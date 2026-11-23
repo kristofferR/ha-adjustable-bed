@@ -1,9 +1,8 @@
 """OKIN 64-bit bed controller implementation.
 
-OKIN 64-bit beds use a 10-byte command protocol:
-- Format: [0x08, 0x02, cmd[0], cmd[1], cmd[2], cmd[3], cmd[4], cmd[5], cmd[6], cmd[7]]
-- Commands are 64-bit bitmask values (8 bytes)
-- No checksum required
+OKIN 64-bit beds use 64-bit Okin N-frames (``codec/okin_nframe.py``):
+``08 02 <64-bit word>``, ten bytes, no checksum. The words are the
+``OKIN_64BIT_KEYS`` profile data.
 
 Two protocol variants use the same command format:
 - Protocol 25_42_02: Nordic UART service, fire-and-forget (withoutResponse=True)
@@ -13,8 +12,8 @@ Protocol reverse-engineered from com.okin.bedding.adjustbed app (Flutter/Dart).
 
 The Custom OKIN variant also opens a session on every connection, as captured
 from the Resident Adjustable Base iPhone app on a Nectar Premier / Resident
-base: subscribe to 62741625, then write the UTC clock frame twice and the
-session frame twice. Without it the base answers motor writes with ATT
+base: subscribe to 62741625, then write the UTC clock record twice and the
+clock query twice. Without it the base answers motor writes with ATT
 "Insufficient Authorization" even on an encrypted, bonded link.
 """
 
@@ -24,20 +23,24 @@ import asyncio
 import logging
 from collections.abc import Callable
 from datetime import UTC, datetime
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Final
 
 from bleak.exc import BleakError
 
 from ..ble_auth import is_ble_authentication_error
+from ..codec import okin_nframe as codec
 from ..const import (
     NORDIC_UART_WRITE_CHAR_UUID,
     OKIMAT_NOTIFY_CHAR_UUID,
     OKIMAT_WRITE_CHAR_UUID,
 )
-from .base import BedController
+from ..profiles.okin_nframe import OKIN_64BIT_PROFILES, OkinNFrameProfile
+from .base import BedController, ProfileExecution
+from .builder import BuildContext
 
 if TYPE_CHECKING:
     from ..coordinator import AdjustableBedCoordinator
+    from .lifecycle import ControllerSession
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -46,86 +49,24 @@ _LOGGER = logging.getLogger(__name__)
 OKIN_64BIT_VARIANT_NORDIC = "nordic"  # Protocol 25_42_02 - Nordic UART, fire-and-forget
 OKIN_64BIT_VARIANT_CUSTOM = "custom"  # Protocol 36_33_04a - Custom OKIN, wait-for-response
 
-
-class Okin64BitCommands:
-    """OKIN 64-bit command values (8-byte arrays)."""
-
-    # Motor commands
-    STOP = bytes([0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00])
-    HEAD_UP = bytes([0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00])
-    HEAD_DOWN = bytes([0x00, 0x00, 0x00, 0x02, 0x00, 0x00, 0x00, 0x00])
-    FOOT_UP = bytes([0x00, 0x00, 0x00, 0x04, 0x00, 0x00, 0x00, 0x00])
-    FOOT_DOWN = bytes([0x00, 0x00, 0x00, 0x08, 0x00, 0x00, 0x00, 0x00])
-    LUMBAR_UP = bytes([0x00, 0x00, 0x00, 0x10, 0x00, 0x00, 0x00, 0x00])
-    LUMBAR_DOWN = bytes([0x00, 0x00, 0x00, 0x20, 0x00, 0x00, 0x00, 0x00])
-
-    # Presets
-    FLAT = bytes([0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00])
-    ZERO_G = bytes([0x00, 0x00, 0x10, 0x00, 0x00, 0x00, 0x00, 0x00])
-    LOUNGE = bytes([0x00, 0x00, 0x20, 0x00, 0x00, 0x00, 0x00, 0x00])
-    TV_PC = bytes([0x00, 0x00, 0x40, 0x00, 0x00, 0x00, 0x00, 0x00])
-    ANTI_SNORE = bytes([0x00, 0x00, 0x80, 0x00, 0x00, 0x00, 0x00, 0x00])
-    MEMORY_1 = bytes([0x00, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00])
-    MEMORY_2 = bytes([0x00, 0x04, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00])
-
-    # Set memory (combined with FLAT bit for programming)
-    SET_ZERO_G = bytes([0x08, 0x00, 0x10, 0x00, 0x00, 0x00, 0x00, 0x00])
-    SET_LOUNGE = bytes([0x08, 0x00, 0x20, 0x00, 0x00, 0x00, 0x00, 0x00])
-    SET_TV_PC = bytes([0x08, 0x00, 0x40, 0x00, 0x00, 0x00, 0x00, 0x00])
-    SET_ANTI_SNORE = bytes([0x08, 0x00, 0x80, 0x00, 0x00, 0x00, 0x00, 0x00])
-
-    # Massage
-    MASSAGE_SWITCH = bytes([0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00])
-    MASSAGE_STOP = bytes([0x02, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00])
-    MASSAGE_TIMER = bytes([0x00, 0x00, 0x02, 0x00, 0x00, 0x00, 0x00, 0x00])
-    STRENGTH_UP = bytes([0x00, 0x00, 0x0C, 0x00, 0x00, 0x00, 0x00, 0x00])
-    STRENGTH_DOWN = bytes([0x01, 0x80, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00])
-    WAVE_MODE = bytes([0x10, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00])
-    WAVE_1 = bytes([0x00, 0x00, 0x00, 0x00, 0x00, 0x08, 0x00, 0x00])
-    WAVE_2 = bytes([0x00, 0x00, 0x00, 0x00, 0x00, 0x10, 0x00, 0x00])
-    WAVE_3 = bytes([0x00, 0x00, 0x00, 0x00, 0x00, 0x20, 0x00, 0x00])
-
-    # Light
-    LIGHT_TOGGLE = bytes([0x00, 0x02, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00])
-    LIGHT_ON = bytes([0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x40])
-    LIGHT_OFF = bytes([0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x80])
+CLOCK_QUERY: Final = codec.prefixed_query((0xE1, 0x80, 0x01))
+"""``08 02 E1 80 01``, the Resident apps' clock query."""
+SESSION_WRITE_GAP_S: Final = 0.12
+"""The hardware-verified replay sent each session write 120 ms after the previous response."""
 
 
-# Session frames the Resident app writes after encryption, before any command.
-OKIN_64BIT_CLOCK_PREFIX = bytes([0xE7, 0x80, 0x01])
-OKIN_64BIT_SESSION_FRAME = bytes([0x08, 0x02, 0xE1, 0x80, 0x01])
-# The app writes each session frame twice; the hardware-verified replay
-# spaced every write 120 ms after its response.
-OKIN_64BIT_SESSION_WRITE_GAP_S = 0.12
+def clock_record(now: datetime) -> bytes:
+    """Encode ``now`` as the ``E7 80 01`` clock record, in the time zone given.
 
-
-def build_okin_64bit_clock_frame(now: datetime) -> bytes:
-    """Build the 9-byte session clock frame for ``now`` in UTC.
-
-    The six time bytes are C ``struct tm`` fields: years since 1900, zero-based
+    The six fields are C ``struct tm`` values: years since 1900, zero-based
     month, day, hour, minute, second. There is no checksum.
     """
-    utc = now.astimezone(UTC)
-    return OKIN_64BIT_CLOCK_PREFIX + bytes(
-        [utc.year - 1900, utc.month - 1, utc.day, utc.hour, utc.minute, utc.second]
+    return codec.calendar_record(
+        0xE7, (now.year - 1900, now.month - 1, now.day, now.hour, now.minute, now.second)
     )
 
 
-def build_okin_64bit_command(cmd_bytes: bytes) -> bytes:
-    """Build a 10-byte OKIN 64-bit command packet.
-
-    Args:
-        cmd_bytes: 8-byte command value
-
-    Returns:
-        10-byte command packet: [0x08, 0x02, cmd[0], ..., cmd[7]]
-    """
-    if len(cmd_bytes) != 8:
-        raise ValueError(f"Command must be 8 bytes, got {len(cmd_bytes)}")
-    return bytes([0x08, 0x02]) + cmd_bytes
-
-
-class Okin64BitController(BedController):
+class Okin64BitController(ProfileExecution[OkinNFrameProfile], BedController):
     """Controller for OKIN 64-bit beds.
 
     Supports two protocol variants:
@@ -138,6 +79,8 @@ class Okin64BitController(BedController):
         coordinator: AdjustableBedCoordinator,
         variant: str = OKIN_64BIT_VARIANT_NORDIC,
         char_uuid: str | None = None,
+        *,
+        profile: OkinNFrameProfile | None = None,
     ) -> None:
         """Initialize the OKIN 64-bit controller.
 
@@ -157,15 +100,20 @@ class Okin64BitController(BedController):
         else:
             self._char_uuid = NORDIC_UART_WRITE_CHAR_UUID
 
-        # Determine write response mode based on variant
-        self._use_response = variant == OKIN_64BIT_VARIANT_CUSTOM
+        # Any other variant uses the Nordic UART route.
+        self._profile = profile or OKIN_64BIT_PROFILES.get(variant, OKIN_64BIT_PROFILES["nordic"])
+        self._write_with_response = self._profile.write == "response"
 
         _LOGGER.debug(
             "Okin64BitController initialized (variant: %s, char: %s, response: %s)",
             variant,
             self._char_uuid,
-            self._use_response,
+            self._write_with_response,
         )
+
+    @property
+    def protocol_diagnostics(self) -> dict[str, object]:
+        return {"variant": self._variant}
 
     @property
     def control_characteristic_uuid(self) -> str:
@@ -174,35 +122,19 @@ class Okin64BitController(BedController):
 
     @property
     def requires_notification_channel(self) -> bool:
-        """Custom OKIN opens its session after subscribing, even without angle sensing."""
+        """The Custom OKIN session subscribes even with angle sensing disabled."""
         return self._variant == OKIN_64BIT_VARIANT_CUSTOM
 
     async def start_notify(self, callback: Callable[[str, float], None] | None = None) -> None:
-        """Subscribe to 62741625 and open the Custom OKIN session.
-
-        Runs on every (re)connection before any command. A GATT security error
-        is raised so the coordinator's pairing recovery runs; other failures
-        are logged and leave the link usable for beds that need no session.
-        """
+        """Subscribe to the Custom OKIN status characteristic, 62741625."""
         self._notify_callback = callback
         if self._variant != OKIN_64BIT_VARIANT_CUSTOM:
             return
         client = self.client
         if client is None or not client.is_connected:
-            raise ConnectionError("Cannot open OKIN 64-bit session: not connected")
-        try:
-            async with self._ble_lock:
-                await client.start_notify(OKIMAT_NOTIFY_CHAR_UUID, self._handle_notification)
-            clock = build_okin_64bit_clock_frame(datetime.now(UTC))
-            for frame in (clock, clock, OKIN_64BIT_SESSION_FRAME, OKIN_64BIT_SESSION_FRAME):
-                await self._write_gatt_with_retry(
-                    self._char_uuid, frame, cancel_event=asyncio.Event(), response=True
-                )
-                await asyncio.sleep(OKIN_64BIT_SESSION_WRITE_GAP_S)
-        except BleakError as err:
-            if is_ble_authentication_error(err):
-                raise
-            _LOGGER.warning("OKIN 64-bit session setup incomplete: %s", err)
+            raise ConnectionError("Cannot subscribe to OKIN 64-bit status: not connected")
+        async with self._ble_lock:
+            await client.start_notify(OKIMAT_NOTIFY_CHAR_UUID, self._handle_notification)
 
     def _handle_notification(self, _: object, data: bytearray) -> None:
         """Forward raw status notifications to diagnostics."""
@@ -219,6 +151,31 @@ class Okin64BitController(BedController):
                 await client.stop_notify(OKIMAT_NOTIFY_CHAR_UUID)
         except BleakError as err:
             _LOGGER.debug("Could not stop OKIN 64-bit notifications: %s", err)
+
+    async def async_on_connect(self, session: ControllerSession) -> None:
+        """Open the Custom OKIN session on every connection, before any command.
+
+        Subscribe, then write the UTC clock record twice and the clock query
+        twice, with response. A GATT security error is raised so the
+        coordinator's pairing recovery runs; other failures are logged and
+        leave the link usable for beds that need no session.
+        """
+        if self._variant != OKIN_64BIT_VARIANT_CUSTOM:
+            await super().async_on_connect(session)
+            return
+        try:
+            await session.async_start_notify()
+            # The iPhone capture carries UTC, unlike Resident's Android app.
+            clock = clock_record(datetime.now(UTC))
+            for frame in (clock, clock, CLOCK_QUERY, CLOCK_QUERY):
+                await self._write_gatt_with_retry(
+                    self._char_uuid, frame, cancel_event=asyncio.Event(), response=True
+                )
+                await asyncio.sleep(SESSION_WRITE_GAP_S)
+        except BleakError as err:
+            if is_ble_authentication_error(err):
+                raise
+            _LOGGER.warning("OKIN 64-bit session setup incomplete: %s", err)
 
     # Capability properties
     @property
@@ -247,7 +204,6 @@ class Okin64BitController(BedController):
 
     @property
     def supports_memory_programming(self) -> bool:
-        """Return False - memory programming uses set commands at preset positions."""
         return False
 
     @property
@@ -256,203 +212,168 @@ class Okin64BitController(BedController):
 
     @property
     def supports_discrete_light_control(self) -> bool:
-        """Return True - OKIN 64-bit supports discrete on/off control."""
         return True
 
     @property
     def has_lumbar_support(self) -> bool:
-        """Return True - OKIN 64-bit beds support lumbar motor."""
         return True
 
     @property
     def supports_stop_all(self) -> bool:
-        """Return True - OKIN 64-bit supports explicit stop command."""
         return True
 
-    def _build_command(self, cmd_bytes: bytes) -> bytes:
-        """Build command bytes for the given command value."""
-        return build_okin_64bit_command(cmd_bytes)
+    # The toggles and steps below exist only where the profile defines their key;
+    # an inherited method alone would offer a button that has nothing to send.
+    @property
+    def supports_light_toggle_control(self) -> bool:
+        return "light_toggle" in self.profile.keys
 
-    async def write_command(
-        self,
-        command: bytes,
-        repeat_count: int = 1,
-        repeat_delay_ms: int = 100,
-        cancel_event: asyncio.Event | None = None,
-    ) -> None:
-        """Write a command to the bed."""
-        _LOGGER.debug(
-            "Writing command to OKIN 64-bit bed: %s (repeat: %d, delay: %dms, response: %s)",
-            command.hex(),
-            repeat_count,
-            repeat_delay_ms,
-            self._use_response,
-        )
-        await self._write_gatt_with_retry(
-            self._char_uuid,
-            command,
-            repeat_count=repeat_count,
-            repeat_delay_ms=repeat_delay_ms,
-            cancel_event=cancel_event,
-            response=self._use_response,
-        )
+    @property
+    def supports_massage_toggle_control(self) -> bool:
+        return "massage_switch" in self.profile.keys
 
-    async def _send_command(self, cmd_bytes: bytes, repeat: int | None = None) -> None:
-        """Send a command to the bed."""
-        command = self._build_command(cmd_bytes)
+    @property
+    def supports_head_massage_intensity_step_control(self) -> bool:
+        return {"strength_up", "strength_down"} <= self.profile.keys.keys()
+
+    @property
+    def supports_massage_mode_step_control(self) -> bool:
+        return "wave_mode" in self.profile.keys
+
+    @property
+    def profile(self) -> OkinNFrameProfile:
+        """The variant's profile: its words and write mode."""
+        return self._profile
+
+    def _build_command(self, word: int) -> bytes:
+        """Frame one 64-bit word."""
+        return codec.frame(word, self.profile.width)
+
+    async def _send_command(self, command: bytes, repeat: int | None = None) -> None:
+        """Send a framed command at the entry's pulse settings."""
         pulse_count = repeat if repeat is not None else self._coordinator.motor_pulse_count
         pulse_delay = self._coordinator.motor_pulse_delay_ms
         await self.write_command(command, repeat_count=pulse_count, repeat_delay_ms=pulse_delay)
 
     async def _move_with_stop(self, command: bytes) -> None:
         """Execute a movement command and send STOP at the end."""
-        try:
+        async with self.releasing(lambda: self._send_stop()):
             await self._send_command(command)
-        finally:
-            try:
-                await self.write_command(
-                    self._build_command(Okin64BitCommands.STOP),
-                    cancel_event=asyncio.Event(),
-                )
-            except Exception:
-                _LOGGER.debug("Failed to send STOP command during cleanup")
+
+    async def _send_stop(self) -> None:
+        """Release the active key; app subclasses may own a release schedule."""
+        await self.write_command(self._build_command(0), cancel_event=asyncio.Event())
+
+    async def _press(self, word: int) -> None:
+        """One app press; subclasses may add their profile's release sequence."""
+        await self.write_command(self._build_command(word))
 
     # Motor control methods
     async def move_head_up(self) -> None:
-        """Move head up."""
-        await self._move_with_stop(Okin64BitCommands.HEAD_UP)
+        await self._move_with_stop(self._build_command(self.profile.keys["head_up"]))
 
     async def move_head_down(self) -> None:
-        """Move head down."""
-        await self._move_with_stop(Okin64BitCommands.HEAD_DOWN)
+        await self._move_with_stop(self._build_command(self.profile.keys["head_down"]))
 
     async def move_head_stop(self) -> None:
-        """Stop head motor."""
-        await self.write_command(
-            self._build_command(Okin64BitCommands.STOP),
-            cancel_event=asyncio.Event(),
-        )
+        await self._send_stop()
 
     async def move_back_up(self) -> None:
-        """Move back up (same as head for OKIN 64-bit)."""
         await self.move_head_up()
 
     async def move_back_down(self) -> None:
-        """Move back down (same as head for OKIN 64-bit)."""
         await self.move_head_down()
 
     async def move_back_stop(self) -> None:
-        """Stop back motor."""
         await self.move_head_stop()
 
     async def move_legs_up(self) -> None:
-        """Move legs up (same as feet for OKIN 64-bit)."""
-        await self._move_with_stop(Okin64BitCommands.FOOT_UP)
+        await self._move_with_stop(self._build_command(self.profile.keys["foot_up"]))
 
     async def move_legs_down(self) -> None:
-        """Move legs down (same as feet for OKIN 64-bit)."""
-        await self._move_with_stop(Okin64BitCommands.FOOT_DOWN)
+        await self._move_with_stop(self._build_command(self.profile.keys["foot_down"]))
 
     async def move_legs_stop(self) -> None:
-        """Stop legs motor."""
         await self.move_head_stop()
 
     async def move_feet_up(self) -> None:
-        """Move feet up."""
-        await self._move_with_stop(Okin64BitCommands.FOOT_UP)
+        await self._move_with_stop(self._build_command(self.profile.keys["foot_up"]))
 
     async def move_feet_down(self) -> None:
-        """Move feet down."""
-        await self._move_with_stop(Okin64BitCommands.FOOT_DOWN)
+        await self._move_with_stop(self._build_command(self.profile.keys["foot_down"]))
 
     async def move_feet_stop(self) -> None:
-        """Stop feet motor."""
         await self.move_head_stop()
 
     async def move_lumbar_up(self) -> None:
-        """Move lumbar up."""
-        await self._move_with_stop(Okin64BitCommands.LUMBAR_UP)
+        await self._move_with_stop(self._build_command(self.profile.keys["lumbar_up"]))
 
     async def move_lumbar_down(self) -> None:
-        """Move lumbar down."""
-        await self._move_with_stop(Okin64BitCommands.LUMBAR_DOWN)
+        await self._move_with_stop(self._build_command(self.profile.keys["lumbar_down"]))
 
     async def move_lumbar_stop(self) -> None:
-        """Stop lumbar motor."""
         await self.move_head_stop()
 
     async def stop_all(self) -> None:
-        """Stop all motors."""
-        await self.write_command(
-            self._build_command(Okin64BitCommands.STOP),
-            cancel_event=asyncio.Event(),
-        )
+        await self._send_stop()
 
     # Preset methods
     async def preset_flat(self) -> None:
-        """Go to flat position."""
-        await self.write_command(self._build_command(Okin64BitCommands.FLAT))
+        await self._press(self.profile.keys["flat"])
 
     async def preset_memory(self, memory_num: int) -> None:
         """Go to memory preset."""
         commands = {
-            1: Okin64BitCommands.MEMORY_1,
-            2: Okin64BitCommands.MEMORY_2,
+            1: self.profile.keys["memory_1"],
+            2: self.profile.keys["memory_2"],
         }
-        if cmd_bytes := commands.get(memory_num):
-            await self.write_command(self._build_command(cmd_bytes))
+        if (word := commands.get(memory_num)) is not None:
+            await self._press(word)
         else:
-            _LOGGER.warning("Invalid memory number %d (valid: 1-2)", memory_num)
+            raise self.not_supported(f"memory preset {memory_num}")
 
-    async def program_memory(self, memory_num: int) -> None:  # noqa: ARG002
+    async def program_memory(self, memory_num: int) -> None:
         """Program current position to memory (not supported - use set commands)."""
-        _LOGGER.warning(
-            "OKIN 64-bit beds don't support programming memory presets directly. "
-            "Memory positions are programmed by sending set commands at the desired position."
-        )
+        raise self.not_supported("saving memory presets")
 
     async def preset_zero_g(self) -> None:
-        """Go to zero gravity position."""
-        await self.write_command(self._build_command(Okin64BitCommands.ZERO_G))
+        await self._press(self.profile.keys["zero_g"])
 
     async def preset_anti_snore(self) -> None:
-        """Go to anti-snore position."""
-        await self.write_command(self._build_command(Okin64BitCommands.ANTI_SNORE))
+        await self._press(self.profile.keys["anti_snore"])
 
     async def preset_tv(self) -> None:
-        """Go to TV position."""
-        await self.write_command(self._build_command(Okin64BitCommands.TV_PC))
+        await self._press(self.profile.keys["tv_pc"])
 
     async def preset_lounge(self) -> None:
-        """Go to lounge position."""
-        await self.write_command(self._build_command(Okin64BitCommands.LOUNGE))
+        await self._press(self.profile.keys["lounge"])
 
     # Light methods
     async def lights_on(self) -> None:
-        """Turn on under-bed lights."""
-        await self.write_command(self._build_command(Okin64BitCommands.LIGHT_ON))
+        await self._press(self.profile.keys["light_on"])
 
     async def lights_off(self) -> None:
-        """Turn off under-bed lights."""
-        await self.write_command(self._build_command(Okin64BitCommands.LIGHT_OFF))
+        await self._press(self.profile.keys["light_off"])
 
     async def lights_toggle(self) -> None:
-        """Toggle under-bed lights."""
-        await self.write_command(self._build_command(Okin64BitCommands.LIGHT_TOGGLE))
+        await self._press(self.profile.keys["light_toggle"])
 
     # Massage methods
     async def massage_toggle(self) -> None:
-        """Toggle massage on/off."""
-        await self.write_command(self._build_command(Okin64BitCommands.MASSAGE_SWITCH))
+        await self._press(self.profile.keys["massage_switch"])
 
     async def massage_head_up(self) -> None:
-        """Increase massage intensity."""
-        await self.write_command(self._build_command(Okin64BitCommands.STRENGTH_UP))
+        await self._press(self.profile.keys["strength_up"])
 
     async def massage_head_down(self) -> None:
-        """Decrease massage intensity."""
-        await self.write_command(self._build_command(Okin64BitCommands.STRENGTH_DOWN))
+        await self._press(self.profile.keys["strength_down"])
 
     async def massage_mode_step(self) -> None:
-        """Step through massage wave modes."""
-        await self.write_command(self._build_command(Okin64BitCommands.WAVE_MODE))
+        await self._press(self.profile.keys["wave_mode"])
+
+
+async def build_controller(ctx: BuildContext) -> Okin64BitController:
+    """Build the controller; Auto defaults to Nordic UART (fire-and-forget)."""
+    variant = ctx.variant if ctx.variant and ctx.variant != "auto" else "nordic"
+    _LOGGER.debug("Using OKIN 64-bit variant: %s", variant)
+    return Okin64BitController(ctx.coordinator, variant=variant)

@@ -13,7 +13,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers import issue_registry as ir
 from homeassistant.helpers.storage import Store
-from pytest_homeassistant_custom_component.common import MockConfigEntry
+from pytest_homeassistant.common import MockConfigEntry
 
 from custom_components.adjustable_bed.app_state_store import AppStateStore, app_state_storage_key
 from custom_components.adjustable_bed.const import (
@@ -21,6 +21,7 @@ from custom_components.adjustable_bed.const import (
     ADJUSTABLE_LUMBAR_VARIANT_STAR,
     BED_TYPE_ADJUSTABLE_LUMBAR,
     BED_TYPE_KEESON,
+    BED_TYPE_OKIN_CB35,
     BED_TYPE_SLEEPYS_BOX25,
     CONF_BED_TYPE,
     CONF_MOTOR_COUNT,
@@ -116,6 +117,34 @@ async def open_flow(hass, target):
     assert isinstance(flow, ProfileRecommendationRepairFlow)
     flow.hass = hass
     return flow
+
+
+async def finish_reconfigure(hass, handoff, action="apply"):
+    """Answer a Reconfigure handoff with its preselected answers, then its review."""
+    from unittest.mock import PropertyMock
+
+    from custom_components.adjustable_bed.config_flow import AdjustableBedConfigFlow
+
+    kind, flow_id = handoff["next_flow"]
+    assert kind == "config_flow"
+    manager = hass.config_entries.flow
+    # The destination's link check is covered elsewhere; these tests follow the review.
+    with patch.object(
+        AdjustableBedConfigFlow,
+        "_migration_requires_check",
+        new_callable=PropertyMock,
+        return_value=False,
+    ):
+        result = await manager.async_configure(flow_id)
+        for _ in range(6):
+            if result["type"] != "form" or result.get("errors"):
+                break
+            if result["step_id"] == "migration_confirm":
+                with patch.object(hass.config_entries, "async_schedule_reload"):
+                    result = await manager.async_configure(flow_id, {"action": action})
+                continue
+            result = await manager.async_configure(flow_id, result["data_schema"]({}))
+    return result
 
 
 @pytest.fixture
@@ -517,15 +546,11 @@ async def test_review_hands_off_without_saving_and_options_confirms(
         form = await flow.async_step_init({"issue_id": target.issue_id})
         result = await flow.async_step_init({"action": "review"})
     assert form["step_id"] == "init"
-    assert result["type"] == "abort" and result["reason"] == "review_started"
+    assert result["type"] == "abort" and result["reason"] == "guided_change_started"
     assert target.entry.data == before
     assert issue(hass, target) is not None
-    kind, flow_id = result["next_flow"]
-    assert kind == "options_flow"
-    manager = hass.config_entries.options
-    with patch.object(hass.config_entries, "async_schedule_reload"):
-        result = await manager.async_configure(flow_id, {})
-    assert result["type"] == "create_entry"
+    result = await finish_reconfigure(hass, result)
+    assert result["type"] == "abort" and result["reason"] == "migration_applied"
     assert target.entry.data[CONF_BED_TYPE] == BED_TYPE_SLEEPYS_BOX25
     decisions = await AppStateStore(hass, ADDRESS).async_slot("profile_recommendations")
     record = decisions["history"][0]
@@ -546,42 +571,10 @@ async def test_cancelled_review_keeps_configuration_and_suggestion(
     flow = await open_flow(hass, target)
     with patch(HISTORY, return_value=info()):
         result = await flow.async_step_init({"action": "review"})
-    hass.config_entries.options.async_abort(result["next_flow"][1])
+    hass.config_entries.flow.async_abort(result["next_flow"][1])
     assert target.entry.data == before
     assert await AppStateStore(hass, ADDRESS).async_slot("profile_recommendations") == {}
     assert issue(hass, target) is not None
-
-
-async def test_aborted_options_init_preserves_an_existing_configure_flow(
-    hass, enable_custom_integrations
-):
-    target = await watch(hass)
-    manager = hass.config_entries.options
-    existing = await manager.async_init(target.entry.entry_id)
-    before = dict(target.entry.data)
-    flow = await open_flow(hass, target)
-    with (
-        patch(HISTORY, return_value=info()),
-        patch.object(
-            manager,
-            "async_init",
-            return_value={
-                "type": "abort",
-                "flow_id": "already_finished",
-                "reason": "already_in_progress",
-            },
-        ),
-        patch.object(manager, "async_configure", wraps=manager.async_configure) as configure,
-    ):
-        result = await flow.async_step_init({"action": "review"})
-    assert result["type"] == "abort" and result["reason"] == "recommendation_changed"
-    configure.assert_not_called()
-    assert [item["flow_id"] for item in manager.async_progress()] == [existing["flow_id"]]
-    assert target.entry.data == before
-    assert target.review_flow_id is None
-    assert issue(hass, target) is not None
-    assert await AppStateStore(hass, ADDRESS).async_slot("profile_recommendations") == {}
-    manager.async_abort(existing["flow_id"])
 
 
 async def test_accepted_unique_match_is_recorded_even_when_selected_profile_has_no_assessment(
@@ -600,10 +593,9 @@ async def test_accepted_unique_match_is_recorded_even_when_selected_profile_has_
         assert original is not None
         flow = await open_flow(hass, target)
         result = await flow.async_step_init({"action": "review"})
-        with patch.object(hass.config_entries, "async_schedule_reload"):
-            result = await hass.config_entries.options.async_configure(result["next_flow"][1], {})
+        result = await finish_reconfigure(hass, result)
         target.refresh()
-    assert result["type"] == "create_entry"
+    assert result["reason"] == "migration_applied"
     assert config_entry.data[CONF_BED_TYPE] == "linak"
     assert target.recommendation is None
     decisions = await AppStateStore(hass, ADDRESS).async_slot("profile_recommendations")
@@ -726,59 +718,6 @@ def test_new_detection_ambiguity_does_not_reuse_the_old_recommendation(field, va
         assert recommend_profile({CONF_BED_TYPE: BED_TYPE_ADJUSTABLE_LUMBAR}, info(), STATE) is None
 
 
-def test_notice_describes_the_actual_controls_lost_and_gained():
-    import json
-    from pathlib import Path
-
-    from custom_components.adjustable_bed.beds.adjustable_lumbar import AdjustableLumbarController
-    from custom_components.adjustable_bed.beds.sleepys_box25 import SleepysBox25Controller
-
-    current = AdjustableLumbarController(MagicMock(), device_name="Star254202000001")
-    suggested = SleepysBox25Controller(MagicMock())
-    root = Path("custom_components/adjustable_bed")
-    strings = json.loads((root / "strings.json").read_text())
-    english = json.loads((root / "translations/en.json").read_text())
-    notice = strings["issues"]["lumbar_star254202_box25"]
-    assert notice == english["issues"]["lumbar_star254202_box25"]
-    text = notice["fix_flow"]["step"]["init"]["description"]
-    assert not current.supports_memory_presets
-    assert suggested.supports_memory_presets and suggested.supports_memory_programming
-    assert current.supports_preset_incline and not suggested.supports_preset_incline
-    assert suggested.supports_preset_tv
-    for button in current.controller_button_specs:
-        assert button.key not in {other.key for other in suggested.controller_button_specs}
-        assert button.name in text
-
-
-async def test_configuration_change_during_handoff_aborts_without_submitting_profile(
-    hass, enable_custom_integrations
-):
-    target = await watch(hass)
-    flow = await open_flow(hass, target)
-    manager = hass.config_entries.options
-    configure = manager.async_configure
-    submissions = []
-
-    async def concurrently_changed(flow_id, user_input):
-        submissions.append(user_input)
-        result = await configure(flow_id, user_input)
-        hass.config_entries.async_update_entry(
-            target.entry, data={**target.entry.data, CONF_ADDRESS: OTHER}
-        )
-        return result
-
-    with (
-        patch(HISTORY, return_value=info()),
-        patch.object(manager, "async_configure", side_effect=concurrently_changed),
-    ):
-        result = await flow.async_step_init({"action": "review"})
-    assert result["reason"] == "recommendation_changed"
-    assert submissions == [{"next_step_id": "settings"}]
-    assert target.entry.data[CONF_ADDRESS] == OTHER
-    assert target.entry.data[CONF_BED_TYPE] == BED_TYPE_ADJUSTABLE_LUMBAR
-    assert not manager.async_progress()
-
-
 def advertisement(name, services):
     observed = info(name)
     observed.service_uuids = services
@@ -853,7 +792,7 @@ def test_bare_dewertokin_services_do_not_offer_ambiguous_profiles(gateway):
 
     service = DEWERTOKIN_RF_GATEWAY_SERVICE_UUID if gateway else DEWERTOKIN_SERVICE_UUID
     assert (
-        recommend_profile({CONF_BED_TYPE: "dewertokin"}, advertisement("", [service]), {}) is None
+        recommend_profile({CONF_BED_TYPE: "okin_handle"}, advertisement("", [service]), {}) is None
     )
 
 
@@ -890,6 +829,19 @@ def test_keeson_auto_named_transports_do_not_offer_unrelated_apps(variant, name)
             {CONF_BED_TYPE: BED_TYPE_KEESON, CONF_PROTOCOL_VARIANT: variant},
             advertisement(name, [NORDIC_UART_SERVICE_UUID]),
             {},
+        )
+        is None
+    )
+
+
+def test_somos_shared_name_preserves_an_explicit_app_selection():
+    from custom_components.adjustable_bed.detection import detect_bed_type_detailed
+
+    observed = advertisement("KSBT03CR123456789", [NORDIC_UART_SERVICE_UUID])
+    assert "somos" in (detect_bed_type_detailed(observed).ambiguous_types or ())
+    assert (
+        recommend_profile(
+            {CONF_BED_TYPE: "somos", CONF_PROTOCOL_VARIANT: "b"}, observed, {}
         )
         is None
     )
@@ -996,7 +948,7 @@ def test_keeson_json_signature_takes_precedence_over_ksbt_name():
 
 @pytest.mark.parametrize(
     "variant",
-    ["base", "ksbt", "ksbt_cr", "ksbt04c", "sino", "sleep_harmony", "ergomotion", "okin", "serta", "purple"],
+    ["base", "ksbt", "ksbt_cr", "ksbt04c", "sino", "sleep_harmony", "ergomotion", "okin", "purple"],
 )
 @pytest.mark.parametrize("name", ["", "KSBT03CR123456789"])
 def test_keeson_json_reviews_conflicting_explicit_transport(variant, name):
@@ -1065,7 +1017,7 @@ def test_keeson_ksbt_name_does_not_replace_explicit_app_selection():
     )
 
 
-@pytest.mark.parametrize("variant", ["sleep_harmony", "purple", "ergomotion", "okin", "serta"])
+@pytest.mark.parametrize("variant", ["sleep_harmony", "purple", "ergomotion", "okin"])
 @pytest.mark.parametrize("name", ["KSBT04C123456789", "smart_dfu"])
 def test_keeson_shared_ksbt_name_keeps_explicit_protocol_app(variant, name):
     assert (
@@ -1121,23 +1073,25 @@ def test_generic_decision_survives_name_changes_but_not_changed_profile():
 async def test_non_lumbar_observer_and_ambiguous_handoff_do_not_save_or_preselect(
     hass, enable_custom_integrations
 ):
-    config_entry = entry(hass, **{CONF_BED_TYPE: BED_TYPE_SLEEPYS_BOX25})
+    config_entry = entry(hass, **{CONF_BED_TYPE: BED_TYPE_OKIN_CB35})
     coord = coordinator()
-    coord.bed_type = BED_TYPE_SLEEPYS_BOX25
+    coord.bed_type = BED_TYPE_OKIN_CB35
     coord.controller.protocol_diagnostics = {}
     target = await watch(hass, config_entry, coord)
     assert issue(hass, target).translation_key == "profile_ambiguous"
     before = dict(config_entry.data)
     flow = await open_flow(hass, target)
-    manager = hass.config_entries.options
-    with (
-        patch(HISTORY, return_value=info()),
-        patch.object(manager, "async_configure", wraps=manager.async_configure) as configure,
-    ):
+    with patch(HISTORY, return_value=info()):
         result = await flow.async_step_init({"action": "review"})
-    configure.assert_called_once_with(result["next_flow"][1], {"next_step_id": "settings"})
+    # Reconfigure opens on the current setup: nothing is preselected or saved.
+    kind, flow_id = result["next_flow"]
+    assert kind == "config_flow"
+    shown = await hass.config_entries.flow.async_configure(flow_id)
+    assert shown["step_id"] == "reconfigure_bed_type"
+    schema = shown["data_schema"]
+    assert schema is not None and schema({})[CONF_BED_TYPE] == BED_TYPE_OKIN_CB35
     assert config_entry.data == before
-    manager.async_abort(result["next_flow"][1])
+    hass.config_entries.flow.async_abort(flow_id)
 
 
 @pytest.mark.parametrize(
@@ -1160,10 +1114,10 @@ async def test_variant_and_remote_reviews_open_valid_settings_without_submitting
         assert any(":" in choice for choice in target.recommendation.choices)
         flow = await open_flow(hass, target)
         before = dict(config_entry.data)
-        manager = hass.config_entries.options
-        with patch.object(manager, "async_configure", wraps=manager.async_configure) as configure:
-            result = await flow.async_step_init({"action": "review"})
-        configure.assert_called_once_with(result["next_flow"][1], {"next_step_id": "settings"})
+        manager = hass.config_entries.flow
+        result = await flow.async_step_init({"action": "review"})
+        # A review that offers another route or app opens Reconfigure.
+        assert result["next_flow"][0] == "config_flow"
         assert config_entry.data == before
         manager.async_abort(result["next_flow"][1])
 
@@ -1410,7 +1364,7 @@ async def test_expired_history_keeps_upgrade_review_confirmation(
         profile_review_mark,
     )
 
-    config_entry = entry(hass, **{CONF_BED_TYPE: BED_TYPE_SLEEPYS_BOX25})
+    config_entry = entry(hass, **{CONF_BED_TYPE: BED_TYPE_OKIN_CB35})
     hass.config_entries.async_update_entry(
         config_entry,
         data={
@@ -1427,11 +1381,11 @@ async def test_expired_history_keeps_upgrade_review_confirmation(
             result = await flow.async_step_init({"action": "keep"})
         else:
             result = await flow.async_step_init({"action": "review"})
-            with patch.object(hass.config_entries, "async_schedule_reload"):
-                result = await hass.config_entries.options.async_configure(
-                    result["next_flow"][1], {}
-                )
-    assert result["type"] == "create_entry"
+            # Choosing the current setup again in Reconfigure answers it.
+            result = await finish_reconfigure(hass, result)
+            assert result["reason"] == "migration_unchanged"
+    if action == "keep":
+        assert result["type"] == "create_entry"
     assert issue(hass, target) is None
     decisions = await AppStateStore(hass, ADDRESS).async_slot("profile_recommendations")
     assert any(key.startswith("upgrade_review_") for key in decisions)
@@ -1455,7 +1409,7 @@ async def test_same_mac_with_different_case_keeps_the_recommendation(hass):
     assert issue(hass, target) is not None
 
 
-@pytest.mark.parametrize("selected", [BED_TYPE_SLEEPYS_BOX25, BED_TYPE_ADJUSTABLE_LUMBAR])
+@pytest.mark.parametrize("selected", [BED_TYPE_OKIN_CB35, BED_TYPE_ADJUSTABLE_LUMBAR])
 async def test_single_address_pair_has_one_physical_notice(
     hass, enable_custom_integrations, selected
 ):
@@ -1484,7 +1438,7 @@ async def test_single_address_pair_has_one_physical_notice(
     assert form["step_id"] == "paired"
     placeholders = form["description_placeholders"]
     assert placeholders is not None
-    assert placeholders["pair_action"] == "Restore standalone controls"
+    assert placeholders["pair_action"] == "Remove Left, Right and Both controls"
     assert placeholders["target"] == "Bedroom"
     assert target.recommendation is not None
     for path in ("strings.json", "translations/en.json"):
@@ -1492,14 +1446,14 @@ async def test_single_address_pair_has_one_physical_notice(
         step = strings["issues"][target.recommendation.translation_key]["fix_flow"]["step"]["paired"]
         assert step["title"].format(**placeholders) == "Review the profile for Bedroom"
         description = step["description"].format(**placeholders)
-        assert "Restore standalone controls" in description
-        assert "Split into two beds" not in description
+        assert "Remove Left, Right and Both controls" in description
+        assert "Separate into two beds" not in description
         assert ",  side" not in description
     hass.config_entries.options.async_abort(result["next_flow"][1])
 
 
 async def test_saving_ambiguous_review_confirms_current_route(hass, enable_custom_integrations):
-    config_entry = entry(hass, **{CONF_BED_TYPE: BED_TYPE_SLEEPYS_BOX25})
+    config_entry = entry(hass, **{CONF_BED_TYPE: BED_TYPE_OKIN_CB35})
     # Populate defaults without starting BLE setup before the unchanged-save check.
     initial = await hass.config_entries.options.async_init(config_entry.entry_id)
     await hass.config_entries.options.async_configure(
@@ -1508,7 +1462,7 @@ async def test_saving_ambiguous_review_confirms_current_route(hass, enable_custo
     with patch.object(hass.config_entries, "async_schedule_reload"):
         await hass.config_entries.options.async_configure(initial["flow_id"], {})
     coord = coordinator()
-    coord.bed_type = BED_TYPE_SLEEPYS_BOX25
+    coord.bed_type = BED_TYPE_OKIN_CB35
     coord.controller.protocol_diagnostics = {}
     target = await watch(hass, config_entry, coord)
     config_entry.mock_state(hass, ConfigEntryState.LOADED)
@@ -1516,24 +1470,22 @@ async def test_saving_ambiguous_review_confirms_current_route(hass, enable_custo
     flow = await open_flow(hass, target)
     with patch(HISTORY, return_value=info()):
         result = await flow.async_step_init({"action": "review"})
-        with patch.object(hass.config_entries, "async_schedule_reload"):
-            result = await hass.config_entries.options.async_configure(result["next_flow"][1], {})
+        result = await finish_reconfigure(hass, result)
     config_entry.mock_state(hass, ConfigEntryState.SETUP_RETRY)
-    assert result["type"] == "create_entry"
+    assert result["reason"] == "migration_unchanged"
     assert config_entry.data == before
-    assert config_entry.data[CONF_BED_TYPE] == BED_TYPE_SLEEPYS_BOX25
+    assert config_entry.data[CONF_BED_TYPE] == BED_TYPE_OKIN_CB35
     assert issue(hass, target) is None
     decisions = await AppStateStore(hass, ADDRESS).async_slot("profile_recommendations")
     assert decisions["history"][0]["decision"] == "dismissed"
     assert decisions["history"][0]["source"] == "configure"
 
 
-@pytest.mark.parametrize("variant", ["auto", "cb24"])
-async def test_single_address_settings_records_review_decision(
-    hass, enable_custom_integrations, variant
-):
+async def test_single_address_settings_records_review_decision(hass, enable_custom_integrations):
+    """Saving the pair's settings from the review answers it; the route stays."""
+    variant = "cb24_ab"
     from custom_components.adjustable_bed.const import (
-        BED_TYPE_OKIN_CB24,
+        BED_TYPE_SMARTBED,
         LINAK_CONTROL_SERVICE_UUID,
         PAIR_MODE_SINGLE_ADDRESS,
     )
@@ -1541,7 +1493,8 @@ async def test_single_address_settings_records_review_decision(
     config_entry = entry(
         hass,
         **{
-            CONF_BED_TYPE: BED_TYPE_OKIN_CB24,
+            CONF_BED_TYPE: BED_TYPE_SMARTBED,
+            CONF_PROTOCOL_VARIANT: variant,
             CONF_MOTOR_COUNT: 2,
             CONF_PAIR_ID: "single",
             CONF_PAIR_MODE: PAIR_MODE_SINGLE_ADDRESS,
@@ -1561,7 +1514,7 @@ async def test_single_address_settings_records_review_decision(
         manager = hass.config_entries.options
         await manager.async_configure(flow_id, {"next_step_id": "settings"})
         with patch.object(hass.config_entries, "async_schedule_reload"):
-            result = await manager.async_configure(flow_id, {CONF_PROTOCOL_VARIANT: variant})
+            result = await manager.async_configure(flow_id, {})
         assert result["type"] == "create_entry"
         assert config_entry.data[CONF_PAIR_MODE] == PAIR_MODE_SINGLE_ADDRESS
         assert config_entry.data[CONF_PROTOCOL_VARIANT] == variant
@@ -1570,8 +1523,8 @@ async def test_single_address_settings_records_review_decision(
     decisions = await AppStateStore(hass, ADDRESS).async_slot("profile_recommendations")
     record = decisions["history"][0]
     assert record["rule"] == original.rule and record["source"] == "configure"
-    assert record["decision"] == ("dismissed" if variant == "auto" else "accepted")
-    assert record["previous_profile"][CONF_PROTOCOL_VARIANT] == "auto"
+    assert record["decision"] == "dismissed"
+    assert record["previous_profile"][CONF_PROTOCOL_VARIANT] == variant
     assert record["selected_profile"][CONF_PROTOCOL_VARIANT] == variant
     assert target.recommendation is not None
     assert set(record["confirmed_rules"]) == {original.rule, target.recommendation.rule}
@@ -1585,7 +1538,7 @@ async def test_options_save_does_not_confirm_new_advertisement_assessment(
 ):
     from custom_components.adjustable_bed.const import LINAK_CONTROL_SERVICE_UUID
 
-    config_entry = entry(hass, **{CONF_BED_TYPE: BED_TYPE_SLEEPYS_BOX25})
+    config_entry = entry(hass, **{CONF_BED_TYPE: BED_TYPE_OKIN_CB35})
     coord = coordinator()
     coord.controller.protocol_diagnostics = {}
     target = await watch(hass, config_entry, coord)
@@ -1599,10 +1552,9 @@ async def test_options_save_does_not_confirm_new_advertisement_assessment(
         target.seen(changed, MagicMock())
         unseen = target.recommendation
         assert unseen is not None and unseen.rule != original.rule
-        with patch.object(hass.config_entries, "async_schedule_reload"):
-            result = await hass.config_entries.options.async_configure(result["next_flow"][1], {})
-    assert result["type"] == "create_entry"
-    assert config_entry.data[CONF_BED_TYPE] == BED_TYPE_SLEEPYS_BOX25
+        result = await finish_reconfigure(hass, result)
+    assert result["reason"] == "migration_unchanged"
+    assert config_entry.data[CONF_BED_TYPE] == BED_TYPE_OKIN_CB35
     decisions = await AppStateStore(hass, ADDRESS).async_slot("profile_recommendations")
     assert decisions[original.rule] is True
     assert unseen.rule not in decisions
@@ -1628,18 +1580,10 @@ async def test_failed_history_write_does_not_abort_committed_settings(
     flow = await open_flow(hass, target)
     with patch(HISTORY, return_value=info()):
         result = await flow.async_step_init({"action": "review"})
-        flow_id = result["next_flow"][1]
-        with (
-            patch.object(Store, "async_save", side_effect=OSError),
-            patch(
-                "custom_components.adjustable_bed.config_flow.async_set_discovery_disabled"
-            ) as change_discovery,
-        ):
-            result = await hass.config_entries.options.async_configure(
-                flow_id, {"disable_discovery": True}
-            )
-        change_discovery.assert_awaited_once_with(hass, True)
-    assert result["type"] == "create_entry"
+        with patch.object(Store, "async_save", side_effect=OSError):
+            result = await finish_reconfigure(hass, result)
+    await hass.async_block_till_done()
+    assert result["reason"] == "migration_applied"
     assert target.entry.data[CONF_BED_TYPE] == BED_TYPE_SLEEPYS_BOX25
     assert issue(hass, target) is None
     # Immediate exports include the completed choice, and the retry makes it durable.
@@ -1669,14 +1613,14 @@ async def test_failed_hardware_commit_leaves_review_and_history_unconfirmed(
         with patch.object(
             coord, "async_execute_controller_command", new=AsyncMock(side_effect=ConnectionError)
         ):
-            result = await hass.config_entries.options.async_configure(result["next_flow"][1], {})
+            result = await finish_reconfigure(hass, result)
         assert result["errors"] == {"base": "limoss_remote_feature_update_failed"}
         assert coord.entry.data == before
         assert target.dismissed == {}
         assert await AppStateStore(hass, ADDRESS).async_slot("profile_recommendations") == {}
         target.refresh()
         assert issue(hass, target) is not None
-        hass.config_entries.options.async_abort(result["flow_id"])
+        hass.config_entries.flow.async_abort(result["flow_id"])
 
 
 def test_eshine_search_hint_does_not_question_an_already_matching_receiver():
@@ -1691,3 +1635,134 @@ def test_eshine_search_hint_does_not_question_an_already_matching_receiver():
         {CONF_BED_TYPE: BED_TYPE_MALOUF_NEW_OKIN, CONF_PROTOCOL_VARIANT: "auto"},
         observed, {},
     ) is None
+
+
+KSBT_NAME = "KSBT03C123456789"
+
+
+async def keeson_review(hass):
+    """A Keeson Base entry whose KSBT name questions its explicit variant."""
+    config_entry = entry(
+        hass, **{CONF_BED_TYPE: BED_TYPE_KEESON, CONF_PROTOCOL_VARIANT: "base", CONF_MOTOR_COUNT: 2}
+    )
+    coord = coordinator()
+    coord.controller.protocol_diagnostics = {}
+    observed = advertisement(KSBT_NAME, [NORDIC_UART_SERVICE_UUID])
+    with patch(HISTORY, return_value=observed), patch(REGISTER):
+        await async_watch_profile_recommendations(hass, config_entry, ((None, coord),))
+    target = _watches(hass)[f"{ISSUE_PREFIX}{config_entry.entry_id}_standalone"]
+    assert issue(hass, target).translation_key == "profile_ambiguous"
+    flow = await open_flow(hass, target)
+    with patch(HISTORY, return_value=observed):
+        form = await flow.async_step_init({"issue_id": target.issue_id})
+        result = await flow.async_step_init({"action": "review"})
+    # Configure refuses an in-family route change, so the review runs the guided change.
+    assert form["step_id"] == "managed"
+    assert result["type"] == "abort" and result["reason"] == "guided_change_started"
+    kind, flow_id = result["next_flow"]
+    assert kind == "config_flow"
+    step = hass.config_entries.flow.async_get(flow_id)
+    assert step["step_id"] == "keeson_family"
+    return target, observed, flow_id
+
+
+async def test_guided_review_stays_pending_when_the_change_is_closed(
+    hass, enable_custom_integrations
+):
+    target, observed, flow_id = await keeson_review(hass)
+    before = dict(target.entry.data)
+    hass.config_entries.flow.async_abort(flow_id)
+    with patch(HISTORY, return_value=observed):
+        target.refresh()
+    assert target.entry.data == before
+    assert await AppStateStore(hass, ADDRESS).async_slot("profile_recommendations") == {}
+    assert issue(hass, target) is not None
+
+
+async def test_keep_in_the_guided_change_keeps_the_profile(hass, enable_custom_integrations):
+    target, observed, flow_id = await keeson_review(hass)
+    result = await hass.config_entries.flow.async_configure(flow_id, {"choice": "keep"})
+    assert result["type"] == "abort" and result["reason"] == "migration_kept"
+    assert (target.entry.data[CONF_BED_TYPE], target.entry.data[CONF_PROTOCOL_VARIANT]) == (
+        BED_TYPE_KEESON,
+        "base",
+    )
+    decisions = await AppStateStore(hass, ADDRESS).async_slot("profile_recommendations")
+    record = decisions["history"][0]
+    assert record["decision"] == "dismissed" and record["source"] == "keep"
+    with patch(HISTORY, return_value=observed):
+        target.refresh()
+    assert issue(hass, target) is None
+
+
+async def test_a_saved_guided_change_answers_the_review(hass, enable_custom_integrations):
+    target, observed, flow_id = await keeson_review(hass)
+    result = await hass.config_entries.flow.async_configure(flow_id, {"choice": "other_route"})
+    assert result["step_id"] == "profile_questions"
+    result = await hass.config_entries.flow.async_configure(
+        flow_id, {CONF_PROTOCOL_VARIANT: "ksbt", CONF_MOTOR_COUNT: "2"}
+    )
+    assert result["step_id"] == "migration_confirm"
+    with patch.object(hass.config_entries, "async_schedule_reload"):
+        result = await hass.config_entries.flow.async_configure(flow_id, {"action": "apply"})
+    assert result["type"] == "abort"
+    assert target.entry.data[CONF_PROTOCOL_VARIANT] == "ksbt"
+    decisions = await AppStateStore(hass, ADDRESS).async_slot("profile_recommendations")
+    record = decisions["history"][0]
+    assert record["decision"] == "accepted" and record["source"] == "configure"
+    assert record["selected_profile"][CONF_PROTOCOL_VARIANT] == "ksbt"
+
+
+async def test_a_review_outside_the_guided_family_opens_the_full_list(
+    hass, enable_custom_integrations
+):
+    """The Keeson question cannot offer Linak, so Reconfigure asks from the full list."""
+    from custom_components.adjustable_bed.const import BED_TYPE_LINAK, LINAK_CONTROL_SERVICE_UUID
+
+    config_entry = entry(
+        hass, **{CONF_BED_TYPE: BED_TYPE_KEESON, CONF_PROTOCOL_VARIANT: "base", CONF_MOTOR_COUNT: 2}
+    )
+    coord = coordinator()
+    coord.controller.protocol_diagnostics = {}
+    observed = advertisement("Bed 1234", [LINAK_CONTROL_SERVICE_UUID])
+    with patch(HISTORY, return_value=observed), patch(REGISTER):
+        await async_watch_profile_recommendations(hass, config_entry, ((None, coord),))
+    target = _watches(hass)[f"{ISSUE_PREFIX}{config_entry.entry_id}_standalone"]
+    assert target.recommendation is not None
+    assert target.recommendation.suggested == BED_TYPE_LINAK
+    flow = await open_flow(hass, target)
+    with patch(HISTORY, return_value=observed):
+        form = await flow.async_step_init({"issue_id": target.issue_id})
+        result = await flow.async_step_init({"action": "review"})
+    assert form["step_id"] == "init"
+    assert result["reason"] == "guided_change_started"
+    kind, flow_id = result["next_flow"]
+    assert kind == "config_flow"
+    shown = await hass.config_entries.flow.async_configure(flow_id)
+    assert shown["step_id"] == "reconfigure_bed_type"
+    # Linak is preselected.
+    assert shown["data_schema"]({})[CONF_BED_TYPE] == "linak"
+    hass.config_entries.flow.async_abort(flow_id)
+
+
+@pytest.mark.parametrize(
+    ("saved_as", "route"), [("okimat", "okin_uuid"), ("okin_cb24", "smartbed")]
+)
+def test_a_decision_saved_under_a_routes_earlier_name_still_answers_it(saved_as, route):
+    """A schema step renamed the route; the recommendation it dismissed must not reopen."""
+    from hashlib import sha256
+
+    from custom_components.adjustable_bed.profile_recommendations import _EARLIER_NAMES
+
+    assert saved_as in _EARLIER_NAMES[route]
+    recommendation = recommend_profile(
+        {CONF_BED_TYPE: route}, advertisement("RC2", ["0000ffe0-0000-1000-8000-00805f9b34fb"]), {}
+    )
+    assert recommendation is not None
+    # The id the same recommendation had while the entry was saved under the earlier name.
+    identity = repr(
+        (recommendation.translation_key, saved_as, "auto", tuple(sorted(recommendation.choices)))
+    ).encode()
+    earlier = f"{recommendation.translation_key}_{sha256(identity).hexdigest()[:20]}"
+    assert earlier != recommendation.rule
+    assert earlier in recommendation.earlier_rules

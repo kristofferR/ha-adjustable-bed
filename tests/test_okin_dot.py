@@ -8,10 +8,10 @@ from unittest.mock import MagicMock, patch
 import pytest
 from homeassistant.const import CONF_ADDRESS, CONF_NAME
 from homeassistant.core import HomeAssistant
-from pytest_homeassistant_custom_component.common import MockConfigEntry
+from pytest_homeassistant.common import MockConfigEntry
 
 from custom_components.adjustable_bed.beds.okin_dot import OkinDotController
-from custom_components.adjustable_bed.beds.okin_uuid import (
+from custom_components.adjustable_bed.beds.okin_uuid.controller import (
     OKIN_UUID_REMOTES,
     OkinUuidComplexCommand,
     OkinUuidController,
@@ -286,7 +286,7 @@ class TestOkinDotController:
 
         controller = coordinator.controller
         assert controller.supports_preset_anti_snore is True
-        with patch("custom_components.adjustable_bed.beds.okin_uuid.asyncio.sleep"):
+        with patch("custom_components.adjustable_bed.beds.okin_nframe.asyncio.sleep"):
             await controller.preset_anti_snore()
 
         writes = _data_writes(mock_bleak_client)
@@ -388,7 +388,7 @@ class TestOkinDotController:
         coordinator = AdjustableBedCoordinator(hass, _make_entry(hass))
         await coordinator.async_connect()
 
-        with patch("custom_components.adjustable_bed.beds.okin_uuid.asyncio.sleep"):
+        with patch("custom_components.adjustable_bed.beds.okin_nframe.asyncio.sleep"):
             await coordinator.controller.preset_flat()
 
         writes = _data_writes(mock_bleak_client)
@@ -410,7 +410,7 @@ class TestOkinDotController:
 
         controller = coordinator.controller
         assert controller.supports_preset_anti_snore is True
-        with patch("custom_components.adjustable_bed.beds.okin_uuid.asyncio.sleep"):
+        with patch("custom_components.adjustable_bed.beds.okin_nframe.asyncio.sleep"):
             await controller.preset_anti_snore()
 
         writes = _data_writes(mock_bleak_client)

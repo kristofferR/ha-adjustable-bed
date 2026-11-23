@@ -10,12 +10,9 @@ import pytest
 from bleak.exc import BleakCharacteristicNotFoundError
 from homeassistant.const import CONF_ADDRESS, CONF_NAME
 from homeassistant.core import HomeAssistant
-from pytest_homeassistant_custom_component.common import MockConfigEntry
+from pytest_homeassistant.common import MockConfigEntry
 
-from custom_components.adjustable_bed.beds.vibradorm import (
-    VibradormCommands,
-    VibradormController,
-)
+from custom_components.adjustable_bed.beds.vibradorm.controller import VibradormController
 from custom_components.adjustable_bed.const import (
     BED_TYPE_VIBRADORM,
     CONF_BED_TYPE,
@@ -112,75 +109,12 @@ class _MockServices:
 
 
 # -----------------------------------------------------------------------------
-# Command Constants Tests
-# -----------------------------------------------------------------------------
-
-
-class TestVibradormCommands:
-    """Test Vibradorm command constants."""
-
-    def test_stop_command(self):
-        """STOP should be 0xFF."""
-        assert VibradormCommands.STOP == 0xFF
-
-    def test_head_commands(self):
-        """Head commands should be correct values."""
-        assert VibradormCommands.HEAD_UP == 0x0B  # 11 = KH (Kopf Hoch)
-        assert VibradormCommands.HEAD_DOWN == 0x0A  # 10 = KR (Kopf Runter)
-
-    def test_legs_commands(self):
-        """Legs/thigh commands should be correct values."""
-        assert VibradormCommands.LEGS_UP == 0x09  # 9 = OSH (Oberschenkel Hoch)
-        assert VibradormCommands.LEGS_DOWN == 0x08  # 8 = OSR (Oberschenkel Runter)
-
-    def test_foot_commands_for_4_motor(self):
-        """Foot commands (4-motor beds) should be correct values."""
-        assert VibradormCommands.FOOT_UP == 0x05  # 5 = FH (Fuß Hoch)
-        assert VibradormCommands.FOOT_DOWN == 0x04  # 4 = FR (Fuß Runter)
-
-    def test_neck_commands_for_4_motor(self):
-        """Neck commands (4-motor beds) should be correct values."""
-        assert VibradormCommands.NECK_UP == 0x03  # 3 = NH (Nacken Hoch)
-        assert VibradormCommands.NECK_DOWN == 0x02  # 2 = NR (Nacken Runter)
-
-    def test_all_motors_commands(self):
-        """All motors commands should be correct values."""
-        assert VibradormCommands.ALL_UP == 0x10  # 16 = AH
-        assert VibradormCommands.ALL_DOWN == 0x00  # 0 = AR (also flat preset)
-
-    def test_memory_preset_commands(self):
-        """Memory preset commands should be correct values."""
-        assert VibradormCommands.MEMORY_1 == 0x0E  # 14
-        assert VibradormCommands.MEMORY_2 == 0x0F  # 15
-        assert VibradormCommands.MEMORY_3 == 0x0C  # 12
-        assert VibradormCommands.MEMORY_4 == 0x1A  # 26
-        assert VibradormCommands.MEMORY_5 == 0x1B  # 27
-        assert VibradormCommands.MEMORY_6 == 0x1C  # 28
-
-    def test_store_command(self):
-        """STORE command should be 0x0D."""
-        assert VibradormCommands.STORE == 0x0D  # 13
-
-
-# -----------------------------------------------------------------------------
 # Controller Tests
 # -----------------------------------------------------------------------------
 
 
 class TestVibradormController:
     """Test VibradormController."""
-
-    async def test_control_characteristic_uuid(
-        self,
-        hass: HomeAssistant,
-        mock_vibradorm_config_entry,
-        mock_coordinator_connected,
-    ):
-        """Control characteristic should use Vibradorm command UUID."""
-        coordinator = AdjustableBedCoordinator(hass, mock_vibradorm_config_entry)
-        await coordinator.async_connect()
-
-        assert coordinator.controller.control_characteristic_uuid == VIBRADORM_COMMAND_CHAR_UUID
 
     async def test_supports_preset_flat(
         self,
@@ -409,7 +343,7 @@ class TestVibradormController:
         mock_client.write_gatt_char.side_effect = _write_side_effect
 
         await controller.write_command(
-            bytes([VibradormCommands.HEAD_UP]),
+            bytes([0x0B]),
             repeat_count=1,
         )
 
@@ -458,7 +392,7 @@ class TestVibradormController:
         mock_client.write_gatt_char.side_effect = _write_side_effect
 
         await controller.write_command(
-            bytes([VibradormCommands.HEAD_UP]),
+            bytes([0x0B]),
             repeat_count=1,
         )
 
@@ -740,7 +674,7 @@ class TestVibradormController:
         entry.add_to_hass(hass)
 
         with patch(
-            "custom_components.adjustable_bed.coordinator.read_ble_device_info",
+            "custom_components.adjustable_bed.coordinator_connection.read_ble_device_info",
             new=AsyncMock(return_value=("Vibradorm GmbH", "VMAT-BASIC-RF-CBI")),
         ):
             coordinator = AdjustableBedCoordinator(hass, entry)
@@ -928,7 +862,7 @@ class TestVibradormMovement:
         # Commands are single bytes
         first_call_data = calls[0][0][1]
         assert len(first_call_data) == 1
-        assert first_call_data[0] == VibradormCommands.HEAD_UP
+        assert first_call_data[0] == 0x0B
 
     async def test_move_legs_up_sends_single_byte(
         self,
@@ -945,7 +879,7 @@ class TestVibradormMovement:
 
         calls = mock_client.write_gatt_char.call_args_list
         first_call_data = calls[0][0][1]
-        assert first_call_data[0] == VibradormCommands.LEGS_UP
+        assert first_call_data[0] == 0x09
 
     async def test_move_head_up_uses_neck_command_on_3_motor(
         self,
@@ -971,7 +905,7 @@ class TestVibradormMovement:
 
         calls = mock_client.write_gatt_char.call_args_list
         first_call_data = calls[0][0][1]
-        assert first_call_data[0] == VibradormCommands.NECK_UP
+        assert first_call_data[0] == 0x03
 
     async def test_move_back_up_uses_back_command_on_3_motor(
         self,
@@ -997,7 +931,7 @@ class TestVibradormMovement:
 
         calls = mock_client.write_gatt_char.call_args_list
         first_call_data = calls[0][0][1]
-        assert first_call_data[0] == VibradormCommands.HEAD_UP
+        assert first_call_data[0] == 0x0B
 
     async def test_stop_all_sends_stop_command(
         self,
@@ -1014,7 +948,7 @@ class TestVibradormMovement:
 
         calls = mock_client.write_gatt_char.call_args_list
         call_data = calls[0][0][1]
-        assert call_data[0] == VibradormCommands.STOP
+        assert call_data[0] == 0xFF
 
     async def test_movement_sends_stop_after(
         self,
@@ -1032,7 +966,7 @@ class TestVibradormMovement:
         calls = mock_client.write_gatt_char.call_args_list
         # Last call should be STOP
         last_call_data = calls[-1][0][1]
-        assert last_call_data[0] == VibradormCommands.STOP
+        assert last_call_data[0] == 0xFF
 
 
 class TestVibradormPresets:
@@ -1071,7 +1005,7 @@ class TestVibradormPresets:
 
         calls = mock_client.write_gatt_char.call_args_list
         first_call_data = calls[0][0][1]
-        assert first_call_data[0] == VibradormCommands.ALL_DOWN
+        assert first_call_data[0] == 0x00
 
     async def test_preset_memory_1_sends_motor_command(
         self,
@@ -1090,7 +1024,7 @@ class TestVibradormPresets:
         calls = mock_client.write_gatt_char.call_args_list
         first_call_data = calls[0][0][1]
         assert len(first_call_data) == 1
-        assert first_call_data[0] == VibradormCommands.MEMORY_1
+        assert first_call_data[0] == 0x0E
 
     async def test_preset_memory_4_sends_motor_command(
         self,
@@ -1109,7 +1043,7 @@ class TestVibradormPresets:
         calls = mock_client.write_gatt_char.call_args_list
         first_call_data = calls[0][0][1]
         assert len(first_call_data) == 1
-        assert first_call_data[0] == VibradormCommands.MEMORY_4
+        assert first_call_data[0] == 0x1A
 
     async def test_preset_memory_6_sends_motor_command(
         self,
@@ -1128,7 +1062,7 @@ class TestVibradormPresets:
         calls = mock_client.write_gatt_char.call_args_list
         first_call_data = calls[0][0][1]
         assert len(first_call_data) == 1
-        assert first_call_data[0] == VibradormCommands.MEMORY_6
+        assert first_call_data[0] == 0x1C
 
     async def test_preset_memory_sends_stop_after(
         self,
@@ -1146,7 +1080,7 @@ class TestVibradormPresets:
 
         calls = mock_client.write_gatt_char.call_args_list
         last_call_data = calls[-1][0][1]
-        assert last_call_data[0] == VibradormCommands.STOP
+        assert last_call_data[0] == 0xFF
 
     async def test_program_memory_sends_store_sequence(
         self,
@@ -1165,17 +1099,17 @@ class TestVibradormPresets:
         sent = [call.args[1] for call in calls]
 
         # First 4 calls: STORE to CBI with alternating toggle
-        assert sent[0] == bytes([0x00, VibradormCommands.STORE])  # toggle=0
-        assert sent[1] == bytes([0x80, VibradormCommands.STORE])  # toggle=1
-        assert sent[2] == bytes([0x00, VibradormCommands.STORE])  # toggle=0
-        assert sent[3] == bytes([0x80, VibradormCommands.STORE])  # toggle=1
+        assert sent[0] == bytes([0x00, 0x0D])  # toggle=0
+        assert sent[1] == bytes([0x80, 0x0D])  # toggle=1
+        assert sent[2] == bytes([0x00, 0x0D])  # toggle=0
+        assert sent[3] == bytes([0x80, 0x0D])  # toggle=1
 
         # 5th call: memory slot to CBI
-        assert sent[4] == bytes([0x00, VibradormCommands.MEMORY_1])  # toggle=0
+        assert sent[4] == bytes([0x00, 0x0E])  # toggle=0
 
         # Last 4 calls: STOP (1-byte motor commands)
         for i in range(5, 9):
-            assert sent[i] == bytes([VibradormCommands.STOP])
+            assert sent[i] == bytes([0xFF])
 
     async def test_program_memory_6_sends_selected_slot(
         self,
@@ -1192,49 +1126,7 @@ class TestVibradormPresets:
 
         calls = mock_client.write_gatt_char.call_args_list
         sent = [call.args[1] for call in calls]
-        assert sent[4] == bytes([0x00, VibradormCommands.MEMORY_6])  # toggle=0
-
-
-class TestVibradormCommandFormat:
-    """Test Vibradorm single-byte command format."""
-
-    def test_all_commands_are_single_bytes(self):
-        """All commands should fit in a single byte (0-255)."""
-        commands = [
-            VibradormCommands.STOP,
-            VibradormCommands.HEAD_UP,
-            VibradormCommands.HEAD_DOWN,
-            VibradormCommands.LEGS_UP,
-            VibradormCommands.LEGS_DOWN,
-            VibradormCommands.FOOT_UP,
-            VibradormCommands.FOOT_DOWN,
-            VibradormCommands.NECK_UP,
-            VibradormCommands.NECK_DOWN,
-            VibradormCommands.ALL_UP,
-            VibradormCommands.ALL_DOWN,
-            VibradormCommands.MEMORY_1,
-            VibradormCommands.MEMORY_2,
-            VibradormCommands.MEMORY_3,
-            VibradormCommands.MEMORY_4,
-            VibradormCommands.STORE,
-        ]
-        for cmd in commands:
-            assert 0 <= cmd <= 255
-
-    def test_no_duplicate_commands(self):
-        """All motor commands should be unique."""
-        motor_commands = [
-            VibradormCommands.HEAD_UP,
-            VibradormCommands.HEAD_DOWN,
-            VibradormCommands.LEGS_UP,
-            VibradormCommands.LEGS_DOWN,
-            VibradormCommands.FOOT_UP,
-            VibradormCommands.FOOT_DOWN,
-            VibradormCommands.NECK_UP,
-            VibradormCommands.NECK_DOWN,
-            VibradormCommands.ALL_UP,
-        ]
-        assert len(motor_commands) == len(set(motor_commands))
+        assert sent[4] == bytes([0x00, 0x1C])  # toggle=0
 
 
 class TestVibradormPositionFeedback:

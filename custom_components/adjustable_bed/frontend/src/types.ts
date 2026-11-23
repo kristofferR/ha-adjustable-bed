@@ -2,7 +2,6 @@
 // custom-card-helpers so the bundle stays small and dependency-light.
 
 export interface HassEntityAttributes {
-  friendly_name?: string;
   icon?: string;
   current_position?: number;
   rgb_color?: [number, number, number];
@@ -24,6 +23,7 @@ export interface EntityRegistryDisplayEntry {
   area_id?: string;
   platform?: string;
   translation_key?: string;
+  // The entity's own name, without its device's name.
   name?: string;
   hidden?: boolean;
   entity_category?: "config" | "diagnostic";
@@ -31,14 +31,19 @@ export interface EntityRegistryDisplayEntry {
 
 export interface DeviceRegistryEntry {
   id: string;
-  name?: string;
-  name_by_user?: string;
+  name?: string | null;
+  name_by_user?: string | null;
   // Set on a paired side's child device, pointing at the synthetic parent.
   parent_device_id?: string | null;
   via_device_id?: string | null;
 }
 
 export type BedSide = "left" | "right" | "both";
+
+// One part of a composed entity name (see hass.formatEntityName).
+export type EntityNameItem =
+  | { type: "floor" | "area" | "parent_device" | "device" | "entity" }
+  | { type: "text"; text: string };
 
 export interface HomeAssistant {
   states: Record<string, HassEntity>;
@@ -47,6 +52,11 @@ export interface HomeAssistant {
   locale: { language: string };
   language: string;
   themes: unknown;
+  formatEntityName(
+    stateObj: HassEntity,
+    name?: string | EntityNameItem | EntityNameItem[],
+    options?: { separator?: string },
+  ): string;
   callService: (
     domain: string,
     service: string,
@@ -65,14 +75,22 @@ export interface AdjustableBedCardConfig {
   show_side_selector?: boolean;
   // "both", a native child device ID, or "left"/"right" for one-address pairs.
   default_target?: string;
-  // Stable preset translation keys; omitted = flat + first recall, [] = none.
+  // Quick action entity ids, in order; omitted = flat + first recall, [] = none.
+  // Older cards stored translation keys, which still resolve.
   compact_actions?: string[];
   navigation_path?: string;
+  open_dialog?: boolean;
+  // Optional full-card settings inside the dialog, scoped to the same bed.
+  dialog_config?: Partial<AdjustableBedCardConfig>;
   animate?: boolean;
   show_graphic?: boolean;
+  show_graphic_labels?: boolean;
+  show_percentage_graphic?: boolean;
+  show_lumbar_graphic?: boolean;
   show_motors?: boolean;
   show_firmness?: boolean;
   show_presets?: boolean;
+  show_saved_positions?: boolean;
   show_memory?: boolean;
   show_lighting?: boolean;
   show_massage?: boolean;
@@ -86,6 +104,8 @@ export interface AdjustableBedCardConfig {
   memory_save?: boolean;
   // Memory positions (slot numbers) to show. Omitted/empty = show all.
   memory_slots?: number[];
+  // A tap on a motor arrow starts it and the next tap stops it (default false).
+  tap_to_move?: boolean;
 }
 
 export interface LovelaceCard extends HTMLElement {
@@ -106,6 +126,14 @@ export interface HeldControl {
   releaseDelayMs: number;
 }
 
+// A renewable hold (#483) the controller declares. `motor` names the
+// timed_move axis for a motor without a held control or timed route of its own.
+export interface HoldLeaseRoute {
+  deviceId: string;
+  motor?: string;
+  side?: BedSide;
+}
+
 export interface MotorEntity {
   key: string;
   cover?: string;
@@ -124,8 +152,13 @@ export interface MotorEntity {
     motor: "back" | "legs" | "lumbar";
     side?: BedSide;
   };
+  holdLease?: HoldLeaseRoute;
   angle?: string; // sensor.* angle in degrees
   position?: string; // number.* position
+  estimate?: string; // number.* <motor>_position_estimated (travel-time estimate)
+  reference?: string; // button.* set_<motor>_reference
+  // A combined pane's motor without a cover is named after a side's cover.
+  nameFrom?: string;
 }
 
 export interface MemorySlot {
@@ -138,6 +171,7 @@ export interface LightEntities {
   buttons?: string[];
   light?: string; // light.* under_bed_lights (color)
   switch?: string; // switch.* under_bed_lights
+  switches?: string[]; // accessory lights, such as a reading or cup-holder light
   state?: string; // binary_sensor.* under_bed_lights (read-only)
   states?: string[]; // read-only light telemetry
   level?: string; // number.* light_level (brightness)
@@ -159,22 +193,36 @@ export interface LightEntities {
 export interface BedEntities {
   motors: MotorEntity[];
   synchro?: string; // switch.* synchro_mode (link split-bed sides)
+  // Further controls a bed places in a single-slot motors role.
+  extraStops?: string[];
+  motorExtras?: string[];
   controlSide?: string; // select.* choosing which side shared controls drive
   firmness: string[]; // number.* sleep_number_setting[_left|_right]
   presets: string[]; // button.* in preferred display order
+  // button.* overwriting a named preset: confirmed, never a quick action.
+  presetSaves: string[];
   stop?: string; // button.* stop
   memory: MemorySlot[];
   connect?: string;
   disconnect?: string;
   connectivity?: string; // binary_sensor.* ble_connection
-  presence: string[]; // binary_sensor.* bed_presence*
   lights: LightEntities;
-  massage: { buttons: string[]; numbers: string[]; selects?: string[]; states?: string[]; timer?: string };
+  massage: {
+    buttons: string[];
+    numbers: string[];
+    selects?: string[];
+    switches?: string[];
+    states?: string[];
+    timer?: string;
+  };
   climate: { entities: string[]; selects: string[]; numbers: string[] }; // numbers: fan_level
   utility: string[]; // button.* sync_positions / child_lock_toggle
+  utilitySwitches?: string[]; // switch.* product settings such as a lock or sleep mode
   utilityNumbers?: string[]; // controller-declared number controls without a card section
   utilitySelects?: string[]; // select.* active app/module surface
   utilityStates?: string[]; // read-only app/device state
+  estimateRemote?: string; // button.* estimate_remote_used
+  savedPositions?: string; // sensor.* saved_positions (whole bed)
 }
 
 // Replaced at build time with the integration version (see build.mjs).

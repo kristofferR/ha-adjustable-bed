@@ -36,8 +36,8 @@ from custom_components.adjustable_bed.bond_verification import (
 )
 from custom_components.adjustable_bed.const import (
     BED_TYPE_LEGGETT_GEN2,
-    BED_TYPE_OKIMAT,
     BED_TYPE_OKIN_CST,
+    BED_TYPE_OKIN_UUID,
 )
 from custom_components.adjustable_bed.setup_operation import OperationOutcome
 
@@ -118,7 +118,7 @@ class TestWhenRecoveryIsOffered:
                 hass,
                 address=TEST_ADDRESS,
                 issue_data=_local_auth_evidence(),
-                bed_type=BED_TYPE_OKIMAT,
+                bed_type=BED_TYPE_OKIN_UUID,
                 protocol_variant=None,
             )
         assert offer.is_eligible
@@ -131,7 +131,7 @@ class TestWhenRecoveryIsOffered:
                 hass,
                 address=TEST_ADDRESS,
                 issue_data=_local_auth_evidence(evidence_transport="proxy"),
-                bed_type=BED_TYPE_OKIMAT,
+                bed_type=BED_TYPE_OKIN_UUID,
                 protocol_variant=None,
             )
         assert not offer.is_eligible
@@ -150,7 +150,7 @@ class TestWhenRecoveryIsOffered:
                 hass,
                 address=TEST_ADDRESS,
                 issue_data=data,
-                bed_type=BED_TYPE_OKIMAT,
+                bed_type=BED_TYPE_OKIN_UUID,
                 protocol_variant=None,
             )
         assert not offer.is_eligible
@@ -192,7 +192,7 @@ class TestWhenRecoveryIsOffered:
                 hass,
                 address=TEST_ADDRESS,
                 issue_data={"address": TEST_ADDRESS, "name": "Bed"},
-                bed_type=BED_TYPE_OKIMAT,
+                bed_type=BED_TYPE_OKIN_UUID,
                 protocol_variant=None,
             )
         assert offer.eligibility == RecoveryEligibility.NO_EVIDENCE
@@ -217,7 +217,7 @@ class TestWhenRecoveryIsOffered:
                 hass,
                 address=TEST_ADDRESS,
                 issue_data=_local_auth_evidence(),
-                bed_type=BED_TYPE_OKIMAT,
+                bed_type=BED_TYPE_OKIN_UUID,
                 protocol_variant=None,
             )
         assert offer.eligibility == RecoveryEligibility.UNREADABLE
@@ -232,7 +232,7 @@ class TestWhenRecoveryIsOffered:
                 hass,
                 address=TEST_ADDRESS,
                 issue_data=_local_auth_evidence(),
-                bed_type=BED_TYPE_OKIMAT,
+                bed_type=BED_TYPE_OKIN_UUID,
                 protocol_variant=None,
             )
         assert not offer.is_eligible
@@ -246,7 +246,7 @@ class TestWhenRecoveryIsOffered:
                 hass,
                 address=TEST_ADDRESS,
                 issue_data=_local_auth_evidence(),
-                bed_type=BED_TYPE_OKIMAT,
+                bed_type=BED_TYPE_OKIN_UUID,
                 protocol_variant=None,
             )
         assert offer.eligibility == RecoveryEligibility.AMBIGUOUS
@@ -294,7 +294,7 @@ class TestRunningRecovery:
                 address=TEST_ADDRESS,
                 name="Bed",
                 offer=self._offer(),
-                bed_type=BED_TYPE_OKIMAT,
+                bed_type=BED_TYPE_OKIN_UUID,
                 protocol_variant=None,
             )
         removal.assert_not_called()
@@ -328,7 +328,7 @@ class TestRunningRecovery:
                 address=TEST_ADDRESS,
                 name="Bed",
                 offer=self._offer(),
-                bed_type=BED_TYPE_OKIMAT,
+                bed_type=BED_TYPE_OKIN_UUID,
                 protocol_variant=None,
             )
         assert result.outcome is OperationOutcome.CONNECTION_FAILED
@@ -383,7 +383,7 @@ class TestRunningRecovery:
                 address=TEST_ADDRESS,
                 name="Bed",
                 offer=self._offer(),
-                bed_type=BED_TYPE_OKIMAT,
+                bed_type=BED_TYPE_OKIN_UUID,
                 protocol_variant=None,
             )
         assert result.outcome is OperationOutcome.BOND_VERIFICATION_FAILED
@@ -422,7 +422,7 @@ class TestRunningRecovery:
                 address=TEST_ADDRESS,
                 name="Bed",
                 offer=self._offer(),
-                bed_type=BED_TYPE_OKIMAT,
+                bed_type=BED_TYPE_OKIN_UUID,
                 protocol_variant=None,
             )
         connect.assert_awaited_once()
@@ -467,7 +467,7 @@ class TestRunningRecovery:
                 address=TEST_ADDRESS,
                 name="Bed",
                 offer=self._offer(),
-                bed_type=BED_TYPE_OKIMAT,
+                bed_type=BED_TYPE_OKIN_UUID,
                 protocol_variant=None,
                 on_bond_removed=removed_marker,
             )
@@ -511,7 +511,7 @@ class TestRunningRecovery:
                 address=TEST_ADDRESS,
                 name="Bed",
                 offer=self._offer(),
-                bed_type=BED_TYPE_OKIMAT,
+                bed_type=BED_TYPE_OKIN_UUID,
                 protocol_variant=None,
             )
         connect.assert_awaited_once()
@@ -559,7 +559,7 @@ class TestRunningRecovery:
                 address=TEST_ADDRESS,
                 name="Bed",
                 offer=self._offer(),
-                bed_type=BED_TYPE_OKIMAT,
+                bed_type=BED_TYPE_OKIN_UUID,
                 protocol_variant=None,
             )
         assert result.outcome is OperationOutcome.BOND_VERIFICATION_FAILED
@@ -606,7 +606,7 @@ class TestRunningRecovery:
                 address=TEST_ADDRESS,
                 name="Bed",
                 offer=self._offer(),
-                bed_type=BED_TYPE_OKIMAT,
+                bed_type=BED_TYPE_OKIN_UUID,
                 protocol_variant=None,
                 on_verified=persisted,
                 on_bond_removed=removed_marker,
@@ -655,7 +655,7 @@ class TestRunningRecovery:
                 address=TEST_ADDRESS,
                 name="Bed",
                 offer=self._offer(),
-                bed_type=BED_TYPE_OKIMAT,
+                bed_type=BED_TYPE_OKIN_UUID,
                 protocol_variant=None,
                 on_bond_removed=removed_marker,
             )
@@ -707,7 +707,7 @@ class TestRunningRecovery:
                 address=TEST_ADDRESS,
                 name="Bed",
                 offer=self._offer(),
-                bed_type=BED_TYPE_OKIMAT,
+                bed_type=BED_TYPE_OKIN_UUID,
                 protocol_variant=None,
             )
         assert result.succeeded
@@ -769,7 +769,7 @@ class TestRunningRecovery:
                     address=TEST_ADDRESS,
                     name="Bed",
                     offer=self._offer(),
-                    bed_type=BED_TYPE_OKIMAT,
+                    bed_type=BED_TYPE_OKIN_UUID,
                     protocol_variant=None,
                     transport_operation=transport_gate,
                     on_verified=persisted,
@@ -837,7 +837,7 @@ class TestRunningRecovery:
                     address=TEST_ADDRESS,
                     name="Bed",
                     offer=self._offer(),
-                    bed_type=BED_TYPE_OKIMAT,
+                    bed_type=BED_TYPE_OKIN_UUID,
                     protocol_variant=None,
                     transport_operation=transport_gate,
                 )
@@ -869,7 +869,7 @@ class TestRunningRecovery:
                 address=TEST_ADDRESS,
                 name="Bed",
                 offer=RecoveryOffer(eligibility=RecoveryEligibility.NOT_LOCAL),
-                bed_type=BED_TYPE_OKIMAT,
+                bed_type=BED_TYPE_OKIN_UUID,
                 protocol_variant=None,
             )
         wait.assert_not_called()
@@ -908,7 +908,7 @@ class TestRunningRecovery:
                 address=TEST_ADDRESS,
                 name="Bed",
                 offer=self._offer(),
-                bed_type=BED_TYPE_OKIMAT,
+                bed_type=BED_TYPE_OKIN_UUID,
                 protocol_variant=None,
             )
         removal.assert_not_called()
@@ -942,7 +942,7 @@ class TestRunningRecovery:
                 address=TEST_ADDRESS,
                 name="Bed",
                 offer=self._offer(),
-                bed_type=BED_TYPE_OKIMAT,
+                bed_type=BED_TYPE_OKIN_UUID,
                 protocol_variant=None,
             )
         removal.assert_not_called()
@@ -991,7 +991,7 @@ class TestRunningRecovery:
                 address=TEST_ADDRESS,
                 name="Bed",
                 offer=self._offer(),
-                bed_type=BED_TYPE_OKIMAT,
+                bed_type=BED_TYPE_OKIN_UUID,
                 protocol_variant=None,
             )
         recovery_client.pair.assert_awaited_once_with()
@@ -1033,7 +1033,7 @@ class TestRunningRecovery:
                 address=TEST_ADDRESS,
                 name="Bed",
                 offer=self._offer(),
-                bed_type=BED_TYPE_OKIMAT,
+                bed_type=BED_TYPE_OKIN_UUID,
                 protocol_variant=None,
             )
         assert not result.succeeded

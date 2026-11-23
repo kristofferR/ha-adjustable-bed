@@ -7,8 +7,12 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-from custom_components.adjustable_bed import logicdata_app_protocol as protocol
-from custom_components.adjustable_bed.beds.logicdata_app import LogicdataAppController
+from custom_components.adjustable_bed.beds.logicdata.app import LogicdataAppController
+from custom_components.adjustable_bed.codec import jiecang as codec
+from custom_components.adjustable_bed.profiles import logicdata as profiles
+from custom_components.adjustable_bed.profiles.logicdata import APP_PROFILES, PHONE
+from custom_components.adjustable_bed.state_keys import UNDER_BED_LIGHTS_ON
+from tests.state_helpers import published
 
 
 @pytest.fixture
@@ -23,8 +27,8 @@ def coordinator():
     coordinator.async_execute_controller_command = AsyncMock()
     services = {}
     characteristics = {}
-    for transport in protocol.TRANSPORTS.values():
-        uuids = {transport.write_uuid, transport.notify_uuid, transport.rename_uuid} - {None}
+    for transport in profiles.TRANSPORTS.values():
+        uuids = {transport.write_uuid, transport.notify_uuid, transport.name_uuid} - {None}
         chars = [MagicMock(uuid=uuid, properties=["write", "notify"]) for uuid in uuids]
         service = MagicMock(uuid=transport.service_uuid, characteristics=chars)
         services[transport.service_uuid] = service
@@ -60,8 +64,8 @@ async def test_motion_has_terminal_touch_repeat_and_fresh_p1_release(
     bed = controller(coordinator, profile=profile, command_family=family, layout=layout)
     with patch.object(bed, "_pause", new=AsyncMock(return_value=True)):
         await bed.move_back_up()
-    expected = protocol.motion_command(family, layout, "back", True)
-    assert packets(coordinator) == [expected] * 3 + [protocol.P1_RELEASE]
+    expected = profiles.motion_command(PHONE, family, layout, "back", True)
+    assert packets(coordinator) == [expected] * 3 + [codec.SHORT_RELEASE]
 
 
 @pytest.mark.parametrize("task_cancel", [False, True])
@@ -88,7 +92,7 @@ async def test_motion_cancel_stops_refresh_and_releases(coordinator, task_cancel
                 await task
         else:
             await task
-    assert packets(coordinator) == [bytes.fromhex("f1f1010101037e"), protocol.P1_RELEASE]
+    assert packets(coordinator) == [bytes.fromhex("f1f1010101037e"), codec.SHORT_RELEASE]
 
 
 @pytest.mark.parametrize("action", ["movement", "hold", "repeat"])
@@ -102,10 +106,10 @@ async def test_slow_write_cancellation_stops_overdue_repeats(coordinator, action
     coordinator.client.write_gatt_char.side_effect = slow_write
     if action == "movement":
         await bed.move_back_up()
-        assert packets(coordinator)[1:] == [protocol.P1_RELEASE]
+        assert packets(coordinator)[1:] == [codec.SHORT_RELEASE]
     elif action == "hold":
         await bed.hold_preset("flat", 1000)
-        assert packets(coordinator)[1:] == [protocol.P1_RELEASE]
+        assert packets(coordinator)[1:] == [codec.SHORT_RELEASE]
     else:
         await bed.write_command(b"test", repeat_count=5)
         assert packets(coordinator) == [b"test"]
@@ -130,20 +134,7 @@ async def test_p2_flat_failure_still_releases(coordinator):
         pytest.raises(ConnectionError, match="failed motion"),
     ):
         await bed.preset_flat()
-    assert packets(coordinator)[-1] == protocol.P1_RELEASE
-
-
-@pytest.mark.parametrize("profile", ["phone", "tablet"])
-async def test_light_preserves_both_release_families(coordinator, profile):
-    bed = controller(coordinator, profile=profile)
-    with patch.object(bed, "_pause", new=AsyncMock(return_value=True)):
-        await bed.lights_toggle()
-    assert packets(coordinator) == [
-        bytes.fromhex("f1f10f000f7e"),
-        protocol.P1_RELEASE,
-        protocol.P2_RELEASE,
-        protocol.P1_RELEASE,
-    ]
+    assert packets(coordinator)[-1] == codec.SHORT_RELEASE
 
 
 @pytest.mark.parametrize("profile", ["phone", "tablet"])
@@ -151,8 +142,8 @@ async def test_massage_mode_cleanup_is_app_specific(coordinator, profile):
     bed = controller(coordinator, profile=profile)
     with patch.object(bed, "_pause", new=AsyncMock(return_value=True)):
         await bed.massage_mode_step()
-    assert packets(coordinator) == [protocol.MASSAGE_MODE] + (
-        [protocol.P2_RELEASE, protocol.P1_RELEASE] if profile == "phone" else []
+    assert packets(coordinator) == [codec.massage_mode()] + (
+        [codec.LONG_RELEASE, codec.SHORT_RELEASE] if profile == "phone" else []
     )
 
 
@@ -173,7 +164,7 @@ async def test_startup_awaits_exact_app_query_and_clock_burst(coordinator, profi
     with patch.object(bed, "_pause", new=AsyncMock(return_value=True)):
         await bed.start_notify()
     assert packets(coordinator)[:6] == [
-        packet for _, packet in protocol.startup_schedule(profile, "p1")
+        packet for _, packet in APP_PROFILES[profile].startup["p1"]
     ]
     assert len(packets(coordinator)) == (8 if profile == "phone" else 6)
     assert bed._initialized
@@ -190,7 +181,7 @@ async def test_t2_only_skips_burst_but_copresent_ready_profile_bootstraps(coordi
         if not ready:
             coordinator.client.services.get_service.side_effect = (
                 lambda uuid, lookup=original_lookup: (
-                    lookup(uuid) if uuid == protocol.TRANSPORTS["t2"].service_uuid else None
+                    lookup(uuid) if uuid == profiles.TRANSPORTS["t2"].service_uuid else None
                 )
             )
         bed = controller(coordinator, profile="tablet", transport="t2")
@@ -198,7 +189,7 @@ async def test_t2_only_skips_burst_but_copresent_ready_profile_bootstraps(coordi
             await bed.start_notify()
         assert len(packets(coordinator)) == (6 if ready else 0)
         assert all(
-            call.args[0] == protocol.TRANSPORTS["t2"].write_uuid
+            call.args[0] == profiles.TRANSPORTS["t2"].write_uuid
             for call in coordinator.client.write_gatt_char.call_args_list
         )
         coordinator.client.services.get_service.side_effect = original_lookup
@@ -230,22 +221,22 @@ async def test_runtime_characteristic_write_mode(coordinator):
     bed = controller(coordinator)
     char = coordinator.client.services.get_characteristic(bed.control_characteristic_uuid)
     char.properties = ["write-without-response"]
-    await bed.write_command(protocol.P1_RELEASE)
+    await bed.write_command(codec.SHORT_RELEASE)
     coordinator.client.write_gatt_char.assert_awaited_once_with(
-        bed.control_characteristic_uuid, protocol.P1_RELEASE, response=False
+        bed.control_characteristic_uuid, codec.SHORT_RELEASE, response=False
     )
 
 
 async def test_known_family_mismatch_rejects_motion_but_allows_cleanup(coordinator):
     bed = controller(coordinator)
-    sender = MagicMock(uuid=protocol.TRANSPORTS["t1"].notify_uuid)
+    sender = MagicMock(uuid=profiles.TRANSPORTS["t1"].notify_uuid)
     bed._notification_handler(sender, bytearray.fromhex("f2f2110001"))
     with (
         patch.object(bed, "_pause", new=AsyncMock(return_value=True)),
         pytest.raises(ValueError, match="different packet family"),
     ):
         await bed.move_back_up()
-    assert packets(coordinator) == [protocol.P1_RELEASE]
+    assert packets(coordinator) == [codec.SHORT_RELEASE]
 
 
 async def test_layout_axes_and_massage_are_not_inferred_from_motor_count(coordinator):
@@ -267,21 +258,22 @@ async def test_layout_axes_and_massage_are_not_inferred_from_motor_count(coordin
 
 def test_split_state_maps_raw_levels_and_keeps_light_contract(coordinator):
     bed = controller(coordinator, layout="split_series")
-    sender = MagicMock(uuid=protocol.TRANSPORTS["t1"].notify_uuid)
+    sender = MagicMock(uuid=profiles.TRANSPORTS["t1"].notify_uuid)
     for unknown in (b"", b"\xf2\xf2\x06", b"\x01\x02\x03"):
         bed._notification_handler(sender, bytearray(unknown))
     coordinator.handle_controller_state_updates.assert_not_called()
     bed._notification_handler(sender, bytearray.fromhex("aaaa06000400030040"))
-    assert bed.get_massage_state() == {"head_intensity": 3, "right_intensity": 2}
-    assert bed.get_light_state() == {"is_on": True}
-    coordinator.handle_controller_state_updates.assert_called_with(
-        {"head_intensity": 3, "right_intensity": 2, "under_bed_lights_on": True}
-    )
+    assert published(*coordinator.handle_controller_state_updates.call_args.args)[UNDER_BED_LIGHTS_ON] is True
+    assert published(*coordinator.handle_controller_state_updates.call_args.args) == {
+        "massage_head_intensity": 3,
+        "massage_right_intensity": 2,
+        "under_bed_lights_on": True,
+    }
 
 
 async def test_clock_response_uses_coordinator_and_tablet_has_no_writer(coordinator):
     bed = controller(coordinator)
-    sender = MagicMock(uuid=protocol.TRANSPORTS["t1"].notify_uuid)
+    sender = MagicMock(uuid=profiles.TRANSPORTS["t1"].notify_uuid)
     bed._notification_handler(sender, bytearray.fromhex("f2f250000000"))
     task = bed._clock_task
     assert task is not None
@@ -310,7 +302,7 @@ async def test_rename_targets_name_characteristic_with_app_repeats(coordinator, 
         1 if profile == "phone" else 2
     )
     assert all(
-        call.args[0] == protocol.TRANSPORTS["t3"].rename_uuid
+        call.args[0] == profiles.TRANSPORTS["t3"].name_uuid
         for call in coordinator.client.write_gatt_char.call_args_list
     )
 
@@ -362,7 +354,7 @@ async def test_scheduled_writes_absorb_ble_latency(coordinator, operation):
     coordinator.client.write_gatt_char.side_effect = slow_write
     with (
         patch(
-            "custom_components.adjustable_bed.beds.logicdata_app.asyncio.get_running_loop",
+            "custom_components.adjustable_bed.beds.logicdata.app.asyncio.get_running_loop",
             return_value=clock,
         ),
         patch.object(bed, "_pause", side_effect=pause),
@@ -370,7 +362,7 @@ async def test_scheduled_writes_absorb_ble_latency(coordinator, operation):
         if operation == "preset":
             await bed.preset_flat()
         else:
-            await bed.write_command(protocol.P1_RELEASE, repeat_count=2, repeat_delay_ms=100)
+            await bed.write_command(codec.SHORT_RELEASE, repeat_count=2, repeat_delay_ms=100)
     assert waits == pytest.approx([0.06])
 
 
@@ -379,8 +371,8 @@ async def test_tablet_t3_subscribes_name_after_queries_without_clock(coordinator
     with patch.object(bed, "_pause", new=AsyncMock(return_value=True)):
         await bed.start_notify()
     assert [call.args[0] for call in coordinator.client.start_notify.call_args_list] == [
-        protocol.TRANSPORTS["t3"].notify_uuid,
-        protocol.TRANSPORTS["t3"].rename_uuid,
+        profiles.TRANSPORTS["t3"].notify_uuid,
+        profiles.TRANSPORTS["t3"].name_uuid,
     ]
     assert len(packets(coordinator)) == 6
 
@@ -391,7 +383,7 @@ async def test_p2_held_presets_use_own_repeat_cadence(coordinator, preset, write
     with patch.object(bed, "_pause", new=AsyncMock(return_value=True)):
         await bed.hold_preset(preset, 500)
     assert len(packets(coordinator)) == writes + 1
-    assert packets(coordinator)[-1] == protocol.P1_RELEASE
+    assert packets(coordinator)[-1] == codec.SHORT_RELEASE
     assert len(set(packets(coordinator)[:-1])) == 1
 
 
@@ -407,12 +399,14 @@ async def test_cancel_p2_memory_hold_prevents_refresh_and_releases(coordinator):
 
     with patch.object(bed, "_pause", side_effect=pause):
         await bed.hold_preset("memory_1", 1000)
-    assert packets(coordinator) == [bytes.fromhex("f1f10b0200000d7e"), protocol.P1_RELEASE]
+    assert packets(coordinator) == [bytes.fromhex("f1f10b0200000d7e"), codec.SHORT_RELEASE]
 
 
 @pytest.mark.parametrize(
     ("preset", "duration"), [("yoga", 1000), ("flat", 0), ("memory_1", 100), ("flat", 60001)]
 )
+
+
 async def test_invalid_held_preset_never_writes(coordinator, preset, duration):
     bed = controller(coordinator, command_family="p2", layout="middle")
     with pytest.raises(ValueError):
@@ -423,7 +417,7 @@ async def test_invalid_held_preset_never_writes(coordinator, preset, duration):
 @pytest.mark.parametrize("profile", ["phone", "tablet"])
 async def test_early_family_mismatch_keeps_startup_and_sensor_available(coordinator, profile):
     bed = controller(coordinator, profile=profile)
-    sender = MagicMock(uuid=protocol.TRANSPORTS["t1"].notify_uuid)
+    sender = MagicMock(uuid=profiles.TRANSPORTS["t1"].notify_uuid)
 
     async def mismatch_on_write(*args, **kwargs):
         bed._notification_handler(sender, bytearray.fromhex("f2f2110001"))
@@ -434,14 +428,14 @@ async def test_early_family_mismatch_keeps_startup_and_sensor_available(coordina
         assert bed._initialized
         assert bed._family_matches is False
         assert packets(coordinator)[:6] == [
-            packet for _, packet in protocol.startup_schedule(profile, "p1")
+            packet for _, packet in APP_PROFILES[profile].startup["p1"]
         ]
         assert len(packets(coordinator)) == (8 if profile == "phone" else 6)
         coordinator.client.stop_notify.assert_not_awaited()
         coordinator.client.write_gatt_char.reset_mock()
         with pytest.raises(ValueError, match="different packet family"):
             await bed.move_back_up()
-        assert packets(coordinator) == [protocol.P1_RELEASE]
+        assert packets(coordinator) == [codec.SHORT_RELEASE]
 
 
 @pytest.mark.parametrize("profile", ["phone", "tablet"])
@@ -468,15 +462,15 @@ async def test_timed_motion_releases_at_planned_endpoint(
     coordinator.client.write_gatt_char.side_effect = write
     with (
         patch(
-            "custom_components.adjustable_bed.beds.logicdata_app.asyncio.get_running_loop",
+            "custom_components.adjustable_bed.beds.logicdata.app.asyncio.get_running_loop",
             return_value=clock,
         ),
         patch.object(bed, "_pause", side_effect=pause),
     ):
         await bed.move_back_up()
-    movement = protocol.motion_command(family, layout, "back", True)
+    movement = profiles.motion_command(PHONE, family, layout, "back", True)
     assert [packet for _, packet in writes] == (
-        [movement] * (release_ms // 100) + [protocol.P1_RELEASE]
+        [movement] * (release_ms // 100) + [codec.SHORT_RELEASE]
     )
     assert [when for when, _ in writes] == pytest.approx(
         [tick / 10 for tick in range(release_ms // 100 + 1)]

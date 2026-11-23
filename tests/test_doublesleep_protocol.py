@@ -1,4 +1,4 @@
-"""Vectors from row107's independently accepted 1.2.24 artifact."""
+"""Vectors from the independently accepted DoubleSleep 1.2.24 artifact."""
 
 from __future__ import annotations
 
@@ -9,9 +9,13 @@ from pathlib import Path
 
 import pytest
 
-from custom_components.adjustable_bed import doublesleep_protocol as p
-from custom_components.adjustable_bed.doublesleep_services import build_request
-from custom_components.adjustable_bed.doublesleep_state import BinaryHistory, Notifications, Report
+from custom_components.adjustable_bed.beds.doublesleep import protocol as p
+from custom_components.adjustable_bed.beds.doublesleep.services import build_request
+from custom_components.adjustable_bed.beds.doublesleep.state import (
+    BinaryHistory,
+    Notifications,
+    Report,
+)
 
 NOW = datetime(2026, 11, 3, 6, 30, 7, tzinfo=timezone(timedelta(hours=1)))
 STATIC = json.loads((Path(__file__).parent / "fixtures/doublesleep_commands.json").read_text())
@@ -19,7 +23,7 @@ STATIC = json.loads((Path(__file__).parent / "fixtures/doublesleep_commands.json
 
 @pytest.mark.parametrize("text", ["NaN", "Infinity"])
 def test_json_rejects_nonfinite_or_excessively_nested_input(text):
-    from custom_components.adjustable_bed.doublesleep_state import decode_json
+    from custom_components.adjustable_bed.beds.doublesleep.state import decode_json
 
     with pytest.raises(ValueError):
         decode_json(text)
@@ -28,11 +32,11 @@ def test_json_rejects_nonfinite_or_excessively_nested_input(text):
 def test_json_recursion_error_is_a_recoverable_parser_error():
     from unittest.mock import patch
 
-    from custom_components.adjustable_bed.doublesleep_state import decode_json
+    from custom_components.adjustable_bed.beds.doublesleep.state import decode_json
 
     with (
         patch(
-            "custom_components.adjustable_bed.doublesleep_state.json.loads",
+            "custom_components.adjustable_bed.beds.doublesleep.state.json.loads",
             side_effect=RecursionError,
         ),
         pytest.raises(ValueError, match="nested too deeply"),
@@ -342,7 +346,7 @@ def test_alarm_one_shot_uses_proven_sunday_first_day_bits(stamp, expected):
 
 
 def test_daily_and_monthly_consumers_preserve_raw_and_exact_defaults():
-    from custom_components.adjustable_bed.doublesleep_state import daily_report, report_records
+    from custom_components.adjustable_bed.beds.doublesleep.state import daily_report, report_records
 
     value = {"day": "2026-11-03", "arrayHR": [75], "sporadicsleep": '{"nap":1}', "extension": 99}
     parsed = daily_report(value)
@@ -363,7 +367,7 @@ def test_daily_and_monthly_consumers_preserve_raw_and_exact_defaults():
 
 @pytest.mark.parametrize("monthly", [False, True])
 def test_report_null_fields_use_artifact_defaults_for_daily_and_monthly(monthly):
-    from custom_components.adjustable_bed.doublesleep_state import daily_report, report_records
+    from custom_components.adjustable_bed.beds.doublesleep.state import daily_report, report_records
 
     expected = daily_report({})
     nulls = dict.fromkeys(expected)
@@ -378,7 +382,7 @@ def test_report_null_fields_use_artifact_defaults_for_daily_and_monthly(monthly)
 
 @pytest.mark.parametrize("invalid", [True, "7", [7], 7.0])
 def test_report_scalars_require_artifact_integer_type(invalid):
-    from custom_components.adjustable_bed.doublesleep_state import (
+    from custom_components.adjustable_bed.beds.doublesleep.state import (
         REPORT_SCALARS,
         daily_report,
         report_records,
@@ -392,7 +396,7 @@ def test_report_scalars_require_artifact_integer_type(invalid):
 
 
 def test_p3_compressed_and_retained_fragment_index_with_single_packet():
-    from custom_components.adjustable_bed.doublesleep_state import JsonReader
+    from custom_components.adjustable_bed.beds.doublesleep.state import JsonReader
 
     reader = JsonReader(side=1)
     payload = gzip.compress(b'{"day":"2026-11-03","arrayHR":[75]}', mtime=0)
@@ -455,3 +459,30 @@ def test_light_replay_and_independent_slow_observer_survive_mfp_local_failure():
     assert parser.ui.slow and parser.ui.pwm == 30 and parser.ui.timer == 10
     assert "parser_error" in parser.state
     assert cache.light[0] == 2
+
+
+_APP_SLOTS = {
+    "p1": {1, 2, 3, 4, 5, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 26, 27, 28, 29, 31, 32}
+    | {35, 36, 37, 38, 40, 41, 47, 48, 49, 50, 52, 53, 58, 59, 60, 62, 63, 64, 66},
+    "p2": set(range(1, 6))
+    | set(range(8, 30))
+    | {31, 32, 35, 36, 37, 38, 40, 41}
+    | {47, 48, 49, 50, 51, 52, 53, 54, 57, 58, 59, 60, 62, 63, 64, 66, 67, 72, 73}
+    | set(range(79, 91)),
+    "p3": {47, 53, 55, 59, 60, 68, 69, 71, 72, 73, 77, 78},
+}
+
+
+@pytest.mark.parametrize("driver", ("p1", "p2", "p3"))
+def test_unsupported_command_slots_refuse_to_write(driver):
+    """The app's reachable slots per driver, frozen so a dropped slot fails here."""
+    supported = _APP_SLOTS[driver]
+    assert supported == {"p1": p.P1_SUPPORTED, "p2": p.P2_SUPPORTED, "p3": p.P3_SUPPORTED}[driver]
+    for index in set(range(91)) - supported:
+        with pytest.raises(ValueError):
+            if driver == "p3":
+                p.JsonWriter().command(index, (), NOW, 247)
+            else:
+                p.binary_command(driver, index, (), p.Cache(), NOW)
+    if driver == "p1":
+        assert p.binary_command("p1", 32, (), p.Cache(), NOW) == b""

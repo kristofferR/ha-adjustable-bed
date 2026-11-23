@@ -1,20 +1,18 @@
 # Reverie
 
-**Status:** ❓ Needs testing (protocol implementation candidate; hardware behavior unverified on a bed)
+**Status:** Not yet tested
 
 **Credit:** Reverse engineering by [kristofferR](https://github.com/kristofferR/ha-adjustable-bed), Vitaliy and [Richard Hopton](https://github.com/richardhopton/smartbed-mqtt)
 
 ## Known Models
 
 - Reverie 9T / 8Q / 7S and other Reverie adjustable bases.
-- Protocol 110 exposes an explicit app-model option
-  with 44 selectable rows: 3E, 5D, 7S, 8Q, 3E Low Pro, 3ET, 3EW, 3EM, 3EMT, 4M,
+- Protocol 110 beds ask for your model in setup, with the app's 44 choices: 3E, 5D, 7S, 8Q, 3E Low Pro, 3ET, 3EW, 3EM, 3EMT, 4M,
   4M Low Pro, 4MM, 6S, 7T, 7HT, 8X, 8T, 9T, STK, O300, O300T, O350LP, O400,
   R350LP, R400, R450, Harmoniq Upgrade, R450HT, R550, R510L, R550L, R650,
   Skye 300, Skye 500, Skye 800, Oasis 2.0, Purple Power Base, Other, R310,
-  R310LP, R310T, R310TLP, R410, and R410LP. `Other` is the explicit fallback.
-  O450 and Base occur in the app enum but are not selectable there and are not
-  offered as setup choices.
+  R310LP, R310T, R310TLP, R410, and R410LP. Pick `Other` if yours is not listed.
+  O450 and Base are not offered, as in the app.
 
 ## Apps
 
@@ -27,17 +25,18 @@
 | Feature | Protocol 108 | Protocol 110 / STK | Pairlink |
 | --- | --- | --- | --- |
 | Motor Control | ✅ (head/back, foot/legs) | ✅ (head, foot; lumbar/body tilt by model) | ✅ (back, legs; lumbar on R510L) |
-| Position Feedback | ✅ (nine-byte notifications, 0–100%) | ✅ (characteristic / selected-side feedback, 0–100%) | ✅ (current authenticated peer) |
-| Memory Presets | ✅ (recall/save 1–4, model-gated) | ✅ (recall/save 1–4, model-gated) | ✅ (recall 1–4; save unavailable) |
-| Massage | ✅ (head/foot 0–10, wave compatibility control) | ✅ (model-gated head/foot 0–10, wave controls) | ✅ (head/foot 0–10, mode/rhythm, raw timer code) |
-| Wave Massage | ✅ (decimal-text builder; no inferred protocol range/cycle) | ✅ (raw characteristic / STK side-specific controls) | See mode/rhythm controls |
-| Under-bed Lights | ✅ (toggle, model-gated) | ✅ (brightness/RGB, model-gated) | ✅ (on/off, level, RGB feedback) |
-| Zero-G / Anti-Snore / Flat | ✅ (model-gated) | ✅ (model-specific preset route) | ✅ |
-| Composer routines / diagnostics | ✅ (per-address lifecycle) | ✅ (model-gated per-address lifecycle) | ✅ (central or explicit local role) |
-| Local BlueZ peripheral role | Not used | Not used | ✅ (explicit setup; active authenticated subscribed peer required) |
+| Position Feedback | ✅ (0–100%) | ✅ (0–100%, per side) | ✅ (from the connected bed) |
+| Memory Presets | ✅ (recall/save 1–4, by model) | ✅ (recall/save 1–4, by model) | ✅ (recall 1–4; no save) |
+| Massage | ✅ (head/foot 0–10, wave) | ✅ (head/foot 0–10, wave, by model) | ✅ (head/foot 0–10, mode/rhythm, timer) |
+| Wave Massage | ✅ | ✅ (per side on STK) | See mode/rhythm controls |
+| Under-bed Lights | ✅ (toggle, by model) | ✅ (brightness/RGB, by model) | ✅ (on/off, level, RGB) |
+| Zero-G / Anti-Snore / Flat | ✅ (by model) | ✅ (by model) | ✅ |
+| Routines and diagnostics | ✅ (per bed) | ✅ (per bed, by model) | ✅ |
+| Home Assistant joins the Pairlink network | ❌ | ❌ | ✅ (chosen in setup; needs a Linux Bluetooth adapter on the Home Assistant host and a paired, connected bed; see [Local peripheral role](#local-peripheral-role)) |
+| Hold until release | ✅ ([renewable](../SERVICES.md#renewable-holds), latched: up to 10 s, then STOP) | ✅ ([renewable](../SERVICES.md#renewable-holds), latched: up to 10 s, then STOP) | ❌ |
 
-Capabilities describe implementation, not hardware confirmation. The selected
-app model remains the source of feature gates.
+These features are not yet tested on hardware. Which ones you get depends on
+the model you pick in setup.
 
 ## Protocol Details
 
@@ -70,10 +69,31 @@ app model remains the source of feature gates.
 The integration discovers Protocol 108 from its GATT service and Protocol 110
 from the Nightstand service.
 
+The bed-type list has one **Reverie Nightstand and Reverie apps · Reverie** row,
+and the brand list's **Reverie: Reverie Nightstand and Reverie apps** row opens
+the same question. The
+receiver's advertised service decides the route, never the app or the name:
+
+| Advertised service | Route |
+|---|---|
+| Nightstand `db801000-f324-29c3-38d1-85c0c2e86885` | Protocol 110 (`reverie_nightstand`) |
+| `1b1d9641-b942-4da8-89cc-98e6a58fbd93` | Protocol 108 (`reverie`) |
+
+When Home Assistant has seen the advertisement, setup confirms the route from
+it without asking. Otherwise it asks which receiver the bed has, and a detected
+route stays one answer away. Either route then asks the model the app shows,
+with the app's explicit **Other** fallback as the default (nothing the bed
+advertises identifies the model, so there is no automatic choice), and, for
+a model whose app reads positions, whether to read them; a model without
+position reports never reads them. **Reconfigure** lists both receivers under
+their own names, so an entry on the wrong one can move without being removed;
+a working entry needs no change. Pairlink (R510L / Harmoniq) keeps its own row
+and setup.
+
 The selected profile controls which movement, position, massage, memory,
 preset, lumbar, and body-tilt entities are created. A model capability flag for
-the Pillow surface has no matching reachable direct BLE command in the accepted
-evidence, so this integration does not create a Pillow control.
+the Pillow surface has no matching direct BLE command in the app, so this
+integration does not create a Pillow control.
 
 ## Commands
 
@@ -141,7 +161,7 @@ Command bytes below are wrapped by the Protocol 108 packet builder.
 | Lights Toggle | `0x5B 0x00` |
 
 The existing HA wave slider retains its compatibility range, but that UI
-limit is not a source-proven Protocol 108 input domain. The packet builder
+limit is not a Protocol 108 range taken from the app. The packet builder
 appends the supplied decimal integer to the text `4`, then applies the source
 checksum and complete-hex-pair decoder. For example, the existing slider's
 level 10 emits `55 41 04 45`, rather than treating 10 as a single nibble or
@@ -155,7 +175,7 @@ that range is a protocol limit. The builder does not clamp or cycle the value.
 #### Characteristic commands
 
 UUIDs below share suffix `-f324-29c3-38d1-85c0c2e86885`.
-Values come from [`reverie_nightstand.py`](../../custom_components/adjustable_bed/beds/reverie_nightstand.py).
+Values come from [`reverie_nightstand.py`](../../custom_components/adjustable_bed/beds/reverie/nightstand.py).
 Model capability gates apply to every row.
 
 | Command | Characteristic prefix | Value / bytes |
@@ -243,7 +263,7 @@ The central GATT profiles are:
 #### Dashboard and setting payloads
 
 Values below come from `dashboard_payload()` / `a7_payload()` and
-[`reverie_pairlink.py`](../../custom_components/adjustable_bed/beds/reverie_pairlink.py).
+[`reverie_pairlink.py`](../../custom_components/adjustable_bed/beds/reverie/pairlink.py).
 Dashboard payloads are `01 command value 00`; settings are
 `01 A7 selector value`. Command numbers are hexadecimal; `value` is one byte.
 These four-byte application payloads are inside the authenticated Pairlink
@@ -256,7 +276,7 @@ frame, not complete plaintext GATT writes.
 | Lumbar up / down / release | `01 07 FF 00` / `01 08 FF 00` / `01 09 00 00` | R510L only |
 | Back / legs / lumbar absolute position | `01 01 value 00` / `01 04 value 00` / `01 07 value 00` | 0–100; lumbar uses `100 − position` |
 | Flat / Zero-G / Anti-Snore | `01 1C 00 00` / `01 62 00 00` / `01 65 00 00` | Presets |
-| Recall memory 1–4 | `01 29 00 00`–`01 2C 00 00` | No reachable memory-save action |
+| Recall memory 1–4 | `01 29 00 00`–`01 2C 00 00` | The app has no memory-save action |
 | Head / foot massage | `01 4D value 00` / `01 4F value 00` | 0 for off; otherwise `5 × level + 15`, levels 1–10 |
 | Stop massage | `01 48 00 00` | Massage off |
 | Light on / off | `01 5C 00 00` / `01 5D 00 00` | Discrete light commands |
@@ -300,8 +320,8 @@ The selected-device central route is the default. It uses an explicit
 configured HomeID first, then the accepted HomeID from the bed's current
 manufacturer data, then the source-known app default `5566` when neither
 caller input nor advertisement supplies one. The default is decimal 5566 and
-normalizes to little-endian bytes `BE 15 00 00`; its provenance remains distinct
-from an explicit value or advertisement. It also uses Home Assistant's declared
+normalizes to little-endian bytes `BE 15 00 00`; it stays distinguishable from an
+explicit value or advertisement. It also uses Home Assistant's declared
 password policy: the known default text `1122` and
 explicit text are UTF-8 encoded and must produce exactly four bytes. An
 optional eight-digit hex value replaces those bytes only while the text remains
@@ -333,9 +353,11 @@ for the writer, without following a replacement primary or changed authenticatio
 
 ### Local peripheral role
 
-The separate local peripheral role is an explicit setup choice that makes this
-Home Assistant host join the Pairlink network. It uses the integration-owned
-Linux BlueZ D-Bus backend at `beds/reverie_pairlink_transport.py`. It is outside
+The separate local peripheral role is an explicit choice in **Configure**,
+**Join the Pairlink network from this host** (the default, **Connect to this
+bed**, is the central route), that makes this Home Assistant host join the
+Pairlink network. It uses the integration-owned
+Linux BlueZ D-Bus backend at `beds/reverie/pairlink_transport.py`. It is outside
 Home Assistant's public server-transport API and never substitutes a central
 write for a local write. Setup selects one active local HA scanner source and
 binds only to its uniquely verified `/org/bluez/hciN` adapter. The integration
@@ -349,7 +371,7 @@ and payload `C0 FF 05`, the accepted HomeID in little-endian order, and six
 generated octets. The generated join address is distinct from the selected
 BlueZ adapter address. It has no local name, service UUID, service data, scan
 response, or includes. The source's Android advertise-mode integer is retained
-as evidence but is not treated as a BlueZ interval. HA requests a 100 ms host
+in diagnostics but is not treated as a BlueZ interval. HA requests a 100 ms host
 interval and requests +1 dBm only when BlueZ reports `CanSetTxPower`. These are
 declared host preferences, not measurements from the source phone. The source
 TxPowerLevel enum is not serialized as dBm, and `tx-power` is not requested as
@@ -391,7 +413,7 @@ descriptor behavior.
 Android's backup-peer branch processes an eligible write without calling its
 common `sendResponse`. BlueZ's public `WriteValue` contract instead maps method
 completion to ATT success and D-Bus errors to ATT errors, with no per-write
-silent-response disposition. The integration retains BlueZ completion rather
+silent-response handling. The integration retains BlueZ completion rather
 than leave a D-Bus request hanging. This platform qualification affects ATT
 acknowledgement only; source reply payloads, peer gates and processing remain
 separate. See the [BlueZ GATT API](https://bluez.readthedocs.io/en/latest/gatt-api/).
@@ -461,7 +483,7 @@ alone does not run physical-disconnect cleanup.
 ## Home Assistant actions and automation
 
 `reverie_set_comfort` accepts typed position, massage, mode, and raw timer-byte
-fields. Pairlink exposes that value as a timer code and does not claim a
+fields. Pairlink's massage timer number sends that byte and does not claim a
 minute conversion. Every selected physical target validates the request before any target
 writes. Protocol 110 Composer requests require its five accepted values.
 Protocol 108 applies changed values after notification feedback. Pairlink
@@ -482,13 +504,9 @@ schedule `reverie_set_comfort`, `reverie_run_routine`, `goto_preset`, or
 `save_preset` at the desired time. Phone-local alarm storage, Android
 notifications, and its scheduler are outside this integration's scope.
 
-`reverie_test` sends the accepted Protocol 108 or 110 direct diagnostic and
-its matching stop writes. Pairlink diagnostics use the current central or local
-session and the same authentication, sign, target, and readiness checks as
-ordinary actions. The diagnostic retains the command connection until its timed
-cleanup completes, including with Disconnect After Command enabled. Pairlink's
-massage mode and rhythm selects display receiver feedback; the mode sensor
-retains its numeric value for automations. Pairlink RGB light color follows
+The app's factory bed test is not offered as an action. Pairlink's
+massage mode select and rhythm switch display receiver feedback; the
+controller state keeps the numeric mode for diagnostics. Pairlink RGB light color follows
 receiver feedback once all three channels are known for the current peer.
 A successful GATT write only shows transport acceptance, not physical bed behavior.
 
@@ -525,7 +543,7 @@ consumed inside the existing command lane; it is not replaced with a timed
 write during silence.
 
 The BLE connection remains held until all pending comfort fields are consumed,
-cancelled, or fail, including with Disconnect After Command enabled. Cancelling
+cancelled, or fail, whatever the **Bluetooth connection** setting. Cancelling
 a routine also discards its pending comfort progression.
 
 ### Command timing and routines
@@ -559,14 +577,10 @@ routine request. Feedback and unrelated backup disconnects preserve the routine.
 ### Pairlink source scope and implementation status
 
 The implementation covers central and explicit local runtime consumers.
-Hardware delivery remains unverified and is deferred to real-user validation
-after beta/release. Audit evidence, overlay identities, exact exclusions and
-acceptance history are in the
-[disposition crosswalk](../apk-analysis/dispositions/row041-reverie.md#guide-evidence-and-scope-notes).
+Delivery to a real bed still needs testing by owners.
 The [SDK implementation notes](reverie-pairlink-sdk.md) describe private receive
 and metadata consumers. They do not create an arbitrary-packet action.
 
 ### Analysis provenance
 
-- Package `com.reverie.reverie`, version 3.3.3.8; row041 and comparison seal amendment 007.
-- [Accepted evidence and disposition crosswalk](../apk-analysis/dispositions/row041-reverie.md).
+Based on Reverie 3.3.3.8 (`com.reverie.reverie`).

@@ -1,35 +1,44 @@
-"""Eshine row106 artifact vectors, safe parsing and HA control surfaces.
+"""Eshine artifact vectors, safe parsing and HA control surfaces.
 
-Derived integration tests, not the raw APK Protocol Audit report. Evidence and
-intentional safety differences: docs/apk-analysis/dispositions/row106-eshine.md.
+Derived integration tests, not the raw APK Protocol Audit report, which
+also records the intentional safety differences.
 """
 
 from __future__ import annotations
 
 import asyncio
 from types import SimpleNamespace
+from typing import Any, cast
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 from bleak.exc import BleakError
 
 from custom_components.adjustable_bed.app_profiles import hidden_generic_fields, per_side_profile
-from custom_components.adjustable_bed.beds.eshine import STATE_GROUPS, EshineController
-from custom_components.adjustable_bed.beds.eshine_protocol import (
-    GATT_MAPS,
-    OPCODES,
-    NotificationStream,
-    control_frame,
+from custom_components.adjustable_bed.bed_traits import bed_traits
+from custom_components.adjustable_bed.beds.eshine.controller import (
+    CODES,
+    STATE_GROUPS,
+    EshineController,
 )
+from custom_components.adjustable_bed.beds.eshine.protocol import NotificationStream
+from custom_components.adjustable_bed.codec import richmat as codec
 from custom_components.adjustable_bed.const import (
     BED_TYPE_ESHINE,
-    BEDS_WITHOUT_ANGLE_FEEDBACK,
     CONF_MOTOR_COUNT,
     CONF_MOTOR_PULSE_COUNT,
     CONF_MOTOR_PULSE_DELAY_MS,
 )
 from custom_components.adjustable_bed.detection import get_bed_type_options
+from custom_components.adjustable_bed.profiles.richmat import ESHINE
 from custom_components.adjustable_bed.sensor import AdjustableBedControllerStateSensor
+from tests.state_helpers import state_writer
+
+# Service, write and declared notify, in the app's order; N1 takes bare codes.
+GATT_MAPS = [
+    (transport.service_uuid, transport.write_uuid, transport.notify_uuid)
+    for transport in (codec.TRANSPORTS[key] for key in ESHINE.transports)
+]
 
 
 def service(row=GATT_MAPS[1], *, response=True, notify_uuid=None):
@@ -48,7 +57,7 @@ def make(*services):
     coordinator.motor_pulse_count = 3
     coordinator.motor_pulse_delay_ms = 999  # Ignored: fixed artifact interval.
     coordinator.controller_state = {}
-    coordinator.handle_controller_state_updates.side_effect = coordinator.controller_state.update
+    coordinator.handle_controller_state_updates.side_effect = state_writer(coordinator.controller_state)
     coordinator.client = MagicMock(is_connected=True, services=list(services) or [service()])
     coordinator.client.write_gatt_char = AsyncMock()
     coordinator.client.start_notify = AsyncMock()
@@ -73,7 +82,8 @@ def sleeps(monkeypatch):
     return delays
 
 
-# Every reachable action in both formats. The literals are the artifact vectors.
+# Every reachable action in both formats, by profile button. The literals are the
+# artifact vectors; setup's ExitLimit (00, 6e02010071) is not a user action.
 COMMANDS = [
     ("head_up", "24", "6e01002493"),
     ("head_down", "25", "6e01002594"),
@@ -84,27 +94,24 @@ COMMANDS = [
     ("pillow_up", "41", "6e010041b0"),
     ("pillow_down", "42", "6e010042b1"),
     ("flat", "31", "6e010031a0"),
-    ("light", "3c", "6e01003cab"),
-    ("massage_head_strength", "4c", "6e01004cbb"),
-    ("massage_foot_strength", "4e", "6e01004ebd"),
+    ("light_toggle", "3c", "6e01003cab"),
+    ("massage_head", "4c", "6e01004cbb"),
+    ("massage_foot", "4e", "6e01004ebd"),
     ("massage_mode", "48", "6e010048b7"),
     ("massage_off", "5e", "6e01005ecd"),
-    ("massage_10_minutes", "5f", "6e01005fce"),
-    ("massage_20_minutes", "63", "6e010063d2"),
-    ("massage_30_minutes", "61", "6e010061d0"),
+    ("massage_timer_10", "5f", "6e01005fce"),
+    ("massage_timer_20", "63", "6e010063d2"),
+    ("massage_timer_30", "61", "6e010061d0"),
     ("anti_snore", "46", "6e010046b5"),
     ("zero_g", "45", "6e010045b4"),
     ("save_anti_snore", "69", "6e010069d8"),
     ("save_zero_g", "66", "6e010066d5"),
     ("stop", "6e", "6e01006edd"),
-    ("exit_limit", "00", "6e02010071"),
 ]
 
 
 @pytest.mark.parametrize(("action", "compact", "framed"), COMMANDS)
 async def test_all_action_vectors(action, compact, framed, sleeps):
-    assert control_frame(action, True).hex() == compact
-    assert control_frame(action, False).hex() == framed
     for row, expected, stop in [
         (GATT_MAPS[0], compact, "6e"),
         (GATT_MAPS[1], framed, "6e01006edd"),
@@ -113,14 +120,10 @@ async def test_all_action_vectors(action, compact, framed, sleeps):
         await ctrl.async_discover_capabilities()
         await ctrl.start_notify()
         ctrl.client.write_gatt_char.reset_mock()
-        if action == "exit_limit":
-            with pytest.raises(ValueError):
-                await ctrl.execute_action(action)
-        else:
-            await ctrl.execute_action(action)
-            assert frames(ctrl) == (
-                [expected] * 3 + [stop] if action in ctrl.held_control_options else [expected]
-            )
+        await ctrl.execute_action(action)
+        assert frames(ctrl) == (
+            [expected] * 3 + [stop] if action in ctrl.held_control_options else [expected]
+        )
 
 
 @pytest.mark.parametrize("row", GATT_MAPS)
@@ -165,7 +168,7 @@ async def test_failed_or_cancelled_movement_releases_with_fresh_event(error):
     await ctrl.async_discover_capabilities()
 
     async def write(*args, **kwargs):
-        if args[1] != control_frame("stop", False):
+        if args[1] != bytes.fromhex("6e01006edd"):
             ctrl._coordinator.cancel_command.set()
             raise error
 
@@ -207,11 +210,14 @@ async def test_profile_exposes_exact_controls_and_no_invented_queries():
     assert not ctrl.supports_memory_presets and ctrl.memory_slot_count == 0
     assert not ctrl.supports_single_address_pairing and not ctrl.supports_direct_position_control
     assert not ctrl.supports_position_feedback
-    assert BED_TYPE_ESHINE in BEDS_WITHOUT_ANGLE_FEEDBACK
-    assert len(ctrl.controller_button_specs) == 7
+    assert bed_traits(BED_TYPE_ESHINE).no_angle_feedback
+    assert len(ctrl.controller_button_specs) == 4
+    # The three timer buttons are the massage timer select's durations.
+    assert ctrl.supports_massage_timer and ctrl.massage_timer_can_turn_off
+    assert ctrl.massage_timer_options == [10, 20, 30]
     assert {row["value"]: row["label"] for row in get_bed_type_options()}[
         BED_TYPE_ESHINE
-    ] == "Eshine app (E6000)"
+    ] == "eShine app (E6000)"
     hidden = hidden_generic_fields(BED_TYPE_ESHINE, None)
     assert {CONF_MOTOR_COUNT, CONF_MOTOR_PULSE_DELAY_MS} <= hidden
     assert CONF_MOTOR_PULSE_COUNT not in hidden
@@ -227,6 +233,8 @@ async def test_buttons_and_generic_actions(sleeps):
     await ctrl.async_discover_capabilities()
     for spec in ctrl.controller_button_specs:
         await spec.press_fn(ctrl)
+    for minutes in (10, 20, 30, 0):
+        await ctrl.set_massage_timer(minutes)
     for method in (
         ctrl.preset_flat,
         ctrl.preset_zero_g,
@@ -244,6 +252,7 @@ async def test_buttons_and_generic_actions(sleeps):
         "6e01005fce",
         "6e010063d2",
         "6e010061d0",
+        "6e01005ecd",
         "6e010031a0",
         "6e010045b4",
         "6e010046b5",
@@ -251,7 +260,7 @@ async def test_buttons_and_generic_actions(sleeps):
         "6e01005ecd",
         "6e010048b7",
     ]
-    assert set(OPCODES) == {action for action, _, _ in COMMANDS}
+    assert {*CODES, "stop"} == {action for action, _, _ in COMMANDS}
 
 
 # Integration projections of every accepted stream vector, including excluded domains.
@@ -366,24 +375,24 @@ RECEIVE_VECTORS = [
     ("common-unknown", ["6e91000107"], []),
     ("ota-fragmented", ["6e40000a", "0103030782bb"], []),
     ("ota-bad-crc", ["6e40000a0103030782ba"], []),
-    ("repair001-valid-3-2-00", ["6e200806030200a1"], [("sleep_adv_name", [])]),
-    ("repair001-valid-3-2-0041", ["6e20090603020041e3"], [("sleep_adv_name", [65])]),
-    ("repair001-valid-5-2-0000", ["6e20090605020000a4"], []),
-    ("repair001-valid-5-2-00012a", ["6e200a06050200012ad0"], [("anti_snore_count", 42)]),
-    ("repair001-valid-5-2-00022b", ["6e200a06050200022bd2"], [("anti_snore_time", 43)]),
-    ("repair001-valid-4-2-000001", ["6e200a060402000001a5"], []),
-    ("repair001-valid-4-2-000101", ["6e200a060402000101a6"], [("snore_stop_music", True)]),
-    ("repair001-opgate-3-2", ["6e20070603019f"], []),
-    ("repair001-opgate-5-2", ["6e2007060501a1"], []),
-    ("repair001-valid-3-3-00", ["6e200806030300a2"], [("sleep_adv_name", [])]),
-    ("repair001-valid-3-3-0041", ["6e20090603030041e4"], [("sleep_adv_name", [65])]),
-    ("repair001-valid-5-3-0000", ["6e20090605030000a5"], []),
-    ("repair001-valid-5-3-00012a", ["6e200a06050300012ad1"], [("anti_snore_count", 42)]),
-    ("repair001-valid-5-3-00022b", ["6e200a06050300022bd3"], [("anti_snore_time", 43)]),
-    ("repair001-valid-4-3-000001", ["6e200a060403000001a6"], []),
-    ("repair001-valid-4-3-000101", ["6e200a060403000101a7"], [("snore_stop_music", True)]),
-    ("repair001-opgate-3-3", ["6e20070603019f"], []),
-    ("repair001-opgate-5-3", ["6e2007060501a1"], []),
+    ("valid-3-2-00", ["6e200806030200a1"], [("sleep_adv_name", [])]),
+    ("valid-3-2-0041", ["6e20090603020041e3"], [("sleep_adv_name", [65])]),
+    ("valid-5-2-0000", ["6e20090605020000a4"], []),
+    ("valid-5-2-00012a", ["6e200a06050200012ad0"], [("anti_snore_count", 42)]),
+    ("valid-5-2-00022b", ["6e200a06050200022bd2"], [("anti_snore_time", 43)]),
+    ("valid-4-2-000001", ["6e200a060402000001a5"], []),
+    ("valid-4-2-000101", ["6e200a060402000101a6"], [("snore_stop_music", True)]),
+    ("opgate-3-2", ["6e20070603019f"], []),
+    ("opgate-5-2", ["6e2007060501a1"], []),
+    ("valid-3-3-00", ["6e200806030300a2"], [("sleep_adv_name", [])]),
+    ("valid-3-3-0041", ["6e20090603030041e4"], [("sleep_adv_name", [65])]),
+    ("valid-5-3-0000", ["6e20090605030000a5"], []),
+    ("valid-5-3-00012a", ["6e200a06050300012ad1"], [("anti_snore_count", 42)]),
+    ("valid-5-3-00022b", ["6e200a06050300022bd3"], [("anti_snore_time", 43)]),
+    ("valid-4-3-000001", ["6e200a060403000001a6"], []),
+    ("valid-4-3-000101", ["6e200a060403000101a7"], [("snore_stop_music", True)]),
+    ("opgate-3-3", ["6e20070603019f"], []),
+    ("opgate-5-3", ["6e2007060501a1"], []),
 ]
 
 
@@ -428,11 +437,13 @@ async def test_parsed_state_exposed_as_diagnostics_without_position_mapping():
         for chunk in chunks:
             ctrl._handle_notification(ctrl._notify_char, bytearray.fromhex(chunk))
     raw.assert_called()
-    state = ctrl._coordinator.controller_state
+    state = cast(dict[str, Any], ctrl._coordinator.controller_state)
     assert state["eshine_motors_data"]["motor_1"] == {"no": 1, "status": 2, "angle": 45}
     assert state["eshine_motors_data"]["motor_type_1"]["monitorHeight"] == 45.6
     assert state["eshine_alarm_data"]["alarm_report"] == [7, 8, 9, 10, 11, 12]
     assert set(STATE_GROUPS) == set(ctrl._observed)
+    # A standalone bed has no side to publish.
+    ctrl._coordinator.entity_side = None
     for spec in ctrl.controller_state_sensor_specs:
         sensor = AdjustableBedControllerStateSensor(ctrl._coordinator, spec)
         assert sensor.native_value == state[spec.state_key]

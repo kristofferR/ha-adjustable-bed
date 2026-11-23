@@ -11,14 +11,14 @@ from homeassistant.const import CONF_ADDRESS, CONF_DEVICE_ID, CONF_NAME
 from homeassistant.core import HomeAssistant
 from homeassistant.data_entry_flow import FlowResultType
 from homeassistant.helpers import device_registry as dr
-from pytest_homeassistant_custom_component.common import MockConfigEntry
+from pytest_homeassistant.common import MockConfigEntry
 
+from custom_components.adjustable_bed.beds.starcode.state import state_updates
 from custom_components.adjustable_bed.button import _button_entities_for
 from custom_components.adjustable_bed.config_flow import (
     AdjustableBedConfigFlow,
     AdjustableBedOptionsFlow,
-    _add_starcode_schema_fields,
-    _starcode_errors,
+    _profile_question_schema,
 )
 from custom_components.adjustable_bed.const import (
     BED_TYPE_STARCODE_M5X5,
@@ -39,6 +39,7 @@ from custom_components.adjustable_bed.pairing import build_pair_entry_data
 from custom_components.adjustable_bed.select import _select_entities_for
 from custom_components.adjustable_bed.sensor import _sensor_entities_for
 from custom_components.adjustable_bed.services import async_register_services
+from custom_components.adjustable_bed.setup_questions import SETUP_PROFILES, FlowContext
 from tests.test_starcode_accessory_group import group, target
 
 
@@ -68,32 +69,37 @@ async def test_paired_generic_settings_preserve_child_app_profiles(hass: HomeAss
     ("profile", "name"),
     [
         ("cb25", "STAR252201123456"),
+        ("cb25", "Star254202123456"),
         ("f23", "STAR254205123456"),
+        ("f23", "Star254205123456"),
         ("kneading", "STAR255402123456"),
+        ("kneading", "Star255402123456"),
     ],
 )
 async def test_explicit_setup_and_factory(hass: HomeAssistant, profile: str, name: str) -> None:
     flow = AdjustableBedConfigFlow()
     flow.hass = hass
-    flow.flow_id = "row005_setup"
+    flow.flow_id = "m5x5_setup"
     flow._manual_data = {
         CONF_ADDRESS: "AA:00:00:00:00:05",
         CONF_NAME: "Friendly name",
         CONF_BED_TYPE: BED_TYPE_STARCODE_M5X5,
     }
-    result = await flow.async_step_starcode_m5x5()
+    result = await flow.async_step_profile_questions()
     assert result["type"] == FlowResultType.FORM
-    assert result["step_id"] == "starcode_m5x5"
+    assert result["step_id"] == "profile_questions"
     with patch.object(
         flow, "_finish_with_verify", AsyncMock(return_value={"type": FlowResultType.CREATE_ENTRY})
     ) as finish:
-        await flow.async_step_starcode_m5x5(
+        await flow.async_step_profile_questions(
             {CONF_STARCODE_M5X5_PROFILE: profile, CONF_BLE_DEVICE_NAME: name}
         )
     data = finish.await_args.args[0]
     assert data[CONF_DISABLE_ANGLE_SENSING] is False
     assert data[CONF_HAS_MASSAGE] is True
+    assert data[CONF_BLE_DEVICE_NAME] == name
     c = target(hass, 10, profile)
+    hass.config_entries.async_update_entry(c.entry, data=data)
     controller = await create_controller(c, BED_TYPE_STARCODE_M5X5, "auto", None)
     assert controller.profile == profile
     assert controller.device_name == name
@@ -102,13 +108,14 @@ async def test_explicit_setup_and_factory(hass: HomeAssistant, profile: str, nam
 
 async def test_name_and_lift_identity_validation(hass: HomeAssistant) -> None:
     main, *lifts = group(hass)
-    assert _starcode_errors(hass, main.entry.data, main.entry.entry_id) == {}
-    bad = {**main.entry.data, CONF_BLE_DEVICE_NAME: "star254205123456"}
-    assert CONF_STARCODE_M5X5_PROFILE in _starcode_errors(hass, bad)
+    profile = SETUP_PROFILES[BED_TYPE_STARCODE_M5X5]
+    context = FlowContext(hass, main.entry.entry_id)
+    assert profile.errors(main.entry.data, context) == {}
+    bad = {**main.entry.data, CONF_BLE_DEVICE_NAME: "Star254205123456"}
+    assert CONF_STARCODE_M5X5_PROFILE in profile.errors(bad, FlowContext(hass))
     bad = {**main.entry.data, CONF_STARCODE_LIFT_ENTRIES: [t.entry.entry_id for t in lifts] * 2}
-    assert CONF_STARCODE_LIFT_ENTRIES in _starcode_errors(hass, bad)
-    schema = {}
-    _add_starcode_schema_fields(schema, main.entry.data, hass, main.entry.entry_id)
+    assert CONF_STARCODE_LIFT_ENTRIES in profile.errors(bad, FlowContext(hass))
+    schema = _profile_question_schema(profile, main.entry.data, context)
     accepted = vol.Schema(schema)(
         {
             CONF_STARCODE_M5X5_PROFILE: "cb25",
@@ -122,16 +129,36 @@ async def test_name_and_lift_identity_validation(hass: HomeAssistant) -> None:
     assert len(accepted_lifts) == 3
 
 
+async def test_options_preserve_mixed_case_bluetooth_name(hass: HomeAssistant) -> None:
+    main = target(hass, 1, "cb25")
+    flow = AdjustableBedOptionsFlow(main.entry)
+    flow.handler = main.entry.entry_id
+    flow.hass = hass
+    name = "Star254202123456"
+    result = await flow.async_step_settings(
+        {CONF_STARCODE_M5X5_PROFILE: "cb25", CONF_BLE_DEVICE_NAME: name}
+    )
+    assert result["type"] == FlowResultType.CREATE_ENTRY
+    assert main.entry.data[CONF_BLE_DEVICE_NAME] == name
+    controller = await create_controller(main, BED_TYPE_STARCODE_M5X5, "auto", None)
+    assert controller.profile == "cb25"
+    assert controller.device_name == name
+
+
 async def test_controls_state_and_readonly_domains(hass: HomeAssistant) -> None:
     c = target(hass, 1, "kneading")
     buttons = _button_entities_for(hass, c)
     keys = {
         getattr(getattr(b, "entity_description", None), "key", b.translation_key) for b in buttons
     }
+    # The saves keep their unique IDs in the shared preset save shape.
+    saves = [b.unique_id for b in buttons if b.translation_key == "catalog_save"]
+    assert sorted(uid.rsplit("starcode_", 1)[-1] for uid in saves) == [
+        "save_lounge",
+        "save_tv",
+        "save_zero_g",
+    ]
     assert {
-        "starcode_save_tv",
-        "starcode_save_zero_g",
-        "starcode_save_lounge",
         "starcode_reset",
         "starcode_light_mode",
         "starcode_light_cycle",
@@ -151,20 +178,22 @@ async def test_controls_state_and_readonly_domains(hass: HomeAssistant) -> None:
     sensors = _sensor_entities_for(hass, c)
     sensor_keys = {s.translation_key for s in sensors}
     assert {
-        "starcode_sonic_time_raw",
+        "starcode_sonic_head_level",
         "starcode_eq_volume",
-        "starcode_kneading_time_raw",
+        "starcode_kneading_mode",
         "starcode_alarm_0",
         "starcode_alarm_1",
     } <= sensor_keys
     c.handle_controller_state_updates(
-        {
-            "alarm_0": True,
-            "alarm_0_details": {"repeat_raw": 255, "hour": 23},
-            "light_color_index": 4,
-            "light_color_option": "4",
-            "light_rgb": [255, 255, 0],
-        }
+        *state_updates(
+            {
+                "alarm_0": True,
+                "alarm_0_details": {"repeat_raw": 255, "hour": 23},
+                "light_color_index": 4,
+                "light_color_option": "4",
+                "light_rgb": [255, 255, 0],
+            }
+        )
     )
     alarm = next(s for s in sensors if s.translation_key == "starcode_alarm_0")
     assert alarm.native_value is True
@@ -179,7 +208,7 @@ async def test_controls_state_and_readonly_domains(hass: HomeAssistant) -> None:
 
 async def test_cb25_always_exposes_distinct_sonic_feedback(hass: HomeAssistant) -> None:
     c = target(hass, 1, "cb25")
-    assert "sonic_time_raw" in {s.state_key for s in c.controller.controller_state_sensor_specs}
+    assert "sonic_head_level" in {s.state_key for s in c.controller.controller_state_sensor_specs}
     assert "sonic_active" in {
         s.state_key for s in c.controller.controller_state_binary_sensor_specs
     }
@@ -197,7 +226,7 @@ async def test_registered_group_service_and_schema(hass: HomeAssistant) -> None:
     main.entry.mock_state(hass, ConfigEntryState.LOADED)
     await async_register_services(hass)
     with patch(
-        "custom_components.adjustable_bed.starcode_accessory_group.run_group", AsyncMock()
+        "custom_components.adjustable_bed.beds.starcode.accessory_group.run_group", AsyncMock()
     ) as run:
         await hass.services.async_call(
             DOMAIN,
@@ -224,7 +253,7 @@ async def test_elevate_name_points_to_the_elevate_bed_type(hass: HomeAssistant) 
         CONF_NAME: "Lift",
         CONF_BED_TYPE: BED_TYPE_STARCODE_M5X5,
     }
-    result = await flow.async_step_starcode_m5x5(
+    result = await flow.async_step_profile_questions(
         {CONF_STARCODE_M5X5_PROFILE: "cb25", CONF_BLE_DEVICE_NAME: "ELEVATE123456"}
     )
     assert result["errors"] == {CONF_STARCODE_M5X5_PROFILE: "starcode_elevate_bed_type"}

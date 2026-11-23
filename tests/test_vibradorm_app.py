@@ -1,4 +1,4 @@
-"""Frozen row031 vectors and real controller delivery/lifecycle behavior."""
+"""Frozen Vibradorm app vectors and real controller delivery/lifecycle behavior."""
 
 from __future__ import annotations
 
@@ -8,27 +8,28 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-from custom_components.adjustable_bed.beds.vibradorm_app import (
-    CBI,
-    COMMAND,
+from custom_components.adjustable_bed.beds.vibradorm.app import (
     INFO_FIELDS,
-    LIGHT,
-    RESPONSE,
     VibradormAppController,
     async_prepare_vibradorm_app_pairing,
     decode_standard_info,
     parse_article,
     parse_sync,
-    validate_vibradorm_app_profile,
 )
+from custom_components.adjustable_bed.beds.vibradorm.app_state import (
+    VibradormAppFloorIntent,
+    VibradormAppTimerIntent,
+)
+from custom_components.adjustable_bed.codec.vibradorm import CBI_CHAR_UUID as CBI
+from custom_components.adjustable_bed.codec.vibradorm import LIGHT_CHAR_UUID as LIGHT
+from custom_components.adjustable_bed.codec.vibradorm import MOTOR_CHAR_UUID as COMMAND
+from custom_components.adjustable_bed.codec.vibradorm import RESPONSE_CHAR_UUID as RESPONSE
 from custom_components.adjustable_bed.light import (
     LIGHT_DESCRIPTION,
     AdjustableBedOnOffLight,
 )
-from custom_components.adjustable_bed.vibradorm_app_state import (
-    VibradormAppFloorIntent,
-    VibradormAppTimerIntent,
-)
+from custom_components.adjustable_bed.profiles.vibradorm import validate_vibradorm_app_profile
+from tests.hold_lease_wire import virtual_clock
 
 
 def make_controller(
@@ -405,13 +406,12 @@ async def test_before_pair_order_five_reads_three_reply_gated_requests_and_clean
 @pytest.mark.asyncio
 async def test_info_unrelated_reply_deadline_and_cancel_cleanup_no_extra_writes():
     c = make_controller(7)
-    result = asyncio.create_task(
-        async_prepare_vibradorm_app_pairing(
+    # On virtual time the deadline ends the wait for the article reply, never the
+    # reads before it.
+    with virtual_clock(), pytest.raises(TimeoutError):
+        await async_prepare_vibradorm_app_pairing(
             c.client, "werkmeister", 7, deadline=asyncio.get_running_loop().time() + 0.03
         )
-    )
-    with pytest.raises(TimeoutError):
-        await result
     assert written(c) == ["01a0c8"]
     c.client.stop_notify.assert_awaited_once()
     c.client.write_gatt_char.reset_mock()
@@ -507,7 +507,10 @@ async def test_write_mode_host_property_policy_and_no_basic_notification():
 async def test_immutable_specs_callbacks_dispatch_side_bound_live_controller():
     c = make_controller(2, features=True)
     for spec in c.controller_button_specs:
-        assert spec.translation_key == spec.key
+        # All motors up and down are the shared all-motors row.
+        assert spec.translation_key == (
+            spec.key.replace("vibradorm_app_all", "all_motors") if "_all_" in spec.key else spec.key
+        )
     select = next(s for s in c.controller_select_specs if s.key.endswith("mood_effect"))
     number = next(s for s in c.controller_number_specs if s.key.endswith("floor_timer_minutes"))
     observed = []
@@ -516,8 +519,10 @@ async def test_immutable_specs_callbacks_dispatch_side_bound_live_controller():
         observed.append(c.command_side)
 
     c.client.write_gatt_char.side_effect = delivery
-    await select.select_fn(c.bind_side("right"), "sunrise")
-    await number.set_fn(c.bind_side("right"), 17)
+    with c.side_scope("right"):
+        await select.select_fn(c, "sunrise")
+    with c.side_scope("right"):
+        await number.set_fn(c, 17)
     assert observed == ["right"]
     assert c._timer_minutes == 17 and not c._timer_enabled
     assert c.command_side is None
@@ -1428,7 +1433,7 @@ async def test_pre_cancelled_floor_actions_preserve_session_intent_and_sequence(
         timer_intent=timer,
     )
     c._toggle = 0x8000
-    before = c.get_light_state()
+    before = c._floor_light_intent()
     c._coordinator.cancel_command.set()
     if action == "on":
         await c.lights_on()
@@ -1441,7 +1446,7 @@ async def test_pre_cancelled_floor_actions_preserve_session_intent_and_sequence(
     assert written(c) == []
     assert floor.level == initial_level and floor.default_level == 6
     assert timer.enabled and timer.minutes == 12
-    assert c._toggle == 0x8000 and c.get_light_state() == before
+    assert c._toggle == 0x8000 and c._floor_light_intent() == before
     c._coordinator.remember_vibradorm_app_floor_default.assert_not_called()
     c._coordinator.handle_controller_state_updates.assert_not_called()
     c._coordinator.record_command_trace.assert_not_called()
@@ -1733,7 +1738,7 @@ async def test_article_write_failure_cleanup_and_malformed_only_reply_times_out(
 
     c.client.start_notify.side_effect = subscribe
     c.client.write_gatt_char.side_effect = write
-    with pytest.raises(TimeoutError):
+    with virtual_clock(), pytest.raises(TimeoutError):
         await async_prepare_vibradorm_app_pairing(
             c.client, "werkmeister", 7, deadline=asyncio.get_running_loop().time() + 0.03
         )
@@ -2088,7 +2093,7 @@ async def test_manifest_globals_startup_zero_first_floor_toggle_on_exact_routes(
     await c.lights_toggle()
     assert written(c) == [expected]
     assert c._toggle == 0x8000
-    assert c.get_light_state()["state_source"] == "local_intent"
+    assert c._floor_light_intent()["state_source"] == "local_intent"
 
 
 # unconfigure writes both local level and remembered level6. The same positive
@@ -2422,6 +2427,7 @@ async def test_real_native_light_entity_remembers_slider_and_repeats_requested_b
     )
     runtime = c._coordinator
     runtime.capability_controller = c
+    runtime.controller = c
     runtime.entity_side = None
 
     async def dispatch(operation, **kwargs):

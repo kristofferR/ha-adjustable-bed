@@ -1,15 +1,15 @@
 # Okin UUID remote-code table regeneration
 
-This directory regenerates `custom_components/adjustable_bed/beds/okin_uuid_remotes.py`
+This directory regenerates `custom_components/adjustable_bed/beds/okin_uuid/remotes.py`
 (the per-remote-code keycode table) and the `OKIMAT_VARIANTS` /
 `OKIN_DOT_VARIANTS` dropdowns in `const.py`.
 
 ## Source of truth
 
 Codes in the pinned FurniMove production catalog
-(`custom_components/adjustable_bed/furnimove_profiles.py`, captured
+(`custom_components/adjustable_bed/beds/furnimove/profiles.py`, captured
 2026-09-30 for the accepted `com.okin.okinsmartcomfort` 2.2.0 audit) are the
-exception: `okin_uuid.py` derives their keycodes and memory-save timing from
+exception: `beds/okin_uuid/controller.py` derives their keycodes and memory-save timing from
 that catalog, and `gen_module.py` emits labels but no data row for them. Every
 overlapping handset matched the earlier backend capture byte for byte when the
 tables were merged; `tests/test_okin_uuid.py` pins the resulting table.
@@ -24,7 +24,8 @@ timing metadata per remote code:
 - Base (production): `https://2df12gl0m0.execute-api.eu-central-1.amazonaws.com/prod`
 - `GET /mobile-data/button/{code}` — keycodes (the table we want)
 - `GET /mobile-data/object/{code}` — model description
-- Header: `authorizationToken: 9FIqFcwHRgdlyPa2MgVizuwuLH0mxhkN`
+- Header: `authorizationToken`, read from the `FURNIMOVE_AUTHORIZATION_TOKEN`
+  environment variable
 
 These values were extracted from the FurniMove 2.0.1 APK
 (`disassembly/output/com.dewertokin.okinsmartcomfort/`). The API/token may
@@ -37,8 +38,8 @@ The captured data is committed as `master.json` so the table can be regenerated
 
 ```bash
 cd tools/okin_remotes
-uv run gen_module.py   # -> okin_uuid_remotes.py (copy into beds/)
-                       #    + gen_okimat_variants.py (OKIMAT_VARIANTS body for const.py)
+uv run --no-sync python gen_module.py  # -> remotes.py (copy into beds/okin_uuid/)
+    # + gen_okimat_variants.py (OKIMAT_VARIANTS and OKIN_DOT_VARIANTS bodies for const.py)
 ```
 
 To refresh `master.json` from the network (rarely needed), provide a text file
@@ -48,7 +49,7 @@ path below is your supplied file, not a file included in this repository.
 
 ```bash
 # Fetch object and button responses for the supplied IDs
-uv run fetch_handsets.py "cache" "/path/to/remote-ids.txt"
+FURNIMOVE_AUTHORIZATION_TOKEN=... uv run fetch_handsets.py "cache" "/path/to/remote-ids.txt"
 # Rebuild the normalized dataset from the cached responses
 uv run build_master.py        # -> master.json
 ```
@@ -76,4 +77,4 @@ verified new IDs to your input file before fetching.
   Flat=0x08000000. They are emitted with `protocol: "dot"` (driving the
   `okin_dot` bed type and `OKIN_DOT_VARIANTS`) and are kept out of the
   csv-inherit pool so standard codes never inherit DOT keycodes. See
-  `docs/beds/okin-dot.md`.
+  `docs/beds/okin-nframe.md#okin-dot`.

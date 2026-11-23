@@ -5,8 +5,14 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from homeassistant.const import CONF_ADDRESS
-from pytest_homeassistant_custom_component.common import MockConfigEntry
+from pytest_homeassistant.common import MockConfigEntry
 
+from custom_components.adjustable_bed.beds.vibradorm.app_discovery import (
+    ManufacturerRecord,
+    manufacturer_discovery_diagnostics,
+    parse_manufacturer_record,
+    public_filter_verdict,
+)
 from custom_components.adjustable_bed.const import (
     BED_TYPE_VIBRADORM_APP,
     CONF_BED_TYPE,
@@ -16,13 +22,6 @@ from custom_components.adjustable_bed.const import (
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
 from custom_components.adjustable_bed.diagnostics import async_get_config_entry_diagnostics
 from custom_components.adjustable_bed.paired_coordinator import PairedBedCoordinator
-from custom_components.adjustable_bed.vibradorm_app_discovery import (
-    ManufacturerRecord,
-    manufacturer_discovery_diagnostics,
-    parse_manufacturer_record,
-    public_filter_verdict,
-    sdk_first_manufacturer,
-)
 
 
 @pytest.mark.parametrize(
@@ -69,23 +68,8 @@ def test_company_short_mask_is_not_payload_identifier(company, accepted):
     assert fields.identifier == 0x03B0
 
 
-def test_sdk_selects_first_ordered_record_not_lowest_or_first_accepted_company():
-    records = (
-        ManufacturerRecord(0xFFFF, b"first"),
-        ManufacturerRecord(0x03B0, b"second"),
-        ManufacturerRecord(0xFFFF, b"duplicate"),
-    )
-    assert sdk_first_manufacturer(records) is records[0]
-    reversed_records = tuple(reversed(records))
-    assert sdk_first_manufacturer(reversed_records) is records[2]
-    rejected_first = (ManufacturerRecord(1, b"rejected"), records[1])
-    assert not parse_manufacturer_record(sdk_first_manufacturer(rejected_first)).company_accepted
-
-
-def test_absent_sdk_record_uses_empty_payload_not_null_sentinel():
-    absent = sdk_first_manufacturer(())
-    assert absent == ManufacturerRecord(-1, b"")
-    fields = parse_manufacturer_record(absent)
+def test_absent_record_uses_empty_payload_not_null_sentinel():
+    fields = parse_manufacturer_record(ManufacturerRecord(-1, b""))
     assert fields.company_id == 0xFFFF
     assert fields.company_accepted
     assert fields.customer == 0xFFFF
@@ -236,6 +220,7 @@ async def test_paired_diagnostics_parse_each_observed_physical_side_and_redact_a
             is_connected=False,
             position_data={},
             command_timing={},
+            connection_settings={},
             entry=SimpleNamespace(data={CONF_BED_TYPE: BED_TYPE_VIBRADORM_APP}),
         )
         for side, address in addresses.items()

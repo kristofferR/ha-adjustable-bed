@@ -9,20 +9,22 @@ from typing import TypedDict, cast
 
 import pytest
 
-from custom_components.adjustable_bed.beds.starcode_m1x12_protocol import (
-    StateValue,
-    clock_packet,
+from custom_components.adjustable_bed.beds.starcode.dialect import (
     extended_packet,
-    keep_open_packet,
     long_packet,
     manufacturer_dialect,
     normal_packet,
-    parse_notification,
     position_packet,
-    profile_from_name,
     query_packet,
+)
+from custom_components.adjustable_bed.beds.starcode.feedback import StateValue
+from custom_components.adjustable_bed.beds.starcode.m1x12_protocol import (
+    clock_packet,
+    parse_notification,
+    profile_from_name,
     time_packet,
 )
+from custom_components.adjustable_bed.codec import okin_5a
 
 
 class VectorInputs(TypedDict, total=False):
@@ -98,7 +100,7 @@ def _build_vector(vector: Vector) -> bytes:
     if vector_id == "V-ELEVATE":
         return normal_packet(_key(item["key"]), "star")
     if vector["protocol"] == "P2":
-        return keep_open_packet()
+        return okin_5a.WAKE
     return normal_packet(_key(item["key"]), _dialect(item["encoding"]))
 
 

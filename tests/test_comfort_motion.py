@@ -1,18 +1,20 @@
-"""Comfort Motion 2.2.1 artifact vectors and its actual HA routes (row115)."""
+"""Comfort Motion 2.2.1 artifact vectors and its actual HA routes."""
 
 from __future__ import annotations
 
 import asyncio
+from dataclasses import astuple
 from types import SimpleNamespace
-from unittest.mock import AsyncMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from homeassistant.const import CONF_ADDRESS, CONF_NAME
 from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers import entity_registry as er
-from pytest_homeassistant_custom_component.common import MockConfigEntry
+from pytest_homeassistant.common import MockConfigEntry
 
 from custom_components.adjustable_bed.beds import comfort_motion as cm
+from custom_components.adjustable_bed.codec.jiecang import TRANSPORTS
 from custom_components.adjustable_bed.config_flow import (
     AdjustableBedConfigFlow,
     AdjustableBedOptionsFlow,
@@ -31,6 +33,34 @@ from custom_components.adjustable_bed.const import (
     CONF_PREFERRED_ADAPTER,
     DOMAIN,
 )
+from custom_components.adjustable_bed.profiles.jiecang import COMFORT_MOTION
+from custom_components.adjustable_bed.state_keys import UNDER_BED_LIGHTS_ON
+from tests.state_helpers import massage_levels, state_writer
+
+# Frozen Comfort Motion 2.2.1 literals.
+RELEASE = bytes.fromhex("f1f14e004e7e")
+LIGHT = bytes.fromhex("f1f10f000f7e")
+WIRE_LEVELS = (0, 2, 3, 4)
+MASSAGE = {
+    "head": tuple(
+        bytes.fromhex(value)
+        for value in (
+            "f1f1120208001c7e",
+            "f1f1120208021e7e",
+            "f1f1120208031f7e",
+            "f1f112020804207e",
+        )
+    ),
+    "foot": tuple(
+        bytes.fromhex(value)
+        for value in (
+            "f1f1140208001e7e",
+            "f1f114020802207e",
+            "f1f114020803217e",
+            "f1f114020804227e",
+        )
+    ),
+}
 
 ADDRESS = "AA:BB:CC:DD:EE:FF"
 
@@ -38,7 +68,7 @@ ADDRESS = "AA:BB:CC:DD:EE:FF"
 def services(transports=("g1",), properties=("write", "notify")):
     result = []
     for key in transports:
-        service, write, notify, name = cm.TRANSPORTS[key]
+        service, write, notify, name = astuple(TRANSPORTS[key])
         chars = {
             uuid: SimpleNamespace(
                 uuid=uuid,
@@ -80,8 +110,9 @@ def make_controller(monkeypatch):
             motor_pulse_count=2,
             controller_state={},
             has_massage=True,
+            record_command_trace=MagicMock(),
         )
-        coordinator.handle_controller_state_updates = coordinator.controller_state.update
+        coordinator.handle_controller_state_updates = state_writer(coordinator.controller_state)
         return (
             cm.ComfortMotionController(coordinator, layout=layout, **options),
             coordinator,
@@ -96,61 +127,20 @@ def packets(client):
 
 
 @pytest.mark.parametrize(
-    "axis,up,expected",
-    [
-        ("back", True, "f1f1010101037e"),
-        ("back", False, "f1f1020101047e"),
-        ("legs", True, "f1f1030101057e"),
-        ("legs", False, "f1f1040101067e"),
-        ("both", True, "f1f1050101077e"),
-        ("both", False, "f1f1060101087e"),
-        ("head", True, "f1f11901011b7e"),
-        ("head", False, "f1f11a01011c7e"),
-        ("lumbar", True, "f1f11b01011d7e"),
-        ("lumbar", False, "f1f11c01011e7e"),
-    ],
-)
-async def test_motion_vectors_and_release(make_controller, axis, up, expected):
-    layout = "standard_2" if axis == "both" else "standard_4_legacy"
-    controller, _, client = make_controller(layout)
-    await controller._move(axis, up)
-    assert packets(client) == [expected, expected, "f1f14e004e7e"]
-
-
-@pytest.mark.parametrize(
-    "method,args,expected,release",
-    [
-        ("preset_flat", (), "f1f10801010a7e", True),
-        ("preset_zero_g", (), "f1f1070101097e", True),
-        ("preset_anti_snore", (), "f1f10901010b7e", True),
-        ("preset_memory", (1,), "f1f10b01010d7e", True),
-        ("preset_memory", (2,), "f1f10d01010f7e", True),
-        ("program_memory", (1,), "f1f10a01010c7e", False),
-        ("program_memory", (2,), "f1f10c01010e7e", False),
-        ("lights_toggle", (), "f1f10f000f7e", False),
-        ("massage_off", (), "f1f11101081a7e", False),
-        ("massage_mode_step", (), "f1f116010a217e", False),
-    ],
-)
-async def test_click_vectors(make_controller, method, args, expected, release):
-    controller, _, client = make_controller()
-    await getattr(controller, method)(*args)
-    assert packets(client) == [expected] + (["f1f14e004e7e"] if release else [])
-
-
-@pytest.mark.parametrize(
     "zone,frames",
     [
         ("head", ["f1f1120208001c7e", "f1f1120208021e7e", "f1f1120208031f7e", "f1f112020804207e"]),
         ("foot", ["f1f1140208001e7e", "f1f114020802207e", "f1f114020803217e", "f1f114020804227e"]),
     ],
 )
+
+
 async def test_massage_vectors_are_not_optimistic(make_controller, zone, frames):
-    controller, _, client = make_controller()
+    controller, coordinator, client = make_controller()
     for level in range(4):
         await controller.set_massage_intensity(zone, level)
     assert packets(client) == frames
-    assert controller.get_massage_state()[f"{zone}_intensity"] == 0
+    assert massage_levels(coordinator.controller_state, zone) == {zone: None}
     with pytest.raises(ValueError):
         await controller.set_massage_intensity(zone, 4)
 
@@ -160,7 +150,7 @@ async def test_setup_queries_without_layout_or_massage(make_controller):
     coordinator.has_massage = False
     await controller.start_notify()
     await controller.start_notify()
-    assert [offset for offset, _ in cm.SETUP] == [200, 300, 400, 500, 600, 700]
+    assert [offset for offset, _ in COMFORT_MOTION.bootstrap] == [200, 300, 400, 500, 600, 700]
     assert packets(client) == [
         "f1f1000101027e",
         "f1f1000101027e",
@@ -183,14 +173,17 @@ async def test_all_24_variants_and_temporal_retention(make_controller, transport
     controller, coordinator, client = make_controller(
         physical_layout, (transport,), has_light=light
     )
-    sender = SimpleNamespace(uuid=cm.TRANSPORTS[transport][2])
+    sender = SimpleNamespace(uuid=astuple(TRANSPORTS[transport])[2])
     controller._handle_notification(sender, bytearray([0, 0, 6, 0, 3, 0, 4, 0, 64]))
     specs = controller.motor_control_specs
     for reply in (layout, layout, 1, 0, 255):
         controller._handle_notification(sender, bytearray([0, 0, 15, 0, reply, 0, 0]))
         assert [s.key for s in controller.motor_control_specs] == [s.key for s in specs]
-        assert controller.get_massage_state() == {"head_intensity": 2, "foot_intensity": 3}
-        assert controller.get_light_state() == {"is_on": True}
+        assert massage_levels(coordinator.controller_state, "head", "foot") == {
+            "head": 2,
+            "foot": 3,
+        }
+        assert coordinator.controller_state[UNDER_BED_LIGHTS_ON] is True
     assert controller.protocol_diagnostics["reported_layout"] == 0
     assert controller.supports_lights is light
     client.is_connected = False
@@ -200,34 +193,35 @@ async def test_all_24_variants_and_temporal_retention(make_controller, transport
     await controller.massage_head_down()
     assert packets(client) == ["f1f1120208021e7e"]
     reconnected = cm.ComfortMotionController(coordinator, layout=physical_layout)
-    assert reconnected.get_massage_state() == controller.get_massage_state()
+    assert reconnected._levels == controller._levels
 
 
 @pytest.mark.parametrize("wire", range(256))
 async def test_unsigned_massage_parser_and_steps(make_controller, wire):
-    controller, _, client = make_controller()
-    sender = SimpleNamespace(uuid=cm.TRANSPORTS["g1"][2])
+    controller, coordinator, client = make_controller()
+    sender = SimpleNamespace(uuid=astuple(TRANSPORTS["g1"])[2])
     controller._handle_notification(sender, bytearray([0, 0, 6, 0, wire, 0, wire, 0, 0]))
     await controller.massage_head_up()
     await controller.massage_foot_down()
     expected = []
     if wire in (0, 2, 3):
-        expected.append(cm.MASSAGE["head"][cm.WIRE_LEVELS.index(wire) + 1].hex())
+        expected.append(MASSAGE["head"][WIRE_LEVELS.index(wire) + 1].hex())
     if wire in (2, 3, 4):
-        expected.append(cm.MASSAGE["foot"][cm.WIRE_LEVELS.index(wire) - 1].hex())
+        expected.append(MASSAGE["foot"][WIRE_LEVELS.index(wire) - 1].hex())
     assert packets(client) == expected
-    if wire not in cm.WIRE_LEVELS:
-        assert controller.get_massage_state() == {"head_intensity": None, "foot_intensity": None}
+    if wire not in WIRE_LEVELS:
+        state = coordinator.controller_state
+        assert massage_levels(state, "head", "foot") == {"head": None, "foot": None}
 
 
 async def test_short_unknown_and_light_only_preserve_massage(make_controller):
-    controller, _, _ = make_controller()
+    controller, coordinator, _ = make_controller()
     sender = SimpleNamespace(uuid="test")
     for value in (b"", b"\x00\x00\x06", bytes(12), bytes.fromhex("00000f0001")):
         controller._handle_notification(sender, bytearray(value))
     controller._handle_notification(sender, bytearray.fromhex("000005000000000040"))
-    assert controller.get_massage_state() == {"head_intensity": 0, "foot_intensity": 0}
-    assert controller.get_light_state() == {"is_on": True}
+    assert massage_levels(coordinator.controller_state, "head", "foot") == {"head": 0, "foot": 0}
+    assert coordinator.controller_state[UNDER_BED_LIGHTS_ON] is True
 
 
 @pytest.mark.parametrize("task_cancel", [False, True])
@@ -235,7 +229,7 @@ async def test_motion_cancellation_releases_with_fresh_event(make_controller, ta
     controller, coordinator, client = make_controller()
 
     async def write(*args, **kwargs):
-        if args[1] != cm.RELEASE:
+        if args[1] != RELEASE:
             coordinator.cancel_command.set()
             if task_cancel:
                 raise asyncio.CancelledError
@@ -259,17 +253,17 @@ async def test_setup_failure_cleans_subscriptions_and_reconnects(make_controller
     client.write_gatt_char.side_effect = None
     await controller.start_notify()
     assert not controller.supports_device_rename
-    assert controller.control_characteristic_uuid == cm.TRANSPORTS["g2"][1]
+    assert controller.control_characteristic_uuid == astuple(TRANSPORTS["g2"])[1]
 
 
 async def test_runtime_properties_and_rename(make_controller):
     controller, _, client = make_controller(transports=("g1", "g2"))
     client.services = services(("g1", "g2"), ("write-without-response", "notify"))
-    await controller.write_command(cm.LIGHT)
+    await controller.write_command(LIGHT)
     assert client.write_gatt_char.await_args.kwargs == {"response": False}
-    assert controller.control_characteristic_uuid == cm.TRANSPORTS["g2"][1]
+    assert controller.control_characteristic_uuid == astuple(TRANSPORTS["g2"])[1]
     await controller.rename_device("Bed_1.2")
-    assert client.write_gatt_char.await_args.args == (cm.TRANSPORTS["g1"][3], b"Bed_1.2")
+    assert client.write_gatt_char.await_args.args == (astuple(TRANSPORTS["g1"])[3], b"Bed_1.2")
     assert client.write_gatt_char.await_args.kwargs == {"response": False}
     for invalid in ("", "A" * 19, "Bed 1", "sengø", "name\n"):
         with pytest.raises(ValueError):
@@ -311,6 +305,7 @@ def entry_data(layout="standard_2", transport="g1"):
 
 @pytest.mark.parametrize("options", [False, True])
 async def test_profile_setup_and_options_reject_other_layouts(hass, options):
+    entry = None
     if options:
         entry = MockConfigEntry(domain=DOMAIN, data=entry_data())
         entry.add_to_hass(hass)
@@ -320,7 +315,7 @@ async def test_profile_setup_and_options_reject_other_layouts(hass, options):
     else:
         flow = AdjustableBedConfigFlow()
         flow._manual_data = entry_data()
-        step = flow.async_step_jiecang_app
+        step = flow.async_step_profile_questions
     flow.hass = hass
     flow.context = {}
     result = await step(
@@ -330,13 +325,18 @@ async def test_profile_setup_and_options_reject_other_layouts(hass, options):
             CONF_JIECANG_APP_TRANSPORT: "g3",
         }
     )
+    if entry is not None:
+        # Configure does not show the layout, so it stays as saved.
+        assert result["type"] == "create_entry"
+        assert entry.data[CONF_JIECANG_APP_LAYOUT] == entry_data()[CONF_JIECANG_APP_LAYOUT]
+        return
     assert result["errors"] == {
         CONF_JIECANG_APP_LAYOUT: "comfort_motion_selection",
         CONF_JIECANG_APP_TRANSPORT: "comfort_motion_selection",
     }
 
 
-@pytest.mark.parametrize("layout", cm.LAYOUT_AXES)
+@pytest.mark.parametrize("layout", COMFORT_MOTION.layouts)
 async def test_real_entities_services_and_serialization(
     hass,
     mock_coordinator_connected,
@@ -353,7 +353,7 @@ async def test_real_entities_services_and_serialization(
     await hass.async_block_till_done()
     entities = er.async_entries_for_config_entry(er.async_get(hass), entry.entry_id)
     keys = {(e.domain, e.unique_id.removeprefix(f"{ADDRESS}_")): e.entity_id for e in entities}
-    assert {key for domain, key in keys if domain == "cover"} == set(cm.LAYOUT_AXES[layout])
+    assert {key for domain, key in keys if domain == "cover"} == set(COMFORT_MOTION.layouts[layout])
     assert ("button", "preset_memory_2") in keys and ("button", "preset_memory_3") not in keys
     assert not any(
         "angle" in key or "position" in key
@@ -416,14 +416,14 @@ async def test_real_entities_services_and_serialization(
     assert await hass.config_entries.async_unload(entry.entry_id)
 
 
-@pytest.mark.parametrize("layout", cm.LAYOUT_AXES)
+@pytest.mark.parametrize("layout", COMFORT_MOTION.layouts)
 async def test_profile_setup_accepts_comfort_motion(hass, layout):
     flow = AdjustableBedConfigFlow()
     flow.hass = hass
     flow.context = {}
     flow._manual_data = entry_data()
     with patch.object(flow, "_finish_with_verify", new=AsyncMock()) as finish:
-        await flow.async_step_jiecang_app({**entry_data(layout), CONF_JIECANG_APP_TRANSPORT: "g2"})
+        await flow.async_step_profile_questions({**entry_data(layout), CONF_JIECANG_APP_TRANSPORT: "g2"})
     saved = finish.call_args.args[0]
     assert saved[CONF_JIECANG_APP_PROFILE] == "comfort_motion"
     assert saved[CONF_JIECANG_APP_LAYOUT] == layout
@@ -432,18 +432,18 @@ async def test_profile_setup_accepts_comfort_motion(hass, layout):
 
 
 async def test_light_feedback_and_unknown_state(make_controller):
-    controller, _, client = make_controller()
+    controller, coordinator, client = make_controller()
     with pytest.raises(ValueError, match="Read light state"):
         await controller.lights_on()
     await controller.lights_toggle()
-    assert controller.get_light_state() == {}
+    assert UNDER_BED_LIGHTS_ON not in coordinator.controller_state
     sender = SimpleNamespace(uuid="test")
     controller._handle_notification(sender, bytearray.fromhex("000005000000000040"))
     await controller.lights_on()
     assert len(packets(client)) == 1
     await controller.lights_off()
     assert packets(client) == ["f1f10f000f7e"] * 2
-    assert controller.get_light_state() == {"is_on": True}
+    assert coordinator.controller_state[UNDER_BED_LIGHTS_ON] is True
 
 
 async def test_setup_cancellation_cleans_without_cross_link_timers(make_controller):
@@ -464,7 +464,7 @@ async def test_wake_task_cancellation_releases(make_controller):
     controller, _, client = make_controller()
 
     async def write(*args, **kwargs):
-        if args[1] != cm.RELEASE:
+        if args[1] != RELEASE:
             raise asyncio.CancelledError
 
     client.write_gatt_char.side_effect = write

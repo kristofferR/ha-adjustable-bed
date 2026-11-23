@@ -10,25 +10,17 @@ import os
 import struct
 import warnings
 from collections.abc import AsyncGenerator, Callable, Generator
-from pathlib import Path
+from types import MethodType
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import psutil
 import pytest
 from homeassistant.const import CONF_ADDRESS, CONF_NAME
 from homeassistant.core import HomeAssistant
-from pytest_homeassistant_custom_component.common import MockConfigEntry
+from pytest_homeassistant.common import MockConfigEntry
 
-# Enable custom component loading
-pytest_plugins = "pytest_homeassistant_custom_component"
-
-# Re-export enable_custom_integrations fixture so it's available in tests
-from pytest_homeassistant_custom_component.plugins import (  # noqa: E402
-    enable_custom_integrations,  # noqa: F401
-)
-
-from custom_components.adjustable_bed.beds.jensen import JensenCommands  # noqa: E402
-from custom_components.adjustable_bed.const import (  # noqa: E402
+from custom_components.adjustable_bed.codec import jmc
+from custom_components.adjustable_bed.const import (
     BED_TYPE_LINAK,
     BEDTECH_SERVICE_UUID,
     CONF_BED_TYPE,
@@ -59,6 +51,7 @@ from custom_components.adjustable_bed.const import (  # noqa: E402
     SVANE_HEAD_SERVICE_UUID,
     VIBRADORM_SERVICE_UUID,
 )
+from tests.pair_mode import CONF_PAIR_CONNECTION_MODE
 
 # Test constants
 TEST_ADDRESS = "AA:BB:CC:DD:EE:FF"
@@ -80,26 +73,40 @@ def make_controller_mock(**overrides: object) -> MagicMock:
 
     Pass keyword overrides for the capabilities a given test actually cares about.
     """
+    from custom_components.adjustable_bed.bed_traits import BedTraits
     from custom_components.adjustable_bed.beds.base import BedController
     from custom_components.adjustable_bed.position_seek import PositionSeekPolicy
 
     controller = MagicMock(
-        prepare_for_position_read=AsyncMock(), prepare_for_movement=AsyncMock()
+        prepare_for_position_read=AsyncMock(),
+        prepare_for_movement=AsyncMock(),
+        static_traits=BedTraits(),
     )
     for name, member in vars(BedController).items():
         if not isinstance(member, property) or member.fget is None:
             continue
         try:
             default = member.fget(controller)
-        except Exception:  # noqa: BLE001 - property needs real state; leave it a Mock
+        except Exception:
             continue
-        # The default seek policy delegates to the mock's seeded tuning
-        # attributes lazily, so per-test overrides still flow through it.
+        # The default seek policy is seeded as one instance, so a test can tune
+        # it in place or replace it.
         if isinstance(
             default,
             bool | int | float | str | tuple | list | dict | None | PositionSeekPolicy,
         ):
             setattr(controller, name, default)
+    # Connection lifecycle hooks keep the base behavior (start notifications).
+    for name in (
+        "async_discover_capabilities",
+        "async_on_connect",
+        "async_after_connect",
+        "async_read_device_info",
+        "async_refresh_auth",
+        "async_resume_session",
+        "stop_keepalive",
+    ):
+        setattr(controller, name, MethodType(getattr(BedController, name), controller))
     for name, value in overrides.items():
         setattr(controller, name, value)
     return controller
@@ -112,9 +119,9 @@ def controller_mock() -> Callable[..., MagicMock]:
 
 
 @pytest.fixture
-def hass_config_dir(tmp_path: Path) -> str:
-    """Keep HA files private to each test without copying the plugin's template."""
-    return str(tmp_path)
+def hass_config_dir(hass_tmp_config_dir: str) -> str:
+    """Keep HA files private to each test."""
+    return hass_tmp_config_dir
 
 
 _WORKER_MEMORY_BYTES = 512 * 1024 * 1024
@@ -153,8 +160,48 @@ def _shorten_unanswered_probe_timeouts(monkeypatch: pytest.MonkeyPatch) -> None:
 
     Tests that deliver replies, or need a specific deadline, patch these again.
     """
-    monkeypatch.setattr("custom_components.adjustable_bed.beds.octo.OCTO_FEATURE_TIMEOUT", 0.01)
-    monkeypatch.setattr("custom_components.adjustable_bed.beds.rmcontrol._CAPABILITY_TIMEOUT", 0.01)
+    monkeypatch.setattr("custom_components.adjustable_bed.beds.octo.controller.OCTO_FEATURE_TIMEOUT", 0.01)
+    monkeypatch.setattr("custom_components.adjustable_bed.beds.octo.controller.OCTO_SESSION_RESPONSE_TIMEOUT", 0.01)
+    monkeypatch.setattr("custom_components.adjustable_bed.beds.rmcontrol.controller._CAPABILITY_TIMEOUT", 0.01)
+
+
+@pytest.fixture
+def instant_vmat_settle(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Skip the VMAT settle wait; mocked beds need none before notifications."""
+    monkeypatch.setattr("custom_components.adjustable_bed.beds.vibradorm.vmat_setup.VMAT_SETTLE_S", 0)
+
+
+@pytest.fixture(autouse=True)
+def _pair_starting_mode_from_test_data(
+    request: pytest.FixtureRequest, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Let a test start a pair in an explicit connection mode.
+
+    A pair always starts automatic and switches to sequential only when the
+    adapter runs out of connection slots. Tests that exercise the sequential
+    topology through a full setup put ``pair_connection_mode`` in the entry's
+    data; the integration itself never reads that key, and schema 5.6 drops it
+    everywhere except here.
+    """
+    import custom_components.adjustable_bed as integration
+    from custom_components.adjustable_bed.paired_coordinator import PairedBedCoordinator
+
+    if request.module.__name__.rsplit(".", 1)[-1] != "test_entry_migration":
+        monkeypatch.setattr(
+            integration,
+            "V5_6_REMOVED_KEYS",
+            integration.V5_6_REMOVED_KEYS - {CONF_PAIR_CONNECTION_MODE},
+        )
+
+    original_init = PairedBedCoordinator.__init__
+
+    def _init(self, hass, entry, children, *, connection_mode=None):
+        stored = {**entry.data, **getattr(entry, "options", {})}.get(
+            CONF_PAIR_CONNECTION_MODE
+        )
+        original_init(self, hass, entry, children, connection_mode=connection_mode or stored)
+
+    monkeypatch.setattr(PairedBedCoordinator, "__init__", _init)
 
 
 @pytest.fixture(autouse=True)
@@ -167,7 +214,7 @@ async def _shutdown_coordinators(
     """Shut down every coordinator created during a test.
 
     Cancels idle-disconnect/reconnect timers armed by connects so the
-    lingering-timer check in pytest-homeassistant-custom-component passes
+    lingering-timer check in pytest-homeassistant passes
     without each test having to disconnect manually. Depending on
     verify_cleanup orders this teardown before the lingering-timer check;
     hass_storage keeps persistence mocked until coordinator shutdown finishes.
@@ -374,8 +421,8 @@ def mock_bleak_client() -> MagicMock:
             response_payload = bytes(
                 (
                     1,
-                    int(sleep_number_mcr_state["left_sleep_number"]),
                     int(sleep_number_mcr_state["right_sleep_number"]),
+                    int(sleep_number_mcr_state["left_sleep_number"]),
                     0,
                     0,
                 )
@@ -423,6 +470,7 @@ def mock_bleak_client() -> MagicMock:
     client.mtu_size = 23
     client.services = MagicMock()
     default_characteristic = client.services.get_characteristic.return_value
+    default_characteristic.properties = ["read", "write", "write-without-response", "notify"]
     mcr_characteristic = MagicMock()
     mcr_characteristic.properties = ["write", "write-without-response"]
     client.services.get_characteristic.side_effect = lambda uuid: (
@@ -474,9 +522,8 @@ def mock_bleak_client() -> MagicMock:
             callback(SLEEP_NUMBER_MCR_TX_CHAR_UUID, bytearray(response_frame))
             return
 
-        if (
-            str(char_uuid).lower() == JENSEN_CHAR_UUID.lower()
-            and data == JensenCommands.READ_POSITION
+        if str(char_uuid).lower() == JENSEN_CHAR_UUID.lower() and data == jmc.command(
+            jmc.POSITION_QUERY
         ):
             callback = notify_callbacks.get(char_uuid)
             if callback is not None:
@@ -497,6 +544,31 @@ def mock_bleak_client() -> MagicMock:
             response_text = (
                 "PASS:dual yes yes yes yes heat_cool yes yes yes yes yes yes yes yes yes yes"
             )
+        elif decoded_payload == "SPRG":
+            response_text = f"PASS:{sleep_number_state.get('privacy', 'active')}"
+        elif decoded_payload.startswith("SPRS "):
+            sleep_number_state["privacy"] = decoded_payload.split(" ")[1]
+            response_text = "PASS:ACK"
+        elif decoded_payload.startswith("LRAG "):
+            side_state = sleep_number_state[decoded_payload.split(" ")[1]]
+            assert isinstance(side_state, dict)
+            response_text = f"PASS:{side_state.get('responsive_air', '0')}"
+        elif decoded_payload.startswith("LRAS "):
+            _, side, enabled = decoded_payload.split(" ")
+            side_state = sleep_number_state[side]
+            assert isinstance(side_state, dict)
+            side_state["responsive_air"] = enabled
+            response_text = "PASS:ACK"
+        elif decoded_payload == "UBAG":
+            response_text = (
+                f"PASS:{sleep_number_state.get('automatic_light', 'false')} "
+                f"{sleep_number_state.get('automatic_light_level', 'low')}"
+            )
+        elif decoded_payload.startswith("UBAS "):
+            _, enabled, level = decoded_payload.split(" ")
+            sleep_number_state["automatic_light"] = enabled
+            sleep_number_state["automatic_light_level"] = level
+            response_text = "PASS:ACK"
         elif decoded_payload.startswith("SNCG "):
             side = decoded_payload.split(" ")[1]
             side_state = sleep_number_state[side]
@@ -801,7 +873,7 @@ def mock_bluetooth_service_info_okimat() -> MagicMock:
 def mock_establish_connection(mock_bleak_client: MagicMock) -> Generator[AsyncMock]:
     """Mock bleak_retry_connector.establish_connection."""
     with patch(
-        "custom_components.adjustable_bed.coordinator.establish_connection",
+        "custom_components.adjustable_bed.coordinator_connection.establish_connection",
         new_callable=AsyncMock,
     ) as mock:
         async def _establish(*_args, **_kwargs):
@@ -826,9 +898,13 @@ def mock_async_ble_device_from_address() -> Generator[MagicMock]:
         yield mock
 
 
-@pytest.fixture
-def mock_bluetooth_adapters() -> Generator[None]:
-    """Mock bluetooth adapter functions."""
+@pytest.fixture(autouse=True)
+def mock_bluetooth_api() -> Generator[None]:
+    """Keep HA's Bluetooth stack from starting and stub the API the integration reads.
+
+    The plugin's own autouse ``mock_bluetooth_adapters`` only fakes the host
+    adapters for a real stack. Tests that need other answers patch these again.
+    """
     patches = [
         patch("homeassistant.components.bluetooth.async_register_callback"),
         patch(
@@ -844,8 +920,8 @@ def mock_bluetooth_adapters() -> Generator[None]:
             return_value=None,
         ),
         patch(
-            "custom_components.adjustable_bed.coordinator.bluetooth.async_register_connection_params",
-            create=True,  # Allow patching even if attribute doesn't exist
+            "homeassistant.components.bluetooth.async_register_advertisement_callback",
+            return_value=lambda: None,
         ),
         patch(
             "homeassistant.components.bluetooth.async_setup",
@@ -855,6 +931,10 @@ def mock_bluetooth_adapters() -> Generator[None]:
             "homeassistant.components.bluetooth_adapters.async_setup",
             new=AsyncMock(return_value=True),
         ),
+        # Bluetooth depends on usb, whose real setup starts a USB watcher and
+        # registers a process-wide serial URI scheme: a setup cut short by a
+        # test's shutdown would leak both into every later test on the worker.
+        patch("homeassistant.components.usb.async_setup", new=AsyncMock(return_value=True)),
     ]
 
     for p in patches:
@@ -870,7 +950,7 @@ def mock_bluetooth_adapters() -> Generator[None]:
 def mock_coordinator_connected(
     mock_establish_connection: AsyncMock,
     mock_async_ble_device_from_address: MagicMock,
-    mock_bluetooth_adapters: None,
+    mock_bluetooth_api: None,
 ) -> None:
     """Provide all mocks needed for a connected coordinator.
 
@@ -879,7 +959,7 @@ def mock_coordinator_connected(
     aren't accessed directly in this function body.
     """
     # Fixtures are activated via dependency injection - no explicit usage needed
-    del mock_establish_connection, mock_async_ble_device_from_address, mock_bluetooth_adapters
+    del mock_establish_connection, mock_async_ble_device_from_address, mock_bluetooth_api
     return None
 
 
@@ -890,7 +970,7 @@ def mock_octo_ready_transport(
 ) -> None:
     """Provide an authoritative, already-ready Standard Octo transport session."""
     del mock_coordinator_connected
-    from custom_components.adjustable_bed.beds.octo import OctoController
+    from custom_components.adjustable_bed.beds.octo.controller import OctoController
 
     async def discover(controller: OctoController) -> bool:
         controller._session_ready = True

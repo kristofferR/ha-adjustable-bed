@@ -9,24 +9,22 @@ import pytest
 from bleak.exc import BleakError
 from homeassistant.const import CONF_ADDRESS, CONF_NAME
 from homeassistant.core import HomeAssistant
-from pytest_homeassistant_custom_component.common import MockConfigEntry
+from pytest_homeassistant.common import MockConfigEntry
 
-from custom_components.adjustable_bed.beds.okin_7byte import _cmd
-from custom_components.adjustable_bed.beds.okin_cb35 import (
-    OKIN_CB35_CONFIG,
-    OkinCB35Controller,
-)
+from custom_components.adjustable_bed.beds.okin_cb35 import OkinCB35Controller
+from custom_components.adjustable_bed.codec.okin_5a import command as _cmd
 from custom_components.adjustable_bed.const import (
     BED_TYPE_OKIN_CB35,
     CONF_BED_TYPE,
+    CONF_CONNECTION_MODE,
     CONF_DISABLE_ANGLE_SENSING,
-    CONF_DISCONNECT_AFTER_COMMAND,
     CONF_HAS_MASSAGE,
     CONF_MOTOR_COUNT,
     CONF_PREFERRED_ADAPTER,
     DOMAIN,
 )
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
+from custom_components.adjustable_bed.profiles.okin_5a import OKIN_CB35
 
 
 @pytest.fixture
@@ -82,7 +80,7 @@ class TestOkinCB35Controller:
 
         write_mock.assert_awaited_once()
         assert write_mock.await_args.kwargs["cancel_event"] is coordinator.cancel_command
-        assert write_mock.await_args.kwargs["response"] is OKIN_CB35_CONFIG.write_with_response
+        assert write_mock.await_args.kwargs["response"] is OKIN_CB35.write_with_response
 
     async def test_cancelled_movement_sends_stop_with_fresh_event(
         self,
@@ -265,7 +263,7 @@ class TestOkinCB35Controller:
         controller._preset_started_at = previous
 
         async def cancel_on_wake(uuid: str, command: bytes, **kwargs: object) -> None:
-            if command == OKIN_CB35_CONFIG.init_commands[0]:
+            if command == OKIN_CB35.wake[0]:
                 coordinator.cancel_command.set()
 
         mock_cb35_client.write_gatt_char.side_effect = cancel_on_wake
@@ -276,7 +274,7 @@ class TestOkinCB35Controller:
                 await controller.move_feet_up()
 
         payloads = [call.args[1] for call in mock_cb35_client.write_gatt_char.await_args_list]
-        assert payloads == list(OKIN_CB35_CONFIG.init_commands) + [_cmd(0x0F)] * 3
+        assert payloads == list(OKIN_CB35.wake) + [_cmd(0x0F)] * 3
         assert controller._preset_started_at == previous
 
         mock_cb35_client.write_gatt_char.reset_mock()
@@ -406,7 +404,7 @@ async def test_stop_after_preset_disconnect_keeps_bounded_interrupt_window(
     """Default v4 disconnects must not forget a still-driving autonomous preset."""
     hass.config_entries.async_update_entry(
         mock_okin_cb35_config_entry,
-        data={**mock_okin_cb35_config_entry.data, CONF_DISCONNECT_AFTER_COMMAND: True},
+        data={**mock_okin_cb35_config_entry.data, CONF_CONNECTION_MODE: "release"},
     )
     coordinator = AdjustableBedCoordinator(hass, mock_okin_cb35_config_entry)
     controllers: list[OkinCB35Controller] = []

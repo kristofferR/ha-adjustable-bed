@@ -8,9 +8,9 @@ from homeassistant.components.cover import CoverEntityFeature
 from homeassistant.const import CONF_ADDRESS, CONF_NAME
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import entity_registry as er
-from pytest_homeassistant_custom_component.common import MockConfigEntry
+from pytest_homeassistant.common import MockConfigEntry
 
-from custom_components.adjustable_bed.beds.jiecang_app import JiecangAppController
+from custom_components.adjustable_bed.beds.jiecang.app import JiecangAppController
 from custom_components.adjustable_bed.const import (
     BED_TYPE_JIECANG,
     BED_TYPE_JIECANG_APP,
@@ -289,7 +289,6 @@ async def test_split_series_right_massage_slider_dispatches_and_reads_its_own_zo
     assert float(hass.states.get(right_id).state) == 2
     assert float(hass.states.get(head_id).state) == 0
     assert float(hass.states.get(foot_id).state) == 0
-    assert coordinator.controller.get_massage_state()["right_intensity"] == 2
 
 
 @pytest.mark.parametrize(
@@ -486,15 +485,15 @@ async def test_dreamhd_alarm_wake_and_rename_services(
     app_ble.write_gatt_char.reset_mock()
     await hass.services.async_call(
         DOMAIN,
-        "jiecang_set_alarm",
+        "set_alarm",
         {
             "device_id": device_id,
             "enabled": True,
             "time": "07:00:00",
             "weekdays": [],
-            "preset": "zero_g",
-            "head_level": 0,
-            "foot_level": 0,
+            "wake_action": "zero_g",
+            "head_massage_level": 0,
+            "foot_massage_level": 0,
         },
         blocking=True,
     )
@@ -549,7 +548,7 @@ async def test_dreamhd_alarm_wake_and_rename_services(
 async def test_dreamhd_all_25_configurations_gate_entities(
     hass, mock_coordinator_connected, app_ble, enable_custom_integrations, layout, massage, light
 ):
-    from custom_components.adjustable_bed.jiecang_app_protocol import layout_axes
+    from custom_components.adjustable_bed.profiles.jiecang import APP_LAYOUT_AXES
 
     entry = _entry(hass, layout, "dreamhd")
     hass.config_entries.async_update_entry(
@@ -563,7 +562,7 @@ async def test_dreamhd_all_25_configurations_gate_entities(
         entity.unique_id.removeprefix(f"{ADDRESS}_")
         for entity in entries
         if entity.domain == "cover"
-    } == set(layout_axes(layout))
+    } == set(APP_LAYOUT_AXES[layout])
     assert ("massage_head_intensity" in keys) == massage
     assert ("massage_foot_intensity" in keys) == massage
     assert ("massage_right_intensity" in keys) == (

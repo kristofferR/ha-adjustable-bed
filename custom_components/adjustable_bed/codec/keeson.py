@@ -1,0 +1,542 @@
+"""Keeson E5/E6 wire codec (K1).
+
+Every command carries one 32-bit Keeson key word, a bit mask of held keys and
+actions. The zero word releases every key. The K1 frame is
+``header FE 16 word [side] checksum``: header ``E5`` or ``E6``, the word in
+little- or big-endian order, an optional side byte that makes the frame nine
+bytes, and the complement of the byte sum.
+
+Some ``keeson`` routes carry the same key word in other frames, listed as
+carriers below. The ``p2`` frames are the Okin N-frame layout; they live here
+until that family's codec exists (#759). Which carrier, header, byte order and
+words an app uses belongs to its profile (``profiles/keeson.py``).
+
+The checked setup frames (``E5 FE 17`` pulse targets, ``E7 80`` clock,
+``E1 80`` alarm dismissal, ``E2 80`` alarm query, ``ED 80`` alarm record,
+``EF 02`` rename) end with the same checksum, as do the ``E2``/``EA``/``EB FE 16``
+clock and alarm frames whose fields the BF, Cherish, Comfort Enhancements and
+AdjustaMattress P2 controllers fill in.
+
+Ergomotion 4.0 (com.sfd.hump 3.7) adds its ``07 D0`` custom massage frames and
+its ``09 0A`` and ``0A 02`` RGB frames, which carry no checksum.
+"""
+
+from __future__ import annotations
+
+import json
+from collections.abc import Mapping, Sequence
+from dataclasses import dataclass
+from datetime import datetime
+from typing import Final, Literal, cast
+
+from ..const import (
+    KEESON_BASE_NOTIFY_CHAR_UUID,
+    KEESON_BASE_SERVICE_UUID,
+    KEESON_BASE_WRITE_CHAR_UUID,
+    KEESON_FALLBACK_GATT_PAIRS,
+    KEESON_JSON_NOTIFY_CHAR_UUID,
+    KEESON_JSON_SERVICE_UUID,
+    KEESON_JSON_WRITE_CHAR_UUID,
+    KEESON_KSBT_CHAR_UUID,
+    KEESON_KSBT_FALLBACK_GATT_PAIRS,
+    KEESON_KSBT_SERVICE_UUID,
+    NORDIC_UART_READ_CHAR_UUID,
+)
+
+TransportKey = Literal["base", "ksbt", "json"]
+ByteOrder = Literal["little", "big"]
+Carrier = Literal["k1", "p2", "p2_side", "p2_padded", "p2_checked", "json"]
+Side = Literal["left", "right"]
+
+
+@dataclass(frozen=True)
+class Transport:
+    """GATT roles. ``fallbacks`` are (service, write) pairs tried when the primary is absent."""
+
+    service_uuid: str
+    write_uuid: str
+    notify_uuid: str
+    fallbacks: tuple[tuple[str, str], ...] = ()
+
+
+TRANSPORTS: Final[dict[TransportKey, Transport]] = {
+    "base": Transport(
+        KEESON_BASE_SERVICE_UUID,
+        KEESON_BASE_WRITE_CHAR_UUID,
+        KEESON_BASE_NOTIFY_CHAR_UUID,
+        tuple(KEESON_FALLBACK_GATT_PAIRS),
+    ),
+    "ksbt": Transport(
+        KEESON_KSBT_SERVICE_UUID,
+        KEESON_KSBT_CHAR_UUID,
+        NORDIC_UART_READ_CHAR_UUID,
+        tuple(KEESON_KSBT_FALLBACK_GATT_PAIRS),
+    ),
+    "json": Transport(
+        KEESON_JSON_SERVICE_UUID, KEESON_JSON_WRITE_CHAR_UUID, KEESON_JSON_NOTIFY_CHAR_UUID
+    ),
+}
+
+RELEASE: Final = 0
+# Motor key bits; every app reads them the same way.
+HEAD_UP: Final = 0x01
+HEAD_DOWN: Final = 0x02
+FOOT_UP: Final = 0x04
+FOOT_DOWN: Final = 0x08
+TILT_UP: Final = 0x10
+TILT_DOWN: Final = 0x20
+LUMBAR_UP: Final = 0x40
+LUMBAR_DOWN: Final = 0x80
+
+
+def checksum(body: bytes) -> int:
+    """Complement of the byte sum, shared by every checked Keeson frame."""
+    return ~sum(body) & 0xFF
+
+
+def checked(body: bytes) -> bytes:
+    """Append the checksum to a frame body."""
+    return body + bytes((checksum(body),))
+
+
+def _word(word: int) -> int:
+    if not 0 <= word <= 0xFFFFFFFF:
+        raise ValueError(f"Key word must be 32-bit, got {word:#x}")
+    return word
+
+
+def frame(
+    word: int, *, header: int = 0xE5, order: ByteOrder = "little", side: int | None = None
+) -> bytes:
+    """Encode one K1 frame."""
+    if header not in (0xE5, 0xE6):
+        raise ValueError(f"K1 header must be E5 or E6, got {header:#x}")
+    body = bytes((header, 0xFE, 0x16)) + _word(word).to_bytes(4, order)
+    if side is not None:
+        body += bytes((side,))
+    return checked(body)
+
+
+# Side selectors of a split receiver that serves both halves on one address
+# (com.sfd.hump 3.7 P1). The eight-byte E5 frame drives both halves.
+SIDE_SELECTORS: Final[Mapping[Side, int]] = {"left": 0x02, "right": 0x01}
+
+
+def side_frame(word: int, side: Side) -> bytes:
+    """Encode the nine-byte little-endian E6 frame that drives one half."""
+    return frame(word, header=0xE6, side=SIDE_SELECTORS[side])
+
+
+def p2(word: int, carrier: Carrier = "p2") -> bytes:
+    """Encode a big-endian ``04 02`` or ``05 02`` frame.
+
+    ``p2`` is ``04 02 word``; ``p2_side`` is ``05 02 word 00``; ``p2_padded``
+    is ``04 02 word 00``; ``p2_checked`` is ``04 02 word checksum``.
+    """
+    body = bytes((0x05 if carrier == "p2_side" else 0x04, 0x02)) + _word(word).to_bytes(4, "big")
+    if carrier in ("p2_side", "p2_padded"):
+        return body + b"\x00"
+    if carrier == "p2_checked":
+        return checked(body)
+    if carrier != "p2":
+        raise ValueError(f"{carrier} is not a P2 carrier")
+    return body
+
+
+def json_command(word: int, device_id: str, *, ctrm: int, km: int, keykt: int) -> bytes:
+    """Encode one JSON/A00A command for the Juna and Linx remotes."""
+    payload = {
+        "code": 2,
+        "dvid": device_id,
+        "cmd": {"key": f"{_word(word):08x}", "ctrm": ctrm, "km": km, "keykt": keykt},
+    }
+    return json.dumps(payload, separators=(",", ":")).encode()
+
+
+def json_packet(code: int, command: Mapping[str, int | str], device_id: str | None) -> bytes:
+    """Encode Dawn House's typed JSON envelope, retaining declared zero fields.
+
+    Member order follows its frozen canonical vectors. Those vectors reconstruct
+    Gson/JSONObject values, rather than recording Android reflection order.
+    Existing Juna/Linx serialization above remains byte-for-byte unchanged.
+    """
+    payload: dict[str, object] = {"cmd": dict(command), "code": code}
+    if device_id is not None:
+        payload["dvid"] = device_id
+    return json.dumps(payload, separators=(",", ":"), sort_keys=True, ensure_ascii=False).encode("utf-8")
+
+
+def parse_json_indication(data: bytes) -> Mapping[str, object] | None:
+    """Dawn House treats each indication as a complete UTF-8 JSON document.
+
+    A truncated document is refused independently; it cannot poison the next
+    indication. There is no source-proven reassembly or identity/ACK filter.
+    """
+    try:
+        decoded: object = json.loads(data.decode("utf-8"))
+    except (UnicodeDecodeError, ValueError):
+        return None
+    if not isinstance(decoded, dict):
+        return None
+    return cast("Mapping[str, object]", decoded)
+
+
+# Two-byte status request of the direct P2 remotes; not a STOP.
+STATUS_QUERY: Final = b"\x00\xb0"
+# Somos Ultra Split Head (E); a query, never a movement release.
+SOMOS_SPLIT_STATUS_QUERY: Final = b"\x01\xb0\x00"
+
+
+def custom_massage(program: int) -> bytes:
+    """Encode Ergomotion 4.0's nine-byte ``07 D0`` custom massage frame.
+
+    Programs 999 and 1 to 8 are the app's; any other value sends its all-zero fallback.
+    """
+    if program == 999:
+        return bytes.fromhex("07d004040000100000")
+    if program == 1:
+        return bytes.fromhex("07d002060000090001")
+    if 2 <= program <= 4:
+        return bytes((7, 208, 2, 4, 0, 0, 9, 0, program))
+    if 5 <= program <= 8:
+        return bytes((7, 208, 4, 6, 0, 0, 9, 0, program))
+    return bytes.fromhex("07d000000000000000")
+
+
+def rgb(color: tuple[int, int, int], *, inverted: bool = False) -> bytes:
+    """Encode Ergomotion 4.0's RGB frame: ``09 0A``, or ``0A 02`` with inverted channels."""
+    if inverted:
+        return (
+            b"\x0a\x02\x00\x00\x00\x00\x01\x01\xbb" + bytes((255 - c) & 255 for c in color) + b"\0"
+        )
+    return b"\x09\x0a\x00\x02\x00\x00\x01" + bytes(c & 255 for c in color) + b"\0"
+
+
+def rename(raw_name: bytes) -> bytes:
+    """Encode the 18-byte ``EF 02`` rename frame: name zero-filled to 15 bytes, checksum last.
+
+    Each app limits the name itself; the frame holds at most 15 bytes.
+    """
+    if len(raw_name) > 15:
+        raise ValueError("This name is too long. Use a shorter name")
+    return checked(b"\xef\x02" + raw_name.ljust(15, b"\x00"))
+
+
+def position_target(head: int, foot: int) -> bytes:
+    """Encode the ``E5 FE 17`` pulse-target frame: two little-endian 16-bit pulse counts."""
+    return checked(
+        b"\xe5\xfe\x17"
+        + (head & 0xFFFF).to_bytes(2, "little")
+        + (foot & 0xFFFF).to_bytes(2, "little")
+    )
+
+
+def clock_fields(fields: Sequence[int]) -> bytes:
+    """Encode the ``E7 80 01`` clock frame from six date and time bytes.
+
+    Apps differ in how they derive the bytes (month and day bases, hour offset).
+    """
+    if len(fields) != 6:
+        raise ValueError("The clock frame carries six date and time bytes")
+    return checked(bytes((0xE7, 0x80, 0x01, *fields)))
+
+
+def clock(now: datetime) -> bytes:
+    """Clock frame with year minus 1900, zero-based month, then day and time as they are."""
+    year = (now.year - 1900) & 0xFF
+    return clock_fields((year, now.month - 1, now.day, now.hour, now.minute, now.second))
+
+
+# Dismisses a ringing wake alarm.
+ALARM_DISMISS: Final = checked(b"\xe1\x80\x04")
+# Asks for the stored alarm records (Glideaway Motion, AdjustaMattress P1).
+ALARM_QUERY: Final = checked(b"\xe2\x80\x03\x00")
+ALARM_WEEKLY: Final = 0x03
+ALARM_ONE_TIME: Final = 0x02
+
+
+def alarm_table(table: int, records: bytes) -> bytes:
+    """Encode an ``ED 80 table`` frame: up to three four-byte records, zero-padded.
+
+    Each app chooses what its four record bytes mean.
+    """
+    if len(records) > 12 or len(records) % 4:
+        raise ValueError("An alarm table carries up to three four-byte records")
+    return checked(bytes((0xED, 0x80, table)) + records.ljust(12, b"\x00"))
+
+
+@dataclass(frozen=True)
+class PositionStatus:
+    """An ``ED``/``F0``/``F1`` status notification; positions are percentages."""
+
+    head_position: int
+    foot_position: int
+    head_massage: int
+    foot_massage: int
+    head_moving: bool
+    foot_moving: bool
+    led_on: bool
+    timer_minutes: int | None
+
+
+_STATUS_LENGTHS: Final = {0xED: 16, 0xF0: 19, 0xF1: 20}
+
+
+# Ergomotion position encoding (based on the AlexxIT/Ergomotion implementation):
+# 16-bit little-endian values, 0xFFFF means inactive.
+def parse_position_status(data: bytes) -> PositionStatus | None:
+    """Parse a status notification; ``FFFF`` positions read as zero."""
+    length = _STATUS_LENGTHS.get(data[0]) if data else None
+    if length is None or len(data) < length:
+        return None
+    head = int.from_bytes(data[1:3], "little")
+    foot = int.from_bytes(data[3:5], "little")
+    moving = data[13] & 0xF
+    timer = data[14]
+    return PositionStatus(
+        head_position=0 if head == 0xFFFF else head,
+        foot_position=0 if foot == 0xFFFF else foot,
+        head_massage=data[5],
+        foot_massage=data[6],
+        head_moving=moving != 0xF and bool(moving & 1),
+        foot_moving=moving != 0xF and bool(moving & 2),
+        led_on=bool(data[13] & 0x40),
+        timer_minutes=10 * timer if 1 <= timer <= 3 else None,
+    )
+
+
+class ComfortBaseAssembler:
+    """ComfortBaseForBluetooth's prefixed notification pair, bounded and consumed once per reply.
+
+    The app retains its prefix forever and accepts empty tails. Consuming it
+    avoids replaying stale timer state; reconnects create a fresh assembler.
+    """
+
+    def __init__(self) -> None:
+        self._prefix: bytes | None = None
+
+    def feed(self, data: bytes) -> bytes | None:
+        if not data:
+            return None
+        if len(data) > 20:
+            self._prefix = None
+            return data
+        if len(data) > 6:
+            if data[:3] == b"\xf4\xfe\x16":
+                self._prefix = data
+                return None
+            if len(data) in (10, 16):
+                self._prefix = None
+                return data
+        prefix, self._prefix = self._prefix, None
+        if prefix is not None and len(prefix) + len(data) <= 23:
+            return prefix + data
+        return None
+
+
+def comfortbase_timer(data: bytes) -> int:
+    """ComfortBaseForBluetooth's displayed timer category, without header or checksum validation."""
+    offset = {23: 19, 16: 14, 10: 8}.get(len(data))
+    nibble = data[offset] & 15 if offset is not None else 0
+    return {1: 10, 2: 20, 3: 30}.get(nibble, 0)
+
+
+@dataclass(frozen=True, slots=True)
+class JalonStatus:
+    """OkinComfortBed Ⅱ's timer bucket and arithmetic signed-shift UBB field."""
+
+    timer_minutes: int
+    light_value: int
+
+
+def parse_jalon_status(data: bytes) -> JalonStatus:
+    """Decode the frozen parser's offsets; assembly/admission belongs to the session.
+
+    The app displays light-on only for a positive result. In particular 80-BF
+    yields -2 and C0-FF yields -1, rather than an unsigned light bit.
+    """
+    offsets = {10: (8, 7), 16: (14, 13), 23: (19, 18)}
+    if len(data) not in offsets:
+        return JalonStatus(0, 0)
+    timer_index, light_index = offsets[len(data)]
+    timer = {1: 10, 2: 20, 3: 30}.get(data[timer_index] & 15, 0)
+    light = int.from_bytes(data[light_index:light_index + 1], signed=True) >> 6
+    return JalonStatus(timer, light)
+
+
+# Fixed GATT roles and reply prefix of the independently audited Jalon app.
+JALON_WRITE_SERVICE: Final = "0000ffe5-0000-1000-8000-00805f9b34fb"
+JALON_WRITE: Final = "0000ffe9-0000-1000-8000-00805f9b34fb"
+JALON_NOTIFY_SERVICE: Final = "0000ffe0-0000-1000-8000-00805f9b34fb"
+JALON_NOTIFY: Final = "0000ffe4-0000-1000-8000-00805f9b34fb"
+JALON_PREFIX: Final = bytes.fromhex("f4fe16")
+
+
+@dataclass(slots=True)
+class UltramaticState:
+    """Raw app values, including signed repeat and unconverted P2 action."""
+
+    hour: int = 0
+    minute: int = 0
+    repeat: int = 0
+    type: int = 0
+    timer: int = 0
+    intensity: int = 0
+    true_hour: int = 0
+    true_minute: int = 0
+    true_repeat: int = 0
+    true_type: int = 0
+
+
+class UltramaticParser:
+    """ORE Ultramatic's corrected preflight and decoder, without unsafe indexing.
+
+    Fresh 4..20-byte F4 fragments cache and RETURN. The cache
+    survives continuations and exact 10/16 or >20-byte decoding. Its owner
+    resets it on session changes, unlike the app's activity-wide lifetime.
+    Truncated alarm fields are ignored instead of raising Java bounds errors.
+    No checksum, header validation or action normalization is invented.
+    """
+
+    def __init__(self) -> None:
+        self.state = UltramaticState()
+        self.pending: bytes | None = None
+
+    @staticmethod
+    def _signed(value: int) -> int:
+        return value if value < 128 else value - 256
+
+    def feed(self, data: bytes) -> tuple[str, ...]:
+        s = self.state
+        if not data:
+            return ()
+        if data[:2] == b"\xe2\xfe":
+            if len(data) < 10:
+                return ()
+            s.minute, s.hour, s.repeat = (self._signed(data[i]) for i in (3, 4, 6))
+            if data[9] & 15 in (8, 9):
+                s.type = 2 if data[9] & 15 == 8 else 3
+            if 1 <= self._signed(data[7]) <= 5 and 1 <= self._signed(data[8]) <= 5:
+                s.type = 1
+            return ("alarm",)
+        if len(data) <= 20:
+            if len(data) > 3 and data[:3] == JALON_PREFIX:
+                self.pending = data
+                return ()
+            if len(data) not in (10, 16):
+                if self.pending is None:
+                    return ()
+                data = self.pending + data
+        if len(data) > 3 and data[:2] == b"\xed\x80":
+            if len(data) < 7:
+                return ()
+            hour, minute, repeat, kind = (self._signed(data[i]) for i in (3, 4, 5, 6))
+            if repeat == -128:
+                repeat = s.true_repeat
+            s.hour, s.minute, s.repeat, s.type = hour, minute, repeat, kind
+            changed = (hour, minute, repeat, kind) != (
+                s.true_hour, s.true_minute, s.true_repeat, s.true_type
+            )
+            s.true_hour, s.true_minute, s.true_repeat, s.true_type = hour, minute, repeat, kind
+            return ("alarm",) if changed else ()
+        intensity = timer = 0
+        if len(data) == 23:
+            intensity, timer = data[11] & 15, self._signed(data[19])
+        elif len(data) == 16:
+            intensity, timer = data[7] & 15, data[14] & 15
+        elif len(data) == 10:
+            timer = self._signed(data[8])
+        s.intensity = (intensity + 1) // 2 if 1 <= intensity <= 6 else 0
+        s.timer = timer
+        return ("massage",)
+
+
+@dataclass(frozen=True, slots=True)
+class SymphonyTimer:
+    """The source UI's massage minutes, including its P1 comparison quirk."""
+
+    minutes: int
+
+
+@dataclass(frozen=True, slots=True)
+class SymphonyAlarm:
+    """One observed alarm, not an inventory of remote alarm slots."""
+
+    enabled: bool
+    hour: int
+    minute: int
+    wake: str
+
+
+class SymphonyParser:
+    """Symphony Sleep 1.1.0 notifications, with bounded, consumed, session-owned F4 fragments.
+
+    No checksum, ACK or length-field constraint is invented. Truncated alarm
+    records, invalid BCD/time values and fragment overflow are refused.
+    """
+
+    def __init__(self, *, p2: bool) -> None:
+        self.p2 = p2
+        self.pending: bytes | None = None
+
+    def feed(self, data: bytes, current_minutes: int = 0) -> SymphonyTimer | SymphonyAlarm | None:
+        alarm: SymphonyAlarm | None = None
+        if self.p2:
+            if len(data) < 5:
+                return None
+            if data[1] == 0x0B:
+                code = int.from_bytes(data[4:5], signed=True)
+                return SymphonyTimer(30 if code > 4 else 20 if code > 2 else 10 if code > 0 else 0)
+            if data[1] != 0x0C or len(data) < 10:
+                return None
+            if any((v & 15) > 9 or v >> 4 > 9 for v in (data[6], data[7])):
+                return None
+            hour, minute = (10 * (v >> 4) + (v & 15) for v in (data[6], data[7]))
+            alarm = SymphonyAlarm(data[9] == 1, hour, minute,
+                                  {2: "memory_1", 3: "memory_2"}.get(data[5], "none"))
+        else:
+            prefix, self.pending = self.pending, None
+            if not data:
+                return None
+            if len(data) < 2:
+                if prefix is None or data[0] in (0xE7, 0xED, 0xF4) or not 20 <= len(prefix) + len(data) <= 30:
+                    return None
+                code = (prefix + data)[19]
+                return SymphonyTimer(0 if code == 255 else code * 10 if current_minutes != code else current_minutes)
+            code: int | None = None
+            if data[:2] == b"\xe7\xfe" and len(data) >= 10:
+                code = data[8]
+            elif data[:2] == b"\xed\xfe" and len(data) >= 16:
+                code = data[14]
+            elif data[:2] == b"\xf4\xfe" and 20 < len(data) <= 30:
+                code = data[19]
+            elif data[0] == 0xF4:
+                self.pending = data if len(data) <= 20 else None
+                return None
+            elif data[:2] == b"\xed\x80":
+                if not 7 <= len(data) <= 16:
+                    return None
+                alarm = SymphonyAlarm(any(data[3:7]),
+                    int.from_bytes(data[3:4], signed=True), int.from_bytes(data[4:5], signed=True),
+                    {0x11: "memory_1", 0x13: "memory_2"}.get(data[6], "none"))
+            elif prefix is not None and 20 <= len(prefix) + len(data) <= 30:
+                code = (prefix + data)[19]
+            else:
+                return None
+            if code is not None:
+                return SymphonyTimer(0 if code == 255 else code * 10 if current_minutes != code else current_minutes)
+        return alarm if alarm is not None and 0 <= alarm.hour <= 23 and 0 <= alarm.minute <= 59 else None
+
+
+def comfortfurniture_cancels_hold(data: bytes) -> bool:
+    """ComfortFurniture 2.3 BED branch: length nine only, accessory dispatch takes precedence.
+
+    No header/checksum/terminator validation or position meaning is established.
+    Accessory replies are ignored rather than reproducing the app's wrong-view
+    casts. Only the remaining 07/06/0A byte7 cases cancel a held BED refresh.
+    """
+    if len(data) != 9 or data[3] == 0x30:
+        return False
+    if data[3] == 0xF0 and (data[7] & 3 == 3 or data[7] & 12 == 12):
+        return False
+    return data[7] in (7, 6, 10)

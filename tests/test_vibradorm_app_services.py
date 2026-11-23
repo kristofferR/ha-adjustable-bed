@@ -204,7 +204,8 @@ async def test_real_pair_routes_differing_profiles_and_exact_release(hass, side)
             self.controller = self.capability_controller = controller
 
         async def async_execute_controller_command(
-            self, command_fn, cancel_running=True, skip_disconnect=False, resource=None, resources=None
+            self, command_fn, cancel_running=True, skip_disconnect=False, resource=None, resources=None,
+            expected_stop_epoch=None,
         ):
             await command_fn(self.controller)
 

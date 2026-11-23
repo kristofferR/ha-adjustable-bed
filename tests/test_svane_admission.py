@@ -7,9 +7,11 @@ from unittest.mock import AsyncMock, patch
 import pytest
 from homeassistant.exceptions import ServiceValidationError
 
-from custom_components.adjustable_bed.beds.svane import SvaneController
+from custom_components.adjustable_bed.beds.svane.controller import SvaneController
 from custom_components.adjustable_bed.const import DOMAIN, SIDE_BOTH
 from custom_components.adjustable_bed.services import _get_controller_for_service
+from tests.error_helpers import raises_key
+from tests.service_patches import patch_with_family
 from tests.test_svane import written
 from tests.test_svane_light_timed_host import runtime as svane_runtime
 from tests.test_svane_services import target
@@ -37,9 +39,9 @@ async def test_registered_release_survives_scheduler_admission(hass, runtime, en
         "device_id": "bed", "motor": "back", "direction": "up", "duration_ms": 200,
     }
     with (
-        patch("custom_components.adjustable_bed.services._resolve_sided_targets",
+        patch_with_family("beds.svane.services", "custom_components.adjustable_bed.services._resolve_sided_targets",
               return_value=([(coordinator, SIDE_BOTH)], [])),
-        patch("custom_components.adjustable_bed.services._get_controller_for_service", live),
+        patch_with_family("beds.svane.services", "custom_components.adjustable_bed.services._get_controller_for_service", live),
     ):
         held = asyncio.create_task(hass.services.async_call(DOMAIN, endpoint, data, blocking=True))
         try:
@@ -90,9 +92,9 @@ async def test_release_during_later_target_preflight_suppresses_only_selected_ax
                 [(first, SIDE_BOTH), (second, SIDE_BOTH)]), []
 
     with (
-        patch("custom_components.adjustable_bed.services._resolve_sided_targets", resolve),
-        patch("custom_components.adjustable_bed.services._get_controller_for_service", live),
-        patch("custom_components.adjustable_bed.beds.svane.asyncio", local_asyncio),
+        patch_with_family("beds.svane.services", "custom_components.adjustable_bed.services._resolve_sided_targets", resolve),
+        patch_with_family("beds.svane.services", "custom_components.adjustable_bed.services._get_controller_for_service", live),
+        patch("custom_components.adjustable_bed.beds.svane.controller.asyncio", local_asyncio),
     ):
         task = asyncio.create_task(hass.services.async_call(DOMAIN, "hold_control", {
             "device_id": ["first", "second"], "control": "head_up_feet_down", "duration": 0.2,
@@ -108,7 +110,7 @@ async def test_release_during_later_target_preflight_suppresses_only_selected_ax
             assert packets
             assert all(p != "100100000000" and p != "102100000000" for _, _, p in packets)
             if profile == "multi":
-                from custom_components.adjustable_bed.beds.svane import FEET
+                from custom_components.adjustable_bed.beds.svane.controller import FEET
                 assert all(service == FEET for service, _, _ in packets)
             else:
                 assert packets[0][2] == "102000000000"
@@ -127,7 +129,7 @@ async def test_idle_release_is_not_replayed_by_next_public_hold(hass, runtime):
         coordinator.cancel_command.set()
 
     controller._motor_wait = stop_after_first
-    with patch("custom_components.adjustable_bed.services._resolve_sided_targets",
+    with patch_with_family("beds.svane.services", "custom_components.adjustable_bed.services._resolve_sided_targets",
                return_value=([(coordinator, SIDE_BOTH)], [])):
         await hass.services.async_call(DOMAIN, "svane_release_axis", {
             "device_id": "bed", "motor": "head",
@@ -156,7 +158,7 @@ async def test_offline_timed_move_reconnects_before_live_role_preflight(hass, ru
 
     live._motor_wait = finish_after_first
     coordinator.async_ensure_connected = AsyncMock(side_effect=reconnect)
-    with patch("custom_components.adjustable_bed.services._resolve_sided_targets",
+    with patch_with_family("beds.svane.services", "custom_components.adjustable_bed.services._resolve_sided_targets",
                return_value=([(coordinator, SIDE_BOTH)], [])):
         await hass.services.async_call(DOMAIN, "timed_move", {
             "device_id": "bed", "motor": "back", "direction": "up", "duration_ms": 200,
@@ -176,7 +178,7 @@ async def test_later_timed_live_role_failure_prevents_every_target_motion(hass, 
     second, two = target("jmc")
     one._coordinator.motor_pulse_count = two._coordinator.motor_pulse_count = 10
     one._coordinator.motor_pulse_delay_ms = two._coordinator.motor_pulse_delay_ms = 100
-    from custom_components.adjustable_bed.beds.svane import OLD
+    from custom_components.adjustable_bed.beds.svane.controller import OLD
     service = next(s for s in two.client.services if s.uuid == OLD)
     if failure == "missing":
         service.characteristics = []
@@ -185,7 +187,7 @@ async def test_later_timed_live_role_failure_prevents_every_target_motion(hass, 
     else:
         service.characteristics.append(service.characteristics[0])
     with (
-        patch("custom_components.adjustable_bed.services._resolve_sided_targets",
+        patch_with_family("beds.svane.services", "custom_components.adjustable_bed.services._resolve_sided_targets",
               return_value=([(first, SIDE_BOTH), (second, SIDE_BOTH)], [])),
         pytest.raises(ServiceValidationError),
     ):
@@ -207,9 +209,9 @@ async def test_session_reconstruction_keeps_admitted_release_boundary(hass, runt
         return target.controller
 
     with (
-        patch("custom_components.adjustable_bed.services._resolve_sided_targets",
+        patch_with_family("beds.svane.services", "custom_components.adjustable_bed.services._resolve_sided_targets",
               return_value=([(coordinator, SIDE_BOTH)], [])),
-        patch("custom_components.adjustable_bed.services._get_controller_for_service", live),
+        patch_with_family("beds.svane.services", "custom_components.adjustable_bed.services._get_controller_for_service", live),
     ):
         task = asyncio.create_task(hass.services.async_call(
             DOMAIN, "hold_control", hold_data(), blocking=True,
@@ -254,9 +256,9 @@ async def test_caller_cancel_during_later_preflight_restores_idle_without_motion
         "device_id": "bed", "motor": "back", "direction": "up", "duration_ms": 200,
     }
     with (
-        patch("custom_components.adjustable_bed.services._resolve_sided_targets",
+        patch_with_family("beds.svane.services", "custom_components.adjustable_bed.services._resolve_sided_targets",
               return_value=([(first, SIDE_BOTH), (second, SIDE_BOTH)], [])),
-        patch("custom_components.adjustable_bed.services._get_controller_for_service", live),
+        patch_with_family("beds.svane.services", "custom_components.adjustable_bed.services._get_controller_for_service", live),
     ):
         task = asyncio.create_task(hass.services.async_call(DOMAIN, endpoint, data, blocking=True))
         await blocked.wait()
@@ -290,10 +292,10 @@ async def test_later_session_replacement_aborts_all_targets_before_dispatch(hass
         "device_id": "bed", "motor": "back", "direction": "up", "duration_ms": 200,
     }
     with (
-        patch("custom_components.adjustable_bed.services._resolve_sided_targets",
+        patch_with_family("beds.svane.services", "custom_components.adjustable_bed.services._resolve_sided_targets",
               return_value=([(first, SIDE_BOTH), (second, SIDE_BOTH)], [])),
-        patch("custom_components.adjustable_bed.services._get_controller_for_service", live),
-        pytest.raises(ServiceValidationError, match="physical session changed"),
+        patch_with_family("beds.svane.services", "custom_components.adjustable_bed.services._get_controller_for_service", live),
+        raises_key("bed_changed", ServiceValidationError),
     ):
         await hass.services.async_call(DOMAIN, endpoint, data, blocking=True)
     one.client.write_gatt_char.assert_not_awaited()

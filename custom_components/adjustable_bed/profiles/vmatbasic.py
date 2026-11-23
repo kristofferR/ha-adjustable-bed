@@ -1,0 +1,207 @@
+"""V-MAT Basic profiles over the Vibradorm VMAT codec.
+
+``VMatBasicProfile`` serves the ``vmatbasic`` bed type: the Basic, CBI and
+XT-Box products of VIBRADORM Remote for Beds, ``com.vibradorm.vmatbasic``
+2.4.3 (14). No hardware acknowledgement, model inference or generic Vibradorm
+packet fallback is implied. Command words, palette, value conversions and
+timing are this app's own.
+"""
+
+from __future__ import annotations
+
+import math
+from dataclasses import dataclass
+from typing import ClassVar, Final
+
+from ..codec import vibradorm as codec
+from ..execution import NO_EXECUTION_CAPABILITIES, ExecutionCapabilities
+
+GAP_SERVICE: Final = "00001800-0000-1000-8000-00805f9b34fb"
+INFO_SERVICE: Final = "0000180a-0000-1000-8000-00805f9b34fb"
+NAME_CHAR: Final = "00002a00-0000-1000-8000-00805f9b34fb"
+MODEL_CHAR: Final = "00002a24-0000-1000-8000-00805f9b34fb"
+FIRMWARE_CHAR: Final = "00002a26-0000-1000-8000-00805f9b34fb"
+REQUIRED_SERVICES: Final = (codec.SERVICE_UUID, codec.STATUS_SERVICE_UUID, GAP_SERVICE)
+READ_ROLES: Final = (
+    ("model", INFO_SERVICE, MODEL_CHAR),
+    ("temperature", codec.STATUS_SERVICE_UUID, codec.TEMPERATURE_CHAR_UUID),
+    ("floor", codec.SERVICE_UUID, codec.LIGHT_CHAR_UUID),
+    ("firmware", INFO_SERVICE, FIRMWARE_CHAR),
+    ("ed", codec.STATUS_SERVICE_UUID, codec.ED_CHAR_UUID),
+)
+MOTOR_ACTIONS: Final = {
+    "all_up": 0x10,
+    "all_down": 0x00,
+    "back_up": 0x0B,
+    "back_down": 0x0A,
+    "legs_up": 0x09,
+    "legs_down": 0x08,
+}
+MASSAGE_ACTIONS: Final = {
+    "back": 0x2C,
+    "legs": 0x2D,
+    "off": 0x34,
+    "program_1": 0x31,
+    "program_2": 0x28,
+    "program_3": 0x29,
+}
+FLOOR: Final = 0x11
+MOOD: Final = 0x77
+HOLD_INTERVAL_S: Final = 0.03
+PALETTE: Final = (
+    0xFFA4C400,
+    0xFF60A917,
+    0xFF008A00,
+    0xFF00ABA9,
+    0xFF1BA1E2,
+    0xFF0050EF,
+    0xFF6A00FF,
+    0xFFAA00FF,
+    0xFFF472D0,
+    0xFFD80073,
+    0xFFA20025,
+    0xFFE51400,
+    0xFFFA6800,
+    0xFFF0A30A,
+    0xFFE3C800,
+    0xFF825A2C,
+    0xFF6D8764,
+    0xFF647687,
+    0xFF76708A,
+    0xFFFFFFFF,
+)
+PALETTE_OPTIONS: Final = tuple(f"col{index}" for index in range(1, 21))
+
+
+def integer(value: object, minimum: int, maximum: int) -> int:
+    """Validate the app's public UI domain before constructing a packet."""
+    if isinstance(value, bool) or not isinstance(value, (int, float)):
+        raise ValueError("A whole number is required")
+    if not math.isfinite(value) or int(value) != value or not minimum <= value <= maximum:
+        raise ValueError(f"Expected a whole number from {minimum} to {maximum}")
+    return int(value)
+
+
+def floor(level: int, minutes: int) -> bytes:
+    """Raw CBI builder; public controls validate their narrower UI bounds."""
+    return codec.light(level & 255, minutes & 0xFFFF)
+
+
+def xt_floor(level: int, minutes: int) -> bytes:
+    """Raw XT builder, retaining the shipped upper clamp and byte conversion."""
+    return codec.command(FLOOR, bytes((min(level, 6) & 255, min(minutes, 255) & 255)))
+
+
+def rgb(color: int) -> bytes:
+    return codec.command(MOOD, bytes((1, 0, (color >> 16) & 255, (color >> 8) & 255, color & 255)))
+
+
+def effect(number: int) -> bytes:
+    return codec.command(MOOD, bytes((8, number & 255)))
+
+
+def speed(progress: int) -> bytes:
+    return codec.command(MOOD, bytes((9, (progress + 1) & 255)))
+
+
+def color_action(color: int, brightness: int) -> bytes:
+    """Use the app's double-precision HSV conversion and integer truncation.
+
+    Scaling RGB bytes directly changes several shipped palette outputs.
+    """
+    red, green, blue = (((color >> shift) & 255) / 255.0 for shift in (16, 8, 0))
+    maximum = max(red, max(green, blue))
+    delta = maximum - min(red, min(green, blue))
+    hue = saturation = 0.0
+    if delta > 0:
+        if maximum == red:
+            hue = (green - blue) / delta
+            if green < blue:
+                hue += 6.0
+        elif maximum == green:
+            hue = 2.0 + (blue - red) / delta
+        else:
+            hue = 4.0 + (red - green) / delta
+        hue *= 60.0
+        saturation = delta / maximum
+    value = (maximum * brightness) / 100.0
+    chroma = saturation * value
+    offset = value - chroma
+    sector = (hue - 360.0 * math.floor(hue / 360.0)) / 60.0
+    intermediate = (1.0 - abs((sector - 2.0 * math.floor(sector / 2.0)) - 1.0)) * chroma
+    components = (
+        (chroma + offset, intermediate + offset, offset),
+        (intermediate + offset, chroma + offset, offset),
+        (offset, chroma + offset, intermediate + offset),
+        (offset, intermediate + offset, chroma + offset),
+        (intermediate + offset, offset, chroma + offset),
+        (chroma + offset, offset, intermediate + offset),
+    )[int(sector)]
+    red_byte, green_byte, blue_byte = (max(0, min(255, int(c * 255.0))) for c in components)
+    return rgb((red_byte << 16) + (green_byte << 8) + blue_byte - 16777216)
+
+
+def rename(name: str) -> bytes:
+    name = name.strip("".join(chr(value) for value in range(33)))
+    if len(name.encode("utf-16-le")) // 2 > 10:
+        raise ValueError("Use a name of at most 10 characters. Emoji count as two")
+    return name.encode("utf-8")
+
+
+@dataclass(frozen=True, slots=True)
+class VMatBasicProfile:
+    """One V-MAT Basic product and its floor-light route."""
+
+    execution: ClassVar[ExecutionCapabilities] = NO_EXECUTION_CAPABILITIES
+    """The controller declares its own (#483)."""
+    key: str
+    floor_char: str | None
+    """Where floor settings go; the Basic product has none."""
+    floor_levels: tuple[int, int]
+    floor_minutes: tuple[int, int]
+
+    def floor(self, level: int, minutes: int) -> bytes:
+        return xt_floor(level, minutes) if self.key == "xtbox" else floor(level, minutes)
+
+
+PROFILES: Final = {
+    "basic": VMatBasicProfile("basic", None, (0, 255), (0, 1439)),
+    "cbi": VMatBasicProfile("cbi", codec.LIGHT_CHAR_UUID, (0, 255), (0, 1439)),
+    "xtbox": VMatBasicProfile("xtbox", codec.CBI_CHAR_UUID, (1, 6), (0, 255)),
+}
+
+
+@dataclass(frozen=True, slots=True)
+class FloorStatus:
+    level: int
+    timer_minutes: int
+
+    @property
+    def display_percent(self) -> float:
+        return (self.level * 100) / 255.0
+
+
+def light_status(data: bytes) -> FloorStatus:
+    return FloorStatus(*codec.parse_light(data))
+
+
+def temperature(data: bytes) -> float:
+    if len(data) < 4:
+        raise ValueError("Temperature requires four bytes")
+    return int.from_bytes(data[:4], "little", signed=True) / 4.0 - 7.0
+
+
+def motor_status(data: bytes) -> bool:
+    if not data:
+        raise ValueError("ED status requires one byte")
+    return bool(data[0] & 1)
+
+
+def manufacturer_payload_matches(payload: bytes) -> bool:
+    """Conditional match for HA data with its two company bytes removed."""
+    return (
+        len(payload) >= 6
+        and payload[:2] == b"\xba\xbe"
+        and payload[2] & 15 == 1
+        and payload[3] & 15 == 1
+    )

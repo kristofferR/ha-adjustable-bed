@@ -1,0 +1,697 @@
+"""L&P commands, feature gates, cancellation and connection ownership."""
+
+import asyncio
+from dataclasses import replace
+from datetime import UTC, datetime
+from types import SimpleNamespace
+from unittest.mock import AsyncMock, MagicMock
+
+import pytest
+
+from custom_components.adjustable_bed.alarm import AlarmRequest
+from custom_components.adjustable_bed.beds.richmat_classic import lp2
+from custom_components.adjustable_bed.beds.richmat_classic.protocol import Worker
+from custom_components.adjustable_bed.beds.richmat_classic.transport import Transport
+from tests.test_lp2_vectors import vectors
+
+
+def controller(layout="APRM", wire="FRAMED"):
+    co = MagicMock()
+    co.cancel_command = asyncio.Event()
+    co.entry.data = {
+        "product_type": layout,
+        "protocol_variant": "lp2",
+        "motor_pulse_count": 1,
+        "ble_device_name": "6BRM",
+    }
+    co.client.is_connected = True
+    co.client.write_gatt_char = AsyncMock()
+    co.client.start_notify = AsyncMock()
+    co.client.stop_notify = AsyncMock()
+    ctrl = lp2.Lp2Controller(co)
+    co.controller = ctrl
+    write = SimpleNamespace(uuid="write", properties=["write"], handle=71)
+    notify = SimpleNamespace(uuid="notify", properties=["notify"], handle=72)
+    ctrl._session = Transport(co.client, write, notify, wire)
+    ctrl._worker = Worker(tick_ms=150)
+    return ctrl, co
+
+
+def packets(co):
+    return [call.args[1].hex() for call in co.client.write_gatt_char.call_args_list]
+
+
+@pytest.fixture
+def clock(monkeypatch):
+    delays = []
+    real_sleep = asyncio.sleep
+    now = [0.0]
+    monkeypatch.setattr(lp2, "monotonic", lambda: now[0])
+    monkeypatch.setattr(lp2.dt_util, "now", lambda: datetime(2026, 11, 19, 12, tzinfo=UTC))
+
+    async def sleep(seconds):
+        delays.append(round(seconds * 1000))
+        now[0] += seconds
+        await real_sleep(0)
+
+    async def wait(milliseconds, cancel):
+        if cancel.is_set():
+            return False
+        await sleep(milliseconds / 1000)
+        return not cancel.is_set()
+
+    monkeypatch.setattr(lp2.asyncio, "sleep", sleep)
+    monkeypatch.setattr(lp2.Lp2Controller, "_wait", staticmethod(wait))
+    return delays
+
+
+@pytest.mark.parametrize(
+    "wire,first,stop", [("RAW", "34", "6e"), ("FRAMED", "6e01002493", "6e01006edd")]
+)
+async def test_held_action_uses_exact_resource_and_release(clock, wire, first, stop):
+    c, co = controller("6BRM", wire)
+    await c.execute_action(1, hold_ms=150)
+    assert packets(co)[0] == first
+    assert packets(co)[-1] == stop
+    assert clock[-1] == 50
+
+
+async def test_cancel_during_refresh_cleans_up_only_its_link(clock):
+    c, co = controller("6BRM")
+
+    async def cancel(_char, _data, **_kwargs):
+        co.cancel_command.set()
+
+    co.client.write_gatt_char.side_effect = cancel
+    await c.execute_action(1)
+    assert packets(co) == ["6e01002493", "6e01006edd"]
+    assert c._worker.payload is None
+
+
+async def test_replacement_link_receives_neither_refresh_nor_old_cleanup(clock):
+    c, co = controller("6BRM")
+    original = co.client
+    replacement = MagicMock()
+    replacement.is_connected = True
+    replacement.write_gatt_char = AsyncMock()
+
+    async def replace_link(_char, _data, **_kwargs):
+        co.client = replacement
+        c._session = replace(c._session, client=replacement)
+
+    original.write_gatt_char.side_effect = replace_link
+    with pytest.raises(ConnectionError, match="changed"):
+        await c.execute_action(1)
+    assert original.write_gatt_char.await_count == 1
+    replacement.write_gatt_char.assert_not_awaited()
+
+
+async def test_direct_rgb_duration_aroma_and_fan_quirk(clock):
+    c, co = controller()
+    with pytest.raises(ValueError, match="lighting"):
+        await c.settings(color=(12, 34, 56))
+    c._receive.light_capable = c._receive.aroma_capable = True
+    await c.settings(color=(12, 34, 56))
+    await c.settings(seconds=300)
+    await c.settings(aroma_times=(1, 2, 3))
+    await c.settings(fan="head", duration=3, level=60)
+    await c.settings(fan="foot", duration=6, level=60)
+    assert packets(co) == [
+        "6e0cff0c856e0d2238d5",
+        "6e0b012ca6",
+        "6e1b00018a",
+        "6e1c00028c",
+        "6e1d00038e",
+        "6e01d30042",
+        "6e01da0049",
+        "6e0101da4a",
+        "6e0101da4a",
+    ]
+    assert clock == [150, 150, 300, 300]
+
+
+async def test_alarm_uses_shared_capability_and_two_frozen_parts(clock):
+    c, co = controller("A9RM")
+    capability = c.alarm_capability
+    assert capability is not None
+    action = capability.wake_actions[0]
+    request = AlarmRequest(
+        enabled=True,
+        wake_action=action,
+        hour=12,
+        minute=0,
+        reference_time=datetime(2026, 11, 19, 12, tzinfo=UTC),
+    )
+    await c.configure_alarm(request)
+    code = next(v for v in c._alarm_actions().values() if lp2._ALARMS[v] == action)
+    from custom_components.adjustable_bed.codec.richmat import countdown
+
+    assert packets(co) == [p.hex() for p in countdown(1440, code)]
+    assert clock == [300, 300]
+    assert c._receive.alarm_enabled is None
+
+
+def test_no_screen_selectors_and_confirmation_never_offers_hold():
+    c, _ = controller("E3RM")
+    assert c.controller_select_specs == ()
+    assert any("Save" in s.name for s in c.controller_button_specs)
+    assert all(s.hold is None for s in c.controller_button_specs if s.requires_confirmation)
+
+
+def test_fragmented_notification_literals_and_stale_callback():
+    for action, expected, packet in vectors("direct"):
+        if not action.startswith("parse"):
+            continue
+        c, co = controller("WFRM")
+        data = bytes.fromhex(packet)
+        session = c._session
+        c._notification(session, session.notify, bytearray(data[:2]))
+        c._notification(session, session.notify, bytearray(data[2:]))
+        assert c._receive.height_cm == pytest.approx(expected["expected_cm"])
+        assert c._receive.height_inches == pytest.approx(expected["expected_inch"])
+        c._session = replace(session)
+        previous = c._receive.height_cm
+        c._notification(session, session.notify, bytearray.fromhex("6e08000177"))
+        assert c._receive.height_cm == previous
+        co.client.write_gatt_char.assert_not_awaited()
+
+
+async def test_switch_only_shows_delivered_request_not_cleanup(clock):
+    from custom_components.adjustable_bed.command_scheduler import (
+        _CURRENT_COMMAND_CONTEXT,
+        CommandContext,
+        CommandKind,
+    )
+    from tests.state_helpers import state_writer
+
+    c, co = controller("APRM")
+    state = {lp2.MASSAGE_ON: False}
+    co.handle_controller_state_updates.side_effect = state_writer(state)
+    context = CommandContext(
+        object(),
+        co.cancel_command,
+        0,
+        "switch",
+        CommandKind.COMMAND,
+        None,
+        frozenset({"configuration"}),
+    )
+    token = _CURRENT_COMMAND_CONTEXT.set(context)
+    try:
+        switch = c.controller_switch_specs[0]
+        co.cancel_command.set()
+        await switch.set_fn(c, True)
+        assert state[lp2.MASSAGE_ON] is False
+        co.cancel_command.clear()
+        await switch.set_fn(c, True)
+        assert state[lp2.MASSAGE_ON] is True
+    finally:
+        _CURRENT_COMMAND_CONTEXT.reset(token)
+
+
+async def test_registered_service_validates_all_targets_before_first_write(hass):
+    from unittest.mock import patch
+
+    from homeassistant.exceptions import ServiceValidationError
+
+    from custom_components.adjustable_bed.beds.richmat_classic.lp2_services import (
+        async_register_lp2_services,
+    )
+    from custom_components.adjustable_bed.const import DOMAIN
+    from tests.test_generic_services import target
+
+    async_register_lp2_services(hass)
+    a, first = target(
+        family=lp2.Lp2Controller,
+        _model=SimpleNamespace(modes=(0, 1)),
+        validate_action=MagicMock(return_value=()),
+        execute_action=AsyncMock(),
+    )
+    b, second = target(
+        family=lp2.Lp2Controller, _model=SimpleNamespace(modes=(0,)), execute_action=AsyncMock()
+    )
+    with (
+        patch(
+            "custom_components.adjustable_bed.services._resolve_sided_targets",
+            return_value=([(a, "both"), (b, "both")], []),
+        ),
+        pytest.raises(ServiceValidationError, match="mode offered"),
+    ):
+        await hass.services.async_call(
+            DOMAIN,
+            "lp2",
+            {"device_id": ["a", "b"], "operation": "control", "control": 1, "mode": 1},
+            blocking=True,
+        )
+    first.execute_action.assert_not_awaited()
+    second.execute_action.assert_not_awaited()
+
+
+def test_package_transport_falls_through_only_when_its_tuple_is_incomplete():
+    from custom_components.adjustable_bed.codec.richmat import TRANSPORTS
+
+    client = MagicMock()
+    channels = {}
+    services = {}
+    for key in ("w0", "w1"):
+        route = TRANSPORTS[key]
+        write = SimpleNamespace(uuid=route.write_uuid, properties=["write"])
+        notify = SimpleNamespace(uuid=route.notify_uuid, properties=["notify"])
+        channels[key] = {route.write_uuid: write, route.notify_uuid: notify}
+        service = MagicMock()
+        service.get_characteristic.side_effect = channels[key].get
+        services[route.service_uuid] = service
+    client.services.get_service.side_effect = services.get
+    assert lp2.select_transport(client).write is channels["w0"][TRANSPORTS["w0"].write_uuid]
+    del channels["w0"][TRANSPORTS["w0"].notify_uuid]
+    assert lp2.select_transport(client).write is channels["w1"][TRANSPORTS["w1"].write_uuid]
+    del channels["w1"][TRANSPORTS["w1"].notify_uuid]
+    with pytest.raises(ValueError, match="incomplete"):
+        lp2.select_transport(client)
+
+
+def test_service_number_values_are_normalized_before_packet_building():
+    import voluptuous as vol
+
+    from custom_components.adjustable_bed.beds.richmat_classic.lp2_services import FIELDS
+
+    request = vol.Schema(FIELDS)(
+        {
+            "device_id": "bed",
+            "operation": "fan",
+            "fan": "head",
+            "duration": 3.0,
+            "intensity": 60.0,
+            "mode": 1.0,
+            "motor": 3.0,
+        }
+    )
+    assert all(type(request[key]) is int for key in ("duration", "intensity", "mode", "motor"))
+
+
+async def test_alarm_preset_and_massage_composition_is_layout_owned(clock):
+    c, co = controller("A9RM")
+    alarm = AlarmRequest(
+        enabled=True,
+        wake_action="tv",
+        massage=True,
+        massage_zone="both",
+        hour=12,
+        minute=0,
+        reference_time=datetime(2026, 11, 19, 12, tzinfo=UTC),
+    )
+    await c.configure_alarm(alarm)
+    assert packets(co) == ["6e05a00013", "6e060577f0"]
+    assert clock == [300, 300]
+    # Owning a packet builder does not give a layout another preset.
+    with pytest.raises(ValueError, match="offered"):
+        c.validate_alarm(replace(alarm, wake_action="memory_3"))
+
+
+def test_malformed_notification_retention_is_bounded_and_recovers():
+    c, _ = controller()
+    session = c._session
+    c._notification(session, session.notify, bytearray(512))
+    assert c._receive.buffer == ""
+    c._notification(session, session.notify, bytearray.fromhex("6e0e00037f"))
+    assert c._receive.light_capable
+
+
+async def test_raw_controls_name_the_effective_operand_and_reject_stale_buttons(clock):
+    c, co = controller("BERM")
+    framed = next(s for s in c.controller_button_specs if s.key == "richmat_classic_10_framed")
+    assert framed.name == "Motor 3 down"
+    c._session = replace(c._session, wire="RAW")
+    save = next(s for s in c.controller_button_specs if s.key == "richmat_classic_10_raw")
+    assert save.name == "Save M1"
+    assert save.requires_confirmation and save.hold is None
+    with pytest.raises(ValueError, match="held execution"):
+        await c.execute_action(10, held=True)
+    assert framed.key not in c.held_control_options
+    with pytest.raises(ValueError, match="changed"):
+        await framed.press_fn(c)
+    with pytest.raises(ValueError, match="control this bed offers"):
+        await c.hold_control(framed.key, 150)
+    combined = next(s for s in c.controller_button_specs if s.key == "richmat_classic_15_raw")
+    assert combined.name == "Motor 1+2 up"
+    await combined.press_fn(c)
+    assert packets(co) == ["36", "6e"]
+
+
+@pytest.mark.parametrize("layout", ["ONRM", "BERM"])
+async def test_raw_massage_off_never_advertises_or_publishes_ten_minutes(clock, layout):
+    from tests.state_helpers import state_writer
+
+    c, co = controller(layout)
+    assert 10 in c.massage_timer_options
+    c._session = replace(c._session, wire="RAW")
+    # BERM has another genuine 10-minute control; ONRM has only the off operand.
+    assert c._timer_controls.get(10) == (22 if layout == "BERM" else None)
+    state = {}
+    co.handle_controller_state_updates.side_effect = state_writer(state)
+    if layout == "ONRM":
+        with pytest.raises(ValueError, match="duration"):
+            await c.set_massage_timer(10)
+        assert lp2.MASSAGE_TIMER_MINUTES not in state
+        co.client.write_gatt_char.assert_not_awaited()
+    else:
+        await c.set_massage_timer(10)
+        assert packets(co) == ["5f", "6e"]
+    assert any(
+        "Massage" in s.name and "off" in s.name and c.controller_button_available(s.key)
+        for s in c.controller_button_specs
+    )
+
+
+async def test_long_only_sync_pair_uses_switch_gestures(clock):
+    c, co = controller("DXRM")
+    switch = next(s for s in c.controller_switch_specs if s.key == "lp2_sync")
+    assert all("Sync" not in s.name for s in c.controller_button_specs)
+    await switch.set_fn(c, True)
+    await switch.set_fn(c, False)
+    assert packets(co) == ["6e0100bc2b", "6e01006edd", "6e0100bd2c", "6e01006edd"]
+    assert clock.count(150) >= 2
+
+
+@pytest.mark.parametrize("layout", ["E3RM", "BRRM"])
+async def test_conflicting_long_and_held_flags_fail_before_worker(clock, layout):
+    c, co = controller(layout)
+    with pytest.raises(ValueError, match="either"):
+        await c.execute_action(
+            next(g.node for g in c._gestures("FRAMED") if g.long), long=True, held=True
+        )
+    co.client.write_gatt_char.assert_not_awaited()
+
+
+def test_lp2_device_information_ownership_is_known_before_controller_build():
+    from custom_components.adjustable_bed.bed_traits import bed_traits
+
+    assert bed_traits("richmat_classic_apps", "lp2").owns_device_info_reads
+    assert not bed_traits("richmat_classic_apps", "milemont").owns_device_info_reads
+
+
+@pytest.mark.parametrize("operation", ["color", "aromatherapy"])
+async def test_live_capabilities_of_entire_batch_precede_settings(hass, operation):
+    from unittest.mock import patch
+
+    from homeassistant.exceptions import ServiceValidationError
+
+    from custom_components.adjustable_bed.beds.richmat_classic.lp2_services import (
+        async_register_lp2_services,
+    )
+    from custom_components.adjustable_bed.const import DOMAIN
+    from tests.test_generic_services import target
+
+    async_register_lp2_services(hass)
+    a, first = target(family=lp2.Lp2Controller, settings=AsyncMock())
+    b, second = target(family=lp2.Lp2Controller, settings=AsyncMock())
+    for child, c, supported in ((a, first, True), (b, second, False)):
+        c._receive = SimpleNamespace(light_capable=supported, aroma_capable=supported)
+
+        async def query(fn, *, current=c, **_kwargs):
+            return await fn(current)
+
+        child.async_execute_controller_query = AsyncMock(side_effect=query)
+    values = {"rgb_color": [1, 2, 3]} if operation == "color" else {"aroma_times": [1, 2, 3]}
+    with (
+        patch(
+            "custom_components.adjustable_bed.services._resolve_sided_targets",
+            return_value=([(a, "both"), (b, "both")], []),
+        ),
+        pytest.raises(ServiceValidationError, match="support"),
+    ):
+        await hass.services.async_call(
+            DOMAIN,
+            "lp2",
+            {"device_id": ["a", "b"], "operation": operation, **values},
+            blocking=True,
+        )
+    first.settings.assert_not_awaited()
+    second.settings.assert_not_awaited()
+    a.async_execute_controller_query.assert_awaited_once()
+    b.async_execute_controller_query.assert_awaited_once()
+
+
+@pytest.mark.parametrize("stop_during", ["preflight", "first_connection"])
+async def test_stop_on_later_target_aborts_batch_before_first_write(hass, stop_during):
+    from unittest.mock import patch
+
+    from custom_components.adjustable_bed.beds.richmat_classic.lp2_services import (
+        async_register_lp2_services,
+    )
+    from custom_components.adjustable_bed.const import DOMAIN
+    from tests.test_generic_services import target
+
+    async_register_lp2_services(hass)
+    a, first = target(family=lp2.Lp2Controller, settings=AsyncMock())
+    b, second = target(family=lp2.Lp2Controller, settings=AsyncMock())
+    if stop_during == "preflight":
+        first._model = second._model = SimpleNamespace(modes=(0,))
+        first.validate_action.return_value = (lp2.Gesture(1, "@string/k_motor1_up", 1),)
+
+        def stop(*_args, **_kwargs):
+            b.stop_epoch += 1
+            return (lp2.Gesture(1, "@string/k_motor1_up", 1),)
+
+        second.validate_action.side_effect = stop
+        data = {"operation": "control", "control": 1}
+    else:
+
+        async def connect_then_run(fn, **_kwargs):
+            b.stop_epoch += 1
+            await fn(first)
+
+        a.async_execute_controller_command.side_effect = connect_then_run
+        data = {"operation": "fan", "fan": "head", "intensity": 20, "duration": 1}
+    with patch(
+        "custom_components.adjustable_bed.services._resolve_sided_targets",
+        return_value=([(a, "both"), (b, "both")], []),
+    ):
+        await hass.services.async_call(
+            DOMAIN, "lp2", {"device_id": ["a", "b"], **data}, blocking=True
+        )
+    first.settings.assert_not_awaited()
+    second.settings.assert_not_awaited()
+    first.execute_action.assert_not_awaited()
+    second.execute_action.assert_not_awaited()
+
+
+@pytest.mark.parametrize(
+    "layout,wire,extra,message",
+    [
+        ("BERM", "RAW", {"control": 10}, "Confirm"),
+        ("E3RM", "FRAMED", {"control": 1, "long": True, "held": True, "confirm": True}, "either"),
+    ],
+)
+async def test_service_rejects_unconfirmed_raw_save_and_conflicting_flags(
+    hass, layout, wire, extra, message
+):
+    from unittest.mock import patch
+
+    from homeassistant.exceptions import ServiceValidationError
+
+    from custom_components.adjustable_bed.beds.richmat_classic.lp2_services import (
+        async_register_lp2_services,
+    )
+    from custom_components.adjustable_bed.const import DOMAIN
+    from tests.test_generic_services import target
+
+    async_register_lp2_services(hass)
+    actual, _ = controller(layout, wire)
+    child, mock = target(family=lp2.Lp2Controller, execute_action=AsyncMock())
+    mock._model = actual._model
+    mock.validate_action = actual.validate_action
+    with (
+        patch(
+            "custom_components.adjustable_bed.services._resolve_sided_targets",
+            return_value=([(child, "both")], []),
+        ),
+        pytest.raises(ServiceValidationError, match=message),
+    ):
+        await hass.services.async_call(
+            DOMAIN, "lp2", {"device_id": "bed", "operation": "control", **extra}, blocking=True
+        )
+    mock.execute_action.assert_not_awaited()
+
+
+@pytest.mark.parametrize("duration", [None, 450, 60000])
+async def test_status_one_save_has_one_emission_regardless_of_movement_duration(clock, duration):
+    c, co = controller("BERM", "RAW")
+    await c.execute_action(10, hold_ms=duration)
+    assert packets(co) == ["43", "6e"]
+    assert clock == [50]
+
+
+@pytest.mark.parametrize("side", ["left", "both"])
+async def test_paired_movement_accepts_its_own_native_generation(hass, side):
+    from unittest.mock import patch
+
+    from custom_components.adjustable_bed.beds.richmat_classic.lp2_services import (
+        async_register_lp2_services,
+    )
+    from custom_components.adjustable_bed.const import DOMAIN, PAIR_CONNECTION_MODE_SEQUENTIAL
+    from tests.test_paired_coordinator import _pair
+
+    async_register_lp2_services(hass)
+    parent, left, right = _pair([], mode=PAIR_CONNECTION_MODE_SEQUENTIAL)
+    controllers = []
+    for child in (left, right):
+        c, _ = controller("6BRM")
+        c.execute_action = AsyncMock()
+        child.controller = child.capability_controller = c
+        controllers.append(c)
+
+        async def execute(fn, *, selected=c, **_kwargs):
+            await fn(selected)
+
+        child.async_execute_controller_command = AsyncMock(side_effect=execute)
+    before = parent.pair_cancel_generation("left", frozenset({"movement"}))
+    with patch(
+        "custom_components.adjustable_bed.services._resolve_sided_targets",
+        return_value=([(parent, side)], []),
+    ):
+        await hass.services.async_call(
+            DOMAIN,
+            "lp2",
+            {"device_id": "pair", "side": side, "operation": "control", "control": 1},
+            blocking=True,
+        )
+    assert parent.pair_cancel_generation("left", frozenset({"movement"})) != before
+    assert parent.stop_count("left") == parent.stop_count("right") == 0
+    controllers[0].execute_action.assert_awaited_once()
+    assert controllers[1].execute_action.await_count == (1 if side == "both" else 0)
+
+
+@pytest.mark.parametrize("first_written", [False, True])
+async def test_local_interruption_counts_required_frames_without_cancelling_scheduler(
+    clock, monkeypatch, first_written
+):
+    from custom_components.adjustable_bed.command_scheduler import (
+        _CURRENT_COMMAND_CONTEXT,
+        CommandContext,
+        CommandKind,
+        Delivery,
+        delivered,
+        note_frame_skipped,
+    )
+
+    c, co = controller()
+    context = CommandContext(
+        object(),
+        co.cancel_command,
+        0,
+        "setting",
+        CommandKind.COMMAND,
+        None,
+        frozenset({"configuration"}),
+    )
+    outcomes = []
+    if first_written:
+
+        async def local_stop(_milliseconds, _cancel):
+            return False
+
+        monkeypatch.setattr(c, "_wait", local_stop)
+    else:
+
+        async def hold_back(_packet):
+            note_frame_skipped()
+
+        monkeypatch.setattr(c, "write_command", hold_back)
+        c._receive.light_capable = True
+    token = _CURRENT_COMMAND_CONTEXT.set(context)
+    try:
+        with delivered(outcomes.append):
+            if first_written:
+                await c.settings(fan="head", duration=3, level=60)
+            else:
+                await c.settings(color=(12, 34, 56))
+    finally:
+        _CURRENT_COMMAND_CONTEXT.reset(token)
+    assert not co.cancel_command.is_set()
+    assert outcomes == [Delivery.PARTIAL if first_written else Delivery.NONE]
+    assert packets(co) == (["6e01d30042"] if first_written else [])
+    assert context.frames_skipped == 1
+
+
+async def test_settled_release_finishes_on_owned_link_before_cancel_returns():
+    c, co = controller("6BRM", "RAW")
+    writing, finish = asyncio.Event(), asyncio.Event()
+
+    async def release_write(_characteristic, _packet, **_kwargs):
+        writing.set()
+        await finish.wait()
+
+    co.client.write_gatt_char.side_effect = release_write
+    release = asyncio.create_task(c._release())
+    await writing.wait()
+    release.cancel()
+    await asyncio.sleep(0)
+    assert not release.done()
+    finish.set()
+    with pytest.raises(asyncio.CancelledError):
+        await release
+    assert packets(co) == ["6e"]
+    assert not co.cancel_command.is_set()
+
+
+def _format_controller(app, layout):
+    if app == "bedsmart":
+        from tests.test_bedsmart import controller as bedsmart_controller
+
+        c, _co = bedsmart_controller(layout)
+        c._scope = None
+    else:
+        c, _co = controller(layout)
+    c._session = c._wire = None
+    return c
+
+
+@pytest.mark.parametrize(
+    ("app", "layout"), [("lp2", "6BRM"), ("lp2", "A3RM"), ("bedsmart", "6BRM")]
+)
+def test_only_the_beds_own_format_lists_its_controls(app, layout):
+    c = _format_controller(app, layout)
+    assert c.has_dynamic_buttons
+    assert c.persisted_app_state.get("wire") is None
+    shared = {s.key for s in c.controller_button_specs}
+    assert not any(k.endswith(("_raw", "_framed")) for k in shared)
+    # The sweep keeps both formats' own rows until the format is known.
+    retained = {key for domain, key in c.retained_entity_keys if domain == "button"}
+    assert retained and all(k.endswith(("_raw", "_framed")) for k in retained)
+    switches = {s.key for s in c.controller_switch_specs}
+    listed = {}
+    for wire, other in (("RAW", "_framed"), ("FRAMED", "_raw")):
+        # A restart restores the format of the last connection.
+        restored = _format_controller(app, layout)
+        restored.restore_persisted_app_state({**c.persisted_app_state, "wire": wire})
+        assert restored.retained_entity_keys == frozenset()
+        assert restored.persisted_app_state["wire"] == wire
+        specs = restored.controller_button_specs
+        keys = {s.key for s in specs}
+        assert shared < keys
+        assert keys - shared <= retained
+        assert not any(k.endswith(other) for k in keys)
+        assert all(restored.controller_button_available(k) for k in keys)
+        names = [s.name for s in specs]
+        assert len(names) == len(set(names))
+        assert switches <= {s.key for s in restored.controller_switch_specs}
+        listed[wire] = {s.key: s.name for s in specs}
+    # Never merged: on A3RM the same node is a different control per format.
+    if layout == "A3RM":
+        assert listed["RAW"]["richmat_classic_15_raw"] != (
+            listed["FRAMED"]["richmat_classic_15_framed"]
+        )
+    with pytest.raises(ValueError, match="command format"):
+        _format_controller(app, layout).restore_persisted_app_state({"wire": "OTHER"})
+
+
+async def test_renewable_hold_of_a_tap_control_is_a_translated_refusal(clock, monkeypatch):
+    from tests.error_helpers import raises_key
+
+    c, co = controller("A0RM")
+    monkeypatch.setattr(lp2, "current_command_context", lambda: SimpleNamespace(lease=object()))
+    node = next(g.node for g in c._gestures("FRAMED") if g.status != 1 and not g.long)
+    with raises_key("control_hold_renewal_not_supported"):
+        await c.execute_action(node)
+    co.client.write_gatt_char.assert_not_awaited()

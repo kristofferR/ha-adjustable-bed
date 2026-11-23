@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+import re
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any
 from urllib.parse import quote
@@ -12,12 +13,14 @@ from homeassistant.helpers.issue_registry import (
     IssueSeverity,
     async_create_issue,
     async_delete_issue,
+    async_refresh_issues,
 )
 from homeassistant.helpers.issue_registry import (
     async_get as async_get_issue_registry,
 )
 
 from .const import DOMAIN
+from .redaction import redact_text
 
 if TYPE_CHECKING:
     from homeassistant.components.bluetooth import BluetoothServiceInfoBleak
@@ -57,7 +60,11 @@ class UnsupportedDeviceInfo:
         integration_version: str | None = None,
         ha_version: str | None = None,
     ) -> str:
-        """Format GitHub issue details for a device wrongly auto-detected as a bed."""
+        """Format GitHub issue details for a device wrongly auto-detected as a bed.
+
+        The issue is public and the device is often someone's phone, so the
+        address keeps only its manufacturer prefix.
+        """
         if self.manufacturer_data:
             mfr_str = "\n".join(
                 f"  - `{hex(k)}`: `{v.hex()}`" for k, v in self.manufacturer_data.items()
@@ -70,7 +77,9 @@ class UnsupportedDeviceInfo:
         else:
             uuid_str = "  None"
 
-        signal_str = "\n".join(f"  - `{signal}`" for signal in signals) if signals else "  None"
+        signal_str = (
+            "\n".join(f"  - `{redact_text(signal)}`" for signal in signals) if signals else "  None"
+        )
         confidence_pct = round(confidence * 100)
 
         return f"""## Misidentified device
@@ -83,11 +92,13 @@ all, or it is a different brand/model.
 |----------|-------|
 | Detected as | `{detected_bed_type or "unknown"}` |
 | Confidence | {confidence_pct}% |
-| Address | `{self.address}` |
-| Name | `{self.name or "Unknown"}` |
+| Address | `{redact_text(self.address)}` |
+| Name | `{redact_text(self.name) if self.name else "Unknown"}` |
 | RSSI | {self.rssi or "N/A"} |
 | Integration version | `{integration_version or "unknown"}` |
 | Home Assistant | `{ha_version or "unknown"}` |
+
+This issue is public. Remove the name above if it is personal, such as a phone's name.
 
 ### Detection signals
 {signal_str}
@@ -138,7 +149,8 @@ def build_misidentified_issue_url(
     Targets the ``misidentified-bed.yml`` issue form, prefilling its ``details``
     textarea (field id) with the captured detection data.
     """
-    title = f"[Misidentified] {device_info.name or device_info.address}"
+    # The title is public and the device is not the user's: never its name.
+    title = f"[Misidentified] Detected as {detected_bed_type or 'a bed'}"
     details = device_info.to_misidentified_details(
         detected_bed_type,
         confidence,
@@ -159,21 +171,11 @@ def async_clear_unsupported_device_issues(hass: HomeAssistant) -> None:
     device that wasn't recognised as a bed. Because the integration's Bluetooth
     matchers are intentionally broad, this nagged users about unrelated devices,
     so the feature was removed. Issues created by those versions linger in the
-    registry, so we clear them on setup to make the upgrade self-cleaning.
+    registry, so a refresh that recreates none of them clears them on setup.
     """
-    registry = async_get_issue_registry(hass)
-    stale_ids = [
-        issue_id
-        for (domain, issue_id) in list(registry.issues)
-        if domain == DOMAIN and issue_id.startswith(_UNSUPPORTED_ISSUE_PREFIX)
-    ]
-    for issue_id in stale_ids:
-        async_delete_issue(hass, DOMAIN, issue_id)
-    if stale_ids:
-        _LOGGER.debug(
-            "Cleared %d obsolete unsupported-device Repairs issue(s)",
-            len(stale_ids),
-        )
+    async_refresh_issues(
+        hass, DOMAIN, issue_id_pattern=re.escape(_UNSUPPORTED_ISSUE_PREFIX)
+    ).async_finish()
 
 
 def _pairing_required_issue_id(address: str) -> str:
@@ -227,6 +229,7 @@ async def create_pairing_required_issue(
         hass,
         DOMAIN,
         issue_id,
+        config_entry_id=entry_id,
         is_fixable=True,
         is_persistent=True,
         severity=IssueSeverity.ERROR,
@@ -272,6 +275,8 @@ def update_octo_pin_required_issue(
     address: str,
     name: str,
     pin_locked_without_pin: bool | None,
+    *,
+    entry_id: str | None = None,
 ) -> None:
     """Raise or clear the "Octo receiver is PIN locked" Repairs issue.
 
@@ -307,9 +312,12 @@ def update_octo_pin_required_issue(
         hass,
         DOMAIN,
         issue_id,
-        is_fixable=False,
+        config_entry_id=entry_id,
+        # Controls stay unavailable until the PIN is saved; the fix asks for it.
+        is_fixable=entry_id is not None,
         is_persistent=True,
-        severity=IssueSeverity.WARNING,
+        severity=IssueSeverity.ERROR,
+        data={"entry_id": entry_id, "address": address} if entry_id is not None else None,
         translation_key="octo_pin_required",
         translation_placeholders={
             "name": name,
@@ -328,6 +336,20 @@ def update_octo_pin_required_issue(
     )
 
 
+def link_octo_pin_required_issue(
+    hass: HomeAssistant, address: str, name: str, entry_id: str
+) -> None:
+    """Link an existing PIN-locked warning to the entry, so removing it removes the warning.
+
+    Covers a warning raised before issues were linked to entries, for a bed
+    that has not connected since.
+    """
+    if async_get_issue_registry(hass).async_get_issue(
+        DOMAIN, _octo_pin_required_issue_id(address)
+    ) is not None:
+        update_octo_pin_required_issue(hass, address, name, True, entry_id=entry_id)
+
+
 def clear_octo_pin_required_issue(hass: HomeAssistant, address: str) -> None:
     """Drop the PIN-locked repair without needing a successful connection.
 
@@ -335,6 +357,6 @@ def clear_octo_pin_required_issue(hass: HomeAssistant, address: str) -> None:
     follows the repair and saves a PIN while the bed is unreachable would keep
     seeing an issue claiming no PIN is configured. Callers use this when the
     configuration itself makes the issue moot (a PIN was saved, the bed type
-    changed) or when the entry goes away.
+    changed).
     """
     async_delete_issue(hass, DOMAIN, _octo_pin_required_issue_id(address))

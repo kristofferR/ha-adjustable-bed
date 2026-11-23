@@ -14,15 +14,15 @@ from typing import cast
 
 import pytest
 
-from custom_components.adjustable_bed.motion_bed_actions import MOTION_BED_ACTIONS
-from custom_components.adjustable_bed.motion_bed_models import (
+from custom_components.adjustable_bed.beds.motion_bed.actions import MOTION_BED_ACTIONS
+from custom_components.adjustable_bed.beds.motion_bed.models import (
     RAW_NAME_MARKERS,
     accepts_motion_bed_name,
     motion_bed_saved_title,
     select_motion_bed,
 )
-from custom_components.adjustable_bed.motion_bed_protocol import SOURCE_COMMANDS
-from custom_components.adjustable_bed.motion_bed_state import MotionBedState
+from custom_components.adjustable_bed.beds.motion_bed.protocol import SOURCE_COMMANDS
+from custom_components.adjustable_bed.beds.motion_bed.state import MotionBedState
 
 _ACTION_FOR_SOURCE = {
     packet.source_id: action for action in MOTION_BED_ACTIONS for packet in action.packets

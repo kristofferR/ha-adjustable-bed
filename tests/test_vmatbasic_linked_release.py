@@ -6,7 +6,7 @@ from unittest.mock import AsyncMock
 import pytest
 
 from custom_components.adjustable_bed import const
-from custom_components.adjustable_bed.beds import vmatbasic_protocol as protocol
+from custom_components.adjustable_bed.codec import vibradorm as codec
 from custom_components.adjustable_bed.command_scheduler import PreparedCommandInvalidated
 from custom_components.adjustable_bed.paired_coordinator import PairedSideError
 from tests.test_vmatbasic import written
@@ -47,7 +47,7 @@ async def test_readiness_failure_restores_idle_release_before_any_motor_write(ha
     pair, left, right = await cold_pair(hass)
     failed = left if failed_side == const.SIDE_LEFT else right
     failed.client.services = [
-        service for service in failed.client.services if service.uuid != protocol.STATUS_SERVICE
+        service for service in failed.client.services if service.uuid != codec.STATUS_SERVICE_UUID
     ]
     try:
         with pytest.raises(PairedSideError):

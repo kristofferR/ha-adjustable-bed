@@ -20,18 +20,20 @@ import asyncio
 import logging
 from typing import TYPE_CHECKING
 
-from bleak.exc import BleakError
-
+from ..codec import keeson as codec
 from ..const import (
     RONDURE_VARIANT_BOTH,
     RONDURE_VARIANT_SIDE_A,
     RONDURE_VARIANT_SIDE_B,
+    RONDURE_VARIANTS,
     RONDURE_WRITE_CHAR_UUID,
     SIDE_BOTH,
     SIDE_LEFT,
     SIDE_RIGHT,
 )
-from .base import BedController
+from ..profiles import keeson as keeson_profiles
+from .base import BedController, ProfileExecution
+from .builder import BuildContext
 
 if TYPE_CHECKING:
     from ..coordinator import AdjustableBedCoordinator
@@ -75,8 +77,10 @@ class RondureCommands:
     STOP = 0x00000000
 
 
-class RondureController(BedController):
+class RondureController(ProfileExecution[keeson_profiles.KeesonProfile], BedController):
     """Controller for Rondure / 1500 Tilt Base beds."""
+
+    _write_with_response = False
 
     def __init__(
         self,
@@ -90,8 +94,13 @@ class RondureController(BedController):
             variant: Side selection - "both", "side_a", or "side_b".
         """
         super().__init__(coordinator)
+        self.profile = keeson_profiles.RONDURE
         self._variant = variant
         _LOGGER.debug("RondureController initialized with variant: %s", variant)
+
+    @property
+    def protocol_diagnostics(self) -> dict[str, object]:
+        return {"variant": self._variant}
 
     @property
     def control_characteristic_uuid(self) -> str:
@@ -129,10 +138,6 @@ class RondureController(BedController):
         """Return True - Rondure beds support tilt control."""
         return True
 
-    def _calculate_checksum(self, data: bytes) -> int:
-        """Calculate checksum (bitwise NOT of sum of all bytes)."""
-        return (~sum(data)) & 0xFF
-
     def _variant_for_side(self, side: str | None = None) -> str:
         """Resolve a per-call logical side without changing legacy defaults."""
         logical_side = side or self.command_side
@@ -145,73 +150,12 @@ class RondureController(BedController):
         return self._variant
 
     def _build_packet(self, command: int, side: str | None = None) -> bytes:
-        """Build a command packet for the bed.
-
-        Args:
-            command: 32-bit command value.
-
-        Returns:
-            8-byte packet for "both" mode, 9-byte for single side mode.
-        """
-        # Split command into little-endian bytes
-        cmd_bytes = [
-            command & 0xFF,
-            (command >> 8) & 0xFF,
-            (command >> 16) & 0xFF,
-            (command >> 24) & 0xFF,
-        ]
-
+        """Build the eight-byte E5 frame for Both, or the nine-byte E6 frame for side A or B."""
         variant = self._variant_for_side(side)
         if variant == RONDURE_VARIANT_BOTH:
-            # 8-byte packet: [0xE5, 0xFE, 0x16, cmd[0-3], checksum]
-            packet = bytes([0xE5, 0xFE, 0x16] + cmd_bytes)
-            checksum = self._calculate_checksum(packet)
-            return packet + bytes([checksum])
-        else:
-            # 9-byte packet: [0xE6, 0xFE, 0x16, cmd[0-3], side, checksum]
-            side_byte = 0x01 if variant == RONDURE_VARIANT_SIDE_A else 0x02
-            packet = bytes([0xE6, 0xFE, 0x16] + cmd_bytes + [side_byte])
-            checksum = self._calculate_checksum(packet)
-            return packet + bytes([checksum])
-
-    async def write_command(
-        self,
-        command: bytes,
-        repeat_count: int = 1,
-        repeat_delay_ms: int = 100,
-        cancel_event: asyncio.Event | None = None,
-    ) -> None:
-        """Write a command to the bed."""
-        if self.client is None or not self.client.is_connected:
-            _LOGGER.error("Cannot write command: BLE client not connected")
-            raise ConnectionError("Not connected to bed")
-
-        effective_cancel = cancel_event or self._coordinator.cancel_command
-
-        _LOGGER.debug(
-            "Writing command to Rondure bed (%s): %s (repeat: %d, delay: %dms)",
-            RONDURE_WRITE_CHAR_UUID,
-            command.hex(),
-            repeat_count,
-            repeat_delay_ms,
-        )
-
-        for i in range(repeat_count):
-            if effective_cancel is not None and effective_cancel.is_set():
-                _LOGGER.info("Command cancelled after %d/%d writes", i, repeat_count)
-                return
-
-            try:
-                async with self._ble_lock:
-                    await self.client.write_gatt_char(
-                        RONDURE_WRITE_CHAR_UUID, command, response=False
-                    )
-            except BleakError:
-                _LOGGER.exception("Failed to write command")
-                raise
-
-            if i < repeat_count - 1:
-                await asyncio.sleep(repeat_delay_ms / 1000)
+            return keeson_profiles.encode(self.profile, command & 0xFFFFFFFF)
+        selector = self.profile.split_sides["side_a" if variant == RONDURE_VARIANT_SIDE_A else "side_b"]
+        return codec.frame(command & 0xFFFFFFFF, header=0xE6, side=selector)
 
     async def _send_command(self, command: int, repeat_count: int = 1) -> None:
         """Build and send a command packet."""
@@ -220,18 +164,13 @@ class RondureController(BedController):
 
     async def _move_with_stop(self, command: int) -> None:  # pyright: ignore[reportIncompatibleMethodOverride]
         """Execute a movement command and always send STOP at the end."""
-        try:
+        async with self.releasing(
+            lambda: self.write_command(
+                self._build_packet(RondureCommands.STOP), cancel_event=asyncio.Event()
+            )
+        ):
             packet = self._build_packet(command)
             await self.write_command(packet, repeat_count=25, repeat_delay_ms=50)
-        finally:
-            try:
-                stop_packet = self._build_packet(RondureCommands.STOP)
-                await self.write_command(
-                    stop_packet,
-                    cancel_event=asyncio.Event(),
-                )
-            except BleakError:
-                _LOGGER.debug("Failed to send STOP command during cleanup")
 
     # Motor control methods
     async def move_head_up(self) -> None:
@@ -331,17 +270,11 @@ class RondureController(BedController):
 
     async def preset_memory(self, memory_num: int) -> None:
         """Go to memory preset (not supported on Rondure beds)."""
-        _LOGGER.warning(
-            "Memory presets are not supported on Rondure beds (requested: M%d)",
-            memory_num,
-        )
+        raise self.not_supported("memory presets")
 
     async def program_memory(self, memory_num: int) -> None:
         """Program current position to memory (not supported on Rondure beds)."""
-        _LOGGER.warning(
-            "Memory programming is not supported on Rondure beds (requested: M%d)",
-            memory_num,
-        )
+        raise self.not_supported("saving memory presets")
 
     # Massage methods
     async def massage_head_toggle(self) -> None:
@@ -380,3 +313,19 @@ class RondureController(BedController):
     async def lights_off(self) -> None:
         """Turn off under-bed light (toggle, no discrete off)."""
         await self.lights_toggle()
+
+
+async def build_controller(ctx: BuildContext) -> RondureController:
+    """Build the controller for the selected side, defaulting to both."""
+    variant = ctx.variant
+    if not variant or variant == "auto":
+        variant = "both"
+    elif variant not in RONDURE_VARIANTS:
+        _LOGGER.warning(
+            "Invalid Rondure variant '%s', defaulting to 'both'. Valid: %s",
+            variant,
+            list(RONDURE_VARIANTS),
+        )
+        variant = "both"
+    _LOGGER.debug("Using Rondure controller with variant: %s", variant)
+    return RondureController(ctx.coordinator, variant=variant)

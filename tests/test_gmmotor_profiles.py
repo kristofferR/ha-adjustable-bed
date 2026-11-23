@@ -2,8 +2,8 @@
 
 import pytest
 
-from custom_components.adjustable_bed.gmmotor_catalog import PROFILES, ROUTES
-from custom_components.adjustable_bed.gmmotor_profiles import load_profile
+from custom_components.adjustable_bed.beds.gmmotor.catalog import PROFILES, ROUTES
+from custom_components.adjustable_bed.beds.gmmotor.profiles import load_profile
 
 
 def test_host_admission_and_nested_profiles() -> None:

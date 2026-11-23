@@ -1,7 +1,36 @@
 # Paired runtimes and registry ownership
 
-Ref #525 and #523. These boundaries preserve the existing pairing model and
-command behavior; topology strategies and same-device concurrency remain separate work.
+Ref #525, #523 and #524. These boundaries preserve the existing pairing model and
+command behavior; same-device concurrency remains separate work (#516).
+
+## Topology strategies
+
+`PairedBedCoordinator` is the public facade. It resolves the side, captures
+pair ownership, preempts overlapping work, and hands the command to one strategy
+in `paired_topology.py`. Each strategy owns target admission, locking,
+prepare/commit, connection switching and its STOP fan-out:
+
+| Strategy | Pair | Behavior |
+| --- | --- | --- |
+| `ConcurrentTwoLinkTopology` | Two addresses, concurrent or automatic mode | One lane per side. Linked groups reserve every scheduler before any side starts and stop every started side on failure. Automatic mode adopts sequential switching after proven adapter-slot exhaustion. |
+| `SequentialTwoLinkTopology` | Two addresses, sequential mode | One link lane. Each side connects, runs and disconnects before the next; STOP reaches only connected or ready local sides. |
+| `SingleLinkSideAwareTopology` | One address | One lane per logical side. A native Both is one physical operation; otherwise the side frames run in turn and STOP cancels the shared scheduler once. |
+
+The static `single_address_native_both` bed trait can require separate side
+operations before a live controller exists. Symphony's two split products use
+that path, including both captured STOP frames on their one physical link.
+
+A two-link pair holds both two-link strategies, and the current connection mode
+selects one. `PairAdmission` holds the cancellation generations and the active
+group for all strategies of a pair, so a command queued before automatic
+fallback reroutes to the sequential strategy with the STOP ownership it
+captured. Child coordinators keep their BLE clients, schedulers,
+authentication, disconnect timers and protocol controllers.
+
+`test_paired_topology_trace.py` records every GATT write, link change, call into
+a physical coordinator and caller outcome under a virtual clock, for every
+strategy (automatic mode included). Its fixture was recorded before the
+extraction, so routing changes must reproduce it exactly.
 
 ## Entity runtimes
 
@@ -19,12 +48,22 @@ union instead of pretending every view is a physical coordinator. Support captur
 uses explicit diagnostic access on the logical view so both physical and logical
 position polling remain paused throughout capture.
 
+Side devices carry the side in their name, so no entity adds it to its translation
+key. A two-address side keeps its own bed's name. A single-address side is named
+`<bed> Left` or `<bed> Right` through the `device` translations, and Home Assistant
+keeps a name the user set. Combined controls on the parent reuse the side's key;
+the parent device's name keeps them apart. Only keys a bed states for a side it
+controls natively, such as Sleep Number's per-side climate, end in `_left`,
+`_right` or `_both`. The card reads an entity's side from its `bed_side` or `side`
+attribute, never from its key.
+
 `ChildEntryView` explicitly forwards identity and lifecycle methods to the real
 parent `ConfigEntry`. Runtime persistence still updates only the matching child
 descriptor; background tasks and unload callbacks belong to the real entry.
 Coordinators accept the two supported entry forms directly, without a cast.
-The existing side-bound controller adapter remains a distinct controller type;
-this change does not redesign the protocol controller interface.
+A single-address side shares the physical controller itself. The runtime binds
+its side with `BedController.side_scope()` around commands, queries and state
+reads, and `own_sides()` limits per-side capability lists to that side.
 
 ## Registry transactions
 
@@ -62,6 +101,17 @@ Single-address unpair retains its in-place config restoration and paired-only
 entity cleanup. Failures restoring its configuration or reloading it are reported
 without hiding the original failure.
 
+## Stale entity rows
+
+Entity builders only build. Every platform records the unique IDs it creates in
+`entity_sweep.py`, and once all forwarded platforms have set up, rows of the entry
+that nothing created are removed. Disabled entities are created too, so they stay.
+The sweep does nothing while any configured side is missing from the runtime, has
+no capability controller, or has not finished entity discovery, so an offline or
+retained side never loses the other side's rows. A controller lists entities that
+appear only once the bed reports them in `retained_entity_keys`. A dynamic builder
+that rebuilds after discovery replaces its own record and triggers the sweep again.
+
 ## Validation
 
 `test_entity_runtime.py` covers every platform in all three runtime shapes,
@@ -74,3 +124,25 @@ and device moves, entry enabling, and source removal. It also checks placeholder
 identity recovery, pre-mutation validation, retryable rollback, and single-address
 config restoration, including cancellation. Existing paired setup tests cover real HA registry adoption,
 conversion, unpair, offline sides, and user customization preservation.
+
+### Physical validation
+
+Deferred for the v5 beta ([#783](https://github.com/kristofferR/ha-adjustable-bed/issues/783)).
+Proven offline: `test_paired_topology_trace.py` reproduces, write for write, the
+trace recorded before the strategies were extracted, for every strategy and for
+automatic mode. Needs real-bed reports: two-address pairs in concurrent,
+sequential and automatic mode, including automatic mode's switch to sequential
+after a real adapter runs out of connection slots; a STOP that must reach both
+sides; and single-address beds running a native Both. Reports through ESPHome
+proxies with few free slots are the most useful.
+
+### A receiver with one shared command timer
+
+A controller may declare `commands_share_timer` when each physical receiver
+has one command timer. Every explicit BedTech 7.1.3 model declares it: physical
+admission replaces any previous axis or action on that receiver. FH models also
+share it across logical banks. Their single-link topology uses one scheduler resource,
+invalidates queued work on both logical sides when any command replaces it,
+and expands a side or motor STOP to both sides. Side scopes still select the
+wire bank; this declaration does not enable concurrent movement. Other
+single-address profiles retain their independent side resources.

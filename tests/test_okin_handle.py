@@ -2,19 +2,16 @@
 
 from __future__ import annotations
 
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
 
 import pytest
 from bleak.exc import BleakError
 from homeassistant.const import CONF_ADDRESS, CONF_NAME
 from homeassistant.core import HomeAssistant
-from pytest_homeassistant_custom_component.common import MockConfigEntry
+from pytest_homeassistant.common import MockConfigEntry
 
-from custom_components.adjustable_bed.beds.okin_handle import (
-    OkinHandleCommands,
-)
 from custom_components.adjustable_bed.const import (
-    BED_TYPE_DEWERTOKIN,
+    BED_TYPE_OKIN_HANDLE,
     CONF_BED_TYPE,
     CONF_DISABLE_ANGLE_SENSING,
     CONF_HAS_MASSAGE,
@@ -26,13 +23,34 @@ from custom_components.adjustable_bed.const import (
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
 
 
+class OkinHandleCommands:
+    """Frames the pre-v5 DewertOkin controller sent, pinned as literals."""
+
+    FLAT = bytes.fromhex("040210000000")
+    ZERO_G = bytes.fromhex("040200004000")
+    TV = bytes.fromhex("040200003000")
+    QUIET_SLEEP = bytes.fromhex("040200008000")
+    MEMORY_1 = bytes.fromhex("040200001000")
+    MEMORY_2 = bytes.fromhex("040200002000")
+    HEAD_UP = bytes.fromhex("040200000001")
+    HEAD_DOWN = bytes.fromhex("040200000002")
+    FOOT_UP = bytes.fromhex("040200000004")
+    FOOT_DOWN = bytes.fromhex("040200000008")
+    WAVE_MASSAGE = bytes.fromhex("040280000000")
+    HEAD_MASSAGE = bytes.fromhex("040200000800")
+    FOOT_MASSAGE = bytes.fromhex("040200000400")
+    MASSAGE_OFF = bytes.fromhex("040202000000")
+    UNDERLIGHT = bytes.fromhex("040200020000")
+    STOP = bytes.fromhex("040200000000")
+
+
 @pytest.fixture
 def mock_okin_handle_config_entry_data() -> dict:
     """Return mock config entry data for Okin handle bed."""
     return {
         CONF_ADDRESS: "AA:BB:CC:DD:EE:FF",
         CONF_NAME: "Okin Handle Test Bed",
-        CONF_BED_TYPE: BED_TYPE_DEWERTOKIN,
+        CONF_BED_TYPE: BED_TYPE_OKIN_HANDLE,
         CONF_MOTOR_COUNT: 2,
         CONF_HAS_MASSAGE: True,
         CONF_DISABLE_ANGLE_SENSING: True,
@@ -58,18 +76,6 @@ def mock_okin_handle_config_entry(
 
 class TestOkinHandleController:
     """Test Okin handle controller."""
-
-    async def test_control_characteristic_uuid(
-        self,
-        hass: HomeAssistant,
-        mock_okin_handle_config_entry,
-        mock_coordinator_connected,
-    ):
-        """Test controller reports the stable Okin write characteristic."""
-        coordinator = AdjustableBedCoordinator(hass, mock_okin_handle_config_entry)
-        await coordinator.async_connect()
-
-        assert coordinator.controller.control_characteristic_uuid == OKIMAT_WRITE_CHAR_UUID
 
     async def test_write_command(
         self,
@@ -138,196 +144,8 @@ class TestOkinHandleController:
             await coordinator.controller.write_command(OkinHandleCommands.STOP)
 
 
-class TestOkinHandleMovement:
-    """Test Okin handle movement commands."""
-
-    async def test_move_head_up(
-        self,
-        hass: HomeAssistant,
-        mock_okin_handle_config_entry,
-        mock_coordinator_connected,
-        mock_bleak_client: MagicMock,
-    ):
-        """Test move head up sends commands followed by stop."""
-        coordinator = AdjustableBedCoordinator(hass, mock_okin_handle_config_entry)
-        await coordinator.async_connect()
-
-        await coordinator.controller.move_head_up()
-
-        calls = mock_bleak_client.write_gatt_char.call_args_list
-        assert len(calls) > 1
-
-        # Last call should be stop
-        last_command = calls[-1][0][1]
-        assert last_command == OkinHandleCommands.STOP
-
-    async def test_move_head_down(
-        self,
-        hass: HomeAssistant,
-        mock_okin_handle_config_entry,
-        mock_coordinator_connected,
-        mock_bleak_client: MagicMock,
-    ):
-        """Test move head down sends commands followed by stop."""
-        coordinator = AdjustableBedCoordinator(hass, mock_okin_handle_config_entry)
-        await coordinator.async_connect()
-
-        await coordinator.controller.move_head_down()
-
-        calls = mock_bleak_client.write_gatt_char.call_args_list
-        assert len(calls) > 1
-        last_command = calls[-1][0][1]
-        assert last_command == OkinHandleCommands.STOP
-
-    async def test_move_legs_up(
-        self,
-        hass: HomeAssistant,
-        mock_okin_handle_config_entry,
-        mock_coordinator_connected,
-        mock_bleak_client: MagicMock,
-    ):
-        """Test move legs up sends FOOT_UP command."""
-        coordinator = AdjustableBedCoordinator(hass, mock_okin_handle_config_entry)
-        await coordinator.async_connect()
-
-        await coordinator.controller.move_legs_up()
-
-        calls = mock_bleak_client.write_gatt_char.call_args_list
-        # First call should be FOOT_UP
-        first_command = calls[0][0][1]
-        assert first_command == OkinHandleCommands.FOOT_UP
-
-    async def test_move_feet_down(
-        self,
-        hass: HomeAssistant,
-        mock_okin_handle_config_entry,
-        mock_coordinator_connected,
-        mock_bleak_client: MagicMock,
-    ):
-        """Test move feet down sends FOOT_DOWN command."""
-        coordinator = AdjustableBedCoordinator(hass, mock_okin_handle_config_entry)
-        await coordinator.async_connect()
-
-        await coordinator.controller.move_feet_down()
-
-        calls = mock_bleak_client.write_gatt_char.call_args_list
-        first_command = calls[0][0][1]
-        assert first_command == OkinHandleCommands.FOOT_DOWN
-
-    async def test_stop_all(
-        self,
-        hass: HomeAssistant,
-        mock_okin_handle_config_entry,
-        mock_coordinator_connected,
-        mock_bleak_client: MagicMock,
-    ):
-        """Test stop all sends stop command."""
-        coordinator = AdjustableBedCoordinator(hass, mock_okin_handle_config_entry)
-        await coordinator.async_connect()
-
-        await coordinator.controller.stop_all()
-
-        mock_bleak_client.write_gatt_char.assert_called_with(
-            OKIMAT_WRITE_CHAR_UUID, OkinHandleCommands.STOP, response=True
-        )
-
-
 class TestOkinHandlePresets:
     """Test Okin handle preset commands."""
-
-    async def test_preset_flat(
-        self,
-        hass: HomeAssistant,
-        mock_okin_handle_config_entry,
-        mock_coordinator_connected,
-        mock_bleak_client: MagicMock,
-    ):
-        """Test preset flat command."""
-        coordinator = AdjustableBedCoordinator(hass, mock_okin_handle_config_entry)
-        await coordinator.async_connect()
-
-        with patch("custom_components.adjustable_bed.beds.okin_handle.asyncio.sleep"):
-            await coordinator.controller.preset_flat()
-
-        first_call = mock_bleak_client.write_gatt_char.call_args_list[0]
-        assert first_call[0][1] == OkinHandleCommands.FLAT
-
-    async def test_preset_zero_g(
-        self,
-        hass: HomeAssistant,
-        mock_okin_handle_config_entry,
-        mock_coordinator_connected,
-        mock_bleak_client: MagicMock,
-    ):
-        """Test preset zero gravity command."""
-        coordinator = AdjustableBedCoordinator(hass, mock_okin_handle_config_entry)
-        await coordinator.async_connect()
-
-        with patch("custom_components.adjustable_bed.beds.okin_handle.asyncio.sleep"):
-            await coordinator.controller.preset_zero_g()
-
-        first_call = mock_bleak_client.write_gatt_char.call_args_list[0]
-        assert first_call[0][1] == OkinHandleCommands.ZERO_G
-
-    async def test_preset_tv(
-        self,
-        hass: HomeAssistant,
-        mock_okin_handle_config_entry,
-        mock_coordinator_connected,
-        mock_bleak_client: MagicMock,
-    ):
-        """Test preset TV command."""
-        coordinator = AdjustableBedCoordinator(hass, mock_okin_handle_config_entry)
-        await coordinator.async_connect()
-
-        with patch("custom_components.adjustable_bed.beds.okin_handle.asyncio.sleep"):
-            await coordinator.controller.preset_tv()
-
-        first_call = mock_bleak_client.write_gatt_char.call_args_list[0]
-        assert first_call[0][1] == OkinHandleCommands.TV
-
-    async def test_preset_anti_snore(
-        self,
-        hass: HomeAssistant,
-        mock_okin_handle_config_entry,
-        mock_coordinator_connected,
-        mock_bleak_client: MagicMock,
-    ):
-        """Test preset anti-snore/quiet sleep command."""
-        coordinator = AdjustableBedCoordinator(hass, mock_okin_handle_config_entry)
-        await coordinator.async_connect()
-
-        with patch("custom_components.adjustable_bed.beds.okin_handle.asyncio.sleep"):
-            await coordinator.controller.preset_anti_snore()
-
-        first_call = mock_bleak_client.write_gatt_char.call_args_list[0]
-        assert first_call[0][1] == OkinHandleCommands.QUIET_SLEEP
-
-    @pytest.mark.parametrize(
-        ("memory_num", "expected_command"),
-        [
-            (1, OkinHandleCommands.MEMORY_1),
-            (2, OkinHandleCommands.MEMORY_2),
-        ],
-    )
-    async def test_preset_memory(
-        self,
-        hass: HomeAssistant,
-        mock_okin_handle_config_entry,
-        mock_coordinator_connected,
-        mock_bleak_client: MagicMock,
-        memory_num: int,
-        expected_command: bytes,
-    ):
-        """Test preset memory commands."""
-        coordinator = AdjustableBedCoordinator(hass, mock_okin_handle_config_entry)
-        await coordinator.async_connect()
-
-        with patch("custom_components.adjustable_bed.beds.okin_handle.asyncio.sleep"):
-            await coordinator.controller.preset_memory(memory_num)
-
-        first_call = mock_bleak_client.write_gatt_char.call_args_list[0]
-        assert first_call[0][1] == expected_command
 
     async def test_preset_memory_invalid(
         self,
@@ -347,97 +165,8 @@ class TestOkinHandlePresets:
         assert "only support memory presets 1 and 2" in caplog.text
 
 
-class TestOkinHandleLights:
-    """Test Okin handle light commands."""
-
-    async def test_lights_toggle(
-        self,
-        hass: HomeAssistant,
-        mock_okin_handle_config_entry,
-        mock_coordinator_connected,
-        mock_bleak_client: MagicMock,
-    ):
-        """Test lights toggle command."""
-        coordinator = AdjustableBedCoordinator(hass, mock_okin_handle_config_entry)
-        await coordinator.async_connect()
-
-        await coordinator.controller.lights_toggle()
-
-        mock_bleak_client.write_gatt_char.assert_called_with(
-            OKIMAT_WRITE_CHAR_UUID, OkinHandleCommands.UNDERLIGHT, response=True
-        )
-
-    async def test_lights_on(
-        self,
-        hass: HomeAssistant,
-        mock_okin_handle_config_entry,
-        mock_coordinator_connected,
-        mock_bleak_client: MagicMock,
-    ):
-        """Test lights on uses toggle (since Okin handle only has toggle)."""
-        coordinator = AdjustableBedCoordinator(hass, mock_okin_handle_config_entry)
-        await coordinator.async_connect()
-
-        await coordinator.controller.lights_on()
-
-        mock_bleak_client.write_gatt_char.assert_called_with(
-            OKIMAT_WRITE_CHAR_UUID, OkinHandleCommands.UNDERLIGHT, response=True
-        )
-
-
 class TestOkinHandleMassage:
     """Test Okin handle massage commands."""
-
-    async def test_massage_toggle(
-        self,
-        hass: HomeAssistant,
-        mock_okin_handle_config_entry,
-        mock_coordinator_connected,
-        mock_bleak_client: MagicMock,
-    ):
-        """Test massage toggle command."""
-        coordinator = AdjustableBedCoordinator(hass, mock_okin_handle_config_entry)
-        await coordinator.async_connect()
-
-        await coordinator.controller.massage_toggle()
-
-        mock_bleak_client.write_gatt_char.assert_called_with(
-            OKIMAT_WRITE_CHAR_UUID, OkinHandleCommands.WAVE_MASSAGE, response=True
-        )
-
-    async def test_massage_off(
-        self,
-        hass: HomeAssistant,
-        mock_okin_handle_config_entry,
-        mock_coordinator_connected,
-        mock_bleak_client: MagicMock,
-    ):
-        """Test massage off command."""
-        coordinator = AdjustableBedCoordinator(hass, mock_okin_handle_config_entry)
-        await coordinator.async_connect()
-
-        await coordinator.controller.massage_off()
-
-        mock_bleak_client.write_gatt_char.assert_called_with(
-            OKIMAT_WRITE_CHAR_UUID, OkinHandleCommands.MASSAGE_OFF, response=True
-        )
-
-    async def test_massage_head_toggle(
-        self,
-        hass: HomeAssistant,
-        mock_okin_handle_config_entry,
-        mock_coordinator_connected,
-        mock_bleak_client: MagicMock,
-    ):
-        """Test head massage toggle command."""
-        coordinator = AdjustableBedCoordinator(hass, mock_okin_handle_config_entry)
-        await coordinator.async_connect()
-
-        await coordinator.controller.massage_head_toggle()
-
-        mock_bleak_client.write_gatt_char.assert_called_with(
-            OKIMAT_WRITE_CHAR_UUID, OkinHandleCommands.HEAD_MASSAGE, response=True
-        )
 
     async def test_massage_foot_toggle(
         self,

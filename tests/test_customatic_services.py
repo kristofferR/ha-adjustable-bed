@@ -10,6 +10,11 @@ import voluptuous as vol
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import ServiceValidationError
 
+from custom_components.adjustable_bed.beds.customatic.services import (
+    CUSTOMATIC_MEMORY_ACTIONS,
+    SERVICE_CUSTOMATIC_HOLD_MEMORY,
+    SERVICE_CUSTOMATIC_MOVE_SIMULTANEOUSLY,
+)
 from custom_components.adjustable_bed.const import (
     BED_TYPE_CUSTOMATIC_CLARITY,
     BED_TYPE_CUSTOMATIC_JEROMES,
@@ -19,12 +24,8 @@ from custom_components.adjustable_bed.const import (
     SIDE_BOTH,
 )
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
-from custom_components.adjustable_bed.services import (
-    CUSTOMATIC_MEMORY_ACTIONS,
-    SERVICE_CUSTOMATIC_HOLD_MEMORY,
-    SERVICE_CUSTOMATIC_MOVE_SIMULTANEOUSLY,
-    async_register_services,
-)
+from custom_components.adjustable_bed.services import async_register_services
+from tests.error_helpers import raises_key
 
 MEMORY_SELECTIONS = [list(selection) for size in range(1, 6)
                      for selection in combinations(CUSTOMATIC_MEMORY_ACTIONS, size)]
@@ -44,12 +45,17 @@ def target(profile=BED_TYPE_CUSTOMATIC_REMEDY):
         ),
         validate_hold_control=MagicMock(),
         hold_control=AsyncMock(),
+        requires_disconnected_transport=False,
+        requires_linked_live_readiness=False,
     )
     coordinator = MagicMock(spec=AdjustableBedCoordinator)
     coordinator.name = "Customatic bed"
     coordinator.bed_type = profile
     coordinator.entry = SimpleNamespace(data={})
+    coordinator.controller_side = None
     coordinator.capability_controller = controller
+    coordinator.stop_epoch = 0
+    coordinator.pairlink_peripheral = False
 
     async def execute(command, **kwargs):
         await command(controller)
@@ -148,7 +154,7 @@ async def test_lumbar_preflight_rejects_two_motor_profile_before_any_write(
     other, other_controller = target(BED_TYPE_CUSTOMATIC_CLARITY)
     other_controller.held_control_options = ("back_up+legs_down",)
     resolve.return_value = ([(coordinator, SIDE_BOTH), (other, SIDE_BOTH)], [])
-    with pytest.raises(ServiceValidationError, match="does not support held control"):
+    with raises_key("held_control_not_supported", ServiceValidationError):
         await hass.services.async_call(
             DOMAIN, SERVICE_CUSTOMATIC_MOVE_SIMULTANEOUSLY,
             {"device_id": ["bed", "other"], "actions": {"lumbar": "up"}, "duration": 1},
@@ -178,6 +184,7 @@ async def test_cancelled_preflight_restores_connected_target_idle_timer(
 ):
     first, controller, resolve = service_target
     second, _ = target(BED_TYPE_CUSTOMATIC_CLARITY)
+    first.controller_side = None
     first.capability_controller = second.capability_controller = None
     first.controller = None
     first.is_connected = False
@@ -268,6 +275,7 @@ async def test_real_pair_preflights_later_side_before_either_command(
     for child, profile in [(left, BED_TYPE_CUSTOMATIC_REMEDY), (right, BED_TYPE_CUSTOMATIC_JEROMES)]:
         child.bed_type = profile
         child.entry = SimpleNamespace(data={})
+        child.controller_side = None
         child.capability_controller = controller
     pair = PairedBedCoordinator(hass, SimpleNamespace(data={CONF_PAIR_ID: "customatic-pair"}),
                                 {SIDE_LEFT: left, SIDE_RIGHT: right})
@@ -301,11 +309,12 @@ async def test_real_pair_fans_out_and_stops_both_after_partial_failure(
             self.bed_type = BED_TYPE_CUSTOMATIC_CLARITY
             self.entry = SimpleNamespace(data={})
             _, self.controller = target(BED_TYPE_CUSTOMATIC_CLARITY)
+            self.controller_side = None
             self.capability_controller = self.controller
 
         async def async_execute_controller_command(
             self, command_fn, cancel_running=True, skip_disconnect=False,
-            resource=None, resources=None,
+            resource=None, resources=None, expected_stop_epoch=None,
         ):
             self.log.append((self.side, "command"))
             await command_fn(self.controller)

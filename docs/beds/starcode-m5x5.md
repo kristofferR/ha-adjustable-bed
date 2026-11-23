@@ -1,19 +1,19 @@
 # AdjustableM5X5 app
 
-**Status:** ❓ Needs testing (artifact-verified, hardware unverified)
+**Status:** Not yet tested
 
 **Credit:** Reverse engineering by [kristofferR](https://github.com/kristofferR/ha-adjustable-bed)
 
-Select **AdjustableM5X5 app** for the artifact-verified behavior of
-`com.starcode.abm5_5` 1.2.3 (version code 6). The generic BOX25 route retains
-its other app contracts. ELEVATE lifts use the [DewertOkin ELEVATE](star-elevate.md)
+Select **AdjustableM5X5 app: CB25, F23 or kneading bed** in the StarCode question if you use AdjustableM5X5 1.2.3
+(`com.starcode.abm5_5`). The generic BOX25 route keeps the behavior of the other
+apps. ELEVATE lifts use the [DewertOkin ELEVATE](okin-5a.md#dewertokin-elevate)
 bed type, which joins this app's lift groups.
 
 ## Known Models
 
 - StarCode `STAR25*` beds operated with AdjustableM5X5, in three bed classes:
   CB25, F23 and kneading (see [Detection and setup](#detection-and-setup))
-- [DewertOkin ELEVATE](star-elevate.md) lifts, as members of this app's lift
+- [DewertOkin ELEVATE](okin-5a.md#dewertokin-elevate) lifts, as members of this app's lift
   groups
 
 ## Apps
@@ -26,14 +26,15 @@ bed type, which joins this app's lift groups.
 
 | Feature | Supported |
 |---------|-----------|
-| Motor Control | ✅ Head, foot, lumbar and the exact head + foot union |
-| Position Feedback | ✅ Head, foot and lumbar clamped percentages (sliders) |
+| Motor Control | ✅ Head, foot, lumbar, and head and foot together |
+| Position Feedback | ✅ Head, foot and lumbar as 0-100% sliders |
 | Presets | ✅ Flat, Ascent (TV), Zero Gravity, Anti-Snore, Lounge |
 | Memory Presets | ✅ M1 / M2 recall and save; save Ascent / Zero Gravity / Lounge; reset saved positions |
 | Massage | ✅ Head / foot / wave increase and decrease, toggle / off, 10/20/30-minute timer |
 | Lights | ✅ Feedback light on/off, cycle, palette, brightness 1–6, **Light mode 1** |
-| Alarm, EQ, sonic and kneading state | ⚠️ Read-only (no reachable setters were established) |
+| Alarm, EQ, sonic and kneading state | ⚠️ Shown, but cannot be changed |
 | Lift groups | ✅ One main plus three lifts |
+| Hold until release | ✅ ([renewable](../SERVICES.md#renewable-holds) `timed_move`: 100 ms refresh, then STOP) |
 
 ## Protocol Details
 
@@ -55,6 +56,8 @@ Optional manufacturer is `00002a29-…`.
 | Extended value | `04 e0 key value 00 00` | `5a e0 04 key value 00 00 a5` |
 | Query | `00 b0` | `5a b0 00 a5` |
 
+- Star frames come from the [Okin 5A codec](okin-5a.md#starcode-frames) and
+  legacy frames from the [Okin N-frame codec](okin-nframe.md#wire-codec).
 - Legacy light on/off uses `08 02 00 00 00 00 BE32(key)`, with keys `40` and
   `80`.
 - Star bedding keys have high bytes `03 10 30`.
@@ -68,7 +71,7 @@ Optional manufacturer is `00002a29-…`.
 - RX subscribes before the sender initializes.
 - Every write uses **without response**.
 - Bleak selects notification/indication subscription from actual properties;
-  the Android request for MTU 512 does not establish a mandatory peripheral MTU.
+  the Android request for MTU 512 does not mean the bed requires that MTU.
 
 ### Dialect selection
 
@@ -91,7 +94,9 @@ Optional manufacturer is `00002a29-…`.
 
 ## Detection and setup
 
-Enter the exact case-sensitive Bluetooth name separately from a friendly name:
+Enter the Bluetooth name as advertised, separately from a friendly name.
+Home Assistant matches these prefixes without regard to letter case and keeps
+the original name unchanged:
 
 | Prefix, in factory order | Profile |
 |---|---|
@@ -99,14 +104,27 @@ Enter the exact case-sensitive Bluetooth name separately from a friendly name:
 | `STAR255402`, `STAR255403` | Kneading |
 | Remaining `STAR25` | CB25 |
 
+For example, `Star254202…` selects CB25. The app uses Android's cached
+platform name, which is separate from the advertised name HA receives. Its
+factory is case-sensitive; HA accepts advertised-name case variations
+to support [beds reported working in the app](https://github.com/kristofferR/ha-adjustable-bed/issues/914#issuecomment-6862684356).
+
 - These names and the shared transport cannot distinguish the app from other
   software. Discovery asks the user to choose the app.
 - A name starting `ELEVATE` is rejected here with a pointer to the DewertOkin
   ELEVATE bed type.
 - The three bed classes and ELEVATE entries may each occupy either the main or
   an independently addressed lift slot.
-- Desk, TV, seating and unknown fallback classes fail the artifact's bedding
+- Desk, TV, seating and unknown fallback classes fail the app's bedding
   feature guards.
+
+### Home Assistant setup
+
+Choose the **AdjustableM5X4, AdjustableM5X5 and Adjustable Comfort M1X12 apps · StarCode** row, then **AdjustableM5X5 app: CB25, F23 or kneading bed**, and enter the exact Bluetooth name, preserving case. An app offered for a Star-named receiver opens its own questions directly. Confirm CB25, F23 or kneading. ELEVATE lifts use the [DewertOkin ELEVATE](okin-5a.md#dewertokin-elevate) bed type instead. The specific F23/kneading prefixes take precedence over generic `STAR25`; shared Nordic UART identifiers alone cannot choose an app. The exact optional manufacturer read selects the command dialect when connecting.
+
+On the main entry, select up to **three other configured AdjustableM5X5 or DewertOkin ELEVATE entries** as lifts. This supports four independent Bluetooth addresses: one main and three lifts. The three bed classes and ELEVATE can occupy either slot; an ELEVATE main selects its lifts in its own options. Duplicate addresses and unrelated products are rejected. This group keeps each device's existing coordinator and entities. It does not convert them into Left/Right paired devices.
+
+Use `adjustable_bed.starcode_move_lifts` for native lift-union movement, STOP or composite flat. A profile or group-selection edit cancels retained delayed writes. Individual controls remain on each physical device.
 
 ## Commands
 
@@ -162,14 +180,14 @@ high bytes, for example Head up is `5a 01 03 10 30 00 a5`.
 
 The app's ELEVATE class uses Star low bytes `40/41` for actuator 1, `42/43` for
 actuator 2, `44/45` for both, `46` for one-shot flat, `0f` STOP and `4f`
-interrupt, the same table as the released [ELEVATE](star-elevate.md)
+interrupt, the same table as the released [ELEVATE](okin-5a.md#dewertokin-elevate)
 controller. That bed type now carries these vectors and the group behavior
 below.
 
 ## Command Timing
 
 - Commands run on the next available **100 ms** sender tick, with one write in
-  flight. No configurable delay replaces the artifact's cadence.
+  flight. No configurable delay replaces the app's cadence.
 - Held app actions become bounded HA pulses and remain cancellable. Movement
   always releases with a fresh STOP event; relative massage adds the
   manufacturer-selected **base** query after neutral, including on
@@ -212,8 +230,8 @@ enabled.
   units. Alarm repeat and hour/minute values remain raw; typed alarm attributes
   retain the exact enums and slot layout.
 - EQ magnitudes/signs, raw volume, USB bit and prior sonic fields are retained.
-- These alarm/sound/sonic/kneading domains are read-only because no reachable
-  setters were established.
+- These alarm/sound/sonic/kneading values are read-only because the app has no
+  control that sets them.
 
 ### RGB state
 
@@ -274,8 +292,8 @@ coordinator.
 ### Readiness and interrupts
 
 - All selected targets must be ready before group writes.
-- Individual main movement interrupts reachable ready lifts; individual lift
-  movement interrupts its reachable ready main.
+- Individual main movement interrupts the ready lifts it can reach; individual
+  lift movement interrupts its ready main if it can reach it.
 - Unloaded, disconnected or unready peers, and peer write failures, do not block
   a healthy individual control. Related pending group admissions are cancelled
   before peer writes, without requiring an offline peer to reconnect.
@@ -287,12 +305,12 @@ coordinator.
 - Composite flat interrupts the group, sends main flat, waits **1600 ms**, then
   sends lift flat.
 - Every target's connection is held through dispatch, delay and cleanup,
-  including with Disconnect After Command enabled.
+  whatever the **Bluetooth connection** setting.
 - STOP, changed selection, lost transport, replacement
   coordinator/controller/client/session or unload cancels delayed writes.
 - Failure/cancellation cleans every admitted target.
 - Group STOP first cancels retained delayed operations and attempts STOP on
-  every reachable configured member, even if the main or another lift is
+  every loaded configured member, connecting if needed, even if the main or another lift is
   unavailable. It reports missing members or transport errors after attempting
   the remaining targets.
 - Successful Elevate flat receives no invented immediate STOP.
@@ -330,13 +348,8 @@ runs.
 
 ### Evidence and deferred validation
 
-The full [225-item disposition ledger](../apk-analysis/row005-dispositions.md)
-binds implementation and exclusions to code and executed tests. All 111 owned
-command rows, 138 inherited command routes, accepted packet/parser vectors and
-exhaustive enum branches have focused tests. Raw APKs, decompilation and frozen
-reports stay machine-local.
-
-Real users after beta/release can validate five physical domains:
+Based on AdjustableM5X5 1.2.3. Not yet tested on hardware; owners can help
+confirm:
 
 1. Movement/release and programming duration
 2. Units/actuator mapping
@@ -344,6 +357,5 @@ Real users after beta/release can validate five physical domains:
 4. Manufacturer/GATT/session observations
 5. Multiple-device interrupt/flat/feedback behavior
 
-Hardware is not needed to complete the proven static implementation. Actual
-peripheral write delivery, actuator cessation, negotiated MTU and the physical
-meanings of raw fields remain separately unverified.
+Write delivery, how the motors stop, the negotiated MTU and the meaning of raw
+fields also still need confirming on a real bed.

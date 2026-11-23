@@ -1,0 +1,570 @@
+[
+  {
+    "id": "V-C001",
+    "protocol": "P1",
+    "action": "Back up",
+    "inputs": {},
+    "expected_bytes": "FFFFFFFF05000000039701",
+    "kind": "literal from shipped code; independently matched smali"
+  },
+  {
+    "id": "V-C002",
+    "protocol": "P1",
+    "action": "Back down",
+    "inputs": {},
+    "expected_bytes": "FFFFFFFF0500000004D6C3",
+    "kind": "literal from shipped code; independently matched smali"
+  },
+  {
+    "id": "V-C003",
+    "protocol": "P1",
+    "action": "Leg up",
+    "inputs": {},
+    "expected_bytes": "FFFFFFFF05000000065702",
+    "kind": "literal from shipped code; independently matched smali"
+  },
+  {
+    "id": "V-C004",
+    "protocol": "P1",
+    "action": "Leg down",
+    "inputs": {},
+    "expected_bytes": "FFFFFFFF050000000796C2",
+    "kind": "literal from shipped code; independently matched smali"
+  },
+  {
+    "id": "V-C005",
+    "protocol": "P1",
+    "action": "Movement release / quick-panel header",
+    "inputs": {},
+    "expected_bytes": "FFFFFFFF0500000000D700",
+    "kind": "literal from shipped code; independently matched smali"
+  },
+  {
+    "id": "V-C006",
+    "protocol": "P1",
+    "action": "Movement-header / massage-header action, physical effect unspecified",
+    "inputs": {},
+    "expected_bytes": "FFFFFFFF0500000000D814",
+    "kind": "literal from shipped code; independently matched smali"
+  },
+  {
+    "id": "V-C007",
+    "protocol": "P1",
+    "action": "Flat bed",
+    "inputs": {},
+    "expected_bytes": "FFFFFFFF0500000008D6C6",
+    "kind": "literal from shipped code; independently matched smali"
+  },
+  {
+    "id": "V-C008",
+    "protocol": "P1",
+    "action": "Save Memory 1",
+    "inputs": {},
+    "expected_bytes": "FFFFFFFF050000A00A2F07",
+    "kind": "literal from shipped code; independently matched smali"
+  },
+  {
+    "id": "V-C009",
+    "protocol": "P1",
+    "action": "Clear Memory 1",
+    "inputs": {},
+    "expected_bytes": "FFFFFFFF050000AF0A2AF7",
+    "kind": "literal from shipped code; independently matched smali"
+  },
+  {
+    "id": "V-C010",
+    "protocol": "P1",
+    "action": "Recall saved Memory 1",
+    "inputs": {},
+    "expected_bytes": "FFFFFFFF050000A10A2E97",
+    "kind": "literal from shipped code; independently matched smali"
+  },
+  {
+    "id": "V-C011",
+    "protocol": "P1",
+    "action": "Save Memory 2",
+    "inputs": {},
+    "expected_bytes": "FFFFFFFF050000B00BE307",
+    "kind": "literal from shipped code; independently matched smali"
+  },
+  {
+    "id": "V-C012",
+    "protocol": "P1",
+    "action": "Clear Memory 2",
+    "inputs": {},
+    "expected_bytes": "FFFFFFFF050000BF0BE6F7",
+    "kind": "literal from shipped code; independently matched smali"
+  },
+  {
+    "id": "V-C013",
+    "protocol": "P1",
+    "action": "Recall saved Memory 2",
+    "inputs": {},
+    "expected_bytes": "FFFFFFFF050000B10BE297",
+    "kind": "literal from shipped code; independently matched smali"
+  },
+  {
+    "id": "V-C014",
+    "protocol": "P1",
+    "action": "Save TV",
+    "inputs": {},
+    "expected_bytes": "FFFFFFFF05000050052B03",
+    "kind": "literal from shipped code; independently matched smali"
+  },
+  {
+    "id": "V-C015",
+    "protocol": "P1",
+    "action": "Clear TV",
+    "inputs": {},
+    "expected_bytes": "FFFFFFFF0500005F052EF3",
+    "kind": "literal from shipped code; independently matched smali"
+  },
+  {
+    "id": "V-C016",
+    "protocol": "P1",
+    "action": "Recall saved TV",
+    "inputs": {},
+    "expected_bytes": "FFFFFFFF05000051052A93",
+    "kind": "literal from shipped code; independently matched smali"
+  },
+  {
+    "id": "V-C017",
+    "protocol": "P1",
+    "action": "Recall built-in TV",
+    "inputs": {},
+    "expected_bytes": "FFFFFFFF05000000051703",
+    "kind": "literal from shipped code; independently matched smali"
+  },
+  {
+    "id": "V-C018",
+    "protocol": "P1",
+    "action": "Save Zero gravity",
+    "inputs": {},
+    "expected_bytes": "FFFFFFFF05000090097B06",
+    "kind": "literal from shipped code; independently matched smali"
+  },
+  {
+    "id": "V-C019",
+    "protocol": "P1",
+    "action": "Clear Zero gravity",
+    "inputs": {},
+    "expected_bytes": "FFFFFFFF0500009F097EF6",
+    "kind": "literal from shipped code; independently matched smali"
+  },
+  {
+    "id": "V-C020",
+    "protocol": "P1",
+    "action": "Recall saved Zero gravity",
+    "inputs": {},
+    "expected_bytes": "FFFFFFFF05000091097A96",
+    "kind": "literal from shipped code; independently matched smali"
+  },
+  {
+    "id": "V-C021",
+    "protocol": "P1",
+    "action": "Recall built-in Zero gravity",
+    "inputs": {},
+    "expected_bytes": "FFFFFFFF05000000091706",
+    "kind": "literal from shipped code; independently matched smali"
+  },
+  {
+    "id": "V-C022",
+    "protocol": "P1",
+    "action": "Save Anti-snore",
+    "inputs": {},
+    "expected_bytes": "FFFFFFFF050000F00FD304",
+    "kind": "literal from shipped code; independently matched smali"
+  },
+  {
+    "id": "V-C023",
+    "protocol": "P1",
+    "action": "Clear Anti-snore",
+    "inputs": {},
+    "expected_bytes": "FFFFFFFF050000FF0FD6F4",
+    "kind": "literal from shipped code; independently matched smali"
+  },
+  {
+    "id": "V-C024",
+    "protocol": "P1",
+    "action": "Recall saved Anti-snore",
+    "inputs": {},
+    "expected_bytes": "FFFFFFFF050000F10FD294",
+    "kind": "literal from shipped code; independently matched smali"
+  },
+  {
+    "id": "V-C025",
+    "protocol": "P1",
+    "action": "Recall built-in Anti-snore",
+    "inputs": {},
+    "expected_bytes": "FFFFFFFF050000000F9704",
+    "kind": "literal from shipped code; independently matched smali"
+  },
+  {
+    "id": "V-C026",
+    "protocol": "P1",
+    "action": "Query saved Memory 1 (named03)",
+    "inputs": {},
+    "expected_bytes": "FFFFFFFF03002800039F09",
+    "kind": "literal from shipped code; independently matched smali"
+  },
+  {
+    "id": "V-C027",
+    "protocol": "P1",
+    "action": "Query saved Memory 2 (named03)",
+    "inputs": {},
+    "expected_bytes": "FFFFFFFF03003000031F0E",
+    "kind": "literal from shipped code; independently matched smali"
+  },
+  {
+    "id": "V-C028",
+    "protocol": "P1",
+    "action": "Query saved TV (named03)",
+    "inputs": {},
+    "expected_bytes": "FFFFFFFF03001800039F06",
+    "kind": "literal from shipped code; independently matched smali"
+  },
+  {
+    "id": "V-C029",
+    "protocol": "P1",
+    "action": "Query saved Zero gravity (named03)",
+    "inputs": {},
+    "expected_bytes": "FFFFFFFF03002000031ECB",
+    "kind": "literal from shipped code; independently matched smali"
+  },
+  {
+    "id": "V-C030",
+    "protocol": "P1",
+    "action": "Query saved Anti-snore (named03)",
+    "inputs": {},
+    "expected_bytes": "FFFFFFFF03003800039ECC",
+    "kind": "literal from shipped code; independently matched smali"
+  },
+  {
+    "id": "V-C031",
+    "protocol": "P1",
+    "action": "Query saved Memory 1 (fallback09)",
+    "inputs": {},
+    "expected_bytes": "FFFFFFFF03002800091F0E",
+    "kind": "literal from shipped code; independently matched smali"
+  },
+  {
+    "id": "V-C032",
+    "protocol": "P1",
+    "action": "Query saved Memory 2 (fallback09)",
+    "inputs": {},
+    "expected_bytes": "FFFFFFFF0300310009CEC9",
+    "kind": "literal from shipped code; independently matched smali"
+  },
+  {
+    "id": "V-C033",
+    "protocol": "P1",
+    "action": "Query saved TV (fallback09)",
+    "inputs": {},
+    "expected_bytes": "FFFFFFFF03001600097EC2",
+    "kind": "literal from shipped code; independently matched smali"
+  },
+  {
+    "id": "V-C034",
+    "protocol": "P1",
+    "action": "Query saved Zero gravity (fallback09)",
+    "inputs": {},
+    "expected_bytes": "FFFFFFFF03001F0009AEC0",
+    "kind": "literal from shipped code; independently matched smali"
+  },
+  {
+    "id": "V-C035",
+    "protocol": "P1",
+    "action": "Query saved Anti-snore (fallback09)",
+    "inputs": {},
+    "expected_bytes": "FFFFFFFF03003A0009BF0B",
+    "kind": "literal from shipped code; independently matched smali"
+  },
+  {
+    "id": "V-C036",
+    "protocol": "P1",
+    "action": "Synchronize off",
+    "inputs": {},
+    "expected_bytes": "FFFFFFFF0100090B001104",
+    "kind": "literal from shipped code; independently matched smali"
+  },
+  {
+    "id": "V-C037",
+    "protocol": "P1",
+    "action": "Synchronize on",
+    "inputs": {},
+    "expected_bytes": "FFFFFFFF0100090B011204",
+    "kind": "literal from shipped code; independently matched smali"
+  },
+  {
+    "id": "V-C038",
+    "protocol": "P1",
+    "action": "Query synchronization support/state",
+    "inputs": {},
+    "expected_bytes": "FFFFFFFF01000A0B0F2104",
+    "kind": "literal from shipped code; independently matched smali"
+  },
+  {
+    "id": "V-C039",
+    "protocol": "P1",
+    "action": "Massage wave minus button",
+    "inputs": {},
+    "expected_bytes": "FFFFFFFF050000001516CF",
+    "kind": "literal from shipped code; independently matched smali"
+  },
+  {
+    "id": "V-C040",
+    "protocol": "P1",
+    "action": "Massage wave plus button",
+    "inputs": {},
+    "expected_bytes": "FFFFFFFF0500000014D70F",
+    "kind": "literal from shipped code; independently matched smali"
+  },
+  {
+    "id": "V-C041",
+    "protocol": "P1",
+    "action": "Massage head minus button",
+    "inputs": {},
+    "expected_bytes": "FFFFFFFF0500000011170C",
+    "kind": "literal from shipped code; independently matched smali"
+  },
+  {
+    "id": "V-C042",
+    "protocol": "P1",
+    "action": "Massage head plus button",
+    "inputs": {},
+    "expected_bytes": "FFFFFFFF0500000010D6CC",
+    "kind": "literal from shipped code; independently matched smali"
+  },
+  {
+    "id": "V-C043",
+    "protocol": "P1",
+    "action": "Massage foot minus button",
+    "inputs": {},
+    "expected_bytes": "FFFFFFFF050000001396CD",
+    "kind": "literal from shipped code; independently matched smali"
+  },
+  {
+    "id": "V-C044",
+    "protocol": "P1",
+    "action": "Massage foot plus button",
+    "inputs": {},
+    "expected_bytes": "FFFFFFFF0500000012570D",
+    "kind": "literal from shipped code; independently matched smali"
+  },
+  {
+    "id": "V-C045",
+    "protocol": "P1",
+    "action": "Massage timer 10 minutes",
+    "inputs": {},
+    "expected_bytes": "FFFFFFFF050000001656CE",
+    "kind": "literal from shipped code; independently matched smali"
+  },
+  {
+    "id": "V-C046",
+    "protocol": "P1",
+    "action": "Massage timer 20 minutes",
+    "inputs": {},
+    "expected_bytes": "FFFFFFFF0500000017970E",
+    "kind": "literal from shipped code; independently matched smali"
+  },
+  {
+    "id": "V-C047",
+    "protocol": "P1",
+    "action": "Massage timer 30 minutes",
+    "inputs": {},
+    "expected_bytes": "FFFFFFFF0500000018D70A",
+    "kind": "literal from shipped code; independently matched smali"
+  },
+  {
+    "id": "V-C048",
+    "protocol": "P1",
+    "action": "Massage timer deselect/stop",
+    "inputs": {},
+    "expected_bytes": "FFFFFFFF050000001CD6C9",
+    "kind": "literal from shipped code; independently matched smali"
+  },
+  {
+    "id": "V-C049",
+    "protocol": "P1",
+    "action": "Hidden massage power-off branch",
+    "inputs": {},
+    "expected_bytes": "FFFFFFFF050000001CD9DD",
+    "kind": "literal from shipped code; independently matched smali"
+  },
+  {
+    "id": "V-C050",
+    "protocol": "P1",
+    "action": "Light brightness 0",
+    "inputs": {},
+    "expected_bytes": "FFFFFFFF050000002396D9",
+    "kind": "literal from shipped code; independently matched smali"
+  },
+  {
+    "id": "V-C051",
+    "protocol": "P1",
+    "action": "Light brightness 1",
+    "inputs": {},
+    "expected_bytes": "FFFFFFFF05000001239749",
+    "kind": "literal from shipped code; independently matched smali"
+  },
+  {
+    "id": "V-C052",
+    "protocol": "P1",
+    "action": "Light brightness 2",
+    "inputs": {},
+    "expected_bytes": "FFFFFFFF050000022397B9",
+    "kind": "literal from shipped code; independently matched smali"
+  },
+  {
+    "id": "V-C053",
+    "protocol": "P1",
+    "action": "Light brightness 3",
+    "inputs": {},
+    "expected_bytes": "FFFFFFFF05000003239629",
+    "kind": "literal from shipped code; independently matched smali"
+  },
+  {
+    "id": "V-C054",
+    "protocol": "P1",
+    "action": "Light brightness 4",
+    "inputs": {},
+    "expected_bytes": "FFFFFFFF05000004239419",
+    "kind": "literal from shipped code; independently matched smali"
+  },
+  {
+    "id": "V-C055",
+    "protocol": "P1",
+    "action": "Light brightness 5",
+    "inputs": {},
+    "expected_bytes": "FFFFFFFF05000005239589",
+    "kind": "literal from shipped code; independently matched smali"
+  },
+  {
+    "id": "V-C056",
+    "protocol": "P1",
+    "action": "Light brightness 6",
+    "inputs": {},
+    "expected_bytes": "FFFFFFFF05000006239579",
+    "kind": "literal from shipped code; independently matched smali"
+  },
+  {
+    "id": "V-C057",
+    "protocol": "P1",
+    "action": "Light brightness 7",
+    "inputs": {},
+    "expected_bytes": "FFFFFFFF050000072394E9",
+    "kind": "literal from shipped code; independently matched smali"
+  },
+  {
+    "id": "V-C058",
+    "protocol": "P1",
+    "action": "Light brightness 8",
+    "inputs": {},
+    "expected_bytes": "FFFFFFFF05000008239119",
+    "kind": "literal from shipped code; independently matched smali"
+  },
+  {
+    "id": "V-C059",
+    "protocol": "P1",
+    "action": "Light brightness 9",
+    "inputs": {},
+    "expected_bytes": "FFFFFFFF05000009239089",
+    "kind": "literal from shipped code; independently matched smali"
+  },
+  {
+    "id": "V-C060",
+    "protocol": "P1",
+    "action": "Light brightness 10",
+    "inputs": {},
+    "expected_bytes": "FFFFFFFF0500000A239079",
+    "kind": "literal from shipped code; independently matched smali"
+  },
+  {
+    "id": "V-C061",
+    "protocol": "P1",
+    "action": "Light timer 10 minutes",
+    "inputs": {},
+    "expected_bytes": "FFFFFFFF050000001916CA",
+    "kind": "literal from shipped code; independently matched smali"
+  },
+  {
+    "id": "V-C062",
+    "protocol": "P1",
+    "action": "Light timer 8 hours",
+    "inputs": {},
+    "expected_bytes": "FFFFFFFF050000001A56CB",
+    "kind": "literal from shipped code; independently matched smali"
+  },
+  {
+    "id": "V-C063",
+    "protocol": "P1",
+    "action": "Light timer 10 hours",
+    "inputs": {},
+    "expected_bytes": "FFFFFFFF050000001B970B",
+    "kind": "literal from shipped code; independently matched smali"
+  },
+  {
+    "id": "V-C064",
+    "protocol": "P1",
+    "action": "Query light brightness",
+    "inputs": {},
+    "expected_bytes": "FFFFFFFF050005FF23C728",
+    "kind": "literal from shipped code; independently matched smali"
+  },
+  {
+    "id": "V-clock-1",
+    "protocol": "P1",
+    "action": "Synchronize local clock",
+    "inputs": {
+      "iso": "2026-11-16T12:34:56"
+    },
+    "expected_bytes": "FFFFFFFF0100011112345601261116F904",
+    "kind": "Concrete app-builder input, not observed hardware traffic"
+  },
+  {
+    "id": "V-clock-2",
+    "protocol": "P1",
+    "action": "Synchronize local clock",
+    "inputs": {
+      "iso": "2024-01-07T00:00:00"
+    },
+    "expected_bytes": "FFFFFFFF01000111000000072401074204",
+    "kind": "Concrete app-builder input, not observed hardware traffic"
+  },
+  {
+    "id": "V-alarm-1",
+    "protocol": "P1",
+    "action": "Save alarm settings",
+    "inputs": {
+      "enabled": true,
+      "hour": 7,
+      "minute": 30,
+      "days": [
+        1,
+        3,
+        7
+      ],
+      "mode": "02",
+      "massage": true,
+      "ring": false
+    },
+    "expected_bytes": "FFFFFFFF01000213010730008A01020100D804",
+    "kind": "Concrete app-builder input, not observed hardware traffic"
+  },
+  {
+    "id": "V-alarm-2",
+    "protocol": "P1",
+    "action": "Save alarm settings",
+    "inputs": {
+      "enabled": false,
+      "hour": 0,
+      "minute": 0,
+      "days": [],
+      "mode": "03",
+      "massage": false,
+      "ring": false
+    },
+    "expected_bytes": "FFFFFFFF01000213A10000000000030000B604",
+    "kind": "Concrete app-builder input, not observed hardware traffic"
+  }
+]

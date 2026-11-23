@@ -1,0 +1,817 @@
+[
+  {
+    "action": "SEAT_1_HEAD_UP",
+    "opcode": 1,
+    "normal_setup_disposition": "REACHABLE"
+  },
+  {
+    "action": "SEAT_1_HEAD_DOWN",
+    "opcode": 2,
+    "normal_setup_disposition": "REACHABLE"
+  },
+  {
+    "action": "SEAT_1_HEAD_STOP",
+    "opcode": 3,
+    "normal_setup_disposition": "REACHABLE"
+  },
+  {
+    "action": "SEAT_1_FOOT_UP",
+    "opcode": 4,
+    "normal_setup_disposition": "REACHABLE"
+  },
+  {
+    "action": "SEAT_1_FOOT_DOWN",
+    "opcode": 5,
+    "normal_setup_disposition": "REACHABLE"
+  },
+  {
+    "action": "SEAT_1_FOOT_STOP",
+    "opcode": 6,
+    "normal_setup_disposition": "REACHABLE"
+  },
+  {
+    "action": "SEAT_1_ALL_UP",
+    "opcode": 7,
+    "normal_setup_disposition": "REACHABLE"
+  },
+  {
+    "action": "SEAT_1_ALL_DOWN",
+    "opcode": 8,
+    "normal_setup_disposition": "REACHABLE"
+  },
+  {
+    "action": "SEAT_1_ALL_STOP",
+    "opcode": 9,
+    "normal_setup_disposition": "REACHABLE"
+  },
+  {
+    "action": "SEAT_2_HEAD_UP",
+    "opcode": 10,
+    "normal_setup_disposition": "REACHABLE"
+  },
+  {
+    "action": "SEAT_2_HEAD_DOWN",
+    "opcode": 11,
+    "normal_setup_disposition": "REACHABLE"
+  },
+  {
+    "action": "SEAT_2_HEAD_STOP",
+    "opcode": 12,
+    "normal_setup_disposition": "REACHABLE"
+  },
+  {
+    "action": "SEAT_2_FOOT_UP",
+    "opcode": 13,
+    "normal_setup_disposition": "REACHABLE"
+  },
+  {
+    "action": "SEAT_2_FOOT_DOWN",
+    "opcode": 14,
+    "normal_setup_disposition": "REACHABLE"
+  },
+  {
+    "action": "SEAT_2_FOOT_STOP",
+    "opcode": 15,
+    "normal_setup_disposition": "REACHABLE"
+  },
+  {
+    "action": "SEAT_2_ALL_UP",
+    "opcode": 16,
+    "normal_setup_disposition": "REACHABLE"
+  },
+  {
+    "action": "SEAT_2_ALL_DOWN",
+    "opcode": 17,
+    "normal_setup_disposition": "REACHABLE"
+  },
+  {
+    "action": "SEAT_2_ALL_STOP",
+    "opcode": 18,
+    "normal_setup_disposition": "REACHABLE"
+  },
+  {
+    "action": "SEAT_1_2_HEAD_UP",
+    "opcode": 19,
+    "normal_setup_disposition": "REACHABLE"
+  },
+  {
+    "action": "SEAT_1_2_HEAD_DOWN",
+    "opcode": 20,
+    "normal_setup_disposition": "REACHABLE"
+  },
+  {
+    "action": "SEAT_1_2_HEAD_STOP",
+    "opcode": 21,
+    "normal_setup_disposition": "REACHABLE"
+  },
+  {
+    "action": "SEAT_1_2_FOOT_UP",
+    "opcode": 22,
+    "normal_setup_disposition": "REACHABLE"
+  },
+  {
+    "action": "SEAT_1_2_FOOT_DOWN",
+    "opcode": 23,
+    "normal_setup_disposition": "REACHABLE"
+  },
+  {
+    "action": "SEAT_1_2_FOOT_STOP",
+    "opcode": 24,
+    "normal_setup_disposition": "REACHABLE"
+  },
+  {
+    "action": "SEAT_1_2_ALL_UP",
+    "opcode": 25,
+    "normal_setup_disposition": "REACHABLE"
+  },
+  {
+    "action": "SEAT_1_2_ALL_DOWN",
+    "opcode": 26,
+    "normal_setup_disposition": "REACHABLE"
+  },
+  {
+    "action": "SEAT_1_2_ALL_STOP",
+    "opcode": 27,
+    "normal_setup_disposition": "REACHABLE"
+  },
+  {
+    "action": "SEAT_1_ALL_MOTOR_STOP",
+    "opcode": 28,
+    "normal_setup_disposition": "REACHABLE"
+  },
+  {
+    "action": "SEAT_2_ALL_MOTOR_STOP",
+    "opcode": 29,
+    "normal_setup_disposition": "REACHABLE"
+  },
+  {
+    "action": "SEAT_1_2_ALL_MOTOR_STOP",
+    "opcode": 30,
+    "normal_setup_disposition": "REACHABLE"
+  },
+  {
+    "action": "SEAT_1_MEMORY_POSITION_A",
+    "opcode": 37,
+    "normal_setup_disposition": "REACHABLE"
+  },
+  {
+    "action": "SEAT_1_MEMORY_POSITION_B",
+    "opcode": 38,
+    "normal_setup_disposition": "REACHABLE"
+  },
+  {
+    "action": "SEAT_1_MEMORY_POSITION_C",
+    "opcode": 39,
+    "normal_setup_disposition": "REACHABLE"
+  },
+  {
+    "action": "SEAT_1_RUN_TO_POSITION_A",
+    "opcode": 41,
+    "normal_setup_disposition": "REACHABLE"
+  },
+  {
+    "action": "SEAT_1_RUN_TO_POSITION_B",
+    "opcode": 42,
+    "normal_setup_disposition": "REACHABLE"
+  },
+  {
+    "action": "SEAT_1_RUN_TO_POSITION_C",
+    "opcode": 43,
+    "normal_setup_disposition": "REACHABLE"
+  },
+  {
+    "action": "SEAT_2_MEMORY_POSITION_A",
+    "opcode": 45,
+    "normal_setup_disposition": "REACHABLE"
+  },
+  {
+    "action": "SEAT_2_MEMORY_POSITION_B",
+    "opcode": 46,
+    "normal_setup_disposition": "REACHABLE"
+  },
+  {
+    "action": "SEAT_2_MEMORY_POSITION_C",
+    "opcode": 47,
+    "normal_setup_disposition": "REACHABLE"
+  },
+  {
+    "action": "SEAT_2_RUN_TO_POSITION_A",
+    "opcode": 49,
+    "normal_setup_disposition": "REACHABLE"
+  },
+  {
+    "action": "SEAT_2_RUN_TO_POSITION_B",
+    "opcode": 50,
+    "normal_setup_disposition": "REACHABLE"
+  },
+  {
+    "action": "SEAT_2_RUN_TO_POSITION_C",
+    "opcode": 51,
+    "normal_setup_disposition": "REACHABLE"
+  },
+  {
+    "action": "SEAT_1_2_MEMORY_POSITION_A",
+    "opcode": 53,
+    "normal_setup_disposition": "REACHABLE"
+  },
+  {
+    "action": "SEAT_1_2_MEMORY_POSITION_B",
+    "opcode": 54,
+    "normal_setup_disposition": "REACHABLE"
+  },
+  {
+    "action": "SEAT_1_2_MEMORY_POSITION_C",
+    "opcode": 55,
+    "normal_setup_disposition": "REACHABLE"
+  },
+  {
+    "action": "SEAT_1_2_RUN_TO_POSITION_A",
+    "opcode": 57,
+    "normal_setup_disposition": "REACHABLE"
+  },
+  {
+    "action": "SEAT_1_2_RUN_TO_POSITION_B",
+    "opcode": 58,
+    "normal_setup_disposition": "REACHABLE"
+  },
+  {
+    "action": "SEAT_1_2_RUN_TO_POSITION_C",
+    "opcode": 59,
+    "normal_setup_disposition": "REACHABLE"
+  },
+  {
+    "action": "SEAT_1_MASSAGE_START",
+    "opcode": 71,
+    "normal_setup_disposition": "REACHABLE"
+  },
+  {
+    "action": "SEAT_1_MASSAGE_STOP",
+    "opcode": 72,
+    "normal_setup_disposition": "REACHABLE"
+  },
+  {
+    "action": "SEAT_2_MASSAGE_START",
+    "opcode": 73,
+    "normal_setup_disposition": "REACHABLE"
+  },
+  {
+    "action": "SEAT_2_MASSAGE_STOP",
+    "opcode": 74,
+    "normal_setup_disposition": "REACHABLE"
+  },
+  {
+    "action": "SEAT_1_2_MASSAGE_START",
+    "opcode": 75,
+    "normal_setup_disposition": "REACHABLE"
+  },
+  {
+    "action": "SEAT_1_2_MASSAGE_STOP",
+    "opcode": 76,
+    "normal_setup_disposition": "REACHABLE"
+  },
+  {
+    "action": "SEAT_1_HEAD_MASSAGE_SETTING",
+    "opcode": 77,
+    "normal_setup_disposition": "REACHABLE"
+  },
+  {
+    "action": "SEAT_2_HEAD_MASSAGE_SETTING",
+    "opcode": 78,
+    "normal_setup_disposition": "REACHABLE"
+  },
+  {
+    "action": "SEAT_1_LEG_MASSAGE_SETTING",
+    "opcode": 79,
+    "normal_setup_disposition": "REACHABLE"
+  },
+  {
+    "action": "SEAT_2_LEG_MASSAGE_SETTING",
+    "opcode": 80,
+    "normal_setup_disposition": "DEAD/UNUSED"
+  },
+  {
+    "action": "SEAT_1_2_HEAD_MASSAGE_SETTING",
+    "opcode": 81,
+    "normal_setup_disposition": "REACHABLE"
+  },
+  {
+    "action": "SEAT_1_2_LEG_MASSAGE_SETTING",
+    "opcode": 82,
+    "normal_setup_disposition": "DEAD/UNUSED"
+  },
+  {
+    "action": "SEAT_1_MASSAGE_15",
+    "opcode": 83,
+    "normal_setup_disposition": "REACHABLE"
+  },
+  {
+    "action": "SEAT_1_MASSAGE_30",
+    "opcode": 84,
+    "normal_setup_disposition": "REACHABLE"
+  },
+  {
+    "action": "SEAT_1_MASSAGE_45",
+    "opcode": 85,
+    "normal_setup_disposition": "REACHABLE"
+  },
+  {
+    "action": "SEAT_2_MASSAGE_15",
+    "opcode": 86,
+    "normal_setup_disposition": "REACHABLE"
+  },
+  {
+    "action": "SEAT_2_MASSAGE_30",
+    "opcode": 87,
+    "normal_setup_disposition": "REACHABLE"
+  },
+  {
+    "action": "SEAT_2_MASSAGE_45",
+    "opcode": 88,
+    "normal_setup_disposition": "REACHABLE"
+  },
+  {
+    "action": "SEAT_1_2_MASSAGE_15",
+    "opcode": 89,
+    "normal_setup_disposition": "REACHABLE"
+  },
+  {
+    "action": "SEAT_1_2_MASSAGE_30",
+    "opcode": 90,
+    "normal_setup_disposition": "REACHABLE"
+  },
+  {
+    "action": "SEAT_1_2_MASSAGE_45",
+    "opcode": 91,
+    "normal_setup_disposition": "REACHABLE"
+  },
+  {
+    "action": "SEAT_1_BED_LIGHT_ON",
+    "opcode": 92,
+    "normal_setup_disposition": "REACHABLE"
+  },
+  {
+    "action": "SEAT_1_BED_LIGHT_OFF",
+    "opcode": 93,
+    "normal_setup_disposition": "REACHABLE"
+  },
+  {
+    "action": "SEAT_2_BED_LIGHT_ON",
+    "opcode": 94,
+    "normal_setup_disposition": "REACHABLE"
+  },
+  {
+    "action": "SEAT_2_BED_LIGHT_OFF",
+    "opcode": 95,
+    "normal_setup_disposition": "REACHABLE"
+  },
+  {
+    "action": "SEAT_1_2_BED_LIGHT_ON",
+    "opcode": 96,
+    "normal_setup_disposition": "REACHABLE"
+  },
+  {
+    "action": "SEAT_1_2_BED_LIGHT_OFF",
+    "opcode": 97,
+    "normal_setup_disposition": "REACHABLE"
+  },
+  {
+    "action": "SEAT_1_ZG",
+    "opcode": 98,
+    "normal_setup_disposition": "REACHABLE"
+  },
+  {
+    "action": "SEAT_2_ZG",
+    "opcode": 99,
+    "normal_setup_disposition": "REACHABLE"
+  },
+  {
+    "action": "SEAT_1_2_ZG",
+    "opcode": 100,
+    "normal_setup_disposition": "REACHABLE"
+  },
+  {
+    "action": "SEAT_1_ANTI_SNORE",
+    "opcode": 101,
+    "normal_setup_disposition": "REACHABLE"
+  },
+  {
+    "action": "SEAT_2_ANTI_SNORE",
+    "opcode": 102,
+    "normal_setup_disposition": "REACHABLE"
+  },
+  {
+    "action": "SEAT_1_2_ANTI_SNORE",
+    "opcode": 103,
+    "normal_setup_disposition": "REACHABLE"
+  },
+  {
+    "action": "SEAT_1_MASSAGE_MODE1",
+    "opcode": 107,
+    "normal_setup_disposition": "REACHABLE"
+  },
+  {
+    "action": "SEAT_2_MASSAGE_MODE1",
+    "opcode": 108,
+    "normal_setup_disposition": "REACHABLE"
+  },
+  {
+    "action": "SEAT_1_2_MASSAGE_MODE1",
+    "opcode": 109,
+    "normal_setup_disposition": "REACHABLE"
+  },
+  {
+    "action": "SEAT_1_MASSAGE_MODE2",
+    "opcode": 110,
+    "normal_setup_disposition": "REACHABLE"
+  },
+  {
+    "action": "SEAT_2_MASSAGE_MODE2",
+    "opcode": 111,
+    "normal_setup_disposition": "REACHABLE"
+  },
+  {
+    "action": "SEAT_1_2_MASSAGE_MODE2",
+    "opcode": 112,
+    "normal_setup_disposition": "REACHABLE"
+  },
+  {
+    "action": "SEAT_1_MASSAGE_MODE3",
+    "opcode": 113,
+    "normal_setup_disposition": "REACHABLE"
+  },
+  {
+    "action": "SEAT_2_MASSAGE_MODE3",
+    "opcode": 114,
+    "normal_setup_disposition": "REACHABLE"
+  },
+  {
+    "action": "SEAT_1_2_MASSAGE_MODE3",
+    "opcode": 115,
+    "normal_setup_disposition": "REACHABLE"
+  },
+  {
+    "action": "SEAT_1_MASSAGE_MODE_CACEL",
+    "opcode": 116,
+    "normal_setup_disposition": "REACHABLE"
+  },
+  {
+    "action": "SEAT_2_MASSAGE_MODE_CACEL",
+    "opcode": 117,
+    "normal_setup_disposition": "REACHABLE"
+  },
+  {
+    "action": "SEAT_1_2_MASSAGE_MODE_CACEL",
+    "opcode": 118,
+    "normal_setup_disposition": "REACHABLE"
+  },
+  {
+    "action": "SEAT_1_TIME_CACEL",
+    "opcode": 119,
+    "normal_setup_disposition": "REACHABLE"
+  },
+  {
+    "action": "SEAT_2_TIME_CACEL",
+    "opcode": 120,
+    "normal_setup_disposition": "REACHABLE"
+  },
+  {
+    "action": "SEAT_1_2_TIME_CACEL",
+    "opcode": 121,
+    "normal_setup_disposition": "REACHABLE"
+  },
+  {
+    "action": "SEAT_1_BACK_UP",
+    "opcode": 122,
+    "normal_setup_disposition": "REACHABLE"
+  },
+  {
+    "action": "SEAT_1_BACK_DOWN",
+    "opcode": 123,
+    "normal_setup_disposition": "REACHABLE"
+  },
+  {
+    "action": "SEAT_1_BACK_STOP",
+    "opcode": 124,
+    "normal_setup_disposition": "REACHABLE"
+  },
+  {
+    "action": "SEAT_2_BACK_UP",
+    "opcode": 125,
+    "normal_setup_disposition": "DEAD/UNUSED"
+  },
+  {
+    "action": "SEAT_2_BACK_DOWN",
+    "opcode": 126,
+    "normal_setup_disposition": "DEAD/UNUSED"
+  },
+  {
+    "action": "SEAT_2_BACK_STOP",
+    "opcode": 127,
+    "normal_setup_disposition": "DEAD/UNUSED"
+  },
+  {
+    "action": "SEAT_1_2_BACK_UP",
+    "opcode": 128,
+    "normal_setup_disposition": "DEAD/UNUSED"
+  },
+  {
+    "action": "SEAT_1_2_BACK_DOWN",
+    "opcode": 129,
+    "normal_setup_disposition": "DEAD/UNUSED"
+  },
+  {
+    "action": "SEAT_1_2_BACK_STOP",
+    "opcode": 130,
+    "normal_setup_disposition": "DEAD/UNUSED"
+  },
+  {
+    "action": "SEAT_1_WAIST_UP",
+    "opcode": 131,
+    "normal_setup_disposition": "REACHABLE"
+  },
+  {
+    "action": "SEAT_1_WAIST_DOWN",
+    "opcode": 132,
+    "normal_setup_disposition": "REACHABLE"
+  },
+  {
+    "action": "SEAT_1_WAIST_STOP",
+    "opcode": 133,
+    "normal_setup_disposition": "REACHABLE"
+  },
+  {
+    "action": "SEAT_2_WAIST_UP",
+    "opcode": 134,
+    "normal_setup_disposition": "DEAD/UNUSED"
+  },
+  {
+    "action": "SEAT_2_WAIST_DOWN",
+    "opcode": 135,
+    "normal_setup_disposition": "DEAD/UNUSED"
+  },
+  {
+    "action": "SEAT_2_WAIST_STOP",
+    "opcode": 136,
+    "normal_setup_disposition": "DEAD/UNUSED"
+  },
+  {
+    "action": "SEAT_1_2_WAIST_UP",
+    "opcode": 137,
+    "normal_setup_disposition": "DEAD/UNUSED"
+  },
+  {
+    "action": "SEAT_1_2_WAIST_DOWN",
+    "opcode": 138,
+    "normal_setup_disposition": "DEAD/UNUSED"
+  },
+  {
+    "action": "SEAT_1_2_WAIST_STOP",
+    "opcode": 139,
+    "normal_setup_disposition": "DEAD/UNUSED"
+  },
+  {
+    "action": "SEAT_1_NECK_UP",
+    "opcode": 140,
+    "normal_setup_disposition": "REACHABLE"
+  },
+  {
+    "action": "SEAT_1_NECK_DOWN",
+    "opcode": 141,
+    "normal_setup_disposition": "REACHABLE"
+  },
+  {
+    "action": "SEAT_1_NECK_STOP",
+    "opcode": 142,
+    "normal_setup_disposition": "REACHABLE"
+  },
+  {
+    "action": "SEAT_2_NECK_UP",
+    "opcode": 143,
+    "normal_setup_disposition": "DEAD/UNUSED"
+  },
+  {
+    "action": "SEAT_2_NECK_DOWN",
+    "opcode": 144,
+    "normal_setup_disposition": "DEAD/UNUSED"
+  },
+  {
+    "action": "SEAT_2_NECK_STOP",
+    "opcode": 145,
+    "normal_setup_disposition": "DEAD/UNUSED"
+  },
+  {
+    "action": "SEAT_1_2_NECK_UP",
+    "opcode": 146,
+    "normal_setup_disposition": "DEAD/UNUSED"
+  },
+  {
+    "action": "SEAT_1_2_NECK_DOWN",
+    "opcode": 147,
+    "normal_setup_disposition": "DEAD/UNUSED"
+  },
+  {
+    "action": "SEAT_1_2_NECK_STOP",
+    "opcode": 148,
+    "normal_setup_disposition": "DEAD/UNUSED"
+  },
+  {
+    "action": "SEAT_1_NEW_ALL_UP",
+    "opcode": 149,
+    "normal_setup_disposition": "REACHABLE"
+  },
+  {
+    "action": "SEAT_1_NEW_ALL_DOWN",
+    "opcode": 150,
+    "normal_setup_disposition": "REACHABLE"
+  },
+  {
+    "action": "SEAT_1_NEW_ALL_STOP",
+    "opcode": 151,
+    "normal_setup_disposition": "REACHABLE"
+  },
+  {
+    "action": "SEAT_2_NEW_ALL_UP",
+    "opcode": 152,
+    "normal_setup_disposition": "DEAD/UNUSED"
+  },
+  {
+    "action": "SEAT_2_NEW_ALL_DOWN",
+    "opcode": 153,
+    "normal_setup_disposition": "DEAD/UNUSED"
+  },
+  {
+    "action": "SEAT_2_NEW_ALL_STOP",
+    "opcode": 154,
+    "normal_setup_disposition": "DEAD/UNUSED"
+  },
+  {
+    "action": "SEAT_1_2_NEW_ALL_UP",
+    "opcode": 155,
+    "normal_setup_disposition": "DEAD/UNUSED"
+  },
+  {
+    "action": "SEAT_1_2_NEW_ALL_DOWN",
+    "opcode": 156,
+    "normal_setup_disposition": "DEAD/UNUSED"
+  },
+  {
+    "action": "SEAT_1_2_NEW_ALL_STOP",
+    "opcode": 157,
+    "normal_setup_disposition": "DEAD/UNUSED"
+  },
+  {
+    "action": "SEAT_1_BOOK",
+    "opcode": 158,
+    "normal_setup_disposition": "REACHABLE"
+  },
+  {
+    "action": "SEAT_2_BOOK",
+    "opcode": 159,
+    "normal_setup_disposition": "DEAD/UNUSED"
+  },
+  {
+    "action": "SEAT_1_2_BOOK",
+    "opcode": 160,
+    "normal_setup_disposition": "DEAD/UNUSED"
+  },
+  {
+    "action": "SEAT_1_LEISURE",
+    "opcode": 161,
+    "normal_setup_disposition": "REACHABLE"
+  },
+  {
+    "action": "SEAT_2_LEISURE",
+    "opcode": 162,
+    "normal_setup_disposition": "DEAD/UNUSED"
+  },
+  {
+    "action": "SEAT_1_2_LEISURE",
+    "opcode": 163,
+    "normal_setup_disposition": "DEAD/UNUSED"
+  },
+  {
+    "action": "SEAT_HOT_SENSOR_ON",
+    "opcode": 164,
+    "normal_setup_disposition": "REACHABLE"
+  },
+  {
+    "action": "SEAT_HOT_SENSOR_OFF",
+    "opcode": 165,
+    "normal_setup_disposition": "REACHABLE"
+  },
+  {
+    "action": "MCU_POWER_SUPPLY",
+    "opcode": 166,
+    "normal_setup_disposition": "REACHABLE"
+  },
+  {
+    "action": "massage_mode4_side-1_start",
+    "opcode": 167,
+    "normal_setup_disposition": "REACHABLE"
+  },
+  {
+    "action": "massage_mode4_side-1_cancel",
+    "opcode": 167,
+    "normal_setup_disposition": "REACHABLE"
+  },
+  {
+    "action": "massage_mode4_side-2_start",
+    "opcode": 167,
+    "normal_setup_disposition": "DEAD/UNUSED"
+  },
+  {
+    "action": "massage_mode4_side-2_cancel",
+    "opcode": 167,
+    "normal_setup_disposition": "DEAD/UNUSED"
+  },
+  {
+    "action": "massage_mode4_both_start",
+    "opcode": 167,
+    "normal_setup_disposition": "DEAD/UNUSED"
+  },
+  {
+    "action": "massage_mode4_both_cancel",
+    "opcode": 167,
+    "normal_setup_disposition": "DEAD/UNUSED"
+  },
+  {
+    "action": "set_current_default_position_1",
+    "opcode": 167,
+    "normal_setup_disposition": "REACHABLE"
+  },
+  {
+    "action": "set_current_default_position_2",
+    "opcode": 167,
+    "normal_setup_disposition": "DEAD/UNUSED"
+  },
+  {
+    "action": "set_current_default_position_3",
+    "opcode": 167,
+    "normal_setup_disposition": "DEAD/UNUSED"
+  },
+  {
+    "action": "set_current_default_position_4",
+    "opcode": 167,
+    "normal_setup_disposition": "REACHABLE"
+  },
+  {
+    "action": "set_current_default_position_5",
+    "opcode": 167,
+    "normal_setup_disposition": "DEAD/UNUSED"
+  },
+  {
+    "action": "set_current_default_position_6",
+    "opcode": 167,
+    "normal_setup_disposition": "DEAD/UNUSED"
+  },
+  {
+    "action": "set_current_default_position_7",
+    "opcode": 167,
+    "normal_setup_disposition": "REACHABLE"
+  },
+  {
+    "action": "set_current_default_position_8",
+    "opcode": 167,
+    "normal_setup_disposition": "DEAD/UNUSED"
+  },
+  {
+    "action": "set_current_default_position_9",
+    "opcode": 167,
+    "normal_setup_disposition": "DEAD/UNUSED"
+  },
+  {
+    "action": "set_current_default_position_10",
+    "opcode": 167,
+    "normal_setup_disposition": "REACHABLE"
+  },
+  {
+    "action": "set_current_default_position_11",
+    "opcode": 167,
+    "normal_setup_disposition": "DEAD/UNUSED"
+  },
+  {
+    "action": "set_current_default_position_12",
+    "opcode": 167,
+    "normal_setup_disposition": "DEAD/UNUSED"
+  },
+  {
+    "action": "add_device_success",
+    "opcode": 69,
+    "normal_setup_disposition": "REACHABLE"
+  },
+  {
+    "action": "check_room_password",
+    "opcode": null,
+    "normal_setup_disposition": "REACHABLE"
+  },
+  {
+    "action": "set_ble_room_password",
+    "opcode": null,
+    "normal_setup_disposition": "REACHABLE"
+  },
+  {
+    "action": "ping_all",
+    "opcode": null,
+    "normal_setup_disposition": "REACHABLE"
+  }
+]

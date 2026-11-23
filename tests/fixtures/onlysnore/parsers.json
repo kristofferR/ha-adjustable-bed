@@ -1,0 +1,118 @@
+[
+  {
+    "id": "status_1",
+    "parser": "status",
+    "input_hex": "a5 0b 00 00 59 02 03 04 06 00 00 00 00 00 00 01 07 00 00 06",
+    "expected": {
+      "privacy": true,
+      "snore_detection": true,
+      "anti_snore_enabled": true,
+      "anti_snore_level": 7,
+      "massage_timer_index": 2,
+      "massage_pattern_index": 2,
+      "massage_head_index": 3,
+      "massage_foot_index": 3,
+      "massage_shared_index": 3
+    },
+    "origin": "Synthetic input exercising the exact artifact formula, not a hardware capture"
+  },
+  {
+    "id": "status_2",
+    "parser": "status",
+    "input_hex": "a5 0b 00 00 00 00 01 00 01 00 00 00 00 00 00 00 01 00 00 00",
+    "expected": {
+      "privacy": false,
+      "snore_detection": false,
+      "anti_snore_enabled": false,
+      "anti_snore_level": 1,
+      "massage_timer_index": 0,
+      "massage_pattern_index": 0,
+      "massage_head_index": 0,
+      "massage_foot_index": 1,
+      "massage_shared_index": 1
+    },
+    "origin": "Synthetic input exercising the exact artifact formula, not a hardware capture"
+  },
+  {
+    "id": "alarm_reply",
+    "parser": "alarm",
+    "input_hex": "a5 0e 08 00 7f 05 07 1e 00 01 01",
+    "expected": {
+      "index": 2,
+      "week": 127,
+      "action_code": 5,
+      "hour": 7,
+      "minute": 30,
+      "open": 1,
+      "soft": 1
+    },
+    "origin": "Synthetic input exercising the exact artifact formula, not a hardware capture"
+  },
+  {
+    "id": "alarm_unset",
+    "parser": "alarm",
+    "input_hex": "a5 0c 08 00 00 00 00 00 00 01 00",
+    "expected": {
+      "index": 0,
+      "week": 0,
+      "action_code": 0,
+      "hour": 0,
+      "minute": 0,
+      "open": 0,
+      "soft": 0
+    },
+    "origin": "Synthetic input exercising the exact artifact formula, not a hardware capture"
+  },
+  {
+    "id": "manufacturer_double",
+    "parser": "manufacturer",
+    "input_hex": "01 23 45 67 89 ab 02",
+    "expected": {
+      "mac": "ab8967452301",
+      "model": "double"
+    },
+    "origin": "Synthetic input exercising the exact artifact formula, not a hardware capture"
+  },
+  {
+    "id": "manufacturer_single",
+    "parser": "manufacturer",
+    "input_hex": "aa bb cc dd ee ff 01",
+    "expected": {
+      "mac": "ffeeddccbbaa",
+      "model": "single"
+    },
+    "origin": "Synthetic input exercising the exact artifact formula, not a hardware capture"
+  },
+  {
+    "id": "history_date",
+    "parser": "history_date",
+    "input_hex": "a6 01 00 00 00 00 00 7e 0a 11 07 1e",
+    "expected": [
+      2026,
+      11,
+      17,
+      7,
+      30
+    ],
+    "origin": "Synthetic input exercising the exact artifact formula, not a hardware capture"
+  },
+  {
+    "id": "history_two_records",
+    "parser": "history_split",
+    "double": false,
+    "input_hex": "a6 01 00 00 00 00 00 7e 0a 11 07 1e a6 01 00 00 00 00 00 7e 0a 11 07 1f",
+    "expected": [
+      "a6 01 00 00 00 00 00 7e 0a 11 07 1e",
+      "a6 01 00 00 00 00 00 7e 0a 11 07 1f"
+    ],
+    "origin": "Synthetic input exercising the exact artifact formula, not a hardware capture"
+  },
+  {
+    "id": "history_short_rejected",
+    "parser": "history_split",
+    "double": true,
+    "input_hex": "a6 01 00",
+    "expected": [],
+    "origin": "Synthetic input exercising the exact artifact formula, not a hardware capture"
+  }
+]

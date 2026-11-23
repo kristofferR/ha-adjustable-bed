@@ -1,4 +1,4 @@
-"""Real HA switch registration preserves unknown until explicit local intent."""
+"""Real HA light registration preserves unknown until explicit local intent."""
 
 import asyncio
 import logging
@@ -7,13 +7,13 @@ import pytest
 from bleak.exc import BleakError
 from homeassistant.const import CONF_ADDRESS, CONF_NAME, STATE_OFF, STATE_ON, STATE_UNKNOWN
 from homeassistant.helpers.entity_component import EntityComponent
-from pytest_homeassistant_custom_component.common import MockConfigEntry
+from pytest_homeassistant.common import MockConfigEntry
 
-from custom_components.adjustable_bed.beds.svane import SvaneController
+from custom_components.adjustable_bed.beds.svane.controller import SvaneController
 from custom_components.adjustable_bed.const import (
     BED_TYPE_SVANE,
     CONF_BED_TYPE,
-    CONF_DISCONNECT_AFTER_COMMAND,
+    CONF_CONNECTION_MODE,
     CONF_PROTOCOL_VARIANT,
     DOMAIN,
     SVANE_VARIANT_JMC,
@@ -21,7 +21,7 @@ from custom_components.adjustable_bed.const import (
 )
 from custom_components.adjustable_bed.controller_factory import create_controller
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
-from custom_components.adjustable_bed.switch import _switch_entities_for
+from custom_components.adjustable_bed.light import _light_entities_for
 from tests.app_state_helpers import restart_app_state, write_app_state
 from tests.test_svane import make_controller
 
@@ -31,7 +31,7 @@ async def lamp_runtime(hass, request):
     variant = SVANE_VARIANT_JMC if request.param == "jmc" else SVANE_VARIANT_MULTI
     entry = MockConfigEntry(domain=DOMAIN, data={
         CONF_ADDRESS: "AA:BB:CC:DD:EE:FF", CONF_NAME: "Svane", CONF_BED_TYPE: BED_TYPE_SVANE,
-        CONF_PROTOCOL_VARIANT: variant, CONF_DISCONNECT_AFTER_COMMAND: False,
+        CONF_PROTOCOL_VARIANT: variant, CONF_CONNECTION_MODE: "idle",
     })
     entry.add_to_hass(hass)
     coordinator = AdjustableBedCoordinator(hass, entry)
@@ -43,11 +43,11 @@ async def lamp_runtime(hass, request):
     assert isinstance(controller, SvaneController)
     coordinator._controller = controller
     await coordinator._async_restore_app_state(controller)
-    lamp = next(e for e in _switch_entities_for(hass, coordinator)
+    lamp = next(e for e in _light_entities_for(hass, coordinator)
                 if e.entity_description.key == "under_bed_lights")
-    lamp.entity_id = "switch.svane_lamp"
-    component = EntityComponent(logging.getLogger(__name__), "switch", hass)
-    component._platforms["switch"].config_entry = entry
+    lamp.entity_id = "light.svane_lamp"
+    component = EntityComponent(logging.getLogger(__name__), "light", hass)
+    component._platforms["light"].config_entry = entry
     await component.async_add_entities([lamp])
     try:
         yield coordinator, controller, lamp, component
@@ -58,7 +58,7 @@ async def lamp_runtime(hass, request):
 
 
 @pytest.mark.parametrize("lamp_runtime", ["multi", "jmc"], indirect=True)
-async def test_registered_cold_switch_is_unknown_despite_restored_preferences(hass, lamp_runtime):
+async def test_registered_cold_light_is_unknown_despite_restored_preferences(hass, lamp_runtime):
     coordinator, controller, lamp, _ = lamp_runtime
     assert lamp.is_on is None and lamp.assumed_state
     assert hass.states.get(lamp.entity_id).state == STATE_UNKNOWN
@@ -71,7 +71,7 @@ async def test_registered_cold_switch_is_unknown_despite_restored_preferences(ha
 @pytest.mark.parametrize("lamp_runtime", ["multi", "jmc"], indirect=True)
 @pytest.mark.parametrize("command", ["on", "off", "intensity"])
 @pytest.mark.parametrize("failure", [None, "ble", "cancel"])
-async def test_registered_switch_receives_explicit_attempted_intent(hass, lamp_runtime, command, failure):
+async def test_registered_light_receives_explicit_attempted_intent(hass, lamp_runtime, command, failure):
     coordinator, controller, lamp, _ = lamp_runtime
     client = controller.client
     attempted = asyncio.Event()
@@ -134,9 +134,9 @@ async def test_warm_reload_retains_intent_but_profile_or_cold_session_does_not(h
     warm = await create_controller(rebuilt, BED_TYPE_SVANE, variant, None)
     assert isinstance(warm, SvaneController) and warm.session is known_session
     rebuilt._controller = warm
-    restored_lamp = next(e for e in _switch_entities_for(hass, rebuilt)
+    restored_lamp = next(e for e in _light_entities_for(hass, rebuilt)
                          if e.entity_description.key == "under_bed_lights")
-    restored_lamp.entity_id = "switch.svane_reloaded_lamp"
+    restored_lamp.entity_id = "light.svane_reloaded_lamp"
     await component.async_add_entities([restored_lamp])
     try:
         assert restored_lamp.is_on is True and restored_lamp.assumed_state
@@ -152,9 +152,9 @@ async def test_warm_reload_retains_intent_but_profile_or_cold_session_does_not(h
         assert isinstance(changed, SvaneController)
         assert changed.session is not known_session and not changed.session.light_intent_known
         changed_runtime._controller = changed
-        changed_lamp = next(e for e in _switch_entities_for(hass, changed_runtime)
+        changed_lamp = next(e for e in _light_entities_for(hass, changed_runtime)
                             if e.entity_description.key == "under_bed_lights")
-        changed_lamp.entity_id = "switch.svane_changed_profile"
+        changed_lamp.entity_id = "light.svane_changed_profile"
         await component.async_add_entities([changed_lamp])
         try:
             assert changed_lamp.is_on is None

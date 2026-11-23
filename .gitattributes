@@ -1,0 +1,2 @@
+# Show the JSON inside gzipped catalogs; see docs/design/protocol-codecs.md#app-catalogs.
+*.json.gz diff=gzip

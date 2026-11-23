@@ -1,6 +1,6 @@
 # SleepSpa S9000AI (SLEEPSTAR)
 
-**Status:** ❓ Needs testing (statically verified from the OEM app; physical hardware testing is pending)
+**Status:** Not yet tested
 
 **Credit:** Reverse engineering by [kristofferR](https://github.com/kristofferR/ha-adjustable-bed)
 
@@ -25,15 +25,15 @@
 | Feature | Supported |
 |---------|-----------|
 | Motor Control | ✅ Head, feet, lumbar, Auxiliary 1, Auxiliary 2; shared STOP |
-| Position Feedback | ✅ 0-100% for five addressable parts; sixth feedback-only part retained in diagnostics |
-| Direct Position | ✅ Zones 0-4, one packet |
-| Presets | ✅ Flat, TV, Zero-G, Anti-Snore, Lounge, both-up |
-| Memory Presets | ✅ Two app-visible slots; recall 3 writes then STOP, save 55 writes |
-| Lighting | ✅ Discrete on/off/toggle, brightness 0-6; protocol API also retains color indices 0-7 |
-| Sonic Massage | ✅ Head, foot, and combined intensity 0-6; five modes; 10/20/30-minute timer |
-| Sleep Monitor | ⚠️ Query/config builders for anti-snore, sleep zone, daily/monthly reports |
-| Environment | ⚠️ Duration, address, and seven-register query builders |
-| Audio | ⚠️ Media, USB, noise, sonic type, volume, cutoff, reset, preset, and EQ protocol methods |
+| Position Feedback | ✅ 0-100% for the five motors |
+| Direct Position | ✅ Move a motor straight to a position |
+| Presets | ✅ Flat, TV, Zero-G, Anti-Snore, Lounge, back and legs up |
+| Memory Presets | ✅ Two slots, recall and save |
+| Lighting | ✅ On/off, brightness 0-6 |
+| Sonic Massage | ✅ Head, foot and combined intensity 0-6; five modes; 10/20/30-minute timer |
+| Sleep Monitor | ❌ Not available in Home Assistant |
+| Environment | ❌ Not available in Home Assistant |
+| Audio | ❌ Not available in Home Assistant |
 
 ## Protocol Details
 
@@ -58,12 +58,15 @@ AA 00 00 09 02 LL [StarCode payload]
 AA 00 00 09 02 07 5A 01 03 10 30 0F A5
 ```
 
+The [Okin 5A codec](okin-5a.md#starcode-frames) builds every StarCode frame:
+
 | StarCode frame | Bytes |
 |----------------|-------|
 | Normal action | `5A 01 [32-bit key, big endian] A5` |
 | Extended value | `5A E0 04 key value value2 value3 A5` |
 | Direct motor position | `5A F0 03 zone position 00 A5` |
 | Query | `5A key 00 A5` |
+| Date/time | `5A 14 07 YY MM DD hh mm ss weekday A5` |
 
 Position is clamped to 0 through 100 and zones 0 through 4 address the five
 controllable actuator parts.
@@ -218,7 +221,7 @@ Both forms below are accepted:
 
 - Identical notifications inside 200 ms are ignored, matching the app.
 - Sleep/environment/config/report responses are retained in controller state as
-  hex so support bundles preserve unmodified protocol evidence. The integration
+  hex so support bundles keep the raw protocol data. The integration
   does not guess the physical meaning of values that the analyzed app leaves
   model-dependent.
 
@@ -245,20 +248,11 @@ feedback-only and appears in controller diagnostics as
 
 ### Analysis provenance
 
-The implementation comes from a clean-room APK Protocol Audit analysis of:
-
-- App: SleepSpa 1.3.7 (build 37)
-- Package: `com.dot.bedding.sleepspa.sleep_spa`
-- Complete split APK set: base, `arm64_v8a`, `en`, `nb`, and `xxhdpi`
-- Artifact-set SHA-256: `d114ec34fcd6645c30d356019ad756d3117d09f0eed8c41eb8e377b885557fdf`
-- Report status: COMPLETE, with 29/29 independent packet/parser vectors passing
-
-The report proves application behavior. Real-bed validation remains deferred
-until a user can test a beta or release and provide a support bundle if needed.
+Based on SleepSpa 1.3.7 (`com.dot.bedding.sleepspa.sleep_spa`).
 
 ### Deferred physical validation
 
-After beta or release, useful validation includes:
+Owners can help by testing:
 
 1. Confirm Company ID `0x00B2`, subtype byte, and single/dual selection from an
    actual `SLEEPSTAR` advertisement.

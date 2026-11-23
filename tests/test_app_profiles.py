@@ -5,30 +5,38 @@ from __future__ import annotations
 from unittest.mock import AsyncMock
 
 import pytest
-from homeassistant.const import CONF_ADDRESS
 from homeassistant.core import HomeAssistant
-from pytest_homeassistant_custom_component.common import MockConfigEntry
 
-from custom_components.adjustable_bed.app_profiles import hidden_generic_fields, per_side_profile
+from custom_components.adjustable_bed.app_families import FAMILY_STEP_ROUTES
+from custom_components.adjustable_bed.app_profiles import (
+    _every_profile_setting,
+    hidden_generic_fields,
+    per_side_profile,
+    profile_settings,
+)
 from custom_components.adjustable_bed.config_flow import (
     AdjustableBedConfigFlow,
     AdjustableBedOptionsFlow,
     _per_side_refusal,
 )
 from custom_components.adjustable_bed.const import (
+    BED_TYPE_CUSTOMATIC_CLARITY,
     BED_TYPE_FSM_RELAX,
     BED_TYPE_KEESON,
+    BED_TYPE_LEGGETT_OKIN,
     BED_TYPE_LINAK,
     BED_TYPE_REVERIE,
     BED_TYPE_REVERIE_NIGHTSTAND,
     BED_TYPE_REVERIE_PAIRLINK,
     BED_TYPE_STAR_ELEVATE,
+    BED_TYPE_STARCODE_ABM5_4,
     BED_TYPE_STARCODE_M1X12,
     BED_TYPE_SVANE,
     BED_TYPE_ZSERIES,
     CONF_BED_TYPE,
     CONF_DISABLE_ANGLE_SENSING,
     CONF_HAS_MASSAGE,
+    CONF_LEGGETT_APP_PROFILE,
     CONF_MOTOR_COUNT,
     CONF_PAIRLINK_HOME_ID,
     CONF_PAIRLINK_HOST_SOURCE,
@@ -39,21 +47,23 @@ from custom_components.adjustable_bed.const import (
     CONF_PROTOCOL_VARIANT,
     CONF_STARCODE_LIFT_ENTRIES,
     CONF_STARCODE_M1X12_PROFILE,
-    DOMAIN,
     KEESON_VARIANT_AMERICANSTAR,
     KEESON_VARIANT_HEAL_EVERY_NIGHT,
     KEESON_VARIANT_INNOVA,
     KEESON_VARIANT_SINO,
     STAR_ELEVATE_VARIANT_M1X12,
+    SUPPORTED_BED_TYPES,
     SVANE_VARIANT_JENSEN_LINON,
     VARIANT_AUTO,
     ZSERIES_VARIANT_Z280,
 )
 from custom_components.adjustable_bed.detection import (
+    HIDDEN_APP_CHOICES,
     bed_type_choice,
     get_bed_type_options,
     resolve_bed_type_choice,
 )
+from tests.form_helpers import finish_new_bed, start_new_bed
 
 
 def test_profiles_that_always_show_massage_hide_the_generic_choice() -> None:
@@ -66,7 +76,8 @@ def test_profiles_that_always_show_massage_hide_the_generic_choice() -> None:
 
 def test_a_variant_entry_replaces_its_bed_types_entry() -> None:
     assert CONF_MOTOR_COUNT in hidden_generic_fields(BED_TYPE_SVANE, VARIANT_AUTO)
-    assert hidden_generic_fields(BED_TYPE_SVANE, SVANE_VARIANT_JENSEN_LINON) == frozenset()
+    # LinOn owns none of Svane's fields; it asks only its own motor count.
+    assert hidden_generic_fields(BED_TYPE_SVANE, SVANE_VARIANT_JENSEN_LINON) == {CONF_MOTOR_COUNT}
     assert hidden_generic_fields(BED_TYPE_LINAK, VARIANT_AUTO) == frozenset()
 
 
@@ -100,6 +111,43 @@ def test_a_sides_own_setting_is_refused() -> None:
     assert fsm is not None and CONF_PRODUCT_TYPE in fsm.keys
 
 
+def test_every_declared_question_belongs_to_its_side() -> None:
+    """Each receiver answers its route's questions, so none is shared across a pair (#745).
+
+    INNOVA's 2M, 3M and 4M screen is one receiver's, as Avanti's always was.
+    """
+    from custom_components.adjustable_bed.pairing import side_owned_profile_fields
+    from custom_components.adjustable_bed.profile_id import profile_route
+    from custom_components.adjustable_bed.setup_questions import SETUP_PROFILES
+
+    for key, profile in SETUP_PROFILES.items():
+        route = profile_route(key)
+        if per_side_profile(route.bed_type, route.variant) is None:
+            continue
+        owned = side_owned_profile_fields(
+            {CONF_BED_TYPE: route.bed_type, CONF_PROTOCOL_VARIANT: route.variant}
+        )
+        assert {question.key for question in profile.questions} <= owned, key
+    sides = [(BED_TYPE_KEESON, KEESON_VARIANT_INNOVA)] * 2
+    assert _per_side_refusal(sides[0], sides, {CONF_MOTOR_COUNT: 4}) == (CONF_MOTOR_COUNT, "INNOVA")
+    sealy = per_side_profile("sealy_posturematic", None)
+    assert sealy is not None
+    assert {CONF_PRODUCT_TYPE, CONF_MOTOR_COUNT} <= sealy.keys
+
+
+def test_the_side_table_lists_only_what_no_question_asks() -> None:
+    """The hand-kept table holds what the declarations cannot say, so it cannot drift."""
+    from custom_components.adjustable_bed import app_profiles
+
+    tables = [
+        *((bed_type, None, side) for bed_type, side in app_profiles._BY_BED_TYPE.items()),
+        *((bed, variant, side) for (bed, variant), side in app_profiles._BY_VARIANT.items()),
+    ]
+    for bed_type, variant, side in tables:
+        asked = app_profiles._declared_questions(bed_type, variant)
+        assert not side.keys & asked, (bed_type, variant, sorted(side.keys & asked))
+
+
 def test_reverie_protocol_models_and_pairlink_credentials_are_side_owned() -> None:
     for bed_type in (BED_TYPE_REVERIE, BED_TYPE_REVERIE_NIGHTSTAND):
         profile = per_side_profile(bed_type, None)
@@ -123,50 +171,26 @@ def test_reverie_protocol_models_and_pairlink_credentials_are_side_owned() -> No
     } <= pairlink.keys
 
 
-async def test_options_redraw_when_a_variant_needs_hidden_fields(hass: HomeAssistant) -> None:
-    entry = MockConfigEntry(
-        domain=DOMAIN,
-        data={
-            CONF_ADDRESS: "AA:BB:CC:DD:EE:01",
-            CONF_BED_TYPE: BED_TYPE_KEESON,
-            CONF_PROTOCOL_VARIANT: KEESON_VARIANT_INNOVA,
-            CONF_HAS_MASSAGE: False,
-        },
-    )
-    entry.add_to_hass(hass)
-    flow = AdjustableBedOptionsFlow(entry)
-    flow.hass = hass
-    flow.handler = entry.entry_id
-
-    form = await flow.async_step_settings()
-    assert CONF_HAS_MASSAGE not in {marker.schema for marker in form["data_schema"].schema}
-    redrawn = await flow.async_step_settings({CONF_PROTOCOL_VARIANT: KEESON_VARIANT_SINO})
-    assert redrawn["type"] == "form"
-    assert CONF_HAS_MASSAGE in {marker.schema for marker in redrawn["data_schema"].schema}
-    saved = await flow.async_step_settings({CONF_HAS_MASSAGE: True})
-    assert saved["type"] == "create_entry"
-    assert entry.data[CONF_PROTOCOL_VARIANT] == KEESON_VARIANT_SINO
-    assert entry.data[CONF_HAS_MASSAGE] is True
-
-
 def test_apps_chosen_by_a_variant_are_listed_by_name() -> None:
     options = {option["value"]: option["label"] for option in get_bed_type_options()}
     innova = bed_type_choice(BED_TYPE_KEESON, KEESON_VARIANT_INNOVA)
-    assert options[innova] == "INNOVA app (Keeson)"
+    assert options[innova] == "INNOVA app"
     assert resolve_bed_type_choice(innova) == (BED_TYPE_KEESON, KEESON_VARIANT_INNOVA)
     assert resolve_bed_type_choice(BED_TYPE_KEESON) == (BED_TYPE_KEESON, None)
-    # Z-Series has no automatic page, so only its app entries are offered.
+    # Z-Series has no automatic page; the Customatic row names it and its
+    # question offers each model.
     assert BED_TYPE_ZSERIES not in options
-    assert bed_type_choice(BED_TYPE_ZSERIES, ZSERIES_VARIANT_Z280) in options
+    assert bed_type_choice(BED_TYPE_ZSERIES, ZSERIES_VARIANT_Z280) in HIDDEN_APP_CHOICES
+    assert "Z-Series" in options[BED_TYPE_CUSTOMATIC_CLARITY]
 
 
 def test_m1x12_main_and_elevate_profiles_are_explicit_and_findable() -> None:
     options = {option["value"]: option["label"] for option in get_bed_type_options()}
     elevate_app = bed_type_choice(BED_TYPE_STAR_ELEVATE, STAR_ELEVATE_VARIANT_M1X12)
-    assert options[BED_TYPE_STARCODE_M1X12] == (
-        "Adjustable Comfort M1X12 app (CB25 / F23 / kneading)"
-    )
-    assert options[elevate_app] == "Adjustable Comfort M1X12 ELEVATE"
+    # The StarCode apps' row names the app; its question opens the app's step.
+    assert "Adjustable Comfort M1X12" in options[BED_TYPE_STARCODE_ABM5_4]
+    assert BED_TYPE_STARCODE_M1X12 in FAMILY_STEP_ROUTES
+    assert options[elevate_app] == "Adjustable Comfort M1X12 app, Elevate lift"
     assert resolve_bed_type_choice(elevate_app) == (
         BED_TYPE_STAR_ELEVATE,
         STAR_ELEVATE_VARIANT_M1X12,
@@ -189,7 +213,7 @@ def test_m1x12_main_and_elevate_profiles_are_explicit_and_findable() -> None:
             (BED_TYPE_STAR_ELEVATE, STAR_ELEVATE_VARIANT_M1X12),
         ],
         {CONF_PROTOCOL_VARIANT: STAR_ELEVATE_VARIANT_M1X12},
-    ) == (CONF_PROTOCOL_VARIANT, "Adjustable Comfort M1X12 ELEVATE")
+    ) == (CONF_PROTOCOL_VARIANT, "Adjustable Comfort M1X12 Elevate lift")
 
 
 @pytest.mark.parametrize("variant", [KEESON_VARIANT_INNOVA, KEESON_VARIANT_AMERICANSTAR])
@@ -199,53 +223,15 @@ async def test_setup_resolves_an_app_entry_to_its_bed_type_and_variant(
     flow = AdjustableBedConfigFlow()
     flow.hass = hass
     flow.context = {}
-    flow._disconnect_choice_confirmed = True
     flow._finish_with_verify = AsyncMock(return_value={"type": "create_entry"})
-    await flow.async_step_manual_entry(
-        {
-            CONF_ADDRESS: "AA:BB:CC:DD:EE:02",
-            CONF_BED_TYPE: bed_type_choice(BED_TYPE_KEESON, variant),
-            CONF_PROTOCOL_VARIANT: VARIANT_AUTO,
-        }
-    )
+    await start_new_bed(flow, "typed", bed_type_choice(BED_TYPE_KEESON, variant), "AA:BB:CC:DD:EE:02")
+    # These apps' screen sets the motor count before setup finishes.
+    await finish_new_bed(flow, await flow.async_step_profile_questions({CONF_MOTOR_COUNT: "2"}))
     saved = flow._finish_with_verify.await_args.args[0]
     assert (saved[CONF_BED_TYPE], saved[CONF_PROTOCOL_VARIANT]) == (
         BED_TYPE_KEESON,
         variant,
     )
-
-
-@pytest.mark.parametrize("variant", [KEESON_VARIANT_INNOVA, KEESON_VARIANT_AMERICANSTAR])
-async def test_options_show_the_app_entry_and_let_the_variant_field_decide(
-    hass: HomeAssistant, variant: str,
-) -> None:
-    entry = MockConfigEntry(
-        domain=DOMAIN,
-        data={
-            CONF_ADDRESS: "AA:BB:CC:DD:EE:03",
-            CONF_BED_TYPE: BED_TYPE_KEESON,
-            CONF_PROTOCOL_VARIANT: variant,
-        },
-    )
-    entry.add_to_hass(hass)
-    flow = AdjustableBedOptionsFlow(entry)
-    flow.hass = hass
-    flow.handler = entry.entry_id
-    choice = bed_type_choice(BED_TYPE_KEESON, variant)
-
-    form = await flow.async_step_settings()
-    marker = next(m for m in form["data_schema"].schema if m.schema == CONF_BED_TYPE)
-    selector = form["data_schema"].schema[marker]
-    assert selector(marker.default()) == choice
-    # The selector is unchanged, so the variant field decides.
-    result = await flow.async_step_settings(
-        {CONF_BED_TYPE: choice, CONF_PROTOCOL_VARIANT: KEESON_VARIANT_SINO}
-    )
-    if result["type"] == "form":
-        result = await flow.async_step_settings({})
-    assert result["type"] == "create_entry"
-    assert entry.data[CONF_BED_TYPE] == BED_TYPE_KEESON
-    assert entry.data[CONF_PROTOCOL_VARIANT] == KEESON_VARIANT_SINO
 
 
 def test_americanstar_profile_owns_massage_and_per_side_layout() -> None:
@@ -255,8 +241,26 @@ def test_americanstar_profile_owns_massage_and_per_side_layout() -> None:
     assert options[choice] == "AMERICANSTAR app (Keeson)"
     assert resolve_bed_type_choice(choice) == (BED_TYPE_KEESON, variant)
     assert CONF_HAS_MASSAGE in hidden_generic_fields(BED_TYPE_KEESON, variant)
-    assert CONF_MOTOR_COUNT not in hidden_generic_fields(BED_TYPE_KEESON, variant)
+    # The app's screen question asks the motor count, so the generic form hides it.
+    assert CONF_MOTOR_COUNT in hidden_generic_fields(BED_TYPE_KEESON, variant)
     sides = [(BED_TYPE_KEESON, variant)] * 2
     assert _per_side_refusal(sides[0], sides, {CONF_MOTOR_COUNT: 3}) == (
         CONF_MOTOR_COUNT, "AMERICANSTAR"
     )
+
+
+@pytest.mark.parametrize("bed_type", SUPPORTED_BED_TYPES)
+def test_a_bed_type_change_leaves_no_other_profiles_settings(bed_type: str) -> None:
+    """Every setting another bed type's profiles own leaves; its own stay."""
+    every = _every_profile_setting()
+    data = {CONF_BED_TYPE: bed_type, **dict.fromkeys(every, "stale")}
+
+    AdjustableBedOptionsFlow._remove_irrelevant_bed_settings(data, bed_type)
+
+    # The L&P app profile stays only on the Okin route, which this data names.
+    expected = profile_settings(bed_type) - (
+        set() if bed_type == BED_TYPE_LEGGETT_OKIN else {CONF_LEGGETT_APP_PROFILE}
+    )
+    assert set(data) & every == expected
+
+

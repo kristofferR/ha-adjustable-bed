@@ -6,13 +6,13 @@ from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
-from custom_components.adjustable_bed.beds.base import (
+from custom_components.adjustable_bed.beds.entity_specs import (
     ControllerMotorHoldSpec,
     MotorControlSpec,
 )
-from custom_components.adjustable_bed.beds.octo import OctoController
-from custom_components.adjustable_bed.beds.reverie_pairlink import ReveriePairlinkController
-from custom_components.adjustable_bed.beds.reverie_pairlink_runtime import (
+from custom_components.adjustable_bed.beds.octo.controller import OctoController
+from custom_components.adjustable_bed.beds.reverie.pairlink import ReveriePairlinkController
+from custom_components.adjustable_bed.beds.reverie.pairlink_runtime import (
     PairlinkCredentials,
     PairlinkHomeIdOrigin,
     PairlinkRole,
@@ -24,6 +24,7 @@ from custom_components.adjustable_bed.cover import (
     AdjustableBedCoverEntityDescription,
     _build_cover_description,
 )
+from custom_components.adjustable_bed.execution import ExecutionCapabilities
 
 
 async def _noop(_controller) -> None:
@@ -73,12 +74,13 @@ async def test_octo_cover_respects_configured_pulses(
 async def test_cover_commands_use_physical_position_axis_resource() -> None:
     """Logical Keeson motor names must share their seek scheduler resource."""
     coordinator = SimpleNamespace(
+        capability_controller=None,
         entity_side=None,
         device_info={},
-        entity_translation_key=lambda key: key,
         entity_unique_id=lambda key: key,
         name="Test bed",
         async_execute_controller_command=AsyncMock(),
+        async_stop_motor=AsyncMock(),
     )
     cover = AdjustableBedCover(
         coordinator,
@@ -100,7 +102,9 @@ async def test_cover_commands_use_physical_position_axis_resource() -> None:
     assert [
         call.kwargs["resource"]
         for call in coordinator.async_execute_controller_command.await_args_list
-    ] == ["motor:back", "motor:back", "motor:back"]
+    ] == ["motor:back", "motor:back"]
+    # The Stop is a motor-scoped STOP on the same physical axis.
+    assert coordinator.async_stop_motor.await_args.args[1] == "motor:back"
 
 
 async def test_pairlink_controller_hold_metadata_reaches_sided_cover_attributes() -> None:
@@ -115,13 +119,14 @@ async def test_pairlink_controller_hold_metadata_reaches_sided_cover_attributes(
         local_join_bt_mac=bytes.fromhex("102030405060"),
     )
     coordinator = SimpleNamespace(
+        capability_controller=None,
         entry=SimpleNamespace(data={}, options={}),
         entity_side="left",
         device_info={},
-        entity_translation_key=lambda key: key,
         entity_unique_id=lambda key: key,
         name="Pairlink left",
         async_execute_controller_command=AsyncMock(),
+        handle_controller_state_updates=MagicMock(),
     )
     controller = ReveriePairlinkController(coordinator, model="R510L", runtime=runtime)
     spec = next(item for item in controller.motor_control_specs if item.key == "back")
@@ -156,9 +161,9 @@ def test_controller_hold_metadata_is_exposed_without_changing_other_cover_attrib
         )
     )
     coordinator = SimpleNamespace(
+        capability_controller=None,
         entity_side="left",
         device_info={},
-        entity_translation_key=lambda key: key,
         entity_unique_id=lambda key: key,
     )
     cover = AdjustableBedCover(coordinator, description)
@@ -175,9 +180,9 @@ def test_controller_hold_metadata_is_exposed_without_changing_other_cover_attrib
 
 def test_cover_without_controller_hold_does_not_publish_hold_metadata() -> None:
     coordinator = SimpleNamespace(
+        capability_controller=None,
         entity_side=None,
         device_info={},
-        entity_translation_key=lambda key: key,
         entity_unique_id=lambda key: key,
     )
     cover = AdjustableBedCover(
@@ -192,3 +197,85 @@ def test_cover_without_controller_hold_does_not_publish_hold_metadata() -> None:
     )
 
     assert not cover.extra_state_attributes
+
+
+def test_cover_requires_both_directions_to_support_a_control_scoped_lease() -> None:
+    coordinator = SimpleNamespace(
+        capability_controller=SimpleNamespace(
+            execution=ExecutionCapabilities(hold="stream", hold_controls=frozenset({"back_up"}))
+        ),
+        entity_side=None,
+        device_info={},
+        entity_unique_id=lambda key: key,
+    )
+    cover = AdjustableBedCover(
+        coordinator,
+        _build_cover_description(
+            MotorControlSpec(
+                key="back",
+                translation_key="back",
+                open_fn=_noop,
+                close_fn=_noop,
+                stop_fn=_noop,
+                hold=ControllerMotorHoldSpec("back_up", "back_down"),
+            )
+        ),
+    )
+    assert "hold_lease_mode" not in cover.extra_state_attributes
+
+
+async def test_cover_without_hold_publishes_a_side_wide_stop() -> None:
+    """A motor whose STOP is the side-wide STOP says so, so the card stops the side."""
+    description = _build_cover_description(
+        MotorControlSpec(
+            key="elevate_both",
+            translation_key="elevate_both",
+            open_fn=_noop,
+            close_fn=_noop,
+            stop_fn=_noop,
+            stop_scope="side",
+        )
+    )
+    coordinator = SimpleNamespace(
+        capability_controller=None,
+        entity_side=None,
+        device_info={},
+        entity_unique_id=lambda key: key,
+        name="Test bed",
+        async_stop_motor=AsyncMock(),
+    )
+
+    cover = AdjustableBedCover(coordinator, description)
+    cover.async_write_ha_state = MagicMock()
+    assert cover.extra_state_attributes == {"held_stop_scope": "side"}
+    # Its STOP is admitted like any side-wide STOP, ending every motor's work.
+    await cover.async_stop_cover()
+    assert coordinator.async_stop_motor.await_args.args[1] == "motor:*"
+    assert coordinator.async_stop_motor.await_args.kwargs["stream_member"] is False
+
+
+@pytest.mark.parametrize(
+    ("key", "translation_key", "icon"),
+    [
+        # The Richmat MH back motor is "head" internally but shown as "Back".
+        ("head", "back", "mdi:human-handsup"),
+        # A bed prefix in the translation key still names the motor shown.
+        ("tilt", "keeson_head", "mdi:head"),
+        # Two motors at once get the generic icon, not half of the pair.
+        ("both", "back_legs", "mdi:bed-outline"),
+        # A motor named before "end" only says which end tilts.
+        ("lumbar", "foot_end_tilt", "mdi:angle-acute"),
+        # "Foot" is the feet motor.
+        ("legs", "smart_sleep_foot", "mdi:foot-print"),
+        # A name with no known motor falls back to the internal key.
+        ("head", "smart_sleep_headrest", "mdi:head"),
+    ],
+)
+def test_cover_icon_follows_the_motor_the_user_sees(
+    key: str, translation_key: str, icon: str
+) -> None:
+    """The icon matches the shown name, not the controller's internal motor key."""
+    spec = MotorControlSpec(
+        key=key, translation_key=translation_key, open_fn=_noop, close_fn=_noop, stop_fn=_noop
+    )
+    assert _build_cover_description(spec).icon == icon

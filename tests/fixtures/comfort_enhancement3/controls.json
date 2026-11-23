@@ -1,0 +1,297 @@
+[
+  {
+    "id": "m1",
+    "protocol": "P1",
+    "action": "m1",
+    "inputs": {
+      "command_mask": 4096
+    },
+    "expected_bytes": "040200001000",
+    "confidence": "VERIFIED"
+  },
+  {
+    "id": "stopCommand",
+    "protocol": "P1",
+    "action": "stopCommand",
+    "inputs": {
+      "command_mask": 0
+    },
+    "expected_bytes": "040200000000",
+    "confidence": "VERIFIED"
+  },
+  {
+    "id": "TV",
+    "protocol": "P1",
+    "action": "TV",
+    "inputs": {
+      "command_mask": 12288
+    },
+    "expected_bytes": "040200003000",
+    "confidence": "VERIFIED"
+  },
+  {
+    "id": "massageStop-0",
+    "protocol": "P1",
+    "action": "massageStop",
+    "inputs": {
+      "command_mask": 1024
+    },
+    "expected_bytes": "040200000400",
+    "confidence": "VERIFIED"
+  },
+  {
+    "id": "massageStop-1",
+    "protocol": "P2",
+    "action": "massageStop",
+    "inputs": {
+      "slot": 0,
+      "step": 0,
+      "delay_ticks": 0,
+      "command_mask": 1024,
+      "duration": 5,
+      "literal_only": true
+    },
+    "expected_bytes": "0b0d0000000000000000040005",
+    "confidence": "VERIFIED"
+  },
+  {
+    "id": "QS",
+    "protocol": "P1",
+    "action": "QS",
+    "inputs": {
+      "command_mask": 32768
+    },
+    "expected_bytes": "040200008000",
+    "confidence": "VERIFIED"
+  },
+  {
+    "id": "m3Down",
+    "protocol": "P1",
+    "action": "m3Down",
+    "inputs": {
+      "command_mask": 32
+    },
+    "expected_bytes": "040200000020",
+    "confidence": "VERIFIED"
+  },
+  {
+    "id": "m3Up",
+    "protocol": "P1",
+    "action": "m3Up",
+    "inputs": {
+      "command_mask": 16
+    },
+    "expected_bytes": "040200000010",
+    "confidence": "VERIFIED"
+  },
+  {
+    "id": "m2",
+    "protocol": "P1",
+    "action": "m2",
+    "inputs": {
+      "command_mask": 8192
+    },
+    "expected_bytes": "040200002000",
+    "confidence": "VERIFIED"
+  },
+  {
+    "id": "storeMemoryPosition",
+    "protocol": "P1",
+    "action": "storeMemoryPosition",
+    "inputs": {
+      "command_mask": 65536
+    },
+    "expected_bytes": "040200010000",
+    "confidence": "VERIFIED"
+  },
+  {
+    "id": "zeroGravity",
+    "protocol": "P1",
+    "action": "zeroGravity",
+    "inputs": {
+      "command_mask": 16384
+    },
+    "expected_bytes": "040200004000",
+    "confidence": "VERIFIED"
+  },
+  {
+    "id": "ubl",
+    "protocol": "P1",
+    "action": "ubl",
+    "inputs": {
+      "command_mask": 131072
+    },
+    "expected_bytes": "040200020000",
+    "confidence": "VERIFIED"
+  },
+  {
+    "id": "massageFootPlus",
+    "protocol": "P1",
+    "action": "massageFootPlus",
+    "inputs": {
+      "command_mask": 4194304
+    },
+    "expected_bytes": "040200400000",
+    "confidence": "VERIFIED"
+  },
+  {
+    "id": "massageHeadPlus",
+    "protocol": "P1",
+    "action": "massageHeadPlus",
+    "inputs": {
+      "command_mask": 2048
+    },
+    "expected_bytes": "040200000800",
+    "confidence": "VERIFIED"
+  },
+  {
+    "id": "massageWave3",
+    "protocol": "P1",
+    "action": "massageWave3",
+    "inputs": {
+      "command_mask": 2147483648
+    },
+    "expected_bytes": "040280000000",
+    "confidence": "VERIFIED"
+  },
+  {
+    "id": "massageStopCommand",
+    "protocol": "P1",
+    "action": "massageStopCommand",
+    "inputs": {
+      "command_mask": 0
+    },
+    "expected_bytes": "040200000000",
+    "confidence": "VERIFIED"
+  },
+  {
+    "id": "tilt",
+    "protocol": "P1",
+    "action": "tilt",
+    "inputs": {
+      "command_mask": 144
+    },
+    "expected_bytes": "040200000090",
+    "confidence": "VERIFIED"
+  },
+  {
+    "id": "flat",
+    "protocol": "P1",
+    "action": "flat",
+    "inputs": {
+      "command_mask": 268435456
+    },
+    "expected_bytes": "040210000000",
+    "confidence": "VERIFIED"
+  },
+  {
+    "id": "m4Down",
+    "protocol": "P1",
+    "action": "m4Down",
+    "inputs": {
+      "command_mask": 128
+    },
+    "expected_bytes": "040200000080",
+    "confidence": "VERIFIED"
+  },
+  {
+    "id": "m3m4Down",
+    "protocol": "P1",
+    "action": "m3m4Down",
+    "inputs": {
+      "command_mask": 160
+    },
+    "expected_bytes": "0402000000a0",
+    "confidence": "VERIFIED"
+  },
+  {
+    "id": "m4Up",
+    "protocol": "P1",
+    "action": "m4Up",
+    "inputs": {
+      "command_mask": 64
+    },
+    "expected_bytes": "040200000040",
+    "confidence": "VERIFIED"
+  },
+  {
+    "id": "m3m4Up",
+    "protocol": "P1",
+    "action": "m3m4Up",
+    "inputs": {
+      "command_mask": 80
+    },
+    "expected_bytes": "040200000050",
+    "confidence": "VERIFIED"
+  },
+  {
+    "id": "m1m2Down",
+    "protocol": "P1",
+    "action": "m1m2Down",
+    "inputs": {
+      "command_mask": 10
+    },
+    "expected_bytes": "04020000000a",
+    "confidence": "VERIFIED"
+  },
+  {
+    "id": "m1m2Up",
+    "protocol": "P1",
+    "action": "m1m2Up",
+    "inputs": {
+      "command_mask": 5
+    },
+    "expected_bytes": "040200000005",
+    "confidence": "VERIFIED"
+  },
+  {
+    "id": "footDown",
+    "protocol": "P1",
+    "action": "footDown",
+    "inputs": {
+      "command_mask": 8
+    },
+    "expected_bytes": "040200000008",
+    "confidence": "VERIFIED"
+  },
+  {
+    "id": "footUp",
+    "protocol": "P1",
+    "action": "footUp",
+    "inputs": {
+      "command_mask": 4
+    },
+    "expected_bytes": "040200000004",
+    "confidence": "VERIFIED"
+  },
+  {
+    "id": "headDown",
+    "protocol": "P1",
+    "action": "headDown",
+    "inputs": {
+      "command_mask": 2
+    },
+    "expected_bytes": "040200000002",
+    "confidence": "VERIFIED"
+  },
+  {
+    "id": "headUp",
+    "protocol": "P1",
+    "action": "headUp",
+    "inputs": {
+      "command_mask": 1
+    },
+    "expected_bytes": "040200000001",
+    "confidence": "VERIFIED"
+  },
+  {
+    "id": "duration-cycle",
+    "protocol": "P1",
+    "action": "cycle massage duration",
+    "inputs": {
+      "command_mask": 33554432
+    },
+    "expected_bytes": "040202000000",
+    "confidence": "VERIFIED"
+  }
+]

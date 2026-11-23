@@ -7,9 +7,9 @@ import pytest
 import voluptuous as vol
 from homeassistant.exceptions import ServiceValidationError
 
+from custom_components.adjustable_bed.beds.limoss.remote_state import LimossRemoteMemory
 from custom_components.adjustable_bed.const import BED_TYPE_LIMOSS_REMOTE, DOMAIN, SIDE_BOTH
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
-from custom_components.adjustable_bed.limoss_remote_state import LimossRemoteMemory
 from custom_components.adjustable_bed.services import async_register_services
 from tests.test_limoss_remote import make_controller
 
@@ -35,10 +35,16 @@ def target(*, memory=8):
 async def service_target(hass):
     await async_register_services(hass)
     coordinator, controller = target()
-    with patch(
-        "custom_components.adjustable_bed.services._resolve_sided_targets",
-        return_value=([(coordinator, SIDE_BOTH)], []),
-    ) as resolve:
+    with (
+        patch(
+            "custom_components.adjustable_bed.services._resolve_sided_targets",
+            return_value=([(coordinator, SIDE_BOTH)], []),
+        ) as resolve,
+        patch(
+            "custom_components.adjustable_bed.services._resolve_sided_targets",
+            new=resolve,
+        ),
+    ):
         yield coordinator, controller, resolve
 
 
@@ -130,7 +136,7 @@ async def test_all_targets_preflight_before_first_action(
     second, other = target(memory=7 if invalid == "capacity" else 8)
     if invalid == "layout":
         # First device has the requested channel; the second only renders 1/2.
-        from custom_components.adjustable_bed.beds.limoss_remote_protocol import (
+        from custom_components.adjustable_bed.beds.limoss.remote_protocol import (
             LimossRemoteCapabilities,
         )
 

@@ -7,15 +7,17 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 from homeassistant.exceptions import ServiceValidationError
 from homeassistant.helpers import entity_registry as er
-from pytest_homeassistant_custom_component.common import MockConfigEntry
+from pytest_homeassistant.common import MockConfigEntry
 
-from custom_components.adjustable_bed.beds.base import (
+from custom_components.adjustable_bed.beds.diagnostic import DiagnosticBedController
+from custom_components.adjustable_bed.beds.entity_specs import (
     ControllerNumberSpec,
     ControllerSelectSpec,
+    ControllerSwitchSpec,
     build_position_number_spec,
 )
-from custom_components.adjustable_bed.beds.diagnostic import DiagnosticBedController
 from custom_components.adjustable_bed.const import BED_TYPE_DIAGNOSTIC, CONF_BED_TYPE, DOMAIN
+from custom_components.adjustable_bed.entity_sweep import async_sweep_after_setup
 from custom_components.adjustable_bed.number import (
     AdjustableBedControllerNumber,
     AdjustableBedLevelNumber,
@@ -34,6 +36,10 @@ from custom_components.adjustable_bed.select import (
 )
 from custom_components.adjustable_bed.select import (
     async_setup_entry as setup_selects,
+)
+from custom_components.adjustable_bed.switch import (
+    AdjustableBedControllerSwitch,
+    _switch_entities_for,
 )
 
 
@@ -110,6 +116,7 @@ def runtime_for(hass, controller, side=None, entry=None):
     runtime = MagicMock()
     runtime.entry = entry
     runtime.entity_side = side
+    runtime.controller_side = None
     runtime.device_info = {}
     runtime.has_massage = False
     runtime.disable_angle_sensing = True
@@ -117,13 +124,13 @@ def runtime_for(hass, controller, side=None, entry=None):
     runtime.capability_controller = controller
     runtime.controller_state = {}
     runtime.entity_unique_id.side_effect = lambda key: f"bed_{key}" + (f"_{side}" if side else "")
-    runtime.entity_translation_key.side_effect = lambda key: key
     lock = asyncio.Lock()
 
     async def execute(command, **kwargs):
         async with lock:
             live = runtime.controller
-            await command(live.bind_side(side) if side else live)
+            with live.side_scope(side):
+                await command(live)
 
     runtime.async_execute_controller_command = AsyncMock(side_effect=execute)
     return runtime
@@ -250,37 +257,6 @@ async def test_state_callbacks_watch_declared_key_and_unsubscribe(hass, domain, 
 
 
 @pytest.mark.parametrize("domain", ["select", "number"])
-@pytest.mark.parametrize("complete", [False, True])
-async def test_stale_cleanup_is_bounded_to_profile_side_platform_and_entry(hass, domain, complete):
-    controller = ProductController()
-    controller.complete = complete
-    controller.selects = controller.numbers = False
-    runtime = runtime_for(hass, controller, "left")
-    registry = er.async_get(hass)
-    stale = registry.async_get_or_create(
-        domain, DOMAIN, f"bed_controller_{domain}_old_left", config_entry=runtime.entry
-    )
-    other_side = registry.async_get_or_create(
-        domain, DOMAIN, f"bed_controller_{domain}_old_right", config_entry=runtime.entry
-    )
-    unrelated = registry.async_get_or_create(
-        domain, DOMAIN, "bed_unrelated_left", config_entry=runtime.entry
-    )
-    other_platform = registry.async_get_or_create(
-        domain, "other", f"bed_controller_{domain}_old_left", config_entry=runtime.entry
-    )
-    other_entry = MockConfigEntry(domain=DOMAIN)
-    other_entry.add_to_hass(hass)
-    other_bed = registry.async_get_or_create(
-        domain, DOMAIN, f"another_controller_{domain}_old_left", config_entry=other_entry
-    )
-    (_select_entities_for if domain == "select" else _number_entities_for)(hass, runtime)
-    assert (registry.async_get(stale.entity_id) is not None) is (not complete)
-    for kept in (other_side, unrelated, other_platform, other_bed):
-        assert registry.async_get(kept.entity_id) is not None
-
-
-@pytest.mark.parametrize("domain", ["select", "number"])
 async def test_late_capabilities_add_once_and_do_not_delete_pending_registry(hass, domain):
     controller = ProductController()
     controller.complete = False
@@ -295,13 +271,16 @@ async def test_late_capabilities_add_once_and_do_not_delete_pending_registry(has
     module = f"custom_components.adjustable_bed.{domain}"
     with patch(f"{module}.entity_runtimes", return_value=[runtime]):
         await (setup_selects if domain == "select" else setup_numbers)(hass, runtime.entry, add)
+    async_sweep_after_setup(hass, runtime.entry, (domain,))
     discover = runtime.register_controller_state_callback.call_args.args[0]
     assert registry.async_get(old.entity_id) is not None
     controller.selects = controller.numbers = True
     controller.complete = True
     discover({})
     discover({})
-    assert add.call_count == 2
+    await hass.async_block_till_done()
+    # Nothing was built at setup; the late capability is added exactly once.
+    assert add.call_count == 1
     assert len(add.call_args.args[0]) == 1
     assert registry.async_get(old.entity_id) is None
 
@@ -455,3 +434,175 @@ async def test_two_address_proxy_routes_only_selected_physical_child(hass):
     children["left"].controller_state["mood_intent"] = "blue"
     assert select.current_option == "blue"
     assert number.native_value is None
+
+
+class SwitchController(DiagnosticBedController):
+    """Declare one read-back switch and one assumed switch."""
+
+    def __init__(self):
+        super().__init__(MagicMock(address="test"))
+        self.calls = []
+
+    @property
+    def controller_switch_specs(self) -> tuple[ControllerSwitchSpec, ...]:
+        return (
+            ControllerSwitchSpec(
+                "lock",
+                "child_lock",
+                lambda ctrl, on: ctrl.set_lock(on),
+                "lock_state",
+                on_value="on",
+            ),
+            ControllerSwitchSpec("sensor", "motion_sensor", lambda ctrl, on: ctrl.set_sensor(on)),
+        )
+
+    async def set_lock(self, enabled):
+        self.calls.append(("lock", enabled, self.command_side))
+
+    async def set_sensor(self, enabled):
+        self.calls.append(("sensor", enabled, self.command_side))
+
+
+async def test_controller_switch_reads_state_or_assumes_last_command(hass):
+    runtime = runtime_for(hass, SwitchController())
+    readback, assumed = (
+        entity
+        for entity in _switch_entities_for(hass, runtime)
+        if isinstance(entity, AdjustableBedControllerSwitch)
+    )
+    assert readback.unique_id == "bed_controller_switch_lock"
+    assert readback.is_on is None and not readback.assumed_state
+    runtime.controller_state = {"lock_state": "on"}
+    assert readback.is_on is True
+    runtime.controller_state = {"lock_state": "off"}
+    assert readback.is_on is False
+    await readback.async_turn_on()
+    # A read-back switch waits for the bed instead of assuming the command took.
+    assert readback.is_on is False
+
+    assert assumed.is_on is None and assumed.assumed_state
+    with patch.object(assumed, "async_write_ha_state"):
+        await assumed.async_turn_off()
+    assert assumed.is_on is False
+    assert runtime.controller.calls == [("lock", True, None), ("sensor", False, None)]
+
+
+async def test_controller_switch_rejects_withdrawn_setting(hass):
+    runtime = runtime_for(hass, SwitchController())
+    switch = next(
+        entity
+        for entity in _switch_entities_for(hass, runtime)
+        if isinstance(entity, AdjustableBedControllerSwitch)
+    )
+    runtime.controller = DiagnosticBedController(MagicMock(address="test"))
+    with pytest.raises(ServiceValidationError):
+        await switch.async_turn_on()
+
+
+async def test_diagnostic_controller_button_is_hidden_maintenance(hass):
+    from homeassistant.const import EntityCategory
+
+    from custom_components.adjustable_bed.beds.entity_specs import ControllerButtonSpec
+    from custom_components.adjustable_bed.button import ControllerActionButton
+
+    runtime = runtime_for(hass, SwitchController())
+    spec = ControllerButtonSpec("refresh", "Refresh", AsyncMock(), translation_key="refresh")
+    plain = ControllerActionButton(runtime, spec)
+    hidden = ControllerActionButton(runtime, replace(spec, diagnostic=True))
+    assert plain.entity_category is None and plain.entity_registry_enabled_default
+    assert hidden.entity_category is EntityCategory.DIAGNOSTIC
+    assert not hidden.entity_registry_enabled_default
+
+
+async def test_local_controller_switch_applies_without_the_bed_link(hass):
+    controller = SwitchController()
+    applied = []
+    spec = ControllerSwitchSpec(
+        "child", "child_mode", AsyncMock(), "child_state", local_set_fn=applied.append
+    )
+    runtime = runtime_for(hass, controller)
+    with patch.object(SwitchController, "controller_switch_specs", (spec,)):
+        switch = AdjustableBedControllerSwitch(runtime, spec)
+        await switch.async_turn_on()
+    assert applied == [True]
+    runtime.async_execute_controller_command.assert_not_called()
+
+
+async def test_controller_switch_records_only_a_command_that_was_sent(hass):
+    runtime = runtime_for(hass, SwitchController())
+    _readback, assumed = (
+        entity
+        for entity in _switch_entities_for(hass, runtime)
+        if isinstance(entity, AdjustableBedControllerSwitch)
+    )
+    # A STOP or replacing command settles the call without running it.
+    runtime.async_execute_controller_command = AsyncMock(return_value=None)
+    await assumed.async_turn_on()
+    assert assumed.is_on is None
+    runtime.async_execute_controller_command = AsyncMock(side_effect=asyncio.CancelledError)
+    with pytest.raises(asyncio.CancelledError):
+        await assumed.async_turn_on()
+    assert assumed.is_on is None
+
+
+async def test_controller_switch_ignores_a_command_stop_cancelled_before_writing(hass):
+    runtime = runtime_for(hass, SwitchController())
+    _readback, assumed = (
+        entity
+        for entity in _switch_entities_for(hass, runtime)
+        if isinstance(entity, AdjustableBedControllerSwitch)
+    )
+    cancelled = MagicMock()
+    cancelled.cancel_event.is_set.return_value = True
+    cancelled.frames_written = cancelled.frames_skipped = 0
+    with patch(
+        "custom_components.adjustable_bed.command_scheduler.current_command_context",
+        return_value=cancelled,
+    ):
+        await assumed.async_turn_on()
+    assert assumed.is_on is None
+
+
+async def test_controller_switch_forgets_assumed_state_when_the_link_drops(hass):
+    runtime = runtime_for(hass, SwitchController())
+    _readback, assumed = (
+        entity
+        for entity in _switch_entities_for(hass, runtime)
+        if isinstance(entity, AdjustableBedControllerSwitch)
+    )
+    assumed.hass = hass
+    with patch.object(assumed, "async_write_ha_state"):
+        await assumed.async_added_to_hass()
+        (on_connection,) = (
+            call.args[0] for call in runtime.register_connection_state_callback.call_args_list
+        )
+        await assumed.async_turn_on()
+        on_connection(True)
+        assert assumed.is_on is True
+        runtime.last_disconnect_reason = "unexpected"
+        on_connection(False)
+    assert assumed.is_on is None
+
+
+async def test_controller_switch_reads_a_cleared_or_mistyped_report_as_unknown(hass):
+    runtime = runtime_for(hass, SwitchController())
+    readback, _assumed = (
+        entity
+        for entity in _switch_entities_for(hass, runtime)
+        if isinstance(entity, AdjustableBedControllerSwitch)
+    )
+    runtime.controller_state = {"lock_state": "on"}
+    assert readback.is_on is True
+    # A controller clears a connection-scoped setting on disconnect.
+    runtime.controller_state = {"lock_state": None}
+    assert readback.is_on is None
+    runtime.controller_state = {"lock_state": False}
+    assert readback.is_on is None
+
+
+async def test_controller_switch_fills_its_name_template(hass):
+    spec = ControllerSwitchSpec(
+        "sync", "side_sync", AsyncMock(), translation_placeholders={"side": "Left"}
+    )
+    switch = AdjustableBedControllerSwitch(runtime_for(hass, SwitchController()), spec)
+    assert switch.translation_placeholders == {"side": "Left"}

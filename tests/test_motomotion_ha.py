@@ -10,17 +10,20 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from homeassistant.const import CONF_ADDRESS, CONF_NAME
-from pytest_homeassistant_custom_component.common import MockConfigEntry
+from pytest_homeassistant.common import MockConfigEntry
 
-from custom_components.adjustable_bed.beds.motomotion import MotoMotionController
-from custom_components.adjustable_bed.const import CONF_BED_TYPE, CONF_BLE_DEVICE_NAME, DOMAIN
-from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
-from custom_components.adjustable_bed.motomotion_protocol import (
+from custom_components.adjustable_bed.bed_traits import reads_positions
+from custom_components.adjustable_bed.beds.motomotion.controller import MotoMotionController
+from custom_components.adjustable_bed.beds.motomotion.protocol import posture
+from custom_components.adjustable_bed.codec.motomotion import (
     Position,
     ascii_command,
     binary_command,
-    posture,
 )
+from custom_components.adjustable_bed.const import CONF_BED_TYPE, CONF_BLE_DEVICE_NAME, DOMAIN
+from custom_components.adjustable_bed.controller_state import StateKey
+from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
+from custom_components.adjustable_bed.execution import HOLD_CEILING_MS
 
 
 def runtime(hass, name="SOFA000001A000H", address="AA:BB:CC:DD:EE:13"):
@@ -214,15 +217,15 @@ async def test_fine_tune_targets_survive_disconnect_and_controller_replacement(h
 async def test_public_user_action_validates_all_targets_before_any_write(hass):
     from homeassistant.exceptions import ServiceValidationError
 
-    from custom_components.adjustable_bed import motomotion_services as service
+    from custom_components.adjustable_bed.beds.motomotion import services as service
 
     a, b = runtime(hass), runtime(hass, "BT2010000", "AA:BB:CC:DD:EE:14")
     await a.async_prime_offline_controller()
     await b.async_prime_offline_controller()
     service.async_register_motomotion_services(hass)
     with (
-        patch.object(
-            service, "_resolve_sided_targets", return_value=([(a, "left"), (b, "left")], [])
+        patch(
+            "custom_components.adjustable_bed.services._resolve_sided_targets", return_value=([(a, "left"), (b, "left")], [])
         ),
         pytest.raises(ServiceValidationError),
     ):
@@ -243,7 +246,7 @@ async def test_public_user_action_validates_all_targets_before_any_write(hass):
 
 
 async def test_public_posture_request_and_restore_have_one_physical_owner(hass):
-    from custom_components.adjustable_bed import motomotion_services as service
+    from custom_components.adjustable_bed.beds.motomotion import services as service
 
     c = runtime(hass)
     await c.async_prime_offline_controller()
@@ -258,7 +261,7 @@ async def test_public_posture_request_and_restore_have_one_physical_owner(hass):
     ctrl._session = (c._client, char, char)
     service.async_register_motomotion_services(hass)
     with (
-        patch.object(service, "_resolve_sided_targets", return_value=([(c, "both")], [])),
+        patch("custom_components.adjustable_bed.services._resolve_sided_targets", return_value=([(c, "both")], [])),
         patch.object(c, "async_ensure_connected", AsyncMock(return_value=True)),
         patch.object(c, "_async_refresh_controller_auth", AsyncMock()),
     ):
@@ -299,25 +302,27 @@ async def test_setup_step_and_options_ownership_use_same_identity_validation(has
     )
     from custom_components.adjustable_bed.config_flow import (
         AdjustableBedConfigFlow,
-        _add_motomotion_schema_fields,
         _name_rule_setup_name,
-        _normalize_motomotion_data,
     )
+    from custom_components.adjustable_bed.setup_questions import setup_profile
 
+    # The generic question step asks the exact name and checks it as the app does.
     flow = AdjustableBedConfigFlow()
     flow.hass = hass
     flow._manual_data = {CONF_BED_TYPE: "motomotion", CONF_NAME: "A renamed chair"}
-    result = await flow.async_step_motomotion({CONF_BLE_DEVICE_NAME: "MOTO"})
-    assert result["type"] == "form" and result["errors"] == {"base": "motomotion_profile"}
+    result = await flow.async_step_profile_questions({CONF_BLE_DEVICE_NAME: "MOTO"})
+    assert result["type"] == "form"
+    assert result["errors"] == {CONF_BLE_DEVICE_NAME: "motomotion_profile"}
+    profile = setup_profile("motomotion")
+    assert profile is not None and profile.validate is not None
+    assert {question.key for question in profile.questions} == {CONF_BLE_DEVICE_NAME}
     values = {CONF_BED_TYPE: "motomotion", CONF_BLE_DEVICE_NAME: "SOFA000001S000H"}
-    _normalize_motomotion_data(values)
-    assert values["disable_angle_sensing"] is True and values["has_massage"] is False
+    assert profile.validate(values) == {}
+    settled = profile.settled(values)
+    assert not reads_positions(settled) and settled["has_massage"] is False
     assert _name_rule_setup_name("motomotion", "SOFA000001S000H") == {
         CONF_BLE_DEVICE_NAME: "SOFA000001S000H"
     }
-    schema = {}
-    _add_motomotion_schema_fields(schema, values)
-    assert {marker.schema for marker in schema} == {CONF_BLE_DEVICE_NAME}
     assert CONF_BLE_DEVICE_NAME in per_side_profile("motomotion", None).keys
     assert "has_massage" in hidden_generic_fields("motomotion", None)
 
@@ -352,7 +357,7 @@ async def connected_runtime(hass, name):
 
 @pytest.fixture
 def protocol_clock(monkeypatch):
-    from custom_components.adjustable_bed.beds import motomotion as bed
+    from custom_components.adjustable_bed.beds.motomotion import controller as bed
 
     now = [0.0]
 
@@ -399,7 +404,7 @@ async def test_public_memory_buttons_and_actions_send_exact_panel_packets(
     from homeassistant.helpers import device_registry as dr
 
     from custom_components.adjustable_bed import button, services
-    from custom_components.adjustable_bed.motomotion_protocol import ascii_command
+    from custom_components.adjustable_bed.codec.motomotion import ascii_command
 
     c, ctrl = await loaded_runtime(hass, name, mock_bleak_client)
     hass.data.setdefault(DOMAIN, {})[c.entry.entry_id] = c
@@ -486,7 +491,7 @@ async def test_panel_a_public_memory_is_not_created_or_admitted(
 async def test_single_address_parent_holds_and_stop_fan_out_exact_side_packets(
     hass, protocol_clock
 ):
-    from custom_components.adjustable_bed.motomotion_protocol import ascii_command
+    from custom_components.adjustable_bed.codec.motomotion import ascii_command
     from custom_components.adjustable_bed.paired_coordinator import SingleAddressPairedCoordinator
     from custom_components.adjustable_bed.pairing import build_single_address_pair_entry_data
 
@@ -529,9 +534,9 @@ async def test_single_address_parent_holds_and_stop_fan_out_exact_side_packets(
 async def test_home_release_button_cancels_held_refresh_without_extra_stop(hass, monkeypatch):
     import asyncio
 
-    from custom_components.adjustable_bed.beds import motomotion as bed
+    from custom_components.adjustable_bed.beds.motomotion import controller as bed
     from custom_components.adjustable_bed.button import ControllerActionButton
-    from custom_components.adjustable_bed.motomotion_protocol import ascii_command
+    from custom_components.adjustable_bed.codec.motomotion import ascii_command
 
     c, ctrl = await connected_runtime(hass, "SOFA000001MC00M")
     started = asyncio.Event()
@@ -587,8 +592,8 @@ async def test_card_pointer_to_wire_charges_native_timing_once(
     hass, monkeypatch, key, release_at, command, stops
 ):
     from custom_components.adjustable_bed import button
-    from custom_components.adjustable_bed.beds import motomotion as bed
-    from custom_components.adjustable_bed.motomotion_protocol import ascii_command
+    from custom_components.adjustable_bed.beds.motomotion import controller as bed
+    from custom_components.adjustable_bed.codec.motomotion import ascii_command
 
     c, ctrl = await connected_runtime(hass, "SOFA000001MCE0M")
     if key.startswith("preset_"):
@@ -618,13 +623,15 @@ async def test_card_pointer_to_wire_charges_native_timing_once(
             text=True,
         ).stdout
     )
+    # The press starts the hold and renews it; release presses the release.
+    holds = events[:-1]
     assert [(e["domain"], e["service"]) for e in events] == [
-        (DOMAIN, "hold_control"),
-        ("button", "press"),
-    ]
-    assert events[1]["data"] == {"entity_id": "button.release"}
+        (DOMAIN, "hold_control")
+    ] * len(holds) + [("button", "press")]
+    assert all(e["data"] == holds[0]["data"] for e in holds)
+    assert events[-1]["data"] == {"entity_id": "button.release"}
     now = [events[0]["at"] / 1000]
-    release_time = events[1]["at"] / 1000
+    release_time = events[-1]["at"] / 1000
     release_due = asyncio.Event()
     wire = []
     original_sleep = asyncio.sleep
@@ -655,9 +662,8 @@ async def test_card_pointer_to_wire_charges_native_timing_once(
     )
 
     async def held(controller):
-        await controller.hold_control(
-            events[0]["data"]["control"], int(events[0]["data"]["duration"] * 1000)
-        )
+        # The service holds a control without a declared hold for its ceiling.
+        await controller.hold_control(events[0]["data"]["control"], HOLD_CEILING_MS)
 
     try:
         with (
@@ -674,7 +680,8 @@ async def test_card_pointer_to_wire_charges_native_timing_once(
         if stops:
             expected.extend([(release_at + 50, ascii_command(0))] * 3)
         assert wire == expected
-        assert [e["at"] for e in events] == [0, release_at]
+        assert [e["at"] for e in holds] == list(range(0, release_at + 1, 250))
+        assert events[-1]["at"] == release_at
     finally:
         c._client.is_connected = False
         await c.async_shutdown()
@@ -714,6 +721,9 @@ async def test_options_single_address_conversion_and_revert_preserve_profile(
     entry.add_to_hass(hass)
     assert await hass.config_entries.async_setup(entry.entry_id)
     await hass.async_block_till_done()
+    # Setup migrates the entry to schema 5, which records its profile id.
+    assert entry.data["profile_id"] == "motomotion"
+    original = dict(entry.data)
     options = await hass.config_entries.options.async_init(entry.entry_id)
     assert options["type"] == FlowResultType.MENU
     assert ("pair_sides" in options["menu_options"]) is side_name
@@ -768,7 +778,7 @@ async def loaded_runtime(hass, name, client):
             CONF_BED_TYPE: "motomotion",
             CONF_BLE_DEVICE_NAME: name,
             "disable_angle_sensing": True,
-            "disconnect_after_command": False,
+            "connection_mode": "idle",
         },
         unique_id="AA:BB:CC:DD:EE:13",
         version=4,
@@ -784,7 +794,7 @@ async def loaded_runtime(hass, name, client):
 async def test_selected_right_survives_idle_disconnect_and_real_controller_replacement(
     hass, protocol_clock, mock_bleak_client, mock_coordinator_connected, enable_custom_integrations
 ):
-    from custom_components.adjustable_bed.motomotion_protocol import ascii_command
+    from custom_components.adjustable_bed.codec.motomotion import ascii_command
     from custom_components.adjustable_bed.paired_coordinator import SingleAddressPairedCoordinator
     from custom_components.adjustable_bed.pairing import build_single_address_pair_entry_data
     from custom_components.adjustable_bed.select import AdjustableBedControllerSelect
@@ -897,11 +907,12 @@ async def test_side_state_translations_belong_to_real_declared_sensors(hass, sid
     for key, sensor in sensors.items():
         assert sensor.translation_key == key
         assert sensor.unique_id == c.entity_unique_id(key)
-        c.handle_controller_state_update(key, 2)
+        c.handle_controller_state_update(StateKey[int](key), 2)
         assert sensor.native_value == 2
     if sided:
-        right = ctrl.bind_side("right")
-        assert {s.key for s in right.controller_state_sensor_specs} & keys == {
+        with ctrl.side_scope("right"):
+            right_keys = {s.key for s in ctrl.controller_state_sensor_specs}
+        assert right_keys & keys == {
             "motomotion_heat_right",
             "motomotion_massage_right",
         }
@@ -912,7 +923,7 @@ async def test_manual_discovery_keeps_substring_candidates_without_advertised_se
     hass, mock_coordinator_connected
 ):
     from custom_components.adjustable_bed import config_flow
-    from custom_components.adjustable_bed.motomotion_profile import Profile
+    from custom_components.adjustable_bed.profiles.motomotion import Profile
     from tests.test_detection import _make_service_info
 
     names = ["xSOFA00001SC00M", "xBT201000", "xMOTO0000100000"]
@@ -946,8 +957,8 @@ async def test_working_targets_survive_real_idle_replacement_next_axis_and_save(
 ):
     from dataclasses import replace
 
+    from custom_components.adjustable_bed.beds.motomotion.requests import Request
     from custom_components.adjustable_bed.button import ControllerActionButton
-    from custom_components.adjustable_bed.motomotion_requests import Request
     from custom_components.adjustable_bed.number import AdjustableBedControllerNumber
 
     c, ctrl = await loaded_runtime(hass, "SOFA000001A000H", mock_bleak_client)
@@ -1084,8 +1095,8 @@ async def test_invalid_optional_intent_cannot_reset_valid_right_side(
 
 
 async def test_working_intent_address_and_exact_profile_isolation(hass):
-    from custom_components.adjustable_bed.motomotion_protocol import Position
-    from custom_components.adjustable_bed.motomotion_requests import Request
+    from custom_components.adjustable_bed.beds.motomotion.requests import Request
+    from custom_components.adjustable_bed.codec.motomotion import Position
 
     name = "SOFA000001A000H"
     c, ctrl = await connected_runtime(hass, name)
@@ -1163,3 +1174,5 @@ async def test_muted_music_survives_idle_before_next_wide_mode_packet(
     else:
         assert mock_bleak_client.write_gatt_char.await_args.args[1] == b"$#M00\r$#T10\r$#B05\r$#V05\r"
     await hass.config_entries.async_unload(c.entry.entry_id)
+
+

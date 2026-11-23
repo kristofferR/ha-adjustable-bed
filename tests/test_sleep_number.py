@@ -8,12 +8,16 @@ from unittest.mock import ANY, AsyncMock, MagicMock, call
 import pytest
 from homeassistant.const import CONF_ADDRESS, CONF_NAME
 from homeassistant.core import HomeAssistant
-from pytest_homeassistant_custom_component.common import MockConfigEntry
+from pytest_homeassistant.common import MockConfigEntry
 
-from custom_components.adjustable_bed.beds.sleep_number import (
+from custom_components.adjustable_bed.beds.sleep_number.controller import (
     BamkeyNotSupportedError,
     SleepNumberCommands,
     SleepNumberController,
+)
+from custom_components.adjustable_bed.binary_sensor import (
+    AdjustableBedPresenceSensor,
+    _binary_sensor_entities_for,
 )
 from custom_components.adjustable_bed.const import (
     BED_TYPE_SLEEP_NUMBER,
@@ -32,6 +36,7 @@ from custom_components.adjustable_bed.const import (
     requires_pairing,
 )
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
+from tests.state_helpers import published
 
 
 def _build_sleep_number_blob(payload: str) -> bytes:
@@ -107,16 +112,6 @@ class TestSleepNumberPairing:
 class TestSleepNumberController:
     """Test Sleep Number controller behavior."""
 
-    async def test_control_characteristic_uuid(self, sleep_number_coordinator) -> None:
-        """Controller should use the BamKey response characteristic."""
-        coordinator = await sleep_number_coordinator(
-            address="AA:BB:CC:DD:EE:21",
-            name="Smart bed 0074E7",
-            entry_id="sleep_number_uuid",
-        )
-
-        assert coordinator.controller.control_characteristic_uuid == SLEEP_NUMBER_BAMKEY_CHAR_UUID
-
     async def test_auto_variant_defaults_to_left_side(self, sleep_number_coordinator) -> None:
         """Auto variant should target the left side by default."""
         coordinator = await sleep_number_coordinator(
@@ -150,7 +145,8 @@ class TestSleepNumberController:
         controller = coordinator.controller
         controller._send_bamkey_command = AsyncMock()
 
-        await controller.bind_side(SLEEP_NUMBER_VARIANT_RIGHT).set_motor_position("back", 57)
+        with controller.side_scope(SLEEP_NUMBER_VARIANT_RIGHT):
+            await controller.set_motor_position("back", 57)
 
         controller._send_bamkey_command.assert_awaited_once_with(
             SleepNumberCommands.SET_ACTUATOR_TARGET_POSITION,
@@ -283,7 +279,7 @@ class TestSleepNumberController:
             _char_uuid: str, payload: bytes, response: bool = False
         ) -> None:
             assert response is False
-            assert _decode_sleep_number_payload(payload) == "ACHA"
+            assert _decode_sleep_number_payload(payload) == "ACHA "
             mock_bleak_client.read_gatt_char.return_value = _build_sleep_number_blob("PASS:ACK")
             mock_bleak_client.read_gatt_char.side_effect = None
             coordinator.controller._handle_bamkey_notification(
@@ -711,10 +707,74 @@ class TestSleepNumberController:
             "BAMG",
             '[{"bamkey":"LBPG","args":"left"},{"bamkey":"LBPG","args":"right"}]',
         )
-        assert coordinator.controller.get_light_state()["light_timer_option"] == "15 min"
+        assert coordinator.controller._coordinator.controller_state["light_timer_option"] == "15 min"
         assert coordinator.controller._coordinator.controller_state["bed_presence"] == "in"
         assert coordinator.controller._coordinator.controller_state["bed_presence_left"] == "in"
         assert coordinator.controller._coordinator.controller_state["bed_presence_right"] == "out"
+
+    async def test_presence_poll_keeps_the_idle_window(
+        self,
+        sleep_number_coordinator,
+    ) -> None:
+        """The occupancy poll reads an open link without extending its idle window."""
+        coordinator = await sleep_number_coordinator(
+            address="AA:BB:CC:DD:EE:2A",
+            name="Smart bed 0074F0",
+            entry_id="sleep_number_presence_idle_window",
+        )
+        timer = coordinator._disconnect_timer
+        deadline = coordinator._idle_deadline
+        assert timer is not None
+        assert deadline is not None
+        coordinator.controller.read_bed_presence_cached = AsyncMock(return_value=True)
+
+        await coordinator.async_refresh_bed_presence()
+
+        coordinator.controller.read_bed_presence_cached.assert_awaited_once()
+        assert coordinator._disconnect_timer is timer
+        assert coordinator._idle_deadline == deadline
+
+    async def test_presence_poll_waits_for_startup(
+        self,
+        sleep_number_coordinator,
+    ) -> None:
+        """The poll does not interleave with a startup that still owns the link."""
+        coordinator = await sleep_number_coordinator(
+            address="AA:BB:CC:DD:EE:2C",
+            name="Smart bed 0074F2",
+            entry_id="sleep_number_presence_startup",
+        )
+        coordinator._link_ready = False
+        coordinator.controller.read_bed_presence_cached = AsyncMock(return_value=True)
+
+        await coordinator.async_refresh_bed_presence()
+
+        coordinator.controller.read_bed_presence_cached.assert_not_awaited()
+
+    async def test_presence_poll_does_not_connect(
+        self,
+        sleep_number_coordinator,
+        mock_bleak_client,
+    ) -> None:
+        """A released bed stays released when the occupancy sensor polls."""
+        coordinator = await sleep_number_coordinator(
+            address="AA:BB:CC:DD:EE:2B",
+            name="Smart bed 0074F1",
+            entry_id="sleep_number_presence_released",
+        )
+        sensor = next(
+            entity
+            for entity in _binary_sensor_entities_for(coordinator.hass, coordinator)
+            if isinstance(entity, AdjustableBedPresenceSensor)
+        )
+        await coordinator.async_disconnect()
+        mock_bleak_client.is_connected = False
+        attempts = coordinator.connection_attempt_count
+
+        await sensor.async_update()
+
+        assert coordinator.connection_attempt_count == attempts
+        assert not coordinator.is_connected
 
     async def test_read_bed_presence_primes_required_characteristics_once(
         self,
@@ -834,12 +894,8 @@ class TestSleepNumberController:
         level, timer = await coordinator.controller._read_underbed_light_settings()
 
         assert (level, timer) == ("medium", 45)
-        assert coordinator.controller.get_light_state() == {
-            "is_on": True,
-            "light_level": 2,
-            "light_timer_minutes": 45,
-            "light_timer_option": "45 min",
-        }
+        assert coordinator.controller._coordinator.controller_state["light_level"] == 2
+        assert coordinator.controller._coordinator.controller_state["light_timer_minutes"] == 45
         assert coordinator.controller._coordinator.controller_state["under_bed_lights_on"] is True
         assert (
             coordinator.controller._coordinator.controller_state["light_timer_option"] == "45 min"
@@ -859,8 +915,8 @@ class TestSleepNumberController:
 
         state = await coordinator.controller.read_light_state()
 
-        assert state == {
-            "is_on": True,
+        assert published(*state) == {
+            "under_bed_lights_on": True,
             "light_level": 3,
             "light_timer_minutes": 15,
             "light_timer_option": "15 min",
@@ -888,8 +944,8 @@ class TestSleepNumberController:
             "medium",
             "30",
         )
-        assert coordinator.controller.get_light_state()["light_level"] == 2
-        assert coordinator.controller.get_light_state()["light_timer_option"] == "30 min"
+        state = coordinator.controller._coordinator.controller_state
+        assert (state["light_level"], state["light_timer_option"]) == (2, "30 min")
 
     async def test_set_light_timer_preserves_current_level(
         self,
@@ -912,5 +968,5 @@ class TestSleepNumberController:
             "high",
             "120",
         )
-        assert coordinator.controller.get_light_state()["light_timer_minutes"] == 120
+        assert coordinator.controller._coordinator.controller_state["light_timer_minutes"] == 120
         assert coordinator.controller.light_auto_off_seconds == 7200

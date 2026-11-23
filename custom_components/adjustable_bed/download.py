@@ -13,10 +13,10 @@ from aiohttp import web
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.http import HomeAssistantView
 
-from .const import DOMAIN
+from .runtime_data import DomainKey, domain_registry, domain_value
 
 # Storage key for download tokens within hass.data[DOMAIN]
-DATA_DOWNLOAD_TOKENS = "download_tokens"
+DATA_DOWNLOAD_TOKENS: DomainKey[dict[str, DownloadGrant]] = DomainKey("download_tokens")
 DOWNLOAD_TOKEN_TTL = 60 * 60
 MAX_DOWNLOAD_TOKENS = 32
 _NO_STORE = {"Cache-Control": "no-store"}
@@ -24,8 +24,13 @@ _LOGGER = logging.getLogger(__name__)
 
 # Only serve files matching this pattern (prevents path traversal)
 _BUNDLE_FILENAME_RE = re.compile(
-    r"^adjustable_bed_support_(bundle|report)_[0-9a-f]+_\d{8}_\d{6}\.json$"
+    r"^adjustable_bed_support_(bundle|report)_[0-9a-f]+_\d{8}_\d{6}(?:_[0-9a-f]{6})?\.json$"
 )
+
+
+def is_bundle_filename(name: str) -> bool:
+    """Whether a file name is one this integration wrote as a support file."""
+    return _BUNDLE_FILENAME_RE.fullmatch(name) is not None
 
 
 @dataclass(frozen=True, slots=True)
@@ -60,9 +65,7 @@ class SupportBundleDownloadView(HomeAssistantView):
     async def get(self, request: web.Request, token: str) -> web.Response:
         """Handle download request."""
         hass: HomeAssistant = request.app["hass"]
-        tokens: dict[str, DownloadGrant] = hass.data.get(DOMAIN, {}).get(
-            DATA_DOWNLOAD_TOKENS, {}
-        )
+        tokens = domain_value(hass, DATA_DOWNLOAD_TOKENS) or {}
 
         _prune_expired(tokens)
         grant = tokens.get(token)
@@ -71,7 +74,7 @@ class SupportBundleDownloadView(HomeAssistantView):
 
         filepath = grant.path
         filename = filepath.name
-        if not _BUNDLE_FILENAME_RE.match(filename):
+        if not is_bundle_filename(filename):
             return web.Response(status=403, text="Invalid file", headers=_NO_STORE)
 
         try:
@@ -96,7 +99,7 @@ class SupportBundleDownloadView(HomeAssistantView):
 def register_download(hass: HomeAssistant, filepath: Path) -> str:
     """Register a reusable one-hour download, retaining at most 32 grants."""
     token = secrets.token_urlsafe(32)
-    tokens: dict[str, DownloadGrant] = hass.data[DOMAIN].setdefault(DATA_DOWNLOAD_TOKENS, {})
+    tokens = domain_registry(hass, DATA_DOWNLOAD_TOKENS, dict)
     _prune_expired(tokens)
     while len(tokens) >= MAX_DOWNLOAD_TOKENS:
         del tokens[next(iter(tokens))]

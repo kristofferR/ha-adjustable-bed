@@ -1,4 +1,4 @@
-"""Accepted row121 artifact vectors and HA behavior; hardware is unverified."""
+"""Accepted HJBed artifact vectors and HA behavior; hardware is unverified."""
 
 from __future__ import annotations
 
@@ -12,9 +12,9 @@ from zoneinfo import ZoneInfo
 
 import pytest
 
-from custom_components.adjustable_bed.beds import hjbed as bed
-from custom_components.adjustable_bed.hjbed_catalog import ACTIONS, MUSIC_ACTIONS, PRODUCTS
-from custom_components.adjustable_bed.hjbed_protocol import (
+from custom_components.adjustable_bed.beds.hjbed import controller as bed
+from custom_components.adjustable_bed.beds.hjbed.catalog import ACTIONS, MUSIC_ACTIONS, PRODUCTS
+from custom_components.adjustable_bed.beds.hjbed.protocol import (
     Alarm,
     add_alarm,
     clock,
@@ -26,9 +26,11 @@ from custom_components.adjustable_bed.hjbed_protocol import (
     query_alarms,
     sync_time,
 )
-from custom_components.adjustable_bed.hjbed_receive import parse_frame
-from custom_components.adjustable_bed.hjbed_requests import Request
-from custom_components.adjustable_bed.hjbed_state import NonProgressFrame, State, Stream
+from custom_components.adjustable_bed.beds.hjbed.receive import parse_frame
+from custom_components.adjustable_bed.beds.hjbed.requests import Request
+from custom_components.adjustable_bed.beds.hjbed.state import NonProgressFrame, State, Stream
+from tests.error_helpers import raises_key
+from tests.state_helpers import state_writer
 
 FIXTURES = Path(__file__).parent / "fixtures"
 RX = json.loads((FIXTURES / "hjbed_receive_vectors.json").read_text())
@@ -48,7 +50,7 @@ def coordinator():
     c.client.start_notify = AsyncMock()
     c.client.stop_notify = AsyncMock()
     c.controller_state = {}
-    c.handle_controller_state_updates.side_effect = c.controller_state.update
+    c.handle_controller_state_updates.side_effect = state_writer(c.controller_state)
     return c
 
 
@@ -223,11 +225,11 @@ async def test_both_finite_pulses_share_a_bounded_window(
 
     monkeypatch.setattr(bed.HJBedController, "_delay", late_timer)
     coordinator.client.write_gatt_char.side_effect = record_write
-    both = c.bind_side("both")
-    if action == "motor":
-        await both.move_head_up()
-    else:
-        await both.preset_memory(1)
+    with c.side_scope("both"):
+        if action == "motor":
+            await c.move_head_up()
+        else:
+            await c.preset_memory(1)
     movement = [(side, at) for side, command, at in writes if command == code]
     expected = (
         [0.0, 0.1]
@@ -511,10 +513,12 @@ async def test_no_stop_on_preset_cancel_and_release_button(coordinator, instant)
 async def test_side_bound_action_and_both_control(coordinator, instant):
     c = controller(coordinator, "990871")
     spec = next(spec for spec in c.controller_button_specs if spec.key == "hjbed_motor_reset")
-    await spec.press_fn(c.bind_side("right"))
+    with c.side_scope("right"):
+        await spec.press_fn(c)
     assert all(bytes.fromhex(f)[2] == 1 for f in written(coordinator))
     coordinator.client.write_gatt_char.reset_mock()
-    await c.bind_side("both").stop_all()
+    with c.side_scope("both"):
+        await c.stop_all()
     assert written(coordinator) == ["6e01006edd", "6e01016ede"]
 
 
@@ -545,22 +549,29 @@ async def test_setup_choices_and_factory(hass, coordinator):
     )
     from custom_components.adjustable_bed.const import BED_TYPE_HJBED, CONF_MOTOR_COUNT
     from custom_components.adjustable_bed.controller_factory import create_controller
-    from custom_components.adjustable_bed.detection import bed_type_choice, get_bed_type_options
+    from custom_components.adjustable_bed.detection import (
+        APP_VARIANT_CHOICES,
+        bed_type_choice,
+        get_bed_type_options,
+    )
+    from custom_components.adjustable_bed.setup_questions import setup_profile
     from custom_components.adjustable_bed.validators import is_valid_variant_for_bed_type
 
     coordinator.hass = hass
+    # One row asks the product; each product keeps its app entry.
+    rows = {row["value"] for row in get_bed_type_options()}
+    assert BED_TYPE_HJBED in rows
+    assert not any(bed_type_choice(BED_TYPE_HJBED, profile) in rows for profile in PRODUCTS)
+    profile_spec = setup_profile(BED_TYPE_HJBED)
+    assert profile_spec is not None
+    assert set(profile_spec.questions[0].options({})) == set(PRODUCTS)
     for profile in PRODUCTS:
-        assert (
-            "HJBed"
-            in {row["value"]: row["label"] for row in get_bed_type_options()}[
-                bed_type_choice(BED_TYPE_HJBED, profile)
-            ]
-        )
+        assert "HJBed" in APP_VARIANT_CHOICES[BED_TYPE_HJBED, profile]
         assert is_valid_variant_for_bed_type(BED_TYPE_HJBED, profile)
         assert CONF_MOTOR_COUNT in hidden_generic_fields(BED_TYPE_HJBED, profile)
         assert per_side_profile(BED_TYPE_HJBED, profile).variant_owned
         c = await create_controller(coordinator, BED_TYPE_HJBED, profile, None)
-        assert isinstance(c, bed.HJBedController) and c.profile == profile
+        assert isinstance(c, bed.HJBedController) and c.product_key == profile
     assert not is_valid_variant_for_bed_type(BED_TYPE_HJBED, "auto")
 
 
@@ -625,8 +636,8 @@ async def test_ha_service_preflights_all_targets(hass, coordinator, instant):
 
     from homeassistant.exceptions import ServiceValidationError
 
+    from custom_components.adjustable_bed.beds.hjbed.services import async_register_hjbed_services
     from custom_components.adjustable_bed.const import DOMAIN
-    from custom_components.adjustable_bed.hjbed_services import async_register_hjbed_services
 
     good = controller(coordinator, "98fcd1")
     good._state.features.add("light")
@@ -638,7 +649,7 @@ async def test_ha_service_preflights_all_targets(hass, coordinator, instant):
     async_register_hjbed_services(hass)
     with (
         patch(
-            "custom_components.adjustable_bed.hjbed_services._resolve_sided_targets",
+            "custom_components.adjustable_bed.services._resolve_sided_targets",
             return_value=(targets, []),
         ),
         pytest.raises(ServiceValidationError),
@@ -750,7 +761,6 @@ async def test_release_invalidates_pending_hold_without_extra_wire_stop(coordina
     runtime = MagicMock()
     runtime.device_info = {}
     runtime.entity_unique_id.side_effect = lambda key: "bed_" + key
-    runtime.entity_translation_key.side_effect = lambda key: key
 
     async def stop():
         async def on_wire(_context):
@@ -776,45 +786,6 @@ async def test_release_invalidates_pending_hold_without_extra_wire_stop(coordina
     await c.stop_all()
     assert written(coordinator) == ["6e01006edd"]
     await scheduler.async_shutdown()
-
-
-def test_disposition_ledger_covers_the_accepted_inventory():
-    from hashlib import sha256
-
-    ledger = json.loads(
-        (FIXTURES.parents[1] / "docs/apk-analysis/dispositions/row121-hjbed.json").read_text()
-    )
-    items = ledger["items"]
-    assert len(items) == len({row["id"] for row in items}) == 1510
-    appended = {
-        "command",
-        "product binding",
-        "receive rule",
-        "feature domain",
-        "state/timing/configuration",
-    }
-    candidate_ids = sorted(row["id"] for row in items if row["category"] not in appended)
-    assert len(candidate_ids) == 582
-    assert (
-        sha256(json.dumps(candidate_ids, separators=(",", ":")).encode()).hexdigest()
-        == "e587eefb8c5d679fe88d93e049e58f9264f30ad0fe156a3e7eda7cfe2726632f"
-    )
-    assert sum(row["category"] == "command" for row in items) == 99
-    assert (
-        sum(
-            row["category"] == "product binding" and row["disposition"] == "IMPLEMENTED"
-            for row in items
-        )
-        == 724
-    )
-    for row in items:
-        assert row["disposition"] in {"IMPLEMENTED", "ALREADY_IMPLEMENTED", "EXCLUDED"}
-        assert ledger["reasons"][row["reason_ref"]]
-        assert row["evidence"]
-        if row["disposition"] != "EXCLUDED":
-            assert ledger["proofs"][row["proof_ref"]]
-            for ref in ledger["proofs"][row["proof_ref"]]:
-                assert (FIXTURES.parents[1] / ref.split(":", 1)[0]).is_file()
 
 
 async def test_acknowledged_alarm_metadata_roundtrips_without_stale_ack_loss(
@@ -852,7 +823,8 @@ async def test_both_hold_refreshes_and_releases_each_attempted_side(coordinator,
                 coordinator.cancel_command.set()
 
     coordinator.client.write_gatt_char.side_effect = release_after_four_writes
-    await c.bind_side("both").hold_control("hjbed_head_up", 60000)
+    with c.side_scope("both"):
+        await c.hold_control("hjbed_head_up", 60000)
     assert [side for side, _ in movement] == [0, 1, 0, 1]
     assert [at for _, at in movement] == pytest.approx([0.1, 0.2, 0.3, 0.4])
     assert written(coordinator)[-2:] == ["6e01006edd", "6e01016ede"]
@@ -866,8 +838,8 @@ async def test_both_cleanup_attempts_right_even_if_left_release_fails(coordinato
             raise ConnectionError("left release failed")
 
     coordinator.client.write_gatt_char.side_effect = fail_left_stop
-    with pytest.raises(ConnectionError, match="left release failed"):
-        await c.bind_side("both").hold_control("hjbed_head_up", 400)
+    with pytest.raises(ConnectionError, match="left release failed"), c.side_scope("both"):
+        await c.hold_control("hjbed_head_up", 400)
     assert written(coordinator)[-2:] == ["6e01006edd", "6e01016ede"]
 
 
@@ -900,7 +872,7 @@ async def test_query_and_delete_retire_only_the_source_alarm_records(coordinator
     ]
     c._state.alarms = rows.copy()
     create = Request("repeat", action="zero_gravity", when=time(8))
-    with pytest.raises(ValueError, match="occupied"):
+    with pytest.raises(ValueError, match="in use"):
         c.validate_hjbed_request(create)
     await c.async_execute_hjbed_request(Request("delete", alarm_id=7))
     assert c._state.alarms == rows[:6]
@@ -952,13 +924,13 @@ async def test_repeat_allocation_requires_known_free_slot_and_reserves_attempt(
     c = controller(coordinator, "98ff11")
     c._state.features.add("alarm")
     auto = Request("repeat", action="zero_gravity", when=time(7))
-    with pytest.raises(ValueError, match="explicit alarm_id"):
+    with pytest.raises(ValueError, match="full alarm list"):
         await c.async_execute_hjbed_request(auto)
     assert written(coordinator) == []
     await c.async_execute_hjbed_request(
         Request("repeat", action="zero_gravity", when=time(7), alarm_id=1)
     )
-    with pytest.raises(ValueError, match="explicit alarm_id"):
+    with pytest.raises(ValueError, match="full alarm list"):
         await c.async_execute_hjbed_request(auto)
     await c.async_execute_hjbed_request(Request("delete", alarm_id=2))
     assert c._available_alarm_slots() == [2]
@@ -966,7 +938,7 @@ async def test_repeat_allocation_requires_known_free_slot_and_reserves_attempt(
     assert bytes.fromhex(written(coordinator)[-1])[6] == 2
     assert coordinator.controller_state["hjbed_available_alarm_slots"] == []
     count = len(written(coordinator))
-    with pytest.raises(ValueError, match="explicit alarm_id"):
+    with pytest.raises(ValueError, match="full alarm list"):
         await c.async_execute_hjbed_request(auto)
     assert len(written(coordinator)) == count  # No notification is needed to reserve it.
 
@@ -988,6 +960,18 @@ async def test_alarm_free_slots_expire_on_query_notification_and_replacement(coo
     assert c._available_alarm_slots() == []
 
 
+async def test_dropped_link_expires_session_alarm_slots(coordinator, clocked):
+    c = controller(coordinator, "98ff11")
+    c._state.features.add("alarm")
+    await c.async_execute_hjbed_request(Request("delete", alarm_id=5))
+    assert coordinator.controller_state["hjbed_available_alarm_slots"] == [5]
+
+    c.on_disconnect()
+    assert coordinator.controller_state["hjbed_available_alarm_slots"] == []
+    with pytest.raises(ConnectionError):
+        c._current_session()
+
+
 async def test_failed_alarm_write_does_not_reallocate_an_uncertain_slot(coordinator, clocked):
     c = controller(coordinator, "98ff11")
     c._state.features.add("alarm")
@@ -996,7 +980,7 @@ async def test_failed_alarm_write_does_not_reallocate_an_uncertain_slot(coordina
     auto = Request("repeat", action="zero_gravity", when=time(7))
     with pytest.raises(ConnectionError, match="uncertain"):
         await c.async_execute_hjbed_request(auto)
-    with pytest.raises(ValueError, match="explicit alarm_id"):
+    with pytest.raises(ValueError, match="full alarm list"):
         await c.async_execute_hjbed_request(auto)
 
 
@@ -1038,7 +1022,6 @@ async def test_local_layout_select_uses_replacement_controller(coordinator, inst
     coordinator.device_info = {}
     coordinator.entity_side = None
     coordinator.entity_unique_id.side_effect = lambda key: "bed_" + key
-    coordinator.entity_translation_key.side_effect = lambda key: key
     old = controller(coordinator, profile)
     coordinator.capability_controller = old
     entity = AdjustableBedControllerSelect(coordinator, old.controller_select_specs[0])
@@ -1052,9 +1035,57 @@ async def test_local_layout_select_uses_replacement_controller(coordinator, inst
         await live.execute_action("974f61")
         assert written(coordinator) == ["6e010031a0", "6e01006edd"]
     else:
-        with pytest.raises(ValueError, match="Normal layout"):
+        with pytest.raises(ValueError, match="Normal model"):
             live.validate_hjbed_request(Request("mode", mode="standard"))
     coordinator.capability_controller = None
-    with pytest.raises(ServiceValidationError, match="local option"):
+    with raises_key("option_unavailable", ServiceValidationError):
         await entity.async_select_option("Normal")
     assert live._motion
+
+
+async def test_sync_on_and_off_are_one_switch(coordinator, instant):
+    c = controller(coordinator, "hj_bede3rm")
+    assert c._sync_details is not None
+    on, off = c._sync_details
+    assert not {"hjbed_sync_on", "hjbed_sync_off"} & {s.key for s in c.controller_button_specs}
+    assert not any(s.name in ("Sync on", "Sync off") for s in c.controller_button_specs)
+    (switch,) = c.controller_switch_specs
+    assert switch.key == "hjbed_sync" and switch.state_key is None
+    assert not switch.entity_registry_enabled_default
+    for enabled, detail in ((True, on), (False, off)):
+        coordinator.client.write_gatt_char.reset_mock()
+        await bed._action(c, detail=detail)
+        by_button = written(coordinator)
+        coordinator.client.write_gatt_char.reset_mock()
+        await switch.set_fn(c, enabled)
+        assert written(coordinator) == by_button != []
+    # A product with only Sync on keeps its button.
+    single = controller(coordinator, "flexxafeg300sh")
+    assert single._sync_details is None and single.controller_switch_specs == ()
+
+
+@pytest.mark.parametrize("profile", [k for k, p in PRODUCTS.items() if p.massage])
+async def test_massage_timer_controls_are_one_select(coordinator, instant, profile):
+    """Each fixed-duration timer button's frames are what the timer select sends."""
+    c = controller(coordinator, profile)
+    timers = {
+        minutes: detail
+        for detail in c.product.massage
+        if (minutes := {95: 10, 99: 20, 97: 30}.get(ACTIONS[detail].code))
+        and "MinuteTimer" in ACTIONS[detail].enum
+    }
+    assert c.supports_massage_timer is bool(timers)
+    assert c.massage_timer_options == sorted(timers)
+    assert not c.massage_timer_can_turn_off
+    keys = {s.key for s in c.controller_button_specs}
+    assert not {k for k in keys if "minute_timer" in k}
+    for minutes, detail in timers.items():
+        coordinator.client.write_gatt_char.reset_mock()
+        await bed._action(c, detail=detail)
+        by_button = written(coordinator)
+        coordinator.client.write_gatt_char.reset_mock()
+        await c.set_massage_timer(minutes)
+        assert written(coordinator) == by_button != []
+        assert coordinator.controller_state["massage_timer"] == minutes
+    with pytest.raises(ValueError):
+        await c.set_massage_timer(15)

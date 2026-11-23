@@ -1,12 +1,17 @@
 # Logicdata SimplicityFrame (SILVERmotion)
 
-**Status:** ❓ Needs testing
+**Status:** Not yet tested
 
 **Credit:** Reverse engineering by [kristofferR](https://github.com/kristofferR/ha-adjustable-bed)
 
 > [!NOTE]
 > For the MOTIONrelax phone and tablet Android apps, use the separate
-> [LOGICDATA app profiles](logicdata-app.md).
+> [LOGICDATA app profiles](jiecang.md#logicdata-app-family).
+
+[SILVERmotion Android](silvermotion.md) is a second route from the same app. It
+sends the command envelope the app's screens use, with zero gravity and
+anti-snore presets. The pairing-required route on this page sends the
+SimplicityFrame library's bare three-byte command payloads.
 
 ## Known Models
 
@@ -17,7 +22,7 @@
 
 | Analyzed | App | Package ID |
 |----------|-----|------------|
-| ✅ | [SILVERmotion](https://play.google.com/store/apps/details?id=at.silvermotion) (Flutter/Dart) | `at.silvermotion` |
+| ✅ | [SILVERmotion](https://apkpure.com/silvermotion/net.logicdata.mobile.sfapp) 1.0.0 (2) | `net.logicdata.mobile.sfapp` |
 
 ## Features
 
@@ -42,7 +47,7 @@ protocol family from all other supported beds.
 **Manufacturer ID:** `0x0547` (1351)
 **Format:** 3-byte command payload, encrypted, CRC-checked and SLIP-framed
 
-### BLE Connection
+### BLE connection
 
 | Property | Value |
 |----------|-------|
@@ -77,7 +82,7 @@ Each 3-byte command therefore becomes `C0`, length `0A`, 8 encrypted bytes,
 > [!NOTE]
 > Earlier versions of this guide described the key as `LogicLink_BT_Key`. That is
 > not the key material: the ASCII text differs from the bytes above. The bytes in
-> `beds/logicdata.py` match the key an independent clean-room analysis recovered
+> `beds/logicdata/controller.py` match the key recovered
 > from the related LOGICDATA SimplicityFrame app's native library.
 
 ### CRC-CCITT
@@ -103,6 +108,15 @@ Detected automatically by:
 2. **Service UUID** (`b9934c43-...`) - confidence 1.0
 
 BLE pairing is required before the encrypted characteristic accepts commands.
+
+Setup shows a detected bed as the **SILVERmotion (SimplicityFrame), MOTIONrelax
+phone and tablet, and Sleep Smart Air Mattress apps · LOGICDATA** row and asks
+which app runs it; **SILVERmotion app: SimplicityFrame bed (pairing required)** or
+**Keep the detected or saved controls** asks the motor count, then
+continues to the pairing step.
+A manually added bed is chosen the same way. An entry moves to a LOGICDATA app
+only through **Reconfigure**, which checks the link and lists the controls that
+change.
 
 ## Commands
 
@@ -174,11 +188,10 @@ sends the preset three times. Stop is sent once.
 
 ### Analysis provenance
 
-Protocol reverse-engineered from the SILVERmotion APK (`at.silvermotion`), a
-Flutter/Dart application. Key classes from Blutter analysis:
+Protocol reverse-engineered from the native libraries of the SILVERmotion
+Android app (`net.logicdata.mobile.sfapp` 1.0.0):
 
-- `SF_GetPipelineTx` - TX pipeline filter chain configuration
-- `SF_Controller` - Command method definitions
-- `SF_CryptoXXTEA` - XXTEA implementation
-- `SF_CRC16` - CRC-CCITT implementation
-- `SF_SLIP` - SLIP framing
+- `libsimplicityframelib.so`: the command functions, such as `SF_HeadUp`,
+  `SF_LegUp`, `SF_AnyKeyPressed`, `SF_FlatPosition` and `SF_MemoryPosition1`
+- `libLD.so`: the transmit pipeline (`SF_GetPipelineTx`) with its XXTEA
+  (`xxtea_encrypt`), CRC and SLIP (`LD::SLIP`) stages

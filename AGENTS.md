@@ -33,7 +33,7 @@ For every current and future bed integration, implement direct BLE bed features 
 
 **Current status:** Dozens of bed protocols implemented. The README's "Supported Beds" table is the single source of truth for which protocols exist and which are confirmed working — don't duplicate that list here.
 
-**Baseline:** Work from `main`. It requires Home Assistant 2026.9.0+
+**Baseline:** Work from `v5` while v5 is in beta. It requires Home Assistant 2026.11.0+
 and Python 3.14.2+. Start with the [documentation index](docs/README.md).
 
 ## GitHub Comment Approval
@@ -74,21 +74,38 @@ Key modules (not an exhaustive listing — check the folder for the rest):
 ```text
 custom_components/adjustable_bed/
 ├── __init__.py           # Integration setup, migration and platform loading
-├── services.py           # Action schemas, handlers and registration
+├── services.py           # Generic actions, shared target resolution and admission
 ├── config_flow.py        # Device discovery and setup wizard
 ├── coordinator.py        # BLE connection management (central hub)
+├── coordinator_bonds.py  # Coordinator mixin: bond verification and pairing
+├── coordinator_connection.py # Coordinator mixin: connect, reconnect, idle disconnect
+├── coordinator_positions.py # Coordinator mixin: position reads, hydration and seeks
 ├── const.py              # Constants, UUIDs, bed type definitions, feature flags
 ├── detection.py          # Bed type auto-detection from BLE services/names
 ├── controller_factory.py # Factory for creating bed controller instances
+├── profile_id.py         # Schema 5 profile id: resolver, migration and setup sync
 ├── entity.py             # Base entity class
 ├── entity_runtime.py     # Typed standalone and paired entity runtime interfaces
-├── paired_coordinator.py # Parent/side routing and combined operation cleanup
+├── entity_retypes.py     # Carries user settings over when an entity changes type
+├── runtime_data.py       # Typed access to entry runtimes and registries in hass.data
+├── command_scheduler.py  # Per-device command lanes, STOP epochs and frame delivery
+├── errors.py             # Every user-visible error, built from translation keys
+├── paired_coordinator.py # Paired facade, logical side views and entity runtimes
+├── paired_topology.py    # Topology strategies: admission, locking, switching, STOP fan-out
 ├── paired_registry.py    # Device/entity ownership transfer and rollback
 ├── paired_devices.py     # Native parent/child devices and service targeting
-├── beds/                 # Bed controllers — one module per protocol
+├── codec/                # Wire codecs: one module per proven wire format
+├── profiles/             # Typed app profiles that drive a codec
+├── beds/                 # Bed controllers and everything bed-specific
 │   ├── base.py           # Abstract base class (BedController)
+│   ├── entity_specs.py   # Entity spec dataclasses controllers declare
+│   ├── catalog_buttons.py # Shared entity shapes for app-catalog buttons
+│   ├── gatt_write.py     # Traced, retried GATT writes (BedController's base)
+│   ├── builder.py        # BuildContext for async controller builders
 │   ├── diagnostic.py     # Debug controller for unsupported beds
-│   └── ...               # See the README "Supported Beds" table and docs/beds/
+│   ├── <family>/         # One package per family with satellites, e.g. gmmotor/:
+│   │                     # controller.py plus protocol, catalog, state, services, ...
+│   └── <protocol>.py     # A family with only a controller stays one module
 ├── cover.py / button.py / sensor.py / switch.py / light.py / climate.py /
 │       select.py / number.py / binary_sensor.py   # HA entity platforms
 ├── diagnostics.py        # HA diagnostics download support
@@ -105,8 +122,8 @@ custom_components/adjustable_bed/
 
 **AdjustableBedCoordinator** (`coordinator.py`): Central BLE connection manager
 - Handles device discovery via HA's Bluetooth integration
-- Profile-based connection timeouts/backoff; multiple usable paths receive a bounded extra retry budget
-- One-second handoff when Disconnect After Command is enabled; otherwise configurable idle timeout (default 40s), except persistent-connection controllers
+- One connection timing for every bed (some beds and app profiles use a shorter connect timeout); multiple usable paths receive a bounded extra retry budget
+- `connection_mode`: release (one-second handoff), idle (`idle_disconnect_seconds`, default 40, one bounded recovery of a dropped link) or always; persistent-connection controllers always hold the link
 - Registers conservative BLE connection parameters (30-50ms intervals)
 - Supports preferred adapter selection for multi-proxy setups
 - Command serialization via `_command_lock` prevents concurrent BLE writes
@@ -114,99 +131,144 @@ custom_components/adjustable_bed/
 - `async_stop_command()`: Cancels running command, acquires lock, then sends STOP
 - Disconnect timer is cancelled during commands to prevent mid-command disconnects
 - `_intentional_disconnect` flag prevents auto-reconnect after manual/idle disconnect
+- Code outside the coordinator uses its public surface (`command_scheduler`,
+  `connection_generation`, `cancel_counter`, `connection_creator_task`) and the
+  pair's public methods, never private attributes; entry runtimes come from
+  `runtime_data.entry_runtime()` / `loaded_runtime()`, not `hass.data[DOMAIN]`
 
-**BedController** (`beds/base.py`): Abstract interface all bed types must implement
-- `write_command(command, repeat_count, repeat_delay_ms, cancel_event)`: Send command bytes
-- `start_notify()` / `stop_notify()`: Position notification handling
-- `read_positions()`: Read current motor positions
-- Motor control methods: `move_head_up()`, `move_back_down()`, `move_legs_stop()`, etc.
-- Preset methods: `preset_memory()`, `program_memory()`
-- Optional features: `lights_on()`, `massage_toggle()`, etc.
+**BedController** (`beds/base.py`): abstract interface every bed type implements:
+`write_command()`, `start_notify()` / `stop_notify()`, `read_positions()`, motor
+methods (`move_head_up()`, …), presets (`preset_memory()`, `program_memory()`)
+and optional features (`lights_on()`, `massage_toggle()`, …).
 
-**Paired beds** (`paired_coordinator.py`, `paired_registry.py`, `paired_devices.py`):
-- Config-entry schema version 4 supports standalone and paired entries
+**Paired beds** (`paired_coordinator.py`, `paired_topology.py`, `paired_registry.py`, `paired_devices.py`):
+- Config-entry schema version 5 supports standalone and paired entries; each entry
+  and paired side stores a profile id ([design](docs/design/profile-id.md))
+- `PairedBedCoordinator` is a facade over one topology strategy: concurrent two-link,
+  sequential two-link, or single-link side-aware
 - One parent device with native Left/Right children, for both one-address and two-address pairs
 - Conversion and unpair preserve side entity/device identities through registry ownership transactions
 - Child service targets retain their side; conflicting explicit side requests are rejected
 - See [runtime boundaries](docs/design/paired-runtime-and-registry.md)
 
-**Config Flow** (`config_flow.py`):
-- Automatic discovery via BLE service UUIDs and device name patterns
-- Manual entry with bed type selection
-- Per-device Bluetooth adapter/proxy selection
-- Protocol variant selection where applicable
-- Options flow for reconfiguration
-- Active rescan and progress-backed setup, authentication, and bond removal
-- Explicit app/product profiles when advertisement data cannot identify the layout
-- Reversible combination of compatible entries and opt-in single-address side controls
-
-**BLE Connection Binary Sensor** (`binary_sensor.py`):
-- Shows real-time BLE connection state (device class: connectivity)
-- Attributes: `last_connected`, `last_disconnected`, `connection_source`, `rssi`, `state_detail`
-- Updates automatically when connection state changes
+**Config Flow** (`config_flow.py`): discovery, setup by app or remote, Configure
+for everyday settings, Reconfigure for the app, model or remote, progress-backed
+setup and bond removal, and reversible combination of compatible entries.
+Setup, Configure and Repairs share one wording for a shared field.
 
 ## Implemented Bed Types
 
-The supported-protocol list lives in the README's "Supported Beds" table — that is the single source of truth; don't mirror it here. To find how a specific bed works:
-
-- `custom_components/adjustable_bed/beds/` — one controller module per protocol
-- `detection.py` — how each bed type is auto-detected (service UUIDs, name patterns)
-- `controller_factory.py` — which bed type maps to which controller class, including
-  variants that share a controller (e.g. Serta/Ergomotion → `KeesonController`)
-- `docs/beds/*.md` — per-protocol documentation including command formats and
-  tested/untested status
+The README's "Supported Beds" table is the single source of truth for which
+protocols exist and which are confirmed working; don't mirror it here. To see
+how a bed works, read its family package in `beds/` (main controller in
+`controller.py`), `detection.py` for auto-detection, `controller_factory.py`
+for the bed type to controller mapping (variants can share a controller, e.g.
+Serta/Ergomotion → `KeesonController`) and its guide in `docs/beds/`.
 
 ## Adding a New Bed Type
 
+Bed support has three layers ([design](docs/design/protocol-codecs.md)): a
+**codec** per proven wire format (`codec/<family>.py`), a typed **profile** per
+app or route (`profiles/<family>.py`), and thin **controller** glue in `beds/`.
+A new app is normally a profile plus its vectors, not a new controller.
+
 1. **Document the BLE protocol** - Use APK reverse engineering (see `docs/apk-analysis/TOOLING.md`) to extract UUIDs and command bytes. The `generate_support_bundle` service captures GATT structure and device responses. User-provided nRF Connect logs can supplement APK analysis with real traffic captures.
 
-2. **Add constants to `const.py`**:
+2. **Find the codec before writing code.** Add the app's frozen frames to a
+   codec's vector file (for example `tests/jiecang_vectors.py`) and run its
+   harness (`tests/test_jiecang_vectors.py`). An existing codec is the right one
+   only if it reproduces every frozen literal byte for byte. Shared names, UUIDs,
+   packet resemblance or constructor calls are not proof.
+   - **A codec reproduces the vectors:** add a profile to its
+     `profiles/<family>.py`. Timing, layouts, presets, memory slots, setup
+     schedules and name rules are profile data, from this app's evidence only.
+   - **None does:** add `codec/<family>.py` with its vector file and harness,
+     then the profile. Record the reason in the design note.
+   - Write controller code only for behavior the evidence proves and data cannot
+     express, such as a session, an authentication handshake or a state machine.
+     Extend the family's shared controller instead of copying it.
+
+3. **Name the bed type in `const.py`**:
    ```python
    BED_TYPE_NEWBED: Final = "newbed"
-   NEWBED_SERVICE_UUID: Final = "..."
-   NEWBED_CHAR_UUID: Final = "..."
    ```
+   Its UUIDs, names and other protocol values belong to its profile
+   (`profiles/<family>.py`) or codec, not to `const.py`. Hints and detection
+   import them from there.
 
-3. **Create controller in `beds/`** (e.g., `newbed.py`):
-   - Extend `BedController`
+4. **Wire the controller in `beds/`.** A profile over an existing codec usually
+   needs only its family controller and the profile's key. A new family adds a
+   controller that drives its codec from the profile, as `beds/newbed.py`, or as
+   a `beds/newbed/` package (`controller.py` plus satellites such as
+   `protocol.py`, `state.py` and `services.py`) once it needs more than one
+   module. Keep the package's `__init__.py` empty so importing a satellite never
+   loads the controller:
+   - Extend `BedController`, or the family's shared controller
    - Implement all abstract methods
-   - Define command bytes as a class (see existing controllers)
+   - Build every frame through the codec, never as literals in the controller
    - Declare capabilities by **overriding the properties `BedController` already
      defines** (`supports_massage`, `memory_slot_count`, `auto_stops_on_idle`, …).
      Entity platforms read these directly, so a typo is a type error rather than a
      silently-wrong default. Do not invent a new capability by setting an
      undeclared attribute — add it to the base class first.
+   - Publish non-position state through declared keys, never raw strings:
+     `KEY: Final = StateKey[T]("name")` next to the controller, or in
+     `state_keys.py` when a platform or the coordinator reads it. Write with
+     `self.forward_controller_state_updates(KEY(value), ...)` and give specs the
+     same key.
+   - Put connect-time startup in the controller's lifecycle hooks
+     (`async_on_connect`, `async_after_connect`, `capability_snapshot_policy`
+     and the others at the end of `beds/base.py`), never in the coordinator.
+     Entry setup a family needs before or instead of the first connection is
+     registered in `entry_hooks.py`.
+   - Held and concurrent execution (#483, #516) is the profile's `execution`
+     field, or an `execution` override on a standalone controller. Declare
+     only what the app's evidence proves (see
+     [protocol codecs](docs/design/protocol-codecs.md#execution-capabilities)).
 
-4. **Add detection to `detection.py`** in `detect_bed_type()`:
+5. **Add detection to `detection.py`.** `detect_bed_type()` only wraps
+   `detect_bed_type_detailed()`, whose first pass matches the hints you declare
+   in step 8. Add the rule that turns a matched hint into the bed type there,
+   reading `first.service(BED_TYPE_NEWBED)` or `first.name(BED_TYPE_NEWBED)`
+   rather than repeating the profile's values. When the signal is shared with
+   other apps, offer the bed type as a low-confidence app candidate so setup
+   asks, as the existing candidate rules do.
 
-   ```python
-   if NEWBED_SERVICE_UUID.lower() in service_uuids:
-       return BED_TYPE_NEWBED
-   ```
-
-5. **Register the controller in `controller_factory.py`.** Most beds are one line
-   in the `_SIMPLE_CONTROLLERS` registry, which lazily imports the module so
-   integration startup does not pay for ~50 unused controllers:
+6. **Register the controller in `controller_factory.py`.** The factory imports
+   bed modules lazily, so integration startup does not pay for unused
+   controllers. A controller built from the coordinator plus fixed kwargs is one
+   line in `_SIMPLE_CONTROLLERS`:
 
    ```python
    BED_TYPE_NEWBED: _ControllerSpec("newbed", "NewbedController"),
    ```
 
-   Pass fixed constructor kwargs as a third argument when needed. Only add an
-   explicit branch in `create_controller()` when construction needs runtime
-   detection, variant resolution, or arguments derived from the advertisement.
-   A bed type must not be both registered and branched on: the registry is
-   consulted last, so the entry would be silently unreachable.
-   `tests/test_controller_contract.py` enforces this and resolves every entry.
+   The module is relative to `beds/`, so a family package registers
+   `_ControllerSpec("newbed.controller", "NewbedController")`.
 
-6. **Add to `const.py`** `SUPPORTED_BED_TYPES` list
+   When construction needs the variant, entry data, the advertisement or the
+   live GATT table, write an async builder in the bed module that takes a
+   `BuildContext` (`beds/builder.py`) and register it in `_BUILDERS`:
 
-7. **Add to `manifest.json`** `bluetooth` array if using different service UUID for discovery
+   ```python
+   BED_TYPE_NEWBED: _BuilderSpec("newbed"),  # beds/newbed.py: build_controller(ctx)
+   ```
 
-8. **Update `beds/__init__.py`** to export the new controller
+   A builder reads its settings from `ctx.data`; never add a bed-specific
+   parameter to `create_controller()`. A builder that picks a class from another
+   module loads it with `await ctx.preload("family.module")` first; the name is
+   relative to `beds/`. A bed type is in one of the two registries, never both.
+
+7. **Add to `const.py`** `SUPPORTED_BED_TYPES` list
+
+8. **Declare discovery hints** in `discovery_hints/<family>.py`, then run
+   `scripts/generate_bluetooth_matchers.py` to regenerate the manifest's
+   `bluetooth` list. Never edit that list by hand; CI checks it
+   ([design](docs/design/discovery-hints.md)).
 
 9. **If the bed reports motor positions**, override `position_number_specs` to
-   return the sliders, building each with `build_position_number_spec()`:
+   return the sliders, building each with `build_position_number_spec()` from
+   `beds/entity_specs.py`:
 
    ```python
    @property
@@ -218,18 +280,26 @@ The supported-protocol list lives in the README's "Supported Beds" table — tha
    ```
 
    Pass `position_key=` when the firmware reports an axis under a different name.
-   Also add the bed type to `BEDS_WITH_POSITION_FEEDBACK` in `const.py`, and to
-   `BEDS_WITH_PERCENTAGE_POSITIONS` if it reports 0-100 percentages rather than
-   degrees. A bed that reports no position data at all belongs in neither, or in
-   `BEDS_WITHOUT_ANGLE_FEEDBACK` if angle sensing would otherwise create degree
-   sensors stuck at "unknown". Note that `position_number_specs` requires a live
-   controller, so these entities only appear once the bed has connected.
+   Also give the bed type `position_feedback=True` in its `bed_traits.py` record,
+   plus `percentage_positions=True` if it reports 0-100 percentages rather than
+   degrees. A bed that reports no position data at all needs neither, or
+   `no_angle_feedback=True` if angle sensing would otherwise create degree
+   sensors stuck at "unknown". The same record declares a persistent connection
+   and connection-scoped state. The factory stamps it on the controller, whose
+   properties override it only to refine it at runtime. Note that
+   `position_number_specs` requires a live controller, so these entities only
+   appear once the bed has connected.
 
-10. **Create documentation** in `docs/beds/newbed.md` using the
-    [bed guide format](docs/BED_GUIDE_FORMAT.md): Status, Credit, Known Models,
-    Apps and Features tables, Protocol Details and command tables. Evidence and
-    dispositions go in the discovery ledger, not the guide, and the ledger never
-    goes in `docs/` (see post-freeze convergence below).
+10. **Create documentation** using the [bed guide format](docs/BED_GUIDE_FORMAT.md).
+    A profile over an existing codec adds a profile section, with the format's
+    fixed headings, to that codec's guide. A new codec gets a new codec guide in
+    the [codec guide format](docs/BED_GUIDE_FORMAT.md#codec-guides), with a
+    renderer in its own `scripts/codec_docs/<family>.py` for every table its code
+    knows.
+    A protocol outside the codec split gets `docs/beds/newbed.md` in the
+    single-protocol format. Evidence and dispositions go in the discovery ledger,
+    not the guide, and the ledger never goes in `docs/` (see post-freeze
+    convergence below).
 
 11. **For an app profile, make the app findable and declare what it owns.**
     Users search the bed-type list by app name. An app that is its own bed type
@@ -237,36 +307,64 @@ The supported-protocol list lives in the README's "Supported Beds" table — tha
     gets an entry in `APP_VARIANT_CHOICES` (`detection.py`); the bed type's own
     label names the app its `auto` variant selects. An app chosen inside its app
     step (for example `vibradorm_app_profile`) is named in its bed type's label.
-    In `app_profiles.py`, list the generic fields the profile sets itself and
+    In `setup_questions.py`, declare the profile's setup questions and the
+    generic fields it sets itself; in `app_profiles.py`, list
     the settings that belong to one side of a two-address pair. Reuse the shared
     keys (`has_massage`, `has_light`, `product_type`, `reverse_motor_1`–`4`,
     `ble_device_name`) instead of adding per-app copies.
+
+12. **Name and expose entities for the person looking at their bed.** Every
+    entity must be a control or value a user understands and wants. Names describe
+    the physical thing in sentence case, never a brand, app, provenance note
+    ("(app)", "Raw …"), protocol word (hex, "field", "axis N", "Part N",
+    "code") or ALL-CAPS app label; give unknown-meaning values no entity. An on/off
+    pair is one `ControllerSwitchSpec`, a refresh button is `diagnostic=True`, and
+    raw or protocol state stays in `protocol_diagnostics`. Controller state
+    sensors are disabled by default: set `entity_registry_enabled_default=True`
+    only for dashboard values (motion, presets, massage and light state, timers).
+
+13. **Use the shared shapes and plumbing.**
+    - A control takes its shared shape: an on/off light is a `light`, timers are
+      the shared massage and light timer selects, a settable level is a number,
+      sleep readings use the shared sleep sensor builders, and app-catalog
+      buttons go through `beds/catalog_buttons.py`. A type change of an existing
+      entity needs a `Retype` row in `entity_retypes.py`.
+    - Every `write_gatt_char` call declares whether its write is one of the
+      command's own frames, and a frame held back is marked skipped
+      (`tests/test_frame_delivery_guard.py`).
+    - Entities show commanded values through `_async_send`; controllers publish
+      them with `sent_state()` around the write. Only `delivered()` reads
+      delivery.
+    - Build user-visible errors in `errors.py` with a translation key.
+    - Set a clock through the `supports_clock_sync` / `sync_clock` hook, never a
+      per-bed button or operation. Expose an alarm through `alarm_capability`
+      and the shared `set_alarm` action; keep a bed-specific alarm action only
+      where the bed's alarm needs checks `set_alarm` cannot express.
+    - A button that asks for confirmation never publishes a held gesture.
 
 ## Configuration Options
 
 | Option | Description | Default |
 |--------|-------------|---------|
-| `motor_count` | 2, 3, or 4 motors; 1 only for supported single-actuator lifts | 2 |
-| `malouf_layout` | Malouf/Lucid physical actuator layout, independent of protocol | auto |
-| `malouf_memory_slots` | Malouf/Lucid remote memory capacity (auto, 1, or 2) | auto |
-| `has_massage` | Enable massage entities | false |
-| `protocol_variant` | Protocol variant (bed-specific) | auto |
-| `disable_angle_sensing` | Disable position feedback | depends on bed type and setup route |
-| `passive_position_reconciliation` | Refresh positions while idle, when supported and quick handoff is off | bed-specific |
-| `preferred_adapter` | Preferred BLE adapter; HA may reroute at connection time | auto |
-| `connection_profile` | BLE connection profile | balanced |
-| `motor_pulse_count` | Command repeat count | 10 |
-| `motor_pulse_delay_ms` | Delay between repeats | 100 |
-| `disconnect_after_command` | Disconnect immediately after commands | per bed type (`disconnect_after_command_default_enabled`) |
-| `idle_disconnect_seconds` | Idle timeout before disconnect; 0 keeps connected unless `disconnect_after_command` | 40 |
-| `disable_discovery` | Suppress automatic discovery (global, stored via `discovery_settings`) | false |
-| `position_mode` | Speed vs accuracy tradeoff | speed |
-| `octo_pin` | PIN for Octo beds | "" |
-| `jensen_pin` | PIN for Jensen beds | "" |
-| `cb24_bed_selection` | Bed A/B selection for CB24 split beds | both sides |
-| `richmat_remote` | Remote code for Richmat beds | auto |
-| `back_max_angle` | Max angle for back motor (degrees) | 68.0 |
-| `legs_max_angle` | Max angle for legs motor (degrees) | 45.0 |
+| `motor_count` | **Number of motors**: 2, 3 or 4; 1 only where the app or remote has one motor | 2 |
+| `malouf_layout` | **Malouf/Lucid motor layout**, independent of the receiver | auto |
+| `malouf_memory_slots` | **Malouf/Lucid memory positions** (auto, 1 or 2) | auto |
+| `has_massage` | **Massage controls** | false |
+| `protocol_variant` | **Bed model or remote**; changed in Reconfigure | auto |
+| `disable_angle_sensing` | Stored inverse of the "Read bed position" field, saved only where it differs from the route | depends on bed type and setup route |
+| `passive_position_reconciliation` | **Refresh positions while idle**, when supported and the connection mode is not release | bed-specific |
+| `preferred_adapter` | **Bluetooth adapter**; HA may reroute at connection time | auto |
+| `connection_mode` | **Bluetooth connection**: `release`, `idle` or `always` | per bed type (`bed_traits.default_connection_mode`) |
+| `idle_disconnect_seconds` | **Seconds to stay connected** for the `idle` mode | 40 |
+| `motor_pulse_count` | **Movement per tap**: command repeat count | per bed type |
+| `motor_pulse_delay_ms` | Delay between repeats; not shown, a saved value still applies | per bed type |
+| `disable_discovery` | Inverse of **Suggest newly found beds** (global, stored via `discovery_settings`) | false |
+| `octo_pin` | **Octo PIN** | "" |
+| `jensen_pin` | **Jensen PIN** | "" |
+| `cb24_bed_selection` | **Bed side** of a CB24 split bed | both sides |
+| `richmat_remote` | **Richmat remote** code | auto |
+| `back_max_angle` | **Maximum back angle (degrees)** | 68.0 |
+| `legs_max_angle` | **Maximum legs angle (degrees)** | 45.0 |
 
 App/product-specific fields and their capability gates are documented in
 [Configuration](docs/CONFIGURATION.md#app-and-product-profiles). Do not infer an
@@ -276,9 +374,11 @@ a two-address pair.
 ## Services
 
 The complete public action index is [Actions and Automations](docs/SERVICES.md).
-`services.yaml` defines the UI fields; `services.py` registers and validates them,
-with dedicated RMControl and Sleep Number handlers. Memory actions accept slots
-1–6 subject to controller capabilities. `set_positions` validates all requested
+`services.yaml` defines the UI fields. `services.py` holds the generic actions,
+target resolution and preflight admission, and calls each family module's
+register function; a family's own actions live in its package's `services.py`
+(for example `beds/reverie/services.py` or `beds/sleep_number/services.py`).
+Memory actions take a slot number from 1 to 255; the controller's `memory_slot_count` decides which slots a bed accepts. `set_positions` validates all requested
 targets before executing the ordered movement. Control actions support paired
 side routing; support capture requires one physical target.
 
@@ -290,11 +390,9 @@ side routing; support capture requires one physical target.
 
 2. **Command serialization** - All entities must use `coordinator.async_execute_controller_command()` instead of calling controller methods directly. This ensures proper locking and prevents concurrent BLE writes.
 
-3. **Cancel event handling** - `write_command()` checks `coordinator._cancel_command` by default. When stop is requested, the cancel event is set, the running command exits early, then STOP is sent.
+3. **Cancel event handling** - `write_command()` checks `coordinator.cancel_command` by default, which is the running command's own cancel event. When stop is requested, the cancel event is set, the running command exits early, then STOP is sent.
 
-4. **Disconnect timer management** - Timer is cancelled when a command starts (inside the lock) and reset when it ends. This prevents mid-command disconnects for long operations.
-
-5. **Intentional disconnect flag** - Set before `client.disconnect()`, checked in `_on_disconnect` to skip auto-reconnect. Cleared in finally block since callback may not fire on clean disconnects.
+4. **Disconnect timer and intentional disconnect** - The timer is cancelled when a command starts (inside the lock) and reset when it ends, so long operations are never cut off. `_intentional_disconnect` is set before `client.disconnect()`, checked in `_on_disconnect` to skip auto-reconnect, and cleared in a finally block since the callback may not fire on clean disconnects.
 
 ## Releases
 
@@ -304,17 +402,41 @@ When creating a release:
    - `custom_components/adjustable_bed/manifest.json` - the `"version"` field
    - `pyproject.toml` - the `version` field in `[project]`
 
-2. Commit, tag, and push:
+2. Rebuild and validate the committed dashboard card bundle after changing the
+   manifest version. The bundle embeds that version even when its source is unchanged:
+   ```bash
+   cd custom_components/adjustable_bed/frontend
+   bun install --frozen-lockfile
+   bun run check
+   bun test
+   ```
+   Include `frontend/dist/adjustable-bed-card.js` in the release commit.
+
+3. Commit, tag, and push:
    ```bash
    git commit -m "chore: Bump version to X.Y.Z"
    git tag vX.Y.Z
    git push && git push origin vX.Y.Z
    ```
 
-3. Create a GitHub release with `gh release create` including a changelog with:
+4. Create a GitHub release with `gh release create` including a changelog with:
    - **What's New** - New features, new bed support
    - **Bug Fixes** - List of fixes with brief descriptions
-   - Do NOT include an "Upgrading" section - users already know how to update
+   - Do NOT include an "Upgrading" section - users already know how to update.
+     Exception: a new major version opens its notes with one, naming the
+     minimum Home Assistant version, saying that a Home Assistant backup taken
+     before the upgrade is the only way back, and linking the upgrade page
+     (`docs/V5_BREAKING_CHANGES.md` for 5.0.0).
+
+### First stable 5.0.0
+
+These lines are true only while v5 is in beta. Change them in the 5.0.0
+release work, after `v5` is merged into `main` (merge, never reset) and before
+the tag is published:
+
+- `AGENTS.md` **Baseline**: work from `main`, not `v5`.
+- `.github/workflows/validate.yml`: drop `v5` from the branch list, or replace
+  it with a maintenance branch if there is one.
 
 ## Frontend (Lovelace Card)
 
@@ -322,17 +444,23 @@ The integration ships a native Lovelace card, `custom:adjustable-bed-card`,
 under `custom_components/adjustable_bed/frontend/`.
 
 - **Source**: `frontend/src/*.ts` (Lit + TypeScript). Key modules:
-  - `discovery.ts` — given a `device_id`, buckets the device's entities by
-    `translation_key` into UI sections. This is what makes the card generic
-    across all bed types; **when you add a new entity, give it a stable
-    `translation_key`** and, if it belongs in the card, add it to a bucket here.
+  - `discovery.ts` — given a `device_id`, buckets the device's entities into
+    UI sections by the placement each publishes (`card_section`, plus
+    `card_role`, `card_motor` and `card_slot` where needed). This is what makes
+    the card generic across all bed types. The placement is declared in Python
+    (`card.py`): each spec type has a default (controller buttons, selects and
+    numbers go to utility, controller state stays hidden), so **when you add an
+    entity that belongs elsewhere in the card, set `card=` on its spec or
+    description**; never add key lists to the card. Then regenerate the card's
+    test fixture with `uv run --no-sync python -m tests.card_placements`.
   - `adjustable-bed-card.ts` — the card element (renders only sections that have
     entities; all colour comes from HA theme CSS variables).
   - `editor.ts` — visual editor (`ha-form` + device picker + section toggles).
   - `hold.ts` — movement pulse repetition and side-scoped release/STOP handling.
   - `bed-graphic.ts` — theme-aware angle SVG. `localize.ts` + `translations/`
     hold the card's own strings (section headers / editor labels);
-    entity names come from HA's localized `friendly_name`.
+    entity labels come from `hass.formatEntityName` (`names.ts`), never from
+    `friendly_name`.
 - **Build** (requires [bun](https://bun.sh)):
   ```bash
   cd custom_components/adjustable_bed/frontend
@@ -377,9 +505,8 @@ beds never answer. Patch any other long protocol wait in the test that hits it.
 
 ### Testing in Home Assistant
 
-1. Copy `custom_components/adjustable_bed` to your HA's `config/custom_components/`
-2. Restart Home Assistant
-3. Enable debug logging: Settings → Devices & Services → Adjustable Bed → ⋮ menu → Enable debug logging. Use the integration, then disable debug logging to download the log file.
+Copy `custom_components/adjustable_bed` to `config/custom_components/`, restart
+Home Assistant, and use the entry's **Enable debug logging** to capture a log.
 
 ### Using BLE Diagnostics
 
@@ -391,33 +518,26 @@ The `generate_support_bundle` service captures protocol data for debugging and a
 
 ### Common Issues
 
-- **Commands timeout**: Another device (app/remote) may be connected - beds only allow one BLE connection
-- **Position sensing breaks physical remote**: Enable `disable_angle_sensing` option
-- **Connection drops**: Move ESP32 proxy closer to bed, check for interference
-- **Octo beds disconnect after 30s**: Configure the PIN in options
+Troubleshooting belongs in [the troubleshooting guide](docs/TROUBLESHOOTING.md),
+not in auto-injected instructions. Clean-room analysts must not open that guide.
 
 ## Documentation
 
-| File | Content |
-|------|---------|
-| `docs/README.md` | Documentation index and developer entry points |
-| `docs/SUPPORTED_ACTUATORS.md` | Which beds use which actuators, brand lookup |
-| `docs/CONFIGURATION.md` | All configuration options explained |
-| `docs/CONNECTION_GUIDE.md` | Bluetooth setup, ESPHome proxy configuration |
-| `docs/TROUBLESHOOTING.md` | Common issues and solutions |
-| `docs/SERVICES.md` | All public actions, paired side routing and automation examples |
-| `docs/COMMAND_LIFECYCLE.md` | Scheduling, cancellation and connection ownership |
-| `docs/beds/*.md` | Per-actuator protocol documentation |
-| `docs/BED_GUIDE_FORMAT.md` | Required layout for bed guides |
+[`docs/README.md`](docs/README.md) indexes every guide. Bed guides follow
+[`docs/BED_GUIDE_FORMAT.md`](docs/BED_GUIDE_FORMAT.md). A change that removes or
+renames a setting, entity, action or field updates the docs in the same PR.
 
 ## Reference Materials
+
+These folders are ignored by git and exist only in the maintainer's checkout, not
+in a public clone:
 
 - `smartbed-mqtt/` - Old Node.js addon (broken, but has protocol implementations for many bed types)
 - `smartbed-mqtt-discord-chats/` - Discord exports with reverse-engineering discussions and user reports
 
 ## APK Reverse Engineering
 
-The `disassembly/` folder contains tools and output from reverse engineering bed controller Android apps to extract BLE protocols.
+The `disassembly/` folder (maintainer checkout only, ignored by git) contains tools and output from reverse engineering bed controller Android apps to extract BLE protocols.
 
 ### Mandatory clean-room analysis while issue #436 is open
 
@@ -448,8 +568,9 @@ account for every reachable discovery before the task can be called complete.
 
 - Build a discovery ledger covering every reachable BLE behavior, including commands, packet builders, responses and notifications, parsers, timing, release behavior, pairing/authentication, discovery rules, model/variant selection, capability gates, configuration writes, and user-visible state.
 - Give every ledger item exactly one disposition: `IMPLEMENTED`, `ALREADY_IMPLEMENTED`, `EXCLUDED`, or `DEFERRED`. `DEFERRED` is only for a claim the audit could not verify within the coordinator workflow's stall rule; the PR body lists each one with its open finding and next step.
+- Record for every `IMPLEMENTED` or `ALREADY_IMPLEMENTED` item which codec carries it, existing or new. Reuse an existing codec only when it reproduces the item's frozen literals byte for byte. The clean-room analysis itself does not change; this mapping belongs to the post-freeze pass.
 - Implement every in-scope item marked `IMPLEMENTED` in the same task, with focused artifact-vector tests, entity or service exposure where users need it, and durable protocol documentation: a bed guide in the [bed guide format](docs/BED_GUIDE_FORMAT.md) with command tables from the shipped code. Never write the guide as audit prose.
-- The discovery ledger is an audit record, not documentation. Keep it machine-local with the APK Protocol Audit report, and put its totals, every exclusion and every deferral in the implementation PR body. Commit a machine-readable ledger only when a test reads it, under `tests/fixtures/`. Never add ledgers, disposition files or audit records to `docs/`. Do not silently defer reachable discoveries or wait for the user to ask whether anything was missed.
+- The discovery ledger is an audit record, not documentation. Keep it machine-local with the APK Protocol Audit report, and put its totals, every exclusion and every deferral in the implementation PR body. Never commit a ledger or a test that checks one: tests drive behavior with real frames and vectors. Never add ledgers, disposition files or audit records to `docs/`. Do not silently defer reachable discoveries or wait for the user to ask whether anything was missed.
 - `ALREADY_IMPLEMENTED` requires a concrete code and test reference showing behavior equivalent to the frozen artifact, not a family resemblance or an assumed shared protocol.
 - `EXCLUDED` requires the exact evidence and reason. Valid reasons are an out-of-scope transport or product boundary (for example WiFi/cloud behavior in this BLE-only integration), a safety constraint, dead or unreachable artifact code, or behavior unrelated to bed integration. Convenience, uncertain model prevalence, missing maintainer hardware, or lack of an existing entity are not valid exclusions.
 - Static artifact evidence can complete the implementation even without physical hardware. Keep hardware status explicit and defer only physical validation, never the implementation itself, when the behavior is exhaustively proven.

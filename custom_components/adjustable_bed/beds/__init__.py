@@ -10,222 +10,317 @@ from typing import TYPE_CHECKING
 from .base import BedController
 
 if TYPE_CHECKING:
+    from .adjustable_lumbar import AdjustableBedAppController as AdjustableBedAppController
     from .adjustable_lumbar import AdjustableLumbarController as AdjustableLumbarController
-    from .adjustamattress import AdjustaMattressController as AdjustaMattressController
+    from .adjustamattress.controller import AdjustaMattressController as AdjustaMattressController
+    from .baseremote.controller import BaseRemoteController as BaseRemoteController
+    from .bedgear.controller import BedgearController as BedgearController
     from .bedjet_powerlayer import BedJetPowerLayerController as BedJetPowerLayerController
     from .bedsense import BedSenseController as BedSenseController
-    from .bf_cherish import BfCherishController as BfCherishController
-    from .casper_base import CasperBaseController as CasperBaseController
-    from .casper_sleep import CasperSleepController as CasperSleepController
-    from .cluster018 import Cluster018Controller as Cluster018Controller
-    from .comfort_enhancements import ComfortEnhancementsController as ComfortEnhancementsController
+    from .bf_cherish.controller import BfCherishController as BfCherishController
+    from .casper_base.controller import CasperBaseController as CasperBaseController
+    from .casper_sleep.controller import CasperSleepController as CasperSleepController
+    from .cheerssleep.controller import CheersSleepController as CheersSleepController
+    from .comfort_enhancement3.controller import (
+        ComfortEnhancement3Controller as ComfortEnhancement3Controller,
+    )
+    from .comfort_enhancements.controller import (
+        ComfortEnhancementsController as ComfortEnhancementsController,
+    )
     from .comfort_motion import ComfortMotionController as ComfortMotionController
     from .coolbase import CoolBaseController as CoolBaseController
-    from .customatic import CustomaticController as CustomaticController
+    from .customatic.controller import CustomaticController as CustomaticController
     from .dewertokin_rf_gateway import (
         DewertOkinRfGatewayController as DewertOkinRfGatewayController,
     )
     from .dewertokin_rf_gateway import (
         DewertOkinUuidRfGatewayController as DewertOkinUuidRfGatewayController,
     )
-    from .doublesleep import DoubleSleepController as DoubleSleepController
+    from .doublesleep.controller import DoubleSleepController as DoubleSleepController
     from .ergo_slim import ErgoSlimController as ErgoSlimController
-    from .ergomotion4 import Ergomotion4Controller as Ergomotion4Controller
+    from .ergomotion4.controller import Ergomotion4Controller as Ergomotion4Controller
     from .ergomotion_app import ErgomotionAppController as ErgomotionAppController
-    from .eshine import EshineController as EshineController
-    from .eshine_okin import EshineOkinController as EshineOkinController
-    from .fsm_relax import FsmRelaxController as FsmRelaxController
-    from .furnimove import FurniMoveController as FurniMoveController
-    from .glideaway_motion import GlideawayMotionController as GlideawayMotionController
-    from .gmmotor import GmmotorController as GmmotorController
-    from .gmmotor_desk import GmmotorDeskController as GmmotorDeskController
-    from .gmmotor_sleep import GmmotorSleepController as GmmotorSleepController
-    from .goodvibe import GoodVibeController as GoodVibeController
-    from .hjbed import HJBedController as HJBedController
+    from .eshine.controller import EshineController as EshineController
+    from .eshine_okin.controller import EshineOkinController as EshineOkinController
+    from .fsm_relax.controller import FsmRelaxController as FsmRelaxController
+    from .furnimove.controller import FurniMoveController as FurniMoveController
+    from .glideaway_motion.controller import GlideawayMotionController as GlideawayMotionController
+    from .gmmotor.controller import GmmotorController as GmmotorController
+    from .gmmotor.desk import GmmotorDeskController as GmmotorDeskController
+    from .gmmotor.sleep import GmmotorSleepController as GmmotorSleepController
+    from .goodvibe.controller import GoodVibeController as GoodVibeController
+    from .hjbed.controller import HJBedController as HJBedController
     from .innova import InnovaController as InnovaController
+    from .instant_comfort.controller import InstantComfortBase as InstantComfortBase
     from .isleep import IsleepController as IsleepController
-    from .jensen import JensenController as JensenController
-    from .jensen_linon import JensenLinonController as JensenLinonController
-    from .jiecang import JiecangController as JiecangController
-    from .jiecang_app import JiecangAppController as JiecangAppController
-    from .kaidi import KaidiController as KaidiController
-    from .keeson import KeesonController as KeesonController
-    from .leggett_gen2 import LeggettGen2Controller as LeggettGen2Controller
-    from .leggett_lp_legacy import LeggettLpLegacyController as LeggettLpLegacyController
-    from .leggett_okin import LeggettOkinController as LeggettOkinController
-    from .leggett_wilinke import LeggettWilinkeController as LeggettWilinkeController
-    from .limoss import LimossController as LimossController
-    from .limoss_remote import LimossRemoteController as LimossRemoteController
-    from .linak import LinakController as LinakController
-    from .logicdata import LogicdataController as LogicdataController
-    from .logicdata_air_pump import LogicdataAirPumpController as LogicdataAirPumpController
-    from .logicdata_app import LogicdataAppController as LogicdataAppController
-    from .malouf_app import MaloufAppController as MaloufAppController
-    from .motion_bed import MotionBedController as MotionBedController
-    from .motomotion import MotoMotionController as MotoMotionController
+    from .jalon_bed.controller import JalonBedController as JalonBedController
+    from .jensen.controller import JensenController as JensenController
+    from .jensen.linon import JensenLinonController as JensenLinonController
+    from .jiecang.app import JiecangAppController as JiecangAppController
+    from .jiecang.controller import JiecangController as JiecangController
+    from .kaidi.comfy import ComfyController as ComfyController
+    from .kaidi.controller import KaidiController as KaidiController
+    from .kaidi.rize import RizeController as RizeController
+    from .keeson.agingplace import AgingPlaceController as AgingPlaceController
+    from .keeson.betterliving2 import BetterLiving2Controller as BetterLiving2Controller
+    from .keeson.comfortfurniture import ComfortFurnitureController as ComfortFurnitureController
+    from .keeson.controller import KeesonController as KeesonController
+    from .keeson.enso import EnsoController as EnsoController
+    from .keeson.jalon import JalonController as JalonController
+    from .keeson.ormatek import OrmatekController as OrmatekController
+    from .keeson.somos import SomosController as SomosController
+    from .keeson.symphony_sleep import SymphonySleepController as SymphonySleepController
+    from .keeson.yamada import YamadaController as YamadaController
+    from .leggett.gen2 import LeggettGen2Controller as LeggettGen2Controller
+    from .leggett.lp_legacy import LeggettLpLegacyController as LeggettLpLegacyController
+    from .leggett.okin import LeggettOkinController as LeggettOkinController
+    from .leggett.wilinke import LeggettWilinkeController as LeggettWilinkeController
+    from .limoss.controller import LimossController as LimossController
+    from .limoss.remote import LimossRemoteController as LimossRemoteController
+    from .linak.controller import LinakController as LinakController
+    from .linx.controller import LinxController as LinxController
+    from .logicdata.air_pump import LogicdataAirPumpController as LogicdataAirPumpController
+    from .logicdata.app import LogicdataAppController as LogicdataAppController
+    from .logicdata.controller import LogicdataController as LogicdataController
+    from .luniosmart.controller import LunioSmartController as LunioSmartController
+    from .majestichome.controller import MajesticHomeController as MajesticHomeController
+    from .malouf.app import MaloufAppController as MaloufAppController
+    from .mlily_remote.controller import MlilyRemoteController as MlilyRemoteController
+    from .motion_bed.controller import MotionBedController as MotionBedController
+    from .motomotion.controller import MotoMotionController as MotoMotionController
     from .motosleep import MotoSleepController as MotoSleepController
-    from .octo import OctoController as OctoController
+    from .n32_motion_bed.controller import N32MotionBedController as N32MotionBedController
+    from .nerum.controller import NerumController as NerumController
+    from .octo.controller import OctoController as OctoController
+    from .okimiki.controller import OkimikiController as OkimikiController
     from .okin_7byte import Okin7ByteController as Okin7ByteController
-    from .okin_cb24 import OkinCB24Controller as OkinCB24Controller
     from .okin_cb35 import OkinCB35Controller as OkinCB35Controller
     from .okin_cst import OkinCstController as OkinCstController
     from .okin_dot import OkinDotController as OkinDotController
     from .okin_handle import OkinHandleController as OkinHandleController
+    from .okin_motionbed import OkinMotionBedController as OkinMotionBedController
     from .okin_nordic import OkinNordicController as OkinNordicController
     from .okin_ore import OkinOreController as OkinOreController
     from .okin_rf_eco_bt import OkinRfEcoBtController as OkinRfEcoBtController
-    from .okin_uuid import OkinUuidController as OkinUuidController
+    from .okin_uuid.controller import OkinUuidController as OkinUuidController
     from .omazz_adjusto_iii import OmazzAdjustoIIIController as OmazzAdjustoIIIController
+    from .onlysnore.controller import OnlySnoreController as OnlySnoreController
     from .ore_comfort_bed import OreComfortBedController as OreComfortBedController
-    from .remacro import RemacroController as RemacroController
-    from .reverie import ReverieController as ReverieController
-    from .reverie_nightstand import ReverieNightstandController as ReverieNightstandController
-    from .richmat import RichmatController as RichmatController
-    from .richmat_mh import RichmatMhController as RichmatMhController
+    from .paramount.controller import ParamountController as ParamountController
+    from .personal_comfort.air import PersonalComfortAir as PersonalComfortAir
+    from .personal_comfort.controller import PersonalComfortBase as PersonalComfortBase
+    from .qplus_app import QPlusAppController as QPlusAppController
+    from .relax_motion.controller import RelaxMotionController as RelaxMotionController
+    from .remacro.controller import RemacroController as RemacroController
+    from .resident.controller import ResidentController as ResidentController
+    from .reverie.controller import ReverieController as ReverieController
+    from .reverie.nightstand import ReverieNightstandController as ReverieNightstandController
+    from .richmat.controller import RichmatController as RichmatController
+    from .richmat_app.controller import RichmatAppController as RichmatAppController
+    from .richmat_classic.controller import RichmatClassicController as RichmatClassicController
+    from .richmat_legacy.controller import RichmatLegacyController as RichmatLegacyController
+    from .richmat_mh.controller import RichmatMhController as RichmatMhController
+    from .rize_home.controller import RizeHomeController as RizeHomeController
     from .rondure import RondureController as RondureController
     from .row_control import RowControlController as RowControlController
-    from .ruf_richmat import RufRichmatController as RufRichmatController
-    from .ruf_richmat_sleep import RufRichmatSleepController as RufRichmatSleepController
-    from .sbi import QPlusAppController as QPlusAppController
-    from .sbi import SBIController as SBIController
+    from .ruf_richmat.controller import RufRichmatController as RufRichmatController
+    from .ruf_richmat.sleep import RufRichmatSleepController as RufRichmatSleepController
+    from .saatva import SaatvaController as SaatvaController
     from .scott_living import ScottLivingController as ScottLivingController
-    from .serenity import SerenityController as SerenityController
-    from .serenity import TranquilController as TranquilController
-    from .serenity import ZSeriesController as ZSeriesController
+    from .sealy.controller import SealyController as SealyController
+    from .serenity.controller import SerenityController as SerenityController
+    from .serenity.controller import TranquilController as TranquilController
+    from .serenity.controller import ZSeriesController as ZSeriesController
     from .serta_mp_remote import SertaMPRemoteController as SertaMPRemoteController
-    from .simmons import SimmonsController as SimmonsController
-    from .sleep_number import SleepNumberController as SleepNumberController
-    from .sleep_number_mcr import SleepNumberMcrController as SleepNumberMcrController
+    from .silvermotion.controller import SilvermotionController as SilvermotionController
+    from .simmons.controller import SimmonsController as SimmonsController
+    from .sleep_assistant.controller import SleepAssistantController as SleepAssistantController
+    from .sleep_number.controller import SleepNumberController as SleepNumberController
+    from .sleep_number.mcr import SleepNumberMcrController as SleepNumberMcrController
     from .sleepstar import SleepStarController as SleepStarController
-    from .sleeptracker import SleeptrackerController as SleeptrackerController
-    from .sleepys_box25 import SleepysBox25Controller as SleepysBox25Controller
-    from .sleepys_box25 import SleepysBox25LegacyController as SleepysBox25LegacyController
-    from .solace import SolaceController as SolaceController
-    from .star_elevate import StarElevateController as StarElevateController
-    from .starcode_abm5_4 import StarcodeAbm5_4Controller as StarcodeAbm5_4Controller
-    from .starcode_m5x5 import StarcodeM5X5Controller as StarcodeM5X5Controller
-    from .suta import SutaController as SutaController
-    from .svane import SvaneController as SvaneController
+    from .sleeptracker.controller import SleeptrackerController as SleeptrackerController
+    from .sleepys.box25 import SleepysBox25Controller as SleepysBox25Controller
+    from .sleepys.box25 import SleepysBox25LegacyController as SleepysBox25LegacyController
+    from .smart_comfort.controller import SmartComfortController as SmartComfortController
+    from .smart_sleep.controller import SmartSleepController as SmartSleepController
+    from .smartbed.controller import SmartBedController as SmartBedController
+    from .solace.controller import SolaceController as SolaceController
+    from .sonicsleep.controller import SonicSleepController as SonicSleepController
+    from .starcode.abm5_4 import StarcodeAbm5_4Controller as StarcodeAbm5_4Controller
+    from .starcode.m5x5 import StarcodeM5X5Controller as StarcodeM5X5Controller
+    from .starcode.star_elevate import StarElevateController as StarElevateController
+    from .superior_sleep.controller import SuperiorSleepController as SuperiorSleepController
+    from .suta.controller import SutaController as SutaController
+    from .svane.controller import SvaneController as SvaneController
+    from .symphony.controller import SymphonyController as SymphonyController
     from .tempur_au import TempurAUController as TempurAUController
     from .tempur_curve import TempurCurveController as TempurCurveController
     from .timotion_ahf import TiMOTIONAhfController as TiMOTIONAhfController
-    from .vibradorm import VibradormController as VibradormController
-    from .vibradorm_app import VibradormAppController as VibradormAppController
-    from .vmatbasic import VMatBasicController as VMatBasicController
+    from .ultramatic.controller import UltramaticController as UltramaticController
+    from .vibradorm.app import VibradormAppController as VibradormAppController
+    from .vibradorm.controller import VibradormController as VibradormController
+    from .vmatbasic.controller import VMatBasicController as VMatBasicController
     from .woosa import WoosaController as WoosaController
 
 _EXPORT_MODULES = {
-    "GoodVibeController": "goodvibe",
-    "MotoMotionController": "motomotion",
-    "HJBedController": "hjbed",
-    "DoubleSleepController": "doublesleep",
-    "GmmotorController": "gmmotor",
-    "GmmotorDeskController": "gmmotor_desk",
-    "GmmotorSleepController": "gmmotor_sleep",
+    "InstantComfortBase": "instant_comfort.controller",
+    "SuperiorSleepController": "superior_sleep.controller",
+    "RizeHomeController": "rize_home.controller",
+    "ComfortEnhancement3Controller": "comfort_enhancement3.controller",
+    "N32MotionBedController": "n32_motion_bed.controller",
+    "LunioSmartController": "luniosmart.controller",
+    "SaatvaController": "saatva",
+    "SonicSleepController": "sonicsleep.controller",
+    "MlilyRemoteController": "mlily_remote.controller",
+    "ResidentController": "resident.controller",
+    "NerumController": "nerum.controller",
+    "RelaxMotionController": "relax_motion.controller",
+    "CheersSleepController": "cheerssleep.controller",
+    "UltramaticController": "ultramatic.controller",
+    "SmartSleepController": "smart_sleep.controller",
+    "JalonBedController": "jalon_bed.controller",
+    "SymphonyController": "symphony.controller",
+    "GoodVibeController": "goodvibe.controller",
+    "MajesticHomeController": "majestichome.controller",
+    "MotoMotionController": "motomotion.controller",
+    "HJBedController": "hjbed.controller",
+    "RichmatAppController": "richmat_app.controller",
+    "DoubleSleepController": "doublesleep.controller",
+    "GmmotorController": "gmmotor.controller",
+    "GmmotorDeskController": "gmmotor.desk",
+    "GmmotorSleepController": "gmmotor.sleep",
     'TempurCurveController': 'tempur_curve',
-    'QPlusAppController': 'sbi',
+    'QPlusAppController': 'qplus_app',
     'SertaMPRemoteController': 'serta_mp_remote',
     'OmazzAdjustoIIIController': 'omazz_adjusto_iii',
     'ErgomotionAppController': 'ergomotion_app',
-    'Cluster018Controller': 'cluster018',
-    'Ergomotion4Controller': 'ergomotion4',
+    'BaseRemoteController': 'baseremote.controller',
+    'RichmatClassicController': 'richmat_classic.controller',
+    'Ergomotion4Controller': 'ergomotion4.controller',
     'RowControlController': 'row_control',
     'ErgoSlimController': 'ergo_slim',
     'TempurAUController': 'tempur_au',
-    "CasperBaseController": "casper_base",
-    "HushBaseController": "hush_base",
-    "HushSleepController": "hush_sleep",
-    "CasperSleepController": "casper_sleep",
-    "ComfortEnhancementsController": "comfort_enhancements",
-    "EshineController": "eshine",
-    "EshineOkinController": "eshine_okin",
-    "GlideawayMotionController": "glideaway_motion",
+    "CasperBaseController": "casper_base.controller",
+    "HushBaseController": "hush_base.controller",
+    "RichmatLegacyController": "richmat_legacy.controller",
+    "LuunaController": "luuna.controller",
+    "MLineController": "mline.controller",
+    "HushSleepController": "hush_sleep.controller",
+    "CasperSleepController": "casper_sleep.controller",
+    "ComfortEnhancementsController": "comfort_enhancements.controller",
+    "EshineController": "eshine.controller",
+    "EshineOkinController": "eshine_okin.controller",
+    "JalonController": "keeson.jalon",
+    "SomosController": ("keeson.somos", "SomosController"),
+    "EnsoController": ("keeson.enso", "EnsoController"),
+    "SealyController": ("sealy.controller", "SealyController"),
+    "SleepAssistantController": "sleep_assistant.controller",
+    "YamadaController": ("keeson.yamada", "YamadaController"),
+    "BetterLiving2Controller": ("keeson.betterliving2", "BetterLiving2Controller"),
+    "GlideawayMotionController": "glideaway_motion.controller",
     "BedSenseController": "bedsense",
     "InnovaController": "innova",
-    "StarcodeM5X5Controller": "starcode_m5x5",
-    "FurniMoveController": "furnimove",
-    "FsmRelaxController": "fsm_relax",
-    "SerenityController": "serenity",
-    "TranquilController": "serenity",
-    "ZSeriesController": "serenity",
-    "SimmonsController": "simmons",
-    "AdjustaMattressController": "adjustamattress",
+    "StarcodeM5X5Controller": "starcode.m5x5",
+    "FurniMoveController": "furnimove.controller",
+    "FsmRelaxController": "fsm_relax.controller",
+    "SerenityController": "serenity.controller",
+    "TranquilController": "serenity.controller",
+    "ZSeriesController": "serenity.controller",
+    "SimmonsController": "simmons.controller",
+    "AdjustaMattressController": "adjustamattress.controller",
     "AdjustableLumbarController": "adjustable_lumbar",
+    "PersonalComfortBase": "personal_comfort.controller",
+    "PersonalComfortAir": "personal_comfort.air",
+    "ParamountController": "paramount.controller",
+    "AdjustableBedAppController": "adjustable_lumbar",
     "BedJetPowerLayerController": "bedjet_powerlayer",
-    "RufRichmatController": "ruf_richmat",
-    "RufRichmatSleepController": "ruf_richmat_sleep",
-    "RichmatMhController": "richmat_mh",
-    "CustomaticController": "customatic",
+    "RufRichmatController": "ruf_richmat.controller",
+    "RufRichmatSleepController": "ruf_richmat.sleep",
+    "RichmatMhController": "richmat_mh.controller",
+    "CustomaticController": "customatic.controller",
     "CoolBaseController": "coolbase",
     "DewertOkinRfGatewayController": "dewertokin_rf_gateway",
     "DewertOkinUuidRfGatewayController": "dewertokin_rf_gateway",
-    "JensenController": "jensen",
-    "JensenLinonController": "jensen_linon",
+    "JensenController": "jensen.controller",
+    "JensenLinonController": "jensen.linon",
     "ComfortMotionController": "comfort_motion",
-    "JiecangController": "jiecang",
-    "JiecangAppController": "jiecang_app",
+    "JiecangController": "jiecang.controller",
+    "JiecangAppController": "jiecang.app",
+    "SmartComfortController": "smart_comfort.controller",
     "IsleepController": "isleep",
-    "KaidiController": "kaidi",
-    "KeesonController": "keeson",
-    "LeggettGen2Controller": "leggett_gen2",
-    "LeggettLpLegacyController": "leggett_lp_legacy",
-    "LeggettOkinController": "leggett_okin",
-    "LeggettWilinkeController": "leggett_wilinke",
-    "LimossController": "limoss",
-    "LimossRemoteController": "limoss_remote",
-    "LinakController": "linak",
-    "LogicdataController": "logicdata",
-    "LogicdataAppController": "logicdata_app",
-    "LogicdataAirPumpController": "logicdata_air_pump",
-    "MaloufAppController": "malouf_app",
-    "MotionBedController": "motion_bed",
+    "RizeController": "kaidi.rize",
+    "ComfyController": "kaidi.comfy",
+    "KaidiController": "kaidi.controller",
+    "LinxController": "linx.controller",
+    "SymphonySleepController": ("keeson.symphony_sleep", "SymphonySleepController"),
+    "KeesonController": "keeson.controller",
+    "OrmatekController": "keeson.ormatek",
+    "AgingPlaceController": "keeson.agingplace",
+    "LeggettGen2Controller": "leggett.gen2",
+    "LeggettLpLegacyController": "leggett.lp_legacy",
+    "LeggettOkinController": "leggett.okin",
+    "LeggettWilinkeController": "leggett.wilinke",
+    "LimossController": "limoss.controller",
+    "LimossRemoteController": "limoss.remote",
+    "LinakController": "linak.controller",
+    "SilvermotionController": "silvermotion.controller",
+    "SmartBedController": "smartbed.controller",
+    "LogicdataController": "logicdata.controller",
+    "LogicdataAppController": "logicdata.app",
+    "LogicdataAirPumpController": "logicdata.air_pump",
+    "MaloufAppController": "malouf.app",
+    "MotionBedController": "motion_bed.controller",
+    "BedgearController": "bedgear.controller",
     "MotoSleepController": "motosleep",
-    "OctoController": "octo",
+    "OctoController": "octo.controller",
+    "OkimikiController": "okimiki.controller",
     "Okin7ByteController": "okin_7byte",
-    "OkinCB24Controller": "okin_cb24",
     "OkinCB35Controller": "okin_cb35",
     "OkinCstController": "okin_cst",
     "OkinDotController": "okin_dot",
     "OkinHandleController": "okin_handle",
+    "OkinMotionBedController": "okin_motionbed",
     "OkinNordicController": "okin_nordic",
-    "BfCherishController": "bf_cherish",
+    "BfCherishController": "bf_cherish.controller",
     "OkinOreController": "okin_ore",
     "OkinRfEcoBtController": "okin_rf_eco_bt",
-    "OkinUuidController": "okin_uuid",
+    "OkinUuidController": "okin_uuid.controller",
+    "ComfortFurnitureController": "keeson.comfortfurniture",
     "OreComfortBedController": "ore_comfort_bed",
-    "RemacroController": "remacro",
-    "ReverieController": "reverie",
-    "ReverieNightstandController": "reverie_nightstand",
-    "RichmatController": "richmat",
+    "RemacroController": "remacro.controller",
+    "ReverieController": "reverie.controller",
+    "ReverieNightstandController": "reverie.nightstand",
+    "RichmatController": "richmat.controller",
     "RondureController": "rondure",
-    "SBIController": "sbi",
     "ScottLivingController": "scott_living",
-    "SleepNumberController": "sleep_number",
-    "SleepNumberMcrController": "sleep_number_mcr",
-    "SleeptrackerController": ("sleeptracker", "SleeptrackerController"),
+    "SleepNumberController": "sleep_number.controller",
+    "SleepNumberMcrController": "sleep_number.mcr",
+    "SleeptrackerController": ("sleeptracker.controller", "SleeptrackerController"),
     "SleepStarController": "sleepstar",
-    "SleepysBox25Controller": "sleepys_box25",
-    "SleepysBox25LegacyController": "sleepys_box25",
-    "SolaceController": "solace",
-    "StarElevateController": "star_elevate",
-    "SutaController": "suta",
-    "SvaneController": "svane",
+    "SleepysBox25Controller": "sleepys.box25",
+    "SleepysBox25LegacyController": "sleepys.box25",
+    "SolaceController": "solace.controller",
+    "StarElevateController": "starcode.star_elevate",
+    "SutaController": "suta.controller",
+    "SvaneController": "svane.controller",
     "TiMOTIONAhfController": "timotion_ahf",
-    "VibradormController": "vibradorm",
-    "VibradormAppController": "vibradorm_app",
-    "VMatBasicController": "vmatbasic",
-    "StarcodeAbm5_4Controller": "starcode_abm5_4",
+    "VibradormController": "vibradorm.controller",
+    "VibradormAppController": "vibradorm.app",
+    "VMatBasicController": "vmatbasic.controller",
+    "StarcodeAbm5_4Controller": "starcode.abm5_4",
     "WoosaController": "woosa",
 }
 
 __all__ = [
+    "InstantComfortBase",
     "DoubleSleepController",
     'TempurCurveController',
     'QPlusAppController',
     'SertaMPRemoteController',
     'OmazzAdjustoIIIController',
     'ErgomotionAppController',
-    'Cluster018Controller',
+    'BaseRemoteController',
+    'RichmatClassicController',
     'Ergomotion4Controller',
     'RowControlController',
     'ErgoSlimController',
@@ -237,7 +332,6 @@ __all__ = [
     "BedJetPowerLayerController",
     "DewertOkinRfGatewayController",
     "DewertOkinUuidRfGatewayController",
-    "OkinCB24Controller",
     "OkinCB35Controller",
     "OkinCstController",
     "OkinDotController",
@@ -247,8 +341,11 @@ __all__ = [
     "OkinRfEcoBtController",
     "OkinUuidController",
     "Okin7ByteController",
+    "ComfortFurnitureController",
     "OreComfortBedController",
     "InnovaController",
+    "OkinMotionBedController",
+    "UltramaticController",
     "OkinNordicController",
     "LeggettGen2Controller",
     "LeggettLpLegacyController",
@@ -263,19 +360,24 @@ __all__ = [
     "JensenLinonController",
     "KaidiController",
     "KeesonController",
+    "OrmatekController",
+    "JalonBedController",
+    "SymphonyController",
     "LimossController",
     "LinakController",
+    "LinxController",
     "LogicdataController",
     "LogicdataAppController",
     "LogicdataAirPumpController",
+    "BedgearController",
     "MotoSleepController",
     "OctoController",
+    "OkimikiController",
     "RemacroController",
     "ReverieController",
     "ReverieNightstandController",
     "RichmatController",
     "RondureController",
-    "SBIController",
     "ScottLivingController",
     "SleepNumberController",
     "SleepNumberMcrController",
@@ -284,8 +386,10 @@ __all__ = [
     "SleepysBox25LegacyController",
     "StarElevateController",
     "SolaceController",
+    "SonicSleepController",
     "SvaneController",
     "SutaController",
+    "SmartComfortController",
     "TiMOTIONAhfController",
     "VibradormController",
     "VibradormAppController",

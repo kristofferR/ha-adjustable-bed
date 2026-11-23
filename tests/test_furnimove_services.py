@@ -5,11 +5,12 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from homeassistant.exceptions import ServiceValidationError
-from pytest_homeassistant_custom_component.common import MockConfigEntry
+from pytest_homeassistant.common import MockConfigEntry
 
 from custom_components.adjustable_bed.const import BED_TYPE_FURNIMOVE, DOMAIN, SIDE_BOTH
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
 from custom_components.adjustable_bed.services import async_register_services
+from tests.error_helpers import raises_key
 from tests.test_furnimove import GAP_NAME, WRITE, char, fast_controller, written
 
 
@@ -32,8 +33,12 @@ async def target(handset="82417", *, bed_type=BED_TYPE_FURNIMOVE, entry=None, re
 
 async def invoke(hass, targets, service, data):
     await async_register_services(hass)
-    with patch("custom_components.adjustable_bed.services._resolve_sided_targets",
-               return_value=([(value, SIDE_BOTH) for value in targets], [])):
+    with (
+        patch("custom_components.adjustable_bed.services._resolve_sided_targets",
+              return_value=([(value, SIDE_BOTH) for value in targets], [])) as resolve,
+        patch("custom_components.adjustable_bed.services._resolve_sided_targets",
+              new=resolve),
+    ):
         await hass.services.async_call(DOMAIN, service, {"device_id": "bed", **data}, blocking=True)
 
 
@@ -74,7 +79,7 @@ async def test_same_row_with_different_actions_rejected_before_any_target_moves(
             hass, SimpleNamespace(data={CONF_PAIR_ID: "furnimove-pair"}),
             {SIDE_LEFT: first, SIDE_RIGHT: second},
         )]
-    with pytest.raises(ServiceValidationError, match="different actions"):
+    with pytest.raises(ServiceValidationError, match="different things"):
         await invoke(hass, targets, "furnimove_action", {"row_index": 1, "duration": .1})
     first.async_execute_controller_command.assert_not_awaited()
     second.async_execute_controller_command.assert_not_awaited()
@@ -93,7 +98,7 @@ async def test_matching_actions_on_different_handsets_can_target_both_devices(ha
 async def test_missing_massage_program_on_later_target_rejected_before_any_write(hass):
     first, controller = await target("12234")
     second, other = await target("90167")
-    with pytest.raises(ServiceValidationError, match="absent"):
+    with pytest.raises(ServiceValidationError, match="no such massage program"):
         await invoke(hass, [first, second], "furnimove_massage_program", {"program": 1})
     first.async_execute_controller_command.assert_not_awaited()
     second.async_execute_controller_command.assert_not_awaited()
@@ -111,7 +116,7 @@ async def test_advisory_duration_accepts_ui_selection_without_wire_or_preemption
 
 
 async def test_advisory_duration_updates_disconnected_receiver_and_survives_reconnect(hass):
-    from custom_components.adjustable_bed.beds.furnimove import FurniMoveController
+    from custom_components.adjustable_bed.beds.furnimove.controller import FurniMoveController
     from custom_components.adjustable_bed.const import CONF_FURNIMOVE_REMOTE
     from tests.test_furnimove_connection import coordinator as make_coordinator
 
@@ -133,7 +138,7 @@ async def test_advisory_duration_updates_disconnected_receiver_and_survives_reco
 async def test_advisory_duration_validates_all_profiles_before_updating_any(hass):
     first, controller = await target("12234")
     second, _ = await target("00000")
-    with pytest.raises(ServiceValidationError, match="no supported local massage duration"):
+    with raises_key("feature_not_supported", ServiceValidationError):
         await invoke(hass, [first, second], "furnimove_massage_duration", {"minutes": 20})
     first.async_set_furnimove_massage_duration.assert_not_awaited()
     assert controller.persisted_app_state == {"duration_minutes": 15}
@@ -155,7 +160,7 @@ async def test_duplicate_or_current_rename_rejected_before_any_connection(hass):
     entry.add_to_hass(hass)
     coordinator, controller = await target(rename=True)
     for name in (" bed ", " TAKEN "):
-        with pytest.raises(ServiceValidationError, match="unique"):
+        with raises_key("name_not_unique", ServiceValidationError):
             await invoke(hass, [coordinator], "rename", {"name": name})
     coordinator.async_ensure_connected.assert_not_awaited()
     assert not written(controller)
@@ -163,7 +168,7 @@ async def test_duplicate_or_current_rename_rejected_before_any_connection(hass):
 
 async def test_unsupported_second_axis_rejected_before_any_wire_write(hass):
     coordinator, controller = await target("00000")
-    with pytest.raises(ServiceValidationError, match="axes"):
+    with pytest.raises(ServiceValidationError, match="two different motors"):
         await invoke(hass, [coordinator], "furnimove_move_simultaneously", {
             "first_motor": "back", "second_motor": "head",
             "first_direction": "up", "second_direction": "down", "duration_ms": 100,

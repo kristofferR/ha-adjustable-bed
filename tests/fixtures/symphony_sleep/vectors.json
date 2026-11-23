@@ -1,0 +1,1113 @@
+{
+  "builders": [
+    {
+      "id": "P1-001",
+      "protocol": "P1",
+      "action": "head up",
+      "inputs": {
+        "function": 1,
+        "subfunction": 1
+      },
+      "expected_bytes": "e6fe16010000000004"
+    },
+    {
+      "id": "P1-002",
+      "protocol": "P1",
+      "action": "head down",
+      "inputs": {
+        "function": 1,
+        "subfunction": 2
+      },
+      "expected_bytes": "e6fe16020000000003"
+    },
+    {
+      "id": "P1-003",
+      "protocol": "P1",
+      "action": "foot up",
+      "inputs": {
+        "function": 2,
+        "subfunction": 1
+      },
+      "expected_bytes": "e6fe16040000000001"
+    },
+    {
+      "id": "P1-004",
+      "protocol": "P1",
+      "action": "foot down",
+      "inputs": {
+        "function": 2,
+        "subfunction": 2
+      },
+      "expected_bytes": "e6fe160800000000fd"
+    },
+    {
+      "id": "P1-005",
+      "protocol": "P1",
+      "action": "head and foot combined up",
+      "inputs": {
+        "function": 3,
+        "subfunction": 1
+      },
+      "expected_bytes": "e6fe16050000000000"
+    },
+    {
+      "id": "P1-006",
+      "protocol": "P1",
+      "action": "head and foot combined down",
+      "inputs": {
+        "function": 3,
+        "subfunction": 2
+      },
+      "expected_bytes": "e6fe160a00000000fb"
+    },
+    {
+      "id": "P1-007",
+      "protocol": "P1",
+      "action": "neck tilt (600E) / lumbar (SS600) up",
+      "inputs": {
+        "function": 4,
+        "subfunction": 1
+      },
+      "expected_bytes": "e6fe161000000000f5"
+    },
+    {
+      "id": "P1-008",
+      "protocol": "P1",
+      "action": "neck tilt (600E) / lumbar (SS600) down",
+      "inputs": {
+        "function": 4,
+        "subfunction": 2
+      },
+      "expected_bytes": "e6fe162000000000e5"
+    },
+    {
+      "id": "P1-009",
+      "protocol": "P1",
+      "action": "elevation up",
+      "inputs": {
+        "function": 5,
+        "subfunction": 1
+      },
+      "expected_bytes": "e6fe164000000000c5"
+    },
+    {
+      "id": "P1-010",
+      "protocol": "P1",
+      "action": "elevation down",
+      "inputs": {
+        "function": 5,
+        "subfunction": 2
+      },
+      "expected_bytes": "e6fe16800000000085"
+    },
+    {
+      "id": "P1-011",
+      "protocol": "P1",
+      "action": "flat",
+      "inputs": {
+        "function": 7,
+        "subfunction": 6
+      },
+      "expected_bytes": "e6fe160000000800fd"
+    },
+    {
+      "id": "P1-012",
+      "protocol": "P1",
+      "action": "anti-snore",
+      "inputs": {
+        "function": 8,
+        "subfunction": 6
+      },
+      "expected_bytes": "e6fe16008000000085"
+    },
+    {
+      "id": "P1-013",
+      "protocol": "P1",
+      "action": "memory A recall",
+      "inputs": {
+        "function": 9,
+        "subfunction": 6
+      },
+      "expected_bytes": "e6fe160020000000e5"
+    },
+    {
+      "id": "P1-014",
+      "protocol": "P1",
+      "action": "memory B recall",
+      "inputs": {
+        "function": 12,
+        "subfunction": 6
+      },
+      "expected_bytes": "e6fe160040000000c5"
+    },
+    {
+      "id": "P1-015",
+      "protocol": "P1",
+      "action": "zero gravity",
+      "inputs": {
+        "function": 11,
+        "subfunction": 6
+      },
+      "expected_bytes": "e6fe160010000000f5"
+    },
+    {
+      "id": "P1-016",
+      "protocol": "P1",
+      "action": "memory A program by holding",
+      "inputs": {
+        "function": 9,
+        "subfunction": 6
+      },
+      "expected_bytes": "e6fe160020000000e5"
+    },
+    {
+      "id": "P1-017",
+      "protocol": "P1",
+      "action": "memory B program by holding",
+      "inputs": {
+        "function": 12,
+        "subfunction": 6
+      },
+      "expected_bytes": "e6fe160040000000c5"
+    },
+    {
+      "id": "P1-018",
+      "protocol": "P1",
+      "action": "global normal release / STOP",
+      "inputs": {
+        "function": 6,
+        "subfunction": 0
+      },
+      "expected_bytes": "e6fe16000000000005"
+    },
+    {
+      "id": "P1-019",
+      "protocol": "P1",
+      "action": "under-bed light toggle",
+      "inputs": {
+        "function": 14,
+        "subfunction": 3
+      },
+      "expected_bytes": "e6fe16000002000003"
+    },
+    {
+      "id": "P1-020",
+      "protocol": "P1",
+      "action": "massage wave increase / start",
+      "inputs": {
+        "function": 17,
+        "subfunction": 8
+      },
+      "expected_bytes": "e6fe160000001000f5"
+    },
+    {
+      "id": "P1-021",
+      "protocol": "P1",
+      "action": "massage wave decrease",
+      "inputs": {
+        "function": 17,
+        "subfunction": 9
+      },
+      "expected_bytes": "e6fe16000000040001"
+    },
+    {
+      "id": "P1-022",
+      "protocol": "P1",
+      "action": "massage intensity increase / start",
+      "inputs": {
+        "function": 20,
+        "subfunction": 8
+      },
+      "expected_bytes": "e6fe16000c000000f9"
+    },
+    {
+      "id": "P1-023",
+      "protocol": "P1",
+      "action": "massage intensity decrease",
+      "inputs": {
+        "function": 20,
+        "subfunction": 9
+      },
+      "expected_bytes": "e6fe16000080010084"
+    },
+    {
+      "id": "P1-024",
+      "protocol": "P1",
+      "action": "massage off",
+      "inputs": {
+        "function": 18,
+        "subfunction": 4
+      },
+      "expected_bytes": "e6fe16000000020003"
+    },
+    {
+      "id": "P1-025",
+      "protocol": "P1",
+      "action": "massage timer cycle",
+      "inputs": {
+        "function": 19,
+        "subfunction": 0
+      },
+      "expected_bytes": "e6fe16000200000003"
+    },
+    {
+      "id": "P1-026",
+      "protocol": "P1",
+      "action": "query alarm",
+      "inputs": {
+        "function": 13,
+        "subfunction": 0
+      },
+      "expected_bytes": "e28003009a"
+    },
+    {
+      "id": "P1-027",
+      "protocol": "P1",
+      "action": "disable bed alarm",
+      "inputs": {
+        "function": 13,
+        "subfunction": 4
+      },
+      "expected_bytes": "ed80030000000000000000000000008f"
+    },
+    {
+      "id": "P1-028",
+      "protocol": "P1",
+      "action": "enable bed alarm",
+      "inputs": {
+        "function": 13,
+        "subfunction": 3,
+        "params": [
+          6,
+          45,
+          -1,
+          17
+        ]
+      },
+      "expected_bytes": "ed8003062dff1100000000000000004c"
+    },
+    {
+      "id": "P1-029",
+      "protocol": "P1",
+      "action": "set bed real-time clock",
+      "inputs": {
+        "function": 55,
+        "subfunction": 0,
+        "params": [
+          126,
+          10,
+          12,
+          6,
+          45,
+          59
+        ]
+      },
+      "expected_bytes": "e780017e0a0c062d3b95"
+    },
+    {
+      "id": "P2-030",
+      "protocol": "P2",
+      "action": "head up",
+      "inputs": {
+        "function": 1,
+        "subfunction": 1
+      },
+      "expected_bytes": "05020000000100"
+    },
+    {
+      "id": "P2-031",
+      "protocol": "P2",
+      "action": "head down",
+      "inputs": {
+        "function": 1,
+        "subfunction": 2
+      },
+      "expected_bytes": "05020000000200"
+    },
+    {
+      "id": "P2-032",
+      "protocol": "P2",
+      "action": "foot up",
+      "inputs": {
+        "function": 2,
+        "subfunction": 1
+      },
+      "expected_bytes": "05020000000400"
+    },
+    {
+      "id": "P2-033",
+      "protocol": "P2",
+      "action": "foot down",
+      "inputs": {
+        "function": 2,
+        "subfunction": 2
+      },
+      "expected_bytes": "05020000000800"
+    },
+    {
+      "id": "P2-034",
+      "protocol": "P2",
+      "action": "head and foot combined up",
+      "inputs": {
+        "function": 3,
+        "subfunction": 1
+      },
+      "expected_bytes": "05020000000500"
+    },
+    {
+      "id": "P2-035",
+      "protocol": "P2",
+      "action": "head and foot combined down",
+      "inputs": {
+        "function": 3,
+        "subfunction": 2
+      },
+      "expected_bytes": "05020000000a00"
+    },
+    {
+      "id": "P2-036",
+      "protocol": "P2",
+      "action": "neck tilt (600E) / lumbar (SS600) up",
+      "inputs": {
+        "function": 4,
+        "subfunction": 1
+      },
+      "expected_bytes": "05020000001000"
+    },
+    {
+      "id": "P2-037",
+      "protocol": "P2",
+      "action": "neck tilt (600E) / lumbar (SS600) down",
+      "inputs": {
+        "function": 4,
+        "subfunction": 2
+      },
+      "expected_bytes": "05020000002000"
+    },
+    {
+      "id": "P2-038",
+      "protocol": "P2",
+      "action": "elevation up",
+      "inputs": {
+        "function": 5,
+        "subfunction": 1
+      },
+      "expected_bytes": "05020000004000"
+    },
+    {
+      "id": "P2-039",
+      "protocol": "P2",
+      "action": "elevation down",
+      "inputs": {
+        "function": 5,
+        "subfunction": 2
+      },
+      "expected_bytes": "05020000008000"
+    },
+    {
+      "id": "P2-040",
+      "protocol": "P2",
+      "action": "flat",
+      "inputs": {
+        "function": 7,
+        "subfunction": 6
+      },
+      "expected_bytes": "05020800000000"
+    },
+    {
+      "id": "P2-041",
+      "protocol": "P2",
+      "action": "anti-snore",
+      "inputs": {
+        "function": 8,
+        "subfunction": 6
+      },
+      "expected_bytes": "05020000800000"
+    },
+    {
+      "id": "P2-042",
+      "protocol": "P2",
+      "action": "memory A recall",
+      "inputs": {
+        "function": 9,
+        "subfunction": 6
+      },
+      "expected_bytes": "05020000200000"
+    },
+    {
+      "id": "P2-043",
+      "protocol": "P2",
+      "action": "memory B recall",
+      "inputs": {
+        "function": 12,
+        "subfunction": 6
+      },
+      "expected_bytes": "05020000400000"
+    },
+    {
+      "id": "P2-044",
+      "protocol": "P2",
+      "action": "zero gravity",
+      "inputs": {
+        "function": 11,
+        "subfunction": 6
+      },
+      "expected_bytes": "05020000100000"
+    },
+    {
+      "id": "P2-045",
+      "protocol": "P2",
+      "action": "memory A program by holding",
+      "inputs": {
+        "function": 9,
+        "subfunction": 6
+      },
+      "expected_bytes": "05020000200000"
+    },
+    {
+      "id": "P2-046",
+      "protocol": "P2",
+      "action": "memory B program by holding",
+      "inputs": {
+        "function": 12,
+        "subfunction": 6
+      },
+      "expected_bytes": "05020000400000"
+    },
+    {
+      "id": "P2-047",
+      "protocol": "P2",
+      "action": "global normal release / STOP",
+      "inputs": {
+        "function": 6,
+        "subfunction": 0
+      },
+      "expected_bytes": "05020000000000"
+    },
+    {
+      "id": "P2-048",
+      "protocol": "P2",
+      "action": "under-bed light toggle",
+      "inputs": {
+        "function": 14,
+        "subfunction": 3
+      },
+      "expected_bytes": "05020002000000"
+    },
+    {
+      "id": "P2-049",
+      "protocol": "P2",
+      "action": "massage wave increase / start",
+      "inputs": {
+        "function": 17,
+        "subfunction": 8
+      },
+      "expected_bytes": "05021000000000"
+    },
+    {
+      "id": "P2-050",
+      "protocol": "P2",
+      "action": "massage wave decrease",
+      "inputs": {
+        "function": 17,
+        "subfunction": 9
+      },
+      "expected_bytes": "05020400000000"
+    },
+    {
+      "id": "P2-051",
+      "protocol": "P2",
+      "action": "massage intensity increase / start",
+      "inputs": {
+        "function": 20,
+        "subfunction": 8
+      },
+      "expected_bytes": "050200000c0000"
+    },
+    {
+      "id": "P2-052",
+      "protocol": "P2",
+      "action": "massage intensity decrease",
+      "inputs": {
+        "function": 20,
+        "subfunction": 9
+      },
+      "expected_bytes": "05020180000000"
+    },
+    {
+      "id": "P2-053",
+      "protocol": "P2",
+      "action": "massage off",
+      "inputs": {
+        "function": 18,
+        "subfunction": 4
+      },
+      "expected_bytes": "05020200000000"
+    },
+    {
+      "id": "P2-054",
+      "protocol": "P2",
+      "action": "massage timer cycle",
+      "inputs": {
+        "function": 19,
+        "subfunction": 0
+      },
+      "expected_bytes": "05020000020000"
+    },
+    {
+      "id": "P2-055",
+      "protocol": "P2",
+      "action": "query massage timer",
+      "inputs": {
+        "function": 18,
+        "subfunction": 5
+      },
+      "expected_bytes": "00b0"
+    },
+    {
+      "id": "P2-056",
+      "protocol": "P2",
+      "action": "query alarm",
+      "inputs": {
+        "function": 13,
+        "subfunction": 0
+      },
+      "expected_bytes": "00c0"
+    },
+    {
+      "id": "P2-057",
+      "protocol": "P2",
+      "action": "disable bed alarm",
+      "inputs": {
+        "function": 13,
+        "subfunction": 4
+      },
+      "expected_bytes": "070500000000000000"
+    },
+    {
+      "id": "P2-058",
+      "protocol": "P2",
+      "action": "enable bed alarm",
+      "inputs": {
+        "function": 13,
+        "subfunction": 3,
+        "params": [
+          6,
+          45,
+          -1,
+          17
+        ]
+      },
+      "expected_bytes": "0705ff020645000100"
+    },
+    {
+      "id": "P2-059",
+      "protocol": "P2",
+      "action": "set bed real-time clock",
+      "inputs": {
+        "function": 55,
+        "subfunction": 0,
+        "now": "2026-11-12T06:45:59"
+      },
+      "expected_bytes": "070426111204064559"
+    },
+    {
+      "id": "P1-alarm-0-0",
+      "protocol": "P1",
+      "action": "alarm field boundary branch",
+      "inputs": {
+        "function": 13,
+        "subfunction": 3,
+        "params": [
+          0,
+          59,
+          -1,
+          0
+        ]
+      },
+      "expected_bytes": "ed8003003bff00000000000000000055"
+    },
+    {
+      "id": "P1-alarm-0-6",
+      "protocol": "P1",
+      "action": "alarm field boundary branch",
+      "inputs": {
+        "function": 13,
+        "subfunction": 3,
+        "params": [
+          6,
+          59,
+          -1,
+          0
+        ]
+      },
+      "expected_bytes": "ed8003063bff0000000000000000004f"
+    },
+    {
+      "id": "P1-alarm-0-23",
+      "protocol": "P1",
+      "action": "alarm field boundary branch",
+      "inputs": {
+        "function": 13,
+        "subfunction": 3,
+        "params": [
+          23,
+          59,
+          -1,
+          0
+        ]
+      },
+      "expected_bytes": "ed8003173bff0000000000000000003e"
+    },
+    {
+      "id": "P1-alarm-17-0",
+      "protocol": "P1",
+      "action": "alarm field boundary branch",
+      "inputs": {
+        "function": 13,
+        "subfunction": 3,
+        "params": [
+          0,
+          59,
+          -1,
+          17
+        ]
+      },
+      "expected_bytes": "ed8003003bff11000000000000000044"
+    },
+    {
+      "id": "P1-alarm-17-6",
+      "protocol": "P1",
+      "action": "alarm field boundary branch",
+      "inputs": {
+        "function": 13,
+        "subfunction": 3,
+        "params": [
+          6,
+          59,
+          -1,
+          17
+        ]
+      },
+      "expected_bytes": "ed8003063bff1100000000000000003e"
+    },
+    {
+      "id": "P1-alarm-17-23",
+      "protocol": "P1",
+      "action": "alarm field boundary branch",
+      "inputs": {
+        "function": 13,
+        "subfunction": 3,
+        "params": [
+          23,
+          59,
+          -1,
+          17
+        ]
+      },
+      "expected_bytes": "ed8003173bff1100000000000000002d"
+    },
+    {
+      "id": "P1-alarm-19-0",
+      "protocol": "P1",
+      "action": "alarm field boundary branch",
+      "inputs": {
+        "function": 13,
+        "subfunction": 3,
+        "params": [
+          0,
+          59,
+          -1,
+          19
+        ]
+      },
+      "expected_bytes": "ed8003003bff13000000000000000042"
+    },
+    {
+      "id": "P1-alarm-19-6",
+      "protocol": "P1",
+      "action": "alarm field boundary branch",
+      "inputs": {
+        "function": 13,
+        "subfunction": 3,
+        "params": [
+          6,
+          59,
+          -1,
+          19
+        ]
+      },
+      "expected_bytes": "ed8003063bff1300000000000000003c"
+    },
+    {
+      "id": "P1-alarm-19-23",
+      "protocol": "P1",
+      "action": "alarm field boundary branch",
+      "inputs": {
+        "function": 13,
+        "subfunction": 3,
+        "params": [
+          23,
+          59,
+          -1,
+          19
+        ]
+      },
+      "expected_bytes": "ed8003173bff1300000000000000002b"
+    },
+    {
+      "id": "P2-alarm-0-0",
+      "protocol": "P2",
+      "action": "alarm field boundary branch",
+      "inputs": {
+        "function": 13,
+        "subfunction": 3,
+        "params": [
+          0,
+          59,
+          -1,
+          0
+        ]
+      },
+      "expected_bytes": "0705ff000059000100"
+    },
+    {
+      "id": "P2-alarm-0-6",
+      "protocol": "P2",
+      "action": "alarm field boundary branch",
+      "inputs": {
+        "function": 13,
+        "subfunction": 3,
+        "params": [
+          6,
+          59,
+          -1,
+          0
+        ]
+      },
+      "expected_bytes": "0705ff000659000100"
+    },
+    {
+      "id": "P2-alarm-0-23",
+      "protocol": "P2",
+      "action": "alarm field boundary branch",
+      "inputs": {
+        "function": 13,
+        "subfunction": 3,
+        "params": [
+          23,
+          59,
+          -1,
+          0
+        ]
+      },
+      "expected_bytes": "0705ff002359000100"
+    },
+    {
+      "id": "P2-alarm-17-0",
+      "protocol": "P2",
+      "action": "alarm field boundary branch",
+      "inputs": {
+        "function": 13,
+        "subfunction": 3,
+        "params": [
+          0,
+          59,
+          -1,
+          17
+        ]
+      },
+      "expected_bytes": "0705ff020059000100"
+    },
+    {
+      "id": "P2-alarm-17-6",
+      "protocol": "P2",
+      "action": "alarm field boundary branch",
+      "inputs": {
+        "function": 13,
+        "subfunction": 3,
+        "params": [
+          6,
+          59,
+          -1,
+          17
+        ]
+      },
+      "expected_bytes": "0705ff020659000100"
+    },
+    {
+      "id": "P2-alarm-17-23",
+      "protocol": "P2",
+      "action": "alarm field boundary branch",
+      "inputs": {
+        "function": 13,
+        "subfunction": 3,
+        "params": [
+          23,
+          59,
+          -1,
+          17
+        ]
+      },
+      "expected_bytes": "0705ff022359000100"
+    },
+    {
+      "id": "P2-alarm-19-0",
+      "protocol": "P2",
+      "action": "alarm field boundary branch",
+      "inputs": {
+        "function": 13,
+        "subfunction": 3,
+        "params": [
+          0,
+          59,
+          -1,
+          19
+        ]
+      },
+      "expected_bytes": "0705ff030059000100"
+    },
+    {
+      "id": "P2-alarm-19-6",
+      "protocol": "P2",
+      "action": "alarm field boundary branch",
+      "inputs": {
+        "function": 13,
+        "subfunction": 3,
+        "params": [
+          6,
+          59,
+          -1,
+          19
+        ]
+      },
+      "expected_bytes": "0705ff030659000100"
+    },
+    {
+      "id": "P2-alarm-19-23",
+      "protocol": "P2",
+      "action": "alarm field boundary branch",
+      "inputs": {
+        "function": 13,
+        "subfunction": 3,
+        "params": [
+          23,
+          59,
+          -1,
+          19
+        ]
+      },
+      "expected_bytes": "0705ff032359000100"
+    }
+  ],
+  "parsers": [
+    {
+      "id": "P1-e7-timer",
+      "provenance": "crafted input from parser predicates, not a captured notification",
+      "steps": [
+        {
+          "box": 1,
+          "input_hex": "e7fe0000000000000200",
+          "expected": {
+            "massage_minutes": 20
+          }
+        }
+      ]
+    },
+    {
+      "id": "P1-ed-off",
+      "steps": [
+        {
+          "box": 1,
+          "input_hex": "edfe000000000000000000000000ff00",
+          "expected": {
+            "massage_minutes": 0
+          }
+        }
+      ]
+    },
+    {
+      "id": "P1-f4-complete",
+      "steps": [
+        {
+          "box": 1,
+          "input_hex": "f4fe00000000000000000000000000000000000300",
+          "expected": {
+            "massage_minutes": 30
+          }
+        }
+      ]
+    },
+    {
+      "id": "P1-f4-fragments",
+      "steps": [
+        {
+          "box": 1,
+          "input_hex": "f4fe0000000000000000000000000000",
+          "expected": null
+        },
+        {
+          "box": 1,
+          "input_hex": "0000000200",
+          "expected": {
+            "massage_minutes": 20
+          }
+        }
+      ]
+    },
+    {
+      "id": "P1-alarm-MB",
+      "steps": [
+        {
+          "box": 1,
+          "input_hex": "ed8003062dff13000000000000000000",
+          "expected": {
+            "alarm_enabled": true,
+            "hour": 6,
+            "minute": 45,
+            "wake": "MB"
+          }
+        }
+      ]
+    },
+    {
+      "id": "P1-alarm-off",
+      "steps": [
+        {
+          "box": 1,
+          "input_hex": "ed800300000000000000000000000000",
+          "expected": {
+            "alarm_enabled": false,
+            "hour": 0,
+            "minute": 0,
+            "wake": "NONE"
+          }
+        }
+      ]
+    },
+    {
+      "id": "P2-timer-thresholds",
+      "steps": [
+        {
+          "box": 2,
+          "input_hex": "000b000000",
+          "expected": {
+            "massage_minutes": 0
+          }
+        },
+        {
+          "box": 2,
+          "input_hex": "000b000001",
+          "expected": {
+            "massage_minutes": 10
+          }
+        },
+        {
+          "box": 2,
+          "input_hex": "000b000002",
+          "expected": {
+            "massage_minutes": 10
+          }
+        },
+        {
+          "box": 2,
+          "input_hex": "000b000003",
+          "expected": {
+            "massage_minutes": 20
+          }
+        },
+        {
+          "box": 2,
+          "input_hex": "000b000004",
+          "expected": {
+            "massage_minutes": 20
+          }
+        },
+        {
+          "box": 2,
+          "input_hex": "000b000005",
+          "expected": {
+            "massage_minutes": 30
+          }
+        },
+        {
+          "box": 2,
+          "input_hex": "000b0000ff",
+          "expected": {
+            "massage_minutes": 0
+          }
+        }
+      ]
+    },
+    {
+      "id": "P2-alarm-MA",
+      "steps": [
+        {
+          "box": 2,
+          "input_hex": "000c0000000206450001",
+          "expected": {
+            "alarm_enabled": true,
+            "hour": 6,
+            "minute": 45,
+            "wake": "MA"
+          }
+        }
+      ]
+    },
+    {
+      "id": "P2-alarm-MB",
+      "steps": [
+        {
+          "box": 2,
+          "input_hex": "000c0000000323590000",
+          "expected": {
+            "alarm_enabled": false,
+            "hour": 23,
+            "minute": 59,
+            "wake": "MB"
+          }
+        }
+      ]
+    },
+    {
+      "id": "fallback-no-parser",
+      "steps": [
+        {
+          "box": -1,
+          "input_hex": "e7fe0000000000000200",
+          "expected": null
+        }
+      ]
+    },
+    {
+      "id": "P1-short-notification",
+      "steps": [
+        {
+          "box": 1,
+          "input_hex": "",
+          "expected_error": "IndexError"
+        }
+      ]
+    },
+    {
+      "id": "P2-short-alarm-notification",
+      "steps": [
+        {
+          "box": 2,
+          "input_hex": "000c000000",
+          "expected_error": "IndexError"
+        }
+      ]
+    },
+    {
+      "id": "P2-invalid-bcd",
+      "steps": [
+        {
+          "box": 2,
+          "input_hex": "000c0000000206fa0001",
+          "expected_error": "ValueError"
+        }
+      ]
+    }
+  ]
+}

@@ -14,9 +14,11 @@ Protocol reverse-engineered from the FurniMove app (com.okin.okinsmartcomfort):
   in the app). The earlier analysis this controller came from also recorded an
   ASCII ``affirm`` write there; the accepted 2.2.0 audit has no such write, and
   it stays here only so released entries keep their behavior.
-- Commands are CB24-style 7-byte frames ``[0x05, 0x02, <keycode BE>, 0x00]``
+- Commands are 40-bit Okin N-frames ``[0x05, 0x02, <keycode BE>, 0x00]``
   (``HexValueConverter.toByteArray`` with ``isDOTProtocol=true``) instead of
-  the standard Okin 6-byte ``[0x04, 0x02, <keycode BE>]``.
+  the standard Okin 6-byte ``[0x04, 0x02, <keycode BE>]``. Memory keys are
+  tap-to-recall, hold-to-save, so the ``OKIN_DOT`` profile recalls them with
+  one press and a STOP: streaming the Okimat recall would overwrite them.
 - Held buttons are re-sent ~every 100ms; release sends keycode 0
   (``DisobeyStandbyTime``), which is the same stop the base controller sends.
 
@@ -33,10 +35,13 @@ from typing import TYPE_CHECKING
 
 from bleak.exc import BleakError
 
+from ..codec import okin_nframe as codec
+from ..command_scheduler import note_write_not_counted
 from ..const import NORDIC_UART_WRITE_CHAR_UUID, VARIANT_AUTO
-from .okin_protocol import int_to_bytes
-from .okin_uuid import OKIN_UUID_REMOTES, OkinUuidController
-from .okin_uuid_remotes import DEFAULT_OKIN_DOT_REMOTE
+from ..profiles.okin_nframe import OKIN_DOT
+from .builder import BuildContext
+from .okin_uuid.controller import OKIN_UUID_REMOTES, OkinUuidController
+from .okin_uuid.remotes import DEFAULT_OKIN_DOT_REMOTE
 
 if TYPE_CHECKING:
     from ..coordinator import AdjustableBedCoordinator
@@ -57,6 +62,7 @@ class OkinDotController(OkinUuidController):
     """
 
     _write_with_response = False
+    _route_profile = OKIN_DOT
 
     def __init__(self, coordinator: AdjustableBedCoordinator, variant: str = VARIANT_AUTO) -> None:
         """Initialize the DOT controller with a DOT remote variant.
@@ -88,20 +94,9 @@ class OkinDotController(OkinUuidController):
         """Return the Nordic UART write characteristic used by DOT boxes."""
         return NORDIC_UART_WRITE_CHAR_UUID
 
-    @property
-    def stale_motor_entity_keys(self) -> frozenset[str]:
-        """Clean up motor covers when the variant changes; no stair legacy here.
-
-        DOT boxes were never misdetected as the RF ECO BT stair profile, but
-        switching between DOT variants with different handset layouts (e.g.
-        RF34 Back/Legs -> RF1058 Head/Feet) should still remove the old axes
-        (active keys are skipped by the cleanup).
-        """
-        return frozenset({"back", "legs", "head", "feet"})
-
     def _build_command(self, command_value: int) -> bytes:
         """Build a DOT frame: [0x05, 0x02, <4-byte keycode big-endian>, 0x00]."""
-        return bytes([0x05, 0x02, *int_to_bytes(command_value), 0x00])
+        return codec.frame40(command_value)
 
     async def _ensure_affirmed(self) -> None:
         """Send the FurniMove "affirm" handshake once per connection."""
@@ -111,11 +106,13 @@ class OkinDotController(OkinUuidController):
         # Mark first so a failing handshake doesn't retry on every command;
         # a reconnect produces a new client object and a fresh attempt.
         self._affirmed_client = client
+        self._record_command_trace(NORDIC_UART_WRITE_CHAR_UUID, _AFFIRM_HANDSHAKE, response=False)
         try:
             async with self._ble_lock:
                 await client.write_gatt_char(
                     NORDIC_UART_WRITE_CHAR_UUID, _AFFIRM_HANDSHAKE, response=False
                 )
+                note_write_not_counted()
             _LOGGER.debug("Sent DOT affirm handshake to %s", self._coordinator.address)
         except BleakError:
             _LOGGER.debug("DOT affirm handshake failed", exc_info=True)
@@ -136,38 +133,6 @@ class OkinDotController(OkinUuidController):
             cancel_event=cancel_event,
         )
 
-    async def preset_memory(self, memory_num: int) -> None:
-        """Recall a memory position with a short press.
-
-        DOT memory buttons are tap-to-recall / hold-to-save: on RF34 97544 the
-        recall and save keycodes are even identical (``0x10000``), only the
-        press duration distinguishes them. Streaming the Okimat-style 100x300ms
-        recall would therefore overwrite the stored position, so send the
-        keycode once and release with STOP like the handset does.
-        """
-        commands = {
-            1: self._remote.memory_1,
-            2: self._remote.memory_2,
-            3: self._remote.memory_3,
-            4: self._remote.memory_4,
-        }
-        command = commands.get(memory_num)
-        if command is None:
-            _LOGGER.warning("Memory %d not available on remote %s", memory_num, self._variant)
-            return
-        try:
-            await self.write_command(self._build_command(command))
-        finally:
-            try:
-                await self.write_command(
-                    self._build_command(0),
-                    cancel_event=asyncio.Event(),
-                )
-            except (TimeoutError, BleakError):
-                _LOGGER.debug(
-                    "Failed to send STOP command during preset_memory cleanup", exc_info=True
-                )
-
     # DOT boxes expose no known position-feedback characteristic; the Okimat
     # FFE4 notify/read paths do not exist on them.
     async def start_notify(
@@ -180,5 +145,12 @@ class OkinDotController(OkinUuidController):
     async def stop_notify(self) -> None:
         """Nothing to stop; notifications are never started."""
 
-    async def read_positions(self, motor_count: int = 2) -> None:  # noqa: ARG002
+    async def read_positions(self, motor_count: int = 2) -> None:
         """Position reads are not available on DOT boxes."""
+
+
+async def build_controller(ctx: BuildContext) -> OkinDotController:
+    """Build the controller for the configured remote variant."""
+    variant = ctx.variant or VARIANT_AUTO
+    _LOGGER.debug("Using Okin DOT variant: %s", variant)
+    return OkinDotController(ctx.coordinator, variant=variant)

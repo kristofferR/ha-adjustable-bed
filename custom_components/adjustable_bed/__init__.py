@@ -4,87 +4,108 @@ from __future__ import annotations
 
 import asyncio
 import logging
-import re
 from collections.abc import Callable, Mapping
-from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, Final
+from typing import Any, Final
 
 from homeassistant.components import bluetooth
 from homeassistant.config_entries import (
     SOURCE_BLUETOOTH,
     ConfigEntry,
-    ConfigEntryState,
 )
 from homeassistant.const import CONF_ADDRESS, Platform
-from homeassistant.core import HomeAssistant
+from homeassistant.core import HomeAssistant, callback
 from homeassistant.exceptions import ConfigEntryNotReady
 from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers import device_registry as dr
+from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.typing import ConfigType
 
-from .beds.remacro_protocol import add_remacro_model
+# Imported first: it stops on a Home Assistant too old for the imports below.
+from . import minimum_home_assistant  # noqa: F401
+from .bed_traits import bed_type_has_position_feedback, default_connection_mode
+from .beds.furnimove.repair import async_refresh_furnimove_layout_issues
+from .beds.remacro.discovery import (
+    async_refresh_remacro_issues,
+    async_watch_remacro_fallback,
+    cache_paired_remacro_models,
+)
+from .beds.reverie.pairlink_local_setup import (
+    PAIRLINK_LOCAL_PROFILE_LEASES_KEY,
+    PairlinkLocalLeaseTransfer,
+    async_preflight_paired_pairlink_local_roles,
+    async_restore_pairlink_local_transfers,
+    async_start_paired_pairlink_local_child,
+    release_pairlink_local_profile_lease,
+    release_pairlink_local_reservations,
+)
+from .beta_feedback import async_setup_beta_feedback, async_setup_upgrade_notice
 from .combine_suggestion import async_load_dismissal
 from .const import (
-    BED_TYPE_BEDTECH,
-    BED_TYPE_DIAGNOSTIC,
+    BED_TYPE_COMFORT_ENHANCEMENTS,
     BED_TYPE_FURNIMOVE,
-    BED_TYPE_KAIDI,
+    BED_TYPE_KEESON,
+    BED_TYPE_LEGGETT_GEN2,
+    BED_TYPE_LEGGETT_OKIN,
+    BED_TYPE_LEGGETT_PLATT,
+    BED_TYPE_LEGGETT_WILINKE,
     BED_TYPE_OCTO,
-    BED_TYPE_REMACRO,
-    BED_TYPE_REVERIE_PAIRLINK,
-    BED_TYPE_RICHMAT,
+    BED_TYPE_QPLUS_APP,
+    BED_TYPE_RICHMAT_CLASSIC_APPS,
+    BED_TYPE_SERTA_MP_REMOTE,
     BED_TYPE_SLEEP_NUMBER,
+    BED_TYPE_SLEEPYS_ELITE_APP,
+    BED_TYPE_SMARTBED,
     BED_TYPE_VIBRADORM,
-    BEDTECH_MANUFACTURER_ID,
-    BEDTECH_SERVICE_UUID,
+    CB24_BED_SELECTION_A,
+    CB24_BED_SELECTION_B,
+    CB24_BED_SELECTION_DEFAULT,
     CONF_BED_TYPE,
     CONF_BLE_BOND_ESTABLISHED,
+    CONF_CB24_BED_SELECTION,
+    CONF_CONNECTION_MODE,
     CONF_DISABLE_ANGLE_SENSING,
+    CONF_DISABLE_DISCOVERY,
     CONF_HAS_LIGHT,
     CONF_HAS_MASSAGE,
-    CONF_KAIDI_ADV_TYPE,
-    CONF_KAIDI_PRODUCT_ID,
-    CONF_KAIDI_RESOLVED_VARIANT,
-    CONF_KAIDI_ROOM_ID,
-    CONF_KAIDI_SOFA_ACU_NO,
-    CONF_KAIDI_TARGET_VADDR,
-    CONF_KAIDI_VARIANT_SOURCE,
+    CONF_IDLE_DISCONNECT_SECONDS,
     CONF_MOTOR_COUNT,
-    CONF_OCTO_PIN,
+    CONF_MOTOR_PULSE_USER_SET,
+    CONF_OCTO_MOTOR_COUNT_OVERRIDE,
     CONF_PAIR_CHILDREN,
     CONF_PAIR_ID,
     CONF_PAIR_MODE,
-    CONF_PAIRLINK_HOST_SOURCE,
-    CONF_PAIRLINK_ROLE,
+    CONF_PRODUCT_TYPE,
+    CONF_PROFILE_MIGRATION,
     CONF_PROFILE_REVIEW_PENDING,
     CONF_PROTOCOL_VARIANT,
-    CONF_RICHMAT_REMOTE,
+    CONF_RICHMAT_CLASSIC_THIRD_SERVICE,
     CONF_SIDE,
+    CONNECTION_MODE_ALWAYS,
+    CONNECTION_MODE_IDLE,
+    CONNECTION_MODE_RELEASE,
+    DEFAULT_MOTOR_COUNT,
     DOMAIN,
+    IDLE_DISCONNECT_KEEP_CONNECTED,
     KEESON_VARIANT_SINO,
-    OCTO_VARIANT_STAR2,
     PAIR_CONNECTION_MODE_SEQUENTIAL,
     PAIR_MODE_SINGLE_ADDRESS,
     PAIR_SIDES,
-    PAIRLINK_ROLE_PERIPHERAL,
+    RETIRED_BED_TYPES,
     RUNTIME_BOND_KEYS,
     VARIANT_AUTO,
     connection_gated_by_bond,
     requires_pairing,
     supports_runtime_authentication_recovery,
 )
-from .controller_factory import create_controller
-from .coordinator import (
-    AdjustableBedCoordinator,
-    ChildEntryView,
-    PairingOnlyConnectionActiveError,
-)
+from .coordinator import AdjustableBedCoordinator, ChildEntryView
+from .coordinator_connection import PairingOnlyConnectionActiveError
+from .download import SupportBundleDownloadView
+from .entity_retypes import async_carry_over_retyped_entities
 from .entity_runtime import EntityRuntime
-from .furnimove_repair import (
-    async_clear_furnimove_layout_issues,
-    async_refresh_furnimove_layout_issues,
-)
-from .kaidi_metadata import add_kaidi_entry_metadata, resolve_kaidi_advertisement
+from .entity_sweep import async_sweep_after_setup
+from .entry_hooks import ENTRY_PREPARE_STEPS, entry_hooks
+from .errors import not_ready, setup_stopped
+from .frontend import async_register_frontend
 from .paired_coordinator import PairedBedCoordinator, SingleAddressPairedCoordinator
 from .paired_devices import async_register_children
 from .paired_registry import (
@@ -104,26 +125,33 @@ from .pairing import (
     is_paired,
     iter_children,
     pair_member_addresses,
+    side_owned_profile_fields,
     with_updated_child,
 )
+from .position_estimate import (
+    async_remove_position_estimates,
+    async_setup_position_estimates,
+    async_unload_position_estimates,
+)
+from .profile_id import entry_profile_id, migrate_v5_data, profile_route, with_profile_ids
 from .profile_recommendations import async_watch_profile_recommendations
 from .profile_review import (
-    async_clear_profile_review_issue,
     async_refresh_profile_review_issue,
     profile_review_mark,
+    v5_profile_review_mark,
 )
-from .remacro_discovery import (
-    async_watch_remacro_fallback,
-    clear_remacro_model_issues,
-    remacro_entry_problem,
-    remacro_manufacturer_data,
-    update_remacro_model_issue,
+from .removed_actions import async_report_removed_calls
+from .removed_entities import (
+    async_forget_removed_entities,
+    async_report_removed_entities,
+    async_setup_removed_entities,
 )
 from .repairs import (
     async_refresh_combine_beds_issue,
     async_setup_combine_beds_issue,
     async_track_combine_beds_issue,
 )
+from .runtime_data import domain_registry, loaded_runtime
 from .services import (
     ATTR_ACTION,
     ATTR_ACTIONS,
@@ -133,18 +161,13 @@ from .services import (
     ATTR_FIRST_DIRECTION,
     ATTR_FIRST_MOTOR,
     ATTR_INCLUDE_LOGS,
-    ATTR_LIFETIME,
     ATTR_MOTOR,
     ATTR_NAME,
-    ATTR_PAUSE,
     ATTR_POSITION,
     ATTR_POSITIONS,
     ATTR_PRESET,
-    ATTR_RECURRENCE_COUNT,
-    ATTR_RECURRENCE_MINUTES,
     ATTR_SECOND_DIRECTION,
     ATTR_SECOND_MOTOR,
-    ATTR_SECONDS,
     ATTR_SIDE,
     ATTR_TARGET_ADDRESS,
     DEFAULT_CAPTURE_DURATION,
@@ -154,14 +177,9 @@ from .services import (
     MIN_TIMED_MOVE_DURATION_MS,
     SERVICE_GENERATE_SUPPORT_BUNDLE,
     SERVICE_GOTO_PRESET,
-    SERVICE_LINAK_MOVE_SIMULTANEOUS,
-    SERVICE_LINAK_RENAME,
-    SERVICE_LINAK_SET_ALARM,
     SERVICE_SAVE_PRESET,
     SERVICE_SET_POSITION,
     SERVICE_SET_POSITIONS,
-    SERVICE_SOLACE_AUDIO,
-    SERVICE_SOLACE_SET_ALARM,
     SERVICE_STOP_ALL,
     SERVICE_TIMED_MOVE,
     TIMED_MOVE_MOTOR_OPTIONS,
@@ -169,7 +187,6 @@ from .services import (
 )
 from .unsupported import (
     async_clear_unsupported_device_issues,
-    clear_octo_pin_required_issue,
     create_pairing_required_issue,
 )
 
@@ -184,18 +201,13 @@ __all__ = [
     "ATTR_FIRST_MOTOR",
     "ATTR_ACTION",
     "ATTR_ACTIONS",
-    "ATTR_LIFETIME",
     "ATTR_MOTOR",
     "ATTR_NAME",
-    "ATTR_PAUSE",
     "ATTR_POSITION",
     "ATTR_POSITIONS",
     "ATTR_PRESET",
-    "ATTR_RECURRENCE_COUNT",
-    "ATTR_RECURRENCE_MINUTES",
     "ATTR_SECOND_DIRECTION",
     "ATTR_SECOND_MOTOR",
-    "ATTR_SECONDS",
     "ATTR_SIDE",
     "ATTR_TARGET_ADDRESS",
     "DEFAULT_CAPTURE_DURATION",
@@ -205,11 +217,6 @@ __all__ = [
     "MIN_TIMED_MOVE_DURATION_MS",
     "SERVICE_GENERATE_SUPPORT_BUNDLE",
     "SERVICE_GOTO_PRESET",
-    "SERVICE_LINAK_MOVE_SIMULTANEOUS",
-    "SERVICE_LINAK_RENAME",
-    "SERVICE_LINAK_SET_ALARM",
-    "SERVICE_SOLACE_AUDIO",
-    "SERVICE_SOLACE_SET_ALARM",
     "SERVICE_SAVE_PRESET",
     "SERVICE_SET_POSITION",
     "SERVICE_SET_POSITIONS",
@@ -232,21 +239,9 @@ SETUP_CLEANUP_TIMEOUT = 5.0
 
 _LOGGER = logging.getLogger(__name__)
 
+# Standalone and paired beds (both single- and separate-address pairs) set up
+# the same platforms; a pair builds per-side entities on native child devices.
 PLATFORMS: list[Platform] = [
-    Platform.BINARY_SENSOR,
-    Platform.BUTTON,
-    Platform.CLIMATE,
-    Platform.COVER,
-    Platform.LIGHT,
-    Platform.NUMBER,
-    Platform.SELECT,
-    Platform.SENSOR,
-    Platform.SWITCH,
-]
-
-# Platforms a paired bed (Dual Bed 4.0) sets up. Each builds per-side entities
-# against native child devices for both single- and separate-address pairs.
-PAIRED_PLATFORMS: list[Platform] = [
     Platform.BINARY_SENSOR,
     Platform.BUTTON,
     Platform.CLIMATE,
@@ -269,15 +264,14 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
     await async_load_dismissal(hass)
     async_setup_combine_beds_issue(hass)
 
-    from .download import SupportBundleDownloadView
-
     hass.http.register_view(SupportBundleDownloadView)
-
-    from .frontend import async_register_frontend
-
     await async_register_frontend(hass)
 
     await async_register_services(hass)
+    await async_setup_beta_feedback(hass)
+    await async_setup_upgrade_notice(hass)
+    async_report_removed_calls(hass)
+    await async_setup_removed_entities(hass)
     return True
 
 
@@ -315,8 +309,1358 @@ def migrate_v4_2_data(data: Mapping[str, Any]) -> dict[str, Any]:
     return migrated
 
 
-async def async_migrate_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
-    """Migrate config entries to newer schema versions."""
+# What 4.x ran with when an entry had not saved the setting. v5 falls back to
+# each bed type's own default instead, so a 4.x entry saves 4.x's value first.
+_V4_RUNTIME_DEFAULTS: Final[dict[str, bool]] = {
+    "disconnect_after_command": False,
+    CONF_DISABLE_ANGLE_SENSING: True,
+}
+
+
+def migrate_v4_runtime_defaults(data: Mapping[str, Any]) -> dict[str, Any]:
+    """Return 4.x entry data with the values 4.x ran with saved where it had none.
+
+    4.x read both from the data of the bed that ran: a standalone entry, a
+    one-address pair, or a two-address side over its pair's data (options that
+    reached the side still win). A two-address pair's own data held neither,
+    so only its sides are filled. An original entry a pair restores on unpair is
+    filled on its own. Diagnostic entries from 1.4.6 to 2.5.3, for example,
+    saved no handoff.
+    """
+    migrated = dict(data)
+    children = migrated.get(CONF_PAIR_CHILDREN)
+    separate = isinstance(children, list) and data.get(CONF_PAIR_MODE) != PAIR_MODE_SINGLE_ADDRESS
+    if not separate:
+        for key, value in _V4_RUNTIME_DEFAULTS.items():
+            migrated.setdefault(key, value)
+    if isinstance(children, list):
+        migrated[CONF_PAIR_CHILDREN] = [
+            _v4_side_defaults(child, data, fill=separate) if isinstance(child, Mapping) else child
+            for child in children
+        ]
+    return migrated
+
+
+def _v4_side_defaults(
+    child: Mapping[str, Any], pair: Mapping[str, Any], *, fill: bool
+) -> dict[str, Any]:
+    side = dict(child)
+    if fill:
+        for key, value in _V4_RUNTIME_DEFAULTS.items():
+            if key not in pair:
+                side.setdefault(key, value)
+    if isinstance(origin := side.get(KEY_ORIGIN_DATA), Mapping):
+        side[KEY_ORIGIN_DATA] = migrate_v4_runtime_defaults(origin)
+    return side
+
+
+def _with_migration_record(
+    data: dict[str, Any], *, from_version: int, from_minor_version: int, **fields: Any
+) -> dict[str, Any]:
+    """Add ``fields`` to the migration record, starting one if the entry has none."""
+    record = data.get(CONF_PROFILE_MIGRATION)
+    data[CONF_PROFILE_MIGRATION] = {
+        **(
+            record
+            if isinstance(record, Mapping)
+            else {"from_version": from_version, "from_minor_version": from_minor_version}
+        ),
+        **fields,
+    }
+    return data
+
+
+# Keys no code reads on v5.
+# Schema 5.2 drops them wherever an entry stores configuration.
+V5_2_OBSOLETE_KEYS: Final = frozenset(
+    {
+        # Integration-wide since it was added: its own Store is the only reader,
+        # so a per-entry copy is never read.
+        CONF_DISABLE_DISCOVERY,
+        # Written on every pair since schema 4 and never read: the entry's
+        # schema version is what versions pair data.
+        "pair_schema_version",
+    }
+)
+
+
+def _drop_obsolete_keys(
+    data: Mapping[str, Any], location: str, dropped: dict[str, list[str]]
+) -> dict[str, Any]:
+    """Return ``data`` without obsolete keys, recording what each location lost.
+
+    Paired sides and the original entries they restore on unpair are cleaned
+    too, so a later split never brings an obsolete key back.
+    """
+    kept = {key: value for key, value in data.items() if key not in V5_2_OBSOLETE_KEYS}
+    if removed := sorted(V5_2_OBSOLETE_KEYS.intersection(data)):
+        dropped[location] = removed
+    for key in (KEY_ORIGIN_DATA, KEY_ORIGIN_OPTIONS):
+        if isinstance(nested := kept.get(key), Mapping):
+            kept[key] = _drop_obsolete_keys(nested, f"{location}.{key}", dropped)
+    if isinstance(children := kept.get(CONF_PAIR_CHILDREN), list):
+        kept[CONF_PAIR_CHILDREN] = [
+            _drop_obsolete_keys(child, f"{location}.{child.get(CONF_SIDE, index)}", dropped)
+            if isinstance(child, Mapping)
+            else child
+            for index, child in enumerate(children)
+        ]
+    return kept
+
+
+def migrate_v5_2_entry(
+    data: Mapping[str, Any],
+    options: Mapping[str, Any],
+    *,
+    from_version: int,
+    from_minor_version: int,
+) -> tuple[dict[str, Any], dict[str, Any]]:
+    """Return entry data and options without the obsolete keys.
+
+    The migration record lists each dropped key by where it was stored
+    (``data``, ``options``, ``data.left``, ``data.left.origin_options`` and so
+    on). An entry without a record yet gets one from the schema it came from.
+    Nothing to drop leaves both unchanged.
+    """
+    dropped: dict[str, list[str]] = {}
+    new_data = _drop_obsolete_keys(data, "data", dropped)
+    new_options = _drop_obsolete_keys(options, "options", dropped)
+    if dropped:
+        _with_migration_record(
+            new_data,
+            from_version=from_version,
+            from_minor_version=from_minor_version,
+            dropped_keys=dropped,
+        )
+    return new_data, new_options
+
+
+# Layouts whose massage buttons raise or do nothing (#787). Their profile settles
+# massage off, as setup and Configure already save it for them.
+_V5_3_MASSAGE_BED_TYPES: Final = frozenset(
+    {BED_TYPE_FURNIMOVE, BED_TYPE_COMFORT_ENHANCEMENTS, BED_TYPE_SLEEPYS_ELITE_APP}
+)
+
+
+def _massage_left_on(view: Mapping[str, Any]) -> bool:
+    """Return True for saved Massage on a layout whose profile settles it off."""
+    from .setup_questions import profile_massage
+
+    return (
+        view.get(CONF_BED_TYPE) in _V5_3_MASSAGE_BED_TYPES
+        and bool(view.get(CONF_HAS_MASSAGE))
+        and profile_massage(view) is False
+    )
+
+
+def _without_shared_massage_option(
+    data: Mapping[str, Any], options: Mapping[str, Any]
+) -> tuple[dict[str, Any], dict[str, Any]]:
+    """Move a paired entry's Massage option into the sides it reached.
+
+    These layouts own Massage per side from 5.3 on, so the option no longer
+    reaches them. Before, it overrode every side whose profile did not own
+    Massage: each such side keeps that value in its own descriptor, and the
+    option goes. A pair without these layouts keeps its option.
+    """
+    new_options = dict(options)
+    children = data.get(CONF_PAIR_CHILDREN)
+    if (
+        CONF_HAS_MASSAGE not in options
+        or not isinstance(children, list)
+        or not any(
+            isinstance(child, Mapping) and child.get(CONF_BED_TYPE) in _V5_3_MASSAGE_BED_TYPES
+            for child in children
+        )
+    ):
+        return dict(data), new_options
+    value = new_options.pop(CONF_HAS_MASSAGE)
+    updated: list[Any] = []
+    for child in children:
+        if isinstance(child, Mapping) and (
+            child.get(CONF_BED_TYPE) in _V5_3_MASSAGE_BED_TYPES
+            or CONF_HAS_MASSAGE not in side_owned_profile_fields(child)
+        ):
+            child = {**child, CONF_HAS_MASSAGE: value}
+        updated.append(child)
+    return {**data, CONF_PAIR_CHILDREN: updated}, new_options
+
+
+def migrate_v5_3_data(
+    data: Mapping[str, Any],
+    options: Mapping[str, Any],
+    *,
+    from_version: int,
+    from_minor_version: int,
+) -> tuple[dict[str, Any], dict[str, Any], list[str]]:
+    """Return entry data and options with Massage off on the layouts without massage.
+
+    A paired side is judged by the settings it runs with, and the original entry
+    it restores on unpair is corrected too. A shared Massage option first moves
+    into the sides of a pair with these layouts, which own Massage per side, so
+    every side keeps the value it ran with. The migration record lists each
+    corrected place under ``massage_off``, which is also returned.
+    """
+    new_options = dict(options)
+    turned_off: list[str] = []
+    if is_paired(data):
+        data, new_options = _without_shared_massage_option(data, options)
+    new_data = dict(data)
+    if not is_paired(data):
+        if _massage_left_on(data):
+            new_data[CONF_HAS_MASSAGE] = False
+            turned_off.append("data")
+    elif isinstance(children := data.get(CONF_PAIR_CHILDREN), list):
+        updated: list[Any] = []
+        for child in children:
+            side = child.get(CONF_SIDE) if isinstance(child, Mapping) else None
+            if side not in PAIR_SIDES:
+                updated.append(child)
+                continue
+            child = dict(child)
+            if _massage_left_on(effective_child_data(data, side, new_options)):
+                child[CONF_HAS_MASSAGE] = False
+                turned_off.append(f"data.{side}")
+            origin = child.get(KEY_ORIGIN_DATA)
+            if isinstance(origin, Mapping) and _massage_left_on(origin):
+                child[KEY_ORIGIN_DATA] = {**origin, CONF_HAS_MASSAGE: False}
+                turned_off.append(f"data.{side}.{KEY_ORIGIN_DATA}")
+            updated.append(child)
+        new_data[CONF_PAIR_CHILDREN] = updated
+    if turned_off:
+        _with_migration_record(
+            new_data,
+            from_version=from_version,
+            from_minor_version=from_minor_version,
+            massage_off=turned_off,
+        )
+    return new_data, new_options, turned_off
+
+
+def _octo_motor_override(view: Mapping[str, Any]) -> str | None:
+    """Return the override an Octo setup saved before the selector ran with, or None.
+
+    Before the selector existed, a stored count other than the default was the
+    user's explicit layout; the default count followed the advertised one.
+    """
+    if view.get(CONF_BED_TYPE) != BED_TYPE_OCTO or CONF_OCTO_MOTOR_COUNT_OVERRIDE in view:
+        return None
+    count = view.get(CONF_MOTOR_COUNT, DEFAULT_MOTOR_COUNT)
+    return str(count) if type(count) is int and count in (1, 3, 4) else "auto"
+
+
+def migrate_v5_5_data(
+    data: Mapping[str, Any],
+    options: Mapping[str, Any],
+    *,
+    from_version: int,
+    from_minor_version: int,
+) -> dict[str, Any]:
+    """Return entry data with every Octo setup's motor layout stored as its override.
+
+    A paired side is judged by the settings it runs with, and the original entry
+    it restores on unpair is written too. The migration record lists each place
+    under ``octo_motor_count_override``.
+    """
+    new_data = dict(data)
+    written: list[str] = []
+    if not is_paired(data):
+        if (override := _octo_motor_override(data)) is not None:
+            new_data[CONF_OCTO_MOTOR_COUNT_OVERRIDE] = override
+            written.append("data")
+    elif isinstance(children := data.get(CONF_PAIR_CHILDREN), list):
+        updated: list[Any] = []
+        for child in children:
+            side = child.get(CONF_SIDE) if isinstance(child, Mapping) else None
+            if side not in PAIR_SIDES:
+                updated.append(child)
+                continue
+            child = dict(child)
+            if (override := _octo_motor_override(effective_child_data(data, side, options))):
+                child[CONF_OCTO_MOTOR_COUNT_OVERRIDE] = override
+                written.append(f"data.{side}")
+            origin = child.get(KEY_ORIGIN_DATA)
+            if isinstance(origin, Mapping) and (override := _octo_motor_override(origin)):
+                child[KEY_ORIGIN_DATA] = {**origin, CONF_OCTO_MOTOR_COUNT_OVERRIDE: override}
+                written.append(f"data.{side}.{KEY_ORIGIN_DATA}")
+            updated.append(child)
+        new_data[CONF_PAIR_CHILDREN] = updated
+    if written:
+        _with_migration_record(
+            new_data,
+            from_version=from_version,
+            from_minor_version=from_minor_version,
+            octo_motor_count_override=written,
+        )
+    return new_data
+
+
+# Settings 5.6 removed (#v5 settings simplification). Their behaviour is now
+# one value for every bed, or the per-bed default.
+V5_6_REMOVED_KEYS: Final = frozenset(
+    {"position_mode", "connection_profile", "pair_connection_mode"}
+)
+_LEGACY_DISCONNECT_AFTER_COMMAND: Final = "disconnect_after_command"
+
+
+_V5_6_INHERITED_KEYS: Final = (
+    _LEGACY_DISCONNECT_AFTER_COMMAND,
+    CONF_IDLE_DISCONNECT_SECONDS,
+    CONF_DISABLE_ANGLE_SENSING,
+)
+
+
+def _v5_6_settings(
+    settings: Mapping[str, Any],
+    route: Mapping[str, Any],
+    location: str,
+    changed: dict[str, list[str]],
+    *,
+    paired: bool = False,
+    underneath: Mapping[str, Any] | None = None,
+    side_overrides: Mapping[str, Any] | None = None,
+    side_route: Mapping[str, Any] | None = None,
+    explicit_mode: bool = False,
+) -> dict[str, Any]:
+    """Return one stored settings mapping in the 5.6 shape.
+
+    ``route`` holds the bed type and variant the mapping runs with, so a saved
+    "Disable angle sensing" equal to that route's default is dropped. Paired
+    sides first take the shared values they inherited, then each side and each
+    original entry is rewritten against its own route. A pair's parent and
+    sides (``paired``) keep their angle-sensing values as they are, since a
+    side without one would inherit the parent's. Options pass the legacy data
+    they layer over as ``underneath``, so their mode reads both as one.
+    """
+    new = {key: value for key, value in settings.items() if key not in V5_6_REMOVED_KEYS}
+    notes = sorted(V5_6_REMOVED_KEYS.intersection(settings))
+    if isinstance(children := new.get(CONF_PAIR_CHILDREN), list):
+        shared = {key: new[key] for key in _V5_6_INHERITED_KEYS if key in new}
+        new[CONF_PAIR_CHILDREN] = [
+            _v5_6_settings(
+                # In the order a side reads them: parent, side, then the options
+                # the side does not own itself.
+                {**shared, **child, **_not_owned(child, side_overrides)},
+                {**route, **_route_of(child), **_not_owned(child, side_route)},
+                f"{location}.{child.get(CONF_SIDE, index)}",
+                changed,
+                paired=True,
+                explicit_mode=True,
+            )
+            if isinstance(child, Mapping)
+            else child
+            for index, child in enumerate(children)
+        ]
+    below = underneath or {}
+    own_after = new.pop(_LEGACY_DISCONNECT_AFTER_COMMAND, None)
+    own_seconds = new.get(CONF_IDLE_DISCONNECT_SECONDS)
+    layered = underneath is not None and (own_after is not None or own_seconds is not None)
+    # Options over data read as one: what this layer leaves out, the one below sets.
+    after = own_after if own_after is not None else below.get(_LEGACY_DISCONNECT_AFTER_COMMAND)
+    seconds = own_seconds if own_seconds is not None else below.get(CONF_IDLE_DISCONNECT_SECONDS)
+    if not layered:
+        after, seconds = own_after, own_seconds
+    explicit_mode = explicit_mode or layered
+    view = {**_route_of(new), **route}
+    default_mode = default_connection_mode(view.get(CONF_BED_TYPE), view.get(CONF_PROTOCOL_VARIANT))
+    if own_seconds == IDLE_DISCONNECT_KEEP_CONNECTED:
+        new.pop(CONF_IDLE_DISCONNECT_SECONDS)
+    mode: str | None = None
+    if seconds == IDLE_DISCONNECT_KEEP_CONNECTED:
+        # Issue #700's "0 keeps the bed connected" applied only while the
+        # handoff was off: saved, inherited, or the bed type's default.
+        handoff = after if after is not None else default_mode == CONNECTION_MODE_RELEASE
+        if after is True or (handoff and explicit_mode):
+            # A side or an option saves its handoff, so it never takes Always
+            # from the layer below.
+            mode = CONNECTION_MODE_RELEASE
+        elif not handoff:
+            mode = CONNECTION_MODE_ALWAYS
+        else:
+            notes.append(f"{CONF_IDLE_DISCONNECT_SECONDS}=0 (handoff on)")
+    elif after is True:
+        mode = CONNECTION_MODE_RELEASE
+    elif after is False:
+        mode = CONNECTION_MODE_IDLE
+    elif explicit_mode and seconds is not None:
+        # Without a saved mode this would take the layer below's new mode,
+        # which its own settings never followed: save the mode it ran with.
+        mode = default_mode
+    if mode is not None:
+        new[CONF_CONNECTION_MODE] = mode
+        notes.append(f"{CONF_CONNECTION_MODE}={mode}")
+    elif own_after is not None:
+        notes.append(_LEGACY_DISCONNECT_AFTER_COMMAND)
+    feedback = bed_type_has_position_feedback(
+        view.get(CONF_BED_TYPE), view.get(CONF_PROTOCOL_VARIANT)
+    )
+    paired = paired or isinstance(children, list)
+    disabled = new.get(CONF_DISABLE_ANGLE_SENSING)
+    below_disabled = below.get(CONF_DISABLE_ANGLE_SENSING)
+    if (
+        isinstance(disabled, bool)
+        and not paired
+        and disabled is not feedback
+        # Dropping it must not uncover an opposite value in the layer below.
+        and below_disabled in (None, disabled)
+    ):
+        # Equal to the route's own default: the route decides it now.
+        del new[CONF_DISABLE_ANGLE_SENSING]
+        notes.append(CONF_DISABLE_ANGLE_SENSING)
+    raw_origin = settings.get(KEY_ORIGIN_DATA)
+    for key in (KEY_ORIGIN_DATA, KEY_ORIGIN_OPTIONS):
+        if isinstance(nested := new.get(key), Mapping):
+            origin = raw_origin if isinstance(raw_origin, Mapping) else nested
+            new[key] = _v5_6_settings(
+                nested,
+                {**_route_of(origin), **_route_of(nested)},
+                f"{location}.{key}",
+                changed,
+                underneath=origin if key == KEY_ORIGIN_OPTIONS else None,
+            )
+    if notes:
+        changed.setdefault(location, []).extend(notes)
+    return new
+
+
+def _not_owned(child: Mapping[str, Any], options: Mapping[str, Any] | None) -> dict[str, Any]:
+    """Return the pair options a side reads: those its own profile does not own."""
+    owned = side_owned_profile_fields(child)
+    return {key: value for key, value in (options or {}).items() if key not in owned}
+
+
+def _route_of(settings: Mapping[str, Any]) -> dict[str, Any]:
+    """Return the bed type and variant a settings mapping stores."""
+    return {
+        key: settings[key] for key in (CONF_BED_TYPE, CONF_PROTOCOL_VARIANT) if key in settings
+    }
+
+
+def migrate_v5_6_entry(
+    data: Mapping[str, Any],
+    options: Mapping[str, Any],
+    *,
+    from_version: int,
+    from_minor_version: int,
+) -> tuple[dict[str, Any], dict[str, Any]]:
+    """Return entry data and options with the 5.6 settings shape.
+
+    Removed settings are dropped; "Disconnect after each command" and the idle
+    timeout's 0 become the connection mode; a saved angle-sensing choice equal
+    to its route's default is dropped, since the route now decides it. The
+    migration record lists each change by where it was stored.
+    """
+    paired = isinstance(data.get(CONF_PAIR_CHILDREN), list)
+    side_overrides: dict[str, Any] = {}
+    if (
+        paired
+        and data.get(CONF_PAIR_MODE) != PAIR_MODE_SINGLE_ADDRESS
+        and (
+            _LEGACY_DISCONNECT_AFTER_COMMAND in options
+            or CONF_IDLE_DISCONNECT_SECONDS in options
+        )
+    ):
+        # A two-address pair's connection options win over each side's own
+        # settings, so each side's mode is derived with them and the options
+        # lose them. A one-address pair's physical bed reads the parent.
+        side_overrides = {
+            key: options[key]
+            for key in (_LEGACY_DISCONNECT_AFTER_COMMAND, CONF_IDLE_DISCONNECT_SECONDS)
+            if key in options
+        }
+        options = {key: value for key, value in options.items() if key not in side_overrides}
+    changed: dict[str, list[str]] = {}
+    if side_overrides:
+        changed["options"] = [f"{key} (moved to each side)" for key in sorted(side_overrides)]
+    route = _route_of(data)
+    new_data = _v5_6_settings(
+        data,
+        route,
+        "data",
+        changed,
+        side_overrides=side_overrides,
+        # A side reads the pair's route options over its own.
+        side_route=_route_of(options) if paired else None,
+    )
+    new_options = _v5_6_settings(
+        options,
+        {**route, **_route_of(options)},
+        "options",
+        changed,
+        # A pair's options reach its sides, which keep their angle choices.
+        paired=paired,
+        underneath=data,
+    )
+    if changed:
+        _with_migration_record(
+            new_data,
+            from_version=from_version,
+            from_minor_version=from_minor_version,
+            settings_5_6=changed,
+        )
+    return new_data, new_options
+
+
+# The bed type SmartBed app beds were saved under before schema 5.7.
+_OKIN_CB24: Final = "okin_cb24"
+# That route sent the CB24 frames whichever legacy receiver was chosen, so each
+# maps to the SmartBed receiver that still sends them.
+_OKIN_CB24_VARIANTS: Final = {"cb_old": "cb24", "dacheng": "cb24", "cb_new": "cb27new"}
+
+
+def _smartbed_variant(view: Mapping[str, Any], *, single_address: bool = False) -> str:
+    """Return the SmartBed receiver that sends what this okin_cb24 route sent."""
+    variant = view.get(CONF_PROTOCOL_VARIANT) or VARIANT_AUTO
+    variant = _OKIN_CB24_VARIANTS.get(variant, variant)
+    sided = single_address or view.get(CONF_CB24_BED_SELECTION) in (
+        CB24_BED_SELECTION_A,
+        CB24_BED_SELECTION_B,
+    )
+    # Every legacy variant sent its side; among the app's receivers only CB24AB does.
+    return "cb24_ab" if sided and variant != "cb27new" else variant
+
+
+def _as_smartbed(settings: Mapping[str, Any], variant: str | None = None) -> dict[str, Any]:
+    """Return one stored mapping of an okin_cb24 route as the SmartBed route stores it.
+
+    ``variant`` is the receiver to store. Without one, a stored legacy name is
+    only translated.
+    """
+    new = dict(settings)
+    if new.get(CONF_BED_TYPE) == _OKIN_CB24:
+        new[CONF_BED_TYPE] = BED_TYPE_SMARTBED
+    stored = new.get(CONF_PROTOCOL_VARIANT)
+    if variant is not None:
+        new[CONF_PROTOCOL_VARIANT] = variant
+    elif isinstance(stored, str):
+        new[CONF_PROTOCOL_VARIANT] = _OKIN_CB24_VARIANTS.get(stored, stored)
+    if new.get(CONF_PROTOCOL_VARIANT) != "cb24_ab" and CONF_CB24_BED_SELECTION in new:
+        new[CONF_CB24_BED_SELECTION] = CB24_BED_SELECTION_DEFAULT
+    # The route drove head and feet whatever count was saved, and the app's
+    # profile decides the rest.
+    for key, value in (
+        (CONF_MOTOR_COUNT, 2),
+        (CONF_HAS_MASSAGE, False),
+        (CONF_DISABLE_ANGLE_SENSING, True),
+        (CONF_MOTOR_PULSE_USER_SET, False),
+    ):
+        if key in new:
+            new[key] = value
+    return new
+
+
+def migrate_v5_7_entry(
+    data: Mapping[str, Any],
+    options: Mapping[str, Any],
+    *,
+    from_version: int,
+    from_minor_version: int,
+) -> tuple[dict[str, Any], dict[str, Any]]:
+    """Return entry data and options with every okin_cb24 route saved as SmartBed.
+
+    The receiver is the one that sends the frames the bed got before: a bed with
+    a side becomes CB24AB, the only receiver of the app that sends one. A bed
+    reads its own data, so that decides its receiver. A paired side also read
+    the pair's options; it now stores what it ran with, since SmartBed's
+    settings belong to each side. The original entries a pair restores on
+    unpair are written too, and an open or kept app review follows the renamed
+    route. The migration record lists each place under ``smartbed``. Any other
+    entry is returned unchanged.
+    """
+    from .pairing import side_owned_profile_fields
+    from .profile_review import carry_profile_review_to_renamed_route
+
+    moved: list[str] = []
+    single = data.get(CONF_PAIR_MODE) == PAIR_MODE_SINGLE_ADDRESS
+
+    def bed(own: Mapping[str, Any], location: str, *, one_address: bool = False) -> dict[str, Any]:
+        """Return a bed's own data: a standalone entry, a pair's parent or an original."""
+        if own.get(CONF_BED_TYPE) != _OKIN_CB24:
+            return dict(own)
+        variant = _smartbed_variant(own, single_address=one_address)
+        moved.append(location)
+        stores = variant != VARIANT_AUTO or CONF_PROTOCOL_VARIANT in own
+        return _as_smartbed(own, variant if stores else None)
+
+    new_data = bed(data, "data", one_address=single)
+    if isinstance(children := data.get(CONF_PAIR_CHILDREN), list):
+        updated: list[Any] = []
+        for child in children:
+            side = child.get(CONF_SIDE) if isinstance(child, Mapping) else None
+            if side not in PAIR_SIDES:
+                updated.append(child)
+                continue
+            child = dict(child)
+            view = effective_child_data(data, side, options)
+            if view.get(CONF_BED_TYPE) == _OKIN_CB24:
+                variant = _smartbed_variant(view, single_address=single)
+                owned = side_owned_profile_fields(
+                    {CONF_BED_TYPE: BED_TYPE_SMARTBED, CONF_PROTOCOL_VARIANT: variant}
+                )
+                ran_with = {key: view[key] for key in owned if key in view}
+                child = _as_smartbed({**child, **ran_with, CONF_BED_TYPE: _OKIN_CB24}, variant)
+                moved.append(f"data.{side}")
+            origin = child.get(KEY_ORIGIN_DATA)
+            if isinstance(origin, Mapping) and origin.get(CONF_BED_TYPE) == _OKIN_CB24:
+                restored = bed(origin, f"data.{side}.{KEY_ORIGIN_DATA}")
+                carry_profile_review_to_renamed_route(origin, restored)
+                child[KEY_ORIGIN_DATA] = restored
+                if isinstance(origin_options := child.get(KEY_ORIGIN_OPTIONS), Mapping):
+                    child[KEY_ORIGIN_OPTIONS] = _as_smartbed(origin_options)
+            updated.append(child)
+        new_data[CONF_PAIR_CHILDREN] = updated
+    if not moved:
+        return new_data, dict(options)
+    carry_profile_review_to_renamed_route(data, new_data)
+    _with_migration_record(
+        new_data,
+        from_version=from_version,
+        from_minor_version=from_minor_version,
+        smartbed=moved,
+    )
+    return new_data, _as_smartbed(options)
+
+
+# What each control of the okin_cb24 route is on the SmartBed route. Unique ids
+# are ``<address or pair id>_<key>[_<side>]``; a pair's own movement buttons end
+# in ``_both``.
+_V5_7_ENTITY_KEYS: Final = {
+    "cover": {"back": "head", "legs": "feet"},
+    "button": {
+        "massage_mode_step": "smartbed_wave_up",
+        "back_up_both": "head_up_both",
+        "back_down_both": "head_down_both",
+        "legs_up_both": "feet_up_both",
+        "legs_down_both": "feet_down_both",
+    },
+}
+
+
+@callback
+def _free_unique_id(
+    registry: er.EntityRegistry, entry: ConfigEntry, domain: str, unique_id: str
+) -> bool:
+    """Make room for a renamed entity; False when another entry owns the id."""
+    taken = registry.async_get_entity_id(domain, DOMAIN, unique_id)
+    if taken is None:
+        return True
+    row = registry.async_get(taken)
+    if row is None or row.config_entry_id != entry.entry_id:
+        return False
+    # The duplicate this entry holds gives way, so the renamed control keeps its ID.
+    registry.async_remove(taken)
+    return True
+
+
+@callback
+def _async_migrate_v5_7_entities(hass: HomeAssistant, entry: ConfigEntry) -> None:
+    """Keep the entity IDs of the controls the SmartBed route names differently.
+
+    A saved motor count of three or four added Head and Feet covers that sent
+    the Back and Legs commands. Back and Legs keep their entity IDs; the
+    duplicates go.
+    """
+    registry = er.async_get(hass)
+    for entity in er.async_entries_for_config_entry(registry, entry.entry_id):
+        for old, new in _V5_7_ENTITY_KEYS.get(entity.domain, {}).items():
+            for suffix in ("", *(f"_{side}" for side in PAIR_SIDES)):
+                if not entity.unique_id.endswith(f"_{old}{suffix}"):
+                    continue
+                unique_id = f"{entity.unique_id.removesuffix(f'{old}{suffix}')}{new}{suffix}"
+                if _free_unique_id(registry, entry, entity.domain, unique_id):
+                    registry.async_update_entity(entity.entity_id, new_unique_id=unique_id)
+
+
+def migrate_v5_8_entry(
+    data: Mapping[str, Any],
+    options: Mapping[str, Any],
+    *,
+    from_version: int,
+    from_minor_version: int,
+) -> tuple[dict[str, Any], dict[str, Any]]:
+    """Return entry data and options with each retired bed type saved as its route.
+
+    4.x saved Okimat, DewertOkin, Nectar and Mattress Firm beds under the brand;
+    each ran the Okin receiver route it is now saved as, so nothing else
+    changes. Paired sides and the original entries they restore on unpair are
+    written too, and an open or kept app review follows the renamed route. The
+    migration record lists each place under ``renamed_bed_types``.
+    """
+    from .profile_review import carry_profile_review_to_renamed_route
+
+    renamed: dict[str, str] = {}
+
+    def current(settings: Mapping[str, Any], location: str) -> dict[str, Any]:
+        new = dict(settings)
+        if (retired := new.get(CONF_BED_TYPE)) in RETIRED_BED_TYPES:
+            new[CONF_BED_TYPE] = RETIRED_BED_TYPES[retired]
+            renamed[location] = retired
+        return new
+
+    new_data = current(data, "data")
+    new_options = current(options, "options")
+    if isinstance(children := data.get(CONF_PAIR_CHILDREN), list):
+        updated: list[Any] = []
+        for child in children:
+            side = child.get(CONF_SIDE) if isinstance(child, Mapping) else None
+            if side not in PAIR_SIDES:
+                updated.append(child)
+                continue
+            child = current(child, f"data.{side}")
+            if isinstance(origin := child.get(KEY_ORIGIN_DATA), Mapping):
+                restored = current(origin, f"data.{side}.{KEY_ORIGIN_DATA}")
+                carry_profile_review_to_renamed_route(origin, restored)
+                child[KEY_ORIGIN_DATA] = restored
+            if isinstance(origin_options := child.get(KEY_ORIGIN_OPTIONS), Mapping):
+                child[KEY_ORIGIN_OPTIONS] = current(
+                    origin_options, f"data.{side}.{KEY_ORIGIN_OPTIONS}"
+                )
+            updated.append(child)
+        new_data[CONF_PAIR_CHILDREN] = updated
+    if renamed:
+        carry_profile_review_to_renamed_route(data, new_data)
+        _with_migration_record(
+            new_data,
+            from_version=from_version,
+            from_minor_version=from_minor_version,
+            renamed_bed_types=renamed,
+        )
+    return new_data, new_options
+
+
+# The bed type Q-Plus app beds were saved under before schema 5.9.
+_SBI: Final = "sbi"
+# The app layout whose keys that route sent: all four motors, the light, the
+# massage modes and TV on the key the route called TV.
+_SBI_LAYOUT: Final = "H"
+
+
+def _as_qplus(own: Mapping[str, Any]) -> dict[str, Any]:
+    """Return a bed's own sbi settings as the Q-Plus app route stores them.
+
+    The bed selection stays as stored: Both, A or B mean the same on both
+    routes, and unset or automatic builds Both on either. The choice to read
+    positions stays too; the app route reads them as the sbi route did.
+    """
+    new = {**own, CONF_BED_TYPE: BED_TYPE_QPLUS_APP, CONF_PRODUCT_TYPE: _SBI_LAYOUT}
+    # The app's layout decides the controls.
+    for key, value in (
+        (CONF_MOTOR_COUNT, 2),
+        (CONF_HAS_MASSAGE, False),
+        (CONF_MOTOR_PULSE_USER_SET, False),
+    ):
+        if key in new:
+            new[key] = value
+    return new
+
+
+def _sbi_renamed(shared: Mapping[str, Any]) -> dict[str, Any]:
+    """Return a shared layer with only its sbi bed type renamed.
+
+    A pair's options, a two-address pair's own data and an original's options
+    hold values a bed of another type may still read, so they stay as they are.
+    """
+    if shared.get(CONF_BED_TYPE) != _SBI:
+        return dict(shared)
+    return {**shared, CONF_BED_TYPE: BED_TYPE_QPLUS_APP}
+
+
+def migrate_v5_9_entry(
+    data: Mapping[str, Any],
+    options: Mapping[str, Any],
+    *,
+    from_version: int,
+    from_minor_version: int,
+) -> tuple[dict[str, Any], dict[str, Any]]:
+    """Return entry data and options with every sbi route saved as the Q-Plus app.
+
+    A bed keeps its stored bed selection and its choice to read positions, and
+    takes the app's H layout, the one with the keys the sbi route sent. A
+    two-address side also read the pair's options; it now stores the selection
+    it ran with, since the app's selection belongs to each side. The original
+    entries a pair restores on unpair are written too, and an open or kept app
+    review follows the renamed route. The migration record lists each place
+    under ``qplus_app``.
+
+    The app route reads positions from this schema on. A Q-Plus app bed without
+    a saved choice ran with them unread, and keeps that until the user turns
+    reading on; the record lists those under ``qplus_app_positions_unread``.
+    Any other entry is returned unchanged.
+    """
+    from .profile_review import carry_profile_review_to_renamed_route
+
+    moved: list[str] = []
+    unread: list[str] = []
+    single = data.get(CONF_PAIR_MODE) == PAIR_MODE_SINGLE_ADDRESS
+    children = data.get(CONF_PAIR_CHILDREN)
+
+    def keeps_unread(view: Mapping[str, Any]) -> bool:
+        return (
+            view.get(CONF_BED_TYPE) == BED_TYPE_QPLUS_APP
+            and CONF_DISABLE_ANGLE_SENSING not in view
+        )
+
+    def bed(own: Mapping[str, Any], location: str) -> dict[str, Any]:
+        """Return a bed's own data: a standalone entry, a one-address pair or an original."""
+        if own.get(CONF_BED_TYPE) == _SBI:
+            moved.append(location)
+            return _as_qplus(own)
+        if keeps_unread(own):
+            unread.append(location)
+            return {**own, CONF_DISABLE_ANGLE_SENSING: True}
+        return dict(own)
+
+    if isinstance(children, list) and not single:
+        new_data = _sbi_renamed(data)
+        if new_data != dict(data):
+            moved.append("data")
+    else:
+        new_data = bed(data, "data")
+    if isinstance(children, list):
+        updated: list[Any] = []
+        for child in children:
+            side = child.get(CONF_SIDE) if isinstance(child, Mapping) else None
+            if side not in PAIR_SIDES:
+                updated.append(child)
+                continue
+            child = dict(child)
+            view = effective_child_data(data, side, options)
+            if view.get(CONF_BED_TYPE) == _SBI:
+                if not single and CONF_PROTOCOL_VARIANT in view:
+                    child[CONF_PROTOCOL_VARIANT] = view[CONF_PROTOCOL_VARIANT]
+                child = _as_qplus(child)
+                moved.append(f"data.{side}")
+            elif keeps_unread(view):
+                child[CONF_DISABLE_ANGLE_SENSING] = True
+                unread.append(f"data.{side}")
+            if isinstance(origin := child.get(KEY_ORIGIN_DATA), Mapping):
+                restored = bed(origin, f"data.{side}.{KEY_ORIGIN_DATA}")
+                carry_profile_review_to_renamed_route(origin, restored)
+                child[KEY_ORIGIN_DATA] = restored
+                if isinstance(origin_options := child.get(KEY_ORIGIN_OPTIONS), Mapping):
+                    child[KEY_ORIGIN_OPTIONS] = _sbi_renamed(origin_options)
+            updated.append(child)
+        new_data[CONF_PAIR_CHILDREN] = updated
+    if not moved and not unread:
+        return new_data, dict(options)
+    fields: dict[str, Any] = {}
+    if moved:
+        carry_profile_review_to_renamed_route(data, new_data)
+        fields["qplus_app"] = moved
+    if unread:
+        fields["qplus_app_positions_unread"] = unread
+    _with_migration_record(
+        new_data, from_version=from_version, from_minor_version=from_minor_version, **fields
+    )
+    return new_data, _sbi_renamed(options)
+
+
+# The sbi route's buttons the Q-Plus app's H layout has under another key, with
+# the same command and the same meaning. Unique ids are
+# ``<address>_<key>[_<side>]``.
+_V5_9_BUTTON_KEYS: Final = {
+    "preset_zero_g": "zero_g",
+    "preset_tv": "tv",
+    "toggle_light": "light",
+    "massage_head_up": "massage_head",
+    "massage_foot_up": "massage_foot",
+}
+
+
+@callback
+def _async_migrate_v5_9_entities(hass: HomeAssistant, entry: ConfigEntry) -> None:
+    """Keep the entity IDs of the sbi buttons the Q-Plus app names differently.
+
+    Only the beds this step moves are touched: another bed type on the other
+    side of a pair keeps its rows. Every other sbi control has no app control
+    with the same command and meaning, and goes when the bed next loads.
+    """
+    data = entry.data
+    beds = [data] if data.get(CONF_BED_TYPE) == _SBI else []
+    beds += [
+        view
+        for side in PAIR_SIDES
+        if get_child(data, side) is not None
+        and (view := effective_child_data(data, side, entry.options)).get(CONF_BED_TYPE) == _SBI
+    ]
+    addresses = {
+        address.upper() for bed in beds if isinstance(address := bed.get(CONF_ADDRESS), str)
+    }
+    keys = {
+        f"{old}{suffix}": f"{new}{suffix}"
+        for old, new in _V5_9_BUTTON_KEYS.items()
+        for suffix in ("", *(f"_{side}" for side in PAIR_SIDES))
+    }
+    registry = er.async_get(hass)
+    for entity in er.async_entries_for_config_entry(registry, entry.entry_id):
+        address, _, key = entity.unique_id.partition("_")
+        if entity.domain != "button" or address not in addresses or key not in keys:
+            continue
+        unique_id = f"{address}_{keys[key]}"
+        if _free_unique_id(registry, entry, "button", unique_id):
+            registry.async_update_entity(entity.entity_id, new_unique_id=unique_id)
+
+
+# The bed type, and the Keeson remote, Serta MP Remote app beds were saved under
+# before schema 5.10.
+_SERTA: Final = "serta"
+# The app has one layout.
+_SERTA_LAYOUT: Final = "standard"
+
+
+def _is_serta(view: Mapping[str, Any]) -> bool:
+    """Return whether these settings run the serta route."""
+    bed_type = view.get(CONF_BED_TYPE)
+    return bed_type == _SERTA or (
+        bed_type == BED_TYPE_KEESON and view.get(CONF_PROTOCOL_VARIANT) == _SERTA
+    )
+
+
+def _as_serta_mp(own: Mapping[str, Any]) -> dict[str, Any]:
+    """Return a bed's own serta settings as the Serta MP Remote app route stores them.
+
+    The app reads the bed's position for its own memories, so the choice is
+    stored: a value a pair shares must not turn it off for this bed.
+    """
+    new = {
+        **own,
+        CONF_BED_TYPE: BED_TYPE_SERTA_MP_REMOTE,
+        CONF_PRODUCT_TYPE: _SERTA_LAYOUT,
+        CONF_DISABLE_ANGLE_SENSING: False,
+    }
+    # The app's layout decides the controls, and it has no remote to choose.
+    for key, value in (
+        (CONF_PROTOCOL_VARIANT, VARIANT_AUTO),
+        (CONF_MOTOR_COUNT, 2),
+        (CONF_HAS_MASSAGE, False),
+        (CONF_MOTOR_PULSE_USER_SET, False),
+    ):
+        if key in new:
+            new[key] = value
+    return new
+
+
+def _serta_renamed(shared: Mapping[str, Any]) -> dict[str, Any]:
+    """Return a shared layer that no longer names the serta route.
+
+    A pair's options, a two-address pair's own data and an original's options
+    hold values a bed of another type may still read, so they stay as they are.
+    """
+    new = dict(shared)
+    if _is_serta(new):
+        new[CONF_BED_TYPE] = BED_TYPE_SERTA_MP_REMOTE
+    if new.get(CONF_PROTOCOL_VARIANT) == _SERTA:
+        new[CONF_PROTOCOL_VARIANT] = VARIANT_AUTO
+    return new
+
+
+# What decides a side's route and whether it reads positions. A pair's options
+# override these on every side.
+_SERTA_ROUTE_KEYS: Final = (CONF_BED_TYPE, CONF_PROTOCOL_VARIANT, CONF_DISABLE_ANGLE_SENSING)
+
+
+def _serta_sides(data: Mapping[str, Any], options: Mapping[str, Any]) -> set[str]:
+    """Return the sides of a pair that ran the serta route.
+
+    The sides of a one-address pair are one bed, which reads its own data.
+    """
+    sides = [side for side in PAIR_SIDES if get_child(data, side) is not None]
+    if data.get(CONF_PAIR_MODE) == PAIR_MODE_SINGLE_ADDRESS:
+        return set(sides) if _is_serta(data) else set()
+    return {side for side in sides if _is_serta(effective_child_data(data, side, options))}
+
+
+def migrate_v5_10_entry(
+    data: Mapping[str, Any],
+    options: Mapping[str, Any],
+    *,
+    from_version: int,
+    from_minor_version: int,
+) -> tuple[dict[str, Any], dict[str, Any]]:
+    """Return entry data and options with every serta route saved as the Serta MP Remote app.
+
+    The serta bed type and the Keeson remote of the same name sent that app's
+    keys. A bed takes the app's one layout and reads its position, as the app
+    does for its memories. A paired side stores its own route: the pair's
+    options no longer decide it, and a side on another route stores what it ran
+    with where a shared value changes. The original entries a pair restores on
+    unpair are written too, and an open or kept app review follows the renamed
+    route. The migration record lists each place under ``serta_mp_remote``. Any
+    other entry is returned unchanged.
+    """
+    from .profile_review import carry_profile_review_to_renamed_route
+
+    moved: list[str] = []
+    children = data.get(CONF_PAIR_CHILDREN)
+
+    def bed(own: Mapping[str, Any], location: str) -> dict[str, Any]:
+        """Return a bed's own data: a standalone entry, a one-address pair or an original."""
+        if not _is_serta(own):
+            return dict(own)
+        moved.append(location)
+        return _as_serta_mp(own)
+
+    # A two-address pair's own data is a layer its sides share, not a bed.
+    if isinstance(children, list) and data.get(CONF_PAIR_MODE) != PAIR_MODE_SINGLE_ADDRESS:
+        new_data = _serta_renamed(data)
+        if new_data != dict(data):
+            moved.append("data")
+    else:
+        new_data = bed(data, "data")
+    new_options = dict(options)
+    if isinstance(children, list):
+        moves = _serta_sides(data, options)
+        if moves:
+            # The options would decide a moved side's route again.
+            for key in _SERTA_ROUTE_KEYS:
+                new_options.pop(key, None)
+        changed = {
+            key
+            for key in _SERTA_ROUTE_KEYS
+            if new_options.get(key) != options.get(key) or new_data.get(key) != data.get(key)
+        }
+        updated: list[Any] = []
+        for child in children:
+            side = child.get(CONF_SIDE) if isinstance(child, Mapping) else None
+            if side not in PAIR_SIDES:
+                updated.append(child)
+                continue
+            child = dict(child)
+            if side in moves:
+                child = _as_serta_mp({**child, CONF_PROTOCOL_VARIANT: VARIANT_AUTO})
+                moved.append(f"data.{side}")
+            else:
+                view = effective_child_data(data, side, options)
+                # Only the pair's options kept this side off the serta route.
+                masked = _is_serta(effective_child_data(data, side))
+                for key in _SERTA_ROUTE_KEYS:
+                    # The side stores what it ran with where a shared value changes.
+                    if key in view and (
+                        key in changed or (masked and key != CONF_DISABLE_ANGLE_SENSING)
+                    ):
+                        child[key] = view[key]
+                if masked and child.get(CONF_PROTOCOL_VARIANT) == _SERTA:
+                    # The removed remote's name means nothing on the bed type it ran.
+                    child[CONF_PROTOCOL_VARIANT] = VARIANT_AUTO
+            if isinstance(origin := child.get(KEY_ORIGIN_DATA), Mapping):
+                restored = bed(origin, f"data.{side}.{KEY_ORIGIN_DATA}")
+                carry_profile_review_to_renamed_route(origin, restored)
+                child[KEY_ORIGIN_DATA] = restored
+                if isinstance(origin_options := child.get(KEY_ORIGIN_OPTIONS), Mapping):
+                    child[KEY_ORIGIN_OPTIONS] = _serta_renamed(origin_options)
+            updated.append(child)
+        new_data[CONF_PAIR_CHILDREN] = updated
+    if not moved:
+        return new_data, dict(options)
+    carry_profile_review_to_renamed_route(data, new_data)
+    _with_migration_record(
+        new_data,
+        from_version=from_version,
+        from_minor_version=from_minor_version,
+        serta_mp_remote=moved,
+    )
+    return new_data, _serta_renamed(new_options)
+
+
+# The serta route's controls the Serta MP Remote app has under another key, with
+# the same command. Unique ids are ``<address>_<key>``; a pair's own movement
+# buttons are ``<pair id>_<key>_both``.
+_V5_10_ENTITY_KEYS: Final = {
+    "cover": {"head": "back", "feet": "legs"},
+    "button": {
+        "preset_zero_g": "zg",
+        "massage_all_toggle": "level",
+        "massage_mode_step": "timer",
+        "massage_head_up": "masheadadd",
+        "massage_head_down": "masheadmin",
+        "massage_foot_up": "masfootadd",
+        "massage_foot_down": "masfootmin",
+    },
+}
+_V5_10_PAIR_BUTTON_KEYS: Final = {
+    "head_up": "back_up",
+    "head_down": "back_down",
+    "feet_up": "legs_up",
+    "feet_down": "legs_down",
+}
+
+
+@callback
+def _async_migrate_v5_10_entities(hass: HomeAssistant, entry: ConfigEntry) -> None:
+    """Keep the entity IDs of the serta controls the app names differently.
+
+    Only the beds this step moves are touched: another bed type on the other
+    side of a pair keeps its rows, and the pair's own buttons move only when
+    both sides do. Memory 1 to 4 keep their rows and recall the app's own
+    memories from now on. Every other serta control has no app control with the
+    same command, and goes when the bed next loads.
+    """
+    data = entry.data
+    moves = _serta_sides(data, entry.options)
+    beds: list[Mapping[str, Any]] = [
+        child for side in moves if (child := get_child(data, side)) is not None
+    ]
+    if not isinstance(data.get(CONF_PAIR_CHILDREN), list) and _is_serta(data):
+        beds.append(data)
+    addresses = {
+        address.upper() for bed in beds if isinstance(address := bed.get(CONF_ADDRESS), str)
+    }
+    pair_id = data.get(CONF_PAIR_ID)
+    both = (
+        {
+            f"{pair_id}_{old}_both": f"{pair_id}_{new}_both"
+            for old, new in _V5_10_PAIR_BUTTON_KEYS.items()
+        }
+        if len(moves) == len(PAIR_SIDES)
+        else {}
+    )
+    registry = er.async_get(hass)
+    for entity in er.async_entries_for_config_entry(registry, entry.entry_id):
+        address, _, key = entity.unique_id.partition("_")
+        if address in addresses and key in (keys := _V5_10_ENTITY_KEYS.get(entity.domain, {})):
+            unique_id = f"{address}_{keys[key]}"
+        elif entity.domain == "button" and entity.unique_id in both:
+            unique_id = both[entity.unique_id]
+        else:
+            continue
+        if _free_unique_id(registry, entry, entity.domain, unique_id):
+            registry.async_update_entity(entity.entity_id, new_unique_id=unique_id)
+
+
+# The model a Leggett & Platt bed could be saved with before schema 5.11, and
+# the bed type that is that model.
+_LEGGETT_MODELS: Final = {
+    "gen2": BED_TYPE_LEGGETT_GEN2,
+    "okin": BED_TYPE_LEGGETT_OKIN,
+    "mlrm": BED_TYPE_LEGGETT_WILINKE,
+}
+_LEGGETT_ROUTE_KEYS: Final = (CONF_BED_TYPE, CONF_PROTOCOL_VARIANT)
+
+
+def _leggett_model(view: Mapping[str, Any]) -> str | None:
+    """Return the bed type of the model these Leggett & Platt settings name.
+
+    Pairing, and a correction on connecting, saved the model's bed type and
+    left the model's name beside it. That name goes too.
+    """
+    bed_type, variant = view.get(CONF_BED_TYPE), view.get(CONF_PROTOCOL_VARIANT)
+    if not isinstance(variant, str) or variant not in _LEGGETT_MODELS:
+        return None
+    if bed_type == BED_TYPE_LEGGETT_PLATT:
+        return _LEGGETT_MODELS[variant]
+    return bed_type if bed_type in _LEGGETT_MODELS.values() else None
+
+
+def _as_leggett_model(own: Mapping[str, Any]) -> dict[str, Any]:
+    """Return settings that name a Leggett & Platt model as that model's bed type."""
+    if (bed_type := _leggett_model(own)) is None:
+        return dict(own)
+    return {**own, CONF_BED_TYPE: bed_type, CONF_PROTOCOL_VARIANT: VARIANT_AUTO}
+
+
+def migrate_v5_11_entry(
+    data: Mapping[str, Any],
+    options: Mapping[str, Any],
+    *,
+    from_version: int,
+    from_minor_version: int,
+) -> tuple[dict[str, Any], dict[str, Any]]:
+    """Return entry data and options with each Leggett & Platt model saved as its bed type.
+
+    A Leggett & Platt bed saved with the Gen2, Okin or MlRM model ran that
+    model's bed type, so only the name changes, and a bed already saved as
+    that bed type drops the model's name. A bed on Automatic keeps its bed
+    type, which finds the model when it connects. A bed reads its route from
+    its own data, so options that would name a model over it lose their route:
+    pairing and Reconfigure read both together. In a two-address pair that
+    names a model anywhere, each side stores the route it ran and the settings
+    its bed type keeps to itself, and the pair's options no longer decide the
+    route. The original entries a pair restores on unpair are written too, and
+    an open or kept app review follows the renamed route. The migration record
+    lists each place under ``leggett_models``. Any other entry is returned
+    unchanged.
+    """
+    from .profile_review import carry_profile_review_to_renamed_route
+
+    moved: list[str] = []
+
+    def bed(own: Mapping[str, Any], location: str) -> dict[str, Any]:
+        new = _as_leggett_model(own)
+        if new != dict(own):
+            moved.append(location)
+        return new
+
+    def bed_options(
+        own: Mapping[str, Any], own_options: Mapping[str, Any], location: str
+    ) -> dict[str, Any]:
+        """Return a bed's options without a route that names a model over its data."""
+        new = dict(own_options)
+        if _leggett_model({**own, **own_options}) is not None and new.keys() & set(
+            _LEGGETT_ROUTE_KEYS
+        ):
+            for key in _LEGGETT_ROUTE_KEYS:
+                new.pop(key, None)
+            moved.append(location)
+        return new
+
+    children = data.get(CONF_PAIR_CHILDREN)
+    two_address = (
+        isinstance(children, list) and data.get(CONF_PAIR_MODE) != PAIR_MODE_SINGLE_ADDRESS
+    )
+    new_data = bed(data, "data")
+    # A two-address pair's options are a layer its sides share, not a bed's.
+    new_options = dict(options) if two_address else bed_options(data, options, "options")
+    if isinstance(children, list):
+        sides = {
+            side: child
+            for child in children
+            if isinstance(child, Mapping) and (side := child.get(CONF_SIDE)) in PAIR_SIDES
+        }
+        # The sides of a one-address pair are one bed, which reads its own data.
+        views = (
+            {side: effective_child_data(data, side, options) for side in sides}
+            if two_address
+            else {}
+        )
+        stores = bool(views) and any(
+            _leggett_model(layer) is not None
+            for layer in (data, options, *sides.values(), *views.values())
+        )
+        if stores:
+            if _leggett_model(options) is not None:
+                moved.append("options")
+            for key in _LEGGETT_ROUTE_KEYS:
+                new_options.pop(key, None)
+        updated: list[Any] = []
+        for child in children:
+            side = child.get(CONF_SIDE) if isinstance(child, Mapping) else None
+            if side not in PAIR_SIDES:
+                updated.append(child)
+                continue
+            child = dict(child)
+            if stores:
+                view = views[side]
+                route = _as_leggett_model(view)
+                if route != view or _leggett_model(child) is not None:
+                    moved.append(f"data.{side}")
+                child.update({key: route[key] for key in _LEGGETT_ROUTE_KEYS if key in route})
+                # The pair's options no longer reach what this bed type keeps to itself.
+                child.update(
+                    {
+                        key: view[key]
+                        for key in side_owned_profile_fields(child)
+                        if key in view and key not in _LEGGETT_ROUTE_KEYS
+                    }
+                )
+            else:
+                child = bed(child, f"data.{side}")
+            if isinstance(origin := child.get(KEY_ORIGIN_DATA), Mapping):
+                restored = bed(origin, f"data.{side}.{KEY_ORIGIN_DATA}")
+                carry_profile_review_to_renamed_route(origin, restored)
+                child[KEY_ORIGIN_DATA] = restored
+                if isinstance(origin_options := child.get(KEY_ORIGIN_OPTIONS), Mapping):
+                    child[KEY_ORIGIN_OPTIONS] = bed_options(
+                        origin, origin_options, f"data.{side}.{KEY_ORIGIN_OPTIONS}"
+                    )
+            updated.append(child)
+        new_data[CONF_PAIR_CHILDREN] = updated
+    if not moved:
+        return dict(data), dict(options)
+    carry_profile_review_to_renamed_route(data, new_data)
+    _with_migration_record(
+        new_data,
+        from_version=from_version,
+        from_minor_version=from_minor_version,
+        leggett_models=moved,
+    )
+    return new_data, new_options
+
+
+def _massage_button_unique_ids(data: Mapping[str, Any], turned_off: list[str]) -> set[str]:
+    """Return the unique ids of the massage buttons Massage on gave these runtimes."""
+    from .button import BUTTON_DESCRIPTIONS
+
+    keys = [description.key for description in BUTTON_DESCRIPTIONS if description.requires_massage]
+    unique_ids: set[str] = set()
+    for location in turned_off:
+        if location == "data":
+            unique_ids.update(f"{data[CONF_ADDRESS].upper()}_{key}" for key in keys)
+            continue
+        _data, side, *origin = location.split(".")
+        child = get_child(data, side)
+        address = child.get(CONF_ADDRESS) if child is not None else None
+        if origin or address is None:
+            # An original entry has no entities until an unpair restores it.
+            continue
+        # These layouts never pair on one address, so each side has its own.
+        unique_ids.update(f"{address.upper()}_{key}" for key in keys)
+        # A combined control needs both sides, so it goes with either one.
+        unique_ids.update(f"{data[CONF_PAIR_ID]}_{key}_both" for key in keys)
+    return unique_ids
+
+
+def migrate_v5_4_data(data: Mapping[str, Any]) -> dict[str, Any]:
+    """Return entry data or options with the classic Richmat key's current name.
+
+    4.4 stored the third-service fallback under the audit-tracker name. Paired
+    sides and the original entries they restore on unpair are migrated too.
+    """
+    from .beds.richmat_classic.profiles import KEY_PREFIX, LEGACY_KEY_PREFIX
+
+    legacy_key = LEGACY_KEY_PREFIX + CONF_RICHMAT_CLASSIC_THIRD_SERVICE.removeprefix(KEY_PREFIX)
+    migrated = dict(data)
+    if legacy_key in migrated:
+        migrated.setdefault(CONF_RICHMAT_CLASSIC_THIRD_SERVICE, migrated.pop(legacy_key))
+    for key in (KEY_ORIGIN_DATA, KEY_ORIGIN_OPTIONS):
+        if isinstance(nested := migrated.get(key), Mapping):
+            migrated[key] = migrate_v5_4_data(nested)
+    if isinstance(children := migrated.get(CONF_PAIR_CHILDREN), list):
+        migrated[CONF_PAIR_CHILDREN] = [
+            migrate_v5_4_data(child) if isinstance(child, Mapping) else child
+            for child in children
+        ]
+    return migrated
+
+
+async def _async_migrate_v5_4_ids(hass: HomeAssistant, entry: ConfigEntry) -> None:
+    """Give the classic Richmat entities and stored app state their current names."""
+    from .app_state_store import app_state_slot, app_state_store
+    from .beds.richmat_classic.profiles import (
+        KEY_PREFIX,
+        LEGACY_APP_STATE_KEY_PREFIX,
+        LEGACY_KEY_PREFIX,
+    )
+
+    registry = er.async_get(hass)
+    # Unique ids are ``<address or pair id>_<key>[_<side>]``.
+    legacy, current = f"_{LEGACY_KEY_PREFIX}", f"_{KEY_PREFIX}"
+
+    @callback
+    def rename(entity: er.RegistryEntry) -> dict[str, Any] | None:
+        if legacy not in entity.unique_id:
+            return None
+        unique_id = entity.unique_id.replace(legacy, current, 1)
+        if registry.async_get_entity_id(entity.domain, DOMAIN, unique_id) is not None:
+            return None
+        return {"new_unique_id": unique_id}
+
+    await er.async_migrate_entries(hass, entry.entry_id, rename)
+    old_slots = app_state_slot(BED_TYPE_RICHMAT_CLASSIC_APPS, None, LEGACY_APP_STATE_KEY_PREFIX)
+    new_slots = old_slots.removesuffix(LEGACY_APP_STATE_KEY_PREFIX)
+    for address in _entry_addresses(entry):
+        try:
+            await app_state_store(hass, address).async_rename_slots(old_slots, new_slots)
+        except OSError:
+            _LOGGER.warning("Could not rename stored app preferences for %s", address, exc_info=True)
+
+
+async def async_migrate_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
+    """Migrate config entries to newer schema versions.
+
+    Each step upgrades from one schema to the next, so an entry from any older
+    version walks the chain. Home Assistant refuses an entry from a newer major
+    version before calling this.
+    """
     _LOGGER.debug(
         "Migrating config entry %s for %s from version %s",
         entry.entry_id,
@@ -324,15 +1668,7 @@ async def async_migrate_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         entry.version,
     )
 
-    if entry.version > 4:
-        _LOGGER.error(
-            "Cannot migrate config entry %s for %s from unsupported future version %s",
-            entry.entry_id,
-            entry.title,
-            entry.version,
-        )
-        return False
-
+    original_version = (entry.version, entry.minor_version)
     if entry.version <= 2:
         new_data = {**entry.data}
 
@@ -361,7 +1697,7 @@ async def async_migrate_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         # by the opt-in pairing flow (already at v4) and never reach this branch.
         hass.config_entries.async_update_entry(entry, version=4)
 
-    if entry.minor_version < 2:
+    if entry.version == 4 and entry.minor_version < 2:
         # v4.1 -> v4.2: store values that v4.0.2 kept under aliases or
         # per-app keys under the one name the integration now reads.
         hass.config_entries.async_update_entry(
@@ -371,7 +1707,7 @@ async def async_migrate_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
             minor_version=2,
         )
 
-    if entry.minor_version < 3:
+    if entry.version == 4 and entry.minor_version < 3:
         # v4.2 -> v4.3: entries from before the explicit app profiles are asked
         # once whether one fits; later entries chose from the full list.
         data = dict(entry.data)
@@ -379,116 +1715,198 @@ async def async_migrate_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
             data[CONF_PROFILE_REVIEW_PENDING] = mark
         hass.config_entries.async_update_entry(entry, data=data, minor_version=3)
 
+    if entry.version == 4:
+        # v4 -> v5.1: store the profile id each entry and paired side runs, and a
+        # record of where it came from. The saved bed type, variant and app keys
+        # are not touched; a connection or position setting 4.x ran with by
+        # default is saved. Schema 5 entries cannot load on 4.x; restoring a Home
+        # Assistant backup is the only way back.
+        data = migrate_v5_data(
+            migrate_v4_runtime_defaults(entry.data),
+            entry.options,
+            from_version=original_version[0],
+            from_minor_version=original_version[1],
+        )
+        # A route that gained an app in v5, such as Woosa Sleep on the Solace
+        # name routes, is reviewed once more.
+        if (mark := v5_profile_review_mark(data)) is not None:
+            data[CONF_PROFILE_REVIEW_PENDING] = mark
+        hass.config_entries.async_update_entry(entry, data=data, version=5, minor_version=1)
+
+    if entry.version == 5 and entry.minor_version < 2:
+        # v5.1 -> v5.2: drop the keys the CONF_* audit found obsolete and list
+        # them in the migration record.
+        data, options = migrate_v5_2_entry(
+            entry.data,
+            entry.options,
+            from_version=original_version[0],
+            from_minor_version=original_version[1],
+        )
+        hass.config_entries.async_update_entry(
+            entry, data=data, options=options, minor_version=2
+        )
+
+    if entry.version == 5 and entry.minor_version < 3:
+        # v5.2 -> v5.3: Massage off on layouts whose profile has no massage
+        # (#787), and their dead massage buttons leave the registry.
+        data, options, turned_off = migrate_v5_3_data(
+            entry.data,
+            entry.options,
+            from_version=original_version[0],
+            from_minor_version=original_version[1],
+        )
+        # The buttons leave the registry now, not at the next successful setup,
+        # so a bed that is out of reach keeps no orphans.
+        registry = er.async_get(hass)
+        for unique_id in _massage_button_unique_ids(data, turned_off):
+            entity_id = registry.async_get_entity_id("button", DOMAIN, unique_id)
+            if entity_id is not None:
+                registry.async_remove(entity_id)
+        hass.config_entries.async_update_entry(
+            entry, data=data, options=options, minor_version=3
+        )
+
+    if entry.version == 5 and entry.minor_version < 4:
+        # v5.3 -> v5.4: the classic Richmat apps' config key, entity unique ids
+        # and stored app state leave the audit-tracker name 4.4 shipped them with.
+        await _async_migrate_v5_4_ids(hass, entry)
+        hass.config_entries.async_update_entry(
+            entry,
+            data=migrate_v5_4_data(entry.data),
+            options=migrate_v5_4_data(entry.options),
+            minor_version=4,
+        )
+
+    if entry.version == 5 and entry.minor_version < 5:
+        # v5.4 -> v5.5: an Octo setup stores its motor layout as the override,
+        # so nothing reads the count saved before the selector existed.
+        data = migrate_v5_5_data(
+            entry.data,
+            entry.options,
+            from_version=original_version[0],
+            from_minor_version=original_version[1],
+        )
+        hass.config_entries.async_update_entry(entry, data=data, minor_version=5)
+
+    if entry.version == 5 and entry.minor_version < 6:
+        # v5.5 -> v5.6: the settings simplification. Position update mode,
+        # connection profile and the stored pair connection mode go; the
+        # disconnect settings become one connection mode.
+        data, options = migrate_v5_6_entry(
+            entry.data,
+            entry.options,
+            from_version=original_version[0],
+            from_minor_version=original_version[1],
+        )
+        hass.config_entries.async_update_entry(
+            entry, data=data, options=options, minor_version=6
+        )
+
+    if entry.version == 5 and entry.minor_version < 7:
+        # v5.6 -> v5.7: a bed on the okin_cb24 route becomes a SmartBed app bed,
+        # the one bed type for that app, on the receiver that sends what it got
+        # before. Controls the app names differently keep their entity IDs.
+        data, options = migrate_v5_7_entry(
+            entry.data,
+            entry.options,
+            from_version=original_version[0],
+            from_minor_version=original_version[1],
+        )
+        if renamed := data != dict(entry.data):
+            _async_migrate_v5_7_entities(hass, entry)
+        hass.config_entries.async_update_entry(
+            entry, data=data, options=options, minor_version=7
+        )
+        if renamed:
+            # The id each route runs under is derived from the renamed fields.
+            _async_sync_profile_ids(hass, entry)
+
+    if entry.version == 5 and entry.minor_version < 8:
+        # v5.7 -> v5.8: an Okimat, DewertOkin, Nectar or Mattress Firm bed that
+        # 4.x saved under its brand is saved as the Okin receiver route it runs.
+        data, options = migrate_v5_8_entry(
+            entry.data,
+            entry.options,
+            from_version=original_version[0],
+            from_minor_version=original_version[1],
+        )
+        renamed = data != dict(entry.data)
+        hass.config_entries.async_update_entry(
+            entry, data=data, options=options, minor_version=8
+        )
+        if renamed:
+            _async_sync_profile_ids(hass, entry)
+
+    if entry.version == 5 and entry.minor_version < 9:
+        # v5.8 -> v5.9: a bed on the sbi route becomes a Q-Plus app bed, the one
+        # bed type for that app, with the bed selection it sent before. Buttons
+        # the app has under another key keep their entity IDs.
+        data, options = migrate_v5_9_entry(
+            entry.data,
+            entry.options,
+            from_version=original_version[0],
+            from_minor_version=original_version[1],
+        )
+        if renamed := data != dict(entry.data):
+            _async_migrate_v5_9_entities(hass, entry)
+        hass.config_entries.async_update_entry(
+            entry, data=data, options=options, minor_version=9
+        )
+        if renamed:
+            _async_sync_profile_ids(hass, entry)
+
+    if entry.version == 5 and entry.minor_version < 10:
+        # v5.9 -> v5.10: a bed on the serta route becomes a Serta MP Remote app
+        # bed, the one bed type for that app. Controls the app has under
+        # another key keep their entity IDs.
+        data, options = migrate_v5_10_entry(
+            entry.data,
+            entry.options,
+            from_version=original_version[0],
+            from_minor_version=original_version[1],
+        )
+        if renamed := data != dict(entry.data):
+            _async_migrate_v5_10_entities(hass, entry)
+        hass.config_entries.async_update_entry(
+            entry, data=data, options=options, minor_version=10
+        )
+        if renamed:
+            _async_sync_profile_ids(hass, entry)
+
+    if entry.version == 5 and entry.minor_version < 11:
+        # v5.10 -> v5.11: a Leggett & Platt bed saved with a model is saved as
+        # that model's bed type, which it ran. Its entities keep their IDs.
+        data, options = migrate_v5_11_entry(
+            entry.data,
+            entry.options,
+            from_version=original_version[0],
+            from_minor_version=original_version[1],
+        )
+        renamed = data != dict(entry.data)
+        hass.config_entries.async_update_entry(
+            entry, data=data, options=options, minor_version=11
+        )
+        if renamed:
+            _async_sync_profile_ids(hass, entry)
+
     _LOGGER.debug(
         "Migration complete for config entry %s (%s), now at version %s",
         entry.title,
         entry.entry_id,
         entry.version,
     )
-    return True
 
 
-def _maybe_cache_kaidi_metadata(hass: HomeAssistant, entry: ConfigEntry) -> None:
-    """Cache Kaidi room/VADDR state from Bluetooth history for existing entries."""
-    if entry.data.get(CONF_BED_TYPE) != BED_TYPE_KAIDI:
-        return
+def _async_sync_profile_ids(hass: HomeAssistant, entry: ConfigEntry) -> None:
+    """Re-derive the stored profile ids before any coordinator reads them.
 
-    advertisement = resolve_kaidi_advertisement(
-        hass,
-        entry.data[CONF_ADDRESS],
-    )
-    if advertisement is None:
-        return
-
-    new_data = add_kaidi_entry_metadata(entry.data, advertisement)
-    if new_data == dict(entry.data):
-        return
-
-    hass.config_entries.async_update_entry(entry, data=new_data)
-    _LOGGER.info(
-        "Cached Kaidi metadata for %s (room_id=%s, target_vaddr=%s, product_id=%s, sofa_acu_no=%s, adv_type=%s, resolved_variant=%s, variant_source=%s)",
-        entry.data[CONF_ADDRESS],
-        new_data.get(CONF_KAIDI_ROOM_ID),
-        new_data.get(CONF_KAIDI_TARGET_VADDR),
-        new_data.get(CONF_KAIDI_PRODUCT_ID),
-        new_data.get(CONF_KAIDI_SOFA_ACU_NO),
-        new_data.get(CONF_KAIDI_ADV_TYPE),
-        new_data.get(CONF_KAIDI_RESOLVED_VARIANT),
-        new_data.get(CONF_KAIDI_VARIANT_SOURCE),
-    )
-
-
-def _async_prepare_remacro_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
-    """Cache the Remacro model and refresh its Repairs warning before connecting.
-
-    A model the selected app does not list, or one not seen yet, still loads on
-    the fallback controls, as every Remacro bed did in v4.0.2; it never blocks setup.
+    Configure, repairs, pairing and runtime corrections edit the saved bed type,
+    variant or app key; every one of them reaches the coordinator through a
+    setup, so deriving here keeps the stored ids current.
     """
-    if entry.data.get(CONF_BED_TYPE) != BED_TYPE_REMACRO:
-        # An earlier Remacro setup may have raised a model issue for this bed.
-        clear_remacro_model_issues(hass, _entry_addresses(entry))
-        return
-    manufacturer_data = remacro_manufacturer_data(hass, entry.data[CONF_ADDRESS])
-    new_data = add_remacro_model(entry.data, manufacturer_data)
-    if new_data != dict(entry.data):
-        hass.config_entries.async_update_entry(entry, data=new_data)
-    problem, placeholders = remacro_entry_problem(entry.data, manufacturer_data)
-    update_remacro_model_issue(
-        hass,
-        entry.data[CONF_ADDRESS],
-        entry.title,
-        problem,
-        placeholders,
-        entry_id=entry.entry_id,
-    )
-
-
-def _maybe_cache_paired_remacro_models(hass: HomeAssistant, entry: ConfigEntry) -> None:
-    """Remember each Remacro side's model and refresh its Repairs warning.
-
-    The stored model lets a side without history resolve its screen at connect
-    and offline; a live advertisement still wins.
-    """
-    children = entry.data.get(CONF_PAIR_CHILDREN)
-    if not isinstance(children, list):
-        return
-    updated: list[Any] = []
-    for child in children:
-        if (
-            isinstance(child, dict)
-            and child.get(CONF_BED_TYPE, entry.data.get(CONF_BED_TYPE)) == BED_TYPE_REMACRO
-            and isinstance(child.get(CONF_ADDRESS), str)
-        ):
-            child = add_remacro_model(
-                child, remacro_manufacturer_data(hass, child[CONF_ADDRESS])
-            )
-        elif isinstance(child, dict) and isinstance(child.get(CONF_ADDRESS), str):
-            # A side that is no longer Remacro must not keep a Remacro model issue.
-            clear_remacro_model_issues(hass, [child[CONF_ADDRESS]])
-        updated.append(child)
-    if updated != children:
-        hass.config_entries.async_update_entry(
-            entry, data={**entry.data, CONF_PAIR_CHILDREN: updated}
-        )
-    for side in PAIR_SIDES:
-        if get_child(entry.data, side) is None:
-            continue
-        data = effective_child_data(entry.data, side, entry.options)
-        address = data.get(CONF_ADDRESS)
-        if data.get(CONF_BED_TYPE) != BED_TYPE_REMACRO or not isinstance(address, str):
-            continue
-        problem, placeholders = remacro_entry_problem(
-            data, remacro_manufacturer_data(hass, address)
-        )
-        update_remacro_model_issue(
-            hass,
-            address,
-            f"{entry.title} ({side})",
-            problem,
-            placeholders,
-            entry_id=entry.entry_id,
-            side=side,
-        )
+    data = with_profile_ids(entry.data, entry.options)
+    if data != dict(entry.data):
+        hass.config_entries.async_update_entry(entry, data=data)
 
 
 def _async_ensure_device_registry_entry(
@@ -502,15 +1920,8 @@ def _async_ensure_device_registry_entry(
     available when the initial connection fails and Home Assistant leaves the
     config entry in SETUP_RETRY.
     """
-    device_registry = dr.async_get(hass)
-    device_info = coordinator.device_info
-    device_registry.async_get_or_create(
-        config_entry_id=entry.entry_id,
-        identifiers=device_info.get("identifiers"),
-        name=device_info.get("name"),
-        manufacturer=device_info.get("manufacturer"),
-        model=device_info.get("model"),
-        model_id=device_info.get("model_id"),
+    dr.async_get(hass).async_get_or_create_from_info(
+        config_entry_id=entry.entry_id, device_info=coordinator.device_info
     )
 
 
@@ -520,12 +1931,15 @@ async def _async_finish_entry_setup(
     coordinator: AdjustableBedCoordinator,
     *,
     schedule_initial_position_read: bool,
-) -> bool:
+) -> None:
     """Store coordinator, forward platforms, and finish setup."""
     hass.data[DOMAIN][entry.entry_id] = coordinator
+    await async_setup_position_estimates(hass, entry.entry_id, [(coordinator.address, None)])
 
     _LOGGER.debug("Setting up platforms: %s", PLATFORMS)
+    async_carry_over_retyped_entities(hass, entry, coordinator)
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
+    async_sweep_after_setup(hass, entry, PLATFORMS)
 
     if schedule_initial_position_read:
         # The successful connect also requests hydration. Route both paths
@@ -534,62 +1948,6 @@ async def _async_finish_entry_setup(
         coordinator._schedule_position_hydration()
 
     _LOGGER.info("Adjustable Bed integration setup complete for %s", entry.title)
-    return True
-
-
-async def _async_setup_offline_diagnostic_entry(
-    hass: HomeAssistant,
-    entry: ConfigEntry,
-    coordinator: AdjustableBedCoordinator,
-    reason: str,
-) -> bool:
-    """Load a diagnostic entry even when initial BLE connection fails."""
-    from .beds.diagnostic import DiagnosticBedController
-
-    _LOGGER.warning(
-        "Loading diagnostic entry %s (%s) without an initial BLE connection so "
-        "diagnostic actions remain available: %s",
-        entry.title,
-        entry.data.get(CONF_ADDRESS),
-        reason,
-    )
-    coordinator._controller = DiagnosticBedController(coordinator)
-    return await _async_finish_entry_setup(
-        hass,
-        entry,
-        coordinator,
-        schedule_initial_position_read=False,
-    )
-
-
-async def _async_setup_offline_furnimove_entry(
-    hass: HomeAssistant,
-    entry: ConfigEntry,
-    coordinator: AdjustableBedCoordinator,
-) -> bool:
-    """Expose the selected catalog layout even when the first link fails."""
-    # A failed cleanup must not turn a half-initialized live session into a
-    # successfully loaded entry. This path requires a client-free controller.
-    if coordinator.client is not None or coordinator.controller is not None:
-        return False
-    await coordinator.async_prime_offline_controller()
-    if coordinator.capability_controller is None:
-        return False
-    _LOGGER.warning(
-        "Loading FurniMove entry %s without an initial BLE connection. Controls use "
-        "the selected handset layout and retry the connection when used; receiver "
-        "compatibility remains unverified.",
-        entry.title,
-    )
-    entry.async_on_unload(entry.add_update_listener(_async_update_listener))
-    return await _async_finish_entry_setup(
-        hass, entry, coordinator, schedule_initial_position_read=False
-    )
-
-
-def _shared_child_fields(parent_data: Mapping[str, Any]) -> dict[str, Any]:
-    """Parent-level config inherited by every child (each descriptor overrides)."""
-    return inheritable_child_fields(parent_data)
 
 
 def _make_child_persist_cb(
@@ -636,15 +1994,17 @@ def _build_paired_children(
     hass: HomeAssistant, entry: ConfigEntry
 ) -> dict[str, AdjustableBedCoordinator]:
     """Build one child coordinator per side from the paired entry's descriptors."""
-    children: dict[str, AdjustableBedCoordinator] = {}
+    views: dict[str, ChildEntryView] = {}
     for side in PAIR_SIDES:
         descriptor = get_child(entry.data, side)
         if descriptor is None:
             continue
         child_data = effective_child_data(entry.data, side, entry.options)
-        view = ChildEntryView(entry, child_data, _make_child_persist_cb(hass, entry, side))
-        children[side] = AdjustableBedCoordinator(hass, view)
-    return children
+        validate = entry_hooks(profile_route(entry_profile_id(child_data)).bed_type).validate
+        if validate is not None:
+            validate(child_data)
+        views[side] = ChildEntryView(entry, child_data, _make_child_persist_cb(hass, entry, side))
+    return {side: AdjustableBedCoordinator(hass, view) for side, view in views.items()}
 
 
 def _async_ensure_paired_device_registry(
@@ -657,23 +2017,15 @@ def _async_ensure_paired_device_registry(
     absorbed standalone devices have transferred ownership; other sides can be
     registered immediately for diagnostics during SETUP_RETRY.
     """
-    registry = dr.async_get(hass)
-    parent_info = coordinator.device_info
-    registry.async_get_or_create(
-        config_entry_id=entry.entry_id,
-        identifiers=parent_info.get("identifiers"),
-        name=parent_info.get("name"),
-        manufacturer=parent_info.get("manufacturer"),
-        model=parent_info.get("model"),
-        model_id=parent_info.get("model_id"),
+    dr.async_get(hass).async_get_or_create_from_info(
+        config_entry_id=entry.entry_id, device_info=coordinator.device_info
     )
-
     async_register_children(hass, coordinator)
 
 
 async def _async_release_absorbed_singles(
     hass: HomeAssistant, entry: ConfigEntry,
-    *, local_transfers: list[_PairlinkLocalLeaseTransfer] | None = None,
+    *, local_transfers: list[PairlinkLocalLeaseTransfer] | None = None,
 ) -> tuple[AdjustableBedCoordinator, ...]:
     """Release the original singles' links before their paired children connect.
 
@@ -695,7 +2047,7 @@ async def _async_release_absorbed_singles(
             original = hass.config_entries.async_get_entry(absorbed_id)
             if original is None or is_paired(original.data):
                 continue
-            original_coordinator = hass.data.get(DOMAIN, {}).get(absorbed_id)
+            original_coordinator = loaded_runtime(hass, absorbed_id)
             if not isinstance(original_coordinator, AdjustableBedCoordinator):
                 continue
             try:
@@ -706,7 +2058,7 @@ async def _async_release_absorbed_singles(
                 if local_transfers and absorbed_id in {
                     item.original.entry.entry_id for item in local_transfers
                 } and transfer is None:
-                    raise ConfigEntryNotReady("Absorbed local runtime changed before transfer")
+                    raise not_ready("setup_retry")
                 if transfer is not None:
                     released = await original_coordinator.async_release_for_pairing_transfer(
                         expected_pairlink_runtime=transfer.runtime,
@@ -716,23 +2068,17 @@ async def _async_release_absorbed_singles(
                 if released is not False:
                     transferring.append(original_coordinator)
                 if released is False or original_coordinator.is_connected:
-                    raise ConfigEntryNotReady(
-                        f"Could not release {original.title} before paired setup"
-                    )
+                    raise not_ready("pair_side_busy", name=original.title)
                 _LOGGER.debug(
                     "Released absorbed single %s's BLE link before paired connect",
                     absorbed_id,
                 )
             except PairingOnlyConnectionActiveError as err:
-                raise ConfigEntryNotReady(
-                    f"Cannot transfer {original.title} while its pairing-only connection is active"
-                ) from err
+                raise not_ready("pair_side_busy", name=original.title) from err
             except ConfigEntryNotReady:
                 raise
-            except Exception as err:  # noqa: BLE001 - retain both working originals
-                raise ConfigEntryNotReady(
-                    f"Could not release {original.title} before paired setup: {err}"
-                ) from err
+            except Exception as err:
+                raise not_ready("pair_side_busy", name=original.title) from err
     except (Exception, asyncio.CancelledError):
         for coordinator in transferring:
             coordinator.finish_pairing_transfer()
@@ -740,7 +2086,7 @@ async def _async_release_absorbed_singles(
     return tuple(transferring)
 
 
-async def _async_setup_paired_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
+async def _async_setup_paired_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
     """Set up a paired (Dual Bed 4.0) entry as one logical device."""
     # HA only clears pending flows matching the new entry's unique_id. A pair's
     # synthetic ID does not match its members' existing Bluetooth discovery cards.
@@ -763,13 +2109,20 @@ async def _async_setup_paired_entry(hass: HomeAssistant, entry: ConfigEntry) -> 
         [child.get(CONF_SIDE) for child in entry.data.get(CONF_PAIR_CHILDREN, [])],
     )
 
-    _maybe_cache_paired_remacro_models(hass, entry)
+    cache_paired_remacro_models(hass, entry)
+    _async_sync_profile_ids(hass, entry)
     if entry.data.get(CONF_PAIR_MODE) == PAIR_MODE_SINGLE_ADDRESS:
-        return await _async_setup_single_address_paired_entry(hass, entry)
+        await _async_setup_single_address_paired_entry(hass, entry)
+        return
 
+    for side in PAIR_SIDES:
+        if get_child(entry.data, side) is not None:
+            await AdjustableBedCoordinator.async_import_tables(
+                hass, effective_child_data(entry.data, side, entry.options)
+            )
     children = _build_paired_children(hass, entry)
     if not children:
-        raise ConfigEntryNotReady("Paired bed has no child sides configured")
+        raise setup_stopped("paired_entry_has_no_sides")
 
     # Observe the first connection too: sequential pairing may disconnect one
     # side before platform setup, taking its live controller with it.
@@ -784,16 +2137,18 @@ async def _async_setup_paired_entry(hass: HomeAssistant, entry: ConfigEntry) -> 
     # A local Pairlink server is selected per physical child. Validate and
     # reserve all selected adapters before creating the parent device or
     # releasing the existing single-entry owners.
-    pairlink_inventory, pairlink_local_roles, pairlink_transfers = _preflight_paired_pairlink_local_roles(
-        hass, entry, children
-    )
+    (
+        pairlink_inventory,
+        pairlink_local_roles,
+        pairlink_transfers,
+    ) = await async_preflight_paired_pairlink_local_roles(hass, entry, children)
 
     try:
         coordinator = PairedBedCoordinator(hass, entry, children)
         _async_ensure_paired_device_registry(hass, entry, coordinator)
     except BaseException:
-        _release_pairlink_local_reservations(hass, pairlink_local_roles, pairlink_transfers)
-        await _async_restore_pairlink_local_transfers(hass, None, pairlink_transfers, pairlink_inventory)
+        release_pairlink_local_reservations(hass, pairlink_local_roles, pairlink_transfers)
+        await async_restore_pairlink_local_transfers(hass, None, pairlink_transfers, pairlink_inventory)
         raise
 
     async def _pairing_repairs_for_unconnected() -> None:
@@ -829,9 +2184,10 @@ async def _async_setup_paired_entry(hass: HomeAssistant, entry: ConfigEntry) -> 
                     else:
                         transferring = await _async_release_absorbed_singles(hass, entry)
                     for _side, child, source, adapter, owner in pairlink_local_roles:
-                        if hass.data[DOMAIN][_PAIRLINK_LOCAL_PROFILE_LEASES_KEY].get(adapter) != owner:
-                            raise ConfigEntryNotReady("Pairlink local reservation changed before startup")
-                        await _async_start_paired_pairlink_local_child(
+                        leases = domain_registry(hass, PAIRLINK_LOCAL_PROFILE_LEASES_KEY, dict)
+                        if leases.get(adapter) != owner:
+                            raise not_ready("setup_retry")
+                        await async_start_paired_pairlink_local_child(
                             hass,
                             child,
                             host_adapter_source=source,
@@ -845,7 +2201,7 @@ async def _async_setup_paired_entry(hass: HomeAssistant, entry: ConfigEntry) -> 
                         connected = await coordinator.async_connect()
             except ConfigEntryNotReady:
                 await _shutdown_failed_pair()
-                _release_pairlink_local_reservations(hass, pairlink_local_roles, pairlink_transfers)
+                release_pairlink_local_reservations(hass, pairlink_local_roles, pairlink_transfers)
                 raise
             except TimeoutError:
                 # The coordinator isn't in hass.data yet, so the unload path won't run —
@@ -853,13 +2209,13 @@ async def _async_setup_paired_entry(hass: HomeAssistant, entry: ConfigEntry) -> 
                 # alive across SETUP_RETRY.
                 await _pairing_repairs_for_unconnected()
                 await _shutdown_failed_pair()
-                _release_pairlink_local_reservations(hass, pairlink_local_roles, pairlink_transfers)
-                raise ConfigEntryNotReady(
-                    f"Paired bed {entry.title} timed out connecting after {SETUP_TIMEOUT:.0f}s"
-                ) from None
+                release_pairlink_local_reservations(hass, pairlink_local_roles, pairlink_transfers)
+                if any(child.refused_outside_pairing_window for child in children.values()):
+                    raise not_ready("setup_pairing_window_closed", name=entry.title) from None
+                raise not_ready("setup_timed_out", name=entry.title, seconds=f"{SETUP_TIMEOUT:.0f}", hint="") from None
             except (Exception, asyncio.CancelledError):
                 await _shutdown_failed_pair()
-                _release_pairlink_local_reservations(hass, pairlink_local_roles, pairlink_transfers)
+                release_pairlink_local_reservations(hass, pairlink_local_roles, pairlink_transfers)
                 raise
 
             # Half-available is fine, but surface pairing repairs for any unconnected side
@@ -869,10 +2225,10 @@ async def _async_setup_paired_entry(hass: HomeAssistant, entry: ConfigEntry) -> 
                 # If NO side connected there is nothing to control yet — retry like a
                 # single bed.
                 await _shutdown_failed_pair()
-                _release_pairlink_local_reservations(hass, pairlink_local_roles, pairlink_transfers)
-                raise ConfigEntryNotReady(
-                    f"No side of paired bed {entry.title} could be connected"
-                )
+                release_pairlink_local_reservations(hass, pairlink_local_roles, pairlink_transfers)
+                if any(child.refused_outside_pairing_window for child in children.values()):
+                    raise not_ready("setup_pairing_window_closed", name=entry.title)
+                raise not_ready("pair_sides_unavailable", name=entry.title)
 
             # Some sides cannot recreate their extra controls without discovery. A
             # concurrent side can lose its first race with the standalone receiver's
@@ -898,7 +2254,7 @@ async def _async_setup_paired_entry(hass: HomeAssistant, entry: ConfigEntry) -> 
                             async with asyncio.timeout(SETUP_TIMEOUT):
                                 if await child.async_connect():
                                     child.cache_capability_controller()
-                        except Exception:  # noqa: BLE001 - validation below reports the retry
+                        except Exception:
                             _LOGGER.debug(
                                 "Pre-absorb capability reconnect of %s failed",
                                 child.address,
@@ -909,13 +2265,10 @@ async def _async_setup_paired_entry(hass: HomeAssistant, entry: ConfigEntry) -> 
                         capability_controller is None
                         or not capability_controller.controller_entity_discovery_complete
                     ):
-                        raise ConfigEntryNotReady(
-                            f"Paired bed {entry.title} needs {child.name} to connect "
-                            "and finish discovering its controls before they can be restored"
-                        )
+                        raise not_ready("pair_side_discovering", name=entry.title, side=child.name)
             except (Exception, asyncio.CancelledError):
                 await _shutdown_failed_pair()
-                _release_pairlink_local_reservations(hass, pairlink_local_roles, pairlink_transfers)
+                release_pairlink_local_reservations(hass, pairlink_local_roles, pairlink_transfers)
                 raise
 
             hass.data[DOMAIN][entry.entry_id] = coordinator
@@ -931,7 +2284,7 @@ async def _async_setup_paired_entry(hass: HomeAssistant, entry: ConfigEntry) -> 
             absorbed_sides = await _async_rehome_absorbed_singles(hass, entry)
         finally:
             try:
-                await _async_restore_pairlink_local_transfers(
+                await async_restore_pairlink_local_transfers(
                     hass, coordinator, pairlink_transfers, pairlink_inventory,
                 )
             finally:
@@ -952,10 +2305,8 @@ async def _async_setup_paired_entry(hass: HomeAssistant, entry: ConfigEntry) -> 
         if not coordinator.children:
             hass.data[DOMAIN].pop(entry.entry_id, None)
             await _shutdown_failed_pair()
-            _release_pairlink_local_reservations(hass, pairlink_local_roles, pairlink_transfers)
-            raise ConfigEntryNotReady(
-                f"Could not absorb either standalone side of paired bed {entry.title}"
-            )
+            release_pairlink_local_reservations(hass, pairlink_local_roles, pairlink_transfers)
+            raise not_ready("pair_transfer_failed", name=entry.title)
         # A just-absorbed concurrent side may have failed its initial connect ONLY
         # because its original single was still holding the (single-link) BLE — which
         # the absorb above has now freed. Retry such a side once so a non-offline-
@@ -974,7 +2325,7 @@ async def _async_setup_paired_entry(hass: HomeAssistant, entry: ConfigEntry) -> 
                     # forwarding indefinitely. A timeout just falls back to offline-prime.
                     async with asyncio.timeout(SETUP_TIMEOUT):
                         await child.async_connect()
-                except Exception:  # noqa: BLE001 - a failed retry just falls back to offline-prime
+                except Exception:
                     _LOGGER.debug("Post-absorb reconnect of %s side failed; priming offline", side)
         # Prime a client-free capability controller for any side that did NOT connect,
         # so its per-side entities are still created up-front (with byte-identical
@@ -988,11 +2339,19 @@ async def _async_setup_paired_entry(hass: HomeAssistant, entry: ConfigEntry) -> 
         try:
             async_register_children(hass, coordinator)
             entry.async_on_unload(entry.add_update_listener(_async_update_listener))
-            await hass.config_entries.async_forward_entry_setups(entry, PAIRED_PLATFORMS)
+            # Each side keeps its own calibration and estimate.
+            await async_setup_position_estimates(
+                hass,
+                entry.entry_id,
+                [(child.address, side) for side, child in coordinator.children.items()],
+            )
+            async_carry_over_retyped_entities(hass, entry, coordinator)
+            await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
+            async_sweep_after_setup(hass, entry, PLATFORMS)
         except (Exception, asyncio.CancelledError):
             hass.data[DOMAIN].pop(entry.entry_id, None)
             await _shutdown_failed_pair()
-            _release_pairlink_local_reservations(hass, pairlink_local_roles, pairlink_transfers)
+            release_pairlink_local_reservations(hass, pairlink_local_roles, pairlink_transfers)
             raise
 
         # Seed each connected child's positions, like the single-bed path does, so
@@ -1007,11 +2366,10 @@ async def _async_setup_paired_entry(hass: HomeAssistant, entry: ConfigEntry) -> 
             hass, entry, (side for side in sides if isinstance(side, AdjustableBedCoordinator))
         )
         _LOGGER.info("Paired bed setup complete for %s", entry.title)
-        return True
     except BaseException:
         # Source removal commits registry ownership even if setup is cancelled.
         # Stop the failed pair without reclaiming committed or restored singles.
-        if hass.data[DOMAIN].get(entry.entry_id) is coordinator:
+        if loaded_runtime(hass, entry.entry_id) is coordinator:
             hass.data[DOMAIN].pop(entry.entry_id)
         cleanup_task = hass.async_create_task(
             _shutdown_failed_pair(), "adjustable_bed.failed_pair_shutdown"
@@ -1026,24 +2384,18 @@ async def _async_setup_paired_entry(hass: HomeAssistant, entry: ConfigEntry) -> 
             cleanup_task.result()
         finally:
             for _side, _child, _source, adapter, owner in pairlink_local_roles:
-                _release_pairlink_local_profile_lease(hass, owner, adapter)
+                release_pairlink_local_profile_lease(hass, owner, adapter)
         if cancelled:
             raise asyncio.CancelledError from None
         raise
 
 
-async def _async_setup_single_address_paired_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
+async def _async_setup_single_address_paired_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
     """Set up a left/right/both surface over one physical coordinator."""
-    inner = AdjustableBedCoordinator(hass, entry)
+    inner = await AdjustableBedCoordinator.async_create(hass, entry)
     coordinator = SingleAddressPairedCoordinator(hass, entry, inner)
-    info = coordinator.device_info
-    dr.async_get(hass).async_get_or_create(
-        config_entry_id=entry.entry_id,
-        identifiers=info.get("identifiers"),
-        name=info.get("name"),
-        manufacturer=info.get("manufacturer"),
-        model=info.get("model"),
-        model_id=info.get("model_id"),
+    dr.async_get(hass).async_get_or_create_from_info(
+        config_entry_id=entry.entry_id, device_info=coordinator.device_info
     )
     async_register_children(hass, coordinator)
     await async_watch_profile_recommendations(hass, entry, ((None, inner),))
@@ -1052,26 +2404,24 @@ async def _async_setup_single_address_paired_entry(hass: HomeAssistant, entry: C
             connected = await coordinator.async_connect()
     except TimeoutError:
         await coordinator.async_shutdown()
-        raise ConfigEntryNotReady(
-            f"Single-address paired bed {entry.title} timed out connecting"
-        ) from None
+        raise not_ready("setup_timed_out", name=entry.title, seconds=f"{SETUP_TIMEOUT:.0f}", hint="") from None
     if not connected:
         await _maybe_create_pairing_issue_for(hass, inner)
         await coordinator.async_shutdown()
-        raise ConfigEntryNotReady(f"Bed {entry.title} could not be connected")
+        raise not_ready("setup_connect_failed", name=entry.title, hint="")
 
     controller = inner.controller
-    if controller is not None and not getattr(controller, "supports_single_address_pairing", True):
+    if controller is not None and not controller.supports_single_address_pairing:
         await coordinator.async_shutdown()
-        raise ConfigEntryNotReady(
-            "The connected protocol has no side selector and cannot expose paired sides"
-        )
+        raise setup_stopped("single_address_pair_unsupported")
 
     hass.data[DOMAIN][entry.entry_id] = coordinator
     try:
         async_register_children(hass, coordinator)
         entry.async_on_unload(entry.add_update_listener(_async_update_listener))
-        await hass.config_entries.async_forward_entry_setups(entry, PAIRED_PLATFORMS)
+        async_carry_over_retyped_entities(hass, entry, coordinator)
+        await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
+        async_sweep_after_setup(hass, entry, PLATFORMS)
     except (Exception, asyncio.CancelledError):
         hass.data[DOMAIN].pop(entry.entry_id, None)
         await coordinator.async_shutdown()
@@ -1084,7 +2434,6 @@ async def _async_setup_single_address_paired_entry(hass: HomeAssistant, entry: C
                 name=f"adjustable_bed_single_address_initial_read_{side}",
             )
     _LOGGER.info("Single-address paired bed setup complete for %s", entry.title)
-    return True
 
 
 def _bond_gated_unbonded(coordinator: AdjustableBedCoordinator) -> bool:
@@ -1169,23 +2518,24 @@ async def _maybe_create_pairing_issue_for(
     )
 
 
-async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
+async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
     """Set up Adjustable Bed from a config entry."""
     hass.data.setdefault(DOMAIN, {})
     async_track_combine_beds_issue(hass, entry)
     async_refresh_furnimove_layout_issues(hass, entry)
     async_refresh_profile_review_issue(hass, entry)
+    async_report_removed_entities(hass, entry)
     await async_register_services(hass)
 
     # Paired beds (Dual Bed 4.0) route to a dedicated setup path; single-bed
     # entries (no pair_id) fall through to the unchanged logic below.
     if is_paired(entry.data):
-        return await _async_setup_paired_entry(hass, entry)
+        await _async_setup_paired_entry(hass, entry)
+        return
 
-    await _async_maybe_reclassify_bedtech_qrrm_entry(hass, entry)
-    _maybe_cache_kaidi_metadata(hass, entry)
-    _async_prepare_remacro_entry(hass, entry)
-    _async_clear_stale_octo_pin_issue(hass, entry)
+    for prepare in ENTRY_PREPARE_STEPS:
+        await prepare(hass, entry)
+    _async_sync_profile_ids(hass, entry)
 
     _LOGGER.info(
         "Setting up Adjustable Bed integration for %s (address: %s, type: %s, motors: %s, massage: %s)",
@@ -1196,19 +2546,59 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         entry.data.get(CONF_HAS_MASSAGE),
     )
 
-    coordinator = AdjustableBedCoordinator(hass, entry)
+    coordinator = await AdjustableBedCoordinator.async_create(hass, entry)
+    try:
+        await _async_setup_standalone_entry(hass, entry, coordinator)
+    except BaseException:
+        # A failed setup must not leave a reconnect timer or bond task behind:
+        # Home Assistant's retry builds a new coordinator for the same bed,
+        # which accepts one connection.
+        if loaded_runtime(hass, entry.entry_id) is coordinator:
+            hass.data[DOMAIN].pop(entry.entry_id)
+
+        async def _bounded_shutdown() -> None:
+            # A stalled disconnect must not block the setup retry.
+            async with asyncio.timeout(SETUP_CLEANUP_TIMEOUT):
+                await coordinator.async_shutdown()
+
+        shutdown = hass.async_create_task(
+            _bounded_shutdown(), "adjustable_bed.failed_setup_shutdown"
+        )
+        cancelled = False
+        while not shutdown.done():
+            try:
+                # Unlike awaiting the task, this neither cancels it nor raises its error.
+                await asyncio.wait((shutdown,))
+            except asyncio.CancelledError:
+                cancelled = True
+        if not shutdown.cancelled() and (err := shutdown.exception()) is not None:
+            _LOGGER.warning(
+                "Failed to stop %s after its setup failed: %r", entry.title, err
+            )
+        if cancelled:
+            raise asyncio.CancelledError from None
+        raise
+
+
+async def _async_setup_standalone_entry(
+    hass: HomeAssistant, entry: ConfigEntry, coordinator: AdjustableBedCoordinator
+) -> None:
+    """Connect a standalone bed and forward its platforms."""
     _async_ensure_device_registry_entry(hass, entry, coordinator)
     await async_watch_profile_recommendations(hass, entry, ((None, coordinator),))
 
-    selected_pairlink_role = entry.options.get(
-        CONF_PAIRLINK_ROLE,
-        entry.data.get(CONF_PAIRLINK_ROLE),
-    )
-    if (
-        entry.data.get(CONF_BED_TYPE) == BED_TYPE_REVERIE_PAIRLINK
-        and selected_pairlink_role == PAIRLINK_ROLE_PERIPHERAL
-    ):
-        return await _async_setup_pairlink_local_entry(hass, entry, coordinator)
+    hooks = entry_hooks(coordinator.bed_type)
+    if hooks.setup_local is not None:
+
+        async def finish_local_setup() -> None:
+            entry.async_on_unload(entry.add_update_listener(_async_update_listener))
+            async_watch_remacro_fallback(hass, entry, (coordinator,))
+            await _async_finish_entry_setup(
+                hass, entry, coordinator, schedule_initial_position_read=False
+            )
+
+        if await hooks.setup_local(hass, entry, coordinator, finish_local_setup):
+            return
 
     # Connect to the bed with a timeout to avoid blocking startup forever
     _LOGGER.debug("Attempting initial connection to bed (timeout: %.0fs)...", SETUP_TIMEOUT)
@@ -1236,42 +2626,31 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
     if not connected:
         await _maybe_create_pairing_issue_for(hass, coordinator)
-        if entry.data.get(CONF_BED_TYPE) == BED_TYPE_DIAGNOSTIC:
-            return await _async_setup_offline_diagnostic_entry(
-                hass,
-                entry,
-                coordinator,
-                reason=(
-                    f"initial connection timed out after {SETUP_TIMEOUT:.0f}s"
-                    if initial_connection_timed_out
-                    else "device was not reachable during initial setup"
-                ),
-            )
-        if coordinator.bed_type == BED_TYPE_FURNIMOVE and await _async_setup_offline_furnimove_entry(
-            hass, entry, coordinator
+        hooks = entry_hooks(coordinator.bed_type)
+        if hooks.load_offline is not None and await hooks.load_offline(
+            hass,
+            entry,
+            coordinator,
+            f"initial connection timed out after {SETUP_TIMEOUT:.0f}s"
+            if initial_connection_timed_out
+            else "device was not reachable during initial setup",
         ):
-            return True
-        if initial_connection_timed_out:
-            raise ConfigEntryNotReady(
-                f"Connection to bed at {entry.data.get(CONF_ADDRESS)} timed out after "
-                f"{SETUP_TIMEOUT:.0f}s.{_connection_failure_hint(coordinator)}"
-            ) from None
-        if _bond_gated_unbonded(coordinator):
-            raise ConfigEntryNotReady(
-                f"Failed to connect to bed at {entry.data.get(CONF_ADDRESS)}."
-                f"{_connection_failure_hint(coordinator)}"
+            entry.async_on_unload(entry.add_update_listener(_async_update_listener))
+            await _async_finish_entry_setup(
+                hass, entry, coordinator, schedule_initial_position_read=False
             )
+            return
+        if coordinator.refused_outside_pairing_window:
+            raise not_ready("setup_pairing_window_closed", name=entry.title) from None
+        if initial_connection_timed_out:
+            raise not_ready("setup_timed_out", name=entry.title, seconds=f"{SETUP_TIMEOUT:.0f}", hint=_connection_failure_hint(coordinator)) from None
+        if _bond_gated_unbonded(coordinator):
+            raise not_ready("setup_connect_failed", name=entry.title, hint=_connection_failure_hint(coordinator))
         last_attempt = (coordinator.connection_attempt_details or [{}])[-1]
         if last_attempt.get("connect_elapsed_seconds") is not None and last_attempt.get("error"):
             # The link came up, so range/power advice would mislead.
-            raise ConfigEntryNotReady(
-                f"Connected to bed at {entry.data.get(CONF_ADDRESS)}, but its startup "
-                f"failed: {last_attempt['error']}.{_connection_failure_hint(coordinator)}"
-            )
-        raise ConfigEntryNotReady(
-            f"Failed to connect to bed at {entry.data.get(CONF_ADDRESS)}. "
-            "Check that the bed is powered on and in range of your Bluetooth adapter/proxy."
-        )
+            raise not_ready("setup_startup_failed", name=entry.title, error=last_attempt['error'], hint=_connection_failure_hint(coordinator))
+        raise not_ready("setup_connect_failed", name=entry.title, hint="")
 
     # The connection proves an advertisement, which the review may still need.
     async_refresh_profile_review_issue(hass, entry)
@@ -1283,355 +2662,12 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     # Keep the proven layout available to the combine wizard after idle disconnect.
     coordinator.cache_capability_controller()
     async_watch_remacro_fallback(hass, entry, (coordinator,))
-    return await _async_finish_entry_setup(
+    await _async_finish_entry_setup(
         hass,
         entry,
         coordinator,
         schedule_initial_position_read=True,
     )
-
-
-if TYPE_CHECKING:
-    from .beds.reverie_pairlink_runtime import PairlinkRuntime
-    from .beds.reverie_pairlink_transport import PairlinkHostAdapterInventoryEntry
-
-_PAIRLINK_LOCAL_PROFILE_LEASES_KEY = "_pairlink_local_profile_leases"
-
-
-
-@dataclass(frozen=True, slots=True)
-class _PairlinkLocalLeaseTransfer:
-    side: str
-    original: AdjustableBedCoordinator
-    entry: ConfigEntry
-    runtime: PairlinkRuntime
-    source: str
-    adapter: str
-    owner: str
-
-
-def _trusted_absorbed_single(
-    hass: HomeAssistant, entry: ConfigEntry, side: str, child: AdjustableBedCoordinator,
-) -> tuple[ConfigEntry | None, AdjustableBedCoordinator | None]:
-    """Validate a descriptor before it can identify an existing lease owner."""
-    if not child.entry.data.get(KEY_ABSORBED_ENTRY_ID):
-        return None, None
-    descriptor = get_child(entry.data, side)
-    absorbed_id = descriptor.get(KEY_ABSORBED_ENTRY_ID) if descriptor is not None else None
-    if not absorbed_id:
-        return None, None
-    original = hass.config_entries.async_get_entry(absorbed_id)
-    if original is None:
-        return None, None
-    if (
-        is_paired(original.data)
-        or str(original.data.get(CONF_ADDRESS, "")).upper() != child.address
-        or original.data.get(CONF_BED_TYPE) != child.bed_type
-        or (
-            descriptor is not None
-            and descriptor.get("origin_unique_id") is not None
-            and descriptor.get("origin_unique_id") != original.unique_id
-        )
-    ):
-        raise ConfigEntryNotReady("Absorbed bed identity does not match its paired side")
-    coordinator = hass.data.get(DOMAIN, {}).get(absorbed_id)
-    if coordinator is not None and (
-        not isinstance(coordinator, AdjustableBedCoordinator)
-        or coordinator.entry is not original
-        or coordinator.address != child.address
-    ):
-        raise ConfigEntryNotReady("Absorbed bed runtime does not match its config entry")
-    return original, coordinator
-
-
-def _release_pairlink_local_reservations(
-    hass: HomeAssistant,
-    roles: list[tuple[str, AdjustableBedCoordinator, str, str, str]],
-    transfers: list[_PairlinkLocalLeaseTransfer],
-) -> None:
-    """Keep predecessor reservations held until their rollback or commit."""
-    retained = {transfer.adapter for transfer in transfers}
-    for _side, _child, _source, adapter, owner in roles:
-        if adapter not in retained:
-            _release_pairlink_local_profile_lease(hass, owner, adapter)
-
-
-async def _async_restore_pairlink_local_transfers(
-    hass: HomeAssistant, parent: PairedBedCoordinator | None,
-    transfers: list[_PairlinkLocalLeaseTransfer],
-    inventory: tuple[PairlinkHostAdapterInventoryEntry, ...],
-) -> None:
-    """Settle source restoration before propagating caller cancellation."""
-    if not transfers:
-        return
-    task = hass.async_create_task(
-        _async_restore_pairlink_local_sources(hass, parent, transfers, inventory),
-        "adjustable_bed.pairlink_transfer_rollback",
-    )
-    cancelled = False
-    while not task.done():
-        try:
-            await asyncio.shield(task)
-        except asyncio.CancelledError:
-            # Keep cleanup isolated from every caller cancellation.
-            cancelled = True
-    task.result()
-    if cancelled:
-        raise asyncio.CancelledError
-
-
-async def _async_restore_pairlink_local_sources(
-    hass: HomeAssistant, parent: PairedBedCoordinator | None,
-    transfers: list[_PairlinkLocalLeaseTransfer],
-    inventory: tuple[PairlinkHostAdapterInventoryEntry, ...],
-) -> None:
-    """Restore surviving singles only after their replacement server has stopped."""
-    failures: list[Exception] = []
-    for transfer in reversed(transfers):
-        original = transfer.original
-        entry = transfer.entry
-        if hass.config_entries.async_get_entry(entry.entry_id) is not entry:
-            # Removing a source entry is the registry transaction's commit point.
-            continue
-        try:
-            if parent is not None:
-                await parent.async_remove_child(transfer.side)
-            leases = hass.data[DOMAIN][_PAIRLINK_LOCAL_PROFILE_LEASES_KEY]
-            if leases.get(transfer.adapter) != transfer.owner:
-                raise ConfigEntryNotReady("Pairlink transfer reservation changed before rollback")
-            current = hass.data[DOMAIN].get(entry.entry_id)
-            unloaded = (
-                current is None
-                and original._shutting_down
-                and entry.state is ConfigEntryState.NOT_LOADED
-            )
-            if current is not original and not unloaded:
-                raise ConfigEntryNotReady("Pairlink source runtime changed before rollback")
-            leases[transfer.adapter] = entry.entry_id
-            if unloaded:
-                if not await hass.config_entries.async_setup(entry.entry_id):
-                    raise ConfigEntryNotReady("Could not reload the original Pairlink local entry")
-            elif transfer.runtime.is_closed:
-                async with original._command_lock, original._lock:
-                    if original._pairlink_runtime is not None:
-                        raise ConfigEntryNotReady("Pairlink source runtime changed during rollback")
-                    await _async_start_paired_pairlink_local_child(
-                        hass, original, host_adapter_source=transfer.source,
-                        adapter_inventory=inventory,
-                    )
-        except Exception as err:
-            failures.append(err)
-        finally:
-            original.finish_pairing_transfer()
-    if failures:
-        raise ExceptionGroup("Pairlink local source restoration failed", failures)
-
-
-def _release_pairlink_local_profile_lease(
-    hass: HomeAssistant,
-    entry_id: str,
-    adapter: str,
-) -> None:
-    """Release one integration-local lease after the entry-owned backend stops."""
-    domain_data = hass.data.get(DOMAIN)
-    if not isinstance(domain_data, dict):
-        return
-    leases = domain_data.get(_PAIRLINK_LOCAL_PROFILE_LEASES_KEY)
-    if isinstance(leases, dict) and leases.get(adapter) == entry_id:
-        leases.pop(adapter, None)
-
-
-async def _async_setup_pairlink_local_entry(
-    hass: HomeAssistant,
-    entry: ConfigEntry,
-    coordinator: AdjustableBedCoordinator,
-) -> bool:
-    """Start an explicitly selected Pairlink local profile without Bleak central."""
-    from .beds.reverie_pairlink import ReveriePairlinkController
-    from .beds.reverie_pairlink_profile import pairlink_host_adapter_inventory
-
-    data = {**entry.data, **entry.options}
-    host_adapter_source = data.get(CONF_PAIRLINK_HOST_SOURCE)
-    if not isinstance(host_adapter_source, str) or not host_adapter_source:
-        raise ConfigEntryNotReady(
-            "Select the exact active local Bluetooth source for Pairlink peripheral mode"
-        )
-
-    adapter_inventory = pairlink_host_adapter_inventory(hass)
-    source_matches = [
-        item for item in adapter_inventory if item.source == host_adapter_source
-    ]
-    if (
-        len(source_matches) != 1
-        or source_matches[0].transport != "local"
-        or not source_matches[0].active
-        or re.fullmatch(r"hci[0-9]+", source_matches[0].adapter) is None
-    ):
-        raise ConfigEntryNotReady(
-            "The selected Pairlink source must map to one active local BlueZ adapter"
-        )
-    adapter = source_matches[0].adapter
-
-    leases = hass.data[DOMAIN].setdefault(_PAIRLINK_LOCAL_PROFILE_LEASES_KEY, {})
-    if not isinstance(leases, dict):
-        raise ConfigEntryNotReady("Pairlink local profile ownership state is unavailable")
-    current_owner = leases.get(adapter)
-    if current_owner is not None and current_owner != entry.entry_id:
-        raise ConfigEntryNotReady(
-            "Another Adjustable Bed entry already owns a Pairlink local profile on this adapter"
-        )
-    leases[adapter] = entry.entry_id
-    entry.async_on_unload(
-        lambda: _release_pairlink_local_profile_lease(
-            hass,
-            entry.entry_id,
-            adapter,
-        )
-    )
-
-    service_info = bluetooth.async_last_service_info(
-        hass,
-        entry.data[CONF_ADDRESS],
-        connectable=True,
-    )
-    manufacturer_data = (
-        getattr(service_info, "manufacturer_data", None)
-        if service_info is not None
-        else None
-    )
-    device_name = getattr(service_info, "name", None) if service_info is not None else None
-
-    try:
-        controller = await create_controller(
-            coordinator=coordinator,
-            bed_type=BED_TYPE_REVERIE_PAIRLINK,
-            protocol_variant=entry.data.get(CONF_PROTOCOL_VARIANT),
-            client=None,
-            device_name=device_name if isinstance(device_name, str) else None,
-            manufacturer_data=(
-                manufacturer_data if isinstance(manufacturer_data, dict) else None
-            ),
-        )
-        if not isinstance(controller, ReveriePairlinkController):
-            raise ConfigEntryNotReady("Pairlink factory returned an incompatible controller")
-        coordinator._controller = controller
-        await controller.async_start_peripheral(
-            host_adapter_source=host_adapter_source,
-            adapter_inventory=adapter_inventory,
-        )
-        coordinator.cache_capability_controller()
-        entry.async_on_unload(entry.add_update_listener(_async_update_listener))
-        async_watch_remacro_fallback(hass, entry, (coordinator,))
-        return await _async_finish_entry_setup(
-            hass,
-            entry,
-            coordinator,
-            schedule_initial_position_read=False,
-        )
-    except BaseException as err:
-        _release_pairlink_local_profile_lease(hass, entry.entry_id, adapter)
-        try:
-            await coordinator.async_shutdown()
-        except Exception:  # noqa: BLE001 - preserve the concrete setup failure
-            _LOGGER.exception("Pairlink peripheral cleanup failed during setup")
-        if isinstance(err, asyncio.CancelledError):
-            raise
-        if isinstance(err, ConfigEntryNotReady):
-            raise
-        raise ConfigEntryNotReady(
-            f"Could not start Pairlink peripheral on the selected local Bluetooth source: {err}"
-        ) from err
-
-
-def _preflight_paired_pairlink_local_roles(
-    hass: HomeAssistant,
-    entry: ConfigEntry,
-    children: Mapping[str, AdjustableBedCoordinator],
-) -> tuple[
-    tuple[PairlinkHostAdapterInventoryEntry, ...],
-    list[tuple[str, AdjustableBedCoordinator, str, str, str]],
-    list[_PairlinkLocalLeaseTransfer],
-]:
-    """Validate every source and conflict before reserving any selected adapter."""
-    from .beds.reverie_pairlink_profile import pairlink_host_adapter_inventory
-
-    inventory = pairlink_host_adapter_inventory(hass)
-    selected: list[tuple[str, AdjustableBedCoordinator, str, str, str]] = []
-    transfers: list[_PairlinkLocalLeaseTransfer] = []
-    for side, child in children.items():
-        if child.bed_type != BED_TYPE_REVERIE_PAIRLINK:
-            continue
-        data = {**child.entry.data, **child.entry.options}
-        if data.get(CONF_PAIRLINK_ROLE) != PAIRLINK_ROLE_PERIPHERAL:
-            continue
-        source = data.get(CONF_PAIRLINK_HOST_SOURCE)
-        if not isinstance(source, str) or not source:
-            raise ConfigEntryNotReady(
-                f"Select an exact active local Bluetooth source for the {side} Pairlink child"
-            )
-        matches = [item for item in inventory if item.source == source]
-        if (
-            len(matches) != 1
-            or matches[0].transport != "local"
-            or not matches[0].active
-            or re.fullmatch(r"hci[0-9]+", matches[0].adapter) is None
-        ):
-            raise ConfigEntryNotReady(
-                f"The {side} Pairlink source must map to one active local BlueZ adapter"
-            )
-        adapter = matches[0].adapter
-        owner = f"{entry.entry_id}:{side}:{child.address.upper()}"
-        selected.append((side, child, source, adapter, owner))
-
-    adapters = [item[3] for item in selected]
-    if len(set(adapters)) != len(adapters):
-        raise ConfigEntryNotReady(
-            "Paired Pairlink local children need distinct unambiguous BlueZ adapters"
-        )
-    if not selected:
-        return inventory, selected, transfers
-
-    originals = {
-        side: _trusted_absorbed_single(hass, entry, side, child)
-        for side, child in children.items()
-    }
-    domain_data = hass.data.setdefault(DOMAIN, {})
-    leases = domain_data.setdefault(_PAIRLINK_LOCAL_PROFILE_LEASES_KEY, {})
-    if not isinstance(leases, dict):
-        raise ConfigEntryNotReady("Pairlink local profile ownership state is unavailable")
-    for side, _child, source, adapter, owner in selected:
-        current_owner = leases.get(adapter)
-        original, coordinator = originals[side]
-        if current_owner is not None and current_owner != owner:
-            runtime = coordinator._pairlink_runtime if coordinator is not None else None
-            if (
-                original is None or coordinator is None
-                or current_owner != original.entry_id
-                or runtime is None or not runtime.is_peripheral_role_active
-                or runtime.peripheral_backend is None or not runtime.peripheral_backend.is_ready
-                or runtime.host_adapter_source != source
-                or runtime.host_adapter_path != f"/org/bluez/{adapter}"
-                or {**original.data, **original.options}.get(CONF_PAIRLINK_ROLE) != PAIRLINK_ROLE_PERIPHERAL
-            ):
-                raise ConfigEntryNotReady(
-                    "Another Adjustable Bed entry already owns a Pairlink local profile on this adapter"
-                )
-            transfers.append(_PairlinkLocalLeaseTransfer(
-                side, coordinator, original, runtime, source, adapter, owner,
-            ))
-        elif coordinator is not None and coordinator._pairlink_runtime is not None:
-            runtime = coordinator._pairlink_runtime
-            if runtime.peripheral_backend is not None:
-                raise ConfigEntryNotReady("Absorbed local backend has no matching source lease")
-
-    for _side, _child, _source, adapter, owner in selected:
-        leases[adapter] = owner
-        entry.async_on_unload(
-            lambda adapter=adapter, owner=owner: _release_pairlink_local_profile_lease(
-                hass, owner, adapter
-            )
-        )
-    return inventory, selected, transfers
 
 
 def _has_selected_disconnected_transport(child: EntityRuntime) -> bool:
@@ -1643,153 +2679,55 @@ def _has_selected_disconnected_transport(child: EntityRuntime) -> bool:
     )
 
 
-async def _async_start_paired_pairlink_local_child(
-    hass: HomeAssistant,
-    child: AdjustableBedCoordinator,
-    *,
-    host_adapter_source: str,
-    adapter_inventory: tuple[PairlinkHostAdapterInventoryEntry, ...],
-) -> None:
-    """Start one prevalidated child-owned local Pairlink backend."""
-    from .beds.reverie_pairlink import ReveriePairlinkController
-
-    address = child.entry.data.get(CONF_ADDRESS)
-    if not isinstance(address, str):
-        raise ConfigEntryNotReady("Paired Pairlink child has no physical address")
-    service_info = bluetooth.async_last_service_info(hass, address, connectable=True)
-    manufacturer_data = (
-        getattr(service_info, "manufacturer_data", None) if service_info is not None else None
-    )
-    device_name = getattr(service_info, "name", None) if service_info is not None else None
-    controller = await create_controller(
-        coordinator=child,
-        bed_type=BED_TYPE_REVERIE_PAIRLINK,
-        protocol_variant=child.entry.data.get(CONF_PROTOCOL_VARIANT),
-        client=None,
-        device_name=device_name if isinstance(device_name, str) else None,
-        manufacturer_data=(
-            manufacturer_data if isinstance(manufacturer_data, dict) else None
-        ),
-    )
-    if not isinstance(controller, ReveriePairlinkController):
-        raise ConfigEntryNotReady("Pairlink factory returned an incompatible child controller")
-    child._controller = controller
-    await controller.async_start_peripheral(
-        host_adapter_source=host_adapter_source,
-        adapter_inventory=adapter_inventory,
-    )
-    child.cache_capability_controller()
-
-
-async def _async_maybe_reclassify_bedtech_qrrm_entry(
-    hass: HomeAssistant, entry: ConfigEntry
-) -> None:
-    """Correct a persisted Richmat QRRM entry from advertisement evidence.
-
-    QRRM is used by both BedTech white-light controllers and Richmat/Casper RGB
-    controllers, and both use the shared FEE9 service. A present manufacturer
-    ID 0x4C57 is positive BedTech evidence, but its absence is inconclusive:
-    ESPHome proxy snapshots can omit manufacturer data for the same device.
-    Connected Device Information provides a second, model-specific correction
-    path in the coordinator (issue #410).
-    """
-    bed_type = entry.data.get(CONF_BED_TYPE)
-    if bed_type != BED_TYPE_RICHMAT:
-        return
-
-    address = entry.data.get(CONF_ADDRESS)
-    if not address:
-        return
-
-    service_info = bluetooth.async_last_service_info(hass, address, connectable=True)
-    if service_info is None:
-        _LOGGER.debug(
-            "Skipping BedTech/Richmat QRRM reclassification for %s (%s): no "
-            "advertisement seen yet for %s",
-            entry.title,
-            entry.entry_id,
-            address,
-        )
-        return
-
-    service_uuids = {uuid.lower() for uuid in (getattr(service_info, "service_uuids", None) or [])}
-    if BEDTECH_SERVICE_UUID.lower() not in service_uuids:
-        return
-
-    device_name = getattr(service_info, "name", None)
-    manufacturer_data = getattr(service_info, "manufacturer_data", None) or {}
-    has_bedtech_manufacturer = BEDTECH_MANUFACTURER_ID in manufacturer_data
-
-    if not isinstance(device_name, str) or not device_name.lower().startswith("qrrm"):
-        return
-    if not has_bedtech_manufacturer:
-        _LOGGER.info(
-            "QRRM entry %s (%s) has no protocol-specific advertisement evidence: "
-            "manufacturer ID 0x%04X is absent (manufacturer IDs seen: %s); "
-            "connected Device Information will be checked",
-            entry.title,
-            entry.entry_id,
-            BEDTECH_MANUFACTURER_ID,
-            sorted(manufacturer_data) or "none",
-        )
-        return
-
-    new_data = {
-        **entry.data,
-        CONF_BED_TYPE: BED_TYPE_BEDTECH,
-        CONF_PROTOCOL_VARIANT: VARIANT_AUTO,
-    }
-    new_data.pop(CONF_RICHMAT_REMOTE, None)
-
-    hass.config_entries.async_update_entry(entry, data=new_data)
-    _LOGGER.warning(
-        "Corrected config entry %s (%s) from Richmat to BedTech because BLE name %r "
-        "uses the shared FEE9 service and advertises BedTech manufacturer ID 0x%04X",
-        entry.title,
-        entry.entry_id,
-        device_name,
-        BEDTECH_MANUFACTURER_ID,
-    )
-
-
-async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
+async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
     """Unload a config entry."""
     _LOGGER.info("Unloading Adjustable Bed integration for %s", entry.title)
 
-    platforms = PAIRED_PLATFORMS if is_paired(entry.data) else PLATFORMS
-    if unload_ok := await hass.config_entries.async_unload_platforms(entry, platforms):
-        coordinator: AdjustableBedCoordinator | PairedBedCoordinator = hass.data[DOMAIN].pop(
-            entry.entry_id
-        )
-        _LOGGER.debug("Disconnecting from bed...")
-        await coordinator.async_shutdown()
-        _LOGGER.info("Successfully unloaded Adjustable Bed integration for %s", entry.title)
-
-    return unload_ok
+    await hass.config_entries.async_unload_platforms_or_raise(entry, PLATFORMS)
+    coordinator: AdjustableBedCoordinator | PairedBedCoordinator = hass.data[DOMAIN].pop(
+        entry.entry_id
+    )
+    _LOGGER.debug("Disconnecting from bed...")
+    await coordinator.async_shutdown()
+    # After shutdown settled any movement, so its travel is persisted.
+    await async_unload_position_estimates(hass, entry.entry_id)
+    _LOGGER.info("Successfully unloaded Adjustable Bed integration for %s", entry.title)
 
 
 async def async_remove_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
-    """Clean up Repairs issues that would otherwise outlive the entry."""
-    async_clear_furnimove_layout_issues(hass, entry.entry_id)
-    async_clear_profile_review_issue(hass, entry.entry_id)
-    address = entry.data.get(CONF_ADDRESS)
-    if address:
-        clear_octo_pin_required_issue(hass, address)
-    # Unpair and combine restore other entries for the same beds first; their
-    # setup refreshes the issue, so only addresses nobody else owns are cleared.
+    """Clean up state that would otherwise outlive the entry.
+
+    Home Assistant removes the entry's Repairs issues itself: each one is linked
+    to the entry that raised it.
+    """
+    async_forget_removed_entities(hass, entry.entry_id)
+    # Unpair and combine restore other entries for the same beds first, so only
+    # addresses nobody else owns lose their app state and estimates.
     owned = {
         owned_address
         for other in hass.config_entries.async_entries(DOMAIN)
         if other.entry_id != entry.entry_id
         for owned_address in _entry_addresses(other)
     }
-    unowned = set(_entry_addresses(entry)) - owned
-    clear_remacro_model_issues(hass, unowned)
-    from .app_state_store import async_remove_app_states
+    addresses = set(_entry_addresses(entry))
+    unowned = addresses - owned
+    await async_remove_position_estimates(hass, entry.entry_id, entry.data, unowned)
+    # A combine that never absorbed its beds still raised their Remacro warnings
+    # as its own. Give each back to the entry that still runs the bed before
+    # Home Assistant removes the issues linked to this one.
+    for other in hass.config_entries.async_entries(DOMAIN):
+        if other.entry_id != entry.entry_id and addresses.intersection(_entry_addresses(other)):
+            async_refresh_remacro_issues(hass, other)
+    from homeassistant.helpers.storage import Store
+
+    from .app_state_store import async_remove_app_states, pairlink_sdk_store_key
 
     # Re-adding a bed must not restore the removed entry's app state or session.
     try:
         await async_remove_app_states(hass, unowned)
+        # Pairlink keys its metadata by entry, so no other entry ever reads it.
+        for address in (None, *addresses):
+            await Store(hass, 1, pairlink_sdk_store_key(entry.entry_id, address)).async_remove()
     except OSError:
         _LOGGER.warning("Could not delete stored app preferences for %s", sorted(unowned), exc_info=True)
     hass.loop.call_soon(async_refresh_combine_beds_issue, hass)
@@ -1804,29 +2742,9 @@ def _entry_addresses(entry: ConfigEntry) -> list[str]:
     return addresses
 
 
-def _async_clear_stale_octo_pin_issue(hass: HomeAssistant, entry: ConfigEntry) -> None:
-    """Drop the Octo PIN repair when the configuration already resolves it.
-
-    Runs on every setup, so saving a PIN (which reloads the entry) clears the
-    issue even when the bed is unreachable and the connect path never runs.
-    """
-    address = entry.data.get(CONF_ADDRESS)
-    if not address:
-        return
-    # Star2 has no PIN mechanism at all, and OctoStar2Controller has no
-    # pin_locked_without_pin, so the connect path could never clear a stale
-    # issue left behind by a variant switch.
-    is_standard_octo = (
-        entry.data.get(CONF_BED_TYPE) == BED_TYPE_OCTO
-        and entry.data.get(CONF_PROTOCOL_VARIANT) != OCTO_VARIANT_STAR2
-    )
-    if not is_standard_octo or entry.data.get(CONF_OCTO_PIN):
-        clear_octo_pin_required_issue(hass, address)
-
-
 async def _async_update_listener(hass: HomeAssistant, entry: ConfigEntry) -> None:
     """Handle options updates."""
-    coordinator = hass.data.get(DOMAIN, {}).get(entry.entry_id)
+    coordinator = loaded_runtime(hass, entry.entry_id)
     if coordinator is not None and coordinator.consume_internal_entry_update(entry):
         # The coordinator recorded its own BLE bond marker. Reloading for that
         # would disconnect the bed, which is fatal for a bed that only grants

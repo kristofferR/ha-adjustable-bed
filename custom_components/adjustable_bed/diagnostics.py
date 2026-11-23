@@ -12,6 +12,10 @@ from homeassistant.core import HomeAssistant
 from homeassistant.loader import async_get_integration
 
 from .adapter import find_service_info_by_address
+from .beds.kaidi.protocol import extract_kaidi_advertisement, kaidi_advertisement_to_dict
+from .beds.vibradorm.app_discovery import manufacturer_discovery_diagnostics
+from .beds.vibradorm.vmat_discovery import vmat_manufacturer_diagnostics
+from .beds.vmatbasic.discovery import manufacturer_diagnostics as vmatbasic_manufacturer_diagnostics
 from .bluetooth_diagnostics import connection_reachability
 from .const import (
     BED_TYPE_VIBRADORM_APP,
@@ -29,6 +33,8 @@ from .const import (
     CONF_MOTOR_COUNT,
     CONF_PAIR_ID,
     CONF_PREFERRED_ADAPTER,
+    CONF_PROFILE_ID,
+    CONF_PROFILE_MIGRATION,
     CONF_PROTOCOL_VARIANT,
     DOMAIN,
     SUPPORTED_BED_TYPES,
@@ -37,13 +43,11 @@ from .coordinator import AdjustableBedCoordinator
 from .diagnostics_utils import get_gatt_summary
 from .discovery_log import async_get_discovery_log
 from .discovery_settings import async_is_discovery_disabled
-from .kaidi_protocol import extract_kaidi_advertisement, kaidi_advertisement_to_dict
 from .paired_coordinator import PairedBedCoordinator
+from .pairing import get_child
 from .profile_decisions import async_profile_decision_history
 from .redaction import redact_data
-from .vibradorm_app_discovery import manufacturer_discovery_diagnostics
-from .vibradorm_vmat_discovery import vmat_manufacturer_diagnostics
-from .vmatbasic_discovery import manufacturer_diagnostics as vmatbasic_manufacturer_diagnostics
+from .runtime_data import entry_runtime
 
 
 def _normalize_ble_address(value: Any) -> str | None:
@@ -76,7 +80,7 @@ async def _async_paired_diagnostics(
     for side, child in coordinator.children.items():
         child_controller = child.controller
         sides[side] = {
-            "address": getattr(child, "address", None),
+            "address": child.address,
             "connected": child.is_connected,
             "reachability": connection_reachability(hass, child.address),
             "controller_type": (
@@ -84,9 +88,12 @@ async def _async_paired_diagnostics(
                 if child_controller is not None
                 else None
             ),
-            "position_data": getattr(child, "position_data", None),
+            "position_data": child.position_data,
             "command_timing": child.command_timing,
+            "connection": child.connection_settings,
             "config": dict(child.entry.data),
+            # From the side's descriptor: a single-address side's entry is the parent.
+            "profile_id": (get_child(entry.data, side) or {}).get(CONF_PROFILE_ID),
             "profile_recommendations": await async_profile_decision_history(hass, child.address),
         }
         if child.bed_type in {BED_TYPE_VIBRADORM_APP, BED_TYPE_VMATBASIC}:
@@ -115,14 +122,16 @@ async def _async_paired_diagnostics(
         "paired": True,
         "pair_id": entry.data.get(CONF_PAIR_ID),
         "name": coordinator.name,
-        "connection_mode": getattr(coordinator, "connection_mode", None),
+        "connection_mode": coordinator.connection_mode,
         "is_connected": coordinator.is_connected,
         "config_entry": {
             "title": entry.title,
             "version": entry.version,
+            "minor_version": entry.minor_version,
             "data": dict(entry.data),
             "options": dict(entry.options),
         },
+        "profile_migration": entry.data.get(CONF_PROFILE_MIGRATION),
         "sides": sides,
     }
     return redact_data(data)
@@ -132,7 +141,7 @@ async def async_get_config_entry_diagnostics(
     hass: HomeAssistant, entry: ConfigEntry
 ) -> dict[str, Any]:
     """Return diagnostics for a config entry."""
-    stored = hass.data[DOMAIN][entry.entry_id]
+    stored = entry_runtime(hass, entry.entry_id)
     if isinstance(stored, PairedBedCoordinator):
         # A paired entry stores a PairedBedCoordinator, which has no client /
         # controller / position_data — aggregate per side instead of crashing.
@@ -171,31 +180,6 @@ async def async_get_config_entry_diagnostics(
                 "characteristic_uuid": controller.control_characteristic_uuid,
             }
         )
-
-        # Add variant info for controllers that have it
-        is_wilinke = getattr(controller, "_is_wilinke", None)
-        if is_wilinke is not None:
-            controller_info["richmat_is_wilinke"] = is_wilinke
-        variant = getattr(controller, "_variant", None)
-        if variant is not None:
-            controller_info["variant"] = variant
-        variant_source = getattr(controller, "_variant_source", None)
-        if variant_source is not None:
-            controller_info["variant_source"] = variant_source
-        char_uuid = getattr(controller, "_char_uuid", None)
-        if char_uuid is not None:
-            controller_info["char_uuid"] = char_uuid
-
-        # Add Octo-specific discovered features
-        discovered_motor_count = getattr(controller, "discovered_motor_count", None)
-        if discovered_motor_count is not None:
-            controller_info["discovered_motor_count"] = discovered_motor_count
-        supports_synchro = getattr(controller, "supports_synchro", None)
-        if supports_synchro is not None:
-            controller_info["supports_synchro"] = supports_synchro
-        is_synchro_active = getattr(controller, "is_synchro_active", None)
-        if is_synchro_active is not None:
-            controller_info["synchro_active"] = is_synchro_active
 
         # Whatever the connect-time protocol handshake resolved to (capabilities,
         # authentication state, ...). Empty for controllers with no handshake.
@@ -282,8 +266,14 @@ async def async_get_config_entry_diagnostics(
         "entry": {
             "entry_id": entry.entry_id,
             "version": entry.version,
+            "minor_version": entry.minor_version,
             "title": entry.title,
             "data": dict(entry.data),
+        },
+        # The id the controller was built from, and the schema 5 migration record.
+        "profile": {
+            "id": coordinator.profile_id,
+            "migration": entry.data.get(CONF_PROFILE_MIGRATION),
         },
         "config": {
             "bed_type": entry.data.get(CONF_BED_TYPE),
@@ -300,6 +290,8 @@ async def async_get_config_entry_diagnostics(
             "kaidi_resolved_variant": entry.data.get(CONF_KAIDI_RESOLVED_VARIANT),
             "kaidi_variant_source": entry.data.get(CONF_KAIDI_VARIANT_SOURCE),
         },
+        # Effective values: 5.6 stores a setting only when it differs from the default.
+        "connection": coordinator.connection_settings,
         "coordinator": {
             "is_connected": is_connected,
             "is_connecting": coordinator.is_connecting,

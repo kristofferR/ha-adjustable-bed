@@ -1,14 +1,17 @@
 """SIMMONS hold and alarm actions: profile preflight before any write."""
 
+from contextlib import contextmanager
 from types import SimpleNamespace
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from homeassistant.exceptions import ServiceValidationError
 
+from custom_components.adjustable_bed.beds.base import BedController
 from custom_components.adjustable_bed.const import BED_TYPE_SIMMONS, DOMAIN, SIDE_BOTH
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
 from custom_components.adjustable_bed.services import async_register_services
+from tests.error_helpers import raises_key
 from tests.test_simmons import make_controller
 
 
@@ -30,19 +33,27 @@ def target(profile=BED_TYPE_SIMMONS, variant=None):
     return coordinator, controller
 
 
+@contextmanager
 def _targets(coordinator):
-    return patch(
-        "custom_components.adjustable_bed.services._resolve_sided_targets",
-        return_value=([(coordinator, SIDE_BOTH)], []),
-    )
+    with (
+        patch(
+            "custom_components.adjustable_bed.services._resolve_sided_targets",
+            return_value=([(coordinator, SIDE_BOTH)], []),
+        ) as resolve,
+        patch(
+            "custom_components.adjustable_bed.services._resolve_sided_targets",
+            new=resolve,
+        ),
+    ):
+        yield resolve
 
 
 @pytest.mark.parametrize(
     ("profile", "variant", "control", "error"),
     [
         (BED_TYPE_SIMMONS, None, "memory", None),
-        (BED_TYPE_SIMMONS, None, "inclined_left", "does not support held control"),
-        (BED_TYPE_SIMMONS, "simmons_inclined", "zero_g", "does not support held control"),
+        (BED_TYPE_SIMMONS, None, "inclined_left", "held_control_not_supported"),
+        (BED_TYPE_SIMMONS, "simmons_inclined", "zero_g", "held_control_not_supported"),
     ],
 )
 async def test_hold_control_preflights_profile_and_layout(hass, profile, variant, control, error):
@@ -51,7 +62,7 @@ async def test_hold_control_preflights_profile_and_layout(hass, profile, variant
     call = {"device_id": "bed", "control": control, "duration": 5.5}
     with _targets(coordinator):
         if error:
-            with pytest.raises(ServiceValidationError, match=error):
+            with raises_key(error, ServiceValidationError):
                 await hass.services.async_call(DOMAIN, "hold_control", call, blocking=True)
             coordinator.async_execute_controller_command.assert_not_awaited()
         else:
@@ -65,15 +76,15 @@ async def test_set_alarm_passes_the_app_fields(hass):
     with _targets(coordinator):
         await hass.services.async_call(
             DOMAIN,
-            "simmons_set_alarm",
+            "set_alarm",
             {
                 "device_id": "bed",
                 "slot": "2",
                 "enabled": True,
                 "time": "07:30:00",
                 "weekdays": ["monday", "sunday"],
-                "mode": "custom_mode",
-                "confirm_custom_mode": True,
+                "wake_action": "custom_position",
+                "confirm_custom_position": True,
             },
             blocking=True,
         )
@@ -96,9 +107,9 @@ async def test_set_alarm_passes_the_app_fields(hass):
 @pytest.mark.parametrize(
     ("variant", "fields", "error"),
     [
-        (None, {"mode": "custom_mode"}, "Custom Mode"),
-        ("simmons_inclined", {"mode": "anti_snore"}, "Alarm mode"),
-        (None, {}, "Alarm mode"),
+        (None, {"wake_action": "custom_position"}, "saved position"),
+        ("simmons_inclined", {"wake_action": "anti_snore"}, "cannot wake with"),
+        (None, {}, "Choose a wake action"),
     ],
 )
 async def test_set_alarm_rejects_unconfirmed_or_unavailable_modes(hass, variant, fields, error):
@@ -107,7 +118,7 @@ async def test_set_alarm_rejects_unconfirmed_or_unavailable_modes(hass, variant,
     with _targets(coordinator), pytest.raises(ServiceValidationError, match=error):
         await hass.services.async_call(
             DOMAIN,
-            "simmons_set_alarm",
+            "set_alarm",
             {"device_id": "bed", "slot": 1, "enabled": True, "time": "07:30:00", **fields},
             blocking=True,
         )
@@ -116,11 +127,12 @@ async def test_set_alarm_rejects_unconfirmed_or_unavailable_modes(hass, variant,
 
 async def test_set_alarm_requires_a_simmons_target(hass):
     await async_register_services(hass)
-    coordinator, controller = target("okin_cb24")
-    with _targets(coordinator), pytest.raises(ServiceValidationError, match="not a SIMMONS"):
+    coordinator, controller = target("smartbed")
+    coordinator.capability_controller = MagicMock(spec=BedController, alarm_capability=None)
+    with _targets(coordinator), pytest.raises(ServiceValidationError, match="has no alarm"):
         await hass.services.async_call(
             DOMAIN,
-            "simmons_set_alarm",
+            "set_alarm",
             {"device_id": "bed", "slot": 1, "enabled": False},
             blocking=True,
         )
@@ -144,7 +156,7 @@ def test_entity_translations_cover_every_layout():
 
 
 def _real_target(name: str, records):
-    from custom_components.adjustable_bed.beds.simmons_protocol import AlarmSlot
+    from custom_components.adjustable_bed.beds.simmons.protocol import AlarmSlot
 
     controller = make_controller(name="OKIN-1")
     controller._write_char = controller.client.services[0].characteristics[0]
@@ -186,18 +198,18 @@ async def test_multi_bed_alarm_validates_every_bed_before_any_write(hass, second
             "custom_components.adjustable_bed.services._resolve_sided_targets",
             return_value=([(first, SIDE_BOTH), (second, SIDE_BOTH)], []),
         ),
-        patch("custom_components.adjustable_bed.beds.simmons.ALARM_REPLY_TIMEOUT_S", 0),
+        patch("custom_components.adjustable_bed.beds.simmons.controller.ALARM_REPLY_TIMEOUT_S", 0),
         pytest.raises(ServiceValidationError, match=error),
     ):
         await hass.services.async_call(
             DOMAIN,
-            "simmons_set_alarm",
+            "set_alarm",
             {
                 "device_id": ["a", "b"],
                 "slot": 1,
                 "enabled": True,
                 "time": "07:30:00",
-                "mode": "flat",
+                "wake_action": "flat",
             },
             blocking=True,
         )
@@ -219,7 +231,7 @@ async def test_multi_bed_alarm_programs_every_bed_after_all_pass(hass):
     ):
         await hass.services.async_call(
             DOMAIN,
-            "simmons_set_alarm",
+            "set_alarm",
             {"device_id": ["a", "b"], "slot": 1, "enabled": False},
             blocking=True,
         )
@@ -236,11 +248,16 @@ async def test_cancelled_alarm_call_releases_every_preflighted_bed(hass):
     coordinator, _controller = target()
     coordinator.async_execute_controller_command = AsyncMock(side_effect=asyncio.CancelledError)
     preflighted = [(coordinator, coordinator), (MagicMock(), MagicMock())]
+
+    async def preflight(targets, check):
+        check(coordinator, coordinator.capability_controller)
+        return preflighted
+
     with (
         _targets(coordinator),
         patch(
-            "custom_components.adjustable_bed.services._preflight_capability",
-            new=AsyncMock(return_value=preflighted),
+            "custom_components.adjustable_bed.services._preflight_each",
+            new=AsyncMock(side_effect=preflight),
         ),
         patch(
             "custom_components.adjustable_bed.services._release_preflighted", new=AsyncMock()
@@ -249,7 +266,7 @@ async def test_cancelled_alarm_call_releases_every_preflighted_bed(hass):
     ):
         await hass.services.async_call(
             DOMAIN,
-            "simmons_set_alarm",
+            "set_alarm",
             {"device_id": "bed", "slot": 1, "enabled": False},
             blocking=True,
         )

@@ -1,6 +1,6 @@
 """Restonic BT Remote (com.keeson.restonicBT 1.2.0) Keeson app profiles.
 
-Every frame literal comes from the accepted clean-room report (row058). Remote A
+Every frame literal comes from the accepted clean-room report. Remote A
 and remote B are the app's user-selected remote styles.
 """
 
@@ -15,11 +15,10 @@ import pytest
 from homeassistant.const import CONF_ADDRESS, CONF_NAME
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import ServiceValidationError
-from pytest_homeassistant_custom_component.common import MockConfigEntry
+from pytest_homeassistant.common import MockConfigEntry
 
-from custom_components.adjustable_bed.actuator_groups import ACTUATOR_GROUPS
-from custom_components.adjustable_bed.beds import keeson
-from custom_components.adjustable_bed.beds.keeson import (
+from custom_components.adjustable_bed.beds.keeson import controller as keeson
+from custom_components.adjustable_bed.beds.keeson.controller import (
     RESTONIC_A_CONTROLS,
     RESTONIC_B_CONTROLS,
     RESTONIC_ZZZ_BUTTON_KEY,
@@ -51,6 +50,7 @@ from custom_components.adjustable_bed.controller_factory import create_controlle
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
 from custom_components.adjustable_bed.detection import detect_bed_type
 from custom_components.adjustable_bed.services import async_register_services
+from tests.error_helpers import raises_key
 
 NAME = "base-i4.00002574"
 ZERO = "e5fe160000000006"
@@ -239,9 +239,11 @@ async def test_cancellation_during_the_release_wait_still_writes_the_zero_frame(
     ]
 
 
+@pytest.mark.parametrize("cancellations", [1, 2, 3])
 async def test_cancelling_the_caller_never_aborts_the_zero_frame_write(
-    coordinator, mock_bleak_client: MagicMock
+    coordinator, mock_bleak_client: MagicMock, cancellations: int
 ):
+    """Cancelling during the in-flight zero-frame write, even repeatedly, cannot drop it."""
     started = asyncio.Event()
     gate = asyncio.Event()
     written: list[bytes] = []
@@ -254,8 +256,11 @@ async def test_cancelling_the_caller_never_aborts_the_zero_frame_write(
     mock_bleak_client.write_gatt_char.side_effect = slow_write
     task = asyncio.create_task(_restonic(coordinator, KEESON_VARIANT_RESTONIC_A).stop_all())
     await started.wait()
-    task.cancel()
-    await asyncio.sleep(0)
+    for _ in range(cancellations):
+        task.cancel()
+        for _ in range(3):
+            await asyncio.sleep(0)
+        assert not task.done()
     gate.set()
     with pytest.raises(asyncio.CancelledError):
         await task
@@ -342,14 +347,13 @@ async def test_fixed_target_and_android_default_write_type(
 
 
 async def test_remote_capabilities(coordinator):
-    """Each remote exposes only its own controls; neither has memory, massage or STOP."""
+    """Each remote exposes only its own controls; neither has memory or massage."""
     coordinator._motor_count = 4
     for variant, remote_b in ((KEESON_VARIANT_RESTONIC_A, False), (KEESON_VARIANT_RESTONIC_B, True)):
         controller = _restonic(coordinator, variant)
         assert [spec.key for spec in controller.motor_control_specs] == (
             ["head", "feet", "back_legs"] if remote_b else ["head", "feet"]
         )
-        assert "back_legs" in controller.stale_motor_entity_keys
         assert controller.held_control_options == tuple(
             RESTONIC_B_CONTROLS if remote_b else RESTONIC_A_CONTROLS
         )
@@ -366,7 +370,8 @@ async def test_remote_capabilities(coordinator):
         assert not controller.supports_preset_lounge
         assert not controller.supports_preset_tv
         assert not controller.supports_preset_anti_snore
-        assert not controller.supports_stop_all
+        # Stop sends the release key the remote sends on button-up.
+        assert controller.supports_stop_all
         assert not controller.supports_discrete_light_control
         assert not controller.auto_enable_massage
         assert not controller.supports_massage_toggle_control
@@ -387,17 +392,18 @@ async def test_controls_absent_from_the_selected_remote_send_nothing(
     coordinator, mock_bleak_client: MagicMock
 ):
     remote_a = _restonic(coordinator, KEESON_VARIANT_RESTONIC_A)
-    for action in (
-        remote_a.lights_toggle,
-        remote_a.restonic_zzz,
-        remote_a.move_back_legs_up,
-        lambda: remote_a.preset_memory(1),
-        lambda: _restonic(coordinator, KEESON_VARIANT_RESTONIC_B).preset_memory(1),
-    ):
+    for action in (remote_a.lights_toggle, remote_a.restonic_zzz, remote_a.move_back_legs_up):
         with pytest.raises(NotImplementedError):
             await action()
-    for preset in (remote_a.preset_tv, remote_a.preset_anti_snore, remote_a.preset_lounge):
-        await preset()
+    for action in (
+        lambda: remote_a.preset_memory(1),
+        lambda: _restonic(coordinator, KEESON_VARIANT_RESTONIC_B).preset_memory(1),
+        remote_a.preset_tv,
+        remote_a.preset_anti_snore,
+        remote_a.preset_lounge,
+    ):
+        with raises_key("feature_not_supported", ServiceValidationError):
+            await action()
     mock_bleak_client.write_gatt_char.assert_not_awaited()
 
 
@@ -514,9 +520,6 @@ async def test_profiles_are_selected_only_explicitly(coordinator):
         assert isinstance(explicit, KeesonController)
         assert explicit._variant == variant
         assert variant in KEESON_VARIANTS
-        assert any(
-            option["variant"] == variant for option in ACTUATOR_GROUPS["keeson"]["variants"] or ()
-        )
 
 
 def _service_target(coordinator: AdjustableBedCoordinator, variant: str):
@@ -540,8 +543,8 @@ def _service_target(coordinator: AdjustableBedCoordinator, variant: str):
     [
         (KEESON_VARIANT_RESTONIC_A, "zero_g", None),
         (KEESON_VARIANT_RESTONIC_B, "zzz", None),
-        (KEESON_VARIANT_RESTONIC_A, "zzz", "does not support held control 'zzz'"),
-        (KEESON_VARIANT_BASE, "flat", "has no held controls"),
+        (KEESON_VARIANT_RESTONIC_A, "zzz", "held_control_not_supported"),
+        (KEESON_VARIANT_BASE, "flat", "held_controls_not_supported"),
     ],
 )
 async def test_hold_service_preflights_before_writing(
@@ -555,7 +558,7 @@ async def test_hold_service_preflights_before_writing(
         return_value=([(target, SIDE_BOTH)], []),
     ):
         if error:
-            with pytest.raises(ServiceValidationError, match=error):
+            with raises_key(error, ServiceValidationError):
                 await hass.services.async_call(
                     DOMAIN, "hold_control", data, blocking=True
                 )
@@ -619,11 +622,11 @@ async def test_setup_exposes_each_remote_surface_and_retires_remote_b_controls(
         ("button", "massage_head_up"),
         ("button", "massage_mode_step"),
         ("button", "massage_wave_next"),
-        ("button", "stop"),
     )
     for platform, key in (
         ("cover", "head"),
         ("cover", "feet"),
+        ("button", "stop"),
         ("button", "preset_flat"),
         ("button", "preset_zero_g"),
         *remote_b_only,
@@ -640,7 +643,12 @@ async def test_setup_exposes_each_remote_surface_and_retires_remote_b_controls(
 
     for platform, key in remote_b_only + never:
         assert not _exists(hass, address, platform, key), key
-    for platform, key in (("cover", "head"), ("cover", "feet"), ("button", "preset_zero_g")):
+    for platform, key in (
+        ("cover", "head"),
+        ("cover", "feet"),
+        ("button", "stop"),
+        ("button", "preset_zero_g"),
+    ):
         assert _exists(hass, address, platform, key), key
 
     assert await hass.config_entries.async_unload(entry.entry_id)

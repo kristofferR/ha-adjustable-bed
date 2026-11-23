@@ -7,20 +7,15 @@ from unittest.mock import AsyncMock, MagicMock, call, patch
 
 import pytest
 
-from custom_components.adjustable_bed.beds.motosleep import (
-    MotoSleepController,
-    build_moto_binary_frame,
-    build_motosleep_numeric_frame,
-    build_motosleep_sync_frame,
-    build_power_bob_numeric_frame,
-)
-from custom_components.adjustable_bed.beds.motosleep_profiles import (
-    MotoSleepTransport,
-    resolve_motosleep_profile,
-)
+from custom_components.adjustable_bed.beds.motosleep import MotoSleepController
+from custom_components.adjustable_bed.codec.motomotion import ascii_command, binary_command
 from custom_components.adjustable_bed.const import BED_TYPE_MOTOSLEEP, MOTOSLEEP_CHAR_UUID
 from custom_components.adjustable_bed.controller_factory import create_controller
 from custom_components.adjustable_bed.cover import _build_cover_description
+from custom_components.adjustable_bed.profiles.motosleep import (
+    MotoSleepTransport,
+    resolve_motosleep_profile,
+)
 
 
 def _moto_name(page: str, *, feature: str = "Q", led: str = "D") -> str:
@@ -73,9 +68,7 @@ async def test_issue_468_short_panel_eight_keeps_home_preset() -> None:
 
     await controller.preset_flat()
 
-    client.write_gatt_char.assert_awaited_once_with(
-        MOTOSLEEP_CHAR_UUID, b"$O", response=False
-    )
+    client.write_gatt_char.assert_awaited_once_with(MOTOSLEEP_CHAR_UUID, b"$O", response=False)
 
 
 async def test_issue_470_short_panel_eight_keeps_toggle_only_light() -> None:
@@ -92,9 +85,7 @@ async def test_issue_470_short_panel_eight_keeps_toggle_only_light() -> None:
 
     await controller.lights_toggle()
 
-    client.write_gatt_char.assert_awaited_once_with(
-        MOTOSLEEP_CHAR_UUID, b"$A", response=False
-    )
+    client.write_gatt_char.assert_awaited_once_with(MOTOSLEEP_CHAR_UUID, b"$A", response=False)
 
 
 def test_power_bob_accepts_exact_length_name_containing_hhc() -> None:
@@ -370,14 +361,14 @@ def test_lowercase_moto_name_routes_to_the_exact_binary_profile() -> None:
 )
 def test_binary_frame_matches_clean_room_vectors(command: int, data: int, expected: str) -> None:
     """Binary framing and XOR match the frozen MotoSleep APK vectors."""
-    assert build_moto_binary_frame(command, data).hex() == expected
+    assert binary_command(command, data).hex() == expected
 
 
 def test_numeric_frame_order_differs_between_apps() -> None:
     """Power Bob and MotoSleep place selector/value fields in opposite order."""
-    assert build_power_bob_numeric_frame("00319", "00128") == b"$#003190012800000R\r"
-    assert build_motosleep_numeric_frame("00128", "00319") == b"$#001280031900000R\r"
-    assert build_motosleep_sync_frame("00015") == b"$#000150000000004R\r"
+    assert ascii_command(319, 128) == b"$#003190012800000R\r"
+    assert ascii_command(128, 319) == b"$#001280031900000R\r"
+    assert ascii_command(15) == b"$#000150000000004R\r"
 
 
 def _controller(name: str) -> tuple[MotoSleepController, MagicMock]:
@@ -542,7 +533,7 @@ async def test_rgb_off_uses_absolute_zero_channels() -> None:
     await controller.lights_off()
 
     assert [call.args[1] for call in client.write_gatt_char.await_args_list] == [
-        build_motosleep_numeric_frame("00000", selector) for selector in ("00315", "00316", "00317")
+        ascii_command(0, selector) for selector in (315, 316, 317)
     ]
 
 
@@ -555,8 +546,8 @@ async def test_hhc_sync_uses_distinct_enable_and_disable_opcodes() -> None:
     await controller.set_synchro(False)
 
     assert [call.args[1] for call in client.write_gatt_char.await_args_list] == [
-        build_motosleep_sync_frame("00012"),
-        build_motosleep_sync_frame("00015"),
+        b"$#000120000000003R\r",
+        b"$#000150000000004R\r",
     ]
 
 
@@ -569,9 +560,9 @@ async def test_binary_preset_and_memory_frames_are_model_specific() -> None:
     await controller.program_memory(2)
 
     assert [call.args[1] for call in client.write_gatt_char.await_args_list] == [
-        build_moto_binary_frame(0x800A),
-        build_moto_binary_frame(0x800C),
-        build_moto_binary_frame(0x811E),
+        binary_command(0x800A),
+        binary_command(0x800C),
+        binary_command(0x811E),
     ]
 
 
@@ -582,7 +573,7 @@ async def test_binary_standard_release_uses_five_zero_stop_frames() -> None:
     await controller.move_back_up()
 
     assert [call.args[1] for call in client.write_gatt_char.await_args_list[1:]] == [
-        build_moto_binary_frame(0x0000, 0)
+        binary_command(0x0000, 0)
     ] * 5
 
 
@@ -593,8 +584,8 @@ async def test_binary_wr219_uses_second_stop_vector() -> None:
     await controller.move_back_up()
 
     calls = client.write_gatt_char.await_args_list
-    assert calls[0].args[1] == build_moto_binary_frame(0x000A)
-    assert [call.args[1] for call in calls[1:]] == [build_moto_binary_frame(0x9088, 1)] * 6
+    assert calls[0].args[1] == binary_command(0x000A)
+    assert [call.args[1] for call in calls[1:]] == [binary_command(0x9088, 1)] * 6
 
 
 def test_swing_is_only_exposed_by_swing_models() -> None:

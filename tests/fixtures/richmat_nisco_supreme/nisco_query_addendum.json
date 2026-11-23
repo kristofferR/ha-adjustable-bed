@@ -1,0 +1,371 @@
+[
+  {
+    "source_id": "N.C1[108]",
+    "source_pointer": "/protocols/0/commands/108/bytes",
+    "action": "TX_EXIT_ONE_MIN",
+    "literal_hex": "6e02010071",
+    "status": "PRESENT_FINALIZED_LITERAL",
+    "expected_hex": "6e02010071",
+    "provenance_kind": "accepted_finalized_literal",
+    "source_field": "6e02010071",
+    "source_citations": [
+      "BleUtil.java:2025-2408; Constant.java TX_EXIT_ONE_MIN"
+    ],
+    "source_path": "/home/kristoffer/Code/Home Assistant/ha-adjustable-bed/disassembly/output/phase4-early/com.richmat.nisco-1.1.1-2026-11-17-queue001/report/analysis.json",
+    "accepted_manifest_pin_reused": "025428b0ad58d62cef01438df28795b577d7411f0f6e510d56320c2c1253e92c"
+  },
+  {
+    "source_id": "N.C1[109]",
+    "source_pointer": "/protocols/0/commands/109/bytes",
+    "action": "TX_ALARM",
+    "literal_hex": "6e08010178",
+    "status": "PRESENT_FINALIZED_LITERAL",
+    "expected_hex": "6e08010178",
+    "provenance_kind": "accepted_finalized_literal",
+    "source_field": "6e08010178",
+    "source_citations": [
+      "BleUtil.java:2025-2408; Constant.java TX_ALARM"
+    ],
+    "source_path": "/home/kristoffer/Code/Home Assistant/ha-adjustable-bed/disassembly/output/phase4-early/com.richmat.nisco-1.1.1-2026-11-17-queue001/report/analysis.json",
+    "accepted_manifest_pin_reused": "025428b0ad58d62cef01438df28795b577d7411f0f6e510d56320c2c1253e92c"
+  },
+  {
+    "source_id": "N.C1[110]",
+    "source_pointer": "/protocols/0/commands/110/bytes",
+    "action": "TX_LED",
+    "literal_hex": "6e0a000179",
+    "status": "PRESENT_FINALIZED_LITERAL",
+    "expected_hex": "6e0a000179",
+    "provenance_kind": "accepted_finalized_literal",
+    "source_field": "6e0a000179",
+    "source_citations": [
+      "BleUtil.java:2025-2408; Constant.java TX_LED"
+    ],
+    "source_path": "/home/kristoffer/Code/Home Assistant/ha-adjustable-bed/disassembly/output/phase4-early/com.richmat.nisco-1.1.1-2026-11-17-queue001/report/analysis.json",
+    "accepted_manifest_pin_reused": "025428b0ad58d62cef01438df28795b577d7411f0f6e510d56320c2c1253e92c"
+  },
+  {
+    "source_id": "N.C1[112]",
+    "source_pointer": "/protocols/0/commands/112/bytes",
+    "action": "TX_MATTRESS",
+    "literal_hex": "5e1a000179",
+    "status": "PRESENT_FINALIZED_LITERAL",
+    "expected_hex": "5e1a000179",
+    "provenance_kind": "accepted_finalized_literal",
+    "source_field": "5e1a000179",
+    "source_citations": [
+      "BleUtil.java:2025-2408; Constant.java TX_MATTRESS"
+    ],
+    "source_path": "/home/kristoffer/Code/Home Assistant/ha-adjustable-bed/disassembly/output/phase4-early/com.richmat.nisco-1.1.1-2026-11-17-queue001/report/analysis.json",
+    "accepted_manifest_pin_reused": "025428b0ad58d62cef01438df28795b577d7411f0f6e510d56320c2c1253e92c"
+  },
+  {
+    "source_id": "N.C1[113]",
+    "source_pointer": "/protocols/0/commands/113/bytes",
+    "action": "TX_WAIST_MATTRESS",
+    "literal_hex": "5e1b00017a",
+    "status": "PRESENT_FINALIZED_LITERAL",
+    "expected_hex": "5e1b00017a",
+    "provenance_kind": "accepted_finalized_literal",
+    "source_field": "5e1b00017a",
+    "source_citations": [
+      "BleUtil.java:2025-2408; Constant.java TX_WAIST_MATTRESS"
+    ],
+    "source_path": "/home/kristoffer/Code/Home Assistant/ha-adjustable-bed/disassembly/output/phase4-early/com.richmat.nisco-1.1.1-2026-11-17-queue001/report/analysis.json",
+    "accepted_manifest_pin_reused": "025428b0ad58d62cef01438df28795b577d7411f0f6e510d56320c2c1253e92c"
+  },
+  {
+    "source_id": "N.C1[114]",
+    "source_pointer": "/protocols/0/commands/114/bytes",
+    "action": "TX_SNORE",
+    "literal_hex": "6e2100008f",
+    "status": "PRESENT_FINALIZED_LITERAL",
+    "expected_hex": "6e2100008f",
+    "provenance_kind": "accepted_finalized_literal",
+    "source_field": "6e2100008f",
+    "source_citations": [
+      "BleUtil.java:2025-2408; Constant.java TX_SNORE"
+    ],
+    "source_path": "/home/kristoffer/Code/Home Assistant/ha-adjustable-bed/disassembly/output/phase4-early/com.richmat.nisco-1.1.1-2026-11-17-queue001/report/analysis.json",
+    "accepted_manifest_pin_reused": "025428b0ad58d62cef01438df28795b577d7411f0f6e510d56320c2c1253e92c"
+  },
+  {
+    "source_id": "N.C1[116]",
+    "source_pointer": "/protocols/0/commands/116/bytes",
+    "action": "TX_DETECTION",
+    "literal_hex": "6e9ac000c8",
+    "status": "PRESENT_FINALIZED_LITERAL",
+    "expected_hex": "6e9ac000c8",
+    "provenance_kind": "accepted_finalized_literal",
+    "source_field": "6e9ac000c8",
+    "source_citations": [
+      "BleUtil.java:2025-2408; Constant.java TX_DETECTION"
+    ],
+    "source_path": "/home/kristoffer/Code/Home Assistant/ha-adjustable-bed/disassembly/output/phase4-early/com.richmat.nisco-1.1.1-2026-11-17-queue001/report/analysis.json",
+    "accepted_manifest_pin_reused": "025428b0ad58d62cef01438df28795b577d7411f0f6e510d56320c2c1253e92c"
+  },
+  {
+    "source_id": "N.C1[117]",
+    "source_pointer": "/protocols/0/commands/117/bytes",
+    "action": "TX_VERSION",
+    "literal_hex": "6e9a000008",
+    "status": "PRESENT_FINALIZED_LITERAL",
+    "expected_hex": "6e9a000008",
+    "provenance_kind": "accepted_finalized_literal",
+    "source_field": "6e9a000008",
+    "source_citations": [
+      "BleUtil.java:2025-2408; Constant.java TX_VERSION"
+    ],
+    "source_path": "/home/kristoffer/Code/Home Assistant/ha-adjustable-bed/disassembly/output/phase4-early/com.richmat.nisco-1.1.1-2026-11-17-queue001/report/analysis.json",
+    "accepted_manifest_pin_reused": "025428b0ad58d62cef01438df28795b577d7411f0f6e510d56320c2c1253e92c"
+  },
+  {
+    "source_id": "N.C1[118]",
+    "source_pointer": "/protocols/0/commands/118/bytes",
+    "action": "TX_MOTOR_MODE",
+    "literal_hex": "6e9a100018",
+    "status": "PRESENT_FINALIZED_LITERAL",
+    "expected_hex": "6e9a100018",
+    "provenance_kind": "accepted_finalized_literal",
+    "source_field": "6e9a100018",
+    "source_citations": [
+      "BleUtil.java:2025-2408; Constant.java TX_MOTOR_MODE"
+    ],
+    "source_path": "/home/kristoffer/Code/Home Assistant/ha-adjustable-bed/disassembly/output/phase4-early/com.richmat.nisco-1.1.1-2026-11-17-queue001/report/analysis.json",
+    "accepted_manifest_pin_reused": "025428b0ad58d62cef01438df28795b577d7411f0f6e510d56320c2c1253e92c"
+  },
+  {
+    "source_id": "N.C1[119]",
+    "source_pointer": "/protocols/0/commands/119/bytes",
+    "action": "TX_MOTOR1_ANGLE",
+    "literal_hex": "6e9a300139",
+    "status": "PRESENT_FINALIZED_LITERAL",
+    "expected_hex": "6e9a300139",
+    "provenance_kind": "accepted_finalized_literal",
+    "source_field": "6e9a300139",
+    "source_citations": [
+      "BleUtil.java:2025-2408; Constant.java TX_MOTOR1_ANGLE"
+    ],
+    "source_path": "/home/kristoffer/Code/Home Assistant/ha-adjustable-bed/disassembly/output/phase4-early/com.richmat.nisco-1.1.1-2026-11-17-queue001/report/analysis.json",
+    "accepted_manifest_pin_reused": "025428b0ad58d62cef01438df28795b577d7411f0f6e510d56320c2c1253e92c"
+  },
+  {
+    "source_id": "N.C1[120]",
+    "source_pointer": "/protocols/0/commands/120/bytes",
+    "action": "TX_MOTOR2_ANGLE",
+    "literal_hex": "6e9a30023a",
+    "status": "PRESENT_FINALIZED_LITERAL",
+    "expected_hex": "6e9a30023a",
+    "provenance_kind": "accepted_finalized_literal",
+    "source_field": "6e9a30023a",
+    "source_citations": [
+      "BleUtil.java:2025-2408; Constant.java TX_MOTOR2_ANGLE"
+    ],
+    "source_path": "/home/kristoffer/Code/Home Assistant/ha-adjustable-bed/disassembly/output/phase4-early/com.richmat.nisco-1.1.1-2026-11-17-queue001/report/analysis.json",
+    "accepted_manifest_pin_reused": "025428b0ad58d62cef01438df28795b577d7411f0f6e510d56320c2c1253e92c"
+  },
+  {
+    "source_id": "N.C1[121]",
+    "source_pointer": "/protocols/0/commands/121/bytes",
+    "action": "TX_MOTOR3_ANGLE",
+    "literal_hex": "6e9a30033b",
+    "status": "PRESENT_FINALIZED_LITERAL",
+    "expected_hex": "6e9a30033b",
+    "provenance_kind": "accepted_finalized_literal",
+    "source_field": "6e9a30033b",
+    "source_citations": [
+      "BleUtil.java:2025-2408; Constant.java TX_MOTOR3_ANGLE"
+    ],
+    "source_path": "/home/kristoffer/Code/Home Assistant/ha-adjustable-bed/disassembly/output/phase4-early/com.richmat.nisco-1.1.1-2026-11-17-queue001/report/analysis.json",
+    "accepted_manifest_pin_reused": "025428b0ad58d62cef01438df28795b577d7411f0f6e510d56320c2c1253e92c"
+  },
+  {
+    "source_id": "N.C1[122]",
+    "source_pointer": "/protocols/0/commands/122/bytes",
+    "action": "TX_MOTOR4_ANGLE",
+    "literal_hex": "6e9a30043c",
+    "status": "PRESENT_FINALIZED_LITERAL",
+    "expected_hex": "6e9a30043c",
+    "provenance_kind": "accepted_finalized_literal",
+    "source_field": "6e9a30043c",
+    "source_citations": [
+      "BleUtil.java:2025-2408; Constant.java TX_MOTOR4_ANGLE"
+    ],
+    "source_path": "/home/kristoffer/Code/Home Assistant/ha-adjustable-bed/disassembly/output/phase4-early/com.richmat.nisco-1.1.1-2026-11-17-queue001/report/analysis.json",
+    "accepted_manifest_pin_reused": "025428b0ad58d62cef01438df28795b577d7411f0f6e510d56320c2c1253e92c"
+  },
+  {
+    "source_id": "N.C1[123]",
+    "source_pointer": "/protocols/0/commands/123/bytes",
+    "action": "TX_QUERY_MASSAGE",
+    "literal_hex": "6e9aa000a8",
+    "status": "PRESENT_FINALIZED_LITERAL",
+    "expected_hex": "6e9aa000a8",
+    "provenance_kind": "accepted_finalized_literal",
+    "source_field": "6e9aa000a8",
+    "source_citations": [
+      "BleUtil.java:2025-2408; Constant.java TX_QUERY_MASSAGE"
+    ],
+    "source_path": "/home/kristoffer/Code/Home Assistant/ha-adjustable-bed/disassembly/output/phase4-early/com.richmat.nisco-1.1.1-2026-11-17-queue001/report/analysis.json",
+    "accepted_manifest_pin_reused": "025428b0ad58d62cef01438df28795b577d7411f0f6e510d56320c2c1253e92c"
+  },
+  {
+    "source_id": "N.C1[124]",
+    "source_pointer": "/protocols/0/commands/124/bytes",
+    "action": "TX_QUERY_UBL_LOCK",
+    "literal_hex": "6e9ab000b8",
+    "status": "PRESENT_FINALIZED_LITERAL",
+    "expected_hex": "6e9ab000b8",
+    "provenance_kind": "accepted_finalized_literal",
+    "source_field": "6e9ab000b8",
+    "source_citations": [
+      "BleUtil.java:2025-2408; Constant.java TX_QUERY_UBL_LOCK"
+    ],
+    "source_path": "/home/kristoffer/Code/Home Assistant/ha-adjustable-bed/disassembly/output/phase4-early/com.richmat.nisco-1.1.1-2026-11-17-queue001/report/analysis.json",
+    "accepted_manifest_pin_reused": "025428b0ad58d62cef01438df28795b577d7411f0f6e510d56320c2c1253e92c"
+  },
+  {
+    "source_id": "N.C1[101]:phase1",
+    "source_pointer": "/protocols/0/commands/101/bytes",
+    "action": "Cancel bed alarm phase1",
+    "literal_hex": null,
+    "accepted_formula": "sumframe(6e 05 00 00)",
+    "status": "MISSING_FINALIZED_HEX_LITERAL",
+    "expected_hex": "6e05000073",
+    "provenance_kind": "accepted_formula_expansion",
+    "source_field": "sumframe(6e 05 00 00), then sumframe(6e 06 00 00)",
+    "prefix_hex": "6e050000",
+    "rule_pointers": [
+      "/protocols/0/packet_format/normal",
+      "/protocols/0/packet_format/extended"
+    ],
+    "arithmetic": {
+      "terms": [
+        110,
+        5,
+        0,
+        0
+      ],
+      "sum": 115,
+      "masked": 115,
+      "explanation": "0x6e+0x05+0+0=115=0x73"
+    },
+    "source_citations": [
+      "AlarmFrag.java:629-644; AlarmCallFrag.java:577-593; ModeFrag.java:124-170"
+    ],
+    "source_path": "/home/kristoffer/Code/Home Assistant/ha-adjustable-bed/disassembly/output/phase4-early/com.richmat.nisco-1.1.1-2026-11-17-queue001/report/analysis.json",
+    "accepted_manifest_pin_reused": "025428b0ad58d62cef01438df28795b577d7411f0f6e510d56320c2c1253e92c",
+    "accepted_rules": {
+      "normal": "6e 01 mode opcode sum8; sum8=sum(all prior bytes)&255. Signed Java addition and final byte narrowing produce same mod256.",
+      "extended": "All P1 query/control variants use sumframe(prefix), where final byte is zeroed then replaced. Exceptions: RGB concatenates independently checksummed five-byte frames in one10-byte write; LONG threshold normalSend transmits unfinalized longData."
+    }
+  },
+  {
+    "source_id": "N.C1[101]:phase2",
+    "source_pointer": "/protocols/0/commands/101/bytes",
+    "action": "Cancel bed alarm phase2",
+    "literal_hex": null,
+    "accepted_formula": "sumframe(6e 06 00 00)",
+    "status": "MISSING_FINALIZED_HEX_LITERAL",
+    "expected_hex": "6e06000074",
+    "provenance_kind": "accepted_formula_expansion",
+    "source_field": "sumframe(6e 05 00 00), then sumframe(6e 06 00 00)",
+    "prefix_hex": "6e060000",
+    "rule_pointers": [
+      "/protocols/0/packet_format/normal",
+      "/protocols/0/packet_format/extended"
+    ],
+    "arithmetic": {
+      "terms": [
+        110,
+        6,
+        0,
+        0
+      ],
+      "sum": 116,
+      "masked": 116,
+      "explanation": "110+6=116=0x74"
+    },
+    "source_citations": [
+      "AlarmFrag.java:629-644; AlarmCallFrag.java:577-593; ModeFrag.java:124-170"
+    ],
+    "source_path": "/home/kristoffer/Code/Home Assistant/ha-adjustable-bed/disassembly/output/phase4-early/com.richmat.nisco-1.1.1-2026-11-17-queue001/report/analysis.json",
+    "accepted_manifest_pin_reused": "025428b0ad58d62cef01438df28795b577d7411f0f6e510d56320c2c1253e92c",
+    "accepted_rules": {
+      "normal": "6e 01 mode opcode sum8; sum8=sum(all prior bytes)&255. Signed Java addition and final byte narrowing produce same mod256.",
+      "extended": "All P1 query/control variants use sumframe(prefix), where final byte is zeroed then replaced. Exceptions: RGB concatenates independently checksummed five-byte frames in one10-byte write; LONG threshold normalSend transmits unfinalized longData."
+    }
+  },
+  {
+    "source_id": "N.C1[106]",
+    "source_pointer": "/protocols/0/commands/106/bytes",
+    "action": "Start bed self detection",
+    "literal_hex": null,
+    "accepted_formula": "sumframe(6e 88 c2 10)",
+    "status": "MISSING_FINALIZED_HEX_LITERAL",
+    "expected_hex": "6e88c210c8",
+    "provenance_kind": "accepted_formula_expansion",
+    "source_field": "sumframe(6e 88 c2 10)",
+    "prefix_hex": "6e88c210",
+    "rule_pointers": [
+      "/protocols/0/packet_format/normal",
+      "/protocols/0/packet_format/extended"
+    ],
+    "arithmetic": {
+      "terms": [
+        110,
+        136,
+        194,
+        16
+      ],
+      "sum": 456,
+      "masked": 200,
+      "explanation": "110+136+194+16=456;456&255=200=0xc8"
+    },
+    "source_citations": [
+      "DetectionFrag.java:192-206; Constant.java:65"
+    ],
+    "source_path": "/home/kristoffer/Code/Home Assistant/ha-adjustable-bed/disassembly/output/phase4-early/com.richmat.nisco-1.1.1-2026-11-17-queue001/report/analysis.json",
+    "accepted_manifest_pin_reused": "025428b0ad58d62cef01438df28795b577d7411f0f6e510d56320c2c1253e92c",
+    "accepted_rules": {
+      "normal": "6e 01 mode opcode sum8; sum8=sum(all prior bytes)&255. Signed Java addition and final byte narrowing produce same mod256.",
+      "extended": "All P1 query/control variants use sumframe(prefix), where final byte is zeroed then replaced. Exceptions: RGB concatenates independently checksummed five-byte frames in one10-byte write; LONG threshold normalSend transmits unfinalized longData."
+    }
+  },
+  {
+    "source_id": "N.C1[107]",
+    "source_pointer": "/protocols/0/commands/107/bytes",
+    "action": "Stop bed self detection",
+    "literal_hex": null,
+    "accepted_formula": "sumframe(6e 88 c2 20)",
+    "status": "MISSING_FINALIZED_HEX_LITERAL",
+    "expected_hex": "6e88c220d8",
+    "provenance_kind": "accepted_formula_expansion",
+    "source_field": "sumframe(6e 88 c2 20)",
+    "prefix_hex": "6e88c220",
+    "rule_pointers": [
+      "/protocols/0/packet_format/normal",
+      "/protocols/0/packet_format/extended"
+    ],
+    "arithmetic": {
+      "terms": [
+        110,
+        136,
+        194,
+        32
+      ],
+      "sum": 472,
+      "masked": 216,
+      "explanation": "110+136+194+32=472;472&255=216=0xd8"
+    },
+    "source_citations": [
+      "DetectionFrag.java:192-206; Constant.java:67"
+    ],
+    "source_path": "/home/kristoffer/Code/Home Assistant/ha-adjustable-bed/disassembly/output/phase4-early/com.richmat.nisco-1.1.1-2026-11-17-queue001/report/analysis.json",
+    "accepted_manifest_pin_reused": "025428b0ad58d62cef01438df28795b577d7411f0f6e510d56320c2c1253e92c",
+    "accepted_rules": {
+      "normal": "6e 01 mode opcode sum8; sum8=sum(all prior bytes)&255. Signed Java addition and final byte narrowing produce same mod256.",
+      "extended": "All P1 query/control variants use sumframe(prefix), where final byte is zeroed then replaced. Exceptions: RGB concatenates independently checksummed five-byte frames in one10-byte write; LONG threshold normalSend transmits unfinalized longData."
+    }
+  }
+]

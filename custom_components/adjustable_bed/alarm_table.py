@@ -10,6 +10,8 @@ from dataclasses import dataclass
 from datetime import UTC, datetime
 from typing import Literal
 
+from .codec import keeson
+
 
 @dataclass(frozen=True, slots=True, kw_only=True)
 class WeeklyAlarmRecord:
@@ -111,28 +113,21 @@ class AlarmTableScheduleSpec:
     def encode(self, schedule: AlarmTableSchedule) -> tuple[bytes, bytes]:
         """Build both complete tables only after validation succeeds."""
         self.validate(schedule)
-        weekly = bytearray(b"\xed\x80\x03" + bytes(13))
-        one_time = bytearray(b"\xed\x80\x02" + bytes(13))
-        index = 3
+        weekly = bytearray()
         for row in schedule.weekly:
             if not row.enabled:
                 continue
             days = self.weekday_marker | sum(1 << ((day + 1) % 7) for day in row.weekdays)
-            weekly[index : index + 4] = bytes(
-                (row.hour, row.minute, days, self.wake_byte if row.wake else 0)
-            )
-            index += 4
-        index = 3
+            weekly += bytes((row.hour, row.minute, days, self.wake_byte if row.wake else 0))
+        one_time = bytearray()
         for row in schedule.one_time:
             if not row.enabled:
                 continue
             seconds = _relative_seconds(row, schedule.reference_time)
             hours, remainder = divmod(seconds, 3600)
             minutes, seconds = divmod(remainder, 60)
-            one_time[index : index + 4] = bytes(
-                (hours & 255, minutes, seconds, self.wake_byte if row.wake else 0)
-            )
-            index += 4
-        for frame in (weekly, one_time):
-            frame[-1] = ~sum(frame[:-1]) & 255
-        return bytes(weekly), bytes(one_time)
+            one_time += bytes((hours & 255, minutes, seconds, self.wake_byte if row.wake else 0))
+        return (
+            keeson.alarm_table(keeson.ALARM_WEEKLY, bytes(weekly)),
+            keeson.alarm_table(keeson.ALARM_ONE_TIME, bytes(one_time)),
+        )

@@ -11,7 +11,7 @@ from homeassistant.const import CONF_ADDRESS, CONF_NAME
 from homeassistant.data_entry_flow import FlowResultType, InvalidData
 from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers import entity_registry as er
-from pytest_homeassistant_custom_component.common import MockConfigEntry
+from pytest_homeassistant.common import MockConfigEntry
 
 from custom_components.adjustable_bed import const
 from custom_components.adjustable_bed.address_lock import async_get_connect_lock
@@ -33,7 +33,6 @@ from custom_components.adjustable_bed.bond_verification import (
 )
 from custom_components.adjustable_bed.config_flow import (
     AdjustableBedConfigFlow,
-    AdjustableBedOptionsFlow,
     CapabilityReport,
     _vibradorm_app_data,
     _vmatbasic_data,
@@ -45,6 +44,7 @@ from custom_components.adjustable_bed.profile_review import (
     async_refresh_profile_review_issue,
     profile_review_mark,
 )
+from tests.form_helpers import finish_new_bed, start_new_bed
 from tests.test_vibradorm_app import make_controller as make_app
 from tests.test_vibradorm_app_config import app_data
 from tests.test_vibradorm_vmat import make_vmat
@@ -130,7 +130,7 @@ def bluetooth_patches(stack, client):
     )
     stack.enter_context(
         patch(
-            "custom_components.adjustable_bed.support_proxy_logs.capture_proxy_logs",
+            "custom_components.adjustable_bed.config_flow.capture_proxy_logs",
             return_value=AsyncExitStack(),
         )
     )
@@ -145,7 +145,7 @@ async def select_app(hass, entry, app):
         const.DOMAIN, context={"source": SOURCE_RECONFIGURE, "entry_id": entry.entry_id}
     )
     assert result["step_id"] == "vibradorm"
-    result = await manager.async_configure(result["flow_id"], {"app": app})
+    result = await manager.async_configure(result["flow_id"], {"choice": app})
     seed = (
         {const.CONF_VIBRADORM_VMAT_REMOTE: "07"}
         if app == "vmat"
@@ -155,10 +155,7 @@ async def select_app(hass, entry, app):
     )
     values = result["data_schema"](seed)
     result = await manager.async_configure(result["flow_id"], values)
-    if result["type"] == FlowResultType.FORM and result["step_id"] in (
-        "vmatbasic",
-        "vibradorm_app",
-    ):
+    if result["type"] == FlowResultType.FORM and result["step_id"] == "profile_questions":
         result = await manager.async_configure(result["flow_id"], result["data_schema"]({}))
     if result["type"] == FlowResultType.FORM and result["step_id"] == "manual_pairing":
         result = await manager.async_configure(result["flow_id"], {"action": "pair_now"})
@@ -186,8 +183,8 @@ async def test_family_selection_retains_metadata_only_for_unchanged_app(
     flow.hass = hass
     flow.context = {"source": SOURCE_RECONFIGURE, "entry_id": entry.entry_id}
     await flow.async_step_reconfigure()
-    result = await flow.async_step_vibradorm({"app": app})
-    assert result["step_id"] == ("vmatbasic" if app == "vmatbasic" else "vibradorm_app")
+    result = await flow.async_step_vibradorm({"choice": app})
+    assert result["step_id"] == "profile_questions"
     assert flow._manual_data is not None
     if app == original_app:
         assert flow._manual_data[const.CONF_VIBRADORM_APP_METADATA] == original[
@@ -205,7 +202,6 @@ async def test_managed_reconfigure_verifies_then_updates_same_entry_and_ids(
     entry = entry_for(
         hass,
         options={
-            const.CONF_CONNECTION_PROFILE: "responsive",
             const.CONF_IDLE_DISCONNECT_SECONDS: 77,
         },
     )
@@ -230,16 +226,17 @@ async def test_managed_reconfigure_verifies_then_updates_same_entry_and_ids(
         bluetooth_patches(stack, client)
         result = await select_app(hass, entry, app)
         assert not result.get("errors")
-        assert result["step_id"] in ("pairing_result", "verify_connection")
-        assert entry.data == before and entry.options == options
-        result = await hass.config_entries.flow.async_configure(result["flow_id"], {})
-        assert result["step_id"] == "vibradorm_confirm"
+        if result["step_id"] == "pairing_result":
+            # A passed pairing shows its outcome; a passed check goes on to the review.
+            assert entry.data == before and entry.options == options
+            result = await hass.config_entries.flow.async_configure(result["flow_id"], {})
+        assert result["step_id"] == "migration_confirm"
         assert entry.data == before and entry.options == options
         result = await hass.config_entries.flow.async_configure(
-            result["flow_id"], {"confirm": True}
+            result["flow_id"], {"action": "apply"}
         )
     assert result["type"] == FlowResultType.ABORT
-    assert result["reason"] == "reconfigure_successful"
+    assert result["reason"] == "migration_applied"
     assert len(hass.config_entries.async_entries(const.DOMAIN)) == 1
     assert entry.unique_id == ADDRESS and entry.data[CONF_ADDRESS] == ADDRESS
     assert entry.data[const.CONF_BED_TYPE] == (
@@ -248,7 +245,7 @@ async def test_managed_reconfigure_verifies_then_updates_same_entry_and_ids(
     assert entry.options == options
     assert dr.async_get(hass).async_get(device.id).identifiers == {(const.DOMAIN, ADDRESS)}
     assert er.async_get(hass).async_get(entity.entity_id).unique_id == entity.unique_id
-    reservation.assert_called_once_with("vibradorm_setup")
+    reservation.assert_called_once_with("profile_migration")
     old_client.disconnect.assert_awaited_once()
     assert not client.is_connected
 
@@ -351,9 +348,9 @@ async def test_confirmation_rejects_concurrent_changes(hass, enable_custom_integ
         changed = {**getattr(entry, change), const.CONF_IDLE_DISCONNECT_SECONDS: 99}
         hass.config_entries.async_update_entry(entry, **{change: changed})
         result = await hass.config_entries.flow.async_configure(
-            result["flow_id"], {"confirm": True}
+            result["flow_id"], {"action": "apply"}
         )
-    assert result["reason"] == "vibradorm_configuration_changed"
+    assert result["reason"] == "migration_entry_changed"
     assert getattr(entry, change) == changed
     assert entry.data[const.CONF_BED_TYPE] == const.BED_TYPE_VIBRADORM
 
@@ -388,7 +385,8 @@ async def test_no_scanner_cannot_skip_migration_verification(hass, enable_custom
         ) as probe,
     ):
         result = await select_app(hass, entry, "vmatbasic")
-        assert result["errors"] == {"base": "vibradorm_verification_required"}
+        assert result["step_id"] == "migration_check_failed"
+        assert "hasn't advertised recently" in result["description_placeholders"]["detail"]
         assert result["data_schema"].schema["action"].config["options"] == ["retry", "keep"]
         hass.config_entries.flow.async_abort(result["flow_id"])
     probe.assert_awaited_once()
@@ -414,7 +412,7 @@ async def test_cancelling_progress_closes_candidate_and_keeps_working_configurat
         result = await manager.async_init(
             const.DOMAIN, context={"source": SOURCE_RECONFIGURE, "entry_id": entry.entry_id}
         )
-        result = await manager.async_configure(result["flow_id"], {"app": "caresse"})
+        result = await manager.async_configure(result["flow_id"], {"choice": "caresse"})
         result = await manager.async_configure(result["flow_id"], result["data_schema"]({}))
         result = await manager.async_configure(result["flow_id"], {"action": "pair_now"})
         await started.wait()
@@ -470,7 +468,7 @@ async def test_same_app_seeds_retained_remote_and_settings(hass, enable_custom_i
     result = await manager.async_init(
         const.DOMAIN, context={"source": SOURCE_RECONFIGURE, "entry_id": entry.entry_id}
     )
-    result = await manager.async_configure(result["flow_id"], {"app": app})
+    result = await manager.async_configure(result["flow_id"], {"choice": app})
     values = result["data_schema"]({})
     assert all(values[key] == value for key, value in expected.items())
     assert entry.data == data
@@ -491,7 +489,7 @@ async def test_repairs_handoff_leaves_review_pending_until_explicit_keep(
     flow = ProfileReviewRepairFlow(entry.entry_id)
     flow.hass = hass
     result = await flow.async_step_init({"issue_id": "ignored"})
-    assert result["step_id"] == "vibradorm"
+    assert result["step_id"] == "managed"
     result = await flow.async_step_init({"choice": "configure"})
     assert result["type"] == FlowResultType.ABORT
     assert const.CONF_PROFILE_REVIEW_PENDING in entry.data
@@ -504,8 +502,8 @@ async def test_repairs_handoff_leaves_review_pending_until_explicit_keep(
     result = await hass.config_entries.flow.async_init(
         const.DOMAIN, context={"source": SOURCE_RECONFIGURE, "entry_id": entry.entry_id}
     )
-    result = await hass.config_entries.flow.async_configure(result["flow_id"], {"app": "legacy"})
-    assert result["reason"] == "vibradorm_legacy_kept"
+    result = await hass.config_entries.flow.async_configure(result["flow_id"], {"choice": "legacy"})
+    assert result["reason"] == "migration_kept"
     assert const.CONF_PROFILE_REVIEW_PENDING not in entry.data
     assert (
         ir.async_get(hass).async_get_issue(const.DOMAIN, "app_profile_review_" + entry.entry_id)
@@ -542,7 +540,7 @@ async def test_paired_setup_is_unchanged_until_explicit_split(
     result = await manager.async_init(
         const.DOMAIN, context={"source": SOURCE_RECONFIGURE, "entry_id": entry.entry_id}
     )
-    assert result["step_id"] == "vibradorm_unpair"
+    assert result["step_id"] == "migration_split"
     assert entry.data == data
     manager.async_abort(result["flow_id"])
     assert entry.data == data
@@ -552,71 +550,38 @@ async def test_paired_setup_is_unchanged_until_explicit_split(
         )
         result = await manager.async_configure(result["flow_id"], {"confirm": True})
         await hass.async_block_till_done()
-    assert result["reason"] == "vibradorm_pair_split_started"
+    assert result["reason"] == "migration_pair_split_started"
     unpair.assert_awaited_once_with(hass, entry)
 
 
 @pytest.mark.parametrize(
-    "bed_type", [const.BED_TYPE_VIBRADORM, const.BED_TYPE_VIBRADORM_APP, const.BED_TYPE_VMATBASIC]
-)
-async def test_unchanged_rendered_options_keep_internal_family_route(hass, bed_type):
-    data = {CONF_ADDRESS: ADDRESS, const.CONF_BED_TYPE: bed_type}
-    if bed_type == const.BED_TYPE_VIBRADORM_APP:
-        data = _vibradorm_app_data(
-            {**data, const.CONF_VIBRADORM_APP_PROFILE: "vmat"},
-            {const.CONF_VIBRADORM_VMAT_REMOTE: "07"},
-        )
-    elif bed_type == const.BED_TYPE_VMATBASIC:
-        data = _vmatbasic_data(data, {const.CONF_VMATBASIC_PROFILE: "cbi"})
-    entry = entry_for(hass, data)
-    flow = AdjustableBedOptionsFlow(entry)
-    flow.handler, flow.hass = entry.entry_id, hass
-    result = await flow.async_step_settings()
-    schema = result["data_schema"]
-    assert schema is not None
-    values = schema({})
-    assert isinstance(values, dict)
-    rows = schema.schema[const.CONF_BED_TYPE].config["options"]
-    assert sum("Vibradorm:" in row["label"] for row in rows) == 1
-    assert values[const.CONF_BED_TYPE] == bed_type
-    result = await flow.async_step_settings(values)
-    assert result["type"] == FlowResultType.CREATE_ENTRY
-    assert entry.data[const.CONF_BED_TYPE] == bed_type
-    if bed_type == const.BED_TYPE_VIBRADORM_APP:
-        assert entry.data[const.CONF_VIBRADORM_VMAT_REMOTE] == "07"
-    elif bed_type == const.BED_TYPE_VMATBASIC:
-        assert entry.data[const.CONF_VMATBASIC_PROFILE] == "cbi"
-
-
-@pytest.mark.parametrize(
-    "step,pairing",
+    "route,pairing",
     [
-        ("manual_entry", "manual_pairing"),
-        ("manual_config", "manual_pairing"),
-        ("bluetooth_confirm", "bluetooth_pairing"),
+        ("typed", "manual_pairing"),
+        ("picked", "manual_pairing"),
+        ("discovered", "bluetooth_pairing"),
     ],
 )
 async def test_fresh_legacy_choice_keeps_existing_pairing_route(
-    hass, mock_bluetooth_service_info, step, pairing
+    hass, mock_bluetooth_service_info, route, pairing
 ):
     flow = AdjustableBedConfigFlow()
     flow.hass, flow.context = hass, {}
     flow._discovery_info = mock_bluetooth_service_info
-    flow._disconnect_choice_confirmed = True
-    result = await getattr(flow, "async_step_" + step)(
-        {
-            CONF_ADDRESS: ADDRESS,
-            CONF_NAME: "Bed",
-            const.CONF_BED_TYPE: const.BED_TYPE_VIBRADORM,
-            const.CONF_PREFERRED_ADAPTER: "auto",
-            const.CONF_DISCONNECT_AFTER_COMMAND: False,
-        }
-    )
+    settings = {CONF_NAME: "Bed", const.CONF_PREFERRED_ADAPTER: "auto", const.CONF_CONNECTION_MODE: const.CONNECTION_MODE_IDLE}
+    result = await start_new_bed(flow, route, const.BED_TYPE_VIBRADORM)
     assert result["step_id"] == "vibradorm"
+    # The legacy setup asks its motors, massage and angle sensing, then pairs.
+    result = await flow.async_step_vibradorm({"choice": "legacy"})
+    assert result["step_id"] == "profile_questions"
     with patch.object(flow, "async_step_" + pairing, new=AsyncMock()) as pair:
-        await flow.async_step_vibradorm({"app": "legacy"})
+        await finish_new_bed(flow, await flow.async_step_profile_questions(
+            {const.CONF_MOTOR_COUNT: "3", const.CONF_HAS_MASSAGE: True}
+        ), settings)
     pair.assert_awaited_once_with()
     assert flow._manual_data[const.CONF_BED_TYPE] == const.BED_TYPE_VIBRADORM
+    assert flow._manual_data[const.CONF_MOTOR_COUNT] == 3
+    assert flow._manual_data[const.CONF_HAS_MASSAGE] is True
 
 
 async def test_repairs_does_not_link_to_a_terminated_reconfigure_flow(hass):
@@ -638,34 +603,6 @@ async def test_repairs_does_not_link_to_a_terminated_reconfigure_flow(hass):
     assert result["type"] == FlowResultType.ABORT
     assert "next_flow" not in result
     assert const.CONF_PROFILE_REVIEW_PENDING in entry.data
-
-
-@pytest.mark.parametrize(
-    "source,target",
-    [
-        (const.BED_TYPE_VIBRADORM_APP, const.BED_TYPE_LINAK),
-        (const.BED_TYPE_LINAK, const.BED_TYPE_VIBRADORM),
-    ],
-)
-async def test_options_can_correct_a_mistaken_bed_family(hass, source, target):
-    data = (
-        app_data()
-        if source == const.BED_TYPE_VIBRADORM_APP
-        else {CONF_ADDRESS: ADDRESS, const.CONF_BED_TYPE: source}
-    )
-    entry = entry_for(hass, data)
-    flow = AdjustableBedOptionsFlow(entry)
-    flow.handler, flow.hass = entry.entry_id, hass
-    result = await flow.async_step_settings({const.CONF_BED_TYPE: target})
-    for _ in range(3):
-        if result["type"] == FlowResultType.CREATE_ENTRY:
-            break
-        assert not result.get("errors")
-        schema = result["data_schema"]
-        assert schema is not None
-        result = await flow.async_step_settings(schema({}))
-    assert result["type"] == FlowResultType.CREATE_ENTRY
-    assert entry.data[const.CONF_BED_TYPE] == target
 
 
 async def test_focused_discovery_offers_one_family_with_other_candidates(
@@ -704,3 +641,36 @@ def test_top_level_family_choice_is_single_and_searchable():
     assert all(
         app in rows[0]["label"] for app in ("VMAT", "Caresse Diamant", "Werkmeister", "V-MAT Basic")
     )
+
+
+async def test_an_app_entry_moves_back_to_the_legacy_setup_through_reconfigure(
+    hass, enable_custom_integrations
+):
+    entry = entry_for(hass, app_data("caresse"))
+    manager = hass.config_entries.flow
+    with ExitStack() as stack:
+        bluetooth_patches(stack, client_for("caresse"))
+        result = await manager.async_init(
+            const.DOMAIN, context={"source": SOURCE_RECONFIGURE, "entry_id": entry.entry_id}
+        )
+        options = [o["value"] for o in result["data_schema"].schema["choice"].config["options"]]
+        # The legacy setup is a route here; Keep is its own answer.
+        assert {"legacy", "keep"} <= set(options)
+        result = await manager.async_configure(result["flow_id"], {"choice": "legacy"})
+        assert result["step_id"] == "profile_questions"
+        result = await manager.async_configure(
+            result["flow_id"],
+            result["data_schema"]({const.CONF_MOTOR_COUNT: "3", const.CONF_HAS_MASSAGE: True}),
+        )
+        assert result["step_id"] == "manual_pairing"
+        result = await manager.async_configure(result["flow_id"], {"action": "pair_now"})
+        assert result["type"] == FlowResultType.SHOW_PROGRESS
+        await hass.async_block_till_done()
+        result = await manager.async_configure(result["flow_id"])
+        result = await manager.async_configure(result["flow_id"], {})
+        assert result["step_id"] == "migration_confirm"
+        result = await manager.async_configure(result["flow_id"], {"action": "apply"})
+    assert result["reason"] == "migration_applied"
+    assert entry.data[const.CONF_BED_TYPE] == const.BED_TYPE_VIBRADORM
+    assert (entry.data[const.CONF_MOTOR_COUNT], entry.data[const.CONF_HAS_MASSAGE]) == (3, True)
+    assert const.CONF_VIBRADORM_APP_PROFILE not in entry.data

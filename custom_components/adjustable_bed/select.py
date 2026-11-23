@@ -3,28 +3,35 @@
 from __future__ import annotations
 
 import logging
-from collections.abc import Callable
-from dataclasses import dataclass
+from collections.abc import Callable, Coroutine
+from dataclasses import dataclass, replace
 from functools import partial
-from typing import TYPE_CHECKING, Any, cast
+from typing import TYPE_CHECKING, Any
 
 from homeassistant.components.select import SelectEntity, SelectEntityDescription
 from homeassistant.config_entries import ConfigEntry
+from homeassistant.const import Platform
 from homeassistant.core import HomeAssistant, callback
-from homeassistant.exceptions import ServiceValidationError
-from homeassistant.helpers import entity_registry as er
-from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
-from .beds.base import ControllerSelectSpec
-from .const import (
-    BED_TYPE_ISLEEP,
-    DOMAIN,
-)
+from .beds.entity_specs import ControllerSelectSpec
+from .beds.octo.runtime import octo_controls_locked
+from .card import CARD_CLIMATE, CARD_LIGHTING, CARD_MASSAGE_TIMER, CardPlacement
+from .controller_state import ControllerState, StateKey, sided
 from .entity import AdjustableBedEntity
 from .entity_discovery import async_setup_dynamic_entities
-from .entity_runtime import EntityRuntime
-from .octo_runtime import octo_controller
+from .entity_runtime import EntityRuntime, named_for_side, own_sides
+from .entity_sweep import PlatformEntities, records_entities
+from .errors import invalid
 from .paired_coordinator import entity_runtimes
+from .runtime_data import entry_runtime
+from .state_keys import (
+    FOOTWARMING_TIMER_OPTION,
+    FOUNDATION_PRESET,
+    LIGHT_TIMER_OPTION,
+    MASSAGE_TIMER_MINUTES,
+    THERMAL_TIMER_OPTION,
+    massage_state_side,
+)
 
 if TYPE_CHECKING:
     from .beds.base import BedController
@@ -36,18 +43,21 @@ _LOGGER = logging.getLogger(__name__)
 class AdjustableBedControllerStateSelectDescription(SelectEntityDescription):
     """Describes a controller-state-backed select entity."""
 
-    required_capability: str
-    options_attr: str
-    state_key: str
-    setter_name: str
+    is_supported: Callable[[BedController], bool]
+    options_fn: Callable[[BedController], list[str]]
+    state_key: StateKey[str | None]
+    select_fn: Callable[[BedController, str], Coroutine[Any, Any, None]]
+    card: CardPlacement
+    # Whether the controller currently offers the setting, once it was created.
+    available_fn: Callable[[BedController], bool] | None = None
 
 
 @dataclass(frozen=True, kw_only=True)
 class AdjustableBedSideStateSelectDescription(SelectEntityDescription):
     """Describes a side-specific select entity backed by controller state."""
 
-    state_key: str
-    setter_name: str
+    state_key: StateKey[str | None]
+    select_fn: Callable[[BedController, str, str], Coroutine[Any, Any, None]]
     side: str
 
 
@@ -61,38 +71,41 @@ LIGHT_TIMER_DESCRIPTION = AdjustableBedControllerStateSelectDescription(
     key="light_timer",
     translation_key="light_timer",
     icon="mdi:timer-outline",
-    required_capability="supports_light_timer",
-    options_attr="light_timer_options",
-    state_key="light_timer_option",
-    setter_name="set_light_timer",
+    is_supported=lambda c: c.supports_light_timer,
+    options_fn=lambda c: c.light_timer_options,
+    state_key=LIGHT_TIMER_OPTION,
+    select_fn=lambda c, option: c.set_light_timer(option),
+    card=CARD_LIGHTING,
 )
 
 THERMAL_TIMER_DESCRIPTION = AdjustableBedControllerStateSelectDescription(
     key="thermal_timer",
     translation_key="thermal_timer",
     icon="mdi:thermometer-lines",
-    required_capability="supports_thermal_climate",
-    options_attr="thermal_timer_options",
-    state_key="thermal_timer_option",
-    setter_name="set_thermal_timer",
+    is_supported=lambda c: c.supports_thermal_climate,
+    options_fn=lambda c: c.thermal_timer_options,
+    state_key=THERMAL_TIMER_OPTION,
+    select_fn=lambda c, option: c.set_thermal_timer(option),
+    card=CARD_CLIMATE,
 )
 
 FOOTWARMING_TIMER_DESCRIPTION = AdjustableBedControllerStateSelectDescription(
     key="footwarming_timer",
     translation_key="footwarming_timer",
     icon="mdi:shoe-print",
-    required_capability="supports_footwarming_climate",
-    options_attr="footwarming_timer_options",
-    state_key="footwarming_timer_option",
-    setter_name="set_footwarming_timer",
+    is_supported=lambda c: c.supports_footwarming_climate,
+    options_fn=lambda c: c.footwarming_timer_options,
+    state_key=FOOTWARMING_TIMER_OPTION,
+    select_fn=lambda c, option: c.set_footwarming_timer(option),
+    card=CARD_CLIMATE,
 )
 
 THERMAL_TIMER_LEFT_DESCRIPTION = AdjustableBedSideStateSelectDescription(
     key="thermal_timer_left",
     translation_key="thermal_timer_left",
     icon="mdi:thermometer-lines",
-    state_key="thermal_timer_option_left",
-    setter_name="set_thermal_timer_for_side",
+    state_key=sided(THERMAL_TIMER_OPTION, "left"),
+    select_fn=lambda c, side, option: c.set_thermal_timer_for_side(side, option),
     side="left",
 )
 
@@ -100,8 +113,8 @@ THERMAL_TIMER_RIGHT_DESCRIPTION = AdjustableBedSideStateSelectDescription(
     key="thermal_timer_right",
     translation_key="thermal_timer_right",
     icon="mdi:thermometer-lines",
-    state_key="thermal_timer_option_right",
-    setter_name="set_thermal_timer_for_side",
+    state_key=sided(THERMAL_TIMER_OPTION, "right"),
+    select_fn=lambda c, side, option: c.set_thermal_timer_for_side(side, option),
     side="right",
 )
 
@@ -109,8 +122,8 @@ FOOTWARMING_TIMER_LEFT_DESCRIPTION = AdjustableBedSideStateSelectDescription(
     key="footwarming_timer_left",
     translation_key="footwarming_timer_left",
     icon="mdi:shoe-print",
-    state_key="footwarming_timer_option_left",
-    setter_name="set_footwarming_timer_for_side",
+    state_key=sided(FOOTWARMING_TIMER_OPTION, "left"),
+    select_fn=lambda c, side, option: c.set_footwarming_timer_for_side(side, option),
     side="left",
 )
 
@@ -118,8 +131,8 @@ FOOTWARMING_TIMER_RIGHT_DESCRIPTION = AdjustableBedSideStateSelectDescription(
     key="footwarming_timer_right",
     translation_key="footwarming_timer_right",
     icon="mdi:shoe-print",
-    state_key="footwarming_timer_option_right",
-    setter_name="set_footwarming_timer_for_side",
+    state_key=sided(FOOTWARMING_TIMER_OPTION, "right"),
+    select_fn=lambda c, side, option: c.set_footwarming_timer_for_side(side, option),
     side="right",
 )
 
@@ -127,8 +140,8 @@ FOUNDATION_PRESET_LEFT_DESCRIPTION = AdjustableBedSideStateSelectDescription(
     key="foundation_preset_left",
     translation_key="foundation_preset_left",
     icon="mdi:bed-double-outline",
-    state_key="foundation_preset_left",
-    setter_name="set_foundation_preset_for_side",
+    state_key=sided(FOUNDATION_PRESET, "left"),
+    select_fn=lambda c, side, option: c.set_foundation_preset_for_side(side, option),
     side="left",
 )
 
@@ -136,22 +149,22 @@ FOUNDATION_PRESET_RIGHT_DESCRIPTION = AdjustableBedSideStateSelectDescription(
     key="foundation_preset_right",
     translation_key="foundation_preset_right",
     icon="mdi:bed-double-outline",
-    state_key="foundation_preset_right",
-    setter_name="set_foundation_preset_for_side",
+    state_key=sided(FOUNDATION_PRESET, "right"),
+    select_fn=lambda c, side, option: c.set_foundation_preset_for_side(side, option),
     side="right",
 )
 
 
+@records_entities(Platform.SELECT)
 async def async_setup_entry(
     hass: HomeAssistant,
     entry: ConfigEntry,
-    async_add_entities: AddEntitiesCallback,
+    async_add_entities: PlatformEntities,
 ) -> None:
     """Set up Adjustable Bed select entities."""
-    coordinator = hass.data[DOMAIN][entry.entry_id]
+    coordinator = entry_runtime(hass, entry.entry_id)
     for runtime in entity_runtimes(coordinator):
         async_setup_dynamic_entities(
-            hass,
             entry,
             runtime,
             async_add_entities,
@@ -179,17 +192,16 @@ def _select_entities_for(hass: HomeAssistant, coordinator: EntityRuntime) -> lis
             )
             entities.append(
                 AdjustableBedMassageTimerSelect(
-                    coordinator, MASSAGE_TIMER_DESCRIPTION, timer_options
+                    coordinator,
+                    MASSAGE_TIMER_DESCRIPTION,
+                    timer_options,
+                    has_off=controller.massage_timer_can_turn_off,
                 )
             )
-        else:
-            _async_remove_stale_select_entity(hass, coordinator, MASSAGE_TIMER_DESCRIPTION.key)
-    elif controller is not None:
-        _async_remove_stale_select_entity(hass, coordinator, MASSAGE_TIMER_DESCRIPTION.key)
 
     if controller is not None:
-        if getattr(controller, LIGHT_TIMER_DESCRIPTION.required_capability, False):
-            timer_options = getattr(controller, LIGHT_TIMER_DESCRIPTION.options_attr, [])
+        if LIGHT_TIMER_DESCRIPTION.is_supported(controller):
+            timer_options = LIGHT_TIMER_DESCRIPTION.options_fn(controller)
             if timer_options:
                 _LOGGER.debug(
                     "Setting up %s select for %s (options: %s)",
@@ -200,20 +212,18 @@ def _select_entities_for(hass: HomeAssistant, coordinator: EntityRuntime) -> lis
                 entities.append(
                     AdjustableBedControllerStateSelect(
                         coordinator,
-                        LIGHT_TIMER_DESCRIPTION,
+                        replace(
+                            LIGHT_TIMER_DESCRIPTION,
+                            available_fn=controller.light_timer_available_fn,
+                        ),
                         timer_options,
                     )
                 )
-        elif not controller.light_timer_pending:
-            # A reclassified entry (e.g. Richmat QRRM corrected to BedTech, #410)
-            # can leave behind the old light-timer select; remove it so a dead
-            # control doesn't linger in the UI and card.
-            _async_remove_stale_select_entity(hass, coordinator, LIGHT_TIMER_DESCRIPTION.key)
 
         thermal_timer_options = list(
-            getattr(controller, THERMAL_TIMER_DESCRIPTION.options_attr, [])
+            THERMAL_TIMER_DESCRIPTION.options_fn(controller)
         )
-        thermal_sides = controller.thermal_climate_sides
+        thermal_sides = own_sides(coordinator, controller.thermal_climate_sides)
         if thermal_sides and thermal_timer_options:
             _LOGGER.debug(
                 "Setting up side-specific thermal timer selects for %s (sides: %s, options: %s)",
@@ -221,7 +231,6 @@ def _select_entities_for(hass: HomeAssistant, coordinator: EntityRuntime) -> lis
                 thermal_sides,
                 thermal_timer_options,
             )
-            _async_remove_stale_select_entity(hass, coordinator, THERMAL_TIMER_DESCRIPTION.key)
             for side_description in (
                 THERMAL_TIMER_LEFT_DESCRIPTION,
                 THERMAL_TIMER_RIGHT_DESCRIPTION,
@@ -231,11 +240,11 @@ def _select_entities_for(hass: HomeAssistant, coordinator: EntityRuntime) -> lis
                 entities.append(
                     AdjustableBedSideStateSelect(
                         coordinator,
-                        side_description,
+                        named_for_side(coordinator, side_description, side_description.side),
                         thermal_timer_options,
                     )
                 )
-        elif getattr(controller, THERMAL_TIMER_DESCRIPTION.required_capability, False):
+        elif THERMAL_TIMER_DESCRIPTION.is_supported(controller):
             if thermal_timer_options:
                 _LOGGER.debug(
                     "Setting up %s select for %s (options: %s)",
@@ -252,20 +261,15 @@ def _select_entities_for(hass: HomeAssistant, coordinator: EntityRuntime) -> lis
                 )
 
         footwarming_timer_options = list(
-            getattr(controller, FOOTWARMING_TIMER_DESCRIPTION.options_attr, [])
+            FOOTWARMING_TIMER_DESCRIPTION.options_fn(controller)
         )
-        footwarming_sides = controller.footwarming_climate_sides
+        footwarming_sides = own_sides(coordinator, controller.footwarming_climate_sides)
         if footwarming_sides and footwarming_timer_options:
             _LOGGER.debug(
                 "Setting up side-specific footwarming timer selects for %s (sides: %s, options: %s)",
                 coordinator.name,
                 footwarming_sides,
                 footwarming_timer_options,
-            )
-            _async_remove_stale_select_entity(
-                hass,
-                coordinator,
-                FOOTWARMING_TIMER_DESCRIPTION.key,
             )
             for side_description in (
                 FOOTWARMING_TIMER_LEFT_DESCRIPTION,
@@ -276,11 +280,11 @@ def _select_entities_for(hass: HomeAssistant, coordinator: EntityRuntime) -> lis
                 entities.append(
                     AdjustableBedSideStateSelect(
                         coordinator,
-                        side_description,
+                        named_for_side(coordinator, side_description, side_description.side),
                         footwarming_timer_options,
                     )
                 )
-        elif getattr(controller, FOOTWARMING_TIMER_DESCRIPTION.required_capability, False):
+        elif FOOTWARMING_TIMER_DESCRIPTION.is_supported(controller):
             if footwarming_timer_options:
                 _LOGGER.debug(
                     "Setting up %s select for %s (options: %s)",
@@ -296,7 +300,9 @@ def _select_entities_for(hass: HomeAssistant, coordinator: EntityRuntime) -> lis
                     )
                 )
 
-    foundation_preset_sides = controller.foundation_preset_sides if controller else ()
+    foundation_preset_sides = (
+        own_sides(coordinator, controller.foundation_preset_sides) if controller else ()
+    )
     foundation_preset_options = controller.foundation_preset_options if controller else []
     if foundation_preset_sides and foundation_preset_options:
         _LOGGER.debug(
@@ -314,52 +320,32 @@ def _select_entities_for(hass: HomeAssistant, coordinator: EntityRuntime) -> lis
             entities.append(
                 AdjustableBedSideStateSelect(
                     coordinator,
-                    side_description,
+                    named_for_side(coordinator, side_description, side_description.side),
                     foundation_preset_options,
                 )
             )
 
     if controller is not None:
         specs = controller.controller_select_specs
-        if controller.controller_entity_discovery_complete:
-            _async_remove_stale_controller_selects(hass, coordinator, specs)
         entities.extend(AdjustableBedControllerSelect(coordinator, spec) for spec in specs)
 
     return entities
-
-
-def _async_remove_stale_controller_selects(
-    hass: HomeAssistant, coordinator: EntityRuntime, specs: tuple[ControllerSelectSpec, ...]
-) -> None:
-    """Remove only this runtime's retired controller-declared selects."""
-    desired = {coordinator.entity_unique_id(f"controller_select_{spec.key}") for spec in specs}
-    prefix, suffix = coordinator.entity_unique_id("controller_select_").split(
-        "controller_select_", 1
-    )
-    prefix += "controller_select_"
-    registry = er.async_get(hass)
-    for row in list(er.async_entries_for_config_entry(registry, coordinator.entry.entry_id)):
-        if (
-            row.domain == "select"
-            and row.platform == DOMAIN
-            and row.unique_id.startswith(prefix)
-            and row.unique_id.endswith(suffix)
-            and row.unique_id not in desired
-        ):
-            registry.async_remove(row.entity_id)
 
 
 class AdjustableBedControllerSelect(AdjustableBedEntity, SelectEntity):
     """A declared product option, unknown until the controller publishes state."""
 
     def __init__(self, coordinator: EntityRuntime, spec: ControllerSelectSpec) -> None:
-        super().__init__(coordinator)
+        super().__init__(coordinator, spec.card)
         self._spec = spec
         self.entity_description = SelectEntityDescription(
-            key=f"controller_select_{spec.key}", translation_key=spec.translation_key
+            key=f"controller_select_{spec.key}",
+            translation_key=spec.translation_key,
+            entity_category=spec.entity_category,
+            entity_registry_enabled_default=spec.entity_registry_enabled_default,
         )
         self._attr_unique_id = coordinator.entity_unique_id(self.entity_description.key)
-        self._set_sided_translation_key(spec.translation_key, spec.key)
+        self._attr_translation_key = spec.translation_key
         self._attr_options = list(spec.options)
         self._unregister_callback: Callable[[], None] | None = None
 
@@ -374,61 +360,57 @@ class AdjustableBedControllerSelect(AdjustableBedEntity, SelectEntity):
             self._unregister_callback()
         await super().async_will_remove_from_hass()
 
+    def _live_spec(self) -> ControllerSelectSpec | None:
+        with self._side_scope():
+            controller = self._coordinator.capability_controller
+            specs = controller.controller_select_specs if controller is not None else ()
+            return next((spec for spec in specs if spec.key == self._spec.key), None)
+
     @callback
-    def _handle_controller_state_update(self, state: dict[str, object]) -> None:
-        if self._spec.state_key in state:
+    def _handle_controller_state_update(self, state: ControllerState) -> None:
+        spec = self._live_spec() or self._spec
+        options = list(spec.options)
+        if spec.state_key in state or options != self._attr_options:
+            self._attr_options = options
             self.async_write_ha_state()
 
     @property
+    def options(self) -> list[str]:
+        # Reconnects retain the entity, but can replace its controller's choices.
+        return list((self._live_spec() or self._spec).options)
+
+    @property
     def current_option(self) -> str | None:
-        value = self._coordinator.controller_state.get(self._spec.state_key)
-        return value if isinstance(value, str) and value in self._spec.options else None
+        spec = self._live_spec() or self._spec
+        value = self._coordinator.controller_state.get(spec.state_key)
+        return value if value in spec.options else None
 
     async def async_select_option(self, option: str) -> None:
-        if option not in self._spec.options:
-            raise ServiceValidationError("Option is not supported by this controller")
-        if self._spec.local_select_fn is not None:
-            # No frame is sent, so do not take the bed's single BLE link.
-            controller = self._coordinator.capability_controller
-            specs = controller.controller_select_specs if controller is not None else ()
-            live = next(
-                (spec for spec in specs if spec.key == self._spec.key),
-                None,
-            )
-            if live is None or live.local_select_fn is None or option not in live.options:
-                raise ServiceValidationError("Controller no longer supports this local option")
-            live.local_select_fn(option)
+        live = self._live_spec()
+        if live is None or option not in live.options:
+            raise invalid("option_unavailable")
+        if live.local_select_fn is not None:
+            # Local choices use the current controller without acquiring a link.
+            with self._side_scope():
+                live.local_select_fn(option)
             return
 
         async def select(ctrl: BedController) -> None:
-            live = next(
+            current = next(
                 (spec for spec in ctrl.controller_select_specs if spec.key == self._spec.key), None
             )
-            if live is None or option not in live.options:
-                raise ServiceValidationError("Controller no longer supports this option")
-            await live.select_fn(ctrl, option)
+            if current is None or option not in current.options:
+                raise invalid("option_unavailable")
+            await current.select_fn(ctrl, option)
 
         await self._coordinator.async_execute_controller_command(select)
 
 
-def _async_remove_stale_select_entity(
-    hass: HomeAssistant,
-    coordinator: EntityRuntime,
-    key: str,
-) -> None:
-    """Remove a select registry entry the current controller no longer provides."""
-    registry = er.async_get(hass)
-    entity_id = registry.async_get_entity_id(
-        "select",
-        DOMAIN,
-        coordinator.entity_unique_id(key),
-    )
-    if entity_id is not None:
-        registry.async_remove(entity_id)
-
-
 class AdjustableBedMassageTimerSelect(AdjustableBedEntity, SelectEntity):
     """Select entity for Adjustable Bed massage timer."""
+
+    # Controller state callbacks write the state; there is nothing to poll.
+    _attr_should_poll = False
 
     entity_description: SelectEntityDescription
 
@@ -437,16 +419,19 @@ class AdjustableBedMassageTimerSelect(AdjustableBedEntity, SelectEntity):
         coordinator: EntityRuntime,
         description: SelectEntityDescription,
         timer_options: list[int],
+        *,
+        has_off: bool = True,
     ) -> None:
         """Initialize the massage timer select entity."""
-        super().__init__(coordinator)
+        super().__init__(coordinator, CARD_MASSAGE_TIMER)
         self.entity_description = description
-        self._set_sided_translation_key(description.translation_key, description.key)
+        self._attr_translation_key = description.translation_key or description.key
         self._attr_unique_id = coordinator.entity_unique_id(description.key)
         self._timer_options = timer_options
+        self._has_off = has_off
 
-        # Build options list: "Off" plus timer durations
-        self._attr_options = ["Off"] + [f"{m} min" for m in timer_options]
+        # The durations, after "Off" when the bed has an off command.
+        self._attr_options = (["Off"] if has_off else []) + [f"{m} min" for m in timer_options]
         self._unregister_callback: Callable[[], None] | None = None
 
     async def async_added_to_hass(self) -> None:
@@ -461,48 +446,36 @@ class AdjustableBedMassageTimerSelect(AdjustableBedEntity, SelectEntity):
         await super().async_will_remove_from_hass()
 
     @callback
-    def _handle_controller_state_update(self, state: dict[str, Any]) -> None:
+    def _handle_controller_state_update(self, state: ControllerState) -> None:
         self.async_write_ha_state()
 
     @property
     def current_option(self) -> str | None:
-        """Return the current timer setting from controller state."""
-        controller = self._coordinator.controller
-        if controller is None and self._coordinator.bed_type == BED_TYPE_ISLEEP:
-            side = self._coordinator.entity_side or "both"
-            state = self._coordinator.controller_state.get(f"isleep_massage_{side}")
-            timer_mode = state.get("timer_mode") if isinstance(state, dict) else None
-        elif controller is None:
-            # Between connections, the timer the profile last published.
-            state = self._coordinator.controller_state
-            timer_mode = (
-                state.get("okin_app_massage_timer")
-                if "okin_app_massage_timer" in state
-                else state.get("bf_cherish_massage_timer", state.get("woosa_massage_timer", 0))
-            )
-        else:
-            timer_mode = controller.get_massage_state().get("timer_mode")
-
-        # Normalize: treat "0", 0, empty, or None as "Off"
-        if not timer_mode or str(timer_mode) == "0":
-            return "Off"
-
-        # Format as option string and validate against allowed options
-        formatted = f"{timer_mode} min"
-        if formatted in self._attr_options:
+        """Return the last published timer, unknown until the controller publishes one."""
+        side = massage_state_side(
+            self._coordinator.bed_type, self._coordinator.entity_side,
+            controller_side=self._coordinator.controller_side,
+        )
+        key = sided(MASSAGE_TIMER_MINUTES, side)
+        state = self._coordinator.controller_state
+        if side is None and (own := self._coordinator.controller_side) is not None:
+            # A controller shared by both sides may publish each side's timer.
+            scoped = sided(MASSAGE_TIMER_MINUTES, own)
+            if scoped in state:
+                key = scoped
+        if key not in state:
+            # Nothing sent or reported yet.
+            return None
+        minutes = state[key]
+        formatted = f"{minutes} min"
+        if minutes and formatted in self._attr_options:
             return formatted
-        return "Off"
+        return "Off" if self._has_off and minutes in (None, 0) else None
 
     async def async_select_option(self, option: str) -> None:
         """Set the massage timer duration."""
-        # Validate option against allowed options
         if option not in self._attr_options:
-            _LOGGER.warning(
-                "Invalid timer option '%s' - allowed options: %s",
-                option,
-                self._attr_options,
-            )
-            return
+            raise invalid("option_unavailable")
 
         _LOGGER.info(
             "Massage timer set requested: %s (device: %s)",
@@ -532,10 +505,15 @@ class AdjustableBedControllerStateSelect(AdjustableBedEntity, SelectEntity):
 
     @property
     def available(self) -> bool:
-        """Respect Octo's PIN gate for live settings."""
-        controller = self._coordinator.capability_controller
-        octo = octo_controller(controller)
-        return super().available and (octo is None or octo.normal_controls_available)
+        """Respect Octo's PIN gate and the controller's own gate for live settings."""
+        with self._side_scope():
+            controller = self._coordinator.capability_controller
+            available_fn = self.entity_description.available_fn
+            return (
+                super().available
+                and not octo_controls_locked(controller)
+                and (available_fn is None or controller is not None and available_fn(controller))
+            )
 
     def __init__(
         self,
@@ -544,9 +522,9 @@ class AdjustableBedControllerStateSelect(AdjustableBedEntity, SelectEntity):
         timer_options: list[str],
     ) -> None:
         """Initialize the controller-state-backed select entity."""
-        super().__init__(coordinator)
+        super().__init__(coordinator, description.card)
         self.entity_description = description
-        self._set_sided_translation_key(description.translation_key, description.key)
+        self._attr_translation_key = description.translation_key or description.key
         self._attr_unique_id = coordinator.entity_unique_id(description.key)
         self._timer_options = timer_options
 
@@ -568,30 +546,22 @@ class AdjustableBedControllerStateSelect(AdjustableBedEntity, SelectEntity):
         await super().async_will_remove_from_hass()
 
     @callback
-    def _handle_controller_state_update(self, state: dict[str, object]) -> None:
+    def _handle_controller_state_update(self, state: ControllerState) -> None:
         """Write state when the controller publishes updated select state."""
-        if self.entity_description.state_key in state:
+        # A gated setting's availability can change with any published state.
+        if self.entity_description.state_key in state or self.entity_description.available_fn:
             self.async_write_ha_state()
 
     @property
     def current_option(self) -> str | None:
         """Return the current timer setting when the controller tracks it."""
         option = self._coordinator.controller_state.get(self.entity_description.state_key)
-        if isinstance(option, str) and option in self._attr_options:
-            return option
-        return None
+        return option if option in self._attr_options else None
 
     async def async_select_option(self, option: str) -> None:
         """Set the controller-backed option."""
-        # Validate option against allowed options
         if option not in self._attr_options:
-            _LOGGER.warning(
-                "Invalid %s option '%s' - allowed options: %s",
-                self.entity_description.key,
-                option,
-                self._attr_options,
-            )
-            return
+            raise invalid("option_unavailable")
 
         _LOGGER.info(
             "%s set requested: %s (device: %s)",
@@ -601,7 +571,7 @@ class AdjustableBedControllerStateSelect(AdjustableBedEntity, SelectEntity):
         )
 
         async def _set_timer(ctrl: BedController) -> None:
-            await getattr(ctrl, self.entity_description.setter_name)(option)
+            await self.entity_description.select_fn(ctrl, option)
 
         await self._coordinator.async_execute_controller_command(_set_timer)
 
@@ -618,9 +588,9 @@ class AdjustableBedSideStateSelect(AdjustableBedEntity, SelectEntity):
         options: list[str],
     ) -> None:
         """Initialize the side-specific select entity."""
-        super().__init__(coordinator)
+        super().__init__(coordinator, CARD_CLIMATE)
         self.entity_description = description
-        self._set_sided_translation_key(description.translation_key, description.key)
+        self._attr_translation_key = description.translation_key or description.key
         self._attr_unique_id = coordinator.entity_unique_id(description.key)
         self._attr_options = options
         self._unregister_callback: Callable[[], None] | None = None
@@ -639,7 +609,7 @@ class AdjustableBedSideStateSelect(AdjustableBedEntity, SelectEntity):
         await super().async_will_remove_from_hass()
 
     @callback
-    def _handle_controller_state_update(self, state: dict[str, Any]) -> None:
+    def _handle_controller_state_update(self, state: ControllerState) -> None:
         """Refresh when the tracked controller-state key changes."""
         if self.entity_description.state_key in state:
             self.async_write_ha_state()
@@ -648,30 +618,19 @@ class AdjustableBedSideStateSelect(AdjustableBedEntity, SelectEntity):
     def current_option(self) -> str | None:
         """Return the current side-specific option."""
         option = self._coordinator.controller_state.get(self.entity_description.state_key)
-        if isinstance(option, str) and option in self._attr_options:
-            return option
-        return None
+        return option if option in self._attr_options else None
 
     @property
     def extra_state_attributes(self) -> dict[str, Any]:
         """Expose the side this preset selector targets."""
-        return {"side": self.entity_description.side}
+        return {**self._base_attributes(), "side": self.entity_description.side}
 
     async def async_select_option(self, option: str) -> None:
         """Set the side-specific option through the controller."""
         if option not in self._attr_options:
-            _LOGGER.warning(
-                "Invalid %s option '%s' - allowed options: %s",
-                self.entity_description.key,
-                option,
-                self._attr_options,
-            )
-            return
+            raise invalid("option_unavailable")
 
         async def _set_option(ctrl: BedController) -> None:
-            await getattr(cast(Any, ctrl), self.entity_description.setter_name)(
-                self.entity_description.side,
-                option,
-            )
+            await self.entity_description.select_fn(ctrl, self.entity_description.side, option)
 
         await self._coordinator.async_execute_controller_command(_set_option)

@@ -1,16 +1,16 @@
 # GM Control
 
-**Status:** ❓ Needs testing (static app evidence; physical bed and firmware behavior unverified)
+**Status:** Not yet tested
 
 **Credit:** Reverse engineering by [kristofferR](https://github.com/kristofferR/ha-adjustable-bed)
 
 ## Known Models
 
-- Exact GM Control product codes, selected in setup. The [catalog ledger](../apk-analysis/dispositions/row102-gmmotor-catalog.csv) records every admitted and unsupported constructor.
-- `V9RM`, `V9RM (standard)` and `V9RM (split head)` retain distinct catalogs. Select the configuration actually used by the app.
-- `FWRM` and `WFRM` use the dedicated desk controller.
-- MM and SXB sleep modules are separate Bluetooth devices and separate integration entries.
-- Shared Bluetooth names or UUIDs do not establish that another app uses this catalog.
+- GM Control product codes, selected in setup.
+- `V9RM`, `V9RM (standard)` and `V9RM (split head)` have different controls. Pick the one your app uses.
+- `FWRM` and `WFRM` are desk controllers.
+- MM and SXB sleep modules are separate Bluetooth devices and are added as separate beds.
+- Another app's bed with a similar Bluetooth name does not use these controls.
 
 ## Apps
 
@@ -22,16 +22,16 @@
 
 | Feature | Product controller | FWRM / WFRM desk | MM / SXB module |
 |---------|--------------------|------------------|-----------------|
-| Motor Control | Exact named app controls and holds | Up, down, reset | None |
-| Position Feedback | Raw indexed reports; no inferred axis mapping | Raw height, unit, bounds and state | None |
-| Memory Presets | Exact product controls, including state-dependent recall/program gestures | Three short recalls; long memory callback sends nothing | None |
-| Massage | Exact product controls; bottom countdown where admitted | None | None |
-| Lights | Product controls; RGB/timeout menu requires its capability reply | None | None |
-| Alarms | Countdown or repeat table according to product; requires clock reply | None | None |
-| Anti-snore Settings | HNRN, HQRN, HSRN, HURN, M7RN, MJRN | None | Incoming raw state only |
-| Sleep Monitoring | BLE module name query where admitted | None | Live polling, part settings, day/month reports, clock, raw sensitivity query on SXB |
-| Paired Beds | Separate addresses retain their own product and app side; one address requires that product's side choices | Separate physical devices | Separate physical devices |
-| Firmware / Cloud / Bed Network | Outside integration boundary | Outside integration boundary | Outside integration boundary |
+| Motor Control | The app's controls for your product, with the app's names | Up, down, reset | None |
+| Position Feedback | ❌ Not shown as bed positions | Desk height, unit, limits and state | None |
+| Memory Presets | Your product's recall and save controls; where the app saves with a long press, you get a **Save …** button | Three memory recalls; no save | None |
+| Massage | Your product's controls; a countdown where the product has one; **Massage timer** select for products with several fixed timers | None | None |
+| Lights | Your product's controls; the RGB and timeout controls appear once the bed reports it has them | None | None |
+| Alarms | Countdown or repeating alarms, by product; appear once the bed answers a clock request | None | None |
+| Anti-snore Settings | HNRN, HQRN, HSRN, HURN, M7RN, MJRN | None | ❌ |
+| Sleep Monitoring | `sleep_name` request on products with sleep monitoring | None | **Live sleep data** switch; heart rate, breathing rate, in bed, snoring and body movement; on SXB also settings, day and month reports and clock |
+| Paired Beds | Two addresses each keep their own product and side; one address offers the sides its product has | Separate devices | Separate devices |
+| Firmware updates, cloud and bed Wi-Fi | ❌ | ❌ | ❌ |
 
 ## Protocol Details
 
@@ -71,12 +71,12 @@ without retry. Product and sleep sessions share one native-write mutex within HA
 
 ## Detection / Setup
 
-1. Choose **GM Control**, then the exact product code and its app side. A matching
+1. Choose **GM Control app**, then the exact product code and its app side. A matching
    raw Bluetooth name supplies a suggestion; it cannot resolve a remote picker.
 2. For an app remote picker or QR code, select its resulting concrete product.
    `QRRM` itself is not a final controller profile.
-3. Choose **GM Control MM sleep module** or **GM Control SXB sleep module** for an
-   independent module. Never select a sensor mode from the bed's transport UUID.
+3. Choose **GM Control sleep module (name starts with RM-)** (MM) or **GM Control
+   sleep module (name starts with HJ-)** (SXB) for an independent module. Never select a sensor mode from the bed's transport UUID.
 
 The app's name filter is a case-sensitive substring test, with uppercase product
 selection and explicit aliases afterward. HA background matchers require a
@@ -84,22 +84,45 @@ literal prefix, so background advertisements use the corresponding prefix
 patterns. Manual discovery and the callback retain the substring rule. Existing
 receiver matches keep priority and offer the app as an additional explicit choice.
 
-For a single Bluetooth address, **Pair sides** appears only for exact products
+For a single Bluetooth address, **Add Left, Right and Both controls** in
+**Configure** appears only for exact products
 that admit Right. If the product has Left and Right without Both, HA serializes
 the two admitted sides. Separate physical receivers retain independent products,
 side settings and session state.
 
-New product entries disable Disconnect After Command by default. Product UI
+New product entries default to **Stay connected for a while**. Product UI
 flags remain local to the physical address, exact product and app side when HA
-replaces a BLE controller, including when quick handoff is explicitly enabled.
+replaces a BLE controller, including when it releases the link after each command.
 Changing product or restarting HA starts a fresh app view. Live capability
 replies are still obtained separately for each connection.
 
+### Home Assistant setup
+
+Choose **GM Control app**, its exact product/configuration and the app bed side.
+Standard and split-head catalogs remain distinct. Remote pickers and QR codes
+require the resulting concrete product; shared services cannot select it.
+Product-owned controls use their exact labels and gestures, without generic
+motor-count or axis settings. FWRM/WFRM select a dedicated desk route.
+
+**GM Control MM sleep module** and **GM Control SXB sleep module** are separate
+Bluetooth entries. Each physical address owns its session, and a paired bed
+retains each receiver's product and wire side. **Add Left, Right and Both
+controls** for one address
+requires the selected product's actual side choices. This guide
+covers commands, raw state and static-only status.
+
 ## Commands
 
-The named buttons come from the selected catalog. The card displays them as
-utility controls, with continuous holds for sustain actions and separate buttons
-for finite short/long callbacks. The `hold_control` action
+The named buttons come from the selected catalog, named the way the app names
+them. The card places motor, preset, memory, massage and light buttons in their
+own sections and the rest under Utility, disabled by default, with continuous
+holds for sustain actions and separate buttons for finite short/long callbacks.
+A preset's or memory's own long operand saves it, so that long press is its
+**Save …** button. Another long operand is a disabled "(long press)" button; a
+long press that writes only what its short press writes has no button. Empty
+app slots and menu headings that send no command have none either; an empty
+slot that sends one takes that command's name. A control the app lists twice
+has one button. The `hold_control` action
 accepts the button's `held_control` identifier and a bounded duration.
 
 ### Example: 6BRM product, framed Left
@@ -143,11 +166,11 @@ commands.
 
 | Operation | Exact construction / field meaning |
 |-----------|------------------------------------|
-| `clock_sync` | `6E 0C 20 08 02 01 UNIX_BE32 ZONE_HOURS SUM8`, then `6E 0D 20 08 03 01 YEAR_MINUS_1970 MONTH DAY HOUR MINUTE SECOND SUM8` |
+| Clock ([`sync_clock`](../SERVICES.md#sync_clock)) | `6E 0C 20 08 02 01 UNIX_BE32 ZONE_HOURS SUM8`, then `6E 0D 20 08 03 01 YEAR_MINUS_1970 MONTH DAY HOUR MINUTE SECOND SUM8` |
 | `alarm` | `6E 05 MINUTES_LOW 00 SUM8`, then `6E 06 MINUTES_HIGH MODE SUM8` |
 | `alarm_at` | Same countdown frames; HA local hour/minute, seconds removed, nonpositive difference plus exactly 86400 seconds |
 | `alarm_cancel` | The two countdown frames with minutes/mode zero |
-| `repeat_alarm` | `6E 0D 20 05 01 01 ID REPEAT HOUR MINUTE MODE STATUS SUM8` |
+| `repeat_alarm` | `6E 0D 20 05 01 01 ID REPEAT HOUR MINUTE MODE STATUS SUM8`; the action sends `REPEAT` 0 and `STATUS` 1, whose other values have no established meaning |
 | `repeat_delete` | `6E 08 20 05 02 01 ID SUM8` |
 | `repeat_query` | `6E 08 20 05 01 00 00 SUM8` |
 | `light_color` | `6E 0C FF RED SUM8`, then `6E 0D GREEN BLUE SUM8`, concatenated in one write |
@@ -179,6 +202,8 @@ characteristic, and candidate roles can carry across accepted services.
 
 The 14-byte header is `00 ID TOTAL SEQUENCE (PAYLOAD_LEN+7) 00 00 11 03 43 55 44
 LEN_LOW LEN_HIGH`, with native byte masking, followed by compact UTF-8 JSON.
+[`codec/sleep_envelope.py`](../../custom_components/adjustable_bed/codec/sleep_envelope.py)
+builds it, as it does for the Casper Base, Hush Base and Good Vibe Sleep sensors.
 There is no packet checksum. IDs run 1–254. Each queued frame waits 100 ms and
 is written in sequential `MTU - 3` chunks without a delay between chunks.
 
@@ -193,8 +218,9 @@ is written in sequential `MTU - 3` chunks without a delay between chunks.
 | `sensor_sensitivity` | Unavailable | `q_sens`, null value; no inferred setter |
 | `sensor_stop` | Local polling / receive cancellation, no wire STOP | Same |
 
-`value` supplies the device part setting. `part` supplies report side 1/2;
-`report_type` is 1 for day and 2 for month. `report_date` defaults to HA's local
+`value` supplies the device part setting. `part` takes the report side, `left`
+or `right` (sent as 1 or 2); `report_type` takes `day` or `month` (sent as 1 or
+2). `report_date` defaults to HA's local
 date. `sensor_live` uses `enabled` to start or stop polling. Clock synchronization
 uses HA's configured timezone. SXB time replies publish in source order and
 follow up with `q_time`, then `q_part`. MM's compiled `q_time` selector consumes
@@ -210,7 +236,7 @@ the coordinator's next connection attempt.
 
 ## Position Feedback / Notifications
 
-- The GM Control state sensor exposes parsed event values, raw indexed motor and
+- The disabled-by-default **Status** sensor exposes parsed event values, raw indexed motor and
   desk reports, alarm records and the selected catalog's local UI state.
 - The sleep-module state sensor exposes raw stream DTOs, clock state, separate
   live-side values and decoded day/month reports. These have no validated
@@ -243,14 +269,8 @@ HA safely drops malformed notifications that make the app's extractor loop
 without progress. It also guarantees callback cleanup after required-field
 failures, limits sleep report memory/decompression to 8 MiB and cancels stale
 session follow-ups on stop/disconnect. These are explicit HA safety behaviors;
-raw diagnostic observer faults are isolated so parsing can continue. The
-[discovery ledger](../apk-analysis/dispositions/row102-gmmotor.md) records
-their differences from the artifact.
+raw diagnostic observer faults are isolated so parsing can continue.
 
 ### Analysis provenance
 
-- GM Control 4.6.6 / code 46600, artifact-set SHA-256
-  `0bdb27d045fb8d097cfc20e26e759ff238f8ac55eb317a3d3eccb814ccc8d11b`.
-- [Complete row102 implementation/disposition ledger](../apk-analysis/dispositions/row102-gmmotor.md).
-- Hardware, ATT delivery, firmware interpretation and physical effects remain
-  unverified. Real-user reports after a beta or release can supply that evidence.
+Based on GM Control 4.6.6 (code 46600).

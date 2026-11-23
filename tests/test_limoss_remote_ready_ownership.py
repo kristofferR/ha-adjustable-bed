@@ -10,30 +10,29 @@ from homeassistant.exceptions import HomeAssistantError
 
 from custom_components.adjustable_bed import const
 from custom_components.adjustable_bed.adapter import AdapterSelectionResult
-from custom_components.adjustable_bed.beds.limoss import LimossController
-from custom_components.adjustable_bed.beds.limoss_remote import LimossRemoteController
-from custom_components.adjustable_bed.beds.limoss_remote_protocol import format_command
-from custom_components.adjustable_bed.limoss_remote_state import (
+from custom_components.adjustable_bed.beds.limoss.remote import LimossRemoteController
+from custom_components.adjustable_bed.beds.limoss.remote_state import (
     LimossRemoteMemory,
     get_limoss_remote_session,
 )
+from custom_components.adjustable_bed.codec import limoss as codec
 from custom_components.adjustable_bed.services import async_register_services
 from tests.test_coordinator_limoss_remote import actual_coordinator
 from tests.test_limoss_remote import make_controller
-from tests.test_limoss_remote_preflight_review import prepare_live
-from tests.test_limoss_remote_review_lifecycle import CAPS
+from tests.test_limoss_remote_entity_reloads import CAPS
+from tests.test_limoss_remote_preflight import prepare_live
 
 
 @pytest.mark.parametrize("retire", [False, True])
 async def test_retirement_after_ready_before_waiter_resumes_prevents_first_movement(hass, retire):
     left = actual_coordinator(hass, **{
-        CONF_ADDRESS: "AA:BB:CC:DD:EE:01", const.CONF_DISCONNECT_AFTER_COMMAND: False,
+        CONF_ADDRESS: "AA:BB:CC:DD:EE:01", const.CONF_CONNECTION_MODE: const.CONNECTION_MODE_IDLE,
         const.CONF_LIMOSS_REMOTE_STATE: {"capabilities": CAPS},
     })
     left_controller, left_client = await prepare_live(left)
     left_controller._sleep = LimossRemoteController._sleep.__get__(left_controller)
     right = actual_coordinator(hass, **{
-        CONF_ADDRESS: "AA:BB:CC:DD:EE:02", const.CONF_DISCONNECT_AFTER_COMMAND: False,
+        CONF_ADDRESS: "AA:BB:CC:DD:EE:02", const.CONF_CONNECTION_MODE: const.CONNECTION_MODE_IDLE,
         const.CONF_LIMOSS_REMOTE_STATE: {"capabilities": CAPS},
     })
     right._post_connect_delay, right._max_retries = 0, 1
@@ -52,23 +51,23 @@ async def test_retirement_after_ready_before_waiter_resumes_prevents_first_movem
         child.save_app_state()
 
     def left_write(role, packet, **kwargs):
-        trace.append(("left", LimossController._tea_decrypt(packet[1:9])[1]))
+        trace.append(("left", codec.decrypt(packet[1:9])[1]))
 
     async def old_write(role, packet, **kwargs):
-        opcode = LimossController._tea_decrypt(packet[1:9])[1]
+        opcode = codec.decrypt(packet[1:9])[1]
         trace.append(("old_right", opcode))
         if opcode == 2:
             entered.set()
             await release.wait()
         if opcode in {0, 1, 2}:
             reply = {2: "0208120008", 0: "0001020304", 1: "0101020304"}[opcode]
-            old_client.start_notify.call_args.args[1](role, bytearray(format_command(bytes.fromhex(reply), 0)))
+            old_client.start_notify.call_args.args[1](role, bytearray(codec.frame(bytes.fromhex(reply), 0)))
 
     def new_write(role, packet, **kwargs):
-        opcode = LimossController._tea_decrypt(packet[1:9])[1]
+        opcode = codec.decrypt(packet[1:9])[1]
         trace.append(("new_right", opcode))
         reply = {2: "0208120007", 0: "0001020304", 1: "0101020304"}[opcode]
-        new_client.start_notify.call_args.args[1](role, bytearray(format_command(bytes.fromhex(reply), 0)))
+        new_client.start_notify.call_args.args[1](role, bytearray(codec.frame(bytes.fromhex(reply), 0)))
 
     async def establish(*args, **kwargs):
         new_client.is_connected = True
@@ -82,7 +81,7 @@ async def test_retirement_after_ready_before_waiter_resumes_prevents_first_movem
     new_client.write_gatt_char.side_effect = new_write
     new_client.disconnect = AsyncMock(side_effect=disconnect)
     adapter = AdapterSelectionResult(BLEDevice(right.address, "App bed", {}), "local", -50, True, ["local"])
-    module = "custom_components.adjustable_bed.coordinator."
+    module = "custom_components.adjustable_bed.coordinator_connection."
     owner = operation = None
     try:
         with ExitStack() as stack:

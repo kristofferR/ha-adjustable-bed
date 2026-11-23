@@ -1,0 +1,1030 @@
+[
+  {
+    "id": "common-version",
+    "entry": "fields",
+    "hex": "6e90000700",
+    "expected": [
+      [
+        "deviceControlBoxProtocolVersionEvent",
+        7
+      ]
+    ]
+  },
+  {
+    "id": "common-bedmode-low-nibble",
+    "entry": "fields",
+    "hex": "6e901bfe00",
+    "expected": [
+      [
+        "deviceVersionOneBedModeEvent",
+        11
+      ]
+    ]
+  },
+  {
+    "id": "common-motor-masks",
+    "entry": "fields",
+    "hex": "6e903bfe00",
+    "expected": [
+      [
+        "deviceVersionOneMotorAngleEvent",
+        {
+          "no": 2,
+          "status": 3,
+          "angle": 254
+        }
+      ]
+    ]
+  },
+  {
+    "id": "common-motor-zero",
+    "entry": "fields",
+    "hex": "6e903000ff",
+    "expected": [
+      [
+        "deviceVersionOneMotorAngleEvent",
+        {
+          "no": 0,
+          "status": 0,
+          "angle": 0
+        }
+      ]
+    ]
+  },
+  {
+    "id": "common-massage-four-threebit-fields",
+    "entry": "fields",
+    "hex": "6e90ab9d00",
+    "expected": [
+      [
+        "deviceVersionOneMassageModeEvent",
+        {
+          "mode": 5,
+          "massage1": 5,
+          "massage2": 3,
+          "massage3": 6
+        }
+      ]
+    ]
+  },
+  {
+    "id": "common-check-start",
+    "entry": "fields",
+    "hex": "6e90c21000",
+    "expected": [
+      [
+        "deviceDetectionStatusEvent",
+        "start"
+      ]
+    ]
+  },
+  {
+    "id": "common-check-repeat",
+    "entry": "fields",
+    "hex": "6e90c24f00",
+    "expected": [
+      [
+        "deviceDetectionStatusEvent",
+        "repeat"
+      ]
+    ]
+  },
+  {
+    "id": "common-check-unknown-default",
+    "entry": "fields",
+    "hex": "6e90c2ff00",
+    "expected": [
+      [
+        "deviceDetectionStatusEvent",
+        "start"
+      ]
+    ]
+  },
+  {
+    "id": "common-detail-empty-3",
+    "entry": "fields",
+    "hex": "6e90c3b200",
+    "expected": [
+      [
+        "deviceDetectionMessageEvent",
+        {}
+      ]
+    ]
+  },
+  {
+    "id": "common-detail-empty-4",
+    "entry": "fields",
+    "hex": "6e90c4b200",
+    "expected": [
+      [
+        "deviceDetectionMessageEvent",
+        {}
+      ]
+    ]
+  },
+  {
+    "id": "common-detail-empty-5",
+    "entry": "fields",
+    "hex": "6e90c5b200",
+    "expected": [
+      [
+        "deviceDetectionMessageEvent",
+        {}
+      ]
+    ]
+  },
+  {
+    "id": "common-unknown-tag",
+    "entry": "fields",
+    "hex": "6e90420100",
+    "expected": []
+  },
+  {
+    "id": "common-wrong-prefix",
+    "entry": "fields",
+    "hex": "6e913bfe00",
+    "expected": []
+  },
+  {
+    "id": "common-wrong-length",
+    "entry": "fields",
+    "hex": "6e903bfe0000",
+    "expected": []
+  },
+  {
+    "id": "ext-white-on",
+    "entry": "fields",
+    "hex": "6e200903010200019e",
+    "expected": [
+      [
+        "deviceWhiteLedStatusEvent",
+        true
+      ]
+    ]
+  },
+  {
+    "id": "ext-white-nonone",
+    "entry": "fields",
+    "hex": "6e20090301030002a0",
+    "expected": [
+      [
+        "deviceWhiteLedStatusEvent",
+        false
+      ]
+    ]
+  },
+  {
+    "id": "ext-op-ignored",
+    "entry": "fields",
+    "hex": "6e200903010100019d",
+    "expected": []
+  },
+  {
+    "id": "ext-motor-height-full",
+    "entry": "fields",
+    "hex": "6e200e01020200012c024402586e",
+    "expected": [
+      [
+        "deviceMotorCurrentHeightStatusEvent",
+        {
+          "height": 30,
+          "type": 2,
+          "angle": 68,
+          "monitorHeight": 60
+        }
+      ]
+    ]
+  },
+  {
+    "id": "ext-motor-height-optional-absent",
+    "entry": "fields",
+    "hex": "6e200b010203630019011c",
+    "expected": [
+      [
+        "deviceMotorCurrentHeightStatusEvent",
+        {
+          "height": 2.5,
+          "type": 1,
+          "angle": -1,
+          "monitorHeight": 0
+        }
+      ]
+    ]
+  },
+  {
+    "id": "ext-motor-angle",
+    "entry": "fields",
+    "hex": "6e200a01030302632f33",
+    "expected": [
+      [
+        "deviceVersionOneMotorAngleEvent",
+        {
+          "position": 2,
+          "angle": 47
+        }
+      ]
+    ]
+  },
+  {
+    "id": "ext-motor-angle-discard-byte7",
+    "entry": "fields",
+    "hex": "6e200a01030201ff44e2",
+    "expected": [
+      [
+        "deviceVersionOneMotorAngleEvent",
+        {
+          "position": 1,
+          "angle": 68
+        }
+      ]
+    ]
+  },
+  {
+    "id": "ext-massage-pairs",
+    "entry": "fields",
+    "hex": "6e200d0201030107095802ff0b",
+    "expected": [
+      [
+        "deviceMassageHeadStrengthStatusEvent",
+        7
+      ],
+      [
+        "deviceMassageFootStrengthStatusEvent",
+        255
+      ]
+    ]
+  },
+  {
+    "id": "ext-massage-odd-payload-ignored",
+    "entry": "fields",
+    "hex": "6e200a020102010702a7",
+    "expected": []
+  },
+  {
+    "id": "ext-massage-mode",
+    "entry": "fields",
+    "hex": "6e20090202020009a6",
+    "expected": [
+      [
+        "deviceMassageModeStatusEvent",
+        9
+      ]
+    ]
+  },
+  {
+    "id": "ext-massage-frequency",
+    "entry": "fields",
+    "hex": "6e200902040300ff9f",
+    "expected": [
+      [
+        "deviceMassageFrequencStatusEvent",
+        255
+      ]
+    ]
+  },
+  {
+    "id": "ext-massage-power",
+    "entry": "fields",
+    "hex": "6e20090206020001a2",
+    "expected": [
+      [
+        "deviceMassagePowerStatusEvent",
+        true
+      ]
+    ]
+  },
+  {
+    "id": "ext-massage-power-nonone",
+    "entry": "fields",
+    "hex": "6e20090206030009ab",
+    "expected": [
+      [
+        "deviceMassagePowerStatusEvent",
+        false
+      ]
+    ]
+  },
+  {
+    "id": "ext-rgb-color",
+    "entry": "fields",
+    "hex": "6e200b04010200ff00ff9e",
+    "expected": [
+      [
+        "deviceRGBStripColorStatusEvent",
+        {
+          "alpha": 1,
+          "red": 1,
+          "green": 0,
+          "blue": 1
+        }
+      ]
+    ]
+  },
+  {
+    "id": "ext-rgb-timer",
+    "entry": "fields",
+    "hex": "6e200a04020300021ec1",
+    "expected": [
+      [
+        "deviceRGBStripTimerStatusEvent",
+        150
+      ]
+    ]
+  },
+  {
+    "id": "ext-rgb-motion",
+    "entry": "fields",
+    "hex": "6e20090403020001a1",
+    "expected": [
+      [
+        "deviceRGBStripMotionStatusEvent",
+        true
+      ]
+    ]
+  },
+  {
+    "id": "ext-rgb-power",
+    "entry": "fields",
+    "hex": "6e20090404030002a4",
+    "expected": [
+      [
+        "deviceRGBStripStatusEvent",
+        false
+      ]
+    ]
+  },
+  {
+    "id": "ext-alarm-query",
+    "entry": "fields",
+    "hex": "6e200d0501020102173b7fff76",
+    "expected": [
+      [
+        "deviceRepeatAlarmListStatusEvent",
+        {
+          "field_7": 1,
+          "field_f": 2,
+          "field_17": 23,
+          "field_1f": 59,
+          "field_27": 127,
+          "field_2f": 255
+        }
+      ]
+    ]
+  },
+  {
+    "id": "ext-alarm-escalation",
+    "entry": "fields",
+    "hex": "6e200d0501030102173b7fff77",
+    "expected": [
+      [
+        "deviceRepeatAlarmListEscalationStatusEvent",
+        {
+          "field_7": 1,
+          "field_f": 2,
+          "field_17": 23,
+          "field_1f": 59,
+          "field_27": 127,
+          "field_2f": 255
+        }
+      ]
+    ]
+  },
+  {
+    "id": "ext-alarm-short-range",
+    "entry": "fields",
+    "hex": "6e2008050102019f",
+    "expected": "RangeError"
+  },
+  {
+    "id": "ext-snore-on",
+    "entry": "fields",
+    "hex": "6e20090601020001a1",
+    "expected": [
+      [
+        "deviceAntiSnoreEvent",
+        true
+      ]
+    ]
+  },
+  {
+    "id": "ext-getoff-nonone",
+    "entry": "fields",
+    "hex": "6e20090602030002a4",
+    "expected": [
+      [
+        "deviceGetOffBedStatusEvent",
+        false
+      ]
+    ]
+  },
+  {
+    "id": "ext-snore-count",
+    "entry": "fields",
+    "hex": "6e200a060502000107ad",
+    "expected": [
+      [
+        "deviceAntiSnoreConfigCountEvent",
+        7
+      ]
+    ]
+  },
+  {
+    "id": "ext-snore-time",
+    "entry": "fields",
+    "hex": "6e200a06050300021ec6",
+    "expected": [
+      [
+        "deviceAntiSnoreConfigTimeEvent",
+        30
+      ]
+    ]
+  },
+  {
+    "id": "ext-lock",
+    "entry": "fields",
+    "hex": "6e20090702020001a3",
+    "expected": [
+      [
+        "deviceCharacteristicsSubscriptionBoxLockEvent",
+        null
+      ]
+    ]
+  },
+  {
+    "id": "ext-unlock-nonone",
+    "entry": "fields",
+    "hex": "6e200907020300ffa2",
+    "expected": [
+      [
+        "deviceCharacteristicsSubscriptionCancelBoxLockEvent",
+        null
+      ]
+    ]
+  },
+  {
+    "id": "ext-check-raw-op-independent-1",
+    "entry": "fields",
+    "hex": "6e20090a0163001116",
+    "expected": [
+      [
+        "deviceCheckEvent",
+        [
+          1,
+          [
+            110,
+            32,
+            9,
+            10,
+            1,
+            99,
+            0,
+            17,
+            22
+          ]
+        ]
+      ]
+    ]
+  },
+  {
+    "id": "ext-check-raw-op-independent-2",
+    "entry": "fields",
+    "hex": "6e20090a0263001117",
+    "expected": [
+      [
+        "deviceCheckEvent",
+        [
+          2,
+          [
+            110,
+            32,
+            9,
+            10,
+            2,
+            99,
+            0,
+            17,
+            23
+          ]
+        ]
+      ]
+    ]
+  },
+  {
+    "id": "ext-check-raw-op-independent-3",
+    "entry": "fields",
+    "hex": "6e20090a0363001118",
+    "expected": [
+      [
+        "deviceCheckEvent",
+        [
+          3,
+          [
+            110,
+            32,
+            9,
+            10,
+            3,
+            99,
+            0,
+            17,
+            24
+          ]
+        ]
+      ]
+    ]
+  },
+  {
+    "id": "ext-check-raw-op-independent-4",
+    "entry": "fields",
+    "hex": "6e20090a0463001119",
+    "expected": [
+      [
+        "deviceCheckEvent",
+        [
+          4,
+          [
+            110,
+            32,
+            9,
+            10,
+            4,
+            99,
+            0,
+            17,
+            25
+          ]
+        ]
+      ]
+    ]
+  },
+  {
+    "id": "ext-check-raw-op-independent-5",
+    "entry": "fields",
+    "hex": "6e20090a056300111a",
+    "expected": [
+      [
+        "deviceCheckEvent",
+        [
+          5,
+          [
+            110,
+            32,
+            9,
+            10,
+            5,
+            99,
+            0,
+            17,
+            26
+          ]
+        ]
+      ]
+    ]
+  },
+  {
+    "id": "ext-pressmode",
+    "entry": "fields",
+    "hex": "6e20090b010200ffa4",
+    "expected": [
+      [
+        "devicePressModeEvent",
+        255
+      ]
+    ]
+  },
+  {
+    "id": "ext-standard-split-is-two",
+    "entry": "fields",
+    "hex": "6e20090b02030002a9",
+    "expected": [
+      [
+        "deviceStrandardAndSplitControlEvent",
+        true
+      ]
+    ]
+  },
+  {
+    "id": "ext-standard-split-other",
+    "entry": "fields",
+    "hex": "6e20090b02030001a8",
+    "expected": [
+      [
+        "deviceStrandardAndSplitControlEvent",
+        false
+      ]
+    ]
+  },
+  {
+    "id": "ext-same-split-raw",
+    "entry": "fields",
+    "hex": "6e20090b04020003ab",
+    "expected": [
+      [
+        "deviceSameAndSplitControlEvent",
+        3
+      ]
+    ]
+  },
+  {
+    "id": "ext-press-short-range",
+    "entry": "fields",
+    "hex": "6e20070b0102a3",
+    "expected": "RangeError"
+  },
+  {
+    "id": "ext-bad-checksum",
+    "entry": "fields",
+    "hex": "6e2009030102000100",
+    "expected": []
+  },
+  {
+    "id": "ext-length-mismatch",
+    "entry": "fields",
+    "hex": "6e200803010200019d",
+    "expected": []
+  },
+  {
+    "id": "fragment-two-then-rest",
+    "entry": "deframe",
+    "steps": [
+      "6e20",
+      "0903010200019e"
+    ],
+    "expected": {
+      "frames": [
+        "6e200903010200019e"
+      ],
+      "buffer": "",
+      "timer": false
+    }
+  },
+  {
+    "id": "fragment-extended-body",
+    "entry": "deframe",
+    "steps": [
+      "6e20090301",
+      "0200019e"
+    ],
+    "expected": {
+      "frames": [
+        "6e200903010200019e"
+      ],
+      "buffer": "",
+      "timer": false
+    }
+  },
+  {
+    "id": "coalesced-extended",
+    "entry": "deframe",
+    "steps": [
+      "6e200903010200019e6e200a01030302632f33"
+    ],
+    "expected": {
+      "frames": [
+        "6e200903010200019e",
+        "6e200a01030302632f33"
+      ],
+      "buffer": "",
+      "timer": false
+    }
+  },
+  {
+    "id": "leading-noise",
+    "entry": "deframe",
+    "steps": [
+      "ff00116e200903010200019e"
+    ],
+    "expected": {
+      "frames": [
+        "6e200903010200019e"
+      ],
+      "buffer": "",
+      "timer": false
+    }
+  },
+  {
+    "id": "trailing-header",
+    "entry": "deframe",
+    "steps": [
+      "6e200903010200019e6e"
+    ],
+    "expected": {
+      "frames": [
+        "6e200903010200019e"
+      ],
+      "buffer": "6e",
+      "timer": true
+    }
+  },
+  {
+    "id": "incomplete-expiry",
+    "entry": "deframe",
+    "steps": [
+      "6e20090301",
+      "expire"
+    ],
+    "expected": {
+      "frames": [],
+      "buffer": "",
+      "timer": false
+    }
+  },
+  {
+    "id": "timer-reset-partial",
+    "entry": "deframe",
+    "steps": [
+      "6e20",
+      "09"
+    ],
+    "expected": {
+      "frames": [],
+      "buffer": "6e2009",
+      "timer": true
+    }
+  },
+  {
+    "id": "noheader-clears",
+    "entry": "deframe",
+    "steps": [
+      "01020304"
+    ],
+    "expected": {
+      "frames": [],
+      "buffer": "",
+      "timer": false
+    }
+  },
+  {
+    "id": "small-noise-retains",
+    "entry": "deframe",
+    "steps": [
+      "0102"
+    ],
+    "expected": {
+      "frames": [],
+      "buffer": "0102",
+      "timer": true
+    }
+  },
+  {
+    "id": "oversized-declaration",
+    "entry": "deframe",
+    "steps": [
+      "6e20ff0102"
+    ],
+    "expected": {
+      "frames": [],
+      "buffer": "6e20ff0102",
+      "timer": true
+    }
+  },
+  {
+    "id": "common-coalesced",
+    "entry": "deframe",
+    "steps": [
+      "6e903bfe006e901bfe00"
+    ],
+    "expected": {
+      "frames": [
+        "6e903bfe00",
+        "6e901bfe00"
+      ],
+      "buffer": "",
+      "timer": false
+    }
+  },
+  {
+    "id": "common-premature-fragment",
+    "entry": "deframe",
+    "steps": [
+      "6e903b",
+      "fe00"
+    ],
+    "expected": {
+      "frames": [
+        "6e903b"
+      ],
+      "buffer": "fe00",
+      "timer": true
+    }
+  },
+  {
+    "id": "common-payload-header-splits",
+    "entry": "deframe",
+    "steps": [
+      "6e903b6e00"
+    ],
+    "expected": {
+      "frames": [
+        "6e903b"
+      ],
+      "buffer": "6e00",
+      "timer": true
+    }
+  },
+  {
+    "id": "common-literal-internal-header",
+    "entry": "deframe",
+    "steps": [
+      "6e23a06e9f"
+    ],
+    "expected": {
+      "frames": [
+        "6e23a0"
+      ],
+      "buffer": "6e9f",
+      "timer": true
+    }
+  },
+  {
+    "id": "declared-two-resync",
+    "entry": "deframe",
+    "steps": [
+      "6e20026e903bfe00"
+    ],
+    "expected": {
+      "frames": [
+        "6e20",
+        "6e903bfe00"
+      ],
+      "buffer": "",
+      "timer": false
+    }
+  },
+  {
+    "id": "zero-length-shared-stall",
+    "entry": "deframe",
+    "steps": [
+      "6e2000"
+    ],
+    "expected": "zero-length non-progress"
+  },
+  {
+    "id": "snore-literal-collides-with-desk-framing",
+    "entry": "deframe",
+    "steps": [
+      "6e2100008f"
+    ],
+    "expected": "zero-length non-progress"
+  },
+  {
+    "id": "three-byte-ota-header-shared-range",
+    "entry": "deframe",
+    "steps": [
+      "6e4000"
+    ],
+    "expected": "RangeError",
+    "scope": "Shared buffer boundary only, OTA payload EXCLUDED"
+  },
+  {
+    "id": "notify-only",
+    "entry": "session",
+    "inputs": {
+      "kind": "notify",
+      "notify": true,
+      "indicate": false
+    },
+    "expected": "0100"
+  },
+  {
+    "id": "notify-and-indicate",
+    "entry": "session",
+    "inputs": {
+      "kind": "notify",
+      "notify": true,
+      "indicate": true
+    },
+    "expected": "0100"
+  },
+  {
+    "id": "indicate-only-unselected",
+    "entry": "session",
+    "inputs": {
+      "kind": "notify",
+      "notify": false,
+      "indicate": true
+    },
+    "expected": "not-selected"
+  },
+  {
+    "id": "notify-missing-cccd",
+    "entry": "session",
+    "inputs": {
+      "kind": "notify",
+      "notify": true,
+      "cccd": false
+    },
+    "expected": "native-false; dart-true; query/completion continue"
+  },
+  {
+    "id": "notify-error",
+    "entry": "session",
+    "inputs": {
+      "kind": "notify",
+      "notify": true,
+      "error": true
+    },
+    "expected": "discovery-catch; no query/completion; no retry"
+  },
+  {
+    "id": "plugin-indication-fallback",
+    "entry": "session",
+    "inputs": {
+      "kind": "plugin_cccd",
+      "notify": false,
+      "indicate": true
+    },
+    "expected": "0200"
+  },
+  {
+    "id": "plugin-no-properties",
+    "entry": "session",
+    "inputs": {
+      "kind": "plugin_cccd",
+      "notify": false,
+      "indicate": false
+    },
+    "expected": "error"
+  },
+  {
+    "id": "mounted-query",
+    "entry": "session",
+    "inputs": {
+      "kind": "query_gate",
+      "mounted": true
+    },
+    "expected": [
+      "query",
+      "completion-clock"
+    ]
+  },
+  {
+    "id": "unmounted-query-skipped",
+    "entry": "session",
+    "inputs": {
+      "kind": "query_gate",
+      "mounted": false
+    },
+    "expected": [
+      "completion-clock"
+    ]
+  },
+  {
+    "id": "mtu-success",
+    "entry": "session",
+    "inputs": {
+      "kind": "mtu",
+      "outcome": "callback",
+      "mtu": 247,
+      "success": true
+    },
+    "expected": 247
+  },
+  {
+    "id": "mtu-callback-status-ignored",
+    "entry": "session",
+    "inputs": {
+      "kind": "mtu",
+      "outcome": "callback",
+      "mtu": 23,
+      "success": false
+    },
+    "expected": 23
+  },
+  {
+    "id": "mtu-invoke-error",
+    "entry": "session",
+    "inputs": {
+      "kind": "mtu",
+      "outcome": "invoke-error"
+    },
+    "expected": "propagate to app connect catch; no MTU retry/fallback; discovery event may already run"
+  },
+  {
+    "id": "mtu-timeout",
+    "entry": "session",
+    "inputs": {
+      "kind": "mtu",
+      "outcome": "timeout"
+    },
+    "expected": "propagate to app connect catch; no MTU retry/fallback; discovery event may already run"
+  },
+  {
+    "id": "mtu-disconnect",
+    "entry": "session",
+    "inputs": {
+      "kind": "mtu",
+      "outcome": "disconnect"
+    },
+    "expected": "propagate to app connect catch; no MTU retry/fallback; discovery event may already run"
+  },
+  {
+    "id": "mtu-adapter-off",
+    "entry": "session",
+    "inputs": {
+      "kind": "mtu",
+      "outcome": "adapter-off"
+    },
+    "expected": "propagate to app connect catch; no MTU retry/fallback; discovery event may already run"
+  }
+]

@@ -15,10 +15,10 @@ from types import MappingProxyType
 from homeassistant.config_entries import SOURCE_IMPORT, ConfigEntry, ConfigEntryDisabler
 from homeassistant.const import CONF_ADDRESS
 from homeassistant.core import HomeAssistant
-from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers import entity_registry as er
 
+from .beds.cancellation import settled
 from .const import (
     CONF_PAIR_ID,
     CONF_PAIR_MODE,
@@ -26,6 +26,7 @@ from .const import (
     DOMAIN,
     PAIR_MODE_SINGLE_ADDRESS,
 )
+from .errors import failed
 from .paired_devices import async_restore_full_device
 from .pairing import (
     KEY_ABSORBED_ENTRY_ID,
@@ -35,9 +36,14 @@ from .pairing import (
     KEY_SINGLE_ADDRESS_ORIGIN_ENTITY_UNIQUE_IDS,
     is_paired,
     iter_children,
-    single_data_from_child,
-    single_options_from_child,
+    standalone_config_after_split,
 )
+from .position_estimate import (
+    async_migrate_entry_store,
+    async_one_side_positions,
+    estimate_bed_keys,
+)
+from .profile_review import carry_profile_review
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -140,26 +146,26 @@ class _RegistryOwnership:
         for row, target in self.entities:
             current = ent_reg.async_get(row.entity_id)
             if current is None or current.config_entry_id != row.config_entry_id:
-                raise HomeAssistantError(f"Entity ownership changed for {row.entity_id}")
+                raise failed("pair_change_failed", reason=f"Entity ownership changed for {row.entity_id}")
             if hass.config_entries.async_get_entry(target) is None:
-                raise HomeAssistantError(f"Target config entry {target} is missing")
+                raise failed("pair_change_failed", reason=f"Target config entry {target} is missing")
             if row.device_id is not None and not any(
                 move.original.id == row.device_id and move.target == target
                 for move in self.devices
             ):
                 device = dev_reg.async_get(row.device_id)
                 if device is None or device.config_entry_id != target:
-                    raise HomeAssistantError(f"No device ownership plan for {row.entity_id}")
+                    raise failed("pair_change_failed", reason=f"No device ownership plan for {row.entity_id}")
         for move in self.devices:
             current = dev_reg.async_get(move.original.id)
             if current is None or current.config_entry_id != move.source:
-                raise HomeAssistantError(f"Device ownership changed for {move.original.id}")
+                raise failed("pair_change_failed", reason=f"Device ownership changed for {move.original.id}")
             if hass.config_entries.async_get_entry(move.target) is None:
-                raise HomeAssistantError(f"Target config entry {move.target} is missing")
+                raise failed("pair_change_failed", reason=f"Target config entry {move.target} is missing")
             placeholder = _device_for_entry_and_identifier(dev_reg, move.target, move.identifier)
             if placeholder is not None and placeholder.id != move.original.id:
                 if er.async_entries_for_device(ent_reg, placeholder.id):
-                    raise HomeAssistantError("Target placeholder already owns entity rows")
+                    raise failed("pair_change_failed", reason="Target placeholder already owns entity rows")
                 self.placeholders.append((placeholder, move.target))
         for row, target in self.entities:
             self._attempted_entities.add(row.entity_id)
@@ -195,7 +201,7 @@ class _RegistryOwnership:
             try:
                 current = ent_reg.async_get(row.entity_id)
                 if current is None:
-                    raise HomeAssistantError(f"Registry row {row.entity_id} disappeared")
+                    raise failed("pair_change_failed", reason=f"Registry row {row.entity_id} disappeared")
                 if current.config_entry_id != row.config_entry_id:
                     ent_reg.async_update_entity(row.entity_id, config_entry_id=row.config_entry_id)
             except Exception:
@@ -207,14 +213,14 @@ class _RegistryOwnership:
             try:
                 current = dev_reg.async_get(move.original.id)
                 if not isinstance(current, dr.DeviceEntry):
-                    raise HomeAssistantError(f"Registry device {move.original.id} disappeared")
+                    raise failed("pair_change_failed", reason=f"Registry device {move.original.id} disappeared")
                 if any(
                     row.device_id == move.original.id
                     and (restored := ent_reg.async_get(row.entity_id)) is not None
                     and restored.config_entry_id != row.config_entry_id
                     for row, _target in self.entities
                 ):
-                    raise HomeAssistantError("Device rollback would delete an unrestored entity")
+                    raise failed("pair_change_failed", reason="Device rollback would delete an unrestored entity")
                 if (
                     current.config_entry_id == move.target
                     and current.config_entry_id != move.source
@@ -235,7 +241,7 @@ class _RegistryOwnership:
             try:
                 current = dev_reg.async_get(placeholder.id)
                 if not isinstance(current, dr.DeviceEntry):
-                    raise HomeAssistantError("Placeholder disappeared before commit")
+                    raise failed("pair_change_failed", reason="Placeholder disappeared before commit")
                 if (
                     current.identifiers == placeholder.identifiers
                     and current.connections == placeholder.connections
@@ -247,7 +253,7 @@ class _RegistryOwnership:
                     )
                     is not None
                 ):
-                    raise HomeAssistantError("Target device ownership has not been rolled back")
+                    raise failed("pair_change_failed", reason="Target device ownership has not been rolled back")
                 dev_reg.async_update_device(
                     placeholder.id,
                     new_identifiers=set(placeholder.identifiers),
@@ -410,14 +416,16 @@ async def async_unpair_entry(hass: HomeAssistant, entry: ConfigEntry) -> list[Co
     the pair, partially-added singles are removed, and the pair is reloaded.
     """
     if not is_paired(entry.data):
-        raise HomeAssistantError("Cannot unpair a standalone bed")
+        raise failed("pair_change_failed", reason="Cannot unpair a standalone bed")
 
     if entry.data.get(CONF_PAIR_MODE) == PAIR_MODE_SINGLE_ADDRESS:
         children = iter_children(entry.data)
         if not children:
-            raise HomeAssistantError("Single-address pair has no provenance")
-        origin_data = single_data_from_child(children[0])
-        origin_options = single_options_from_child(children[0])
+            raise failed("pair_change_failed", reason="Single-address pair has no provenance")
+        origin_data, origin_options = standalone_config_after_split(
+            entry.data, entry.options, str(children[0].get(CONF_SIDE))
+        )
+        carry_profile_review(entry.data, origin_data)
         origin_title = children[0].get(KEY_ORIGIN_TITLE) or entry.title
         origin_unique_id = children[0].get(KEY_ORIGIN_UNIQUE_ID) or entry.unique_id
         paired_data = dict(entry.data)
@@ -427,7 +435,7 @@ async def async_unpair_entry(hass: HomeAssistant, entry: ConfigEntry) -> list[Co
         preserved = set(entry.data.get(KEY_SINGLE_ADDRESS_ORIGIN_ENTITY_UNIQUE_IDS, []))
         unloaded = await hass.config_entries.async_unload(entry.entry_id)
         if not unloaded:
-            raise HomeAssistantError("Could not unload the bed before reverting sides")
+            raise failed("pair_change_failed", reason="Could not unload the bed before reverting sides")
         try:
             hass.config_entries.async_update_entry(
                 entry,
@@ -479,7 +487,7 @@ async def async_unpair_entry(hass: HomeAssistant, entry: ConfigEntry) -> list[Co
 
     children = iter_children(entry.data)
     if len(children) != 2:
-        raise HomeAssistantError("Paired bed must contain exactly two sides")
+        raise failed("pair_change_failed", reason="Paired bed must contain exactly two sides")
 
     existing_entries = hass.config_entries.async_entries(DOMAIN)
     occupied_entry_ids = {
@@ -494,21 +502,21 @@ async def async_unpair_entry(hass: HomeAssistant, entry: ConfigEntry) -> list[Co
     for child in children:
         address = child.get(CONF_ADDRESS)
         if not isinstance(address, str) or not address:
-            raise HomeAssistantError("Paired child is missing its Bluetooth address")
+            raise failed("pair_change_failed", reason="Paired child is missing its Bluetooth address")
         unique_id = child.get(KEY_ORIGIN_UNIQUE_ID) or address
         if unique_id in occupied_unique_ids:
-            raise HomeAssistantError(
-                f"Cannot unpair because standalone id {unique_id} already exists"
-            )
+            raise failed("pair_change_failed", reason=f"Cannot unpair because standalone id {unique_id} already exists")
         origin_entry_id = child.get(KEY_ABSORBED_ENTRY_ID)
         if origin_entry_id in occupied_entry_ids:
-            raise HomeAssistantError(
-                f"Cannot restore original config entry {origin_entry_id}: id is in use"
-            )
+            raise failed("pair_change_failed", reason=f"Cannot restore original config entry {origin_entry_id}: id is in use")
         title = child.get(KEY_ORIGIN_TITLE) or child.get("name") or address
         source = child.get(KEY_ORIGIN_SOURCE) or SOURCE_IMPORT
+        single_data, single_options = standalone_config_after_split(
+            entry.data, entry.options, str(child.get(CONF_SIDE))
+        )
+        carry_profile_review(entry.data, single_data)
         single = ConfigEntry(
-            data=single_data_from_child(child),
+            data=single_data,
             # Register both target entry ids before moving registry rows, but do
             # not let async_add() set up their platforms until the transfer is
             # complete. This avoids temporary duplicate entities/devices under
@@ -517,8 +525,11 @@ async def async_unpair_entry(hass: HomeAssistant, entry: ConfigEntry) -> list[Co
             discovery_keys=MappingProxyType({}),
             domain=DOMAIN,
             entry_id=origin_entry_id,
-            minor_version=1,
-            options=single_options_from_child(child),
+            # The pair's migrations already rewrote each side's nested original,
+            # so the standalone entry starts at the same schema and is not
+            # marked for the upgrade review a second time.
+            minor_version=entry.minor_version,
+            options=single_options,
             source=source,
             subentries_data=(),
             title=title,
@@ -531,10 +542,23 @@ async def async_unpair_entry(hass: HomeAssistant, entry: ConfigEntry) -> list[Co
 
     unloaded = await hass.config_entries.async_unload(entry.entry_id)
     if not unloaded:
-        raise HomeAssistantError("Could not unload the paired bed before unpairing")
+        raise failed("pair_change_failed", reason="Could not unload the paired bed before unpairing")
     # Child devices cannot change config-entry ownership. Restore their full
     # records first, then use the same ownership transaction as standalone beds.
     try:
+        # A pair that never loaded on this version still has its per-entry
+        # estimates; the beds must find them in their own stores.
+        if not await async_migrate_entry_store(
+            hass, entry.entry_id, estimate_bed_keys(entry.data)
+        ):
+            raise failed("pair_change_failed", reason="Could not move the estimated positions")
+        # Saved positions of one side keep their buttons below. Read from the
+        # stores, so this also holds for a pair that is not loaded.
+        one_side_positions = await async_one_side_positions(
+            hass,
+            entry.entry_id,
+            [(str(child.get(CONF_ADDRESS)), child.get(CONF_SIDE)) for child in children],
+        )
         for child in children:
             device = dr.async_get(hass).async_get_child_device_by_identifier(
                 (DOMAIN, child.get(CONF_ADDRESS, "")), entry.entry_id,
@@ -556,6 +580,51 @@ async def async_unpair_entry(hass: HomeAssistant, entry: ConfigEntry) -> list[Co
         )
         if device is not None:
             child_devices[single.entry_id] = device
+
+    # A saved position of one side keeps its button row (entity ID, name, area,
+    # disabled and hidden state): renamed to the unique ID that bed uses and
+    # put on its device, it moves with the side below. A rollback renames it back.
+    saved_position_prefix = f"{entry.data[CONF_PAIR_ID]}_saved_position_"
+    renamed_buttons: list[er.RegistryEntry] = []
+
+    def restore_renamed_buttons() -> bool:
+        complete = True
+        for row in renamed_buttons:
+            try:
+                current = ent_reg.async_get(row.entity_id)
+                if current is not None and current.config_entry_id == entry.entry_id:
+                    ent_reg.async_update_entity(
+                        row.entity_id, new_unique_id=row.unique_id, device_id=row.device_id
+                    )
+            except Exception:
+                complete = False
+                _LOGGER.exception("Could not restore saved-position button %s", row.entity_id)
+        return complete
+
+    try:
+        for row in list(er.async_entries_for_config_entry(ent_reg, entry.entry_id)):
+            position_id = row.unique_id.removeprefix(saved_position_prefix)
+            side = one_side_positions.get(position_id)
+            if row.domain != "button" or position_id == row.unique_id or side is None:
+                continue
+            side_address, stored_id = side
+            device = next(
+                (
+                    child_devices[single.entry_id]
+                    for single, address in singles
+                    if address.upper() == side_address and single.entry_id in child_devices
+                ),
+                None,
+            )
+            unique_id = f"{side_address}_saved_position_{stored_id}"
+            if device is None or ent_reg.async_get_entity_id("button", DOMAIN, unique_id):
+                continue
+            renamed_buttons.append(row)
+            ent_reg.async_update_entity(row.entity_id, new_unique_id=unique_id, device_id=device.id)
+    except (Exception, asyncio.CancelledError):
+        restore_renamed_buttons()
+        await hass.config_entries.async_setup(entry.entry_id)
+        raise
 
     pair_rows = list(er.async_entries_for_config_entry(ent_reg, entry.entry_id))
     row_owners: dict[str, str] = {}
@@ -593,6 +662,9 @@ async def async_unpair_entry(hass: HomeAssistant, entry: ConfigEntry) -> list[Co
             await hass.config_entries.async_add(single)
 
         ownership.apply(hass)
+        # A position of both sides becomes one on each bed with its own new
+        # button. The pair's button stays until the pair is removed, so a
+        # rollback finds it untouched.
 
         # Load the restored entries only after their existing device and entity
         # rows belong to them. The setup paths now adopt those rows in place.
@@ -603,7 +675,10 @@ async def async_unpair_entry(hass: HomeAssistant, entry: ConfigEntry) -> list[Co
                     single.title,
                 )
 
-        removal = await hass.config_entries.async_remove(entry.entry_id)
+        # Removing the pair is the commit point. Home Assistant deletes its
+        # remaining rows only after the removal hook, so a cancelled caller
+        # must not cut the removal short and leave them orphaned.
+        removal = await settled(hass.config_entries.async_remove(entry.entry_id))
         ownership.finish(hass)
         if removal.get("require_restart"):
             _LOGGER.warning(
@@ -618,6 +693,7 @@ async def async_unpair_entry(hass: HomeAssistant, entry: ConfigEntry) -> list[Co
             _LOGGER.exception("Pair %s was removed before unpair removal raised", entry.entry_id)
             raise
         restored = ownership.rollback(hass)
+        restored = restore_renamed_buttons() and restored
         for single, _address in reversed(singles):
             if hass.config_entries.async_get_entry(single.entry_id) is None:
                 continue

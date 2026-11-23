@@ -8,7 +8,6 @@ from types import SimpleNamespace
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
-import voluptuous as vol
 import yaml
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import ServiceValidationError
@@ -29,35 +28,54 @@ from custom_components.adjustable_bed.const import (
 )
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
 from custom_components.adjustable_bed.services import async_register_services
+from tests.error_helpers import raises_key
 
 ROOT = Path(__file__).parents[1] / "custom_components" / "adjustable_bed"
 
 
-def target(bed_type: str = BED_TYPE_KEESON, name: str = "Bed", **capabilities: object):
-    """A coordinator whose capability controller declares only ``capabilities``."""
-    controller = SimpleNamespace(
-        held_control_options=(),
-        validate_hold_control=MagicMock(),
-        hold_control=AsyncMock(),
-        supports_device_rename=False,
-        disconnects_after_rename=False,
-        validate_device_rename=MagicMock(),
-        rename_device=AsyncMock(),
-        supports_clock_sync=False,
-        sync_clock=AsyncMock(),
-        supports_memory_presets=True,
-        memory_slot_count=4,
-        supports_held_memory_recall=False,
-        validate_memory_recall=MagicMock(),
-        preset_memory=AsyncMock(),
-        recall_memory=AsyncMock(),
-    )
-    vars(controller).update(capabilities)
+def target(
+    bed_type: str = BED_TYPE_KEESON,
+    name: str = "Bed",
+    family: type | None = None,
+    **capabilities: object,
+):
+    """A coordinator whose capability controller declares only ``capabilities``.
+
+    ``family`` makes the controller a mock of that controller class, so family
+    actions find their interface.
+    """
+    members: dict[str, object] = {
+        "held_control_options": (),
+        "validate_hold_control": MagicMock(),
+        "hold_control": AsyncMock(),
+        "supports_device_rename": False,
+        "disconnects_after_rename": False,
+        "validate_device_rename": MagicMock(),
+        "rename_device": AsyncMock(),
+        "supports_clock_sync": False,
+        "validate_clock_sync": MagicMock(),
+        "sync_clock": AsyncMock(),
+        "supports_memory_presets": True,
+        "memory_slot_count": 4,
+        "supports_held_memory_recall": False,
+        "validate_memory_recall": MagicMock(),
+        "preset_memory": AsyncMock(),
+        "recall_memory": AsyncMock(),
+        "requires_disconnected_transport": False,
+        **capabilities,
+    }
+    controller = SimpleNamespace(**members) if family is None else MagicMock(spec=family)
+    if family is not None:
+        for key, value in members.items():
+            setattr(controller, key, value)
     coordinator = MagicMock(spec=AdjustableBedCoordinator)
     coordinator.name = name
     coordinator.bed_type = bed_type
     coordinator.entry = SimpleNamespace(data={})
+    coordinator.controller_side = None
     coordinator.capability_controller = controller
+    coordinator.stop_epoch = 0
+    controller._coordinator = coordinator
 
     async def execute(command, **kwargs):
         await command(controller)
@@ -77,19 +95,15 @@ def select(resolve, *targets) -> None:
     resolve.return_value = ([(coordinator, SIDE_BOTH) for coordinator, _ in targets], [])
 
 
-async def test_service_text_lives_only_in_translations() -> None:
+async def test_every_action_and_field_is_named_in_both_translation_files() -> None:
+    """The two files ship together, and an unnamed action or field shows its raw key."""
     services = yaml.safe_load((ROOT / "services.yaml").read_text())
     strings = json.loads((ROOT / "strings.json").read_text())
     assert strings == json.loads((ROOT / "translations" / "en.json").read_text())
     translated = strings["services"]
-    assert set(translated) == set(services)
     for name, spec in services.items():
-        assert not {"name", "description"} & set(spec), name
-        assert translated[name]["name"] and translated[name]["description"], name
-        fields = spec.get("fields") or {}
-        assert set(translated[name].get("fields", {})) == set(fields), name
-        for field, field_spec in fields.items():
-            assert not {"name", "description"} & set(field_spec), (name, field)
+        assert translated[name]["name"], name
+        for field in spec.get("fields") or {}:
             assert translated[name]["fields"][field]["name"], (name, field)
 
 
@@ -123,13 +137,14 @@ async def test_hold_control_admission_survives_stop_during_live_preflight(
         held_control_options=("back_up",),
         validate_hold_control=MagicMock(),
         hold_control=AsyncMock(),
+        requires_disconnected_transport=False,
     )
     coordinator = SimpleNamespace(
         name="Pairlink",
         bed_type="reverie_pairlink",
         entry=SimpleNamespace(data={}),
         capability_controller=controller,
-        _command_scheduler=scheduler,
+        stop_epoch=scheduler.stop_epoch,
     )
     observed_stop_epochs: list[int | None] = []
 
@@ -229,7 +244,7 @@ async def test_hold_control_profile_constraint_becomes_validation_error(
     ("status_ready", "lock_mask", "message"),
     [
         (False, 0, "valid status frame"),
-        (True, 0x01, "disabled by status lock bit"),
+        (True, 0x01, "locked on the bed"),
     ],
 )
 async def test_ahf_hold_control_preflights_status_and_lock_before_writes(
@@ -252,6 +267,7 @@ async def test_ahf_hold_control_preflights_status_and_lock_before_writes(
     controller._status_ready = status_ready
     controller._feature_mask = lock_mask
     coordinator, _ = target(BED_TYPE_TIMOTION_AHF)
+    coordinator.controller_side = None
     coordinator.capability_controller = controller
     select(resolve, (coordinator, controller))
 
@@ -282,23 +298,6 @@ async def test_hold_control_cannot_mix_live_session_profiles(
     assert raised.value.translation_key == "mixed_profile_targets"
 
 
-async def test_released_leggett_alias_keeps_its_control_list(
-    hass: HomeAssistant, resolve
-) -> None:
-    coordinator, controller = target(held_control_options=("flat", "head_up"))
-    select(resolve, (coordinator, controller))
-    with pytest.raises(vol.Invalid):
-        await hass.services.async_call(
-            DOMAIN, "leggett_hold_control",
-            {"device_id": "bed", "control": "head_up", "duration": 1}, blocking=True,
-        )
-    await hass.services.async_call(
-        DOMAIN, "leggett_hold_control",
-        {"device_id": "bed", "control": "flat", "duration": 0.5}, blocking=True,
-    )
-    controller.hold_control.assert_awaited_once_with("flat", 500)
-
-
 async def test_rename_validates_every_target_before_writing(
     hass: HomeAssistant, resolve
 ) -> None:
@@ -325,7 +324,7 @@ async def test_rename_rejects_unsupported_bed(hass: HomeAssistant, resolve) -> N
     assert raised.value.translation_key == "device_rename_not_supported"
 
 
-@pytest.mark.parametrize(("service", "disconnects"), [("rename", False), ("linak_rename", True)])
+@pytest.mark.parametrize(("service", "disconnects"), [("rename", False), ("rename", True)])
 async def test_rename_disconnects_only_where_the_controller_asks(
     hass: HomeAssistant, resolve, service, disconnects
 ) -> None:
@@ -343,15 +342,7 @@ async def test_rename_disconnects_only_where_the_controller_asks(
     assert coordinator.async_disconnect.await_count == int(disconnects)
 
 
-async def test_released_jiecang_alias_keeps_its_name_rule(hass: HomeAssistant, resolve) -> None:
-    select(resolve, target(supports_device_rename=True))
-    with pytest.raises(vol.Invalid):
-        await hass.services.async_call(
-            DOMAIN, "jiecang_rename", {"device_id": "bed", "name": "Bed room"}, blocking=True,
-        )
-
-
-@pytest.mark.parametrize("service", ["sync_clock", "malouf_sync_clock"])
+@pytest.mark.parametrize("service", ["sync_clock"])
 async def test_sync_clock_writes_through_configuration_lane(
     hass: HomeAssistant, resolve, service
 ) -> None:
@@ -395,3 +386,85 @@ async def test_goto_preset_duration_rejected_where_unsupported(
         DOMAIN, "goto_preset", {"device_id": "bed", "preset": 1}, blocking=True,
     )
     controller.preset_memory.assert_awaited_once_with(1)
+
+
+async def test_percentage_bed_without_sliders_accepts_no_set_position_motor() -> None:
+    """A direct percentage bed with no sliders never falls back to generic motors."""
+    from custom_components.adjustable_bed import services
+    from custom_components.adjustable_bed.beds.base import BedController
+    from custom_components.adjustable_bed.const import BED_TYPE_SLEEP_NUMBER
+
+    controller = MagicMock(
+        spec=BedController,
+        supports_direct_position_control=True,
+        reports_percentage_position=True,
+        position_number_specs=(),
+        requires_disconnected_transport=False,
+    )
+    coordinator, _ = target(BED_TYPE_SLEEP_NUMBER)
+    coordinator.entry = SimpleNamespace(data={"bed_type": BED_TYPE_SLEEP_NUMBER})
+    coordinator.capability_controller = controller
+    coordinator.disable_angle_sensing = False
+    with raises_key("invalid_motor_for_bed_type", ServiceValidationError):
+        await services._set_position_plan(coordinator, coordinator, [], "back", 50)
+
+
+async def test_jalon_programming_hold_is_rejected_before_an_earlier_target_moves(
+    hass: HomeAssistant, resolve
+) -> None:
+    from custom_components.adjustable_bed.beds.keeson.jalon import JalonController
+    from tests.test_controller_contract import _FactoryCoordinator
+
+    first, first_controller = target(held_control_options=("memory_1",))
+    jalon = JalonController(_FactoryCoordinator(), protocol="P3", layout="0")
+    second, second_controller = target(
+        bed_type="jalon", held_control_options=jalon.held_control_options,
+        validate_hold_control=jalon.validate_hold_control,
+    )
+    select(resolve, (first, first_controller), (second, second_controller))
+    with pytest.raises(ServiceValidationError, match="Save preset action"):
+        await hass.services.async_call(
+            DOMAIN, "hold_control",
+            {"device_id": ["first", "second"], "control": "memory_1", "duration": 6},
+            blocking=True,
+        )
+    first_controller.hold_control.assert_not_awaited()
+    second_controller.hold_control.assert_not_awaited()
+
+
+@pytest.mark.parametrize("slot", [2.9, True, "two", float("inf"), float("-inf"), float("nan")])
+async def test_set_alarm_rejects_a_slot_that_is_not_a_whole_number(
+    hass: HomeAssistant, resolve, slot
+) -> None:
+    with pytest.raises(ServiceValidationError) as raised:
+        await hass.services.async_call(
+            DOMAIN, "set_alarm", {"device_id": "bed", "enabled": False, "slot": slot}, blocking=True
+        )
+    assert raised.value.translation_key == "whole_number_required"
+
+
+@pytest.mark.parametrize("action", ["goto_preset", "save_preset"])
+async def test_memory_actions_refuse_a_fractional_slot(
+    hass: HomeAssistant, resolve, action
+) -> None:
+    """Memory 1.7 is a mistake, not memory 1."""
+    with pytest.raises(ServiceValidationError) as raised:
+        await hass.services.async_call(
+            DOMAIN, action, {"device_id": "bed", "preset": 1.7}, blocking=True
+        )
+    assert raised.value.translation_key == "whole_number_required"
+    resolve.assert_not_called()
+
+
+def test_selector_option_keys_are_valid_translation_keys() -> None:
+    import re
+
+    selectors = json.loads((ROOT / "strings.json").read_text())["selector"]
+    pattern = re.compile(r"[a-z0-9]([a-z0-9_-]*[a-z0-9])?")
+    bad = {
+        key: option
+        for key, spec in selectors.items()
+        for option in spec.get("options", {})
+        if not pattern.fullmatch(option)
+    }
+    assert not bad

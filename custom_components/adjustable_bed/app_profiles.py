@@ -1,14 +1,16 @@
 """What each bed type or app profile owns in the setup and options forms.
 
-Two tables, read by every setup route and the options flow:
-
 - ``hidden_generic_fields``: generic fields a profile sets itself or never
-  reads, so no form shows them. A profile that needs one of them asks for it
-  in its own app step instead.
+  reads, so no form shows them. Each profile declares them in
+  ``setup_questions.py`` with its setup questions.
 - ``per_side_profile``: app settings that belong to one physical bed. The
   shared form of a two-address pair refuses to change them, or to change
   either side to, from or between such profiles; each side is configured
-  alone instead.
+  alone instead. Every question a route's declarations ask is one of them;
+  the table below adds what the declarations cannot say (see "Per-side
+  settings" in docs/design/setup-questions.md).
+- ``profile_settings``: every setting a bed type's profiles own. Changing the
+  bed type drops the settings other bed types own (``foreign_settings``).
 
 A profile is keyed by bed type, or by bed type and protocol variant when the
 variant selects the app. A variant entry replaces the bed type's entry.
@@ -16,86 +18,92 @@ variant selects the app. A variant entry replaces the bed type's entry.
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
+from functools import cache
 from typing import Final
 
-from .cluster033_profiles import SERTA_MEMORY_KEYS
 from .const import (
+    BED_TYPE_ADJUSTABLE_BED,
     BED_TYPE_ADJUSTABLE_LUMBAR,
     BED_TYPE_ADJUSTAMATTRESS,
     BED_TYPE_BEDSENSE,
+    BED_TYPE_BETTERLIVING2,
     BED_TYPE_BF,
     BED_TYPE_CHERISH,
+    BED_TYPE_COMFORT_ENHANCEMENT3,
     BED_TYPE_COMFORT_ENHANCEMENTS,
+    BED_TYPE_COMFORTBASE,
+    BED_TYPE_COMFYDS,
     BED_TYPE_DOUBLESLEEP,
     BED_TYPE_ESHINE,
     BED_TYPE_ESHINE_OKIN,
     BED_TYPE_FSM_RELAX,
     BED_TYPE_FURNIMOVE,
+    BED_TYPE_GALAXY,
     BED_TYPE_GLIDEAWAY_MOTION,
     BED_TYPE_GOODVIBE,
     BED_TYPE_HJBED,
     BED_TYPE_ISLEEP,
+    BED_TYPE_JALON,
+    BED_TYPE_JALON_BED,
     BED_TYPE_JIECANG_APP,
     BED_TYPE_KAIDI,
     BED_TYPE_KEESON,
+    BED_TYPE_KOMFYD,
     BED_TYPE_LEGGETT_LP_LEGACY,
     BED_TYPE_LEGGETT_OKIN,
     BED_TYPE_LEGGETT_PLATT,
     BED_TYPE_LIMOSS_REMOTE,
-    BED_TYPE_LOGICDATA_AIR_PUMP,
+    BED_TYPE_LINX,
     BED_TYPE_LOGICDATA_APP,
     BED_TYPE_MALOUF_APP,
+    BED_TYPE_MLILY,
+    BED_TYPE_MLILY_REMOTE,
     BED_TYPE_MOTION_BED,
     BED_TYPE_MOTOMOTION,
-    BED_TYPE_OCTO,
+    BED_TYPE_N32_MOTION_BED,
+    BED_TYPE_OKIMIKI,
     BED_TYPE_OKIN_CST,
+    BED_TYPE_OKIN_MOTIONBED,
     BED_TYPE_REMACRO,
+    BED_TYPE_RESIDENT,
     BED_TYPE_REVERIE,
     BED_TYPE_REVERIE_NIGHTSTAND,
     BED_TYPE_REVERIE_PAIRLINK,
-    BED_TYPE_SERENITY,
+    BED_TYPE_RICHMAT_APP,
+    BED_TYPE_RICHMAT_APP_SLEEP,
+    BED_TYPE_RICHMAT_CLASSIC_APPS,
+    BED_TYPE_RIZE,
+    BED_TYPE_RIZE_HOME,
+    BED_TYPE_RIZE_REMEDY_II,
+    BED_TYPE_SILVERMOTION,
     BED_TYPE_SIMMONS,
     BED_TYPE_SLEEPTRACKER,
     BED_TYPE_SLEEPYS_ELITE_APP,
     BED_TYPE_SOLACE,
+    BED_TYPE_SOMOS,
     BED_TYPE_STAR_ELEVATE,
     BED_TYPE_STARCODE_ABM5_4,
     BED_TYPE_STARCODE_M1X12,
     BED_TYPE_STARCODE_M5X5,
+    BED_TYPE_SUPERIOR_SLEEP,
     BED_TYPE_SVANE,
-    BED_TYPE_TIMOTION_AHF,
+    BED_TYPE_SYMPHONY,
+    BED_TYPE_SYMPHONY_SLEEP,
     BED_TYPE_TRANQUIL,
     BED_TYPE_VIBRADORM_APP,
     BED_TYPE_VMATBASIC,
+    BED_TYPE_YAMADA,
     BED_TYPE_ZSERIES,
-    CLUSTER033_BED_TYPES,
     CONF_BLE_DEVICE_NAME,
     CONF_DISABLE_ANGLE_SENSING,
-    CONF_FSM_RELAX_MEMORY_NAMES,
-    CONF_FURNIMOVE_REMOTE,
-    CONF_HAS_LIGHT,
     CONF_HAS_MASSAGE,
-    CONF_JIECANG_APP_LAYOUT,
     CONF_JIECANG_APP_PROFILE,
-    CONF_JIECANG_APP_TRANSPORT,
     CONF_KAIDI_PRODUCT_ID,
     CONF_KAIDI_ROOM_ID,
     CONF_KAIDI_SOFA_ACU_NO,
     CONF_KAIDI_TARGET_VADDR,
     CONF_LEGGETT_APP_PROFILE,
-    CONF_LOGICDATA_APP_FAMILY,
-    CONF_LOGICDATA_APP_LAYOUT,
-    CONF_LOGICDATA_APP_PROFILE,
-    CONF_LOGICDATA_APP_TRANSPORT,
-    CONF_LP_LEGACY_MODE,
-    CONF_LP_LEGACY_MODEL,
-    CONF_LP_LEGACY_READ_UUID,
-    CONF_LP_LEGACY_WRITE_UUID,
-    CONF_MALOUF_APP_MODEL,
-    CONF_MALOUF_APP_PRIMARY,
-    CONF_MALOUF_APP_PROFILE,
-    CONF_MALOUF_APP_TRANSPORT,
     CONF_MOTOR_COUNT,
     CONF_MOTOR_PULSE_COUNT,
     CONF_MOTOR_PULSE_DELAY_MS,
@@ -106,143 +114,37 @@ from .const import (
     CONF_PAIRLINK_ROLE,
     CONF_PRODUCT_TYPE,
     CONF_PROTOCOL_VARIANT,
-    CONF_REVERSE_MOTORS,
-    CONF_SLEEPYS_ELITE_SELECTOR,
-    CONF_STARCODE_LIFT_ENTRIES,
-    CONF_STARCODE_M1X12_PROFILE,
-    CONF_STARCODE_M5X5_PROFILE,
-    DOUBLESLEEP_CONFIG_KEYS,
+    CONF_SLEEPTRACKER_FOUNDATION,
+    CONF_STARCODE_UI_SELECTOR,
+    CONF_VIBRADORM_APP_METADATA,
+    CONF_VIBRADORM_APP_PROFILE,
     KAIDI_VARIANT_FLOYD,
     KEESON_VARIANT_AMERICANSTAR,
     KEESON_VARIANT_AVANTI_BASES,
     KEESON_VARIANT_BEDSENSE_BASES,
+    KEESON_VARIANT_COMFORTFURNITURE,
     KEESON_VARIANT_DYNASTY_BASES,
     KEESON_VARIANT_HEAL_EVERY_NIGHT,
     KEESON_VARIANT_INNOVA,
     KEESON_VARIANT_MAXCOIL_UNA,
+    KEESON_VARIANT_OKIN_COMFORT_BED,
     KEESON_VARIANT_OKIN_SEATING,
+    KEESON_VARIANT_ORE_ULTRAMATIC,
     KEESON_VARIANT_SIMON_LI,
     LEGGETT_VARIANT_OKIN,
-    LIMOSS_REMOTE_CONFIG_KEYS,
-    MOTION_BED_CONFIG_KEYS,
     OKIN_CST_VARIANT_NECTAR_MOVE,
     RICHMAT_MH_BED_TYPES,
-    SLEEPTRACKER_CONFIG_KEYS,
+    SOLACE_VARIANT_SOPHIE,
     SOLACE_VARIANT_WOOSA,
     STAR_ELEVATE_VARIANT_M1X12,
-    STARCODE_APP_CONFIG_KEYS,
-    SVANE_VARIANT_JENSEN_LINON,
-    VIBRADORM_APP_CONFIG_KEYS,
-    VMATBASIC_CONFIG_KEYS,
 )
-
-# The generic fields a profile can own.
-GENERIC_FIELDS: Final = frozenset(
-    {
-        CONF_MOTOR_COUNT,
-        CONF_HAS_MASSAGE,
-        CONF_DISABLE_ANGLE_SENSING,
-        CONF_MOTOR_PULSE_COUNT,
-        CONF_MOTOR_PULSE_DELAY_MS,
-        CONF_PROTOCOL_VARIANT,
-    }
-)
-# The app fixes the layout and its own refresh interval.
-_FIXED_LAYOUT: Final = frozenset({CONF_MOTOR_COUNT, CONF_MOTOR_PULSE_DELAY_MS})
-# The app step defines every control and its held behavior.
-_APP_DEFINED: Final = GENERIC_FIELDS
-_ALWAYS_MASSAGE: Final = frozenset({CONF_HAS_MASSAGE})
-# The pulse count stays visible: it bounds each HA movement at the app's cadence.
-_NECTAR_MOVE: Final = _FIXED_LAYOUT | _ALWAYS_MASSAGE | {CONF_DISABLE_ANGLE_SENSING}
-
-_HIDDEN_BY_BED_TYPE: Final[dict[str, frozenset[str]]] = {
-    "richmat_classic_apps": GENERIC_FIELDS - {CONF_MOTOR_PULSE_COUNT},
-    "ergomotion_4": _APP_DEFINED - {CONF_MOTOR_PULSE_COUNT},
-    "gmmotor": GENERIC_FIELDS,
-    "gmmotor_sleep_mm": GENERIC_FIELDS,
-    "gmmotor_sleep_sxb": GENERIC_FIELDS,
-    BED_TYPE_BF: _APP_DEFINED - {CONF_MOTOR_PULSE_COUNT},
-    BED_TYPE_CHERISH: _APP_DEFINED - {CONF_MOTOR_PULSE_COUNT},
-    **dict.fromkeys(CLUSTER033_BED_TYPES, _APP_DEFINED - {CONF_MOTOR_PULSE_COUNT}),
-    # OCTO motor layout comes from its advertised capability record, with an
-    # OCTO-specific explicit override in the profile's own setup/options UI.
-    BED_TYPE_OCTO: frozenset({CONF_MOTOR_COUNT}),
-    "casper_remote": GENERIC_FIELDS,
-    "casper_base": GENERIC_FIELDS - {CONF_PROTOCOL_VARIANT},
-    "hush_base": GENERIC_FIELDS - {CONF_PROTOCOL_VARIANT},
-    "hush_sleep_mm": GENERIC_FIELDS,
-    "hush_sleep_sxb": GENERIC_FIELDS,
-    "hush_remote": GENERIC_FIELDS,
-    "casper_sleep_mm": GENERIC_FIELDS,
-    "casper_sleep_sxb": GENERIC_FIELDS,
-    BED_TYPE_COMFORT_ENHANCEMENTS: _APP_DEFINED - {CONF_PROTOCOL_VARIANT, CONF_MOTOR_PULSE_COUNT},
-    BED_TYPE_ESHINE_OKIN: _APP_DEFINED - {CONF_PROTOCOL_VARIANT, CONF_MOTOR_PULSE_COUNT},
-    BED_TYPE_ESHINE: _APP_DEFINED - {CONF_MOTOR_PULSE_COUNT},
-    BED_TYPE_GOODVIBE: _APP_DEFINED - {CONF_PROTOCOL_VARIANT},
-    BED_TYPE_MOTOMOTION: _APP_DEFINED,
-    BED_TYPE_HJBED: _APP_DEFINED - {CONF_PROTOCOL_VARIANT, CONF_MOTOR_PULSE_COUNT},
-    BED_TYPE_GLIDEAWAY_MOTION: _APP_DEFINED - {CONF_PROTOCOL_VARIANT, CONF_MOTOR_PULSE_COUNT},
-    BED_TYPE_ISLEEP: _APP_DEFINED - {CONF_MOTOR_PULSE_COUNT},
-    BED_TYPE_BEDSENSE: frozenset({CONF_MOTOR_COUNT, CONF_HAS_MASSAGE, CONF_DISABLE_ANGLE_SENSING}),
-    BED_TYPE_SERENITY: _FIXED_LAYOUT,
-    BED_TYPE_TRANQUIL: _FIXED_LAYOUT,
-    BED_TYPE_ZSERIES: _FIXED_LAYOUT,
-    BED_TYPE_SIMMONS: _FIXED_LAYOUT,
-    **dict.fromkeys(RICHMAT_MH_BED_TYPES, _FIXED_LAYOUT),
-    "richmat_sleep_receiver": _FIXED_LAYOUT,
-    BED_TYPE_LOGICDATA_AIR_PUMP: _FIXED_LAYOUT,
-    # AHF has no massage. Motor count still sizes the legacy covers.
-    BED_TYPE_TIMOTION_AHF: frozenset({CONF_HAS_MASSAGE}),
-    # These apps always show their massage page.
-    BED_TYPE_ADJUSTAMATTRESS: _FIXED_LAYOUT | {CONF_HAS_MASSAGE, CONF_DISABLE_ANGLE_SENSING},
-    BED_TYPE_ADJUSTABLE_LUMBAR: _FIXED_LAYOUT | _ALWAYS_MASSAGE,
-    BED_TYPE_STARCODE_ABM5_4: _FIXED_LAYOUT | _ALWAYS_MASSAGE,
-    # The handset table sets the layout and massage; the receiver sets the protocol.
-    BED_TYPE_FURNIMOVE: _FIXED_LAYOUT | {CONF_HAS_MASSAGE, CONF_PROTOCOL_VARIANT},
-    BED_TYPE_STARCODE_M5X5: _APP_DEFINED - {CONF_MOTOR_PULSE_COUNT},
-    BED_TYPE_STARCODE_M1X12: _APP_DEFINED - {CONF_MOTOR_PULSE_COUNT},
-    # The app step asks for massage; the pulse count bounds a held control.
-    BED_TYPE_FSM_RELAX: _APP_DEFINED - {CONF_MOTOR_PULSE_COUNT},
-    BED_TYPE_LIMOSS_REMOTE: _APP_DEFINED,
-    BED_TYPE_VIBRADORM_APP: _APP_DEFINED,
-    BED_TYPE_VMATBASIC: _APP_DEFINED,
-    BED_TYPE_MOTION_BED: _APP_DEFINED,
-    BED_TYPE_DOUBLESLEEP: _APP_DEFINED - {CONF_MOTOR_PULSE_COUNT},
-    BED_TYPE_SLEEPTRACKER: _APP_DEFINED,
-    BED_TYPE_SLEEPYS_ELITE_APP: _APP_DEFINED,
-    # The variant selects the Svane Remote app profile or Jensen LinOn.
-    BED_TYPE_SVANE: _APP_DEFINED - {CONF_PROTOCOL_VARIANT},
-}
-_HIDDEN_BY_VARIANT: Final[dict[tuple[str, str], frozenset[str]]] = {
-    # Nectar Move fixes two axes, has massage, and uses its own refresh interval.
-    (BED_TYPE_OKIN_CST, OKIN_CST_VARIANT_NECTAR_MOVE): _NECTAR_MOVE,
-    (BED_TYPE_KAIDI, KAIDI_VARIANT_FLOYD): _APP_DEFINED - {CONF_MOTOR_PULSE_COUNT, CONF_MOTOR_PULSE_DELAY_MS},
-    (BED_TYPE_SVANE, SVANE_VARIANT_JENSEN_LINON): frozenset(),
-    (BED_TYPE_STAR_ELEVATE, STAR_ELEVATE_VARIANT_M1X12): _FIXED_LAYOUT | {CONF_PROTOCOL_VARIANT},
-    (BED_TYPE_KEESON, KEESON_VARIANT_AVANTI_BASES): frozenset(
-        {CONF_HAS_MASSAGE, CONF_DISABLE_ANGLE_SENSING, CONF_MOTOR_PULSE_DELAY_MS}
-    ),
-    **{
-        (BED_TYPE_KEESON, variant): _ALWAYS_MASSAGE
-        for variant in (
-            KEESON_VARIANT_INNOVA,
-            KEESON_VARIANT_MAXCOIL_UNA,
-            KEESON_VARIANT_DYNASTY_BASES,
-            KEESON_VARIANT_AMERICANSTAR,
-            KEESON_VARIANT_BEDSENSE_BASES,
-            KEESON_VARIANT_HEAL_EVERY_NIGHT,
-        )
-    },
-}
 
 
 def hidden_generic_fields(bed_type: str | None, variant: str | None) -> frozenset[str]:
     """Return the generic fields no form shows for this profile."""
-    if bed_type is None:
-        return frozenset()
-    if variant is not None and (bed_type, variant) in _HIDDEN_BY_VARIANT:
-        return _HIDDEN_BY_VARIANT[bed_type, variant]
-    return _HIDDEN_BY_BED_TYPE.get(bed_type, frozenset())
+    from .setup_questions import owned_fields
+
+    return owned_fields(bed_type, variant)
 
 
 @dataclass(frozen=True, slots=True)
@@ -251,158 +153,144 @@ class SideProfile:
 
     # Shown as {profile} in the "unpair first" error.
     label: str
-    # Settings stored for each side.
+    # Settings stored for each side that no setup question asks, such as a
+    # detected product or values an action saves. Declared questions are added.
     keys: frozenset[str] = frozenset()
     # True when every protocol variant of the bed type is a side's own choice.
     variant_owned: bool = False
 
 
 _BY_BED_TYPE: Final[dict[str, SideProfile]] = {
-    "gmmotor": SideProfile("GM Control product", frozenset({CONF_PRODUCT_TYPE, "gmmotor_side", CONF_BLE_DEVICE_NAME})),
+    "ormatek": SideProfile("OrmatekTechnoSmart", frozenset({CONF_MOTOR_COUNT, CONF_HAS_MASSAGE, CONF_BLE_DEVICE_NAME}), variant_owned=True),
+    "nerum": SideProfile("Nerum", variant_owned=True),
+    "relax_motion": SideProfile("Relax Motion", variant_owned=True),
+    "smartbed": SideProfile("SmartBed", frozenset({CONF_HAS_MASSAGE}), variant_owned=True),
+    "cheerssleep": SideProfile("CheersSleep"),
+    "enso": SideProfile("Enso Remote", frozenset({CONF_MOTOR_COUNT})),
+    "sealy_posturematic": SideProfile("Sealy Posturematic", frozenset({CONF_MOTOR_COUNT})),
+    "agingplace": SideProfile("Aging in Place / Dawn House"),
+    "sleep_assistant": SideProfile("Sleep Assist"),
+    "onlysnore": SideProfile("Snore Monitor 2.3.8"),
+    "smart_sleep": SideProfile("OKIN Smart Sleep", variant_owned=True),
+    "bedtech": SideProfile("BedTech model", frozenset({CONF_MOTOR_COUNT, CONF_HAS_MASSAGE}), variant_owned=True),
+    "gmmotor": SideProfile("GM Control product", frozenset({CONF_BLE_DEVICE_NAME})),
     "gmmotor_sleep_mm": SideProfile("GM Control MM sleep module"),
     "gmmotor_sleep_sxb": SideProfile("GM Control SXB sleep module"),
+    BED_TYPE_LINX: SideProfile("Linx", variant_owned=True),
+    BED_TYPE_SYMPHONY_SLEEP: SideProfile("Symphony Sleep", variant_owned=True),
+    BED_TYPE_JALON_BED: SideProfile("OkinComfortBed Ⅱ (Jalon)"),
+    BED_TYPE_SYMPHONY: SideProfile("Symphony Sleep Sense", frozenset({CONF_MOTOR_COUNT, CONF_HAS_MASSAGE, CONF_BLE_DEVICE_NAME}), variant_owned=True),
     BED_TYPE_BF: SideProfile("BF"),
     BED_TYPE_CHERISH: SideProfile("Cherish"),
-    'tempur_curve': SideProfile('Tempur Curve', frozenset({CONF_PRODUCT_TYPE})),
-    'qplus_app': SideProfile('Q-Plus Adjustable Remote', frozenset({CONF_PRODUCT_TYPE, CONF_PROTOCOL_VARIANT})),
-    'serta_mp_remote': SideProfile('Serta MP Remote', SERTA_MEMORY_KEYS | {CONF_PRODUCT_TYPE}),
-    'omazz_adjusto_iii': SideProfile('Omazz Adjusto III', frozenset({CONF_PRODUCT_TYPE})),
-    'ergomotion_app': SideProfile('Ergomotion (app)', frozenset({CONF_PRODUCT_TYPE})),
-    "ergomotion_4": SideProfile("Ergomotion 4.0", frozenset({
-        CONF_PRODUCT_TYPE, CONF_HAS_LIGHT, CONF_BLE_DEVICE_NAME,
-        "ergomotion4_model_keys", "ergomotion4_massage_keys", "ergomotion4_rgb",
-        "ergomotion4_product_name",
-    })),
-    'row_control': SideProfile('ROW Control', frozenset({CONF_PRODUCT_TYPE})),
-    'ergo_slim': SideProfile('Ergo Slim', frozenset({CONF_PRODUCT_TYPE})),
-    'tempur_au': SideProfile('TEMPUR AU', frozenset({CONF_PRODUCT_TYPE})),
+    "tempur_curve": SideProfile("Tempur Curve"),
+    "qplus_app": SideProfile("Q-Plus Adjustable Remote"),
+    "serta_mp_remote": SideProfile("Serta MP Remote"),
+    "omazz_adjusto_iii": SideProfile("Omazz Adjusto III"),
+    "ergomotion_app": SideProfile("Ergomotion (app)"),
+    "ergomotion_4": SideProfile("Ergomotion 4.0", frozenset({CONF_BLE_DEVICE_NAME})),
+    "row_control": SideProfile("ROW Control"),
+    "ergo_slim": SideProfile("Ergo Slim"),
+    "tempur_au": SideProfile("TEMPUR AU"),
     "casper_base": SideProfile("Casper Base product", variant_owned=True),
     "hush_base": SideProfile("Hush Base product", variant_owned=True),
+    "luuna": SideProfile("Luuna + product", variant_owned=True),
+    "instant_comfort": SideProfile("Instant Comfort", variant_owned=True),
+    "personal_comfort": SideProfile("Personal Comfort", variant_owned=True),
+    "mline": SideProfile("M Line protocol and layout", frozenset({CONF_BLE_DEVICE_NAME}), variant_owned=True),
+    "suta": SideProfile("SUTA Smart Home name-selected layout"),
+    "luniosmart": SideProfile("Lunio Smart+", frozenset()),
+    "sleep_evolution": SideProfile("SleepEvolution", frozenset({CONF_BLE_DEVICE_NAME}), variant_owned=True),
+    "wsilver_legacy": SideProfile("W.Silver Products (older version)", frozenset({CONF_BLE_DEVICE_NAME}), variant_owned=True),
+    "super_colchones": SideProfile("Super Colchones product", variant_owned=True),
+    "sonicsleep": SideProfile("SonicSleep IQRM", frozenset({"product_type"})),
     "casper_sleep_mm": SideProfile("Casper Base MM sensor"),
     "casper_sleep_sxb": SideProfile("Casper Base SXB sensor"),
-    BED_TYPE_COMFORT_ENHANCEMENTS: SideProfile("Comfort Enhancements", variant_owned=True),
+    "hush_sleep_mm": SideProfile("Hush Base MM sensor"),
+    "hush_sleep_sxb": SideProfile("Hush Base SXB sensor"),
+    # The layout, handset or control box decides one side's massage (#787).
+    BED_TYPE_COMFORT_ENHANCEMENTS: SideProfile(
+        "Comfort Enhancements", frozenset({CONF_HAS_MASSAGE}), variant_owned=True
+    ),
+    BED_TYPE_GALAXY: SideProfile("Galaxy Bed Control", variant_owned=True),
     BED_TYPE_GOODVIBE: SideProfile("Good Vibe Sleep", variant_owned=True),
-    "richmat_classic_apps": SideProfile("Classic Richmat apps", frozenset({CONF_PRODUCT_TYPE, "cluster018_third_service"}), variant_owned=True),
-    BED_TYPE_MOTOMOTION: SideProfile("MotoMotion", frozenset({CONF_BLE_DEVICE_NAME})),
+    BED_TYPE_MLILY: SideProfile("MLILY Control", variant_owned=True),
+    "majestichome": SideProfile("Majestic Home", variant_owned=True),
+    BED_TYPE_OKIMIKI: SideProfile("Okimiki product", variant_owned=True),
+    "dreamsense": SideProfile("Dream Sense Bed", frozenset({CONF_PRODUCT_TYPE}), variant_owned=True),
+    "saatva": SideProfile("Saatva", frozenset({CONF_PRODUCT_TYPE}), variant_owned=True),
+    "bobpowerbase": SideProfile("Power Bob Base", variant_owned=True),
+    BED_TYPE_MLILY_REMOTE: SideProfile("MLILY Remote", variant_owned=True),
+    BED_TYPE_RICHMAT_CLASSIC_APPS: SideProfile("Classic Richmat apps", frozenset({CONF_BLE_DEVICE_NAME}), variant_owned=True),
+    "bedgear": SideProfile("Bedgear"),
+    "l2motion": SideProfile("L2 Motion"),
+    BED_TYPE_MOTOMOTION: SideProfile("MotoMotion"),
     BED_TYPE_HJBED: SideProfile("HJBed", variant_owned=True),
+    BED_TYPE_JALON: SideProfile("OkinComfortBed II", frozenset({CONF_BLE_DEVICE_NAME})),
+    BED_TYPE_SOMOS: SideProfile("Somos", frozenset({CONF_MOTOR_COUNT, CONF_HAS_MASSAGE}), variant_owned=True),
+    BED_TYPE_COMFORTBASE: SideProfile("ComfortBaseForBluetooth", frozenset({CONF_MOTOR_COUNT, CONF_HAS_MASSAGE}), variant_owned=True),
+    BED_TYPE_RICHMAT_APP: SideProfile("Richmat 4.2.0", variant_owned=True),
+    BED_TYPE_RICHMAT_APP_SLEEP: SideProfile("Richmat sleep session", variant_owned=True),
     BED_TYPE_GLIDEAWAY_MOTION: SideProfile("Glideaway Motion", variant_owned=True),
-    BED_TYPE_ISLEEP: SideProfile("ISleep", frozenset({CONF_PRODUCT_TYPE, "kaidi_room_id", "kaidi_sofa_acu_no"})),
+    BED_TYPE_ISLEEP: SideProfile("ISleep"),
+    BED_TYPE_KOMFYD: SideProfile("KomfyD"),
+    BED_TYPE_COMFYDS: SideProfile("ComfyDS"),
+    "smart_comfort_synargy": SideProfile("Smart Comfort by SYNARGY"),
+    "smart_comfort_synergy": SideProfile("Smart Comfort"),
+    BED_TYPE_RIZE: SideProfile("Rize Beds"),
     BED_TYPE_BEDSENSE: SideProfile("BedSense", frozenset({CONF_BLE_DEVICE_NAME}), variant_owned=True),
-    BED_TYPE_FSM_RELAX: SideProfile(
-        "FSM Relax",
-        frozenset(
-            {
-                CONF_PRODUCT_TYPE,
-                CONF_HAS_LIGHT,
-                CONF_HAS_MASSAGE,
-                CONF_FSM_RELAX_MEMORY_NAMES,
-                *CONF_REVERSE_MOTORS,
-            }
-        ),
-    ),
-    BED_TYPE_LIMOSS_REMOTE: SideProfile("Limoss Remote", LIMOSS_REMOTE_CONFIG_KEYS),
-    BED_TYPE_FURNIMOVE: SideProfile("FurniMove", frozenset({CONF_FURNIMOVE_REMOTE})),
-    BED_TYPE_LOGICDATA_APP: SideProfile(
-        "Logicdata bed app",
-        frozenset(
-            {
-                CONF_LOGICDATA_APP_PROFILE,
-                CONF_LOGICDATA_APP_FAMILY,
-                CONF_LOGICDATA_APP_LAYOUT,
-                CONF_LOGICDATA_APP_TRANSPORT,
-                CONF_HAS_LIGHT,
-            }
-        ),
-    ),
+    BED_TYPE_FSM_RELAX: SideProfile("FSM Relax"),
+    BED_TYPE_LIMOSS_REMOTE: SideProfile("Limoss Remote"),
+    BED_TYPE_FURNIMOVE: SideProfile("FurniMove", frozenset({CONF_HAS_MASSAGE})),
+    BED_TYPE_SILVERMOTION: SideProfile("SILVERmotion Android"),
+    BED_TYPE_LOGICDATA_APP: SideProfile("Logicdata bed app"),
+    # The family step picks the app, so no question asks its key.
     BED_TYPE_JIECANG_APP: SideProfile(
         "Jiecang / Comfort Motion app",
-        frozenset(
-            {
-                CONF_JIECANG_APP_PROFILE,
-                CONF_JIECANG_APP_LAYOUT,
-                CONF_JIECANG_APP_TRANSPORT,
-                CONF_HAS_LIGHT,
-                CONF_HAS_MASSAGE,
-            }
-        ),
+        frozenset({CONF_JIECANG_APP_PROFILE, CONF_HAS_MASSAGE}),
     ),
-    BED_TYPE_MALOUF_APP: SideProfile(
-        "Malouf / Lucid app",
-        frozenset(
-            {
-                CONF_MALOUF_APP_PROFILE,
-                CONF_MALOUF_APP_MODEL,
-                CONF_MALOUF_APP_TRANSPORT,
-                CONF_MALOUF_APP_PRIMARY,
-            }
-        ),
-    ),
-    BED_TYPE_LEGGETT_LP_LEGACY: SideProfile(
-        "L&P legacy app",
-        frozenset(
-            {
-                CONF_LP_LEGACY_MODEL,
-                CONF_LP_LEGACY_MODE,
-                CONF_LP_LEGACY_WRITE_UUID,
-                CONF_LP_LEGACY_READ_UUID,
-            }
-        ),
-    ),
+    BED_TYPE_MALOUF_APP: SideProfile("Malouf / Lucid app"),
+    BED_TYPE_LEGGETT_LP_LEGACY: SideProfile("L&P legacy app"),
     BED_TYPE_LEGGETT_OKIN: SideProfile(
         "Leggett & Platt app", frozenset({CONF_LEGGETT_APP_PROFILE})
     ),
-    BED_TYPE_DOUBLESLEEP: SideProfile("OKIN SleepEase", DOUBLESLEEP_CONFIG_KEYS),
-    BED_TYPE_SLEEPTRACKER: SideProfile("Sleeptracker Smart Bed", SLEEPTRACKER_CONFIG_KEYS),
-    BED_TYPE_SLEEPYS_ELITE_APP: SideProfile(
-        "Sleepy's Elite app",
-        frozenset({CONF_SLEEPYS_ELITE_SELECTOR}),
+    BED_TYPE_DOUBLESLEEP: SideProfile("OKIN SleepEase"),
+    # Older setups saved the app's foundation size; it stays this profile's to drop.
+    BED_TYPE_SLEEPTRACKER: SideProfile(
+        "Sleeptracker Smart Bed", frozenset({CONF_SLEEPTRACKER_FOUNDATION})
     ),
-    BED_TYPE_MOTION_BED: SideProfile("Motion Bed", MOTION_BED_CONFIG_KEYS | {CONF_BLE_DEVICE_NAME}),
-    BED_TYPE_STARCODE_ABM5_4: SideProfile("AdjustableM5X4", STARCODE_APP_CONFIG_KEYS),
-    BED_TYPE_STARCODE_M5X5: SideProfile(
-        "AdjustableM5X5",
-        frozenset({CONF_STARCODE_M5X5_PROFILE, CONF_BLE_DEVICE_NAME, CONF_STARCODE_LIFT_ENTRIES}),
-    ),
-    BED_TYPE_STARCODE_M1X12: SideProfile(
-        "Adjustable Comfort M1X12",
-        frozenset({CONF_STARCODE_M1X12_PROFILE, CONF_BLE_DEVICE_NAME, CONF_STARCODE_LIFT_ENTRIES}),
-    ),
-    BED_TYPE_VIBRADORM_APP: SideProfile(
-        "Vibradorm app", VIBRADORM_APP_CONFIG_KEYS | {CONF_HAS_MASSAGE}
-    ),
-    BED_TYPE_VMATBASIC: SideProfile("V-MAT Basic", VMATBASIC_CONFIG_KEYS),
+    BED_TYPE_SLEEPYS_ELITE_APP: SideProfile("Sleepy's Elite app", frozenset({CONF_HAS_MASSAGE})),
+    BED_TYPE_MOTION_BED: SideProfile("Motion Bed"),
+    # The command selector's change sets the app's UI selector.
+    BED_TYPE_STARCODE_ABM5_4: SideProfile("AdjustableM5X4", frozenset({CONF_STARCODE_UI_SELECTOR})),
+    BED_TYPE_STARCODE_M5X5: SideProfile("AdjustableM5X5"),
+    BED_TYPE_STARCODE_M1X12: SideProfile("Adjustable Comfort M1X12"),
+    BED_TYPE_VIBRADORM_APP: SideProfile("Vibradorm app", frozenset({CONF_VIBRADORM_APP_PROFILE})),
+    BED_TYPE_VMATBASIC: SideProfile("V-MAT Basic"),
     BED_TYPE_ESHINE_OKIN: SideProfile("eShine E2000/E3000/E3100/E5000", variant_owned=True),
     BED_TYPE_ESHINE: SideProfile("Eshine E6000"),
     BED_TYPE_TRANQUIL: SideProfile("Tranquil"),
+    BED_TYPE_RIZE_REMEDY_II: SideProfile("Rize Remedy II"),
     BED_TYPE_ZSERIES: SideProfile("Customatic Z-Series", variant_owned=True),
     BED_TYPE_ADJUSTAMATTRESS: SideProfile("AdjustaMattress", variant_owned=True),
+    BED_TYPE_ADJUSTABLE_BED: SideProfile("Adjustable bed", variant_owned=True),
     BED_TYPE_ADJUSTABLE_LUMBAR: SideProfile("Adjustable bed (Lumbar)", variant_owned=True),
+    BED_TYPE_SUPERIOR_SLEEP: SideProfile("Superior Sleep product", variant_owned=True),
+    BED_TYPE_RIZE_HOME: SideProfile("Rize Home product", variant_owned=True),
+    BED_TYPE_OKIN_MOTIONBED: SideProfile("OKIN Motion Bed"),
+    BED_TYPE_COMFORT_ENHANCEMENT3: SideProfile("Comfort Enhancement 3", variant_owned=True),
+    BED_TYPE_N32_MOTION_BED: SideProfile("N32 Motion Bed"),
+    BED_TYPE_RESIDENT: SideProfile("Resident Adjustable Base"),
+    "ultramatic_smart_bed": SideProfile("Ultramatic Smart Bed"),
+    BED_TYPE_YAMADA: SideProfile("アシステック / Yamada", variant_owned=True),
+    BED_TYPE_BETTERLIVING2: SideProfile("BetterLiving2", variant_owned=True),
     BED_TYPE_SIMMONS: SideProfile("SIMMONS", variant_owned=True),
     **dict.fromkeys(RICHMAT_MH_BED_TYPES, SideProfile("Richmat app model", variant_owned=True)),
     "richmat_sleep_receiver": SideProfile("Richmat sleep receiver app", variant_owned=True),
     BED_TYPE_REMACRO: SideProfile("Remacro app", variant_owned=True),
-    BED_TYPE_REVERIE: SideProfile(
-        "Reverie Protocol 108",
-        frozenset(
-            {
-                CONF_PROTOCOL_VARIANT,
-                CONF_MOTOR_COUNT,
-                CONF_HAS_MASSAGE,
-                CONF_DISABLE_ANGLE_SENSING,
-            }
-        ),
-    ),
-    BED_TYPE_REVERIE_NIGHTSTAND: SideProfile(
-        "Reverie Protocol 110",
-        frozenset(
-            {
-                CONF_PROTOCOL_VARIANT,
-                CONF_MOTOR_COUNT,
-                CONF_HAS_MASSAGE,
-                CONF_DISABLE_ANGLE_SENSING,
-            }
-        ),
-    ),
+    # The model sets the motors and massage; the model and angle sensing are asked.
+    BED_TYPE_REVERIE: SideProfile("Reverie Protocol 108", frozenset({CONF_MOTOR_COUNT, CONF_HAS_MASSAGE})),
+    # The model sets the motors and massage; the model and angle sensing are asked.
+    BED_TYPE_REVERIE_NIGHTSTAND: SideProfile("Reverie Protocol 110", frozenset({CONF_MOTOR_COUNT, CONF_HAS_MASSAGE})),
     BED_TYPE_REVERIE_PAIRLINK: SideProfile(
         "Reverie Pairlink R510L / Harmoniq",
         frozenset(
@@ -421,14 +309,16 @@ _BY_BED_TYPE: Final[dict[str, SideProfile]] = {
 }
 _BY_VARIANT: Final[dict[tuple[str, str], SideProfile]] = {
     (BED_TYPE_STAR_ELEVATE, STAR_ELEVATE_VARIANT_M1X12): SideProfile(
-        "Adjustable Comfort M1X12 ELEVATE", frozenset({CONF_PROTOCOL_VARIANT})
+        "Adjustable Comfort M1X12 Elevate lift", frozenset({CONF_PROTOCOL_VARIANT})
     ),
     (BED_TYPE_KAIDI, KAIDI_VARIANT_FLOYD): SideProfile(
         "Floyd Home", frozenset({CONF_KAIDI_ROOM_ID, CONF_KAIDI_TARGET_VADDR,
                                  CONF_KAIDI_PRODUCT_ID, CONF_KAIDI_SOFA_ACU_NO}),
     ),
     (BED_TYPE_SOLACE, SOLACE_VARIANT_WOOSA): SideProfile("Woosa Sleep"),
+    (BED_TYPE_SOLACE, SOLACE_VARIANT_SOPHIE): SideProfile("Sophie"),
     (BED_TYPE_OKIN_CST, OKIN_CST_VARIANT_NECTAR_MOVE): SideProfile("Nectar Move"),
+    # Saved before schema 5.11; the migration steps read a side as it was read then.
     (BED_TYPE_LEGGETT_PLATT, LEGGETT_VARIANT_OKIN): SideProfile(
         "Leggett & Platt app", frozenset({CONF_LEGGETT_APP_PROFILE})
     ),
@@ -438,12 +328,11 @@ _BY_VARIANT: Final[dict[tuple[str, str], SideProfile]] = {
         "Heal Every Night", frozenset({CONF_MOTOR_COUNT})
     ),
     (BED_TYPE_KEESON, KEESON_VARIANT_OKIN_SEATING): SideProfile("OKIN-Seating"),
-    (BED_TYPE_KEESON, KEESON_VARIANT_AVANTI_BASES): SideProfile(
-        "Avanti Bases", frozenset({CONF_MOTOR_COUNT})
-    ),
-    (BED_TYPE_KEESON, KEESON_VARIANT_AMERICANSTAR): SideProfile(
-        "AMERICANSTAR", frozenset({CONF_MOTOR_COUNT})
-    ),
+    (BED_TYPE_KEESON, KEESON_VARIANT_AVANTI_BASES): SideProfile("Avanti Bases"),
+    (BED_TYPE_KEESON, KEESON_VARIANT_ORE_ULTRAMATIC): SideProfile("ORE Ultramatic"),
+    (BED_TYPE_KEESON, KEESON_VARIANT_OKIN_COMFORT_BED): SideProfile("OKIN Comfort Bed"),
+    (BED_TYPE_KEESON, KEESON_VARIANT_COMFORTFURNITURE): SideProfile("ComfortFurniture bedding"),
+    (BED_TYPE_KEESON, KEESON_VARIANT_AMERICANSTAR): SideProfile("AMERICANSTAR"),
     (BED_TYPE_KEESON, KEESON_VARIANT_BEDSENSE_BASES): SideProfile("Bedsense Bases"),
     (BED_TYPE_KEESON, KEESON_VARIANT_INNOVA): SideProfile("INNOVA"),
     (BED_TYPE_KEESON, KEESON_VARIANT_MAXCOIL_UNA): SideProfile("MaxCoil Una"),
@@ -451,13 +340,93 @@ _BY_VARIANT: Final[dict[tuple[str, str], SideProfile]] = {
 }
 
 
+@cache
 def per_side_profile(bed_type: str | None, variant: str | None) -> SideProfile | None:
-    """Return the per-side app profile of a bed type and variant, if any."""
+    """Return the per-side app profile of a bed type and variant, if any.
+
+    Its keys include every question the route's setup declarations ask, for
+    any app, since each receiver answers those for itself.
+    """
     if bed_type is None:
         return None
     if variant is not None and (bed_type, variant) in _BY_VARIANT:
-        return _BY_VARIANT[bed_type, variant]
-    return _BY_BED_TYPE.get(bed_type)
+        profile = _BY_VARIANT[bed_type, variant]
+    elif (found := _BY_BED_TYPE.get(bed_type)) is not None:
+        profile = found
+    else:
+        return None
+    return replace(profile, keys=profile.keys | _declared_questions(bed_type, variant))
+
+
+def _declared_questions(bed_type: str, variant: str | None) -> frozenset[str]:
+    """Return the questions a route's declarations ask, under every app they name."""
+    from .profile_id import profile_route
+    from .setup_questions import SETUP_PROFILES, setup_profile
+
+    apps = {None} | {
+        route.app_profile
+        for route in map(profile_route, SETUP_PROFILES)
+        if route.bed_type == bed_type
+    }
+    return frozenset(
+        question.key
+        for app in apps
+        if (profile := setup_profile(bed_type, variant, app)) is not None
+        for question in profile.questions
+    )
+
+
+# Settings a bed type saves that no declared question asks and no side profile
+# lists: repair markers, app metadata and its own settings outside a profile.
+_STORED_BY_BED_TYPE: Final[dict[str, frozenset[str]]] = {
+    BED_TYPE_OKIN_CST: frozenset({"okimat_model_on_cst", "okin_cst_kept"}),
+    BED_TYPE_VIBRADORM_APP: frozenset({CONF_VIBRADORM_APP_METADATA}),
+}
+# Settings every route reads, which no profile owns.
+_SHARED_SETTINGS: Final = frozenset(
+    {
+        CONF_MOTOR_COUNT,
+        CONF_HAS_MASSAGE,
+        CONF_DISABLE_ANGLE_SENSING,
+        CONF_MOTOR_PULSE_COUNT,
+        CONF_MOTOR_PULSE_DELAY_MS,
+        CONF_PROTOCOL_VARIANT,
+        CONF_BLE_DEVICE_NAME,
+    }
+)
+
+
+@cache
+def profile_settings(bed_type: str) -> frozenset[str]:
+    """Return the settings a bed type's profiles own, under every variant and app.
+
+    That is every question its declarations ask, every per-side setting of its
+    side profiles and what it stores outside them.
+    """
+    from .profile_id import profile_route
+    from .setup_questions import SETUP_PROFILES
+    from .validators import get_variants_for_bed_type
+
+    owned = set(_STORED_BY_BED_TYPE.get(bed_type, ()))
+    for variant in (None, *(get_variants_for_bed_type(bed_type) or ())):
+        if (side := per_side_profile(bed_type, variant)) is not None:
+            owned |= side.keys
+    for key, profile in SETUP_PROFILES.items():
+        if profile_route(key).bed_type == bed_type:
+            owned.update(question.key for question in profile.questions)
+    return frozenset(owned) - _SHARED_SETTINGS
+
+
+@cache
+def _every_profile_setting() -> frozenset[str]:
+    from .const import SUPPORTED_BED_TYPES
+
+    return frozenset().union(*map(profile_settings, SUPPORTED_BED_TYPES))
+
+
+def foreign_settings(bed_type: str) -> frozenset[str]:
+    """Return the settings other bed types own that this bed type does not."""
+    return _every_profile_setting() - profile_settings(bed_type)
 
 
 def is_per_side_variant(bed_type: str | None, variant: str | None) -> bool:

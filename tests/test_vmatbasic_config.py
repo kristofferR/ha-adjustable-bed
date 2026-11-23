@@ -7,9 +7,10 @@ import voluptuous as vol
 from homeassistant.config_entries import SOURCE_RECONFIGURE
 from homeassistant.const import CONF_ADDRESS, CONF_NAME
 from homeassistant.data_entry_flow import FlowResultType
-from pytest_homeassistant_custom_component.common import MockConfigEntry
+from pytest_homeassistant.common import MockConfigEntry
 
 from custom_components.adjustable_bed import const
+from custom_components.adjustable_bed.bed_traits import reads_positions
 from custom_components.adjustable_bed.config_flow import (
     CONF_PAIR_SELECTION,
     AdjustableBedConfigFlow,
@@ -17,6 +18,7 @@ from custom_components.adjustable_bed.config_flow import (
 from custom_components.adjustable_bed.controller_factory import create_controller
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
 from custom_components.adjustable_bed.pairing_candidates import encode_pair_selection
+from tests.form_helpers import NEW_BED_ROUTES, finish_new_bed, form_fields, start_new_bed
 from tests.test_vmatbasic import make_controller
 
 ADDRESS = "11:22:33:44:55:66"
@@ -28,82 +30,74 @@ def app_data(profile="basic", **extra):
         CONF_NAME: "App receiver",
         const.CONF_BED_TYPE: const.BED_TYPE_VMATBASIC,
         const.CONF_VMATBASIC_PROFILE: profile,
-        const.CONF_DISCONNECT_AFTER_COMMAND: False,
+        const.CONF_CONNECTION_MODE: const.CONNECTION_MODE_IDLE,
         const.CONF_DISABLE_ANGLE_SENSING: True,
         **extra,
     }
 
 
-@pytest.mark.parametrize("step", ["manual_entry", "manual_config", "bluetooth_confirm"])
+@pytest.mark.parametrize("route", NEW_BED_ROUTES)
 async def test_all_setup_routes_collect_explicit_profile_without_bond(
-    hass, mock_bluetooth_service_info, step
+    hass, mock_bluetooth_service_info, route
 ):
     flow = AdjustableBedConfigFlow()
     flow.hass = hass
     flow.context = {}
     flow._discovery_info = mock_bluetooth_service_info
-    flow._disconnect_choice_confirmed = True
-    result = await getattr(flow, "async_step_" + step)(
-        {
-            CONF_ADDRESS: ADDRESS,
-            CONF_NAME: "Basic",
-            const.CONF_BED_TYPE: const.BED_TYPE_VMATBASIC,
-            const.CONF_DISCONNECT_AFTER_COMMAND: False,
-            const.CONF_PREFERRED_ADAPTER: "auto",
-        }
-    )
-    # The first editable selector change rebuilds its formerly generic form.
-    if result["step_id"] == step:
-        values = result["data_schema"]({CONF_ADDRESS: ADDRESS} if step == "manual_entry" else {})
-        assert const.CONF_MOTOR_COUNT not in values
-        assert const.CONF_MOTOR_PULSE_DELAY_MS not in values
-        result = await getattr(flow, "async_step_" + step)(values)
+    settings = {
+        CONF_NAME: "Basic",
+        const.CONF_CONNECTION_MODE: const.CONNECTION_MODE_IDLE,
+        const.CONF_PREFERRED_ADAPTER: "auto",
+    }
+    result = await start_new_bed(flow, route, const.BED_TYPE_VMATBASIC)
     assert result["step_id"] == "vibradorm"
-    result = await flow.async_step_vibradorm({"app": "vmatbasic"})
-    assert result["step_id"] == "vmatbasic"
+    result = await flow.async_step_vibradorm({"choice": "vmatbasic"})
+    assert result["step_id"] == "profile_questions"
     with patch.object(
         flow,
         "_finish_with_verify",
         new=AsyncMock(return_value={"type": FlowResultType.CREATE_ENTRY}),
     ) as finish:
-        result = await flow.async_step_vmatbasic({const.CONF_VMATBASIC_PROFILE: "basic"})
+        result = await flow.async_step_profile_questions({const.CONF_VMATBASIC_PROFILE: "basic"})
+        # The app fixes the layout and cadence, so neither is asked after it.
+        fields = {marker.schema for marker in form_fields(result["data_schema"])}
+        assert {const.CONF_MOTOR_COUNT, const.CONF_MOTOR_PULSE_DELAY_MS}.isdisjoint(fields)
+        result = await finish_new_bed(flow, result, settings)
     assert result["type"] == FlowResultType.CREATE_ENTRY
     data = finish.call_args.args[0]
     assert data[const.CONF_VMATBASIC_PROFILE] == "basic"
     assert data[const.CONF_MOTOR_PULSE_DELAY_MS] == 30
-    assert data[const.CONF_DISABLE_ANGLE_SENSING] is True
+    assert not reads_positions(data)
     assert not const.requires_pairing(const.BED_TYPE_VMATBASIC)
     assert not const.requires_pairing_after_service_discovery(const.BED_TYPE_VMATBASIC)
 
 
 @pytest.mark.parametrize("profile", ["cbi", "xtbox"])
-async def test_profile_selection_rebuilds_exact_floor_domain_before_finish(hass, profile):
+async def test_floor_fields_show_for_the_products_that_have_them(hass, profile):
     flow = AdjustableBedConfigFlow()
     flow.hass, flow.context, flow._manual_data = hass, {}, app_data()
-    result = await flow.async_step_vmatbasic({const.CONF_VMATBASIC_PROFILE: profile})
-    assert result["type"] == FlowResultType.FORM
-    schema = result["data_schema"]
-    assert isinstance(schema, vol.Schema)
-    values = schema({const.CONF_VMATBASIC_FLOOR_LEVEL: 6 if profile == "xtbox" else 255})
-    assert isinstance(values, dict)
-    assert values[const.CONF_VMATBASIC_PROFILE] == profile
+    rendered = await flow.async_step_profile_questions()
+    markers = {marker.schema: marker for marker in rendered["data_schema"].schema}
+    assert markers[const.CONF_VMATBASIC_FLOOR_LEVEL].visible == {
+        "field": const.CONF_VMATBASIC_PROFILE,
+        "operator": "in",
+        "value": ["cbi", "xtbox"],
+    }
+    level = 6 if profile == "xtbox" else 255
     with patch.object(
         flow,
         "_finish_with_verify",
         new=AsyncMock(return_value={"type": FlowResultType.CREATE_ENTRY}),
     ) as finish:
-        await flow.async_step_vmatbasic(values)
-    assert (
-        finish.call_args.args[0][const.CONF_VMATBASIC_FLOOR_LEVEL]
-        == values[const.CONF_VMATBASIC_FLOOR_LEVEL]
-    )
+        await flow.async_step_profile_questions(
+            {const.CONF_VMATBASIC_PROFILE: profile, const.CONF_VMATBASIC_FLOOR_LEVEL: level}
+        )
+    assert finish.call_args.args[0][const.CONF_VMATBASIC_FLOOR_LEVEL] == level
 
 
 @pytest.mark.parametrize("options", [False, True])
 @pytest.mark.parametrize("old,new", [("cbi", "xtbox"), ("xtbox", "cbi"), ("xtbox", "basic")])
-async def test_full_rendered_profile_change_discards_all_old_dependent_defaults(
-    hass, options, old, new
-):
+async def test_a_product_change_keeps_only_the_new_products_answers(hass, options, old, new):
     data = app_data(
         old, **{const.CONF_VMATBASIC_FLOOR_LEVEL: 6, const.CONF_VMATBASIC_FLOOR_MINUTES: 123}
     )
@@ -114,52 +108,39 @@ async def test_full_rendered_profile_change_discards_all_old_dependent_defaults(
         flow = AdjustableBedConfigFlow()
         flow.context, flow.hass = {"source": SOURCE_RECONFIGURE, "entry_id": entry.entry_id}, hass
         await flow.async_step_reconfigure()
-        await flow.async_step_vibradorm({"app": "vmatbasic"})
-        step = flow.async_step_vmatbasic
+        await flow.async_step_vibradorm({"choice": "vmatbasic"})
     else:
         flow = AdjustableBedConfigFlow()
         flow.context, flow.hass, flow._manual_data = {}, hass, data
-        step = flow.async_step_vmatbasic
-    rendered = await step()
-    schema = rendered["data_schema"]
-    assert isinstance(schema, vol.Schema)
-    submitted = schema({})
-    assert isinstance(submitted, dict)
-    submitted[const.CONF_VMATBASIC_PROFILE] = new
-    with (
-        patch.object(
-            flow,
-            "_finish_with_verify",
-            new=AsyncMock(return_value={"type": FlowResultType.CREATE_ENTRY}),
-        )
-    ):
-        rebuilt = await step(submitted)
+    # The new product's floor fields are answered on the same form; Basic has none.
+    answers = {const.CONF_VMATBASIC_PROFILE: new}
+    if new != "basic":
+        answers[const.CONF_VMATBASIC_FLOOR_LEVEL] = 1
+        answers[const.CONF_VMATBASIC_FLOOR_MINUTES] = 5
+    with patch.object(
+        flow,
+        "_finish_with_verify",
+        new=AsyncMock(return_value={"type": FlowResultType.CREATE_ENTRY}),
+    ) as finish:
+        await flow.async_step_profile_questions(answers)
     retained = flow._manual_data
     assert retained[const.CONF_VMATBASIC_PROFILE] == new
-    assert const.CONF_VMATBASIC_FLOOR_LEVEL not in retained
-    assert const.CONF_VMATBASIC_FLOOR_MINUTES not in retained
-    if new != "basic":
-        assert rebuilt["type"] == FlowResultType.FORM
-        assert not rebuilt["errors"]
+    if new == "basic":
+        assert const.CONF_VMATBASIC_FLOOR_LEVEL not in retained
+        assert const.CONF_VMATBASIC_FLOOR_MINUTES not in retained
+    else:
+        assert retained[const.CONF_VMATBASIC_FLOOR_LEVEL] == 1
+        assert retained[const.CONF_VMATBASIC_FLOOR_MINUTES] == 5
     if options:
-        if new != "basic":
-            schema = rebuilt["data_schema"]
-            assert isinstance(schema, vol.Schema)
-            next_submission = schema({})
-            assert isinstance(next_submission, dict)
-            assert const.CONF_VMATBASIC_FLOOR_LEVEL not in next_submission
-            assert next_submission[const.CONF_VMATBASIC_FLOOR_MINUTES] == 0
-            with patch.object(flow, "_finish_with_verify", new=AsyncMock()):
-                await step(next_submission)
-        assert entry.data == data
-        flow._vibradorm_verified = True
-        flow._create_selected_app_entry(title="Basic", data=flow._manual_data)
-        completed = await flow.async_step_vibradorm_confirm({"confirm": True})
+        assert entry is not None and entry.data == data
+        flow._migration_verified = True
+        await flow._async_create_selected_app_entry(title="Basic", data=flow._manual_data)
+        completed = await flow.async_step_migration_confirm({"action": "apply"})
         assert completed["type"] == FlowResultType.ABORT
-        assert entry is not None
         assert entry.data[const.CONF_VMATBASIC_PROFILE] == new
-        assert const.CONF_VMATBASIC_FLOOR_LEVEL not in entry.data
-        assert entry.data.get(const.CONF_VMATBASIC_FLOOR_MINUTES) == (None if new == "basic" else 0)
+        assert entry.data.get(const.CONF_VMATBASIC_FLOOR_LEVEL) == (None if new == "basic" else 1)
+    else:
+        finish.assert_awaited_once()
 
 
 @pytest.mark.parametrize("profile", const.VMATBASIC_PROFILES)
@@ -175,7 +156,7 @@ async def test_real_factory_profile_offline_exposure_and_no_model_inference(hass
         ble_model="XT-Box",
         manufacturer_data={0xFFFF: b"\xba\xbe\x11\x11\x00\x00"},
     )
-    assert controller.profile == profile
+    assert controller.profile.key == profile
     assert [spec.key for spec in controller.motor_control_specs] == ["back", "legs"]
     assert controller.memory_slot_count == 0
     assert const.BED_TYPE_VMATBASIC in const.OFFLINE_CAPABILITY_SAFE_BED_TYPES
@@ -218,7 +199,7 @@ async def test_saved_zero_and_timer_survive_real_factory_reconstruction(hass):
 async def test_invalid_saved_parameters_do_not_finish_setup(hass, profile, key, value):
     flow = AdjustableBedConfigFlow()
     flow.hass, flow.context, flow._manual_data = hass, {}, app_data(profile)
-    result = await flow.async_step_vmatbasic({key: value})
+    result = await flow.async_step_profile_questions({key: value})
     assert result["errors"] == {key: "vmatbasic_invalid"}
 
 
@@ -230,7 +211,7 @@ async def test_invalid_saved_parameters_do_not_finish_setup(hass, profile, key, 
 async def test_rendered_profile_schema_rejects_nonwhole_values(hass, profile, field, value):
     flow = AdjustableBedConfigFlow()
     flow.hass, flow.context, flow._manual_data = hass, {}, app_data(profile)
-    result = await flow.async_step_vmatbasic()
+    result = await flow.async_step_profile_questions()
     schema = result["data_schema"]
     assert isinstance(schema, vol.Schema)
     with pytest.raises(vol.Invalid):

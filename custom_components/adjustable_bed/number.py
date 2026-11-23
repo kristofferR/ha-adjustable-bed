@@ -7,7 +7,7 @@ from collections.abc import Callable, Coroutine, Sequence
 from dataclasses import dataclass, replace
 from functools import partial
 from math import isclose, isfinite
-from typing import TYPE_CHECKING, Any, cast
+from typing import TYPE_CHECKING, Any
 
 from homeassistant.components.number import (
     NumberEntity,
@@ -15,44 +15,50 @@ from homeassistant.components.number import (
     NumberMode,
 )
 from homeassistant.config_entries import ConfigEntry
+from homeassistant.const import Platform
 from homeassistant.core import HomeAssistant, callback
-from homeassistant.exceptions import ServiceValidationError
-from homeassistant.helpers import entity_registry as er
-from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
-from .beds.base import ControllerNumberSpec, PositionNumberSpec
+from .bed_traits import bed_type_has_position_feedback
+from .beds.entity_specs import ControllerNumberSpec, PositionNumberSpec
+from .beds.octo.runtime import octo_controls_locked
+from .card import (
+    CARD_CLIMATE,
+    CARD_FIRMNESS,
+    CARD_LIGHT_LEVEL,
+    CARD_MASSAGE,
+    CardPlacement,
+    motor_card,
+)
 from .const import (
-    BED_TYPE_ISLEEP,
-    BED_TYPE_JENSEN,
-    BED_TYPE_JIECANG_APP,
-    BED_TYPE_LINAK,
-    BED_TYPE_LOGICDATA_APP,
-    BED_TYPE_SLEEP_NUMBER_MCR,
-    BED_TYPE_SLEEPSTAR,
-    BED_TYPE_SOLACE,
-    BED_TYPE_STARCODE_M5X5,
-    BED_TYPE_SVANE,
-    BED_TYPE_VIBRADORM_APP,
-    BEDS_WITHOUT_ANGLE_FEEDBACK,
     CONF_BED_TYPE,
     CONF_HAS_MASSAGE,
     CONF_PROTOCOL_VARIANT,
-    DOMAIN,
     SIDE_BOTH,
-    bed_type_has_position_feedback,
 )
-from .entity import AdjustableBedEntity
+from .controller_state import ControllerState, StateKey, sided
+from .entity import AdjustableBedEntity, PlacedInCard, RenamesInPlace
 from .entity_discovery import async_setup_dynamic_entities
-from .entity_runtime import EntityRuntime
-from .octo_runtime import octo_controller
+from .entity_runtime import EntityRuntime, controller_side_scope, named_for_side, own_sides
+from .entity_sweep import PlatformEntities, records_entities
+from .errors import invalid
 from .paired_coordinator import (
     PairedBedCoordinator,
     SingleAddressPairedCoordinator,
     entity_runtimes,
 )
+from .position_estimate_entities import async_setup_estimate_numbers
+from .runtime_data import entry_runtime
+from .state_keys import (
+    FAN_LEVEL,
+    LIGHT_LEVEL,
+    SLEEP_NUMBER,
+    SLEEP_NUMBER_SIDE,
+    massage_intensity,
+    massage_state_side,
+)
 
 if TYPE_CHECKING:
-    from .beds.base import BedController, SideBoundController
+    from .beds.base import BedController
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -66,6 +72,8 @@ class AdjustableBedNumberEntityDescription(NumberEntityDescription):
     move_down_fn: Callable[[BedController], Coroutine[Any, Any, None]]
     move_stop_fn: Callable[[BedController], Coroutine[Any, Any, None]]
     max_angle: float
+    # The motor (its cover's translation key) the slider sits with in the card.
+    motor: str
     min_motors: int = 2
 
 
@@ -88,6 +96,7 @@ NUMBER_DESCRIPTIONS: tuple[AdjustableBedNumberEntityDescription, ...] = (
         native_unit_of_measurement="°",
         mode=NumberMode.SLIDER,
         position_key="back",
+        motor="back",
         move_up_fn=lambda ctrl: ctrl.move_back_up(),
         move_down_fn=lambda ctrl: ctrl.move_back_down(),
         move_stop_fn=lambda ctrl: ctrl.move_back_stop(),
@@ -104,6 +113,7 @@ NUMBER_DESCRIPTIONS: tuple[AdjustableBedNumberEntityDescription, ...] = (
         native_unit_of_measurement="°",
         mode=NumberMode.SLIDER,
         position_key="legs",
+        motor="legs",
         move_up_fn=lambda ctrl: ctrl.move_legs_up(),
         move_down_fn=lambda ctrl: ctrl.move_legs_down(),
         move_stop_fn=lambda ctrl: ctrl.move_legs_stop(),
@@ -120,6 +130,7 @@ NUMBER_DESCRIPTIONS: tuple[AdjustableBedNumberEntityDescription, ...] = (
         native_unit_of_measurement="°",
         mode=NumberMode.SLIDER,
         position_key="head",
+        motor="head",
         move_up_fn=lambda ctrl: ctrl.move_head_up(),
         move_down_fn=lambda ctrl: ctrl.move_head_down(),
         move_stop_fn=lambda ctrl: ctrl.move_head_stop(),
@@ -136,18 +147,13 @@ NUMBER_DESCRIPTIONS: tuple[AdjustableBedNumberEntityDescription, ...] = (
         native_unit_of_measurement="°",
         mode=NumberMode.SLIDER,
         position_key="feet",
+        motor="feet",
         move_up_fn=lambda ctrl: ctrl.move_feet_up(),
         move_down_fn=lambda ctrl: ctrl.move_feet_down(),
         move_stop_fn=lambda ctrl: ctrl.move_feet_stop(),
         max_angle=45.0,
         min_motors=4,
     ),
-)
-
-
-_POSITION_ENTITY_KEYS = frozenset(
-    [description.key for description in NUMBER_DESCRIPTIONS]
-    + [f"{axis}_position_{side}" for axis in ("back", "legs") for side in ("left", "right")]
 )
 
 
@@ -162,8 +168,8 @@ class AdjustableBedMassageNumberEntityDescription(NumberEntityDescription):
 class AdjustableBedSideStateNumberEntityDescription(NumberEntityDescription):
     """Describes a side-specific number entity backed by controller state."""
 
-    state_key: str
-    setter_name: str
+    state_key: StateKey[int]
+    set_fn: Callable[[BedController, str, int], Coroutine[Any, Any, None]]
     side: str
 
 
@@ -225,8 +231,9 @@ MASSAGE_NUMBER_DESCRIPTIONS: tuple[AdjustableBedMassageNumberEntityDescription, 
 class AdjustableBedLevelNumberEntityDescription(NumberEntityDescription):
     """Describes a level slider backed by controller state."""
 
-    state_key: str
+    state_key: StateKey[int | None]
     set_fn: Callable[[BedController, int], Coroutine[Any, Any, None]]
+    card: CardPlacement
 
 
 LIGHT_LEVEL_DESCRIPTION = AdjustableBedLevelNumberEntityDescription(
@@ -237,8 +244,9 @@ LIGHT_LEVEL_DESCRIPTION = AdjustableBedLevelNumberEntityDescription(
     native_max_value=10,
     native_step=1,
     mode=NumberMode.SLIDER,
-    state_key="light_level",
+    state_key=LIGHT_LEVEL,
     set_fn=lambda ctrl, level: ctrl.set_light_level(level),
+    card=CARD_LIGHT_LEVEL,
 )
 
 FAN_LEVEL_DESCRIPTION = AdjustableBedLevelNumberEntityDescription(
@@ -249,8 +257,9 @@ FAN_LEVEL_DESCRIPTION = AdjustableBedLevelNumberEntityDescription(
     native_max_value=10,
     native_step=1,
     mode=NumberMode.SLIDER,
-    state_key="fan_level",
+    state_key=FAN_LEVEL,
     set_fn=lambda ctrl, level: ctrl.set_fan_level(level),
+    card=CARD_CLIMATE,
 )
 
 SLEEP_NUMBER_SETTING_DESCRIPTION = NumberEntityDescription(
@@ -271,8 +280,8 @@ SLEEP_NUMBER_SETTING_LEFT_DESCRIPTION = AdjustableBedSideStateNumberEntityDescri
     native_max_value=100,
     native_step=5,
     mode=NumberMode.SLIDER,
-    state_key="sleep_number_left",
-    setter_name="set_sleep_number_setting_for_side",
+    state_key=sided(SLEEP_NUMBER, "left"),
+    set_fn=lambda c, side, value: c.set_sleep_number_setting_for_side(side, value),
     side="left",
 )
 
@@ -284,8 +293,8 @@ SLEEP_NUMBER_SETTING_RIGHT_DESCRIPTION = AdjustableBedSideStateNumberEntityDescr
     native_max_value=100,
     native_step=5,
     mode=NumberMode.SLIDER,
-    state_key="sleep_number_right",
-    setter_name="set_sleep_number_setting_for_side",
+    state_key=sided(SLEEP_NUMBER, "right"),
+    set_fn=lambda c, side, value: c.set_sleep_number_setting_for_side(side, value),
     side="right",
 )
 
@@ -312,28 +321,31 @@ def _build_position_description(
         move_down_fn=spec.close_fn,
         move_stop_fn=spec.stop_fn,
         max_angle=spec.native_max_value,
+        motor=spec.motor,
         min_motors=1,
     )
 
 
+@records_entities(Platform.NUMBER)
 async def async_setup_entry(
     hass: HomeAssistant,
     entry: ConfigEntry,
-    async_add_entities: AddEntitiesCallback,
+    async_add_entities: PlatformEntities,
 ) -> None:
     """Set up Adjustable Bed number entities."""
-    coordinator = hass.data[DOMAIN][entry.entry_id]
+    coordinator = entry_runtime(hass, entry.entry_id)
+    # Opt-in travel-time estimates and saved positions (#601).
+    async_setup_estimate_numbers(hass, entry, async_add_entities)
     for runtime in entity_runtimes(coordinator):
         async_setup_dynamic_entities(
-            hass, entry, runtime, async_add_entities, partial(_number_entities_for, hass, runtime)
+            entry, runtime, async_add_entities, partial(_number_entities_for, hass, runtime)
         )
     if isinstance(coordinator, PairedBedCoordinator):
-        paired_entities: list[NumberEntity] = []
-        children = list(coordinator.children.values())
         # Combined sliders on the parent device drive both sides to one target.
         # They read the raw children's positions and seek via the parent (side=both).
-        paired_entities.extend(_combined_position_entities_for(coordinator, children))
-        _async_remove_stale_combined_number_entities(hass, coordinator, children, paired_entities)
+        paired_entities = _combined_position_entities_for(
+            coordinator, list(coordinator.children.values())
+        )
         if paired_entities:
             async_add_entities(paired_entities)
 
@@ -350,34 +362,6 @@ def _number_entities_for(hass: HomeAssistant, coordinator: EntityRuntime) -> lis
         has_massage = True
 
     entities: list[NumberEntity] = []
-
-    # Beds with no angle/position feedback may have registered position sliders
-    # under an earlier version or a previously selected profile. Remove any so
-    # existing installs do not keep dead orphaned numbers (#322, #344).
-    if bed_type in BEDS_WITHOUT_ANGLE_FEEDBACK:
-        _async_remove_stale_position_entities(hass, coordinator)
-    elif (
-        bed_type in (BED_TYPE_LINAK, BED_TYPE_SLEEP_NUMBER_MCR, BED_TYPE_STARCODE_M5X5)
-        and controller is not None
-        # Until capabilities resolve, the controller reports no axes; removing
-        # sliders then would delete working entities (#714).
-        and controller.controller_entity_discovery_complete
-    ):
-        supported_keys = {spec.key for spec in controller.position_number_specs}
-        position_keys = _POSITION_ENTITY_KEYS
-        if bed_type == BED_TYPE_STARCODE_M5X5:
-            position_keys = position_keys | {"lumbar_position"}
-        _async_remove_stale_position_entities(
-            hass,
-            coordinator,
-            stale_keys=frozenset(key for key in position_keys if key not in supported_keys),
-        )
-    elif bed_type == BED_TYPE_SLEEPSTAR:
-        _async_remove_stale_position_entities(
-            hass,
-            coordinator,
-            stale_keys=frozenset({"back_position", "legs_position"}),
-        )
 
     # Set up position number entities (only for beds with position feedback)
     if not coordinator.disable_angle_sensing:
@@ -403,25 +387,6 @@ def _number_entities_for(hass: HomeAssistant, coordinator: EntityRuntime) -> lis
                 entry.data.get(CONF_PROTOCOL_VARIANT),
             )
 
-    if controller is not None:
-        supported_zones = (
-            controller.massage_intensity_zones
-            if has_massage and controller.supports_massage_intensity_control
-            else []
-        )
-        registry = er.async_get(hass)
-        for description in MASSAGE_NUMBER_DESCRIPTIONS:
-            # The right-side control can remain after switching away from MOTIONrelax.
-            if bed_type != BED_TYPE_LOGICDATA_APP and description.key != "massage_right_intensity":
-                continue
-            if description.massage_zone in supported_zones:
-                continue
-            entity_id = registry.async_get_entity_id(
-                "number", DOMAIN, coordinator.entity_unique_id(description.key)
-            )
-            if entity_id is not None:
-                registry.async_remove(entity_id)
-
     # Set up massage intensity number entities (only for beds with massage and direct intensity control)
     if has_massage and controller is not None:
         if controller.supports_massage_intensity_control:
@@ -441,21 +406,15 @@ def _number_entities_for(hass: HomeAssistant, coordinator: EntityRuntime) -> lis
                         key=massage_desc.key,
                         translation_key=massage_desc.translation_key,
                         icon=massage_desc.icon,
-                        native_min_value=0,
+                        native_min_value=controller.massage_intensity_min(
+                            massage_desc.massage_zone
+                        ),
                         native_max_value=max_intensity,
                         native_step=1,
                         mode=massage_desc.mode,
                         massage_zone=massage_desc.massage_zone,
                     )
                     entities.append(AdjustableBedMassageNumber(coordinator, massage_adjusted))
-
-    if controller is not None:
-        active_zones = (
-            set(controller.massage_intensity_zones)
-            if has_massage and controller.supports_massage_intensity_control
-            else set()
-        )
-        _async_remove_stale_massage_entities(hass, coordinator, active_zones)
 
     # Set up light level number entity (only for beds that support it)
     if controller is not None and controller.supports_light_level_control:
@@ -475,19 +434,6 @@ def _number_entities_for(hass: HomeAssistant, coordinator: EntityRuntime) -> lis
                 ),
             )
         )
-    elif (
-        bed_type
-        in (
-            BED_TYPE_SOLACE,
-            BED_TYPE_STARCODE_M5X5,
-            BED_TYPE_JIECANG_APP,
-            BED_TYPE_SVANE,
-            BED_TYPE_JENSEN,
-            BED_TYPE_VIBRADORM_APP,
-        )
-        and controller is not None
-    ):
-        _async_remove_stale_level_entity(hass, coordinator, LIGHT_LEVEL_DESCRIPTION)
 
     if controller is not None and controller.supports_fan_level_control:
         entities.append(
@@ -496,18 +442,16 @@ def _number_entities_for(hass: HomeAssistant, coordinator: EntityRuntime) -> lis
                 replace(FAN_LEVEL_DESCRIPTION, native_max_value=controller.fan_level_max),
             )
         )
-    elif bed_type == BED_TYPE_JENSEN and controller is not None:
-        # A corrected config report can take away a fan the fallback assumed.
-        _async_remove_stale_level_entity(hass, coordinator, FAN_LEVEL_DESCRIPTION)
 
-    sleep_number_sides = controller.sleep_number_setting_sides if controller else ()
+    sleep_number_sides = (
+        own_sides(coordinator, controller.sleep_number_setting_sides) if controller else ()
+    )
     if controller is not None and sleep_number_sides:
         _LOGGER.debug(
             "Setting up side-specific Sleep Number controls for %s (sides: %s)",
             coordinator.name,
             sleep_number_sides,
         )
-        _async_remove_stale_sleep_number_entity(hass, coordinator)
         for side_description in (
             SLEEP_NUMBER_SETTING_LEFT_DESCRIPTION,
             SLEEP_NUMBER_SETTING_RIGHT_DESCRIPTION,
@@ -517,17 +461,11 @@ def _number_entities_for(hass: HomeAssistant, coordinator: EntityRuntime) -> lis
             entities.append(
                 AdjustableBedSideStateNumber(
                     coordinator,
-                    AdjustableBedSideStateNumberEntityDescription(
-                        key=side_description.key,
-                        translation_key=side_description.translation_key,
-                        icon=side_description.icon,
+                    replace(
+                        named_for_side(coordinator, side_description, side_description.side),
                         native_min_value=controller.sleep_number_setting_min,
                         native_max_value=controller.sleep_number_setting_max,
                         native_step=controller.sleep_number_setting_step,
-                        mode=side_description.mode,
-                        state_key=side_description.state_key,
-                        setter_name=side_description.setter_name,
-                        side=side_description.side,
                     ),
                 )
             )
@@ -550,15 +488,13 @@ def _number_entities_for(hass: HomeAssistant, coordinator: EntityRuntime) -> lis
 
     if controller is not None:
         specs = _controller_number_specs_for_entities(controller)
-        if controller.controller_entity_discovery_complete:
-            _async_remove_stale_controller_numbers(hass, coordinator, specs)
         entities.extend(AdjustableBedControllerNumber(coordinator, spec) for spec in specs)
 
     return entities
 
 
 def _controller_number_specs_for_entities(
-    controller: BedController | SideBoundController,
+    controller: BedController,
 ) -> tuple[ControllerNumberSpec, ...]:
     """Keep a controller-owned generic level setter off the duplicate entity list."""
     specs = controller.controller_number_specs
@@ -580,32 +516,11 @@ def _valid_controller_number_value(spec: ControllerNumberSpec, value: float) -> 
     return isfinite(steps) and isclose(steps, round(steps), rel_tol=0, abs_tol=1e-8)
 
 
-def _async_remove_stale_controller_numbers(
-    hass: HomeAssistant, coordinator: EntityRuntime, specs: tuple[ControllerNumberSpec, ...]
-) -> None:
-    """Remove only this runtime's retired controller-declared numbers."""
-    desired = {coordinator.entity_unique_id(f"controller_number_{spec.key}") for spec in specs}
-    prefix, suffix = coordinator.entity_unique_id("controller_number_").split(
-        "controller_number_", 1
-    )
-    prefix += "controller_number_"
-    registry = er.async_get(hass)
-    for row in list(er.async_entries_for_config_entry(registry, coordinator.entry.entry_id)):
-        if (
-            row.domain == "number"
-            and row.platform == DOMAIN
-            and row.unique_id.startswith(prefix)
-            and row.unique_id.endswith(suffix)
-            and row.unique_id not in desired
-        ):
-            registry.async_remove(row.entity_id)
-
-
 class AdjustableBedControllerNumber(AdjustableBedEntity, NumberEntity):
     """A declared product value, unknown until the controller publishes state."""
 
     def __init__(self, coordinator: EntityRuntime, spec: ControllerNumberSpec) -> None:
-        super().__init__(coordinator)
+        super().__init__(coordinator, spec.card)
         self._spec = spec
         self.entity_description = NumberEntityDescription(
             key=f"controller_number_{spec.key}",
@@ -614,18 +529,27 @@ class AdjustableBedControllerNumber(AdjustableBedEntity, NumberEntity):
             native_max_value=spec.native_max_value,
             native_step=spec.native_step,
             native_unit_of_measurement=spec.native_unit_of_measurement,
-            mode=NumberMode.SLIDER,
+            # A slider for a usable range; a box past 256 steps (a 16-bit height).
+            mode=NumberMode.AUTO,
+            entity_category=spec.entity_category,
+            entity_registry_enabled_default=spec.entity_registry_enabled_default,
         )
         self._attr_unique_id = coordinator.entity_unique_id(self.entity_description.key)
-        self._set_sided_translation_key(spec.translation_key, spec.key)
+        self._attr_translation_key = spec.translation_key
         self._unregister_callback: Callable[[], None] | None = None
 
     @property
     def available(self) -> bool:
         """Respect Octo's PIN gate for live settings."""
         controller = self._coordinator.capability_controller
-        octo = octo_controller(controller)
-        return super().available and (octo is None or octo.normal_controls_available)
+        return (
+            super().available
+            and not octo_controls_locked(controller)
+            and (
+                controller is None
+                or self.entity_description.key not in controller.unavailable_controller_entity_keys
+            )
+        )
 
     async def async_added_to_hass(self) -> None:
         await super().async_added_to_hass()
@@ -639,7 +563,7 @@ class AdjustableBedControllerNumber(AdjustableBedEntity, NumberEntity):
         await super().async_will_remove_from_hass()
 
     @callback
-    def _handle_controller_state_update(self, state: dict[str, object]) -> None:
+    def _handle_controller_state_update(self, state: ControllerState) -> None:
         if self._spec.state_key in state:
             self.async_write_ha_state()
 
@@ -652,14 +576,14 @@ class AdjustableBedControllerNumber(AdjustableBedEntity, NumberEntity):
 
     async def async_set_native_value(self, value: float) -> None:
         if not _valid_controller_number_value(self._spec, value):
-            raise ServiceValidationError("Value is outside this controller's range or step")
+            raise invalid("value_out_of_range", min=self._spec.native_min_value, max=self._spec.native_max_value, step=self._spec.native_step)
 
         async def set_value(ctrl: BedController) -> None:
             live = next(
                 (spec for spec in ctrl.controller_number_specs if spec.key == self._spec.key), None
             )
             if live is None or not _valid_controller_number_value(live, value):
-                raise ServiceValidationError("Controller no longer supports this value")
+                raise invalid("option_unavailable")
             await live.set_fn(ctrl, value)
 
         await self._coordinator.async_execute_controller_command(set_value)
@@ -674,6 +598,11 @@ def _position_number_specs(
     degrees or percent, and which position_data key each one reads. See
     BedController.position_number_specs.
     """
+    with controller_side_scope(coordinator):
+        return _bound_position_number_specs(coordinator)
+
+
+def _bound_position_number_specs(coordinator: EntityRuntime) -> tuple[PositionNumberSpec, ...]:
     controller = coordinator.capability_controller
     if coordinator.disable_angle_sensing or controller is None:
         return ()
@@ -696,7 +625,8 @@ def _combined_position_entities_for(
     source is unknown, not absent, so no combined slider is built until both
     sides are known (same rule as the combined buttons).
     """
-    if not children or any(child.capability_controller is None for child in children):
+    # A side kept by its own entry leaves nothing to combine.
+    if len(children) < 2 or any(child.capability_controller is None for child in children):
         return []
     specs_per_side = [_position_number_specs(child) for child in children]
     specs_by_side = [{spec.key: spec for spec in specs} for specs in specs_per_side]
@@ -722,106 +652,6 @@ def _combined_position_entities_for(
     return entities
 
 
-def _async_remove_stale_combined_number_entities(
-    hass: HomeAssistant,
-    coordinator: PairedBedCoordinator,
-    children: Sequence[EntityRuntime],
-    entities: list[NumberEntity],
-) -> None:
-    """Remove pair-level sliders no longer supported by both known sides."""
-    if any(child.capability_controller is None for child in children):
-        return
-    desired_unique_ids = {
-        unique_id
-        for entity in entities
-        if (unique_id := entity.unique_id) is not None and unique_id.endswith("_both")
-    }
-    candidate_keys = {description.key for description in NUMBER_DESCRIPTIONS}
-    candidate_keys.update(spec.key for child in children for spec in _position_number_specs(child))
-    candidate_unique_ids = {coordinator.entity_unique_id(f"{key}_both") for key in candidate_keys}
-    registry = er.async_get(hass)
-    for row in list(er.async_entries_for_config_entry(registry, coordinator.entry.entry_id)):
-        translation_key = (row.translation_key or "").removesuffix("_both")
-        if (
-            row.domain == "number"
-            and (
-                row.unique_id in candidate_unique_ids
-                or (row.unique_id.endswith("_both") and translation_key.endswith("_position"))
-            )
-            and row.unique_id not in desired_unique_ids
-        ):
-            registry.async_remove(row.entity_id)
-
-
-def _async_remove_stale_sleep_number_entity(
-    hass: HomeAssistant,
-    coordinator: EntityRuntime,
-) -> None:
-    """Remove the legacy single-side Sleep Number entity when side controls exist."""
-    registry = er.async_get(hass)
-    entity_id = registry.async_get_entity_id(
-        "number",
-        DOMAIN,
-        coordinator.entity_unique_id(SLEEP_NUMBER_SETTING_DESCRIPTION.key),
-    )
-    if entity_id is not None:
-        registry.async_remove(entity_id)
-
-
-def _async_remove_stale_level_entity(
-    hass: HomeAssistant,
-    coordinator: EntityRuntime,
-    description: AdjustableBedLevelNumberEntityDescription,
-) -> None:
-    """Remove a level slider the current profile no longer exposes."""
-    registry = er.async_get(hass)
-    entity_id = registry.async_get_entity_id(
-        "number",
-        DOMAIN,
-        coordinator.entity_unique_id(description.key),
-    )
-    if entity_id is not None:
-        registry.async_remove(entity_id)
-
-
-def _async_remove_stale_massage_entities(
-    hass: HomeAssistant,
-    coordinator: EntityRuntime,
-    active_zones: set[str],
-) -> None:
-    """Remove intensity numbers no longer supported by the selected controller."""
-    registry = er.async_get(hass)
-    for description in MASSAGE_NUMBER_DESCRIPTIONS:
-        if description.massage_zone in active_zones:
-            continue
-        entity_id = registry.async_get_entity_id(
-            "number", DOMAIN, coordinator.entity_unique_id(description.key)
-        )
-        if entity_id is not None:
-            registry.async_remove(entity_id)
-
-
-def _async_remove_stale_position_entities(
-    hass: HomeAssistant,
-    coordinator: EntityRuntime,
-    *,
-    stale_keys: frozenset[str] | None = None,
-) -> None:
-    """Remove position number entities the integration no longer creates.
-
-    Beds in BEDS_WITHOUT_ANGLE_FEEDBACK have no position feedback, but an earlier
-    version or profile may have registered *_back_position/*_legs_position sliders
-    that now linger as dead orphaned numbers (#322, #344).
-    """
-    registry = er.async_get(hass)
-    for key in _POSITION_ENTITY_KEYS if stale_keys is None else stale_keys:
-        entity_id = registry.async_get_entity_id(
-            "number", DOMAIN, coordinator.entity_unique_id(key)
-        )
-        if entity_id is not None:
-            registry.async_remove(entity_id)
-
-
 class AdjustableBedPositionNumber(AdjustableBedEntity, NumberEntity):
     """Number entity for Adjustable Bed position control."""
 
@@ -833,9 +663,9 @@ class AdjustableBedPositionNumber(AdjustableBedEntity, NumberEntity):
         description: AdjustableBedNumberEntityDescription,
     ) -> None:
         """Initialize the number entity."""
-        super().__init__(coordinator)
+        super().__init__(coordinator, motor_card(description.motor))
         self.entity_description = description
-        self._set_sided_translation_key(description.translation_key, description.key)
+        self._attr_translation_key = description.translation_key or description.key
         self._attr_unique_id = coordinator.entity_unique_id(description.key)
         self._unregister_callback: Callable[[], None] | None = None
 
@@ -890,11 +720,11 @@ class AdjustableBedPositionNumber(AdjustableBedEntity, NumberEntity):
         )
 
 
-class PairedBedCombinedPositionNumber(NumberEntity):
+class PairedBedCombinedPositionNumber(RenamesInPlace, PlacedInCard, NumberEntity):
     """A 'both sides' position slider on the paired parent device.
 
     Reports the mean of the sides' positions, so the slider sits between them
-    while they differ. Setting it seeks both sides to the same target through
+    while they differ, and nothing while a side has not reported. Setting it seeks both sides to the same target through
     the parent (side=both), which takes the pair command lock.
     """
 
@@ -911,12 +741,10 @@ class PairedBedCombinedPositionNumber(NumberEntity):
         self.entity_description = description
         self._attr_unique_id = coordinator.entity_unique_id(f"{description.key}_both")
         self._attr_device_info = coordinator.device_info
-        translation_key = description.translation_key or description.key
+        self._attr_translation_key = description.translation_key or description.key
+        self._card = motor_card(description.motor)
         if isinstance(coordinator, SingleAddressPairedCoordinator):
-            self._attr_translation_key = f"{translation_key}_both"
             self._attr_extra_state_attributes = {"bed_side": SIDE_BOTH}
-        else:
-            self._attr_translation_key = translation_key
         self._unregister_callbacks: list[Callable[[], None]] = []
 
     @property
@@ -946,14 +774,17 @@ class PairedBedCombinedPositionNumber(NumberEntity):
 
     @property
     def native_value(self) -> float | None:
-        """Return the mean position of the sides that report one."""
+        """Return the mean position, unknown until every side reports one.
+
+        One side's angle is not the whole bed's.
+        """
         max_angle = self.entity_description.max_angle
         position_key = self.entity_description.position_key
-        positions = [
-            min(max_angle, max(0.0, float(position)))
-            for child in self._coordinator.children.values()
-            if (position := child.position_data.get(position_key)) is not None
-        ]
+        positions: list[float] = []
+        for child in self._coordinator.children.values():
+            if (position := child.position_data.get(position_key)) is None:
+                return None
+            positions.append(min(max_angle, max(0.0, float(position))))
         if not positions:
             return None
         return sum(positions) / len(positions)
@@ -989,9 +820,9 @@ class AdjustableBedMassageNumber(AdjustableBedEntity, NumberEntity):
         description: AdjustableBedMassageNumberEntityDescription,
     ) -> None:
         """Initialize the massage number entity."""
-        super().__init__(coordinator)
+        super().__init__(coordinator, CARD_MASSAGE)
         self.entity_description = description
-        self._set_sided_translation_key(description.translation_key, description.key)
+        self._attr_translation_key = description.translation_key or description.key
         self._attr_unique_id = coordinator.entity_unique_id(description.key)
         self._unregister_callback: Callable[[], None] | None = None
 
@@ -1009,55 +840,37 @@ class AdjustableBedMassageNumber(AdjustableBedEntity, NumberEntity):
     @property
     def available(self) -> bool:
         """Keep legacy wave automation unavailable off its current source side."""
+        zone = self.entity_description.massage_zone
         controller = self._coordinator.capability_controller
-        zone_available = (
-            getattr(controller, "legacy_massage_wave_available", True)
-            if self.entity_description.massage_zone == "wave"
-            else True
+        zone_available = controller is None or (
+            (zone != "wave" or controller.legacy_massage_wave_available)
+            and controller.massage_intensity_available(zone)
         )
-        return super().available and zone_available is not False
+        return super().available and zone_available
 
     @callback
-    def _handle_controller_state_update(self, state: dict[str, Any]) -> None:
+    def _handle_controller_state_update(self, state: ControllerState) -> None:
         self.async_write_ha_state()
 
     @property
     def native_value(self) -> float | None:
-        """Return the current massage intensity from controller state."""
-        controller = self._coordinator.controller
-        if controller is None and self._coordinator.bed_type == BED_TYPE_ISLEEP:
-            side = self._coordinator.entity_side or "both"
-            state = self._coordinator.controller_state.get(f"isleep_massage_{side}")
-            value = (
-                state.get(f"{self.entity_description.massage_zone}_intensity")
-                if isinstance(state, dict) else None
-            )
-            return float(value) if isinstance(value, (int, float)) else None
-        if controller is None:
-            state_key = {
-                "head": "woosa_head_level",
-                "foot": "woosa_foot_level",
-            }.get(self.entity_description.massage_zone)
-            value = self._coordinator.controller_state.get(state_key) if state_key else None
-            return float(value) if isinstance(value, (int, float)) else None
-
-        # Get massage state from controller
-        state = controller.get_massage_state()
-        zone = self.entity_description.massage_zone
-
-        # Map zone to state key
-        key_map = {
-            "all": "intensity",
-            "head": "head_intensity",
-            "foot": "foot_intensity",
-            "right": "right_intensity",
-            "wave": "wave_intensity",
-        }
-        state_key = key_map.get(zone)
-        if state_key and state_key in state:
-            value = state[state_key]
-            return float(value) if value is not None else None
-        return 0.0
+        """Return the zone's last published intensity."""
+        key = sided(
+            massage_intensity(self.entity_description.massage_zone),
+            massage_state_side(
+                self._coordinator.bed_type, self._coordinator.entity_side,
+                controller_side=self._coordinator.controller_side,
+            ),
+        )
+        state = self._coordinator.controller_state
+        if key not in state:
+            # A connected bed that tracks no level for this zone shows zero,
+            # unless zero is not a level the zone has.
+            if self._coordinator.controller is None or (self.native_min_value or 0) > 0:
+                return None
+            return 0.0
+        value = state[key]
+        return None if value is None else float(value)
 
     async def async_set_native_value(self, value: float) -> None:
         """Set the massage intensity level."""
@@ -1088,9 +901,9 @@ class AdjustableBedLevelNumber(AdjustableBedEntity, NumberEntity):
         description: AdjustableBedLevelNumberEntityDescription,
     ) -> None:
         """Initialize the level number entity."""
-        super().__init__(coordinator)
+        super().__init__(coordinator, description.card)
         self.entity_description = description
-        self._set_sided_translation_key(description.translation_key, description.key)
+        self._attr_translation_key = description.translation_key or description.key
         self._attr_unique_id = coordinator.entity_unique_id(description.key)
         self._unregister_callback: Callable[[], None] | None = None
 
@@ -1108,7 +921,7 @@ class AdjustableBedLevelNumber(AdjustableBedEntity, NumberEntity):
         await super().async_will_remove_from_hass()
 
     @callback
-    def _handle_controller_state_update(self, state: dict[str, Any]) -> None:
+    def _handle_controller_state_update(self, state: ControllerState) -> None:
         """Write state when the controller publishes this level."""
         if self.entity_description.state_key in state:
             self.async_write_ha_state()
@@ -1132,7 +945,7 @@ class AdjustableBedLevelNumber(AdjustableBedEntity, NumberEntity):
                 self.native_max_value,
             )
         ):
-            raise ServiceValidationError("Value is outside this light slider's integer range")
+            raise invalid("value_out_of_range", min=self.native_min_value, max=self.native_max_value, step=1)
         level = round(value)
 
         _LOGGER.info(
@@ -1150,7 +963,7 @@ class AdjustableBedLevelNumber(AdjustableBedEntity, NumberEntity):
                     value, ctrl.light_level_min, ctrl.light_level_max
                 )
             ):
-                raise ServiceValidationError("Value is outside the current light slider's range")
+                raise invalid("value_out_of_range", min=ctrl.light_level_min, max=ctrl.light_level_max, step=1)
             number_spec = next(
                 (
                     spec
@@ -1161,9 +974,7 @@ class AdjustableBedLevelNumber(AdjustableBedEntity, NumberEntity):
             )
             if number_spec is not None:
                 if not _valid_controller_number_value(number_spec, value):
-                    raise ServiceValidationError(
-                        "Value is outside the current controller's light level range"
-                    )
+                    raise invalid("value_out_of_range", min=number_spec.native_min_value, max=number_spec.native_max_value, step=number_spec.native_step)
                 await number_spec.set_fn(ctrl, value)
                 return
             await self.entity_description.set_fn(ctrl, level)
@@ -1192,9 +1003,9 @@ class AdjustableBedSleepNumberSettingNumber(AdjustableBedEntity, NumberEntity):
         description: NumberEntityDescription,
     ) -> None:
         """Initialize the Sleep Number setting entity."""
-        super().__init__(coordinator)
+        super().__init__(coordinator, CARD_FIRMNESS)
         self.entity_description = description
-        self._set_sided_translation_key(description.translation_key, description.key)
+        self._attr_translation_key = description.translation_key or description.key
         self._attr_unique_id = coordinator.entity_unique_id(description.key)
         self._unregister_callback: Callable[[], None] | None = None
 
@@ -1212,15 +1023,15 @@ class AdjustableBedSleepNumberSettingNumber(AdjustableBedEntity, NumberEntity):
         await super().async_will_remove_from_hass()
 
     @callback
-    def _handle_controller_state_update(self, state: dict[str, Any]) -> None:
+    def _handle_controller_state_update(self, state: ControllerState) -> None:
         """Write state when the controller publishes Sleep Number changes."""
-        if "sleep_number" in state:
+        if SLEEP_NUMBER in state:
             self.async_write_ha_state()
 
     @property
     def native_value(self) -> float | None:
         """Return the current Sleep Number setting."""
-        value = self._coordinator.controller_state.get("sleep_number")
+        value = self._coordinator.controller_state.get(SLEEP_NUMBER)
         if not isinstance(value, (str, int, float)):
             return None
         return float(value)
@@ -1228,8 +1039,8 @@ class AdjustableBedSleepNumberSettingNumber(AdjustableBedEntity, NumberEntity):
     @property
     def extra_state_attributes(self) -> dict[str, Any]:
         """Return side metadata for the configured Sleep Number setting."""
-        attrs: dict[str, Any] = {}
-        side = self._coordinator.controller_state.get("sleep_number_side")
+        attrs = self._base_attributes()
+        side = self._coordinator.controller_state.get(SLEEP_NUMBER_SIDE)
         if side is not None:
             attrs["side"] = side
         return attrs
@@ -1245,7 +1056,7 @@ class AdjustableBedSleepNumberSettingNumber(AdjustableBedEntity, NumberEntity):
         )
 
         async def _set_sleep_number(ctrl: BedController) -> None:
-            await cast(Any, ctrl).set_sleep_number_setting(setting)
+            await ctrl.set_sleep_number_setting(setting)
 
         await self._coordinator.async_execute_controller_command(_set_sleep_number)
 
@@ -1261,9 +1072,9 @@ class AdjustableBedSideStateNumber(AdjustableBedEntity, NumberEntity):
         description: AdjustableBedSideStateNumberEntityDescription,
     ) -> None:
         """Initialize the side-specific number entity."""
-        super().__init__(coordinator)
+        super().__init__(coordinator, CARD_FIRMNESS)
         self.entity_description = description
-        self._set_sided_translation_key(description.translation_key, description.key)
+        self._attr_translation_key = description.translation_key or description.key
         self._attr_unique_id = coordinator.entity_unique_id(description.key)
         self._unregister_callback: Callable[[], None] | None = None
 
@@ -1281,7 +1092,7 @@ class AdjustableBedSideStateNumber(AdjustableBedEntity, NumberEntity):
         await super().async_will_remove_from_hass()
 
     @callback
-    def _handle_controller_state_update(self, state: dict[str, Any]) -> None:
+    def _handle_controller_state_update(self, state: ControllerState) -> None:
         """Refresh when the tracked controller-state key changes."""
         if self.entity_description.state_key in state:
             self.async_write_ha_state()
@@ -1297,16 +1108,13 @@ class AdjustableBedSideStateNumber(AdjustableBedEntity, NumberEntity):
     @property
     def extra_state_attributes(self) -> dict[str, Any]:
         """Expose the side served by this number entity."""
-        return {"side": self.entity_description.side}
+        return {**self._base_attributes(), "side": self.entity_description.side}
 
     async def async_set_native_value(self, value: float) -> None:
         """Set the side-specific value through the controller."""
         setting = round(value)
 
         async def _set_value(ctrl: BedController) -> None:
-            await getattr(cast(Any, ctrl), self.entity_description.setter_name)(
-                self.entity_description.side,
-                setting,
-            )
+            await self.entity_description.set_fn(ctrl, self.entity_description.side, setting)
 
         await self._coordinator.async_execute_controller_command(_set_value)

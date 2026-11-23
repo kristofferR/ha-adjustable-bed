@@ -6,18 +6,26 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 from homeassistant.const import CONF_ADDRESS, CONF_NAME
 from homeassistant.data_entry_flow import FlowResultType
-from pytest_homeassistant_custom_component.common import MockConfigEntry
+from pytest_homeassistant.common import MockConfigEntry
 
 from custom_components.adjustable_bed import const
+from custom_components.adjustable_bed.bed_traits import reads_positions
 from custom_components.adjustable_bed.config_flow import (
     AdjustableBedConfigFlow,
     AdjustableBedOptionsFlow,
-    _starcode_app_errors,
 )
 from custom_components.adjustable_bed.controller_factory import create_controller
 from custom_components.adjustable_bed.pairing import supports_single_address_pairing
+from custom_components.adjustable_bed.setup_questions import SETUP_PROFILES
+from tests.form_helpers import NEW_BED_ROUTES, finish_new_bed, start_new_bed
 
 ADDRESS = "11:22:33:44:55:66"
+
+
+def _validate(data):
+    validate = SETUP_PROFILES[const.BED_TYPE_STARCODE_ABM5_4].validate
+    assert validate is not None
+    return validate(data)
 
 
 def app_data(**extra):
@@ -31,38 +39,55 @@ def app_data(**extra):
     }
 
 
-@pytest.mark.parametrize("step", ["manual_entry", "manual_config", "bluetooth_confirm"])
+@pytest.mark.parametrize("route", NEW_BED_ROUTES)
 async def test_every_setup_route_collects_explicit_C_D_without_requesting_bond(
-    hass, mock_bluetooth_service_info, step
+    hass, mock_bluetooth_service_info, route
 ):
     flow = AdjustableBedConfigFlow()
     flow.context = {}
     flow.hass = hass
     flow._discovery_info = mock_bluetooth_service_info
-    flow._disconnect_choice_confirmed = True
-    result = await getattr(flow, f"async_step_{step}")(
-        {
-            CONF_ADDRESS: ADDRESS,
-            CONF_NAME: "App bed",
-            const.CONF_BED_TYPE: const.BED_TYPE_STARCODE_ABM5_4,
-            const.CONF_DISCONNECT_AFTER_COMMAND: False,
-            const.CONF_PREFERRED_ADAPTER: "auto",
-        }
-    )
-    assert result["step_id"] == "starcode_app"
+    settings = {
+        CONF_NAME: "App bed",
+        const.CONF_CONNECTION_MODE: const.CONNECTION_MODE_IDLE,
+        const.CONF_PREFERRED_ADAPTER: "auto",
+    }
+    result = await start_new_bed(flow, route, const.BED_TYPE_STARCODE_ABM5_4)
+    # The StarCode apps' row asks which app first.
+    assert result["step_id"] == "starcode_family"
+    result = await flow.async_step_starcode_family({"choice": "m5x4"})
+    assert result["step_id"] == "profile_questions"
+    # Both follow the bed by default, so they wait under Advanced.
     fields = {marker.schema for marker in result["data_schema"].schema}
-    assert fields == {const.CONF_STARCODE_COMMAND_SELECTOR, const.CONF_STARCODE_TRANSPORT_SELECTOR}
+    assert fields == {"advanced"}
+    advanced = result["data_schema"].schema[next(iter(result["data_schema"].schema))].schema
+    assert {marker.schema for marker in advanced.schema} == {
+        const.CONF_STARCODE_COMMAND_SELECTOR,
+        const.CONF_STARCODE_TRANSPORT_SELECTOR,
+    }
     with (
         patch.object(flow, "_verification_possible", return_value=False),
         patch.object(flow, "async_step_bluetooth_pairing", new=AsyncMock()) as bluetooth_pairing,
         patch.object(flow, "async_step_manual_pairing", new=AsyncMock()) as manual_pairing,
     ):
-        completed = await flow.async_step_starcode_app(
+        result = await flow.async_step_profile_questions(
             {
                 const.CONF_STARCODE_COMMAND_SELECTOR: "BOX15",
                 const.CONF_STARCODE_TRANSPORT_SELECTOR: "auto",
             }
         )
+        if route == "typed":
+            # A typed address has no Bluetooth name to settle the transport.
+            assert result["errors"] == {
+                const.CONF_STARCODE_TRANSPORT_SELECTOR: "starcode_app_invalid"
+            }
+            result = await flow.async_step_profile_questions(
+                {
+                    const.CONF_STARCODE_COMMAND_SELECTOR: "BOX15",
+                    const.CONF_STARCODE_TRANSPORT_SELECTOR: "BOX3633",
+                }
+            )
+        completed = await finish_new_bed(flow, result, settings)
     assert completed["type"] == FlowResultType.CREATE_ENTRY
     bluetooth_pairing.assert_not_awaited()
     manual_pairing.assert_not_awaited()
@@ -72,7 +97,7 @@ async def test_every_setup_route_collects_explicit_C_D_without_requesting_bond(
     assert completed["data"][const.CONF_STARCODE_TRANSPORT_SELECTOR] == "BOX3633"
     assert flow._manual_data[const.CONF_MOTOR_COUNT] == 2
     assert flow._manual_data[const.CONF_HAS_MASSAGE] is True
-    assert flow._manual_data[const.CONF_DISABLE_ANGLE_SENSING] is True
+    assert not reads_positions(flow._manual_data)
 
 
 @pytest.mark.parametrize(
@@ -101,7 +126,7 @@ async def test_factory_uses_original_bluetooth_name_not_friendly_label(hass, nam
     ],
 )
 def test_config_rejects_invalid_axes_and_unreachable_transport(extra, error):
-    assert _starcode_app_errors(app_data(**extra)) == {error: "starcode_app_invalid"}
+    assert _validate(app_data(**extra)) == {error: "starcode_app_invalid"}
 
 
 async def test_options_auto_transport_roundtrip_preserves_original_name_default(hass):
@@ -121,7 +146,7 @@ async def test_options_auto_transport_roundtrip_preserves_original_name_default(
         ).default()
         == "auto"
     )
-    assert not _starcode_app_errors(entry.data)
+    assert not _validate(entry.data)
 
 
 @pytest.mark.parametrize(
@@ -171,8 +196,9 @@ async def test_two_address_options_cannot_copy_app_selectors_between_children(ha
     assert not const.STARCODE_APP_CONFIG_KEYS.intersection(
         key.schema for key in result["data_schema"].schema
     )
+    # A side's own selector is not on the shared form, so it is ignored.
     result = await flow.async_step_settings({const.CONF_STARCODE_COMMAND_SELECTOR: "BOX1220"})
-    assert result["errors"] == {"base": "app_profile_unpair_first"}
+    assert result["type"] == FlowResultType.CREATE_ENTRY
     assert [
         child[const.CONF_STARCODE_COMMAND_SELECTOR]
         for child in entry.data[const.CONF_PAIR_CHILDREN]
@@ -181,7 +207,6 @@ async def test_two_address_options_cannot_copy_app_selectors_between_children(ha
 
 def test_name_candidate_never_guesses_the_app_or_requires_manufacturer_payload():
     import fnmatch
-    import itertools
     import json
     from pathlib import Path
 
@@ -192,7 +217,7 @@ def test_name_candidate_never_guesses_the_app_or_requires_manufacturer_payload()
         (Path(__file__).parents[1] / "custom_components/adjustable_bed/manifest.json").read_text()
     )
     matchers = [row["local_name"] for row in manifest["bluetooth"] if "local_name" in row]
-    for prefix in map("".join, itertools.product("sS", "tT", "aA", "rR")):
+    for prefix in ("STAR", "Star", "star"):
         name = prefix + "254202079996"
         assert any(fnmatch.fnmatchcase(name, matcher) for matcher in matchers)
         result = detect_bed_type_detailed(

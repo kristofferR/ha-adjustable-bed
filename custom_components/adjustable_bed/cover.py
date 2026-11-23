@@ -6,7 +6,7 @@ import asyncio
 import logging
 from collections.abc import Callable, Coroutine
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Literal
 
 from homeassistant.components.cover import (
     CoverDeviceClass,
@@ -15,32 +15,24 @@ from homeassistant.components.cover import (
     CoverEntityFeature,
 )
 from homeassistant.config_entries import ConfigEntry
+from homeassistant.const import Platform
 from homeassistant.core import HomeAssistant
-from homeassistant.helpers import entity_registry as er
-from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
-from .beds.base import ControllerMotorHoldSpec
-from .const import (
-    BED_TYPE_OCTO,
-    BED_TYPE_SLEEPYS_ELITE_APP,
-    BEDS_WITH_PERCENTAGE_POSITIONS,
-    DOMAIN,
-    SLEEPYS_ELITE_NATIVE_ACTION_MS,
-)
-from .entity import AdjustableBedEntity
+from .bed_traits import bed_traits
+from .beds.entity_specs import ControllerMotorHoldSpec
+from .beds.octo.runtime import octo_controller, octo_controls_locked
+from .card import motor_card
+from .entity import AdjustableBedEntity, hold_lease_attributes
 from .entity_discovery import async_setup_dynamic_entities
 from .entity_runtime import EntityRuntime
-from .logicdata_app_protocol import LAYOUTS, layout_axes
-from .octo_runtime import octo_controller
+from .entity_sweep import PlatformEntities, records_entities
 from .paired_coordinator import entity_runtimes
+from .position_estimate import track_motor_command
+from .runtime_data import entry_runtime
 
 if TYPE_CHECKING:
-    from .beds.base import (
-        BedController,
-        ControllerMotorHoldSpec,
-        MotorControlSpec,
-        SideBoundController,
-    )
+    from .beds.base import BedController
+    from .beds.entity_specs import ControllerMotorHoldSpec, MotorControlSpec
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -59,6 +51,7 @@ class AdjustableBedCoverEntityDescription(CoverEntityDescription):
     max_angle: float = 68
     scheduler_resource: str | None = None
     hold: ControllerMotorHoldSpec | None = None
+    stop_scope: Literal["motor", "side"] | None = None
 
 
 # Note: For Linak beds:
@@ -195,16 +188,16 @@ COVER_DESCRIPTIONS: tuple[AdjustableBedCoverEntityDescription, ...] = (
 )
 
 
+@records_entities(Platform.COVER)
 async def async_setup_entry(
     hass: HomeAssistant,
     entry: ConfigEntry,
-    async_add_entities: AddEntitiesCallback,
+    async_add_entities: PlatformEntities,
 ) -> None:
     """Set up Adjustable Bed cover entities."""
-    coordinator = hass.data[DOMAIN][entry.entry_id]
+    coordinator = entry_runtime(hass, entry.entry_id)
     for runtime in entity_runtimes(coordinator):
         async_setup_dynamic_entities(
-            hass,
             entry,
             runtime,
             async_add_entities,
@@ -234,12 +227,7 @@ def _cover_entities_for(
     ):
         return []
 
-    _async_remove_stale_cover_entities(hass, coordinator, controller)
-
-    # Skip motor cover entities if bed doesn't support motor control. Still run
-    # stale cleanup first, so covers left over from an older config (e.g. a Gen2
-    # entry that resolved to a no-actuator profile) are removed rather than left
-    # registered and unavailable.
+    # Skip motor cover entities if bed doesn't support motor control.
     if not controller.supports_motor_control:
         _LOGGER.debug(
             "Skipping motor covers for %s - bed only supports presets",
@@ -261,6 +249,32 @@ def _cover_entities_for(
     ]
 
 
+_COVER_TEMPLATES: dict[str, AdjustableBedCoverEntityDescription] = {
+    description.key: description for description in COVER_DESCRIPTIONS
+}
+# Beds name the feet motor "Foot" as often as "Feet".
+_COVER_TEMPLATES["foot"] = _COVER_TEMPLATES["feet"]
+
+
+def _cover_template(spec: MotorControlSpec) -> AdjustableBedCoverEntityDescription | None:
+    """The template whose icon matches the motor the user sees.
+
+    The translation key names what the user sees ("keeson_back" is "Back"), so it
+    decides first, also by a trailing motor name ("foot_end_tilt" is a tilt)
+    unless another motor name comes right before it ("back_legs" is two motors
+    and gets the generic icon). The internal key decides only when the
+    translation key names no known motor.
+    """
+    parts = spec.translation_key.split("_")
+    for start in range(len(parts)):
+        template = _COVER_TEMPLATES.get("_".join(parts[start:]))
+        if template is not None:
+            if start and parts[start - 1] in _COVER_TEMPLATES:
+                break
+            return template
+    return _COVER_TEMPLATES.get(spec.key)
+
+
 def _build_cover_description(
     spec: MotorControlSpec,
 ) -> AdjustableBedCoverEntityDescription:
@@ -269,8 +283,7 @@ def _build_cover_description(
     Travel limits come from the spec, so per-frame limits belong on the
     controller's motor_max_angles rather than as a bed-type check here.
     """
-    templates_by_key = {description.key: description for description in COVER_DESCRIPTIONS}
-    template = templates_by_key.get(spec.key)
+    template = _cover_template(spec)
 
     return AdjustableBedCoverEntityDescription(
         key=spec.key,
@@ -284,55 +297,8 @@ def _build_cover_description(
         max_angle=spec.max_angle,
         scheduler_resource=spec.scheduler_resource,
         hold=spec.hold,
+        stop_scope=spec.stop_scope,
     )
-
-
-def _async_remove_stale_cover_entities(
-    hass: HomeAssistant,
-    coordinator: EntityRuntime,
-    controller: BedController | SideBoundController,
-) -> None:
-    """Remove stale cover entities that should no longer be exposed."""
-    registry = er.async_get(hass)
-    active_keys = (
-        {spec.key for spec in controller.motor_control_specs}
-        if controller.supports_motor_control and not controller.has_discrete_motor_control
-        else set()
-    )
-    # App-specific covers must retire when a different protocol replaces them.
-    stale_keys = controller.stale_motor_entity_keys | {
-        axis for layout in LAYOUTS for axis in layout_axes(layout)
-    } | {
-        "both", "right_back", "right_legs", "both_backs", "both_legs", "waist",
-        "hip", "lift", "rise_and_fall", "back_and_leg",
-        "malouf_tilt_head", "malouf_full_tilt", "back_legs",
-        "motor_1", "motor_2", "motor_3", "motor_4",
-    }
-
-    for key in stale_keys:
-        if key in active_keys:
-            continue
-
-        unique_id = coordinator.entity_unique_id(key)
-        entity_id = registry.async_get_entity_id("cover", DOMAIN, unique_id)
-        if entity_id is not None:
-            registry.async_remove(entity_id)
-            _LOGGER.info("Removed stale cover entity %s for %s", entity_id, coordinator.name)
-
-    # Layout-specific app covers must also retire after a protocol change.
-    namespace = "motion_bed_"
-    prefix, suffix = coordinator.entity_unique_id(namespace).split(namespace, 1)
-    prefix += namespace
-    active_ids = {coordinator.entity_unique_id(key) for key in active_keys}
-    for row in list(er.async_entries_for_config_entry(registry, coordinator.entry.entry_id)):
-        if (
-            row.domain == "cover"
-            and row.platform == DOMAIN
-            and row.unique_id.startswith(prefix)
-            and row.unique_id.endswith(suffix)
-            and row.unique_id not in active_ids
-        ):
-            registry.async_remove(row.entity_id)
 
 
 class AdjustableBedCover(AdjustableBedEntity, CoverEntity):
@@ -349,9 +315,10 @@ class AdjustableBedCover(AdjustableBedEntity, CoverEntity):
         description: AdjustableBedCoverEntityDescription,
     ) -> None:
         """Initialize the cover."""
-        super().__init__(coordinator)
+        translation_key = description.translation_key or description.key
+        super().__init__(coordinator, motor_card(translation_key))
         self.entity_description = description
-        self._set_sided_translation_key(description.translation_key, description.key)
+        self._attr_translation_key = translation_key
         self._attr_unique_id = coordinator.entity_unique_id(description.key)
         self._is_moving = False
         self._move_direction: str | None = None
@@ -371,15 +338,25 @@ class AdjustableBedCover(AdjustableBedEntity, CoverEntity):
     @property
     def available(self) -> bool:
         """Hide Octo motor controls while the live PIN gate is locked."""
-        controller = self._coordinator.capability_controller
-        octo = octo_controller(controller)
-        return super().available and (octo is None or octo.normal_controls_available)
+        return super().available and not octo_controls_locked(
+            self._coordinator.capability_controller
+        )
 
     @property
     def extra_state_attributes(self) -> dict[str, Any]:
         """Expose bounded hold metadata to the existing card/service path."""
         attributes = dict(getattr(self, "_attr_extra_state_attributes", None) or {})
         hold = self.entity_description.hold
+        controllers = [self._coordinator.capability_controller]
+        lease = hold_lease_attributes(
+            controllers,
+            self.entity_description.key,
+            control=hold.up_control if hold is not None else None,
+        )
+        if hold is None or lease == hold_lease_attributes(
+            controllers, self.entity_description.key, control=hold.down_control
+        ):
+            attributes.update(lease)
         if hold is not None:
             attributes.update(
                 held_control_up=hold.up_control,
@@ -390,7 +367,17 @@ class AdjustableBedCover(AdjustableBedEntity, CoverEntity):
             )
             if hold.release_button_key is not None:
                 attributes["hold_release_button_key"] = hold.release_button_key
+        elif self.entity_description.stop_scope is not None:
+            attributes["held_stop_scope"] = self.entity_description.stop_scope
         return attributes
+
+    @property
+    def _stop_scope(self) -> Literal["motor", "side"]:
+        """What this cover's STOP halts: its own motor, or every motor on the side."""
+        hold = self.entity_description.hold
+        if hold is not None:
+            return hold.stop_scope
+        return self.entity_description.stop_scope or "motor"
 
     @property
     def _position_key(self) -> str:
@@ -435,9 +422,9 @@ class AdjustableBedCover(AdjustableBedEntity, CoverEntity):
         if position is None:
             return None
 
-        # Check if bed type reports percentage directly (e.g., Keeson/Ergomotion/Serta)
+        # Check if bed type reports percentage directly (e.g., Keeson/Ergomotion)
         # Use bed_type constant check instead of controller to handle disconnected state
-        if self._coordinator.bed_type in BEDS_WITH_PERCENTAGE_POSITIONS:
+        if bed_traits(self._coordinator.bed_type).percentage_positions:
             # Position is already 0-100 percentage
             return min(100, max(0, int(position)))
 
@@ -481,25 +468,30 @@ class AdjustableBedCover(AdjustableBedEntity, CoverEntity):
                 self.entity_description.key,
             )
             hold = self.entity_description.hold
-            # OCTO's native actions use its configured pulses; hold metadata
-            # describes the card gesture, not a replacement travel duration.
-            if hold is not None and self._coordinator.bed_type != BED_TYPE_OCTO:
+            if hold is not None and hold.press_hold_ms is not None:
                 control = hold.up_control if direction == "open" else hold.down_control
+                duration_ms = hold.press_hold_ms
+
+                async def held(controller: BedController) -> None:
+                    await controller.hold_control(control, duration_ms)
+
+                # Only the hold is timed; its start and release delays are not travel.
+                tracked_hold = track_motor_command(
+                    self.hass,
+                    self.entity_description.key,
+                    "up" if direction == "open" else "down",
+                    held,
+                )
 
                 async def bounded_movement(controller: BedController) -> None:
-                    duration_ms = (
-                        SLEEPYS_ELITE_NATIVE_ACTION_MS
-                        if self._coordinator.bed_type == BED_TYPE_SLEEPYS_ELITE_APP
-                        else 1000
-                    )
                     controller.validate_hold_control(control, duration_ms)
-                    if self._coordinator.bed_type == BED_TYPE_SLEEPYS_ELITE_APP:
-                        await controller.hold_control(control, duration_ms)
+                    if hold.press_is_native:
+                        await tracked_hold(controller)
                         return
                     await controller.prepare_for_movement()
                     if hold.start_delay_ms:
                         await asyncio.sleep(hold.start_delay_ms / 1000)
-                    await controller.hold_control(control, duration_ms)
+                    await tracked_hold(controller)
                     if hold.release_delay_ms:
                         await asyncio.sleep(hold.release_delay_ms / 1000)
 
@@ -507,14 +499,16 @@ class AdjustableBedCover(AdjustableBedEntity, CoverEntity):
                     bounded_movement,
                     resource=self._motor_resource,
                 )
-            elif direction == "open":
-                await self._coordinator.async_execute_controller_command(
-                    self.entity_description.open_fn,
-                    resource=self._motor_resource,
-                )
             else:
                 await self._coordinator.async_execute_controller_command(
-                    self.entity_description.close_fn,
+                    track_motor_command(
+                        self.hass,
+                        self.entity_description.key,
+                        "up" if direction == "open" else "down",
+                        self.entity_description.open_fn
+                        if direction == "open"
+                        else self.entity_description.close_fn,
+                    ),
                     resource=self._motor_resource,
                 )
             _LOGGER.debug(
@@ -522,12 +516,6 @@ class AdjustableBedCover(AdjustableBedEntity, CoverEntity):
                 self.entity_description.key,
                 direction,
             )
-        except Exception:
-            _LOGGER.exception(
-                "Failed to move cover %s",
-                self.entity_description.key,
-            )
-            raise
         finally:
             # Only clear state if no newer movement has started
             if self._movement_generation == current_generation:
@@ -547,24 +535,18 @@ class AdjustableBedCover(AdjustableBedEntity, CoverEntity):
         # that started after this stop was called (rapid stop→move sequence)
         stop_generation = self._movement_generation
 
+        # A Stop never waits behind another motor's command (#516). A motor
+        # streaming with others ends alone, its cleanup in the streamer;
+        # otherwise the STOP pre-empts the motion holding the writer, on a
+        # standalone bed or one side of a pair. A side-wide declared Stop ends
+        # every motor's work, the stream too.
+        motor_scoped = self._stop_scope == "motor"
         try:
-            _LOGGER.debug("Sending stop command for %s", self.entity_description.key)
-            # cancel_running=True (the default) cancels the in-flight movement
-            # first, then sends this motor's specific stop. For a paired side this
-            # routes through the proxy → the parent preempts the in-flight pulse
-            # (round-16 cancel) before the lock, so the stop is both immediate and
-            # motor-specific (not a side-wide stop_all).
-            await self._coordinator.async_execute_controller_command(
+            await self._coordinator.async_stop_motor(
                 self.entity_description.stop_fn,
-                resource=self._motor_resource,
+                self._motor_resource if motor_scoped else "motor:*",
+                stream_member=motor_scoped,
             )
-            _LOGGER.debug("Stop command sent for %s", self.entity_description.key)
-        except Exception:
-            _LOGGER.exception(
-                "Failed to stop cover %s",
-                self.entity_description.key,
-            )
-            raise
         finally:
             # Only clear state if no newer movement has started since stop was called
             if self._movement_generation == stop_generation:

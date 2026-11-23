@@ -17,18 +17,18 @@ from typing import TYPE_CHECKING, Any, Final
 
 from bleak.backends.characteristic import BleakGATTCharacteristic
 from bleak.exc import BleakError
-from homeassistant.exceptions import HomeAssistantError
 
 from ..const import (
     TIMOTION_AHF_NOTIFY_CHAR_UUID,
     TIMOTION_AHF_SERVICE_UUID,
     TIMOTION_AHF_WRITE_CHAR_UUID,
 )
-from .base import (
-    BedController,
-    ControllerButtonSpec,
-    ControllerStateSensorSpec,
-)
+from ..controller_state import StateKey
+from ..errors import failed
+from ..execution import ExecutionCapabilities
+from .base import BedController
+from .catalog_buttons import Kind, catalog_button
+from .entity_specs import ControllerButtonSpec, ControllerStateSensorSpec
 
 if TYPE_CHECKING:
     from bleak import BleakClient
@@ -42,23 +42,10 @@ _INITIAL_CONTROL_DELAY_SECONDS: Final = 0.1
 _CONTROL_REPEAT_DELAY_SECONDS: Final = 0.1
 
 
-class TiMOTIONAhfCommands:
-    """AHF app-action bitmasks, grouped by packet byte."""
-
-    CONTROL_1_UP = 0x01
-    CONTROL_1_DOWN = 0x02
-    CONTROL_2_UP = 0x04
-    CONTROL_2_DOWN = 0x08
-    CONTROL_3_UP = 0x10
-    CONTROL_3_DOWN = 0x20
-
-    CONTROL_4_UP = 0x01
-    CONTROL_4_DOWN = 0x02
-    CONTROL_5_UP = 0x04
-    CONTROL_5_DOWN = 0x08
-    NIGHT = 0x10
-    LIGHT = 0x20
-    CHAIR = 0x40
+STATUS: Final = StateKey[str]("timotion_ahf_status")
+STATUS_ERROR: Final = StateKey[str | None]("timotion_ahf_status_error")
+LOCK_MASK: Final = StateKey[int | None]("timotion_ahf_lock_mask")
+LAMP_DISPLAY_CODE: Final = StateKey[int | None]("timotion_ahf_lamp_display_code")
 
 
 @dataclass(frozen=True, slots=True)
@@ -74,30 +61,32 @@ class _ControlAction:
 
 
 _CONTROL_ACTIONS: Final = (
-    _ControlAction("control_1_up", "Control 1 Up", group1=0x01, lock_bit=0, icon="mdi:arrow-up"),
+    _ControlAction("control_1_up", "Control 1 up", group1=0x01, lock_bit=0, icon="mdi:arrow-up"),
     _ControlAction(
-        "control_1_down", "Control 1 Down", group1=0x02, lock_bit=0, icon="mdi:arrow-down"
+        "control_1_down", "Control 1 down", group1=0x02, lock_bit=0, icon="mdi:arrow-down"
     ),
-    _ControlAction("control_2_up", "Control 2 Up", group1=0x04, lock_bit=1, icon="mdi:arrow-up"),
+    _ControlAction("control_2_up", "Control 2 up", group1=0x04, lock_bit=1, icon="mdi:arrow-up"),
     _ControlAction(
-        "control_2_down", "Control 2 Down", group1=0x08, lock_bit=1, icon="mdi:arrow-down"
+        "control_2_down", "Control 2 down", group1=0x08, lock_bit=1, icon="mdi:arrow-down"
     ),
-    _ControlAction("control_3_up", "Control 3 Up", group1=0x10, lock_bit=2, icon="mdi:arrow-up"),
+    _ControlAction("control_3_up", "Control 3 up", group1=0x10, lock_bit=2, icon="mdi:arrow-up"),
     _ControlAction(
-        "control_3_down", "Control 3 Down", group1=0x20, lock_bit=2, icon="mdi:arrow-down"
+        "control_3_down", "Control 3 down", group1=0x20, lock_bit=2, icon="mdi:arrow-down"
     ),
-    _ControlAction("control_4_up", "Control 4 Up", group2=0x01, lock_bit=3, icon="mdi:arrow-up"),
+    _ControlAction("control_4_up", "Control 4 up", group2=0x01, lock_bit=3, icon="mdi:arrow-up"),
     _ControlAction(
-        "control_4_down", "Control 4 Down", group2=0x02, lock_bit=3, icon="mdi:arrow-down"
+        "control_4_down", "Control 4 down", group2=0x02, lock_bit=3, icon="mdi:arrow-down"
     ),
-    _ControlAction("control_5_up", "Control 5 Up", group2=0x04, lock_bit=4, icon="mdi:arrow-up"),
+    _ControlAction("control_5_up", "Control 5 up", group2=0x04, lock_bit=4, icon="mdi:arrow-up"),
     _ControlAction(
-        "control_5_down", "Control 5 Down", group2=0x08, lock_bit=4, icon="mdi:arrow-down"
+        "control_5_down", "Control 5 down", group2=0x08, lock_bit=4, icon="mdi:arrow-down"
     ),
     _ControlAction("night", "Night", group2=0x10, lock_bit=5, icon="mdi:weather-night"),
     _ControlAction("light", "Light", group2=0x20, icon="mdi:lightbulb-outline"),
     _ControlAction("chair", "Chair", group2=0x40, lock_bit=6, icon="mdi:chair-rolling"),
 )
+# The legacy cover each app control drives (#615, #669, #670).
+_COVER_CONTROLS: Final = {"back": 1, "legs": 2, "head": 3, "feet": 4, "pillow": 5}
 _CONTROL_ACTION_BY_KEY: Final = {action.key: action for action in _CONTROL_ACTIONS}
 _BUTTON_PREFIX: Final = "timotion_ahf_"
 _STATUS_NOT_READY_MESSAGE: Final = (
@@ -132,6 +121,11 @@ class TiMOTIONAhfController(BedController):
         self._status_error: str | None = None
         self._feature_mask: int | None = None
         self._lamp_display_code: int | None = None
+
+    @property
+    def execution(self) -> ExecutionCapabilities:
+        """The app refreshes held controls every 100 ms, then three neutral frames (#483)."""
+        return ExecutionCapabilities(hold="stream")
 
     @property
     def control_characteristic_uuid(self) -> str:
@@ -181,15 +175,30 @@ class TiMOTIONAhfController(BedController):
 
     @property
     def controller_button_specs(self) -> tuple[ControllerButtonSpec, ...]:
-        """Expose the app's thirteen literal controls as stable named actions."""
+        """Expose the app's literal controls; those a cover or the light already sends start off."""
+        covered = {
+            f"control_{_COVER_CONTROLS[spec.key]}_{direction}"
+            for spec in self.motor_control_specs
+            if spec.key in _COVER_CONTROLS
+            for direction in ("up", "down")
+        }
         return tuple(
-            ControllerButtonSpec(
-                key=f"{_BUTTON_PREFIX}{action.key}",
-                name=action.label,
-                press_fn=_press_action(action.key),
-                icon=action.icon,
-            )
+            spec
             for action in _CONTROL_ACTIONS
+            if (
+                spec := catalog_button(
+                    f"{_BUTTON_PREFIX}{action.key}",
+                    action.label,
+                    _press_action(action.key),
+                    # Night and Chair recall positions the app names.
+                    kind=Kind.PRESET if action.key in ("night", "chair") else
+                    Kind.LIGHT if action.key == "light" else Kind.MOTOR,
+                    icon=action.icon,
+                    # The light toggle and assumed light send the Light action.
+                    enabled=action.key not in covered and action.key != "light",
+                )
+            )
+            is not None
         )
 
     @property
@@ -199,21 +208,24 @@ class TiMOTIONAhfController(BedController):
             ControllerStateSensorSpec(
                 key="timotion_ahf_status",
                 translation_key="timotion_ahf_status",
-                state_key="timotion_ahf_status",
+                state_key=STATUS,
                 icon="mdi:bluetooth",
-                attribute_keys=("timotion_ahf_status_error",),
+                attribute_keys=(STATUS_ERROR,),
+                entity_registry_enabled_default=False,
             ),
             ControllerStateSensorSpec(
                 key="timotion_ahf_lock_mask",
                 translation_key="timotion_ahf_lock_mask",
-                state_key="timotion_ahf_lock_mask",
+                state_key=LOCK_MASK,
                 icon="mdi:lock-outline",
+                entity_registry_enabled_default=False,
             ),
             ControllerStateSensorSpec(
                 key="timotion_ahf_lamp_display_code",
                 translation_key="timotion_ahf_lamp_display_code",
-                state_key="timotion_ahf_lamp_display_code",
+                state_key=LAMP_DISPLAY_CODE,
                 icon="mdi:lightbulb-outline",
+                entity_registry_enabled_default=False,
             ),
         )
 
@@ -233,7 +245,7 @@ class TiMOTIONAhfController(BedController):
     def validate_hold_control(self, control: str, duration_ms: int) -> None:
         """Preflight AHF status and lock state before a bounded held action."""
         if duration_ms <= 0:
-            raise ValueError("TiMOTION AHF hold duration must be greater than zero")
+            raise ValueError("Choose a duration longer than zero")
         action = _CONTROL_ACTION_BY_KEY.get(control)
         if action is None:
             raise ValueError(f"Unsupported TiMOTION AHF held control: {control}")
@@ -366,6 +378,13 @@ class TiMOTIONAhfController(BedController):
         finally:
             await self._send_stop()
 
+    def motor_pulse_settings(self) -> tuple[int, int]:
+        """A renewable hold refreshes at the app's interval; finite pulses keep the entry's."""
+        refresh = round(_CONTROL_REPEAT_DELAY_SECONDS * 1000)
+        if (count := self.leased_hold_refreshes(refresh)) is not None:
+            return count, refresh
+        return super().motor_pulse_settings()
+
     def _monotonic(self) -> float:
         """Return the event-loop clock used to bound a held action."""
         return asyncio.get_running_loop().time()
@@ -381,8 +400,7 @@ class TiMOTIONAhfController(BedController):
         if action.lock_bit is not None and self._feature_mask is not None:
             if self._feature_mask & (1 << action.lock_bit):
                 raise ValueError(
-                    f"TiMOTION AHF {action.label} is disabled by status lock bit "
-                    f"{action.lock_bit} (mask 0x{self._feature_mask:02X})"
+                    f"{action.label} is locked on the bed. Unlock it, then try again"
                 )
 
     def _action_enabled(self, action: _ControlAction) -> bool:
@@ -430,12 +448,10 @@ class TiMOTIONAhfController(BedController):
         self._notify_error = None
         self._status_event.set()
         self.forward_controller_state_updates(
-            {
-                "timotion_ahf_status": self._status_state,
-                "timotion_ahf_status_error": None,
-                "timotion_ahf_lock_mask": self._feature_mask,
-                "timotion_ahf_lamp_display_code": self._lamp_display_code,
-            }
+            STATUS(self._status_state),
+            STATUS_ERROR(None),
+            LOCK_MASK(self._feature_mask),
+            LAMP_DISPLAY_CODE(self._lamp_display_code),
         )
         _LOGGER.debug(
             "TiMOTION AHF status: lock_mask=0x%02X lamp_display_code=%d",
@@ -480,7 +496,7 @@ class TiMOTIONAhfController(BedController):
                 except TimeoutError:
                     self._notify_error = "Status notification subscription timed out"
                     raise
-                except Exception as err:  # noqa: BLE001 - read can still establish status
+                except Exception as err:
                     self._notify_error = f"Status notification subscription failed: {err}"
                     _LOGGER.warning("Failed to start TiMOTION AHF status notifications: %s", err)
 
@@ -498,7 +514,7 @@ class TiMOTIONAhfController(BedController):
             async def read_initial_status() -> None:
                 try:
                     initial_status = await client.read_gatt_char(TIMOTION_AHF_NOTIFY_CHAR_UUID)
-                except Exception as err:  # noqa: BLE001 - a later valid notification may succeed
+                except Exception as err:
                     self._read_error = f"Initial status read failed: {err}"
                     _LOGGER.debug("Failed to read initial TiMOTION AHF status: %s", err)
                 else:
@@ -577,12 +593,10 @@ class TiMOTIONAhfController(BedController):
         self._feature_mask = None
         self._lamp_display_code = None
         self.forward_controller_state_updates(
-            {
-                "timotion_ahf_status": self._status_state,
-                "timotion_ahf_status_error": None,
-                "timotion_ahf_lock_mask": None,
-                "timotion_ahf_lamp_display_code": None,
-            }
+            STATUS(self._status_state),
+            STATUS_ERROR(None),
+            LOCK_MASK(None),
+            LAMP_DISPLAY_CODE(None),
         )
 
     def _set_status_timeout(self, message: str) -> None:
@@ -590,12 +604,7 @@ class TiMOTIONAhfController(BedController):
         self._status_ready = False
         self._status_state = "timed_out"
         self._status_error = message
-        self.forward_controller_state_updates(
-            {
-                "timotion_ahf_status": self._status_state,
-                "timotion_ahf_status_error": message,
-            }
-        )
+        self.forward_controller_state_updates(STATUS(self._status_state), STATUS_ERROR(message))
         _LOGGER.warning("%s", message)
 
     def _queue_preempting_stop(self) -> None:
@@ -623,12 +632,10 @@ class TiMOTIONAhfController(BedController):
         self._write_mode_initialized = False
         self._write_mode_error = None
         self.forward_controller_state_updates(
-            {
-                "timotion_ahf_status": self._status_state,
-                "timotion_ahf_status_error": None,
-                "timotion_ahf_lock_mask": None,
-                "timotion_ahf_lamp_display_code": None,
-            }
+            STATUS(self._status_state),
+            STATUS_ERROR(None),
+            LOCK_MASK(None),
+            LAMP_DISPLAY_CODE(None),
         )
 
     async def run_action(self, key: str) -> None:
@@ -636,7 +643,7 @@ class TiMOTIONAhfController(BedController):
         try:
             await self._send_action(_CONTROL_ACTION_BY_KEY[key])
         except ValueError as err:
-            raise HomeAssistantError(str(err)) from err
+            raise failed("action_rejected", reason=err) from err
 
     # Covers created by earlier releases keep their entity IDs (#615, #669,
     # #670). Their axis names are legacy labels for app Controls 1-5.
@@ -708,7 +715,7 @@ def _press_action(key: str) -> Callable[[BedController], Coroutine[Any, Any, Non
 
     async def press(controller: BedController) -> None:
         if not isinstance(controller, TiMOTIONAhfController):
-            raise HomeAssistantError("The active controller is not TiMOTION AHF")
+            raise failed("bed_changed")
         await controller.run_action(key)
 
     return press

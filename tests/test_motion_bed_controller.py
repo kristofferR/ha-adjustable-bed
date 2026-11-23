@@ -11,16 +11,17 @@ from unittest.mock import AsyncMock, MagicMock
 import pytest
 
 from custom_components.adjustable_bed.beds.base import BedController
-from custom_components.adjustable_bed.beds.motion_bed import (
+from custom_components.adjustable_bed.beds.motion_bed.actions import ACTION_BY_KEY
+from custom_components.adjustable_bed.beds.motion_bed.controller import (
     CHARACTERISTIC,
     STOP,
     MotionBedController,
+    button_actions_for,
 )
-from custom_components.adjustable_bed.motion_bed_actions import ACTION_BY_KEY
-from custom_components.adjustable_bed.motion_bed_models import select_motion_bed
-from custom_components.adjustable_bed.motion_bed_protocol import SOURCE_COMMANDS
-from custom_components.adjustable_bed.motion_bed_requests import MotionBedWrite
-from custom_components.adjustable_bed.motion_bed_state import MotionBedFollowup
+from custom_components.adjustable_bed.beds.motion_bed.models import select_motion_bed
+from custom_components.adjustable_bed.beds.motion_bed.protocol import SOURCE_COMMANDS
+from custom_components.adjustable_bed.beds.motion_bed.requests import MotionBedWrite
+from custom_components.adjustable_bed.beds.motion_bed.state import MotionBedFollowup
 
 
 def characteristic(handle: int, *, properties: tuple[str, ...] = ("write", "notify")) -> MagicMock:
@@ -365,7 +366,7 @@ async def test_present_hub_thermal_starts_owned_polling_once(monkeypatch) -> Non
     rig = rig_for("TL-Q")
     await rig.controller.async_discover_capabilities()
     rig.controller._spawn = MagicMock()
-    monkeypatch.setattr("custom_components.adjustable_bed.beds.motion_bed.asyncio.sleep", AsyncMock())
+    monkeypatch.setattr("custom_components.adjustable_bed.beds.motion_bed.controller.asyncio.sleep", AsyncMock())
     status = bytes.fromhex("FFFFFFFF01002714000000000000000C")
     rig.controller._handle_notification(status)
     await rig.controller._start_present_modules()
@@ -403,7 +404,7 @@ async def test_thermal_poll_intervals_and_disconnect_cancellation(
         else:
             await real_sleep(0)
 
-    monkeypatch.setattr("custom_components.adjustable_bed.beds.motion_bed.asyncio.sleep", sleep)
+    monkeypatch.setattr("custom_components.adjustable_bed.beds.motion_bed.controller.asyncio.sleep", sleep)
     rig.controller._spawn(rig.controller._thermal_poll)
     await real_sleep(0)
     assert delays == [2]
@@ -444,7 +445,9 @@ async def test_nullable_boolean_sensor_platform_remains_stable() -> None:
     assert {
         spec.key for spec in rig.controller.controller_state_binary_sensor_specs
     } == before_binary
-    assert "motion_bed_motor_light_enabled" in before_binary
+    assert "motion_bed_thermal_timer_enabled" in before_binary
+    # The module light is a switch with the reported state, not a binary sensor.
+    assert "motion_bed_motor_light_enabled" not in before_binary
     await rig.controller.stop_notify()
 
 
@@ -476,7 +479,7 @@ async def test_followup_packet_and_delay_match_source(
     rig = rig_for()
     await rig.controller.async_discover_capabilities()
     sleep = AsyncMock()
-    monkeypatch.setattr("custom_components.adjustable_bed.beds.motion_bed.asyncio.sleep", sleep)
+    monkeypatch.setattr("custom_components.adjustable_bed.beds.motion_bed.controller.asyncio.sleep", sleep)
     await rig.controller._followup(effect)
     sleep.assert_awaited_once_with(effect.delay_ms / 1000)
     assert rig.writes == [SOURCE_COMMANDS[source]]
@@ -512,7 +515,7 @@ async def test_sleep_adjust_release_stops_then_queries_after_100ms(
     rig = rig_for()
     await rig.controller.async_discover_capabilities()
     sleep = AsyncMock()
-    monkeypatch.setattr("custom_components.adjustable_bed.beds.motion_bed.asyncio.sleep", sleep)
+    monkeypatch.setattr("custom_components.adjustable_bed.beds.motion_bed.controller.asyncio.sleep", sleep)
     await rig.controller.async_execute_motion_bed_action(
         "sleep_adjust_activity_adjust_back_up", duration=0.001
     )
@@ -534,7 +537,7 @@ async def test_new_day_report_request_resets_prior_aggregation_and_retains_other
     rig.controller._activate("day_report")
     rig.controller._handle_notification(bytes.fromhex("FFFFFFFF05000107"))
     rig.controller._handle_notification(bytes.fromhex("FFFFFFFF02000414010A1403010203040506"))
-    assert rig.controller.protocol_diagnostics["day_received_segments"] == "[1]"
+    assert rig.controller._state.to_updates()["day_received_segments"] == "[1]"
     request = MotionBedWrite(
         "sleep_report",
         (bytes.fromhex("FFFFFFFF0200130B001C04"),),
@@ -543,9 +546,9 @@ async def test_new_day_report_request_resets_prior_aggregation_and_retains_other
         historical_day=True,
     )
     await rig.controller.async_execute_motion_bed_write(request)
-    assert rig.controller.protocol_diagnostics["day_received_segments"] == "[]"
-    assert rig.controller.protocol_diagnostics["day_slots"] == str([0] * 24)
-    assert rig.controller.protocol_diagnostics["day_total"] is None
+    assert rig.controller._state.to_updates()["day_received_segments"] == "[]"
+    assert rig.controller._state.to_updates()["day_slots"] == str([0] * 24)
+    assert rig.controller._state.to_updates()["day_total"] is None
     assert rig.controller.protocol_diagnostics["brightness"] == 7
     assert rig.controller._route.historical_day and rig.controller._route.day_window_offset == 2
 
@@ -559,7 +562,7 @@ async def test_persistent_write_confirmation_and_profile_validation_precede_traf
         await rig.controller.async_execute_motion_bed_write(request)
     rig.client.write_gatt_char.assert_not_awaited()
     unsupported = MotionBedWrite("thermal_schedule", (STOP,), "thermal_schedule")
-    with pytest.raises(ValueError, match="unavailable"):
+    with pytest.raises(ValueError, match="does not offer"):
         await rig.controller.async_execute_motion_bed_write(unsupported)
     rig.client.write_gatt_char.assert_not_awaited()
 
@@ -604,9 +607,9 @@ async def test_home_startup_preserves_source_clock_sync_and_fragment_event_delay
     delays = []
     async def sleep(delay):
         delays.append(delay)
-    monkeypatch.setattr("custom_components.adjustable_bed.beds.motion_bed.asyncio.sleep", sleep)
+    monkeypatch.setattr("custom_components.adjustable_bed.beds.motion_bed.controller.asyncio.sleep", sleep)
     clock = bytes.fromhex("FFFFFFFF010203")
-    monkeypatch.setattr("custom_components.adjustable_bed.beds.motion_bed.build_clock", lambda timestamp: clock)
+    monkeypatch.setattr("custom_components.adjustable_bed.beds.motion_bed.controller.build_clock", lambda timestamp: clock)
     await rig.controller.async_discover_capabilities()
     await rig.controller.start_notify()
     assert rig.writes[:3] == [SOURCE_COMMANDS["HomeActivity:321"], clock, SOURCE_COMMANDS["HomeActivity:311"]]
@@ -626,7 +629,7 @@ async def test_module_removed_during_startup_delay_never_receives_following_cloc
         count += 1
         if count == 2:
             rig.controller._state = replace(rig.controller._state, thermal_module_present=False)
-    monkeypatch.setattr("custom_components.adjustable_bed.beds.motion_bed.asyncio.sleep", sleep)
+    monkeypatch.setattr("custom_components.adjustable_bed.beds.motion_bed.controller.asyncio.sleep", sleep)
     await rig.controller._module_startup("thermal")
     assert rig.writes == [SOURCE_COMMANDS["LengnuanFragment:183"]]
     await rig.controller.stop_notify()
@@ -642,7 +645,7 @@ async def test_calibration_debug_has_ten_two_second_samples_or_cancels_before_fi
         intervals.append(timeout)
         if not cancelled:
             raise TimeoutError
-    monkeypatch.setattr("custom_components.adjustable_bed.beds.motion_bed.asyncio.wait_for", wait_for)
+    monkeypatch.setattr("custom_components.adjustable_bed.beds.motion_bed.controller.asyncio.wait_for", wait_for)
     key = "sleep_data_entry_activity_capture_debug"
     await rig.controller.async_execute_motion_bed_action(key)
     selected = ACTION_BY_KEY[key].select(rig.controller._state, False)
@@ -654,7 +657,7 @@ async def test_calibration_debug_has_ten_two_second_samples_or_cancels_before_fi
 
 @pytest.mark.parametrize("cancelled", [False, True])
 async def test_pressure_live_quiet_delay_is_bound_to_request_and_cancelled_before_io(monkeypatch, cancelled):
-    from custom_components.adjustable_bed.motion_bed_protocol import build_pressure_live
+    from custom_components.adjustable_bed.beds.motion_bed.protocol import build_pressure_live
     rig = rig_for("TL-A")
     await rig.controller.async_discover_capabilities()
     intervals = []
@@ -663,10 +666,100 @@ async def test_pressure_live_quiet_delay_is_bound_to_request_and_cancelled_befor
         intervals.append(timeout)
         if not cancelled:
             raise TimeoutError
-    monkeypatch.setattr("custom_components.adjustable_bed.beds.motion_bed.asyncio.wait_for", wait_for)
+    monkeypatch.setattr("custom_components.adjustable_bed.beds.motion_bed.controller.asyncio.wait_for", wait_for)
     frame = build_pressure_live(11,9)
     request = MotionBedWrite("pressure", (frame,), "pressure_settings", initial_delay_ms=2500)
     await rig.controller.async_execute_motion_bed_write(request)
     assert intervals == [2.5]
     assert rig.writes == ([] if cancelled else [frame])
+    await rig.controller.stop_notify()
+
+
+async def _same_frames(rig: Rig, new: Callable[[], Awaitable[None]], old_key: str) -> list[bytes]:
+    """Return the frames ``new`` writes, after checking the old button wrote the same."""
+    ctrl = rig.controller
+    state = ctrl._state
+    rig.client.write_gatt_char.reset_mock()
+    await new()
+    sent = rig.writes
+    ctrl._state = state
+    rig.client.write_gatt_char.reset_mock()
+    await ctrl.async_execute_motion_bed_action(button_actions_for(ctrl._active_owners())[old_key].key)
+    assert rig.writes == sent, old_key
+    return sent
+
+
+@pytest.mark.asyncio
+async def test_value_buttons_become_one_control_sending_the_same_frames() -> None:
+    rig = rig_for()
+    ctrl = rig.controller
+    await ctrl.async_discover_capabilities()
+    buttons = {spec.key for spec in ctrl.controller_button_specs}
+    for replaced in ("motion_bed_10time", "motion_bed_brightness_5", "motion_bed_tv_8xiaoshi"):
+        assert replaced not in buttons
+    assert ctrl.auto_enable_massage and ctrl.massage_timer_can_turn_off
+    assert ctrl.massage_timer_options == [10, 20, 30]
+    assert ctrl.light_timer_options == ["10 min", "8 hours", "10 hours"]
+    (brightness,) = ctrl.controller_number_specs
+    assert (brightness.native_min_value, brightness.native_max_value) == (0, 10)
+    assert await _same_frames(rig, lambda: ctrl.set_massage_timer(20), "motion_bed_20time")
+    await _same_frames(rig, lambda: brightness.set_fn(ctrl, 7), "motion_bed_brightness_7")
+    await _same_frames(rig, lambda: ctrl.set_light_timer("8 hours"), "motion_bed_tv_8xiaoshi")
+    # A timer set here shows without a report, as the home screen may send none.
+    assert ctrl._shown_massage_timer == 20
+    # Without a report, Off presses the chosen timer's key as the app's screen shows it.
+    rig.client.write_gatt_char.reset_mock()
+    await ctrl.set_massage_timer(0)
+    home_off = list(rig.writes)
+    assert ctrl._shown_massage_timer is None
+    # Off presses the reported timer's key, which the app turns into its deselect frame.
+    ctrl._state = replace(ctrl._state, massage_timer=20)
+    ctrl._publish()
+    off = await _same_frames(rig, lambda: ctrl.set_massage_timer(0), "motion_bed_20time")
+    assert off == home_off
+    assert ctrl._shown_massage_timer is None
+    assert off != await _same_frames(rig, lambda: ctrl.set_massage_timer(10), "motion_bed_10time")
+    # Choosing the reported, shown timer keeps it instead of toggling it off.
+    ctrl._state = replace(ctrl._state, massage_timer=10)
+    ctrl._publish()
+    rig.client.write_gatt_char.reset_mock()
+    await ctrl.set_massage_timer(10)
+    assert rig.writes == []
+    # A reported timer cleared here cannot be chosen again until the bed reports.
+    await ctrl.set_massage_timer(0)
+    with pytest.raises(ValueError, match="not reported"):
+        await ctrl.set_massage_timer(10)
+
+
+@pytest.mark.asyncio
+async def test_toggles_and_module_pairs_are_switches_with_reported_state() -> None:
+    rig = rig_for()
+    ctrl = rig.controller
+    await ctrl.async_discover_capabilities()
+    switches = {spec.key: spec for spec in ctrl.controller_switch_specs}
+    assert {"motion_bed_night_light_enabled", "motion_bed_sleep_enabled"} <= switches.keys()
+    buttons = {spec.key for spec in ctrl.controller_button_specs}
+    assert not {"motion_bed_night_light", "motion_bed_sleepmian"} & buttons
+    night = switches["motion_bed_night_light_enabled"]
+    with pytest.raises(ValueError):
+        await night.set_fn(ctrl, False)  # Unknown: the toggle would turn it on.
+    ctrl._state = replace(ctrl._state, night_light_enabled=False)
+    await _same_frames(rig, lambda: night.set_fn(ctrl, True), "motion_bed_night_light")
+    rig.client.write_gatt_char.reset_mock()
+    await night.set_fn(ctrl, False)
+    assert rig.writes == []
+
+    hub = rig_for("TL-Q")
+    await hub.controller.async_discover_capabilities()
+    assert not hub.controller.controller_switch_specs
+    hub.controller._handle_notification(bytes.fromhex("FFFFFFFF01002714000A000000000000"))
+    module = {spec.key: spec for spec in hub.controller.controller_switch_specs}
+    assert {"motion_bed_motor_light_enabled", "motion_bed_motor_massage_enabled"} <= module.keys()
+    light = module["motion_bed_motor_light_enabled"]
+    await _same_frames(hub, lambda: light.set_fn(hub.controller, True), "motion_bed_light_enabled_on")
+    await _same_frames(hub, lambda: light.set_fn(hub.controller, False), "motion_bed_light_enabled_off")
+    assert ("switch", "controller_switch_motion_bed_motor_light_enabled") in (
+        hub.controller.retained_entity_keys
+    )
+    await hub.controller.stop_notify()
     await rig.controller.stop_notify()

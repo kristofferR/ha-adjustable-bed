@@ -1,4 +1,4 @@
-"""Accepted row126 catalog vectors, target ownership and public surface."""
+"""Hush Base catalog vectors, target ownership and public surface."""
 
 from __future__ import annotations
 
@@ -9,15 +9,16 @@ from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
-from custom_components.adjustable_bed.beds.hush_base import HushBaseController
-from custom_components.adjustable_bed.beds.hush_sleep import (
+from custom_components.adjustable_bed.beds.casper_base.protocol import Request
+from custom_components.adjustable_bed.beds.hush_base.catalog import ACTIONS, INDICES, PRODUCTS
+from custom_components.adjustable_bed.beds.hush_base.controller import HushBaseController
+from custom_components.adjustable_bed.beds.hush_sleep.controller import (
     HushRemoteController,
     HushSleepController,
 )
-from custom_components.adjustable_bed.casper_base_protocol import Request, control
-from custom_components.adjustable_bed.const import HUSH_BASE_VARIANTS
-from custom_components.adjustable_bed.hush_catalog import ACTIONS, INDICES, PRODUCTS
+from custom_components.adjustable_bed.codec.richmat import function
 from custom_components.adjustable_bed.pairing import supports_single_address_pairing
+from custom_components.adjustable_bed.profiles.hush import HUSH_BASE_VARIANTS
 from custom_components.adjustable_bed.validators import get_variants_for_bed_type
 from tests.test_casper_base import frames, make
 
@@ -50,7 +51,11 @@ async def test_all_exact_ordered_memberships_and_capabilities(product):
     assert list(actual[6:]) == product["flags"]
     for group, descriptors in zip(actual[1:6], product["groups"], strict=True):
         assert [list(ACTIONS[i]) for i in group] == [FIXTURE["descriptors"][d] for d in descriptors]
-    assert {s.translation_key for s in controller.controller_button_specs} == {"hush_base_action"}
+    # Actions take the shared catalog shapes, not a per-bed key.
+    assert not any(
+        (s.translation_key or "").startswith(("hush", "casper"))
+        for s in controller.controller_button_specs
+    )
     assert supports_single_address_pairing("hush_base", key) == product["flags"][-1]
     assert not controller.supports_single_address_pairing
     assert all("None" not in s.key for s in controller.controller_button_specs)
@@ -80,7 +85,7 @@ async def test_transport_side_stop_and_initialization(transport, side):
     finally:
         controller._command_side.reset(token)
     expected_sides = (0, 1) if side == "both" else (1,) if side == "right" else (0,)
-    assert frames(c) == [control(0x6E, single=transport == 0, side=s).hex() for s in expected_sides]
+    assert frames(c) == [function(0x6E, s, single=transport == 0).hex() for s in expected_sides]
 
 
 async def test_profile_is_explicit_and_light_policy_is_hush_specific():
@@ -170,3 +175,10 @@ async def test_dedicated_music_descriptors_and_phone_only_exclusion():
     for key in PRODUCTS:
         other, _ = hush(key)
         assert "PhoneLight" not in other.actions
+
+
+@pytest.mark.parametrize("model", PRODUCTS)
+async def test_massage_timer_actions_are_one_select(model):
+    from tests.test_casper_base import assert_timer_select_sends_the_timer_actions
+
+    await assert_timer_select_sends_the_timer_actions(lambda: hush(model))

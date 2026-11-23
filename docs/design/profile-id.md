@@ -1,0 +1,205 @@
+# Profile ids and the schema 5 migration
+
+Issue [#778](https://github.com/kristofferR/ha-adjustable-bed/issues/778). Code:
+[`profile_id.py`](../../custom_components/adjustable_bed/profile_id.py).
+Tests: `tests/test_profile_id.py`, `tests/test_profile_id_aliases.py`.
+
+## Why
+
+A config entry identified its bed through several interacting fields:
+`bed_type`, `protocol_variant` and five app keys (`jiecang_app_profile`,
+`leggett_app_profile`, `logicdata_app_profile`, `malouf_app_profile`,
+`vibradorm_app_profile`). Each consumer resolved that combination on its own.
+Schema 5 stores the result once, as a **profile id**, and the runtime builds from it.
+
+## The profile id
+
+A profile id names the route an entry runs:
+
+```text
+<bed_type>[:<protocol_variant>][@<app_profile>]
+```
+
+- The variant appears when one is stored and it is not `auto`. A missing variant
+  and `auto` are the same route, because the coordinator has always passed `auto`
+  for both.
+- The app profile appears for bed types that pick one with an app key, read
+  from that key.
+- `%`, `:` and `@` inside a saved value are escaped as `%25`, `%3A` and `%40`, so
+  every id round-trips. Other characters, including spaces, stay as saved.
+
+Examples: `linak`, `keeson:sino`, `reverie:Skye 500`, `jiecang_app@dreamask`,
+`leggett_okin@prodigy2`.
+
+The id space is every codec family profile route plus every standalone
+controller: each bed type, each listed variant and each app key choice.
+A route can still auto-detect inside its family at connect (for example
+`keeson` resolves its variant from the advertisement); the id names the
+configured route, not the result of that detection.
+
+### API
+
+The surface for later work, such as setup questions per profile
+([#779](https://github.com/kristofferR/ha-adjustable-bed/issues/779)):
+
+| Name | Purpose |
+|------|---------|
+| `resolve_profile_id(data)` | Saved fields to profile id |
+| `profile_route(profile_id)` | Profile id to `ProfileRoute(bed_type, variant, app_profile)` |
+| `entry_profile_id(data)` | The stored id, or the derived one for data without it |
+| `with_profile_ids(data, options)` | Entry data with the entry's and each paired side's id derived |
+| `APP_PROFILE_KEYS` | The app key each bed type reads |
+| `PROFILE_RESOLVER_VERSION` | Bumped whenever the resolver maps any fields to a different id |
+
+## Saved fields stay
+
+The step to schema 5.1 leaves the original `bed_type`, `protocol_variant` and app
+keys in the entry unchanged and stores the profile id beside them. Later steps
+rename a saved route only where two bed types ran the same thing; see
+[Aliases](#aliases).
+
+## Storage
+
+| Where | Key |
+|-------|-----|
+| Every entry | `profile_id` |
+| Each paired side descriptor | `profile_id`, derived from the side's effective config |
+| The migrated entry | `profile_migration` |
+
+A side never inherits the parent's id: both keys are excluded from child
+inheritance in `pairing.py`. A side's effective config includes parent options,
+so an option that changes the side's variant changes its id.
+
+## Migration (4.x to 5.1)
+
+`async_migrate_entry` runs the earlier steps unchanged, then stamps version 5,
+minor version 1, before the [5.2](#migration-51-to-52) and
+[5.3](#migration-52-to-53) steps. The step derives
+the ids and writes the record:
+
+```json
+{
+  "from_version": 4,
+  "from_minor_version": 3,
+  "resolver_version": 1,
+  "profile_id": "keeson:sino",
+  "fields": {"bed_type": "keeson", "protocol_variant": "sino"},
+  "sides": {"left": {"profile_id": "...", "fields": {}}}
+}
+```
+
+`fields` holds the saved values the ids were derived from; `sides` is present for
+paired entries. The migration changes no other data, no options and no entry,
+device or entity identity, so actions and automations keep their targets. The
+v4 minor steps now run only for version 4 entries.
+
+Schema 5 entries do not load on 4.x, because 4.x rejects versions above 4.
+Restoring a Home Assistant backup is the only rollback; there is no downgrade path.
+
+An unpaired side is recreated at the pair's schema, so it no longer re-runs
+the 4.x minor steps: its saved fields were already migrated with the pair, and
+the one-time app profile review is not raised for it again.
+
+## Migration (5.1 to 5.2)
+
+The 5.2 step drops the keys no v5 code reads (`V5_2_OBSOLETE_KEYS` in
+`__init__.py`): `pair_schema_version`, written on every pair since 4.0.0 but
+never read, and a per-entry copy of `disable_discovery`, whose only reader is
+the integration-wide Store. It drops them from data, options, each paired
+side and each side's `origin_data` and `origin_options`. It adds `dropped_keys` to the record, by where each key
+was stored (`data`, `options`, `data.left`, `data.left.origin_options` and so
+on), and creates the record for an entry made at 5.1 that has none. Nothing to
+drop leaves the entry's data and options unchanged. No other key is touched.
+
+## Migration (5.2 to 5.3)
+
+The 5.3 step turns Massage off where the saved route's profile settles it off:
+a FurniMove handset without massage rows, `comfort_enhancements:mc3` and a
+`sleepys_elite_app` control box other than BOX25. It reads the profile through
+`profile_massage` in `setup_questions.py`, the same data setup uses, for entry
+data, each paired side's effective settings and each side's `origin_data`.
+These layouts own Massage per side from 5.3 on, so a pair with one of them
+first moves an old shared Massage option into the sides it reached and drops
+it; no side's effective value changes except the corrected ones. The step
+adds `massage_off` to the record by the same locations as `dropped_keys`, and
+deletes the massage buttons of each corrected entry or side from the entity
+registry, with the both-sides buttons of a corrected side. These are the only
+entities a schema 5 step removes: those buttons raised errors or did nothing
+([#787](https://github.com/kristofferR/ha-adjustable-bed/issues/787)).
+
+### Physical validation
+
+Deferred for the v5 beta ([#783](https://github.com/kristofferR/ha-adjustable-bed/issues/783)).
+Proven offline: `tests/test_profile_id.py` migrates every former route (each
+bed type, listed variant and app key choice) as a standalone entry, and
+examples of both pair modes. It checks that saved fields stay, that entry, device and entity identities
+stay, and that every wire snapshot scenario builds the same controller from its
+profile id. Needs real reports: upgrades of real 4.x installations, especially
+entries from early releases, entries with options saved over several versions
+and paired beds, that come up with the same controls and entity IDs. The
+`profile_migration` record in diagnostics and support bundles shows what each
+upgrade derived.
+
+## Runtime
+
+- **Setup** re-derives the stored ids before any coordinator is created, for
+  standalone and paired entries. Configure, repairs, pairing and unpairing edit
+  saved fields and then reload, so the stored ids never go stale.
+- **Runtime corrections** (a connect-time protocol correction) store the
+  corrected id together with the corrected bed type.
+- **The coordinator** reads `entry_profile_id(entry.data)` and takes its bed type
+  and variant from the id's route. Every bed-type branch and the controller
+  factory receive those, so the factory builds from the profile id.
+  `_SIMPLE_CONTROLLERS` stays reachable: each of its bed types is its own id.
+- **Diagnostics** show the running id and the migration record (`profile` for a
+  standalone entry, `profile_migration` and each side's `profile_id` for a pair).
+- **Support bundles** carry a `profile` section: the schema version, the stored
+  id, the migration record and, for a pair, each side's stored id with whether
+  the bundle's address reaches that side (both, for a single-address pair).
+
+`tests/test_profile_id.py` builds every wire snapshot scenario from its profile
+id and checks that the factory receives the same arguments and returns the same
+controller class.
+
+## Aliases
+
+Two routes may share one profile id only when they are proven equivalent beyond
+the wire: setup fields, capabilities, entities and Repairs, each with its own
+test. The wire snapshot proves bytes only, and shared names, UUIDs or grouping
+prove nothing ([#676](https://github.com/kristofferR/ha-adjustable-bed/issues/676)).
+
+No byte-identical group in the wire snapshot passes
+yet, so every route keeps its own id. `tests/test_profile_id_aliases.py` pins one
+non-wire difference per group:
+
+| Group | Kept separate because |
+|-------|-----------------------|
+| `comfort_motion`, `jiecang` | Repairs: the app profile review lists the LOGICDATA app for `comfort_motion` only. Device manufacturer: "Comfort Motion" against "Jiecang". |
+| `ergomotion`, `keeson:ergomotion` | Capabilities: only the bed type mints its controller and entities before the first connection. Device manufacturer: "Ergomotion" against "Keeson". |
+| `leggett_gen2`, `leggett_platt` | Setup offers only `leggett_gen2`. `leggett_platt` finds Gen2 or MlRM from the connected bed's services, so it builds no controller before connecting. |
+| `keeson:americanstar`, `avanti_bases`, `bedsense_bases`, `dynasty_bases`, `maxcoil_una` | Setup fields: Avanti Bases hides more generic fields. Each app has its own setup label. |
+| `richmat_best_mattress:model_bfrm`, `richmat_blvd_home:model_bfrm` | Two bed types built for different apps, with their own setup labels. |
+| `fsm_relax`, `fsm_relax:massage_light` | Already one id, `fsm_relax`: the light and massage flags are settings, not routes. |
+
+The four brand ids 4.x saved (`okimat`, `dewertokin`, `nectar`, `mattressfirm`)
+are merged: schema 5.8 saves them as `okin_uuid`, `okin_handle`, `okin_7byte`
+and `okin_nordic`. Their device manufacturer now reads "Okin", and the app
+review that listed apps for `dewertokin` follows the entry to `okin_handle`.
+Schema 5.10 saves `serta` and `keeson:serta` as `serta_mp_remote`, the app
+whose keys that route sent. Schema 5.11 saves `leggett_platt` with the `gen2`,
+`okin` or `mlrm` model as `leggett_gen2`, `leggett_okin` or `leggett_wilinke`.
+
+Merging a group later means: remove each difference or prove it immaterial with a
+test, map the alias to the canonical id in `resolve_profile_id`, bump
+`PROFILE_RESOLVER_VERSION`, and list the merge on the v5 breaking changes page
+([#783](https://github.com/kristofferR/ha-adjustable-bed/issues/783)). Setup then
+re-derives the stored id; the saved fields still stay.
+
+The explicit `adjustable_bed` app route (Adjustable bed 1.2.1) keeps its own identity from
+`adjustable_lumbar` and `okin_64bit`: the STAR-manufacturer route has distinct
+speech movement packets and bounded execution. Shared long-table literals do
+not make their reachable features or configuration equivalent.
+
+Rize Remedy II uses the explicit `rize_remedy_ii` profile id on standalone entries
+and each two-address paired side. Shared OKIN names and the CST frame do not
+merge its setup, capabilities or response parser with another app.

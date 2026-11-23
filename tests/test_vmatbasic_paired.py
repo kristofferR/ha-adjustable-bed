@@ -4,14 +4,14 @@ import asyncio
 from unittest.mock import AsyncMock, patch
 
 import pytest
-from pytest_homeassistant_custom_component.common import MockConfigEntry
+from pytest_homeassistant.common import MockConfigEntry
 
 from custom_components.adjustable_bed import const
-from custom_components.adjustable_bed.beds import vmatbasic_protocol as protocol
 from custom_components.adjustable_bed.paired_coordinator import (
     PairedBedCoordinator,
     PairedSideError,
 )
+from custom_components.adjustable_bed.profiles import vmatbasic as vmat_profiles
 from tests.test_vmatbasic import written
 from tests.test_vmatbasic_public import close, target
 
@@ -58,7 +58,7 @@ async def test_actual_pair_readiness_precedes_both_generic_controller_routes(has
         await close(right)
 
 
-@pytest.mark.parametrize("missing", protocol.REQUIRED_SERVICES)
+@pytest.mark.parametrize("missing", vmat_profiles.REQUIRED_SERVICES)
 async def test_actual_right_service_failure_prevents_every_left_movement(hass, missing):
     pair, left, right = await make_pair(hass)
     right.client.services = [
@@ -101,23 +101,23 @@ async def test_sequential_link_is_rejected_before_either_move(hass):
 async def test_queued_link_rejects_mode_change_before_sequential_admission(hass):
     pair, left, right = await make_pair(hass)
     entered = asyncio.Event()
-    acquire = pair._pair_group_lock.acquire
+    acquire = pair._lanes.group_lock.acquire
 
     async def mark_entry() -> bool:
         entered.set()
         return await acquire()
 
     sequential = AsyncMock()
-    await pair._pair_group_lock.acquire()
+    await pair._lanes.group_lock.acquire()
     task = None
     try:
-        with patch.object(pair._pair_group_lock, "acquire", mark_entry), patch.object(
-            pair, "_run_both_sequential", sequential
+        with patch.object(pair._lanes.group_lock, "acquire", mark_entry), patch.object(
+            pair._sequential, "_run_cycle", sequential
         ):
             task = asyncio.create_task(hold(pair))
             await entered.wait()
             pair._connection_mode = const.PAIR_CONNECTION_MODE_SEQUENTIAL
-            pair._pair_group_lock.release()
+            pair._lanes.group_lock.release()
             with pytest.raises(ValueError, match="concurrent"):
                 await task
             sequential.assert_not_awaited()
@@ -127,8 +127,8 @@ async def test_queued_link_rejects_mode_change_before_sequential_admission(hass)
         assert written(left.controller)[-1][1] == b"\xff"
         assert written(right.controller) == []
     finally:
-        if pair._pair_group_lock.locked():
-            pair._pair_group_lock.release()
+        if pair._lanes.group_lock.locked():
+            pair._lanes.group_lock.release()
         if task is not None and not task.done():
             task.cancel()
             await asyncio.gather(task, return_exceptions=True)

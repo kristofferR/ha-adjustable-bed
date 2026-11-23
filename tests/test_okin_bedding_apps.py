@@ -8,13 +8,14 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-from custom_components.adjustable_bed.beds.serenity import (
+from custom_components.adjustable_bed.beds.serenity.controller import (
     TranquilController,
     ZSeriesController,
     alarm_frame,
     alarm_repeat_bit,
     clock_frame,
 )
+from tests.hold_lease_wire import virtual_clock
 
 STOP = "0c02000000000000000000000000"
 
@@ -156,18 +157,28 @@ ZSERIES_ROWS = (
 @pytest.mark.parametrize(("row", "action", "expected"), TRANQUIL_ROWS)
 async def test_tranquil_every_artifact_row_with_safe_voice_stop(row, action, expected) -> None:
     controller = tranquil()
-    with patch("asyncio.sleep", new=AsyncMock()) as sleep:
+    times: list[float] = []
+
+    async def record(*_args, **_kwargs) -> None:
+        times.append(asyncio.get_running_loop().time())
+
+    controller.client.write_gatt_char.side_effect = record
+    # On virtual time each write's time is exact: the two STOPs land 100 and
+    # 200 ms after the action ends, however busy the loop is.
+    with virtual_clock():
         if action is None:
             await controller.stop_all()
         else:
             await controller.hold_control(action, 250)
     frames = written(controller)
+    ended = 0.0 if action is None else 0.25
     assert frames[-2:] == [STOP, STOP]
-    assert [call.args[0] for call in sleep.call_args_list[-2:]] == pytest.approx([0.1, 0.2], abs=0.01)
+    assert times[-2:] == pytest.approx([ended + 0.1, ended + 0.2])
     if action is None:
         assert frames == [STOP, STOP]
     else:
         assert set(frames[:-2]) == {expected}
+        assert all(time < ended for time in times[:-2])
 
 
 @pytest.mark.parametrize(("row", "models", "action", "expected"), ZSERIES_ROWS)
@@ -241,7 +252,6 @@ def test_profiles_expose_only_their_own_app_surface() -> None:
             "head_foot_down",
             "save_zero_g",
             "save_tv",
-            "light_toggle",
             "massage_timer_cycle",
             "massage_intensity_cycle",
         )
@@ -254,7 +264,6 @@ def test_profiles_expose_only_their_own_app_surface() -> None:
             "selector_5_down",
             "save_zero_g",
             "save_tv",
-            "light_toggle",
             "massage_timer_cycle",
             "massage_head_cycle",
             "massage_foot_cycle",
@@ -348,7 +357,7 @@ async def test_exact_manufacturer_string_gates_zseries_alarm_page(manufacturer, 
     assert controller.clock_alarm_preset_options == (("massage", "memory_1") if available else ())
     assert controller.protocol_diagnostics["zseries_manufacturer"] == manufacturer.decode()
     if not available:
-        with pytest.raises(ValueError, match="manufacturer"):
+        with pytest.raises(ValueError, match="controller has no alarm"):
             await controller.configure_clock_alarm(enabled=True, hour=7, minute=45, preset="massage")
         assert written(controller) == []
 
@@ -390,7 +399,7 @@ async def test_set_alarm_writes_clock_alarm_then_two_app_queries() -> None:
     controller._alarm_available = True
     now = datetime(2026, 10, 1, 13, 47, 59)
     with (
-        patch("custom_components.adjustable_bed.beds.serenity.dt_util.now", return_value=now),
+        patch("custom_components.adjustable_bed.beds.serenity.controller.dt_util.now", return_value=now),
         patch("asyncio.sleep", new=AsyncMock()) as sleep,
     ):
         await controller.configure_clock_alarm(enabled=True, hour=7, minute=45, preset="memory_1")

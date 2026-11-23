@@ -3,13 +3,12 @@
 
 import pytest
 
-from custom_components.adjustable_bed.motion_bed_state import (
+from custom_components.adjustable_bed.beds.motion_bed.state import (
     MotionBedContext,
     MotionBedFollowup,
     MotionBedRoute,
     MotionBedState,
     PresetVariant,
-    k4_short_recall_selected,
     parse_motion_bed_k4_text,
     parse_motion_bed_notification,
 )
@@ -129,18 +128,6 @@ def test_k4_repaired_selectors_and_all_eight_echoes(
 )
 def test_k4_ordinary_selectors_do_nothing(selector: str) -> None:
     assert parse("FFFFFFFF" + selector, "preset", variant="K4").state == MotionBedState()
-
-
-@pytest.mark.parametrize("left,right", [(False, False), (True, False), (False, True), (True, True)])
-def test_k4_short_recall_cross_flags(left: bool, right: bool) -> None:
-    state = MotionBedState(
-        left_tv=left, right_tv=right, left_zero_gravity=not left, right_zero_gravity=not right
-    )
-    for field in ("left_tv", "right_tv", "left_zero_gravity"):
-        assert k4_short_recall_selected(state, field) == left
-    assert k4_short_recall_selected(state, "right_zero_gravity") == right
-    with pytest.raises(ValueError):
-        k4_short_recall_selected(state, "tv")
 
 
 def test_k5_coupled_memory_flags_and_no_echo_clear() -> None:
@@ -1740,11 +1727,6 @@ def test_registered_parser_vectors(
         source_slots = expected["source_slots"]
         assert isinstance(source_slots, tuple)
         assert result.state.day_slots[offset : offset + len(source_slots)] == source_slots
-    if variant == "K4":
-        assert k4_short_recall_selected(result.state, "left_tv") == result.state.left_tv
-        assert k4_short_recall_selected(result.state, "right_tv") == result.state.left_tv
-        assert k4_short_recall_selected(result.state, "left_zero_gravity") == result.state.left_tv
-        assert k4_short_recall_selected(result.state, "right_zero_gravity") == result.state.right_tv
 
 
 def test_unrecognized_air_settings_retain_selected_state_but_keep_raw_limits() -> None:

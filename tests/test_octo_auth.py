@@ -14,7 +14,8 @@ from homeassistant.const import CONF_ADDRESS, CONF_NAME
 from homeassistant.core import HomeAssistant
 from homeassistant.data_entry_flow import FlowResultType
 
-from custom_components.adjustable_bed import octo_auth as octo_auth_module
+from custom_components.adjustable_bed.beds.octo import auth as octo_auth_module
+from custom_components.adjustable_bed.beds.octo.auth import OctoPinStatus, async_verify_octo_pin
 from custom_components.adjustable_bed.config_flow import (
     AdjustableBedConfigFlow,
     CapabilityReport,
@@ -30,7 +31,6 @@ from custom_components.adjustable_bed.const import (
     OCTO_VARIANT_STAR2,
     VARIANT_AUTO,
 )
-from custom_components.adjustable_bed.octo_auth import OctoPinStatus, async_verify_octo_pin
 from custom_components.adjustable_bed.setup_operation import (
     OperationOutcome,
     OperationResult,
@@ -434,7 +434,7 @@ async def test_invalid_device_info_stops_setup_before_capabilities_or_pin(client
 )
 async def test_incomplete_or_invalid_replies_never_confirm_pin(client, caps, reply, early):
     respond(client, capabilities=caps, reply=reply, before_pin=early)
-    with patch("custom_components.adjustable_bed.octo_auth.PIN_VERIFICATION_TIMEOUT", 0.01):
+    with patch("custom_components.adjustable_bed.beds.octo.auth.PIN_VERIFICATION_TIMEOUT", 0.01):
         assert (
             await async_verify_octo_pin(client, "1234", VARIANT_AUTO) is OctoPinStatus.INCONCLUSIVE
         )
@@ -534,14 +534,23 @@ async def test_invalid_replacement_pin_stays_on_form(hass, invalid_pin):
     assert flow._pending_entry[CONF_OCTO_PIN] == "1234"
 
 
-@pytest.mark.parametrize("step", ["manual_octo", "bluetooth_octo"])
-async def test_pin_collection_routes_through_verification(hass, step):
-    flow = pin_flow(hass, None)
-    assert flow._pending_entry is not None
-    flow._manual_data = dict(flow._pending_entry)
+async def test_pin_collection_routes_through_verification(hass):
+    from custom_components.adjustable_bed.config_flow import AdjustableBedConfigFlow
+
+    flow = AdjustableBedConfigFlow()
+    flow.hass, flow.context = hass, {"source": "user"}
+    flow._selected_bed_type = "octo"
     with patch.object(flow, "_finish_with_verify", AsyncMock()) as verify:
-        await getattr(flow, f"async_step_{step}")({CONF_OCTO_PIN: "1234"})
-    verify.assert_awaited_once_with(flow._manual_data, "Octo bed")
+        # The PIN is on Octo's final settings.
+        result = await flow.async_step_manual_entry({"address": "AA:BB:CC:DD:EE:FF"})
+        assert CONF_OCTO_PIN in {marker.schema for marker in result["data_schema"].schema}
+        result = await flow.async_step_finish_settings(
+            {"name": "Octo bed", "connection_mode": "idle", CONF_OCTO_PIN: " 1234 "}
+        )
+    assert verify.await_args is not None, result
+    data, title = verify.await_args.args
+    assert title == "Octo bed"
+    assert data[CONF_OCTO_PIN] == "1234"
 
 
 async def test_no_scanner_cannot_bypass_octo_pin_check(hass):
@@ -569,3 +578,34 @@ async def test_corrupt_pin_capability_cannot_look_like_pin_free_bed(client, cap)
         DEVICEINFO_QUERY,
         CAP_QUERY,
     ]
+
+
+@pytest.mark.parametrize("status", [OctoPinStatus.ACCEPTED, OctoPinStatus.NOT_REQUIRED])
+async def test_reconfigure_reviews_a_verified_pin_before_saving(hass, status):
+    """Reconfigure cannot create an entry: a verified PIN goes to its review."""
+    from pytest_homeassistant.common import MockConfigEntry
+
+    from custom_components.adjustable_bed.const import DOMAIN
+    from custom_components.adjustable_bed.profile_migration import (
+        MigrationSnapshot,
+        reconfigure_context,
+    )
+
+    entry = MockConfigEntry(
+        domain=DOMAIN,
+        title="Octo bed",
+        data={CONF_ADDRESS: "AA:BB:CC:DD:EE:01", CONF_NAME: "Octo bed", CONF_BED_TYPE: "linak"},
+        unique_id="AA:BB:CC:DD:EE:01",
+    )
+    entry.add_to_hass(hass)
+    flow = pin_flow(hass, status)
+    flow.context = reconfigure_context(entry)
+    flow._migration = MigrationSnapshot.of(entry)
+    flow._migration_verified = True
+    await flow.async_step_verify_octo_pin()
+
+    result = await flow.async_step_verify_octo_pin({})
+
+    assert result["type"] is FlowResultType.FORM
+    assert result["step_id"] == "migration_confirm"
+    assert entry.data[CONF_BED_TYPE] == "linak"

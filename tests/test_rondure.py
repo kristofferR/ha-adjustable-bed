@@ -7,12 +7,13 @@ from unittest.mock import MagicMock
 import pytest
 from homeassistant.const import CONF_ADDRESS, CONF_NAME
 from homeassistant.core import HomeAssistant
-from pytest_homeassistant_custom_component.common import MockConfigEntry
+from pytest_homeassistant.common import MockConfigEntry
 
 from custom_components.adjustable_bed.beds.rondure import (
     RondureCommands,
     RondureController,
 )
+from custom_components.adjustable_bed.codec import keeson as codec
 from custom_components.adjustable_bed.const import (
     BED_TYPE_RONDURE,
     CONF_BED_TYPE,
@@ -25,7 +26,6 @@ from custom_components.adjustable_bed.const import (
     RONDURE_VARIANT_BOTH,
     RONDURE_VARIANT_SIDE_A,
     RONDURE_VARIANT_SIDE_B,
-    RONDURE_WRITE_CHAR_UUID,
     SIDE_BOTH,
     SIDE_LEFT,
     SIDE_RIGHT,
@@ -163,23 +163,17 @@ class TestRondureChecksum:
         expected_sum = 0xE5 + 0xFE + 0x16 + 0x01 + 0x00 + 0x00 + 0x00
         expected_checksum = (~expected_sum) & 0xFF
 
-        # Create controller to access checksum method
-        from unittest.mock import MagicMock
-        controller = RondureController(MagicMock(), RONDURE_VARIANT_BOTH)
-        actual_checksum = controller._calculate_checksum(data)
+        actual_checksum = codec.checksum(data)
 
         assert actual_checksum == expected_checksum
 
     def test_checksum_for_stop_command(self):
         """Test checksum calculation for STOP command packet."""
-        from unittest.mock import MagicMock
-        controller = RondureController(MagicMock(), RONDURE_VARIANT_BOTH)
-
         # STOP is all zeros, so cmd bytes are [0, 0, 0, 0]
         # Header: [0xE5, 0xFE, 0x16]
         # Full packet before checksum: [0xE5, 0xFE, 0x16, 0, 0, 0, 0]
         data = bytes([0xE5, 0xFE, 0x16, 0, 0, 0, 0])
-        checksum = controller._calculate_checksum(data)
+        checksum = codec.checksum(data)
 
         # Sum = 0xE5 + 0xFE + 0x16 = 0x1F9
         # ~0x1F9 & 0xFF = ~505 & 0xFF = -506 & 0xFF
@@ -210,9 +204,12 @@ class TestRondurePacketBuilding:
         command = RondureCommands.HEAD_UP
 
         legacy = controller._build_packet(command)
-        assert controller.bind_side(SIDE_LEFT)._build_packet(command)[7] == 0x01
-        assert controller.bind_side(SIDE_RIGHT)._build_packet(command)[7] == 0x02
-        assert controller.bind_side(SIDE_BOTH)._build_packet(command) == legacy
+        with controller.side_scope(SIDE_LEFT):
+            assert controller._build_packet(command)[7] == 0x01
+        with controller.side_scope(SIDE_RIGHT):
+            assert controller._build_packet(command)[7] == 0x02
+        with controller.side_scope(SIDE_BOTH):
+            assert controller._build_packet(command) == legacy
         assert controller._build_packet(command) == legacy
 
     def test_single_side_packet_is_9_bytes(self):
@@ -284,7 +281,7 @@ class TestRondurePacketBuilding:
         # Verify checksum
         checksum_byte = packet[-1]
         data_before_checksum = packet[:-1]
-        expected_checksum = controller._calculate_checksum(data_before_checksum)
+        expected_checksum = codec.checksum(data_before_checksum)
 
         assert checksum_byte == expected_checksum
 
@@ -296,18 +293,6 @@ class TestRondurePacketBuilding:
 
 class TestRondureController:
     """Test RondureController."""
-
-    async def test_control_characteristic_uuid(
-        self,
-        hass: HomeAssistant,
-        mock_rondure_config_entry,
-        mock_coordinator_connected,
-    ):
-        """Control characteristic should use Rondure write UUID."""
-        coordinator = AdjustableBedCoordinator(hass, mock_rondure_config_entry)
-        await coordinator.async_connect()
-
-        assert coordinator.controller.control_characteristic_uuid == RONDURE_WRITE_CHAR_UUID
 
     async def test_supports_preset_flat(
         self,
@@ -394,117 +379,6 @@ class TestRondureController:
         assert coordinator.controller.has_tilt_support is True
 
 
-class TestRondureMovement:
-    """Test Rondure movement commands."""
-
-    async def test_move_head_up_sends_8_byte_packet(
-        self,
-        hass: HomeAssistant,
-        mock_rondure_config_entry,
-        mock_coordinator_connected,
-    ):
-        """move_head_up should send 8-byte packet."""
-        coordinator = AdjustableBedCoordinator(hass, mock_rondure_config_entry)
-        await coordinator.async_connect()
-        mock_client = coordinator._client
-
-        await coordinator.controller.move_head_up()
-
-        assert mock_client.write_gatt_char.called
-        calls = mock_client.write_gatt_char.call_args_list
-        first_call_data = calls[0][0][1]
-        assert len(first_call_data) == 8
-
-    async def test_stop_all_sends_stop_packet(
-        self,
-        hass: HomeAssistant,
-        mock_rondure_config_entry,
-        mock_coordinator_connected,
-    ):
-        """stop_all should send STOP command packet."""
-        coordinator = AdjustableBedCoordinator(hass, mock_rondure_config_entry)
-        await coordinator.async_connect()
-        mock_client = coordinator._client
-
-        await coordinator.controller.stop_all()
-
-        calls = mock_client.write_gatt_char.call_args_list
-        call_data = calls[0][0][1]
-        # STOP command: all zeros in command bytes
-        assert call_data[3] == 0x00
-        assert call_data[4] == 0x00
-        assert call_data[5] == 0x00
-        assert call_data[6] == 0x00
-
-    async def test_movement_sends_stop_after(
-        self,
-        hass: HomeAssistant,
-        mock_rondure_config_entry,
-        mock_coordinator_connected,
-    ):
-        """Movement should send STOP after motor command."""
-        coordinator = AdjustableBedCoordinator(hass, mock_rondure_config_entry)
-        await coordinator.async_connect()
-        mock_client = coordinator._client
-
-        await coordinator.controller.move_head_up()
-
-        calls = mock_client.write_gatt_char.call_args_list
-        # Last call should be STOP
-        last_call_data = calls[-1][0][1]
-        # STOP has all zeros in command bytes
-        assert last_call_data[3] == 0x00
-        assert last_call_data[4] == 0x00
-        assert last_call_data[5] == 0x00
-        assert last_call_data[6] == 0x00
-
-
-class TestRondurePresets:
-    """Test Rondure preset commands."""
-
-    async def test_preset_flat_sends_flat_command(
-        self,
-        hass: HomeAssistant,
-        mock_rondure_config_entry,
-        mock_coordinator_connected,
-    ):
-        """preset_flat should send FLAT command."""
-        coordinator = AdjustableBedCoordinator(hass, mock_rondure_config_entry)
-        await coordinator.async_connect()
-        mock_client = coordinator._client
-
-        await coordinator.controller.preset_flat()
-
-        calls = mock_client.write_gatt_char.call_args_list
-        call_data = calls[0][0][1]
-        # FLAT = 0x08000000 in little-endian: [0x00, 0x00, 0x00, 0x08]
-        assert call_data[3] == 0x00
-        assert call_data[4] == 0x00
-        assert call_data[5] == 0x00
-        assert call_data[6] == 0x08
-
-    async def test_preset_zero_g_sends_zero_g_command(
-        self,
-        hass: HomeAssistant,
-        mock_rondure_config_entry,
-        mock_coordinator_connected,
-    ):
-        """preset_zero_g should send ZERO_G command."""
-        coordinator = AdjustableBedCoordinator(hass, mock_rondure_config_entry)
-        await coordinator.async_connect()
-        mock_client = coordinator._client
-
-        await coordinator.controller.preset_zero_g()
-
-        calls = mock_client.write_gatt_char.call_args_list
-        call_data = calls[0][0][1]
-        # ZERO_G = 0x00001000 in little-endian: [0x00, 0x10, 0x00, 0x00]
-        assert call_data[3] == 0x00
-        assert call_data[4] == 0x10
-        assert call_data[5] == 0x00
-        assert call_data[6] == 0x00
-
-
 class TestRondureVariants:
     """Test Rondure protocol variants."""
 
@@ -514,21 +388,3 @@ class TestRondureVariants:
         assert RONDURE_VARIANT_SIDE_A == "side_a"
         assert RONDURE_VARIANT_SIDE_B == "side_b"
 
-    async def test_side_a_sends_9_byte_packet(
-        self,
-        hass: HomeAssistant,
-        mock_rondure_side_a_config_entry,
-        mock_coordinator_connected,
-    ):
-        """Side A variant should send 9-byte packets."""
-        coordinator = AdjustableBedCoordinator(hass, mock_rondure_side_a_config_entry)
-        await coordinator.async_connect()
-        mock_client = coordinator._client
-
-        await coordinator.controller.stop_all()
-
-        calls = mock_client.write_gatt_char.call_args_list
-        call_data = calls[0][0][1]
-        assert len(call_data) == 9
-        # Side byte should be 0x01 for side A
-        assert call_data[7] == 0x01

@@ -1,4 +1,4 @@
-"""Exact app selectors and command lookup from accepted row018 evidence."""
+"""Exact app selectors and command lookup from accepted RMControl 2 evidence."""
 
 from __future__ import annotations
 
@@ -8,7 +8,7 @@ from dataclasses import FrozenInstanceError, astuple
 
 import pytest
 
-from custom_components.adjustable_bed.richmat_profiles import (
+from custom_components.adjustable_bed.beds.rmcontrol.profiles import (
     RICHMAT_PRODUCT_CODES,
     get_product_profile,
 )

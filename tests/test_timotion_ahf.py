@@ -11,15 +11,14 @@ import pytest
 from bleak.exc import BleakError
 from homeassistant.const import CONF_ADDRESS, CONF_NAME
 from homeassistant.core import HomeAssistant
-from homeassistant.exceptions import HomeAssistantError
+from homeassistant.exceptions import HomeAssistantError, ServiceValidationError
 from homeassistant.helpers import entity_registry as er
-from pytest_homeassistant_custom_component.common import MockConfigEntry
+from pytest_homeassistant.common import MockConfigEntry
 
 from custom_components.adjustable_bed.app_profiles import hidden_generic_fields
 from custom_components.adjustable_bed.beds.base import BedController
 from custom_components.adjustable_bed.beds.timotion_ahf import (
     STATUS_READINESS_TIMEOUT_SECONDS,
-    TiMOTIONAhfCommands,
     TiMOTIONAhfController,
     build_timotion_ahf_command,
 )
@@ -43,6 +42,7 @@ from custom_components.adjustable_bed.const import (
     TIMOTION_AHF_SERVICE_UUID,
     TIMOTION_AHF_WRITE_CHAR_UUID,
 )
+from custom_components.adjustable_bed.controller_state import StateUpdate
 from custom_components.adjustable_bed.cover import _cover_entities_for
 from custom_components.adjustable_bed.light import _light_entities_for
 from custom_components.adjustable_bed.pairing import supports_single_address_pairing
@@ -87,8 +87,8 @@ class _Coordinator:
         self.tasks.append(task)
         return task
 
-    def handle_controller_state_updates(self, updates: dict[str, object]) -> None:
-        self.state.update(updates)
+    def handle_controller_state_updates(self, *updates: StateUpdate) -> None:
+        self.state.update((update.key, update.value) for update in updates)
         for callback_fn in tuple(self.state_callbacks):
             callback_fn(self.state)
 
@@ -214,16 +214,16 @@ def test_controller_declares_app_labels_without_physical_axes() -> None:
         "chair",
     )
     assert [spec.name for spec in controller.controller_button_specs] == [
-        "Control 1 Up",
-        "Control 1 Down",
-        "Control 2 Up",
-        "Control 2 Down",
-        "Control 3 Up",
-        "Control 3 Down",
-        "Control 4 Up",
-        "Control 4 Down",
-        "Control 5 Up",
-        "Control 5 Down",
+        "Control 1 up",
+        "Control 1 down",
+        "Control 2 up",
+        "Control 2 down",
+        "Control 3 up",
+        "Control 3 down",
+        "Control 4 up",
+        "Control 4 down",
+        "Control 5 up",
+        "Control 5 down",
         "Night",
         "Light",
         "Chair",
@@ -331,7 +331,8 @@ async def test_idle_disconnected_hold_reconnects_then_checks_current_status(
         return_value=([(coordinator, SIDE_BOTH)], []),
     ):
         if lock_mask:
-            with pytest.raises(ValueError, match="disabled by status lock bit 0"):
+            # The live check rejects it the way preflight would have.
+            with pytest.raises(ServiceValidationError, match="locked on the bed"):
                 await hass.services.async_call(DOMAIN, "hold_control", call_data, blocking=True)
         else:
             await hass.services.async_call(DOMAIN, "hold_control", call_data, blocking=True)
@@ -409,7 +410,7 @@ async def test_app_action_vectors_and_finite_button_pulse(
 
 
 def test_command_builder_is_immutable_neutral_based_and_eleven_bytes() -> None:
-    packet = build_timotion_ahf_command(group1=TiMOTIONAhfCommands.CONTROL_2_UP)
+    packet = build_timotion_ahf_command(group1=0x04)
 
     assert packet == bytes.fromhex("ddddff0404000000000000")
     assert len(packet) == 11
@@ -761,7 +762,7 @@ def test_lock_mask_gates_only_app_actions(mask: int, disabled: set[str]) -> None
             key not in disabled
         )
         if key in disabled:
-            with pytest.raises(ValueError, match="disabled by status lock bit"):
+            with pytest.raises(ValueError, match="locked on the bed"):
                 controller.validate_hold_control(key, 100)
         else:
             controller.validate_hold_control(key, 100)
@@ -1095,15 +1096,6 @@ async def test_legacy_ahf_entities_keep_their_ids_and_send_app_actions(
     legacy_light = registry.async_get_or_create(
         "light", DOMAIN, "bed_under_bed_lights_assumed", config_entry=entry
     )
-    legacy_toggle = registry.async_get_or_create(
-        "button", DOMAIN, "bed_toggle_light", config_entry=entry
-    )
-    stale_named_action = registry.async_get_or_create(
-        "button", DOMAIN, "bed_timotion_ahf_old_axis", config_entry=entry
-    )
-    unrelated_action = registry.async_get_or_create(
-        "button", DOMAIN, "bed_other_app_action", config_entry=entry
-    )
     controller_runtime = _Coordinator()
     controller_runtime.motor_count = 5
     controller, _ = controller_for(runtime=controller_runtime)
@@ -1117,7 +1109,6 @@ async def test_legacy_ahf_entities_keep_their_ids_and_send_app_actions(
         device_info={},
         entity_side=None,
         entity_unique_id=lambda key: f"bed_{key}",
-        entity_translation_key=lambda key: key,
     )
 
     covers = _cover_entities_for(hass, runtime)
@@ -1132,11 +1123,7 @@ async def test_legacy_ahf_entities_keep_their_ids_and_send_app_actions(
     assert len(actions) == 13
     assert stop_button.available
     assert [light.unique_id for light in lights] == [legacy_light.unique_id]
-    assert all(registry.async_get(row.entity_id) is not None for row in legacy_covers)
-    assert registry.async_get(legacy_light.entity_id) is not None
-    assert registry.async_get(legacy_toggle.entity_id) is not None
-    assert registry.async_get(stale_named_action.entity_id) is None
-    assert registry.async_get(unrelated_action.entity_id) is not None
+    assert "bed_timotion_ahf_old_axis" not in {button.unique_id for button in buttons}
 
     writes: list[bytes] = []
 

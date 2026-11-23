@@ -1,6 +1,6 @@
 """BedSense 1.8 (com.fenmenbielei.bedsense), separate from Bedsense Bases.
 
-All wire literals and layout gates come from the accepted row108 report.
+All wire literals and layout gates come from BedSense 1.8.
 Memory flags and massage bars reproduce app indicators, not measured positions.
 """
 
@@ -9,70 +9,47 @@ from __future__ import annotations
 import asyncio
 from collections.abc import Callable, Mapping
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Final
 
 from bleak.backends.characteristic import BleakGATTCharacteristic
+from homeassistant.const import EntityCategory
 
+from ..card import (
+    CARD_HIDDEN,
+    CARD_MASSAGE,
+    CardPlacement,
+)
+from ..codec import ff_frame as codec
 from ..const import CONF_BLE_DEVICE_NAME
+from ..controller_state import StateKey
 from ..detection import is_mac_like_name
-from .base import (
-    BedController,
+from ..profiles.ff_frame import BEDSENSE, BedSenseProfile, bedsense_layout
+from ..state_keys import LIGHT_TIMER_OPTION, MASSAGE_TIMER_MINUTES
+from .base import BedController, ProfileExecution
+from .builder import BuildContext
+from .catalog_buttons import Kind, catalog_button, unique_buttons
+from .entity_specs import (
     ControllerButtonSpec,
     ControllerStateBinarySensorSpec,
     ControllerStateSensorSpec,
     MotorCommandCallable,
     MotorControlSpec,
     PositionNumberSpec,
-    SideBoundController,
 )
-from .bedsense_commands import ACTIONS
-from .bedsense_memory import MEMORY_RULES
 
 if TYPE_CHECKING:
     from ..coordinator import AdjustableBedCoordinator
 
-CHARACTERISTIC = "0000ffe1-0000-1000-8000-00805f9b34fb"
-LAYOUTS = {
-    1: ("back", "waist", "back_and_leg", "legs"),
-    2: ("back", "waist", "head", "legs"),
-    3: ("back", "waist", "head", "legs"),
-    4: ("back", "hip", "head", "legs"),
-    5: ("back", "hip", "head", "legs"),
-    6: ("back",),
-    7: ("back", "legs"),
-    8: ("back", "rise_and_fall"),
-    9: ("back", "hip", "lift", "legs"),
-}
+CHARACTERISTIC = codec.CHARACTERISTIC_UUID
+LAYOUTS = BEDSENSE.layouts
+ACTIONS = BEDSENSE.actions
 MEMORIES = ("m1", "m2", "tv", "zero_g", "anti_snore")
-
-
-def bedsense_layout(name: str | None) -> int:
-    """Exact, case-sensitive selection precedence; not a discovery signature."""
-    name = name or ""
-    if "JQ-D" in name:
-        return 2
-    if "JQ" in name or "NQ" in name:
-        return 1
-    if "IQ" in name:
-        return 4
-    if "LQ" in name:
-        return 5
-    if "KQ" in name and "H" not in name:
-        return 6
-    if "MQ" in name or "UPS" in name:
-        return 7
-    if "S4-2" in name:
-        return 9
-    if "H" in name and "S4" not in name:
-        return 8
-    return 3
+__all__ = ["CHARACTERISTIC", "BedSenseController", "BedSenseSession", "bedsense_layout"]
 
 
 def _action(key: str) -> MotorCommandCallable:
-    async def run(controller: BedController | SideBoundController) -> None:
-        target = (
-            controller._controller if isinstance(controller, SideBoundController) else controller
-        )
+    async def run(controller: BedController) -> None:
+        target = controller
         if not isinstance(target, BedSenseController):
             raise TypeError("BedSense action requires its controller")
         await target.execute_action(key)
@@ -90,8 +67,67 @@ class BedSenseSession:
     counts: dict[str, int] = field(default_factory=lambda: {"head": 0, "foot": 0, "wave": 0})
 
 
-class BedSenseController(BedController):
+def _state_key(name: str) -> StateKey[object]:
+    """BedSense publishes its mixed-type session state under these names."""
+    return StateKey[object](name)
+
+
+_SENSOR_CARDS: Final[Mapping[str, CardPlacement]] = dict.fromkeys(
+    ("head_steps", "foot_steps", "wave_steps"), CARD_MASSAGE
+)
+
+# The light timer select's options, each one app button.
+_LIGHT_TIMERS: Mapping[str, str] = {
+    "10 min": "light_10_min",
+    "8 hours": "light_8_h",
+    "10 hours": "light_10_h",
+}
+# The app indicator recorded per light button, as its select option.
+_LIGHT_OPTIONS: Mapping[str, str] = {"10 min": "10 min", "8 h": "8 hours", "10 h": "10 hours"}
+# The massage timer select's durations, each one app button.
+_MASSAGE_TIMERS: Mapping[int, str] = {
+    10: "massage_timer_10",
+    20: "massage_timer_20",
+    30: "massage_timer_30",
+}
+
+
+# Entity names for the app's controls; the profile labels describe the wire actions.
+_BUTTON_NAMES = {
+    "circulation_back_and_leg": "Back and leg circulation",
+    "circulation_default": "Default circulation",
+    "circulation_head": "Head circulation",
+    "circulation_hip": "Hip circulation",
+    "circulation_legs": "Leg circulation",
+    "circulation_waist": "Waist circulation",
+    "circulation_whole_body": "Whole body circulation",
+    "clear_anti_snore": "Clear Anti-snore position",
+    "clear_m1": "Clear M1 position",
+    "clear_m2": "Clear M2 position",
+    "clear_tv": "Clear TV position",
+    "clear_zero_g": "Clear Zero Gravity position",
+    "decline": "Decline",
+    "rise": "Rise",
+    "leg_relax": "Leg relax",
+    "lumbar": "Lumbar",
+    "music": "Music",
+    "massage_head_up": "Head massage up",
+    "massage_head_down": "Head massage down",
+    "massage_foot_up": "Foot massage up",
+    "massage_foot_down": "Foot massage down",
+    "massage_wave_up": "Massage frequency up",
+    "massage_wave_down": "Massage frequency down",
+}
+
+
+def _button_name(key: str) -> str:
+    return _BUTTON_NAMES.get(key) or ACTIONS[key].label
+
+
+class BedSenseController(ProfileExecution[BedSenseProfile], BedController):
     """One GATT target, with explicit app-labelled controls for nine layouts."""
+
+    profile: BedSenseProfile = BEDSENSE
 
     def __init__(
         self,
@@ -148,9 +184,14 @@ class BedSenseController(BedController):
             "M1",
             "M2",
             "TV",
-            "Zero Gravity",
-            "Flat Bed" if self.layout in (6, 8) else "Anti Snore",
+            "Zero gravity",
+            "Flat" if self.layout in (6, 8) else "Anti-snore",
         )
+
+    @property
+    def memory_slots_recalled_by_presets(self) -> frozenset[int]:
+        # TV, Zero Gravity and Anti-Snore (Flat on layouts 6 and 8) recall slots 3 to 5.
+        return frozenset({3, 4, 5})
 
     @property
     def supports_preset_tv(self) -> bool:
@@ -184,46 +225,39 @@ class BedSenseController(BedController):
 
     @property
     def controller_button_specs(self) -> tuple[ControllerButtonSpec, ...]:
-        # Memory recall/save and Flat/TV/Zero Gravity/Anti Snore have standard entities.
+        # Memory recall/save and Flat/TV/Zero Gravity/Anti Snore have standard
+        # entities; the timer buttons are the massage and light timer selects.
         keys = [
             k
             for k, a in ACTIONS.items()
             if self.layout in a.variants
             and (
                 k.startswith(("circulation_", "clear_", "massage_", "light_"))
-                or k in ("background_tap", "lumbar", "music", "leg_relax", "rise", "decline")
+                or k in ("lumbar", "music", "leg_relax", "rise", "decline")
             )
+            and not k.startswith(("massage_timer_", "light_"))
         ]
-        specs = []
+        specs: list[ControllerButtonSpec | None] = []
         for key in keys:
-            category = (
-                "massage"
-                if key.startswith("massage_")
-                else "light"
-                if key.startswith("light_")
-                else "action"
-            )
             specs.append(
-                ControllerButtonSpec(
+                catalog_button(
                     f"bedsense_{key}",
-                    ACTIONS[key].label,
+                    _button_name(key),
                     _action(key),
+                    kind=Kind.MASSAGE
+                    if key.startswith(("massage_", "circulation_"))
+                    else Kind.LIGHT
+                    if key.startswith("light_")
+                    # Shortcuts to a position the bed knows.
+                    else Kind.PRESET
+                    if key in ("lumbar", "leg_relax", "rise", "decline")
+                    else None,
                     scheduler_resource="*",
-                    translation_key=f"bedsense_{category}",
-                    translation_placeholders={"action": ACTIONS[key].label},
+                    # Clearing forgets a saved position.
+                    requires_confirmation=key.startswith("clear_"),
                 )
             )
-        specs.append(
-            ControllerButtonSpec(
-                "bedsense_refresh_memory",
-                "Refresh memory indicators",
-                _action("refresh_memory"),
-                scheduler_resource="*",
-                translation_key="bedsense_action",
-                translation_placeholders={"action": "Refresh memory indicators"},
-            )
-        )
-        return tuple(specs)
+        return unique_buttons(specs)
 
     @property
     def controller_state_binary_sensor_specs(self) -> tuple[ControllerStateBinarySensorSpec, ...]:
@@ -231,9 +265,10 @@ class BedSenseController(BedController):
             ControllerStateBinarySensorSpec(
                 f"bedsense_m{i}_saved",
                 f"bedsense_m{i}_saved",
-                f"bedsense_m{i}_saved",
+                _state_key(f"bedsense_m{i}_saved"),
                 "mdi:content-save",
-                attribute_keys=("bedsense_state_source",),
+                attribute_keys=(_state_key("bedsense_state_source"),),
+                entity_registry_enabled_default=False,
             )
             for i in range(1, 6)
         )
@@ -244,25 +279,58 @@ class BedSenseController(BedController):
             ControllerStateSensorSpec(
                 f"bedsense_{key}",
                 f"bedsense_{key}",
-                f"bedsense_{key}",
-                "mdi:information-outline",
-                attribute_keys=("bedsense_state_source",),
+                _state_key(f"bedsense_{key}"),
+                "mdi:vibrate" if key in _SENSOR_CARDS else "mdi:information-outline",
+                attribute_keys=(_state_key("bedsense_state_source"),),
+                # Step counts only mirror the up/down buttons; the bed takes no level.
+                entity_registry_enabled_default=key == "circulation",
+                card=_SENSOR_CARDS.get(key, CARD_HIDDEN),
+                entity_category=None if key in _SENSOR_CARDS else EntityCategory.DIAGNOSTIC,
             )
-            for key in (
-                "head_bar",
-                "wave_bar",
-                "circulation",
-                "massage_timer",
-                "light_duration",
-                "head_steps",
-                "foot_steps",
-                "wave_steps",
-            )
+            # The timer selects show the massage timer and light duration.
+            for key in ("circulation", "head_steps", "foot_steps", "wave_steps")
         )
 
+    def _layout_has(self, key: str) -> bool:
+        return self.layout in ACTIONS[key].variants
+
     @property
-    def stale_motor_entity_keys(self) -> frozenset[str]:
-        return frozenset(axis for axes in LAYOUTS.values() for axis in axes)
+    def auto_enable_massage(self) -> bool:
+        # Every layout's app screen has the massage controls, timer included.
+        return True
+
+    @property
+    def supports_massage_timer(self) -> bool:
+        return bool(self.massage_timer_options)
+
+    @property
+    def massage_timer_options(self) -> list[int]:
+        return [m for m, key in _MASSAGE_TIMERS.items() if self._layout_has(key)]
+
+    @property
+    def massage_timer_can_turn_off(self) -> bool:
+        return self._layout_has("massage_timer_cancel")
+
+    async def set_massage_timer(self, minutes: int) -> None:
+        """Choosing the running timer keeps it; the app's button would cancel it."""
+        if minutes and minutes not in self.massage_timer_options:
+            raise ValueError("Choose a massage timer this bed model offers")
+        if minutes and minutes == self._session.timer:
+            return
+        await self.execute_action(_MASSAGE_TIMERS[minutes] if minutes else "massage_timer_cancel")
+
+    @property
+    def supports_light_timer(self) -> bool:
+        return bool(self.light_timer_options)
+
+    @property
+    def light_timer_options(self) -> list[str]:
+        return [option for option, key in _LIGHT_TIMERS.items() if self._layout_has(key)]
+
+    async def set_light_timer(self, timer_option: str) -> None:
+        if timer_option not in self.light_timer_options:
+            raise ValueError("Choose a light timer this bed model offers")
+        await self.execute_action(_LIGHT_TIMERS[timer_option])
 
     @property
     def protocol_diagnostics(self) -> dict[str, object]:
@@ -296,7 +364,12 @@ class BedSenseController(BedController):
     def _publish(self, source: str) -> None:
         self._state.update({f"bedsense_m{i}_saved": saved for i, saved in self._saved.items()})
         self._state["bedsense_state_source"] = source
-        self.forward_controller_state_updates(dict(self._state))
+        light = self._state.get("bedsense_light_duration")
+        self.forward_controller_state_updates(
+            *(_state_key(name)(value) for name, value in self._state.items()),
+            MASSAGE_TIMER_MINUTES(self._session.timer),
+            LIGHT_TIMER_OPTION(_LIGHT_OPTIONS.get(light) if isinstance(light, str) else None),
+        )
 
     def _roles(self) -> list[BleakGATTCharacteristic]:
         if self.client is None or not self.client.is_connected:
@@ -349,13 +422,13 @@ class BedSenseController(BedController):
             for characteristic in roles:
                 await client.start_notify(characteristic, self._notification)
                 self._subscribed.append(characteristic)
-            await asyncio.sleep(0.2)
+            await asyncio.sleep(self.profile.read_delay_ms / 1000)
             for characteristic in roles:
                 async with self._ble_lock:
                     data = await client.read_gatt_char(characteristic)
                 self._parse(bytes(data), "read")
-            # askState's first write is 2 seconds after setup; then 200 ms spacing.
-            await asyncio.sleep(1.8)
+            # askState's first write follows setup by query_start_ms.
+            await asyncio.sleep((self.profile.query_start_ms - self.profile.read_delay_ms) / 1000)
             await self._query_memory(initial_delay=False)
         except BaseException:
             await self.stop_notify()
@@ -381,7 +454,7 @@ class BedSenseController(BedController):
 
     def _parse(self, data: bytes, source: str) -> None:
         s = data.hex(" ").upper() + " "
-        for rule in MEMORY_RULES:
+        for rule in self.profile.memory_rules:
             if rule.required_n is not None and rule.required_n != self._n:
                 continue
             if not (s == rule.pattern if rule.exact else rule.pattern in s):
@@ -433,13 +506,13 @@ class BedSenseController(BedController):
 
     async def _query_memory(self, *, initial_delay: bool = True) -> None:
         if initial_delay:
-            await asyncio.sleep(2)
+            await asyncio.sleep(self.profile.query_start_ms / 1000)
         group = "68" if self.layout in (6, 8) else "7" if self.layout == 7 else "default"
         for index, slot in enumerate((3, 4, 1, 2, 5)):
             if self._coordinator.cancel_command.is_set():
                 return
             if index:
-                await asyncio.sleep(0.2)
+                await asyncio.sleep(self.profile.query_spacing_ms / 1000)
             await self.write_command(ACTIONS[f"query_{group}_{slot}"].frame)
 
     async def execute_action(self, key: str) -> None:
@@ -448,14 +521,15 @@ class BedSenseController(BedController):
             return
         action = ACTIONS.get(key)
         if action is None or self.layout not in action.variants:
-            raise ValueError(f"BedSense action unavailable for this layout: {key}")
+            raise ValueError(f"This bed model does not offer {key}")
         if key.endswith(("_up", "_down")) and not key.startswith("massage_"):
             count, delay = self.motor_pulse_settings()
             # This is HA's requested hold duration, NOT a protocol repeat cadence.
             try:
                 await self.write_command(action.frame)
                 try:
-                    async with asyncio.timeout(count * delay / 1000):
+                    # A renewable hold (#483) waits for its lease, within its ceiling.
+                    async with asyncio.timeout(self.leased_hold_ms(count * delay) / 1000):
                         await self._coordinator.cancel_command.wait()
                 except TimeoutError:
                     pass
@@ -507,7 +581,7 @@ class BedSenseController(BedController):
     def validate_memory_recall(self, memory_num: int) -> None:
         super().validate_memory_recall(memory_num)
         if memory_num in (1, 2) and not self._saved[memory_num]:
-            raise ValueError("Save this BedSense memory before recalling it")
+            raise ValueError("Save this memory position before recalling it")
 
     async def preset_memory(self, memory_num: int) -> None:
         self.validate_memory_recall(memory_num)
@@ -532,7 +606,7 @@ class BedSenseController(BedController):
 
     async def preset_anti_snore(self) -> None:
         if not self.supports_preset_anti_snore:
-            raise ValueError("This layout has Flat Bed instead of Anti Snore")
+            raise ValueError("This bed model has Flat instead of Anti-snore")
         await self.preset_memory(5)
 
     async def move_back_up(self) -> None:
@@ -563,3 +637,15 @@ class BedSenseController(BedController):
     move_head_stop = stop_all
     move_legs_stop = stop_all
     move_feet_stop = stop_all
+
+
+async def build_controller(ctx: BuildContext) -> BedSenseController:
+    """Build the controller with the connection-independent app session."""
+    from ..app_session import app_session
+
+    return BedSenseController(
+        ctx.coordinator,
+        variant=ctx.variant or "auto",
+        device_name=ctx.live_device_name,
+        session=app_session(ctx.coordinator.hass, ctx.coordinator.address, "bedsense", BedSenseSession),
+    )

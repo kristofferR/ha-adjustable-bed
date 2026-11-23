@@ -14,7 +14,6 @@ from custom_components.adjustable_bed.bluetooth_bond import (
     LocalBondInventory,
     LocalBondRecord,
     async_read_local_bonds,
-    async_remove_host_bond,
     async_remove_local_bond,
     select_local_bond,
 )
@@ -232,66 +231,6 @@ class TestRemovingOneBond:
             result = await async_remove_local_bond(self._record())
         assert result.status is BondRemovalStatus.RPC_FAILED
         assert not result.succeeded
-
-
-class TestChoosingWhichBondToRemove:
-    """Never guess which adapter's bond the user meant."""
-
-    async def test_an_unreadable_backend_refuses(self) -> None:
-        with _patch_objects(None):
-            result = await async_remove_host_bond(TEST_ADDRESS)
-        assert result.status is BondRemovalStatus.BACKEND_UNAVAILABLE
-
-    async def test_no_bond_is_reported_as_already_absent(self) -> None:
-        with _patch_objects(_objects(devices=[])):
-            result = await async_remove_host_bond(TEST_ADDRESS)
-        assert result.status is BondRemovalStatus.ALREADY_ABSENT
-        assert not result.succeeded
-
-    async def test_two_bonded_adapters_without_a_choice_refuse(self) -> None:
-        tree = _objects(
-            devices=[_device(), _device(path=_DEVICE_1, adapter=_ADAPTER_1)],
-            adapters={_ADAPTER_0: "11:22:33:44:55:66", _ADAPTER_1: "AA:AA:AA:AA:AA:AA"},
-        )
-        with (
-            _patch_objects(tree),
-            patch(f"{_BOND}.async_remove_local_bond") as removal,
-        ):
-            result = await async_remove_host_bond(TEST_ADDRESS)
-        assert result.status is BondRemovalStatus.AMBIGUOUS_OWNER
-        removal.assert_not_called()
-
-    async def test_naming_the_adapter_resolves_the_ambiguity(self) -> None:
-        tree = _objects(
-            devices=[_device(), _device(path=_DEVICE_1, adapter=_ADAPTER_1)],
-            adapters={_ADAPTER_0: "11:22:33:44:55:66", _ADAPTER_1: "AA:AA:AA:AA:AA:AA"},
-        )
-        with (
-            _patch_objects(tree),
-            patch(f"{_BOND}.async_remove_local_bond", AsyncMock()) as removal,
-        ):
-            await async_remove_host_bond(TEST_ADDRESS, adapter_address="AA:AA:AA:AA:AA:AA")
-        removal.assert_awaited_once()
-        assert removal.await_args[0][0].adapter_path == _ADAPTER_1
-
-    async def test_a_named_adapter_with_no_bond_is_already_absent(self) -> None:
-        with (
-            _patch_objects(_objects(devices=[_device()])),
-            patch(f"{_BOND}.async_remove_local_bond") as removal,
-        ):
-            result = await async_remove_host_bond(
-                TEST_ADDRESS, adapter_address="99:99:99:99:99:99"
-            )
-        assert result.status is BondRemovalStatus.ALREADY_ABSENT
-        removal.assert_not_called()
-
-    async def test_a_single_bond_needs_no_adapter_named(self) -> None:
-        with (
-            _patch_objects(_objects(devices=[_device()])),
-            patch(f"{_BOND}.async_remove_local_bond", AsyncMock()) as removal,
-        ):
-            await async_remove_host_bond(TEST_ADDRESS)
-        removal.assert_awaited_once()
 
 
 @pytest.mark.parametrize(

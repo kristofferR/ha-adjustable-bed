@@ -1,12 +1,11 @@
-"""Serenity profile reloads preserve other sides and retire obsolete app entities."""
+"""Serenity profile entities follow the selected profile."""
 
 import asyncio
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from homeassistant.const import CONF_ADDRESS
-from homeassistant.helpers import entity_registry as er
-from pytest_homeassistant_custom_component.common import MockConfigEntry
+from pytest_homeassistant.common import MockConfigEntry
 
 from custom_components.adjustable_bed.button import _button_entities_for
 from custom_components.adjustable_bed.const import (
@@ -20,92 +19,51 @@ from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinato
 from custom_components.adjustable_bed.cover import _cover_entities_for
 from custom_components.adjustable_bed.light import _light_entities_for
 from custom_components.adjustable_bed.sensor import _sensor_entities_for
+from custom_components.adjustable_bed.state_keys import UNDER_BED_LIGHTS_ON
 from tests.conftest import make_controller_mock
+from tests.state_helpers import published
 from tests.test_malouf_app_entities import configure_entity_runtime
 from tests.test_serenity import make_controller, written
 
 
 @pytest.mark.parametrize("retain", [True, False])
-async def test_status_sensor_reload_reconciles_only_the_current_side(hass, retain):
+async def test_status_sensors_follow_the_profile(hass, retain):
     controller = (
         make_controller()
         if retain
         else make_controller_mock(
             controller_state_sensor_specs=(),
-            stale_controller_state_sensor_entity_keys=frozenset(),
             position_number_specs=(),
         )
     )
     runtime = configure_entity_runtime(
         hass, controller, BED_TYPE_SERENITY if retain else BED_TYPE_DIAGNOSTIC
     )
-    keys = {
-        "serenity_manufacturer",
-        "serenity_status_code",
-        "serenity_massage_timer_code",
-        "serenity_massage_timer_minutes",
-        "serenity_save_event_code",
-        "serenity_alarm_type",
-    }
-    registry = er.async_get(hass)
-    old = [
-        registry.async_get_or_create(
-            "sensor", DOMAIN, f"bed_{key}_left", config_entry=runtime.entry
-        )
-        for key in keys
-    ]
-    other = registry.async_get_or_create(
-        "sensor", DOMAIN, "bed_serenity_status_code_right", config_entry=runtime.entry
-    )
-    unrelated = registry.async_get_or_create(
-        "sensor", DOMAIN, "bed_unrelated_left", config_entry=runtime.entry
-    )
+    keys = {"serenity_manufacturer", "serenity_massage_timer_minutes", "serenity_alarm_type"}
     entities = _sensor_entities_for(hass, runtime)
-    assert all((registry.async_get(row.entity_id) is not None) is retain for row in old)
-    assert registry.async_get(other.entity_id) is not None
-    assert registry.async_get(unrelated.entity_id) is not None
+    # The entry's stale sweep retires whatever the builder no longer creates.
     assert {entity.unique_id for entity in entities if "serenity_" in entity.unique_id} == (
         {f"bed_{key}_left" for key in keys} if retain else set()
     )
 
 
 @pytest.mark.parametrize("retain", [True, False])
-async def test_literal_app_buttons_reload_reconciles_only_current_side(hass, retain):
+async def test_literal_app_buttons_follow_the_profile(hass, retain):
     controller = make_controller() if retain else make_controller_mock(controller_button_specs=())
     runtime = configure_entity_runtime(
         hass, controller, BED_TYPE_SERENITY if retain else BED_TYPE_DIAGNOSTIC
     )
-    registry = er.async_get(hass)
-    old = registry.async_get_or_create(
-        "button", DOMAIN, "bed_serenity_selector_4_up_left", config_entry=runtime.entry
-    )
-    other = registry.async_get_or_create(
-        "button", DOMAIN, "bed_serenity_selector_4_up_right", config_entry=runtime.entry
-    )
-    unrelated = registry.async_get_or_create(
-        "button", DOMAIN, "bed_other_action_left", config_entry=runtime.entry
-    )
     entities = _button_entities_for(hass, runtime)
-    assert (registry.async_get(old.entity_id) is not None) is retain
-    assert registry.async_get(other.entity_id) is not None
-    assert registry.async_get(unrelated.entity_id) is not None
-    assert any(entity.unique_id == old.unique_id for entity in entities) is retain
+    assert (
+        any(entity.unique_id == "bed_serenity_selector_4_up_left" for entity in entities) is retain
+    )
 
 
-async def test_profile_retires_old_lumbar_cover_without_guessing_auxiliary_axes(hass):
+async def test_profile_covers_skip_lumbar_without_guessing_auxiliary_axes(hass):
     controller = make_controller()
     runtime = configure_entity_runtime(hass, controller, BED_TYPE_SERENITY)
-    registry = er.async_get(hass)
-    old = registry.async_get_or_create(
-        "cover", DOMAIN, "bed_lumbar_left", config_entry=runtime.entry
-    )
-    other = registry.async_get_or_create(
-        "cover", DOMAIN, "bed_lumbar_right", config_entry=runtime.entry
-    )
     covers = _cover_entities_for(hass, runtime)
     assert {cover.entity_description.key for cover in covers} == {"head", "feet"}
-    assert registry.async_get(old.entity_id) is None
-    assert registry.async_get(other.entity_id) is not None
     actions = {button.unique_id for button in _button_entities_for(hass, runtime)}
     assert {
         f"bed_serenity_selector_{selector}_{direction}_left"
@@ -129,7 +87,10 @@ async def test_native_light_toggle_keeps_unknown_physical_state(hass):
     )
     await button.async_press()
     assert "0c02000200000000000000000000" in written(controller)
-    assert not controller.get_light_state()
+    assert all(
+        UNDER_BED_LIGHTS_ON not in published(*call.args)
+        for call in controller._coordinator.handle_controller_state_updates.call_args_list
+    )
     assert not any(
         getattr(light, "supports_color", False) for light in _light_entities_for(hass, runtime)
     )
@@ -183,7 +144,8 @@ async def test_other_axis_stop_preempts_a_running_cover_through_production_sched
     assert len(frames) >= 3
 
 
-async def test_discrete_light_switch_tracks_only_commanded_intent(hass):
+async def test_discrete_light_tracks_only_commanded_intent(hass):
+    from custom_components.adjustable_bed.light import AdjustableBedOnOffLight
     from custom_components.adjustable_bed.switch import _switch_entities_for
 
     controller = make_controller()
@@ -194,13 +156,14 @@ async def test_discrete_light_switch_tracks_only_commanded_intent(hass):
         await command(controller)
 
     runtime.async_execute_controller_command = AsyncMock(side_effect=dispatch)
-    switches = _switch_entities_for(hass, runtime)
-    light = next(
-        switch for switch in switches if switch.entity_description.key == "under_bed_lights"
+    assert not any(
+        switch.entity_description.key == "under_bed_lights"
+        for switch in _switch_entities_for(hass, runtime)
     )
+    (light,) = _light_entities_for(hass, runtime)
+    assert isinstance(light, AdjustableBedOnOffLight)
     assert light.is_on is None
     assert light.assumed_state is True
-    assert _light_entities_for(hass, runtime) == []
     with patch.object(light, "async_write_ha_state", MagicMock()):
         await light.async_turn_on()
         assert light.is_on is True
@@ -209,7 +172,10 @@ async def test_discrete_light_switch_tracks_only_commanded_intent(hass):
     frames = written(controller)
     assert "0c02000000000000004000000000" in frames
     assert "0c02000000000000008000000000" in frames
-    assert controller.get_light_state() == {}
+    assert all(
+        UNDER_BED_LIGHTS_ON not in published(*call.args)
+        for call in controller._coordinator.handle_controller_state_updates.call_args_list
+    )
 
 
 async def test_parser_publishes_native_diagnostic_values_and_signed_alarm_attributes(hass):
@@ -237,12 +203,14 @@ async def test_parser_publishes_native_diagnostic_values_and_signed_alarm_attrib
     await controller.refresh_manufacturer()
     assert sensors["serenity_manufacturer"].native_value == "CST13"
     controller._handle_notification(None, status(2))
-    assert sensors["serenity_status_code"].native_value == 2
+    # Raw codes stay in published state, without their own entities.
+    raw = coordinator.controller_state
+    assert raw.get(controller._state_key("status_code")) == 2
     assert sensors["serenity_massage_timer_minutes"].native_value == 20
     await controller.hold_control("save_memory_1", 100)
     controller._handle_notification(None, status(3))
-    assert sensors["serenity_save_event_code"].native_value == 4
-    assert sensors["serenity_massage_timer_code"].native_value == 2
+    assert raw.get(controller._state_key("save_event_code")) == 4
+    assert raw.get(controller._state_key("massage_timer_code")) == 2
     assert sensors["serenity_massage_timer_minutes"].native_value == 20
     payload = status(128, alarm=True)
     payload[4:8] = bytes([128, 6, 129, 255])
@@ -256,5 +224,15 @@ async def test_parser_publishes_native_diagnostic_values_and_signed_alarm_attrib
         "serenity_alarm_on": True,
     }
     controller._handle_notification(None, status(128))
-    assert sensors["serenity_status_code"].native_value == -128
+    assert raw.get(controller._state_key("status_code")) == -128
     assert sensors["serenity_massage_timer_minutes"].native_value is None
+
+
+def test_preset_saves_are_confirmed_save_buttons():
+    from custom_components.adjustable_bed.card import CARD_PRESET_SAVE
+
+    specs = make_controller().controller_button_specs
+    saves = [s for s in specs if s.key.split("_", 1)[1].startswith("save_")]
+    assert saves
+    assert all(s.requires_confirmation and s.card == CARD_PRESET_SAVE for s in saves)
+    assert not any(s.requires_confirmation for s in specs if s not in saves)

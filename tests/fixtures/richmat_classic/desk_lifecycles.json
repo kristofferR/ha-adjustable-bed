@@ -1,0 +1,80 @@
+[
+  {
+    "id": "F4-65008",
+    "slot": 1,
+    "kind": "cancel_ignored",
+    "expected_first": "6e96000408"
+  },
+  {
+    "id": "F4-65009",
+    "slot": 1,
+    "kind": "disconnect_resume",
+    "expected_first": "6e96000408"
+  },
+  {
+    "id": "F4-65010",
+    "slot": 1,
+    "kind": "pause_and_ringing",
+    "expected_first": "6e96000408"
+  },
+  {
+    "id": "F4-65011",
+    "slot": 2,
+    "kind": "cancel_ignored",
+    "expected_first": "6e9600080c"
+  },
+  {
+    "id": "F4-65012",
+    "slot": 2,
+    "kind": "disconnect_resume",
+    "expected_first": "6e9600080c"
+  },
+  {
+    "id": "F4-65013",
+    "slot": 2,
+    "kind": "pause_and_ringing",
+    "expected_first": "6e9600080c"
+  },
+  {
+    "id": "F4-65014",
+    "slot": 3,
+    "kind": "cancel_ignored",
+    "expected_first": "6e96001014"
+  },
+  {
+    "id": "F4-65015",
+    "slot": 3,
+    "kind": "disconnect_resume",
+    "expected_first": "6e96001014"
+  },
+  {
+    "id": "F4-65016",
+    "slot": 3,
+    "kind": "pause_and_ringing",
+    "expected_first": "6e96001014"
+  },
+  {
+    "id": "F4-65017",
+    "slot": 4,
+    "kind": "cancel_ignored",
+    "expected_first": "6e95000003"
+  },
+  {
+    "id": "F4-65018",
+    "slot": 4,
+    "kind": "disconnect_resume",
+    "expected_first": "6e95000003"
+  },
+  {
+    "id": "F4-65019",
+    "slot": 4,
+    "kind": "pause_and_ringing",
+    "expected_first": "6e95000003"
+  },
+  {
+    "id": "F4-65020",
+    "slot": 1,
+    "kind": "owner_replacement",
+    "expected_first": "6e96000408"
+  }
+]

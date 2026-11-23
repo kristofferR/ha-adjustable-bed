@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from custom_components.adjustable_bed.beds.leggett_gen2_profiles import (
+from custom_components.adjustable_bed.beds.leggett.gen2_profiles import (
     GEN2_FALLBACK,
     GEN2_PROFILES,
     capabilities_for_product,

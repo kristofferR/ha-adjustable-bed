@@ -8,10 +8,16 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-from custom_components.adjustable_bed import doublesleep_protocol as p
-from custom_components.adjustable_bed.beds.doublesleep import DoubleSleepController, Session
-from custom_components.adjustable_bed.doublesleep_services import Request
-from custom_components.adjustable_bed.doublesleep_state import Report
+from custom_components.adjustable_bed.bed_traits import bed_traits
+from custom_components.adjustable_bed.beds.doublesleep import protocol as p
+from custom_components.adjustable_bed.beds.doublesleep.controller import (
+    DoubleSleepController,
+    Session,
+)
+from custom_components.adjustable_bed.beds.doublesleep.services import Request
+from custom_components.adjustable_bed.beds.doublesleep.state import Report
+from custom_components.adjustable_bed.const import BED_TYPE_DOUBLESLEEP
+from tests.state_helpers import state_writer
 from tests.test_doublesleep_protocol import NOW, json_notification
 
 
@@ -50,7 +56,7 @@ class Bed:
             cancel_command=asyncio.Event(),
             hass=SimpleNamespace(data={}, async_create_task=lambda coro: asyncio.create_task(coro)),
             record_command_trace=MagicMock(),
-            handle_controller_state_updates=self.states.update,
+            handle_controller_state_updates=state_writer(self.states),
         )
         self.bed = DoubleSleepController(
             self.coordinator, protocol=driver, model=model, session=Session()
@@ -59,7 +65,8 @@ class Bed:
 
     async def connect(self):
         with patch(
-            "custom_components.adjustable_bed.beds.doublesleep.asyncio.sleep", new=AsyncMock()
+            "custom_components.adjustable_bed.beds.doublesleep.controller.asyncio.sleep",
+            new=AsyncMock(),
         ):
             await self.bed.start_notify()
         self.client.write_gatt_char.reset_mock()
@@ -73,7 +80,8 @@ async def test_setup_and_stale_notification_callback(driver):
     bed = Bed(driver=driver, model=11135 if driver == "p3" else 3)
     await bed.connect()
     assert len(bed.receivers) == 1
-    assert bed.bed.requires_notification_channel and bed.bed.requires_persistent_connection
+    assert bed.bed.requires_notification_channel
+    assert bed_traits(BED_TYPE_DOUBLESLEEP, driver).persistent_connection
     previous = bed.receivers[0]
     await bed.bed.stop_notify()
     previous(bed.rx, bytearray.fromhex("2a00000881020102"))
@@ -141,7 +149,7 @@ async def test_p3_report_continuation_runs_inside_owned_operation():
     await bed.connect()
     task = asyncio.create_task(bed.bed.request(Request("report", (1, 0, 2026, 11, 3))))
     await asyncio.sleep(0)
-    with pytest.raises(ValueError, match="already active"):
+    with pytest.raises(ValueError, match="already being downloaded"):
         bed.bed.validate_request(Request("report", (0, 0, 2026, 11, 3)))
     bed.bed._receive(json_notification("q_report", {"fsize": 20}))
     for _ in range(5):
@@ -209,11 +217,47 @@ async def test_save_releases_and_massage_queries_follow_source_delay():
     assert bed.packets() == [bytes.fromhex("aa000001050125"), bytes.fromhex("aa000001010400000000")]
     bed.client.write_gatt_char.reset_mock()
     with patch(
-        "custom_components.adjustable_bed.beds.doublesleep.asyncio.sleep", new=AsyncMock()
+        "custom_components.adjustable_bed.beds.doublesleep.controller.asyncio.sleep",
+        new=AsyncMock(),
     ) as delay:
         await bed.bed.press(35)
     delay.assert_awaited_once_with(0.2)
     assert bed.packets() == [bytes.fromhex("aa000002010150"), bytes.fromhex("2a000002810103")]
+
+
+@pytest.mark.parametrize("driver", ["p1", "p2"])
+async def test_massage_switches_send_the_on_and_off_keys_and_show_running(driver):
+    bed = Bed(driver)
+    await bed.connect()
+    specs = {s.key: s for s in bed.bed.controller_switch_specs}
+    domains = ("massage", "sonic") if driver == "p2" else ("massage",)
+    assert {f"doublesleep_{d}" for d in domains} <= specs.keys()
+    assert ("doublesleep_sonic" in specs) is (driver == "p2")
+    labels = {s.key for s in bed.bed.controller_button_specs}
+    assert not labels & {f"doublesleep_{i}" for i in (28, 29, 89, 90)}
+    for domain, (on, off) in (("massage", (28, 29)), ("sonic", (89, 90)))[: len(domains)]:
+        expected = []
+        for index in (on, off):
+            bed.client.write_gatt_char.reset_mock()
+            with patch(
+                "custom_components.adjustable_bed.beds.doublesleep.controller.asyncio.sleep",
+                new=AsyncMock(),
+            ):
+                await bed.bed.press(index)
+            expected.append(bed.packets())
+        sent = []
+        for value in (True, False):
+            bed.client.write_gatt_char.reset_mock()
+            with patch(
+                "custom_components.adjustable_bed.beds.doublesleep.controller.asyncio.sleep",
+                new=AsyncMock(),
+            ):
+                await specs[f"doublesleep_{domain}"].set_fn(bed.bed, value)
+            sent.append(bed.packets())
+        assert sent == expected
+        bed.bed.parser.state[f"{domain}_running"] = 1
+        bed.bed._publish()
+        assert bed.states[f"doublesleep_{domain}_on"] is True
 
 
 async def test_cancellation_before_first_fragment_does_not_publish_privacy():
@@ -228,13 +272,16 @@ async def test_cancellation_before_first_fragment_does_not_publish_privacy():
 async def test_alarm_and_anti_snore_workflows_are_distinct_and_capability_gated():
     bed = Bed()
     await bed.connect()
-    with patch("custom_components.adjustable_bed.beds.doublesleep.asyncio.sleep", new=AsyncMock()):
+    with patch(
+        "custom_components.adjustable_bed.beds.doublesleep.controller.asyncio.sleep",
+        new=AsyncMock(),
+    ):
         await bed.bed.request(Request("alarm", (6, 30, 130, 9, 1)))
     assert bed.packets()[0][:6] == bytes.fromhex("aa0000030108")
     assert bed.packets()[1] == bytes.fromhex("aa000003020801820901061e0001")
     assert bed.packets()[2] == bytes.fromhex("2a000003810101")
     bed.client.write_gatt_char.reset_mock()
-    with pytest.raises(ValueError, match="capability"):
+    with pytest.raises(ValueError, match="slow anti-snore"):
         bed.bed.validate_request(Request("anti_snore", (1, 2, 30, 10)))
     bed.bed.ui.slow = True
     bed.bed.ui.pwm = 30
@@ -312,9 +359,9 @@ def test_child_lock_restore_and_local_change_do_not_republish_stale_sensor_state
     assert bed.states["doublesleep_child_lock"] == "on"
     bed.states["doublesleep_left_heart_rate"] = 77
     bed.bed.parser.state["left_heart_rate"] = 45
-    spec = bed.bed.controller_select_specs[0]
-    assert spec.local_select_fn is not None
-    spec.local_select_fn("off")
+    spec = next(s for s in bed.bed.controller_switch_specs if s.key == "doublesleep_child_lock")
+    assert spec.local_set_fn is not None
+    spec.local_set_fn(False)
     assert bed.states["doublesleep_child_lock"] == "off"
     assert bed.states["doublesleep_left_heart_rate"] == 77
     assert not bed.client.write_gatt_char.called
@@ -341,7 +388,7 @@ async def test_report_silence_closes_session_without_a_real_timeout_wait():
     await bed.connect()
     with (
         patch(
-            "custom_components.adjustable_bed.beds.doublesleep.asyncio.wait",
+            "custom_components.adjustable_bed.beds.doublesleep.controller.asyncio.wait",
             new=AsyncMock(return_value=(set(), set())),
         ),
         pytest.raises(TimeoutError, match="no progress"),
@@ -367,7 +414,8 @@ async def test_sensitivity_change_retains_unselected_reported_values(driver, mod
     await bed.connect()
     bed.bed.parser.state.update(use_side=2, left_sensitivity=3, right_sensitivity=9)
     with patch(
-        "custom_components.adjustable_bed.beds.doublesleep.asyncio.sleep", new=AsyncMock()
+        "custom_components.adjustable_bed.beds.doublesleep.controller.asyncio.sleep",
+        new=AsyncMock(),
     ) as delay:
         await bed.bed.request(Request("sensitivities", (-1, 1, -1)))
     delay.assert_awaited_once_with(0.2)
@@ -375,7 +423,7 @@ async def test_sensitivity_change_retains_unselected_reported_values(driver, mod
         assert bed.packets()[0] == p.binary_command("p2", 67, (2, 1, 9), p.Cache(), NOW)
     else:
         assert b'"L":[1],"R":[9]' in bed.packets()[0]
-        with pytest.raises(ValueError, match="no reachable side-setting"):
+        with pytest.raises(ValueError, match="cannot change its sensor sides"):
             bed.bed.validate_request(Request("sensitivities", (1, 1, 1)))
 
 
@@ -404,6 +452,7 @@ async def test_unexpected_disconnect_retires_old_timers_tasks_and_report_future(
     callbacks = [(timer._callback, timer._args) for timer in timers if timer is not None]
     assert len(callbacks) == 2
     old._report_future = asyncio.get_running_loop().create_future()
+
     async def queued(*args, **kwargs):
         await asyncio.Event().wait()
 
@@ -439,7 +488,7 @@ async def test_overlapping_legacy_download_waits_for_completion_and_confirmation
     first = bed.bed._legacy_timer
     assert first is not None
     callback, args = first._callback, first._args
-    with pytest.raises(ValueError, match="already active"):
+    with pytest.raises(ValueError, match="already running"):
         await bed.bed.execute(66)
     assert bed.bed._legacy_timer is first and bed.bed._legacy_active
     assert bed.packets() == [bytes.fromhex("01b102")]
@@ -450,7 +499,7 @@ async def test_overlapping_legacy_download_waits_for_completion_and_confirmation
     bed.coordinator.async_execute_controller_command = execute
     first.cancel()
     bed.bed._finish_legacy()
-    with pytest.raises(ValueError, match="already active"):
+    with pytest.raises(ValueError, match="already running"):
         await bed.bed.execute(66)
     await asyncio.gather(*bed.bed._followups)
     assert bed.packets()[-1] == bytes.fromhex("01b301")
@@ -473,3 +522,37 @@ async def test_invalid_report_scalar_never_publishes_success(channel, data):
     with pytest.raises(ValueError, match="must be an integer"):
         bed.bed._report(Report(channel, 0, 0, data))
     assert bed.states == before
+
+
+@pytest.mark.parametrize("driver", ["p1", "p2"])
+def test_disable_anti_snore_is_an_extra_and_sonic_sources_sit_together(driver):
+    bed = Bed(driver)
+    specs = {s.key: s for s in bed.bed.controller_button_specs}
+    stop_snore = specs["doublesleep_63"]
+    # Ending an intervention is no preset, and there is no enable to pair it with.
+    assert stop_snore.translation_key == "catalog_action"
+    assert stop_snore.card.section == "utility" and not stop_snore.entity_registry_enabled_default
+    sources = [specs.get(f"doublesleep_{i}") for i in (87, 88)]
+    if driver == "p2":
+        assert all(s is not None and s.card.section == "massage" for s in sources)
+        assert not any(s.entity_registry_enabled_default for s in sources if s is not None)
+    else:
+        assert sources == [None, None]
+
+
+def test_diagnostics_leave_out_vital_signs_and_reports():
+    """Heart rate, breathing, presence and reports stay out of support files (PRIV-2)."""
+    bed = Bed()
+    bed.bed.parser._live("left", [62, 15, 3, 0, 1])
+    bed.bed.parser.state["left_sensitivity"] = 4
+    bed.bed.parser.state["last_json"] = {"cmd": "q_realtime", "val": {"L": [0, 3, 62, 15]}}
+    bed.bed.parser.state["right_report"] = {"standardHR": 61}
+
+    state = bed.bed.protocol_diagnostics["state"]
+
+    assert isinstance(state, dict)
+    assert state["left_sensitivity"] == 4
+    for key in ("left_heart_rate", "left_breath_rate", "left_status", "left_raw", "left_history"):
+        assert key not in state
+    assert "last_json" not in state
+    assert "right_report" not in state

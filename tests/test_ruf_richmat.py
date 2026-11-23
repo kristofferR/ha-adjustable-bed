@@ -8,31 +8,33 @@ import json
 from datetime import UTC, datetime
 from pathlib import Path
 from types import SimpleNamespace
-from unittest.mock import AsyncMock, MagicMock
+from typing import Any, cast
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-from custom_components.adjustable_bed.beds.richmat_mh import resolve_model
-from custom_components.adjustable_bed.beds.richmat_mh_protocol import GATT_MAPS, Event, finalize
-from custom_components.adjustable_bed.beds.ruf_richmat import (
+from custom_components.adjustable_bed.beds.richmat_mh.controller import resolve_model
+from custom_components.adjustable_bed.beds.richmat_mh.protocol import GATT_MAPS, Event, finalize
+from custom_components.adjustable_bed.beds.ruf_richmat.controller import (
     AppClassifier,
     RufRichmatController,
     load_app_model,
     waist_init,
 )
-from custom_components.adjustable_bed.beds.ruf_richmat_sleep import RufRichmatSleepController
-from custom_components.adjustable_bed.const import SUPPORTED_BED_TYPES
-from custom_components.adjustable_bed.controller_factory import create_controller
-from custom_components.adjustable_bed.detection import BED_TYPE_DISPLAY_NAMES
-from custom_components.adjustable_bed.ruf_richmat_models import MODEL_IDS
-from custom_components.adjustable_bed.ruf_richmat_profiles import APPS, profiles
-from custom_components.adjustable_bed.ruf_richmat_protocol import (
+from custom_components.adjustable_bed.beds.ruf_richmat.models import MODEL_IDS
+from custom_components.adjustable_bed.beds.ruf_richmat.profiles import profiles
+from custom_components.adjustable_bed.beds.ruf_richmat.protocol import (
     AlarmRequest,
     alarm_frame,
     calendar_clock,
     sleep_frame,
 )
+from custom_components.adjustable_bed.beds.ruf_richmat.sleep import RufRichmatSleepController
+from custom_components.adjustable_bed.const import RUF_RICHMAT_APPS, SUPPORTED_BED_TYPES
+from custom_components.adjustable_bed.controller_factory import create_controller
+from custom_components.adjustable_bed.detection import BED_TYPE_DISPLAY_NAMES
 from custom_components.adjustable_bed.validators import is_valid_variant_for_bed_type
+from tests.state_helpers import state_writer
 
 
 def coordinator():
@@ -42,7 +44,7 @@ def coordinator():
     c.motor_pulse_count = 2
     c.controller_state = {}
     c.handle_controller_state_update.side_effect = lambda k, v: c.controller_state.update({k: v})
-    c.handle_controller_state_updates.side_effect = c.controller_state.update
+    c.handle_controller_state_updates.side_effect = state_writer(c.controller_state)
     c.client = MagicMock(is_connected=True)
     c.client.write_gatt_char = AsyncMock()
     return c
@@ -74,7 +76,7 @@ def delays(monkeypatch):
 
 
 def test_all_selected_apps_are_findable_and_models_resolve():
-    for bed, app in APPS.items():
+    for bed, app in RUF_RICHMAT_APPS.items():
         assert bed in SUPPORTED_BED_TYPES and bed in BED_TYPE_DISPLAY_NAMES
         for model in MODEL_IDS[app]:
             assert resolve_model(app, f"model_{model}", None) == (model, None)
@@ -203,7 +205,7 @@ async def test_initialization_is_app_and_version_specific(
 
     async def query(raw):
         await original(raw)
-        if raw == "6e9a000008":
+        if raw.hex() == "6e9a000008":
             c._apply(Event("version", version))
 
     c._write_query = query
@@ -311,7 +313,7 @@ async def test_calendar_refresh_removes_deleted_slots_and_keeps_reported_records
     ]
     for record in records:
         c._apply(Event("extended", record.hex()))
-    state = c._coordinator.controller_state
+    state = cast(dict[str, Any], c._coordinator.controller_state)
     assert state["ruf_richmat_calendar_alarm_count"] == 2
     previous = state["ruf_richmat_calendar_alarms"]
     original = c.write_command
@@ -379,7 +381,7 @@ def test_sleep_json_has_exact_raw_rate_and_boolean_meaning():
     assert "ruf_richmat_sleep_right_heart_rate" not in state
 
 
-@pytest.mark.parametrize("bed,app", APPS.items())
+@pytest.mark.parametrize("bed,app", RUF_RICHMAT_APPS.items())
 async def test_factory_selects_real_app_controller(bed, app):
     c = coordinator()
 
@@ -395,7 +397,7 @@ async def test_factory_selects_real_app_controller(bed, app):
 
 
 def test_restored_normal_mattress_matches_all_accepted_vectors():
-    from custom_components.adjustable_bed.beds.richmat_mh_protocol import mattress_frame
+    from custom_components.adjustable_bed.beds.richmat_mh.protocol import mattress_frame
 
     data = json.loads(
         (Path(__file__).parent / "fixtures/ruf_richmat_normal_mattress_vectors.json").read_text()
@@ -465,25 +467,45 @@ def test_calendar_capability_and_position_gates_are_model_specific():
     assert not c.supports_ruf_richmat_alarms
 
 
-async def test_alarm_service_schema_and_validation(hass, monkeypatch):
-    from homeassistant.core import ServiceCall
-
-    from custom_components.adjustable_bed import ruf_richmat_services as service
+async def test_set_alarm_writes_the_mattress_alarm(hass):
+    from tests.alarm_helpers import call_set_alarm
 
     c = make("wsilver2", "bfrm_mattress")
     c._normal_ready = True
-
-    async def execute(call, capability, label, command, validate):
-        assert capability == "supports_ruf_richmat_alarms"
-        validate(c)
-        await command(c)
-
-    monkeypatch.setattr(service, "_execute", execute)
-    data = service.SCHEMA(
-        {"device_id": ["bed"], "family": "mattress", "time": "07:30:00", "mattress_side": "right"}
+    await call_set_alarm(
+        hass,
+        c,
+        {"enabled": True, "time": "07:30:00", "mattress_side": "right"},
     )
-    await service.handle_alarm(ServiceCall(hass, "adjustable_bed", service.SERVICE, data))
     assert frames(c)[0].startswith("5e020b0101071e")
+
+
+async def test_set_alarm_writes_a_named_calendar_alarm(hass):
+    from tests.alarm_helpers import call_set_alarm
+
+    model = next(
+        m
+        for m, p in profiles("wsilver2").items()
+        if p["fields"].get("hasNewAlarm") and p["fields"].get("alarmList")
+    )
+    c = make("wsilver2", model)
+    c._dev = {}
+    capability = c.alarm_capability
+    assert capability is not None and capability.slots == 7 and capability.wake_actions
+    c.ruf_richmat_alarm = AsyncMock()
+    await call_set_alarm(
+        hass,
+        c,
+        {
+            "enabled": True,
+            "time": "07:30:00",
+            "slot": 2,
+            "weekdays": ["monday"],
+            "wake_action": capability.wake_actions[0],
+        },
+    )
+    request = c.ruf_richmat_alarm.await_args.args[0]
+    assert (request.family, request.slot, request.weekdays) == ("calendar", 2, (0,))
 
 
 @pytest.mark.parametrize("app", MODEL_IDS)
@@ -541,7 +563,7 @@ def test_normal_mattress_variant_preserves_verified_ver2_bed_controls(model):
 
 
 def test_selector_validation_does_not_load_catalog_files(monkeypatch):
-    from custom_components.adjustable_bed import ruf_richmat_profiles
+    from custom_components.adjustable_bed.beds.ruf_richmat import profiles as ruf_richmat_profiles
 
     def blocked(_app):
         pytest.fail("A synchronous setup selector must not read/decompress a catalog")
@@ -553,7 +575,7 @@ def test_selector_validation_does_not_load_catalog_files(monkeypatch):
 
 
 async def test_factory_preloads_only_the_selected_catalog_in_executor(monkeypatch):
-    from custom_components.adjustable_bed import ruf_richmat_profiles
+    from custom_components.adjustable_bed.beds.ruf_richmat import profiles as ruf_richmat_profiles
     from tests.test_controller_contract import _FactoryCoordinator
 
     c = _FactoryCoordinator()
@@ -573,3 +595,228 @@ async def test_factory_preloads_only_the_selected_catalog_in_executor(monkeypatc
     result = await create_controller(c, "richmat_americanstar", "model_2i_mattress", None)
     assert isinstance(result, RufRichmatController)
     assert order[0:2] == [("executor", "americanstar"), ("read", "americanstar")]
+
+
+async def test_set_alarm_mattress_rejects_a_wake_action(hass):
+    from homeassistant.exceptions import ServiceValidationError
+
+    from tests.alarm_helpers import call_set_alarm
+
+    c = make("wsilver2", "bfrm_mattress")
+    c._normal_ready = True
+    with pytest.raises(ServiceValidationError, match="only vibrates|wake_action"):
+        await call_set_alarm(
+            hass,
+            c,
+            {"enabled": True, "time": "07:30:00", "mattress_side": "right", "wake_action": "tv"},
+        )
+    assert not frames(c)
+
+
+async def test_set_alarm_off_keeps_the_reported_calendar_slot(hass):
+    from homeassistant.exceptions import ServiceValidationError
+
+    from custom_components.adjustable_bed.beds.ruf_richmat.protocol import alarm_frame
+    from custom_components.adjustable_bed.codec import richmat as codec
+    from tests.alarm_helpers import call_set_alarm
+
+    model = next(
+        m
+        for m, p in profiles("wsilver2").items()
+        if p["fields"].get("hasNewAlarm") and p["fields"].get("alarmList")
+    )
+    c = make("wsilver2", model)
+    c._dev = {}
+    query = codec.record_20_len(5, 1, 0, (0,))
+    record = {"bed": 0, "hour": 6, "minute": 45, "mode": 0x45, "week": 0b0100_0001}
+    answers = True
+    writes: list[bytes] = []
+
+    async def write(frame, *args, **kwargs):
+        writes.append(bytes(frame))
+        if frame == query and answers:
+            c._calendar_alarms[3] = dict(record)
+
+    c.write_command = AsyncMock(side_effect=write)
+    sleep = AsyncMock()
+    with patch("custom_components.adjustable_bed.beds.ruf_richmat.controller.asyncio.sleep", sleep):
+        await call_set_alarm(hass, c, {"enabled": False, "slot": 3})
+        assert writes[0] == query
+        expected = AlarmRequest(
+            "calendar", False, hour=6, minute=45, slot=3, mode=0x45, weekdays=(1,)
+        )
+        assert alarm_frame(expected, datetime.now()) in writes
+        # A bed that never answers is refused before the slot is rewritten.
+        c._calendar_alarms.clear()
+        writes.clear()
+        answers = False
+        with pytest.raises(ServiceValidationError, match="Refresh"):
+            await call_set_alarm(hass, c, {"enabled": False, "slot": 3})
+        assert writes == [query]
+
+
+async def test_set_alarm_calendar_needs_an_explicit_wake_action(hass):
+    from homeassistant.exceptions import ServiceValidationError
+
+    from tests.alarm_helpers import call_set_alarm
+
+    model = next(
+        m
+        for m, p in profiles("wsilver2").items()
+        if p["fields"].get("hasNewAlarm") and p["fields"].get("alarmList")
+    )
+    c = make("wsilver2", model)
+    c._dev = {}
+    c.ruf_richmat_alarm = AsyncMock()
+    with pytest.raises(ServiceValidationError, match="Choose a wake action"):
+        await call_set_alarm(hass, c, {"enabled": True, "time": "07:00:00", "slot": 1})
+    c.ruf_richmat_alarm.assert_not_awaited()
+
+
+def _timer_layout(kind: str, app: str, model: str):
+    """A Richmat MH-family controller of one controller kind on a model's first page."""
+    if kind == "bedtech":
+        from tests.test_bedtech_classic import make as make_bedtech
+
+        return make_bedtech(model)
+    if kind == "app":
+        from tests.test_richmat_nisco_supreme import make as make_app
+
+        return make_app(app, model)
+    if kind == "ruf":
+        return make(app, model)
+    from tests.test_richmat_mh import W1
+    from tests.test_richmat_mh import make as make_mh
+
+    c = make_mh(app, None, variant=f"model_{model}")
+    c._write_char = SimpleNamespace(uuid=W1[1], properties=["write"], handle=1)
+    return c
+
+
+TEN, TWENTY, THIRTY = ["6e01005fce", "6e01006edd"], ["6e010063d2", "6e01006edd"], ["6e010061d0", "6e01006edd"]
+
+
+# Running every timer button and the select on all 4,139 Richmat MH-family
+# layout pages gives 11 groups by the frames and delays they send; one layout of
+# each group is pinned here. The frames are what the buttons sent. Hour timers
+# send the minute timers' codes: the label states the duration.
+@pytest.mark.parametrize(
+    ("kind", "app", "model", "sent", "stop_after"),
+    [
+        ("mh", "revive", "farm", {10: TEN, 20: TWENTY, 30: THIRTY}, 0.12),
+        ("ruf", "wsilver2", "6hrm", {10: TEN, 20: TWENTY, 30: THIRTY}, 0.12),
+        ("ruf", "bailey2", "4i", {10: TEN, 20: TWENTY, 30: THIRTY}, 0.1),
+        ("app", "nisco", "6hrm", {10: TEN, 20: TWENTY, 30: THIRTY}, 0.12),
+        ("app", "nisco", "aerm", {10: TEN, 20: TWENTY, 30: THIRTY}, 0.15),
+        ("app", "nisco", "mlrm", {10: TEN, 30: THIRTY}, 0.12),
+        ("app", "nisco", "ygrm", {10: TEN, 20: TWENTY}, 0.12),
+        ("bedtech", "bedtech_classic", "4i", {10: TEN, 20: TWENTY, 30: THIRTY}, 0.12),
+        ("ruf", "americanstar", "hsrm", {120: TEN, 180: TWENTY, 300: THIRTY}, 0.12),
+        ("ruf", "bailey2", "hsrm", {120: TEN, 180: TWENTY, 300: THIRTY}, 0.1),
+        ("bedtech", "bedtech_classic", "hsrm", {120: TEN, 180: TWENTY, 300: THIRTY}, 0.12),
+    ],
+)
+async def test_massage_timer_select_sends_what_its_buttons_sent(delays, kind, app, model, sent, stop_after):
+    c = _timer_layout(kind, app, model)
+    assert c.massage_timer_options == sorted(sent) and not c.massage_timer_can_turn_off
+    keys = {spec.key for spec in c.controller_button_specs}
+    assert not {f"richmat_mh_{code:02x}" for code in c._massage_timer_codes.values()} & keys
+    for minutes, expected in sent.items():
+        fresh = _timer_layout(kind, app, model)
+        delays.clear()
+        await fresh.set_massage_timer(minutes)
+        assert (frames(fresh), [round(d, 3) for d in delays]) == (expected, [stop_after])
+
+
+@pytest.mark.parametrize(
+    ("kind", "app", "model", "button"),
+    [
+        ("app", "nisco", "a9rm", "richmat_mh_5f"),  # 10 minutes only
+        ("app", "nisco", "ilrm", "richmat_mh_61"),  # 30 minutes only
+        ("ruf", "americanstar", "cwrn", "richmat_mh_60"),  # 15 minutes only
+    ],
+)
+def test_a_layout_without_a_minute_timer_choice_keeps_its_buttons(kind, app, model, button):
+    c = _timer_layout(kind, app, model)
+    assert not c.supports_massage_timer
+    assert button in {spec.key for spec in c.controller_button_specs}
+
+
+def test_a_factory_reset_asks_first_whatever_its_label_case() -> None:
+    """The TX app writes "Factory reset"; the name check missed it, so it never asked."""
+    c = make("tx", "3i")
+    assert next(x.label for x in c._controls() if x.code == 0x62) == "Factory reset"
+    spec = next(s for s in c.controller_button_specs if s.key == "richmat_mh_62")
+    assert spec.requires_confirmation and not spec.entity_registry_enabled_default
+
+
+ONE, TWO, THREE = ["6e010067d6", "6e01006edd"], ["6e0100af1e", "6e01006edd"], ["6e010068d7", "6e01006edd"]
+
+
+# The 32 Richmat MH-family layout pages with all three massage intensity
+# buttons form 5 groups by what they send; one of each is pinned here. Each
+# level of the number sends what its button sent.
+@pytest.mark.parametrize(
+    ("kind", "app", "model", "stop_after"),
+    [
+        ("mh", "idealbed", "b1rm", 0.12),
+        ("ruf", "wsilver2", "b1rm", 0.12),
+        ("ruf", "bailey2", "b1rm", 0.1),
+        ("app", "nisco", "r2rm", 0.12),
+        ("bedtech", "bedtech_classic", "b1rm", 0.12),
+    ],
+)
+async def test_massage_intensity_levels_are_one_number(delays, kind, app, model, stop_after):
+    c = _timer_layout(kind, app, model)
+    assert c.massage_intensity_zones == ["all"] and c.auto_enable_massage
+    assert (c.massage_intensity_min("all"), c.massage_intensity_max) == (1, 3)
+    assert not {"richmat_mh_67", "richmat_mh_af", "richmat_mh_68"} & {s.key for s in c.controller_button_specs}
+    for level, expected in ((1, ONE), (2, TWO), (3, THREE)):
+        fresh = _timer_layout(kind, app, model)
+        delays.clear()
+        await fresh.set_massage_intensity("all", level)
+        assert (frames(fresh), [round(d, 3) for d in delays]) == (expected, [stop_after])
+
+
+# The 7 RUF layout pages with heat off, low, medium and high form 2 groups by
+# what they send; each level of the select sends what its button sent.
+@pytest.mark.parametrize(("app", "stop_after"), [("wsilver2", 0.12), ("bailey2", 0.1)])
+async def test_heat_levels_are_one_select(delays, app, stop_after):
+    c = make(app, "hsrm")
+    (spec,) = [s for s in c.controller_select_specs if s.key == "heat_level"]
+    assert spec.options == ("off", "low", "medium", "high")
+    assert not {"richmat_mh_9c", "richmat_mh_9f"} & {s.key for s in c.controller_button_specs}
+    for level, code in zip(spec.options, ("9c0b", "9d0c", "9e0d", "9f0e"), strict=True):
+        fresh = make(app, "hsrm")
+        delays.clear()
+        await spec.select_fn(fresh, level)
+        assert (frames(fresh), [round(d, 3) for d in delays]) == (
+            [f"6e0100{code}", "6e01006edd"],
+            [stop_after],
+        )
+
+
+def test_a_level_number_without_zero_shows_unknown_until_a_level_is_sent() -> None:
+    from dataclasses import replace
+
+    from custom_components.adjustable_bed.number import (
+        MASSAGE_NUMBER_DESCRIPTIONS,
+        AdjustableBedMassageNumber,
+    )
+    from custom_components.adjustable_bed.state_keys import massage_intensity
+
+    coordinator = MagicMock()
+    coordinator.controller_state, coordinator.entity_side, coordinator.device_info = {}, None, {}
+    description = replace(MASSAGE_NUMBER_DESCRIPTIONS[0], native_min_value=1, native_max_value=3)
+    number = AdjustableBedMassageNumber(coordinator, description)
+    # 0 is no level of these beds: nothing sent yet is unknown, not off.
+    assert number.native_value is None
+    coordinator.controller_state[massage_intensity("all")] = 2
+    assert number.native_value == 2
+
+
+@pytest.mark.parametrize(("app", "shape"), [("wsilver2", "massage_all_toggle"), ("americanstar", "massage_all_off")])
+def test_a_massage_stop_keeps_its_button_where_other_layouts_use_its_code_as_a_timer(app, shape):
+    """VERM's only massage stop is code 61 ("Start Stop", "All Off"), a 30-minute timer elsewhere."""
+    spec = next(s for s in make(app, "verm").controller_button_specs if s.key == "richmat_mh_61")
+    assert spec.translation_key == shape and spec.entity_registry_enabled_default

@@ -3,11 +3,14 @@ from dataclasses import replace
 
 import pytest
 
-from custom_components.adjustable_bed.motion_bed_actions import ACTION_BY_KEY
-from custom_components.adjustable_bed.motion_bed_models import select_motion_bed
-from custom_components.adjustable_bed.motion_bed_protocol import build_alarm, build_audio_volume
-from custom_components.adjustable_bed.motion_bed_requests import MotionBedWrite
-from custom_components.adjustable_bed.motion_bed_state import (
+from custom_components.adjustable_bed.beds.motion_bed.actions import ACTION_BY_KEY
+from custom_components.adjustable_bed.beds.motion_bed.models import select_motion_bed
+from custom_components.adjustable_bed.beds.motion_bed.protocol import (
+    build_alarm,
+    build_audio_volume,
+)
+from custom_components.adjustable_bed.beds.motion_bed.requests import MotionBedWrite
+from custom_components.adjustable_bed.beds.motion_bed.state import (
     MotionBedRoute,
     MotionBedState,
     parse_motion_bed_notification,
@@ -50,15 +53,15 @@ async def test_actual_callback_audio_feedback_controls_preview_volume_and_alarm_
     alarm = MotionBedWrite("alarm", (build_alarm(enabled=True,hour=6,minute=30,weekdays={},audio=expected),), "home", confirmed=True, persistent=True, alarm_audio=expected)
     rig.controller.validate_motion_bed_write(alarm)
     mismatch = replace(alarm, alarm_audio=not expected)
-    with pytest.raises(ValueError, match="audio"):
+    with pytest.raises(ValueError, match="alarm sound"):
         rig.controller.validate_motion_bed_write(mismatch)
     if expected:
         rig.controller.validate_motion_bed_action("alarm_activity_audio_preview_1")
         rig.controller.validate_motion_bed_write(volume)
     else:
-        with pytest.raises(ValueError, match="audio support"):
+        with pytest.raises(ValueError, match="reported a speaker"):
             rig.controller.validate_motion_bed_action("alarm_activity_audio_preview_1")
-        with pytest.raises(ValueError, match="audio support|unavailable"):
+        with pytest.raises(ValueError, match="reported a speaker|does not offer"):
             rig.controller.validate_motion_bed_write(volume)
     await rig.controller.stop_notify()
 

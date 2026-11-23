@@ -10,9 +10,9 @@ from unittest.mock import AsyncMock, Mock
 
 import pytest
 
-from custom_components.adjustable_bed.beds.reverie_comfort import ReverieComfortRequest
-from custom_components.adjustable_bed.beds.reverie_pairlink import ReveriePairlinkController
-from custom_components.adjustable_bed.beds.reverie_pairlink_protocol import (
+from custom_components.adjustable_bed.beds.reverie.comfort import ReverieComfortRequest
+from custom_components.adjustable_bed.beds.reverie.pairlink import ReveriePairlinkController
+from custom_components.adjustable_bed.beds.reverie.pairlink_protocol import (
     PAIRLINK_WRITE_UUID,
     a7_payload,
     build_user_frame,
@@ -22,13 +22,14 @@ from custom_components.adjustable_bed.beds.reverie_pairlink_protocol import (
     state_query_payloads,
     status_sync_payloads,
 )
-from custom_components.adjustable_bed.beds.reverie_pairlink_runtime import (
+from custom_components.adjustable_bed.beds.reverie.pairlink_runtime import (
     PairlinkCredentials,
     PairlinkHomeIdOrigin,
     PairlinkRole,
     PairlinkRuntime,
     PairlinkRuntimeNotReadyError,
 )
+from tests.state_helpers import published
 
 _ADDRESS = "AA:BB:CC:DD:EE:FF"
 _HOME_ID = 5566
@@ -143,6 +144,7 @@ def _controller(model: str = "R510L") -> tuple[
         clear_position_feedback=Mock(),
         hold_command_connection=nullcontext,
         hass=SimpleNamespace(async_create_task=create_task, loop=fake_loop),
+        record_command_trace=Mock(),
     )
     controller = ReveriePairlinkController(coordinator, model=model, runtime=runtime)
     controller._sdk_io._store = Mock(async_load=AsyncMock(return_value=None), async_save=AsyncMock())
@@ -229,6 +231,23 @@ async def test_central_login_callback_replies_and_dispatches_with_learned_sessio
         device_key=bytes.fromhex("10203040"),
     )
     assert client.writes[-1] == (PAIRLINK_WRITE_UUID, expected_assigned_va, False)
+
+
+async def test_central_writes_are_traced_redacted() -> None:
+    """The login reply carries the password; no Pairlink frame is traced in clear."""
+    pytest.importorskip("cryptography")
+    controller, client, runtime, tasks = _controller()
+    await _join_central(controller, client, runtime, tasks)
+    await controller.async_send_payload(bytes.fromhex("0101FF00"))
+
+    traces = [call.kwargs for call in controller._coordinator.record_command_trace.call_args_list]
+    assert len(client.writes) >= 3  # login reply, add confirmation, user frame
+    assert [(t["characteristic_uuid"], t["payload"]["length"]) for t in traces] == [
+        (uuid, len(data)) for uuid, data, _response in client.writes
+    ]
+    assert {(t["payload"]["hex"], t["payload"]["ascii_preview"]) for t in traces} == {
+        ("**REDACTED**", None)
+    }
 
 
 async def test_clock_query_is_one_shot_and_rearmed_only_by_source_response() -> None:
@@ -357,13 +376,15 @@ async def test_registered_channel20_updates_state_without_sdk_fallthrough() -> N
 
     # The source envelope carries sender VA4, then 02/A7 and selector/value.
     packet = b"\x03\xFF\xFF\xFF\xFF\x20" + bytes.fromhex("11223344") + bytes.fromhex("02A70137")
+    controller._coordinator.handle_controller_state_updates.reset_mock()
     await _notify(client, tasks, packet)
 
     assert controller._state["back_position"] == 55
     assert forwarded == [(0x20, bytes.fromhex("1122334402A70137"), True)]
-    assert controller._coordinator.handle_controller_state_update.call_args_list == [
-        (("back_position", 55),)
-    ]
+    assert [
+        published(*call.args)
+        for call in controller._coordinator.handle_controller_state_updates.call_args_list
+    ] == [{"back_position": 55}]
 
 
 async def test_raw_registered_selector_accepts_six_through_nine_bytes_before_sdk() -> None:
@@ -589,8 +610,6 @@ async def test_pairlink_action_methods_match_source_command_vectors() -> None:
     )
 
 
-
-
 async def test_pairlink_raw_integer_setters_clamp_after_type_validation() -> None:
     controller, _client, _runtime, _tasks = _controller()
     controller.async_send_payload = AsyncMock()
@@ -648,7 +667,7 @@ async def test_pairlink_harmoniq_comfort_preflight_excludes_unsupported_lumbar()
             force=True,
         )
     )
-    with pytest.raises(ValueError, match="does not support lumbar_position"):
+    with pytest.raises(ValueError, match="no lumbar position setting"):
         controller.validate_comfort_request(
             ReverieComfortRequest(head_position=20, lumbar_position=40)
         )
@@ -680,7 +699,7 @@ async def test_pairlink_held_axis_has_one_press_and_same_axis_release(
     await _join_central(controller, client, runtime, tasks)
     controller.async_send_payload = AsyncMock()
     monkeypatch.setattr(
-        "custom_components.adjustable_bed.beds.reverie_pairlink.asyncio.sleep",
+        "custom_components.adjustable_bed.beds.reverie.pairlink.asyncio.sleep",
         AsyncMock(),
     )
 
@@ -689,33 +708,6 @@ async def test_pairlink_held_axis_has_one_press_and_same_axis_release(
     assert tuple(call.args[0] for call in controller.async_send_payload.await_args_list) == (
         bytes.fromhex("0101FF00"),
         bytes.fromhex("01030000"),
-    )
-
-
-async def test_pairlink_diagnostic_uses_fake_two_second_timer_and_exact_stop_pair() -> None:
-    controller, client, runtime, tasks = _controller()
-    await _join_central(controller, client, runtime, tasks)
-    controller.async_send_payload = AsyncMock()
-
-    await controller.async_start_diagnostic()
-
-    assert controller._diagnostic_timer is not None
-    timer = controller._diagnostic_timer
-    assert timer.delay == 2
-    assert tuple(call.args[0] for call in controller.async_send_payload.await_args_list) == (
-        bytes.fromhex("014F1400"),
-        bytes.fromhex("015C0000"),
-    )
-    timer.fire()
-    while tasks:
-        pending, tasks[:] = tasks[:], []
-        await asyncio.gather(*pending)
-
-    assert tuple(call.args[0] for call in controller.async_send_payload.await_args_list) == (
-        bytes.fromhex("014F1400"),
-        bytes.fromhex("015C0000"),
-        bytes.fromhex("01480000"),
-        bytes.fromhex("015D0000"),
     )
 
 

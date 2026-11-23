@@ -7,19 +7,20 @@ from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 from bleak.exc import BleakError
-from pytest_homeassistant_custom_component.common import MockConfigEntry
+from pytest_homeassistant.common import MockConfigEntry
 
-from custom_components.adjustable_bed.beds.gmmotor import GmmotorController
-from custom_components.adjustable_bed.beds.gmmotor_sleep import GmmotorSleepController
+from custom_components.adjustable_bed.bed_traits import default_connection_mode
+from custom_components.adjustable_bed.beds.gmmotor.controller import GmmotorController
+from custom_components.adjustable_bed.beds.gmmotor.notifications import Event
+from custom_components.adjustable_bed.beds.gmmotor.requests import Request
+from custom_components.adjustable_bed.beds.gmmotor.services import async_register_gmmotor_services
+from custom_components.adjustable_bed.beds.gmmotor.sessions import sleep_intent
+from custom_components.adjustable_bed.beds.gmmotor.sleep import GmmotorSleepController
+from custom_components.adjustable_bed.beds.gmmotor.transport import E0FF, SLEEP_NOTIFY, SLEEP_WRITE
 from custom_components.adjustable_bed.button import ControllerActionButton
-from custom_components.adjustable_bed.const import DOMAIN, disconnect_after_command_default_enabled
+from custom_components.adjustable_bed.codec.sleep_envelope import frame
+from custom_components.adjustable_bed.const import DOMAIN
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
-from custom_components.adjustable_bed.gmmotor_notifications import Event
-from custom_components.adjustable_bed.gmmotor_requests import Request
-from custom_components.adjustable_bed.gmmotor_services import async_register_gmmotor_services
-from custom_components.adjustable_bed.gmmotor_sessions import sleep_intent
-from custom_components.adjustable_bed.gmmotor_sleep_protocol import frame
-from custom_components.adjustable_bed.gmmotor_transport import E0FF, SLEEP_NOTIFY, SLEEP_WRITE
 
 
 @pytest.fixture
@@ -52,7 +53,7 @@ def gm_link(mock_coordinator_connected, mock_bleak_client, monkeypatch):
     mock_bleak_client.start_notify = AsyncMock()
     mock_bleak_client.stop_notify = AsyncMock()
     monkeypatch.setattr(GmmotorController, "_pause", AsyncMock(return_value=True))
-    monkeypatch.setattr("custom_components.adjustable_bed.beds.gmmotor_sleep._QUEUE_TICK", 0)
+    monkeypatch.setattr("custom_components.adjustable_bed.beds.gmmotor.sleep._QUEUE_TICK", 0)
     return mock_bleak_client
 
 
@@ -68,7 +69,7 @@ def coordinator(
             "product_type": product,
             "gmmotor_side": side,
             "disable_angle_sensing": True,
-            "disconnect_after_command": quick,
+            "connection_mode": "release" if quick else "idle",
         },
     )
     entry.add_to_hass(hass)
@@ -84,7 +85,7 @@ def button(c, material):
 
 @pytest.mark.parametrize("bed_type", ["gmmotor", "gmmotor_sleep_mm", "gmmotor_sleep_sxb"])
 def test_new_entries_do_not_offer_quick_handoff_by_default(bed_type):
-    assert disconnect_after_command_default_enabled(bed_type) is False
+    assert (default_connection_mode(bed_type) == "release") is False
 
 
 @pytest.mark.parametrize("quick", [False, True])
@@ -157,9 +158,7 @@ async def test_gated_service_waits_for_replacement_connection_reply(
     if fields["operation"] in ("alarm", "alarm_at", "repeat_alarm"):
         fields = {**fields, "mode": first.profile.alarm_choices[0][0]}
     task = asyncio.create_task(
-        hass.services.async_call(
-            DOMAIN, "gmmotor", {"device_id": "bed", **fields}, blocking=True
-        )
+        hass.services.async_call(DOMAIN, "gmmotor", {"device_id": "bed", **fields}, blocking=True)
     )
     await asyncio.wait_for(queried.wait(), 1)
     assert c.controller is not first
@@ -189,7 +188,8 @@ async def test_product_state_isolated_from_other_address_profile_and_admitted_ri
     # The right side is admitted by V9RM:1; its distinct catalog never gets E3RM flags.
     right = GmmotorController(c, profile="V9RM:1", side="right")
     assert right._ui_state == right.profile.initial_state == 0
-    assert right.bind_side("left").controller_button_specs
+    with right.side_scope("left"):
+        assert right.controller_button_specs
     fresh = GmmotorController(c, profile="E3RM")
     assert fresh._ui_state == 0  # Changing product starts a new app view.
 

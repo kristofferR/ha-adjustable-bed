@@ -4,9 +4,10 @@ from unittest.mock import AsyncMock
 
 import pytest
 from homeassistant.const import CONF_ADDRESS
-from pytest_homeassistant_custom_component.common import MockConfigEntry
+from pytest_homeassistant.common import MockConfigEntry
 
-from custom_components.adjustable_bed.beds.motion_bed import MotionBedController
+from custom_components.adjustable_bed.beds.motion_bed.controller import MotionBedController
+from custom_components.adjustable_bed.beds.motion_bed.models import select_motion_bed
 from custom_components.adjustable_bed.const import (
     BED_TYPE_MOTION_BED,
     CONF_BED_TYPE,
@@ -15,7 +16,6 @@ from custom_components.adjustable_bed.const import (
     DOMAIN,
 )
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
-from custom_components.adjustable_bed.motion_bed_models import select_motion_bed
 from tests.app_state_helpers import restart_app_state, stored_app_state
 
 
@@ -49,7 +49,7 @@ async def test_reported_audio_preference_survives_reconnect_and_restart_without_
         target.controller.validate_motion_bed_action("alarm_activity_audio_preview_1")
         target.controller._state = replace(target.controller._state, audio_available=False)
         target.controller._handle_notification(b"unrelated")
-        with pytest.raises(ValueError, match="audio support"):
+        with pytest.raises(ValueError, match="reported a speaker"):
             target.controller.validate_motion_bed_action("alarm_activity_audio_preview_1")
         assert await stored_app_state(target, key) == {"audio_available": False}
 
@@ -63,7 +63,7 @@ async def test_audio_preference_isolated_by_physical_target_and_explicit_profile
     other = coordinator(hass, **change)
     await other._async_restore_app_state(other.controller)
     assert other.controller.persisted_app_state == {"audio_available": False}
-    with pytest.raises(ValueError, match="audio support"):
+    with pytest.raises(ValueError, match="reported a speaker"):
         other.controller.validate_motion_bed_action("alarm_activity_audio_preview_1")
 
 

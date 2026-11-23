@@ -5,10 +5,10 @@ from copy import copy
 from unittest.mock import AsyncMock
 
 import pytest
-from pytest_homeassistant_custom_component.common import MockConfigEntry
+from pytest_homeassistant.common import MockConfigEntry
 
 from custom_components.adjustable_bed.const import (
-    CONF_DISCONNECT_AFTER_COMMAND,
+    CONF_CONNECTION_MODE,
     CONF_IDLE_DISCONNECT_SECONDS,
     DOMAIN,
     PAIRLINK_ROLE_CENTRAL,
@@ -19,7 +19,7 @@ from tests.test_reverie_pairlink import _controller, _join_central
 from tests.test_reverie_pairlink_production import _entry
 
 
-@pytest.mark.parametrize("action", ["reverie_run_routine", "reverie_test"])
+@pytest.mark.parametrize("action", ["reverie_run_routine"])
 @pytest.mark.parametrize("stop", [False, True])
 async def test_later_deferred_target_respects_stop_before_dispatch(
     hass,
@@ -67,11 +67,15 @@ async def test_later_deferred_target_respects_stop_before_dispatch(
     clients[0].write_gatt_char = blocked_write
     clients[1].write_gatt_char.reset_mock()
 
-    def resolve(_hass, devices, _side):
+    def resolve(_hass, devices, _side, *, problems=None):
+        # Every device resolves, so a STOP has no problem to record.
         selected = {"first": first, "later": later}
         return ([(selected[device], "both") for device in devices], [])
 
     monkeypatch.setattr("custom_components.adjustable_bed.services._resolve_sided_targets", resolve)
+    monkeypatch.setattr(
+        "custom_components.adjustable_bed.beds.reverie.services._resolve_sided_targets", resolve
+    )
     await async_register_services(hass)
     data = {}
     if action == "reverie_run_routine":
@@ -104,7 +108,6 @@ async def test_later_deferred_target_respects_stop_before_dispatch(
         if stop:
             clients[1].write_gatt_char.assert_not_awaited()
             assert later.controller._routine_timer is None
-            assert later.controller._diagnostic_timer is None
             await hass.services.async_call(
                 DOMAIN, action, {"device_id": ["later"], **data}, blocking=True
             )
@@ -136,7 +139,7 @@ async def test_central_polls_preserve_idle_deadline_and_never_reconnect(
         entry,
         data={
             **entry.data,
-            CONF_DISCONNECT_AFTER_COMMAND: False,
+            CONF_CONNECTION_MODE: "idle",
             CONF_IDLE_DISCONNECT_SECONDS: idle_seconds,
         },
     )
@@ -223,7 +226,7 @@ async def test_status_poll_rearms_after_internal_preemption_only(
         entry,
         data={
             **entry.data,
-            CONF_DISCONNECT_AFTER_COMMAND: False,
+            CONF_CONNECTION_MODE: "idle",
             CONF_IDLE_DISCONNECT_SECONDS: idle_seconds,
         },
     )

@@ -25,43 +25,22 @@ body:
       required: true
 
   - type: input
-    id: bed_type
+    id: app_or_remote
     attributes:
-      label: Bed Type
-      description: Which bed type is configured in the integration?
-      placeholder: "e.g., Richmat, Keeson, Linak, Leggett & Platt"
+      label: App or remote
+      description: Which app or remote did you choose when you set up the bed?
+      placeholder: "e.g., Linak Bed Control app, Richmat remote, Ergomotion app"
     validations:
       required: true
-
-  - type: dropdown
-    id: release
-    attributes:
-      label: Release
-      description: Which release line are you running?
-      options:
-        - Stable release (4.x)
-        - v5 beta
-        - Development build (main or a branch)
-    validations:
-      required: true
-
-  - type: input
-    id: v5_beta_number
-    attributes:
-      label: v5 Beta Number
-      description: "Only for the v5 beta: which beta you run."
-      placeholder: "e.g., b1 for v5.0.0b1"
-    validations:
-      required: false
 
   - type: input
     id: integration_version
     attributes:
-      label: Integration Version
-      description: "Settings → Integrations → Adjustable Bed → version shown"
-      placeholder: "Exact installed version, including the beta suffix if present"
+      label: Integration version
+      description: "The exact version, shown under Settings > Devices & services > Adjustable Bed, including any beta suffix."
+      placeholder: "e.g., 5.0.0 or 4.4.2"
     validations:
-      required: false
+      required: true
 
   - type: dropdown
     id: connection_method
@@ -83,13 +62,16 @@ body:
       description: |
         **A support bundle helps us investigate.** If capture fails, describe the error instead so the report can still be tracked.
 
-        1. Go to Developer Tools → Actions
+        1. Go to Developer Tools > Actions
         2. Search for `adjustable_bed.generate_support_bundle`
         3. Select your bed device (the affected Left/Right child for a two-address combined bed) and click "Perform action"
         4. Click the **download link** in the notification that appears
-        5. Drag and drop the JSON file here
+        5. Open the file and remove anything you do not want to share
+        6. Drag and drop the JSON file here
 
-        **Alternative:** Download diagnostics from Settings → Devices & Services → Adjustable Bed → ⋮ → Download diagnostics
+        **Alternative:** Under Settings > Devices & services > Adjustable Bed, choose Download diagnostics in the entry's three-dots menu
+
+        **Issues are public.** Open the file in a text editor first and remove anything you do not want to share. The file leaves out PINs, typed names, health readings and other nearby devices, and keeps only the manufacturer prefix of Bluetooth addresses. See [what the files share](https://github.com/kristofferR/ha-adjustable-bed/blob/main/docs/GETTING_HELP.md#what-the-files-share).
       placeholder: "Attach the bundle or diagnostics, or explain why capture was not possible"
     validations:
       required: true
@@ -100,12 +82,12 @@ body:
       label: Additional Logs
       description: |
         The support bundle already includes recent logs. Only add extra logs here if you have **debug logging** output that captures the specific issue:
-        1. Settings → Devices & Services → Adjustable Bed → ⋮ → Enable debug logging
+        1. Under Settings > Devices & services > Adjustable Bed, choose Enable debug logging in the three-dots menu
         2. Reproduce the issue
         3. Disable debug logging (browser downloads the log file)
-        4. Paste or attach the relevant entries
+        4. The download is Home Assistant's whole log and is not redacted: paste only the Adjustable Bed and Bluetooth entries, without anything you do not want to share
       render: text
-      placeholder: "Paste debug log entries here (optional — the support bundle already includes logs)"
+      placeholder: "Paste debug log entries here (optional: the support bundle already includes logs)"
     validations:
       required: false
 
@@ -115,7 +97,7 @@ body:
       label: Additional Context
       description: |
         Add any other context about the problem here:
-        - Home Assistant version and whether you upgraded from v3
+        - Home Assistant version, and the integration version you upgraded from if this started after an update
         - Standalone or combined bed; affected side and action target
         - Does the physical remote work?
         - Did this work before? What changed?

@@ -1,0 +1,1 @@
+"""motomotion bed family."""

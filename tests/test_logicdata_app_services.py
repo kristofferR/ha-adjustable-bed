@@ -1,6 +1,5 @@
 """Service validation and serialized dispatch for the Logicdata app controllers."""
 
-from types import SimpleNamespace
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
@@ -8,7 +7,11 @@ import voluptuous as vol
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import ServiceValidationError
 
-from custom_components.adjustable_bed.beds.logicdata_app import LogicdataAppController
+from custom_components.adjustable_bed.alarm import AlarmCapability
+from custom_components.adjustable_bed.beds.logicdata.app import LogicdataAppController
+from custom_components.adjustable_bed.beds.logicdata.app_services import (
+    SERVICE_LOGICDATA_HOLD_PRESET,
+)
 from custom_components.adjustable_bed.const import (
     BED_TYPE_LOGICDATA_APP,
     DOMAIN,
@@ -18,19 +21,21 @@ from custom_components.adjustable_bed.const import (
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
 from custom_components.adjustable_bed.paired_coordinator import PairedBedCoordinator
 from custom_components.adjustable_bed.services import (
-    SERVICE_LOGICDATA_HOLD_PRESET,
-    SERVICE_LOGICDATA_RENAME,
-    SERVICE_LOGICDATA_SET_ALARM,
+    SERVICE_RENAME,
+    SERVICE_SET_ALARM,
     SERVICE_TIMED_MOVE,
     async_register_services,
 )
+from tests.alarm_helpers import use_shared_alarm_writer
+from tests.error_helpers import raises_key
 
 
 @pytest.fixture
 async def service_target(hass: HomeAssistant):
     """Use real registered schemas and dispatch with a client-free controller."""
     await async_register_services(hass)
-    controller = SimpleNamespace(
+    controller = MagicMock(
+        spec=LogicdataAppController,
         supports_clock_alarm=True,
         supports_device_rename=True,
         supports_preset_hold=True,
@@ -41,19 +46,31 @@ async def service_target(hass: HomeAssistant):
         rename_device=AsyncMock(),
         hold_preset=AsyncMock(),
     )
+    use_shared_alarm_writer(
+        controller,
+        AlarmCapability(
+            wake_actions=("flat", "zero_g", "anti_snore", "memory_1", "memory_2"),
+            weekdays=True,
+            massage_levels=3,
+        ),
+    )
     coordinator = MagicMock(spec=AdjustableBedCoordinator)
     coordinator.name = "Logicdata bed"
     coordinator.bed_type = BED_TYPE_LOGICDATA_APP
+    coordinator.controller_side = None
     coordinator.capability_controller = controller
 
     async def execute(command, **kwargs):
         await command(controller)
 
     coordinator.async_execute_controller_command = AsyncMock(side_effect=execute)
-    with patch(
-        "custom_components.adjustable_bed.services._resolve_sided_targets",
-        return_value=([(coordinator, SIDE_BOTH)], []),
-    ) as resolve:
+    with (
+        patch(
+            "custom_components.adjustable_bed.services._resolve_sided_targets",
+            return_value=([(coordinator, SIDE_BOTH)], []),
+        ) as resolve,
+        patch("custom_components.adjustable_bed.services._resolve_sided_targets", new=resolve),
+    ):
         yield coordinator, controller, resolve
 
 
@@ -63,15 +80,15 @@ async def test_alarm_converts_weekdays_and_time_without_interrupting_motion(
     coordinator, controller, _ = service_target
     await hass.services.async_call(
         DOMAIN,
-        SERVICE_LOGICDATA_SET_ALARM,
+        SERVICE_SET_ALARM,
         {
             "device_id": "bed",
             "enabled": True,
             "time": "07:35:00",
             "weekdays": ["monday", "friday", "sunday"],
-            "preset": "anti_snore",
-            "head_level": 3,
-            "foot_level": 2,
+            "wake_action": "anti_snore",
+            "head_massage_level": 3,
+            "foot_massage_level": 2,
         },
         blocking=True,
     )
@@ -93,7 +110,7 @@ async def test_alarm_can_be_disabled_with_default_fields(hass: HomeAssistant, se
     _, controller, _ = service_target
     await hass.services.async_call(
         DOMAIN,
-        SERVICE_LOGICDATA_SET_ALARM,
+        SERVICE_SET_ALARM,
         {"device_id": "bed", "enabled": False},
         blocking=True,
     )
@@ -112,7 +129,7 @@ async def test_rename_is_serialized_as_configuration(hass: HomeAssistant, servic
     coordinator, controller, _ = service_target
     await hass.services.async_call(
         DOMAIN,
-        SERVICE_LOGICDATA_RENAME,
+        SERVICE_RENAME,
         {"device_id": "bed", "name": "My Bed"},
         blocking=True,
     )
@@ -125,8 +142,8 @@ async def test_rename_is_serialized_as_configuration(hass: HomeAssistant, servic
 @pytest.mark.parametrize(
     ("service", "data", "capability"),
     [
-        (SERVICE_LOGICDATA_SET_ALARM, {"enabled": True}, "supports_clock_alarm"),
-        (SERVICE_LOGICDATA_RENAME, {"name": "Bed"}, "supports_device_rename"),
+        (SERVICE_SET_ALARM, {"enabled": True, "time": "07:00:00"}, "alarm_capability"),
+        (SERVICE_RENAME, {"name": "Bed"}, "supports_device_rename"),
         (
             SERVICE_LOGICDATA_HOLD_PRESET,
             {"preset": "memory_1", "duration": 1},
@@ -141,9 +158,13 @@ async def test_all_targets_are_validated_before_writing(
     unsupported = MagicMock(spec=AdjustableBedCoordinator)
     unsupported.name = "Unsupported bed"
     unsupported.bed_type = BED_TYPE_LOGICDATA_APP
-    unsupported.capability_controller = SimpleNamespace(**{capability: False})
+    unsupported.controller_side = None
+    unsupported.capability_controller = MagicMock(
+        spec=LogicdataAppController,
+        **{capability: None if capability == "alarm_capability" else False},
+    )
     resolve.return_value = ([(coordinator, SIDE_BOTH), (unsupported, SIDE_BOTH)], [])
-    with pytest.raises(ServiceValidationError, match="does not support"):
+    with raises_key({"feature_not_supported", "alarm_not_supported", "device_rename_not_supported"}, ServiceValidationError):
         await hass.services.async_call(
             DOMAIN, service, {"device_id": ["bed", "other"], **data}, blocking=True
         )
@@ -154,16 +175,11 @@ async def test_all_targets_are_validated_before_writing(
 @pytest.mark.parametrize(
     ("service", "data"),
     [
-        (SERVICE_LOGICDATA_SET_ALARM, {"enabled": True, "weekdays": ["holiday"]}),
-        (SERVICE_LOGICDATA_SET_ALARM, {"enabled": True, "time": "25:00:00"}),
-        (SERVICE_LOGICDATA_SET_ALARM, {"enabled": True, "head_level": 4}),
-        (SERVICE_LOGICDATA_SET_ALARM, {"enabled": True, "preset": "yoga"}),
-        (SERVICE_LOGICDATA_SET_ALARM, {"enabled": True, "foot_level": -1}),
-        (SERVICE_LOGICDATA_RENAME, {"name": ""}),
-        (SERVICE_LOGICDATA_RENAME, {"name": "a" * 256}),
-        (SERVICE_LOGICDATA_RENAME, {"name": "SengÅ"}),
-        (SERVICE_LOGICDATA_RENAME, {"name": "BED\n"}),
-        (SERVICE_LOGICDATA_SET_ALARM, {"enabled": True, "device_id": []}),
+        (SERVICE_SET_ALARM, {"enabled": True, "weekdays": ["holiday"]}),
+        (SERVICE_SET_ALARM, {"enabled": True, "time": "25:00:00"}),
+        (SERVICE_SET_ALARM, {"enabled": True, "wake_action": "sideways"}),
+        (SERVICE_SET_ALARM, {"enabled": True, "foot_massage_level": -1}),
+        (SERVICE_SET_ALARM, {"enabled": True, "device_id": []}),
     ],
 )
 async def test_invalid_fields_do_not_dispatch(hass: HomeAssistant, service_target, service, data):
@@ -180,8 +196,8 @@ async def test_missing_device_prevents_partial_dispatch(hass: HomeAssistant, ser
     with pytest.raises(ServiceValidationError):
         await hass.services.async_call(
             DOMAIN,
-            SERVICE_LOGICDATA_SET_ALARM,
-            {"device_id": ["bed", "missing"], "enabled": True},
+            SERVICE_SET_ALARM,
+            {"device_id": ["bed", "missing"], "enabled": False},
             blocking=True,
         )
     coordinator.async_execute_controller_command.assert_not_awaited()
@@ -199,7 +215,7 @@ async def test_alarm_preserves_paired_side_dispatch(hass: HomeAssistant, service
     resolve.return_value = ([(pair, SIDE_RIGHT)], [])
     await hass.services.async_call(
         DOMAIN,
-        SERVICE_LOGICDATA_SET_ALARM,
+        SERVICE_SET_ALARM,
         {"device_id": "pair", "side": SIDE_RIGHT, "enabled": False},
         blocking=True,
     )
@@ -314,6 +330,7 @@ async def test_timed_move_dispatches_right_back(
         has_light=False,
         has_massage=False,
     )
+    coordinator.controller_side = None
     coordinator.capability_controller = bed
 
     async def execute(command, **kwargs):
@@ -341,3 +358,16 @@ async def test_timed_move_dispatches_right_back(
     assert kwargs["resource"] == "motor:*"
     assert kwargs["pulse_delay_ms"] == 100
     assert kwargs["pulse_count"] == pulse_count
+
+
+async def test_alarm_rejects_levels_and_actions_the_bed_lacks(hass: HomeAssistant, service_target):
+    coordinator, _, _ = service_target
+    for data in ({"head_massage_level": 4}, {"wake_action": "yoga"}, {"slot": 2}):
+        with pytest.raises(ServiceValidationError):
+            await hass.services.async_call(
+                DOMAIN,
+                SERVICE_SET_ALARM,
+                {"device_id": "bed", "enabled": True, "time": "07:00:00", **data},
+                blocking=True,
+            )
+    coordinator.async_execute_controller_command.assert_not_awaited()

@@ -165,6 +165,13 @@ opens a real PR. The PR body lists the ledger totals, every exclusion and every
 deferral. Run the repository's configured review loop. The convergence rules are
 in [AGENTS.md](../../AGENTS.md#mandatory-post-freeze-implementation-convergence).
 
+The ledger also records, for every `IMPLEMENTED` or `ALREADY_IMPLEMENTED`
+item, which wire codec carries it: an existing codec only when its vector
+harness reproduces the item's frozen literals byte for byte, otherwise a new
+codec with its own vectors. New app support then lands as a profile over that
+codec ([design](../design/protocol-codecs.md)). The analyst prompt, schema and
+clean-room analysis do not change; the comparison stays in the post-freeze pass.
+
 ## Publish milestones
 
 After acceptance, reopening or implementation changes, update the trackers and

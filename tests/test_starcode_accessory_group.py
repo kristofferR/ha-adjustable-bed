@@ -9,14 +9,20 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 from homeassistant.const import CONF_ADDRESS, CONF_NAME
 from homeassistant.core import HomeAssistant
-from pytest_homeassistant_custom_component.common import MockConfigEntry
+from homeassistant.exceptions import ServiceValidationError
+from pytest_homeassistant.common import MockConfigEntry
 
-from custom_components.adjustable_bed.beds.star_elevate import (
+from custom_components.adjustable_bed.beds.starcode.accessory_group import (
+    cancel_group_operations,
+    interrupt_conflicting_group,
+    run_group,
+    validate_lift_entries,
+)
+from custom_components.adjustable_bed.beds.starcode.m5x5 import StarcodeM5X5Controller
+from custom_components.adjustable_bed.beds.starcode.star_elevate import (
     StarElevateCommands,
     StarElevateController,
 )
-from custom_components.adjustable_bed.beds.starcode_m5x5 import StarcodeM5X5Controller
-from custom_components.adjustable_bed.config_flow import _starcode_m1x12_errors
 from custom_components.adjustable_bed.const import (
     BED_TYPE_STAR_ELEVATE,
     BED_TYPE_STARCODE_M1X12,
@@ -31,12 +37,8 @@ from custom_components.adjustable_bed.const import (
     STAR_ELEVATE_VARIANT_M1X12,
 )
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
-from custom_components.adjustable_bed.starcode_accessory_group import (
-    cancel_group_operations,
-    interrupt_conflicting_group,
-    run_group,
-    validate_lift_entries,
-)
+from custom_components.adjustable_bed.setup_questions import SETUP_PROFILES, FlowContext
+from tests.error_helpers import raises_key
 
 
 def target(hass: HomeAssistant, index: int, profile: str) -> AdjustableBedCoordinator:
@@ -199,9 +201,8 @@ async def test_m1x12_group_requires_explicit_elevate_variant_and_limits_two(
     ):
         validate_lift_entries(hass, main.data, [legacy.entry_id])
     assert CONF_PROTOCOL_VARIANT not in legacy.data
-    assert _starcode_m1x12_errors(
-        hass,
-        {**main.data, CONF_STARCODE_LIFT_ENTRIES: [legacy.entry_id]},
+    assert SETUP_PROFILES[BED_TYPE_STARCODE_M1X12].errors(
+        {**main.data, CONF_STARCODE_LIFT_ENTRIES: [legacy.entry_id]}, FlowContext(hass)
     ) == {CONF_STARCODE_LIFT_ENTRIES: "starcode_m1x12_elevate_reconfigure"}
 
     lifts = []
@@ -239,8 +240,12 @@ async def test_unrelated_and_unready_rejected_before_movement(hass: HomeAssistan
     hass.config_entries.async_update_entry(
         lifts[0].entry, data={**lifts[0].entry.data, CONF_BED_TYPE: "desk"}
     )
-    with pytest.raises(ValueError, match="bedding profile"):
+    with pytest.raises(ValueError, match="Adjustable M5X5 bed"):
         validate_lift_entries(hass, main.entry.data, [lifts[0].entry.entry_id])
+    # The action says to set up the lifts again, without writing anything.
+    with raises_key("lifts_not_configured", ServiceValidationError):
+        await run_group(main, "up")
+    assert all(t.controller.write_command.await_count == 0 for t in (main, *lifts))
 
 
 async def test_ready_identity_does_not_substitute_transport(hass: HomeAssistant) -> None:
@@ -268,7 +273,7 @@ async def test_flat_orders_main_then_exact_delay_then_lifts_without_extra_stop(
         events.append(("delay", seconds))
 
     with patch(
-        "custom_components.adjustable_bed.starcode_accessory_group.asyncio.sleep", side_effect=delay
+        "custom_components.adjustable_bed.beds.starcode.accessory_group.asyncio.sleep", side_effect=delay
     ):
         await run_group(main, "flat")
     delay_index = events.index(("delay", 1.6))
@@ -298,7 +303,7 @@ async def test_owned_delay_is_cancelled_and_all_admitted_targets_stop(
         await wait.wait()
 
     with patch(
-        "custom_components.adjustable_bed.starcode_accessory_group.asyncio.sleep", side_effect=delay
+        "custom_components.adjustable_bed.beds.starcode.accessory_group.asyncio.sleep", side_effect=delay
     ):
         running = asyncio.create_task(run_group(main, "flat"))
         await entered.wait()
@@ -452,7 +457,7 @@ async def test_delayed_flat_aborts_after_any_retained_session_changes(
 
     with (
         patch(
-            "custom_components.adjustable_bed.starcode_accessory_group.asyncio.sleep",
+            "custom_components.adjustable_bed.beds.starcode.accessory_group.asyncio.sleep",
             side_effect=delay,
         ),
         pytest.raises(asyncio.CancelledError),
@@ -464,3 +469,94 @@ async def test_delayed_flat_aborts_after_any_retained_session_changes(
         }
     assert all(member._command_connection_holds == 0 for member in (main, *lifts))
     assert all(member.async_stop_command.await_count == 1 for member in (main, *lifts))
+
+
+def test_a_configured_lift_that_is_missing_or_another_bed_says_which(hass: HomeAssistant) -> None:
+    from custom_components.adjustable_bed.beds.starcode import accessory_group
+    from custom_components.adjustable_bed.const import BED_TYPE_LINAK, DOMAIN
+
+    other = MagicMock(spec=AdjustableBedCoordinator)
+    other.bed_type = BED_TYPE_LINAK
+    hass.data[DOMAIN] = {"other": other}
+    with raises_key("bed_not_loaded", ServiceValidationError):
+        accessory_group._resolve(hass, "missing")
+    with raises_key("lifts_not_configured", ServiceValidationError):
+        accessory_group._resolve(hass, "other")
+
+
+async def test_lifts_action_on_another_bed_names_the_beds_it_is_for(hass: HomeAssistant) -> None:
+    from custom_components.adjustable_bed.beds.starcode import accessory_group
+    from custom_components.adjustable_bed.const import BED_TYPE_LINAK
+
+    entry = MockConfigEntry(domain="adjustable_bed", data={"bed_type": BED_TYPE_LINAK})
+    for action in ("up", "stop"):
+        call = MagicMock(hass=hass, data={"device_id": "linak", "action": action})
+        with (
+            patch.object(
+                accessory_group, "async_get_device_and_config_entry", return_value=(None, entry)
+            ),
+            raises_key("action_for_other_beds", ServiceValidationError),
+        ):
+            await accessory_group.handle_group(call)
+
+
+async def test_stop_names_each_bed_that_did_not_stop(hass: HomeAssistant) -> None:
+    from custom_components.adjustable_bed.beds.starcode import accessory_group
+
+    main, *lifts = group(hass)
+    lifts[0].async_stop_command.side_effect = ConnectionError("out of range")
+    lifts[1].async_stop_command.side_effect = asyncio.CancelledError()
+    lifts[2].async_stop_command.side_effect = TimeoutError()
+    with raises_key("lifts_not_stopped") as raised:
+        await accessory_group._stop_configured_group(
+            hass, main.entry.entry_id, main.entry.data[CONF_STARCODE_LIFT_ENTRIES]
+        )
+    reasons = raised.value.translation_placeholders["reasons"]
+    # A failure without a message is named by its kind.
+    # A STOP cancelled with its replaced session did not stop that bed either.
+    assert reasons == (
+        f"{lifts[0].name}: out of range; {lifts[1].name}: CancelledError; "
+        f"{lifts[2].name}: TimeoutError"
+    )
+    # Every bed was still told to stop.
+    assert all(t.async_stop_command.await_count == 1 for t in (main, *lifts))
+
+
+async def test_a_lift_set_up_as_another_bed_mid_action_says_so(hass: HomeAssistant) -> None:
+    main, *lifts = group(hass)
+    entered = asyncio.Event()
+    wait = asyncio.Event()
+
+    async def delay(seconds):
+        entered.set()
+        await wait.wait()
+
+    with patch(
+        "custom_components.adjustable_bed.beds.starcode.accessory_group.asyncio.sleep", side_effect=delay
+    ):
+        running = asyncio.create_task(run_group(main, "flat"))
+        await entered.wait()
+        hass.config_entries.async_update_entry(
+            lifts[0].entry, data={**lifts[0].entry.data, CONF_BED_TYPE: "linak"}
+        )
+        wait.set()
+        with raises_key("lifts_not_configured", ServiceValidationError):
+            await running
+    assert all(t.async_stop_command.await_count == 1 for t in (main, *lifts))
+
+
+async def test_a_lift_set_up_as_another_bed_as_lifts_start_says_so(hass: HomeAssistant) -> None:
+    """The lifts run in parallel; the reason still reaches the user unwrapped."""
+    main, *lifts = group(hass)
+
+    async def execute(fn, **kwargs):
+        if fn.__name__ == "_up":
+            hass.config_entries.async_update_entry(
+                lifts[1].entry, data={**lifts[1].entry.data, CONF_BED_TYPE: "linak"}
+            )
+        await fn(lifts[0].controller)
+
+    lifts[0].async_execute_controller_command.side_effect = execute
+    with raises_key("lifts_not_configured", ServiceValidationError):
+        await run_group(main, "up")
+    assert all(t.async_stop_command.await_count == 1 for t in (main, *lifts))

@@ -1,0 +1,129 @@
+"""L&P Adjustable Base 2.3.25 layout selection and BLE transport profile."""
+
+from typing import Final
+
+LAYOUTS: Final = (
+    '209A05', '6BRM', '6CRM', '6DRM', '6ERM', '6FRM', '6HRM', 'A0RM', 'A1RM', 'A2RM',
+    'A3RM', 'A6RM', 'A7RM', 'A8RM', 'A9RM', 'AARM', 'ABRM', 'ACRM', 'ADRM', 'AERM',
+    'AFRM', 'AGRM', 'AHRM', 'AIRM', 'AJRM', 'AKRM', 'ALRM', 'AMRM', 'ANRM', 'AORM',
+    'APRM', 'AQRM', 'ARRM', 'ASRM', 'ATRM', 'AURM', 'AVRM', 'AWRM', 'AXRM', 'AYRM',
+    'AZRM', 'B0RM', 'B1RM', 'B2RM', 'B3RM', 'B4RM', 'B5RM', 'B6RM', 'B7RM', 'B8RM',
+    'B8TT', 'B9RM', 'B9TT', 'BARM', 'BBRM', 'BCRM', 'BDRM', 'BERM', 'BFRM', 'BGRM',
+    'BHRM', 'BIRM', 'BJRM', 'BKRM', 'BLRM', 'BMRM', 'BNRM', 'BORM', 'BPRM', 'BQRM',
+    'BRRM', 'BSRM', 'BTRM', 'BURM', 'BVRM', 'BWRM', 'BXRM', 'BYRM', 'BZRM', 'C0RM',
+    'C1RM', 'C2RM', 'C3RM', 'C4RM', 'C5RM', 'C6RM', 'C7RM', 'C8RM', 'C9RM', 'CARM',
+    'CBRM', 'CCRM', 'CDRM', 'CERM', 'CGRM', 'CHRM', 'CIRM', 'CJRM', 'CKRM', 'CLRM',
+    'CMRM', 'CNRM', 'CORM', 'CPRM', 'CQRM', 'CRRM', 'CSRM', 'CTRM', 'CURM', 'CVRM',
+    'CWRM', 'CXRM', 'CYRM', 'CZRM', 'D0RM', 'D1RM', 'D2RM', 'D3RM', 'D4RM', 'D5RM',
+    'D6RM', 'D7RM', 'D8RM', 'D9RM', 'DARM', 'DBRM', 'DCRM', 'DDRM', 'DERM', 'DFRM',
+    'DGRM', 'DHRM', 'DIRM', 'DJRM', 'DKRM', 'DLRM', 'DMRM', 'DNRM', 'DPRM', 'DQRM',
+    'DRRM', 'DSRM', 'DTRM', 'DURM', 'DVRM', 'DWRM', 'DXRM', 'DYRM', 'DZRM', 'E0RM',
+    'E1RM', 'E2RM', 'E3RM', 'E4RM', 'E5RM', 'E6RM', 'E7RM', 'E8RM', 'E9RM', 'ECRM',
+    'EDRM', 'EFRM', 'EGRM', 'EIRM', 'EJRM', 'EKRM', 'EMRM', 'ENRM', 'EORM', 'EPRM',
+    'EQRM', 'ERRM', 'ESRM', 'ETRM', 'EURM', 'EVRM', 'EWRM', 'EXRM', 'EYRM', 'EZRM',
+    'F0RM', 'F1RM', 'F2RM', 'F3RM', 'F4RM', 'F5RM', 'F6RM', 'F7RM', 'F8RM', 'F9RM',
+    'FARM', 'FBRM', 'FCRM', 'FDRM', 'FERM', 'FFRM', 'FGRM', 'FHRM', 'FIRM', 'FJRM',
+    'FKRM', 'FLRM', 'FMRM', 'FNRM', 'FPRM', 'FQRM', 'FRRM', 'FSRM', 'FTRM', 'FURM',
+    'FVRM', 'FWRM', 'FXRM', 'FYRM', 'FZRM', 'G2RM', 'G3RM', 'G4RM', 'G5RM', 'G6RM',
+    'G7RM', 'G8RM', 'G9RM', 'GMRM', 'GVRM', 'I0RM', 'I1RM', 'I2RM', 'I3RM', 'I4RM',
+    'I5RM', 'I6RM', 'I7RM', 'I8RM', 'I9RM', 'IARM', 'IBRM', 'ICRM', 'IDRM', 'IERM',
+    'IFRM', 'IGRM', 'IHRM', 'IIRM', 'IJRM', 'IKRM', 'ILRM', 'IMRM', 'INRM', 'IORM',
+    'IPRM', 'IQRM', 'IRRM', 'ISRM', 'M3RM', 'M4RM', 'M5RM', 'M6RM', 'M7RM', 'M9RM',
+    'MARM', 'MLRM', 'MMRM', 'MRRM', 'O0RM', 'O1RM', 'O2RM', 'O3RM', 'O4RM', 'O5RM',
+    'O6RM', 'O7RM', 'O8RM', 'O9RM', 'OARM', 'OMRM', 'ONRM', 'OORM', 'OPRM', 'OQRM',
+    'ORRM', 'OSRM', 'OTRM', 'OURM', 'OVRM', 'OWRM', 'OXRM', 'OYRM', 'OZRM', 'P0RM',
+    'P1RM', 'P2RM', 'P3RM', 'P4RM', 'P5RM', 'P6RM', 'P9RM', 'QRRM', 'R2RM', 'R5RM',
+    'R6RM', 'RMCS', 'S9RM', 'SARM', 'T0RM', 'T1RM', 'T2RM', 'T3RM', 'T4RM', 'T5RM',
+    'T6RM', 'T7RM', 'T8RM', 'T9RM', 'TARM', 'TBRM', 'TCRM', 'TDRM', 'TERM', 'TEST',
+    'THRM', 'TLRM', 'TWRM', 'TZRM', 'U0RM', 'U1RM', 'U2RM', 'U3RM', 'U4RM', 'U5RM',
+    'U6RM', 'U7RM', 'U8RM', 'U9RM', 'UARM', 'UBRM', 'UCRM', 'UDRM', 'UERM', 'UFRM',
+    'UGRM', 'UHRM', 'UIRM', 'UJRM', 'UKRM', 'ULRM', 'UMRM', 'UNRM', 'UORM', 'UPRM',
+    'UQRM', 'URRM', 'UTRM', 'UURM', 'UVRM', 'UWRM', 'UXRM', 'UYRM', 'UZRM', 'V0RM',
+    'V1RM', 'V2RM', 'V3RM', 'V4RM', 'V5RM', 'V6RM', 'V7RM', 'V8RM', 'V9RM', 'VARM',
+    'VBRM', 'VCRM', 'VDRM', 'VERM', 'VFRM', 'VGRM', 'VHRM', 'VIRM', 'VJRM', 'VKRM',
+    'VLRM', 'VMRM', 'VNRM', 'VORM', 'VPRM', 'VQRM', 'VRRM', 'VSRM', 'VTRM', 'VURM',
+    'VVRM', 'VWRM', 'VXRM', 'VYRM', 'VZRM', 'W0RM', 'W1RM', 'W2RM', 'W3RM', 'W4RM',
+    'W5RM', 'W6RM', 'W7RM', 'W8RM', 'W9RM', 'WARM', 'WBRM', 'WCRM', 'WDRM', 'WERM',
+    'WFRM', 'WGRM', 'WHRM', 'WIRM', 'WJRM', 'WKRM', 'WLRM', 'WMRM', 'WNRM', 'WORM',
+    'WPRM', 'WQRM', 'WRRM', 'WSRM', 'WTRM', 'WURM', 'WVRM', 'WWRM', 'WXRM', 'WYRM',
+    'WZRM', 'X0RM', 'X1RM', 'X2RM', 'X4RM', 'X5RM', 'X6RM', 'X7RM', 'X8RM', 'X9RM',
+    'XARM', 'XBRM', 'XCRM', 'XDRM', 'XERM', 'XFRM', 'XGRM', 'XHRM', 'XIRM', 'XJRM',
+    'XKRM', 'XLRM', 'XMRM', 'XNRM', 'XORM', 'XPRM', 'XQRM', 'XRRM', 'XSRM', 'XTRM',
+    'XURM', 'XVRM', 'XWRM', 'XXRM', 'XYRM', 'XZRM', 'Y0RM', 'Y1RM', 'Y2RM', 'Y3RM',
+    'Y4RM', 'Y5RM', 'Y6RM', 'Y7RM', 'Y8RM', 'Y9RM', 'YARM', 'YBRM', 'YCRM', 'YDRM',
+    'YERM', 'YFRM', 'YGRM', 'YHRM', 'YIRM', 'YJRM', 'YKRM', 'YMRM', 'YNRM', 'YORM',
+    'YPRM', 'YQRM', 'YRRM', 'YSRM', 'YTRM', 'YURM', 'YVRM', 'YWRM', 'YXRM', 'YYRM',
+    'YZRM', 'Z0RM', 'Z1RM', 'Z2RM', 'Z3RM', 'Z4RM', 'Z5RM', 'Z6RM', 'Z7RM', 'Z8RM',
+    'Z9RM', 'ZARM', 'ZBRM', 'ZCRM', 'ZDRM', 'ZERM', 'ZFRM', 'ZGRM', 'ZHRM', 'ZIRM',
+    'ZJRM', 'ZKRM', 'ZLRM', 'ZMRM', 'ZNRM', 'ZORM', 'ZPRM', 'ZQRM', 'ZR00', 'ZR01',
+    'ZR10', 'ZR11', 'ZR12', 'ZR20', 'ZR21', 'ZR30', 'ZR40', 'ZR50', 'ZR51', 'ZR60',
+    'ZR70', 'ZR80', 'ZRA0', 'ZRA1', 'ZRA2', 'ZRI0', 'ZRRM', 'ZRS0', 'ZRS1', 'ZRS2',
+    'ZRS3', 'ZSRM', 'ZTRM', 'ZURM', 'ZVRM', 'ZWRM', 'ZXRM', 'ZYRM', 'ZZRM',
+)
+
+ALIASES: Final = {
+    "200I": "A8RM",
+    "200IV2": "A8RM",
+    "200U&I": "A0RM",
+    "208A14": "A8RM",
+    "400I": "A0RM",
+    "800I": "A1RM",
+    "B6RU": "B6RM",
+    "COOL": "QRRM",
+    "FC200": "A8RM",
+    "L&P ADJBED": "ZRS3",
+    "L&P-ADJBED": "ZRS3",
+    "MPE_HJ001": "ZRA2",
+    "MPE_HJ002": "TWRM",
+    "MPE_HJ003": "WPRM",
+    "MPE_HJ005": "WPRM",
+    "MPE_HJ006": "BNRM",
+    "MPE_HJ006-1": "BNRM",
+    "MPE_HJ008": "BLRM",
+    "MPE_HJ010": "ZRA2",
+    "MPE_HJ011": "ZRA2",
+    "MPE_HJ012": "ZRA2",
+    "ZR90": "S9RM",
+}
+
+
+def scan_matches(name: str | None) -> bool:
+    if name is None or len(name) < 4:
+        return False
+    return (
+        name in ("L&P-ADJBED", "L&P ADJBED")
+        or name.upper().startswith(
+            (
+                "200IV2",
+                "208A14",
+                "209A05",
+                "200U&I",
+                "FC200",
+                "MPE_HJ001",
+                "MPE_HJ002",
+                "MPE_HJ003",
+                "MPE_HJ005",
+                "MPE_HJ006",
+                "MPE_HJ008",
+                "MPE_HJ010",
+                "MPE_HJ011",
+                "MPE_HJ012",
+                "200I",
+                "400I",
+                "800I",
+                "COOL TOUCH",
+            )
+        )
+        or name[:4].upper() in LAYOUTS
+    )
+
+# Preset + all/head/foot massage, as selected by the alarm page.
+ALARM_COMBINATIONS: Final = {
+    0x58: (0x77, 0x7A, 0x7D),
+    0x46: (0x78, 0x7B, 0x7E),
+    0x45: (0x79, 0x7C, 0x7F),
+    0x59: (0xAC, 0xAD, 0xAE),
+    0x2E: (0x81, 0x82, 0x83),
+    0x2F: (0xA6, 0xA7, 0xA8),
+    0x30: (0xA9, 0xAA, 0xAB),
+}

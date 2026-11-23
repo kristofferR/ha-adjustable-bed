@@ -10,32 +10,31 @@ from homeassistant.exceptions import HomeAssistantError
 
 from custom_components.adjustable_bed import const
 from custom_components.adjustable_bed.adapter import AdapterSelectionResult
-from custom_components.adjustable_bed.beds.limoss import LimossController
-from custom_components.adjustable_bed.beds.limoss_remote import LimossRemoteController
-from custom_components.adjustable_bed.beds.limoss_remote_protocol import format_command
-from custom_components.adjustable_bed.controller_factory import create_controller
-from custom_components.adjustable_bed.limoss_remote_state import (
+from custom_components.adjustable_bed.beds.limoss.remote import LimossRemoteController
+from custom_components.adjustable_bed.beds.limoss.remote_state import (
     LimossRemoteMemory,
     get_limoss_remote_session,
 )
+from custom_components.adjustable_bed.codec import limoss as codec
+from custom_components.adjustable_bed.controller_factory import create_controller
 from custom_components.adjustable_bed.services import async_register_services
 from tests.test_coordinator_limoss_remote import actual_coordinator
 from tests.test_limoss_remote import make_controller
-from tests.test_limoss_remote_preflight_review import prepare_live
-from tests.test_limoss_remote_review_lifecycle import CAPS
+from tests.test_limoss_remote_entity_reloads import CAPS
+from tests.test_limoss_remote_preflight import prepare_live
 
 
 async def test_inflight_registered_startup_must_not_skip_later_fresh_preflight(hass):
     left = actual_coordinator(hass, **{
         CONF_ADDRESS: "AA:BB:CC:DD:EE:01",
-        const.CONF_DISCONNECT_AFTER_COMMAND: False,
+        const.CONF_CONNECTION_MODE: const.CONNECTION_MODE_IDLE,
         const.CONF_LIMOSS_REMOTE_STATE: {"capabilities": CAPS},
     })
     left_controller, left_client = await prepare_live(left)
     left_controller._sleep = LimossRemoteController._sleep.__get__(left_controller)
     right = actual_coordinator(hass, **{
         CONF_ADDRESS: "AA:BB:CC:DD:EE:02",
-        const.CONF_DISCONNECT_AFTER_COMMAND: False,
+        const.CONF_CONNECTION_MODE: const.CONNECTION_MODE_IDLE,
         const.CONF_LIMOSS_REMOTE_STATE: {"capabilities": CAPS},
     })
     right._client = right._controller = None
@@ -50,20 +49,20 @@ async def test_inflight_registered_startup_must_not_skip_later_fresh_preflight(h
         child.save_app_state()
 
     def left_write(role, packet, **kwargs):
-        opcode = LimossController._tea_decrypt(packet[1:9])[1]
+        opcode = codec.decrypt(packet[1:9])[1]
         trace.append(("left", opcode))
         if opcode == 0x11:
             moved.set()
 
     async def right_write(role, packet, **kwargs):
-        opcode = LimossController._tea_decrypt(packet[1:9])[1]
+        opcode = codec.decrypt(packet[1:9])[1]
         trace.append(("right", opcode))
         if opcode == 2:
             entered.set()
             await release.wait()
         if opcode in {0, 1, 2}:
             reply = {2: "0208120007", 0: "0001020304", 1: "0101020304"}[opcode]
-            right_client.start_notify.call_args.args[1](role, bytearray(format_command(bytes.fromhex(reply), 0)))
+            right_client.start_notify.call_args.args[1](role, bytearray(codec.frame(bytes.fromhex(reply), 0)))
 
     async def disconnect():
         right_client.is_connected = False
@@ -76,7 +75,7 @@ async def test_inflight_registered_startup_must_not_skip_later_fresh_preflight(h
     right_client.write_gatt_char.side_effect = right_write
     right_client.disconnect = AsyncMock(side_effect=disconnect)
     adapter = AdapterSelectionResult(BLEDevice(right.address, "App bed", {}), "local", -50, True, ["local"])
-    module = "custom_components.adjustable_bed.coordinator."
+    module = "custom_components.adjustable_bed.coordinator_connection."
     connect = operation = None
     try:
         with ExitStack() as stack:
@@ -139,13 +138,13 @@ async def pending_controller(hass):
     requests = []
 
     async def write(char, packet, **kwargs):
-        opcode = LimossController._tea_decrypt(packet[1:9])[1]
+        opcode = codec.decrypt(packet[1:9])[1]
         requests.append(opcode)
         if opcode == 2:
             entered.set()
             await release.wait()
         payload = {2: "0208120008", 0: "0001020304", 1: "0101020304"}[opcode]
-        client.start_notify.call_args.args[1](char, bytearray(format_command(bytes.fromhex(payload), 0)))
+        client.start_notify.call_args.args[1](char, bytearray(codec.frame(bytes.fromhex(payload), 0)))
 
     client.write_gatt_char.side_effect = write
     return coordinator, controller, client, entered, release, requests
@@ -232,10 +231,10 @@ async def test_retired_startup_cannot_complete_or_unsubscribe_replacement_genera
         await controller.stop_notify()
 
         def replacement_write(char, packet, **kwargs):
-            opcode = LimossController._tea_decrypt(packet[1:9])[1]
+            opcode = codec.decrypt(packet[1:9])[1]
             requests.append(opcode)
             payload = {2: "0208120007", 0: "0001020304", 1: "0101020304"}[opcode]
-            client.start_notify.call_args.args[1](char, bytearray(format_command(bytes.fromhex(payload), 0)))
+            client.start_notify.call_args.args[1](char, bytearray(codec.frame(bytes.fromhex(payload), 0)))
 
         client.write_gatt_char.side_effect = replacement_write
         # The real ATT lane remains occupied by the retired generation until it

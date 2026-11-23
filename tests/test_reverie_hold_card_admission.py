@@ -12,9 +12,9 @@ from unittest.mock import AsyncMock, patch
 
 import pytest
 from homeassistant.core import HomeAssistant
-from pytest_homeassistant_custom_component.common import MockConfigEntry
+from pytest_homeassistant.common import MockConfigEntry
 
-from custom_components.adjustable_bed.beds.reverie_pairlink import ReveriePairlinkController
+from custom_components.adjustable_bed.beds.reverie.pairlink import ReveriePairlinkController
 from custom_components.adjustable_bed.const import DOMAIN, SIDE_BOTH, SIDE_LEFT, SIDE_RIGHT
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
 from custom_components.adjustable_bed.paired_coordinator import PairedBedCoordinator
@@ -98,7 +98,7 @@ async def test_old_both_event_cannot_cancel_new_work_after_side_lane_wait(hass, 
         {SIDE_LEFT: left, SIDE_RIGHT: right}, connection_mode="concurrent")
     await async_register_services(hass)
     entered = asyncio.Event()
-    original_lanes = parent._locked_target_sides
+    original_lanes = parent._lanes.locked_target_sides
 
     @asynccontextmanager
     async def observed_lanes(targets):
@@ -106,7 +106,7 @@ async def test_old_both_event_cannot_cancel_new_work_after_side_lane_wait(hass, 
         async with original_lanes(targets):
             yield
 
-    parent._locked_target_sides = observed_lanes
+    parent._lanes.locked_target_sides = observed_lanes
     fields = ({"control": "back_up", "duration": 1} if service == "hold_control" else
         {"motor": "back", "direction": "up", "duration_ms": 1000})
     active, release, cancelled = asyncio.Event(), asyncio.Event(), asyncio.Event()
@@ -119,12 +119,13 @@ async def test_old_both_event_cannot_cancel_new_work_after_side_lane_wait(hass, 
             cancelled.set()
             raise
 
-    def resolve(_hass, ids, side=None):
+    def resolve(_hass, ids, side=None, *, problems=None):
+        # Both targets resolve, so a STOP has no problem to record.
         if ids == ["physical"]:
             return [(left, SIDE_BOTH)], []
         return [(parent, side or SIDE_BOTH)], []
 
-    await parent._pair_side_locks[SIDE_LEFT].acquire()
+    await parent._lanes.side_locks[SIDE_LEFT].acquire()
     task = newer_task = None
     try:
         with patch("custom_components.adjustable_bed.services._resolve_sided_targets", side_effect=resolve):
@@ -137,7 +138,7 @@ async def test_old_both_event_cannot_cancel_new_work_after_side_lane_wait(hass, 
                     newer, resource="motor:back"))
                 await active.wait()
                 count = left._cancel_counter
-                parent._pair_side_locks[SIDE_LEFT].release()
+                parent._lanes.side_locks[SIDE_LEFT].release()
                 await task
                 assert not cancelled.is_set(), "stale Both admission cancelled newer physical movement"
                 assert left._cancel_counter == count, "stale event mutated legacy cancellation ownership"
@@ -146,8 +147,8 @@ async def test_old_both_event_cannot_cancel_new_work_after_side_lane_wait(hass, 
                 release.set()
                 await newer_task
     finally:
-        if parent._pair_side_locks[SIDE_LEFT].locked():
-            parent._pair_side_locks[SIDE_LEFT].release()
+        if parent._lanes.side_locks[SIDE_LEFT].locked():
+            parent._lanes.side_locks[SIDE_LEFT].release()
         release.set()
         for pending in (task, newer_task):
             if pending is not None and not pending.done():
@@ -219,7 +220,10 @@ async def test_real_entity_projection_matches_card_fixture(hass):
 
 
 async def test_standalone_controller_action_preserves_flat_hold_contract(hass):
-    from custom_components.adjustable_bed.beds.base import ControllerButtonSpec, ControllerHoldSpec
+    from custom_components.adjustable_bed.beds.entity_specs import (
+        ControllerButtonSpec,
+        ControllerHoldSpec,
+    )
     from custom_components.adjustable_bed.button import ControllerActionButton
 
     child, controller = make_child(hass, 3)

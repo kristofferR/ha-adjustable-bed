@@ -1,4 +1,4 @@
-"""Simon Li, Heal Every Night and OKIN-Seating app profiles, row060.
+"""Simon Li, Heal Every Night and OKIN-Seating app profiles.
 
 Every frame literal comes from the accepted clean-room reports for
 com.okin.simon 1.0.1 (2), com.okin.healeverynight 1.0 (1) and
@@ -17,23 +17,23 @@ from unittest.mock import AsyncMock, MagicMock, call, patch
 
 import pytest
 from bleak.exc import BleakError
+from homeassistant.config_entries import SOURCE_RECONFIGURE
 from homeassistant.const import CONF_ADDRESS, CONF_NAME
 from homeassistant.core import HomeAssistant
 from homeassistant.data_entry_flow import FlowResultType
 from homeassistant.exceptions import ServiceValidationError
 from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers import entity_registry as er
-from pytest_homeassistant_custom_component.common import MockConfigEntry
+from pytest_homeassistant.common import MockConfigEntry
 
 from custom_components.adjustable_bed.app_session import app_session, drop_app_sessions
 from custom_components.adjustable_bed.app_state_store import app_state_store
-from custom_components.adjustable_bed.beds.keeson import KeesonController
-from custom_components.adjustable_bed.beds.keeson_okin_apps import (
+from custom_components.adjustable_bed.beds.keeson.controller import KeesonController
+from custom_components.adjustable_bed.beds.keeson.okin_apps import (
     HealSession,
     OkinAppKeesonController,
     heal_movement_key,
     java_uuid_order,
-    okin_app_frame,
 )
 from custom_components.adjustable_bed.const import (
     BED_TYPE_KEESON,
@@ -52,8 +52,16 @@ from custom_components.adjustable_bed.const import (
     KEESON_VARIANT_SIMON_LI,
 )
 from custom_components.adjustable_bed.controller_factory import create_controller
+from custom_components.adjustable_bed.controller_state import StateKey
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
+from custom_components.adjustable_bed.profiles.keeson import (
+    HEAL_EVERY_NIGHT,
+    OKIN_SEATING,
+    SIMON_LI,
+    encode,
+)
 from tests.app_state_helpers import stored_app_state
+from tests.error_helpers import raises_key
 
 Action = Callable[[OkinAppKeesonController], Awaitable[None]]
 ZERO = "e5fe160000000006"
@@ -238,16 +246,14 @@ def _service(uuid: str, *chars: _Char) -> SimpleNamespace:
 
 
 def test_builder_matches_the_report_vectors():
-    # Simon V13-V16 and OKIN-Seating VEC07-VEC09: big-endian low 32 bits.
-    assert okin_app_frame(0x01020304).hex() == "e5fe1601020304fc"
-    assert okin_app_frame(-1).hex() == "e5fe16ffffffff0a"
-    assert okin_app_frame(4294967297).hex() == "e5fe160000000105"
-    assert okin_app_frame(2164227840).hex() == "e5fe1680ff7f0008"
-    assert okin_app_frame(305419896).hex() == "e5fe1612345678f2"
-    assert okin_app_frame(4600387192).hex() == "e5fe1612345678f2"
+    # Simon V13-V16 and OKIN-Seating VEC07-VEC09: big-endian words.
+    for profile in (SIMON_LI, OKIN_SEATING, HEAL_EVERY_NIGHT):
+        assert encode(profile, 0x01020304).hex() == "e5fe1601020304fc"
+        assert encode(profile, 0xFFFFFFFF).hex() == "e5fe16ffffffff0a"
+        assert encode(profile, 0x80FF7F00).hex() == "e5fe1680ff7f0008"
+        assert encode(profile, 0x12345678).hex() == "e5fe1612345678f2"
     for key, frame in HEAL_CONSTANTS.items():
-        assert okin_app_frame(key).hex() == frame
-        assert sum(okin_app_frame(key)) % 256 == 0xFF
+        assert encode(HEAL_EVERY_NIGHT, key).hex() == frame
 
 
 @pytest.mark.parametrize(("action", "frame"), SIMON_VECTORS)
@@ -280,7 +286,7 @@ async def test_simon_memory_save_holds_the_memory_key_2100_ms(
         raise TimeoutError
 
     monkeypatch.setattr(
-        "custom_components.adjustable_bed.beds.keeson_okin_apps.asyncio.wait_for", fake_wait_for
+        "custom_components.adjustable_bed.beds.keeson.okin_apps.asyncio.wait_for", fake_wait_for
     )
     await _ctrl(coordinator, KEESON_VARIANT_SIMON_LI).program_memory(2)
     # Writes at 0..2000 ms, the hold lasts to 2100 ms, then the release.
@@ -412,7 +418,7 @@ async def test_heal_massage_page_follows_the_app_state_machine(
     await controller.set_massage_timer(20)  # Every label sends timer1.
     assert _written(mock_bleak_client) == TIMER_INITIAL
     assert no_sleep.await_args_list == [call(0.1)] * 3
-    assert controller.get_massage_state()["timer_mode"] == "20"
+    assert coordinator.controller_state["massage_timer"] == 20
 
     mock_bleak_client.write_gatt_char.reset_mock()
     await controller.massage_wave_next()
@@ -516,7 +522,7 @@ async def test_capabilities_are_gated_per_app(coordinator):
         assert not controller.supports_head_massage_intensity_step_control
         assert not controller.supports_massage_timer
         assert controller.controller_number_specs == ()
-        assert controller.controller_select_specs == ()
+        assert controller.controller_switch_specs == ()
         assert [spec.key for spec in controller.controller_button_specs] == ["okin_app_home"]
     assert simon.memory_slot_count == 2 and simon.supports_memory_programming
     assert seating.memory_slot_count == 0 and not seating.supports_memory_presets
@@ -533,7 +539,7 @@ async def test_capabilities_are_gated_per_app(coordinator):
         ("okin_app_massage_foot", 0, 3),
         ("okin_app_massage_wave", 1, 4),
     ]
-    assert [s.key for s in heal.controller_select_specs] == [
+    assert [s.key for s in heal.controller_switch_specs] == [
         "okin_app_installation",
         "okin_app_actuator_1",
         "okin_app_actuator_2",
@@ -708,23 +714,23 @@ async def test_setup_exposes_each_app_surface_and_cleans_up(
     for key in ("okin_app_massage_head", "okin_app_massage_foot", "okin_app_massage_wave"):
         assert exists("number", f"controller_number_{key}"), key
     for key in ("okin_app_installation", "okin_app_actuator_1", "okin_app_actuator_2"):
-        assert exists("select", f"controller_select_{key}"), key
+        assert exists("switch", f"controller_switch_{key}"), key
     assert exists("select", "massage_timer")
-    assert exists("switch", "under_bed_lights")
-    # No state feedback: the light switch starts unknown and reports assumed state.
+    assert exists("light", "under_bed_lights")
+    # No state feedback: the light starts unknown and reports assumed state.
     light = hass.states.get(
-        registry.async_get_entity_id("switch", DOMAIN, f"{address}_under_bed_lights")
+        registry.async_get_entity_id("light", DOMAIN, f"{address}_under_bed_lights")
     )
     assert light.state == "unknown"
     assert light.attributes.get("assumed_state") is True
 
     # Settings are local: no frame, persisted as app state, and remap the keys.
     state_id = registry.async_get_entity_id(
-        "select", DOMAIN, f"{address}_controller_select_okin_app_installation"
+        "switch", DOMAIN, f"{address}_controller_switch_okin_app_installation"
     )
-    assert hass.states.get(state_id).state == "standard"
+    assert hass.states.get(state_id).state == "off"
     await hass.services.async_call(
-        "select", "select_option", {"entity_id": state_id, "option": "swapped"}, blocking=True
+        "switch", "turn_on", {"entity_id": state_id}, blocking=True
     )
     await hass.async_block_till_done()
     mock_bleak_client.write_gatt_char.assert_not_awaited()  # A local setting sends nothing.
@@ -733,7 +739,7 @@ async def test_setup_exposes_each_app_surface_and_cleans_up(
         "actuator_1": False,
         "actuator_2": False,
     }
-    assert hass.states.get(state_id).state == "swapped"
+    assert hass.states.get(state_id).state == "on"
 
     await _reload(hass, entry, **{CONF_PROTOCOL_VARIANT: KEESON_VARIANT_SIMON_LI})
     for key in ("back", "feet", "lumbar"):
@@ -744,10 +750,10 @@ async def test_setup_exposes_each_app_surface_and_cleans_up(
         assert exists("button", key), key
     for key in ("preset_flat", "preset_zero_g", "massage_all_off", "massage_wave_next"):
         assert not exists("button", key), key
-    assert not exists("select", "controller_select_okin_app_installation")
+    assert not exists("switch", "controller_switch_okin_app_installation")
     assert not exists("number", "controller_number_okin_app_massage_wave")
     assert not exists("select", "massage_timer")
-    assert not exists("switch", "under_bed_lights")
+    assert not exists("light", "under_bed_lights")
 
     await _reload(hass, entry, **{CONF_PROTOCOL_VARIANT: KEESON_VARIANT_OKIN_SEATING})
     assert not exists("cover", "lumbar")
@@ -796,7 +802,7 @@ async def test_hold_service(
 
     await _reload(hass, entry, **{CONF_PROTOCOL_VARIANT: KEESON_VARIANT_BASE})
     mock_bleak_client.write_gatt_char.reset_mock()
-    with pytest.raises(ServiceValidationError, match="has no held controls"):
+    with raises_key("held_controls_not_supported", ServiceValidationError):
         await hass.services.async_call(
             DOMAIN,
             "hold_control",
@@ -843,7 +849,6 @@ async def test_heal_state_starts_without_a_wave_level_and_settings_are_heal_only
 ):
     controller = _ctrl(coordinator, KEESON_VARIANT_HEAL_EVERY_NIGHT)
     assert coordinator.controller_state["okin_app_massage_wave"] is None
-    assert controller.get_massage_state()["wave_intensity"] is None
     assert controller.persisted_app_state is not None
     assert _ctrl(coordinator, KEESON_VARIANT_SIMON_LI).persisted_app_state is None
 
@@ -876,21 +881,15 @@ async def test_heal_settings_survive_a_profile_change_and_end_with_the_entry(
     assert address in sessions
 
     # Changing the profile keeps Heal Every Night's slot for a later change back.
-    form = await hass.config_entries.options.async_init(entry.entry_id)
-    form = await hass.config_entries.options.async_configure(
-        form["flow_id"], user_input={"next_step_id": "settings"}
+    manager = hass.config_entries.flow
+    result = await manager.async_init(
+        DOMAIN, context={"source": SOURCE_RECONFIGURE, "entry_id": entry.entry_id}
     )
-    changes = {
-        CONF_BED_TYPE: BED_TYPE_KEESON,
-        CONF_MOTOR_COUNT: 2,
-        CONF_PROTOCOL_VARIANT: KEESON_VARIANT_SIMON_LI,
-    }
-    result = await hass.config_entries.options.async_configure(form["flow_id"], user_input=changes)
-    if result["type"] == FlowResultType.FORM:
-        result = await hass.config_entries.options.async_configure(
-            result["flow_id"], user_input=changes
-        )
-    assert result["type"] == FlowResultType.CREATE_ENTRY
+    result = await manager.async_configure(result["flow_id"], {"choice": "okin_seating_apps"})
+    result = await manager.async_configure(result["flow_id"], {"choice": "keeson:simon_li"})
+    assert result["step_id"] == "migration_confirm"
+    result = await manager.async_configure(result["flow_id"], {"action": "apply"})
+    assert result["reason"] == "migration_applied"
     await hass.async_block_till_done()
     assert entry.data[CONF_PROTOCOL_VARIANT] == KEESON_VARIANT_SIMON_LI
 
@@ -924,7 +923,7 @@ async def test_simon_memory_recall_is_bounded_by_elapsed_time(
     The limit is scaled down from 2000 ms so the test runs on a short real clock.
     """
     monkeypatch.setattr(
-        "custom_components.adjustable_bed.beds.keeson_okin_apps.SIMON_MEMORY_RECALL_MAX_MS",
+        "custom_components.adjustable_bed.beds.keeson.okin_apps.SIMON_MEMORY_RECALL_MAX_MS",
         limit_ms,
     )
     loop = asyncio.get_running_loop()
@@ -944,56 +943,6 @@ async def test_simon_memory_recall_is_bounded_by_elapsed_time(
     assert 1 <= len(keys) < capped  # The deadline, not the write cap, ended the stream.
     assert max(keys) < limit_ms / 1000
     assert starts[-1][1] == ZERO  # The shielded release still follows.
-
-
-@pytest.mark.parametrize(
-    ("initial", "requested"),
-    [
-        (KEESON_VARIANT_BASE, KEESON_VARIANT_SIMON_LI),
-        (KEESON_VARIANT_HEAL_EVERY_NIGHT, KEESON_VARIANT_BASE),
-        (KEESON_VARIANT_SIMON_LI, KEESON_VARIANT_OKIN_SEATING),
-    ],
-)
-async def test_paired_options_require_unpairing_for_an_app_profile_change(
-    hass: HomeAssistant, initial: str, requested: str
-):
-    """Each physical seat keeps its own app; the shared form never copies one."""
-    from custom_components.adjustable_bed.config_flow import AdjustableBedOptionsFlow
-    from custom_components.adjustable_bed.pairing import (
-        build_pair_entry_data,
-        effective_child_data,
-    )
-
-    def side(address: str, variant: str) -> dict[str, Any]:
-        return {
-            CONF_ADDRESS: address,
-            CONF_NAME: "Seat",
-            CONF_BED_TYPE: BED_TYPE_KEESON,
-            CONF_PROTOCOL_VARIANT: variant,
-            CONF_MOTOR_COUNT: 2,
-            CONF_HAS_MASSAGE: False,
-            CONF_DISABLE_ANGLE_SENSING: True,
-            CONF_PREFERRED_ADAPTER: "auto",
-        }
-
-    entry = MockConfigEntry(
-        domain=DOMAIN,
-        data=build_pair_entry_data(
-            side("AA:BB:CC:DD:EE:71", initial),
-            side("AA:BB:CC:DD:EE:72", KEESON_VARIANT_BASE),
-            name="Paired seats",
-        ),
-    )
-    entry.add_to_hass(hass)
-    flow = AdjustableBedOptionsFlow(entry)
-    flow.hass = hass
-    flow.handler = entry.entry_id
-
-    result = await flow.async_step_settings({CONF_PROTOCOL_VARIANT: requested})
-
-    assert result["type"] is FlowResultType.FORM
-    assert result["errors"] == {CONF_PROTOCOL_VARIANT: "app_profile_unpair_first"}
-    assert effective_child_data(entry.data, "right")[CONF_PROTOCOL_VARIANT] == KEESON_VARIANT_BASE
 
 
 async def test_held_controls_keep_the_count_but_use_the_app_100ms_refresh(
@@ -1045,19 +994,17 @@ async def test_massage_off_publishes_the_cleared_timer(
 ):
     controller = _ctrl(coordinator, KEESON_VARIANT_HEAL_EVERY_NIGHT)
     await controller.set_massage_timer(20)
-    assert coordinator.controller_state["okin_app_massage_timer"] == 20
+    assert coordinator.controller_state["massage_timer"] == 20
 
     original = mock_bleak_client.write_gatt_char.side_effect
     mock_bleak_client.write_gatt_char.side_effect = BleakError("write failed")
     with pytest.raises(BleakError):
         await controller.massage_off()
-    assert coordinator.controller_state["okin_app_massage_timer"] == 20
-    assert controller.get_massage_state()["timer_mode"] == "20"
+    assert coordinator.controller_state["massage_timer"] == 20
 
     mock_bleak_client.write_gatt_char.side_effect = original
     await controller.massage_off()
-    assert coordinator.controller_state["okin_app_massage_timer"] is None
-    assert controller.get_massage_state()["timer_mode"] is None
+    assert coordinator.controller_state["massage_timer"] is None
 
 
 def _fail_write(client: MagicMock, *, nth: int) -> None:
@@ -1096,13 +1043,9 @@ async def test_timer_start_commits_nothing_until_the_whole_sequence_is_written(
     _fail_write(mock_bleak_client, nth=3)  # The head level of the start sequence fails.
     with pytest.raises(BleakError):
         await controller.set_massage_timer(10)
-    assert controller.get_massage_state() == {
-        "head_intensity": 0,
-        "foot_intensity": 0,
-        "wave_intensity": None,
-        "timer_mode": None,
-    }
-    assert coordinator.controller_state["okin_app_massage_timer"] is None
+    session = controller._session
+    assert (session.head, session.foot, session.wave, session.timer_minutes) == (0, 0, 0, None)
+    assert coordinator.controller_state["massage_timer"] is None
     assert coordinator.controller_state["okin_app_massage_wave"] is None
     with pytest.raises(ValueError):
         await controller.massage_head_up()  # The page is still disabled.
@@ -1136,7 +1079,7 @@ async def test_a_cancelled_write_commits_no_app_state(
     await controller.preset_flat()  # A recall, not a re-tap STOP.
     await controller.lights_toggle()  # Still off, so the toggle turns it on.
     assert _written(mock_bleak_client) == ["e5fe160100000203", "e5fe1631000001d4"]
-    assert controller.get_massage_state()["timer_mode"] is None
+    assert coordinator.controller_state["massage_timer"] is None
 
 
 @pytest.mark.parametrize("heal_side", ["left", "right"])
@@ -1296,7 +1239,7 @@ async def test_timer_select_keeps_the_heal_timer_across_a_disconnect(
     coordinator = hass.data[DOMAIN][entry.entry_id]
     await coordinator.async_disconnect()
     assert coordinator.controller is None
-    coordinator.handle_controller_state_updates({"unrelated": 1})  # Re-render the select.
+    coordinator.handle_controller_state_updates(StateKey[int]("unrelated")(1))  # Re-render the select.
     await hass.async_block_till_done()
     assert hass.states.get(select_id).state == "20 min"
 
@@ -1356,7 +1299,7 @@ async def test_massage_off_sends_both_zones_even_when_one_fails(
         await controller.massage_off()
     assert _written(mock_bleak_client) == HEAL_STOP
     # Not both written: the page stays open and the timer stays published.
-    assert coordinator.controller_state["okin_app_massage_timer"] == 10
+    assert coordinator.controller_state["massage_timer"] == 10
     await controller.massage_head_up()
 
 

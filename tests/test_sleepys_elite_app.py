@@ -17,14 +17,15 @@ from homeassistant.const import CONF_NAME
 from homeassistant.core import HomeAssistant
 
 from custom_components.adjustable_bed.app_profiles import per_side_profile
-from custom_components.adjustable_bed.beds.sleepys_app import SleepysEliteAppController
-from custom_components.adjustable_bed.beds.sleepys_app_routes import (
+from custom_components.adjustable_bed.beds.sleepys.app import SleepysEliteAppController
+from custom_components.adjustable_bed.beds.sleepys.app_routes import (
     CANONICAL_ROUTE_SHA256,
     ROUTES,
 )
 from custom_components.adjustable_bed.config_flow import AdjustableBedConfigFlow
 from custom_components.adjustable_bed.const import (
     BED_TYPE_SLEEPYS_ELITE_APP,
+    CONF_BED_TYPE,
     CONF_DISABLE_ANGLE_SENSING,
     CONF_HAS_MASSAGE,
     CONF_MOTOR_PULSE_USER_SET,
@@ -33,6 +34,7 @@ from custom_components.adjustable_bed.const import (
 )
 from custom_components.adjustable_bed.controller_factory import create_controller
 from custom_components.adjustable_bed.detection import BED_TYPE_DISPLAY_NAMES
+from tests.state_helpers import published
 
 FIXTURES = Path(__file__).parent / "fixtures"
 _ROUTE_FIXTURE = FIXTURES / "sleepys_elite_routes_v2.tsv"
@@ -103,7 +105,10 @@ def _controller(selector: str, *, connected: bool = False) -> SleepysEliteAppCon
         record_command_trace=MagicMock(),
         handle_controller_state_updates=MagicMock(),
     )
-    return SleepysEliteAppController(coordinator, selector)
+    controller = SleepysEliteAppController(coordinator, selector)
+    # Only notifications matter here, not the massage level published at construction.
+    coordinator.handle_controller_state_updates.reset_mock()
+    return controller
 
 
 def _gatt_client(
@@ -255,6 +260,7 @@ async def test_app_selector_belongs_to_each_physical_side_and_factory_does_not_i
             address="AA:BB:CC:DD:EE:FF",
             client=None,
             cancel_command=asyncio.Event(),
+            handle_controller_state_updates=MagicMock(),
         )
         controller = await create_controller(
             coordinator,
@@ -277,11 +283,16 @@ async def test_manual_app_profile_is_findable_and_persists_selector_capabilities
 ) -> None:
     flow = AdjustableBedConfigFlow()
     flow.hass = hass
-    flow._manual_data = {CONF_NAME: "Sleepy's test bed"}
+    flow._manual_data = {
+        CONF_NAME: "Sleepy's test bed",
+        CONF_BED_TYPE: BED_TYPE_SLEEPYS_ELITE_APP,
+    }
     finish = AsyncMock(return_value={"step_id": "verify_connection"})
 
     with patch.object(flow, "_finish_with_verify", finish):
-        form = await flow.async_step_sleepys_elite_app()
+        # The family row asks the app or receiver first; the app asks its selector.
+        form = await flow.async_step_sleepys_family({"choice": "app"})
+        assert form["step_id"] == "profile_questions"
         marker = next(
             marker
             for marker in form["data_schema"].schema
@@ -289,24 +300,19 @@ async def test_manual_app_profile_is_findable_and_persists_selector_capabilities
         )
         selector = form["data_schema"].schema[marker]
         assert marker.default() == "none"
-        assert {option["value"] for option in selector.config["options"]} == set(
-            SLEEPYS_ELITE_SELECTORS
-        )
+        assert set(selector.container) == set(SLEEPYS_ELITE_SELECTORS)
         assert BED_TYPE_DISPLAY_NAMES[BED_TYPE_SLEEPYS_ELITE_APP] == (
-            "Sleepy's Elite app (explicit selector)"
+            "MFRM Sleepy's Elite app"
         )
 
-        result = await flow.async_step_sleepys_elite_app({CONF_SLEEPYS_ELITE_SELECTOR: "BOX25"})
+        result = await flow.async_step_profile_questions({CONF_SLEEPYS_ELITE_SELECTOR: "BOX25"})
 
     assert result == {"step_id": "verify_connection"}
-    assert flow._manual_data == {
-        CONF_NAME: "Sleepy's test bed",
-        CONF_SLEEPYS_ELITE_SELECTOR: "BOX25",
-        CONF_HAS_MASSAGE: True,
-        CONF_DISABLE_ANGLE_SENSING: False,
-        CONF_MOTOR_PULSE_USER_SET: False,
-    }
-    finish.assert_awaited_once_with(flow._manual_data, "Sleepy's test bed")
+    saved = finish.call_args.args[0]
+    assert saved[CONF_SLEEPYS_ELITE_SELECTOR] == "BOX25"
+    assert saved[CONF_HAS_MASSAGE] is True
+    assert saved[CONF_DISABLE_ANGLE_SENSING] is False
+    assert saved[CONF_MOTOR_PULSE_USER_SET] is False
 
 
 def test_ha_surfaces_follow_proven_selector_and_feature_domains() -> None:
@@ -321,28 +327,28 @@ def test_ha_surfaces_follow_proven_selector_and_feature_domains() -> None:
         assert "sleepys_app_query_position" in button_keys
         assert ("sleepys_app_massage_query" in button_keys) is (selector in _VOICE_SELECTORS)
         assert ("sleepys_app_color_code" in number_keys) is (selector in _VOICE_SELECTORS)
-        assert ("sleepys_app_massage_timer_code" in select_keys) is (selector in _VOICE_SELECTORS)
+        # Timer codes 1/2/3 are the shared massage timer select's 10/20/30 minutes.
+        assert controller.supports_massage_timer is (selector in _VOICE_SELECTORS)
+        assert not controller.massage_timer_can_turn_off
+        assert "sleepys_app_massage_timer" not in button_keys
+        # Massage on and Massage off are one switch.
+        switch_keys = {spec.key for spec in controller.controller_switch_specs}
+        assert not {"sleepys_app_massage_on", "sleepys_app_massage_off"} & button_keys
+        assert ("sleepys_app_massage" in switch_keys) is (selector in _VOICE_SELECTORS)
 
         if selector in (*_POSITION_SLIDER_SELECTORS, *_VOICE_SELECTORS):
             assert {f"sleepys_app_target_axis_{axis}" for axis in range(3)} <= number_keys
         else:
             assert not any(key.startswith("sleepys_app_target_axis_") for key in number_keys)
 
-        if selector in _VOICE_SELECTORS:
-            assert {
-                f"sleepys_app_voice_axis_{axis}_{target}"
-                for axis in range(3)
-                for target in (0, 100)
-            } <= button_keys
-            assert {
-                "sleepys_app_voice_brightness_down",
-                "sleepys_app_voice_brightness_up",
-            } <= button_keys
-            assert {"sleepys_app_field_0x43", "sleepys_app_field_0x5f"} <= state_keys
-        else:
-            assert not any(key.startswith("sleepys_app_voice_axis_") for key in button_keys)
-
-        assert any(key.startswith("sleepys_app_field_") for key in state_keys)
+        # Voice shortcuts repeat the target numbers and light controls.
+        assert not any(key.startswith("sleepys_app_voice_") for key in button_keys)
+        # Unlabelled app fields stay in diagnostics; BOX25 reports head, foot and lumbar.
+        assert state_keys == (
+            {f"sleepys_app_position_axis_{axis}" for axis in range(3)}
+            if selector in _VOICE_SELECTORS
+            else set()
+        )
 
 
 async def test_dynamic_vectors_retain_frozen_provenance_and_current_route_counts() -> None:
@@ -516,22 +522,6 @@ async def test_brightness_ui_zero_is_off_but_controller_zero_is_brightness() -> 
     controller._write_route.assert_awaited_once()
 
 
-async def test_voice_brightness_step_retains_endpoint_and_needs_known_level() -> None:
-    controller = _controller("BOX25", connected=True)
-    controller._write_route = AsyncMock()
-
-    await controller.adjust_light_level(-1)
-    controller._write_route.assert_not_awaited()
-
-    controller._light_level = 0
-    controller._light_level_known = True
-    await controller.adjust_light_level(-1)
-    route = controller._write_route.await_args.args[0]
-    assert route.builder == "changeLightBrightness"
-    assert route.logical_values == (4, 224, 0, 0, 0, 0)
-    controller._write_route.assert_awaited_once()
-
-
 async def test_palette_number_requires_enabled_lights_and_is_one_shot() -> None:
     controller = _controller("BOX25_STAR", connected=True)
     controller._write_route = AsyncMock()
@@ -596,7 +586,9 @@ async def test_massage_values_require_active_state_and_time_commit_skips_same_co
     await controller.set_massage_timer_code(2)
     controller._write_route.assert_not_awaited()
     await controller.set_massage_intensity("all", 2)
-    await controller.set_massage_timer_code(3)
+    await controller.set_massage_timer(30)
+    updates = published(*controller._coordinator.handle_controller_state_updates.call_args.args)
+    assert updates["massage_timer"] == 30
     routes = [call.args[0] for call in controller._write_route.await_args_list]
     assert [route.logical_values for route in routes] == [
         (4, 224, 6, 3, 3, 0),
@@ -715,9 +707,9 @@ def test_non_timer_layouts_keep_field_0b_out_of_the_timer_select(
 
     controller._handle_notification(characteristic, bytearray(frame))
 
-    updates = controller._coordinator.handle_controller_state_updates.call_args.args[0]
+    updates = published(*controller._coordinator.handle_controller_state_updates.call_args.args)
     assert "sleepys_app_field_0x0b" in updates
-    assert "sleepys_app_massage_timer_code" not in updates
+    assert "massage_timer" not in updates
 
 
 def test_unknown_timer_code_does_not_enter_the_declared_select_domain() -> None:
@@ -730,9 +722,9 @@ def test_unknown_timer_code_does_not_enter_the_declared_select_domain() -> None:
 
     controller._handle_notification(characteristic, raw)
 
-    updates = controller._coordinator.handle_controller_state_updates.call_args.args[0]
+    updates = published(*controller._coordinator.handle_controller_state_updates.call_args.args)
     assert updates["sleepys_app_field_0x0b"] == 0
-    assert "sleepys_app_massage_timer_code" not in updates
+    assert "massage_timer" not in updates
 
 
 @pytest.mark.parametrize(
@@ -839,3 +831,24 @@ async def test_hold_repeats_at_100ms_then_stops_with_a_fresh_event() -> None:
     assert release.builder == "stop"
     assert isinstance(release_kwargs["cancel_event"], asyncio.Event)
     assert release_kwargs["cancel_event"] is not controller._coordinator.cancel_command
+
+
+async def test_motion_sensor_reports_a_setting_it_never_wrote() -> None:
+    controller = _controller("BOX25", connected=True)
+    controller._run_refresh_window = AsyncMock(return_value=False)
+    with pytest.raises(ConnectionError, match="not sent"):
+        await controller.set_motion_sensor(enabled=True)
+
+
+@pytest.mark.parametrize("selector", _VOICE_SELECTORS)
+async def test_massage_switch_presses_the_app_massage_buttons(selector: str) -> None:
+    controller = _controller(selector)
+    switch = next(s for s in controller.controller_switch_specs if s.key == "sleepys_app_massage")
+    assert switch.state_key is None and switch.translation_key == "massage"
+    with patch.object(controller, "_press_app_action", AsyncMock()) as press:
+        await switch.set_fn(controller, True)
+        await switch.set_fn(controller, False)
+    assert [c.args for c in press.await_args_list] == [
+        ("sleepys_app_massage_on", "massageOn"),
+        ("sleepys_app_massage_off", "massageOff"),
+    ]

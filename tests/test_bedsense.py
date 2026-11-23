@@ -16,7 +16,6 @@ from custom_components.adjustable_bed.beds.bedsense import (
     BedSenseController,
     bedsense_layout,
 )
-from custom_components.adjustable_bed.beds.bedsense_commands import ACTIONS
 from custom_components.adjustable_bed.const import (
     BED_TYPE_BEDSENSE,
     CONF_BLE_DEVICE_NAME,
@@ -26,6 +25,7 @@ from custom_components.adjustable_bed.const import (
 )
 from custom_components.adjustable_bed.controller_factory import create_controller
 from custom_components.adjustable_bed.detection import BED_TYPE_DISPLAY_NAMES
+from custom_components.adjustable_bed.profiles.ff_frame import BEDSENSE_ACTIONS as ACTIONS
 from custom_components.adjustable_bed.validators import VARIANTS_BY_BED_TYPE
 
 VECTORS = json.loads((Path(__file__).parent / "fixtures/bedsense_vectors.json").read_text())
@@ -129,12 +129,15 @@ def test_nine_fresh_layouts_expose_only_proven_controls(layout, axes, cycle):
     c = make_controller(layout)
     assert {s.key for s in c.motor_control_specs} == axes
     assert all(s.scheduler_resource == "*" for s in c.motor_control_specs)
-    assert axes <= c.stale_motor_entity_keys
     buttons = {s.key.removeprefix("bedsense_") for s in c.controller_button_specs}
     assert {
         k.removeprefix("circulation_") for k in buttons if k.startswith("circulation_")
     } == cycle
-    assert {"light_10_min", "light_8_h", "light_10_h", "refresh_memory"} <= buttons
+    # Timer buttons are the massage and light timer selects.
+    assert not any(k.startswith(("light_", "massage_timer_")) for k in buttons)
+    assert c.light_timer_options == ["10 min", "8 hours", "10 hours"]
+    assert c.massage_timer_options == [10, 20, 30] and c.massage_timer_can_turn_off
+    assert "refresh_memory" not in buttons and "background_tap" not in buttons
     assert ("lumbar" in buttons) is (layout in (6, 8))
     assert ("music" in buttons) is (layout in (4, 5))
     assert ("rise" in buttons) is (layout == 9)
@@ -143,15 +146,18 @@ def test_nine_fresh_layouts_expose_only_proven_controls(layout, axes, cycle):
     assert not c.supports_position_feedback and not c.position_number_specs
     assert not c.supports_lights and not c.supports_massage  # app-labelled buttons instead
     assert len(c.controller_state_binary_sensor_specs) == 5
-    assert len(c.controller_state_sensor_specs) == 8
+    # The timer selects show the massage timer and light duration.
+    assert len(c.controller_state_sensor_specs) == 4
 
 
 async def test_factory_and_explicit_app_registration():
     c = make_controller()
-    c._coordinator.hass.async_add_import_executor_job = AsyncMock()
+    c._coordinator.hass.async_add_import_executor_job = AsyncMock(
+        side_effect=lambda func, *args: func(*args)
+    )
     result = await create_controller(c._coordinator, BED_TYPE_BEDSENSE, "auto", c.client, "JQ-D")
     assert isinstance(result, BedSenseController) and result.layout == 2
-    assert "com.fenmenbielei.bedsense" in BED_TYPE_DISPLAY_NAMES[BED_TYPE_BEDSENSE]
+    assert BED_TYPE_DISPLAY_NAMES[BED_TYPE_BEDSENSE] == "BedSense app"
     assert len(VARIANTS_BY_BED_TYPE[BED_TYPE_BEDSENSE]) == 10
     assert {
         CONF_MOTOR_COUNT,
@@ -354,6 +360,18 @@ async def test_massage_timer_toggle_steps_and_light_duration_are_local():
     assert c.protocol_diagnostics["bedsense_state_source"] == "local_write"
 
 
+async def test_timer_selects_send_the_app_buttons_frames():
+    c = make_controller()
+    await c.set_massage_timer(20)
+    # Choosing the running timer keeps it rather than toggling it off.
+    await c.set_massage_timer(20)
+    await c.set_massage_timer(0)
+    await c.set_light_timer("8 hours")
+    expected = [ACTIONS[k].frame for k in ("massage_timer_20", "massage_timer_cancel", "light_8_h")]
+    assert packets(c)[-3:] == expected
+    assert c._session.timer == 0
+
+
 def test_memory_persistence_is_per_app_without_cross_device_state():
     c = make_controller()
     c.restore_persisted_app_state({"m1": True})
@@ -368,12 +386,10 @@ def test_memory_persistence_is_per_app_without_cross_device_state():
 
 
 @pytest.mark.parametrize("retain", [True, False])
-async def test_profile_entity_exposure_and_cleanup_is_side_scoped(hass, retain):
-    from homeassistant.helpers import entity_registry as er
-
+async def test_profile_entity_exposure_follows_the_profile(hass, retain):
     from custom_components.adjustable_bed.binary_sensor import _binary_sensor_entities_for
     from custom_components.adjustable_bed.button import _button_entities_for
-    from custom_components.adjustable_bed.const import BED_TYPE_DIAGNOSTIC, DOMAIN
+    from custom_components.adjustable_bed.const import BED_TYPE_DIAGNOSTIC
     from custom_components.adjustable_bed.cover import _cover_entities_for
     from custom_components.adjustable_bed.sensor import _sensor_entities_for
     from tests.conftest import make_controller_mock
@@ -384,9 +400,6 @@ async def test_profile_entity_exposure_and_cleanup_is_side_scoped(hass, retain):
         if retain
         else make_controller_mock(
             motor_control_specs=(),
-            stale_motor_entity_keys=frozenset(),
-            stale_controller_state_sensor_entity_keys=frozenset(),
-            stale_controller_state_binary_sensor_entity_keys=frozenset(),
             controller_button_specs=(),
             controller_state_sensor_specs=(),
             controller_state_binary_sensor_specs=(),
@@ -395,34 +408,21 @@ async def test_profile_entity_exposure_and_cleanup_is_side_scoped(hass, retain):
     runtime = configure_entity_runtime(
         hass, c, BED_TYPE_BEDSENSE if retain else BED_TYPE_DIAGNOSTIC
     )
-    registry = er.async_get(hass)
-    for domain, key, build in (
-        ("cover", "hip", _cover_entities_for),
-        ("button", "bedsense_rise", _button_entities_for),
-        ("sensor", "bedsense_head_bar", _sensor_entities_for),
-        ("binary_sensor", "bedsense_m1_saved", _binary_sensor_entities_for),
+    for key, build in (
+        ("hip", _cover_entities_for),
+        ("bedsense_rise", _button_entities_for),
+        ("bedsense_head_steps", _sensor_entities_for),
+        ("bedsense_m1_saved", _binary_sensor_entities_for),
     ):
-        rows = [
-            registry.async_get_or_create(
-                domain, DOMAIN, f"bed_{key}_{side}", config_entry=runtime.entry
-            )
-            for side in ("left", "right")
-        ]
-        unrelated = registry.async_get_or_create(
-            domain, DOMAIN, "bed_unrelated_left", config_entry=runtime.entry
-        )
         entities = build(hass, runtime)
-        assert (registry.async_get(rows[0].entity_id) is not None) is retain
-        assert registry.async_get(rows[1].entity_id) is not None
-        assert registry.async_get(unrelated.entity_id) is not None
-        assert (rows[0].unique_id in {e.unique_id for e in entities}) is retain
+        assert (f"bed_{key}_left" in {e.unique_id for e in entities}) is retain
 
 
 async def test_other_axis_stop_preempts_held_movement_through_scheduler(hass):
     from unittest.mock import patch
 
     from homeassistant.const import CONF_ADDRESS
-    from pytest_homeassistant_custom_component.common import MockConfigEntry
+    from pytest_homeassistant.common import MockConfigEntry
 
     from custom_components.adjustable_bed.const import CONF_BED_TYPE, DOMAIN
     from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
@@ -466,7 +466,9 @@ async def test_other_axis_stop_preempts_held_movement_through_scheduler(hass):
 
 async def test_offline_factory_uses_stored_raw_name_and_live_address_falls_back():
     c = make_controller()
-    c._coordinator.hass.async_add_import_executor_job = AsyncMock()
+    c._coordinator.hass.async_add_import_executor_job = AsyncMock(
+        side_effect=lambda func, *args: func(*args)
+    )
     c._coordinator.entry.data = {CONF_BLE_DEVICE_NAME: "JQ-D"}
     for client, name, expected in (
         (None, "My KQ bed", 2),
@@ -519,7 +521,7 @@ async def test_reconnect_retains_timer_toggle_steps_and_indicators_per_address(h
 
 async def test_reconnected_memory_flags_reach_cached_service_preflight(hass):
     from homeassistant.const import CONF_ADDRESS
-    from pytest_homeassistant_custom_component.common import MockConfigEntry
+    from pytest_homeassistant.common import MockConfigEntry
 
     from custom_components.adjustable_bed.const import CONF_BED_TYPE, DOMAIN
     from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator

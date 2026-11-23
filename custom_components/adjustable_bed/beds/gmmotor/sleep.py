@@ -1,0 +1,613 @@
+"""GM Control MM/SXB direct BLE sleep-module sessions.
+
+Request/state ownership is per physical HA target. This avoids sharing the
+app's singleton active-command state across unrelated configured modules.
+"""
+
+from __future__ import annotations
+
+import asyncio
+import logging
+from collections.abc import Callable
+from dataclasses import asdict
+from typing import TYPE_CHECKING, Final, Literal
+
+from homeassistant.util import dt as dt_util
+
+from ...card import CARD_UTILITY
+from ...controller_state import StateKey, StateUpdate
+from ..base import BedController, require_controller
+from ..entity_specs import (
+    ControllerStateBinarySensorSpec,
+    ControllerStateSensorSpec,
+    ControllerSwitchSpec,
+    MotorControlSpec,
+    SleepFlag,
+    sleep_flag_binary_sensor_spec,
+    sleep_rate_sensor_spec,
+    sleep_rate_value,
+)
+from .notifications import Value
+from .protocol import MalformedNotification
+from .requests import GmmotorActions, Operation, Request
+from .sessions import LIVE_ENABLED, sleep_intent
+from .sleep_protocol import (
+    LiveState,
+    ReceiveBuffer,
+    Requests,
+    SleepCommand,
+    normal_live,
+    sxb_live,
+)
+from .sleep_reports import decode_report
+from .sleep_state import ClockUpdate, Followup, ReportSize, Stream, dispatch, fields
+from .transport import Transport, native_write_lock, select_sleep
+
+if TYPE_CHECKING:
+    from bleak.backends.characteristic import BleakGATTCharacteristic
+
+    from ...coordinator import AdjustableBedCoordinator
+
+_LOGGER = logging.getLogger(__name__)
+_QUEUE_TICK = 0.1
+_LIVE_INTERVAL = 2.0
+_STALE_INTERVAL = 5.0
+_REPORT_BUDGET = 8 * 1024 * 1024
+_STREAM_NAMES = {
+    "0x7": "realtime",
+    "0xb": "time",
+    "0xf": "part",
+    "0x13": "report_size",
+    "0x17": "month_report",
+    "0x1b": "day_report",
+    "0x2f": "time",
+    "0x33": "clock",
+    "0x37": "part",
+    "0x3b": "realtime",
+    "0x3f": "report_size",
+    "0x43": "month_report",
+    "0x47": "day_report",
+    "0x4b": "day_report_new",
+    "0x57": "initialization",
+    "0x5f": "sensitivity",
+    "0x63": "anti_snore",
+}
+
+
+EVENT: Final = StateKey[str]("gmmotor_sleep_event")
+STREAMS: Final = StateKey[dict[str, Value]]("gmmotor_sleep_streams")
+CLOCK: Final = StateKey[dict[str, Value]]("gmmotor_sleep_clock")
+REPORTS: Final = StateKey[dict[str, Value]]("gmmotor_sleep_reports")
+INVALID: Final = StateKey[int]("gmmotor_sleep_invalid")
+
+
+_SIDES: Final[tuple[Literal["left", "right"], ...]] = ("left", "right")
+
+
+def _live_key(side: str) -> StateKey[dict[str, object]]:
+    return StateKey[dict[str, object]]("gmmotor_sleep_" + side)
+
+
+def _rate_key(side: str, field: str) -> StateKey[int | None]:
+    return StateKey[int | None](f"gmmotor_sleep_{side}_{field}")
+
+
+def _flag_key(side: str, field: str) -> StateKey[bool | None]:
+    return StateKey[bool | None](f"gmmotor_sleep_{side}_{field}")
+
+
+def _live_updates(side: str, state: LiveState) -> list[StateUpdate]:
+    """One side's display record, plus the typed readings the entities show."""
+    return [
+        _live_key(side)(asdict(state)),
+        _rate_key(side, "heart_rate")(sleep_rate_value(state.first_value)),
+        _rate_key(side, "breathing_rate")(sleep_rate_value(state.second_value)),
+        _flag_key(side, "on_bed")(state.on_bed),
+        _flag_key(side, "moving")(state.moving),
+        _flag_key(side, "snoring")(state.snoring),
+    ]
+
+_FLAG_FIELDS: Final[tuple[tuple[str, SleepFlag], ...]] = (
+    ("on_bed", "bed_presence"),
+    ("moving", "body_movement"),
+    ("snoring", "snoring"),
+)
+
+
+
+class _Stopped(Exception):
+    """Live data stopped before a queued write reached the bed."""
+
+class GmmotorSleepController(BedController, GmmotorActions):
+    """One explicitly selected GM Control sleep module, independent of the bed."""
+
+    def __init__(self, coordinator: AdjustableBedCoordinator, *, sxb: bool) -> None:
+        super().__init__(coordinator)
+        self._sxb = sxb
+        self._requests = Requests(sxb=sxb)
+        self._receive_buffer = ReceiveBuffer(sxb=sxb)
+        self._transport: Transport | None = None
+        self._subscriptions: list[BleakGATTCharacteristic] = []
+        self._write_lock = native_write_lock(coordinator.hass)
+        self._clock: dict[str, Value] = dict.fromkeys(("0x7", "0xb", "0xf", "0x13", "0x17", "0x1b"))
+        self._streams: dict[str, Value] = {}
+        self._cache: dict[str, Value] = {}
+        self._report_date = dt_util.now().date()
+        self._report_part = 1
+        self._report_type = 1
+        self._device_part = 12 if sxb else 2
+        self._reported_part: Value = None
+        self._session_side = 1
+        self._generation = 0
+        self._tasks: set[asyncio.Task[None]] = set()
+        self._poll_timer: asyncio.TimerHandle | None = None
+        self._stale_timer: asyncio.TimerHandle | None = None
+        self._live_seen = {"left": 0, "right": 0}
+        self._intent = sleep_intent(coordinator.hass, str(coordinator.address), sxb=sxb)
+        self._invalid = 0
+
+    @property
+    def _live_enabled(self) -> bool:
+        return self._intent.live_enabled
+
+    @_live_enabled.setter
+    def _live_enabled(self, enabled: bool) -> None:
+        self._intent.live_enabled = enabled
+        self.forward_controller_state_update(LIVE_ENABLED, enabled)
+
+    @property
+    def control_characteristic_uuid(self) -> str:
+        return self._transport.write.uuid if self._transport else ""
+
+    @property
+    def supports_motor_control(self) -> bool:
+        return False
+
+    @property
+    def motor_control_specs(self) -> tuple[MotorControlSpec, ...]:
+        return ()
+
+    @property
+    def memory_slot_count(self) -> int:
+        return 0
+
+    @property
+    def supports_preset_flat(self) -> bool:
+        return False
+
+    @property
+    def supports_stop_all(self) -> bool:
+        return False
+
+    @property
+    def supports_single_address_pairing(self) -> bool:
+        return False
+
+    @property
+    def requires_notification_channel(self) -> bool:
+        return True
+
+    @property
+    def supports_clock_sync(self) -> bool:
+        return True
+
+    async def sync_clock(self) -> None:
+        """Set the module's clock, as the app's time write does on every connection."""
+        await self.async_execute_gmmotor_request(Request("sensor_time"))
+
+    @property
+    def controller_switch_specs(self) -> tuple[ControllerSwitchSpec, ...]:
+        # The clock is set on every connection and through the shared clock
+        # action; the reported part is diagnostic state the GM Control action queries.
+        return (
+            ControllerSwitchSpec(
+                "gmmotor_sleep_live",
+                "live_sleep_data",
+                lambda ctrl, on: require_controller(
+                    ctrl, GmmotorSleepController
+                ).async_execute_gmmotor_request(Request("sensor_live" if on else "sensor_stop")),
+                LIVE_ENABLED,
+                icon="mdi:heart-pulse",
+                # Stopping sends nothing, so it never takes the module's link.
+                local_off_fn=self._stop_live,
+            ),
+        )
+
+    @property
+    def controller_state_sensor_specs(self) -> tuple[ControllerStateSensorSpec, ...]:
+        return (
+            *(
+                sleep_rate_sensor_spec(
+                    kind, f"gmmotor_sleep_{side}_{kind}", _rate_key(side, kind), side
+                )
+                for side in _SIDES
+                for kind in ("heart_rate", "breathing_rate")
+            ),
+            ControllerStateSensorSpec(
+                key="gmmotor_sleep_state",
+                translation_key="gmmotor_sleep_state",
+                state_key=EVENT,
+                icon="mdi:sleep",
+                attribute_keys=(
+                    STREAMS,
+                    CLOCK,
+                    REPORTS,
+                    _live_key("left"),
+                    _live_key("right"),
+                    INVALID,
+                ),
+                card=CARD_UTILITY,
+                entity_registry_enabled_default=False,
+            ),
+        )
+
+    @property
+    def controller_state_binary_sensor_specs(self) -> tuple[ControllerStateBinarySensorSpec, ...]:
+        return tuple(
+            sleep_flag_binary_sensor_spec(
+                kind, f"gmmotor_sleep_{side}_{field}", _flag_key(side, field), side
+            )
+            for side in _SIDES
+            for field, kind in _FLAG_FIELDS
+        )
+
+    async def write_command(
+        self,
+        command: bytes,
+        repeat_count: int = 1,
+        repeat_delay_ms: int = 100,
+        cancel_event: asyncio.Event | None = None,
+    ) -> None:
+        await self._write_chunks(command, repeat_count, repeat_delay_ms, cancel_event)
+
+    async def _write_chunks(
+        self,
+        command: bytes,
+        repeat_count: int = 1,
+        repeat_delay_ms: int = 100,
+        cancel_event: asyncio.Event | None = None,
+        *,
+        generation: int | None = None,
+    ) -> None:
+        transport, client = self._transport, self.client
+        if transport is None or client is None or not client.is_connected:
+            raise ConnectionError("GM Control sleep session is not ready")
+        chunk_size = client.mtu_size - 3
+        if chunk_size <= 0:
+            raise ValueError("Invalid negotiated sleep-module MTU")
+        cancel = cancel_event if cancel_event is not None else self._coordinator.cancel_command
+
+        def before_write() -> None:
+            # Both locks are held: a stop that came while this waited for them voids it.
+            if generation is not None and generation != self._generation:
+                raise _Stopped
+
+        first = True
+        for index in range(repeat_count):
+            if index:
+                await asyncio.sleep(repeat_delay_ms / 1000)
+            for start in range(0, len(command), chunk_size):
+                chunk = command[start : start + chunk_size]
+                if len(chunk) > min(chunk_size, 512):
+                    raise ValueError("Sleep write exceeds the source native payload limit")
+                async with self._write_lock:
+                    async with asyncio.timeout(15):
+                        await self._write_gatt_with_retry(
+                            transport.write.uuid,
+                            chunk,
+                            cancel_event=cancel,
+                            response=transport.response,
+                            characteristic=transport.write,
+                            before_write=before_write if first else None,
+                        )
+                first = False
+
+    async def _send(self, command: SleepCommand, *, generation: int | None = None) -> None:
+        """Send one command; a queued one passes its generation so a stop voids it."""
+        now = dt_util.now()
+        request = self._requests.build(
+            command,
+            now=now,
+            zone=self._coordinator.hass.config.time_zone,
+            part=self._report_part if command != "s_part" else self._device_part,
+            report_type=self._report_type,
+            year=self._report_date.year,
+            month=self._report_date.month,
+            day=self._report_date.day,
+        )
+        self._receive_buffer.start(command)
+        if not request.packet:
+            return
+        # Every reachable framed bean is pressType5: removed before one send.
+        # Chunks are sequential SDK writes, without a per-chunk queue delay.
+        await asyncio.sleep(_QUEUE_TICK)
+        if generation is not None and generation != self._generation:
+            return  # Stopped during the queue delay.
+        try:
+            await self._write_chunks(request.packet, generation=generation)
+        except _Stopped:
+            return  # Stopped while waiting for the write locks.
+
+    def _queue(self, command: SleepCommand, *, delayed: bool = False) -> None:
+        generation = self._generation
+
+        async def run() -> None:
+            if delayed:
+                await asyncio.sleep(0)  # Source zero-duration Future callback.
+            if (
+                generation != self._generation
+                or self._transport is None
+                or self._coordinator.controller is not self
+            ):
+                return
+            if command == "q_report_allow" and self._report_type not in (1, 2):
+                return
+
+            async def execute(_controller: BedController) -> None:
+                if (
+                    generation == self._generation
+                    and self._transport is not None
+                    and self._coordinator.controller is self
+                ):
+                    await self._send(command, generation=generation)
+
+            try:
+                await self._coordinator.async_execute_controller_command(
+                    execute, cancel_running=False, resource="configuration"
+                )
+            except Exception:
+                _LOGGER.debug("GM Control sleep follow-up failed", exc_info=True)
+
+        task = self._coordinator.hass.async_create_task(run(), "gmmotor_sleep_followup")
+        self._tasks.add(task)
+        task.add_done_callback(self._tasks.discard)
+
+    def _poll(self) -> None:
+        self._poll_timer = None
+        if not self._live_enabled or self._transport is None:
+            return
+        if self._receive_buffer.command not in ("q_report", "q_report_allow"):
+            self._queue("q_realtime")
+        self._poll_timer = asyncio.get_running_loop().call_later(_LIVE_INTERVAL, self._poll)
+
+    def _stale_tick(self) -> None:
+        """SXB 0x801cfc clears a side after an empty five-second display window."""
+        self._stale_timer = None
+        if not self._sxb or not self._live_enabled or self._transport is None:
+            return
+        if self._receive_buffer.command not in ("q_report", "q_report_allow"):
+            updates: list[StateUpdate] = []
+            for side, seen in self._live_seen.items():
+                if seen:
+                    self._live_seen[side] = 0
+                else:
+                    updates.extend(
+                        _live_updates(side, LiveState(None, None, None, None, None, False))
+                    )
+            if updates:
+                self.forward_controller_state_updates(*updates)
+        self._stale_timer = asyncio.get_running_loop().call_later(_STALE_INTERVAL, self._stale_tick)
+
+    def _cancel_live_timers(self) -> None:
+        for timer in (self._poll_timer, self._stale_timer):
+            if timer:
+                timer.cancel()
+        self._poll_timer = self._stale_timer = None
+
+    def _start_live_timers(self) -> None:
+        if self._poll_timer is None:
+            self._poll_timer = asyncio.get_running_loop().call_later(_LIVE_INTERVAL, self._poll)
+        if self._sxb and self._stale_timer is None:
+            self._stale_timer = asyncio.get_running_loop().call_later(
+                _STALE_INTERVAL, self._stale_tick
+            )
+
+    def _publish(self, stream: Stream) -> None:
+        name = _STREAM_NAMES[stream.field]
+        self._streams[name] = stream.value
+        updates = [EVENT(name), STREAMS(dict(self._streams)), CLOCK(dict(self._clock))]
+        if name == "part":
+            self._reported_part = fields(stream.value)["0x13"]
+        if name == "realtime":
+            root = fields(stream.value)
+            val = fields(root["0xf"])
+            for side, key in (("left", "0x7"), ("right", "0xb")):
+                value = val[key]
+                if self._sxb:
+                    if value is None:
+                        continue
+                    if not isinstance(value, list) or any(
+                        type(v) not in (int, float) for v in value
+                    ):
+                        raise MalformedNotification("SXB live data expects numeric lists")
+                    state = sxb_live([v for v in value if isinstance(v, (int, float))])
+                else:
+                    if not isinstance(value, str):
+                        raise MalformedNotification("MM live data expects a string")
+                    state = normal_live(value)
+                if state is not None:
+                    if self._sxb:
+                        self._live_seen[side] += 1
+                    updates.extend(_live_updates(side, state))
+        self.forward_controller_state_updates(*updates)
+
+    def _receive(self, sender: BleakGATTCharacteristic, data: bytearray) -> None:
+        if self._transport is None or self._coordinator.controller is not self:
+            return
+        self.forward_raw_notification(sender.uuid, bytes(data))
+        try:
+            payload = self._receive_buffer.feed(bytes(data))
+            if len(self._receive_buffer.pending) > _REPORT_BUDGET:
+                raise MalformedNotification("Sleep assembly exceeds the HA memory budget")
+            if payload is None:
+                return
+            if self._receive_buffer.command == "q_report_allow":
+                report = decode_report(
+                    payload,
+                    sxb=self._sxb,
+                    kind=self._report_type,
+                    side=self._report_part,
+                    session_side=self._session_side,
+                    requested_date=self._report_date,
+                )
+                if report is not None:
+                    if report.cache_key is not None:
+                        self._cache[report.cache_key] = report.wrapper
+                    self.forward_controller_state_update(REPORTS, dict(self._cache))
+                    self._publish(Stream(report.stream, report.wrapper))
+                # HA owns one finite transfer and may resume an earlier live
+                # intent. The source leaves this command active for its page.
+                self._receive_buffer.clear()
+                return
+            report_finished = False
+            for effect in dispatch(
+                payload,
+                sxb=self._sxb,
+                active=self._receive_buffer.command,
+                clock=self._clock,
+                session_side=self._session_side,
+                report_type=self._report_type,
+            ):
+                if isinstance(effect, ClockUpdate):
+                    self._clock.update(effect.fields)
+                    self.forward_controller_state_update(CLOCK, dict(self._clock))
+                elif isinstance(effect, ReportSize):
+                    if effect.size > _REPORT_BUDGET:
+                        raise MalformedNotification("Sleep report exceeds the HA receive budget")
+                    self._receive_buffer.report_size = effect.size
+                    report_finished = effect.size <= 0
+                elif isinstance(effect, Stream):
+                    self._publish(effect)
+                elif isinstance(effect, Followup):
+                    self._queue(effect.command, delayed=effect.delayed)
+            if report_finished:
+                self._receive_buffer.clear()
+        except (MalformedNotification, ValueError, TypeError) as err:
+            self._invalid += 1
+            self._receive_buffer.pending.clear()
+            self.forward_controller_state_update(INVALID, self._invalid)
+            _LOGGER.debug("Rejected GM Control sleep response: %s", err)
+
+    def validate_gmmotor_request(self, request: Request) -> None:
+        if request.operation not in (
+            "sensor_time",
+            "sensor_part",
+            "sensor_query_part",
+            "sensor_live",
+            "sensor_report",
+            "sensor_sensitivity",
+            "sensor_stop",
+        ):
+            raise ValueError("This action works on the bed, not on the sleep sensor")
+        if request.operation == "sensor_sensitivity" and not self._sxb:
+            raise ValueError("This sleep sensor cannot report its sensitivity")
+        if request.operation == "sensor_part" and request.value not in (
+            (11, 12, 13) if self._sxb else (1, 2)
+        ):
+            raise ValueError("Choose a part setting this sleep sensor offers")
+
+    def _stop_live(self) -> None:
+        self._generation += 1  # Queued realtime polls must not write after this.
+        self._live_enabled = False
+        self._cancel_live_timers()
+        self._receive_buffer.clear()
+
+    async def async_execute_gmmotor_request(self, request: Request) -> None:
+        self.validate_gmmotor_request(request)
+        self._generation += 1
+        op = request.operation
+        if op == "sensor_part":
+            if self._sxb and self._reported_part == request.value:
+                return
+            self._device_part = request.value
+        if op == "sensor_stop":
+            self._stop_live()
+            return  # The source has no outbound STOP frame.
+        if op == "sensor_report":
+            self._report_date = request.report_date or dt_util.now().date()
+            self._report_part = request.part
+            self._session_side = request.part
+            self._report_type = request.report_type
+            await self._send("q_report")
+        elif op == "sensor_live":
+            self._live_enabled = request.enabled
+            if not request.enabled:
+                self._cancel_live_timers()
+                self._receive_buffer.clear()
+                return
+            await self._send("q_realtime")
+            if self._live_enabled:  # Not stopped while the request was being sent.
+                self._start_live_timers()
+        else:
+            commands: dict[Operation, SleepCommand] = {
+                "sensor_time": "s_time",
+                "sensor_part": "s_part",
+                "sensor_query_part": "q_part",
+                "sensor_sensitivity": "q_sens",
+            }
+            await self._send(commands[op])
+
+    async def start_notify(self, callback: Callable[[str, float], None] | None = None) -> None:
+        if self._subscriptions:
+            return
+        client = self.client
+        if client is None or not client.is_connected:
+            raise ConnectionError("Not connected to GM Control sleep module")
+        self._transport = select_sleep(client.services, sxb=self._sxb)
+        self._receive_buffer.clear()
+        self.forward_controller_state_update(LIVE_ENABLED, self._live_enabled)
+        try:
+            for characteristic in self._transport.notifications:
+                async with self.ble_lock:
+                    await client.start_notify(characteristic, self._receive)
+                self._subscriptions.append(characteristic)
+            # Source 150 microseconds truncates to zero in its platform timer.
+            await asyncio.sleep(0)
+            if self._sxb:
+                # The host's DOUBLE_USE readiness consumer selects part 12.
+                self._device_part = 12
+                await self._send("s_part")
+            await self._send("s_time")
+            if self._live_enabled:
+                self._start_live_timers()
+        except BaseException as err:
+            if isinstance(err, asyncio.CancelledError) and self._coordinator.controller is self:
+                self._live_enabled = False
+            await self.stop_notify()
+            raise
+
+    def on_disconnect(self) -> None:
+        self._generation += 1
+        self._receive_buffer.clear()
+        self._transport = None
+        self._subscriptions.clear()
+        self._cancel_live_timers()
+        self._live_seen = {"left": 0, "right": 0}
+        for task in tuple(self._tasks):
+            task.cancel()
+
+    async def stop_notify(self) -> None:
+        client = self.client
+        subscriptions = tuple(self._subscriptions)
+        self.on_disconnect()
+        if client is not None and client.is_connected:
+            for characteristic in subscriptions:
+                async with self.ble_lock:
+                    await client.stop_notify(characteristic)
+        tasks = tuple(task for task in self._tasks if task is not asyncio.current_task())
+        if tasks:
+            await asyncio.gather(*tasks, return_exceptions=True)
+
+    async def _unmapped_axis(self) -> None:
+        raise NotImplementedError("A GM Control sleep module has no bed motors")
+
+    move_head_up = move_head_down = move_back_up = move_back_down = _unmapped_axis
+    move_legs_up = move_legs_down = move_feet_up = move_feet_down = _unmapped_axis
+    move_head_stop = move_back_stop = move_legs_stop = move_feet_stop = stop_all = _unmapped_axis
+    preset_flat = _unmapped_axis
+
+    async def preset_memory(self, memory_num: int) -> None:
+        raise NotImplementedError("A sleep module has no bed memories")
+
+    async def program_memory(self, memory_num: int) -> None:
+        raise NotImplementedError("A sleep module has no bed memories")

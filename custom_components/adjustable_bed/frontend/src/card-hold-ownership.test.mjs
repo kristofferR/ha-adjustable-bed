@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
-import { test } from "bun:test";
+import { afterAll, test } from "bun:test";
 import { plugin } from "bun";
+import { placed } from "./test-placements";
 
 plugin({
   name: "card-hold-ownership-lit",
@@ -24,6 +25,17 @@ plugin({
   },
 });
 
+// This file's globals must not leak into other test files sharing the process.
+const previousGlobals = Object.fromEntries(
+  ["window", "KeyboardEvent"].map((name) => [name, Object.getOwnPropertyDescriptor(globalThis, name)]),
+);
+afterAll(() => {
+  for (const [name, descriptor] of Object.entries(previousGlobals)) {
+    if (descriptor) Object.defineProperty(globalThis, name, descriptor);
+    else Reflect.deleteProperty(globalThis, name);
+  }
+});
+
 const customElements = new Map();
 globalThis.window = Object.assign(new EventTarget(), {
   customElements: {
@@ -44,7 +56,11 @@ globalThis.KeyboardEvent = class {
 
 const { AdjustableBedCard } = await import("./adjustable-bed-card.ts");
 const { bedEntitiesForDevice } = await import("./discovery.ts");
-const { heldButtonMotor, stopFromCard } = await import("./hold.ts");
+const { heldButtonMotor, stopCardMotorHold } = await import("./hold.ts");
+
+// Stop as a side's or a single bed's Stop button does: scoped to that stop.
+const stopFromCard = (hold, hass, stopEntityId) =>
+  stopCardMotorHold(hold, stopEntityId, [stopEntityId], undefined, hass);
 
 class FakeClock {
   now = 0;
@@ -81,9 +97,7 @@ const flushMicrotasks = async () => {
 function makeM1Fixture(mode, { combinedHold = true } = {}) {
   const root = "pair-root";
   const nativeTwoAddress = mode === "native-two-address";
-  const legacyOneDevice = mode === "legacy-one-device";
   const sideAttributes = (side) => ({ bed_side: side });
-  const stopAttributes = (side) => legacyOneDevice ? {} : sideAttributes(side);
   const devices = { [root]: { id: root } };
   const entities = {};
   const states = {};
@@ -118,19 +132,16 @@ function makeM1Fixture(mode, { combinedHold = true } = {}) {
     devices["left-device"] = { id: "left-device", parent_device_id: root };
     devices["right-device"] = { id: "right-device", parent_device_id: root };
   }
-  add(ids.bothStop, root, "stop_both", stopAttributes("both"));
-  add(ids.leftStop, nativeTwoAddress ? "left-device" : root,
-    nativeTwoAddress ? "stop" : "stop_left", stopAttributes("left"));
-  add(ids.rightStop, nativeTwoAddress ? "right-device" : root,
-    nativeTwoAddress ? "stop" : "stop_right", stopAttributes("right"));
+  add(ids.bothStop, root, "stop_both", sideAttributes("both"));
+  add(ids.leftStop, nativeTwoAddress ? "left-device" : root, "stop", sideAttributes("left"));
+  add(ids.rightStop, nativeTwoAddress ? "right-device" : root, "stop", sideAttributes("right"));
 
   for (const side of ["left", "right"]) {
     const deviceId = nativeTwoAddress ? `${side}-device` : root;
-    const sideSuffix = nativeTwoAddress ? "" : `_${side}`;
     for (const part of [1, 2, 4, 8, 16]) {
       const entityId = part === 1 ? ids[`${side}Part1`] :
         part === 2 ? ids[`${side}Part2`] : `cover.${side}_part_${part}`;
-      add(entityId, deviceId, `starcode_m1x12_part_${part}${sideSuffix}`, {
+      add(entityId, deviceId, `starcode_m1x12_part_${part}`, {
         ...sideAttributes(side),
         held_control_up: `part_${part}_up`,
         held_control_down: `part_${part}_down`,
@@ -140,10 +151,7 @@ function makeM1Fixture(mode, { combinedHold = true } = {}) {
       });
     }
   }
-  const bothButtonKey = nativeTwoAddress
-    ? "starcode_m1x12_part_1_up"
-    : "starcode_m1x12_part_1_up_both";
-  add(ids.bothUp, root, bothButtonKey, {
+  add(ids.bothUp, root, "starcode_m1x12_part_1_up", {
     ...sideAttributes("both"),
     ...(combinedHold ? {
       held_control: "part_1_up",
@@ -152,8 +160,7 @@ function makeM1Fixture(mode, { combinedHold = true } = {}) {
     } : {}),
   });
   add(ids.rightWave, nativeTwoAddress ? "right-device" : root,
-    nativeTwoAddress ? "starcode_m1x12_hold_massage_wave_up" :
-      "starcode_m1x12_hold_massage_wave_up_right", {
+    "starcode_m1x12_hold_massage_wave_up", {
       ...sideAttributes("right"),
       held_control: "massage_wave_up",
       hold_start_delay_ms: 100,
@@ -161,12 +168,13 @@ function makeM1Fixture(mode, { combinedHold = true } = {}) {
     });
 
   const clock = new FakeClock();
-  const hass = {
+  const hass = placed({
     entities,
     states,
     devices,
     language: "en",
     locale: { language: "en" },
+    formatEntityName: (stateObj) => stateObj.entity_id,
     callService(domain, service, data) {
       calls.push({ at: clock.now, domain, service, data });
       if (service === "hold_control" ||
@@ -175,7 +183,7 @@ function makeM1Fixture(mode, { combinedHold = true } = {}) {
       }
       return Promise.resolve();
     },
-  };
+  });
   assert.ok(Object.values(entities).every((entry) => typeof entry.entity_id === "string"),
     JSON.stringify(Object.entries(entities).filter(([, entry]) => typeof entry.entity_id !== "string")));
   const sideBed = (side) => bedEntitiesForDevice(
@@ -238,15 +246,11 @@ function makeM1Fixture(mode, { combinedHold = true } = {}) {
   };
 }
 
-const modes = ["native-two-address", "native-single-address", "legacy-one-device"];
+const modes = ["native-two-address", "native-single-address"];
 
 for (const mode of modes) {
   test(`${mode}: Left STOP preserves the Right keyboard hold and its own release target`, async () => {
     const fixture = makeM1Fixture(mode);
-    if (mode === "legacy-one-device") {
-      assert.equal(fixture.hass.states[fixture.ids.leftStop].attributes.bed_side, undefined);
-      assert.equal(fixture.hass.entities[fixture.ids.leftStop].translation_key, "stop_left");
-    }
     const right = fixture.motorForCover("right", fixture.ids.rightPart1);
     fixture.startKey(right, fixture.ids.rightStop);
     fixture.clock.advance(100);
@@ -324,7 +328,7 @@ test("a same-device Both STOP still overlaps and cancels a started side hold", a
 
 test("an explicit unsided STOP remains broad within its own device", async () => {
   const deviceId = "standalone-device";
-  const hass = {
+  const hass = placed({
     entities: {
       "cover.raw_part": {
         entity_id: "cover.raw_part",
@@ -364,7 +368,7 @@ test("an explicit unsided STOP remains broad within its own device", async () =>
       calls.push({ domain, service, data });
       return new Promise((resolve) => pending.push(resolve));
     },
-  };
+  });
   const calls = [];
   const pending = [];
   const card = new AdjustableBedCard();

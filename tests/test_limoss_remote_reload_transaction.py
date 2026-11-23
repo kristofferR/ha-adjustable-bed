@@ -7,16 +7,24 @@ from unittest.mock import AsyncMock, patch
 import pytest
 from bleak.backends.device import BLEDevice
 from homeassistant.exceptions import HomeAssistantError
-from pytest_homeassistant_custom_component.common import MockConfigEntry
+from pytest_homeassistant.common import MockConfigEntry
 
 from custom_components.adjustable_bed import const, services
 from custom_components.adjustable_bed.adapter import AdapterSelectionResult
-from custom_components.adjustable_bed.beds.limoss import LimossController
-from custom_components.adjustable_bed.beds.limoss_remote_protocol import format_command
-from custom_components.adjustable_bed.limoss_remote_state import get_limoss_remote_session
+from custom_components.adjustable_bed.beds.limoss import remote_services as limoss_remote_services
+from custom_components.adjustable_bed.beds.limoss.remote import LimossRemoteController
+from custom_components.adjustable_bed.beds.limoss.remote_state import get_limoss_remote_session
+from custom_components.adjustable_bed.codec import limoss as codec
+from tests.pair_mode import CONF_PAIR_CONNECTION_MODE
 from tests.test_limoss_remote import make_controller
 from tests.test_limoss_remote_config import app_data
-from tests.test_limoss_remote_review_lifecycle import CAPS
+from tests.test_limoss_remote_entity_reloads import CAPS
+
+
+@pytest.fixture(autouse=True)
+def _fast_tick(monkeypatch):
+    """Pace the remote's frames at 5 ms instead of the app's tick; these tests check reloads."""
+    monkeypatch.setattr(LimossRemoteController, "_tick", property(lambda _self: 0.005))
 
 
 @asynccontextmanager
@@ -25,7 +33,7 @@ async def loaded_runtime(hass, paired):
     data = [app_data(**{
         "address": address,
         const.CONF_SIDE: side,
-        const.CONF_DISCONNECT_AFTER_COMMAND: True,
+        const.CONF_CONNECTION_MODE: const.CONNECTION_MODE_RELEASE,
         const.CONF_DISABLE_ANGLE_SENSING: True,
         const.CONF_HAS_LIGHT: True,
         const.CONF_HAS_MASSAGE: True,
@@ -33,7 +41,7 @@ async def loaded_runtime(hass, paired):
     }) for address, side in zip(addresses, (const.SIDE_LEFT, const.SIDE_RIGHT), strict=False)]
     entry = MockConfigEntry(domain=const.DOMAIN, version=4, data={
         const.CONF_PAIR_ID: "reload-review",
-        const.CONF_PAIR_CONNECTION_MODE: const.PAIR_CONNECTION_MODE_SEQUENTIAL,
+        CONF_PAIR_CONNECTION_MODE: const.PAIR_CONNECTION_MODE_SEQUENTIAL,
         const.CONF_PAIR_CHILDREN: data,
     } if paired else data[0])
     entry.add_to_hass(hass)
@@ -49,7 +57,7 @@ async def loaded_runtime(hass, paired):
             trace.append((address, "disconnect"))
 
         async def write(role, packet, *, address=address, client=client, **kwargs):
-            opcode = LimossController._tea_decrypt(packet[1:9])[1]
+            opcode = codec.decrypt(packet[1:9])[1]
             trace.append((address, opcode))
             if opcode in {0, 1, 2}:
                 reply = {
@@ -57,7 +65,7 @@ async def loaded_runtime(hass, paired):
                     0: bytes.fromhex("0001020304"),
                     1: bytes.fromhex("0101020304"),
                 }[opcode]
-                client.start_notify.call_args.args[1](role, bytearray(format_command(reply, 0)))
+                client.start_notify.call_args.args[1](role, bytearray(codec.frame(reply, 0)))
             elif opcode == 0x11 and state["failure"]:
                 entered.set()
                 if state["failure"] == "error":
@@ -78,7 +86,7 @@ async def loaded_runtime(hass, paired):
         return clients[device.address]
 
     with ExitStack() as stack:
-        module = "custom_components.adjustable_bed.coordinator."
+        module = "custom_components.adjustable_bed.coordinator_connection."
         for name, mock in [
             ("select_adapter", AsyncMock(side_effect=adapter)),
             ("establish_connection", AsyncMock(side_effect=establish)),
@@ -117,7 +125,7 @@ async def loaded_runtime(hass, paired):
 async def test_capability_reload_waits_for_real_public_transaction(hass, paired, service, changed):
     async with loaded_runtime(hass, paired) as (entry, original, children, trace, state, _, _):
         state["capacity"] = 7 if changed else 8
-        preflight = services._preflight_live_limoss_remote
+        preflight = limoss_remote_services._preflight_live_limoss_remote
 
         async def preflight_then_disconnect(*args, **kwargs):
             await preflight(*args, **kwargs)
@@ -135,9 +143,11 @@ async def test_capability_reload_waits_for_real_public_transaction(hass, paired,
             data["duration"] = 0.1
         elif service == "limoss_remote_features":
             data = {"underbed_light": False, "massage": False}
+        targets = ([(original, const.SIDE_BOTH)], [])
         with (
-            patch.object(services, "_resolve_sided_targets", return_value=([(original, const.SIDE_BOTH)], [])),
-            patch.object(services, "_preflight_live_limoss_remote", side_effect=preflight_then_disconnect),
+            patch.object(services, "_resolve_sided_targets", return_value=targets),
+            patch("custom_components.adjustable_bed.services._resolve_sided_targets", return_value=targets),
+            patch.object(limoss_remote_services, "_preflight_live_limoss_remote", side_effect=preflight_then_disconnect),
         ):
             await asyncio.wait_for(hass.services.async_call(
                 const.DOMAIN, service, {"device_id": ["physical"], **data}, blocking=True,
@@ -194,7 +204,7 @@ async def test_failed_or_cancelled_public_transaction_releases_reload_after_nati
 async def test_unselected_sibling_reload_waits_for_selected_service_phases(hass):
     async with loaded_runtime(hass, True) as (entry, original, children, _, _, _, _):
         left, right = children
-        preflight = services._preflight_live_limoss_remote
+        preflight = limoss_remote_services._preflight_live_limoss_remote
 
         async def changed_sibling_after_preflight(*args, **kwargs):
             await preflight(*args, **kwargs)
@@ -205,7 +215,7 @@ async def test_unselected_sibling_reload_waits_for_selected_service_phases(hass)
 
         with (
             patch.object(services, "_resolve_sided_targets", return_value=([(original, const.SIDE_LEFT)], [])),
-            patch.object(services, "_preflight_live_limoss_remote", side_effect=changed_sibling_after_preflight),
+            patch.object(limoss_remote_services, "_preflight_live_limoss_remote", side_effect=changed_sibling_after_preflight),
         ):
             await asyncio.wait_for(hass.services.async_call(
                 const.DOMAIN, "goto_preset", {"device_id": ["physical"], "preset": 1}, blocking=True,

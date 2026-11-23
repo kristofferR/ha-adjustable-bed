@@ -1,5 +1,5 @@
 // Card-owned translations for section headers and editor labels. Entity display
-// names come from Home Assistant's own localized friendly_name, so this only
+// names come from Home Assistant's entity naming (see names.ts), so this only
 // covers the card's structural chrome.
 import en from "./translations/en.json";
 import nb from "./translations/nb.json";
@@ -9,8 +9,8 @@ type Strings = Record<string, string>;
 
 const LANGUAGES: Record<string, Strings> = { en, nb };
 
-function pickLanguage(hass?: HomeAssistant): Strings {
-  const lang = (hass?.locale?.language || hass?.language || "en").toLowerCase();
+function pickLanguage(language?: string): Strings {
+  const lang = (language || "en").toLowerCase();
   // Match primary subtag, e.g. "nb-NO" -> "nb", "nn" -> Norwegian fallback.
   const primary = lang.split("-")[0];
   if (LANGUAGES[lang]) return LANGUAGES[lang];
@@ -24,7 +24,16 @@ export function localize(
   key: string,
   params?: Record<string, string>,
 ): string {
-  const strings = pickLanguage(hass);
+  return localizeLanguage(hass?.locale?.language || hass?.language, key, params);
+}
+
+// For text shown before Home Assistant hands the card a hass object.
+export function localizeLanguage(
+  language: string | undefined,
+  key: string,
+  params?: Record<string, string>,
+): string {
+  const strings = pickLanguage(language);
   let value = strings[key] ?? LANGUAGES.en[key] ?? key;
   if (params) {
     for (const [name, replacement] of Object.entries(params)) {

@@ -26,10 +26,9 @@ from __future__ import annotations
 import logging
 from dataclasses import dataclass
 from enum import StrEnum
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, TypeGuard
 
 from homeassistant.components import bluetooth
-from homeassistant.components.bluetooth import BluetoothServiceInfoBleak
 from homeassistant.core import HomeAssistant, callback
 
 from .const import ADAPTER_AUTO
@@ -179,7 +178,7 @@ def _can_connect(scanner: Any, transport: TransportClass) -> bool:
         if callable(checker):
             try:
                 return bool(checker())
-            except Exception:  # noqa: BLE001 - advisory only
+            except Exception:
                 return True
         return True
 
@@ -187,7 +186,7 @@ def _can_connect(scanner: Any, transport: TransportClass) -> bool:
     if callable(allocations):
         try:
             allocation = allocations()
-        except Exception:  # noqa: BLE001 - advisory only
+        except Exception:
             return True
         slots = getattr(allocation, "slots", 0) or 0
         if slots > 0:
@@ -206,7 +205,7 @@ def async_scanner_registrations(hass: HomeAssistant) -> dict[str, dict[str, Any]
     registrations: dict[str, dict[str, Any]] = {}
     try:
         entries = hass.config_entries.async_entries(_BLUETOOTH_DOMAIN)
-    except Exception:  # noqa: BLE001 - labelling must never break setup
+    except Exception:
         return registrations
     for entry in entries:
         source = entry.data.get(_CONF_SOURCE)
@@ -240,7 +239,7 @@ def _score(scanner_device: Any, rssi_diff: int) -> float | None:
     try:
         score: Any = scorer(rssi_diff)
         return float(score)
-    except Exception:  # noqa: BLE001 - scoring is advisory
+    except Exception:
         _LOGGER.debug("Could not score connection path", exc_info=True)
         return None
 
@@ -288,7 +287,7 @@ def async_connection_paths(hass: HomeAssistant, address: str) -> tuple[Connectio
         scanner_devices = list(
             bluetooth.async_scanner_devices_by_address(hass, address.upper(), connectable=True)
         )
-    except Exception:  # noqa: BLE001 - a missing manager must not block setup
+    except Exception:
         _LOGGER.debug("Could not enumerate scanners for %s", address, exc_info=True)
         return ()
 
@@ -299,7 +298,7 @@ def async_connection_paths(hass: HomeAssistant, address: str) -> tuple[Connectio
                     hass, address.upper(), connectable=False
                 )
             )
-        except Exception:  # noqa: BLE001 - a missing manager must not block setup
+        except Exception:
             _LOGGER.debug(
                 "Could not enumerate fallback scanners for %s", address, exc_info=True
             )
@@ -399,7 +398,7 @@ def async_path_for_source(
         return None
     try:
         scanner = bluetooth.async_scanner_by_source(hass, source)
-    except Exception:  # noqa: BLE001 - diagnostics must not raise
+    except Exception:
         scanner = None
     if scanner is None:
         return ConnectionPath(source=source, rssi=rssi)
@@ -440,7 +439,7 @@ def async_resolve_ble_device(
                     )
                     if scanner_source == source:
                         return getattr(scanner_device, "ble_device", None)
-            except Exception:  # noqa: BLE001 - fall through to the generic lookup
+            except Exception:
                 _LOGGER.debug(
                     "Scanner-specific lookup failed for %s", address, exc_info=True
                 )
@@ -449,7 +448,7 @@ def async_resolve_ble_device(
             device = bluetooth.async_ble_device_from_address(
                 hass, normalized, connectable=connectable
             )
-        except Exception:  # noqa: BLE001
+        except Exception:
             _LOGGER.debug("Could not resolve a BLE device for %s", address, exc_info=True)
             continue
         if device is not None:
@@ -477,6 +476,15 @@ def client_source(client: Any) -> str | None:
     return None
 
 
+def is_esphome_proxy_path(path: ConnectionPath | None) -> TypeGuard[ConnectionPath]:
+    """Return True when a link runs through an ESPHome Bluetooth proxy."""
+    return (
+        path is not None
+        and path.transport is TransportClass.PROXY
+        and path.source_domain == _ESPHOME_DOMAIN
+    )
+
+
 async def async_clear_proxy_gatt_cache(client: Any, path: ConnectionPath | None) -> bool:
     """Drop the cached GATT table of a bed reached through an ESPHome proxy.
 
@@ -488,16 +496,11 @@ async def async_clear_proxy_gatt_cache(client: Any, path: ConnectionPath | None)
     rediscovers. Limited to ESPHome because Home Assistant's wrapper falls back
     to BlueZ ``RemoveDevice`` for other backends, which deletes a host bond.
     """
-    if (
-        path is None
-        or path.transport is not TransportClass.PROXY
-        or path.source_domain != _ESPHOME_DOMAIN
-        or not getattr(client, "is_connected", False)
-    ):
+    if not is_esphome_proxy_path(path) or not getattr(client, "is_connected", False):
         return False
     try:
         cleared = bool(await client.clear_cache())
-    except Exception:  # noqa: BLE001 - best effort; the caller already has its failure
+    except Exception:
         _LOGGER.debug("Could not clear the proxy GATT cache via %s", path.source, exc_info=True)
         return False
     if cleared:
@@ -509,20 +512,6 @@ async def async_clear_proxy_gatt_cache(client: Any, path: ConnectionPath | None)
     return cleared
 
 
-def path_from_service_info(
-    hass: HomeAssistant,
-    service_info: BluetoothServiceInfoBleak | None,
-) -> ConnectionPath | None:
-    """Build a path from an advertisement snapshot (used by the freshness gate)."""
-    if service_info is None:
-        return None
-    return async_path_for_source(
-        hass,
-        getattr(service_info, "source", None),
-        rssi=_rssi(getattr(service_info, "rssi", None)),
-    )
-
-
 # --- User-facing description -------------------------------------------------
 #
 # The sentences live in ``strings.json`` under the discovery step's
@@ -532,7 +521,7 @@ def path_from_service_info(
 # Only the dynamic parts — scanner name, signal, adapter id — are interpolated
 # here; the prose itself is translated.
 
-_TRANSPORT_STRINGS_PREFIX = "step.bluetooth_confirm.data_description"
+_TRANSPORT_STRINGS_PREFIX = "step.finish_settings.data_description"
 
 _DEFAULT_STRINGS: dict[str, str] = {
     "transport_direct": "Direct Bluetooth",
@@ -591,7 +580,7 @@ async def _async_string(hass: HomeAssistant, key: str) -> str:
         translations = await async_get_translations(
             hass, hass.config.language, "config", {DOMAIN}
         )
-    except Exception:  # noqa: BLE001 - a missing translation must not block setup
+    except Exception:
         return default
     return translations.get(
         f"component.{DOMAIN}.config.{_TRANSPORT_STRINGS_PREFIX}.{key}", default

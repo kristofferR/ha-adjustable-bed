@@ -7,16 +7,16 @@ from homeassistant.const import CONF_ADDRESS
 from homeassistant.exceptions import ServiceValidationError
 
 from custom_components.adjustable_bed import const
-from custom_components.adjustable_bed.button import AdjustableBedButton, _button_entities_for
-from custom_components.adjustable_bed.limoss_remote_state import (
+from custom_components.adjustable_bed.beds.limoss.remote_state import (
     LimossRemoteMemory,
     get_limoss_remote_session,
 )
+from custom_components.adjustable_bed.button import AdjustableBedButton, _button_entities_for
 from custom_components.adjustable_bed.services import async_register_services
 from tests.test_coordinator_limoss_remote import actual_coordinator
 from tests.test_limoss_remote import make_controller
 from tests.test_limoss_remote_entities import runtime
-from tests.test_limoss_remote_review_lifecycle import live_controller
+from tests.test_limoss_remote_entity_reloads import live_controller
 
 
 @pytest.mark.parametrize("invalid", ["missing", "different_layout"])
@@ -29,7 +29,7 @@ async def test_actual_generic_memory_preflight_rejects_second_target_before_any_
             hass,
             **{
                 CONF_ADDRESS: f"AA:BB:CC:DD:EE:{index + 1:02X}",
-                const.CONF_DISCONNECT_AFTER_COMMAND: False,
+                const.CONF_CONNECTION_MODE: const.CONNECTION_MODE_IDLE,
                 const.CONF_LIMOSS_REMOTE_STATE: {
                     "capabilities": {
                         "key_count": 8,

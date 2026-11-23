@@ -1,0 +1,469 @@
+[
+  {
+    "id": "SUTA-B201*",
+    "selector": "case-sensitive name[0:9] == SUTA-B201; shared B202D predicate is false for this prefix",
+    "source": "smali_classes3/com/shuta/smart_home/fragment/home/HomeFragment.smali:h0, line 4837",
+    "disposition": "REACHABLE",
+    "controller": "MattressControllerM500DFragment",
+    "content_sha256": "5799e1e8b7c5d7a269735b0943f07afa8f61ddbae4d5180123683cb38ff97725",
+    "scope": "Direct BLE bed behavior; seating-only functions have EXCLUDED domain disposition"
+  },
+  {
+    "id": "SUTA-B202* except D",
+    "selector": "case-sensitive name[0:9] == SUTA-B202; not startsWith SUTA-B202D",
+    "source": "smali_classes3/com/shuta/smart_home/fragment/home/HomeFragment.smali:h0, line 4817",
+    "disposition": "REACHABLE",
+    "controller": "MattressControllerM500DFragment",
+    "content_sha256": "5799e1e8b7c5d7a269735b0943f07afa8f61ddbae4d5180123683cb38ff97725",
+    "scope": "Direct BLE bed behavior; seating-only functions have EXCLUDED domain disposition"
+  },
+  {
+    "id": "SUTA-B202D*",
+    "selector": "case-sensitive name[0:9] == SUTA-B202; startsWith SUTA-B202D",
+    "source": "smali_classes3/com/shuta/smart_home/fragment/home/HomeFragment.smali:h0, line 4817",
+    "disposition": "REACHABLE",
+    "controller": "MattressControllerM510Fragment",
+    "content_sha256": "2eba6516687257bf9c4a48b914397c85b2f9171027efedd6deaa69d6dc670aec",
+    "scope": "Direct BLE bed behavior; seating-only functions have EXCLUDED domain disposition"
+  },
+  {
+    "id": "SUTA-B205*",
+    "selector": "case-sensitive name[0:9] == SUTA-B205",
+    "source": "smali_classes3/com/shuta/smart_home/fragment/home/HomeFragment.smali:h0, line 4748",
+    "disposition": "REACHABLE",
+    "controller": "MattressControllerM205Fragment",
+    "content_sha256": "92e54680aea35632006273ee5674e7852c77a2e3e2caab579a3e55cb88c71f95",
+    "scope": "Direct BLE bed behavior; seating-only functions have EXCLUDED domain disposition"
+  },
+  {
+    "id": "SUTA-B206* except A,H",
+    "selector": "case-sensitive name[0:9] == SUTA-B206; neither suffix predicate",
+    "source": "smali_classes3/com/shuta/smart_home/fragment/home/HomeFragment.smali:h0, line 4592",
+    "disposition": "REACHABLE",
+    "controller": "MattressControllerM500Fragment",
+    "content_sha256": "719f8bb5f7986464bffc39ea61686bb89a71600a3154bba44a492117e3820cfc",
+    "scope": "Direct BLE bed behavior; seating-only functions have EXCLUDED domain disposition"
+  },
+  {
+    "id": "SUTA-B206A*",
+    "selector": "case-sensitive name[0:9] == SUTA-B206; startsWith SUTA-B206A",
+    "source": "smali_classes3/com/shuta/smart_home/fragment/home/HomeFragment.smali:h0, line 4592",
+    "disposition": "REACHABLE",
+    "controller": "MattressControllerM510DFragment",
+    "content_sha256": "4597eac73626379b4c551ff3f3274304170d5d399eba3cc18e8c0a3ca7d829e7",
+    "scope": "Direct BLE bed behavior; seating-only functions have EXCLUDED domain disposition"
+  },
+  {
+    "id": "SUTA-B206H*",
+    "selector": "case-sensitive name[0:9] == SUTA-B206; startsWith SUTA-B206H",
+    "source": "smali_classes3/com/shuta/smart_home/fragment/home/HomeFragment.smali:h0, line 4592",
+    "disposition": "REACHABLE",
+    "controller": "MattressControllerM510DFragment",
+    "content_sha256": "4597eac73626379b4c551ff3f3274304170d5d399eba3cc18e8c0a3ca7d829e7",
+    "scope": "Direct BLE bed behavior; seating-only functions have EXCLUDED domain disposition"
+  },
+  {
+    "id": "SUTA-B207*",
+    "selector": "case-sensitive name[0:9] == SUTA-B207",
+    "source": "smali_classes3/com/shuta/smart_home/fragment/home/HomeFragment.smali:h0, line 4522",
+    "disposition": "REACHABLE",
+    "controller": "MattressControllerB207Fragment",
+    "content_sha256": "343d65ee8cb5197a2ddd6caad629ac142a777dfd7581835255c352bf917f955e",
+    "scope": "Direct BLE bed behavior; seating-only functions have EXCLUDED domain disposition"
+  },
+  {
+    "id": "SUTA-B210*",
+    "selector": "case-sensitive name[0:9] == SUTA-B210",
+    "source": "smali_classes3/com/shuta/smart_home/fragment/home/HomeFragment.smali:h0, line 4452",
+    "disposition": "REACHABLE",
+    "controller": "MattressControllerM500Fragment",
+    "content_sha256": "719f8bb5f7986464bffc39ea61686bb89a71600a3154bba44a492117e3820cfc",
+    "scope": "Direct BLE bed behavior; seating-only functions have EXCLUDED domain disposition"
+  },
+  {
+    "id": "SUTA-B212*",
+    "selector": "case-sensitive name[0:9] == SUTA-B212",
+    "source": "smali_classes3/com/shuta/smart_home/fragment/home/HomeFragment.smali:h0, line 4382",
+    "disposition": "REACHABLE",
+    "controller": "MattressControllerB212DFragment",
+    "content_sha256": "b9afe030cfb9f03960bb3d44bdaca2d5e26661c22654e03866b489636dd0bd91",
+    "scope": "Direct BLE bed behavior; seating-only functions have EXCLUDED domain disposition"
+  },
+  {
+    "id": "SUTA-B301*",
+    "selector": "case-sensitive name[0:9] == SUTA-B301",
+    "source": "smali_classes3/com/shuta/smart_home/fragment/home/HomeFragment.smali:h0, line 4312",
+    "disposition": "REACHABLE",
+    "controller": "MattressControllerB301CFragment",
+    "content_sha256": "70760473f2581271abf610eeead473750c571d5832e8d3f3731a2850a998c84e",
+    "scope": "Direct BLE bed behavior; seating-only functions have EXCLUDED domain disposition"
+  },
+  {
+    "id": "SUTA-B302*",
+    "selector": "case-sensitive name[0:9] == SUTA-B302",
+    "source": "smali_classes3/com/shuta/smart_home/fragment/home/HomeFragment.smali:h0, line 4242",
+    "disposition": "REACHABLE",
+    "controller": "MattressControllerB302CFragment",
+    "content_sha256": "cef3c2d985190a06018220a50cb249c9e6a3fe7c6149f906127599c785bda85a",
+    "scope": "Direct BLE bed behavior; seating-only functions have EXCLUDED domain disposition"
+  },
+  {
+    "id": "SUTA-B402*",
+    "selector": "case-sensitive name[0:9] == SUTA-B402",
+    "source": "smali_classes3/com/shuta/smart_home/fragment/home/HomeFragment.smali:h0, line 4172",
+    "disposition": "REACHABLE",
+    "controller": "MattressControllerB402Fragment",
+    "content_sha256": "a97807f6f4cd2670a755d4039d129954cd127db3ab460e3de6d2033fe99a034d",
+    "scope": "Direct BLE bed behavior; seating-only functions have EXCLUDED domain disposition"
+  },
+  {
+    "id": "SUTA-B410*",
+    "selector": "case-sensitive name[0:9] == SUTA-B410",
+    "source": "smali_classes3/com/shuta/smart_home/fragment/home/HomeFragment.smali:h0, line 4102",
+    "disposition": "REACHABLE",
+    "controller": "MattressControllerB805Fragment",
+    "content_sha256": "5e34af160549687bbaf5432c80ac51505f0a0336bc7845e0a0b2bee0d1e6e78d",
+    "scope": "Direct BLE bed behavior; seating-only functions have EXCLUDED domain disposition"
+  },
+  {
+    "id": "SUTA-B506*",
+    "selector": "case-sensitive name[0:9] == SUTA-B506",
+    "source": "smali_classes3/com/shuta/smart_home/fragment/home/HomeFragment.smali:h0, line 4032",
+    "disposition": "REACHABLE",
+    "controller": "MattressControllerM666Fragment",
+    "content_sha256": "540a15a2064af1c4330341d41ca11b6e46704f5b2f58e861117ca364c412ea87",
+    "scope": "Direct BLE bed behavior; seating-only functions have EXCLUDED domain disposition"
+  },
+  {
+    "id": "SUTA-B603*",
+    "selector": "case-sensitive name[0:9] == SUTA-B603",
+    "source": "smali_classes3/com/shuta/smart_home/fragment/home/HomeFragment.smali:h0, line 3962",
+    "disposition": "REACHABLE",
+    "controller": "MattressControllerB603Fragment",
+    "content_sha256": "db19dac6f200b2fd2c131ec1a3a883650c812b7c2079982285aaccf7ab1ee494",
+    "scope": "Direct BLE bed behavior; seating-only functions have EXCLUDED domain disposition"
+  },
+  {
+    "id": "SUTA-B604*",
+    "selector": "case-sensitive name[0:9] == SUTA-B604",
+    "source": "smali_classes3/com/shuta/smart_home/fragment/home/HomeFragment.smali:h0, line 3892",
+    "disposition": "REACHABLE",
+    "controller": "MattressControllerB604Fragment",
+    "content_sha256": "6e1b0a61cd70280cd41159b9f037fc9400c67563bd968e3fe09aace0b3228cb4",
+    "scope": "Direct BLE bed behavior; seating-only functions have EXCLUDED domain disposition"
+  },
+  {
+    "id": "SUTA-B701*",
+    "selector": "case-sensitive name[0:9] == SUTA-B701",
+    "source": "smali_classes3/com/shuta/smart_home/fragment/home/HomeFragment.smali:h0, line 3871",
+    "disposition": "REACHABLE",
+    "controller": "MattressControllerB207Fragment",
+    "content_sha256": "343d65ee8cb5197a2ddd6caad629ac142a777dfd7581835255c352bf917f955e",
+    "scope": "Direct BLE bed behavior; seating-only functions have EXCLUDED domain disposition"
+  },
+  {
+    "id": "SUTA-B702*",
+    "selector": "case-sensitive name[0:9] == SUTA-B702",
+    "source": "smali_classes3/com/shuta/smart_home/fragment/home/HomeFragment.smali:h0, line 3801",
+    "disposition": "REACHABLE",
+    "controller": "MattressControllerB702Fragment",
+    "content_sha256": "8d25e6d2e56a45f9e40a9f70b4e42d3c9b410ea54a341fd250ad10a180282e8d",
+    "scope": "Direct BLE bed behavior; seating-only functions have EXCLUDED domain disposition"
+  },
+  {
+    "id": "SUTA-B710*",
+    "selector": "case-sensitive name[0:9] == SUTA-B710",
+    "source": "smali_classes3/com/shuta/smart_home/fragment/home/HomeFragment.smali:h0, line 3731",
+    "disposition": "REACHABLE",
+    "controller": "MattressControllerES204Fragment",
+    "content_sha256": "d45b861079c901a118d4711941007a536c23f948516b718cc1aa73247b445feb",
+    "scope": "Direct BLE bed behavior; seating-only functions have EXCLUDED domain disposition"
+  },
+  {
+    "id": "SUTA-B801*",
+    "selector": "case-sensitive name[0:9] == SUTA-B801",
+    "source": "smali_classes3/com/shuta/smart_home/fragment/home/HomeFragment.smali:h0, line 3661",
+    "disposition": "REACHABLE",
+    "controller": "MattressControllerB801Fragment",
+    "content_sha256": "8d78d15b637477d2d0664c6dd3563d78563b823dab1390ca40b848b71dda8291",
+    "scope": "Direct BLE bed behavior; seating-only functions have EXCLUDED domain disposition"
+  },
+  {
+    "id": "SUTA-B803*",
+    "selector": "case-sensitive name[0:9] == SUTA-B803",
+    "source": "smali_classes3/com/shuta/smart_home/fragment/home/HomeFragment.smali:h0, line 3591",
+    "disposition": "REACHABLE",
+    "controller": "MattressControllerB803Fragment",
+    "content_sha256": "94061c89823203bb64d4c67bd77735bd197d2f189cacb926a93880a167cb84b9",
+    "scope": "Direct BLE bed behavior; seating-only functions have EXCLUDED domain disposition"
+  },
+  {
+    "id": "SUTA-B804*",
+    "selector": "case-sensitive name[0:9] == SUTA-B804",
+    "source": "smali_classes3/com/shuta/smart_home/fragment/home/HomeFragment.smali:h0, line 3570",
+    "disposition": "REACHABLE",
+    "controller": "MattressControllerB803Fragment",
+    "content_sha256": "94061c89823203bb64d4c67bd77735bd197d2f189cacb926a93880a167cb84b9",
+    "scope": "Direct BLE bed behavior; seating-only functions have EXCLUDED domain disposition"
+  },
+  {
+    "id": "SUTA-B805*",
+    "selector": "case-sensitive name[0:9] == SUTA-B805",
+    "source": "smali_classes3/com/shuta/smart_home/fragment/home/HomeFragment.smali:h0, line 3549",
+    "disposition": "REACHABLE",
+    "controller": "MattressControllerB805Fragment",
+    "content_sha256": "5e34af160549687bbaf5432c80ac51505f0a0336bc7845e0a0b2bee0d1e6e78d",
+    "scope": "Direct BLE bed behavior; seating-only functions have EXCLUDED domain disposition"
+  },
+  {
+    "id": "SUTA-B810*",
+    "selector": "case-sensitive name[0:9] == SUTA-B810",
+    "source": "smali_classes3/com/shuta/smart_home/fragment/home/HomeFragment.smali:h0, line 3479",
+    "disposition": "REACHABLE",
+    "controller": "MattressControllerB810iFragment",
+    "content_sha256": "9b167fe343cfe0ace4efa20a6aa3f6815cf55ed6c63be2f8de2e1fcd72e52885",
+    "scope": "Direct BLE bed behavior; seating-only functions have EXCLUDED domain disposition"
+  },
+  {
+    "id": "SUTA-B901*",
+    "selector": "case-sensitive name[0:9] == SUTA-B901",
+    "source": "smali_classes3/com/shuta/smart_home/fragment/home/HomeFragment.smali:h0, line 3409",
+    "disposition": "REACHABLE",
+    "controller": "MattressControllerB901Fragment",
+    "content_sha256": "a1df3f1a7d9389f3b0437abe24073cca098fbc806bd255c4cb3c3c8a9e98b6de",
+    "scope": "Direct BLE bed behavior; seating-only functions have EXCLUDED domain disposition"
+  },
+  {
+    "id": "SUTA-B903*",
+    "selector": "case-sensitive name[0:9] == SUTA-B903",
+    "source": "smali_classes3/com/shuta/smart_home/fragment/home/HomeFragment.smali:h0, line 3339",
+    "disposition": "REACHABLE",
+    "controller": "MattressControllerB903Fragment",
+    "content_sha256": "61e2904364e8c38bc1c0670d541c663795f591c189425da4984b17457cfcea69",
+    "scope": "Direct BLE bed behavior; seating-only functions have EXCLUDED domain disposition"
+  },
+  {
+    "id": "SUTA-B905*",
+    "selector": "case-sensitive name[0:9] == SUTA-B905",
+    "source": "smali_classes3/com/shuta/smart_home/fragment/home/HomeFragment.smali:h0, line 3269",
+    "disposition": "REACHABLE",
+    "controller": "MattressControllerB905Fragment",
+    "content_sha256": "14bd5505ecf428e9dd4417ff31c06bb8e38250965bb43ea28ae3ef9835bb71aa",
+    "scope": "Direct BLE bed behavior; seating-only functions have EXCLUDED domain disposition"
+  },
+  {
+    "id": "SUTA-DRAW*",
+    "selector": "case-sensitive name[0:9] == SUTA-DRAW",
+    "source": "smali_classes3/com/shuta/smart_home/fragment/home/HomeFragment.smali:h0, line 3199",
+    "disposition": "REACHABLE",
+    "controller": "MattressControllerDrawerFragment",
+    "content_sha256": "6551b88d4ebcdb3bebd6004563e91d71ae5db05d43c185ca23877860858a98f4",
+    "scope": "EXCLUDED: drawer/accessory view; no proven direct BED effect."
+  },
+  {
+    "id": "SUTA-ES20*",
+    "selector": "case-sensitive name[0:9] == SUTA-ES20",
+    "source": "smali_classes3/com/shuta/smart_home/fragment/home/HomeFragment.smali:h0, line 3108",
+    "disposition": "REACHABLE",
+    "controller": "MattressControllerES204Fragment",
+    "content_sha256": "d45b861079c901a118d4711941007a536c23f948516b718cc1aa73247b445feb",
+    "scope": "Direct BLE bed behavior; seating-only functions have EXCLUDED domain disposition"
+  },
+  {
+    "id": "SUTA-F260*",
+    "selector": "case-sensitive name[0:9] == SUTA-F260",
+    "source": "smali_classes3/com/shuta/smart_home/fragment/home/HomeFragment.smali:h0, line 3129",
+    "disposition": "REACHABLE",
+    "controller": "MattressControllerF260AFragment",
+    "content_sha256": "5a768c893e9bb1fdb894ae670a1fa4ec1e7df0b74b8bb4b958d8d756d7e93fa9",
+    "scope": "Direct BLE bed behavior; seating-only functions have EXCLUDED domain disposition"
+  },
+  {
+    "id": "SUTA-Flow*",
+    "selector": "case-sensitive name[0:9] == SUTA-Flow",
+    "source": "smali_classes3/com/shuta/smart_home/fragment/home/HomeFragment.smali:h0, line 3038",
+    "disposition": "REACHABLE",
+    "controller": "YogoControllerFragment",
+    "content_sha256": "bc1712a0c60396f01b517c4c35b4863d29fe80fff862c5584fa5c656875b4650",
+    "scope": "Direct BLE bed behavior; seating-only functions have EXCLUDED domain disposition"
+  },
+  {
+    "id": "SUTA-M400*",
+    "selector": "case-sensitive name[0:9] == SUTA-M400; shared B202D predicate is false for this prefix",
+    "source": "smali_classes3/com/shuta/smart_home/fragment/home/HomeFragment.smali:h0, line 3017",
+    "disposition": "REACHABLE",
+    "controller": "MattressControllerM500DFragment",
+    "content_sha256": "5799e1e8b7c5d7a269735b0943f07afa8f61ddbae4d5180123683cb38ff97725",
+    "scope": "Direct BLE bed behavior; seating-only functions have EXCLUDED domain disposition"
+  },
+  {
+    "id": "SUTA-M410*",
+    "selector": "case-sensitive name[0:9] == SUTA-M410; shared B202D predicate is false for this prefix",
+    "source": "smali_classes3/com/shuta/smart_home/fragment/home/HomeFragment.smali:h0, line 2996",
+    "disposition": "REACHABLE",
+    "controller": "MattressControllerM500DFragment",
+    "content_sha256": "5799e1e8b7c5d7a269735b0943f07afa8f61ddbae4d5180123683cb38ff97725",
+    "scope": "Direct BLE bed behavior; seating-only functions have EXCLUDED domain disposition"
+  },
+  {
+    "id": "SUTA-M411*",
+    "selector": "case-sensitive name[0:9] == SUTA-M411; shared B202D predicate is false for this prefix",
+    "source": "smali_classes3/com/shuta/smart_home/fragment/home/HomeFragment.smali:h0, line 2975",
+    "disposition": "REACHABLE",
+    "controller": "MattressControllerM500DFragment",
+    "content_sha256": "5799e1e8b7c5d7a269735b0943f07afa8f61ddbae4d5180123683cb38ff97725",
+    "scope": "Direct BLE bed behavior; seating-only functions have EXCLUDED domain disposition"
+  },
+  {
+    "id": "SUTA-M500*",
+    "selector": "case-sensitive name[0:9] == SUTA-M500; shared B202D predicate is false for this prefix",
+    "source": "smali_classes3/com/shuta/smart_home/fragment/home/HomeFragment.smali:h0, line 2954",
+    "disposition": "REACHABLE",
+    "controller": "MattressControllerM500DFragment",
+    "content_sha256": "5799e1e8b7c5d7a269735b0943f07afa8f61ddbae4d5180123683cb38ff97725",
+    "scope": "Direct BLE bed behavior; seating-only functions have EXCLUDED domain disposition"
+  },
+  {
+    "id": "SUTA-M510* except D",
+    "selector": "case-sensitive name[0:9] == SUTA-M510; not startsWith SUTA-M510D",
+    "source": "smali_classes3/com/shuta/smart_home/fragment/home/HomeFragment.smali:h0, line 2819",
+    "disposition": "REACHABLE",
+    "controller": "MattressControllerM510Fragment",
+    "content_sha256": "2eba6516687257bf9c4a48b914397c85b2f9171027efedd6deaa69d6dc670aec",
+    "scope": "Direct BLE bed behavior; seating-only functions have EXCLUDED domain disposition"
+  },
+  {
+    "id": "SUTA-M510D*",
+    "selector": "case-sensitive name[0:9] == SUTA-M510; startsWith SUTA-M510D",
+    "source": "smali_classes3/com/shuta/smart_home/fragment/home/HomeFragment.smali:h0, line 2819",
+    "disposition": "REACHABLE",
+    "controller": "MattressControllerM510DFragment",
+    "content_sha256": "4597eac73626379b4c551ff3f3274304170d5d399eba3cc18e8c0a3ca7d829e7",
+    "scope": "Direct BLE bed behavior; seating-only functions have EXCLUDED domain disposition"
+  },
+  {
+    "id": "SUTA-M511*",
+    "selector": "case-sensitive name[0:9] == SUTA-M511",
+    "source": "smali_classes3/com/shuta/smart_home/fragment/home/HomeFragment.smali:h0, line 2798",
+    "disposition": "REACHABLE",
+    "controller": "MattressControllerM666Fragment",
+    "content_sha256": "540a15a2064af1c4330341d41ca11b6e46704f5b2f58e861117ca364c412ea87",
+    "scope": "Direct BLE bed behavior; seating-only functions have EXCLUDED domain disposition"
+  },
+  {
+    "id": "SUTA-MOON*",
+    "selector": "case-sensitive name[0:9] == SUTA-MOON",
+    "source": "smali_classes3/com/shuta/smart_home/fragment/home/HomeFragment.smali:h0, line 2728",
+    "disposition": "REACHABLE",
+    "controller": "IMattressFragment",
+    "content_sha256": "db45c978ab09d85e561ab5a69bfc2d43baf10cf38a03844789aa46dc49714b0a",
+    "scope": "Direct BLE bed behavior; seating-only functions have EXCLUDED domain disposition"
+  },
+  {
+    "id": "SUTA-N520*",
+    "selector": "case-sensitive name[0:9] == SUTA-N520",
+    "source": "smali_classes3/com/shuta/smart_home/fragment/home/HomeFragment.smali:h0, line 2658",
+    "disposition": "REACHABLE",
+    "controller": "MattressControllerN520Fragment",
+    "content_sha256": "78c70b3653883e70e59b605cdb93daaa7b2829b69dda665dc994f4aba1d097ae",
+    "scope": "Direct BLE bed behavior; seating-only functions have EXCLUDED domain disposition"
+  },
+  {
+    "id": "SUTA-RBHC*",
+    "selector": "case-sensitive name[0:9] == SUTA-RBHC",
+    "source": "smali_classes3/com/shuta/smart_home/fragment/home/HomeFragment.smali:h0, line 2588",
+    "disposition": "REACHABLE",
+    "controller": "MattressControllerMotorFragment",
+    "content_sha256": "5776994ef8b36f3fa9a7ad2beccf327cb43c2e923a03ef0a22efc41ab0e192e6",
+    "scope": "Direct BLE bed behavior; seating-only functions have EXCLUDED domain disposition"
+  },
+  {
+    "id": "SUTA-ROLL*",
+    "selector": "case-sensitive name[0:9] == SUTA-ROLL",
+    "source": "smali_classes3/com/shuta/smart_home/fragment/home/HomeFragment.smali:h0, line 2518",
+    "disposition": "REACHABLE",
+    "controller": "RollSofaControllerFragment",
+    "content_sha256": "0513958bdaccb9dbd797c309f6e8a3becc4ac4e7d8c14f4fedc2cceb0d242153",
+    "scope": "Mixed domain: shared sofa/bed conversion retained; seating-only controls EXCLUDED per command row."
+  },
+  {
+    "id": "SUTA-S100*",
+    "selector": "case-sensitive name[0:9] == SUTA-S100",
+    "source": "smali_classes3/com/shuta/smart_home/fragment/home/HomeFragment.smali:h0, line 2448",
+    "disposition": "REACHABLE",
+    "controller": "MattressControllerM500Fragment",
+    "content_sha256": "719f8bb5f7986464bffc39ea61686bb89a71600a3154bba44a492117e3820cfc",
+    "scope": "Direct BLE bed behavior; seating-only functions have EXCLUDED domain disposition"
+  },
+  {
+    "id": "SUTA-S200*",
+    "selector": "case-sensitive name[0:9] == SUTA-S200",
+    "source": "smali_classes3/com/shuta/smart_home/fragment/home/HomeFragment.smali:h0, line 2427",
+    "disposition": "REACHABLE",
+    "controller": "MattressControllerM500Fragment",
+    "content_sha256": "719f8bb5f7986464bffc39ea61686bb89a71600a3154bba44a492117e3820cfc",
+    "scope": "Direct BLE bed behavior; seating-only functions have EXCLUDED domain disposition"
+  },
+  {
+    "id": "SUTA-S300*",
+    "selector": "case-sensitive name[0:9] == SUTA-S300",
+    "source": "smali_classes3/com/shuta/smart_home/fragment/home/HomeFragment.smali:h0, line 2406",
+    "disposition": "REACHABLE",
+    "controller": "MattressControllerM500Fragment",
+    "content_sha256": "719f8bb5f7986464bffc39ea61686bb89a71600a3154bba44a492117e3820cfc",
+    "scope": "Direct BLE bed behavior; seating-only functions have EXCLUDED domain disposition"
+  },
+  {
+    "id": "SUTA-SOFA*",
+    "selector": "case-sensitive name[0:9] == SUTA-SOFA",
+    "source": "smali_classes3/com/shuta/smart_home/fragment/home/HomeFragment.smali:h0, line 2336",
+    "disposition": "REACHABLE",
+    "controller": "SofaBedControllerFragment",
+    "content_sha256": "7bcd8d4d40f6e355697d19fc320677b998b8fb5dbfe3c1fa3155482c1768aa63",
+    "scope": "Mixed domain: shared sofa/bed conversion retained; seating-only controls EXCLUDED per command row."
+  },
+  {
+    "id": "SUTA-STOR*",
+    "selector": "case-sensitive name[0:9] == SUTA-STOR",
+    "source": "smali_classes3/com/shuta/smart_home/fragment/home/HomeFragment.smali:h0, line 2315",
+    "disposition": "REACHABLE",
+    "controller": "MattressControllerB402Fragment",
+    "content_sha256": "a97807f6f4cd2670a755d4039d129954cd127db3ab460e3de6d2033fe99a034d",
+    "scope": "Direct BLE bed behavior; seating-only functions have EXCLUDED domain disposition"
+  },
+  {
+    "id": "SUTA-TEMP*",
+    "selector": "case-sensitive name[0:9] == SUTA-TEMP",
+    "source": "smali_classes3/com/shuta/smart_home/fragment/home/HomeFragment.smali:h0, line 2245",
+    "disposition": "REACHABLE",
+    "controller": "TempControllerFragment",
+    "content_sha256": "b65e2084decd913180c6d50854b9e208afcd4db88a3d378454070c4060ae5784",
+    "scope": "Direct BLE bed behavior; seating-only functions have EXCLUDED domain disposition"
+  },
+  {
+    "id": "SUTA-YOGA*",
+    "selector": "case-sensitive name[0:9] == SUTA-YOGA",
+    "source": "smali_classes3/com/shuta/smart_home/fragment/home/HomeFragment.smali:h0, line 2224",
+    "disposition": "REACHABLE",
+    "controller": "YogoControllerFragment",
+    "content_sha256": "bc1712a0c60396f01b517c4c35b4863d29fe80fff862c5584fa5c656875b4650",
+    "scope": "Direct BLE bed behavior; seating-only functions have EXCLUDED domain disposition"
+  },
+  {
+    "id": "fallback",
+    "selector": "name length >=9 and no exact prefix case",
+    "source": "HomeFragment.smali:h0 :goto_1",
+    "disposition": "REACHABLE",
+    "controller": "MattressControllerM666Fragment",
+    "content_sha256": "540a15a2064af1c4330341d41ca11b6e46704f5b2f58e861117ca364c412ea87",
+    "scope": "Direct BLE bed behavior; seating-only functions have EXCLUDED domain disposition"
+  },
+  {
+    "id": "short-name",
+    "selector": "name length <9",
+    "source": "HomeFragment.smali:h0 entry",
+    "disposition": "DEAD/UNUSED",
+    "controller": null,
+    "scope": "No controller selected"
+  }
+]

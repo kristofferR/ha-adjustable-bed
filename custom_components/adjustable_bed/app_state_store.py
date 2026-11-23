@@ -37,8 +37,9 @@ from homeassistant.helpers.storage import Store
 
 from .app_session import drop_app_sessions
 from .const import DOMAIN
+from .runtime_data import DomainKey, domain_registry
 
-_REGISTRY_KEY = "app_state_stores"
+_REGISTRY_KEY: DomainKey[dict[str, AppStateStore]] = DomainKey("app_state_stores")
 _LOGGER = logging.getLogger(__name__)
 PROFILE_DECISIONS_SLOT: Final = "profile_recommendations"
 
@@ -141,6 +142,26 @@ class AppStateStore:
                         "Unable to persist app state during unload; retry scheduled", exc_info=True
                     )
 
+    async def async_rename_slots(self, old_prefix: str, new_prefix: str) -> None:
+        """Move slots from ``old_prefix`` to ``new_prefix`` for a schema migration.
+
+        A slot already stored under the new name is kept.
+        """
+        async with self._lock:
+            data = await self._async_load()
+            renamed = {
+                new_prefix + slot.removeprefix(old_prefix): state
+                for slot, state in data.items()
+                if slot.startswith(old_prefix)
+            }
+            if not renamed:
+                return
+            kept = {slot: state for slot, state in data.items() if not slot.startswith(old_prefix)}
+            updated = {**renamed, **kept}
+            await self._store.async_save(updated)
+            data.clear()
+            data.update(updated)
+
     async def async_remove(self, *, keep_slots: Iterable[str] = ()) -> None:
         """Forget app preferences, optionally retaining durable support evidence."""
         async with self._lock:
@@ -184,9 +205,19 @@ class AppStateStore:
         return dict(self._data or {})
 
 
+def jensen_memory_store_key(address: str) -> str:
+    """Jensen keeps app-stored memory positions in one file per bed."""
+    return f"{DOMAIN}.jensen_memory.{address.replace(':', '_').lower()}"
+
+
+def pairlink_sdk_store_key(entry_id: str, address: str | None = None) -> str:
+    """A Pairlink entry's SDK metadata file; each side of a pair keeps its own."""
+    suffix = f".{address.upper().replace('-', ':')}" if address is not None else ""
+    return f"{DOMAIN}.pairlink_sdk.{entry_id}{suffix}"
+
+
 def _registry(hass: HomeAssistant) -> dict[str, AppStateStore]:
-    registry: dict[str, AppStateStore] = hass.data.setdefault(DOMAIN, {}).setdefault(_REGISTRY_KEY, {})
-    return registry
+    return domain_registry(hass, _REGISTRY_KEY, dict)
 
 
 def app_state_store(hass: HomeAssistant, address: str) -> AppStateStore:
@@ -198,6 +229,11 @@ def app_state_store(hass: HomeAssistant, address: str) -> AppStateStore:
     return registry[key]
 
 
+def discard_app_state_store(hass: HomeAssistant, address: str) -> None:
+    """Forget an unsaved address's store object without touching storage."""
+    _registry(hass).pop(address.upper(), None)
+
+
 async def async_remove_app_states(hass: HomeAssistant, addresses: Iterable[str]) -> None:
     """Forget the app state and sessions of beds no config entry owns any more."""
     registry = _registry(hass)
@@ -207,3 +243,4 @@ async def async_remove_app_states(hass: HomeAssistant, addresses: Iterable[str])
     for address in addresses:
         store = registry.pop(address.upper(), None) or AppStateStore(hass, address)
         await store.async_remove(keep_slots=(PROFILE_DECISIONS_SLOT,))
+        await Store(hass, 1, jensen_memory_store_key(address)).async_remove()

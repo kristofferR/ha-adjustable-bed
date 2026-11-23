@@ -4,15 +4,8 @@ from dataclasses import dataclass, field
 from enum import IntFlag
 from typing import Final, overload
 
-from . import casper_base_catalog as _casper_base_catalog
-from . import hush_catalog as _hush_catalog
-from . import richmat_mh_catalog as _richmat_mh_catalog
-from . import ruf_richmat_models as _ruf_richmat_models
-from . import ruf_richmat_profiles as _ruf_richmat_profiles
-from .cluster018_profiles import APP_NAMES as CLUSTER018_APPS
-from .goodvibe_catalog import PROFILE_CHOICES as GOODVIBE_PROFILES
-from .hjbed_catalog import PROFILE_CHOICES as HJBED_PROFILES
-
+# How every automatic choice reads in setup and Configure.
+AUTOMATIC_LABEL: Final = "Automatic (recommended)"
 DOMAIN: Final = "adjustable_bed"
 
 
@@ -70,8 +63,6 @@ STARCODE_APP_CONFIG_KEYS: Final = frozenset({CONF_STARCODE_COMMAND_SELECTOR, CON
 CONF_MOTION_BED_RESTORED: Final = "motion_bed_restored"
 CONF_MOTION_BED_PRESET: Final = "motion_bed_preset"
 CONF_MOTION_BED_MOVEMENT: Final = "motion_bed_movement"
-# The app's identity is the exact advertised name, stored as ble_device_name.
-MOTION_BED_CONFIG_KEYS: Final = frozenset({CONF_MOTION_BED_PRESET, CONF_MOTION_BED_MOVEMENT, CONF_MOTION_BED_RESTORED})
 
 CONF_STARCODE_M5X5_PROFILE: Final = "starcode_m5x5_profile"
 CONF_STARCODE_M1X12_PROFILE: Final = "starcode_m1x12_profile"
@@ -158,12 +149,10 @@ CONF_LOGICDATA_APP_FAMILY: Final = "logicdata_app_family"
 CONF_LOGICDATA_APP_LAYOUT: Final = "logicdata_app_layout"
 CONF_LOGICDATA_APP_TRANSPORT: Final = "logicdata_app_transport"
 LOGICDATA_APP_PROFILES: Final = {
-    "phone": "Phone app",
-    "tablet": "Tablet app",
-    "sleep_smart": "Sleep Smart Air Mattress app (bed)",
+    "phone": "MOTIONrelax phone app",
+    "tablet": "MOTIONrelax tablet app",
+    "sleep_smart": "Sleep Smart Air Mattress app (bed base)",
 }
-# Sleep Smart's final movement layout is always two motors; series picks massage zones.
-LOGICDATA_SLEEP_SMART_LAYOUTS: Final = frozenset({"standard_2", "split_series"})
 LOGICDATA_APP_FAMILIES: Final = {"p1": "P1 (standard)", "p2": "P2 (middle)"}
 LOGICDATA_APP_LAYOUTS: Final = {
     "standard_2": "Back and legs (2 motors)",
@@ -176,7 +165,7 @@ LOGICDATA_APP_LAYOUTS: Final = {
     "middle": "Middle layout",
 }
 LOGICDATA_APP_TRANSPORTS: Final = {
-    "auto": "Auto (one compatible GATT endpoint)",
+    "auto": AUTOMATIC_LABEL,
     "t1": "T1", "t2": "T2", "t3": "T3",
 }
 
@@ -201,7 +190,7 @@ JIECANG_APP_LAYOUTS: Final = {
     "split_after_bilateral": "Split after bilateral",
 }
 JIECANG_APP_TRANSPORTS: Final = {
-    "auto": "Auto (GATT endpoints)",
+    "auto": AUTOMATIC_LABEL,
     "g1": "G1",
     "g2": "G2",
     "g3": "G3",
@@ -233,7 +222,7 @@ MALOUF_APP_MODELS: Final = {
     "S755": "S755",
 }
 MALOUF_APP_TRANSPORTS: Final = {
-    "auto": "Automatic (one compatible GATT endpoint)",
+    "auto": AUTOMATIC_LABEL,
     "richmat_single": "Richmat Nordic UART",
     "richmat_framed": "Richmat framed",
     "okin_legacy": "OKIN legacy (FFE5)",
@@ -249,17 +238,23 @@ PRODUCT_TYPES: Final = {"bed": "Bed", "chair": "Chair"}
 # Per-channel motor direction flags an app sends with every movement command.
 CONF_REVERSE_MOTORS: Final = tuple(f"reverse_motor_{i}" for i in range(1, 5))
 CONF_DISABLE_ANGLE_SENSING: Final = "disable_angle_sensing"
+# Form-only: the positive "Read bed position" toggle. It is stored as
+# CONF_DISABLE_ANGLE_SENSING, and only where it differs from the route.
+CONF_READ_POSITIONS: Final = "read_positions"
 CONF_PREFERRED_ADAPTER: Final = "preferred_adapter"
-CONF_CONNECTION_PROFILE: Final = "connection_profile"
 CONF_MOTOR_PULSE_COUNT: Final = "motor_pulse_count"
 CONF_MOTOR_PULSE_DELAY_MS: Final = "motor_pulse_delay_ms"
-CONF_DISCONNECT_AFTER_COMMAND: Final = "disconnect_after_command"
+# How long the BLE link stays open after a command: released right away, kept
+# for ``idle_disconnect_seconds``, or kept for good.
+CONF_CONNECTION_MODE: Final = "connection_mode"
+CONNECTION_MODE_RELEASE: Final = "release"
+CONNECTION_MODE_IDLE: Final = "idle"
+CONNECTION_MODE_ALWAYS: Final = "always"
 CONF_IDLE_DISCONNECT_SECONDS: Final = "idle_disconnect_seconds"
-CONF_POSITION_MODE: Final = "position_mode"
 CONF_PASSIVE_POSITION_RECONCILIATION: Final = "passive_position_reconciliation"
-# Global (not per-entry) toggle to suppress automatic Bluetooth discovery cards.
-# Stored separately via discovery_settings, surfaced as a checkbox in the options
-# flow. Manual "Add Integration" is unaffected.
+# The key a legacy per-entry copy of the integration-wide discovery switch used.
+# The switch lives in discovery_settings' own Store and is set from the "Add
+# Integration" menu; entries only drop this key (schema 5.2 and options saves).
 CONF_DISABLE_DISCOVERY: Final = "disable_discovery"
 CONF_BLE_DEVICE_NAME: Final = "ble_device_name"
 CONF_OCTO_PIN: Final = "octo_pin"
@@ -331,7 +326,6 @@ CONF_PAIR_ID: Final = "pair_id"
 CONF_PAIR_MODE: Final = "pair_mode"
 CONF_PAIR_CHILDREN: Final = "pair_children"
 CONF_PAIR_MEMBER_ADDRESSES: Final = "pair_member_addresses"
-CONF_PAIR_SCHEMA_VERSION: Final = "pair_schema_version"
 # Per-child descriptor key for which physical side the child drives.
 CONF_SIDE: Final = "side"
 
@@ -339,48 +333,72 @@ CONF_SIDE: Final = "side"
 # profiles whose route gained some, to the reviewed bed types and variants;
 # cleared once the review is answered or the route changes.
 CONF_PROFILE_REVIEW_PENDING: Final = "profile_review_pending"
+# An explicit "Keep current setup" answer: the reviewed route signature and the
+# app choices offered at that time. The review returns only for that route when
+# a later release offers an app the user was not shown.
+CONF_PROFILE_REVIEW_KEPT: Final = "profile_review_kept"
+
+# Schema 5: the profile id the entry (or one paired side) runs, derived from the
+# saved bed type, variant and app key (see profile_id.py), and the record the
+# schema 5 migration left for diagnostics.
+CONF_PROFILE_ID: Final = "profile_id"
+CONF_PROFILE_MIGRATION: Final = "profile_migration"
 
 # pair_mode values: one shared BLE link vs two separate per-side links.
 PAIR_MODE_SINGLE_ADDRESS: Final = "single_address"
 PAIR_MODE_SEPARATE_ADDRESS: Final = "separate_address"
-PAIR_MODES: Final = (PAIR_MODE_SINGLE_ADDRESS, PAIR_MODE_SEPARATE_ADDRESS)
 
 # Side vocabulary — central, so no module invents ad-hoc magic strings.
 SIDE_LEFT: Final = "left"
 SIDE_RIGHT: Final = "right"
 SIDE_BOTH: Final = "both"
+
+# Motors the timed_move action can name, and so the card can hold through it.
+TIMED_MOVE_MOTOR_OPTIONS: Final = (
+    "axis_1",
+    "axis_2",
+    "axis_3",
+    "lumbar_tilt",
+    "neck",
+    "tv_lift",
+    "back",
+    "right_back",
+    "legs",
+    "head",
+    "feet",
+    "both",
+    "tilt",
+    "pillow",
+    "lumbar",
+    "bed_height",
+    "elevate",
+    "stair",
+    "m1x12_part_1",
+    "m1x12_part_2",
+    "m1x12_part_4",
+    "m1x12_part_8",
+    "m1x12_part_16",
+    "elevate_actuator_1",
+    "elevate_actuator_2",
+    "elevate_both",
+)
+
 # The two physical sides, in stable order (left first, right second).
 PAIR_SIDES: Final = (SIDE_LEFT, SIDE_RIGHT)
 
-# Internal forward-compat marker for the paired-entry data shape within v4.
-PAIR_SCHEMA_VERSION: Final = 1
-
-# How the two sides' BLE links are driven. ``auto``/``concurrent`` let each
-# independent receiver retain its own connection policy. Explicit ``sequential``
-# mode switches the active connection per command, holding one link at a time.
-CONF_PAIR_CONNECTION_MODE: Final = "pair_connection_mode"
+# How the two sides' BLE links are driven. A pair starts ``auto`` (concurrent:
+# each receiver keeps its own connection policy) and falls back to
+# ``sequential`` (one link at a time) when the adapter cannot hold both. The
+# stored key is obsolete: nothing ever set it, and schema 5.6 drops it.
 PAIR_CONNECTION_MODE_AUTO: Final = "auto"
 PAIR_CONNECTION_MODE_CONCURRENT: Final = "concurrent"
 PAIR_CONNECTION_MODE_SEQUENTIAL: Final = "sequential"
-PAIR_CONNECTION_MODES: Final = (
-    PAIR_CONNECTION_MODE_AUTO,
-    PAIR_CONNECTION_MODE_CONCURRENT,
-    PAIR_CONNECTION_MODE_SEQUENTIAL,
-)
 DEFAULT_PAIR_CONNECTION_MODE: Final = PAIR_CONNECTION_MODE_AUTO
 
 # Default angle limits (from Linak beds)
 DEFAULT_BACK_MAX_ANGLE: Final = 68.0
 DEFAULT_LEGS_MAX_ANGLE: Final = 45.0
 REVERIE_BACK_MAX_ANGLE: Final = 60.0
-
-# Position mode values
-POSITION_MODE_SPEED: Final = "speed"
-POSITION_MODE_ACCURACY: Final = "accuracy"
-
-# Connection profile values
-CONNECTION_PROFILE_BALANCED: Final = "balanced"
-CONNECTION_PROFILE_RELIABLE: Final = "reliable"
 
 # Special value for auto adapter selection
 ADAPTER_AUTO: Final = "auto"
@@ -395,7 +413,7 @@ MALOUF_LAYOUT_LUMBAR: Final = "lumbar"
 MALOUF_LAYOUT_FOUR_MOTOR: Final = "four_motor"
 MALOUF_LAYOUT_HILO: Final = "hilo"
 MALOUF_LAYOUTS: Final = {
-    MALOUF_LAYOUT_AUTO: "Auto (motor count; select Hi-Lo explicitly)",
+    MALOUF_LAYOUT_AUTO: AUTOMATIC_LABEL,
     MALOUF_LAYOUT_TWO_MOTOR: "Back and legs (2 motor, including Lucid L600)",
     MALOUF_LAYOUT_HEAD_TILT: "Back, legs, and head tilt",
     MALOUF_LAYOUT_LUMBAR: "Back, legs, and lumbar",
@@ -404,7 +422,7 @@ MALOUF_LAYOUTS: Final = {
 }
 MALOUF_MEMORY_SLOTS_AUTO: Final = 0
 MALOUF_MEMORY_SLOT_OPTIONS: Final = {
-    MALOUF_MEMORY_SLOTS_AUTO: "Auto (1 for 2-motor layout, otherwise 2)",
+    MALOUF_MEMORY_SLOTS_AUTO: AUTOMATIC_LABEL,
     1: "1 memory position",
     2: "2 memory positions",
 }
@@ -415,15 +433,29 @@ BED_TYPE_OKIN_HANDLE: Final = "okin_handle"  # Okin 6-byte via BLE handle
 BED_TYPE_OKIN_UUID: Final = "okin_uuid"  # Okin 6-byte via UUID (requires pairing)
 BED_TYPE_OKIN_7BYTE: Final = "okin_7byte"  # 7-byte via Okin service UUID
 BED_TYPE_OKIN_NORDIC: Final = "okin_nordic"  # 7-byte via Nordic UART
-BED_TYPE_OKIN_CB24: Final = "okin_cb24"  # CB24 protocol via Nordic UART (SmartBed by Okin)
 BED_TYPE_OKIN_DOT: Final = "okin_dot"  # DOT PROTOCOL: CB24-style frames, FurniMove remote keycodes
+BED_TYPE_NERUM: Final = "nerum"
+BED_TYPE_RELAX_MOTION: Final = "relax_motion"
+BED_TYPE_SMARTBED: Final = "smartbed"  # The SmartBed app's receivers (Okin CB24 family and others)
+BED_TYPE_CHEERSSLEEP: Final = "cheerssleep"
+BED_TYPE_SMART_SLEEP: Final = "smart_sleep"
+BED_TYPE_SLEEP_ASSISTANT: Final = "sleep_assistant"
+BED_TYPE_ONLYSNORE: Final = "onlysnore"
+BED_TYPE_JALON_BED: Final = "jalon_bed"
+BED_TYPE_SYMPHONY_SLEEP: Final = "symphony_sleep"
+BED_TYPE_SYMPHONY: Final = "symphony"
+BED_TYPE_ORMATEK: Final = "ormatek"
+CONF_SYMPHONY_SIDE: Final = "symphony_side"
 BED_TYPE_BF: Final = "bf"
 BED_TYPE_CHERISH: Final = "cherish"
 BED_TYPE_OKIN_ORE: Final = "okin_ore"  # OREBedBleProtocol (A5 5A format, 00001000 service)
 BED_TYPE_OKIN_CST: Final = "okin_cst"  # OKIN CSTProtocol (14-byte dual-field commands)
 BED_TYPE_OKIN_RF_ECO_BT: Final = "okin_rf_eco_bt"  # Single-actuator staircase
 BED_TYPE_FURNIMOVE: Final = "furnimove"
+CONF_COMFORT_ENHANCEMENT3_REMOTE_CODE: Final = "comfort_enhancement3_remote_code"
 CONF_FURNIMOVE_REMOTE: Final = "furnimove_remote"
+# Set once the user confirms an RF ECO BT bed is a single-actuator staircase.
+CONF_STAIRCASE_LAYOUT_CONFIRMED: Final = "rf_eco_staircase_confirmed"
 BED_TYPE_LEGGETT_LP_LEGACY: Final = "leggett_lp_legacy"
 BED_TYPE_LEGGETT_GEN2: Final = "leggett_gen2"  # Leggett Gen2 ASCII protocol
 BED_TYPE_LEGGETT_OKIN: Final = "leggett_okin"  # Leggett Okin binary protocol
@@ -444,43 +476,45 @@ BED_TYPE_RICHMAT: Final = "richmat"
 BED_TYPE_SOLACE: Final = "solace"
 BED_TYPE_MOTOSLEEP: Final = "motosleep"
 
-BEDS_WITH_PASSIVE_POSITION_RECONCILIATION: Final = frozenset({BED_TYPE_LINAK})
-
-
-def supports_passive_position_reconciliation(bed_type: str | None) -> bool:
-    """Return True if the bed type supports passive position reconciliation."""
-    return bed_type in BEDS_WITH_PASSIVE_POSITION_RECONCILIATION
-
-
-def passive_position_reconciliation_default_enabled(bed_type: str | None) -> bool:
-    """Return whether passive position reconciliation should default to enabled."""
-    return supports_passive_position_reconciliation(bed_type)
-
-
 BED_TYPE_REVERIE: Final = "reverie"
-BED_TYPE_LEGGETT_PLATT: Final = "leggett_platt"  # -> leggett_gen2 or leggett_okin
-BED_TYPE_OKIMAT: Final = "okimat"  # -> okin_uuid
+BED_TYPE_LEGGETT_PLATT: Final = "leggett_platt"  # Finds Gen2 or MlRM when it connects
 BED_TYPE_KEESON: Final = "keeson"
 BED_TYPE_ERGOMOTION: Final = "ergomotion"
 BED_TYPE_JIECANG: Final = "jiecang"
 BED_TYPE_JIECANG_APP: Final = "jiecang_app"
-BED_TYPE_DEWERTOKIN: Final = "dewertokin"  # -> okin_handle
 BED_TYPE_OCTO: Final = "octo"
-BED_TYPE_MATTRESSFIRM: Final = "mattressfirm"  # -> okin_nordic
-BED_TYPE_NECTAR: Final = "nectar"  # -> okin_7byte
 BED_TYPE_MALOUF_NEW_OKIN: Final = "malouf_new_okin"
 BED_TYPE_MALOUF_LEGACY_OKIN: Final = "malouf_legacy_okin"
 BED_TYPE_MALOUF_APP: Final = "malouf_app"
 BED_TYPE_FSM_RELAX: Final = "fsm_relax"
 CONF_FSM_RELAX_MEMORY_NAMES: Final = "fsm_relax_memory_names"
 BED_TYPE_SERENITY: Final = "serenity"  # Explicit Jordan's Serenity app profile
+BED_TYPE_RIZE_REMEDY_II: Final = "rize_remedy_ii"  # Explicit Rize Remedy II app
 BED_TYPE_TRANQUIL: Final = "tranquil"  # Explicit Jordan's Tranquil app profile
 # Glideaway model is selected manually; no advertisement-derived model rule.
+BED_TYPE_GALAXY: Final = "galaxy"
 BED_TYPE_GOODVIBE: Final = "goodvibe"
-BED_TYPE_CLUSTER018: Final = "richmat_classic_apps"
+BED_TYPE_MLILY: Final = "mlily"
+BED_TYPE_MAJESTICHOME: Final = "majestichome"
+BED_TYPE_OKIMIKI: Final = "okimiki"
+BED_TYPE_DREAMSENSE: Final = "dreamsense"
+BED_TYPE_SAATVA: Final = "saatva"
+BED_TYPE_BOBPOWERBASE: Final = "bobpowerbase"
+BED_TYPE_MLILY_REMOTE: Final = "mlily_remote"
+BED_TYPE_RICHMAT_CLASSIC_APPS: Final = "richmat_classic_apps"
+# Opt-in to the classic apps' third-service fallback when no fixed service exists.
+CONF_RICHMAT_CLASSIC_THIRD_SERVICE: Final = "richmat_classic_third_service"
+BED_TYPE_BEDGEAR: Final = "bedgear"
+BED_TYPE_L2MOTION: Final = "l2motion"
 BED_TYPE_MOTOMOTION: Final = "motomotion"
 BED_TYPE_HJBED: Final = "hjbed"
+BED_TYPE_RICHMAT_APP: Final = "richmat_app"
+BED_TYPE_RICHMAT_APP_SLEEP: Final = "richmat_app_sleep"
 HJBED_SCAN_KEYWORDS: Final = ("QRRM", "COOL", "MPE_", "209A", "ZRA1")
+BED_TYPE_JALON: Final = "jalon"
+JALON_LAYOUTS: Final = {"0": "Head and foot", "10": "Head, foot and neck",
+                         "11": "Head, foot and lumbar", "2": "Head, foot, neck and lumbar"}
+
 BED_TYPE_GLIDEAWAY_MOTION: Final = "glideaway_motion"
 GLIDEAWAY_MOTION_MODELS: Final = {
     "motion_400": "MOTION 400 (GM-A4Z)",
@@ -497,6 +531,13 @@ ZSERIES_VARIANTS: Final = {
     ZSERIES_VARIANT_Z280: "Z-280 page (M1/M2, separate massage zones)",
 }
 # Bed types whose variant is a user choice with no automatic default.
+BED_TYPE_ENSO: Final = "enso"
+BED_TYPE_SEALY_POSTUREMATIC: Final = "sealy_posturematic"
+BED_TYPE_YAMADA: Final = "yamada"
+BED_TYPE_BETTERLIVING2: Final = "betterliving2"
+BED_TYPE_SOMOS: Final = "somos"
+BED_TYPE_COMFORTBASE: Final = "comfortbase"
+BED_TYPE_LINX: Final = "linx"
 BED_TYPE_COMFORT_ENHANCEMENTS: Final = "comfort_enhancements"
 COMFORT_ENHANCEMENTS_VARIANTS: Final = {
     "mc2": "MC2: AC-1/BC3, Massage Plus / Comfort Position",
@@ -505,53 +546,81 @@ COMFORT_ENHANCEMENTS_VARIANTS: Final = {
     "mc5": "MC5: Hi Lo Lift / Massage Plus",
 }
 VARIANT_REQUIRED_BED_TYPES: Final = frozenset(
-    {
-        "richmat_sleep_receiver",BED_TYPE_GOODVIBE, BED_TYPE_HJBED, BED_TYPE_ESHINE_OKIN, BED_TYPE_ZSERIES, BED_TYPE_GLIDEAWAY_MOTION, BED_TYPE_COMFORT_ENHANCEMENTS, "casper_base", "hush_base"}
-)
+    {BED_TYPE_DREAMSENSE, BED_TYPE_SAATVA, BED_TYPE_MAJESTICHOME, BED_TYPE_LINX, BED_TYPE_SOMOS, BED_TYPE_BOBPOWERBASE, "sleep_evolution", "wsilver_legacy", BED_TYPE_SYMPHONY_SLEEP, "comfort_enhancement3", BED_TYPE_YAMADA, BED_TYPE_RICHMAT_APP, BED_TYPE_RICHMAT_APP_SLEEP, "luuna", "personal_comfort", "instant_comfort", "richmat_sleep_receiver", BED_TYPE_MLILY, BED_TYPE_MLILY_REMOTE, BED_TYPE_GALAXY, BED_TYPE_OKIMIKI, BED_TYPE_GOODVIBE, BED_TYPE_HJBED, BED_TYPE_ESHINE_OKIN, BED_TYPE_ZSERIES, BED_TYPE_GLIDEAWAY_MOTION, BED_TYPE_COMFORT_ENHANCEMENTS, BED_TYPE_COMFORTBASE, "casper_base", BED_TYPE_RICHMAT_CLASSIC_APPS}
+).union({BED_TYPE_BETTERLIVING2})
+# Aging in Place / Dawn House has one fixed profile; these filter observations.
+BED_TYPE_AGINGPLACE: Final = "agingplace"
+CONF_AGINGPLACE_BED_MODE: Final = "agingplace_bed_mode"
+CONF_AGINGPLACE_BED_SIDE: Final = "agingplace_bed_side"
+CONF_AGINGPLACE_SELECTED_SIDE: Final = "agingplace_selected_side"
 # Explicit OKIN Bedding app profiles sharing the Serenity controller core.
 OKIN_BEDDING_APP_BED_TYPES: Final = frozenset(
-    {BED_TYPE_SERENITY, BED_TYPE_TRANQUIL, BED_TYPE_ZSERIES}
+    {BED_TYPE_SERENITY, BED_TYPE_TRANQUIL, BED_TYPE_ZSERIES, BED_TYPE_RIZE_REMEDY_II}
 )
 # A Z-Series button press holds pulse_count x 100 ms, within the 60 s hold limit.
 ZSERIES_PULSE_COUNT_RANGE: Final = (1, 600)
 BED_TYPE_SIMMONS: Final = "simmons"  # Explicit SIMMONS app profile (com.okin.simmons)
 # Explicit Adjustable bed (Lumbar) app profile (com.okin.bedding.adjustablelumbar)
 BED_TYPE_ADJUSTAMATTRESS: Final = "adjustamattress"
+BED_TYPE_ADJUSTABLE_BED: Final = "adjustable_bed"
 BED_TYPE_ADJUSTABLE_LUMBAR: Final = "adjustable_lumbar"
-# Explicit Richmat MH app profiles (row055): one shared library, five catalogs.
+# Resident Adjustable Base 1.0.0, com.okin.resident.release, fixed 36_33_01a table.
+BED_TYPE_RESIDENT: Final = "resident"
+BED_TYPE_ULTRAMATIC_SMART_BED: Final = "ultramatic_smart_bed"
+BED_TYPE_SUPERIOR_SLEEP: Final = "superior_sleep"
+BED_TYPE_RIZE_HOME: Final = "rize_home"
+BED_TYPE_OKIN_MOTIONBED: Final = "okin_motionbed"
+BED_TYPE_COMFORT_ENHANCEMENT3: Final = "comfort_enhancement3"
+BED_TYPE_N32_MOTION_BED: Final = "n32_motion_bed"
+# Explicit Richmat MH app profiles: one shared library, five catalogs.
+BED_TYPE_PERSONAL_COMFORT: Final = "personal_comfort"
+BED_TYPE_INSTANT_COMFORT: Final = "instant_comfort"
+BED_TYPE_LUUNA: Final = "luuna"
+BED_TYPE_MLINE: Final = "mline"
+CONF_MLINE_CHILD_MODE: Final = "mline_child_mode"
+BED_TYPE_SLEEP_EVOLUTION: Final = "sleep_evolution"
+BED_TYPE_WSILVER_LEGACY: Final = "wsilver_legacy"
+BED_TYPE_SUPER_COLCHONES: Final = "super_colchones"
+BED_TYPE_SONICSLEEP: Final = "sonicsleep"
+BED_TYPE_LUNIOSMART: Final = "luniosmart"
 BED_TYPE_HUSH_BASE: Final = "hush_base"
 BED_TYPE_HUSH_SLEEP_MM: Final = "hush_sleep_mm"
 BED_TYPE_HUSH_SLEEP_SXB: Final = "hush_sleep_sxb"
-HUSH_BASE_VARIANTS: Final = {
-    key: value[0] + ("" if 46 <= _hush_catalog.INDICES[key] <= 57 else " (restored profile)")
-    for key, value in _hush_catalog.PRODUCTS.items()
-}
-HUSH_BASE_SIDE_VARIANTS: Final = frozenset(key for key, value in _hush_catalog.PRODUCTS.items() if value[11])
 BED_TYPE_CASPER_BASE: Final = "casper_base"
 BED_TYPE_GMMOTOR: Final = "gmmotor"
 BED_TYPE_GMMOTOR_SLEEP_MM: Final = "gmmotor_sleep_mm"
 BED_TYPE_GMMOTOR_SLEEP_SXB: Final = "gmmotor_sleep_sxb"
 BED_TYPE_CASPER_SLEEP_MM: Final = "casper_sleep_mm"
 BED_TYPE_CASPER_SLEEP_SXB: Final = "casper_sleep_sxb"
-CASPER_BASE_VARIANTS: Final = {
-    key: value[0] + (" (stored profile)" if key not in ("casperpro", "caspermax") else "")
-    for key, value in _casper_base_catalog.PRODUCTS.items()
-}
-CASPER_BASE_SIDE_VARIANTS: Final = frozenset(
-    key for key, value in _casper_base_catalog.PRODUCTS.items() if value[11]
-)
 BED_TYPE_RICHMAT_REVIVE: Final = "richmat_revive"  # com.richmat.revive3
 BED_TYPE_RICHMAT_BEST_MATTRESS: Final = "richmat_best_mattress"  # com.richmat.best_mattress
 BED_TYPE_RICHMAT_BLVD_HOME: Final = "richmat_blvd_home"  # com.richmat.blvd_home
 BED_TYPE_RICHMAT_HARMONY: Final = "richmat_harmony"  # com.richmat.harmony
 BED_TYPE_RICHMAT_IDEALBED: Final = "richmat_idealbed"  # com.richmat.idealbed
+# The RUF and Richmat app profiles, each with its catalog in ``beds/ruf_richmat/data``.
+RUF_RICHMAT_APPS: Final[dict[str, str]] = {
+    "ruf_betten": "ruf",
+    "wsilver_products": "wsilver2",
+    "richmat_americanstar": "americanstar",
+    "bailey_bed_control": "bailey2",
+    "richmat_tx": "tx",
+}
+BED_TYPE_RICHMAT_NISCO: Final = "richmat_nisco"
+BED_TYPE_RICHMAT_MLILY_SUPREME: Final = "richmat_mlily_supreme"
+BED_TYPE_BEDTECH_CLASSIC: Final = "bedtech_classic"
+RICHMAT_MH_APP_CATALOGS: Final[dict[str, str]] = {
+    BED_TYPE_RICHMAT_NISCO: "nisco",
+    BED_TYPE_RICHMAT_MLILY_SUPREME: "mlily_supreme",
+    BED_TYPE_BEDTECH_CLASSIC: "bedtech_classic",
+}
 RICHMAT_MH_APPS: Final[dict[str, str]] = {
     BED_TYPE_RICHMAT_REVIVE: "revive",
     BED_TYPE_RICHMAT_BEST_MATTRESS: "best_mattress",
     BED_TYPE_RICHMAT_BLVD_HOME: "blvd_home",
     BED_TYPE_RICHMAT_HARMONY: "harmony",
     BED_TYPE_RICHMAT_IDEALBED: "idealbed",
-    **_ruf_richmat_profiles.APPS,
+    **RUF_RICHMAT_APPS,
+    **RICHMAT_MH_APP_CATALOGS,
 }
 RICHMAT_MH_BED_TYPES: Final = frozenset(RICHMAT_MH_APPS)
 BED_TYPE_CUSTOMATIC_CLARITY: Final = "customatic_clarity"
@@ -575,7 +644,6 @@ LIMOSS_REMOTE_CONFIG_KEYS: Final = frozenset(
         *CONF_REVERSE_MOTORS,
     }
 )
-BED_TYPE_SERTA: Final = "serta"  # Serta Motion Perfect (uses Keeson protocol with serta variant)
 BED_TYPE_BEDTECH: Final = "bedtech"  # BedTech 5-byte ASCII protocol
 BED_TYPE_JENSEN: Final = "jensen"  # Jensen JMC400/LinON Entry (6-byte commands)
 BED_TYPE_SLEEP_NUMBER: Final = "sleep_number"  # Sleep Number Climate 360 / Fuzion bamkey BLE
@@ -604,7 +672,7 @@ BED_TYPE_VIBRADORM_APP: Final = "vibradorm_app"
 BED_TYPE_VMATBASIC: Final = "vmatbasic"
 BED_TYPE_STARCODE_ABM5_4: Final = "starcode_abm5_4"
 BED_TYPE_DOUBLESLEEP: Final = "doublesleep"
-DOUBLESLEEP_VARIANTS: Final = {"auto": "From advertisement", "p1": "SleepDriver (P1)", "p2": "XiaoBao (P2)", "p3": "XiaoBao Only sensor (P3)"}
+DOUBLESLEEP_VARIANTS: Final = {"auto": AUTOMATIC_LABEL, "p1": "SleepDriver (P1)", "p2": "XiaoBao (P2)", "p3": "XiaoBao Only sensor (P3)"}
 DOUBLESLEEP_CONFIG_KEYS: Final = frozenset({CONF_PRODUCT_TYPE, CONF_PROTOCOL_VARIANT})
 BED_TYPE_SLEEPTRACKER: Final = "sleeptracker"
 CONF_SLEEPTRACKER_FOUNDATION: Final = "sleeptracker_foundation"
@@ -615,6 +683,7 @@ CONF_SLEEPTRACKER_PROCESSOR_TYPE: Final = "sleeptracker_processor_type"
 SLEEPTRACKER_CONFIG_KEYS: Final = frozenset(
     {
         CONF_PRODUCT_TYPE,
+        # No longer asked, but still owned so a profile change drops it.
         CONF_SLEEPTRACKER_FOUNDATION,
         CONF_SLEEPTRACKER_UNIT,
         CONF_SLEEPTRACKER_SNAPSHOT_SIDE,
@@ -630,18 +699,24 @@ BED_TYPE_REMACRO: Final = (
 )
 BED_TYPE_COOLBASE: Final = "coolbase"  # Cool Base (Keeson BaseI5 with fan control)
 BED_TYPE_SCOTT_LIVING: Final = "scott_living"  # Scott Living 9-byte protocol
-BED_TYPE_SBI: Final = "sbi"  # SBI/Q-Plus (Costco) with position feedback
 BED_TYPE_SUTA: Final = "suta"  # SUTA Smart Home AT protocol (ASCII + CRLF)
+BED_TYPE_PARAMOUNT: Final = "paramount"
 BED_TYPE_TIMOTION_AHF: Final = "timotion_ahf"  # TiMOTION AHF 11-byte bitmask protocol
+BED_TYPE_RIZE: Final = "rize"
 BED_TYPE_ISLEEP: Final = "isleep"
+BED_TYPE_KOMFYD: Final = "komfyd"
+BED_TYPE_COMFYDS: Final = "comfyds"
+BED_TYPE_SMART_COMFORT_SYNARGY: Final = "smart_comfort_synargy"
+BED_TYPE_SMART_COMFORT_SYNERGY: Final = "smart_comfort_synergy"
 BED_TYPE_KAIDI: Final = "kaidi"  # Kaidi custom mesh-over-GATT protocol (Rize/Floyd/ISleep)
 BED_TYPE_LOGICDATA_APP: Final = "logicdata_app"
 # Sleep Smart Air Mattress pump: a separate BLE device on the shared ffe0 service.
 BED_TYPE_LOGICDATA_AIR_PUMP: Final = "logicdata_air_pump"
+BED_TYPE_SILVERMOTION: Final = "silvermotion"
 BED_TYPE_LOGICDATA: Final = "logicdata"  # Logicdata SimplicityFrame (XXTEA+CRC16+SLIP)
 BED_TYPE_BEDSENSE: Final = "bedsense"
 BEDSENSE_VARIANTS: Final = {
-    "auto": "BedSense layout from the Bluetooth name",
+    "auto": AUTOMATIC_LABEL,
     "bedsense_1": "BEDSENSE-850 (TYPE 1)",
     "bedsense_2": "BEDSENSE-890 (TYPE 2)",
     "bedsense_3": "Default BedSense layout (TYPE 3, WAIST / HIP labels)",
@@ -665,8 +740,6 @@ HAS_LIGHT_DEFAULTS: Final[dict[str, bool]] = {
     BED_TYPE_FSM_RELAX: False,
     BED_TYPE_LIMOSS_REMOTE: False,
 }
-# Apps that drive chairs and beds (CONF_PRODUCT_TYPE, CONF_REVERSE_MOTORS).
-CHAIR_AND_BED_APP_BED_TYPES: Final = frozenset({BED_TYPE_FSM_RELAX, BED_TYPE_LIMOSS_REMOTE})
 
 # All supported bed types (includes both protocol-based and legacy names)
 BED_TYPE_TEMPUR_CURVE: Final = 'tempur_curve'
@@ -678,23 +751,63 @@ BED_TYPE_ERGOMOTION_4: Final = "ergomotion_4"
 BED_TYPE_ROW_CONTROL: Final = 'row_control'
 BED_TYPE_ERGO_SLIM: Final = 'ergo_slim'
 BED_TYPE_TEMPUR_AU: Final = 'tempur_au'
-CLUSTER033_BED_TYPES: Final = frozenset({BED_TYPE_TEMPUR_CURVE, BED_TYPE_QPLUS_APP, BED_TYPE_SERTA_MP_REMOTE, BED_TYPE_OMAZZ_ADJUSTO_III, BED_TYPE_ERGOMOTION_APP, BED_TYPE_ROW_CONTROL, BED_TYPE_ERGO_SLIM, BED_TYPE_TEMPUR_AU})
+KEESON_LAYOUT_APP_BED_TYPES: Final = frozenset({BED_TYPE_TEMPUR_CURVE, BED_TYPE_QPLUS_APP, BED_TYPE_SERTA_MP_REMOTE, BED_TYPE_OMAZZ_ADJUSTO_III, BED_TYPE_ERGOMOTION_APP, BED_TYPE_ROW_CONTROL, BED_TYPE_ERGO_SLIM, BED_TYPE_TEMPUR_AU})
 
 SUPPORTED_BED_TYPES: Final = [
-    BED_TYPE_CLUSTER018,
+    BED_TYPE_NERUM,
+    BED_TYPE_RELAX_MOTION,
+    BED_TYPE_SMARTBED,
+    BED_TYPE_CHEERSSLEEP,
+    BED_TYPE_AGINGPLACE,
+    BED_TYPE_SMART_SLEEP,
+    BED_TYPE_SLEEP_ASSISTANT,
+    BED_TYPE_ONLYSNORE,
+    BED_TYPE_ENSO,
+    BED_TYPE_SEALY_POSTUREMATIC,
+    BED_TYPE_YAMADA,
+    BED_TYPE_BETTERLIVING2,
+    BED_TYPE_BEDGEAR,
+    BED_TYPE_L2MOTION,
+    BED_TYPE_PARAMOUNT,
+    BED_TYPE_RICHMAT_CLASSIC_APPS,
     BED_TYPE_ERGOMOTION_4,
     BED_TYPE_GMMOTOR, BED_TYPE_GMMOTOR_SLEEP_MM, BED_TYPE_GMMOTOR_SLEEP_SXB,
-    *sorted(CLUSTER033_BED_TYPES),
+    *sorted(KEESON_LAYOUT_APP_BED_TYPES),
+    BED_TYPE_GALAXY,
     BED_TYPE_GOODVIBE,
+    BED_TYPE_MLILY,
+    BED_TYPE_MAJESTICHOME,
+    BED_TYPE_OKIMIKI,
+    BED_TYPE_DREAMSENSE,
+    BED_TYPE_SAATVA,
+    BED_TYPE_BOBPOWERBASE,
+    BED_TYPE_MLILY_REMOTE,
     BED_TYPE_MOTOMOTION,
     BED_TYPE_HJBED,
+    BED_TYPE_JALON,
+    BED_TYPE_RICHMAT_APP,
+    BED_TYPE_RICHMAT_APP_SLEEP,
     BED_TYPE_GLIDEAWAY_MOTION,
     BED_TYPE_BEDSENSE,
     BED_TYPE_BF,
+    BED_TYPE_JALON_BED,
+    BED_TYPE_LINX,
+    BED_TYPE_SYMPHONY_SLEEP,
+    BED_TYPE_SYMPHONY,
+    BED_TYPE_ORMATEK,
     BED_TYPE_CHERISH,
     "casper_remote",
     "hush_remote",
     BED_TYPE_CASPER_BASE, BED_TYPE_CASPER_SLEEP_MM, BED_TYPE_CASPER_SLEEP_SXB,
+    BED_TYPE_LUUNA,
+    BED_TYPE_PERSONAL_COMFORT,
+    BED_TYPE_INSTANT_COMFORT,
+    BED_TYPE_MLINE,
+    BED_TYPE_SLEEP_EVOLUTION,
+    BED_TYPE_WSILVER_LEGACY,
+    BED_TYPE_SUPER_COLCHONES,
+    BED_TYPE_SONICSLEEP,
+    BED_TYPE_LUNIOSMART,
     BED_TYPE_HUSH_BASE, BED_TYPE_HUSH_SLEEP_MM, BED_TYPE_HUSH_SLEEP_SXB,
     # Protocol-based types (new naming)
     BED_TYPE_FURNIMOVE,
@@ -702,7 +815,6 @@ SUPPORTED_BED_TYPES: Final = [
     BED_TYPE_OKIN_UUID,
     BED_TYPE_OKIN_7BYTE,
     BED_TYPE_OKIN_NORDIC,
-    BED_TYPE_OKIN_CB24,
     BED_TYPE_OKIN_DOT,
     BED_TYPE_OKIN_ORE,
     BED_TYPE_OKIN_CST,
@@ -722,19 +834,26 @@ SUPPORTED_BED_TYPES: Final = [
     BED_TYPE_JIECANG,
     BED_TYPE_JIECANG_APP,
     BED_TYPE_OCTO,
-    # Legacy aliases (for backwards compatibility with existing configs)
+    # Saved by 4.x; the connected bed picks the Gen2 or MlRM route.
     BED_TYPE_LEGGETT_PLATT,
-    BED_TYPE_OKIMAT,
-    BED_TYPE_DEWERTOKIN,
-    BED_TYPE_MATTRESSFIRM,
-    BED_TYPE_NECTAR,
     BED_TYPE_FSM_RELAX,
     BED_TYPE_SERENITY,
     BED_TYPE_TRANQUIL,
+    BED_TYPE_RIZE_REMEDY_II,
     BED_TYPE_SIMMONS,
     BED_TYPE_ADJUSTAMATTRESS,
+    BED_TYPE_ADJUSTABLE_BED,
     BED_TYPE_ADJUSTABLE_LUMBAR,
+    BED_TYPE_RESIDENT,
+    BED_TYPE_RIZE_HOME,
+    BED_TYPE_SUPERIOR_SLEEP,
+    BED_TYPE_ULTRAMATIC_SMART_BED,
+    BED_TYPE_OKIN_MOTIONBED,
+    BED_TYPE_COMFORT_ENHANCEMENT3,
+    BED_TYPE_N32_MOTION_BED,
     BED_TYPE_COMFORT_ENHANCEMENTS,
+    BED_TYPE_SOMOS,
+    BED_TYPE_COMFORTBASE,
     BED_TYPE_ESHINE,
     BED_TYPE_ESHINE_OKIN,
     # Explicit Richmat MH app profiles
@@ -743,7 +862,8 @@ SUPPORTED_BED_TYPES: Final = [
     BED_TYPE_RICHMAT_BLVD_HOME,
     BED_TYPE_RICHMAT_HARMONY,
     BED_TYPE_RICHMAT_IDEALBED,
-    *_ruf_richmat_profiles.APPS,
+    *RUF_RICHMAT_APPS,
+    *RICHMAT_MH_APP_CATALOGS,
     "richmat_sleep_receiver",
     # Explicit Customatic app profiles
     BED_TYPE_ZSERIES,
@@ -764,8 +884,6 @@ SUPPORTED_BED_TYPES: Final = [
     # Limoss / Stawett
     BED_TYPE_LIMOSS,
     BED_TYPE_LIMOSS_REMOTE,
-    # Serta Motion Perfect
-    BED_TYPE_SERTA,
     # BedTech
     BED_TYPE_BEDTECH,
     # Jensen
@@ -807,8 +925,6 @@ SUPPORTED_BED_TYPES: Final = [
     BED_TYPE_COOLBASE,
     # Scott Living (9-byte Keeson variant)
     BED_TYPE_SCOTT_LIVING,
-    # SBI/Q-Plus (Costco, with position feedback)
-    BED_TYPE_SBI,
     # SUTA Smart Home AT protocol
     BED_TYPE_SUTA,
     # TiMOTION AHF protocol
@@ -816,8 +932,14 @@ SUPPORTED_BED_TYPES: Final = [
     # Kaidi (Rize/Floyd/ISleep)
     BED_TYPE_KAIDI,
     BED_TYPE_ISLEEP,
+    BED_TYPE_KOMFYD,
+    BED_TYPE_COMFYDS,
+    BED_TYPE_SMART_COMFORT_SYNARGY,
+    BED_TYPE_SMART_COMFORT_SYNERGY,
+    BED_TYPE_RIZE,
     # Logicdata SimplicityFrame (SILVERmotion)
     BED_TYPE_LOGICDATA,
+    BED_TYPE_SILVERMOTION,
     BED_TYPE_LOGICDATA_APP,
     BED_TYPE_LOGICDATA_AIR_PUMP,
     BED_TYPE_STARCODE_ABM5_4,
@@ -846,14 +968,22 @@ SUPPORTED_BED_TYPES: Final = [
 # every member, so adding a post-connect mutation later fails loudly.
 OFFLINE_CAPABILITY_SAFE_BED_TYPES: Final = frozenset(
     {
+        BED_TYPE_DREAMSENSE,
+        BED_TYPE_PERSONAL_COMFORT,
+        BED_TYPE_BEDGEAR,
+        BED_TYPE_L2MOTION,
+        BED_TYPE_SLEEP_EVOLUTION,
+        BED_TYPE_WSILVER_LEGACY,
+        BED_TYPE_SUPER_COLCHONES,
+        BED_TYPE_SONICSLEEP,
+        BED_TYPE_LUNIOSMART,
         BED_TYPE_MOTOMOTION,
-        BED_TYPE_CLUSTER018,
+        BED_TYPE_RICHMAT_CLASSIC_APPS,
         BED_TYPE_ERGOMOTION_4,
-        *CLUSTER033_BED_TYPES,
+        *KEESON_LAYOUT_APP_BED_TYPES,
         BED_TYPE_BEDSENSE,
         BED_TYPE_FURNIMOVE,
         BED_TYPE_OKIN_HANDLE,
-        BED_TYPE_DEWERTOKIN,
         BED_TYPE_OKIN_ORE,
         BED_TYPE_LEGGETT_GEN2,
         BED_TYPE_LEGGETT_LP_LEGACY,
@@ -866,7 +996,6 @@ OFFLINE_CAPABILITY_SAFE_BED_TYPES: Final = frozenset(
         BED_TYPE_JIECANG,
         BED_TYPE_COMFORT_MOTION,
         BED_TYPE_ERGOMOTION,
-        BED_TYPE_SERTA,
         BED_TYPE_OKIN_FFE,
         BED_TYPE_BEDTECH,
         BED_TYPE_SLEEPYS_BOX15,
@@ -875,7 +1004,6 @@ OFFLINE_CAPABILITY_SAFE_BED_TYPES: Final = frozenset(
         BED_TYPE_SVANE,
         BED_TYPE_RONDURE,
         BED_TYPE_SCOTT_LIVING,
-        BED_TYPE_SBI,
         BED_TYPE_SUTA,
         BED_TYPE_TIMOTION_AHF,
         # One fixed frame layout; the GATT name is cosmetic and grants no controls.
@@ -887,7 +1015,15 @@ OFFLINE_CAPABILITY_SAFE_BED_TYPES: Final = frozenset(
         # chooses a protocol when the variant leaves it on auto.
         BED_TYPE_SIMMONS,
         # Controls are identical for all three tables; only the live link picks one.
+        BED_TYPE_ADJUSTABLE_BED,
         BED_TYPE_ADJUSTABLE_LUMBAR,
+        BED_TYPE_RESIDENT,
+        BED_TYPE_RIZE_HOME,
+    BED_TYPE_SUPERIOR_SLEEP,
+        BED_TYPE_ULTRAMATIC_SMART_BED,
+        BED_TYPE_OKIN_MOTIONBED,
+        BED_TYPE_COMFORT_ENHANCEMENT3,
+        BED_TYPE_N32_MOTION_BED,
         BED_TYPE_ESHINE,
         # Fixed pump controls; pressure is live-link state only.
         BED_TYPE_LOGICDATA_AIR_PUMP,
@@ -897,20 +1033,22 @@ OFFLINE_CAPABILITY_SAFE_BED_TYPES: Final = frozenset(
         BED_TYPE_MOTION_BED,
         BED_TYPE_SLEEPTRACKER,
         BED_TYPE_ISLEEP,
+        BED_TYPE_KOMFYD,
+        BED_TYPE_COMFYDS,
+        BED_TYPE_RIZE,
         BED_TYPE_LIMOSS_REMOTE,
     }
 )
 
 
-# Mapping from legacy bed types to their protocol-based equivalents
-# Used by controller_factory to resolve the correct controller
-LEGACY_BED_TYPE_MAPPING: Final = {
-    BED_TYPE_DEWERTOKIN: BED_TYPE_OKIN_HANDLE,
-    BED_TYPE_OKIMAT: BED_TYPE_OKIN_UUID,
-    BED_TYPE_NECTAR: BED_TYPE_OKIN_7BYTE,
-    BED_TYPE_MATTRESSFIRM: BED_TYPE_OKIN_NORDIC,
-    # Note: leggett_platt not mapped here - requires variant detection in
-    # controller_factory.py to determine gen2 (default), okin, or wilinke (mlrm)
+# Bed types 4.x saved under a brand name, and the route each one ran. Schema
+# 5.8 renames them in saved entries; the migration steps before it still meet
+# them.
+RETIRED_BED_TYPES: Final = {
+    "dewertokin": BED_TYPE_OKIN_HANDLE,
+    "okimat": BED_TYPE_OKIN_UUID,
+    "nectar": BED_TYPE_OKIN_7BYTE,
+    "mattressfirm": BED_TYPE_OKIN_NORDIC,
 }
 
 # Some controllers (e.g. certain OKIN CST boards) accept a GATT read on a
@@ -935,7 +1073,6 @@ LINAK_CONTROL_SERVICE_UUID: Final = "99fa0001-338a-1024-8a49-009c0215f78a"
 LINAK_CONTROL_CHAR_UUID: Final = "99fa0002-338a-1024-8a49-009c0215f78a"
 LINAK_ERROR_CHAR_UUID: Final = "99fa0003-338a-1024-8a49-009c0215f78a"
 
-LINAK_CONFIG_SERVICE_UUID: Final = "99fa0010-338a-1024-8a49-009c0215f78a"
 LINAK_CONFIG_CHAR_UUID: Final = "99fa0011-338a-1024-8a49-009c0215f78a"
 
 LINAK_POSITION_SERVICE_UUID: Final = "99fa0020-338a-1024-8a49-009c0215f78a"
@@ -955,13 +1092,9 @@ LINAK_VARIANT_PERFORMANCE: Final = "performance_legacy"
 
 # Linak position calibration
 LINAK_BACK_MAX_POSITION: Final = 820
-LINAK_BACK_MAX_ANGLE: Final = 68
 LINAK_LEG_MAX_POSITION: Final = 548
-LINAK_LEG_MAX_ANGLE: Final = 45
 LINAK_HEAD_MAX_POSITION: Final = 820
-LINAK_HEAD_MAX_ANGLE: Final = 68
 LINAK_FEET_MAX_POSITION: Final = 548
-LINAK_FEET_MAX_ANGLE: Final = 45
 
 # Nordic UART Service UUIDs (used by multiple protocols)
 NORDIC_UART_SERVICE_UUID: Final = "6e400001-b5a3-f393-e0a9-e50e24dcca9e"
@@ -985,8 +1118,6 @@ BEDTECH_MANUFACTURER_ID: Final = 0x4C57
 # WiLinke variants (5-byte commands with checksum)
 # Source: com.desarketing.gmmotor (Germany Motions) APK blutter decompilation
 # The app supports 6 BLE variants (Nordic + W1-W5), we track the WiLinke ones here
-# W1 is the default fallback when no specific service is found
-RICHMAT_WILINKE_W1_SERVICE_UUID: Final = "0000fee9-0000-1000-8000-00805f9b34fb"
 # W4 uses the generic FFF0 short UUID, which countless non-bed BLE devices also
 # advertise (a "NO_DVR-*" camera system in issue #418, plus LED strips, scales,
 # etc.), so it is NOT bed-unique. All known W4 beds are Germany Motions units
@@ -1033,7 +1164,6 @@ KEESON_KSBT_CHAR_UUID: Final = "6e400002-b5a3-f393-e0a9-e50e24dcca9e"
 
 # Extended Nordic UART variant (Ergomotion/SFD beds)
 KEESON_EXTENDED_NORDIC_SERVICE_UUID: Final = "6e400020-b5a3-f393-e0a9-e50e24dcca9e"
-KEESON_EXTENDED_NORDIC_CHAR_UUID: Final = "6e400021-b5a3-f393-e0a9-e50e24dcca9e"
 
 # KSBT fallback service/characteristic UUIDs
 # Some KSBT devices advertise with different service UUIDs but still use KSBT protocol
@@ -1074,14 +1204,7 @@ KEESON_BETTERLIVING_SERVICE_UUIDS: Final = frozenset(
 CB1322_MANUFACTURER_MARKERS: Final = ("ble-4.0 module", "dewertokin")
 
 # Ergomotion specific UUIDs (same protocol as Keeson Base, but with position feedback)
-ERGOMOTION_SERVICE_UUID: Final = "0000ffe5-0000-1000-8000-00805f9b34fb"
 ERGOMOTION_WRITE_CHAR_UUID: Final = "0000ffe9-0000-1000-8000-00805f9b34fb"
-ERGOMOTION_NOTIFY_CHAR_UUID: Final = "0000ffe4-0000-1000-8000-00805f9b34fb"
-
-# Ergomotion position calibration (based on AlexxIT/Ergomotion implementation)
-# Position values are 16-bit little-endian, 0xFFFF means inactive
-ERGOMOTION_MAX_POSITION: Final = 100  # Position values normalized to 0-100
-ERGOMOTION_MAX_MASSAGE: Final = 6  # Massage levels 0-6
 
 # Solace specific UUIDs
 SOLACE_SERVICE_UUID: Final = "0000ffe0-0000-1000-8000-00805f9b34fb"
@@ -1096,8 +1219,6 @@ MOTOSLEEP_CHAR_UUID: Final = "0000ffe1-0000-1000-8000-00805f9b34fb"
 # notifications, requests MTU 250, and writes commands to FFF2. The separate
 # FFE0 service is selected for SUTA smart-mattress/accessory families.
 SUTA_SERVICE_UUID: Final = "0000fff0-0000-1000-8000-00805f9b34fb"
-SUTA_NOTIFY_CHAR_UUID: Final = "0000fff1-0000-1000-8000-00805f9b34fb"
-SUTA_DEFAULT_WRITE_CHAR_UUID: Final = "0000fff2-0000-1000-8000-00805f9b34fb"
 
 # BedJet PowerLayer UUIDs.
 # The frame and the BedJet climate blower both ADVERTISE the 1000 service, so the
@@ -1133,8 +1254,6 @@ KAIDI_NOTIFY_CHAR_UUID: Final = "9e5d1e47-5c13-43a0-8635-82adffc2386f"
 KAIDI_NAME_PATTERNS: Final = ("mouselet",)
 # Known Kaidi OUI prefixes from decompiled app (getBtAddr MAC checks)
 KAIDI_MAC_PREFIXES: Final = ("00:95:69", "F0:AC:D7")
-KAIDI_JOIN_PASSWORD: Final = b"1122"
-KAIDI_BROADCAST_VADDR: Final = 0xFFFFFFFF
 
 # Logicdata SimplicityFrame (SILVERmotion) - LogicLink BLE protocol
 # XXTEA encrypted, CRC16, SLIP framed
@@ -1163,7 +1282,6 @@ LEGGETT_OKIN_REVISION_SELECTOR_CHAR_UUID: Final = "00001721-0000-1000-8000-00805
 
 # Leggett & Platt Richmat variant (WiLinke protocol, discrete massage commands)
 # Uses same service/char as Richmat WiLinke but with L&P-specific features
-LEGGETT_RICHMAT_SERVICE_UUID: Final = "0000fee9-0000-1000-8000-00805f9b34fb"
 LEGGETT_RICHMAT_CHAR_UUID: Final = "d44bc439-abfd-45a2-b575-925416129600"
 
 # Reverie specific UUIDs (Protocol 108 - XOR checksum)
@@ -1190,11 +1308,6 @@ REVERIE_STK_SIDE_NO_DATA_UUID: Final = "db8010a6-f324-29c3-38d1-85c0c2e86885"
 
 # Reverie Pairlink central and explicit local BlueZ host-peripheral roles.
 REVERIE_PAIRLINK_SERVICE_UUID: Final = "9e5d1e47-5c13-43a0-8635-82adffc0386f"
-REVERIE_PAIRLINK_WRITE_UUID: Final = "9e5d1e47-5c13-43a0-8635-82adffc1386f"
-REVERIE_PAIRLINK_NOTIFY_UUID: Final = "9e5d1e47-5c13-43a0-8635-82adffc2386f"
-REVERIE_PAIRLINK_LP_SERVICE_UUID: Final = "0000ffd0-0000-1000-8000-00805f9b34fb"
-REVERIE_PAIRLINK_LP_WRITE_UUID: Final = "0000ffd1-0000-1000-8000-00805f9b34fb"
-REVERIE_PAIRLINK_LP_NOTIFY_UUID: Final = "0000ffd2-0000-1000-8000-00805f9b34fb"
 CONF_PAIRLINK_ROLE: Final = "pairlink_role"
 CONF_PAIRLINK_HOST_SOURCE: Final = "pairlink_host_source"
 CONF_PAIRLINK_HOME_ID: Final = "pairlink_home_id"
@@ -1225,7 +1338,6 @@ NORDIC_DFU_SERVICE_UUID: Final = "00001530-1212-efde-1523-785feabcd123"
 
 # OKIN position feedback UUIDs (used by Lucid, some Okimat beds)
 # Reference: https://github.com/richardhopton/smartbed-mqtt/issues/53
-OKIN_POSITION_SERVICE_UUID: Final = "0000ffe0-0000-1000-8000-00805f9b34fb"
 OKIN_POSITION_NOTIFY_CHAR_UUID: Final = "0000ffe4-0000-1000-8000-00805f9b34fb"
 
 # OKIN position calibration
@@ -1261,11 +1373,6 @@ COMFORT_MOTION_PEILIN_CHAR_UUID: Final = "88121427-11e2-52a2-4615-ff00dec16801"
 LIMOSS_SERVICE_UUID: Final = "0000ffe0-0000-1000-8000-00805f9b34fb"
 LIMOSS_CHAR_UUID: Final = "0000ffe1-0000-1000-8000-00805f9b34fb"
 
-# DewertOkin specific (A H Beard, HankookGallery beds)
-# Legacy handle from older traces. Handles are device/firmware-specific; the
-# controller writes to the stable shared Okin characteristic UUID instead.
-DEWERTOKIN_WRITE_HANDLE: Final = 0x0013
-
 # DewertOkin manufacturer data (BLE Company ID)
 # Source: com.dewertokin.okinsmartcomfort app disassembly
 MANUFACTURER_ID_DEWERTOKIN: Final = 1643  # 0x066B
@@ -1288,10 +1395,6 @@ DEWERTOKIN_RF_GATEWAY_MODEL: Final = "Bluetooth RF-Gateway"
 DEWERTOKIN_RF_GATEWAY_SERVICE_UUID: Final = "92111420-72ab-4564-62ef-2a881286a6b0"
 DEWERTOKIN_RF_GATEWAY_DEVICE_NAME_CHAR_UUID: Final = "92111422-72ab-4564-62ef-2a881286a6b0"
 
-# Serta Motion Perfect III specific
-# Uses handle-based writes rather than UUID
-SERTA_WRITE_HANDLE: Final = 0x0020
-
 # Octo specific UUIDs
 # Standard Octo variant
 OCTO_SERVICE_UUID: Final = "0000ffe0-0000-1000-8000-00805f9b34fb"
@@ -1310,12 +1413,11 @@ OCTO_VARIANT_STAR2: Final = "star2"
 # Mattress Firm 900 / Okin Nordic specific UUIDs
 # Protocol reverse-engineered by David Delahoz (https://github.com/daviddelahoz/BLEAdjustableBase)
 # Uses Nordic UART Service with custom 7-byte command format
-MATTRESSFIRM_SERVICE_UUID: Final = "6e400001-b5a3-f393-e0a9-e50e24dcca9e"
 MATTRESSFIRM_CHAR_UUID: Final = "6e400002-b5a3-f393-e0a9-e50e24dcca9e"
 MATTRESSFIRM_WRITE_CHAR_UUID: Final = MATTRESSFIRM_CHAR_UUID  # Alias for protocol clarity
 
-# Okin CB24 bed selection values
-# Used by SmartBed by Okin for split-king/dual bed configurations
+# CB24AB bed selection values
+# Used by the SmartBed app for split-king/dual bed configurations
 # Source: com.okin.bedding.smartbedwifi ANALYSIS.md
 CB24_BED_SELECTION_DEFAULT: Final = 0x00  # Default/single bed
 CB24_BED_SELECTION_A: Final = 0xAA  # Bed A (left side)
@@ -1335,20 +1437,17 @@ NECTAR_NOTIFY_CHAR_UUID: Final = "62741625-52f9-8864-b1ab-3b3a8d65950b"
 # Detection: Service UUID or scan record bytes 9-10 = 0x4F 0x4B ("OK")
 OKIN_ORE_SERVICE_UUID: Final = "00001000-0000-1000-8000-00805f9b34fb"
 OKIN_ORE_WRITE_CHAR_UUID: Final = "00001001-0000-1000-8000-00805f9b34fb"
-OKIN_ORE_READ_CHAR_UUID: Final = "00001002-0000-1000-8000-00805f9b34fb"
 
 # Malouf NEW_OKIN specific UUIDs
 # Protocol reverse-engineered from Malouf Base app
 # Uses a unique advertised service UUID for detection plus Nordic UART for commands
 MALOUF_NEW_OKIN_ADVERTISED_SERVICE_UUID: Final = "01000001-0000-1000-8000-00805f9b34fb"
 MALOUF_NEW_OKIN_WRITE_CHAR_UUID: Final = "6e400002-b5a3-f393-e0a9-e50e24dcca9e"
-MALOUF_NEW_OKIN_NOTIFY_CHAR_UUID: Final = "6e400003-b5a3-f393-e0a9-e50e24dcca9e"
 
 # Malouf LEGACY_OKIN specific UUIDs
 # Uses FFE5 service (similar to Keeson) but with different 9-byte command format
 MALOUF_LEGACY_OKIN_SERVICE_UUID: Final = "0000ffe5-0000-1000-8000-00805f9b34fb"
 MALOUF_LEGACY_OKIN_WRITE_CHAR_UUID: Final = "0000ffe9-0000-1000-8000-00805f9b34fb"
-MALOUF_LEGACY_OKIN_NOTIFY_CHAR_UUID: Final = "0000ffe4-0000-1000-8000-00805f9b34fb"
 
 # Detection name patterns for beds sharing the OKIN service UUID
 # Multiple bed types share the same UUID (62741523-...), so name patterns help disambiguate:
@@ -1382,11 +1481,6 @@ OKIMAT_NAME_PATTERNS: Final = (
 OKIMAT_NAME_ONLY_PATTERNS: Final = ("okin-receiver", "okin - receiver", "okin receiver")
 OKIN_GENERIC_NAME_PATTERNS: Final = ("okin-",)
 
-# OKIN 64-bit name patterns (from com.okin.bedding.adjustbed app disassembly)
-# Note: Most OKIN 64-bit devices don't have distinctive names - they require
-# post-connection characteristic detection (presence of 62741625 read char)
-OKIN_64BIT_NAME_PATTERNS: Final[tuple[str, ...]] = ()  # No reliable name patterns found
-
 # BedTech name patterns (shares FEE9 service UUID with Richmat WiLinke)
 # Keep this narrow: model-number aliases like BT6500 are also seen on beds
 # that behave as Richmat WiLinke and should not be hard-forced to BedTech.
@@ -1406,11 +1500,6 @@ DEWERTOKIN_NAME_PATTERNS: Final = (
 # These use the same FFE5 service UUID as Keeson but with different command prefix
 # Note: Generic "okin" pattern should match OKIN devices that don't match OKIMAT patterns
 OKIN_FFE_NAME_PATTERNS: Final = ("okin", "cb-", "cb.")
-
-# Serta/Ergomotion name patterns (big-endian variant of Keeson protocol)
-# Uses same FFE5 service UUID as Keeson but with big-endian byte order
-# Covers: Serta MP Remote, Ergomotion 4.0, and related OEM beds
-SERTA_NAME_PATTERNS: Final = ("serta", "motion perfect", "ergomotion", "hump")
 
 # Linak name patterns for devices that don't advertise service UUIDs
 # Some Linak beds only advertise "Bed XXXX" (4 digits) without service UUIDs
@@ -1492,7 +1581,7 @@ OCTO_NAME_PATTERNS: Final = (
 )
 
 # Exact case-folded prefixes accepted for automatic discovery. Other S-series names
-# belong to the separately audited Motion Bed app profile (docs/beds/motion_bed.md);
+# belong to the separately audited Motion Bed app profile (docs/beds/ff_frame.md#motion-bed);
 # only exact S4-Y has legacy Solace hardware evidence and is handled by the narrow
 # regex in detection.py.
 SOLACE_NAME_PATTERNS: Final = (
@@ -1553,21 +1642,6 @@ JENSEN_NAME_PATTERNS: Final = ("jmc",)  # JMC400, JMC300, etc.
 # Adjustable Sleep 2.0.29 accepts "JMC400" anywhere in the name, case-insensitively.
 JENSEN_NAME_FRAGMENT: Final = "jmc400"
 
-# SUTA Smart Home name patterns.
-# Note: The integration currently targets the bed-frame AT protocol (FFF0 service).
-# Accessory/mattress subtypes use a different binary protocol and are excluded.
-SUTA_NAME_PATTERNS: Final = ("suta-",)
-SUTA_UNSUPPORTED_NAME_PREFIXES: Final = (
-    "suta-moon",
-    "suta-temp",
-    "suta-rbhc",
-    "suta-drawer",
-    "suta-storage",
-    "suta-sofa",
-    "suta-yogabed",
-    "suta-rollsofa",
-)
-
 # BedJet PowerLayer advertised local names. "BEDJET_BF" is the factory name of the
 # frame; the climate blower advertises its own BEDJET_* name on the same service,
 # so only this prefix may claim the frame. Renaming the frame from the remote
@@ -1598,6 +1672,8 @@ JENSEN_CHAR_UUID: Final = "00001111-0000-1000-8000-00805f9b34fb"
 SLEEP_NUMBER_SERVICE_UUID: Final = "09d23fae-90e6-44c2-95b6-0b3d0f1abf25"
 SLEEP_NUMBER_BAMKEY_CHAR_UUID: Final = "421e00f3-ae76-4c49-ab6e-39e4df4a5333"
 SLEEP_NUMBER_AUTH_CHAR_UUID: Final = "8d4675a5-b5fa-42b2-b587-0ee71c46b709"
+SLEEP_NUMBER_TRANSFER_INFO_CHAR_UUID: Final = "e8d06e2a-c987-48f8-93a8-4d18d56b4337"
+SLEEP_NUMBER_BULK_CHAR_UUID: Final = "0ec9a5a3-8ac3-4582-92f3-1666421f323d"
 
 # Sleep Number BAM / MCR specific UUIDs (older 360 / i8 FlexFit bases)
 # Protocol reverse-engineered from com.selectcomfort.SleepIQ APK and live testing
@@ -1649,7 +1725,6 @@ VIBRADORM_NAME_PATTERNS: Final = ("vmat",)
 # Uses 8-byte (both sides) or 9-byte (single side) packets with ~sum checksum
 RONDURE_SERVICE_UUID: Final = "0000ffe0-0000-1000-8000-00805f9b34fb"
 RONDURE_WRITE_CHAR_UUID: Final = "0000ffe9-0000-1000-8000-00805f9b34fb"
-RONDURE_READ_CHAR_UUID: Final = "0000ffe4-0000-1000-8000-00805f9b34fb"
 # Also supports Nordic UART as an alternative (same UUIDs as NORDIC_UART_*)
 
 # Rondure side selection variants
@@ -1662,18 +1737,25 @@ RONDURE_VARIANTS: Final = {
     RONDURE_VARIANT_SIDE_B: "Side B only",
 }
 
-# SBI/Q-Plus side selection variants
-SBI_VARIANT_BOTH: Final = "both"  # Control both sides (8-byte, 0xE5 header)
-SBI_VARIANT_SIDE_A: Final = "side_a"  # Control side A only (9-byte, 0xE6 header)
-SBI_VARIANT_SIDE_B: Final = "side_b"  # Control side B only (9-byte, 0xE6 header)
-SBI_VARIANTS: Final = {
-    SBI_VARIANT_BOTH: "Both sides (dual bed)",
-    SBI_VARIANT_SIDE_A: "Side A only",
-    SBI_VARIANT_SIDE_B: "Side B only",
+# Q-Plus head and foot travel: the last degree of each pulse lookup table.
+QPLUS_HEAD_MAX_ANGLE: Final = 60.0
+QPLUS_FOOT_MAX_ANGLE: Final = 32.0
+# Serta MP Remote travel limits.
+SERTA_MP_REMOTE_BACK_MAX_ANGLE: Final = 60.0
+SERTA_MP_REMOTE_LEGS_MAX_ANGLE: Final = 45.0
+
+# The Q-Plus app's bed selection (com.sbi.costco): Both, A or B.
+QPLUS_VARIANT_BOTH: Final = "both"  # Both sides (8-byte, 0xE5 header)
+QPLUS_VARIANT_SIDE_A: Final = "side_a"  # Side A only (9-byte, 0xE6 header)
+QPLUS_VARIANT_SIDE_B: Final = "side_b"  # Side B only (9-byte, 0xE6 header)
+QPLUS_VARIANTS: Final = {
+    QPLUS_VARIANT_BOTH: "Both sides (dual bed)",
+    QPLUS_VARIANT_SIDE_A: "Side A only",
+    QPLUS_VARIANT_SIDE_B: "Side B only",
 }
 
 # Remacro (SynData) UUIDs, shared by the Slumberland, The Brick and Jerome's
-# apps (row 050). Frames are 8 bytes: [serial, PID, LE16 code, LE32 parameter].
+# apps. Frames are 8 bytes: [serial, PID, LE16 code, LE32 parameter].
 REMACRO_SERVICE_UUID: Final = "6e403587-b5a3-f393-e0a9-e50e24dcca9e"
 REMACRO_WRITE_CHAR_UUID: Final = "6e403588-b5a3-f393-e0a9-e50e24dcca9e"
 REMACRO_READ_CHAR_UUID: Final = "6e403589-b5a3-f393-e0a9-e50e24dcca9e"
@@ -1681,8 +1763,8 @@ REMACRO_READ_CHAR_UUID: Final = "6e403589-b5a3-f393-e0a9-e50e24dcca9e"
 # Protocol variants
 VARIANT_AUTO: Final = "auto"
 STAR_ELEVATE_VARIANTS: Final = {
-    VARIANT_AUTO: "Auto-detect",
-    STAR_ELEVATE_VARIANT_M1X12: "Adjustable Comfort M1X12 ELEVATE",
+    VARIANT_AUTO: AUTOMATIC_LABEL,
+    STAR_ELEVATE_VARIANT_M1X12: "Adjustable Comfort M1X12 app, Elevate lift",
 }
 
 # SIMMONS app: the regular/inclined bed type is independent of the packet
@@ -1695,12 +1777,12 @@ SIMMONS_VARIANT_INCLINED_SMARTBED: Final = "simmons_inclined_smartbed"
 # Variants whose packet format follows the app's Bluetooth-name rule.
 SIMMONS_NAME_RULE_VARIANTS: Final = frozenset({VARIANT_AUTO, SIMMONS_VARIANT_INCLINED})
 SIMMONS_VARIANTS: Final = {
-    VARIANT_AUTO: "Regular bed, protocol from the Bluetooth name",
-    SIMMONS_VARIANT_OKIN: "Regular bed, OKIN-name protocol",
-    SIMMONS_VARIANT_SMARTBED: "Regular bed, SmartBed-name protocol",
-    SIMMONS_VARIANT_INCLINED: "Inclined bed, protocol from the Bluetooth name",
-    SIMMONS_VARIANT_INCLINED_OKIN: "Inclined bed, OKIN-name protocol",
-    SIMMONS_VARIANT_INCLINED_SMARTBED: "Inclined bed, SmartBed-name protocol",
+    VARIANT_AUTO: "Regular bed (recommended)",
+    SIMMONS_VARIANT_OKIN: "Regular bed, as for an OKIN Bluetooth name",
+    SIMMONS_VARIANT_SMARTBED: "Regular bed, as for a SmartBed Bluetooth name",
+    SIMMONS_VARIANT_INCLINED: "Inclined bed, chosen by its Bluetooth name",
+    SIMMONS_VARIANT_INCLINED_OKIN: "Inclined bed, as for an OKIN Bluetooth name",
+    SIMMONS_VARIANT_INCLINED_SMARTBED: "Inclined bed, as for a SmartBed Bluetooth name",
 }
 # AdjustaMattress 1.6.0: model and manual layout are independent choices.
 ADJUSTAMATTRESS_LAYOUTS: Final = (
@@ -1708,9 +1790,9 @@ ADJUSTAMATTRESS_LAYOUTS: Final = (
     "FoldingBed", "HilowBed", "Lolobed",
 )
 ADJUSTAMATTRESS_VARIANTS: Final = {
-    VARIANT_AUTO: "AdjustaBed layout, model from Bluetooth name and GATT",
-    **{f"P{model}_L{layout}": f"{name} (P{model}: {transport})"
-       for model, transport in enumerate(("CB", "JLDP", "CB24", "SleepSnore"), 1)
+    VARIANT_AUTO: "AdjustaBed (recommended)",
+    **{f"P{model}_L{layout}": f"{name} (receiver P{model})"
+       for model in range(1, 5)
        for layout, name in enumerate(ADJUSTAMATTRESS_LAYOUTS)},
 }
 # Adjustable bed (Lumbar) app: "auto" applies the app's Bluetooth-name rule.
@@ -1718,61 +1800,36 @@ ADJUSTAMATTRESS_VARIANTS: Final = {
 ADJUSTABLE_LUMBAR_VARIANT_OKIN: Final = "adjustable_lumbar_okin"
 ADJUSTABLE_LUMBAR_VARIANT_STAR: Final = "adjustable_lumbar_star"
 ADJUSTABLE_LUMBAR_VARIANTS: Final = {
-    VARIANT_AUTO: "Command table from the Bluetooth name (OKIN or Star)",
-    ADJUSTABLE_LUMBAR_VARIANT_OKIN: "OKIN-name table (OKIN service, with response)",
-    ADJUSTABLE_LUMBAR_VARIANT_STAR: "Star-name tables (Nordic UART, chosen by manufacturer)",
+    VARIANT_AUTO: AUTOMATIC_LABEL,
+    ADJUSTABLE_LUMBAR_VARIANT_OKIN: "OKIN receiver",
+    ADJUSTABLE_LUMBAR_VARIANT_STAR: "Star receiver",
 }
 
 
-# Richmat MH app model choices, from the generated catalog: each app's picker dialog
-# and setup wizard, Revive's six short manual identifiers, and every model for
-# Idealbed, whose manual dialog accepts any valid identifier. "auto" applies the
-# app's name rule: the first four characters of the raw Bluetooth name, lowercased,
-# name the model; QRRM asks for a choice.
-def _richmat_mh_model_choices(app: str) -> tuple[tuple[str, str], ...]:
-    catalog = _richmat_mh_catalog
-    choices: dict[str, str] = dict(catalog.PICKERS.get(app, ()))
-    manual = catalog.MANUAL_SHORT_IDS.get(app, ())
-    if app in catalog.MANUAL_ANY_MODEL:
-        manual = sorted(catalog.MODELS[app])
-    for model in manual:
-        choices.setdefault(model, model.upper())
-    return tuple(choices.items())
-
-
-RICHMAT_MH_MODEL_CHOICES: Final[dict[str, tuple[tuple[str, str], ...]]] = {
-    **{app: _richmat_mh_model_choices(app) for app in _richmat_mh_catalog.MODELS},
-    **{app: tuple((model, model.upper()) for model in models)
-       for app, models in _ruf_richmat_models.MODEL_IDS.items()},
-}
-RICHMAT_MH_VARIANTS_BY_APP: Final[dict[str, dict[str, str]]] = {
-    app: {
-        VARIANT_AUTO: "Model from the Bluetooth name (first four characters)",
-        **{
-            f"model_{model}": label if label == model.upper() else f"{label} ({model.upper()})"
-            for model, label in choices
-        },
-    }
-    for app, choices in RICHMAT_MH_MODEL_CHOICES.items()
-}
-for _app in ("wsilver2", "americanstar", "tx"):
-    RICHMAT_MH_VARIANTS_BY_APP[_app].update({
-        f"model_{model}_mattress": f"{model.upper()} with normal mattress (explicit opt-in)"
-        for model in _ruf_richmat_models.MODEL_IDS[_app]
-    })
 # Explicit app bed types whose name rule reads the stored raw Bluetooth name.
+ADJUSTABLE_BED_VARIANTS: Final = {
+    VARIANT_AUTO: AUTOMATIC_LABEL,
+    "adjustable_bed_okin": "OKIN receiver",
+    "adjustable_bed_star": "Star receiver",
+    "adjustable_bed_star_5a": "STAR receiver (older)",
+}
+
 NAME_RULE_VARIANTS_BY_BED_TYPE: Final[dict[str, frozenset[str]]] = {
+    BED_TYPE_SOLACE: frozenset({"sophie"}),
     BED_TYPE_BEDSENSE: frozenset({VARIANT_AUTO}),
     BED_TYPE_SIMMONS: SIMMONS_NAME_RULE_VARIANTS,
     BED_TYPE_ADJUSTAMATTRESS: frozenset({VARIANT_AUTO}),
+    BED_TYPE_ADJUSTABLE_BED: frozenset({VARIANT_AUTO}),
     BED_TYPE_ADJUSTABLE_LUMBAR: frozenset({VARIANT_AUTO}),
     BED_TYPE_STARCODE_M1X12: frozenset({VARIANT_AUTO}),
     **{bed_type: frozenset({VARIANT_AUTO}) for bed_type in RICHMAT_MH_APPS},
 }
+SOLACE_VARIANT_SOPHIE: Final = "sophie"
 SOLACE_VARIANT_WOOSA: Final = "woosa"
 SOLACE_VARIANTS: Final = {
-    VARIANT_AUTO: "Auto (conservative device-name profile)",
-    SOLACE_VARIANT_WOOSA: "Woosa Sleep app (select explicitly)",
+    VARIANT_AUTO: AUTOMATIC_LABEL,
+    SOLACE_VARIANT_WOOSA: "Woosa Sleep app",
+    SOLACE_VARIANT_SOPHIE: "Sophie app",
 }
 # The multi-service profile is stored as ``auto``, as v4.0.2 entries hold it.
 # A new setup whose scanned name contains ``JMC`` stores the JMC profile.
@@ -1794,9 +1851,9 @@ REMACRO_VARIANTS: Final = {
     REMACRO_VARIANT_JEROMES: "Jerome's app",
 }
 LINAK_VARIANTS: Final = {
-    VARIANT_AUTO: "Auto (Bed Control)",
-    LINAK_VARIANT_BED_CONTROL: "Bed Control (modern, auto-detected capabilities)",
-    LINAK_VARIANT_PERFORMANCE: "Performance Series (legacy, 300 ms hold cadence)",
+    VARIANT_AUTO: AUTOMATIC_LABEL,
+    LINAK_VARIANT_BED_CONTROL: "Bed Control or Bed Connect app",
+    LINAK_VARIANT_PERFORMANCE: "Performance Series app (older bases)",
 }
 
 # Okin CST product profiles. The shared service and ``OKIN-*`` local-name
@@ -1814,16 +1871,17 @@ OKIN_CST_VARIANT_MF900: Final = "cst_mf900"
 OKIN_CST_VARIANT_SUPPORT: Final = "cst_support"
 OKIN_CST_VARIANT_NECTAR_MOVE: Final = "cst_nectar_move"
 OKIN_CST_VARIANTS: Final = {
-    VARIANT_AUTO: "Auto (MF900 profile)",
-    OKIN_CST_VARIANT_SANCTUARY: "Rize Sanctuary",
-    OKIN_CST_VARIANT_RESIDENT: "Rize Resident",
-    OKIN_CST_VARIANT_AVIADA: "Rize Aviada",
-    OKIN_CST_VARIANT_BOB: "Rize Bob",
-    OKIN_CST_VARIANT_CONTEMPO: "Rize Contempo",
-    OKIN_CST_VARIANT_CAREFREE: "Rize II Carefree",
-    OKIN_CST_VARIANT_CLARITY: "Rize II Clarity",
-    OKIN_CST_VARIANT_MF900: "Rize MF900 / Mattress Firm 900-O",
-    OKIN_CST_VARIANT_SUPPORT: "Support",
+    VARIANT_AUTO: AUTOMATIC_LABEL,
+    # Each product is named by the app its accepted report identifies.
+    OKIN_CST_VARIANT_SANCTUARY: "Jordan's Sanctuary - O app (Rize Sanctuary)",
+    OKIN_CST_VARIANT_RESIDENT: "Resident Adjustable Bed app (Rize Resident)",
+    OKIN_CST_VARIANT_AVIADA: "Rize Aviada - O app (Rize Aviada)",
+    OKIN_CST_VARIANT_BOB: "POWER BOB ULTRA-O app (Rize Bob)",
+    OKIN_CST_VARIANT_CONTEMPO: "Rize Contemporary III - O app (Rize Contempo)",
+    OKIN_CST_VARIANT_CAREFREE: "Carefree app (Rize II Carefree)",
+    OKIN_CST_VARIANT_CLARITY: "Rize Clarity II - O app (Rize II Clarity)",
+    OKIN_CST_VARIANT_MF900: "MFirm 900 - O app (Rize MF900 / Mattress Firm 900-O)",
+    OKIN_CST_VARIANT_SUPPORT: "Support 挺你 科技調整床 app (Support)",
     OKIN_CST_VARIANT_NECTAR_MOVE: "Nectar Move",
 }
 OKIN_CST_THREE_MOTOR_VARIANTS: Final = frozenset(
@@ -1842,16 +1900,16 @@ OKIN_CST_THREE_MOTOR_VARIANTS: Final = frozenset(
 SLEEPYS_BOX25_VARIANT_STAR: Final = "box25_star"
 SLEEPYS_BOX25_VARIANT_LEGACY: Final = "box25_legacy"
 SLEEPYS_BOX25_VARIANTS: Final = {
-    VARIANT_AUTO: "Auto (Device Information manufacturer)",
-    SLEEPYS_BOX25_VARIANT_STAR: "StarCode (5A-framed)",
-    SLEEPYS_BOX25_VARIANT_LEGACY: "Legacy CB25 (05/04/08/03 frames)",
+    VARIANT_AUTO: AUTOMATIC_LABEL,
+    SLEEPYS_BOX25_VARIANT_STAR: "Newer control box (StarCode)",
+    SLEEPYS_BOX25_VARIANT_LEGACY: "Older control box (CB25)",
 }
 
 # Sleep Number side selection variants
 SLEEP_NUMBER_VARIANT_LEFT: Final = "left"
 SLEEP_NUMBER_VARIANT_RIGHT: Final = "right"
 SLEEP_NUMBER_VARIANTS: Final = {
-    VARIANT_AUTO: "Auto (left side by default)",
+    VARIANT_AUTO: AUTOMATIC_LABEL,
     SLEEP_NUMBER_VARIANT_LEFT: "Left side",
     SLEEP_NUMBER_VARIANT_RIGHT: "Right side",
 }
@@ -1866,33 +1924,27 @@ KAIDI_VARIANT_SEAT_3: Final = "seat_3"
 KAIDI_VARIANT_SEAT_1_2: Final = "seat_1_2"
 KAIDI_VARIANTS: Final = {
     KAIDI_VARIANT_FLOYD: "Floyd Home (product 139)",
-    VARIANT_AUTO: "Auto-detect (recommended)",
+    VARIANT_AUTO: AUTOMATIC_LABEL,
     KAIDI_VARIANT_SEAT_1: "Seat 1 (single base)",
     KAIDI_VARIANT_SEAT_2: "Seat 2",
     KAIDI_VARIANT_SEAT_3: "Seat 3",
     KAIDI_VARIANT_SEAT_1_2: "Seat 1+2 (split/dual base)",
 }
 
-# OKIN CB24 profile variants (SmartBed app device profiles)
+# The SmartBed app's receiver profiles.
 # Source: com.okin.bedding.smartbedwifi model/device/*
-OKIN_CB24_VARIANT_OLD: Final = "cb_old"
-OKIN_CB24_VARIANT_NEW: Final = "cb_new"
-OKIN_CB24_VARIANT_CB24: Final = "cb24"
-OKIN_CB24_VARIANT_CB27: Final = "cb27"
-OKIN_CB24_VARIANT_CB24_AB: Final = "cb24_ab"
-OKIN_CB24_VARIANT_CB1221: Final = "cb1221"
-OKIN_CB24_VARIANT_DACHENG: Final = "dacheng"
-OKIN_CB24_VARIANT_CB27NEW: Final = "cb27new"
-OKIN_CB24_VARIANTS: Final = {
-    VARIANT_AUTO: "Auto-detect (recommended)",
-    OKIN_CB24_VARIANT_OLD: "OLD protocol compatibility (safe one-shot presets)",
-    OKIN_CB24_VARIANT_NEW: "NEW protocol (CB27New)",
-    OKIN_CB24_VARIANT_CB24: "CB24 profile (legacy packets, one-shot presets)",
-    OKIN_CB24_VARIANT_CB27: "CB27 profile (legacy packets, one-shot presets)",
-    OKIN_CB24_VARIANT_CB24_AB: "CB24AB profile (legacy packets, one-shot presets)",
-    OKIN_CB24_VARIANT_CB1221: "CB1221 profile (legacy packets, one-shot presets)",
-    OKIN_CB24_VARIANT_DACHENG: "Dacheng profile (legacy packets, one-shot presets)",
-    OKIN_CB24_VARIANT_CB27NEW: "CB27New profile (NEW protocol)",
+SMARTBED_VARIANTS: Final = {
+    VARIANT_AUTO: AUTOMATIC_LABEL,
+    "standard": "Standard receiver",
+    "cb": "CB receiver",
+    "cb24": "CB24 control box",
+    "cb27": "CB27 control box",
+    "cb24_ab": "CB24AB control box",
+    "cb1221": "CB1221 control box",
+    "dacheng": "Dacheng control box",
+    "cb27new": "CB27New control box",
+    "headboard126": "Headboard 126",
+    "headboard265": "Headboard 265",
 }
 
 # Keeson variants
@@ -1902,7 +1954,6 @@ KEESON_VARIANT_KSBT: Final = "ksbt"
 KEESON_VARIANT_KSBT_CR: Final = "ksbt_cr"
 KEESON_VARIANT_ERGOMOTION: Final = "ergomotion"
 KEESON_VARIANT_OKIN: Final = "okin"
-KEESON_VARIANT_SERTA: Final = "serta"
 KEESON_VARIANT_SINO: Final = "sino"
 KEESON_VARIANT_PURPLE: Final = "purple"
 KEESON_VARIANT_KSBT04C: Final = "ksbt04c"
@@ -1923,6 +1974,9 @@ KEESON_VARIANT_BEDSENSE_BASES: Final = "bedsense_bases"
 KEESON_VARIANT_INNOVA: Final = "innova"
 # Accepted ORE comfort-bed app profiles: explicit, never auto-selected.
 KEESON_VARIANT_AVANTI_BASES: Final = "avanti_bases"
+KEESON_VARIANT_OKIN_COMFORT_BED: Final = "okin_comfort_bed"
+KEESON_VARIANT_COMFORTFURNITURE: Final = "comfortfurniture"
+KEESON_VARIANT_ORE_ULTRAMATIC: Final = "ore_ultramatic"
 # ORE comfort-bed apps (com.ore.okincomfortbed code base): explicit, never auto-selected.
 KEESON_VARIANT_AMERICANSTAR: Final = "americanstar"
 KEESON_VARIANT_MAXCOIL_UNA: Final = "maxcoil_una"
@@ -1933,42 +1987,37 @@ ORE_COMFORT_BED_VARIANTS: Final = frozenset(
         KEESON_VARIANT_DYNASTY_BASES,
         KEESON_VARIANT_BEDSENSE_BASES,
         KEESON_VARIANT_AVANTI_BASES,
+        KEESON_VARIANT_OKIN_COMFORT_BED,
+        KEESON_VARIANT_COMFORTFURNITURE,
+        KEESON_VARIANT_ORE_ULTRAMATIC,
         KEESON_VARIANT_AMERICANSTAR,
     }
 )
-# Explicit protocol variants whose entity-gating capabilities depend only on stored
-# config, for bed types that are not offline-safe as a whole (a Keeson "auto" entry
-# detects its variant live). A paired side on one of these variants can be minted
-# offline. Each bed type contributes its own frozenset, so profiles extend this
-# independently; every member must build its controller without a client.
+# Keeson's share of ``pairing.OFFLINE_CAPABILITY_SAFE_VARIANTS``: variants whose
+# capabilities come only from stored config ("auto" detects its variant live).
 OFFLINE_CAPABILITY_SAFE_KEESON_VARIANTS: Final = (
-    ORE_COMFORT_BED_VARIANTS | {KEESON_VARIANT_INNOVA} | frozenset(OKIN_APP_VARIANTS)
+    (ORE_COMFORT_BED_VARIANTS - {KEESON_VARIANT_ORE_ULTRAMATIC})
+    | {KEESON_VARIANT_INNOVA} | frozenset(OKIN_APP_VARIANTS)
 )
-OFFLINE_CAPABILITY_SAFE_VARIANTS: Final[dict[str, frozenset[str]]] = {
-    BED_TYPE_ADJUSTAMATTRESS: frozenset(v for v in ADJUSTAMATTRESS_VARIANTS if v != VARIANT_AUTO),
-    BED_TYPE_COMFORT_ENHANCEMENTS: frozenset(COMFORT_ENHANCEMENTS_VARIANTS),
-    BED_TYPE_GOODVIBE: frozenset(GOODVIBE_PROFILES),
-    BED_TYPE_HJBED: frozenset(HJBED_PROFILES),
-    BED_TYPE_ESHINE_OKIN: frozenset(ESHINE_OKIN_PROFILES),
-    BED_TYPE_GLIDEAWAY_MOTION: frozenset(GLIDEAWAY_MOTION_MODELS),
-    BED_TYPE_KEESON: OFFLINE_CAPABILITY_SAFE_KEESON_VARIANTS,
-}
 # Restonic BT Remote (com.keeson.restonicBT): the app's user-selected remote style.
 KEESON_VARIANT_RESTONIC_A: Final = "restonic_a"
 KEESON_VARIANT_RESTONIC_B: Final = "restonic_b"
 KEESON_VARIANTS: Final = {
-    VARIANT_AUTO: "Auto-detect",
-    KEESON_VARIANT_BASE: "BaseI4/BaseI5 (Member's Mark)",
-    KEESON_VARIANT_JSON: "JSON/A00A (Juna, Linx, Ergo Health)",
-    KEESON_VARIANT_KSBT: "KSBT (Nordic UART, some Ergomotion Sync beds)",
-    KEESON_VARIANT_KSBT_CR: "KSBT03CR (7-byte, 0x05 prefix)",
-    KEESON_VARIANT_KSBT04C: "KSBT04C (generic 7-byte checksum)",
-    KEESON_VARIANT_SLEEP_HARMONY: "Sleep Harmony (KSBT04C / base-i5)",
-    KEESON_VARIANT_ADJUSTABLE_LITE: "Adjustable Lite app (KSBT01C / KSBT03C)",
+    VARIANT_AUTO: AUTOMATIC_LABEL,
+    KEESON_VARIANT_BASE: "Member's Mark base (BaseI4 / BaseI5)",
+    KEESON_VARIANT_JSON: "Juna, Linx or Ergo Health base",
+    KEESON_VARIANT_KSBT: "KSBT receiver (some Ergomotion Sync beds)",
+    KEESON_VARIANT_KSBT_CR: "KSBT03CR receiver",
+    KEESON_VARIANT_KSBT04C: "KSBT04C receiver",
+    KEESON_VARIANT_SLEEP_HARMONY: "Sleep Harmony app",
+    KEESON_VARIANT_ADJUSTABLE_LITE: "Adjustable Lite app",
     KEESON_VARIANT_SIMON_LI: "Simon Li app (chair / love seat / sofa)",
-    KEESON_VARIANT_HEAL_EVERY_NIGHT: "Heal Every Night app (motor count 2/3/4 = Healing 6/7/8)",
+    KEESON_VARIANT_HEAL_EVERY_NIGHT: "Heal Every Night app",
     KEESON_VARIANT_OKIN_SEATING: "OKIN-Seating app",
     KEESON_VARIANT_AVANTI_BASES: "Avanti Bases app (2M / 3M / 4M motor count)",
+    KEESON_VARIANT_OKIN_COMFORT_BED: "OKIN Comfort Bed app (2M / 3M / 4M motor count)",
+    KEESON_VARIANT_COMFORTFURNITURE: "ComfortFurniture app (bedding only)",
+    KEESON_VARIANT_ORE_ULTRAMATIC: "ORE Ultramatic app (2M / 3M / 4M; automatic GATT route)",
     KEESON_VARIANT_AMERICANSTAR: "AMERICANSTAR app (2M / 3M / 4M motor count)",
     KEESON_VARIANT_BEDSENSE_BASES: "Bedsense Bases app (2M / 3M / 4M motor count)",
     KEESON_VARIANT_INNOVA: "INNOVA app (2M / 3M / 4M motor count)",
@@ -1976,23 +2025,17 @@ KEESON_VARIANTS: Final = {
     KEESON_VARIANT_DYNASTY_BASES: "Dynasty Bases app (2M / 3M / 4M motor count)",
     KEESON_VARIANT_RESTONIC_A: "Restonic BT app, remote A (6 buttons)",
     KEESON_VARIANT_RESTONIC_B: "Restonic BT app, remote B (10 buttons)",
-    KEESON_VARIANT_ERGOMOTION: "Ergomotion (with position feedback)",
-    KEESON_VARIANT_OKIN: "OKIN FFE (OKIN 13/15 series, 0xE6 prefix)",
-    KEESON_VARIANT_SERTA: "Serta (Serta MP Remote)",
-    KEESON_VARIANT_SINO: "Sino (BetterLiving, big-endian)",
+    KEESON_VARIANT_ERGOMOTION: "Ergomotion base (reports positions)",
+    KEESON_VARIANT_OKIN: "OKIN 13 or 15 series control box",
+    KEESON_VARIANT_SINO: "BetterLiving base (Sino)",
     KEESON_VARIANT_PURPLE: "Purple Smart Base (Premium / Premium Plus)",
 }
 
-# Leggett & Platt variants
+# The models of the automatic Leggett & Platt setup. It finds Gen2 or MlRM
+# when it connects; before schema 5.11 an entry could also save one.
 LEGGETT_VARIANT_GEN2: Final = "gen2"
 LEGGETT_VARIANT_OKIN: Final = "okin"
 LEGGETT_VARIANT_MLRM: Final = "mlrm"
-LEGGETT_VARIANTS: Final = {
-    VARIANT_AUTO: "Auto-detect",
-    LEGGETT_VARIANT_GEN2: "Gen2 (Richmat-based, most common)",
-    LEGGETT_VARIANT_OKIN: "Okin (requires BLE pairing)",
-    LEGGETT_VARIANT_MLRM: "MlRM (WiLinke protocol, discrete massage control)",
-}
 
 
 @overload
@@ -2004,19 +2047,17 @@ def resolve_explicit_bed_type(bed_type: None, protocol_variant: str | None) -> N
 
 
 def resolve_explicit_bed_type(bed_type: str | None, protocol_variant: str | None) -> str | None:
-    """Resolve a legacy umbrella bed type to the concrete type an EXPLICIT
-    protocol variant selects.
+    """Return the bed type a saved bed type and model run.
 
-    The offline-capability path must agree across three places — the pairing
-    gate, offline minting (``async_prime_offline_controller``), and the pair
-    child descriptors — so they all funnel a stored bed type + variant through
-    this one resolver. Currently only ``leggett_platt`` needs it: an explicit
-    variant maps to leggett_wilinke (mlrm) / leggett_okin (okin) / leggett_gen2
-    (gen2), mirroring the explicit-variant branches of
-    ``controller_factory.create_controller``. ``auto``/unset can only be resolved
-    from a live connection, so the umbrella type is returned unchanged (and stays
-    offline-unsafe, which is correct — it can't be minted without connecting).
+    A bed type 4.x saved under a brand runs its Okin receiver route. The
+    automatic ``leggett_platt`` setup runs the model its connection found:
+    leggett_wilinke (mlrm) or leggett_gen2 (gen2). Before schema 5.11 an entry
+    could save that model, or okin for leggett_okin, and the migration steps
+    before it still meet those. Without a model the bed type is returned
+    unchanged: only a live connection finds it.
     """
+    if bed_type in RETIRED_BED_TYPES:
+        return RETIRED_BED_TYPES[bed_type]
     if bed_type == BED_TYPE_LEGGETT_PLATT:
         if protocol_variant == LEGGETT_VARIANT_MLRM:
             return BED_TYPE_LEGGETT_WILINKE
@@ -2033,11 +2074,11 @@ RICHMAT_VARIANT_WILINKE: Final = "wilinke"
 RICHMAT_VARIANT_PREFIX55: Final = "prefix55"
 RICHMAT_VARIANT_PREFIXAA: Final = "prefixaa"
 RICHMAT_VARIANTS: Final = {
-    VARIANT_AUTO: "Auto-detect (recommended)",
-    RICHMAT_VARIANT_NORDIC: "Nordic (single-byte commands)",
-    RICHMAT_VARIANT_WILINKE: "WiLinke (5-byte commands with 0x6E prefix)",
-    RICHMAT_VARIANT_PREFIX55: "Prefix55 (5-byte commands with 0x55 prefix)",
-    RICHMAT_VARIANT_PREFIXAA: "PrefixAA (5-byte commands with 0xAA prefix)",
+    VARIANT_AUTO: AUTOMATIC_LABEL,
+    RICHMAT_VARIANT_NORDIC: "Nordic receiver",
+    RICHMAT_VARIANT_WILINKE: "WiLinke receiver",
+    RICHMAT_VARIANT_PREFIX55: "Other receiver, type A",
+    RICHMAT_VARIANT_PREFIXAA: "Other receiver, type B",
 }
 
 
@@ -2103,7 +2144,7 @@ RICHMAT_REMOTE_BT6500: Final = "BT6500"
 RICHMAT_REMOTE_LP_QRRM: Final = "LP-QRRM"
 # Printed and QR-encoded on the HJH89 handset of a QRRM receiver (#695). The
 # features come from the generated table; the Revive Control, Blvd Home and
-# HARMONY catalogs (row055) define the same GGRM controls.
+# HARMONY catalogs define the same GGRM controls.
 RICHMAT_REMOTE_GGRM: Final = "GGRM"
 
 # Richmat WiLinke stop-byte compatibility.
@@ -2119,7 +2160,7 @@ RICHMAT_COMBINED_HEAD_FEET_REMOTE_CODES: Final[frozenset[str]] = frozenset({"twr
 
 # Display names for remote selection
 RICHMAT_REMOTES: Final = {
-    RICHMAT_REMOTE_AUTO: "Auto (all features enabled)",
+    RICHMAT_REMOTE_AUTO: AUTOMATIC_LABEL,
     RICHMAT_REMOTE_AZRN: "AZRN (Head, Pillow, Feet)",
     RICHMAT_REMOTE_BT6500: "BT6500 (Head, Feet, Pillow, Lumbar, M1/M2, ZG, Anti-snore, TV, Lights)",
     RICHMAT_REMOTE_BURM: "BURM (Head, Feet, Massage, Lights)",
@@ -2426,44 +2467,6 @@ def resolve_richmat_remote_code(
     return normalized or RICHMAT_REMOTE_AUTO
 
 
-def get_richmat_features(remote_code: str) -> RichmatFeatures:
-    """Get features for a Richmat remote code.
-
-    Looks up features from both manually-defined overrides and the
-    comprehensive auto-generated mapping (492 product codes extracted
-    from Richmat apps).
-
-    Args:
-        remote_code: The remote code (e.g., "VIRM", "qrrm", "i7rm")
-                    Case-insensitive, will be normalized to lowercase.
-
-    Returns:
-        RichmatFeatures flags for the remote code, or all features
-        enabled if the code is not found (safe fallback).
-    """
-    # Import here to avoid circular dependency
-    from .richmat_features import RICHMAT_REMOTE_FEATURES_GENERATED
-
-    # Normalize to lowercase for lookup
-    code_lower = remote_code.lower() if remote_code else ""
-
-    # Special case: "auto" returns all features
-    if code_lower == "auto" or not code_lower:
-        return RICHMAT_REMOTE_FEATURES[RICHMAT_REMOTE_AUTO]
-
-    # First check manually-defined features (uppercase keys)
-    code_upper = remote_code.upper()
-    if code_upper in RICHMAT_REMOTE_FEATURES:
-        return RICHMAT_REMOTE_FEATURES[code_upper]
-
-    # Then check generated features (lowercase keys)
-    if code_lower in RICHMAT_REMOTE_FEATURES_GENERATED:
-        return RICHMAT_REMOTE_FEATURES_GENERATED[code_lower]
-
-    # Fallback: return all features enabled
-    return RICHMAT_REMOTE_FEATURES[RICHMAT_REMOTE_AUTO]
-
-
 def richmat_remote_has_combined_head_feet(remote_code: str) -> bool:
     """Return True when this remote is known to drive head and feet as one step.
 
@@ -2501,7 +2504,7 @@ def get_richmat_motor_count(features: RichmatFeatures) -> int:
 
 # Octo variants
 OCTO_VARIANTS: Final = {
-    VARIANT_AUTO: "Auto-detect (recommended)",
+    VARIANT_AUTO: AUTOMATIC_LABEL,
     OCTO_VARIANT_STANDARD: "Standard Octo (most common)",
     OCTO_VARIANT_STAR2: "Octo Remote Star2",
 }
@@ -2515,9 +2518,9 @@ RICHMAT_PROTOCOL_PREFIXAA: Final = "prefixaa"  # [0xAA, 1, 0, cmd, (cmd+0xAB)&0x
 # Okimat remote code variants (generated; keyed by the printed remote code).
 # Source of truth: DewertOkin FurniMove handset backend + bundled
 # handsetlist.csv capability flags. Drives OKIN_UUID_REMOTES in
-# beds/okin_uuid.py; regenerate via tools/okin_remotes/.
+# beds/okin_uuid/controller.py; regenerate via tools/okin_remotes/.
 OKIMAT_VARIANTS: Final = {
-    VARIANT_AUTO: "Auto-detect (try 82417 first)",
+    VARIANT_AUTO: AUTOMATIC_LABEL,
     "62211": "62211 - RF (Head/Back/Legs, 4 Mem)",
     "62612": "62612 - RF (Head/Back/Legs/Feet, 4 Mem)",
     "63293": "63293 - RF (Back/Legs)",
@@ -2701,7 +2704,7 @@ OKIMAT_VARIANTS: Final = {
     "92113": "92113 - RF-STYLE/BK/BK/14/2009 (Back/Legs, 4 Mem)",
     "92129": "92129 - TOPLINE-11-SL-2M (Back/Legs, 2 Mem, Massage)",
     "92428": "92428 - RF (Back/Legs, 2 Mem)",
-    "92461": "92461 - \n  RF-TOPLINE\n  SI (Back/Legs)",
+    "92461": "92461 - RF-TOPLINE SI (Back/Legs)",
     "92471": "92471 - RF (Back/Legs, 2 Mem)",
     "92535": "92535 - RF-LITELINE/07/ (Back/Legs)",
     "92591": "92591 - RF-FLASHLINE/09/WH/GY (Back/Legs, 2 Mem)",
@@ -2738,7 +2741,7 @@ OKIMAT_VARIANTS: Final = {
 # channels exist start at 0x1/0x2) but keep their section meaning; the table
 # maps them to the standard section fields, so labels match the exposed axes.
 OKIN_DOT_VARIANTS: Final = {
-    VARIANT_AUTO: "Auto (RF34 layout, try 97450 first)",
+    VARIANT_AUTO: AUTOMATIC_LABEL,
     "90167": "90167 - RF1058 (Head/Feet, 4 Mem, Massage)",
     "91983": "91983 - RF1058 (Head/Feet, 3 Mem, Massage)",
     "93558": "93558 - RF1058 (Head/Feet, 3 Mem, Massage)",
@@ -2754,110 +2757,10 @@ OKIN_DOT_FURNIMOVE_VARIANTS: Final = frozenset({"90167", "91983", "93558"})
 OKIN_64BIT_VARIANT_NORDIC: Final = "nordic"
 OKIN_64BIT_VARIANT_CUSTOM: Final = "custom"
 OKIN_64BIT_VARIANTS: Final = {
-    VARIANT_AUTO: "Auto (Nordic UART)",
-    OKIN_64BIT_VARIANT_NORDIC: "Nordic UART (fire-and-forget)",
-    OKIN_64BIT_VARIANT_CUSTOM: "Custom OKIN (wait-for-response)",
+    VARIANT_AUTO: AUTOMATIC_LABEL,
+    OKIN_64BIT_VARIANT_NORDIC: "Standard receiver",
+    OKIN_64BIT_VARIANT_CUSTOM: "Receiver that needs Bluetooth pairing",
 }
-
-# All protocol variants (for validation)
-ALL_PROTOCOL_VARIANTS: Final = [
-    *CLUSTER018_APPS,
-    *CASPER_BASE_VARIANTS,
-    *HUSH_BASE_VARIANTS,
-
-    "p1", "p2", "p3",
-    *COMFORT_ENHANCEMENTS_VARIANTS,
-    *(v for v in BEDSENSE_VARIANTS if v != "auto"),
-    VARIANT_AUTO,
-    STAR_ELEVATE_VARIANT_M1X12,
-    SOLACE_VARIANT_WOOSA,
-    SVANE_VARIANT_JENSEN_LINON,
-    SVANE_VARIANT_JMC,
-    REMACRO_VARIANT_THE_BRICK,
-    REMACRO_VARIANT_JEROMES,
-    KAIDI_VARIANT_SEAT_1,
-    KAIDI_VARIANT_SEAT_2,
-    KAIDI_VARIANT_SEAT_3,
-    KAIDI_VARIANT_SEAT_1_2,
-    OKIN_CB24_VARIANT_OLD,
-    OKIN_CB24_VARIANT_NEW,
-    OKIN_CB24_VARIANT_CB24,
-    OKIN_CB24_VARIANT_CB27,
-    OKIN_CB24_VARIANT_CB24_AB,
-    OKIN_CB24_VARIANT_CB1221,
-    OKIN_CB24_VARIANT_DACHENG,
-    OKIN_CB24_VARIANT_CB27NEW,
-    KEESON_VARIANT_BASE,
-    KEESON_VARIANT_JSON,
-    KEESON_VARIANT_KSBT,
-    KEESON_VARIANT_KSBT04C,
-    KEESON_VARIANT_SLEEP_HARMONY,
-    KEESON_VARIANT_ADJUSTABLE_LITE,
-    KEESON_VARIANT_SIMON_LI,
-    KEESON_VARIANT_HEAL_EVERY_NIGHT,
-    KEESON_VARIANT_OKIN_SEATING,
-    KEESON_VARIANT_AVANTI_BASES,
-    KEESON_VARIANT_AMERICANSTAR,
-    KEESON_VARIANT_BEDSENSE_BASES,
-    KEESON_VARIANT_INNOVA,
-    KEESON_VARIANT_MAXCOIL_UNA,
-    KEESON_VARIANT_DYNASTY_BASES,
-    KEESON_VARIANT_RESTONIC_A,
-    KEESON_VARIANT_RESTONIC_B,
-    KEESON_VARIANT_ERGOMOTION,
-    KEESON_VARIANT_OKIN,
-    KEESON_VARIANT_SERTA,
-    KEESON_VARIANT_SINO,
-    KEESON_VARIANT_PURPLE,
-    LEGGETT_VARIANT_GEN2,
-    LEGGETT_VARIANT_OKIN,
-    LEGGETT_VARIANT_MLRM,
-    SLEEP_NUMBER_VARIANT_LEFT,
-    SLEEP_NUMBER_VARIANT_RIGHT,
-    RICHMAT_VARIANT_NORDIC,
-    RICHMAT_VARIANT_WILINKE,
-    RICHMAT_VARIANT_PREFIX55,
-    RICHMAT_VARIANT_PREFIXAA,
-    OCTO_VARIANT_STANDARD,
-    OCTO_VARIANT_STAR2,
-    *(_variant for _variant in OKIMAT_VARIANTS if _variant != VARIANT_AUTO),
-    *(
-        _variant
-        for _variant in OKIN_DOT_VARIANTS
-        if _variant != VARIANT_AUTO and _variant not in OKIN_DOT_FURNIMOVE_VARIANTS
-    ),
-    OKIN_64BIT_VARIANT_NORDIC,
-    OKIN_64BIT_VARIANT_CUSTOM,
-    LINAK_VARIANT_BED_CONTROL,
-    LINAK_VARIANT_PERFORMANCE,
-    *(_variant for _variant in OKIN_CST_VARIANTS if _variant != VARIANT_AUTO),
-    SLEEPYS_BOX25_VARIANT_STAR,
-    SLEEPYS_BOX25_VARIANT_LEGACY,
-    # SBI/Q-Plus variants
-    SBI_VARIANT_BOTH,
-    SBI_VARIANT_SIDE_A,
-    SBI_VARIANT_SIDE_B,
-    # Rondure variants (already in RONDURE_VARIANTS)
-    RONDURE_VARIANT_BOTH,
-    RONDURE_VARIANT_SIDE_A,
-    RONDURE_VARIANT_SIDE_B,
-    *(_variant for _variant in SIMMONS_VARIANTS if _variant != VARIANT_AUTO),
-    *(v for v in ADJUSTAMATTRESS_VARIANTS if v != VARIANT_AUTO),
-    ADJUSTABLE_LUMBAR_VARIANT_OKIN,
-    ADJUSTABLE_LUMBAR_VARIANT_STAR,
-    "wsilver2", "americanstar", "bailey2", "tx",
-    *dict.fromkeys(
-        variant
-        for variants in RICHMAT_MH_VARIANTS_BY_APP.values()
-        for variant in variants
-        if variant != VARIANT_AUTO
-    ),
-    *ZSERIES_VARIANTS,
-    *GOODVIBE_PROFILES,
-    *HJBED_PROFILES,
-    *ESHINE_OKIN_PROFILES,
-    *GLIDEAWAY_MOTION_MODELS,
-]
 
 # Protocols whose setup requests OS-level BLE pairing. This policy alone does
 # not prove that a successful connection or metadata read is authenticated.
@@ -2871,7 +2774,6 @@ BEDS_REQUIRING_PAIRING: Final[set[str]] = {
     BED_TYPE_OKIN_CST,
     BED_TYPE_OKIN_RF_ECO_BT,
     BED_TYPE_LEGGETT_OKIN,
-    BED_TYPE_OKIMAT,
     BED_TYPE_VIBRADORM,
     BED_TYPE_LOGICDATA,
     BED_TYPE_VIBRADORM_APP,
@@ -2881,16 +2783,18 @@ BEDS_REQUIRING_PAIRING: Final[set[str]] = {
     # advertising. The controller-side reason remains hardware behavior, not
     # something the APK can prove.
     BED_TYPE_LEGGETT_GEN2,
+    # Resident Adjustable Base (Nectar Premier): an iPhone capture and a proxy
+    # replay show its motor writes fail with ATT Insufficient Authorization
+    # until the link is encrypted with a bond made in pairing mode.
+    BED_TYPE_RESIDENT,
 }
 
 # Bed type + variant combinations that require BLE pairing
 # Maps bed type to set of variants that require pairing for that specific bed type
 # Note: Keeson's "okin" variant (OKIN FFE) does NOT require pairing - it's a different protocol
 BED_TYPE_VARIANTS_REQUIRING_PAIRING: Final[dict[str, set[str]]] = {
-    BED_TYPE_LEGGETT_PLATT: {LEGGETT_VARIANT_OKIN, LEGGETT_VARIANT_GEN2},
-    # Custom OKIN (62741525): a Nectar Premier / Resident base rejects motor
-    # writes with ATT Insufficient Authorization until the link is encrypted
-    # with a bond made in the base's pairing mode. The Nordic variant does not.
+    # Custom OKIN (62741525) drives the same Resident base, which needs the
+    # bond above. The Nordic variant does not.
     BED_TYPE_OKIN_64BIT: {OKIN_64BIT_VARIANT_CUSTOM},
 }
 
@@ -2899,8 +2803,8 @@ def requires_pairing(bed_type: str, protocol_variant: str | None = None) -> bool
     """Check if a bed configuration requires BLE pairing.
 
     Args:
-        bed_type: The bed type constant (e.g., BED_TYPE_LEGGETT_PLATT)
-        protocol_variant: Optional protocol variant (e.g., "okin", "gen2")
+        bed_type: The bed type constant (e.g., BED_TYPE_OKIN_64BIT)
+        protocol_variant: Optional protocol variant (e.g., "custom")
 
     Returns:
         True if this bed/variant combination requires OS-level BLE pairing
@@ -2923,7 +2827,9 @@ def supports_runtime_authentication_recovery(
     bed_type: str, protocol_variant: str | None = None
 ) -> bool:
     """Return whether an observed GATT auth failure should offer bond repair."""
-    return requires_pairing(bed_type, protocol_variant) or (
+    # SILVERmotion's app requests a bond, but only an observed auth failure
+    # warrants repair here; it does not opt into unconditional setup pairing.
+    return bed_type == BED_TYPE_SILVERMOTION or requires_pairing(bed_type, protocol_variant) or (
         bed_type == BED_TYPE_OKIN_CST and protocol_variant == OKIN_CST_VARIANT_NECTAR_MOVE
     )
 
@@ -2934,12 +2840,16 @@ def requires_pairing_after_service_discovery(
     """Return True when GATT discovery must precede the BLE bond request.
 
     LP Control and Sleep Number connect and discover services before calling the Android
-    bonding API. BlueZ's usual ``pair=True`` path instead invokes
+    bonding API. SILVERmotion keeps that ordering for an explicit bond repair.
+    BlueZ's usual ``pair=True`` path instead invokes
     ``Device1.Pair`` without first making the ordinary unbonded GATT connection.
     """
-    if bed_type in (BED_TYPE_LEGGETT_GEN2, BED_TYPE_SLEEP_NUMBER, BED_TYPE_VIBRADORM_APP):
-        return True
-    return bed_type == BED_TYPE_LEGGETT_PLATT and protocol_variant == LEGGETT_VARIANT_GEN2
+    return bed_type in (
+        BED_TYPE_LEGGETT_GEN2,
+        BED_TYPE_SLEEP_NUMBER,
+        BED_TYPE_VIBRADORM_APP,
+        BED_TYPE_SILVERMOTION,
+    )
 
 
 def connection_gated_by_bond(bed_type: str, protocol_variant: str | None = None) -> bool:
@@ -2952,9 +2862,7 @@ def connection_gated_by_bond(bed_type: str, protocol_variant: str | None = None)
     symptom; the controller firmware's exact link-layer filtering is not
     visible in the Android APK.
     """
-    if bed_type == BED_TYPE_LEGGETT_GEN2:
-        return True
-    return bed_type == BED_TYPE_LEGGETT_PLATT and protocol_variant == LEGGETT_VARIANT_GEN2
+    return bed_type == BED_TYPE_LEGGETT_GEN2
 
 
 def grants_one_connection_per_pairing_window(
@@ -2985,158 +2893,6 @@ def grants_one_connection_per_pairing_window(
     return connection_gated_by_bond(bed_type, protocol_variant)
 
 
-# Bed types that support angle sensing (position feedback)
-BEDS_WITH_ANGLE_SENSING: Final = frozenset(
-    {
-        BED_TYPE_LINAK,
-        BED_TYPE_OKIMAT,
-        BED_TYPE_OKIN_UUID,  # Same protocol as Okimat
-        BED_TYPE_REVERIE,
-        BED_TYPE_REVERIE_NIGHTSTAND,
-        BED_TYPE_REVERIE_PAIRLINK,
-    }
-)
-
-# Bed types that support position feedback (for Number entities with position seeking)
-# Includes all angle sensing beds plus beds that report percentage positions
-# Note: BED_TYPE_KEESON is NOT included here because only the ergomotion variant supports
-# position feedback - this is handled specially in number.py with variant checking
-# Sleep Number MCR exposes positions only when foundation discovery proves the
-# corresponding actuator exists; its controller supplies the per-side specs.
-BEDS_WITH_POSITION_FEEDBACK: Final = frozenset(
-    {
-        BED_TYPE_SERTA_MP_REMOTE,
-        BED_TYPE_STARCODE_M5X5,
-        BED_TYPE_LINAK,
-        BED_TYPE_OKIMAT,
-        BED_TYPE_OKIN_UUID,  # Same protocol as Okimat
-        BED_TYPE_REVERIE,
-        BED_TYPE_REVERIE_NIGHTSTAND,
-        BED_TYPE_REVERIE_PAIRLINK,
-        BED_TYPE_ERGOMOTION,
-        BED_TYPE_JENSEN,
-        BED_TYPE_LIMOSS,
-        BED_TYPE_SLEEP_NUMBER,
-        BED_TYPE_SLEEP_NUMBER_MCR,
-        BED_TYPE_VIBRADORM,
-        BED_TYPE_SLEEPYS_BOX25,
-        BED_TYPE_SLEEPSTAR,
-        BED_TYPE_BEDJET_POWERLAYER,
-        # Head and foot angles come from the app's pulse lookup tables (#239).
-        BED_TYPE_SBI,
-    }
-)
-
-
-def bed_type_has_position_feedback(bed_type: str | None, protocol_variant: str | None) -> bool:
-    """Return True if this bed type/variant combination reports motor positions.
-
-    Membership in BEDS_WITH_POSITION_FEEDBACK is not sufficient on its own:
-    Keeson hardware only reports positions on the ergomotion variant, so the
-    variant has to be consulted too. Callers that decide whether to create
-    position entities, accept set_position calls, or probe for position
-    feedback must all agree, so they share this single predicate.
-    """
-    if not bed_type:
-        return False
-    if bed_type in (
-        BED_TYPE_REVERIE,
-        BED_TYPE_REVERIE_NIGHTSTAND,
-        BED_TYPE_REVERIE_PAIRLINK,
-    ):
-        from .beds.reverie_profiles import resolve_reverie_model
-
-        return resolve_reverie_model(protocol_variant).positions
-    if bed_type == BED_TYPE_SVANE and protocol_variant != SVANE_VARIANT_JENSEN_LINON:
-        return False
-    if bed_type in BEDS_WITH_POSITION_FEEDBACK:
-        return True
-    return bed_type == BED_TYPE_KEESON and protocol_variant == KEESON_VARIANT_ERGOMOTION
-
-
-# Bed types that may have angle sensing enabled in an existing entry but report no
-# degree-angle data. CST, RF ECO BT and the Jiecang apps expose no reliable position feedback. Skip
-# their entity creation and remove stale sensors from earlier profiles so they do
-# not remain "unknown" forever (#322, #344, #501).
-BEDS_WITHOUT_ANGLE_FEEDBACK: Final = frozenset(
-    {
-        BED_TYPE_CLUSTER018,
-        BED_TYPE_ERGOMOTION_4,
-        BED_TYPE_DOUBLESLEEP,
-        # The app exposes raw motor-index/desk reports, without a proven
-        # mapping to HA's generic head/back/legs/feet angle entities.
-        BED_TYPE_GMMOTOR, BED_TYPE_GMMOTOR_SLEEP_MM, BED_TYPE_GMMOTOR_SLEEP_SXB,
-        *(CLUSTER033_BED_TYPES - {BED_TYPE_SERTA_MP_REMOTE}),
-        BED_TYPE_GOODVIBE,
-        BED_TYPE_MOTOMOTION,
-        BED_TYPE_HJBED,
-        BED_TYPE_GLIDEAWAY_MOTION,
-        BED_TYPE_ISLEEP,
-        BED_TYPE_BEDSENSE,
-        BED_TYPE_BF,
-        BED_TYPE_CHERISH,
-        "casper_remote",
-        "hush_remote",
-        BED_TYPE_CASPER_BASE, BED_TYPE_CASPER_SLEEP_MM, BED_TYPE_CASPER_SLEEP_SXB,
-        BED_TYPE_HUSH_BASE, BED_TYPE_HUSH_SLEEP_MM, BED_TYPE_HUSH_SLEEP_SXB,
-        BED_TYPE_LIMOSS_REMOTE,
-        BED_TYPE_FURNIMOVE,
-        BED_TYPE_FSM_RELAX,
-        BED_TYPE_SERENITY,
-        BED_TYPE_TRANQUIL,
-        BED_TYPE_ZSERIES,
-        BED_TYPE_SIMMONS,
-        BED_TYPE_ADJUSTAMATTRESS,
-        BED_TYPE_ADJUSTABLE_LUMBAR,
-        BED_TYPE_COMFORT_ENHANCEMENTS,
-        BED_TYPE_ESHINE,
-        BED_TYPE_ESHINE_OKIN,
-        # VER1 angle replies feed the app's arc labels, not the shared angle axes.
-        *RICHMAT_MH_BED_TYPES,
-        "richmat_sleep_receiver",
-        BED_TYPE_CUSTOMATIC_CLARITY,
-        BED_TYPE_CUSTOMATIC_JEROMES,
-        BED_TYPE_CUSTOMATIC_REMEDY,
-        BED_TYPE_MALOUF_APP,
-        BED_TYPE_LOGICDATA_APP,
-        BED_TYPE_LOGICDATA_AIR_PUMP,
-        BED_TYPE_JIECANG_APP,
-        BED_TYPE_LEGGETT_LP_LEGACY,
-        BED_TYPE_VIBRADORM_APP,
-        BED_TYPE_VMATBASIC,
-        BED_TYPE_STARCODE_ABM5_4,
-        # M1X12 feedback reports opaque Part percentages, not named degree axes.
-        BED_TYPE_STARCODE_M1X12,
-        BED_TYPE_MOTION_BED,
-        BED_TYPE_SLEEPTRACKER,
-        BED_TYPE_OKIN_CST,
-        BED_TYPE_OKIN_RF_ECO_BT,
-    }
-)
-
-# Bed types that report positions as 0-100 percentages (not angle degrees)
-# These bed types return percentage values directly, so no angle-to-percent conversion is needed.
-# Keeson, Serta and OKIN FFE all run KeesonController, so all three belong here.
-# Only the Ergomotion variant actually reports positions; for the others this keeps
-# angle sensing from creating degree sensors that would sit at "unknown" forever,
-# since KeesonController.start_notify() never subscribes outside that variant.
-BEDS_WITH_PERCENTAGE_POSITIONS: Final = frozenset(
-    {
-        BED_TYPE_STARCODE_M5X5,
-        BED_TYPE_KEESON,
-        BED_TYPE_ERGOMOTION,
-        BED_TYPE_SERTA,
-        BED_TYPE_OKIN_FFE,
-        BED_TYPE_JENSEN,
-        BED_TYPE_SLEEP_NUMBER,
-        BED_TYPE_SLEEP_NUMBER_MCR,
-        BED_TYPE_SLEEPYS_BOX25,
-        BED_TYPE_SLEEPSTAR,
-        BED_TYPE_REVERIE_NIGHTSTAND,
-        BED_TYPE_REVERIE_PAIRLINK,
-    }
-)
-
 # Position seeking constants
 POSITION_TOLERANCE: Final = 3.0  # Angle tolerance in degrees for target reached
 POSITION_OVERSHOOT_TOLERANCE: Final = (
@@ -3151,130 +2907,22 @@ POSITION_STALL_COUNT: Final = 3  # Number of consecutive stall detections before
 # Default values
 DEFAULT_MOTOR_COUNT: Final = 2
 DEFAULT_HAS_MASSAGE: Final = False
-DEFAULT_DISABLE_ANGLE_SENSING: Final = True  # For beds without angle sensing
-DEFAULT_POSITION_MODE: Final = POSITION_MODE_SPEED
 DEFAULT_PROTOCOL_VARIANT: Final = VARIANT_AUTO
-DEFAULT_DISCONNECT_AFTER_COMMAND: Final = False
 DEFAULT_IDLE_DISCONNECT_SECONDS: Final = 40
-# Idle timeout value meaning "never idle-disconnect" (issue #700).
+MAX_IDLE_DISCONNECT_SECONDS: Final = 300
+# The coordinator's idle timeout for "always connected" (issue #700).
 IDLE_DISCONNECT_KEEP_CONNECTED: Final = 0
 DEFAULT_OCTO_PIN: Final = ""
-DEFAULT_CONNECTION_PROFILE: Final = CONNECTION_PROFILE_BALANCED
-
-# Bed types whose controller has to hold the BLE link open for the entry's
-# lifetime. The coordinator already suppresses the post-command disconnect for
-# them (see _disconnect_after_operation_enabled), so defaulting the option on
-# would only advertise something the bed cannot do.
-BEDS_REQUIRING_PERSISTENT_CONNECTION: Final = frozenset(
-    {
-        BED_TYPE_GMMOTOR_SLEEP_MM,
-        BED_TYPE_GMMOTOR_SLEEP_SXB,
-        BED_TYPE_LEGGETT_GEN2,
-        BED_TYPE_SLEEP_NUMBER_MCR,
-    }
+# BLE connection timing. One setting for every bed: the slower values of the
+# former "Reliable" profile, since the faster ones only saved seconds on a
+# connect that had already worked.
+CONNECTION_SETTINGS: Final = ConnectionProfileSettings(
+    max_retries=3,
+    retry_base_delay=3.0,  # 3s then 6s (with jitter)
+    retry_jitter=0.2,
+    connection_timeout=25.0,
+    post_connect_delay=1.0,
 )
-
-# These controllers track user-selected state in the connection-scoped
-# controller. They can reconnect on demand, but a new entry must retain the
-# controller by default so consecutive controls keep their intended state.
-BEDS_WITH_DISCONNECT_AFTER_COMMAND_DEFAULT_DISABLED: Final = (
-    BEDS_REQUIRING_PERSISTENT_CONNECTION
-    | frozenset(
-        {
-            # Preset repeat-tap and massage cycles depend on connection-local state.
-            BED_TYPE_COMFORT_ENHANCEMENTS,
-            BED_TYPE_COMFORT_MOTION,
-            BED_TYPE_ERGOMOTION,
-            BED_TYPE_GMMOTOR,
-            BED_TYPE_JENSEN,
-            BED_TYPE_JIECANG,
-            BED_TYPE_JIECANG_APP,
-            BED_TYPE_KAIDI,
-            BED_TYPE_LEGGETT_WILINKE,
-            BED_TYPE_ISLEEP,
-            BED_TYPE_LIMOSS,
-            BED_TYPE_LOGICDATA_APP,
-            # Pressure is polled only on a held link, like the app's pump tab.
-            BED_TYPE_LOGICDATA_AIR_PUMP,
-            BED_TYPE_MALOUF_APP,
-            BED_TYPE_OCTO,
-            BED_TYPE_OKIMAT,
-            BED_TYPE_OKIN_CB24,
-            BED_TYPE_OKIN_CST,
-            BED_TYPE_OKIN_ORE,
-            BED_TYPE_OKIN_UUID,
-            BED_TYPE_REVERIE,
-            BED_TYPE_REVERIE_NIGHTSTAND,
-            BED_TYPE_SLEEP_NUMBER,
-            BED_TYPE_SLEEPSTAR,
-            BED_TYPE_SLEEPYS_BOX25,
-            BED_TYPE_SUTA,
-            BED_TYPE_SVANE,
-            BED_TYPE_VIBRADORM,
-            BED_TYPE_VIBRADORM_APP,
-            BED_TYPE_VMATBASIC,
-            BED_TYPE_STARCODE_ABM5_4,
-            BED_TYPE_MOTION_BED,
-        }
-    )
-)
-
-
-def disconnect_after_command_default_enabled(
-    bed_type: str | None, protocol_variant: str | None = None
-) -> bool:
-    """Return whether a NEW entry should free the BLE link after each command.
-
-    These beds accept a single BLE connection at a time, so holding the link
-    locks the physical remote and the vendor app out until the idle timeout
-    expires. Handing the link straight back is the better default; beds that
-    need it held open keep the option off.
-
-    Legacy umbrella types with an auto variant stay conservative when a
-    connection-scoped controller cannot be ruled out before connecting.
-
-    Only new entries consult this. An existing entry already stores its own
-    value, which is left alone.
-    """
-    if bed_type == BED_TYPE_GOODVIBE:
-        return protocol_variant not in ("sleep_rm", "sleep_hj")
-    if not bed_type:
-        return DEFAULT_DISCONNECT_AFTER_COMMAND
-    resolved = resolve_explicit_bed_type(bed_type, protocol_variant)
-    if bed_type == BED_TYPE_KEESON and protocol_variant in {
-        None,
-        "",
-        VARIANT_AUTO,
-        KEESON_VARIANT_ERGOMOTION,
-        KEESON_VARIANT_SINO,
-    }:
-        return False
-    if bed_type == BED_TYPE_LEGGETT_PLATT and protocol_variant in {
-        None,
-        "",
-        VARIANT_AUTO,
-    }:
-        return False
-    return resolved not in BEDS_WITH_DISCONNECT_AFTER_COMMAND_DEFAULT_DISABLED
-
-
-# Connection profiles
-CONNECTION_PROFILES: Final = {
-    CONNECTION_PROFILE_BALANCED: ConnectionProfileSettings(
-        max_retries=3,
-        retry_base_delay=2.0,  # 2s then 4s (with jitter)
-        retry_jitter=0.2,
-        connection_timeout=20.0,
-        post_connect_delay=0.5,
-    ),
-    CONNECTION_PROFILE_RELIABLE: ConnectionProfileSettings(
-        max_retries=3,
-        retry_base_delay=3.0,  # 3s then 6s (with jitter)
-        retry_jitter=0.2,
-        connection_timeout=25.0,
-        post_connect_delay=1.0,
-    ),
-}
 
 # Default motor pulse values (can be overridden per device)
 # These control how many command pulses are sent and the delay between them
@@ -3307,9 +2955,6 @@ BED_MOTOR_PULSE_DEFAULTS: Final = {
     # Ergomotion: 100ms delay → 10 repeats = 1.0s total
     # Source: com.sfd.ergomotion ANALYSIS.md
     BED_TYPE_ERGOMOTION: (10, 100),
-    # Serta: 100ms delay → 10 repeats = 1.0s total
-    # Source: com.ore.serta330 ANALYSIS.md
-    BED_TYPE_SERTA: (10, 100),
     # Malouf Legacy OKIN: 150ms delay → 7 repeats = 1.05s total
     # Source: com.malouf.bedbase / com.lucid.bedbase ANALYSIS.md
     BED_TYPE_MALOUF_LEGACY_OKIN: (7, 150),
@@ -3321,14 +2966,30 @@ BED_MOTOR_PULSE_DEFAULTS: Final = {
     BED_TYPE_CUSTOMATIC_REMEDY: (8, 120),
     BED_TYPE_FSM_RELAX: (10, 60),
     BED_TYPE_SERENITY: (10, 100),  # APK refresh cadence; bounded HA movement duration
+    BED_TYPE_RIZE_REMEDY_II: (10, 100),
     BED_TYPE_TRANQUIL: (10, 100),  # APK refresh cadence; bounded HA movement duration
     # 100 ms is the app refresh; the count also bounds a Z-Series button press.
     BED_TYPE_ZSERIES: (10, 100),
     BED_TYPE_SIMMONS: (4, 300),  # APK 300 ms hold refresh; ~1.2 s HA movement
+    BED_TYPE_SOMOS: (10, 300),
+    BED_TYPE_COMFORTBASE: (10, 100),
+    BED_TYPE_AGINGPLACE: (5, 200),
     BED_TYPE_COMFORT_ENHANCEMENTS: (5, 200),  # app 200 ms refresh, bounded HA tap
     BED_TYPE_ESHINE_OKIN: (10, 300),  # App refresh cadence; count bounds HA movement
     BED_TYPE_ESHINE: (10, 100),  # Eshine 100 ms refresh; count bounds an HA movement
     BED_TYPE_ADJUSTAMATTRESS: (5, 200),  # APK 200 ms refresh, bounded HA movement
+    BED_TYPE_ADJUSTABLE_BED: (10, 100),  # APK 100 ms hold refresh; ~1 s HA movement
+    BED_TYPE_SUPERIOR_SLEEP: (10, 100),
+    BED_TYPE_RIZE_HOME: (3, 200),  # Rize Home fixed 200 ms refresh; bounded HA tap.
+    BED_TYPE_OKIN_MOTIONBED: (5, 200),  # Fixed 200 ms app refresh, ~1 s HA tap.
+    BED_TYPE_COMFORT_ENHANCEMENT3: (10, 100),
+    BED_TYPE_N32_MOTION_BED: (5, 200),  # Finite caller pulse; app refresh is 200 ms.
+    BED_TYPE_LINX: (334, 3),  # HA finite tap bound; Linx attempts held refresh every 3 ms.
+    BED_TYPE_SYMPHONY_SLEEP: (4, 300),
+    BED_TYPE_YAMADA: (4, 300),  # HA finite tap default at the app refresh cadence.
+    BED_TYPE_BETTERLIVING2: (10, 100),  # The chosen layout owns the actual refresh cadence.
+    BED_TYPE_RESIDENT: (4, 300),  # Resident 300 ms refresh; four pulses bound an HA tap.
+    BED_TYPE_ULTRAMATIC_SMART_BED: (4, 300),  # HA finite tap; app held refresh is 300 ms.
     BED_TYPE_ADJUSTABLE_LUMBAR: (10, 100),  # APK 100 ms hold refresh; ~1 s HA movement
     # Richmat MH apps: KEEP repeats at each control's own interval (100 ms for
     # every motor); the count bounds an HA hold.
@@ -3342,9 +3003,6 @@ BED_MOTOR_PULSE_DEFAULTS: Final = {
     # OKIN Nordic: 100ms delay → 10 repeats = 1.0s total
     # Source: com.lucid.bedbase ANALYSIS.md
     BED_TYPE_OKIN_NORDIC: (10, 100),
-    # OKIN CB24: 300ms delay → 3 repeats = 0.9s total
-    # Source: com.okin.bedding.smartbedwifi ANALYSIS.md
-    BED_TYPE_OKIN_CB24: (3, 300),
     # OKIN DOT: FurniMove resends the held keycode ~every 100ms
     # (BluetoothLeService.onCharacteristicWrite Thread.sleep(100) loop)
     BED_TYPE_OKIN_DOT: (10, 100),
@@ -3411,9 +3069,6 @@ BED_MOTOR_PULSE_DEFAULTS: Final = {
     # Scott Living: 100ms delay → 10 repeats = 1.0s total
     # Source: com.keeson.scottlivingrelease ANALYSIS.md
     BED_TYPE_SCOTT_LIVING: (10, 100),
-    # SBI/Q-Plus: 100ms delay → 10 repeats = 1.0s total
-    # Source: com.sbi.costco ANALYSIS.md
-    BED_TYPE_SBI: (10, 100),
     # SUTA: 150ms delay → 7 repeats = 1.05s total
     # Source: com.shuta.smart_home ANALYSIS.md
     BED_TYPE_SUTA: (7, 150),
@@ -3421,7 +3076,7 @@ BED_MOTOR_PULSE_DEFAULTS: Final = {
     # 100 ms delay between repeats. Held AHF controls use a separate cadence.
     BED_TYPE_TIMOTION_AHF: (10, 100),
     # Logicdata: 30ms delay → 10 repeats = 0.3s total
-    # Source: at.silvermotion APK analysis (SF_GetPipelineTx sendCount=10, delay=30ms)
+    # Source: SILVERmotion APK analysis (SF_GetPipelineTx sendCount=10, delay=30ms)
     BED_TYPE_LOGICDATA: (10, 30),
     # BedJet PowerLayer: one write moves for ~1.3s and then self-stops, so writes
     # every 100ms hold the motor through the repo-standard 1.0s press while the

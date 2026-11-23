@@ -9,7 +9,7 @@ from unittest.mock import AsyncMock, MagicMock, call
 
 import pytest
 
-from custom_components.adjustable_bed.beds.furnimove import (
+from custom_components.adjustable_bed.beds.furnimove.controller import (
     CSS_FEEDBACK,
     DOT_FEEDBACK,
     DOT_WRITE,
@@ -23,8 +23,10 @@ from custom_components.adjustable_bed.beds.furnimove import (
     combine_furnimove_commands,
     validate_furnimove_name,
 )
+from custom_components.adjustable_bed.beds.furnimove.profiles import FurniMoveAction as Action
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
-from custom_components.adjustable_bed.furnimove_profiles import FurniMoveAction as Action
+from tests.hold_lease_wire import virtual_clock
+from tests.state_helpers import massage_levels, state_writer
 
 
 def char(uuid: str, properties=("write",)):
@@ -39,7 +41,11 @@ def make_controller(handset_id="82417", *, characteristics=None) -> FurniMoveCon
     coordinator.handle_controller_state_update.side_effect = (
         lambda key, value: coordinator.controller_state.update({key: value})
     )
+    coordinator.handle_controller_state_updates.side_effect = (
+        lambda *updates: state_writer(coordinator.controller_state)(*updates)
+    )
     coordinator.motor_pulse_count = 2
+    coordinator.furnimove_widget_state = (False, None, None)
     coordinator.client = MagicMock(
         is_connected=True,
         services=[
@@ -136,12 +142,13 @@ async def test_light_exposure_is_toggle_and_unpublished_initial_boolean() -> Non
     controller = await fast_controller()
     assert controller.supports_lights and controller.supports_light_toggle_control
     assert not controller.supports_discrete_light_control
-    assert not controller.supports_light_state_feedback
+    # The light shows the reported UBL state; the initial False is not a report.
+    assert controller.supports_light_state_feedback
+    assert controller._coordinator.controller_state.get("under_bed_lights_on") is None
     assert not any(
         entry.args[0] == "furnimove_ubl"
         for entry in controller._coordinator.handle_controller_state_update.call_args_list
     )
-    assert controller.stale_motor_entity_keys == frozenset({"stair"})
 
 
 async def test_axes_main_release_tail_and_offline_no_stop_frame(monkeypatch) -> None:
@@ -198,23 +205,25 @@ async def test_task_cancellation_still_releases() -> None:
 
 
 async def test_memory_program_selected_slot_timer_and_dot_omission() -> None:
-    controller = await fast_controller(characteristics=[char(DOT_WRITE)])
-    controller.profile = replace(
-        controller.profile,
-        actions=(
-            Action("MemoSave", "memory-update", "0x00010000", 400, 200),
-            Action("Arbitrary slot A", "memory", "0x00001000"),
-            Action("Arbitrary slot B", "memory", "0x00002000"),
-            Action("DisobeyStandbyTime", "utility", "0x00000000"),
-        ),
-    )
-    assert controller.memory_slot_names == ("Arbitrary slot A", "Arbitrary slot B")
-    await controller.program_memory(2)
-    assert written(controller) == ["040200010000"] * 3 + ["040200002000"]
-    assert controller._pause.call_args_list == [call(200), call(200), call(0), call(400), call(200)]
-    controller.client.write_gatt_char.reset_mock()
-    await controller.preset_memory(1)
-    assert written(controller) == ["05020000100000"] * 2 + ["05020000000000"]
+    # The controller times pauses on the loop clock; virtual time keeps them exact.
+    with virtual_clock():
+        controller = await fast_controller(characteristics=[char(DOT_WRITE)])
+        controller.profile = replace(
+            controller.profile,
+            actions=(
+                Action("MemoSave", "memory-update", "0x00010000", 400, 200),
+                Action("Arbitrary slot A", "memory", "0x00001000"),
+                Action("Arbitrary slot B", "memory", "0x00002000"),
+                Action("DisobeyStandbyTime", "utility", "0x00000000"),
+            ),
+        )
+        assert controller.memory_slot_names == ("Arbitrary slot A", "Arbitrary slot B")
+        await controller.program_memory(2)
+        assert written(controller) == ["040200010000"] * 3 + ["040200002000"]
+        assert controller._pause.call_args_list == [call(200), call(200), call(0), call(400), call(200)]
+        controller.client.write_gatt_char.reset_mock()
+        await controller.preset_memory(1)
+        assert written(controller) == ["05020000100000"] * 2 + ["05020000000000"]
 
 
 async def test_cancelled_save_never_writes_selected_slot() -> None:
@@ -341,6 +350,7 @@ def generic(bits: int) -> bytes:
 @pytest.mark.parametrize("rf", [False, True])
 def test_initial_off_feedback_publishes_once_and_invalid_packets_remain_unknown(rf):
     controller = make_controller()
+    controller._coordinator.controller_state.clear()  # Construction publishes massage levels.
     if rf:
         controller._rf_name = char(RF_NAME)
     controller._parse_feedback(bytes(9))
@@ -350,6 +360,7 @@ def test_initial_off_feedback_publishes_once_and_invalid_packets_remain_unknown(
     controller._parse_feedback(feedback)
     assert controller._coordinator.controller_state == {
         "furnimove_ubl": False,
+        "under_bed_lights_on": False,
         "furnimove_sync": False,
         "furnimove_child_lock": False,
     }
@@ -455,27 +466,29 @@ async def test_factory_queue_null_keys_order_and_target_intensity() -> None:
 
 
 async def test_massage_program_stop_variants_and_local_countdown_no_wire() -> None:
-    controller = await fast_controller("12234", characteristics=[char(DOT_WRITE)])
-    await controller.massage_off()
-    assert written(controller) == ["040200000400"] * 2
-    controller.client.write_gatt_char.reset_mock()
-    controller._pause.reset_mock()
-    await controller.massage_off()
-    assert written(controller) == ["040200000400"] * 2
-    assert controller._pause.call_args_list == [call(150, controller._pause.call_args.args[1])]
-    controller._state["furnimove_massage_intensity"] = 5
-    controller.client.write_gatt_char.reset_mock()
-    await controller.massage_off()
-    assert written(controller) == ["040200000400"]
-    assert controller._pause.call_args.args[0] == 250
-    controller.client.write_gatt_char.reset_mock()
-    await controller.set_furnimove_massage_program(4)
-    assert written(controller)[-2:] == ["040204000000", "040200000000"]
-    controller.client.write_gatt_char.reset_mock()
-    await controller.set_massage_timer(30)
-    assert written(controller) == []
-    assert controller.get_massage_state()["timer"] == 30
-    assert not controller.supports_massage_timer
+    # The controller times pauses on the loop clock; virtual time keeps them exact.
+    with virtual_clock():
+        controller = await fast_controller("12234", characteristics=[char(DOT_WRITE)])
+        await controller.massage_off()
+        assert written(controller) == ["040200000400"] * 2
+        controller.client.write_gatt_char.reset_mock()
+        controller._pause.reset_mock()
+        await controller.massage_off()
+        assert written(controller) == ["040200000400"] * 2
+        assert controller._pause.call_args_list == [call(150, controller._pause.call_args.args[1])]
+        controller._state["furnimove_massage_intensity"] = 5
+        controller.client.write_gatt_char.reset_mock()
+        await controller.massage_off()
+        assert written(controller) == ["040200000400"]
+        assert controller._pause.call_args.args[0] == 250
+        controller.client.write_gatt_char.reset_mock()
+        await controller.set_furnimove_massage_program(4)
+        assert written(controller)[-2:] == ["040204000000", "040200000000"]
+        controller.client.write_gatt_char.reset_mock()
+        await controller.set_massage_timer(30)
+        assert written(controller) == []
+        assert controller.protocol_diagnostics["furnimove_massage_timer_minutes"] == 30
+        assert not controller.supports_massage_timer
 
 
 @pytest.mark.parametrize(
@@ -486,7 +499,7 @@ async def test_massage_program_stop_variants_and_local_countdown_no_wire() -> No
 async def test_absent_massage_program_rejected_without_writes_or_state_changes(handset, missing):
     controller = await fast_controller(handset)
     state = controller.protocol_diagnostics.copy()
-    with pytest.raises(ValueError, match="absent"):
+    with pytest.raises(ValueError, match="no such massage program"):
         await controller.set_furnimove_massage_program(missing)
     assert not written(controller)
     assert controller.protocol_diagnostics == state
@@ -514,7 +527,7 @@ async def test_absent_wave_intensity_step_preserves_program_state(handset, direc
     await controller.set_furnimove_massage_program(4)
     await controller.set_furnimove_massage_program(4)
     state = controller.protocol_diagnostics.copy()
-    assert controller.get_massage_state()["intensity"] == 2
+    assert massage_levels(controller._coordinator.controller_state, "all") == {"all": 2}
     controller.client.write_gatt_char.reset_mock()
     controller._coordinator.handle_controller_state_update.reset_mock()
     controller._pause.reset_mock()
@@ -540,7 +553,7 @@ async def test_mode_step_cycles_only_available_massage_programs(handset, program
     assert controller.supports_massage_mode_step_control
     for program in programs:
         await controller.massage_mode_step()
-        assert controller.get_massage_state()["mode"] == program
+        assert controller.protocol_diagnostics["furnimove_massage_program"] == program
         name = f"Massager{program}" if program < 4 else "MassagerWave"
         assert written(controller)[-2] == controller._frame(controller.profile.first(name)).hex()
 
@@ -565,7 +578,8 @@ async def test_local_state_restore_selects_wire_consumer_without_hardware_claim(
         {"duration_minutes": 20, "running": True, "zone": "wave", "intensity": 2}
     )
     assert written(controller) == []
-    assert controller.get_massage_state()["source"] == "local_app_state"
+    levels = massage_levels(controller._coordinator.controller_state, "all", "head", "wave")
+    assert levels == {"all": 2, "head": 0, "wave": 2}
     assert controller.persisted_app_state == {
         "duration_minutes": 20,
         "running": True,
@@ -585,13 +599,15 @@ async def test_local_state_restore_selects_wire_consumer_without_hardware_claim(
 
 
 async def test_widget_uses_fixed_once_timing_and_dot_false() -> None:
-    controller = await fast_controller(characteristics=[char(DOT_WRITE)])
-    flat_index = next(i for i, row in enumerate(controller.profile.actions) if row.action == "Flat")
-    await controller.async_execute_furnimove_action(flat_index, consumer="widget")
-    assert written(controller) == ["0402000000aa"] * 100 + ["040200000000"]
-    assert controller._pause.call_args_list == [call(200)] * 100
-    with pytest.raises(ValueError):
-        controller.validate_furnimove_action(flat_index, duration_ms=50, consumer="widget")
+    # The controller times pauses on the loop clock; virtual time keeps them exact.
+    with virtual_clock():
+        controller = await fast_controller(characteristics=[char(DOT_WRITE)])
+        flat_index = next(i for i, row in enumerate(controller.profile.actions) if row.action == "Flat")
+        await controller.async_execute_furnimove_action(flat_index, consumer="widget")
+        assert written(controller) == ["0402000000aa"] * 100 + ["040200000000"]
+        assert controller._pause.call_args_list == [call(200)] * 100
+        with pytest.raises(ValueError):
+            controller.validate_furnimove_action(flat_index, duration_ms=50, consumer="widget")
 
 
 async def test_arbitrary_preset_duplicate_labels_and_no_invented_dead_massage() -> None:
@@ -679,3 +695,25 @@ async def test_dot_write_notification_property_does_not_subscribe(monkeypatch) -
         feedback,
     ]
     assert controller.client.write_gatt_char.call_args.args == (dot_write, b"\x00\xb0")
+
+
+def test_a_new_link_shows_the_light_only_from_its_own_report() -> None:
+    controller = make_controller()
+    state = controller._coordinator.controller_state
+    controller._parse_feedback(generic(0x00020000))
+    assert state["under_bed_lights_on"] is True
+    controller._clear_session()
+    assert state["under_bed_lights_on"] is None
+    # The same reading as the last link still counts as this link's report.
+    controller._parse_feedback(generic(0x00020000))
+    assert state["under_bed_lights_on"] is True
+
+
+def test_a_report_corrects_the_light_state_a_command_showed() -> None:
+    controller = make_controller()
+    state = controller._coordinator.controller_state
+    controller._parse_feedback(generic(0))
+    # A toggle showed On; the remote switched the lamp back before the next report.
+    state["under_bed_lights_on"] = True
+    controller._parse_feedback(generic(0))
+    assert state["under_bed_lights_on"] is False

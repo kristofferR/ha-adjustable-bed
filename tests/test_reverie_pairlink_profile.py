@@ -6,13 +6,13 @@ import pytest
 from homeassistant.components import bluetooth
 
 from custom_components.adjustable_bed import bluetooth_transport
-from custom_components.adjustable_bed.beds.reverie_pairlink_profile import (
+from custom_components.adjustable_bed.beds.reverie.pairlink_profile import (
     build_pairlink_peripheral_profile,
     pairlink_host_adapter_inventory,
     parse_pairlink_manufacturer_data,
     resolve_pairlink_model,
 )
-from custom_components.adjustable_bed.beds.reverie_pairlink_transport import (
+from custom_components.adjustable_bed.beds.reverie.pairlink_transport import (
     PairlinkGattFlag,
     PairlinkGattPermission,
     PairlinkHostAdapterInventoryEntry,
@@ -172,7 +172,9 @@ def test_peripheral_profile_requires_exact_home_and_local_join_inputs() -> None:
 
 
 def test_local_join_mac_matches_the_source_generated_octet_range(monkeypatch) -> None:
-    from custom_components.adjustable_bed.beds import reverie_pairlink_profile
+    from custom_components.adjustable_bed.beds.reverie import (
+        pairlink_profile as reverie_pairlink_profile,
+    )
 
     values = iter((0, 0.001, 0.25, 0.5, 0.75, 0.999999))
     monkeypatch.setattr(reverie_pairlink_profile.random, "random", lambda: next(values))

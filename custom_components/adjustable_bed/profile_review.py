@@ -3,7 +3,9 @@
 v4.0.2 had none of the app profiles, so an older entry keeps the generic route
 it was set up with, even where an app profile now controls the bed correctly.
 The minor-version 3 migration marks each older entry whose route gained app
-profiles: ``CONF_PROFILE_REVIEW_PENDING`` stores the route it reviews. While
+profiles: ``CONF_PROFILE_REVIEW_PENDING`` stores the route it reviews. The v5
+migration marks once more the entries whose route gained an app after that
+(``_V5_ROUTE_APPS``, such as Woosa Sleep on the Solace name routes). While
 the entry still uses that route, setup raises one fixable issue per entry
 listing only the relevant apps:
 
@@ -15,12 +17,17 @@ listing only the relevant apps:
 
 Switching submits the chosen app to the options flow, so the change is
 validated and stored exactly as Configure stores it, keeping device and entity
-IDs. Vibradorm hands off to its managed, verified reconfigure wizard; closing
-that wizard leaves the review pending. Other apps with their own settings are
-left to Configure. Keeping the current
-configuration, finishing the flow in any other way, or any later change of bed
-type or variant removes the mark; entries created later never get it. FurniMove is not offered: its own repairs cover the
-routes its handsets used.
+IDs. A family with a managed wizard (``profile_migration``) hands off to its
+verified reconfigure flow, and an app with its own settings hands off to
+Configure with the app preselected. A handoff never answers the review: it
+stays pending until a saved change of bed type or variant, or an explicit
+"Keep the current setup". Splitting a reviewed pair carries the review to each
+standalone bed. Entries created later never get the mark. FurniMove is not
+offered: its own repairs cover the routes its handsets used.
+
+Keep is permanent for the reviewed route (``CONF_PROFILE_REVIEW_KEPT``). The
+review returns only when a later release offers that route an app the user was
+not shown.
 """
 
 from __future__ import annotations
@@ -33,10 +40,10 @@ import voluptuous as vol
 from homeassistant.components import bluetooth
 from homeassistant.components.repairs import RepairsFlow, RepairsFlowResult
 from homeassistant.components.repairs.const import FlowType
-from homeassistant.config_entries import SOURCE_RECONFIGURE, ConfigEntry
+from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import CONF_ADDRESS
 from homeassistant.core import HomeAssistant, callback
-from homeassistant.data_entry_flow import FlowResultType, UnknownFlow
+from homeassistant.data_entry_flow import FlowResultType
 from homeassistant.helpers import selector
 from homeassistant.helpers.issue_registry import (
     IssueSeverity,
@@ -46,25 +53,29 @@ from homeassistant.helpers.issue_registry import (
 
 from .const import (
     BED_TYPE_ADJUSTABLE_LUMBAR,
+    BED_TYPE_BETTERLIVING2,
     BED_TYPE_COMFORT_MOTION,
     BED_TYPE_COOLBASE,
-    BED_TYPE_DEWERTOKIN,
     BED_TYPE_FSM_RELAX,
     BED_TYPE_KEESON,
     BED_TYPE_LIMOSS,
     BED_TYPE_LIMOSS_REMOTE,
     BED_TYPE_LOGICDATA_APP,
+    BED_TYPE_MAJESTICHOME,
+    BED_TYPE_MLILY,
+    BED_TYPE_MLILY_REMOTE,
     BED_TYPE_MOTION_BED,
     BED_TYPE_OCTO,
-    BED_TYPE_OKIMAT,
+    BED_TYPE_OKIMIKI,
     BED_TYPE_OKIN_64BIT,
-    BED_TYPE_OKIN_CB24,
     BED_TYPE_OKIN_CB35,
     BED_TYPE_OKIN_CST,
     BED_TYPE_OKIN_FFE,
+    BED_TYPE_OKIN_HANDLE,
     BED_TYPE_OKIN_ORE,
     BED_TYPE_OKIN_UUID,
     BED_TYPE_REMACRO,
+    BED_TYPE_RESIDENT,
     BED_TYPE_RICHMAT,
     BED_TYPE_SERENITY,
     BED_TYPE_SIMMONS,
@@ -78,6 +89,7 @@ from .const import (
     BED_TYPE_VMATBASIC,
     BED_TYPE_ZSERIES,
     CONF_BED_TYPE,
+    CONF_PROFILE_REVIEW_KEPT,
     CONF_PROFILE_REVIEW_PENDING,
     CONF_PROTOCOL_VARIANT,
     DOMAIN,
@@ -86,12 +98,14 @@ from .const import (
     KEESON_VARIANT_AVANTI_BASES,
     KEESON_VARIANT_BASE,
     KEESON_VARIANT_BEDSENSE_BASES,
+    KEESON_VARIANT_COMFORTFURNITURE,
     KEESON_VARIANT_DYNASTY_BASES,
     KEESON_VARIANT_HEAL_EVERY_NIGHT,
     KEESON_VARIANT_INNOVA,
     KEESON_VARIANT_KSBT,
     KEESON_VARIANT_MAXCOIL_UNA,
     KEESON_VARIANT_OKIN_SEATING,
+    KEESON_VARIANT_ORE_ULTRAMATIC,
     KEESON_VARIANT_RESTONIC_A,
     KEESON_VARIANT_RESTONIC_B,
     KEESON_VARIANT_SIMON_LI,
@@ -99,19 +113,23 @@ from .const import (
     PAIR_SIDES,
     REMACRO_VARIANT_JEROMES,
     REMACRO_VARIANT_THE_BRICK,
+    RETIRED_BED_TYPES,
     RICHMAT_MH_BED_TYPES,
+    SOLACE_VARIANT_SOPHIE,
+    SOLACE_VARIANT_WOOSA,
     VARIANT_AUTO,
     ZSERIES_VARIANT_Z230,
     ZSERIES_VARIANT_Z280,
 )
 from .detection import (
     APP_VARIANT_CHOICES,
-    BED_TYPE_DISPLAY_NAMES,
     bed_type_choice,
+    bed_type_label,
     detect_bed_type_detailed,
     resolve_bed_type_choice,
 )
 from .pairing import effective_child_data, get_child, is_paired
+from .profile_migration import managed_family, reconfigure_context
 from .validators import get_variants_for_bed_type
 
 ISSUE_PREFIX: Final = "app_profile_review_"
@@ -138,11 +156,11 @@ def _keeson(*variants: str) -> tuple[str, ...]:
     return tuple(bed_type_choice(BED_TYPE_KEESON, variant) for variant in variants)
 
 
-# Same Keeson frame, different keys and release timing (row060).
+# Same Keeson frame, different keys and release timing.
 _OKIN_SEATING_APPS: Final = _keeson(
     KEESON_VARIANT_SIMON_LI, KEESON_VARIANT_HEAL_EVERY_NIGHT, KEESON_VARIANT_OKIN_SEATING
 )
-# ORE-named bases; v4.0.2's sino label named Dynasty and INNOVA (row056, row059).
+# ORE-named bases; v4.0.2's sino label named Dynasty and INNOVA.
 _ORE_APPS: Final = _keeson(
     KEESON_VARIANT_AVANTI_BASES,
     KEESON_VARIANT_INNOVA,
@@ -151,9 +169,9 @@ _ORE_APPS: Final = _keeson(
     KEESON_VARIANT_DYNASTY_BASES,
     KEESON_VARIANT_BEDSENSE_BASES,
 )
-# The app accepts base-i4 (Keeson Base) and base-i5 (Cool Base) names (row058).
+# The app accepts base-i4 (Keeson Base) and base-i5 (Cool Base) names.
 _RESTONIC_APPS: Final = _keeson(KEESON_VARIANT_RESTONIC_A, KEESON_VARIANT_RESTONIC_B)
-# Same 14-byte CST frame as the OKIN routes (serenity.md, row052).
+# Same 14-byte CST frame as the OKIN routes (okin-nframe.md#jordans-serenity).
 _OKIN_BEDDING_APPS: Final = (
     BED_TYPE_SERENITY,
     BED_TYPE_TRANQUIL,
@@ -162,19 +180,57 @@ _OKIN_BEDDING_APPS: Final = (
 )
 _AUTO: Final = frozenset({VARIANT_AUTO})
 
+# Routes that gained an app after v4.3 reviewed every older entry. The v5
+# migration asks those entries once more (``v5_profile_review_mark``).
+_V5_ROUTE_APPS: Final[tuple[_RouteApps, ...]] = (
+    # Woosa Sleep drives the Solace name routes' frame and controller and
+    # shares their names, so only the app tells them apart (#676).
+    _RouteApps(
+        frozenset({BED_TYPE_SOLACE}),
+        _AUTO,
+        (
+            bed_type_choice(BED_TYPE_SOLACE, SOLACE_VARIANT_WOOSA),
+            # Sophie shares the same frame and names.
+            bed_type_choice(BED_TYPE_SOLACE, SOLACE_VARIANT_SOPHIE),
+        ),
+    ),
+    # ORE apps on the same Keeson frame as the ORE apps v4.3 already offered
+    # these routes.
+    _RouteApps(
+        frozenset({BED_TYPE_KEESON}),
+        frozenset({VARIANT_AUTO, KEESON_VARIANT_BASE, KEESON_VARIANT_SINO}),
+        (*_keeson(KEESON_VARIANT_COMFORTFURNITURE, KEESON_VARIANT_ORE_ULTRAMATIC), BED_TYPE_BETTERLIVING2),
+    ),
+    # v4.0.2 detected these apps' advertised names on the Richmat Nordic UART
+    # and WiLinke services as the generic Richmat route.
+    _RouteApps(
+        frozenset({BED_TYPE_RICHMAT}),
+        None,
+        (
+            "luniosmart",
+            "sleep_evolution",
+            "wsilver_legacy",
+            BED_TYPE_MLILY,
+            BED_TYPE_MLILY_REMOTE,
+            BED_TYPE_OKIMIKI,
+            BED_TYPE_MAJESTICHOME,
+        ),
+    ),
+)
+
 _ROUTE_APPS: Final[tuple[_RouteApps, ...]] = (
     # Keeson auto ran KSBT for KSBT names and Base for other FFE5 beds.
     _RouteApps(
         frozenset({BED_TYPE_KEESON}),
         _AUTO,
-        (*_keeson(KEESON_VARIANT_ADJUSTABLE_LITE), *_OKIN_SEATING_APPS, *_ORE_APPS, *_RESTONIC_APPS),
+        (*_keeson(KEESON_VARIANT_ADJUSTABLE_LITE), *_OKIN_SEATING_APPS, *_ORE_APPS, *_RESTONIC_APPS, BED_TYPE_BETTERLIVING2),
     ),
     _RouteApps(
         frozenset({BED_TYPE_KEESON}),
         frozenset({KEESON_VARIANT_BASE}),
-        (*_OKIN_SEATING_APPS, *_ORE_APPS, *_RESTONIC_APPS),
+        (*_OKIN_SEATING_APPS, *_ORE_APPS, *_RESTONIC_APPS, BED_TYPE_BETTERLIVING2),
     ),
-    # Adjustable Lite's frames all exist in the KSBT profile (row051).
+    # Adjustable Lite's frames all exist in the KSBT profile.
     _RouteApps(
         frozenset({BED_TYPE_KEESON}),
         frozenset({KEESON_VARIANT_KSBT}),
@@ -183,7 +239,7 @@ _ROUTE_APPS: Final[tuple[_RouteApps, ...]] = (
     _RouteApps(
         frozenset({BED_TYPE_KEESON}),
         frozenset({KEESON_VARIANT_SINO}),
-        (*_OKIN_SEATING_APPS, *_ORE_APPS),
+        (*_OKIN_SEATING_APPS, *_ORE_APPS, BED_TYPE_BETTERLIVING2),
     ),
     # v4.0.2 labelled Okin ORE "Dynasty, INNOVA"; both apps use the Keeson frame.
     _RouteApps(
@@ -194,21 +250,20 @@ _ROUTE_APPS: Final[tuple[_RouteApps, ...]] = (
     _RouteApps(frozenset({BED_TYPE_COOLBASE}), None, _RESTONIC_APPS),
     # okin-named 62741523 beds were Okimat, refined to Okin CST by GATT.
     _RouteApps(
-        frozenset({BED_TYPE_OKIMAT, BED_TYPE_OKIN_UUID, BED_TYPE_OKIN_CST}),
+        frozenset({BED_TYPE_OKIN_UUID, BED_TYPE_OKIN_CST}),
         None,
         _OKIN_BEDDING_APPS,
     ),
     # v4.0.2 sent Simmons and Glory names, and Tranquil Sleep, to DewertOkin.
     _RouteApps(
-        frozenset({BED_TYPE_DEWERTOKIN}),
+        frozenset({BED_TYPE_OKIN_HANDLE}),
         None,
         (BED_TYPE_SIMMONS, *_OKIN_BEDDING_APPS[1:]),
     ),
-    # okin names on 62741523, and Star names on Nordic UART (row054).
+    # okin names on 62741523, and Star names on Nordic UART.
     _RouteApps(
         frozenset(
             {
-                BED_TYPE_OKIMAT,
                 BED_TYPE_OKIN_UUID,
                 BED_TYPE_OKIN_64BIT,
                 BED_TYPE_OKIN_CB35,
@@ -218,9 +273,16 @@ _ROUTE_APPS: Final[tuple[_RouteApps, ...]] = (
         None,
         (BED_TYPE_ADJUSTABLE_LUMBAR,),
     ),
-    # Shared OKIN FFE, CB24, Keeson and Richmat routes (row049).
+    # Resident uses only the custom OKIN service; Nordic UART is not a route.
+    # A SmartBed entry is saved as okin_cb24 until schema 5.7 renames it.
     _RouteApps(
-        frozenset({BED_TYPE_OKIN_FFE, BED_TYPE_OKIN_CB24, BED_TYPE_RICHMAT}),
+        frozenset({BED_TYPE_OKIN_UUID, BED_TYPE_OKIN_UUID, "okin_cb24", "smartbed", BED_TYPE_OKIN_64BIT}),
+        None,
+        (BED_TYPE_RESIDENT,),
+    ),
+    # Shared OKIN FFE, CB24, Keeson and Richmat routes.
+    _RouteApps(
+        frozenset({BED_TYPE_OKIN_FFE, "okin_cb24", "smartbed", BED_TYPE_RICHMAT}),
         None,
         (BED_TYPE_SIMMONS,),
     ),
@@ -232,7 +294,7 @@ _ROUTE_APPS: Final[tuple[_RouteApps, ...]] = (
     _RouteApps(frozenset({BED_TYPE_RICHMAT}), None, tuple(sorted(RICHMAT_MH_BED_TYPES))),
     _RouteApps(frozenset({BED_TYPE_LIMOSS}), None, (BED_TYPE_LIMOSS_REMOTE, BED_TYPE_FSM_RELAX)),
     _RouteApps(frozenset({BED_TYPE_VIBRADORM}), None, (BED_TYPE_VIBRADORM_APP, BED_TYPE_VMATBASIC)),
-    # The Sleep Smart bed profile of the LOGICDATA app (row053).
+    # The Sleep Smart bed profile of the LOGICDATA app.
     _RouteApps(frozenset({BED_TYPE_COMFORT_MOTION}), None, (BED_TYPE_LOGICDATA_APP,)),
     # v4.0.2 always used the Slumberland screens (remacro.md).
     _RouteApps(
@@ -243,11 +305,12 @@ _ROUTE_APPS: Final[tuple[_RouteApps, ...]] = (
             bed_type_choice(BED_TYPE_REMACRO, REMACRO_VARIANT_JEROMES),
         ),
     ),
+    *_V5_ROUTE_APPS,
 )
 
 # Detection rules that now pick another primary route than v4.0.2 did for the
 # same advertisement: detected bed type -> the stored types v4.0.2 chose.
-# Cool Base matches "base-i5" anywhere in the name (row047 D40); v4.0.2 only
+# Cool Base matches "base-i5" anywhere in the name; v4.0.2 only
 # matched the prefix, so the rest landed on the shared Keeson route.
 _DETECTION_DRIFT: Final[dict[str, frozenset[str]]] = {
     BED_TYPE_COOLBASE: frozenset({BED_TYPE_KEESON}),
@@ -283,14 +346,22 @@ def _is_app_choice(bed_type: str, variant: object) -> bool:
     return isinstance(variant, str) and (bed_type, variant) in APP_VARIANT_CHOICES
 
 
-def related_app_choices(bed_type: object, variant: object) -> list[str]:
+def _route(bed_type: object) -> object:
+    """Return the route a saved bed type runs: before schema 5.8 it may be a retired one."""
+    return RETIRED_BED_TYPES.get(bed_type, bed_type) if isinstance(bed_type, str) else bed_type
+
+
+def related_app_choices(
+    bed_type: object, variant: object, routes: tuple[_RouteApps, ...] = _ROUTE_APPS
+) -> list[str]:
     """Known app choices for a generic route, not proof of a better match."""
     if not isinstance(bed_type, str) or _is_app_choice(bed_type, variant):
         return []
+    bed_type = _route(bed_type)
     stored_variant = variant if isinstance(variant, str) else VARIANT_AUTO
     return [
         choice
-        for route in _ROUTE_APPS
+        for route in routes
         if bed_type in route.bed_types and (route.variants is None or stored_variant in route.variants)
         for choice in route.choices
     ]
@@ -350,6 +421,12 @@ def _review_target(
     return _Review(tuple(choices))
 
 
+def suggested_apps(hass: HomeAssistant, data: Mapping[str, Any]) -> list[str]:
+    """Return the app choices the review offers one physical bed's route."""
+    review = _review_target(hass, data)
+    return [choice for choice in review.choices if choice != review.drift]
+
+
 def _targets(entry_data: Mapping[str, Any]) -> list[Mapping[str, Any]]:
     """Return the configuration of each physical bed the entry controls."""
     if not is_paired(entry_data):
@@ -406,8 +483,28 @@ def profile_review_mark(entry_data: Mapping[str, Any]) -> str | None:
     if any(
         related_app_choices(target.get(CONF_BED_TYPE), target.get(CONF_PROTOCOL_VARIANT))
         or (
-            target.get(CONF_BED_TYPE) in _ADVERTISED_ROUTES
+            _route(target.get(CONF_BED_TYPE)) in _ADVERTISED_ROUTES
             and not _is_app_choice(target[CONF_BED_TYPE], target.get(CONF_PROTOCOL_VARIANT))
+        )
+        for target in _targets(entry_data)
+    ):
+        return _route_signature(entry_data)
+    return None
+
+
+def v5_profile_review_mark(entry_data: Mapping[str, Any]) -> str | None:
+    """Return the review mark for an entry whose route gained an app in v5.
+
+    v4.3 already reviewed every older entry and retired the reviews it had
+    nothing to offer, so only the v5 migration can reach them again. An open
+    review for the current route already lists the new app. A kept review is
+    asked again, since it was not shown that app.
+    """
+    if _pending(entry_data):
+        return None
+    if any(
+        related_app_choices(
+            target.get(CONF_BED_TYPE), target.get(CONF_PROTOCOL_VARIANT), _V5_ROUTE_APPS
         )
         for target in _targets(entry_data)
     ):
@@ -420,19 +517,64 @@ def _pending(entry_data: Mapping[str, Any]) -> bool:
     return bool(mark) and mark == _route_signature(entry_data)
 
 
+def carry_profile_review_to_renamed_route(
+    source: Mapping[str, Any], target: dict[str, Any]
+) -> None:
+    """Keep an open or kept review on an entry whose route a migration renamed."""
+    old, new = _route_signature(source), _route_signature(target)
+    if target.get(CONF_PROFILE_REVIEW_PENDING) == old:
+        target[CONF_PROFILE_REVIEW_PENDING] = new
+    kept = target.get(CONF_PROFILE_REVIEW_KEPT)
+    if isinstance(kept, Mapping) and kept.get("route") == old:
+        target[CONF_PROFILE_REVIEW_KEPT] = {**kept, "route": new}
+
+
+def _kept_apps(entry_data: Mapping[str, Any]) -> frozenset[str] | None:
+    """Return the apps shown when Keep was chosen for the current route."""
+    kept = entry_data.get(CONF_PROFILE_REVIEW_KEPT)
+    if not isinstance(kept, Mapping) or kept.get("route") != _route_signature(entry_data):
+        return None
+    apps = kept.get("apps")
+    return frozenset(app for app in apps if isinstance(app, str)) if isinstance(apps, list) else None
+
+
+def kept_profile_choices(entry_data: Mapping[str, Any]) -> frozenset[str]:
+    """Return the app choices the entry was shown when it kept its current route."""
+    return _kept_apps(entry_data) or frozenset()
+
+
+def carry_profile_review(source: Mapping[str, Any], target: dict[str, Any]) -> None:
+    """Keep a pair's review state on a standalone bed split out of it.
+
+    An open review stays open for each bed whose own route still has apps to
+    offer. A Keep answered on the pair covers each bed for the apps it was
+    shown, including a review the bed still had from before it was combined.
+    """
+    if _pending(source) and (mark := profile_review_mark(target)) is not None:
+        # The pair's open review outranks an older Keep it may also hold.
+        target[CONF_PROFILE_REVIEW_PENDING] = mark
+    elif (apps := _kept_apps(source)) is not None:
+        target.pop(CONF_PROFILE_REVIEW_PENDING, None)
+        target[CONF_PROFILE_REVIEW_KEPT] = {
+            "route": _route_signature(target),
+            "apps": sorted(apps),
+        }
+
+
 def choice_label(choice: str) -> str:
     """Return the bed-type selector label of a choice."""
     bed_type, variant = resolve_bed_type_choice(choice)
     if variant is not None:
         return APP_VARIANT_CHOICES[bed_type, variant]
-    return BED_TYPE_DISPLAY_NAMES.get(bed_type, bed_type)
+    return bed_type_label(bed_type)
 
 
-def _route_label(data: Mapping[str, Any]) -> str:
+def route_label(data: Mapping[str, Any]) -> str:
+    """Return the friendly label of a saved route, never a raw ID."""
     bed_type = data.get(CONF_BED_TYPE)
     if not isinstance(bed_type, str):
         return "an unknown bed type"
-    label = BED_TYPE_DISPLAY_NAMES.get(bed_type, bed_type)
+    label = bed_type_label(bed_type)
     variant = data.get(CONF_PROTOCOL_VARIANT)
     variants = get_variants_for_bed_type(bed_type) or {}
     if isinstance(variant, str) and variant != VARIANT_AUTO and variant in variants:
@@ -449,7 +591,7 @@ def _placeholders(entry: ConfigEntry, choices: tuple[str, ...], app: str) -> dic
         "name": entry.title,
         "apps": "\n".join(f"- {choice_label(choice)}" for choice in choices),
         "app": choice_label(app),
-        "current": _route_label(_targets(entry.data)[0]),
+        "current": route_label(_targets(entry.data)[0]),
     }
 
 
@@ -467,8 +609,16 @@ def async_refresh_profile_review_issue(hass: HomeAssistant, entry: ConfigEntry) 
         async_delete_issue(hass, DOMAIN, issue_id)
         return
     if CONF_PROFILE_REVIEW_PENDING not in entry.data:
-        async_delete_issue(hass, DOMAIN, issue_id)
-        return
+        kept = _kept_apps(entry.data)
+        review = _review(hass, entry.data) if kept is not None else None
+        if kept is None or review is None or not review.complete or set(review.choices) <= kept:
+            async_delete_issue(hass, DOMAIN, issue_id)
+            return
+        # A newer release offers this kept route an app the user has not seen.
+        hass.config_entries.async_update_entry(
+            entry,
+            data={**entry.data, CONF_PROFILE_REVIEW_PENDING: _route_signature(entry.data)},
+        )
     if not _pending(entry.data):
         # The bed type or variant changed since the upgrade, through this
         # review or Configure: the user has chosen.
@@ -485,6 +635,7 @@ def async_refresh_profile_review_issue(hass: HomeAssistant, entry: ConfigEntry) 
         hass,
         DOMAIN,
         issue_id,
+        config_entry_id=entry.entry_id,
         is_fixable=True,
         is_persistent=False,
         severity=IssueSeverity.WARNING,
@@ -496,7 +647,7 @@ def async_refresh_profile_review_issue(hass: HomeAssistant, entry: ConfigEntry) 
 
 @callback
 def async_clear_profile_review_issue(hass: HomeAssistant, entry_id: str) -> None:
-    """Remove the review when its config entry is removed."""
+    """Remove the entry's review once its profile has been settled."""
     async_delete_issue(hass, DOMAIN, _issue_id(entry_id))
 
 
@@ -508,48 +659,16 @@ def _clear_mark(hass: HomeAssistant, entry: ConfigEntry) -> None:
 
 @callback
 def async_keep_current_profile(hass: HomeAssistant, entry: ConfigEntry) -> None:
-    """Record an explicit decision to keep the current setup."""
-    _clear_mark(hass, entry)
+    """Record an explicit decision to keep the current setup, for this route."""
+    review = _review(hass, entry.data)
+    kept = _kept_apps(entry.data) or frozenset()
+    data = {key: value for key, value in entry.data.items() if key != CONF_PROFILE_REVIEW_PENDING}
+    data[CONF_PROFILE_REVIEW_KEPT] = {
+        "route": _route_signature(entry.data),
+        "apps": sorted(kept | set(review.choices)),
+    }
+    hass.config_entries.async_update_entry(entry, data=data)
     async_clear_profile_review_issue(hass, entry.entry_id)
-
-
-# A bed type change re-renders the form once, and a variant can re-render it
-# for its own fields; a form still open after this needs real input.
-_MAX_OPTIONS_SUBMISSIONS: Final = 4
-
-
-async def _async_switch_via_options(hass: HomeAssistant, entry: ConfigEntry, choice: str) -> bool:
-    """Submit an app choice through the options flow; True once it is saved.
-
-    Every other field keeps the value Configure shows, so the options flow
-    applies its own validation, cleanup and pair guards. A form that reports
-    an error, or still waits for input, is abandoned without saving anything.
-    """
-    manager = hass.config_entries.options
-    result = await manager.async_init(entry.entry_id)
-    flow_id = result["flow_id"]
-    try:
-        result = await manager.async_configure(flow_id, {"next_step_id": "settings"})
-        submission: dict[str, Any] = {CONF_BED_TYPE: choice}
-        for _ in range(_MAX_OPTIONS_SUBMISSIONS):
-            if result.get("type") is not FlowResultType.FORM or result.get("errors"):
-                break
-            result = await manager.async_configure(flow_id, submission)
-            submission = {}
-    finally:
-        if result.get("type") is not FlowResultType.CREATE_ENTRY:
-            try:
-                manager.async_abort(flow_id)
-            except UnknownFlow:
-                pass
-    return result.get("type") is FlowResultType.CREATE_ENTRY
-
-
-def _needs_app_settings(choice: str) -> bool:
-    """Return True for apps whose own settings this shared repair cannot collect."""
-    from .config_flow import APP_SETTINGS_BED_TYPES
-
-    return resolve_bed_type_choice(choice)[0] in APP_SETTINGS_BED_TYPES
 
 
 class ProfileReviewRepairFlow(RepairsFlow):
@@ -557,7 +676,6 @@ class ProfileReviewRepairFlow(RepairsFlow):
 
     def __init__(self, entry_id: str) -> None:
         self._entry_id = entry_id
-        self._choice: str | None = None
 
     def _entry(self) -> ConfigEntry | None:
         entry = self.hass.config_entries.async_get_entry(self._entry_id)
@@ -572,22 +690,25 @@ class ProfileReviewRepairFlow(RepairsFlow):
         choices = _review(self.hass, entry.data).choices
         if not choices:
             return self._finish(entry)
-        if any(target.get(CONF_BED_TYPE) == BED_TYPE_VIBRADORM for target in _targets(entry.data)):
+        if managed_family(entry.data) is not None:
             if (user_input or {}).get("choice") == _KEEP:
                 return self._finish(entry)
             if (user_input or {}).get("choice") == "configure":
-                result = await self.hass.config_entries.flow.async_init(
-                    DOMAIN, context={"source": SOURCE_RECONFIGURE, "entry_id": entry.entry_id}
-                )
-                if result.get("type") is not FlowResultType.FORM:
-                    return self.async_abort(reason="vibradorm_setup_unavailable")
-                return self.async_abort(
-                    reason="vibradorm_setup_started",
-                    next_flow=(FlowType.CONFIG_FLOW, result["flow_id"]),
-                )
+                return await self._async_reconfigure(entry, None)
             return self.async_show_form(
-                step_id="vibradorm",
-                data_schema=vol.Schema({vol.Required("choice"): selector.SelectSelector(selector.SelectSelectorConfig(options=[selector.SelectOptionDict(value="configure", label="Choose my app and remote"), selector.SelectOptionDict(value=_KEEP, label="Keep current setup")], mode=selector.SelectSelectorMode.DROPDOWN))}),
+                step_id="managed",
+                description_placeholders=_placeholders(entry, choices, choices[0]),
+                data_schema=vol.Schema(
+                    {
+                        vol.Required("choice"): selector.SelectSelector(
+                            selector.SelectSelectorConfig(
+                                options=["configure", _KEEP],
+                                translation_key="profile_review_managed",
+                                mode=selector.SelectSelectorMode.LIST,
+                            )
+                        )
+                    }
+                ),
             )
         if is_paired(entry.data):
             # App profiles are per physical bed and none supports paired
@@ -598,15 +719,9 @@ class ProfileReviewRepairFlow(RepairsFlow):
         if choice == _KEEP:
             return self._finish(entry)
         if choice in choices:
-            self._choice = choice
-            if _needs_app_settings(choice) or not await _async_switch_via_options(
-                self.hass, entry, choice
-            ):
-                return await self.async_step_configure()
-            # The saved options reload the entry; its setup retires the mark
-            # because the entry no longer uses the reviewed route.
-            async_delete_issue(self.hass, DOMAIN, _issue_id(entry.entry_id))
-            return self.async_create_entry(title="", data={})
+            # Reconfigure asks the app's own questions, checks and reviews the
+            # change, and settles this review when it saves or keeps.
+            return await self._async_reconfigure(entry, choice)
         return self.async_show_form(
             step_id="init",
             description_placeholders=_placeholders(entry, choices, choices[0]),
@@ -631,16 +746,20 @@ class ProfileReviewRepairFlow(RepairsFlow):
             ),
         )
 
-    async def async_step_configure(self, user_input: dict[str, Any] | None = None) -> RepairsFlowResult:
-        """Point to Configure for an app this flow cannot apply by itself."""
-        entry = self._entry()
-        if entry is None or self._choice is None:
-            return self.async_abort(reason="entry_missing")
-        if user_input is not None:
-            return self._finish(entry)
-        return self.async_show_form(
-            step_id="configure",
-            description_placeholders=_placeholders(entry, (self._choice,), self._choice),
+    async def async_step_managed(self, user_input: dict[str, Any] | None = None) -> RepairsFlowResult:
+        """Take the guided-change answer the init step's managed form submits."""
+        return await self.async_step_init(user_input)
+
+    async def _async_reconfigure(self, entry: ConfigEntry, choice: str | None) -> RepairsFlowResult:
+        """Hand the change to Reconfigure, with the chosen app preselected."""
+        result = await self.hass.config_entries.flow.async_init(
+            DOMAIN, context=reconfigure_context(entry, choice)
+        )
+        if result.get("type") is not FlowResultType.FORM:
+            return self.async_abort(reason="migration_setup_unavailable")
+        return self.async_abort(
+            reason="migration_setup_started",
+            next_flow=(FlowType.CONFIG_FLOW, result["flow_id"]),
         )
 
     async def async_step_unpair(self, user_input: dict[str, Any] | None = None) -> RepairsFlowResult:
@@ -649,11 +768,28 @@ class ProfileReviewRepairFlow(RepairsFlow):
         if entry is None:
             return self.async_abort(reason="entry_missing")
         choices = _review(self.hass, entry.data).choices
-        if user_input is not None or not choices:
+        if not choices:
             return self._finish(entry)
+        choice = (user_input or {}).get("choice")
+        if choice == _KEEP:
+            return self._finish(entry)
+        if choice == "split":
+            # Splitting carries the open review to each standalone bed.
+            return self.async_abort(reason="profile_review_open")
         return self.async_show_form(
             step_id="unpair",
             description_placeholders=_placeholders(entry, choices, choices[0]),
+            data_schema=vol.Schema(
+                {
+                    vol.Required("choice"): selector.SelectSelector(
+                        selector.SelectSelectorConfig(
+                            options=["split", _KEEP],
+                            translation_key="profile_review_unpair",
+                            mode=selector.SelectSelectorMode.LIST,
+                        )
+                    )
+                }
+            ),
         )
 
     def _finish(self, entry: ConfigEntry) -> RepairsFlowResult:

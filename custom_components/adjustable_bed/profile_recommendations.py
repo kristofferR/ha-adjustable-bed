@@ -12,6 +12,7 @@ import re
 from collections.abc import Collection, Iterable, Mapping
 from dataclasses import dataclass
 from hashlib import sha256
+from itertools import product
 from typing import TYPE_CHECKING, Any, Final, Literal
 
 import voluptuous as vol
@@ -22,7 +23,6 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import CONF_ADDRESS
 from homeassistant.core import Event, HomeAssistant, callback
 from homeassistant.data_entry_flow import FlowResultType, UnknownFlow
-from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers import issue_registry as ir
 from homeassistant.helpers import selector
 
@@ -30,15 +30,27 @@ from .app_state_store import app_state_store
 from .const import (
     ADJUSTABLE_LUMBAR_VARIANT_STAR,
     BED_TYPE_ADJUSTABLE_LUMBAR,
-    BED_TYPE_CLUSTER018,
+    BED_TYPE_BETTERLIVING2,
+    BED_TYPE_COMFORT_ENHANCEMENT3,
     BED_TYPE_ESHINE_OKIN,
+    BED_TYPE_GALAXY,
     BED_TYPE_GOODVIBE,
     BED_TYPE_HJBED,
     BED_TYPE_KEESON,
+    BED_TYPE_MLILY,
+    BED_TYPE_MLINE,
+    BED_TYPE_N32_MOTION_BED,
     BED_TYPE_OCTO,
+    BED_TYPE_OKIMIKI,
+    BED_TYPE_RESIDENT,
     BED_TYPE_RICHMAT,
+    BED_TYPE_RICHMAT_APP,
+    BED_TYPE_RICHMAT_APP_SLEEP,
+    BED_TYPE_RICHMAT_CLASSIC_APPS,
     BED_TYPE_SLEEPYS_BOX25,
+    BED_TYPE_SOMOS,
     BED_TYPE_STARCODE_ABM5_4,
+    BED_TYPE_YAMADA,
     CONF_BED_TYPE,
     CONF_PROTOCOL_VARIANT,
     CONF_RICHMAT_REMOTE,
@@ -50,10 +62,10 @@ from .const import (
     KEESON_VARIANT_KSBT04C,
     KEESON_VARIANT_KSBT_CR,
     KEESON_VARIANT_SINO,
-    LEGACY_BED_TYPE_MAPPING,
     NORDIC_UART_SERVICE_UUID,
     OCTO_VARIANT_STANDARD,
     OCTO_VARIANT_STAR2,
+    RETIRED_BED_TYPES,
     RICHMAT_REMOTE_AUTO,
     RICHMAT_REMOTE_BT6500,
     RICHMAT_REMOTE_GGRM,
@@ -76,11 +88,13 @@ from .profile_decisions import (
     decision_timestamp,
     profile_selection,
 )
+from .profile_migration import managed_family, reconfigure_context
 from .profile_review import (
     async_clear_profile_review_issue,
     async_refresh_profile_review_issue,
     choice_label,
     covers_profile_review,
+    kept_profile_choices,
     profile_review_mark,
     related_app_choices,
 )
@@ -89,6 +103,7 @@ from .validators import get_variants_for_bed_type
 # These name hints ask the user which companion app they use. They are not
 # competing receiver signatures for an already configured physical device.
 _GMMOTOR_APP_HINTS: Final = frozenset({"gmmotor", "gmmotor_sleep_mm", "gmmotor_sleep_sxb"})
+_APP_HINTS: Final = _GMMOTOR_APP_HINTS | {"instant_comfort"}
 
 if TYPE_CHECKING:
     from .coordinator import AdjustableBedCoordinator
@@ -112,6 +127,8 @@ class Recommendation:
     suggested: str | None
     choices: tuple[str, ...] = ()
     translation_key: str = "lumbar_star254202_box25"
+    # The ids this had while one of its routes was saved under an earlier name.
+    earlier_rules: tuple[str, ...] = ()
 
 
 def _recommendation_label(choice: str) -> str:
@@ -156,7 +173,7 @@ def _reported_recommendation(
 ) -> Recommendation | None:
     """Match only the user-confirmed identity in #670, not every Star/BOX25 bed.
 
-    The accepted row054 report proves the current profile's table selection.
+    Adjustable bed (Lumbar) 1.2.2 proves the current profile's table selection.
     #670 adds physical evidence for numbered memory on the suggested profile.
     See docs/design/profile-recommendations.md for the limits of that evidence.
     """
@@ -175,7 +192,9 @@ def _reported_recommendation(
     if (
         detected.bed_type != BED_TYPE_SLEEPYS_BOX25
         or detected.requires_characteristic_check
-        or set(detected.ambiguous_types or ()) - {BED_TYPE_STARCODE_ABM5_4} - _GMMOTOR_APP_HINTS
+        or set(detected.ambiguous_types or ())
+        - {BED_TYPE_STARCODE_ABM5_4, "sealy_posturematic"}
+        - _GMMOTOR_APP_HINTS
     ):
         return None
     # This key changes only for materially different evidence, not releases,
@@ -196,6 +215,11 @@ def recommend_profile(
     controls. Ambiguous routes therefore offer review without choosing a winner.
     """
     if info is None:
+        return None
+    if (data.get("bed_type") == BED_TYPE_BETTERLIVING2
+        and data.get("protocol_variant") in ("p1", "p2", "p3")
+        and data.get("product_type") in ("2", "3")):
+        # Shared receiver names/services cannot replace this explicit app choice.
         return None
     if (
         _SLEEPTRACKER_PROFILE in SUPPORTED_BED_TYPES
@@ -222,11 +246,14 @@ def recommend_profile(
     if not isinstance(bed_type, str) or bed_type not in SUPPORTED_BED_TYPES:
         return None
     current = bed_type_choice(bed_type, variant if isinstance(variant, str) else None)
+    if bed_type == "smartbed" and variant in ("standard", "cb", "headboard126", "headboard265"):
+        # Chosen by hand: no advertisement tells these receivers from the Okin routes.
+        return None
     detected = detect_bed_type_detailed(info)
-    if bed_type in _GMMOTOR_APP_HINTS and bed_type in (detected.ambiguous_types or ()):
+    if bed_type in _APP_HINTS and bed_type in (detected.ambiguous_types or ()):
         return None  # The user's explicit companion app resolves this shared identity.
     detected.ambiguous_types = [
-        choice for choice in detected.ambiguous_types or () if choice not in _GMMOTOR_APP_HINTS
+        choice for choice in detected.ambiguous_types or () if choice not in _APP_HINTS
     ] or None
     if detected.bed_type not in SUPPORTED_BED_TYPES or detected.confidence < 0.6:
         return None
@@ -265,13 +292,22 @@ def recommend_profile(
     # A bare shared service is not enough to question a configured bed. Name,
     # manufacturer or a high-confidence dedicated signature must corroborate it.
     receiver_ambiguities = set(detected.ambiguous_types or ()) - {
-        BED_TYPE_HJBED, BED_TYPE_GOODVIBE, BED_TYPE_ESHINE_OKIN, BED_TYPE_CLUSTER018,
+        BED_TYPE_MLILY, BED_TYPE_HJBED, BED_TYPE_GOODVIBE, BED_TYPE_GALAXY, "bobpowerbase",
+        BED_TYPE_ESHINE_OKIN, BED_TYPE_RICHMAT_CLASSIC_APPS,
+        BED_TYPE_RESIDENT, BED_TYPE_MLINE, BED_TYPE_YAMADA, BED_TYPE_COMFORT_ENHANCEMENT3,
+        BED_TYPE_N32_MOTION_BED, BED_TYPE_BETTERLIVING2, BED_TYPE_OKIMIKI,
+        BED_TYPE_SOMOS, "saatva", "dreamsense", "super_colchones",
+        BED_TYPE_RICHMAT_APP, BED_TYPE_RICHMAT_APP_SLEEP,
     }
     if (detected.confidence < 0.9 or receiver_ambiguities) and not any(
         signal.startswith(("name:", "manufacturer", "mac:"))
         and signal not in (
-            "name:hjbed_app_candidate", "name:goodvibe_app_candidate",
-            "name:eshine_okin_app_candidate", "name:cluster018_app_candidate",
+            "name:mlily_app_candidate", "name:hjbed_app_candidate", "name:goodvibe_app_candidate", "name:galaxy_app_candidate",
+            "name:bobpowerbase_app_candidate", "name:dreamsense_app_candidate", "name:super_colchones_app_candidate",
+            "name:eshine_okin_app_candidate", "name:richmat_classic_app_candidate",
+            "name:resident_app_candidate", "name:mline_app_candidate", "name:yamada_app_candidate",
+            "name:n32_app_candidate", "name:betterliving2_app_candidate", "name:okimiki_app_candidate",
+            "name:richmat_app_candidate", "name:richmat_sleep_candidate",
         )
         for signal in detected.signals
     ):
@@ -291,12 +327,6 @@ def recommend_profile(
     # App-name hints offer an opt-in choice, not a competing receiver signature.
     # Keep an already selected app above; assess other profiles by receiver evidence.
     matches = {detected.bed_type, *receiver_ambiguities}
-    if variant in (None, VARIANT_AUTO) and (
-        LEGACY_BED_TYPE_MAPPING.get(bed_type, bed_type)
-        == LEGACY_BED_TYPE_MAPPING.get(detected.bed_type, detected.bed_type)
-        and bed_type != detected.bed_type
-    ):
-        return None  # Existing aliases already use the same protocol route.
     remote_choices: set[str] = set()
     if (
         bed_type == detected.bed_type == BED_TYPE_RICHMAT
@@ -316,8 +346,7 @@ def recommend_profile(
             choice
             for choice in {*matches, *apps, *remote_choices}
             if choice != current
-            and LEGACY_BED_TYPE_MAPPING.get(choice, choice)
-            != LEGACY_BED_TYPE_MAPPING.get(bed_type, bed_type)
+            and choice != bed_type
             and (
                 choice in SUPPORTED_BED_TYPES
                 or choice in remote_choices
@@ -337,11 +366,28 @@ def recommend_profile(
         else None
     )
     kind = "profile_mismatch" if suggested else "profile_ambiguous"
-    # Dismissals change only with the selected route/variant or available choices.
-    identity = repr((kind, bed_type, variant or VARIANT_AUTO, choices)).encode()
-    return Recommendation(
-        f"{kind}_{sha256(identity).hexdigest()[:20]}", current, suggested, choices, kind
-    )
+    names = (bed_type, *choices)
+    rules = [
+        _route_rule(kind, earlier[0], variant, earlier[1:])
+        for earlier in product(*((name, *_EARLIER_NAMES.get(name, ())) for name in names))
+    ]
+    return Recommendation(rules[0], current, suggested, choices, kind, tuple(rules[1:]))
+
+
+# What a route was saved as before a schema step renamed it. A decision saved
+# under the earlier name still answers the same recommendation.
+_EARLIER_NAMES: Final[dict[str, tuple[str, ...]]] = {
+    "smartbed": ("okin_cb24",),
+    "qplus_app": ("sbi",),
+    "serta_mp_remote": ("serta",),
+    **{route: (retired,) for retired, route in RETIRED_BED_TYPES.items()},
+}
+
+
+def _route_rule(kind: str, bed_type: str, variant: object, choices: Iterable[str]) -> str:
+    """Return a rule id: it changes only with the route, its variant or the choices."""
+    identity = repr((kind, bed_type, variant or VARIANT_AUTO, tuple(sorted(choices)))).encode()
+    return f"{kind}_{sha256(identity).hexdigest()[:20]}"
 
 
 @callback
@@ -357,28 +403,30 @@ def has_profile_assessment(hass: HomeAssistant, entry_id: str) -> bool:
     return bool(relevant) and all(
         (
             watch.recommendation is not None
-            and not watch.dismissed.get(watch.recommendation.rule)
+            and not watch.answered(watch.recommendation)
             and watch._covers_upgrade_review
         )
-        or watch.dismissed.get(watch.upgrade_review_key or "")
+        or any(watch.dismissed.get(key) for key in _upgrade_review_keys(watch.profile_data))
         for watch in relevant
     )
 
 
 def _upgrade_review_key(data: Mapping[str, object]) -> str | None:
     """Identify the upgrade review an explicit decision also confirms."""
-    profile = {
-        CONF_BED_TYPE: data.get(CONF_BED_TYPE),
-        CONF_PROTOCOL_VARIANT: data.get(CONF_PROTOCOL_VARIANT),
-    }
-    mark = profile_review_mark(profile)
-    if mark is None:
-        return None
-    choices = tuple(
-        sorted(related_app_choices(data.get(CONF_BED_TYPE), data.get(CONF_PROTOCOL_VARIANT)))
+    return next(iter(_upgrade_review_keys(data)), None)
+
+
+def _upgrade_review_keys(data: Mapping[str, object]) -> tuple[str, ...]:
+    """Return the upgrade review's key, then the keys it had under earlier route names."""
+    bed_type, variant = data.get(CONF_BED_TYPE), data.get(CONF_PROTOCOL_VARIANT)
+    if profile_review_mark({CONF_BED_TYPE: bed_type, CONF_PROTOCOL_VARIANT: variant}) is None:
+        return ()
+    choices = tuple(sorted(related_app_choices(bed_type, variant)))
+    return tuple(
+        f"upgrade_review_{sha256(repr((mark, choices)).encode()).hexdigest()[:20]}"
+        for name in (bed_type, *_EARLIER_NAMES.get(str(bed_type), ()))
+        if (mark := profile_review_mark({CONF_BED_TYPE: name, CONF_PROTOCOL_VARIANT: variant}))
     )
-    identity = repr((mark, choices)).encode()
-    return f"upgrade_review_{sha256(identity).hexdigest()[:20]}"
 
 
 def _watches(hass: HomeAssistant) -> dict[str, ProfileRecommendationWatch]:
@@ -424,6 +472,13 @@ class ProfileRecommendationWatch:
     @property
     def upgrade_review_key(self) -> str | None:
         return _upgrade_review_key(self.profile_data)
+
+    def answered(self, recommendation: Recommendation) -> bool:
+        """Whether a decision was saved for this recommendation, under any name it had."""
+        return any(
+            self.dismissed.get(rule)
+            for rule in (recommendation.rule, *recommendation.earlier_rules)
+        )
 
     @callback
     def refresh(self, info: bluetooth.BluetoothServiceInfoBleak | None = None) -> None:
@@ -489,7 +544,15 @@ class ProfileRecommendationWatch:
             async_clear_profile_review_issue(self.hass, self.entry.entry_id)
         else:
             async_refresh_profile_review_issue(self.hass, self.entry)
-        if recommendation is None or self.dismissed.get(recommendation.rule):
+        if (
+            recommendation is None
+            or self.answered(recommendation)
+            # Keep on the app review already answered every choice offered here.
+            or (
+                bool(recommendation.choices)
+                and set(recommendation.choices) <= kept_profile_choices(self.entry.data)
+            )
+        ):
             ir.async_delete_issue(self.hass, DOMAIN, self.issue_id)
             return
         current = ir.async_get(self.hass).async_get_issue(DOMAIN, self.issue_id)
@@ -504,6 +567,7 @@ class ProfileRecommendationWatch:
             self.hass,
             DOMAIN,
             self.issue_id,
+            config_entry_id=self.entry.entry_id,
             is_fixable=True,
             is_persistent=False,
             severity=ir.IssueSeverity.WARNING,
@@ -528,7 +592,7 @@ class ProfileRecommendationWatch:
             "choices": "\n".join(
                 f"- {_recommendation_label(choice)}" for choice in self.recommendation.choices
             ),
-            "pair_action": "Split into two beds" if self.side else "Restore standalone controls",
+            "pair_action": "Separate into two beds" if self.side else "Remove Left, Right and Both controls",
             "processor_guide_url": (
                 "https://github.com/kristofferR/ha-adjustable-bed/blob/main/docs/beds/sleeptracker.md"
             ),
@@ -690,6 +754,23 @@ async def async_confirm_profile_review(
         )
 
 
+async def async_keep_reviewed_profile(hass: HomeAssistant, entry: ConfigEntry, flow_id: str) -> None:
+    """A Keep answered in the guided change a review opened keeps the current profile."""
+    for watch in tuple(_watches(hass).values()):
+        if watch.entry is not entry or watch.review_flow_id != flow_id:
+            continue
+        recommendation = watch.review_recommendation
+        watch.review_flow_id = None
+        watch.review_recommendation = None
+        watch.review_profile = None
+        if recommendation is not None and recommendation == watch.recommendation:
+            try:
+                await watch.async_keep(recommendation)
+            except OSError:
+                # The notice stays, so Keep in the repair can retry.
+                _LOGGER.warning("Unable to save the kept profile recommendation", exc_info=True)
+
+
 @callback
 def async_complete_profile_review(hass: HomeAssistant, entry: ConfigEntry, flow_id: str) -> None:
     """Retire the notice even when an unchanged save fires no update listener."""
@@ -699,6 +780,25 @@ def async_complete_profile_review(hass: HomeAssistant, entry: ConfigEntry, flow_
             watch.review_recommendation = None
             watch.review_profile = None
             watch.refresh()
+
+
+def _reviews_within_guided_family(
+    entry_data: Mapping[str, Any], recommendation: Recommendation
+) -> bool:
+    """Return True when every candidate stays in the entry's guided family.
+
+    Such a review runs the family's question in Reconfigure, as the app review
+    does, even without one suggested app.
+    """
+    family = managed_family(entry_data)
+    if family is None or recommendation.rule == _TEMPUR_PROCESSOR_RULE:
+        return False
+    candidates = (recommendation.suggested,) if recommendation.suggested else recommendation.choices
+    return bool(candidates) and all(
+        not choice.startswith(_REMOTE_PREFIX)
+        and choice.partition(":")[0] in family.managed
+        for choice in candidates
+    )
 
 
 class ProfileRecommendationRepairFlow(RepairsFlow):
@@ -717,11 +817,12 @@ class ProfileRecommendationRepairFlow(RepairsFlow):
         if (
             recommendation is None
             or recommendation.rule != self._rule
-            or watch.dismissed.get(recommendation.rule)
+            or watch.answered(recommendation)
         ):
             return self.async_abort(reason="recommendation_changed")
         action = (user_input or {}).get("action")
         errors: dict[str, str] = {}
+        guided = _reviews_within_guided_family(watch.entry.data, recommendation)
         if action == "keep":
             try:
                 await watch.async_keep(recommendation)
@@ -735,11 +836,25 @@ class ProfileRecommendationRepairFlow(RepairsFlow):
                     step_id="processor",
                     description_placeholders=watch.placeholders(),
                 )
+            candidates = (
+                (recommendation.suggested,)
+                if recommendation.suggested
+                else recommendation.choices
+            )
+            if guided or (
+                not is_paired(watch.entry.data)
+                and any(not choice.startswith(_REMOTE_PREFIX) for choice in candidates)
+            ):
+                # An app, bed type or route is chosen, checked and reviewed in
+                # Reconfigure, with a single suggestion preselected.
+                return await self._async_start_guided_change(watch, recommendation)
             if is_paired(watch.entry.data):
                 # Existing per-side profile restrictions require an explicit split.
                 # Open the menu; never split or change either side from this repair.
                 result = await self.hass.config_entries.options.async_init(watch.entry.entry_id)
             else:
+                # A remote setting, or nothing to choose, is checked in
+                # Configure; saving it answers the review.
                 manager = self.hass.config_entries.options
                 original_data, original_options = watch.entry.data, watch.entry.options
                 result = await manager.async_init(watch.entry.entry_id)
@@ -754,16 +869,10 @@ class ProfileRecommendationRepairFlow(RepairsFlow):
                         or watch.entry.data != original_data
                         or watch.entry.options != original_options
                         or watch.recommendation != recommendation
-                        or watch.dismissed.get(recommendation.rule)
+                        or watch.answered(recommendation)
                     ):
                         manager.async_abort(flow_id)
                         return self.async_abort(reason="recommendation_changed")
-                    # A bed-type change only re-renders settings. The user must
-                    # submit that form to apply it, exactly as in Configure.
-                    if recommendation.suggested is not None:
-                        result = await manager.async_configure(
-                            flow_id, {CONF_BED_TYPE: recommendation.suggested}
-                        )
                 except BaseException:
                     try:
                         manager.async_abort(flow_id)
@@ -778,13 +887,11 @@ class ProfileRecommendationRepairFlow(RepairsFlow):
                     reason="review_started", next_flow=(FlowType.OPTIONS_FLOW, result["flow_id"])
                 )
             return self.async_abort(reason="recommendation_changed")
-        # Use HA's schema class across its 2026.9/2026.10 validation-engine change.
-        schema_type = type(cv.PLATFORM_SCHEMA)
         return self.async_show_form(
-            step_id="paired" if is_paired(watch.entry.data) else "init",
+            step_id="managed" if guided else "paired" if is_paired(watch.entry.data) else "init",
             description_placeholders=watch.placeholders(),
             errors=errors,
-            data_schema=schema_type(
+            data_schema=vol.Schema(
                 {
                     vol.Required("action"): selector.SelectSelector(
                         selector.SelectSelectorConfig(
@@ -805,6 +912,37 @@ class ProfileRecommendationRepairFlow(RepairsFlow):
         self, user_input: dict[str, Any] | None = None
     ) -> RepairsFlowResult:
         return await self.async_step_init(user_input)
+
+    async def async_step_managed(
+        self, user_input: dict[str, Any] | None = None
+    ) -> RepairsFlowResult:
+        return await self.async_step_init(user_input)
+
+    async def _async_start_guided_change(
+        self, watch: ProfileRecommendationWatch, recommendation: Recommendation
+    ) -> RepairsFlowResult:
+        """Open Reconfigure, with the suggested app preselected where it names one.
+
+        The notice stays until Reconfigure saves a change or keeps the profile.
+        """
+        result = await self.hass.config_entries.flow.async_init(
+            DOMAIN,
+            context=reconfigure_context(
+                watch.entry,
+                recommendation.suggested
+                if recommendation.suggested
+                and not recommendation.suggested.startswith(_REMOTE_PREFIX)
+                else None,
+            ),
+        )
+        if result.get("type") is not FlowResultType.FORM:
+            return self.async_abort(reason="recommendation_changed")
+        watch.review_flow_id = result["flow_id"]
+        watch.review_recommendation = recommendation
+        watch.review_profile = profile_selection(watch.profile_data)
+        return self.async_abort(
+            reason="guided_change_started", next_flow=(FlowType.CONFIG_FLOW, result["flow_id"])
+        )
 
     async def async_step_processor(
         self, user_input: dict[str, Any] | None = None

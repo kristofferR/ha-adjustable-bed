@@ -7,12 +7,12 @@ from unittest.mock import MagicMock, patch
 import pytest
 from homeassistant.const import CONF_ADDRESS, CONF_NAME
 from homeassistant.core import HomeAssistant
-from pytest_homeassistant_custom_component.common import MockConfigEntry
+from pytest_homeassistant.common import MockConfigEntry
 
-from custom_components.adjustable_bed.beds.reverie import (
+from custom_components.adjustable_bed.beds.reverie.comfort import ReverieComfortRequest
+from custom_components.adjustable_bed.beds.reverie.controller import (
     ReverieCommands,
 )
-from custom_components.adjustable_bed.beds.reverie_comfort import ReverieComfortRequest
 from custom_components.adjustable_bed.const import (
     BED_TYPE_REVERIE,
     CONF_BED_TYPE,
@@ -79,18 +79,6 @@ class TestReverieController:
         assert coordinator.entity_unique_id(wave.key) == (
             "AA:BB:CC:DD:EE:FF_massage_wave_intensity"
         )
-
-    async def test_control_characteristic_uuid(
-        self,
-        hass: HomeAssistant,
-        mock_reverie_config_entry,
-        mock_coordinator_connected,
-    ):
-        """Test controller reports correct characteristic UUID."""
-        coordinator = AdjustableBedCoordinator(hass, mock_reverie_config_entry)
-        await coordinator.async_connect()
-
-        assert coordinator.controller.control_characteristic_uuid == REVERIE_CHAR_UUID
 
     async def test_build_command_checksum(
         self,
@@ -236,7 +224,7 @@ class TestReverieMovement:
         coordinator = AdjustableBedCoordinator(hass, mock_reverie_config_entry)
         await coordinator.async_connect()
 
-        with patch("custom_components.adjustable_bed.beds.reverie.asyncio.sleep"):
+        with patch("custom_components.adjustable_bed.beds.reverie.controller.asyncio.sleep"):
             await coordinator.controller.hold_control("back_up", 250)
 
         assert [call.args[1] for call in mock_bleak_client.write_gatt_char.call_args_list] == [

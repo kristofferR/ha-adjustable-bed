@@ -9,20 +9,15 @@ from typing import cast
 from unittest.mock import AsyncMock, MagicMock, PropertyMock, patch
 
 import pytest
-
-# HA 2026.9 defines this here; 2026.10 re-exports it from const.
-from homeassistant.components.light import (
-    ATTR_RGB_COLOR,  # pyright: ignore[reportPrivateImportUsage]
-    ATTR_RGBW_COLOR,  # pyright: ignore[reportPrivateImportUsage]
-)
+from homeassistant.components.light import ATTR_RGB_COLOR, ATTR_RGBW_COLOR
 from homeassistant.components.light.const import ColorMode
 from homeassistant.const import CONF_ADDRESS, CONF_NAME
 from homeassistant.core import HomeAssistant
-from pytest_homeassistant_custom_component.common import MockConfigEntry
+from pytest_homeassistant.common import MockConfigEntry
 
-from custom_components.adjustable_bed.beds import octo as octo_module
 from custom_components.adjustable_bed.beds.base import BedController
-from custom_components.adjustable_bed.beds.octo import (
+from custom_components.adjustable_bed.beds.octo import controller as octo_module
+from custom_components.adjustable_bed.beds.octo.controller import (
     OCTO_FEATURE_END,
     OCTO_FEATURE_LIGHT,
     OCTO_FEATURE_LIGHT_AUTO,
@@ -52,6 +47,7 @@ from custom_components.adjustable_bed.button import (
     BUTTON_DESCRIPTIONS,
     AdjustableBedButton,
     PairedBedCombinedButton,
+    PairedBedCombinedMotorButton,
 )
 from custom_components.adjustable_bed.const import (
     BED_TYPE_OCTO,
@@ -81,11 +77,13 @@ from custom_components.adjustable_bed.light import (
     AdjustableBedLight,
     _light_entities_for,
 )
+from custom_components.adjustable_bed.state_keys import AUTOMATIC_LIGHT
 from custom_components.adjustable_bed.switch import (
     SWITCH_DESCRIPTIONS,
     AdjustableBedSwitch,
     _switch_entities_for,
 )
+from tests.state_helpers import published
 
 _REAL_OCTO_DISCOVER_FEATURES = OctoController.discover_features
 
@@ -345,7 +343,7 @@ class TestOctoRequiredStartupDiscovery:
                 OctoController, "discover_features", new_callable=AsyncMock, return_value=False
             ) as discover,
             patch.object(OctoController, "send_pin", new_callable=AsyncMock) as send_pin,
-            patch.object(AdjustableBedCoordinator, "_backfill_octo_snapshot") as backfill_snapshot,
+            patch.object(AdjustableBedCoordinator, "_persist_capability_snapshot") as backfill_snapshot,
         ):
             assert await coordinator.async_connect() is False
 
@@ -379,7 +377,7 @@ class TestOctoRequiredStartupDiscovery:
                 OctoController, "discover_features", new_callable=AsyncMock, return_value=True
             ) as discover,
             patch.object(OctoController, "send_pin", new_callable=AsyncMock) as send_pin,
-            patch.object(AdjustableBedCoordinator, "_backfill_octo_snapshot") as backfill_snapshot,
+            patch.object(AdjustableBedCoordinator, "_persist_capability_snapshot") as backfill_snapshot,
         ):
             assert await coordinator.async_connect() is True
 
@@ -533,9 +531,10 @@ class TestOctoLegacyMotorSurface:
         mock_octo_config_entry: MockConfigEntry,
     ) -> None:
         """Only CAP_END retires fallback IDs after replacing the known layout."""
+        from homeassistant.const import Platform
         from homeassistant.helpers import entity_registry as er
 
-        from custom_components.adjustable_bed.cover import _cover_entities_for
+        from tests.test_entity_sweep import async_setup_platforms_and_sweep
 
         coordinator = AdjustableBedCoordinator(hass, mock_octo_config_entry)
         controller = OctoController(coordinator)
@@ -568,7 +567,10 @@ class TestOctoLegacyMotorSurface:
             controller._handle_feature_response([0xFF, 0xFF, 0xFF, 0, 0, 0])
 
         assert controller.controller_entity_discovery_complete is True
-        assert [entity.unique_id for entity in _cover_entities_for(hass, coordinator)] == [
+        covers = await async_setup_platforms_and_sweep(
+            hass, mock_octo_config_entry, coordinator, (Platform.COVER,)
+        )
+        assert [entity.unique_id for entity in covers] == [
             f"{mock_octo_config_entry.data[CONF_ADDRESS]}_tv_lift"
         ]
         assert all(
@@ -1310,11 +1312,17 @@ class TestOctoPinAuth:
 
         combined = PairedBedCombinedButton(coordinator, description)
         stop = PairedBedCombinedButton(coordinator, stop_description)
+        from custom_components.adjustable_bed.beds.entity_specs import MotorControlSpec
+
+        back = MotorControlSpec("back", "back", AsyncMock(), AsyncMock(), AsyncMock())
+        both_back_up = PairedBedCombinedMotorButton(coordinator, back, "up")
 
         assert combined.available is False
+        assert both_back_up.available is False
         assert stop.available is True
         octo._pin_locked = False
         assert combined.available is True
+        assert both_back_up.available is True
 
     async def test_send_pin_redacts_command_diagnostics(
         self,
@@ -1451,9 +1459,6 @@ class TestOctoCommands:
         assert controller.discovered_motor_count is None
         assert controller.effective_motor_count is None
         assert controller.motor_control_specs == ()
-        assert controller.stale_motor_entity_keys == frozenset(
-            {"tv_lift", "back", "legs", "back_legs", "head", "feet", "head_feet"}
-        )
 
         coordinator.entry.data[CONF_OCTO_MOTOR_COUNT_OVERRIDE] = "3"
         assert controller.effective_motor_count == 3
@@ -1506,7 +1511,7 @@ class TestOctoCommands:
         controller = OctoController(coordinator)
 
         controller.validate_hold_control("back_up", 60_000)
-        with pytest.raises(ValueError, match="100..60000"):
+        with pytest.raises(ValueError, match="0.1 to 60 seconds"):
             controller.validate_hold_control("back_up", 60_001)
 
     @pytest.mark.parametrize(
@@ -1555,7 +1560,7 @@ class TestOctoCommands:
 
         monkeypatch.setattr("custom_components.adjustable_bed.beds.base.asyncio.sleep", AsyncMock())
         monkeypatch.setattr(
-            "custom_components.adjustable_bed.beds.octo.asyncio.wait_for", _raise_timeout
+            "custom_components.adjustable_bed.beds.octo.controller.asyncio.wait_for", _raise_timeout
         )
         mock_bleak_client.write_gatt_char.reset_mock()
 
@@ -1611,9 +1616,6 @@ class TestOctoCommands:
         assert controller.supports_memory_presets is True
         assert controller.memory_slot_count == 4
         assert controller.supports_synchro is True
-        assert controller.stale_motor_entity_keys == frozenset(
-            {"back", "legs", "back_legs", "head", "feet", "head_feet"}
-        )
 
         mock_bleak_client.write_gatt_char.reset_mock()
         await controller.motor_control_specs[0].open_fn(controller)
@@ -1624,31 +1626,18 @@ class TestOctoCommands:
             controller._build_packet([0x02, 0x73]),
         ]
 
-    async def test_bed_layout_marks_tv_lift_entity_as_stale(
-        self,
-        hass: HomeAssistant,
-        mock_octo_config_entry,
-    ):
-        """Normal OCTO beds should clean up a former TV lift entity."""
-        coordinator = AdjustableBedCoordinator(hass, mock_octo_config_entry)
-        controller = OctoController(coordinator)
-
         # This fixture is a 2-motor bed, so the 4-motor combined step is stale
         # here too and must not linger in the registry.
-        assert controller.stale_motor_entity_keys == frozenset({"tv_lift", "head_feet"})
 
-    async def test_star2_layout_marks_tv_lift_entity_as_stale(
+    async def test_star2_layout_capabilities(
         self,
         hass: HomeAssistant,
         mock_octo_star2_config_entry,
     ):
-        """Star2 should clean up a former one-motor TV lift entity."""
+        """Star2 exposes its fixed motors and presets."""
         coordinator = AdjustableBedCoordinator(hass, mock_octo_star2_config_entry)
         controller = OctoStar2Controller(coordinator)
 
-        assert controller.stale_motor_entity_keys == frozenset(
-            {"tv_lift", "head", "feet", "head_feet"}
-        )
         assert controller.auto_stops_on_idle is True
         assert controller.supports_preset_both_up is False
         assert controller.supports_preset_flat is False
@@ -2378,7 +2367,7 @@ class TestOctoRGBWILightEntity:
         light.async_write_ha_state = MagicMock()
         remove_callback = coordinator.register_controller_state_callback(light._handle_light_state)
         monkeypatch.setattr(
-            "custom_components.adjustable_bed.beds.octo.OCTO_PIN_LOCK_RETRY_DELAY_SECONDS", 10
+            "custom_components.adjustable_bed.beds.octo.controller.OCTO_PIN_LOCK_RETRY_DELAY_SECONDS", 10
         )
 
         controller._handle_pin_notification(OCTO_SYSTEM_PIN_LOCK, [])
@@ -2398,7 +2387,10 @@ class TestOctoRGBWILightEntity:
         mock_octo_config_entry,
         mock_octo_ready_transport,
     ) -> None:
+        from homeassistant.const import Platform
         from homeassistant.helpers import entity_registry as er
+
+        from tests.test_entity_sweep import async_setup_platforms_and_sweep
 
         coordinator = AdjustableBedCoordinator(hass, mock_octo_config_entry)
         await coordinator.async_connect()
@@ -2423,12 +2415,17 @@ class TestOctoRGBWILightEntity:
         )
 
         controller._features_complete.clear()
-        incomplete = _light_entities_for(hass, coordinator)
+        incomplete = await async_setup_platforms_and_sweep(
+            hass, mock_octo_config_entry, coordinator, (Platform.LIGHT,)
+        )
         assert incomplete == []
         assert registry.async_get_entity_id("light", DOMAIN, unique_id) is not None
 
         _activate_capabilities(controller)
-        assert _light_entities_for(hass, coordinator) == []
+        retired = await async_setup_platforms_and_sweep(
+            hass, mock_octo_config_entry, coordinator, (Platform.LIGHT,)
+        )
+        assert retired == []
         assert registry.async_get_entity_id("light", DOMAIN, unique_id) is None
         assert (
             registry.async_get_entity_id(
@@ -2452,17 +2449,11 @@ class TestOctoRGBWILightEntity:
         assert len(regained) == 1
         assert regained[0].unique_id == unique_id
 
-    @pytest.mark.parametrize(
-        ("characteristic", "readonly"),
-        ((b"\x01", 1), (b"\x00", 0)),
-    )
-    async def test_readonly_or_gated_color_record_is_not_advertised(
+    async def test_inactive_color_record_is_not_advertised(
         self,
         hass: HomeAssistant,
         mock_octo_config_entry,
         mock_octo_ready_transport,
-        characteristic: bytes,
-        readonly: int,
     ) -> None:
         coordinator = AdjustableBedCoordinator(hass, mock_octo_config_entry)
         await coordinator.async_connect()
@@ -2472,10 +2463,9 @@ class TestOctoRGBWILightEntity:
             _capability(OCTO_FEATURE_LIGHT, b"\x01", b"\x01"),
             _capability(
                 OCTO_FEATURE_LIGHT_RGB,
-                characteristic,
+                b"\x00",
                 bytes((1, 2, 3)),
                 value_type=0x03,
-                readonly=readonly,
             ),
         )
 
@@ -2802,11 +2792,11 @@ class TestOctoCapabilityControls:
                 _capability(
                     OCTO_FEATURE_LIGHT_DURATION,
                     b"\x01\xa4",
-                    b"\x00\x05",
+                    b"\x05",
                     value_type=0x34,
                 ),
                 lambda: controller.set_light_duration(0),
-                b"\x00\x00",
+                b"\x00",
             ),
             (
                 _capability(OCTO_FEATURE_LIGHT_AUTO, b"\x01\xa5", b"\x00", value_type=0x35),
@@ -2848,7 +2838,7 @@ class TestOctoCapabilityControls:
                 assert controller._light_duration_minutes == 0
             controller.write_command.reset_mock()
 
-    async def test_readonly_remote_teach_uses_exact_action_and_requires_unlocked_pin(
+    async def test_remote_teach_uses_exact_action_and_requires_unlocked_pin(
         self,
     ) -> None:
         coordinator = MagicMock()
@@ -2858,10 +2848,11 @@ class TestOctoCapabilityControls:
         controller._session_ready = True
         controller._features_complete.set()
         controller.write_command = AsyncMock()
+        # The app gates teach on the active characteristic only; #965's record has value 0.
         record = _capability(
             OCTO_FEATURE_REMOTE_TEACH,
             b"\x01",
-            b"\x01",
+            b"\x00",
             value_type=1,
             readonly=1,
         )
@@ -2886,20 +2877,40 @@ class TestOctoCapabilityControls:
         )
         controller.write_command.assert_awaited_once_with(expected, 1, 100, None)
 
-    async def test_setting_writer_rejects_readonly_or_inactive_record(self) -> None:
+    async def test_readonly_flagged_light_record_stays_writable(self) -> None:
+        # #965 (RC2): every record is flagged readonly. The app never gates on the
+        # flag; it echoes the record with only the value replaced.
         coordinator = MagicMock()
         coordinator.motor_count = 2
         coordinator.entry.data = {}
         controller = OctoController(coordinator)
         controller._session_ready = True
         controller.write_command = AsyncMock()
-        readonly = _capability(
-            OCTO_FEATURE_REMOTE_CONTROL_LOCK,
-            b"\x01",
-            b"\x00",
-            readonly=1,
+        _activate_capabilities(
+            controller,
+            _capability(OCTO_FEATURE_LIGHT, b"\x01", b"\x00", value_type=1, readonly=1),
+            _capability(OCTO_FEATURE_LIGHT_DURATION, b"\x01", b"\x05", value_type=1, readonly=1),
         )
-        controller._capability_records = {readonly.feature_id: readonly}
+
+        assert controller.supports_discrete_light_control is True
+        assert not controller.legacy_light_fallback
+        assert controller.light_auto_off_seconds == 300
+        await controller.lights_on()
+
+        expected = controller._build_packet(
+            [0x20, 0x72], [0x00, 0x01, 0x02, 0x01, 0x01, 0x01, 0x01, 0x01]
+        )
+        controller.write_command.assert_awaited_once_with(expected, 1, 100, None)
+
+    async def test_setting_writer_rejects_inactive_record(self) -> None:
+        coordinator = MagicMock()
+        coordinator.motor_count = 2
+        coordinator.entry.data = {}
+        controller = OctoController(coordinator)
+        controller._session_ready = True
+        controller.write_command = AsyncMock()
+        inactive = _capability(OCTO_FEATURE_REMOTE_CONTROL_LOCK, b"\x00", b"\x00")
+        controller._capability_records = {inactive.feature_id: inactive}
         controller._apply_capability_records(controller._capability_records)
 
         assert controller.supports_remote_control_lock is False
@@ -2915,7 +2926,7 @@ class TestOctoCapabilityControls:
         controller = OctoController(coordinator)
         controller._session_ready = True
         controller.write_command = AsyncMock()
-        record = _capability(OCTO_FEATURE_LIGHT_DURATION, b"\x01", b"\x00\x05")
+        record = _capability(OCTO_FEATURE_LIGHT_DURATION, b"\x01", b"\x05")
         light = _capability(OCTO_FEATURE_LIGHT, b"\x01", b"\x00")
         controller._capability_records = {record.feature_id: record, light.feature_id: light}
         controller._apply_capability_records(controller._capability_records)
@@ -2929,7 +2940,7 @@ class TestOctoCapabilityControls:
         assert controller._light_duration_minutes == 0
         assert controller.light_auto_off_seconds is None
         assert (
-            coordinator.handle_controller_state_updates.call_args.args[0]["octo_light_duration"]
+            published(*coordinator.handle_controller_state_updates.call_args.args)["octo_light_duration"]
             == 0
         )
 
@@ -2943,7 +2954,7 @@ class TestOctoCapabilityControls:
 
         assert controller.light_auto_off_seconds == 300
 
-    @pytest.mark.parametrize("malformed_duration", (b"\x05", b"\x00\x3d"))
+    @pytest.mark.parametrize("malformed_duration", (b"\x00\x05", b"\x3d"))
     def test_malformed_light_duration_does_not_become_legacy_default(
         self, malformed_duration: bytes
     ) -> None:
@@ -2995,7 +3006,7 @@ class TestOctoCapabilityControls:
         assert registry.async_get_entity_id("switch", DOMAIN, unique_id) == legacy_row.entity_id
         assert _light_entities_for(hass, coordinator) == []
 
-        controller.lights_on = AsyncMock()
+        controller._write_octo_command = AsyncMock()
 
         async def execute(command, **_kwargs):
             await command(controller)
@@ -3036,7 +3047,7 @@ class TestOctoCapabilityControls:
                 assert len(timers) == 2 and not timers[1][2].cancel.called
 
                 records = dict(controller._capability_records)
-                duration = _capability(OCTO_FEATURE_LIGHT_DURATION, b"\x01", b"\x00\x02")
+                duration = _capability(OCTO_FEATURE_LIGHT_DURATION, b"\x01", b"\x02")
                 records[duration.feature_id] = duration
                 controller._capability_records = records
                 controller._apply_capability_records(records)
@@ -3102,6 +3113,50 @@ class TestOctoCapabilityControls:
         assert controller._capability_records == {}
         assert _light_entities_for(hass, coordinator) == []
 
+    @pytest.mark.parametrize("turn_on", (True, False))
+    async def test_legacy_switch_ignores_precommand_discovery_state(
+        self, hass: HomeAssistant, mock_octo_config_entry, turn_on: bool
+    ) -> None:
+        coordinator = AdjustableBedCoordinator(hass, mock_octo_config_entry)
+        controller = OctoController(coordinator)
+        coordinator._controller = controller
+        controller._session_ready = True
+        controller._legacy_assumed_lights = True
+        controller._has_lights = True
+        controller._write_octo_command = AsyncMock()
+        light = next(
+            entity
+            for entity in _switch_entities_for(hass, coordinator)
+            if entity.entity_description.key == "under_bed_lights"
+        )
+        light.hass = hass
+        light._attr_is_on = not turn_on
+
+        async def execute(command, **_kwargs):
+            # Reconnect discovery publishes unknown before the actual operation.
+            controller._publish_capability_state()
+            await command(controller)
+
+        coordinator.async_execute_controller_command = AsyncMock(side_effect=execute)
+        await light.async_added_to_hass()
+        timer = MagicMock()
+        try:
+            with (
+                patch.object(light, "async_write_ha_state"),
+                patch.object(hass.loop, "call_later", return_value=timer) as schedule,
+            ):
+                await (light.async_turn_on() if turn_on else light.async_turn_off())
+                assert light.is_on is turn_on
+                controller._write_octo_command.assert_awaited_once()
+                if turn_on:
+                    assert light._auto_off_timer is timer
+                    assert schedule.call_args.args[0] == 300
+                else:
+                    assert light._auto_off_timer is None
+                    timer.cancel.assert_called()
+        finally:
+            await light.async_will_remove_from_hass()
+
     @pytest.mark.parametrize("finish", ["expire", "off", "remove", "failed_off"])
     async def test_color_light_tracks_hardware_timeout(self, hass, finish):
         coordinator = MagicMock(motor_count=2)
@@ -3111,7 +3166,7 @@ class TestOctoCapabilityControls:
         _activate_capabilities(
             controller,
             _capability(OCTO_FEATURE_LIGHT, b"\x01", b"\x00"),
-            _capability(OCTO_FEATURE_LIGHT_DURATION, b"\x01", b"\x00\x05"),
+            _capability(OCTO_FEATURE_LIGHT_DURATION, b"\x01", b"\x05"),
             _capability(OCTO_FEATURE_LIGHT_RGB, b"\x01", bytes((12, 34, 56)), value_type=0x03),
         )
         controller.lights_on = AsyncMock()
@@ -3155,7 +3210,7 @@ class TestOctoCapabilityControls:
                 expired.assert_called_once()
             assert light._light_auto_off_timer is None
 
-    def test_light_auto_off_updates_readonly_observation_without_granting_write_access(self):
+    def test_light_auto_off_updates_observation_without_writing(self):
         coordinator = MagicMock(motor_count=2)
         coordinator.entry.data = {}
         controller = OctoController(coordinator)
@@ -3163,10 +3218,9 @@ class TestOctoCapabilityControls:
         _activate_capabilities(
             controller,
             _capability(OCTO_FEATURE_LIGHT, b"\x01", b"\x01", readonly=1),
-            _capability(OCTO_FEATURE_LIGHT_DURATION, b"\x01", b"\x00\x05"),
+            _capability(OCTO_FEATURE_LIGHT_DURATION, b"\x01", b"\x05"),
         )
 
-        assert controller.supports_discrete_light_control is False
         controller.on_light_auto_off()
 
         record = controller._capability_records[OCTO_FEATURE_LIGHT]
@@ -3189,7 +3243,7 @@ class TestOctoCapabilityControls:
             _capability(OCTO_FEATURE_LIGHT, b"\x01", b"\x00"),
             _capability(OCTO_FEATURE_PIN, b"\x01", b"\x00\x01"),
             _capability(OCTO_FEATURE_REMOTE_CONTROL_LOCK, b"\x01", b"\x00"),
-            _capability(OCTO_FEATURE_LIGHT_DURATION, b"\x01", b"\x00\x05"),
+            _capability(OCTO_FEATURE_LIGHT_DURATION, b"\x01", b"\x05"),
         )
         assert controller.light_auto_off_seconds == 300
         controller.write_command = AsyncMock()
@@ -3261,7 +3315,7 @@ class TestOctoCapabilityControls:
         _activate_capabilities(
             controller,
             _capability(OCTO_FEATURE_LIGHT, b"\x01", b"\x00"),
-            _capability(OCTO_FEATURE_LIGHT_DURATION, b"\x01", b"\x00\x05"),
+            _capability(OCTO_FEATURE_LIGHT_DURATION, b"\x01", b"\x05"),
             _capability(OCTO_FEATURE_LIGHT_RGB, b"\x01", bytes((12, 34, 56)), value_type=0x03),
         )
         from homeassistant.helpers import entity_registry as er
@@ -3308,7 +3362,7 @@ class TestOctoCapabilityControls:
                 assert len(timers) == 1 and timers[0][0] == 300
 
                 controller._publish_capability_state()
-                controller.forward_controller_state_updates({"automatic_light": True})
+                controller.forward_controller_state_updates(AUTOMATIC_LIGHT(True))
                 assert len(timers) == 1
                 assert timers[0][2].cancel.called is False
 
@@ -3367,7 +3421,7 @@ class TestOctoCapabilityControls:
                 bytes((10, 20, 30)),
                 value_type=0x03,
             ),
-            _capability(OCTO_FEATURE_LIGHT_DURATION, b"\x01", b"\x00\x05"),
+            _capability(OCTO_FEATURE_LIGHT_DURATION, b"\x01", b"\x05"),
         )
         lights = _light_entities_for(hass, coordinator)
         assert len(lights) == 1 and isinstance(lights[0], AdjustableBedLight)
@@ -3437,7 +3491,7 @@ class TestOctoCapabilityControls:
         controller._pin_locked = False
         controller.write_command = AsyncMock()
         sleep = AsyncMock()
-        monkeypatch.setattr("custom_components.adjustable_bed.beds.octo.asyncio.sleep", sleep)
+        monkeypatch.setattr("custom_components.adjustable_bed.beds.octo.controller.asyncio.sleep", sleep)
 
         await controller.reset_defaults()
 
@@ -3480,7 +3534,7 @@ class TestCapabilitySnapshot:
         return SimpleNamespace(
             motor_count=2,
             entry=SimpleNamespace(data={}),
-            handle_controller_state_updates=lambda _updates: None,
+            handle_controller_state_updates=lambda *_updates: None,
         )
 
     def test_snapshot_roundtrip_restores_entity_gating(self):
@@ -3602,29 +3656,34 @@ class TestOctoDynamicEntities:
         coordinator.capability_controller = controller
         coordinator.register_controller_state_callback = MagicMock()
         entry = MagicMock()
-        add = MagicMock()
+        sink = MagicMock()
+        # The entry's sweep retires dropped rows once discovery is complete.
+        sink.has_row.side_effect = lambda _id: not controller.controller_entity_discovery_complete
         initial = MagicMock()
         initial.unique_id = "bed_octo_light"
         regained = MagicMock()
         regained.unique_id = "bed_octo_light"
         current = [initial]
-        async_setup_dynamic_entities(MagicMock(), entry, coordinator, add, lambda: tuple(current))
+
+        def added() -> list[list[MagicMock]]:
+            return [call.args[0] for call in sink.add_published.call_args_list if call.args[0]]
+
+        async_setup_dynamic_entities(entry, coordinator, sink, lambda: tuple(current))
         callback = coordinator.register_controller_state_callback.call_args.args[0]
-        add.assert_called_once_with([initial])
+        assert added() == [[initial]]
 
         controller._features_complete.clear()
         callback({})  # failed/incomplete discovery retains the prior surface
-        assert add.call_count == 1
+        assert added() == [[initial]]
 
         controller._handle_feature_response([0xFF, 0xFF, 0xFF, 0, 0, 0])
         current.clear()  # the complete capability set retires the Octo-owned row
         callback({})
-        assert add.call_count == 1
+        assert added() == [[initial]]
 
         current.append(regained)
         callback({})  # a later complete list can add the same stable ID again
-        assert add.call_count == 2
-        assert add.call_args.args == ([regained],)
+        assert added() == [[initial], [regained]]
         snapshot = controller.capability_snapshot()
         assert snapshot is not None
         assert snapshot["has_pin"] is None
@@ -3703,7 +3762,7 @@ class TestPinReauth:
     async def test_pin_lock_schedules_resend(self, monkeypatch: pytest.MonkeyPatch):
         ctrl, coordinator, order = self._ctrl()
         monkeypatch.setattr(
-            "custom_components.adjustable_bed.beds.octo.OCTO_PIN_LOCK_RETRY_DELAY_SECONDS", 0
+            "custom_components.adjustable_bed.beds.octo.controller.OCTO_PIN_LOCK_RETRY_DELAY_SECONDS", 0
         )
         ctrl._handle_pin_notification(OCTO_SYSTEM_PIN_LOCK, [])
         assert ctrl._pin_locked is True
@@ -3716,7 +3775,7 @@ class TestPinReauth:
     async def test_pin_lock_waits_exactly_one_second(self, monkeypatch: pytest.MonkeyPatch):
         ctrl, coordinator, order = self._ctrl()
         sleep = AsyncMock()
-        monkeypatch.setattr("custom_components.adjustable_bed.beds.octo.asyncio.sleep", sleep)
+        monkeypatch.setattr("custom_components.adjustable_bed.beds.octo.controller.asyncio.sleep", sleep)
 
         ctrl._handle_pin_notification(OCTO_SYSTEM_PIN_LOCK, [])
         assert ctrl._pin_resend_task is not None
@@ -3745,7 +3804,7 @@ class TestPinReauth:
         controller._pin_locked = False
         controller._features_complete.set()
         monkeypatch.setattr(
-            "custom_components.adjustable_bed.beds.octo.OCTO_PIN_LOCK_RETRY_DELAY_SECONDS", 0
+            "custom_components.adjustable_bed.beds.octo.controller.OCTO_PIN_LOCK_RETRY_DELAY_SECONDS", 0
         )
 
         packets: list[bytes] = []
@@ -3797,7 +3856,7 @@ class TestPinReauth:
         """A PIN challenge split across notifications is handled after reassembly."""
         ctrl, coordinator, order = self._ctrl()
         monkeypatch.setattr(
-            "custom_components.adjustable_bed.beds.octo.OCTO_PIN_LOCK_RETRY_DELAY_SECONDS", 0
+            "custom_components.adjustable_bed.beds.octo.controller.OCTO_PIN_LOCK_RETRY_DELAY_SECONDS", 0
         )
         response = _build_octo_response(
             ctrl,
@@ -3841,7 +3900,7 @@ class TestPinReauth:
         timed_out._pin_locked = True
         timed_out._pin_state_event.clear()
         monkeypatch.setattr(
-            "custom_components.adjustable_bed.beds.octo.OCTO_PIN_ACCEPTANCE_TIMEOUT", 0
+            "custom_components.adjustable_bed.beds.octo.controller.OCTO_PIN_ACCEPTANCE_TIMEOUT", 0
         )
         with pytest.raises(TimeoutError, match="Timed out"):
             await timed_out.async_wait_for_pin_acceptance(asyncio.Event())
@@ -4077,7 +4136,7 @@ class TestOctoPinLockDiagnostics:
         """The user follows the repair while the bed is offline; it must clear."""
         from homeassistant.helpers import issue_registry as ir
 
-        from custom_components.adjustable_bed import _async_clear_stale_octo_pin_issue
+        from custom_components.adjustable_bed.beds.octo.runtime import async_refresh_octo_pin_issue
         from custom_components.adjustable_bed.unsupported import (
             update_octo_pin_required_issue,
         )
@@ -4096,8 +4155,36 @@ class TestOctoPinLockDiagnostics:
         )
         entry.add_to_hass(hass)
 
-        _async_clear_stale_octo_pin_issue(hass, entry)
+        await async_refresh_octo_pin_issue(hass, entry)
 
+        assert registry.async_get_issue(DOMAIN, issue_id) is None
+
+    async def test_setup_links_an_older_repair_so_removal_clears_it(
+        self,
+        hass: HomeAssistant,
+        mock_octo_config_entry_data: dict,
+    ):
+        """A repair raised before issues had entries goes with its entry."""
+        from homeassistant.helpers import issue_registry as ir
+
+        from custom_components.adjustable_bed.beds.octo.runtime import async_refresh_octo_pin_issue
+        from custom_components.adjustable_bed.unsupported import (
+            update_octo_pin_required_issue,
+        )
+
+        issue_id = "octo_pin_required_aa_bb_cc_dd_ee_ff"
+        registry = ir.async_get(hass)
+        update_octo_pin_required_issue(hass, "AA:BB:CC:DD:EE:FF", "Bed", True)
+        data = {k: v for k, v in mock_octo_config_entry_data.items() if k != CONF_OCTO_PIN}
+        entry = MockConfigEntry(domain=DOMAIN, data=data, unique_id="AA:BB:CC:DD:EE:FF")
+        entry.add_to_hass(hass)
+
+        # The bed stays unreachable, so only setup can link the repair.
+        await async_refresh_octo_pin_issue(hass, entry)
+        issue = registry.async_get_issue(DOMAIN, issue_id)
+        assert issue is not None and issue.config_entry_id == entry.entry_id
+
+        await hass.config_entries.async_remove(entry.entry_id)
         assert registry.async_get_issue(DOMAIN, issue_id) is None
 
     async def test_removing_the_entry_clears_the_repair(
@@ -4108,17 +4195,18 @@ class TestOctoPinLockDiagnostics:
         """A leftover issue would keep nagging about a bed that is gone."""
         from homeassistant.helpers import issue_registry as ir
 
-        from custom_components.adjustable_bed import async_remove_entry
         from custom_components.adjustable_bed.unsupported import (
             update_octo_pin_required_issue,
         )
 
         issue_id = "octo_pin_required_aa_bb_cc_dd_ee_ff"
         registry = ir.async_get(hass)
-        update_octo_pin_required_issue(hass, "AA:BB:CC:DD:EE:FF", "Bed", True)
+        update_octo_pin_required_issue(
+            hass, "AA:BB:CC:DD:EE:FF", "Bed", True, entry_id=mock_octo_config_entry.entry_id
+        )
         assert registry.async_get_issue(DOMAIN, issue_id) is not None
 
-        await async_remove_entry(hass, mock_octo_config_entry)
+        await hass.config_entries.async_remove(mock_octo_config_entry.entry_id)
 
         assert registry.async_get_issue(DOMAIN, issue_id) is None
 
@@ -4166,14 +4254,16 @@ class TestOctoPinLockDiagnostics:
         strings_path = Path(__file__).parents[1] / "custom_components/adjustable_bed/strings.json"
         strings = json.loads(strings_path.read_text(encoding="utf-8"))
         text = strings["issues"]["octo_pin_required"]
+        # A fixable issue explains itself in its flow, whose form names the bed.
+        description = text["fix_flow"]["step"]["init"]["description"]
         referenced = {
             field
-            for value in (text["title"], text["description"])
+            for value in (text["title"], description)
             for _, field, _, _ in _string.Formatter().parse(value)
             if field
         }
         assert referenced <= set(issue.translation_placeholders or {})
-        assert "http" not in text["description"]
+        assert "http" not in description
         assert "recovery_url" not in (issue.translation_placeholders or {})
 
     async def test_star2_variant_clears_a_stale_standard_octo_repair(
@@ -4184,7 +4274,7 @@ class TestOctoPinLockDiagnostics:
         """Star2 has no PIN, and its controller could never clear the issue."""
         from homeassistant.helpers import issue_registry as ir
 
-        from custom_components.adjustable_bed import _async_clear_stale_octo_pin_issue
+        from custom_components.adjustable_bed.beds.octo.runtime import async_refresh_octo_pin_issue
         from custom_components.adjustable_bed.unsupported import (
             update_octo_pin_required_issue,
         )
@@ -4203,7 +4293,7 @@ class TestOctoPinLockDiagnostics:
         )
         entry.add_to_hass(hass)
 
-        _async_clear_stale_octo_pin_issue(hass, entry)
+        await async_refresh_octo_pin_issue(hass, entry)
 
         assert registry.async_get_issue(DOMAIN, issue_id) is None
 
@@ -4224,7 +4314,11 @@ class TestOctoPinLockDiagnostics:
         entry = MockConfigEntry(
             domain=DOMAIN,
             title="Octo Test Bed",
-            data={**mock_octo_config_entry_data, CONF_MOTOR_COUNT: motor_count},
+            data={
+                **mock_octo_config_entry_data,
+                CONF_MOTOR_COUNT: motor_count,
+                CONF_OCTO_MOTOR_COUNT_OVERRIDE: str(motor_count),
+            },
             unique_id="AA:BB:CC:DD:EE:FF",
             entry_id=f"octo_flat_{motor_count}",
         )
@@ -4374,7 +4468,11 @@ class TestOctoMemoryInfoAndCombinedStep:
         entry = MockConfigEntry(
             domain=DOMAIN,
             title="Octo Test Bed",
-            data={**mock_octo_config_entry_data, CONF_MOTOR_COUNT: 4},
+            data={
+                **mock_octo_config_entry_data,
+                CONF_MOTOR_COUNT: 4,
+                CONF_OCTO_MOTOR_COUNT_OVERRIDE: "4",
+            },
             unique_id="AA:BB:CC:DD:EE:FF",
             entry_id="octo_m34",
         )
@@ -4470,28 +4568,6 @@ class TestOctoMemoryInfoAndCombinedStep:
 
         expected = controller._build_packet([0x10, 0x70], [0x00])
         assert expected in [c[0][1] for c in mock_bleak_client.write_gatt_char.call_args_list]
-
-    async def test_combined_cover_becomes_stale_when_motor_count_drops(
-        self,
-        hass: HomeAssistant,
-        mock_octo_config_entry_data: dict,
-        mock_octo_ready_transport,
-    ):
-        """Reconfiguring 4 motors down must not leave a ghost entity behind."""
-        entry = MockConfigEntry(
-            domain=DOMAIN,
-            title="Octo Test Bed",
-            data={**mock_octo_config_entry_data, CONF_MOTOR_COUNT: 2},
-            unique_id="AA:BB:CC:DD:EE:FF",
-            entry_id="octo_stale_m34",
-        )
-        entry.add_to_hass(hass)
-
-        coordinator = AdjustableBedCoordinator(hass, entry)
-        await coordinator.async_connect()
-        controller = cast(OctoController, coordinator.controller)
-
-        assert "head_feet" in controller.stale_motor_entity_keys
 
     def test_absent_meminfo_leaves_every_slot_programmable(self):
         """CAP_MEMINFO is optional; without it we must not infer any locking."""

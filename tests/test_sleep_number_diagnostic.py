@@ -6,7 +6,7 @@ from unittest.mock import AsyncMock, MagicMock
 import pytest
 from bleak.exc import BleakError
 
-from custom_components.adjustable_bed.sleep_number_auth import async_read_sleep_number_session
+from custom_components.adjustable_bed.beds.sleep_number.auth import async_read_sleep_number_session
 
 
 @pytest.mark.parametrize("value,outcome", [

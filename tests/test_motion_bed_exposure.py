@@ -5,9 +5,10 @@ from unittest.mock import AsyncMock, MagicMock
 import pytest
 from homeassistant.const import CONF_ADDRESS, CONF_NAME
 from homeassistant.data_entry_flow import FlowResultType
-from pytest_homeassistant_custom_component.common import MockConfigEntry
+from pytest_homeassistant.common import MockConfigEntry
 
-from custom_components.adjustable_bed.beds.motion_bed import MotionBedController
+from custom_components.adjustable_bed.beds.motion_bed.controller import MotionBedController
+from custom_components.adjustable_bed.beds.motion_bed.models import select_motion_bed
 from custom_components.adjustable_bed.button import (
     ControllerActionButton,
     _async_follow_motion_bed_module_actions,
@@ -23,7 +24,6 @@ from custom_components.adjustable_bed.const import (
     DOMAIN,
 )
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
-from custom_components.adjustable_bed.motion_bed_models import select_motion_bed
 
 
 @pytest.mark.parametrize("input_data,valid", [
@@ -40,7 +40,7 @@ async def test_explicit_app_step_checks_identity_and_retained_layout_before_conn
     flow.hass = hass
     flow._manual_data = {CONF_ADDRESS: "AA:BB:CC:DD:EE:FF", CONF_NAME: "Bed", CONF_BED_TYPE: BED_TYPE_MOTION_BED}
     flow._finish_with_verify = AsyncMock(return_value={"type": FlowResultType.CREATE_ENTRY})
-    result = await flow.async_step_motion_bed(input_data)
+    result = await flow.async_step_profile_questions(input_data)
     if valid:
         flow._finish_with_verify.assert_awaited_once()
         data = flow._finish_with_verify.call_args.args[0]
@@ -94,3 +94,40 @@ async def test_hub_surface_select_requires_present_module_and_changes_only_therm
     assert controller.protocol_diagnostics["active_module"] == "thermal"
     assert controller._module_is_active("thermal")
     assert not controller._module_is_active("motor")
+
+
+@pytest.mark.parametrize("saved", [None, "K1"])
+async def test_configure_stores_auto_as_no_retained_layout(hass, saved):
+    """Auto follows the name; Configure never saves it as a layout override."""
+    from custom_components.adjustable_bed.config_flow import AdjustableBedOptionsFlow
+
+    data = {CONF_ADDRESS: "AA:BB:CC:DD:EE:FF", CONF_BED_TYPE: BED_TYPE_MOTION_BED, CONF_BLE_DEVICE_NAME: "QMS-IQ"}
+    if saved is not None:
+        data[CONF_MOTION_BED_PRESET] = saved
+    entry = MockConfigEntry(domain=DOMAIN, data=data)
+    entry.add_to_hass(hass)
+    flow = AdjustableBedOptionsFlow(entry)
+    flow.hass, flow.handler = hass, entry.entry_id
+    result = await flow._async_options_form(
+        {CONF_BLE_DEVICE_NAME: "QMS-IQ", CONF_MOTION_BED_PRESET: "auto", CONF_MOTION_BED_MOVEMENT: "auto"},
+        step_id="settings",
+    )
+    assert result["type"] == "create_entry", result
+    assert CONF_MOTION_BED_PRESET not in entry.data
+    assert CONF_MOTION_BED_MOVEMENT not in entry.data
+
+
+async def test_air_massage_timer_reads_in_minutes(hass):
+    """The bed's air timer 0, 1 and 2 are the app's 10, 20 and 30 minutes."""
+    from custom_components.adjustable_bed.beds.motion_bed.controller import AIR_TIMER_MINUTES
+
+    entry = MockConfigEntry(domain=DOMAIN, data={CONF_ADDRESS: "AA:BB:CC:DD:EE:FF", CONF_BED_TYPE: BED_TYPE_MOTION_BED, CONF_BLE_DEVICE_NAME: "TL-Q"})
+    coord = AdjustableBedCoordinator(hass, entry)
+    controller = MotionBedController(coord, selection=select_motion_bed("TL-Q"))
+    coord._controller = controller
+    for raw, minutes in ((0, 10), (2, 30), (None, None)):
+        controller._state = replace(controller._state, air_timer=raw)
+        controller._publish()
+        assert coord.controller_state.get(AIR_TIMER_MINUTES) == minutes
+    spec = next(s for s in controller.controller_state_sensor_specs if s.key == "motion_bed_air_timer")
+    assert (spec.state_key, spec.native_unit_of_measurement) == (AIR_TIMER_MINUTES, "min")

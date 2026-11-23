@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
-import { test } from "bun:test";
+import { afterAll, test } from "bun:test";
 import { plugin } from "bun";
+import { placed } from "./test-placements";
 
 plugin({
   name: "card-cover-stop-test-lit",
@@ -19,6 +20,17 @@ plugin({
         : "export const property = () => () => {}; export const state = () => () => {};",
     }));
   },
+});
+
+// This file's globals must not leak into other test files sharing the process.
+const previousGlobals = Object.fromEntries(
+  ["window", "KeyboardEvent"].map((name) => [name, Object.getOwnPropertyDescriptor(globalThis, name)]),
+);
+afterAll(() => {
+  for (const [name, descriptor] of Object.entries(previousGlobals)) {
+    if (descriptor) Object.defineProperty(globalThis, name, descriptor);
+    else Reflect.deleteProperty(globalThis, name);
+  }
 });
 
 const customElements = new Map();
@@ -90,7 +102,7 @@ function makeFixture(mode, { coverHoldMetadata = true } = {}) {
   const calls = [];
   const pending = [];
   const clock = new FakeClock();
-  const hass = {
+  const hass = placed({
     entities: {},
     states: {},
     devices: { [root]: { id: root } },
@@ -107,7 +119,7 @@ function makeFixture(mode, { coverHoldMetadata = true } = {}) {
       }
       return Promise.resolve();
     },
-  };
+  });
 
   if (separateAddresses) {
     hass.devices[left] = { id: left, parent_device_id: root };
@@ -132,15 +144,15 @@ function makeFixture(mode, { coverHoldMetadata = true } = {}) {
   add(
     ids.bothStop,
     root,
-    singleAddress ? "stop_both" : "stop_both",
+    "stop_both",
     singleAddress ? { bed_side: "both" } : {},
   );
-  add(ids.leftStop, left, singleAddress ? "stop_left" : "stop", { bed_side: "left" });
-  add(ids.rightStop, right, singleAddress ? "stop_right" : "stop", { bed_side: "right" });
+  add(ids.leftStop, left, "stop", { bed_side: "left" });
+  add(ids.rightStop, right, "stop", { bed_side: "right" });
   add(
     ids.bothHeadUp,
     root,
-    singleAddress ? "head_up_both" : "head_up",
+    "head_up",
     singleAddress ? { bed_side: "both" } : {},
   );
 
@@ -156,9 +168,9 @@ function makeFixture(mode, { coverHoldMetadata = true } = {}) {
         }
       : {}),
   });
-  add(ids.leftHead, left, singleAddress ? "head_left" : "head", coverAttributes("left"));
-  add(ids.rightHead, right, singleAddress ? "head_right" : "head", coverAttributes("right"));
-  add(ids.leftFeet, left, singleAddress ? "feet_left" : "feet", coverAttributes("left"));
+  add(ids.leftHead, left, "head", coverAttributes("left"));
+  add(ids.rightHead, right, "head", coverAttributes("right"));
+  add(ids.leftFeet, left, "feet", coverAttributes("left"));
 
   const side = (deviceId, name) => bedEntitiesForDevice(
     hass,
@@ -330,4 +342,92 @@ test("motor-specific cover Stop leaves a different-axis Both hold running", asyn
   fixture.card._hold.abandon();
   fixture.pending.forEach((resolve) => resolve());
   await flushMicrotasks();
+});
+
+// Checked against real Python entity builders by the Smart Sleep controller tests.
+const smartSleepRoutes = (await import("../../../../tests/fixtures/smart_sleep_button_holds.json")).default;
+
+function smartSleepCard(format, key) {
+  const entityId = `button.${key}`;
+  const stopId = "button.smart_sleep_stop";
+  const calls = [];
+  let finishHold;
+  const hass = placed({
+    entities: {
+      [entityId]: { entity_id: entityId, device_id: "bed", platform: "adjustable_bed", translation_key: key },
+      [stopId]: { entity_id: stopId, device_id: "bed", platform: "adjustable_bed", translation_key: "stop" },
+    },
+    states: {
+      [entityId]: { entity_id: entityId, state: "unknown", attributes: smartSleepRoutes[format][key] },
+      [stopId]: { entity_id: stopId, state: "unknown", attributes: {} },
+    },
+    devices: { bed: { id: "bed" } },
+    formatEntityName: () => key,
+    callService(domain, service, data) {
+      calls.push({ domain, service, data });
+      return service === "hold_control"
+        ? new Promise((resolve) => { finishHold = resolve; })
+        : Promise.resolve();
+    },
+  });
+  const card = new AdjustableBedCard();
+  card.hass = hass;
+  card._hold.timers = new FakeClock();
+  const tile = card._actionTile(entityId, stopId);
+  const handler = (name) => tile.values[tile.strings.findIndex((part) => part.endsWith(`${name}=`))];
+  return { calls, handler, tile, entityId, stopId, finish: () => finishHold?.() };
+}
+
+for (const key of Object.keys(smartSleepRoutes.p2)) {
+  test(`Smart Sleep P2 ${key}: the real tile recalls on click without a held-service window`, async () => {
+    const fixture = smartSleepCard("p2", key);
+    assert.equal(fixture.handler("@pointerdown"), undefined);
+    assert.equal(fixture.handler("@pointerup"), undefined);
+    fixture.handler("@click")();
+    await flushMicrotasks();
+    assert.deepEqual(fixture.calls, [{ domain: "button", service: "press", data: { entity_id: fixture.entityId } }]);
+  });
+}
+
+for (const key of Object.keys(smartSleepRoutes.p1)) {
+  test(`Smart Sleep P1 ${key}: the real memory tile leases refresh and releases through STOP`, async () => {
+    const fixture = smartSleepCard("p1", key);
+    fixture.handler("@keydown")(new KeyboardEvent("keydown"));
+    await flushMicrotasks();
+    assert.equal(fixture.calls[0]?.service, "hold_control");
+    assert.equal(fixture.calls[0].data.control, smartSleepRoutes.p1[key].held_control);
+    assert.equal(fixture.calls[0].data.duration, 0.75);
+    assert.equal(typeof fixture.calls[0].data.hold_owner, "string");
+    fixture.handler("@keyup")(new KeyboardEvent("keyup"));
+    await flushMicrotasks();
+    assert.deepEqual(fixture.calls[1], { domain: "button", service: "press", data: { entity_id: fixture.stopId } });
+    fixture.finish();
+    await flushMicrotasks();
+  });
+}
+
+test("combined light of unconfirmed switches offers On and Off instead of a toggle", () => {
+  const calls = [];
+  const card = new AdjustableBedCard();
+  card.hass = {
+    states: {
+      "switch.left_light": { entity_id: "switch.left_light", state: "unknown", attributes: { assumed_state: true } },
+      "switch.right_light": { entity_id: "switch.right_light", state: "on", attributes: {} },
+    },
+    entities: {}, devices: {}, locale: { language: "en" }, language: "en",
+    callService(domain, service, data) { calls.push({ domain, service, data }); return Promise.resolve(); },
+  };
+  const pane = (id) => ({ bed: { lights: { switch: id } } });
+  const parent = { lights: {} };
+  const template = card._combinedLighting(parent, [pane("switch.left_light"), pane("switch.right_light")]);
+  assert.ok(template.strings.join("").includes('role="group"'), "expected an On/Off group");
+  assert.ok(!template.strings.join("").includes('role="switch"'), "no toggle for unsure lights");
+  const handlers = template.values.filter((value) => typeof value === "function");
+  handlers.at(-2)();
+  handlers.at(-1)();
+  const both = { entity_id: ["switch.left_light", "switch.right_light"] };
+  assert.deepEqual(calls, [
+    { domain: "homeassistant", service: "turn_off", data: both },
+    { domain: "homeassistant", service: "turn_on", data: both },
+  ]);
 });

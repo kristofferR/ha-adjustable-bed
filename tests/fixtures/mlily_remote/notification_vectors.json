@@ -1,0 +1,1303 @@
+[
+  {
+    "id": "RX-motor-2",
+    "protocol": "P3",
+    "action": "receive motor-2",
+    "parser": "extended",
+    "inputs": {
+      "direction": "receive",
+      "construction": "synthetic branch input using artifact offsets, not a hardware capture"
+    },
+    "expected_bytes": "6e 20 0e 01 02 02 00 01 2c 02 1e 02 58 48",
+    "expected_state": {
+      "height": 30.0,
+      "type": 2,
+      "angle": 30,
+      "monitorHeight": 60.0
+    }
+  },
+  {
+    "id": "RX-massage-zones-2",
+    "protocol": "P3",
+    "action": "receive massage-zones-2",
+    "parser": "extended",
+    "inputs": {
+      "direction": "receive",
+      "construction": "synthetic branch input using artifact offsets, not a hardware capture"
+    },
+    "expected_bytes": "6e 20 0b 02 01 02 01 04 02 06 ab",
+    "expected_state": {
+      "zones": [
+        [
+          1,
+          4
+        ],
+        [
+          2,
+          6
+        ]
+      ]
+    }
+  },
+  {
+    "id": "RX-massage-mode-2",
+    "protocol": "P3",
+    "action": "receive massage-mode-2",
+    "parser": "extended",
+    "inputs": {
+      "direction": "receive",
+      "construction": "synthetic branch input using artifact offsets, not a hardware capture"
+    },
+    "expected_bytes": "6e 20 09 02 02 02 00 03 a0",
+    "expected_state": {
+      "mode": 3
+    }
+  },
+  {
+    "id": "RX-massage-frequency-2",
+    "protocol": "P3",
+    "action": "receive massage-frequency-2",
+    "parser": "extended",
+    "inputs": {
+      "direction": "receive",
+      "construction": "synthetic branch input using artifact offsets, not a hardware capture"
+    },
+    "expected_bytes": "6e 20 09 02 04 02 00 11 b0",
+    "expected_state": {
+      "frequency": 17
+    }
+  },
+  {
+    "id": "RX-massage-follow_intensity-2",
+    "protocol": "P3",
+    "action": "receive massage-follow_intensity-2",
+    "parser": "extended",
+    "inputs": {
+      "direction": "receive",
+      "construction": "synthetic branch input using artifact offsets, not a hardware capture"
+    },
+    "expected_bytes": "6e 20 09 02 05 02 00 02 a2",
+    "expected_state": {
+      "follow_intensity": 2
+    }
+  },
+  {
+    "id": "RX-massage-on-2",
+    "protocol": "P3",
+    "action": "receive massage-on-2",
+    "parser": "extended",
+    "inputs": {
+      "direction": "receive",
+      "construction": "synthetic branch input using artifact offsets, not a hardware capture"
+    },
+    "expected_bytes": "6e 20 09 02 06 02 00 01 a2",
+    "expected_state": {
+      "on": true
+    }
+  },
+  {
+    "id": "RX-white-2-0",
+    "protocol": "P3",
+    "action": "receive white-2-0",
+    "parser": "extended",
+    "inputs": {
+      "direction": "receive",
+      "construction": "synthetic branch input using artifact offsets, not a hardware capture"
+    },
+    "expected_bytes": "6e 20 09 03 01 02 00 00 9d",
+    "expected_state": {
+      "on": false
+    }
+  },
+  {
+    "id": "RX-white-2-1",
+    "protocol": "P3",
+    "action": "receive white-2-1",
+    "parser": "extended",
+    "inputs": {
+      "direction": "receive",
+      "construction": "synthetic branch input using artifact offsets, not a hardware capture"
+    },
+    "expected_bytes": "6e 20 09 03 01 02 00 01 9e",
+    "expected_state": {
+      "on": true
+    }
+  },
+  {
+    "id": "RX-rgb-2",
+    "protocol": "P3",
+    "action": "receive rgb-2",
+    "parser": "extended",
+    "inputs": {
+      "direction": "receive",
+      "construction": "synthetic branch input using artifact offsets, not a hardware capture"
+    },
+    "expected_bytes": "6e 20 0b 04 01 02 00 11 80 ff 30",
+    "expected_state": {
+      "rgb": [
+        17,
+        128,
+        255
+      ],
+      "alpha": 1.0
+    }
+  },
+  {
+    "id": "RX-rgb-timer-2",
+    "protocol": "P3",
+    "action": "receive rgb-timer-2",
+    "parser": "extended",
+    "inputs": {
+      "direction": "receive",
+      "construction": "synthetic branch input using artifact offsets, not a hardware capture"
+    },
+    "expected_bytes": "6e 20 0a 04 02 02 00 02 23 c5",
+    "expected_state": {
+      "minutes": 155
+    }
+  },
+  {
+    "id": "RX-rgb-sensor_enabled-2-0",
+    "protocol": "P3",
+    "action": "receive rgb-sensor_enabled-2-0",
+    "parser": "extended",
+    "inputs": {
+      "direction": "receive",
+      "construction": "synthetic branch input using artifact offsets, not a hardware capture"
+    },
+    "expected_bytes": "6e 20 09 04 03 02 00 00 a0",
+    "expected_state": {
+      "sensor_enabled": false
+    }
+  },
+  {
+    "id": "RX-rgb-sensor_enabled-2-1",
+    "protocol": "P3",
+    "action": "receive rgb-sensor_enabled-2-1",
+    "parser": "extended",
+    "inputs": {
+      "direction": "receive",
+      "construction": "synthetic branch input using artifact offsets, not a hardware capture"
+    },
+    "expected_bytes": "6e 20 09 04 03 02 00 01 a1",
+    "expected_state": {
+      "sensor_enabled": true
+    }
+  },
+  {
+    "id": "RX-rgb-strip_on-2-0",
+    "protocol": "P3",
+    "action": "receive rgb-strip_on-2-0",
+    "parser": "extended",
+    "inputs": {
+      "direction": "receive",
+      "construction": "synthetic branch input using artifact offsets, not a hardware capture"
+    },
+    "expected_bytes": "6e 20 09 04 04 02 00 00 a1",
+    "expected_state": {
+      "strip_on": false
+    }
+  },
+  {
+    "id": "RX-rgb-strip_on-2-1",
+    "protocol": "P3",
+    "action": "receive rgb-strip_on-2-1",
+    "parser": "extended",
+    "inputs": {
+      "direction": "receive",
+      "construction": "synthetic branch input using artifact offsets, not a hardware capture"
+    },
+    "expected_bytes": "6e 20 09 04 04 02 00 01 a2",
+    "expected_state": {
+      "strip_on": true
+    }
+  },
+  {
+    "id": "RX-alarm-2",
+    "protocol": "P3",
+    "action": "receive alarm-2",
+    "parser": "extended",
+    "inputs": {
+      "direction": "receive",
+      "construction": "synthetic branch input using artifact offsets, not a hardware capture"
+    },
+    "expected_bytes": "6e 20 0d 05 01 02 01 02 03 04 05 06 b8",
+    "expected_state": {
+      "event": "list",
+      "record": {
+        "field_7": 1,
+        "field_f": 2,
+        "field_17": 3,
+        "field_1f": 4,
+        "field_27": 5,
+        "field_2f": 6
+      }
+    }
+  },
+  {
+    "id": "RX-snore_detection-2-0",
+    "protocol": "P3",
+    "action": "receive snore_detection-2-0",
+    "parser": "extended",
+    "inputs": {
+      "direction": "receive",
+      "construction": "synthetic branch input using artifact offsets, not a hardware capture"
+    },
+    "expected_bytes": "6e 20 09 06 01 02 00 00 a0",
+    "expected_state": {
+      "snore_detection": false
+    }
+  },
+  {
+    "id": "RX-snore_detection-2-1",
+    "protocol": "P3",
+    "action": "receive snore_detection-2-1",
+    "parser": "extended",
+    "inputs": {
+      "direction": "receive",
+      "construction": "synthetic branch input using artifact offsets, not a hardware capture"
+    },
+    "expected_bytes": "6e 20 09 06 01 02 00 01 a1",
+    "expected_state": {
+      "snore_detection": true
+    }
+  },
+  {
+    "id": "RX-out_of_bed_detection-2-0",
+    "protocol": "P3",
+    "action": "receive out_of_bed_detection-2-0",
+    "parser": "extended",
+    "inputs": {
+      "direction": "receive",
+      "construction": "synthetic branch input using artifact offsets, not a hardware capture"
+    },
+    "expected_bytes": "6e 20 09 06 02 02 00 00 a1",
+    "expected_state": {
+      "out_of_bed_detection": false
+    }
+  },
+  {
+    "id": "RX-out_of_bed_detection-2-1",
+    "protocol": "P3",
+    "action": "receive out_of_bed_detection-2-1",
+    "parser": "extended",
+    "inputs": {
+      "direction": "receive",
+      "construction": "synthetic branch input using artifact offsets, not a hardware capture"
+    },
+    "expected_bytes": "6e 20 09 06 02 02 00 01 a2",
+    "expected_state": {
+      "out_of_bed_detection": true
+    }
+  },
+  {
+    "id": "RX-sleep-band-2",
+    "protocol": "P3",
+    "action": "receive sleep-band-2",
+    "parser": "extended",
+    "inputs": {
+      "direction": "receive",
+      "construction": "synthetic branch input using artifact offsets, not a hardware capture"
+    },
+    "expected_bytes": "6e 20 0c 06 03 02 00 42 41 4e 44 ba",
+    "expected_state": {
+      "sleep_band_name_bytes": [
+        66,
+        65,
+        78,
+        68
+      ]
+    }
+  },
+  {
+    "id": "RX-motor-3",
+    "protocol": "P3",
+    "action": "receive motor-3",
+    "parser": "extended",
+    "inputs": {
+      "direction": "receive",
+      "construction": "synthetic branch input using artifact offsets, not a hardware capture"
+    },
+    "expected_bytes": "6e 20 0e 01 02 03 00 01 2c 02 1e 02 58 49",
+    "expected_state": {
+      "height": 30.0,
+      "type": 2,
+      "angle": 30,
+      "monitorHeight": 60.0
+    }
+  },
+  {
+    "id": "RX-massage-zones-3",
+    "protocol": "P3",
+    "action": "receive massage-zones-3",
+    "parser": "extended",
+    "inputs": {
+      "direction": "receive",
+      "construction": "synthetic branch input using artifact offsets, not a hardware capture"
+    },
+    "expected_bytes": "6e 20 0b 02 01 03 01 04 02 06 ac",
+    "expected_state": {
+      "zones": [
+        [
+          1,
+          4
+        ],
+        [
+          2,
+          6
+        ]
+      ]
+    }
+  },
+  {
+    "id": "RX-massage-mode-3",
+    "protocol": "P3",
+    "action": "receive massage-mode-3",
+    "parser": "extended",
+    "inputs": {
+      "direction": "receive",
+      "construction": "synthetic branch input using artifact offsets, not a hardware capture"
+    },
+    "expected_bytes": "6e 20 09 02 02 03 00 03 a1",
+    "expected_state": {
+      "mode": 3
+    }
+  },
+  {
+    "id": "RX-massage-frequency-3",
+    "protocol": "P3",
+    "action": "receive massage-frequency-3",
+    "parser": "extended",
+    "inputs": {
+      "direction": "receive",
+      "construction": "synthetic branch input using artifact offsets, not a hardware capture"
+    },
+    "expected_bytes": "6e 20 09 02 04 03 00 11 b1",
+    "expected_state": {
+      "frequency": 17
+    }
+  },
+  {
+    "id": "RX-massage-follow_intensity-3",
+    "protocol": "P3",
+    "action": "receive massage-follow_intensity-3",
+    "parser": "extended",
+    "inputs": {
+      "direction": "receive",
+      "construction": "synthetic branch input using artifact offsets, not a hardware capture"
+    },
+    "expected_bytes": "6e 20 09 02 05 03 00 02 a3",
+    "expected_state": {
+      "follow_intensity": 2
+    }
+  },
+  {
+    "id": "RX-massage-on-3",
+    "protocol": "P3",
+    "action": "receive massage-on-3",
+    "parser": "extended",
+    "inputs": {
+      "direction": "receive",
+      "construction": "synthetic branch input using artifact offsets, not a hardware capture"
+    },
+    "expected_bytes": "6e 20 09 02 06 03 00 01 a3",
+    "expected_state": {
+      "on": true
+    }
+  },
+  {
+    "id": "RX-white-3-0",
+    "protocol": "P3",
+    "action": "receive white-3-0",
+    "parser": "extended",
+    "inputs": {
+      "direction": "receive",
+      "construction": "synthetic branch input using artifact offsets, not a hardware capture"
+    },
+    "expected_bytes": "6e 20 09 03 01 03 00 00 9e",
+    "expected_state": {
+      "on": false
+    }
+  },
+  {
+    "id": "RX-white-3-1",
+    "protocol": "P3",
+    "action": "receive white-3-1",
+    "parser": "extended",
+    "inputs": {
+      "direction": "receive",
+      "construction": "synthetic branch input using artifact offsets, not a hardware capture"
+    },
+    "expected_bytes": "6e 20 09 03 01 03 00 01 9f",
+    "expected_state": {
+      "on": true
+    }
+  },
+  {
+    "id": "RX-rgb-3",
+    "protocol": "P3",
+    "action": "receive rgb-3",
+    "parser": "extended",
+    "inputs": {
+      "direction": "receive",
+      "construction": "synthetic branch input using artifact offsets, not a hardware capture"
+    },
+    "expected_bytes": "6e 20 0b 04 01 03 00 11 80 ff 31",
+    "expected_state": {
+      "rgb": [
+        17,
+        128,
+        255
+      ],
+      "alpha": 1.0
+    }
+  },
+  {
+    "id": "RX-rgb-timer-3",
+    "protocol": "P3",
+    "action": "receive rgb-timer-3",
+    "parser": "extended",
+    "inputs": {
+      "direction": "receive",
+      "construction": "synthetic branch input using artifact offsets, not a hardware capture"
+    },
+    "expected_bytes": "6e 20 0a 04 02 03 00 02 23 c6",
+    "expected_state": {
+      "minutes": 155
+    }
+  },
+  {
+    "id": "RX-rgb-sensor_enabled-3-0",
+    "protocol": "P3",
+    "action": "receive rgb-sensor_enabled-3-0",
+    "parser": "extended",
+    "inputs": {
+      "direction": "receive",
+      "construction": "synthetic branch input using artifact offsets, not a hardware capture"
+    },
+    "expected_bytes": "6e 20 09 04 03 03 00 00 a1",
+    "expected_state": {
+      "sensor_enabled": false
+    }
+  },
+  {
+    "id": "RX-rgb-sensor_enabled-3-1",
+    "protocol": "P3",
+    "action": "receive rgb-sensor_enabled-3-1",
+    "parser": "extended",
+    "inputs": {
+      "direction": "receive",
+      "construction": "synthetic branch input using artifact offsets, not a hardware capture"
+    },
+    "expected_bytes": "6e 20 09 04 03 03 00 01 a2",
+    "expected_state": {
+      "sensor_enabled": true
+    }
+  },
+  {
+    "id": "RX-rgb-strip_on-3-0",
+    "protocol": "P3",
+    "action": "receive rgb-strip_on-3-0",
+    "parser": "extended",
+    "inputs": {
+      "direction": "receive",
+      "construction": "synthetic branch input using artifact offsets, not a hardware capture"
+    },
+    "expected_bytes": "6e 20 09 04 04 03 00 00 a2",
+    "expected_state": {
+      "strip_on": false
+    }
+  },
+  {
+    "id": "RX-rgb-strip_on-3-1",
+    "protocol": "P3",
+    "action": "receive rgb-strip_on-3-1",
+    "parser": "extended",
+    "inputs": {
+      "direction": "receive",
+      "construction": "synthetic branch input using artifact offsets, not a hardware capture"
+    },
+    "expected_bytes": "6e 20 09 04 04 03 00 01 a3",
+    "expected_state": {
+      "strip_on": true
+    }
+  },
+  {
+    "id": "RX-alarm-3",
+    "protocol": "P3",
+    "action": "receive alarm-3",
+    "parser": "extended",
+    "inputs": {
+      "direction": "receive",
+      "construction": "synthetic branch input using artifact offsets, not a hardware capture"
+    },
+    "expected_bytes": "6e 20 0d 05 01 03 01 02 03 04 05 06 b9",
+    "expected_state": {
+      "event": "report",
+      "record": {
+        "field_7": 1,
+        "field_f": 2,
+        "field_17": 3,
+        "field_1f": 4,
+        "field_27": 5,
+        "field_2f": 6
+      }
+    }
+  },
+  {
+    "id": "RX-snore_detection-3-0",
+    "protocol": "P3",
+    "action": "receive snore_detection-3-0",
+    "parser": "extended",
+    "inputs": {
+      "direction": "receive",
+      "construction": "synthetic branch input using artifact offsets, not a hardware capture"
+    },
+    "expected_bytes": "6e 20 09 06 01 03 00 00 a1",
+    "expected_state": {
+      "snore_detection": false
+    }
+  },
+  {
+    "id": "RX-snore_detection-3-1",
+    "protocol": "P3",
+    "action": "receive snore_detection-3-1",
+    "parser": "extended",
+    "inputs": {
+      "direction": "receive",
+      "construction": "synthetic branch input using artifact offsets, not a hardware capture"
+    },
+    "expected_bytes": "6e 20 09 06 01 03 00 01 a2",
+    "expected_state": {
+      "snore_detection": true
+    }
+  },
+  {
+    "id": "RX-out_of_bed_detection-3-0",
+    "protocol": "P3",
+    "action": "receive out_of_bed_detection-3-0",
+    "parser": "extended",
+    "inputs": {
+      "direction": "receive",
+      "construction": "synthetic branch input using artifact offsets, not a hardware capture"
+    },
+    "expected_bytes": "6e 20 09 06 02 03 00 00 a2",
+    "expected_state": {
+      "out_of_bed_detection": false
+    }
+  },
+  {
+    "id": "RX-out_of_bed_detection-3-1",
+    "protocol": "P3",
+    "action": "receive out_of_bed_detection-3-1",
+    "parser": "extended",
+    "inputs": {
+      "direction": "receive",
+      "construction": "synthetic branch input using artifact offsets, not a hardware capture"
+    },
+    "expected_bytes": "6e 20 09 06 02 03 00 01 a3",
+    "expected_state": {
+      "out_of_bed_detection": true
+    }
+  },
+  {
+    "id": "RX-sleep-band-3",
+    "protocol": "P3",
+    "action": "receive sleep-band-3",
+    "parser": "extended",
+    "inputs": {
+      "direction": "receive",
+      "construction": "synthetic branch input using artifact offsets, not a hardware capture"
+    },
+    "expected_bytes": "6e 20 0c 06 03 03 00 42 41 4e 44 bb",
+    "expected_state": {
+      "sleep_band_name_bytes": [
+        66,
+        65,
+        78,
+        68
+      ]
+    }
+  },
+  {
+    "id": "RX-check-1",
+    "protocol": "P3",
+    "action": "receive check-1",
+    "parser": "extended",
+    "inputs": {
+      "direction": "receive",
+      "construction": "synthetic branch input using artifact offsets, not a hardware capture"
+    },
+    "expected_bytes": "6e 20 09 0a 01 02 07 09 b4",
+    "expected_state": {
+      "check_selector": 1,
+      "raw": [
+        110,
+        32,
+        9,
+        10,
+        1,
+        2,
+        7,
+        9,
+        180
+      ]
+    }
+  },
+  {
+    "id": "RX-check-2",
+    "protocol": "P3",
+    "action": "receive check-2",
+    "parser": "extended",
+    "inputs": {
+      "direction": "receive",
+      "construction": "synthetic branch input using artifact offsets, not a hardware capture"
+    },
+    "expected_bytes": "6e 20 09 0a 02 02 07 09 b5",
+    "expected_state": {
+      "check_selector": 2,
+      "raw": [
+        110,
+        32,
+        9,
+        10,
+        2,
+        2,
+        7,
+        9,
+        181
+      ]
+    }
+  },
+  {
+    "id": "RX-check-3",
+    "protocol": "P3",
+    "action": "receive check-3",
+    "parser": "extended",
+    "inputs": {
+      "direction": "receive",
+      "construction": "synthetic branch input using artifact offsets, not a hardware capture"
+    },
+    "expected_bytes": "6e 20 09 0a 03 02 07 09 b6",
+    "expected_state": {
+      "check_selector": 3,
+      "raw": [
+        110,
+        32,
+        9,
+        10,
+        3,
+        2,
+        7,
+        9,
+        182
+      ]
+    }
+  },
+  {
+    "id": "RX-check-4",
+    "protocol": "P3",
+    "action": "receive check-4",
+    "parser": "extended",
+    "inputs": {
+      "direction": "receive",
+      "construction": "synthetic branch input using artifact offsets, not a hardware capture"
+    },
+    "expected_bytes": "6e 20 09 0a 04 02 07 09 b7",
+    "expected_state": {
+      "check_selector": 4,
+      "raw": [
+        110,
+        32,
+        9,
+        10,
+        4,
+        2,
+        7,
+        9,
+        183
+      ]
+    }
+  },
+  {
+    "id": "RX-check-5",
+    "protocol": "P3",
+    "action": "receive check-5",
+    "parser": "extended",
+    "inputs": {
+      "direction": "receive",
+      "construction": "synthetic branch input using artifact offsets, not a hardware capture"
+    },
+    "expected_bytes": "6e 20 09 0a 05 02 07 09 b8",
+    "expected_state": {
+      "check_selector": 5,
+      "raw": [
+        110,
+        32,
+        9,
+        10,
+        5,
+        2,
+        7,
+        9,
+        184
+      ]
+    }
+  },
+  {
+    "id": "RX-check-6",
+    "protocol": "P3",
+    "action": "receive check-6",
+    "parser": "extended",
+    "inputs": {
+      "direction": "receive",
+      "construction": "synthetic branch input using artifact offsets, not a hardware capture"
+    },
+    "expected_bytes": "6e 20 09 0a 06 02 07 09 b9",
+    "expected_state": {
+      "check_selector": 6,
+      "raw": [
+        110,
+        32,
+        9,
+        10,
+        6,
+        2,
+        7,
+        9,
+        185
+      ]
+    }
+  },
+  {
+    "id": "RX-unknown-domain",
+    "protocol": "P3",
+    "action": "receive unknown-domain",
+    "parser": "extended",
+    "inputs": {
+      "direction": "receive",
+      "construction": "synthetic branch input using artifact offsets, not a hardware capture"
+    },
+    "expected_bytes": "6e 20 09 07 01 02 00 01 a2",
+    "expected_state": null
+  },
+  {
+    "id": "RX-ignored-mode",
+    "protocol": "P3",
+    "action": "receive ignored-mode",
+    "parser": "extended",
+    "inputs": {
+      "direction": "receive",
+      "construction": "synthetic branch input using artifact offsets, not a hardware capture"
+    },
+    "expected_bytes": "6e 20 09 04 04 01 00 01 a1",
+    "expected_state": null
+  },
+  {
+    "id": "RX-alarm-wrong-subcommand",
+    "protocol": "P3",
+    "action": "receive alarm-wrong-subcommand",
+    "parser": "extended",
+    "inputs": {
+      "direction": "receive",
+      "construction": "synthetic branch input using artifact offsets, not a hardware capture"
+    },
+    "expected_bytes": "6e 20 09 05 02 02 00 01 a1",
+    "expected_state": null
+  },
+  {
+    "id": "RX-check-unknown-selector",
+    "protocol": "P3",
+    "action": "receive check-unknown-selector",
+    "parser": "extended",
+    "inputs": {
+      "direction": "receive",
+      "construction": "synthetic branch input using artifact offsets, not a hardware capture"
+    },
+    "expected_bytes": "6e 20 09 0a 07 02 00 01 ab",
+    "expected_state": null
+  },
+  {
+    "id": "RX-v1-0x0",
+    "protocol": "P2",
+    "action": "receive v1-0x0",
+    "parser": "v1",
+    "inputs": {
+      "direction": "receive",
+      "construction": "synthetic branch input using artifact offsets, not a hardware capture"
+    },
+    "expected_bytes": "6e 90 00 2a 00",
+    "expected_state": {
+      "version": 42
+    }
+  },
+  {
+    "id": "RX-v1-0x15",
+    "protocol": "P2",
+    "action": "receive v1-0x15",
+    "parser": "v1",
+    "inputs": {
+      "direction": "receive",
+      "construction": "synthetic branch input using artifact offsets, not a hardware capture"
+    },
+    "expected_bytes": "6e 90 15 2a 00",
+    "expected_state": {
+      "bed_mode": 5
+    }
+  },
+  {
+    "id": "RX-v1-0x35",
+    "protocol": "P2",
+    "action": "receive v1-0x35",
+    "parser": "v1",
+    "inputs": {
+      "direction": "receive",
+      "construction": "synthetic branch input using artifact offsets, not a hardware capture"
+    },
+    "expected_bytes": "6e 90 35 2a 00",
+    "expected_state": {
+      "no": 1,
+      "status": 1,
+      "angle": 42
+    }
+  },
+  {
+    "id": "RX-v1-0xa3",
+    "protocol": "P2",
+    "action": "receive v1-0xa3",
+    "parser": "v1",
+    "inputs": {
+      "direction": "receive",
+      "construction": "synthetic branch input using artifact offsets, not a hardware capture"
+    },
+    "expected_bytes": "6e 90 a3 2a 00",
+    "expected_state": {
+      "mode": 1,
+      "massage1": 2,
+      "massage2": 5,
+      "massage3": 4
+    }
+  },
+  {
+    "id": "RX-check-status-0x10",
+    "protocol": "P2",
+    "action": "receive check-status-0x10",
+    "parser": "diagnostic",
+    "inputs": {
+      "direction": "receive",
+      "construction": "synthetic branch input using artifact offsets, not a hardware capture"
+    },
+    "expected_bytes": "6e 90 c2 10 00",
+    "expected_state": {
+      "check_status": "start"
+    }
+  },
+  {
+    "id": "RX-check-status-0x20",
+    "protocol": "P2",
+    "action": "receive check-status-0x20",
+    "parser": "diagnostic",
+    "inputs": {
+      "direction": "receive",
+      "construction": "synthetic branch input using artifact offsets, not a hardware capture"
+    },
+    "expected_bytes": "6e 90 c2 20 00",
+    "expected_state": {
+      "check_status": "stop"
+    }
+  },
+  {
+    "id": "RX-check-status-0x30",
+    "protocol": "P2",
+    "action": "receive check-status-0x30",
+    "parser": "diagnostic",
+    "inputs": {
+      "direction": "receive",
+      "construction": "synthetic branch input using artifact offsets, not a hardware capture"
+    },
+    "expected_bytes": "6e 90 c2 30 00",
+    "expected_state": {
+      "check_status": "pause"
+    }
+  },
+  {
+    "id": "RX-check-status-0x40",
+    "protocol": "P2",
+    "action": "receive check-status-0x40",
+    "parser": "diagnostic",
+    "inputs": {
+      "direction": "receive",
+      "construction": "synthetic branch input using artifact offsets, not a hardware capture"
+    },
+    "expected_bytes": "6e 90 c2 40 00",
+    "expected_state": {
+      "check_status": "repeat"
+    }
+  },
+  {
+    "id": "RX-check-status-0xf0",
+    "protocol": "P2",
+    "action": "receive check-status-0xf0",
+    "parser": "diagnostic",
+    "inputs": {
+      "direction": "receive",
+      "construction": "synthetic branch input using artifact offsets, not a hardware capture"
+    },
+    "expected_bytes": "6e 90 c2 f0 00",
+    "expected_state": {
+      "check_status": "start"
+    }
+  },
+  {
+    "id": "RX-diag-3-0x50",
+    "protocol": "P2",
+    "action": "receive diag-3-0x50",
+    "parser": "diagnostic",
+    "inputs": {
+      "direction": "receive",
+      "construction": "synthetic branch input using artifact offsets, not a hardware capture"
+    },
+    "expected_bytes": "6e 90 c3 50 00",
+    "expected_state": {
+      "component": "motor",
+      "logged_status": "abnormal",
+      "logged_number": 5,
+      "event_payload": {}
+    }
+  },
+  {
+    "id": "RX-diag-3-0x51",
+    "protocol": "P2",
+    "action": "receive diag-3-0x51",
+    "parser": "diagnostic",
+    "inputs": {
+      "direction": "receive",
+      "construction": "synthetic branch input using artifact offsets, not a hardware capture"
+    },
+    "expected_bytes": "6e 90 c3 51 00",
+    "expected_state": {
+      "component": "motor",
+      "logged_status": "normal",
+      "logged_number": 5,
+      "event_payload": {}
+    }
+  },
+  {
+    "id": "RX-diag-3-0x52",
+    "protocol": "P2",
+    "action": "receive diag-3-0x52",
+    "parser": "diagnostic",
+    "inputs": {
+      "direction": "receive",
+      "construction": "synthetic branch input using artifact offsets, not a hardware capture"
+    },
+    "expected_bytes": "6e 90 c3 52 00",
+    "expected_state": {
+      "component": "motor",
+      "logged_status": "controlBoxMalfunction",
+      "logged_number": 5,
+      "event_payload": {}
+    }
+  },
+  {
+    "id": "RX-diag-3-0x53",
+    "protocol": "P2",
+    "action": "receive diag-3-0x53",
+    "parser": "diagnostic",
+    "inputs": {
+      "direction": "receive",
+      "construction": "synthetic branch input using artifact offsets, not a hardware capture"
+    },
+    "expected_bytes": "6e 90 c3 53 00",
+    "expected_state": {
+      "component": "motor",
+      "logged_status": "notPluggedIn",
+      "logged_number": 5,
+      "event_payload": {}
+    }
+  },
+  {
+    "id": "RX-diag-3-0x5f",
+    "protocol": "P2",
+    "action": "receive diag-3-0x5f",
+    "parser": "diagnostic",
+    "inputs": {
+      "direction": "receive",
+      "construction": "synthetic branch input using artifact offsets, not a hardware capture"
+    },
+    "expected_bytes": "6e 90 c3 5f 00",
+    "expected_state": {
+      "component": "motor",
+      "logged_status": "notPluggedIn",
+      "logged_number": 5,
+      "event_payload": {}
+    }
+  },
+  {
+    "id": "RX-diag-4-0x50",
+    "protocol": "P2",
+    "action": "receive diag-4-0x50",
+    "parser": "diagnostic",
+    "inputs": {
+      "direction": "receive",
+      "construction": "synthetic branch input using artifact offsets, not a hardware capture"
+    },
+    "expected_bytes": "6e 90 c4 50 00",
+    "expected_state": {
+      "component": "massage",
+      "logged_status": "abnormal",
+      "logged_number": 5,
+      "event_payload": {}
+    }
+  },
+  {
+    "id": "RX-diag-4-0x51",
+    "protocol": "P2",
+    "action": "receive diag-4-0x51",
+    "parser": "diagnostic",
+    "inputs": {
+      "direction": "receive",
+      "construction": "synthetic branch input using artifact offsets, not a hardware capture"
+    },
+    "expected_bytes": "6e 90 c4 51 00",
+    "expected_state": {
+      "component": "massage",
+      "logged_status": "normal",
+      "logged_number": 5,
+      "event_payload": {}
+    }
+  },
+  {
+    "id": "RX-diag-4-0x52",
+    "protocol": "P2",
+    "action": "receive diag-4-0x52",
+    "parser": "diagnostic",
+    "inputs": {
+      "direction": "receive",
+      "construction": "synthetic branch input using artifact offsets, not a hardware capture"
+    },
+    "expected_bytes": "6e 90 c4 52 00",
+    "expected_state": {
+      "component": "massage",
+      "logged_status": "controlBoxMalfunction",
+      "logged_number": 5,
+      "event_payload": {}
+    }
+  },
+  {
+    "id": "RX-diag-4-0x53",
+    "protocol": "P2",
+    "action": "receive diag-4-0x53",
+    "parser": "diagnostic",
+    "inputs": {
+      "direction": "receive",
+      "construction": "synthetic branch input using artifact offsets, not a hardware capture"
+    },
+    "expected_bytes": "6e 90 c4 53 00",
+    "expected_state": {
+      "component": "massage",
+      "logged_status": "notPluggedIn",
+      "logged_number": 5,
+      "event_payload": {}
+    }
+  },
+  {
+    "id": "RX-diag-4-0x5f",
+    "protocol": "P2",
+    "action": "receive diag-4-0x5f",
+    "parser": "diagnostic",
+    "inputs": {
+      "direction": "receive",
+      "construction": "synthetic branch input using artifact offsets, not a hardware capture"
+    },
+    "expected_bytes": "6e 90 c4 5f 00",
+    "expected_state": {
+      "component": "massage",
+      "logged_status": "notPluggedIn",
+      "logged_number": 5,
+      "event_payload": {}
+    }
+  },
+  {
+    "id": "RX-diag-5-0x50",
+    "protocol": "P2",
+    "action": "receive diag-5-0x50",
+    "parser": "diagnostic",
+    "inputs": {
+      "direction": "receive",
+      "construction": "synthetic branch input using artifact offsets, not a hardware capture"
+    },
+    "expected_bytes": "6e 90 c5 50 00",
+    "expected_state": {
+      "component": "underbed_light",
+      "logged_status": "abnormal",
+      "logged_number": 5,
+      "event_payload": {}
+    }
+  },
+  {
+    "id": "RX-diag-5-0x51",
+    "protocol": "P2",
+    "action": "receive diag-5-0x51",
+    "parser": "diagnostic",
+    "inputs": {
+      "direction": "receive",
+      "construction": "synthetic branch input using artifact offsets, not a hardware capture"
+    },
+    "expected_bytes": "6e 90 c5 51 00",
+    "expected_state": {
+      "component": "underbed_light",
+      "logged_status": "normal",
+      "logged_number": 5,
+      "event_payload": {}
+    }
+  },
+  {
+    "id": "RX-diag-5-0x52",
+    "protocol": "P2",
+    "action": "receive diag-5-0x52",
+    "parser": "diagnostic",
+    "inputs": {
+      "direction": "receive",
+      "construction": "synthetic branch input using artifact offsets, not a hardware capture"
+    },
+    "expected_bytes": "6e 90 c5 52 00",
+    "expected_state": {
+      "component": "underbed_light",
+      "logged_status": "controlBoxMalfunction",
+      "logged_number": 5,
+      "event_payload": {}
+    }
+  },
+  {
+    "id": "RX-diag-5-0x53",
+    "protocol": "P2",
+    "action": "receive diag-5-0x53",
+    "parser": "diagnostic",
+    "inputs": {
+      "direction": "receive",
+      "construction": "synthetic branch input using artifact offsets, not a hardware capture"
+    },
+    "expected_bytes": "6e 90 c5 53 00",
+    "expected_state": {
+      "component": "underbed_light",
+      "logged_status": "notPluggedIn",
+      "logged_number": 5,
+      "event_payload": {}
+    }
+  },
+  {
+    "id": "RX-diag-5-0x5f",
+    "protocol": "P2",
+    "action": "receive diag-5-0x5f",
+    "parser": "diagnostic",
+    "inputs": {
+      "direction": "receive",
+      "construction": "synthetic branch input using artifact offsets, not a hardware capture"
+    },
+    "expected_bytes": "6e 90 c5 5f 00",
+    "expected_state": {
+      "component": "underbed_light",
+      "logged_status": "notPluggedIn",
+      "logged_number": 5,
+      "event_payload": {}
+    }
+  },
+  {
+    "id": "RX-diag-6-0x50",
+    "protocol": "P2",
+    "action": "receive diag-6-0x50",
+    "parser": "diagnostic",
+    "inputs": {
+      "direction": "receive",
+      "construction": "synthetic branch input using artifact offsets, not a hardware capture"
+    },
+    "expected_bytes": "6e 90 c6 50 00",
+    "expected_state": {
+      "component": "usb",
+      "logged_status": "abnormal",
+      "logged_number": 5,
+      "event_payload": {}
+    }
+  },
+  {
+    "id": "RX-diag-6-0x51",
+    "protocol": "P2",
+    "action": "receive diag-6-0x51",
+    "parser": "diagnostic",
+    "inputs": {
+      "direction": "receive",
+      "construction": "synthetic branch input using artifact offsets, not a hardware capture"
+    },
+    "expected_bytes": "6e 90 c6 51 00",
+    "expected_state": {
+      "component": "usb",
+      "logged_status": "normal",
+      "logged_number": 5,
+      "event_payload": {}
+    }
+  },
+  {
+    "id": "RX-diag-6-0x52",
+    "protocol": "P2",
+    "action": "receive diag-6-0x52",
+    "parser": "diagnostic",
+    "inputs": {
+      "direction": "receive",
+      "construction": "synthetic branch input using artifact offsets, not a hardware capture"
+    },
+    "expected_bytes": "6e 90 c6 52 00",
+    "expected_state": {
+      "component": "usb",
+      "logged_status": "controlBoxMalfunction",
+      "logged_number": 5,
+      "event_payload": {}
+    }
+  },
+  {
+    "id": "RX-diag-6-0x53",
+    "protocol": "P2",
+    "action": "receive diag-6-0x53",
+    "parser": "diagnostic",
+    "inputs": {
+      "direction": "receive",
+      "construction": "synthetic branch input using artifact offsets, not a hardware capture"
+    },
+    "expected_bytes": "6e 90 c6 53 00",
+    "expected_state": {
+      "component": "usb",
+      "logged_status": "notPluggedIn",
+      "logged_number": 5,
+      "event_payload": {}
+    }
+  },
+  {
+    "id": "RX-diag-6-0x5f",
+    "protocol": "P2",
+    "action": "receive diag-6-0x5f",
+    "parser": "diagnostic",
+    "inputs": {
+      "direction": "receive",
+      "construction": "synthetic branch input using artifact offsets, not a hardware capture"
+    },
+    "expected_bytes": "6e 90 c6 5f 00",
+    "expected_state": {
+      "component": "usb",
+      "logged_status": "notPluggedIn",
+      "logged_number": 5,
+      "event_payload": {}
+    }
+  },
+  {
+    "id": "RX-bad-checksum",
+    "protocol": "P3",
+    "action": "receive motor-2",
+    "parser": "extended",
+    "inputs": {
+      "direction": "receive",
+      "construction": "synthetic branch input using artifact offsets, not a hardware capture"
+    },
+    "expected_bytes": "6e 20 0e 01 02 02 00 01 2c 02 1e 02 58 49",
+    "expected_state": null
+  }
+]

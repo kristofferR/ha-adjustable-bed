@@ -8,7 +8,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 from bleak.exc import BleakError
 
-from custom_components.adjustable_bed.beds.serenity import SerenityController
+from custom_components.adjustable_bed.beds.serenity.controller import SerenityController
 
 
 def make_controller(properties=("write",)) -> SerenityController:
@@ -194,7 +194,6 @@ def test_exact_capabilities_no_guessed_extra_axes() -> None:
     assert not controller.supports_preset_incline
     assert not controller.supports_clock_alarm
     assert not controller.supports_clock_sync
-    assert not controller.supports_alarm
     assert not controller.supports_light_color_control
     assert not controller.supports_light_level_control
     assert not controller.supports_light_state_feedback
@@ -221,8 +220,8 @@ async def test_literal_buttons_bound_callback(action: str) -> None:
     spec = next(
         spec for spec in controller.controller_button_specs if spec.key == f"serenity_{action}"
     )
-    with patch("asyncio.sleep", new=AsyncMock()):
-        await spec.press_fn(controller.bind_side("right"))
+    with patch("asyncio.sleep", new=AsyncMock()), controller.side_scope("right"):
+        await spec.press_fn(controller)
     assert written(controller)[0] == next(expected for _, key, expected in ROWS if key == action)
 
 
@@ -409,7 +408,8 @@ async def test_manufacturer_subscription_order_and_explicit_refresh_button() -> 
         for spec in controller.controller_button_specs
         if spec.key == "serenity_refresh_manufacturer"
     )
-    await spec.press_fn(controller.bind_side("left"))
+    with controller.side_scope("left"):
+        await spec.press_fn(controller)
     assert order == ["read"]
     assert written(controller) == []
 

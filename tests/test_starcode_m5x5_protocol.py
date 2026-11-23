@@ -9,15 +9,17 @@ from datetime import datetime, timedelta, timezone
 
 import pytest
 
-from custom_components.adjustable_bed.beds.starcode_m5x5_protocol import (
-    StateValue,
-    clock_packet,
+from custom_components.adjustable_bed.beds.starcode.dialect import (
     extended_packet,
-    long_normal_packet,
+    long_packet,
     manufacturer_dialect,
     normal_packet,
-    parse_notification,
     query_packet,
+)
+from custom_components.adjustable_bed.beds.starcode.m5x5_protocol import (
+    StateValue,
+    clock_packet,
+    parse_notification,
 )
 
 NORMAL_VECTORS: list[tuple[str, int, str, str]] = [
@@ -345,8 +347,8 @@ def test_normal_key_preserves_low_32_bits(dialect: str, expected: str) -> None:
 
 
 def test_accepted_long_light_and_query_vectors() -> None:
-    assert long_normal_packet(128) == bytes.fromhex("08 02 00 00 00 00 00 00 00 80")
-    assert long_normal_packet(64) == bytes.fromhex("08 02 00 00 00 00 00 00 00 40")
+    assert long_packet(128) == bytes.fromhex("08 02 00 00 00 00 00 00 00 80")
+    assert long_packet(64) == bytes.fromhex("08 02 00 00 00 00 00 00 00 40")
     assert query_packet("legacy") == bytes.fromhex("00 b0")
     assert query_packet("star") == bytes.fromhex("5a b0 00 a5")
 

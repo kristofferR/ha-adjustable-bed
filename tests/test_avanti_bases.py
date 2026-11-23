@@ -1,4 +1,4 @@
-"""Row065 Avanti Bases 1.0.5 (7), vectors from its accepted FULL report.
+"""Avanti Bases 1.0.5 (7), vectors from its accepted FULL report.
 
 These literals were checked against Avanti E07-E15 and audit round01, not
 inferred from another ORE app. Hardware remains unverified.
@@ -11,7 +11,7 @@ from types import SimpleNamespace
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
-from homeassistant.const import ATTR_ASSUMED_STATE, ATTR_ENTITY_ID, CONF_ADDRESS, STATE_UNKNOWN
+from homeassistant.const import ATTR_ASSUMED_STATE, ATTR_ENTITY_ID, STATE_UNKNOWN
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers import entity_registry as er
@@ -35,10 +35,11 @@ from custom_components.adjustable_bed.const import (
     KEESON_BASE_NOTIFY_CHAR_UUID,
     KEESON_BASE_WRITE_CHAR_UUID,
     KEESON_VARIANT_AVANTI_BASES,
-    VARIANT_AUTO,
 )
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
 from custom_components.adjustable_bed.detection import bed_type_choice, get_bed_type_options
+from tests.error_helpers import raises_key
+from tests.form_helpers import finish_new_bed, start_new_bed
 
 # Share transport/HA fixture helpers only; Avanti's command vectors stay below.
 from .test_ore_comfort_bed import _char, _controller, _entry, _services, _waits, _written
@@ -225,7 +226,7 @@ async def test_avanti_gatt_and_no_reported_state(
     ctrl._write_char = None
     mock_bleak_client.services = _services(last)
     mock_bleak_client.write_gatt_char.reset_mock()
-    with pytest.raises(HomeAssistantError, match="FFE9 and FFE4"):
+    with raises_key("bed_missing_service", HomeAssistantError):
         await ctrl.preset_flat()
     assert not _written(mock_bleak_client)
 
@@ -234,27 +235,24 @@ async def test_avanti_app_choice_and_side_owned_layout(hass: HomeAssistant) -> N
     choice = bed_type_choice(BED_TYPE_KEESON, APP)
     assert {o["value"]: o["label"] for o in get_bed_type_options()}[
         choice
-    ] == "Avanti Bases app (Keeson)"
+    ] == "Avanti Bases app"
     flow = AdjustableBedConfigFlow()
     flow.hass = hass
     flow.context = {}
-    flow._disconnect_choice_confirmed = True
     flow._finish_with_verify = AsyncMock(return_value={"type": "create_entry"})
-    await flow.async_step_manual_entry(
-        {
-            CONF_ADDRESS: "AA:BB:CC:DD:06:50",
-            CONF_BED_TYPE: choice,
-            CONF_PROTOCOL_VARIANT: VARIANT_AUTO,
-            CONF_MOTOR_COUNT: 4,
-        }
-    )
+    # The app's screen asks the motor count.
+    screen = await start_new_bed(flow, "typed", choice, "AA:BB:CC:DD:06:50")
+    assert screen["step_id"] == "profile_questions"
+    await finish_new_bed(flow, await flow.async_step_profile_questions({CONF_MOTOR_COUNT: "4"}))
     saved = flow._finish_with_verify.await_args.args[0]
     assert (saved[CONF_BED_TYPE], saved[CONF_PROTOCOL_VARIANT], saved[CONF_MOTOR_COUNT]) == (
         BED_TYPE_KEESON,
         APP,
         4,
     )
+    # The screen question asks the motor count, so the generic form hides it too.
     assert hidden_generic_fields(BED_TYPE_KEESON, APP) == {
+        CONF_MOTOR_COUNT,
         CONF_HAS_MASSAGE,
         CONF_DISABLE_ANGLE_SENSING,
         CONF_MOTOR_PULSE_DELAY_MS,
@@ -315,10 +313,10 @@ async def test_avanti_entities_and_serialized_actions(
         entity("button", key)
     for zone in LEVELS:
         entity("number", f"controller_number_ore_comfort_massage_{zone}")
-    entity("select", f"controller_select_{STATE_TIMER}")
+    entity("select", "massage_timer")
     for key in ("back_position", "legs_position", "head_position", "lumbar_position"):
         assert registry.async_get_entity_id("number", DOMAIN, f"{address}_{key}") is None
-    light = entity("switch", "under_bed_lights")
+    light = entity("light", "under_bed_lights")
     assert hass.states.get(light).state == STATE_UNKNOWN
     assert hass.states.get(light).attributes[ATTR_ASSUMED_STATE] is True
     mock_bleak_client.write_gatt_char.reset_mock()

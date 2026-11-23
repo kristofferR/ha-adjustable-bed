@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import logging
 from collections.abc import Awaitable, Callable
 from types import SimpleNamespace
 from unittest.mock import AsyncMock, MagicMock, PropertyMock, call, patch
@@ -11,11 +12,12 @@ from bleak.exc import BleakError
 from homeassistant.components.climate.const import HVACMode
 from homeassistant.const import CONF_ADDRESS, CONF_NAME, STATE_OFF, STATE_ON, STATE_UNAVAILABLE
 from homeassistant.core import HomeAssistant
-from pytest_homeassistant_custom_component.common import MockConfigEntry
+from homeassistant.exceptions import HomeAssistantError
+from homeassistant.helpers import device_registry as dr
+from pytest_homeassistant.common import MockConfigEntry
 
 from custom_components.adjustable_bed.beds.base import BedController
-from custom_components.adjustable_bed.beds.leggett_gen2 import LeggettGen2Commands
-from custom_components.adjustable_bed.beds.richmat import RichmatCommands
+from custom_components.adjustable_bed.beds.leggett.gen2 import LeggettGen2Commands
 from custom_components.adjustable_bed.button import (
     BUTTON_DESCRIPTIONS,
     _button_translation_key,
@@ -578,7 +580,10 @@ class TestCoverEntities:
         entity_id = cover_entities[0]
 
         coordinator = hass.data[DOMAIN][mock_config_entry.entry_id]
-        coordinator.async_execute_controller_command = AsyncMock(side_effect=RuntimeError("boom"))
+        # The Stop is a STOP admission that runs the motor's stop as a command does.
+        coordinator._async_execute_controller_operation = AsyncMock(
+            side_effect=RuntimeError("boom")
+        )
 
         with pytest.raises(RuntimeError, match="boom"):
             await hass.services.async_call(
@@ -772,7 +777,7 @@ class TestSleepNumberEntities:
         registry = er.async_get(hass)
 
         assert (
-            registry.async_get_entity_id("switch", DOMAIN, "AA:BB:CC:DD:EE:41_under_bed_lights")
+            registry.async_get_entity_id("light", DOMAIN, "AA:BB:CC:DD:EE:41_under_bed_lights")
             is not None
         )
         assert (
@@ -812,14 +817,16 @@ class TestSleepNumberEntities:
             "AA:BB:CC:DD:EE:41_bed_presence_left",
         )
         assert left_presence_entity_id is not None
-        assert hass.states.get(left_presence_entity_id) is None
+        # Occupancy is a dashboard value, enabled by default.
+        assert hass.states.get(left_presence_entity_id) is not None
         right_presence_entity_id = registry.async_get_entity_id(
             "binary_sensor",
             DOMAIN,
             "AA:BB:CC:DD:EE:41_bed_presence_right",
         )
         assert right_presence_entity_id is not None
-        assert hass.states.get(right_presence_entity_id) is None
+        # Occupancy is a dashboard value, enabled by default.
+        assert hass.states.get(right_presence_entity_id) is not None
         assert (
             registry.async_get_entity_id(
                 "binary_sensor",
@@ -931,6 +938,65 @@ class TestSleepNumberEntities:
         assert thermal_right_state.attributes["side"] == "right"
         assert hass.states.get(footwarming_left_entity_id).state == "heat"
         assert hass.states.get(footwarming_right_entity_id).state == "off"
+
+    async def test_single_address_side_names_carry_the_side_once(
+        self,
+        hass: HomeAssistant,
+        mock_coordinator_connected,
+        enable_custom_integrations,
+    ) -> None:
+        """A side device named "Bed Left" must not add a second "Left" to its entities."""
+        del mock_coordinator_connected, enable_custom_integrations
+        from homeassistant.data_entry_flow import FlowResultType
+        from homeassistant.helpers import entity_registry as er
+
+        entry = MockConfigEntry(
+            domain=DOMAIN,
+            title="Bed",
+            data={
+                CONF_ADDRESS: "AA:BB:CC:DD:EE:43",
+                CONF_NAME: "Bed",
+                CONF_BED_TYPE: BED_TYPE_SLEEP_NUMBER,
+                CONF_PROTOCOL_VARIANT: SLEEP_NUMBER_VARIANT_LEFT,
+                CONF_MOTOR_COUNT: 2,
+                CONF_HAS_MASSAGE: False,
+                CONF_DISABLE_ANGLE_SENSING: True,
+                CONF_PREFERRED_ADAPTER: "auto",
+            },
+            unique_id="AA:BB:CC:DD:EE:43",
+            entry_id="sleep_number_single_address_names",
+        )
+        entry.add_to_hass(hass)
+        await hass.config_entries.async_setup(entry.entry_id)
+        await hass.async_block_till_done()
+        result = await hass.config_entries.options.async_init(entry.entry_id)
+        result = await hass.config_entries.options.async_configure(
+            result["flow_id"], {"next_step_id": "pair_sides"}
+        )
+        result = await hass.config_entries.options.async_configure(
+            result["flow_id"], {"confirm": True}
+        )
+        assert result["type"] == FlowResultType.CREATE_ENTRY
+        await hass.async_block_till_done()
+
+        registry = er.async_get(hass)
+        expected = {
+            ("number", "sleep_number_setting"): "Sleep Number setting",
+            ("select", "thermal_timer"): "Climate timer",
+            ("select", "footwarming_timer"): "Footwarming timer",
+            ("climate", "sleep_number_thermal_climate"): "Climate",
+            ("climate", "footwarming_climate"): "Footwarming",
+        }
+        for side, label in (("left", "Left"), ("right", "Right")):
+            for (platform, base), name in expected.items():
+                # The unique ID keeps the side the standalone bed gave it.
+                entity_id = registry.async_get_entity_id(
+                    platform, DOMAIN, f"AA:BB:CC:DD:EE:43_{base}_{side}"
+                )
+                assert entity_id is not None, (platform, base, side)
+                state = hass.states.get(entity_id)
+                assert state is not None
+                assert state.attributes["friendly_name"] == f"Bed {label} {name}"
 
     async def test_sleep_number_setup_removes_legacy_single_side_entities(
         self,
@@ -1423,18 +1489,20 @@ class TestButtonEntities:
         timer_controller.massage_mode_step_is_timer = True
         mode_controller = MagicMock(spec=BedController)
         mode_controller.massage_mode_step_is_timer = False
+        timer_side = SimpleNamespace(controller_side=None, capability_controller=timer_controller)
+        mode_side = SimpleNamespace(controller_side=None, capability_controller=mode_controller)
 
         assert (
             _button_translation_key(
                 description,
-                (timer_controller, timer_controller),
+                (timer_side, timer_side),
             )
             == "massage_timer_step"
         )
         assert (
             _button_translation_key(
                 description,
-                (timer_controller, mode_controller),
+                (timer_side, mode_side),
             )
             == "massage_mode_step"
         )
@@ -1455,10 +1523,11 @@ class TestButtonEntities:
         ]
 
         # The mock has no reference-output service, so it represents the
-        # app's Standard model: flat, both-up, stop, connection controls,
-        # wake and defaults reset. Lighting has its own light entity. The
-        # distinct destructive factory reset is registered but disabled.
-        assert len(button_states) == 7
+        # app's Standard model: flat, both-up, stop and connection controls.
+        # Lighting has its own light entity. The one-press defaults reset, the
+        # destructive factory reset and the diagnostic wake are registered but
+        # disabled.
+        assert len(button_states) == 5
 
     async def test_button_entities_with_massage(
         self,
@@ -1468,7 +1537,7 @@ class TestButtonEntities:
         enable_custom_integrations,
     ):
         """Test massage button entities are created when has_massage=True."""
-        from pytest_homeassistant_custom_component.common import MockConfigEntry
+        from pytest_homeassistant.common import MockConfigEntry
 
         # Create entry with massage enabled
         mock_config_entry_data["has_massage"] = True
@@ -1488,10 +1557,10 @@ class TestButtonEntities:
             state for state in hass.states.async_all() if state.entity_id.startswith("button.")
         ]
 
-        # Seven enabled Standard-model base actions plus the modern app's eleven
+        # Five enabled Standard-model base actions plus the modern app's eleven
         # massage actions. Memory controls are absent without the reference
         # service, exactly as they are in Bed Control.
-        assert len(button_states) == 18
+        assert len(button_states) == 16
 
     async def test_keeson_base_exposes_direct_massage_buttons(
         self,
@@ -1570,7 +1639,7 @@ class TestButtonEntities:
         assert timer_entity_id == str(established_timer.entity_id)
         timer_state = hass.states.get(timer_entity_id)
         assert timer_state is not None
-        assert timer_state.name.endswith("Massage: Timer")
+        assert timer_state.name.endswith("Massage timer")
 
         # 3.6 briefly shipped different unique IDs. Migrate them without
         # changing an existing entity ID, and prefer an established pre-3.6
@@ -1680,7 +1749,7 @@ class TestButtonEntities:
             is not None
         )
         assert (
-            registry.async_get_entity_id("switch", DOMAIN, "AA:BB:CC:DD:EE:40_under_bed_lights")
+            registry.async_get_entity_id("light", DOMAIN, "AA:BB:CC:DD:EE:40_under_bed_lights")
             is not None
         )
         assert (
@@ -1819,26 +1888,84 @@ class TestButtonEntities:
         coordinator = hass.data[DOMAIN][mock_config_entry.entry_id]
         coordinator.async_ensure_connected = AsyncMock(return_value=False)
 
-        with pytest.raises(RuntimeError, match="Failed to connect"):
+        with pytest.raises(HomeAssistantError) as raised:
             await hass.services.async_call(
                 "button",
                 "press",
                 {"entity_id": entity_id},
                 blocking=True,
             )
+        assert raised.value.translation_key == "bed_not_connected"
+
+    @pytest.mark.parametrize(
+        ("domain", "service", "suffix"),
+        [
+            ("button", "press", "_flat"),
+            ("button", "press", "_stop_all"),
+            ("cover", "open_cover", "_head"),
+            ("cover", "stop_cover", "_head"),
+            (DOMAIN, "stop_all", None),
+        ],
+    )
+    async def test_unreachable_bed_raises_translated_error_without_traceback(
+        self,
+        hass: HomeAssistant,
+        mock_config_entry,
+        mock_coordinator_connected,
+        enable_custom_integrations,
+        caplog: pytest.LogCaptureFixture,
+        domain: str,
+        service: str,
+        suffix: str | None,
+    ):
+        """A control or action on a bed that is off or out of range says so plainly.
+
+        The error is Home Assistant's own, translated, and nothing logs a traceback.
+        """
+        del mock_coordinator_connected, enable_custom_integrations
+        hass.config_entries.async_update_entry(
+            mock_config_entry,
+            data={**mock_config_entry.data, CONF_BED_TYPE: BED_TYPE_OKIN_CST},
+        )
+        await hass.config_entries.async_setup(mock_config_entry.entry_id)
+        await hass.async_block_till_done()
+        coordinator = hass.data[DOMAIN][mock_config_entry.entry_id]
+        await coordinator.async_disconnect()
+        coordinator.async_ensure_connected = AsyncMock(return_value=False)
+        if suffix is None:
+            [device] = dr.async_entries_for_config_entry(
+                dr.async_get(hass), mock_config_entry.entry_id
+            )
+            data = {"device_id": [device.id]}
+        else:
+            [entity_id] = [
+                state.entity_id
+                for state in hass.states.async_all(domain)
+                if state.entity_id.endswith(suffix)
+            ]
+            data = {"entity_id": entity_id}
+        caplog.clear()
+
+        with pytest.raises(HomeAssistantError) as raised:
+            await hass.services.async_call(domain, service, data, blocking=True)
+
+        assert raised.value.translation_key == "bed_not_connected"
+        assert isinstance(raised.value, ConnectionError)
+        assert not [record for record in caplog.records if record.exc_info]
+        assert not [record for record in caplog.records if record.levelno >= logging.ERROR]
 
 
 class TestSwitchEntities:
     """Test switch entities."""
 
-    async def test_switch_entities_created(
+    async def test_discrete_light_is_a_light_not_a_switch(
         self,
         hass: HomeAssistant,
         mock_config_entry,
         mock_coordinator_connected,
         enable_custom_integrations,
     ):
-        """Test switch entities are created."""
+        """A bed with on/off light commands gets a light entity and no light switch."""
         hass.config_entries.async_update_entry(
             mock_config_entry,
             data={**mock_config_entry.data, CONF_BED_TYPE: BED_TYPE_OKIN_CST},
@@ -1846,14 +1973,11 @@ class TestSwitchEntities:
         await hass.config_entries.async_setup(mock_config_entry.entry_id)
         await hass.async_block_till_done()
 
-        switch_states = [
-            state for state in hass.states.async_all() if state.entity_id.startswith("switch.")
-        ]
+        states = hass.states.async_all()
+        assert not [state for state in states if state.entity_id.startswith("switch.")]
+        assert len([state for state in states if state.entity_id.startswith("light.")]) == 1
 
-        # Should have under-bed lights switch
-        assert len(switch_states) == 1
-
-    async def test_failed_switch_turn_off_keeps_auto_off_timer(
+    async def test_failed_light_turn_off_keeps_auto_off_timer(
         self,
         hass: HomeAssistant,
         mock_config_entry,
@@ -1869,13 +1993,13 @@ class TestSwitchEntities:
         await hass.config_entries.async_setup(mock_config_entry.entry_id)
         await hass.async_block_till_done()
 
-        switch_entities = [
+        light_entities = [
             state.entity_id
             for state in hass.states.async_all()
-            if state.entity_id.startswith("switch.")
+            if state.entity_id.startswith("light.")
         ]
-        assert len(switch_entities) == 1
-        entity_id = switch_entities[0]
+        assert len(light_entities) == 1
+        entity_id = light_entities[0]
 
         coordinator = hass.data[DOMAIN][mock_config_entry.entry_id]
         with patch.object(
@@ -1894,7 +2018,7 @@ class TestSwitchEntities:
                 *args: object,
             ) -> object:
                 nonlocal scheduled_auto_off
-                if getattr(callback, "__name__", "") == "auto_off_callback":
+                if getattr(callback, "__name__", "") == "expire":
 
                     def invoke_auto_off() -> None:
                         callback(*args)
@@ -1905,7 +2029,7 @@ class TestSwitchEntities:
 
             with patch.object(hass.loop, "call_later", side_effect=capture_auto_off):
                 await hass.services.async_call(
-                    "switch",
+                    "light",
                     "turn_on",
                     {"entity_id": entity_id},
                     blocking=True,
@@ -1918,7 +2042,7 @@ class TestSwitchEntities:
 
                 with pytest.raises(RuntimeError, match="boom"):
                     await hass.services.async_call(
-                        "switch",
+                        "light",
                         "turn_off",
                         {"entity_id": entity_id},
                         blocking=True,
@@ -2587,7 +2711,7 @@ class TestLightEntities:
 
         mock_bleak_client.write_gatt_char.assert_called_once_with(
             coordinator.controller.control_characteristic_uuid,
-            coordinator.controller._build_command(RichmatCommands.LIGHTS_TOGGLE),
+            coordinator.controller._build_command(0x3C),
             response=True,
         )
 
@@ -2898,7 +3022,7 @@ class TestLightEntities:
         assert state is not None
         assert state.state == STATE_OFF
 
-    async def test_switch_turn_on_off(
+    async def test_discrete_light_turn_on_off(
         self,
         hass: HomeAssistant,
         mock_config_entry,
@@ -2906,7 +3030,7 @@ class TestLightEntities:
         mock_bleak_client: MagicMock,
         enable_custom_integrations,
     ):
-        """Test turning switch on and off."""
+        """Test turning the on/off light on and off."""
         hass.config_entries.async_update_entry(
             mock_config_entry,
             data={**mock_config_entry.data, CONF_BED_TYPE: BED_TYPE_OKIN_CST},
@@ -2914,16 +3038,16 @@ class TestLightEntities:
         await hass.config_entries.async_setup(mock_config_entry.entry_id)
         await hass.async_block_till_done()
 
-        switch_entities = [
+        light_entities = [
             state.entity_id
             for state in hass.states.async_all()
-            if state.entity_id.startswith("switch.")
+            if state.entity_id.startswith("light.")
         ]
-        entity_id = switch_entities[0]
+        entity_id = light_entities[0]
 
         # Turn on
         await hass.services.async_call(
-            "switch",
+            "light",
             "turn_on",
             {"entity_id": entity_id},
             blocking=True,
@@ -2934,7 +3058,7 @@ class TestLightEntities:
 
         # Turn off
         await hass.services.async_call(
-            "switch",
+            "light",
             "turn_off",
             {"entity_id": entity_id},
             blocking=True,
@@ -2975,7 +3099,7 @@ class TestSensorEntities:
         enable_custom_integrations,
     ):
         """Linak position numbers replace duplicate angle and model sensors."""
-        from pytest_homeassistant_custom_component.common import MockConfigEntry
+        from pytest_homeassistant.common import MockConfigEntry
 
         # Create entry with angle sensing enabled
         _configure_linak_advanced(mock_bleak_client)

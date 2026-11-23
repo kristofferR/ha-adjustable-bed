@@ -1,0 +1,101 @@
+[
+  {
+    "protocol": "P2",
+    "inputs": [
+      {
+        "hour": 6,
+        "minute": 30,
+        "repeat": 130,
+        "type": 17,
+        "on": true
+      },
+      {
+        "hour": 8,
+        "minute": 45,
+        "repeat": 255,
+        "type": 19,
+        "on": false
+      },
+      {
+        "hour": 23,
+        "minute": 59,
+        "repeat": 255,
+        "type": 18,
+        "on": true
+      }
+    ],
+    "expected": "ed8003061e8211082d0013173bff122d"
+  },
+  {
+    "protocol": "P3",
+    "inputs": {
+      "index": 0,
+      "hour": 23,
+      "minute": 59,
+      "repeat": 128,
+      "kind": 0,
+      "on": true
+    },
+    "expected": "07058000173b000100"
+  },
+  {
+    "protocol": "P3",
+    "inputs": {
+      "index": 1,
+      "hour": 23,
+      "minute": 59,
+      "repeat": 128,
+      "kind": 17,
+      "on": true
+    },
+    "expected": "07068005173b000100"
+  },
+  {
+    "protocol": "P3",
+    "inputs": {
+      "index": 2,
+      "hour": 23,
+      "minute": 59,
+      "repeat": 128,
+      "kind": 19,
+      "on": true
+    },
+    "expected": "07078006173b000100"
+  },
+  {
+    "protocol": "P3",
+    "inputs": {
+      "index": 0,
+      "hour": 23,
+      "minute": 59,
+      "repeat": 128,
+      "kind": 18,
+      "on": true
+    },
+    "expected": "07058007173b000100"
+  },
+  {
+    "protocol": "P3",
+    "inputs": {
+      "index": 1,
+      "hour": 23,
+      "minute": 59,
+      "repeat": 128,
+      "kind": 9,
+      "on": true
+    },
+    "expected": "07068008173b000100"
+  },
+  {
+    "protocol": "P3",
+    "inputs": {
+      "index": 2,
+      "hour": 0,
+      "minute": 0,
+      "repeat": 255,
+      "kind": 18,
+      "on": false
+    },
+    "expected": "0707ff070000000000"
+  }
+]

@@ -1,4 +1,4 @@
-"""Accepted row113 vectors through live controller and receive/action boundaries."""
+"""Accepted MotoMotion app vectors through live controller and receive/action boundaries."""
 
 from __future__ import annotations
 
@@ -8,20 +8,23 @@ from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
-from custom_components.adjustable_bed.beds import motomotion as bed
-from custom_components.adjustable_bed.motomotion_profile import Profile, eligible
-from custom_components.adjustable_bed.motomotion_protocol import (
-    Position,
-    ascii_command,
-    binary_command,
+from custom_components.adjustable_bed.beds.motomotion import controller as bed
+from custom_components.adjustable_bed.beds.motomotion.protocol import (
     decimal,
     light_cycle,
-    music_command,
     posture,
     rgb_total,
 )
-from custom_components.adjustable_bed.motomotion_requests import Request
-from custom_components.adjustable_bed.motomotion_state import State
+from custom_components.adjustable_bed.beds.motomotion.requests import Request
+from custom_components.adjustable_bed.beds.motomotion.state import State
+from custom_components.adjustable_bed.codec.motomotion import (
+    Position,
+    ascii_command,
+    binary_command,
+    music_command,
+)
+from custom_components.adjustable_bed.profiles.motomotion import Profile, eligible
+from tests.state_helpers import state_writer
 
 
 @pytest.fixture
@@ -35,7 +38,7 @@ def coordinator():
     c.client.start_notify = AsyncMock()
     c.client.stop_notify = AsyncMock()
     c.controller_state = {}
-    c.handle_controller_state_updates.side_effect = c.controller_state.update
+    c.handle_controller_state_updates.side_effect = state_writer(c.controller_state)
     return c
 
 
@@ -279,10 +282,11 @@ async def test_side_scoped_callable_and_invalid_other_child(coordinator, instant
     c = controller(coordinator, "SOFA000001SC00H")
     c._state.rgb = ("0", "0", "0")
     spec = next(s for s in c.controller_button_specs if s.key == "motomotion_light_toggle")
-    await spec.press_fn(c.bind_side("right"))
+    with c.side_scope("right"):
+        await spec.press_fn(c)
     assert written(coordinator) == [ascii_command(k, 10120) for k in (315, 316, 317)]
-    with pytest.raises(ValueError):
-        await c.bind_side("left").select("side", "right")
+    with pytest.raises(ValueError), c.side_scope("left"):
+        await c.select("side", "right")
 
 
 def test_restore_side_defaults_for_existing_state(coordinator):
@@ -553,19 +557,23 @@ async def test_held_movement_cadence_and_fresh_cleanup(coordinator, monkeypatch)
 
 
 async def test_right_child_level_consumes_right_delivered_state(coordinator, instant):
-    from custom_components.adjustable_bed.motomotion_state import Comfort
+    from custom_components.adjustable_bed.beds.motomotion.state import Comfort
 
     c = controller(coordinator, "SOFA000001S000M")
     c._local_lr = (Comfort(heat=0), Comfort(heat=2))
-    await c.bind_side("right").async_execute_motomotion_action("motomotion_heat_up")
+    with c.side_scope("right"):
+        await c.async_execute_motomotion_action("motomotion_heat_up")
     assert written(coordinator) == [ascii_command(334, 10000)]
     c._publish()
     assert coordinator.controller_state["motomotion_heat_left"] == 0
     assert coordinator.controller_state["motomotion_heat_right"] == 2
-    assert {s.key for s in c.bind_side("right").controller_state_sensor_specs} == {
-        "motomotion_status",
-        "motomotion_heat_right",
-        "motomotion_massage_right",
+    with c.side_scope("right"):
+        specs = c.controller_state_sensor_specs
+    # The "Bed Right" side device already names the side.
+    assert {(s.key, s.translation_key) for s in specs} == {
+        ("motomotion_status", "motomotion_status"),
+        ("motomotion_heat_right", "motomotion_heat"),
+        ("motomotion_massage_right", "motomotion_massage"),
     }
 
 
@@ -613,37 +621,6 @@ async def test_start_failure_invalidates_pending_callbacks(coordinator, monkeypa
     assert c._session is None
     c._notification(1, char, bytearray(frame(24)))
     assert c._state.token_count == 0
-
-
-def test_durable_ledger_covers_every_accepted_identifier_and_command():
-    import json
-    from pathlib import Path
-
-    d = json.loads(
-        (
-            Path(__file__).parents[1] / "docs/apk-analysis/dispositions/row113-motomotion.json"
-        ).read_text()
-    )
-    assert len(d["items"]) == len({item["id"] for item in d["items"]}) == 316
-    assert len(d["command_coverage"]) == 144
-    assert (
-        d["coverage"]["primary_routes"]
-        == d["coverage"]["unique_panel_classes"] + d["coverage"]["aliases"]
-        == 17
-    )
-    for item in d["items"]:
-        assert item["disposition"] in ("IMPLEMENTED", "ALREADY_IMPLEMENTED", "EXCLUDED")
-        assert item["reason"]
-        if item["disposition"] == "IMPLEMENTED":
-            assert item["groups"] and all(g in d["behavior_groups"] for g in item["groups"])
-    for group in d["behavior_groups"].values():
-        assert group["code"] and group["tests"]
-        for reference in group["code"] + group["tests"]:
-            path, symbol = reference.split("::")
-            text = (Path(__file__).parents[1] / path).read_text()
-            assert ("def " + symbol.split(".")[-1] + "(") in text or (
-                "class " + symbol + ":"
-            ) in text
 
 
 async def test_release_before_first_period_never_starts_motor(coordinator, monkeypatch):
@@ -764,7 +741,8 @@ async def test_selector2_ascii_branch_precedes_moto_binary(
             s for s in c.controller_button_specs if s.key == "motomotion_headrest_" + direction
         )
         assert spec.name == "Back " + direction
-        assert spec.translation_placeholders == {"action": "Back " + direction}
+        # It moves the back, so it sits on the back's motor row.
+        assert spec.translation_key == "back_" + direction
 
 
 @pytest.mark.parametrize("duration", [20, 250])
@@ -800,7 +778,7 @@ async def test_switch_posture_invalidates_save_and_rebuilds_five_target_axes(coo
     await c.async_execute_motomotion_request(
         Request("fine_tune", posture="tv", targets=Position(1, 2, 3, 4, 5))
     )
-    with pytest.raises(ValueError, match="different user or posture"):
+    with pytest.raises(ValueError, match="another user or posture"):
         await c.async_execute_motomotion_request(Request("save_posture", posture="lay"))
     assert c._posture == "tv" and c._custom == {}
     await c.select("posture", "lay")

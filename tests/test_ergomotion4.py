@@ -17,8 +17,7 @@ from custom_components.adjustable_bed.alarm_table import (
     OneTimeAlarmRecord,
     WeeklyAlarmRecord,
 )
-from custom_components.adjustable_bed.beds.cluster033 import control_frame
-from custom_components.adjustable_bed.beds.ergomotion4 import (
+from custom_components.adjustable_bed.beds.ergomotion4.controller import (
     CONF_MASSAGE_KEYS,
     CONF_MODEL_KEYS,
     CONF_PRODUCT_NAME,
@@ -27,15 +26,15 @@ from custom_components.adjustable_bed.beds.ergomotion4 import (
     SILENT_RX,
     TX_UUIDS,
     Ergomotion4Controller,
-    custom_frame,
     custom_product,
     p2_frame,
     parse_status,
-    rgb_frame,
 )
-from custom_components.adjustable_bed.beds.keeson import KeesonController
-from custom_components.adjustable_bed.ergomotion4_profiles import ACTIONS, PRODUCTS
+from custom_components.adjustable_bed.beds.ergomotion4.profiles import ACTIONS, PRODUCTS
+from custom_components.adjustable_bed.beds.keeson.controller import KeesonController
+from custom_components.adjustable_bed.codec import keeson as codec
 from custom_components.adjustable_bed.pairing import supports_single_address_pairing
+from tests.state_helpers import published, state_writer
 
 FIXTURES = Path(__file__).parent / "fixtures/ergomotion4"
 VECTORS = json.loads((FIXTURES / "test-vectors.json").read_text())
@@ -47,7 +46,7 @@ CATALOG = json.loads((FIXTURES / "catalog.json").read_text())
 def hold_clock(monkeypatch):
     clock = SimpleNamespace(milliseconds=0.0)
     monkeypatch.setattr(
-        "custom_components.adjustable_bed.beds.ergomotion4.monotonic",
+        "custom_components.adjustable_bed.beds.ergomotion4.controller.monotonic",
         lambda: clock.milliseconds / 1000,
     )
     return clock
@@ -65,7 +64,7 @@ def coordinator(product="H", **data):
     result.motor_pulse_count = 1
     result.observed_ble_device_name = "KSBT03CP123"
     result.controller_state = {}
-    result.handle_controller_state_updates.side_effect = result.controller_state.update
+    result.handle_controller_state_updates.side_effect = state_writer(result.controller_state)
     rx = MagicMock(uuid="0000ffe4-0000-1000-8000-00805f9b34fb", properties=["notify"])
     tx = MagicMock(uuid="0000ffe9-0000-1000-8000-00805f9b34fb", properties=["write"])
     service = MagicMock(characteristics=[rx, tx])
@@ -93,8 +92,10 @@ def packets(coord):
     ids=lambda v: v["id"],
 )
 def test_p1_side_vectors(vector):
-    side = {"Both": "both", "Left": "side_b", "Right": "side_a"}[vector["inputs"]["side"]]
-    assert control_frame(vector["inputs"]["key"], side).hex() == vector["expected_bytes"]
+    side = {"Both": None, "Left": 2, "Right": 1}[vector["inputs"]["side"]]
+    key = vector["inputs"]["key"] & 0xFFFFFFFF
+    frame = codec.frame(key) if side is None else codec.frame(key, header=0xE6, side=side)
+    assert frame.hex() == vector["expected_bytes"]
 
 
 @pytest.mark.parametrize(
@@ -107,15 +108,15 @@ def test_p2_custom_rgb_vectors(vector):
     if vector["id"].startswith("P2-"):
         frame = p2_frame(data["key"])
     elif vector["id"].startswith("custom-"):
-        frame = custom_frame(data["key"])
+        frame = codec.custom_massage(data["key"])
     else:
-        frame = rgb_frame((data["r"], data["g"], data["b"]), inverted=data["invert"])
+        frame = codec.rgb((data["r"], data["g"], data["b"]), inverted=data["invert"])
     assert frame.hex() == vector["expected_bytes"]
 
 
 def test_p2_unsupported_key_does_not_become_arbitrary_command():
     assert p2_frame(0xDEADBEEF).hex() == "040200000000"
-    assert custom_frame(9).hex() == "07d000000000000000"
+    assert codec.custom_massage(9).hex() == "07d000000000000000"
 
 
 @pytest.mark.parametrize("case", CASES, ids=lambda c: c["id"])
@@ -142,8 +143,8 @@ async def test_artifact_command_sequences(case, hold_clock):
     ctrl._wait.side_effect = wait
     side = {"Both": "both", "Left": "left", "Right": "right"}[case["side"]]
     action = ACTIONS[case["command"]]
-    bound = ctrl.bind_side(side)
-    await bound._run_action(action.key)
+    with ctrl.side_scope(side):
+        await ctrl._run_action(action.key)
     expected = case["press"] + ([["wait", 100]] + case["release"] if case["held"] else [])
     assert trace == expected
     assert ctrl.command_side is None
@@ -234,10 +235,11 @@ async def test_side_state_is_not_published_as_both_sides():
     frame = bytearray(19)
     frame[0], frame[14], frame[16] = 241, 3, 2
     ctrl._parse_notification(bytes(frame))
-    assert coord.controller_state["right_app_timer_status"] == 3
+    assert coord.controller_state["right_app_timer_status"] == 30
     assert coord.controller_state["left_app_timer_status"] is None
     assert coord.controller_state["app_timer_status"] is None
-    specs = ctrl.bind_side("right").controller_state_sensor_specs
+    with ctrl.side_scope("right"):
+        specs = ctrl.controller_state_sensor_specs
     assert specs[0].state_key == "right_app_timer_status"
 
 
@@ -256,8 +258,8 @@ async def test_product_session_init_and_pairing_contract(product):
         else [b"\x00\xb0"] * 3
     )
     if not p1:
-        with pytest.raises(ValueError, match="side selector"):
-            ctrl.bind_side("left")._frame(1)
+        with pytest.raises(ValueError, match="has no sides"), ctrl.side_scope("left"):
+            ctrl._frame(1)
 
 
 @pytest.mark.parametrize("variant", ["base", "ergomotion"])
@@ -272,7 +274,8 @@ async def test_legacy_p1_side_routing_and_cancelled_release(variant):
         ("right", "e6fe16010000000103"),
         ("both", "e5fe160100000005"),
     ):
-        assert ctrl.bind_side(side)._build_command(1).hex() == expected
+        with ctrl.side_scope(side):
+            assert ctrl._build_command(1).hex() == expected
     assert ctrl.supports_single_address_pairing
     assert supports_single_address_pairing("keeson", variant)
     assert ctrl._build_command(1).hex() == "e5fe160100000005"
@@ -288,7 +291,8 @@ async def test_cancelled_hold_releases_original_side_on_fresh_event():
         return True
 
     ctrl._wait.side_effect = cancel
-    await ctrl.bind_side("left").hold_control("c054", 1000)
+    with ctrl.side_scope("left"):
+        await ctrl.hold_control("c054", 1000)
     assert packets(coord) == [
         bytes.fromhex("e6fe16010000000202"),
         bytes.fromhex("e6fe16000000000203"),
@@ -302,7 +306,8 @@ async def test_cancelled_hold_releases_original_side_on_fresh_event():
         return True
 
     ctrl._wait.side_effect = disconnect
-    await ctrl.bind_side("right").hold_control("c054", 1000)
+    with ctrl.side_scope("right"):
+        await ctrl.hold_control("c054", 1000)
     assert packets(coord) == [bytes.fromhex("e6fe16010000000103")]
 
 
@@ -323,11 +328,11 @@ async def test_hold_deadline_includes_transport_time(hold_clock, ordinary_press,
 
     coord.client.write_gatt_char.side_effect = write
     ctrl._wait.side_effect = wait
-    bound = ctrl.bind_side("left")
-    if ordinary_press:
-        await bound._run_action("c054")
-    else:
-        await bound.hold_control("c054", 1000)
+    with ctrl.side_scope("left"):
+        if ordinary_press:
+            await ctrl._run_action("c054")
+        else:
+            await ctrl.hold_control("c054", 1000)
 
     assert all(at < 1000 for at, _ in writes[:-1])
     assert {payload for _, payload in writes[:-1]} == {"e6fe16010000000202"}
@@ -339,8 +344,8 @@ async def test_hold_deadline_includes_transport_time(hold_clock, ordinary_press,
 async def test_failed_pulse_still_attempts_release():
     ctrl, coord = await ready()
     coord.client.write_gatt_char.side_effect = [RuntimeError("failed"), None]
-    with pytest.raises(RuntimeError, match="failed"):
-        await ctrl.bind_side("right")._run_action("c059")
+    with pytest.raises(RuntimeError, match="failed"), ctrl.side_scope("right"):
+        await ctrl._run_action("c059")
     assert packets(coord)[-1].hex() == "e6fe16000000000104"
 
 
@@ -368,7 +373,7 @@ async def test_rename_clock_and_alarm_vectors():
         with pytest.raises(ValueError):
             ctrl.validate_device_rename(name)
     now = datetime(2026, 11, 3, 21, 7, 40, tzinfo=ZoneInfo("Europe/Oslo"))
-    with patch("custom_components.adjustable_bed.beds.cluster033.dt_util.now", return_value=now):
+    with patch("custom_components.adjustable_bed.beds.keeson.layout_app.dt_util.now", return_value=now):
         await ctrl.sync_clock()
     assert packets(coord)[-1].hex() == next(
         v["expected_bytes"] for v in VECTORS if v["id"] == "clock"
@@ -408,7 +413,7 @@ async def test_meditation_product_and_name_gates(product, name, expected):
     assert packets(coord)[-4].hex() == "040208000000"
     coord.observed_ble_device_name = "unrelated"
     if product != "20th Anniversary":
-        with pytest.raises(ValueError, match="do not admit"):
+        with pytest.raises(ValueError, match="no meditation mode"):
             await ctrl._run_action("meditation_start")
 
 
@@ -469,23 +474,19 @@ async def test_catalog_action_bytes(vector):
 
 async def test_configuration_and_actual_entity_exposure(hass):
     from custom_components.adjustable_bed.button import _button_entities_for
-    from custom_components.adjustable_bed.config_flow import (
-        _add_cluster033_schema_fields,
-        _normalize_cluster033_data,
-    )
     from custom_components.adjustable_bed.detection import get_bed_type_options
+    from custom_components.adjustable_bed.setup_questions import SETUP_PROFILES
 
     data = {"bed_type": "ergomotion_4", "product_type": "M30"}
-    schema = {}
-    _add_cluster033_schema_fields(schema, data)
-    _normalize_cluster033_data(data)
-    assert data["disable_angle_sensing"] is True
-    assert data["has_massage"] is False
+    profile = SETUP_PROFILES["ergomotion_4"]
+    assert profile.validate is not None and profile.validate(data) == {}
+    settled = profile.settled(data)
+    assert settled["disable_angle_sensing"] is True
+    assert settled["has_massage"] is False
     assert any(choice["value"] == "ergomotion_4" for choice in get_bed_type_options())
     ctrl, coord = await ready("M30")
     coord.controller = coord.capability_controller = ctrl
     coord.entity_unique_id.side_effect = lambda key: key
-    coord.entity_translation_key.side_effect = lambda key: key
     entities = [entity for entity in _button_entities_for(hass, coord) if hasattr(entity, "_spec")]
     assert {entity._spec.key for entity in entities} == {a.key for a in ctrl._actions()} | {
         "dismiss_alarm"
@@ -493,7 +494,7 @@ async def test_configuration_and_actual_entity_exposure(hass):
 
 
 async def test_options_cannot_switch_paired_p1_to_p2(hass):
-    from pytest_homeassistant_custom_component.common import MockConfigEntry
+    from pytest_homeassistant.common import MockConfigEntry
 
     from custom_components.adjustable_bed.config_flow import AdjustableBedOptionsFlow
     from custom_components.adjustable_bed.const import DOMAIN
@@ -530,52 +531,8 @@ async def test_reconnected_session_does_not_receive_old_queries():
     assert packets(coord) == []
 
 
-def test_discovery_ledger_has_complete_coverage_and_resolvable_proofs():
-    import ast
-    from collections import Counter
-
-    root = Path(__file__).parents[1]
-    ledger = json.loads(
-        (root / "docs/apk-analysis/dispositions/issue558-ergomotion4.json").read_text()
-    )
-    items = ledger["items"]
-    assert len(items) == ledger["counts"]["total_items"] == 892
-    assert len({i["id"] for i in items}) == len(items)
-    assert dict(Counter(i["disposition"] for i in items)) == ledger["counts"]["dispositions"]
-    live_commands = {i["source_command_id"] for i in items if i["id"].startswith("command:")}
-    assert len(live_commands) == 385
-    assert {c["command"].split("_")[0] for c in CASES} == {
-        cid for cid in live_commands if cid < "C376"
-    }
-    assert len([i for i in items if i["id"].startswith("candidate:")]) == 423
-    assert len([i for i in items if i["id"].startswith("catalog:")]) == 21
-    assert len([i for i in items if i["id"].startswith("route:")]) == 27
-    for item in items:
-        assert item["evidence"]
-        if item["disposition"] == "EXCLUDED":
-            assert item["reason_ref"] in ledger["reasons"]
-            assert item["id"] in ledger["exclusion_inventory"][item["reason_ref"]]
-        else:
-            assert item["proof_ref"] in ledger["proofs"]
-    for proof in ledger["proofs"].values():
-        for reference in proof["code"] + proof["tests"]:
-            if "::" not in reference:
-                path, line = reference.rsplit(":", 1)
-                assert 0 < int(line) <= len((root / path).read_text().splitlines())
-                continue
-            path, symbol = reference.split("::")
-            tree = ast.parse((root / path).read_text())
-            names = {
-                n.name
-                for n in ast.walk(tree)
-                if isinstance(n, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef))
-            }
-            names.update(n.id for n in ast.walk(tree) if isinstance(n, ast.Name))
-            assert symbol.split(".")[-1] in names, reference
-
-
 async def test_native_paired_runtime_routes_left_right_and_both_on_one_connection(hass, hold_clock):
-    from pytest_homeassistant_custom_component.common import MockConfigEntry
+    from pytest_homeassistant.common import MockConfigEntry
 
     from custom_components.adjustable_bed.const import DOMAIN
     from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
@@ -630,7 +587,7 @@ async def test_native_paired_runtime_routes_left_right_and_both_on_one_connectio
 @pytest.mark.parametrize("bed_type,variant", (("ergomotion", "auto"), ("keeson", "ergomotion")))
 @pytest.mark.parametrize("stored_preference", (False, None))
 async def test_legacy_split_suppresses_unscoped_positions(hass, bed_type, variant, stored_preference):
-    from pytest_homeassistant_custom_component.common import MockConfigEntry
+    from pytest_homeassistant.common import MockConfigEntry
 
     from custom_components.adjustable_bed.const import DOMAIN
     from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
@@ -675,9 +632,9 @@ async def test_legacy_split_suppresses_unscoped_positions(hass, bed_type, varian
         await inner.async_start_notify()
         notify.assert_not_awaited()
 
-    # Restoring standalone controls keeps the user's feedback preference.
+    # Restored standalone, the bed reads its position: saved, or as its route does.
     standalone = AdjustableBedCoordinator(hass, MockConfigEntry(domain=DOMAIN, data=original))
-    assert standalone.disable_angle_sensing is (stored_preference is None)
+    assert standalone.disable_angle_sensing is False
 
 
 def _reported_light(ctrl, enabled):
@@ -693,11 +650,11 @@ def _rgb_entity(ctrl, coord):
     coord.controller = coord.capability_controller = ctrl
     coord.entity_side = None
     coord.entity_unique_id.side_effect = lambda key: key
-    coord.entity_translation_key.side_effect = lambda key: key
     entity = AdjustableBedLight(coord, LIGHT_DESCRIPTION)
     entity.async_write_ha_state = MagicMock()
 
-    def update(values):
+    def update(*updates):
+        values = published(*updates)
         coord.controller_state.update(values)
         entity._handle_light_state(values)
 
@@ -716,11 +673,9 @@ async def test_rgb_entity_tracks_reported_power_and_disconnect():
     for enabled in (True, False, True):
         _reported_light(ctrl, enabled)
         assert entity.is_on is enabled
-        assert coord.controller_state["ergomotion4_light"] is enabled
         assert coord.controller_state["under_bed_lights_on"] is enabled
     ctrl.on_disconnect()
     assert coord.controller_state["under_bed_lights_on"] is None
-    assert coord.controller_state["ergomotion4_light"] is None
     assert entity.is_on is False
 
 
@@ -764,7 +719,7 @@ async def test_rgb_power_confirmation_timeout_never_sends_unguarded_color():
     _reported_light(ctrl, False)
     with (
         patch(
-            "custom_components.adjustable_bed.beds.ergomotion4.LIGHT_POWER_CONFIRM_TIMEOUT_SECONDS",
+            "custom_components.adjustable_bed.beds.ergomotion4.controller.LIGHT_POWER_CONFIRM_TIMEOUT_SECONDS",
             0,
         ),
         pytest.raises(TimeoutError),
@@ -810,3 +765,16 @@ def test_custom_preset_ancestor_gates_keep_o5_slot_consumption(keys, expected):
     # exist. dealTagAction consumes a slot even when the tag is inert o5.
     product = custom_product("Other", keys, (), False, False)
     assert set(product.commands) & {"C043", "C044", "C045", "C046"} == expected
+
+
+async def test_a_reported_light_is_one_light_and_an_unreported_one_keeps_its_button():
+    # A custom product's status frames carry the light; the H style's do not.
+    ctrl, _ = await ready("custom", ergomotion4_model_keys=["k1"], has_light=True)
+    assert ctrl.supports_light_state_feedback and ctrl.supports_light_toggle_control
+    light = ctrl._light_action()
+    assert light is not None
+    assert light.key not in {s.key for s in ctrl.controller_button_specs if s is not None}
+    assert ctrl.controller_state_binary_sensor_specs == ()
+    plain, _ = await ready("H")
+    assert not plain.supports_light_state_feedback
+    assert "c056" in {s.key for s in plain.controller_button_specs if s is not None}

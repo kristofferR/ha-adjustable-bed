@@ -15,11 +15,14 @@ from bleak.backends.device import BLEDevice
 from bleak.exc import BleakError
 from homeassistant.const import CONF_ADDRESS, CONF_NAME
 from homeassistant.core import HomeAssistant
-from pytest_homeassistant_custom_component.common import MockConfigEntry
+from pytest_homeassistant.common import MockConfigEntry
 
+# The hold action imports this on demand in the executor; loading it up front
+# keeps virtual time from racing a real import thread.
+import custom_components.adjustable_bed.beds.vmatbasic.services  # noqa: F401
 from custom_components.adjustable_bed.adapter import AdapterSelectionResult
-from custom_components.adjustable_bed.beds.sleepys_app import SleepysEliteAppController
-from custom_components.adjustable_bed.beds.sleepys_app_routes import ROUTES
+from custom_components.adjustable_bed.beds.sleepys.app import SleepysEliteAppController
+from custom_components.adjustable_bed.beds.sleepys.app_routes import ROUTES
 from custom_components.adjustable_bed.bluetooth_transport import ConnectionPath, TransportClass
 from custom_components.adjustable_bed.bond_verification import (
     BondEvidence,
@@ -31,8 +34,8 @@ from custom_components.adjustable_bed.button import ControllerActionButton
 from custom_components.adjustable_bed.const import (
     BED_TYPE_SLEEPYS_ELITE_APP,
     CONF_BED_TYPE,
+    CONF_CONNECTION_MODE,
     CONF_DISABLE_ANGLE_SENSING,
-    CONF_DISCONNECT_AFTER_COMMAND,
     CONF_SLEEPYS_ELITE_SELECTOR,
     DEVICE_INFO_CHARS,
     DEVICE_INFO_SERVICE_UUID,
@@ -47,12 +50,20 @@ from custom_components.adjustable_bed.number import (
     AdjustableBedLevelNumber,
     AdjustableBedMassageNumber,
 )
-from custom_components.adjustable_bed.select import AdjustableBedControllerSelect
+from custom_components.adjustable_bed.select import (
+    MASSAGE_TIMER_DESCRIPTION,
+    AdjustableBedMassageTimerSelect,
+)
 from custom_components.adjustable_bed.services import async_register_services
+from custom_components.adjustable_bed.switch import AdjustableBedControllerSwitch
+from tests.pair_mode import CONF_PAIR_CONNECTION_MODE
 
 from .conftest import TEST_ADDRESS, TEST_NAME
 
 _MODULE = "custom_components.adjustable_bed.coordinator"
+
+_CONNECTION = "custom_components.adjustable_bed.coordinator_connection"
+_BONDS = "custom_components.adjustable_bed.coordinator_bonds"
 _LOCAL = ConnectionPath(source="local", transport=TransportClass.LOCAL, adapter="hci0")
 _T = TypeVar("_T")
 
@@ -124,9 +135,15 @@ class _VirtualClock:
             self._sleepers.remove(sleeper)
 
     async def run_until(self, task: asyncio.Task[_T]) -> _T:
+        loop = asyncio.get_running_loop()
         for _ in range(1_000):
-            for _ in range(12):
+            # Virtual time may only pass once nothing else can run: a fixed
+            # number of yields raced on-demand imports finishing in the
+            # executor, which let a write's deadline fire before the write.
+            for _ in range(10_000):
                 await asyncio.sleep(0)
+                if not loop._ready:  # type: ignore[attr-defined]
+                    break
             if task.done():
                 return task.result()
             pending = [deadline for deadline, future in self._sleepers if not future.done()]
@@ -227,7 +244,7 @@ async def sleepys_runtime(
             CONF_BED_TYPE: BED_TYPE_SLEEPYS_ELITE_APP,
             CONF_SLEEPYS_ELITE_SELECTOR: "BOX25",
             CONF_DISABLE_ANGLE_SENSING: True,
-            CONF_DISCONNECT_AFTER_COMMAND: False,
+            CONF_CONNECTION_MODE: "idle",
         },
     )
     entry.add_to_hass(hass)
@@ -266,12 +283,12 @@ async def _connect_with_real_startup(
     adapter = AdapterSelectionResult(device, _LOCAL.source, -50, True, [_LOCAL.source])
     generic_dis = AsyncMock()
     with (
-        patch(f"{_MODULE}.select_adapter", return_value=adapter),
-        patch(f"{_MODULE}.client_source", return_value=_LOCAL.source),
-        patch(f"{_MODULE}.async_path_for_source", return_value=_LOCAL),
-        patch(f"{_MODULE}.async_verify_native_bond", return_value=_native_bond()),
-        patch(f"{_MODULE}.close_stale_connections_by_address", new_callable=AsyncMock),
-        patch(f"{_MODULE}.read_ble_device_info", generic_dis),
+        patch(f"{_CONNECTION}.select_adapter", return_value=adapter),
+        patch(f"{_CONNECTION}.client_source", return_value=_LOCAL.source),
+        patch(f"{_CONNECTION}.async_path_for_source", return_value=_LOCAL),
+        patch(f"{_BONDS}.async_verify_native_bond", return_value=_native_bond()),
+        patch(f"{_CONNECTION}.close_stale_connections_by_address", new_callable=AsyncMock),
+        patch(f"{_CONNECTION}.read_ble_device_info", generic_dis),
     ):
         connected = await coordinator.async_connect()
     return connected, generic_dis
@@ -585,9 +602,11 @@ async def test_native_button_cover_number_and_select_use_bounded_paths(
         controller._app_fields["field_0x53"] = 1
         await clock.run_until(asyncio.create_task(number.async_set_native_value(5)))
 
-        select = AdjustableBedControllerSelect(coordinator, controller.controller_select_specs[0])
+        select = AdjustableBedMassageTimerSelect(
+            coordinator, MASSAGE_TIMER_DESCRIPTION, [10, 20, 30], has_off=False
+        )
         controller._app_fields["field_0x4b"] = 1
-        await clock.run_until(asyncio.create_task(select.async_select_option("2")))
+        await clock.run_until(asyncio.create_task(select.async_select_option("20 min")))
 
         level = AdjustableBedLevelNumber(
             coordinator,
@@ -595,14 +614,6 @@ async def test_native_button_cover_number_and_select_use_bounded_paths(
         )
         await clock.run_until(asyncio.create_task(level.async_set_native_value(0)))
         await clock.run_until(asyncio.create_task(level.async_set_native_value(6)))
-        brightness_up = next(
-            spec
-            for spec in controller.controller_button_specs
-            if spec.key == "sleepys_app_voice_brightness_up"
-        )
-        await clock.run_until(
-            asyncio.create_task(ControllerActionButton(coordinator, brightness_up).async_press())
-        )
 
         massage = AdjustableBedMassageNumber(
             coordinator,
@@ -617,14 +628,7 @@ async def test_native_button_cover_number_and_select_use_bounded_paths(
         )
         position = AdjustableBedControllerNumber(coordinator, position_spec)
         await clock.run_until(asyncio.create_task(position.async_set_native_value(100)))
-        voice_target = next(
-            spec
-            for spec in controller.controller_button_specs
-            if spec.key == "sleepys_app_voice_axis_1_0"
-        )
-        await clock.run_until(
-            asyncio.create_task(ControllerActionButton(coordinator, voice_target).async_press())
-        )
+        await clock.run_until(asyncio.create_task(position.async_set_native_value(0)))
 
     stop = controller._route("stop").payload
     memory = ROUTES[("m1", "BOX25")].payload
@@ -637,18 +641,17 @@ async def test_native_button_cover_number_and_select_use_bounded_paths(
     voice_position = controller._value_route("position_axis_1", 0).payload
     assert [payload for _, payload in trace[:4]] == [memory, memory, memory, stop]
     assert sum(payload == stop for _, payload in trace) == 2
-    assert len(trace) == 16
+    assert len(trace) == 15
     assert trace[8][1] == palette
     assert trace[9][1] == timer
     assert trace[10][1] == light_off
     assert trace[11][1] == light_level
-    assert trace[12][1] == light_level
-    assert trace[13][1] == intensity
-    assert trace[14][1] == position_target
-    assert trace[15][1] == voice_position
+    assert trace[12][1] == intensity
+    assert trace[13][1] == position_target
+    assert trace[14][1] == voice_position
     assert sum(payload == palette for _, payload in trace) == 1
     assert sum(payload == timer for _, payload in trace) == 1
-    assert sum(payload == light_level for _, payload in trace) == 2
+    assert sum(payload == light_level for _, payload in trace) == 1
     assert sum(payload == intensity for _, payload in trace) == 1
     assert sum(payload == position_target for _, payload in trace) == 1
     assert sum(payload == voice_position for _, payload in trace) == 1
@@ -673,11 +676,12 @@ async def test_motion_sensor_refresh_is_bounded_and_has_no_stop(
     ):
         spec = next(
             spec
-            for spec in controller.controller_button_specs
-            if spec.key == "sleepys_app_motion_sensor_on"
+            for spec in controller.controller_switch_specs
+            if spec.key == "sleepys_app_motion_sensor"
         )
-        button = ControllerActionButton(coordinator, spec)
-        await clock.run_until(asyncio.create_task(button.async_press()))
+        switch = AdjustableBedControllerSwitch(coordinator, spec)
+        with patch.object(switch, "async_write_ha_state"):
+            await clock.run_until(asyncio.create_task(switch.async_turn_on()))
 
     route = controller._route("motionSensorOn")
     assert len(trace) == 50, trace[-3:]
@@ -694,7 +698,6 @@ async def test_sequential_both_button_is_finite_and_drops_stale_hold_metadata(
 ) -> None:
     from custom_components.adjustable_bed.button import PairedBedCombinedMotorButton
     from custom_components.adjustable_bed.const import (
-        CONF_PAIR_CONNECTION_MODE,
         CONF_PAIR_ID,
         PAIR_CONNECTION_MODE_CONCURRENT,
         PAIR_CONNECTION_MODE_SEQUENTIAL,
@@ -714,7 +717,7 @@ async def test_sequential_both_button_is_finite_and_drops_stale_hold_metadata(
             CONF_BED_TYPE: BED_TYPE_SLEEPYS_ELITE_APP,
             CONF_SLEEPYS_ELITE_SELECTOR: "BOX25",
             CONF_DISABLE_ANGLE_SENSING: True,
-            CONF_DISCONNECT_AFTER_COMMAND: False,
+            CONF_CONNECTION_MODE: "idle",
         },
     )
     right_entry.add_to_hass(hass)
@@ -858,7 +861,6 @@ async def test_stale_both_hold_preflight_preserves_new_left_hold(
 ) -> None:
     """A STOP during Both-side preflight cannot replace a newer Left hold."""
     from custom_components.adjustable_bed.const import (
-        CONF_PAIR_CONNECTION_MODE,
         CONF_PAIR_ID,
         PAIR_CONNECTION_MODE_CONCURRENT,
         SIDE_BOTH,
@@ -878,7 +880,7 @@ async def test_stale_both_hold_preflight_preserves_new_left_hold(
             CONF_BED_TYPE: BED_TYPE_SLEEPYS_ELITE_APP,
             CONF_SLEEPYS_ELITE_SELECTOR: "BOX25",
             CONF_DISABLE_ANGLE_SENSING: True,
-            CONF_DISCONNECT_AFTER_COMMAND: False,
+            CONF_CONNECTION_MODE: "idle",
         },
     )
     right_entry.add_to_hass(hass)
@@ -961,8 +963,13 @@ async def test_stale_both_hold_preflight_preserves_new_left_hold(
     right._offline_controller = None
 
     def resolve_targets(
-        _hass: HomeAssistant, _device_ids: list[str], explicit_side: str | None = None
+        _hass: HomeAssistant,
+        _device_ids: list[str],
+        explicit_side: str | None = None,
+        *,
+        problems: list[BaseException] | None = None,
     ) -> tuple[list[tuple[PairedBedCoordinator, str]], list[str]]:
+        # The pair resolves, so a STOP has no problem to record.
         return [(pair, explicit_side or SIDE_BOTH)], []
 
     old_both_hold: asyncio.Task[object] | None = None
@@ -1126,8 +1133,8 @@ async def test_remote_timer_notifications_update_the_declared_select(
     _hass, coordinator, controller, client = sleepys_runtime
     characteristic = _FakeGattCharacteristic("6E400003-B5A3-F393-E0A9-E50E24DCCA9E")
     controller._notify_characteristic = characteristic
-    select = AdjustableBedControllerSelect(
-        coordinator, controller.controller_select_specs[0]
+    select = AdjustableBedMassageTimerSelect(
+        coordinator, MASSAGE_TIMER_DESCRIPTION, [10, 20, 30], has_off=False
     )
 
     def status(seconds: int) -> bytearray:
@@ -1139,13 +1146,11 @@ async def test_remote_timer_notifications_update_the_declared_select(
 
     controller._handle_notification(characteristic, status(600))
     assert coordinator.controller_state["sleepys_app_field_0x0b"] == 1
-    assert coordinator.controller_state["sleepys_app_massage_timer_code"] == "1"
-    assert select.current_option == "1"
+    assert select.current_option == "10 min"
 
     controller._handle_notification(characteristic, status(1200))
     assert coordinator.controller_state["sleepys_app_field_0x0b"] == 2
-    assert coordinator.controller_state["sleepys_app_massage_timer_code"] == "2"
-    assert select.current_option == "2"
+    assert select.current_option == "20 min"
 
     stale_characteristic = _FakeGattCharacteristic(
         "6E400003-B5A3-F393-E0A9-E50E24DCCA9F"
@@ -1154,9 +1159,9 @@ async def test_remote_timer_notifications_update_the_declared_select(
     controller._handle_notification(stale_characteristic, status(1800))
     controller._handle_notification(characteristic, bytearray.fromhex("A5 0B 00"))
     assert coordinator.controller_state == before_stale
-    assert select.current_option == "2"
+    assert select.current_option == "20 min"
 
     with _ready_command_lane(coordinator):
-        await select.async_select_option("2")
+        await select.async_select_option("20 min")
     client.write_gatt_char.assert_not_awaited()
     await coordinator.async_shutdown()

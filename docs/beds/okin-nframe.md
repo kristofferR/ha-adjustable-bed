@@ -1,0 +1,6114 @@
+# Okin and DewertOkin
+
+**Status:** Partly tested: Okimat, Prodigy CE / CU170 and the RF ECO BT stair lift are tested; Okin CST and Adjustable bed (Lumbar) are partly tested; DewertOkin, Customatic, the other Leggett profiles and the other 40-bit profiles need testing. Each profile states its own status.
+
+**Credit:** Reverse engineering by [kristofferR](https://github.com/kristofferR/ha-adjustable-bed), david_nagy, corne, PT, MarcusW and [Richard Hopton](https://github.com/richardhopton/smartbed-mqtt)
+
+This guide covers every bed that sends Okin N-frame command words. The 32-bit
+profiles are Okimat handset tables, DewertOkin, the OKIN Smart Remote stair lift,
+the Customatic apps and the Leggett & Platt Okin apps. The 40-bit profiles are
+Okin DOT, SIMMONS, OKIN SleepEase, the Sleepy's Elite legacy
+CB25 dialect, the AdjustableM5X4 key selectors and the eShine app's products. The 96-bit profiles are the
+Okin CST (CSTProtocol) products and the OKIN Bedding apps: Jordan's Serenity,
+Jordan's Tranquil and Customatic Z-Series. The 64-bit profiles are Okin 64-Bit
+the Adjustable bed (Lumbar) app, Rize Home and Resident Adjustable Base.
+
+## Known Models
+
+Symphony Sleep Sense beds on its P3 format, and its split beds, also use this
+format; see the [Symphony profile](okin-soundwave.md#symphony-sleep-sense) for
+their setup choices, controls and alarms.
+
+| Profile | Models |
+|---|---|
+| [Okimat](#okimat) | Okimat beds, Lucid L600, Customatic Demo, RF ECO BT bed receivers, other beds with Okin motors; the apps marked ⚠️ under [Apps](#apps) are not fully checked |
+| [DewertOkin](#dewertokin) | A H Beard, Hankook Gallery, beds with the DewertOkin HE150 controller, DewertOkin Bluetooth RF-Gateway receivers; see [DewertOkin brands](#dewertokin-brands) |
+| [RF ECO BT stair lift](#rf-eco-bt-stair-lift) | Elda BTH / RF ECO BT / MEGAMAT staircase from [#344](https://github.com/kristofferR/ha-adjustable-bed/issues/344); Device Information model `MEGAMAT MBZ`, advertising as `OKIN-050226` |
+| [Customatic](#customatic-family) | Customatic Clarity, Jerome's C and Remedy bases |
+| [Leggett Okin](#leggett-okin-family) | Leggett & Platt Prodigy Comfort Elite and similar control boxes, marked `LP BED CONTROL`; tested on a DewertOkin CU170 control box |
+| [Okin DOT](#okin-dot) | DewertOkin "DOT PROTOCOL" receivers for the RF1058, RF34 and RF6707 handsets |
+| [SIMMONS](#simmons) | Beds controlled with the SIMMONS app, regular and inclined |
+| [OKIN SleepEase](#okin-sleepease) | OKIN SleepEase / DoubleSleep / XiaoBao app models |
+| [Sleepy's legacy CB25](#sleepys-legacy-cb25) | Sleepy's Elite BOX25 receivers whose Device Information manufacturer is not `star` |
+| [AdjustableM5X4](#adjustablem5x4) | StarCode beds operated with the AdjustableM5X4 app |
+| [eShine](#eshine) | eShine app products E2000, E3000/E3100 (one selector) and E5000 |
+| [Okin CST](#okin-cst) | Mattress Firm 900-O / Rize MF900, Rize Sanctuary, Resident, Aviada, Bob, Contempo, Rize II Carefree and Clarity, Support, Nectar Motion (Nectar Move) |
+| [Jordan's Serenity](#jordans-serenity) | Beds controlled with the Jordan's Serenity app |
+| [Jordan's Tranquil](#jordans-tranquil) | Beds controlled with the Jordan's Tranquil app |
+| [Customatic Z-Series](#customatic-z-series) | Customatic Z-230 and Z-280 bases with the Z-Series app |
+| [Okin 64-Bit](#okin-64-bit) | Okin controllers with the Adjustable bed app, including `NORA_CON` / `NORACON` |
+| [Adjustable bed app](#adjustable-bed-app) | Beds controlled with Adjustable bed 1.2.1 |
+| [OKIN Motion Bed](#okin-motion-bed) | Beds controlled with OKIN Motion Bed; which button moves which motor is not yet tested on hardware |
+| [Comfort Enhancement 3 / Comfort Plus3](#comfort-enhancement-3) | All 15 remotes in the app; not yet tested on hardware |
+| [N32 Motion Bed](#n32-motion-bed) | Beds controlled with N32 Motion Bed; not yet tested on hardware |
+| [Resident Adjustable Base](#resident-adjustable-base) | Beds controlled with Resident Adjustable Base; not yet tested on hardware |
+| [Ultramatic Smart Bed](#ultramatic-smart-bed) | Beds controlled with Ultramatic Smart Bed; not yet tested on hardware |
+| [Superior sleep](#superior-sleep-ss350--ss650) | SS350 and SS650 |
+| [Adjustable bed (Lumbar)](#adjustable-bed-lumbar) | Beds controlled with the Adjustable bed(Lumbar) app |
+
+Customatic Z-Series beds use the separate [Customatic Z-Series](#customatic-z-series)
+profile; Okimat, DewertOkin and the other controllers stay separate from the
+Customatic app profiles.
+
+## Apps
+
+| Analyzed | App | Package ID | Profile |
+|---|---|---|---|
+| ✅ | OKIN Motion Bed 1.0 (2), not yet tested on hardware | `com.okin.motionbed` | [OKIN Motion Bed](#okin-motion-bed), chosen in setup |
+| ⚠️ | [OKIN ComfortBed II-N](https://play.google.com/store/apps/details?id=com.ore.jalon.neworebeding) | `com.ore.jalon.neworebeding` | [Okimat](#okimat), not fully checked |
+| ✅ | [OKIN Comfort Bed](https://play.google.com/store/apps/details?id=com.ore.okincomfortbed) 1.1.6 (8), not yet tested on hardware | `com.ore.okincomfortbed` | [ORE comfort-bed profile](keeson.md#okin-comfort-bed), a Keeson profile |
+| ✅ | [OKIN Smart Bed](https://play.google.com/store/apps/details?id=com.okin.bedding.smartbedwifi) | `com.okin.bedding.smartbedwifi` | [SmartBed app](smartbed.md) |
+| ⚠️ | Rize II | `com.okin.bedding.rizeii` | [Okimat](#okimat), not fully checked |
+| ✅ | [Comfort Enhancement 3 / Comfort Plus3](https://play.google.com/store/apps/details?id=com.okin.apex) 1.4.0 (5) | `com.okin.apex` | [Comfort Enhancement 3](#comfort-enhancement-3) |
+| ✅ | [Resident Adjustable Bed](https://play.google.com/store/apps/details?id=com.okin.bedding.rizeResident) 1.0.1 | `com.okin.bedding.rizeResident` | [Okin CST](#okin-cst) (Rize Resident) |
+| ✅ | [Customatic Technologies Z-Series](https://play.google.com/store/apps/details?id=com.okin.bedding.glory) 1.0.4 (5) | `com.okin.bedding.glory` | [Customatic Z-Series](#customatic-z-series) |
+| ✅ | [Jordan's Tranquil](https://play.google.com/store/apps/details?id=com.okin.bedding.tranquil) 1.0.2 (3) | `com.okin.bedding.tranquil` | [Jordan's Tranquil](#jordans-tranquil) |
+| ⚠️ | Jobs 賈伯斯 | `com.okin.bedding.jobs` | [Okimat](#okimat), not fully checked |
+| ✅ | [OKIN Smart Remote / FurniMove](https://play.google.com/store/apps/details?id=com.okin.okinsmartcomfort) 2.2.0 (19) | `com.okin.okinsmartcomfort` | [Okimat](#okimat), [DewertOkin](#dewertokin), [RF ECO BT stair lift](#rf-eco-bt-stair-lift), [Okin DOT](#okin-dot) |
+| ✅ | [Customatic Clarity](https://play.google.com/store/apps/details?id=com.okin.bedding.customaticclarity) 1.0.1 | `com.okin.bedding.customaticclarity` | [Customatic Clarity](#customatic-clarity) |
+| ✅ | [Customatic Jerome's](https://play.google.com/store/apps/details?id=com.okin.bedding.customaticjeromes) 1.0.1 | `com.okin.bedding.customaticjeromes` | [Customatic Jerome's](#customatic-jeromes) |
+| ✅ | [Customatic Remedy](https://play.google.com/store/apps/details?id=com.okin.bedding.customaticremedy) 1.0.1 | `com.okin.bedding.customaticremedy` | [Customatic Remedy](#customatic-remedy) |
+| ✅ | [Prodigy 2L](https://play.google.com/store/apps/details?id=com.leggett.prodigy2L) 1.2 (15) | `com.leggett.prodigy2L` | [Prodigy 2L](#prodigy-2l) |
+| ✅ | [Prodigy 2](https://play.google.com/store/apps/details?id=com.leggett.prodigy2) 2.2.0 (44) | `com.leggett.prodigy2` | [Prodigy 2](#prodigy-2) |
+| ✅ | [Prodigy CE / Prodigy 4](https://play.google.com/store/apps/details?id=com.leggett.prodigy4) 1.2.0 (18) | `com.leggett.prodigy4` | [Prodigy CE](#prodigy-ce-prodigy-4) |
+| ✅ | [U / Ultra Series](https://play.google.com/store/apps/details?id=com.leggett.useries) 2.1 (16) | `com.leggett.useries` | [U Series](#u-series) |
+| ✅ | [SIMMONS](https://play.google.com/store/apps/details?id=com.okin.simmons) 1.12.9 (code 99) | `com.okin.simmons` | [SIMMONS](#simmons) |
+| ✅ | [OKIN SleepEase / DoubleSleep](https://play.google.com/store/apps/details?id=com.okin.doublesleep) 1.2.24 (code 109) | `com.okin.doublesleep` | [OKIN SleepEase](#okin-sleepease) |
+| ✅ | [MFRM Sleepy's Elite](https://play.google.com/store/apps/details?id=com.okin.bedding.sleepy) | `com.okin.bedding.sleepy` | [Sleepy's legacy CB25](#sleepys-legacy-cb25) |
+| ✅ | [AdjustableM5X4](https://play.google.com/store/apps/details?id=com.starcode.abm5_4) 1.0.1 (3) | `com.starcode.abm5_4` | [AdjustableM5X4](#adjustablem5x4) |
+| ✅ | [Jordan's Sanctuary - O](https://play.google.com/store/apps/details?id=com.okin.bedding.rizeSanctuary) 1.0.1 (2) | `com.okin.bedding.rizeSanctuary` | [Okin CST](#okin-cst) (Rize Sanctuary) |
+| ✅ | [Rize Aviada - O](https://play.google.com/store/apps/details?id=com.okin.bedding.rizeaviada) 1.0.1 (2) | `com.okin.bedding.rizeaviada` | [Okin CST](#okin-cst) (Rize Aviada) |
+| ✅ | [POWER BOB ULTRA-O](https://play.google.com/store/apps/details?id=com.okin.bedding.rizebob) 1.0.1 (2) | `com.okin.bedding.rizebob` | [Okin CST](#okin-cst) (Rize Bob) |
+| ✅ | [Rize Contemporary III - O](https://play.google.com/store/apps/details?id=com.okin.bedding.rizecontempo) 1.0.2 (3) | `com.okin.bedding.rizecontempo` | [Okin CST](#okin-cst) (Rize Contempo) |
+| ✅ | [Carefree](https://play.google.com/store/apps/details?id=com.okin.bedding.rizeiicarefree) 1.0.1 (2) | `com.okin.bedding.rizeiicarefree` | [Okin CST](#okin-cst) (Rize II Carefree) |
+| ✅ | [Rize Clarity II - O](https://play.google.com/store/apps/details?id=com.okin.bedding.rizeiiclarity) 1.0.1 (2) | `com.okin.bedding.rizeiiclarity` | [Okin CST](#okin-cst) (Rize II Clarity) |
+| ✅ | [Mattress Firm 900 - O / MFirm 900 - O](https://play.google.com/store/apps/details?id=com.okin.bedding.rizemf900) 1.1.2 (4) | `com.okin.bedding.rizemf900` | [Okin CST](#okin-cst) (Rize MF900, the Auto profile) |
+| ✅ | [Support 挺你 科技調整床](https://play.google.com/store/apps/details?id=com.okin.bedding.support) 1.0.4 (5) | `com.okin.bedding.support` | [Okin CST](#okin-cst) (Support) |
+| ✅ | [Nectar Move](https://play.google.com/store/apps/details?id=com.okin.bedding.nectarmotion) 1.0.1 (2) | `com.okin.bedding.nectarmotion` | [Okin CST](#okin-cst) (Nectar Move) |
+| ✅ | [Jordan's Serenity](https://play.google.com/store/apps/details?id=com.okin.bedding.serenity) 1.0.1 (code 2) | `com.okin.bedding.serenity` | [Jordan's Serenity](#jordans-serenity) |
+| ✅ | [Superior sleep](https://play.google.com/store/apps/details?id=com.okin.bedding.superior.superior) 1.0.0 (2) | `com.okin.bedding.superior.superior` | [SS350 / SS650](#superior-sleep-ss350--ss650) |
+| ✅ | [Rize Home](https://play.google.com/store/apps/details?id=com.okin.rize) 1.1.2 (12) | `com.okin.rize` | [Remedy III / Contempo IV](#rize-home-remedy-iii--contempo-iv) |
+| ✅ | [N32 Motion Bed](https://play.google.com/store/apps/details?id=com.okin.simmonskorea) 1.1.14 (38) | `com.okin.simmonskorea` | [N32 Motion Bed](#n32-motion-bed) |
+| ✅ | [Resident Adjustable Base](https://play.google.com/store/apps/details?id=com.okin.resident.release) 1.0.0 (1) | `com.okin.resident.release` | [Resident Adjustable Base](#resident-adjustable-base) |
+| ✅ | [Ultramatic Smart Bed](https://play.google.com/store/apps/details?id=com.okin.ultramaticSmartBed) 1.1.2 (5) | `com.okin.ultramaticSmartBed` | [Ultramatic Smart Bed](#ultramatic-smart-bed) |
+| ✅ | [Adjustable bed](https://play.google.com/store/apps/details?id=com.okin.bedding.adjustbed) 1.2.1 (33) | `com.okin.bedding.adjustbed` | [Adjustable bed app](#adjustable-bed-app) |
+| ✅ | [Adjustable bed(Lumbar)](https://play.google.com/store/apps/details?id=com.okin.bedding.adjustablelumbar) 1.2.2 (code 33) | `com.okin.bedding.adjustablelumbar` | [Adjustable bed (Lumbar)](#adjustable-bed-lumbar) |
+| ✅ | [eShine](https://play.google.com/store/apps/details?id=com.okin.eshine) 1.1.8 (22) | `com.okin.eshine` | [eShine](#eshine) (E2000, E3000/E3100, E5000) |
+
+⚠️ These apps are not fully checked, so the profile listed for them may not
+match your bed, and setup does not name them.
+
+Beds controlled with FurniMove handset IDs normally use the
+[FurniMove / OKIN Smart Remote](furnimove.md) app profile.
+
+## Features
+
+| Feature | Okimat | DewertOkin | RF ECO BT stair | Customatic | Leggett Okin |
+|---|---|---|---|---|---|
+| Motor control | ✅ Per handset | ✅ Head, feet | ✅ One stair actuator | ✅ Back, legs; Remedy adds lumbar | ✅ Head, feet, plus pillow and/or lumbar per app |
+| Simultaneous movement | ⚠️ Held motors move together; the app cannot do this (see [Controls](#okimat)) | ❌ | ❌ | ✅ `customatic_move_simultaneously`, and `timed_move` calls on different motors run together | ✅ Prodigy CE and U Series: `timed_move` calls on different motors run together |
+| Hold until release | ❌ | ❌ | ❌ | ✅ Renewable `timed_move` and `hold_control` | ✅ Renewable `timed_move` and `hold_control` |
+| Position feedback | ⚠️ Some receivers | ❌ | ❌ | ❌ | ❌ |
+| Flat | ✅ Most handsets | ✅ | ❌ | ✅ (Jerome's also Restored Flat) | ✅ Held button |
+| Other presets | Zero-G, anti-snore / quiet sleep where the handset has them | Zero-G, TV, Quiet Sleep | ❌ | Named memory-page controls | Snore |
+| Memory presets | ✅ 1-4 slots per handset, save key | ✅ 2 slots, no save | ❌ | ❌ Numbered slots; ✅ named hold buttons | ✅ Prodigy: four favorites incl. fixed Snore; U Series: two held memory controls and SET |
+| Massage | ✅ Handsets with massage keys | ✅ Wave, head, foot, off | ❌ | ❌ | ✅ Head/foot up/down, on/off toggle, wave step |
+| Under-bed lights | ✅ Toggle, handsets with a light key | ✅ Toggle | ❌ | ✅ Clarity/Remedy toggle; ❌ Jerome's | ✅ Toggle; Prodigy CE adds a light that shows its state |
+| Sync, child lock | ✅ Handsets with those keys | ❌ | ❌ | ❌ | ❌ |
+| Sleep and alarm timers | ❌ | ❌ | ❌ | ❌ | ✅ The bed's own timers |
+| Control mode | ❌ | ❌ | ❌ | ❌ | ⚠️ Prodigy apps; Prodigy CE has no press-and-hold mode |
+| Device Information | ❌ | ❌ | ❌ | ✅ Five diagnostic sensors | ✅ Diagnostics |
+| BLE pairing | ✅ Required | ❌ | ✅ Asked for | ❌ | ✅ Required |
+
+The 40-bit profiles:
+
+| Feature | DOT | SIMMONS | SleepEase | Sleepy's legacy CB25 | AdjustableM5X4 | eShine |
+|---|---|---|---|---|---|---|
+| Motor control | ✅ Two motors per handset | ✅ Back, legs | ✅ Head, foot, lumbar, headrest, hips (P1, P2) | ✅ Head, foot, lumbar, neck | ✅ Head, foot, both together | ✅ Head, foot; E5000 adds Head Tilt |
+| Position feedback | ❌ | ❌ | ❌ | ✅ 0-100 % | ❌ | ❌ |
+| Presets | ✅ Flat; Zero-G, Quiet Sleep, Anti-snore on RF1058 | ✅ Flat; Zero-G, TV/PC, Anti-snore on a regular bed | ✅ Held (P1) or one-shot (P2) recalls | ✅ Flat, TV, Zero-G, Anti-snore, Lounge | ✅ Flat, TV, Lounge, Zero-G, Anti-snore | ✅ Held Flat, Zero-G, Anti-snore, Reading, TV, Flat + Zero-G |
+| Memory presets | ✅ RF1058 and RF34 codes, tap to recall | ✅ Custom Mode, saved by a 5.5 s hold | ✅ Two recalls | ✅ 2 slots with save | ✅ Memory A, named saves and reset | ❌ |
+| Massage | ✅ RF1058 codes | ❌ | ✅ | ✅ | ✅ Intensity, wave and timer once massage is on | ✅ E3000/E3100, E5000 |
+| Under-bed lights | ✅ Toggle | ✅ | ✅ Toggle | ✅ | ✅ By selector | ✅ E3000/E3100, E5000: hold-to-use toggle that shows its state |
+| Alarms and clock | ❌ | ✅ Two slots, clock sync | ✅ | ❌ | ❌ | ✅ Next-occurrence alarm, clock sync |
+| Left and right on one address | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
+| Hold until release | ❌ | ✅ | ❌ | ✅ | ✅ | ✅ |
+| BLE pairing | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
+
+The 96-bit profiles:
+
+| Feature | Okin CST | Jordan's Serenity | Jordan's Tranquil | Customatic Z-Series |
+|---|---|---|---|---|
+| Motor control | ✅ Head, foot; lumbar on Aviada, Contempo, MF900 and Support | ✅ Head, foot, remote selectors 4 and 5 | ✅ Head, foot, remote selectors 4 and 5 | ✅ Head, foot; Z-230 head and foot together, Z-280 selector 5 |
+| Presets | ✅ Flat, Zero-G, Anti-snore; Lounge, Incline, Reading per product | ✅ Flat, Zero-G, TV, Leisure, Anti-snore | ✅ Flat, Zero-G, Lounge, Anti-snore | ✅ Flat, Zero-G, TV, Anti-snore |
+| Memory presets | ✅ One to four per product, with save | ✅ M1, M2 with save | ✅ M1, M2 with save | ✅ M1 (Z-230) or M1, M2 (Z-280), with save |
+| Massage | ⚠️ Per product | ✅ Head, foot, mode, timer, waves, off | ✅ Head, foot, mode, timer, waves, off | ✅ Toggle, mode, timer; zones or intensity per page |
+| Under-bed lights | ✅ Every product except Resident | ✅ Toggle, on, off | ✅ Toggle, on, off | ✅ Toggle |
+| Alarm and clock | ❌ | ❌ | ❌ | ✅ CST13/CST14 receivers |
+| Hold until release | ✅ | ✅ | ✅ | ✅ |
+| BLE pairing | ⚠️ Most products | ❌ | ❌ | ❌ |
+
+The 64-bit profiles:
+
+| Feature | Okin 64-Bit | Adjustable bed (Lumbar) |
+|---|---|---|
+| Motor control | ✅ Head, foot, lumbar | ✅ Head, foot, lumbar |
+| Presets | ✅ Flat, Zero-G, Lounge, TV/PC, Anti-snore | ✅ Flat, Zero-G, Lounge (Leisure), Incline, Anti-snore |
+| Memory presets | ✅ Two recalls, no save | ✅ Named saves by a 6 s hold |
+| Massage | ✅ Toggle, intensity, wave mode | ✅ Waves, intensity, stop, check |
+| Under-bed lights | ✅ Toggle, on, off | ✅ Toggle |
+| Hold until release | ❌ | ✅ |
+| BLE pairing | ⚠️ Custom OKIN variant | ❌ |
+
+## Choosing a profile
+
+Detection suggests Okimat for the Okin service, DewertOkin by device name and
+Leggett Okin by Leggett names; each profile's Setup lists its rules. The stair
+lift and the Customatic apps are explicit choices, and Leggett Okin entries
+choose their app. DOT is detected from the Nordic UART write characteristic on
+an Okin handset entry; SIMMONS, SleepEase,
+Sleepy's Elite, AdjustableM5X4 and eShine are explicit app choices.
+
+### Home Assistant setup
+
+The bed-type list has one **FurniMove / OKIN Smart Remote app, Okimat, Lucid,
+DOT and RF ECO BT remotes · Okin** row for the [Okimat](#okimat),
+[Okin DOT](#okin-dot), [RF ECO BT stair lift](#rf-eco-bt-stair-lift) and
+[FurniMove](furnimove.md) routes. Setup then asks which app or remote you use;
+the receiver's name, label and services never decide it, and you don't need an
+RF remote to answer.
+
+1. **FurniMove / OKIN Smart Remote app:** choose the handset ID the app uses.
+2. **No app: Okimat or OKIN handset code (requires pairing):** choose the code
+   printed on the handset, the motor count, whether massage motors are fitted
+   and whether to read positions.
+3. **No app: DOT remote (RF34 or RF6707):** choose the remote code, the motor
+   count and whether massage motors are fitted. The RF1058 handsets belong to
+   the FurniMove answer.
+4. **No app: single-actuator staircase, RF ECO BT (requires pairing):** confirms
+   the staircase.
+5. The apps the [app review](../CONFIGURATION.md#profile-recommendations) lists
+   for a detected Okimat route, such as Jordan's Serenity or Adjustable bed
+   (Lumbar), switch to that app's profile.
+6. When detection found a route, **Keep the detected or saved controls**
+   saves it.
+
+A bed set up as [Okin CST](#okin-cst), from its row or the discovery question,
+is asked the same question with its own apps first: each CST product app, then
+Jordan's Serenity, Jordan's Tranquil and Customatic Z-Series, then the answers
+above. Keep saves Okin CST with its MF900 profile. An existing CST entry keeps
+Configure for its product, and **Reconfigure** asks the same question, so it
+can also move to another Okin route.
+
+For an existing bed, open the entry's three-dot menu and **Reconfigure** (see
+[Changing the app or layout](../CONFIGURATION.md#changing-the-bed-type-app-or-layout-of-an-existing-bed)).
+The same question appears, with **Keep the detected or saved controls**
+leaving the entry as it is. Before the
+review, each Okin route is checked for the command endpoint its controller
+writes, and the Okimat and staircase routes also check the bond; a bed without
+them keeps its setup. **Configure** keeps routine settings; the handset ID, remote code and
+route change only through **Reconfigure**. The [FurniMove repairs](furnimove.md#repairing-existing-configurations)
+are unchanged.
+
+<!-- generated:okin-nframe-profiles -->
+<!-- Generated by scripts/generate_codec_docs.py from the codec and profile data. Edit those, not this block. -->
+
+### Profile summary
+
+| Profile | Key | Bed types | Word | Frame | Write | Axes | Memory |
+|---|---|---|---|---|---|---|---|
+| Comfort Enhancement 3 remote 0 | `apex_0` | `comfort_enhancement3` | 32-bit | plain frame | with response | head, feet | 2 |
+| Comfort Enhancement 3 remote 1 | `apex_1` | `comfort_enhancement3` | 32-bit | plain frame | with response | head, feet | 2 |
+| Comfort Enhancement 3 remote 2 | `apex_2` | `comfort_enhancement3` | 32-bit | plain frame | with response | head, feet | 2 |
+| Comfort Enhancement 3 remote 3 | `apex_3` | `comfort_enhancement3` | 32-bit | plain frame | with response | head, feet | 2 |
+| Comfort Enhancement 3 remote 4 | `apex_4` | `comfort_enhancement3` | 32-bit | plain frame | with response | head, feet | 1 |
+| Comfort Enhancement 3 remote 5 | `apex_5` | `comfort_enhancement3` | 32-bit | plain frame | with response | head, feet | 1 |
+| Comfort Enhancement 3 remote 6 | `apex_6` | `comfort_enhancement3` | 32-bit | plain frame | with response | head, feet | 1 |
+| Comfort Enhancement 3 remote 7 | `apex_7` | `comfort_enhancement3` | 32-bit | plain frame | with response | head, feet | 2 |
+| Comfort Enhancement 3 remote 8 | `apex_8` | `comfort_enhancement3` | 32-bit | plain frame | with response | head, feet | 2 |
+| Comfort Enhancement 3 remote 9 | `apex_9` | `comfort_enhancement3` | 32-bit | plain frame | with response | head, feet | 2 |
+| Comfort Enhancement 3 remote 10 | `apex_10` | `comfort_enhancement3` | 32-bit | plain frame | with response | head, feet | 2 |
+| Comfort Enhancement 3 remote 11 | `apex_11` | `comfort_enhancement3` | 32-bit | plain frame | with response | head, feet | 2 |
+| Comfort Enhancement 3 remote 12 | `apex_12` | `comfort_enhancement3` | 32-bit | plain frame | with response | head, feet | 2 |
+| Comfort Enhancement 3 remote 13 | `apex_13` | `comfort_enhancement3` | 32-bit | plain frame | with response | head, feet | 2 |
+| Comfort Enhancement 3 remote 14 | `apex_14` | `comfort_enhancement3` | 32-bit | plain frame | with response | head, feet | 2 |
+| Okimat handset table | `okimat` | `okin_uuid` | 32-bit | plain; RF-Gateway envelope when detected | with response | handset table | handset table |
+| DewertOkin | `dewertokin` | `okin_handle` | 32-bit | plain; RF-Gateway envelope when detected | with response | head, feet | 2 |
+| OKIN Smart Remote RF ECO BT stair lift | `okin_rf_eco_bt` | `okin_rf_eco_bt` | 32-bit | plain frame | with response | stair | 0 |
+| Customatic Clarity | `clarity` | `customatic_clarity` | 32-bit | plain frame | from the characteristic's properties | back, legs | 0 |
+| Customatic Jerome's | `jeromes` | `customatic_jeromes` | 32-bit | plain frame | from the characteristic's properties | back, legs | 0 |
+| Customatic Remedy | `remedy` | `customatic_remedy` | 32-bit | plain frame | from the characteristic's properties | back, legs, lumbar | 0 |
+| Prodigy 2L | `prodigy2l` | `leggett_okin` | 32-bit | plain (R1) or envelope (R0), by selector characteristic | without response | head, feet, lumbar | 4 |
+| Prodigy 2 | `prodigy2` | `leggett_okin` | 32-bit | plain (R1) or envelope (R0), by selector characteristic | without response | head, feet, pillow | 4 |
+| Prodigy CE | `prodigy4` | `leggett_okin` | 32-bit | plain (R1) or envelope (R0), by selector characteristic | without response | head, feet, pillow, lumbar | 4 |
+| U Series | `useries` | `leggett_okin` | 32-bit | plain (R1) or envelope (R0), by selector characteristic | without response | head, feet, pillow | 2 |
+| DewertOkin DOT handset table | `okin_dot` | `okin_dot` | 40-bit | plain frame | without response | handset table | handset table |
+| SIMMONS SmartBed names | `simmons_smartbed` | `simmons` | 40-bit | plain frame | without response | back, legs | 1 |
+| SIMMONS OKIN names | `simmons_okin` | `simmons` | 40-bit | Keeson E6 frame; inclined keys plain | with response | back, legs | 1 |
+| OKIN SleepEase | `doublesleep` | `doublesleep` | 40-bit | plain frame | without response | head, feet, lumbar, pillow, hip | 2 |
+| Sleepy's Elite legacy CB25 | `sleepys_box25` | `sleepys_box25` | 40-bit | plain frame | without response | head, foot, lumbar, neck | 2 |
+| AdjustableM5X4 none, BOX24, BOX1221, BOX2422, BOX2442 | `starcode_abm5_4` | `starcode_abm5_4` | 40-bit | plain frame | without response | head, foot | 1 |
+| AdjustableM5X4 BOX3633 | `starcode_abm5_4_box3633` | `starcode_abm5_4` | 40-bit | plain frame | without response | head, foot | 1 |
+| AdjustableM5X4 BOX25 | `starcode_abm5_4_box25` | `starcode_abm5_4` | 40-bit | plain frame | without response | head, foot | 1 |
+| AdjustableM5X4 BOX15 | `starcode_abm5_4_box15` | `starcode_abm5_4` | 40-bit | plain frame | without response | head, foot | 1 |
+| AdjustableM5X4 BOX1220 | `starcode_abm5_4_box1220` | `starcode_abm5_4` | 40-bit | plain frame | without response | head, foot | 1 |
+| eShine E2000 | `eshine_e2000` | `eshine_okin` | 40-bit | plain frame | without response | head, feet | 0 |
+| eShine E3000 / E3100 | `eshine_e30003100` | `eshine_okin` | 40-bit | plain frame | without response | head, feet | 0 |
+| eShine E5000 | `eshine_e5000` | `eshine_okin` | 40-bit | plain frame | without response | head, feet, pillow | 0 |
+| Rize Sanctuary | `cst_sanctuary` | `okin_cst` | 96-bit | plain frame | with response | head, feet | 2 |
+| Rize Resident | `cst_resident` | `okin_cst` | 96-bit | plain frame | with response | head, feet | 4 |
+| Rize Aviada | `cst_aviada` | `okin_cst` | 96-bit | plain frame | with response | head, feet, lumbar | 3 |
+| Rize Bob | `cst_bob` | `okin_cst` | 96-bit | plain frame | with response | head, feet | 2 |
+| Rize Contempo | `cst_contempo` | `okin_cst` | 96-bit | plain frame | with response | head, feet, lumbar | 3 |
+| Rize II Carefree | `cst_carefree` | `okin_cst` | 96-bit | plain frame | with response | head, feet | 1 |
+| Rize II Clarity | `cst_clarity` | `okin_cst` | 96-bit | plain frame | with response | head, feet | 3 |
+| Rize MF900 | `cst_mf900` | `okin_cst` | 96-bit | plain frame | with response | head, feet, lumbar | 3 |
+| Support | `cst_support` | `okin_cst` | 96-bit | plain frame | with response | head, feet, lumbar | 3 |
+| Nectar Move | `cst_nectar_move` | `okin_cst` | 96-bit | plain frame | with response | head, feet | 2 |
+| Jordan's Serenity | `serenity` | `serenity` | 96-bit | plain frame | from the characteristic's properties | head, feet | 2 |
+| Jordan's Tranquil | `tranquil` | `tranquil` | 96-bit | plain frame | from the characteristic's properties | head, feet | 2 |
+| Customatic Z-230 | `zseries_z230` | `customatic_zseries` | 96-bit | plain frame | from the characteristic's properties | head, feet | 1 |
+| Customatic Z-280 | `zseries_z280` | `customatic_zseries` | 96-bit | plain frame | from the characteristic's properties | head, feet | 2 |
+| Rize Remedy II | `rize_remedy_ii` | `rize_remedy_ii` | 96-bit | plain frame | from the characteristic's properties | head, feet, lumbar | 3 |
+| OKIN Motion Bed | `okin_motionbed` | `okin_motionbed` | 32-bit | fixed E5 gateway envelope | with response | back, middle, legs | 2 |
+| N32 Motion Bed | `n32_motion_bed` | `n32_motion_bed` | 40-bit | plain frame | with response | back, legs, head | 3 |
+| Resident Adjustable Base | `resident` | `resident` | 64-bit | plain frame | with response | head, feet | 2 |
+| Ultramatic Smart Bed | `ultramatic_smart_bed` | `ultramatic_smart_bed` | 40-bit | plain frame | without response | head, foot, headtilt, lumbar, hips | 2 |
+| OKIN 64-bit Nordic UART | `okin_64bit_nordic` | `okin_64bit` | 64-bit | plain frame | without response | head, feet, lumbar | 2 |
+| OKIN 64-bit OKIN service | `okin_64bit_custom` | `okin_64bit` | 64-bit | plain frame | with response | head, feet, lumbar | 2 |
+| Adjustable bed (Lumbar) 36_33_04a | `adjustable_lumbar_okin` | `adjustable_lumbar` | 64-bit | plain frame | with response | head, feet, lumbar | 0 |
+| Adjustable bed (Lumbar) 25_42_02 | `adjustable_lumbar_star` | `adjustable_lumbar` | 64-bit | plain frame | without response | head, feet, lumbar | 0 |
+
+### Hold and release timing
+
+| Profile | Hold refresh | Repeats | Release |
+|---|---|---|---|
+| Comfort Enhancement 3 remote 0 | 100 ms | entry pulse count; until release with a renewable hold | 2 STOP at 100 ms, 200 ms after the last write |
+| Comfort Enhancement 3 remote 1 | 100 ms | entry pulse count; until release with a renewable hold | 2 STOP at 100 ms, 200 ms after the last write |
+| Comfort Enhancement 3 remote 2 | 100 ms | entry pulse count; until release with a renewable hold | 2 STOP at 100 ms, 200 ms after the last write |
+| Comfort Enhancement 3 remote 3 | 100 ms | entry pulse count; until release with a renewable hold | 2 STOP at 100 ms, 200 ms after the last write |
+| Comfort Enhancement 3 remote 4 | 100 ms | entry pulse count; until release with a renewable hold | 2 STOP at 100 ms, 200 ms after the last write |
+| Comfort Enhancement 3 remote 5 | 100 ms | entry pulse count; until release with a renewable hold | 2 STOP at 100 ms, 200 ms after the last write |
+| Comfort Enhancement 3 remote 6 | 100 ms | entry pulse count; until release with a renewable hold | 2 STOP at 100 ms, 200 ms after the last write |
+| Comfort Enhancement 3 remote 7 | 100 ms | entry pulse count; until release with a renewable hold | 2 STOP at 100 ms, 200 ms after the last write |
+| Comfort Enhancement 3 remote 8 | 100 ms | entry pulse count; until release with a renewable hold | 2 STOP at 100 ms, 200 ms after the last write |
+| Comfort Enhancement 3 remote 9 | 100 ms | entry pulse count; until release with a renewable hold | 2 STOP at 100 ms, 200 ms after the last write |
+| Comfort Enhancement 3 remote 10 | 100 ms | entry pulse count; until release with a renewable hold | 2 STOP at 100 ms, 200 ms after the last write |
+| Comfort Enhancement 3 remote 11 | 100 ms | entry pulse count; until release with a renewable hold | 2 STOP at 100 ms, 200 ms after the last write |
+| Comfort Enhancement 3 remote 12 | 100 ms | entry pulse count; until release with a renewable hold | 2 STOP at 100 ms, 200 ms after the last write |
+| Comfort Enhancement 3 remote 13 | 100 ms | entry pulse count; until release with a renewable hold | 2 STOP at 100 ms, 200 ms after the last write |
+| Comfort Enhancement 3 remote 14 | 100 ms | entry pulse count; until release with a renewable hold | 2 STOP at 100 ms, 200 ms after the last write |
+| Okimat handset table | entry pulse delay | entry pulse count | 1 STOP |
+| DewertOkin | entry pulse delay | entry pulse count | 1 STOP |
+| OKIN Smart Remote RF ECO BT stair lift | 100 ms | entry pulse count | none (refresh ends) |
+| Customatic Clarity | 120 ms | entry pulse count; until release with a renewable hold | 1 STOP, 100 ms after the last write |
+| Customatic Jerome's | 120 ms | entry pulse count; until release with a renewable hold | 1 STOP, 100 ms after the last write |
+| Customatic Remedy | 120 ms | entry pulse count; until release with a renewable hold | 1 STOP, 100 ms after the last write |
+| Prodigy 2L | 100 ms | entry pulse count; until release with a renewable hold | 4 STOP at 100 ms |
+| Prodigy 2 | 100 ms | entry pulse count; until release with a renewable hold | 4 STOP at 100 ms |
+| Prodigy CE | 100 ms | entry pulse count; until release with a renewable hold | 4 STOP at 100 ms |
+| U Series | 100 ms | entry pulse count; until release with a renewable hold | 4 STOP at 100 ms |
+| DewertOkin DOT handset table | entry pulse delay | entry pulse count | 1 STOP |
+| SIMMONS SmartBed names | 300 ms | entry pulse count; until release with a renewable hold | 2 STOP at 300 ms, 100 ms after the last write |
+| SIMMONS OKIN names | 300 ms | entry pulse count; until release with a renewable hold | 2 STOP at 300 ms, 100 ms after the last write |
+| OKIN SleepEase | 300 ms | entry pulse count | 1 STOP |
+| Sleepy's Elite legacy CB25 | entry pulse delay | entry pulse count | 1 STOP |
+| AdjustableM5X4 none, BOX24, BOX1221, BOX2422, BOX2442 | 100 ms | entry pulse count; until release with a renewable hold | 1 STOP |
+| AdjustableM5X4 BOX3633 | 100 ms | entry pulse count; until release with a renewable hold | 1 STOP |
+| AdjustableM5X4 BOX25 | 100 ms | entry pulse count; until release with a renewable hold | 1 STOP |
+| AdjustableM5X4 BOX15 | n/a | n/a | moves with its own frames |
+| AdjustableM5X4 BOX1220 | n/a | n/a | moves with its own frames |
+| eShine E2000 | 300 ms | entry pulse count; until release with a renewable hold | 1 STOP, 200 ms after the last write |
+| eShine E3000 / E3100 | 300 ms | entry pulse count; until release with a renewable hold | 1 STOP, 200 ms after the last write |
+| eShine E5000 | 300 ms | entry pulse count; until release with a renewable hold | 1 STOP, 200 ms after the last write |
+| Rize Sanctuary | entry pulse delay | entry pulse count; until release with a renewable hold | 2 STOP at 100 ms, 100 ms after the last write |
+| Rize Resident | entry pulse delay | entry pulse count; until release with a renewable hold | 2 STOP at 100 ms, 100 ms after the last write |
+| Rize Aviada | entry pulse delay | entry pulse count; until release with a renewable hold | 2 STOP at 100 ms, 100 ms after the last write |
+| Rize Bob | entry pulse delay | entry pulse count; until release with a renewable hold | 2 STOP at 100 ms, 100 ms after the last write |
+| Rize Contempo | entry pulse delay | entry pulse count; until release with a renewable hold | 2 STOP at 100 ms, 100 ms after the last write |
+| Rize II Carefree | entry pulse delay | entry pulse count; until release with a renewable hold | 2 STOP at 100 ms, 100 ms after the last write |
+| Rize II Clarity | entry pulse delay | entry pulse count; until release with a renewable hold | 2 STOP at 100 ms, 100 ms after the last write |
+| Rize MF900 | entry pulse delay | entry pulse count; until release with a renewable hold | 2 STOP at 100 ms, 100 ms after the last write |
+| Support | entry pulse delay | entry pulse count; until release with a renewable hold | 2 STOP at 100 ms, 100 ms after the last write |
+| Nectar Move | 100 ms | entry pulse count; until release with a renewable hold | 2 STOP at 100 ms, 100 ms after the last write |
+| Jordan's Serenity | 100 ms | entry pulse count; until release with a renewable hold | 2 STOP at 100 ms, 100 ms after the last write |
+| Jordan's Tranquil | 100 ms | entry pulse count; until release with a renewable hold | 2 STOP at 100 ms, 100 ms after the last write |
+| Customatic Z-230 | 100 ms | entry pulse count; until release with a renewable hold | 2 STOP at 100 ms, 100 ms after the last write |
+| Customatic Z-280 | 100 ms | entry pulse count; until release with a renewable hold | 2 STOP at 100 ms, 100 ms after the last write |
+| Rize Remedy II | 100 ms | entry pulse count; until release with a renewable hold | 2 STOP at 100 ms, 100 ms after the last write |
+| OKIN Motion Bed | 200 ms | entry pulse count; until release with a renewable hold | 1 STOP |
+| N32 Motion Bed | 200 ms | entry pulse count; until release with a renewable hold | 1 STOP |
+| Resident Adjustable Base | 300 ms | entry pulse count; until release with a renewable hold | 2 STOP at 300 ms |
+| Ultramatic Smart Bed | 300 ms | entry pulse count; until release with a renewable hold | 1 STOP, 100 ms after the last write |
+| OKIN 64-bit Nordic UART | entry pulse delay | entry pulse count | 1 STOP |
+| OKIN 64-bit OKIN service | entry pulse delay | entry pulse count | 1 STOP |
+| Adjustable bed (Lumbar) 36_33_04a | 100 ms | entry pulse count; until release with a renewable hold | 2 STOP at 300 ms |
+| Adjustable bed (Lumbar) 25_42_02 | 100 ms | entry pulse count; until release with a renewable hold | 2 STOP at 300 ms |
+
+Entry pulse settings are the configured motor pulse count and delay.
+
+### One-shot timing
+
+| Profile | Presets and recall | Memory recall | Memory save | Sync, child lock | Light, massage | Control mode |
+|---|---|---|---|---|---|---|
+| Comfort Enhancement 3 remote 0 | once, 2 STOP | once, 2 STOP | n/a | n/a | once, no STOP | n/a |
+| Comfort Enhancement 3 remote 1 | once, 2 STOP | once, 2 STOP | n/a | n/a | n/a | n/a |
+| Comfort Enhancement 3 remote 2 | once, 2 STOP | once, 2 STOP | n/a | n/a | once, no STOP | n/a |
+| Comfort Enhancement 3 remote 3 | once, 2 STOP | once, 2 STOP | n/a | n/a | once, no STOP | n/a |
+| Comfort Enhancement 3 remote 4 | once, 2 STOP | once, 2 STOP | n/a | n/a | once, no STOP | n/a |
+| Comfort Enhancement 3 remote 5 | once, 2 STOP | once, 2 STOP | n/a | n/a | once, no STOP | n/a |
+| Comfort Enhancement 3 remote 6 | once, 2 STOP | once, 2 STOP | n/a | n/a | once, no STOP | n/a |
+| Comfort Enhancement 3 remote 7 | once, 2 STOP | once, 2 STOP | n/a | n/a | once, no STOP | n/a |
+| Comfort Enhancement 3 remote 8 | once, 2 STOP | once, 2 STOP | n/a | n/a | once, no STOP | n/a |
+| Comfort Enhancement 3 remote 9 | once, 2 STOP | once, 2 STOP | n/a | n/a | once, no STOP | n/a |
+| Comfort Enhancement 3 remote 10 | once, 2 STOP | once, 2 STOP | n/a | n/a | once, no STOP | n/a |
+| Comfort Enhancement 3 remote 11 | once, 2 STOP | once, 2 STOP | n/a | n/a | once, no STOP | n/a |
+| Comfort Enhancement 3 remote 12 | once, 2 STOP | once, 2 STOP | n/a | n/a | once, no STOP | n/a |
+| Comfort Enhancement 3 remote 13 | once, 2 STOP | once, 2 STOP | n/a | n/a | once, no STOP | n/a |
+| Comfort Enhancement 3 remote 14 | once, 2 STOP | once, 2 STOP | n/a | n/a | once, no STOP | n/a |
+| Okimat handset table | 100 × 300 ms, 1 STOP | 100 × 300 ms, 1 STOP | 10 × 200 ms, no STOP (or the handset's hold) | 60 × 100 ms, 1 STOP | once, no STOP | n/a |
+| DewertOkin | 100 × 300 ms, 1 STOP | 100 × 300 ms, 1 STOP | n/a | n/a | once, no STOP | n/a |
+| OKIN Smart Remote RF ECO BT stair lift | n/a | n/a | n/a | n/a | n/a | n/a |
+| Customatic Clarity | once, no STOP | once, no STOP | n/a | n/a | once, no STOP | n/a |
+| Customatic Jerome's | 3 × 0 ms, no STOP | 3 × 0 ms, no STOP | n/a | n/a | n/a | n/a |
+| Customatic Remedy | once, no STOP | once, no STOP | n/a | n/a | once, no STOP | n/a |
+| Prodigy 2L | 10 × 100 ms, no STOP | 10 × 100 ms, no STOP | n/a | n/a | once, then 100 ms, 4 STOP | 55 × 100 ms, 1 STOP |
+| Prodigy 2 | 10 × 100 ms, no STOP | 10 × 100 ms, no STOP | n/a | n/a | once, then 100 ms, 4 STOP | 55 × 100 ms, 1 STOP |
+| Prodigy CE | 10 × 100 ms, no STOP | 10 × 100 ms, no STOP | n/a | n/a | once, then 100 ms, 4 STOP | 55 × 100 ms, 1 STOP |
+| U Series | 10 × 100 ms, no STOP | 10 × 100 ms, no STOP | n/a | n/a | once, then 100 ms, 4 STOP | n/a |
+| DewertOkin DOT handset table | 100 × 300 ms, 1 STOP | once, 1 STOP | 10 × 200 ms, no STOP (or the handset's hold) | 60 × 100 ms, 1 STOP | once, no STOP | n/a |
+| SIMMONS SmartBed names | once, 2 STOP | once, 2 STOP | n/a | n/a | once, 2 STOP | n/a |
+| SIMMONS OKIN names | once, 2 STOP | once, 2 STOP | n/a | n/a | once, 2 STOP | n/a |
+| OKIN SleepEase | n/a | n/a | n/a | n/a | n/a | n/a |
+| Sleepy's Elite legacy CB25 | 3 × 100 ms, 1 STOP | 3 × 100 ms, 1 STOP | 110 × 100 ms, no STOP | n/a | once, no STOP | n/a |
+| AdjustableM5X4 none, BOX24, BOX1221, BOX2422, BOX2442 | n/a | n/a | n/a | n/a | once, no STOP | n/a |
+| AdjustableM5X4 BOX3633 | n/a | n/a | n/a | n/a | once, no STOP | n/a |
+| AdjustableM5X4 BOX25 | n/a | n/a | n/a | n/a | once, no STOP | n/a |
+| AdjustableM5X4 BOX15 | n/a | n/a | n/a | n/a | once, no STOP | n/a |
+| AdjustableM5X4 BOX1220 | n/a | n/a | n/a | n/a | once, no STOP | n/a |
+| eShine E2000 | n/a | n/a | n/a | n/a | n/a | n/a |
+| eShine E3000 / E3100 | n/a | n/a | n/a | n/a | once, no STOP | n/a |
+| eShine E5000 | n/a | n/a | n/a | n/a | once, no STOP | n/a |
+| Rize Sanctuary | 6 × 100 ms, 2 STOP | 6 × 100 ms, 2 STOP | n/a | n/a | 6 × 100 ms, 2 STOP | n/a |
+| Rize Resident | 6 × 100 ms, 2 STOP | 6 × 100 ms, 2 STOP | n/a | n/a | 6 × 100 ms, 2 STOP | n/a |
+| Rize Aviada | 6 × 100 ms, 2 STOP | 6 × 100 ms, 2 STOP | n/a | n/a | 6 × 100 ms, 2 STOP | n/a |
+| Rize Bob | 6 × 100 ms, 2 STOP | 6 × 100 ms, 2 STOP | n/a | n/a | 6 × 100 ms, 2 STOP | n/a |
+| Rize Contempo | 6 × 100 ms, 2 STOP | 6 × 100 ms, 2 STOP | n/a | n/a | 6 × 100 ms, 2 STOP | n/a |
+| Rize II Carefree | 6 × 100 ms, 2 STOP | 6 × 100 ms, 2 STOP | n/a | n/a | 6 × 100 ms, 2 STOP | n/a |
+| Rize II Clarity | 6 × 100 ms, 2 STOP | 6 × 100 ms, 2 STOP | n/a | n/a | 6 × 100 ms, 2 STOP | n/a |
+| Rize MF900 | 6 × 100 ms, 2 STOP | 6 × 100 ms, 2 STOP | n/a | n/a | 6 × 100 ms, 2 STOP | n/a |
+| Support | 6 × 100 ms, 2 STOP | 6 × 100 ms, 2 STOP | n/a | n/a | 6 × 100 ms, 2 STOP | n/a |
+| Nectar Move | once, 2 STOP | once, 2 STOP | n/a | n/a | once, 2 STOP | n/a |
+| Jordan's Serenity | held to its deadline, 2 STOP | held to its deadline, 2 STOP | held to its deadline, 2 STOP | n/a | held to its deadline, 2 STOP | n/a |
+| Jordan's Tranquil | held to its deadline, 2 STOP | held to its deadline, 2 STOP | held to its deadline, 2 STOP | n/a | held to its deadline, 2 STOP | n/a |
+| Customatic Z-230 | held to its deadline, 2 STOP | held to its deadline, 2 STOP | held to its deadline, 2 STOP | n/a | held to its deadline, 2 STOP | n/a |
+| Customatic Z-280 | held to its deadline, 2 STOP | held to its deadline, 2 STOP | held to its deadline, 2 STOP | n/a | held to its deadline, 2 STOP | n/a |
+| Rize Remedy II | held to its deadline, 2 STOP | held to its deadline, 2 STOP | held to its deadline, 2 STOP | n/a | held to its deadline, 2 STOP | n/a |
+| OKIN Motion Bed | once, no STOP | once, no STOP | once, no STOP | n/a | once, no STOP | n/a |
+| N32 Motion Bed | once, 1 STOP | once, 1 STOP | n/a | n/a | n/a | n/a |
+| Resident Adjustable Base | once, 2 STOP | once, 2 STOP | n/a | n/a | once, 2 STOP | n/a |
+| Ultramatic Smart Bed | held recall | held M1/M2 | same frame, bounded save hold | n/a | one-shot, see profile | n/a |
+| OKIN 64-bit Nordic UART | once, no STOP | once, no STOP | n/a | n/a | once, no STOP | n/a |
+| OKIN 64-bit OKIN service | once, no STOP | once, no STOP | n/a | n/a | once, no STOP | n/a |
+| Adjustable bed (Lumbar) 36_33_04a | once, 2 STOP | once, 2 STOP | n/a | n/a | once, 2 STOP | n/a |
+| Adjustable bed (Lumbar) 25_42_02 | once, 2 STOP | once, 2 STOP | n/a | n/a | once, 2 STOP | n/a |
+
+Leggett Okin profiles also stream Flat for 30000 ms and program a favorite by
+holding the store key 5000 ms, then the slot 2000 ms. Customatic named memory
+controls hold 2700 ms with no STOP. SIMMONS saves Custom Mode by holding its
+recall key 5500 ms. AdjustableM5X4 presets and recalls are held keys on its
+refresh; it streams Flat for 600 ms and saves or resets for 6000 ms. SleepEase P1
+presets are held keys on its refresh too, as are eShine presets, its Flat + Zero-G
+chord and its light; its massage keys are one write. The OKIN Bedding apps hold
+every action to its own deadline, saves for 5000 ms except Rize Remedy II, whose
+save chord has no threshold; see their profiles.
+<!-- /generated -->
+
+### Aliases
+
+A bed that 4.x saved as `leggett_platt` with the `okin` model is saved as
+`leggett_okin`, the bed type it ran (schema 5.11). The automatic
+[`leggett_platt` setup](leggett-platt.md#aliases) never builds this controller.
+
+Entries 4.x saved as `okimat` or `dewertokin` are saved as `okin_uuid` and
+`okin_handle`, the routes they always ran.
+
+Routes that send the same bytes as their default route keep their own id too,
+since only a missing variant and `auto` share one: `okin_64bit` variant `nordic`
+is what `auto` builds, but it is a saved choice that Configure and the profile
+review show as its own route; `adjustable_lumbar` variant `adjustable_lumbar_star`
+matches `auto` only for Star-named beds, because `auto` picks the table from the
+Bluetooth name at connect.
+
+## Wire codec
+
+Implemented once in `custom_components/adjustable_bed/codec/okin_nframe.py`.
+Profiles (`profiles/okin_nframe.py`) decide which words an app sends and how it
+times them. Every frame table in this section is generated from the codec.
+
+### Transports
+
+<!-- generated:okin-nframe-transports -->
+<!-- Generated by scripts/generate_codec_docs.py from the codec and profile data. Edit those, not this block. -->
+
+| Role | UUID | Used by |
+|---|---|---|
+| Service | `62741523-52f9-8864-b1ab-3b3a8d65950b` | All profiles |
+| Write | `62741525-52f9-8864-b1ab-3b3a8d65950b` | All profiles |
+| Position notify | `0000ffe4-0000-1000-8000-00805f9b34fb` | Okimat (receivers that expose it) |
+| Status notify | `62741625-52f9-8864-b1ab-3b3a8d65950b` | Leggett Okin |
+| Revision selector | `00001721-0000-1000-8000-00805f9b34fb` | Leggett Okin (presence selects R1) |
+| Settings write | `90311625-25fa-3346-12ef-3cfb7a2556ac` | Leggett Okin Prodigy profiles |
+| Settings notify | `90311725-25fa-3346-12ef-3cfb7a2556ac` | Leggett Okin Prodigy profiles |
+| Service | `6e400001-b5a3-f393-e0a9-e50e24dcca9e` | 40-bit profiles |
+| Write | `6e400002-b5a3-f393-e0a9-e50e24dcca9e` | 40-bit profiles |
+| Notify | `6e400003-b5a3-f393-e0a9-e50e24dcca9e` | SIMMONS, SleepEase, Sleepy's, AdjustableM5X4, eShine |
+
+The settings channel opens with `01 02` after subscribing. SIMMONS also accepts
+FFE5/FFE9 with FFE0/FFE4, and AdjustableM5X4 two more transports; see their
+profiles.
+<!-- /generated -->
+
+Numeric GATT handles vary by device and firmware, so every profile writes by
+characteristic UUID. Issue [#394](https://github.com/kristofferR/ha-adjustable-bed/issues/394)
+reported a bed whose write characteristic was handle `0x000d` while `0x0013`
+belonged to another attribute.
+
+### Framing and checksum
+
+**Frame:** `N 02 <N-byte command word, big-endian>`, so a frame is `N + 2` bytes.
+The 32-bit profiles use `N = 4`, giving six bytes. The 96-bit CST profiles use
+`N = 12`: two independently routed 32-bit fields, primary then secondary, and 32
+zero bits, fourteen bytes in all (`codec.frame96()`). The app chooses the field
+per action, so a key's word records its field. The 40-bit profiles use
+`N = 5`: the 32-bit key word, then one selector byte, seven bytes in all
+(`codec.frame40()`). The selector picks a side on the
+[SmartBed app](smartbed.md)'s CB24AB receiver (`AA` for A, `BB` for B) and is
+`00` everywhere else. The 64-bit profiles use `N = 8`, ten bytes,
+and Sleepy's legacy CB25 and AdjustableM5X4 send a few 64-bit `08 02` frames
+too. The codec also builds the 48-bit width, which [AdjustaMattress](keeson.md#adjustamattress)
+P4 sends. There is no checksum, sequence number or authentication payload.
+
+**Other frames of the 40-bit routes:** two-byte `00 <code>` requests
+(`codec.request()`), 6-byte `04 E0 <parameter> <value> <value2> 00` setting
+frames (`codec.extended()`) and 5-byte `03 F0 <axis> <target> 00` position
+targets (`codec.position_target()`), and setting records that carry their field
+count first, then an opcode (`codec.record()`): the 9-byte `07 04` clock
+(`codec.clock()`) and alarms `07 05` or `08 05`, plus SIMMONS SmartBed's second
+slot `07 06` (`codec.alarm()`). Serenity's clock is `07 06` too. What each one
+asks for, and how an app derives its fields, is profile data. eShine,
+AdjustaMattress P3 and P4, SIMMONS SmartBed and Serenity send them.
+SIMMONS OKIN names carry the same 32-bit masks in a Keeson E6 frame,
+`E6 FE 16 <word, little-endian> 00 <checksum>`, built by `codec/keeson.py`.
+
+**Command word:** a bit mask of held keys. Keys held together are one frame with
+several bits set, and the zero word releases every key (STOP).
+
+**RF-Gateway envelope (revision 0):** `E5 FE 16 <command word> <checksum>`, eight
+bytes. The checksum is the inverted low byte of the sum of the first seven bytes,
+so all eight bytes sum to `0xFF`. DewertOkin RF-Gateway receivers and Leggett
+boxes without the revision selector take this envelope; the words are the same.
+
+### Command encoders
+
+The words below are profile data, framed by `codec.frame()` or `codec.frame40()`
+and, where a profile can use it, `codec.gateway_frame()`. Okimat and DOT words
+come from the selected handset table; see
+[Okimat handset keys](#okimat-handset-keys).
+
+<!-- generated:okin-nframe-keys -->
+<!-- Generated by scripts/generate_codec_docs.py from the codec and profile data. Edit those, not this block. -->
+
+#### DewertOkin keys
+
+| Command | Word | Frame | Envelope (R0) |
+|---|---|---|---|
+| Head up | `0x00000001` | `04 02 00 00 00 01` | `E5 FE 16 00 00 00 01 05` |
+| Head down | `0x00000002` | `04 02 00 00 00 02` | `E5 FE 16 00 00 00 02 04` |
+| Feet up | `0x00000004` | `04 02 00 00 00 04` | `E5 FE 16 00 00 00 04 02` |
+| Feet down | `0x00000008` | `04 02 00 00 00 08` | `E5 FE 16 00 00 00 08 FE` |
+| Flat | `0x10000000` | `04 02 10 00 00 00` | `E5 FE 16 10 00 00 00 F6` |
+| Zero-G | `0x00004000` | `04 02 00 00 40 00` | `E5 FE 16 00 00 40 00 C6` |
+| TV | `0x00003000` | `04 02 00 00 30 00` | `E5 FE 16 00 00 30 00 D6` |
+| Anti-snore / Snore | `0x00008000` | `04 02 00 00 80 00` | `E5 FE 16 00 00 80 00 86` |
+| Memory 1 | `0x00001000` | `04 02 00 00 10 00` | `E5 FE 16 00 00 10 00 F6` |
+| Memory 2 | `0x00002000` | `04 02 00 00 20 00` | `E5 FE 16 00 00 20 00 E6` |
+| Wave massage | `0x80000000` | `04 02 80 00 00 00` | `E5 FE 16 80 00 00 00 86` |
+| Head massage | `0x00000800` | `04 02 00 00 08 00` | `E5 FE 16 00 00 08 00 FE` |
+| Foot massage | `0x00000400` | `04 02 00 00 04 00` | `E5 FE 16 00 00 04 00 02` |
+| Massage off | `0x02000000` | `04 02 02 00 00 00` | `E5 FE 16 02 00 00 00 04` |
+| Under-bed light toggle | `0x00020000` | `04 02 00 02 00 00` | `E5 FE 16 00 02 00 00 04` |
+| STOP / release | `0x00000000` | `04 02 00 00 00 00` | `E5 FE 16 00 00 00 00 06` |
+
+#### RF ECO BT keys
+
+| Command | Word | Frame |
+|---|---|---|
+| Stair out (open) | `0x00000001` | `04 02 00 00 00 01` |
+| Stair in (close) | `0x00000002` | `04 02 00 00 00 02` |
+
+The stair profile has no STOP: release ends the refresh.
+
+#### Customatic keys
+
+| Command | Word | Profiles | Frame |
+|---|---|---|---|
+| Back up | `0x00000001` | all | `04 02 00 00 00 01` |
+| Back down | `0x00000002` | all | `04 02 00 00 00 02` |
+| Legs up | `0x00000004` | all | `04 02 00 00 00 04` |
+| Legs down | `0x00000008` | all | `04 02 00 00 00 08` |
+| Lumbar up | `0x00000010` | Customatic Remedy | `04 02 00 00 00 10` |
+| Lumbar down | `0x00000020` | Customatic Remedy | `04 02 00 00 00 20` |
+| Memory page: Flat | `0x08000000` | Customatic Clarity, Customatic Remedy | `04 02 08 00 00 00` |
+| Memory page: ZG | `0x00001000` | Customatic Clarity, Customatic Remedy | `04 02 00 00 10 00` |
+| Memory page: ANTI | `0x00008000` | Customatic Clarity, Customatic Remedy | `04 02 00 00 80 00` |
+| Memory page: Program | `0x80000000` | Customatic Clarity, Customatic Remedy | `04 02 80 00 00 00` |
+| Memory page: Incline | `0x00004000` | Customatic Clarity, Customatic Remedy | `04 02 00 00 40 00` |
+| Under-bed light toggle | `0x00020000` | Customatic Clarity, Customatic Remedy | `04 02 00 02 00 00` |
+| Flat | `0x08000000` | Customatic Clarity, Customatic Remedy | `04 02 08 00 00 00` |
+| Flat | `0x10000000` | Customatic Jerome's | `04 02 10 00 00 00` |
+| Restored Flat | `0x08000000` | Customatic Jerome's | `04 02 08 00 00 00` |
+| STOP / release | `0x00000000` | all | `04 02 00 00 00 00` |
+
+#### Leggett Okin keys
+
+| Command | Word | Profiles | Frame | Envelope (R0) |
+|---|---|---|---|---|
+| Head up | `0x00000001` | all | `04 02 00 00 00 01` | `E5 FE 16 00 00 00 01 05` |
+| Head down | `0x00000002` | all | `04 02 00 00 00 02` | `E5 FE 16 00 00 00 02 04` |
+| Feet up | `0x00000004` | all | `04 02 00 00 00 04` | `E5 FE 16 00 00 00 04 02` |
+| Feet down | `0x00000008` | all | `04 02 00 00 00 08` | `E5 FE 16 00 00 00 08 FE` |
+| Pillow up | `0x00000010` | Prodigy 2, Prodigy CE, U Series | `04 02 00 00 00 10` | `E5 FE 16 00 00 00 10 F6` |
+| Pillow down | `0x00000020` | Prodigy 2, Prodigy CE, U Series | `04 02 00 00 00 20` | `E5 FE 16 00 00 00 20 E6` |
+| Lumbar up | `0x00000040` | Prodigy 2L, Prodigy CE | `04 02 00 00 00 40` | `E5 FE 16 00 00 00 40 C6` |
+| Lumbar down | `0x00000080` | Prodigy 2L, Prodigy CE | `04 02 00 00 00 80` | `E5 FE 16 00 00 00 80 86` |
+| Flat | `0x08000000` | all | `04 02 08 00 00 00` | `E5 FE 16 08 00 00 00 FE` |
+| Memory 1 | `0x00001000` | all | `04 02 00 00 10 00` | `E5 FE 16 00 00 10 00 F6` |
+| Memory 2 | `0x00002000` | all | `04 02 00 00 20 00` | `E5 FE 16 00 00 20 00 E6` |
+| Memory 3 | `0x00004000` | Prodigy 2L, Prodigy 2, Prodigy CE | `04 02 00 00 40 00` | `E5 FE 16 00 00 40 00 C6` |
+| Memory 4 | `0x00008000` | Prodigy 2L, Prodigy 2, Prodigy CE | `04 02 00 00 80 00` | `E5 FE 16 00 00 80 00 86` |
+| Anti-snore / Snore | `0x00004000` | all | `04 02 00 00 40 00` | `E5 FE 16 00 00 40 00 C6` |
+| Memory store (arm) | `0x00010000` | all | `04 02 00 01 00 00` | `E5 FE 16 00 01 00 00 05` |
+| Head massage up | `0x00000800` | all | `04 02 00 00 08 00` | `E5 FE 16 00 00 08 00 FE` |
+| Head massage down | `0x00800000` | all | `04 02 00 80 00 00` | `E5 FE 16 00 80 00 00 86` |
+| Foot massage up | `0x00000400` | all | `04 02 00 00 04 00` | `E5 FE 16 00 00 04 00 02` |
+| Foot massage down | `0x01000000` | all | `04 02 01 00 00 00` | `E5 FE 16 01 00 00 00 05` |
+| Massage on/off | `0x00000100` | all | `04 02 00 00 01 00` | `E5 FE 16 00 00 01 00 05` |
+| Massage wave mode step | `0x10000000` | all | `04 02 10 00 00 00` | `E5 FE 16 10 00 00 00 F6` |
+| Under-bed light toggle | `0x00020000` | all | `04 02 00 02 00 00` | `E5 FE 16 00 02 00 00 04` |
+| Control mode: press-and-hold | `0x08010000` | Prodigy 2L, Prodigy 2, Prodigy CE | `04 02 08 01 00 00` | `E5 FE 16 08 01 00 00 FD` |
+| Control mode: press-and-release | `0x01800000` | Prodigy 2L, Prodigy 2, Prodigy CE | `04 02 01 80 00 00` | `E5 FE 16 01 80 00 00 85` |
+| Sleep timer cancel | `0xFF200000` | all | `04 02 FF 20 00 00` | `E5 FE 16 FF 20 00 00 E7` |
+| Alarm cancel / stop | `0xFD000000` | U Series | `04 02 FD 00 00 00` | `E5 FE 16 FD 00 00 00 09` |
+| Alarm cancel / stop | `0xFD200000` | Prodigy 2L, Prodigy 2, Prodigy CE | `04 02 FD 20 00 00` | `E5 FE 16 FD 20 00 00 E9` |
+| CU170 stop (DUMMY) | `0x00040000` | Prodigy CE | `04 02 00 04 00 00` | `E5 FE 16 00 04 00 00 02` |
+| STOP / release | `0x00000000` | all | `04 02 00 00 00 00` | `E5 FE 16 00 00 00 00 06` |
+
+#### SIMMONS keys
+
+| Command | Word | Profiles | Frame |
+|---|---|---|---|
+| Head up | `0x0000000001` | all | `05 02 00 00 00 01 00` or `E6 FE 16 01 00 00 00 00 04` |
+| Head down | `0x0000000002` | all | `05 02 00 00 00 02 00` or `E6 FE 16 02 00 00 00 00 03` |
+| Legs up | `0x0000000004` | all | `05 02 00 00 00 04 00` or `E6 FE 16 04 00 00 00 00 01` |
+| Legs down | `0x0000000008` | all | `05 02 00 00 00 08 00` or `E6 FE 16 08 00 00 00 00 FD` |
+| Flat | `0x0008000000` | all | `05 02 08 00 00 00 00` or `E6 FE 16 00 00 00 08 00 FD` |
+| Zero-G | `0x0000001000` | all | `05 02 00 00 10 00 00` or `E6 FE 16 00 10 00 00 00 F5` |
+| TV | `0x0000004000` | all | `05 02 00 00 40 00 00` or `E6 FE 16 00 40 00 00 00 C5` |
+| Anti-snore / Snore | `0x0000008000` | all | `05 02 00 00 80 00 00` or `E6 FE 16 00 80 00 00 00 85` |
+| Custom Mode (memory) | `0x0000010000` | all | `05 02 00 01 00 00 00` or `E6 FE 16 00 00 01 00 00 04` |
+| Under-bed light toggle | `0x0000020000` | all | `05 02 00 02 00 00 00` or `E6 FE 16 00 00 02 00 00 03` |
+| Inclined Left | `0x0000000010` | all | `05 02 00 00 00 10 00` |
+| Inclined Middle | `0x0000001000` | all | `05 02 00 00 10 00 00` |
+| Inclined Right | `0x0000000020` | all | `05 02 00 00 00 20 00` |
+| STOP / release | `0x00000000` | all | `05 02 00 00 00 00 00` or `E6 FE 16 00 00 00 00 00 05` |
+
+SmartBed and unmatched names send the 40-bit frame, OKIN names the Keeson E6
+frame. The inclined keys keep the 40-bit frame on both.
+
+#### SleepEase keys
+
+| Command | Word | Frame |
+|---|---|---|
+| Index 1 | `0x0000000000` | `05 02 00 00 00 00 00` |
+| Index 2 | `0x0000000001` | `05 02 00 00 00 01 00` |
+| Index 3 | `0x0000000002` | `05 02 00 00 00 02 00` |
+| Index 4 | `0x0000000004` | `05 02 00 00 00 04 00` |
+| Index 5 | `0x0000000008` | `05 02 00 00 00 08 00` |
+| Index 8 | `0x0000000040` | `05 02 00 00 00 40 00` |
+| Index 9 | `0x0000000080` | `05 02 00 00 00 80 00` |
+| Index 10 | `0x0000000010` | `05 02 00 00 00 10 00` |
+| Index 11 | `0x0000000020` | `05 02 00 00 00 20 00` |
+| Index 12 | `0x0040000000` | `05 02 40 00 00 00 00` |
+| Index 13 | `0x0080000000` | `05 02 80 00 00 00 00` |
+| Index 14 | `0x0000010000` | `05 02 00 01 00 00 00` |
+| Index 15 | `0x0000040000` | `05 02 00 04 00 00 00` |
+| Index 16 | `0x0000008000` | `05 02 00 00 80 00 00` |
+| Index 17 | `0x0000002000` | `05 02 00 00 20 00 00` |
+| Index 18 | `0x0000004000` | `05 02 00 00 40 00 00` |
+| Index 19 | `0x0000001000` | `05 02 00 00 10 00 00` |
+| Index 26 | `0x0008000000` | `05 02 08 00 00 00 00` |
+| Index 28 | `0x0000000100` | `05 02 00 00 01 00 00` |
+| Index 29 | `0x0000000100` | `05 02 00 00 01 00 00` |
+| Index 31 | `0x0000000200` | `05 02 00 00 02 00 00` |
+| Index 35 | `0x0000000800` | `05 02 00 00 08 00 00` |
+| Index 36 | `0x0000800000` | `05 02 00 80 00 00 00` |
+| Index 37 | `0x0000000400` | `05 02 00 00 04 00 00` |
+| Index 38 | `0x0010000000` | `05 02 10 00 00 00 00` |
+| Index 40 | `0x0010000000` | `05 02 10 00 00 00 00` |
+| Index 41 | `0x0004000000` | `05 02 04 00 00 00 00` |
+| Index 58 | `0x0000020000` | `05 02 00 02 00 00 00` |
+
+SleepDriver (P1) words by the app's command index; index 1 is STOP. The profile's
+other static frames and the XiaoBao (P2) and P3 packets are listed in its section.
+
+#### Sleepy's legacy CB25 keys
+
+| Command | Word | Frame |
+|---|---|---|
+| Head up | `0x0000000001` | `05 02 00 00 00 01 00` |
+| Head down | `0x0000000002` | `05 02 00 00 00 02 00` |
+| Foot up | `0x0000000004` | `05 02 00 00 00 04 00` |
+| Foot down | `0x0000000008` | `05 02 00 00 00 08 00` |
+| Lumbar up | `0x0000000010` | `05 02 00 00 00 10 00` |
+| Lumbar down | `0x0000000020` | `05 02 00 00 00 20 00` |
+| Neck tilt up | `0x0000000040` | `05 02 00 00 00 40 00` |
+| Neck tilt down | `0x0000000080` | `05 02 00 00 00 80 00` |
+| STOP / release | `0x0000000000` | `05 02 00 00 00 00 00` |
+| Flat | `0x0008000000` | `05 02 08 00 00 00 00` |
+| TV | `0x0000004000` | `05 02 00 00 40 00 00` |
+| Zero-G | `0x0000001000` | `05 02 00 00 10 00 00` |
+| Anti-snore | `0x0000008000` | `05 02 00 00 80 00 00` |
+| Lounge | `0x0000002000` | `05 02 00 00 20 00 00` |
+| Memory 1 | `0x0000010000` | `05 02 00 01 00 00 00` |
+| Memory 2 | `0x0000040000` | `05 02 00 04 00 00 00` |
+| Store memory 1 | `0x0008010000` | `05 02 08 01 00 00 00` |
+| Store memory 2 | `0x0008040000` | `05 02 08 04 00 00 00` |
+| Massage toggle | `0x0000080000` | `05 02 00 08 00 00 00` |
+| Massage exit | `0x0002000000` | `05 02 02 00 00 00 00` |
+| Head massage up | `0x0000000800` | `05 02 00 00 08 00 00` |
+| Head massage down | `0x0000800000` | `05 02 00 80 00 00 00` |
+| Foot massage up | `0x0000000400` | `05 02 00 00 04 00 00` |
+| Foot massage down | `0x0001000000` | `05 02 01 00 00 00 00` |
+| Massage intensity up | `0x0000000C00` | `05 02 00 00 0C 00 00` |
+| Massage intensity down | `0x0001800000` | `05 02 01 80 00 00 00` |
+| Under-bed light toggle | `0x0002000000000000` | `08 02 00 02 00 00 00 00 00 00` |
+| Massage wave 1 | `0x0000000000080000` | `08 02 00 00 00 00 00 08 00 00` |
+| Massage wave 2 | `0x0000000000100000` | `08 02 00 00 00 00 00 10 00 00` |
+| Massage wave 3 | `0x0000000000200000` | `08 02 00 00 00 00 00 20 00 00` |
+
+#### AdjustableM5X4 keys
+
+| Command | Word | Profiles | Frame |
+|---|---|---|---|
+| `headUp` | `0x0000000001` | AdjustableM5X4 none, BOX24, BOX1221, BOX2422, BOX2442, AdjustableM5X4 BOX3633, AdjustableM5X4 BOX25 | `05 02 00 00 00 01 00` |
+| `headDown` | `0x0000000002` | AdjustableM5X4 none, BOX24, BOX1221, BOX2422, BOX2442, AdjustableM5X4 BOX3633, AdjustableM5X4 BOX25 | `05 02 00 00 00 02 00` |
+| `footUp` | `0x0000000004` | AdjustableM5X4 none, BOX24, BOX1221, BOX2422, BOX2442, AdjustableM5X4 BOX3633, AdjustableM5X4 BOX25 | `05 02 00 00 00 04 00` |
+| `footDown` | `0x0000000008` | AdjustableM5X4 none, BOX24, BOX1221, BOX2422, BOX2442, AdjustableM5X4 BOX3633, AdjustableM5X4 BOX25 | `05 02 00 00 00 08 00` |
+| `unionUp` | `0x0000000005` | AdjustableM5X4 none, BOX24, BOX1221, BOX2422, BOX2442, AdjustableM5X4 BOX3633, AdjustableM5X4 BOX25 | `05 02 00 00 00 05 00` |
+| `unionDown` | `0x000000000A` | AdjustableM5X4 none, BOX24, BOX1221, BOX2422, BOX2442, AdjustableM5X4 BOX3633, AdjustableM5X4 BOX25 | `05 02 00 00 00 0A 00` |
+| STOP / release | `0x0000000000` | AdjustableM5X4 none, BOX24, BOX1221, BOX2422, BOX2442, AdjustableM5X4 BOX3633, AdjustableM5X4 BOX25 | `05 02 00 00 00 00 00` |
+| `flatPosition` | `0x0008000000` | AdjustableM5X4 none, BOX24, BOX1221, BOX2422, BOX2442, AdjustableM5X4 BOX3633, AdjustableM5X4 BOX25 | `05 02 08 00 00 00 00` |
+| TV | `0x0000004000` | AdjustableM5X4 none, BOX24, BOX1221, BOX2422, BOX2442, AdjustableM5X4 BOX3633, AdjustableM5X4 BOX25 | `05 02 00 00 40 00 00` |
+| Lounge / Reading | `0x0000002000` | AdjustableM5X4 none, BOX24, BOX1221, BOX2422, BOX2442, AdjustableM5X4 BOX3633, AdjustableM5X4 BOX25 | `05 02 00 00 20 00 00` |
+| `zeroGravity` | `0x0000001000` | AdjustableM5X4 none, BOX24, BOX1221, BOX2422, BOX2442, AdjustableM5X4 BOX3633, AdjustableM5X4 BOX25 | `05 02 00 00 10 00 00` |
+| `anti` | `0x0000008000` | AdjustableM5X4 none, BOX24, BOX1221, BOX2422, BOX2442, AdjustableM5X4 BOX3633, AdjustableM5X4 BOX25 | `05 02 00 00 80 00 00` |
+| `m1` | `0x0000010000` | AdjustableM5X4 none, BOX24, BOX1221, BOX2422, BOX2442, AdjustableM5X4 BOX3633, AdjustableM5X4 BOX25 | `05 02 00 01 00 00 00` |
+| `saveM1` | `0x0000010000` | AdjustableM5X4 none, BOX24, BOX1221, BOX2422, BOX2442, AdjustableM5X4 BOX3633, AdjustableM5X4 BOX25 | `05 02 00 01 00 00 00` |
+| `saveTv` | `0x0080004000` | AdjustableM5X4 none, BOX24, BOX1221, BOX2422, BOX2442, AdjustableM5X4 BOX3633, AdjustableM5X4 BOX25 | `05 02 80 00 40 00 00` |
+| `saveLounge` | `0x0080002000` | AdjustableM5X4 none, BOX24, BOX1221, BOX2422, BOX2442, AdjustableM5X4 BOX3633, AdjustableM5X4 BOX25 | `05 02 80 00 20 00 00` |
+| `saveZeroGravity` | `0x0080001000` | AdjustableM5X4 none, BOX24, BOX1221, BOX2422, BOX2442, AdjustableM5X4 BOX3633, AdjustableM5X4 BOX25 | `05 02 80 00 10 00 00` |
+| `resetMemory` | `0x0088000000` | all | `05 02 88 00 00 00 00` |
+| `massageOnOff` | `0x0000080000` | all | `05 02 00 08 00 00 00` |
+| `headStrengthAdd` | `0x0000000800` | AdjustableM5X4 BOX3633, AdjustableM5X4 BOX25, AdjustableM5X4 BOX1220 | `05 02 00 00 08 00 00` |
+| `headStrengthReduce` | `0x0000800000` | AdjustableM5X4 BOX3633, AdjustableM5X4 BOX25, AdjustableM5X4 BOX1220 | `05 02 00 80 00 00 00` |
+| `footStrengthAdd` | `0x0000000400` | AdjustableM5X4 BOX3633, AdjustableM5X4 BOX25, AdjustableM5X4 BOX1220 | `05 02 00 00 04 00 00` |
+| `footStrengthReduce` | `0x0001000000` | AdjustableM5X4 BOX3633, AdjustableM5X4 BOX25, AdjustableM5X4 BOX1220 | `05 02 01 00 00 00 00` |
+| `waveAdd` | `0x0010000000` | AdjustableM5X4 BOX3633, AdjustableM5X4 BOX25, AdjustableM5X4 BOX1220 | `05 02 10 00 00 00 00` |
+| `waveReduce` | `0x0004000000` | AdjustableM5X4 BOX3633, AdjustableM5X4 BOX25, AdjustableM5X4 BOX1220 | `05 02 04 00 00 00 00` |
+| `underbedLighting` | `0x0000020000` | AdjustableM5X4 BOX3633 | `05 02 00 02 00 00 00` |
+| `change2White` | `0x0000020004` | AdjustableM5X4 BOX25 | `05 02 00 02 00 04 00` |
+| `turnonUnderbedLighting` | `0x0000020000` | AdjustableM5X4 none, BOX24, BOX1221, BOX2422, BOX2442, AdjustableM5X4 BOX15, AdjustableM5X4 BOX1220 | `05 02 00 02 00 00 00` |
+| `turnoffUnderbedLighting` | `0x0000020000` | AdjustableM5X4 none, BOX24, BOX1221, BOX2422, BOX2442, AdjustableM5X4 BOX15, AdjustableM5X4 BOX1220 | `05 02 00 02 00 00 00` |
+| `underbedLighting` | `0x0002000000000000` | AdjustableM5X4 none, BOX24, BOX1221, BOX2422, BOX2442, AdjustableM5X4 BOX25 | `08 02 00 02 00 00 00 00 00 00` |
+| `turnonUnderbedLighting` | `0x0000000000000040` | AdjustableM5X4 BOX3633 | `08 02 00 00 00 00 00 00 00 40` |
+| `turnoffUnderbedLighting` | `0x0000000000000080` | AdjustableM5X4 BOX3633 | `08 02 00 00 00 00 00 00 00 80` |
+
+Keyed by the app's action names. BOX15 and BOX1220 move with their own frames, so
+their profiles hold only the shared keys; BOX25_STAR sends StarCode only.
+
+#### eShine keys
+
+| Command | Word | Profiles | Frame |
+|---|---|---|---|
+| Wave massage | `0x0010000000` | eShine E3000 / E3100, eShine E5000 | `05 02 10 00 00 00 00` |
+| STOP / release | `0x0000000000` | all | `05 02 00 00 00 00 00` |
+| TV | `0x0000004000` | all | `05 02 00 00 40 00 00` |
+| Anti-snore / Snore | `0x0000008000` | all | `05 02 00 00 80 00 00` |
+| Zero-G | `0x0000001000` | all | `05 02 00 00 10 00 00` |
+| Feet down | `0x0000000008` | all | `05 02 00 00 00 08 00` |
+| Feet up | `0x0000000004` | all | `05 02 00 00 00 04 00` |
+| Head down | `0x0000000002` | all | `05 02 00 00 00 02 00` |
+| Head up | `0x0000000001` | all | `05 02 00 00 00 01 00` |
+| Pillow down | `0x0000000020` | eShine E5000 | `05 02 00 00 00 20 00` |
+| Pillow up | `0x0000000010` | eShine E5000 | `05 02 00 00 00 10 00` |
+| Under-bed light toggle | `0x0000020000` | eShine E3000 / E3100, eShine E5000 | `05 02 00 02 00 00 00` |
+| Flat | `0x0008000000` | all | `05 02 08 00 00 00 00` |
+| Reading | `0x0000002000` | all | `05 02 00 00 20 00 00` |
+| Foot massage strength step | `0x0000000400` | eShine E3000 / E3100, eShine E5000 | `05 02 00 00 04 00 00` |
+| Head massage strength step | `0x0000000800` | eShine E3000 / E3100, eShine E5000 | `05 02 00 00 08 00 00` |
+| Massage timer step | `0x0000000200` | eShine E3000 / E3100, eShine E5000 | `05 02 00 00 02 00 00` |
+| Massage off | `0x0002000000` | eShine E3000 / E3100, eShine E5000 | `05 02 02 00 00 00 00` |
+| `massage_on` | `0x0000000100` | eShine E3000 / E3100, eShine E5000 | `05 02 00 00 01 00 00` |
+| Flat + Zero-G chord | `0x0008001000` | all | `05 02 08 00 10 00 00` |
+
+The app's one key table; each product selector exposes the rows listed for it.
+
+#### Okin CST keys
+
+| Command | Word | Profiles | Frame |
+|---|---|---|---|
+| Head up | `00000001 00000000` | all | `0C 02 00 00 00 01 00 00 00 00 00 00 00 00` |
+| Head down | `00000002 00000000` | all | `0C 02 00 00 00 02 00 00 00 00 00 00 00 00` |
+| Foot up | `00000004 00000000` | all | `0C 02 00 00 00 04 00 00 00 00 00 00 00 00` |
+| Foot down | `00000008 00000000` | all | `0C 02 00 00 00 08 00 00 00 00 00 00 00 00` |
+| Flat | `08000000 00000000` | all | `0C 02 08 00 00 00 00 00 00 00 00 00 00 00` |
+| Zero-G | `00001000 00000000` | all | `0C 02 00 00 10 00 00 00 00 00 00 00 00 00` |
+| Anti-snore / Snore | `00008000 00000000` | all | `0C 02 00 00 80 00 00 00 00 00 00 00 00 00` |
+| Lumbar up | `00000010 00000000` | Rize Aviada, Rize Contempo, Rize MF900, Support | `0C 02 00 00 00 10 00 00 00 00 00 00 00 00` |
+| Lumbar down | `00000020 00000000` | Rize Aviada, Rize Contempo, Rize MF900, Support | `0C 02 00 00 00 20 00 00 00 00 00 00 00 00` |
+| Lounge / Reading | `00002000 00000000` | Rize Sanctuary, Rize Resident, Rize Aviada, Rize Bob, Rize Contempo, Rize II Clarity, Rize MF900, Support, Nectar Move | `0C 02 00 00 20 00 00 00 00 00 00 00 00 00` |
+| Incline | `00004000 00000000` | Rize Resident, Rize Aviada, Rize Contempo, Rize II Clarity, Rize MF900, Support | `0C 02 00 00 40 00 00 00 00 00 00 00 00 00` |
+| Memory 1 | `00001000 00000000` | all | `0C 02 00 00 10 00 00 00 00 00 00 00 00 00` |
+| Save memory 1 | `08001000 00000000` | all | `0C 02 08 00 10 00 00 00 00 00 00 00 00 00` |
+| Memory 2 | `00002000 00000000` | Rize Sanctuary, Rize Bob, Nectar Move | `0C 02 00 00 20 00 00 00 00 00 00 00 00 00` |
+| Memory 2 | `00004000 00000000` | Rize Resident, Rize Aviada, Rize Contempo, Rize II Clarity, Rize MF900, Support | `0C 02 00 00 40 00 00 00 00 00 00 00 00 00` |
+| Save memory 2 | `08002000 00000000` | Rize Sanctuary, Rize Bob, Nectar Move | `0C 02 08 00 20 00 00 00 00 00 00 00 00 00` |
+| Save memory 2 | `08004000 00000000` | Rize Resident, Rize Aviada, Rize Contempo, Rize II Clarity, Rize MF900, Support | `0C 02 08 00 40 00 00 00 00 00 00 00 00 00` |
+| Memory 3 | `00002000 00000000` | Rize Resident, Rize Aviada, Rize Contempo, Rize II Clarity, Rize MF900, Support | `0C 02 00 00 20 00 00 00 00 00 00 00 00 00` |
+| Save memory 3 | `08002000 00000000` | Rize Resident, Rize Aviada, Rize Contempo, Rize II Clarity, Rize MF900, Support | `0C 02 08 00 20 00 00 00 00 00 00 00 00 00` |
+| Under-bed light toggle | `00020000 00000000` | Rize Sanctuary, Rize Aviada, Rize Bob, Rize Contempo, Rize II Carefree, Rize II Clarity, Rize MF900, Support, Nectar Move | `0C 02 00 02 00 00 00 00 00 00 00 00 00 00` |
+| Light on | `00000000 00000040` | Rize Sanctuary, Rize Aviada, Rize Bob, Rize Contempo, Rize II Carefree, Rize II Clarity, Rize MF900, Support | `0C 02 00 00 00 00 00 00 00 40 00 00 00 00` |
+| Light off | `00000000 00000080` | Rize Sanctuary, Rize Aviada, Rize Bob, Rize Contempo, Rize II Carefree, Rize II Clarity, Rize MF900, Support | `0C 02 00 00 00 00 00 00 00 80 00 00 00 00` |
+| Massage wave 1 | `00000000 00080000` | Rize Sanctuary, Rize Resident, Rize Aviada, Rize Bob, Rize Contempo, Rize II Clarity, Rize MF900, Support | `0C 02 00 00 00 00 00 08 00 00 00 00 00 00` |
+| Massage wave 2 | `00000000 00100000` | Rize Sanctuary, Rize Resident, Rize Aviada, Rize Bob, Rize Contempo, Rize II Clarity, Rize MF900, Support | `0C 02 00 00 00 00 00 10 00 00 00 00 00 00` |
+| Massage wave 3 | `00000000 00200000` | Rize Sanctuary, Rize Resident, Rize Aviada, Rize Bob, Rize Contempo, Rize II Clarity, Rize MF900, Support | `0C 02 00 00 00 00 00 20 00 00 00 00 00 00` |
+| Massage off | `02000000 00000000` | Rize Sanctuary, Rize Resident, Rize Aviada, Rize Bob, Rize Contempo, Rize II Clarity, Rize MF900, Support | `0C 02 02 00 00 00 00 00 00 00 00 00 00 00` |
+| Head massage up | `00000800 00000000` | Rize Sanctuary, Rize Resident, Rize Bob, Support | `0C 02 00 00 08 00 00 00 00 00 00 00 00 00` |
+| Head massage down | `00800000 00000000` | Rize Sanctuary, Rize Resident | `0C 02 00 80 00 00 00 00 00 00 00 00 00 00` |
+| Head massage down | `00800000 00800000` | Rize Bob, Support | `0C 02 00 80 00 00 00 80 00 00 00 00 00 00` |
+| Foot massage up | `00000400 00000000` | Rize Sanctuary, Rize Resident, Rize Bob, Support | `0C 02 00 00 04 00 00 00 00 00 00 00 00 00` |
+| Foot massage down | `00000000 01000000` | Support | `0C 02 00 00 00 00 01 00 00 00 00 00 00 00` |
+| Foot massage down | `01000000 00000000` | Rize Sanctuary, Rize Resident | `0C 02 01 00 00 00 00 00 00 00 00 00 00 00` |
+| Foot massage down | `01000000 01000000` | Rize Bob | `0C 02 01 00 00 00 01 00 00 00 00 00 00 00` |
+| Memory 4 | `00010000 00000000` | Rize Resident | `0C 02 00 01 00 00 00 00 00 00 00 00 00 00` |
+| Save memory 4 | `08010000 00000000` | Rize Resident | `0C 02 08 01 00 00 00 00 00 00 00 00 00 00` |
+| Massage timer step | `00000200 00000000` | Rize Resident | `0C 02 00 00 02 00 00 00 00 00 00 00 00 00` |
+| Massage intensity up | `00000C00 00000000` | Rize Aviada, Rize Contempo, Rize II Clarity, Rize MF900, Nectar Move | `0C 02 00 00 0C 00 00 00 00 00 00 00 00 00` |
+| Massage intensity down | `01800000 00000000` | Rize Aviada, Rize Contempo, Rize II Clarity, Rize MF900 | `0C 02 01 80 00 00 00 00 00 00 00 00 00 00` |
+| Massage toggle | `00000000 00000100` | Rize Sanctuary, Rize Bob | `0C 02 00 00 00 00 00 00 01 00 00 00 00 00` |
+| STOP / release | `00000000 00000000` | all | `0C 02 00 00 00 00 00 00 00 00 00 00 00 00` |
+
+The word column shows the primary and secondary fields. Each product lists the
+controls it supports; held motors send the OR of their primary words.
+
+#### OKIN Bedding app keys
+
+| Command | Word | Profiles | Frame |
+|---|---|---|---|
+| Head up | `00000001 00000000` | all | `0C 02 00 00 00 01 00 00 00 00 00 00 00 00` |
+| Head down | `00000002 00000000` | all | `0C 02 00 00 00 02 00 00 00 00 00 00 00 00` |
+| Foot up | `00000004 00000000` | all | `0C 02 00 00 00 04 00 00 00 00 00 00 00 00` |
+| Foot down | `00000008 00000000` | all | `0C 02 00 00 00 08 00 00 00 00 00 00 00 00` |
+| `selector_4_up` | `00000010 00000000` | Jordan's Serenity, Jordan's Tranquil | `0C 02 00 00 00 10 00 00 00 00 00 00 00 00` |
+| `selector_4_down` | `00000020 00000000` | Jordan's Serenity, Jordan's Tranquil | `0C 02 00 00 00 20 00 00 00 00 00 00 00 00` |
+| `selector_5_up` | `00000010 00000000` | Customatic Z-280 | `0C 02 00 00 00 10 00 00 00 00 00 00 00 00` |
+| `selector_5_up` | `00000040 00000000` | Jordan's Serenity, Jordan's Tranquil | `0C 02 00 00 00 40 00 00 00 00 00 00 00 00` |
+| `selector_5_down` | `00000020 00000000` | Customatic Z-280 | `0C 02 00 00 00 20 00 00 00 00 00 00 00 00` |
+| `selector_5_down` | `00000080 00000000` | Jordan's Serenity, Jordan's Tranquil | `0C 02 00 00 00 80 00 00 00 00 00 00 00 00` |
+| Flat | `08000000 00000000` | all | `0C 02 08 00 00 00 00 00 00 00 00 00 00 00` |
+| Zero-G | `00001000 00000000` | all | `0C 02 00 00 10 00 00 00 00 00 00 00 00 00` |
+| Memory 1 | `00010000 00000000` | Jordan's Serenity, Jordan's Tranquil, Customatic Z-230, Customatic Z-280 | `0C 02 00 01 00 00 00 00 00 00 00 00 00 00` |
+| TV | `00004000 00000000` | Jordan's Serenity, Customatic Z-230, Customatic Z-280 | `0C 02 00 00 40 00 00 00 00 00 00 00 00 00` |
+| Memory 2 | `00040000 00000000` | Jordan's Serenity, Jordan's Tranquil, Customatic Z-280 | `0C 02 00 04 00 00 00 00 00 00 00 00 00 00` |
+| `save_zero_g` | `08001000 00000000` | all | `0C 02 08 00 10 00 00 00 00 00 00 00 00 00` |
+| Save memory 1 | `08010000 00000000` | Jordan's Serenity, Jordan's Tranquil, Customatic Z-230, Customatic Z-280 | `0C 02 08 01 00 00 00 00 00 00 00 00 00 00` |
+| `save_tv` | `08004000 00000000` | Jordan's Serenity, Customatic Z-230, Customatic Z-280 | `0C 02 08 00 40 00 00 00 00 00 00 00 00 00` |
+| Save memory 2 | `08040000 00000000` | Jordan's Serenity, Jordan's Tranquil, Customatic Z-280 | `0C 02 08 04 00 00 00 00 00 00 00 00 00 00` |
+| `massage_head_cycle` | `00000800 00000000` | Jordan's Serenity, Jordan's Tranquil, Customatic Z-280 | `0C 02 00 00 08 00 00 00 00 00 00 00 00 00` |
+| `massage_foot_cycle` | `00000400 00000000` | Jordan's Serenity, Jordan's Tranquil, Customatic Z-280 | `0C 02 00 00 04 00 00 00 00 00 00 00 00 00` |
+| `massage_mode_cycle` | `10000000 00000000` | Jordan's Serenity, Jordan's Tranquil, Customatic Z-230, Customatic Z-280 | `0C 02 10 00 00 00 00 00 00 00 00 00 00 00` |
+| `massage_timer_cycle` | `00000200 00000000` | Jordan's Serenity, Jordan's Tranquil, Customatic Z-230, Customatic Z-280 | `0C 02 00 00 02 00 00 00 00 00 00 00 00 00` |
+| Massage toggle | `00000100 00000000` | Jordan's Serenity, Jordan's Tranquil, Customatic Z-230, Customatic Z-280 | `0C 02 00 00 01 00 00 00 00 00 00 00 00 00` |
+| Under-bed light toggle | `00020000 00000000` | all | `0C 02 00 02 00 00 00 00 00 00 00 00 00 00` |
+| `leisure` | `00002000 00000000` | Jordan's Serenity | `0C 02 00 00 20 00 00 00 00 00 00 00 00 00` |
+| Anti-snore / Snore | `00008000 00000000` | all | `0C 02 00 00 80 00 00 00 00 00 00 00 00 00` |
+| Massage wave 1 | `00000000 00080000` | Jordan's Serenity, Jordan's Tranquil, Rize Remedy II | `0C 02 00 00 00 00 00 08 00 00 00 00 00 00` |
+| Massage wave 2 | `00000000 00100000` | Jordan's Serenity, Jordan's Tranquil, Rize Remedy II | `0C 02 00 00 00 00 00 10 00 00 00 00 00 00` |
+| Massage wave 3 | `00000000 00200000` | Jordan's Serenity, Jordan's Tranquil, Rize Remedy II | `0C 02 00 00 00 00 00 20 00 00 00 00 00 00` |
+| Massage off | `02000000 00000000` | Jordan's Serenity, Jordan's Tranquil, Rize Remedy II | `0C 02 02 00 00 00 00 00 00 00 00 00 00 00` |
+| Light on | `00000000 00000040` | Jordan's Serenity, Jordan's Tranquil, Rize Remedy II | `0C 02 00 00 00 00 00 00 00 40 00 00 00 00` |
+| Light off | `00000000 00000080` | Jordan's Serenity, Jordan's Tranquil, Rize Remedy II | `0C 02 00 00 00 00 00 00 00 80 00 00 00 00` |
+| Lounge / Reading | `00002000 00000000` | Jordan's Tranquil, Rize Remedy II | `0C 02 00 00 20 00 00 00 00 00 00 00 00 00` |
+| `save_lounge` | `08002000 00000000` | Jordan's Tranquil, Rize Remedy II | `0C 02 08 00 20 00 00 00 00 00 00 00 00 00` |
+| STOP / release | `00000000 00000000` | Rize Remedy II | `0C 02 00 00 00 00 00 00 00 00 00 00 00 00` |
+| Lumbar up | `00000010 00000000` | Rize Remedy II | `0C 02 00 00 00 10 00 00 00 00 00 00 00 00` |
+| Lumbar down | `00000020 00000000` | Rize Remedy II | `0C 02 00 00 00 20 00 00 00 00 00 00 00 00` |
+| Incline | `00004000 00000000` | Rize Remedy II | `0C 02 00 00 40 00 00 00 00 00 00 00 00 00` |
+| `save_incline` | `08004000 00000000` | Rize Remedy II | `0C 02 08 00 40 00 00 00 00 00 00 00 00 00` |
+| Massage intensity up | `00000C00 00000000` | Rize Remedy II | `0C 02 00 00 0C 00 00 00 00 00 00 00 00 00` |
+| Massage intensity down | `01800000 00000000` | Rize Remedy II | `0C 02 01 80 00 00 00 00 00 00 00 00 00 00` |
+| `head_foot_up` | `00000005 00000000` | Customatic Z-230 | `0C 02 00 00 00 05 00 00 00 00 00 00 00 00` |
+| `head_foot_down` | `0000000A 00000000` | Customatic Z-230 | `0C 02 00 00 00 0A 00 00 00 00 00 00 00 00` |
+| `massage_intensity_cycle` | `00000C00 00000000` | Customatic Z-230 | `0C 02 00 00 0C 00 00 00 00 00 00 00 00 00` |
+
+Each app's action table, by the app's action names.
+
+#### Resident Adjustable Base keys
+
+| Command | Word | Frame |
+|---|---|---|
+| STOP / release | `0x0000000000000000` | `08 02 00 00 00 00 00 00 00 00` |
+| Head up | `0x0000000100000000` | `08 02 00 00 00 01 00 00 00 00` |
+| Head down | `0x0000000200000000` | `08 02 00 00 00 02 00 00 00 00` |
+| Foot up | `0x0000000400000000` | `08 02 00 00 00 04 00 00 00 00` |
+| Foot down | `0x0000000800000000` | `08 02 00 00 00 08 00 00 00 00` |
+| `head_foot_up` | `0x0000000500000000` | `08 02 00 00 00 05 00 00 00 00` |
+| `head_foot_down` | `0x0000000A00000000` | `08 02 00 00 00 0A 00 00 00 00` |
+| Flat | `0x0800000000000000` | `08 02 08 00 00 00 00 00 00 00` |
+| Zero-G | `0x0000100000000000` | `08 02 00 00 10 00 00 00 00 00` |
+| `tv_pc` | `0x0000400000000000` | `08 02 00 00 40 00 00 00 00 00` |
+| Lounge / Reading | `0x0000200000000000` | `08 02 00 00 20 00 00 00 00 00` |
+| Anti-snore / Snore | `0x0000800000000000` | `08 02 00 00 80 00 00 00 00 00` |
+| Memory 1 | `0x0001000000000000` | `08 02 00 01 00 00 00 00 00 00` |
+| Memory 2 | `0x0004000000000000` | `08 02 00 04 00 00 00 00 00 00` |
+| Under-bed light toggle | `0x0002000000000000` | `08 02 00 02 00 00 00 00 00 00` |
+| `massage_switch` | `0x0000010000000000` | `08 02 00 00 01 00 00 00 00 00` |
+| Massage off | `0x0200000000000000` | `08 02 02 00 00 00 00 00 00 00` |
+| `strength_up` | `0x00000C0000000000` | `08 02 00 00 0C 00 00 00 00 00` |
+| `strength_down` | `0x0180000000000000` | `08 02 01 80 00 00 00 00 00 00` |
+| Massage timer step | `0x0000020000000000` | `08 02 00 00 02 00 00 00 00 00` |
+
+#### Okin 64-Bit keys
+
+| Command | Word | Profiles | Frame |
+|---|---|---|---|
+| STOP / release | `0x0000000000000000` | all | `08 02 00 00 00 00 00 00 00 00` |
+| Head up | `0x0000000100000000` | all | `08 02 00 00 00 01 00 00 00 00` |
+| Head down | `0x0000000200000000` | all | `08 02 00 00 00 02 00 00 00 00` |
+| Foot up | `0x0000000400000000` | all | `08 02 00 00 00 04 00 00 00 00` |
+| Foot down | `0x0000000800000000` | all | `08 02 00 00 00 08 00 00 00 00` |
+| Lumbar up | `0x0000001000000000` | all | `08 02 00 00 00 10 00 00 00 00` |
+| Lumbar down | `0x0000002000000000` | all | `08 02 00 00 00 20 00 00 00 00` |
+| Flat | `0x0800000000000000` | all | `08 02 08 00 00 00 00 00 00 00` |
+| Zero-G | `0x0000100000000000` | all | `08 02 00 00 10 00 00 00 00 00` |
+| Lounge / Reading | `0x0000200000000000` | all | `08 02 00 00 20 00 00 00 00 00` |
+| `tv_pc` | `0x0000400000000000` | all | `08 02 00 00 40 00 00 00 00 00` |
+| Anti-snore / Snore | `0x0000800000000000` | all | `08 02 00 00 80 00 00 00 00 00` |
+| Memory 1 | `0x0001000000000000` | all | `08 02 00 01 00 00 00 00 00 00` |
+| Memory 2 | `0x0004000000000000` | all | `08 02 00 04 00 00 00 00 00 00` |
+| `massage_switch` | `0x0000010000000000` | all | `08 02 00 00 01 00 00 00 00 00` |
+| `strength_up` | `0x00000C0000000000` | all | `08 02 00 00 0C 00 00 00 00 00` |
+| `strength_down` | `0x0180000000000000` | all | `08 02 01 80 00 00 00 00 00 00` |
+| `wave_mode` | `0x1000000000000000` | all | `08 02 10 00 00 00 00 00 00 00` |
+| Under-bed light toggle | `0x0002000000000000` | all | `08 02 00 02 00 00 00 00 00 00` |
+| Light on | `0x0000000000000040` | all | `08 02 00 00 00 00 00 00 00 40` |
+| Light off | `0x0000000000000080` | all | `08 02 00 00 00 00 00 00 00 80` |
+
+#### Adjustable bed (Lumbar) keys
+
+| Command | Word | Profiles | Frame |
+|---|---|---|---|
+| Head up | `0x0000000100000000` | all | `08 02 00 00 00 01 00 00 00 00` |
+| Head down | `0x0000000200000000` | all | `08 02 00 00 00 02 00 00 00 00` |
+| Feet up | `0x0000000400000000` | all | `08 02 00 00 00 04 00 00 00 00` |
+| Feet down | `0x0000000800000000` | all | `08 02 00 00 00 08 00 00 00 00` |
+| Lumbar up | `0x0000001000000000` | all | `08 02 00 00 00 10 00 00 00 00` |
+| Lumbar down | `0x0000002000000000` | all | `08 02 00 00 00 20 00 00 00 00` |
+| STOP / release | `0x0000000000000000` | all | `08 02 00 00 00 00 00 00 00 00` |
+| Flat | `0x0800000000000000` | all | `08 02 08 00 00 00 00 00 00 00` |
+| Anti-snore / Snore | `0x0000800000000000` | all | `08 02 00 00 80 00 00 00 00 00` |
+| Lounge / Reading | `0x0000200000000000` | all | `08 02 00 00 20 00 00 00 00 00` |
+| Incline | `0x0000400000000000` | all | `08 02 00 00 40 00 00 00 00 00` |
+| Zero-G | `0x0000100000000000` | all | `08 02 00 00 10 00 00 00 00 00` |
+| `save_anti_snore` | `0x0800800000000000` | all | `08 02 08 00 80 00 00 00 00 00` |
+| `save_lounge` | `0x0800200000000000` | all | `08 02 08 00 20 00 00 00 00 00` |
+| `save_incline` | `0x0800400000000000` | all | `08 02 08 00 40 00 00 00 00 00` |
+| `save_zero_g` | `0x0800100000000000` | all | `08 02 08 00 10 00 00 00 00 00` |
+| Under-bed light toggle | `0x0002000000000000` | all | `08 02 00 02 00 00 00 00 00 00` |
+| Massage wave 1 | `0x0000000000080000` | all | `08 02 00 00 00 00 00 08 00 00` |
+| Massage wave 2 | `0x0000000000100000` | all | `08 02 00 00 00 00 00 10 00 00` |
+| Massage wave 3 | `0x0000000000200000` | all | `08 02 00 00 00 00 00 20 00 00` |
+| `massage_stop` | `0x0200000000000000` | all | `08 02 02 00 00 00 00 00 00 00` |
+| `massage_up` | `0x00000C0000000000` | all | `08 02 00 00 0C 00 00 00 00 00` |
+| `massage_down` | `0x0180000000000000` | all | `08 02 01 80 00 00 00 00 00 00` |
+| `massage_on` | `0x0000010000000000` | all | `08 02 00 00 01 00 00 00 00 00` |
+| `voice_stop` | `0x0000000000000000` | all | `08 02 00 00 00 00 00 00 00 00` |
+
+The 25_42_02 and 36_33_04a tables share these words; 35_22_01 sends StarCode `5A`
+frames, listed in its profile.
+<!-- /generated -->
+
+### Responses
+
+| Parser | Profiles | Input |
+|---|---|---|
+| `parse_position` | Okimat | Position notification on the position characteristic, 7+ bytes: head raw at bytes 3-4 and foot raw at bytes 5-6, little-endian |
+| `parse_status` | Leggett Okin | Status notification: the app's LED mask (operations 6, 7, 8, 9 and 11) and signed status byte |
+| `parse_receipt` | Prodigy CE | 20-byte CU170 status frame: `09 0B`, two identical big-endian status dwords, ten trailing bytes |
+
+eShine parses its own `A5 0B 0E` and `A5 0C 0E` replies; see its
+[Notifications](#eshine).
+
+Okimat angles are `raw / max_raw × max_angle`, clamped:
+
+| Motor | Max raw value | Max angle |
+|---|---|---|
+| Head/back | 16000 | 60° |
+| Foot/legs | 12000 | 45° |
+
+### STOP and release behavior
+
+- Okimat and DewertOkin release a held key with one STOP frame. Okimat sends it
+  only when no other motor is still held, so other held motors keep moving.
+- Customatic sends one fresh STOP 100 ms after the last motor write; memory-page
+  holds end without one.
+- Leggett Okin ends every held key with four zero frames (the app's
+  `MaxZeroCount = 3` loop). There is no distinct stop opcode. Recalls send no
+  terminator at all.
+- The RF ECO BT stair lift has no STOP: release ends the refresh.
+- CST products and the OKIN Bedding apps release with two STOPs, 100 and 200 ms
+  after the release.
+- DOT and Sleepy's legacy CB25 release with one STOP; a Sleepy's preset STOP
+  commits the recall. SIMMONS sends two STOPs 100 and 400 ms after
+  every release. SleepEase P1 sends its index 1 STOP after every hold. eShine
+  sends one STOP 200 ms after the last held write.
+- Every cleanup runs with a fresh cancel event, so a stop request cannot
+  suppress it.
+
+The [hold and release timing](#hold-and-release-timing) table has the counts
+and intervals.
+
+### Vectors
+
+`tests/okin_nframe_vectors.py` lists each profile's frozen frames: app profiles
+take every N-frame literal from their app (SIMMONS also its Keeson
+E6 frames, SleepEase its pinned P1 vectors), and the Okimat, DewertOkin, RF ECO
+BT, DOT, Sleepy's legacy CB25 and AdjustableM5X4 routes take the frames
+the pre-v5 controllers sent, including the RF-Gateway envelopes. `tests/test_okin_nframe_vectors.py` checks that every
+literal round-trips through the codec and that every fixed frame a profile can
+send is frozen. eShine's requests, clock and alarm frames are frozen in
+`SETTING_FRAMES`, and the AdjustaMattress P3/P4 vectors in
+`tests/fixtures/adjustamattress/commands.json` round-trip through the same
+builders.
+
+## Profiles
+
+### Okimat
+
+**Status:** Tested
+
+#### Setup
+
+- Bed type `okin_uuid` selects this profile.
+- Choose **No app: Okimat or OKIN handset code (requires pairing)**, then the handset's remote
+  code (see [Home Assistant setup](#home-assistant-setup)). The code is
+  printed on the back of the handset. If an exact code is not offered, use a
+  captured code only when its button layout and keycodes have been verified for
+  that handset.
+- **Requires BLE pairing before use.**
+- When the connected device is a DewertOkin RF-Gateway, the same handset table
+  is sent in the [RF-Gateway envelope](#framing-and-checksum). When it is a DOT
+  box, the entry uses the [Okin DOT](#okin-dot) controller.
+
+**Detection.** Okimat is the fallback for the Okin service UUID. Some receiver
+modules only advertise a local name such as `OKIN-Receiver` or `OKIN - Receiver`
+until paired; those are shown as a pairing-required Okin-family protocol
+selection, because the receiver name and the shared service UUID do not identify
+the packet format. Priority:
+
+1. Device name contains "nectar" → [Nectar](okin-5a.md#nectar)
+2. Device name contains "leggett", "l&p", or "adjustable base" → [Leggett & Platt](leggett-platt.md)
+3. Device name contains "okimat", "okin rf", or "okin ble" → Okimat/Okin UUID
+4. Connected GATT has the Okin service plus CSS → OKIN Smart Remote /
+   [RF ECO BT](#rf-eco-bt-stair-lift) when no stronger signal exists. Nordic DFU
+   is only a CST hint and never selects Okin CST, which stays an explicit choice
+   ([#555](https://github.com/kristofferR/ha-adjustable-bed/issues/555)). Device
+   Information model `MEGAMAT MBZ` identifies the confirmed staircase, while an
+   `OKIMAT` model identifies a full bed. The generic model `RF eco BT` is also
+   used by full beds, so an explicitly selected valid handset code preserves the
+   Okin UUID profile. With ambiguous shared GATT signals and nothing else that
+   identifies the model, an already configured CST or RF ECO BT profile is preserved. A CST
+   entry on an `OKIMAT` drive gets a [repair](furnimove.md#repairing-existing-configurations)
+   instead of a silent switch.
+5. Device name is `OKIN-Receiver` / `OKIN - Receiver` → prompt for an Okin-family protocol
+6. Fallback → Okimat (with warning)
+
+If your bed is misidentified, choose its app or remote through **Reconfigure**.
+
+#### Controls
+
+The integration ships 210 handset codes covering the captured DewertOkin RF
+handset range (RFS-ELLIPSE, RF-TOPLINE, RF-LITELINE, RF-FLASHLINE, RF-FREE-ELEC,
+RF-TOUCH, RF-TOUCHLINE, RF-STYLE, RF-ECO and their memory and massage
+variants). The app accepts manually entered IDs, but its backend has no endpoint
+that enumerates every valid ID, so this table is a snapshot rather than a
+provably complete catalog.
+
+- Only motors the handset drives get covers. Head controls drive a dedicated
+  head/tilt motor when the handset has one and stay a back synonym on 2-motor
+  handsets; feet falls back to legs the same way. The configured motor count
+  still caps how many axes are shown.
+- Motors held together send the sum of their words in one frame. This is
+  integration behavior carried over from
+  [smartbed-mqtt #66](https://github.com/richardhopton/smartbed-mqtt/pull/66),
+  not from an app: no app was analyzed for the Okimat route (its test vectors are
+  the pre-v5 controller's frames), and FurniMove shows
+  only a single held key's refresh, with no combined held keys.
+  FurniMove's two-axis movement is its explicit
+  [`furnimove_move_simultaneously`](furnimove.md) action.
+- Flat, memory recall, zero-gravity and anti-snore stream their key, then STOP.
+  Anti-snore falls back to the quiet-sleep key: RF1058 handsets carry the same
+  `0x4000` preset as either "Snore" or "QuietSleep".
+- Memory save sends the handset's single save key; the handset decides the slot.
+- The light toggle appears only for handsets with a light key and sends one
+  press per button press: repeating it flashes the light and can end in "off".
+- Sync both sides (split bases) and child lock stream their key like any held
+  key, then STOP.
+- Massage keys are single presses. Handsets with a wave key step modes with it;
+  handsets with only discrete program keys cycle through them.
+
+##### Okimat handset keys
+
+<!-- generated:okin-nframe-okimat -->
+<!-- Generated by scripts/generate_codec_docs.py from the codec and profile data. Edit those, not this block. -->
+
+210 selectable handset codes. Each row counts the codes that define the key and
+lists every command word they use for it.
+
+| Key | Codes | Command words |
+|---|---|---|
+| Back up / down | 203 | `0x00000001`, `0x00000002`, `0x00000004`, `0x00000008` |
+| Legs up / down | 199 | `0x00000004`, `0x00000008`, `0x00000010`, `0x00000020` |
+| Head (tilt) up / down | 59 | `0x00000001`, `0x00000002`, `0x00000010`, `0x00000020` |
+| Feet up / down | 38 | `0x00000020`, `0x00000040`, `0x00000080` |
+| Flat | 206 | `0x0000000A`, `0x0000002A`, `0x000000AA`, `0x10000000`, `0x100000AA` |
+| Memory 1-4 | 99 | `0x00001000`, `0x00002000`, `0x00003000`, `0x00004000`, `0x00008000` |
+| Memory save | 99 | `0x00010000` |
+| Under-bed light | 172 | `0x00020000` |
+| Sync both sides | 69 | `0x00000100` |
+| Child lock | 53 | `0x08000000` |
+| Zero-gravity | 8 | `0x00004000` |
+| Massage | 13 | per handset |
+
+Handset memory-save holds: 10 × 200 ms, 25 × 200 ms, 40 × 200 ms. Other handsets
+use the profile's default memory save.
+
+Flat words per handset:
+
+| Flat word | Codes |
+|---|---|
+| `0x0000000A` | 86432, 93055 |
+| `0x0000002A` | 93329 |
+| `0x000000AA` | 82417, 82418, 93332, 94428, 94429, 94430, 94495, 94500 |
+| `0x10000000` | 65433, 84762, 85281, 89441, 89448, 89746, 89803, 90392, 90882, 90928, 91334, 91616, 91751, 92063, 92129, 92428, 92471, 94238, 94239, 94369, 96312, 96313, 96314, 96315, 97134, 97135 |
+| `0x100000AA` | 62211, 62612, 63293, 63338, 63365, 65418, 65567, 68036, 71852, 71853, 73591, 73593, 74130, 74131, 75225, 75267, 75268, 76208, 76688, 76691, 77008, 77010, 77011, 77560, 77561, 77839, 77991, 77994, 77995, 77996, 78031, 78033, 78080, 78081, 78102, 78103, 78105, 78109, 78110, 78111, 78237, 78238, 78281, 78283, 78375, 78378, 78379, 78381, 78386, 78737, 78773, 78785, 78791, 78847, 78854, 78860, 80027, 80035, 80036, 80354, 80355, 80358, 80360, 80593, 80595, 80597, 80599, 80601, 80602, 80603, 80604, 80608, 80616, 80673, 80674, 80675, 80676, 80683, 80685, 80714, 80716, 80903, 81183, 81185, 81186, 81187, 81191, 81192, 81193, 81194, 81196, 81197, 81202, 81204, 81205, 81611, 81613, 81619, 81620, 82292, 82295, 82620, 82634, 82635, 82755, 82757, 82760, 82764, 82767, 82770, 82785, 82786, 82790, 82794, 82795, 82796, 82797, 82799, 83060, 83126, 83219, 83358, 83462, 83489, 83603, 84148, 84149, 84150, 84151, 84173, 84562, 84563, 84564, 84582, 84931, 84963, 85057, 85058, 85124, 85126, 88875, 88877, 89137, 89138, 89139, 89476, 89837, 90269, 90354, 90658, 90675, 90678, 90679, 90916, 90918, 91050, 91244, 91246, 91914, 92113, 92461, 92535, 92591, 93025, 93300, 93305, 93306, 93339, 94186 |
+
+Memory slots per handset (the highest slot each code defines):
+
+| Memory slots | Codes |
+|---|---|
+| 1 | 76691, 78379, 78381, 80601, 80603, 80604 |
+| 2 | 78847, 78854, 78860, 80027, 80903, 82292, 82418, 83060, 85058, 86432, 89545, 89746, 90199, 90354, 90882, 90916, 90928, 91246, 91334, 92129, 92428, 92471, 92591, 93055, 93306, 93332, 93339, 94186, 94238, 94430, 94500, 97134, 97135 |
+| 3 | 78773, 78785, 78791, 80035, 80036, 82295, 83126, 83219, 84173, 89837, 90918, 91050, 91914 |
+| 4 | 62211, 62612, 63365, 65418, 65433, 65567, 76208, 77839, 77991, 77994, 77995, 77996, 78080, 78081, 78102, 78103, 78105, 78109, 78110, 78111, 78737, 81185, 81187, 81191, 81192, 81193, 81196, 81197, 81202, 81204, 81205, 85057, 85281, 89441, 89448, 89476, 90269, 90658, 90675, 90678, 90679, 92113, 93300, 93329, 94369, 94428, 94429 |
+<!-- /generated -->
+
+**Flat is a per-code property**: two codes in the same model family can use
+different Flat words, so each code stores its own values instead of sharing a
+family profile. This corrected several Flat values earlier releases had wrong
+(for example 82620, 83489, 91246, 92591, 93306). Handset 93332's head-down and
+feet-down keys share one word, `0x00000020`, as in the
+[smartbed-mqtt reference](https://github.com/richardhopton/smartbed-mqtt); the
+handset maps that word to both motors.
+
+**Source of truth.** The handset table is generated from the DewertOkin
+FurniMove handset backend (`GET /mobile-data/button/{code}`), which returns
+authoritative 32-bit keycodes and timing per code. For codes the backend no
+longer serves, keycodes are inherited from a live code with the identical
+`handsetlist.csv` capability signature when one exists (`csv-inherit:<code>`).
+When no live sibling exists they are rebuilt from the universal and modal
+keycode maps according to the CSV flags (`csv-reconstruct`); these entries have
+lower assurance, and Flat may be approximate. `beds/okin_uuid/remotes.py` tags
+each entry `backend`, `csv-inherit:<code>` or `csv-reconstruct`;
+`tools/okin_remotes/` regenerates it.
+
+The 83 codes that also appear in the pinned [FurniMove](furnimove.md) production
+catalog take their keycodes and memory-save timing from that catalog; they
+matched the backend capture byte for byte. Okin UUID remains their bed type in
+new setups, because it adds the mandatory bond and position feedback that the
+FurniMove app profile lacks.
+
+> [!NOTE]
+> Six codes that share the handset backend use a different transport and frame
+> ("DOT PROTOCOL" / RF1058 / RF34 / RF6707: 90167, 91983, 93558, 97450, 97544,
+> 98035). They are the separate [Okin DOT](#okin-dot) bed type. If 97450, 97544
+> or 98035 is printed on your remote, answer **No app: DOT remote (RF34 or
+> RF6707)** in the [Okin question](#home-assistant-setup) instead of the Okimat
+> handset code; the RF1058 codes belong to the FurniMove answer.
+
+#### Timing
+
+See the [hold and release](#hold-and-release-timing) and
+[one-shot](#one-shot-timing) tables. FurniMove 2.2.0 repeats a held key every
+100 ms after each successful write while the touchscreen button is held, then
+sends the zero/standby keycode. It does not use the backend UBL `duration` or
+`frequency` fields to schedule writes; a light tap starts one press sequence.
+
+#### Notifications
+
+Some receivers report positions on the position characteristic (service
+`0000ffe0-0000-1000-8000-00805f9b34fb`); it is not part of every controller's
+GATT layout. See [Responses](#responses). FurniMove 2.2.0 exposes no alternate
+position path for receivers without it: its `62741625...` parser reports only
+under-bed light, sync and child-lock state, and it ignores notifications on
+`90311725...`. The app parses no angle or motor position from either channel.
+
+#### Evidence
+
+The handset tables are based on FurniMove 2.2.0.
+
+### DewertOkin
+
+**Status:** Not yet tested
+
+#### Setup
+
+- Bed type `okin_handle` selects this profile.
+- **Detection:** device name contains `dewertokin`, `dewert`, `a h beard`, or
+  `hankook`, not a service UUID.
+- Address type: random.
+- Earlier notes described these writes as handle-based, but the numeric handle
+  is not stable, so the profile writes to the Okin write characteristic UUID.
+- **RF-Gateway:** devices whose Device Information reports manufacturer
+  `DewertOkin GmbH`, model `Bluetooth RF-Gateway`, can expose the normal Okin
+  service plus an RF-Gateway settings service
+  `92111420-72ab-4564-62ef-2a881286a6b0` with device-name characteristic
+  `92111422-72ab-4564-62ef-2a881286a6b0`. FurniMove 2.0.1 uses that
+  characteristic's presence to detect a gateway and writes it only to rename the
+  gateway; every command still goes to the Okin write characteristic, in the
+  [RF-Gateway envelope](#framing-and-checksum). The integration selects the
+  envelope when the BLE model is `Bluetooth RF-Gateway` or when that
+  service and characteristic pair is present. The same applies to Okimat entries.
+
+#### Controls
+
+Head and feet motors (back and legs are synonyms), Flat, Zero-G, TV, Quiet
+Sleep, memory 1 and 2 (no programming), wave, head and foot massage toggles,
+massage off and the light toggle. See the [DewertOkin table](#dewertokin-keys). The
+light is a toggle: on and off each send it.
+
+#### Timing
+
+Motors and presets stream their key, then STOP; light and massage keys are one
+write. See the [timing tables](#hold-and-release-timing). FurniMove repeats held
+keys every 100 ms (`Thread.sleep(100L)`) and sends an explicit stop after motor
+release.
+
+#### Evidence
+
+DewertOkin sends the pre-v5 controller's frames.
+
+#### DewertOkin brands
+
+Brands using DewertOkin/ORE actuators, from 79 analyzed apps:
+
+- **Rize family:** Rize (Home, II, II Carefree, II Clarity, Contemporary, Bob,
+  Sanctuary, Aviada, MF900), Resident Adjustable Base
+- **Simmons:** SIMMONS (US), Simmons Korea (시몬스). Beds controlled with the
+  `com.okin.simmons` app use the explicit [SIMMONS app profile](#simmons).
+- **Customatic:** Customatic Demo; Clarity, Remedy and Jerome's C use the
+  [Customatic app profiles](#customatic-family)
+- **Mattress brands:** Mattress Firm (except Sleepy's Elite, see
+  [Sleepy's Elite](sleepys.md)), Nectar Motion, Glory Furniture, Tranquil Sleep,
+  Luxe, Ultra
+- **ORE/Glideaway family:** Glideaway Motion (current app:
+  [explicit MOTION 400/450/500/600 profile](keeson.md#glideaway-motion)), Symphony
+  Sleep, Movita, Dynasty Bases (current app:
+  [MaxCoil Una / Dynasty Bases / Bedsense Bases profile](keeson.md#ore-comfort-bed-profiles)),
+  Better Living, LevaSleep, American Star, Avanti Bases (current app: explicit
+  [Avanti Bases profile](keeson.md#ore-comfort-bed-profiles), `avanti_bases`), Comfort
+  Furniture, Hestia Motion, Maxcoil Una (current app:
+  [MaxCoil Una / Dynasty Bases / Bedsense Bases profile](keeson.md#ore-comfort-bed-profiles)),
+  Power's Bedding, Ultramatic Smart Bed
+- **Asian markets:** Jobs 賈伯斯 (Taiwan), Koizumi (Japan), Minamoto Bed (Japan),
+  M line, Berun, Alya, Nerum, IST
+- **Other brands:** Simon Li (see the
+  [Keeson app profiles](keeson.md#simon-li-heal-every-night-and-okin-seating-profiles),
+  which also cover Heal Every Night and OKIN-Seating), Cherish Smart, Support
+  挺你, Apex, Doublesleep, OkinSmartComfort, OrmatekTechnoSmart, INNOVA (SFM)
+  (current app: [INNOVA profile](keeson.md#innova-profile)), RÖWA, Flexsteel
+  Pulse, A H Beard, Hankook Gallery, beds with the DewertOkin HE150 controller
+
+The 79 apps use one of these protocols:
+
+| Protocol | Apps | Service UUID | Guide |
+|---|---|---|---|
+| FFE5/Keeson | 31 | `0000ffe5-...` | [Keeson](keeson.md) |
+| OKIN UUID | 19 | `62741523-...` | this guide |
+| FFE0/Solace | 19 | `0000ffe0-...` | [Solace](ff_frame.md#solace-name-routes) |
+| Nordic UART | 5 | `6e400001-...` | [Mattress Firm 900](okin-5a.md#mattress-firm-900--iflex) |
+| FFF0/WiLinke | 2 | `0000fff0-...` | [Leggett & Platt](leggett-platt.md) |
+
+| App | Package ID | Protocol |
+|---|---|---|
+| MFRM Sleepy's Elite | `com.okin.bedding.sleepy` | Multi-protocol |
+| Resident | `com.okin.resident.release` | 64-bit N-frame, [Resident Adjustable Base](#resident-adjustable-base) |
+| Rize II | `com.okin.bedding.rizeii` | OKIN UUID |
+| Simmons | `com.okin.simmons` | Flutter; own frames, see [SIMMONS app](#simmons) |
+| Glideaway | `com.ore.bedding.glideawaymontion` | E6 FE 16 on FFE5/FFE9, [explicit Motion app profile](keeson.md#glideaway-motion) |
+| Symphony | `com.ore.bedding.symphony` | FFE5 + Nordic |
+| INNOVA/SFM | `com.ore.sfm` | FFE9/FFE4, little-endian E5 FE 16; see the [INNOVA profile](keeson.md#innova-profile) |
+| OkinSmartComfort | `com.okin.okinsmartcomfort` | OKIN UUID + Nordic |
+
+The complete app listing was `disassembly/output/OKIN_MASTER_ANALYSIS.md`.
+
+### RF ECO BT stair lift
+
+**App:** [OKIN Smart Remote / FurniMove](https://play.google.com/store/apps/details?id=com.okin.okinsmartcomfort) 2.2.0 (19), `com.okin.okinsmartcomfort`
+
+**Status:** Tested (reporter hardware in [#344](https://github.com/kristofferR/ha-adjustable-bed/issues/344))
+
+> [!WARNING]
+> This controls a moving staircase, not a bed. It exposes one cover entity named
+> `Stair` for a moving staircase actuator. Automations should only run where
+> motion is safe, visible and supervised.
+
+The [ELDA-BTH product page](https://elda-treppen.de/produkt/bth/) describes the
+system as a semi-automatic loft stair with a quiet maintenance-free spindle
+motor, gas spring support, switch and/or radio remote control, and electrical
+emergency lowering.
+
+#### Setup
+
+Use manual setup, select the **FurniMove / OKIN Smart Remote app, Okimat, Lucid, DOT and RF ECO BT remotes · Okin** row and answer **No app: single-actuator
+staircase, RF ECO BT (requires pairing)** (bed type `okin_rf_eco_bt`). Detection: none from
+advertisements.
+
+- Choose it only for a single moving actuator. RF ECO BT is also the receiver
+  for adjustable beds; for a bed controlled by the FurniMove app choose
+  **[FurniMove / OKIN Smart Remote](furnimove.md)** and its exact handset ID, and
+  for another app that app's profile.
+- Legacy RF ECO BT entries receive an offline layout repair, including entries
+  with a configured count of one. Explicit staircase confirmation prevents the
+  repair from returning while preserving the existing Stair entity.
+- The integration requests a Bluetooth bond, as it does for Okimat beds.
+
+**Device identification.** The reported device advertises as `OKIN-050226` with
+no service UUIDs, so it cannot be detected safely from advertisements.
+Diagnostics can identify it after connecting from the Okin service and write
+characteristic plus CSS service `90311623-25fa-3346-12ef-3cfb7a2556ac` and CSS
+write characteristic `90311625-25fa-3346-12ef-3cfb7a2556ac`. Nordic DFU service
+`00001530-1212-efde-1523-785feabcd123` on the same device may mean this profile
+or a full bed using [Okin CST](#okin-cst); it is not a safe discriminator, and
+an already configured RF ECO BT or CST profile is preserved when these signals
+disagree with it. Full OKIMAT beds and RF ECO BT bed receivers expose the same
+GATT signature, so it cannot choose a topology alone:
+
+| Model | Device |
+|---|---|
+| `MEGAMAT MBZ` | The single-actuator ELDA staircase from #344 |
+| `OKIMAT 4 IPS/M` | The multi-motor Lattoflex bed from [#406](https://github.com/kristofferR/ha-adjustable-bed/issues/406) |
+| `RF eco BT` | A two-motor bed receiver using RF-TOPLINE handset `82620`, also reported in #344 |
+
+- The exact `MEGAMAT MBZ` model remains the stronger staircase signal.
+- For other shared-GATT receivers, explicitly selecting a valid handset code
+  under the Okin UUID profile counts for more than the generic receiver
+  identity and keeps the multi-motor controller active.
+- Generic `OKIN-*` devices remain ambiguous because several unrelated OKIN
+  protocols use that naming pattern.
+
+#### Controls
+
+Open and close send the M2 out and in keys from the
+[RF ECO BT table](#rf-eco-bt-keys); stop ends the held refresh. No presets, memory,
+lights, massage or position feedback. The generic zero frame is not a valid
+staircase STOP: the reporter found it switched a light on, while ending the
+refresh stopped motion, so the integration never sends it here.
+
+#### Timing
+
+The direction refresh uses the app's interval with the configured, bounded
+pulse count (see the [timing table](#hold-and-release-timing)). Cancellation
+always clears the held motor state.
+
+**Connection.** Home Assistant keeps this profile's BLE connection open,
+whatever the **Bluetooth connection** setting.
+
+- In the reporter's [4.1.1 test](https://github.com/kristofferR/ha-adjustable-bed/issues/344#issuecomment-6036101893),
+  the normal 40-second idle disconnect left the receiver advertising but unable
+  to reconnect, with GATT timeouts. Retaining the connection worked reliably,
+  including after a Home Assistant restart.
+- The FurniMove profile applies the same policy when the receiver reports the
+  `RF eco BT` model and a connect to it has timed out or aborted, after a bed
+  receiver showed the same reconnect failures
+  ([#633](https://github.com/kristofferR/ha-adjustable-bed/issues/633)). Other
+  profiles are unchanged.
+- Keeping the link open occupies a Bluetooth connection slot and may prevent a
+  companion app from connecting.
+- After an unexpected drop, Home Assistant schedules one automatic reconnect
+  using the normal bounded retry budget. Recovery sends no
+  movement command. If it fails, the next command or **Connect** action can try
+  again; no background retry loop runs.
+- Manual Disconnect remains available and cancels both scheduled and in-progress
+  automatic recovery.
+- The receiver may still need a power cycle if GATT timeouts recur; keeping the
+  link open is a tested workaround, not an explanation of those timeouts.
+
+#### Evidence
+
+FurniMove 2.2.0 (`com.okin.okinsmartcomfort`) proves the shipped
+offline two-axis fallback table's M2 keys and the six-byte frame; the M2
+staircase mapping comes from #344. If M2 is not the right channel for another
+installation, mapping it needs that owner's OKIN Smart Remote ID or QR contents;
+do not add M3, reversed, DOT or RF-Gateway variants to this profile without a new
+app or hardware report.
+
+### Customatic family
+
+**Status:** Not yet tested
+
+The three apps share one frame, transport and timing; each is its own bed type.
+The Clarity and Remedy packages publish their apps as **Rize Clarity** and
+**Rize Remedy**, and setup's row names them too.
+
+| Profile | Package | Motors | Memory page | Light |
+|---|---|---|---|---|
+| Clarity | `com.okin.bedding.customaticclarity` | Back, legs | Yes | Toggle |
+| Jerome's | `com.okin.bedding.customaticjeromes` | Back, legs | No | None |
+| Remedy | `com.okin.bedding.customaticremedy` | Back, legs, lumbar | Yes | Toggle |
+
+#### Setup
+
+Choose the **Clarity (Rize Clarity), Jerome's C, Remedy (Rize Remedy) and Z-Series apps · Customatic** row
+(or the brand list's **Customatic: Clarity (Rize Clarity), Jerome's C, Remedy (Rize
+Remedy) and Z-Series apps** row), then the app supplied with the bed: Clarity,
+Jerome's C, Remedy, or Z-Series with its model. Detection: none. For an existing
+bed, use the entry's **Reconfigure**; a change first checks the new app's
+command characteristic, and **Configure** no longer changes the app.
+
+- The apps scan for the case-sensitive name prefixes `OKIN` and `iFlex_Bed`,
+  which identify candidates, not the app. They share their service, command
+  characteristic and names, and Device Information strings do not select
+  capabilities either, so the profile is a manual choice.
+- Each package hard-codes its app layout; product selectors the app never uses create
+  no extra variants.
+- Clarity and Remedy can reconnect to a saved address. Jerome's app never
+  reconnects that way; selecting a physical bed slot directly still works.
+- **Write mode:** the apps leave the Android write type unchanged, so the
+  runtime value is unknown. HA validates the exact command service and
+  characteristic, and writes with response when it advertises `write`, otherwise
+  without response when it advertises only `write-without-response`. This is an
+  implementation choice, not a claim about the app or every physical bed.
+- No notification subscription, position read, massage, pairing or
+  authentication, custom settings write, firmware update or MTU negotiation.
+
+#### Home Assistant setup
+
+| Answer | Profile |
+|---|---|
+| Clarity app (Rize Clarity): back and legs, memory page and light | [Clarity](#customatic-clarity) |
+| Jerome's C app: back and legs, no memory page or light | [Jerome's](#customatic-jeromes) |
+| Remedy app (Rize Remedy): back, legs and lumbar, memory page and light | [Remedy](#customatic-remedy) |
+| Z-Series app with the Z-230 model | [Z-Series](#customatic-z-series), that model's page |
+| Z-Series app with the Z-280 model | [Z-Series](#customatic-z-series), that model's page |
+
+The Jordan's row asks the same way between [Serenity](#jordans-serenity) and
+[Tranquil](#jordans-tranquil). An app's own row in the app question, such as
+Tranquil, is not asked again. For an existing bed, open the entry's three-dot menu and **Reconfigure** (see [Changing the app or layout](../CONFIGURATION.md#changing-the-bed-type-app-or-layout-of-an-existing-bed)); **Keep the detected or saved controls** leaves the entry as it is. A change first checks the link for the new app's exact GATT roles, then a review lists the added and removed controls before **Apply this change** saves it. **Configure** keeps routine settings; the app and model change only through **Reconfigure**. The Customatic apps check their one command
+characteristic; Z-Series, Serenity and Tranquil check their command and
+notification characteristics.
+
+#### Controls
+
+See the [Customatic table](#customatic-keys).
+
+- **Motors:** back and legs, plus lumbar on Remedy. Motors held together OR their
+  bits, so `back_up+legs_up` sends `04 02 00 00 00 05`.
+- **Flat:** see each profile.
+- **Memory page** (Clarity and Remedy): five independently held controls, Flat,
+  ZG, ANTI, Program and Incline. HA keeps their literal names instead of giving
+  ZG or ANTI a physical meaning, and they are not numbered memory slots. The
+  **ZG**, **ANTI**, **Incline**, **Program**, **Save ZG** (Program + ZG), **Save
+  Incline** (Program + Incline) and **Reset** (Flat + Program) buttons hold their
+  mask for the app's confirmation threshold (see the
+  [one-shot timing](#one-shot-timing) note); it is not a hardware
+  acknowledgement or proof of storage. Flat + ZG and Flat + ANTI remain literal
+  combinations; the app's unused `resetMemory()` helper does not make Flat + ZG
+  a reset.
+- **Light** (Clarity and Remedy): one toggle frame, no release. Its state and
+  brightness are unknown; HA exposes no inferred state or discrete on/off.
+- **Device Information** (service `0000180a-0000-1000-8000-00805f9b34fb`),
+  read in this order: manufacturer `2a29`, hardware revision `2a27`, software
+  revision `2a28`, firmware revision `2a26`, model `2a24`. The app schedules them
+  at 0/120/240/360/480 ms after connecting and retries the whole batch from its
+  information screen if a cached field is null. HA reads all five at connection
+  discovery and offers **Refresh Device Information** for a whole-batch retry,
+  serialized with at least 120 ms spacing and a two-second bound per read.
+  Missing characteristics or failed reads keep cached values and never block
+  controls. Values decode UTF-8 with replacement, like Java; empty strings are
+  values, not missing fields. The sensors are `customatic_manufacturer`,
+  `customatic_hardware_revision`, `customatic_software_revision`,
+  `customatic_firmware_revision` and `customatic_model`; diagnostics include them.
+  No field selects frames, the app or capabilities, and none needs a
+  notification channel or angle sensing.
+
+#### Timing
+
+See the [timing tables](#hold-and-release-timing). Explicit Stop sends the zero
+mask at once, after the own release of any move it pre-empts.
+
+- Cleanup runs after cancellation and outside the requested movement deadline.
+  HA's duration is an elapsed-time ceiling for the refresh, so no extra refresh
+  follows the deadline.
+- The configured pulse count applies to ordinary cover actions; the interval
+  stays the app's.
+- Each motor has its own scheduler resource. A Stop from any axis still
+  pre-empts a move on another axis at once (that move sends its own release,
+  then the zero mask), because a Stop never waits behind another motor's
+  command. Two-address paired children keep separate physical-side resources.
+- Each app ORs held motors into one mask and clears only a released motor's
+  bit (#516). `timed_move` calls on different motors, renewable or not, run
+  together: each 120 ms frame is the OR of every moving motor's key, for
+  example `04 02 00 00 00 05` for back and legs up. When one motor ends, the
+  next frame drops its bit at once and the others keep moving; the zero write
+  follows 100 ms after the last motor ends. A motor's own Stop ends only that
+  motor, while Stop all ends them all. HA uses one 120 ms lane instead of the
+  app's duplicate phase-offset chains.
+- Each app streams a held mask until release, so `timed_move` and
+  `hold_control` accept a renewable hold lease
+  ([Renewable holds](../SERVICES.md#renewable-holds)). The mask refreshes at
+  120 ms until the lease runs out or a Stop arrives, then the normal release
+  follows.
+
+#### Services
+
+**Move motors together:** `adjustable_bed.customatic_move_simultaneously` takes
+an `actions` mapping of `back`, `legs` and, for Remedy, `lumbar` to `up` or
+`down`, plus a duration in seconds.
+
+- Different motors may run in opposite directions: all eight safe states for two
+  motors and all 26 for three.
+- Axes are ordered back, legs, lumbar, with equivalent held-control strings such
+  as `back_up+legs_down+lumbar_up`.
+- Opposite directions on one motor are rejected before any write.
+
+**Hold memory controls:** `adjustable_bed.customatic_hold_memory` takes any
+nonempty subset of `flat`, `zg`, `anti`, `program` and `incline` in `actions`;
+all 31 subsets OR their bits. The duration accepts 0.1-60 seconds in whole
+milliseconds.
+
+```yaml
+action: adjustable_bed.customatic_hold_memory
+data:
+  device_id: YOUR_BED_DEVICE_ID
+  actions: [program, zg]
+  duration: 2.7
+```
+
+- Duplicate or unknown controls, empty selections and mixed motor and memory
+  selections are rejected before writing.
+- HA starts the selected composite mask immediately on one refresh lane. It does
+  not replay Android touch-down sequences or their phase-dependent first tick,
+  which keeps the app's masks while giving the action a deterministic
+  duration.
+
+**Paired beds:** Jerome's app can send the same frame to two selected beds. Use
+an explicit two-address HA pair or target both devices. These profiles have no
+frame-side selector and no single-address logical pair. HA supplies connection
+checks, command serialization, cancellation and reconnects instead of the app's
+constant-true connection check.
+
+#### Evidence
+
+Based on the Customatic Clarity, Jerome's and Remedy apps. Movement labels,
+save and reset effects, light behavior and write-property compatibility still
+need testing by owners.
+
+### Customatic Clarity
+
+**App:** [Customatic Clarity](https://play.google.com/store/apps/details?id=com.okin.bedding.customaticclarity) 1.0.1, `com.okin.bedding.customaticclarity`
+
+**Status:** Not yet tested
+
+Behaves as the [Customatic family](#customatic-family), except as below.
+
+#### Controls
+
+Flat sends the Flat word once.
+
+### Customatic Jerome's
+
+**App:** [Customatic Jerome's](https://play.google.com/store/apps/details?id=com.okin.bedding.customaticjeromes) 1.0.1, `com.okin.bedding.customaticjeromes`
+
+**Status:** Not yet tested
+
+Behaves as the [Customatic family](#customatic-family), except as below.
+
+#### Controls
+
+- No memory page, no light and no lumbar.
+- Flat (the fresh screen) sends its alternate Flat word three times in a row,
+  with no interval or release.
+- Its restored fragment has a separate generic Flat: the
+  **Restored Flat** button sends the restored word once. That persisted route
+  does not justify switching every Flat to it.
+
+### Customatic Remedy
+
+**App:** [Customatic Remedy](https://play.google.com/store/apps/details?id=com.okin.bedding.customaticremedy) 1.0.1, `com.okin.bedding.customaticremedy`
+
+**Status:** Not yet tested
+
+Behaves as the [Customatic family](#customatic-family), except as below.
+
+#### Controls
+
+Adds the lumbar motor. Flat sends the Flat word once.
+
+### Leggett Okin family
+
+**Status:** Partly tested (Prodigy CE / CU170 tested in [#368](https://github.com/kristofferR/ha-adjustable-bed/issues/368); the other app profiles need testing)
+
+#### Setup
+
+- Bed type `leggett_okin` (see
+  [Leggett & Platt](leggett-platt.md)). **Detection:** device names containing
+  "leggett", "l&p" or "lp bed" tell these beds from Okimat and Nectar beds on the
+  same service UUID.
+- Choose the bed's app in the [L&P question](leggett-platt.md#home-assistant-setup);
+  each app selects its own profile. The default remains **Prodigy CE (Prodigy 4) app: back, feet, pillow and lumbar**,
+  preserving existing configurations, and an existing entry changes it through
+  **Reconfigure**. Device names
+  and shared service UUIDs do not tell the physical actuator layout.
+- App profile and wire revision are independent. The app picks the frame once
+  per connection: the plain frame (revision 1) when the revision selector
+  characteristic exists under the service, the
+  [envelope](#framing-and-checksum) (revision 0) when it does not. The
+  integration applies the same check after service discovery, records the
+  revision in diagnostics, and refuses to guess when service discovery is
+  unavailable.
+- Configure each side before combining two separately addressed beds; shared
+  paired options keep each side's app profile. Separate the combined bed temporarily to change it.
+- **Pairing** is required. Neither app calls `createBond`, but the write
+  characteristic needs an encrypted link, so Android bonds reactively on the
+  resulting ATT error 5. An authentication failure while connecting clears the
+  cached bond marker and allows automatic pairing retries; a verified retry
+  suppresses the pairing repair. Failed, inconclusive or cancelled recovery still
+  raises it, and command-time authentication errors stay visible.
+- **Write mode:** CU170 hardware testing measured a 217-218 ms motion watchdog,
+  so the integration writes without response and measures the interval from the
+  start of each write. Awaiting a confirmed write and then sleeping adds the BLE
+  round trip to every gap, which repeatedly crossed the watchdog over a WiFi
+  Bluetooth proxy and made the motor stop and restart. The pairing and write
+  policies come from hardware testing, not from APK calls.
+- **WiFi proxies:** unconfirmed writes cannot hide packet loss on a proxy's
+  WiFi. Every frame crosses that hop as a TCP packet, so one lost packet holds
+  back all later frames until TCP resends it, usually past the watchdog. Long
+  held moves then stop and restart
+  ([#916](https://github.com/kristofferR/ha-adjustable-bed/issues/916)). A
+  faster cadence does not help, because queued frames still wait for the lost
+  one, so the stream keeps the app's 100 ms interval. A frame loop running next
+  to the bed showed no late frames on similar or weaker radio links. Use an
+  Ethernet proxy or a Bluetooth adapter on the Home Assistant host when the
+  proxy's WiFi is weak.
+- BLE only: Classic RFCOMM paths in Prodigy 2 and U Series are outside this
+  integration's transports.
+
+#### Controls
+
+See the [Leggett Okin table](#leggett-okin-keys). Held keys combine into one frame.
+
+> [!WARNING]
+> **Do not trust the `FBP_KEYCODE_*` constant names in decompiled output.**
+> Several are wrong for this hardware: `0x00800000` is declared
+> `LIGHT_INTENSITY_DOWN`, but the shipped massage screen binds it to head massage
+> **down**. The layout binding and the write boundary are the authority; both
+> independent analyses of Prodigy CE reached this separately.
+
+- **Flat** is a held button, not a recall.
+- **Memory store** (`0x00010000`) arms the box to overwrite a slot and must never
+  appear in the recall ladder. Earlier releases used a ladder shifted one step up
+  (`0x2000`…`0x10000`), so every memory button recalled its neighbour and
+  "Memory 4" streamed the store-arm key for 30 seconds, which could reprogram a
+  slot with whatever position the bed was in.
+- **Massage** power is a toggle with no discrete off, so there is no massage-off
+  button; the wave key is the mode-step button. There is no massage timer:
+  `0x00000200` is an app constant (`FBP_KEYCODE_M5_IN`, a fifth actuator
+  channel) never bound to a control or written.
+- **Light and massage** keys are held keys: a tap leaves one command interval
+  before the release burst. Previously the first zero could follow the press
+  immediately, making the light toggle too short to register. The precise
+  minimum hardware debounce is not known.
+
+**Hold control:** `adjustable_bed.hold_control` exposes bounded holds for flat,
+Snore, lighting and massage; U Series also permits memory 1, memory 2 and SET.
+The released `hold_control` name still works with the same list. The
+movement services cover motor holds.
+
+#### Timing
+
+See the [timing tables](#hold-and-release-timing).
+
+| Command family | Lifecycle |
+|---|---|
+| Held keys (motors, flat, light, massage) | Stream while held; on release exactly four zero frames, then silence |
+| Recalls (memory slots, Snore) | A fixed burst with no terminator: the box drives the move to completion itself, and a release could cancel it |
+| Flat | No app-defined duration: the integration streams it for the Flat hold at the bed's repeat interval, never faster than the profile's interval, then releases |
+| Control mode | The settings dialog's attempts, then one zero frame |
+
+- A recall interrupted by cancellation or a write failure ends with the zero
+  release.
+- LP Control 2.9.0 uses a 200 ms cadence where Prodigy CE uses 100 ms; the
+  integration uses the accepted Prodigy/U Series cadence and the recorded CU170
+  policy.
+- Every app streams a held key until release, so `timed_move` and
+  `hold_control` accept a renewable hold lease
+  ([Renewable holds](../SERVICES.md#renewable-holds)). The key refreshes at
+  100 ms until the lease runs out or a Stop arrives, then the four zero frames
+  follow. On Prodigy CE's CU170 box, motion stops 217 to 218 ms after the last
+  frame (measured in #368 and #516), so a lost link cannot leave a motor running.
+- Prodigy CE and U Series combine held keys (#516). `timed_move` calls on
+  different motors, renewable or not, run together: each 100 ms frame carries
+  the OR of every moving motor's key. When one motor ends, the next frame drops
+  its key and the others keep moving; the four zero frames follow only when the
+  last motor ends. A motor's own Stop ends only that motor, while Stop all ends
+  them all. Prodigy 2 and 2L keep one motor at a time: their reports do not
+  prove that one key can be released while another stays held.
+
+#### Notifications
+
+The status characteristic acknowledges accepted writes and also reports
+physical-remote actions. The app reconstructs an LED/status mask (see
+[Responses](#responses)) but only gives meaning to sleep timer (`0x8000`) and
+alarm (`0x4000`). No parsed value influences a later command. There is **no
+position, angle, percentage or motor-state feedback**.
+
+The integration retains raw LED-mask and signed-status sensors and reads the
+standard Device Information strings for diagnostics. U Series applies its app's
+low-byte suppression to the indicators while keeping the raw mask.
+
+#### Services
+
+`adjustable_bed.leggett_sleep_timer` and `adjustable_bed.set_alarm`
+start or cancel native timers. The services validate the profile's actions and
+ranges before writing; see their action descriptions for fields.
+
+| Command | Profiles | Word | Range |
+|---|---|---|---|
+| Sleep timer | Prodigy | Plain frame `04 02 FF <favorite - 1> <minutes, 16-bit big-endian>` under either revision | Favorite 1-4, 1-1439 minutes |
+| Sleep timer | U Series | `0xFF000000` with the action bits and minutes OR'd in; follows the selected revision | Flat `0x00100000`, memory 1 `0x00000000`, memory 2 `0x00010000`, memory 3 `0x00020000`; 15-90 minutes in 15-minute steps |
+| Sleep cancel | All | `0xFF200000` | |
+| Alarm | All | `0xFD000000` + minutes | 1-1440 minutes |
+| Alarm cancel / stop | Prodigy | `0xFD200000` | |
+| Alarm cancel / stop | U Series | `0xFD000000` | |
+
+- All three Prodigy apps disable 00:00 in their sleep picker; their zero-to-1440
+  branch is not a selectable duration. U Series' third sleep memory is distinct
+  from a direct recall button.
+- Timer commands, including the Prodigy plain sleep frame, use the recall burst.
+  A successful timer has no zero tail; an interrupted one ends with the release.
+
+#### Evidence
+
+Based on the Prodigy 2L, Prodigy 2, Prodigy CE and U Series apps, plus the CU170
+stop on Prodigy CE.
+
+### Prodigy 2L
+
+**App:** [Prodigy 2L](https://play.google.com/store/apps/details?id=com.leggett.prodigy2L) 1.2 (15), `com.leggett.prodigy2L`
+
+**Status:** Not yet tested
+
+Behaves as the [Leggett Okin family](#leggett-okin-family), except as below.
+
+#### Controls
+
+Head, feet and lumbar. Four favorites: Favorite 1, Favorite 2, the fixed Snore
+entry (wire slot 3, which has no save and no separate Zero-G action) and
+Favorite 3. Programming holds the store key, switches directly to the slot, then
+sends the ordinary release (see the [one-shot timing](#one-shot-timing) note).
+The app's reset and slot assignment are consecutive calls in one callback, so the
+integration inserts no zero gap between the stages. The shipped user guide
+agrees: "Touch Save… the massage motors will buzz once. Within 5 seconds, touch
+the Favorite Position being edited."
+
+**Control mode:** press-and-hold and press-and-release buttons rather than a
+select, because no notification reports the active mode. On boxes with the
+optional Smart Remote settings service, notification setup also sends the
+settings initialization write.
+
+### Prodigy 2
+
+**App:** [Prodigy 2](https://play.google.com/store/apps/details?id=com.leggett.prodigy2) 2.2.0 (44), `com.leggett.prodigy2`
+
+**Status:** Not yet tested
+
+Behaves as [Prodigy 2L](#prodigy-2l), except that the third motor is the pillow
+instead of lumbar.
+
+### Prodigy CE (Prodigy 4)
+
+**App:** [Prodigy CE / Prodigy 4](https://play.google.com/store/apps/details?id=com.leggett.prodigy4) 1.2.0 (18), `com.leggett.prodigy4`
+
+**Status:** Tested on two CU170 controllers in [#368](https://github.com/kristofferR/ha-adjustable-bed/issues/368) (movement, Flat, presets and the light); recall of saved favorites is not yet confirmed
+
+Behaves as [Prodigy 2L](#prodigy-2l), with head, feet, pillow and lumbar, except
+as below.
+
+#### Controls
+
+- **Stop all** first sends the reporter's hardware-tested DUMMY key (CU170 stop
+  in the table), then the ordinary release. It interrupts a latched preset or
+  preset-save sequence, which zero alone does not, uses the selected revision
+  (`E5 FE 16 00 04 00 00 02` / `04 02 00 04 00 00`) and ignores the cancelled
+  movement's cancel event. Ordinary end-of-hold cleanup still sends only zero.
+  This comes from the
+  [September hardware report](https://github.com/kristofferR/ha-adjustable-bed/issues/368#issuecomment-5747783066),
+  not an app command.
+- **Control mode:** #368 reports that SET+FLAT (press-and-hold) factory-resets the
+  CU170 and wipes its presets, so HA removes the press-and-hold button and refuses
+  the command even from an old entity. Use the physical remote's procedure.
+  Press-and-release stays available.
+- Successful recalls keep the app's burst; explicit interruption needs the DUMMY
+  key, while cancellation or a write failure uses the zero cleanup.
+
+#### Notifications
+
+The [CU170 hardware report](https://github.com/kristofferR/ha-adjustable-bed/issues/368#issuecomment-5481326088)
+gives the physical meaning absent from the app.
+
+- A 20-byte status frame on the status characteristic (see
+  [Responses](#responses)) carries the CU170 status mask. The first trailing byte
+  reads `01` while massage wave mode runs and `FF` in every other frame observed
+  (owner captures and debug log, 2026-07 to 2026-10). Frames of another length or
+  with mismatched dwords are ignored.
+
+| CU170 status mask | Meaning |
+|---|---|
+| `0x00020000` | Under-bed light on |
+| `0x00400000` | Alarm armed |
+| `0x00800000` | Sleep timer armed |
+
+- A toggle's receipt holds the **old** light state; a separate spontaneous
+  notification holds the **new** state, including physical-remote changes. Every
+  valid notification is processed, not one receipt per write.
+- Alarm and sleep indicators use these masks once a CU170 frame is recognized,
+  instead of the app's labels, and settings notifications cannot overwrite them.
+  CU170 frames have no signed-status field.
+
+**Light entity:** on and off toggle only when the known state differs, then wait
+up to three seconds for confirmation; a missing confirmation leaves the light
+unknown and reports an error without retrying. State is not restored across Home
+Assistant sessions and clears on disconnect. After subscribing, startup sends the
+app's four idle zero frames, which request live status without toggling the
+light (the September report confirms a key write refreshes status); without a
+valid reply the state stays unknown. The redundant **Toggle light** button is
+removed; `light.toggle` stays available, as does the physical remote.
+
+**Remaining hardware observations:**
+
+- The reporter measured one light pulse when memory storage arms and three when a
+  preset is saved; those pulses also change the real light state.
+- Programming keeps the app's bounded arm-then-slot sequence. An
+  acknowledgement-driven version needs paired raw traces of both initial light
+  states, and must never combine SET with FLAT. The store path sends each key
+  separately.
+- The CU170 can be set for latched or hold-required presets. Recalls use the
+  app's burst; `adjustable_bed.hold_control` gives an explicit held duration for
+  hold-required boxes. Flat keeps its bounded hold.
+- Worth a capture if you have the equipment: which revision real units use,
+  whether recall truly ends without a terminator, whether changing control mode
+  resets editable favorites on all firmware, and whether the tap interval
+  registers reliably on local adapters and wireless proxies.
+
+### U Series
+
+**App:** [U / Ultra Series](https://play.google.com/store/apps/details?id=com.leggett.useries) 2.1 (16), `com.leggett.useries`
+
+**Status:** Not yet tested
+
+Behaves as the [Leggett Okin family](#leggett-okin-family), except as below.
+
+#### Controls
+
+- Head, feet and pillow.
+- Two held memory keys, a held Snore control and a held SET key, all through
+  `adjustable_bed.hold_control` with an explicit duration. There are no one-shot
+  Memory 1, Memory 2 or Snore buttons, no four direct favorites and no composite
+  favorite programming.
+- No control-mode settings and no settings-channel initialization.
+- Its alarm-stop key differs from the Prodigy profiles; see
+  [Services](#services-1).
+
+### Okin DOT
+
+**App:** [FurniMove](https://play.google.com/store/apps/details?id=com.okin.okinsmartcomfort) (earlier analysis; accepted 2.2.0 audit), `com.okin.okinsmartcomfort`
+
+**Status:** Not yet tested
+
+All keycodes come live from the DewertOkin handset backend
+(`GET /mobile-data/button/{code}`); the snapshot lives in
+`tools/okin_remotes/master.json` with `protocol: "dot"`.
+
+#### Setup
+
+##### Known models
+
+"DOT PROTOCOL" is DewertOkin's name (it appears verbatim in RF34 handset
+descriptions) for receiver boxes that pair with the RF1058, RF34, and RF6707
+RF handsets.
+
+- The handset remote codes resolve through the same FurniMove backend as the
+  [Okimat](okin-nframe.md#okimat) codes.
+- The box itself is a CB24-family receiver: it exposes the Nordic UART service
+  instead of the Okin `62741523` service and takes CB24-style 7-byte frames.
+
+###### Remote codes
+
+| Code | Handset | Motors | Extras |
+|------|---------|--------|--------|
+| 90167 | RF1058 | Head + Feet | 4 memories, zero-g, quiet sleep, head/foot massage |
+| 91983 | RF1058 | Head + Feet | 3 memories, zero-g, anti-snore, head/foot massage |
+| 93558 | RF1058 | Head + Feet | 3 memories, zero-g, anti-snore, head/foot massage |
+| 97450 | RF34/09/WH/GY | Back + Legs | 2 memories |
+| 97544 | RF34/09/BK/BK | Back + Legs | 2 memories |
+| 98035 | RF6707 | Head + Back | Motors + light only |
+
+The motor keycodes are **renumbered per handset**: whichever two motor channels
+the handset drives, the first pair is `0x1`/`0x2` and the second is `0x4`/`0x8`
+(unlike the fixed Okimat bit assignment). The channels keep their section
+meaning (M1=Head, M2=Back, M3=Legs, M4=Feet in FurniMove), and the integration
+exposes correspondingly named controls: an RF1058 bed gets Head and Feet
+covers, an RF6707 bed gets Head and Back.
+
+##### Protocol Details
+
+**Service UUID:** `6e400001-b5a3-f393-e0a9-e50e24dcca9e` (Nordic UART)
+**Write Characteristic:** `6e400002-b5a3-f393-e0a9-e50e24dcca9e` (write without response)
+**Format:** 7 bytes, `[0x05, 0x02, kc3, kc2, kc1, kc0, 0x00]`
+
+FurniMove calls this characteristic `CB24_WRITE_CHARACTERISTIC` and flags the
+connection as DOT when it is present (`BluetoothLeService.setCharacteristics`).
+
+###### Packet Format
+
+7 bytes (`HexValueConverter.toByteArray` with `isDOTProtocol=true`):
+
+```text
+[0x05, 0x02, kc3, kc2, kc1, kc0, 0x00]
+```
+
+- Bytes 2–5: 32-bit keycode, big-endian
+- No checksum
+- Identical to the [SmartBed app](smartbed.md)'s CB24 frame with bed
+  selection byte `0x00`
+
+###### Handshake
+
+- The earlier FurniMove analysis this bed type came from recorded an ASCII
+  `affirm` write to the write characteristic on discovery. The integration
+  mirrors it once per connection before the first command.
+- The accepted FurniMove 2.2.0 audit has no such write, and it also sends
+  memory save, massage and some utility controls in the six-byte `04 02` format
+  even on a DOT receiver.
+- Okin DOT keeps its released behavior for existing entries; the FurniMove
+  profile follows 2.2.0 exactly.
+
+##### Detection / Setup
+
+- If the code printed on your remote is **97450, 97544 or 98035**, choose the
+  **FurniMove / OKIN Smart Remote app, Okimat, Lucid, DOT and RF ECO BT remotes · Okin** row and answer **No app: DOT remote (RF34 or RF6707)** in the
+  [Okin question](#home-assistant-setup), then pick that code. Okin DOT is not
+  a row of its own. An existing entry changes its code through
+  **Reconfigure**; Configure refuses a route or code change in the Okin family.
+- For **90167, 91983 or 93558**, new setups use the [FurniMove](furnimove.md)
+  app profile instead: its pinned catalog covers those handsets and follows the
+  app's per-control frame format. Existing Okin DOT entries with those codes
+  keep working and receive a repair offering the switch. Their keycodes come
+  from the FurniMove catalog either way.
+- Entries configured as Okimat/Okin UUID are also rescued automatically: if the
+  connected box has no Okin `62741525` characteristic but does expose Nordic
+  UART, the integration promotes the entry to the Okin DOT bed type (persisted,
+  which also drops the Okimat pairing requirement) and falls back to the default
+  DOT remote (`97450`) until a printed DOT code is selected through
+  **Reconfigure**, under **No app: DOT remote (RF34 or RF6707)**. Standard Okimat
+  keycodes are never wrapped in DOT frames.
+
+#### Controls
+
+##### Features
+
+| Feature | Supported |
+|---------|-----------|
+| Motor Control | ✅ Two motors per handset (Head + Feet, Back + Legs, or Head + Back) |
+| Position Feedback | ❌ (none known) |
+| Memory Presets | ✅ RF1058 and RF34 codes (recall is a short press, save is a hold) |
+| Massage | ✅ RF1058 codes (head/feet +/−, wave, stop) |
+| Under-bed Lights | ✅ Toggle |
+| Flat | ✅ |
+| Zero-G / Quiet Sleep / Anti-Snore | ✅ RF1058 codes |
+| BLE Pairing | ❌ Not required |
+
+##### Commands
+
+Values are 32-bit keycodes placed in the DOT frame.
+
+###### Shared (all six codes)
+
+| Command | Value |
+|---------|-------|
+| Stop | `0x00000000` |
+| First motor Up / Down | `0x00000001` / `0x00000002`: Head on RF1058/RF6707, Back on RF34 |
+| Second motor Up / Down | `0x00000004` / `0x00000008`: Feet on RF1058, Legs on RF34, Back on RF6707 |
+| Flat | `0x08000000` |
+| Toggle Lights (UBL) | `0x00020000` |
+
+The DOT Flat value `0x08000000` equals the standard Okimat child-lock keycode,
+one of the reasons these codes must not be driven with the Okimat profile.
+
+###### RF1058 extras
+
+| Command | Value |
+|---------|-------|
+| Zero gravity | `0x00001000` |
+| Quiet sleep (90167) / Anti-snore (91983, 93558) | `0x00004000` |
+| Memory 1–4 (90167) | `0x3000`, `0x5000`, `0x6000`, `0x7000` |
+| Memory 1–3 (91983, 93558) | `0x2000`, `0x8000`, `0x3000` |
+| Memory save (hold 5s) | `0x00010000` |
+| Massage head +/− | `0x00000800` / `0x00800000` |
+| Massage feet +/− | `0x00000400` / `0x01000000` |
+| Massage wave | `0x10000000` |
+| Massage stop | `0x00000100` |
+
+###### RF34 extras (97450, 97544)
+
+| Command | Value |
+|---------|-------|
+| Memory 1 / Memory 2 | `0x00010000` / `0x00040000` |
+| Memory save (hold 2s) | `0x0001f000` (97450), `0x00010000` (97544) |
+
+#### Timing
+
+##### DOT command timing
+
+- Held buttons are re-sent ~every 100ms (the app rewrites the characteristic
+  on each write completion after a 100ms sleep).
+- Release sends keycode `0x00000000` (`DisobeyStandbyTime`) as the stop.
+- Memory recall is a **short press** (one frame + STOP); save is the hold:
+  5s @ 200ms on RF1058, 2s @ 200ms on RF34. On 97544 recall and save share
+  keycode `0x10000`; only the press duration distinguishes them.
+- The light key is a hold too (5s @ 100ms per the backend).
+
+#### Evidence
+
+##### Notes
+
+- After releasing a button, FurniMove also writes a raw 2-byte `00 B0` packet
+  ~400ms after the stop keycode. Its function is unknown (possibly re-arming
+  the box's standby timer); the integration does not send it. If a tester
+  reports motors that keep creeping after stop, this is the first thing to try.
+- The RF34 97544 handset uses the same keycode (`0x00010000`) for Memory 1
+  recall and memory save. On the physical remote, saving is holding the
+  memory button. A short press recalls, the 2s hold stream saves.
+
+###### Differences from Okimat
+
+| | Okimat (okin_uuid) | Okin DOT |
+|---|---|---|
+| Service | `62741523-...` | Nordic UART `6e400001-...` |
+| Frame | 6-byte `04 02 <kc BE>` | 7-byte `05 02 <kc BE> 00` |
+| Write | With response | Without response |
+| Pairing | Required | Not required |
+| Position feedback | Yes (FFE4 notify) | None known |
+| Handshake | None | `affirm` on connect |
+
+###### Source Code References
+
+- `custom_components/adjustable_bed/beds/okin_dot.py`: controller
+- `disassembly/output/com.okin.okinsmartcomfort/jadx/sources/com/dewertokin/okinsmartcomfort/service/utils/HexValueConverter.java`: DOT framing
+- `disassembly/output/com.okin.okinsmartcomfort/jadx/sources/com/dewertokin/okinsmartcomfort/service/bleModule/bluetooth/BluetoothLeService.java`: DOT detection + `affirm` handshake
+
+### SIMMONS
+
+**App:** [SIMMONS](https://play.google.com/store/apps/details?id=com.okin.simmons) 1.12.9 (code 99), `com.okin.simmons`
+
+**Status:** Not yet tested
+
+#### Setup
+
+##### Known models
+
+- Beds controlled with the SIMMONS app (Android package `com.okin.simmons`), regular and inclined bed types
+- OKIN- and SmartBed-named receivers; these names are shared with other apps
+- Other `Simmons*` beds without this app follow [DewertOkin](okin-nframe.md#dewertokin)
+
+##### Protocol Details
+
+| Role | Service | Characteristic |
+|---|---|---|
+| Write | `6e400001-b5a3-f393-e0a9-e50e24dcca9e` | `6e400002-b5a3-f393-e0a9-e50e24dcca9e` |
+| Notify | `6e400001-b5a3-f393-e0a9-e50e24dcca9e` | `6e400003-b5a3-f393-e0a9-e50e24dcca9e` |
+| Write | `0000ffe5-0000-1000-8000-00805f9b34fb` | `0000ffe9-0000-1000-8000-00805f9b34fb` |
+| Notify | `0000ffe0-0000-1000-8000-00805f9b34fb` | `0000ffe4-0000-1000-8000-00805f9b34fb` |
+
+**Format:** Two packet formats (OKIN and SmartBed) sharing one 32-bit control mask
+
+- Services are matched in discovery order and the last match of each role wins,
+  independent of the packet format.
+- A connection without both a write and a notify role fails, as the app
+  disconnects.
+- Notifications stay subscribed with angle sensing off.
+
+###### Packet Format
+
+| Format | Frame | Checksum |
+|--------|-------|----------|
+| OKIN | `E6 FE 16` + mask little-endian + `00` + checksum | (255 − sum of the preceding bytes) & 255 |
+| SmartBed | `05 02` + mask big-endian + `00` | None |
+
+###### Write Mode
+
+- OKIN-format frames are written with response (Android's default write type).
+- SmartBed-format frames are written without response.
+
+##### Detection / Setup
+
+Select **SIMMONS app** manually. OKIN and SmartBed Bluetooth names and the
+Nordic UART or FFE5 services are shared with other apps, so they never select
+this profile. Existing entries keep their bed type until you change it.
+
+###### Configuration
+
+The protocol variant carries two independent choices from the app:
+
+| Variant | Bed type | Packet format |
+|---|---|---|
+| `auto` (default) | Regular | From the Bluetooth name |
+| `simmons_okin` / `simmons_smartbed` | Regular | Fixed |
+| `simmons_inclined` | Inclined | From the Bluetooth name |
+| `simmons_inclined_okin` / `simmons_inclined_smartbed` | Inclined | Fixed |
+
+Name rule:
+
+- The rule is the app's, which reads Android's device (GAP) name; HA sees the
+  advertised name or BlueZ alias instead.
+- HA keeps the raw Bluetooth name from setup and from later real (non-address)
+  observations, never the entry's display name. An address-like live name
+  (BlueZ uses the address when a bed sends no name) falls back to that stored
+  raw name.
+- The lowercased name is checked for a `smartbed` prefix, then an `okin` prefix,
+  with no trimming. Any other name, including a missing one, uses the SmartBed
+  format, as the app does for a reconnect to a saved bed whose name matches
+  neither prefix.
+- Use a fixed variant if Home Assistant sees a different name than the phone.
+- In a two-address pair the variant belongs to each physical bed, so the
+  combined options form refuses variant changes: separate the beds, set each bed, then
+  combine them again.
+
+Bed type and motors:
+
+- The app offers the inclined bed type only in its Japanese language setting;
+  the profile offers it regardless of language.
+- Motor count is fixed at two (back, legs).
+- Position feedback, massage and pairing do not exist in the app.
+
+##### Home Assistant setup
+
+Choose **SIMMONS app** manually. OKIN and SmartBed names and the shared Bluetooth services do not identify this app. The protocol variant selects the app's bed type (regular or inclined) and, optionally, the packet format. `auto` keeps a regular bed and applies the app's name rule: a name starting with `smartbed` or any unmatched name uses SmartBed frames, a name starting with `okin` uses OKIN frames. Motor count is fixed at two and the 300 ms refresh is fixed. The variant belongs to each physical bed: split a two-address pair before changing it.
+
+#### Controls
+
+##### Features
+
+| Feature | Supported |
+|---------|-----------|
+| Motor Control | ✅ (fixed at two motors: back, legs) |
+| Position Feedback | ❌ (does not exist in the app) |
+| Memory Presets | ✅ (Custom Mode recall; **Save Custom Mode** by a 5.5 s hold) |
+| Presets | ✅ Flat; Zero gravity, TV/PC and Anti-snore on a regular bed |
+| Inclined controls | ✅ **Inclined Left/Middle/Right** on an inclined bed |
+| Massage | ❌ (does not exist in the app) |
+| Under-bed Light | ✅ |
+| Alarms and clock | ✅ (two alarm slots, clock sync) |
+| Pairing | ❌ (does not exist in the app) |
+
+##### Commands
+
+The 32-bit control mask is shared by both formats.
+
+###### Motor Control
+
+| Control | Mask | OKIN frame | SmartBed frame |
+|---|---|---|---|
+| Back up | `0x1` | `E6 FE 16 01 00 00 00 00 04` | `05 02 00 00 00 01 00` |
+| Back down | `0x2` | `E6 FE 16 02 00 00 00 00 03` | `05 02 00 00 00 02 00` |
+| Legs up | `0x4` | `E6 FE 16 04 00 00 00 00 01` | `05 02 00 00 00 04 00` |
+| Legs down | `0x8` | `E6 FE 16 08 00 00 00 00 FD` | `05 02 00 00 00 08 00` |
+| STOP | `0` | `E6 FE 16 00 00 00 00 00 05` | `05 02 00 00 00 00 00` |
+
+###### Presets
+
+| Control | Mask | OKIN frame | SmartBed frame |
+|---|---|---|---|
+| Flat | `0x08000000` | `E6 FE 16 00 00 00 08 00 FD` | `05 02 08 00 00 00 00` |
+| Zero gravity (regular) | `0x1000` | `E6 FE 16 00 10 00 00 00 F5` | `05 02 00 00 10 00 00` |
+| TV/PC (regular) | `0x4000` | `E6 FE 16 00 40 00 00 00 C5` | `05 02 00 00 40 00 00` |
+| Anti-snore (regular) | `0x8000` | `E6 FE 16 00 80 00 00 00 85` | `05 02 00 00 80 00 00` |
+
+###### Memory
+
+| Control | Mask | OKIN frame | SmartBed frame |
+|---|---|---|---|
+| Custom Mode memory | `0x10000` | `E6 FE 16 00 00 01 00 00 04` | `05 02 00 01 00 00 00` |
+
+There is no separate save frame; **Save Custom Mode** holds the recall frame
+(see [Command Timing](#simmons-command-timing)).
+
+###### Lights
+
+| Control | Mask | OKIN frame | SmartBed frame |
+|---|---|---|---|
+| Under-bed light | `0x20000` | `E6 FE 16 00 00 02 00 00 03` | `05 02 00 02 00 00 00` |
+
+###### Inclined controls
+
+| Control | Mask | OKIN frame | SmartBed frame |
+|---|---|---|---|
+| Inclined left / middle / right | `0x10` / `0x1000` / `0x20` | SmartBed frame, written with response | `05 02 00 00 00 10 00` / `05 02 00 00 10 00 00` / `05 02 00 00 00 20 00` |
+
+The inclined controls always send the SmartBed frame, even with the OKIN format
+selected; the profile reproduces this. Their physical roles are unknown, so they
+are exposed as **Inclined Left/Middle/Right** buttons. The middle mask equals
+zero gravity.
+
+#### Timing
+
+##### SIMMONS command timing
+
+| Operation | Behavior |
+|-----------|----------|
+| Every held control | Repeats every 300 ms |
+| Release | Two STOP frames, at +100 ms and +400 ms |
+| Covers | Configured pulse count at the fixed 300 ms interval |
+| Preset, Custom Mode recall, light and inclined buttons | App taps: the button-down frame once, no 300 ms refresh, then the two release STOPs |
+| **Save Custom Mode** | Holds the recall frame for 5.5 s |
+| Longer holds | Use `hold_control` |
+
+- On release the app schedules two STOP frames, at +100 ms and +400 ms. HA sends
+  both from one release origin with fresh cancellation events, even if the
+  movement was cancelled or a write failed.
+- Every release is global, so all axes share one command resource.
+- App taps have no 300 ms refresh because the press is already released. The app
+  enforces no minimum preset hold. Whether a tap completes a preset on the bed,
+  or the bed needs a hold, is unverified.
+- **Save Custom Mode** timing: the app's help says to hold M for 5 seconds and
+  its "Custom Mode has been set" notice appears at 5.5 s. There is no separate
+  save frame, and whether the bed stores the position is unverified.
+- The app's own races (a new press replacing a pending STOP, repeat revival, no
+  STOP on page dispose or disconnect) are not reproduced: HA serializes commands
+  and always finishes the release.
+
+#### Services
+
+##### Alarms and clock
+
+During connection setup, after notifications start and before any command runs,
+HA writes the local clock and repeats the alarm page's queries at 0, 300 and
+600 ms, so even a quick-disconnect session gets them. If that clock write fails,
+`set_alarm` writes the clock first, because the alarm fires on the bed's
+clock. The **Set bed clock** action (`adjustable_bed.sync_clock`) and the
+**Refresh Alarms** button repeat these.
+
+###### Alarm frames
+
+| | OKIN | SmartBed |
+|---|---|---|
+| Clock | `E7 80 01`, year−1900, month−1, day, hour, minute, second, checksum | `07 04`, year−1900, month−1, day, hour, minute, second, ISO weekday (Mon 1…Sun 7) |
+| Query | `E1 80 03 9B` (both alarms) | `00 C0`, then `00 D0` 300 ms later |
+| Program | `ED 80 03` + slot 1 and slot 2 records (hour, minute, weekday, type) + `00 00 00 00` + checksum | `07 05` (slot 1) or `07 06` (slot 2), weekday, type, hour, minute, `00 01 01` |
+| Disable | Same frame; selected weekday and type 0, hours/minutes kept | `07 05` or `07 06` + seven zero bytes |
+| Reply | `ED 80 03`: records at offsets 3 and 7; enabled unless weekday is 0 or 128 | `A5 0C 0E` / `A5 0D 0E`: weekday 4, type 5, hour 6, minute 7, open 9 |
+
+| Alarm mode | OKIN wire type | SmartBed wire type |
+|------------|---------------:|-------------------:|
+| Custom Mode | 17 | 5 |
+| Flat | 28 | 9 |
+| Anti-snore (regular bed only) | 16 | 4 |
+
+- These writes are not press/hold commands: a movement STOP never cancels them,
+  and local records change only after the write is sent.
+- Each integer is masked to one byte.
+
+###### Weekday encoding
+
+- The weekday is a bitmask with Sunday as bit 0 and bit 7 marking a repeat. A
+  repeat mask passes through.
+- A one-off alarm (mask 128) is sent as the bit of the next occurrence: today if
+  the time, truncated to whole milliseconds, is not yet past, otherwise after an
+  absolute 24 hours, so a DST change can shift the day.
+
+###### Two-slot programming
+
+- OKIN programming rewrites both slots, so the other slot's record is re-sent
+  (its weekday is sent as 0 when that alarm is disabled).
+- The app takes those bytes from its own local record, which carries its display
+  overlay and, for a one-off alarm, the editor mask 128 that its own reply parser
+  reads as disabled.
+- HA instead re-sends exactly what the bed reported for that slot on the current
+  connection, which is safer than the app: it preserves the bed's current state,
+  including changes made by another app while HA was away.
+- The slot being programmed uses the requested values; a disabled slot keeps the
+  hour and minute the bed reported.
+- The written record is remembered as pending until an exactly matching reply
+  arrives. After a write, HA queries again 300 ms later.
+- The written slot shows the requested values at once but counts as unreported
+  until the bed confirms it, so a later write on the same connection queries
+  first and never resends an unconfirmed value.
+
+###### `set_alarm` rules
+
+- Follows the app's rules: Custom Mode needs `confirm_custom_mode` (the app warns
+  that extreme custom angles can cause injury), and an enabled alarm cannot share
+  its time or mode with the other enabled alarm.
+- Every check or write needs both records as reported on the current connection.
+  Otherwise HA sends the alarm query and waits up to 2 s (an integration-side
+  guard, not an app value), then refuses with nothing written.
+- Records kept from an earlier connection stay visible in the sensors but never
+  feed a conflict check or the other slot's record, so an alarm changed in the
+  app while HA was away is not undone.
+
+###### Replies
+
+- Reply overlays match the app: an enabled OKIN record keeps the locally known
+  weekday, and a disabled SmartBed record keeps the local hour, minute and
+  weekday; a SmartBed record with open=1 and all fields zero counts as disabled.
+- A 20-byte notification whose bytes 1–2 are `FE 16` is joined with the next one.
+- Records too short for their header are ignored whole.
+
+###### Differences from the app
+
+- Alarm records belong to each physical bed rather than one global phone
+  setting; they live in memory, so after an HA restart the first reply is taken
+  as reported.
+- Local records change only after a successful write.
+- HA never enables an alarm with wire type 0, which the app can do by
+  re-enabling a disabled slot.
+- The display overlay is kept for the sensors only; every write uses the bed's
+  raw report from the current connection.
+
+###### Alarm sensors
+
+**Alarm 1** and **Alarm 2** sensors show the time, with attributes for enabled,
+mode, wire type, weekday mask and whether a reply is awaited.
+
+#### Evidence
+
+##### Notes
+
+###### Validation requests
+
+For real users:
+
+- Whether each name prefix matches the bed's actual protocol
+- Which GATT roles the bed exposes
+- Whether a preset tap completes the motion or needs a hold
+- What the inclined controls move
+- Whether the bed accepts SmartBed inclined frames in OKIN mode
+- How the light responds to a hold
+- How alarm replies report one-off alarms (HA re-sends the reported weekday for
+  the other slot, where the app would send mask 128)
+
+###### Analysis provenance
+
+Based on SIMMONS 1.12.9 (`com.okin.simmons`).
+
+### OKIN SleepEase
+
+**App:** [OKIN SleepEase / DoubleSleep](https://play.google.com/store/apps/details?id=com.okin.doublesleep) 1.2.24 (code 109), `com.okin.doublesleep`
+
+**Status:** Not yet tested
+
+Select **OKIN SleepEase (DoubleSleep / XiaoBao)** for the `com.okin.doublesleep`
+app. Support is based on app version 1.2.24 (109). Hardware behavior has not been
+confirmed. This is a separate integration profile;
+a Nordic UART service alone does not identify this app.
+
+#### Setup
+
+##### Known models
+
+- OKIN SleepEase / DoubleSleep / XiaoBao app profiles below.
+- Physical actuator count, sensor accuracy and independent motor-side addressing
+  are unverified; use the saved app model rather than inferring them from its name.
+
+| Model code | App label | App double predicate | Sensor/report UI |
+|---|---|---|---|
+| 0 | Unknown | No | Legacy |
+| 2 | Single | No | Legacy |
+| 3 | Double | Yes | Legacy |
+| 4 | Meise | No | Legacy |
+| 5 | Dormimundo | No | Legacy |
+| 10135 | Sleep XiaoBao | Yes | XiaoBao |
+| 10137 | Sleep XiaoBao Single | No | XiaoBao |
+| 67 | Milliwave Double | No | Legacy, 18-byte records |
+| 11135 | Sleep XiaoBao Only | Yes | Sensor only |
+| 11136 | Sleep XiaoBao Only Single | No | Sensor only |
+
+The source calls model 67 single even though its name contains “Double”. This
+implementation follows its predicates and record layout. Model labels do not
+prove physical actuator count, sensor accuracy or independently addressed motors.
+
+##### Protocol Details
+
+**Service UUID:** `6e400001-b5a3-f393-e0a9-e50e24dcca9e`
+**Write Characteristic:** `6e400002-b5a3-f393-e0a9-e50e24dcca9e`
+**Notify Characteristic:** `6e400003-b5a3-f393-e0a9-e50e24dcca9e`
+**Format:** Independent P1 raw arrays, P2 `AA` controls / `2A` queries, or P3 nested-header JSON
+
+###### Write Mode
+
+Service `6e400001-b5a3-f393-e0a9-e50e24dcca9e` owns TX
+`6e400002-b5a3-f393-e0a9-e50e24dcca9e` and RX
+`6e400003-b5a3-f393-e0a9-e50e24dcca9e`. P1/P2 require write-without-response;
+P3 requires write-with-response. RX supports notify or indicate through the
+backend. No app PIN, bonding or authentication exchange is present.
+
+###### Packet Format
+
+P1 uses its own `05 02` / raw-array builders. P2 uses its separate `aa` command
+families and `2a` query families. They must not be interchanged. P3 uses compact
+ordered UTF-8 JSON (`id`, `cmd`, `val`), a sequence advancing for both JSON and
+fragments, and a 14-byte nested header. Fragments fit negotiated ATT MTU minus 3
+and the one-byte inner-body length. No fixed MTU is requested or assumed.
+
+| P3 component | Exact layout |
+|---|---|
+| Outer header | `type sequence count index body_length 00 00` |
+| Inner header | `11 03 59 44 59 chunk_length_low chunk_length_high` |
+| JSON | Compact UTF-8 `{"id":sequence,"cmd":command,"val":value}` |
+| Outer type | `02` for setters / initialization, `00` for queries |
+| Sequence | Increments modulo 256 once for JSON ID and again for each fragment |
+| Fragment payload | `min(MTU - 3, 497, 262) - 14` bytes; at most 255 fragments |
+
+Values in binary templates below are bytes unless stated otherwise. `LE16` means
+two little-endian bytes. Integer fields use the controller's byte coercion.
+
+##### Detection / Setup
+
+Setup asks for the saved app model and the BLE driver separately. Automatic driver
+selection uses the advertisement name and company 89 payload. It waits for an
+advertisement rather than guessing an offline driver's controls. An explicit P1,
+P2 or P3 selection is available when the advertisement cannot be recovered.
+Changing a saved UI model does not change the driver chosen from the advertisement.
+
+| Selection | Rule in the shipped selector |
+|---|---|
+| Discovery | Platform name begins with `sleepbt`, `osleepbt` or `osleepbts`, case-insensitive; company 89 must supply an app identity |
+| P3 driver | Advertisement name begins with `osleepbt`, case-insensitive |
+| P2 driver | Otherwise company 89 has at least 7 bytes and payload byte 6 plus 1 is 135 or 137 |
+| P1 driver | Remaining advertisements after the P3/P2 checks |
+| Saved model | Separate platform-name / company-data selector; user confirms the model independently |
+
+#### Controls
+
+##### Features
+
+| Feature | P1 | P2 | P3 |
+|---------|----|----|----|
+| Motor Control | ✅ Head, foot, lumbar, headrest, hips | ✅ Same axes | ❌ |
+| Position Feedback | ❌ | ❌ | ❌ |
+| Presets | ✅ Held recalls | ✅ One-shot recalls | ❌ |
+| Memory Presets | ✅ Two numbered recalls | ✅ Two numbered recalls, six named save targets | ❌ |
+| Massage | ✅ Regular | ✅ Regular or capability-gated sonic | ❌ |
+| Lights | ✅ Toggle | ✅ Toggle using reported settings | ❌ |
+| Alarm | ✅ | ✅ | ❌ |
+| Anti-snore configuration | ✅ | ✅ Slow settings require MFP capability | ❌ Query only |
+| Sensitivity configuration | ❌ | ✅ Binary builder | ✅ JSON builder |
+| Privacy and live sensor state | ✅ | ✅ | ✅ |
+| Reports | ✅ Legacy | ✅ Day/month or saved legacy UI | ✅ Day/month |
+| Local child lock | ✅ | ✅ | ✅ |
+| Single-address motor-side pairing | ❌ | ❌ | ❌ |
+
+Capabilities also depend on the independently saved UI model. A sensor-only
+saved model has no bed controls even if its selected driver is P1 or P2;
+an action whose driver builder is unavailable fails before writing.
+
+##### Controls and state
+
+P1 and P2 expose the app's five labelled axes: head, foot, lumbar, headrest and
+hips. The headrest uses HA's pillow control and hips use its hip control. Presets
+include Flat, Zero gravity, Anti-snore, Lounge/Reading, TV and two numbered recalls.
+P1 recall is held; P2 recall is one-shot. P2 can save all six non-Flat targets.
+All movement uses the protocol's STOP on release and cancellation. The native
+card receives held-control metadata for the axes and P1 presets.
+The app shares one held-movement stream across motor controls. A card Stop
+cancels that shared software stream; hardware effects across axes remain unverified.
+
+Regular massage on and off is the **Massage** switch, and P2 sonic massage (when
+its MFP function list contains 7) the **Sonic massage** switch. Controller
+buttons expose the massage steps, light toggle, explicit state/version queries
+and legacy history retrieval; the queries are diagnostic and disabled by
+default. P1 massage on/off share the same toggle packet and P1 time down has no
+packet. These aliases are preserved. P2 relative commands use notification
+state without optimistic increments. Light toggle replays its reported mode and
+four settings; no unsupported color or brightness writes are invented.
+
+The **Child lock** switch (disabled by default) is a local, persisted HA
+preference with the app's exact command filter. **Privacy** is a switch too,
+also disabled by default. It does not program a handset lock. STOP remains available. Sensor-only
+P3 has no movement, presets or massage controls. Sensor sides are fields in one
+physical device's data, not a way to route movement to one half. Single-address
+motor pairing is therefore unavailable. Two physical entries retain their own
+model, driver and cached settings when combined.
+
+Sensors expose the left and right **heart rate** (bpm) and **breathing rate**
+(breaths/min), bed status, rolling eight-value history, sensitivity, alarm,
+firmware and sensor versions, massage state and the **Left/Right sleep report
+status**. Most are diagnostic and disabled by default; physical accuracy is
+unverified. No measured motor position,
+angle, battery or current is inferred.
+
+##### Commands
+
+Tables are taken from
+[`DoubleSleepController`](../../custom_components/adjustable_bed/beds/doublesleep/controller.py)
+and its [`protocol builders`](../../custom_components/adjustable_bed/beds/doublesleep/protocol.py).
+Indices identify builders, not a raw-packet service. UI model, child-lock and
+reported capability gates still apply.
+
+###### Motor Control
+
+| Index | Command | P1 bytes | P2 bytes |
+|---|---|---|---|
+| 1 | STOP / release | `05 02 00 00 00 00 00` | `AA 00 00 01 01 04 00 00 00 00` |
+| 2 | Head up | `05 02 00 00 00 01 00` | `AA 00 00 01 01 04 01 00 00 00` |
+| 3 | Head down | `05 02 00 00 00 02 00` | `AA 00 00 01 01 04 02 00 00 00` |
+| 4 | Foot up | `05 02 00 00 00 04 00` | `AA 00 00 01 01 04 04 00 00 00` |
+| 5 | Foot down | `05 02 00 00 00 08 00` | `AA 00 00 01 01 04 08 00 00 00` |
+| 8 | Lumbar up | `05 02 00 00 00 40 00` | `AA 00 00 01 01 04 10 00 00 00` |
+| 9 | Lumbar down | `05 02 00 00 00 80 00` | `AA 00 00 01 01 04 20 00 00 00` |
+| 10 | Headrest up | `05 02 00 00 00 10 00` | `AA 00 00 01 01 04 40 00 00 00` |
+| 11 | Headrest down | `05 02 00 00 00 20 00` | `AA 00 00 01 01 04 80 00 00 00` |
+| 12 | Hips up | `05 02 40 00 00 00 00` | `AA 00 00 01 01 04 00 01 00 00` |
+| 13 | Hips down | `05 02 80 00 00 00 00` | `AA 00 00 01 01 04 00 02 00 00` |
+| 27 | App all stop | `05 02 00` | `AA 00 00 01 02 00` |
+
+STOP index 1 is the release frame. Index 27 is the distinct app all-stop frame;
+P1's three-byte `05 02 00` is not padded into its seven-byte STOP packet.
+
+###### Presets
+
+| Index | Command | P1 bytes | P2 bytes |
+|---|---|---|---|
+| 14 | Memory 1 recall | `05 02 00 01 00 00 00` | `AA 00 00 01 03 01 05` |
+| 15 | Memory 2 recall | `05 02 00 04 00 00 00` | `AA 00 00 01 03 01 06` |
+| 16 | Anti-snore recall | `05 02 00 00 80 00 00` | `AA 00 00 01 03 01 04` |
+| 17 | Lounge / Reading recall | `05 02 00 00 20 00 00` | `AA 00 00 01 03 01 02` |
+| 18 | TV recall | `05 02 00 00 40 00 00` | `AA 00 00 01 03 01 03` |
+| 19 | Zero gravity recall | `05 02 00 00 10 00 00` | `AA 00 00 01 03 01 01` |
+| 26 | Flat recall | `05 02 08 00 00 00 00` | `AA 00 00 01 03 01 09` |
+
+P1 recalls use held motion; P2 recalls are one-shot. Both finish with index 1
+using a fresh cancellation event.
+
+###### Memory
+
+| Index | Command | P1 bytes | P2 bytes |
+|---|---|---|---|
+| 20 | Save Memory 1 | Unavailable | `AA 00 00 01 05 01 25` |
+| 21 | Save Memory 2 | Unavailable | `AA 00 00 01 05 01 26` |
+| 22 | Save Anti-snore | Unavailable | `AA 00 00 01 05 01 24` |
+| 23 | Save Lounge | Unavailable | `AA 00 00 01 05 01 22` |
+| 24 | Save TV | Unavailable | `AA 00 00 01 05 01 23` |
+| 25 | Save Zero gravity | Unavailable | `AA 00 00 01 05 01 21` |
+
+Each supported save is followed by release index 1. These actions program the
+corresponding physical preset; Flat has no save action.
+
+###### Massage
+
+| Index | Command | P1 bytes | P2 bytes |
+|---|---|---|---|
+| 28 | Massage on / toggle | `05 02 00 00 01 00 00` | `AA 00 00 02 01 01 40` |
+| 29 | Massage off / toggle | `05 02 00 00 01 00 00` | `AA 00 00 02 01 01 41` |
+| 31 | Massage time up | `05 02 00 00 02 00 00` | See dynamic table |
+| 32 | Massage time down | See dynamic table | See dynamic table |
+| 35 | Head massage up | `05 02 00 00 08 00 00` | See dynamic table |
+| 36 | Head massage down | `05 02 00 80 00 00 00` | See dynamic table |
+| 37 | Foot massage up | `05 02 00 00 04 00 00` | See dynamic table |
+| 38 | Foot massage down | `05 02 10 00 00 00 00` | See dynamic table |
+| 40 | Massage mode up | `05 02 10 00 00 00 00` | See dynamic table |
+| 41 | Massage mode down | `05 02 04 00 00 00 00` | See dynamic table |
+| 50 | Query massage | `00 B0` | `2A 00 00 02 81 01 03` |
+| 51 | Query sonic massage | Unavailable | `2A 00 00 06 81 00` |
+
+P1 index 32 has an empty builder and sends no bytes. P1 on/off share a toggle;
+P1 foot-down and mode-up also share their exact packet. P2 uses the notification
+cache, not optimistic increments.
+
+**P2 relative builders**
+
+The following are **cold-cache examples**, not fixed packets. Regular cache
+starts with running/mode/head/foot/time all 0. Sonic starts with source/mode 1
+and head/foot/time 0. Notifications determine later writes.
+
+| Index | Command | Cold-cache P2 bytes |
+|---|---|---|
+| 31 | Massage time up | `AA 00 00 02 01 01 49` |
+| 32 | Massage time down | `AA 00 00 02 01 01 4B` |
+| 35 | Head massage up | `AA 00 00 02 01 01 50` |
+| 36 | Head massage down | `AA 00 00 02 01 01 52` |
+| 37 | Foot massage up | `AA 00 00 02 01 01 54` |
+| 38 | Foot massage down | `AA 00 00 02 01 01 56` |
+| 40 | Massage mode up | `AA 00 00 02 01 01 42` |
+| 41 | Massage mode down | `AA 00 00 02 01 01 45` |
+| 79 | Sonic head up | `AA 00 00 06 02 03 00 01 04` |
+| 80 | Sonic head down | `AA 00 00 06 02 03 00 01 08` |
+| 81 | Sonic foot up | `AA 00 00 06 02 03 00 02 04` |
+| 82 | Sonic foot down | `AA 00 00 06 02 03 00 02 08` |
+| 83 | Sonic mode up | `AA 00 00 06 03 02 00 02` |
+| 84 | Sonic mode down | `AA 00 00 06 03 02 00 06` |
+| 85 | Sonic time up | `AA 00 00 06 0B 06 00 03 57 02 57 02` |
+| 86 | Sonic time down | `AA 00 00 06 0B 06 00 03 07 07 07 07` |
+
+| Relative family | Encoding after computing notification-relative `r` |
+|---|---|
+| Regular time/head/foot/mode | `AA 00 00 02 01 01 (base+r)`, bases `48` / `4F` / `53` / `41` respectively |
+| Sonic mode | `AA 00 00 06 03 02 00 r` |
+| Sonic head/foot | `AA 00 00 06 02 03 00 zone level`, zone `01` / `02`; level is 0 when `r=0`, otherwise `2*(r+1)` |
+| Sonic time | `AA 00 00 06 0B 06 00 03 LE16(600*r-1) LE16(600*r-1)` |
+
+`r` follows `relative()` exactly: time cycles 1–3, regular mode 1–4, sonic mode
+1–6, sonic head/foot 0–3 and regular head/foot 0–4. Regular head/foot down uses
+the separate branch `1 -> 4`, below 1 `-> 3`, otherwise `value - 1`.
+
+**Sonic source and power**
+
+| Index | Command | P1 bytes | P2 bytes |
+|---|---|---|---|
+| 87 | Sonic normal source | Unavailable | `AA 00 00 06 05 02 00 00` |
+| 88 | Sonic music source | Unavailable | `AA 00 00 06 05 02 00 01` |
+| 89 | Sonic on | Unavailable | `AA 00 00 06 0C 02 00 01` |
+| 90 | Sonic off | Unavailable | `AA 00 00 06 0C 02 00 00` |
+
+Sonic controls require MFP function 7. Regular control actions are unavailable
+while the sonic UI is selected.
+
+###### Lights
+
+| Index | Command | P1 bytes | P2 bytes |
+|---|---|---|---|
+| 54 | Query light | Unavailable | `2A 00 00 04 81 00` |
+| 58 | Toggle light | `05 02 00 02 00 00 00` | See dynamic table |
+
+| Dynamic command | P2 bytes |
+|---|---|
+| Toggle light (58) | `AA 00 00 04 01 06 mode toggle c1 c2 c3 c4` |
+
+The light cache starts with six zeros. `toggle` is 1 only when reported on/off
+is 0; mode and all four settings are replayed without inventing brightness or
+color commands.
+
+###### Alarm, state, privacy and legacy queries
+
+| Index | Command | P1 bytes | P2 bytes |
+|---|---|---|---|
+| 48 | Disable alarm | `07 05 00 00 00 00 00 00 00 00` | `AA 00 00 03 02 08 01 00 00 00 00 00 00 00` |
+| 52 | Query alarm | `00 C0` | `2A 00 00 03 81 01 01` |
+| 53 | Query state | `00 B0` | `2A 00 00 07 81 00` |
+| 59 | Privacy on | `01 B2 01` | `AA 00 00 07 02 01 01` |
+| 60 | Privacy off | `01 B2 00` | `AA 00 00 07 02 01 00` |
+| 63 | Disable anti-snore | `02 0B 00 00 01` | `AA 00 00 07 01 08 00 02 01 01 00 00 00 00` |
+| 64 | Confirm legacy history (internal) | `01 B3 01` | `01 B3 01` |
+| 66 | Download legacy history | `01 B1 02` | `01 B1 02` |
+| 73 | Read sensor version / initialize P3 | Unavailable | `2A 00 00 08 81 00` |
+
+###### Dynamic binary configuration
+
+| Index | Command | P1 bytes | P2 bytes |
+|---|---|---|---|
+| 47 | Clock | `07 04 (year-1900) (month-1) day (ISO_weekday-1) hour minute second` | `AA 00 00 03 01 08 (year-2000) month day ISO_weekday hour minute second UTC_hours` |
+| 49 | Alarm | `07 05 massage preset hour minute 00 01 01 days` | `AA 00 00 03 02 08 01 days preset 01 hour minute 00 massage` |
+| 57 | MFP capabilities | Unavailable | `2A 00 00 05 81 09 page FF FF 00 00 22 25 12 4B` |
+| 62 | Anti-snore | `02 0B operation strength_code 01` | `AA 00 00 07 01 08 operation 02 mode 01 pwm timer 00 00` |
+| 67 | Sensitivities | Unavailable | `AA 00 00 07 04 03 side left right` |
+| 72 | Daily report | Unavailable | `2A 00 00 07 opcode 03 (year%2000) month day`, opcode `84` left / `85` right |
+| 72 | Monthly report | Unavailable | `2A 00 00 07 opcode 02 (year%2000) month`, opcode `86` left / `87` right |
+
+- P2/P3 clock UTC hours truncate the local offset toward zero. Binary fields wrap
+  through the builder's byte conversion; report service years are restricted to
+  2000–2255 before writing.
+- Alarm `days` uses Sunday-first day bits `01 02 04 08 10 20 40`; repeat sets
+  `80`. Preset values are Zero gravity `01`, Flat `09`, Memory 1 `05`,
+  Memory 2 `06`, Vibration `08`. Massage is `00` or `01`.
+- Anti-snore operation is `01` apply or `02` demo. P1 strength code is `01`
+  for mode 1, `03` for mode 2, `06` for mode 3. P2 sends mode 1–3 directly.
+
+###### P3 JSON commands
+
+All values below use the nested P3 envelope above. The JSON object is always
+ordered `id`, `cmd`, `val`; report `part=side+1` and `type=kind+1` with
+left/day 0 and right/month 1 in the service request.
+
+| Index | Command | `cmd` | `val` | Outer type |
+|---|---|---|---|---|
+| 47 | Synchronize clock | `s_time` | `{"ts":integer_epoch_seconds,"utc":integer_UTC_hours}` | `02` |
+| 53 | Query anti-snore state | `q_antiSnore` | `{}` | `00` |
+| 55 | Query clock | `q_time` | `{}` | `00` |
+| 59 | Privacy on | `q_realtime` | `{"time":1}` | `00` |
+| 60 | Privacy off | `q_realtime` | `{"time":65535}` | `00` |
+| 68 | Set sensitivities | `s_sens` | `{"L":[left],"R":[right],"ret":0}` | `02` |
+| 69 | Query sensitivities | `q_sens` | `{}` | `00` |
+| 71 | Query sensor sides | `q_part` | `{}` | `00` |
+| 72 | Query report | `q_report` | `{"part":part,"type":type,"y":year,"m":month,"d":day}` | `00` |
+| 73 | Initialize sensor | `s_init` | `0` | `02` |
+| 77 | Refresh realtime | `q_realtime` | `{"time":65535}` | `00` |
+| 78 | Allow report (internal) | `q_report` | `{"allow":1}` | `00` |
+
+#### Timing
+
+##### SleepEase command timing
+
+| Operation | Timing / cleanup |
+|---|---|
+| Held card controls and P1 held presets | 300 ms start-based refresh; finite HA hold of 100–60000 ms; fresh STOP in `finally` |
+| Motor pulse helper | 300 ms cancellable wait between writes, then fresh STOP |
+| Regular massage; sonic level/mode/time/on/off | Query corresponding state after 200 ms |
+| Sonic source (87/88) | Command only; no followup state query |
+| Alarm set / disable | Query alarm after 300 ms |
+| Sensitivity update | Query state / sensitivities after 200 ms |
+| Anti-snore apply / demo | Immediate close / distinct app all-stop cleanup |
+| P2 report header timer | 5 seconds, retaining the source's cancellation and decode-error ordering |
+| Owned report exchange | 5 seconds without report progress; progressing transfers may continue longer |
+| Legacy transfer | 500 ms quiet interval, then internal confirmation 64; no overlap through confirmation |
+| GATT write completion | 15-second bound per write |
+
+##### Wire and lifecycle reference
+
+Writes are serialized and awaited, errors stop a fragment batch and each write
+has the source plugin's 15-second completion bound. Report cancellation ends the
+connection before another request can borrow a late response. RX callbacks from
+an old client are ignored. A persistent connection supports sensor data and
+report continuation; explicitly disconnect to hand the link to the phone app.
+Unexpected link loss immediately invalidates connection timers and queued work.
+
+#### Notifications
+
+##### Position Feedback / Notifications
+
+Notification parsers retain the source's branch ordering, P1 massage formulas,
+P2 regular/sonic caches, header-selected report side/mode, empty-P2 completion,
+monthly text dispatch, P3 char-code single-packet decoder and retained fragment
+index. Callback/device ownership, timer cancellation and connection cleanup are
+covered by focused tests. Caches survive reconnects for one physical target and
+are cleared on profile/address removal by HA's app-session infrastructure.
+They are not shared across beds. Numeric caches and sequence survive a logical
+view reload; view capabilities and rolling histories survive reconnects but
+start cold when their coordinator is recreated.
+
+#### Services
+
+##### Configuration and reports
+
+Use `adjustable_bed.doublesleep_configure` with a physical bed device target.
+The action selector offers:
+
+- `alarm`: hour, minute, optional repeating weekdays, an app alarm action and
+  massage. Empty weekdays schedule the next occurrence once. The app's Sunday
+  day-bit overflow is corrected using its Sunday-first weekday layout.
+  Clock calibration precedes setup; the alarm is queried after 300 ms. The Disable
+  alarm button uses the separate close command and subsequent query.
+- `anti_snore` and `anti_snore_demo`: app strength/mode 1–3. The operation byte is
+  selected by the action. Apply sends the source's immediate close command;
+  demo sends its distinct app all-stop command. Optional slow PWM/timer byte
+  settings require the reported slow-anti-snore MFP capability. Omitted values
+  use its reported/default settings (PWM 30 when supported, timer 10).
+- `sensitivities`: optional P2 sensor-side value 1–3 and left/right Low, Medium or
+  High values (1–3). Omitted fields retain reported values, defaulting to both
+  sensors and Low on a cold view. P3 can read sensor sides but has no
+  side-setting action.
+  The saved sensor-only UI uses P3's JSON command; the other UI uses P2's binary command. An unavailable
+  builder fails before writing. State is queried after 200 ms.
+- `report`: left/right sensor side, day/month and date. P2 and P3 report profiles
+  expose this action. The binary year must fit its 2000-based byte. A request owns
+  the connection until a result. Five seconds without report progress ends the
+  exchange; a progressing transfer can continue longer. The app's five-second
+  indication does not abort its transfer. P3's allow-report continuation runs
+  inside the owned operation.
+- `save_preset`: P2 Memory 1/2, Anti-snore, Lounge, TV or Zero gravity, followed by
+  release. This changes the corresponding physical bed preset.
+- `capabilities`: the app's MFP page byte. The app uses page 0 during connection and
+  page 1 for slow-anti-snore settings. The resulting function/capability state is
+  available in the configuration sensor attributes.
+
+Report status 0 means data, 1 means empty and 2 means the app's busy/timeout result.
+Report sensor attributes preserve the original daily map or monthly JSON text,
+all returned fields, the selected side and the app consumer's typed/defaulted
+records. Missing and null fields receive the app's defaults. Scalars and array
+members require integers; text fields require strings. Unknown wire keys remain
+in the raw data. A malformed report is recorded as a parser error, without publishing a
+successful decoded report. No local health score or month-chart aggregation is
+calculated. The app's page navigation, SQL cache and cloud fallback are not HA
+report triggers; report retrieval is explicit here.
+
+Legacy UI models use the Download legacy history button. The controller captures
+12/16/18-byte records, waits for the source's 500 ms quiet interval, retains raw and
+normalized record fields, then confirms completion. It does not send a speculative
+all-history command. P2 with a saved legacy UI model uses the legacy request too.
+Overlapping downloads are rejected until the first transfer and its completion
+confirmation finish.
+
+#### Evidence
+
+##### Notes
+
+###### Analysis provenance
+
+Based on OKIN SleepEase / DoubleSleep 1.2.24 (`com.okin.doublesleep`).
+
+### Sleepy's legacy CB25
+
+**App:** [MFRM Sleepy's Elite](https://play.google.com/store/apps/details?id=com.okin.bedding.sleepy), `com.okin.bedding.sleepy`
+
+**Status:** Not yet tested
+
+#### Setup
+
+The Sleepy's Elite app speaks two dialects to its BOX25 receivers over Nordic
+UART, chosen by the Device Information manufacturer: `star` selects StarCode
+(`5A` frames, the [Okin 5A](okin-5a.md) layout), anything else, or nothing,
+selects this legacy CB25 dialect. Setup, sessions and feedback are shared and
+described in the [Sleepy's guide](sleepys.md).
+
+#### Controls
+
+The controller keeps the StarCode action surface and frames each action as the
+[Sleepy's legacy CB25 keys](#sleepys-legacy-cb25-keys): 40-bit key frames, a
+few 64-bit `08 02` frames for the light toggle and massage waves, `04 E0`
+setting frames for light on/off, massage level and timer, `03 F0` position
+targets and the `00 D0` position request.
+
+#### Timing
+
+The app's one sender drives both dialects, so the timing is this profile's data
+for both: see the [one-shot timing](#one-shot-timing) table. A preset's trailing
+STOP commits it (#372).
+
+#### Evidence
+
+Frames are the pre-v5 translation table's, kept in
+`tests/okin_nframe_vectors.py`. The app is described in the [Sleepy's guide](sleepys.md).
+
+### AdjustableM5X4
+
+**App:** [AdjustableM5X4](https://play.google.com/store/apps/details?id=com.starcode.abm5_4) 1.0.1 (3), `com.starcode.abm5_4`
+
+**Status:** Not yet tested
+
+This profile belongs to `com.starcode.abm5_4` 1.0.1 (3), delivered as five APK
+members. It preserves this app's commands and state rules separately from other
+StarCode, Sleepys and shared-UART applications. A brand, device-name prefix or
+service UUID alone does not identify the app profile.
+
+#### Setup
+
+##### Known models
+
+- StarCode beds operated with the AdjustableM5X4 app. The app's ten command
+  enums (`none`, `BOX15`, `BOX24`, `BOX1220`, `BOX1221`, `BOX2422`, `BOX2442`,
+  `BOX3633`, `BOX25`, `BOX25_STAR`) are application enums, not ten verified
+  hardware models.
+- Three live transports: the `BOX1220` service (names starting `BLE`), the
+  `BOX3633` service, and Nordic UART (names starting `Star`). See
+  [GATT and connection](#gatt-and-connection).
+
+##### Protocol Details
+
+**Service UUID:** per live transport (D route), see the table below
+**Format:** Action-specific frames for each command selector (C); see [Frame matrix](#frame-matrix)
+
+###### GATT and connection
+
+| Live D route | Service | Write | Receive | Normal writes | App subscription |
+|---|---|---|---|---|---|
+| D3, `BOX1220` | `00001000-0000-1000-8000-00805f9b34fb` | `00001001-0000-1000-8000-00805f9b34fb` | `00001002-0000-1000-8000-00805f9b34fb` | Without response | Enabled |
+| D7, `BOX3633` | `62741523-52f9-8864-b1ab-3b3a8d65950b` | `62741525-52f9-8864-b1ab-3b3a8d65950b` | `62741625-52f9-8864-b1ab-3b3a8d65950b` | With response | Role assigned, not subscribed |
+| D8/9, UART | `6e400001-b5a3-f393-e0a9-e50e24dcca9e` | `6e400002-b5a3-f393-e0a9-e50e24dcca9e` | `6e400003-b5a3-f393-e0a9-e50e24dcca9e` | Without response | Enabled |
+
+- The D1 FFE9/FFE4 branch has no current writer and is excluded. Restoring C1
+  does not enable D1: its packet/parser can operate over an independent
+  live D route.
+- Actual characteristic properties come from the peripheral. Notification versus
+  indication and CCCD writes are host transport responsibilities.
+- Device Information service `180a` contains manufacturer `2a29` and firmware
+  `2a28` roles, expanded to standard Bluetooth UUIDs.
+
+###### Write Mode
+
+- UART initialization sends the common wake packet **with response**, with one
+  immediate retry on failure; normal UART command writes remain without
+  response.
+- D7 (`BOX3633`) normal writes use write with response; D3 and UART use
+  without response.
+
+###### Frame structure
+
+- Frames are action-specific for each C.
+- BOX15's selected frames append the complement of bytes 0–7; BOX1220's
+  selected seven-byte frames place the complement of bytes 2–6, with
+  destination byte 2 zeroed, in byte 2.
+- Other groups do not acquire a checksum through family resemblance. There is no
+  proved additional encryption, sequence number or nonce.
+- Native vector tables cover all exact action arrays and fallbacks; equal on/off
+  frames in some variants remain distinct app actions.
+
+##### Independent selectors
+
+The app has three selectors. **C** chooses command bytes and the parser; **D**
+chooses GATT roles and normal write mode; **U** determines which parsed fields the
+UI consumes, its positive control gates and preset release behavior. They can
+diverge. A restored C value remains usable before, or without, an optional
+manufacturer result; C is not a transport-readiness barrier.
+
+| C ordinal | Exact enum | Parser | Positive controls |
+|---|---|---|---|
+| 0 | `none` | Legacy BOX24 formulas | Restoration-only gate |
+| 1 | `BOX15` | BOX15 length/header branches | Restoration-only gate |
+| 2 | `BOX24` | Legacy BOX24 formulas | Restoration-only gate |
+| 3 | `BOX1220` | Legacy BOX24 formulas | Conditional retained state |
+| 4 | `BOX1221` | Legacy BOX24 formulas | Restoration-only gate |
+| 5 | `BOX2422` | Legacy BOX24 formulas | Restoration-only gate |
+| 6 | `BOX2442` | Legacy BOX24 formulas | Restoration-only gate |
+| 7 | `BOX3633` | Legacy BOX24 formulas | Conditional retained state |
+| 8 | `BOX25` | Modern BOX25 formulas | Modern parsed-state gate |
+| 9 | `BOX25_STAR` | Modern BOX25 formulas | Modern parsed-state gate |
+
+- These are application enums, not ten verified hardware models. All ten C
+  values have conditional live routes.
+- Five enums share a tested packet matrix without becoming one selector.
+- The app restores a missing preference as C0 and accepts ordinals 0–9; invalid
+  stored values throw in the app. HA must reject invalid configuration safely.
+
+###### Detection and transport classification
+
+- Scanning applies `platformName.toLowerCase().startsWith("star")`.
+  Constructors instead use case-sensitive `Star` for D8, `BLE` for D3 and
+  otherwise D7. Thus a lowercase `star` name can scan successfully and construct
+  D7.
+- The manufacturer characteristic's exact string `star` selects C/D9; another
+  result selects C/D8 in the UART classification path. Both D choices retain the
+  same UART role pair and write mode, so the callback changes D without
+  reopening a different channel. This callback does not update U.
+- No service or manufacturer-data acceptance filter is supplied to scanning;
+  company key 89 is printed as a diagnostic.
+- Remembered reconnection uses the stored identity/name.
+
+###### Persisted fields and options
+
+- The integration's persisted fields are `starcode_abm5_4_command_selector`,
+  `starcode_abm5_4_transport_selector` and `starcode_abm5_4_ui_selector`. Their
+  configuration and public runtime have focused test coverage; the UI selector
+  is retained/internal rather than an additional ordinary user picker.
+- Automatic transport selection may use the original Bluetooth name; explicit
+  app selection supplies the application contract.
+- Each physical address owns its selectors, observed state and operation
+  generation.
+- Options transport changes check the exact selected service and write/receive
+  roles when the receiver is already connected and its GATT tree is available.
+  A mismatch leaves the saved settings unchanged.
+- Disconnected receivers, including those still advertising, remain unverified
+  until startup; options do not open another connection.
+- Auto uses the retained original BLE name and requires an explicit transport
+  when that identity is unavailable.
+
+##### Home Assistant setup
+
+Choose the **AdjustableM5X4, AdjustableM5X5 and Adjustable Comfort M1X12 apps · StarCode** row, then **AdjustableM5X4 app**. Star names offer this app as a candidate, while existing receiver detection remains available. The original Bluetooth name chooses transport independently of the saved command/parser selector. Manufacturer classification can update the command selector without changing the retained UI selector. “Use detected transport profile” copies the current transport into both app selectors while retaining this physical bed’s observed timer/light/massage state. Single-address side control is unsupported; two-address pairs retain each child’s settings.
+
+#### Controls
+
+##### Features
+
+| Feature | Supported |
+|---------|-----------|
+| Motor Control | ✅ Head/back and foot/legs up/down, native union up/down, STOP |
+| Position Feedback | ❌ (raw parsed fields are diagnostics, not calibrated positions) |
+| Presets | ✅ Flat, TV, Lounge, Zero Gravity, Anti-Snore |
+| Memory Presets | ✅ Memory A only (recall/save); named TV/Lounge/Zero Gravity saves and reset |
+| Massage | ✅ Toggle; relative head/foot intensity, wave and 10/20/30-minute timer behind the observed massage-on gate |
+| Floor light | ✅ Toggle, plus/minus, raw 1–6 brightness where available; feedback light, or an on/off light with assumed state where the app has on and off buttons |
+| Automatic white | ✅ (U8/9-consumed field 47 while connected) |
+| Paired beds | ✅ Two-address pairs; no one-address left/right selector |
+
+##### Commands
+
+The required public controls are head/back and foot/legs up/down, native union
+up/down, STOP, Flat, TV, Lounge, Zero Gravity, Anti-Snore, Memory A recall/save,
+named TV/Lounge/Zero Gravity saves and reset. Both visual M1 and M2 in the app
+invoke Memory A. There is no independent second memory slot.
+
+###### Frame matrix
+
+Exact hex frames per command selector. `none`, `BOX24`, `BOX1221`, `BOX2422`
+and `BOX2442` share one table. A dash means the app has no such action for that
+selector.
+
+| App action | C0/C2/C4/C5/C6 | C1 `BOX15` | C3 `BOX1220` | C7 `BOX3633` | C8 `BOX25` | C9 `BOX25_STAR` |
+|---|---|---|---|---|---|---|
+| `headUp` | `05020000000100` | `e6fe16010000000004` | `a55ade00002001` | `05020000000100` | `05020000000100` | `5a0103103000a5` |
+| `headDown` | `05020000000200` | `e6fe16020000000003` | `a55add00002002` | `05020000000200` | `05020000000200` | `5a0103103001a5` |
+| `footUp` | `05020000000400` | `e6fe16040000000001` | `a55adc00002003` | `05020000000400` | `05020000000400` | `5a0103103002a5` |
+| `footDown` | `05020000000800` | `e6fe160800000000fd` | `a55adb00002004` | `05020000000800` | `05020000000800` | `5a0103103003a5` |
+| `unionUp` | `05020000000500` | `e6fe16050000000000` | `a55adb00002004` | `05020000000500` | `05020000000500` | `5a010310300ca5` |
+| `unionDown` | `05020000000a00` | `e6fe160a00000000fb` | `a55adb00002004` | `05020000000a00` | `05020000000a00` | `5a010310300da5` |
+| `stop` | `05020000000000` | `e6fe16000000000005` | `a55adf00002000` | `05020000000000` | `05020000000000` | `5a010310300fa5` |
+| `flatPosition` | `05020800000000` | `e6fe160000000800fd` | `a55a7900002066` | `05020800000000` | `05020800000000` | `5a0103103010a5` |
+| `tv` | `05020000400000` | `e6fe160040000000c5` | `a55a7d00002062` | `05020000400000` | `05020000400000` | `5a0103103011a5` |
+| `lounge` | `05020000200000` | `e6fe160020000000e5` | `a55a7e00002061` | `05020000200000` | `05020000200000` | `5a0103103017a5` |
+| `zeroGravity` | `05020000100000` | `e6fe160010000000f5` | `a55a7f00002060` | `05020000100000` | `05020000100000` | `5a0103103013a5` |
+| `anti` | `05020000800000` | `e6fe16008000000085` | `a55a7c00002063` | `05020000800000` | `05020000800000` | `5a0103103016a5` |
+| `m1` (Memory A) | `05020001000000` | `e6fe16000001000004` | `a55a7b00002064` | `05020001000000` | `05020001000000` | `5a010310301aa5` |
+| `saveM1` | `05020001000000` | `e6fe16000001000004` | `a55a7b00002064` | `05020001000000` | `05020001000000` | `5a0103103094a5` |
+| `saveTv` | `05028000400000` | `e6fe160040000000c5` | `a55a7d00002062` | `05028000400000` | `05028000400000` | `5a0103103021a5` |
+| `saveLounge` | `05028000200000` | `e6fe160020000000e5` | `a55a7e00002061` | `05028000200000` | `05028000200000` | `5a0103103027a5` |
+| `saveZeroGravity` | `05028000100000` | `e6fe160010000000f5` | `a55a7f00002060` | `05028000100000` | `05028000100000` | `5a0103103023a5` |
+| `resetMemory` | `05028800000000` | `05028800000000` | `05028800000000` | `05028800000000` | `05028800000000` | `5a0103103037a5` |
+| `massageOnOff` | `05020008000000` | `05020008000000` | `05020008000000` | `05020008000000` | `05020008000000` | `5a010310305aa5` |
+| `headStrengthAdd` | none | none | `05020000080000` | `05020000080000` | `05020000080000` | `5a0103103060a5` |
+| `headStrengthReduce` | none | none | `05020080000000` | `05020080000000` | `05020080000000` | `5a0103103061a5` |
+| `footStrengthAdd` | none | none | `05020000040000` | `05020000040000` | `05020000040000` | `5a0103103062a5` |
+| `footStrengthReduce` | none | none | `05020100000000` | `05020100000000` | `05020100000000` | `5a0103103063a5` |
+| `waveAdd` | none | none | `05021000000000` | `05021000000000` | `05021000000000` | `5a0103103058a5` |
+| `waveReduce` | none | none | `05020400000000` | `05020400000000` | `05020400000000` | `5a0103103059a5` |
+| `underbedLighting` (toggle) | `08020002000000000000` | `e6fe16000002000003` | `a55a5f00002080` | `05020002000000` | `08020002000000000000` | `5a0103103071a5` |
+| `turnonUnderbedLighting` | `05020002000000` | `05020002000000` | `05020002000000` | `08020000000000000040` | `04e001010000` | `5a0103103073a5` |
+| `turnoffUnderbedLighting` | `05020002000000` | `05020002000000` | `05020002000000` | `08020000000000000080` | `04e001000000` | `5a0103103074a5` |
+| `change2White` (automatic white) | none | none | none | none | `05020002000400` | `5a0103103079a5` |
+| `keepConnect` (wake) | `5a0b00a5` | `5a0b00a5` | `5a0b00a5` | `5a0b00a5` | `5a0b00a5` | `5a0b00a5` |
+| `queryMassage` | `00b0` | `00b0` | `00b0` | `00b0` | `00b0` | `5ab000a5` |
+
+###### Extended builders
+
+| App action | C9 `BOX25_STAR` | Other selectors |
+|---|---|---|
+| `changeMassageTime` | `5a e0 04 07 value 00 00 a5` | `04 e0 07 value 00 00` |
+| `changeLightBrightness` | `5a e0 04 00 value 00 00 a5` | `04 e0 00 value 00 00` |
+
+The private builder accepts one byte (0–255); public controls use the narrower
+domains below.
+
+###### Actions and timing
+
+| Operation | Exact app behavior | Required HA behavior |
+|---|---|---|
+| Movement and Memory A recall | Immediate frame, repeat every 100 ms while held; immediate STOP on up/cancel | Bounded cancellable held action; fresh-event STOP |
+| Other preset hold | 100 ms stream; release STOP only for U8/9 | Preserve U-dependent release, serialized by target |
+| Flat | Starts on release, runs 600 ms; cleanup follows U; save/reset combination suppresses Flat | Expose the complete release-triggered operation |
+| Save/reset combination | Exact C frame starts immediately and streams through the 6 s local confirmation interval | Await bounded writes; preserve safety cleanup without claiming a device ACK |
+| Massage strength step | Single shot | Relative head/foot increase/decrease only |
+| Massage wave step | 100 ms stream while held | Bounded directional operation |
+| Massage release | STOP at 100 ms, query at 300 ms | Same-owner delayed cleanup; obsolete callbacks cannot stop a new action |
+| Automatic white | Changed U8/9-consumed field 47=true while connected starts captured C frames every 100 ms, ceasing after 5 s without STOP | Queue behind active user commands without preemption; invalidate replacement-owner callbacks |
+
+- The six-second success toast does not prove EEPROM persistence or delivery.
+- Three-packet commitment, 110-packet storage and arbitrary generic program
+  frames from another app must not be imported.
+- The shared app debounce accepts only elapsed sampled integer milliseconds
+  **strictly greater than 500 ms** across floor-light plus/minus, brightness,
+  and native on/off/toggle actions. A suppressed brightness change does not
+  update local state; a rejected value does not consume the shared gate.
+- Plus/minus computes a bounded request from the observed or retained level and
+  does not advance that level locally, including on the non-subscribing BOX3633
+  route. Native feedback or the separate slider change updates local level; a
+  successful write does not prove physical brightness.
+
+###### Held control keys
+
+The `adjustable_bed.hold_control` action accepts `device_id`, profile-specific
+`control`, `duration` in seconds (0.1–60), and an optional `side`, with
+whole-target preflight before writes. The controller's internal duration is
+milliseconds. Its exact 23 control keys are `head_up`, `head_down`, `foot_up`,
+`foot_down`, `union_up`, `union_down`, `memory_1`, `flat`, `tv`, `lounge`,
+`zero_g`, `anti_snore`, `save_memory_1`, `save_tv`, `save_lounge`,
+`save_zero_g`, `save_reset`, `head_strength_up`, `head_strength_down`,
+`foot_strength_up`, `foot_strength_down`, `wave_up` and `wave_down`.
+Do not use another application's held-command catalog.
+
+Standard preset buttons expose Flat, Zero G, Anti-snore, TV, Lounge and Memory A.
+The `goto_preset` action accepts only slot 1; the named presets also remain
+available through the profile-specific held action. Native C/U release gates apply
+to every route.
+
+##### Massage and floor light gates
+
+###### Massage
+
+- Massage toggle is always available.
+- Positive relative intensity, wave and timer requests require the observed
+  massage-on gate.
+- The timer's live raw inputs are 1, 2 and 3, displayed as 10, 20 and 30
+  minutes. A timer select must offer only those choices; the app's `massageOff`
+  path is dead, so no generic Off timer command is inferred.
+- Absolute intensity, absolute modes and sonic setters are not proved controls.
+
+###### Floor light
+
+- Floor on/off/toggle and plus/minus are independent actions.
+- The HA feedback light exists only when U8/9 consumes state and the physical
+  transport subscribes. It remains unknown until a valid native callback (or
+  same-address retained Home state), and commands do not optimistically change
+  it.
+- Non-feedback C7/8/9 have distinct accepted on and off frames, so their floor
+  light is an on/off light with assumed state instead of a toggle button.
+  Other profiles expose the native toggle button. C0/1/2/3/4/5/6 on/off
+  builders coincide, so no discrete power switch or assumed on/off state is
+  inferred.
+- Brightness is a raw integer, not measured percent, lux or a calibrated
+  hardware level. Zero selects the off action rather than a raw-zero slider
+  frame.
+
+| Capability gate | What is available |
+|---|---|
+| C0/1/2/4/5/6, restoration only | Positive massage gate has no enabling writer. Fresh light level 1 yields plus raw2 or minus off. No full 1–6 slider or newly built automatic-white operation. Toggle and required release/query remain reachable. |
+| C3/7 | Own-address state retained from a valid modern route can keep massage/light on and timer/level values, making conditional positive controls and raw 1–6 brightness available. Newly consumed legacy feedback remains UI-suppressed. |
+| C8/9 | Modern U8/9 feedback can enable positive massage, timer and light-level controls. A stale legacy U can still suppress updates; each command checks current observed gates. |
+
+##### Entities and diagnostics
+
+- The controller-specific entities include a 10/20/30 timer select, 1–6
+  light-level number where available, union and light-step buttons, confirmed
+  save/reset actions, a diagnostic massage-state query, the massage wave and
+  head intensity sensors and a massage binary sensor. Selectors, firmware and
+  the raw app fields stay in diagnostics; each connection sends the wake frame
+  where the transport needs it and reads the firmware.
+- Their semantic keys use `starcode_abm5_4_*` for platform, translation and card
+  discovery.
+- Custom controls stay owned by their physical child when using a two-address
+  paired entry. This app has no encoded one-address left/right selector.
+- The `starcode_abm5_4_use_detected_profile` button cancels and cleans up the
+  current owner's work before adopting D into C/U. It retains own-address state
+  and invalidates old callbacks.
+- Changing positive controls, the feedback light or the native on/off light
+  defers a capability reload until the owned connection is
+  released; unchanged catalogs do not trigger reload loops.
+- Each paired child persists its own selectors and rebuilds under the parent
+  registry guard.
+- Consumed-state diagnostics include `starcode_abm5_4_massage_on`,
+  `starcode_abm5_4_light_on`, `starcode_abm5_4_wave`,
+  `starcode_abm5_4_head_intensity`, `starcode_abm5_4_low_4b` and
+  `starcode_abm5_4_automatic_white_flag`, alongside the 16 raw fields (`b`,
+  `13`, `1b`, `23`, `2b`, `33`, `3b`, `43`, `47`, `4b`, `53`, `5f`, `67`, `6f`,
+  `77`, `7f`), selectors, manufacturer, firmware, timer and light level. These
+  describe parsed/application state and add no hardware units or ACK.
+
+#### Timing
+
+##### AdjustableM5X4 command timing
+
+| Item | Timing |
+|---|---|
+| Repeated control writes | Exact 100 ms cadence |
+| Manufacturer read retry | 200 ms |
+| Notification retry | 2 s |
+| Connected query delay | 500 ms |
+| Firmware read | 1 s after the query callback |
+| Normal connection timeout (explicitly selected profile) | 8 s |
+| Flat | 600 ms, starting on release |
+| Save / reset | 6 s confirmation interval |
+| Massage release | STOP at 100 ms, query at 300 ms |
+| Automatic white | Every 100 ms, ceasing after 5 s |
+
+- Failed or absent optional classification preserves the current selector.
+  Reads, query and their diagnostic results require exposure.
+- The explicitly selected profile uses the app's 8 s normal connection timeout,
+  including initial setup, capability probes and HA host/proxy connect attempts.
+  HA connection-profile retries and backoff still apply.
+- The shipped Android library defaults to an MTU 512 request; the app does not
+  select it. HA/Bleak and Bluetooth proxies own MTU negotiation, so this profile
+  neither requests nor claims negotiated MTU 512.
+- An already-notifying app toggle-off quirk must not leave HA without a required
+  live subscription.
+- The app's 30 s reboot wait belongs only to the Nordic firmware updater
+  completion flow, which this BLE bed-control integration does not expose.
+- HA awaits the required wake and notification setup before reporting the
+  session ready. A terminal failure, cancellation or change of the original
+  physical target clears readiness and notification resources so a later
+  connection can retry. The optional manufacturer/query tasks retain their
+  separate native delays and are cancelled with a failed session.
+- Repeated control writes keep the exact 100 ms cadence after a platform write
+  failure, with a logged failure and no immediate retry or acknowledgement
+  claim.
+- The `timed_move` action plans the held duration on that same 100 ms cadence,
+  rounding up to whole intervals without adding a second immediate-write
+  interval. Its service deadline bounds nonmultiples of 100 ms, and the
+  60-second limit remains valid. Stored pulse count and delay options remain
+  unchanged.
+- STOP cleanup and the massage release query retain their deadlines. A completed
+  service call does not prove that an unacknowledged write reached the bed.
+
+#### Notifications
+
+##### Feedback interpretation
+
+The parsers assign raw model fields. They do not prove calibrated motor positions,
+angles, percent, fault codes or physical actuator count. The app proves two control
+axes; no extra neck/lumbar/motion/voice/alarm/RGB control follows from raw slots.
+Initial fields 47 and 5f are true in the app model, separately from physical state.
+
+| Parser | Recognition and sufficient length | Important formulas |
+|---|---|---|
+| Modern C8/9 | `a5/0b`, at least 16 bytes | Time `(b[4]<<8)\|b[5]` maps 1–600→1, 601–1200→2, 1201–1800→3, otherwise 0. Wave is byte 6 low nibble; both intensity slots use byte 7 low nibble. Brightness/index are byte 14 high/low nibble; light on is low nibble>0; field 47 is byte 15 high nibble==1. |
+| Modern C8/9 | `a5/0d`, at least 19 bytes | Fields 2b/33/3b clamp bytes 4/6/8 to 100; field 5f is byte 17==0. These remain raw diagnostics. |
+| All non-BOX15 C | `a5/0c`, at least 8 bytes | Fields 67/7f/6f use bytes 6/4/7. Field 77 maps byte 5=5→17,6→19,otherwise 9. No alarm interpretation is inferred. |
+| Legacy BOX24 formulas | `a5/0b`, byte 2=14, at least 9 bytes | Timer index multiplied by 10; wave=byte 6−1, including −1. Intensity scale is `v//3 + v%3 + int(v>1)` on byte 7 low nibble and byte 8. |
+| BOX15 special | `ed/80`, at least 7 bytes | Fields 67/7f/6f/77 use bytes 3/5/4/6. |
+| BOX15 fallback | Non-special length 23 | Timer `b[19]&15`, head `remap(b[11]&7)`, foot `remap(b[12])`, wave `b[21]`. |
+| BOX15 fallback | Non-special length 16 | Timer `b[14]&15`, head `remap(b[7])`, foot `remap(b[8])`, wave `b[14]>>4`. |
+| BOX15 fallback | Non-special length 10 | Timer `b[8]&15`, head/foot 0, wave 1. |
+| BOX15 fallback | Other non-special length | Timer/head/foot 0, wave 1. |
+
+- Here `remap` maps 3→2 and 6→3, passing other values through. BOX15 fallback
+  overwrites those four fields without adding header/checksum validation. A
+  short recognized special `ed/80` frame of 4–6 bytes is rejected safely rather
+  than falling through and overwriting fallback state.
+- Short-frame guards prevent out-of-bounds updates without inventing checksum
+  validation. The unused D1 fragment accumulator is not enabled by
+  selecting C1.
+- Identical parsed model updates keep the app's equality suppression;
+  valid changed updates must retain exact formulas.
+
+###### UI-consumed state
+
+Only U8/9 consumes modern parsed state for its positive gates and public light/
+massage state.
+
+| UI field | Source |
+|---|---|
+| Head intensity | `max(field13−1,0)` |
+| Timer | `field_b` |
+| Wave | `field23` |
+| Massage-on | **timer>0** |
+| Light-on | `field43` |
+| Level | `field53` |
+| Low 4b | `field4b` |
+| Automatic-white flag | `field 47` |
+
+- The flag starts white only while connected.
+- Raw 67/6f/77/7f have no other app consumer or proved error/model mapping; raw
+  2b/33/3b have no measurement UI or unit conversion.
+- Field 5f supplies diagnostic stopped text, not STOP or a control gate. All
+  assigned raw fields remain diagnostic.
+
+##### State retention and offline restoration
+
+###### Same-address state
+
+- C/D/U transitions may preserve observed state on the **same address**. State
+  from another physical bed cannot authorize controls.
+- Actual reconnects retain the eight observed Home UI fields and the shared
+  light timestamp in the coordinator's process-local state. Reconstructed raw
+  models keep fresh parser defaults; raw diagnostics stay unknown until a valid
+  callback. The retained head intensity, wave, low4b and white flag remain
+  last-observed UI values, separate from the new raw parser model.
+- Internal capability reloads hand this state to the matching entry and
+  physical address, including a controller built later. Fresh consumed native
+  state or a newly accepted light intent takes precedence over the old
+  snapshot.
+- Rehydration does not replay callbacks or restart automatic white lighting.
+- A changed notification with a modern U runs the native whole-model Home
+  consumer, even for a partial diagnostic frame, so fresh model defaults can
+  replace retained UI fields. An unchanged frame or legacy U does not run that
+  consumer.
+- A native test across all C/U combinations is a branch probe, not proof that
+  every combination has a live application writer. An old modern
+  automatic-white stream retargeted to another bed is a safety exclusion, not a
+  fresh C3/7 automatic-white control.
+
+###### Offline paired-side restoration
+
+Offline paired-side restoration is limited to stored selectors that prove a
+fixed entity catalog.
+
+- An omitted transport selector requires the stored original BLE name; a
+  display alias cannot supply that identity.
+- BOX1220/BOX3633 transports do not reclassify C.
+- UART transports can restore offline when either possible manufacturer result
+  keeps the same complete catalog: positive controls, feedback light and
+  native on/off light. C7/8/9 qualify; C3 qualifies only with a consuming
+  U8/9. A nonconsuming U with C3 must finish live classification because C8/9
+  would add the on/off light.
+- UART with another C must connect and finish classification before its
+  complete catalog is known. U remains independent.
+- Offline capabilities do not create observed feedback or permission for
+  state-gated timer/light/massage commands.
+
+###### Command admission
+
+- UART command admission waits for optional manufacturer classification to
+  finish (or prove unavailable), alongside required wake/subscription
+  initialization. Its query/read cadence stays parallel, and stale sessions
+  cannot publish readiness.
+- Delayed queries and automatic-white callbacks use their own queued command
+  reservation, preserving the current HA and tracing context while detaching the
+  movement reservation.
+- Native lighting buttons queue without cancelling movement.
+
+#### Evidence
+
+##### Notes
+
+###### Brightness binding
+
+Twelve brightness test probes using 15, 30 or 255 cover the private one-byte
+builder, not additional public brightness levels. Public brightness remains
+integral 1–6 with off as a separate action.
+
+###### Ownership, boundaries and validation
+
+- Operations, subscriptions, reads and delayed callbacks must remain bound to
+  the original address and connection/profile generation. Teardown, disconnect
+  and selection changes cancel owned work and attempt required cleanup while the
+  original connection is available.
+- The app's stale callback/state-transfer bugs are not implementation targets;
+  their bed controls are still offered.
+- Nordic DFU payload/catalog/download/bond handling, Wi-Fi, handset
+  permissions, licensing and navigation are product/host boundaries.
+  Firmware-update activity still invalidates normal roles and control
+  admission. No PIN, bond removal, unproved capability query or OTA retry is
+  introduced.
+
+###### Analysis provenance
+
+Based on AdjustableM5X4 1.0.1 (`com.starcode.abm5_4`).
+
+### eShine
+
+**App:** [eShine](https://play.google.com/store/apps/details?id=com.okin.eshine) 1.1.8 (22), `com.okin.eshine`
+
+**Status:** Not yet tested
+
+One profile per product selector in the app: E2000 (`eshine_e2000`),
+E3000/E3100 (`eshine_e30003100`, one selector) and E5000 (`eshine_e5000`). They
+share the app's key table, timing, clock and alarm, and differ in the keys they
+expose. The [E6000 app profile](richmat.md#eshine) uses a different app and controller.
+
+#### Setup
+
+Select **eShine app (E2000)**, **eShine app (E3000 / E3100)** or **eShine app
+(E5000)**, the same selector used in the app. Choose the product explicitly: the name and service do not identify the
+model. The app accepts a case-sensitive `Smartbed` substring anywhere in a device
+name. `Smartbed` advertisements offer an app candidate; they never select the
+product. Identical names at different addresses remain separate devices.
+Automatic discovery uses the existing advertised Nordic UART service registration.
+HA rejects leading-wildcard name matchers, so a name-only advertisement with
+`Smartbed` in the middle of its name remains available through **Add integration**
+and the manual scan. No guessed name prefix or default product is substituted.
+The app search hint does not question an already matching receiver profile.
+
+Generic motor count, massage opt-in and refresh delay are owned by this profile.
+The pulse count bounds an ordinary HA press; sustained actions accept a duration.
+Single-address pairing is unavailable. For two independent addresses, configure
+each side's own product before combining them using HA's existing paired setup.
+
+##### eShine GATT roles and write mode
+
+The profile uses the Nordic UART service, write and notify roles in
+[Transports](#transports). Both exact characteristic roles are required; a shared
+UART service does not prove that this app profile is appropriate. Writes go
+without response, and the write characteristic must advertise that property. The
+receive characteristic may notify or indicate; HA/Bleak manages its CCCD. There
+is no app-specific authentication, bond request or startup handshake.
+
+Frames are direct 2-byte requests, 7-byte key frames and 9-byte clock and alarm
+writes, with no added header, checksum, encryption, sequence or terminator.
+Dynamic clock fields use their low eight bits.
+
+#### Controls
+
+| Feature | E2000 | E3000 / E3100 | E5000 |
+|---------|-------|---------------|-------|
+| Motor Control | ✅ Head, Foot | ✅ Head, Foot | ✅ Head, Foot, Head Tilt |
+| Position Feedback | ❌ | ❌ | ❌ |
+| Named Presets | ✅ Flat, Zero Gravity, Anti Snore, Reading, Watch TV | ✅ Same | ✅ Same |
+| Flat + Zero Gravity chord | ✅ | ✅ | ✅ |
+| Numbered Memory Slots | ❌ | ❌ | ❌ |
+| Massage | ❌ | ✅ On/off, separate strengths, wave, timer | ✅ Same |
+| Night Light | ❌ | ✅ Held toggle and feedback | ✅ Same |
+| Local Clock / Alarm | ✅ Zero Gravity / Flat | ✅ Zero Gravity / Flat / Massage | ✅ Same |
+| Single-address Split / Coupling | ❌ | ❌ | ❌ |
+| HA two-address pair | ✅ Independent sides | ✅ Independent sides | ✅ Independent sides |
+| Hold until release | ✅ ([renewable](../SERVICES.md#renewable-holds): 300 ms refresh, STOP 200 ms after the lease ends) | ✅ Same | ✅ Same |
+
+Every control sends a row of the [eShine keys](#eshine-keys) table; the Profiles
+column lists the products that expose it.
+
+| Controls | Keys | Behavior |
+|---|---|---|
+| Head, Foot, Head Tilt (E5000) | `head_*`, `feet_*`, `pillow_*` | Held |
+| Flat, Zero Gravity, Anti Snore, Reading, Watch TV | `flat`, `zero_g`, `anti_snore`, `reading`, `tv` | Held |
+| Flat + Zero Gravity chord | `flat_zero_g` | Held |
+| Night Light | `light` | Held toggle, then a state query |
+| Massage on, off | `massage_on`, `massage_off` | One write, then a state query |
+| Head and Foot strength, timer | `massage_head_strength`, `massage_foot_strength`, `massage_timer` | One increment or cycle, then a state query |
+| Massage wave | `massage_wave` | One increment, only while massage is reported on |
+| STOP | `stop` | Movement and release request |
+
+| Request | Bytes | Description |
+|---|---|---|
+| `query_state` | `00 B0` | Query massage and light state |
+| `query_alarm` | `00 C0` | Query alarm |
+| `disable_alarm` | `07 05 00 00 00 00 00 00 00` | Disable the local alarm |
+
+Massage and alarm sensors expose the complete received state as attributes; the
+card includes them in its existing massage and utility sections. A **Refresh
+bed state** button (diagnostic, disabled by default) and separate strength and
+timer cycle buttons are also exposed. The **Set bed clock** action
+(`adjustable_bed.sync_clock`) sets the clock. There are no angles, positions, battery or firmware and
+device-information parsers.
+
+##### eShine sustained presets and chord
+
+Use `adjustable_bed.hold_control` with `flat`, `zero_g`, `anti_snore`, `reading`,
+`tv` or `flat_zero_g` and a duration in seconds. The same held bytes are used for
+long holds. The app's 5.5-second Set/Reset toast does not prove physical saving or
+reset success; there is no separate save/reset packet or numbered memory command.
+The ordinary preset buttons use a bounded pulse window rather than an assumed
+one-shot motion.
+
+#### Timing
+
+Hold refresh and release are in the [hold and release timing](#hold-and-release-timing)
+table; the rest of the app's sequences:
+
+| Operation | Timing |
+|-----------|--------|
+| Held movement, presets, chord and Night Light | Immediate write, refresh every 300 ms while held |
+| Release / STOP | Captured literal after 200 ms, with uncancelled cleanup to original session |
+| Night Light state refresh | 300 ms after release request |
+| Massage increment/on/off | One write, query after 50 ms, no movement STOP |
+| Clock | Wait 100 ms, clock write, alarm query after 200 ms |
+| Alarm enable | Set, wait 200 ms, query then set, wait 200 ms, query |
+| Connect | Subscribe once, query massage/light, wait 200 ms, query alarm |
+
+HA serializes operations and bounds held controls to at most 60 seconds.
+Cancellation/error release uses shielded, drained `finally` cleanup; delayed work
+cannot migrate to another session. Timing describes requested writes, not
+measured on-air or firmware timing.
+
+#### Notifications
+
+The profile parses its own replies (`eshine_okin_protocol.py`):
+
+| Header | Fields |
+|--------|--------|
+| `a5 0b 0e` | Seconds=`d4*256+d5`; timer index=ceil(seconds/600); wave=`d6-1`; Head uses `d7&15`, Foot uses unmasked `d8`; each strength=`v%3+v//3+(v>1)`; light is on exactly when `d13==1` |
+| `a5 0c 0e` | Weekday mask `d4`, action `d5`, hour `d6`, minute `d7`, enabled `d9`; enabled1 with all four preceding fields zero means off; other nonzero enabled means on |
+
+Timer indexes 1/2/3 correspond to the app's 10/20/30-minute indicators. Reported
+values remain unclamped, including wave -1, Head6, Foot86/87 or timer 110. Disabled
+massage zeroes its displayed wave/strengths while preserving raw observations.
+Alarm actions map 1/9/8 to Zero Gravity/Flat/Massage; unknown action is reported as
+unknown. Overflow hours/minutes normalize in the local reference date; raw fields
+remain available. Received actions never enable additional product capabilities.
+
+HA ignores incomplete or unknown notifications atomically. In particular, the
+app's unknown `fe 16` marker is not treated as a fragmentation format and
+cannot suppress the next valid delivery. State is invalidated on disconnect.
+
+#### Services
+
+##### eShine clock and alarms
+
+| Command | Bytes | Description |
+|---------|-------|-------------|
+| Local clock | `07 04 YY MM DD WW hh mm ss` | Year minus 2000; weekday Monday=1 through Sunday=7 |
+| Enable alarm | `07 05 days action hh mm 00 01 01` | `days` is one next-occurrence day bit, Sunday bit0 |
+| Alarm action | `01` / `09` / `08` | Zero Gravity / Flat / Massage; Massage unavailable on E2000 |
+
+`adjustable_bed.set_alarm` accepts `enabled`, minute-precision `time` and
+`wake_action` (`zero_g`, `flat`, `massage`). A time at or before now selects tomorrow.
+An enabled alarm synchronizes the local clock first. Setting writes the same
+snapshot twice with a query between them and after them, spaced 200 ms. Disabling
+writes the nine-byte zero form and queries after 200 ms. No arbitrary weekday
+schedule, massage intensity or alarm slot is inferred.
+
+```yaml
+action: adjustable_bed.set_alarm
+data:
+  device_id: YOUR_DEVICE_ID
+  enabled: true
+  time: "07:00:00"
+  wake_action: zero_g
+```
+
+#### Evidence
+
+Based on eShine 1.1.8 (22); its key, request, clock and alarm frames are in
+`tests/okin_nframe_vectors.py`.
+
+- Not yet tested on hardware, including what STOP stops and whether a long-hold
+  preset save is kept. Do not assume either from beds that share this transport.
+- Wi-Fi, cloud, account and firmware update features are not supported.
+
+###### eShine analysis provenance
+
+Based on eShine 1.1.8 (`com.okin.eshine`).
+
+### Okin CST
+
+**Apps:** the Rize, MFirm 900, Support and Nectar Motion apps in [Apps](#apps)
+
+**Status:** Partly tested (the MFirm 900 - O profile works on a CB3633A in [#501](https://github.com/kristofferR/ha-adjustable-bed/issues/501); Okin CST movement worked on an MFirm 900-O, a Jordan's Serenity bed and a Nectar Premium in [#365](https://github.com/kristofferR/ha-adjustable-bed/issues/365), [#573](https://github.com/kristofferR/ha-adjustable-bed/issues/573) and [#605](https://github.com/kristofferR/ha-adjustable-bed/issues/605); the other app profiles need testing)
+
+**Android:** all ten analyzed packages are Android apps, listed under
+[Analysis provenance](#cst-analysis-provenance).
+
+#### Setup
+
+##### Known models
+
+- Mattress Firm 900-O / MFirm 900-O and Rize MF900
+- Rize Sanctuary, Resident, Aviada, Bob, and Contempo
+- Rize II Carefree and Rize II Clarity
+- Support
+- Nectar Motion using the Nectar Move app profile
+- Bluetooth names vary; some report as `OKIN-XXXXXX`
+
+##### Choosing the app
+
+Choose the **Rize and Jordan's apps (and other Okin apps) · Okin** row, or the
+same name when discovery asks which Okin protocol the bed uses. Setup then asks the
+[Okin question](#home-assistant-setup) with the CST apps first, for example
+**Resident Adjustable Bed app (Rize Resident)**, because **Keep the detected or saved controls** keeps the
+MF900 profile rather than detecting the product. The Nectar Move app has its
+own **Nectar Move · Okin** row, which answers the question itself.
+
+##### Protocol Details
+
+**Service UUID:** `62741523-52f9-8864-b1ab-3b3a8d65950b` (standard OKIN)
+**Write Characteristic:** `62741525-...`
+**Notify Characteristic:** `62741625-...`
+**Format:** 14-byte command with two separate 32-bit fields
+
+###### Packet Format
+
+```text
+[0x0C, 0x02, primary[4], secondary[4], 0x00, 0x00, 0x00, 0x00]
+```
+
+- **Primary field** (bytes 2-5): Head, foot, and lumbar motor control plus
+  presets, memory-save chords, light toggle, massage stop, and intensity
+- **Secondary field** (bytes 6-9): Discrete light on/off and massage wave modes
+- Each field is a big-endian 32-bit value; unused fields are zero.
+
+Field placement is app-specific. Do not assume all presets, lights, or massage
+commands use the secondary field.
+
+###### Write Mode
+
+The accepted Android app does not set a numeric write type; it leaves the write
+characteristic at its runtime default. Home Assistant retains its existing
+write-with-response integration policy. The apps do not show
+the receiver's effective write mode or required characteristic properties, so
+the effective hardware behavior is deferred for real-user validation.
+
+##### Pairing
+
+The captured MFirm receiver gates its reads and notification characteristics
+(including Device Information) behind an OS-level Bluetooth **bond**. The OS
+negotiates the bond automatically when a client accesses one of those encrypted
+characteristics.
+
+- Pairing is "Just Works": **no PIN** and **no dedicated Bluetooth pairing button**.
+- Before bonding, those characteristics return GATT `error=5` "Insufficient
+  authentication". The command characteristic (`62741525-...`) itself was
+  readable unbonded, but the integration still establishes the bond so the
+  connection matches the official app's full GATT session.
+
+**To enter pairing mode, power-cycle the control box:** unplug it for ~30 seconds,
+then plug it back in. The status light blinks blue, then turns green after ~20 s;
+that window is when the base accepts a new bond. Some models instead use the
+under-bed lamp/light button (hold until it blinks blue). The physical "Pair"/"Learn"
+button found on some OKIN control boxes only syncs the **RF remote**, not Bluetooth.
+
+The integration requests `pair=True` automatically and verifies the bond after
+connecting. If the link connected but did not bond, it clears its cached bond
+state, re-pairs on the next attempt, and surfaces a **"Bluetooth pairing required"**
+repair with a guided **Fix** button. ESPHome Bluetooth proxies can pair only on
+ESPHome ≥ 2024.3.0; a local adapter near the bed is the most reliable for the
+first bond.
+
+Nectar Move's app has no app-issued bond request or authentication
+gate, so its profile skips proactive pairing. Home Assistant still routes an
+actual GATT authentication failure through the existing bond-recovery repair.
+That repair, with its **Pair Now** action, stays until a later connection
+succeeds. This does not change pairing policy for other CST profiles.
+
+##### Detection / Setup
+
+| Signal | Value |
+|--------|-------|
+| Service UUID | `62741523-52f9-8864-b1ab-3b3a8d65950b` (standard OKIN) |
+| Name patterns | Varies (shared UUID requires disambiguation; some report as `OKIN-XXXXXX`) |
+| Connected GATT hint | CSS `90311623-...` plus Nordic DFU `00001530-...` is ambiguous and requires another identity signal |
+| BLE Pairing | Required for most profiles; Nectar Move does not proactively request a bond |
+
+- Manual selection may be needed since the service UUID is shared with other Okin protocols.
+- The shared UUID and the official apps' common `OKIN-*` name filter do not
+  distinguish the nine product layouts. Choose the matching app or product in
+  the Okin question, in setup or in **Reconfigure**. Automatic preserves the MF900 profile for existing
+  entries.
+- Do not choose CST solely because diagnostics show both the CSS and Nordic DFU
+  services. That connected GATT signature is also exposed by RF ECO BT stair
+  actuators and by OKIMAT drives used with FurniMove (#555). Device Information
+  model `MEGAMAT MBZ` identifies RF ECO BT. Choose CST only when the known base
+  or app identity corroborates the CST protocol. The integration never selects
+  CST automatically from GATT; a CST entry whose drive reports an `OKIMAT` model
+  is offered a [repair](furnimove.md#repairing-existing-configurations).
+- Do not select CST for `LP BED...` receivers. LP Control 2.9.0 identifies those
+  as its Okin profile and sends 6-byte commands, even when the receiver also
+  exposes CSS and Nordic DFU services. See [Leggett & Platt](leggett-platt.md).
+- **Nectar Move** is opt-in; see [Nectar Move profile](#nectar-move-profile).
+
+##### Product Profiles
+
+| Variant | Motors | Presets beyond Flat | Programmable memories | Massage | Light |
+|---|---|---|---:|---|---|
+| Sanctuary | Head, foot | Anti-snore, lounge, Zero-G | 2 | Head/foot intensity, 3 waves, full-body start, off | Toggle and discrete on/off |
+| Resident | Head, foot | Anti-snore, lounge, Zero-G, incline | 4, including `M` | Head/foot intensity, 3 waves, timer step, off | None in the shipped UI |
+| Aviada | Head, foot, lumbar | Anti-snore, lounge, Zero-G, incline | 3 | Global intensity, 3 waves, off | Toggle and discrete on/off |
+| Bob | Head, foot | Anti-snore, lounge, Zero-G | 2 | Head/foot intensity, 3 waves, full-body start, off | Toggle and discrete on/off |
+| Contempo | Head, foot, lumbar | Anti-snore, lounge, Zero-G, incline | 3 | Global intensity, 3 waves, off | Toggle and discrete on/off |
+| Carefree | Head, foot | Anti-snore, Zero-G | 1 | None | Toggle and discrete on/off |
+| Clarity II | Head, foot | Anti-snore, lounge, Zero-G, incline | 3 | Global intensity, 3 waves, off | Toggle and discrete on/off |
+| MF900 | Head, foot, lumbar | Anti-snore, lounge, Zero-G, incline | 3 | Global intensity, 3 waves, off | Toggle and discrete on/off |
+| Support | Head, foot, lumbar | Anti-snore, lounge, Zero-G, incline | 3 | Head/foot intensity, 3 waves, off | Toggle and discrete on/off |
+| Nectar Move | Head, feet (app axes; physical semantics unverified) | Anti, Zero Gravity, Reading | 2: Zero Gravity, Reading | Increase only | Toggle only |
+
+The zoned decrease frames are not interchangeable. Bob routes both zone-down
+commands through both CST fields, Support routes foot-down through only the
+secondary field, and Sanctuary/Resident use only the primary field. Selecting
+the product profile is therefore required for safe zoned massage controls.
+
+###### Nectar Move profile
+
+Choose **Nectar Move** in the Okin question, in setup or in Reconfigure. No shared OKIN
+name, UUID, or Device Information result selects it. The profile is opt-in and
+keeps the other CST application profiles unchanged.
+
+- **Axes:** two, labelled Head and Feet. Those are app-control labels; the
+  receiver's physical actuator semantics have not been verified. Position
+  feedback is not supported.
+- **Presets:** Flat, Anti, Zero Gravity, and Reading. The two saveable slots are
+  Zero Gravity and Reading. Reading has its own stable entity name and does not
+  rename Lounge in other profiles.
+- **Light:** under-bed lighting is an assumed-state toggle only.
+- **Massage:** one combined intensity-increase button. It has no decrease, off,
+  start/toggle, head/foot, wave, timer, level, or state action.
+- **Save response:** see [Notifications](#notifications-6).
+- **Write mode:** the Android app leaves the write characteristic's write type at
+  its runtime default; the integration keeps its write-with-response policy
+  (see [Write Mode](#write-mode-3)).
+
+Hardware checks remain deferred:
+effective write behavior, physical axis and preset meaning, notification byte
+meaning, and receiver repeat/STOP semantics. They are not implementation work.
+
+#### Controls
+
+##### Features
+
+| Feature | Supported |
+|---------|-----------|
+| Motor Control | ✅ Head and foot; lumbar on Aviada, Contempo, MF900 and Support |
+| Position Feedback | ❌ (no decoded motor positions) |
+| Memory Presets | ✅ (one to four programmable preset memories, per profile) |
+| Massage | ⚠️ Per profile: global or head/foot intensity, three wave modes, off; increase only on Nectar Move; none on Carefree |
+| Under-bed Lights | ✅ Every profile except Resident (toggle only on Nectar Move) |
+| Flat / Zero-G / Anti-Snore | ✅ |
+| Lounge / Incline (TV) / Reading | ⚠️ Per profile |
+| BLE Pairing | ⚠️ Required for most profiles; Nectar Move does not proactively request a bond |
+
+##### Commands
+
+###### Motor Control (primary field)
+
+| Command | Value | Description |
+|---------|-------|-------------|
+| Stop | `0x00000000` | All-zero frame (also the release) |
+| Head Up | `0x00000001` | Raise head |
+| Head Down | `0x00000002` | Lower head |
+| Foot Up | `0x00000004` | Raise foot |
+| Foot Down | `0x00000008` | Lower foot |
+| Lumbar Up | `0x00000010` | Raise lumbar (lumbar profiles only) |
+| Lumbar Down | `0x00000020` | Lower lumbar (lumbar profiles only) |
+
+Multiple motor bits can be OR'd together for simultaneous movement.
+
+###### Presets and Memory (primary field)
+
+| Command | Value | Description |
+|---------|-------|-------------|
+| Flat | `0x08000000` | Flat |
+| Zero-G | `0x00001000` | Zero-G recall |
+| Lounge | `0x00002000` | Lounge recall (Reading on Nectar Move) |
+| Incline / TV | `0x00004000` | Incline recall |
+| Anti-snore | `0x00008000` | Anti-snore |
+| Memory `M` | `0x00010000` | Resident's fourth memory recall |
+| Save Zero-G | `0x08001000` | Flat + Zero-G chord |
+| Save Lounge | `0x08002000` | Flat + Lounge chord (Save Reading on Nectar Move) |
+| Save Incline | `0x08004000` | Flat + Incline chord |
+| Save `M` | `0x08010000` | Flat + `M` chord (Resident) |
+
+###### Memory Slots
+
+The MFirm app treats Zero-G, Incline, and Lounge as user-programmable preset
+memories. Home Assistant exposes those as numbered memory slots:
+
+| HA Memory Slot | MFirm App Memory |
+|----------------|------------------|
+| Memory 1 | Zero-G |
+| Memory 2 | Incline |
+| Memory 3 | Lounge |
+
+Other product variants expose only their app's slots. Resident
+adds a fourth `M` slot; Sanctuary and Bob expose Zero-G and Lounge; Carefree
+exposes only Zero-G. The other profiles use the three MF900 mappings above.
+
+###### Lights
+
+| Command | Field | Value | Description |
+|---------|-------|-------|-------------|
+| Light Toggle | Primary | `0x00020000` | Toggle under-bed light |
+| Light On | Secondary | `0x00000040` | Discrete on |
+| Light Off | Secondary | `0x00000080` | Discrete off |
+
+###### Massage
+
+| Command | Field | Value | Description |
+|---------|-------|-------|-------------|
+| Massage Off | Primary | `0x02000000` | Stop massage |
+| Massage All + | Primary | `0x00000C00` | Global intensity up |
+| Massage All - | Primary | `0x01800000` | Global intensity down |
+| Massage Wave 1 | Secondary | `0x00080000` | Wave mode 1 |
+| Massage Wave 2 | Secondary | `0x00100000` | Wave mode 2 |
+| Massage Wave 3 | Secondary | `0x00200000` | Wave mode 3 |
+
+###### Product-specific massage fields
+
+| Product | Action | Primary | Secondary |
+|---|---|---:|---:|
+| Sanctuary, Resident | Head + | `0x00000800` | `0x00000000` |
+| Sanctuary, Resident | Head - | `0x00800000` | `0x00000000` |
+| Sanctuary, Resident | Foot + | `0x00000400` | `0x00000000` |
+| Sanctuary, Resident | Foot - | `0x01000000` | `0x00000000` |
+| Bob | Head - | `0x00800000` | `0x00800000` |
+| Bob | Foot - | `0x01000000` | `0x01000000` |
+| Support | Head - | `0x00800000` | `0x00800000` |
+| Support | Foot - | `0x00000000` | `0x01000000` |
+| Sanctuary, Bob | Full-body massage | `0x00000000` | `0x00000100` |
+| Resident | Timer step | `0x00000200` | `0x00000000` |
+
+Bob and Support use the same primary-only zone-increase fields as Sanctuary and
+Resident. Every product with massage uses the shared wave and massage-off
+fields above.
+
+#### Timing
+
+##### CST command timing
+
+###### Rize and support app profiles
+
+- The Android app sends the active command immediately and every 100 ms while a
+  button is held.
+- On release it sends the all-zero STOP frame twice, at +100 ms and +200 ms.
+- For one-shot voice actions such as presets, lights, and massage, the app
+  streams for 500 ms before the same delayed STOP cleanup. Home Assistant uses
+  that fixed one-shot cadence for button entities and keeps motor movement
+  duration configurable.
+
+###### Nectar Move
+
+- Nectar Move uses the same 100 ms held-command refresh and delayed STOP pair,
+  but its app also repeats every other action only while held.
+- Home Assistant movement commands are finite, so each one refreshes the axis
+  at the app's 100 ms interval for the configured **Movement per tap**
+  (default 10, about one second), then sends the STOP pair.
+- The card's hold loop re-issues movements while a control stays pressed, and a
+  STOP or replacement command ends the refresh early with the same release.
+- Stateless preset, save, light, and massage buttons send one selected frame,
+  then STOP at +100 ms and +200 ms as a bounded Home Assistant tap mapping.
+
+#### Notifications
+
+##### Notifications
+
+- The app subscribes to the notify characteristic (`62741625-...`) but only
+  watches byte 10 for a generic change; it does not decode motor positions.
+- **Nectar Move:** notification byte 10 is tracked only while a memory save is
+  pending. A changed signed byte emits the `Memory save response observed`
+  diagnostic. That signal is not proof that a physical memory was stored, and
+  no position or device state is inferred from the byte.
+
+#### Evidence
+
+##### Notes
+
+###### Relationship to Other Okin Protocols
+
+Many command values match Okimat/Okin UUID values. CST differs in packet framing
+and in which 32-bit field carries each remote action.
+
+> [!WARNING]
+> Earlier versions of this page listed Head Tilt `0x00000010`/`0x00000020`,
+> Lumbar `0x00000040`/`0x00000080`, a Massage Toggle `0x04000000`, a position
+> notify characteristic `62741524-...` and Okimat-style position feedback. The
+> apps and the current controller use Lumbar
+> `0x00000010`/`0x00000020`, have no tilt axis or `0x04000000` command, and
+> decode no positions.
+
+###### CST analysis provenance
+
+Based on nine Rize and support apps: `com.okin.bedding.rizeSanctuary`,
+`rizeResident`, `rizeaviada`, `rizebob`, `rizeiicarefree` and `rizeiiclarity`
+1.0.1, `rizecontempo` 1.0.2, `rizemf900` 1.1.2 and `com.okin.bedding.support`
+1.0.4, plus Nectar Move 1.0.1 (`com.okin.bedding.nectarmotion`). The protocol
+was first reverse-engineered from `CSTProtocol.java` in the Rize MF900 and
+Nectar Motion apps.
+
+### Jordan's Serenity
+
+**App:** [Jordan's Serenity](https://play.google.com/store/apps/details?id=com.okin.bedding.serenity) 1.0.1 (code 2), `com.okin.bedding.serenity`
+
+**Status:** Not yet tested
+
+#### Setup
+
+##### Known models
+
+- Beds controlled with the Jordan's Serenity app (Android package `com.okin.bedding.serenity`)
+- OKIN receivers; their Bluetooth names (lowercase form starting with `okin`) are shared with other apps
+- Sibling apps on the same controller core, each with its own action table:
+  [Jordan's Tranquil](#jordans-tranquil) and the [Customatic Z-Series](#customatic-z-series)
+
+##### Protocol Details
+
+**Service UUID:** `62741523-52f9-8864-b1ab-3b3a8d65950b`
+**Write Characteristic:** `62741525-52f9-8864-b1ab-3b3a8d65950b`
+**Notify Characteristic:** `62741625-52f9-8864-b1ab-3b3a8d65950b`
+**Manufacturer Read:** service `0000180a-0000-1000-8000-00805f9b34fb`, characteristic `00002a29-0000-1000-8000-00805f9b34fb`
+**Format:** 14-byte CST frame: `0c 02`, a 32-bit primary field and a 32-bit
+secondary field (both big-endian), then four zero bytes
+
+###### Packet Format
+
+```text
+[0x0C, 0x02, primary(4, big-endian), secondary(4, big-endian), 0x00, 0x00, 0x00, 0x00]
+```
+
+- No normal checksum, encryption, side selector, or authentication packet.
+- The existing CST builder is reused because its bytes are equivalent; another
+  product's capabilities are not inherited.
+- Examples: Head up `0c 02 00 00 00 01 00 00 00 00 00 00 00 00`, Wave 1
+  `0c 02 00 00 00 00 00 08 00 00 00 00 00 00`, Release/Stop is `0c 02` plus
+  twelve zero bytes.
+
+###### Write Mode
+
+- The Android app leaves its characteristic write type unchanged, so the runtime
+  ATT mode is unknown.
+- HA validates the command role and prefers acknowledged writes when `write` is
+  advertised, otherwise using `write-without-response`. This is a host policy,
+  not a recovered fixed Android write mode.
+- Notifications require the exact notify role and remain subscribed with angle
+  sensing disabled. Bleak handles the notification CCCD.
+
+##### Detection / Setup
+
+- Select **Serenity and Tranquil apps · Jordan's** manually and answer **Jordan's
+  Serenity app**. Shared OKIN advertisements or GATT UUIDs
+  do not identify this app.
+- Initial app discovery scans without a service filter and accepts names whose
+  lowercase form starts with `okin`. This shared prefix cannot select Serenity.
+- The app always selects CSTProtocol and the Z280 remote/massage screen pair.
+  Persisted bed-type settings do not change that selection.
+- Manufacturer values, including CST13/CST14, never select a protocol and always
+  leave alarm controls disabled. Existing CST product profiles are separate.
+- The app has no PIN, bonding or pairing step.
+
+##### Home Assistant setup
+
+Choose the **Serenity and Tranquil apps · Jordan's** row, then **Jordan's Serenity app**, for the profile based on `com.okin.bedding.serenity` 1.0.1 (2). Shared OKIN discovery and GATT UUIDs do not identify this app profile. The two named main axes use Head and Feet; additional actuator controls retain literal selector 4/5 names because app touch and voice labels disagree. Setup hides motor-count and pulse-delay fields: the app has two named axes, the additional selectors and a fixed 100 ms refresh interval. The internal named-axis count does not claim a physical actuator count. Status notifications remain active when angle sensing is disabled; this profile reports no motor position.
+
+#### Controls
+
+##### Features
+
+| Feature | Supported |
+|---------|-----------|
+| Motor Control | ✅ Head/back and foot/legs covers; Remote Selector 4/5 as literal buttons |
+| Position Feedback | ❌ |
+| Memory Presets | ✅ (M1, M2; plus Save Zero Gravity and Save TV) |
+| Presets | ✅ Flat, Zero Gravity, TV, Leisure (exposed through Lounge), Anti-Snore |
+| Massage | ✅ (head/foot/mode/timer cycles, toggle, off, Wave 1-3) |
+| Lights | ✅ (native toggle, assumed-state on/off **Under-bed lights** light; no RGB or brightness) |
+| Alarms | ❌ (alarm replies are parsed as diagnostic state only) |
+| Diagnostic state | ✅ (manufacturer, status code, massage timer, save event, alarm reply) |
+
+##### App commands
+
+Values occupy the primary field unless a secondary value is listed. The
+held-control service (`hold_control`) uses these exact `control` values.
+
+###### Motor Control
+
+| Command | `control` | Primary | Secondary |
+|---------|-----------|--------:|----------:|
+| Head/back up, down | `head_up`, `head_down` | `0x1`, `0x2` | 0 |
+| Foot/legs up, down | `foot_up`, `foot_down` | `0x4`, `0x8` | 0 |
+| Remote Selector 4 up, down | `selector_4_up`, `selector_4_down` | `0x10`, `0x20` | 0 |
+| Remote Selector 5 up, down | `selector_5_up`, `selector_5_down` | `0x40`, `0x80` | 0 |
+| Release/Stop | | 0 | 0 |
+
+Touch labels and voice labels conflict for the extra selectors:
+
+- Remote lumbar controls send selector 4, while the presenter calls that tilt.
+- Remote tilt controls send selector 5, while its presenter calls that lumbar.
+- Voice lumbar selects 4 and headtilt selects 5.
+
+HA therefore exposes **Control 4 up/down** and **Control 5 up/down** buttons
+rather than guessing whether they move the lumbar or the head tilt. Only the known head/feet
+controls create covers. All covers share the global scheduler resource because
+every release zeros the whole command.
+
+###### Presets
+
+| Command | `control` | Primary | Secondary |
+|---------|-----------|--------:|----------:|
+| Flat | `flat` | `0x08000000` | 0 |
+| Zero Gravity | `zero_g` | `0x1000` | 0 |
+| TV | `tv` | `0x4000` | 0 |
+| Leisure, exposed through Lounge | `leisure` | `0x2000` | 0 |
+| Anti-Snore | `anti_snore` | `0x8000` | 0 |
+
+###### Memory
+
+| Command | `control` | Primary | Secondary |
+|---------|-----------|--------:|----------:|
+| M1, M2 | `memory_1`, `memory_2` | `0x10000`, `0x40000` | 0 |
+| Save Zero Gravity | `save_zero_g` | `0x08001000` | 0 |
+| Save M1, Save M2 | `save_memory_1`, `save_memory_2` | `0x08010000`, `0x08040000` | 0 |
+| Save TV | `save_tv` | `0x08004000` | 0 |
+
+- Only M1 and M2 are numbered memory slots. Separate Save Zero Gravity and Save
+  TV buttons keep the app's Flat+preset chords.
+- Save buttons hold for five seconds, matching the bound app help gesture.
+  Frames begin immediately; the app has no five-second command gate or storage
+  acknowledgement.
+- The held action service permits longer holds without assuming a storage
+  acknowledgement.
+
+###### Massage
+
+| Command | `control` | Primary | Secondary |
+|---------|-----------|--------:|----------:|
+| Head massage cycle | `massage_head_cycle` | `0x800` | 0 |
+| Foot massage cycle | `massage_foot_cycle` | `0x400` | 0 |
+| Massage mode cycle | `massage_mode_cycle` | `0x10000000` | 0 |
+| Massage timer cycle | `massage_timer_cycle` | `0x200` | 0 |
+| Massage toggle | `massage_toggle` | `0x100` | 0 |
+| Massage off | `massage_off` | `0x02000000` | 0 |
+| Wave 1, 2, 3 | `wave_1`, `wave_2`, `wave_3` | 0 | `0x80000`, `0x100000`, `0x200000` |
+
+###### Lights
+
+| Command | `control` | Primary | Secondary |
+|---------|-----------|--------:|----------:|
+| Light toggle | `light_toggle` | `0x20000` | 0 |
+| Light on, off | `light_on`, `light_off` | 0 | `0x40`, `0x80` |
+
+Light on/off is the **Under-bed lights** light, which starts unknown and marks
+commanded values as assumed. The separate **Toggle light** button preserves the app's
+native toggle/cycle. Neither control has physical state feedback, RGB
+selection, or brightness selection.
+
+#### Timing
+
+##### Serenity command timing
+
+| Operation | Hold | Source |
+|-----------|------|--------|
+| Every touch action | Immediate stream repeated every 100 ms | App |
+| Ordinary cover pulses | Configured count at the app's fixed 100 ms interval | HA setting |
+| Save buttons | Five seconds | App help gesture |
+| Flat | 1500 ms | Voice path |
+| Voice presets, light commands, direct massage commands | Stop requested after 500 ms | Voice path |
+| Other ordinary button actions | Bounded 500 ms | HA policy |
+| `hold_control` | 0.1–60 seconds, any literal control including saves and both extra selectors | HA service |
+
+Release and cleanup:
+
+- Handled release/cancel ends the stream and attempts zero packets at +100 and
+  +200 ms from one release timestamp. This applies to motor, preset, save,
+  massage, and light controls.
+- HA preserves those nominal offsets while serializing writes. If the first
+  write finishes after the second deadline, HA attempts the second immediately
+  afterward.
+- HA attempts both cleanup writes even if the first fails, and uses a fresh
+  cancellation event so task cancellation cannot suppress either attempt.
+- A requested elapsed duration ends refresh before cleanup begins.
+- Exact Android repeat counts at the deadline depend on handler scheduling; HA
+  uses an elapsed ceiling instead of reproducing the boundary race.
+- The app has no valid combined-motor packets. Its shared touch mask
+  is interpreted through exact switch cases; unknown combinations can leave a
+  prior stream running. HA rejects unknown or combined held controls before
+  writing.
+
+#### Notifications
+
+##### Notifications and diagnostic state
+
+The parser accepts each notification independently:
+
+- Inputs of ten bytes or fewer are ignored. The app does not validate the first
+  byte, header, checksum, or frame length beyond that guard; HA preserves these
+  recognition rules and signed byte values.
+- **Alarm reply** (byte 1 is 12): signed repeat/hour/minute from bytes 4/6/7,
+  subtype byte 5 mapped to alarm type, enabled when byte 9 equals 1. Subtypes
+  1–9 map to types 9/17/18/16/20/19/18/9/21; unknown subtypes retain the
+  previous type. Alarm replies are parsed even though the app has no alarm
+  commands or screen. HA exposes diagnostic alarm state and adds no alarm-writing action.
+- **Status code** (other notifications): signed byte 10 is a change-only status
+  code.
+  - With a pending save, the next changed code reports the source's local save
+    event and clears that pending code; it does not update the timer.
+  - Release, movement, massage, light controls, duplicate status codes, and
+    alarm replies preserve a pending save. Any preset recall clears it.
+  - Local save event codes: 5 for Zero Gravity, 4 for M1, 6 for TV, and 8 for M2.
+  - Otherwise the changed code updates the massage timer code. Codes 1/2/3
+    select 10/20/30 minutes in the app; other signed values remain raw and have
+    unknown duration. This is a selected timer, not remaining time.
+
+| State | Keys |
+|-------|------|
+| Diagnostic state | `serenity_manufacturer`, `serenity_status_code`, `serenity_massage_timer_code`, `serenity_massage_timer_minutes`, `serenity_save_event_code`, `serenity_alarm_type` |
+| Alarm sensor attributes | `serenity_alarm_repeat`, `serenity_alarm_hour`, `serenity_alarm_minute`, `serenity_alarm_on` |
+| Controller diagnostics | Also include the pending save code (`save_pending_code`) |
+
+HA-specific handling:
+
+- HA supplies the active callback equivalent, copies notification bytes
+  immediately, and scopes state to one controller. It does not reproduce null
+  callback crashes, mutable-buffer callback races, or app-global state leaking
+  between selected devices.
+- The diagnostic save event is not proof of successful physical storage. The app
+  records intent before transmission, so a failed or cancelled save write can
+  still produce this local event on a later changed status.
+
+###### Manufacturer
+
+- Read one second after subscription, with the exact Information service/read
+  property required. Missing information or read failures do not block control.
+- **Refresh Manufacturer** repeats the app's on-resume read.
+- Text decodes using UTF-8 with replacement, the modern Android default charset.
+- Manufacturer never enables alarms or changes capabilities.
+
+#### Evidence
+
+##### Notes
+
+###### Safety adaptations
+
+- The app's voice Stop briefly emits head-up before scheduling Stop. HA excludes
+  that unsafe branch and sends the two zero frames only.
+- HA also excludes indefinite voice motion, delayed stops interrupting
+  replacement commands, stale callbacks writing to a newly selected bed, and
+  command callbacks surviving disconnect/background/destruction.
+- HA serializes commands per physical bed and finishes cleanup before
+  replacement.
+
+###### Exclusions
+
+- Left out, because the app never uses them: Z230 and legacy remote screens,
+  alarm/current-time/query/clock-adjustment builders, combined selector-3
+  helpers, direct massage level/timer/query helpers without callers, the unused
+  presenter speech map, unused save timer/checksum helpers, and child-lock
+  artwork without a command.
+- Android speech recognition, help graphics, localization, framework code,
+  connector-map/UI plumbing, and BLE library internals are outside BLE protocol
+  implementation.
+- Unsafe callback and voice behavior is excluded as described above.
+
+###### Validation
+
+- Focused vectors in `tests/test_serenity.py` account for all 45 app action
+  rows, with CMD32 explicitly mapped to safe Stop rather than head-up.
+- They cover signed parser branches, unknown alarm types, save-event persistence
+  and diversion, deadlines, cancellation-safe double release, independent
+  release attempts after a write failure, button routing, exact GATT
+  role/property validation, subscription/read ordering, and optional
+  manufacturer failures.
+- Physical actuator mapping, save outcomes, ATT compatibility, and notification
+  meanings remain deferred external validation.
+
+###### Serenity analysis provenance
+
+Based on Serenity 1.0.1 (`com.okin.bedding.serenity`).
+
+### Jordan's Tranquil
+
+**App:** [Jordan's Tranquil](https://play.google.com/store/apps/details?id=com.okin.bedding.tranquil) 1.0.2 (code 3), `com.okin.bedding.tranquil`
+
+**Status:** Not yet tested
+
+#### Setup
+
+##### Known models
+
+- Beds controlled with the Jordan's Tranquil app (Android package `com.okin.bedding.tranquil`)
+- OKIN receivers; their names and GATT UUIDs are shared with other apps
+- Reuses the [Serenity](#jordans-serenity) controller core: the same transport, 14-byte
+  frame, refresh/release lifecycle and notification parser. Its action table,
+  save codes and buttons are its own.
+
+##### Protocol Details
+
+**Service UUID:** `62741523-52f9-8864-b1ab-3b3a8d65950b`
+**Write Characteristic:** `62741525-52f9-8864-b1ab-3b3a8d65950b`
+**Notify Characteristic:** `62741625-52f9-8864-b1ab-3b3a8d65950b`
+**Manufacturer Read:** service `0000180a-0000-1000-8000-00805f9b34fb`, characteristic `00002a29-0000-1000-8000-00805f9b34fb`
+**Format:** 14-byte CST frame: `0c 02`, a big-endian 32-bit primary field, a
+big-endian 32-bit secondary field, then four zero bytes
+
+###### Packet Format
+
+```text
+[0x0C, 0x02, primary(4, big-endian), secondary(4, big-endian), 0x00, 0x00, 0x00, 0x00]
+```
+
+- There is no checksum, encryption, side selector, PIN or bonding.
+- Example: Lounge `0c 02 00 00 20 00 00 00 00 00 00 00 00 00`; Release/Stop is
+  `0c 02` plus twelve zero bytes.
+
+###### Write Mode
+
+The app leaves the Android write type unchanged; HA prefers acknowledged writes
+when `write` is advertised, otherwise `write-without-response`. This is a host
+policy.
+
+##### Detection / Setup
+
+- Select **Serenity and Tranquil apps · Jordan's** manually and answer **Jordan's
+  Tranquil app**. Shared OKIN names and GATT UUIDs do
+  not identify this app.
+- The app always shows its Z280 remote and massage pages; the stored model
+  choice is ignored.
+- Manufacturer strings, including CST13/CST14, never enable alarm controls in
+  this app.
+
+##### Home Assistant setup
+
+Choose the **Serenity and Tranquil apps · Jordan's** row, then **Jordan's Tranquil app**, for `com.okin.bedding.tranquil` 1.0.2 (3). The app shares OKIN discovery names and GATT UUIDs with other products, so it is not detected automatically. As with Serenity, setup hides motor-count and pulse-delay fields; the pulse count stays editable. A two-address pair must be split before either side changes to, from or between this profile and another. Notifications stay active when angle sensing is disabled; this profile reports no motor position.
+
+#### Controls
+
+##### Features
+
+| Feature | Supported |
+|---------|-----------|
+| Motor Control | ✅ Head and Feet covers; Remote Selector 4/5 as literal buttons |
+| Position Feedback | ❌ |
+| Memory Presets | ✅ (M1, M2; plus Save Zero Gravity and Save Lounge) |
+| Presets | ✅ Flat, Zero Gravity, Lounge, Anti-Snore (voice only); no TV |
+| Massage | ✅ (head/foot/mode/timer cycles, toggle; voice-only off and Wave 1-3) |
+| Lights | ✅ (native toggle, assumed-state on/off **Under-bed lights** light; no RGB or brightness) |
+| Alarms | ❌ (no alarm page; alarm replies are parsed as diagnostic state only) |
+| Diagnostic state | ✅ (manufacturer, status code, massage timer, save event, alarm reply) |
+
+##### App commands
+
+Values occupy the primary field unless a secondary value is listed. The
+`hold_control` name is the service's `control` value.
+
+###### Motor Control
+
+| Command (`hold_control` name) | Primary | Secondary | Source |
+|---|---:|---:|---|
+| Head up/down (`head_up`, `head_down`) | `0x1`, `0x2` | 0 | Touch and voice |
+| Foot up/down (`foot_up`, `foot_down`) | `0x4`, `0x8` | 0 | Touch and voice |
+| Remote Selector 4 up/down (`selector_4_up`, `selector_4_down`) | `0x10`, `0x20` | 0 | Lumbar-icon touch, voice "lumbar" |
+| Remote Selector 5 up/down (`selector_5_up`, `selector_5_down`) | `0x40`, `0x80` | 0 | H TILT touch, voice "head tilt" |
+| Release/Stop | 0 | 0 | Release, cancel and timed stops |
+
+The lumbar-icon and H TILT buttons send builder operations 4 and 5, while the
+app's presenter method names are swapped. Voice labels agree with the touch
+labels. As with Serenity, HA exposes literal **Remote Selector 4/5 Up/Down**
+buttons and creates covers only for Head and Feet. The physical actuator behind
+each selector is unverified.
+
+###### Presets
+
+| Command (`hold_control` name) | Primary | Secondary | Source |
+|---|---:|---:|---|
+| Flat (`flat`) | `0x08000000` | 0 | Touch and voice |
+| Zero Gravity (`zero_g`) | `0x1000` | 0 | Touch and voice |
+| Lounge (`lounge`) | `0x2000` | 0 | Touch, voice "lounge"/"leisure" |
+| Anti-Snore (`anti_snore`) | `0x8000` | 0 | Voice only (the touch button is hidden) |
+
+###### Memory
+
+| Command (`hold_control` name) | Primary | Secondary | Source |
+|---|---:|---:|---|
+| M1, M2 (`memory_1`, `memory_2`) | `0x10000`, `0x40000` | 0 | Touch |
+| Save Zero Gravity, Save Lounge (`save_zero_g`, `save_lounge`) | `0x08001000`, `0x08002000` | 0 | Flat + preset chord |
+| Save M1, Save M2 (`save_memory_1`, `save_memory_2`) | `0x08010000`, `0x08040000` | 0 | Flat + preset chord |
+
+Only M1 and M2 are numbered memory slots. **Save Zero gravity** and **Save
+Lounge** buttons cover the other chords.
+
+###### Massage
+
+| Command (`hold_control` name) | Primary | Secondary | Source |
+|---|---:|---:|---|
+| Head/foot massage cycle (`massage_head_cycle`, `massage_foot_cycle`) | `0x800`, `0x400` | 0 | Massage page |
+| Massage mode, timer cycle (`massage_mode_cycle`, `massage_timer_cycle`) | `0x10000000`, `0x200` | 0 | Massage page |
+| Massage toggle (`massage_toggle`) | `0x100` | 0 | Massage page |
+| Massage off (`massage_off`) | `0x02000000` | 0 | Voice only |
+| Wave 1, 2, 3 (`wave_1`..`wave_3`) | 0 | `0x80000`, `0x100000`, `0x200000` | Voice only |
+
+###### Lights
+
+| Command (`hold_control` name) | Primary | Secondary | Source |
+|---|---:|---:|---|
+| Light toggle (`light_toggle`) | `0x20000` | 0 | Massage page and voice |
+| Light on, off (`light_on`, `light_off`) | 0 | `0x40`, `0x80` | Voice only |
+
+Light on/off is the assumed-state **Under-bed lights** light; **Toggle light** sends the native
+toggle. There is no RGB or brightness command, although the app help mentions
+color cycling.
+
+#### Timing
+
+##### Tranquil command timing
+
+| Operation | Hold | Source |
+|-----------|------|--------|
+| Held controls | Repeat every 100 ms | App |
+| Ordinary cover pulses | Configured count at the 100 ms interval | HA setting |
+| Flat | 1500 ms | App voice deadline |
+| Lounge, Zero Gravity, Anti-Snore, waves, massage off and light commands | 500 ms | App voice deadlines |
+| Save buttons | Five seconds | App help; the app has no hold timer or storage acknowledgement |
+| M1/M2 recall, selectors and massage-page buttons | Same 500 ms bound | HA policy |
+| `hold_control` | Any literal action for 0.1 to 60 seconds | HA service |
+
+Release attempts two zero frames at +100 and +200 ms from one origin, with a
+fresh cancellation event so cancellation cannot suppress either. Every release
+is global, so all covers share one scheduler resource.
+
+#### Notifications
+
+##### Notifications and diagnostic state
+
+The parser is shared with [Serenity](#notifications-and-diagnostic-state-1):
+
+- Inputs of ten bytes or fewer are ignored.
+- Byte 1 equal to 12 is an alarm reply: signed repeat/hour/minute at 4/6/7,
+  subtype at 5, enabled at 9. Alarm replies are parsed even though this app has
+  no alarm page.
+- Otherwise signed byte 10 is a change-only status code. A changed status during
+  a pending save reports the app's local save code (Zero Gravity 5, Lounge 3,
+  M1 4, M2 8). Any recall clears it.
+- Otherwise it updates the massage timer code; 1/2/3 mean 10/20/30 minutes in
+  the app.
+
+| State | Keys |
+|-------|------|
+| Diagnostic state | `tranquil_manufacturer`, `tranquil_status_code`, `tranquil_massage_timer_code`, `tranquil_massage_timer_minutes`, `tranquil_save_event_code`, `tranquil_alarm_type` |
+| Alarm attributes | `tranquil_alarm_repeat`, `tranquil_alarm_hour`, `tranquil_alarm_minute`, `tranquil_alarm_on` |
+
+The manufacturer is read one second after subscribing; **Refresh Manufacturer**
+repeats the app's on-resume read.
+
+#### Evidence
+
+##### Notes
+
+###### Safety adaptations
+
+Excluded app behavior:
+
+- The voice "stop" branch sends Head Up before scheduling STOP, so HA sends STOP
+  only.
+- Unbounded voice motion, remote touch-mask replay, delayed stops that overlap
+  newer commands, and streams that survive disconnect or device changes.
+
+###### Deferred validation
+
+For real users after a release: actuator mapping of selectors 4 and 5, ATT write
+mode, repeat and STOP arrival, save persistence and minimum hold time, massage
+and light semantics, and notification contents.
+
+###### Tranquil analysis provenance
+
+Based on Jordan's Tranquil 1.0.2 (`com.okin.bedding.tranquil`).
+
+### Customatic Z-Series
+
+**App:** [Customatic Z-Series](https://play.google.com/store/apps/details?id=com.okin.bedding.glory) 1.0.4 (code 5), `com.okin.bedding.glory`
+
+**Status:** Not yet tested
+
+#### Setup
+
+##### Known models
+
+- Customatic Z-230 and Z-280, as chosen on the app's model selection screen
+- Beds controlled with the Customatic Technologies Z-Series app (Android package `com.okin.bedding.glory`)
+- OKIN receivers; their names and GATT UUIDs are shared with other apps
+- Reuses the [Serenity](#jordans-serenity) controller core: transport, 14-byte frame,
+  refresh/release lifecycle and notification parser. Action tables, save codes,
+  buttons, timing and the alarm page are this app's own.
+- Separate from the six-byte [Customatic Clarity/Jerome's/Remedy](okin-nframe.md#customatic-family) apps
+
+##### Protocol Details
+
+**Service UUID:** `62741523-52f9-8864-b1ab-3b3a8d65950b`
+**Write Characteristic:** `62741525-52f9-8864-b1ab-3b3a8d65950b` (also used for alarm frames)
+**Notify Characteristic:** `62741625-52f9-8864-b1ab-3b3a8d65950b`
+**Manufacturer Read:** service `0000180a-0000-1000-8000-00805f9b34fb`, characteristic `00002a29-0000-1000-8000-00805f9b34fb`
+**Format:** 14-byte CST frame: `0c 02`, two big-endian 32-bit fields and four zero bytes
+
+These are the same service, command, notify and manufacturer roles as
+[Tranquil](#protocol-details-6).
+
+###### Packet Format
+
+```text
+[0x0C, 0x02, primary(4, big-endian), secondary(4, big-endian), 0x00, 0x00, 0x00, 0x00]
+```
+
+- The secondary field is always zero.
+- There is no checksum, encryption, PIN or bonding.
+- Example: Head and Foot up `0c 02 00 00 00 05 00 00 00 00 00 00 00 00`;
+  Release/Stop is `0c 02` plus twelve zero bytes.
+
+###### Write Mode
+
+Shared with the Serenity core: the app leaves the Android write type unchanged;
+HA prefers acknowledged writes when `write` is advertised, otherwise
+`write-without-response`.
+
+##### Detection / Setup
+
+- Choose the **Clarity (Rize Clarity), Jerome's C, Remedy (Rize Remedy) and
+  Z-Series apps · Customatic** row and answer **Z-Series app with the Z-230
+  model** or **Z-Series app with the Z-280 model** in the [Customatic question](#customatic-family).
+  The Z-Series apps are not rows of their own.
+- Pick the model you chose on the app's selection screen; it is stored as
+  protocol variant `z230` or `z280`, which has no automatic choice.
+- Shared OKIN names and GATT UUIDs do not identify the app or the model.
+- Setup accepts 1 to 600 motor pulses for these profiles; a stored value outside
+  that range is clamped.
+
+##### Home Assistant setup
+
+For `com.okin.bedding.glory` 1.0.4 (5), choose the **Clarity (Rize Clarity), Jerome's C, Remedy (Rize Remedy) and Z-Series apps · Customatic** row, then **Z-Series app with the Z-230 model** or **Z-Series app with the Z-280 model** to match the model chosen on the app's selection screen (protocol variant `z230` or `z280`). The app shares OKIN discovery names and GATT UUIDs with other products, so it is not detected automatically. As with Serenity, setup hides motor-count and pulse-delay fields. The pulse count stays editable and also bounds an ordinary button press, because the app streams a touched control until release and defines no deadline of its own. Z-Series setup accepts 1 to 600 pulses (0.1 to 60 s). A two-address pair must be split before either side changes to, from or between these profiles. Notifications stay active when angle sensing is disabled; these profiles report no motor position.
+
+#### Controls
+
+##### Features
+
+| Feature | Z-230 | Z-280 |
+|---------|-------|-------|
+| Motor Control | ✅ Head, Foot, Head and Foot together | ✅ Head, Foot; Remote Selector 5 as literal buttons |
+| Position Feedback | ❌ | ❌ |
+| Memory Presets | ✅ (M1; plus Save Zero Gravity and Save TV) | ✅ (M1, M2; plus Save Zero Gravity and Save TV) |
+| Presets | ✅ Flat, Anti-Snore, Zero Gravity, TV | ✅ Flat, Anti-Snore, Zero Gravity, TV |
+| Massage | ✅ (toggle, mode/timer cycles, intensity) | ✅ (toggle, mode/timer cycles, head/foot cycles) |
+| Lights | ✅ (toggle only) | ✅ (toggle only) |
+| Alarm and clock | ⚠️ Only for manufacturer `CST13`/`CST14` | ⚠️ Only for manufacturer `CST13`/`CST14` |
+| Diagnostic state | ✅ | ✅ |
+
+The app has no voice control, waves, massage off or discrete light on/off, so
+those are not exposed.
+
+##### App commands
+
+Values occupy the primary field; the secondary field is always zero. The
+`hold_control` name is the service's `control` value.
+
+###### Motor Control
+
+| Command (`hold_control` name) | Primary | Z-230 | Z-280 |
+|---|---:|:---:|:---:|
+| Head up/down (`head_up`, `head_down`) | `0x1`, `0x2` | yes | yes |
+| Foot up/down (`foot_up`, `foot_down`) | `0x4`, `0x8` | yes | yes |
+| Head and Foot up/down (`head_foot_up`, `head_foot_down`) | `0x05`, `0x0a` | yes | |
+| Remote Selector 5 up/down (`selector_5_up`, `selector_5_down`) | `0x10`, `0x20` | | yes |
+| Release/Stop | 0 | yes | yes |
+
+The Z-280 extra control shows neck artwork, while the presenter calls it lumbar
+and this app's builder operation 5 emits `0x10`/`0x20`. HA exposes
+**Control 5 up** and **Control 5 down** buttons; which part they move still needs testing.
+
+###### Presets
+
+| Command (`hold_control` name) | Primary | Z-230 | Z-280 |
+|---|---:|:---:|:---:|
+| Flat (`flat`) | `0x08000000` | yes | yes |
+| Anti-Snore (`anti_snore`) | `0x8000` | yes | yes |
+| Zero Gravity (`zero_g`) | `0x1000` | yes | yes |
+| TV (`tv`) | `0x4000` | yes | yes |
+
+###### Memory
+
+| Command (`hold_control` name) | Primary | Z-230 | Z-280 |
+|---|---:|:---:|:---:|
+| M1 (`memory_1`) | `0x10000` | yes | yes |
+| M2 (`memory_2`) | `0x40000` | | yes |
+| Save Zero Gravity, Save TV, Save M1 (`save_zero_g`, `save_tv`, `save_memory_1`) | `0x08001000`, `0x08004000`, `0x08010000` | yes | yes |
+| Save M2 (`save_memory_2`) | `0x08040000` | | yes |
+
+Numbered memory: Z-230 has M1, Z-280 has M1 and M2. **Save Zero gravity** and
+**Save TV** buttons cover the named chords.
+
+###### Massage
+
+| Command (`hold_control` name) | Primary | Z-230 | Z-280 |
+|---|---:|:---:|:---:|
+| Massage toggle (`massage_toggle`) | `0x100` | yes | yes |
+| Massage mode, timer cycle (`massage_mode_cycle`, `massage_timer_cycle`) | `0x10000000`, `0x200` | yes | yes |
+| Massage intensity (`massage_intensity_cycle`) | `0x0c00` | yes | |
+| Head/foot massage cycle (`massage_head_cycle`, `massage_foot_cycle`) | `0x800`, `0x400` | | yes |
+
+###### Lights
+
+| Command (`hold_control` name) | Primary | Z-230 | Z-280 |
+|---|---:|:---:|:---:|
+| Light toggle (`light_toggle`) | `0x20000` | yes | yes |
+
+#### Timing
+
+##### Z-Series command timing
+
+| Operation | Hold | Source |
+|-----------|------|--------|
+| Touch controls | Repeat every 100 ms until release | App |
+| Ordinary buttons and presets | Configured motor pulse count at the app's 100 ms cadence (default 10, so one second) | HA bound; the app defines no deadline for a touched button |
+| Save buttons | Five seconds | App help; the app has no save timer or storage acknowledgement |
+| `hold_control` | Any literal action for 0.1 to 60 seconds | HA service |
+
+After release, two zero frames are attempted at +100 and +200 ms. Remote and
+massage releases both end in that global STOP in HA.
+
+#### Notifications
+
+##### Notifications and diagnostic state
+
+- Same parser as [Tranquil](#notifications-and-diagnostic-state-1), with
+  keys prefixed `zseries_`.
+- Local save codes: Zero Gravity 5, M1 4, TV 6, M2 8.
+- Alarm replies populate **App alarm state** with repeat, hour, minute and on
+  attributes.
+
+#### Services
+
+##### Alarm
+
+- The app shows its alarm page only when the Device Information manufacturer
+  string is exactly `CST13` or `CST14` (case-sensitive), for either model.
+- HA reads it one second after subscribing and on **Refresh Manufacturer**, and
+  stores the last successful result with the entry so it survives disconnects
+  and restarts.
+- A failed read changes nothing: while the result is unknown, an alarm action
+  reconnects and reads it again before writing. A confirmed other string makes
+  the alarm actions unavailable.
+
+###### Alarm frames
+
+| Frame | Bytes |
+|---|---|
+| Alarm on | `07 05 repeat wake hour minute 00 01 01` |
+| Alarm off | `07 05 00 00 00 00 00 00 01` |
+| Clock | `07 06 (year-2000) month day weekday hour minute second` (binary, Sunday = 0) |
+| Status query | `00 c0` |
+
+- `repeat` is today's weekday bit (Sunday = bit 0). If the time is earlier than
+  the current hour and minute, the next day's bit is used, wrapping Saturday to
+  Sunday.
+- `wake` is 1 for massage and 2 for M1.
+- The final byte is the app's stored bed selection, which defaults to 1 and has
+  no setter.
+
+###### Alarm actions
+
+- `set_alarm` mirrors opening the alarm page and tapping its switch:
+  clock frame, alarm frame, then two queries at +500 and +800 ms. Enabling
+  requires both a time and a wake mode.
+- In the app the clock is sent when the page opens and the alarm only after a
+  later user tap; HA sends the two frames back-to-back, a host choice that
+  hardware validation should confirm.
+- `sync_clock` sends the clock frame and the same queries.
+- Times use Home Assistant's time zone.
+- The app's other wake-type mappings, the `-128` repeat sentinel and the
+  checksum clock-adjust builder are unused by the app and are not implemented.
+
+#### Evidence
+
+##### Notes
+
+###### Exclusions
+
+Excluded: remote touch-mask replay, delayed stops overlapping newer commands,
+streams surviving disconnect or device changes, the dead voice handler
+(including its head-up-before-stop branch), unused legacy pages and helpers,
+and alarm writes queued while disconnected.
+
+###### Deferred validation
+
+For real users after a release: selector and combined-motor mapping, ATT write
+mode, STOP arrival, save persistence, alarm behavior (including acceptance of
+the back-to-back clock and alarm frames) and notification contents.
+
+###### Z-Series analysis provenance
+
+Based on Customatic Z-Series 1.0.4 (`com.okin.bedding.glory`).
+
+### Okin 64-Bit
+
+**App:** Adjustable bed, `com.okin.bedding.adjustbed`
+
+**Status:** Not yet tested
+
+**Ref:** Reverse-engineered from the `com.okin.bedding.adjustbed` APK
+
+#### Setup
+
+##### Known Controllers
+
+- `NORA_CON` / `NORACON` Mattress Firm controllers
+- Nectar Premier Adjustable Base / Resident Adjustable Base (`OKIN-` followed by
+  digits, Device Information manufacturer `DewertOkin GmbH`): Custom OKIN variant,
+  see [Custom OKIN pairing and session](#custom-okin-pairing-and-session). The
+  [Resident Adjustable Base](#resident-adjustable-base) app profile also drives it.
+- Other newer Okin controllers using the 10-byte `0x08 0x02` command frame
+
+Reported `NORA_CON` / `NORACON` controllers use the Nordic variant. Their connected
+Device Information Service reports manufacturer `IDT` and model `NORACON`.
+
+##### Detection
+
+| Signal | Value |
+|--------|-------|
+| Nordic service UUID | `6e400001-b5a3-f393-e0a9-e50e24dcca9e` |
+| Nordic write characteristic | `6e400002-b5a3-f393-e0a9-e50e24dcca9e` |
+| Custom OKIN service UUID | `62741523-52f9-8864-b1ab-3b3a8d65950b` |
+| Custom OKIN write characteristic | `62741525-52f9-8864-b1ab-3b3a8d65950b` |
+| Name hint | `NORA_CON` |
+| Device Information hint | Manufacturer `IDT`, model `NORACON` |
+
+The Nordic UART service is shared by several bed protocols. Generic Nordic UART
+devices still need disambiguation; `NORA_CON` / `NORACON` is the known
+high-confidence signal for this 64-bit profile.
+
+##### Protocol Variants
+
+| Variant | Service UUID | Write Characteristic | Mode |
+|---------|--------------|----------------------|------|
+| Nordic (`25_42_02`) | `6e400001-b5a3-f393-e0a9-e50e24dcca9e` | `6e400002-...` | Fire-and-forget |
+| Custom OKIN (`36_33_04a`) | `62741523-52f9-8864-b1ab-3b3a8d65950b` | `62741525-...` | Wait-for-response, bonded link, session on connect |
+
+##### Custom OKIN pairing and session
+
+The Custom OKIN variant requires BLE pairing and opens a session on every
+connection. The Nordic variant does neither.
+
+- Bond once while the base is in pairing mode (see
+  [putting the bed in pairing mode](../TROUBLESHOOTING.md#putting-the-bed-in-pairing-mode)),
+  then use **Pair Now** during setup or in the pairing repair.
+- Later connections encrypt the link with the stored bond. On an ESPHome
+  Bluetooth proxy that means requesting pairing on each connection, which the
+  integration does once a cached bond proves unreliable.
+- Without encryption, Device Information reads fail with Insufficient
+  Authentication and motor writes fail with ATT Insufficient Authorization (`0x08`).
+- Encryption alone is not enough: without the session the base still answers
+  motor writes with Insufficient Authorization. A session write that fails with
+  a GATT security error starts the integration's pairing recovery; other
+  failures are logged and the link stays usable.
+
+The session is sent after encryption and before any command, every write with
+response to `62741525`, 120 ms after the previous response:
+
+| Step | Action | Bytes |
+|------|--------|-------|
+| 1 | Enable notifications | CCCD of `62741625-52f9-8864-b1ab-3b3a8d65950b` |
+| 2 | Clock record, twice | `E7 80 01 YY MM DD hh mm ss` |
+| 3 | Clock query, twice | `08 02 E1 80 01` |
+
+The clock record carries the current **UTC** time as C `struct tm` fields,
+with no checksum: years since 1900 (2026 = `7E`), zero-based month
+(November = `0A`), day, hour, minute, second. For example,
+2026-11-15 21:50:53 UTC is `E7 80 01 7E 0A 0F 15 32 35`. The
+[Resident Adjustable Base](#resident-adjustable-base) profile sends the same two
+frames from its Android app's schedule, with local time.
+
+##### Packet Format
+
+```text
+[0x08, 0x02, cmd[0], cmd[1], cmd[2], cmd[3], cmd[4], cmd[5], cmd[6], cmd[7]]
+```
+
+- Header: `0x08 0x02`
+- Command: 8-byte 64-bit bitmask value
+- Checksum: none
+
+The `0x08 0x02` header distinguishes this from 32-bit Okin/Keeson-style frames
+such as `0x04 0x02` and `0x05 0x02`. Do not reuse 6-byte Okimat or 7-byte
+Mattress Firm Nordic packets with this protocol.
+
+#### Controls
+
+##### Commands
+
+| Command | Bytes | Description |
+|---------|-------|-------------|
+| Stop | `00 00 00 00 00 00 00 00` | Stop all motors |
+| Head Up | `00 00 00 01 00 00 00 00` | Raise head |
+| Head Down | `00 00 00 02 00 00 00 00` | Lower head |
+| Foot Up | `00 00 00 04 00 00 00 00` | Raise foot |
+| Foot Down | `00 00 00 08 00 00 00 00` | Lower foot |
+| Lumbar Up | `00 00 00 10 00 00 00 00` | Raise lumbar |
+| Lumbar Down | `00 00 00 20 00 00 00 00` | Lower lumbar |
+| Flat | `08 00 00 00 00 00 00 00` | Flat preset |
+| Zero-G | `00 00 10 00 00 00 00 00` | Zero gravity |
+| Lounge | `00 00 20 00 00 00 00 00` | Lounge preset |
+| TV/PC | `00 00 40 00 00 00 00 00` | TV position |
+| Anti-Snore | `00 00 80 00 00 00 00 00` | Anti-snore |
+| Memory 1 | `00 01 00 00 00 00 00 00` | Go to memory 1 |
+| Memory 2 | `00 04 00 00 00 00 00 00` | Go to memory 2 |
+| Light Toggle | `00 02 00 00 00 00 00 00` | Toggle lights |
+| Light On | `00 00 00 00 00 00 00 40` | Turn light on |
+| Light Off | `00 00 00 00 00 00 00 80` | Turn light off |
+| Massage Switch | `00 00 01 00 00 00 00 00` | Switch massage mode |
+| Massage Stop | `02 00 00 00 00 00 00 00` | Stop massage |
+
+##### Features
+
+| Feature | Supported |
+|---------|-----------|
+| Motor Control | ✅ Head, Foot, Lumbar |
+| Position Feedback | ❌ |
+| Memory Presets | ✅ (2 slots) |
+| Massage | ✅ (timer, wave modes) |
+| Under-bed Lights | ✅ |
+| Zero-G / Anti-Snore / TV / Lounge | ✅ |
+| BLE Pairing | Custom OKIN: ✅ Required; Nordic: ❌ Not required |
+
+#### Evidence
+
+The Custom OKIN session and pairing requirement come from a Bluetooth capture
+of the Resident Adjustable Base iPhone app on a Nectar Premier base, not from
+app analysis: LE encryption with a stored bond, the notification subscription,
+then the four session writes. A replay over an ESPHome proxy confirmed that the
+bond and the session are both needed and, together, enough to move the bed with
+a held frame repeated about every 300 ms followed by STOP.
+
+##### Related Protocols
+
+- [Okimat/Okin](okin-nframe.md#okimat) uses the same custom OKIN service UUID on some models,
+  but sends 6-byte `0x04 0x02` frames.
+- [Mattress Firm 900](okin-5a.md#mattress-firm-900--iflex) also uses Nordic UART, but sends 7-byte
+  `5A 01 ... A5` frames.
+- [Okin CB35](okin-5a.md#sealy-posturematic-cb35) uses Nordic UART with a related 7-byte Star protocol.
+- The [Adjustable bed (Lumbar) app](#adjustable-bed-lumbar) sends `0x08 0x02` frames on
+  both of these services with its own name rule, timing and release STOPs. Select
+  that explicit profile for beds controlled with that app; this bed type is unchanged.
+
+### Adjustable bed app
+
+**App:** [Adjustable bed](https://play.google.com/store/apps/details?id=com.okin.bedding.adjustbed) 1.2.1 (33), `com.okin.bedding.adjustbed`
+
+**Status:** Not yet tested
+
+#### Setup
+
+Detection: none. Choose **Adjustable bed app** explicitly for this app, rather than the separate Lumbar app or legacy Okin 64-Bit receiver. Shared names and services do not identify the app or retail model.
+
+`auto` lowercases the raw Bluetooth name: `okin` selects `36_33_04a`; `star` starts at `25_42_02` and switches to `35_22_01` only for exactly the four bytes `STAR` read from Device Information manufacturer 180A/2A29. Advertisement manufacturer data is not that read. Other names need an explicit variant. Each paired receiver owns its variant; no packet selects a split side. A fixed STAR-table variant is available for a known table.
+
+P1/P2 use Nordic UART without response; P3 uses the custom OKIN service with response, as in the Lumbar transport table. An absent Device Information service aborts setup for either name. P3 also aborts on an absent manufacturer characteristic; P1 allows that missing characteristic and retains P1. This read is a selector, not bonding, authentication, or a known firmware requirement. Home Assistant awaits it and fixes selection per connection, avoiding the app's asynchronous global asset/read race. A failed read retains the name-selected table as a deliberate integration fallback, not a claim about the app's error handling.
+
+#### Controls
+
+| Feature | Supported |
+|---|---|
+| Motor control | Head, feet and speech-dispatched lumbar |
+| Presets | Flat, Zero Gravity, Anti-Snore, Lounge, Incline |
+| Programming | Save the four named presets with the Flat-plus-preset chord |
+| Massage | Global intensity up/down, waves 1–3, off and speech on |
+| Light | Toggle |
+| Positions / numbered memory / side packets | None in this app |
+
+Covers and the preset, save, wave, intensity and light buttons use the touch route. The **Voice: …** buttons (diagnostic, disabled by default) send the commands the app's voice control sends, without speech recognition. On P2, the lumbar cover uses that dispatcher too: the ordinary lumbar declarations are unused. No explicit light-on/off, brightness, color, numbered memory or alarm controls are inferred from unused declarations.
+
+Long tables use the N-frame encoder. The STAR-manufacturer table uses the [Okin 5A encoder](okin-5a.md), with no checksum despite the asset flag. The generated table contains the app's ordinary and speech packets and raw query:
+
+<!-- generated:adjustable-bed-commands -->
+<!-- Generated by scripts/generate_codec_docs.py from the codec and profile data. Edit those, not this block. -->
+
+| Profile | Asset | Control | Bytes |
+|---|---|---|---|
+| adjustable_bed_star | 25_42_02 | head_up | `08 02 00 00 00 01 00 00 00 00` |
+| adjustable_bed_star | 25_42_02 | head_down | `08 02 00 00 00 02 00 00 00 00` |
+| adjustable_bed_star | 25_42_02 | feet_up | `08 02 00 00 00 04 00 00 00 00` |
+| adjustable_bed_star | 25_42_02 | feet_down | `08 02 00 00 00 08 00 00 00 00` |
+| adjustable_bed_star | 25_42_02 | lumbar_up | `08 02 00 00 00 10 00 00 00 00` |
+| adjustable_bed_star | 25_42_02 | lumbar_down | `08 02 00 00 00 20 00 00 00 00` |
+| adjustable_bed_star | 25_42_02 | stop | `08 02 00 00 00 00 00 00 00 00` |
+| adjustable_bed_star | 25_42_02 | flat | `08 02 08 00 00 00 00 00 00 00` |
+| adjustable_bed_star | 25_42_02 | anti_snore | `08 02 00 00 80 00 00 00 00 00` |
+| adjustable_bed_star | 25_42_02 | lounge | `08 02 00 00 20 00 00 00 00 00` |
+| adjustable_bed_star | 25_42_02 | incline | `08 02 00 00 40 00 00 00 00 00` |
+| adjustable_bed_star | 25_42_02 | zero_g | `08 02 00 00 10 00 00 00 00 00` |
+| adjustable_bed_star | 25_42_02 | save_anti_snore | `08 02 08 00 80 00 00 00 00 00` |
+| adjustable_bed_star | 25_42_02 | save_lounge | `08 02 08 00 20 00 00 00 00 00` |
+| adjustable_bed_star | 25_42_02 | save_incline | `08 02 08 00 40 00 00 00 00 00` |
+| adjustable_bed_star | 25_42_02 | save_zero_g | `08 02 08 00 10 00 00 00 00 00` |
+| adjustable_bed_star | 25_42_02 | light | `08 02 00 02 00 00 00 00 00 00` |
+| adjustable_bed_star | 25_42_02 | wave_1 | `08 02 00 00 00 00 00 08 00 00` |
+| adjustable_bed_star | 25_42_02 | wave_2 | `08 02 00 00 00 00 00 10 00 00` |
+| adjustable_bed_star | 25_42_02 | wave_3 | `08 02 00 00 00 00 00 20 00 00` |
+| adjustable_bed_star | 25_42_02 | massage_stop | `08 02 02 00 00 00 00 00 00 00` |
+| adjustable_bed_star | 25_42_02 | massage_up | `08 02 00 00 0C 00 00 00 00 00` |
+| adjustable_bed_star | 25_42_02 | massage_down | `08 02 01 80 00 00 00 00 00 00` |
+| adjustable_bed_star | 25_42_02 | massage_on | `08 02 00 00 01 00 00 00 00 00` |
+| adjustable_bed_star | 25_42_02 | voice_stop | `08 02 00 00 00 00 00 00 00 00` |
+| adjustable_bed_star | 25_42_02 | check_massage | `02 04` |
+| adjustable_bed_star_5a | 35_22_01 | head_up | `5A 01 03 10 30 00 A5` |
+| adjustable_bed_star_5a | 35_22_01 | head_down | `5A 01 03 10 30 01 A5` |
+| adjustable_bed_star_5a | 35_22_01 | feet_up | `5A 01 03 10 30 02 A5` |
+| adjustable_bed_star_5a | 35_22_01 | feet_down | `5A 01 03 10 30 03 A5` |
+| adjustable_bed_star_5a | 35_22_01 | stop | `5A 01 03 10 30 0F A5` |
+| adjustable_bed_star_5a | 35_22_01 | flat | `5A 01 03 10 30 10 A5` |
+| adjustable_bed_star_5a | 35_22_01 | anti_snore | `5A 01 03 10 30 16 A5` |
+| adjustable_bed_star_5a | 35_22_01 | lounge | `5A 01 03 10 30 12 A5` |
+| adjustable_bed_star_5a | 35_22_01 | incline | `5A 01 03 10 30 11 A5` |
+| adjustable_bed_star_5a | 35_22_01 | zero_g | `5A 01 03 10 30 13 A5` |
+| adjustable_bed_star_5a | 35_22_01 | save_anti_snore | `5A 01 03 10 30 93 A5` |
+| adjustable_bed_star_5a | 35_22_01 | save_lounge | `5A 01 03 10 30 91 A5` |
+| adjustable_bed_star_5a | 35_22_01 | save_incline | `5A 01 03 10 30 92 A5` |
+| adjustable_bed_star_5a | 35_22_01 | save_zero_g | `5A 01 03 10 30 90 A5` |
+| adjustable_bed_star_5a | 35_22_01 | light | `5A 01 03 10 30 71 A5` |
+| adjustable_bed_star_5a | 35_22_01 | wave_1 | `5A 01 03 10 30 52 A5` |
+| adjustable_bed_star_5a | 35_22_01 | wave_2 | `5A 01 03 10 30 53 A5` |
+| adjustable_bed_star_5a | 35_22_01 | wave_3 | `5A 01 03 10 30 54 A5` |
+| adjustable_bed_star_5a | 35_22_01 | massage_stop | `5A 01 03 10 30 6F A5` |
+| adjustable_bed_star_5a | 35_22_01 | massage_on | `5A 01 03 10 30 52 A5` |
+| adjustable_bed_star_5a | 35_22_01 | massage_up | `5A 01 03 10 40 60 A5` |
+| adjustable_bed_star_5a | 35_22_01 | massage_down | `5A 01 03 10 40 61 A5` |
+| adjustable_bed_star_5a | 35_22_01 | voice_stop | `5A 01 03 10 30 1F A5` |
+| adjustable_bed_star_5a | 35_22_01 | voice_head_up | `5A 01 03 10 40 00 A5` |
+| adjustable_bed_star_5a | 35_22_01 | voice_head_down | `5A 01 03 10 40 01 A5` |
+| adjustable_bed_star_5a | 35_22_01 | voice_feet_up | `5A 01 03 10 40 02 A5` |
+| adjustable_bed_star_5a | 35_22_01 | voice_feet_down | `5A 01 03 10 40 03 A5` |
+| adjustable_bed_star_5a | 35_22_01 | voice_lumbar_up | `5A 01 03 10 40 06 A5` |
+| adjustable_bed_star_5a | 35_22_01 | voice_lumbar_down | `5A 01 03 10 40 07 A5` |
+| adjustable_bed_star_5a | 35_22_01 | check_massage | `5A B0 00 A5` |
+| adjustable_bed_okin | 36_33_04a | head_up | `08 02 00 00 00 01 00 00 00 00` |
+| adjustable_bed_okin | 36_33_04a | head_down | `08 02 00 00 00 02 00 00 00 00` |
+| adjustable_bed_okin | 36_33_04a | feet_up | `08 02 00 00 00 04 00 00 00 00` |
+| adjustable_bed_okin | 36_33_04a | feet_down | `08 02 00 00 00 08 00 00 00 00` |
+| adjustable_bed_okin | 36_33_04a | lumbar_up | `08 02 00 00 00 10 00 00 00 00` |
+| adjustable_bed_okin | 36_33_04a | lumbar_down | `08 02 00 00 00 20 00 00 00 00` |
+| adjustable_bed_okin | 36_33_04a | stop | `08 02 00 00 00 00 00 00 00 00` |
+| adjustable_bed_okin | 36_33_04a | flat | `08 02 08 00 00 00 00 00 00 00` |
+| adjustable_bed_okin | 36_33_04a | anti_snore | `08 02 00 00 80 00 00 00 00 00` |
+| adjustable_bed_okin | 36_33_04a | lounge | `08 02 00 00 20 00 00 00 00 00` |
+| adjustable_bed_okin | 36_33_04a | incline | `08 02 00 00 40 00 00 00 00 00` |
+| adjustable_bed_okin | 36_33_04a | zero_g | `08 02 00 00 10 00 00 00 00 00` |
+| adjustable_bed_okin | 36_33_04a | save_anti_snore | `08 02 08 00 80 00 00 00 00 00` |
+| adjustable_bed_okin | 36_33_04a | save_lounge | `08 02 08 00 20 00 00 00 00 00` |
+| adjustable_bed_okin | 36_33_04a | save_incline | `08 02 08 00 40 00 00 00 00 00` |
+| adjustable_bed_okin | 36_33_04a | save_zero_g | `08 02 08 00 10 00 00 00 00 00` |
+| adjustable_bed_okin | 36_33_04a | light | `08 02 00 02 00 00 00 00 00 00` |
+| adjustable_bed_okin | 36_33_04a | wave_1 | `08 02 00 00 00 00 00 08 00 00` |
+| adjustable_bed_okin | 36_33_04a | wave_2 | `08 02 00 00 00 00 00 10 00 00` |
+| adjustable_bed_okin | 36_33_04a | wave_3 | `08 02 00 00 00 00 00 20 00 00` |
+| adjustable_bed_okin | 36_33_04a | massage_stop | `08 02 02 00 00 00 00 00 00 00` |
+| adjustable_bed_okin | 36_33_04a | massage_up | `08 02 00 00 0C 00 00 00 00 00` |
+| adjustable_bed_okin | 36_33_04a | massage_down | `08 02 01 80 00 00 00 00 00 00` |
+| adjustable_bed_okin | 36_33_04a | massage_on | `08 02 00 00 01 00 00 00 00 00` |
+| adjustable_bed_okin | 36_33_04a | voice_stop | `08 02 00 00 00 00 00 00 00 00` |
+| adjustable_bed_okin | 36_33_04a | check_massage | `02 04` |
+
+| Gesture | Schedule | Release |
+|---|---|---|
+| Touch hold | Immediate, every 100 ms | STOP at 0 and 300 ms |
+| Save named preset | Hold chord for 6000 ms | STOP at 0 and 300 ms |
+| Speech motor P1/P3 | 100 ms stream, bounded by entry pulse count | Voice STOP and ordinary release |
+| Speech motor P2 | One start, bounded by entry pulse count × 100 ms | Voice STOP and ordinary release |
+| Speech preset, massage or light | Pre-STOP, two writes 100 ms apart | No post-STOP |
+| Massage query | Once on request | None |
+<!-- /generated -->
+
+#### Timing
+
+The generated schedule gives refresh and release intervals. Home Assistant serializes physical commands and completes both ordinary release STOPs before admitting the next command. Fresh cancellation events protect cleanup. Save buttons hold the chord until the app's confirmation time, then release; actual storage remains unverified.
+
+Speech movement has a bounded window from the entry's pulse count. P2 sends one speech start, then voice STOP and ordinary release at the deadline or cancellation. A held P2 lumbar control uses its requested duration, bounded by the latched ceiling for a renewable lease. The whole P2 profile uses that conservative ceiling; its head/feet touch controls still refresh throughout the lease. This deliberate safety limit replaces the app's otherwise unbounded speech movement. Speech preset, light and massage buttons retain the finite two-write route, with pre-STOP and no post-STOP. Touch massage off sends its initial command followed by ordinary release, which replaces the app's scheduled extra copy.
+
+#### Notifications
+
+Notifications are subscribed on the selected transport and preserved as raw diagnostics. No position, massage, alarm, battery or command-acknowledgement state is inferred. The app's massage matcher builds a four- or five-byte rule but requires exactly two bytes, so it never parses a reply. Its declared wave/strength decoder cases are also absent. Alarm packets only log; network callbacks have no bed-feature consumer. The broken fragment-buffer and parser paths do not establish usable feedback.
+
+#### Services
+
+Standard movement, STOP and held-control actions work through the command queue. The named save and app speech routes have buttons. Check Massage writes the raw query on demand; there is no Home Assistant massage-page initialization event to trigger the app's delayed page query. There is no additional app service.
+
+#### Evidence
+
+Based on `com.okin.bedding.adjustbed` 1.2.1 (33). Its command rows are in `tests/fixtures/adjustable_bed_vectors.json`.
+
+Hardware effects, watchdogs, retail compatibility, real replies and preset storage need testing by owners. Home Assistant uses its own Bluetooth connection policy; the app SDK's MTU, timeout and Android calls are not firmware requirements. Speech/audio/help, Wi-Fi/cloud/accounts and firmware updates are outside the integration. The legacy Okin 64-Bit profile remains separate, with its historical additional commands, for existing entries.
+
+
+### Adjustable bed (Lumbar)
+
+**App:** [Adjustable bed(Lumbar)](https://play.google.com/store/apps/details?id=com.okin.bedding.adjustablelumbar) 1.2.2 (code 33), `com.okin.bedding.adjustablelumbar`
+
+**Status:** Partly tested (a BOX25 Star control box ran this profile's controls, memory included, before 4.1.0 in [#670](https://github.com/kristofferR/ha-adjustable-bed/issues/670); the current profile needs testing)
+
+Select **Adjustable bed (Lumbar) app** manually when the bed uses the Android
+app `com.okin.bedding.adjustablelumbar` (shown as "Adjustable bed(Lumbar)").
+
+#### Setup
+
+##### Known models
+
+- Beds controlled by the "Adjustable bed(Lumbar)" app
+- Bluetooth names starting with `okin` or `star` (lowercased prefix); see
+  [Detection / Setup](#detection--setup-7)
+
+##### Protocol Details
+
+**Service UUID:** `62741523-52f9-8864-b1ab-3b3a8d65950b` or `6e400001-b5a3-f393-e0a9-e50e24dcca9e`, per table
+**Write Characteristic:** `62741525-…` or `6e400002-…`
+**Notify Characteristic:** `62741625-…` or `6e400003-…`
+**Format:** `08 02` + eight table bytes, or `5A 01` + four table bytes + `A5`
+
+###### Command tables
+
+The app ships three tables and picks one per connection:
+
+| Bluetooth name (lowercased prefix) | Device Information manufacturer (`0x2A29`) | Table | Service | Write | Notify | Write type |
+|---|---|---|---|---|---|---|
+| `okin` (checked first) | read, value unused | `36_33_04a` | `62741523-52f9-8864-b1ab-3b3a8d65950b` | `62741525-…` | `62741625-…` | With response |
+| `star` | exactly the four bytes `STAR` | `35_22_01` | `6e400001-b5a3-f393-e0a9-e50e24dcca9e` | `6e400002-…` | `6e400003-…` | Without response |
+| `star` | anything else, unreadable or absent | `25_42_02` | `6e400001-b5a3-f393-e0a9-e50e24dcca9e` | `6e400002-…` | `6e400003-…` | Without response |
+
+###### Packet Format
+
+- `25_42_02` and `36_33_04a`: `08 02` + eight table bytes (identical payloads, different transport).
+- `35_22_01`: `5A 01` + four table bytes + `A5`.
+- No checksum, sequence, side byte or encryption.
+
+###### Connection requirements
+
+- Like the app, the profile requires the table's service with its write and
+  notify characteristics, a write property matching the table's write type,
+  and the Device Information service (`0x180A`). The `okin` row also requires
+  the manufacturer characteristic. A missing requirement refuses the
+  connection.
+- The manufacturer is read once per connection before notifications are
+  enabled; the generic Device Information read is skipped for this profile.
+- Notifications stay enabled with angle sensing off, because the app only
+  allows control after enabling them.
+- No pairing, PIN or handshake exists.
+
+##### Detection / Setup
+
+OKIN and Star Bluetooth names, the Nordic UART service and the OKIN `62741523`
+service are shared with other apps and bed types ([Okin 64-Bit](#okin-64-bit),
+[Sleepy's BOX25](sleepys.md) and others), so they never select this profile.
+Existing entries keep their bed type until you change it.
+
+- The manufacturer match is case-sensitive and exact: `STAR` followed by a NUL
+  byte selects `25_42_02`.
+- Any other name, including `smartbed` (which the app's scan accepts), has no
+  table in the app, so the connection is refused with `auto`.
+
+| Variant | Meaning |
+|---|---|
+| `auto` (default) | Apply the app's name rule |
+| `adjustable_lumbar_okin` | Always use the `okin` row |
+| `adjustable_lumbar_star` | Always use the `star` rows; the manufacturer read still chooses between them |
+
+- The name rule reads the raw Bluetooth name, not the entry's display name. HA
+  stores the raw name at setup and on later real (non-address) observations; an
+  address-like live name falls back to it.
+- Use a fixed variant if Home Assistant sees a different name than the phone.
+- In a two-address pair the variant belongs to each physical bed: separate the beds, set
+  each bed, then combine them again.
+
+###### Home Assistant setup
+
+Choose **Adjustable bed (Lumbar) app** manually. OKIN and Star names and the shared services do not identify this app. `auto` applies the app's name rule: a name starting with `okin` uses the OKIN-service table; a name starting with `star` uses a Nordic UART table chosen by the Device Information manufacturer. Any other name needs a fixed variant. Head, foot and lumbar are fixed, as is the 100 ms refresh. The variant belongs to each physical bed: split a two-address pair before changing it.
+
+#### Controls
+
+##### Features
+
+| Feature | Supported |
+|---------|-----------|
+| Motor Control | ✅ Head, Feet, Lumbar |
+| Position Feedback | ❌ |
+| Memory Presets | ❌ No numbered-memory action (see [Notes](#notes-8)) |
+| Flat / Zero Gravity / Lounge / Incline / Anti-Snore | ✅ |
+| Preset saves | ⚠️ Save Zero Gravity / Lounge / Incline / Anti-Snore (storage unverified) |
+| Massage | ✅ Wave 1–3, intensity +/−, off, on (voice route), check |
+| Lights | ⚠️ One light frame (Toggle light); no light on/off |
+| Timers / Alarms | ❌ |
+| BLE Pairing | ❌ No pairing, PIN or handshake |
+
+##### Commands
+
+###### Motor Control
+
+| Control | `25_42_02` / `36_33_04a` | `35_22_01` |
+|---|---|---|
+| Head up / down | `08 02 00 00 00 01 00 00 00 00` / `…02…` | `5A 01 03 10 30 00 A5` / `…30 01 A5` |
+| Foot up / down | `08 02 00 00 00 04 00 00 00 00` / `…08…` | `5A 01 03 10 30 02 A5` / `…30 03 A5` |
+| Lumbar up / down | `08 02 00 00 00 10 00 00 00 00` / `…20…` | `5A 01 03 10 30 06 A5` / `…30 07 A5` |
+| STOP | `08 02 00 00 00 00 00 00 00 00` | `5A 01 03 10 30 0F A5` |
+
+###### Presets
+
+| Control | `25_42_02` / `36_33_04a` | `35_22_01` |
+|---|---|---|
+| Flat | `08 02 08 00 00 00 00 00 00 00` | `5A 01 03 10 30 10 A5` |
+| Zero gravity | `08 02 00 00 10 00 00 00 00 00` | `5A 01 03 10 30 13 A5` |
+| Lounge (app: LEISURE) | `08 02 00 00 20 00 00 00 00 00` | `5A 01 03 10 30 12 A5` |
+| Incline (app: INCLINE) | `08 02 00 00 40 00 00 00 00 00` | `5A 01 03 10 30 11 A5` |
+| Anti-snore | `08 02 00 00 80 00 00 00 00 00` | `5A 01 03 10 30 16 A5` |
+| Save zero gravity / lounge / incline / anti-snore | `08 02 08 00 10…` / `…20…` / `…40…` / `…80…` | `5A 01 03 10 30 90/91/92/93 A5` |
+
+###### Lights
+
+| Control | `25_42_02` / `36_33_04a` | `35_22_01` |
+|---|---|---|
+| Light | `08 02 00 02 00 00 00 00 00 00` | `5A 01 03 10 30 71 A5` |
+
+###### Massage
+
+| Control | `25_42_02` / `36_33_04a` | `35_22_01` |
+|---|---|---|
+| Massage wave 1 / 2 / 3 | `08 02 00 00 00 00 00 08 00 00` / `…10…` / `…20…` | `5A 01 03 10 30 52/53/54 A5` |
+| Massage stop | `08 02 02 00 00 00 00 00 00 00` | `5A 01 03 10 30 6F A5` |
+| Massage intensity + / − | `08 02 00 00 0C 00 00 00 00 00` / `08 02 01 80 00 00 00 00 00 00` | `5A 01 03 10 40 60 A5` / `…40 61 A5` |
+| Massage on (voice route) | `08 02 00 00 01 00 00 00 00 00` | `5A 01 03 10 30 52 A5` |
+| Voice pre-STOP | ordinary STOP | `5A 01 03 10 30 1F A5` |
+| Check massage (raw query) | `02 04` | `5A B0 00 A5` |
+
+#### Timing
+
+##### Timing and controls
+
+Held app controls write immediately and then every 100 ms. Releasing writes
+STOP immediately and again 300 ms later; both STOPs use fresh cancel events and
+are always attempted.
+
+| Home Assistant control | Behavior |
+|---|---|
+| Head, Feet and Lumbar covers | Stream for the configured pulse count at 100 ms (default 10, about 1 s), then the release STOPs. Motor count and pulse delay are fixed. |
+| Flat, Zero Gravity, Lounge, Incline, Anti-Snore presets; Toggle light; Massage +/−; Wave 1–3 | App tap: one write, then the release STOPs. Use `hold_control` to hold longer. |
+| Massage off | Massage stop, then the release STOPs (the release replaces the app's +100 ms repeat). |
+| Save Zero Gravity / Lounge / Incline / Anti-Snore | Holds the Flat+preset save frame for 6 s, when the app reports "Setup" (its help text says 5 s), then the release STOPs. Whether the bed stores the position is unverified. |
+| Massage On | The app's voice route: one pre-STOP, then the massage-on frame twice, 100 ms apart. It is the only path to this frame. |
+| Check Massage | The massage page's raw query, written once. No reply is parsed. |
+| Stop | The release STOPs. STOP has no side parameter; its physical scope is unverified. |
+
+#### Notifications
+
+##### Notifications
+
+Replies are not parsed. In every shipped table the massage-status dispatch can
+never match, alarm frames are only logged and the remaining callbacks have no
+consumers. Raw replies still appear in support bundles.
+
+#### Evidence
+
+##### Notes
+
+- The app has no numbered-memory action, position feedback, light
+  on/off, timers, alarms or firmware update path. Constants for those in its
+  tables are never sent. This describes the shipped app, not a hardware
+  capability verdict.
+- [Issue #670](https://github.com/kristofferR/ha-adjustable-bed/issues/670)
+  reports working numbered memory controls before 4.1.0, so their loss is a
+  compatibility regression requiring the previous working bed type/variant,
+  exact recall/save buttons and current diagnostics. The app has no
+  numbered-memory save sequence; named preset saves above
+  must not be presented as equivalent replacements or guessed numbered-slot
+  mappings.
+- Not exposed: the app's speech-recognition commands (the same frames are
+  available as buttons; voice movement is excluded because the app sends no
+  STOP after it), and its chord edge cases (the first held preset briefly
+  recalls before the save starts; an unsupported chord only stops).
+
+###### Lumbar analysis provenance
+
+Based on Adjustable bed (Lumbar) 1.2.2.
+
+### Rize Home (Remedy III / Contempo IV)
+
+**App:** [Rize Home](https://play.google.com/store/apps/details?id=com.okin.rize) 1.1.2 (12), `com.okin.rize`
+
+**Status:** Not yet tested
+
+#### Setup
+
+Choose **Rize Home app**, then select the product, **Remedy III** or **Contempo IV**.
+**Reconfigure** can change this selection later. A shared `smartbed` name is only an
+app candidate, never an automatic product or protocol identification. Rize Beds
+(Kaidi), the older Rize CST apps and Resident Adjustable Base are separate routes.
+
+The app uses the UART roles below without proprietary authentication. HA owns
+connection retries, timeout, adapter/proxy selection and ATT MTU negotiation.
+Android requests MTU512 after its settling delay; every Rize Home record fits
+inside the minimum ATT payload. HA subscribes before startup massage queries,
+retries a failed notification subscription once, and rejects missing GATT roles.
+There is no bed identity, capability or motor-position query.
+
+#### Controls
+
+<!-- generated:rize-home -->
+<!-- Generated by scripts/generate_codec_docs.py from the codec and profile data. Edit those, not this block. -->
+
+| Profile | Bed type | Motors | Presets | Programmable | Poll query starts |
+|---|---|---|---|---|---|
+| rize_home_remedy_iii | `rize_home` | head, foot, lumbar, elevate | reading, memory, anti_snore, leisure, flat, zero_g | reading, memory, anti_snore, leisure, zero_g | +0 ms, +100 ms |
+| rize_home_contempo_iv | `rize_home` | head_tilt, head, foot, lumbar, elevate | anti_snore, leisure, flat, zero_g | anti_snore, leisure, zero_g | +0 ms |
+
+| Role | UUID |
+|---|---|
+| Service | `6e400001-b5a3-f393-e0a9-e50e24dcca9e` |
+| Write without response | `6e400002-b5a3-f393-e0a9-e50e24dcca9e` |
+| Notify / indicate | `6e400003-b5a3-f393-e0a9-e50e24dcca9e` |
+
+| Action | Frame |
+|---|---|
+| head_tilt_up | `05 02 40 00 00 00` |
+| head_tilt_down | `05 02 80 00 00 00` |
+| head_up | `05 02 00 00 00 01` |
+| head_down | `05 02 00 00 00 02` |
+| foot_up | `05 02 00 00 00 04` |
+| foot_down | `05 02 00 00 00 08` |
+| lumbar_up | `05 02 00 00 00 10` |
+| lumbar_down | `05 02 00 00 00 20` |
+| elevate_up | `05 02 00 00 00 40` |
+| elevate_down | `05 02 00 00 00 80` |
+| leisure | `05 02 00 00 40 00` |
+| zero_g | `05 02 00 00 10 00` |
+| anti_snore | `05 02 00 00 80 00` |
+| flat | `05 02 08 00 00 00` |
+| memory | `05 02 00 01 00 00` |
+| reading | `05 02 00 00 20 00` |
+| light | `05 02 00 02 00 00` |
+| massage_on | `05 02 00 08 00 00 00` |
+| massage_off | `05 02 02 00 00 00 00` |
+| massage_head_up | `05 02 00 00 08 00 00` |
+| massage_head_down | `05 02 00 80 00 00 00` |
+| massage_foot_up | `05 02 00 00 04 00 00` |
+| massage_foot_down | `05 02 01 00 00 00 00` |
+| massage_up | `05 02 00 00 0C 00 00` |
+| massage_down | `05 02 01 80 00 00 00` |
+| massage_toggle | `05 02 00 00 01 00 00` |
+| massage_mode | `05 02 10 00 00 00 00` |
+| massage_timer | `05 02 00 00 02 00 00` |
+| motion_on | `05 02 00 02 10 00 00` |
+| motion_off | `05 02 00 02 80 00 00` |
+| reset_memories | `05 02 08 00 10 00` |
+| stop | `05 02 00 00 00 00` |
+| voice_stop | `05 02 00 00 00 03 00` |
+| query | `00 B0` |
+
+| Operation | Timing |
+|---|---|
+| Held refresh | 200 ms |
+| Once writes | +0 ms, +200 ms, +400 ms |
+| Program / reset / sensor | 6000 ms |
+| Intensity poll | 1500 ms |
+| Massage release | STOP at +200 ms; query 300 ms later |
+| Startup settling | 350 ms |
+| Subscription retry | once after 1000 ms |
+<!-- /generated -->
+
+The product chooses the normal motor/preset/massage controls. Remedy has one
+MEMORY action, exposed as slot 1; the app method called m5 does not mean slot 5.
+Save buttons stream the matching recall frame. Reset streams FLAT+ZG. Motion
+sensor buttons stream the corresponding ZG/LIGHT or ANTI-SNORE/LIGHT chord.
+Under-bed lighting is a toggle, with no readable light state or discrete on/off.
+
+Disabled-by-default **Voice action** entities expose all actions of the app's
+common dispatcher, including actions absent from one product's screen.
+These are app actions, not confirmation of extra physical motors or presets.
+Speech acquisition and phrase aliases are phone features; use HA's own voice
+facilities to call these actions. An explicit command-source selector exposes
+the app's sticky button/speech branch without requiring a microphone.
+
+#### Timing
+
+One sender owns the repeat schedule. A later sender replaces that schedule;
+already submitted writes remain serialized. Button presets and massage refresh
+while held. Speech presets/massage use the once burst without an automatic STOP;
+voice motors remain held, bounded and released by HA. Button STOP has six bytes,
+speech STOP seven. Changing source during an operation does not redirect cleanup.
+Programming retains the source-dependent sender and the full save duration.
+
+Intensity holds poll while the gesture is active. Remedy's second query replaces
+the first query's repeat timer; Contempo has no second query. Massage release
+starts a STOP burst, then its query replaces that burst before its third write.
+HA bounds all held operations, cancels the poll with its owner and retains the
+scheduler resource until release completes. UI sensor chords release with STOP;
+the direct speech sensor command ends its refresh without inventing a STOP.
+
+#### Notifications
+
+Only `A5 0B 0E` packets at least nine bytes long are parsed. The app checks only
+three bytes before its callback and may throw on truncated input; HA drops that
+input. Neither product buffers fragments or validates an invented checksum.
+
+Remedy's timer index is ceil(((b4 << 8) + b5) / 600). Combined intensity is
+ceil(b7 / 2). The b8-derived quantity is computed/logged by Android and is not
+persisted or exposed as separate foot state. Contempo independently stores
+floor(b4 / 2), raw b6 mode, b7 head and b8 foot. Active means timer index is nonzero.
+The app labels timer choices 10/20/30 minutes; HA preserves the index rather than
+guessing calibration or ranges. No position, light, firmware or acknowledgement
+state is inferred from these values.
+
+HA binds the parser and every write to the captured connection. Disconnect
+invalidates callbacks and state before awaiting notification cleanup. Old timers
+cannot target another connection. Android's unconditional Contempo callback
+clear and uncancelled page timers are not reproduced.
+
+#### Services
+
+Use standard motor/STOP, memory and `hold_control` actions. Controls named
+`voice_<action>` select the speech branch and retain that source, just as the
+app does. Normal product controls reject unavailable capabilities before writing.
+All motors and held buttons share one scheduling resource because STOP is global.
+There is no native side selector; separate addresses can use HA's paired facade.
+
+#### Evidence
+
+Based on Rize Home 1.1.2 (`com.okin.rize`).
+The original 34 literals, 39 semantic rows and eight parser cases are replayed by
+`tests/test_rize_home.py`. The existing codec's prefixed-record/request encoders
+reproduce all literals, including the fixed prefix on different record lengths.
+
+External owners can validate discovery/GATT, press/release and voice
+STOP, programming/reset effects and real notification ranges. Phone UI, audio, local locks/themes,
+manual/PDF infrastructure and generic network/account/OTA SDK surface are outside
+the direct BLE bed product boundary.
+
+
+### OKIN Motion Bed
+
+**App:** [OKIN Motion Bed](https://apkpure.com/okin-motion-bed/com.okin.motionbed) 1.0 (2), `com.okin.motionbed`
+
+**Status:** Not yet tested
+
+#### Setup
+
+Choose **OKIN Motion Bed app** (`com.okin.motionbed`) explicitly and select the
+bed's MAC. Detection: none. The app scans without name, service or manufacturer
+filters. Shared advertisements do not identify this app. Home Assistant retains
+MAC ownership and checks fresh Bluetooth reachability; rescanning never retargets
+an entry by a row index. One fixed layout is offered. The saved generic motor
+count is a compatibility field, not proof of physical actuator count. There is
+no app authentication, PIN, pairing handshake, query or startup write.
+
+#### Controls
+
+The dashboard card and covers expose Back, Feet and **Middle controls (lumbar
+icon)**. The middle commands are named head in the app but drawn as lumbar;
+no physical head/lumbar or combined-motor interpretation is assumed. There are
+no measured positions, ranges or light-state entities.
+
+Flat, Zero-G and Memory A/B recall and programming use separate explicit actions.
+Repeated recalls always recall. **Stop preset** sends the distinct preset-stop
+frame that Android sends on a second same-preset tap. Global Stop sends manual
+STOP and preset STOP, so it covers either class of movement. The **Bed light**
+switch sends the app's light parameter 1 for on and 0 for off; which one the
+bed treats as on still needs testing.
+
+Android shares a last-button/count toggle between presets, lights and phone
+flashlight. An initial memory long-save retains count -1, so the next same-slot
+Android tap is a no-op; prior count 0 recalls and count 1 stops. HA does not carry
+that incidental UI coupling into explicit recall/program actions, does not report
+pre-submit success as bed confirmation, and sends no invented reset command.
+
+<!-- generated:okin-motionbed -->
+<!-- Generated by scripts/generate_codec_docs.py from the codec and profile data. Edit those, not this block. -->
+
+| Role | Service | Characteristic | Mode |
+|---|---|---|---|
+| Control | last matching service in Android UUID order | `0000ffe9-0000-1000-8000-00805f9b34fb` | write with response; requires write property |
+| Notification | last matching service in Android UUID order | `0000ffe4-0000-1000-8000-00805f9b34fb` | notify when supported; subscription failure does not gate writes |
+
+| Action | Word | Final frame |
+|---|---|---|
+| back up | `0x00000001` | `E5 FE 16 00 00 00 01 05` |
+| back down | `0x00000002` | `E5 FE 16 00 00 00 02 04` |
+| middle up | `0x00000005` | `E5 FE 16 00 00 00 05 01` |
+| middle down | `0x0000000A` | `E5 FE 16 00 00 00 0A FC` |
+| legs up | `0x00000004` | `E5 FE 16 00 00 00 04 02` |
+| legs down | `0x00000008` | `E5 FE 16 00 00 00 08 FE` |
+| stop | `0x00000000` | `E5 FE 16 00 00 00 00 06` |
+| preset stop | `0x21000000` | `E5 FE 16 21 00 00 00 E5` |
+| zero g | `0x21000001` | `E5 FE 16 21 00 00 01 E4` |
+| flat | `0x21000002` | `E5 FE 16 21 00 00 02 E3` |
+| memory 1 | `0x21000004` | `E5 FE 16 21 00 00 04 E1` |
+| memory 2 | `0x21000006` | `E5 FE 16 21 00 00 06 DF` |
+| save memory 1 | `0x20000014` | `E5 FE 16 20 00 00 14 D2` |
+| save memory 2 | `0x20000016` | `E5 FE 16 20 00 00 16 D0` |
+| light parameter 0 | `0x31000000` | `E5 FE 16 31 00 00 00 D5` |
+| light parameter 1 | `0x31000001` | `E5 FE 16 31 00 00 01 D4` |
+
+Held directions refresh every 200 ms, then send 1 manual STOP. Memory slots: 2.
+Presets, memory programming and light parameters write once.
+<!-- /generated -->
+
+#### Timing
+
+The generated table gives this app's hold cadence. Releasing, cancelling or
+replacing a hold ends the cancellable refresh and sends manual STOP with a fresh
+cancellation event. All controls serialize on one bed-wide movement resource.
+The card uses bounded, renewable holds with a side-scoped release action, so
+pointer-up/cancel sends only the held command's manual STOP. A finite HA tap
+uses the configured pulse count at the app cadence. The Android SDK's FIFO can
+leave queued refreshes ahead of STOP; HA writes directly under its command lock.
+No hardware watchdog is assumed. HA owns bounded reconnect/backoff and intentional
+idle disconnection; every new session reselects GATT roles and subscriptions.
+
+#### Notifications
+
+FFE4 is subscribed when it supports notify. No subscription acknowledgment gates
+commands. Android only forwards an E2FE16 prefix to an event with no consumer;
+HA keeps raw diagnostic bytes and exposes no invented alarm, capability, light
+or position interpretation. Short packets are safe. Old-session callbacks are
+ignored. Writes require the app SDK's write property and use response mode;
+the exact inherited Android writeType remains a physical validation question.
+
+#### Services
+
+Standard `goto_preset`, `save_preset`, `hold_control` and `stop` actions cover
+the controls alongside the entities. `hold_control` accepts `back_up/down`,
+`middle_up/down` and `legs_up/down`. Memory slots 1/2 are A/B. Light parameter
+and preset-stop buttons are also callable through `button.press`.
+
+#### Evidence
+
+Based on `com.okin.motionbed` 1.0 (2); the existing gateway encoder reproduces
+all its commands. Not yet tested on hardware: owners can help confirm mechanical
+mappings, light polarity, memory/preset behavior, release latency, GATT
+properties, reconnect ordering and what the notifications mean.
+
+### N32 Motion Bed
+
+**App:** [N32 Motion Bed](https://play.google.com/store/apps/details?id=com.okin.simmonskorea) 1.1.14 (38), `com.okin.simmonskorea`
+
+**Status:** Not yet tested
+
+#### Setup
+
+Choose **N32 Motion Bed app** (`com.okin.simmonskorea`) explicitly. The app
+accepts nonempty platform names beginning with `smartbed` or `n32 motionbed`,
+ignoring case. These shared names offer an app choice, and the Nordic UART
+service alone does not identify this app. Confident receiver detection wins.
+Optional company 89 identity reverses the whole payload, then takes bytes
+1 through 6; it never determines the control address, admission or sides.
+
+The profile fixes its three UI groups, disables angle sensing, light and
+massage, and owns its protocol and refresh cadence. Ordinary cover movement
+keeps the user's pulse count. No PIN, bonding, model selection or single-address
+side controls are required. Two independently configured physical receivers can
+use HA's two-address pairing; the app itself has no physical sides.
+
+#### Controls
+
+Upper drives the app's combined upper mask. Lower and Cervical use their own
+UI masks; no individual upper motors or other anatomy are exposed. Flat, M1,
+M2, M3, Relax, TV and Zero-G retain the app's labels. The generated N32 key
+table lists the frames. Memory programming has no distinct opcode: the app
+holds the same preset frame and displays a saved tip at its frame-button
+threshold. `hold_control` permits that bounded gesture without claiming
+firmware save success. No massage, light or position telemetry is created.
+
+<!-- generated:n32-session -->
+<!-- Generated by scripts/generate_codec_docs.py from the codec and profile data. Edit those, not this block. -->
+
+| Role | UUID |
+|---|---|
+| Service | `6e400001-b5a3-f393-e0a9-e50e24dcca9e` |
+| Write, with response | `6e400002-b5a3-f393-e0a9-e50e24dcca9e` |
+| Notify or indicate | `6e400003-b5a3-f393-e0a9-e50e24dcca9e` |
+
+| Operation | Frame | Schedule |
+|---|---|---|
+| Query slot 1 | `00 C0` | startup and on request |
+| Query slot 2 | `00 D0` | startup and on request |
+| Query slot 3 | `00 E0` | startup and on request |
+| Clock (2026-11-12 23:59:01) | `07 04 1A 0B 0C 04 17 3B 01` | connect +500 ms |
+| Delete slot 1 | `07 05 00 00 00 00 00 00 01 00` | then query the same slot |
+| Delete slot 2 | `07 06 00 00 00 00 00 00 01 00` | then query the same slot |
+| Delete slot 3 | `07 07 00 00 00 00 00 00 01 00` | then query the same slot |
+| Slot 1, Monday 06:30, M1 | `07 05 82 05 06 1E 00 01 01 00` | set then query slot 1 |
+
+| Property | Value |
+|---|---|
+| Held refresh | 200 ms |
+| Frame-button threshold | 5300 ms |
+| Release | 1 STOP |
+| Alarm slots | 1, 2, 3 |
+| Alarm modes | none: 0, m1: 5, m2: 6, m3: 4, flat: 9 |
+<!-- /generated -->
+
+#### Timing
+
+Held actions write immediately and refresh at the profile's interval, then
+send an explicit STOP on release, cancellation or deadline. Frame buttons also
+stop at their app threshold. Cover pulse counts and renewable card leases are
+independent. Missed refresh ticks are skipped after a slow acknowledged write;
+write latency never adds another refresh period to the requested duration.
+Captured link/characteristic ownership prevents old cleanup from writing into
+a new connection. HA schedules commands per selected physical target.
+
+Connection startup subscribes before querying all three of the app's slots,
+then calibrates the clock. The generated session table gives the roles and
+schedule. The clock is generated when its queued write dispatches. HA's
+Bluetooth stack negotiates MTU and handles adapters/proxies; the Android
+plugin's MTU request is not a firmware requirement.
+
+#### Notifications
+
+Complete A5 slot replies update the alarm sensors with time, enabled, mode,
+week, raw `ab` and `soft` fields, and whether the report belongs to this
+connection. Short packets, ignored ACKs and unobserved massage branches create
+no telemetry. Low-bit weeks on enabled alarms become once in the app callback.
+Deletion is tested before old-field preservation: a fully cleared reply
+removes the row, whereas disabled nonempty replies retain previous mode/week.
+Phone music is local and has no wire field.
+
+Display records survive controller recreation on the same physical coordinator;
+freshness and write admission do not. A missing or stale slot is never treated
+as an empty inventory. Disable queries its slot and checks its current report,
+including after reconnect. An already disabled slot needs no overwrite. Full
+set supplies every editable field, and delete explicitly clears every field.
+Only actual callback reports update sensor values.
+
+#### Services
+
+[`adjustable_bed.set_alarm`](../SERVICES.md#set_alarm) sets or disables slots 1
+through 3 (`slot`). Turning an alarm on needs a time; `weekdays` (empty or left out for once)
+and `wake_action` (`none` by default, or `memory_1`, `memory_2`, `memory_3`,
+`flat`) are optional;
+`enabled: false` disables the slot and keeps its time. Delete and query are not
+offered as actions. All targets pass
+profile/session admission before a requested mutation. Each write rechecks its
+live session; disable also rejects a changed report while waiting for the wire.
+
+Recurring masks retain the app's high bit with Sunday in bit 0. Once and a
+retained empty recurring mask use the next scheduled ISO weekday, including
+Sunday as 128. Disable retains fields and follows the same once conversion.
+Delete bypasses that conversion, zeros all editable fields and queries the
+same slot. No capacity beyond these three UI slots is asserted.
+
+#### Evidence
+
+Based on `com.okin.simmonskorea` 1.1.14 (38).
+The 20 raw masks, original 28 vectors and 36 corrected alarm/identity cases
+are preserved in the N32 test fixture. The former `v-alarm-delete-3` is a
+retained-fields disable, distinct from cleared UI deletion. Physical behavior
+and firmware save/stop effects await testing by owners.
+
+### Resident Adjustable Base
+
+**App:** [Resident Adjustable Base](https://play.google.com/store/apps/details?id=com.okin.resident.release) 1.0.0 (1), `com.okin.resident.release`
+
+**Status:** Not yet tested
+
+#### Setup
+
+1. Choose **Resident Adjustable Base app**. There is no model or remote question.
+2. Put the base in [pairing mode](../TROUBLESHOOTING.md#putting-the-bed-in-pairing-mode)
+   so Home Assistant can bond with it.
+
+The layout is fixed: two motors and massage, with **Read bed position** off.
+**Movement per tap** still sets how far one tap moves. For two receivers, add
+each one and combine them; each keeps its own app. Left and Right controls on
+one receiver are not supported.
+
+Choose **Resident Adjustable Base app** (`com.okin.resident.release`). Shared
+Okin service and name matches offer it as a candidate alongside existing
+receivers. Accepted name prefixes also offer a low-confidence candidate when
+no service UUID is advertised; the connection check validates the exact GATT
+roles before controls are available. Confirm the app explicitly: these names do not identify its wire
+format by themselves. The app reads the platform Bluetooth device name;
+Home Assistant's discovery gate uses the advertised local name, so a receiver
+whose names differ may need manual setup. All selected receivers use one fixed
+profile. There is no model, remote code or alternate catalog choice, and the
+model-read result does not change controls.
+
+The layout is fixed at two axes, with massage enabled and angle sensing off.
+The app needs all three GATT roles below. It requests no app-specific PIN,
+authentication or bonding sequence, but the base refuses an unencrypted link,
+so this profile **requires BLE pairing** (see Evidence). Bond once while the
+base is in [pairing mode](../TROUBLESHOOTING.md#putting-the-bed-in-pairing-mode).
+A startup write that fails with a GATT security error starts the integration's
+pairing recovery.
+Two-address pairs retain independent profiles; there is no one-address side
+selector or bed-side synchronization command.
+
+<!-- generated:resident-session -->
+<!-- Generated by scripts/generate_codec_docs.py from the codec and profile data. Edit those, not this block. -->
+
+| Role | Service | Characteristic |
+|---|---|---|
+| Control (with response) | `62741523-52f9-8864-b1ab-3b3a8d65950b` | `62741525-52f9-8864-b1ab-3b3a8d65950b` |
+| Notification | `62741523-52f9-8864-b1ab-3b3a8d65950b` | `62741625-52f9-8864-b1ab-3b3a8d65950b` |
+| Model read (ignored) | `0000180a-0000-1000-8000-00805f9b34fb` | `00002a24-0000-1000-8000-00805f9b34fb` |
+
+| Operation | Frame | Schedule |
+|---|---|---|
+| Massage query | `00 04` | now and +300 ms on startup and massage release |
+| Clock query | `08 02 E1 80 01` | 100 ms after clock setting |
+| Local clock (2026-11-10 07:08:09) | `E7 80 01 7E 0A 0A 07 08 09` | once at connect +300 ms, also manual sync |
+
+Model read: connect +1000 ms; notification retry gaps: 350/350/300 ms. Name
+prefixes (case-insensitive): `okin`, `smartbed`.
+<!-- /generated -->
+
+#### Controls
+
+The generated [Resident key table](#resident-adjustable-base-keys) lists every
+control word. Back and legs move separately or together in the same direction.
+Flat, Zero-G, TV/PC, Lounge, Anti-snore and M1/M2 are recalls. M1/M2 are two
+slots, with no memory programming. The underbed lamp is toggle-only. Massage
+has a global start/toggle, stop, strength up/down and timer cycle; it has no
+independent head/foot controls or wave modes. No position feedback is available.
+
+#### Timing
+
+See [hold timing](#hold-and-release-timing) for the profile's refresh and two-STOP release.
+Refresh, STOP and query schedules use monotonic deadlines, so acknowledged
+write latency does not accumulate into their intervals. Every touch control,
+including presets, lights and massage, may be held; a
+normal HA button sends one press and the release. Motor taps use the configured
+pulse count; renewable holds end on release or the integration's lease limit.
+Only the explicit combined-axis keys are supported, without arbitrary motor
+composition. Massage releases interleave a query with each STOP. Both STOPs
+are attempted after cancellation or a write failure, using a fresh cancel event.
+
+Startup awaits notification enablement and its retries, the clock sequence,
+model read and massage queries before admitting commands. It runs once per
+connection, with pending writes and notification callbacks bound to that link.
+It does not reproduce the Android app's overlapping readiness callbacks or
+its already-enabled notification disable/retry race. A disconnect discards
+buffered fragments and timer state. Lost radio connectivity cannot guarantee
+physical STOP delivery.
+
+#### Notifications
+
+The Resident parser consumes only the unsigned timer selector at byte 10 of
+an assembled `09 0B` report. Codes 1, 2 and 3 select the app's 10, 20 and
+30 minute indicators, exposed as **Massage timer**. Other codes leave the
+sensor unknown. This is a selected timer, not a countdown or proof of massage
+power or intensity. Short matching frames are ignored instead of reproducing
+the app's bounds error. Tiny chunks leave a pending fragment unchanged; a
+20-byte current chunk with bytes 1/2 `FE 16` replaces the pending fragment.
+The next accepted chunk is appended before dispatch. Model information and
+clock replies do not publish state.
+
+#### Services
+
+Standard movement and preset actions, `hold_control` for every named profile
+key except STOP, and `move_simultaneously` for back/legs in one direction.
+The **Refresh massage timer** button repeats the query. The
+`adjustable_bed.sync_clock` action sets the bed's binary local calendar fields using Home Assistant's
+time zone, then query the clock. Clock setting is unrelated to motor calibration.
+
+#### Evidence
+
+Resident 1.0.0 proves the single fixed profile,
+all command builders, response handling and lifecycle timings from Resident
+1.0.0. Its test vectors are in `tests/fixtures/resident_vectors.json` and the
+N-frame command census.
+
+A Nectar Premier base proved the link security the APK cannot show: a Bluetooth
+capture of the iPhone app and a replay over an ESPHome proxy (see
+[Custom OKIN pairing and session](#custom-okin-pairing-and-session)). Its motor
+writes fail with ATT Insufficient Authorization until the link is encrypted with
+a bond and the clock record and clock query were written on that connection.
+This profile's own startup and controls have not yet run on that hardware.
+
+### Ultramatic Smart Bed
+
+**App:** [Ultramatic Smart Bed](https://play.google.com/store/apps/details?id=com.okin.ultramaticSmartBed) 1.1.2 (5), `com.okin.ultramaticSmartBed`
+
+**Status:** Not yet tested
+
+#### Setup
+
+Select **Ultramatic Smart Bed app** during setup or Reconfigure.
+This is independent of the legacy Ultramatic ORE controls. The app accepts a
+platform name beginning with `smartbed`, ignoring case, and the first
+manufacturer-data value beginning with `44 4F 54 01 05`. It checks no company
+identifier or advertised service. HA offers an app choice for this shared name;
+the exact UART roles below are required on connection. Both notify and
+indicate-only receivers are accepted. No PIN or mandatory bond is declared.
+
+The stored selector is Left (A), Both (AB, the default) or Right (B). Optional single-address
+Left/Right child devices route to A/B on the same connection. Each physical
+bed of a two-address pair retains its own selector. Left and Right choose the
+protocol side within the same connection; they say nothing else about the bed. The compatibility motor-count setting does not limit the
+app's five control pairs or assert a physical actuator count.
+
+#### Controls
+
+Head, Foot and Head tilt use the app labels. The covers **Posture** and
+**Lumbar** also use the app's visible labels; the app's internal names for
+them are LUMBAR and HIPS, and their physical mapping still needs testing. There is no
+angle feedback, seek, or calibration.
+
+Flat, ZG, ANTI, M1 and M2 are held recalls. Confirmed **Save zero gravity
+position** and **Save anti-snore position** buttons, and the generic **Save to
+Memory 1/2** buttons, hold that preset's frame for the app's save gesture.
+**Reset saved positions** holds the fixed FLAT+ZG combination. The app's
+completion toast is not a device acknowledgement; the reset is not claimed to
+erase EEPROM or factory settings. TV and Read are
+not exposed because the app has no command for them.
+
+Massage offers head/foot intensity steps, wave steps, timer cycling and a
+master toggle. No absolute intensity or wave setter is claimed. Light is a
+toggle button without assumed on/off state or brightness.
+
+<!-- generated:ultramatic-controls -->
+<!-- Generated by scripts/generate_codec_docs.py from the codec and profile data. Edit those, not this block. -->
+
+| Role | UUID | Mode |
+|---|---|---|
+| Service | `6e400001-b5a3-f393-e0a9-e50e24dcca9e` | exact UUID |
+| Write | `6e400002-b5a3-f393-e0a9-e50e24dcca9e` | without response |
+| Status | `6e400003-b5a3-f393-e0a9-e50e24dcca9e` | notify preferred, indicate accepted |
+
+| Action | A | AB | B |
+|---|---|---|---|
+| HEADUP | `05 02 00 00 00 01 01` | `05 02 00 00 00 01 00` | `05 02 00 00 00 01 02` |
+| HEADDOWN | `05 02 00 00 00 02 01` | `05 02 00 00 00 02 00` | `05 02 00 00 00 02 02` |
+| FOOTUP | `05 02 00 00 00 04 01` | `05 02 00 00 00 04 00` | `05 02 00 00 00 04 02` |
+| FOOTDOWN | `05 02 00 00 00 08 01` | `05 02 00 00 00 08 00` | `05 02 00 00 00 08 02` |
+| HEADTILTUP | `05 02 00 00 00 10 01` | `05 02 00 00 00 10 00` | `05 02 00 00 00 10 02` |
+| HEADTILTDOWN | `05 02 00 00 00 20 01` | `05 02 00 00 00 20 00` | `05 02 00 00 00 20 02` |
+| LUMBARUP | `05 02 00 00 00 40 01` | `05 02 00 00 00 40 00` | `05 02 00 00 00 40 02` |
+| LUMBARDOWN | `05 02 00 00 00 80 01` | `05 02 00 00 00 80 00` | `05 02 00 00 00 80 02` |
+| HIPSUP | `05 02 40 00 00 00 01` | `05 02 40 00 00 00 00` | `05 02 40 00 00 00 02` |
+| HIPSDOWN | `05 02 80 00 00 00 01` | `05 02 80 00 00 00 00` | `05 02 80 00 00 00 02` |
+| ZG | `05 02 00 00 10 00 01` | `05 02 00 00 10 00 00` | `05 02 00 00 10 00 02` |
+| ANTI | `05 02 00 00 80 00 01` | `05 02 00 00 80 00 00` | `05 02 00 00 80 00 02` |
+| FLAT | `05 02 08 00 00 00 01` | `05 02 08 00 00 00 00` | `05 02 08 00 00 00 02` |
+| M1 | `05 02 00 01 00 00 01` | `05 02 00 01 00 00 00` | `05 02 00 01 00 00 02` |
+| M2 | `05 02 00 04 00 00 01` | `05 02 00 04 00 00 00` | `05 02 00 04 00 00 02` |
+| LIGHT | `05 02 00 02 00 00 01` | `05 02 00 02 00 00 00` | `05 02 00 02 00 00 02` |
+| timerSwitch | `05 02 00 00 02 00 01` | `05 02 00 00 02 00 00` | `05 02 00 00 02 00 02` |
+| headStrengthAdd | `05 02 00 00 08 00 01` | `05 02 00 00 08 00 00` | `05 02 00 00 08 00 02` |
+| headStrengthReduce | `05 02 00 80 00 00 01` | `05 02 00 80 00 00 00` | `05 02 00 80 00 00 02` |
+| footStrengthAdd | `05 02 00 00 04 00 01` | `05 02 00 00 04 00 00` | `05 02 00 00 04 00 02` |
+| footStrengthReduce | `05 02 01 00 00 00 01` | `05 02 01 00 00 00 00` | `05 02 01 00 00 00 02` |
+| waveAdd | `05 02 10 00 00 00 01` | `05 02 10 00 00 00 00` | `05 02 10 00 00 00 02` |
+| waveReduce | `05 02 04 00 00 00 01` | `05 02 04 00 00 00 00` | `05 02 04 00 00 00 02` |
+| massageOnOff | `05 02 00 00 01 00 01` | `05 02 00 00 01 00 00` | `05 02 00 00 01 00 02` |
+| reset_memory | `05 02 08 00 10 00 01` | `05 02 08 00 10 00 00` | `05 02 08 00 10 00 02` |
+| STOP | `05 02 00 00 00 00 00` | `05 02 00 00 00 00 00` | `05 02 00 00 00 00 00` |
+
+| Request | Bytes |
+|---|---|
+| Massage status | `00 B0` |
+| Alarm status | `00 C0` |
+
+| Gesture | Policy |
+|---|---|
+| Movement and recall | Immediate, then 300 ms while held |
+| Release | Global AB STOP after 100 ms |
+| Save ZG / ANTI / M1 / M2; FLAT+ZG | Same held frame for 6000 ms; no hardware acknowledgement |
+| Massage | One control, then status queries at 300 / 600 / 900 ms |
+| Light | One toggle, then ordinary release |
+| Startup | clock +0 ms, massage +200 ms, massage +500 ms |
+| Explicit clock sync | clock +0 ms, clock +500 ms |
+| Alarm set | alarm +0 ms, alarm +300 ms, query +500 ms, query +600 ms, query +700 ms |
+| Alarm query | query +0 ms, query +200 ms |
+| Notification retry | Once after 1000 ms |
+<!-- /generated -->
+
+#### Timing
+
+The generated table specifies normal schedules. The source app's delayed
+callbacks reread one mutable command buffer: startup's clock retry becomes a
+massage query, and an alarm retry becomes an alarm query. HA captures these
+normal frames and their connection, serializes their sequence, and prevents
+another action from replacing a pending STOP. Holds use elapsed deadlines
+without catching up missed refreshes. Release drains on cancellation and uses
+the captured connection. STOP always addresses AB, including after A or B
+movement. Concurrent arbitrary controls are unsupported; renewable Both holds
+on a sequential pair are rejected before motion. Finite and single-side
+operations use the normal coordinator acceptance.
+
+#### Notifications
+
+Massage and alarm reports contain two seven-byte records. The Left (A), Right
+(B) and Both sides (AB) massage timer sensors have raw wave and head/foot
+intensity attributes; each alarm sensor has days, wake type, raw position index
+and enabled attributes. These
+states clear on disconnect. A record with side zero marks standalone operation
+and always selects the first record, even when the second record contains zero.
+AB requires A/B records to agree. Massage uses whole timer buckets for the low
+timer byte while still comparing the high byte and all other tail bytes.
+
+Massage time is big-endian; the display buckets are off, 10, 20 and 30 minutes,
+without claiming raw hardware units or ranges. Alarm receive order is
+`side, days, type, BCDhour, BCDminute, ignored, enabled`. It differs from the
+send order `days, type, BCDhour, BCDminute, zero, enabled, side`.
+Zero days and mismatched AB records use the app's local-time default. Invalid
+BCD nibbles and unknown type indices remain visible as diagnostics, but cannot
+be sent back by Toggle. Truncated recognized reports are safely ignored. The
+source's current-chunk FE16 buffering is bounded to one chunk and cleared on
+each connection; its retained prefix is not another protocol.
+
+#### Services
+
+The bed alarm uses [`set_alarm`](../SERVICES.md#set_alarm). Left is the A
+alarm, Right is B and Both is AB; a standalone bed uses its configured side
+(Both by default). With `enabled` and a
+`time`, it writes the whole alarm: `wake_action` is `massage` (Vibrate),
+`zero_g` (ZG) or `memory_1` (M1), and `weekdays` sets the Sunday-bit-0 day mask.
+No weekdays sends the app's mask 128, which chooses today only if the selected
+minute is strictly after local now, otherwise tomorrow. `enabled: false`
+without a time turns off the alarm reported on this connection and keeps its
+other fields; it needs a current report (press **Refresh alarm** first) and
+sends nothing when that alarm is already off. Every target is validated before
+mutation. **Refresh massage** and **Refresh alarm** are
+diagnostic buttons, disabled by default, and use the same scheduler as the
+`adjustable_bed.sync_clock` action and all other controls. The card's hidden **Release
+held control** button ends a held control without an extra STOP. Bed alarms already written can run while
+HA is disconnected.
+
+#### Evidence
+
+Based on Ultramatic Smart Bed 1.1.2 (`com.okin.ultramaticSmartBed`). The app's
+frames and receive cases reproduce through the shared N-frame codec, including
+the corrected unequal wake-type/side alarm cases. Hardware still needs testing.
+
+### Superior sleep (SS350 / SS650)
+
+**App:** [Superior sleep](https://play.google.com/store/apps/details?id=com.okin.bedding.superior.superior) 1.0.0 (2), `com.okin.bedding.superior.superior`
+
+**Status:** Not yet tested
+
+#### Setup
+
+Choose **Superior sleep app (SS350 / SS650)**, then the app's exact product,
+**SS350** or **SS650**. **Exact Bluetooth name** selects the transport:
+a case-sensitive `BLE` prefix uses the `ble` route below; every other nonempty
+name uses `nordic`. The app accepts any named device, so an unrelated name must
+be selected manually. Shared `Smartbed`/`BLE` names offer only a weak candidate when the matching
+route service is advertised, and preserve stronger receiver identification.
+Name-only receivers remain available through explicit manual setup. No PIN, bonding or special MTU
+is required by this profile. Home Assistant adapters and proxies are supported.
+
+#### Controls
+
+The two layouts use the same command format. The app's Head/Foot rows appear
+as Back/Legs in Home Assistant. On SS650 the additional app Back row drives the
+`neckTilt` command; the integration calls this Head, without measured position
+or a claim about the mechanism. Lumbar is the fourth row.
+
+SS350 offers combined massage strength and wave controls. SS650 offers separate
+head/foot strength and mode controls. Their identically encoded wave-increase
+and mode-cycle functions belong to different product layouts. The timer button
+cycles the bed timer; it cannot select a fixed duration directly.
+
+<!-- generated:superior-sleep -->
+<!-- Generated by scripts/generate_codec_docs.py from the codec and profile data. Edit those, not this block. -->
+
+| Profile | Bed type | App motor labels | Presets | Massage adjustments | Programmable |
+|---|---|---|---|---|---|
+| superior_sleep_ss350 | `superior_sleep` | head, foot | flat, zero_g, anti_snore, lounge, memory_1, memory_2 | massage_up, massage_down, wave_up, wave_down, massage_timer | memory_1, memory_2, lounge, zero_g |
+| superior_sleep_ss650 | `superior_sleep` | head, foot, back, lumbar | flat, zero_g, anti_snore | massage_head_up, massage_head_down, massage_foot_up, massage_foot_down, massage_mode, massage_timer | zero_g |
+
+| Name route | Service | Write without response | Notify |
+|---|---|---|---|
+| nordic | `6e400001-b5a3-f393-e0a9-e50e24dcca9e` | `6e400002-b5a3-f393-e0a9-e50e24dcca9e` | `6e400003-b5a3-f393-e0a9-e50e24dcca9e` |
+| ble | `00001000-0000-1000-8000-00805f9b34fb` | `00001001-0000-1000-8000-00805f9b34fb` | `00001002-0000-1000-8000-00805f9b34fb` |
+
+| Action | Frame |
+|---|---|
+| head_up | `05 02 00 00 00 01 00` |
+| head_down | `05 02 00 00 00 02 00` |
+| foot_up | `05 02 00 00 00 04 00` |
+| foot_down | `05 02 00 00 00 08 00` |
+| lumbar_up | `05 02 00 00 00 10 00` |
+| lumbar_down | `05 02 00 00 00 20 00` |
+| back_up | `05 02 00 00 00 40 00` |
+| back_down | `05 02 00 00 00 80 00` |
+| flat | `05 02 08 00 00 00 00` |
+| zero_g | `05 02 00 00 10 00 00` |
+| anti_snore | `05 02 00 00 80 00 00` |
+| lounge | `05 02 00 00 20 00 00` |
+| memory_1 | `05 02 00 01 00 00 00` |
+| memory_2 | `05 02 00 04 00 00 00` |
+| reset_memories | `05 02 08 00 10 00 00` |
+| light | `05 02 00 02 00 00 00` |
+| motion_on | `05 02 00 02 10 00 00` |
+| motion_off | `05 02 00 02 80 00 00` |
+| massage_on | `05 02 00 08 00 00 00` |
+| massage_off | `05 02 02 00 00 00 00` |
+| massage_head_up | `05 02 00 00 08 00 00` |
+| massage_head_down | `05 02 00 80 00 00 00` |
+| massage_foot_up | `05 02 00 00 04 00 00` |
+| massage_foot_down | `05 02 01 00 00 00 00` |
+| massage_up | `05 02 00 00 0C 00 00` |
+| massage_down | `05 02 01 80 00 00 00` |
+| massage_mode | `05 02 10 00 00 00 00` |
+| wave_up | `05 02 10 00 00 00 00` |
+| wave_down | `05 02 04 00 00 00 00` |
+| massage_timer | `05 02 00 00 02 00 00` |
+| stop | `05 02 00 00 00 00 00` |
+| speech_stop | `05 02 00 00 00 03 00` |
+| query_massage | `00 B0` |
+| query_alarm | `00 C0` |
+
+| Operation | Timing |
+|---|---|
+| Held refresh | 100 ms |
+| One-shot, STOP and queries | 2 attempts, 100 ms apart |
+| Save/reset gesture | 6000 ms of the recall/chord frame, then STOP |
+| Motion activation on/off | 5000 ms refresh, then end without STOP |
+| Massage release | Refresh continues until query starts after 100 ms; no STOP |
+| Startup massage / post-alarm query | +500 ms from operation start |
+
+Selected speech targets: `head_up`, `head_down`, `foot_up`, `foot_down`,
+`back_up`, `back_down`, `lumbar_up`, `lumbar_down`, `speech_stop`, `lounge`,
+`zero_g`, `anti_snore`, `flat`, `memory_1`, `memory_2`, `massage_on`,
+`massage_off`, `light`, `motion_on`, `motion_off`.
+<!-- /generated -->
+
+#### Timing
+
+Ordinary controls use button timing. The card and `hold_control` renew movement
+only for the active press, then run its release. A regular tap is bounded by
+**Movement per tap** at the profile's refresh interval. Massage release leaves
+the timer alive until its delayed query, including a refresh due in that window.
+Other held movement, preset and light controls release with STOP.
+
+Save buttons require confirmation and hold the existing recall frame. Reset
+saved presets is a disabled, confirmed maintenance button for the app's
+Flat + Zero gravity chord. Neither operation has a separate save opcode, and
+its physical effect has not been tested. Under-bed motion activation has no
+reported state; the switch shows a delivered command, or unknown after a
+partial command or disconnect. Its refresh ends without an invented STOP.
+The app's Massage on and Massage off keys are the **Massage** switch, shown the
+same way; the massage timer, mode and level sensors show what the bed reports.
+
+The command-input action preserves the selected speech callers' timing.
+Nonmotor preset, light and massage on/off targets use the one-shot attempts;
+selected motor targets refresh until the requested HA duration or cancellation.
+The app has no automatic timeout for speech motion, so HA bounds that duration.
+The ten massage adjustments have no selected speech input. No audio is used.
+
+#### Notifications
+
+Each live route passes complete notifications directly. Truncated frames are
+ignored safely. Massage reports use `A5 0B 0E`; remaining seconds are the
+bitwise OR of the shifted high byte and low byte. The app groups them into
+10/20/30-minute display buckets, with zero outside that range. Mode is the raw
+byte minus one. Levels retain the app's non-linear calculation; no absolute
+level setter or position slider is inferred.
+
+`A5 0C` reports alarm hour, minute, raw mask and transformed app selector
+(5 becomes 17, 6 becomes 19, other values become 9). The independent app display
+maps bits 6 through 1 to Monday through Saturday, with Sunday at bit 0.
+Outbound alarm writes use enable bit 7, Monday through Saturday at bits 1 through
+6 and Sunday at bit 0. These paths are independent: the integration never
+converts a received mask into an outbound schedule or asserts a round trip.
+Physical response semantics remain unknown. Alarm fields are diagnostic and
+remain unknown until reported; writes do not invent readback state.
+
+#### Services
+
+- `sync_clock` writes HA local time, including Monday=1 through Sunday=7.
+  Startup also sets the clock and queries massage state.
+- `set_alarm` supports weekdays and the app's `m1`/`m2` choices as
+  `wake_mode_1`/`wake_mode_2`. Both selected choices encode selector 6 in the
+  shipped builder. Disabling zeroes mask, hour and minute. A delayed query reads
+  the app display independently. There is no inferred memory/actuator meaning.
+- `hold_control` accepts the product's held button controls, excluding saves,
+  reset and fixed five-second motion-activation operations.
+- `superior_sleep_speech` accepts exactly the selected targets listed above.
+  It also makes the app's shared speech targets available when absent from a
+  product's ordinary page. No duplicate speech button entities are created.
+
+#### Evidence
+
+Based on Superior sleep 1.0.0 (2), as available on November 18, 2026, which
+sends these frames on both product routes. Hardware, physical save effects and
+notification scaling have not been tested.
+
+
+## Notes
+
+### Related Okin formats
+
+The OKIN ComfortBed II-N app picks a protocol by device name:
+
+| Device prefix | Protocol | Frame |
+|---|---|---|
+| `okin-ble` | CB.13/CB.15 (FFE5) | 9 bytes: `[0xE6, 0xFE, 0x16, cmd(4), side, checksum]` |
+| `smartbed` | CB.24 (Nordic UART) | 7 bytes: `[0x05, 0x02, cmd(4), 0x00]` (no checksum) |
+
+Extra motors in those apps: neck `0x00000010`/`0x00000020`, lumbar
+`0x00000040`/`0x00000080`, hips (CB.24) `0x40000000`/`0x80000000`.
+
+Other Okin formats, which share roots but not frames: [Nectar](okin-5a.md#nectar)
+(7 bytes), [Mattress Firm 900](okin-5a.md#mattress-firm-900--iflex) (7 bytes over Nordic UART),
+[Okin CST](#okin-cst) (14 bytes) and [Okin 64-Bit](#okin-64-bit) (10-byte
+`08 02` frames; select it for a `NORA_CON` / `NORACON` controller or the
+`com.okin.bedding.adjustbed` app). The
+[brand lookup](../SUPPORTED_ACTUATORS.md) lists which brands use which family.
+
+### Analysis provenance
+
+- **Customatic:** based on the Clarity, Jerome's and Remedy 1.0.1 apps.
+- **Leggett Okin:** based on Prodigy 4 1.2.0 (`com.leggett.prodigy4`); the
+  CU170 status mapping supplements it.
+- **FurniMove:** based on FurniMove 2.2.0 (`com.okin.okinsmartcomfort`).
+- **Resident Adjustable Base:** based on `com.okin.resident.release` 1.0.0. This
+  app is separate from the Rize Resident CST profile.
+
+### Rize Remedy II
+
+**App:** Rize Remedy II 1.0.1 (2), `com.okin.bedding.rizeii`
+
+**Status:** Not yet tested
+
+#### Setup
+
+Choose **Rize Remedy II app**. There are no further questions: the layout has
+head, foot and lumbar motors, massage and lights. **Movement per tap** can be set
+from 1 to 600. The three memory buttons save Zero Gravity, Incline and Leisure.
+
+##### Known models
+
+- One fixed product and protocol in the Rize Remedy II app.
+- Select **Rize Remedy II app** explicitly. Generic OKIN names do not identify this app.
+
+##### Protocol Details
+
+The app uses the 96-bit N-frame: `0c 02`, two big-endian 32-bit fields,
+then four zero bytes. Every live frame reproduces through the shared codec.
+
+| Role | UUID |
+| --- | --- |
+| Service | `62741523-52f9-8864-b1ab-3b3a8d65950b` |
+| Write | `62741525-52f9-8864-b1ab-3b3a8d65950b` |
+| Notify | `62741625-52f9-8864-b1ab-3b3a8d65950b` |
+| Optional model read | `00002a24-0000-1000-8000-00805f9b34fb`, Device Information service |
+
+The app leaves the Android characteristic write type unchanged. HA requires
+one exact writable command role and one notifying role in the service. It
+prefers `write`, falling back to `write-without-response` only when advertised.
+This is HA policy, not proof of the app's ATT mode. HA awaits subscription
+completion; the app only checks admission of its notification/CCCD requests.
+The optional readable model value is logged after one second and selects no
+capability. There is no protocol startup payload, app PIN, bond request, MTU
+request or side byte. Generic HA adapters, Bluetooth proxies and authentication
+recovery remain platform features.
+
+##### Detection / Setup
+
+The app scans without a service filter and accepts names starting with `okin`,
+case-insensitively. HA offers a name-only app candidate, preserving stronger
+receiver matches. Choose the app manually; there is no product or protocol
+selector. The fixed layout has head, foot and lumbar axes, massage and lighting.
+Pulse count remains configurable at the app's 100 ms refresh interval.
+
+#### Controls
+
+##### Apps
+
+| App | Profile | Hardware |
+| --- | --- | --- |
+| Rize Remedy II 1.0.1 (2) | `rize_remedy_ii` | Unverified |
+
+##### Features
+
+| Feature | Support |
+| --- | --- |
+| Motors | Head, foot, lumbar up/down and bed-wide STOP |
+| Recall | Flat, Anti-Snore, Leisure, Zero Gravity, Incline |
+| Save | Flat + Zero Gravity, Flat + Incline, Flat + Leisure |
+| Light | Toggle, on, off; state is assumed, not read |
+| Massage | Waves 1/2/3, shared intensity increase/decrease, off |
+| Position feedback | None |
+| Save response | Session-local source acknowledgment, not storage or position telemetry |
+
+##### Commands
+
+<!-- generated:rize-remedy-ii-controls -->
+<!-- Generated by scripts/generate_codec_docs.py from the codec and profile data. Edit those, not this block. -->
+
+| Control | Frame |
+|---|---|
+| Stop | `0C 02 00 00 00 00 00 00 00 00 00 00 00 00` |
+| Head Up | `0C 02 00 00 00 01 00 00 00 00 00 00 00 00` |
+| Head Down | `0C 02 00 00 00 02 00 00 00 00 00 00 00 00` |
+| Foot Up | `0C 02 00 00 00 04 00 00 00 00 00 00 00 00` |
+| Foot Down | `0C 02 00 00 00 08 00 00 00 00 00 00 00 00` |
+| Lumbar Up | `0C 02 00 00 00 10 00 00 00 00 00 00 00 00` |
+| Lumbar Down | `0C 02 00 00 00 20 00 00 00 00 00 00 00 00` |
+| Flat | `0C 02 08 00 00 00 00 00 00 00 00 00 00 00` |
+| Anti Snore | `0C 02 00 00 80 00 00 00 00 00 00 00 00 00` |
+| Lounge | `0C 02 00 00 20 00 00 00 00 00 00 00 00 00` |
+| Zero G | `0C 02 00 00 10 00 00 00 00 00 00 00 00 00` |
+| Incline | `0C 02 00 00 40 00 00 00 00 00 00 00 00 00` |
+| Save Lounge | `0C 02 08 00 20 00 00 00 00 00 00 00 00 00` |
+| Save Zero G | `0C 02 08 00 10 00 00 00 00 00 00 00 00 00` |
+| Save Incline | `0C 02 08 00 40 00 00 00 00 00 00 00 00 00` |
+| Light Toggle | `0C 02 00 02 00 00 00 00 00 00 00 00 00 00` |
+| Light On | `0C 02 00 00 00 00 00 00 00 40 00 00 00 00` |
+| Light Off | `0C 02 00 00 00 00 00 00 00 80 00 00 00 00` |
+| Wave 1 | `0C 02 00 00 00 00 00 08 00 00 00 00 00 00` |
+| Wave 2 | `0C 02 00 00 00 00 00 10 00 00 00 00 00 00` |
+| Wave 3 | `0C 02 00 00 00 00 00 20 00 00 00 00 00 00` |
+| Massage Intensity Up | `0C 02 00 00 0C 00 00 00 00 00 00 00 00 00` |
+| Massage Intensity Down | `0C 02 01 80 00 00 00 00 00 00 00 00 00 00` |
+| Massage Off | `0C 02 02 00 00 00 00 00 00 00 00 00 00 00` |
+<!-- /generated -->
+
+##### Timing and release
+
+One refresh lane writes immediately and then every 100 ms while held. Ordinary
+covers send the configured pulse count. Renewable card holds continue until
+release, cancellation or lease expiry; all three axes share one physical
+resource. The app's exact-value action switch does not prove arbitrary
+concurrent motor bit unions. HA serializes replacements and completes cleanup
+before admitting the next operation.
+
+The active voice path stops one-shots after 500 ms. HA uses that bounded press
+for preset, light, massage and save buttons; `hold_control` accepts an explicit
+duration up to 60 seconds. Saves are simultaneous Flat + preset chords with no
+source hold threshold. The three named HA memory slots are Zero Gravity,
+Incline and Leisure; these names alias those exact chords, not generic app
+memory numbers. Releasing both keys sends STOP at +100 and +200 ms. Releasing
+one app key redispatches remaining Flat or recall; in HA, starting that remaining
+control first releases the previous operation. Cleanup uses fresh cancellation
+events and captured connection identity, so old delayed STOPs cannot affect a
+replacement controller or paired side.
+
+##### Notifications
+
+A save response requires more than ten bytes, byte 6 equal to `A0`, and signed
+byte 10 positive (`01` through `7F`), plus a pending save in the subscribed,
+connected session. The source pending codes are Zero Gravity 5, Incline 6,
+Leisure 3. STOP preserves pending intent. HA records the captured pending
+operation once, and invalidates it on disconnect/unsubscribe, failure or another
+operation. Overlapping unresolved saves make untagged replies ambiguous until
+the next session. A response never claims physical memory persistence. No
+position, massage or lighting state is hydrated.
+
+#### Services
+
+Use the normal movement, preset, save-memory, lighting and massage entities or
+shared actions. `hold_control` supports the profile's named controls, including
+`save_zero_g`, `save_incline` and `save_lounge`. Two-address HA pairs retain each
+physical side's profile and session. This app proves no single-address side
+selection or autonomous app reconnect; HA supplies its normal reconnect and
+safe unload cleanup.
+
+#### Evidence
+
+Based on `com.okin.bedding.rizeii` 1.0.1 (2).
+The profile reproduces all 24 live command literals. GATT/write-mode behavior,
+physical axis mapping, release effects, save acknowledgments and memory
+persistence need testing by owners.
+
+### Comfort Enhancement 3
+
+**App:** [Comfort Enhancement 3](https://play.google.com/store/apps/details?id=com.okin.apex)
+1.4.0 (5), `com.okin.apex`. Acquisition name: Comfort Plus3.
+
+**Status:** Not yet tested
+
+#### Setup
+
+1. Choose **Comfort Enhancement 3 / Comfort Plus3 app**.
+2. Choose the remote from the list, or choose to enter a code and type the exact
+   remote code. The bed's name does not tell the remotes apart.
+
+The remote decides every control. On a bed with two receivers, each side keeps
+its own remote.
+
+Choose **Comfort Enhancement 3 / Comfort Plus3 app**, then choose one of
+its remote indices or enter its exact printed code. The manual-code card is a
+setup route, not another hardware profile. Codes are case-sensitive; unknown
+codes and the app's pending-selection sentinels cannot enable controls.
+The shared Okin service offers an app candidate and preserves stronger receiver
+signatures. No Bluetooth name or manufacturer filter identifies this app or its
+remote. Each physical address keeps its own remote selection and local state.
+There are no additional physical side controls.
+
+#### Controls
+
+Head and Foot use the standard back and legs covers. M3/M4, MidBody, HeadTilt,
+TFlat and combined Head + Foot are app-labelled group buttons, not claims about
+measured anatomy or actuator count. The generated table lists every profile's
+gates. Zzz uses the QS packet on TV-equipped profiles; the wake-up picker still
+uses its own exact preset gates. Profile12 has wake-up massage without a main
+massage page. UBL controls the bed light; the phone flashlight is separate.
+
+<!-- generated:apex-controls -->
+<!-- Generated by scripts/generate_codec_docs.py from the codec and profile data. Edit those, not this block. -->
+
+| Index | Exact remote codes | Additional app groups | Memory | ZG | TV / Zzz | QS | Massage | Wake massage | Flat | UBL | Tilt |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| 0 | 89746, 90882, 91334 | none | M1/M2 | yes | no | no | no | no | yes | yes | no |
+| 1 | 92063, 91751 | none | M1/M2 | yes | no | no | no | no | yes | no | no |
+| 2 | 89925, 90568 | M3 + M4 | M1/M2 | yes | no | no | no | no | yes | yes | no |
+| 3 | 90566, 89927, 92169 | none | M1/M2 | yes | yes | no | yes | yes | yes | yes | no |
+| 4 | 90188, 92177 | Lumbar (M3) | M1 | yes | no | yes | yes | yes | yes | yes | no |
+| 5 | 90192 | M3 + M4 | M1 | yes | no | yes | yes | yes | yes | yes | no |
+| 6 | 91869, 91871, 92379 | M3 + M4 | M1 | yes | no | no | yes | yes | yes | yes | yes |
+| 7 | 93567 | Head + Foot (M1 + M2) | M1/M2 | yes | yes | no | no | no | yes | yes | no |
+| 8 | 93372 | Head + Foot (M1 + M2) | M1/M2 | yes | yes | no | yes | yes | yes | yes | no |
+| 9 | 93375 | MidBody (M3 + M4) | M1/M2 | yes | yes | no | yes | yes | yes | yes | no |
+| 10 | 93379 | M3 + M4, TFlat (M4) | M1/M2 | yes | yes | no | yes | yes | yes | yes | no |
+| 11 | PMT-5019 | MidBody (M3 + M4) | M1/M2 | no | no | no | no | no | no | yes | no |
+| 12 | PMT-5020 | HeadTilt (M3 + M4) | M1/M2 | no | no | no | no | yes | no | yes | no |
+| 13 | 95563 | MidBody (M3), TFlat (M4) | M1/M2 | yes | yes | no | yes | yes | yes | yes | no |
+| 14 | PMT-5024 | MidBody (M3), HeadTilt (M4) | M1/M2 | yes | yes | no | yes | yes | yes | yes | no |
+
+| Command | Word | Profiles | Frame |
+|---|---|---|---|
+| Head up | `0x00000001` | all | `04 02 00 00 00 01` |
+| Head down | `0x00000002` | all | `04 02 00 00 00 02` |
+| Feet up | `0x00000004` | all | `04 02 00 00 00 04` |
+| Feet down | `0x00000008` | all | `04 02 00 00 00 08` |
+| Memory 1 | `0x00001000` | all | `04 02 00 00 10 00` |
+| Memory store (arm) | `0x00010000` | all | `04 02 00 01 00 00` |
+| `m3_m4_up` | `0x00000050` | Comfort Enhancement 3 remote 2, Comfort Enhancement 3 remote 5, Comfort Enhancement 3 remote 6, Comfort Enhancement 3 remote 10 | `04 02 00 00 00 50` |
+| `m3_m4_down` | `0x000000A0` | Comfort Enhancement 3 remote 2, Comfort Enhancement 3 remote 5, Comfort Enhancement 3 remote 6, Comfort Enhancement 3 remote 10 | `04 02 00 00 00 A0` |
+| `tflat_up` | `0x00000040` | Comfort Enhancement 3 remote 10, Comfort Enhancement 3 remote 13 | `04 02 00 00 00 40` |
+| `tflat_down` | `0x00000080` | Comfort Enhancement 3 remote 10, Comfort Enhancement 3 remote 13 | `04 02 00 00 00 80` |
+| Memory 2 | `0x00002000` | Comfort Enhancement 3 remote 0, Comfort Enhancement 3 remote 1, Comfort Enhancement 3 remote 2, Comfort Enhancement 3 remote 3, Comfort Enhancement 3 remote 7, Comfort Enhancement 3 remote 8, Comfort Enhancement 3 remote 9, Comfort Enhancement 3 remote 10, Comfort Enhancement 3 remote 11, Comfort Enhancement 3 remote 12, Comfort Enhancement 3 remote 13, Comfort Enhancement 3 remote 14 | `04 02 00 00 20 00` |
+| Zero-G | `0x00004000` | Comfort Enhancement 3 remote 0, Comfort Enhancement 3 remote 1, Comfort Enhancement 3 remote 2, Comfort Enhancement 3 remote 3, Comfort Enhancement 3 remote 4, Comfort Enhancement 3 remote 5, Comfort Enhancement 3 remote 6, Comfort Enhancement 3 remote 7, Comfort Enhancement 3 remote 8, Comfort Enhancement 3 remote 9, Comfort Enhancement 3 remote 10, Comfort Enhancement 3 remote 13, Comfort Enhancement 3 remote 14 | `04 02 00 00 40 00` |
+| TV | `0x00003000` | Comfort Enhancement 3 remote 3, Comfort Enhancement 3 remote 7, Comfort Enhancement 3 remote 8, Comfort Enhancement 3 remote 9, Comfort Enhancement 3 remote 10, Comfort Enhancement 3 remote 13, Comfort Enhancement 3 remote 14 | `04 02 00 00 30 00` |
+| `qs` | `0x00008000` | Comfort Enhancement 3 remote 3, Comfort Enhancement 3 remote 4, Comfort Enhancement 3 remote 5, Comfort Enhancement 3 remote 7, Comfort Enhancement 3 remote 8, Comfort Enhancement 3 remote 9, Comfort Enhancement 3 remote 10, Comfort Enhancement 3 remote 13, Comfort Enhancement 3 remote 14 | `04 02 00 00 80 00` |
+| Flat | `0x10000000` | Comfort Enhancement 3 remote 0, Comfort Enhancement 3 remote 1, Comfort Enhancement 3 remote 2, Comfort Enhancement 3 remote 3, Comfort Enhancement 3 remote 4, Comfort Enhancement 3 remote 5, Comfort Enhancement 3 remote 6, Comfort Enhancement 3 remote 7, Comfort Enhancement 3 remote 8, Comfort Enhancement 3 remote 9, Comfort Enhancement 3 remote 10, Comfort Enhancement 3 remote 13, Comfort Enhancement 3 remote 14 | `04 02 10 00 00 00` |
+| Under-bed light toggle | `0x00020000` | Comfort Enhancement 3 remote 0, Comfort Enhancement 3 remote 2, Comfort Enhancement 3 remote 3, Comfort Enhancement 3 remote 4, Comfort Enhancement 3 remote 5, Comfort Enhancement 3 remote 6, Comfort Enhancement 3 remote 7, Comfort Enhancement 3 remote 8, Comfort Enhancement 3 remote 9, Comfort Enhancement 3 remote 10, Comfort Enhancement 3 remote 11, Comfort Enhancement 3 remote 12, Comfort Enhancement 3 remote 13, Comfort Enhancement 3 remote 14 | `04 02 00 02 00 00` |
+| `massage_duration` | `0x02000000` | Comfort Enhancement 3 remote 3, Comfort Enhancement 3 remote 4, Comfort Enhancement 3 remote 5, Comfort Enhancement 3 remote 6, Comfort Enhancement 3 remote 8, Comfort Enhancement 3 remote 9, Comfort Enhancement 3 remote 10, Comfort Enhancement 3 remote 13, Comfort Enhancement 3 remote 14 | `04 02 02 00 00 00` |
+| Head massage | `0x00000800` | Comfort Enhancement 3 remote 3, Comfort Enhancement 3 remote 4, Comfort Enhancement 3 remote 5, Comfort Enhancement 3 remote 6, Comfort Enhancement 3 remote 8, Comfort Enhancement 3 remote 9, Comfort Enhancement 3 remote 10, Comfort Enhancement 3 remote 13, Comfort Enhancement 3 remote 14 | `04 02 00 00 08 00` |
+| Foot massage | `0x00400000` | Comfort Enhancement 3 remote 3, Comfort Enhancement 3 remote 4, Comfort Enhancement 3 remote 5, Comfort Enhancement 3 remote 6, Comfort Enhancement 3 remote 8, Comfort Enhancement 3 remote 9, Comfort Enhancement 3 remote 10, Comfort Enhancement 3 remote 13, Comfort Enhancement 3 remote 14 | `04 02 00 40 00 00` |
+| Wave massage | `0x80000000` | Comfort Enhancement 3 remote 3, Comfort Enhancement 3 remote 4, Comfort Enhancement 3 remote 5, Comfort Enhancement 3 remote 6, Comfort Enhancement 3 remote 8, Comfort Enhancement 3 remote 9, Comfort Enhancement 3 remote 10, Comfort Enhancement 3 remote 13, Comfort Enhancement 3 remote 14 | `04 02 80 00 00 00` |
+| `massage_stop` | `0x00000400` | Comfort Enhancement 3 remote 3, Comfort Enhancement 3 remote 4, Comfort Enhancement 3 remote 5, Comfort Enhancement 3 remote 6, Comfort Enhancement 3 remote 8, Comfort Enhancement 3 remote 9, Comfort Enhancement 3 remote 10, Comfort Enhancement 3 remote 13, Comfort Enhancement 3 remote 14 | `04 02 00 00 04 00` |
+| `midbody_up` | `0x00000010` | Comfort Enhancement 3 remote 13, Comfort Enhancement 3 remote 14 | `04 02 00 00 00 10` |
+| `midbody_up` | `0x00000050` | Comfort Enhancement 3 remote 9, Comfort Enhancement 3 remote 11 | `04 02 00 00 00 50` |
+| `midbody_down` | `0x00000020` | Comfort Enhancement 3 remote 13, Comfort Enhancement 3 remote 14 | `04 02 00 00 00 20` |
+| `midbody_down` | `0x000000A0` | Comfort Enhancement 3 remote 9, Comfort Enhancement 3 remote 11 | `04 02 00 00 00 A0` |
+| `head_tilt_up` | `0x00000040` | Comfort Enhancement 3 remote 14 | `04 02 00 00 00 40` |
+| `head_tilt_up` | `0x00000050` | Comfort Enhancement 3 remote 12 | `04 02 00 00 00 50` |
+| `head_tilt_down` | `0x00000080` | Comfort Enhancement 3 remote 14 | `04 02 00 00 00 80` |
+| `head_tilt_down` | `0x000000A0` | Comfort Enhancement 3 remote 12 | `04 02 00 00 00 A0` |
+| `head_foot_up` | `0x00000005` | Comfort Enhancement 3 remote 7, Comfort Enhancement 3 remote 8 | `04 02 00 00 00 05` |
+| `head_foot_down` | `0x0000000A` | Comfort Enhancement 3 remote 7, Comfort Enhancement 3 remote 8 | `04 02 00 00 00 0A` |
+| Lumbar up | `0x00000010` | Comfort Enhancement 3 remote 4 | `04 02 00 00 00 10` |
+| Lumbar down | `0x00000020` | Comfort Enhancement 3 remote 4 | `04 02 00 00 00 20` |
+| `tilt` | `0x00000090` | Comfort Enhancement 3 remote 6 | `04 02 00 00 00 90` |
+| STOP / release | `0x00000000` | all | `04 02 00 00 00 00` |
+<!-- /generated -->
+
+#### Timing
+
+Movement holds use the profile's refresh and STOP schedule in
+[Choosing a profile](#choosing-a-profile). Ordinary cover presses retain the
+configured motor pulse count. A renewable card hold streams until its lease
+ends. HA serializes all resources for this app and captures the target session,
+then awaits fresh-event STOP cleanup. A denied or stale gesture cannot schedule
+a later STOP against another movement or physical bed.
+
+Presets and memories recall once and release. In Favorites, Zero Gravity's
+first callback writes, then a case mismatch makes subsequent callbacks reject
+until reset. HA keeps that single-press effect and does not expose a
+uniform renewable preset stream. The System Tilt flag omission and unconditional
+release after rejected presses are unsafe Android ownership bugs.
+
+Saving memory writes the setter at 100..4000 ms, then the selected M1/M2 recall
+at 4100/4200/4300 ms. Normal completion has no extra STOP or position read.
+Cancellation releases safely. These packets differ from local favorite labels.
+
+Massage duration cycles use zero, wait, step, wait. Initial duration/intensity
+choices send the relative number of steps; Wave uses zero and one wave command.
+The local countdown is an estimate, not reported bed state. Live expiry sends
+the bed's paired control/schedule massage-stop effect. Flat clears the local
+countdown without adding a massage-stop command.
+
+#### Notifications
+
+The controller requires write 1525 and notify 1625 under service 1523. Optional
+standard Service Changed subscriptions are enabled and awaited, then bed
+notifications get one retry. Optional model and firmware reads cannot change
+capabilities; the model's HE150 comparison has no app effect. There are no
+startup control writes, authentication, bonding, PIN, position parser or
+heartbeat. The app requests MTU512 but does not prove a negotiated value; HA
+uses its normal queued GATT transport for these short packets. Notifications
+and ACKs carry no actuator, light or massage telemetry.
+
+#### Services
+
+`comfort_enhancement3_start_massage` takes duration, intensity and Head/Feet/HF/Wave.
+`set_alarm` selects the current or next day, a slot,
+optional massage/light and an exact supported preset. It removes the old slot
+before rebuilding. `set_alarm` removes one slot.
+There is no known read/list operation or physical slot maximum.
+
+The schedule encoder concatenates `0B0D`, decimal slot/step text padded to two
+characters, eight hexadecimal delay characters, eight command characters and
+two duration characters, then parses hex pairs. Thus index 10 is encoded as
+hexadecimal `10`, not a binary integer byte. HA accepts only the nominal
+13-byte formatter domain (slot/step 0..99, unsigned fields). This is a wire-width
+check, not a firmware capacity claim. Source overflows and odd-width failures
+are rejected before any bed writes. Delay truncates microseconds to whole
+seconds toward zero, tests the sign, then multiplies by ten. HA exposes valid
+clock inputs and normalizes selected current/next day across calendar boundaries.
+
+The source's due callback includes real bed massage-stop writes. HA retains
+that effect with a captured session, slot generation and queued operation;
+edits, deletion and disconnect invalidate stale callbacks. Bed programs already
+written can continue without HA connected. Local callbacks require the same
+live session. Phone reminders, music and notifications are separate.
+
+#### Evidence
+
+All original 29 literal and eight dynamic vectors are reproduced by the Okin
+N-frame codec, including its schedule encoder. External owners may
+validate firmware acceptance.
+

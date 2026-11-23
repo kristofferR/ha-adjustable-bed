@@ -1,0 +1,1430 @@
+[
+  {
+    "id": "P1-51dca1-tap-side0",
+    "protocol": "P1",
+    "action": "deviceFunctionItemCheckClock",
+    "inputs": {
+      "code": 1,
+      "side": 0,
+      "raw": true,
+      "special": true
+    },
+    "expected_bytes": "01"
+  },
+  {
+    "id": "P1-51dcc1-tap-side0",
+    "protocol": "P1",
+    "action": "deviceFunctionItemExitLimit",
+    "inputs": {
+      "code": 0,
+      "side": 0,
+      "raw": true,
+      "special": true
+    },
+    "expected_bytes": "00"
+  },
+  {
+    "id": "P1-51dce1-tap-side0",
+    "protocol": "P1",
+    "action": "deviceFunctionItemMemoryPosition2",
+    "inputs": {
+      "code": 47,
+      "side": 0,
+      "raw": true,
+      "special": false
+    },
+    "expected_bytes": "2f"
+  },
+  {
+    "id": "P1-51dce1-save-side0",
+    "protocol": "P1",
+    "action": "deviceFunctionItemMemoryPosition2.program",
+    "inputs": {
+      "code": 44,
+      "side": 0,
+      "raw": true,
+      "special": false
+    },
+    "expected_bytes": "2c"
+  },
+  {
+    "id": "P1-51dd01-tap-side0",
+    "protocol": "P1",
+    "action": "deviceFunctionItemMemoryPosition1",
+    "inputs": {
+      "code": 46,
+      "side": 0,
+      "raw": true,
+      "special": false
+    },
+    "expected_bytes": "2e"
+  },
+  {
+    "id": "P1-51dd01-save-side0",
+    "protocol": "P1",
+    "action": "deviceFunctionItemMemoryPosition1.program",
+    "inputs": {
+      "code": 43,
+      "side": 0,
+      "raw": true,
+      "special": false
+    },
+    "expected_bytes": "2b"
+  },
+  {
+    "id": "P1-51dd21-tap-side0",
+    "protocol": "P1",
+    "action": "deviceFunctionItemAntiSnoring",
+    "inputs": {
+      "code": 70,
+      "side": 0,
+      "raw": true,
+      "special": false
+    },
+    "expected_bytes": "46"
+  },
+  {
+    "id": "P1-51dd21-save-side0",
+    "protocol": "P1",
+    "action": "deviceFunctionItemAntiSnoring.program",
+    "inputs": {
+      "code": 105,
+      "side": 0,
+      "raw": true,
+      "special": false
+    },
+    "expected_bytes": "69"
+  },
+  {
+    "id": "P1-51dd41-tap-side0",
+    "protocol": "P1",
+    "action": "deviceFunctionItemZeroGravity",
+    "inputs": {
+      "code": 69,
+      "side": 0,
+      "raw": true,
+      "special": false
+    },
+    "expected_bytes": "45"
+  },
+  {
+    "id": "P1-51dd41-save-side0",
+    "protocol": "P1",
+    "action": "deviceFunctionItemZeroGravity.program",
+    "inputs": {
+      "code": 102,
+      "side": 0,
+      "raw": true,
+      "special": false
+    },
+    "expected_bytes": "66"
+  },
+  {
+    "id": "P1-51dd61-tap-side0",
+    "protocol": "P1",
+    "action": "deviceFunctionItemMassageModeAllOff",
+    "inputs": {
+      "code": 94,
+      "side": 0,
+      "raw": true,
+      "special": false
+    },
+    "expected_bytes": "5e"
+  },
+  {
+    "id": "P1-51dd81-tap-side0",
+    "protocol": "P1",
+    "action": "deviceFunctionItemMassageModeChange",
+    "inputs": {
+      "code": 72,
+      "side": 0,
+      "raw": true,
+      "special": false
+    },
+    "expected_bytes": "48"
+  },
+  {
+    "id": "P1-51dda1-tap-side0",
+    "protocol": "P1",
+    "action": "deviceFunctionItemMassageFootInstensityStrengthen",
+    "inputs": {
+      "code": 78,
+      "side": 0,
+      "raw": true,
+      "special": false
+    },
+    "expected_bytes": "4e"
+  },
+  {
+    "id": "P1-51ddc1-tap-side0",
+    "protocol": "P1",
+    "action": "deviceFunctionItemMassageHeadInstensityStrengthen",
+    "inputs": {
+      "code": 76,
+      "side": 0,
+      "raw": true,
+      "special": false
+    },
+    "expected_bytes": "4c"
+  },
+  {
+    "id": "P1-51dde1-tap-side0",
+    "protocol": "P1",
+    "action": "deviceFunctionItemBedLight",
+    "inputs": {
+      "code": 60,
+      "side": 0,
+      "raw": true,
+      "special": false
+    },
+    "expected_bytes": "3c"
+  },
+  {
+    "id": "P1-51de01-tap-side0",
+    "protocol": "P1",
+    "action": "deviceFunctionItemMotorReset",
+    "inputs": {
+      "code": 49,
+      "side": 0,
+      "raw": true,
+      "special": false
+    },
+    "expected_bytes": "31"
+  },
+  {
+    "id": "P1-51de21-tap-side0",
+    "protocol": "P1",
+    "action": "deviceFunctionItemFootDown",
+    "inputs": {
+      "code": 39,
+      "side": 0,
+      "raw": true,
+      "special": false
+    },
+    "expected_bytes": "27"
+  },
+  {
+    "id": "P1-51de41-tap-side0",
+    "protocol": "P1",
+    "action": "deviceFunctionItemFootUp",
+    "inputs": {
+      "code": 38,
+      "side": 0,
+      "raw": true,
+      "special": false
+    },
+    "expected_bytes": "26"
+  },
+  {
+    "id": "P1-51de61-tap-side0",
+    "protocol": "P1",
+    "action": "deviceFunctionItemHeadDown",
+    "inputs": {
+      "code": 37,
+      "side": 0,
+      "raw": true,
+      "special": false
+    },
+    "expected_bytes": "25"
+  },
+  {
+    "id": "P1-51de81-tap-side0",
+    "protocol": "P1",
+    "action": "deviceFunctionItemHeadUp",
+    "inputs": {
+      "code": 36,
+      "side": 0,
+      "raw": true,
+      "special": false
+    },
+    "expected_bytes": "24"
+  },
+  {
+    "id": "P1-51dea1-tap-side0",
+    "protocol": "P1",
+    "action": "deviceFunctionItemMassage30MinuteTimer",
+    "inputs": {
+      "code": 97,
+      "side": 0,
+      "raw": true,
+      "special": false
+    },
+    "expected_bytes": "61"
+  },
+  {
+    "id": "P1-51dec1-tap-side0",
+    "protocol": "P1",
+    "action": "deviceFunctionItemMassage20MinuteTimer",
+    "inputs": {
+      "code": 99,
+      "side": 0,
+      "raw": true,
+      "special": false
+    },
+    "expected_bytes": "63"
+  },
+  {
+    "id": "P1-51dee1-tap-side0",
+    "protocol": "P1",
+    "action": "deviceFunctionItemMassage10MinuteTimer",
+    "inputs": {
+      "code": 95,
+      "side": 0,
+      "raw": true,
+      "special": false
+    },
+    "expected_bytes": "5f"
+  },
+  {
+    "id": "P1-51df01-tap-side0",
+    "protocol": "P1",
+    "action": "deviceFunctionItemStop",
+    "inputs": {
+      "code": 110,
+      "side": 0,
+      "raw": true,
+      "special": false
+    },
+    "expected_bytes": "6e"
+  },
+  {
+    "id": "P1-51df21-tap-side0",
+    "protocol": "P1",
+    "action": "deviceFunctionItemPillowDown",
+    "inputs": {
+      "code": 66,
+      "side": 0,
+      "raw": true,
+      "special": false
+    },
+    "expected_bytes": "42"
+  },
+  {
+    "id": "P1-51df41-tap-side0",
+    "protocol": "P1",
+    "action": "deviceFunctionItemPillowUp",
+    "inputs": {
+      "code": 65,
+      "side": 0,
+      "raw": true,
+      "special": false
+    },
+    "expected_bytes": "41"
+  },
+  {
+    "id": "P1-51df61-tap-side0",
+    "protocol": "P1",
+    "action": "deviceFunctionItemLumberDown",
+    "inputs": {
+      "code": 64,
+      "side": 0,
+      "raw": true,
+      "special": false
+    },
+    "expected_bytes": "40"
+  },
+  {
+    "id": "P1-51df81-tap-side0",
+    "protocol": "P1",
+    "action": "deviceFunctionItemLumberUp",
+    "inputs": {
+      "code": 63,
+      "side": 0,
+      "raw": true,
+      "special": false
+    },
+    "expected_bytes": "3f"
+  },
+  {
+    "id": "P1-51dfa1-tap-side0",
+    "protocol": "P1",
+    "action": "deviceFunctionItemHeadAndFootDown",
+    "inputs": {
+      "code": 42,
+      "side": 0,
+      "raw": true,
+      "special": false
+    },
+    "expected_bytes": "2a"
+  },
+  {
+    "id": "P1-51dfc1-tap-side0",
+    "protocol": "P1",
+    "action": "deviceFunctionItemHeadAndFootUp",
+    "inputs": {
+      "code": 41,
+      "side": 0,
+      "raw": true,
+      "special": false
+    },
+    "expected_bytes": "29"
+  },
+  {
+    "id": "P1-51dfe1-tap-side0",
+    "protocol": "P1",
+    "action": "deviceFunctionItemMemoryPosition3",
+    "inputs": {
+      "code": 48,
+      "side": 0,
+      "raw": true,
+      "special": false
+    },
+    "expected_bytes": "30"
+  },
+  {
+    "id": "P1-51dfe1-save-side0",
+    "protocol": "P1",
+    "action": "deviceFunctionItemMemoryPosition3.program",
+    "inputs": {
+      "code": 45,
+      "side": 0,
+      "raw": true,
+      "special": false
+    },
+    "expected_bytes": "2d"
+  },
+  {
+    "id": "P1-51e001-tap-side0",
+    "protocol": "P1",
+    "action": "deviceFunctionItemTVPosition",
+    "inputs": {
+      "code": 88,
+      "side": 0,
+      "raw": true,
+      "special": false
+    },
+    "expected_bytes": "58"
+  },
+  {
+    "id": "P1-51e001-save-side0",
+    "protocol": "P1",
+    "action": "deviceFunctionItemTVPosition.program",
+    "inputs": {
+      "code": 100,
+      "side": 0,
+      "raw": true,
+      "special": false
+    },
+    "expected_bytes": "64"
+  },
+  {
+    "id": "P1-51e021-tap-side0",
+    "protocol": "P1",
+    "action": "deviceFunctionItemMassageLumbarInstensityStrengthen",
+    "inputs": {
+      "code": 224,
+      "side": 0,
+      "raw": true,
+      "special": false
+    },
+    "expected_bytes": "e0"
+  },
+  {
+    "id": "P1-51e041-tap-side0",
+    "protocol": "P1",
+    "action": "deviceFunctionItemLoungePosition",
+    "inputs": {
+      "code": 89,
+      "side": 0,
+      "raw": true,
+      "special": false
+    },
+    "expected_bytes": "59"
+  },
+  {
+    "id": "P1-51e041-save-side0",
+    "protocol": "P1",
+    "action": "deviceFunctionItemLoungePosition.program",
+    "inputs": {
+      "code": 101,
+      "side": 0,
+      "raw": true,
+      "special": false
+    },
+    "expected_bytes": "65"
+  },
+  {
+    "id": "P2-51dca1-tap-side0",
+    "protocol": "P2",
+    "action": "deviceFunctionItemCheckClock",
+    "inputs": {
+      "code": 1,
+      "side": 0,
+      "raw": false,
+      "special": true
+    },
+    "expected_bytes": "6e 08 01 01 78"
+  },
+  {
+    "id": "P2-51dcc1-tap-side0",
+    "protocol": "P2",
+    "action": "deviceFunctionItemExitLimit",
+    "inputs": {
+      "code": 0,
+      "side": 0,
+      "raw": false,
+      "special": true
+    },
+    "expected_bytes": "6e 02 01 00 71"
+  },
+  {
+    "id": "P2-51dce1-tap-side0",
+    "protocol": "P2",
+    "action": "deviceFunctionItemMemoryPosition2",
+    "inputs": {
+      "code": 47,
+      "side": 0,
+      "raw": false,
+      "special": false
+    },
+    "expected_bytes": "6e 01 00 2f 9e"
+  },
+  {
+    "id": "P2-51dce1-tap-side1",
+    "protocol": "P2",
+    "action": "deviceFunctionItemMemoryPosition2",
+    "inputs": {
+      "code": 47,
+      "side": 1,
+      "raw": false,
+      "special": false
+    },
+    "expected_bytes": "6e 01 01 2f 9f"
+  },
+  {
+    "id": "P2-51dce1-save-side0",
+    "protocol": "P2",
+    "action": "deviceFunctionItemMemoryPosition2.program",
+    "inputs": {
+      "code": 44,
+      "side": 0,
+      "raw": false,
+      "special": false
+    },
+    "expected_bytes": "6e 01 00 2c 9b"
+  },
+  {
+    "id": "P2-51dce1-save-side1",
+    "protocol": "P2",
+    "action": "deviceFunctionItemMemoryPosition2.program",
+    "inputs": {
+      "code": 44,
+      "side": 1,
+      "raw": false,
+      "special": false
+    },
+    "expected_bytes": "6e 01 01 2c 9c"
+  },
+  {
+    "id": "P2-51dd01-tap-side0",
+    "protocol": "P2",
+    "action": "deviceFunctionItemMemoryPosition1",
+    "inputs": {
+      "code": 46,
+      "side": 0,
+      "raw": false,
+      "special": false
+    },
+    "expected_bytes": "6e 01 00 2e 9d"
+  },
+  {
+    "id": "P2-51dd01-tap-side1",
+    "protocol": "P2",
+    "action": "deviceFunctionItemMemoryPosition1",
+    "inputs": {
+      "code": 46,
+      "side": 1,
+      "raw": false,
+      "special": false
+    },
+    "expected_bytes": "6e 01 01 2e 9e"
+  },
+  {
+    "id": "P2-51dd01-save-side0",
+    "protocol": "P2",
+    "action": "deviceFunctionItemMemoryPosition1.program",
+    "inputs": {
+      "code": 43,
+      "side": 0,
+      "raw": false,
+      "special": false
+    },
+    "expected_bytes": "6e 01 00 2b 9a"
+  },
+  {
+    "id": "P2-51dd01-save-side1",
+    "protocol": "P2",
+    "action": "deviceFunctionItemMemoryPosition1.program",
+    "inputs": {
+      "code": 43,
+      "side": 1,
+      "raw": false,
+      "special": false
+    },
+    "expected_bytes": "6e 01 01 2b 9b"
+  },
+  {
+    "id": "P2-51dd21-tap-side0",
+    "protocol": "P2",
+    "action": "deviceFunctionItemAntiSnoring",
+    "inputs": {
+      "code": 70,
+      "side": 0,
+      "raw": false,
+      "special": false
+    },
+    "expected_bytes": "6e 01 00 46 b5"
+  },
+  {
+    "id": "P2-51dd21-tap-side1",
+    "protocol": "P2",
+    "action": "deviceFunctionItemAntiSnoring",
+    "inputs": {
+      "code": 70,
+      "side": 1,
+      "raw": false,
+      "special": false
+    },
+    "expected_bytes": "6e 01 01 46 b6"
+  },
+  {
+    "id": "P2-51dd21-save-side0",
+    "protocol": "P2",
+    "action": "deviceFunctionItemAntiSnoring.program",
+    "inputs": {
+      "code": 105,
+      "side": 0,
+      "raw": false,
+      "special": false
+    },
+    "expected_bytes": "6e 01 00 69 d8"
+  },
+  {
+    "id": "P2-51dd21-save-side1",
+    "protocol": "P2",
+    "action": "deviceFunctionItemAntiSnoring.program",
+    "inputs": {
+      "code": 105,
+      "side": 1,
+      "raw": false,
+      "special": false
+    },
+    "expected_bytes": "6e 01 01 69 d9"
+  },
+  {
+    "id": "P2-51dd41-tap-side0",
+    "protocol": "P2",
+    "action": "deviceFunctionItemZeroGravity",
+    "inputs": {
+      "code": 69,
+      "side": 0,
+      "raw": false,
+      "special": false
+    },
+    "expected_bytes": "6e 01 00 45 b4"
+  },
+  {
+    "id": "P2-51dd41-tap-side1",
+    "protocol": "P2",
+    "action": "deviceFunctionItemZeroGravity",
+    "inputs": {
+      "code": 69,
+      "side": 1,
+      "raw": false,
+      "special": false
+    },
+    "expected_bytes": "6e 01 01 45 b5"
+  },
+  {
+    "id": "P2-51dd41-save-side0",
+    "protocol": "P2",
+    "action": "deviceFunctionItemZeroGravity.program",
+    "inputs": {
+      "code": 102,
+      "side": 0,
+      "raw": false,
+      "special": false
+    },
+    "expected_bytes": "6e 01 00 66 d5"
+  },
+  {
+    "id": "P2-51dd41-save-side1",
+    "protocol": "P2",
+    "action": "deviceFunctionItemZeroGravity.program",
+    "inputs": {
+      "code": 102,
+      "side": 1,
+      "raw": false,
+      "special": false
+    },
+    "expected_bytes": "6e 01 01 66 d6"
+  },
+  {
+    "id": "P2-51dd61-tap-side0",
+    "protocol": "P2",
+    "action": "deviceFunctionItemMassageModeAllOff",
+    "inputs": {
+      "code": 94,
+      "side": 0,
+      "raw": false,
+      "special": false
+    },
+    "expected_bytes": "6e 01 00 5e cd"
+  },
+  {
+    "id": "P2-51dd61-tap-side1",
+    "protocol": "P2",
+    "action": "deviceFunctionItemMassageModeAllOff",
+    "inputs": {
+      "code": 94,
+      "side": 1,
+      "raw": false,
+      "special": false
+    },
+    "expected_bytes": "6e 01 01 5e ce"
+  },
+  {
+    "id": "P2-51dd81-tap-side0",
+    "protocol": "P2",
+    "action": "deviceFunctionItemMassageModeChange",
+    "inputs": {
+      "code": 72,
+      "side": 0,
+      "raw": false,
+      "special": false
+    },
+    "expected_bytes": "6e 01 00 48 b7"
+  },
+  {
+    "id": "P2-51dd81-tap-side1",
+    "protocol": "P2",
+    "action": "deviceFunctionItemMassageModeChange",
+    "inputs": {
+      "code": 72,
+      "side": 1,
+      "raw": false,
+      "special": false
+    },
+    "expected_bytes": "6e 01 01 48 b8"
+  },
+  {
+    "id": "P2-51dda1-tap-side0",
+    "protocol": "P2",
+    "action": "deviceFunctionItemMassageFootInstensityStrengthen",
+    "inputs": {
+      "code": 78,
+      "side": 0,
+      "raw": false,
+      "special": false
+    },
+    "expected_bytes": "6e 01 00 4e bd"
+  },
+  {
+    "id": "P2-51dda1-tap-side1",
+    "protocol": "P2",
+    "action": "deviceFunctionItemMassageFootInstensityStrengthen",
+    "inputs": {
+      "code": 78,
+      "side": 1,
+      "raw": false,
+      "special": false
+    },
+    "expected_bytes": "6e 01 01 4e be"
+  },
+  {
+    "id": "P2-51ddc1-tap-side0",
+    "protocol": "P2",
+    "action": "deviceFunctionItemMassageHeadInstensityStrengthen",
+    "inputs": {
+      "code": 76,
+      "side": 0,
+      "raw": false,
+      "special": false
+    },
+    "expected_bytes": "6e 01 00 4c bb"
+  },
+  {
+    "id": "P2-51ddc1-tap-side1",
+    "protocol": "P2",
+    "action": "deviceFunctionItemMassageHeadInstensityStrengthen",
+    "inputs": {
+      "code": 76,
+      "side": 1,
+      "raw": false,
+      "special": false
+    },
+    "expected_bytes": "6e 01 01 4c bc"
+  },
+  {
+    "id": "P2-51dde1-tap-side0",
+    "protocol": "P2",
+    "action": "deviceFunctionItemBedLight",
+    "inputs": {
+      "code": 60,
+      "side": 0,
+      "raw": false,
+      "special": false
+    },
+    "expected_bytes": "6e 01 00 3c ab"
+  },
+  {
+    "id": "P2-51dde1-tap-side1",
+    "protocol": "P2",
+    "action": "deviceFunctionItemBedLight",
+    "inputs": {
+      "code": 60,
+      "side": 1,
+      "raw": false,
+      "special": false
+    },
+    "expected_bytes": "6e 01 01 3c ac"
+  },
+  {
+    "id": "P2-51de01-tap-side0",
+    "protocol": "P2",
+    "action": "deviceFunctionItemMotorReset",
+    "inputs": {
+      "code": 49,
+      "side": 0,
+      "raw": false,
+      "special": false
+    },
+    "expected_bytes": "6e 01 00 31 a0"
+  },
+  {
+    "id": "P2-51de01-tap-side1",
+    "protocol": "P2",
+    "action": "deviceFunctionItemMotorReset",
+    "inputs": {
+      "code": 49,
+      "side": 1,
+      "raw": false,
+      "special": false
+    },
+    "expected_bytes": "6e 01 01 31 a1"
+  },
+  {
+    "id": "P2-51de21-tap-side0",
+    "protocol": "P2",
+    "action": "deviceFunctionItemFootDown",
+    "inputs": {
+      "code": 39,
+      "side": 0,
+      "raw": false,
+      "special": false
+    },
+    "expected_bytes": "6e 01 00 27 96"
+  },
+  {
+    "id": "P2-51de21-tap-side1",
+    "protocol": "P2",
+    "action": "deviceFunctionItemFootDown",
+    "inputs": {
+      "code": 39,
+      "side": 1,
+      "raw": false,
+      "special": false
+    },
+    "expected_bytes": "6e 01 01 27 97"
+  },
+  {
+    "id": "P2-51de41-tap-side0",
+    "protocol": "P2",
+    "action": "deviceFunctionItemFootUp",
+    "inputs": {
+      "code": 38,
+      "side": 0,
+      "raw": false,
+      "special": false
+    },
+    "expected_bytes": "6e 01 00 26 95"
+  },
+  {
+    "id": "P2-51de41-tap-side1",
+    "protocol": "P2",
+    "action": "deviceFunctionItemFootUp",
+    "inputs": {
+      "code": 38,
+      "side": 1,
+      "raw": false,
+      "special": false
+    },
+    "expected_bytes": "6e 01 01 26 96"
+  },
+  {
+    "id": "P2-51de61-tap-side0",
+    "protocol": "P2",
+    "action": "deviceFunctionItemHeadDown",
+    "inputs": {
+      "code": 37,
+      "side": 0,
+      "raw": false,
+      "special": false
+    },
+    "expected_bytes": "6e 01 00 25 94"
+  },
+  {
+    "id": "P2-51de61-tap-side1",
+    "protocol": "P2",
+    "action": "deviceFunctionItemHeadDown",
+    "inputs": {
+      "code": 37,
+      "side": 1,
+      "raw": false,
+      "special": false
+    },
+    "expected_bytes": "6e 01 01 25 95"
+  },
+  {
+    "id": "P2-51de81-tap-side0",
+    "protocol": "P2",
+    "action": "deviceFunctionItemHeadUp",
+    "inputs": {
+      "code": 36,
+      "side": 0,
+      "raw": false,
+      "special": false
+    },
+    "expected_bytes": "6e 01 00 24 93"
+  },
+  {
+    "id": "P2-51de81-tap-side1",
+    "protocol": "P2",
+    "action": "deviceFunctionItemHeadUp",
+    "inputs": {
+      "code": 36,
+      "side": 1,
+      "raw": false,
+      "special": false
+    },
+    "expected_bytes": "6e 01 01 24 94"
+  },
+  {
+    "id": "P2-51dea1-tap-side0",
+    "protocol": "P2",
+    "action": "deviceFunctionItemMassage30MinuteTimer",
+    "inputs": {
+      "code": 97,
+      "side": 0,
+      "raw": false,
+      "special": false
+    },
+    "expected_bytes": "6e 01 00 61 d0"
+  },
+  {
+    "id": "P2-51dea1-tap-side1",
+    "protocol": "P2",
+    "action": "deviceFunctionItemMassage30MinuteTimer",
+    "inputs": {
+      "code": 97,
+      "side": 1,
+      "raw": false,
+      "special": false
+    },
+    "expected_bytes": "6e 01 01 61 d1"
+  },
+  {
+    "id": "P2-51dec1-tap-side0",
+    "protocol": "P2",
+    "action": "deviceFunctionItemMassage20MinuteTimer",
+    "inputs": {
+      "code": 99,
+      "side": 0,
+      "raw": false,
+      "special": false
+    },
+    "expected_bytes": "6e 01 00 63 d2"
+  },
+  {
+    "id": "P2-51dec1-tap-side1",
+    "protocol": "P2",
+    "action": "deviceFunctionItemMassage20MinuteTimer",
+    "inputs": {
+      "code": 99,
+      "side": 1,
+      "raw": false,
+      "special": false
+    },
+    "expected_bytes": "6e 01 01 63 d3"
+  },
+  {
+    "id": "P2-51dee1-tap-side0",
+    "protocol": "P2",
+    "action": "deviceFunctionItemMassage10MinuteTimer",
+    "inputs": {
+      "code": 95,
+      "side": 0,
+      "raw": false,
+      "special": false
+    },
+    "expected_bytes": "6e 01 00 5f ce"
+  },
+  {
+    "id": "P2-51dee1-tap-side1",
+    "protocol": "P2",
+    "action": "deviceFunctionItemMassage10MinuteTimer",
+    "inputs": {
+      "code": 95,
+      "side": 1,
+      "raw": false,
+      "special": false
+    },
+    "expected_bytes": "6e 01 01 5f cf"
+  },
+  {
+    "id": "P2-51df01-tap-side0",
+    "protocol": "P2",
+    "action": "deviceFunctionItemStop",
+    "inputs": {
+      "code": 110,
+      "side": 0,
+      "raw": false,
+      "special": false
+    },
+    "expected_bytes": "6e 01 00 6e dd"
+  },
+  {
+    "id": "P2-51df01-tap-side1",
+    "protocol": "P2",
+    "action": "deviceFunctionItemStop",
+    "inputs": {
+      "code": 110,
+      "side": 1,
+      "raw": false,
+      "special": false
+    },
+    "expected_bytes": "6e 01 01 6e de"
+  },
+  {
+    "id": "P2-51df21-tap-side0",
+    "protocol": "P2",
+    "action": "deviceFunctionItemPillowDown",
+    "inputs": {
+      "code": 66,
+      "side": 0,
+      "raw": false,
+      "special": false
+    },
+    "expected_bytes": "6e 01 00 42 b1"
+  },
+  {
+    "id": "P2-51df21-tap-side1",
+    "protocol": "P2",
+    "action": "deviceFunctionItemPillowDown",
+    "inputs": {
+      "code": 66,
+      "side": 1,
+      "raw": false,
+      "special": false
+    },
+    "expected_bytes": "6e 01 01 42 b2"
+  },
+  {
+    "id": "P2-51df41-tap-side0",
+    "protocol": "P2",
+    "action": "deviceFunctionItemPillowUp",
+    "inputs": {
+      "code": 65,
+      "side": 0,
+      "raw": false,
+      "special": false
+    },
+    "expected_bytes": "6e 01 00 41 b0"
+  },
+  {
+    "id": "P2-51df41-tap-side1",
+    "protocol": "P2",
+    "action": "deviceFunctionItemPillowUp",
+    "inputs": {
+      "code": 65,
+      "side": 1,
+      "raw": false,
+      "special": false
+    },
+    "expected_bytes": "6e 01 01 41 b1"
+  },
+  {
+    "id": "P2-51df61-tap-side0",
+    "protocol": "P2",
+    "action": "deviceFunctionItemLumberDown",
+    "inputs": {
+      "code": 64,
+      "side": 0,
+      "raw": false,
+      "special": false
+    },
+    "expected_bytes": "6e 01 00 40 af"
+  },
+  {
+    "id": "P2-51df61-tap-side1",
+    "protocol": "P2",
+    "action": "deviceFunctionItemLumberDown",
+    "inputs": {
+      "code": 64,
+      "side": 1,
+      "raw": false,
+      "special": false
+    },
+    "expected_bytes": "6e 01 01 40 b0"
+  },
+  {
+    "id": "P2-51df81-tap-side0",
+    "protocol": "P2",
+    "action": "deviceFunctionItemLumberUp",
+    "inputs": {
+      "code": 63,
+      "side": 0,
+      "raw": false,
+      "special": false
+    },
+    "expected_bytes": "6e 01 00 3f ae"
+  },
+  {
+    "id": "P2-51df81-tap-side1",
+    "protocol": "P2",
+    "action": "deviceFunctionItemLumberUp",
+    "inputs": {
+      "code": 63,
+      "side": 1,
+      "raw": false,
+      "special": false
+    },
+    "expected_bytes": "6e 01 01 3f af"
+  },
+  {
+    "id": "P2-51dfa1-tap-side0",
+    "protocol": "P2",
+    "action": "deviceFunctionItemHeadAndFootDown",
+    "inputs": {
+      "code": 42,
+      "side": 0,
+      "raw": false,
+      "special": false
+    },
+    "expected_bytes": "6e 01 00 2a 99"
+  },
+  {
+    "id": "P2-51dfa1-tap-side1",
+    "protocol": "P2",
+    "action": "deviceFunctionItemHeadAndFootDown",
+    "inputs": {
+      "code": 42,
+      "side": 1,
+      "raw": false,
+      "special": false
+    },
+    "expected_bytes": "6e 01 01 2a 9a"
+  },
+  {
+    "id": "P2-51dfc1-tap-side0",
+    "protocol": "P2",
+    "action": "deviceFunctionItemHeadAndFootUp",
+    "inputs": {
+      "code": 41,
+      "side": 0,
+      "raw": false,
+      "special": false
+    },
+    "expected_bytes": "6e 01 00 29 98"
+  },
+  {
+    "id": "P2-51dfc1-tap-side1",
+    "protocol": "P2",
+    "action": "deviceFunctionItemHeadAndFootUp",
+    "inputs": {
+      "code": 41,
+      "side": 1,
+      "raw": false,
+      "special": false
+    },
+    "expected_bytes": "6e 01 01 29 99"
+  },
+  {
+    "id": "P2-51dfe1-tap-side0",
+    "protocol": "P2",
+    "action": "deviceFunctionItemMemoryPosition3",
+    "inputs": {
+      "code": 48,
+      "side": 0,
+      "raw": false,
+      "special": false
+    },
+    "expected_bytes": "6e 01 00 30 9f"
+  },
+  {
+    "id": "P2-51dfe1-tap-side1",
+    "protocol": "P2",
+    "action": "deviceFunctionItemMemoryPosition3",
+    "inputs": {
+      "code": 48,
+      "side": 1,
+      "raw": false,
+      "special": false
+    },
+    "expected_bytes": "6e 01 01 30 a0"
+  },
+  {
+    "id": "P2-51dfe1-save-side0",
+    "protocol": "P2",
+    "action": "deviceFunctionItemMemoryPosition3.program",
+    "inputs": {
+      "code": 45,
+      "side": 0,
+      "raw": false,
+      "special": false
+    },
+    "expected_bytes": "6e 01 00 2d 9c"
+  },
+  {
+    "id": "P2-51dfe1-save-side1",
+    "protocol": "P2",
+    "action": "deviceFunctionItemMemoryPosition3.program",
+    "inputs": {
+      "code": 45,
+      "side": 1,
+      "raw": false,
+      "special": false
+    },
+    "expected_bytes": "6e 01 01 2d 9d"
+  },
+  {
+    "id": "P2-51e001-tap-side0",
+    "protocol": "P2",
+    "action": "deviceFunctionItemTVPosition",
+    "inputs": {
+      "code": 88,
+      "side": 0,
+      "raw": false,
+      "special": false
+    },
+    "expected_bytes": "6e 01 00 58 c7"
+  },
+  {
+    "id": "P2-51e001-tap-side1",
+    "protocol": "P2",
+    "action": "deviceFunctionItemTVPosition",
+    "inputs": {
+      "code": 88,
+      "side": 1,
+      "raw": false,
+      "special": false
+    },
+    "expected_bytes": "6e 01 01 58 c8"
+  },
+  {
+    "id": "P2-51e001-save-side0",
+    "protocol": "P2",
+    "action": "deviceFunctionItemTVPosition.program",
+    "inputs": {
+      "code": 100,
+      "side": 0,
+      "raw": false,
+      "special": false
+    },
+    "expected_bytes": "6e 01 00 64 d3"
+  },
+  {
+    "id": "P2-51e001-save-side1",
+    "protocol": "P2",
+    "action": "deviceFunctionItemTVPosition.program",
+    "inputs": {
+      "code": 100,
+      "side": 1,
+      "raw": false,
+      "special": false
+    },
+    "expected_bytes": "6e 01 01 64 d4"
+  },
+  {
+    "id": "P2-51e021-tap-side0",
+    "protocol": "P2",
+    "action": "deviceFunctionItemMassageLumbarInstensityStrengthen",
+    "inputs": {
+      "code": 224,
+      "side": 0,
+      "raw": false,
+      "special": false
+    },
+    "expected_bytes": "6e 01 00 e0 4f"
+  },
+  {
+    "id": "P2-51e021-tap-side1",
+    "protocol": "P2",
+    "action": "deviceFunctionItemMassageLumbarInstensityStrengthen",
+    "inputs": {
+      "code": 224,
+      "side": 1,
+      "raw": false,
+      "special": false
+    },
+    "expected_bytes": "6e 01 01 e0 50"
+  },
+  {
+    "id": "P2-51e041-tap-side0",
+    "protocol": "P2",
+    "action": "deviceFunctionItemLoungePosition",
+    "inputs": {
+      "code": 89,
+      "side": 0,
+      "raw": false,
+      "special": false
+    },
+    "expected_bytes": "6e 01 00 59 c8"
+  },
+  {
+    "id": "P2-51e041-tap-side1",
+    "protocol": "P2",
+    "action": "deviceFunctionItemLoungePosition",
+    "inputs": {
+      "code": 89,
+      "side": 1,
+      "raw": false,
+      "special": false
+    },
+    "expected_bytes": "6e 01 01 59 c9"
+  },
+  {
+    "id": "P2-51e041-save-side0",
+    "protocol": "P2",
+    "action": "deviceFunctionItemLoungePosition.program",
+    "inputs": {
+      "code": 101,
+      "side": 0,
+      "raw": false,
+      "special": false
+    },
+    "expected_bytes": "6e 01 00 65 d4"
+  },
+  {
+    "id": "P2-51e041-save-side1",
+    "protocol": "P2",
+    "action": "deviceFunctionItemLoungePosition.program",
+    "inputs": {
+      "code": 101,
+      "side": 1,
+      "raw": false,
+      "special": false
+    },
+    "expected_bytes": "6e 01 01 65 d5"
+  },
+  {
+    "id": "P3-alarm-0-0-low",
+    "protocol": "P3",
+    "action": "countdown low",
+    "inputs": {
+      "minutes": 0,
+      "code": 0,
+      "part": "low"
+    },
+    "expected_bytes": "6e 05 00 00 73"
+  },
+  {
+    "id": "P3-alarm-0-0-high",
+    "protocol": "P3",
+    "action": "countdown high",
+    "inputs": {
+      "minutes": 0,
+      "code": 0,
+      "part": "high"
+    },
+    "expected_bytes": "6e 06 00 00 74"
+  },
+  {
+    "id": "P3-alarm-1-69-low",
+    "protocol": "P3",
+    "action": "countdown low",
+    "inputs": {
+      "minutes": 1,
+      "code": 69,
+      "part": "low"
+    },
+    "expected_bytes": "6e 05 01 00 74"
+  },
+  {
+    "id": "P3-alarm-1-69-high",
+    "protocol": "P3",
+    "action": "countdown high",
+    "inputs": {
+      "minutes": 1,
+      "code": 69,
+      "part": "high"
+    },
+    "expected_bytes": "6e 06 00 45 b9"
+  },
+  {
+    "id": "P3-alarm-300-46-low",
+    "protocol": "P3",
+    "action": "countdown low",
+    "inputs": {
+      "minutes": 300,
+      "code": 46,
+      "part": "low"
+    },
+    "expected_bytes": "6e 05 2c 00 9f"
+  },
+  {
+    "id": "P3-alarm-300-46-high",
+    "protocol": "P3",
+    "action": "countdown high",
+    "inputs": {
+      "minutes": 300,
+      "code": 46,
+      "part": "high"
+    },
+    "expected_bytes": "6e 06 01 2e a3"
+  },
+  {
+    "id": "P3-alarm-1439-88-low",
+    "protocol": "P3",
+    "action": "countdown low",
+    "inputs": {
+      "minutes": 1439,
+      "code": 88,
+      "part": "low"
+    },
+    "expected_bytes": "6e 05 9f 00 12"
+  },
+  {
+    "id": "P3-alarm-1439-88-high",
+    "protocol": "P3",
+    "action": "countdown high",
+    "inputs": {
+      "minutes": 1439,
+      "code": 88,
+      "part": "high"
+    },
+    "expected_bytes": "6e 06 05 58 d1"
+  },
+  {
+    "id": "P3-clock-2026",
+    "protocol": "P3",
+    "action": "synchronize date/time",
+    "inputs": {
+      "date_parts": [
+        2026,
+        11,
+        16,
+        12,
+        34,
+        56
+      ]
+    },
+    "expected_bytes": "6e 20 0d 08 03 01 38 0b 10 0c 22 38 60"
+  },
+  {
+    "id": "P3-clock-2025",
+    "protocol": "P3",
+    "action": "synchronize date/time",
+    "inputs": {
+      "date_parts": [
+        2025,
+        1,
+        2,
+        3,
+        4,
+        5
+      ]
+    },
+    "expected_bytes": "6e 20 0d 08 03 01 37 01 02 03 04 05 ed"
+  }
+]

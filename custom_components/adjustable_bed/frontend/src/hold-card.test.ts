@@ -1,8 +1,9 @@
-import { afterEach, expect, test } from "bun:test";
+import { afterAll, afterEach, expect, test } from "bun:test";
 import type { TemplateResult } from "lit";
 import type { HomeAssistant, MotorEntity } from "./types";
 import { bedEntitiesForDevice } from "./discovery";
 import projections from "./fixtures/reverie041-holds.json";
+import { placed } from "./test-placements";
 
 // Lit supplies its node HTMLElement shim. Only event targets are faked here;
 // templates, registered closures, card lifecycle and service dispatch are real.
@@ -18,6 +19,16 @@ const page = Object.assign(new EventTarget(), { visibilityState: "visible" });
 class KeyEvent extends Event {
   constructor(public key: string, public repeat = false, type = "keydown") { super(type, { bubbles: true, cancelable: true }); }
 }
+// This file's globals must not leak into other test files sharing the process.
+const previousGlobals = Object.fromEntries(
+  ["window", "KeyboardEvent", "document"].map((name) => [name, Object.getOwnPropertyDescriptor(globalThis, name)]),
+);
+afterAll(() => {
+  for (const [name, descriptor] of Object.entries(previousGlobals)) {
+    if (descriptor) Object.defineProperty(globalThis, name, descriptor);
+    else Reflect.deleteProperty(globalThis, name);
+  }
+});
 Object.assign(globalThis, { window: browser, KeyboardEvent: KeyEvent });
 const { AdjustableBedCard } = await import("./adjustable-bed-card");
 Object.assign(globalThis, { document: page });
@@ -60,16 +71,17 @@ const deferred = () => {
 };
 const flush = async () => { for (let i = 0; i < 8; i++) await Promise.resolve(); };
 function fixture() {
-  const hass: HomeAssistant = { entities: {}, states: {}, devices: {}, themes: {},
+  const hass: HomeAssistant = placed({ entities: {}, states: {}, devices: {}, themes: {},
+    formatEntityName: (s) => s.entity_id,
     locale: { language: "en" }, language: "en", callService: async (domain, service, data) => {
       calls.push({ domain, service, data });
       return new Promise<void>(() => {});
-    } };
+    } });
   for (const [device, key] of [["pair", "back_up"], ["left", "back_up"], ["right", "back_up"]]) {
     const entity_id = "button." + device + "_" + key;
     hass.entities[entity_id] = { entity_id, device_id: device, platform: "adjustable_bed", translation_key: key };
     hass.states[entity_id] = { entity_id, state: "unknown", last_changed: "", last_updated: "",
-      attributes: device === "pair" ? projections.compatible_both_button : {
+      attributes: device === "pair" ? { ...projections.compatible_both_button } : {
         held_control: "back_up", hold_start_delay_ms: 0, hold_release_delay_ms: 0,
       } };
     const stop = "button." + device + "_stop";
@@ -111,7 +123,7 @@ test("actual card handlers route discovered standalone and Both holds, then capt
     const { template } = row(api, hass, device);
     handler(template, "@pointerdown")(down(1));
     expect(calls.at(-1)).toEqual({ domain: "adjustable_bed", service: "hold_control", data: {
-      device_id: [device], control: "back_up", duration: 60,
+      device_id: [device], control: "back_up", duration: 0.75, hold_owner: expect.any(String), hold_generation: expect.any(Number),
     } });
     delete hass.entities["button." + device + "_stop"];
     page.visibilityState = "visible";
@@ -205,7 +217,8 @@ function useCover(hass: HomeAssistant, device: string): void {
   const entity_id = "cover." + device + "_back";
   hass.entities[entity_id] = { entity_id, device_id: device, platform: "adjustable_bed", translation_key: "back" };
   hass.states[entity_id] = { entity_id, state: "open", last_changed: "", last_updated: "",
-    attributes: device === "left" ? projections.paired_left_cover : projections.standalone_cover };
+    // A copy: tests delete projection fields, which must not leak into others.
+    attributes: { ...(device === "left" ? projections.paired_left_cover : projections.standalone_cover) } };
 }
 
 test("real Python standalone cover metadata reaches the registered bounded card path", () => {
@@ -214,7 +227,7 @@ test("real Python standalone cover metadata reaches the registered bounded card 
   const left = row(api, hass, "left");
   handler(left.template, "@pointerdown")(down(5));
   expect(calls.at(-1)).toEqual({ domain: "adjustable_bed", service: "hold_control", data: {
-    device_id: ["left"], control: "back_up", duration: 60, side: "left",
+    device_id: ["left"], control: "back_up", duration: 0.75, hold_owner: expect.any(String), hold_generation: expect.any(Number), side: "left",
   } });
   handler(left.template, "@pointerup")(up(5));
   expect(calls.at(-1)).toEqual({ domain: "cover", service: "stop_cover", data: {
@@ -317,9 +330,9 @@ function axisCover(hass: HomeAssistant, device: string, axis: string): MotorEnti
   hass.states[entity_id] = { entity_id, state: "open", last_changed: "", last_updated: "", attributes: {
     ...projections.standalone_cover, held_control_up: `${axis}_up`, held_control_down: `${axis}_down`,
   } };
-  // Older side-wide controls do not publish the new typed scope field.
+  // These controls stop the whole side, as their covers publish.
   if (axis.startsWith("starcode_m1x12_part_") || axis === "elevate_both") {
-    delete hass.states[entity_id].attributes.held_stop_scope;
+    hass.states[entity_id].attributes.held_stop_scope = "side";
   }
   return bedEntitiesForDevice(hass, device).motors.find((motor) => motor.key === axis)!;
 }
@@ -484,3 +497,62 @@ for (const key of ["Enter", " "]) {
     expect(calls.length).toBe(count);
   });
 }
+
+test("tap to move: a click starts the motor, the next click on any arrow stops it", () => {
+  const { card, api, hass } = fixture();
+  card.setConfig({ type: "custom:adjustable-bed-card", device_id: "pair", tap_to_move: true });
+  const back: MotorEntity = { key: "back", cover: "cover.back", holdLease: { deviceId: "pair", motor: "back" } };
+  const legs: MotorEntity = { key: "legs", cover: "cover.legs" };
+  const pressed = (template: TemplateResult) =>
+    template.values[template.strings.findIndex((part) => part.endsWith("aria-pressed="))];
+  const up = api._motorDirection(back, "up", "button.pair_stop");
+  // A click, so a scroll that starts on the arrow never moves the bed.
+  expect(up.strings.join("")).not.toContain("@pointerdown");
+  expect(pressed(up)).toBe("false");
+  handler(up, "@click")(new Event("click"));
+  expect(calls).toEqual([{ domain: "adjustable_bed", service: "timed_move", data: {
+    device_id: "pair", motor: "back", direction: "up", duration_ms: 750,
+    hold_owner: expect.any(String), hold_generation: expect.any(Number),
+  } }]);
+  expect(pressed(api._motorDirection(back, "up", "button.pair_stop"))).toBe("true");
+  expect(pressed(api._motorDirection(back, "down", "button.pair_stop"))).toBe("false");
+  handler(api._motorDirection(legs, "down", "button.pair_stop"), "@click")(new Event("click"));
+  expect(calls.slice(1)).toEqual([{ domain: "cover", service: "stop_cover", data: { entity_id: "cover.back" } }]);
+  expect(pressed(api._motorDirection(back, "up", "button.pair_stop"))).toBe("false");
+
+  // A held control without a lease keeps press-and-hold in tap mode, and its
+  // assistive activation stops a running tap move like a press does.
+  const windowed = row(api, hass, "left").template;
+  expect(windowed.strings.join("")).toContain("@pointerdown");
+  handler(api._motorDirection(back, "up", "button.pair_stop"), "@click")(new Event("click"));
+  handler(windowed, "@click")(Object.assign(new Event("click"), { detail: 0 }));
+  expect(calls.slice(2)).toEqual([
+    { domain: "adjustable_bed", service: "timed_move", data: expect.any(Object) },
+    { domain: "cover", service: "stop_cover", data: { entity_id: "cover.back" } },
+  ]);
+
+  // Another row's Stop is scoped to its own motor, yet still ends the tap move.
+  handler(api._motorDirection(back, "up", "button.pair_stop"), "@click")(new Event("click"));
+  stopHandler(api._motorRow(legs, "button.pair_stop"))(new Event("click"));
+  expect(calls.slice(5)).toEqual([
+    { domain: "cover", service: "stop_cover", data: { entity_id: "cover.back" } },
+    { domain: "cover", service: "stop_cover", data: { entity_id: "cover.legs" } },
+  ]);
+  expect(pressed(api._motorDirection(back, "up", "button.pair_stop"))).toBe("false");
+
+  // A preset replaces a tap move; a STOP from the card could cancel it.
+  handler(api._motorDirection(back, "up", "button.pair_stop"), "@click")(new Event("click"));
+  (card as unknown as { _press(id: string): void })._press("button.flat");
+  expect(calls.slice(8)).toEqual([
+    { domain: "button", service: "press", data: { entity_id: "button.flat" } },
+  ]);
+  expect(pressed(api._motorDirection(back, "up", "button.pair_stop"))).toBe("false");
+
+  // Holding Enter repeats native clicks; only the first keypress may toggle.
+  const keydown = handler(api._motorDirection(back, "up", "button.pair_stop"), "@keydown");
+  const first = new KeyEvent("Enter");
+  const repeat = new KeyEvent("Enter", true);
+  keydown(first);
+  keydown(repeat);
+  expect([first.defaultPrevented, repeat.defaultPrevented]).toEqual([false, true]);
+});

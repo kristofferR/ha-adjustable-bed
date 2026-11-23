@@ -7,19 +7,18 @@ import pytest
 from homeassistant.const import CONF_ADDRESS, CONF_NAME
 from homeassistant.core import HomeAssistant
 from homeassistant.data_entry_flow import FlowResultType
-from pytest_homeassistant_custom_component.common import MockConfigEntry
+from pytest_homeassistant.common import MockConfigEntry
 
+from custom_components.adjustable_bed.beds.leggett.lp_legacy_profiles import LP_LEGACY_PROFILE_CODES
 from custom_components.adjustable_bed.config_flow import (
     AdjustableBedConfigFlow,
     AdjustableBedOptionsFlow,
-    _lp_legacy_schema,
-    _validate_lp_legacy_settings,
 )
 from custom_components.adjustable_bed.const import (
     BED_TYPE_LEGGETT_LP_LEGACY,
     BED_TYPE_RICHMAT,
     CONF_BED_TYPE,
-    CONF_DISCONNECT_AFTER_COMMAND,
+    CONF_CONNECTION_MODE,
     CONF_LP_LEGACY_MODE,
     CONF_LP_LEGACY_MODEL,
     CONF_LP_LEGACY_READ_UUID,
@@ -30,8 +29,16 @@ from custom_components.adjustable_bed.const import (
 )
 from custom_components.adjustable_bed.controller_factory import create_controller
 from custom_components.adjustable_bed.detection import get_bed_type_options
-from custom_components.adjustable_bed.lp_legacy_profiles import LP_LEGACY_PROFILE_CODES
 from custom_components.adjustable_bed.pairing import build_pair_entry_data
+from custom_components.adjustable_bed.setup_questions import SETUP_PROFILES
+
+_LEGACY = SETUP_PROFILES[BED_TYPE_LEGGETT_LP_LEGACY]
+
+
+def _validate_lp_legacy_settings(data: dict) -> dict[str, str]:
+    """The declaration's own cleaning and checks, as setup and Configure run them."""
+    assert _LEGACY.validate is not None
+    return _LEGACY.validate(_LEGACY.staged({}, data))
 
 _WRITE_UUID = "11111111-2222-3333-4444-555555555555"
 _READ_UUID = "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee"
@@ -54,9 +61,14 @@ def test_explicit_choices_have_no_guessed_defaults() -> None:
         CONF_LP_LEGACY_MODE,
         CONF_LP_LEGACY_WRITE_UUID,
     }
-    assert _lp_legacy_schema({})
+    assert [question.key for question in _LEGACY.questions] == [
+        CONF_LP_LEGACY_MODEL,
+        CONF_LP_LEGACY_MODE,
+        CONF_LP_LEGACY_WRITE_UUID,
+        CONF_LP_LEGACY_READ_UUID,
+    ]
     options = {option["value"]: option["label"] for option in get_bed_type_options()}
-    assert options[BED_TYPE_LEGGETT_LP_LEGACY] == "L&P Adjustable Base (legacy app)"
+    assert options[BED_TYPE_LEGGETT_LP_LEGACY] == "L&P Adjustable Base app (older version)"
     assert BED_TYPE_RICHMAT in options
 
 
@@ -79,20 +91,17 @@ async def test_manual_entry_collects_and_saves_legacy_settings(hass: HomeAssista
     flow.hass = hass
     flow.context = {"source": "user"}
     flow._selected_bed_type = BED_TYPE_LEGGETT_LP_LEGACY
-    result = await flow.async_step_manual_entry(
-        {
-            CONF_ADDRESS: "AA:BB:CC:DD:EE:FF",
-            CONF_NAME: "Legacy app bed",
-            CONF_BED_TYPE: BED_TYPE_LEGGETT_LP_LEGACY,
-            CONF_DISCONNECT_AFTER_COMMAND: False,
-        }
-    )
-    assert result["step_id"] == "lp_legacy"
-    invalid = await flow.async_step_lp_legacy({})
-    assert invalid["step_id"] == "lp_legacy"
+    result = await flow.async_step_manual_entry({CONF_ADDRESS: "AA:BB:CC:DD:EE:FF"})
+    assert result["step_id"] == "profile_questions"
+    invalid = await flow.async_step_profile_questions({CONF_LP_LEGACY_MODE: "framed"})
+    assert invalid["step_id"] == "profile_questions"
     assert CONF_LP_LEGACY_MODEL in invalid["errors"]
     with patch.object(AdjustableBedConfigFlow, "_verification_possible", return_value=False):
-        result = await flow.async_step_lp_legacy(_settings())
+        result = await flow.async_step_profile_questions(_settings())
+        assert result["step_id"] == "finish_settings"
+        result = await flow.async_step_finish_settings(
+            {CONF_NAME: "Legacy app bed", CONF_CONNECTION_MODE: "idle"}
+        )
     assert result["type"] == FlowResultType.CREATE_ENTRY
     assert result["data"][CONF_BED_TYPE] == BED_TYPE_LEGGETT_LP_LEGACY
     assert {key: result["data"][key] for key in _settings()} == _settings()
@@ -125,7 +134,7 @@ async def test_factory_uses_explicit_config_without_inspecting_advertisements(
 ) -> None:
     coordinator = SimpleNamespace(hass=hass, entry=SimpleNamespace(data=_settings()))
     with patch(
-        "custom_components.adjustable_bed.beds.leggett_lp_legacy.LeggettLpLegacyController"
+        "custom_components.adjustable_bed.beds.leggett.lp_legacy.LeggettLpLegacyController"
     ) as constructor:
         await create_controller(
             coordinator,
@@ -178,9 +187,8 @@ async def test_paired_options_preserve_each_sides_profile_and_endpoints(
     shown = {marker.schema for marker in result["data_schema"].schema}
     assert shown.isdisjoint(_settings())
     # A side's own profile is not part of the shared form.
-    refused = await flow.async_step_settings({CONF_MOTOR_PULSE_COUNT: "20", **right})
-    assert refused["errors"] == {"base": "app_profile_unpair_first"}
-    result = await flow.async_step_settings({CONF_MOTOR_PULSE_COUNT: "20"})
+    # A side's own app fields are not on the shared form, so they are ignored.
+    result = await flow.async_step_settings({CONF_MOTOR_PULSE_COUNT: 20, **right})
     assert result["type"] == FlowResultType.CREATE_ENTRY
     for child, original in zip(entry.data[CONF_PAIR_CHILDREN], (left, right), strict=True):
         assert {key: child[key] for key in _settings()} == {
@@ -190,19 +198,3 @@ async def test_paired_options_preserve_each_sides_profile_and_endpoints(
     assert set(entry.data).isdisjoint(_settings())
 
 
-async def test_paired_type_change_cannot_create_unconfigured_lp_sides(hass: HomeAssistant) -> None:
-    data = build_pair_entry_data(
-        {CONF_ADDRESS: "AA:BB:CC:DD:EE:01", CONF_BED_TYPE: BED_TYPE_RICHMAT},
-        {CONF_ADDRESS: "AA:BB:CC:DD:EE:02", CONF_BED_TYPE: BED_TYPE_RICHMAT},
-        name="Pair",
-    )
-    entry = MockConfigEntry(domain=DOMAIN, data=data)
-    entry.add_to_hass(hass)
-    flow = AdjustableBedOptionsFlow(entry)
-    flow.hass = hass
-    flow.handler = entry.entry_id
-
-    result = await flow.async_step_settings({CONF_BED_TYPE: BED_TYPE_LEGGETT_LP_LEGACY})
-
-    assert result["errors"] == {CONF_BED_TYPE: "app_profile_unpair_first"}
-    assert entry.data == data

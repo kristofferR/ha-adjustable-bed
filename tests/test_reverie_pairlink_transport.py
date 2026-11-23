@@ -13,7 +13,7 @@ from dbus_fast import DBusError, Message, Variant
 from dbus_fast.aio import MessageBus
 from dbus_fast.constants import MessageType
 
-from custom_components.adjustable_bed.beds import reverie_pairlink_transport as transport
+from custom_components.adjustable_bed.beds.reverie import pairlink_transport as transport
 
 _SOURCE = "AA:BB:CC:DD:EE:FF"
 _ADAPTER = "hci3"
@@ -670,7 +670,7 @@ async def test_source_descriptor_profile_requires_active_role_before_opening_bus
 
 
 async def test_source_profile_maps_to_functional_bluez_profile() -> None:
-    from custom_components.adjustable_bed.beds.reverie_pairlink_profile import (
+    from custom_components.adjustable_bed.beds.reverie.pairlink_profile import (
         build_pairlink_peripheral_profile,
     )
 
@@ -741,7 +741,7 @@ async def test_production_advertisement_uses_only_reported_optional_power(
 ) -> None:
     from dbus_fast.service import ServiceInterface
 
-    from custom_components.adjustable_bed.beds.reverie_pairlink_profile import (
+    from custom_components.adjustable_bed.beds.reverie.pairlink_profile import (
         build_pairlink_peripheral_profile,
     )
 

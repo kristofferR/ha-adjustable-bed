@@ -1,0 +1,633 @@
+[
+  {
+    "id": "head_up",
+    "protocol": "P1",
+    "action": "head_up",
+    "kind": "control",
+    "inputs": {
+      "action": "head_up"
+    },
+    "expected_bytes": "05 02 00 00 00 01 00 00"
+  },
+  {
+    "id": "head_down",
+    "protocol": "P1",
+    "action": "head_down",
+    "kind": "control",
+    "inputs": {
+      "action": "head_down"
+    },
+    "expected_bytes": "05 02 00 00 00 02 00 00"
+  },
+  {
+    "id": "foot_up",
+    "protocol": "P1",
+    "action": "foot_up",
+    "kind": "control",
+    "inputs": {
+      "action": "foot_up"
+    },
+    "expected_bytes": "05 02 00 00 00 04 00 00"
+  },
+  {
+    "id": "foot_down",
+    "protocol": "P1",
+    "action": "foot_down",
+    "kind": "control",
+    "inputs": {
+      "action": "foot_down"
+    },
+    "expected_bytes": "05 02 00 00 00 08 00 00"
+  },
+  {
+    "id": "headrest_up",
+    "protocol": "P1",
+    "action": "headrest_up",
+    "kind": "control",
+    "inputs": {
+      "action": "headrest_up"
+    },
+    "expected_bytes": "05 02 00 00 00 10 00 00"
+  },
+  {
+    "id": "headrest_down",
+    "protocol": "P1",
+    "action": "headrest_down",
+    "kind": "control",
+    "inputs": {
+      "action": "headrest_down"
+    },
+    "expected_bytes": "05 02 00 00 00 20 00 00"
+  },
+  {
+    "id": "lumbar_up",
+    "protocol": "P1",
+    "action": "lumbar_up",
+    "kind": "control",
+    "inputs": {
+      "action": "lumbar_up"
+    },
+    "expected_bytes": "05 02 00 00 00 40 00 00"
+  },
+  {
+    "id": "lumbar_down",
+    "protocol": "P1",
+    "action": "lumbar_down",
+    "kind": "control",
+    "inputs": {
+      "action": "lumbar_down"
+    },
+    "expected_bytes": "05 02 00 00 00 80 00 00"
+  },
+  {
+    "id": "hips_up",
+    "protocol": "P1",
+    "action": "hips_up",
+    "kind": "control",
+    "inputs": {
+      "action": "hips_up"
+    },
+    "expected_bytes": "05 02 40 00 00 00 00 00"
+  },
+  {
+    "id": "hips_down",
+    "protocol": "P1",
+    "action": "hips_down",
+    "kind": "control",
+    "inputs": {
+      "action": "hips_down"
+    },
+    "expected_bytes": "05 02 80 00 00 00 00 00"
+  },
+  {
+    "id": "flat",
+    "protocol": "P1",
+    "action": "flat",
+    "kind": "control",
+    "inputs": {
+      "action": "flat"
+    },
+    "expected_bytes": "05 02 08 00 00 00 00 00"
+  },
+  {
+    "id": "reading",
+    "protocol": "P1",
+    "action": "reading",
+    "kind": "control",
+    "inputs": {
+      "action": "reading"
+    },
+    "expected_bytes": "05 02 00 00 20 00 00 00"
+  },
+  {
+    "id": "tv",
+    "protocol": "P1",
+    "action": "tv",
+    "kind": "control",
+    "inputs": {
+      "action": "tv"
+    },
+    "expected_bytes": "05 02 00 00 40 00 00 00"
+  },
+  {
+    "id": "zero_gravity",
+    "protocol": "P1",
+    "action": "zero_gravity",
+    "kind": "control",
+    "inputs": {
+      "action": "zero_gravity"
+    },
+    "expected_bytes": "05 02 00 00 10 00 00 00"
+  },
+  {
+    "id": "anti_snore_preset",
+    "protocol": "P1",
+    "action": "anti_snore_preset",
+    "kind": "control",
+    "inputs": {
+      "action": "anti_snore_preset"
+    },
+    "expected_bytes": "05 02 00 00 80 00 00 00"
+  },
+  {
+    "id": "memory_1",
+    "protocol": "P1",
+    "action": "memory_1",
+    "kind": "control",
+    "inputs": {
+      "action": "memory_1"
+    },
+    "expected_bytes": "05 02 00 01 00 00 00 00"
+  },
+  {
+    "id": "memory_2",
+    "protocol": "P1",
+    "action": "memory_2",
+    "kind": "control",
+    "inputs": {
+      "action": "memory_2"
+    },
+    "expected_bytes": "05 02 00 04 00 00 00 00"
+  },
+  {
+    "id": "massage_all",
+    "protocol": "P1",
+    "action": "massage_all",
+    "kind": "control",
+    "inputs": {
+      "action": "massage_all"
+    },
+    "expected_bytes": "05 02 00 00 01 00 00 00"
+  },
+  {
+    "id": "massage_stop_all",
+    "protocol": "P1",
+    "action": "massage_stop_all",
+    "kind": "control",
+    "inputs": {
+      "action": "massage_stop_all"
+    },
+    "expected_bytes": "05 02 02 00 00 00 00 00"
+  },
+  {
+    "id": "massage_wave_next",
+    "protocol": "P1",
+    "action": "massage_wave_next",
+    "kind": "control",
+    "inputs": {
+      "action": "massage_wave_next"
+    },
+    "expected_bytes": "05 02 10 00 00 00 00 00"
+  },
+  {
+    "id": "massage_timer_next",
+    "protocol": "P1",
+    "action": "massage_timer_next",
+    "kind": "control",
+    "inputs": {
+      "action": "massage_timer_next"
+    },
+    "expected_bytes": "05 02 00 00 02 00 00 00"
+  },
+  {
+    "id": "massage_foot_strength_next",
+    "protocol": "P1",
+    "action": "massage_foot_strength_next",
+    "kind": "control",
+    "inputs": {
+      "action": "massage_foot_strength_next"
+    },
+    "expected_bytes": "05 02 00 00 04 00 00 00"
+  },
+  {
+    "id": "massage_head_strength_next",
+    "protocol": "P1",
+    "action": "massage_head_strength_next",
+    "kind": "control",
+    "inputs": {
+      "action": "massage_head_strength_next"
+    },
+    "expected_bytes": "05 02 00 00 08 00 00 00"
+  },
+  {
+    "id": "light",
+    "protocol": "P1",
+    "action": "light",
+    "kind": "control",
+    "inputs": {
+      "action": "light"
+    },
+    "expected_bytes": "05 02 00 02 00 00 00 00"
+  },
+  {
+    "id": "stop",
+    "protocol": "P1",
+    "action": "stop",
+    "kind": "control",
+    "inputs": {
+      "action": "stop"
+    },
+    "expected_bytes": "05 02 00 00 00 00 00 00"
+  },
+  {
+    "id": "reading_program",
+    "protocol": "P1",
+    "action": "reading_program",
+    "kind": "control",
+    "inputs": {
+      "action": "reading",
+      "save": true
+    },
+    "expected_bytes": "05 02 00 00 20 00 00 0f"
+  },
+  {
+    "id": "tv_program",
+    "protocol": "P1",
+    "action": "tv_program",
+    "kind": "control",
+    "inputs": {
+      "action": "tv",
+      "save": true
+    },
+    "expected_bytes": "05 02 00 00 40 00 00 0f"
+  },
+  {
+    "id": "zero_gravity_program",
+    "protocol": "P1",
+    "action": "zero_gravity_program",
+    "kind": "control",
+    "inputs": {
+      "action": "zero_gravity",
+      "save": true
+    },
+    "expected_bytes": "05 02 00 00 10 00 00 0f"
+  },
+  {
+    "id": "anti_snore_preset_program",
+    "protocol": "P1",
+    "action": "anti_snore_preset_program",
+    "kind": "control",
+    "inputs": {
+      "action": "anti_snore_preset",
+      "save": true
+    },
+    "expected_bytes": "05 02 00 00 80 00 00 0f"
+  },
+  {
+    "id": "memory_1_program",
+    "protocol": "P1",
+    "action": "memory_1_program",
+    "kind": "control",
+    "inputs": {
+      "action": "memory_1",
+      "save": true
+    },
+    "expected_bytes": "05 02 00 01 00 00 00 0f"
+  },
+  {
+    "id": "memory_2_program",
+    "protocol": "P1",
+    "action": "memory_2_program",
+    "kind": "control",
+    "inputs": {
+      "action": "memory_2",
+      "save": true
+    },
+    "expected_bytes": "05 02 00 04 00 00 00 0f"
+  },
+  {
+    "id": "stop_program",
+    "protocol": "P1",
+    "action": "stop_program",
+    "kind": "control",
+    "inputs": {
+      "action": "stop",
+      "save": true
+    },
+    "expected_bytes": "05 02 00 00 00 00 00 0f"
+  },
+  {
+    "id": "configuration_query",
+    "protocol": "P1",
+    "action": "configuration_query",
+    "kind": "query",
+    "inputs": {
+      "opcode": 160
+    },
+    "expected_bytes": "00 a0"
+  },
+  {
+    "id": "status_query",
+    "protocol": "P1",
+    "action": "status_query",
+    "kind": "query",
+    "inputs": {
+      "opcode": 176
+    },
+    "expected_bytes": "00 b0"
+  },
+  {
+    "id": "alarm_0_query",
+    "protocol": "P1",
+    "action": "alarm_0_query",
+    "kind": "query",
+    "inputs": {
+      "opcode": 192
+    },
+    "expected_bytes": "00 c0"
+  },
+  {
+    "id": "alarm_1_query",
+    "protocol": "P1",
+    "action": "alarm_1_query",
+    "kind": "query",
+    "inputs": {
+      "opcode": 208
+    },
+    "expected_bytes": "00 d0"
+  },
+  {
+    "id": "alarm_2_query",
+    "protocol": "P1",
+    "action": "alarm_2_query",
+    "kind": "query",
+    "inputs": {
+      "opcode": 224
+    },
+    "expected_bytes": "00 e0"
+  },
+  {
+    "id": "setting_177_1",
+    "protocol": "P1",
+    "action": "setting_177_1",
+    "kind": "setting",
+    "inputs": {
+      "opcode": 177,
+      "value": 1
+    },
+    "expected_bytes": "01 b1 01"
+  },
+  {
+    "id": "setting_177_2",
+    "protocol": "P1",
+    "action": "setting_177_2",
+    "kind": "setting",
+    "inputs": {
+      "opcode": 177,
+      "value": 2
+    },
+    "expected_bytes": "01 b1 02"
+  },
+  {
+    "id": "setting_178_0",
+    "protocol": "P1",
+    "action": "setting_178_0",
+    "kind": "setting",
+    "inputs": {
+      "opcode": 178,
+      "value": 0
+    },
+    "expected_bytes": "01 b2 00"
+  },
+  {
+    "id": "setting_178_1",
+    "protocol": "P1",
+    "action": "setting_178_1",
+    "kind": "setting",
+    "inputs": {
+      "opcode": 178,
+      "value": 1
+    },
+    "expected_bytes": "01 b2 01"
+  },
+  {
+    "id": "setting_180_1",
+    "protocol": "P1",
+    "action": "setting_180_1",
+    "kind": "setting",
+    "inputs": {
+      "opcode": 180,
+      "value": 1
+    },
+    "expected_bytes": "01 b4 01"
+  },
+  {
+    "id": "setting_181_0",
+    "protocol": "P1",
+    "action": "setting_181_0",
+    "kind": "setting",
+    "inputs": {
+      "opcode": 181,
+      "value": 0
+    },
+    "expected_bytes": "01 b5 00"
+  },
+  {
+    "id": "setting_181_1",
+    "protocol": "P1",
+    "action": "setting_181_1",
+    "kind": "setting",
+    "inputs": {
+      "opcode": 181,
+      "value": 1
+    },
+    "expected_bytes": "01 b5 01"
+  },
+  {
+    "id": "history_confirm",
+    "protocol": "P1",
+    "action": "history_confirm",
+    "kind": "setting",
+    "inputs": {
+      "opcode": 179,
+      "value": 1
+    },
+    "expected_bytes": "01 b3 01"
+  },
+  {
+    "id": "intervention_0_1",
+    "protocol": "P1",
+    "action": "intervention_0_1",
+    "kind": "intervention",
+    "inputs": {
+      "mode": 0,
+      "level": 1
+    },
+    "expected_bytes": "02 0b 00 01 01 00 00"
+  },
+  {
+    "id": "intervention_1_3",
+    "protocol": "P1",
+    "action": "intervention_1_3",
+    "kind": "intervention",
+    "inputs": {
+      "mode": 1,
+      "level": 3
+    },
+    "expected_bytes": "02 0b 01 03 01 00 00"
+  },
+  {
+    "id": "intervention_2_7",
+    "protocol": "P1",
+    "action": "intervention_2_7",
+    "kind": "intervention",
+    "inputs": {
+      "mode": 2,
+      "level": 7
+    },
+    "expected_bytes": "02 0b 02 07 01 00 00"
+  },
+  {
+    "id": "intervention_stop",
+    "protocol": "P1",
+    "action": "intervention_stop",
+    "kind": "intervention_stop",
+    "inputs": {},
+    "expected_bytes": "02 0b 00 01"
+  },
+  {
+    "id": "clock_1",
+    "protocol": "P1",
+    "action": "clock_1",
+    "kind": "clock",
+    "inputs": {
+      "datetime": "2026-11-17T12:34:56"
+    },
+    "expected_bytes": "07 04 7e 0a 11 01 0c 22 38"
+  },
+  {
+    "id": "clock_2",
+    "protocol": "P1",
+    "action": "clock_2",
+    "kind": "clock",
+    "inputs": {
+      "datetime": "2025-01-01T00:01:02"
+    },
+    "expected_bytes": "07 04 7d 00 01 02 00 01 02"
+  },
+  {
+    "id": "alarm_type_0",
+    "protocol": "P1",
+    "action": "alarm_type_0",
+    "kind": "alarm",
+    "inputs": {
+      "type_index": 0,
+      "week": 127,
+      "hour": 7,
+      "minute": 30
+    },
+    "expected_bytes": "07 05 7f 01 07 1e 00 01 01"
+  },
+  {
+    "id": "alarm_type_1",
+    "protocol": "P1",
+    "action": "alarm_type_1",
+    "kind": "alarm",
+    "inputs": {
+      "type_index": 1,
+      "week": 127,
+      "hour": 7,
+      "minute": 30
+    },
+    "expected_bytes": "07 05 7f 09 07 1e 00 01 01"
+  },
+  {
+    "id": "alarm_type_2",
+    "protocol": "P1",
+    "action": "alarm_type_2",
+    "kind": "alarm",
+    "inputs": {
+      "type_index": 2,
+      "week": 127,
+      "hour": 7,
+      "minute": 30
+    },
+    "expected_bytes": "07 05 7f 05 07 1e 00 01 01"
+  },
+  {
+    "id": "alarm_type_3",
+    "protocol": "P1",
+    "action": "alarm_type_3",
+    "kind": "alarm",
+    "inputs": {
+      "type_index": 3,
+      "week": 127,
+      "hour": 7,
+      "minute": 30
+    },
+    "expected_bytes": "07 05 7f 06 07 1e 00 01 01"
+  },
+  {
+    "id": "alarm_type_4",
+    "protocol": "P1",
+    "action": "alarm_type_4",
+    "kind": "alarm",
+    "inputs": {
+      "type_index": 4,
+      "week": 127,
+      "hour": 7,
+      "minute": 30
+    },
+    "expected_bytes": "07 05 7f 08 07 1e 00 01 01"
+  },
+  {
+    "id": "alarm_close",
+    "protocol": "P1",
+    "action": "alarm_close",
+    "kind": "alarm_close",
+    "inputs": {},
+    "expected_bytes": "07 05 00 00 00 00 00 00 00"
+  },
+  {
+    "id": "alarm3_0",
+    "protocol": "P1",
+    "action": "alarm3_0",
+    "kind": "alarm3",
+    "inputs": {
+      "index": 0,
+      "week": 127,
+      "action_code": 5,
+      "hour": 8,
+      "minute": 15,
+      "open": 1,
+      "soft": 1
+    },
+    "expected_bytes": "07 05 7f 05 08 0f 00 01 00 01"
+  },
+  {
+    "id": "alarm3_2",
+    "protocol": "P1",
+    "action": "alarm3_2",
+    "kind": "alarm3",
+    "inputs": {
+      "index": 2,
+      "week": 2,
+      "action_code": 8,
+      "hour": 23,
+      "minute": 59,
+      "open": 0,
+      "soft": 0
+    },
+    "expected_bytes": "07 07 02 08 17 3b 00 00 00 00"
+  }
+]

@@ -1,0 +1,1 @@
+"""leggett bed family."""

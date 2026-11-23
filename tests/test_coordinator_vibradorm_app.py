@@ -13,18 +13,20 @@ from bleak.backends.device import BLEDevice
 from bleak.exc import BleakError
 from homeassistant.const import CONF_ADDRESS, CONF_NAME
 from homeassistant.core import HomeAssistant
-from pytest_homeassistant_custom_component.common import MockConfigEntry
+from pytest_homeassistant.common import MockConfigEntry
 
 from custom_components.adjustable_bed import _build_paired_children
 from custom_components.adjustable_bed.adapter import AdapterSelectionResult
-from custom_components.adjustable_bed.beds.vibradorm_app import (
-    CBI,
-    COMMAND,
+from custom_components.adjustable_bed.beds.vibradorm.app import (
     INFO_FIELDS,
-    RESPONSE,
     VibradormAppController,
     VibradormAppMetadata,
     async_prepare_vibradorm_app_pairing,
+)
+from custom_components.adjustable_bed.beds.vibradorm.app_state import (
+    clear_vibradorm_app_session_intent,
+    get_vibradorm_app_session_intent,
+    mark_vibradorm_app_selection,
 )
 from custom_components.adjustable_bed.bluetooth_transport import ConnectionPath, TransportClass
 from custom_components.adjustable_bed.bond_verification import (
@@ -34,6 +36,9 @@ from custom_components.adjustable_bed.bond_verification import (
     BondVerificationStatus,
     build_bond_context,
 )
+from custom_components.adjustable_bed.codec.vibradorm import CBI_CHAR_UUID as CBI
+from custom_components.adjustable_bed.codec.vibradorm import MOTOR_CHAR_UUID as COMMAND
+from custom_components.adjustable_bed.codec.vibradorm import RESPONSE_CHAR_UUID as RESPONSE
 from custom_components.adjustable_bed.const import (
     BED_TYPE_VIBRADORM_APP,
     CONF_BED_TYPE,
@@ -57,11 +62,9 @@ from custom_components.adjustable_bed.controller_factory import create_controlle
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
 from custom_components.adjustable_bed.paired_coordinator import PairedBedCoordinator
 from custom_components.adjustable_bed.pairing import get_child
-from custom_components.adjustable_bed.vibradorm_app_state import (
-    clear_vibradorm_app_session_intent,
-    get_vibradorm_app_session_intent,
-    mark_vibradorm_app_selection,
-)
+from custom_components.adjustable_bed.profiles.vibradorm import vibradorm_app_metadata_key
+from tests.coordinator_patches import patch_coordinator_global
+from tests.hold_lease_wire import virtual_clock
 
 from .conftest import TEST_ADDRESS, TEST_NAME, make_controller_mock
 
@@ -69,7 +72,9 @@ _LOCAL = ConnectionPath(source="11:22:33:44:55:66", transport=TransportClass.LOC
 _PROXY = ConnectionPath(source="proxy-source", transport=TransportClass.PROXY)
 _METADATA = VibradormAppMetadata("model", "firmware", "software", "article")
 _MODULE = "custom_components.adjustable_bed.coordinator"
-_HELPER = "custom_components.adjustable_bed.beds.vibradorm_app.async_prepare_vibradorm_app_pairing"
+_CONNECTION = "custom_components.adjustable_bed.coordinator_connection"
+_BONDS = "custom_components.adjustable_bed.coordinator_bonds"
+_HELPER = "custom_components.adjustable_bed.beds.vibradorm.app.async_prepare_vibradorm_app_pairing"
 
 
 def _evidence(path: ConnectionPath, positive: bool = False) -> BondEvidence:
@@ -129,7 +134,7 @@ def test_marker_scope_requires_exact_context_or_attempt_source(
 async def test_existing_exact_native_proof_skips_first_information_and_pair(
     coordinator: AdjustableBedCoordinator
 ) -> None:
-    with patch(f"{_MODULE}.async_verify_native_bond", return_value=_evidence(_LOCAL, True)), patch(
+    with patch(f"{_BONDS}.async_verify_native_bond", return_value=_evidence(_LOCAL, True)), patch(
         _HELPER, new_callable=AsyncMock
     ) as info:
         assert await coordinator._async_pair_on_live_link({})
@@ -164,7 +169,7 @@ async def test_stored_native_context_avoids_repairing_on_inconclusive_inventory(
     def native(*args, **kwargs):
         return _evidence(path, positive=coordinator.client.pair.await_count > 0)
 
-    with patch(f"{_MODULE}.async_verify_native_bond", side_effect=native), patch(
+    with patch(f"{_BONDS}.async_verify_native_bond", side_effect=native), patch(
         _HELPER, return_value=_METADATA
     ) as info, patch.object(coordinator, "_async_raise_pairing_issue", new_callable=AsyncMock) as issue:
         result = await coordinator._async_pair_on_live_link(details, force_pairing=force_pairing)
@@ -186,7 +191,7 @@ async def test_live_native_repair_does_not_write_an_intermediate_false_marker(
         CONF_BLE_BOND_CONTEXT: {**build_bond_context(_evidence(_LOCAL, True)), "verified_at": "before"},
     })
     coordinator._ble_bond_established = True
-    with patch(f"{_MODULE}.async_verify_native_bond", return_value=_evidence(_LOCAL, True)), patch.object(
+    with patch(f"{_BONDS}.async_verify_native_bond", return_value=_evidence(_LOCAL, True)), patch.object(
         coordinator, "_async_persist_config", wraps=coordinator._async_persist_config
     ) as persist:
         assert await coordinator.async_pair_now()
@@ -210,7 +215,7 @@ async def test_first_bond_information_precedes_rpc_and_native_proof(
         trace.append("pair")
 
     coordinator.client.pair.side_effect = pair
-    with patch(f"{_MODULE}.async_verify_native_bond", side_effect=[
+    with patch(f"{_BONDS}.async_verify_native_bond", side_effect=[
         _evidence(_LOCAL), _evidence(_LOCAL, True)
     ]) as native, patch(_HELPER, side_effect=info):
         assert await coordinator._async_pair_on_live_link({})
@@ -235,7 +240,7 @@ async def test_fresh_metadata_and_replacement_native_marker_use_one_guarded_writ
         CONF_VIBRADORM_APP_METADATA: {"model": "old"},
     })
     coordinator._ble_bond_established = True
-    with patch(f"{_MODULE}.async_verify_native_bond", side_effect=[
+    with patch(f"{_BONDS}.async_verify_native_bond", side_effect=[
         _evidence(_LOCAL), _evidence(_LOCAL, True)
     ]), patch(_HELPER, return_value=_METADATA), patch.object(
         coordinator, "_async_persist_config", wraps=coordinator._async_persist_config
@@ -251,7 +256,7 @@ async def test_proxy_rpc_success_is_only_source_scoped_unverified_attempt(
     coordinator: AdjustableBedCoordinator
 ) -> None:
     coordinator._connection_path = _PROXY
-    with patch(f"{_MODULE}.async_verify_native_bond", return_value=_evidence(_PROXY)), patch(
+    with patch(f"{_BONDS}.async_verify_native_bond", return_value=_evidence(_PROXY)), patch(
         _HELPER, return_value=_METADATA
     ) as info, patch.object(coordinator, "_async_raise_pairing_issue", new_callable=AsyncMock) as issue:
         assert not await coordinator._async_pair_on_live_link({})
@@ -278,7 +283,7 @@ async def test_successful_pair_rpc_with_readable_absence_cannot_establish_a_mark
         )
     absent = replace(_evidence(_LOCAL), status=BondVerificationStatus.NATIVE_ABSENT, error=error)
     details: dict = {}
-    with patch(f"{_MODULE}.async_verify_native_bond", return_value=absent), patch(
+    with patch(f"{_BONDS}.async_verify_native_bond", return_value=absent), patch(
         _HELPER, return_value=_METADATA,
     ) as info, patch.object(coordinator, "_async_raise_pairing_issue", new_callable=AsyncMock) as issue:
         assert not await coordinator._async_pair_on_live_link(details, force_pairing=True)
@@ -303,7 +308,7 @@ async def test_failed_native_pair_keeps_live_link_without_proof(
     coordinator: AdjustableBedCoordinator, error: Exception
 ) -> None:
     coordinator.client.pair.side_effect = error
-    with patch(f"{_MODULE}.async_verify_native_bond", return_value=_evidence(_LOCAL)), patch(
+    with patch(f"{_BONDS}.async_verify_native_bond", return_value=_evidence(_LOCAL)), patch(
         _HELPER, return_value=_METADATA
     ), patch.object(coordinator, "_async_raise_pairing_issue", new_callable=AsyncMock) as issue:
         assert not await coordinator._async_pair_on_live_link({})
@@ -316,7 +321,7 @@ async def test_failed_native_pair_keeps_live_link_without_proof(
 async def test_runtime_native_probe_keeps_unverified_link_but_repair_cannot_succeed(
     coordinator: AdjustableBedCoordinator
 ) -> None:
-    with patch(f"{_MODULE}.async_verify_native_bond", return_value=_evidence(_LOCAL)), patch(
+    with patch(f"{_BONDS}.async_verify_native_bond", return_value=_evidence(_LOCAL)), patch(
         _HELPER, return_value=_METADATA
     ), patch.object(coordinator, "_async_raise_pairing_issue", new_callable=AsyncMock):
         assert await coordinator._async_verify_bonded()
@@ -328,7 +333,6 @@ async def test_runtime_native_probe_keeps_unverified_link_but_repair_cannot_succ
 async def test_one_deadline_bounds_information_and_pair_without_reset(
     coordinator: AdjustableBedCoordinator
 ) -> None:
-    deadline = asyncio.get_running_loop().time() + 0.04
     reached_pair = asyncio.Event()
 
     async def info(*args, **kwargs):
@@ -341,9 +345,12 @@ async def test_one_deadline_bounds_information_and_pair_without_reset(
         await asyncio.Event().wait()
 
     coordinator.client.pair.side_effect = pair
-    with patch(f"{_MODULE}.async_verify_native_bond", return_value=_evidence(_LOCAL)), patch(
+    # On virtual time the deadline falls inside the pair, never earlier because
+    # the loop was busy.
+    with virtual_clock(), patch(f"{_BONDS}.async_verify_native_bond", return_value=_evidence(_LOCAL)), patch(
         _HELPER, side_effect=info
     ), pytest.raises(TimeoutError):
+        deadline = asyncio.get_running_loop().time() + 0.04
         await coordinator._async_pair_on_live_link({}, onboarding_deadline=deadline)
     assert reached_pair.is_set()
     assert not coordinator._ble_bond_established
@@ -361,14 +368,14 @@ async def test_actual_rerouted_source_is_used_before_first_bond_and_dis_is_skipp
         seen_paths.append(path)
         return _evidence(_PROXY)
 
-    with patch(f"{_MODULE}.client_source", return_value=_PROXY.source), patch(
-        f"{_MODULE}.async_path_for_source", return_value=_PROXY
-    ), patch(f"{_MODULE}.async_verify_native_bond", side_effect=native), patch(
+    with patch(f"{_CONNECTION}.client_source", return_value=_PROXY.source), patch(
+        f"{_CONNECTION}.async_path_for_source", return_value=_PROXY
+    ), patch(f"{_BONDS}.async_verify_native_bond", side_effect=native), patch(
         _HELPER, return_value=_METADATA
-    ), patch(f"{_MODULE}.create_controller", return_value=controller), patch(
-        f"{_MODULE}.read_ble_device_info", new_callable=AsyncMock
+    ), patch_coordinator_global("create_controller", return_value=controller), patch(
+        f"{_CONNECTION}.read_ble_device_info", new_callable=AsyncMock
     ) as dis, patch.object(coordinator, "_async_raise_pairing_issue", new_callable=AsyncMock), patch(
-        f"{_MODULE}.close_stale_connections_by_address", new_callable=AsyncMock
+        f"{_CONNECTION}.close_stale_connections_by_address", new_callable=AsyncMock
     ):
         assert await coordinator.async_connect()
     assert seen_paths and all(path == _PROXY for path in seen_paths)
@@ -397,16 +404,18 @@ async def test_connect_and_information_share_deadline_and_expiry_cleans_link(
         assert kwargs["deadline"] == connection_deadline
         await asyncio.Event().wait()
 
-    with patch(f"{_MODULE}.asyncio.timeout_at", wraps=asyncio.timeout_at) as timeout_at, patch(
-        f"{_MODULE}.VIBRADORM_APP_ONBOARDING_TIMEOUT_SECONDS", 0.04
-    ), patch(
-        f"{_MODULE}.establish_connection", side_effect=connect
-    ), patch(f"{_MODULE}.client_source", return_value=_LOCAL.source), patch(
-        f"{_MODULE}.async_path_for_source", return_value=_LOCAL
-    ), patch(f"{_MODULE}.async_verify_native_bond", return_value=_evidence(_LOCAL)), patch(
+    # Entered first, so the spy wraps the virtual deadline: it expires during the
+    # information read, never during a connect a busy loop delayed.
+    with virtual_clock(), patch(
+        f"{_MODULE}.asyncio.timeout_at", wraps=asyncio.timeout_at
+    ) as timeout_at, patch_coordinator_global("VIBRADORM_APP_ONBOARDING_TIMEOUT_SECONDS", 0.04), patch(
+        f"{_CONNECTION}.establish_connection", side_effect=connect
+    ), patch(f"{_CONNECTION}.client_source", return_value=_LOCAL.source), patch(
+        f"{_CONNECTION}.async_path_for_source", return_value=_LOCAL
+    ), patch(f"{_BONDS}.async_verify_native_bond", return_value=_evidence(_LOCAL)), patch(
         _HELPER, side_effect=info
     ), patch(
-        f"{_MODULE}.close_stale_connections_by_address", new_callable=AsyncMock
+        f"{_CONNECTION}.close_stale_connections_by_address", new_callable=AsyncMock
     ):
         assert not await coordinator.async_connect()
     assert mock_bleak_client.disconnect.await_count >= 1
@@ -423,7 +432,7 @@ async def test_historical_command_stop_does_not_cancel_explicit_pairing(
         assert kwargs["cancel_event"] is None
         return _METADATA
 
-    with patch(f"{_MODULE}.async_verify_native_bond", side_effect=[
+    with patch(f"{_BONDS}.async_verify_native_bond", side_effect=[
         _evidence(_LOCAL), _evidence(_LOCAL, True)
     ]), patch(_HELPER, side_effect=info):
         assert await coordinator._async_pair_live_and_verify()
@@ -447,12 +456,12 @@ async def test_existing_werkmeister_bond_starts_real_notifications_without_infor
     )]
     mock_bleak_client.start_notify = AsyncMock()
     mock_bleak_client.stop_notify = AsyncMock()
-    with patch(f"{_MODULE}.client_source", return_value=_LOCAL.source), patch(
-        f"{_MODULE}.async_path_for_source", return_value=_LOCAL
-    ), patch(f"{_MODULE}.async_verify_native_bond", return_value=_evidence(_LOCAL, True)), patch(
+    with patch(f"{_CONNECTION}.client_source", return_value=_LOCAL.source), patch(
+        f"{_CONNECTION}.async_path_for_source", return_value=_LOCAL
+    ), patch(f"{_BONDS}.async_verify_native_bond", return_value=_evidence(_LOCAL, True)), patch(
         _HELPER, new_callable=AsyncMock
-    ) as info, patch(f"{_MODULE}.read_ble_device_info", new_callable=AsyncMock) as dis, patch(
-        f"{_MODULE}.close_stale_connections_by_address", new_callable=AsyncMock
+    ) as info, patch(f"{_CONNECTION}.read_ble_device_info", new_callable=AsyncMock) as dis, patch(
+        f"{_CONNECTION}.close_stale_connections_by_address", new_callable=AsyncMock
     ):
         assert await coordinator.async_connect()
     assert isinstance(coordinator.controller, VibradormAppController)
@@ -549,14 +558,14 @@ async def test_first_native_onboarding_with_stored_strings_runs_real_information
     mock_bleak_client.read_gatt_char = AsyncMock(side_effect=read)
     mock_bleak_client.write_gatt_char = AsyncMock(side_effect=write)
     mock_bleak_client.pair = AsyncMock(side_effect=pair)
-    with patch(f"{_MODULE}.establish_connection", side_effect=establish), patch(
-        f"{_MODULE}.client_source", return_value=_LOCAL.source
-    ), patch(f"{_MODULE}.async_path_for_source", return_value=_LOCAL), patch(
-        f"{_MODULE}.async_verify_native_bond", side_effect=native
+    with patch(f"{_CONNECTION}.establish_connection", side_effect=establish), patch(
+        f"{_CONNECTION}.client_source", return_value=_LOCAL.source
+    ), patch(f"{_CONNECTION}.async_path_for_source", return_value=_LOCAL), patch(
+        f"{_BONDS}.async_verify_native_bond", side_effect=native
     ), patch(_HELPER, wraps=async_prepare_vibradorm_app_pairing) as helper, patch.object(
         coordinator, "_async_pair_on_live_link", wraps=coordinator._async_pair_on_live_link
-    ) as onboarding, patch(f"{_MODULE}.read_ble_device_info", new_callable=AsyncMock) as generic, patch(
-        f"{_MODULE}.close_stale_connections_by_address", new_callable=AsyncMock
+    ) as onboarding, patch(f"{_CONNECTION}.read_ble_device_info", new_callable=AsyncMock) as generic, patch(
+        f"{_CONNECTION}.close_stale_connections_by_address", new_callable=AsyncMock
     ):
         assert await coordinator.async_connect()
     expected = ["connect", "native", *([] if basic else ["subscribe"]),
@@ -586,7 +595,7 @@ async def test_invalid_retained_control_is_rejected_before_information_or_pair(
     hass.config_entries.async_update_entry(coordinator.entry, data={
         **coordinator.entry.data, CONF_VIBRADORM_CONTROL_TYPE: stored_control,
     })
-    with patch(f"{_MODULE}.async_verify_native_bond", return_value=_evidence(_LOCAL)), pytest.raises(ValueError):
+    with patch(f"{_BONDS}.async_verify_native_bond", return_value=_evidence(_LOCAL)), pytest.raises(ValueError):
         await coordinator._async_pair_on_live_link({})
     coordinator.client.read_gatt_char.assert_not_called()
     coordinator.client.pair.assert_not_called()
@@ -602,7 +611,7 @@ async def test_failed_information_clears_cached_marker_with_one_write_and_reload
         CONF_BLE_BOND_CONTEXT: historical_context,
     })
     coordinator._ble_bond_established = True
-    with patch(f"{_MODULE}.async_verify_native_bond", return_value=_evidence(_LOCAL)), patch(
+    with patch(f"{_BONDS}.async_verify_native_bond", return_value=_evidence(_LOCAL)), patch(
         _HELPER, side_effect=error
     ), patch.object(coordinator, "_async_persist_config", wraps=coordinator._async_persist_config) as persist, pytest.raises(type(error)):
         await coordinator._async_pair_on_live_link({}, force_pairing=True)
@@ -628,11 +637,11 @@ async def test_cancelled_first_information_cleans_actual_connection_and_propagat
         reading.set()
         await asyncio.Event().wait()
 
-    with patch(f"{_MODULE}.client_source", return_value=_LOCAL.source), patch(
-        f"{_MODULE}.async_path_for_source", return_value=_LOCAL
-    ), patch(f"{_MODULE}.async_verify_native_bond", return_value=_evidence(_LOCAL)), patch(
+    with patch(f"{_CONNECTION}.client_source", return_value=_LOCAL.source), patch(
+        f"{_CONNECTION}.async_path_for_source", return_value=_LOCAL
+    ), patch(f"{_BONDS}.async_verify_native_bond", return_value=_evidence(_LOCAL)), patch(
         _HELPER, side_effect=info
-    ), patch(f"{_MODULE}.close_stale_connections_by_address", new_callable=AsyncMock):
+    ), patch(f"{_CONNECTION}.close_stale_connections_by_address", new_callable=AsyncMock):
         task = asyncio.create_task(coordinator.async_connect())
         await asyncio.wait_for(reading.wait(), 1)
         task.cancel()
@@ -775,7 +784,7 @@ async def test_actual_factory_first_selection_and_reconstruction_use_shared_floo
     coordinator.client.write_gatt_char = AsyncMock()
     first = await create_controller(coordinator, BED_TYPE_VIBRADORM_APP, None, coordinator.client)
     assert isinstance(first, VibradormAppController)
-    assert first.get_light_state()["state_source"] == "local_intent"
+    assert first._floor_light_intent()["state_source"] == "local_intent"
     await first.lights_toggle()
     assert coordinator.client.write_gatt_char.await_args.args[1].hex() == "80110000"
     assert state.floor.level == 0 and state.floor.default_level == 6
@@ -810,7 +819,7 @@ async def test_failed_ble_toggle_keeps_remembered_intent_through_guarded_prefere
     assert coordinator.entry.data[CONF_VIBRADORM_FLOOR_DEFAULT] == 4
     assert coordinator.consume_internal_entry_update(coordinator.entry)
     assert (state.floor.level, state.floor.default_level) == (0, 4)
-    assert controller.get_light_state()["state_source"] == "local_intent"
+    assert controller._floor_light_intent()["state_source"] == "local_intent"
 
 
 async def test_paired_preference_write_and_ownership_migration_preserve_only_target_intent(
@@ -895,9 +904,9 @@ async def test_real_information_partial_progress_survives_terminal_failure_in_on
         CONF_BLE_BOND_CONTEXT: historical_context, CONF_VIBRADORM_APP_METADATA: old_metadata,
     })
     coordinator._ble_bond_established = True
-    coordinator.handle_controller_state_updates({
-        f"vibradorm_app_{field}": value for field, value in old_metadata.items()
-    })
+    coordinator.handle_controller_state_updates(*(
+        vibradorm_app_metadata_key(field)(value) for field, value in old_metadata.items()
+    ))
     client = coordinator.client
     characters = {
         uuid: MagicMock(uuid=uuid, handle=index + 1, properties=properties)
@@ -955,10 +964,11 @@ async def test_real_information_partial_progress_survives_terminal_failure_in_on
         asyncio.CancelledError if failure.endswith("cancel")
         else BleakError if failure.endswith("error") else TimeoutError
     )
-    deadline = asyncio.get_running_loop().time() + 0.04
-    with patch(f"{_MODULE}.async_verify_native_bond", return_value=_evidence(_LOCAL)), patch.object(
+    # On virtual time a blocked stage, not a busy loop, decides which stage times out.
+    with virtual_clock(), patch(f"{_BONDS}.async_verify_native_bond", return_value=_evidence(_LOCAL)), patch.object(
         coordinator, "_async_persist_config", wraps=coordinator._async_persist_config
     ) as persist, pytest.raises(expected_exception):
+        deadline = asyncio.get_running_loop().time() + 0.04
         await coordinator._async_pair_on_live_link({}, onboarding_deadline=deadline, force_pairing=True)
     persist.assert_called_once()
     expected = {**old_metadata, "model": "new model", "firmware": ""}
@@ -1009,7 +1019,7 @@ async def test_real_refresh_batch_persists_partial_or_full_metadata_for_reconstr
 
     client.read_gatt_char = AsyncMock(side_effect=read)
     with patch.object(coordinator, "_async_persist_config", wraps=coordinator._async_persist_config) as persist, patch(
-        f"{_MODULE}.async_verify_native_bond"
+        f"{_BONDS}.async_verify_native_bond"
     ) as native:
         if error is None:
             await controller.refresh_device_info()
@@ -1062,15 +1072,15 @@ async def test_established_reconnect_retains_connection_profile_budget(
         await asyncio.sleep(0.02)  # Longer than the compressed first-onboarding budget.
         return mock_bleak_client
 
-    with patch(f"{_MODULE}.VIBRADORM_APP_ONBOARDING_TIMEOUT_SECONDS", 0.01), patch(
-        f"{_MODULE}.select_adapter", return_value=adapter
-    ), patch(f"{_MODULE}.establish_connection", side_effect=connect), patch(
-        f"{_MODULE}.client_source", return_value=path.source
-    ), patch(f"{_MODULE}.async_path_for_source", return_value=path), patch(
-        f"{_MODULE}.async_verify_native_bond", return_value=_evidence(path, native_context)
-    ), patch(_HELPER, new_callable=AsyncMock) as info, patch(
-        f"{_MODULE}.create_controller", return_value=controller
-    ), patch(f"{_MODULE}.close_stale_connections_by_address", new_callable=AsyncMock), patch.object(
+    with patch_coordinator_global("VIBRADORM_APP_ONBOARDING_TIMEOUT_SECONDS", 0.01), patch(
+        f"{_CONNECTION}.select_adapter", return_value=adapter
+    ), patch(f"{_CONNECTION}.establish_connection", side_effect=connect), patch(
+        f"{_CONNECTION}.client_source", return_value=path.source
+    ), patch(f"{_CONNECTION}.async_path_for_source", return_value=path), patch(
+        f"{_BONDS}.async_verify_native_bond", return_value=_evidence(path, native_context)
+    ), patch(_HELPER, new_callable=AsyncMock) as info, patch_coordinator_global(
+        "create_controller", return_value=controller
+    ), patch(f"{_CONNECTION}.close_stale_connections_by_address", new_callable=AsyncMock), patch.object(
         coordinator, "_async_pair_on_live_link", wraps=coordinator._async_pair_on_live_link
     ) as pairing:
         assert await coordinator.async_connect()
@@ -1105,14 +1115,14 @@ async def test_established_selected_path_reroute_retains_original_onboarding_dea
         await asyncio.sleep(0.02)
         return mock_bleak_client
 
-    with patch(f"{_MODULE}.VIBRADORM_APP_ONBOARDING_TIMEOUT_SECONDS", 0.01), patch(
-        f"{_MODULE}.select_adapter", return_value=adapter
-    ), patch(f"{_MODULE}.establish_connection", side_effect=connect), patch(
-        f"{_MODULE}.client_source", return_value=_PROXY.source
-    ), patch(f"{_MODULE}.async_path_for_source", return_value=_PROXY), patch(
-        f"{_MODULE}.async_verify_native_bond", return_value=_evidence(_PROXY)
+    with patch_coordinator_global("VIBRADORM_APP_ONBOARDING_TIMEOUT_SECONDS", 0.01), patch(
+        f"{_CONNECTION}.select_adapter", return_value=adapter
+    ), patch(f"{_CONNECTION}.establish_connection", side_effect=connect), patch(
+        f"{_CONNECTION}.client_source", return_value=_PROXY.source
+    ), patch(f"{_CONNECTION}.async_path_for_source", return_value=_PROXY), patch(
+        f"{_BONDS}.async_verify_native_bond", return_value=_evidence(_PROXY)
     ), patch(_HELPER, new_callable=AsyncMock) as info, patch(
-        f"{_MODULE}.close_stale_connections_by_address", new_callable=AsyncMock
+        f"{_CONNECTION}.close_stale_connections_by_address", new_callable=AsyncMock
     ), patch.object(
         coordinator, "_async_pair_on_live_link", wraps=coordinator._async_pair_on_live_link
     ) as pairing:
@@ -1147,7 +1157,7 @@ async def test_readable_native_absence_replaces_saved_same_source_marker(
         assert not coordinator._unverified_marker_applies(_LOCAL.source)
         return _METADATA
 
-    with patch(f"{_MODULE}.async_verify_native_bond", side_effect=[absent, _evidence(_LOCAL, True)]), patch(
+    with patch(f"{_BONDS}.async_verify_native_bond", side_effect=[absent, _evidence(_LOCAL, True)]), patch(
         _HELPER, side_effect=info
     ) as metadata:
         assert await coordinator._async_pair_on_live_link({})
@@ -1172,16 +1182,16 @@ async def test_readable_absence_after_slow_reconnect_does_not_reset_onboarding_b
         await asyncio.sleep(0.02)
         return mock_bleak_client
 
-    with patch(f"{_MODULE}.VIBRADORM_APP_ONBOARDING_TIMEOUT_SECONDS", 0.01), patch(
-        f"{_MODULE}.select_adapter", return_value=adapter
-    ), patch(f"{_MODULE}.establish_connection", side_effect=connect), patch(
-        f"{_MODULE}.client_source", return_value=_LOCAL.source
-    ), patch(f"{_MODULE}.async_path_for_source", return_value=_LOCAL), patch(
-        f"{_MODULE}.async_verify_native_bond", return_value=replace(
+    with patch_coordinator_global("VIBRADORM_APP_ONBOARDING_TIMEOUT_SECONDS", 0.01), patch(
+        f"{_CONNECTION}.select_adapter", return_value=adapter
+    ), patch(f"{_CONNECTION}.establish_connection", side_effect=connect), patch(
+        f"{_CONNECTION}.client_source", return_value=_LOCAL.source
+    ), patch(f"{_CONNECTION}.async_path_for_source", return_value=_LOCAL), patch(
+        f"{_BONDS}.async_verify_native_bond", return_value=replace(
             _evidence(_LOCAL), status=BondVerificationStatus.NATIVE_ABSENT, error="native_bond_no_bond"
         )
     ), patch(_HELPER, new_callable=AsyncMock) as info, patch(
-        f"{_MODULE}.close_stale_connections_by_address", new_callable=AsyncMock
+        f"{_CONNECTION}.close_stale_connections_by_address", new_callable=AsyncMock
     ):
         assert not await coordinator.async_connect()
     info.assert_not_awaited()

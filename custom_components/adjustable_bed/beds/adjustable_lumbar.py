@@ -1,6 +1,6 @@
 """Adjustable bed (Lumbar) app profile (com.okin.bedding.adjustablelumbar 1.2.2).
 
-Accepted as APK audit row054. The app ships three command tables and picks one
+Based on Adjustable bed (Lumbar) 1.2.2. The app ships three command tables and picks one
 from the lowercase Bluetooth name: ``okin`` selects ``36_33_04a`` (OKIN service,
 write with response); ``star`` selects ``25_42_02`` (Nordic UART, write without
 response), upgraded to ``35_22_01`` when the Device Information manufacturer
@@ -12,25 +12,39 @@ from __future__ import annotations
 
 import asyncio
 import logging
-from collections.abc import Callable, Mapping
+from collections.abc import Callable
 from dataclasses import replace
 from typing import TYPE_CHECKING, Final, Literal
 
 from bleak.exc import BleakError
 
+from ..card import CARD_MASSAGE, CARD_PRESET_SAVE, CARD_UTILITY
+from ..codec import okin_5a, okin_nframe
 from ..const import (
     ADJUSTABLE_LUMBAR_VARIANT_OKIN,
     ADJUSTABLE_LUMBAR_VARIANT_STAR,
+    BED_TYPE_ADJUSTABLE_BED,
     CONF_BLE_DEVICE_NAME,
 )
 from ..detection import is_mac_like_name
-from .base import (
-    BedController,
-    ControllerButtonSpec,
-    MotorCommandCallable,
-    MotorControlSpec,
-    SideBoundController,
+from ..profiles.adjustable_bed import (
+    PROFILES,
+    VOICE_FINITE,
+    VOICE_MOTORS,
+    VOICE_PRESETS,
+    AdjustableAppProfile,
 )
+from ..profiles.okin_nframe import (
+    ADJUSTABLE_LUMBAR_KEYS,
+    ADJUSTABLE_LUMBAR_PROFILES,
+    ADJUSTABLE_LUMBAR_REFRESH_MS,
+    ADJUSTABLE_LUMBAR_SAVE_HOLD_MS,
+    OkinNFrameProfile,
+)
+from .base import BedController, ProfileExecution
+from .builder import BuildContext
+from .catalog_buttons import as_save
+from .entity_specs import ControllerButtonSpec, MotorCommandCallable, MotorControlSpec
 
 if TYPE_CHECKING:
     from bleak.backends.characteristic import BleakGATTCharacteristic
@@ -52,75 +66,50 @@ DEVICE_INFO_SERVICE: Final = "0000180a-0000-1000-8000-00805f9b34fb"
 MANUFACTURER_CHAR: Final = "00002a29-0000-1000-8000-00805f9b34fb"
 STAR_MANUFACTURER: Final = b"STAR"  # Exact, case-sensitive; a trailing NUL fails.
 
-REFRESH_MS: Final = 100  # Held controls write immediately, then every 100 ms.
-RELEASE_STOP_OFFSETS_S: Final = (0.0, 0.3)  # Release: STOP now and at +300 ms.
+REFRESH_MS: Final = ADJUSTABLE_LUMBAR_REFRESH_MS
+_RELEASE: Final = ADJUSTABLE_LUMBAR_PROFILES["25_42_02"].hold
+RELEASE_STOP_OFFSETS_S: Final = tuple(  # Release: STOP now and at +300 ms.
+    (_RELEASE.release_after_ms + index * _RELEASE.release_ms) / 1000
+    for index in range(_RELEASE.releases)
+)
 EXTRA_WRITE_S: Final = 0.1  # One-repeat commands write at 0 and +100 ms.
-# The app reports "Setup" after a Flat+preset chord is held for 6 s (its help
-# text says 5 s). The save frame itself starts at once; storage is unverified.
-SAVE_HOLD_MS: Final = 6000
+# The save frame starts at once; storage is unverified.
+SAVE_HOLD_MS: Final = ADJUSTABLE_LUMBAR_SAVE_HOLD_MS
 # Integration guard, not a protocol value: bounds the manufacturer read.
 MANUFACTURER_READ_TIMEOUT_S: Final = 5.0
 
-# 25_42_02 and 36_33_04a frames: 08 02 + the table's eight payload bytes.
-_LONG_PAYLOADS: Final[dict[str, str]] = {
-    "head_up": "00 00 00 01 00 00 00 00",
-    "head_down": "00 00 00 02 00 00 00 00",
-    "feet_up": "00 00 00 04 00 00 00 00",
-    "feet_down": "00 00 00 08 00 00 00 00",
-    "lumbar_up": "00 00 00 10 00 00 00 00",
-    "lumbar_down": "00 00 00 20 00 00 00 00",
-    "stop": "00 00 00 00 00 00 00 00",
-    "flat": "08 00 00 00 00 00 00 00",
-    "anti_snore": "00 00 80 00 00 00 00 00",
-    "lounge": "00 00 20 00 00 00 00 00",  # App label LEISURE (memoryLounge).
-    "incline": "00 00 40 00 00 00 00 00",  # App label INCLINE (memoryTvpc).
-    "zero_g": "00 00 10 00 00 00 00 00",
-    "save_anti_snore": "08 00 80 00 00 00 00 00",
-    "save_lounge": "08 00 20 00 00 00 00 00",
-    "save_incline": "08 00 40 00 00 00 00 00",
-    "save_zero_g": "08 00 10 00 00 00 00 00",
-    "light": "00 02 00 00 00 00 00 00",
-    "wave_1": "00 00 00 00 00 08 00 00",
-    "wave_2": "00 00 00 00 00 10 00 00",
-    "wave_3": "00 00 00 00 00 20 00 00",
-    "massage_stop": "02 00 00 00 00 00 00 00",
-    "massage_up": "00 00 0c 00 00 00 00 00",
-    "massage_down": "01 80 00 00 00 00 00 00",
-    "massage_on": "00 00 01 00 00 00 00 00",  # Reachable only through voice.
-    "voice_stop": "00 00 00 00 00 00 00 00",  # Voice pre-STOP is the ordinary STOP.
-}
-# 35_22_01 frames: 5a 01 + four payload bytes + a5.
-_STAR_PAYLOADS: Final[dict[str, str]] = {
-    "head_up": "03 10 30 00",
-    "head_down": "03 10 30 01",
-    "feet_up": "03 10 30 02",
-    "feet_down": "03 10 30 03",
-    "lumbar_up": "03 10 30 06",
-    "lumbar_down": "03 10 30 07",
-    "stop": "03 10 30 0f",
-    "flat": "03 10 30 10",
-    "anti_snore": "03 10 30 16",
-    "lounge": "03 10 30 12",
-    "incline": "03 10 30 11",
-    "zero_g": "03 10 30 13",
-    "save_anti_snore": "03 10 30 93",
-    "save_lounge": "03 10 30 91",
-    "save_incline": "03 10 30 92",
-    "save_zero_g": "03 10 30 90",
-    "light": "03 10 30 71",
-    "wave_1": "03 10 30 52",
-    "wave_2": "03 10 30 53",
-    "wave_3": "03 10 30 54",
-    "massage_stop": "03 10 30 6f",
-    "massage_up": "03 10 40 60",
-    "massage_down": "03 10 40 61",
-    "massage_on": "03 10 30 52",  # The voice massage-on entry equals wave 1.
-    "voice_stop": "03 10 30 1f",  # stopVoice, the voice path's pre-STOP.
+# 35_22_01 frames are Okin 5A key frames: (page, key) for ``codec/okin_5a.py``.
+_STAR_KEYS: Final[dict[str, tuple[int, int]]] = {
+    "head_up": (0x30, 0x00),
+    "head_down": (0x30, 0x01),
+    "feet_up": (0x30, 0x02),
+    "feet_down": (0x30, 0x03),
+    "lumbar_up": (0x30, 0x06),
+    "lumbar_down": (0x30, 0x07),
+    "stop": (0x30, 0x0F),
+    "flat": (0x30, 0x10),
+    "anti_snore": (0x30, 0x16),
+    "lounge": (0x30, 0x12),
+    "incline": (0x30, 0x11),
+    "zero_g": (0x30, 0x13),
+    "save_anti_snore": (0x30, 0x93),
+    "save_lounge": (0x30, 0x91),
+    "save_incline": (0x30, 0x92),
+    "save_zero_g": (0x30, 0x90),
+    "light": (0x30, 0x71),
+    "wave_1": (0x30, 0x52),
+    "wave_2": (0x30, 0x53),
+    "wave_3": (0x30, 0x54),
+    "massage_stop": (0x30, 0x6F),
+    "massage_up": (0x40, 0x60),
+    "massage_down": (0x40, 0x61),
+    "massage_on": (0x30, 0x52),  # The voice massage-on entry equals wave 1.
+    "voice_stop": (0x30, 0x1F),  # stopVoice, the voice path's pre-STOP.
 }
 # The massage-page query is written raw, without the table prefix or suffix.
 _CHECK_MASSAGE: Final[dict[Table, bytes]] = {
     "25_42_02": bytes.fromhex("0204"),
-    "35_22_01": bytes.fromhex("5ab000a5"),
+    "35_22_01": okin_5a.request(0xB0),
     "36_33_04a": bytes.fromhex("0204"),
 }
 
@@ -149,10 +138,10 @@ HELD_CONTROLS: Final = (
     "massage_down",
 )
 _SAVE_LABELS: Final = {
-    "save_zero_g": "Save Zero Gravity",
-    "save_lounge": "Save Lounge",
-    "save_incline": "Save Incline",
-    "save_anti_snore": "Save Anti-Snore",
+    "save_zero_g": "Save zero gravity",
+    "save_lounge": "Save lounge",
+    "save_incline": "Save incline",
+    "save_anti_snore": "Save anti-snore",
 }
 _WAVE_LABELS: Final = {"wave_1": "Wave 1", "wave_2": "Wave 2", "wave_3": "Wave 3"}
 
@@ -160,8 +149,9 @@ _WAVE_LABELS: Final = {"wave_1": "Wave 1", "wave_2": "Wave 2", "wave_3": "Wave 3
 def control_frame(table: Table, action: str) -> bytes:
     """Return the exact frame the app writes for ``action`` on ``table``."""
     if table == "35_22_01":
-        return b"\x5a\x01" + bytes.fromhex(_STAR_PAYLOADS[action]) + b"\xa5"
-    return b"\x08\x02" + bytes.fromhex(_LONG_PAYLOADS[action])
+        page, key = _STAR_KEYS[action]
+        return okin_5a.command(key, page)
+    return okin_nframe.frame(ADJUSTABLE_LUMBAR_KEYS[action], 8)
 
 
 def check_massage_frame(table: Table) -> bytes:
@@ -191,11 +181,15 @@ def _protocol_name(live: str | None, stored: object) -> str | None:
     return stored if isinstance(stored, str) and not is_mac_like_name(stored) else None
 
 
+def _voice_label(action: str) -> str:
+    """Sentence-case label of a voice-route action, e.g. ``voice_zero_g`` -> "Zero g"."""
+    label = action.removeprefix("voice_").replace("_", " ")
+    return {"zero g": "Zero gravity", "anti snore": "Anti-snore"}.get(label, label).capitalize()
+
+
 def _action(name: str) -> MotorCommandCallable:
-    async def invoke(controller: BedController | SideBoundController) -> None:
-        target = (
-            controller._controller if isinstance(controller, SideBoundController) else controller
-        )
+    async def invoke(controller: BedController) -> None:
+        target = controller
         if not isinstance(target, AdjustableLumbarController):
             raise TypeError("This action requires the Adjustable bed (Lumbar) app profile")
         await target.execute_app_action(name)
@@ -203,7 +197,9 @@ def _action(name: str) -> MotorCommandCallable:
     return invoke
 
 
-class AdjustableLumbarController(BedController):
+class AdjustableLumbarController(
+    ProfileExecution[OkinNFrameProfile | AdjustableAppProfile | None], BedController
+):
     """Faithful Adjustable bed (Lumbar) app controls for all three tables."""
 
     def __init__(
@@ -220,8 +216,7 @@ class AdjustableLumbarController(BedController):
         elif protocol_variant == ADJUSTABLE_LUMBAR_VARIANT_STAR:
             branch = "star"
         else:
-            data = getattr(getattr(coordinator, "entry", None), "data", None)
-            stored = data.get(CONF_BLE_DEVICE_NAME) if isinstance(data, Mapping) else None
+            stored = coordinator.entry.data.get(CONF_BLE_DEVICE_NAME)
             branch = resolve_branch(_protocol_name(device_name, stored))
         self._branch = branch
         # Star beds start on 25_42_02; the manufacturer read may upgrade them.
@@ -237,6 +232,11 @@ class AdjustableLumbarController(BedController):
     @property
     def table(self) -> Table | None:
         return self._table
+
+    @property
+    def profile(self) -> OkinNFrameProfile | AdjustableAppProfile | None:
+        """The N-frame table's profile; ``None`` on 35_22_01 or with no table."""
+        return ADJUSTABLE_LUMBAR_PROFILES.get(self._table) if self._table else None
 
     @property
     def control_characteristic_uuid(self) -> str:
@@ -316,18 +316,30 @@ class AdjustableLumbarController(BedController):
         labels = {
             **_SAVE_LABELS,
             **_WAVE_LABELS,
-            "massage_on": "Massage On",
-            "check_massage": "Check Massage",
+            "massage_on": "Massage on",
+            "check_massage": "Refresh massage",
         }
-        return tuple(
+        specs = (
             ControllerButtonSpec(
                 f"adjustable_lumbar_{key}",
                 label,
                 _action(key),
                 translation_key=f"adjustable_lumbar_{key}",
                 icon="mdi:content-save" if key.startswith("save_") else "mdi:gesture-tap",
+                diagnostic=key == "check_massage",
+                # Saving overwrites the stored preset, so the card asks first.
+                requires_confirmation=key in _SAVE_LABELS,
+                card=CARD_MASSAGE
+                if key in _WAVE_LABELS or key == "massage_on"
+                else CARD_PRESET_SAVE
+                if key in _SAVE_LABELS
+                else CARD_UTILITY,
             )
             for key, label in labels.items()
+        )
+        return tuple(
+            as_save(spec) if spec.key.removeprefix("adjustable_lumbar_") in _SAVE_LABELS else spec
+            for spec in specs
         )
 
     # --------------------------------------------------------------- transport
@@ -455,7 +467,7 @@ class AdjustableLumbarController(BedController):
                 await asyncio.shield(task)
             except asyncio.CancelledError:
                 cancelled = True
-            except Exception:  # noqa: BLE001 - re-raised below unless cancelled
+            except Exception:
                 break
         if cancelled:
             if not task.cancelled():
@@ -478,7 +490,7 @@ class AdjustableLumbarController(BedController):
             or not isinstance(duration_ms, int)
             or not 0 < duration_ms <= 60000
         ):
-            raise ValueError("Duration must be a positive integer, at most 60000 ms")
+            raise ValueError("Choose a duration of up to 60 seconds")
 
     async def hold_control(self, control: str, duration_ms: int) -> None:
         """Stream a control every 100 ms for the hold, then release it."""
@@ -624,3 +636,148 @@ class AdjustableLumbarController(BedController):
             await self.check_massage()
         else:
             raise ValueError(f"Unknown Adjustable bed (Lumbar) action '{action}'")
+
+
+class AdjustableBedAppController(AdjustableLumbarController):
+    """Adjustable bed 1.2.1 app route, sharing the proven transport, gestures and release."""
+
+    def __init__(
+        self,
+        coordinator: AdjustableBedCoordinator,
+        *,
+        protocol_variant: str | None = None,
+        device_name: str | None = None,
+    ) -> None:
+        variant = {
+            "adjustable_bed_okin": ADJUSTABLE_LUMBAR_VARIANT_OKIN,
+            "adjustable_bed_star": ADJUSTABLE_LUMBAR_VARIANT_STAR,
+            "adjustable_bed_star_5a": ADJUSTABLE_LUMBAR_VARIANT_STAR,
+        }.get(protocol_variant or "", protocol_variant)
+        super().__init__(coordinator, protocol_variant=variant, device_name=device_name)
+        self._fixed_star = protocol_variant == "adjustable_bed_star_5a"
+        if self._fixed_star:
+            self._table = "35_22_01"
+
+    @property
+    def profile(self) -> AdjustableAppProfile | None:
+        return PROFILES.get(self._table) if self._table else None
+
+    @property
+    def protocol_diagnostics(self) -> dict[str, object]:
+        return {
+            key.replace("adjustable_lumbar", "adjustable_bed"): value
+            for key, value in super().protocol_diagnostics.items()
+        }
+
+    async def async_discover_capabilities(self) -> None:
+        await super().async_discover_capabilities()
+        if self._fixed_star:
+            self._table = "35_22_01"
+
+    def _frame(self, action: str) -> bytes:
+        if self.profile is None:
+            raise ConnectionError("Adjustable bed command table is not resolved")
+        return self.profile.frames[action]
+
+    @property
+    def controller_button_specs(self) -> tuple[ControllerButtonSpec, ...]:
+        # Keep existing translated save/wave controls and expose the alternate
+        # BLE route without requiring a speech recognizer in Home Assistant.
+        buttons = tuple(
+            replace(spec, key=spec.key.replace("adjustable_lumbar", "adjustable_bed"))
+            for spec in super().controller_button_specs
+        )
+        # The voice route repeats controls the touch entities already offer, so
+        # these stay disabled diagnostics for testing that route.
+        return buttons + tuple(
+            ControllerButtonSpec(
+                f"adjustable_bed_{action}",
+                "Voice: " + _voice_label(action),
+                _action(action),
+                invalidates_position=(
+                    action in VOICE_MOTORS or action.removeprefix("voice_") in VOICE_PRESETS
+                ),
+                icon="mdi:gesture-tap",
+                translation_key="adjustable_bed_speech",
+                translation_placeholders={"action": "Voice: " + _voice_label(action)},
+                diagnostic=True,
+                card=CARD_UTILITY,
+            )
+            for action in (*VOICE_MOTORS, *(f"voice_{key}" for key in VOICE_FINITE), "voice_stop")
+        )
+
+    def motor_pulse_settings(self) -> tuple[int, int]:
+        count = self._coordinator.motor_pulse_count
+        # P2 touch motors still refresh, under its conservative latched ceiling.
+        if ceiling_ms := self.leased_hold_ms(0):
+            count = self.timed_move_repeat_count(ceiling_ms, REFRESH_MS)
+        return count, REFRESH_MS
+
+    async def _voice_move(self, action: str, duration_ms: int) -> None:
+        """Bound the app's otherwise unbounded speech movement, then release."""
+        try:
+            await self.write_command(self._frame("voice_stop"))
+            if self._table == "35_22_01":
+                duration_ms = min(duration_ms, self.leased_hold_ms(duration_ms))
+                await self.write_command(self._frame(action))
+                try:
+                    await asyncio.wait_for(
+                        self._coordinator.cancel_command.wait(), duration_ms / 1000
+                    )
+                except TimeoutError:
+                    pass
+            else:
+                await self.write_command(
+                    self._frame(action.removeprefix("voice_")),
+                    repeat_count=self.timed_move_repeat_count(duration_ms, REFRESH_MS),
+                    repeat_delay_ms=REFRESH_MS,
+                )
+        finally:
+            try:
+                await self.write_command(self._frame("voice_stop"), cancel_event=asyncio.Event())
+            finally:
+                await self._release()
+
+    async def _move(self, action: str) -> None:
+        if self._table == "35_22_01" and action.startswith("lumbar_"):
+            await self._voice_move(
+                f"voice_{action}",
+                self.leased_hold_ms(self._coordinator.motor_pulse_count * REFRESH_MS),
+            )
+        else:
+            await super()._move(action)
+
+    async def hold_control(self, control: str, duration_ms: int) -> None:
+        self.validate_hold_control(control, duration_ms)
+        if self._table == "35_22_01" and control.startswith("lumbar_"):
+            await self._voice_move(f"voice_{control}", duration_ms)
+        else:
+            await super().hold_control(control, duration_ms)
+
+    async def execute_app_action(self, action: str) -> None:
+        if action in VOICE_MOTORS:
+            await self._voice_move(action, self._coordinator.motor_pulse_count * REFRESH_MS)
+        elif action == "voice_stop":
+            try:
+                await self.write_command(self._frame("voice_stop"), cancel_event=asyncio.Event())
+            finally:
+                await self._release()
+        elif action.removeprefix("voice_") in VOICE_FINITE and action.startswith("voice_"):
+            await self.write_command(self._frame("voice_stop"))
+            await self.write_command(
+                self._frame(action.removeprefix("voice_")), repeat_count=2, repeat_delay_ms=100
+            )
+        else:
+            await super().execute_app_action(action)
+
+
+async def build_controller(ctx: BuildContext) -> AdjustableLumbarController:
+    """Build the controller; the app's name rule picks the table unless the variant fixes it."""
+    controller = (
+        AdjustableBedAppController
+        if ctx.bed_type == BED_TYPE_ADJUSTABLE_BED
+        else AdjustableLumbarController
+    )
+    return controller(
+        ctx.coordinator, protocol_variant=ctx.variant, device_name=ctx.live_device_name
+    )

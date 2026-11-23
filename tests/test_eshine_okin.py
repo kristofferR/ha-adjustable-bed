@@ -1,18 +1,21 @@
-"""Accepted row122 vectors and deliberate HA session/framing corrections."""
+"""Accepted eShine app vectors and deliberate HA session/framing corrections."""
 
 from __future__ import annotations
 
 import asyncio
 from datetime import datetime
 from types import SimpleNamespace
+from typing import Any, cast
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 from bleak.exc import BleakError
 
 from custom_components.adjustable_bed.app_profiles import hidden_generic_fields, per_side_profile
-from custom_components.adjustable_bed.beds.eshine_okin import EshineOkinController
-from custom_components.adjustable_bed.beds.eshine_okin_protocol import (
+from custom_components.adjustable_bed.bed_traits import bed_traits
+from custom_components.adjustable_bed.beds.base import BedController
+from custom_components.adjustable_bed.beds.eshine_okin.controller import EshineOkinController
+from custom_components.adjustable_bed.beds.eshine_okin.protocol import (
     COMMANDS,
     HELD,
     NOTIFY_UUID,
@@ -24,7 +27,6 @@ from custom_components.adjustable_bed.beds.eshine_okin_protocol import (
 )
 from custom_components.adjustable_bed.const import (
     BED_TYPE_ESHINE_OKIN,
-    BEDS_WITHOUT_ANGLE_FEEDBACK,
     CONF_HAS_MASSAGE,
     CONF_MOTOR_COUNT,
     CONF_MOTOR_PULSE_COUNT,
@@ -34,6 +36,8 @@ from custom_components.adjustable_bed.const import (
 )
 from custom_components.adjustable_bed.detection import get_bed_type_options
 from custom_components.adjustable_bed.validators import get_variants_for_bed_type
+from tests.error_helpers import raises_key
+from tests.state_helpers import state_writer
 
 NOW = datetime.fromisoformat("2026-11-03T14:47:09+01:00")
 
@@ -45,7 +49,7 @@ def make(profile="eshine_e5000", *, properties=("notify",)):
     coordinator.motor_pulse_count = 3
     coordinator.motor_pulse_delay_ms = 999
     coordinator.controller_state = {}
-    coordinator.handle_controller_state_updates.side_effect = coordinator.controller_state.update
+    coordinator.handle_controller_state_updates.side_effect = state_writer(coordinator.controller_state)
     write = SimpleNamespace(uuid=WRITE_UUID, properties=["write-without-response"], handle=1)
     notify = SimpleNamespace(uuid=NOTIFY_UUID, properties=list(properties), handle=2)
     coordinator.client = MagicMock(
@@ -133,7 +137,7 @@ def test_explicit_profiles_and_entity_contracts(profile):
     options = get_bed_type_options()
     assert any("eShine" in name and "E2000" in name for name in (o["label"] for o in options))
     assert get_variants_for_bed_type(BED_TYPE_ESHINE_OKIN) == ESHINE_OKIN_PROFILES
-    assert BED_TYPE_ESHINE_OKIN in BEDS_WITHOUT_ANGLE_FEEDBACK
+    assert bed_traits(BED_TYPE_ESHINE_OKIN).no_angle_feedback
     assert {s.key for s in ctrl.motor_control_specs} == (
         {"head", "feet", "pillow"} if profile == "eshine_e5000" else {"head", "feet"}
     )
@@ -265,7 +269,7 @@ def test_clock_and_alarm_vectors():
 
 async def test_alarm_double_set_query_order_and_clock(pauses, monkeypatch):
     monkeypatch.setattr(
-        "custom_components.adjustable_bed.beds.eshine_okin.dt_util.now", lambda: NOW
+        "custom_components.adjustable_bed.beds.eshine_okin.controller.dt_util.now", lambda: NOW
     )
     ctrl = make()
     await ctrl.async_discover_capabilities()
@@ -333,7 +337,7 @@ async def test_receive_state_entity_attributes_stale_callbacks_and_reconnect(pau
     await ctrl.start_notify()
     notify, receive = ctrl.client.start_notify.call_args.args
     receive(notify, bytearray.fromhex("a50b0e000258010101000000000100"))
-    state = ctrl._coordinator.controller_state
+    state = cast(dict[str, Any], ctrl._coordinator.controller_state)
     assert state["under_bed_lights_on"] is True
     assert state["eshine_okin_massage_data"]["head"] == 1
     receive(notify, bytearray.fromhex("fffe16") + bytearray(17))
@@ -367,7 +371,7 @@ async def test_held_named_preset_and_chord_use_same_frames_without_invented_save
 @pytest.mark.parametrize("profile", ESHINE_OKIN_PROFILES)
 async def test_factory_and_manual_selection(hass, profile):
     from homeassistant.const import CONF_ADDRESS
-    from pytest_homeassistant_custom_component.common import MockConfigEntry
+    from pytest_homeassistant.common import MockConfigEntry
 
     from custom_components.adjustable_bed.config_flow import AdjustableBedConfigFlow
     from custom_components.adjustable_bed.const import CONF_BED_TYPE, DOMAIN
@@ -387,20 +391,16 @@ async def test_factory_and_manual_selection(hass, profile):
     controller = await create_controller(
         coordinator, BED_TYPE_ESHINE_OKIN, protocol_variant=profile, client=None
     )
-    assert isinstance(controller, EshineOkinController) and controller.profile == profile
+    assert isinstance(controller, EshineOkinController) and controller.profile.key == profile
     assert is_valid_variant_for_bed_type(BED_TYPE_ESHINE_OKIN, profile)
     assert not is_valid_variant_for_bed_type(BED_TYPE_ESHINE_OKIN, "auto")
+    from tests.form_helpers import finish_new_bed, start_new_bed
+
     flow = AdjustableBedConfigFlow()
     flow.hass, flow.context = hass, {}
-    flow._disconnect_choice_confirmed = True
     flow._finish_with_verify = AsyncMock(return_value={"type": "create_entry"})
-    await flow.async_step_manual_entry(
-        {
-            CONF_ADDRESS: "AA:BB:CC:DD:EE:22",
-            CONF_BED_TYPE: f"eshine_okin:{profile}",
-            CONF_PROTOCOL_VARIANT: "auto",
-        }
-    )
+    result = await start_new_bed(flow, "typed", f"eshine_okin:{profile}", "AA:BB:CC:DD:EE:22")
+    await finish_new_bed(flow, result)
     saved = flow._finish_with_verify.await_args.args[0]
     assert saved[CONF_BED_TYPE] == BED_TYPE_ESHINE_OKIN
     assert saved[CONF_PROTOCOL_VARIANT] == profile
@@ -411,7 +411,7 @@ async def ha_target(hass):
     from homeassistant.config_entries import ConfigEntryState
     from homeassistant.const import CONF_ADDRESS, CONF_NAME
     from homeassistant.helpers import device_registry as dr
-    from pytest_homeassistant_custom_component.common import MockConfigEntry
+    from pytest_homeassistant.common import MockConfigEntry
 
     from custom_components.adjustable_bed import services
     from custom_components.adjustable_bed.const import CONF_BED_TYPE, DOMAIN
@@ -447,11 +447,14 @@ async def test_alarm_service_validation_and_serialized_execution(hass, ha_target
     from custom_components.adjustable_bed.const import DOMAIN
 
     coordinator, device_id = ha_target
-    data = {"device_id": [device_id], "enabled": True, "time": "06:30:00", "wake_mode": "massage"}
-    await hass.services.async_call(DOMAIN, "eshine_set_alarm", data, blocking=True)
+    data = {"device_id": [device_id], "enabled": True, "time": "06:30:00", "wake_action": "massage"}
+    await hass.services.async_call(DOMAIN, "set_alarm", data, blocking=True)
     coordinator.async_execute_controller_command.assert_awaited_once()
     command = coordinator.async_execute_controller_command.await_args.args[0]
-    controller = MagicMock(sync_clock=AsyncMock(), configure_clock_alarm=AsyncMock())
+    assert coordinator.async_execute_controller_command.await_args.kwargs["cancel_running"]
+    controller = coordinator.controller
+    controller.sync_clock = AsyncMock()
+    controller.configure_clock_alarm = AsyncMock()
     await command(controller)
     controller.sync_clock.assert_awaited_once()
     controller.configure_clock_alarm.assert_awaited_once_with(
@@ -460,17 +463,22 @@ async def test_alarm_service_validation_and_serialized_execution(hass, ha_target
         hour=6,
         minute=30,
         preset="massage",
+        head_level=0,
+        foot_level=0,
     )
     coordinator.async_execute_controller_command.reset_mock()
     for invalid in ({**data, "time": "06:30:01"}, {"device_id": [device_id], "enabled": True}):
         with pytest.raises(ServiceValidationError):
-            await hass.services.async_call(DOMAIN, "eshine_set_alarm", invalid, blocking=True)
+            await hass.services.async_call(DOMAIN, "set_alarm", invalid, blocking=True)
     coordinator._controller = EshineOkinController(coordinator, profile="eshine_e2000")
-    with pytest.raises(ServiceValidationError, match="does not expose"):
-        await hass.services.async_call(DOMAIN, "eshine_set_alarm", data, blocking=True)
+    with raises_key("alarm_wake_action_not_supported", ServiceValidationError):
+        await hass.services.async_call(DOMAIN, "set_alarm", data, blocking=True)
     coordinator._bed_type = "eshine"  # E6000 is a different app, despite shared branding.
-    with pytest.raises(ServiceValidationError, match="Choose an eShine"):
-        await hass.services.async_call(DOMAIN, "eshine_set_alarm", data, blocking=True)
+    coordinator._controller = MagicMock(
+        spec=BedController, requires_disconnected_transport=False, alarm_capability=None
+    )
+    with pytest.raises(ServiceValidationError, match="has no alarm"):
+        await hass.services.async_call(DOMAIN, "set_alarm", data, blocking=True)
     coordinator.async_execute_controller_command.assert_not_awaited()
 
 
@@ -533,7 +541,7 @@ def test_discovery_candidate_never_selects_a_product(name):
 async def test_public_hold_sync_and_all_target_alarm_preflight(hass, ha_target, monkeypatch):
     from homeassistant.exceptions import ServiceValidationError
 
-    from custom_components.adjustable_bed import services
+    from custom_components.adjustable_bed import services as eshine_okin_services
     from custom_components.adjustable_bed.const import DOMAIN, SIDE_BOTH
 
     coordinator, device_id = ha_target
@@ -548,7 +556,9 @@ async def test_public_hold_sync_and_all_target_alarm_preflight(hass, ha_target, 
         blocking=True,
     )
     command = coordinator.async_execute_controller_command.await_args.args[0]
-    fake = MagicMock(hold_control=AsyncMock())
+    # The checked controller, so the hold is not checked again.
+    fake = coordinator.capability_controller
+    fake.hold_control = AsyncMock()
     await command(fake)
     fake.hold_control.assert_awaited_once_with("flat_zero_g", 5500)
     coordinator.async_execute_controller_command.reset_mock()
@@ -563,17 +573,19 @@ async def test_public_hold_sync_and_all_target_alarm_preflight(hass, ha_target, 
     other.is_connected = True
     other.async_execute_controller_command = AsyncMock()
     monkeypatch.setattr(
-        services, "_call_targets", lambda call: [(coordinator, SIDE_BOTH), (other, SIDE_BOTH)]
+        eshine_okin_services,
+        "_call_targets",
+        lambda call: [(coordinator, SIDE_BOTH), (other, SIDE_BOTH)],
     )
-    with pytest.raises(ServiceValidationError, match="does not expose"):
+    with raises_key("alarm_wake_action_not_supported", ServiceValidationError):
         await hass.services.async_call(
             DOMAIN,
-            "eshine_set_alarm",
+            "set_alarm",
             {
                 "device_id": [device_id],
                 "enabled": True,
                 "time": "06:30:00",
-                "wake_mode": "massage",
+                "wake_action": "massage",
             },
             blocking=True,
         )
@@ -692,37 +704,17 @@ async def test_reported_light_drives_enabled_entity_and_safe_desired_state(
         await entity.async_will_remove_from_hass()
 
 
-async def test_profile_change_removes_obsolete_actions_and_retains_sibling_registry(
-    hass, ha_target
-):
-    from homeassistant.helpers import entity_registry as er
-
+async def test_profile_change_drops_obsolete_actions(hass, ha_target):
     from custom_components.adjustable_bed.button import _button_entities_for
-    from custom_components.adjustable_bed.const import DOMAIN
 
     coordinator, _ = ha_target
-    registry = er.async_get(hass)
     old_keys = [spec.key for spec in coordinator._controller.controller_button_specs]
-    old = {
-        key: registry.async_get_or_create(
-            "button",
-            DOMAIN,
-            coordinator.entity_unique_id(key),
-            config_entry=coordinator.entry,
-        ).entity_id
-        for key in old_keys
-    }
-    sibling = registry.async_get_or_create(
-        "button",
-        DOMAIN,
-        "other_address_eshine_okin_massage_on",
-        config_entry=coordinator.entry,
-    )
     coordinator._controller = EshineOkinController(coordinator, profile="eshine_e2000")
-    _button_entities_for(hass, coordinator)
-    for key, entity_id in old.items():
-        assert (registry.async_get(entity_id) is None) == key.startswith("eshine_okin_massage_")
-    assert registry.async_get(sibling.entity_id) is not None
+    built = {entity.unique_id for entity in _button_entities_for(hass, coordinator)}
+    for key in old_keys:
+        assert (coordinator.entity_unique_id(key) not in built) == key.startswith(
+            "eshine_okin_massage_"
+        )
 
 
 async def test_motor_covers_publish_controller_owned_hold_metadata(hass, ha_target):

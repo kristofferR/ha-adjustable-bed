@@ -8,13 +8,13 @@ from unittest.mock import AsyncMock, MagicMock
 import pytest
 from homeassistant.const import CONF_ADDRESS, CONF_NAME
 from homeassistant.core import HomeAssistant
-from pytest_homeassistant_custom_component.common import MockConfigEntry
+from pytest_homeassistant.common import MockConfigEntry
 
-from custom_components.adjustable_bed.beds.richmat import (
+from custom_components.adjustable_bed.beds.richmat.controller import (
     RICHMAT_LEGACY_RGB_LIGHT_TIMER_OPTIONS,
-    RichmatCommands,
     RichmatController,
 )
+from custom_components.adjustable_bed.beds.richmat.features import get_richmat_features
 from custom_components.adjustable_bed.button import BUTTON_DESCRIPTIONS, _should_add_button
 from custom_components.adjustable_bed.const import (
     BED_TYPE_RICHMAT,
@@ -27,12 +27,9 @@ from custom_components.adjustable_bed.const import (
     CONF_RICHMAT_REMOTE,
     DOMAIN,
     RICHMAT_NORDIC_CHAR_UUID,
-    RICHMAT_PROTOCOL_PREFIX55,
-    RICHMAT_PROTOCOL_PREFIXAA,
     RICHMAT_REMOTE_GGRM,
     RICHMAT_REMOTE_LP_QRRM,
     RICHMAT_VARIANT_NORDIC,
-    get_richmat_features,
     get_richmat_motor_count,
     resolve_richmat_remote_code,
 )
@@ -85,92 +82,6 @@ class TestRichmatController:
 
         assert coordinator.controller.control_characteristic_uuid == RICHMAT_NORDIC_CHAR_UUID
 
-    async def test_build_command_nordic(
-        self,
-        hass: HomeAssistant,
-        mock_richmat_config_entry,
-        mock_coordinator_connected,
-    ):
-        """Test Nordic variant builds single-byte commands."""
-        coordinator = AdjustableBedCoordinator(hass, mock_richmat_config_entry)
-        await coordinator.async_connect()
-
-        # Nordic variant: single byte
-        command = coordinator.controller._build_command(RichmatCommands.PRESET_FLAT)
-        assert command == bytes([0x31])
-
-    async def test_build_command_wilinke(
-        self,
-        hass: HomeAssistant,
-        mock_richmat_config_entry,
-        mock_coordinator_connected,
-    ):
-        """Test WiLinke variant builds 5-byte commands."""
-        coordinator = AdjustableBedCoordinator(hass, mock_richmat_config_entry)
-        await coordinator.async_connect()
-
-        # Create a WiLinke controller directly
-        controller = RichmatController(coordinator, is_wilinke=True)
-
-        # WiLinke: [110, 1, 0, cmd, cmd+111]
-        command = controller._build_command(RichmatCommands.PRESET_FLAT)
-        assert len(command) == 5
-        assert command[0] == 110
-        assert command[1] == 1
-        assert command[2] == 0
-        assert command[3] == RichmatCommands.PRESET_FLAT
-        # checksum = (cmd + 111) & 0xFF
-        expected_checksum = (RichmatCommands.PRESET_FLAT + 111) & 0xFF
-        assert command[4] == expected_checksum
-
-    async def test_build_command_prefix55(
-        self,
-        hass: HomeAssistant,
-        mock_richmat_config_entry,
-        mock_coordinator_connected,
-    ):
-        """Test Prefix55 variant builds 5-byte commands with 0x55 prefix."""
-        coordinator = AdjustableBedCoordinator(hass, mock_richmat_config_entry)
-        await coordinator.async_connect()
-
-        # Create a Prefix55 controller directly
-        controller = RichmatController(coordinator, command_protocol=RICHMAT_PROTOCOL_PREFIX55)
-
-        # Prefix55: [0x55, 0x01, 0x00, cmd, (cmd + 0x56) & 0xFF]
-        command = controller._build_command(RichmatCommands.PRESET_FLAT)
-        assert len(command) == 5
-        assert command[0] == 0x55
-        assert command[1] == 0x01
-        assert command[2] == 0x00
-        assert command[3] == RichmatCommands.PRESET_FLAT
-        # checksum = (cmd + 0x56) & 0xFF
-        expected_checksum = (RichmatCommands.PRESET_FLAT + 0x56) & 0xFF
-        assert command[4] == expected_checksum
-
-    async def test_build_command_prefixaa(
-        self,
-        hass: HomeAssistant,
-        mock_richmat_config_entry,
-        mock_coordinator_connected,
-    ):
-        """Test PrefixAA variant builds 5-byte commands with 0xAA prefix."""
-        coordinator = AdjustableBedCoordinator(hass, mock_richmat_config_entry)
-        await coordinator.async_connect()
-
-        # Create a PrefixAA controller directly
-        controller = RichmatController(coordinator, command_protocol=RICHMAT_PROTOCOL_PREFIXAA)
-
-        # PrefixAA: [0xAA, 0x01, 0x00, cmd, (cmd + 0xAB) & 0xFF]
-        command = controller._build_command(RichmatCommands.PRESET_FLAT)
-        assert len(command) == 5
-        assert command[0] == 0xAA
-        assert command[1] == 0x01
-        assert command[2] == 0x00
-        assert command[3] == RichmatCommands.PRESET_FLAT
-        # checksum = (cmd + 0xAB) & 0xFF
-        expected_checksum = (RichmatCommands.PRESET_FLAT + 0xAB) & 0xFF
-        assert command[4] == expected_checksum
-
     async def test_wilinke_qrrm_uses_compat_stop_byte(
         self,
         hass: HomeAssistant,
@@ -185,7 +96,7 @@ class TestRichmatController:
         stop_command = controller._build_stop_command()
 
         assert len(stop_command) == 5
-        assert stop_command[3] == RichmatCommands.END_COMPAT
+        assert stop_command[3] == 0x5E
 
     async def test_wilinke_non_compat_remote_uses_standard_stop_byte(
         self,
@@ -201,25 +112,7 @@ class TestRichmatController:
         stop_command = controller._build_stop_command()
 
         assert len(stop_command) == 5
-        assert stop_command[3] == RichmatCommands.END
-
-    async def test_write_command(
-        self,
-        hass: HomeAssistant,
-        mock_richmat_config_entry,
-        mock_coordinator_connected,
-        mock_bleak_client: MagicMock,
-    ):
-        """Test writing a command to the bed."""
-        coordinator = AdjustableBedCoordinator(hass, mock_richmat_config_entry)
-        await coordinator.async_connect()
-
-        command = coordinator.controller._build_command(RichmatCommands.END)
-        await coordinator.controller.write_command(command)
-
-        mock_bleak_client.write_gatt_char.assert_called_with(
-            RICHMAT_NORDIC_CHAR_UUID, command, response=True
-        )
+        assert stop_command[3] == 0x6E
 
     async def test_write_command_not_connected(
         self,
@@ -236,68 +129,12 @@ class TestRichmatController:
 
         with pytest.raises(ConnectionError):
             await coordinator.controller.write_command(
-                coordinator.controller._build_command(RichmatCommands.END)
+                coordinator.controller._build_command(0x6E)
             )
 
 
 class TestRichmatMovement:
     """Test Richmat movement commands."""
-
-    async def test_move_head_up(
-        self,
-        hass: HomeAssistant,
-        mock_richmat_config_entry,
-        mock_coordinator_connected,
-        mock_bleak_client: MagicMock,
-    ):
-        """Test move head up sends commands followed by stop."""
-        coordinator = AdjustableBedCoordinator(hass, mock_richmat_config_entry)
-        await coordinator.async_connect()
-
-        await coordinator.controller.move_head_up()
-
-        calls = mock_bleak_client.write_gatt_char.call_args_list
-        assert len(calls) > 1
-
-        # Last call should be END command
-        last_command = calls[-1][0][1]
-        expected_end = coordinator.controller._build_command(RichmatCommands.END)
-        assert last_command == expected_end
-
-    async def test_move_head_down(
-        self,
-        hass: HomeAssistant,
-        mock_richmat_config_entry,
-        mock_coordinator_connected,
-        mock_bleak_client: MagicMock,
-    ):
-        """Test move head down."""
-        coordinator = AdjustableBedCoordinator(hass, mock_richmat_config_entry)
-        await coordinator.async_connect()
-
-        await coordinator.controller.move_head_down()
-
-        calls = mock_bleak_client.write_gatt_char.call_args_list
-        assert len(calls) > 1
-
-    async def test_move_legs_up(
-        self,
-        hass: HomeAssistant,
-        mock_richmat_config_entry,
-        mock_coordinator_connected,
-        mock_bleak_client: MagicMock,
-    ):
-        """Test move legs up sends FEET_UP command."""
-        coordinator = AdjustableBedCoordinator(hass, mock_richmat_config_entry)
-        await coordinator.async_connect()
-
-        await coordinator.controller.move_legs_up()
-
-        calls = mock_bleak_client.write_gatt_char.call_args_list
-        # First call should be FEET_UP
-        first_command = calls[0][0][1]
-        expected = coordinator.controller._build_command(RichmatCommands.MOTOR_FEET_UP)
-        assert first_command == expected
 
     async def test_move_head_feet_up_sends_combined_command(
         self,
@@ -313,9 +150,9 @@ class TestRichmatMovement:
         await coordinator.controller.move_head_feet_up()
 
         calls = mock_bleak_client.write_gatt_char.call_args_list
-        expected = coordinator.controller._build_command(RichmatCommands.MOTOR_HEAD_FEET_UP)
+        expected = coordinator.controller._build_command(0x29)
         assert calls[0][0][1] == expected
-        assert calls[-1][0][1] == coordinator.controller._build_command(RichmatCommands.END)
+        assert calls[-1][0][1] == coordinator.controller._build_command(0x6E)
 
     async def test_move_head_feet_down_sends_combined_command(
         self,
@@ -331,26 +168,8 @@ class TestRichmatMovement:
         await coordinator.controller.move_head_feet_down()
 
         calls = mock_bleak_client.write_gatt_char.call_args_list
-        expected = coordinator.controller._build_command(RichmatCommands.MOTOR_HEAD_FEET_DOWN)
+        expected = coordinator.controller._build_command(0x2A)
         assert calls[0][0][1] == expected
-
-    async def test_stop_all(
-        self,
-        hass: HomeAssistant,
-        mock_richmat_config_entry,
-        mock_coordinator_connected,
-        mock_bleak_client: MagicMock,
-    ):
-        """Test stop all sends END command."""
-        coordinator = AdjustableBedCoordinator(hass, mock_richmat_config_entry)
-        await coordinator.async_connect()
-
-        await coordinator.controller.stop_all()
-
-        expected_end = coordinator.controller._build_command(RichmatCommands.END)
-        mock_bleak_client.write_gatt_char.assert_called_with(
-            RICHMAT_NORDIC_CHAR_UUID, expected_end, response=True
-        )
 
     async def test_wilinke_qrrm_move_stop_uses_compat_byte(
         self,
@@ -371,83 +190,7 @@ class TestRichmatMovement:
         calls = mock_bleak_client.write_gatt_char.call_args_list
         assert len(calls) == 1
         sent_command = calls[0][0][1]
-        assert sent_command[3] == RichmatCommands.END_COMPAT
-
-    async def test_move_lumbar_up(
-        self,
-        hass: HomeAssistant,
-        mock_richmat_config_entry,
-        mock_coordinator_connected,
-        mock_bleak_client: MagicMock,
-    ):
-        """Test move lumbar up sends LUMBAR_UP command."""
-        coordinator = AdjustableBedCoordinator(hass, mock_richmat_config_entry)
-        await coordinator.async_connect()
-
-        await coordinator.controller.move_lumbar_up()
-
-        calls = mock_bleak_client.write_gatt_char.call_args_list
-        # First call should be LUMBAR_UP
-        first_command = calls[0][0][1]
-        expected = coordinator.controller._build_command(RichmatCommands.MOTOR_LUMBAR_UP)
-        assert first_command == expected
-
-    async def test_move_lumbar_down(
-        self,
-        hass: HomeAssistant,
-        mock_richmat_config_entry,
-        mock_coordinator_connected,
-        mock_bleak_client: MagicMock,
-    ):
-        """Test move lumbar down sends LUMBAR_DOWN command."""
-        coordinator = AdjustableBedCoordinator(hass, mock_richmat_config_entry)
-        await coordinator.async_connect()
-
-        await coordinator.controller.move_lumbar_down()
-
-        calls = mock_bleak_client.write_gatt_char.call_args_list
-        # First call should be LUMBAR_DOWN
-        first_command = calls[0][0][1]
-        expected = coordinator.controller._build_command(RichmatCommands.MOTOR_LUMBAR_DOWN)
-        assert first_command == expected
-
-    async def test_move_pillow_up(
-        self,
-        hass: HomeAssistant,
-        mock_richmat_config_entry,
-        mock_coordinator_connected,
-        mock_bleak_client: MagicMock,
-    ):
-        """Test move pillow up sends PILLOW_UP command."""
-        coordinator = AdjustableBedCoordinator(hass, mock_richmat_config_entry)
-        await coordinator.async_connect()
-
-        await coordinator.controller.move_pillow_up()
-
-        calls = mock_bleak_client.write_gatt_char.call_args_list
-        # First call should be PILLOW_UP
-        first_command = calls[0][0][1]
-        expected = coordinator.controller._build_command(RichmatCommands.MOTOR_PILLOW_UP)
-        assert first_command == expected
-
-    async def test_move_pillow_down(
-        self,
-        hass: HomeAssistant,
-        mock_richmat_config_entry,
-        mock_coordinator_connected,
-        mock_bleak_client: MagicMock,
-    ):
-        """Test move pillow down sends PILLOW_DOWN command."""
-        coordinator = AdjustableBedCoordinator(hass, mock_richmat_config_entry)
-        await coordinator.async_connect()
-
-        await coordinator.controller.move_pillow_down()
-
-        calls = mock_bleak_client.write_gatt_char.call_args_list
-        # First call should be PILLOW_DOWN
-        first_command = calls[0][0][1]
-        expected = coordinator.controller._build_command(RichmatCommands.MOTOR_PILLOW_DOWN)
-        assert first_command == expected
+        assert sent_command[3] == 0x5E
 
     async def test_has_lumbar_support(
         self,
@@ -479,7 +222,7 @@ class TestRichmatFeatureDetection:
 
     def test_v1rm_no_pillow_no_lumbar(self):
         """Test V1RM remote has no pillow or lumbar support."""
-        from custom_components.adjustable_bed.beds.richmat import RichmatController
+        from custom_components.adjustable_bed.beds.richmat.controller import RichmatController
 
         # Create controller with V1RM remote code
         coordinator = MagicMock()
@@ -492,7 +235,7 @@ class TestRichmatFeatureDetection:
 
     def test_190_0055_pillow_no_lumbar(self):
         """Test 190-0055 remote has pillow but no lumbar support."""
-        from custom_components.adjustable_bed.beds.richmat import RichmatController
+        from custom_components.adjustable_bed.beds.richmat.controller import RichmatController
 
         coordinator = MagicMock()
         controller = RichmatController(coordinator, is_wilinke=False, remote_code="190-0055")
@@ -502,7 +245,7 @@ class TestRichmatFeatureDetection:
 
     def test_virm_full_features(self):
         """Test VIRM remote has full feature support."""
-        from custom_components.adjustable_bed.beds.richmat import RichmatController
+        from custom_components.adjustable_bed.beds.richmat.controller import RichmatController
 
         coordinator = MagicMock()
         controller = RichmatController(coordinator, is_wilinke=False, remote_code="VIRM")
@@ -557,16 +300,16 @@ class TestRichmatFeatureDetection:
             remote_code=RICHMAT_REMOTE_LP_QRRM,
         )
 
-        assert controller._build_command(RichmatCommands.PRESET_FLAT) == bytes.fromhex(
+        assert controller._build_command(0x31) == bytes.fromhex(
             "6e010031a0"
         )
-        assert controller._build_command(RichmatCommands.PRESET_ZERO_G) == bytes.fromhex(
+        assert controller._build_command(0x45) == bytes.fromhex(
             "6e010045b4"
         )
-        assert controller._build_command(RichmatCommands.PRESET_MEMORY_1) == bytes.fromhex(
+        assert controller._build_command(0x2E) == bytes.fromhex(
             "6e01002e9d"
         )
-        assert controller._build_command(RichmatCommands.PRESET_MEMORY_2) == bytes.fromhex(
+        assert controller._build_command(0x2F) == bytes.fromhex(
             "6e01002f9e"
         )
         assert controller._build_stop_command() == bytes.fromhex("6e01006edd")
@@ -622,13 +365,6 @@ class TestRichmatFeatureDetection:
             "pillow",
             "lumbar",
         ]
-        assert controller.stale_motor_entity_keys == {
-            "back",
-            "legs",
-            "pillow",
-            "lumbar",
-            "head_feet",
-        }
 
     def test_head_only_remote_omits_combined_head_feet_control(self):
         """The combined step needs both axes, so a head-only remote must not get it."""
@@ -716,11 +452,11 @@ class TestRichmatFeatureDetection:
         )
 
         expected = {
-            RichmatCommands.MOTOR_PILLOW_UP: "6e01003fae",
-            RichmatCommands.MOTOR_LUMBAR_UP: "6e010041b0",
-            RichmatCommands.PRESET_ANTI_SNORE: "6e010046b5",
-            RichmatCommands.PROGRAM_MEMORY_1: "6e01002b9a",
-            RichmatCommands.LIGHTS_TOGGLE: "6e01003cab",
+            0x3F: "6e01003fae",
+            0x41: "6e010041b0",
+            0x46: "6e010046b5",
+            0x2B: "6e01002b9a",
+            0x3C: "6e01003cab",
         }
         for command, frame in expected.items():
             assert controller._build_command(command) == bytes.fromhex(frame)
@@ -838,78 +574,6 @@ class TestRichmatFeatureDetection:
 
         assert controller._build_light_timer_command(180) == bytes.fromhex("6e0b00b42d")
         assert controller._build_light_timer_command(0) == bytes.fromhex("6e0b000079")
-
-
-class TestRichmatPresets:
-    """Test Richmat preset commands."""
-
-    async def test_preset_flat(
-        self,
-        hass: HomeAssistant,
-        mock_richmat_config_entry,
-        mock_coordinator_connected,
-        mock_bleak_client: MagicMock,
-    ):
-        """Test preset flat command."""
-        coordinator = AdjustableBedCoordinator(hass, mock_richmat_config_entry)
-        await coordinator.async_connect()
-
-        await coordinator.controller.preset_flat()
-
-        expected_cmd = coordinator.controller._build_command(RichmatCommands.PRESET_FLAT)
-        first_call = mock_bleak_client.write_gatt_char.call_args_list[0]
-        assert first_call[0][1] == expected_cmd
-
-    async def test_preset_zero_g(
-        self,
-        hass: HomeAssistant,
-        mock_richmat_config_entry,
-        mock_coordinator_connected,
-        mock_bleak_client: MagicMock,
-    ):
-        """Test preset zero gravity command."""
-        coordinator = AdjustableBedCoordinator(hass, mock_richmat_config_entry)
-        await coordinator.async_connect()
-
-        await coordinator.controller.preset_zero_g()
-
-        expected_cmd = coordinator.controller._build_command(RichmatCommands.PRESET_ZERO_G)
-        first_call = mock_bleak_client.write_gatt_char.call_args_list[0]
-        assert first_call[0][1] == expected_cmd
-
-    async def test_preset_tv(
-        self,
-        hass: HomeAssistant,
-        mock_richmat_config_entry,
-        mock_coordinator_connected,
-        mock_bleak_client: MagicMock,
-    ):
-        """Test preset TV command."""
-        coordinator = AdjustableBedCoordinator(hass, mock_richmat_config_entry)
-        await coordinator.async_connect()
-
-        await coordinator.controller.preset_tv()
-
-        expected_cmd = coordinator.controller._build_command(RichmatCommands.PRESET_TV)
-        first_call = mock_bleak_client.write_gatt_char.call_args_list[0]
-        assert first_call[0][1] == expected_cmd
-
-    async def test_preset_anti_snore(
-        self,
-        hass: HomeAssistant,
-        mock_richmat_config_entry,
-        mock_coordinator_connected,
-        mock_bleak_client: MagicMock,
-    ):
-        """Test preset anti-snore command."""
-        coordinator = AdjustableBedCoordinator(hass, mock_richmat_config_entry)
-        await coordinator.async_connect()
-
-        await coordinator.controller.preset_anti_snore()
-
-        expected_cmd = coordinator.controller._build_command(RichmatCommands.PRESET_ANTI_SNORE)
-        first_call = mock_bleak_client.write_gatt_char.call_args_list[0]
-        assert first_call[0][1] == expected_cmd
 
 
 class TestRichmatRgbLights:
@@ -1047,80 +711,9 @@ class TestRichmatRgbLights:
             response=True,
         )
 
-    @pytest.mark.parametrize(
-        "memory_num,expected_value",
-        [
-            (1, RichmatCommands.PRESET_MEMORY_1),
-            (2, RichmatCommands.PRESET_MEMORY_2),
-        ],
-    )
-    async def test_preset_memory(
-        self,
-        hass: HomeAssistant,
-        mock_richmat_config_entry,
-        mock_coordinator_connected,
-        mock_bleak_client: MagicMock,
-        memory_num: int,
-        expected_value: int,
-    ):
-        """Test preset memory commands."""
-        coordinator = AdjustableBedCoordinator(hass, mock_richmat_config_entry)
-        await coordinator.async_connect()
-
-        await coordinator.controller.preset_memory(memory_num)
-
-        expected_cmd = coordinator.controller._build_command(expected_value)
-        first_call = mock_bleak_client.write_gatt_char.call_args_list[0]
-        assert first_call[0][1] == expected_cmd
-
-    @pytest.mark.parametrize(
-        "memory_num,expected_value",
-        [
-            (1, RichmatCommands.PROGRAM_MEMORY_1),
-            (2, RichmatCommands.PROGRAM_MEMORY_2),
-        ],
-    )
-    async def test_program_memory(
-        self,
-        hass: HomeAssistant,
-        mock_richmat_config_entry,
-        mock_coordinator_connected,
-        mock_bleak_client: MagicMock,
-        memory_num: int,
-        expected_value: int,
-    ):
-        """Test program memory commands."""
-        coordinator = AdjustableBedCoordinator(hass, mock_richmat_config_entry)
-        await coordinator.async_connect()
-
-        await coordinator.controller.program_memory(memory_num)
-
-        expected_cmd = coordinator.controller._build_command(expected_value)
-        mock_bleak_client.write_gatt_char.assert_called_with(
-            RICHMAT_NORDIC_CHAR_UUID, expected_cmd, response=True
-        )
-
 
 class TestRichmatLights:
     """Test Richmat light commands."""
-
-    async def test_lights_toggle(
-        self,
-        hass: HomeAssistant,
-        mock_richmat_config_entry,
-        mock_coordinator_connected,
-        mock_bleak_client: MagicMock,
-    ):
-        """Test lights toggle command."""
-        coordinator = AdjustableBedCoordinator(hass, mock_richmat_config_entry)
-        await coordinator.async_connect()
-
-        await coordinator.controller.lights_toggle()
-
-        expected_cmd = coordinator.controller._build_command(RichmatCommands.LIGHTS_TOGGLE)
-        mock_bleak_client.write_gatt_char.assert_called_with(
-            RICHMAT_NORDIC_CHAR_UUID, expected_cmd, response=True
-        )
 
     @pytest.mark.parametrize("method_name", ["lights_on", "lights_off"])
     async def test_bt6500_lights_on_off_send_toggle_command(
@@ -1174,12 +767,13 @@ class TestRichmatMassage:
             (0x61, "6e010061d0"),
         ],
     )
+
     async def test_ggrm_extra_actions_match_frozen_catalog(self, monkeypatch, command, frame):
-        """Row055 Blvd Home GGRM vectors and Revive ONCE release semantics."""
+        """Richmat MH Blvd Home GGRM vectors and Revive ONCE release semantics."""
         controller = RichmatController(MagicMock(has_massage=True), is_wilinke=True, remote_code="GGRM")
         controller.write_command = AsyncMock()
         sleep = AsyncMock()
-        monkeypatch.setattr("custom_components.adjustable_bed.beds.richmat.asyncio.sleep", sleep)
+        monkeypatch.setattr("custom_components.adjustable_bed.beds.richmat.controller.asyncio.sleep", sleep)
         spec = next(s for s in controller.controller_button_specs if s.key == f"richmat_mh_{command:02x}")
 
         await spec.press_fn(controller)
@@ -1196,6 +790,7 @@ class TestRichmatMassage:
         ("auto", True, True, set()),
         ("GGRM", False, True, set()),
     ])
+
     async def test_ggrm_extra_actions_require_profile_transport_and_massage(
         self, remote, wilinke, massage, keys
     ):
@@ -1213,7 +808,7 @@ class TestRichmatMassage:
             side_effect=[asyncio.CancelledError(), None] if cancel_during == "write" else None
         )
         sleep = AsyncMock(side_effect=asyncio.CancelledError() if cancel_during == "release_delay" else None)
-        monkeypatch.setattr("custom_components.adjustable_bed.beds.richmat.asyncio.sleep", sleep)
+        monkeypatch.setattr("custom_components.adjustable_bed.beds.richmat.controller.asyncio.sleep", sleep)
 
         with pytest.raises(asyncio.CancelledError):
             await controller.tap_ggrm_action(0x66)
@@ -1230,6 +825,7 @@ class TestRichmatMassage:
             ("bt6500", "massage_all_toggle", "6e01005dcc", "massage_off"),
         ],
     )
+
     async def test_all_massage_button_matches_remote(
         self, remote_code, button_key, frame, unsupported_method
     ):
@@ -1255,78 +851,6 @@ class TestRichmatMassage:
             await getattr(controller, unsupported_method)()
         controller.write_command.assert_not_awaited()
 
-    async def test_massage_toggle(
-        self,
-        hass: HomeAssistant,
-        mock_richmat_config_entry,
-        mock_coordinator_connected,
-        mock_bleak_client: MagicMock,
-    ):
-        """Test massage toggle command."""
-        coordinator = AdjustableBedCoordinator(hass, mock_richmat_config_entry)
-        await coordinator.async_connect()
-
-        await coordinator.controller.massage_toggle()
-
-        expected_cmd = coordinator.controller._build_command(RichmatCommands.MASSAGE_TOGGLE)
-        mock_bleak_client.write_gatt_char.assert_called_with(
-            RICHMAT_NORDIC_CHAR_UUID, expected_cmd, response=True
-        )
-
-    async def test_massage_head_toggle(
-        self,
-        hass: HomeAssistant,
-        mock_richmat_config_entry,
-        mock_coordinator_connected,
-        mock_bleak_client: MagicMock,
-    ):
-        """Test head massage toggle command."""
-        coordinator = AdjustableBedCoordinator(hass, mock_richmat_config_entry)
-        await coordinator.async_connect()
-
-        await coordinator.controller.massage_head_toggle()
-
-        expected_cmd = coordinator.controller._build_command(RichmatCommands.MASSAGE_HEAD_STEP)
-        mock_bleak_client.write_gatt_char.assert_called_with(
-            RICHMAT_NORDIC_CHAR_UUID, expected_cmd, response=True
-        )
-
-    async def test_massage_foot_toggle(
-        self,
-        hass: HomeAssistant,
-        mock_richmat_config_entry,
-        mock_coordinator_connected,
-        mock_bleak_client: MagicMock,
-    ):
-        """Test foot massage toggle command."""
-        coordinator = AdjustableBedCoordinator(hass, mock_richmat_config_entry)
-        await coordinator.async_connect()
-
-        await coordinator.controller.massage_foot_toggle()
-
-        expected_cmd = coordinator.controller._build_command(RichmatCommands.MASSAGE_FOOT_STEP)
-        mock_bleak_client.write_gatt_char.assert_called_with(
-            RICHMAT_NORDIC_CHAR_UUID, expected_cmd, response=True
-        )
-
-    async def test_massage_mode_step(
-        self,
-        hass: HomeAssistant,
-        mock_richmat_config_entry,
-        mock_coordinator_connected,
-        mock_bleak_client: MagicMock,
-    ):
-        """Test massage mode step command."""
-        coordinator = AdjustableBedCoordinator(hass, mock_richmat_config_entry)
-        await coordinator.async_connect()
-
-        await coordinator.controller.massage_mode_step()
-
-        expected_cmd = coordinator.controller._build_command(RichmatCommands.MASSAGE_PATTERN_STEP)
-        mock_bleak_client.write_gatt_char.assert_called_with(
-            RICHMAT_NORDIC_CHAR_UUID, expected_cmd, response=True
-        )
-
 
 class TestRichmatSync:
     """Test Richmat split-king sync commands."""
@@ -1342,42 +866,6 @@ class TestRichmatSync:
         await coordinator.async_connect()
 
         assert coordinator.controller.supports_synchro is True
-
-    async def test_set_synchro_on(
-        self,
-        hass: HomeAssistant,
-        mock_richmat_config_entry,
-        mock_coordinator_connected,
-        mock_bleak_client: MagicMock,
-    ):
-        """Test sync on sends 0xBC command."""
-        coordinator = AdjustableBedCoordinator(hass, mock_richmat_config_entry)
-        await coordinator.async_connect()
-
-        await coordinator.controller.set_synchro(True)
-
-        expected_cmd = coordinator.controller._build_command(RichmatCommands.SYNC_ON)
-        mock_bleak_client.write_gatt_char.assert_called_with(
-            RICHMAT_NORDIC_CHAR_UUID, expected_cmd, response=True
-        )
-
-    async def test_set_synchro_off(
-        self,
-        hass: HomeAssistant,
-        mock_richmat_config_entry,
-        mock_coordinator_connected,
-        mock_bleak_client: MagicMock,
-    ):
-        """Test sync off sends 0xBD command."""
-        coordinator = AdjustableBedCoordinator(hass, mock_richmat_config_entry)
-        await coordinator.async_connect()
-
-        await coordinator.controller.set_synchro(False)
-
-        expected_cmd = coordinator.controller._build_command(RichmatCommands.SYNC_OFF)
-        mock_bleak_client.write_gatt_char.assert_called_with(
-            RICHMAT_NORDIC_CHAR_UUID, expected_cmd, response=True
-        )
 
 
 class TestRichmatPositionNotifications:

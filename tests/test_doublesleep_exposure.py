@@ -9,6 +9,8 @@ import pytest
 
 from custom_components.adjustable_bed import const
 from custom_components.adjustable_bed.app_profiles import hidden_generic_fields, per_side_profile
+from custom_components.adjustable_bed.bed_traits import reads_positions
+from custom_components.adjustable_bed.beds.doublesleep.services import build_request
 from custom_components.adjustable_bed.button import BUTTON_DESCRIPTIONS, AdjustableBedButton
 from custom_components.adjustable_bed.config_flow import (
     AdjustableBedConfigFlow,
@@ -20,38 +22,30 @@ from custom_components.adjustable_bed.detection import (
     BED_TYPE_DISPLAY_NAMES,
     detect_bed_type_detailed,
 )
-from custom_components.adjustable_bed.doublesleep_services import build_request
+from tests.form_helpers import NEW_BED_ROUTES, finish_new_bed, start_new_bed
 from tests.test_doublesleep_controller import Bed
 
 
-@pytest.mark.parametrize("step", ("manual_entry", "manual_config", "bluetooth_confirm"))
+@pytest.mark.parametrize("route", NEW_BED_ROUTES)
 async def test_all_setup_routes_collect_separate_saved_model_and_driver(
-    hass, mock_bluetooth_service_info, step
+    hass, mock_bluetooth_service_info, route
 ):
     flow = AdjustableBedConfigFlow()
     flow.hass = hass
     flow.context = {}
     flow._discovery_info = mock_bluetooth_service_info
-    flow._disconnect_choice_confirmed = True
-    result = await getattr(flow, "async_step_" + step)(
-        {
-            "address": "AA:BB:CC:01:02:03",
-            "bed_type": const.BED_TYPE_DOUBLESLEEP,
-            "name": "SleepEase",
-            "motor_count": 2,
-            "has_massage": False,
-            "disable_angle_sensing": False,
-            "disconnect_after_command": False,
-            "preferred_adapter": "auto",
-        }
-    )
-    assert result["step_id"] == "doublesleep"
+    result = await start_new_bed(flow, route, const.BED_TYPE_DOUBLESLEEP, "AA:BB:CC:01:02:03")
+    assert result["step_id"] == "profile_questions"
     values = result["data_schema"]({"product_type": "11136", "protocol_variant": "p2"})
     with patch.object(flow, "_finish_with_verify", new=AsyncMock()) as finish:
-        await flow.async_step_doublesleep(values)
+        await finish_new_bed(
+            flow,
+            await flow.async_step_profile_questions(values),
+            {"name": "SleepEase", "connection_mode": "idle"},
+        )
     saved = finish.call_args.args[0]
     assert saved["product_type"] == "11136" and saved["protocol_variant"] == "p2"
-    assert saved["disable_angle_sensing"] and saved["motor_pulse_delay_ms"] == 300
+    assert not reads_positions(saved) and saved["motor_pulse_delay_ms"] == 300
 
 
 def test_profile_findability_and_per_address_options():
@@ -100,7 +94,9 @@ async def test_factory_uses_advertisement_for_driver_and_saved_model_for_ui():
     bed.coordinator.entry = SimpleNamespace(
         data={"product_type": "3", "ble_device_name": "sleepbt"}, options={}
     )
-    bed.coordinator.hass.async_add_import_executor_job = AsyncMock()
+    bed.coordinator.hass.async_add_import_executor_job = AsyncMock(
+        side_effect=lambda func, *args: func(*args)
+    )
     result = await create_controller(
         bed.coordinator,
         const.BED_TYPE_DOUBLESLEEP,
@@ -119,13 +115,13 @@ async def test_setup_model_default_uses_platform_name_independently_of_driver(ha
     flow = AdjustableBedConfigFlow()
     flow.hass = hass
     flow.context = {}
-    flow._manual_data = {}
+    flow._manual_data = {"bed_type": const.BED_TYPE_DOUBLESLEEP}
     flow._discovery_info = SimpleNamespace(
         name="osleepbts-A",
         device=SimpleNamespace(name="sleepbt"),
         manufacturer_data={89: bytes([0, 0, 0, 0, 0, 0, 134])},
     )
-    result = await flow.async_step_doublesleep()
+    result = await flow.async_step_profile_questions()
     assert result["data_schema"] is not None
     defaults = result["data_schema"]({})
     assert defaults["product_type"] == "10135"
@@ -154,7 +150,6 @@ def test_standard_button_exposes_p1_hold_without_changing_other_buttons():
         capability_controller=bed.bed,
         controller=bed.bed,
         entity_unique_id=lambda key: key,
-        entity_translation_key=lambda key: key,
         device_info={},
         entry=SimpleNamespace(entry_id="entry"),
         side=None,
@@ -171,9 +166,9 @@ def test_standard_button_exposes_p1_hold_without_changing_other_buttons():
 def test_motor_covers_expose_the_shared_app_hold_owner(driver):
     bed = Bed(driver, 3)
     runtime = SimpleNamespace(
+        capability_controller=None,
         device_info={},
         entity_side=None,
-        entity_translation_key=lambda key: key,
         entity_unique_id=lambda key: key,
     )
     specs = bed.bed.motor_control_specs

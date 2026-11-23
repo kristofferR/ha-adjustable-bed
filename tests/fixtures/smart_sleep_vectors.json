@@ -1,0 +1,1077 @@
+[
+  {
+    "id": "V001",
+    "protocol": "P2",
+    "action": "_ connectResult(/* No info */) {",
+    "inputs": {},
+    "expected_bytes": "2a 00 00 05 81 09 00 ff ff 00 00 22 25 12 4b"
+  },
+  {
+    "id": "V002",
+    "protocol": "P1",
+    "action": "_ checkAlarm(/* No info */) {",
+    "inputs": {},
+    "expected_bytes": "00 c0"
+  },
+  {
+    "id": "V003",
+    "protocol": "P1",
+    "action": "_ massageAll(/* No info */) {",
+    "inputs": {},
+    "expected_bytes": "05 02 00 00 01 00 00"
+  },
+  {
+    "id": "V004",
+    "protocol": "P1",
+    "action": "_ massageStopAll(/* No info */) {",
+    "inputs": {},
+    "expected_bytes": "05 02 02 00 00 00 00"
+  },
+  {
+    "id": "V005",
+    "protocol": "P1",
+    "action": "_ stopCommand(/* No info */) {",
+    "inputs": {},
+    "expected_bytes": "05 02 00 00 00 00 00"
+  },
+  {
+    "id": "V006",
+    "protocol": "P1",
+    "action": "_ light(/* No info */) {",
+    "inputs": {},
+    "expected_bytes": "05 02 00 02 00 00 00"
+  },
+  {
+    "id": "V007",
+    "protocol": "P1",
+    "action": "_ confirmGainHistoryData(/* No info */) {",
+    "inputs": {},
+    "expected_bytes": "01 b3 01"
+  },
+  {
+    "id": "V008",
+    "protocol": "P1",
+    "action": "_ gainAllHistoricalData(/* No info */) {",
+    "inputs": {},
+    "expected_bytes": "01 b1 01"
+  },
+  {
+    "id": "V009",
+    "protocol": "P1",
+    "action": "_ checkOpenBlemanage(/* No info */) {",
+    "inputs": {},
+    "expected_bytes": "01 b4 01"
+  },
+  {
+    "id": "V010",
+    "protocol": "P1",
+    "action": "_ gainNewHistoricalData(/* No info */) {",
+    "inputs": {},
+    "expected_bytes": "01 b1 02"
+  },
+  {
+    "id": "V011",
+    "protocol": "P1",
+    "action": "_ setDemoAntiSnoring(/* No info */) {",
+    "inputs": {},
+    "expected_bytes": "02 0b 02 06 01"
+  },
+  {
+    "id": "V012",
+    "protocol": "P1",
+    "action": "_ openPrivacyMode(/* No info */) {",
+    "inputs": {},
+    "expected_bytes": "01 b2 01"
+  },
+  {
+    "id": "V013",
+    "protocol": "P1",
+    "action": "_ closePrivacyMode(/* No info */) {",
+    "inputs": {},
+    "expected_bytes": "01 b2 00"
+  },
+  {
+    "id": "V014",
+    "protocol": "P1",
+    "action": "_ waveAdd(/* No info */) {",
+    "inputs": {},
+    "expected_bytes": "05 02 10 00 00 00 00"
+  },
+  {
+    "id": "V015",
+    "protocol": "P1",
+    "action": "_ timerSwitch(/* No info */) {",
+    "inputs": {},
+    "expected_bytes": "05 02 00 00 02 00 00"
+  },
+  {
+    "id": "V016",
+    "protocol": "P1",
+    "action": "_ footStrengthAdd(/* No info */) {",
+    "inputs": {},
+    "expected_bytes": "05 02 00 00 04 00 00"
+  },
+  {
+    "id": "V017",
+    "protocol": "P1",
+    "action": "_ headStrengthAdd(/* No info */) {",
+    "inputs": {},
+    "expected_bytes": "05 02 00 00 08 00 00"
+  },
+  {
+    "id": "V018",
+    "protocol": "P1",
+    "action": "_ flatPosition(/* No info */) {",
+    "inputs": {},
+    "expected_bytes": "05 02 08 00 00 00 00"
+  },
+  {
+    "id": "V019",
+    "protocol": "P1",
+    "action": "_ memory6_M2(/* No info */) {",
+    "inputs": {},
+    "expected_bytes": "05 02 00 04 00 00 00"
+  },
+  {
+    "id": "V020",
+    "protocol": "P1",
+    "action": "_ memory5_M1(/* No info */) {",
+    "inputs": {},
+    "expected_bytes": "05 02 00 01 00 00 00"
+  },
+  {
+    "id": "V021",
+    "protocol": "P1",
+    "action": "_ openAIZero(/* No info */) {",
+    "inputs": {},
+    "expected_bytes": "01 b6 01"
+  },
+  {
+    "id": "V022",
+    "protocol": "P1",
+    "action": "_ antiSnore(/* No info */) {",
+    "inputs": {},
+    "expected_bytes": "05 02 00 00 80 00 00"
+  },
+  {
+    "id": "V023",
+    "protocol": "P1",
+    "action": "_ zeroGravity(/* No info */) {",
+    "inputs": {},
+    "expected_bytes": "05 02 00 00 10 00 00"
+  },
+  {
+    "id": "V024",
+    "protocol": "P1",
+    "action": "_ memory3_TV(/* No info */) {",
+    "inputs": {},
+    "expected_bytes": "05 02 00 00 40 00 00"
+  },
+  {
+    "id": "V025",
+    "protocol": "P1",
+    "action": "_ memory2_Read(/* No info */) {",
+    "inputs": {},
+    "expected_bytes": "05 02 00 00 20 00 00"
+  },
+  {
+    "id": "V026",
+    "protocol": "P1",
+    "action": "_ machinery5Down(/* No info */) {",
+    "inputs": {},
+    "expected_bytes": "05 02 80 00 00 00 00"
+  },
+  {
+    "id": "V027",
+    "protocol": "P1",
+    "action": "_ machinery3Down(/* No info */) {",
+    "inputs": {},
+    "expected_bytes": "05 02 00 00 00 20 00"
+  },
+  {
+    "id": "V028",
+    "protocol": "P1",
+    "action": "_ machinery4Down(/* No info */) {",
+    "inputs": {},
+    "expected_bytes": "05 02 00 00 00 80 00"
+  },
+  {
+    "id": "V029",
+    "protocol": "P1",
+    "action": "_ machinery5Up(/* No info */) {",
+    "inputs": {},
+    "expected_bytes": "05 02 40 00 00 00 00"
+  },
+  {
+    "id": "V030",
+    "protocol": "P1",
+    "action": "_ machinery3Up(/* No info */) {",
+    "inputs": {},
+    "expected_bytes": "05 02 00 00 00 10 00"
+  },
+  {
+    "id": "V031",
+    "protocol": "P1",
+    "action": "_ machinery4Up(/* No info */) {",
+    "inputs": {},
+    "expected_bytes": "05 02 00 00 00 40 00"
+  },
+  {
+    "id": "V032",
+    "protocol": "P1",
+    "action": "_ footDown(/* No info */) {",
+    "inputs": {},
+    "expected_bytes": "05 02 00 00 00 08 00"
+  },
+  {
+    "id": "V033",
+    "protocol": "P1",
+    "action": "_ headDown(/* No info */) {",
+    "inputs": {},
+    "expected_bytes": "05 02 00 00 00 02 00"
+  },
+  {
+    "id": "V034",
+    "protocol": "P1",
+    "action": "_ footUp(/* No info */) {",
+    "inputs": {},
+    "expected_bytes": "05 02 00 00 00 04 00"
+  },
+  {
+    "id": "V035",
+    "protocol": "P1",
+    "action": "_ headUp(/* No info */) {",
+    "inputs": {},
+    "expected_bytes": "05 02 00 00 00 01 00"
+  },
+  {
+    "id": "V036",
+    "protocol": "P2",
+    "action": "get _ stopCommand(/* No info */) {",
+    "inputs": {},
+    "expected_bytes": "aa 00 00 01 02 00"
+  },
+  {
+    "id": "V037",
+    "protocol": "P2",
+    "action": "get _ closeLight(/* No info */) {",
+    "inputs": {},
+    "expected_bytes": "aa 00 00 04 01 05 00 00"
+  },
+  {
+    "id": "V038",
+    "protocol": "P2",
+    "action": "get _ openLight(/* No info */) {",
+    "inputs": {},
+    "expected_bytes": "aa 00 00 04 01 05 00 01"
+  },
+  {
+    "id": "V039",
+    "protocol": "P2",
+    "action": "get _ checkAlarm(/* No info */) {",
+    "inputs": {},
+    "expected_bytes": "2a 00 00 03 81 01 01"
+  },
+  {
+    "id": "V040",
+    "protocol": "P2",
+    "action": "get _ closeAlarm(/* No info */) {",
+    "inputs": {},
+    "expected_bytes": "aa 00 00 03 02 07 01 00 00 00 00 00 00"
+  },
+  {
+    "id": "V041",
+    "protocol": "P2",
+    "action": "get _ massageAll(/* No info */) {",
+    "inputs": {},
+    "expected_bytes": "aa 00 00 02 01 01 40"
+  },
+  {
+    "id": "V042",
+    "protocol": "P2",
+    "action": "get _ checkMassage(/* No info */) {",
+    "inputs": {},
+    "expected_bytes": "2a 00 00 02 81 01 03"
+  },
+  {
+    "id": "V043",
+    "protocol": "P2",
+    "action": "get _ massageStopAll(/* No info */) {",
+    "inputs": {},
+    "expected_bytes": "aa 00 00 02 01 01 41"
+  },
+  {
+    "id": "V044",
+    "protocol": "P2",
+    "action": "get _ flatPosition(/* No info */) {",
+    "inputs": {},
+    "expected_bytes": "aa 00 00 01 03 01 09"
+  },
+  {
+    "id": "V045",
+    "protocol": "P2",
+    "action": "get _ saveMemory6_M2(/* No info */) {",
+    "inputs": {},
+    "expected_bytes": "aa 00 00 01 05 01 26"
+  },
+  {
+    "id": "V046",
+    "protocol": "P2",
+    "action": "get _ memory6_M2(/* No info */) {",
+    "inputs": {},
+    "expected_bytes": "aa 00 00 01 03 01 06"
+  },
+  {
+    "id": "V047",
+    "protocol": "P2",
+    "action": "get _ saveMemory5_M1(/* No info */) {",
+    "inputs": {},
+    "expected_bytes": "aa 00 00 01 05 01 25"
+  },
+  {
+    "id": "V048",
+    "protocol": "P2",
+    "action": "get _ memory5_M1(/* No info */) {",
+    "inputs": {},
+    "expected_bytes": "aa 00 00 01 03 01 05"
+  },
+  {
+    "id": "V049",
+    "protocol": "P2",
+    "action": "get _ saveAntiSnore(/* No info */) {",
+    "inputs": {},
+    "expected_bytes": "aa 00 00 01 05 01 24"
+  },
+  {
+    "id": "V050",
+    "protocol": "P2",
+    "action": "get _ antiSnore(/* No info */) {",
+    "inputs": {},
+    "expected_bytes": "aa 00 00 01 03 01 04"
+  },
+  {
+    "id": "V051",
+    "protocol": "P2",
+    "action": "get _ saveZeroGravity(/* No info */) {",
+    "inputs": {},
+    "expected_bytes": "aa 00 00 01 05 01 21"
+  },
+  {
+    "id": "V052",
+    "protocol": "P2",
+    "action": "get _ zeroGravity(/* No info */) {",
+    "inputs": {},
+    "expected_bytes": "aa 00 00 01 03 01 01"
+  },
+  {
+    "id": "V053",
+    "protocol": "P2",
+    "action": "get _ saveTv(/* No info */) {",
+    "inputs": {},
+    "expected_bytes": "aa 00 00 01 05 01 23"
+  },
+  {
+    "id": "V054",
+    "protocol": "P2",
+    "action": "get _ memory_tv(/* No info */) {",
+    "inputs": {},
+    "expected_bytes": "aa 00 00 01 03 01 03"
+  },
+  {
+    "id": "V055",
+    "protocol": "P2",
+    "action": "get _ saveRead(/* No info */) {",
+    "inputs": {},
+    "expected_bytes": "aa 00 00 01 05 01 22"
+  },
+  {
+    "id": "V056",
+    "protocol": "P2",
+    "action": "get _ memory_read(/* No info */) {",
+    "inputs": {},
+    "expected_bytes": "aa 00 00 01 03 01 02"
+  },
+  {
+    "id": "V057",
+    "protocol": "P2",
+    "action": "get _ stopDriver(/* No info */) {",
+    "inputs": {},
+    "expected_bytes": "aa 00 00 01 01 04 00 00 00 00"
+  },
+  {
+    "id": "V058",
+    "protocol": "P2",
+    "action": "get _ machinery5Down(/* No info */) {",
+    "inputs": {},
+    "expected_bytes": "aa 00 00 01 01 04 00 02 00 00"
+  },
+  {
+    "id": "V059",
+    "protocol": "P2",
+    "action": "get _ machinery5Up(/* No info */) {",
+    "inputs": {},
+    "expected_bytes": "aa 00 00 01 01 04 00 01 00 00"
+  },
+  {
+    "id": "V060",
+    "protocol": "P2",
+    "action": "get _ machinery3Down(/* No info */) {",
+    "inputs": {},
+    "expected_bytes": "aa 00 00 01 01 04 20 00 00 00"
+  },
+  {
+    "id": "V061",
+    "protocol": "P2",
+    "action": "get _ machinery3Up(/* No info */) {",
+    "inputs": {},
+    "expected_bytes": "aa 00 00 01 01 04 10 00 00 00"
+  },
+  {
+    "id": "V062",
+    "protocol": "P2",
+    "action": "get _ machinery4Down(/* No info */) {",
+    "inputs": {},
+    "expected_bytes": "aa 00 00 01 01 04 80 00 00 00"
+  },
+  {
+    "id": "V063",
+    "protocol": "P2",
+    "action": "get _ machinery4Up(/* No info */) {",
+    "inputs": {},
+    "expected_bytes": "aa 00 00 01 01 04 40 00 00 00"
+  },
+  {
+    "id": "V064",
+    "protocol": "P2",
+    "action": "get _ footDown(/* No info */) {",
+    "inputs": {},
+    "expected_bytes": "aa 00 00 01 01 04 08 00 00 00"
+  },
+  {
+    "id": "V065",
+    "protocol": "P2",
+    "action": "get _ footUp(/* No info */) {",
+    "inputs": {},
+    "expected_bytes": "aa 00 00 01 01 04 04 00 00 00"
+  },
+  {
+    "id": "V066",
+    "protocol": "P2",
+    "action": "get _ headDown(/* No info */) {",
+    "inputs": {},
+    "expected_bytes": "aa 00 00 01 01 04 02 00 00 00"
+  },
+  {
+    "id": "V067",
+    "protocol": "P2",
+    "action": "get _ headUp(/* No info */) {",
+    "inputs": {},
+    "expected_bytes": "aa 00 00 01 01 04 01 00 00 00"
+  },
+  {
+    "id": "V068",
+    "protocol": "P1",
+    "action": "checkState",
+    "inputs": {},
+    "expected_bytes": "00 b0"
+  },
+  {
+    "id": "V069",
+    "protocol": "P1",
+    "action": "motor 1 up",
+    "inputs": {
+      "axis": 1,
+      "direction": "up"
+    },
+    "expected_bytes": "05 02 00 00 00 01 00"
+  },
+  {
+    "id": "V070",
+    "protocol": "P2",
+    "action": "motor 1 up",
+    "inputs": {
+      "axis": 1,
+      "direction": "up"
+    },
+    "expected_bytes": "aa 00 00 01 01 04 01 00 00 00"
+  },
+  {
+    "id": "V071",
+    "protocol": "P1",
+    "action": "motor 1 down",
+    "inputs": {
+      "axis": 1,
+      "direction": "down"
+    },
+    "expected_bytes": "05 02 00 00 00 02 00"
+  },
+  {
+    "id": "V072",
+    "protocol": "P2",
+    "action": "motor 1 down",
+    "inputs": {
+      "axis": 1,
+      "direction": "down"
+    },
+    "expected_bytes": "aa 00 00 01 01 04 02 00 00 00"
+  },
+  {
+    "id": "V073",
+    "protocol": "P1",
+    "action": "motor 2 up",
+    "inputs": {
+      "axis": 2,
+      "direction": "up"
+    },
+    "expected_bytes": "05 02 00 00 00 04 00"
+  },
+  {
+    "id": "V074",
+    "protocol": "P2",
+    "action": "motor 2 up",
+    "inputs": {
+      "axis": 2,
+      "direction": "up"
+    },
+    "expected_bytes": "aa 00 00 01 01 04 04 00 00 00"
+  },
+  {
+    "id": "V075",
+    "protocol": "P1",
+    "action": "motor 2 down",
+    "inputs": {
+      "axis": 2,
+      "direction": "down"
+    },
+    "expected_bytes": "05 02 00 00 00 08 00"
+  },
+  {
+    "id": "V076",
+    "protocol": "P2",
+    "action": "motor 2 down",
+    "inputs": {
+      "axis": 2,
+      "direction": "down"
+    },
+    "expected_bytes": "aa 00 00 01 01 04 08 00 00 00"
+  },
+  {
+    "id": "V077",
+    "protocol": "P1",
+    "action": "motor 3 up",
+    "inputs": {
+      "axis": 3,
+      "direction": "up"
+    },
+    "expected_bytes": "05 02 00 00 00 10 00"
+  },
+  {
+    "id": "V078",
+    "protocol": "P2",
+    "action": "motor 3 up",
+    "inputs": {
+      "axis": 3,
+      "direction": "up"
+    },
+    "expected_bytes": "aa 00 00 01 01 04 10 00 00 00"
+  },
+  {
+    "id": "V079",
+    "protocol": "P1",
+    "action": "motor 3 down",
+    "inputs": {
+      "axis": 3,
+      "direction": "down"
+    },
+    "expected_bytes": "05 02 00 00 00 20 00"
+  },
+  {
+    "id": "V080",
+    "protocol": "P2",
+    "action": "motor 3 down",
+    "inputs": {
+      "axis": 3,
+      "direction": "down"
+    },
+    "expected_bytes": "aa 00 00 01 01 04 20 00 00 00"
+  },
+  {
+    "id": "V081",
+    "protocol": "P1",
+    "action": "motor 4 up",
+    "inputs": {
+      "axis": 4,
+      "direction": "up"
+    },
+    "expected_bytes": "05 02 00 00 00 40 00"
+  },
+  {
+    "id": "V082",
+    "protocol": "P2",
+    "action": "motor 4 up",
+    "inputs": {
+      "axis": 4,
+      "direction": "up"
+    },
+    "expected_bytes": "aa 00 00 01 01 04 40 00 00 00"
+  },
+  {
+    "id": "V083",
+    "protocol": "P1",
+    "action": "motor 4 down",
+    "inputs": {
+      "axis": 4,
+      "direction": "down"
+    },
+    "expected_bytes": "05 02 00 00 00 80 00"
+  },
+  {
+    "id": "V084",
+    "protocol": "P2",
+    "action": "motor 4 down",
+    "inputs": {
+      "axis": 4,
+      "direction": "down"
+    },
+    "expected_bytes": "aa 00 00 01 01 04 80 00 00 00"
+  },
+  {
+    "id": "V085",
+    "protocol": "P1",
+    "action": "motor 5 up",
+    "inputs": {
+      "axis": 5,
+      "direction": "up"
+    },
+    "expected_bytes": "05 02 40 00 00 00 00"
+  },
+  {
+    "id": "V086",
+    "protocol": "P2",
+    "action": "motor 5 up",
+    "inputs": {
+      "axis": 5,
+      "direction": "up"
+    },
+    "expected_bytes": "aa 00 00 01 01 04 00 01 00 00"
+  },
+  {
+    "id": "V087",
+    "protocol": "P1",
+    "action": "motor 5 down",
+    "inputs": {
+      "axis": 5,
+      "direction": "down"
+    },
+    "expected_bytes": "05 02 80 00 00 00 00"
+  },
+  {
+    "id": "V088",
+    "protocol": "P2",
+    "action": "motor 5 down",
+    "inputs": {
+      "axis": 5,
+      "direction": "down"
+    },
+    "expected_bytes": "aa 00 00 01 01 04 00 02 00 00"
+  },
+  {
+    "id": "V089",
+    "protocol": "P2",
+    "action": "head strength",
+    "inputs": {
+      "index": 0,
+      "first_opcode": 80,
+      "count": 4
+    },
+    "expected_bytes": "aa 00 00 02 01 01 53"
+  },
+  {
+    "id": "V090",
+    "protocol": "P2",
+    "action": "head strength",
+    "inputs": {
+      "index": 1,
+      "first_opcode": 80,
+      "count": 4
+    },
+    "expected_bytes": "aa 00 00 02 01 01 50"
+  },
+  {
+    "id": "V091",
+    "protocol": "P2",
+    "action": "head strength",
+    "inputs": {
+      "index": 4,
+      "first_opcode": 80,
+      "count": 4
+    },
+    "expected_bytes": "aa 00 00 02 01 01 53"
+  },
+  {
+    "id": "V092",
+    "protocol": "P2",
+    "action": "head strength",
+    "inputs": {
+      "index": 5,
+      "first_opcode": 80,
+      "count": 4
+    },
+    "expected_bytes": "aa 00 00 02 01 01 50"
+  },
+  {
+    "id": "V093",
+    "protocol": "P2",
+    "action": "foot strength",
+    "inputs": {
+      "index": 0,
+      "first_opcode": 84,
+      "count": 4
+    },
+    "expected_bytes": "aa 00 00 02 01 01 57"
+  },
+  {
+    "id": "V094",
+    "protocol": "P2",
+    "action": "foot strength",
+    "inputs": {
+      "index": 1,
+      "first_opcode": 84,
+      "count": 4
+    },
+    "expected_bytes": "aa 00 00 02 01 01 54"
+  },
+  {
+    "id": "V095",
+    "protocol": "P2",
+    "action": "foot strength",
+    "inputs": {
+      "index": 4,
+      "first_opcode": 84,
+      "count": 4
+    },
+    "expected_bytes": "aa 00 00 02 01 01 57"
+  },
+  {
+    "id": "V096",
+    "protocol": "P2",
+    "action": "foot strength",
+    "inputs": {
+      "index": 5,
+      "first_opcode": 84,
+      "count": 4
+    },
+    "expected_bytes": "aa 00 00 02 01 01 54"
+  },
+  {
+    "id": "V097",
+    "protocol": "P2",
+    "action": "timer",
+    "inputs": {
+      "index": 0,
+      "first_opcode": 73,
+      "count": 3
+    },
+    "expected_bytes": "aa 00 00 02 01 01 4b"
+  },
+  {
+    "id": "V098",
+    "protocol": "P2",
+    "action": "timer",
+    "inputs": {
+      "index": 1,
+      "first_opcode": 73,
+      "count": 3
+    },
+    "expected_bytes": "aa 00 00 02 01 01 49"
+  },
+  {
+    "id": "V099",
+    "protocol": "P2",
+    "action": "timer",
+    "inputs": {
+      "index": 3,
+      "first_opcode": 73,
+      "count": 3
+    },
+    "expected_bytes": "aa 00 00 02 01 01 4b"
+  },
+  {
+    "id": "V100",
+    "protocol": "P2",
+    "action": "timer",
+    "inputs": {
+      "index": 4,
+      "first_opcode": 73,
+      "count": 3
+    },
+    "expected_bytes": "aa 00 00 02 01 01 49"
+  },
+  {
+    "id": "V101",
+    "protocol": "P2",
+    "action": "wave cycle",
+    "inputs": {
+      "current_index": 0
+    },
+    "expected_bytes": "aa 00 00 02 01 01 42"
+  },
+  {
+    "id": "V102",
+    "protocol": "P2",
+    "action": "wave cycle",
+    "inputs": {
+      "current_index": 1
+    },
+    "expected_bytes": "aa 00 00 02 01 01 43"
+  },
+  {
+    "id": "V103",
+    "protocol": "P2",
+    "action": "wave cycle",
+    "inputs": {
+      "current_index": 3
+    },
+    "expected_bytes": "aa 00 00 02 01 01 45"
+  },
+  {
+    "id": "V104",
+    "protocol": "P2",
+    "action": "wave cycle",
+    "inputs": {
+      "current_index": 4
+    },
+    "expected_bytes": "aa 00 00 02 01 01 42"
+  },
+  {
+    "id": "V105",
+    "protocol": "P2",
+    "action": "alarm UI ordinal",
+    "inputs": {
+      "ui_ordinal": 0,
+      "hour": 6,
+      "minute": 30,
+      "week": 127
+    },
+    "expected_bytes": "aa 00 00 03 02 07 01 7f 09 01 06 1e 00"
+  },
+  {
+    "id": "V106",
+    "protocol": "P2",
+    "action": "alarm UI ordinal",
+    "inputs": {
+      "ui_ordinal": 1,
+      "hour": 6,
+      "minute": 30,
+      "week": 127
+    },
+    "expected_bytes": "aa 00 00 03 02 07 01 7f 01 01 06 1e 00"
+  },
+  {
+    "id": "V107",
+    "protocol": "P2",
+    "action": "alarm UI ordinal",
+    "inputs": {
+      "ui_ordinal": 2,
+      "hour": 6,
+      "minute": 30,
+      "week": 127
+    },
+    "expected_bytes": "aa 00 00 03 02 07 01 7f 02 01 06 1e 00"
+  },
+  {
+    "id": "V108",
+    "protocol": "P2",
+    "action": "alarm UI ordinal",
+    "inputs": {
+      "ui_ordinal": 3,
+      "hour": 6,
+      "minute": 30,
+      "week": 127
+    },
+    "expected_bytes": "aa 00 00 03 02 07 01 7f 03 01 06 1e 00"
+  },
+  {
+    "id": "V109",
+    "protocol": "P2",
+    "action": "alarm UI ordinal",
+    "inputs": {
+      "ui_ordinal": 4,
+      "hour": 6,
+      "minute": 30,
+      "week": 127
+    },
+    "expected_bytes": "aa 00 00 03 02 07 01 7f 04 01 06 1e 00"
+  },
+  {
+    "id": "V110",
+    "protocol": "P1",
+    "action": "set alarm",
+    "inputs": {
+      "hour": 6,
+      "minute": 30,
+      "week": 127,
+      "mode_index": 2,
+      "flexible_wake": 1
+    },
+    "expected_bytes": "07 05 7f 05 06 1e 00 01 01 01"
+  },
+  {
+    "id": "V111",
+    "protocol": "P1",
+    "action": "set alarm",
+    "inputs": {
+      "hour": 23,
+      "minute": 59,
+      "week": 128,
+      "mode_index": 4,
+      "flexible_wake": 0
+    },
+    "expected_bytes": "07 05 80 08 17 3b 00 01 01 00"
+  },
+  {
+    "id": "V112",
+    "protocol": "P2",
+    "action": "set alarm",
+    "inputs": {
+      "hour": 6,
+      "minute": 30,
+      "week": 21,
+      "action": 3
+    },
+    "expected_bytes": "aa 00 00 03 02 07 01 15 03 01 06 1e 00"
+  },
+  {
+    "id": "V113",
+    "protocol": "P2",
+    "action": "set alarm",
+    "inputs": {
+      "hour": 23,
+      "minute": 59,
+      "week": 127,
+      "action": 9
+    },
+    "expected_bytes": "aa 00 00 03 02 07 01 7f 09 01 17 3b 00"
+  },
+  {
+    "id": "V114",
+    "protocol": "P1",
+    "action": "disable alarm",
+    "inputs": {
+      "flexible_wake": 0
+    },
+    "expected_bytes": "07 05 00 00 00 00 00 00 00 00"
+  },
+  {
+    "id": "V115",
+    "protocol": "P1",
+    "action": "disable alarm",
+    "inputs": {
+      "flexible_wake": 1
+    },
+    "expected_bytes": "07 05 00 00 00 00 00 00 00 01"
+  },
+  {
+    "id": "V116",
+    "protocol": "P1",
+    "action": "set antisnore",
+    "inputs": {
+      "enabled": false,
+      "value": 0
+    },
+    "expected_bytes": "02 0b 00 00 01"
+  },
+  {
+    "id": "V117",
+    "protocol": "P1",
+    "action": "set antisnore",
+    "inputs": {
+      "enabled": true,
+      "value": 1
+    },
+    "expected_bytes": "02 0b 01 01 01"
+  },
+  {
+    "id": "V118",
+    "protocol": "P1",
+    "action": "set antisnore",
+    "inputs": {
+      "enabled": true,
+      "value": 3
+    },
+    "expected_bytes": "02 0b 01 03 01"
+  },
+  {
+    "id": "V119",
+    "protocol": "P1",
+    "action": "set antisnore",
+    "inputs": {
+      "enabled": true,
+      "value": 6
+    },
+    "expected_bytes": "02 0b 01 06 01"
+  },
+  {
+    "id": "V120",
+    "protocol": "P1",
+    "action": "set sensitivity",
+    "inputs": {
+      "level": 1
+    },
+    "expected_bytes": "01 0a 01"
+  },
+  {
+    "id": "V121",
+    "protocol": "P1",
+    "action": "set sensitivity",
+    "inputs": {
+      "level": 2
+    },
+    "expected_bytes": "01 0a 02"
+  },
+  {
+    "id": "V122",
+    "protocol": "P1",
+    "action": "set sensitivity",
+    "inputs": {
+      "level": 3
+    },
+    "expected_bytes": "01 0a 03"
+  },
+  {
+    "id": "V123",
+    "protocol": "P1",
+    "action": "set clock",
+    "inputs": {
+      "local_datetime": "2026-11-12T14:06:31"
+    },
+    "expected_bytes": "07 04 7e 0a 0c 03 0e 06 1f"
+  },
+  {
+    "id": "V124",
+    "protocol": "P2",
+    "action": "set clock",
+    "inputs": {
+      "local_datetime": "2026-11-12T14:06:31"
+    },
+    "expected_bytes": "aa 00 00 03 01 07 1a 0b 0c 04 0e 06 1f"
+  },
+  {
+    "id": "V125",
+    "protocol": "P1",
+    "action": "set clock",
+    "inputs": {
+      "local_datetime": "2025-01-05T00:00:00"
+    },
+    "expected_bytes": "07 04 7d 00 05 06 00 00 00"
+  },
+  {
+    "id": "V126",
+    "protocol": "P2",
+    "action": "set clock",
+    "inputs": {
+      "local_datetime": "2025-01-05T00:00:00"
+    },
+    "expected_bytes": "aa 00 00 03 01 07 19 01 05 07 00 00 00"
+  }
+]

@@ -10,17 +10,18 @@ from __future__ import annotations
 
 import asyncio
 import contextlib
+from contextvars import ContextVar
 from functools import partial
 from types import SimpleNamespace
 from typing import cast
-from unittest.mock import AsyncMock
+from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 from homeassistant.helpers.device_registry import DeviceInfo
 
-from custom_components.adjustable_bed.beds.okin_cb24 import OkinCB24Controller
-from custom_components.adjustable_bed.beds.sbi import SBIController
-from custom_components.adjustable_bed.beds.sleep_number import SleepNumberController
+from custom_components.adjustable_bed import paired_topology
+from custom_components.adjustable_bed.beds.qplus_app import QPlusAppController
+from custom_components.adjustable_bed.beds.sleep_number.controller import SleepNumberController
 from custom_components.adjustable_bed.command_scheduler import (
     CommandContext,
     CommandHandle,
@@ -35,11 +36,9 @@ from custom_components.adjustable_bed.const import (
     BED_TYPE_KAIDI,
     BED_TYPE_LINAK,
     BED_TYPE_OCTO,
-    BED_TYPE_OKIN_CB24,
-    BED_TYPE_SBI,
+    BED_TYPE_QPLUS_APP,
     BED_TYPE_SLEEP_NUMBER,
     CONF_BED_TYPE,
-    CONF_PAIR_CONNECTION_MODE,
     CONF_PAIR_ID,
     DOMAIN,
     PAIR_CONNECTION_MODE_AUTO,
@@ -60,12 +59,73 @@ from custom_components.adjustable_bed.position_seek import (
     SeekOutcome,
     SeekResult,
 )
+from tests.pair_mode import CONF_PAIR_CONNECTION_MODE
 
 ADDR = {SIDE_LEFT: "AA:BB:CC:DD:EE:01", SIDE_RIGHT: "AA:BB:CC:DD:EE:02"}
 
 
-class RecordingChild:
-    """A test double for a child coordinator that records an ordered trail."""
+class SchedulerSurface:
+    """The production prepare/commit surface, backed by a real device scheduler."""
+
+    scheduler: DeviceCommandScheduler
+    prepared_scopes: list[frozenset[str]]
+
+    @property
+    def stop_epoch(self) -> int:
+        return self.scheduler.stop_epoch
+
+    async def async_prepare_command_operation(
+        self,
+        operation,
+        *,
+        resource=None,
+        resources=None,
+        cancel_running=True,
+        group_id,
+        expected_stop_epoch=None,
+    ) -> CommandHandle:
+        async def scheduled(_context: CommandContext) -> None:
+            await operation()
+
+        command_scope = (
+            command_resources(*resources)
+            if resources is not None
+            else command_resources(resource or "*")
+        )
+        self.prepared_scopes.append(command_scope)
+        return await self.scheduler.enqueue(
+            CommandIntent(
+                scheduled,
+                resources=command_scope,
+                kind=CommandKind.GROUP,
+                replacement_key=(resource or "*") if resources is None else None,
+                cancel_running=cancel_running,
+                group_id=group_id,
+            ),
+            prepared=True,
+            expected_stop_epoch=expected_stop_epoch,
+        )
+
+    async def async_wait_prepared_command(self, handle: CommandHandle) -> None:
+        await self.scheduler.wait_ready(handle)
+
+    def commit_prepared_command(self, handle: CommandHandle) -> None:
+        self.scheduler.commit(handle)
+
+    async def async_wait_prepared_command_result(self, handle: CommandHandle) -> None:
+        await self.scheduler.wait_prepared_result(handle)
+
+    async def async_abort_prepared_command(self, handle: CommandHandle) -> None:
+        await self.scheduler.cancel(handle, CommandOutcome.GROUP_ABORTED)
+
+
+class RecordingChild(SchedulerSurface):
+    """A child coordinator double with the production scheduler that records an ordered trail."""
+
+    controller_side = None
+    pairlink_peripheral = False
+    bed_type = "linak"
+    refused_outside_pairing_window = False
 
     def __init__(
         self,
@@ -92,6 +152,7 @@ class RecordingChild:
         self.connect_raises = connect_raises
         self.fail_disconnect = fail_disconnect
         self.connection_attempt_details: list[dict[str, object]] = []
+        self._evicted_attempts = 0
         self.connection_source = "hci0"
         self.controller = None
         self.capability_controller = None
@@ -105,6 +166,17 @@ class RecordingChild:
         self._connect_gate = asyncio.Event()
         self._block_connect = block_connect
         self.connection_holds = 0
+        self.scheduler = DeviceCommandScheduler(side)
+        self.prepared_scopes: list[frozenset[str]] = []
+
+    @property
+    def connection_attempt_count(self) -> int:
+        """Attempts ever recorded; the retained details may have dropped older ones."""
+        return self._evicted_attempts + len(self.connection_attempt_details)
+
+    @connection_attempt_count.setter
+    def connection_attempt_count(self, count: int) -> None:
+        self._evicted_attempts = count - len(self.connection_attempt_details)
 
     @contextlib.contextmanager
     def hold_command_connection(self):
@@ -123,7 +195,12 @@ class RecordingChild:
         yield self.async_disconnect
 
     def request_command_cancel(self, resource=None, *, resources=None) -> None:
-        del resource, resources
+        scope = (
+            command_resources(*resources)
+            if resources is not None
+            else command_resources(resource or "*")
+        )
+        self.scheduler.request_cancel(scope)
         self.log.append((self.side, "cancel"))
         self._gate.set()
 
@@ -162,10 +239,14 @@ class RecordingChild:
             raise RuntimeError(f"{self.side} seek boom")
 
     async def async_stop_command(self) -> None:
-        self.log.append((self.side, "stop"))
-        self._gate.set()
-        if self.fail_stop:
-            raise RuntimeError(f"{self.side} stop boom")
+        stop_epoch = self.scheduler.request_stop()
+        try:
+            self.log.append((self.side, "stop"))
+            self._gate.set()
+            if self.fail_stop:
+                raise RuntimeError(f"{self.side} stop boom")
+        finally:
+            self.scheduler.finish_stop(stop_epoch)
 
     async def async_connect(self) -> bool:
         self.log.append((self.side, "connect"))
@@ -194,73 +275,6 @@ class RecordingChild:
         return lambda: None
 
 
-class ScheduledRecordingChild(RecordingChild):
-    """Recording child with the production prepare/commit scheduler surface."""
-
-    def __init__(self, side: str, log: list[tuple[str, str]], **kwargs) -> None:
-        super().__init__(side, log, **kwargs)
-        self.scheduler = DeviceCommandScheduler(side)
-        self.prepared_scopes: list[frozenset[str]] = []
-
-    def request_command_cancel(self, resource=None, *, resources=None) -> None:
-        scope = (
-            command_resources(*resources)
-            if resources is not None
-            else command_resources(resource or "*")
-        )
-        self.scheduler.request_cancel(scope)
-        super().request_command_cancel(resource, resources=resources)
-
-    async def async_prepare_command_operation(
-        self,
-        operation,
-        *,
-        resource=None,
-        resources=None,
-        cancel_running=True,
-        group_id,
-    ) -> CommandHandle:
-        async def scheduled(_context: CommandContext) -> None:
-            await operation()
-
-        command_scope = (
-            command_resources(*resources)
-            if resources is not None
-            else command_resources(resource or "*")
-        )
-        self.prepared_scopes.append(command_scope)
-        return await self.scheduler.enqueue(
-            CommandIntent(
-                scheduled,
-                resources=command_scope,
-                kind=CommandKind.GROUP,
-                replacement_key=(resource or "*") if resources is None else None,
-                cancel_running=cancel_running,
-                group_id=group_id,
-            ),
-            prepared=True,
-        )
-
-    async def async_wait_prepared_command(self, handle: CommandHandle) -> None:
-        await self.scheduler.wait_ready(handle)
-
-    def commit_prepared_command(self, handle: CommandHandle) -> None:
-        self.scheduler.commit(handle)
-
-    async def async_wait_prepared_command_result(self, handle: CommandHandle) -> None:
-        await self.scheduler.wait_prepared_result(handle)
-
-    async def async_abort_prepared_command(self, handle: CommandHandle) -> None:
-        await self.scheduler.cancel(handle, CommandOutcome.GROUP_ABORTED)
-
-    async def async_stop_command(self) -> None:
-        stop_epoch = self.scheduler.request_stop()
-        try:
-            await super().async_stop_command()
-        finally:
-            self.scheduler.finish_stop(stop_epoch)
-
-
 def _make(children, *, connection_mode=None, name="Master Bed"):
     entry = SimpleNamespace(data={CONF_PAIR_ID: "pair_abc123", "name": name})
     return PairedBedCoordinator(
@@ -279,12 +293,63 @@ async def _noop(_controller):
     return None
 
 
+@pytest.mark.parametrize("side", [SIDE_LEFT, SIDE_BOTH])
+@pytest.mark.parametrize("stop_during_preflight", [False, True])
+async def test_clock_sync_after_motor_activity_keeps_configuration_admission(
+    hass, monkeypatch, side, stop_during_preflight
+):
+    from custom_components.adjustable_bed import services
+
+    pair, left, right = _pair([])
+    # A completed motor command changes the all-resource generation, while the
+    # configuration lane remains available to clock synchronization.
+    await pair.async_execute_controller_command(_noop, side=SIDE_LEFT, resource="motor:head")
+    controllers = []
+    for child in (left, right):
+        controller = SimpleNamespace(
+            supports_clock_sync=True,
+            validate_clock_sync=MagicMock(),
+            sync_clock=AsyncMock(),
+            requires_disconnected_transport=False,
+            requires_linked_live_readiness=False,
+            commands_share_timer=False,
+            _coordinator=child,
+        )
+        controllers.append(controller)
+        monkeypatch.setattr(child, "bed_type", BED_TYPE_LINAK, raising=False)
+        monkeypatch.setattr(child, "capability_controller", controller)
+
+        async def execute(controller, command, **_kwargs):
+            await command(controller)
+
+        monkeypatch.setattr(child, "async_execute_controller_command", partial(execute, controller))
+
+    real_preflight = services._preflight_each
+
+    async def preflight(targets, check):
+        result = await real_preflight(targets, check)
+        if stop_during_preflight:
+            # A physical STOP must still invalidate the captured request even
+            # when it does not change the pair's resource generations.
+            await left.async_stop_command()
+        return result
+
+    monkeypatch.setattr(services, "_preflight_each", preflight)
+    monkeypatch.setattr(services, "_resolve_sided_targets", lambda *_args: ([(pair, side)], []))
+    await services.async_register_services(hass)
+    await hass.services.async_call(DOMAIN, "sync_clock", {"device_id": "bed"}, blocking=True)
+
+    expected = 0 if stop_during_preflight else 1
+    assert controllers[0].sync_clock.await_count == expected
+    assert controllers[1].sync_clock.await_count == (expected if side == SIDE_BOTH else 0)
+
+
 class TestSideRouting:
     @pytest.mark.parametrize("fail_right", [False, True])
     async def test_combined_command_holds_early_side_through_group_cleanup(self, fail_right):
         log = []
-        left = ScheduledRecordingChild(SIDE_LEFT, log)
-        right = ScheduledRecordingChild(SIDE_RIGHT, log, block=True, fail_command=fail_right)
+        left = RecordingChild(SIDE_LEFT, log)
+        right = RecordingChild(SIDE_RIGHT, log, block=True, fail_command=fail_right)
         coord = _make({SIDE_LEFT: left, SIDE_RIGHT: right})
         task = asyncio.create_task(coord.async_execute_controller_command(_noop, side=SIDE_BOTH))
         try:
@@ -311,8 +376,8 @@ class TestSideRouting:
 
     async def test_both_waits_until_every_device_scheduler_is_ready(self):
         log: list[tuple[str, str]] = []
-        left = ScheduledRecordingChild(SIDE_LEFT, log)
-        right = ScheduledRecordingChild(SIDE_RIGHT, log)
+        left = RecordingChild(SIDE_LEFT, log)
+        right = RecordingChild(SIDE_RIGHT, log)
         coord = _make({SIDE_LEFT: left, SIDE_RIGHT: right})
         blocker_started = asyncio.Event()
         release_blocker = asyncio.Event()
@@ -351,8 +416,8 @@ class TestSideRouting:
 
     async def test_single_queued_behind_prepared_group_does_not_block_commit(self):
         log: list[tuple[str, str]] = []
-        left = ScheduledRecordingChild(SIDE_LEFT, log)
-        right = ScheduledRecordingChild(SIDE_RIGHT, log)
+        left = RecordingChild(SIDE_LEFT, log)
+        right = RecordingChild(SIDE_RIGHT, log)
         coord = _make({SIDE_LEFT: left, SIDE_RIGHT: right})
         blocker_started = asyncio.Event()
         release_blocker = asyncio.Event()
@@ -407,7 +472,7 @@ class TestSideRouting:
 
     async def test_newer_same_axis_invalidates_prepared_single_side_command(self):
         log: list[tuple[str, str]] = []
-        left = ScheduledRecordingChild(SIDE_LEFT, log)
+        left = RecordingChild(SIDE_LEFT, log)
         coord = _make({SIDE_LEFT: left})
         blocker_started = asyncio.Event()
         release_blocker = asyncio.Event()
@@ -459,7 +524,7 @@ class TestSideRouting:
 
     async def test_different_queued_axes_survive_prepared_single_side_wait(self):
         log: list[tuple[str, str]] = []
-        left = ScheduledRecordingChild(SIDE_LEFT, log)
+        left = RecordingChild(SIDE_LEFT, log)
         coord = _make({SIDE_LEFT: left})
         blocker_started = asyncio.Event()
         release_blocker = asyncio.Event()
@@ -511,8 +576,8 @@ class TestSideRouting:
 
     async def test_active_axis_replacement_bypasses_disjoint_waiting_group(self):
         log: list[tuple[str, str]] = []
-        left = ScheduledRecordingChild(SIDE_LEFT, log)
-        right = ScheduledRecordingChild(SIDE_RIGHT, log)
+        left = RecordingChild(SIDE_LEFT, log)
+        right = RecordingChild(SIDE_RIGHT, log)
         coord = _make({SIDE_LEFT: left, SIDE_RIGHT: right})
         legs_started = asyncio.Event()
         operations: list[str] = []
@@ -571,8 +636,8 @@ class TestSideRouting:
 
     async def test_group_preemption_does_not_cancel_unrelated_child_axis(self):
         log: list[tuple[str, str]] = []
-        left = ScheduledRecordingChild(SIDE_LEFT, log)
-        right = ScheduledRecordingChild(SIDE_RIGHT, log)
+        left = RecordingChild(SIDE_LEFT, log)
+        right = RecordingChild(SIDE_RIGHT, log)
         coord = _make({SIDE_LEFT: left, SIDE_RIGHT: right})
         legs_started = asyncio.Event()
         release_legs = asyncio.Event()
@@ -633,8 +698,8 @@ class TestSideRouting:
 
     async def test_group_enqueue_cancellation_aborts_completed_reservations(self):
         log: list[tuple[str, str]] = []
-        left = ScheduledRecordingChild(SIDE_LEFT, log)
-        right = ScheduledRecordingChild(SIDE_RIGHT, log)
+        left = RecordingChild(SIDE_LEFT, log)
+        right = RecordingChild(SIDE_RIGHT, log)
         coord = _make({SIDE_LEFT: left, SIDE_RIGHT: right})
         right_prepare_started = asyncio.Event()
         original_prepare = right.async_prepare_command_operation
@@ -671,8 +736,8 @@ class TestSideRouting:
 
     async def test_linked_group_reserves_every_declared_resource(self):
         log: list[tuple[str, str]] = []
-        left = ScheduledRecordingChild(SIDE_LEFT, log)
-        right = ScheduledRecordingChild(SIDE_RIGHT, log)
+        left = RecordingChild(SIDE_LEFT, log)
+        right = RecordingChild(SIDE_RIGHT, log)
         coord = _make({SIDE_LEFT: left, SIDE_RIGHT: right})
         resources = {"motor:back", "motor:legs"}
 
@@ -696,8 +761,8 @@ class TestSideRouting:
 
     async def test_linked_group_replacement_is_normal_cancellation(self):
         log: list[tuple[str, str]] = []
-        left = ScheduledRecordingChild(SIDE_LEFT, log, block=True)
-        right = ScheduledRecordingChild(SIDE_RIGHT, log, block=True)
+        left = RecordingChild(SIDE_LEFT, log, block=True)
+        right = RecordingChild(SIDE_RIGHT, log, block=True)
         coord = _make({SIDE_LEFT: left, SIDE_RIGHT: right})
 
         both_task = asyncio.create_task(
@@ -747,8 +812,8 @@ class TestSideRouting:
 
     async def test_different_axes_on_one_child_queue_without_cross_cancel(self):
         log: list[tuple[str, str]] = []
-        left = ScheduledRecordingChild(SIDE_LEFT, log, block=True)
-        right = ScheduledRecordingChild(SIDE_RIGHT, log)
+        left = RecordingChild(SIDE_LEFT, log, block=True)
+        right = RecordingChild(SIDE_RIGHT, log)
         coord = _make({SIDE_LEFT: left, SIDE_RIGHT: right})
 
         back = asyncio.create_task(
@@ -843,7 +908,7 @@ class TestBothFailureContract:
         """A child's feedback failure enters the paired cleanup path."""
         log: list = []
         coord, left, _ = _pair(log)
-        failure = PositionFeedbackError("Lost fresh position feedback for back during seek")
+        failure = PositionFeedbackError("position_feedback_lost", motor="back")
         left.async_seek_position = AsyncMock(side_effect=failure)
         with pytest.raises(PairedSideError) as exc:
             await coord.async_seek_position(
@@ -862,7 +927,10 @@ class TestBothFailureContract:
         task = asyncio.ensure_future(
             coord.async_execute_controller_command(_noop, side=SIDE_BOTH)
         )
-        await asyncio.sleep(0.01)  # both children dispatched and blocking
+        # Cancel only once both children are blocking; earlier, nothing is moving.
+        async with asyncio.timeout(1):
+            while not {(SIDE_LEFT, "command"), (SIDE_RIGHT, "command")} <= set(log):
+                await asyncio.sleep(0)
         task.cancel()
         with pytest.raises(asyncio.CancelledError):
             await task
@@ -968,7 +1036,7 @@ class TestPreemption:
         log: list = []
         coord, left, right = _pair(log)
         # Simulate an active WHOLE-BED move (both children under one command).
-        coord._active_children = {left, right}
+        coord._admission.active_children = {left, right}
 
         await coord.async_execute_controller_command(_noop, side=SIDE_LEFT)
 
@@ -984,7 +1052,7 @@ class TestPreemption:
         log: list = []
         coord, left, _right = _pair(log)
         # Simulate an active LEFT-ONLY move.
-        coord._active_children = {left}
+        coord._admission.active_children = {left}
 
         await coord.async_execute_controller_command(_noop, side=SIDE_RIGHT)
 
@@ -996,7 +1064,7 @@ class TestPreemption:
     async def test_cancel_running_both_preempts_both_sides(self):
         log: list = []
         coord, left, right = _pair(log)
-        coord._active_children = {left, right}
+        coord._admission.active_children = {left, right}
 
         await coord.async_execute_controller_command(_noop, side=SIDE_BOTH)
 
@@ -1006,11 +1074,11 @@ class TestPreemption:
     async def test_stop_bumps_pair_cancel_counter_per_side(self):
         log: list = []
         coord, _left, _right = _pair(log)
-        before = dict(coord._pair_cancel_counter)
+        before = dict(coord._admission.cancel_counter)
         await coord.async_stop_command(side=SIDE_LEFT)
         # A left-only stop bumps only the left counter.
-        assert coord._pair_cancel_counter[SIDE_LEFT] == before[SIDE_LEFT] + 1
-        assert coord._pair_cancel_counter[SIDE_RIGHT] == before[SIDE_RIGHT]
+        assert coord._admission.cancel_counter[SIDE_LEFT] == before[SIDE_LEFT] + 1
+        assert coord._admission.cancel_counter[SIDE_RIGHT] == before[SIDE_RIGHT]
 
     async def test_concurrent_single_side_does_not_take_pair_lock(self):
         log: list = []
@@ -1018,7 +1086,7 @@ class TestPreemption:
         # Concurrent-mode children own independent physical schedulers. The
         # parent lock is now reserved for sequential connection switching, so a
         # left-only request does not wait behind unrelated pair metadata work.
-        async with coord._pair_command_lock:
+        async with coord._sequential.command_lock:
             command = asyncio.ensure_future(
                 coord.async_execute_controller_command(_noop, side=SIDE_LEFT)
             )
@@ -1030,12 +1098,12 @@ class TestPreemption:
         coord, _left, _right = _pair(log)
         # A queued RIGHT movement must NOT be dropped when LEFT's counter bumps
         # (an independent left reverse), only when RIGHT's does.
-        async with coord._pair_command_lock:
+        async with coord._sequential.command_lock:
             queued = asyncio.ensure_future(
                 coord.async_execute_controller_command(_noop, side=SIDE_RIGHT)
             )
             await asyncio.sleep(0.01)
-            coord._pair_cancel_counter[SIDE_LEFT] += 1  # independent left activity
+            coord._admission.cancel_counter[SIDE_LEFT] += 1  # independent left activity
         await asyncio.wait_for(queued, timeout=1)
         assert ("right", "command") in log
 
@@ -1104,7 +1172,7 @@ class TestSideProxy:
         parent.async_stop_command.assert_awaited_once_with(side=SIDE_LEFT)
 
 
-class SingleAddressInner:
+class SingleAddressInner(SchedulerSurface):
     """One physical coordinator double used by the Phase 3 routing tests."""
 
     def hold_command_connection(self):
@@ -1126,6 +1194,8 @@ class SingleAddressInner:
         self.position_hydration_events: list[str] = []
         self.position_hydration_pause_count = 0
         self.seek_results: list[SeekResult] = []
+        self.scheduler = DeviceCommandScheduler(self.address)
+        self.prepared_scopes: list[frozenset[str]] = []
 
     def _record_seek_result(self, result: SeekResult) -> None:
         self.seek_results.append(result)
@@ -1185,52 +1255,50 @@ class SingleAddressInner:
         self.position_hydration_pause_count -= 1
 
 
-class RecordingLogicalController:
-    """Minimal side-bindable controller for shared-scheduler tests."""
+class _SideScopedController:
+    commands_share_timer = False
+
+    """Minimal controller whose calls see the side bound by ``side_scope``."""
 
     def __init__(self, _coordinator) -> None:
-        self.stop_sides: list[str] = []
+        self.stop_sides: list[str | None] = []
+        self._bound_side: ContextVar[str | None] = ContextVar("test_side", default=None)
 
-    def bind_side(self, side: str):
-        owner = self
+    @property
+    def command_side(self) -> str | None:
+        return self._bound_side.get()
 
-        class BoundController:
-            _side = side
+    @contextlib.contextmanager
+    def side_scope(self, side: str | None):
+        token = self._bound_side.set(side)
+        try:
+            yield
+        finally:
+            self._bound_side.reset(token)
 
-            async def stop_all(self) -> None:
-                owner.stop_sides.append(side)
-
-        return BoundController()
+    async def stop_all(self) -> None:
+        self.stop_sides.append(self.command_side)
 
 
-class DirectPositionController:
+class RecordingLogicalController(_SideScopedController):
+    """Minimal side-bindable controller for shared-scheduler tests."""
+
+
+class DirectPositionController(_SideScopedController):
     """Minimal side-bindable direct-position controller."""
 
     supports_direct_position_control = True
 
     def __init__(self, _coordinator) -> None:
-        self.targets: list[tuple[str, str, int]] = []
-        self.stop_sides: list[str] = []
+        super().__init__(_coordinator)
+        self.targets: list[tuple[str | None, str, int]] = []
 
-    def bind_side(self, side: str):
-        owner = self
+    @staticmethod
+    def angle_to_native_position(_motor: str, angle: float) -> int:
+        return round(angle)
 
-        class BoundController:
-            supports_direct_position_control = True
-
-            @staticmethod
-            def angle_to_native_position(_motor: str, angle: float) -> int:
-                return round(angle)
-
-            @staticmethod
-            async def set_motor_position(motor: str, position: int) -> None:
-                owner.targets.append((side, motor, position))
-
-            @staticmethod
-            async def stop_all() -> None:
-                owner.stop_sides.append(side)
-
-        return BoundController()
+    async def set_motor_position(self, motor: str, position: int) -> None:
+        self.targets.append((self.command_side, motor, position))
 
 
 class ScheduledSingleAddressInner(SingleAddressInner):
@@ -1330,7 +1398,7 @@ class TestSingleAddressCoordinator:
 
         coordinator, inner = self._scheduled_coordinator()
         intents = []
-        physical = SimpleNamespace(_protocol_command_resources=lambda scope: scope)
+        physical = SimpleNamespace(_protocol_command_resources=lambda scope: scope, capability_controller=None)
 
         async def execute(command, *, resource=None, resources=None, **_kwargs):
             intent = AdjustableBedCoordinator._build_command_intent(
@@ -1383,12 +1451,12 @@ class TestSingleAddressCoordinator:
         inner.bed_type = bed_type
         return SingleAddressPairedCoordinator(None, entry, inner), inner
 
-    async def test_sbi_uses_native_side_and_both_packets(self):
-        coordinator = self._coordinator(BED_TYPE_SBI, SBIController)
+    async def test_qplus_uses_native_side_and_both_packets(self):
+        coordinator = self._coordinator(BED_TYPE_QPLUS_APP, QPlusAppController)
         packets = []
 
         async def record(controller):
-            packets.append(controller._build_command(0))
+            packets.append(controller._frame(0))
 
         await coordinator.async_execute_controller_command(record, side=SIDE_LEFT)
         await coordinator.async_execute_controller_command(record, side=SIDE_RIGHT)
@@ -1403,7 +1471,7 @@ class TestSingleAddressCoordinator:
         sides = []
 
         async def record(controller):
-            sides.append(controller._side)
+            sides.append(controller.command_side)
 
         await coordinator.async_execute_controller_command(record, side=SIDE_BOTH)
 
@@ -1560,15 +1628,15 @@ class TestSingleAddressCoordinator:
         sides: list[str] = []
 
         async def old_both(controller) -> None:
-            sides.append(f"old:{controller._side}")
-            if controller._side == SIDE_LEFT:
+            sides.append(f"old:{controller.command_side}")
+            if controller.command_side == SIDE_LEFT:
                 context = current_command_context()
                 assert context is not None
                 left_started.set()
                 await context.cancel_event.wait()
 
         async def replacement(controller) -> None:
-            sides.append(f"new:{controller._side}")
+            sides.append(f"new:{controller.command_side}")
 
         both_task = asyncio.create_task(
             coordinator.async_execute_controller_command(
@@ -1592,7 +1660,7 @@ class TestSingleAddressCoordinator:
     @pytest.mark.parametrize(
         ("bed_type", "controller_type"),
         [
-            (BED_TYPE_SBI, SBIController),
+            (BED_TYPE_QPLUS_APP, QPlusAppController),
             (BED_TYPE_SLEEP_NUMBER, SleepNumberController),
         ],
     )
@@ -1872,7 +1940,7 @@ class TestSingleAddressCoordinator:
         stopped at the wrapper would guard nothing, and the removal would fail
         on a missing attribute instead.
         """
-        coordinator = self._coordinator(BED_TYPE_SBI, SBIController)
+        coordinator = self._coordinator(BED_TYPE_QPLUS_APP, QPlusAppController)
         inner = coordinator._single_inner
         entered: list[str] = []
         applied: list[bool] = []
@@ -1892,7 +1960,7 @@ class TestSingleAddressCoordinator:
         assert applied == [True]
 
     def test_side_and_combined_ids_share_the_mac_device(self):
-        coordinator = self._coordinator(BED_TYPE_SBI, SBIController)
+        coordinator = self._coordinator(BED_TYPE_QPLUS_APP, QPlusAppController)
         left = coordinator.children[SIDE_LEFT]
 
         assert left.entity_unique_id("back") == "AA:BB:CC:DD:EE:50_back_left"
@@ -1903,34 +1971,8 @@ class TestSingleAddressCoordinator:
             (DOMAIN, "AA:BB:CC:DD:EE:50")
         }
 
-    def test_shared_cb24_position_updates_relay_to_each_side(self):
-        coordinator = self._coordinator(BED_TYPE_OKIN_CB24, OkinCB24Controller)
-        left = coordinator.children[SIDE_LEFT]
-        right = coordinator.children[SIDE_RIGHT]
-        left_updates = []
-        right_updates = []
-        left.register_position_callback(left_updates.append)
-        right.register_position_callback(right_updates.append)
-
-        coordinator._single_inner.update_positions({"back": 42.0})
-
-        assert left.position_data == {"back": 42.0}
-        assert right.position_data == {"back": 42.0}
-        assert left_updates == [{"back": 42.0}]
-        assert right_updates == [{"back": 42.0}]
-
-    async def test_cb24_shutdown_unregisters_shared_position_relays(self):
-        coordinator = self._coordinator(BED_TYPE_OKIN_CB24, OkinCB24Controller)
-        inner = coordinator._single_inner
-
-        assert len(inner._position_callbacks) == 3
-
-        await coordinator.async_shutdown()
-
-        assert inner._position_callbacks == set()
-
-    async def test_sbi_position_updates_remain_side_scoped(self):
-        coordinator = self._coordinator(BED_TYPE_SBI, SBIController)
+    async def test_position_updates_remain_side_scoped(self):
+        coordinator = self._coordinator(BED_TYPE_QPLUS_APP, QPlusAppController)
         left = coordinator.children[SIDE_LEFT]
         right = coordinator.children[SIDE_RIGHT]
         left_updates = []
@@ -2285,7 +2327,9 @@ class TestConnectionModeResolution:
         coordinator = self._coord(BED_TYPE_OCTO)
         left = coordinator.children[SIDE_LEFT]
         right = coordinator.children[SIDE_RIGHT]
-        pairing_only = SimpleNamespace(manual_disconnect_strands_connection=True)
+        pairing_only = SimpleNamespace(
+            manual_disconnect_strands_connection=True, requires_disconnected_transport=False
+        )
         left.controller = pairing_only
         right.capability_controller = pairing_only
         right.connection_attempt_details = []
@@ -2430,7 +2474,7 @@ class TestConnectionModeResolution:
             None, entry, {SIDE_LEFT: left, SIDE_RIGHT: right}
         )
         attempt_cursors = {
-            side: coordinator._connection_attempt_cursor(child)
+            side: paired_topology.connection_attempt_cursor(child)
             for side, child in coordinator.children.items()
         }
         right.connection_attempt_details.append(
@@ -2444,7 +2488,7 @@ class TestConnectionModeResolution:
         )
 
         fallback = asyncio.create_task(
-            coordinator._async_fallback_after_connection_slot_exhaustion(
+            coordinator._lanes.fallback_after_connection_slot_exhaustion(
                 error, attempt_cursors
             )
         )
@@ -2500,12 +2544,12 @@ class TestConnectionModeResolution:
             {"error": "Old connection slot failure"}
         ]
         child.connection_attempt_count = 1
-        cursor = coordinator._connection_attempt_cursor(child)
+        cursor = paired_topology.connection_attempt_cursor(child)
 
         child.connection_attempt_count = 3
         child.connection_attempt_details.append({"error": "Unrelated failure"})
 
-        assert not coordinator._connection_slot_exhausted(
+        assert not paired_topology.connection_slot_exhausted(
             child, ConnectionError("Not connected to bed"), cursor
         )
 
@@ -2515,13 +2559,13 @@ class TestConnectionModeResolution:
         right = RecordingChild(SIDE_RIGHT, log, connected=False)
         coordinator = _make({SIDE_LEFT: left, SIDE_RIGHT: right})
 
-        await coordinator._pair_group_lock.acquire()
+        await coordinator._lanes.group_lock.acquire()
         task = asyncio.create_task(
             coordinator.async_execute_controller_command(_noop, side=SIDE_BOTH)
         )
         await asyncio.sleep(0)
         coordinator._connection_mode = PAIR_CONNECTION_MODE_SEQUENTIAL
-        coordinator._pair_group_lock.release()
+        coordinator._lanes.group_lock.release()
 
         await task
 
@@ -2538,7 +2582,9 @@ class TestConnectionModeResolution:
         coordinator = self._coord(BED_TYPE_OCTO)
         left = coordinator.children[SIDE_LEFT]
         right = coordinator.children[SIDE_RIGHT]
-        pairing_only = SimpleNamespace(manual_disconnect_strands_connection=True)
+        pairing_only = SimpleNamespace(
+            manual_disconnect_strands_connection=True, requires_disconnected_transport=False
+        )
         left.controller = pairing_only
         right.capability_controller = pairing_only
         right._connected = False
@@ -2566,7 +2612,9 @@ class TestConnectionModeResolution:
     async def test_auto_command_waits_for_reconnect_before_fallback_safety_check(self):
         reconnect_started = asyncio.Event()
         finish_reconnect = asyncio.Event()
-        pairing_only = SimpleNamespace(manual_disconnect_strands_connection=True)
+        pairing_only = SimpleNamespace(
+            manual_disconnect_strands_connection=True, requires_disconnected_transport=False
+        )
 
         class ReconnectingChild(RecordingChild):
             def __init__(self):
@@ -2764,6 +2812,15 @@ class TestSequentialCycle:
         ]
         assert set(exc.value.side_errors) == {SIDE_RIGHT}
 
+    async def test_side_refused_outside_its_pairing_window_says_so(self):
+        log: list = []
+        coord, _, right = self._seq(log, right={"connect_result": False})
+        right.refused_outside_pairing_window = True
+        with pytest.raises(PairedSideError) as exc:
+            await coord.async_execute_controller_command(_noop, side=SIDE_BOTH)
+        error = exc.value.side_errors[SIDE_RIGHT]
+        assert error.translation_key == "side_pairing_window_closed"
+
     async def test_stop_only_targets_a_still_connected_side(self):
         log: list = []
         # left still connected (mid-move), right already released.
@@ -2808,17 +2865,18 @@ class TestSequentialCycle:
 
     async def test_op_and_disconnect_both_fail_surfaces_both(self):
         # If a side's command fails AND its release then also fails, the disconnect
-        # failure (link may still be live/moving) must not be dropped — the side
-        # error reflects both, with the original op error as its cause.
+        # failure (link may still be live/moving) must not be dropped, and the
+        # command keeps its own reason beside it.
         log: list = []
         coord, _, _ = self._seq(
             log, left={"fail_command": True, "fail_disconnect": True}
         )
         with pytest.raises(PairedSideError) as exc:
             await coord.async_execute_controller_command(_noop, side=SIDE_BOTH)
-        err = exc.value.side_errors[SIDE_LEFT]
-        assert "release also failed" in str(err)
-        assert isinstance(err.__cause__, RuntimeError)  # the original command error
+        assert isinstance(exc.value.side_errors[SIDE_LEFT], RuntimeError)
+        release = exc.value.side_errors[f"{SIDE_LEFT} (disconnect)"]
+        assert release.translation_key == "side_not_released"
+        assert exc.value.translation_key == "pair_side_failed"
         # The loop broke on left; right is never connected.
         assert (SIDE_RIGHT, "connect") not in log
 

@@ -1,20 +1,20 @@
 # FurniMove / OKIN Smart Remote
 
-**Status:** ❓ Needs testing (APK and production API behavior verified; hardware validation pending)
+**Status:** Partly tested (back and legs work on an RF ECO BT receiver with handset 12234 in [#556](https://github.com/kristofferR/ha-adjustable-bed/issues/556); the receiver in [#633](https://github.com/kristofferR/ha-adjustable-bed/issues/633) does not move yet; other handsets and features need testing)
 
 **Credit:** Reverse engineering by [kristofferR](https://github.com/kristofferR/ha-adjustable-bed)
 
 ## Known Models
 
-- OKIN receivers used with the FurniMove app, selected by the exact handset ID
+- OKIN receivers used with the FurniMove app, selected by the handset ID
   shown in the app (see [Captured layouts](#captured-layouts))
 - Handset families in the catalog: RF-TOPLINE, RF-TOUCH, RF-TOUCHLINE, RF-STYLE,
   RF-LITE / RF-LITELINE, RF-FLASHLINE, RF-ECO+, RFS-ELLIPSE, RF HS-Elegance,
   "REMOTE CONTROL 2,4GHz ECO", and the RF1058 DOT handsets
 - RF ECO BT receivers (Device Information model `RF eco BT`, part 88802); see
   [Connection](#connection)
-- RF ECO BT, P1103 and shared OKIN UUIDs identify a receiver or transport, not
-  its number of motors or command layout
+- The receiver type (RF ECO BT, P1103 or another OKIN receiver) does not tell how
+  many motors the bed has or which buttons it uses; pick your handset ID in setup
 
 ## Apps
 
@@ -22,20 +22,25 @@
 |----------|-----|------------|
 | ✅ | [FurniMove](https://play.google.com/store/apps/details?id=com.okin.okinsmartcomfort) **2.2.0 (19)** | `com.okin.okinsmartcomfort` |
 
+Smart Comfort Pro **1.0.5 (7)**, package `com.okin.seating.smartcomfort`, is a
+separate app for chairs and sofas and is not supported. It is not the FurniMove /
+OKIN Smart Remote app (`com.okin.okinsmartcomfort`) described here.
+
 ## Features
 
 | Feature | Supported |
 |---------|-----------|
 | Motor Control | ✅ (per handset table: `M1` Head, `M2` Back, `M3` Legs, `M4` Feet) |
-| Position Feedback | ❌ (the app reports no motor positions; no position or angle sliders) |
-| Memory Presets | ✅ (per handset table, up to 4 slots; save-memory per ordered slot) |
-| Named presets and utility buttons | ✅ (every reachable non-actuator row, e.g. Flat, QuietSleep, Snore) |
+| Position Feedback | ❌ |
+| Memory Presets | ✅ (up to 4 slots, as your handset has them; recall and save) |
+| Named presets and utility buttons | ✅ (your handset's other buttons, e.g. Flat, QuietSleep, Snore) |
 | Massage | ✅ (handsets with massage rows: intensity, zones, programs 1-3 and Wave) |
-| Under-bed light (UBL) | ✅ (toggle button plus reported binary state) |
-| Sync / Child Lock | ✅ (command buttons plus reported booleans) |
+| Under-bed light (UBL) | ✅ (a light that shows its on/off state) |
+| Sync / Child Lock | ✅ (buttons and their on/off state) |
 | Simultaneous movement | ✅ (`adjustable_bed.furnimove_move_simultaneously`) |
 | Rename | ✅ (`adjustable_bed.rename`) |
-| Bonding | ⚠️ (advisory background bond request; never required) |
+| Pairing | Optional; Home Assistant may ask some receivers to pair in the background |
+| Hold until release | ✅ ([renewable](../SERVICES.md#renewable-holds) `timed_move`: 100 ms refresh, then the handset's release) |
 
 ## Protocol Details
 
@@ -85,12 +90,11 @@ sets no explicit Android write type.
 
 ### Choosing the layout
 
-- Choose **FurniMove / OKIN Smart Remote** and select the exact handset ID used
+- Choose **FurniMove / OKIN Smart Remote app** and select the exact handset ID used
   in the FurniMove app, matching the physical remote. There is no automatic
   handset choice.
-- Issue #633 establishes use of FurniMove; #556's receiver label alone does not
-  establish its app. For another app, select that app's documented integration
-  profile.
+- The owner in #633 uses FurniMove; #556's receiver label alone does not tell
+  which app it uses. For another app, select that app's integration profile.
 - Motor count, massage availability and action ordering come from the selected
   table.
 - An unknown/missing handset ID still prevents setup. An unavailable ID requires
@@ -100,7 +104,7 @@ sets no explicit Android write type.
   when no physical wireless handset is present.
 - A configured catalog layout loads its control and diagnostic entities even if
   the first BLE connection fails or times out. Commands and **Connect** retry
-  the connection on demand. **BLE Connection** remains disconnected and live
+  the connection on demand. **BLE connection** remains disconnected and live
   feedback stays unknown until startup succeeds. This uses the selected handset
   table; it does not confirm that the receiver supports it.
 
@@ -119,10 +123,10 @@ five-row offline table `00000`.
 ### Select the app as well as the handset
 
 This catalog is also the keycode source for the 86 handsets that the
-[Okin UUID](okimat.md) and [Okin DOT](okin-dot.md) bed types list. Their
+[Okin UUID](okin-nframe.md#okimat) and [Okin DOT](okin-nframe.md#okin-dot) bed types list. Their
 earlier backend capture matched it byte for byte, including memory-save
 timing, so those bed types now derive the keycodes from here. Shared keycodes
-do not establish the same bonding or feedback requirements. Explicit FurniMove
+do not mean the same bonding or feedback requirements. Explicit FurniMove
 setup offers every captured handset, including `82417`:
 
 | Handsets | New setups use | Why |
@@ -138,11 +142,13 @@ below.
 
 > [!NOTE]
 > For the FurniMove app showing handset **82417**, choose **FurniMove / OKIN
-> Smart Remote → 82417: RF TOPLINE SI/BK/BK/07**. This table exposes Back and
+> Smart Remote app**, then **82417: RF-TOPLINE SI/BK/BK/07**. This table exposes Back and
 > Legs, with no massage or memory slots. `90167: RF1058` is a different layout
 > and is not a fallback for this receiver. Correct an existing entry through its
-> integration options; selecting `82417` does not require replacing the entry or
-> removing an operating-system bond.
+> **Reconfigure** (see
+> [Changing the app or layout](../CONFIGURATION.md#changing-the-bed-type-app-or-layout-of-an-existing-bed));
+> selecting `82417` does not require replacing the entry or removing an
+> operating-system bond.
 
 ### Discovery
 
@@ -161,37 +167,54 @@ FurniMove connections and setup verification wait for live GATT service
 discovery before starting subscriptions. A cached BlueZ service collection can
 otherwise arrive before its characteristic objects exist, producing
 `org.freedesktop.DBus.Error.UnknownObject` on reads and notifications. This fixes
-the race observed in #633, but does not establish the cause of a link that
+the race observed in #633, but does not explain a link that
 disconnects before service discovery completes.
+
+### Home Assistant setup
+
+Select the **FurniMove / OKIN Smart Remote app, Okimat, Lucid, DOT and RF ECO BT remotes · Okin** row, answer **FurniMove / OKIN Smart Remote app** (see the
+[Okin question](okin-nframe.md#home-assistant-setup)), then choose the exact
+handset ID used by the app. The catalog includes all 87 captured production IDs and three
+shipped local/offline IDs. Motor count, massage capability and ordered commands
+come from the selected table; manual motor count and pulse delay are hidden.
+Shared RF ECO BT receiver labels and GATT UUIDs do not choose a handset.
+The profile has no angle feedback or mandatory pairing/protected-read gate.
+
+Old RF ECO BT entries receive a [guided layout repair](#repairing-existing-configurations),
+including offline entries and unconfirmed one-motor configurations. It preserves
+the existing entry and matching entity IDs. Confirm a staircase or select the
+FurniMove handset. For a bed using another app, choose that app through
+**Reconfigure**. Paired repairs change only their own physical side.
 
 ## Repairing existing configurations
 
 After upgrading, every legacy **RF ECO BT single actuator** entry without an
 explicit staircase confirmation receives a fixable warning under **Settings →
 System → Repairs**, even if connection fails. A saved count of one motor does
-not establish the product. The repair offers these choices:
+not identify the product. The repair offers these choices:
 
 - **FurniMove adjustable bed:** choose the exact handset layout, restoring the
   selected axes. Every captured FurniMove handset is listed.
 - **Single-actuator staircase:** retain its one Stair cover.
-- **Keep current configuration:** dismiss the repair without changing any
+- **Keep the current setup:** dismiss the repair without changing any
   setting. A full OKIMAT bed saved as RF ECO BT is promoted at runtime (#406);
-  set its printed handset code under Okin UUID in the integration options.
+  choose its printed handset code through **Reconfigure**, under **No app:
+  Okimat or OKIN handset code (requires pairing)**.
 
 A FurniMove entry without a captured handset gets the first two choices.
 
 An **Okin DOT** entry using handset 90167, 91983 or 93558 receives a separate
-fixable warning offering **Switch to the FurniMove profile** or **Keep current
-configuration**. Switching keeps the handset and derives the axes and massage
+fixable warning offering **Switch to the FurniMove profile** or **Keep the current
+setup**. Switching keeps the handset and derives the axes and massage
 availability from its table.
 
 An **Okin CST** entry whose drive reports an `OKIMAT` Device Information model
 (for example `OKIMAT 4 IPS`, #555) receives a fixable warning after it connects.
 Older versions chose CST for these drives from shared CSS and Nordic DFU
 services. The repair offers **Switch to Okimat** (the route a new setup uses),
-**Switch to FurniMove** with a captured handset, or **Keep Okin CST**. A remote
+**Switch to FurniMove** with a captured handset, or **Keep the current setup**. A remote
 code missing from DewertOkin's catalog, such as #555's `90569`, cannot be
-selected; use Okimat instead.
+selected; the handset list ends with **Switch to Okimat** for that case.
 
 Every repair:
 
@@ -203,8 +226,8 @@ Every repair:
 - For FurniMove conversion, clears obsolete mandatory-pairing state and the old
   pairing repair; it never removes an operating-system bond.
 
-Saving the matching profile in integration options also clears the layout repair
-on the next setup.
+Applying the matching profile through **Reconfigure** also clears the layout
+repair on the next setup.
 
 ## Controls and actions
 
@@ -216,9 +239,9 @@ on the next setup.
 - Memory slots preserve all ordered `memory` rows; arbitrary `memory-preset`
   labels remain separate named buttons. Save-memory uses the requested ordered
   slot.
-- All reachable non-actuator rows also have named buttons, with indexed keys
-  that distinguish duplicate labels. Diagnostics list every captured row and the
-  reachable row indexes.
+- Every other handset row the app uses also has a named button, with indexed
+  keys that distinguish duplicate labels. Diagnostics list every captured row and
+  the indexes in use.
 - Actions use the shared command lock and all-target validation; paired sides
   retain their own profiles. An ordered row must have the same action name and
   category on every target. If it differs, select one device or physical side
@@ -264,7 +287,7 @@ on the next setup.
 ## Commands
 
 Keycodes are per handset and come from the pinned tables in
-`custom_components/adjustable_bed/furnimove_profiles.py`. The two app-shipped
+`custom_components/adjustable_bed/beds/furnimove/profiles.py`. The two app-shipped
 tables below show how keycodes become frames.
 
 ### Offline table `00000`
@@ -359,8 +382,7 @@ keep advertising after a disconnect but refuse or time out reconnects
 [#633](https://github.com/kristofferR/ha-adjustable-bed/issues/633)).
 
 - Once a connect to it has timed out or aborted since Home Assistant started, it
-  is held connected, overriding **Disconnect After Command** and the idle
-  timeout, and an unexpected drop schedules one automatic reconnect.
+  is held connected, overriding the **Bluetooth connection** setting, and an unexpected drop schedules one automatic reconnect.
 - Until then it keeps the configured handoff, so a receiver that reconnects
   normally stays free for the FurniMove app
   ([#336](https://github.com/kristofferR/ha-adjustable-bed/issues/336)).
@@ -380,8 +402,8 @@ keep advertising after a disconnect but refuse or time out reconnects
 
 ## Captured layouts
 
-The setup selector contains every row below. Axes reflect reachable named
-commands; action and memory counts preserve captured ordering and aliases.
+The setup selector contains every row below. Axes reflect the named commands
+the app uses; action and memory counts preserve captured ordering and aliases.
 
 | ID | Description | Axes | Rows | Memory | Massage | Source |
 |----|-------------|------|------|--------|---------|--------|
@@ -480,12 +502,6 @@ commands; action and memory counts preserve captured ordering and aliases.
 
 ### Analysis provenance
 
-- This explicit app profile comes from `com.okin.okinsmartcomfort`
-  **2.2.0 (19)**, including its complete 19-APK artifact set and production API
-  tables captured on 2026-09-30.
-- The clean-room report passed independent acceptance before the integration
-  comparison.
-- [The discovery ledger](../apk-analysis/dispositions/157-furnimove.md) records
-  every implemented behavior and exclusion.
-- Ref [#633](https://github.com/kristofferR/ha-adjustable-bed/issues/633) and
-  [#556](https://github.com/kristofferR/ha-adjustable-bed/issues/556).
+Based on FurniMove 2.2.0 (`com.okin.okinsmartcomfort`), with its product
+tables captured on 2026-09-30. Ref [#633](https://github.com/kristofferR/ha-adjustable-bed/issues/633)
+and [#556](https://github.com/kristofferR/ha-adjustable-bed/issues/556).

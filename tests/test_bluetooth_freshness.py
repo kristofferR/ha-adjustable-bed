@@ -2,12 +2,17 @@
 
 from __future__ import annotations
 
+import asyncio
+from collections.abc import Iterator
+from contextlib import contextmanager
+from datetime import timedelta
 from types import SimpleNamespace
 from typing import Any
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 import pytest
 from homeassistant.core import HomeAssistant
+from pytest_homeassistant.common import async_fire_time_changed
 
 from custom_components.adjustable_bed.bluetooth_freshness import (
     MAX_ADVERTISEMENT_AGE_SECONDS,
@@ -386,115 +391,154 @@ class TestGateConnection:
 
 
 class TestWaitForAdvertisement:
-    """A bed between advertising intervals deserves a second look, not a refusal."""
+    """A bed between advertising intervals deserves a second look, not a refusal.
+
+    The wait runs on the event loop clock, which ``freezer`` controls, so these
+    tests advance time explicitly and deliver packets through the callback the
+    wait registers.
+    """
 
     @staticmethod
-    def _advancing_clock(step: float = 1.0):
-        """Return a monotonic stand-in that moves forward on every read.
+    @contextmanager
+    def _packets() -> Iterator[dict[str, Any]]:
+        """Capture the per-packet callback the wait registers."""
+        registered: dict[str, Any] = {"unsubscribe": MagicMock()}
 
-        The module-level fixture freezes time so ages are exact; the wait loop
-        needs the opposite, since its only exit condition is the clock.
-        """
-        state = {"now": NOW}
+        def _register(_hass: HomeAssistant, callback: Any, address: str) -> MagicMock:
+            registered["callback"], registered["address"] = callback, address
+            return registered["unsubscribe"]
 
-        def _now() -> float:
-            value = state["now"]
-            state["now"] += step
-            return value
+        with patch(
+            f"{_FRESHNESS}.bluetooth.async_register_advertisement_callback",
+            side_effect=_register,
+        ):
+            yield registered
 
-        return patch(f"{_FRESHNESS}._monotonic", side_effect=_now)
+    @staticmethod
+    async def _settle() -> None:
+        for _ in range(5):
+            await asyncio.sleep(0)
+
+    async def _advance(self, hass: HomeAssistant, freezer: Any, seconds: float) -> None:
+        freezer.tick(timedelta(seconds=seconds))
+        async_fire_time_changed(hass)
+        await self._settle()
 
     async def test_an_already_fresh_bed_returns_without_waiting(
         self, hass: HomeAssistant
     ) -> None:
         device = SimpleNamespace(address=TEST_ADDRESS)
         with (
+            self._packets() as packets,
             _patch_last_service_info(_service_info(age=1.0)) as lookup,
             patch(f"{_FRESHNESS}.async_resolve_ble_device", return_value=device),
         ):
             evidence, resolved = await async_wait_for_advertisement(hass, TEST_ADDRESS)
         assert evidence.is_fresh
         assert resolved is device
-        # One glance at the history - both scanner views, but no polling.
+        # One glance at the history - both scanner views - and no listener.
         assert lookup.call_count == 2
+        assert "callback" not in packets
 
-    async def test_an_advertisement_arriving_during_the_wait_is_accepted(
-        self, hass: HomeAssistant
+    async def test_the_first_fresh_packet_ends_the_wait(
+        self, hass: HomeAssistant, freezer: Any
     ) -> None:
         device = SimpleNamespace(address=TEST_ADDRESS)
-        stale = _service_info(age=MAX_ADVERTISEMENT_AGE_SECONDS + 5)
-        fresh = _service_info(age=1.0)
+        history = {"info": _service_info(age=MAX_ADVERTISEMENT_AGE_SECONDS + 5)}
+        seen: list[float] = []
         with (
-            self._advancing_clock(step=0.0),
+            self._packets() as packets,
             patch(
                 f"{_FRESHNESS}.bluetooth.async_last_service_info",
-                side_effect=[stale, stale, fresh],
+                side_effect=lambda *_args, **_kwargs: history["info"],
             ),
             patch(f"{_FRESHNESS}.async_resolve_ble_device", return_value=device),
         ):
-            evidence, resolved = await async_wait_for_advertisement(
-                hass, TEST_ADDRESS, wait_timeout=60.0, poll_interval=0.001
+            task = asyncio.create_task(
+                async_wait_for_advertisement(
+                    hass, TEST_ADDRESS.lower(), wait_timeout=60.0, on_progress=seen.append
+                )
             )
+            await self._settle()
+            assert packets["address"] == TEST_ADDRESS
+            history["info"] = _service_info(age=0.0)
+            packets["callback"](history["info"])
+            await self._settle()
+
+            assert task.done()
+            evidence, resolved = task.result()
         assert evidence.is_fresh
         assert resolved is device
+        # No time passed: the packet, not a later check, ended the wait.
+        assert seen == [0.0, 1.0]
+        packets["unsubscribe"].assert_called_once()
 
-    async def test_fresh_evidence_without_a_device_keeps_waiting(
-        self, hass: HomeAssistant
+    async def test_fresh_evidence_without_a_device_waits_for_the_next_packet(
+        self, hass: HomeAssistant, freezer: Any
     ) -> None:
         """Scanner history can change between freshness and device resolution."""
         device = SimpleNamespace(address=TEST_ADDRESS)
         with (
-            self._advancing_clock(step=0.0),
+            self._packets() as packets,
             _patch_last_service_info(_service_info(age=1.0)),
             patch(
                 f"{_FRESHNESS}.async_resolve_ble_device",
-                side_effect=[None, device],
+                side_effect=[None, None, device],
             ) as resolve,
         ):
-            evidence, resolved = await async_wait_for_advertisement(
-                hass, TEST_ADDRESS, wait_timeout=60.0, poll_interval=0.001
+            task = asyncio.create_task(
+                async_wait_for_advertisement(hass, TEST_ADDRESS, wait_timeout=60.0)
             )
+            await self._settle()
+            packets["callback"](_service_info(age=0.0))
+            await self._settle()
+            assert not task.done()
+            packets["callback"](_service_info(age=0.0))
+            await self._settle()
 
+            evidence, resolved = task.result()
         assert evidence.is_fresh
         assert resolved is device
-        assert resolve.call_count == 2
+        assert resolve.call_count == 3
 
-    async def test_a_silent_bed_gives_up_without_resolving_a_device(
-        self, hass: HomeAssistant
+    async def test_a_silent_bed_gives_up_at_the_deadline(
+        self, hass: HomeAssistant, freezer: Any
     ) -> None:
         with (
-            self._advancing_clock(step=5.0),
-            _patch_last_service_info(
-                _service_info(age=MAX_ADVERTISEMENT_AGE_SECONDS + 5)
-            ),
+            self._packets() as packets,
+            _patch_last_service_info(_service_info(age=MAX_ADVERTISEMENT_AGE_SECONDS + 5)),
             patch(f"{_FRESHNESS}.async_resolve_ble_device") as resolve,
         ):
-            evidence, resolved = await async_wait_for_advertisement(
-                hass, TEST_ADDRESS, wait_timeout=10.0, poll_interval=0.001
+            task = asyncio.create_task(
+                async_wait_for_advertisement(hass, TEST_ADDRESS, wait_timeout=10.0)
             )
+            await self._settle()
+            await self._advance(hass, freezer, 8.0)
+            assert not task.done()
+            await self._advance(hass, freezer, 2.0)
+
+            evidence, resolved = task.result()
         assert evidence.status is FreshnessStatus.STALE
         assert resolved is None
         resolve.assert_not_called()
+        packets["unsubscribe"].assert_called_once()
 
     async def test_progress_is_reported_over_the_known_wait(
-        self, hass: HomeAssistant
+        self, hass: HomeAssistant, freezer: Any
     ) -> None:
         """The wait is the only setup phase whose duration is genuinely known."""
         seen: list[float] = []
         with (
-            self._advancing_clock(step=2.0),
-            _patch_last_service_info(
-                _service_info(age=MAX_ADVERTISEMENT_AGE_SECONDS + 5)
-            ),
+            self._packets(),
+            _patch_last_service_info(_service_info(age=MAX_ADVERTISEMENT_AGE_SECONDS + 5)),
         ):
-            await async_wait_for_advertisement(
-                hass,
-                TEST_ADDRESS,
-                wait_timeout=20.0,
-                poll_interval=0.001,
-                on_progress=seen.append,
+            task = asyncio.create_task(
+                async_wait_for_advertisement(
+                    hass, TEST_ADDRESS, wait_timeout=4.0, on_progress=seen.append
+                )
             )
-        assert seen
-        assert all(0.0 <= value <= 1.0 for value in seen)
-        assert seen == sorted(seen)
-        assert seen[-1] == 1.0
+            await self._settle()
+            for _ in range(4):
+                await self._advance(hass, freezer, 1.0)
+            assert task.done()
+        assert seen == pytest.approx([0.0, 0.25, 0.5, 0.75, 1.0])

@@ -8,7 +8,7 @@ import pytest
 from bleak.backends.device import BLEDevice
 from bleak.exc import BleakError
 from homeassistant.const import CONF_ADDRESS
-from pytest_homeassistant_custom_component.common import MockConfigEntry
+from pytest_homeassistant.common import MockConfigEntry
 
 from custom_components.adjustable_bed import const
 from custom_components.adjustable_bed.adapter import AdapterSelectionResult
@@ -21,8 +21,10 @@ from custom_components.adjustable_bed.bond_verification import (
 )
 from custom_components.adjustable_bed.config_flow import _vibradorm_app_data
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
-from custom_components.adjustable_bed.vibradorm_vmat_setup import QUERY_STAGES
+from custom_components.adjustable_bed.profiles.vibradorm import VMAT_QUERY_STAGES as QUERY_STAGES
 from tests.test_vibradorm_vmat import frames, make_vmat
+
+pytestmark = pytest.mark.usefixtures("instant_vmat_settle")
 
 
 @pytest.mark.asyncio
@@ -127,7 +129,7 @@ async def test_runtime_first_bond_always_closes_setup_and_unproven_rpc_is_not_a_
         else None
     )
     with (
-        patch("custom_components.adjustable_bed.coordinator.async_verify_native_bond", new=AsyncMock(side_effect=[unknown, native if verified else native_absent if absent else unknown])),
+        patch("custom_components.adjustable_bed.coordinator_bonds.async_verify_native_bond", new=AsyncMock(side_effect=[unknown, native if verified else native_absent if absent else unknown])),
         patch.object(coordinator, "_async_raise_pairing_issue", new=AsyncMock()),
         (pytest.raises(expected_error) if expected_error is not None else nullcontext()),
     ):
@@ -198,7 +200,7 @@ async def test_public_connect_retains_failed_setup_and_denies_reuse_replacement_
     native = BondEvidence(BondVerificationStatus.NATIVE_OS_STATE, BondOwner.from_path(path), "native", "now", kind=BondEvidenceKind.NATIVE_OS_STATE)
     device = BLEDevice(address, "Bed", {"source": source})
     adapter = AdapterSelectionResult(device, source, -50, True, [source])
-    module = "custom_components.adjustable_bed.coordinator."
+    module = "custom_components.adjustable_bed.coordinator_connection."
     cancels = disconnect_kind in ("cancel", "task_cancel")
     try:
         with (
@@ -207,7 +209,7 @@ async def test_public_connect_retains_failed_setup_and_denies_reuse_replacement_
             patch(module + "establish_connection", new=AsyncMock(return_value=c.client)) as establish,
             patch(module + "client_source", return_value=source),
             patch(module + "async_path_for_source", return_value=path),
-            patch(module + "async_verify_native_bond", new=AsyncMock(side_effect=[unknown, native])) as native_probe,
+            patch("custom_components.adjustable_bed.coordinator_bonds.async_verify_native_bond", new=AsyncMock(side_effect=[unknown, native])) as native_probe,
             patch(module + "close_stale_connections_by_address", new=AsyncMock()),
             patch(module + "connection_reachability", return_value=None),
             patch.object(coordinator, "_async_raise_pairing_issue", new=AsyncMock()),
@@ -232,11 +234,12 @@ async def test_public_connect_retains_failed_setup_and_denies_reuse_replacement_
                 config_module = "custom_components.adjustable_bed.config_flow."
                 diagnostic_module = "custom_components.adjustable_bed.ble_diagnostics."
                 with (
-                    patch("custom_components.adjustable_bed.support_proxy_logs.capture_proxy_logs", return_value=AsyncExitStack()),
+                    patch("custom_components.adjustable_bed.config_flow.capture_proxy_logs", return_value=AsyncExitStack()),
                     patch("bleak_retry_connector.establish_connection", new=AsyncMock()) as config_connect,
                     patch(config_module + "async_predict_path", return_value=PathPrediction(path, (path,))),
                     patch(diagnostic_module + "select_adapter", new=AsyncMock(return_value=adapter)),
                     patch(diagnostic_module + "establish_connection", new=AsyncMock()) as diagnostic_connect,
+                    patch(diagnostic_module + "asyncio.sleep"),
                 ):
                     async def config_worker():
                         return await flow._async_pair_and_classify(address, "pair", device)
@@ -331,7 +334,7 @@ async def test_public_stop_reconnects_vmat_with_its_own_startup_cancellation(has
     device = BLEDevice(address, "Bed", {"source": source})
     adapter = AdapterSelectionResult(device, source, -50, True, [source])
     native = BondEvidence(BondVerificationStatus.NATIVE_OS_STATE, BondOwner.from_path(path), "native", "now", kind=BondEvidenceKind.NATIVE_OS_STATE)
-    module = "custom_components.adjustable_bed.coordinator."
+    module = "custom_components.adjustable_bed.coordinator_connection."
     try:
         with (
             patch(module + "select_adapter", return_value=adapter),
@@ -339,7 +342,7 @@ async def test_public_stop_reconnects_vmat_with_its_own_startup_cancellation(has
             patch(module + "establish_connection", new=AsyncMock(return_value=c.client)) as establish,
             patch(module + "client_source", return_value=source),
             patch(module + "async_path_for_source", return_value=path),
-            patch(module + "async_verify_native_bond", new=AsyncMock(return_value=native)),
+            patch("custom_components.adjustable_bed.coordinator_bonds.async_verify_native_bond", new=AsyncMock(return_value=native)),
             patch(module + "close_stale_connections_by_address", new=AsyncMock()),
             patch(module + "connection_reachability", return_value=None),
         ):
@@ -363,7 +366,7 @@ async def test_vmat_half_initialized_link_cannot_be_overwritten_before_observed_
     coordinator = AdjustableBedCoordinator(hass, entry)
     coordinator._client = client = MagicMock(is_connected=True)
     client.disconnect = AsyncMock(side_effect=(BleakError("disconnect failed") if disconnect_kind == "error" else asyncio.CancelledError() if disconnect_kind == "cancel" else None))
-    with patch("custom_components.adjustable_bed.coordinator.establish_connection", new=AsyncMock()) as establish:
+    with patch("custom_components.adjustable_bed.coordinator_connection.establish_connection", new=AsyncMock()) as establish:
         with pytest.raises(asyncio.CancelledError) if disconnect_kind == "cancel" else nullcontext():
             assert not await coordinator.async_connect()
         establish.assert_not_awaited()

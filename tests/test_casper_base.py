@@ -1,4 +1,4 @@
-"""Row101 product, transport, cleanup and live sensor integration contracts."""
+"""Casper Base 1.0.8 product, transport, cleanup and live sensor integration contracts."""
 
 from __future__ import annotations
 
@@ -11,13 +11,21 @@ from unittest.mock import AsyncMock, MagicMock
 import pytest
 
 from custom_components.adjustable_bed.app_profiles import hidden_generic_fields, per_side_profile
-from custom_components.adjustable_bed.beds.casper_base import CasperBaseController
-from custom_components.adjustable_bed.beds.casper_sleep import CasperSleepController
-from custom_components.adjustable_bed.casper_base_catalog import ACTIONS, PRODUCTS
-from custom_components.adjustable_bed.casper_base_protocol import GATT, Event, Request
-from custom_components.adjustable_bed.casper_sleep_protocol import NOTIFY, SERVICES, WRITE, envelope
+from custom_components.adjustable_bed.beds.casper_base.catalog import ACTIONS, PRODUCTS
+from custom_components.adjustable_bed.beds.casper_base.controller import CasperBaseController
+from custom_components.adjustable_bed.beds.casper_base.protocol import Event, Request
+from custom_components.adjustable_bed.beds.casper_sleep.controller import CasperSleepController
+from custom_components.adjustable_bed.beds.casper_sleep.protocol import (
+    NOTIFY,
+    SERVICES,
+    WRITE,
+    envelope,
+)
+from custom_components.adjustable_bed.codec.richmat import TRANSPORTS
 from custom_components.adjustable_bed.detection import BED_TYPE_DISPLAY_NAMES
+from custom_components.adjustable_bed.profiles.casper import TRANSPORTS as PROFILE_TRANSPORTS
 from custom_components.adjustable_bed.validators import get_variants_for_bed_type
+from tests.state_helpers import state_writer
 
 
 def char(uuid, *properties):
@@ -31,12 +39,13 @@ def make(model="casperpro", *, transport=1, kind=None):
     c.motor_pulse_count = 3
     c.controller_state = {}
     c.handle_controller_state_update.side_effect = lambda k, v: c.controller_state.update({k: v})
-    c.handle_controller_state_updates.side_effect = c.controller_state.update
+    c.handle_controller_state_updates.side_effect = state_writer(c.controller_state)
     c.client = MagicMock(is_connected=True, mtu_size=23)
     c.client.write_gatt_char = AsyncMock()
     c.client.start_notify = AsyncMock()
     c.client.stop_notify = AsyncMock()
-    service, write = GATT[transport]
+    gatt = TRANSPORTS[PROFILE_TRANSPORTS[transport]]
+    service, write = gatt.service_uuid, gatt.write_uuid
     chars = [char(write, "write", "write-without-response"), char("1234", "notify")]
     if kind:
         service = SERVICES[0]
@@ -135,7 +144,8 @@ async def test_side_binding_and_music_default_left():
     ctrl, c = make("hushl400sh")
     await ctrl.start_notify()
     c.client.write_gatt_char.reset_mock()
-    await ctrl.bind_side("right").async_perform_casper_base_action("MotorReset")
+    with ctrl.side_scope("right"):
+        await ctrl.async_perform_casper_base_action("MotorReset")
     assert frames(c) == ["6e010131a1"]
     ctrl, c = make("nisconup355b")
     await ctrl.start_notify()
@@ -236,6 +246,31 @@ async def test_information_nullable_error_ignoring_merge():
     with pytest.raises(ValueError):
         ctrl._consume({"val": {"type": 5}})
     assert c.controller_state["casper_sleep_info"]["type"] == "bed-sensor"
+
+
+@pytest.mark.parametrize(
+    ("kind", "live", "expected"),
+    [
+        ("sxb", [0, 1, 72, 15, 1], (72, 15)),
+        ("sxb", [0, 1, 72.0, 15.0, 1], (72, 15)),
+        # Whole per-minute values, rounded as the app shows them.
+        ("sxb", [0, 1, 72.75, 15.25, 1], (73, 15)),
+        ("sxb", [0, 0], (None, None)),
+        ("mm", "1-1-0x48-0x0f-1-0-0-0", (72, 15)),
+        ("mm", "0-1-72-15-1-0-0-0", (None, None)),
+    ],
+)
+async def test_live_notifications_publish_numeric_rates(kind, live, expected):
+    ctrl, c = make(kind=kind)
+    ctrl._receive.reset("q_realtime")
+    packet = envelope({"id": 1, "cmd": "q_realtime", "val": {"L": live, "R": live}}, 1)
+    ctrl._on_notification(None, bytearray(packet))
+
+    for side in ("L", "R"):
+        for field, value in zip(("heart", "breath"), expected, strict=True):
+            actual = c.controller_state[f"casper_sleep_{side}_{field}"]
+            assert actual == value
+            assert type(actual) is type(value)
 
 
 @pytest.mark.parametrize("kind", ["mm", "sxb"])
@@ -351,7 +386,7 @@ async def test_sensor_live_replacement_and_local_stop(hass, monkeypatch):
 
 
 async def test_remote_finder_sends_no_bed_setup_or_locator_command():
-    from custom_components.adjustable_bed.beds.casper_sleep import CasperRemoteController
+    from custom_components.adjustable_bed.beds.casper_sleep.controller import CasperRemoteController
 
     _, c = make()
     c.client.services = []
@@ -391,11 +426,43 @@ async def test_side_bound_button_and_cover_callbacks_keep_their_side():
     ctrl, c = make("hushl400sh")
     await ctrl.start_notify()
     c.client.write_gatt_char.reset_mock()
-    right = ctrl.bind_side("right")
-    spec = next(s for s in right.controller_button_specs if s.key == "casper_motorreset")
-    await spec.press_fn(right)
-    assert frames(c) == ["6e010131a1"]
-    c.client.write_gatt_char.reset_mock()
-    back = next(s for s in right.motor_control_specs if s.key == "back")
-    await back.open_fn(right)
+    with ctrl.side_scope("right"):
+        # Flat is the app's Motor reset action.
+        await ctrl.preset_flat()
+        assert frames(c) == ["6e010131a1"]
+        c.client.write_gatt_char.reset_mock()
+        back = next(s for s in ctrl.motor_control_specs if s.key == "back")
+        await back.open_fn(ctrl)
     assert frames(c) == ["6e01012494"] * 3 + ["6e01016ede"]
+
+
+async def assert_timer_select_sends_the_timer_actions(build) -> None:
+    """The massage timer select sends exactly what each timer action's button sent."""
+    ctrl, _ = build()
+    timers = ctrl.massage_timer_actions
+    assert ctrl.supports_massage_timer is bool(timers)
+    assert ctrl.massage_timer_options == sorted(timers)
+    assert not ctrl.massage_timer_can_turn_off
+    assert not {
+        spec.key for spec in ctrl.controller_button_specs if "minutetimer" in spec.key
+    }
+
+
+    async def sent(run) -> list[str]:
+        connected, c = build()
+        await connected.start_notify()
+        c.client.write_gatt_char.reset_mock()
+        await run(connected)
+        return frames(c)
+
+    for minutes, action in timers.items():
+        by_button = await sent(lambda b, a=action: b.async_perform_casper_base_action(a))
+        by_select = await sent(lambda b, m=minutes: b.set_massage_timer(m))
+        assert by_select == by_button != []
+    with pytest.raises(ValueError):
+        await ctrl.set_massage_timer(15)
+
+
+@pytest.mark.parametrize("model", PRODUCTS)
+async def test_massage_timer_actions_are_one_select(model):
+    await assert_timer_select_sends_the_timer_actions(lambda: make(model))

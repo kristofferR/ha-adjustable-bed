@@ -8,17 +8,15 @@ from homeassistant.config_entries import SOURCE_BLUETOOTH, SOURCE_USER
 from homeassistant.const import CONF_ADDRESS, CONF_NAME
 from homeassistant.core import HomeAssistant
 from homeassistant.data_entry_flow import FlowResultType
-from pytest_homeassistant_custom_component.common import MockConfigEntry
+from pytest_homeassistant.common import MockConfigEntry
 
 from custom_components.adjustable_bed import const
-from custom_components.adjustable_bed.beds.starcode_abm5_4 import StarcodeAbm5_4Controller
+from custom_components.adjustable_bed.beds.starcode.abm5_4 import StarcodeAbm5_4Controller
 from custom_components.adjustable_bed.bluetooth_transport import TransportClass
-from custom_components.adjustable_bed.config_flow import (
-    BED_TYPE_AUTO_DETECT,
-    AdjustableBedConfigFlow,
-)
+from custom_components.adjustable_bed.config_flow import AdjustableBedConfigFlow
 from custom_components.adjustable_bed.controller_factory import create_controller
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
+from tests.form_helpers import answer_app, form_fields, select_options, suggested
 from tests.test_config_flow import _advance_only_progress, _fake_connected_client, _patch_gate
 
 _APP_PROBE_ROLES = {
@@ -43,6 +41,24 @@ _APP_PROBE_ROLES = {
         "6e400003-b5a3-f393-e0a9-e50e24dcca9e",
     ),
 }
+
+
+
+async def _answer_starcode_family(hass, result):
+    """The StarCode apps' row asks which app first; answer AdjustableM5X4."""
+    if result.get("step_id") == "starcode_family":
+        result = await hass.config_entries.flow.async_configure(
+            result["flow_id"], user_input={"choice": "m5x4"}
+        )
+    return result
+
+async def _settings_if_asked(hass, result):
+    """Submit a new bed's final settings, once its app's questions are answered."""
+    if result.get("step_id") == "finish_settings":
+        result = await hass.config_entries.flow.async_configure(
+            result["flow_id"], user_input={const.CONF_CONNECTION_MODE: const.CONNECTION_MODE_IDLE}
+        )
+    return result
 
 
 def _app_probe_client(selector: str) -> MagicMock:
@@ -75,6 +91,7 @@ async def test_real_app_setup_over_nonbonding_proxy_verifies_then_creates_entry(
         result = await hass.config_entries.flow.async_configure(
             result["flow_id"], user_input={CONF_ADDRESS: "manual"}
         )
+        result = await answer_app(hass, result, const.BED_TYPE_STARCODE_ABM5_4)
         assert result["step_id"] == "manual_entry"
     else:
         result = await hass.config_entries.flow.async_init(
@@ -91,18 +108,18 @@ async def test_real_app_setup_over_nonbonding_proxy_verifies_then_creates_entry(
                 else const.BED_TYPE_STARCODE_ABM5_4
             },
         )
-        assert result["step_id"] == "bluetooth_confirm"
-    result = await hass.config_entries.flow.async_configure(
-        result["flow_id"],
-        user_input={
-            **({CONF_ADDRESS: mock_bluetooth_service_info.address} if route == "manual" else {}),
-            CONF_NAME: "Explicit app bed",
-            const.CONF_BED_TYPE: const.BED_TYPE_STARCODE_ABM5_4,
-            const.CONF_PREFERRED_ADAPTER: "auto",
-            const.CONF_DISCONNECT_AFTER_COMMAND: False,
-        },
-    )
-    assert result["step_id"] == "starcode_app"
+    if route == "manual":
+        result = await hass.config_entries.flow.async_configure(
+            result["flow_id"], user_input={CONF_ADDRESS: mock_bluetooth_service_info.address}
+        )
+    elif route == "show_all":
+        # Every app, searched for this bed.
+        assert result["step_id"] == "select_app"
+        result = await hass.config_entries.flow.async_configure(
+            result["flow_id"], user_input={const.CONF_BED_TYPE: const.BED_TYPE_STARCODE_ABM5_4}
+        )
+    result = await _answer_starcode_family(hass, result)
+    assert result["step_id"] == "profile_questions"
     client = _app_probe_client("BOX3633")
     client.pair = AsyncMock(side_effect=BleakError("PAIRING_NOT_SUPPORTED"))
 
@@ -132,9 +149,18 @@ async def test_real_app_setup_over_nonbonding_proxy_verifies_then_creates_entry(
     ):
         result = await hass.config_entries.flow.async_configure(
             result["flow_id"],
-            user_input={
+            user_input={"advanced": {
                 const.CONF_STARCODE_COMMAND_SELECTOR: "BOX15",
                 const.CONF_STARCODE_TRANSPORT_SELECTOR: "BOX3633",
+            }},
+        )
+        assert result["step_id"] == "finish_settings"
+        result = await hass.config_entries.flow.async_configure(
+            result["flow_id"],
+            user_input={
+                CONF_NAME: "Explicit app bed",
+                const.CONF_PREFERRED_ADAPTER: "auto",
+                const.CONF_CONNECTION_MODE: const.CONNECTION_MODE_IDLE,
             },
         )
         assert result["type"] == FlowResultType.SHOW_PROGRESS
@@ -189,12 +215,15 @@ async def test_real_discovery_preserves_receiver_choice_and_blocks_show_all_auto
     result = await hass.config_entries.flow.async_configure(
         result["flow_id"], user_input={"bed_type_choice": receiver}
     )
-    assert result["step_id"] == "bluetooth_confirm"
-    schema = result["data_schema"]
-    assert schema is not None
-    defaults = schema({})
-    assert isinstance(defaults, dict)
-    assert defaults[const.CONF_BED_TYPE] == receiver
+    if receiver == const.BED_TYPE_SLEEPYS_BOX25:
+        # The Sleepy's question asks the app, and Keep saves the chosen receiver.
+        assert result["step_id"] == "sleepys_family"
+        assert "keep" in select_options(result, "choice")
+        flow = hass.config_entries.flow._progress[result["flow_id"]]
+        assert flow._manual_data[const.CONF_BED_TYPE] == receiver
+    else:
+        assert result["step_id"] == "bluetooth_confirm"
+        assert suggested(result, const.CONF_BED_TYPE) == receiver
     hass.config_entries.flow.async_abort(result["flow_id"])
     result = await hass.config_entries.flow.async_init(
         const.DOMAIN, context={"source": SOURCE_BLUETOOTH}, data=mock_bluetooth_service_info
@@ -202,17 +231,10 @@ async def test_real_discovery_preserves_receiver_choice_and_blocks_show_all_auto
     result = await hass.config_entries.flow.async_configure(
         result["flow_id"], user_input={"bed_type_choice": "show_all"}
     )
-    schema = result["data_schema"]
-    assert schema is not None
-    defaults = schema({})
-    assert isinstance(defaults, dict)
-    assert defaults[const.CONF_BED_TYPE] == BED_TYPE_AUTO_DETECT
-    rejected = await hass.config_entries.flow.async_configure(
-        result["flow_id"], user_input={const.CONF_BED_TYPE: BED_TYPE_AUTO_DETECT}
-    )
-    assert rejected["type"] == FlowResultType.FORM
-    assert rejected["errors"] == {"base": "auto_detect_failed"}
-    hass.config_entries.flow.async_abort(rejected["flow_id"])
+    # Every app is listed, and the shared UART suggests none of them.
+    assert result["step_id"] == "select_app"
+    assert suggested(result, const.CONF_BED_TYPE) is None
+    hass.config_entries.flow.async_abort(result["flow_id"])
 
 
 async def test_unrelated_unique_receiver_still_reaches_normal_confirm(
@@ -235,7 +257,7 @@ async def test_unrelated_unique_receiver_still_reaches_normal_confirm(
 async def test_runtime_selected_app_connects_without_bond_support(
     hass: HomeAssistant, mock_coordinator_connected, mock_bleak_client
 ) -> None:
-    from custom_components.adjustable_bed.beds.starcode_abm5_4_profiles import TRANSPORTS
+    from custom_components.adjustable_bed.beds.starcode.abm5_4_profiles import TRANSPORTS
 
     role = TRANSPORTS["BOX3633"]
     mock_bleak_client.services = [
@@ -261,7 +283,7 @@ async def test_runtime_selected_app_connects_without_bond_support(
     entry.add_to_hass(hass)
     coordinator = AdjustableBedCoordinator(hass, entry)
     with patch(
-        "custom_components.adjustable_bed.coordinator.establish_connection",
+        "custom_components.adjustable_bed.coordinator_connection.establish_connection",
         new=AsyncMock(return_value=mock_bleak_client),
     ) as connect:
         assert await coordinator.async_connect()
@@ -291,7 +313,6 @@ async def test_private_star2_auto_preserves_receiver_and_pulse_defaults(
             result = await hass.config_entries.flow.async_configure(
                 result["flow_id"], user_input={CONF_ADDRESS: mock_bluetooth_service_info.address}
             )
-            assert result["step_id"] == "manual_config"
         else:
             # Preserve a full-list choice while the scanner gains the private service.
             mock_bluetooth_service_info.service_uuids = []
@@ -305,14 +326,19 @@ async def test_private_star2_auto_preserves_receiver_and_pulse_defaults(
             result = await hass.config_entries.flow.async_configure(
                 result["flow_id"], user_input={"bed_type_choice": "show_all"}
             )
-            assert result["step_id"] == "bluetooth_confirm"
-        schema = result["data_schema"]
-        assert schema is not None
-        defaults = schema({})
-        assert isinstance(defaults, dict)
-        assert defaults[const.CONF_BED_TYPE] == const.BED_TYPE_OCTO
-        assert defaults[const.CONF_MOTOR_PULSE_COUNT] == "3"
-        assert defaults[const.CONF_MOTOR_PULSE_DELAY_MS] == "50"
+        # The app question suggests the confidently detected receiver.
+        assert result["step_id"] == "select_app"
+        result = await hass.config_entries.flow.async_configure(
+            result["flow_id"],
+            user_input={const.CONF_BED_TYPE: suggested(result, const.CONF_BED_TYPE)},
+        )
+        assert result["step_id"] == "finish_settings"
+        defaults = {
+            marker.schema: marker.default()
+            for marker in form_fields(result["data_schema"])
+            if marker.schema in (const.CONF_MOTOR_PULSE_COUNT, const.CONF_MOTOR_PULSE_DELAY_MS)
+        }
+        assert defaults == {const.CONF_MOTOR_PULSE_COUNT: 3}
         with (
             patch.object(AdjustableBedConfigFlow, "_verification_possible", return_value=False),
             patch(
@@ -323,16 +349,10 @@ async def test_private_star2_auto_preserves_receiver_and_pulse_defaults(
             result = await hass.config_entries.flow.async_configure(
                 result["flow_id"],
                 user_input={
-                    const.CONF_BED_TYPE: BED_TYPE_AUTO_DETECT,
-                    const.CONF_PROTOCOL_VARIANT: const.OCTO_VARIANT_STAR2,
-                    const.CONF_DISCONNECT_AFTER_COMMAND: False,
+                    "advanced": {const.CONF_PROTOCOL_VARIANT: const.OCTO_VARIANT_STAR2},
+                    const.CONF_CONNECTION_MODE: const.CONNECTION_MODE_IDLE,
                 },
             )
-            if route == "manual":
-                assert result["step_id"] == "manual_octo"
-                result = await hass.config_entries.flow.async_configure(
-                    result["flow_id"], user_input={}
-                )
             assert result["type"] == FlowResultType.CREATE_ENTRY
         assert result["data"][const.CONF_BED_TYPE] == const.BED_TYPE_OCTO
         assert result["data"][const.CONF_MOTOR_PULSE_COUNT] == 3
@@ -358,27 +378,22 @@ async def test_shared_star_uart_manual_auto_requires_explicit_choice(
         result = await hass.config_entries.flow.async_configure(
             result["flow_id"], user_input={CONF_ADDRESS: mock_bluetooth_service_info.address}
         )
-    assert result["step_id"] == "manual_config"
-    schema = result["data_schema"]
-    assert schema is not None
-    defaults = schema({})
-    assert isinstance(defaults, dict)
-    assert defaults[const.CONF_BED_TYPE] == BED_TYPE_AUTO_DETECT
-    result = await hass.config_entries.flow.async_configure(
-        result["flow_id"], user_input={const.CONF_BED_TYPE: BED_TYPE_AUTO_DETECT}
-    )
-    assert result["step_id"] == "manual_config"
-    assert result["errors"] == {"base": "auto_detect_failed"}
+    # The shared Star UART is ambiguous, so the app question suggests nothing
+    # and the user has to choose.
+    assert result["step_id"] == "select_app"
+    assert suggested(result, const.CONF_BED_TYPE) is None
     hass.config_entries.flow.async_abort(result["flow_id"])
 
 
+@pytest.mark.parametrize("app_hint", [const.BED_TYPE_STARCODE_ABM5_4, "sealy_posturematic"])
 @pytest.mark.parametrize("other_ambiguity", [None, const.BED_TYPE_LINAK])
 def test_confident_receiver_app_hint_preserves_other_ambiguities(
+    app_hint: str,
     other_ambiguity: str | None,
 ) -> None:
     from custom_components.adjustable_bed.config_flow import _confident_auto_detect
 
-    alternatives = [const.BED_TYPE_STARCODE_ABM5_4]
+    alternatives = [app_hint]
     if other_ambiguity:
         alternatives.append(other_ambiguity)
     result = const.DetectionResult(
@@ -400,7 +415,8 @@ async def test_star_scan_without_service_list_keeps_name_based_chooser(
     result = await hass.config_entries.flow.async_configure(
         result["flow_id"], user_input={"bed_type_choice": const.BED_TYPE_STARCODE_ABM5_4}
     )
-    assert result["step_id"] == "bluetooth_confirm"
+    # The StarCode question asks which of its apps runs the bed.
+    assert result["step_id"] == "starcode_family"
     hass.config_entries.flow.async_abort(result["flow_id"])
 
 
@@ -418,16 +434,13 @@ async def test_selected_app_transport_mismatch_cannot_create_entry(
     result = await hass.config_entries.flow.async_configure(
         result["flow_id"], user_input={CONF_ADDRESS: "manual"}
     )
+    result = await answer_app(hass, result, const.BED_TYPE_STARCODE_ABM5_4)
     assert result["step_id"] == "manual_entry"
     result = await hass.config_entries.flow.async_configure(
-        result["flow_id"],
-        user_input={
-            CONF_ADDRESS: mock_bluetooth_service_info.address,
-            const.CONF_BED_TYPE: const.BED_TYPE_STARCODE_ABM5_4,
-            const.CONF_DISCONNECT_AFTER_COMMAND: False,
-        },
+        result["flow_id"], user_input={CONF_ADDRESS: mock_bluetooth_service_info.address}
     )
-    assert result["step_id"] == "starcode_app"
+    result = await _answer_starcode_family(hass, result)
+    assert result["step_id"] == "profile_questions"
     client = _fake_connected_client()
     # A live writable receiver is insufficient when the selected app roles are absent.
     client.write_gatt_char = AsyncMock()
@@ -451,16 +464,21 @@ async def test_selected_app_transport_mismatch_cannot_create_entry(
     ):
         result = await hass.config_entries.flow.async_configure(
             result["flow_id"],
-            user_input={
+            user_input={"advanced": {
                 const.CONF_STARCODE_COMMAND_SELECTOR: "BOX15",
                 const.CONF_STARCODE_TRANSPORT_SELECTOR: selected_transport,
-            },
+            }},
+        )
+        assert result["step_id"] == "finish_settings"
+        result = await hass.config_entries.flow.async_configure(
+            result["flow_id"], user_input={const.CONF_CONNECTION_MODE: const.CONNECTION_MODE_IDLE}
         )
         result = await _advance_only_progress(hass, result)
         assert result["step_id"] == "verify_connection"
         result = await hass.config_entries.flow.async_configure(result["flow_id"], user_input={})
         assert result["type"] == FlowResultType.FORM
-        assert result["step_id"] == "starcode_app"
+        result = await _answer_starcode_family(hass, result)
+        assert result["step_id"] == "profile_questions"
         assert result["errors"] == {const.CONF_STARCODE_TRANSPORT_SELECTOR: "starcode_app_invalid"}
     client.disconnect.assert_awaited_once()
     client.write_gatt_char.assert_not_awaited()
@@ -485,7 +503,7 @@ async def test_selected_app_transport_mismatch_cannot_create_entry(
     ):
         result = await hass.config_entries.flow.async_configure(
             result["flow_id"],
-            user_input={const.CONF_STARCODE_TRANSPORT_SELECTOR: selected_transport},
+            user_input={"advanced": {const.CONF_STARCODE_TRANSPORT_SELECTOR: selected_transport}},
         )
         result = await _advance_only_progress(hass, result)
         assert result["step_id"] == "verify_connection"
@@ -631,15 +649,12 @@ async def test_app_unavailable_probe_still_allows_informational_finish(
     result = await hass.config_entries.flow.async_configure(
         result["flow_id"], user_input={CONF_ADDRESS: "manual"}
     )
+    result = await answer_app(hass, result, const.BED_TYPE_STARCODE_ABM5_4)
     result = await hass.config_entries.flow.async_configure(
-        result["flow_id"],
-        user_input={
-            CONF_ADDRESS: mock_bluetooth_service_info.address,
-            const.CONF_BED_TYPE: const.BED_TYPE_STARCODE_ABM5_4,
-            const.CONF_DISCONNECT_AFTER_COMMAND: False,
-        },
+        result["flow_id"], user_input={CONF_ADDRESS: mock_bluetooth_service_info.address}
     )
-    assert result["step_id"] == "starcode_app"
+    result = await _answer_starcode_family(hass, result)
+    assert result["step_id"] == "profile_questions"
     with (
         patch.object(AdjustableBedConfigFlow, "_verification_possible", return_value=True),
         _patch_gate("nonbonding-proxy", -60, TransportClass.PROXY),
@@ -654,11 +669,12 @@ async def test_app_unavailable_probe_still_allows_informational_finish(
     ):
         result = await hass.config_entries.flow.async_configure(
             result["flow_id"],
-            user_input={
+            user_input={"advanced": {
                 const.CONF_STARCODE_COMMAND_SELECTOR: "BOX15",
                 const.CONF_STARCODE_TRANSPORT_SELECTOR: "BOX1220",
-            },
+            }},
         )
+        result = await _settings_if_asked(hass, result)
         result = await _advance_only_progress(hass, result)
         assert result["step_id"] == "verify_connection"
         result = await hass.config_entries.flow.async_configure(result["flow_id"], user_input={})
@@ -724,16 +740,12 @@ async def test_manual_auto_entry_factory_preserves_native_transport_identity(
     result = await hass.config_entries.flow.async_configure(
         result["flow_id"], user_input={CONF_ADDRESS: "manual"}
     )
+    result = await answer_app(hass, result, const.BED_TYPE_STARCODE_ABM5_4)
     result = await hass.config_entries.flow.async_configure(
-        result["flow_id"],
-        user_input={
-            CONF_ADDRESS: mock_bluetooth_service_info.address,
-            CONF_NAME: "Star display alias",
-            const.CONF_BED_TYPE: const.BED_TYPE_STARCODE_ABM5_4,
-            const.CONF_DISCONNECT_AFTER_COMMAND: False,
-        },
+        result["flow_id"], user_input={CONF_ADDRESS: mock_bluetooth_service_info.address}
     )
-    assert result["step_id"] == "starcode_app"
+    result = await _answer_starcode_family(hass, result)
+    assert result["step_id"] == "profile_questions"
     gate = _patch_gate("nonbonding-proxy", -60, TransportClass.PROXY)
     gate._result[1].name = original
     client = _app_probe_client("BOX1220")
@@ -761,21 +773,23 @@ async def test_manual_auto_entry_factory_preserves_native_transport_identity(
     ):
         result = await hass.config_entries.flow.async_configure(
             result["flow_id"],
-            user_input={
+            user_input={"advanced": {
                 const.CONF_STARCODE_COMMAND_SELECTOR: "BOX15",
                 const.CONF_STARCODE_TRANSPORT_SELECTOR: "auto",
-            },
+            }},
         )
+        result = await _settings_if_asked(hass, result)
         result = await _advance_only_progress(hass, result)
         assert result["step_id"] == "verify_connection"
         result = await hass.config_entries.flow.async_configure(result["flow_id"], user_input={})
         if original is None:
-            assert result["step_id"] == "starcode_app"
+            result = await _answer_starcode_family(hass, result)
+            assert result["step_id"] == "profile_questions"
             assert result["errors"] == {
                 const.CONF_STARCODE_TRANSPORT_SELECTOR: "starcode_app_invalid"
             }
             result = await hass.config_entries.flow.async_configure(
-                result["flow_id"], user_input={const.CONF_STARCODE_TRANSPORT_SELECTOR: "BOX1220"}
+                result["flow_id"], user_input={"advanced": {const.CONF_STARCODE_TRANSPORT_SELECTOR: "BOX1220"}}
             )
             result = await _advance_only_progress(hass, result)
             result = await hass.config_entries.flow.async_configure(
@@ -823,15 +837,11 @@ async def test_nameless_manual_auto_without_scanner_requires_explicit_transport(
     result = await hass.config_entries.flow.async_configure(
         result["flow_id"], user_input={CONF_ADDRESS: "manual"}
     )
+    result = await answer_app(hass, result, const.BED_TYPE_STARCODE_ABM5_4)
     result = await hass.config_entries.flow.async_configure(
-        result["flow_id"],
-        user_input={
-            CONF_ADDRESS: mock_bluetooth_service_info.address,
-            CONF_NAME: "Star display alias",
-            const.CONF_BED_TYPE: const.BED_TYPE_STARCODE_ABM5_4,
-            const.CONF_DISCONNECT_AFTER_COMMAND: False,
-        },
+        result["flow_id"], user_input={CONF_ADDRESS: mock_bluetooth_service_info.address}
     )
+    result = await _answer_starcode_family(hass, result)
     with (
         patch.object(AdjustableBedConfigFlow, "_verification_possible", return_value=False),
         patch("bleak_retry_connector.establish_connection", new=AsyncMock()) as connect,
@@ -842,16 +852,20 @@ async def test_nameless_manual_auto_without_scanner_requires_explicit_transport(
     ):
         result = await hass.config_entries.flow.async_configure(
             result["flow_id"],
-            user_input={
+            user_input={"advanced": {
                 const.CONF_STARCODE_COMMAND_SELECTOR: "BOX15",
                 const.CONF_STARCODE_TRANSPORT_SELECTOR: "auto",
-            },
+            }},
         )
         assert result["type"] == FlowResultType.FORM
         assert result["errors"] == {const.CONF_STARCODE_TRANSPORT_SELECTOR: "starcode_app_invalid"}
+        # The error opens the Advanced section that holds the field.
+        advanced = next(v for k, v in result["data_schema"].schema.items() if k == "advanced")
+        assert advanced.options["collapsed"] is False
         result = await hass.config_entries.flow.async_configure(
-            result["flow_id"], user_input={const.CONF_STARCODE_TRANSPORT_SELECTOR: "BOX1220"}
+            result["flow_id"], user_input={"advanced": {const.CONF_STARCODE_TRANSPORT_SELECTOR: "BOX1220"}}
         )
+        result = await _settings_if_asked(hass, result)
         assert result["type"] == FlowResultType.CREATE_ENTRY
     connect.assert_not_awaited()
     assert const.CONF_BLE_DEVICE_NAME not in result["data"]

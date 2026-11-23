@@ -20,6 +20,7 @@ def target(*, active=True, profile=BED_TYPE_STARCODE_ABM5_4):
     co.name = "App bed"
     co.bed_type = profile
     co.entry = SimpleNamespace(data={})
+    co.controller_side = None
     co.capability_controller = ctrl
 
     async def execute(command, **kwargs):
@@ -96,6 +97,7 @@ async def test_real_two_address_pair_dispatch_preserves_side_and_independent_C(h
             self.controller._coordinator.address = self.address
             self.controller._owner_address = self.address
             self.controller.hold_control = AsyncMock()
+            self.controller_side = None
             self.capability_controller = self.controller
 
         async def async_execute_controller_command(
@@ -105,6 +107,7 @@ async def test_real_two_address_pair_dispatch_preserves_side_and_independent_C(h
             skip_disconnect=False,
             resource=None,
             resources=None,
+            expected_stop_epoch=None,
         ):
             await command_fn(self.controller)
 

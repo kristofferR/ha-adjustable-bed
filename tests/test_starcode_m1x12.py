@@ -17,10 +17,16 @@ from homeassistant.config_entries import ConfigEntryState
 from homeassistant.const import CONF_ADDRESS, CONF_NAME
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import device_registry as dr
-from pytest_homeassistant_custom_component.common import MockConfigEntry
+from pytest_homeassistant.common import MockConfigEntry
 
-from custom_components.adjustable_bed.beds.star_elevate import StarElevateCommands
-from custom_components.adjustable_bed.beds.starcode_m1x12 import (
+from custom_components.adjustable_bed.beds.starcode.dialect import (
+    extended_packet,
+    long_packet,
+    normal_packet,
+    position_packet,
+    query_packet,
+)
+from custom_components.adjustable_bed.beds.starcode.m1x12 import (
     DEVICE_INFORMATION,
     FIRMWARE,
     MANUFACTURER,
@@ -30,18 +36,13 @@ from custom_components.adjustable_bed.beds.starcode_m1x12 import (
     StarcodeM1X12Controller,
     StarElevateM1X12Controller,
 )
-from custom_components.adjustable_bed.beds.starcode_m1x12_protocol import (
+from custom_components.adjustable_bed.beds.starcode.m1x12_protocol import (
     clock_packet,
-    extended_packet,
-    keep_open_packet,
-    long_packet,
-    normal_packet,
-    position_packet,
-    query_packet,
 )
+from custom_components.adjustable_bed.beds.starcode.star_elevate import StarElevateCommands
 from custom_components.adjustable_bed.binary_sensor import _binary_sensor_entities_for
 from custom_components.adjustable_bed.button import _button_entities_for
-from custom_components.adjustable_bed.config_flow import _starcode_m1x12_errors
+from custom_components.adjustable_bed.codec import okin_5a
 from custom_components.adjustable_bed.const import (
     BED_TYPE_STAR_ELEVATE,
     BED_TYPE_STARCODE_M1X12,
@@ -66,6 +67,7 @@ from custom_components.adjustable_bed.number import _number_entities_for
 from custom_components.adjustable_bed.select import _select_entities_for
 from custom_components.adjustable_bed.sensor import _sensor_entities_for
 from custom_components.adjustable_bed.services import async_register_services
+from custom_components.adjustable_bed.setup_questions import SETUP_PROFILES, FlowContext
 
 _FIXTURE_DIR = Path(__file__).parent / "fixtures"
 COMMAND_ROWS = json.loads((_FIXTURE_DIR / "starcode_m1x12_command_rows.json").read_text())
@@ -340,9 +342,9 @@ async def test_held_entity_metadata_reaches_real_bounded_service_and_controller(
             {
                 "starcode_m1x12_alarm_0",
                 "starcode_m1x12_eq_volume",
-                "starcode_m1x12_kneading_time_raw",
+                "starcode_m1x12_kneading_mode",
             },
-            {"starcode_m1x12_kneading_on", "starcode_m1x12_kneading_demo"},
+            {"starcode_m1x12_kneading_on"},
         ),
     ),
 )
@@ -359,9 +361,11 @@ async def test_m1x12_entities_follow_explicit_app_profile(
         "m1x12_part_1",
         "m1x12_part_2",
         "m1x12_part_4",
-        "m1x12_part_8",
-        "m1x12_part_16",
     }
+    # Parts 8 and 16 have no physical label: held controls only, never entities.
+    assert {"part_8_up", "part_8_down", "part_16_up", "part_16_down"} <= set(
+        controller.held_control_options
+    )
     assert all(spec.hold is not None for spec in controller.motor_control_specs)
     number_ids = {entity.unique_id for entity in _number_entities_for(hass, coordinator)}
     assert (
@@ -442,7 +446,7 @@ async def test_m1x12_setup_requires_explicit_matching_app_name_and_profile(
         CONF_BLE_DEVICE_NAME: name,
         CONF_STARCODE_M1X12_PROFILE: profile,
     }
-    errors = _starcode_m1x12_errors(hass, data)
+    errors = SETUP_PROFILES[BED_TYPE_STARCODE_M1X12].errors(data, FlowContext(hass))
     assert (not errors) is valid
     if not valid:
         assert errors == {CONF_STARCODE_M1X12_PROFILE: "starcode_m1x12_profile_mismatch"}
@@ -556,7 +560,7 @@ async def test_m1x12_sender_first_tick_cadence_and_busy_tick_skip(
         sleep=advance_clock,
     )
     monkeypatch.setattr(
-        "custom_components.adjustable_bed.beds.starcode_m1x12.asyncio", fake_asyncio
+        "custom_components.adjustable_bed.beds.starcode.m1x12.asyncio", fake_asyncio
     )
 
     controller._next_tick = clock.now + 0.1
@@ -615,7 +619,7 @@ def _expected_main_frame(row: dict[str, Any], dialect: str) -> bytes:
             return normal_packet(int(selected_stop[2], 0), "legacy")
     special_packet = re.search(r"LONG_C\((0x[0-9a-fA-F]+)\)", description)
     if row["action"] == "connection keep-open" or row["action"] == "elevation connection keep-open":
-        return keep_open_packet()
+        return okin_5a.WAKE
     if row["action"] == "query status":
         return query_packet("star" if row["protocol"] in ("P3", "P4") else dialect)
     if row["action"] == "clock correction at connection":
@@ -668,7 +672,7 @@ async def _invoke_row(controller: Any, row: dict[str, Any]) -> bool:
         elif action == "elevation STOP":
             await controller.stop_all()
         elif action == "elevation connection keep-open":
-            await controller.write_command(keep_open_packet())
+            await controller.write_command(okin_5a.WAKE)
         else:
             raise AssertionError(f"Unmapped M1X12 ELEVATE row {row['id']}: {action}")
         return False
@@ -736,7 +740,7 @@ async def _invoke_row(controller: Any, row: dict[str, Any]) -> bool:
     elif action == "query status":
         await controller.query_status()
     elif action == "connection keep-open":
-        await controller.write_command(keep_open_packet())
+        await controller.write_command(okin_5a.WAKE)
     elif action == "internal progress target":
         controller.queue_position_targets(((0, 50),))
         await controller._send_progress_target(
@@ -772,7 +776,7 @@ def _expected_sequence(row: dict[str, Any], dialect: str, profile: str) -> list[
             return [normal_packet(0x0310304F, "star")]
         if action == "elevation STOP":
             return [stop]
-        return [keep_open_packet()]
+        return [okin_5a.WAKE]
 
     stop = normal_packet(0x0310300F, "star") if dialect == "star" else normal_packet(0, "legacy")
     if action in _MOTOR_CONTROLS or action in _MASSAGE_CONTROLS:
@@ -928,7 +932,7 @@ async def test_accepted_command_rows_run_through_the_m1x12_controller(
         return None
 
     monkeypatch.setattr(
-        "custom_components.adjustable_bed.beds.starcode_m1x12.asyncio.sleep", no_protocol_wait
+        "custom_components.adjustable_bed.beds.starcode.m1x12.asyncio.sleep", no_protocol_wait
     )
 
     await _invoke_row(controller, row)
@@ -950,7 +954,7 @@ async def test_elevate_defaults_keep_the_legacy_controller(
     controller = await create_controller(
         coordinator, BED_TYPE_STAR_ELEVATE, variant, None, device_name="ELEVATE123456"
     )
-    from custom_components.adjustable_bed.beds.star_elevate import StarElevateController
+    from custom_components.adjustable_bed.beds.starcode.star_elevate import StarElevateController
 
     assert type(controller) is StarElevateController
 
@@ -1004,14 +1008,14 @@ async def test_m1x12_startup_keeps_read_subscribe_and_wake_order(
         return None
 
     monkeypatch.setattr(
-        "custom_components.adjustable_bed.beds.starcode_m1x12.asyncio.sleep", no_wait
+        "custom_components.adjustable_bed.beds.starcode.m1x12.asyncio.sleep", no_wait
     )
     monkeypatch.setattr(
-        "custom_components.adjustable_bed.beds.starcode_m1x12.dt_util.now", lambda: fixed_time
+        "custom_components.adjustable_bed.beds.starcode.m1x12.dt_util.now", lambda: fixed_time
     )
 
     cases = (
-        ("cb25", b"star", [keep_open_packet(), query_packet("star")]),
+        ("cb25", b"star", [okin_5a.WAKE, query_packet("star")]),
         ("cb25", b"other", [query_packet("legacy")]),
         ("f23", b"other", [clock_packet(fixed_time), query_packet("star")]),
     )
@@ -1060,10 +1064,10 @@ async def test_m1x12_firmware_read_failure_leaves_version_unknown_but_session_re
         return None
 
     monkeypatch.setattr(
-        "custom_components.adjustable_bed.beds.starcode_m1x12.asyncio.sleep", no_wait
+        "custom_components.adjustable_bed.beds.starcode.m1x12.asyncio.sleep", no_wait
     )
     monkeypatch.setattr(
-        "custom_components.adjustable_bed.beds.starcode_m1x12.asyncio.wait_for", record_timeout
+        "custom_components.adjustable_bed.beds.starcode.m1x12.asyncio.wait_for", record_timeout
     )
     client = _GattClient(reads={FIRMWARE: firmware, MANUFACTURER: b"star"})
     _coordinator, controller = await _create_controller(hass, client=client)
@@ -1166,7 +1170,7 @@ async def test_m1x12_elevate_read_failure_keeps_version_unknown_and_session_read
         return await original_wait_for(awaitable, timeout)
 
     monkeypatch.setattr(
-        "custom_components.adjustable_bed.beds.starcode_m1x12.asyncio.wait_for",
+        "custom_components.adjustable_bed.beds.starcode.m1x12.asyncio.wait_for",
         record_timeout,
     )
     client = _GattClient(reads={FIRMWARE: firmware, MANUFACTURER: b"star"})

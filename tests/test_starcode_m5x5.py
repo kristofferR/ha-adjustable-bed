@@ -13,7 +13,7 @@ import pytest
 from bleak.exc import BleakError
 from homeassistant.core import HomeAssistant
 
-from custom_components.adjustable_bed.beds.starcode_m5x5 import (
+from custom_components.adjustable_bed.beds.starcode.m5x5 import (
     DEVICE_INFORMATION,
     FIRMWARE,
     MANUFACTURER,
@@ -23,7 +23,9 @@ from custom_components.adjustable_bed.beds.starcode_m5x5 import (
     StarcodeM5X5Controller,
     profile_from_name,
 )
-from custom_components.adjustable_bed.beds.starcode_m5x5_protocol import clock_packet
+from custom_components.adjustable_bed.beds.starcode.m5x5_protocol import clock_packet
+from custom_components.adjustable_bed.state_keys import UNDER_BED_LIGHTS_ON
+from tests.state_helpers import state_writer
 
 # ELEVATE (P3) rows are verified against the star_elevate controller instead.
 VECTORS = [
@@ -62,7 +64,7 @@ def make_controller(
     )
     coordinator = MagicMock()
     coordinator.hass = hass
-    coordinator.entry = SimpleNamespace(entry_id="row005", data={})
+    coordinator.entry = SimpleNamespace(entry_id="m5x5", data={})
     coordinator.name = "STAR252201123456"
     coordinator.address = "AA:00:00:00:00:05"
     coordinator.client = client
@@ -101,7 +103,7 @@ async def test_all_command_vectors(hass: HomeAssistant, case: dict[str, object])
             await controller.light_mode()
         elif action.startswith("initialize"):
             with patch(
-                "custom_components.adjustable_bed.beds.starcode_m5x5.dt_util.now", return_value=NOW
+                "custom_components.adjustable_bed.beds.starcode.m5x5.dt_util.now", return_value=NOW
             ):
                 await controller.start_notify()
         else:
@@ -135,9 +137,7 @@ async def test_all_command_vectors(hass: HomeAssistant, case: dict[str, object])
 
 
 def controller_stop(controller: StarcodeM5X5Controller) -> bytes:
-    return bytes.fromhex(
-        "5a010310300fa5" if controller.dialect == "star" else "05020000000000"
-    )
+    return bytes.fromhex("5a010310300fa5" if controller.dialect == "star" else "05020000000000")
 
 
 @pytest.mark.parametrize(
@@ -148,8 +148,15 @@ def controller_stop(controller: StarcodeM5X5Controller) -> bytes:
         ("STAR255402foo", "kneading"),
         ("STAR255403foo", "kneading"),
         ("STAR25999", "cb25"),
+        ("Star254202123456", "cb25"),
+        ("Star254205foo", "f23"),
+        ("star255401foo", "f23"),
+        ("Star255402foo", "kneading"),
+        ("star255403foo", "kneading"),
+        ("star25999", "cb25"),
         ("ELEVATEfoo", None),
-        ("star25999", None),
+        ("Star241234", None),
+        ("Bedroom Star254202", None),
         ("TV", None),
     ],
 )
@@ -172,7 +179,7 @@ async def test_required_roles_and_without_response(hass: HomeAssistant, profile:
     c.client.start_notify.side_effect = subscribe
     with (
         patch.object(c, "_write_gatt_with_retry", side_effect=write),
-        patch("custom_components.adjustable_bed.beds.starcode_m5x5.asyncio.sleep", AsyncMock()),
+        patch("custom_components.adjustable_bed.beds.starcode.m5x5.asyncio.sleep", AsyncMock()),
     ):
         await c.start_notify()
     assert events[0] == ("subscribe", NOTIFY)
@@ -224,6 +231,23 @@ async def test_stale_callbacks_are_discarded(hass: HomeAssistant) -> None:
     old(MagicMock(), bytearray.fromhex("a50d00000a140b1e0c00280000000000000000"))
     c._coordinator.handle_controller_state_updates.assert_not_called()
     assert c.client.stop_notify.await_count == 1
+
+
+async def test_dropped_link_clears_every_status_report(hass: HomeAssistant) -> None:
+    """A dropped link clears the status reports a clean teardown clears."""
+    c = make_controller(hass)
+    state: dict[str, object] = {}
+    c._coordinator.handle_controller_state_updates.side_effect = state_writer(state)
+    with patch.object(c, "write_command", AsyncMock()):
+        await c.start_notify()
+    session_keys = set(state)
+    receive = c.client.start_notify.await_args.args[1]
+    receive(MagicMock(), bytearray.fromhex("a50b0000012c0243000000000000511000000000"))
+    reported = set(state) - session_keys
+    assert {UNDER_BED_LIGHTS_ON, "light_on"} <= reported
+
+    c.on_disconnect()
+    assert all(state[key] is None for key in reported)
 
 
 async def test_cancelled_firmware_read_unsubscribes_owned_session(hass: HomeAssistant) -> None:
@@ -318,7 +342,7 @@ async def test_init_tick_cannot_write_through_replacement_client(hass: HomeAssis
         await resume.wait()
 
     with patch(
-        "custom_components.adjustable_bed.beds.starcode_m5x5.asyncio.sleep",
+        "custom_components.adjustable_bed.beds.starcode.m5x5.asyncio.sleep",
         side_effect=pause_tick,
     ):
         starting = asyncio.create_task(c.start_notify())
@@ -344,7 +368,7 @@ async def test_queued_ble_lane_rechecks_owned_writer_session(
     queued = asyncio.Event()
     c._coordinator.record_command_trace.side_effect = lambda **kwargs: queued.set()
     await c.ble_lock.acquire()
-    with patch("custom_components.adjustable_bed.beds.starcode_m5x5.asyncio.sleep", AsyncMock()):
+    with patch("custom_components.adjustable_bed.beds.starcode.m5x5.asyncio.sleep", AsyncMock()):
         writing = asyncio.create_task(c.write_command(bytes.fromhex("5a0b00a5")))
         await queued.wait()
         if change == "client":
@@ -396,7 +420,7 @@ async def test_sender_tick_cancel_and_failed_delivery(hass: HomeAssistant) -> No
     c._next_tick = tick
     with (
         patch(
-            "custom_components.adjustable_bed.beds.starcode_m5x5.asyncio.sleep", AsyncMock()
+            "custom_components.adjustable_bed.beds.starcode.m5x5.asyncio.sleep", AsyncMock()
         ) as sleep,
         patch.object(c, "_write_gatt_with_retry", AsyncMock()) as write,
     ):
@@ -410,7 +434,7 @@ async def test_sender_tick_cancel_and_failed_delivery(hass: HomeAssistant) -> No
     write.assert_not_awaited()
     c._coordinator.cancel_command.clear()
     with (
-        patch("custom_components.adjustable_bed.beds.starcode_m5x5.asyncio.sleep", AsyncMock()),
+        patch("custom_components.adjustable_bed.beds.starcode.m5x5.asyncio.sleep", AsyncMock()),
         patch.object(
             c, "_write_gatt_with_retry", AsyncMock(side_effect=BleakError("delivery failed"))
         ),
@@ -458,12 +482,12 @@ EXISTING_LEAVES = json.loads(
 
 @pytest.mark.parametrize("case", EXISTING_LEAVES, ids=lambda case: case["id"])
 def test_all_frozen_existing_leaf_proofs(case: dict[str, object]) -> None:
-    from custom_components.adjustable_bed.beds import sleepys_box25
-    from custom_components.adjustable_bed.beds.star_elevate import _elevate_command
-    from custom_components.adjustable_bed.beds.starcode_m5x5_protocol import (
+    from custom_components.adjustable_bed.beds.starcode.dialect import (
         extended_packet,
         normal_packet,
     )
+    from custom_components.adjustable_bed.beds.starcode.star_elevate import _elevate_command
+    from custom_components.adjustable_bed.codec import okin_5a, okin_nframe
 
     raw_arguments = case["arguments"]
     assert isinstance(raw_arguments, list)
@@ -475,21 +499,21 @@ def test_all_frozen_existing_leaf_proofs(case: dict[str, object]) -> None:
     assert isinstance(vector, str)
     expected = bytes.fromhex(vector)
     name = case["function"]
-    if name == "_legacy_normal":
+    if name == "_legacy_normal":  # now the 40-bit Okin N-frame codec
         assert len(arguments) == 1
-        actual = sleepys_box25._legacy_normal(arguments[0])
+        actual = okin_nframe.frame40(arguments[0])
         replacement = normal_packet(arguments[0], "legacy")
     elif name == "_legacy_extended":
         assert len(arguments) == 2
-        actual = sleepys_box25._legacy_extended(arguments[0], arguments[1])
+        actual = okin_nframe.extended(arguments[0], arguments[1])
         replacement = extended_packet(arguments[0], arguments[1], "legacy")
-    elif name == "_star_command":
+    elif name == "_star_command":  # now the Okin 5A codec's key frame
         assert len(arguments) == 2
-        actual = sleepys_box25._star_command(arguments[0], arguments[1])
+        actual = okin_5a.command(arguments[0], arguments[1])
         replacement = normal_packet(0x03100000 | (arguments[1] << 8) | arguments[0], "star")
     elif name == "_star_extended":
         assert len(arguments) == 2
-        actual = sleepys_box25._star_extended(arguments[0], arguments[1])
+        actual = okin_5a.extended(arguments[0], arguments[1])
         replacement = extended_packet(arguments[0], arguments[1], "star")
     else:
         assert name == "_elevate_command"

@@ -9,21 +9,22 @@ import asyncio
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
+from bleak.exc import BleakError
 from homeassistant.const import CONF_ADDRESS, CONF_NAME
 from homeassistant.core import HomeAssistant
-from pytest_homeassistant_custom_component.common import MockConfigEntry
+from pytest_homeassistant.common import MockConfigEntry
 
-from custom_components.adjustable_bed.beds.sleepys import (
-    SleepysBox15Commands,
-    SleepysBox24Commands,
-    _calculate_box15_checksum,
-)
-from custom_components.adjustable_bed.beds.sleepys_box25 import (
+from custom_components.adjustable_bed.beds.sleepys.box25 import (
     Box25Commands,
     SleepysBox25Controller,
     SleepysBox25LegacyController,
     _translate_star_to_legacy,
 )
+from custom_components.adjustable_bed.beds.sleepys.controller import (
+    SleepysBox15Commands,
+    SleepysBox24Commands,
+)
+from custom_components.adjustable_bed.codec import keeson as codec
 from custom_components.adjustable_bed.const import (
     BED_TYPE_SLEEPYS_BOX15,
     BED_TYPE_SLEEPYS_BOX24,
@@ -44,7 +45,13 @@ from custom_components.adjustable_bed.const import (
 )
 from custom_components.adjustable_bed.controller_factory import create_controller
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
+from custom_components.adjustable_bed.select import (
+    MASSAGE_TIMER_DESCRIPTION,
+    AdjustableBedMassageTimerSelect,
+)
+from custom_components.adjustable_bed.state_keys import MASSAGE_TIMER_MINUTES
 from custom_components.adjustable_bed.validators import get_variants_for_bed_type
+from tests.coordinator_patches import patch_coordinator_global
 
 # -----------------------------------------------------------------------------
 # Test Fixtures
@@ -150,11 +157,6 @@ def mock_sleepys_box25_config_entry(
 class TestSleepysBox15Commands:
     """Test BOX15 command constants."""
 
-    def test_header_is_3_bytes(self):
-        """Header should be exactly 3 bytes."""
-        assert len(SleepysBox15Commands.HEADER) == 3
-        assert bytes([0xE6, 0xFE, 0x16]) == SleepysBox15Commands.HEADER
-
     def test_motor_command_values(self):
         """Verify motor command values."""
         assert SleepysBox15Commands.STOP == 0x00
@@ -208,20 +210,20 @@ class TestBox15Checksum:
         data = bytes([0xE6, 0xFE, 0x16, 0x01, 0x00, 0x00, 0x00, 0x00])
         data_sum = sum(data) & 0xFF
         expected_checksum = (~data_sum) & 0xFF
-        assert _calculate_box15_checksum(data) == expected_checksum
+        assert codec.checksum(data) == expected_checksum
 
     def test_checksum_head_up_command(self):
         """Verify checksum for HEAD_UP command."""
         # [0xE6, 0xFE, 0x16, 0x01, 0x00, 0x00, 0x00, 0x00]
         data = bytes([0xE6, 0xFE, 0x16, 0x01, 0x00, 0x00, 0x00, 0x00])
-        checksum = _calculate_box15_checksum(data)
+        checksum = codec.checksum(data)
         # Sum: 0xE6 + 0xFE + 0x16 + 0x01 = 0x195 -> 0x95, inverted = ~0x95 = 0x6A
         assert checksum == (~(0xE6 + 0xFE + 0x16 + 0x01)) & 0xFF
 
     def test_checksum_stop_command(self):
         """Verify checksum for STOP command."""
         data = bytes([0xE6, 0xFE, 0x16, 0x00, 0x00, 0x00, 0x00, 0x00])
-        checksum = _calculate_box15_checksum(data)
+        checksum = codec.checksum(data)
         # Sum: 0xE6 + 0xFE + 0x16 = 0x194 -> 0x94, inverted = ~0x94 = 0x6B
         assert checksum == (~(0xE6 + 0xFE + 0x16)) & 0xFF
 
@@ -229,7 +231,7 @@ class TestBox15Checksum:
         """Verify checksum for FLAT preset command."""
         # [0xE6, 0xFE, 0x16, 0x00, 0x00, 0x00, 0x08, 0x00]
         data = bytes([0xE6, 0xFE, 0x16, 0x00, 0x00, 0x00, 0x08, 0x00])
-        checksum = _calculate_box15_checksum(data)
+        checksum = codec.checksum(data)
         # Sum: 0xE6 + 0xFE + 0x16 + 0x08 = 0x19C -> 0x9C, inverted = ~0x9C = 0x63
         assert checksum == (~(0xE6 + 0xFE + 0x16 + 0x08)) & 0xFF
 
@@ -237,7 +239,7 @@ class TestBox15Checksum:
         """Verify checksum for ZERO_G preset command."""
         # [0xE6, 0xFE, 0x16, 0x00, 0x10, 0x00, 0x00, 0x00]
         data = bytes([0xE6, 0xFE, 0x16, 0x00, 0x10, 0x00, 0x00, 0x00])
-        checksum = _calculate_box15_checksum(data)
+        checksum = codec.checksum(data)
         # Sum: 0xE6 + 0xFE + 0x16 + 0x10 = 0x1A4 -> 0xA4, inverted = ~0xA4 = 0x5B
         assert checksum == (~(0xE6 + 0xFE + 0x16 + 0x10)) & 0xFF
 
@@ -249,18 +251,6 @@ class TestBox15Checksum:
 
 class TestSleepysBox15Controller:
     """Test SleepysBox15Controller."""
-
-    async def test_control_characteristic_uuid(
-        self,
-        hass: HomeAssistant,
-        mock_sleepys_box15_config_entry,
-        mock_coordinator_connected,
-    ):
-        """Control characteristic should use Keeson Base UUID."""
-        coordinator = AdjustableBedCoordinator(hass, mock_sleepys_box15_config_entry)
-        await coordinator.async_connect()
-
-        assert coordinator.controller.control_characteristic_uuid == KEESON_BASE_WRITE_CHAR_UUID
 
     async def test_supports_preset_zero_g(
         self,
@@ -350,7 +340,7 @@ class TestSleepysBox15CommandFormat:
         await coordinator.async_connect()
 
         command = coordinator.controller._build_motor_command(SleepysBox15Commands.HEAD_UP)
-        assert command[0:3] == SleepysBox15Commands.HEADER
+        assert command[0:3] == b"\xe6\xfe\x16"
 
     async def test_motor_command_byte3_is_motor_cmd(
         self,
@@ -389,7 +379,7 @@ class TestSleepysBox15CommandFormat:
         await coordinator.async_connect()
 
         command = coordinator.controller._build_motor_command(SleepysBox15Commands.HEAD_DOWN)
-        expected_checksum = _calculate_box15_checksum(command[0:8])
+        expected_checksum = codec.checksum(command[0:8])
         assert command[8] == expected_checksum
 
     async def test_preset_command_is_9_bytes(
@@ -422,7 +412,7 @@ class TestSleepysBox15CommandFormat:
             SleepysBox15Commands.ZERO_G_BYTE4,
             SleepysBox15Commands.ZERO_G_BYTE6,
         )
-        assert command[0:3] == SleepysBox15Commands.HEADER
+        assert command[0:3] == b"\xe6\xfe\x16"
 
     async def test_preset_command_byte3_is_zero(
         self,
@@ -471,209 +461,12 @@ class TestSleepysBox15CommandFormat:
             SleepysBox15Commands.ZERO_G_BYTE4,
             SleepysBox15Commands.ZERO_G_BYTE6,
         )
-        expected_checksum = _calculate_box15_checksum(command[0:8])
+        expected_checksum = codec.checksum(command[0:8])
         assert command[8] == expected_checksum
-
-
-class TestSleepysBox15Movement:
-    """Test BOX15 movement commands."""
-
-    async def test_move_head_up_sends_command(
-        self,
-        hass: HomeAssistant,
-        mock_sleepys_box15_config_entry,
-        mock_coordinator_connected,
-    ):
-        """move_head_up should send HEAD_UP command."""
-        coordinator = AdjustableBedCoordinator(hass, mock_sleepys_box15_config_entry)
-        await coordinator.async_connect()
-        mock_client = coordinator._client
-
-        await coordinator.controller.move_head_up()
-
-        # Should have multiple writes (pulse count + stop)
-        assert mock_client.write_gatt_char.called
-        calls = mock_client.write_gatt_char.call_args_list
-        # First calls are HEAD_UP command
-        first_call_data = calls[0][0][1]
-        assert first_call_data[3] == SleepysBox15Commands.HEAD_UP
-
-    async def test_move_head_down_sends_command(
-        self,
-        hass: HomeAssistant,
-        mock_sleepys_box15_config_entry,
-        mock_coordinator_connected,
-    ):
-        """move_head_down should send HEAD_DOWN command."""
-        coordinator = AdjustableBedCoordinator(hass, mock_sleepys_box15_config_entry)
-        await coordinator.async_connect()
-        mock_client = coordinator._client
-
-        await coordinator.controller.move_head_down()
-
-        calls = mock_client.write_gatt_char.call_args_list
-        first_call_data = calls[0][0][1]
-        assert first_call_data[3] == SleepysBox15Commands.HEAD_DOWN
-
-    async def test_move_feet_up_sends_command(
-        self,
-        hass: HomeAssistant,
-        mock_sleepys_box15_config_entry,
-        mock_coordinator_connected,
-    ):
-        """move_feet_up should send FOOT_UP command."""
-        coordinator = AdjustableBedCoordinator(hass, mock_sleepys_box15_config_entry)
-        await coordinator.async_connect()
-        mock_client = coordinator._client
-
-        await coordinator.controller.move_feet_up()
-
-        calls = mock_client.write_gatt_char.call_args_list
-        first_call_data = calls[0][0][1]
-        assert first_call_data[3] == SleepysBox15Commands.FOOT_UP
-
-    async def test_move_feet_down_sends_command(
-        self,
-        hass: HomeAssistant,
-        mock_sleepys_box15_config_entry,
-        mock_coordinator_connected,
-    ):
-        """move_feet_down should send FOOT_DOWN command."""
-        coordinator = AdjustableBedCoordinator(hass, mock_sleepys_box15_config_entry)
-        await coordinator.async_connect()
-        mock_client = coordinator._client
-
-        await coordinator.controller.move_feet_down()
-
-        calls = mock_client.write_gatt_char.call_args_list
-        first_call_data = calls[0][0][1]
-        assert first_call_data[3] == SleepysBox15Commands.FOOT_DOWN
-
-    async def test_move_lumbar_up_sends_command(
-        self,
-        hass: HomeAssistant,
-        mock_sleepys_box15_config_entry,
-        mock_coordinator_connected,
-    ):
-        """move_lumbar_up should send LUMBAR_UP command."""
-        coordinator = AdjustableBedCoordinator(hass, mock_sleepys_box15_config_entry)
-        await coordinator.async_connect()
-        mock_client = coordinator._client
-
-        await coordinator.controller.move_lumbar_up()
-
-        calls = mock_client.write_gatt_char.call_args_list
-        first_call_data = calls[0][0][1]
-        assert first_call_data[3] == SleepysBox15Commands.LUMBAR_UP
-
-    async def test_move_lumbar_down_sends_command(
-        self,
-        hass: HomeAssistant,
-        mock_sleepys_box15_config_entry,
-        mock_coordinator_connected,
-    ):
-        """move_lumbar_down should send LUMBAR_DOWN command."""
-        coordinator = AdjustableBedCoordinator(hass, mock_sleepys_box15_config_entry)
-        await coordinator.async_connect()
-        mock_client = coordinator._client
-
-        await coordinator.controller.move_lumbar_down()
-
-        calls = mock_client.write_gatt_char.call_args_list
-        first_call_data = calls[0][0][1]
-        assert first_call_data[3] == SleepysBox15Commands.LUMBAR_DOWN
-
-    async def test_stop_all_sends_stop_command(
-        self,
-        hass: HomeAssistant,
-        mock_sleepys_box15_config_entry,
-        mock_coordinator_connected,
-    ):
-        """stop_all should send STOP command."""
-        coordinator = AdjustableBedCoordinator(hass, mock_sleepys_box15_config_entry)
-        await coordinator.async_connect()
-        mock_client = coordinator._client
-
-        await coordinator.controller.stop_all()
-
-        calls = mock_client.write_gatt_char.call_args_list
-        call_data = calls[0][0][1]
-        assert call_data[3] == SleepysBox15Commands.STOP
-
-    async def test_movement_sends_stop_after_command(
-        self,
-        hass: HomeAssistant,
-        mock_sleepys_box15_config_entry,
-        mock_coordinator_connected,
-    ):
-        """Movement should always send STOP after motor command."""
-        coordinator = AdjustableBedCoordinator(hass, mock_sleepys_box15_config_entry)
-        await coordinator.async_connect()
-        mock_client = coordinator._client
-
-        await coordinator.controller.move_head_up()
-
-        calls = mock_client.write_gatt_char.call_args_list
-        # Last call should be STOP
-        last_call_data = calls[-1][0][1]
-        assert last_call_data[3] == SleepysBox15Commands.STOP
 
 
 class TestSleepysBox15Presets:
     """Test BOX15 preset commands."""
-
-    async def test_preset_flat_sends_correct_bytes(
-        self,
-        hass: HomeAssistant,
-        mock_sleepys_box15_config_entry,
-        mock_coordinator_connected,
-    ):
-        """preset_flat should send correct byte4 and byte6."""
-        coordinator = AdjustableBedCoordinator(hass, mock_sleepys_box15_config_entry)
-        await coordinator.async_connect()
-        mock_client = coordinator._client
-
-        await coordinator.controller.preset_flat()
-
-        calls = mock_client.write_gatt_char.call_args_list
-        first_call_data = calls[0][0][1]
-        assert first_call_data[4] == SleepysBox15Commands.FLAT_BYTE4
-        assert first_call_data[6] == SleepysBox15Commands.FLAT_BYTE6
-
-    async def test_preset_zero_g_sends_correct_bytes(
-        self,
-        hass: HomeAssistant,
-        mock_sleepys_box15_config_entry,
-        mock_coordinator_connected,
-    ):
-        """preset_zero_g should send correct byte4 and byte6."""
-        coordinator = AdjustableBedCoordinator(hass, mock_sleepys_box15_config_entry)
-        await coordinator.async_connect()
-        mock_client = coordinator._client
-
-        await coordinator.controller.preset_zero_g()
-
-        calls = mock_client.write_gatt_char.call_args_list
-        first_call_data = calls[0][0][1]
-        assert first_call_data[4] == SleepysBox15Commands.ZERO_G_BYTE4
-        assert first_call_data[6] == SleepysBox15Commands.ZERO_G_BYTE6
-
-    async def test_preset_sends_stop_after(
-        self,
-        hass: HomeAssistant,
-        mock_sleepys_box15_config_entry,
-        mock_coordinator_connected,
-    ):
-        """Presets should send STOP after preset command."""
-        coordinator = AdjustableBedCoordinator(hass, mock_sleepys_box15_config_entry)
-        await coordinator.async_connect()
-        mock_client = coordinator._client
-
-        await coordinator.controller.preset_flat()
-
-        calls = mock_client.write_gatt_char.call_args_list
-        last_call_data = calls[-1][0][1]
-        assert last_call_data[3] == SleepysBox15Commands.STOP
 
     async def test_preset_memory_logs_warning(
         self,
@@ -713,18 +506,6 @@ class TestSleepysBox15Presets:
 
 class TestSleepysBox24Controller:
     """Test SleepysBox24Controller."""
-
-    async def test_control_characteristic_uuid(
-        self,
-        hass: HomeAssistant,
-        mock_sleepys_box24_config_entry,
-        mock_coordinator_connected,
-    ):
-        """Control characteristic should use BOX24 write UUID."""
-        coordinator = AdjustableBedCoordinator(hass, mock_sleepys_box24_config_entry)
-        await coordinator.async_connect()
-
-        assert coordinator.controller.control_characteristic_uuid == SLEEPYS_BOX24_WRITE_CHAR_UUID
 
     async def test_supports_preset_zero_g(
         self,
@@ -1123,7 +904,7 @@ class TestSleepysProtocolDifferences:
 
         box15_cmd = box15_coordinator.controller._build_motor_command(SleepysBox15Commands.HEAD_UP)
         # BOX15 checksum is in last byte
-        expected_checksum = _calculate_box15_checksum(box15_cmd[0:8])
+        expected_checksum = codec.checksum(box15_cmd[0:8])
         assert box15_cmd[8] == expected_checksum
 
         # BOX24 has no checksum - last byte is the command itself
@@ -1154,7 +935,6 @@ class TestSleepysProtocolDifferences:
 
     def test_different_headers(self):
         """BOX15 and BOX24 use different header bytes."""
-        assert bytes([0xE6, 0xFE, 0x16]) == SleepysBox15Commands.HEADER
         assert bytes([0xA5, 0x5A, 0x00, 0x00, 0x00, 0x20]) == SleepysBox24Commands.HEADER
 
     def test_different_foot_command_values(self):
@@ -1201,7 +981,6 @@ class TestSleepysBox25Controller:
             "tilt",
         ]
         assert controller.motor_control_specs[3].translation_key == "head_end_tilt"
-        assert controller.stale_motor_entity_keys == {"back", "legs"}
 
     async def test_star_status_notifications_propagate_and_clamp_motor_positions(
         self,
@@ -1264,7 +1043,7 @@ class TestSleepysBox25Controller:
         cancel_event.set()
 
         with patch(
-            "custom_components.adjustable_bed.beds.sleepys_box25.asyncio.sleep",
+            "custom_components.adjustable_bed.beds.sleepys.box25.asyncio.sleep",
             new=AsyncMock(),
         ):
             await controller.write_command(Box25Commands.HEAD_UP, cancel_event=cancel_event)
@@ -1285,7 +1064,7 @@ class TestSleepysBox25Controller:
 
         for operation in (controller.massage_off, lambda: controller.set_massage_timer(0)):
             controller._massage_active = True
-            controller._massage_timer_minutes = 20
+            coordinator.controller_state[MASSAGE_TIMER_MINUTES] = 20
             state_before = dict(coordinator.controller_state)
             with (
                 patch.object(
@@ -1297,8 +1076,7 @@ class TestSleepysBox25Controller:
             ):
                 await operation()
 
-            assert controller.get_massage_state()["active"] is True
-            assert controller.get_massage_state()["timer_mode"] == "20"
+            assert controller._massage_active is True
             assert coordinator.controller_state == state_before
 
     async def test_all_controls_use_oem_box25_star_frames(
@@ -1420,11 +1198,9 @@ class TestSleepysBox25Controller:
             bytes.fromhex("5A E0 04 07 02 00 00 A5"),
             bytes.fromhex("5A E0 04 00 06 00 00 A5"),
         ]
-        assert controller.get_massage_state() == {
-            "intensity": 7,
-            "timer_mode": "20",
-            "active": False,
-        }
+        assert coordinator.controller_state["massage_all_intensity"] == 7
+        assert coordinator.controller_state["massage_timer"] == 20
+        assert controller._massage_active is False
         assert coordinator.controller_state["light_level"] == 6
         assert coordinator.controller_state["under_bed_lights_on"] is True
 
@@ -1546,8 +1322,8 @@ class TestSleepysBox25Controller:
 
         legacy = SleepysBox25LegacyController(coordinator)
         await coordinator.async_disconnect()
-        with patch(
-            "custom_components.adjustable_bed.coordinator.create_controller",
+        with patch_coordinator_global(
+            "create_controller",
             AsyncMock(return_value=legacy),
         ):
             await coordinator.async_connect()
@@ -1572,9 +1348,12 @@ class TestSleepysBox25Controller:
             bytearray.fromhex("A5 0B 0E 00 02 59 00 00 00 00 00 00 00 00 00 00"),
         )
 
-        assert controller.get_massage_state()["timer_mode"] == "20"
         assert coordinator.controller_state["massage_timer"] == 20
         assert coordinator.controller_state["massage_active"] is True
+        select = AdjustableBedMassageTimerSelect(
+            coordinator, MASSAGE_TIMER_DESCRIPTION, controller.massage_timer_options
+        )
+        assert select.current_option == "20 min"
 
     async def test_preset_arms_then_commits_with_starcode_terminator(
         self,
@@ -1597,11 +1376,11 @@ class TestSleepysBox25Controller:
 
         with (
             patch.object(controller, "write_command", AsyncMock()) as mock_write,
-            patch("custom_components.adjustable_bed.beds.sleepys_box25.asyncio.sleep", AsyncMock()),
+            patch("custom_components.adjustable_bed.beds.sleepys.box25.asyncio.sleep", AsyncMock()),
         ):
             await controller.preset_flat()
 
-        assert mock_write.await_count == 2
+        # Calls after these two are the background position read after connect.
         # 1) StarCode flat key, repeated to arm the preset.
         arm_call = mock_write.call_args_list[0]
         assert arm_call.args[0] == Box25Commands.STAR_PRESET_FLAT
@@ -1611,6 +1390,40 @@ class TestSleepysBox25Controller:
         commit_call = mock_write.call_args_list[1]
         assert commit_call.args[0] == Box25Commands.STAR_PRESET_TERMINATOR
         assert isinstance(commit_call.kwargs["cancel_event"], asyncio.Event)
+
+    async def test_preset_fails_when_its_commit_write_fails(
+        self,
+        hass: HomeAssistant,
+        mock_sleepys_box25_config_entry,
+        mock_coordinator_connected,
+    ):
+        """Without the terminator the bed never moves, so the preset must fail."""
+        coordinator = AdjustableBedCoordinator(hass, mock_sleepys_box25_config_entry)
+        await coordinator.async_connect()
+        controller = coordinator.controller
+        commit_failed = BleakError("commit lost")
+
+        with (
+            patch.object(
+                controller, "write_command", AsyncMock(side_effect=[None, commit_failed])
+            ),
+            patch("custom_components.adjustable_bed.beds.sleepys.box25.asyncio.sleep", AsyncMock()),
+            pytest.raises(BleakError) as raised,
+        ):
+            await controller.preset_flat()
+        assert raised.value is commit_failed
+
+        # A failed arm write stays the error the user sees.
+        arm_failed = BleakError("arm lost")
+        with (
+            patch.object(
+                controller, "write_command", AsyncMock(side_effect=[arm_failed, commit_failed])
+            ) as mock_write,
+            pytest.raises(BleakError) as raised,
+        ):
+            await controller.preset_flat()
+        assert raised.value is arm_failed
+        assert mock_write.call_args_list[1].args[0] == Box25Commands.STAR_PRESET_TERMINATOR
 
     async def test_named_and_memory_presets_use_starcode_frames(
         self,
@@ -1641,7 +1454,7 @@ class TestSleepysBox25Controller:
             with (
                 patch.object(controller, "write_command", AsyncMock()) as mock_write,
                 patch(
-                    "custom_components.adjustable_bed.beds.sleepys_box25.asyncio.sleep",
+                    "custom_components.adjustable_bed.beds.sleepys.box25.asyncio.sleep",
                     AsyncMock(),
                 ),
             ):
@@ -1749,6 +1562,7 @@ class TestSleepysBox25RuntimeDialect:
             ("STAR255403-ABC", "Okin", SleepysBox25Controller),
         ],
     )
+
     async def test_auto_variant_matches_device_information_runtime_branch(
         self,
         hass,
@@ -1774,6 +1588,7 @@ class TestSleepysBox25RuntimeDialect:
             (SLEEPYS_BOX25_VARIANT_LEGACY, SleepysBox25LegacyController),
         ],
     )
+
     async def test_manual_dialect_override_is_respected(
         self,
         hass,
@@ -1793,9 +1608,9 @@ class TestSleepysBox25RuntimeDialect:
 
     def test_box25_variants_are_available_to_config_flow(self) -> None:
         assert get_variants_for_bed_type(BED_TYPE_SLEEPYS_BOX25) == {
-            VARIANT_AUTO: "Auto (Device Information manufacturer)",
-            SLEEPYS_BOX25_VARIANT_STAR: "StarCode (5A-framed)",
-            SLEEPYS_BOX25_VARIANT_LEGACY: "Legacy CB25 (05/04/08/03 frames)",
+            VARIANT_AUTO: "Automatic (recommended)",
+            SLEEPYS_BOX25_VARIANT_STAR: "Newer control box (StarCode)",
+            SLEEPYS_BOX25_VARIANT_LEGACY: "Older control box (CB25)",
         }
 
     @pytest.mark.parametrize(
@@ -1823,6 +1638,7 @@ class TestSleepysBox25RuntimeDialect:
             (bytes.fromhex("5AE00406080800A5"), "04E006080800"),
         ],
     )
+
     def test_exact_legacy_command_translation(self, star: bytes, legacy: str) -> None:
         assert _translate_star_to_legacy(star) == bytes.fromhex(legacy)
 

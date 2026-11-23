@@ -10,15 +10,17 @@ import pytest
 from bleak.exc import BleakError
 from homeassistant.core import HomeAssistant
 
-from custom_components.adjustable_bed.beds.linak import (
+from custom_components.adjustable_bed.beds.linak.controller import (
     LinakCommands,
     LinakPositionSeekPolicy,
 )
-from custom_components.adjustable_bed.beds.linak_protocol import (
+from custom_components.adjustable_bed.beds.linak.protocol import (
     LinakCapabilitySnapshot,
     LinakModelVariant,
     LinakProfile,
+    build_simultaneous_command,
 )
+from custom_components.adjustable_bed.bluetooth_transport import ConnectionPath, TransportClass
 from custom_components.adjustable_bed.const import (
     BED_TYPE_LINAK,
     CONF_PROTOCOL_VARIANT,
@@ -44,6 +46,16 @@ from custom_components.adjustable_bed.position_seek import (
     SeekSample,
 )
 from custom_components.adjustable_bed.services import _timed_move_plan
+
+ESPHOME_PROXY_PATH = ConnectionPath(
+    source="AA:BB:CC:DD:EE:01",
+    transport=TransportClass.PROXY,
+    source_domain="esphome",
+)
+# Captured from an Advanced controller in the 3 minutes after power-on.
+PAIRING_WINDOW_ADVERTISEMENT = bytes.fromhex(
+    "020105 020a04 11068af715029c00498a24108a330100fa99"
+)
 
 
 def _written_commands(mock_bleak_client: MagicMock) -> list[bytes]:
@@ -128,18 +140,6 @@ class TestLinakController:
     def test_linak_does_not_require_os_pairing(self) -> None:
         """App-requested bonding must not become a hardware requirement."""
         assert requires_pairing(BED_TYPE_LINAK) is False
-
-    async def test_control_characteristic_uuid(
-        self,
-        hass: HomeAssistant,
-        mock_config_entry,
-        mock_coordinator_connected,
-    ):
-        """Test controller reports correct characteristic UUID."""
-        coordinator = AdjustableBedCoordinator(hass, mock_config_entry)
-        await coordinator.async_connect()
-
-        assert coordinator.controller.control_characteristic_uuid == LINAK_CONTROL_CHAR_UUID
 
     async def test_write_command(
         self,
@@ -236,7 +236,7 @@ class TestLinakController:
         ]
 
         with patch(
-            "custom_components.adjustable_bed.beds.linak.asyncio.sleep",
+            "custom_components.adjustable_bed.beds.linak.controller.asyncio.sleep",
             new=AsyncMock(),
         ) as mock_sleep:
             await coordinator.controller.write_command(
@@ -309,8 +309,8 @@ class TestLinakController:
             BleakError("Insufficient authentication"), None, None,
         ]
         with (
-            patch("custom_components.adjustable_bed.beds.linak.monotonic", return_value=100),
-            patch("custom_components.adjustable_bed.beds.linak.asyncio.sleep", new=AsyncMock()),
+            patch("custom_components.adjustable_bed.beds.linak.controller.monotonic", return_value=100),
+            patch("custom_components.adjustable_bed.beds.linak.controller.asyncio.sleep", new=AsyncMock()),
         ):
             await controller.stop_all()
 
@@ -338,8 +338,8 @@ class TestLinakController:
 
         mock_bleak_client.write_gatt_char.side_effect = write
         with (
-            patch("custom_components.adjustable_bed.beds.linak.monotonic", side_effect=lambda: clock),
-            patch("custom_components.adjustable_bed.beds.linak.asyncio.sleep", side_effect=advance),
+            patch("custom_components.adjustable_bed.beds.linak.controller.monotonic", side_effect=lambda: clock),
+            patch("custom_components.adjustable_bed.beds.linak.controller.asyncio.sleep", side_effect=advance),
         ):
             if ready_after is None:
                 with pytest.raises(BleakError, match="Insufficient authentication"):
@@ -370,7 +370,7 @@ class TestLinakController:
         assert subscribe.await_count == 2
         assert _written_commands(mock_bleak_client) == [LinakCommands.MOVE_STOP] * 2
 
-    async def test_seek_position_step_refreshes_without_intermediate_release(
+    async def test_seek_step_refreshes_without_intermediate_release(
         self,
         hass: HomeAssistant,
         mock_config_entry,
@@ -382,8 +382,12 @@ class TestLinakController:
         await coordinator.async_connect()
         _mark_session_ready(coordinator)
 
-        await coordinator.controller.seek_position_step("legs", True, remaining_distance=25.0)
-        await coordinator.controller.seek_position_step("legs", True, remaining_distance=2.0)
+        policy = coordinator.controller.position_seek_policy
+        default_step = AsyncMock()
+        await policy.async_issue_step("legs", True, default_step)
+        await policy.async_issue_step("legs", True, default_step)
+
+        default_step.assert_not_awaited()
 
         assert _written_commands(mock_bleak_client) == [
             LinakCommands.MOVE_LEGS_UP,
@@ -399,8 +403,15 @@ class TestLinakController:
         """Linak set-position seeks should finish much closer than the global default."""
         coordinator = AdjustableBedCoordinator(hass, mock_config_entry)
         await coordinator.async_connect()
+        policy = coordinator.controller.position_seek_policy
 
-        assert coordinator.controller.position_seek_tolerance == pytest.approx(0.3)
+        assert policy.tolerance == pytest.approx(0.3)
+        # Held refreshes chain until feedback enters the band, and never reverse.
+        assert policy.chains_steps_while_moving is True
+        assert policy.chain_min_remaining_distance == pytest.approx(0.3)
+        assert policy.reverses_on_overshoot is False
+        assert policy.prefers_cached_position_feedback is True
+        assert policy.cached_position_feedback_max_age == pytest.approx(0.5)
 
     async def test_downward_seek_releases_early_from_live_speed(
         self,
@@ -486,19 +497,15 @@ class TestLinakController:
         hass.config_entries.async_update_entry(mock_config_entry, data=data_without_snapshot)
         coordinator._handle_position_update("back", 10.0)
 
-        async def finish_step(
-            position_key: str,
-            moving_up: bool,
-            remaining_distance: float | None,
-        ) -> None:
-            assert (position_key, moving_up, remaining_distance) == ("back", True, 10.0)
+        async def finish_step(position_key: str, moving_up: bool, _default_step) -> None:
+            assert (position_key, moving_up) == ("back", True)
             coordinator._handle_position_update("back", 20.0)
 
         read_positions = AsyncMock()
         with (
             patch.object(
-                coordinator.controller,
-                "seek_position_step",
+                LinakPositionSeekPolicy,
+                "async_issue_step",
                 new=AsyncMock(side_effect=finish_step),
             ),
             patch.object(coordinator, "_async_read_positions", new=read_positions),
@@ -535,8 +542,8 @@ class TestLinakController:
         read_positions = AsyncMock(side_effect=refresh_position)
         with (
             patch.object(
-                coordinator.controller,
-                "seek_position_step",
+                LinakPositionSeekPolicy,
+                "async_issue_step",
                 new=AsyncMock(side_effect=stale_after_step),
             ),
             patch.object(coordinator, "_async_read_positions", new=read_positions),
@@ -562,9 +569,10 @@ class TestLinakController:
         coordinator = AdjustableBedCoordinator(hass, mock_config_entry)
         await coordinator.async_connect()
 
-        assert coordinator.controller.position_seek_stall_count == 1
-        assert coordinator.controller.position_seek_check_interval == pytest.approx(0.1)
-        assert coordinator.controller.position_seek_stall_threshold == pytest.approx(0.2)
+        policy = coordinator.controller.position_seek_policy
+        assert policy.stall_count == 1
+        assert policy.check_interval == pytest.approx(0.1)
+        assert policy.stall_threshold == pytest.approx(0.2)
 
     async def test_seek_refreshes_continuously_then_releases_once(
         self,
@@ -635,7 +643,7 @@ class TestLinakController:
 
         assert result.outcome is SeekOutcome.ENDPOINT_REACHED
         assert result.final_angle == pytest.approx(1.1)
-        assert issue_step.await_args_list == [call(False, 1.1), call(False, 1.1)]
+        assert issue_step.await_args_list == [call(False), call(False)]
         stop.assert_awaited_once_with()
 
     async def test_movement_to_lower_endpoint_has_one_endpoint_retry(
@@ -655,10 +663,10 @@ class TestLinakController:
 
         assert result.outcome is SeekOutcome.ENDPOINT_REACHED
         assert issue_step.await_args_list == [
-            call(False, 40.0),
-            call(False, 10.0),
-            call(False, 1.1),
-            call(False, 1.1),
+            call(False),
+            call(False),
+            call(False),
+            call(False),
         ]
 
     async def test_lower_endpoint_rebound_requires_fresh_stall_confirmations(
@@ -678,11 +686,11 @@ class TestLinakController:
 
         assert result.outcome is SeekOutcome.ENDPOINT_REACHED
         assert issue_step.await_args_list == [
-            call(False, 1.1),
-            call(False, 1.1),
-            call(False, 0.8),
-            call(False, 1.1),
-            call(False, 1.1),
+            call(False),
+            call(False),
+            call(False),
+            call(False),
+            call(False),
         ]
 
     async def test_lower_endpoint_policy_retries_mid_range_stall(
@@ -702,9 +710,9 @@ class TestLinakController:
 
         assert result.outcome is SeekOutcome.REACHED_TARGET
         assert issue_step.await_args_list == [
-            call(False, 40.0),
-            call(False, 15.0),
-            call(False, 15.0),
+            call(False),
+            call(False),
+            call(False),
         ]
 
     async def test_group_continues_after_lower_endpoint_completion(
@@ -914,7 +922,7 @@ class TestLinakController:
         mock_bleak_client.read_gatt_char.side_effect = stalled_read
         handler = MagicMock()
         with patch(
-            "custom_components.adjustable_bed.beds.linak.LINAK_PROTOCOL_READ_TIMEOUT_S",
+            "custom_components.adjustable_bed.beds.linak.controller.LINAK_PROTOCOL_READ_TIMEOUT_S",
             0.001,
         ):
             await coordinator.controller._read_protocol_characteristic(
@@ -969,6 +977,129 @@ class TestLinakCorpusProfiles:
         assert coordinator.controller.memory_slot_count == 0
         assert coordinator.controller.supports_position_feedback is False
         assert coordinator.controller.passive_position_reconciliation_interval is None
+
+    async def test_esphome_proxy_encrypts_the_link_before_the_first_read(
+        self,
+        hass: HomeAssistant,
+        mock_config_entry,
+        mock_coordinator_connected,
+        mock_bleak_client: MagicMock,
+    ) -> None:
+        """A proxy waits for the bed to ask, and the bed never asks with its light on."""
+        order: list[str] = []
+        original_read = mock_bleak_client.read_gatt_char.side_effect
+
+        async def read(uuid: str) -> bytes:
+            if str(uuid).lower() == LINAK_POSITION_MASK_UUID:
+                order.append("mask")
+            return await original_read(uuid)
+
+        mock_bleak_client.read_gatt_char.side_effect = read
+        mock_bleak_client.pair = AsyncMock(side_effect=lambda: order.append("pair"))
+
+        with patch(
+            "custom_components.adjustable_bed.beds.linak.controller.async_path_for_source",
+            return_value=ESPHOME_PROXY_PATH,
+        ):
+            await AdjustableBedCoordinator(hass, mock_config_entry).async_connect()
+
+        assert order == ["pair", "mask"]
+
+    async def test_esphome_proxy_pairs_anew_inside_the_pairing_window(
+        self,
+        hass: HomeAssistant,
+        mock_config_entry,
+        mock_coordinator_connected,
+        mock_establish_connection: AsyncMock,
+        mock_bleak_client: MagicMock,
+        mock_bluetooth_service_info: MagicMock,
+    ) -> None:
+        """A stored bond only re-encrypts, so a proxy the bed refuses would stay refused."""
+        calls: list[str] = []
+        mock_bleak_client.unpair = AsyncMock(side_effect=lambda: calls.append("unpair"))
+        mock_bleak_client.pair = AsyncMock(side_effect=lambda: calls.append("pair"))
+        mock_bluetooth_service_info.raw = PAIRING_WINDOW_ADVERTISEMENT
+
+        with (
+            patch(
+                "custom_components.adjustable_bed.beds.linak.controller.async_path_for_source",
+                return_value=ESPHOME_PROXY_PATH,
+            ),
+            patch(
+                "custom_components.adjustable_bed.beds.linak.controller.bluetooth.async_last_service_info",
+                return_value=mock_bluetooth_service_info,
+            ),
+        ):
+            coordinator = AdjustableBedCoordinator(hass, mock_config_entry)
+            # Removing the bond drops the link, so the first attempt ends there
+            # and the new pairing happens on a second connection.
+            assert await coordinator.async_connect()
+            assert calls == ["unpair", "pair"]
+            assert mock_establish_connection.await_count == 2
+            await coordinator.async_disconnect()
+            # Later connections in the same window keep the new bond.
+            assert await coordinator.async_connect()
+
+        assert calls == ["unpair", "pair", "pair"]
+
+    @pytest.mark.parametrize(
+        ("path", "pair_calls"),
+        [(ESPHOME_PROXY_PATH, 1), (None, 0)],
+        ids=["proxy_refuses", "other_adapter"],
+    )
+    async def test_link_without_proxy_encryption_keeps_the_readiness_retry(
+        self,
+        hass: HomeAssistant,
+        mock_config_entry,
+        mock_coordinator_connected,
+        mock_bleak_client: MagicMock,
+        path: ConnectionPath | None,
+        pair_calls: int,
+    ) -> None:
+        """A refused request, or an adapter that is not a proxy, still waits for the bed."""
+        mock_bleak_client.pair = AsyncMock(
+            side_effect=BleakError("Pairing failed due to error: 82")
+        )
+        auth_error = BleakError(
+            "Bluetooth GATT Error address=CB:3D:68:A7:7B:D0 handle=14 "
+            "error=5 description=Insufficient authentication"
+        )
+        original_read = mock_bleak_client.read_gatt_char.side_effect
+        mask_reads = 0
+
+        async def read(uuid: str) -> bytes:
+            nonlocal mask_reads
+            if str(uuid).lower() == LINAK_POSITION_MASK_UUID:
+                mask_reads += 1
+                if mask_reads == 1:
+                    raise auth_error
+            return await original_read(uuid)
+
+        mock_bleak_client.read_gatt_char.side_effect = read
+        mock_bleak_client.write_gatt_char.side_effect = [auth_error, None, None]
+
+        with (
+            patch(
+                "custom_components.adjustable_bed.beds.linak.controller.async_path_for_source",
+                return_value=path,
+            ),
+            patch(
+                "custom_components.adjustable_bed.beds.linak.controller.asyncio.sleep",
+                new=AsyncMock(),
+            ),
+        ):
+            coordinator = AdjustableBedCoordinator(hass, mock_config_entry)
+            await coordinator.async_connect()
+            # The first command repeats the deferred mask read on the same link.
+            await coordinator.controller.write_command(LinakCommands.MOVE_HEAD_UP)
+
+        assert mask_reads == 2
+        assert mock_bleak_client.pair.await_count == pair_calls
+        assert _written_commands(mock_bleak_client) == [
+            LinakCommands.MOVE_STOP,
+            LinakCommands.MOVE_STOP,
+            LinakCommands.MOVE_HEAD_UP,
+        ]
 
     async def test_capability_mask_retries_after_cold_session_auth_window(
         self,
@@ -1033,7 +1164,7 @@ class TestLinakCorpusProfiles:
     ) -> None:
         """A mask read that never answers (#714) is bounded and keeps 3.x features."""
         monkeypatch.setattr(
-            "custom_components.adjustable_bed.beds.linak.LINAK_CAPABILITY_MASK_READ_TIMEOUT_S",
+            "custom_components.adjustable_bed.beds.linak.controller.LINAK_CAPABILITY_MASK_READ_TIMEOUT_S",
             0,
         )
         original_read = mock_bleak_client.read_gatt_char.side_effect
@@ -1092,7 +1223,7 @@ class TestLinakCorpusProfiles:
         stored: dict,
         expected_axes: tuple[str, ...],
     ) -> None:
-        from pytest_homeassistant_custom_component.common import MockConfigEntry
+        from pytest_homeassistant.common import MockConfigEntry
 
         from custom_components.adjustable_bed.const import CONF_MOTOR_COUNT, DOMAIN
 
@@ -1334,6 +1465,35 @@ class TestLinakCorpusProfiles:
 class TestLinakMovement:
     """Test Linak movement commands."""
 
+    async def test_simultaneous_duration_ends_on_the_clock_through_a_slow_proxy(
+        self, hass, mock_config_entry, mock_coordinator_connected, mock_bleak_client,
+    ):
+        """Neither a slow acknowledgement nor later setup may eat or stretch the duration."""
+        coordinator = AdjustableBedCoordinator(hass, mock_config_entry)
+        await coordinator.async_connect()
+        controller = coordinator.controller
+        _mark_session_ready(coordinator)
+        command = build_simultaneous_command("back", True, "legs", True)
+        readiness_calls = 0
+
+        async def readiness(*_args, **_kwargs):
+            nonlocal readiness_calls
+            readiness_calls += 1
+            if readiness_calls > 1:
+                # Setup that was deferred at connect, repeated on a later request.
+                await asyncio.sleep(.05)
+
+        async def write(_uuid, sent, **_kwargs):
+            if sent == command:
+                await asyncio.Event().wait()
+
+        mock_bleak_client.write_gatt_char.side_effect = write
+        with patch.object(controller, "_await_control_ready", side_effect=readiness):
+            async with asyncio.timeout(.5):
+                await controller.move_simultaneously("back", True, "legs", True, 20)
+
+        assert _written_commands(mock_bleak_client) == [command, LinakCommands.MOVE_STOP]
+
     async def test_disables_polling_during_commands(
         self,
         hass: HomeAssistant,
@@ -1496,7 +1656,7 @@ class TestLinakPresets:
 
         mock_bleak_client.write_gatt_char.side_effect = write
         with (
-            patch("custom_components.adjustable_bed.beds.linak.LINAK_MEMORY_RECALL_DURATION_S", .02),
+            patch("custom_components.adjustable_bed.beds.linak.controller.LINAK_MEMORY_RECALL_DURATION_S", .02),
             patch.object(controller, "_await_control_ready", side_effect=readiness),
         ):
             async with asyncio.timeout(.5):
@@ -1689,7 +1849,7 @@ class TestLinakMassage:
         _mark_session_ready(coordinator)
 
         with patch(
-            "custom_components.adjustable_bed.beds.linak.asyncio.sleep",
+            "custom_components.adjustable_bed.beds.linak.controller.asyncio.sleep",
             new=AsyncMock(),
         ):
             await coordinator.controller.massage_toggle()
@@ -1790,7 +1950,7 @@ class TestLinakPositionData:
                 new=AsyncMock(),
             ) as mock_ensure_notifications,
             patch(
-                "custom_components.adjustable_bed.beds.linak.asyncio.sleep",
+                "custom_components.adjustable_bed.beds.linak.controller.asyncio.sleep",
                 new=AsyncMock(),
             ) as mock_sleep,
         ):
@@ -1820,7 +1980,7 @@ class TestLinakPositionData:
                 new=AsyncMock(return_value={"back"}),
             ) as mock_read_positions_once,
             patch(
-                "custom_components.adjustable_bed.beds.linak.asyncio.sleep",
+                "custom_components.adjustable_bed.beds.linak.controller.asyncio.sleep",
                 new=AsyncMock(),
             ) as mock_sleep,
         ):

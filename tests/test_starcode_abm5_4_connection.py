@@ -6,11 +6,11 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 from bleak.backends.device import BLEDevice
 from homeassistant.const import CONF_ADDRESS, CONF_NAME
-from pytest_homeassistant_custom_component.common import MockConfigEntry
+from pytest_homeassistant.common import MockConfigEntry
 
 from custom_components.adjustable_bed import const
 from custom_components.adjustable_bed.address_lock import ReentrantAddressLock
-from custom_components.adjustable_bed.beds.starcode_abm5_4_profiles import (
+from custom_components.adjustable_bed.beds.starcode.abm5_4_profiles import (
     TRANSPORTS,
     initial_fields,
 )
@@ -20,11 +20,10 @@ from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinato
 
 
 @pytest.mark.real_connect_delays
-@pytest.mark.parametrize("profile", list(const.CONNECTION_PROFILES))
 @pytest.mark.parametrize("bed_type", [const.BED_TYPE_STARCODE_ABM5_4, const.BED_TYPE_LINAK])
 @pytest.mark.parametrize("transport", ["BOX1220", "BOX3633", "BOX25", "BOX25_STAR"])
 async def test_connection_driver_receives_exact_app_deadline_without_changing_other_profiles(
-    hass, mock_coordinator_connected, mock_bleak_client, profile, bed_type, transport
+    hass, mock_coordinator_connected, mock_bleak_client, bed_type, transport
 ):
     if bed_type == const.BED_TYPE_STARCODE_ABM5_4:
         role = TRANSPORTS[transport]
@@ -43,7 +42,6 @@ async def test_connection_driver_receives_exact_app_deadline_without_changing_ot
             CONF_ADDRESS: "AA:BB:CC:DD:EE:FF",
             CONF_NAME: "Explicit app bed",
             const.CONF_BED_TYPE: bed_type,
-            const.CONF_CONNECTION_PROFILE: profile,
             const.CONF_STARCODE_COMMAND_SELECTOR: "BOX15",
             const.CONF_STARCODE_UI_SELECTOR: "BOX15",
             const.CONF_STARCODE_TRANSPORT_SELECTOR: transport,
@@ -51,10 +49,10 @@ async def test_connection_driver_receives_exact_app_deadline_without_changing_ot
     )
     entry.add_to_hass(hass)
     coordinator = AdjustableBedCoordinator(hass, entry)
-    settings = const.CONNECTION_PROFILES[profile]
+    settings = const.CONNECTION_SETTINGS
     with (
         patch(
-            "custom_components.adjustable_bed.coordinator.establish_connection",
+            "custom_components.adjustable_bed.coordinator_connection.establish_connection",
             new_callable=AsyncMock,
             return_value=mock_bleak_client,
         ) as connect,
@@ -105,7 +103,7 @@ async def test_first_setup_connection_uses_selected_app_timeout(hass, request_bo
     expected = (
         8.0
         if bed_type == const.BED_TYPE_STARCODE_ABM5_4
-        else const.CONNECTION_PROFILES[const.DEFAULT_CONNECTION_PROFILE].connection_timeout
+        else const.CONNECTION_SETTINGS.connection_timeout
     )
     assert connect.await_args.kwargs["timeout"] == expected
     assert connect.await_args.kwargs.get("pair", False) is request_bond
@@ -174,12 +172,12 @@ async def test_real_reconnect_retains_only_same_address_observed_app_state(
 
     with (
         patch(
-            "custom_components.adjustable_bed.coordinator.establish_connection",
+            "custom_components.adjustable_bed.coordinator_connection.establish_connection",
             AsyncMock(side_effect=connect),
         ),
         patch("custom_components.adjustable_bed.coordinator.asyncio.sleep", AsyncMock()),
         patch(
-            "custom_components.adjustable_bed.beds.starcode_abm5_4.StarcodeAbm5_4Controller._spawn"
+            "custom_components.adjustable_bed.beds.starcode.abm5_4.StarcodeAbm5_4Controller._spawn"
         ) as spawn,
     ):
         assert await coordinator.async_connect()

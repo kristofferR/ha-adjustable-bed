@@ -1,8 +1,8 @@
 # Leggett & Platt
 
-**Status:** ✅ Tested for Gen2 LP Comfort Connect pairing and motor movement; other variants and features need more testing
+**Status:** Partly tested (Gen2 LP Comfort Connect pairing and movement in [discussion #614](https://github.com/kristofferR/ha-adjustable-bed/discussions/614) and [#385](https://github.com/kristofferR/ha-adjustable-bed/issues/385); the QRRM Richmat route's presets in [#504](https://github.com/kristofferR/ha-adjustable-bed/issues/504); other variants and features need more testing)
 
-[Discussion #614](https://github.com/kristofferR/ha-adjustable-bed/discussions/614) confirms that a Prodigy LBR with an LP Comfort Connect 209-M001 controller was auto-detected, bonded through an ESPHome Bluetooth proxy, and moved with tested commands. The reporter has not yet checked every motor, preset, massage and lighting control, or long-term connection stability.
+[Discussion #614](https://github.com/kristofferR/ha-adjustable-bed/discussions/614) confirms that a Prodigy LBR with an LP Comfort Connect 209-M001 controller was detected, bonded through an ESPHome Bluetooth proxy, and moved with tested commands. The reporter has not yet checked every motor, preset, massage and lighting control, or long-term connection stability.
 
 **Credit:** Reverse engineering by [kristofferR](https://github.com/kristofferR/ha-adjustable-bed), MarcusW, [Josh Pearce](https://github.com/joshpearce), and [Richard Hopton](https://github.com/richardhopton/smartbed-mqtt)
 
@@ -36,6 +36,41 @@
 | Zero-G | ❌ | ✅ | ✅ | ✅ |
 | TV Preset | ❌ | ❌ | ✅ | ❌ |
 | Lounge Preset | ❌ | ❌ | ✅ | ❌ |
+| Hold until release | ✅ ([renewable](../SERVICES.md#renewable-holds): 200 ms refresh, then STOP) | ❌ | ❌ | ❌ |
+
+## Home Assistant setup
+
+The bed-type list has one **Prodigy CE, Prodigy 2, Prodigy 2L, U Series, LP
+Control and L&P Adjustable Base apps · Leggett & Platt** row; the Gen2 and MlRM rows
+are behind it. Setup then asks which app or remote you use. Each answer comes
+from that app; the bed's name never decides it.
+
+| Answer | Route |
+|---|---|
+| Prodigy CE (Prodigy 4) app: back, feet, pillow and lumbar | [Leggett Okin](okin-nframe.md#leggett-okin-family) with that app's layout; requires pairing |
+| Prodigy 2 app: back, feet and pillow | Leggett Okin with that app's layout; requires pairing |
+| Prodigy 2L app: back, feet and lumbar | Leggett Okin with that app's layout; requires pairing |
+| U Series app: back, feet and pillow | Leggett Okin with that app's layout; requires pairing |
+| LP Control app with an LP BED receiver | Leggett Okin with its default (Prodigy CE) layout; requires pairing |
+| LP Control app with an LP Comfort Connect base | [Gen2](#gen2-variant); requires pairing |
+| L&P Adjustable Base app, MlRM remote | [MlRM](#mlrm-variant) |
+| L&P Adjustable Base app with a QRRM remote (Flat, Zero G, Custom 1, Custom 2) | [Richmat](richmat.md) with the **L&P QRRM (Head, Feet, Flat, Zero G, Custom 1/2)** remote |
+| L&P Adjustable Base app (older version) | [L&P legacy app](richmat.md#lp-legacy-app) (version 2.2.1), which keeps its own row and settings |
+| Keep the detected or saved controls | The detected or chosen route |
+
+LP Control lists its own Okin products, but choosing one does not change the
+controls: LP Control on an LP BED receiver uses the default layout.
+
+For an existing bed, open the entry's three-dot menu and **Reconfigure** (see
+[Changing the app or layout](../CONFIGURATION.md#changing-the-bed-type-app-or-layout-of-an-existing-bed));
+**Keep the detected or saved controls** leaves the entry as it is. An entry on the legacy app or on the L&P
+app's QRRM remote gets the same question. A change to the Okin or Gen2 route pairs the
+bed before the review, as setup does; the MlRM, Richmat and legacy routes switch
+unchecked, as Configure did. A bed on the automatic setup of 4.x becomes the
+route you choose. A
+review lists the added and removed controls before **Apply this change** saves
+it. **Configure** keeps routine settings; the app, layout and route change only
+through **Reconfigure**.
 
 ## Detection
 
@@ -46,8 +81,10 @@ Leggett & Platt beds have four protocol variants with different detection method
 Some L&P bases advertise as `QRRM` and are configured as the **Richmat** bed
 type, rather than one of the three Leggett-specific variants below. QRRM does
 not identify the physical remote layout. If the remote has Flat, Zero G,
-Custom 1, and Custom 2 buttons, select **L&P QRRM** as the Richmat remote in the
-integration options. The current L&P and Richmat apps likewise require a typed,
+Custom 1, and Custom 2 buttons, answer the [L&P question](#home-assistant-setup)
+with **L&P Adjustable Base app with a QRRM remote (Flat, Zero G, Custom 1, Custom
+2)**, or select **L&P QRRM (Head, Feet, Flat, Zero G, Custom 1/2)** as
+the Richmat remote in an existing Richmat entry's options. The current L&P and Richmat apps likewise require a typed,
 scanned, or previously saved physical remote profile because the BLE peripheral
 does not expose one. Flat is confirmed on the issue #504 hardware; the other
 command frames are recovered consistently from the current apps and still need
@@ -56,7 +93,7 @@ physical validation. See [Richmat](richmat.md) for the protocol details.
 ### Gen2 Variant
 - **Service UUID:** `45e25100-...` (unique to Gen2), when advertised
 - **LP Comfort Connect (control box 209-M001, ESP32):** advertises **no service
-  UUID** — only manufacturer data under company ID `0x092D` (2349) whose payload
+  UUID**, only manufacturer data under company ID `0x092D` (2349) whose payload
   begins with ASCII `XP` or `CP` (e.g. `58 50 05 00 00 00` = `"XP"…`). Detected
   from that prefix, matching the LP Control app's `isGen2Box()` check.
 - Detection: automatic by service UUID **or** the `XP`/`CP` manufacturer prefix.
@@ -70,7 +107,7 @@ physical validation. See [Richmat](richmat.md) for the protocol details.
 > **The bond is advisory, not required.** That `createBond()` is the only one in
 > the whole app, there is no `ACTION_BOND_STATE_CHANGED` receiver and no bond
 > retry anywhere, and the call site deliberately falls through rather than
-> returning — so the app never learns whether the bond succeeded and simply
+> returning, so the app never learns whether the bond succeeded and simply
 > keeps using the same link either way. It also connects with
 > `connectGatt(ctx, autoConnect=true, cb, TRANSPORT_LE)`
 > (`BLEService.java:195`), i.e. an untimed background connection, and never
@@ -84,9 +121,9 @@ physical validation. See [Richmat](richmat.md) for the protocol details.
 > stops advertising connectably is hardware behaviour the APK cannot prove.
 >
 > Both facts drive the same rule: **never spend or discard a live link.** The
-> integration therefore mirrors the app on the first connection — connect
+> integration therefore mirrors the app on the first connection: connect
 > without a bond, discover the live GATT services, then create the BLE bond
-> while that link is active — and if the bond fails it logs the failure, raises
+> while that link is active. If the bond fails it logs the failure, raises
 > the pairing repair, and *keeps the connection* rather than reconnecting.
 > For the same reason the setup capability probe, the config flow's "Pair Now"
 > step and the pairing repair flow do not open their own throwaway connection
@@ -94,7 +131,7 @@ physical validation. See [Richmat](richmat.md) for the protocol details.
 > paths also share a per-address lock so two attempts cannot collide into
 > `org.bluez.Error.InProgress` and abort each other.
 >
-> **An unpaired reconnect is unencrypted, not unbonded.** Through an ESP32
+> **A reconnect without pairing is unencrypted, not unbonded.** Through an ESP32
 > Bluetooth proxy, a reconnect that skips the bond request leaves the link
 > unencrypted even though the bed still holds the bond, so commands fail with
 > "Insufficient encryption" (issue #709). BlueZ raises link security on that
@@ -110,7 +147,7 @@ physical validation. See [Richmat](richmat.md) for the protocol details.
 > Pairing should still happen during the pairing window:
 >
 > - **Entering pairing mode** (per the LP Control app): unplug the bed, remove
->   any batteries from the power supply, plug it back in — a small chime plays
+>   any batteries from the power supply, plug it back in. A small chime plays
 >   and a pulsing blue light shows under the bed. Pair promptly while it pulses;
 >   the APK does not state the duration of this initial power-cycle window.
 >   A connected client can also re-open the window with the `PAIR ENABLE`
@@ -168,9 +205,26 @@ physical validation. See [Richmat](richmat.md) for the protocol details.
 - **Device Name:** Starts with "MlRM"
 - Detection: Automatic by device name prefix + WiLinke service UUID
 
-**If your Okin bed is misidentified as Okimat:** Change the bed type in integration settings and select the Okin variant.
+**If your Okin bed is misidentified as Okimat:** open **Reconfigure**, choose the Leggett & Platt row, then the app layout it shows. LP Control with an LP BED receiver uses the default Prodigy 4 (Prodigy CE) layout.
 
-See also: [Okin Protocol Family](../SUPPORTED_ACTUATORS.md#okin-protocol-family)
+See also: the [brand lookup](../SUPPORTED_ACTUATORS.md)
+
+### Aliases
+
+`leggett_platt` is the automatic setup of 4.x, shown as **Gen2 or MlRM, found
+automatically (Leggett & Platt)**. It is kept for the beds that use it and is not
+offered in the bed-type list. Each time it connects it builds the MlRM
+controller when the bed exposes a WiLinke service, and otherwise the same Gen2
+controller with the same timing as `leggett_gen2`, so the two send identical
+bytes; the wire snapshot (`tests/test_wire_snapshot.py`) proves it by capture.
+It does not get the Gen2 route's pairing handling. To fix the model, open
+**Reconfigure** and choose the bed's app.
+
+A bed that 4.x saved with the Gen2, Okin or MlRM model is saved as
+`leggett_gen2`, `leggett_okin` or `leggett_wilinke`, the bed type it ran
+(schema 5.11). Its entities, entity IDs and commands are unchanged. An MlRM bed
+without a saved repeat interval now repeats a held motor command every 110 ms,
+the MlRM cadence, instead of every 100 ms.
 
 ## Gen2 Variant (ASCII Commands)
 
@@ -200,7 +254,7 @@ See also: [Okin Protocol Family](../SUPPORTED_ACTUATORS.md#okin-protocol-family)
 
 ### Motor Commands
 
-Format: `M {down}:{up}:{stop}` — three colon-separated fields, each a list of
+Format: `M {down}:{up}:{stop}`: three colon-separated fields, each a list of
 motor numbers. For a single press the motor number goes in **exactly one**
 field and the others are empty; there is no trailing stop list. The app
 re-sends the move command every 200 ms while a button is held and sends a
@@ -256,7 +310,7 @@ mode byte (`OperatingMode` `CONSTANT_COLOR`/`OFF`) with RGBA bytes.
 Gen2 beds **do not report their feature set over BLE**. The app ships a bundled
 profile per model (`assets/ID_<productId>.json`) and selects it by a `productId`
 it derives from the advertisement manufacturer data (hex each payload byte after
-the `XP`/`CP` prefix, reverse, take the first four, parse base-16 — e.g.
+the `XP`/`CP` prefix, reverse, take the first four, parse base-16, for example
 `58 50 05 …` → `5`). The profile declares the under-bed light style
 (**none / toggle / single-colour / RGB**), which actuators are present (**pillow
 and lumbar vary by model**), massage, and memory slot count (**typically 3**).
@@ -271,7 +325,7 @@ Unknown product ids fall back to a fully-featured profile.
 
 The motor and massage keycodes overlap with Keeson's, but the preset ladder,
 repeat behaviour and release semantics do **not** - see
-[Leggett & Platt Okin](leggett-okin.md) for the protocol as it was actually
+[Leggett & Platt Okin](okin-nframe.md#leggett-okin-family) for the protocol as it was actually
 recovered from the vendor apps, including the memory ladder, the two-stage
 memory store, and the second (checksummed) frame format used by older control
 boxes.
@@ -305,65 +359,15 @@ Multiple motors can be moved simultaneously by OR-ing their command values toget
 
 ## MlRM Variant (WiLinke)
 
-**Credit:** Reverse engineering by [kristofferR](https://github.com/kristofferR/ha-adjustable-bed), [Josh Pearce](https://github.com/joshpearce)
+This variant uses Richmat WiLinke BLE hardware with Leggett & Platt codes: discrete
+massage up/down commands instead of the Richmat step commands, and held presets.
+Its frames, timing and controls are in the [L&P MlRM profile](richmat.md#lp-mlrm)
+of the Richmat codec guide.
 
-**Characteristic UUID:** `d44bc439-abfd-45a2-b575-925416129600`
-**Format:** 5 bytes `[0x6E, 0x01, 0x00, command, checksum]`
-**Checksum:** Sum of first 4 bytes, truncated to 8 bits
+## Legacy App Variant (Richmat 6E)
 
-This variant uses Richmat WiLinke BLE hardware but with Leggett & Platt-specific commands. A key differentiator from standard Richmat WiLinke is discrete massage UP/DOWN commands instead of cycling step commands.
-
-### Preset Commands
-
-| Command | Byte | Description |
-|---------|------|-------------|
-| Flat | `0x31` | Flat position |
-| Zero-G | `0x45` | Zero gravity |
-| Anti-Snore | `0x46` | Anti-snore position |
-| TV | `0x58` | TV viewing position |
-| Lounge | `0x59` | Lounge position |
-| Memory 1 | `0x2E` | Recall memory slot 1 |
-| Memory 2 | `0x2F` | Recall memory slot 2 |
-
-### Program Commands
-
-| Command | Byte | Description |
-|---------|------|-------------|
-| Program Memory 1 | `0x2B` | Save current position to slot 1 |
-| Program Memory 2 | `0x2C` | Save current position to slot 2 |
-| Program Zero-G | `0x66` | Save as zero-g position |
-| Program Anti-Snore | `0x69` | Save as anti-snore position |
-| Program TV | `0x64` | Save as TV position |
-| Program Lounge | `0x65` | Save as lounge position |
-
-### Motor Commands
-
-| Command | Byte | Description |
-|---------|------|-------------|
-| Head Up | `0x24` | Raise head |
-| Head Down | `0x25` | Lower head |
-| Feet Up | `0x26` | Raise feet |
-| Feet Down | `0x27` | Lower feet |
-| End/Stop | `0x6E` | Stop all movement |
-
-### Massage Commands
-
-| Command | Byte | Description |
-|---------|------|-------------|
-| Head Massage Up | `0x4C` | Increase head massage |
-| Head Massage Down | `0x4D` | Decrease head massage |
-| Foot Massage Up | `0x4E` | Increase foot massage |
-| Foot Massage Down | `0x4F` | Decrease foot massage |
-| Stop Massage | `0x47` | Stop all massage |
-| Head Toggle | `0x32` | Toggle head massage |
-| Foot Toggle | `0x33` | Toggle foot massage |
-| Intensity Up | `0x34` | Overall intensity up |
-| Intensity Down | `0x35` | Overall intensity down |
-| Pattern Step | `0x38` | Cycle massage patterns |
-| Wave Mode | `0x39` | Toggle wave mode |
-
-### Light Commands
-
-| Command | Byte | Description |
-|---------|------|-------------|
-| Lights Toggle | `0x3C` | Toggle under-bed lights |
+The L&P Adjustable Base 2.2.1 legacy app (`leggett_lp_legacy`) sends Richmat 6E
+packets built from its per-layout catalog tokens, as one bare byte or a
+`6E 01` frame depending on the entry's packet mode. Its layouts, packet modes,
+event states and timing are in the [L&P legacy app profile](richmat.md#lp-legacy-app)
+of the Richmat codec guide.

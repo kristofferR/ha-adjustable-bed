@@ -1,4 +1,4 @@
-"""Profile-specific BLE behavior from the four accepted cluster-005 reports."""
+"""Profile-specific BLE behavior from the four accepted Leggett app reports."""
 
 from __future__ import annotations
 
@@ -9,7 +9,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 from bleak.exc import BleakError
 
-from custom_components.adjustable_bed.beds.leggett_okin import LeggettOkinController
+from custom_components.adjustable_bed.beds.leggett.okin import LeggettOkinController
 from custom_components.adjustable_bed.const import (
     LEGGETT_OKIN_CHAR_UUID,
     LEGGETT_OKIN_NOTIFY_CHAR_UUID,
@@ -18,6 +18,8 @@ from custom_components.adjustable_bed.const import (
     OKIN_SMART_REMOTE_CSS_NOTIFY_CHAR_UUID,
     OKIN_SMART_REMOTE_CSS_WRITE_CHAR_UUID,
 )
+from tests.error_helpers import raises_key
+from tests.state_helpers import published
 
 
 def make_controller(profile: str = "prodigy4", revision: int = 1) -> LeggettOkinController:
@@ -217,14 +219,12 @@ async def test_notify_bootstrap_and_serial_device_information(profile):
     controller._handle_notification(
         LEGGETT_OKIN_NOTIFY_CHAR_UUID, bytearray.fromhex("0600060000017f0002")
     )
-    controller._coordinator.handle_controller_state_updates.assert_called_with(
-        {
+    assert published(*controller._coordinator.handle_controller_state_updates.call_args.args) == {
             "leggett_led_mask": 0x077F0003,
             "leggett_status": 127,
             "leggett_alarm_indicator": False,
             "leggett_sleep_timer_indicator": False,
         }
-    )
 
 
 @pytest.mark.parametrize("duration_ms", [100, 200])
@@ -296,13 +296,13 @@ async def test_connect_refreshes_light_after_subscribing_and_again_after_disconn
 
     controller.write_command.side_effect = reply_to_idle
     await controller.start_notify()
-    assert controller.get_light_state() == {"is_on": True}
+    assert controller._light_is_on is True
     await controller.start_notify()
     assert controller.write_command.await_count == 1
     await controller.stop_notify()
     await controller.start_notify()
     assert controller.write_command.await_count == 2
-    assert controller.get_light_state() == {"is_on": True}
+    assert controller._light_is_on is True
 
 
 @pytest.mark.parametrize("reason", ["other_profile", "cancelled", "subscribe_failed"])
@@ -355,7 +355,7 @@ def test_indicator_mask_obeys_useries_display_filter_without_losing_raw_bits(pro
     controller._handle_notification(
         LEGGETT_OKIN_NOTIFY_CHAR_UUID, bytearray.fromhex("06000000c001000000")
     )
-    updates = controller._coordinator.handle_controller_state_updates.call_args.args[0]
+    updates = published(*controller._coordinator.handle_controller_state_updates.call_args.args)
     assert updates["leggett_led_mask"] == 0xC001
     assert updates["leggett_alarm_indicator"] is (profile == "prodigy4")
     assert updates["leggett_sleep_timer_indicator"] is (profile == "prodigy4")
@@ -363,7 +363,7 @@ def test_indicator_mask_obeys_useries_display_filter_without_losing_raw_bits(pro
     controller._handle_notification(
         LEGGETT_OKIN_NOTIFY_CHAR_UUID, bytearray.fromhex("06000000c000000000")
     )
-    updates = controller._coordinator.handle_controller_state_updates.call_args.args[0]
+    updates = published(*controller._coordinator.handle_controller_state_updates.call_args.args)
     assert updates["leggett_alarm_indicator"] is True
     assert updates["leggett_sleep_timer_indicator"] is True
 
@@ -438,7 +438,7 @@ async def test_device_information_timeout_continues_to_next_field():
 
     controller.client.read_gatt_char.side_effect = read
     with patch(
-        "custom_components.adjustable_bed.beds.leggett_okin.DEVICE_INFO_READ_TIMEOUT",
+        "custom_components.adjustable_bed.beds.leggett.okin.DEVICE_INFO_READ_TIMEOUT",
         0.01,
     ):
         await controller._read_device_information(frozenset({manufacturer, model}))
@@ -472,7 +472,7 @@ def test_cu170_receipt_then_spontaneous_status_uses_latest_state():
     report_cu170(controller, 0)
     report_cu170(controller, 0)  # Receipt precedes the effect of the toggle.
     report_cu170(controller, 0xC20000)
-    assert updates.call_args.args[0] == {
+    assert published(*updates.call_args.args) == {
         "leggett_led_mask": 0xC20000,
         "leggett_status": None,
         "leggett_alarm_indicator": True,
@@ -521,7 +521,7 @@ def test_cu170_status_from_massage_wave_mode_log_updates_state():
         mask = int.from_bytes(payload[2:6], "big")
         controller._handle_notification(LEGGETT_OKIN_NOTIFY_CHAR_UUID, payload)
         assert controller.protocol_diagnostics["under_bed_lights_on"] is bool(mask & 0x20000)
-        assert updates.call_args.args[0]["leggett_led_mask"] == mask
+        assert published(*updates.call_args.args)["leggett_led_mask"] == mask
 
 
 @pytest.mark.parametrize("profile", ["prodigy2", "prodigy2l", "useries"])
@@ -530,7 +530,7 @@ def test_cu170_hardware_mapping_does_not_leak_to_other_profiles(profile):
     report_cu170(controller, 0x20000)
     assert not controller.supports_light_state_feedback
     assert "under_bed_lights_on" not in (
-        controller._coordinator.handle_controller_state_updates.call_args.args[0]
+        published(*controller._coordinator.handle_controller_state_updates.call_args.args)
     )
 
 
@@ -568,18 +568,18 @@ async def test_unknown_or_unconfirmed_light_state_never_causes_a_retry_toggle():
     from homeassistant.exceptions import HomeAssistantError
 
     controller = make_controller()
-    with pytest.raises(HomeAssistantError, match="unknown"):
+    with raises_key("light_state_unknown", HomeAssistantError):
         await controller.lights_on()
     controller.write_command.assert_not_awaited()
     report_cu170(controller, 0)
     controller._tap_keycode = AsyncMock()
     with (
-        patch("custom_components.adjustable_bed.beds.leggett_okin.LIGHT_STATE_TIMEOUT_S", 0),
+        patch("custom_components.adjustable_bed.beds.leggett.okin.LIGHT_STATE_TIMEOUT_S", 0),
         pytest.raises(HomeAssistantError, match="did not confirm"),
     ):
         await controller.lights_on()
     controller._tap_keycode.assert_awaited_once()
-    with pytest.raises(HomeAssistantError, match="unknown"):
+    with raises_key("light_state_unknown", HomeAssistantError):
         await controller.lights_on()
     controller._tap_keycode.assert_awaited_once()
 
@@ -629,7 +629,7 @@ async def test_cu170_reset_chord_is_not_exposed_and_cannot_be_sent():
     descriptions = {item.key: item for item in BUTTON_DESCRIPTIONS}
     assert not _should_add_button(descriptions["control_mode_press_and_hold"], controller, True)
     assert _should_add_button(descriptions["control_mode_press_and_release"], controller, True)
-    with pytest.raises(HomeAssistantError, match="factory-reset"):
+    with raises_key("prodigy_hold_mode_blocked", HomeAssistantError):
         await controller.set_control_mode_press_and_hold()
     controller.write_command.assert_not_awaited()
     await controller.set_control_mode_press_and_release()
@@ -654,5 +654,5 @@ async def test_notifications_during_or_after_shutdown_cannot_restore_state(error
     else:
         await controller.stop_notify()
     report_cu170(controller, 0x20000)
-    assert controller.get_light_state() == {"is_on": None}
+    assert controller._light_is_on is None
     assert controller.protocol_diagnostics["notification_led_mask"] is None

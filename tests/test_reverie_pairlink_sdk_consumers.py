@@ -7,8 +7,8 @@ from unittest.mock import Mock
 
 import pytest
 
-from custom_components.adjustable_bed.beds import reverie_pairlink as pairlink
-from custom_components.adjustable_bed.beds.reverie_pairlink_protocol import (
+from custom_components.adjustable_bed.beds.reverie import pairlink
+from custom_components.adjustable_bed.beds.reverie.pairlink_protocol import (
     decrypt_user_frame,
     fragment_central_frame,
     state_query_payloads,
@@ -294,7 +294,7 @@ async def test_calendar_uses_existing_central_fragment_sender(monkeypatch) -> No
     client.mtu_size = 23
     await _notify(client, tasks, _message(0x049B))
     plain = bytes.fromhex("0311223344200001000001000000009204EA07091C081E0003FD00000000")
-    from custom_components.adjustable_bed.beds.reverie_pairlink_protocol import encrypt_user_frame
+    from custom_components.adjustable_bed.beds.reverie.pairlink_protocol import encrypt_user_frame
 
     wire = encrypt_user_frame(
         plain, event_key=runtime.current_event_key, device_key=bytes.fromhex("10203040")

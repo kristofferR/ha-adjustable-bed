@@ -7,14 +7,16 @@ from unittest.mock import MagicMock, patch
 import pytest
 from homeassistant.const import CONF_ADDRESS, CONF_NAME
 from homeassistant.core import HomeAssistant
-from pytest_homeassistant_custom_component.common import MockConfigEntry
+from pytest_homeassistant.common import MockConfigEntry
 
 from custom_components.adjustable_bed.const import (
     BED_TYPE_KAIDI,
     BED_TYPE_LINAK,
     CONF_BED_TYPE,
+    CONF_CONNECTION_MODE,
     CONF_DISABLE_ANGLE_SENSING,
     CONF_HAS_MASSAGE,
+    CONF_IDLE_DISCONNECT_SECONDS,
     CONF_KAIDI_ADV_TYPE,
     CONF_KAIDI_PRODUCT_ID,
     CONF_KAIDI_RESOLVED_VARIANT,
@@ -24,14 +26,14 @@ from custom_components.adjustable_bed.const import (
     CONF_KAIDI_VARIANT_SOURCE,
     CONF_MOTOR_COUNT,
     CONF_PREFERRED_ADAPTER,
+    CONNECTION_MODE_IDLE,
     DOMAIN,
 )
 from custom_components.adjustable_bed.diagnostics import async_get_config_entry_diagnostics
 from custom_components.adjustable_bed.discovery_log import async_get_discovery_log
+from custom_components.adjustable_bed.paired_coordinator import SingleAddressSideCoordinator
 from custom_components.adjustable_bed.redaction import (
     KEYS_TO_REDACT,
-    MAC_ADDRESS_KEYS,
-    _redact_mac_address,
     redact_data,
 )
 
@@ -66,6 +68,44 @@ def mock_diagnostics_config_entry(
     return entry
 
 
+async def test_diagnostics_report_effective_connection_settings(
+    hass: HomeAssistant,
+    mock_coordinator_connected,
+    enable_custom_integrations,
+) -> None:
+    """Diagnostics show how the bed connects, not just the keys stored for it."""
+    from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
+
+    entry = MockConfigEntry(
+        domain=DOMAIN,
+        data={
+            CONF_ADDRESS: "AA:BB:CC:DD:EE:F1",
+            CONF_NAME: "Test Bed",
+            CONF_BED_TYPE: BED_TYPE_LINAK,
+            CONF_MOTOR_COUNT: 2,
+            CONF_CONNECTION_MODE: CONNECTION_MODE_IDLE,
+            CONF_IDLE_DISCONNECT_SECONDS: 25,
+        },
+        unique_id="AA:BB:CC:DD:EE:F1",
+    )
+    entry.add_to_hass(hass)
+    coordinator = AdjustableBedCoordinator(hass, entry)
+    hass.data.setdefault(DOMAIN, {})[entry.entry_id] = coordinator
+
+    result = await async_get_config_entry_diagnostics(hass, entry)
+
+    # The angle setting is not stored when it matches the default.
+    assert result["config"]["disable_angle_sensing"] is None
+    assert result["connection"] == {
+        "mode": CONNECTION_MODE_IDLE,
+        "idle_seconds": 25,
+        "reads_positions": True,
+    }
+    # A single-address pair's side reports its physical link.
+    side = SingleAddressSideCoordinator(coordinator, "left", MagicMock())
+    assert side.connection_settings == result["connection"]
+
+
 class TestDiagnosticsRedaction:
     """Test diagnostics data redaction."""
 
@@ -73,24 +113,12 @@ class TestDiagnosticsRedaction:
         """Test that sensitive keys are in redaction lists."""
         # Name and PIN should be fully redacted
         assert CONF_NAME in KEYS_TO_REDACT
-        # MAC address should be partially redacted (OUI kept)
-        assert CONF_ADDRESS in MAC_ADDRESS_KEYS
-        assert "address" in MAC_ADDRESS_KEYS
 
     def test_octo_enrollment_pin_and_confirmation_are_redacted(self) -> None:
         assert redact_data({"octo_pin": "1234", "octo_pin_confirmation": "1234"}) == {
             "octo_pin": "**REDACTED**",
             "octo_pin_confirmation": "**REDACTED**",
         }
-
-    def test_mac_address_partial_redaction(self):
-        """Test that MAC addresses are partially redacted, keeping the OUI."""
-        # Should keep first 3 bytes (OUI) and redact last 3
-        assert _redact_mac_address("AA:BB:CC:DD:EE:FF") == "AA:BB:CC:**:**:**"
-        assert _redact_mac_address("aa:bb:cc:dd:ee:ff") == "AA:BB:CC:**:**:**"
-        # Should handle dash separators
-        assert _redact_mac_address("AA-BB-CC-DD-EE-FF") == "AA-BB-CC-**-**-**"
-
 
 class TestDiagnosticsOutput:
     """Test diagnostics output structure."""
@@ -99,9 +127,9 @@ class TestDiagnosticsOutput:
         self,
         hass: HomeAssistant,
         mock_diagnostics_config_entry,
-        mock_coordinator_connected,  # noqa: ARG002
+        mock_coordinator_connected,
         mock_bleak_client: MagicMock,
-        enable_custom_integrations,  # noqa: ARG002
+        enable_custom_integrations,
     ):
         """Test diagnostics when not connected."""
         from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
@@ -140,9 +168,9 @@ class TestDiagnosticsOutput:
         self,
         hass: HomeAssistant,
         mock_diagnostics_config_entry,
-        mock_coordinator_connected,  # noqa: ARG002
-        mock_bleak_client: MagicMock,  # noqa: ARG002
-        enable_custom_integrations,  # noqa: ARG002
+        mock_coordinator_connected,
+        mock_bleak_client: MagicMock,
+        enable_custom_integrations,
     ):
         """Test diagnostics when connected."""
         from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
@@ -183,12 +211,42 @@ class TestDiagnosticsOutput:
         # Check controller info
         assert "initialized" in result["controller"]
 
+    async def test_diagnostics_show_the_profile_id_and_migration_record(
+        self,
+        hass: HomeAssistant,
+        mock_diagnostics_config_entry,
+        mock_coordinator_connected,
+        mock_bleak_client: MagicMock,
+        enable_custom_integrations,
+    ):
+        """The running profile id and the schema 5 migration record are reported."""
+        from custom_components.adjustable_bed import async_migrate_entry
+        from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
+
+        await async_migrate_entry(hass, mock_diagnostics_config_entry)
+        coordinator = AdjustableBedCoordinator(hass, mock_diagnostics_config_entry)
+        hass.data.setdefault(DOMAIN, {})[mock_diagnostics_config_entry.entry_id] = coordinator
+
+        result = await async_get_config_entry_diagnostics(hass, mock_diagnostics_config_entry)
+
+        assert result["entry"]["minor_version"] == 11
+        assert result["profile"]["id"] == BED_TYPE_LINAK
+        assert result["profile"]["migration"] == {
+            "from_version": 1,
+            "from_minor_version": 1,
+            "resolver_version": 1,
+            "profile_id": BED_TYPE_LINAK,
+            "fields": {CONF_BED_TYPE: BED_TYPE_LINAK},
+            # The connection it ran with before, which it had not saved.
+            "settings_5_6": {"data": ["connection_mode=idle"]},
+        }
+
     async def test_diagnostics_redacts_sensitive_data(
         self,
         hass: HomeAssistant,
         mock_diagnostics_config_entry,
-        mock_coordinator_connected,  # noqa: ARG002
-        enable_custom_integrations,  # noqa: ARG002
+        mock_coordinator_connected,
+        enable_custom_integrations,
     ):
         """Test that sensitive data is redacted."""
         from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
@@ -212,8 +270,8 @@ class TestDiagnosticsOutput:
         self,
         hass: HomeAssistant,
         mock_diagnostics_config_entry,
-        mock_coordinator_connected,  # noqa: ARG002
-        enable_custom_integrations,  # noqa: ARG002
+        mock_coordinator_connected,
+        enable_custom_integrations,
     ):
         """Test diagnostics includes controller info when connected."""
         from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
@@ -236,8 +294,8 @@ class TestDiagnosticsOutput:
         self,
         hass: HomeAssistant,
         mock_diagnostics_config_entry,
-        mock_coordinator_connected,  # noqa: ARG002
-        enable_custom_integrations,  # noqa: ARG002
+        mock_coordinator_connected,
+        enable_custom_integrations,
     ):
         """Command diagnostics should come from scheduler admission."""
         from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
@@ -269,8 +327,8 @@ class TestDiagnosticsOutput:
         self,
         hass: HomeAssistant,
         mock_diagnostics_config_entry,
-        mock_coordinator_connected,  # noqa: ARG002
-        enable_custom_integrations,  # noqa: ARG002
+        mock_coordinator_connected,
+        enable_custom_integrations,
     ):
         """Diagnostics should surface non-connectable fallback advertisement data."""
         from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
@@ -302,8 +360,8 @@ class TestDiagnosticsOutput:
         self,
         hass: HomeAssistant,
         mock_diagnostics_config_entry,
-        mock_coordinator_connected,  # noqa: ARG002
-        enable_custom_integrations,  # noqa: ARG002
+        mock_coordinator_connected,
+        enable_custom_integrations,
     ):
         """Test diagnostics includes supported bed types."""
         from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
@@ -321,8 +379,8 @@ class TestDiagnosticsOutput:
         self,
         hass: HomeAssistant,
         mock_diagnostics_config_entry,
-        mock_coordinator_connected,  # noqa: ARG002
-        enable_custom_integrations,  # noqa: ARG002
+        mock_coordinator_connected,
+        enable_custom_integrations,
     ):
         """Diagnostics should not expose auto-detections from unrelated devices."""
         from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
@@ -368,7 +426,7 @@ class TestDiagnosticsOutput:
     async def test_diagnostics_include_kaidi_metadata_and_parsed_advertisement(
         self,
         hass: HomeAssistant,
-        enable_custom_integrations,  # noqa: ARG002
+        enable_custom_integrations,
     ):
         """Diagnostics should include Kaidi config metadata and parsed manufacturer data."""
         from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator

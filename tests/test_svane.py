@@ -9,7 +9,7 @@ from unittest.mock import AsyncMock, MagicMock
 import pytest
 from bleak.exc import BleakError
 
-from custom_components.adjustable_bed.beds.svane import (
+from custom_components.adjustable_bed.beds.svane.controller import (
     DIS,
     DOWN,
     FEET,
@@ -25,7 +25,9 @@ from custom_components.adjustable_bed.beds.svane import (
     SvaneController,
     uuid,
 )
-from custom_components.adjustable_bed.svane_state import SvaneSession, get_svane_session
+from custom_components.adjustable_bed.beds.svane.state import SvaneSession, get_svane_session
+from custom_components.adjustable_bed.codec import jmc
+from tests.state_helpers import published
 
 
 def make_controller(profile="multi", *, properties=("write", "read", "notify"), session=None):
@@ -122,7 +124,7 @@ def test_java_int32_light_vectors(level, expected):
     ],
 )
 def test_closed_jmc_motion_vectors(head, feet, expected):
-    assert SvaneCommands.motion(head, feet).hex() == expected
+    assert jmc.motion(head, feet).hex() == expected
 
 
 @pytest.mark.parametrize("value", [True, 1.2, "90", None, 2**31, -(2**31) - 1])
@@ -139,7 +141,7 @@ async def test_literal_held_actions_and_release(profile, control):
     calls = written(controller)
     head, feet = MOTIONS[control]
     if profile == "jmc":
-        assert calls[0] == (OLD, OLD_CHAR, SvaneCommands.motion(head, feet).hex())
+        assert calls[0] == (OLD, OLD_CHAR, jmc.motion(head, feet).hex())
         assert calls[-1] == (OLD, OLD_CHAR, "100000000000")
         assert all(s == OLD and c == OLD_CHAR for s, c, _ in calls)
     else:
@@ -167,7 +169,7 @@ async def test_source_schedule_after_work(profile, control, minfirst, minnext):
     start = asyncio.get_running_loop().time()
 
     async def write(role, data, **kwargs):
-        if data not in (b"\x00\x00", SvaneCommands.motion(None, None)):
+        if data not in (b"\x00\x00", jmc.motion(None, None)):
             times.append(asyncio.get_running_loop().time() - start)
 
     controller.client.write_gatt_char.side_effect = write
@@ -232,7 +234,7 @@ async def test_started_roles_cleanup_after_cancellation_or_write_failure(profile
 
 async def test_cleanup_attempts_all_p1_directions_when_one_stop_fails():
     controller = make_controller()
-    controller._started = {(HEAD, UP), (FEET, DOWN)}
+    controller._started = dict.fromkeys(((HEAD, UP), (FEET, DOWN)))
 
     async def write(role, data, **kwargs):
         if role.uuid == UP:
@@ -371,7 +373,7 @@ async def test_partial_dis_observation_survives_later_failure_and_reconstruction
     assert "svane_hardware" not in session.observations
     rebuilt = make_controller(session=session)
     updates = rebuilt._coordinator.handle_controller_state_updates.call_args_list
-    assert any(call.args[0].get("svane_firmware") == "known fw" for call in updates)
+    assert any(published(*call.args).get("svane_firmware") == "known fw" for call in updates)
     assert not session.position
 
 
@@ -518,13 +520,13 @@ def test_bad_stored_preferences_are_rejected_before_changing_the_session(hass, p
 async def test_notify_lifecycle_cleanup_unsubscribes_even_failed_motor_release():
     controller = make_controller()
     await controller._subscribe(OLD, OLD_CHAR)
-    controller._started = {(HEAD, UP)}
+    controller._started = dict.fromkeys(((HEAD, UP),))
     controller.client.write_gatt_char.side_effect = BleakError("release failed")
     with pytest.raises(BleakError):
         await controller.stop_notify()
     controller.client.stop_notify.assert_awaited_once()
     assert not controller._subscriptions
-    assert controller._started == {(HEAD, UP)}
+    assert list(controller._started) == [(HEAD, UP)]
     controller.client.write_gatt_char.side_effect = None
     await controller.stop_all()
     assert not controller._started
@@ -618,7 +620,7 @@ async def test_saved_p1_memory_is_persisted_and_survives_a_restart():
     [{"3": ["81", "82"]}, {"1": ["81"]}, {"1": ["", "82"]}, {"1": ["8", "82"]}, ["81", "82"]],
 )
 def test_invalid_persisted_p1_memory_is_rejected(multi_slots):
-    from custom_components.adjustable_bed.svane_state import svane_preferences
+    from custom_components.adjustable_bed.beds.svane.state import svane_preferences
 
     with pytest.raises(ValueError):
         svane_preferences({"intensity": 90, "multi_slots": multi_slots})

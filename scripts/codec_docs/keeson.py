@@ -1,0 +1,1207 @@
+"""Generated blocks of the Keeson E5/E6 codec guide."""
+
+from __future__ import annotations
+
+import re
+from collections.abc import Iterable, Mapping
+from typing import Any, cast
+
+from custom_components.adjustable_bed import controller_factory
+from custom_components.adjustable_bed.beds import innova as innova_module
+from custom_components.adjustable_bed.beds import ore_comfort_bed as ore_module
+from custom_components.adjustable_bed.beds import scott_living as scott_living_module
+from custom_components.adjustable_bed.beds import serta_mp_remote as serta_mp_module
+from custom_components.adjustable_bed.beds.glideaway_motion import controller as glideaway_module
+from custom_components.adjustable_bed.beds.keeson import layout_app as keeson_layout_app_module
+from custom_components.adjustable_bed.beds.keeson import okin_apps as okin_apps_module
+from custom_components.adjustable_bed.beds.ore_comfort_bed import ORE_COMFORT_BED_APPS
+from custom_components.adjustable_bed.codec import keeson as keeson_codec
+from custom_components.adjustable_bed.profiles import keeson as keeson_profiles
+from scripts.codec_docs._agingplace import BLOCKS as _AGINGPLACE_BLOCKS
+from scripts.codec_docs._betterliving2 import BLOCKS as _BETTERLIVING2_BLOCKS
+from scripts.codec_docs._common import Block, _block, _hex, _table
+from scripts.codec_docs._enso import BLOCKS as _ENSO_BLOCKS
+from scripts.codec_docs._ore_ultramatic import BLOCKS as _ULTRAMATIC_BLOCKS
+from scripts.codec_docs._ormatek import BLOCKS as _ORMATEK_BLOCKS
+from scripts.codec_docs._somos import BLOCKS as _SOMOS_BLOCKS
+from scripts.codec_docs._yamada import BLOCKS as _YAMADA_BLOCKS
+
+GUIDE = "docs/beds/keeson.md"
+
+_K = keeson_profiles.KeesonCommands
+_S = keeson_profiles.SinoCommands
+_KEESON_NAMES: dict[str, str] = {
+    **{f"betterliving2_{wire}_{layout}": f"BetterLiving2 {wire.upper()}, {layout} motors"
+       for wire in ("p1", "p2", "p3") for layout in ("2", "3")},
+    "base": "Base (BaseI4/I5)",
+    "ergomotion": "Ergomotion",
+    "okin": "OKIN FFE",
+    "cb1322": "BetterLiving CB1322",
+    "sino": "Sino",
+    "betterliving": "BetterLiving",
+    "json": "JSON/A00A",
+    "ksbt": "KSBT",
+    "ksbt03c": "KSBT03C",
+    "ksbt_cr": "KSBT03CR",
+    "ksbt04c": "KSBT04C",
+    "sleep_harmony": "Sleep Harmony (KSBT04C)",
+    "sleep_harmony_base_i5": "Sleep Harmony (base-i5)",
+    "purple": "Purple Premium",
+    "purple_plus": "Purple Premium Plus",
+    "adjustable_lite": "Adjustable Lite (KSBT01C)",
+    "adjustable_lite_ksbt03c": "Adjustable Lite (KSBT03C)",
+    "restonic_a": "Restonic BT remote A",
+    "restonic_b": "Restonic BT remote B",
+    "innova": "INNOVA",
+    "simon_li": "Simon Li",
+    "okin_seating": "OKIN-Seating",
+    "heal_every_night": "Heal Every Night",
+    "okin_comfort_bed": "OKIN Comfort Bed",
+    "comfortfurniture": "ComfortFurniture",
+    "ore_ultramatic": "ORE Ultramatic",
+    "americanstar": "AMERICANSTAR",
+    "avanti_bases": "Avanti Bases",
+    "bedsense_bases": "Bedsense Bases",
+    "dynasty_bases": "Dynasty Bases",
+    "maxcoil_una": "MaxCoil Una",
+    "jalon_13": "OkinComfortBed II P1",
+    "jalon_15": "OkinComfortBed II P2",
+    "jalon_24": "OkinComfortBed II P3",
+    "glideaway_motion": "Glideaway Motion",
+    "malouf_legacy_okin": "Malouf legacy OKIN",
+    "sleepys_box15": "Sleepy's BOX15",
+    "scott_living": "Scott Living",
+    "adjustamattress": "AdjustaMattress P1",
+    "adjustamattress_p2": "AdjustaMattress P2",
+    "rondure": "Rondure",
+    "coolbase": "Cool Base",
+    "bf": "BF",
+    "cherish": "Cherish",
+    "comfort_enhancements": "Comfort Enhancements",
+    "comfortbase": "ComfortBaseForBluetooth",
+    "jalon_bed": "OkinComfortBed Ⅱ (Jalon)",
+    "yamada_p1": "アシステック P1",
+    "yamada_p2": "アシステック P2",
+}
+# Controllers that keep their key tables and timing; their profile is only the frame.
+_KEESON_CONTROLLERS: dict[str, tuple[str, str]] = {
+    **{f"betterliving2_{wire}_{layout}": (f"`betterliving2`, {wire.upper()}, {layout} motors", "[BetterLiving2](#betterliving2)")
+       for wire in ("p1", "p2", "p3") for layout in ("2", "3")},
+    "comfortfurniture": ("`keeson:comfortfurniture`", "[ComfortFurniture](#comfortfurniture)"),
+    "ore_ultramatic": ("`keeson`, `ore_ultramatic`", "[ORE Ultramatic](#ore-ultramatic)"),
+    "yamada_p1": ("`yamada`, P1", "[アシステック](#アシステック--yamada)"),
+    "yamada_p2": ("`yamada`, P2", "[アシステック](#アシステック--yamada)"),
+    **dict.fromkeys(("jalon_13", "jalon_15", "jalon_24"), ("`jalon`", "[OkinComfortBed II](#okincomfortbed-ii)")),
+    "jalon_bed": ("`jalon_bed`", "[OkinComfortBed Ⅱ (Jalon)](#okincomfortbed-ⅱ-jalon)"),
+    "glideaway_motion": ("`glideaway_motion`", "[Glideaway Motion](#glideaway-motion)"),
+    "malouf_legacy_okin": ("`malouf_legacy_okin`", "[Malouf](malouf.md)"),
+    "sleepys_box15": ("`sleepys_box15`", "[Sleepy's](sleepys.md)"),
+    "scott_living": ("`scott_living`", "[Scott Living](#scott-living)"),
+    "adjustamattress": ("`adjustamattress`, model P1", "[AdjustaMattress](#adjustamattress)"),
+    "adjustamattress_p2": ("`adjustamattress`, model P2", "[AdjustaMattress](#adjustamattress)"),
+    "rondure": ("`rondure`", "[Rondure](#rondure)"),
+    "coolbase": ("`coolbase`", "[Cool Base](#cool-base)"),
+    "bf": ("`bf`", "[BF and Cherish](#bf-and-cherish)"),
+    "cherish": ("`cherish`", "[BF and Cherish](#bf-and-cherish)"),
+    "comfortbase": ("`comfortbase`", "[ComfortBaseForBluetooth](#comfortbaseforbluetooth)"),
+    "comfort_enhancements": (
+        "`comfort_enhancements`",
+        "[Comfort Enhancements](#comfort-enhancements)",
+    ),
+}
+# Profiles chosen inside a variant: (variant, rule).
+KEESON_SUB_ROUTES: dict[str, tuple[str, str]] = {
+    "ksbt03c": ("ksbt", "name starts with `KSBT03C`, not `KSBT03CR`"),
+    "sleep_harmony_base_i5": ("sleep_harmony", "name starts with `base-i5.`"),
+    "purple_plus": ("purple", "name starts with `KSBT04C`, or the Nordic UART service exists"),
+    "adjustable_lite_ksbt03c": ("adjustable_lite", "name contains `KSBT03C` (case-sensitive)"),
+    "betterliving": ("sino", "Auto: both fallback services, or an `OKIN-BLE` name with one"),
+    "cb1322": (
+        "okin",
+        "Auto: as BetterLiving, with a `BLE-4.0 Module` or `DewertOKIN` manufacturer",
+    ),
+}
+# Profiles whose app controller keeps its own key table (see the profile sections).
+_KEESON_APP_TABLES = frozenset(
+    {
+        "innova",
+        "simon_li",
+        "okin_seating",
+        "heal_every_night",
+        *ORE_COMFORT_BED_APPS,
+        *_KEESON_CONTROLLERS,
+    }
+)
+_CARRIER_LAYOUTS = {
+    "k1": "`header FE 16` + word + checksum",
+    "p2": "`04 02` + big-endian word",
+    "p2_side": "`05 02` + big-endian word + `00`",
+    "p2_padded": "`04 02` + big-endian word + `00`",
+    "p2_checked": "`04 02` + big-endian word + checksum",
+    "json": "JSON envelope, see below",
+}
+
+
+def _kname(key: str) -> str:
+    return _KEESON_NAMES[key]
+
+
+def _knames(keys: Iterable[str]) -> str:
+    return ", ".join(_kname(key) for key in keys) or "none"
+
+
+def keeson_aliases() -> dict[str, tuple[str, ...]]:
+    """Alias bed types per profile, from the factory registry."""
+    aliases: dict[str, tuple[str, ...]] = {}
+    for bed_type, spec in controller_factory._SIMPLE_CONTROLLERS.items():
+        if (spec.module, spec.class_name) == ("keeson.controller", "KeesonController"):
+            variant = spec.kwargs["variant"]
+            aliases[variant] = (*aliases.get(variant, ()), bed_type)
+    return aliases
+
+
+def _route(key: str) -> str:
+    if key in _KEESON_CONTROLLERS:
+        return f"bed type {_KEESON_CONTROLLERS[key][0]}"
+    if key in KEESON_SUB_ROUTES:
+        variant, rule = KEESON_SUB_ROUTES[key]
+        route = f"`keeson` `{variant}`: {rule}"
+    else:
+        route = f"`keeson` `{key}`" + (" (Auto default)" if key == "base" else "")
+    aliases = keeson_aliases().get(key, ())
+    return route + "".join(f"; bed type `{bed_type}`" for bed_type in aliases)
+
+
+def _carrier(profile: keeson_profiles.KeesonProfile) -> str:
+    if profile.carrier != "k1":
+        return {
+            "p2": "P2 6-byte",
+            "p2_side": "P2 7-byte (`05`)",
+            "p2_padded": "P2 7-byte, `00` end",
+            "p2_checked": "P2 7-byte, checksum end",
+            "json": "JSON",
+        }[profile.carrier]
+    label = "model" if profile.key == "jalon_bed" else "side"
+    side = f", {label} `{profile.side:02X}`" if profile.side is not None else ""
+    return f"K1 `{profile.header:02X}`, {profile.order}-endian{side}"
+
+
+def _word(word: int) -> str:
+    return f"`0x{word:08X}`"
+
+
+def _kframe(profile: keeson_profiles.KeesonProfile, step: int | bytes) -> str:
+    if profile.carrier == "json" and isinstance(step, int):
+        return f"JSON key `{step:08x}`, `ctrm` {int(step != 0)}"
+    return _hex(step if isinstance(step, bytes) else keeson_profiles.encode(profile, step, "Bed"))
+
+
+def _steps(profile: keeson_profiles.KeesonProfile, *, waits: bool) -> str:
+    return (
+        ", ".join(
+            (f"+{wait} ms " if waits else "") + _kframe(profile, step)
+            for wait, step in profile.release.steps
+        )
+        or "none"
+    )
+
+
+def _lease(profile: keeson_profiles.KeesonProfile | keeson_profiles.AppProfile) -> str:
+    return "renewable lease" if profile.execution.hold == "stream" else "no"
+
+
+def _hold(profile: keeson_profiles.KeesonProfile) -> str:
+    if profile.refresh_ms:
+        return f"pulse count × {profile.refresh_ms} ms"
+    if profile.hold:
+        return f"{profile.hold[0]} × {profile.hold[1]} ms"
+    return "configured"
+
+
+def _keeson_timing_rows() -> Iterable[tuple[str, ...]]:
+    for key, profile in keeson_profiles.PROFILES.items():
+        if key in _KEESON_CONTROLLERS:
+            continue  # Timing stays in these controllers; see their sections.
+        release = profile.release
+        if not release.steps:
+            stop = "none"
+        elif release.on_stop:
+            stop = _steps(profile, waits=False)
+        else:
+            stop = "none"
+        yield (
+            _kname(key),
+            _hold(profile),
+            "{} × {} ms".format(*profile.three_motor_hold) if profile.three_motor_hold else "same",
+            _steps(profile, waits=True)
+            + (" (STOP ends the wait)" if release.guarded and release.steps else ""),
+            stop,
+            "yes" if release.after_tap else "no",
+            f"{profile.tap_wait_ms} ms" if profile.tap_wait_ms else "none",
+        )
+
+
+def _preset_cell(profile: keeson_profiles.KeesonProfile, preset: keeson_profiles.Preset) -> str:
+    word = profile.presets.get(preset)
+    if word is None:
+        return "no"
+    held = profile.held_controls.get(preset)
+    suffix = " (not listed)" if preset in profile.unlisted_presets else ""
+    suffix += " (held)" if held and held[1] else ""
+    return _word(word) + suffix
+
+
+def _memory_cell(words: Mapping[int, int]) -> str:
+    return "<br>".join(f"{slot}: {_word(word)}" for slot, word in words.items()) or "none"
+
+
+def render_keeson_profiles() -> str:
+    profiles = keeson_profiles.PROFILES
+    summary = _table(
+        ("Profile", "Route", "Frame", "Transport", "Lights", "Massage", "Hold until release"),
+        (
+            (
+                _kname(key),
+                _route(key),
+                _carrier(profile),
+                "app controller"
+                if key in _KEESON_CONTROLLERS
+                else "live FFE9 / FFE4" if key in ("okin_comfort_bed", "comfortfurniture")
+                else profile.transport.upper() + (" (fixed)" if profile.fixed_write else ""),
+                "app controller" if key in _KEESON_APP_TABLES else profile.lights or "none",
+                "app controller" if key in _KEESON_APP_TABLES else profile.massage,
+                _lease(profile),
+            )
+            for key, profile in profiles.items()
+        ),
+    )
+    timing = _table(
+        (
+            "Profile",
+            "Hold",
+            "Three motors",
+            "Release after a hold",
+            "Explicit stop",
+            "Released after one-shots",
+            "Wait before one-shots",
+        ),
+        _keeson_timing_rows(),
+    )
+    presets = _table(
+        ("Profile", "Flat", "Zero G", "Lounge", "TV", "Anti-snore", "Memory recall", "Memory save"),
+        (
+            (
+                _kname(key),
+                *(
+                    _preset_cell(profile, preset)
+                    for preset in ("flat", "zero_g", "lounge", "tv", "anti_snore")
+                ),
+                _memory_cell(profile.memory),
+                (
+                    _memory_cell(profile.memory_save.words)
+                    + (
+                        f"<br>{profile.memory_save.repeats} × {profile.memory_save.repeat_ms} ms"
+                        + (", waiting first" if profile.memory_save.wait_first else "")
+                        if profile.memory_save.repeats > 1
+                        else ""
+                    )
+                )
+                if profile.memory_save
+                else "none",
+            )
+            for key, profile in profiles.items()
+            if key not in _KEESON_APP_TABLES
+        ),
+    )
+    return _block(
+        "### Profile summary",
+        summary,
+        "### Hold and release timing",
+        "A hold writes its frame the given number of times while the stored cadence is "
+        "the Keeson default; a customized cadence wins. Release waits count from the "
+        "previous write. An explicit stop sends the release without its waits. The "
+        "[controller profiles](#controller-profiles) keep their timing in their "
+        "controllers. Under a [renewable hold](../SERVICES.md#renewable-holds), a "
+        "profile with hold until release refreshes at its app interval until the "
+        "lease ends or STOP arrives, up to 30 s, then sends its release.",
+        timing,
+        "### Presets and memory",
+        f"Words, encoded in the profile's frame. {_knames(sorted(_KEESON_APP_TABLES))} "
+        "keep their key tables with their app controllers; see their sections.",
+        presets,
+    )
+
+
+def render_keeson_transports() -> str:
+    profiles = keeson_profiles.PROFILES
+    return _block(
+        _table(
+            ("Transport", "Service", "Write", "Notify", "Fallbacks (service / write)", "Profiles"),
+            (
+                (
+                    key.upper(),
+                    f"`{transport.service_uuid}`",
+                    f"`{transport.write_uuid}`",
+                    f"`{transport.notify_uuid}`",
+                    "<br>".join(f"`{s}` / `{w}`" for s, w in transport.fallbacks) or "none",
+                    _knames(
+                        name
+                        for name, profile in profiles.items()
+                        if profile.transport == key and name not in _KEESON_CONTROLLERS
+                        and name != "okin_comfort_bed"
+                    ),
+                )
+                for key, transport in keeson_codec.TRANSPORTS.items()
+            ),
+        ),
+        _table(
+            ("Profile", "Service", "Write", "Notify role", "Selection"),
+            ((
+                _kname(keeson_profiles.OKIN_COMFORT_BED.key),
+                "any discovered service",
+                f"`{keeson_codec.TRANSPORTS['base'].write_uuid}`",
+                f"`{keeson_codec.TRANSPORTS['base'].notify_uuid}` (no CCCD)",
+                "last matching characteristics; both required",
+            ),),
+        )
+    )
+
+
+def render_keeson_carriers() -> str:
+    groups: dict[tuple[str, int, str, int | None], list[str]] = {}
+    for key, profile in keeson_profiles.PROFILES.items():
+        groups.setdefault(
+            (profile.carrier, profile.header, profile.order, profile.side), []
+        ).append(key)
+    rows = []
+    for (carrier, *_shape), keys in groups.items():
+        profile = keeson_profiles.PROFILES[keys[0]]
+        rows.append(
+            (
+                _carrier(profile),
+                _CARRIER_LAYOUTS[carrier],
+                "see JSON envelope" if carrier == "json" else _kframe(profile, _K.MOTOR_HEAD_UP),
+                _knames(keys),
+            )
+        )
+    split = [key for key, profile in keeson_profiles.PROFILES.items() if profile.single_side]
+    for side, selector in keeson_codec.SIDE_SELECTORS.items():
+        frame = keeson_profiles.encode(
+            keeson_profiles.PROFILES[split[0]], _K.MOTOR_HEAD_UP, side=side
+        )
+        rows.append(
+            (
+                f"K1 `E6`, little-endian, {side.title()} side `{selector:02X}`",
+                "`E6 FE 16` + word + side + checksum",
+                _hex(frame),
+                _knames(split),
+            )
+        )
+    return _block(_table(("Frame", "Layout", "Head up", "Profiles"), rows))
+
+
+_KEY_LABELS: tuple[tuple[str, int], ...] = (
+    ("Release (all keys up)", keeson_codec.RELEASE),
+    ("Head up / down", _K.MOTOR_HEAD_UP),
+    ("", _K.MOTOR_HEAD_DOWN),
+    ("Feet up / down", _K.MOTOR_FEET_UP),
+    ("", _K.MOTOR_FEET_DOWN),
+    ("Tilt up / down", _K.MOTOR_TILT_UP),
+    ("", _K.MOTOR_TILT_DOWN),
+    ("Lumbar up / down", _K.MOTOR_LUMBAR_UP),
+    ("", _K.MOTOR_LUMBAR_DOWN),
+    ("Massage step", _K.MASSAGE_STEP),
+    ("Massage timer step", _K.MASSAGE_TIMER_STEP),
+    ("Foot massage + / -", _K.MASSAGE_FOOT_UP),
+    ("", _K.MASSAGE_FOOT_DOWN),
+    ("Head massage + / -", _K.MASSAGE_HEAD_UP),
+    ("", _K.MASSAGE_HEAD_DOWN),
+    ("Zero G", _K.PRESET_ZERO_G),
+    ("`0x2000`: Read, Lounge or a memory", _K.PRESET_MEMORY_1),
+    ("`0x4000`: TV or a memory", _K.PRESET_MEMORY_2),
+    ("`0x8000`: Anti-snore or a memory", _K.PRESET_MEMORY_3),
+    ("`0x10000`: M or a memory", _K.PRESET_MEMORY_4),
+    ("Light toggle", _K.TOGGLE_SAFETY_LIGHTS),
+    ("Flat", _K.PRESET_FLAT),
+    ("Wave next / previous (Base)", _K.MASSAGE_WAVE_STEP),
+    ("", _K.MASSAGE_WAVE_PREVIOUS),
+    ("Intensity 1 / 2 / 3 (Base)", _K.MASSAGE_INTENSITY_1),
+    ("", _K.MASSAGE_INTENSITY_2),
+    ("", _K.MASSAGE_INTENSITY_3),
+    ("All massage off (Sleep Harmony)", _K.MASSAGE_ALL_STOP),
+)
+
+
+def render_keeson_keys() -> str:
+    base = keeson_profiles.BASE
+    harmony = keeson_profiles.SLEEP_HARMONY_BASE_I5
+    rows = []
+    for label, word in _KEY_LABELS:
+        profile = harmony if word == _K.MASSAGE_ALL_STOP else base
+        rows.append((label, _word(word), _kframe(profile, word), _kname(profile.key)))
+    return _block(
+        _table(("Key", "Word", "Example frame", "Example profile"), rows),
+        "Which word a profile sends for a preset or memory slot is in "
+        "[Presets and memory](#presets-and-memory).",
+    )
+
+
+def render_keeson_sino() -> str:
+    sino = keeson_profiles.SINO
+    rows = (
+        (
+            "Light on / off",
+            f"{_word(_S.LIGHT_ON)} / {_word(_S.LIGHT_OFF)}",
+            f"{_kframe(sino, _S.LIGHT_ON)} / {_kframe(sino, _S.LIGHT_OFF)}",
+        ),
+        (
+            "Head massage level 0-10",
+            f"{_word(_S.MASSAGE_HEAD_INTENSITY_BASE)} + level",
+            f"{_kframe(sino, _S.MASSAGE_HEAD_INTENSITY_BASE)} … "
+            f"{_kframe(sino, _S.MASSAGE_HEAD_INTENSITY_BASE + 10)}",
+        ),
+        (
+            "Foot massage level 0-10",
+            f"{_word(_S.MASSAGE_FOOT_INTENSITY_BASE)} + level",
+            f"{_kframe(sino, _S.MASSAGE_FOOT_INTENSITY_BASE)} … "
+            f"{_kframe(sino, _S.MASSAGE_FOOT_INTENSITY_BASE + 10)}",
+        ),
+        (
+            "Wave pattern 1-10",
+            f"{_word(_S.MASSAGE_HEAD_WAVE_BASE)} + pattern",
+            f"{_kframe(sino, _S.MASSAGE_HEAD_WAVE_BASE + 1)} … "
+            f"{_kframe(sino, _S.MASSAGE_HEAD_WAVE_BASE + 10)}",
+        ),
+    )
+    return _block(_table(("Command", "Word", "Frames (Sino)"), rows))
+
+
+def _control_rows(
+    profile: keeson_profiles.KeesonProfile, controls: Iterable[tuple[str, int, str]]
+) -> list[str]:
+    return _table(
+        ("Control", "Word", "Frame", "Sent"),
+        ((label, _word(word), _kframe(profile, word), how) for label, word, how in controls),
+    )
+
+
+def render_keeson_adjustable_lite() -> str:
+    lite, ksbt03c = keeson_profiles.ADJUSTABLE_LITE, keeson_profiles.ADJUSTABLE_LITE_KSBT03C
+    rows = [
+        ("Head/back up", _K.MOTOR_HEAD_UP, "both"),
+        ("Head/back down", _K.MOTOR_HEAD_DOWN, "both"),
+        ("Leg/foot up", _K.MOTOR_FEET_UP, "both"),
+        ("Leg/foot down", _K.MOTOR_FEET_DOWN, "both"),
+        *(
+            (preset.replace("_", " ").title(), word, "both")
+            for preset, word in lite.presets.items()
+        ),
+        *((f"Memory {slot}", word, "both") for slot, word in lite.memory.items()),
+        ("Light", _K.TOGGLE_SAFETY_LIGHTS, "both"),
+        *(
+            (preset.replace("_", " ").title(), word, "KSBT03C")
+            for preset, word in ksbt03c.presets.items()
+            if preset not in lite.presets
+        ),
+        ("Massage timer", _K.MASSAGE_TIMER_STEP, "KSBT03C"),
+        ("Head massage +", _K.MASSAGE_HEAD_UP, "KSBT03C"),
+        ("Head massage -", _K.MASSAGE_HEAD_DOWN, "KSBT03C"),
+        ("Leg massage +", _K.MASSAGE_FOOT_UP, "KSBT03C"),
+        ("Leg massage -", _K.MASSAGE_FOOT_DOWN, "KSBT03C"),
+    ]
+    table = _table(
+        ("Control", "Word", "Frame", "Remotes"),
+        ((label, _word(word), _kframe(lite, word), remotes) for label, word, remotes in rows),
+    )
+    return _block(table, f"Status query: {_hex(keeson_codec.STATUS_QUERY)}, both remotes.")
+
+
+def render_keeson_restonic() -> str:
+    a, b = keeson_profiles.RESTONIC_A_CONTROLS, keeson_profiles.RESTONIC_B_CONTROLS
+    profile = keeson_profiles.RESTONIC_A
+
+    def mode(controls: Mapping[str, tuple[int, bool]], name: str) -> str:
+        if name not in controls:
+            return "no"
+        return "held" if controls[name][1] else "once"
+
+    return _block(
+        _table(
+            ("`hold_control` name", "Word", "Frame", "Remote A", "Remote B"),
+            (
+                (f"`{name}`", _word(word), _kframe(profile, word), mode(a, name), mode(b, name))
+                for name, (word, _held) in {**a, **b}.items()
+            ),
+        ),
+        f"Release: {_kframe(profile, keeson_codec.RELEASE)} after every control.",
+    )
+
+
+def render_keeson_innova() -> str:
+    profile = keeson_profiles.INNOVA
+    held = {**innova_module._COMMON_HELD}
+    for layout in innova_module._LAYOUT_HELD.values():
+        held.update(layout)
+    screens = {
+        name: "/".join(
+            f"{count}M" for count, layout in innova_module._LAYOUT_HELD.items() if name in layout
+        )
+        or "all"
+        for name in held
+    }
+    once = (
+        ("Zero G", profile.presets["zero_g"]),
+        ("Flat", profile.presets["flat"]),
+        ("Light", _K.TOGGLE_LIGHTS),
+        ("Head massage +", _K.MASSAGE_HEAD_UP),
+        ("Head massage -", _K.MASSAGE_HEAD_DOWN),
+        ("Foot massage +", _K.MASSAGE_FOOT_UP),
+        ("Foot massage -", _K.MASSAGE_FOOT_DOWN),
+        ("Massage level", innova_module.MASSAGE_LEVEL),
+        ("Massage timer (massage page)", innova_module.MASSAGE_TIMER),
+    )
+    return _block(
+        _table(
+            ("Held control (`hold_control` name)", "Word", "Frame", "Screens"),
+            ((f"`{n}`", _word(w), _kframe(profile, w), screens[n]) for n, w in held.items()),
+        ),
+        _table(
+            ("One-shot control", "Word", "Frame"),
+            ((label, _word(word), _kframe(profile, word)) for label, word in once),
+        ),
+        f"Release and Stop: {_kframe(profile, keeson_codec.RELEASE)}. Rename example "
+        f"(`BED`): {_hex(innova_module.innova_rename_frame('BED'))}.",
+    )
+
+
+def render_keeson_okin_apps() -> str:
+    apps = okin_apps_module
+    simon, seating = apps.SIMON_KEYS, apps.SEATING_KEYS
+    profile = keeson_profiles.SIMON_LI
+    seats = _table(
+        ("Control", "Simon Li", "OKIN-Seating"),
+        (
+            (
+                f"`{name}`",
+                _kframe(profile, simon[name]) if name in simon else "-",
+                _kframe(profile, seating[name]) if name in seating else "-",
+            )
+            for name in {**simon, **seating}
+        ),
+    )
+    heal = keeson_profiles.HEAL_EVERY_NIGHT
+    movement = dict(
+        zip(
+            (
+                "Head up",
+                "Foot up",
+                "Tilt up",
+                "Lumbar up",
+                "Head down",
+                "Foot down",
+                "Tilt down",
+                "Lumbar down",
+            ),
+            apps.HEAL_MOVEMENT_KEYS,
+            strict=True,
+        )
+    )
+    heal_rows = [
+        *((label, _word(word), _kframe(heal, word)) for label, word in movement.items()),
+        *(
+            (f"{name.replace('_', ' ').title()}", _word(w), _kframe(heal, w))
+            for name, w in apps.HEAL_PRESETS.items()
+        ),
+        *(
+            (f"Save memory {slot}", _word(w), _kframe(heal, w))
+            for slot, w in apps.HEAL_MEMORY_SAVE.items()
+        ),
+        ("Preset STOP", _word(apps.HEAL_PRESET_STOP), _kframe(heal, apps.HEAL_PRESET_STOP)),
+        (
+            f"Head massage level 0-{apps.HEAL_ZONE_MAX}",
+            f"{_word(apps.HEAL_HEAD_MASSAGE)} + level",
+            f"{_kframe(heal, apps.HEAL_HEAD_MASSAGE)} … "
+            f"{_kframe(heal, apps.HEAL_HEAD_MASSAGE + apps.HEAL_ZONE_MAX)}",
+        ),
+        (
+            f"Foot massage level 0-{apps.HEAL_ZONE_MAX}",
+            f"{_word(apps.HEAL_FOOT_MASSAGE)} + level",
+            f"{_kframe(heal, apps.HEAL_FOOT_MASSAGE)} … "
+            f"{_kframe(heal, apps.HEAL_FOOT_MASSAGE + apps.HEAL_ZONE_MAX)}",
+        ),
+        (
+            f"Wave 1-{apps.HEAL_WAVE_MAX}",
+            f"{_word(apps.HEAL_WAVE)} + wave - 1",
+            f"{_kframe(heal, apps.HEAL_WAVE)} … "
+            f"{_kframe(heal, apps.HEAL_WAVE + apps.HEAL_WAVE_MAX - 1)}",
+        ),
+        ("Timer (every label)", _word(apps.HEAL_TIMER), _kframe(heal, apps.HEAL_TIMER)),
+        (
+            "Light on / off",
+            f"{_word(apps.HEAL_LIGHT_ON)} / {_word(apps.HEAL_LIGHT_OFF)}",
+            f"{_kframe(heal, apps.HEAL_LIGHT_ON)} / {_kframe(heal, apps.HEAL_LIGHT_OFF)}",
+        ),
+    ]
+    return _block(
+        "#### Simon Li and OKIN-Seating keys",
+        seats,
+        "#### Heal Every Night keys",
+        "Movement keys before the settings below swap or reverse them.",
+        _table(("Control", "Word", "Frame"), heal_rows),
+        f"Release: {_kframe(profile, keeson_codec.RELEASE)} for all three apps.",
+    )
+
+
+
+
+def render_comfortfurniture() -> str:
+    from custom_components.adjustable_bed.profiles.comfortfurniture import PRESET_NAMES, PROFILE
+
+    p = PROFILE
+    axes = _table(("Control", "Up", "Down"), (
+        (axis, _kframe(p.wire, up), _kframe(p.wire, down)) for axis, (up, down) in p.axes.items()
+    ))
+    presets = _table(("Target", "Recall", "Save"), (
+        (label, _kframe(p.wire, p.recalls[name]), _kframe(p.wire, p.saves[name]))
+        for name, label in PRESET_NAMES.items()
+    ))
+    words = [("Movement release", 0), ("Preset stop", p.preset_stop),
+             ("Reset label (physical effect unknown)", p.reset_label),
+             ("Massage start, initial", p.massage_start), ("Massage off", p.massage_stop),
+             *((f"{slider} bin {b}", p.slider_word(slider, b * 10))
+               for slider in p.slider_bases for b in range(3)),
+             *((f"Timer {minutes} minutes", word) for minutes, word in p.timers.items()),
+             ("Light off", ore_module.LIGHT_OFF), ("Light on", ore_module.LIGHT_ON)]
+    other = _table(("Action", "Frame"), ((name, _kframe(p.wire, word)) for name, word in words))
+    timing = _table(("Parameter", "Value"), (
+        ("Held refresh", f"{p.wire.refresh_ms} ms, first write immediate"),
+        ("One-shot / release pre-send wait", f"{p.wire.tap_wait_ms} ms"),
+        ("Slider raw progress / default", f"0..{p.slider_max} / {p.slider_default}"),
+        ("Quantization", "floor(progress / 10), bins 0..2"),
+    ))
+    return _block("#### Axis frames", axes, "#### Named target frames", presets,
+                  "#### Other frames", other, "#### App parameters", timing)
+
+def render_keeson_ore() -> str:
+    ore = ore_module
+    profile = keeson_profiles.MAXCOIL_UNA
+    names = {2: "2M", 3: "3M", 4: "4M"}
+    axes: dict[tuple[int, int], tuple[list[str], list[str]]] = {}
+    for count, layout in ore.LAYOUTS.items():
+        for key, _tk, up, down in layout:
+            entry = axes.setdefault((up, down), ([], []))
+            entry[0].append(f"{names[count]} {key}")
+    motion = _table(
+        ("Axis", "Up", "Down"),
+        (
+            (", ".join(labels), _kframe(profile, up), _kframe(profile, down))
+            for (up, down), (labels, _unused) in axes.items()
+        ),
+    )
+    recall = {"Zero G": ore.RECALL_ZERO_G, "Flat": ore.RECALL_FLAT}
+    recall |= {f"Memory {'AB'[slot - 1]}": w for slot, w in ore.RECALL_MEMORY.items()}
+    save = {"Zero G": ore.SAVE_ZERO_G, "Flat": ore.SAVE_FLAT}
+    save |= {f"Memory {'AB'[slot - 1]}": w for slot, w in ore.SAVE_MEMORY.items()}
+    presets = _table(
+        ("Preset", "Recall", "Save"),
+        ((name, _kframe(profile, recall[name]), _kframe(profile, save[name])) for name in recall),
+    )
+    top = ore.MASSAGE_LEVEL_MAX
+    other = _table(
+        ("Command", "Word", "Frames"),
+        (
+            *(
+                (
+                    f"{zone.title()} massage level 0-{top}",
+                    f"{_word(base)} + level",
+                    f"{_kframe(profile, base)} … {_kframe(profile, base + top)}",
+                )
+                for zone, base in ore.MASSAGE_BASE.items()
+            ),
+            *(
+                (f"Massage timer {minutes} min", _word(w), _kframe(profile, w))
+                for minutes, w in ore.MASSAGE_TIMER.items()
+            ),
+            (
+                "Light on / off",
+                f"{_word(ore.LIGHT_ON)} / {_word(ore.LIGHT_OFF)}",
+                f"{_kframe(profile, ore.LIGHT_ON)} / {_kframe(profile, ore.LIGHT_OFF)}",
+            ),
+            ("Release / STOP", _word(keeson_codec.RELEASE), _kframe(profile, keeson_codec.RELEASE)),
+        ),
+    )
+    return _block(
+        "#### Motion", motion, "#### Presets and memory", presets, "#### Massage and lights", other
+    )
+
+
+def render_jalon_bed() -> str:
+    from custom_components.adjustable_bed.profiles import jalon_bed as app
+    rows = [(axis + direction, _word(word), _kframe(app.PROFILE, word))
+            for axis, words in app.MOTORS.items()
+            for direction, word in zip((" up", " down"), words, strict=True)]
+    rows += [(name, _word(word), _kframe(app.PROFILE, word))
+             for name, word in {**app.HELD, **{f"massage {name}": word for name, word in app.MASSAGE.items()}, "light toggle": app.LIGHT, "STOP/release": 0}.items()]
+    layouts = [(key, value.label, ", ".join(value.axes), "0") for key, value in app.LAYOUTS.items()]
+    timing = [("Motor refresh / releases before and after", f"{app.REFRESH_MS} ms / {app.MOTOR_RELEASES}"),
+              ("Preset tap / position-page Flat / release", f"{app.PRESET_REPEATS} / {app.POSITION_FLAT_REPEATS} / 1"),
+              ("Held preset refresh / maximum / release", f"{app.REFRESH_MS} ms / {app.HOLD_LIMIT_MS} ms / none"),
+              ("Massage and light / releases", f"{app.UTILITY_REPEATS} / {app.UTILITY_RELEASES}"),
+              ("Time sync to alarm / disabled alarm / release", f"{app.ALARM_DELAY_MS} ms / {app.DISABLE_REPEATS} / 1")]
+    modes = [(name, f"`{value:02X}`") for name, value in app.WAKE_MODES.items()]
+    return _block(_table(("Control", "Word", "Frame"), rows),
+                  _table(("Layout", "App layout", "HA axes", "Wire model"), layouts),
+                  _table(("Timing / writes", "Value"), timing),
+                  _table(("Wake action", "Mode byte"), modes))
+
+
+def render_keeson_controllers() -> str:
+    rows = []
+    for key, (route, guide) in _KEESON_CONTROLLERS.items():
+        profile = keeson_profiles.PROFILES[key]
+        rows.append(
+            (
+                _kname(key),
+                route,
+                _carrier(profile)
+                + (
+                    " (A/B: `E6`, side "
+                    + "/".join(f"`{byte:02X}`" for byte in profile.split_sides.values())
+                    + ")"
+                    if profile.split_sides
+                    else ""
+                ),
+                _kframe(profile, _K.MOTOR_HEAD_UP),
+                _kframe(profile, keeson_codec.RELEASE),
+                _lease(profile),
+                guide,
+            )
+        )
+    return _block(
+        _table(
+            (
+                "Profile",
+                "Bed type",
+                "Frame",
+                "Word `0x1`",
+                "Zero word",
+                "Hold until release",
+                "Guide",
+            ),
+            rows,
+        )
+    )
+
+
+def render_keeson_glideaway() -> str:
+    gm = glideaway_module
+    profile = keeson_profiles.GLIDEAWAY_MOTION
+    axes = {
+        "back": "Back/head",
+        "feet": "Feet",
+        "both": "Head + feet",
+        "tilt": "Neck tilt",
+        "bed_height": "Bed height",
+    }
+    rows = [
+        (f"{axes[axis]} {direction}", _word(word), _kframe(profile, word))
+        for axis, pair in gm.AXES.items()
+        for direction, word in zip(("up", "down"), pair, strict=True)
+    ]
+    rows += [
+        (name.replace("_", " ").capitalize(), _word(word), _kframe(profile, word))
+        for name, word in gm.PRESETS.items()
+    ]
+    rows.append(("Light toggle (500/600)", _word(gm.LIGHT), _kframe(profile, gm.LIGHT)))
+    rows += [
+        (f"Massage {name.replace('_', ' ')} (500/600)", _word(word), _kframe(profile, word))
+        for name, word in gm.MASSAGE.items()
+    ]
+    rows.append(("Release", _word(keeson_codec.RELEASE), _kframe(profile, keeson_codec.RELEASE)))
+    return _block(_table(("Control", "Word", "Frame"), rows))
+
+
+def render_keeson_scott_living() -> str:
+    table = scott_living_module.ScottLivingCommands
+    profile = keeson_profiles.SCOTT_LIVING
+    words = {name: word for name, word in vars(table).items() if name.isupper()}
+    rows = [
+        (name.replace("_", " ").title(), _word(word), _kframe(profile, word))
+        for name, word in words.items()
+    ]
+    rows.append(("Stop", _word(keeson_codec.RELEASE), _kframe(profile, keeson_codec.RELEASE)))
+    return _block(_table(("Command", "Word", "Frame"), rows))
+
+
+# Keeson layout apps
+
+_C033_ROLES = {
+    keeson_layout_app_module.FFE9: "FFE9",
+    keeson_layout_app_module.FFE4: "FFE4",
+    keeson_layout_app_module.NUS_TX: "NUS TX",
+    keeson_layout_app_module.NUS_RX: "NUS RX",
+}
+
+
+def _c033_controller(
+    profile: keeson_profiles.AppProfile, side: str = "both"
+) -> keeson_layout_app_module.AppController:
+    return keeson_layout_app_module.AppController(cast(Any, None), profile, side=side)
+
+
+_C033_HEADINGS = {"ergomotion_app": "Ergomotion app"}
+
+
+def _c033_heading(app: str) -> str:
+    return _C033_HEADINGS.get(app, keeson_profiles.APP_NAMES[app])
+
+
+def _c033_layouts(app: str) -> str:
+    default = keeson_profiles.DEFAULT_LAYOUTS[app]
+    return ", ".join(
+        f"**{layout}**" if layout == default else layout
+        for layout in keeson_profiles.APP_LAYOUTS[app]
+    )
+
+
+def _c033_frame(app: str) -> str:
+    if app == "qplus_app":
+        return "K1 `E5` (Both) or `E6` + side byte (A/B); MX: P2 6-byte"
+    return "K1 `E5`, little-endian"
+
+
+def _c033_clock(profile: keeson_profiles.AppProfile) -> str:
+    if not profile.clock:
+        return "none"
+    delay = profile.clock_init_delay_ms
+    if delay is None:
+        return "on demand"
+    when = "at connect" if delay == 0 else f"{delay / 1000:g} s after connect"
+    return f"{when}, and on demand"
+
+
+def _c033_rename(profile: keeson_profiles.AppProfile) -> str:
+    if not profile.rename_units:
+        return "none"
+    trim = "trimmed" if profile.rename_trimmed else "outer spaces rejected"
+    return f"{profile.rename_units} UTF-16 units, {trim}"
+
+
+def _c033_alarm(profile: keeson_profiles.AppProfile) -> str:
+    spec = profile.alarm
+    if spec is None:
+        return "none"
+    marker = f"marker `{spec.weekday_marker:#04x}`" if spec.weekday_marker else "no marker"
+    return f"wake byte `{spec.wake_byte:#04x}`, {marker}, {spec.capacity} per table"
+
+
+def render_keeson_apps() -> str:
+    rows = []
+    for app in keeson_profiles.APP_LAYOUTS:
+        profile = keeson_profiles.app_profile(app)
+        roles = ("FFE9", "FFE4") + (("NUS TX", "NUS RX") if app == "qplus_app" else ())
+        dismiss = (
+            f"{profile.shutdown_count} × {_hex(keeson_codec.ALARM_DISMISS)}, "
+            f"{profile.shutdown_delay_ms} ms apart"
+            if profile.shutdown_count
+            else "none"
+        )
+        rows.append(
+            (
+                f"[{_c033_heading(app)}](#{_anchor(_c033_heading(app))})",
+                f"`{app}`",
+                _c033_layouts(app),
+                _c033_frame(app),
+                " / ".join(roles),
+                _c033_rename(profile),
+                _c033_clock(profile),
+                dismiss,
+                _c033_alarm(profile),
+                _lease(profile),
+            )
+        )
+    return _block(
+        _table(
+            (
+                "Profile",
+                "Bed type",
+                "Layouts (default bold)",
+                "Frame",
+                "Write / notify",
+                "Rename",
+                "Clock",
+                "Wake dismissal",
+                "Alarm tables",
+                "Hold until release",
+            ),
+            rows,
+        )
+    )
+
+
+def _anchor(title: str) -> str:
+    return re.sub(r"[^a-z0-9 -]", "", title.lower()).replace(" ", "-")
+
+
+def render_keeson_app_controls(app: str) -> str:
+    """One row per distinct app key, with the layouts that show it."""
+    layouts = keeson_profiles.APP_LAYOUTS[app]
+    rows: dict[tuple[str, ...], list[str]] = {}
+    for layout in layouts:
+        profile = keeson_profiles.app_profile(app, layout)
+        controller = _c033_controller(profile)
+        for action in profile.actions:
+            cover = {"head_up": "Back", "head_down": "Back", "foot_up": "Legs", "foot_down": "Legs"}
+            label = action.name + (f" ({cover[action.key]} cover)" if action.key in cover else "")
+            row = (
+                label,
+                f"`{action.key}`",
+                f"`{action.mask:#x}`",
+                _hex(controller._frame(action.mask)),
+                f"`{action.mode}`",
+            )
+            rows.setdefault(row, []).append(layout)
+    header = ("App label", "Key", "Mask", "Frame", "Behavior")
+    if len(layouts) == 1:
+        return _block(_table(header, rows))
+    return _block(
+        _table((*header, "Layouts"), ((*row, ", ".join(found)) for row, found in rows.items()))
+    )
+
+
+def render_keeson_qplus_sides() -> str:
+    profile = keeson_profiles.app_profile("qplus_app", "M2")
+    rows = []
+    for side, name in (("both", "Both"), ("side_a", "Side A"), ("side_b", "Side B")):
+        controller = _c033_controller(profile, side)
+        rows.append(
+            (
+                f"{name} (`{side}`)",
+                _hex(controller._frame(keeson_codec.HEAD_UP)),
+                _hex(controller._frame(keeson_codec.RELEASE)),
+            )
+        )
+    mx = keeson_profiles.app_profile("qplus_app", "MX")
+    assert mx.p2_keys is not None
+    keys = ", ".join(f"`{key:#x}`" for key in sorted(mx.p2_keys))
+    return _block(
+        _table(("Selector", "Head up", "Release"), rows),
+        f"MX keys the sparse builder accepts (any other key is sent as zero): {keys}.",
+    )
+
+
+def render_keeson_serta_mp() -> str:
+    head, foot = serta_mp_module.HEAD_TABLE, serta_mp_module.FOOT_TABLE
+
+    def calibration(name: str, table: tuple[int, ...]) -> list[str]:
+        return _table(
+            (name, *(f"+{step}" for step in range(10))),
+            (
+                (
+                    f"{start}°",
+                    *(str(v) for v in table[start : start + 10]),
+                    *[""] * (10 - len(table[start : start + 10])),
+                )
+                for start in range(0, len(table), 10)
+            ),
+        )
+
+    other = 0x8000
+    targets = _table(
+        ("Target", "Head field", "Foot field", "Example"),
+        (
+            (
+                "Back slider or `set_position`",
+                "head table value",
+                f"`{other:#x}`",
+                f"Back 30°: {_hex(keeson_codec.position_target(head[30], other))}",
+            ),
+            (
+                "Legs slider or `set_position`",
+                f"`{other:#x}`",
+                "foot table value",
+                f"Legs 15°: {_hex(keeson_codec.position_target(other, foot[15]))}",
+            ),
+            (
+                "Local memory recall",
+                "head table value",
+                "foot table value",
+                f"Slot 1 default (15°/35°): {_hex(keeson_codec.position_target(head[15], foot[35]))}",
+            ),
+        ),
+    )
+    return _block(
+        "#### Position targets",
+        targets,
+        "#### Calibration tables",
+        "Pulse value per degree, used for targets and for feedback conversion.",
+        calibration("Head", head),
+        calibration("Foot", foot),
+    )
+
+
+def render_comfortbase() -> str:
+    from custom_components.adjustable_bed.const import (
+        KEESON_BASE_NOTIFY_CHAR_UUID,
+        KEESON_BASE_WRITE_CHAR_UUID,
+    )
+    from custom_components.adjustable_bed.profiles import comfortbase as app
+
+    profile = keeson_profiles.COMFORTBASE
+    rows = [(p.name, str(p.stored_value), ", ".join(p.axes), "Yes" if p.massage_light else "No")
+            for p in app.PRODUCTS.values()]
+    controls = [(f"{axis} {direction}", _hex(keeson_profiles.encode(profile, word)))
+                for axis, (_label, up, down) in app.AXES.items()
+                for direction, word in (("up", up), ("down", down))]
+    controls += [(name, _hex(keeson_profiles.encode(profile, word)))
+                 for name, word in {**app.PRESETS, **{f"Memory {n}": w for n, w in app.MEMORY.items()},
+                                    **app.MASSAGE, "Light toggle": app.LIGHT_TOGGLE, "STOP": 0}.items()]
+    return "\n\n".join((
+        "\n".join(_table(("Product", "App value", "Controls", "Massage / light"), rows)),
+        "\n".join(_table(("Action", "Frame"), controls)),
+        "\n".join(_table(("Setting", "Value"), [
+            ("Write service / characteristic", f"`{app.WRITE_SERVICE}` / `{KEESON_BASE_WRITE_CHAR_UUID}`"),
+            ("Notify service / characteristic", f"`{app.NOTIFY_SERVICE}` / `{KEESON_BASE_NOTIFY_CHAR_UUID}`"),
+            ("Held refresh", f"{app.REFRESH_MS} ms"),
+            ("Save all five presets", f"{app.SAVE_SECONDS} s held recall, then STOP"),
+            ("Alarm sequence", f"Two clock writes, {app.ALARM_DELAY_SECONDS * 1000:g} ms wait, one alarm"),
+            ("Clock", "E7 80 01, year minus 1900, zero-based month, day, hour, minute, second, checksum"),
+            ("Alarm", "ED 80 03, hour, minute, opaque FF, Memory A 0E / B 0F, eight zeros, checksum"),
+            ("Alarm cancel", _hex(keeson_codec.alarm_table(3, bytes(4)))),
+        ])),
+    ))
+
+
+BLOCKS: list[Block] = [
+    (GUIDE, "keeson-jalon-bed", render_jalon_bed),
+    (GUIDE, "keeson-profiles", render_keeson_profiles),
+    (GUIDE, "keeson-transports", render_keeson_transports),
+    (GUIDE, "keeson-carriers", render_keeson_carriers),
+    (GUIDE, "keeson-keys", render_keeson_keys),
+    (GUIDE, "keeson-sino", render_keeson_sino),
+    (GUIDE, "keeson-adjustable-lite", render_keeson_adjustable_lite),
+    (GUIDE, "keeson-restonic", render_keeson_restonic),
+    (GUIDE, "keeson-innova", render_keeson_innova),
+    (GUIDE, "keeson-okin-apps", render_keeson_okin_apps),
+    (GUIDE, "keeson-ore", render_keeson_ore),
+    (GUIDE, "keeson-comfortfurniture", render_comfortfurniture),
+    (GUIDE, "keeson-apps", render_keeson_apps),
+    *(
+        (
+            GUIDE,
+            f"keeson-app-{app.replace('_', '-')}",
+            lambda app=app: render_keeson_app_controls(app),
+        )
+        for app in keeson_profiles.APP_LAYOUTS
+    ),
+    (GUIDE, "keeson-qplus-sides", render_keeson_qplus_sides),
+    (GUIDE, "keeson-serta-mp", render_keeson_serta_mp),
+    (GUIDE, "keeson-controllers", render_keeson_controllers),
+    (GUIDE, "keeson-glideaway", render_keeson_glideaway),
+    (GUIDE, "keeson-scott-living", render_keeson_scott_living),
+    (GUIDE, "keeson-comfortbase", render_comfortbase),
+]
+
+
+def render_jalon() -> str:
+    from datetime import datetime
+
+    from custom_components.adjustable_bed.profiles import jalon
+    profiles = tuple(jalon.PROFILES.values())
+    now = datetime(2026, 11, 10, 13, 14, 15)
+    return _block(
+        "#### Profiles and transport",
+        _table(("Profile", "Write service", "Write", "Notify service", "Notify", "Response"), (
+            (p.key, keeson_codec.TRANSPORTS[p.transport].service_uuid,
+             keeson_codec.TRANSPORTS[p.transport].write_uuid,
+             "0000ffe0-0000-1000-8000-00805f9b34fb" if p.key != "jalon_24" else keeson_codec.TRANSPORTS[p.notify].service_uuid,
+             keeson_codec.TRANSPORTS[p.notify].notify_uuid, str(not p.no_response))
+            for p in profiles)),
+        "#### Layouts",
+        _table(("App bedType", "Actuators"), ((key, ", ".join(axes)) for key, axes in jalon.LAYOUTS.items())),
+        "#### Commands",
+        _table(("Action", *(p.key for p in profiles)), (
+            (name, *(_hex(keeson_profiles.encode(p, word)) for p in profiles))
+            for name, word in jalon.COMMANDS.items())),
+        "#### Queries and clock",
+        _table(("Action", *(p.key for p in profiles)), (
+            ("Massage query", *(_hex(jalon.massage_query(p)) for p in profiles)),
+            ("Alarm query", "Unavailable", *(_hex(jalon.alarm_query(p)) for p in profiles[1:])),
+            ("Clock (2026-11-10 Tue 13:14:15)", *(_hex(jalon.clock(p, now)) for p in profiles)),
+        )),
+        "#### Wake types",
+        _table(("Action", "P2", "P3"), ((mode, str(value), str(jalon.WAKE_TYPES["jalon_24"][mode]))
+                for mode, value in jalon.WAKE_TYPES["jalon_15"].items())),
+        "#### Timing",
+        _table(("Operation", "Behavior"), (
+            ("Held movement / Flat / M1 / M2", f"Immediate; refresh every {jalon.REFRESH_MS} ms"),
+            ("Release / explicit STOP", f"Immediate STOP and one more after {jalon.REFRESH_MS} ms"),
+            ("Preset tap", f"Single write; release after {jalon.PRESET_MS} ms"),
+            ("Memory recall", f"One {jalon.REFRESH_MS} ms hold then release"),
+            ("Memory programming", f"Same recall word held {jalon.MEMORY_SAVE_MS} ms then release"),
+            ("Massage toggle", f"Single toggle; query after {jalon.QUERY_DELAY_MS} ms"),
+            ("Clock sync", f"Two identical writes {jalon.REFRESH_MS} ms apart, after connect"),
+            ("Alarm query", f"After {jalon.QUERY_DELAY_MS} ms: P2 twice at {jalon.REFRESH_MS} ms; P3 once"),
+            ("Alarm set", f"One write; query after {jalon.QUERY_DELAY_MS} ms: P2 twice, P3 three times at {jalon.ALARM_FOLLOWUP_MS} ms"),
+        )),
+    )
+
+
+BLOCKS.append((GUIDE, "keeson-jalon", render_jalon))
+
+
+def render_symphony_sleep() -> str:
+    from datetime import datetime
+
+    from custom_components.adjustable_bed.profiles import symphony_sleep as app
+
+    words = {**{f"{axis}_{direction}": row[index + 1] for axis, row in app.AXES.items()
+                for index, direction in enumerate(("up", "down"))},
+             **app.PRESETS, "memory_A_recall_and_hold_save": app.MEMORY[1],
+             "memory_B_recall_and_hold_save": app.MEMORY[2], "stop": 0,
+             "light_toggle": app.LIGHT, **app.MASSAGE}
+    now = datetime(2026, 11, 12, 6, 45, 59)
+    return _block(
+        "##### Models",
+        _table(("Model", "App controls", "Light / massage"), (
+            (model.label, ", ".join(app.AXES[a][0] for a in model.axes), str(model.accessories))
+            for model in app.MODELS.values())),
+        "##### Transports",
+        _table(("Selection", "Write service / characteristic", "Notify service / characteristic", "Parser"), (
+            (route, f"{keeson_codec.TRANSPORTS[p.transport].service_uuid} / {keeson_codec.TRANSPORTS[p.transport].write_uuid}",
+             f"{keeson_codec.TRANSPORTS[p.transport].service_uuid if route == 'box2' else keeson_codec.JALON_NOTIFY_SERVICE} / {keeson_codec.TRANSPORTS[p.transport].notify_uuid}",
+             "disabled" if route == "fallback" else "P2" if route == "box2" else "P1")
+            for route, p in app.PROFILES.items())),
+        "##### Normal controls",
+        _table(("Control", "P1", "P2"), ((key, _hex(app.normal("box1", word)), _hex(app.normal("box2", word)))
+              for key, word in words.items())),
+        "##### Bed alarm and clock",
+        _table(("Action", "P1", "P2"), (
+            ("Query alarm", _hex(app.alarm_query("box1")), _hex(app.alarm_query("box2"))),
+            ("Clock, 2026-11-12 Thursday 06:45:59", _hex(app.clock("box1", now)), _hex(app.clock("box2", now))),
+            ("Disable", *(_hex(app.alarm(r, enabled=False, hour=0, minute=0, wake="none")) for r in ("box1", "box2"))),
+            *((f"Enable 06:45, {wake}", *(_hex(app.alarm(r, enabled=True, hour=6, minute=45, wake=wake)) for r in ("box1", "box2"))) for wake in app.WAKE),
+        )),
+        "##### Schedules",
+        _table(("Operation", "Schedule"), (
+            ("Held controls", f"Immediately, then every {app.REFRESH_MS} ms; bounded HA presses use configured pulse count"),
+            ("Release / STOP", "Immediately, +300 ms, +600 ms; awaited on the captured session"),
+            ("Memory A/B program", f"Same recall stream for {app.SAVE_MS} ms, then release; no completion ACK"),
+            ("P2 massage query", "00 B0 at +300 ms and +600 ms, independent of release"),
+            ("Alarm enable or disable", "RTC now, wait 300 ms, alarm; P2 query at +300 ms and +500 ms after alarm"),
+            ("Refresh alarm", "Query now and +200 ms"),
+        )),
+    )
+
+
+BLOCKS.append((GUIDE, "keeson-symphony-sleep", render_symphony_sleep))
+BLOCKS.extend(_AGINGPLACE_BLOCKS)
+
+BLOCKS.extend(_YAMADA_BLOCKS)
+BLOCKS.extend(_BETTERLIVING2_BLOCKS)
+
+BLOCKS.extend(_ORMATEK_BLOCKS)
+BLOCKS.extend(_SOMOS_BLOCKS)
+BLOCKS.extend(_ULTRAMATIC_BLOCKS)
+
+BLOCKS.extend(_ENSO_BLOCKS)

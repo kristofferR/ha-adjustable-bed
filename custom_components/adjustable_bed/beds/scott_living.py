@@ -2,10 +2,8 @@
 
 Reverse engineering from com.keeson.scottlivingrelease APK.
 
-Scott Living uses a 9-byte Keeson variant with inverted sum checksum.
-Packet format: [0xE6, 0xFE, 0x16, cmd0, cmd1, cmd2, cmd3, side, checksum]
-
-The side byte is always 0x01 in this implementation.
+Scott Living uses the nine-byte Keeson E6 frame with side byte 0x01
+(``profiles/keeson.py`` SCOTT_LIVING).
 """
 
 from __future__ import annotations
@@ -22,7 +20,8 @@ from ..const import (
     KEESON_BASE_NOTIFY_CHAR_UUID,
     KEESON_BASE_WRITE_CHAR_UUID,
 )
-from .base import BedController
+from ..profiles import keeson as keeson_profiles
+from .base import BedController, ProfileExecution
 
 if TYPE_CHECKING:
     from ..coordinator import AdjustableBedCoordinator
@@ -67,7 +66,7 @@ class ScottLivingCommands:
     PRESET_FLAT = 134217728  # 0x8000000 -> cmd3=0x08
 
 
-class ScottLivingController(BedController):
+class ScottLivingController(ProfileExecution[keeson_profiles.KeesonProfile], BedController):
     """Controller for Scott Living beds (9-byte Keeson variant)."""
 
     def __init__(self, coordinator: AdjustableBedCoordinator) -> None:
@@ -77,6 +76,7 @@ class ScottLivingController(BedController):
             coordinator: The AdjustableBedCoordinator instance
         """
         super().__init__(coordinator)
+        self.profile = keeson_profiles.SCOTT_LIVING
         self._notify_callback: Callable[[str, float], None] | None = None
         self._motor_state: dict[str, bool | None] = {}
 
@@ -140,45 +140,8 @@ class ScottLivingController(BedController):
         return True
 
     def _build_command(self, key: int) -> bytes:
-        """Build a 9-byte command packet from a key value.
-
-        Format: [0xE6, 0xFE, 0x16, cmd0, cmd1, cmd2, cmd3, side, checksum]
-        Checksum: (~sum(bytes 0-7)) & 0xFF
-        """
-        # Convert key to command bytes using bit positions
-        cmd0 = key & 0xFF
-        cmd1 = (key >> 8) & 0xFF
-        cmd2 = (key >> 16) & 0xFF
-        cmd3 = (key >> 24) & 0xFF
-        side = 0x01  # Always side 1 in this app
-
-        header = [0xE6, 0xFE, 0x16]
-        data = header + [cmd0, cmd1, cmd2, cmd3, side]
-        checksum = (~sum(data)) & 0xFF
-        data.append(checksum)
-        return bytes(data)
-
-    async def write_command(
-        self,
-        command: bytes,
-        repeat_count: int = 1,
-        repeat_delay_ms: int = 100,
-        cancel_event: asyncio.Event | None = None,
-    ) -> None:
-        """Write a command to the bed."""
-        _LOGGER.debug(
-            "Writing command to Scott Living bed: %s (repeat: %d, delay: %dms)",
-            command.hex(),
-            repeat_count,
-            repeat_delay_ms,
-        )
-        await self._write_gatt_with_retry(
-            self._char_uuid,
-            command,
-            repeat_count=repeat_count,
-            repeat_delay_ms=repeat_delay_ms,
-            cancel_event=cancel_event,
-        )
+        """Build a nine-byte E6 frame through the Keeson codec (side byte ``01``)."""
+        return keeson_profiles.encode(self.profile, key & 0xFFFFFFFF)
 
     async def start_notify(
         self, callback: Callable[[str, float], None] | None = None
@@ -244,23 +207,20 @@ class ScottLivingController(BedController):
         elif state.get("lumbar") is False:
             key += ScottLivingCommands.MOTOR_LUMBAR_DOWN
 
-        try:
+        async def release() -> None:
+            self._motor_state = {}
+            await self.write_command(
+                self._build_command(0),  # Zero = stop
+                cancel_event=asyncio.Event(),
+            )
+
+        async with self.releasing(release):
             if key:
                 await self.write_command(
                     self._build_command(key),
                     repeat_count=self._coordinator.motor_pulse_count,
                     repeat_delay_ms=self._coordinator.motor_pulse_delay_ms,
                 )
-        finally:
-            # Always send stop
-            self._motor_state = {}
-            try:
-                await self.write_command(
-                    self._build_command(0),  # Zero = stop
-                    cancel_event=asyncio.Event(),
-                )
-            except Exception:
-                _LOGGER.debug("Failed to send STOP command during cleanup")
 
     # Motor control methods
     async def move_head_up(self) -> None:
@@ -361,11 +321,11 @@ class ScottLivingController(BedController):
         if command := commands.get(memory_num):
             await self.write_command(self._build_command(command))
         else:
-            _LOGGER.warning("Scott Living supports Memory 1-4, requested: %d", memory_num)
+            raise self.not_supported(f"memory preset {memory_num}")
 
     async def program_memory(self, memory_num: int) -> None:
         """Program current position to memory (not supported)."""
-        _LOGGER.warning("Scott Living doesn't support programming memory presets")
+        raise self.not_supported("saving memory presets")
 
     async def preset_zero_g(self) -> None:
         """Go to zero gravity position."""
@@ -373,7 +333,7 @@ class ScottLivingController(BedController):
 
     async def preset_lounge(self) -> None:
         """Go to lounge position (not available)."""
-        _LOGGER.warning("Lounge preset is not available on Scott Living beds")
+        raise self.not_supported("the Lounge preset")
 
     async def preset_tv(self) -> None:
         """Go to TV position (same as Memory 3)."""

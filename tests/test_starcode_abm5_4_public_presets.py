@@ -8,10 +8,10 @@ from unittest.mock import AsyncMock, patch
 import pytest
 from homeassistant.const import CONF_ADDRESS, CONF_NAME
 from homeassistant.exceptions import ServiceValidationError
-from pytest_homeassistant_custom_component.common import MockConfigEntry
+from pytest_homeassistant.common import MockConfigEntry
 
 from custom_components.adjustable_bed import const
-from custom_components.adjustable_bed.beds.starcode_abm5_4_profiles import SELECTORS, TRANSPORTS
+from custom_components.adjustable_bed.beds.starcode.abm5_4_profiles import SELECTORS, TRANSPORTS
 from custom_components.adjustable_bed.button import _button_entities_for
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
 from custom_components.adjustable_bed.services import async_register_services
@@ -140,7 +140,7 @@ async def test_real_scheduler_white_queues_without_interrupting_user_stream(
             const.CONF_STARCODE_UI_SELECTOR: "BOX25",
             const.CONF_STARCODE_TRANSPORT_SELECTOR: "BOX1220",
             const.CONF_DISABLE_ANGLE_SENSING: True,
-            const.CONF_DISCONNECT_AFTER_COMMAND: False,
+            const.CONF_CONNECTION_MODE: const.CONNECTION_MODE_IDLE,
         },
     )
     entry.add_to_hass(hass)
@@ -235,6 +235,7 @@ async def test_registered_preset_routes_use_actual_physical_children_and_native_
             )
             self.controller._coordinator.address = self.address
             self.controller._owner_address = self.address
+            self.controller_side = None
             self.capability_controller = self.controller
 
         async def async_execute_controller_command(
@@ -244,6 +245,7 @@ async def test_registered_preset_routes_use_actual_physical_children_and_native_
             skip_disconnect=False,
             resource=None,
             resources=None,
+            expected_stop_epoch=None,
         ):
             await command_fn(self.controller)
 

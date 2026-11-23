@@ -6,13 +6,13 @@ from unittest.mock import AsyncMock, patch
 import pytest
 from bleak.exc import BleakError
 from homeassistant.const import CONF_ADDRESS, CONF_NAME
-from pytest_homeassistant_custom_component.common import MockConfigEntry
+from pytest_homeassistant.common import MockConfigEntry
 
-from custom_components.adjustable_bed.beds.svane import HEAD, OLD, OLD_CHAR, POSITION
+from custom_components.adjustable_bed.beds.svane.controller import HEAD, OLD, OLD_CHAR, POSITION
 from custom_components.adjustable_bed.const import (
     BED_TYPE_SVANE,
     CONF_BED_TYPE,
-    CONF_DISCONNECT_AFTER_COMMAND,
+    CONF_CONNECTION_MODE,
     CONF_PROTOCOL_VARIANT,
     DOMAIN,
     SIDE_BOTH,
@@ -31,7 +31,7 @@ async def real_bed(hass, request):
         CONF_ADDRESS: "AA:BB:CC:DD:EE:FF", CONF_NAME: "Svane",
         CONF_BED_TYPE: BED_TYPE_SVANE,
         CONF_PROTOCOL_VARIANT: SVANE_VARIANT_JMC if profile == "jmc" else SVANE_VARIANT_MULTI,
-        CONF_DISCONNECT_AFTER_COMMAND: False,
+        CONF_CONNECTION_MODE: "idle",
     })
     entry.add_to_hass(hass)
     coordinator = AdjustableBedCoordinator(hass, entry)
@@ -134,7 +134,7 @@ async def test_untracked_jmc_stop_failure_retains_exact_role_for_retry(failure):
     controller.client.write_gatt_char.side_effect = [error, None]
     with pytest.raises(type(error)):
         await controller.stop_all()
-    assert controller._started == {(OLD, OLD_CHAR)}
+    assert list(controller._started) == [(OLD, OLD_CHAR)]
     await controller.stop_all()
     assert written(controller) == [(OLD, OLD_CHAR, "100000000000")] * 2
     assert not controller._started

@@ -1,4 +1,4 @@
-"""Production controller, entity and lifecycle contracts for accepted row116."""
+"""Production controller, entity and lifecycle contracts for Good Vibe Sleep 2.0.1."""
 
 from __future__ import annotations
 
@@ -11,10 +11,18 @@ from zoneinfo import ZoneInfo
 
 import pytest
 
-from custom_components.adjustable_bed.beds import goodvibe as bed
-from custom_components.adjustable_bed.goodvibe_catalog import ACTIONS, PRODUCTS, PROFILE_CHOICES
-from custom_components.adjustable_bed.goodvibe_protocol import sleep_packet
-from custom_components.adjustable_bed.goodvibe_services import Request
+from custom_components.adjustable_bed.beds.goodvibe import controller as bed
+from custom_components.adjustable_bed.beds.goodvibe.catalog import (
+    ACTIONS,
+    PRODUCTS,
+    PROFILE_CHOICES,
+)
+from custom_components.adjustable_bed.beds.goodvibe.protocol import action_frame, clock
+from custom_components.adjustable_bed.beds.goodvibe.services import Request
+from custom_components.adjustable_bed.beds.goodvibe.sleep import sleep_packet
+from custom_components.adjustable_bed.codec import richmat as codec
+from custom_components.adjustable_bed.profiles.richmat import GOODVIBE
+from tests.state_helpers import state_writer
 
 
 @pytest.fixture
@@ -29,7 +37,7 @@ def coordinator(hass):
     c.client.start_notify = AsyncMock()
     c.client.stop_notify = AsyncMock()
     c.controller_state = {}
-    c.handle_controller_state_updates.side_effect = c.controller_state.update
+    c.handle_controller_state_updates.side_effect = state_writer(c.controller_state)
     return c
 
 
@@ -50,28 +58,48 @@ async def test_all_profile_factory_and_setup_contracts(hass, coordinator):
         hidden_generic_fields,
         per_side_profile,
     )
+    from custom_components.adjustable_bed.bed_traits import default_connection_mode
     from custom_components.adjustable_bed.const import (
         BED_TYPE_GOODVIBE,
         CONF_MOTOR_COUNT,
-        disconnect_after_command_default_enabled,
     )
     from custom_components.adjustable_bed.controller_factory import create_controller
-    from custom_components.adjustable_bed.detection import bed_type_choice, get_bed_type_options
+    from custom_components.adjustable_bed.detection import (
+        APP_VARIANT_CHOICES,
+        bed_type_choice,
+        get_bed_type_options,
+    )
+    from custom_components.adjustable_bed.setup_questions import setup_profile
     from custom_components.adjustable_bed.validators import is_valid_variant_for_bed_type
 
+    # One row asks the product, searchable by label; each product keeps its app entry.
     choices = {x["value"]: x["label"] for x in get_bed_type_options()}
+    assert BED_TYPE_GOODVIBE in choices
+    assert not any(
+        bed_type_choice(BED_TYPE_GOODVIBE, profile) in choices for profile in PROFILE_CHOICES
+    )
+    profile_spec = setup_profile(BED_TYPE_GOODVIBE)
+    assert profile_spec is not None
+    (product,) = profile_spec.questions
+    assert product.searchable and set(product.options({})) == set(PROFILE_CHOICES)
     for profile in PROFILE_CHOICES:
-        assert "Good Vibe Sleep" in choices[bed_type_choice(BED_TYPE_GOODVIBE, profile)]
+        assert "Good Vibe Sleep" in APP_VARIANT_CHOICES[BED_TYPE_GOODVIBE, profile]
         assert is_valid_variant_for_bed_type(BED_TYPE_GOODVIBE, profile)
         assert CONF_MOTOR_COUNT in hidden_generic_fields(BED_TYPE_GOODVIBE, profile)
         assert per_side_profile(BED_TYPE_GOODVIBE, profile).variant_owned
         obj = await create_controller(coordinator, BED_TYPE_GOODVIBE, profile, None)
         assert isinstance(obj, bed.GoodVibeController)
-        assert obj.profile == profile
-        assert disconnect_after_command_default_enabled(BED_TYPE_GOODVIBE, profile) == (
+        assert obj.profile is GOODVIBE and obj.product_key == profile
+        assert (default_connection_mode(BED_TYPE_GOODVIBE, profile) == "release") == (
             profile not in ("sleep_rm", "sleep_hj")
         )
     assert not is_valid_variant_for_bed_type(BED_TYPE_GOODVIBE, "auto")
+
+
+def test_past_single_alarm_countdown_truncates_its_high_byte():
+    # Over a day in the past the countdown is negative; -5.6 truncates to -5, not -6.
+    assert clock(-1440, 5) == (bytes.fromhex("6e056000d3"), bytes.fromhex("6e06fb0574"))
+    assert clock(-1440, 5)[1] != codec.countdown(-1440, 5)[1]
 
 
 @pytest.mark.parametrize("kind", (1, 2, 3))
@@ -212,7 +240,6 @@ async def test_buttons_expose_only_exact_product_actions(coordinator):
     }
     assert not obj.supports_motor_control
     assert obj.memory_slot_count == 0
-    assert obj.supports_goodvibe
     with pytest.raises(ValueError):
         await obj.press("not-this-product", 1000)
 
@@ -242,12 +269,16 @@ async def test_action_gesture_write_and_release_contract(coordinator, monkeypatc
     duration = 3100 if gesture in ("longPress", "shortAndLongPress") else 300
     await obj.press(detail, duration)
     side = obj._side()
-    primary = ACTIONS[detail].packet(side, legacy, gesture in ("longPress", "shortAndLongPress"))
+    primary = action_frame(
+        ACTIONS[detail], side, legacy, gesture in ("longPress", "shortAndLongPress")
+    )
     if gesture == "sustainPress":
-        assert writes(coordinator) == [primary] * 3 + [bed.p.generic(110, side, legacy)]
+        assert writes(coordinator) == [primary] * 3 + [
+            codec.function(codec.STOP, side, single=legacy)
+        ]
         assert delays == [100, 100, 100]
     elif gesture == "shortPress":
-        assert writes(coordinator) == [primary, bed.p.generic(110, side, legacy)]
+        assert writes(coordinator) == [primary, codec.function(codec.STOP, side, single=legacy)]
     else:
         assert writes(coordinator) == [primary]
         assert delays == [3000]
@@ -273,13 +304,13 @@ async def test_cancellation_and_async_failure_run_fresh_release(coordinator, mon
     monkeypatch.setattr(obj, "_delay", delay)
     with pytest.raises(asyncio.CancelledError):
         await obj.press(detail, 300)
-    assert writes(coordinator)[-1] == bed.p.generic(110, obj._side(), False)
+    assert writes(coordinator)[-1] == codec.function(codec.STOP, obj._side(), single=False)
     coordinator.client.write_gatt_char.reset_mock()
     coordinator.client.write_gatt_char.side_effect = [ConnectionError("in flight failure"), None]
     monkeypatch.setattr(obj, "_delay", AsyncMock(return_value=True))
     with pytest.raises(ConnectionError):
         await obj.press(detail, 300)
-    assert writes(coordinator)[-1] == bed.p.generic(110, obj._side(), False)
+    assert writes(coordinator)[-1] == codec.function(codec.STOP, obj._side(), single=False)
 
 
 async def test_sleep_stop_between_chunks_prevents_later_send(coordinator):
@@ -377,9 +408,11 @@ async def test_light_menu_ranges_are_exact_profile_choices(coordinator, model):
     )
     obj = controller(coordinator, profile)
     expected = (0, 1800, 3600, 14400, 28800) if model == "RNRN" else (0, 300, 600, 900)
-    assert next(
-        s for s in obj.controller_select_specs if s.key == "goodvibe_light_duration"
-    ).options == tuple(map(str, expected))
+    assert obj.light_timer_options == (
+        ["Always On", "30 min", "1 hour", "4 hours", "8 hours"]
+        if model == "RNRN"
+        else ["Always On", "5 min", "10 min", "15 min"]
+    )
     for seconds in expected:
         obj.validate_goodvibe_request(Request("light_duration", seconds=seconds))
     with pytest.raises(ValueError):
@@ -391,7 +424,7 @@ async def test_light_menu_ranges_are_exact_profile_choices(coordinator, model):
 
 
 async def test_alias_choices_resolve_exact_accepted_endpoints(coordinator):
-    from custom_components.adjustable_bed.goodvibe_catalog import ALIAS_TARGETS
+    from custom_components.adjustable_bed.beds.goodvibe.catalog import ALIAS_TARGETS
 
     assert len(ALIAS_TARGETS) == 27
     for alias, target in ALIAS_TARGETS.items():
@@ -480,6 +513,15 @@ async def test_report_service_completes_metadata_continuation_and_typed_payload(
     assert obj._sleep.last is None
     assert obj._report_context is None
 
+    # Each report can be a megabyte, so only the newest few stay in memory.
+    for day in range(4, 4 + bed.MAX_CACHED_REPORTS):
+        commands.clear()
+        await obj.async_execute_goodvibe_request(
+            Request("report", part=1, date=date(2026, 11, day), report_type=report_type)
+        )
+    assert len(cache) == bed.MAX_CACHED_REPORTS
+    assert f"1:{report_type}:2026:11:3" not in cache
+
 
 @pytest.mark.parametrize("profile,parts", (("sleep_rm", (1, 2)), ("sleep_hj", (11, 12, 13))))
 async def test_part_setting_uses_admitted_caller_operands(coordinator, profile, parts):
@@ -526,10 +568,10 @@ async def test_type_two_time_response_chain_is_link_owned(coordinator):
 async def test_inline_countdown_and_light_close_have_public_controller_paths(coordinator, legacy):
     key = next(k for k, v in PRODUCTS.items() if v.massage_timer and v.light)
     obj = controller(coordinator, key, legacy)
-    spec = next(s for s in obj.controller_select_specs if s.key == "goodvibe_massage_timer")
-    assert spec.options == ("0", "10", "20", "30")
+    assert obj.supports_massage_timer and obj.massage_timer_can_turn_off
+    assert obj.massage_timer_options == [10, 20, 30]
     for value, code in ((0, 94), (10, 95), (20, 99), (30, 97)):
-        await spec.select_fn(obj, str(value))
+        await obj.set_massage_timer(value)
         assert writes(coordinator)[-1] == (
             bytes([code]) if legacy else bytes([110, 1, 0, code, (111 + code) & 255])
         )
@@ -552,8 +594,6 @@ async def test_light_preference_defaults_survive_controller_replacement(
 
 
 async def test_bound_side_is_scoped_and_release_keeps_original_side(coordinator, monkeypatch):
-    from custom_components.adjustable_bed.beds.base import SideBoundController
-
     key = next(
         k
         for k, v in PRODUCTS.items()
@@ -569,8 +609,12 @@ async def test_bound_side_is_scoped_and_release_keeps_original_side(coordinator,
     )
     monkeypatch.setattr(obj, "_delay", AsyncMock(return_value=True))
     spec = next(s for s in obj.controller_button_specs if s.key == "goodvibe_" + detail)
-    await spec.press_fn(SideBoundController(obj, "right"))
-    assert writes(coordinator) == [ACTIONS[detail].packet(1, False), bytes.fromhex("6e01016ede")]
+    with obj.side_scope("right"):
+        await spec.press_fn(obj)
+    assert writes(coordinator) == [
+        action_frame(ACTIONS[detail], 1, False),
+        bytes.fromhex("6e01016ede"),
+    ]
     assert obj.command_side is None and obj.choices.side == 0
 
 
@@ -626,3 +670,77 @@ async def test_non_json_numeric_constants_cannot_replace_sleep_state(coordinator
     obj._notification(obj._link, obj._link.rx, header + raw)
     assert obj.choices.realtime["L"].heart == "60"
     assert obj._rejection is not None
+
+
+async def test_massage_timer_controls_are_one_select_sending_the_same_frames(coordinator, monkeypatch):
+    """Fixed-duration timer controls become the shared timer select; each press is unchanged."""
+    keys = [
+        k
+        for k in PRODUCTS
+        if not PRODUCTS[k].massage_timer and controller(coordinator, k)._massage_timer_details
+    ]
+    assert keys
+    for key in keys:
+        obj = controller(coordinator, key)
+        details = obj._massage_timer_details
+        assert obj.supports_massage_timer and obj.auto_enable_massage
+        assert obj.massage_timer_options == sorted(details)
+        assert not obj.massage_timer_can_turn_off
+        assert not {"goodvibe_" + d for d in details.values()} & {
+            s.key for s in obj.controller_button_specs
+        }
+        for minutes, detail in details.items():
+            sent = []
+            for run in (
+                lambda o, d=detail: bed._press(o, detail=d),
+                lambda o, m=minutes: o.set_massage_timer(m),
+            ):
+                coordinator.client.write_gatt_char.reset_mock()
+                fresh = controller(coordinator, key)
+                monkeypatch.setattr(fresh, "_delay", AsyncMock(return_value=True))
+                await run(fresh)
+                sent.append(writes(coordinator))
+            assert sent[0] == sent[1] != []
+        with pytest.raises(ValueError):
+            await obj.set_massage_timer(15)
+
+
+async def test_sync_on_and_off_are_one_switch_sending_the_same_frames(coordinator, monkeypatch):
+    keys = [k for k in PRODUCTS if controller(coordinator, k)._sync_details]
+    assert keys
+    for key in keys:
+        obj = controller(coordinator, key)
+        assert obj._sync_details is not None
+        on, off = obj._sync_details
+        assert not {"goodvibe_" + on, "goodvibe_" + off} & {
+            s.key for s in obj.controller_button_specs
+        }
+        (switch,) = obj.controller_switch_specs
+        assert switch.key == "goodvibe_sync" and not switch.entity_registry_enabled_default
+        for enabled, detail in ((True, on), (False, off)):
+            sent = []
+            for run in (
+                lambda o, d=detail: bed._press(o, detail=d),
+                lambda o, e=enabled, s=switch: s.set_fn(o, e),
+            ):
+                coordinator.client.write_gatt_char.reset_mock()
+                fresh = controller(coordinator, key)
+                monkeypatch.setattr(fresh, "_delay", AsyncMock(return_value=True))
+                await run(fresh)
+                sent.append(writes(coordinator))
+            assert sent[0] == sent[1] != []
+
+
+async def test_diagnostics_leave_out_sleep_readings_and_reports(coordinator):
+    """Live readings and nightly reports stay out of support files (PRIV-2)."""
+    obj = controller(coordinator, "sleep_rm")
+    obj.choices.events.update(
+        {
+            "q_realtime": {"L": "1-0-62-15-0-0-0-0"},
+            "report": {"heart_beat_avg": 61},
+            "report_cache": {"1:1:2026:11:3": {"heart_beat_avg": 61}},
+            "deviceAntiSnoreConfigCountEvent": 2,
+        }
+    )
+
+    assert obj.protocol_diagnostics["events"] == {"deviceAntiSnoreConfigCountEvent": 2}

@@ -10,15 +10,18 @@ from homeassistant.const import CONF_ADDRESS, CONF_NAME
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import ServiceValidationError
 from homeassistant.helpers import entity_registry as er
-from pytest_homeassistant_custom_component.common import MockConfigEntry
+from pytest_homeassistant.common import MockConfigEntry
 
-from custom_components.adjustable_bed.beds.logicdata_app import LogicdataAppController
+from custom_components.adjustable_bed.beds.logicdata.app import LogicdataAppController
+from custom_components.adjustable_bed.beds.logicdata.app_services import (
+    SERVICE_LOGICDATA_HOLD_PRESET,
+)
 from custom_components.adjustable_bed.config_flow import AdjustableBedConfigFlow
 from custom_components.adjustable_bed.const import (
     BED_TYPE_LOGICDATA_AIR_PUMP,
     BED_TYPE_LOGICDATA_APP,
     CONF_BED_TYPE,
-    CONF_DISCONNECT_AFTER_COMMAND,
+    CONF_CONNECTION_MODE,
     CONF_HAS_LIGHT,
     CONF_HAS_MASSAGE,
     CONF_LOGICDATA_APP_FAMILY,
@@ -32,8 +35,7 @@ from custom_components.adjustable_bed.const import (
 )
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
 from custom_components.adjustable_bed.services import (
-    SERVICE_LOGICDATA_HOLD_PRESET,
-    SERVICE_LOGICDATA_RENAME,
+    SERVICE_RENAME,
     async_register_services,
 )
 
@@ -58,15 +60,14 @@ async def test_setup_accepts_only_the_two_motor_layouts(hass, family, layout, er
     flow.context = {}
     flow.hass = hass
     flow._manual_data = {CONF_BED_TYPE: BED_TYPE_LOGICDATA_APP}
+    result = await flow.async_step_logicdata_family({"choice": "sleep_smart"})
+    assert result["step_id"] == "profile_questions"
+    assert flow._manual_data[CONF_LOGICDATA_APP_PROFILE] == "sleep_smart"
     with patch.object(
         flow, "_finish_with_verify", AsyncMock(return_value={"type": "create_entry"})
     ):
-        result = await flow.async_step_logicdata_app(
-            {
-                CONF_LOGICDATA_APP_PROFILE: "sleep_smart",
-                CONF_LOGICDATA_APP_FAMILY: family,
-                CONF_LOGICDATA_APP_LAYOUT: layout,
-            }
+        result = await flow.async_step_profile_questions(
+            {CONF_LOGICDATA_APP_FAMILY: family, CONF_LOGICDATA_APP_LAYOUT: layout}
         )
     assert result.get("errors", {}) == errors
     assert (CONF_LOGICDATA_APP_FAMILY in flow._manual_data) is not bool(errors)
@@ -114,7 +115,7 @@ async def test_entities_follow_the_app_surface(
             CONF_HAS_MASSAGE: True,
             CONF_MOTOR_PULSE_COUNT: 1,
             CONF_PREFERRED_ADAPTER: "auto",
-            CONF_DISCONNECT_AFTER_COMMAND: False,
+            CONF_CONNECTION_MODE: "idle",
         },
         unique_id=ADDRESS,
     )
@@ -133,7 +134,10 @@ async def test_entities_follow_the_app_surface(
         "preset_memory_1",
         "program_memory_1",
     }
-    assert {"factory_reset", "logicdata_app_query_massage", "toggle_light"} <= buttons
+    assert {"factory_reset", "logicdata_app_query_massage"} <= buttons
+    # The bed reports its light, so one light replaces the toggle button.
+    assert ("light", "under_bed_lights") in keys
+    assert "toggle_light" not in buttons
     assert ("sensor", "logicdata_app_massage_mode") in keys
     assert ("sensor", "logicdata_app_family_match") not in keys
 
@@ -151,16 +155,21 @@ def _target(name, bed_type, **controller):
     coordinator = MagicMock(spec=AdjustableBedCoordinator)
     coordinator.name = name
     coordinator.bed_type = bed_type
-    coordinator.capability_controller = SimpleNamespace(**controller)
+    coordinator.controller_side = None
+    coordinator.capability_controller = MagicMock(spec=LogicdataAppController, **controller)
     return coordinator
 
 
 @pytest.fixture
 async def services(hass: HomeAssistant):
     await async_register_services(hass)
-    with patch(
-        "custom_components.adjustable_bed.services._resolve_sided_targets"
-    ) as resolve:
+    with (
+        patch("custom_components.adjustable_bed.services._resolve_sided_targets") as resolve,
+        patch(
+            "custom_components.adjustable_bed.services._resolve_sided_targets",
+            new=resolve,
+        ),
+    ):
         yield resolve
 
 
@@ -181,7 +190,7 @@ async def test_rename_validates_every_app_rule_before_any_write(hass, services):
     services.return_value = ([(phone, SIDE_BOTH), (pump, SIDE_BOTH)], [])
     with pytest.raises(ServiceValidationError, match="1..20"):
         await hass.services.async_call(
-            DOMAIN, SERVICE_LOGICDATA_RENAME, {"device_id": ["a", "b"], "name": "My Bed"},
+            DOMAIN, SERVICE_RENAME, {"device_id": ["a", "b"], "name": "My Bed"},
             blocking=True,
         )
     phone.async_execute_controller_command.assert_not_called()

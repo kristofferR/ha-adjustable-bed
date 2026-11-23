@@ -6,6 +6,7 @@ import asyncio
 import json
 from collections.abc import Awaitable, Callable
 from dataclasses import dataclass, replace
+from datetime import datetime
 from pathlib import Path
 from typing import TypedDict, cast
 from unittest.mock import AsyncMock, MagicMock, patch
@@ -16,15 +17,16 @@ from homeassistant.config_entries import ConfigEntryState
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import ServiceValidationError
 from homeassistant.helpers import device_registry as dr
-from pytest_homeassistant_custom_component.common import MockConfigEntry
+from homeassistant.util import dt as dt_util
+from pytest_homeassistant.common import MockConfigEntry
 
 from custom_components.adjustable_bed import _async_ensure_paired_device_registry
 from custom_components.adjustable_bed.beds.base import BedController
-from custom_components.adjustable_bed.beds.motion_bed import MotionBedController
+from custom_components.adjustable_bed.beds.motion_bed.controller import MotionBedController
+from custom_components.adjustable_bed.beds.motion_bed.models import select_motion_bed
+from custom_components.adjustable_bed.beds.motion_bed.services import build_motion_bed_request
 from custom_components.adjustable_bed.const import BED_TYPE_MOTION_BED, DOMAIN, SIDE_BOTH
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
-from custom_components.adjustable_bed.motion_bed_models import select_motion_bed
-from custom_components.adjustable_bed.motion_bed_services import build_motion_bed_request
 from custom_components.adjustable_bed.paired_coordinator import PairedBedCoordinator
 from custom_components.adjustable_bed.paired_devices import async_register_children
 from custom_components.adjustable_bed.services import async_register_services
@@ -107,12 +109,6 @@ async def invoke(
 _VALID_PUBLIC_CASES: tuple[tuple[str, str, dict[str, object]], ...] = (
     ("motion_bed_action", "QMS4", {"action": "home_activity_bed_status"}),
     (
-        "motion_bed_alarm",
-        "QMS4",
-        {"enabled": True, "hour": 6, "minute": 30, "audio": True, "confirmed": True},
-    ),
-    ("motion_bed_clock", "QMS4", {"timestamp": "2026-09-30T07:45:00"}),
-    (
         "motion_bed_sleep_angles",
         "QMS4",
         {"page": 4, "flat": [1, 2, 3, 4], "side_positions": [5, 6, 7, 8], "confirmed": True},
@@ -194,10 +190,6 @@ async def test_module_rebinding_and_deletion_are_confirmed(
 @pytest.mark.parametrize(
     "service, profile, data",
     (
-        ("motion_bed_alarm", "QMS4", {"enabled": True, "hour": 24, "minute": 0}),
-        ("motion_bed_alarm", "QMS4", {"enabled": True, "hour": 1, "minute": 0, "weekdays": [0]}),
-        ("motion_bed_alarm", "QMS4", {"enabled": True, "hour": 1, "minute": 0, "mode": 7}),
-        ("motion_bed_clock", "QMS4", {"timestamp": "not-a-date"}),
         (
             "motion_bed_sleep_angles",
             "QMS4",
@@ -243,21 +235,62 @@ async def test_invalid_public_domains_fail_before_connection_or_write(
 
 
 @pytest.mark.parametrize(
-    "profile, thermal",
-    (("TL-A", False), ("TL-A", True), ("TL-W", False), ("QMS4", True), ("TL-B", True)),
+    ("profile", "vector_id"),
+    (("QMS4", "clock-0"), ("TL-B", "clock-0"), ("TL-W", "thermal_clock-0")),
 )
-async def test_clock_protocol_cannot_cross_module_surface(
-    hass: HomeAssistant, profile: str, thermal: bool
+async def test_sync_clock_sets_each_surface_with_its_own_app_frame(
+    hass: HomeAssistant, freezer, profile: str, vector_id: str
 ) -> None:
-    target = make_target(hass, profile)
-    with pytest.raises(ServiceValidationError):
-        await invoke(
-            hass,
-            [target],
-            "motion_bed_clock",
-            {"timestamp": "2026-09-30T07:45:00", "thermal": thermal},
-        )
-    assert not target.writes
+    """The motor or home clock and the thermal clock never cross module surfaces."""
+    freezer.move_to(datetime(2026, 9, 30, 7, 45, tzinfo=dt_util.get_default_time_zone()))
+    controller = make_target(hass, profile).controller
+    assert controller.supports_clock_sync
+    controller.validate_clock_sync()
+    (write,) = controller._clock_writes()
+    assert [frame.hex().upper() for frame in write.frames] == [_BUILDER_EXPECTED[vector_id]]
+
+
+@pytest.mark.parametrize(
+    ("active", "contexts"),
+    ((None, []), ("air", []), ("motor", ["home"]), ("thermal", ["thermal"])),
+)
+def test_hub_sync_clock_sets_only_the_active_module(
+    hass: HomeAssistant, active: str | None, contexts: list[str]
+) -> None:
+    """A hub never switches module to set a clock, so it never reruns a module's startup."""
+    controller = make_target(hass, "TL-Q").controller
+    controller._module_present = lambda module: True
+    controller._active_module = active
+    assert [write.context for write in controller._clock_writes()] == contexts
+    if not contexts:
+        with pytest.raises(ValueError, match="motor or heating module"):
+            controller.validate_clock_sync()
+
+
+async def test_hub_switched_to_air_after_the_check_is_refused(hass: HomeAssistant) -> None:
+    controller = make_target(hass, "TL-Q").controller
+    controller._module_present = lambda module: True
+    controller._active_module = "motor"
+    controller.validate_clock_sync()
+    controller._active_module = "air"
+    controller.async_execute_motion_bed_write = AsyncMock()
+    with pytest.raises(ValueError, match="motor or heating module"):
+        await controller.sync_clock()
+    controller.async_execute_motion_bed_write.assert_not_awaited()
+
+
+def test_idle_hub_sets_the_clock_of_the_module_it_remembers(hass: HomeAssistant) -> None:
+    """After an idle disconnect only the remembered module is known; it is the one to set."""
+    controller = make_target(hass, "TL-Q").controller
+    controller._module_present = lambda module: True
+    controller._active_module = None
+    controller._remembered_module = "thermal"
+    controller.validate_clock_sync()
+    assert [write.context for write in controller._clock_writes()] == ["thermal"]
+
+
+def test_air_module_has_no_clock(hass: HomeAssistant) -> None:
+    assert not make_target(hass, "TL-A").controller.supports_clock_sync
 
 
 async def test_day_report_offset_is_not_graph_viewport_offset(hass: HomeAssistant) -> None:
@@ -267,36 +300,6 @@ async def test_day_report_offset_is_not_graph_viewport_offset(hass: HomeAssistan
         assert target.writes[-1][8] == offset
         assert target.controller._route.day_window_offset == 0
         assert target.controller._route.historical_day
-
-
-async def test_alarm_preserves_disabled_map_repeat_and_modular_first_switch(
-    hass: HomeAssistant,
-) -> None:
-    home = make_target(hass, audio=False)
-    await invoke(
-        hass,
-        [home],
-        "motion_bed_alarm",
-        {
-            "enabled": False,
-            "hour": 6,
-            "minute": 30,
-            "repeat": True,
-            "weekdays": [],
-            "confirmed": True,
-        },
-    )
-    assert home.writes[0][12:14] == b"\x00\x01"
-    motor = make_target(hass, "TL-B", address="01:23:45:67:89:AC", audio=False)
-    await invoke(
-        hass,
-        [motor],
-        "motion_bed_alarm",
-        {"enabled": False, "hour": 6, "minute": 30, "switch": 0, "confirmed": True},
-    )
-    assert motor.writes[0][8] == 0
-
-
 
 
 @pytest.mark.parametrize("service, profile, data", _VALID_PUBLIC_CASES)
@@ -341,8 +344,8 @@ async def test_native_paired_child_targets_retain_their_side(
     pair, _, _, left_id, right_id = await make_registered_pair(hass)
     await hass.services.async_call(
         DOMAIN,
-        "motion_bed_clock",
-        {"device_id": left_id if side == "left" else right_id, "timestamp": "2026-09-30T07:45:00"},
+        "motion_bed_action",
+        {"device_id": left_id if side == "left" else right_id, "action": "home_activity_bed_status"},
         blocking=True,
     )
     pair.async_execute_controller_command.assert_awaited_once()
@@ -358,8 +361,8 @@ async def test_native_child_conflicting_explicit_side_rejected_before_io(
     with pytest.raises(ServiceValidationError) as error:
         await hass.services.async_call(
             DOMAIN,
-            "motion_bed_clock",
-            {"device_id": left_id, "side": explicit_side, "timestamp": "2026-09-30T07:45:00"},
+            "motion_bed_action",
+            {"device_id": left_id, "side": explicit_side, "action": "home_activity_bed_status"},
             blocking=True,
         )
     assert error.value.translation_key == "side_selection_conflict"
@@ -394,8 +397,8 @@ async def test_matching_children_dispatch_once_with_both(hass: HomeAssistant) ->
     pair, _, _, left_id, right_id = await make_registered_pair(hass)
     await hass.services.async_call(
         DOMAIN,
-        "motion_bed_clock",
-        {"device_id": [left_id, right_id], "timestamp": "2026-09-30T07:45:00"},
+        "motion_bed_action",
+        {"device_id": [left_id, right_id], "action": "home_activity_bed_status"},
         blocking=True,
     )
     pair.async_execute_controller_command.assert_awaited_once()
@@ -409,18 +412,6 @@ async def test_audio_requires_current_physical_capability(
     target = make_target(hass, audio=False)
     with pytest.raises(ServiceValidationError):
         await invoke(hass, [target], "motion_bed_audio", {"operation": operation, "value": value})
-    assert not target.writes
-
-
-async def test_home_alarm_cannot_force_modular_initial_switch(hass: HomeAssistant) -> None:
-    target = make_target(hass, audio=False)
-    with pytest.raises(ServiceValidationError):
-        await invoke(
-            hass,
-            [target],
-            "motion_bed_alarm",
-            {"enabled": True, "hour": 0, "minute": 0, "switch": 0, "confirmed": True},
-        )
     assert not target.writes
 
 
@@ -465,22 +456,6 @@ _BUILDER_EXPECTED.update(
     {"audio-track-1": "FFFFFFFF0100130B011C04", "audio-volume-1": "FFFFFFFF0100140B011D04"}
 )
 _DYNAMIC_SOURCE_ROUTES: tuple[tuple[str, str, dict[str, object], str, int | None], ...] = (
-    (
-        "AlarmActivity:371",
-        "motion_bed_alarm",
-        {
-            "enabled": True,
-            "hour": 6,
-            "minute": 30,
-            "weekdays": [],
-            "mode": 1,
-            "massage": True,
-            "sound": 17,
-            "audio": True,
-        },
-        "alarm-True-{}",
-        None,
-    ),
     (
         "AnmoSetActivity:188",
         "motion_bed_air_setting",
@@ -528,38 +503,6 @@ _DYNAMIC_SOURCE_ROUTES: tuple[tuple[str, str, dict[str, object], str, int | None
         "motion_bed_module",
         {"operation": "bind", "module_type": 10, "address": "01:23:45:67:89:AB"},
         "bind-0A",
-        None,
-    ),
-    (
-        "DianDongSetActivity:653",
-        "motion_bed_clock",
-        {"timestamp": "2026-09-30T07:45:00", "thermal": False},
-        "clock-0",
-        None,
-    ),
-    (
-        "DianDongSetActivity:881",
-        "motion_bed_alarm",
-        {
-            "enabled": False,
-            "hour": 6,
-            "minute": 30,
-            "weekdays": [1, 7],
-            "mode": 1,
-            "massage": True,
-            "sound": 17,
-            "audio": True,
-            "switch": 161,
-            "repeat": True,
-        },
-        "alarm-False-{'1': True, '7': True}",
-        None,
-    ),
-    (
-        "HomeActivity:337",
-        "motion_bed_clock",
-        {"timestamp": "2026-09-30T07:45:00", "thermal": False},
-        "clock-0",
         None,
     ),
     (
@@ -633,29 +576,6 @@ _DYNAMIC_SOURCE_ROUTES: tuple[tuple[str, str, dict[str, object], str, int | None
         None,
     ),
     (
-        "DiandongFragment:302",
-        "motion_bed_alarm",
-        {
-            "enabled": True,
-            "hour": 6,
-            "minute": 30,
-            "weekdays": [],
-            "mode": 1,
-            "massage": True,
-            "sound": 17,
-            "audio": True,
-        },
-        "alarm-True-{}",
-        None,
-    ),
-    (
-        "DiandongFragment:340",
-        "motion_bed_clock",
-        {"timestamp": "2026-09-30T07:45:00", "thermal": False},
-        "clock-0",
-        None,
-    ),
-    (
         "KuaijieK2MFragment:452",
         "motion_bed_audio",
         {"operation": "track", "value": 1},
@@ -667,13 +587,6 @@ _DYNAMIC_SOURCE_ROUTES: tuple[tuple[str, str, dict[str, object], str, int | None
         "motion_bed_audio",
         {"operation": "volume", "value": 1},
         "audio-volume-1",
-        None,
-    ),
-    (
-        "LengnuanFragment:206",
-        "motion_bed_clock",
-        {"timestamp": "2026-09-30T07:45:00", "thermal": True},
-        "thermal_clock-0",
         None,
     ),
 )
@@ -706,4 +619,51 @@ async def test_every_dynamic_source_builder_is_bound_to_public_request(
 
 
 def test_all_ble_dynamic_source_rows_are_covered() -> None:
-    assert len(_DYNAMIC_SOURCE_ROUTES) == len({row[0] for row in _DYNAMIC_SOURCE_ROUTES}) == 26
+    # The four clock builders belong to Set bed clock, covered by the sync_clock test.
+    assert len(_DYNAMIC_SOURCE_ROUTES) == len({row[0] for row in _DYNAMIC_SOURCE_ROUTES}) == 19
+
+
+@pytest.mark.parametrize(
+    ("profile", "data", "vector_id"),
+    [
+        (
+            "QMS4",
+            {
+                "enabled": True,
+                "time": "06:30:00",
+                "wake_action": "zero_g",
+                "massage": True,
+                "sound": "music_1",
+            },
+            "alarm-True-{}",
+        ),
+        (
+            "TL-B",
+            {
+                "enabled": False,
+                "time": "06:30:00",
+                "weekdays": ["monday", "sunday"],
+                "wake_action": "zero_g",
+                "massage": True,
+                "sound": "music_1",
+            },
+            "alarm-False-{'1': True, '7': True}",
+        ),
+    ],
+)
+async def test_set_alarm_writes_the_app_alarm_vectors(
+    hass: HomeAssistant, profile: str, data: dict[str, object], vector_id: str
+) -> None:
+    """Home and motor-module alarms (AlarmActivity:371, DianDongSetActivity:881)."""
+    target = make_target(hass, profile)
+    await invoke(hass, [target], "set_alarm", data)
+    assert target.writes[0].hex().upper() == _BUILDER_EXPECTED[vector_id]
+
+
+async def test_set_alarm_offers_music_only_with_audio(hass: HomeAssistant) -> None:
+    target = make_target(hass, audio=False)
+    with pytest.raises(ServiceValidationError):
+        await invoke(
+            hass, [target], "set_alarm", {"enabled": True, "time": "06:30", "sound": "music_1"}
+        )
+    assert not target.writes

@@ -9,8 +9,8 @@ from unittest.mock import AsyncMock, patch
 import pytest
 from bleak.exc import BleakError
 
-from custom_components.adjustable_bed.beds.sleepys_app import SleepysEliteAppController
-from custom_components.adjustable_bed.beds.sleepys_app_routes import ROUTES
+from custom_components.adjustable_bed.beds.sleepys.app import SleepysEliteAppController
+from custom_components.adjustable_bed.beds.sleepys.app_routes import ROUTES
 from custom_components.adjustable_bed.button import ControllerActionButton
 from custom_components.adjustable_bed.command_scheduler import (
     CommandContext,
@@ -31,7 +31,7 @@ from tests.test_coordinator_sleepys_elite import (
     _FakeGattService,
     _ready_command_lane,
     _VirtualClock,
-    sleepys_runtime,  # noqa: F401,F811 - imported pytest fixture
+    sleepys_runtime,  # noqa: F401 - imported pytest fixture
 )
 
 

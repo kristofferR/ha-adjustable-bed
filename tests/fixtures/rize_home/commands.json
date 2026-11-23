@@ -1,0 +1,969 @@
+[
+  {
+    "id": "motionSensorOff-0",
+    "action": "motionSensorOff",
+    "bytes": "05 02 00 02 80 00 00",
+    "characteristic": "6e400002-b5a3-f393-e0a9-e50e24dcca9e",
+    "write_type": "without_response",
+    "timing": {
+      "mode": "held-6s",
+      "interval_ms": 200,
+      "details": "Held: immediate+200ms until canceled. Once: nominal0/200/400ms,can be interrupted. Source-dependent: button held,speak once.",
+      "duration_ms": 6000,
+      "duration_ms_unknown_reason": "Known6s app timer,actual timer ordering is runtime-dependent."
+    },
+    "release_behavior": "Immediate/every200ms;6s delayed closure cancels current timer with no STOP. UI compound path separately sendsSTOP at6s.",
+    "preconditions": "Selected device state connected and non-null write characteristic; no proprietary auth gate. Native WRITE_NO_RESPONSE property required.",
+    "call_chain": "ZG+LIGHT or ANTI-SNORE+LIGHT UI compound action,or voice alias -> BleManager.",
+    "variants": [
+      "MODEL-1",
+      "MODEL-2"
+    ],
+    "dynamic_fields": "None in frame; only action/source-selected literal differs.",
+    "response": "No matching app response/position parser.",
+    "confidence": "VERIFIED",
+    "semantic_action": "Disable motion sensor"
+  },
+  {
+    "id": "motionSensorOn-0",
+    "action": "motionSensorOn",
+    "bytes": "05 02 00 02 10 00 00",
+    "characteristic": "6e400002-b5a3-f393-e0a9-e50e24dcca9e",
+    "write_type": "without_response",
+    "timing": {
+      "mode": "held-6s",
+      "interval_ms": 200,
+      "details": "Held: immediate+200ms until canceled. Once: nominal0/200/400ms,can be interrupted. Source-dependent: button held,speak once.",
+      "duration_ms": 6000,
+      "duration_ms_unknown_reason": "Known6s app timer,actual timer ordering is runtime-dependent."
+    },
+    "release_behavior": "Immediate/every200ms;6s delayed closure cancels current timer with no STOP. UI compound path separately sendsSTOP at6s.",
+    "preconditions": "Selected device state connected and non-null write characteristic; no proprietary auth gate. Native WRITE_NO_RESPONSE property required.",
+    "call_chain": "ZG+LIGHT or ANTI-SNORE+LIGHT UI compound action,or voice alias -> BleManager.",
+    "variants": [
+      "MODEL-1",
+      "MODEL-2"
+    ],
+    "dynamic_fields": "None in frame; only action/source-selected literal differs.",
+    "response": "No matching app response/position parser.",
+    "confidence": "VERIFIED",
+    "semantic_action": "Enable motion sensor"
+  },
+  {
+    "id": "underbedLighting-0",
+    "action": "underbedLighting",
+    "bytes": "05 02 00 02 00 00",
+    "characteristic": "6e400002-b5a3-f393-e0a9-e50e24dcca9e",
+    "write_type": "without_response",
+    "timing": {
+      "mode": "once",
+      "interval_ms": 200,
+      "details": "Held: immediate+200ms until canceled. Once: nominal0/200/400ms,can be interrupted. Source-dependent: button held,speak once.",
+      "duration_ms": null,
+      "duration_ms_unknown_reason": "Unbounded held duration or fixed burst; see mode."
+    },
+    "release_behavior": "Max3 writes; pointer UP can replace with STOP. No brightness/color parameter.",
+    "preconditions": "Selected device state connected and non-null write characteristic; no proprietary auth gate. Native WRITE_NO_RESPONSE property required.",
+    "call_chain": "Under-bed light pointer/voice action -> dispatcher -> BleManager.underbedLighting.",
+    "variants": [
+      "MODEL-1",
+      "MODEL-2"
+    ],
+    "dynamic_fields": "None in frame; only action/source-selected literal differs.",
+    "response": "No matching app response/position parser.",
+    "confidence": "VERIFIED",
+    "semantic_action": "Under-bed light toggle"
+  },
+  {
+    "id": "massageHeadAndFootMinus-0",
+    "action": "massageHeadAndFootMinus",
+    "bytes": "05 02 01 80 00 00 00",
+    "characteristic": "6e400002-b5a3-f393-e0a9-e50e24dcca9e",
+    "write_type": "without_response",
+    "timing": {
+      "mode": "source-dependent",
+      "interval_ms": 200,
+      "details": "Held: immediate+200ms until canceled. Once: nominal0/200/400ms,can be interrupted. Source-dependent: button held,speak once.",
+      "duration_ms": null,
+      "duration_ms_unknown_reason": "Unbounded held duration or fixed burst; see mode."
+    },
+    "release_behavior": "Button source held until release; speak source once maximum3. Massage UI release schedules STOP/query; intensity polling can replace the shared timer.",
+    "preconditions": "Selected device state connected and non-null write characteristic; no proprietary auth gate. Native WRITE_NO_RESPONSE property required.",
+    "call_chain": "Product preset/massage pointer action or global voice dispatcher -> BleManager.",
+    "variants": [
+      "MODEL-1",
+      "MODEL-2"
+    ],
+    "dynamic_fields": "None in frame; only action/source-selected literal differs.",
+    "response": "Massage state may arrive througha5 0b 0e notification; no per-control acknowledgement parser.",
+    "confidence": "VERIFIED",
+    "semantic_action": "Decrease both massage intensities"
+  },
+  {
+    "id": "massageHeadAndFoot-0",
+    "action": "massageHeadAndFoot",
+    "bytes": "05 02 00 00 0c 00 00",
+    "characteristic": "6e400002-b5a3-f393-e0a9-e50e24dcca9e",
+    "write_type": "without_response",
+    "timing": {
+      "mode": "source-dependent",
+      "interval_ms": 200,
+      "details": "Held: immediate+200ms until canceled. Once: nominal0/200/400ms,can be interrupted. Source-dependent: button held,speak once.",
+      "duration_ms": null,
+      "duration_ms_unknown_reason": "Unbounded held duration or fixed burst; see mode."
+    },
+    "release_behavior": "Button source held until release; speak source once maximum3. Massage UI release schedules STOP/query; intensity polling can replace the shared timer.",
+    "preconditions": "Selected device state connected and non-null write characteristic; no proprietary auth gate. Native WRITE_NO_RESPONSE property required.",
+    "call_chain": "Product preset/massage pointer action or global voice dispatcher -> BleManager.",
+    "variants": [
+      "MODEL-1",
+      "MODEL-2"
+    ],
+    "dynamic_fields": "None in frame; only action/source-selected literal differs.",
+    "response": "Massage state may arrive througha5 0b 0e notification; no per-control acknowledgement parser.",
+    "confidence": "VERIFIED",
+    "semantic_action": "Increase both massage intensities"
+  },
+  {
+    "id": "massageFootMinus-0",
+    "action": "massageFootMinus",
+    "bytes": "05 02 01 00 00 00 00",
+    "characteristic": "6e400002-b5a3-f393-e0a9-e50e24dcca9e",
+    "write_type": "without_response",
+    "timing": {
+      "mode": "source-dependent",
+      "interval_ms": 200,
+      "details": "Held: immediate+200ms until canceled. Once: nominal0/200/400ms,can be interrupted. Source-dependent: button held,speak once.",
+      "duration_ms": null,
+      "duration_ms_unknown_reason": "Unbounded held duration or fixed burst; see mode."
+    },
+    "release_behavior": "Button source held until release; speak source once maximum3. Massage UI release schedules STOP/query; intensity polling can replace the shared timer.",
+    "preconditions": "Selected device state connected and non-null write characteristic; no proprietary auth gate. Native WRITE_NO_RESPONSE property required.",
+    "call_chain": "Product preset/massage pointer action or global voice dispatcher -> BleManager.",
+    "variants": [
+      "MODEL-1",
+      "MODEL-2"
+    ],
+    "dynamic_fields": "None in frame; only action/source-selected literal differs.",
+    "response": "Massage state may arrive througha5 0b 0e notification; no per-control acknowledgement parser.",
+    "confidence": "VERIFIED",
+    "semantic_action": "Decrease foot massage intensity"
+  },
+  {
+    "id": "massageFoot-0",
+    "action": "massageFoot",
+    "bytes": "05 02 00 00 04 00 00",
+    "characteristic": "6e400002-b5a3-f393-e0a9-e50e24dcca9e",
+    "write_type": "without_response",
+    "timing": {
+      "mode": "source-dependent",
+      "interval_ms": 200,
+      "details": "Held: immediate+200ms until canceled. Once: nominal0/200/400ms,can be interrupted. Source-dependent: button held,speak once.",
+      "duration_ms": null,
+      "duration_ms_unknown_reason": "Unbounded held duration or fixed burst; see mode."
+    },
+    "release_behavior": "Button source held until release; speak source once maximum3. Massage UI release schedules STOP/query; intensity polling can replace the shared timer.",
+    "preconditions": "Selected device state connected and non-null write characteristic; no proprietary auth gate. Native WRITE_NO_RESPONSE property required.",
+    "call_chain": "Product preset/massage pointer action or global voice dispatcher -> BleManager.",
+    "variants": [
+      "MODEL-1",
+      "MODEL-2"
+    ],
+    "dynamic_fields": "None in frame; only action/source-selected literal differs.",
+    "response": "Massage state may arrive througha5 0b 0e notification; no per-control acknowledgement parser.",
+    "confidence": "VERIFIED",
+    "semantic_action": "Increase foot massage intensity"
+  },
+  {
+    "id": "massageHeadMinus-0",
+    "action": "massageHeadMinus",
+    "bytes": "05 02 00 80 00 00 00",
+    "characteristic": "6e400002-b5a3-f393-e0a9-e50e24dcca9e",
+    "write_type": "without_response",
+    "timing": {
+      "mode": "source-dependent",
+      "interval_ms": 200,
+      "details": "Held: immediate+200ms until canceled. Once: nominal0/200/400ms,can be interrupted. Source-dependent: button held,speak once.",
+      "duration_ms": null,
+      "duration_ms_unknown_reason": "Unbounded held duration or fixed burst; see mode."
+    },
+    "release_behavior": "Button source held until release; speak source once maximum3. Massage UI release schedules STOP/query; intensity polling can replace the shared timer.",
+    "preconditions": "Selected device state connected and non-null write characteristic; no proprietary auth gate. Native WRITE_NO_RESPONSE property required.",
+    "call_chain": "Product preset/massage pointer action or global voice dispatcher -> BleManager.",
+    "variants": [
+      "MODEL-1",
+      "MODEL-2"
+    ],
+    "dynamic_fields": "None in frame; only action/source-selected literal differs.",
+    "response": "Massage state may arrive througha5 0b 0e notification; no per-control acknowledgement parser.",
+    "confidence": "VERIFIED",
+    "semantic_action": "Decrease head massage intensity"
+  },
+  {
+    "id": "massageHead-0",
+    "action": "massageHead",
+    "bytes": "05 02 00 00 08 00 00",
+    "characteristic": "6e400002-b5a3-f393-e0a9-e50e24dcca9e",
+    "write_type": "without_response",
+    "timing": {
+      "mode": "source-dependent",
+      "interval_ms": 200,
+      "details": "Held: immediate+200ms until canceled. Once: nominal0/200/400ms,can be interrupted. Source-dependent: button held,speak once.",
+      "duration_ms": null,
+      "duration_ms_unknown_reason": "Unbounded held duration or fixed burst; see mode."
+    },
+    "release_behavior": "Button source held until release; speak source once maximum3. Massage UI release schedules STOP/query; intensity polling can replace the shared timer.",
+    "preconditions": "Selected device state connected and non-null write characteristic; no proprietary auth gate. Native WRITE_NO_RESPONSE property required.",
+    "call_chain": "Product preset/massage pointer action or global voice dispatcher -> BleManager.",
+    "variants": [
+      "MODEL-1",
+      "MODEL-2"
+    ],
+    "dynamic_fields": "None in frame; only action/source-selected literal differs.",
+    "response": "Massage state may arrive througha5 0b 0e notification; no per-control acknowledgement parser.",
+    "confidence": "VERIFIED",
+    "semantic_action": "Increase head massage intensity"
+  },
+  {
+    "id": "massageOff-0",
+    "action": "massageOff",
+    "bytes": "05 02 02 00 00 00 00",
+    "characteristic": "6e400002-b5a3-f393-e0a9-e50e24dcca9e",
+    "write_type": "without_response",
+    "timing": {
+      "mode": "source-dependent",
+      "interval_ms": 200,
+      "details": "Held: immediate+200ms until canceled. Once: nominal0/200/400ms,can be interrupted. Source-dependent: button held,speak once.",
+      "duration_ms": null,
+      "duration_ms_unknown_reason": "Unbounded held duration or fixed burst; see mode."
+    },
+    "release_behavior": "Button source held until release; speak source once maximum3. Massage UI release schedules STOP/query; intensity polling can replace the shared timer.",
+    "preconditions": "Selected device state connected and non-null write characteristic; no proprietary auth gate. Native WRITE_NO_RESPONSE property required.",
+    "call_chain": "Product preset/massage pointer action or global voice dispatcher -> BleManager.",
+    "variants": [
+      "MODEL-1",
+      "MODEL-2"
+    ],
+    "dynamic_fields": "None in frame; only action/source-selected literal differs.",
+    "response": "Massage state may arrive througha5 0b 0e notification; no per-control acknowledgement parser.",
+    "confidence": "VERIFIED",
+    "semantic_action": "Massage off (speech action)"
+  },
+  {
+    "id": "massageOn-0",
+    "action": "massageOn",
+    "bytes": "05 02 00 08 00 00 00",
+    "characteristic": "6e400002-b5a3-f393-e0a9-e50e24dcca9e",
+    "write_type": "without_response",
+    "timing": {
+      "mode": "source-dependent",
+      "interval_ms": 200,
+      "details": "Held: immediate+200ms until canceled. Once: nominal0/200/400ms,can be interrupted. Source-dependent: button held,speak once.",
+      "duration_ms": null,
+      "duration_ms_unknown_reason": "Unbounded held duration or fixed burst; see mode."
+    },
+    "release_behavior": "Button source held until release; speak source once maximum3. Massage UI release schedules STOP/query; intensity polling can replace the shared timer.",
+    "preconditions": "Selected device state connected and non-null write characteristic; no proprietary auth gate. Native WRITE_NO_RESPONSE property required.",
+    "call_chain": "Product preset/massage pointer action or global voice dispatcher -> BleManager.",
+    "variants": [
+      "MODEL-1",
+      "MODEL-2"
+    ],
+    "dynamic_fields": "None in frame; only action/source-selected literal differs.",
+    "response": "Massage state may arrive througha5 0b 0e notification; no per-control acknowledgement parser.",
+    "confidence": "VERIFIED",
+    "semantic_action": "Massage on (speech action)"
+  },
+  {
+    "id": "reading-0",
+    "action": "reading",
+    "bytes": "05 02 00 00 20 00",
+    "characteristic": "6e400002-b5a3-f393-e0a9-e50e24dcca9e",
+    "write_type": "without_response",
+    "timing": {
+      "mode": "source-dependent",
+      "interval_ms": 200,
+      "details": "Held: immediate+200ms until canceled. Once: nominal0/200/400ms,can be interrupted. Source-dependent: button held,speak once.",
+      "duration_ms": null,
+      "duration_ms_unknown_reason": "Unbounded held duration or fixed burst; see mode."
+    },
+    "release_behavior": "Button source held until release; speak source once maximum3. Massage UI release schedules STOP/query; intensity polling can replace the shared timer.",
+    "preconditions": "Selected device state connected and non-null write characteristic; no proprietary auth gate. Native WRITE_NO_RESPONSE property required.",
+    "call_chain": "Product preset/massage pointer action or global voice dispatcher -> BleManager.",
+    "variants": [
+      "MODEL-1",
+      "MODEL-2"
+    ],
+    "dynamic_fields": "None in frame; only action/source-selected literal differs.",
+    "response": "No matching app response/position parser.",
+    "confidence": "VERIFIED",
+    "semantic_action": "Reading preset recall"
+  },
+  {
+    "id": "m5-0",
+    "action": "m5",
+    "bytes": "05 02 00 01 00 00",
+    "characteristic": "6e400002-b5a3-f393-e0a9-e50e24dcca9e",
+    "write_type": "without_response",
+    "timing": {
+      "mode": "source-dependent",
+      "interval_ms": 200,
+      "details": "Held: immediate+200ms until canceled. Once: nominal0/200/400ms,can be interrupted. Source-dependent: button held,speak once.",
+      "duration_ms": null,
+      "duration_ms_unknown_reason": "Unbounded held duration or fixed burst; see mode."
+    },
+    "release_behavior": "Button source held until release; speak source once maximum3. Massage UI release schedules STOP/query; intensity polling can replace the shared timer.",
+    "preconditions": "Selected device state connected and non-null write characteristic; no proprietary auth gate. Native WRITE_NO_RESPONSE property required.",
+    "call_chain": "Product preset/massage pointer action or global voice dispatcher -> BleManager.",
+    "variants": [
+      "MODEL-1",
+      "MODEL-2"
+    ],
+    "dynamic_fields": "None in frame; only action/source-selected literal differs.",
+    "response": "No matching app response/position parser.",
+    "confidence": "VERIFIED",
+    "semantic_action": "Memory recall (artifact method m5)"
+  },
+  {
+    "id": "flat-0",
+    "action": "flat",
+    "bytes": "05 02 08 00 00 00",
+    "characteristic": "6e400002-b5a3-f393-e0a9-e50e24dcca9e",
+    "write_type": "without_response",
+    "timing": {
+      "mode": "source-dependent",
+      "interval_ms": 200,
+      "details": "Held: immediate+200ms until canceled. Once: nominal0/200/400ms,can be interrupted. Source-dependent: button held,speak once.",
+      "duration_ms": null,
+      "duration_ms_unknown_reason": "Unbounded held duration or fixed burst; see mode."
+    },
+    "release_behavior": "Button source held until release; speak source once maximum3. Massage UI release schedules STOP/query; intensity polling can replace the shared timer.",
+    "preconditions": "Selected device state connected and non-null write characteristic; no proprietary auth gate. Native WRITE_NO_RESPONSE property required.",
+    "call_chain": "Product preset/massage pointer action or global voice dispatcher -> BleManager.",
+    "variants": [
+      "MODEL-1",
+      "MODEL-2"
+    ],
+    "dynamic_fields": "None in frame; only action/source-selected literal differs.",
+    "response": "No matching app response/position parser.",
+    "confidence": "VERIFIED",
+    "semantic_action": "Flat preset recall"
+  },
+  {
+    "id": "antiSnore-0",
+    "action": "antiSnore",
+    "bytes": "05 02 00 00 80 00",
+    "characteristic": "6e400002-b5a3-f393-e0a9-e50e24dcca9e",
+    "write_type": "without_response",
+    "timing": {
+      "mode": "source-dependent",
+      "interval_ms": 200,
+      "details": "Held: immediate+200ms until canceled. Once: nominal0/200/400ms,can be interrupted. Source-dependent: button held,speak once.",
+      "duration_ms": null,
+      "duration_ms_unknown_reason": "Unbounded held duration or fixed burst; see mode."
+    },
+    "release_behavior": "Button source held until release; speak source once maximum3. Massage UI release schedules STOP/query; intensity polling can replace the shared timer.",
+    "preconditions": "Selected device state connected and non-null write characteristic; no proprietary auth gate. Native WRITE_NO_RESPONSE property required.",
+    "call_chain": "Product preset/massage pointer action or global voice dispatcher -> BleManager.",
+    "variants": [
+      "MODEL-1",
+      "MODEL-2"
+    ],
+    "dynamic_fields": "None in frame; only action/source-selected literal differs.",
+    "response": "No matching app response/position parser.",
+    "confidence": "VERIFIED",
+    "semantic_action": "Anti-snore preset recall"
+  },
+  {
+    "id": "zeroGravity-0",
+    "action": "zeroGravity",
+    "bytes": "05 02 00 00 10 00",
+    "characteristic": "6e400002-b5a3-f393-e0a9-e50e24dcca9e",
+    "write_type": "without_response",
+    "timing": {
+      "mode": "source-dependent",
+      "interval_ms": 200,
+      "details": "Held: immediate+200ms until canceled. Once: nominal0/200/400ms,can be interrupted. Source-dependent: button held,speak once.",
+      "duration_ms": null,
+      "duration_ms_unknown_reason": "Unbounded held duration or fixed burst; see mode."
+    },
+    "release_behavior": "Button source held until release; speak source once maximum3. Massage UI release schedules STOP/query; intensity polling can replace the shared timer.",
+    "preconditions": "Selected device state connected and non-null write characteristic; no proprietary auth gate. Native WRITE_NO_RESPONSE property required.",
+    "call_chain": "Product preset/massage pointer action or global voice dispatcher -> BleManager.",
+    "variants": [
+      "MODEL-1",
+      "MODEL-2"
+    ],
+    "dynamic_fields": "None in frame; only action/source-selected literal differs.",
+    "response": "No matching app response/position parser.",
+    "confidence": "VERIFIED",
+    "semantic_action": "Zero-gravity preset recall"
+  },
+  {
+    "id": "leisure-0",
+    "action": "leisure",
+    "bytes": "05 02 00 00 40 00",
+    "characteristic": "6e400002-b5a3-f393-e0a9-e50e24dcca9e",
+    "write_type": "without_response",
+    "timing": {
+      "mode": "source-dependent",
+      "interval_ms": 200,
+      "details": "Held: immediate+200ms until canceled. Once: nominal0/200/400ms,can be interrupted. Source-dependent: button held,speak once.",
+      "duration_ms": null,
+      "duration_ms_unknown_reason": "Unbounded held duration or fixed burst; see mode."
+    },
+    "release_behavior": "Button source held until release; speak source once maximum3. Massage UI release schedules STOP/query; intensity polling can replace the shared timer.",
+    "preconditions": "Selected device state connected and non-null write characteristic; no proprietary auth gate. Native WRITE_NO_RESPONSE property required.",
+    "call_chain": "Product preset/massage pointer action or global voice dispatcher -> BleManager.",
+    "variants": [
+      "MODEL-1",
+      "MODEL-2"
+    ],
+    "dynamic_fields": "None in frame; only action/source-selected literal differs.",
+    "response": "No matching app response/position parser.",
+    "confidence": "VERIFIED",
+    "semantic_action": "Leisure preset recall"
+  },
+  {
+    "id": "stopCommand-0",
+    "action": "stopCommand (speak source)",
+    "bytes": "05 02 00 00 00 03 00",
+    "characteristic": "6e400002-b5a3-f393-e0a9-e50e24dcca9e",
+    "write_type": "without_response",
+    "timing": {
+      "mode": "once",
+      "interval_ms": 200,
+      "details": "Held: immediate+200ms until canceled. Once: nominal0/200/400ms,can be interrupted. Source-dependent: button held,speak once.",
+      "duration_ms": null,
+      "duration_ms_unknown_reason": "Unbounded held duration or fixed burst; see mode."
+    },
+    "release_behavior": "Cancels previous timer then max3 STOP writes; branch0 speak,branch1 button.",
+    "preconditions": "Selected device state connected and non-null write characteristic; no proprietary auth gate. Native WRITE_NO_RESPONSE property required.",
+    "call_chain": "UP,explicit speech Stop,memory-save timeout or massage confirmation -> BleManager.stopCommand.",
+    "variants": [
+      "MODEL-1",
+      "MODEL-2"
+    ],
+    "dynamic_fields": "None in frame; only action/source-selected literal differs.",
+    "response": "No matching app response/position parser.",
+    "confidence": "VERIFIED",
+    "semantic_action": "stopCommand (speak source)"
+  },
+  {
+    "id": "stopCommand-1",
+    "action": "stopCommand (button source)",
+    "bytes": "05 02 00 00 00 00",
+    "characteristic": "6e400002-b5a3-f393-e0a9-e50e24dcca9e",
+    "write_type": "without_response",
+    "timing": {
+      "mode": "once",
+      "interval_ms": 200,
+      "details": "Held: immediate+200ms until canceled. Once: nominal0/200/400ms,can be interrupted. Source-dependent: button held,speak once.",
+      "duration_ms": null,
+      "duration_ms_unknown_reason": "Unbounded held duration or fixed burst; see mode."
+    },
+    "release_behavior": "Cancels previous timer then max3 STOP writes; branch0 speak,branch1 button.",
+    "preconditions": "Selected device state connected and non-null write characteristic; no proprietary auth gate. Native WRITE_NO_RESPONSE property required.",
+    "call_chain": "UP,explicit speech Stop,memory-save timeout or massage confirmation -> BleManager.stopCommand.",
+    "variants": [
+      "MODEL-1",
+      "MODEL-2"
+    ],
+    "dynamic_fields": "None in frame; only action/source-selected literal differs.",
+    "response": "No matching app response/position parser.",
+    "confidence": "VERIFIED",
+    "semantic_action": "stopCommand (button source)"
+  },
+  {
+    "id": "elevateDown-0",
+    "action": "elevateDown",
+    "bytes": "05 02 00 00 00 80",
+    "characteristic": "6e400002-b5a3-f393-e0a9-e50e24dcca9e",
+    "write_type": "without_response",
+    "timing": {
+      "mode": "held",
+      "interval_ms": 200,
+      "details": "Held: immediate+200ms until canceled. Once: nominal0/200/400ms,can be interrupted. Source-dependent: button held,speak once.",
+      "duration_ms": null,
+      "duration_ms_unknown_reason": "Unbounded held duration or fixed burst; see mode."
+    },
+    "release_behavior": "UP sends source-selected STOP. Position CANCEL only cancels refresh. Voice has no auto duration.",
+    "preconditions": "Selected device state connected and non-null write characteristic; no proprietary auth gate. Native WRITE_NO_RESPONSE property required.",
+    "call_chain": "Product motor control -> touchAction -> SendCommandControl.sendCommand, or global speech alias -> dispatcher -> BleManager.",
+    "variants": [
+      "MODEL-1",
+      "MODEL-2"
+    ],
+    "dynamic_fields": "None in frame; only action/source-selected literal differs.",
+    "response": "No matching app response/position parser.",
+    "confidence": "VERIFIED",
+    "semantic_action": "elevateDown"
+  },
+  {
+    "id": "elevateUp-0",
+    "action": "elevateUp",
+    "bytes": "05 02 00 00 00 40",
+    "characteristic": "6e400002-b5a3-f393-e0a9-e50e24dcca9e",
+    "write_type": "without_response",
+    "timing": {
+      "mode": "held",
+      "interval_ms": 200,
+      "details": "Held: immediate+200ms until canceled. Once: nominal0/200/400ms,can be interrupted. Source-dependent: button held,speak once.",
+      "duration_ms": null,
+      "duration_ms_unknown_reason": "Unbounded held duration or fixed burst; see mode."
+    },
+    "release_behavior": "UP sends source-selected STOP. Position CANCEL only cancels refresh. Voice has no auto duration.",
+    "preconditions": "Selected device state connected and non-null write characteristic; no proprietary auth gate. Native WRITE_NO_RESPONSE property required.",
+    "call_chain": "Product motor control -> touchAction -> SendCommandControl.sendCommand, or global speech alias -> dispatcher -> BleManager.",
+    "variants": [
+      "MODEL-1",
+      "MODEL-2"
+    ],
+    "dynamic_fields": "None in frame; only action/source-selected literal differs.",
+    "response": "No matching app response/position parser.",
+    "confidence": "VERIFIED",
+    "semantic_action": "elevateUp"
+  },
+  {
+    "id": "lumbarDown-0",
+    "action": "lumbarDown",
+    "bytes": "05 02 00 00 00 20",
+    "characteristic": "6e400002-b5a3-f393-e0a9-e50e24dcca9e",
+    "write_type": "without_response",
+    "timing": {
+      "mode": "held",
+      "interval_ms": 200,
+      "details": "Held: immediate+200ms until canceled. Once: nominal0/200/400ms,can be interrupted. Source-dependent: button held,speak once.",
+      "duration_ms": null,
+      "duration_ms_unknown_reason": "Unbounded held duration or fixed burst; see mode."
+    },
+    "release_behavior": "UP sends source-selected STOP. Position CANCEL only cancels refresh. Voice has no auto duration.",
+    "preconditions": "Selected device state connected and non-null write characteristic; no proprietary auth gate. Native WRITE_NO_RESPONSE property required.",
+    "call_chain": "Product motor control -> touchAction -> SendCommandControl.sendCommand, or global speech alias -> dispatcher -> BleManager.",
+    "variants": [
+      "MODEL-1",
+      "MODEL-2"
+    ],
+    "dynamic_fields": "None in frame; only action/source-selected literal differs.",
+    "response": "No matching app response/position parser.",
+    "confidence": "VERIFIED",
+    "semantic_action": "lumbarDown"
+  },
+  {
+    "id": "lumbarUp-0",
+    "action": "lumbarUp",
+    "bytes": "05 02 00 00 00 10",
+    "characteristic": "6e400002-b5a3-f393-e0a9-e50e24dcca9e",
+    "write_type": "without_response",
+    "timing": {
+      "mode": "held",
+      "interval_ms": 200,
+      "details": "Held: immediate+200ms until canceled. Once: nominal0/200/400ms,can be interrupted. Source-dependent: button held,speak once.",
+      "duration_ms": null,
+      "duration_ms_unknown_reason": "Unbounded held duration or fixed burst; see mode."
+    },
+    "release_behavior": "UP sends source-selected STOP. Position CANCEL only cancels refresh. Voice has no auto duration.",
+    "preconditions": "Selected device state connected and non-null write characteristic; no proprietary auth gate. Native WRITE_NO_RESPONSE property required.",
+    "call_chain": "Product motor control -> touchAction -> SendCommandControl.sendCommand, or global speech alias -> dispatcher -> BleManager.",
+    "variants": [
+      "MODEL-1",
+      "MODEL-2"
+    ],
+    "dynamic_fields": "None in frame; only action/source-selected literal differs.",
+    "response": "No matching app response/position parser.",
+    "confidence": "VERIFIED",
+    "semantic_action": "lumbarUp"
+  },
+  {
+    "id": "footDown-0",
+    "action": "footDown",
+    "bytes": "05 02 00 00 00 08",
+    "characteristic": "6e400002-b5a3-f393-e0a9-e50e24dcca9e",
+    "write_type": "without_response",
+    "timing": {
+      "mode": "held",
+      "interval_ms": 200,
+      "details": "Held: immediate+200ms until canceled. Once: nominal0/200/400ms,can be interrupted. Source-dependent: button held,speak once.",
+      "duration_ms": null,
+      "duration_ms_unknown_reason": "Unbounded held duration or fixed burst; see mode."
+    },
+    "release_behavior": "UP sends source-selected STOP. Position CANCEL only cancels refresh. Voice has no auto duration.",
+    "preconditions": "Selected device state connected and non-null write characteristic; no proprietary auth gate. Native WRITE_NO_RESPONSE property required.",
+    "call_chain": "Product motor control -> touchAction -> SendCommandControl.sendCommand, or global speech alias -> dispatcher -> BleManager.",
+    "variants": [
+      "MODEL-1",
+      "MODEL-2"
+    ],
+    "dynamic_fields": "None in frame; only action/source-selected literal differs.",
+    "response": "No matching app response/position parser.",
+    "confidence": "VERIFIED",
+    "semantic_action": "footDown"
+  },
+  {
+    "id": "footUp-0",
+    "action": "footUp",
+    "bytes": "05 02 00 00 00 04",
+    "characteristic": "6e400002-b5a3-f393-e0a9-e50e24dcca9e",
+    "write_type": "without_response",
+    "timing": {
+      "mode": "held",
+      "interval_ms": 200,
+      "details": "Held: immediate+200ms until canceled. Once: nominal0/200/400ms,can be interrupted. Source-dependent: button held,speak once.",
+      "duration_ms": null,
+      "duration_ms_unknown_reason": "Unbounded held duration or fixed burst; see mode."
+    },
+    "release_behavior": "UP sends source-selected STOP. Position CANCEL only cancels refresh. Voice has no auto duration.",
+    "preconditions": "Selected device state connected and non-null write characteristic; no proprietary auth gate. Native WRITE_NO_RESPONSE property required.",
+    "call_chain": "Product motor control -> touchAction -> SendCommandControl.sendCommand, or global speech alias -> dispatcher -> BleManager.",
+    "variants": [
+      "MODEL-1",
+      "MODEL-2"
+    ],
+    "dynamic_fields": "None in frame; only action/source-selected literal differs.",
+    "response": "No matching app response/position parser.",
+    "confidence": "VERIFIED",
+    "semantic_action": "footUp"
+  },
+  {
+    "id": "headDown-0",
+    "action": "headDown",
+    "bytes": "05 02 00 00 00 02",
+    "characteristic": "6e400002-b5a3-f393-e0a9-e50e24dcca9e",
+    "write_type": "without_response",
+    "timing": {
+      "mode": "held",
+      "interval_ms": 200,
+      "details": "Held: immediate+200ms until canceled. Once: nominal0/200/400ms,can be interrupted. Source-dependent: button held,speak once.",
+      "duration_ms": null,
+      "duration_ms_unknown_reason": "Unbounded held duration or fixed burst; see mode."
+    },
+    "release_behavior": "UP sends source-selected STOP. Position CANCEL only cancels refresh. Voice has no auto duration.",
+    "preconditions": "Selected device state connected and non-null write characteristic; no proprietary auth gate. Native WRITE_NO_RESPONSE property required.",
+    "call_chain": "Product motor control -> touchAction -> SendCommandControl.sendCommand, or global speech alias -> dispatcher -> BleManager.",
+    "variants": [
+      "MODEL-1",
+      "MODEL-2"
+    ],
+    "dynamic_fields": "None in frame; only action/source-selected literal differs.",
+    "response": "No matching app response/position parser.",
+    "confidence": "VERIFIED",
+    "semantic_action": "headDown"
+  },
+  {
+    "id": "headUp-0",
+    "action": "headUp",
+    "bytes": "05 02 00 00 00 01",
+    "characteristic": "6e400002-b5a3-f393-e0a9-e50e24dcca9e",
+    "write_type": "without_response",
+    "timing": {
+      "mode": "held",
+      "interval_ms": 200,
+      "details": "Held: immediate+200ms until canceled. Once: nominal0/200/400ms,can be interrupted. Source-dependent: button held,speak once.",
+      "duration_ms": null,
+      "duration_ms_unknown_reason": "Unbounded held duration or fixed burst; see mode."
+    },
+    "release_behavior": "UP sends source-selected STOP. Position CANCEL only cancels refresh. Voice has no auto duration.",
+    "preconditions": "Selected device state connected and non-null write characteristic; no proprietary auth gate. Native WRITE_NO_RESPONSE property required.",
+    "call_chain": "Product motor control -> touchAction -> SendCommandControl.sendCommand, or global speech alias -> dispatcher -> BleManager.",
+    "variants": [
+      "MODEL-1",
+      "MODEL-2"
+    ],
+    "dynamic_fields": "None in frame; only action/source-selected literal differs.",
+    "response": "No matching app response/position parser.",
+    "confidence": "VERIFIED",
+    "semantic_action": "headUp"
+  },
+  {
+    "id": "headTiltDown-0",
+    "action": "headTiltDown",
+    "bytes": "05 02 80 00 00 00",
+    "characteristic": "6e400002-b5a3-f393-e0a9-e50e24dcca9e",
+    "write_type": "without_response",
+    "timing": {
+      "mode": "held",
+      "interval_ms": 200,
+      "details": "Held: immediate+200ms until canceled. Once: nominal0/200/400ms,can be interrupted. Source-dependent: button held,speak once.",
+      "duration_ms": null,
+      "duration_ms_unknown_reason": "Unbounded held duration or fixed burst; see mode."
+    },
+    "release_behavior": "UP sends source-selected STOP. Position CANCEL only cancels refresh. Voice has no auto duration.",
+    "preconditions": "Selected device state connected and non-null write characteristic; no proprietary auth gate. Native WRITE_NO_RESPONSE property required.",
+    "call_chain": "Product motor control -> touchAction -> SendCommandControl.sendCommand, or global speech alias -> dispatcher -> BleManager.",
+    "variants": [
+      "MODEL-1",
+      "MODEL-2"
+    ],
+    "dynamic_fields": "None in frame; only action/source-selected literal differs.",
+    "response": "No matching app response/position parser.",
+    "confidence": "VERIFIED",
+    "semantic_action": "headTiltDown"
+  },
+  {
+    "id": "headTiltUp-0",
+    "action": "headTiltUp",
+    "bytes": "05 02 40 00 00 00",
+    "characteristic": "6e400002-b5a3-f393-e0a9-e50e24dcca9e",
+    "write_type": "without_response",
+    "timing": {
+      "mode": "held",
+      "interval_ms": 200,
+      "details": "Held: immediate+200ms until canceled. Once: nominal0/200/400ms,can be interrupted. Source-dependent: button held,speak once.",
+      "duration_ms": null,
+      "duration_ms_unknown_reason": "Unbounded held duration or fixed burst; see mode."
+    },
+    "release_behavior": "UP sends source-selected STOP. Position CANCEL only cancels refresh. Voice has no auto duration.",
+    "preconditions": "Selected device state connected and non-null write characteristic; no proprietary auth gate. Native WRITE_NO_RESPONSE property required.",
+    "call_chain": "Product motor control -> touchAction -> SendCommandControl.sendCommand, or global speech alias -> dispatcher -> BleManager.",
+    "variants": [
+      "MODEL-1",
+      "MODEL-2"
+    ],
+    "dynamic_fields": "None in frame; only action/source-selected literal differs.",
+    "response": "No matching app response/position parser.",
+    "confidence": "VERIFIED",
+    "semantic_action": "headTiltUp"
+  },
+  {
+    "id": "confirmationResponse-0",
+    "action": "confirmationResponse",
+    "bytes": "00 b0",
+    "characteristic": "6e400002-b5a3-f393-e0a9-e50e24dcca9e",
+    "write_type": "without_response",
+    "timing": {
+      "mode": "once",
+      "interval_ms": 200,
+      "details": "Held: immediate+200ms until canceled. Once: nominal0/200/400ms,can be interrupted. Source-dependent: button held,speak once.",
+      "duration_ms": null,
+      "duration_ms_unknown_reason": "Unbounded held duration or fixed burst; see mode."
+    },
+    "release_behavior": "No movement cleanup. Cancels/replaces prior sender timer; max3 query writes unless interrupted.",
+    "preconditions": "Selected device state connected and non-null write characteristic; no proprietary auth gate. Native WRITE_NO_RESPONSE property required.",
+    "call_chain": "Massage initState/release/intensity timer -> BleManager.confirmationResponse.",
+    "variants": [
+      "MODEL-1",
+      "MODEL-2"
+    ],
+    "dynamic_fields": "None in frame; only action/source-selected literal differs.",
+    "response": "Massage state may arrive througha5 0b 0e notification; no per-control acknowledgement parser.",
+    "confidence": "VERIFIED",
+    "semantic_action": "Query massage state"
+  },
+  {
+    "id": "massageOpen-0",
+    "action": "massageOpen",
+    "bytes": "05 02 00 00 01 00 00",
+    "characteristic": "6e400002-b5a3-f393-e0a9-e50e24dcca9e",
+    "write_type": "without_response",
+    "timing": {
+      "mode": "source-dependent",
+      "interval_ms": 200,
+      "details": "Held: immediate+200ms until canceled. Once: nominal0/200/400ms,can be interrupted. Source-dependent: button held,speak once.",
+      "duration_ms": null,
+      "duration_ms_unknown_reason": "Unbounded held duration or fixed burst; see mode."
+    },
+    "release_behavior": "Button source held until release; speak source once maximum3. Massage UI release schedules STOP/query; intensity polling can replace the shared timer.",
+    "preconditions": "Selected device state connected and non-null write characteristic; no proprietary auth gate. Native WRITE_NO_RESPONSE property required.",
+    "call_chain": "Product massage pointer control -> BleManager.",
+    "variants": [
+      "MODEL-1",
+      "MODEL-2"
+    ],
+    "dynamic_fields": "None in frame; only action/source-selected literal differs.",
+    "response": "Massage state may arrive througha5 0b 0e notification; no per-control acknowledgement parser.",
+    "confidence": "VERIFIED",
+    "semantic_action": "Massage UI power toggle"
+  },
+  {
+    "id": "massageMode-0",
+    "action": "massageMode",
+    "bytes": "05 02 10 00 00 00 00",
+    "characteristic": "6e400002-b5a3-f393-e0a9-e50e24dcca9e",
+    "write_type": "without_response",
+    "timing": {
+      "mode": "source-dependent",
+      "interval_ms": 200,
+      "details": "Held: immediate+200ms until canceled. Once: nominal0/200/400ms,can be interrupted. Source-dependent: button held,speak once.",
+      "duration_ms": null,
+      "duration_ms_unknown_reason": "Unbounded held duration or fixed burst; see mode."
+    },
+    "release_behavior": "Button source held until release; speak source once maximum3. Massage UI release schedules STOP/query; intensity polling can replace the shared timer.",
+    "preconditions": "Selected device state connected and non-null write characteristic; no proprietary auth gate. Native WRITE_NO_RESPONSE property required.",
+    "call_chain": "Product massage pointer control -> BleManager.",
+    "variants": [
+      "MODEL-2"
+    ],
+    "dynamic_fields": "None in frame; only action/source-selected literal differs.",
+    "response": "Massage state may arrive througha5 0b 0e notification; no per-control acknowledgement parser.",
+    "confidence": "VERIFIED",
+    "semantic_action": "Cycle massage mode"
+  },
+  {
+    "id": "massageTimer-0",
+    "action": "massageTimer",
+    "bytes": "05 02 00 00 02 00 00",
+    "characteristic": "6e400002-b5a3-f393-e0a9-e50e24dcca9e",
+    "write_type": "without_response",
+    "timing": {
+      "mode": "source-dependent",
+      "interval_ms": 200,
+      "details": "Held: immediate+200ms until canceled. Once: nominal0/200/400ms,can be interrupted. Source-dependent: button held,speak once.",
+      "duration_ms": null,
+      "duration_ms_unknown_reason": "Unbounded held duration or fixed burst; see mode."
+    },
+    "release_behavior": "Button source held until release; speak source once maximum3. Massage UI release schedules STOP/query; intensity polling can replace the shared timer.",
+    "preconditions": "Selected device state connected and non-null write characteristic; no proprietary auth gate. Native WRITE_NO_RESPONSE property required.",
+    "call_chain": "Product massage pointer control -> BleManager.",
+    "variants": [
+      "MODEL-1",
+      "MODEL-2"
+    ],
+    "dynamic_fields": "None in frame; only action/source-selected literal differs.",
+    "response": "Massage state may arrive througha5 0b 0e notification; no per-control acknowledgement parser.",
+    "confidence": "VERIFIED",
+    "semantic_action": "Cycle massage timer"
+  },
+  {
+    "id": "flatAndZg-0",
+    "action": "flatAndZg",
+    "bytes": "05 02 08 00 10 00",
+    "characteristic": "6e400002-b5a3-f393-e0a9-e50e24dcca9e",
+    "write_type": "without_response",
+    "timing": {
+      "mode": "held-6s",
+      "interval_ms": 200,
+      "details": "Held: immediate+200ms until canceled. Once: nominal0/200/400ms,can be interrupted. Source-dependent: button held,speak once.",
+      "duration_ms": 6000,
+      "duration_ms_unknown_reason": "Known6s app timer,actual timer ordering is runtime-dependent."
+    },
+    "release_behavior": "Hold6s then local Memory reset dialog and STOP. Early UP cancels hold and sendsSTOP.",
+    "preconditions": "Selected device state connected and non-null write characteristic; no proprietary auth gate. Native WRITE_NO_RESPONSE property required.",
+    "call_chain": "FLAT+ZG compound flags -> _memorySavedFunction -> BleManager.flatAndZg.",
+    "variants": [
+      "MODEL-1",
+      "MODEL-2"
+    ],
+    "dynamic_fields": "None in frame; only action/source-selected literal differs.",
+    "response": "No matching app response/position parser.",
+    "confidence": "VERIFIED",
+    "semantic_action": "Reset programmed presets (FLAT+ZG)"
+  },
+  {
+    "id": "program-leisure",
+    "action": "program leisure",
+    "bytes": "05 02 00 00 40 00",
+    "characteristic": "6e400002-b5a3-f393-e0a9-e50e24dcca9e",
+    "write_type": "without_response",
+    "timing": {
+      "mode": "button-source held recall frame for6s",
+      "interval_ms": 200,
+      "duration_ms": 6000,
+      "qualification": "No separate program opcode. With source=speak,underlying helper instead once-sends; report preserves that source-dependent behavior. Boundary timer ordering can change exact count."
+    },
+    "release_behavior": "Release before6s cancels memory timer and sendsSTOP; at6s local Memory saved dialog plusSTOP. Dialog is time-based,not a bed acknowledgement.",
+    "preconditions": "Selected device state connected and non-null write characteristic; no proprietary auth gate. Native WRITE_NO_RESPONSE property required.",
+    "call_chain": "Preset PointerDown -> current ControlType -> _memorySavedFunction -> touchAction/dispatcher -> same recall frame;6s callback -> dialog+stopCommand.",
+    "variants": [
+      "MODEL-1",
+      "MODEL-2"
+    ],
+    "dynamic_fields": "None in frame; only action/source-selected literal differs.",
+    "response": "No matching app response/position parser.",
+    "confidence": "VERIFIED",
+    "semantic_action": "Program leisure preset via held recall"
+  },
+  {
+    "id": "program-zeroGravity",
+    "action": "program zeroGravity",
+    "bytes": "05 02 00 00 10 00",
+    "characteristic": "6e400002-b5a3-f393-e0a9-e50e24dcca9e",
+    "write_type": "without_response",
+    "timing": {
+      "mode": "button-source held recall frame for6s",
+      "interval_ms": 200,
+      "duration_ms": 6000,
+      "qualification": "No separate program opcode. With source=speak,underlying helper instead once-sends; report preserves that source-dependent behavior. Boundary timer ordering can change exact count."
+    },
+    "release_behavior": "Release before6s cancels memory timer and sendsSTOP; at6s local Memory saved dialog plusSTOP. Dialog is time-based,not a bed acknowledgement.",
+    "preconditions": "Selected device state connected and non-null write characteristic; no proprietary auth gate. Native WRITE_NO_RESPONSE property required.",
+    "call_chain": "Preset PointerDown -> current ControlType -> _memorySavedFunction -> touchAction/dispatcher -> same recall frame;6s callback -> dialog+stopCommand.",
+    "variants": [
+      "MODEL-1",
+      "MODEL-2"
+    ],
+    "dynamic_fields": "None in frame; only action/source-selected literal differs.",
+    "response": "No matching app response/position parser.",
+    "confidence": "VERIFIED",
+    "semantic_action": "Program Zero Gravity preset via held recall"
+  },
+  {
+    "id": "program-antiSnore",
+    "action": "program antiSnore",
+    "bytes": "05 02 00 00 80 00",
+    "characteristic": "6e400002-b5a3-f393-e0a9-e50e24dcca9e",
+    "write_type": "without_response",
+    "timing": {
+      "mode": "button-source held recall frame for6s",
+      "interval_ms": 200,
+      "duration_ms": 6000,
+      "qualification": "No separate program opcode. With source=speak,underlying helper instead once-sends; report preserves that source-dependent behavior. Boundary timer ordering can change exact count."
+    },
+    "release_behavior": "Release before6s cancels memory timer and sendsSTOP; at6s local Memory saved dialog plusSTOP. Dialog is time-based,not a bed acknowledgement.",
+    "preconditions": "Selected device state connected and non-null write characteristic; no proprietary auth gate. Native WRITE_NO_RESPONSE property required.",
+    "call_chain": "Preset PointerDown -> current ControlType -> _memorySavedFunction -> touchAction/dispatcher -> same recall frame;6s callback -> dialog+stopCommand.",
+    "variants": [
+      "MODEL-1",
+      "MODEL-2"
+    ],
+    "dynamic_fields": "None in frame; only action/source-selected literal differs.",
+    "response": "No matching app response/position parser.",
+    "confidence": "VERIFIED",
+    "semantic_action": "Program Anti Snore preset via held recall"
+  },
+  {
+    "id": "program-m5",
+    "action": "program memory",
+    "bytes": "05 02 00 01 00 00",
+    "characteristic": "6e400002-b5a3-f393-e0a9-e50e24dcca9e",
+    "write_type": "without_response",
+    "timing": {
+      "mode": "button-source held recall frame for6s",
+      "interval_ms": 200,
+      "duration_ms": 6000,
+      "qualification": "No separate program opcode. With source=speak,underlying helper instead once-sends; report preserves that source-dependent behavior. Boundary timer ordering can change exact count."
+    },
+    "release_behavior": "Release before6s cancels memory timer and sendsSTOP; at6s local Memory saved dialog plusSTOP. Dialog is time-based,not a bed acknowledgement.",
+    "preconditions": "Selected device state connected and non-null write characteristic; no proprietary auth gate. Native WRITE_NO_RESPONSE property required.",
+    "call_chain": "Preset PointerDown -> current ControlType -> _memorySavedFunction -> touchAction/dispatcher -> same recall frame;6s callback -> dialog+stopCommand.",
+    "variants": [
+      "MODEL-1"
+    ],
+    "dynamic_fields": "None in frame; only action/source-selected literal differs.",
+    "response": "No matching app response/position parser.",
+    "confidence": "VERIFIED",
+    "semantic_action": "Program memory preset via held recall"
+  },
+  {
+    "id": "program-reading",
+    "action": "program reading",
+    "bytes": "05 02 00 00 20 00",
+    "characteristic": "6e400002-b5a3-f393-e0a9-e50e24dcca9e",
+    "write_type": "without_response",
+    "timing": {
+      "mode": "button-source held recall frame for6s",
+      "interval_ms": 200,
+      "duration_ms": 6000,
+      "qualification": "No separate program opcode. With source=speak,underlying helper instead once-sends; report preserves that source-dependent behavior. Boundary timer ordering can change exact count."
+    },
+    "release_behavior": "Release before6s cancels memory timer and sendsSTOP; at6s local Memory saved dialog plusSTOP. Dialog is time-based,not a bed acknowledgement.",
+    "preconditions": "Selected device state connected and non-null write characteristic; no proprietary auth gate. Native WRITE_NO_RESPONSE property required.",
+    "call_chain": "Preset PointerDown -> current ControlType -> _memorySavedFunction -> touchAction/dispatcher -> same recall frame;6s callback -> dialog+stopCommand.",
+    "variants": [
+      "MODEL-1"
+    ],
+    "dynamic_fields": "None in frame; only action/source-selected literal differs.",
+    "response": "No matching app response/position parser.",
+    "confidence": "VERIFIED",
+    "semantic_action": "Program reading preset via held recall"
+  }
+]

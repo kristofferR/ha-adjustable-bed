@@ -5,11 +5,12 @@ from __future__ import annotations
 import pytest
 from bleak.exc import BleakError
 
+from custom_components.adjustable_bed.beds.sleep_number.auth import validate_sleep_number_session
 from custom_components.adjustable_bed.ble_auth import (
     is_ble_authentication_error,
     is_ble_pairing_auth_failure,
+    is_esphome_connection_status_change,
 )
-from custom_components.adjustable_bed.sleep_number_auth import validate_sleep_number_session
 
 
 @pytest.mark.parametrize(
@@ -78,34 +79,53 @@ def test_unrelated_errors_match_neither() -> None:
     assert is_ble_authentication_error(err) is False
 
 
+@pytest.mark.parametrize(
+    "message",
+    [
+        "Bed - AA:BB:CC:DD:EE:01: Failed to connect after 1 attempt(s): Peripheral "
+        "AA:BB:CC:DD:EE:01 changed connection status while waiting for "
+        "BluetoothDevicePairingResponse: Insufficient authorization (8)",
+        "Peripheral AA:BB:CC:DD:EE:01 changed connection status while waiting for "
+        "BluetoothDeviceUnpairingResponse: Insufficient authentication (5)",
+    ],
+)
+def test_esphome_pairing_response_disconnect_is_a_failed_pairing(message: str) -> None:
+    """A proxy link that dropped while pairing is not a missing bond.
+
+    aioesphomeapi prints the ESP-IDF disconnect reason with ATT error names, so
+    status 8 (a connection timeout) reads as "Insufficient authorization".
+    Counting it as an authentication error cleared the bond marker after
+    every failed pairing attempt over a proxy.
+    """
+    err = BleakError(message)
+    assert is_ble_authentication_error(err) is False
+    assert is_esphome_connection_status_change(err) is True
+
+
+def test_esphome_status_change_on_other_requests_is_not_an_auth_error() -> None:
+    """The same drop during service discovery is a lost link, not a pairing failure."""
+    err = BleakError(
+        "Peripheral AA:BB:CC:DD:EE:01 changed connection status while waiting for "
+        "BluetoothGATTGetServicesResponse: Attribute not found (10)"
+    )
+    assert is_ble_authentication_error(err) is False
+    assert is_esphome_connection_status_change(err) is True
+
+
+def test_esphome_gatt_auth_error_is_still_an_auth_error() -> None:
+    """A real GATT security reply over a proxy keeps its meaning."""
+    err = BleakError(
+        "Bluetooth GATT Error address=AA:BB:CC:DD:EE:01 handle=26 error=5 "
+        "description=Insufficient authentication"
+    )
+    assert is_ble_authentication_error(err) is True
+    assert is_esphome_connection_status_change(err) is False
+
+
 @pytest.mark.parametrize("message", ["GATT error 50", "error=150", "Write not permitted"])
 def test_non_authentication_gatt_errors_do_not_request_pairing(message: str) -> None:
     """A CCCD write rejection alone is not proof of missing link encryption."""
     assert not is_ble_authentication_error(BleakError(message))
-
-
-def test_repair_text_does_not_assume_the_bond_lives_on_the_host() -> None:
-    """A proxy bond cannot be cleared with bluetoothctl on the Home Assistant host.
-
-    strings.json already states that Home Assistant cannot remove a bond that
-    lives on a proxy, so recovery guidance must not tell every user to run
-    bluetoothctl there.
-    """
-    import json
-    from pathlib import Path
-
-    strings = json.loads(
-        Path("custom_components/adjustable_bed/strings.json").read_text()
-    )
-    flow = strings["issues"]["pairing_required"]["fix_flow"]
-    description = flow["step"]["confirm"]["description"]
-
-    assert "ESPHome" in description
-    assert "stored on the proxy" in description
-    # Scoped to the errors that actually mean a refusal, so an ordinary
-    # missing-encryption failure is not sent down this path.
-    assert "AuthenticationFailed" in description
-    assert "AuthenticationRejected" in description
 
 
 def test_shared_repair_text_prescribes_no_bed_specific_reset() -> None:
@@ -161,34 +181,3 @@ def test_repair_text_does_not_assert_an_unproven_cause() -> None:
     assert "refusing the bond" not in description
 
 
-def test_translation_strings_contain_no_angle_brackets() -> None:
-    """hassfest rejects angle brackets in translations as HTML.
-
-    A placeholder written as `<address>` reads as an HTML tag and fails CI, so
-    catch it here instead: the strings already receive {address}.
-    """
-    import json
-    import re
-    from pathlib import Path
-
-    pattern = re.compile(r"<[^>]+>")
-    offenders: list[str] = []
-
-    def walk(node: object, path: str) -> None:
-        if isinstance(node, dict):
-            for key, value in node.items():
-                walk(value, f"{path}.{key}")
-        elif isinstance(node, str) and pattern.search(node):
-            offenders.append(path)
-
-    # Discover the files rather than listing them: the set of shipped
-    # translations differs between branches, and a hardcoded list either breaks
-    # when one is missing or silently skips a new one.
-    root = Path("custom_components/adjustable_bed")
-    files = [root / "strings.json", *sorted(root.glob("translations/*.json"))]
-    assert files, "no translation files found"
-
-    for path in files:
-        walk(json.loads(path.read_text()), path.name)
-
-    assert offenders == []

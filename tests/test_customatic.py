@@ -8,14 +8,15 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 from bleak.exc import BleakError
 
-from custom_components.adjustable_bed.beds.customatic import (
-    COMMAND_CHARACTERISTIC,
-    COMMAND_SERVICE,
+from custom_components.adjustable_bed.beds.customatic.controller import (
     DEVICE_INFO_FIELDS,
     DEVICE_INFO_SERVICE,
     CustomaticController,
-    command_frame,
 )
+from custom_components.adjustable_bed.codec.okin_nframe import SERVICE_UUID as COMMAND_SERVICE
+from custom_components.adjustable_bed.codec.okin_nframe import WRITE_UUID as COMMAND_CHARACTERISTIC
+from custom_components.adjustable_bed.codec.okin_nframe import frame as command_frame
+from tests.hold_lease_wire import virtual_clock
 
 
 def make_controller(
@@ -159,7 +160,8 @@ def test_exact_profile_capabilities(
 ) -> None:
     controller = make_controller(profile)
     assert tuple(spec.key for spec in controller.motor_control_specs) == axes
-    assert all(spec.scheduler_resource == "*" for spec in controller.motor_control_specs)
+    # Per-motor resources, so held motors can share the merged stream (#516).
+    assert all(spec.scheduler_resource is None for spec in controller.motor_control_specs)
     assert controller.simultaneous_movement_axes == axes
     assert len(controller.held_control_options) == option_count
     assert controller.supports_held_control
@@ -245,8 +247,8 @@ async def test_invalid_duration_has_no_release_or_commands(duration: int) -> Non
 async def test_named_button_callback_real_delivery(action: str, expected: str) -> None:
     controller = make_controller()
     spec = next(spec for spec in controller.controller_button_specs if spec.name == action)
-    with patch("asyncio.sleep", new=AsyncMock()):
-        await spec.press_fn(controller.bind_side("left"))
+    with patch("asyncio.sleep", new=AsyncMock()), controller.side_scope("left"):
+        await spec.press_fn(controller)
     assert written(controller) == [expected] * 24
 
 
@@ -265,13 +267,14 @@ async def test_numbered_memory_rejected(profile: str) -> None:
 async def test_timed_motor_deadline_and_release_outside_deadline() -> None:
     controller = make_controller("remedy")
     timestamps = []
-    start = asyncio.get_running_loop().time()
 
     async def record(*args, **kwargs) -> None:
         timestamps.append(asyncio.get_running_loop().time() - start)
 
     controller.client.write_gatt_char.side_effect = record
-    await controller.hold_control("back_up+legs_down+lumbar_up", 250)
+    with virtual_clock():
+        start = asyncio.get_running_loop().time()
+        await controller.hold_control("back_up+legs_down+lumbar_up", 250)
     assert written(controller) == ["040200000019"] * 3 + ["040200000000"]
     assert all(timestamp < 0.25 for timestamp in timestamps[:-1])
     assert timestamps[-1] >= 0.35
@@ -345,8 +348,8 @@ async def test_motor_entity_callbacks_delegate_to_bound_controller(
     original = make_controller("remedy")
     target = make_controller("remedy")
     spec = next(spec for spec in original.motor_control_specs if spec.key == axis)
-    with patch("asyncio.sleep", new=AsyncMock()):
-        await (spec.open_fn if up else spec.close_fn)(target.bind_side("right"))
+    with patch("asyncio.sleep", new=AsyncMock()), target.side_scope("right"):
+        await (spec.open_fn if up else spec.close_fn)(target)
     assert written(original) == []
     assert written(target) == [expected] * 2 + ["040200000000"]
 

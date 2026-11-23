@@ -6,7 +6,7 @@ from unittest.mock import AsyncMock, patch
 
 import pytest
 from homeassistant.const import CONF_ADDRESS, CONF_NAME
-from pytest_homeassistant_custom_component.common import MockConfigEntry
+from pytest_homeassistant.common import MockConfigEntry
 
 from custom_components.adjustable_bed import const
 from custom_components.adjustable_bed.beds.base import BedController
@@ -23,7 +23,7 @@ def coordinator(hass):
             CONF_NAME: "App",
             const.CONF_BED_TYPE: const.BED_TYPE_VMATBASIC,
             const.CONF_VMATBASIC_PROFILE: "basic",
-            const.CONF_DISCONNECT_AFTER_COMMAND: False,
+            const.CONF_CONNECTION_MODE: const.CONNECTION_MODE_IDLE,
         },
     )
     entry.add_to_hass(hass)

@@ -1,8 +1,8 @@
 """Explicit Woosa Sleep profile, verified against com.sn.woosa 1.1.9.
 
 The shared discovery names cannot identify the app. Only an explicit profile
-selects these commands. See docs/beds/woosa-disposition.md for evidence and
-intentional differences from the Android UI.
+selects these commands. Evidence: the accepted com.sn.woosa 1.1.9 audit (issue
+#606), including intentional differences from the Android UI.
 """
 
 from __future__ import annotations
@@ -12,18 +12,48 @@ import logging
 import math
 from collections.abc import Collection
 from functools import partial
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Final
 
 from bleak.exc import BleakError
 from homeassistant.util import dt as dt_util
 
-from .base import BedController, ControllerButtonSpec
-from .solace import (
+from ..command_scheduler import Delivery, delivered
+from ..controller_state import StateKey, StateUpdate
+from ..profiles.ff_frame import (
+    SOLACE_PROFILES,
+    WOOSA_ALARM_QUERY,
+    WOOSA_FOOT_LEVELS,
+    WOOSA_HEAD_LEVELS,
+    WOOSA_LIGHT_OFF,
+    WOOSA_MASSAGE_REPLIES,
+    WOOSA_MODE_STEP,
+    WOOSA_MODES,
+    WOOSA_PRESET_QUERIES,
+    WOOSA_SAVES,
+    WOOSA_STARTUP,
+    SolaceProfile,
+)
+from ..state_keys import (
+    LIGHT_TIMER_OPTION,
+    MASSAGE_TIMER_MINUTES,
+    UNDER_BED_LIGHTS_ON,
+    massage_intensity,
+)
+from .base import BedController
+from .catalog_buttons import Kind, catalog_button
+from .entity_specs import ControllerButtonSpec
+from .solace.controller import (
+    ALARM_ENABLED,
+    ALARM_MASSAGE,
+    ALARM_MODE,
+    ALARM_SOUND,
+    ALARM_TIME,
+    ALARM_WEEKDAYS,
     SolaceCommands,
     SolaceController,
-    SolaceProfile,
     build_solace_alarm_command,
     build_solace_clock_command,
+    preset_selected,
 )
 
 if TYPE_CHECKING:
@@ -31,81 +61,18 @@ if TYPE_CHECKING:
 
 _LOGGER = logging.getLogger(__name__)
 
-_INIT = bytes.fromhex("FFFFFFFF02000E0B001704")
-_ALARM_QUERY = bytes.fromhex("FFFFFFFF01000A0B0F2104")
-_PRESET_QUERIES = tuple(
-    bytes.fromhex(frame)
-    for frame in (
-        "FFFFFFFF03002800039F09",
-        "FFFFFFFF03001800039F06",
-        "FFFFFFFF03002000031ECB",
-        "FFFFFFFF03003800039ECC",
-    )
-)
-_LIGHT_OFF = bytes.fromhex("FFFFFFFF050000004B9737")
-_MODE_STEP = bytes.fromhex("FFFFFFFF0500050014C70E")
-_HEAD_LEVELS = tuple(
-    bytes.fromhex(frame)
-    for frame in (
-        "FFFFFFFF050000004F96F4",
-        "FFFFFFFF0500000050D73C",
-        "FFFFFFFF050000005116FC",
-        "FFFFFFFF050000005256FD",
-    )
-)
-_FOOT_LEVELS = tuple(
-    bytes.fromhex(frame)
-    for frame in (
-        "FFFFFFFF0500000053973D",
-        "FFFFFFFF0500000054D6FF",
-        "FFFFFFFF0500000055173F",
-        "FFFFFFFF0500000056573E",
-    )
-)
-_MODES = tuple(
-    bytes.fromhex(frame)
-    for frame in (
-        "FFFFFFFF050000005796FE",
-        "FFFFFFFF0500000058D6FA",
-        "FFFFFFFF0500000059173A",
-        "FFFFFFFF050000005A573B",
-    )
-)
-_MASSAGE_REPLIES = {
-    "head": tuple(
-        bytes.fromhex(frame)
-        for frame in (
-            "FFFFFFFF0500000100D690",
-            "FFFFFFFF050000011E5698",
-            "FFFFFFFF050000011F9758",
-            "FFFFFFFF0500000120D748",
-        )
-    ),
-    "foot": tuple(
-        bytes.fromhex(frame)
-        for frame in (
-            "FFFFFFFF0500000200D660",
-            "FFFFFFFF05000002211678",
-            "FFFFFFFF05000002225679",
-            "FFFFFFFF050000022397B9",
-        )
-    ),
-    "mode": tuple(
-        bytes.fromhex(frame)
-        for frame in (
-            "FFFFFFFF0500000324D7EB",
-            "FFFFFFFF0500000325162B",
-            "FFFFFFFF0500000326562A",
-            "FFFFFFFF050000032797EA",
-        )
-    ),
-}
-_SAVES = {
-    "memory_1": SolaceCommands.PROGRAM_MEMORY_1,
-    "love": SolaceCommands.PROGRAM_ANTI_SNORE,
-    "tv": SolaceCommands.PROGRAM_TV,
-    "zero_g": SolaceCommands.PROGRAM_ZERO_G,
-}
+LIGHT_TIMER: Final = StateKey[str]("woosa_light_timer")
+LIGHT_DEADLINE: Final = StateKey[float | None]("woosa_light_deadline")
+LIGHT_CANDIDATE: Final = StateKey[int]("woosa_light_candidate")
+MASSAGE_ACTIVE: Final = StateKey[bool]("woosa_massage_active")
+MASSAGE_MODE: Final = StateKey[int]("woosa_massage_mode")
+MODE_PREFERENCE: Final = StateKey[int]("woosa_mode_preference")
+MASSAGE_TIMER_PREFERENCE: Final = StateKey[int]("woosa_massage_timer_preference")
+MASSAGE_DEADLINE: Final = StateKey[float | None]("woosa_massage_deadline")
+
+
+def _preference(zone: str) -> StateKey[int]:
+    return StateKey[int](f"woosa_{zone}_preference")
 
 
 async def _button_action(controller: BedController, *, action: str) -> None:
@@ -129,64 +96,35 @@ class WoosaController(SolaceController):
 
     @property
     def profile(self) -> SolaceProfile:
-        return SolaceProfile.WOOSA
-
-    @property
-    def _query_family(self) -> str:
-        return "woosa"
-
+        return SOLACE_PROFILES["woosa"]
     @property
     def supports_preset_anti_snore(self) -> bool:
         # Keep the app-specific action separate from the generic anti-snore capability.
         return False
 
     @property
-    def memory_slot_count(self) -> int:
-        return 1
-
-    @property
-    def supports_lights(self) -> bool:
-        return True
-
-    @property
     def supports_discrete_light_control(self) -> bool:
         return True
 
     @property
-    def supports_light_level_control(self) -> bool:
-        return True
-
-    @property
-    def light_timer_options(self) -> list[str]:
-        return ["Off", "10 min", "8 hours", "10 hours"]
-
-    @property
     def light_auto_off_seconds(self) -> int | None:
-        option = self._coordinator.controller_state.get("light_timer_option")
-        if not isinstance(option, str):
+        option = self._coordinator.controller_state.get(LIGHT_TIMER_OPTION)
+        if option is None:
             return None
         duration = {
             "10 min": 10 * 60,
             "8 hours": 8 * 60 * 60,
             "10 hours": 10 * 60 * 60,
         }.get(option)
-        deadline = self._coordinator.controller_state.get("woosa_light_deadline")
-        if duration is None or not isinstance(deadline, float):
+        deadline = self._coordinator.controller_state.get(LIGHT_DEADLINE)
+        if duration is None or deadline is None:
             return None
         return max(0, math.ceil(deadline - asyncio.get_running_loop().time()))
 
     def on_light_auto_off(self) -> None:
         self.forward_controller_state_updates(
-            {
-                "under_bed_lights_on": False,
-                "light_timer_option": "Off",
-                "woosa_light_deadline": None,
-            }
+            UNDER_BED_LIGHTS_ON(False), LIGHT_TIMER_OPTION("Off"), LIGHT_DEADLINE(None)
         )
-
-    @property
-    def supports_massage(self) -> bool:
-        return True
 
     @property
     def supports_massage_wave_frequency_control(self) -> bool:
@@ -205,10 +143,6 @@ class WoosaController(SolaceController):
         return 3
 
     @property
-    def supports_solace_alarm(self) -> bool:
-        return True
-
-    @property
     def solace_alarm_sound_options(self) -> tuple[str, ...]:
         return ("none", "alarm")
 
@@ -222,12 +156,17 @@ class WoosaController(SolaceController):
             *((f"mode_{mode}", f"Massage mode {mode}") for mode in range(1, 5)),
         )
         return tuple(
-            ControllerButtonSpec(
-                key=f"woosa_{action.replace('save_', 'program_').replace('mode_', 'massage_mode_')}",
-                name=name,
-                press_fn=partial(_button_action, action=action),
-            )
+            spec
             for action, name in actions
+            if (
+                spec := catalog_button(
+                    f"woosa_{action.replace('save_', 'program_').replace('mode_', 'massage_mode_')}",
+                    name,
+                    partial(_button_action, action=action),
+                    kind=Kind.SAVE if action.startswith("save_") else None,
+                )
+            )
+            is not None
         )
 
     async def _async_query_preset_states(self, query_family: str) -> None:
@@ -237,22 +176,12 @@ class WoosaController(SolaceController):
             if controller is not self:
                 return
             self.forward_controller_state_updates(
-                {f"solace_{key}_selected": False for key in _SAVES}
+                *(preset_selected(key)(False) for key in WOOSA_SAVES)
             )
             # Preserve each worker's offsets; serialize coincident writes.
-            schedule = (
-                (0.5, _INIT),
-                (0.6, _PRESET_QUERIES[0]),
-                (0.9, _PRESET_QUERIES[1]),
-                (1.0, None),
-                (1.2, _PRESET_QUERIES[2]),
-                (1.5, _ALARM_QUERY),
-                (1.5, _PRESET_QUERIES[3]),
-                (1.5, SolaceCommands.LIGHT_STATUS_QUERY),
-            )
-            previous = 0.0
-            for offset, command in schedule:
-                await asyncio.sleep(offset - previous)
+            previous = 0
+            for offset, command in WOOSA_STARTUP:
+                await asyncio.sleep((offset - previous) / 1000)
                 await self.write_command(
                     command if command is not None else build_solace_clock_command(dt_util.now())
                 )
@@ -280,7 +209,7 @@ class WoosaController(SolaceController):
 
     async def _send_preset(self, command: bytes) -> None:
         await self._send_stop()
-        await asyncio.sleep(0.2)
+        await asyncio.sleep(self.profile.preset_preamble_ms / 1000)
         if not self._coordinator.cancel_command.is_set():
             await self.write_command(command)
 
@@ -292,7 +221,7 @@ class WoosaController(SolaceController):
         if memory_num != 1:
             raise ValueError("Woosa has one numbered Favourite memory")
         if not self._preset_is_selected("memory_1"):
-            raise ValueError("Woosa has not reported a saved Favourite position")
+            raise ValueError("The bed has no saved Favourite position yet. Save one first")
         await self._send_preset(SolaceCommands.PRESET_MEMORY_1)
 
     async def program_memory(self, memory_num: int) -> None:
@@ -301,10 +230,10 @@ class WoosaController(SolaceController):
         await self.save_preset("memory_1")
 
     async def save_preset(self, key: str) -> None:
-        await self.write_command(_SAVES[key])
+        await self.write_command(WOOSA_SAVES[key])
         # The app re-queries after saving; only replies establish saved state.
-        for command in _PRESET_QUERIES:
-            await asyncio.sleep(0.3)
+        for command in WOOSA_PRESET_QUERIES:
+            await asyncio.sleep(self.profile.save_requery_ms / 1000)
             await self.write_command(command)
 
     async def preset_love(self) -> None:
@@ -315,32 +244,26 @@ class WoosaController(SolaceController):
         )
 
     async def lights_on(self) -> None:
-        timer = self._coordinator.controller_state.get("woosa_light_timer", "10 min")
-        await self.set_light_timer(str(timer))
+        await self.set_light_timer(self._coordinator.controller_state.get(LIGHT_TIMER, "10 min"))
 
     async def lights_off(self) -> None:
-        await self.write_command(_LIGHT_OFF)
-        self.forward_controller_state_updates(
-            {
-                "under_bed_lights_on": False,
-                "light_timer_option": "Off",
-                "woosa_light_deadline": None,
-            }
-        )
+        # The bed reports no light state: show what the command delivered.
+        with self.sent_state(
+            UNDER_BED_LIGHTS_ON(False), LIGHT_TIMER_OPTION("Off"), LIGHT_DEADLINE(None)
+        ):
+            await self.write_command(WOOSA_LIGHT_OFF)
 
     async def set_light_level(self, level: int) -> None:
-        await super().set_light_level(level)
-        if 0 <= level <= self.light_level_max:
-            self.forward_controller_state_updates(
-                {
-                    "under_bed_lights_on": level > 0,
-                    **(
-                        {"light_timer_option": "Off", "woosa_light_deadline": None}
-                        if level == 0
-                        else {}
-                    ),
-                }
+        updates = (
+            (
+                UNDER_BED_LIGHTS_ON(level > 0),
+                *((LIGHT_TIMER_OPTION("Off"), LIGHT_DEADLINE(None)) if level == 0 else ()),
             )
+            if 0 <= level <= self.light_level_max
+            else ()
+        )
+        with self.sent_state(*updates):
+            await super().set_light_level(level)
 
     async def set_light_timer(self, timer_option: str) -> None:
         if timer_option == "Off":
@@ -348,57 +271,55 @@ class WoosaController(SolaceController):
             return
         if timer_option not in self.light_timer_options:
             raise ValueError("Unsupported Woosa light timer")
-        await super().set_light_timer(timer_option)
         duration = {"10 min": 600, "8 hours": 28800, "10 hours": 36000}[timer_option]
-        self.forward_controller_state_updates(
-            {
-                "woosa_light_timer": timer_option,
-                "light_timer_option": timer_option,
-                "under_bed_lights_on": True,
-                "woosa_light_deadline": asyncio.get_running_loop().time() + duration,
-            }
+        updates = (
+            LIGHT_TIMER(timer_option),
+            LIGHT_TIMER_OPTION(timer_option),
+            UNDER_BED_LIGHTS_ON(True),
         )
 
-    def get_massage_state(self) -> dict[str, int | str | bool]:
-        state = self._coordinator.controller_state
-        return {
-            "head_intensity": int(state.get("woosa_head_level", 0)),
-            "foot_intensity": int(state.get("woosa_foot_level", 0)),
-            "timer_mode": str(state.get("woosa_massage_timer", 0)),
-        }
+        def show(delivery: Delivery) -> None:
+            if delivery is Delivery.SENT:
+                # The bed's countdown starts once the write went out.
+                deadline = asyncio.get_running_loop().time() + duration
+                self.forward_controller_state_updates(*updates, LIGHT_DEADLINE(deadline))
+            elif delivery is Delivery.PARTIAL:
+                self.forward_controller_state_updates(
+                    *(StateUpdate(update.key, None) for update in updates),
+                    LIGHT_DEADLINE(None),
+                )
+
+        with delivered(show):
+            await super().set_light_timer(timer_option)
 
     async def set_massage_intensity(self, zone: str, level: int) -> None:
         if zone not in {"head", "foot"} or not 0 <= level <= 3:
             raise ValueError("Woosa massage supports head/foot levels 0-3")
-        commands = _HEAD_LEVELS if zone == "head" else _FOOT_LEVELS
+        commands = WOOSA_HEAD_LEVELS if zone == "head" else WOOSA_FOOT_LEVELS
         await self.write_command(commands[level])
         self._publish_massage_level(zone, level)
 
     def _publish_massage_level(self, zone: str, level: int) -> None:
         other_zone = "foot" if zone == "head" else "head"
-        other_level = int(self._coordinator.controller_state.get(f"woosa_{other_zone}_level", 0))
+        other_level = self._coordinator.controller_state.get(massage_intensity(other_zone))
         self.forward_controller_state_updates(
-            {
-                f"woosa_{zone}_level": level,
-                f"woosa_{zone}_preference": level,
-                "woosa_massage_active": bool(level or other_level),
-            }
+            massage_intensity(zone)(level),
+            _preference(zone)(level),
+            MASSAGE_ACTIVE(bool(level or other_level)),
         )
 
     async def set_massage_mode(self, mode: int) -> None:
         if mode not in range(1, 5):
             raise ValueError("Woosa massage modes are 1-4")
-        await self.write_command(_MODES[mode - 1])
-        self.forward_controller_state_updates(
-            {"woosa_massage_mode": mode, "woosa_mode_preference": mode}
-        )
+        await self.write_command(WOOSA_MODES[mode - 1])
+        self.forward_controller_state_updates(MASSAGE_MODE(mode), MODE_PREFERENCE(mode))
 
     async def massage_mode_step(self) -> None:
-        await self.write_command(_MODE_STEP)
+        await self.write_command(WOOSA_MODE_STEP)
 
     async def _step_massage(self, zone: str, delta: int) -> None:
         """Use the manual screen's bounded, single-write adjustment path."""
-        current = int(self._coordinator.controller_state.get(f"woosa_{zone}_level", 2))
+        current = self._coordinator.controller_state.get(massage_intensity(zone), 2) or 0
         level = current + delta
         if not 0 <= level <= 3:
             return
@@ -438,87 +359,70 @@ class WoosaController(SolaceController):
             minutes * 60, self._expire_massage, deadline
         )
         self.forward_controller_state_updates(
-            {
-                "woosa_massage_timer": minutes,
-                "woosa_massage_timer_preference": minutes,
-                "woosa_massage_deadline": deadline,
-            }
+            MASSAGE_TIMER_MINUTES(minutes),
+            MASSAGE_TIMER_PREFERENCE(minutes),
+            MASSAGE_DEADLINE(deadline),
         )
 
     def _expire_massage(self, deadline: float) -> None:
         state = self._coordinator.controller_state
-        if state.get("woosa_massage_deadline") != deadline:
+        if state.get(MASSAGE_DEADLINE) != deadline:
             return
         self._massage_expiry_handle = None
-        self.forward_controller_state_updates(
-            {
-                "woosa_massage_active": False,
-                "woosa_massage_timer": 0,
-                "woosa_massage_deadline": None,
-                "woosa_head_level": 0,
-                "woosa_foot_level": 0,
-            }
-        )
+        self._publish_massage_stopped()
 
     async def massage_off(self) -> None:
         await super().massage_off()
         if self._massage_expiry_handle is not None:
             self._massage_expiry_handle.cancel()
             self._massage_expiry_handle = None
+        self._publish_massage_stopped()
+
+    def _publish_massage_stopped(self) -> None:
         self.forward_controller_state_updates(
-            {
-                "woosa_massage_active": False,
-                "woosa_massage_timer": 0,
-                "woosa_massage_deadline": None,
-                "woosa_head_level": 0,
-                "woosa_foot_level": 0,
-            }
+            MASSAGE_ACTIVE(False),
+            MASSAGE_TIMER_MINUTES(0),
+            MASSAGE_DEADLINE(None),
+            massage_intensity("head")(0),
+            massage_intensity("foot")(0),
         )
 
     async def massage_toggle(self) -> None:
         state = self._coordinator.controller_state
-        if state.get("woosa_massage_active", False):
+        if state.get(MASSAGE_ACTIVE, False):
             await self.massage_off()
             return
         # Proven MassageActivity route; keep preferences independent per zone.
-        head = int(state.get("woosa_head_preference", 2))
-        foot = int(state.get("woosa_foot_preference", 2))
-        mode = int(state.get("woosa_mode_preference", 2))
-        timer = int(state.get("woosa_massage_timer_preference", 10))
+        head = state.get(_preference("head"), 2)
+        foot = state.get(_preference("foot"), 2)
+        mode = state.get(MODE_PREFERENCE, 2)
+        timer = state.get(MASSAGE_TIMER_PREFERENCE, 10)
         try:
             await self.massage_off()
-            await asyncio.sleep(0.4)
+            await asyncio.sleep(self.profile.massage_step_ms / 1000)
             if self._coordinator.cancel_command.is_set():
                 raise asyncio.CancelledError
             await self.set_massage_timer(timer)
-            await asyncio.sleep(0.4)
+            await asyncio.sleep(self.profile.massage_step_ms / 1000)
             if self._coordinator.cancel_command.is_set():
                 raise asyncio.CancelledError
             await self.set_massage_intensity("head", head)
-            await asyncio.sleep(0.4)
+            await asyncio.sleep(self.profile.massage_step_ms / 1000)
             if self._coordinator.cancel_command.is_set():
                 raise asyncio.CancelledError
             await self.set_massage_intensity("foot", foot)
-            await asyncio.sleep(0.4)
+            await asyncio.sleep(self.profile.massage_step_ms / 1000)
             if self._coordinator.cancel_command.is_set():
                 raise asyncio.CancelledError
             await self.set_massage_mode(mode)
-            self.forward_controller_state_updates({"woosa_massage_active": bool(head or foot)})
+            self.forward_controller_state_updates(MASSAGE_ACTIVE(bool(head or foot)))
         except Exception, asyncio.CancelledError:
             try:
                 await self.write_command(SolaceCommands.MASSAGE_STOP, cancel_event=asyncio.Event())
                 if self._massage_expiry_handle is not None:
                     self._massage_expiry_handle.cancel()
                     self._massage_expiry_handle = None
-                self.forward_controller_state_updates(
-                    {
-                        "woosa_massage_active": False,
-                        "woosa_massage_timer": 0,
-                        "woosa_massage_deadline": None,
-                        "woosa_head_level": 0,
-                        "woosa_foot_level": 0,
-                    }
-                )
+                self._publish_massage_stopped()
             except BleakError, ConnectionError:
                 _LOGGER.debug("Could not stop interrupted Woosa massage sequence")
             raise
@@ -548,14 +452,15 @@ class WoosaController(SolaceController):
                 sound=sound,
             )
         )
-        await self.write_command(_ALARM_QUERY)
+        await self.write_command(WOOSA_ALARM_QUERY)
 
     def _parse_notification(self, data: bytes) -> None:
-        updates: dict[str, bool | int | str] = {}
+        updates: list[StateUpdate] = []
         for selector, key in ((0x0A, "memory_1"), (0x0F, "love"), (0x05, "tv"), (0x09, "zero_g")):
             if data.startswith(bytes.fromhex("FFFFFFFF030600") + bytes([selector])):
-                updates[f"solace_{key}_selected"] = True
-        for zone, frames in _MASSAGE_REPLIES.items():
+                updates.append(preset_selected(key)(True))
+        levels: dict[str, int] = {}
+        for zone, frames in WOOSA_MASSAGE_REPLIES.items():
             if (
                 bytes.fromhex("FFFFFFFF050000") + bytes([{"head": 1, "foot": 2, "mode": 3}[zone]])
                 not in data
@@ -563,45 +468,50 @@ class WoosaController(SolaceController):
                 continue
             for level, frame in enumerate(frames):
                 if frame in data:
-                    key = "woosa_massage_mode" if zone == "mode" else f"woosa_{zone}_level"
-                    updates[key] = level + (zone == "mode")
+                    if zone == "mode":
+                        updates.append(MASSAGE_MODE(level + 1))
+                    else:
+                        levels[zone] = level
+                        updates.append(massage_intensity(zone)(level))
                     break
             break  # The app's outer zone predicates are mutually exclusive.
-        if "woosa_head_level" in updates or "woosa_foot_level" in updates:
+        if levels:
             current = self._coordinator.controller_state
-            updates["woosa_massage_active"] = bool(
-                updates.get("woosa_head_level", current.get("woosa_head_level", 0))
-                or updates.get("woosa_foot_level", current.get("woosa_foot_level", 0))
+            updates.append(
+                MASSAGE_ACTIVE(
+                    bool(
+                        levels.get("head", current.get(massage_intensity("head"), 0))
+                        or levels.get("foot", current.get(massage_intensity("foot"), 0))
+                    )
+                )
             )
         # The app treats arbitrary control/massage replies as light brightness.
         # Keep its candidate diagnostic only; it cannot establish physical state.
         if bytes.fromhex("FFFFFFFF0500") in data and len(data) > 7:
-            updates["woosa_light_candidate"] = data[7]
+            updates.append(LIGHT_CANDIDATE(data[7]))
         if data.startswith(bytes.fromhex("FFFFFFFF0100030B00")):
-            updates.update(
-                {
-                    "solace_alarm_enabled": False,
-                    "solace_alarm_time": "00:00",
-                    "solace_alarm_weekdays": "",
-                    "solace_alarm_mode": "no_action",
-                    "solace_alarm_massage": False,
-                    "solace_alarm_sound": "none",
-                }
-            )
+            updates += [
+                ALARM_ENABLED(False),
+                ALARM_TIME("00:00"),
+                ALARM_WEEKDAYS(""),
+                ALARM_MODE("no_action"),
+                ALARM_MASSAGE(False),
+                ALARM_SOUND("none"),
+            ]
         elif data.startswith(bytes.fromhex("FFFFFFFF01000413")) and len(data) >= 17:
-            updates.update(
-                {
-                    "solace_alarm_enabled": data[8] == 0x0F,
-                    "solace_alarm_time": f"{data[9]:02x}:{data[10]:02x}",
-                    "solace_alarm_weekdays": ",".join(
-                        str(day) for day in range(1, 8) if data[12] & (1 << day)
-                    ),
-                    "solace_alarm_mode": {1: "zero_g", 2: "memory_1", 3: "no_action"}.get(
+            updates += [
+                ALARM_ENABLED(data[8] == 0x0F),
+                ALARM_TIME(f"{data[9]:02x}:{data[10]:02x}"),
+                ALARM_WEEKDAYS(
+                    ",".join(str(day) for day in range(1, 8) if data[12] & (1 << day))
+                ),
+                ALARM_MODE(
+                    {1: "zero_g", 2: "memory_1", 3: "no_action"}.get(
                         data[14], f"unknown_{data[14]:02x}"
-                    ),
-                    "solace_alarm_massage": data[15] == 1,
-                    "solace_alarm_sound": "alarm" if data[16] == 1 else "none",
-                }
-            )
+                    )
+                ),
+                ALARM_MASSAGE(data[15] == 1),
+                ALARM_SOUND("alarm" if data[16] == 1 else "none"),
+            ]
         if updates:
-            self.forward_controller_state_updates(updates)
+            self.forward_controller_state_updates(*updates)

@@ -6,23 +6,22 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 import voluptuous as vol
 from homeassistant.exceptions import ServiceValidationError
-from pytest_homeassistant_custom_component.common import MockConfigEntry
+from pytest_homeassistant.common import MockConfigEntry
 
-from custom_components.adjustable_bed.beds.gmmotor import GmmotorController
-from custom_components.adjustable_bed.beds.gmmotor_desk import GmmotorDeskController
-from custom_components.adjustable_bed.beds.gmmotor_sleep import GmmotorSleepController
+from custom_components.adjustable_bed.beds.gmmotor.controller import GmmotorController
+from custom_components.adjustable_bed.beds.gmmotor.desk import GmmotorDeskController
+from custom_components.adjustable_bed.beds.gmmotor.notifications import Event
+from custom_components.adjustable_bed.beds.gmmotor.requests import Request
+from custom_components.adjustable_bed.beds.gmmotor.services import async_register_gmmotor_services
+from custom_components.adjustable_bed.beds.gmmotor.sleep import GmmotorSleepController
+from custom_components.adjustable_bed.beds.gmmotor.transport import Transport
 from custom_components.adjustable_bed.button import ControllerActionButton
 from custom_components.adjustable_bed.config_flow import (
     AdjustableBedConfigFlow,
-    _gmmotor_errors,
     _name_rule_setup_name,
 )
 from custom_components.adjustable_bed.const import DOMAIN
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
-from custom_components.adjustable_bed.gmmotor_notifications import Event
-from custom_components.adjustable_bed.gmmotor_requests import Request
-from custom_components.adjustable_bed.gmmotor_services import async_register_gmmotor_services
-from custom_components.adjustable_bed.gmmotor_transport import Transport
 from custom_components.adjustable_bed.paired_coordinator import SingleAddressPairedCoordinator
 from custom_components.adjustable_bed.pairing import (
     build_pair_entry_data,
@@ -31,6 +30,7 @@ from custom_components.adjustable_bed.pairing import (
     supports_single_address_pairing,
 )
 from custom_components.adjustable_bed.sensor import AdjustableBedControllerStateSensor
+from custom_components.adjustable_bed.setup_questions import _gmmotor_errors
 
 
 def physical(hass, product="6BRM", address="AA:BB:CC:DD:EE:01"):
@@ -42,7 +42,7 @@ def physical(hass, product="6BRM", address="AA:BB:CC:DD:EE:01"):
             "product_type": product,
             "gmmotor_side": "left",
             "disable_angle_sensing": True,
-            "disconnect_after_command": False,
+            "connection_mode": "idle",
         },
     )
     c = AdjustableBedCoordinator(hass, entry)
@@ -79,15 +79,15 @@ async def test_real_app_step_preserves_raw_name_and_rejects_incompatible_nested_
         "bed_type": "gmmotor",
         "ble_device_name": "V9RM-raw",
     }
-    result = await flow.async_step_gmmotor()
-    assert result["type"] == "form" and result["step_id"] == "gmmotor"
+    result = await flow.async_step_profile_questions()
+    assert result["type"] == "form" and result["step_id"] == "profile_questions"
     with patch.object(
         flow, "_finish_with_verify", AsyncMock(return_value={"type": "create_entry"})
     ) as finish:
-        result = await flow.async_step_gmmotor({"product_type": "V9RM:0", "gmmotor_side": "right"})
+        result = await flow.async_step_profile_questions({"product_type": "V9RM:0", "gmmotor_side": "right"})
         assert result["errors"] == {"gmmotor_side": "gmmotor_side"}
         finish.assert_not_awaited()
-        await flow.async_step_gmmotor({"product_type": "V9RM:1", "gmmotor_side": "right"})
+        await flow.async_step_profile_questions({"product_type": "V9RM:1", "gmmotor_side": "right"})
     data = finish.await_args.args[0]
     assert data["product_type"] == "V9RM:1" and data["gmmotor_side"] == "right"
     assert data["ble_device_name"] == "V9RM-raw" and data["disable_angle_sensing"] is True
@@ -198,7 +198,7 @@ async def test_real_scheduler_keeps_two_countdown_frames_atomic(hass):
 
 async def test_button_and_sensor_use_production_runtime(hass):
     c, ctrl = physical(hass)
-    spec = next(x for x in ctrl.controller_button_specs if x.name == "Head Up")
+    spec = next(x for x in ctrl.controller_button_specs if x.name == "Head up")
     button = ControllerActionButton(c, spec)
     sensor = AdjustableBedControllerStateSensor(c, ctrl.controller_state_sensor_specs[0])
     assert button.extra_state_attributes["hold_start_delay_ms"] == 100
@@ -247,7 +247,7 @@ async def test_sleep_stop_service_waits_for_the_entire_active_frame(hass, sxb):
         data={
             "address": "AA:BB:CC:DD:EE:01",
             "bed_type": "gmmotor_sleep_sxb" if sxb else "gmmotor_sleep_mm",
-            "disconnect_after_command": False,
+            "connection_mode": "idle",
         },
     )
     c = AdjustableBedCoordinator(hass, entry)
@@ -282,7 +282,7 @@ async def test_sleep_stop_service_waits_for_the_entire_active_frame(hass, sxb):
     with (
         patch.object(c, "async_connect", AsyncMock(return_value=True)),
         patch.object(ctrl, "validate_gmmotor_request", side_effect=admit),
-        patch("custom_components.adjustable_bed.beds.gmmotor_sleep._QUEUE_TICK", 0),
+        patch("custom_components.adjustable_bed.beds.gmmotor.sleep._QUEUE_TICK", 0),
         patch(
             "custom_components.adjustable_bed.services._resolve_sided_targets",
             return_value=([(c, "both")], []),

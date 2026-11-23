@@ -4,7 +4,7 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from custom_components.adjustable_bed.gmmotor_transport import (
+from custom_components.adjustable_bed.beds.gmmotor.transport import (
     E0FF,
     NORDIC,
     P1_SERVICES,

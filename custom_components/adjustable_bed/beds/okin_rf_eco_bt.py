@@ -5,13 +5,11 @@ from __future__ import annotations
 import logging
 from collections.abc import Callable
 
-from .base import MotorControlSpec
-from .okin_uuid import OkinUuidController
+from ..profiles.okin_nframe import RF_ECO_BT, RF_ECO_BT_REFRESH_MS
+from .entity_specs import MotorControlSpec
+from .okin_uuid.controller import OkinUuidController
 
 _LOGGER = logging.getLogger(__name__)
-
-STAIR_OUT_COMMAND = 0x00000001
-STAIR_IN_COMMAND = 0x00000002
 
 
 class OkinRfEcoBtController(OkinUuidController):
@@ -22,10 +20,7 @@ class OkinRfEcoBtController(OkinUuidController):
     single actuator surface.
     """
 
-    @property
-    def requires_persistent_connection(self) -> bool:
-        """Keep the stair receiver connected to avoid idle reconnect timeouts (#344)."""
-        return True
+    _route_profile = RF_ECO_BT
 
     @property
     def supports_preset_flat(self) -> bool:
@@ -95,24 +90,6 @@ class OkinRfEcoBtController(OkinUuidController):
             ),
         )
 
-    @property
-    def stale_motor_entity_keys(self) -> frozenset[str]:
-        """Remove bed motor covers if an existing entry is switched to this profile."""
-        return frozenset(
-            {
-                "back",
-                "legs",
-                "head",
-                "feet",
-                "lumbar",
-                "pillow",
-                "neck",
-                "tilt",
-                "hip",
-                "bed_height",
-            }
-        )
-
     async def start_notify(self, callback: Callable[[str, float], None] | None = None) -> None:
         """Store callback only; this profile has no supported position feedback."""
         self._notify_callback = callback
@@ -127,11 +104,11 @@ class OkinRfEcoBtController(OkinUuidController):
 
     async def move_back_up(self) -> None:
         """Move the stair actuator out/open."""
-        await self._move_motor("back", STAIR_OUT_COMMAND)
+        await self._move_motor("back", RF_ECO_BT.keys["stair_out"])
 
     async def move_back_down(self) -> None:
         """Move the stair actuator in/close."""
-        await self._move_motor("back", STAIR_IN_COMMAND)
+        await self._move_motor("back", RF_ECO_BT.keys["stair_in"])
 
     async def stop_all(self) -> None:
         """End held-command refresh; this layout defines no release packet."""
@@ -147,7 +124,7 @@ class OkinRfEcoBtController(OkinUuidController):
             await self.write_command(
                 self._build_command(command_value),
                 repeat_count=self._coordinator.motor_pulse_count,
-                repeat_delay_ms=100,
+                repeat_delay_ms=RF_ECO_BT_REFRESH_MS,
             )
         finally:
             self._motor_state.pop(motor, None)

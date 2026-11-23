@@ -5,13 +5,13 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from homeassistant.const import CONF_ADDRESS, CONF_NAME
-from pytest_homeassistant_custom_component.common import MockConfigEntry
+from pytest_homeassistant.common import MockConfigEntry
 
+from custom_components.adjustable_bed.beds.furnimove.profiles import FURNIMOVE_PROFILES
 from custom_components.adjustable_bed.bluetooth_freshness import FreshnessStatus
 from custom_components.adjustable_bed.config_flow import (
     AdjustableBedConfigFlow,
     AdjustableBedOptionsFlow,
-    _motor_count_options,
 )
 from custom_components.adjustable_bed.const import (
     ADAPTER_AUTO,
@@ -32,6 +32,7 @@ from custom_components.adjustable_bed.detection import (
     detect_bed_type_detailed,
     refine_okin_shared_uuid_protocol_from_gatt,
 )
+from tests.form_helpers import form_fields
 
 
 @pytest.mark.parametrize("chosen", [BED_TYPE_FURNIMOVE, BED_TYPE_OKIN_RF_ECO_BT])
@@ -45,13 +46,29 @@ async def test_bluetooth_confirm_uses_the_selected_app_fields(hass, chosen):
     )
     flow._disambiguated_bed_type = chosen
     result = await flow.async_step_bluetooth_confirm()
-    fields = {marker.schema for marker in result["data_schema"].schema}
+    # The Okin question asks which app; the detected receiver is its Keep.
+    assert result["step_id"] == "okin_family"
+    result = await flow.async_step_okin_family(
+        {"choice": "furnimove" if chosen == BED_TYPE_FURNIMOVE else "keep"}
+    )
+    if result["step_id"] == "keep_detected":
+        # Keep says what it sets up first.
+        result = await flow.async_step_keep_continue()
+    if result["step_id"] == "profile_questions":
+        # FurniMove asks its handset first.
+        result = await flow.async_step_profile_questions(
+            {CONF_FURNIMOVE_REMOTE: next(iter(FURNIMOVE_PROFILES))}
+        )
+    assert result["step_id"] == "finish_settings"
+    fields = {marker.schema for marker in form_fields(result["data_schema"])}
     if chosen == BED_TYPE_FURNIMOVE:
         assert fields.isdisjoint({
             CONF_PROTOCOL_VARIANT, CONF_MOTOR_COUNT, CONF_HAS_MASSAGE, CONF_MOTOR_PULSE_DELAY_MS,
         })
     else:
-        assert CONF_PROTOCOL_VARIANT in fields
+        # The receiver has one route, so setup asks for none.
+        assert CONF_PROTOCOL_VARIANT not in fields
+        assert CONF_MOTOR_PULSE_DELAY_MS not in fields
 
 
 @pytest.mark.parametrize("scanner_available", [False, True])
@@ -62,10 +79,10 @@ async def test_every_finish_path_requires_the_app_handset_before_probe(hass, sca
     flow._verification_possible = lambda: scanner_available
     data = {CONF_ADDRESS: "AA:BB:CC:DD:EE:FF", CONF_BED_TYPE: BED_TYPE_FURNIMOVE}
     result = await flow._finish_with_verify(data, "Bed receiver")
-    assert result["step_id"] == "furnimove"
+    assert result["step_id"] == "profile_questions"
     assert {marker.schema for marker in result["data_schema"].schema} == {CONF_FURNIMOVE_REMOTE}
     assert not requires_pairing(BED_TYPE_FURNIMOVE)
-    result = await flow.async_step_furnimove({CONF_FURNIMOVE_REMOTE: "not-captured"})
+    result = await flow.async_step_profile_questions({CONF_FURNIMOVE_REMOTE: "not-captured"})
     assert result["errors"] == {CONF_FURNIMOVE_REMOTE: "furnimove_remote_required"}
     assert flow._pending_entry is None
 
@@ -79,56 +96,37 @@ async def test_shipped_offline_layout_creates_both_axes_without_a_bond_gate(hass
         CONF_ADDRESS: "AA:BB:CC:DD:EE:FF", CONF_BED_TYPE: BED_TYPE_FURNIMOVE,
         CONF_NAME: "Bed", CONF_MOTOR_COUNT: 1,
     }
-    result = await flow.async_step_furnimove({CONF_FURNIMOVE_REMOTE: "00000"})
+    result = await flow.async_step_profile_questions({CONF_FURNIMOVE_REMOTE: "00000"})
     assert result["type"] == "create_entry"
     assert result["data"][CONF_MOTOR_COUNT] == 2
     assert result["data"][CONF_HAS_MASSAGE] is False
     assert result["data"][CONF_DISABLE_ANGLE_SENSING] is True
 
 
-async def test_options_change_from_stair_requires_a_handset_then_derives_layout(hass):
-    entry = MockConfigEntry(domain=DOMAIN, data={
-        CONF_ADDRESS: "AA:BB:CC:DD:EE:FF", CONF_BED_TYPE: BED_TYPE_OKIN_RF_ECO_BT,
-        CONF_MOTOR_COUNT: 1,
-    })
-    entry.add_to_hass(hass)
-    flow = AdjustableBedOptionsFlow(entry)
-    flow.hass = hass
-    flow.handler = entry.entry_id
-    rebuilt = await flow._async_options_form({CONF_BED_TYPE: BED_TYPE_FURNIMOVE}, step_id="settings")
-    assert rebuilt["type"] == "form"
-    saved = await flow._async_options_form({
-        CONF_BED_TYPE: BED_TYPE_FURNIMOVE, CONF_FURNIMOVE_REMOTE: "00000",
-    }, step_id="settings")
-    assert saved["type"] == "create_entry"
-    assert entry.data[CONF_FURNIMOVE_REMOTE] == "00000"
-    assert entry.data[CONF_MOTOR_COUNT] == 2
-    assert entry.data[CONF_BED_TYPE] == BED_TYPE_FURNIMOVE
-    assert _motor_count_options(BED_TYPE_OKIN_RF_ECO_BT) == [1]
-
-
 async def test_explicit_furnimove_offers_all_captured_handsets_without_a_bond_gate(hass):
     """A shared handset ID must not force the app onto a different bond policy."""
-    from custom_components.adjustable_bed.beds.okin_uuid import (
+    from custom_components.adjustable_bed.beds.furnimove.profiles import FURNIMOVE_PROFILES
+    from custom_components.adjustable_bed.beds.okin_uuid.controller import (
         FURNIMOVE_DOT_HANDSETS,
         FURNIMOVE_STANDARD_HANDSETS,
     )
+    from custom_components.adjustable_bed.config_flow import _setup_routes
     from custom_components.adjustable_bed.const import (
-        ALL_PROTOCOL_VARIANTS,
+        BED_TYPE_OKIN_DOT,
         OKIMAT_VARIANTS,
         OKIN_DOT_FURNIMOVE_VARIANTS,
     )
-    from custom_components.adjustable_bed.furnimove_profiles import FURNIMOVE_PROFILES
 
     flow = AdjustableBedConfigFlow()
     flow.hass = hass
     flow.context = {}
     flow._verification_possible = lambda: False
     flow._manual_data = {CONF_ADDRESS: "AA:BB:CC:DD:EE:FF", CONF_BED_TYPE: BED_TYPE_FURNIMOVE}
-    result = await flow.async_step_furnimove()
+    result = await flow.async_step_profile_questions()
     marker = next(iter(result["data_schema"].schema))
-    offered = set(result["data_schema"].schema[marker].container)
-    saved = await flow.async_step_furnimove({CONF_FURNIMOVE_REMOTE: "82417"})
+    # The long handset list is a searchable picker: each row's label selects its ID.
+    offered = set(result["data_schema"].schema[marker].rows().values())
+    saved = await flow.async_step_profile_questions({CONF_FURNIMOVE_REMOTE: "82417"})
     assert saved["type"] == "create_entry"
     assert saved["data"][CONF_FURNIMOVE_REMOTE] == "82417"
     assert saved["data"][CONF_MOTOR_COUNT] == 2
@@ -139,25 +137,8 @@ async def test_explicit_furnimove_offers_all_captured_handsets_without_a_bond_ga
     assert FURNIMOVE_STANDARD_HANDSETS.issubset(offered)
     assert FURNIMOVE_STANDARD_HANDSETS.issubset(OKIMAT_VARIANTS)
     assert OKIN_DOT_FURNIMOVE_VARIANTS == FURNIMOVE_DOT_HANDSETS
-    assert OKIN_DOT_FURNIMOVE_VARIANTS.isdisjoint(ALL_PROTOCOL_VARIANTS)
-
-
-async def test_furnimove_options_can_correct_90167_to_the_app_82417(hass):
-    entry = MockConfigEntry(domain=DOMAIN, data={
-        CONF_ADDRESS: "AA:BB:CC:DD:EE:FF", CONF_BED_TYPE: BED_TYPE_FURNIMOVE,
-        CONF_FURNIMOVE_REMOTE: "90167", CONF_HAS_MASSAGE: True,
-    })
-    entry.add_to_hass(hass)
-    flow = AdjustableBedOptionsFlow(entry)
-    flow.hass = hass
-    flow.handler = entry.entry_id
-    saved = await flow._async_options_form({
-        CONF_BED_TYPE: BED_TYPE_FURNIMOVE, CONF_FURNIMOVE_REMOTE: "82417",
-    }, step_id="settings")
-    assert saved["type"] == "create_entry"
-    assert entry.data[CONF_FURNIMOVE_REMOTE] == "82417"
-    assert entry.data[CONF_HAS_MASSAGE] is False
-    assert entry.data[CONF_DISABLE_ANGLE_SENSING] is True
+    # A fresh DOT setup never offers the handsets that belong to FurniMove.
+    assert OKIN_DOT_FURNIMOVE_VARIANTS.isdisjoint(_setup_routes(BED_TYPE_OKIN_DOT))
 
 
 async def test_furnimove_setup_probe_waits_for_live_services(hass, mock_bleak_client):
@@ -193,11 +174,17 @@ async def test_dot_options_keep_a_stored_furnimove_handset_only_for_that_entry(h
         flow.handler = entry.entry_id
         return flow
 
+    from custom_components.adjustable_bed.setup_questions import setup_profile_for
+
     for stored, expected in (("93558", True), ("97450", False)):
         flow = options_flow(stored)
         form = await flow._async_options_form(None, step_id="settings")
-        marker = next(m for m in form["data_schema"].schema if m.schema == CONF_PROTOCOL_VARIANT)
-        container = form["data_schema"].schema[marker].container
+        # The code is the Okin route, which only the guided change changes.
+        assert CONF_PROTOCOL_VARIANT not in {m.schema for m in form["data_schema"].schema}
+        data = {CONF_BED_TYPE: BED_TYPE_OKIN_DOT, CONF_PROTOCOL_VARIANT: stored}
+        profile = setup_profile_for(data)
+        assert profile is not None
+        container = profile.questions[0].options(data) or {}
         assert ("93558" in container) is expected
         assert {"90167", "91983"}.isdisjoint(container)
         assert stored in container
@@ -229,11 +216,11 @@ def test_app_gateway_is_a_candidate_with_no_inferred_handset():
     ("service_uuids", "manufacturer_data", "expected", "confident"),
     [
         # The app checks its manufacturer and 1523 predicates before the gateway.
-        (["00001420-0000-1000-8000-00805f9b34fb"], {1643: b"\x01"}, "dewertokin", True),
+        (["00001420-0000-1000-8000-00805f9b34fb"], {1643: b"\x01"}, "okin_handle", True),
         (
             ["00001420-0000-1000-8000-00805f9b34fb", "00001523-0000-1000-8000-00805f9b34fb"],
             {},
-            "dewertokin",
+            "okin_handle",
             True,
         ),
         # Another bed's unique service UUID keeps its own route.

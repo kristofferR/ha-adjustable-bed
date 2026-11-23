@@ -1,21 +1,21 @@
 # RUF, W.Silver, AMERICANSTAR, Bailey and TX apps
 
-**Status:** ❓ Needs testing (app-derived support; physical hardware unverified)
+**Status:** Not yet tested
 
 **Credit:** Reverse engineering by [kristofferR](https://github.com/kristofferR/ha-adjustable-bed)
 
 ## Known Models
 
 - RUF uses the fixed six-button BQRM remote, including names recognized by its app.
-- W.Silver Products: 508 current selectors, including its B6RM, Y2RM, U1RM,
+- W.Silver Products: 508 remote models to choose from, including its B6RM, Y2RM, U1RM,
   A6RM, UFRM, A8RM, UVRM, O1RM, DIRM, FJRM, AWRM, AXRM, JPRM and ACRN choices.
-- AMERICANSTAR: 532 usable selectors; Bailey's Bed Control: 572 usable selectors;
-  TX: 495 usable selectors. Setup lists each app's own selectors. A selector
-  identifies the app layout, not a confirmed physical actuator count.
+- AMERICANSTAR: 532 remote models; Bailey's Bed Control: 572; TX: 495. Setup
+  lists each app's own models. The model sets which controls you get, as in the
+  app; it does not tell how many motors your bed has.
 - The separately selected sleep receiver advertises a name containing the
   case-sensitive text `HJ_Bed`. RUF does not expose that receiver.
 - The older AMERICANSTAR Comfort Bed profile is a different app and controller.
-  See [ORE Comfort Bed](ore-comfort-bed.md).
+  See [ORE comfort-bed profiles](keeson.md#ore-comfort-bed-profiles).
 
 ## Apps
 
@@ -31,36 +31,39 @@
 
 | Feature | RUF | W.Silver / AMERICANSTAR / Bailey / TX |
 |---------|-----|--------------------------------------|
-| Motor Control | Head, foot, combined | Exact selected model's axes and buttons |
+| Motor Control | Head, foot, combined | The selected model's motors and buttons |
 | Memory Presets | No | Model-specific recall and separate save buttons |
-| Massage | No generic massage page | Model-specific buttons and reply/version-gated intensity sliders |
-| Lights | No generic light page | Model buttons, reply-gated RGB and timeout controls |
-| Position Feedback | No exposed motor sliders | App angle sliders when the model and protocol version provide them |
-| Diagnostics | Reply-gated | Reply-gated |
-| Waist Mattress | Powered initialization required | Powered initialization required |
-| Normal Mattress | No | Explicit opt-in plus powered initialization; W.Silver, AMERICANSTAR and TX only |
-| Countdown / Indexed Alarms | No | Model and reply-gated |
-| Weekly Alarms | No | Model `hasNewAlarm` plus a nonempty alarm position list |
-| Sleep Monitoring / Intervention | No | Separate receiver, explicit app selection |
-| App PIN / Authentication | No app handshake found | No app handshake found; OS or firmware link security remains unverified |
+| Massage | No | The model's buttons; intensity sliders once the bed reports them |
+| Lights | No | The model's buttons; color and timeout controls once the bed reports them |
+| Position Feedback | No | Angle sliders on models that report angles |
+| Diagnostics | Once the bed answers | Once the bed answers |
+| Waist Mattress | Appears once the powered mattress reports in | Appears once the powered mattress reports in |
+| Normal Mattress | No | W.Silver, AMERICANSTAR and TX only: choose it in setup; appears once the powered mattress reports in |
+| Countdown / Indexed Alarms | No | On models that have them, once the bed answers |
+| Weekly Alarms | No | On models with weekly alarms |
+| Sleep Monitoring / Intervention | No | Separate receiver, added as its own entry |
+| PIN or pairing | Not needed | Not needed |
 
 ## Detection / Setup
 
 1. Select the exact app name in setup. Shared Bluetooth services and four-character
    names cannot identify which app layout a bed uses.
-2. Choose **Model from the Bluetooth name** or an explicit model. Automatic model
+2. Choose **Automatic (recommended)**, which reads the model from the Bluetooth
+   name, or an explicit model. Automatic model
    selection reads the first four characters of the raw Bluetooth name, ignoring
    case. `QRRM` and `Cool Touch` names require a model choice. RUF always selects
    its fixed BQRM remote.
-3. Only choose **with normal mattress** if your W.Silver, AMERICANSTAR or TX bed
+3. Only choose a model ending in "with normal mattress" if your W.Silver, AMERICANSTAR or TX bed
    actually provides that function. The normal app constructors do not enable it.
    The apps can consume a saved Boolean enabling this page, but the origin and
    prevalence of old saved records are unknown. HA's explicit choice represents
-   that capability choice; it does not import or infer an app's saved history.
+   that capability choice; it does not read an app's saved history.
    A new, valid, powered normal initialization is also required. VER1/VER2 pages
    do not enable normal-mattress controls.
-4. For the separate sleep device, add **W.Silver / AMERICANSTAR / Bailey / TX sleep
-   receiver**, choose its app, and select that receiver's address. Its GATT roles
+4. For the separate sleep device, add the row for its app: **W.Silver Products
+   separate sleep receiver**, **AMERICANSTAR separate sleep receiver**, **Bailey's
+   Bed Control separate sleep receiver** or **TX separate sleep receiver**, and
+   select that receiver's address. Its GATT roles
    differ from the bed remote. Device attributes must arrive before settings can
    be changed. A source-single receiver in single mode cannot switch user mode.
 
@@ -159,7 +162,9 @@ is separate from recall; a long-code field alone never enables a held command.
 | Aroma timing | `6e 1b/1c/1d value 00 SUM8`, 150 ms between writes | Model and aroma reply |
 
 Massage buttons, timers, heat, resets and additional app-labelled actions use
-only their app/model catalog bindings. Slider ranges come from that model's
+only their app/model catalog bindings. A model with more than one of the 10, 20
+and 30 minute massage timers shows them as one **Massage timer** select
+(durations only); each option sends that timer's button command. Slider ranges come from that model's
 entities; feedback clamps to those ranges. A checksum or GATT completion does
 not prove that a physical operation succeeded.
 
@@ -196,11 +201,11 @@ values, not live UI controls. They are not offered as an Off command.
 
 | Family | Bytes | Action |
 |--------|-------|--------|
-| Countdown | `6e05 minute-low slot SUM8`, then `6e06 minute-high action SUM8` | Existing `richmat_mh_alarm` action; slot 0 or model-gated 1–3 |
-| Normal mattress | `5e side 0b repeat intensity H M nowH nowM SUM8` | `richmat_app_alarm`, family `mattress`; repeat `01` once / `02` daily |
-| Waist mattress | `5e03 0b repeat side intensity H M nowH nowM SUM8` | Existing `richmat_mh_waist_alarm` action |
-| Weekly save/toggle | `6e200d050101 slot bed H M mode week SUM8` | `richmat_app_alarm`, family `calendar` |
-| Weekly delete | `6e2008050201 slot SUM8` | Set `delete: true` |
+| Countdown | `6e05 minute-low slot SUM8`, then `6e06 minute-high action SUM8` | Existing `set_alarm` action; slot 0 or model-gated 1–3 |
+| Normal mattress | `5e side 0b repeat intensity H M nowH nowM SUM8` | `set_alarm` with `mattress_side`; repeat `01` once / `02` daily (all seven weekdays) |
+| Waist mattress | `5e03 0b repeat side intensity H M nowH nowM SUM8` | Existing `set_alarm` action |
+| Weekly save/toggle | `6e200d050101 slot bed H M mode week SUM8` | `set_alarm` with `slot` |
+| Weekly delete | `6e2008050201 slot SUM8` | Not offered; `enabled: false` disables the slot |
 | Weekly query | `6e2008050100009c` | Sent before clock synchronization and after a change |
 
 Weekly slots are 1–7. Mode is an exact position opcode in the selected model's
@@ -274,7 +279,7 @@ TX omits Music USB from both initialization lists. Other apps include that
 query in legacy/VER1 lists. Query completion is not a semantic acknowledgment.
 HA's configured pulse count bounds movement and protocol-specific release is
 attempted even after cancellation. Physical timing and firmware stop behavior
-still require real-user confirmation after a beta or release.
+still require real-user confirmation.
 
 ## Notes
 
@@ -285,10 +290,6 @@ BedTech is a separate follow-up and is not covered by these app profiles.
 
 ### Analysis provenance
 
-| Package/version | Frozen artifact-set SHA-256 |
-|-----------------|----------------------------|
-| `com.desarketing.ruf_betten_motor2` 1.1.8 | `3883e4f4197e9bd91d9a52ffad4b45923b2c3b437fb4ab0b45856b311ad148ab` |
-| `com.richmat.wsilver2` 1.1.19 | `876cf079b8d7ecf344010714b5178e7c376b444d591687e53d1e41081d421035` |
-| `com.richmat.americanstar` 1.0.0 | `998d8c568339b504ffec7f7b062ef6f3f487db3fcd54ad8c7adf08152a8547c4` |
-| `com.richmat.bailey2` 2.1.21 | `15bc635d9c98eefaa65355b5ef1942cfd9b61273e065bb87fe9a1f787fb7aed3` |
-| `com.richmat.tx` 1.0.0 | `7454dd539701130569e55a5595ab285558286253cd050bde4f4fa00396d987ff` |
+Based on `com.desarketing.ruf_betten_motor2` 1.1.8, `com.richmat.wsilver2`
+1.1.19, `com.richmat.americanstar` 1.0.0, `com.richmat.bailey2` 2.1.21 and
+`com.richmat.tx` 1.0.0.

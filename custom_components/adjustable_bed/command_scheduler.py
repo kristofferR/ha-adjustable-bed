@@ -5,24 +5,47 @@ them, scopes replacement to the resources they control, and provides an atomic
 prepare/commit gate for paired coordinators, but it never slices or interleaves
 protocol coroutines. Protocol-specific concurrency can be added behind a
 different execution strategy once its wire behaviour is proven.
+
+A held intent (``CommandKind.HOLD``, #483) also carries a lease: an owner, a
+generation and a monotonic deadline. Renewing a live lease replaces its
+deadline without touching the wire. When the deadline passes, the scheduler
+cancels the hold through its own cancel event, so the controller runs the same
+cleanup a STOP or replacement would. A generation that has ended is never
+admitted or renewed again, and leases live only in memory.
+
+The merged-stream strategy (#516) is the one exception to opaque operations.
+It is used only for motors a controller declares in
+``ExecutionCapabilities.concurrent``. One streamer per device owns the wire as
+a single ``CommandKind.STREAM`` intent, and holds and timed moves on disjoint
+motors join it as members. Each tick the controller composes the live members
+into its frames; a member that ends gets its own cleanup, and the last one out
+runs the profile release.
 """
 
 from __future__ import annotations
 
 import asyncio
 import contextlib
+import logging
 import time
-from collections import deque
-from collections.abc import Awaitable, Callable, Collection
+from collections import OrderedDict, deque
+from collections.abc import Awaitable, Callable, Collection, Coroutine, Iterator
 from contextvars import Context, ContextVar, Token, copy_context
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from enum import StrEnum
-from typing import Any, Final
+from typing import Any, Final, Literal, Protocol
 from uuid import uuid4
+
+from .errors import BedNotConnectedError
+
+_LOGGER = logging.getLogger(__name__)
 
 ALL_COMMAND_RESOURCES: Final = frozenset({"*"})
 MAX_RECENT_COMMAND_RECORDS: Final = 20
+# Ended lease generations are remembered so a late renewal cannot restart a
+# hold. Live and reserved leases are never evicted.
+MAX_HOLD_LEASE_RECORDS: Final = 128
 
 
 class CommandKind(StrEnum):
@@ -31,7 +54,10 @@ class CommandKind(StrEnum):
     COMMAND = "command"
     SEEK = "seek"
     GROUP = "group"
+    INSPECTION = "inspection"
     STOP = "stop"
+    HOLD = "hold"
+    STREAM = "stream"
 
 
 class CommandState(StrEnum):
@@ -56,10 +82,536 @@ class CommandOutcome(StrEnum):
     SHUTDOWN = "shutdown"
     TIMEOUT = "timeout"
     FAILED = "failed"
+    EXPIRED = "expired"
+    DISCONNECTED = "disconnected"
 
 
 class PreparedCommandInvalidated(RuntimeError):
     """Raised when a linked command loses its reservation before completion."""
+
+
+class StaleHoldLease(RuntimeError):
+    """Raised when a hold names a generation that has ended or been superseded."""
+
+
+class HoldClaim(StrEnum):
+    """What a hold lease request may do on one device."""
+
+    RENEW = "renew"
+    """A live or reserved lease of this generation takes the new deadline."""
+    START = "start"
+    """No live lease of this generation exists; a new hold may be admitted."""
+    STALE = "stale"
+    """The generation has ended, was superseded, or names another action."""
+
+
+@dataclass(frozen=True, slots=True)
+class HoldLease:
+    """One caller's claim on a held motion, renewable until it ends."""
+
+    owner: str
+    generation: int
+    action: str
+    """The held motion within the resources, such as a direction or control."""
+    duration_s: float
+    """How long the hold lasts after this request unless renewed again."""
+
+    def __post_init__(self) -> None:
+        if not self.owner or not self.action:
+            raise ValueError("A hold lease needs an owner and an action")
+        if isinstance(self.generation, bool) or self.generation < 0:
+            raise ValueError("A hold lease generation must be a non-negative integer")
+        if not self.duration_s > 0:
+            raise ValueError("A hold lease must last a positive duration")
+
+
+@dataclass(slots=True)
+class HoldWindow:
+    """One press's hold of a control, and the route its renewals follow."""
+
+    control: str
+    generation: int
+    deadline: float
+    windowed: bool = True
+    ended: bool = False
+    expired: bool = False
+    # The commands this press started, one per physical side.
+    commands: list[CommandContext] = field(default_factory=list)
+
+    @property
+    def lapsed(self) -> bool:
+        """Whether renewals stopped, even before the deadline keeper notices."""
+        return self.expired or asyncio.get_running_loop().time() >= self.deadline
+
+
+class HoldWindows:
+    """One bed's presses by (side, owner), kept by the runtime they describe.
+
+    Ended presses are remembered, bounded, so a late renewal of an ended press
+    never starts motion again. A reloaded bed gets a new runtime and starts empty.
+    """
+
+    __slots__ = ("_presses",)
+    ENDED_KEPT: Final = 64
+
+    def __init__(self) -> None:
+        self._presses: OrderedDict[tuple[str, str], HoldWindow] = OrderedDict()
+
+    def get(self, side: str, owner: str) -> HoldWindow | None:
+        return self._presses.get((side, owner))
+
+    def remember(self, side: str, owner: str, press: HoldWindow) -> None:
+        key = (side, owner)
+        self._presses[key] = press
+        self._presses.move_to_end(key)
+        ended = [k for k, w in self._presses.items() if w.ended]
+        for stale in ended[: max(0, len(ended) - self.ENDED_KEPT)]:
+            del self._presses[stale]
+
+
+@dataclass(slots=True, eq=False)
+class _LeaseRecord:
+    """Scheduler-side state of one owner's lease on one resource set."""
+
+    generation: int
+    action: str
+    resources: frozenset[str]
+    deadline: float
+    handle: CommandHandle | None = None
+    member: StreamMember | None = None
+    ended: bool = False
+    timer: asyncio.TimerHandle | None = None
+    ceiling: float | None = None
+    """Event-loop time no renewal can extend the running hold past."""
+
+
+@dataclass(slots=True, eq=False)
+class StreamMember:
+    """One motor's held or timed motion inside a merged stream (#516)."""
+
+    motor: str
+    """The controller's motor key, for composing frames."""
+    resource: str
+    """The scheduler resource this member owns; one member per resource."""
+    action: str
+    """The direction or control being held."""
+    deadline: float
+    """Event-loop time at which the member ends unless its lease is renewed."""
+    duration_s: float | None = None
+    """A timed move's budget, counted from its first written tick, like the
+    serial path's budget after connection. ``deadline`` applies until then."""
+    lease: HoldLease | None = None
+    ceiling: float | None = None
+    """Event-loop time no renewal can extend the member past."""
+    outcome: CommandOutcome | None = None
+    error: BaseException | None = None
+    done: asyncio.Event = field(default_factory=asyncio.Event)
+    on_wire: Callable[[], None] | None = None
+    """Called once, as the first write carrying this member starts."""
+    on_left: Callable[[float | None], None] | None = None
+    """Called once when the member settles, if it reached the wire: the
+    seconds from its first write to its retirement, or None when it failed."""
+    wire_started: float | None = None
+    left_at: float | None = None
+
+    def settle(self) -> None:
+        """Resolve the caller and report how long the motion ran."""
+        if self.done.is_set():
+            return
+        self.done.set()
+        if self.on_left is None or self.wire_started is None:
+            return
+        failed = self.error is not None or self.outcome is CommandOutcome.FAILED
+        left_at = self.left_at if self.left_at is not None else asyncio.get_running_loop().time()
+        try:
+            self.on_left(None if failed else max(0.0, left_at - self.wire_started))
+        except Exception:
+            _LOGGER.exception("Stream member timing observer failed")
+
+
+class StreamDriver(Protocol):
+    """What a merged stream needs from a controller that composes members."""
+
+    @property
+    def stream_tick_s(self) -> float:
+        """Refresh interval of the composed frames."""
+        ...
+
+    async def write_stream_tick(self, members: tuple[StreamMember, ...]) -> None:
+        """Write one composed refresh carrying every live member."""
+        ...
+
+    async def end_stream_member(
+        self, member: StreamMember, remaining: tuple[StreamMember, ...]
+    ) -> None:
+        """Run one ending member's own cleanup while ``remaining`` keep moving."""
+        ...
+
+    async def release_stream(self) -> None:
+        """Run the profile release after the last member has ended."""
+        ...
+
+
+StreamRunner = Callable[[Callable[[StreamDriver], Awaitable[None]]], Awaitable[None]]
+"""Runs the stream body with the live controller, inside the device's wire lane."""
+
+
+class _MergedStream:
+    """One streamer that owns the wire for members on disjoint motors."""
+
+    def __init__(self, scheduler: DeviceCommandScheduler, resources: frozenset[str]) -> None:
+        self.scheduler = scheduler
+        self.resources = resources
+        self.members: dict[str, StreamMember] = {}
+        self.ending: deque[StreamMember] = deque()
+        self.handle: CommandHandle | None = None
+        self.membership_changed = False
+        self.wake = asyncio.Event()
+        self.closing = False
+        self.awaiting_release: list[StreamMember] = []
+        self.cleaning: StreamMember | None = None
+
+    @property
+    def accepting(self) -> bool:
+        handle = self.handle
+        return (
+            handle is not None
+            and not self.closing
+            and not handle.future.done()
+            and not handle.context.cancel_event.is_set()
+        )
+
+    def join(self, member: StreamMember) -> None:
+        previous = self.members.get(member.resource)
+        if previous is not None:
+            # Same-motor replacement is atomic: the stream never looks empty.
+            self.retire(previous, CommandOutcome.REPLACED, close_if_empty=False)
+        self.members[member.resource] = member
+        self.membership_changed = True
+        self.wake.set()
+
+    def retire(
+        self, member: StreamMember, outcome: CommandOutcome, *, close_if_empty: bool = True
+    ) -> None:
+        """Remove a live member; its cleanup runs on the streamer's next pass.
+
+        Removing the last member closes admission at once, whoever removed it,
+        so a newcomer starts a fresh stream behind this one's release.
+        """
+        if self.members.get(member.resource) is not member:
+            return
+        del self.members[member.resource]
+        member.outcome = outcome
+        now = asyncio.get_running_loop().time()
+        if member.left_at is None:
+            # An expired member stopped moving at its deadline, however late
+            # the streamer noticed; an interrupted write stamped it already.
+            member.left_at = (
+                min(now, member.deadline) if outcome is CommandOutcome.EXPIRED else now
+            )
+        self.ending.append(member)
+        self.scheduler._end_member_lease(member)
+        self.membership_changed = True
+        if close_if_empty and not self.members:
+            self.closing = True
+        self.wake.set()
+
+    def abandon(self, outcome: CommandOutcome, error: BaseException | None = None) -> None:
+        """Resolve every member still waiting, with the stream's failure if any."""
+        cleaning = (self.cleaning,) if self.cleaning is not None else ()
+        for member in (*self.members.values(), *self.ending, *cleaning, *self.awaiting_release):
+            if member.done.is_set():
+                continue
+            member.outcome = member.outcome or outcome
+            if error is not None and member.error is None:
+                member.error = error
+            self.scheduler._end_member_lease(member)
+            member.settle()
+        self.members.clear()
+        self.ending.clear()
+        self.scheduler._forget_stream(self)
+
+    async def run(self, context: CommandContext, runner: StreamRunner) -> None:
+        try:
+            await runner(lambda driver: self._stream(context, driver))
+        except asyncio.CancelledError:
+            self.abandon(context.cancel_reason or CommandOutcome.CALLER_CANCELLED)
+            raise
+        except BaseException as err:
+            # A connection, tick or release failure reaches every member it ended.
+            self.abandon(CommandOutcome.FAILED, err)
+            raise
+        else:
+            # A runner that returned without running the body (preempted while
+            # waiting for the link) ends its members as cancelled.
+            self.abandon(context.cancel_reason or CommandOutcome.STOPPED)
+
+    def _stamp_live(self) -> None:
+        """Stop the travel clock of every live member (idempotent)."""
+        stopped_at = asyncio.get_running_loop().time()
+        for member in self.members.values():
+            if member.left_at is None:
+                # A member whose deadline passed while the streamer was busy
+                # stopped moving at that deadline.
+                member.left_at = min(stopped_at, member.deadline)
+
+    async def _clock_on_stop(self, cancel_event: asyncio.Event) -> None:
+        # STOP or replacement stops every member's travel at once, whatever
+        # the streamer is awaiting: a write unwinding or a member's cleanup.
+        await cancel_event.wait()
+        self._stamp_live()
+
+    async def _stream(self, context: CommandContext, driver: StreamDriver) -> None:
+        loop = asyncio.get_running_loop()
+        next_tick = loop.time()
+        failure: BaseException | None = None
+        clock = asyncio.ensure_future(self._clock_on_stop(context.cancel_event))
+        try:
+            while True:
+                # Cleanup awaits the wire, so recheck deadlines until none is
+                # overdue: an expired member must never reach another tick.
+                while True:
+                    now = loop.time()
+                    for member in tuple(self.members.values()):
+                        if member.deadline <= now:
+                            self.retire(member, CommandOutcome.EXPIRED)
+                    if not self.ending:
+                        break
+                    if not self.members:
+                        # Close before yielding to the cleanup task, so a ready
+                        # newcomer cannot join a stream that is ending.
+                        self.closing = True
+                    await _settled(self._clean_up(driver))
+                if not self.members or context.cancel_event.is_set():
+                    break
+                self.wake.clear()
+                if self.membership_changed or loop.time() >= next_tick:
+                    self.membership_changed = False
+                    members = tuple(self.members.values())
+                    # A timed move's budget starts as its first write starts,
+                    # like the serial path's timeout around its write loop.
+                    started = loop.time()
+                    for member in members:
+                        if member.duration_s is not None:
+                            member.deadline = started + member.duration_s
+                            member.duration_s = None
+                        if member.wire_started is None:
+                            member.wire_started = started
+                            if member.on_wire is not None:
+                                try:
+                                    member.on_wire()
+                                except Exception:
+                                    _LOGGER.exception("Stream member timing observer failed")
+                    await self._write_tick(driver, members, context)
+                    # Fixed rate from each write's start, so a slow link does not
+                    # stretch the refresh period past a watchdog. A write that
+                    # overruns its slot is followed at once, never by a burst.
+                    next_tick = started + driver.stream_tick_s
+                if self.membership_changed:
+                    continue
+                earliest = min(member.deadline for member in self.members.values())
+                timeout = max(0.0, min(next_tick, earliest) - loop.time())
+                with contextlib.suppress(TimeoutError):
+                    async with asyncio.timeout(timeout):
+                        await _first_set(self.wake, context.cancel_event)
+        except BaseException as err:
+            failure = err
+            raise
+        finally:
+            if context.cancel_event.is_set():
+                self._stamp_live()  # the watcher may not have run yet
+            clock.cancel()
+            # STOP, replacement, shutdown or a failure: every member ends here,
+            # each with its own cleanup, then the profile release. New members
+            # start a fresh stream behind this one.
+            self.closing = True
+            outcome = (
+                CommandOutcome.FAILED
+                if failure is not None and not isinstance(failure, asyncio.CancelledError)
+                else context.cancel_reason or CommandOutcome.STOPPED
+            )
+            for member in tuple(self.members.values()):
+                self.retire(member, outcome)
+            if outcome is CommandOutcome.FAILED and failure is not None:
+                # Members retired just before the failure have not settled yet;
+                # the failure is theirs too.
+                for member in (*self.ending, *self.awaiting_release):
+                    if not member.done.is_set():
+                        member.outcome = CommandOutcome.FAILED
+                        member.error = member.error or failure
+            # A STOP arriving now cancels this task; the cleanup and release
+            # still finish before the wire lane is handed on.
+            await _settled(self._close(driver))
+
+    async def _write_tick(
+        self,
+        driver: StreamDriver,
+        members: tuple[StreamMember, ...],
+        context: CommandContext,
+    ) -> None:
+        """Write one composed tick, abandoning it once a member in it ends.
+
+        Deadlines and lease expiry keep running while the write is in flight;
+        a write that outlives a member's deadline, or a member stopped
+        meanwhile, is cancelled as the serial path's timeout cancels its write.
+        """
+        loop = asyncio.get_running_loop()
+        tick = asyncio.ensure_future(driver.write_stream_tick(members))
+        ours = False
+        stopping = False
+        try:
+            while not tick.done():
+                live = [m for m in members if self.members.get(m.resource) is m]
+                overdue = [m for m in live if m.deadline <= loop.time()]
+                # Retire at the interruption, before the write unwinds, so the
+                # unwinding never counts as travel.
+                for member in overdue:
+                    self.retire(member, CommandOutcome.EXPIRED)
+                if context.cancel_event.is_set():
+                    stopping = True
+                    break
+                if overdue or len(live) < len(members):
+                    break
+                self.wake.clear()
+                timeout = max(0.0, min(m.deadline for m in live) - loop.time())
+                with contextlib.suppress(TimeoutError):
+                    async with asyncio.timeout(timeout):
+                        await _first_set_or_done(tick, self.wake, context.cancel_event)
+        except asyncio.CancelledError:
+            stopping = True  # STOP preempted the streamer task itself
+            raise
+        finally:
+            # The STOP watcher in _stream also stamps; stamping here as well
+            # covers a streamer cancelled without its cancel event.
+            stamp_stopped = self._stamp_live
+            if not tick.done():
+                if stopping or context.cancel_event.is_set():
+                    stamp_stopped()
+                ours = True
+                tick.cancel()
+            # Never hand the wire on while this write is still running, even
+            # when a STOP cancels the streamer meanwhile. A STOP arriving
+            # during the unwinding still stops the clock at once.
+            interrupted = False
+            while not tick.done():
+                try:
+                    if context.cancel_event.is_set():
+                        stamp_stopped()
+                        await asyncio.wait({tick})
+                    else:
+                        await _first_set_or_done(tick, context.cancel_event)
+                except asyncio.CancelledError:
+                    interrupted = True
+                    stamp_stopped()
+            # A failed write outranks the STOP that cancelled the streamer:
+            # its members must report the failure, not a clean stop.
+            error = None if tick.cancelled() else tick.exception()
+            if error is not None:
+                raise error
+            if interrupted:
+                raise asyncio.CancelledError
+        if tick.cancelled() and not ours:
+            # Something under the write cancelled it: the frame's fate is
+            # unknown, so the stream fails and every member is cleaned up.
+            raise RuntimeError("A stream write was cancelled")
+
+    async def _close(self, driver: StreamDriver) -> None:
+        try:
+            await self._clean_up(driver)
+        finally:
+            try:
+                await driver.release_stream()
+            except BaseException as err:
+                for member in self.awaiting_release:
+                    member.error = member.error or err
+                    member.outcome = CommandOutcome.FAILED
+                raise
+            finally:
+                # The last members out return after the release, as a
+                # serial move returns after its STOP.
+                for member in self.awaiting_release:
+                    member.settle()
+
+    async def _clean_up(self, driver: StreamDriver) -> None:
+        """Run every ending member's cleanup, then raise the first failure."""
+        first_error: BaseException | None = None
+        while self.ending:
+            handle = self.handle
+            if handle is not None and handle.context.cancel_event.is_set():
+                # STOP, replacement or shutdown ends every member: no reduced
+                # frame may carry a motor that is about to stop.
+                for live in tuple(self.members.values()):
+                    self.retire(live, handle.context.cancel_reason or CommandOutcome.STOPPED)
+            if not self.members:
+                # Last ones out: newcomers queue behind this release instead
+                # of joining while it is under way.
+                self.closing = True
+            member = self.ending.popleft()
+            # Held until finalized, so no exit path can lose its caller.
+            self.cleaning = member
+            cancelled = False
+            try:
+                await driver.end_stream_member(member, tuple(self.members.values()))
+            except asyncio.CancelledError as err:
+                # An awaited write was cancelled under the cleanup: the cleanup
+                # did not complete, which is a failure for this member.
+                task = asyncio.current_task()
+                cancelled = task is not None and task.cancelling() > 0
+                failure = RuntimeError(f"{member.motor} cleanup was cancelled")
+                failure.__cause__ = err
+                member.error = failure
+                member.outcome = CommandOutcome.FAILED
+                first_error = first_error or failure
+            except Exception as err:
+                member.error = err
+                member.outcome = CommandOutcome.FAILED
+                first_error = first_error or err
+            finally:
+                self.cleaning = None
+                if self.members:
+                    member.settle()
+                else:
+                    # The last members out settle after the release runs.
+                    self.closing = True
+                    self.awaiting_release.append(member)
+            if cancelled:
+                raise asyncio.CancelledError
+        if first_error is not None:
+            raise first_error
+
+
+async def _settled(cleanup: Coroutine[Any, Any, None]) -> None:
+    """Finish ``cleanup`` even when the caller is cancelled meanwhile."""
+    task = asyncio.ensure_future(cleanup)
+    try:
+        await asyncio.shield(task)
+    except asyncio.CancelledError:
+        while not task.done():
+            with contextlib.suppress(asyncio.CancelledError):
+                await asyncio.shield(task)
+        if not task.cancelled():
+            task.exception()  # members already carry a cleanup failure
+        raise
+
+
+async def _first_set_or_done(task: asyncio.Future[None], *events: asyncio.Event) -> None:
+    waiters = [asyncio.ensure_future(event.wait()) for event in events]
+    try:
+        await asyncio.wait({task, *waiters}, return_when=asyncio.FIRST_COMPLETED)
+    finally:
+        for waiter in waiters:
+            waiter.cancel()
+        await asyncio.gather(*waiters, return_exceptions=True)
+
+
+async def _first_set(*events: asyncio.Event) -> None:
+    waiters = [asyncio.ensure_future(event.wait()) for event in events]
+    try:
+        await asyncio.wait(waiters, return_when=asyncio.FIRST_COMPLETED)
+    finally:
+        for waiter in waiters:
+            waiter.cancel()
+        await asyncio.gather(*waiters, return_exceptions=True)
 
 
 @dataclass(slots=True)
@@ -83,13 +635,35 @@ class CommandContext:
     cleanup_stop_sent: bool = False
     active: bool = True
     defer_disconnect: bool = False
+    lease: HoldLease | None = None
+    hold_deadline: float | None = None
+    """Event-loop time at which a held command's lease expires, if any."""
     cancel_generation: int = 0
+    _cancel_changed: asyncio.Event = field(default_factory=asyncio.Event, repr=False)
+    # Frames this operation handed to the bed, and frames a cancellation
+    # stopped it from sending; together they say what reached the bed.
+    frames_written: int = 0
+    frames_skipped: int = 0
 
     def request_cancel(self, outcome: CommandOutcome) -> None:
         """Distinguish repeated cancellations of this exact resource admission."""
         self.cancel_generation += 1
         self.cancel_reason = outcome
         self.cancel_event.set()
+        self._cancel_changed.set()
+        self._cancel_changed = asyncio.Event()
+
+    def cancel_event_after(self, generation: int) -> asyncio.Event:
+        """Signal the next cancellation after an observed generation.
+
+        A normal hold expiry leaves ``cancel_event`` set. Follow-up work can
+        still stop immediately when a later STOP or replacement arrives.
+        """
+        if self.cancel_generation > generation:
+            already_cancelled = asyncio.Event()
+            already_cancelled.set()
+            return already_cancelled
+        return self._cancel_changed
 
 
 CommandOperation = Callable[[CommandContext], Awaitable[None]]
@@ -107,7 +681,12 @@ class CommandIntent:
     group_id: str | None = None
     pulse_count: int | None = None
     pulse_delay_ms: int | None = None
+    lease: HoldLease | None = None
     intent_id: str = field(default_factory=lambda: uuid4().hex)
+
+    def __post_init__(self) -> None:
+        if (self.lease is None) != (self.kind is not CommandKind.HOLD):
+            raise ValueError("A HOLD intent carries a lease, and only a HOLD intent does")
 
 
 @dataclass(frozen=True, slots=True)
@@ -166,6 +745,8 @@ class CommandHandle:
     invalidated_stop_epoch: int | None = None
     ready: asyncio.Event = field(default_factory=asyncio.Event)
     commit: asyncio.Event = field(default_factory=asyncio.Event)
+    lease_record: _LeaseRecord | None = None
+    stream: _MergedStream | None = None
 
 
 _CURRENT_COMMAND_CONTEXT: ContextVar[CommandContext | None] = ContextVar(
@@ -179,6 +760,148 @@ def current_command_context() -> CommandContext | None:
     return context if context is None or context.active else None
 
 
+class Delivery(StrEnum):
+    """What of a command reached the bed."""
+
+    SENT = "sent"
+    """Nothing was held back: it ran uncancelled, or was cancelled after its last frame."""
+    PARTIAL = "partial"
+    """Some frames went out and a later one was held back (or it failed after one)."""
+    NONE = "none"
+    """No frame went out, and it was cancelled, failed, or held its frame back."""
+
+
+# The command whose link this task is preparing (connect, startup,
+# authentication): its writes here are not that command's frames.
+_PREPARING_LINK: ContextVar[CommandContext | None] = ContextVar(
+    "adjustable_bed_preparing_link", default=None
+)
+
+
+@contextlib.contextmanager
+def command_frames_not_counted() -> Iterator[None]:
+    """Send link preparation (connect, startup, session join, PIN) uncounted.
+
+    Names the running command in this task's context, so only its preparation
+    is uncounted: a task started meanwhile that runs another command (a
+    scheduler worker) counts normally, and so do the command's own frames sent
+    from a task started outside the preparation. A task the preparation starts
+    (a shielded startup write) inherits the mark: its writes are preparation too.
+    """
+    token = _PREPARING_LINK.set(current_command_context())
+    try:
+        yield
+    finally:
+        _PREPARING_LINK.reset(token)
+
+
+def _preparing_link(context: CommandContext) -> bool:
+    return _PREPARING_LINK.get() is context
+
+
+_FRAMES_COUNTED: ContextVar[bool] = ContextVar("adjustable_bed_frames_counted", default=False)
+
+
+@contextlib.contextmanager
+def command_frames_counted() -> Iterator[None]:
+    """Count frames the command sends with an event of their own (STOP cannot stop them)."""
+    token = _FRAMES_COUNTED.set(True)
+    try:
+        yield
+    finally:
+        _FRAMES_COUNTED.reset(token)
+
+
+def note_frame_written(cancel_event: asyncio.Event | None) -> None:
+    """Record that a frame of the running command was handed to the bed.
+
+    ``cancel_event`` is the event the write was gated on. Only the command's
+    own event counts: a STOP or release frame sent with a fresh event during
+    cleanup is not the command's frame, and neither is link preparation.
+    """
+    context = current_command_context()
+    if (
+        context is not None
+        and (cancel_event is context.cancel_event or _FRAMES_COUNTED.get())
+        and not _preparing_link(context)
+    ):
+        context.frames_written += 1
+
+
+def note_write_not_counted() -> None:
+    """Declare a write that is not the running command's frame.
+
+    For writes that only prepare the link (wake, handshake, subscription),
+    cleanup frames, and writers whose caller counts the frame. It does
+    nothing: every write must say which it is (tests/test_frame_delivery_guard.py).
+    """
+
+
+def note_frame_skipped() -> None:
+    """Record, inside a command, that a frame of it was held back.
+
+    Whatever held it back: STOP, a replacing command, or the controller ending
+    the operation itself (a deadline, a reply). Never for a frame the command
+    did not need to send.
+    """
+    context = current_command_context()
+    if context is not None and not _preparing_link(context):
+        context.frames_skipped += 1
+
+
+def _delivery_since(
+    context: CommandContext | None,
+    written: int,
+    skipped: int,
+    ending: Literal["returned", "cancelled", "failed"],
+) -> Delivery:
+    """What a step that started at ``written``/``skipped`` delivered.
+
+    ``ending`` is how the step ended: ``returned``, ``cancelled`` (it raised
+    ``CancelledError``) or ``failed`` (any other error).
+    """
+    if context is None:
+        return Delivery.SENT if ending == "returned" else Delivery.NONE
+    sent = context.frames_written > written
+    if ending == "failed":
+        # A failed step reached the bed at most in part, STOP or not.
+        return Delivery.PARTIAL if sent else Delivery.NONE
+    if context.frames_skipped > skipped:
+        # A frame was held back: by STOP, a replacing command, or the
+        # controller itself (a deadline, a reply that ended the operation).
+        return Delivery.PARTIAL if sent else Delivery.NONE
+    if ending == "returned" and not context.cancel_event.is_set():
+        # Uncancelled and nothing held back, also when it chose to send nothing.
+        return Delivery.SENT
+    # Cancelled, by STOP or a replacing command, with nothing held back.
+    return Delivery.SENT if sent else Delivery.NONE
+
+
+@contextlib.contextmanager
+def delivered(show: Callable[[Delivery], None]) -> Iterator[None]:
+    """Run one step of a command, then ``show`` what of it reached the bed.
+
+    The only way to read delivery (tests/test_frame_delivery_guard.py), so it is
+    always settled, also when the step raises: a step cancelled after its frame
+    went out was still sent, one that failed with any other error after a frame
+    was sent in part.
+    The exception still propagates.
+    """
+    context = current_command_context()
+    written = context.frames_written if context is not None else 0
+    skipped = context.frames_skipped if context is not None else 0
+    try:
+        yield
+    except asyncio.CancelledError:
+        # Cancellation ends the step; what it sent before that still counts.
+        show(_delivery_since(context, written, skipped, "cancelled"))
+        raise
+    except BaseException:
+        show(_delivery_since(context, written, skipped, "failed"))
+        raise
+    show(_delivery_since(context, written, skipped, "returned"))
+
+
 def copy_context_without_command() -> Context:
     """Keep tracing and HA context, without a parent's command reservation."""
     context = copy_context()
@@ -190,6 +913,43 @@ def command_resources(*resources: str) -> frozenset[str]:
     """Normalize a resource declaration, defaulting to the whole command link."""
     normalized = frozenset(resource for resource in resources if resource)
     return normalized or ALL_COMMAND_RESOURCES
+
+
+def _consume_failure(future: asyncio.Future[None]) -> None:
+    if not future.cancelled():
+        future.exception()
+
+
+def _clamp(deadline: float, ceiling: float | None) -> float:
+    return deadline if ceiling is None else min(deadline, ceiling)
+
+
+def _strategy(handle: CommandHandle) -> str:
+    return "merged_stream" if handle.stream is not None else "serial_opaque"
+
+
+def _motion_scope(resources: Collection[str]) -> frozenset[str]:
+    """Every motor of each motor resource's bed or side: ``motor:back`` is ``motor:*``.
+
+    A motor-scoped STOP pre-empts motion on any motor in this scope, since one
+    writer serves them all. ``side:left:motor:back`` stays on its side.
+    """
+    scope = set()
+    for resource in resources:
+        prefix, marker, motor = resource.rpartition("motor:")
+        if marker and motor and (not prefix or prefix.endswith(":")):
+            scope.add(f"{prefix}motor:*")
+    return frozenset(scope)
+
+
+def _holds_motion_within(active: Collection[str], stop: Collection[str]) -> bool:
+    """Whether ``active`` drives motion in the STOP's bed or side.
+
+    Work confined to the other side of a one-address pair is never pre-empted.
+    A native Both move also drives this side in the same frame, so it is, and
+    ends on both sides, as overlapping replacement and a side STOP end it.
+    """
+    return _resources_overlap(active, _motion_scope(stop))
 
 
 def _resources_overlap(left: Collection[str], right: Collection[str]) -> bool:
@@ -230,6 +990,8 @@ class DeviceCommandScheduler:
         self._stop_barrier = asyncio.Event()
         self._stop_barrier.set()
         self._closed = False
+        self._leases: OrderedDict[tuple[str, frozenset[str]], _LeaseRecord] = OrderedDict()
+        self._streams: dict[frozenset[str], _MergedStream] = {}
 
     @property
     def token(self) -> object:
@@ -246,9 +1008,19 @@ class DeviceCommandScheduler:
         return self._stop_epoch
 
     @property
+    def has_pending_stop(self) -> bool:
+        """Return whether the newest admitted STOP still owns its barrier."""
+        return not self._stop_barrier.is_set()
+
+    @property
     def recent_records(self) -> tuple[CommandRecord, ...]:
         """Return the bounded immutable terminal history."""
         return tuple(self._recent_records)
+
+    @property
+    def active(self) -> CommandHandle | None:
+        """Return the command currently running, if any."""
+        return self._active
 
     @property
     def diagnostics(self) -> dict[str, object]:
@@ -284,7 +1056,7 @@ class DeviceCommandScheduler:
             "kind": handle.intent.kind.value,
             "group_id": handle.intent.group_id,
             "resources": sorted(handle.intent.resources),
-            "scheduler_strategy": self.strategy_name,
+            "scheduler_strategy": _strategy(handle),
             "stop_epoch": handle.context.admitted_stop_epoch,
             "state": handle.state.value,
             "admitted_at": handle.admitted_at.isoformat(),
@@ -299,13 +1071,27 @@ class DeviceCommandScheduler:
                 if handle.started_monotonic is not None
                 else None
             ),
+            "hold_generation": (
+                handle.context.lease.generation if handle.context.lease is not None else None
+            ),
+            "hold_remaining_seconds": (
+                round(handle.context.hold_deadline - asyncio.get_running_loop().time(), 3)
+                if handle.context.hold_deadline is not None
+                else None
+            ),
         }
 
     async def execute(
         self, intent: CommandIntent, *, expected_stop_epoch: int | None = None
     ) -> None:
-        """Admit an ordinary intent and wait for its terminal result."""
+        """Admit an ordinary intent and wait for its terminal result.
+
+        A HOLD intent whose lease renews the live hold returns at once: the
+        live hold keeps running with the new deadline.
+        """
         handle = await self.enqueue(intent, expected_stop_epoch=expected_stop_epoch)
+        if handle.intent is not intent:
+            return
         try:
             await asyncio.shield(handle.future)
         except asyncio.CancelledError:
@@ -319,7 +1105,14 @@ class DeviceCommandScheduler:
         prepared: bool = False,
         expected_stop_epoch: int | None = None,
     ) -> CommandHandle:
-        """Admit an intent and return its handle without waiting for execution."""
+        """Admit an intent and return its handle without waiting for execution.
+
+        A HOLD intent that renews a live hold of its generation returns that
+        live handle instead; one naming an ended generation raises
+        ``StaleHoldLease``.
+        """
+        if intent.lease is not None and prepared:
+            raise ValueError("A held command cannot join a prepared group")
         handle = self._new_handle(
             intent,
             prepared=prepared,
@@ -328,7 +1121,7 @@ class DeviceCommandScheduler:
 
         async with self._lock:
             if self._closed:
-                raise RuntimeError(f"Command scheduler for {self._name} is shut down")
+                raise BedNotConnectedError
             if expected_stop_epoch is not None and expected_stop_epoch != self._stop_epoch:
                 self._finish_locked(
                     handle,
@@ -336,25 +1129,181 @@ class DeviceCommandScheduler:
                     invalidated_stop_epoch=self._stop_epoch,
                 )
                 return handle
-            replaces_active = False
-            if intent.cancel_running:
-                active = self._active
-                if active is not None and self._handles_conflict(active, handle):
-                    handle.context.preempted_contexts = (active.context,)
-                replaces_active = self._replace_conflicts_locked(handle)
-            # A replacement for the operation currently owning the link must be
-            # next after that operation's cleanup. Otherwise an older,
-            # unrelated prepared group can sit in front of a motor STOP/reverse
-            # and prevent the replacement from ever reaching the active motor.
-            if replaces_active:
-                self._queue.appendleft(handle)
-            else:
-                self._queue.append(handle)
-            if self._worker is None or self._worker.done():
-                self._worker = asyncio.create_task(
-                    self._run(), name=f"adjustable_bed_commands_{self._name}"
-                )
+            if intent.lease is not None:
+                live = self._bind_lease_locked(handle, intent.lease)
+                if live is not None:
+                    return live
+                if handle.future.done():
+                    return handle
+            self._admit_locked(handle)
         return handle
+
+    def _admit_locked(self, handle: CommandHandle) -> None:
+        replaces_active = False
+        if handle.intent.cancel_running:
+            active = self._active
+            if active is not None and self._handles_conflict(active, handle):
+                handle.context.preempted_contexts = (active.context,)
+            replaces_active = self._replace_conflicts_locked(handle)
+        active = self._active
+        if (
+            handle.intent.kind is CommandKind.STOP
+            and not replaces_active
+            and active is not None
+            and not active.future.done()
+            and _holds_motion_within(active.intent.resources, handle.intent.resources)
+        ):
+            # A queued STOP never waits behind another motor's motion on its
+            # bed or side either (#516): that command's cleanup, then this.
+            handle.context.preempted_contexts = (active.context,)
+            active.context.request_cancel(CommandOutcome.STOPPED)
+            replaces_active = True
+        # A replacement for the operation currently owning the link must be
+        # next after that operation's cleanup. Otherwise an older,
+        # unrelated prepared group can sit in front of a motor STOP/reverse
+        # and prevent the replacement from ever reaching the active motor.
+        if replaces_active:
+            self._queue.appendleft(handle)
+        else:
+            self._queue.append(handle)
+        if self._worker is None or self._worker.done():
+            self._worker = asyncio.create_task(
+                self._run(), name=f"adjustable_bed_commands_{self._name}"
+            )
+
+    # ---------------------------------------------------------- merged stream
+    async def execute_stream_member(
+        self,
+        member: StreamMember,
+        resources: Collection[str],
+        runner: StreamRunner,
+        *,
+        expected_stop_epoch: int | None = None,
+    ) -> CommandOutcome | None:
+        """Join ``member`` to the live stream over ``resources``, or start one.
+
+        ``resources`` are the controller's concurrent motors. A member on a
+        motor that already streams replaces it. Returns the member's outcome,
+        or None when a lease renewed the live member instead; raises the
+        member's cleanup failure.
+        """
+        stream_resources = command_resources(*resources)
+        if member.resource not in stream_resources:
+            raise ValueError(f"{member.resource} is not a concurrent resource")
+        async with self._lock:
+            if self._closed:
+                raise BedNotConnectedError
+            if expected_stop_epoch is not None and expected_stop_epoch != self._stop_epoch:
+                return CommandOutcome.STOPPED
+            if member.lease is not None:
+                bound = self._bind_member_lease(member)
+                if bound == "renewed":
+                    return None
+                if bound == "expired":
+                    return CommandOutcome.EXPIRED
+            stream = self._streams.get(stream_resources)
+            if stream is None or not stream.accepting:
+                stream = _MergedStream(self, stream_resources)
+                self._streams[stream_resources] = stream
+
+                async def operation(context: CommandContext) -> None:
+                    await stream.run(context, runner)
+
+                handle = self._new_handle(
+                    CommandIntent(operation, resources=stream_resources, kind=CommandKind.STREAM),
+                    prepared=False,
+                )
+                handle.stream = stream
+                stream.handle = handle
+                # Members carry the failure; nobody awaits the streamer itself.
+                handle.future.add_done_callback(_consume_failure)
+                stream.join(member)
+                self._admit_locked(handle)
+            else:
+                stream.join(member)
+        try:
+            await member.done.wait()
+        except asyncio.CancelledError:
+            stream.retire(member, CommandOutcome.CALLER_CANCELLED)
+            raise
+        if member.error is not None:
+            raise member.error
+        return member.outcome
+
+    def _bind_member_lease(self, member: StreamMember) -> str:
+        """Bind a member to its lease: "bound", "renewed" (a live hold) or "expired"."""
+        assert member.lease is not None
+        key = (member.lease.owner, frozenset({member.resource}))
+        record = self._leases.get(key)
+        claim = self._classify_lease(record, member.lease)
+        if claim is HoldClaim.STALE:
+            raise StaleHoldLease(
+                f"Hold generation {member.lease.generation} of {member.lease.owner!r} has ended"
+            )
+        if claim is HoldClaim.RENEW and record is not None and (
+            record.member is not None or record.handle is not None
+        ):
+            self._set_lease_deadline(record, member.lease)
+            return "renewed"
+        if record is None or claim is HoldClaim.START:
+            record = self._new_lease_record(key, member.lease)
+        if record.timer is not None:
+            # The streamer enforces member deadlines itself.
+            record.timer.cancel()
+            record.timer = None
+        if record.deadline <= asyncio.get_running_loop().time():
+            # Reserved, then waited out its lease before admission.
+            self._end_lease(record)
+            return "expired"
+        record.member = member
+        member.deadline = _clamp(record.deadline, member.ceiling)
+        return "bound"
+
+    def _end_member_lease(self, member: StreamMember) -> None:
+        if member.lease is None:
+            return
+        record = self._leases.get((member.lease.owner, frozenset({member.resource})))
+        if record is not None and record.member is member:
+            self._end_lease(record)
+
+    def _forget_stream(self, stream: _MergedStream) -> None:
+        if self._streams.get(stream.resources) is stream:
+            del self._streams[stream.resources]
+
+    def stream_owns(self, resources: Collection[str]) -> bool:
+        """Return whether an accepting stream owns any of ``resources``.
+
+        True even when that motor's member already ended, so a repeated motor
+        STOP stays member-scoped instead of replacing the whole stream.
+        """
+        return any(
+            stream.accepting and _resources_overlap(stream.resources, resources)
+            for stream in self._streams.values()
+        )
+
+    def _stop_stream_members(self, resources: Collection[str], stop_epoch: int) -> None:
+        """End only the members a motor-scoped STOP names.
+
+        A stream still queued keeps its other members: it is re-admitted at
+        this STOP's epoch, or finished without writing once it has none left.
+        """
+        for stream in tuple(self._streams.values()):
+            for member in tuple(stream.members.values()):
+                if _resources_overlap((member.resource,), resources):
+                    stream.retire(member, CommandOutcome.STOPPED)
+            handle = stream.handle
+            if handle is None or handle.started_at is not None or handle.future.done():
+                continue
+            # Nothing reached the wire yet, so there is nothing to clean up.
+            while stream.ending:
+                stream.ending.popleft().settle()
+            if stream.members:
+                handle.context.admitted_stop_epoch = stop_epoch
+            elif handle in self._queue:
+                self._queue.remove(handle)
+                self._finish_locked(
+                    handle, CommandOutcome.STOPPED, invalidated_stop_epoch=stop_epoch
+                )
 
     def admit_stop(
         self,
@@ -363,18 +1312,33 @@ class DeviceCommandScheduler:
         *,
         group_id: str | None = None,
     ) -> asyncio.Task[None]:
-        """Invalidate matching work and synchronously start a safety STOP."""
+        """Invalidate matching work and synchronously start a safety STOP.
+
+        The STOP needs the one writer at once, so it also pre-empts motion on
+        any other motor of its bed or side (#516): the in-flight write and that
+        command's own cleanup finish, then the STOP's frames go out, ahead of
+        anything queued. A merged stream that owns a stopped motor keeps the
+        writer and ends only that member.
+        """
         if self._closed:
-            raise RuntimeError(f"Command scheduler for {self._name} is shut down")
+            raise BedNotConnectedError
         normalized_resources = command_resources(*resources)
         active = self._active
-        preempted_contexts = (
-            (active.context,)
-            if active is not None
-            and _resources_overlap(active.intent.resources, normalized_resources)
-            else ()
+        overlaps = active is not None and _resources_overlap(
+            active.intent.resources, normalized_resources
         )
+        holds_motion = (
+            active is not None
+            and not overlaps
+            and _holds_motion_within(active.intent.resources, normalized_resources)
+        )
+        preempted_contexts = (active.context,) if active is not None and (
+            overlaps or holds_motion
+        ) else ()
         stop_epoch = self.request_stop(normalized_resources)
+        if active is not None and holds_motion and not active.future.done():
+            active.context.request_cancel(CommandOutcome.STOPPED)
+            active.invalidated_stop_epoch = stop_epoch
         handle = self._new_handle(
             CommandIntent(
                 operation,
@@ -445,6 +1409,7 @@ class DeviceCommandScheduler:
             resources=intent.resources,
             pulse_count=intent.pulse_count,
             pulse_delay_ms=intent.pulse_delay_ms,
+            lease=intent.lease,
         )
         handle = CommandHandle(
             intent=intent,
@@ -480,7 +1445,8 @@ class DeviceCommandScheduler:
         except asyncio.CancelledError:
             await self.cancel(handle, CommandOutcome.CALLER_CANCELLED)
             raise
-        if handle.outcome is not CommandOutcome.COMPLETED:
+        # A lease running out is how a held member normally ends.
+        if handle.outcome not in (CommandOutcome.COMPLETED, CommandOutcome.EXPIRED):
             raise PreparedCommandInvalidated(
                 f"Prepared command {handle.intent.intent_id} was {handle.outcome}"
             )
@@ -519,12 +1485,23 @@ class DeviceCommandScheduler:
         """Invalidate matching work and advance the monotonic STOP epoch."""
         self._stop_barrier.clear()
         self._stop_epoch += 1
+        self._end_leases_overlapping(resources)
+        # A motor-scoped STOP ends only its stream member; a side or bed-wide
+        # STOP cancels the whole streamer below.
+        wide = self._is_wide(resources)
+        if not wide:
+            self._stop_stream_members(resources, self._stop_epoch)
         self._cancel_matching(
             resources,
             outcome=CommandOutcome.STOPPED,
             invalidated_stop_epoch=self._stop_epoch,
+            spare_streams=not wide,
         )
         return self._stop_epoch
+
+    @staticmethod
+    def _is_wide(resources: Collection[str]) -> bool:
+        return any(item == "*" or item.endswith(":*") for item in resources)
 
     def finish_stop(self, stop_epoch: int) -> None:
         """Release commands only after the newest STOP operation finishes."""
@@ -536,6 +1513,8 @@ class DeviceCommandScheduler:
         self._closed = True
         self._stop_barrier.set()
         self._stop_epoch += 1
+        for record in self._leases.values():
+            self._end_lease(record)
         self._cancel_matching(
             ALL_COMMAND_RESOURCES,
             outcome=CommandOutcome.SHUTDOWN,
@@ -559,13 +1538,250 @@ class DeviceCommandScheduler:
                 await stop_drain
                 raise
 
+    # ------------------------------------------------------------ hold leases
+    def claim_hold(
+        self, lease: HoldLease, resources: Collection[str], *, reserve: bool = True
+    ) -> HoldClaim:
+        """Classify a hold request without awaiting, and apply it.
+
+        ``RENEW`` replaces the live or reserved lease's deadline and writes no
+        frame. ``START`` reserves the generation (unless ``reserve`` is False)
+        so concurrent requests renew the reservation and a STOP before
+        admission ends it. ``STALE`` changes nothing.
+        """
+        if self._closed:
+            return HoldClaim.STALE
+        normalized = command_resources(*resources)
+        key = (lease.owner, normalized)
+        record = self._leases.get(key)
+        claim = self._classify_lease(record, lease)
+        if claim is HoldClaim.RENEW and record is not None:
+            self._set_lease_deadline(record, lease)
+        elif claim is HoldClaim.START and reserve:
+            self._new_lease_record(key, lease)
+        return claim
+
+    def release_hold_claim(self, lease: HoldLease, resources: Collection[str]) -> None:
+        """End a reservation that was never admitted, for example after preflight failed."""
+        record = self._leases.get((lease.owner, command_resources(*resources)))
+        if (
+            record is not None
+            and record.generation == lease.generation
+            and record.handle is None
+        ):
+            self._end_lease(record)
+
+    def end_holds(self, outcome: CommandOutcome) -> None:
+        """End every hold and reservation now, without replay, for example on disconnect."""
+        for record in tuple(self._leases.values()):
+            self._expire_record(record, outcome)
+        # A superseded generation can still be running after a newer one
+        # replaced its record; reach it through its handle.
+        for handle in (self._active, *self._queue):
+            if handle is not None and handle.lease_record is not None:
+                self._expire_record(handle.lease_record, outcome)
+        for stream in tuple(self._streams.values()):
+            handle = stream.handle
+            if handle is not None and not handle.future.done():
+                handle.context.request_cancel(outcome)
+                if handle in self._queue:
+                    self._queue.remove(handle)
+                    self._finish_locked(handle, outcome)
+
+    def _classify_lease(self, record: _LeaseRecord | None, lease: HoldLease) -> HoldClaim:
+        if (
+            record is not None
+            and not record.ended
+            and record.deadline <= asyncio.get_running_loop().time()
+        ):
+            # The timer callback may not have run yet; a late renewal must
+            # not revive an overdue lease.
+            self._expire_record(record, CommandOutcome.EXPIRED)
+        if record is None or lease.generation > record.generation:
+            return HoldClaim.START
+        if (
+            lease.generation < record.generation
+            or record.ended
+            or record.action != lease.action
+            or (record.handle is not None and record.handle.context.cancel_event.is_set())
+            or (record.member is not None and record.member.outcome is not None)
+        ):
+            return HoldClaim.STALE
+        return HoldClaim.RENEW
+
+    def _new_lease_record(
+        self, key: tuple[str, frozenset[str]], lease: HoldLease
+    ) -> _LeaseRecord:
+        previous = self._leases.pop(key, None)
+        if previous is not None and previous.handle is None:
+            # A newer generation supersedes an unadmitted reservation. A live
+            # hold is replaced through ordinary resource conflict on admission.
+            self._end_lease(previous)
+        record = _LeaseRecord(
+            generation=lease.generation,
+            action=lease.action,
+            resources=key[1],
+            deadline=0.0,
+        )
+        self._leases[key] = record
+        self._set_lease_deadline(record, lease)
+        self._prune_leases()
+        return record
+
+    def _prune_leases(self) -> None:
+        excess = len(self._leases) - MAX_HOLD_LEASE_RECORDS
+        if excess <= 0:
+            return
+        for key in [key for key, record in self._leases.items() if record.ended][:excess]:
+            del self._leases[key]
+
+    def bound_hold(self, context: CommandContext, ceiling_s: float) -> None:
+        """Start the running hold's ceiling: it ends ``ceiling_s`` from now at the latest.
+
+        The ceiling is clock time, so per-write latency in the controller's
+        refresh cannot stretch a renewed hold past it (#483). It ends the hold
+        as lease expiry does, and the controller's release still runs.
+        """
+        handle = self._active
+        if handle is None or handle.context is not context:
+            return
+        record = handle.lease_record
+        if record is None or record.ended or record.member is not None or record.ceiling is not None:
+            return
+        record.ceiling = asyncio.get_running_loop().time() + ceiling_s
+        if record.deadline > record.ceiling:
+            record.deadline = record.ceiling
+            self._arm_lease_timer(record)
+
+    def _set_lease_deadline(self, record: _LeaseRecord, lease: HoldLease) -> None:
+        loop = asyncio.get_running_loop()
+        record.deadline = _clamp(loop.time() + lease.duration_s, record.ceiling)
+        self._arm_lease_timer(record)
+
+    def _arm_lease_timer(self, record: _LeaseRecord) -> None:
+        loop = asyncio.get_running_loop()
+        if record.timer is not None:
+            record.timer.cancel()
+            record.timer = None
+        if record.member is not None:
+            # Wake the streamer to recompute its wait; no frame is written.
+            record.member.deadline = _clamp(record.deadline, record.member.ceiling)
+            stream = next(
+                (s for s in self._streams.values() if s.members.get(record.member.resource)
+                 is record.member),
+                None,
+            )
+            if stream is not None:
+                stream.wake.set()
+            return
+        record.timer = loop.call_at(record.deadline, self._on_lease_deadline, record)
+        if record.handle is not None:
+            record.handle.context.hold_deadline = record.deadline
+
+    def _on_lease_deadline(self, record: _LeaseRecord) -> None:
+        record.timer = None
+        if not record.ended:
+            self._expire_record(record, CommandOutcome.EXPIRED)
+
+    def _expire_record(self, record: _LeaseRecord, outcome: CommandOutcome) -> None:
+        """End a lease and cancel its hold; the controller's cleanup still runs."""
+        handle = record.handle
+        self._end_lease(record)
+        if record.member is not None:
+            for stream in tuple(self._streams.values()):
+                stream.retire(record.member, outcome)
+            return
+        if handle is None or handle.future.done():
+            return
+        # Expiry is a normal end only until an explicit cancellation wins.
+        # Its timer can run after STOP while controller cleanup still owns the lane.
+        if outcome is CommandOutcome.EXPIRED and handle.context.cancel_event.is_set():
+            return
+        handle.context.request_cancel(outcome)
+        if handle in self._queue:
+            self._queue.remove(handle)
+            self._finish_locked(handle, outcome)
+
+    def _end_lease(self, record: _LeaseRecord) -> None:
+        record.ended = True
+        if record.timer is not None:
+            record.timer.cancel()
+            record.timer = None
+
+    def _end_leases_overlapping(self, resources: Collection[str]) -> None:
+        """A STOP ends reservations it overlaps, so their admission cannot follow it."""
+        for record in tuple(self._leases.values()):
+            if record.handle is None and _resources_overlap(record.resources, resources):
+                self._end_lease(record)
+
+    def _bind_lease_locked(
+        self, handle: CommandHandle, lease: HoldLease
+    ) -> CommandHandle | None:
+        """Attach an admitted hold to its lease, or renew the live one."""
+        key = (lease.owner, handle.intent.resources)
+        record = self._leases.get(key)
+        claim = self._classify_lease(record, lease)
+        if claim is HoldClaim.STALE:
+            raise StaleHoldLease(
+                f"Hold generation {lease.generation} of {lease.owner!r} has ended"
+            )
+        if claim is HoldClaim.RENEW and record is not None and record.handle is not None:
+            self._set_lease_deadline(record, lease)
+            return record.handle
+        if record is None or claim is HoldClaim.START:
+            record = self._new_lease_record(key, lease)
+        record.handle = handle
+        handle.lease_record = record
+        handle.context.hold_deadline = record.deadline
+        if record.deadline <= asyncio.get_running_loop().time():
+            # Reserved, then waited out its lease before admission.
+            self._end_lease(record)
+            self._finish_locked(handle, CommandOutcome.EXPIRED)
+        return None
+
+    def bind_hold_inline(
+        self, context: CommandContext, lease: HoldLease, resources: Collection[str]
+    ) -> bool:
+        """Make the running reservation that owns ``context`` the held command.
+
+        Paired groups run each side inside a prepared reservation, so a held
+        start there binds its lease to that reservation instead of queueing a
+        nested command. Returns False when there is nothing to run: the call
+        renewed a live hold, or its reservation already expired.
+        """
+        handle = self._active
+        if handle is None or handle.context is not context:
+            raise ValueError("A held command can only bind to the running reservation")
+        key = (lease.owner, command_resources(*resources))
+        record = self._leases.get(key)
+        claim = self._classify_lease(record, lease)
+        if claim is HoldClaim.STALE:
+            raise StaleHoldLease(
+                f"Hold generation {lease.generation} of {lease.owner!r} has ended"
+            )
+        if claim is HoldClaim.RENEW and record is not None and record.handle is not None:
+            self._set_lease_deadline(record, lease)
+            return False
+        if record is None or claim is HoldClaim.START:
+            record = self._new_lease_record(key, lease)
+        if record.deadline <= asyncio.get_running_loop().time():
+            self._end_lease(record)
+            return False
+        record.handle = handle
+        handle.lease_record = record
+        context.lease = lease
+        context.hold_deadline = record.deadline
+        return True
+
     def _replace_conflicts_locked(self, incoming: CommandHandle) -> bool:
         """Cancel conflicts and report whether the active handle was replaced."""
         active = self._active
         replaces_active = False
         if active is not None and self._handles_conflict(active, incoming):
             replaces_active = True
-            active.context.request_cancel(CommandOutcome.REPLACED)
+            # A streamer already ending at a STOP keeps that reason for its members.
+            if active.stream is None or not active.context.cancel_event.is_set():
+                active.context.request_cancel(CommandOutcome.REPLACED)
 
         for queued in tuple(self._queue):
             if not self._handles_conflict(queued, incoming):
@@ -591,13 +1807,20 @@ class DeviceCommandScheduler:
         *,
         outcome: CommandOutcome,
         invalidated_stop_epoch: int | None = None,
+        spare_streams: bool = False,
     ) -> None:
         active = self._active
-        if active is not None and _resources_overlap(active.intent.resources, resources):
+        if (
+            active is not None
+            and _resources_overlap(active.intent.resources, resources)
+            and not (spare_streams and active.stream is not None)
+        ):
             active.context.request_cancel(outcome)
             active.invalidated_stop_epoch = invalidated_stop_epoch
         for queued in tuple(self._queue):
-            if not _resources_overlap(queued.intent.resources, resources):
+            if not _resources_overlap(queued.intent.resources, resources) or (
+                spare_streams and queued.stream is not None
+            ):
                 continue
             self._queue.remove(queued)
             queued.context.request_cancel(outcome)
@@ -757,6 +1980,10 @@ class DeviceCommandScheduler:
     ) -> None:
         if handle.finished_at is not None:
             return
+        if handle.lease_record is not None:
+            self._end_lease(handle.lease_record)
+        if handle.stream is not None and handle.started_at is None:
+            handle.stream.abandon(outcome)
         if invalidated_stop_epoch is not None:
             handle.invalidated_stop_epoch = invalidated_stop_epoch
         finished_at = datetime.now(UTC)
@@ -783,7 +2010,7 @@ class DeviceCommandScheduler:
                 kind=handle.intent.kind,
                 group_id=handle.intent.group_id,
                 resources=tuple(sorted(handle.intent.resources)),
-                scheduler_strategy=self.strategy_name,
+                scheduler_strategy=_strategy(handle),
                 stop_epoch=handle.context.admitted_stop_epoch,
                 invalidated_stop_epoch=handle.invalidated_stop_epoch,
                 admitted_at=handle.admitted_at,

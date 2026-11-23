@@ -9,14 +9,18 @@ from bleak.exc import BleakError
 from homeassistant.const import CONF_ADDRESS
 
 from custom_components.adjustable_bed import const
+from custom_components.adjustable_bed.beds.vibradorm.app_state import (
+    get_vibradorm_app_session_intent,
+)
 from custom_components.adjustable_bed.config_flow import (
     AdjustableBedConfigFlow,
     _vibradorm_app_data,
     _vibradorm_app_errors,
 )
-from custom_components.adjustable_bed.vibradorm_app_state import get_vibradorm_app_session_intent
-from custom_components.adjustable_bed.vibradorm_vmat_profiles import VMAT_REMOTES
+from custom_components.adjustable_bed.profiles.vibradorm import VMAT_REMOTES
 from tests.test_vibradorm_vmat import make_vmat
+
+pytestmark = pytest.mark.usefixtures("instant_vmat_settle")
 
 
 @pytest.mark.parametrize("disconnect_kind", ["noop", "error", "cancel", "task_cancel"])
@@ -28,7 +32,7 @@ async def test_public_progress_worker_retains_failed_setup_across_retry_removal_
     from contextlib import AsyncExitStack
 
     from bleak.backends.device import BLEDevice
-    from pytest_homeassistant_custom_component.common import MockConfigEntry
+    from pytest_homeassistant.common import MockConfigEntry
 
     from custom_components.adjustable_bed.adapter import AdapterSelectionResult
     from custom_components.adjustable_bed.address_lock import async_get_connect_lock
@@ -45,7 +49,9 @@ async def test_public_progress_worker_retains_failed_setup_across_retry_removal_
         BondVerificationStatus,
     )
     from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
-    from custom_components.adjustable_bed.vibradorm_vmat_setup import QUERY_STAGES
+    from custom_components.adjustable_bed.profiles.vibradorm import (
+        VMAT_QUERY_STAGES as QUERY_STAGES,
+    )
 
     address, source = "11:22:33:44:55:66", "AA:BB:CC:DD:EE:FF"
     path = ConnectionPath(source, transport=TransportClass.LOCAL, adapter="hci0")
@@ -94,7 +100,7 @@ async def test_public_progress_worker_retains_failed_setup_across_retry_removal_
     module = "custom_components.adjustable_bed.config_flow."
     lock = async_get_connect_lock(hass, address)
     with (
-        patch("custom_components.adjustable_bed.support_proxy_logs.capture_proxy_logs", return_value=AsyncExitStack()),
+        patch("custom_components.adjustable_bed.config_flow.capture_proxy_logs", return_value=AsyncExitStack()),
         patch("bleak_retry_connector.establish_connection", new=AsyncMock(return_value=c.client)) as establish,
         patch(module + "async_predict_path", return_value=PathPrediction(path, (path,))),
         patch(module + "client_source", return_value=source),
@@ -142,7 +148,7 @@ async def test_public_progress_worker_retains_failed_setup_across_retry_removal_
     entry.add_to_hass(hass)
     coordinator = AdjustableBedCoordinator(hass, entry)
     coordinator._max_retries = 1
-    runtime_module = "custom_components.adjustable_bed.coordinator."
+    runtime_module = "custom_components.adjustable_bed.coordinator_connection."
     with (
         patch(runtime_module + "select_adapter", return_value=AdapterSelectionResult(device, source, -50, True, [source])),
         patch(runtime_module + "async_connection_paths", return_value=()),
@@ -157,6 +163,7 @@ async def test_public_progress_worker_retains_failed_setup_across_retry_removal_
     with (
         patch(diagnostic_module + "select_adapter", new=AsyncMock(return_value=AdapterSelectionResult(device, source, -50, True, [source]))),
         patch(diagnostic_module + "establish_connection", new=AsyncMock()) as diagnostic_connect,
+        patch(diagnostic_module + "asyncio.sleep"),
     ):
         with pytest.raises(ConnectionError):
             await BLEDiagnosticRunner(hass, address)._connect()
@@ -183,7 +190,7 @@ async def test_public_progress_worker_retains_failed_setup_across_retry_removal_
     recovered.client.write_gatt_char.side_effect = recovered_write
     recovered.client.disconnect.side_effect = close_recovered
     with (
-        patch("custom_components.adjustable_bed.support_proxy_logs.capture_proxy_logs", return_value=AsyncExitStack()),
+        patch("custom_components.adjustable_bed.config_flow.capture_proxy_logs", return_value=AsyncExitStack()),
         patch("bleak_retry_connector.establish_connection", new=AsyncMock(return_value=recovered.client)) as establish,
         patch(module + "async_predict_path", return_value=PathPrediction(path, (path,))),
         patch(module + "client_source", return_value=source),
@@ -241,7 +248,7 @@ async def test_vmat_pre_stage_failure_retains_native_owner(hass, mode, disconnec
     native = BondEvidence(BondVerificationStatus.NATIVE_OS_STATE, BondOwner.from_path(path), "native", "now", kind=BondEvidenceKind.NATIVE_OS_STATE)
     module = "custom_components.adjustable_bed.config_flow."
     with (
-        patch("custom_components.adjustable_bed.support_proxy_logs.capture_proxy_logs", return_value=AsyncExitStack()),
+        patch("custom_components.adjustable_bed.config_flow.capture_proxy_logs", return_value=AsyncExitStack()),
         patch("bleak_retry_connector.establish_connection", new=AsyncMock(return_value=c.client)),
         patch(module + "async_predict_path", return_value=PathPrediction(path, (path,))),
         patch(module + "client_source", return_value=source),
@@ -283,7 +290,7 @@ async def test_public_options_switch_from_vmat_removes_remote_before_factory(has
     """The profile switch now uses guided setup, retaining this ledger binding."""
     from homeassistant.config_entries import SOURCE_RECONFIGURE
     from homeassistant.data_entry_flow import FlowResultType
-    from pytest_homeassistant_custom_component.common import MockConfigEntry
+    from pytest_homeassistant.common import MockConfigEntry
 
     from custom_components.adjustable_bed.controller_factory import create_controller
     from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
@@ -299,13 +306,8 @@ async def test_public_options_switch_from_vmat_removes_remote_before_factory(has
     flow.context = {"source": SOURCE_RECONFIGURE, "entry_id": entry.entry_id}
     flow.hass = hass
     await flow.async_step_reconfigure()
-    initial = await flow.async_step_vibradorm({"app": "vmat"})
-    schema = initial["data_schema"]
-    assert callable(schema)
-    submission = schema({})
-    assert isinstance(submission, dict)
-    submission[const.CONF_VIBRADORM_APP_PROFILE] = app
-    rebuilt = await flow.async_step_vibradorm_app(submission)
+    # The family step switches the app; the new app's questions follow.
+    rebuilt = await flow.async_step_vibradorm({"choice": app})
     assert rebuilt["type"] == FlowResultType.FORM
     assert not rebuilt["errors"]
     schema = rebuilt["data_schema"]
@@ -314,10 +316,10 @@ async def test_public_options_switch_from_vmat_removes_remote_before_factory(has
     assert isinstance(defaults, dict)
     assert const.CONF_VIBRADORM_VMAT_REMOTE not in defaults
     with patch.object(flow, "async_step_manual_pairing", new=AsyncMock()):
-        await flow.async_step_vibradorm_app(defaults)
-    flow._vibradorm_verified = True
-    flow._create_selected_app_entry(title="Bed", data=flow._manual_data)
-    finished = await flow.async_step_vibradorm_confirm({"confirm": True})
+        await flow.async_step_profile_questions(defaults)
+    flow._migration_verified = True
+    await flow._async_create_selected_app_entry(title="Bed", data=flow._manual_data)
+    finished = await flow.async_step_migration_confirm({"action": "apply"})
     assert finished["type"] == FlowResultType.ABORT
     assert entry.data[const.CONF_VIBRADORM_APP_PROFILE] == app
     assert const.CONF_VIBRADORM_VMAT_REMOTE not in entry.data
@@ -361,7 +363,9 @@ async def test_public_setup_accepts_native_closure_after_disconnect_rpc_error(ha
     c = make_vmat("07")
     c.client.pair = AsyncMock()
     queried = 0
-    from custom_components.adjustable_bed.vibradorm_vmat_setup import QUERY_STAGES
+    from custom_components.adjustable_bed.profiles.vibradorm import (
+        VMAT_QUERY_STAGES as QUERY_STAGES,
+    )
 
     async def write(char, packet, **kwargs):
         nonlocal queried
@@ -382,7 +386,7 @@ async def test_public_setup_accepts_native_closure_after_disconnect_rpc_error(ha
     native = BondEvidence(BondVerificationStatus.NATIVE_OS_STATE, BondOwner.from_path(path), "native", "now", kind=BondEvidenceKind.NATIVE_OS_STATE)
     module = "custom_components.adjustable_bed.config_flow."
     with (
-        patch("custom_components.adjustable_bed.support_proxy_logs.capture_proxy_logs", return_value=AsyncExitStack()),
+        patch("custom_components.adjustable_bed.config_flow.capture_proxy_logs", return_value=AsyncExitStack()),
         patch("bleak_retry_connector.establish_connection", new=AsyncMock(return_value=c.client)),
         patch(module + "async_predict_path", return_value=PathPrediction(path, (path,))),
         patch(module + "client_source", return_value=source),
@@ -404,7 +408,7 @@ async def test_public_setup_accepts_native_closure_after_disconnect_rpc_error(ha
 
 async def test_separate_address_options_preserve_each_vmat_remote(hass):
     from homeassistant.data_entry_flow import FlowResultType
-    from pytest_homeassistant_custom_component.common import MockConfigEntry
+    from pytest_homeassistant.common import MockConfigEntry
 
     from custom_components.adjustable_bed.config_flow import AdjustableBedOptionsFlow
     from custom_components.adjustable_bed.pairing import build_pair_entry_data
@@ -437,7 +441,6 @@ async def test_public_prebonded_setup_validates_ordinary_profile_roles(hass, rem
 
     from bleak.backends.device import BLEDevice
 
-    from custom_components.adjustable_bed.beds.vibradorm_app import CBI, COMMAND, LIGHT
     from custom_components.adjustable_bed.bluetooth_transport import (
         ConnectionPath,
         PathPrediction,
@@ -449,6 +452,9 @@ async def test_public_prebonded_setup_validates_ordinary_profile_roles(hass, rem
         BondOwner,
         BondVerificationStatus,
     )
+    from custom_components.adjustable_bed.codec.vibradorm import CBI_CHAR_UUID as CBI
+    from custom_components.adjustable_bed.codec.vibradorm import LIGHT_CHAR_UUID as LIGHT
+    from custom_components.adjustable_bed.codec.vibradorm import MOTOR_CHAR_UUID as COMMAND
 
     address, source = "11:22:33:44:55:66", "AA:BB:CC:DD:EE:FF"
     path = ConnectionPath(source, transport=TransportClass.LOCAL, adapter="hci0")
@@ -472,7 +478,7 @@ async def test_public_prebonded_setup_validates_ordinary_profile_roles(hass, rem
     native = BondEvidence(BondVerificationStatus.NATIVE_OS_STATE, BondOwner.from_path(path), "native", "now", kind=BondEvidenceKind.NATIVE_OS_STATE)
     module = "custom_components.adjustable_bed.config_flow."
     with (
-        patch("custom_components.adjustable_bed.support_proxy_logs.capture_proxy_logs", return_value=AsyncExitStack()),
+        patch("custom_components.adjustable_bed.config_flow.capture_proxy_logs", return_value=AsyncExitStack()),
         patch("bleak_retry_connector.establish_connection", new=AsyncMock(return_value=c.client)),
         patch(module + "async_predict_path", return_value=PathPrediction(path, (path,))),
         patch(module + "client_source", return_value=source),
@@ -505,8 +511,10 @@ async def test_public_setup_transport_write_timeout_never_pairs(hass, mode):
         BondOwner,
         BondVerificationStatus,
     )
+    from custom_components.adjustable_bed.profiles.vibradorm import (
+        VMAT_QUERY_STAGES as QUERY_STAGES,
+    )
     from custom_components.adjustable_bed.setup_operation import OperationOutcome
-    from custom_components.adjustable_bed.vibradorm_vmat_setup import QUERY_STAGES
 
     address, source = "11:22:33:44:55:66", "AA:BB:CC:DD:EE:FF"
     path = ConnectionPath(source, transport=TransportClass.LOCAL, adapter="hci0")
@@ -532,7 +540,7 @@ async def test_public_setup_transport_write_timeout_never_pairs(hass, mode):
     unknown = BondEvidence(BondVerificationStatus.INCONCLUSIVE, BondOwner.from_path(path), "native", "now")
     module = "custom_components.adjustable_bed.config_flow."
     with (
-        patch("custom_components.adjustable_bed.support_proxy_logs.capture_proxy_logs", return_value=AsyncExitStack()),
+        patch("custom_components.adjustable_bed.config_flow.capture_proxy_logs", return_value=AsyncExitStack()),
         patch("bleak_retry_connector.establish_connection", new=AsyncMock(return_value=c.client)),
         patch(module + "async_predict_path", return_value=PathPrediction(path, (path,))),
         patch(module + "client_source", return_value=source),
@@ -550,16 +558,17 @@ async def test_public_setup_transport_write_timeout_never_pairs(hass, mode):
 
 
 @pytest.mark.asyncio
-async def test_two_step_app_form_requires_remote_then_enters_existing_bond_flow(hass):
+async def test_vmat_asks_its_remote_then_enters_existing_bond_flow(hass):
     flow = AdjustableBedConfigFlow()
     flow.context = {}
     flow.hass = hass
     flow._manual_data = {CONF_ADDRESS: "11:22:33:44:55:66", const.CONF_BED_TYPE: const.BED_TYPE_VIBRADORM_APP}
-    result = await flow.async_step_vibradorm_app({const.CONF_VIBRADORM_APP_PROFILE: "vmat"})
+    # The family step chooses VMAT; its only question is the remote.
+    result = await flow.async_step_vibradorm({"choice": "vmat"})
     fields = {marker.schema for marker in result["data_schema"].schema}
-    assert fields == {const.CONF_VIBRADORM_APP_PROFILE, const.CONF_VIBRADORM_VMAT_REMOTE}
+    assert fields == {const.CONF_VIBRADORM_VMAT_REMOTE}
     with patch.object(flow, "async_step_manual_pairing", new=AsyncMock()) as pairing:
-        await flow.async_step_vibradorm_app({const.CONF_VIBRADORM_VMAT_REMOTE: "11"})
+        await flow.async_step_profile_questions({const.CONF_VIBRADORM_VMAT_REMOTE: "11"})
     pairing.assert_awaited_once()
     assert flow._manual_data[const.CONF_MOTOR_COUNT] == 3
     assert flow._manual_data[const.CONF_DISABLE_ANGLE_SENSING] is True
@@ -629,8 +638,9 @@ async def test_actual_entity_factories_follow_remote_gates(hass, remote):
     assert ("vibradorm_app_sync_observed" in sensor_keys) is c.profile.sync
     assert ("massage_head_toggle" in button_keys) is c.profile.massage
     assert ("massage_foot_toggle" in button_keys) is c.profile.massage
-    assert ("under_bed_lights" in switch_keys) is c.profile.floor_light
-    assert light_keys == set()  # No arbitrary RGB light or measured on/off feedback.
+    # The floor light is an on/off light; no arbitrary RGB light.
+    assert light_keys == ({"under_bed_lights"} if c.profile.floor_light else set())
+    assert "under_bed_lights" not in switch_keys
 
 
 @pytest.mark.asyncio
@@ -638,7 +648,9 @@ async def test_actual_entity_factories_follow_remote_gates(hass, remote):
 async def test_selected_vmat_entry_discards_previous_app_selection_intent(hass, restored):
     from homeassistant.data_entry_flow import FlowResultType
 
-    from custom_components.adjustable_bed.vibradorm_app_state import mark_vibradorm_app_selection
+    from custom_components.adjustable_bed.beds.vibradorm.app_state import (
+        mark_vibradorm_app_selection,
+    )
 
     address = "11:22:33:44:55:66"
     old = mark_vibradorm_app_selection(
@@ -651,7 +663,7 @@ async def test_selected_vmat_entry_discards_previous_app_selection_intent(hass, 
         const.CONF_VIBRADORM_APP_PROFILE: "vmat",
         const.CONF_VIBRADORM_RESTORED: restored,
     }, {const.CONF_VIBRADORM_VMAT_REMOTE: "07"})
-    result = flow._create_selected_app_entry(title="VMAT", data=data)
+    result = await flow._async_create_selected_app_entry(title="VMAT", data=data)
     assert result["type"] is FlowResultType.CREATE_ENTRY
     restored_old = get_vibradorm_app_session_intent(
         hass, address, app_profile="caresse", control_type=5,
@@ -704,7 +716,9 @@ async def test_real_setup_stages_then_pair_proof_close_disconnect_and_metadata_r
         BondOwner,
         BondVerificationStatus,
     )
-    from custom_components.adjustable_bed.vibradorm_vmat_setup import QUERY_STAGES
+    from custom_components.adjustable_bed.profiles.vibradorm import (
+        VMAT_QUERY_STAGES as QUERY_STAGES,
+    )
 
     address = "11:22:33:44:55:66"
     source = "AA:BB:CC:DD:EE:FF"

@@ -7,8 +7,8 @@ entries and paired beds. It reuses the existing advertisement detector and the
 known app choices in `profile_review.py`. It never opens a connection, probes a
 command, reads another characteristic, or switches protocols to test a hypothesis.
 No detection predicate or bed protocol changes are introduced by this feature.
-The [closed-issue audit](profile-recommendation-issue-audit.md) records historical
-selection failures and the evidence available to assess them.
+A closed-issue audit, kept machine-local with the other audit records, assessed
+historical selection failures against the evidence available for each.
 
 ## Assessment
 
@@ -201,18 +201,9 @@ protocol tables and newly ambiguous detection results do not qualify.
 
 ### Evidence and limits
 
-The accepted row054 report for `com.okin.bedding.adjustablelumbar` 1.2.2 (33)
-proves the existing current-profile selection and the absence of reachable
-numbered-memory actions. Its artifact-set hash is
-`ed65ed1b4970c95c2b1744687f94401447f851f23e81f8af6699a68854988b08`;
-accepted `REPORT.SHA256` hash is
-`39a64e7895b238a518498a671a37ae686252b8a68156ecf8a6b261ddb610050d`;
-`analysis.json` hash is
-`43073da1665399a64c146aa32e2040c91f3cd9e53850a212591e37ab03e0ced1`.
-The frozen report manifest was verified before reuse. See the existing
-[row054 dispositions](../apk-analysis/dispositions/row054-adjustable-lumbar.md).
-No APK was reanalyzed, no audit acceptance was changed, and no queue unit was
-advanced by this notification feature.
+Adjustable bed (Lumbar) 1.2.2 (`com.okin.bedding.adjustablelumbar`) proves the
+existing current-profile selection and the absence of reachable numbered-memory
+actions.
 
 The [support bundle and control-box photograph in #670](https://github.com/kristofferR/ha-adjustable-bed/issues/670#issuecomment-6026118933)
 add the observed Star254202 name, `STAR` manufacturer, model `254202`, selected
@@ -239,7 +230,7 @@ hardware capability is inferred and no packet, timing or controller is changed.
   Covered by `tests/test_profile_recommendations.py`.
 - `ALREADY_IMPLEMENTED`: current-profile table/manufacturer selection and controls,
   `beds/adjustable_lumbar.py`, `tests/test_adjustable_lumbar.py`; target-profile
-  numbered memories, `beds/sleepys_box25.py`, `tests/test_sleepys.py`.
+  numbered memories, `beds/sleepys/box25.py`, `tests/test_sleepys.py`.
 - `EXCLUDED`: none of the requested notification behavior. Other model identities
   remain unsupported by this rule because there is no equivalent matching evidence;
   they are not declared incompatible or queued for guessed protocol changes.

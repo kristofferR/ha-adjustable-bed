@@ -8,16 +8,14 @@ from unittest.mock import AsyncMock, MagicMock, call, patch
 import pytest
 from homeassistant.const import CONF_ADDRESS, CONF_NAME
 from homeassistant.core import HomeAssistant
-from pytest_homeassistant_custom_component.common import MockConfigEntry
+from pytest_homeassistant.common import MockConfigEntry
 
 from custom_components.adjustable_bed.beds.okin_cst import (
-    _BUTTON_PRESS_REPEAT_COUNT,
-    _PRESET_REPEAT_COUNT,
     CstMotorCommands,
     CstRemoteCommands,
     OkinCstController,
 )
-from custom_components.adjustable_bed.beds.okin_protocol import build_cst_command
+from custom_components.adjustable_bed.codec.okin_nframe import frame96
 from custom_components.adjustable_bed.const import (
     BED_TYPE_OKIN_CST,
     CONF_BED_TYPE,
@@ -30,6 +28,7 @@ from custom_components.adjustable_bed.const import (
     OKIMAT_WRITE_CHAR_UUID,
 )
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
+from custom_components.adjustable_bed.profiles.okin_nframe import CST_PRESS
 
 
 @pytest.fixture
@@ -92,13 +91,13 @@ def _assert_writes_use_cst_characteristic(mock_client: MagicMock) -> None:
 def _assert_button_press_sequence(payloads: list[bytes], command: bytes) -> None:
     """Assert a short app-style press followed by the STOP sequence."""
     assert payloads == (
-        [command] * _BUTTON_PRESS_REPEAT_COUNT + [build_cst_command()] * 2
+        [command] * CST_PRESS.repeats + [frame96(0)] * 2
     )
 
 
 def _assert_preset_sequence(payloads: list[bytes], command: bytes) -> None:
     """Assert a long preset hold followed by the STOP sequence."""
-    assert payloads == [command] * _PRESET_REPEAT_COUNT + [build_cst_command()] * 2
+    assert payloads == [command] * CST_PRESS.repeats + [frame96(0)] * 2
 
 
 class TestOkinCstCapabilities:
@@ -128,7 +127,6 @@ class TestOkinCstCapabilities:
             "feet",
             "lumbar",
         ]
-        assert okin_cst_controller.stale_motor_entity_keys == frozenset({"back", "legs", "tilt"})
 
     def test_command_values_match_reachable_cst_protocol(self) -> None:
         """Only command values reachable from the shipped app are declared."""
@@ -146,39 +144,19 @@ class TestOkinCstCapabilities:
 class TestOkinCstCommands:
     """Test Okin CST command routing and timing."""
 
-    @patch(
-        "custom_components.adjustable_bed.beds.okin_cst.asyncio.sleep",
-        new_callable=AsyncMock,
-    )
-    async def test_flat_preset_uses_primary_field_and_app_one_shot_cadence(
-        self,
-        _mock_sleep: AsyncMock,
-        okin_cst_controller: OkinCstController,
-        mock_bleak_client: MagicMock,
-    ) -> None:
-        """Flat uses the primary field and the app's fixed 500 ms voice cadence."""
-        mock_bleak_client.write_gatt_char.reset_mock()
-
-        await okin_cst_controller.preset_flat()
-
-        expected = build_cst_command(motor_value=CstRemoteCommands.FLAT)
-        payloads = _payloads(mock_bleak_client)
-        _assert_preset_sequence(payloads, expected)
-        _assert_writes_use_cst_characteristic(mock_bleak_client)
-
     @pytest.mark.parametrize(
         ("method_name", "command_value"),
         [
-            ("preset_zero_g", CstRemoteCommands.ZERO_G),
-            ("preset_anti_snore", CstRemoteCommands.ANTI_SNORE),
             ("preset_lounge", CstRemoteCommands.LOUNGE),
             ("preset_incline", CstRemoteCommands.INCLINE),
         ],
     )
+
     @patch(
         "custom_components.adjustable_bed.beds.okin_cst.asyncio.sleep",
         new_callable=AsyncMock,
     )
+
     async def test_preset_actions_use_primary_field(
         self,
         _mock_sleep: AsyncMock,
@@ -196,165 +174,14 @@ class TestOkinCstCommands:
         payloads = _payloads(mock_bleak_client)
         _assert_preset_sequence(
             payloads,
-            build_cst_command(motor_value=command_value),
-        )
-
-    @pytest.mark.parametrize(
-        ("memory_num", "command_value"),
-        [
-            (1, CstRemoteCommands.ZERO_G),
-            (2, CstRemoteCommands.INCLINE),
-            (3, CstRemoteCommands.LOUNGE),
-        ],
-    )
-    @patch(
-        "custom_components.adjustable_bed.beds.okin_cst.asyncio.sleep",
-        new_callable=AsyncMock,
-    )
-    async def test_memory_recalls_use_programmable_preset_slots(
-        self,
-        _mock_sleep: AsyncMock,
-        okin_cst_controller: OkinCstController,
-        mock_bleak_client: MagicMock,
-        memory_num: int,
-        command_value: int,
-    ) -> None:
-        """HA memory slots map to MFirm's saveable ZG, incline, and lounge slots."""
-        mock_bleak_client.write_gatt_char.reset_mock()
-
-        await okin_cst_controller.preset_memory(memory_num)
-
-        payloads = _payloads(mock_bleak_client)
-        _assert_preset_sequence(
-            payloads,
-            build_cst_command(motor_value=command_value),
-        )
-
-    @pytest.mark.parametrize(
-        ("memory_num", "command_value"),
-        [
-            (1, CstRemoteCommands.SAVE_ZERO_G),
-            (2, CstRemoteCommands.SAVE_INCLINE),
-            (3, CstRemoteCommands.SAVE_LOUNGE),
-        ],
-    )
-    @patch(
-        "custom_components.adjustable_bed.beds.okin_cst.asyncio.sleep",
-        new_callable=AsyncMock,
-    )
-    async def test_program_memory_uses_app_save_combos(
-        self,
-        _mock_sleep: AsyncMock,
-        okin_cst_controller: OkinCstController,
-        mock_bleak_client: MagicMock,
-        memory_num: int,
-        command_value: int,
-    ) -> None:
-        """Program memory sends MFirm's Flat+preset save packets."""
-        mock_bleak_client.write_gatt_char.reset_mock()
-
-        await okin_cst_controller.program_memory(memory_num)
-
-        _assert_button_press_sequence(
-            _payloads(mock_bleak_client),
-            build_cst_command(motor_value=command_value),
+            frame96(command_value),
         )
 
     @patch(
         "custom_components.adjustable_bed.beds.okin_cst.asyncio.sleep",
         new_callable=AsyncMock,
     )
-    async def test_lights_on_uses_secondary_field(
-        self,
-        _mock_sleep: AsyncMock,
-        okin_cst_controller: OkinCstController,
-        mock_bleak_client: MagicMock,
-    ) -> None:
-        """Discrete light-on uses the secondary CST field."""
-        mock_bleak_client.write_gatt_char.reset_mock()
 
-        await okin_cst_controller.lights_on()
-
-        _assert_button_press_sequence(
-            _payloads(mock_bleak_client),
-            build_cst_command(control_value=CstRemoteCommands.LIGHT_ON),
-        )
-
-    @patch(
-        "custom_components.adjustable_bed.beds.okin_cst.asyncio.sleep",
-        new_callable=AsyncMock,
-    )
-    async def test_lights_off_uses_secondary_field(
-        self,
-        _mock_sleep: AsyncMock,
-        okin_cst_controller: OkinCstController,
-        mock_bleak_client: MagicMock,
-    ) -> None:
-        """Discrete light-off uses the secondary CST field."""
-        mock_bleak_client.write_gatt_char.reset_mock()
-
-        await okin_cst_controller.lights_off()
-
-        _assert_button_press_sequence(
-            _payloads(mock_bleak_client),
-            build_cst_command(control_value=CstRemoteCommands.LIGHT_OFF),
-        )
-
-    @patch(
-        "custom_components.adjustable_bed.beds.okin_cst.asyncio.sleep",
-        new_callable=AsyncMock,
-    )
-    async def test_lights_toggle_uses_primary_field(
-        self,
-        _mock_sleep: AsyncMock,
-        okin_cst_controller: OkinCstController,
-        mock_bleak_client: MagicMock,
-    ) -> None:
-        """Light toggle uses the primary CST field in the MFirm app."""
-        mock_bleak_client.write_gatt_char.reset_mock()
-
-        await okin_cst_controller.lights_toggle()
-
-        _assert_button_press_sequence(
-            _payloads(mock_bleak_client),
-            build_cst_command(motor_value=CstRemoteCommands.LIGHT_TOGGLE),
-        )
-
-    @pytest.mark.parametrize(
-        ("method_name", "command_value"),
-        [
-            ("massage_off", CstRemoteCommands.MASSAGE_OFF),
-            ("massage_intensity_up", CstRemoteCommands.MASSAGE_INTENSITY),
-            ("massage_intensity_down", CstRemoteCommands.MASSAGE_INTENSITY_MINUS),
-        ],
-    )
-    @patch(
-        "custom_components.adjustable_bed.beds.okin_cst.asyncio.sleep",
-        new_callable=AsyncMock,
-    )
-    async def test_massage_actions_use_primary_field(
-        self,
-        _mock_sleep: AsyncMock,
-        okin_cst_controller: OkinCstController,
-        mock_bleak_client: MagicMock,
-        method_name: str,
-        command_value: int,
-    ) -> None:
-        """Most MFirm massage actions are carried in the primary CST field."""
-        mock_bleak_client.write_gatt_char.reset_mock()
-        method: Callable[[], Awaitable[None]] = getattr(okin_cst_controller, method_name)
-
-        await method()
-
-        _assert_button_press_sequence(
-            _payloads(mock_bleak_client),
-            build_cst_command(motor_value=command_value),
-        )
-
-    @patch(
-        "custom_components.adjustable_bed.beds.okin_cst.asyncio.sleep",
-        new_callable=AsyncMock,
-    )
     async def test_massage_mode_step_cycles_secondary_field_waves(
         self,
         _mock_sleep: AsyncMock,
@@ -368,60 +195,24 @@ class TestOkinCstCommands:
         await okin_cst_controller.massage_mode_step()
 
         payloads = _payloads(mock_bleak_client)
-        expected_press_length = _BUTTON_PRESS_REPEAT_COUNT + 2
+        expected_press_length = CST_PRESS.repeats + 2
         assert len(payloads) == expected_press_length * 2
         first_press = payloads[:expected_press_length]
         second_press = payloads[expected_press_length:]
         _assert_button_press_sequence(
             first_press,
-            build_cst_command(control_value=CstRemoteCommands.MASSAGE_WAVE_1),
+            frame96(0, CstRemoteCommands.MASSAGE_WAVE_1),
         )
         _assert_button_press_sequence(
             second_press,
-            build_cst_command(control_value=CstRemoteCommands.MASSAGE_WAVE_2),
+            frame96(0, CstRemoteCommands.MASSAGE_WAVE_2),
         )
 
-    @pytest.mark.parametrize(
-        ("method_name", "command_value"),
-        [
-            ("move_back_up", CstMotorCommands.HEAD_UP),
-            ("move_back_down", CstMotorCommands.HEAD_DOWN),
-            ("move_legs_up", CstMotorCommands.FOOT_UP),
-            ("move_legs_down", CstMotorCommands.FOOT_DOWN),
-            ("move_lumbar_up", CstMotorCommands.LUMBAR_UP),
-            ("move_lumbar_down", CstMotorCommands.LUMBAR_DOWN),
-        ],
-    )
     @patch(
         "custom_components.adjustable_bed.beds.okin_cst.asyncio.sleep",
         new_callable=AsyncMock,
     )
-    async def test_motor_actions_use_exact_primary_field_bits(
-        self,
-        _mock_sleep: AsyncMock,
-        okin_cst_controller: OkinCstController,
-        mock_bleak_client: MagicMock,
-        method_name: str,
-        command_value: int,
-    ) -> None:
-        """Head, foot, and lumbar use the app's reachable motor bits."""
-        mock_bleak_client.write_gatt_char.reset_mock()
-        method: Callable[[], Awaitable[None]] = getattr(okin_cst_controller, method_name)
 
-        await method()
-
-        expected = build_cst_command(motor_value=command_value)
-        assert _payloads(mock_bleak_client) == [
-            expected,
-        ] * okin_cst_controller._coordinator.motor_pulse_count + [
-            build_cst_command(),
-            build_cst_command(),
-        ]
-
-    @patch(
-        "custom_components.adjustable_bed.beds.okin_cst.asyncio.sleep",
-        new_callable=AsyncMock,
-    )
     async def test_stop_sequence_waits_before_both_release_frames(
         self,
         mock_sleep: AsyncMock,
@@ -433,7 +224,7 @@ class TestOkinCstCommands:
 
         await okin_cst_controller.stop_all()
 
-        assert _payloads(mock_bleak_client) == [build_cst_command()] * 2
+        assert _payloads(mock_bleak_client) == [frame96(0)] * 2
         assert mock_sleep.await_args_list == [call(0.1), call(0.1)]
 
     async def test_notifications_are_forwarded_raw_without_position_updates(

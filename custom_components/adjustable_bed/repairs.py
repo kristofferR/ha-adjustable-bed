@@ -12,6 +12,7 @@ host.
 from __future__ import annotations
 
 import logging
+from collections.abc import Mapping
 from datetime import UTC, datetime
 from typing import TYPE_CHECKING, Any
 
@@ -72,6 +73,7 @@ from .const import (
     PAIR_SIDES,
     RUNTIME_BOND_KEYS,
     grants_one_connection_per_pairing_window,
+    requires_pairing_after_service_discovery,
 )
 from .pairing import (
     effective_child_data,
@@ -83,6 +85,7 @@ from .pairing_candidates import (
     active_pairing_candidates,
     build_pair_selection_schema,
 )
+from .runtime_data import loaded_runtime
 from .setup_operation import (
     BluetoothOperationMixin,
     OperationOutcome,
@@ -158,6 +161,90 @@ def async_track_combine_beds_issue(
 
     entry.async_on_unload(entry.async_on_state_change(refresh))
     refresh()
+
+
+OCTO_PIN_ISSUE_PREFIX = "octo_pin_required_"
+
+
+class OctoPinRepairFlow(RepairsFlow):
+    """Save the PIN a locked Octo receiver asks for, on the entry or its side."""
+
+    def __init__(self, entry_id: str, address: str) -> None:
+        self._entry_id = entry_id
+        self._address = address.upper()
+
+    async def async_step_init(
+        self, user_input: dict[str, Any] | None = None
+    ) -> RepairsFlowResult:
+        """Ask for the PIN and save it where Configure keeps it."""
+        from homeassistant.helpers.selector import (
+            TextSelector,
+            TextSelectorConfig,
+            TextSelectorType,
+        )
+
+        from .const import (
+            BED_TYPE_OCTO,
+            CONF_BED_TYPE,
+            CONF_OCTO_PIN,
+            CONF_PROTOCOL_VARIANT,
+            CONF_SIDE,
+            OCTO_VARIANT_STAR2,
+        )
+        from .pairing import get_child, iter_children, with_updated_child
+        from .validators import is_valid_octo_pin, normalize_octo_pin
+
+        entry = self.hass.config_entries.async_get_entry(self._entry_id)
+        if entry is None:
+            return self.async_abort(reason="entry_missing")
+        side = next(
+            (
+                child.get(CONF_SIDE)
+                for child in iter_children(entry.data)
+                if str(child.get(CONF_ADDRESS, "")).upper() == self._address
+            ),
+            None,
+        )
+        if side is None and str(entry.data.get(CONF_ADDRESS, "")).upper() != self._address:
+            # The receiver this repair named is no longer part of the entry.
+            return self.async_abort(reason="entry_missing")
+        target = get_child(entry.data, side) if side is not None else entry.data
+        if (
+            target is None
+            or target.get(CONF_BED_TYPE) != BED_TYPE_OCTO
+            # Star2 receivers have no PIN.
+            or target.get(CONF_PROTOCOL_VARIANT) == OCTO_VARIANT_STAR2
+            or target.get(CONF_OCTO_PIN)
+        ):
+            # Configure saved a PIN, or the bed changed, since the repair opened.
+            return self.async_abort(reason="pin_saved")
+        errors: dict[str, str] = {}
+        # RepairsFlowManager passes {"issue_id": ...} to the first step.
+        if user_input is not None and CONF_OCTO_PIN in user_input:
+            pin = normalize_octo_pin(user_input[CONF_OCTO_PIN])
+            if not pin or not is_valid_octo_pin(pin):
+                errors[CONF_OCTO_PIN] = "invalid_pin"
+            else:
+                data = (
+                    with_updated_child(entry.data, side, {CONF_OCTO_PIN: pin})
+                    if side is not None
+                    else {**entry.data, CONF_OCTO_PIN: pin}
+                )
+                # The entry's update listener reloads it with the PIN.
+                self.hass.config_entries.async_update_entry(entry, data=data)
+                return self.async_create_entry(data={})
+        return self.async_show_form(
+            step_id="init",
+            data_schema=vol.Schema(
+                {
+                    vol.Required(CONF_OCTO_PIN): TextSelector(
+                        TextSelectorConfig(type=TextSelectorType.PASSWORD)
+                    )
+                }
+            ),
+            errors=errors,
+            description_placeholders={"name": entry.title},
+        )
 
 
 class CombineBedsRepairFlow(RepairsFlow):
@@ -255,9 +342,7 @@ class CombineBedsRepairFlow(RepairsFlow):
                 result.get("type") is not FlowResultType.FORM
                 or result.get("step_id") != "pair_beds"
             ):
-                return self.async_abort(
-                    reason=result.get("reason") or "pairing_flow_failed"
-                )
+                return self._abort_like(result)
             self._pairing_flow_id = result["flow_id"]
 
         result = await self.hass.config_entries.flow.async_configure(
@@ -277,7 +362,19 @@ class CombineBedsRepairFlow(RepairsFlow):
                 description_placeholders=self._description_placeholders(),
             )
         self._pairing_flow_id = None
-        return self.async_abort(reason=result.get("reason") or "pairing_flow_failed")
+        return self._abort_like(result)
+
+    def _abort_like(self, result: Mapping[str, Any]) -> RepairsFlowResult:
+        """End this flow as the pairing config flow ended.
+
+        Keep its translation domain, so a reason Home Assistant owns, such as
+        ``already_in_progress``, still resolves.
+        """
+        return self.async_abort(
+            reason=result.get("reason") or "pairing_flow_failed",
+            description_placeholders=result.get("description_placeholders"),
+            translation_domain=result.get("translation_domain"),
+        )
 
 
 class PairingRequiredRepairFlow(BluetoothOperationMixin, RepairsFlow):
@@ -363,7 +460,7 @@ class PairingRequiredRepairFlow(BluetoothOperationMixin, RepairsFlow):
         entry = self._entry()
         if entry is None:
             return None
-        coordinator = self.hass.data.get(DOMAIN, {}).get(entry.entry_id)
+        coordinator = loaded_runtime(self.hass, entry.entry_id)
         side = self._target_side()
         if coordinator is None or side is None:
             return coordinator
@@ -921,7 +1018,7 @@ class PairingRequiredRepairFlow(BluetoothOperationMixin, RepairsFlow):
                 # async_pair_now() clears the runtime bond marker itself, which
                 # editing entry.data alone would not do.
                 paired = bool(await coordinator.async_pair_now())
-            except Exception as err:  # noqa: BLE001 - any failure means "not paired"
+            except Exception as err:
                 _LOGGER.warning("Repair: pairing failed for %s: %s", self._address, err)
                 return False
             if not paired and coordinator.pairing_supported is False:
@@ -974,7 +1071,7 @@ class PairingRequiredRepairFlow(BluetoothOperationMixin, RepairsFlow):
         )
         try:
             await self.hass.config_entries.async_reload(self._entry_id)
-        except Exception as err:  # noqa: BLE001 - any failure means "not paired"
+        except Exception as err:
             _LOGGER.warning("Repair: pairing failed for %s: %s", self._address, err)
             return False
         bonded = self._bonded_now()
@@ -1003,9 +1100,8 @@ class PairingRequiredRepairFlow(BluetoothOperationMixin, RepairsFlow):
     async def _async_try_pair(self, expected_source: str | None = None) -> bool:
         """Create a bond for beds that pair at connect time, and verify it.
 
-        Beds that must bond after service discovery never reach this path: they
-        are one-connection beds and are handled by _async_pair_via_coordinator,
-        which refuses to open a throwaway client at all.
+        One-connection beds are handled by _async_pair_via_coordinator, which
+        refuses to open a throwaway client. Other beds keep their own ordering.
         """
         via_coordinator = await self._async_pair_via_coordinator(expected_source)
         if via_coordinator is not None:
@@ -1051,6 +1147,11 @@ class PairingRequiredRepairFlow(BluetoothOperationMixin, RepairsFlow):
             return False
 
         client: BleakClient | None = None
+        bed_type, variant = self._bed_type()
+        pair_after_discovery = (
+            pair and bed_type is not None
+            and requires_pairing_after_service_discovery(bed_type, variant)
+        )
         reload_entry_id: str | None = None
         verified_owner: BondOwner | None = None
         # Hold the address lock for the whole client lifetime. Releasing it after
@@ -1059,7 +1160,7 @@ class PairingRequiredRepairFlow(BluetoothOperationMixin, RepairsFlow):
         async with async_get_connect_lock(self.hass, self._address):
             try:
                 connect_kwargs: dict[str, Any] = (
-                    {"pair": True} if pair and expected_source is None else {}
+                    {"pair": True} if pair and expected_source is None and not pair_after_discovery else {}
                 )
                 client = await establish_connection(
                     BleakClient,
@@ -1069,7 +1170,7 @@ class PairingRequiredRepairFlow(BluetoothOperationMixin, RepairsFlow):
                     use_services_cache=False,
                     **connect_kwargs,
                 )
-            except Exception as err:  # noqa: BLE001 - any failure means "not paired"
+            except Exception as err:
                 _LOGGER.warning("Repair: pairing failed for %s: %s", self._address, err)
                 return False
 
@@ -1085,7 +1186,7 @@ class PairingRequiredRepairFlow(BluetoothOperationMixin, RepairsFlow):
                     )
                     return False
                 pair_error: Exception | None = None
-                if pair and expected_source:
+                if pair and (expected_source or pair_after_discovery):
                     try:
                         await client.pair()
                     except (NotImplementedError, TypeError) as err:
@@ -1096,7 +1197,7 @@ class PairingRequiredRepairFlow(BluetoothOperationMixin, RepairsFlow):
                             err,
                         )
                         return False
-                    except Exception as err:  # noqa: BLE001 - the verifier decides
+                    except Exception as err:
                         pair_error = err
                         _LOGGER.warning(
                             "Repair: pairing %s raised (%s); verifying the bond",
@@ -1149,7 +1250,7 @@ class PairingRequiredRepairFlow(BluetoothOperationMixin, RepairsFlow):
                                 err,
                             )
                             bonded = True
-                    except Exception as err:  # noqa: BLE001
+                    except Exception as err:
                         _LOGGER.debug(
                             "Repair: bond verification inconclusive for %s: %s",
                             self._address,
@@ -1174,7 +1275,7 @@ class PairingRequiredRepairFlow(BluetoothOperationMixin, RepairsFlow):
                 if client is not None:
                     try:
                         await client.disconnect()
-                    except Exception:  # noqa: BLE001
+                    except Exception:
                         pass
 
         if reload_entry_id is not None:
@@ -1194,6 +1295,8 @@ async def async_create_fix_flow(
         return CombineBedsRepairFlow()
 
     payload = data or {}
+    if issue_id.startswith(OCTO_PIN_ISSUE_PREFIX):
+        return OctoPinRepairFlow(payload.get("entry_id", ""), payload.get("address", ""))
     from .profile_recommendations import (
         ISSUE_PREFIX as RECOMMENDATION_ISSUE_PREFIX,
     )
@@ -1204,7 +1307,7 @@ async def async_create_fix_flow(
     if issue_id.startswith(RECOMMENDATION_ISSUE_PREFIX):
         return ProfileRecommendationRepairFlow(issue_id, payload.get("rule", ""))
 
-    from .furnimove_repair import ISSUE_PREFIX, FurniMoveLayoutRepairFlow
+    from .beds.furnimove.repair import ISSUE_PREFIX, FurniMoveLayoutRepairFlow
 
     if issue_id.startswith(ISSUE_PREFIX):
         return FurniMoveLayoutRepairFlow(payload.get("entry_id", ""), payload.get("side"))
@@ -1215,8 +1318,8 @@ async def async_create_fix_flow(
     if issue_id.startswith(PROFILE_REVIEW_ISSUE_PREFIX):
         return ProfileReviewRepairFlow(payload.get("entry_id", ""))
 
-    from .remacro_discovery import ISSUE_PREFIX as REMACRO_ISSUE_PREFIX
-    from .remacro_discovery import RemacroAppRepairFlow
+    from .beds.remacro.discovery import ISSUE_PREFIX as REMACRO_ISSUE_PREFIX
+    from .beds.remacro.discovery import RemacroAppRepairFlow
 
     if issue_id.startswith(REMACRO_ISSUE_PREFIX):
         return RemacroAppRepairFlow(

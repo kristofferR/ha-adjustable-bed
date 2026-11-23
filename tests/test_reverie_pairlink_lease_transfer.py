@@ -11,7 +11,7 @@ from homeassistant.components import bluetooth
 from homeassistant.exceptions import ConfigEntryNotReady
 from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers import entity_registry as er
-from pytest_homeassistant_custom_component.common import MockConfigEntry
+from pytest_homeassistant.common import MockConfigEntry
 
 from custom_components.adjustable_bed import (
     async_setup_entry,
@@ -19,8 +19,10 @@ from custom_components.adjustable_bed import (
     bluetooth_transport,
     pairing,
 )
-from custom_components.adjustable_bed.beds import reverie_pairlink_transport as transport
+from custom_components.adjustable_bed.beds.reverie import pairlink_transport as transport
 from custom_components.adjustable_bed.const import DOMAIN
+from custom_components.adjustable_bed.errors import BedNotConnectedError
+from tests.error_helpers import raises_key
 from tests.test_reverie_pairlink_production import (
     _adapter_objects,
     _device_for_address,
@@ -109,9 +111,11 @@ async def fixture_pair(hass, monkeypatch, *, mixed=False, central_side=1, mode=N
     ) for i, entry in enumerate(entries)]
     data = pairing.build_pair_entry_data(
         {**entries[0].data, **entries[0].options}, {**entries[1].data, **entries[1].options},
-        name="Transferred pair", connection_mode=mode, left_origin=(entries[0].entry_id, entries[0].unique_id),
+        name="Transferred pair", left_origin=(entries[0].entry_id, entries[0].unique_id),
         right_origin=(entries[1].entry_id, entries[1].unique_id),
     )
+    # Tests start the pair in this mode (see conftest).
+    data["pair_connection_mode"] = mode
     pair = MockConfigEntry(domain=DOMAIN, title="Transferred pair", unique_id=data["pair_id"], data=data)
     pair.add_to_hass(hass)
     monkeypatch.setattr(bluetooth, "async_current_scanners", lambda _: _scanners(SOURCES))
@@ -148,7 +152,7 @@ async def test_trusted_absorbed_local_leases_transfer_and_preserve_side_ids(
             assert coordinator.entry.data.get("pairlink_role") == "central"
             return True
         monkeypatch.setattr(AdjustableBedCoordinator, "async_connect", connect_central)
-    assert await async_setup_entry(hass, pair)
+    await async_setup_entry(hass, pair)
     parent = hass.data[DOMAIN][pair.entry_id]
     for i, side in enumerate(("left", "right")):
         child = parent.children[side]
@@ -171,7 +175,7 @@ async def test_trusted_absorbed_local_leases_transfer_and_preserve_side_ids(
         assert hass.data[DOMAIN]["_pairlink_local_profile_leases"][adapter] == f"{pair.entry_id}:{side}:{child.address}"
     for sock in sockets:
         assert _recv(sock) == b""
-    assert await async_unload_entry(hass, pair)
+    await async_unload_entry(hass, pair)
     await pair._async_process_on_unload(hass)
     assert active == {}
     for sock in sockets:
@@ -317,7 +321,7 @@ async def test_absorbed_identity_must_match_the_trusted_entry_and_runtime_before
         hass.config_entries.async_update_entry(pair, data=data)
     before = list(trace)
     leases = dict(hass.data[DOMAIN]["_pairlink_local_profile_leases"])
-    with pytest.raises(ConfigEntryNotReady, match="Absorbed bed"):
+    with raises_key("setup_retry", ConfigEntryNotReady):
         await async_setup_entry(hass, pair)
     assert trace == before
     assert hass.data[DOMAIN]["_pairlink_local_profile_leases"] == leases
@@ -335,7 +339,7 @@ async def test_retired_local_entry_never_uses_central_fallback(
     central = AsyncMock(side_effect=AssertionError("local role reached central connection"))
     monkeypatch.setattr(original, "_async_connect_attempts_locked", central)
     await original.async_release_for_pairing_transfer()
-    with pytest.raises(ConnectionError, match="ownership is being transferred"):
+    with raises_key("bed_combining", BedNotConnectedError):
         await original.async_execute_controller_command(lambda controller: controller.stop_all())
     original.finish_pairing_transfer()
     assert await original.async_connect() is False
@@ -368,7 +372,7 @@ async def test_partial_registry_refusal_restores_only_its_source_and_keeps_commi
             raise RuntimeError("injected one-side registry refusal")
         return await real_remove(entry_id)
     monkeypatch.setattr(hass.config_entries, "async_remove", remove_one)
-    assert await async_setup_entry(hass, pair)
+    await async_setup_entry(hass, pair)
     parent = hass.data[DOMAIN][pair.entry_id]
     committed_side = "right" if retained_side == "left" else "left"
     assert set(parent.children) == {committed_side}
@@ -383,7 +387,7 @@ async def test_partial_registry_refusal_restores_only_its_source_and_keeps_commi
     assert dr.async_get(hass).async_get(devices[committed].id).config_entry_id == pair.entry_id
     leases = hass.data[DOMAIN]["_pairlink_local_profile_leases"]
     assert leases[SOURCES[retained][1]] == retained_original.entry.entry_id
-    assert await async_unload_entry(hass, pair)
+    await async_unload_entry(hass, pair)
     await pair._async_process_on_unload(hass)
     assert set(active) == {f"/org/bluez/{SOURCES[retained][1]}"}
     assert leases == {SOURCES[retained][1]: retained_original.entry.entry_id}

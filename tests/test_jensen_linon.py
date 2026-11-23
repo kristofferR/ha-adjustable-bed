@@ -13,24 +13,22 @@ import pytest
 from bleak.exc import BleakError
 from homeassistant.const import CONF_ADDRESS, CONF_NAME
 from homeassistant.core import HomeAssistant
-from homeassistant.data_entry_flow import FlowResultType
-from pytest_homeassistant_custom_component.common import MockConfigEntry
+from pytest_homeassistant.common import MockConfigEntry
 
-from custom_components.adjustable_bed.beds.jensen_linon import (
+from custom_components.adjustable_bed.beds.jensen.linon import (
     HOLD_INTERVAL_MS,
     JensenLinonCommands,
     JensenLinonController,
 )
-from custom_components.adjustable_bed.beds.svane import SvaneController
+from custom_components.adjustable_bed.beds.svane.controller import SvaneController
 from custom_components.adjustable_bed.config_flow import (
     AdjustableBedConfigFlow,
-    AdjustableBedOptionsFlow,
 )
 from custom_components.adjustable_bed.const import (
     BED_TYPE_SVANE,
     CONF_BED_TYPE,
+    CONF_CONNECTION_MODE,
     CONF_DISABLE_ANGLE_SENSING,
-    CONF_DISCONNECT_AFTER_COMMAND,
     CONF_HAS_MASSAGE,
     CONF_MOTOR_COUNT,
     CONF_PREFERRED_ADAPTER,
@@ -49,7 +47,8 @@ from custom_components.adjustable_bed.const import (
 from custom_components.adjustable_bed.controller_factory import create_controller
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
 from custom_components.adjustable_bed.detection import is_jensen_linon_name
-from custom_components.adjustable_bed.pairing import build_pair_entry_data, effective_child_data
+from tests.form_helpers import finish_new_bed
+from tests.state_helpers import published
 
 HEAD = SVANE_HEAD_SERVICE_UUID
 FOOT = SVANE_FEET_SERVICE_UUID
@@ -79,7 +78,7 @@ def written(controller: JensenLinonController) -> list[tuple[str, str, str]]:
 def _no_sleep(monkeypatch: pytest.MonkeyPatch) -> AsyncMock:
     """Skip the 800 ms hold interval (this patches ``asyncio.sleep`` itself)."""
     sleep = AsyncMock()
-    monkeypatch.setattr("custom_components.adjustable_bed.beds.jensen_linon.asyncio.sleep", sleep)
+    monkeypatch.setattr("custom_components.adjustable_bed.beds.jensen.linon.asyncio.sleep", sleep)
     return sleep
 
 
@@ -228,10 +227,7 @@ class TestJensenLinonLights:
 
         target = (SVANE_LIGHT_SERVICE_UUID, SVANE_LIGHT_ON_OFF_UUID)
         assert written(controller) == [(*target, "010000"), (*target, "000000"), (*target, "010000")]
-        assert controller.get_light_state() == {"is_on": True}
-        controller._coordinator.handle_controller_state_updates.assert_called_with(
-            {"under_bed_lights_on": True}
-        )
+        assert published(*controller._coordinator.handle_controller_state_updates.call_args.args) == {"under_bed_lights_on": True}
 
     def test_light_frame_builder(self) -> None:
         assert JensenLinonCommands.light(True).hex() == "010000"
@@ -298,25 +294,34 @@ async def test_bluetooth_setup_stores_the_app_profile(
     variant: str,
     expected: str,
 ) -> None:
-    """A new entry keeps the profile the device name selects; auto stays Svane."""
+    """The app's name rule suggests the profile; the confirmed answer is saved."""
     mock_bluetooth_service_info.name = name
     mock_bluetooth_service_info.service_uuids = [SVANE_HEAD_SERVICE_UUID]
     flow = AdjustableBedConfigFlow()
     flow.hass = hass
+    flow.context = {}
     flow._discovery_info = mock_bluetooth_service_info
     finish = AsyncMock()
     flow._finish_with_verify = finish
+    answers = {VARIANT_AUTO: "svane_bed", SVANE_VARIANT_JENSEN_LINON: "jensen_linon"}
 
-    submitted = {
-        CONF_BED_TYPE: BED_TYPE_SVANE,
-        CONF_PROTOCOL_VARIANT: variant,
-        CONF_DISCONNECT_AFTER_COMMAND: False,
-    }
-    result = await flow.async_step_bluetooth_confirm(dict(submitted))
-    if variant == SVANE_VARIANT_JENSEN_LINON:
-        # Jensen LinOn uses the generic fields the Svane app form hid.
-        assert result["type"] == "form"
-        await flow.async_step_bluetooth_confirm(dict(submitted))
+    # A discovered Svane controller's first question is the Jensen / Svane one.
+    result = await flow.async_step_bluetooth_confirm()
+    if name == "Adjustable Bed":
+        # Too generic a name to confirm the shared service: the user picks first.
+        assert result["step_id"] == "bluetooth_disambiguate"
+        result = await flow.async_step_bluetooth_disambiguate({"bed_type_choice": "svane"})
+    assert result["step_id"] == "jensen_family"
+    choice = next(marker for marker in result["data_schema"].schema if marker == "choice")
+    if variant == VARIANT_AUTO:
+        # The Jensen app's rule suggests LinOn for its names; Svane Bed stays Svane.
+        assert choice.default() == answers[expected]
+    result = await flow.async_step_jensen_family({"choice": answers[expected]})
+    if expected == SVANE_VARIANT_JENSEN_LINON:
+        # LinOn asks its motor count, the setting its old row showed.
+        assert result["step_id"] == "profile_questions"
+        result = await flow.async_step_profile_questions({CONF_MOTOR_COUNT: "2"})
+    await finish_new_bed(flow, result, {CONF_CONNECTION_MODE: "idle"})
 
     assert finish.await_args is not None
     assert finish.await_args.args[0][CONF_PROTOCOL_VARIANT] == expected
@@ -349,48 +354,6 @@ async def test_factory_uses_the_stored_profile(
     )
 
     assert type(controller) is controller_type
-
-
-@pytest.mark.parametrize(
-    ("initial", "requested"),
-    [(VARIANT_AUTO, SVANE_VARIANT_JENSEN_LINON), (SVANE_VARIANT_JENSEN_LINON, VARIANT_AUTO)],
-)
-async def test_paired_options_reject_a_shared_profile_change(
-    hass: HomeAssistant, initial: str, requested: str
-) -> None:
-    """One pair side's LinOn profile is never copied onto a Svane side."""
-
-    def side(address: str, variant: str) -> dict:
-        return {
-            CONF_ADDRESS: address,
-            CONF_NAME: "Bed",
-            CONF_BED_TYPE: BED_TYPE_SVANE,
-            CONF_PROTOCOL_VARIANT: variant,
-            CONF_MOTOR_COUNT: 2,
-            CONF_HAS_MASSAGE: False,
-            CONF_DISABLE_ANGLE_SENSING: True,
-            CONF_PREFERRED_ADAPTER: "auto",
-            CONF_DISCONNECT_AFTER_COMMAND: False,
-        }
-
-    entry = MockConfigEntry(
-        domain=DOMAIN,
-        data=build_pair_entry_data(
-            side("AA:BB:CC:DD:EE:11", initial),
-            side("AA:BB:CC:DD:EE:22", VARIANT_AUTO),
-            name="Paired bed",
-        ),
-    )
-    entry.add_to_hass(hass)
-    flow = AdjustableBedOptionsFlow(entry)
-    flow.hass = hass
-    flow.handler = entry.entry_id
-
-    result = await flow.async_step_settings({CONF_PROTOCOL_VARIANT: requested})
-
-    assert result["type"] is FlowResultType.FORM
-    assert result["errors"] == {CONF_PROTOCOL_VARIANT: "app_profile_unpair_first"}
-    assert effective_child_data(entry.data, "right")[CONF_PROTOCOL_VARIANT] == VARIANT_AUTO
 
 
 async def test_svane_light_slider_removed_for_linon(

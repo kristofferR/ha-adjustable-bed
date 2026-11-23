@@ -1,0 +1,50 @@
+[
+  {
+    "id": "7781c1",
+    "name": "bleServiceUUIDNordic",
+    "service": "6e400001-b5a3-f393-e0a9-e50e24dcca9e",
+    "write": "6e400002-b5a3-f393-e0a9-e50e24dcca9e",
+    "notify_enum": "6e400003-b5a3-f393-e0a9-e50e24dcca9e",
+    "source": "work/blutter/objs.txt:Obj@7781c1"
+  },
+  {
+    "id": "7781f1",
+    "name": "bleServiceUUIDW5",
+    "service": "0000e0ff-3c17-d293-8e48-14fe2e4da212",
+    "write": "00000002-3c17-d293-8e48-14fe2e4da212",
+    "notify_enum": "00000003-3c17-d293-8e48-14fe2e4da212",
+    "source": "work/blutter/objs.txt:Obj@7781f1"
+  },
+  {
+    "id": "778221",
+    "name": "bleServiceUUIDW4",
+    "service": "0000FFF0-0000-1000-8000-00805F9B34FB",
+    "write": "0000FFF2-0000-1000-8000-00805F9B34FB",
+    "notify_enum": "0000FFF1-0000-1000-8000-00805F9B34FB",
+    "source": "work/blutter/objs.txt:Obj@778221"
+  },
+  {
+    "id": "778251",
+    "name": "bleServiceUUIDW3",
+    "service": "0000FFE0-0000-1000-8000-00805F9B34FB",
+    "write": "0000FFE2-0000-1000-8000-00805F9B34FB",
+    "notify_enum": "0000FFE1-0000-1000-8000-00805F9B34FB",
+    "source": "work/blutter/objs.txt:Obj@778251"
+  },
+  {
+    "id": "778281",
+    "name": "bleServiceUUIDW2",
+    "service": "0000FEE9-0000-1000-8000-00805F9B34BB",
+    "write": "D44BC439-ABFD-45A2-B575-925416129622",
+    "notify_enum": "D44BC439-ABFD-45A2-B575-925416129611",
+    "source": "work/blutter/objs.txt:Obj@778281"
+  },
+  {
+    "id": "7782b1",
+    "name": "bleServiceUUIDW1",
+    "service": "0000FEE9-0000-1000-8000-00805F9B34FB",
+    "write": "D44BC439-ABFD-45A2-B575-925416129600",
+    "notify_enum": "D44BC439-ABFD-45A2-B575-925416129601",
+    "source": "work/blutter/objs.txt:Obj@7782b1"
+  }
+]

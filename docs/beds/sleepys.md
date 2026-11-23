@@ -1,6 +1,6 @@
 # Sleepy's Elite (MFRM)
 
-**Status:** ❓ Needs testing (protocol implemented; hardware unverified)
+**Status:** Partly tested (BOX25 STAR receivers work in [#413](https://github.com/kristofferR/ha-adjustable-bed/issues/413), [#617](https://github.com/kristofferR/ha-adjustable-bed/issues/617) and [#702](https://github.com/kristofferR/ha-adjustable-bed/issues/702); BOX15, BOX24 and the Sleepy's Elite app profile need testing)
 
 **Credit:** Reverse engineering by [kristofferR](https://github.com/kristofferR/ha-adjustable-bed) and [SethCalkins](https://github.com/SethCalkins) (BOX25 Star, ported from [ha-dewertokin-bed](https://github.com/sethcalkins/ha-dewertokin-bed))
 
@@ -33,18 +33,12 @@ Use the separate [SleepSpa S9000AI protocol](sleepstar.md) for that device name.
 | BOX24 | 7 bytes | No | ❌ | ❌ | ❌ | ❌ | ❌ | 62741523 (OKIN 64-bit) |
 | BOX25 (StarCode or legacy) | 2-20 bytes | No | ✅ | ✅ | ✅ | ✅ | ✅ | 6e400001 (Nordic UART) |
 
-**Protocol Selection:**
-
-- If your device name starts with **"Star25"** and advertises Nordic UART, use BOX25. Auto mode reads Device Information `2A29`: text containing `star` selects StarCode; any other/missing value selects legacy CB25. A manual dialect override is available.
-- If your bed has **lumbar control** (but no Star name), use the BOX15 variant
-- If your bed has **OKIN 64-bit service UUID** (62741523-...), use BOX24
-- Octo Star2 beds also use `Star2` names, but they advertise the Octo Star2 UUID and are detected as Octo first
-- When in doubt, try BOX24 first (simplest protocol)
+BOX15 sends the nine-byte E6 frame of the [Keeson codec](keeson.md#controller-profiles).
 
 ### Explicit Sleepy's Elite app profile
 
-Choose **Sleepy's Elite app** in manual setup when the bed is operated with the
-`com.okin.bedding.sleepy` app. This is a separate, app-findable profile. It is
+Answer **MFRM Sleepy's Elite app: the control box it lists** in the [setup question](#home-assistant-setup)
+when the bed is operated with the `com.okin.bedding.sleepy` app. This is a separate, app-findable profile. It is
 never inferred from a shared BLE service or transport, and it does not replace
 the existing BOX15, BOX24, or BOX25 integrations above. For a paired bed, choose
 the selector independently for each physical receiver. Select `none` only when
@@ -63,19 +57,28 @@ Other Sleepy's profiles keep their existing generic `2A29`/`2A24` behavior.
 
 | Selector | Write characteristic | Notification characteristic | App-only additions |
 |----------|----------------------|-----------------------------|--------------------|
-| `none`, `BOX24`, `BOX1221`, `BOX2422`, `BOX2442` | Nordic UART `6E400002` | Nordic UART `6E400003` | Position target sliders and raw app state where the app caller is proven |
-| `BOX15` | `FFE9` in `FFE5` | `FFE4` in `FFE0` | Position target sliders and raw app state where the app caller is proven |
-| `BOX1220` | `1001` in `1000` | `1002` in `1000` | Position target sliders and raw app state where the app caller is proven |
-| `BOX3633` | `62741525` in `62741523` | `62741625` in `62741523` | Only the proven safe common app surface; the conditional navigation-race position slider is excluded |
+| `none`, `BOX24`, `BOX1221`, `BOX2422`, `BOX2442` | Nordic UART `6E400002` | Nordic UART `6E400003` | Position target sliders and raw app state where the app uses them |
+| `BOX15` | `FFE9` in `FFE5` | `FFE4` in `FFE0` | Position target sliders and raw app state where the app uses them |
+| `BOX1220` | `1001` in `1000` | `1002` in `1000` | Position target sliders and raw app state where the app uses them |
+| `BOX3633` | `62741525` in `62741523` | `62741625` in `62741523` | Only the common app controls; the position slider the app shows only after a screen race is left out |
 | `BOX25`, `BOX25_STAR` | Nordic UART `6E400002` | Nordic UART `6E400003` | App light, massage, timer-code, and voice actions |
 
-The profile exposes proven head, feet, lumbar, and selector-supported neck
+Each selector's frames come from the [Okin N-frame](okin-nframe.md#wire-codec),
+[Okin 5A](okin-5a.md#starcode-frames) or [Keeson](keeson.md#controller-profiles)
+codec, except BOX1220's `A5 5A` frames, which no codec builds.
+
+Held movement and held app actions accept a
+[renewable hold](../SERVICES.md#renewable-holds): the app's 100 ms refresh
+continues until the lease runs out, then the selector STOP follows.
+
+The profile exposes head, feet, lumbar, and selector-supported neck
 movement, the app's preset and memory actions, position refresh, and eligible
-light/massage actions. Position target values and unlabelled state fields keep
-the app's raw axis/field identities; the integration does not guess physical
-axis labels or semantics. Nine proven UI selectors expose axis `0`, `1`, and
-`2` target numbers over the logical `0..100` range. BOX25 and BOX25_STAR also
-retain separate one-shot voice endpoints at `0` and `100`. Stable BOX3633
+light/massage actions. The app's position axes `0`, `1` and `2` belong to its
+head, foot and lumbar controllers, so they appear as head, foot and lumbar
+target numbers over the logical `0..100` range on nine of the app's selectors.
+Unlabelled app state fields stay in diagnostics. The app's voice shortcuts
+(STOP, one-step brightness and position targets `0` and `100`) repeat existing
+controls and are not separate entities. Stable BOX3633
 continues to expose its direction controls before target-event creation; its
 conditional navigation-race target slider remains excluded.
 
@@ -100,15 +103,13 @@ physical side's explicit selector. No physical axis meaning is inferred.
 On `BOX25` and `BOX25_STAR`, lights and massage follow the app's actual callers.
 The brightness number spans `0..6`: positive values send one brightness
 frame, while zero uses the separate light-off route. The controller brightness
-setter still supports the distinct source value-zero brightness frame. Two
-one-step HA buttons adapt the source's relative voice brightness calls; they
-retain the current `0..6` level at either endpoint and wait for a known level
-before sending. Slider and palette commits require the parsed under-bed-light
+setter still supports the distinct source value-zero brightness frame. Slider and palette commits require the parsed under-bed-light
 enabled state. HA commits require the active BLE controller session but do
 not reproduce the app's UI-only debounce or local preview. Combined massage
 intensity spans `0..7` and maps to builder
-value `0` or `2..8`; timer options are opaque codes `1`, `2`, and `3`, not
-minute labels. Intensity and timer commits require active massage; timer
+value `0` or `2..8`. The **Massage timer** select offers 10, 20 and 30 minutes
+(timer codes `1`, `2` and `3`) and no off. Intensity and timer commits require
+active massage; timer
 selection also skips the already-selected code. The source sends brightness
 after slider end/active cancellation, timer choices on button up/cancel, and
 intensity on slider end/active cancellation or button up/cancel; its intensity
@@ -125,22 +126,49 @@ cover actions use a bounded 300 ms adapter window with the same refresh and
 release behavior. Voice position calls are one-shot.
 Motion-sensor refresh ends after five seconds by cancelling its repeat; this
 path sends no fabricated STOP frame. The app's
-`setAlarm` and `queryAlarm` routes are unreachable from the app UI and are not
+`setAlarm` and `queryAlarm` routes have no control in the app UI and are not
 exposed. The two empty BOX15 writer calls are retained as exact empty-value
 attempts in the internal route table; no payload bytes or platform acceptance
 are inferred for them, and they do not create public massage controls.
 
-Current caller policy, its accepted addendum/audit hashes, and the selector
-classification correction are indexed additively in the [row003 disposition
-ledger](../apk-analysis/dispositions/row003-sleepys-elite.json). They leave the
-canonical route table and original dynamic-vector provenance intact.
 
 Raw RX state is parsed atomically: malformed or bounds-faulting packets, and
 callbacks without a current BLE notification session, leave the prior state
 unchanged. Unknown fields are surfaced with neutral raw
-field names instead of inferred physical labels. The protocol is reconstructed
-from accepted canonical v2 app evidence; physical behavior has not been
-verified on a bed.
+field names instead of guessed physical labels. The protocol follows the app;
+physical behavior has not been verified on a bed.
+
+## Home Assistant setup
+
+The bed-type list has one **MFRM Sleepy's Elite app, BOX15, BOX24 and BOX25
+receivers · Sleepy's Elite** row, and the brand list's **Sleepy's Elite: MFRM
+Sleepy's Elite app, BOX15, BOX24 and BOX25 receivers** row opens the same
+question. The BOX15, BOX24 and BOX25 routes are answers of that question, not
+rows of their own. Setup asks which app or receiver runs the bed:
+
+| Answer | Route |
+|---|---|
+| MFRM Sleepy's Elite app: the control box it lists | The [explicit app profile](#explicit-sleepys-elite-app-profile), then the control box the app shows |
+| No app: control box labelled BOX25 | [BOX25](#box25-protocol-nordic-uart) on the Nordic UART service, then the motor count, massage, whether to read positions and, under **Advanced**, the packet dialect (Auto reads Device Information) |
+| No app: control box labelled BOX24 | [BOX24](#box24-protocol-7-byte-packets) on the OKIN 64-bit service, then the motor count |
+| No app: control box labelled BOX15 | [BOX15](#box15-protocol-9-byte-packets-with-checksum) on the FFE5 service, then the motor count |
+| An app the profile review suggests | That app's own setup, for example [Adjustable bed (Lumbar)](okin-nframe.md#adjustable-bed-lumbar) on a BOX25 receiver |
+| Keep the detected or saved controls | The detected route and its questions |
+
+Choose a receiver by the Bluetooth service the bed advertises. A `Star` name or
+a lumbar motor does not identify the receiver: other apps use `Star` names, and
+both BOX15 and BOX25 have lumbar. The question has nothing to keep when you
+chose the row yourself, because no route was detected.
+
+For an existing bed, open the entry's three-dot menu and **Reconfigure** (see
+[Changing the app or layout](../CONFIGURATION.md#changing-the-bed-type-app-or-layout-of-an-existing-bed));
+**Keep the detected or saved controls** leaves the entry as it is. A change first checks the link: the app's
+control box needs its setup and response characteristics, and each receiver
+route needs the one characteristic it writes. A review then lists the added and
+removed controls before **Apply this change** saves it. **Configure** keeps
+routine settings, such as the motor count or massage; the app, control box and
+dialect change only through **Reconfigure**. Every saved bed type and control
+box keeps working.
 
 ## Features
 
@@ -160,6 +188,7 @@ verified on a bed.
 | Under-Bed Lights | ❌ | ❌ | ✅ (RGB color, on/off and level 0-6; legacy CB25: on/off and level) |
 | Massage | ❌ | ❌ | ✅ (toggle/off, 3 wave modes, timer) |
 | Massage Intensity | ❌ | ❌ | ✅ (head/foot steps and combined level 0-7) |
+| Hold until release | ❌ | ❌ | ✅ (both dialects; renewable `timed_move`) |
 
 ## Protocol Details
 
@@ -270,14 +299,16 @@ runtime split using a case-insensitive `contains("star")` test. Fixed F23 and
 kneading product identifiers (`STAR254203/4205/4255/4256/4257`,
 `STAR255401/5402/5403`) are StarCode-only.
 
-`BOX25_STAR` uses StarCode for every motor, preset, light, and massage action:
+`BOX25_STAR` uses StarCode, built by the
+[Okin 5A codec](okin-5a.md#starcode-frames), for every motor, preset, light, and
+massage action:
 
 ```text
 5A 01 03 10 [category] [command] A5
 ```
 
 Normal commands are written to Nordic UART without response. The integration
-sends the proven `5A 0B 00 A5` wake frame once **with response**, before enabling
+sends the app's `5A 0B 00 A5` wake frame once **with response**, before enabling
 RX notifications, exactly matching the Sleepy's app session. There is no
 application-level delay after wake. The legacy
 `00 D0` / `00 B0` subsystem initializers and `05 02`, `08 02`, and `04 E0`
@@ -361,8 +392,8 @@ offers preset colors:
   at level 6) lack a frame header and offsets, so the integration does not parse
   them. Light state stays assumed.
 
-The legacy CB25 dialect has no proven color frame. Its extended frame carries
-only two values, so legacy beds keep the on/off switch. With the auto variant, a
+The legacy CB25 dialect has no color frame. Its extended frame carries
+only two values, so legacy beds keep the on/off light. With the auto variant, a
 later connection that resolves the other dialect reloads the entities once the
 link is released.
 
@@ -393,20 +424,26 @@ The 10/20/30 minute timer maps to values 1/2/3:
 #### Legacy CB25 Runtime Dialect
 
 When `2A29` is missing, unreadable, empty, or does not contain `star`, Auto mode
-uses the legacy packet builders recovered from the same reachable BOX25 class:
+uses the legacy packet builders from the same BOX25 class in the app.
+They are Okin N-frames; the generated key table is in the
+[Sleepy's legacy CB25 profile](okin-nframe.md#sleepys-legacy-cb25):
 
 ```text
 normal:   05 02 [32-bit key, big-endian] 00
-extended: 04 E0 [subcommand] [value] [value2] 00
+extended: 04 E0 [subcommand] [value] [value 2] 00
 position: 03 F0 [zone] [position] 00
 query:    00 B0 (massage/light), 00 D0 (motor position)
 ```
+
+The app builds both queries. The integration sends only `00 D0`: it translates
+the StarCode status query `5A B0 00 A5`, which serves both purposes, to the
+legacy position query, and never sends `00 B0`.
 
 Movement keys are `1/2` head, `4/8` foot, `10/20` lumbar, `40/80` neck,
 and zero for STOP. Preset keys are `08000000` flat, `00004000` TV,
 `00001000` zero-G, `00008000` anti-snore, `00002000` lounge,
 `00010000` memory 1, and `00040000` memory 2. The integration preserves the
-same three-repeat plus STOP recall sequence and the proven long-press memory
+same three-repeat plus STOP recall sequence and the app's long-press memory
 programming behavior.
 
 Legacy light on/off uses `04 E0 01 01/00 00 00`; toggle and wave modes use the
@@ -451,33 +488,35 @@ From app disassembly:
 - **Stop Required:** Yes, explicit stop after motor release
 - **BOX25 Star normal write mode:** write without response
 - **BOX25 Star wake:** one write with response before notifications, no app delay
+- **BOX25 renewable hold:** on both BOX25 dialects, `timed_move` accepts a
+  renewable hold lease ([Renewable holds](../SERVICES.md#renewable-holds)); the
+  motor key refreshes until the lease runs out or a Stop arrives, then the STOP
+  frame follows.
 
 ## Detection
 
-Sleepy's Elite beds are auto-detected by name plus BLE services:
+Sleepy's Elite beds are detected by name plus BLE services:
 
 - Device names starting with `star25` (case-insensitive) plus Nordic UART → BOX25, then `2A29` selects StarCode or legacy packets at connection time
-- `ELEVATE*` plus Nordic UART → the separate [ELEVATE controller](star-elevate.md),
+- `ELEVATE*` plus Nordic UART → the separate [ELEVATE controller](okin-5a.md#dewertokin-elevate),
   never BOX25
 - Device names starting with "star" without Nordic UART are treated as a low-confidence BOX25 match because Octo Star2 uses similar names
 - Device names containing "sleepy" or "mfrm" (case-insensitive):
   - OKIN 64-bit service (62741523-...) → BOX24
   - FFE5 service (0000FFE5-...) → BOX15
 
-**If auto-detection fails:**
-
-1. Use nRF Connect app to scan your bed
-2. If device name starts with "Star" → manually select BOX25 Star
-3. If you see service `62741523-...` → manually select BOX24
-4. If you only see service `0000FFE5-...` → manually select BOX15
-5. If BOX24 doesn't work and your bed has lumbar → try BOX15
+**If detection fails:** scan the bed with the nRF Connect app and answer
+the [setup question](#home-assistant-setup) with the receiver whose service it
+advertises: Nordic UART `6e400001-...` for BOX25, `62741523-...` for BOX24, or
+`0000FFE5-...` for BOX15. If you use the app, choose the app and the control
+box it lists instead.
 
 ## Related Protocols
 
-- **[DewertOkin](dewertokin.md)** - Different command format, uses handle writes
-- **[Okin 64-bit](okin-64bit.md)** - Similar service UUID but different packet format
+- **[DewertOkin](okin-nframe.md#dewertokin)** - Different command format, uses handle writes
+- **[Okin 64-bit](okin-nframe.md#okin-64-bit)** - Similar service UUID but different packet format
 - **[Keeson](keeson.md)** - Same FFE5 service but different command encoding
-- **[Adjustable bed (Lumbar) app](adjustable-lumbar.md)** - Also serves `Star` names over Nordic UART, but selects its own tables from an exact `STAR` manufacturer reply; choose that explicit profile for beds using that app
+- **[Adjustable bed (Lumbar) app](okin-nframe.md#adjustable-bed-lumbar)** - Also serves `Star` names over Nordic UART, but selects its own tables from an exact `STAR` manufacturer reply; choose that explicit profile for beds using that app
 
 ## AdjustableM5X5
 

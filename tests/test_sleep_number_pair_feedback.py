@@ -7,9 +7,9 @@ from unittest.mock import AsyncMock, MagicMock, call, patch
 
 import pytest
 from homeassistant.const import CONF_ADDRESS, CONF_NAME
-from pytest_homeassistant_custom_component.common import MockConfigEntry
+from pytest_homeassistant.common import MockConfigEntry
 
-from custom_components.adjustable_bed.beds.sleep_number import SleepNumberController
+from custom_components.adjustable_bed.beds.sleep_number.controller import SleepNumberController
 from custom_components.adjustable_bed.const import (
     BED_TYPE_SLEEP_NUMBER,
     CONF_BED_TYPE,
@@ -21,6 +21,18 @@ from custom_components.adjustable_bed.const import (
 )
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
 from custom_components.adjustable_bed.paired_coordinator import SingleAddressPairedCoordinator
+
+
+@pytest.fixture(autouse=True)
+def fast_sleepiq_polling(monkeypatch):
+    monkeypatch.setattr(
+        "custom_components.adjustable_bed.beds.sleep_number.controller._MICRO_MOVEMENT_POLL_INTERVAL_SECONDS",
+        0.001,
+    )
+    monkeypatch.setattr(
+        "custom_components.adjustable_bed.beds.sleep_number.controller._HOMING_POLL_INTERVAL_SECONDS",
+        0.001,
+    )
 
 
 @pytest.fixture
@@ -111,6 +123,8 @@ async def test_movement_after_reconnect_refreshes_selected_side(
         nonlocal preset_checks
         if controller._coordinator.cancel_command.is_set():
             raise asyncio.CancelledError
+        if command in {"ACTS", "ACSP", "ACHS"}:
+            controller._link.note_control_started()
         writes.append((command, *args))
         await asyncio.sleep(0.001)
         if command == "ACTG":
@@ -137,7 +151,7 @@ async def test_movement_after_reconnect_refreshes_selected_side(
         patch.object(SleepNumberController, "query_config", AsyncMock()),
         patch.object(SleepNumberController, "_send_bamkey_command", send),
         patch(
-            "custom_components.adjustable_bed.beds.sleep_number._MOVEMENT_POLL_INTERVAL_SECONDS",
+            "custom_components.adjustable_bed.beds.sleep_number.controller._MOVEMENT_POLL_INTERVAL_SECONDS",
             0.001,
         ),
         patch.object(inner, "_async_record_verified_bond", AsyncMock(return_value=True)),
@@ -194,6 +208,8 @@ async def test_standalone_preset_feedback_lifecycle(outcome, monkeypatch):
     checks = 0
 
     async def send(command, *args, **kwargs):
+        if command in {"ACTS", "ACSP", "ACHS"}:
+            controller._link.note_control_started()
         nonlocal checks
         if command == "AGCP":
             checks += 1
@@ -208,11 +224,11 @@ async def test_standalone_preset_feedback_lifecycle(outcome, monkeypatch):
 
     controller._send_bamkey_command = AsyncMock(side_effect=send)
     monkeypatch.setattr(
-        "custom_components.adjustable_bed.beds.sleep_number._MOVEMENT_POLL_INTERVAL_SECONDS",
+        "custom_components.adjustable_bed.beds.sleep_number.controller._MOVEMENT_POLL_INTERVAL_SECONDS",
         0.001,
     )
     monkeypatch.setattr(
-        "custom_components.adjustable_bed.beds.sleep_number._MOVEMENT_FEEDBACK_TIMEOUT_SECONDS",
+        "custom_components.adjustable_bed.beds.sleep_number.controller._MOVEMENT_FEEDBACK_TIMEOUT_SECONDS",
         0.05,
     )
     if outcome == "cancel":
@@ -266,6 +282,8 @@ async def test_held_motion_cleanup_precedes_replacement(
         cancel = kwargs.get("cancel_event") or controller._coordinator.cancel_command
         if cancel.is_set():
             raise asyncio.CancelledError
+        if command in {"ACTS", "ACSP", "ACHS"}:
+            controller._link.note_control_started()
         writes.append((command, *args))
         await asyncio.sleep(0)
         if command == "ACTS":
@@ -284,7 +302,8 @@ async def test_held_motion_cleanup_precedes_replacement(
         return []
 
     monkeypatch.setattr(
-        "custom_components.adjustable_bed.beds.sleep_number._MOVEMENT_POLL_INTERVAL_SECONDS", 0.001
+        "custom_components.adjustable_bed.beds.sleep_number.controller._MOVEMENT_POLL_INTERVAL_SECONDS",
+        0.001,
     )
     with (
         patch.object(SleepNumberController, "start_notify", start_notify),
@@ -339,6 +358,8 @@ async def test_homing_tracks_status_and_refreshes_both_sides(final_state, monkey
     statuses = iter(["in_progress", final_state])
 
     async def send(command, *args, **kwargs):
+        if command in {"ACTS", "ACSP", "ACHS"}:
+            controller._link.note_control_started()
         if command == "ACHG":
             return [next(statuses)]
         if command == "ACTG":
@@ -347,7 +368,8 @@ async def test_homing_tracks_status_and_refreshes_both_sides(final_state, monkey
 
     controller._send_bamkey_command = AsyncMock(side_effect=send)
     monkeypatch.setattr(
-        "custom_components.adjustable_bed.beds.sleep_number._MOVEMENT_POLL_INTERVAL_SECONDS", 0.001
+        "custom_components.adjustable_bed.beds.sleep_number.controller._MOVEMENT_POLL_INTERVAL_SECONDS",
+        0.001,
     )
     if final_state == "done":
         await controller.async_execute_sleep_number_command("starts_actuator_homing", {})
@@ -380,6 +402,8 @@ async def test_unbound_service_does_not_publish_other_side_as_default(monkeypatc
     }
 
     async def send(command, *args, **kwargs):
+        if command in {"ACTS", "ACSP", "ACHS"}:
+            controller._link.note_control_started()
         if command == "ACTM":
             return ["0", "0", "1", "1"]
         if command == "ACTG":
@@ -389,7 +413,8 @@ async def test_unbound_service_does_not_publish_other_side_as_default(monkeypatc
 
     controller._send_bamkey_command = AsyncMock(side_effect=send)
     monkeypatch.setattr(
-        "custom_components.adjustable_bed.beds.sleep_number._MOVEMENT_POLL_INTERVAL_SECONDS", 0.001
+        "custom_components.adjustable_bed.beds.sleep_number.controller._MOVEMENT_POLL_INTERVAL_SECONDS",
+        0.001,
     )
     await controller.async_execute_sleep_number_command(
         "set_actuator_target_position",
@@ -398,3 +423,19 @@ async def test_unbound_service_does_not_publish_other_side_as_default(monkeypatc
     callback.assert_called_once_with("right_legs", 42.0)
     assert controller.command_side is None
     assert controller._side == "left"
+
+
+async def test_combined_controls_read_each_side_capability(feedback_pair):
+    """A one-sided actuator must not appear as a combined both-sides control."""
+    from custom_components.adjustable_bed.button import _paired_motor_available
+    from custom_components.adjustable_bed.number import _combined_position_entities_for
+
+    inner = feedback_pair._single_inner
+    controller = SleepNumberController(inner)
+    controller._system_config = {"left_head_actuator": "yes", "right_head_actuator": "no"}
+    inner._controller = controller
+
+    assert not _paired_motor_available(feedback_pair, "back")
+    assert _paired_motor_available(feedback_pair, "legs")
+    sliders = _combined_position_entities_for(feedback_pair, list(feedback_pair.children.values()))
+    assert [slider.entity_description.key for slider in sliders] == ["legs_position"]

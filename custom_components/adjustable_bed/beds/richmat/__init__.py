@@ -1,0 +1,1 @@
+"""richmat bed family."""

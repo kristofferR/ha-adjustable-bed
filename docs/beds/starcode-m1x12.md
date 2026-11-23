@@ -1,21 +1,19 @@
 # Adjustable Comfort M1X12 app
 
-**Status:** ❓ Needs testing (artifact-verified, hardware unverified)
+**Status:** Not yet tested
 
 **Credit:** Reverse engineering by [kristofferR](https://github.com/kristofferR/ha-adjustable-bed)
 
-The **Adjustable Comfort M1X12 app** is an explicit Home Assistant bed profile
-for the CB25, F23 and kneading layouts. Nordic UART, manufacturer, firmware
-text, the advertised ELEVATE name and group membership do not select this
-profile. Existing AdjustableM5X5 and DewertOkin ELEVATE entries keep their
-current behavior until the user reconfigures them.
+Choose **Adjustable Comfort M1X12 app: CB25, F23 or kneading bed** in the StarCode
+question for the CB25, F23 and kneading layouts; setup never picks it on its own. Existing AdjustableM5X5 and DewertOkin
+ELEVATE entries keep their current behavior until you reconfigure them.
 
 ## Known Models
 
 - StarCode `STAR25*` beds operated with Adjustable Comfort M1X12, in three
   layouts: CB25, F23 and kneading (see [Configuration and groups](#configuration-and-groups))
-- Up to two [DewertOkin ELEVATE](star-elevate.md) lifts per main, configured as
-  the **Adjustable Comfort M1X12 ELEVATE** variant
+- Up to two [DewertOkin ELEVATE](okin-5a.md#dewertokin-elevate) lifts per main, set up as
+  **Adjustable Comfort M1X12 app, Elevate lift**
 
 ## Apps
 
@@ -27,14 +25,15 @@ current behavior until the user reconfigures them.
 
 | Feature | Supported |
 |---------|-----------|
-| Motor Control | ✅ Raw Parts 1, 2, 4, 8 and 16, plus the Part 1+2 union |
-| Position Feedback | ⚠️ Read-only Part percentages (no degree sliders or physical axis names) |
+| Motor Control | ✅ Head (Part 1), foot (Part 2), lumbar (Part 4) and head and foot together; Parts 8 and 16 through `hold_control` only |
+| Position Feedback | ⚠️ Head, foot and lumbar shown as percentages; no position sliders |
 | Presets | ✅ Flat, TV, zero gravity, anti-snore, lounge |
-| Memory Presets | ✅ Memory 1/2 recall and save, raw MemoryType 8 recall, reset |
+| Memory Presets | ✅ Memory 1/2 recall and save, reset; one more saved position (MemoryType 8) through the memory action only |
 | Massage | ✅ Toggle/off, 10/20/30-minute timer, held wave and head/foot/both intensity |
-| Lights | ✅ On/off/cycle, model-gated light modes 0/1, brightness 1–6 |
-| Alarm, EQ, USB, sonic and kneading state | ⚠️ Read-only |
-| ELEVATE lifts | ✅ Up to two explicitly configured M1X12 ELEVATE entries |
+| Lights | ✅ On/off/cycle, light modes 0/1 on models that have them, brightness 1–6 |
+| Alarm, EQ, USB, sonic and kneading state | ⚠️ Shown, but cannot be changed |
+| ELEVATE lifts | ✅ Up to two, each added as an M1X12 ELEVATE entry |
+| Hold until release | ✅ ([renewable](../SERVICES.md#renewable-holds) `timed_move` and `hold_control`: 100 ms refresh, then STOP) |
 
 ## Protocol Details
 
@@ -60,8 +59,8 @@ The main profile also requires Device Information Service
 | Keep-open | n/a | `5a 0b 00 a5` |
 | Clock | n/a | `5a 14 07 year month day weekday hour minute second a5` |
 
-- Extended S/C, long C-light, position and query frames are implemented by the
-  target codec.
+- S frames come from the [Okin 5A codec](okin-5a.md#starcode-frames) and C
+  frames from the [Okin N-frame codec](okin-nframe.md#wire-codec).
 - Accepted literal packets, including unsigned high-bit keys, are in the
   [151-vector fixture](../../tests/fixtures/starcode_m1x12_vectors.json); all
   165 accepted command rows run through the M1X12 controller in focused tests.
@@ -81,7 +80,8 @@ The main profile also requires Device Information Service
 
 ## Configuration and groups
 
-Choose **Adjustable Comfort M1X12 app** from the bed list, enter the original
+Choose **Adjustable Comfort M1X12 app: CB25, F23 or kneading bed** in the StarCode
+question, enter the original
 Bluetooth name and select CB25, F23 or kneading.
 
 | Name prefix, checked first to last | Layout |
@@ -99,14 +99,22 @@ Bluetooth name and select CB25, F23 or kneading.
 
 An M1X12 main entry can link up to two independent ELEVATE entries.
 
-- Each lift must be explicitly reconfigured to the **Adjustable Comfort M1X12
-  ELEVATE** variant first. The group form rejects a generic ELEVATE entry with a
+- Each lift must be explicitly reconfigured to **Adjustable Comfort M1X12 app,
+  Elevate lift** first. The group form rejects a generic ELEVATE entry with a
   request to reconfigure it.
 - Linking leaves the other entry's configuration, controller, device ID and
   associations untouched.
 - The M1X12 lift group is not a paired left/right bed. Existing AdjustableM5X5
   groups retain their three-lift limit.
 - Profile and lift ownership stay with one physical side of a two-address pair.
+
+### Home Assistant setup
+
+Choose the **AdjustableM5X4, AdjustableM5X5 and Adjustable Comfort M1X12 apps · StarCode** row, then **Adjustable Comfort M1X12 app: CB25, F23 or kneading bed**, then enter the exact Bluetooth name and choose CB25, F23 or kneading. Specific F23 and kneading prefixes take precedence over generic `STAR25`; the app identity is not inferred from Nordic UART, manufacturer, firmware or the name alone. Existing AdjustableM5X5 entries retain their current controller and configuration.
+
+An M1X12 main can include up to **two separately configured ELEVATE accessories**. Each ELEVATE entry must be explicitly reconfigured to **Adjustable Comfort M1X12 app, Elevate lift** before it can be linked. Linking never changes that entry. Existing ELEVATE defaults and AdjustableM5X5 groups keep their current behavior. These entries remain independent devices and do not become Left/Right paired beds. The M1X12 profile and accessory list belong to one physical side and cannot be changed from a shared two-address pair form.
+
+The optional manufacturer read selects its normal command framing only inside the chosen M1X12 profile. The required Device Information 2A28 characteristic supplies the firmware version state; firmware text does not select capabilities.
 
 ## Connection and version state
 
@@ -237,8 +245,9 @@ Part feedback uses the accepted byte mapping and clamps values to 0–100%:
 | 1, 2, 4, 8 | 4, 6, 8, 10 |
 | 16, 32 | 5, 7 |
 
-- These appear as separately named Part state sensors. The main controller does
-  not assign physical names to Parts 8 or 16.
+- Parts 1, 2 and 4 appear as head, foot and lumbar position sensors, the app
+  Home screen's labels. Parts 8, 16 and 32 have no physical label, so their
+  feedback stays in diagnostics.
 - The notification's motor-stopped flag is byte 17 equal to zero.
 - No generic degree-position sliders or invented physical axes are exposed.
   Part state is not mapped to standard angle sensors.
@@ -247,7 +256,7 @@ Part feedback uses the accepted byte mapping and clamps values to 0–100%:
 
 The internal progress-target helper encodes Part selectors 0–4 and a target
 byte. Stopped feedback advances an already populated internal queue; movement,
-STOP and session teardown clear or invalidate it. The accepted app has no UI
+STOP and session teardown clear or invalidate it. The app has no UI
 enqueue/set-position entry point, so this helper is retained as internal
 protocol behavior and is not presented as a Home Assistant control.
 
@@ -255,17 +264,19 @@ protocol behavior and is not presented as a Home Assistant control.
 
 The main profile exposes:
 
-- Flat, TV, zero gravity, anti-snore, lounge, memory 1/2 recall, raw MemoryType
-  8 recall, memory 1/2 save and reset.
-- Per-Part movement, Part 1+2 union, interrupt, STOP and continuous held
-  controls for wave and head/foot/both massage intensity.
+- Flat, TV, zero gravity, anti-snore, lounge, memory 1/2 recall, memory 1/2
+  save and reset. MemoryType 8 has no app caller, so it is not a button.
+- Head, foot and lumbar movement, head and foot together, interrupt, STOP and
+  continuous held controls for wave and head/foot/both massage intensity.
+  Parts 8 and 16 have no physical label and are held controls only.
 - Massage toggle/off and 10/20/30-minute timer choices.
 - Light on/off/cycle, model-gated light modes 0/1 and brightness 1–6. The
   three accepted model IDs are `252201`, `254202` and `352201`; other or empty
   models keep their distinct behavior. F23 and kneading use their accepted S
   lighting overrides.
-- Read-only Part percentages, motor state, massage state, light state/RGB and
-  sonic state. CB25 exposes its basic alarm state. F23 and kneading expose the
+- Read-only head, foot and lumbar percentages, massage state, light color and
+  sonic state. Raw timer counts, motor-stopped and demo flags stay in
+  diagnostics, and the status query is a diagnostic button. CB25 exposes its basic alarm state. F23 and kneading expose the
   advanced alarm, EQ and USB state; kneading additionally exposes kneading
   on/demo/mode/time state. These notifications do not imply setters that the
   app does not provide.
@@ -276,8 +287,8 @@ ELEVATE keeps the existing two-actuator surface plus the combined action. Its
 three covers publish the same bounded hold metadata, with paired-side ownership
 preserved. It does not gain massage, light, preset or model controls.
 
-The native card includes the Part covers, read-only state and held massage
-actions. Translation files and the shipped card bundle are updated with the
+The native card includes the head, foot and lumbar covers, read-only state
+and held massage actions. Translation files and the shipped card bundle are updated with the
 integration.
 
 ## Notes
@@ -285,25 +296,16 @@ integration.
 ### Scope and validation
 
 - Nordic DFU transfer/bootloader, cloud/account services, Wi-Fi provisioning
-  and network administration remain excluded at the accepted source rows.
+  and network administration are out of scope.
   Normal 2A28 version state and ordinary BLE session readiness remain
   implemented.
-- The machine-local accepted report and comparison are sealed; this task does
-  not reopen the APK or create a new analysis claim. The implementation ledger
-  preserves all 126 accepted exclusions with their original evidence and
-  reasons.
 - Focused validation covers the 165 command rows, 151 literal packet vectors,
   notification/parser guards, startup ordering and version-read failures,
   explicit ELEVATE selection, app profile capabilities, group validation,
   paired-side ownership, card hold/release, and actual cover/button/service STOP
-  paths. Full-suite scheduling and independent conformance review belong to the
-  root task owner.
-- Hardware operation remains unverified. Real-user checks are deferred until a
-  beta or release.
+  paths.
+- Hardware operation still needs testing by owners.
 
 ### Analysis provenance
 
-- This implementation follows accepted artifact evidence, including the frozen
-  report SHA-256 `ed4d010495b70c6ceb31ef7c2f896b872e67b95b14e44c6f8844bc9f46ff6ae1`.
-- The full 970-ID mapping, including all exclusions, is in the
-  [M1X12 implementation ledger](starcode-m1x12-implementation-ledger.json).
+Based on AdjustableM1X12 1.1.3 (`com.starcode.adjustablem1x12`).

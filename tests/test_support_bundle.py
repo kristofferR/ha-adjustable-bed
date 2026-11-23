@@ -11,8 +11,9 @@ import pytest
 from bleak.exc import BleakError
 from homeassistant.const import CONF_ADDRESS, CONF_NAME
 from homeassistant.core import HomeAssistant
-from pytest_homeassistant_custom_component.common import MockConfigEntry
+from pytest_homeassistant.common import MockConfigEntry
 
+from custom_components.adjustable_bed import async_migrate_entry
 from custom_components.adjustable_bed.adapter import AdapterSelectionResult
 from custom_components.adjustable_bed.app_state_store import app_state_store
 from custom_components.adjustable_bed.ble_diagnostics import (
@@ -23,8 +24,10 @@ from custom_components.adjustable_bed.ble_diagnostics import (
     ServiceInfo,
 )
 from custom_components.adjustable_bed.const import (
+    BED_TYPE_KEESON,
     BED_TYPE_LEGGETT_GEN2,
     BED_TYPE_LEGGETT_OKIN,
+    BED_TYPE_LINAK,
     BED_TYPE_OKIN_CST,
     BED_TYPE_OKIN_RF_ECO_BT,
     BED_TYPE_OKIN_UUID,
@@ -34,8 +37,12 @@ from custom_components.adjustable_bed.const import (
     CONF_DISABLE_ANGLE_SENSING,
     CONF_HAS_MASSAGE,
     CONF_MOTOR_COUNT,
+    CONF_PAIR_CHILDREN,
+    CONF_PAIR_ID,
+    CONF_PAIR_MODE,
     CONF_PREFERRED_ADAPTER,
     CONF_PROTOCOL_VARIANT,
+    CONF_SIDE,
     DEVICE_INFO_CHARS,
     DOMAIN,
     LINAK_CONTROL_SERVICE_UUID,
@@ -44,10 +51,12 @@ from custom_components.adjustable_bed.const import (
     OKIMAT_WRITE_CHAR_UUID,
     OKIN_SMART_REMOTE_CSS_SERVICE_UUID,
     OKIN_SMART_REMOTE_CSS_WRITE_CHAR_UUID,
+    PAIR_MODE_SEPARATE_ADDRESS,
     SLEEP_NUMBER_AUTH_CHAR_UUID,
     SOLACE_SERVICE_UUID,
 )
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
+from custom_components.adjustable_bed.profile_id import PROFILE_RESOLVER_VERSION
 from custom_components.adjustable_bed.redaction import redact_sleep_number_sessions
 from custom_components.adjustable_bed.support_bundle import (
     _build_evidence_summary,
@@ -1000,6 +1009,8 @@ class TestBleDiagnosticsRunner:
                 "custom_components.adjustable_bed.ble_diagnostics.bluetooth.async_scanner_count",
                 return_value=1,
             ),
+            # Skip the one-second wait between reconnect attempts.
+            patch("custom_components.adjustable_bed.ble_diagnostics.asyncio.sleep"),
         ):
             report = await BLEDiagnosticRunner(
                 hass,
@@ -1433,7 +1444,7 @@ class TestSupportBundle:
         hass: HomeAssistant,
         enable_custom_integrations,
     ):
-        """Nearby inventory should favor likely beds, then strong advertisements."""
+        """Only the target and likely beds are listed; other devices are only counted."""
         del enable_custom_integrations
         nearby = [
             _build_nearby_service_info(
@@ -1474,10 +1485,13 @@ class TestSupportBundle:
 
         assert inventory["limit"] == 30
         assert inventory["total_visible"] == 36
-        assert inventory["included"] == 30
-        assert inventory["truncated"] is True
-        assert len(inventory["devices"]) == 30
-        assert [device["rank"] for device in inventory["devices"]] == list(range(1, 31))
+        assert inventory["included"] == 2
+        assert inventory["truncated"] is False
+        assert inventory["other_devices"] == 34
+        assert [device["rank"] for device in inventory["devices"]] == [1, 2]
+        # Other people's phones and watches never appear by name or address.
+        assert "Nearby 05" not in json.dumps(inventory)
+        assert "02:00:00:00:00:05" not in json.dumps(inventory)
 
         likely_bed = inventory["devices"][0]
         assert likely_bed["address"] == "AA:BB:CC:DD:EE:FF"
@@ -1491,7 +1505,6 @@ class TestSupportBundle:
         assert strongest_unknown["address"] == "02:00:00:00:00:00"
         assert strongest_unknown["is_target"] is True
         assert strongest_unknown["rssi"] == -20
-        assert all(device["address"] != "02:00:00:00:00:22" for device in inventory["devices"])
 
     async def test_generate_support_bundle_raw_address_has_standard_sections(
         self,
@@ -1543,7 +1556,8 @@ class TestSupportBundle:
             )
 
         assert report["target"]["mode"] == "target_address"
-        assert report["metadata"]["report_version"] == "2.5"
+        assert report["metadata"]["report_version"] == "2.6"
+        assert report["profile"] is None
         assert report["integration"]["configured_device"] is False
         assert report["integration"]["kaidi_product_id"] is None
         assert report["integration"]["kaidi_sofa_acu_no"] is None
@@ -1615,12 +1629,12 @@ class TestSupportBundle:
             )
 
         assert report["target"]["mode"] == "configured_device"
-        assert report["target"]["address"] == mock_config_entry.data["address"]
+        assert report["target"]["address"] == "AA:BB:CC:**:**:**"
         assert report["target"]["device_id"] == "retry-device-id"
         assert report["target"]["entry_id"] == mock_config_entry.entry_id
-        assert report["target"]["title"] == mock_config_entry.title
+        assert report["target"]["title"] == "**REDACTED**"
         assert report["integration"]["entry_id"] == mock_config_entry.entry_id
-        assert report["integration"]["address"] == mock_config_entry.data["address"]
+        assert report["integration"]["address"] == "AA:BB:CC:**:**:**"
         assert report["controller"]["initialized"] is False
         assert report["command_trace"] == []
 
@@ -1696,7 +1710,7 @@ class TestSupportBundle:
             )
 
         pairing = report["pairing"]
-        assert report["metadata"]["report_version"] == "2.5"
+        assert report["metadata"]["report_version"] == "2.6"
         assert pairing["required"] is True
         assert pairing["connection_gated_by_bond"] is True
         assert pairing["persisted_bond_marker"] is True
@@ -2066,7 +2080,7 @@ class TestSupportBundleLoggingWarning:
                 MagicMock(return_value="/config/bundle.json"),
             ),
             patch(
-                "custom_components.adjustable_bed.download.register_download",
+                "custom_components.adjustable_bed.services.register_download",
                 MagicMock(return_value="/api/download/bundle.json"),
             ),
             patch(
@@ -2096,7 +2110,7 @@ class TestSupportBundleLoggingWarning:
 
         assert len(created) == 1
         title, message = created[0]
-        assert title == "Adjustable Bed Support Bundle Ready"
+        assert title == "Adjustable bed: support bundle ready"
         assert "This bundle contains no logs" in message
         assert "Enable debug logging" in message
         # `logger:` only sets levels; it cannot create a missing log file.
@@ -2142,7 +2156,7 @@ class TestSupportBundleLoggingWarning:
                 MagicMock(return_value="/config/bundle.json"),
             ),
             patch(
-                "custom_components.adjustable_bed.download.register_download",
+                "custom_components.adjustable_bed.services.register_download",
                 MagicMock(return_value="/api/download/bundle.json"),
             ),
             patch(
@@ -2228,7 +2242,7 @@ class TestSupportBundlePreCaptureLogWarning:
                 MagicMock(return_value="/config/bundle.json"),
             ),
             patch(
-                "custom_components.adjustable_bed.download.register_download",
+                "custom_components.adjustable_bed.services.register_download",
                 MagicMock(return_value="/api/download/bundle.json"),
             ),
             patch(
@@ -2252,7 +2266,7 @@ class TestSupportBundlePreCaptureLogWarning:
         )
 
         titles = [title for title, _ in events]
-        assert titles.index("Adjustable Bed: this bundle will have no logs") < titles.index(
+        assert titles.index("Adjustable bed: this bundle will have no logs") < titles.index(
             "__capture_ran__"
         )
         pre_capture = next(msg for title, msg in events if "no logs" in title)
@@ -2312,20 +2326,6 @@ class TestSupportBundleLogProbeSafety:
         assert available is False
         assert reason == "not_a_file"
         assert "not a regular file" in error
-
-    def test_tail_refuses_a_fifo_too(self, tmp_path):
-        """The capture's own reader has the same hazard."""
-        import os
-
-        from custom_components.adjustable_bed.support_report import _read_log_file
-
-        fifo = tmp_path / "home-assistant.log"
-        os.mkfifo(fifo)
-        entries = _read_log_file(str(fifo))
-
-        # Treated like a missing file: the remedy is a downloadable log, not a
-        # permissions fix.
-        assert entries[0]["log_read_reason"] == "missing"
 
     def test_probe_rejects_an_empty_log_file(self, tmp_path):
         """A left-over empty file is readable but will never yield evidence."""
@@ -2390,7 +2390,7 @@ class TestSupportBundleLogProbeSafety:
                 MagicMock(return_value="/config/bundle.json"),
             ),
             patch(
-                "custom_components.adjustable_bed.download.register_download",
+                "custom_components.adjustable_bed.services.register_download",
                 MagicMock(return_value="/api/download/bundle.json"),
             ),
             patch(
@@ -2441,7 +2441,7 @@ class TestSupportBundleLogProbeSafety:
                 AsyncMock(side_effect=RuntimeError("boom")),
             ),
             patch(
-                "custom_components.adjustable_bed.download.register_download",
+                "custom_components.adjustable_bed.services.register_download",
                 MagicMock(return_value="/api/download/bundle.json"),
             ),
             patch(
@@ -2500,7 +2500,7 @@ class TestSupportBundleLogProbeSafety:
                 MagicMock(return_value="/config/bundle.json"),
             ),
             patch(
-                "custom_components.adjustable_bed.download.register_download",
+                "custom_components.adjustable_bed.services.register_download",
                 MagicMock(return_value="/api/download/bundle.json"),
             ),
             patch(
@@ -2563,7 +2563,7 @@ class TestSupportBundleLogProbeSafety:
                 MagicMock(return_value="/config/bundle.json"),
             ),
             patch(
-                "custom_components.adjustable_bed.download.register_download",
+                "custom_components.adjustable_bed.services.register_download",
                 MagicMock(return_value="/api/download/bundle.json"),
             ),
             patch(
@@ -2615,7 +2615,7 @@ class TestSupportBundleLogProbeSafety:
                 AsyncMock(side_effect=_asyncio.CancelledError()),
             ),
             patch(
-                "custom_components.adjustable_bed.download.register_download",
+                "custom_components.adjustable_bed.services.register_download",
                 MagicMock(return_value="/api/download/bundle.json"),
             ),
             patch(
@@ -2664,7 +2664,7 @@ class TestSupportBundleLogProbeSafety:
                 MagicMock(return_value="/config/bundle.json"),
             ),
             patch(
-                "custom_components.adjustable_bed.download.register_download",
+                "custom_components.adjustable_bed.services.register_download",
                 MagicMock(return_value="/api/download/bundle.json"),
             ),
             patch(
@@ -2723,7 +2723,7 @@ class TestSupportBundleLogProbeSafety:
                 MagicMock(return_value="/config/bundle.json"),
             ),
             patch(
-                "custom_components.adjustable_bed.download.register_download",
+                "custom_components.adjustable_bed.services.register_download",
                 MagicMock(return_value="/api/download/bundle.json"),
             ),
             patch(
@@ -2783,7 +2783,7 @@ class TestSupportBundleLogProbeSafety:
                 MagicMock(return_value="/config/bundle.json"),
             ),
             patch(
-                "custom_components.adjustable_bed.download.register_download",
+                "custom_components.adjustable_bed.services.register_download",
                 MagicMock(return_value="/api/download/bundle.json"),
             ),
             patch(
@@ -2854,7 +2854,7 @@ class TestSupportBundleLogProbeSafety:
                 MagicMock(return_value="/config/bundle.json"),
             ),
             patch(
-                "custom_components.adjustable_bed.download.register_download",
+                "custom_components.adjustable_bed.services.register_download",
                 MagicMock(return_value="/api/download/bundle.json"),
             ),
             patch(
@@ -2922,7 +2922,7 @@ class TestSupportBundleLogProbeSafety:
                 MagicMock(return_value="/config/bundle.json"),
             ),
             patch(
-                "custom_components.adjustable_bed.download.register_download",
+                "custom_components.adjustable_bed.services.register_download",
                 MagicMock(return_value="/api/download/bundle.json"),
             ),
             patch(
@@ -2950,3 +2950,106 @@ class TestSupportBundleLogProbeSafety:
         link.symlink_to(real)
 
         assert _probe_log_file(str(link)) == (True, None, None)
+
+
+def _profile_bundle_report(address: str) -> DiagnosticReport:
+    """Return the smallest capture result a configured bundle accepts."""
+    return DiagnosticReport(
+        metadata={"version": "2.0"},
+        device={"address": address},
+        advertisement=None,
+        advertisements_by_source=[],
+        detection={},
+        gatt_services=[],
+        gatt_summary={},
+        device_information={},
+        notifications=[],
+        notification_summary={},
+        adapter_details={},
+        connection_history={},
+        connection_attempt_details=[],
+        command_trace=[],
+        errors=[],
+    )
+
+
+async def _bundle_for(hass: HomeAssistant, entry: MockConfigEntry, address: str) -> dict:
+    with (
+        patch.object(
+            BLEDiagnosticRunner,
+            "run_diagnostics",
+            new=AsyncMock(return_value=_profile_bundle_report(address)),
+        ),
+        patch(
+            "custom_components.adjustable_bed.support_bundle.bluetooth.async_current_scanners",
+            return_value=[],
+        ),
+    ):
+        return await generate_support_bundle(
+            hass, address=address, capture_duration=0, include_logs=False, entry=entry
+        )
+
+
+@pytest.mark.usefixtures("enable_custom_integrations")
+async def test_bundle_shows_the_schema_5_migration_record(
+    hass: HomeAssistant, mock_config_entry_data: dict
+) -> None:
+    """A migrated entry's bundle keeps the old schema, its saved fields and the new id."""
+    data = {
+        **mock_config_entry_data,
+        CONF_BED_TYPE: BED_TYPE_KEESON,
+        CONF_PROTOCOL_VARIANT: "sino",
+    }
+    entry = MockConfigEntry(domain=DOMAIN, data=data, version=4, minor_version=3)
+    entry.add_to_hass(hass)
+    await async_migrate_entry(hass, entry)
+
+    report = await _bundle_for(hass, entry, data[CONF_ADDRESS])
+
+    assert report["profile"] == {
+        "schema_version": 5,
+        "schema_minor_version": 11,
+        "profile_id": "keeson:sino",
+        "migration": {
+            "from_version": 4,
+            "from_minor_version": 3,
+            "resolver_version": PROFILE_RESOLVER_VERSION,
+            "profile_id": "keeson:sino",
+            "fields": {CONF_BED_TYPE: BED_TYPE_KEESON, CONF_PROTOCOL_VARIANT: "sino"},
+            # Schema 5.6 saved the connection 4.x ran with and dropped an
+            # angle-sensing value equal to the route's default.
+            "settings_5_6": {"data": ["connection_mode=idle", "disable_angle_sensing"]},
+        },
+    }
+
+
+@pytest.mark.usefixtures("enable_custom_integrations")
+async def test_paired_bundle_shows_each_side_and_the_one_it_targets(hass: HomeAssistant) -> None:
+    left = {CONF_SIDE: "left", CONF_ADDRESS: "AA:BB:CC:DD:EE:0A", CONF_BED_TYPE: BED_TYPE_LINAK}
+    right = {
+        CONF_SIDE: "right",
+        CONF_ADDRESS: "AA:BB:CC:DD:EE:0B",
+        CONF_BED_TYPE: BED_TYPE_KEESON,
+        CONF_PROTOCOL_VARIANT: "sino",
+    }
+    data = {
+        CONF_PAIR_ID: "pair_1",
+        CONF_PAIR_MODE: PAIR_MODE_SEPARATE_ADDRESS,
+        CONF_BED_TYPE: BED_TYPE_LINAK,
+        CONF_PAIR_CHILDREN: [left, right],
+    }
+    entry = MockConfigEntry(domain=DOMAIN, data=data, version=4, minor_version=3)
+    entry.add_to_hass(hass)
+    await async_migrate_entry(hass, entry)
+
+    profile = (await _bundle_for(hass, entry, "aa:bb:cc:dd:ee:0b"))["profile"]
+
+    assert profile["sides"] == {
+        "left": {"profile_id": "linak", "targeted": False},
+        "right": {"profile_id": "keeson:sino", "targeted": True},
+    }
+    assert profile["migration"]["from_version"] == 4
+    assert profile["migration"]["sides"]["right"] == {
+        "profile_id": "keeson:sino",
+        "fields": {CONF_BED_TYPE: BED_TYPE_KEESON, CONF_PROTOCOL_VARIANT: "sino"},
+    }

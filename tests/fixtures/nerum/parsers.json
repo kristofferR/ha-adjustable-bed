@@ -1,0 +1,288 @@
+[
+  {
+    "parser": "P1",
+    "hex": "a55a000007205000010203020101",
+    "expected": {
+      "dispatch": 8272,
+      "head": 1,
+      "foot": 2,
+      "minutes": 30,
+      "wave": 2,
+      "light": true,
+      "massage": true
+    }
+  },
+  {
+    "parser": "P1",
+    "hex": "a500000007205000010203020101",
+    "expected": {
+      "dispatch": 8272,
+      "head": 1,
+      "foot": 2,
+      "minutes": 30,
+      "wave": 2,
+      "light": true,
+      "massage": true
+    }
+  },
+  {
+    "parser": "P1",
+    "hex": "00000000000000",
+    "expected": {
+      "rejected": "both header bytes wrong"
+    }
+  },
+  {
+    "parser": "P1",
+    "hex": "a55a00000020800001",
+    "expected": {
+      "dispatch": 8064
+    }
+  },
+  {
+    "parser": "P1",
+    "hex": "a55a0000002064",
+    "expected": {
+      "dispatch": 8292,
+      "operate": 4
+    }
+  },
+  {
+    "parser": "P1",
+    "hex": "a5",
+    "expected": {
+      "exception": "ArrayIndexOutOfBoundsException"
+    }
+  },
+  {
+    "parser": "P3",
+    "hex": "000c00008205061e0001",
+    "expected": {
+      "index": 1,
+      "hour": 6,
+      "minute": 30,
+      "type": 17,
+      "repeat": -126,
+      "on": true
+    }
+  },
+  {
+    "parser": "P3",
+    "hex": "000d00000006082d0000",
+    "expected": {
+      "index": 2,
+      "hour": 8,
+      "minute": 45,
+      "type": 19,
+      "repeat": 0,
+      "on": false
+    }
+  },
+  {
+    "parser": "P3",
+    "hex": "000e0000ff07173b0001",
+    "expected": {
+      "index": 3,
+      "hour": 23,
+      "minute": 59,
+      "type": 18,
+      "repeat": -1,
+      "on": true
+    }
+  },
+  {
+    "parser": "P3",
+    "hex": "000b",
+    "expected": null
+  },
+  {
+    "parser": "P3",
+    "hex": "000c",
+    "expected": {
+      "exception": "ArrayIndexOutOfBoundsException"
+    }
+  },
+  {
+    "parser": "P2",
+    "hex": "f4fe160000000000000000050600000000000002",
+    "expected": {
+      "state": null,
+      "previous": "f4fe160000000000000000050600000000000002"
+    },
+    "previous": null
+  },
+  {
+    "parser": "P2",
+    "hex": "000400",
+    "expected": {
+      "state": {
+        "minutes": 20,
+        "massage": true,
+        "head": 3,
+        "foot": 3,
+        "wave": 3
+      },
+      "previous": "f4fe160000000000000000050600000000000002"
+    },
+    "previous": "f4fe160000000000000000050600000000000002"
+  },
+  {
+    "parser": "P2",
+    "hex": "00000000000000030500000000003200",
+    "expected": {
+      "state": {
+        "minutes": 20,
+        "massage": true,
+        "head": 2,
+        "foot": 3,
+        "wave": 2
+      },
+      "previous": null
+    },
+    "previous": null
+  },
+  {
+    "parser": "P2",
+    "hex": "00000000000000000100",
+    "expected": {
+      "state": {
+        "minutes": 10,
+        "massage": true,
+        "head": 0,
+        "foot": 0,
+        "wave": 0
+      },
+      "previous": null
+    },
+    "previous": null
+  },
+  {
+    "parser": "P2",
+    "hex": "0102",
+    "expected": {
+      "state": null,
+      "previous": null
+    },
+    "previous": null
+  },
+  {
+    "parser": "P2",
+    "hex": "ed8003061e8211082d0013173bff1200",
+    "expected": {
+      "state": {
+        "alarms": [
+          {
+            "index": 1,
+            "hour": 6,
+            "minute": 30,
+            "type": 17,
+            "repeat": -126,
+            "on": true
+          },
+          {
+            "index": 2,
+            "hour": 8,
+            "minute": 45,
+            "type": 19,
+            "repeat": 0,
+            "on": false
+          },
+          {
+            "index": 3,
+            "hour": 23,
+            "minute": 59,
+            "type": 18,
+            "repeat": -1,
+            "on": true
+          }
+        ]
+      },
+      "previous": null
+    },
+    "previous": null
+  },
+  {
+    "parser": "P2",
+    "hex": "ed800300",
+    "expected": {
+      "state": null,
+      "previous": null
+    },
+    "previous": null
+  },
+  {
+    "parser": "discovery",
+    "hex": "00000000000000000000000000000000000000000000000000000000000000",
+    "expected": {
+      "protocol": "P3",
+      "id": "0000000000000000",
+      "motors": 0,
+      "massage": false
+    },
+    "name": "SMARTBED"
+  },
+  {
+    "parser": "discovery",
+    "hex": "00000000000000000000000000000000000000000000000000000000000000",
+    "expected": {
+      "protocol": "P2",
+      "id": "0000000000000000",
+      "motors": 0,
+      "massage": false
+    },
+    "name": "OKIN-unit"
+  },
+  {
+    "parser": "discovery",
+    "hex": "0000000000000000004f4b4134303031314142434445464748494a00000000",
+    "expected": {
+      "protocol": "P1",
+      "id": "A40011ABCDEFGHIJ",
+      "motors": 4,
+      "massage": true
+    },
+    "name": "smartbed"
+  },
+  {
+    "parser": "discovery",
+    "hex": "0000000000000000004f4b416e303030304142434445464748494a00000000",
+    "expected": {
+      "protocol": "P1",
+      "id": "An0000ABCDEFGHIJ",
+      "motors": 2,
+      "massage": true
+    },
+    "name": "okin"
+  },
+  {
+    "parser": "discovery",
+    "hex": "00000000000000000000000000000000000000000000000000000000000000",
+    "expected": null,
+    "name": "unrelated"
+  },
+  {
+    "parser": "discovery",
+    "hex": "00000000000000000000000000000000000000000000000000000000000000",
+    "expected": null,
+    "name": null
+  },
+  {
+    "parser": "discovery",
+    "hex": "0000000000000000004f4b000000",
+    "expected": {
+      "exception": "ArrayIndexOutOfBoundsException"
+    },
+    "name": "okin"
+  },
+  {
+    "parser": "discovery",
+    "hex": "0000000000000000004f4bc3a9324141303041424344454647484900000000",
+    "name": "okin",
+    "expected": {
+      "protocol": "P1",
+      "id": "\u00e92AA00ABCDEFGHI",
+      "motors": 2,
+      "massage": false
+    }
+  }
+]

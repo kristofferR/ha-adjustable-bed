@@ -1,15 +1,21 @@
 """Legacy RF receivers get an offline, identity-preserving layout repair."""
 
-from unittest.mock import AsyncMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from homeassistant.const import CONF_ADDRESS
 from homeassistant.helpers import issue_registry as ir
-from pytest_homeassistant_custom_component.common import MockConfigEntry
+from pytest_homeassistant.common import MockConfigEntry
 
+from custom_components.adjustable_bed.beds.furnimove.repair import (
+    CONF_FURNIMOVE_ROUTE_KEPT,
+    CONF_OKIMAT_MODEL_ON_CST,
+    CONF_OKIN_CST_KEPT,
+    FurniMoveLayoutRepairFlow,
+    async_refresh_furnimove_layout_issues,
+)
 from custom_components.adjustable_bed.const import (
     BED_TYPE_FURNIMOVE,
-    BED_TYPE_OKIMAT,
     BED_TYPE_OKIN_CST,
     BED_TYPE_OKIN_DOT,
     BED_TYPE_OKIN_RF_ECO_BT,
@@ -23,19 +29,11 @@ from custom_components.adjustable_bed.const import (
     CONF_PAIR_MODE,
     CONF_PROTOCOL_VARIANT,
     CONF_SIDE,
+    CONF_STAIRCASE_LAYOUT_CONFIRMED,
     DOMAIN,
     PAIR_MODE_SEPARATE_ADDRESS,
     SIDE_LEFT,
     SIDE_RIGHT,
-)
-from custom_components.adjustable_bed.furnimove_repair import (
-    CONF_FURNIMOVE_ROUTE_KEPT,
-    CONF_OKIMAT_MODEL_ON_CST,
-    CONF_OKIN_CST_KEPT,
-    CONF_STAIRCASE_LAYOUT_CONFIRMED,
-    FurniMoveLayoutRepairFlow,
-    async_clear_furnimove_layout_issues,
-    async_refresh_furnimove_layout_issues,
 )
 from custom_components.adjustable_bed.pairing import effective_child_data
 from custom_components.adjustable_bed.repairs import async_create_fix_flow
@@ -55,7 +53,8 @@ async def test_offline_entry_gets_repair_before_any_connection(hass):
     from custom_components.adjustable_bed import async_setup_entry
 
     with patch("custom_components.adjustable_bed.async_register_services", AsyncMock()), patch(
-        "custom_components.adjustable_bed.AdjustableBedCoordinator", side_effect=RuntimeError("offline")
+        "custom_components.adjustable_bed.AdjustableBedCoordinator.async_create",
+        side_effect=RuntimeError("offline"),
     ), pytest.raises(RuntimeError, match="offline"):
         await async_setup_entry(hass, entry)
     issue_id = f"furnimove_layout_{entry.entry_id}_standalone"
@@ -67,8 +66,30 @@ async def test_offline_entry_gets_repair_before_any_connection(hass):
     # HA supplies metadata to init, not a submitted form.
     result = await flow.async_step_init({"issue_id": issue_id})
     assert result["step_id"] == "init"
-    async_clear_furnimove_layout_issues(hass, entry.entry_id)
+    await hass.config_entries.async_remove(entry.entry_id)
     assert ir.async_get(hass).async_get_issue(DOMAIN, issue_id) is None
+
+
+async def test_layout_refresh_keeps_an_ignored_issue_and_drops_a_stale_one(hass):
+    entry = _legacy(hass)
+    registry = ir.async_get(hass)
+    issue_id = f"furnimove_layout_{entry.entry_id}_standalone"
+    stale_id = f"furnimove_layout_{entry.entry_id}_left"
+    # Left over from when the entry was a pair.
+    ir.async_create_issue(
+        hass, DOMAIN, stale_id, is_fixable=True, is_persistent=True,
+        severity=ir.IssueSeverity.WARNING, translation_key="furnimove_layout",
+    )
+    async_refresh_furnimove_layout_issues(hass, entry)
+    ir.async_ignore_issue(hass, DOMAIN, issue_id, True)
+
+    # Setup refreshes again on every reload.
+    async_refresh_furnimove_layout_issues(hass, entry)
+
+    issue = registry.async_get_issue(DOMAIN, issue_id)
+    assert issue is not None and issue.dismissed_version is not None
+    assert issue.config_entry_id == entry.entry_id
+    assert registry.async_get_issue(DOMAIN, stale_id) is None
 
 
 async def test_bed_repair_preserves_identity_and_clears_obsolete_pairing_issue(hass):
@@ -163,7 +184,7 @@ async def test_one_motor_does_not_prove_that_a_legacy_entry_is_a_staircase(hass)
 
 async def test_handset_repair_accepts_the_exact_furnimove_app_82417(hass):
     """Repair must offer the captured layout shown in the user's FurniMove app."""
-    from custom_components.adjustable_bed.furnimove_profiles import FURNIMOVE_PROFILES
+    from custom_components.adjustable_bed.beds.furnimove.profiles import FURNIMOVE_PROFILES
     entry = _legacy(hass)
     flow = FurniMoveLayoutRepairFlow(entry.entry_id, None)
     flow.hass = hass
@@ -264,7 +285,7 @@ async def test_okimat_drive_on_cst_switches_to_okimat_keeping_identity_and_bond(
     result = await flow.async_step_init({"route": "okimat"})
     assert result["type"] == "create_entry"
     assert entry.entry_id == entry_id
-    assert dict(entry.data) == {CONF_ADDRESS: "D0:D1:62:A4:62:F1", CONF_BED_TYPE: BED_TYPE_OKIMAT,
+    assert dict(entry.data) == {CONF_ADDRESS: "D0:D1:62:A4:62:F1", CONF_BED_TYPE: BED_TYPE_OKIN_UUID,
                                 CONF_MOTOR_COUNT: 2, CONF_BLE_BOND_ESTABLISHED: True}
     assert ir.async_get(hass).async_get_issue(DOMAIN, issue_id) is None
 
@@ -285,6 +306,19 @@ async def test_okimat_drive_on_cst_can_choose_a_captured_furnimove_handset(hass)
     assert not ir.async_get(hass).issues
 
 
+async def test_an_unlisted_handset_can_still_switch_to_okimat(hass):
+    """The repair dialog has no Back, so the handset list itself offers Okimat."""
+    entry = _cst(hass)
+    flow = FurniMoveLayoutRepairFlow(entry.entry_id, None)
+    flow.hass = hass
+    form = await flow.async_step_init({"route": "furnimove"})
+    config = form["data_schema"].schema[CONF_FURNIMOVE_REMOTE].config
+    assert config["options"][-1]["value"] == "okimat"
+    assert config["translation_key"] == "okimat_cst_route"
+    await flow.async_step_handset({CONF_FURNIMOVE_REMOTE: "okimat"})
+    assert entry.data[CONF_BED_TYPE] == BED_TYPE_OKIN_UUID
+
+
 async def test_okimat_drive_on_cst_can_keep_cst_and_other_cst_entries_get_no_prompt(hass):
     entry = _cst(hass)
     before = dict(entry.data)
@@ -300,6 +334,8 @@ async def test_okimat_drive_on_cst_can_keep_cst_and_other_cst_entries_get_no_pro
 async def test_paired_okimat_side_on_cst_keeps_its_bond_and_gets_its_own_repair(hass):
     """Recording the #555 model on one side must not drop that side's bond markers."""
     from custom_components.adjustable_bed import _build_paired_children
+    from custom_components.adjustable_bed.beds.okin_cst import OkinCstController
+    from custom_components.adjustable_bed.controller_factory import create_controller
 
     entry = MockConfigEntry(domain=DOMAIN, title="Bed", version=4, data={
         CONF_PAIR_ID: "pair_555", CONF_PAIR_MODE: PAIR_MODE_SEPARATE_ADDRESS,
@@ -310,7 +346,11 @@ async def test_paired_okimat_side_on_cst_keeps_its_bond_and_gets_its_own_repair(
     })
     entry.add_to_hass(hass)
     children = _build_paired_children(hass, entry)
-    children[SIDE_LEFT]._record_okimat_model_on_cst("OKIMAT 4 IPS")
+    left_side = children[SIDE_LEFT]
+    offline = await create_controller(left_side, BED_TYPE_OKIN_CST, "auto", None, ble_model="OKIMAT 4 IPS")
+    assert type(offline) is OkinCstController
+    assert CONF_OKIMAT_MODEL_ON_CST not in effective_child_data(entry.data, SIDE_LEFT, entry.options)
+    await create_controller(left_side, BED_TYPE_OKIN_CST, "auto", MagicMock(), ble_model="OKIMAT 4 IPS")
     left = effective_child_data(entry.data, SIDE_LEFT, entry.options)
     assert left[CONF_OKIMAT_MODEL_ON_CST] == "OKIMAT 4 IPS"
     assert left[CONF_BLE_BOND_ESTABLISHED] is True

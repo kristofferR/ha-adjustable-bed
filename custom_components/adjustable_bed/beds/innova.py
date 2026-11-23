@@ -1,7 +1,6 @@
 """INNOVA app profile (com.ore.sfm 2.0 (3)).
 
-Accepted clean-room audit, APK Protocol Audit cluster-015 / row059
-(docs/apk-analysis/dispositions/row059-ore-bedsense-innova.md). Its sibling,
+Its sibling,
 Bedsense Bases, shares the ORE comfort-bed behavior in ``ore_comfort_bed.py``.
 INNOVA differs materially: the frame ``E5 FE 16 k0 k1 k2 k3 ~sum`` carries the
 standard Keeson 32-bit key in little-endian order, Memory A/B and the
@@ -11,9 +10,10 @@ the bed, and 16/19-byte FFE4 notifications drive the lamp and timer icons.
 The app scans without any name or service rule, so the profile is explicit
 only. The user picks the 2M/3M/4M screen with the motor count.
 
-Timing: held keys write at 0 ms and then every 100 ms; ``buttonUp`` cancels the
-refresh and, 100 ms later, writes the zero key. Every single-shot write is
-preceded by a 100 ms sleep in ``sendSingleMessage``.
+Frames, timing, presets and memory are the ``INNOVA`` profile
+(``profiles/keeson.py``): held keys write at 0 ms and then every 100 ms;
+``buttonUp`` cancels the refresh and, 100 ms later, writes the zero key. Every
+single-shot write is preceded by a 100 ms sleep in ``sendSingleMessage``.
 """
 
 from __future__ import annotations
@@ -26,37 +26,33 @@ from typing import Any, Final
 from bleak.backends.characteristic import BleakGATTCharacteristic
 from bleak.exc import BleakError
 
+from ..card import CARD_MASSAGE, CARD_MASSAGE_TIMER
+from ..codec import keeson as codec
 from ..const import (
     KEESON_BASE_NOTIFY_CHAR_UUID,
     KEESON_BASE_WRITE_CHAR_UUID,
     KEESON_VARIANT_INNOVA,
 )
-from .base import (
+from ..controller_state import StateKey, StateUpdate
+from ..state_keys import UNDER_BED_LIGHTS_ON
+from .entity_specs import (
     ControllerButtonSpec,
-    ControllerStateBinarySensorSpec,
     ControllerStateSensorSpec,
     MotorCommandCallable,
     MotorControlSpec,
+    massage_timer_sensor_spec,
 )
-from .keeson import KeesonCommands, KeesonController, _wait_unless_cancelled
+from .keeson.controller import KeesonCommands, KeesonController
 
 _LOGGER = logging.getLogger(__name__)
-
-# sendSingleMessage sleeps 100 ms on the caller before each single write,
-# including the zero key that buttonUp sends after cancelling a hold.
-SINGLE_SEND_DELAY_S: Final = 0.1
-HOLD_INTERVAL_MS: Final = 100
-ZERO_KEY: Final = 0x00000000
 
 COMBINED_UP: Final = 0x00000005  # 2M back and foot together.
 COMBINED_DOWN: Final = 0x0000000A
 MASSAGE_LEVEL: Final = 0x00000100
 MASSAGE_TIMER: Final = 0x00000200
 RENAME_MAX_UNITS: Final = 14
-RENAME_FRAME_LENGTH: Final = 18
 
-STATE_LIGHT: Final = "innova_light"
-STATE_MASSAGE_TIMER: Final = "innova_massage_timer"
+STATE_MASSAGE_TIMER: Final = StateKey[int | None]("innova_massage_timer")
 _TIMER_MINUTES: Final = {-1: 0, 1: 10, 2: 20, 3: 30}
 
 BUTTON_MASSAGE_LEVEL: Final = "innova_massage_level"
@@ -91,12 +87,6 @@ HELD_CONTROLS: Final = tuple(
 )
 
 
-def innova_frame(key: int) -> bytes:
-    """``E5 FE 16 || low32(key) little-endian || ~sum`` (buildBluetoothPackage)."""
-    body = bytes((0xE5, 0xFE, 0x16)) + (key & 0xFFFFFFFF).to_bytes(4, "little")
-    return body + bytes(((~sum(body)) & 0xFF,))
-
-
 def _java_trim(name: str) -> str:
     """Mirror ``String.trim()``: strip leading/trailing chars <= U+0020."""
     start, end = 0, len(name)
@@ -114,10 +104,10 @@ def _utf16_units(text: str) -> int:
 def validate_innova_name(name: str) -> str:
     """Apply the Options editor: maxLength 14 UTF-16 units, then trim, non-empty."""
     if _utf16_units(name) > RENAME_MAX_UNITS:
-        raise ValueError("The INNOVA app limits names to 14 characters")
+        raise ValueError("Use a name of at most 14 characters. Emoji count as two")
     trimmed = _java_trim(name)
     if not trimmed:
-        raise ValueError("The INNOVA app requires a non-empty name")
+        raise ValueError("Enter a name")
     return trimmed
 
 
@@ -126,19 +116,13 @@ def innova_rename_frame(name: str) -> bytes:
 
     The app copies ``String.length()`` bytes (UTF-16 units) from
     ``getBytes()`` (UTF-8 on Android), so multibyte names are truncated
-    exactly as the app truncates them. Byte 16 stays zero; byte 17 is the
-    complemented sum of bytes 0..16.
+    exactly as the app truncates them.
     """
     trimmed = validate_innova_name(name)
-    frame = bytearray(RENAME_FRAME_LENGTH)
-    frame[0:2] = b"\xef\x02"
-    raw = trimmed.encode("utf-8")[: _utf16_units(trimmed)]
-    frame[2 : 2 + len(raw)] = raw
-    frame[17] = (~sum(frame[:17])) & 0xFF
-    return bytes(frame)
+    return codec.rename(trimmed.encode("utf-8")[: _utf16_units(trimmed)])
 
 
-def parse_innova_status(data: bytes) -> dict[str, Any] | None:
+def parse_innova_status(data: bytes) -> list[StateUpdate] | None:
     """Decode a notification exactly as ``GattUpdateReceiver`` does.
 
     Only 16- and 19-byte values are read, with no header or checksum. The flag
@@ -155,10 +139,10 @@ def parse_innova_status(data: bytes) -> dict[str, Any] | None:
         return None
     if (flags >> 5) & 1:
         return None
-    state: dict[str, Any] = {STATE_LIGHT: bool((flags >> 6) & 1)}
+    state = [UNDER_BED_LIGHTS_ON(bool((flags >> 6) & 1))]
     signed = timer - 256 if timer > 127 else timer
     if signed in _TIMER_MINUTES:
-        state[STATE_MASSAGE_TIMER] = _TIMER_MINUTES[signed]
+        state.append(STATE_MASSAGE_TIMER(_TIMER_MINUTES[signed]))
     return state
 
 
@@ -227,13 +211,11 @@ class InnovaController(KeesonController):
         return tuple(specs)
 
     @property
-    def stale_motor_entity_keys(self) -> frozenset[str]:
-        return frozenset({"tilt", "lumbar", "waist", "back_legs"})
+    def _hold_interval_ms(self) -> int:
+        assert self.profile.refresh_ms is not None
+        return self.profile.refresh_ms
 
     # ------------------------------------------------------------- transport
-    def _build_command(self, command_value: int) -> bytes:
-        return innova_frame(command_value)
-
     def _resolve_roles(self) -> tuple[BleakGATTCharacteristic, BleakGATTCharacteristic]:
         """Return the app's write and notify roles, resolved once per connection.
 
@@ -291,66 +273,28 @@ class InnovaController(KeesonController):
     async def _send_singles(self, *keys: int) -> None:
         """``sendSingleMessage``: sleep 100 ms, then write once, per key."""
         for key in keys:
-            await asyncio.sleep(SINGLE_SEND_DELAY_S)
+            await asyncio.sleep(self.profile.tap_wait_ms / 1000)
             await self.write_command(self._build_command(key))
 
     async def _write_single_shot(self, command: bytes) -> None:
-        await asyncio.sleep(SINGLE_SEND_DELAY_S)
+        await asyncio.sleep(self.profile.tap_wait_ms / 1000)
         await self.write_command(command)
-
-    async def _release(self, *, delay: bool) -> None:
-        """``buttonUp``: the zero key, normally 100 ms after the refresh ends.
-
-        A Stop, a cancelled hold or a replacement sends it at once, and a Stop
-        arriving during the wait ends the wait. The write runs on a fresh event
-        in its own task, which is never cancelled and is awaited until it
-        finishes, however often the caller is cancelled. The cancellation is
-        re-raised afterwards, unless the write failed: that error wins.
-        """
-        stop_requested = self._coordinator.cancel_command
-        interrupted: asyncio.CancelledError | None = None
-        if delay and not stop_requested.is_set():
-            try:
-                await _wait_unless_cancelled(stop_requested, SINGLE_SEND_DELAY_S)
-            except asyncio.CancelledError as err:
-                interrupted = err
-        release = asyncio.create_task(
-            self.write_command(self._build_command(ZERO_KEY), cancel_event=asyncio.Event())
-        )
-        # asyncio.wait never cancels the task, so keep waiting for the write
-        # through any number of cancellations of this caller.
-        while not release.done():
-            try:
-                await asyncio.wait((release,))
-            except asyncio.CancelledError:
-                interrupted = interrupted or asyncio.CancelledError()
-        if interrupted is not None:
-            # A failed release must not hide behind the cancellation: like an
-            # exception raised in a finally block, the write error wins.
-            failure = None if release.cancelled() else release.exception()
-            if failure is not None:
-                raise failure from interrupted
-            raise interrupted
-        release.result()
-
-    async def _release_motion(self, *, delay: bool = True) -> None:
-        await self._release(delay=delay)
 
     async def _hold(self, key: int, repeat_count: int | None = None) -> None:
         """Stream a held key every 100 ms, then release with the zero key."""
         if repeat_count is None:
-            repeat_count, _delay = self.motor_pulse_settings()
+            repeat_count, _delay = self._held_cadence()
         completed = False
         try:
             await self.write_command(
                 self._build_command(key),
                 repeat_count=repeat_count,
-                repeat_delay_ms=HOLD_INTERVAL_MS,
+                repeat_delay_ms=self._hold_interval_ms,
             )
             completed = True
         finally:
             self._motor_state = {}
-            await self._release(delay=completed)
+            await self._touch_up(delay=completed)
 
     async def _move_motor(self, motor: str, direction: bool | None) -> None:
         self._motor_state = {motor: direction}
@@ -359,7 +303,7 @@ class InnovaController(KeesonController):
             await self._hold(command)
         else:
             self._motor_state = {}
-            await self._release(delay=False)
+            await self._touch_up(delay=False)
 
     async def move_union_up(self) -> None:
         """2M combined back and legs up (``0x05``)."""
@@ -371,7 +315,7 @@ class InnovaController(KeesonController):
 
     async def stop_all(self) -> None:
         self._motor_state = {}
-        await self._release(delay=False)
+        await self._touch_up(delay=False)
 
     @property
     def supports_stop_all(self) -> bool:
@@ -389,49 +333,27 @@ class InnovaController(KeesonController):
         if control not in controls:
             raise ValueError(f"The INNOVA {self._layout}M screen has no held control {control}")
         if isinstance(duration_ms, bool) or not 100 <= duration_ms <= 60000:
-            raise ValueError("Hold duration must be 100..60000 milliseconds")
+            raise ValueError("Choose a duration from 0.1 to 60 seconds")
         if self._coordinator.cancel_command.is_set():
             return
-        await self._hold(controls[control], repeat_count=-(-duration_ms // HOLD_INTERVAL_MS))
+        await self._hold(controls[control], repeat_count=-(-duration_ms // self._hold_interval_ms))
 
     # ---------------------------------------------------------------- presets
-    @property
-    def supports_preset_lounge(self) -> bool:
-        return False
-
-    @property
-    def supports_preset_tv(self) -> bool:
-        return False
-
-    @property
-    def supports_preset_anti_snore(self) -> bool:
-        return False
-
-    @property
-    def memory_slot_count(self) -> int:
-        return 2
-
     @property
     def memory_slot_names(self) -> tuple[str | None, ...]:
         return ("Memory A", "Memory B")
 
-    @property
-    def supports_memory_programming(self) -> bool:
-        return False
-
     async def preset_flat(self) -> None:
-        await self._send_singles(KeesonCommands.PRESET_FLAT)
+        await self._send_singles(self.profile.presets["flat"])
 
     async def preset_zero_g(self) -> None:
-        await self._send_singles(KeesonCommands.PRESET_ZERO_G)
+        await self._send_singles(self.profile.presets["zero_g"])
 
     async def preset_memory(self, memory_num: int) -> None:
         """Memory A/B stream while held; a press holds for one motor burst."""
-        if memory_num not in (1, 2):
+        if memory_num not in self.profile.memory:
             raise ValueError("INNOVA has Memory A (1) and Memory B (2) only")
-        await self._hold(
-            KeesonCommands.PRESET_MEMORY_1 if memory_num == 1 else KeesonCommands.PRESET_MEMORY_2
-        )
+        await self._hold(self.profile.memory[memory_num])
 
     async def program_memory(self, memory_num: int) -> None:
         raise NotImplementedError("The INNOVA app has no memory programming command")
@@ -450,11 +372,10 @@ class InnovaController(KeesonController):
     def supports_discrete_light_control(self) -> bool:
         return False
 
-    async def lights_on(self) -> None:
-        raise NotImplementedError("The INNOVA app has only a light toggle")
-
-    async def lights_off(self) -> None:
-        raise NotImplementedError("The INNOVA app has only a light toggle")
+    @property
+    def supports_light_state_feedback(self) -> bool:
+        """Every status notification reports the light; the app has only a toggle."""
+        return True
 
     async def lights_toggle(self) -> None:
         await self._send_singles(KeesonCommands.TOGGLE_LIGHTS)
@@ -554,17 +475,19 @@ class InnovaController(KeesonController):
         return (
             ControllerButtonSpec(
                 key=BUTTON_MASSAGE_LEVEL,
-                name="Massage level",
+                name="Cycle massage level",
                 press_fn=_action("massage_level_step"),
                 icon="mdi:sine-wave",
                 translation_key=BUTTON_MASSAGE_LEVEL,
+                card=CARD_MASSAGE,
             ),
             ControllerButtonSpec(
                 key=BUTTON_MASSAGE_TIMER_HOLD,
-                name="Massage timer (memory page)",
+                name="Cycle massage timer",
                 press_fn=_action("massage_timer_hold"),
                 icon="mdi:timer-outline",
                 translation_key=BUTTON_MASSAGE_TIMER_HOLD,
+                card=CARD_MASSAGE,
             ),
         )
 
@@ -614,42 +537,22 @@ class InnovaController(KeesonController):
         self.forward_raw_notification(self._notify_char_uuid, bytes(data))
         state = parse_innova_status(bytes(data))
         if state:
-            self.forward_controller_state_updates(state)
+            self.forward_controller_state_updates(*state)
 
     def invalidate_diagnostics(self) -> None:
-        self.forward_controller_state_updates(dict.fromkeys((STATE_LIGHT, STATE_MASSAGE_TIMER)))
-
-    @property
-    def controller_state_binary_sensor_specs(self) -> tuple[ControllerStateBinarySensorSpec, ...]:
-        return (
-            ControllerStateBinarySensorSpec(
-                key=STATE_LIGHT,
-                translation_key=STATE_LIGHT,
-                state_key=STATE_LIGHT,
-                icon="mdi:lightbulb",
-            ),
-        )
-
-    @property
-    def stale_controller_state_binary_sensor_entity_keys(self) -> frozenset[str]:
-        return frozenset()
+        self.forward_controller_state_updates(UNDER_BED_LIGHTS_ON(None), STATE_MASSAGE_TIMER(None))
 
     @property
     def controller_state_sensor_specs(self) -> tuple[ControllerStateSensorSpec, ...]:
         return (
-            ControllerStateSensorSpec(
-                key=STATE_MASSAGE_TIMER,
-                translation_key=STATE_MASSAGE_TIMER,
-                state_key=STATE_MASSAGE_TIMER,
-                icon="mdi:timer-outline",
-                native_unit_of_measurement="min",
+            massage_timer_sensor_spec(
+                "innova_massage_timer",
+                "innova_massage_timer",
+                STATE_MASSAGE_TIMER,
+                card=CARD_MASSAGE_TIMER,
             ),
         )
 
     @property
-    def stale_controller_state_sensor_entity_keys(self) -> frozenset[str]:
-        return frozenset()
-
-    @property
     def protocol_diagnostics(self) -> dict[str, Any]:
-        return {"app": "INNOVA", "app_package": "com.ore.sfm 2.0 (3)", "layout": f"{self._layout}M"}
+        return {**super().protocol_diagnostics, "app": "INNOVA", "app_package": "com.ore.sfm 2.0 (3)", "layout": f"{self._layout}M"}

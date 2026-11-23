@@ -1,0 +1,770 @@
+[
+  {
+    "id": "motionSensorOff-0",
+    "method": "motionSensorOff",
+    "branch": 0,
+    "tagged_register_values": [
+      10,
+      4,
+      0,
+      4,
+      256,
+      0,
+      0
+    ],
+    "values": [
+      5,
+      2,
+      0,
+      2,
+      128,
+      0,
+      0
+    ],
+    "expected_bytes": "05 02 00 02 80 00 00"
+  },
+  {
+    "id": "motionSensorOn-0",
+    "method": "motionSensorOn",
+    "branch": 0,
+    "tagged_register_values": [
+      10,
+      4,
+      0,
+      4,
+      32,
+      0,
+      0
+    ],
+    "values": [
+      5,
+      2,
+      0,
+      2,
+      16,
+      0,
+      0
+    ],
+    "expected_bytes": "05 02 00 02 10 00 00"
+  },
+  {
+    "id": "underbedLighting-0",
+    "method": "underbedLighting",
+    "branch": 0,
+    "tagged_register_values": [
+      10,
+      4,
+      0,
+      4,
+      0,
+      0
+    ],
+    "values": [
+      5,
+      2,
+      0,
+      2,
+      0,
+      0
+    ],
+    "expected_bytes": "05 02 00 02 00 00"
+  },
+  {
+    "id": "massageHeadAndFootMinus-0",
+    "method": "massageHeadAndFootMinus",
+    "branch": 0,
+    "tagged_register_values": [
+      10,
+      4,
+      2,
+      256,
+      0,
+      0,
+      0
+    ],
+    "values": [
+      5,
+      2,
+      1,
+      128,
+      0,
+      0,
+      0
+    ],
+    "expected_bytes": "05 02 01 80 00 00 00"
+  },
+  {
+    "id": "massageHeadAndFoot-0",
+    "method": "massageHeadAndFoot",
+    "branch": 0,
+    "tagged_register_values": [
+      10,
+      4,
+      0,
+      0,
+      24,
+      0,
+      0
+    ],
+    "values": [
+      5,
+      2,
+      0,
+      0,
+      12,
+      0,
+      0
+    ],
+    "expected_bytes": "05 02 00 00 0c 00 00"
+  },
+  {
+    "id": "massageFootMinus-0",
+    "method": "massageFootMinus",
+    "branch": 0,
+    "tagged_register_values": [
+      10,
+      4,
+      2,
+      0,
+      0,
+      0,
+      0
+    ],
+    "values": [
+      5,
+      2,
+      1,
+      0,
+      0,
+      0,
+      0
+    ],
+    "expected_bytes": "05 02 01 00 00 00 00"
+  },
+  {
+    "id": "massageFoot-0",
+    "method": "massageFoot",
+    "branch": 0,
+    "tagged_register_values": [
+      10,
+      4,
+      0,
+      0,
+      8,
+      0,
+      0
+    ],
+    "values": [
+      5,
+      2,
+      0,
+      0,
+      4,
+      0,
+      0
+    ],
+    "expected_bytes": "05 02 00 00 04 00 00"
+  },
+  {
+    "id": "massageHeadMinus-0",
+    "method": "massageHeadMinus",
+    "branch": 0,
+    "tagged_register_values": [
+      10,
+      4,
+      0,
+      256,
+      0,
+      0,
+      0
+    ],
+    "values": [
+      5,
+      2,
+      0,
+      128,
+      0,
+      0,
+      0
+    ],
+    "expected_bytes": "05 02 00 80 00 00 00"
+  },
+  {
+    "id": "massageHead-0",
+    "method": "massageHead",
+    "branch": 0,
+    "tagged_register_values": [
+      10,
+      4,
+      0,
+      0,
+      16,
+      0,
+      0
+    ],
+    "values": [
+      5,
+      2,
+      0,
+      0,
+      8,
+      0,
+      0
+    ],
+    "expected_bytes": "05 02 00 00 08 00 00"
+  },
+  {
+    "id": "massageOff-0",
+    "method": "massageOff",
+    "branch": 0,
+    "tagged_register_values": [
+      10,
+      4,
+      4,
+      0,
+      0,
+      0,
+      0
+    ],
+    "values": [
+      5,
+      2,
+      2,
+      0,
+      0,
+      0,
+      0
+    ],
+    "expected_bytes": "05 02 02 00 00 00 00"
+  },
+  {
+    "id": "massageOn-0",
+    "method": "massageOn",
+    "branch": 0,
+    "tagged_register_values": [
+      10,
+      4,
+      0,
+      16,
+      0,
+      0,
+      0
+    ],
+    "values": [
+      5,
+      2,
+      0,
+      8,
+      0,
+      0,
+      0
+    ],
+    "expected_bytes": "05 02 00 08 00 00 00"
+  },
+  {
+    "id": "reading-0",
+    "method": "reading",
+    "branch": 0,
+    "tagged_register_values": [
+      10,
+      4,
+      0,
+      0,
+      64,
+      0
+    ],
+    "values": [
+      5,
+      2,
+      0,
+      0,
+      32,
+      0
+    ],
+    "expected_bytes": "05 02 00 00 20 00"
+  },
+  {
+    "id": "m5-0",
+    "method": "m5",
+    "branch": 0,
+    "tagged_register_values": [
+      10,
+      4,
+      0,
+      2,
+      0,
+      0
+    ],
+    "values": [
+      5,
+      2,
+      0,
+      1,
+      0,
+      0
+    ],
+    "expected_bytes": "05 02 00 01 00 00"
+  },
+  {
+    "id": "flat-0",
+    "method": "flat",
+    "branch": 0,
+    "tagged_register_values": [
+      10,
+      4,
+      16,
+      0,
+      0,
+      0
+    ],
+    "values": [
+      5,
+      2,
+      8,
+      0,
+      0,
+      0
+    ],
+    "expected_bytes": "05 02 08 00 00 00"
+  },
+  {
+    "id": "antiSnore-0",
+    "method": "antiSnore",
+    "branch": 0,
+    "tagged_register_values": [
+      10,
+      4,
+      0,
+      0,
+      256,
+      0
+    ],
+    "values": [
+      5,
+      2,
+      0,
+      0,
+      128,
+      0
+    ],
+    "expected_bytes": "05 02 00 00 80 00"
+  },
+  {
+    "id": "zeroGravity-0",
+    "method": "zeroGravity",
+    "branch": 0,
+    "tagged_register_values": [
+      10,
+      4,
+      0,
+      0,
+      32,
+      0
+    ],
+    "values": [
+      5,
+      2,
+      0,
+      0,
+      16,
+      0
+    ],
+    "expected_bytes": "05 02 00 00 10 00"
+  },
+  {
+    "id": "leisure-0",
+    "method": "leisure",
+    "branch": 0,
+    "tagged_register_values": [
+      10,
+      4,
+      0,
+      0,
+      128,
+      0
+    ],
+    "values": [
+      5,
+      2,
+      0,
+      0,
+      64,
+      0
+    ],
+    "expected_bytes": "05 02 00 00 40 00"
+  },
+  {
+    "id": "stopCommand-0",
+    "method": "stopCommand",
+    "branch": 0,
+    "tagged_register_values": [
+      10,
+      4,
+      0,
+      0,
+      0,
+      6,
+      0
+    ],
+    "values": [
+      5,
+      2,
+      0,
+      0,
+      0,
+      3,
+      0
+    ],
+    "expected_bytes": "05 02 00 00 00 03 00"
+  },
+  {
+    "id": "stopCommand-1",
+    "method": "stopCommand",
+    "branch": 1,
+    "tagged_register_values": [
+      10,
+      4,
+      0,
+      0,
+      0,
+      0
+    ],
+    "values": [
+      5,
+      2,
+      0,
+      0,
+      0,
+      0
+    ],
+    "expected_bytes": "05 02 00 00 00 00"
+  },
+  {
+    "id": "elevateDown-0",
+    "method": "elevateDown",
+    "branch": 0,
+    "tagged_register_values": [
+      10,
+      4,
+      0,
+      0,
+      0,
+      256
+    ],
+    "values": [
+      5,
+      2,
+      0,
+      0,
+      0,
+      128
+    ],
+    "expected_bytes": "05 02 00 00 00 80"
+  },
+  {
+    "id": "elevateUp-0",
+    "method": "elevateUp",
+    "branch": 0,
+    "tagged_register_values": [
+      10,
+      4,
+      0,
+      0,
+      0,
+      128
+    ],
+    "values": [
+      5,
+      2,
+      0,
+      0,
+      0,
+      64
+    ],
+    "expected_bytes": "05 02 00 00 00 40"
+  },
+  {
+    "id": "lumbarDown-0",
+    "method": "lumbarDown",
+    "branch": 0,
+    "tagged_register_values": [
+      10,
+      4,
+      0,
+      0,
+      0,
+      64
+    ],
+    "values": [
+      5,
+      2,
+      0,
+      0,
+      0,
+      32
+    ],
+    "expected_bytes": "05 02 00 00 00 20"
+  },
+  {
+    "id": "lumbarUp-0",
+    "method": "lumbarUp",
+    "branch": 0,
+    "tagged_register_values": [
+      10,
+      4,
+      0,
+      0,
+      0,
+      32
+    ],
+    "values": [
+      5,
+      2,
+      0,
+      0,
+      0,
+      16
+    ],
+    "expected_bytes": "05 02 00 00 00 10"
+  },
+  {
+    "id": "footDown-0",
+    "method": "footDown",
+    "branch": 0,
+    "tagged_register_values": [
+      10,
+      4,
+      0,
+      0,
+      0,
+      16
+    ],
+    "values": [
+      5,
+      2,
+      0,
+      0,
+      0,
+      8
+    ],
+    "expected_bytes": "05 02 00 00 00 08"
+  },
+  {
+    "id": "footUp-0",
+    "method": "footUp",
+    "branch": 0,
+    "tagged_register_values": [
+      10,
+      4,
+      0,
+      0,
+      0,
+      8
+    ],
+    "values": [
+      5,
+      2,
+      0,
+      0,
+      0,
+      4
+    ],
+    "expected_bytes": "05 02 00 00 00 04"
+  },
+  {
+    "id": "headDown-0",
+    "method": "headDown",
+    "branch": 0,
+    "tagged_register_values": [
+      10,
+      4,
+      0,
+      0,
+      0,
+      4
+    ],
+    "values": [
+      5,
+      2,
+      0,
+      0,
+      0,
+      2
+    ],
+    "expected_bytes": "05 02 00 00 00 02"
+  },
+  {
+    "id": "headUp-0",
+    "method": "headUp",
+    "branch": 0,
+    "tagged_register_values": [
+      10,
+      4,
+      0,
+      0,
+      0,
+      2
+    ],
+    "values": [
+      5,
+      2,
+      0,
+      0,
+      0,
+      1
+    ],
+    "expected_bytes": "05 02 00 00 00 01"
+  },
+  {
+    "id": "headTiltDown-0",
+    "method": "headTiltDown",
+    "branch": 0,
+    "tagged_register_values": [
+      10,
+      4,
+      256,
+      0,
+      0,
+      0
+    ],
+    "values": [
+      5,
+      2,
+      128,
+      0,
+      0,
+      0
+    ],
+    "expected_bytes": "05 02 80 00 00 00"
+  },
+  {
+    "id": "headTiltUp-0",
+    "method": "headTiltUp",
+    "branch": 0,
+    "tagged_register_values": [
+      10,
+      4,
+      128,
+      0,
+      0,
+      0
+    ],
+    "values": [
+      5,
+      2,
+      64,
+      0,
+      0,
+      0
+    ],
+    "expected_bytes": "05 02 40 00 00 00"
+  },
+  {
+    "id": "confirmationResponse-0",
+    "method": "confirmationResponse",
+    "branch": 0,
+    "tagged_register_values": [
+      0,
+      352
+    ],
+    "values": [
+      0,
+      176
+    ],
+    "expected_bytes": "00 b0"
+  },
+  {
+    "id": "massageOpen-0",
+    "method": "massageOpen",
+    "branch": 0,
+    "tagged_register_values": [
+      10,
+      4,
+      0,
+      0,
+      2,
+      0,
+      0
+    ],
+    "values": [
+      5,
+      2,
+      0,
+      0,
+      1,
+      0,
+      0
+    ],
+    "expected_bytes": "05 02 00 00 01 00 00"
+  },
+  {
+    "id": "massageMode-0",
+    "method": "massageMode",
+    "branch": 0,
+    "tagged_register_values": [
+      10,
+      4,
+      32,
+      0,
+      0,
+      0,
+      0
+    ],
+    "values": [
+      5,
+      2,
+      16,
+      0,
+      0,
+      0,
+      0
+    ],
+    "expected_bytes": "05 02 10 00 00 00 00"
+  },
+  {
+    "id": "massageTimer-0",
+    "method": "massageTimer",
+    "branch": 0,
+    "tagged_register_values": [
+      10,
+      4,
+      0,
+      0,
+      4,
+      0,
+      0
+    ],
+    "values": [
+      5,
+      2,
+      0,
+      0,
+      2,
+      0,
+      0
+    ],
+    "expected_bytes": "05 02 00 00 02 00 00"
+  },
+  {
+    "id": "flatAndZg-0",
+    "method": "flatAndZg",
+    "branch": 0,
+    "tagged_register_values": [
+      10,
+      4,
+      16,
+      0,
+      32,
+      0
+    ],
+    "values": [
+      5,
+      2,
+      8,
+      0,
+      16,
+      0
+    ],
+    "expected_bytes": "05 02 08 00 10 00"
+  }
+]

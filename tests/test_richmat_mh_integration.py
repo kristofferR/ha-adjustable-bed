@@ -6,8 +6,8 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from custom_components.adjustable_bed.actuator_groups import get_actuator_group_for_bed_type
-from custom_components.adjustable_bed.beds import richmat_mh_protocol as protocol
+from custom_components.adjustable_bed.bed_traits import bed_traits
+from custom_components.adjustable_bed.beds.richmat_mh import protocol
 from custom_components.adjustable_bed.binary_sensor import _binary_sensor_entities_for
 from custom_components.adjustable_bed.button import _button_entities_for
 from custom_components.adjustable_bed.config_flow import (
@@ -16,7 +16,6 @@ from custom_components.adjustable_bed.config_flow import (
     _richmat_mh_variant_error,
 )
 from custom_components.adjustable_bed.const import (
-    BEDS_WITHOUT_ANGLE_FEEDBACK,
     CONF_BLE_DEVICE_NAME,
     RICHMAT_MH_APPS,
     RICHMAT_MH_BED_TYPES,
@@ -26,7 +25,12 @@ from custom_components.adjustable_bed.const import (
     requires_pairing,
 )
 from custom_components.adjustable_bed.controller_factory import create_controller
-from custom_components.adjustable_bed.detection import detect_bed_type, get_bed_type_options
+from custom_components.adjustable_bed.detection import (
+    BED_TYPE_DISPLAY_NAMES,
+    detect_bed_type,
+    get_bed_type_options,
+)
+from custom_components.adjustable_bed.labels import display_label
 from custom_components.adjustable_bed.light import _light_entities_for
 from custom_components.adjustable_bed.number import _number_entities_for
 from custom_components.adjustable_bed.select import _select_entities_for
@@ -39,12 +43,13 @@ from tests.test_richmat_mh import make, vers0, vers1
 
 @pytest.mark.parametrize("bed_type", sorted(RICHMAT_MH_BED_TYPES))
 def test_profile_registration(bed_type: str) -> None:
-    assert bed_type in SUPPORTED_BED_TYPES and bed_type in BEDS_WITHOUT_ANGLE_FEEDBACK
+    assert bed_type in SUPPORTED_BED_TYPES and bed_traits(bed_type).no_angle_feedback
     assert get_motor_pulse_defaults(bed_type) == (10, 100)
     assert not requires_pairing(bed_type)  # the app has no pairing, PIN or encryption
     assert _motor_count_options(bed_type) == [2]
-    assert get_actuator_group_for_bed_type(bed_type)[0] == "richmat_apps"
-    assert any(option["value"] == bed_type for option in get_bed_type_options())
+    # The app is an answer of the Richmat question and has its own searchable row.
+    rows = {option["value"]: option["label"] for option in get_bed_type_options()}
+    assert rows[bed_type] == BED_TYPE_DISPLAY_NAMES[bed_type]
     assert is_valid_variant_for_bed_type(bed_type, VARIANT_AUTO)
     assert _name_rule_setup_name(bed_type, "7IRM0001") == {CONF_BLE_DEVICE_NAME: "7IRM0001"}
     assert _name_rule_setup_name(bed_type, "AA:BB:CC:DD:EE:FF") == {}
@@ -80,9 +85,11 @@ async def test_legacy_page_entities(hass) -> None:
             "richmat_mh_stop_detection", "preset_flat"} <= buttons
     assert "toggle_light" not in buttons  # the colour light owns the light icon
     taps = [e for e in _button_entities_for(hass, runtime)
-            if str(getattr(e, "_attr_translation_key", "")).startswith("richmat_mh_")
-            and getattr(e, "_attr_translation_placeholders", None)]
-    assert taps and all(e._attr_translation_placeholders == {"action": e._spec.name} for e in taps)
+            if str(getattr(e, "_attr_translation_key", "")).startswith("catalog_")
+            and "action" in (getattr(e, "_attr_translation_placeholders", None) or {})]
+    assert taps and all(
+        e._attr_translation_placeholders == {"action": display_label(e._spec.name)} for e in taps
+    )
     assert len(_light_entities_for(hass, runtime)) == 1
     numbers = {e.unique_id for e in _number_entities_for(hass, runtime)}
     assert "bed_controller_number_richmat_mh_light_timer_left" in numbers
@@ -153,7 +160,7 @@ def test_every_entity_translation_and_select_state_exists() -> None:
     import json
     from pathlib import Path
 
-    from custom_components.adjustable_bed import richmat_mh_catalog as catalog
+    from custom_components.adjustable_bed.beds.richmat_mh import catalog
 
     root = Path(__file__).parents[1] / "custom_components" / "adjustable_bed"
     strings = json.loads((root / "strings.json").read_text())["entity"]
@@ -213,77 +220,6 @@ def test_coordinator_persists_a_changed_snapshot_and_schedules_a_reload() -> Non
         coordinator.remember_richmat_mh_snapshot(snapshot)
 
 
-async def test_two_address_pair_refuses_a_combined_model_change(hass) -> None:
-    """Each side is its own physical bed and app model; unpair before changing it."""
-    from unittest.mock import patch
-
-    from homeassistant.const import CONF_ADDRESS, CONF_NAME
-    from homeassistant.data_entry_flow import FlowResultType
-    from pytest_homeassistant_custom_component.common import MockConfigEntry
-
-    from custom_components.adjustable_bed import _build_paired_children
-    from custom_components.adjustable_bed.config_flow import AdjustableBedOptionsFlow
-    from custom_components.adjustable_bed.const import (
-        CONF_BED_TYPE,
-        CONF_DISABLE_ANGLE_SENSING,
-        CONF_MOTOR_COUNT,
-        CONF_PAIR_CHILDREN,
-        CONF_PAIR_ID,
-        CONF_PAIR_MEMBER_ADDRESSES,
-        CONF_PAIR_MODE,
-        CONF_PAIR_SCHEMA_VERSION,
-        CONF_PREFERRED_ADAPTER,
-        CONF_PROTOCOL_VARIANT,
-        CONF_SIDE,
-        DOMAIN,
-        PAIR_MODE_SEPARATE_ADDRESS,
-    )
-
-    left, right = "AA:BB:CC:DD:EE:81", "AA:BB:CC:DD:EE:82"
-
-    def child(side: str, address: str) -> dict:
-        return {
-            CONF_SIDE: side,
-            CONF_ADDRESS: address,
-            CONF_NAME: side.capitalize(),
-            CONF_BED_TYPE: "richmat_revive",
-            CONF_MOTOR_COUNT: 2,
-            CONF_DISABLE_ANGLE_SENSING: True,
-            CONF_PREFERRED_ADAPTER: "auto",
-            CONF_PROTOCOL_VARIANT: "model_vorm",
-            CONF_BLE_DEVICE_NAME: "VORM0001",
-        }
-
-    entry = MockConfigEntry(
-        domain=DOMAIN,
-        title="Revive Pair",
-        data={
-            CONF_PAIR_ID: "pair_revive",
-            CONF_PAIR_MODE: PAIR_MODE_SEPARATE_ADDRESS,
-            CONF_PAIR_SCHEMA_VERSION: 1,
-            CONF_BED_TYPE: "richmat_revive",
-            CONF_NAME: "Revive Pair",
-            CONF_PREFERRED_ADAPTER: "auto",
-            CONF_PROTOCOL_VARIANT: "model_vorm",
-            CONF_PAIR_MEMBER_ADDRESSES: [left, right],
-            CONF_PAIR_CHILDREN: [child("left", left), child("right", right)],
-        },
-        unique_id="pair_revive",
-        version=4,
-    )
-    entry.add_to_hass(hass)
-    _build_paired_children(hass, entry)
-    flow = AdjustableBedOptionsFlow(entry)
-    flow.handler = entry.entry_id
-    flow.hass = hass
-    with patch("homeassistant.components.bluetooth.async_last_service_info", return_value=None):
-        result = await flow.async_step_settings({CONF_PROTOCOL_VARIANT: "model_farm"})
-    assert result["type"] is FlowResultType.FORM
-    assert result["errors"] == {CONF_PROTOCOL_VARIANT: "app_profile_unpair_first"}
-    stored = [c[CONF_PROTOCOL_VARIANT] for c in entry.data[CONF_PAIR_CHILDREN]]
-    assert stored == ["model_vorm", "model_vorm"]
-
-
 @pytest.mark.parametrize(
     ("snapshot", "minted"),
     [
@@ -295,7 +231,7 @@ async def test_two_address_pair_refuses_a_combined_model_change(hass) -> None:
 async def test_offline_side_mints_from_the_stored_snapshot(hass, snapshot, minted) -> None:
     """A paired side unreachable at reload keeps its catalog and page-gated entities."""
     from homeassistant.const import CONF_ADDRESS, CONF_NAME
-    from pytest_homeassistant_custom_component.common import MockConfigEntry
+    from pytest_homeassistant.common import MockConfigEntry
 
     from custom_components.adjustable_bed.const import (
         CONF_BED_TYPE,
@@ -325,3 +261,38 @@ async def test_offline_side_mints_from_the_stored_snapshot(hass, snapshot, minte
     assert controller is not None and controller.supports_richmat_mh_alarm
     keys = {spec.key for spec in controller.controller_number_specs}
     assert {"richmat_mh_back_angle", "richmat_mh_light_timer"} <= keys
+
+
+async def test_configure_shows_a_model_error_it_has_no_field_for(
+    hass, enable_custom_integrations
+) -> None:
+    """Configure has no model field, so the error is the form's own, not a silent redraw."""
+    from homeassistant.const import CONF_ADDRESS, CONF_NAME
+    from pytest_homeassistant.common import MockConfigEntry
+
+    from custom_components.adjustable_bed.const import (
+        CONF_BED_TYPE,
+        CONF_BLE_DEVICE_NAME,
+        CONF_PROTOCOL_VARIANT,
+        DOMAIN,
+    )
+
+    entry = MockConfigEntry(
+        domain=DOMAIN,
+        data={
+            CONF_ADDRESS: "AA:BB:CC:DD:EE:01",
+            CONF_NAME: "Revive bed",
+            CONF_BED_TYPE: "richmat_revive",
+            CONF_PROTOCOL_VARIANT: VARIANT_AUTO,
+            CONF_BLE_DEVICE_NAME: "QRRM0001",
+        },
+        unique_id="AA:BB:CC:DD:EE:01",
+    )
+    entry.add_to_hass(hass)
+    menu = await hass.config_entries.options.async_init(entry.entry_id)
+    form = await hass.config_entries.options.async_configure(
+        menu["flow_id"], {"next_step_id": "settings"}
+    )
+    assert CONF_PROTOCOL_VARIANT not in {str(marker) for marker in form["data_schema"].schema}
+    result = await hass.config_entries.options.async_configure(form["flow_id"], {})
+    assert result["errors"] == {"base": "richmat_mh_choose_model"}

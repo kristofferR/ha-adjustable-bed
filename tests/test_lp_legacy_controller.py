@@ -7,12 +7,13 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-from custom_components.adjustable_bed.beds.leggett_lp_legacy import LeggettLpLegacyController
-from custom_components.adjustable_bed.lp_legacy_profiles import (
+from custom_components.adjustable_bed.beds.leggett.lp_legacy import LeggettLpLegacyController
+from custom_components.adjustable_bed.beds.leggett.lp_legacy_profiles import (
     LP_LEGACY_PROFILE_CODES,
     LpLegacyControl,
     get_lp_legacy_profile,
 )
+from tests.state_helpers import published
 
 WRITE_UUID = "00000001-0000-0000-0000-000000000000"
 READ_UUID = "00000002-0000-0000-0000-000000000000"
@@ -108,11 +109,11 @@ async def test_hold_cadence_absorbs_write_latency_and_never_waits_negative(coord
     coordinator.cancel_command.wait = AsyncMock(side_effect=TimeoutError)
     with (
         patch(
-            "custom_components.adjustable_bed.beds.leggett_lp_legacy.monotonic",
+            "custom_components.adjustable_bed.beds.leggett.lp_legacy.monotonic",
             side_effect=[100.0, 100.06, 200.0, 200.14],
         ),
         patch(
-            "custom_components.adjustable_bed.beds.leggett_lp_legacy.asyncio.timeout",
+            "custom_components.adjustable_bed.beds.leggett.lp_legacy.asyncio.timeout",
             wraps=asyncio.timeout,
         ) as timeout,
     ):
@@ -213,9 +214,7 @@ async def test_explicit_read_endpoint_and_exact_diagnostic_frames(coordinator):
         ("6E 07 01 02 78", "alarm_routine_2"),
     ]:
         controller._notification_handler(characteristic, bytearray.fromhex(packet))
-        coordinator.handle_controller_state_updates.assert_called_with(
-            {"lp_legacy_notification": packet, "lp_legacy_notification_effect": effect}
-        )
+        assert published(*coordinator.handle_controller_state_updates.call_args.args) == {"lp_legacy_notification": packet, "lp_legacy_notification_effect": effect}
     coordinator.handle_controller_state_updates.reset_mock()
     for packet in ["6E 09 01 00 79", "6E 09 01 00 78 00", "6E 09 01"]:
         controller._notification_handler(characteristic, bytearray.fromhex(packet))
@@ -262,8 +261,11 @@ async def test_button_callback_preserves_bound_side(coordinator, side):
         observed_sides.append(controller._command_side.get())
 
     coordinator.client.write_gatt_char.side_effect = record_write
-    with patch.object(controller, "_wait_ticks", new=AsyncMock(return_value=True)):
-        await controller.controller_button_specs[0].press_fn(controller.bind_side(side))
+    with (
+        patch.object(controller, "_wait_ticks", new=AsyncMock(return_value=True)),
+        controller.side_scope(side),
+    ):
+        await controller.controller_button_specs[0].press_fn(controller)
 
     assert written(coordinator) == [control.press.legacy] * 2 + [control.release.legacy]
     assert observed_sides == [side] * 3

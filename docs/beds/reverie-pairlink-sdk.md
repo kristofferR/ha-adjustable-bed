@@ -1,13 +1,13 @@
 # Private Pairlink SDK receive consumers
 
-**Status:** ❓ Needs testing (hardware delivery unverified)
+**Status:** Not yet tested
 
 **Credit:** Reverse engineering by [kristofferR](https://github.com/kristofferR/ha-adjustable-bed)
 
 ## Known Models
 
 - The private SDK consumers serve the [Reverie Pairlink profiles](reverie.md#pairlink-central-route), including R510L and Harmoniq Upgrade.
-- This is a receive/metadata reference, not a separate selectable bed type or a generic lighting integration.
+- This page describes how the integration listens to a Pairlink bed. It is not a separate bed type to pick in setup, and it adds no lighting controls.
 
 ## Apps
 
@@ -19,12 +19,12 @@
 
 | Feature | Supported |
 | --- | --- |
-| Central / local receive consumers | ✅ (entry-owned runtime reducer, verified physical receive owner) |
-| Device identity / online state | ✅ (full, TLV and FF ping; exact MAC/vAddr associations) |
-| Calendar response | ✅ (known-device request, current session and signing gates) |
-| Metadata / composition / fingerprint persistence | ✅ (entry-owned canonical beans and HA Store) |
-| Direct bed controls | See [Reverie](reverie.md#commands); this SDK layer adds no public arbitrary-packet action |
-| Generic lighting prediction / acquisition worker | ❌ (no lighting entities; worker disabled) |
+| Messages from the bed | ✅ Read from the connected bed only |
+| Device identity and online state | ✅ Tracks which paired devices are present and online |
+| Date and time | ✅ Answers the bed's date and time request from a known device |
+| Device details | ✅ Kept across Home Assistant restarts |
+| Bed controls | See [Reverie](reverie.md#commands); this page adds no extra action |
+| Lighting | ❌ No lighting controls |
 
 ## Protocol Details
 
@@ -177,11 +177,8 @@ write is suspended. Physical teardown still invalidates queued work.
 
 ## Notes
 
-Hardware delivery remains unverified. Source scope, release adoption and root
-source overlays are recorded in the
-[disposition crosswalk](../apk-analysis/dispositions/row041-reverie.md#guide-evidence-and-scope-notes).
+Hardware delivery remains unverified.
 
 ### Analysis provenance
 
-- Package `com.reverie.reverie`, version 3.3.3.8, accepted row041 audit.
-- [Evidence and exact dispositions](../apk-analysis/dispositions/row041-reverie.md).
+Based on Reverie 3.3.3.8 (`com.reverie.reverie`).

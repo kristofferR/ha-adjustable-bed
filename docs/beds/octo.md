@@ -1,10 +1,10 @@
 # OCTO Smart Control
 
-**Status:** ⚠️ Partially tested (2-4 motor bed receivers field-tested; the one-motor RTV TV lift and OCTO Smart Control 1.03.02 behavior are APK-verified, hardware unverified)
+**Status:** Partly tested (Standard 2-4 motor receivers work in [#73](https://github.com/kristofferR/ha-adjustable-bed/issues/73), [#440](https://github.com/kristofferR/ha-adjustable-bed/issues/440) and [#499](https://github.com/kristofferR/ha-adjustable-bed/issues/499), and a Star2 DA1458X in [#510](https://github.com/kristofferR/ha-adjustable-bed/issues/510); an RTV TV lift was reported working in [#440](https://github.com/kristofferR/ha-adjustable-bed/issues/440); the other OCTO Smart Control app features need testing)
 
 **Credit:** Reverse engineering by [kristofferR](https://github.com/kristofferR/ha-adjustable-bed), [_pm](https://community.home-assistant.io/t/how-to-setup-esphome-to-control-my-bluetooth-controlled-octocontrol-bed/540790), [goedh452](https://community.home-assistant.io/t/how-to-setup-esphome-to-control-my-bluetooth-controlled-octocontrol-bed/540790/10), Murp, and [Brokkert](https://github.com/Brokkert)
 
-**Integration profile:** Standard OCTO Smart Control uses the existing OCTO bed type. Star2 remains a separate protocol variant.
+**Setup:** choose OCTO for beds controlled by OCTO Smart Control. Octo Remote Star2 receivers are a separate variant.
 
 ## Known Models
 
@@ -67,18 +67,20 @@ checked; see [Analysis provenance](#analysis-provenance).
 
 | Feature | Supported |
 |---------|-----------|
-| Bed Motor Control | ✅ (1-4 motors from `CAP_MOTORCOUNT`; explicit 1-4 override) |
-| One-motor TV/Bed Lift | ✅ (Standard variant; dedicated TV Lift entity, hardware validation pending) |
+| Bed Motor Control | ✅ (1-4 motors, as the receiver reports; you can set the count yourself) |
+| One-motor TV/Bed Lift | ✅ (Standard variant; its own TV Lift entity; not yet tested on hardware) |
 | Position Feedback | ❌ |
-| Memory Presets | ✅ (dynamically detected, Standard variant only) |
-| Combined Back + Legs Control | ✅ (two-motor Standard and Star2 variants; hold-capable in the bundled card) |
-| Under-bed Lights | ✅ (Standard variant only; on/off switch, RGB / RGBW light entity on `CAP_LIGHT_RGB` / `CAP_LIGHT_RGBWI`) |
-| Light duration, automatic light, light sensitivity | ✅ (Standard variant, when advertised) |
-| Synchro/Linked Mode | ✅ (Standard variant, split-king beds with `CAP_SYNCHRO`) |
-| Remote-control lock / Remote teach | ✅ (Standard variant, when advertised) |
+| [Estimated Positions](../ESTIMATED_POSITIONS.md) | ✅ (opt-in, Standard variant; TV lift, back, legs, head and feet; not yet tested on hardware) |
+| Memory Presets | ✅ (as the receiver reports, Standard variant only) |
+| Combined Back + Legs Control | ✅ (two-motor Standard and Star2 variants; hold to move in the card) |
+| Under-bed Lights | ✅ (Standard variant only; on/off switch, and a color light when the receiver has RGB or RGBW lights) |
+| Light duration, automatic light, light sensitivity | ✅ (Standard variant, when the receiver has them) |
+| Synchro/Linked Mode | ✅ (Standard variant, split-king beds that support it) |
+| Remote-control lock / Remote teach | ✅ (Standard variant, when the receiver has them) |
 | PIN Authentication | ✅ (Standard variant only; PIN enrollment action) |
-| Receiver reset | ✅ (confirmed, destructive action) |
-| Massage, battery, alarm, motor status | ❌ (not exposed by this app protocol) |
+| Receiver reset | ✅ (asks for confirmation; cannot be undone) |
+| Massage, battery, alarm, motor status | ❌ |
+| Hold until release | ✅ Standard ([renewable](../SERVICES.md#renewable-holds) `timed_move` and `hold_control`: 350 ms refresh, then STOP); ❌ Star2 |
 
 ## Protocol Details
 
@@ -139,14 +141,17 @@ authoritative capability records. Malformed replies remain strict failures.
   as complete discovery and cannot retire known entities or be persisted as a
   capability snapshot.
 - This absence fallback preserves the behavior used by field-reported receivers;
-  it does not change the accepted app behavior when valid replies arrive.
+  it does not change the app's behavior when valid replies arrive.
 - Star2 does not use this P1 handshake.
 
 #### Capability records
 
 Capabilities are retained as typed records containing the feature ID, read-only
 flag, characteristic bytes, value type and value bytes. Writes replace only the
-value bytes and preserve the advertised metadata. Device information and
+value bytes and preserve the advertised metadata. A record is active when its
+first characteristic byte is `0x01`. Like the app, the integration does not
+treat the read-only flag as a gate: some receivers, such as the RC2, flag every
+record read-only but still accept writes, which echo the flag unchanged. Device information and
 capabilities are stored per physical receiver when a pair is configured.
 
 The integration queries capabilities via `[0x20, 0x71]`. Known feature IDs:
@@ -161,7 +166,7 @@ The integration queries capabilities via `[0x20, 0x71]`. Known feature IDs:
 | `0x000011` | Remote-control lock | Lock state, 1 byte |
 | `0x000101` | CAP_SYNCHRO | Synchro/linked mode support |
 | `0x000102` | CAP_LIGHT | Under-bed light support (on/off) |
-| `0x000103` | Light duration | Minutes, 2 bytes big-endian |
+| `0x000103` | Light duration | Minutes, 1 byte (0-60) |
 | `0x000104` | CAP_LIGHT_RGBWI | RGB + White + Intensity light control |
 | `0x000105` | Automatic light | Motion-triggered lighting, 1 byte |
 | `0x000106` | Light sensitivity | 2 bytes big-endian |
@@ -192,7 +197,7 @@ memory features. The Standard-only session gate does not apply to Star2.
 - **Standard variant:** Detected by an official OCTO device-name prefix. The
   shared `FFE0` service UUID alone is not sufficient because other protocol
   families also use it.
-- **Star2 variant:** Auto-detected after connection when the
+- **Star2 variant:** Detected after connection when the
   `0000aa5c-0000-1000-8000-00805f9b34fb` service contains the
   `00005a55-0000-1000-8000-00805f9b34fb` write characteristic. Explicit
   variant selections override this GATT-based detection.
@@ -222,7 +227,7 @@ the Standard or Star2 implementation when the variant is left on Auto. Features
 are still limited by the device capabilities and the support table above, and
 every OEM combination is not necessarily hardware-tested.
 
-The accepted 1.03.02 artifact defines no separate protocol profile selected by
+App version 1.03.02 has no separate protocol profile selected by
 OEM branding, CID, PID, hardware, firmware, locale or device name. Standard P1
 remains the existing OCTO bed type; Star2 remains separate.
 
@@ -263,7 +268,7 @@ combined steps it offers are:
   (`RC3`, `BM3` and 4-motor bases) actually reach flat instead of leaving the
   extra actuators parked.
 - A motor count the app does not recognize renders no controls at all.
-- **Back + Legs:** on a two-motor receiver, M1+2 is exposed as a **Back + Legs**
+- **Back + legs:** on a two-motor receiver, M1+2 is exposed as a **Back + legs**
   motor control. Its Up and Down actions replace the former tap-only Back + Legs
   Up and Flat preset tiles, so the bundled card can repeat the command while the
   control is held. Three- and four-motor receivers retain separate preset
@@ -345,7 +350,7 @@ advertised record:
 
 - Star2 has no STOP frame: its motors stop when the held-command refresh ends.
 - The Star2 Both Up and Both Down frames are exposed as the Up and Down actions
-  of the **Back + Legs** motor control. In the bundled card this makes the
+  of the **Back + legs** motor control. In the bundled card this makes the
   combined movement hold-capable, like the individual Back and Legs controls.
 
 ## Motor layout and motion
@@ -376,19 +381,25 @@ those states from command timing.
 
 ### One-motor TV lift
 
-- Native Open/Close actions use the configured **Motor pulse count** and
-  **Motor pulse delay**, as on Standard OCTO bed motors. The bundled card's
-  press-and-hold controls move until released. For a repeatable timed action,
-  use `adjustable_bed.hold_control` with `control: tv_lift_up` or
-  `tv_lift_down` and `duration` in seconds (0.1–60). Timed travel does not prove
-  arrival at a position.
+- Native Open/Close actions use the configured **Movement per tap** and the
+  bed's repeat interval, as on Standard OCTO bed motors. The bundled card's
+  press-and-hold and optional tap-to-move controls use renewable holds and STOP.
+- For a repeatable timed action, use `adjustable_bed.hold_control` with
+  `control: tv_lift_up` or `tv_lift_down` and `duration` in seconds (0.1–60).
+  Timed travel does not prove arrival at a position.
+- For percentage height and named saved heights, enable **Configure > Estimated
+  positions** and calibrate **TV lift**. Fully lowered is 0%, fully raised is
+  100%. The card shows an estimated-height slider and saved positions; reference
+  recovery and remote-use invalidation follow the
+  [estimated-position rules](../ESTIMATED_POSITIONS.md). Calibration, tracking
+  and recall are tested offline; their physical accuracy remains unverified.
 - The official OCTO device list identifies `RTV` as **Lift 1M**, and the
   official app controls it through Standard OCTO motor 1 (`0x02`).
 - An automatically discovered `RTV` defaults to one motor and exposes one **TV
   Lift** cover with Raise, Lower, and Stop controls. You can also select one
   motor manually for a Standard OCTO controller.
 - The lift is deliberately not presented as an adjustable bed. Bed-only controls
-  such as Flat, Back + Legs Up, memory positions, lights, and synchro mode are
+  such as Flat, Back + legs up, memory positions, lights, and Controller sync are
   suppressed even if a malformed or unexpected capability response advertises
   them. Position feedback is not available.
 - The packet implementation is derived from the official OCTO app; physical RTV
@@ -479,9 +490,10 @@ the bed's PIN.
 - **PIN not required:** finish setup after capability discovery confirms this.
 - **Required or rejected:** enter or correct the PIN and retry without losing
   the other settings.
-- **Could not verify:** the entry remains unsaved. Wake the bed, close other
-  connected apps, check the selected Bluetooth adapter or proxy, and retry.
-  A timeout or connection failure does not mean the PIN is wrong.
+- **Could not verify:** wake the bed, close other connected apps, check the
+  selected Bluetooth adapter or proxy, and choose **Check again**, or choose
+  **Finish setup anyway** to save the entry without a verdict. A timeout or
+  connection failure does not mean the PIN is wrong.
 
 Further setup rules:
 
@@ -523,8 +535,7 @@ command.
 
 ### PIN protocol
 
-`CAP_BLE_PIN` (`0x000003`) carries three separate flags. Per a clean-room
-analysis of OCTO Smart Control 1.03.01 (versionCode 10301):
+`CAP_BLE_PIN` (`0x000003`) carries three separate flags. Per OCTO Smart Control 1.03.01 (versionCode 10301):
 
 | Field | Meaning |
 |-------|---------|
@@ -540,7 +551,8 @@ analysis of OCTO Smart Control 1.03.01 (versionCode 10301):
 - The integration handles the LOCK push, tracks STATE responses, and retains the
   25-second keepalive fallback when authentication requires it.
 - Standard Octo setup reports rejected or inconclusive PIN checks before saving
-  the entry; see [PIN verification](#pin-verification-during-setup).
+  the entry, and can finish after an inconclusive one; see
+  [PIN verification](#pin-verification-during-setup).
 - The PIN feature does not exist in OCTO Smart Control 1.1.57 (versionCode
   10157); it was added by versionCode 10301.
 
@@ -562,8 +574,8 @@ integration whose controls do nothing.
 The official app hides *every* control while locked (motors, light and presets
 alike), so the app itself does not distinguish between them. Users have reported
 the under-bed light still responding while the motors do not, which is how this
-usually presents in the field, but that asymmetry is a field observation and is
-not established by the app.
+usually presents in the field, but that asymmetry is a field observation, not
+something the app shows.
 
 The integration raises a repair notification when capability discovery reports
 `CAP_BLE_PIN` locked while no PIN is configured. Enter the PIN in the
@@ -614,9 +626,9 @@ no PIN set (`CAP_BLE_PIN` `value[0]` becomes 0), so it is no longer locked.
 | `CTL_RCV2` (Receiver II) | `RC2` | Button on the controller **10x in quick succession** | Light flashes 1x |
 | `CTL_BMB` (BrickMini Basic) | `BMB` | Button on the controller **10x in quick succession** | Light flashes 1x |
 | `CTL_BRICK2` (Brick 2) | `OCTOBrick2` | Button **1x briefly, then 1x long (approx. 10 s)** | Beeps 3x briefly |
-| `9021` | not established | Button **1x briefly, then 1x long (approx. 10 s)** | Light flashes 1x |
-| `1001` | not established | Button **1x briefly, then 1x long (approx. 10 s)** | Beeps 3x briefly |
-| `CTL_LIFT_MICRO` | not established | Reset from the **remote**, not the controller (below) | See below |
+| `9021` | unknown | Button **1x briefly, then 1x long (approx. 10 s)** | Light flashes 1x |
+| `1001` | unknown | Button **1x briefly, then 1x long (approx. 10 s)** | Beeps 3x briefly |
+| `CTL_LIFT_MICRO` | unknown | Reset from the **remote**, not the controller (below) | See below |
 
 The BLE-name column is a best-effort match against the official name prefixes;
 only the first three are confident. If your receiver is not one of those, pick
@@ -658,7 +670,7 @@ authoritative. The app exposes these direct BLE controls:
 | Light sensitivity, 6 / 35 / 85 | Select |
 | Remote teach | Button, only when active and PIN-unlocked |
 
-- Read-only and inactive records do not create writable controls.
+- Inactive records do not create controls. The read-only flag does not hide them.
 - The RGB and RGBWI records keep their own metadata and values. Switching color
   modes writes only the requested record; the RGBWI intensity remains unchanged
   unless an RGBW brightness value is sent.
@@ -708,10 +720,10 @@ If one configured Octo entry only moves one side of the bed:
 
 1. Add the other Octo BLE address as a second Adjustable Bed device.
 2. Rename the two entries during setup so they are clearly left/right.
-3. Use the `Synchro Mode` switch if your hardware supports linked movement.
+3. Use the **Controller sync** switch if your hardware supports linked movement.
 
 The official Octo app handles this by storing separate left/right device
-addresses and switching between them. Also note that the `Back + Legs Up`
+addresses and switching between them. Also note that the `Back + legs up`
 preset only moves both motors on the currently connected controller; it does
 not mean both bed sides.
 
@@ -727,10 +739,10 @@ device.
   same side (Ref #612). Existing automatic pairs adopt the corrected policy on
   reload.
 - Automatic mode falls back to sequential switching if the adapter reports that
-  the second link exhausted its connection slots, and **explicit sequential
-  mode** still visits the two sides in turn. This changes integration
-  scheduling, not controller commands, authentication, or timing.
-- When explicitly configured for sequential switching, the paired coordinator
+  the second link exhausted its connection slots. There is no setting to choose
+  sequential switching. This changes integration scheduling, not controller
+  commands, authentication, or timing.
+- While switching sequentially, the paired coordinator
   follows the stricter control-screen contract: a disconnect error that still
   reports an active physical link is retained and reported, and sequential
   switching stops before connecting the other address.
@@ -739,7 +751,7 @@ device.
   a one-motor RTV cannot be paired with a two-motor RC2.
 - This design matches three-device installations such as two `RC2` bed sides
   plus one `RTV` TV lift.
-- `Synchro Mode`, when advertised by a receiver, remains a hardware capability
+- **Controller sync**, when advertised by a receiver, remains a hardware capability
   and is not software grouping across arbitrary entries.
 
 Unit tests cover left-then-right switching, abort-on-release-failure, PIN
@@ -749,7 +761,7 @@ ordering tests, but still needs validation on real dual OCTO hardware.
 
 The APK proves the app uses one active GATT target, but it cannot prove whether
 bed firmware permits two simultaneous central connections or whether two
-Bluetooth proxies behave differently from one. It also does not establish a
+Bluetooth proxies behave differently from one. It also does not show a
 shared connection limit across two independent receivers. Single-proxy and
 dual-proxy operation remain hardware-validation items.
 
@@ -774,25 +786,17 @@ dual-proxy operation remain hardware-validation items.
 - Star2 defaults to 3 command pulses with a 50 ms delay. This cadence produced
   smooth, jerk-free movement on a DA1458x receiver during the hardware testing
   reported in [issue #510](https://github.com/kristofferR/ha-adjustable-bed/issues/510#issuecomment-5453581631).
-  Standard OCTO keeps its separate 350 ms default. Existing entries keep their
-  configured overrides; change Motor Pulse Count to `3` and Motor Pulse Delay to
-  `50` in the integration options if an older Star2 entry still has other
-  values.
+  Standard OCTO keeps its separate 350 ms default. An older Star2 entry keeps
+  any repeat interval it saved, which Configure no longer shows. Set
+  **Movement per tap** to `3`. If the bed still moves jerkily, removing the
+  entry and adding the bed again restores the 50 ms interval, but the new
+  entry gets new entities.
 
 ## Notes
 
 ### Analysis provenance
 
-- **OCTO Smart Control 1.03.02 (version code 10302):** the protocol
-  implementation follows the accepted clean-room analysis of
-  `de.octoactuators.octosmartcontrolapp` version 1.03.02, acquired as a complete
-  19 APK / 21 member set. The evidence establishes app behavior for that
-  delivered artifact. It does not establish that the delivery contains every
-  Play Store variant or all 57 optional locale splits. No physical bed was
-  available for validation, so hardware behavior remains unverified and is
-  deferred for real users after beta or release.
-- The complete finding ledger, including already-covered behavior and explicit
-  exclusions, is in [row030 dispositions](../apk-analysis/dispositions/row030-octo-smart-control.md).
+Based on OCTO Smart Control 1.03.02 (`de.octoactuators.octosmartcontrolapp`).
 
 #### Official app recheck (1.03.01)
 

@@ -1,0 +1,243 @@
+"""The bed-type list's rows: family labels, protocol routes and product questions (#676)."""
+
+from unittest.mock import AsyncMock, patch
+
+import pytest
+from homeassistant.const import CONF_ADDRESS, CONF_NAME
+
+from custom_components.adjustable_bed import const
+from custom_components.adjustable_bed.app_families import (
+    APP_FAMILIES,
+    answer_family,
+    question_family,
+)
+from custom_components.adjustable_bed.config_flow import (
+    AdjustableBedConfigFlow,
+    AdjustableBedOptionsFlow,
+    _bed_type_selector,
+    _family_rows,
+)
+from custom_components.adjustable_bed.detection import (
+    PROTOCOL_ROUTES,
+    bed_type_label,
+    get_bed_type_options,
+    resolve_bed_type_choice,
+)
+from tests.form_helpers import form_fields, start_new_bed, suggested
+from tests.test_sleepys_family_flow import entry_for
+
+ADDRESS = "11:22:33:44:55:66"
+
+
+def test_every_family_question_has_one_family_row():
+    rows = [family.row for family in APP_FAMILIES]
+    steps = [family.step for family in APP_FAMILIES]
+    assert len(set(rows)) == len(set(steps)) == len(APP_FAMILIES)
+    # Each row opens its own family's question.
+    assert all(question_family(family.row) is family for family in APP_FAMILIES)
+
+
+@pytest.mark.parametrize("show_saved_id", [False, True], ids=["setup", "configure"])
+def test_a_rows_family_is_the_family_its_journey_asks(show_saved_id):
+    """Each row of a family's journey reads "<app> · <family>"; other rows name themselves.
+
+    Configure lists more rows by name, such as the Richmat apps, and they follow
+    the same rule.
+    """
+    rows = _bed_type_selector(const.BED_TYPE_LINAK, show_saved_id=show_saved_id).rows()
+    for label, choice in rows.items():
+        bed_type, variant = resolve_bed_type_choice(choice)
+        declared = answer_family(bed_type, variant) or question_family(bed_type)
+        family = declared.name if declared is not None else None
+        if family is None:
+            assert " · " not in label, label
+        else:
+            app, separator, named = label.rpartition(" · ")
+            assert separator and named == family, label
+            # The family is named once, never again inside the app part.
+            assert not app.endswith(f"({family})"), label
+    assert rows["Heal Every Night app · Keeson"] == "keeson:heal_every_night"
+    assert rows["Woosa Sleep app · Solace"] == "solace:woosa"
+    if show_saved_id:
+        assert rows["Revive Control app · Richmat"] == const.BED_TYPE_RICHMAT_REVIVE
+
+
+def test_the_brand_list_names_a_detected_routes_family_first():
+    """A detected route takes its family row's value, and the row still reads brand first."""
+    rows = dict(_family_rows(const.BED_TYPE_OKIN_UUID))
+    assert rows[const.BED_TYPE_OKIN_UUID].startswith("Okin: ")
+    assert const.BED_TYPE_FURNIMOVE not in rows
+
+
+def test_protocol_routes_are_off_the_list_but_reachable():
+    listed = {option["value"] for option in get_bed_type_options()}
+    assert not PROTOCOL_ROUTES & listed
+    configure = _bed_type_selector(const.BED_TYPE_LINAK, show_saved_id=True)
+    assert set(configure.rows().values()) >= PROTOCOL_ROUTES
+    # A detected protocol route is still its own row on a discovered bed's list.
+    assert const.BED_TYPE_OKIN_HANDLE in _bed_type_selector(const.BED_TYPE_OKIN_HANDLE).rows().values()
+
+
+async def test_the_good_vibe_row_asks_its_product_searchably(hass, mock_bluetooth_service_info):
+    """One row, then a searchable product question the app's name rule suggests."""
+    from custom_components.adjustable_bed.beds.goodvibe.catalog import (
+        PROFILE_CHOICES as GOODVIBE_PROFILES,
+    )
+
+    rows = {option["value"] for option in get_bed_type_options()}
+    assert const.BED_TYPE_GOODVIBE in rows
+    assert sum(resolve_bed_type_choice(row)[0] == const.BED_TYPE_GOODVIBE for row in rows) == 1
+    mock_bluetooth_service_info.name = "6BRM-1234"
+    flow = AdjustableBedConfigFlow()
+    flow.hass, flow.context = hass, {}
+    flow._discovery_info = mock_bluetooth_service_info
+    result = await start_new_bed(flow, "picked", const.BED_TYPE_GOODVIBE)
+    assert result["step_id"] == "profile_questions"
+    marker = next(m for m in result["data_schema"].schema if m == const.CONF_PROTOCOL_VARIANT)
+    picker = result["data_schema"].schema[marker]
+    assert hasattr(picker, "rows") and len(picker.rows()) == len(GOODVIBE_PROFILES)
+    # The suggestion is a default the user confirms, shown by its label.
+    assert marker.default() == GOODVIBE_PROFILES["selector-0001"]
+    result = await flow.async_step_profile_questions({const.CONF_PROTOCOL_VARIANT: "6CRM"})
+    assert result["step_id"] == "finish_settings"
+    with patch.object(flow, "_finish_with_verify", new=AsyncMock()) as finish:
+        await flow.async_step_finish_settings({CONF_NAME: "Bed"})
+    saved = finish.call_args.args[0]
+    assert (saved[const.CONF_BED_TYPE], saved[const.CONF_PROTOCOL_VARIANT]) == (
+        const.BED_TYPE_GOODVIBE,
+        "selector-0002",
+    )
+
+
+async def test_a_typed_hjbed_guesses_no_product(hass):
+    flow = AdjustableBedConfigFlow()
+    flow.hass, flow.context = hass, {}
+    result = await start_new_bed(flow, "typed", const.BED_TYPE_HJBED, ADDRESS)
+    assert result["step_id"] == "profile_questions"
+    # No name to suggest from, so nothing is preselected.
+    assert suggested(result, const.CONF_PROTOCOL_VARIANT) is None
+    fields = {m.schema for m in form_fields(result["data_schema"])}
+    assert fields == {const.CONF_PROTOCOL_VARIANT}
+
+
+async def test_configure_keeps_a_saved_good_vibe_product(hass):
+    entry = entry_for(
+        hass,
+        {
+            CONF_ADDRESS: ADDRESS,
+            const.CONF_BED_TYPE: const.BED_TYPE_GOODVIBE,
+            const.CONF_PROTOCOL_VARIANT: "selector-0002",
+        },
+    )
+    flow = AdjustableBedOptionsFlow(entry)
+    flow.hass, flow.handler = hass, entry.entry_id
+    form = await flow._async_options_form(None, step_id="settings")
+    # The product picks the route, which changes in Reconfigure.
+    assert const.CONF_PROTOCOL_VARIANT not in {m.schema for m in form["data_schema"].schema}
+    with patch.object(hass.config_entries, "async_schedule_reload"):
+        result = await flow._async_options_form({}, step_id="settings")
+    assert result["type"] == "create_entry"
+    assert entry.data[const.CONF_PROTOCOL_VARIANT] == "selector-0002"
+    assert "Good Vibe" in bed_type_label(const.BED_TYPE_GOODVIBE)
+
+
+@pytest.mark.parametrize(
+    ("bed_type", "variant"),
+    [(const.BED_TYPE_CASPER_BASE, "caspermax"), (const.BED_TYPE_COMFORT_ENHANCEMENTS, "mc3")],
+)
+async def test_an_app_whose_route_is_its_product_is_reachable_from_the_app_list(
+    hass, bed_type, variant
+):
+    """Its row is in the app list, and the app's product or layout is asked next."""
+    from custom_components.adjustable_bed.validators import get_variants_for_bed_type
+
+    flow = AdjustableBedConfigFlow()
+    flow.hass, flow.context = hass, {}
+    result = await flow.async_step_select_app()
+    assert bed_type in result["data_schema"].schema[const.CONF_BED_TYPE].rows().values()
+    result = await start_new_bed(flow, "typed", bed_type, ADDRESS)
+    assert result["step_id"] == "profile_questions"
+    assert {m.schema for m in form_fields(result["data_schema"])} == {const.CONF_PROTOCOL_VARIANT}
+    # Nothing is guessed.
+    assert suggested(result, const.CONF_PROTOCOL_VARIANT) is None
+    marker = next(m for m in result["data_schema"].schema if m == const.CONF_PROTOCOL_VARIANT)
+    picker = result["data_schema"].schema[marker]
+    label = get_variants_for_bed_type(bed_type)[variant]
+    result = await flow.async_step_profile_questions(
+        {const.CONF_PROTOCOL_VARIANT: label if hasattr(picker, "rows") else variant}
+    )
+    assert result["step_id"] == "finish_settings"
+    with patch.object(flow, "_finish_with_verify", new=AsyncMock()) as finish:
+        await flow.async_step_finish_settings({CONF_NAME: "Bed"})
+    saved = finish.call_args.args[0]
+    assert (saved[const.CONF_BED_TYPE], saved[const.CONF_PROTOCOL_VARIANT]) == (bed_type, variant)
+    if variant == "mc3":
+        # The answered layout's own profile settles what it owns: MC3 has no massage.
+        assert saved[const.CONF_HAS_MASSAGE] is False
+
+
+# A bed type only 4.x could set up: its beds keep it, and no list offers it.
+_DETECTION_ONLY = {
+    const.BED_TYPE_LEGGETT_PLATT: "finds Gen2 or MlRM when it connects",
+}
+
+
+def test_every_bed_a_user_can_own_can_be_chosen_in_setup():
+    """Each bed type is a row of the app list, a family answer or an Okin receiver."""
+    from custom_components.adjustable_bed.config_flow import OKIN_RECEIVER_ROUTES
+
+    offered = {
+        resolve_bed_type_choice(choice)[0] for choice in _bed_type_selector(None).rows().values()
+    }
+    offered |= {answer.bed_type for family in APP_FAMILIES for answer in family.answers.values()}
+    offered |= set(OKIN_RECEIVER_ROUTES)
+    assert set(const.SUPPORTED_BED_TYPES) - offered == set(_DETECTION_ONLY)
+
+
+def test_personal_comfort_is_a_row_everywhere_a_comparable_app_is():
+    for rows in (
+        _bed_type_selector(None).rows().values(),
+        _bed_type_selector(const.BED_TYPE_LINAK, show_saved_id=True).rows().values(),
+        (choice for choice, _label in _family_rows()),
+    ):
+        assert "personal_comfort" in set(rows)
+
+
+async def test_personal_comfort_asks_its_unit_from_its_row(hass):
+    flow = AdjustableBedConfigFlow()
+    flow.hass, flow.context = hass, {}
+    result = await start_new_bed(flow, "typed", "personal_comfort", ADDRESS)
+    assert result["step_id"] == "profile_questions"
+    assert const.CONF_PROTOCOL_VARIANT in {m.schema for m in form_fields(result["data_schema"])}
+    # Nothing is guessed.
+    assert suggested(result, const.CONF_PROTOCOL_VARIANT) is None
+
+
+async def test_the_brand_list_asks_which_okin_receiver_in_plain_words(hass):
+    from custom_components.adjustable_bed.config_flow import OKIN_RECEIVER_ROUTES
+
+    rows = dict(_family_rows())
+    assert not PROTOCOL_ROUTES & set(rows)
+    assert rows["okin_receivers"] == "Okin (other receivers)"
+    assert set(OKIN_RECEIVER_ROUTES) == PROTOCOL_ROUTES
+    flow = AdjustableBedConfigFlow()
+    flow.hass, flow.context = hass, {}
+    result = await flow.async_step_select_family({const.CONF_BED_TYPE: "Okin (other receivers)"})
+    assert result["step_id"] == "okin_receiver"
+    selector = result["data_schema"].schema["choice"]
+    # The dialog has no Back, so the question itself offers a way out.
+    assert selector.config["options"] == [*OKIN_RECEIVER_ROUTES, "not_sure"]
+    assert selector.config["translation_key"] == "okin_receiver_choice"
+    with patch.object(flow, "_async_after_app_choice", new=AsyncMock()) as after:
+        await flow.async_step_okin_receiver({"choice": const.BED_TYPE_OKIN_FFE})
+    after.assert_awaited_once()
+    assert flow._selected_bed_type == const.BED_TYPE_OKIN_FFE
+    with patch.object(flow, "async_step_diagnostic", new=AsyncMock()) as diagnostic:
+        await flow.async_step_okin_receiver({"choice": "not_sure"})
+    diagnostic.assert_awaited_once()
+    # A protocol route submitted by its ID, as the brand list once offered it, still works.
+    flow = AdjustableBedConfigFlow()
+    flow.hass, flow.context = hass, {}
+    with patch.object(flow, "_async_after_app_choice", new=AsyncMock()):
+        await flow.async_step_select_family({const.CONF_BED_TYPE: const.BED_TYPE_OKIN_ORE})
+    assert flow._selected_bed_type == const.BED_TYPE_OKIN_ORE

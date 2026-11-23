@@ -3,16 +3,19 @@
 from __future__ import annotations
 
 import asyncio
+from collections.abc import Awaitable, Callable
 from datetime import UTC, datetime
+from typing import cast
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-from custom_components.adjustable_bed.beds.rmcontrol import (
+from custom_components.adjustable_bed.beds.rmcontrol.controller import (
     RmcontrolController,
     detect_rmcontrol_transport,
 )
-from custom_components.adjustable_bed.rmcontrol_protocol import Notification
+from custom_components.adjustable_bed.beds.rmcontrol.protocol import Notification
+from tests.state_helpers import published, state_writer
 
 
 def controller(
@@ -127,7 +130,7 @@ def test_native_controls_still_reject_conflicting_main_page_occurrences() -> Non
 async def test_local_items_never_become_ble_packets() -> None:
     ctrl = controller("E3RM")
     ctrl.write_command = AsyncMock()
-    with pytest.raises(ValueError, match="local UI"):
+    with pytest.raises(ValueError, match="cannot be used from Home Assistant"):
         await ctrl.async_execute_product_action("deviceFunctionItemMemory")
     ctrl.write_command.assert_not_called()
 
@@ -147,15 +150,23 @@ async def test_exact_conflicting_occurrence_has_separate_button() -> None:
         assert ctrl.write_command.call_args_list[0].args[0][3] == action.short_opcode
     specs = ctrl.controller_button_specs
     assert len({spec.key for spec in specs}) == len(specs)
-    assert all(not spec.entity_registry_enabled_default for spec in specs)
+    # Neither copy is the bed's own memory 1 recall, so each keeps a button.
+    assert sum("itemmemoryposition1_" in spec.key and spec.key.endswith("_short") for spec in specs) == 2
 
 
 async def test_product_button_callback_uses_selected_occurrence() -> None:
     ctrl = controller()
     ctrl.write_command = AsyncMock()
-    spec = next(spec for spec in ctrl.controller_button_specs if "pillowup" in spec.key)
+    # The bed's own pillow cover sends this product's pillow control.
+    assert not any("pillowup" in spec.key for spec in ctrl.controller_button_specs)
+    spec = next(spec for spec in ctrl.controller_button_specs if spec.key.endswith("_long"))
+    action = next(
+        a
+        for a in ctrl.product_profile.actions
+        if spec.key.endswith(f"{a.action.removeprefix('deviceFunction')}_{a.occurrence}_long".lower())
+    )
     await spec.press_fn(ctrl)
-    assert ctrl.write_command.call_args_list[0].args[0][3] == 0x3F
+    assert ctrl.write_command.call_args_list[0].args[0][3] == action.long_opcode
 
 
 async def test_fixed_queue_spacing_and_cancelled_write_cleanup() -> None:
@@ -210,9 +221,7 @@ async def test_notify_exact_role_probes_buffer_and_state_forwarding() -> None:
     assert not ctrl.supports_rmcontrol_alarm
     callback(None, bytearray.fromhex("0078"))
     assert not ctrl.supports_rmcontrol_alarm  # This exact product has no alarmList.
-    ctrl._coordinator.handle_controller_state_updates.assert_called_with(
-        {"rmcontrol_capability_alarm": True}
-    )
+    assert published(*ctrl._coordinator.handle_controller_state_updates.call_args.args) == {"rmcontrol_capability_alarm": True}
     await ctrl.stop_notify()
     client.stop_notify.assert_awaited_once_with(notify_uuid)
 
@@ -326,7 +335,7 @@ def test_reported_state_precedes_entity_discovery_callback_and_retains_alarm_rec
     ctrl = controller()
     assert ctrl.controller_state_sensor_specs == ()
     snapshots = []
-    ctrl._coordinator.handle_controller_state_updates.side_effect = lambda _: snapshots.append(
+    ctrl._coordinator.handle_controller_state_updates.side_effect = lambda *_: snapshots.append(
         {spec.key for spec in ctrl.controller_state_sensor_specs}
     )
     ctrl._accept_notification(Notification("light_timer", {"seconds": 120}))
@@ -346,10 +355,8 @@ def test_reported_state_precedes_entity_discovery_callback_and_retains_alarm_rec
             )
         )
     assert set(ctrl.protocol_diagnostics["last_received_alarm_records"]) == {1, 2}
-    alarm_spec = next(
-        spec for spec in ctrl.controller_state_sensor_specs if spec.key == "rmcontrol_alarm_record"
-    )
-    assert "rmcontrol_repeat_alarm_command" in alarm_spec.attribute_keys
+    # The last received records are no authoritative alarm list: diagnostics only.
+    assert "rmcontrol_alarm_record" not in {spec.key for spec in ctrl.controller_state_sensor_specs}
 
 
 async def test_reconnect_clears_previously_forwarded_telemetry() -> None:
@@ -362,7 +369,7 @@ async def test_reconnect_clears_previously_forwarded_telemetry() -> None:
     client.services.get_characteristic.return_value.properties = ["notify"]
     ctrl.write_command = AsyncMock()
     await ctrl.start_notify()
-    cleared = ctrl._coordinator.handle_controller_state_updates.call_args.args[0]
+    cleared = published(*ctrl._coordinator.handle_controller_state_updates.call_args.args)
     assert cleared["under_bed_lights_rgb"] is None
     assert cleared["under_bed_lights_on"] is None
     assert cleared["rmcontrol_light_timer_seconds"] is None
@@ -377,7 +384,7 @@ async def test_alarm_query_invalidates_previous_observations_without_claiming_de
     ctrl._accept_notification(Notification("repeat_alarm", {"alarm_id": 1, "hour": 7}))
     await ctrl.rmcontrol_query_alarms()
     assert ctrl.protocol_diagnostics["last_received_alarm_records"] == {}
-    assert ctrl._coordinator.handle_controller_state_updates.call_args.args[0] == {
+    assert published(*ctrl._coordinator.handle_controller_state_updates.call_args.args) == {
         "rmcontrol_repeat_alarm_alarm_id": None,
         "rmcontrol_repeat_alarm_hour": None,
     }
@@ -395,10 +402,11 @@ async def test_alarm_delete_invalidates_only_the_displayed_slot(deleted_id: int)
     assert set(ctrl.protocol_diagnostics["last_received_alarm_records"]) == {3 - deleted_id}
     if deleted_id == 2:
         assert "rmcontrol_repeat_alarm_alarm_id" not in ctrl._reported_state
-        ctrl._coordinator.handle_controller_state_updates.assert_called_once_with({
+        assert ctrl._coordinator.handle_controller_state_updates.call_count == 1
+        assert published(*ctrl._coordinator.handle_controller_state_updates.call_args.args) == {
             "rmcontrol_repeat_alarm_alarm_id": None,
             "rmcontrol_repeat_alarm_hour": None,
-        })
+        }
     else:
         assert ctrl._reported_state["rmcontrol_repeat_alarm_alarm_id"] == 2
         ctrl._coordinator.handle_controller_state_updates.assert_not_called()
@@ -440,7 +448,7 @@ async def test_alarm_time_sync_startup_does_not_require_repeat_or_reply() -> Non
     client.services.get_characteristic.return_value.properties = ["notify"]
     ctrl.write_command = AsyncMock()
     with patch(
-        "custom_components.adjustable_bed.beds.rmcontrol.dt_util.now",
+        "custom_components.adjustable_bed.beds.rmcontrol.controller.dt_util.now",
         return_value=datetime(1970, 1, 1, tzinfo=UTC),
     ):
         await ctrl.start_notify()
@@ -507,7 +515,7 @@ async def test_parn_enforces_exact_source_eight_color_palette() -> None:
 def test_timer_report_updates_select_and_diagnostic(seconds: int, option: str | None) -> None:
     ctrl = controller()
     ctrl._accept_notification(Notification("light_timer", {"seconds": seconds}))
-    updates = ctrl._coordinator.handle_controller_state_updates.call_args.args[0]
+    updates = published(*ctrl._coordinator.handle_controller_state_updates.call_args.args)
     assert updates["light_timer_option"] == option
     assert updates["rmcontrol_light_timer_seconds"] == seconds
 
@@ -518,7 +526,7 @@ async def test_reconnect_waits_for_delayed_menu_capabilities() -> None:
     client.start_notify = AsyncMock()
     client.services.get_characteristic.return_value.properties = ["notify"]
     ctrl.write_command = AsyncMock()
-    with patch("custom_components.adjustable_bed.beds.rmcontrol._CAPABILITY_TIMEOUT", 1):
+    with patch("custom_components.adjustable_bed.beds.rmcontrol.controller._CAPABILITY_TIMEOUT", 1):
         setup = asyncio.create_task(ctrl.start_notify())
         await asyncio.sleep(0)
         assert not setup.done()
@@ -537,16 +545,19 @@ async def test_reconnect_waits_for_delayed_menu_capabilities() -> None:
     await ctrl.rmcontrol_anti_snore_switch(True)
 
 
-async def test_missing_capability_reply_times_out_and_late_reply_still_enables() -> None:
+async def test_unanswered_light_probe_completes_discovery_and_late_reply_still_enables() -> None:
+    """A bed without a light never answers; discovery ends so the entity sweep can run."""
     ctrl = controller("6ERM", nordic=True)
     client = ctrl._coordinator.client
     client.start_notify = AsyncMock()
     client.services.get_characteristic.return_value.properties = ["notify"]
     ctrl.write_command = AsyncMock()
-    with patch("custom_components.adjustable_bed.beds.rmcontrol._CAPABILITY_TIMEOUT", 0):
+    with patch("custom_components.adjustable_bed.beds.rmcontrol.controller._CAPABILITY_TIMEOUT", 0):
         await ctrl.start_notify()
     assert not ctrl.supports_light_color_control
-    assert not ctrl.controller_entity_discovery_complete
+    assert ctrl.controller_entity_discovery_complete
+    # The sweep keeps the light rows a late reply would bring back.
+    assert {("select", "light_timer"), ("light", "under_bed_lights")} <= ctrl.retained_entity_keys
     assert ctrl._notify_uuid is not None
     ctrl._accept_notification(Notification("capability", {"light": True}))
     assert ctrl.supports_light_color_control
@@ -575,7 +586,7 @@ async def test_replacement_controller_clears_coordinator_session_state() -> None
     ctrl = controller(nordic=True)
     state = {"unrelated": 42}
     ctrl._coordinator.controller_state = state
-    ctrl._coordinator.handle_controller_state_updates.side_effect = state.update
+    ctrl._coordinator.handle_controller_state_updates.side_effect = state_writer(state)
     ctrl._accept_notification(Notification("music", {"playing": True}))
     ctrl._accept_notification(Notification("lock", {"locked": True}))
     ctrl._accept_notification(Notification("massage", {"head_strength": 3}))
@@ -612,5 +623,184 @@ async def test_zone_strength_actions_use_intensity_controls(code: str, paired: b
         ]
     else:
         names = [spec.name for spec in ctrl.controller_button_specs]
-        assert any("Massage Head Instensity Strengthen" in name for name in names)
-        assert any("Massage Foot Instensity Strengthen" in name for name in names)
+        assert "Massage head intensity up" in names
+        assert "Massage foot intensity up" in names
+
+
+def _products() -> list[str]:
+    from custom_components.adjustable_bed.beds.rmcontrol.profiles import RICHMAT_PRODUCT_CODES
+
+    codes = []
+    for code in RICHMAT_PRODUCT_CODES:
+        try:
+            controller(code)
+        except ValueError:
+            continue
+        codes.append(code)
+    return codes
+
+
+@pytest.mark.parametrize("nordic", [False, True])
+async def test_massage_timer_buttons_are_one_select_sending_the_same_frames(nordic: bool) -> None:
+    """A timer button the select replaces sent exactly the select's frames."""
+    checked = 0
+    for code in _products():
+        ctrl = controller(code, nordic=nordic)
+        timers = {
+            a
+            for a in ctrl.product_profile.actions
+            if "MinuteTimer" in a.action and a.action.startswith("deviceFunctionItemMassage")
+        }
+        keys = {s.key for s in ctrl.controller_button_specs}
+        if not ctrl.supports_massage_timer:
+            # A single duration keeps its button.
+            assert len({a.action for a in timers}) < 2 or not any(
+                ctrl._lookup(a.action.removeprefix("deviceFunctionItem")) for a in timers
+            )
+            continue
+        checked += 1
+        assert not ctrl.massage_timer_can_turn_off and ctrl.auto_enable_massage
+        removed = 0
+        for action in timers:
+            key = (
+                f"product_action_rmcontrol_{action.getter.removeprefix('get _ ')}_"
+                f"{action.action.removeprefix('deviceFunction')}_{action.occurrence}_short"
+            ).lower()
+            if key in keys:
+                continue
+            removed += 1
+            minutes = int(action.action.removeprefix("deviceFunctionItemMassage")[:2])
+            sent = []
+            for run in (
+                lambda c, a=action: c.async_execute_product_action(
+                    a.action, getter=a.getter, occurrence=a.occurrence
+                ),
+                lambda c, m=minutes: c.set_massage_timer(m),
+            ):
+                fresh = controller(code, nordic=nordic)
+                fresh.write_command = AsyncMock()
+                await run(fresh)
+                sent.append([call.args for call in fresh.write_command.call_args_list])
+            assert sent[0] == sent[1] != []
+        assert removed >= len(ctrl.massage_timer_options)
+        with pytest.raises(ValueError):
+            await ctrl.set_massage_timer(15)
+    assert checked
+
+
+def test_product_buttons_skip_what_the_bed_entities_send_and_keep_unique_ids() -> None:
+    ctrl = controller("A4RN")
+    keys = {s.key for s in ctrl.controller_button_specs}
+    # The TV preset entity sends the main page's TV; its save is a confirmed button.
+    assert not any(k.endswith("itemtvposition_1_short") for k in keys)
+    save = next(s for s in ctrl.controller_button_specs if s.name == "Save TV position")
+    assert save.key == "product_action_rmcontrol_detailspagedisplaylist_itemtvposition_5_long"
+    assert save.requires_confirmation and save.entity_registry_enabled_default
+    names = [s.name for s in ctrl.controller_button_specs]
+    assert len(names) == len(set(names))
+
+
+def _standard_commands(ctrl: RmcontrolController) -> list[Callable[[], Awaitable[None]]]:
+    """The commands the bed's own entities send, under the gates their platforms read."""
+    commands: list[Callable[[], Awaitable[None]]] = []
+    for spec in ctrl.motor_control_specs:
+        commands += [getattr(ctrl, f"move_{spec.key}_up"), getattr(ctrl, f"move_{spec.key}_down")]
+    for preset in ("flat", "zero_g", "anti_snore", "tv", "lounge"):
+        if getattr(ctrl, f"supports_preset_{preset}"):
+            commands.append(getattr(ctrl, f"preset_{preset}"))
+    for slot in range(1, ctrl.memory_slot_count + 1):
+        commands.append(lambda n=slot: ctrl.preset_memory(n))
+        if ctrl.is_memory_slot_programmable(slot):
+            commands.append(lambda n=slot: ctrl.program_memory(n))
+    if ctrl.supports_discrete_light_control:
+        commands += [ctrl.lights_on, ctrl.lights_off]
+    elif ctrl.supports_light_toggle_control:
+        commands.append(ctrl.lights_toggle)
+    for supported, command in (
+        (ctrl.supports_massage_toggle_control, ctrl.massage_toggle),
+        (ctrl.supports_massage_off_control, ctrl.massage_off),
+        (ctrl.supports_massage_mode_step_control, ctrl.massage_mode_step),
+    ):
+        if supported:
+            commands.append(command)
+    if ctrl.supports_head_massage_intensity_step_control:
+        commands += [ctrl.massage_head_up, ctrl.massage_head_down]
+    if ctrl.supports_foot_massage_intensity_step_control:
+        commands += [ctrl.massage_foot_up, ctrl.massage_foot_down]
+    if ctrl.supports_synchro:
+        commands += [lambda: ctrl.set_synchro(True), lambda: ctrl.set_synchro(False)]
+    commands += [lambda m=m: ctrl.set_massage_timer(m) for m in ctrl.massage_timer_options]
+    return commands
+
+
+@pytest.mark.parametrize("nordic", [False, True])
+async def test_a_control_without_a_button_sends_what_a_listed_entity_sends(nordic: bool) -> None:
+    """Every app control is reachable: a press without a button of its own sends
+    the same frames, repeats, delays and STOP as an entity that is listed."""
+
+    async def sent(ctrl: RmcontrolController, command: Awaitable[None]) -> tuple[object, ...]:
+        mock = cast(AsyncMock, ctrl.write_command)
+        mock.reset_mock()
+        await command
+        return tuple(
+            (call.args, tuple(sorted((k, v) for k, v in call.kwargs.items() if k != "cancel_event")))
+            for call in mock.call_args_list
+        )
+
+    told_apart = 0
+    for code in _products():
+        ctrl = controller(code, nordic=nordic)
+        ctrl.write_command = AsyncMock()
+        specs = ctrl.controller_button_specs
+        listed = {await sent(ctrl, spec.press_fn(ctrl)) for spec in specs}
+        listed |= {await sent(ctrl, command()) for command in _standard_commands(ctrl)}
+        for action in ctrl.product_profile.actions:
+            if action.action.startswith(("deviceFunctionItemTitle", "deviceFunctionSofa")):
+                continue
+            for long_press in (False, True):
+                try:
+                    frames = await sent(
+                        ctrl,
+                        ctrl.async_execute_product_action(
+                            action.action,
+                            getter=action.getter,
+                            occurrence=action.occurrence,
+                            long_press=long_press,
+                        ),
+                    )
+                except ValueError:
+                    continue  # Not a gesture this control has, or not a bed command.
+                assert frames in listed, (code, action, long_press)
+        told_apart += sum(not spec.entity_registry_enabled_default for spec in specs)
+    assert told_apart
+
+
+def test_a_copy_sending_another_command_keeps_a_disabled_button_told_apart() -> None:
+    ctrl = controller("B4RM", nordic=False)
+    specs = {s.key: s for s in ctrl.controller_button_specs}
+    # The main page holds All motors up until STOP; the motor list taps it once.
+    held = specs["product_action_rmcontrol_detailspagedisplaylist_itemallmotorup_5_short"]
+    assert held.translation_key == "all_motors_up" and held.entity_registry_enabled_default
+    tap = specs["product_action_rmcontrol_motorlist_itemallmotorup_4_short"]
+    assert tap.translation_placeholders == {"action": "All motor up (short press)"}
+    assert not tap.entity_registry_enabled_default
+    # No light entity sends N2RM's light on, so its button stays.
+    keys = {s.key for s in controller("N2RM").controller_button_specs}
+    assert "product_action_rmcontrol_richmatalarmlist_itembedlighton_2_short" in keys
+
+
+def test_diagnostics_leave_out_in_bed_and_sleep_status() -> None:
+    """The stop-music flag is derived from both, so it stays out too (PRIV-2)."""
+    ctrl = controller()
+    ctrl._reported_state.update(
+        {
+            "rmcontrol_anti_snore_in_bed_status": 1,
+            "rmcontrol_anti_snore_sleep_status": 1,
+            "rmcontrol_anti_snore_stop_music": True,
+            "rmcontrol_anti_snore_intervention_count": 3,
+        }
+    )
+
+    state = ctrl.protocol_diagnostics["state"]
+
+    assert state == {"rmcontrol_anti_snore_intervention_count": 3}

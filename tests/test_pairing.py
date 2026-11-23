@@ -7,10 +7,10 @@ from homeassistant.const import CONF_ADDRESS
 
 from custom_components.adjustable_bed.const import (
     BED_TYPE_KAIDI,
-    BED_TYPE_OKIN_CB24,
+    BED_TYPE_QPLUS_APP,
     BED_TYPE_RONDURE,
-    BED_TYPE_SBI,
     BED_TYPE_SLEEP_NUMBER,
+    BED_TYPE_SMARTBED,
     CB24_BED_SELECTION_A,
     CB24_BED_SELECTION_B,
     CONF_BED_TYPE,
@@ -26,12 +26,11 @@ from custom_components.adjustable_bed.const import (
     KAIDI_VARIANT_SEAT_1,
     KAIDI_VARIANT_SEAT_1_2,
     KAIDI_VARIANT_SEAT_2,
-    OKIN_CB24_VARIANT_NEW,
     PAIR_MODE_SINGLE_ADDRESS,
+    QPLUS_VARIANT_SIDE_A,
+    QPLUS_VARIANT_SIDE_B,
     RONDURE_VARIANT_SIDE_A,
     RONDURE_VARIANT_SIDE_B,
-    SBI_VARIANT_SIDE_A,
-    SBI_VARIANT_SIDE_B,
     SIDE_LEFT,
     SIDE_RIGHT,
     SLEEP_NUMBER_VARIANT_LEFT,
@@ -45,10 +44,10 @@ from custom_components.adjustable_bed.pairing import (
     iter_children,
     make_pair_id,
     octo_snapshot_from_descriptor,
-    pair_layout_from_descriptor,
     pair_member_addresses,
     single_data_from_child,
     single_options_from_child,
+    standalone_config_after_split,
     supports_single_address_pairing,
     with_updated_child,
 )
@@ -195,7 +194,6 @@ class TestBuildPairEntryData:
         child = get_child(data, SIDE_LEFT)
         assert single_data_from_child(child) == original_data
         assert single_options_from_child(child) == original_options
-        assert pair_layout_from_descriptor(child) == layout
 
     def test_a_split_keeps_the_bond_state_the_side_actually_has(self):
         """A bond belongs to an address, so the frozen snapshot cannot own it.
@@ -206,13 +204,13 @@ class TestBuildPairEntryData:
         original_data = {
             "address": LEFT_ADDR,
             "name": "Left",
-            "bed_type": "okimat",
+            "bed_type": "okin_uuid",
             "ble_bond_established": True,
             "ble_bond_context": {"version": 1, "transport": "local", "source": "hci0"},
         }
         data = build_pair_entry_data(
             dict(original_data),
-            {"address": RIGHT_ADDR, "bed_type": "okimat"},
+            {"address": RIGHT_ADDR, "bed_type": "okin_uuid"},
             name="Master",
             left_origin_data=original_data,
         )
@@ -259,15 +257,98 @@ class TestBuildPairEntryData:
         assert restored[CONF_BLE_DEVICE_NAME] == "SealyMF Base"
 
 
+class TestSplitRetention:
+    """Decision 13 of #676: connection preferences survive a split, the rest reverts."""
+
+    def test_separate_address_split_keeps_current_connection_preferences(self):
+        original = {
+            "address": LEFT_ADDR,
+            "name": "Left",
+            "bed_type": "linak",
+            "motor_count": 2,
+            "preferred_adapter": "auto",
+        }
+        original_options = {"idle_disconnect_seconds": 40, "back_max_angle": 55.0}
+        data = build_pair_entry_data(
+            {**original, **original_options},
+            {"address": RIGHT_ADDR, "bed_type": "linak"},
+            name="Master",
+            left_origin_data=original,
+            left_origin_options=original_options,
+        )
+        data = with_updated_child(
+            data,
+            SIDE_LEFT,
+            {"preferred_adapter": "hci1", "motor_count": 4, "idle_disconnect_seconds": 90},
+        )
+        # Parent options win over the side descriptor, as at runtime.
+        restored, options = standalone_config_after_split(
+            data, {"connection_mode": "release"}, SIDE_LEFT
+        )
+        assert restored == {
+            **original,
+            "preferred_adapter": "hci1",
+            "idle_disconnect_seconds": 90,
+            "connection_mode": "release",
+            "profile_id": "linak",
+        }
+        assert options == {"back_max_angle": 55.0}
+
+    def test_split_derives_each_sides_profile_id_from_its_restored_route(self):
+        from custom_components.adjustable_bed.const import CONF_PROFILE_ID
+        from custom_components.adjustable_bed.profile_id import resolve_profile_id
+
+        # The original was saved before profile ids, the side carries another
+        # route's id, and a parent option changes the variant while combined.
+        original = {"address": LEFT_ADDR, "bed_type": "keeson", "protocol_variant": "ksbt"}
+        data = build_pair_entry_data(
+            {**original, CONF_PROFILE_ID: "keeson:ksbt"},
+            {"address": RIGHT_ADDR, "bed_type": "keeson", CONF_PROFILE_ID: "stale"},
+            name="Master",
+            left_origin_data=original,
+        )
+        for side in (SIDE_LEFT, SIDE_RIGHT):
+            restored, options = standalone_config_after_split(
+                data, {"protocol_variant": "base"}, side
+            )
+            assert restored[CONF_PROFILE_ID] == resolve_profile_id({**restored, **options})
+        left, _options = standalone_config_after_split(data, {}, SIDE_LEFT)
+        assert left[CONF_PROFILE_ID] == "keeson:ksbt"
+        right, _options = standalone_config_after_split(data, {}, SIDE_RIGHT)
+        assert right[CONF_PROFILE_ID] == "keeson"
+
+    def test_single_address_revert_keeps_current_connection_preferences(self):
+        original = {
+            "address": LEFT_ADDR,
+            "name": "Bed",
+            "bed_type": "smartbed",
+            "protocol_variant": "cb24_ab",
+            "preferred_adapter": "auto",
+            "idle_disconnect_seconds": 40,
+        }
+        data = build_single_address_pair_entry_data(
+            original, name="Bed", origin_options={"back_max_angle": 50.0}
+        )
+        data["preferred_adapter"] = "hci2"
+        side = iter_children(data)[0][CONF_SIDE]
+        restored, options = standalone_config_after_split(
+            data, {"idle_disconnect_seconds": 0}, side
+        )
+        assert restored["preferred_adapter"] == "hci2"
+        assert restored["idle_disconnect_seconds"] == 0
+        assert restored["bed_type"] == "smartbed"
+        assert options == {"back_max_angle": 50.0}
+
+
 class TestBuildSingleAddressPairEntryData:
     @pytest.mark.parametrize(
         ("bed_type", "left_key", "left_value", "right_value"),
         [
             (
-                BED_TYPE_SBI,
+                BED_TYPE_QPLUS_APP,
                 CONF_PROTOCOL_VARIANT,
-                SBI_VARIANT_SIDE_A,
-                SBI_VARIANT_SIDE_B,
+                QPLUS_VARIANT_SIDE_A,
+                QPLUS_VARIANT_SIDE_B,
             ),
             (
                 BED_TYPE_RONDURE,
@@ -276,7 +357,7 @@ class TestBuildSingleAddressPairEntryData:
                 RONDURE_VARIANT_SIDE_B,
             ),
             (
-                BED_TYPE_OKIN_CB24,
+                BED_TYPE_SMARTBED,
                 CONF_CB24_BED_SELECTION,
                 CB24_BED_SELECTION_A,
                 CB24_BED_SELECTION_B,
@@ -297,6 +378,9 @@ class TestBuildSingleAddressPairEntryData:
             CONF_BED_TYPE: bed_type,
             "name": "One physical bed",
         }
+        if bed_type == BED_TYPE_SMARTBED:
+            # Only the app's CB24AB receiver sends a side.
+            original[CONF_PROTOCOL_VARIANT] = "cb24_ab"
         data = build_single_address_pair_entry_data(
             original, name="Master", origin_options={"motor_count": 2}
         )
@@ -309,16 +393,19 @@ class TestBuildSingleAddressPairEntryData:
         assert get_child(data, SIDE_RIGHT)[left_key] == right_value
         assert single_data_from_child(get_child(data, SIDE_LEFT)) == original
 
+    def test_qplus_mx_is_refused(self):
+        """MX sends P2 frames, which carry no A/B selector."""
+        assert supports_single_address_pairing(BED_TYPE_QPLUS_APP, "both", product_type="H")
+        assert not supports_single_address_pairing(BED_TYPE_QPLUS_APP, "both", product_type="MX")
+
     def test_cbnew_is_refused(self):
-        assert not supports_single_address_pairing(
-            BED_TYPE_OKIN_CB24, OKIN_CB24_VARIANT_NEW
-        )
+        assert not supports_single_address_pairing(BED_TYPE_SMARTBED, "cb27new")
         with pytest.raises(ValueError, match="does not support"):
             build_single_address_pair_entry_data(
                 {
                     CONF_ADDRESS: LEFT_ADDR,
-                    CONF_BED_TYPE: BED_TYPE_OKIN_CB24,
-                    CONF_PROTOCOL_VARIANT: OKIN_CB24_VARIANT_NEW,
+                    CONF_BED_TYPE: BED_TYPE_SMARTBED,
+                    CONF_PROTOCOL_VARIANT: "cb27new",
                 },
                 name="Unsupported",
             )

@@ -1,17 +1,17 @@
 # Svane Remote
 
-**Status:** ❓ Needs testing (Svane Remote 1.8 profiles are artifact-verified; physical hardware unverified)
+**Status:** Partly tested (a LinON Pro bed moved and recalled memory with the earlier LinonPI implementation in [#152](https://github.com/kristofferR/ha-adjustable-bed/issues/152); the Svane Remote 1.8 profiles need testing)
 
 **Credit:** Reverse engineering by [kristofferR](https://github.com/kristofferR/ha-adjustable-bed)
 
 ## Known Models
 
 - Svane adjustable beds with the "Svane Bed" BLE name (LinonPI controller)
-- JMC400 beds (also in the Svane app), through the explicit P2 JMC400 profile
+- JMC400 beds (also in the Svane app), through the P2 JMC400 profile chosen in setup
 - Jensen LinOn beds ("Adjustable Bed"/"Jensen Bed") share these services but use
   the Jensen app's own frames: protocol variant `jensen_linon`, described in the
   [Jensen guide](jensen.md#linon). The separate [Jensen](jensen.md) and
-  [Jensen LinOn](jensen.md#linon) profiles retain their own behavior.
+  [Jensen LinOn](jensen.md#linon) profiles keep their own behavior.
 - Svane is a Norwegian bed manufacturer; its beds are primarily sold in
   Scandinavia. "LinON" appears to be Svane's internal name for its bed
   controller; it is not related to Linak despite the similar-sounding name.
@@ -22,25 +22,26 @@
 |----------|-----|------------|
 | ✅ | [Svane Remote](https://play.google.com/store/apps/details?id=com.svane.svaneremote) **Version 1.8 (8)** | `com.svane.svaneremote` |
 
-The app has two explicit BLE profiles. Earlier pre-audit analysis of this protocol
-used the package `com.produktide.svane.svaneremote`.
+The app has two profiles, chosen in setup. An earlier Svane app used the package
+`com.produktide.svane.svaneremote`.
 
 ## Features
 
 | Feature | Supported |
 |---------|-----------|
 | Motor Control | ✅ (2 app axes: head/backrest and feet/seat+footrest) |
-| Combined movement | ✅ (four head/feet combinations) |
-| Position Feedback | ❌ (opaque raw bytes as diagnostics only; no angles or sliders) |
-| Memory Presets | ✅ (2 host slots: Read and TV) |
-| Svane Position | ✅ (one-shot; Flat, Zero-G or Anti-Snore meaning unproven) |
-| Flat Preset | ❌ (dormant firmware command, not reachable) |
-| Under-bed Lights | ✅ (on/off, 5-100 intensity, held adjust; assumed state) |
+| Combined movement | ✅ (four head/feet combinations; separate `timed_move` calls on head and feet run together) |
+| Hold until release | ✅ (renewable `timed_move`) |
+| Position Feedback | ❌ (the raw values appear in diagnostics only) |
+| Memory Presets | ✅ (2 slots: Read and TV) |
+| Svane Position | ✅ (one press; whether it moves to Flat, Zero-G or Anti-Snore is not yet known) |
+| Flat Preset | ❌ |
+| Under-bed Lights | ✅ (on/off, brightness 5-100, hold to adjust; shows the last command sent, not a reading) |
 | Massage | ❌ |
 | Device information | ✅ (firmware, hardware, manufacturer diagnostics) |
 
 - The two axes keep the integration's existing `back` and `legs` cover keys.
-- Physical actuator count and numeric position units are unknown.
+- How many motors the bed has and what its position values mean are not known.
 - There are no measured-angle sensors or position sliders.
 
 ## Protocol Details
@@ -49,6 +50,9 @@ used the package `com.produktide.svane.svaneremote`.
 **Write Characteristic:** P1 role per service (table below); P2 `1234/1111`
 **Notify Characteristic:** `1234/1111` (old role, subscribed on both profiles)
 **Format:** P1 2-byte writes to direction-specific characteristics; P2 6-byte frames on `1111`
+
+P2 frames, and the lamp frames of both profiles, are [JMC400](jmc.md#svane-remote)
+frames.
 
 All short UUIDs expand to `0000xxxx-0000-1000-8000-00805f9b34fb`.
 
@@ -116,10 +120,11 @@ write to the correct service to control the intended motor.
 - Bed-type detection uses the head service `0000abcb-0000-1000-8000-00805f9b34fb`
   or a name containing `Svane Bed` or `Jensen Bed` (case-insensitive), so renamed
   beds such as "Svane Bed 2" still detect.
-- Select the Svane app explicitly. A new setup that keeps the multi-service
-  default and has a scanned name containing case-sensitive `JMC` stores the JMC
-  variant instead, following the app's own name rule. Existing entries retain
-  their stored variant.
+- Choose **Jensen Adjustable Sleep app (JMC400 and LinOn beds) and Svane Remote app · Jensen / Svane** in the bed-type list and answer the
+  [app and bed question](jensen.md#home-assistant-setup). For a scanned name
+  containing case-sensitive `JMC`, the question suggests the JMC400 profile,
+  following the app's own name rule, in Bluetooth and manual setup alike.
+  Existing entries retain their stored variant; **Reconfigure** changes it.
 - The source's individual discovery names are exactly case-sensitive `Svane Bed`
   and `JMC400`; its selected-name rule uses case-sensitive `JMC` to choose P2.
 - The shared JMC name and service also occur in the Jensen route and do not prove
@@ -191,8 +196,8 @@ The builder is not clamped to 100.
 
 ### Dormant commands
 
-The old dormant `3fff`, `3f40`, `3f80` and `3f81` writes are not reachable
-controls in this profile. Earlier versions of this guide described them as read
+The old dormant `3fff`, `3f40`, `3f80` and `3f81` writes are not controls in
+this profile. Earlier versions of this guide described them as read
 position, save position, recall position and flatten.
 
 ## Command Timing
@@ -203,9 +208,13 @@ position, save position, recall position and flatten.
   another 100 ms after work.
 - These are held refreshes, not a source fixed repeat count.
 - Ordinary cover actions use a bounded one-second host duration.
-- Generic `timed_move` uses its active task-local pulse plan to keep the selected
-  axis active through the caller's elapsed ceiling, with the same native cadence
-  and cleanup.
+- Generic `timed_move` streams the selected axis (#516) for the caller's
+  elapsed ceiling, with the same native cadence and cleanup. Calls on head and
+  feet run together: P1 refreshes head at the start of each 100 ms pass and feet
+  100 ms into it; P2 sends one mask carrying both. A renewable hold lease
+  ([Renewable holds](../SERVICES.md#renewable-holds)) keeps an axis moving until
+  the lease runs out. A new head press is written at once and never delays
+  feet's next refresh, so pressing head again and again cannot stall feet.
 - All selected targets validate before dispatch, including the existing
   delayed-feet minimum; the explicit service accepts 0.1–60 seconds. Feet-only
   actions and P1 combinations require more than 0.1 seconds.
@@ -222,7 +231,11 @@ position, save position, recall position and flatten.
   `1234/1111`. Explicit STOP sends this frame even when no held role is tracked,
   including during or after a memory recall.
 - Releasing one axis while the other remains active removes its mask and
-  continues the remaining refresh without an immediate global STOP.
+  continues the remaining refresh without an immediate global STOP. When two
+  `timed_move` calls stream together, the axis that ends first gets its own
+  release: P1 sends `0000` to its started role, P2 sends the mask without it.
+  The last axis out gets the normal release: P1 its role's `0000`, P2 the
+  global STOP. `svane_release_axis` and a cover's own Stop end only that axis.
 - Cancellation and an explicit axis release remain normal exit paths.
 - Cancellation, failed writes and controller detach attempt the actual movement
   releases independently of the cancelled event.
@@ -251,7 +264,7 @@ position, save position, recall position and flatten.
 ## Memory and presets
 
 - The **Svane position** action keeps the `preset_zero_g` button ID that existing
-  entries use. The artifact does not prove a Flat, Zero-G or Anti-Snore meaning.
+  entries use. Whether it means Flat, Zero-G or Anti-Snore is not known.
 - Preset, lamp and memory actions do not append movement STOP.
 - The two source-labelled positions are **Read** and **TV** (public numbered
   memory slots 1 and 2).
@@ -287,13 +300,13 @@ position, save position, recall position and flatten.
   slots pass validation.
 - Normal recall still appends no STOP. P2's explicit global STOP can interrupt
   recall independently of held-motion tracking.
-- P1's opaque absolute-position recall has no proven STOP on its position
+- P1's opaque absolute-position recall has no known STOP on its position
   characteristic and supplies no direction to select a directional release. Host
   STOP cancels a pending feet write during the one-second gap, but does not claim
   to halt a head recall already delivered. The integration does not guess a
   direction or write a fabricated STOP to the position characteristic.
 - Idle notification teardown does not append a global STOP; started held-motion
-  roles still receive their proven cleanup.
+  roles still receive their normal cleanup.
 
 ## Lamp
 
@@ -306,11 +319,11 @@ position, save position, recall position and flatten.
   same-target/profile reloads, while cold restart or profile reset loses it.
   Subsequent optimistic values are assumed; there is no native physical
   lamp-state feedback.
-- Lamp intensity is a persisted local preference, exposed through the established
+- Lamp intensity is a persisted local preference, exposed through the existing
   0-100 light level slider so existing entries keep their entity. Setting 0 turns
   the lamp off; other values snap to the app's 5-100 steps of five and command the
   lamp on.
-- Action buttons, the light level number and the assumed-state switch share that
+- Action buttons, the light level number and the assumed-state light share that
   local intent. Intent is published before delivery and remains local command
   intent after a failed or cancelled write, not physical readback.
 - Full signed-32-bit boundary vectors test the intensity builder, while the public
@@ -318,7 +331,7 @@ position, save position, recall position and flatten.
 
 ### Held adjustment
 
-- The frozen app's held adjustment begins after more than 200 ms while local
+- The app's held adjustment begins after more than 200 ms while local
   intent is on. It unconditionally reverses step at current intensity >=100 or
   <=6 before adding five: 90→95→100→95, and 10→5→10.
 - The held HA control accepts the same 5–100, step-five range as the intensity
@@ -350,7 +363,7 @@ position, save position, recall position and flatten.
   persisted preferences of every profile are kept, so switching back restores
   that profile's slots and intensity.
 - A shared options form cannot change a Svane profile across two separate
-  addresses: unpair and configure each side separately first.
+  addresses: separate the combined bed and configure each side first.
 - Common options and an unchanged rendered profile preserve mixed P1/P2 routes
   and target-local caches.
 
@@ -358,7 +371,7 @@ position, save position, recall position and flatten.
 
 - Earlier versions of this guide marked the previous LinonPI implementation
   ✅ Tested; the current app profiles have not been validated on physical
-  hardware. Physical captures are deferred to real users after beta/release.
+  hardware. Physical captures are deferred.
 - Classic RFCOMM, firmware updates, dead builders, phone-only functions and
   precise unsafe source fragments remain excluded. Earlier analysis identified
   the app's Classic Bluetooth route as OKIN-i devices, which this BLE integration
@@ -366,5 +379,4 @@ position, save position, recall position and flatten.
 
 ### Analysis provenance
 
-See the [complete disposition ledger](../apk-analysis/dispositions/row130-svane.md)
-for all 663 rows and every exclusion.
+Based on Svane Remote 1.8.

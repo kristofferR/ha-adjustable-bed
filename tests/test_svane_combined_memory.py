@@ -4,7 +4,7 @@ from unittest.mock import AsyncMock, patch
 
 import pytest
 from homeassistant.const import CONF_ADDRESS, CONF_NAME
-from pytest_homeassistant_custom_component.common import MockConfigEntry
+from pytest_homeassistant.common import MockConfigEntry
 
 from custom_components.adjustable_bed.button import (
     BUTTON_DESCRIPTIONS,
@@ -15,7 +15,7 @@ from custom_components.adjustable_bed.button import (
 from custom_components.adjustable_bed.const import (
     BED_TYPE_SVANE,
     CONF_BED_TYPE,
-    CONF_DISCONNECT_AFTER_COMMAND,
+    CONF_CONNECTION_MODE,
     CONF_PAIR_ID,
     CONF_PROTOCOL_VARIANT,
     DOMAIN,
@@ -40,7 +40,7 @@ async def mixed_pair(hass, request):
         entry = MockConfigEntry(domain=DOMAIN, data={
             CONF_ADDRESS: address, CONF_NAME: side, CONF_BED_TYPE: BED_TYPE_SVANE,
             CONF_PROTOCOL_VARIANT: SVANE_VARIANT_MULTI if profile == "multi" else SVANE_VARIANT_JMC,
-            CONF_DISCONNECT_AFTER_COMMAND: False,
+            CONF_CONNECTION_MODE: "idle",
         })
         entry.add_to_hass(hass)
         child = AdjustableBedCoordinator(hass, entry)
@@ -80,7 +80,7 @@ async def test_actual_combined_memory_button_rejects_unsaved_side_before_any_dis
     button = memory_button(pair, children, slot)
     with (
         patch.object(pair, "async_execute_controller_command", wraps=pair.async_execute_controller_command) as dispatch,
-        pytest.raises(ValueError, match="save this local slot"),
+        pytest.raises(ValueError, match="Save this memory position"),
     ):
         await button.async_press()
     dispatch.assert_not_awaited()
@@ -110,7 +110,7 @@ async def test_invalid_combined_slot_rejects_before_ready_sibling_dispatch(mixed
     controllers[multi_side].session.multi_slots[1] = (b"head", b"")
     with (
         patch.object(pair, "async_execute_controller_command", wraps=pair.async_execute_controller_command) as dispatch,
-        pytest.raises(ValueError, match="nonempty raw axes"),
+        pytest.raises(ValueError, match="not saved completely"),
     ):
         await memory_button(pair, children, 1).async_press()
     dispatch.assert_not_awaited()
@@ -142,7 +142,7 @@ async def test_offline_slot_preflight_does_not_open_either_connection(mixed_pair
         child._controller = None
     with (
         patch.object(pair, "async_execute_controller_command", wraps=pair.async_execute_controller_command) as dispatch,
-        pytest.raises(ValueError, match="save this local slot"),
+        pytest.raises(ValueError, match="Save this memory position"),
     ):
         await button.async_press()
     dispatch.assert_not_awaited()

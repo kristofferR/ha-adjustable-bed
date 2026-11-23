@@ -7,6 +7,9 @@ import voluptuous as vol
 import yaml
 from homeassistant.const import CONF_ADDRESS, CONF_NAME
 
+from custom_components.adjustable_bed.beds.motion_bed.services import (
+    async_register_motion_bed_services,
+)
 from custom_components.adjustable_bed.config_flow import AdjustableBedConfigFlow
 from custom_components.adjustable_bed.const import (
     BED_TYPE_MOTION_BED,
@@ -14,7 +17,6 @@ from custom_components.adjustable_bed.const import (
     CONF_BLE_DEVICE_NAME,
     DOMAIN,
 )
-from custom_components.adjustable_bed.motion_bed_services import async_register_motion_bed_services
 from tests.test_detection import _make_service_info
 
 resources = yaml.safe_load(
@@ -45,7 +47,7 @@ async def test_original_name_prefill_survives_editable_title(
         flow._manual_data[CONF_BLE_DEVICE_NAME] = stored
     if observed is not None:
         flow._discovery_info = _make_service_info(name=observed)
-    result = await flow.async_step_motion_bed()
+    result = await flow.async_step_profile_questions()
     marker = next(k for k in result["data_schema"].schema if k.schema == CONF_BLE_DEVICE_NAME)
     assert marker.default() == expected
 
@@ -64,7 +66,7 @@ async def test_motion_ui_matches_registered_multiple_target_contract(hass, name)
 
 
 @pytest.mark.parametrize(
-    ("name", "field"), [("motion_bed_alarm", "mode"), ("motion_bed_thermal_schedule", "gear")]
+    ("name", "field"), [("motion_bed_thermal_schedule", "gear")]
 )
 async def test_motion_ui_required_matches_actual_registered_schema(hass, name, field):
     async_register_motion_bed_services(hass)

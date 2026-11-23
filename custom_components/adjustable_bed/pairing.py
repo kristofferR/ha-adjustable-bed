@@ -22,57 +22,84 @@ from typing import Any, Final, TypedDict, cast
 
 from homeassistant.const import CONF_ADDRESS, CONF_NAME
 
+from .beds.goodvibe.catalog import PROFILE_CHOICES as GOODVIBE_PROFILES
+from .beds.hjbed.catalog import PROFILE_CHOICES as HJBED_PROFILES
+from .beds.richmat_app.catalog import ALL_CHOICES as RICHMAT_APP_PRODUCTS
+from .beds.richmat_app.sleep_profiles import CHOICES as RICHMAT_SLEEP_CHOICES
 from .const import (
+    ADJUSTAMATTRESS_VARIANTS,
+    BED_TYPE_ADJUSTAMATTRESS,
+    BED_TYPE_BETTERLIVING2,
     BED_TYPE_CASPER_BASE,
+    BED_TYPE_COMFORT_ENHANCEMENTS,
+    BED_TYPE_COMFORTBASE,
+    BED_TYPE_COMFYDS,
     BED_TYPE_ERGOMOTION,
     BED_TYPE_ERGOMOTION_4,
+    BED_TYPE_ESHINE_OKIN,
+    BED_TYPE_GLIDEAWAY_MOTION,
     BED_TYPE_GMMOTOR,
+    BED_TYPE_GOODVIBE,
+    BED_TYPE_HJBED,
     BED_TYPE_ISLEEP,
     BED_TYPE_KAIDI,
     BED_TYPE_KEESON,
+    BED_TYPE_KOMFYD,
     BED_TYPE_LIMOSS_REMOTE,
+    BED_TYPE_MAJESTICHOME,
+    BED_TYPE_MLILY,
+    BED_TYPE_MLILY_REMOTE,
     BED_TYPE_MOTOMOTION,
-    BED_TYPE_OKIN_CB24,
+    BED_TYPE_OKIMIKI,
+    BED_TYPE_QPLUS_APP,
+    BED_TYPE_RICHMAT_APP,
+    BED_TYPE_RICHMAT_APP_SLEEP,
+    BED_TYPE_RIZE,
     BED_TYPE_RONDURE,
-    BED_TYPE_SBI,
     BED_TYPE_SLEEP_NUMBER,
-    CASPER_BASE_SIDE_VARIANTS,
+    BED_TYPE_SOMOS,
+    BED_TYPE_SYMPHONY,
+    BED_TYPE_YAMADA,
     CB24_BED_SELECTION_A,
     CB24_BED_SELECTION_B,
+    COMFORT_ENHANCEMENTS_VARIANTS,
     CONF_BED_TYPE,
     CONF_BLE_DEVICE_NAME,
     CONF_CB24_BED_SELECTION,
+    CONF_CONNECTION_MODE,
     CONF_FSM_RELAX_MEMORY_NAMES,
+    CONF_IDLE_DISCONNECT_SECONDS,
     CONF_KAIDI_RESOLVED_VARIANT,
     CONF_LIMOSS_REMOTE_STATE,
     CONF_LIMOSS_REMOTE_THEME,
     CONF_PAIR_CHILDREN,
-    CONF_PAIR_CONNECTION_MODE,
     CONF_PAIR_ID,
     CONF_PAIR_MEMBER_ADDRESSES,
     CONF_PAIR_MODE,
-    CONF_PAIR_SCHEMA_VERSION,
+    CONF_PREFERRED_ADAPTER,
     CONF_PRODUCT_TYPE,
+    CONF_PROFILE_ID,
+    CONF_PROFILE_MIGRATION,
+    CONF_PROFILE_REVIEW_KEPT,
     CONF_PROFILE_REVIEW_PENDING,
     CONF_PROTOCOL_VARIANT,
     CONF_REVERSE_MOTORS,
     CONF_SIDE,
-    HUSH_BASE_SIDE_VARIANTS,
+    ESHINE_OKIN_PROFILES,
+    GLIDEAWAY_MOTION_MODELS,
     KAIDI_VARIANT_SEAT_1,
     KAIDI_VARIANT_SEAT_1_2,
     KAIDI_VARIANT_SEAT_2,
     LIMOSS_REMOTE_CONFIG_KEYS,
-    OKIN_CB24_VARIANT_CB27NEW,
-    OKIN_CB24_VARIANT_NEW,
+    OFFLINE_CAPABILITY_SAFE_KEESON_VARIANTS,
     PAIR_MODE_SEPARATE_ADDRESS,
     PAIR_MODE_SINGLE_ADDRESS,
-    PAIR_SCHEMA_VERSION,
     PAIR_SIDES,
+    QPLUS_VARIANT_SIDE_A,
+    QPLUS_VARIANT_SIDE_B,
     RONDURE_VARIANT_SIDE_A,
     RONDURE_VARIANT_SIDE_B,
     RUNTIME_BOND_KEYS,
-    SBI_VARIANT_SIDE_A,
-    SBI_VARIANT_SIDE_B,
     SIDE_LEFT,
     SIDE_RIGHT,
     SLEEP_NUMBER_VARIANT_LEFT,
@@ -80,6 +107,43 @@ from .const import (
     VARIANT_AUTO,
     VMATBASIC_CONFIG_KEYS,
 )
+from .errors import invalid
+from .profiles.bobpowerbase import PROFILE_CHOICES as BOB_PROFILES
+from .profiles.comfortbase import PRODUCTS as COMFORTBASE_PRODUCTS
+from .profiles.majestichome import PROFILE_CHOICES as MAJESTICHOME_PROFILES
+from .profiles.mlily_choices import PROFILE_CHOICES as MLILY_PROFILES
+from .profiles.mlily_remote import VARIANTS as MLILY_REMOTE_PROFILES
+from .profiles.okimiki import PROFILE_CHOICES as OKIMIKI_PROFILES
+from .profiles.saatva import CHOICES as SAATVA_PROFILES
+from .profiles.saatva import TWO_RECEIVER_PROFILES as SAATVA_TWO_RECEIVER_PROFILES
+
+# Explicit protocol variants whose entity-gating capabilities depend only on stored
+# config, for bed types that are not offline-safe as a whole (a Keeson "auto" entry
+# detects its variant live). A paired side on one of these variants can be minted
+# offline. Each bed type contributes its own frozenset, so profiles extend this
+# independently; every member must build its controller without a client.
+OFFLINE_CAPABILITY_SAFE_VARIANTS: Final[dict[str, frozenset[str]]] = {
+    "instant_comfort": frozenset({"malouf", "reverie_v1", "reverie_v2"}),
+    BED_TYPE_ADJUSTAMATTRESS: frozenset(v for v in ADJUSTAMATTRESS_VARIANTS if v != VARIANT_AUTO),
+    BED_TYPE_COMFORT_ENHANCEMENTS: frozenset(COMFORT_ENHANCEMENTS_VARIANTS),
+    BED_TYPE_SOMOS: frozenset({"a", "b", "c", "d", "e"}),
+    BED_TYPE_COMFORTBASE: frozenset(COMFORTBASE_PRODUCTS),
+    BED_TYPE_YAMADA: frozenset({"p1", "p2"}),
+    BED_TYPE_BETTERLIVING2: frozenset({"p1", "p2", "p3"}),
+    BED_TYPE_GOODVIBE: frozenset(GOODVIBE_PROFILES),
+    BED_TYPE_MLILY: frozenset(MLILY_PROFILES),
+    BED_TYPE_MAJESTICHOME: frozenset(MAJESTICHOME_PROFILES),
+    BED_TYPE_OKIMIKI: frozenset(OKIMIKI_PROFILES),
+    "bobpowerbase": frozenset(BOB_PROFILES),
+    "saatva": frozenset(SAATVA_PROFILES),
+    BED_TYPE_MLILY_REMOTE: frozenset(MLILY_REMOTE_PROFILES),
+    BED_TYPE_HJBED: frozenset(HJBED_PROFILES),
+    BED_TYPE_RICHMAT_APP: frozenset(RICHMAT_APP_PRODUCTS),
+    BED_TYPE_RICHMAT_APP_SLEEP: frozenset(RICHMAT_SLEEP_CHOICES),
+    BED_TYPE_ESHINE_OKIN: frozenset(ESHINE_OKIN_PROFILES),
+    BED_TYPE_GLIDEAWAY_MOTION: frozenset(GLIDEAWAY_MOTION_MODELS),
+    BED_TYPE_KEESON: OFFLINE_CAPABILITY_SAFE_KEESON_VARIANTS,
+}
 
 
 class ChildDescriptor(TypedDict, total=False):
@@ -95,6 +159,8 @@ class ChildDescriptor(TypedDict, total=False):
     name: str
     bed_type: str
     protocol_variant: str
+    # Schema 5: derived from this side's effective config (profile_id.py).
+    profile_id: str
     kaidi_resolved_variant: str
     preferred_adapter: str
     octo_pin: str
@@ -144,19 +210,28 @@ KEY_SINGLE_ADDRESS_ORIGIN_ENTITY_UNIQUE_IDS: Final = (
 PAIR_LAYOUT_CAPABILITY_KEY: Final = "pair_layout"
 SINGLE_ADDRESS_SIDE_AWARE_BED_TYPES: Final = frozenset(
     {
+        "cheerssleep",
+        "ultramatic_smart_bed",
+        "bobpowerbase",
+        "bedtech",
+        BED_TYPE_MLILY_REMOTE,
         BED_TYPE_ERGOMOTION,
         BED_TYPE_ERGOMOTION_4,
         BED_TYPE_KEESON,
-        BED_TYPE_SBI,
+        BED_TYPE_QPLUS_APP,
         BED_TYPE_RONDURE,
-        BED_TYPE_OKIN_CB24,
+        "smartbed",
         BED_TYPE_SLEEP_NUMBER,
         BED_TYPE_KAIDI,
         BED_TYPE_ISLEEP,
+        BED_TYPE_KOMFYD,
+        BED_TYPE_COMFYDS,
+        BED_TYPE_RIZE,
         BED_TYPE_CASPER_BASE,
         "hush_base",
         BED_TYPE_GMMOTOR,
         BED_TYPE_MOTOMOTION,
+        BED_TYPE_SYMPHONY,
     }
 )
 
@@ -166,14 +241,33 @@ def supports_single_address_pairing(
     protocol_variant: str | None = None,
     *,
     resolved_variant: str | None = None,
+    capabilities: object = None,
     product_type: str | None = None,
     ble_device_name: str | None = None,
 ) -> bool:
     """Return whether a bed can expose the Phase 3 single-address surface."""
+    if bed_type == "richmat_classic_apps":
+        from .profiles.jerome2 import SIDE_LAYOUTS
+
+        return protocol_variant == "jerome2" and product_type in SIDE_LAYOUTS
+    if bed_type == "saatva":
+        return protocol_variant == "bt3000fh_split_top"
+    if bed_type == "bobpowerbase":
+        return protocol_variant in ("elite_sh", "ultra_sh")
     if bed_type not in SINGLE_ADDRESS_SIDE_AWARE_BED_TYPES:
         return False
+    if bed_type == "cheerssleep":
+        return str(product_type) in {"51", "52", "140", "141", "172"}
+    if bed_type == BED_TYPE_MLILY_REMOTE:
+        return product_type == "double"
+    if bed_type == BED_TYPE_SYMPHONY:
+        return str(product_type) in {"10", "15"}
+    if bed_type in (BED_TYPE_KOMFYD, BED_TYPE_COMFYDS):
+        return str(product_type) == "130"
+    if bed_type == "bedtech":
+        return protocol_variant in {"bt3000fh", "btx4fh", "btx5fh"}
     if bed_type == BED_TYPE_MOTOMOTION:
-        from .motomotion_profile import Profile
+        from .profiles.motomotion import Profile
 
         try:
             return Profile(ble_device_name or "").sides
@@ -182,21 +276,28 @@ def supports_single_address_pairing(
     if bed_type == BED_TYPE_KEESON:
         # Auto can resolve to incompatible P2/JSON/OEM frames at connection.
         return protocol_variant in {"base", "ergomotion"}
+    if bed_type == BED_TYPE_QPLUS_APP:
+        # MX's P2 frames carry no A/B selector.
+        return product_type != "MX"
     if bed_type == BED_TYPE_ERGOMOTION_4:
-        from .ergomotion4_profiles import PRODUCTS
+        from .beds.ergomotion4.profiles import PRODUCTS
 
         product = PRODUCTS.get(product_type or "H")
         return product is not None and product.protocol == "P1"
     if bed_type == BED_TYPE_GMMOTOR:
-        from .gmmotor_profiles import load_profile
+        from .beds.gmmotor.profiles import load_profile
 
         try:
             return product_type is not None and 1 in load_profile(product_type).sides
         except ValueError:
             return False
     if bed_type == "hush_base":
+        from .profiles.hush import HUSH_BASE_SIDE_VARIANTS
+
         return protocol_variant in HUSH_BASE_SIDE_VARIANTS
     if bed_type == BED_TYPE_CASPER_BASE:
+        from .profiles.casper import CASPER_BASE_SIDE_VARIANTS
+
         return protocol_variant in CASPER_BASE_SIDE_VARIANTS
     if bed_type == BED_TYPE_KAIDI:
         effective_variant = (
@@ -205,10 +306,14 @@ def supports_single_address_pairing(
             else protocol_variant
         )
         return effective_variant == KAIDI_VARIANT_SEAT_1_2
-    return not (
-        bed_type == BED_TYPE_OKIN_CB24
-        and protocol_variant in {OKIN_CB24_VARIANT_NEW, OKIN_CB24_VARIANT_CB27NEW}
-    )
+    if bed_type == "smartbed":
+        from .beds.smartbed.setup import verified_ab
+
+        # Only the CB24AB profile serializes a side of its own.
+        return protocol_variant == "cb24_ab" or (
+            protocol_variant in (None, VARIANT_AUTO) and verified_ab(capabilities)
+        )
+    return True
 
 
 def is_paired(entry_data: Mapping[str, Any]) -> bool:
@@ -259,12 +364,14 @@ CHILD_INHERITANCE_EXCLUDED_KEYS: Final = frozenset(
         CONF_FSM_RELAX_MEMORY_NAMES, CONF_LIMOSS_REMOTE_THEME,
         # The upgrade review belongs to the entry, not to either side.
         CONF_PROFILE_REVIEW_PENDING,
+        CONF_PROFILE_REVIEW_KEPT,
+        # Each side stores its own profile id; the parent's must never stand in.
+        CONF_PROFILE_ID,
+        CONF_PROFILE_MIGRATION,
         CONF_PAIR_ID,
         CONF_PAIR_MODE,
         CONF_PAIR_CHILDREN,
         CONF_PAIR_MEMBER_ADDRESSES,
-        CONF_PAIR_SCHEMA_VERSION,
-        CONF_PAIR_CONNECTION_MODE,
         *RUNTIME_BOND_KEYS,
         *VMATBASIC_CONFIG_KEYS,
         CONF_LIMOSS_REMOTE_STATE,
@@ -415,8 +522,6 @@ _PAIR_ONLY_DESCRIPTOR_KEYS = frozenset(
         CONF_PAIR_MODE,
         CONF_PAIR_CHILDREN,
         CONF_PAIR_MEMBER_ADDRESSES,
-        CONF_PAIR_SCHEMA_VERSION,
-        CONF_PAIR_CONNECTION_MODE,
     }
 )
 
@@ -435,17 +540,6 @@ def octo_snapshot_from_descriptor(
     caps = descriptor.get("capabilities") or {}
     octo = caps.get("octo")
     return dict(octo) if isinstance(octo, Mapping) else None
-
-
-def pair_layout_from_descriptor(
-    descriptor: Mapping[str, Any] | None,
-) -> dict[str, Any] | None:
-    """Return the persisted generic motor-layout snapshot for one side."""
-    if not descriptor:
-        return None
-    caps = descriptor.get("capabilities") or {}
-    layout = caps.get(PAIR_LAYOUT_CAPABILITY_KEY)
-    return dict(layout) if isinstance(layout, Mapping) else None
 
 
 def single_data_from_child(descriptor: Mapping[str, Any]) -> dict[str, Any]:
@@ -508,6 +602,50 @@ def single_options_from_child(descriptor: Mapping[str, Any]) -> dict[str, Any]:
     return dict(origin_options) if isinstance(origin_options, Mapping) else {}
 
 
+# Connection preferences describe how Home Assistant reaches a receiver, not
+# what the receiver is. Splitting a pair keeps the values the user chose while
+# combined; bed type, app profile and side settings revert to the originals.
+SPLIT_RETAINED_KEYS: Final = (
+    CONF_PREFERRED_ADAPTER,
+    CONF_IDLE_DISCONNECT_SECONDS,
+    CONF_CONNECTION_MODE,
+)
+
+
+def standalone_config_after_split(
+    entry_data: Mapping[str, Any],
+    entry_options: Mapping[str, Any],
+    side: str,
+) -> tuple[dict[str, Any], dict[str, Any]]:
+    """Return the standalone data and options one side gets when a pair splits.
+
+    The original pre-combination configuration is restored, except for
+    ``SPLIT_RETAINED_KEYS``: those take the value the side used while paired,
+    including edits made through the receiver or parent settings. A retained
+    value is written to data and removed from options, so a restored original
+    option cannot shadow it.
+    """
+    descriptor = get_child(entry_data, side)
+    if descriptor is None:
+        raise ValueError(f"Paired entry has no child for side {side!r}")
+    data = single_data_from_child(descriptor)
+    options = single_options_from_child(descriptor)
+    if entry_data.get(CONF_PAIR_MODE) == PAIR_MODE_SINGLE_ADDRESS:
+        current: Mapping[str, Any] = {**entry_data, **entry_options}
+    else:
+        current = effective_child_data(entry_data, side, entry_options)
+    for key in SPLIT_RETAINED_KEYS:
+        options.pop(key, None)
+        if key in current:
+            data[key] = current[key]
+        else:
+            data.pop(key, None)
+    from .profile_id import with_profile_ids
+
+    # The restored route decides the id; a stale or side-level copy never does.
+    return with_profile_ids(data, options), options
+
+
 def _descriptor_from_single(
     data: Mapping[str, Any],
     side: str,
@@ -562,7 +700,6 @@ def build_pair_entry_data(
     right_data: Mapping[str, Any],
     *,
     name: str,
-    connection_mode: str | None = None,
     left_octo_snapshot: Mapping[str, Any] | None = None,
     right_octo_snapshot: Mapping[str, Any] | None = None,
     left_layout_snapshot: Mapping[str, Any] | None = None,
@@ -592,6 +729,24 @@ def build_pair_entry_data(
     pair's setup re-homes that entry's registry rows in place instead of letting
     the platforms recreate them (preserving per-side history/customizations).
     """
+    if any(item.get(CONF_BED_TYPE) == "sleep_assistant" for item in (left_data, right_data)):
+        raise ValueError("Sleep Assist supports standalone entries only")
+    if any(item.get(CONF_BED_TYPE) == "personal_comfort" for item in (left_data, right_data)) and any(
+        item.get(CONF_BED_TYPE) != "personal_comfort"
+        or item.get(CONF_PROTOCOL_VARIANT) not in {"malouf", "reverie_v1", "reverie_v2"}
+        or item.get(CONF_PRODUCT_TYPE) == "none"
+        for item in (left_data, right_data)
+    ):
+        raise ValueError("Only configured Personal Comfort bases can be combined")
+    if any(item.get(CONF_BED_TYPE) == "saatva" and item.get(CONF_PROTOCOL_VARIANT) not in SAATVA_TWO_RECEIVER_PROFILES
+           for item in (left_data, right_data)):
+        raise invalid("not_supported_by_bed", feature="two-receiver pairing")
+    if any(item.get(CONF_BED_TYPE) == "instant_comfort" for item in (left_data, right_data)) and any(
+        item.get(CONF_BED_TYPE) != "instant_comfort"
+        or item.get(CONF_PROTOCOL_VARIANT) not in {"malouf", "reverie_v1", "reverie_v2"}
+        for item in (left_data, right_data)
+    ):
+        raise ValueError("Only configured Instant Comfort bases can be combined")
     left_addr = left_data[CONF_ADDRESS]
     right_addr = right_data[CONF_ADDRESS]
     left_entry_id, left_unique_id = left_origin or (None, None)
@@ -600,7 +755,6 @@ def build_pair_entry_data(
     data: dict[str, Any] = {
         CONF_PAIR_ID: make_pair_id([left_addr, right_addr]),
         CONF_PAIR_MODE: PAIR_MODE_SEPARATE_ADDRESS,
-        CONF_PAIR_SCHEMA_VERSION: PAIR_SCHEMA_VERSION,
         CONF_BED_TYPE: left_data.get(CONF_BED_TYPE),
         CONF_NAME: name,
         CONF_PAIR_MEMBER_ADDRESSES: [left_addr.upper(), right_addr.upper()],
@@ -631,8 +785,6 @@ def build_pair_entry_data(
             ),
         ],
     }
-    if connection_mode is not None:
-        data[CONF_PAIR_CONNECTION_MODE] = connection_mode
     return data
 
 
@@ -640,6 +792,7 @@ def build_single_address_pair_entry_data(
     single_data: Mapping[str, Any],
     *,
     name: str,
+    transport_proven: bool = False,
     origin_entry_id: str | None = None,
     origin_unique_id: str | None = None,
     origin_title: str | None = None,
@@ -662,10 +815,14 @@ def build_single_address_pair_entry_data(
         bed_type,
         protocol_variant,
         resolved_variant=resolved_variant,
+        capabilities=single_data.get("capabilities"),
         product_type=single_data.get(CONF_PRODUCT_TYPE),
         ble_device_name=single_data.get(CONF_BLE_DEVICE_NAME),
     ):
         raise ValueError(f"{bed_type!r} does not support single-address pairing")
+
+    if bed_type == "richmat_classic_apps" and not transport_proven:
+        raise ValueError("Jerome side routing requires live framed transport proof")
 
     address = cast("str", single_data[CONF_ADDRESS])
     left = _descriptor_from_single(
@@ -689,15 +846,18 @@ def build_single_address_pair_entry_data(
         origin_options=origin_options,
     )
 
-    if bed_type == BED_TYPE_SBI:
-        left[CONF_PROTOCOL_VARIANT] = SBI_VARIANT_SIDE_A
-        right[CONF_PROTOCOL_VARIANT] = SBI_VARIANT_SIDE_B
+    if bed_type == BED_TYPE_QPLUS_APP:
+        left[CONF_PROTOCOL_VARIANT] = QPLUS_VARIANT_SIDE_A
+        right[CONF_PROTOCOL_VARIANT] = QPLUS_VARIANT_SIDE_B
     elif bed_type == BED_TYPE_RONDURE:
         left[CONF_PROTOCOL_VARIANT] = RONDURE_VARIANT_SIDE_A
         right[CONF_PROTOCOL_VARIANT] = RONDURE_VARIANT_SIDE_B
-    elif bed_type == BED_TYPE_OKIN_CB24:
+    elif bed_type == "smartbed":
         left[CONF_CB24_BED_SELECTION] = CB24_BED_SELECTION_A
         right[CONF_CB24_BED_SELECTION] = CB24_BED_SELECTION_B
+    elif bed_type == "ultramatic_smart_bed":
+        left[CONF_CB24_BED_SELECTION] = 1
+        right[CONF_CB24_BED_SELECTION] = 2
     elif bed_type == BED_TYPE_SLEEP_NUMBER:
         left[CONF_PROTOCOL_VARIANT] = SLEEP_NUMBER_VARIANT_LEFT
         right[CONF_PROTOCOL_VARIANT] = SLEEP_NUMBER_VARIANT_RIGHT
@@ -712,7 +872,6 @@ def build_single_address_pair_entry_data(
         {
             CONF_PAIR_ID: make_pair_id([address]),
             CONF_PAIR_MODE: PAIR_MODE_SINGLE_ADDRESS,
-            CONF_PAIR_SCHEMA_VERSION: PAIR_SCHEMA_VERSION,
             CONF_NAME: name,
             CONF_PAIR_MEMBER_ADDRESSES: [address.upper()],
             CONF_PAIR_CHILDREN: [left, right],

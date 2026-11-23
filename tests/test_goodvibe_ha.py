@@ -3,16 +3,18 @@
 from __future__ import annotations
 
 import asyncio
+from dataclasses import replace
 from unittest.mock import AsyncMock, MagicMock, patch
 
 from homeassistant.const import CONF_ADDRESS, CONF_NAME
-from pytest_homeassistant_custom_component.common import MockConfigEntry
+from pytest_homeassistant.common import MockConfigEntry
 
-from custom_components.adjustable_bed.beds.goodvibe import GoodVibeController, Link
+from custom_components.adjustable_bed.beds.goodvibe.controller import GoodVibeController, Link
+from custom_components.adjustable_bed.beds.goodvibe.protocol import action_frame
 from custom_components.adjustable_bed.const import (
     BED_TYPE_GOODVIBE,
     CONF_BED_TYPE,
-    CONF_DISCONNECT_AFTER_COMMAND,
+    CONF_CONNECTION_MODE,
     CONF_PROTOCOL_VARIANT,
     DOMAIN,
 )
@@ -27,7 +29,7 @@ def runtime(hass, profile="sleep_hj", handoff=True, address="AA:BB:CC:DD:EE:16")
             CONF_NAME: "Good Vibe Sleep",
             CONF_BED_TYPE: BED_TYPE_GOODVIBE,
             CONF_PROTOCOL_VARIANT: profile,
-            CONF_DISCONNECT_AFTER_COMMAND: handoff,
+            CONF_CONNECTION_MODE: "release" if handoff else "idle",
         },
     )
     entry.add_to_hass(hass)
@@ -143,8 +145,8 @@ async def test_background_writes_use_serialized_production_command_path(hass):
 
 async def test_release_entity_uses_stop_admission_without_an_extra_wire_stop(hass):
     from custom_components.adjustable_bed.beds.base import CONTROLLER_GESTURE_RELEASE
+    from custom_components.adjustable_bed.beds.goodvibe.catalog import ACTIONS
     from custom_components.adjustable_bed.button import ControllerActionButton
-    from custom_components.adjustable_bed.goodvibe_catalog import ACTIONS
 
     c = runtime(hass, profile="selector-0001")
     obj = c._controller
@@ -173,15 +175,15 @@ async def test_release_entity_uses_stop_admission_without_an_extra_wire_stop(has
         await release.async_press()
         await task
     frames = [call.args[1] for call in c._client.write_gatt_char.await_args_list]
-    assert frames == [ACTIONS[detail].packet(0, False), bytes.fromhex("6e01006edd")]
+    assert frames == [action_frame(ACTIONS[detail], 0, False), bytes.fromhex("6e01006edd")]
     assert not CONTROLLER_GESTURE_RELEASE.get()
     c._client.is_connected = False
     await c.async_shutdown()
 
 
 async def test_release_entity_invalidates_a_hold_still_in_connection_preflight(hass):
+    from custom_components.adjustable_bed.beds.goodvibe.catalog import ACTIONS
     from custom_components.adjustable_bed.button import ControllerActionButton
-    from custom_components.adjustable_bed.goodvibe_catalog import ACTIONS
 
     c = runtime(hass, profile="selector-0001")
     obj = c._controller
@@ -226,8 +228,8 @@ async def test_release_entity_invalidates_a_hold_still_in_connection_preflight(h
 
 async def test_public_hold_service_released_during_preflight_cannot_start_later(hass):
     from custom_components.adjustable_bed import services
+    from custom_components.adjustable_bed.beds.goodvibe.catalog import ACTIONS
     from custom_components.adjustable_bed.button import ControllerActionButton
-    from custom_components.adjustable_bed.goodvibe_catalog import ACTIONS
 
     c = runtime(hass, profile="selector-0001")
     obj = c._controller
@@ -275,8 +277,8 @@ async def test_public_configuration_preflights_every_target_before_any_write(has
     import pytest
     from homeassistant.exceptions import ServiceValidationError
 
-    from custom_components.adjustable_bed import goodvibe_services as service
-    from custom_components.adjustable_bed.goodvibe_catalog import PRODUCTS
+    from custom_components.adjustable_bed.beds.goodvibe import services as service
+    from custom_components.adjustable_bed.beds.goodvibe.catalog import PRODUCTS
 
     light = next(k for k, v in PRODUCTS.items() if v.light)
     dark = next(k for k, v in PRODUCTS.items() if not v.light)
@@ -285,8 +287,8 @@ async def test_public_configuration_preflights_every_target_before_any_write(has
     b._client.write_gatt_char = AsyncMock()
     service.async_register_goodvibe_services(hass)
     with (
-        patch.object(
-            service, "_resolve_sided_targets", return_value=([(a, "both"), (b, "both")], [])
+        patch(
+            "custom_components.adjustable_bed.services._resolve_sided_targets", return_value=([(a, "both"), (b, "both")], [])
         ),
         pytest.raises(ServiceValidationError),
     ):
@@ -304,15 +306,19 @@ async def test_public_configuration_preflights_every_target_before_any_write(has
 
 
 async def test_public_configuration_and_dynamic_entities_use_real_scheduler(hass):
-    from custom_components.adjustable_bed import goodvibe_services as service
-    from custom_components.adjustable_bed.goodvibe_catalog import PRODUCTS
-    from custom_components.adjustable_bed.goodvibe_protocol import (
+    from custom_components.adjustable_bed.beds.goodvibe import services as service
+    from custom_components.adjustable_bed.beds.goodvibe.catalog import PRODUCTS
+    from custom_components.adjustable_bed.beds.goodvibe.protocol import (
         SNORE_MENU_EXCLUDED_MODELS,
         light_duration,
         snore_config,
     )
     from custom_components.adjustable_bed.number import AdjustableBedControllerNumber
-    from custom_components.adjustable_bed.select import AdjustableBedControllerSelect
+    from custom_components.adjustable_bed.select import (
+        LIGHT_TIMER_DESCRIPTION,
+        AdjustableBedControllerSelect,
+        AdjustableBedControllerStateSelect,
+    )
     from custom_components.adjustable_bed.sensor import AdjustableBedControllerStateSensor
 
     key = next(
@@ -336,8 +342,10 @@ async def test_public_configuration_and_dynamic_entities_use_real_scheduler(hass
     paired._client.is_connected = False
     await paired.async_shutdown()
     c._client.write_gatt_char.assert_not_awaited()
-    duration = AdjustableBedControllerSelect(
-        c, next(s for s in obj.controller_select_specs if s.key == "goodvibe_light_duration")
+    duration = AdjustableBedControllerStateSelect(
+        c,
+        replace(LIGHT_TIMER_DESCRIPTION, available_fn=obj.light_timer_available_fn),
+        obj.light_timer_options,
     )
     count = AdjustableBedControllerNumber(
         c, next(s for s in obj.controller_number_specs if s.key == "goodvibe_snore_count")
@@ -346,9 +354,9 @@ async def test_public_configuration_and_dynamic_entities_use_real_scheduler(hass
     with (
         patch.object(c, "async_ensure_connected", AsyncMock(return_value=True)),
         patch.object(c, "_async_refresh_controller_auth", AsyncMock()),
-        patch.object(service, "_resolve_sided_targets", return_value=([(c, "both")], [])),
+        patch("custom_components.adjustable_bed.services._resolve_sided_targets", return_value=([(c, "both")], [])),
     ):
-        await duration.async_select_option("300")
+        await duration.async_select_option("5 min")
         await count.async_set_native_value(17)
         await hass.services.async_call(
             DOMAIN,
@@ -363,7 +371,7 @@ async def test_public_configuration_and_dynamic_entities_use_real_scheduler(hass
     ]
     obj._event("deviceAntiSnoreConfigCountEvent", 18)
     assert count.native_value == 18
-    assert duration.current_option == "300"
+    assert duration.current_option == "5 min"
     assert status.native_value == "deviceAntiSnoreConfigCountEvent"
     assert status.extra_state_attributes["goodvibe_events"]["deviceAntiSnoreConfigCountEvent"] == 18
     c._client.is_connected = False
@@ -371,7 +379,7 @@ async def test_public_configuration_and_dynamic_entities_use_real_scheduler(hass
 
 
 async def test_monitoring_poll_write_failure_keeps_intent_and_retries(hass):
-    from custom_components.adjustable_bed.beds import goodvibe as bed
+    from custom_components.adjustable_bed.beds.goodvibe import controller as bed
 
     c = runtime(hass)
     obj = c._controller
@@ -405,53 +413,68 @@ async def test_monitoring_poll_write_failure_keeps_intent_and_retries(hass):
     await c.async_shutdown()
 
 
-async def test_sleep_sensor_localization_keys_preserve_identity_and_raw_state(hass):
-    import json
-    import re
+async def test_sleep_readings_are_typed_shared_entities(hass):
     from contextlib import ExitStack
-    from pathlib import Path
 
+    from homeassistant.components.binary_sensor import BinarySensorDeviceClass
+    from homeassistant.components.sensor import SensorStateClass
+
+    from custom_components.adjustable_bed.binary_sensor import (
+        AdjustableBedControllerStateBinarySensor,
+    )
     from custom_components.adjustable_bed.sensor import AdjustableBedControllerStateSensor
 
     c = runtime(hass)
     obj = c._controller
-    expected = {
-        "goodvibe_L_heart": "61",
-        "goodvibe_L_respiration": "12",
-        "goodvibe_L_occupancy": "On Bed",
-        "goodvibe_L_movement": "--",
-        "goodvibe_L_snore": "Snoring",
-        "goodvibe_R_heart": "72",
-        "goodvibe_R_respiration": "18",
-        "goodvibe_R_occupancy": "On Bed",
-        "goodvibe_R_movement": "Body Move",
-        "goodvibe_R_snore": "--",
+    rates = {
+        "goodvibe_L_heart": ("heart_rate_left", 61),
+        "goodvibe_L_respiration": ("breathing_rate_left", 12),
+        "goodvibe_R_heart": ("heart_rate_right", 72),
+        "goodvibe_R_respiration": ("breathing_rate_right", 18),
+    }
+    # The app's "--" is unknown, not a state string.
+    flags = {
+        "goodvibe_L_occupancy": ("bed_presence_left", True),
+        "goodvibe_L_movement": ("body_movement_left", None),
+        "goodvibe_L_snore": ("snoring_left", True),
+        "goodvibe_R_occupancy": ("bed_presence_right", True),
+        "goodvibe_R_movement": ("body_movement_right", True),
+        "goodvibe_R_snore": ("snoring_right", None),
     }
     specs = [s for s in obj.controller_state_sensor_specs if s.key != "goodvibe_status"]
-    assert {s.key for s in specs} == set(expected)
+    binary_specs = list(obj.controller_state_binary_sensor_specs)
+    assert {s.key: s.translation_key for s in specs} == {k: v[0] for k, v in rates.items()}
+    assert {s.key: s.translation_key for s in binary_specs} == {
+        k: v[0] for k, v in flags.items()
+    }
     sensors = [AdjustableBedControllerStateSensor(c, spec) for spec in specs]
-    for spec, sensor in zip(specs, sensors, strict=True):
-        assert spec.state_key == spec.key
-        assert sensor.unique_id == f"{c.address}_{spec.key}"
-        assert sensor.translation_key == spec.translation_key == spec.key.lower()
-        assert re.fullmatch(r"[a-z0-9]+(?:[a-z0-9_-]*[a-z0-9])?", spec.translation_key)
-    integration = Path(__file__).parents[1] / "custom_components/adjustable_bed"
-    for path in (integration / "strings.json", integration / "translations/en.json"):
-        translated = json.loads(path.read_text())["entity"]["sensor"]
-        assert all(spec.translation_key in translated for spec in specs)
-        assert not set(expected).intersection(translated)
+    binaries = [AdjustableBedControllerStateBinarySensor(c, spec) for spec in binary_specs]
+    for entity in (*sensors, *binaries):
+        assert entity.unique_id == f"{c.address}_{entity._spec.key}"
+        assert entity.entity_category is None
+        assert entity.entity_registry_enabled_default
+    assert all(s.native_unit_of_measurement in ("bpm", "breaths/min") for s in sensors)
+    assert all(s.state_class == SensorStateClass.MEASUREMENT for s in sensors)
+    assert {b.device_class for b in binaries} == {
+        BinarySensorDeviceClass.OCCUPANCY,
+        BinarySensorDeviceClass.MOTION,
+        BinarySensorDeviceClass.SOUND,
+    }
     with ExitStack() as stack:
-        writes = [stack.enter_context(patch.object(s, "async_write_ha_state")) for s in sensors]
-        for sensor in sensors:
+        for entity in (*sensors, *binaries):
+            stack.enter_context(patch.object(entity, "async_write_ha_state"))
             stack.callback(
-                c.register_controller_state_callback(sensor._handle_controller_state_update)
+                c.register_controller_state_callback(entity._handle_controller_state_update)
             )
         obj.choices.realtime["L"].accept(3, [0, 1, 61, 12, 1])
         obj.choices.realtime["R"].accept(3, [0, -2, 72, 18, 0])
         obj._publish()
-        assert {s._spec.state_key: s.native_value for s in sensors} == expected
-        assert all(write.call_count == 1 for write in writes)
-        assert all(key in c.controller_state for key in expected)
-        assert not {key.lower() for key in expected}.intersection(c.controller_state)
+        assert {s._spec.key: s.native_value for s in sensors} == {
+            k: v[1] for k, v in rates.items()
+        }
+        assert {b._spec.key: b.is_on for b in binaries} == {k: v[1] for k, v in flags.items()}
+        obj.choices.realtime["L"].accept(3, [0, 0, 0, 0, 0])
+        obj._publish()
+        assert sensors[0].native_value is None
     c._client.is_connected = False
     await c.async_shutdown()

@@ -19,7 +19,7 @@ from homeassistant.data_entry_flow import FlowResultType
 from homeassistant.helpers import issue_registry as ir
 from homeassistant.helpers.issue_registry import IssueSeverity
 from homeassistant.setup import async_setup_component
-from pytest_homeassistant_custom_component.common import MockConfigEntry
+from pytest_homeassistant.common import MockConfigEntry
 
 from custom_components.adjustable_bed.bluetooth_bond import (
     BluezReadStatus,
@@ -38,7 +38,7 @@ from custom_components.adjustable_bed.bond_verification import (
 )
 from custom_components.adjustable_bed.const import (
     BED_TYPE_LEGGETT_GEN2,
-    BED_TYPE_OKIMAT,
+    BED_TYPE_OKIN_UUID,
     BED_TYPE_SLEEP_NUMBER,
     CONF_BED_TYPE,
     CONF_BLE_BOND_ESTABLISHED,
@@ -89,6 +89,7 @@ def _bed_entry(
     address: str,
     name: str,
     state: ConfigEntryState = ConfigEntryState.LOADED,
+    bed_type: str = "linak",
 ) -> MockConfigEntry:
     """Add a standalone bed entry in the requested lifecycle state."""
     entry = MockConfigEntry(
@@ -97,7 +98,7 @@ def _bed_entry(
         data={
             CONF_ADDRESS: address,
             CONF_NAME: name,
-            CONF_BED_TYPE: "linak",
+            CONF_BED_TYPE: bed_type,
         },
         unique_id=address,
         version=4,
@@ -141,6 +142,22 @@ async def test_combine_suggestion_tracks_active_standalone_entries(
 
     right._async_set_state(hass, ConfigEntryState.UNLOAD_IN_PROGRESS, None)
     assert registry.async_get_issue(DOMAIN, COMBINE_BEDS_ISSUE_ID) is None
+
+
+async def test_combine_suggestion_needs_two_beds_of_one_protocol(hass: HomeAssistant) -> None:
+    """Two beds of different protocols can never be one bed's sides."""
+    hass.set_state(CoreState.running)
+    _bed_entry(hass, address="AA:BB:CC:DD:EE:01", name="Linak")
+    _bed_entry(hass, address="AA:BB:CC:DD:EE:02", name="Octo", bed_type="octo")
+    registry = ir.async_get(hass)
+
+    async_refresh_combine_beds_issue(hass)
+    assert registry.async_get_issue(DOMAIN, COMBINE_BEDS_ISSUE_ID) is None
+
+    _bed_entry(hass, address="AA:BB:CC:DD:EE:03", name="Second Linak")
+    async_refresh_combine_beds_issue(hass)
+    issue = registry.async_get_issue(DOMAIN, COMBINE_BEDS_ISSUE_ID)
+    assert issue is not None and issue.data == {"entry_count": 2}
 
 
 async def test_combine_suggestion_preserves_dismissal_during_startup(
@@ -584,7 +601,7 @@ async def test_recovery_persistence_relies_on_the_loaded_entry_listener(
         data={
             CONF_ADDRESS: TEST_ADDRESS,
             CONF_NAME: TEST_NAME,
-            CONF_BED_TYPE: "okimat",
+            CONF_BED_TYPE: "okin_uuid",
         },
         unique_id=TEST_ADDRESS,
         entry_id="loaded_recovery_entry",
@@ -626,7 +643,7 @@ async def test_recovery_persistence_reloads_an_unloaded_entry(
         data={
             CONF_ADDRESS: TEST_ADDRESS,
             CONF_NAME: TEST_NAME,
-            CONF_BED_TYPE: "okimat",
+            CONF_BED_TYPE: "okin_uuid",
         },
         unique_id=TEST_ADDRESS,
         entry_id="unloaded_recovery_entry",
@@ -662,7 +679,7 @@ async def test_a_removed_bond_stops_being_recorded_even_when_recovery_fails(
         data={
             CONF_ADDRESS: TEST_ADDRESS,
             CONF_NAME: TEST_NAME,
-            CONF_BED_TYPE: "okimat",
+            CONF_BED_TYPE: "okin_uuid",
             CONF_BLE_BOND_ESTABLISHED: True,
             CONF_BLE_BOND_MARKER_UNRELIABLE: True,
             CONF_BLE_BOND_CONTEXT: {
@@ -748,7 +765,7 @@ async def test_try_pair_succeeds_and_clears_marker(hass: HomeAssistant) -> None:
         data={
             CONF_ADDRESS: TEST_ADDRESS,
             CONF_NAME: TEST_NAME,
-            CONF_BED_TYPE: "okimat",
+            CONF_BED_TYPE: "okin_uuid",
             CONF_BLE_BOND_ESTABLISHED: False,
         },
         unique_id=TEST_ADDRESS,
@@ -948,7 +965,7 @@ async def test_repair_releases_its_client_when_verification_is_cancelled(
         data={
             CONF_ADDRESS: TEST_ADDRESS,
             CONF_NAME: TEST_NAME,
-            CONF_BED_TYPE: "okimat",
+            CONF_BED_TYPE: "okin_uuid",
             CONF_BLE_BOND_ESTABLISHED: False,
         },
         unique_id=TEST_ADDRESS,
@@ -984,7 +1001,7 @@ async def test_repair_releases_its_client_when_verification_is_unauthenticated(
         data={
             CONF_ADDRESS: TEST_ADDRESS,
             CONF_NAME: TEST_NAME,
-            CONF_BED_TYPE: "okimat",
+            CONF_BED_TYPE: "okin_uuid",
             CONF_BLE_BOND_ESTABLISHED: False,
         },
         unique_id=TEST_ADDRESS,
@@ -1106,7 +1123,7 @@ async def test_proxy_pair_rpc_error_can_still_produce_verified_bond(
     """The authenticated read decides after an ESPHome pairing RPC timeout."""
     entry = _bed_entry(hass, address=TEST_ADDRESS, name=TEST_NAME)
     hass.config_entries.async_update_entry(
-        entry, data={**entry.data, CONF_BED_TYPE: BED_TYPE_OKIMAT}
+        entry, data={**entry.data, CONF_BED_TYPE: BED_TYPE_OKIN_UUID}
     )
     flow = PairingRequiredRepairFlow(TEST_ADDRESS, TEST_NAME, entry.entry_id)
     flow.hass = hass
@@ -1465,7 +1482,7 @@ async def test_a_standalone_bed_with_host_evidence_is_offered_recovery(
         data={
             CONF_ADDRESS: TEST_ADDRESS,
             CONF_NAME: TEST_NAME,
-            CONF_BED_TYPE: BED_TYPE_OKIMAT,
+            CONF_BED_TYPE: BED_TYPE_OKIN_UUID,
         },
         unique_id=TEST_ADDRESS,
         entry_id="repair_single_stale_bond_entry",
@@ -1494,7 +1511,7 @@ async def test_an_unresolved_combined_pair_is_not_offered_stale_bond_recovery(
         title=TEST_NAME,
         data={
             CONF_NAME: TEST_NAME,
-            CONF_BED_TYPE: BED_TYPE_OKIMAT,
+            CONF_BED_TYPE: BED_TYPE_OKIN_UUID,
             CONF_PAIR_ID: "pair_abc123",
             CONF_PAIR_MEMBER_ADDRESSES: [TEST_ADDRESS, "AA:BB:CC:DD:EE:01"],
         },
@@ -1528,7 +1545,7 @@ async def test_an_ambiguous_combined_address_is_not_offered_stale_bond_recovery(
         title=TEST_NAME,
         data={
             CONF_NAME: TEST_NAME,
-            CONF_BED_TYPE: BED_TYPE_OKIMAT,
+            CONF_BED_TYPE: BED_TYPE_OKIN_UUID,
             CONF_PAIR_ID: "pair_duplicate_address",
             CONF_PAIR_MODE: PAIR_MODE_SEPARATE_ADDRESS,
             CONF_PAIR_MEMBER_ADDRESSES: [TEST_ADDRESS],
@@ -1536,12 +1553,12 @@ async def test_an_ambiguous_combined_address_is_not_offered_stale_bond_recovery(
                 {
                     CONF_SIDE: SIDE_LEFT,
                     CONF_ADDRESS: TEST_ADDRESS,
-                    CONF_BED_TYPE: BED_TYPE_OKIMAT,
+                    CONF_BED_TYPE: BED_TYPE_OKIN_UUID,
                 },
                 {
                     CONF_SIDE: SIDE_RIGHT,
                     CONF_ADDRESS: TEST_ADDRESS,
-                    CONF_BED_TYPE: BED_TYPE_OKIMAT,
+                    CONF_BED_TYPE: BED_TYPE_OKIN_UUID,
                 },
             ],
         },
@@ -1576,19 +1593,19 @@ async def test_an_ambiguous_combined_address_is_not_offered_stale_bond_recovery(
             {
                 CONF_SIDE: "middle",
                 CONF_ADDRESS: TEST_ADDRESS,
-                CONF_BED_TYPE: BED_TYPE_OKIMAT,
+                CONF_BED_TYPE: BED_TYPE_OKIN_UUID,
             }
         ],
         [
             {
                 CONF_SIDE: SIDE_LEFT,
                 CONF_ADDRESS: TEST_ADDRESS,
-                CONF_BED_TYPE: BED_TYPE_OKIMAT,
+                CONF_BED_TYPE: BED_TYPE_OKIN_UUID,
             },
             {
                 CONF_SIDE: SIDE_LEFT,
                 CONF_ADDRESS: "AA:BB:CC:DD:EE:01",
-                CONF_BED_TYPE: BED_TYPE_OKIMAT,
+                CONF_BED_TYPE: BED_TYPE_OKIN_UUID,
             },
         ],
     ],
@@ -1603,7 +1620,7 @@ async def test_malformed_combined_side_is_not_offered_stale_bond_recovery(
         title=TEST_NAME,
         data={
             CONF_NAME: TEST_NAME,
-            CONF_BED_TYPE: BED_TYPE_OKIMAT,
+            CONF_BED_TYPE: BED_TYPE_OKIN_UUID,
             CONF_PAIR_ID: "pair_malformed_side",
             CONF_PAIR_MODE: PAIR_MODE_SEPARATE_ADDRESS,
             CONF_PAIR_MEMBER_ADDRESSES: [TEST_ADDRESS],
@@ -1643,7 +1660,7 @@ async def test_a_combined_side_is_offered_stale_bond_recovery(
         title=TEST_NAME,
         data={
             CONF_NAME: TEST_NAME,
-            CONF_BED_TYPE: BED_TYPE_OKIMAT,
+            CONF_BED_TYPE: BED_TYPE_OKIN_UUID,
             CONF_PAIR_ID: "pair_abc123",
             CONF_PAIR_MODE: PAIR_MODE_SEPARATE_ADDRESS,
             CONF_PAIR_MEMBER_ADDRESSES: [TEST_ADDRESS, other_address],
@@ -1652,14 +1669,14 @@ async def test_a_combined_side_is_offered_stale_bond_recovery(
                     CONF_SIDE: SIDE_LEFT,
                     CONF_ADDRESS: TEST_ADDRESS,
                     CONF_NAME: "Left",
-                    CONF_BED_TYPE: BED_TYPE_OKIMAT,
+                    CONF_BED_TYPE: BED_TYPE_OKIN_UUID,
                     CONF_BLE_BOND_ESTABLISHED: True,
                 },
                 {
                     CONF_SIDE: SIDE_RIGHT,
                     CONF_ADDRESS: other_address,
                     CONF_NAME: "Right",
-                    CONF_BED_TYPE: BED_TYPE_OKIMAT,
+                    CONF_BED_TYPE: BED_TYPE_OKIN_UUID,
                 },
             ],
         },
@@ -1714,7 +1731,7 @@ async def test_combined_recovery_persists_only_the_repaired_child(
         title=TEST_NAME,
         data={
             CONF_NAME: TEST_NAME,
-            CONF_BED_TYPE: BED_TYPE_OKIMAT,
+            CONF_BED_TYPE: BED_TYPE_OKIN_UUID,
             CONF_PAIR_ID: "pair_abc123",
             CONF_PAIR_MODE: PAIR_MODE_SEPARATE_ADDRESS,
             CONF_PAIR_MEMBER_ADDRESSES: [TEST_ADDRESS, other_address],
@@ -1722,7 +1739,7 @@ async def test_combined_recovery_persists_only_the_repaired_child(
                 {
                     CONF_SIDE: SIDE_LEFT,
                     CONF_ADDRESS: TEST_ADDRESS,
-                    CONF_BED_TYPE: BED_TYPE_OKIMAT,
+                    CONF_BED_TYPE: BED_TYPE_OKIN_UUID,
                     CONF_BLE_BOND_ESTABLISHED: True,
                     CONF_BLE_BOND_CONTEXT: stale_context,
                     CONF_BLE_BOND_MARKER_UNRELIABLE: True,
@@ -1730,7 +1747,7 @@ async def test_combined_recovery_persists_only_the_repaired_child(
                 {
                     CONF_SIDE: SIDE_RIGHT,
                     CONF_ADDRESS: other_address,
-                    CONF_BED_TYPE: BED_TYPE_OKIMAT,
+                    CONF_BED_TYPE: BED_TYPE_OKIN_UUID,
                     CONF_BLE_BOND_ESTABLISHED: True,
                     CONF_BLE_BOND_CONTEXT: {"transport": "proxy"},
                 },
@@ -1798,7 +1815,7 @@ async def test_loaded_combined_repair_updates_the_child_view_and_runtime(
         title=TEST_NAME,
         data={
             CONF_NAME: TEST_NAME,
-            CONF_BED_TYPE: BED_TYPE_OKIMAT,
+            CONF_BED_TYPE: BED_TYPE_OKIN_UUID,
             CONF_PAIR_ID: "pair_loaded_repair",
             CONF_PAIR_MODE: PAIR_MODE_SEPARATE_ADDRESS,
             CONF_PAIR_MEMBER_ADDRESSES: [TEST_ADDRESS, other_address],
@@ -1806,13 +1823,13 @@ async def test_loaded_combined_repair_updates_the_child_view_and_runtime(
                 {
                     CONF_SIDE: SIDE_LEFT,
                     CONF_ADDRESS: TEST_ADDRESS,
-                    CONF_BED_TYPE: BED_TYPE_OKIMAT,
+                    CONF_BED_TYPE: BED_TYPE_OKIN_UUID,
                     CONF_BLE_BOND_MARKER_UNRELIABLE: True,
                 },
                 {
                     CONF_SIDE: SIDE_RIGHT,
                     CONF_ADDRESS: other_address,
-                    CONF_BED_TYPE: BED_TYPE_OKIMAT,
+                    CONF_BED_TYPE: BED_TYPE_OKIN_UUID,
                 },
             ],
         },
@@ -1866,7 +1883,7 @@ async def test_a_proxy_pairing_failure_keeps_the_guided_pairing_retry(
         data={
             CONF_ADDRESS: TEST_ADDRESS,
             CONF_NAME: TEST_NAME,
-            CONF_BED_TYPE: BED_TYPE_OKIMAT,
+            CONF_BED_TYPE: BED_TYPE_OKIN_UUID,
         },
         unique_id=TEST_ADDRESS,
         entry_id="repair_proxy_pairing_failure_entry",
@@ -1903,7 +1920,7 @@ async def test_an_unbonded_proxy_link_keeps_the_guided_pairing_retry(
         data={
             CONF_ADDRESS: TEST_ADDRESS,
             CONF_NAME: TEST_NAME,
-            CONF_BED_TYPE: BED_TYPE_OKIMAT,
+            CONF_BED_TYPE: BED_TYPE_OKIN_UUID,
         },
         unique_id=TEST_ADDRESS,
         entry_id="repair_unbonded_proxy_entry",
@@ -1959,7 +1976,7 @@ async def test_a_proxy_authentication_failure_still_gets_proxy_guidance(
         data={
             CONF_ADDRESS: TEST_ADDRESS,
             CONF_NAME: TEST_NAME,
-            CONF_BED_TYPE: BED_TYPE_OKIMAT,
+            CONF_BED_TYPE: BED_TYPE_OKIN_UUID,
             CONF_BLE_BOND_ESTABLISHED: True,
             # Only ever written from a verification that positively proved a
             # bond, which is what makes this independent of the failure above.
@@ -2514,7 +2531,8 @@ async def test_repair_verifies_without_pairing_after_clearing_a_stale_proxy_cach
         gatt_cache_cleared=cleared,
     )
     verified = replace(failed, status=BondVerificationStatus.VERIFIED, gatt_cache_cleared=False)
-    connect = AsyncMock(return_value=MagicMock(disconnect=AsyncMock()))
+    paired_client = MagicMock(disconnect=AsyncMock(), pair=AsyncMock())
+    connect = AsyncMock(return_value=paired_client)
     find_device = MagicMock(return_value=MagicMock())
     with (
         patch.object(flow, "_async_pair_via_coordinator", new=AsyncMock(return_value=None)),
@@ -2532,10 +2550,10 @@ async def test_repair_verifies_without_pairing_after_clearing_a_stale_proxy_cach
     ):
         assert await flow._async_try_pair() is repaired
 
-    # The final pair reuses the live link (pinned source), so it pairs via client.pair().
-    assert ["pair" in c.kwargs for c in connect.await_args_list] == [True] + [False] * (
-        len(pairs) - 1
-    )
+    # This forced generic Sleep Number route still discovers before pairing.
+    # Clearing stale handles must verify without an intervening pair request.
+    assert ["pair" in c.kwargs for c in connect.await_args_list] == [False] * len(pairs)
+    assert paired_client.pair.await_count == sum(pairs)
     assert [c.args[0] for c in find_device.call_args_list] == [None] + ["proxy"] * (
         len(pairs) - 1
     )
@@ -2600,3 +2618,87 @@ async def test_repair_retries_a_rerouted_stale_cache_verification_once(
         ("proxy", False),
         ("proxy", False),
     ]
+
+
+async def test_combine_repair_keeps_the_pairing_flows_translation_domain(
+    hass: HomeAssistant,
+) -> None:
+    """A reason Home Assistant owns still resolves when Repairs passes it on."""
+    _bed_entry(hass, address="AA:BB:CC:DD:EE:01", name="Left")
+    _bed_entry(hass, address="AA:BB:CC:DD:EE:02", name="Right")
+    flow = CombineBedsRepairFlow()
+    flow.hass = hass
+    aborted = {
+        "type": FlowResultType.ABORT,
+        "flow_id": "config-flow-id",
+        "handler": DOMAIN,
+        "reason": "already_in_progress",
+        "translation_domain": "homeassistant",
+    }
+    with patch.object(
+        hass.config_entries.flow, "async_init", new=AsyncMock(return_value=aborted)
+    ):
+        result = await flow.async_step_pair_beds({CONF_NAME: "Combined"})
+
+    assert result["type"] is FlowResultType.ABORT
+    assert (result["reason"], result["translation_domain"]) == (
+        "already_in_progress",
+        "homeassistant",
+    )
+
+
+@pytest.mark.parametrize("paired", [False, True])
+async def test_octo_pin_repair_saves_the_pin_it_asks_for(hass: HomeAssistant, paired: bool) -> None:
+    """A locked Octo receiver's repair takes the PIN and saves it where Configure does."""
+    from custom_components.adjustable_bed.repairs import async_create_fix_flow
+    from custom_components.adjustable_bed.unsupported import update_octo_pin_required_issue
+
+    address = "AA:BB:CC:DD:EE:01"
+    side_data = {CONF_ADDRESS: address, "bed_type": "octo"}
+    data: dict[str, Any] = (
+        {
+            "pair_id": "pair_test",
+            "pair_children": [
+                {**side_data, "side": "left"},
+                {CONF_ADDRESS: "AA:BB:CC:DD:EE:02", "bed_type": "octo", "side": "right"},
+            ],
+        }
+        if paired
+        else side_data
+    )
+    entry = MockConfigEntry(domain=DOMAIN, title="Bed", data=data)
+    entry.add_to_hass(hass)
+    update_octo_pin_required_issue(hass, address, "Bed", True, entry_id=entry.entry_id)
+    issue = ir.async_get(hass).async_get_issue(DOMAIN, "octo_pin_required_aa_bb_cc_dd_ee_01")
+    assert issue is not None and issue.is_fixable and issue.severity is IssueSeverity.ERROR
+
+    flow = await async_create_fix_flow(hass, issue.issue_id, issue.data)
+    flow.hass = hass
+    form = await flow.async_step_init({"issue_id": issue.issue_id})
+    assert form["type"] == FlowResultType.FORM
+    form = await flow.async_step_init({"octo_pin": "12a4"})
+    assert form["errors"] == {"octo_pin": "invalid_pin"}
+    with patch.object(hass.config_entries, "async_reload", AsyncMock()):
+        done = await flow.async_step_init({"octo_pin": " 1234 "})
+    assert done["type"] == FlowResultType.CREATE_ENTRY
+    if paired:
+        assert get_child(entry.data, "left")["octo_pin"] == "1234"
+        assert "octo_pin" not in get_child(entry.data, "right")
+    else:
+        assert entry.data["octo_pin"] == "1234"
+
+
+async def test_octo_pin_repair_never_overwrites_a_pin_saved_since(hass: HomeAssistant) -> None:
+    from custom_components.adjustable_bed.repairs import OctoPinRepairFlow
+
+    entry = MockConfigEntry(
+        domain=DOMAIN,
+        title="Bed",
+        data={CONF_ADDRESS: "AA:BB:CC:DD:EE:01", "bed_type": "octo", "octo_pin": "4321"},
+    )
+    entry.add_to_hass(hass)
+    flow = OctoPinRepairFlow(entry.entry_id, "AA:BB:CC:DD:EE:01")
+    flow.hass = hass
+    result = await flow.async_step_init({"octo_pin": "1234"})
+    assert result["type"] == FlowResultType.ABORT and result["reason"] == "pin_saved"
+    assert entry.data["octo_pin"] == "4321"

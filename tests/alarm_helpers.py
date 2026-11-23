@@ -1,0 +1,84 @@
+"""Drive the shared ``set_alarm`` action against one real controller.
+
+Target resolution and BLE scheduling are replaced; validation and the
+controller's own frame building run for real, so a per-bed test can assert the
+exact bytes the new action writes.
+"""
+
+from __future__ import annotations
+
+from typing import Any
+from unittest.mock import AsyncMock, MagicMock, patch
+
+from homeassistant.core import HomeAssistant
+from homeassistant.exceptions import ServiceValidationError
+
+from custom_components.adjustable_bed.alarm import AlarmCapability
+from custom_components.adjustable_bed.beds.base import BedController
+from custom_components.adjustable_bed.const import DOMAIN
+from custom_components.adjustable_bed.services import async_register_services
+
+
+async def call_set_alarm(
+    hass: HomeAssistant,
+    controller: BedController,
+    data: dict[str, Any],
+    *,
+    owner: object | None = None,
+    side: str = "both",
+    bed_type: str | None = None,
+) -> list[dict[str, Any]]:
+    """Call ``set_alarm`` for one physical target and return each write's scheduling."""
+    target = MagicMock(
+        bed_type=bed_type,
+        capability_controller=controller,
+        operation_identity=1,
+    )
+    target.name = "Bed"
+    owner = owner if owner is not None else MagicMock()
+    scheduled: list[dict[str, Any]] = []
+
+    async def preflight_each(targets, check):
+        try:
+            check(target, controller)
+        except ValueError as err:
+            raise ServiceValidationError(str(err)) from err
+        return []
+
+    async def execute(coordinator, target_side, command, **kwargs):
+        scheduled.append(kwargs)
+        side_scope = getattr(controller, "side_scope", None)
+        if side_scope is None:
+            await command(controller)
+            return
+        with side_scope(target_side):
+            await command(controller)
+
+    # Register (and so import every family module) before patching: family
+    # modules bind the shared helpers at import time and would keep the mocks.
+    if not hass.services.has_service(DOMAIN, "set_alarm"):
+        await async_register_services(hass)
+    with (
+        patch(
+            "custom_components.adjustable_bed.services._resolve_sided_targets",
+            return_value=([(owner, side)], []),
+        ),
+        patch("custom_components.adjustable_bed.services._command_targets", return_value=[target]),
+        patch("custom_components.adjustable_bed.services._preflight_each", side_effect=preflight_each),
+        patch("custom_components.adjustable_bed.services._execute_sided", side_effect=execute),
+    ):
+        await hass.services.async_call(
+            DOMAIN, "set_alarm", {"device_id": "bed", **data}, blocking=True
+        )
+    return scheduled
+
+
+def use_shared_alarm_writer(controller: MagicMock, capability: AlarmCapability) -> None:
+    """Give a spec mock a real capability and the base class's alarm writer."""
+
+    async def configure_alarm(alarm):
+        await BedController.configure_alarm(controller, alarm)
+
+    controller.alarm_capability = capability
+    controller.validate_alarm = MagicMock()
+    controller.configure_alarm = AsyncMock(side_effect=configure_alarm)

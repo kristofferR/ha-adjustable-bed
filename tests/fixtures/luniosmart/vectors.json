@@ -1,0 +1,266 @@
+[
+  {
+    "id": "V-head_up",
+    "protocol": "P1",
+    "action": "head_up",
+    "inputs": {
+      "builder": "control",
+      "key": 36
+    },
+    "expected_bytes": "6e01002493"
+  },
+  {
+    "id": "V-head_down",
+    "protocol": "P1",
+    "action": "head_down",
+    "inputs": {
+      "builder": "control",
+      "key": 37
+    },
+    "expected_bytes": "6e01002594"
+  },
+  {
+    "id": "V-foot_up",
+    "protocol": "P1",
+    "action": "foot_up",
+    "inputs": {
+      "builder": "control",
+      "key": 38
+    },
+    "expected_bytes": "6e01002695"
+  },
+  {
+    "id": "V-foot_down",
+    "protocol": "P1",
+    "action": "foot_down",
+    "inputs": {
+      "builder": "control",
+      "key": 39
+    },
+    "expected_bytes": "6e01002796"
+  },
+  {
+    "id": "V-flat",
+    "protocol": "P1",
+    "action": "flat",
+    "inputs": {
+      "builder": "control",
+      "key": 49
+    },
+    "expected_bytes": "6e010031a0"
+  },
+  {
+    "id": "V-memory_recall_1",
+    "protocol": "P1",
+    "action": "memory_recall_1",
+    "inputs": {
+      "builder": "control",
+      "key": 46
+    },
+    "expected_bytes": "6e01002e9d"
+  },
+  {
+    "id": "V-memory_save_1",
+    "protocol": "P1",
+    "action": "memory_save_1",
+    "inputs": {
+      "builder": "control",
+      "key": 43
+    },
+    "expected_bytes": "6e01002b9a"
+  },
+  {
+    "id": "V-zero_gravity",
+    "protocol": "P1",
+    "action": "zero_gravity",
+    "inputs": {
+      "builder": "control",
+      "key": 69
+    },
+    "expected_bytes": "6e010045b4"
+  },
+  {
+    "id": "V-anti_snore",
+    "protocol": "P1",
+    "action": "anti_snore",
+    "inputs": {
+      "builder": "control",
+      "key": 70
+    },
+    "expected_bytes": "6e010046b5"
+  },
+  {
+    "id": "V-release",
+    "protocol": "P1",
+    "action": "release",
+    "inputs": {
+      "builder": "control",
+      "key": 110
+    },
+    "expected_bytes": "6e01006edd"
+  },
+  {
+    "id": "V-query-True",
+    "protocol": "P1",
+    "action": "capability query",
+    "inputs": {
+      "builder": "capability_query",
+      "nordic": true
+    },
+    "expected_bytes": "00"
+  },
+  {
+    "id": "V-query-False",
+    "protocol": "P1",
+    "action": "capability query",
+    "inputs": {
+      "builder": "capability_query",
+      "nordic": false
+    },
+    "expected_bytes": "6e02010071"
+  },
+  {
+    "id": "V-clock-1",
+    "protocol": "P1",
+    "action": "local clock synchronization",
+    "inputs": {
+      "builder": "clock_sync",
+      "parts": [
+        0,
+        1,
+        1,
+        0,
+        0,
+        0
+      ]
+    },
+    "expected_bytes": "6e200d080301000101000000a9"
+  },
+  {
+    "id": "V-clock-2",
+    "protocol": "P1",
+    "action": "local clock synchronization",
+    "inputs": {
+      "builder": "clock_sync",
+      "parts": [
+        56,
+        11,
+        17,
+        12,
+        34,
+        56
+      ]
+    },
+    "expected_bytes": "6e200d080301380b110c223861"
+  },
+  {
+    "id": "V-literal-0",
+    "protocol": "P1",
+    "action": "notification deviceCharacteristicsSubscriptionClockEvent",
+    "inputs": {
+      "builder": "literal_notification",
+      "event": "deviceCharacteristicsSubscriptionClockEvent"
+    },
+    "expected_bytes": "6e09010078"
+  },
+  {
+    "id": "V-literal-1",
+    "protocol": "P1",
+    "action": "notification deviceCharacteristicsSubscriptionLightEvent",
+    "inputs": {
+      "builder": "literal_notification",
+      "event": "deviceCharacteristicsSubscriptionLightEvent"
+    },
+    "expected_bytes": "6e0e00037f"
+  },
+  {
+    "id": "V-literal-2",
+    "protocol": "P1",
+    "action": "notification deviceCharacteristicsSubscriptionAromatherapyEvent",
+    "inputs": {
+      "builder": "literal_notification",
+      "event": "deviceCharacteristicsSubscriptionAromatherapyEvent"
+    },
+    "expected_bytes": "6e1a000189"
+  },
+  {
+    "id": "V-literal-3",
+    "protocol": "P1",
+    "action": "notification deviceAddAlarmSuccessEvent",
+    "inputs": {
+      "builder": "literal_notification",
+      "event": "deviceAddAlarmSuccessEvent"
+    },
+    "expected_bytes": "6e07010177"
+  },
+  {
+    "id": "V-literal-4",
+    "protocol": "P1",
+    "action": "notification deviceCancelAlarmSuccessEvent",
+    "inputs": {
+      "builder": "literal_notification",
+      "event": "deviceCancelAlarmSuccessEvent"
+    },
+    "expected_bytes": "6e07010278"
+  },
+  {
+    "id": "V-literal-5",
+    "protocol": "P1",
+    "action": "notification deviceCharacteristicsSubscriptionMusicEvent",
+    "inputs": {
+      "builder": "literal_notification",
+      "event": "deviceCharacteristicsSubscriptionMusicEvent"
+    },
+    "expected_bytes": "6e16010186"
+  },
+  {
+    "id": "V-literal-6",
+    "protocol": "P1",
+    "action": "notification deviceCharacteristicsSubscriptionDetectionEvent",
+    "inputs": {
+      "builder": "literal_notification",
+      "event": "deviceCharacteristicsSubscriptionDetectionEvent"
+    },
+    "expected_bytes": "6e90c101c0"
+  },
+  {
+    "id": "V-literal-7",
+    "protocol": "P1",
+    "action": "notification deviceCharacteristicsSubscriptionSnoreEvent",
+    "inputs": {
+      "builder": "literal_notification",
+      "event": "deviceCharacteristicsSubscriptionSnoreEvent"
+    },
+    "expected_bytes": "6e2100008f"
+  },
+  {
+    "id": "V-literal-8",
+    "protocol": "P1",
+    "action": "notification deviceCharacteristicsSubscriptionBoxLockEvent",
+    "inputs": {
+      "builder": "literal_notification",
+      "event": "deviceCharacteristicsSubscriptionBoxLockEvent"
+    },
+    "expected_bytes": "6e23018416"
+  },
+  {
+    "id": "V-literal-9",
+    "protocol": "P1",
+    "action": "notification deviceCharacteristicsSubscriptionCancelBoxLockEvent",
+    "inputs": {
+      "builder": "literal_notification",
+      "event": "deviceCharacteristicsSubscriptionCancelBoxLockEvent"
+    },
+    "expected_bytes": "6e23008415"
+  },
+  {
+    "id": "V-literal-10",
+    "protocol": "P1",
+    "action": "notification deviceCharacteristicsSubscriptionSnoreStopPlayMusicEvent",
+    "inputs": {
+      "builder": "literal_notification",
+      "event": "deviceCharacteristicsSubscriptionSnoreStopPlayMusicEvent"
+    },
+    "expected_bytes": "6e23a06e9f"
+  }
+]

@@ -1,7 +1,6 @@
 """Layout replacement keeps matching identities and removes retired controls."""
 
 import pytest
-from homeassistant.helpers import entity_registry as er
 
 from custom_components.adjustable_bed.beds.okin_rf_eco_bt import OkinRfEcoBtController
 from custom_components.adjustable_bed.binary_sensor import _binary_sensor_entities_for
@@ -10,7 +9,6 @@ from custom_components.adjustable_bed.const import (
     BED_TYPE_FURNIMOVE,
     BED_TYPE_OKIN_RF_ECO_BT,
     CONF_HAS_MASSAGE,
-    DOMAIN,
 )
 from custom_components.adjustable_bed.cover import _cover_entities_for
 from custom_components.adjustable_bed.number import _number_entities_for
@@ -24,12 +22,12 @@ async def test_initial_off_feedback_changes_reported_sensors_from_unknown_to_off
     runtime = configure_entity_runtime(hass, controller, BED_TYPE_FURNIMOVE)
     runtime.controller_state = controller._coordinator.controller_state
     sensors = [
-        sensor for sensor in _binary_sensor_entities_for(hass, runtime)
-        if sensor.unique_id in {
-            "bed_furnimove_ubl_left", "bed_furnimove_sync_left", "bed_furnimove_child_lock_left",
-        }
+        sensor
+        for sensor in _binary_sensor_entities_for(hass, runtime)
+        if sensor.unique_id
+        in {"bed_furnimove_sync_left", "bed_furnimove_child_lock_left"}
     ]
-    assert len(sensors) == 3
+    assert len(sensors) == 2
     assert all(sensor.is_on is None for sensor in sensors)
     controller._parse_feedback(generic(0))
     assert all(sensor.is_on is False for sensor in sensors)
@@ -60,46 +58,40 @@ async def test_local_massage_sensors_follow_selected_handset(hass, handset, mass
     assert len(massage_entities) == (5 if massage else 0)
 
 
-async def test_replacing_stair_cover_preserves_matching_bed_motor_ids(hass):
+async def test_replacing_stair_cover_keeps_matching_bed_motor_ids(hass):
     controller = make_controller("00000")
     runtime = configure_entity_runtime(hass, controller, BED_TYPE_FURNIMOVE)
-    registry = er.async_get(hass)
-    stair = registry.async_get_or_create("cover", DOMAIN, "bed_stair_left", config_entry=runtime.entry)
-    back = registry.async_get_or_create("cover", DOMAIN, "bed_back_left", config_entry=runtime.entry)
-    legs = registry.async_get_or_create("cover", DOMAIN, "bed_legs_left", config_entry=runtime.entry)
-    other = registry.async_get_or_create("cover", DOMAIN, "bed_stair_right", config_entry=runtime.entry)
     covers = _cover_entities_for(hass, runtime)
-    assert {entity.unique_id for entity in covers} == {back.unique_id, legs.unique_id}
-    assert registry.async_get(stair.entity_id) is None
-    assert registry.async_get(back.entity_id) is back and registry.async_get(legs.entity_id) is legs
-    assert registry.async_get(other.entity_id) is other
+    assert {entity.unique_id for entity in covers} == {"bed_back_left", "bed_legs_left"}
 
 
-async def test_shorter_profile_removes_only_retired_actions_of_current_side(hass):
+async def test_shorter_profile_builds_only_its_actions(hass):
     controller = make_controller("00000")
     runtime = configure_entity_runtime(hass, controller, BED_TYPE_FURNIMOVE)
-    registry = er.async_get(hass)
-    retained = registry.async_get_or_create("button", DOMAIN, "bed_furnimove_action_4_left", config_entry=runtime.entry)
-    retired = registry.async_get_or_create("button", DOMAIN, "bed_furnimove_action_50_left", config_entry=runtime.entry)
-    other = registry.async_get_or_create("button", DOMAIN, "bed_furnimove_action_50_right", config_entry=runtime.entry)
-    buttons = _button_entities_for(hass, runtime)
-    assert any(entity.unique_id == retained.unique_id for entity in buttons)
-    assert registry.async_get(retained.entity_id) is retained
-    assert registry.async_get(retired.entity_id) is None
-    assert registry.async_get(other.entity_id) is other
+    buttons = {entity.unique_id for entity in _button_entities_for(hass, runtime)}
+    # Its only non-motor row, Flat, is the standard Flat preset button.
+    assert "bed_preset_flat_left" in buttons
+    assert not any(unique_id.startswith("bed_furnimove_action_") for unique_id in buttons)
 
 
-async def test_confirming_staircase_retires_furnimove_state_of_only_selected_side(hass):
+async def test_confirming_staircase_drops_furnimove_state(hass):
     previous = make_controller()
     controller = OkinRfEcoBtController(previous._coordinator)
     runtime = configure_entity_runtime(hass, controller, BED_TYPE_OKIN_RF_ECO_BT)
-    registry = er.async_get(hass)
-    sensors = []
-    for domain, key in (("sensor", "furnimove_model"), ("binary_sensor", "furnimove_sync")):
-        sensors.append(registry.async_get_or_create(domain, DOMAIN, f"bed_{key}_left", config_entry=runtime.entry))
-        registry.async_get_or_create(domain, DOMAIN, f"bed_{key}_right", config_entry=runtime.entry)
-    _sensor_entities_for(hass, runtime)
-    _binary_sensor_entities_for(hass, runtime)
-    for row in sensors:
-        assert registry.async_get(row.entity_id) is None
-        assert registry.async_get_entity_id(row.domain, DOMAIN, row.unique_id.replace("_left", "_right"))
+    built = {
+        entity.unique_id
+        for entity in (
+            *_sensor_entities_for(hass, runtime),
+            *_binary_sensor_entities_for(hass, runtime),
+        )
+    }
+    assert not {"bed_furnimove_model_left", "bed_furnimove_sync_left"} & built
+
+
+async def test_action_buttons_skip_standard_rows_and_use_readable_names(hass):
+    from custom_components.adjustable_bed.beds.furnimove.controller import _ACTION_LABELS
+
+    controller = make_controller()
+    rows = {spec.name for spec in controller.furnimove_action_specs}
+    names = {spec.name for spec in controller.controller_button_specs}
+    assert names == {_ACTION_LABELS[row] for row in rows if row in _ACTION_LABELS}

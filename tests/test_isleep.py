@@ -1,4 +1,4 @@
-"""Accepted row064 artifact vectors and action lifecycles (no hardware claims)."""
+"""Accepted ISleep artifact vectors and action lifecycles (no hardware claims)."""
 
 from __future__ import annotations
 
@@ -11,8 +11,8 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 from bleak.exc import BleakError
 
-from custom_components.adjustable_bed.beds.base import SideBoundController
-from custom_components.adjustable_bed.beds.isleep import IsleepController, control_frame, room_frame
+from custom_components.adjustable_bed.beds.isleep import IsleepController
+from custom_components.adjustable_bed.codec import kaidi as codec
 from custom_components.adjustable_bed.const import (
     BED_TYPE_ISLEEP,
     CONF_KAIDI_ROOM_ID,
@@ -21,14 +21,17 @@ from custom_components.adjustable_bed.const import (
     KAIDI_NOTIFY_CHAR_UUID,
     KAIDI_WRITE_CHAR_UUID,
 )
-from custom_components.adjustable_bed.isleep_profile import (
+from custom_components.adjustable_bed.controller_state import sided
+from custom_components.adjustable_bed.profiles.kaidi import (
     ISLEEP_PRODUCTS,
     add_isleep_metadata,
     isleep_advertisement,
     validate_isleep_profile,
 )
+from custom_components.adjustable_bed.state_keys import massage_intensity
+from tests.state_helpers import state_writer
 
-ROWS = json.loads((Path(__file__).parent / "fixtures/isleep_row064_commands.json").read_text())
+ROWS = json.loads((Path(__file__).parent / "fixtures/isleep_commands.json").read_text())
 OWN = 0x90ABCDEF
 TARGET = 0x12345678
 MAC = "AA:BB:CC:DD:EE:FF"
@@ -57,7 +60,8 @@ def make_controller(product=129, *, split=False, ready=True):
             }
         ),
         record_command_trace=MagicMock(),
-        handle_controller_state_updates=MagicMock(),
+        controller_state=(state := {}),
+        handle_controller_state_updates=MagicMock(side_effect=state_writer(state)),
         save_app_state=MagicMock(),
         async_write_app_state=AsyncMock(),
         async_disconnect=AsyncMock(),
@@ -84,39 +88,39 @@ async def test_all_108_ui_rows_each_product_and_lane(row):
     for product in row["products"]:
         c, co, client = make_controller(product, split=row["lane"] != 0 or product in (130, 143))
         c._parameter = 50
-        bound = SideBoundController(c, ("left", "right", "both")[row["lane"]])
-        action = row["action"]
-        if action.endswith(("_up", "_down", "_stop")):
-            axis, direction = action.rsplit("_", 1)
-            if axis == "all":
-                if direction == "stop":
-                    await bound._stop("all")
+        with c.side_scope(("left", "right", "both")[row["lane"]]):
+            action = row["action"]
+            if action.endswith(("_up", "_down", "_stop")):
+                axis, direction = action.rsplit("_", 1)
+                if axis == "all":
+                    if direction == "stop":
+                        await c._stop("all")
+                    else:
+                        await c._move("all", direction == "up")
                 else:
-                    await bound._move("all", direction == "up")
+                    await getattr(c, f"move_{axis}_{direction}")()
+            elif action.startswith("save_"):
+                await c.program_memory(int(action[-1]))
+            elif action.startswith("memory_"):
+                await c.preset_memory(int(action[-1]))
+            elif action in ("flat", "zero_g", "anti_snore"):
+                await getattr(c, "preset_" + action)()
+            elif action.startswith("light_"):
+                await getattr(c, "lights_" + action[6:])()
+            elif action == "massage_on":
+                await c.massage_toggle()
+            elif action == "massage_off":
+                await c.massage_off()
+            elif action.endswith("_strength"):
+                await c.set_massage_intensity(action.split("_")[0], 50)
+            elif action.startswith("pattern_"):
+                await c.set_pattern(0 if action == "pattern_cancel" else int(action[-1]))
+            elif action.startswith("timer_"):
+                await c.set_massage_timer(
+                    0 if action == "timer_cancel" else c.massage_timer_options[int(action[-1]) - 1]
+                )
             else:
-                await getattr(bound, f"move_{axis}_{direction}")()
-        elif action.startswith("save_"):
-            await bound.program_memory(int(action[-1]))
-        elif action.startswith("memory_"):
-            await bound.preset_memory(int(action[-1]))
-        elif action in ("flat", "zero_g", "anti_snore"):
-            await getattr(bound, "preset_" + action)()
-        elif action.startswith("light_"):
-            await getattr(bound, "lights_" + action[6:])()
-        elif action == "massage_on":
-            await bound.massage_toggle()
-        elif action == "massage_off":
-            await bound.massage_off()
-        elif action.endswith("_strength"):
-            await bound.set_massage_intensity(action.split("_")[0], 50)
-        elif action.startswith("pattern_"):
-            await bound.set_pattern(0 if action == "pattern_cancel" else int(action[-1]))
-        elif action.startswith("timer_"):
-            await bound.set_massage_timer(
-                0 if action == "timer_cancel" else c.massage_timer_options[int(action[-1]) - 1]
-            )
-        else:
-            pytest.fail(action)
+                pytest.fail(action)
         expected = bytes.fromhex("037856341220efcdab9001") + bytes([row["opcode"], 50, 0])
         assert packets(client)[0] == expected
         assert client.write_gatt_char.call_args_list[0].kwargs["response"] is True
@@ -185,7 +189,8 @@ async def test_cancelled_hold_releases_same_lane_and_original_target():
             wrote.set()
 
     client.write_gatt_char.side_effect = write
-    task = asyncio.create_task(SideBoundController(c, "right").move_back_up())
+    with c.side_scope("right"):
+        task = asyncio.create_task(c.move_back_up())
     await wrote.wait()
     c._target = 0x01020304
     co.cancel_command.set()
@@ -400,9 +405,9 @@ def test_discovery_gates_and_truncated_mode2_alternate():
     ],
 )
 def test_exact_room_builders(room, auth, enroll):
-    assert room_frame(room).hex() == auth
-    assert room_frame(room, enroll=True).hex() == enroll
-    assert control_frame(OWN, TARGET, 1, 0).hex() == "037856341220efcdab9001010000"
+    assert codec.join(room).hex() == auth
+    assert codec.enroll(room).hex() == enroll
+    assert codec.control(TARGET, OWN, 1, 0).hex() == "037856341220efcdab9001010000"
 
 
 async def test_enrollment_is_explicit_fresh_only_and_ack_is_durable():
@@ -491,7 +496,7 @@ async def test_failed_ack_is_retried_on_the_established_session():
 
 async def test_setup_and_options_preserve_explicit_profile(hass):
     from homeassistant.const import CONF_ADDRESS
-    from pytest_homeassistant_custom_component.common import MockConfigEntry
+    from pytest_homeassistant.common import MockConfigEntry
 
     from custom_components.adjustable_bed.config_flow import (
         AdjustableBedConfigFlow,
@@ -512,16 +517,20 @@ async def test_setup_and_options_preserve_explicit_profile(hass):
         "homeassistant.components.bluetooth.async_last_service_info",
         return_value=SimpleNamespace(manufacturer_data=manufacturer(1, 132)),
     ):
-        form = await flow.async_step_isleep()
-        assert form["step_id"] == "isleep"
+        form = await flow.async_step_profile_questions()
+        assert form["step_id"] == "profile_questions"
         assert form["data_schema"] is not None
         assert (
             form["data_schema"](
-                {CONF_PRODUCT_TYPE: "132", CONF_KAIDI_ROOM_ID: 10001, CONF_KAIDI_SOFA_ACU_NO: 2}
+                {
+                    CONF_PRODUCT_TYPE: "132",
+                    CONF_KAIDI_ROOM_ID: 10001,
+                    "advanced": {CONF_KAIDI_SOFA_ACU_NO: 2},
+                }
             )[CONF_PRODUCT_TYPE]
-            == "132"
+            == 132
         )
-        await flow.async_step_isleep(
+        await flow.async_step_profile_questions(
             {CONF_PRODUCT_TYPE: "132", CONF_KAIDI_ROOM_ID: 10200, CONF_KAIDI_SOFA_ACU_NO: 2}
         )
     data = flow._finish_with_verify.call_args.args[0]
@@ -583,17 +592,25 @@ async def test_enrollment_failure_and_timeout_never_save_success():
 
 async def test_saved_intent_survives_reconnect_without_restoring_live_addresses():
     c, _, _ = make_controller(130, split=True)
-    await SideBoundController(c, "both").massage_toggle()
-    await SideBoundController(c, "both").set_massage_intensity("head", 50)
+    with c.side_scope("both"):
+        await c.massage_toggle()
+    with c.side_scope("both"):
+        await c.set_massage_intensity("head", 50)
     state = c.persisted_app_state
-    await SideBoundController(c, "right").set_massage_intensity("head", 60)
+    with c.side_scope("right"):
+        await c.set_massage_intensity("head", 60)
     assert state["strengths"][1]["head"] == 50  # store snapshots cannot alias mutable state
-    new, _, _ = make_controller(130, split=True, ready=False)
+    new, co, _ = make_controller(130, split=True, ready=False)
     new.restore_persisted_app_state(state)
     assert new._own is None and new._target is None and not new._ready
     assert new._parameter == 50
-    assert SideBoundController(new, "left").get_massage_state()["head_active"]
-    assert SideBoundController(new, "right").get_massage_state()["head_intensity"] == 50
+    assert new._massage == [True, True, True]
+    head = massage_intensity("head")
+    assert [co.controller_state[sided(head, side)] for side in ("left", "right", "both")] == [
+        50,
+        50,
+        50,
+    ]
     new.restore_persisted_app_state({})
     assert new._parameter == 0 and not new._massage[0]
 
@@ -610,7 +627,7 @@ async def test_old_notification_callback_cannot_poison_reconnected_session():
 @pytest.mark.parametrize("product,descriptor", [(130, 2), (129, 1)])
 async def test_single_address_options_reject_losing_split_controls(hass, product, descriptor):
     from homeassistant.const import CONF_ADDRESS
-    from pytest_homeassistant_custom_component.common import MockConfigEntry
+    from pytest_homeassistant.common import MockConfigEntry
 
     from custom_components.adjustable_bed.config_flow import AdjustableBedOptionsFlow
     from custom_components.adjustable_bed.const import (
@@ -645,7 +662,7 @@ async def test_single_address_options_reject_losing_split_controls(hass, product
 
 async def test_massage_entity_state_survives_idle_disconnect_and_reconnect_per_side(hass):
     from homeassistant.const import CONF_ADDRESS
-    from pytest_homeassistant_custom_component.common import MockConfigEntry
+    from pytest_homeassistant.common import MockConfigEntry
 
     from custom_components.adjustable_bed.const import CONF_BED_TYPE, CONF_HAS_MASSAGE, DOMAIN
     from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
@@ -721,3 +738,32 @@ async def test_massage_entity_state_survives_idle_disconnect_and_reconnect_per_s
     assert packets(client)[1][11] == 119
     assert lt.current_option == "Off" and rt.current_option == "30 min"
     await pair.async_shutdown()
+
+
+async def test_configure_rejects_an_out_of_range_room(hass, enable_custom_integrations):
+    """The room field itself rejects a room outside the signed 32-bit range."""
+    from homeassistant.const import CONF_ADDRESS
+    from homeassistant.data_entry_flow import InvalidData
+    from pytest_homeassistant.common import MockConfigEntry
+
+    from custom_components.adjustable_bed.const import CONF_BED_TYPE, DOMAIN
+
+    data = {
+        CONF_ADDRESS: MAC,
+        CONF_BED_TYPE: BED_TYPE_ISLEEP,
+        CONF_PRODUCT_TYPE: 129,
+        CONF_KAIDI_ROOM_ID: 10000,
+        CONF_KAIDI_SOFA_ACU_NO: 2,
+    }
+    entry = MockConfigEntry(domain=DOMAIN, data=data)
+    entry.add_to_hass(hass)
+    menu = await hass.config_entries.options.async_init(entry.entry_id)
+    form = await hass.config_entries.options.async_configure(
+        menu["flow_id"], {"next_step_id": "settings"}
+    )
+    with pytest.raises(InvalidData) as error:
+        await hass.config_entries.options.async_configure(
+            form["flow_id"], {**form["data_schema"]({}), CONF_KAIDI_ROOM_ID: 2**31}
+        )
+    assert CONF_KAIDI_ROOM_ID in error.value.schema_errors
+    assert dict(entry.data) == data

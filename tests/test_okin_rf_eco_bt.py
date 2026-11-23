@@ -9,17 +9,13 @@ import pytest
 from bleak_retry_connector import BleakNotFoundError
 from homeassistant.const import CONF_ADDRESS, CONF_NAME
 from homeassistant.core import HomeAssistant
-from pytest_homeassistant_custom_component.common import MockConfigEntry
+from pytest_homeassistant.common import MockConfigEntry
 
-from custom_components.adjustable_bed.beds.okin_rf_eco_bt import (
-    STAIR_IN_COMMAND,
-    STAIR_OUT_COMMAND,
-)
 from custom_components.adjustable_bed.const import (
     BED_TYPE_OKIN_RF_ECO_BT,
     CONF_BED_TYPE,
+    CONF_CONNECTION_MODE,
     CONF_DISABLE_ANGLE_SENSING,
-    CONF_DISCONNECT_AFTER_COMMAND,
     CONF_HAS_MASSAGE,
     CONF_MOTOR_COUNT,
     CONF_MOTOR_PULSE_COUNT,
@@ -82,7 +78,7 @@ class TestOkinRfEcoBtController:
             mock_okin_rf_eco_bt_config_entry,
             data={
                 **mock_okin_rf_eco_bt_config_entry.data,
-                CONF_DISCONNECT_AFTER_COMMAND: disconnect_after_command,
+                CONF_CONNECTION_MODE: "release" if disconnect_after_command else "idle",
             },
         )
         coordinator = AdjustableBedCoordinator(hass, mock_okin_rf_eco_bt_config_entry)
@@ -119,7 +115,7 @@ class TestOkinRfEcoBtController:
             mock_okin_rf_eco_bt_config_entry,
             data={
                 **mock_okin_rf_eco_bt_config_entry.data,
-                CONF_DISCONNECT_AFTER_COMMAND: disconnect_after_command,
+                CONF_CONNECTION_MODE: "release" if disconnect_after_command else "idle",
             },
         )
         coordinator = AdjustableBedCoordinator(hass, mock_okin_rf_eco_bt_config_entry)
@@ -357,8 +353,8 @@ class TestOkinRfEcoBtController:
             assert controller.supports_lights is False
             assert controller.supports_light_toggle_control is False
             assert controller.supports_massage is False
-            assert controller._build_command(STAIR_OUT_COMMAND) == STAIR_OUT_PACKET
-            assert controller._build_command(STAIR_IN_COMMAND) == STAIR_IN_PACKET
+            assert controller._build_command(0x00000001) == STAIR_OUT_PACKET
+            assert controller._build_command(0x00000002) == STAIR_IN_PACKET
         finally:
             await coordinator.async_disconnect()
 

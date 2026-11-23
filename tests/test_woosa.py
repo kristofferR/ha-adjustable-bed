@@ -1,29 +1,30 @@
 """Woosa Sleep 1.1.9 artifact vectors and command lifecycle.
 
-Vector provenance: accepted report C01-C61 / N01-N07, documented in
-docs/beds/woosa-disposition.md. No physical hardware confirmation is implied.
+Vector provenance: accepted report C01-C61 / N01-N07. No physical hardware
+confirmation is implied.
 """
 
 from __future__ import annotations
 
 import asyncio
 from collections.abc import Callable, Iterator
-from datetime import datetime, time
+from datetime import datetime
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from homeassistant.const import CONF_ADDRESS, CONF_NAME
-from homeassistant.core import HomeAssistant, ServiceCall
+from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import ServiceValidationError
 from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers import entity_registry as er
-from pytest_homeassistant_custom_component.common import MockConfigEntry
+from pytest_homeassistant.common import MockConfigEntry
 
-from custom_components.adjustable_bed.beds.solace import (
+from custom_components.adjustable_bed.bed_traits import bed_type_has_position_feedback
+from custom_components.adjustable_bed.beds.solace.controller import (
     SolaceController,
     build_solace_clock_command,
 )
-from custom_components.adjustable_bed.beds.woosa import WoosaController
+from custom_components.adjustable_bed.beds.woosa import MASSAGE_MODE, WoosaController
 from custom_components.adjustable_bed.const import (
     BED_TYPE_SOLACE,
     CONF_BED_TYPE,
@@ -34,7 +35,6 @@ from custom_components.adjustable_bed.const import (
     DOMAIN,
     SOLACE_CHAR_UUID,
     SOLACE_VARIANT_WOOSA,
-    bed_type_has_position_feedback,
 )
 from custom_components.adjustable_bed.number import (
     MASSAGE_NUMBER_DESCRIPTIONS,
@@ -44,7 +44,8 @@ from custom_components.adjustable_bed.select import (
     MASSAGE_TIMER_DESCRIPTION,
     AdjustableBedMassageTimerSelect,
 )
-from custom_components.adjustable_bed.services import handle_solace_set_alarm
+from custom_components.adjustable_bed.services import async_register_services
+from tests.state_helpers import state_writer
 
 
 @pytest.fixture
@@ -52,7 +53,7 @@ def controller() -> Iterator[WoosaController]:
     coordinator = MagicMock()
     coordinator.controller_state = {}
     coordinator.cancel_command = asyncio.Event()
-    coordinator.handle_controller_state_updates.side_effect = coordinator.controller_state.update
+    coordinator.handle_controller_state_updates.side_effect = state_writer(coordinator.controller_state)
     coordinator.handle_controller_state_update.side_effect = (
         coordinator.controller_state.__setitem__
     )
@@ -183,7 +184,7 @@ async def test_absolute_massage_vectors(controller, zone, frames) -> None:
     for level in range(4):
         await controller.set_massage_intensity(zone, level)
     assert written(controller) == frames
-    assert controller.get_massage_state()[f"{zone}_intensity"] == 3
+    assert controller._coordinator.controller_state[f"massage_{zone}_intensity"] == 3
 
 
 async def test_massage_level_writes_update_activity(controller) -> None:
@@ -228,15 +229,10 @@ def test_massage_entities_retain_state_without_live_controller(controller) -> No
     coordinator = controller._coordinator
     coordinator.controller = None
     coordinator.capability_controller = MagicMock()
-    coordinator.capability_controller.get_massage_state.return_value = {
-        "head_intensity": 1,
-        "foot_intensity": 1,
-        "timer_mode": "10",
-    }
     coordinator.entity_side = None
     coordinator.device_info = {}
     coordinator.controller_state.update(
-        {"woosa_head_level": 2, "woosa_foot_level": 3, "woosa_massage_timer": 20}
+        {"massage_head_intensity": 2, "massage_foot_intensity": 3, "massage_timer": 20}
     )
     head = AdjustableBedMassageNumber(coordinator, MASSAGE_NUMBER_DESCRIPTIONS[1])
     foot = AdjustableBedMassageNumber(coordinator, MASSAGE_NUMBER_DESCRIPTIONS[2])
@@ -248,11 +244,9 @@ def test_massage_entities_retain_state_without_live_controller(controller) -> No
     assert timer.current_option == "20 min"
 
     coordinator.controller = MagicMock()
-    coordinator.controller.get_massage_state.return_value = {
-        "head_intensity": 3,
-        "foot_intensity": 2,
-        "timer_mode": "30",
-    }
+    coordinator.controller_state.update(
+        {"massage_head_intensity": 3, "massage_foot_intensity": 2, "massage_timer": 30}
+    )
     assert head.native_value == 3
     assert foot.native_value == 2
     assert timer.current_option == "30 min"
@@ -266,15 +260,15 @@ async def test_massage_timer_expiry_clears_activity_and_preserves_preferences(co
     old_deadline = state["woosa_massage_deadline"]
     await controller.set_massage_timer(20)
     controller._expire_massage(old_deadline)
-    assert state["woosa_massage_timer"] == 20
+    assert state["massage_timer"] == 20
 
     state["woosa_massage_active"] = True
     assert controller._massage_expiry_handle is not None
     controller._massage_expiry_handle.cancel()
     controller._expire_massage(state["woosa_massage_deadline"])
     assert state["woosa_massage_active"] is False
-    assert state["woosa_massage_timer"] == 0
-    assert state["woosa_head_level"] == state["woosa_foot_level"] == 0
+    assert state["massage_timer"] == 0
+    assert state["massage_head_intensity"] == state["massage_foot_intensity"] == 0
     assert state["woosa_head_preference"] == 2
     assert state["woosa_foot_preference"] == 3
     controller.write_command.reset_mock()
@@ -377,7 +371,7 @@ async def test_preset_presence_selects_dashboard_branch(
 
 
 async def test_favourite_requires_reported_memory_and_flat_is_direct(controller) -> None:
-    with pytest.raises(ValueError, match="reported"):
+    with pytest.raises(ValueError, match="saved Favourite"):
         await controller.preset_memory(1)
     controller._parse_notification(bytes.fromhex("FFFFFFFF0306000A"))
     with patch("custom_components.adjustable_bed.beds.woosa.asyncio.sleep", new_callable=AsyncMock):
@@ -480,14 +474,14 @@ async def test_alarm_packet_and_sound_gate(controller) -> None:
 @pytest.mark.parametrize(
     ("frame", "key", "value"),
     [
-        ("FFFFFFFF0500000100D690", "woosa_head_level", 0),
-        ("FFFFFFFF050000011E5698", "woosa_head_level", 1),
-        ("FFFFFFFF050000011F9758", "woosa_head_level", 2),
-        ("FFFFFFFF0500000120D748", "woosa_head_level", 3),
-        ("FFFFFFFF0500000200D660", "woosa_foot_level", 0),
-        ("FFFFFFFF05000002211678", "woosa_foot_level", 1),
-        ("FFFFFFFF05000002225679", "woosa_foot_level", 2),
-        ("FFFFFFFF050000022397B9", "woosa_foot_level", 3),
+        ("FFFFFFFF0500000100D690", "massage_head_intensity", 0),
+        ("FFFFFFFF050000011E5698", "massage_head_intensity", 1),
+        ("FFFFFFFF050000011F9758", "massage_head_intensity", 2),
+        ("FFFFFFFF0500000120D748", "massage_head_intensity", 3),
+        ("FFFFFFFF0500000200D660", "massage_foot_intensity", 0),
+        ("FFFFFFFF05000002211678", "massage_foot_intensity", 1),
+        ("FFFFFFFF05000002225679", "massage_foot_intensity", 2),
+        ("FFFFFFFF050000022397B9", "massage_foot_intensity", 3),
         ("FFFFFFFF0500000324D7EB", "woosa_massage_mode", 1),
         ("FFFFFFFF0500000325162B", "woosa_massage_mode", 2),
         ("FFFFFFFF0500000326562A", "woosa_massage_mode", 3),
@@ -507,7 +501,7 @@ def test_ambiguous_light_value_is_diagnostic_only(controller) -> None:
     # The app's brightness-level2 frame is also its foot-massage level3 reply.
     controller._parse_notification(bytes.fromhex("FFFFFFFF050000022397B9"))
     state = controller._coordinator.controller_state
-    assert state["woosa_foot_level"] == 3
+    assert state["massage_foot_intensity"] == 3
     assert state["woosa_light_candidate"] == 2
     assert "light_level" not in state
     assert "under_bed_lights_on" not in state
@@ -553,7 +547,7 @@ async def test_custom_buttons_dispatch_to_live_controller(controller) -> None:
 async def test_timer_off_and_late_cancellation_clear_active_state(controller) -> None:
     await controller.set_massage_timer(20)
     await controller.set_massage_timer(0)
-    assert controller.get_massage_state()["timer_mode"] == "0"
+    assert controller._coordinator.controller_state["massage_timer"] == 0
     controller.write_command.reset_mock()
     waits = 0
 
@@ -579,7 +573,7 @@ async def test_timer_off_and_late_cancellation_clear_active_state(controller) ->
         "FFFFFFFF050000001CD6C9",
     ]
     assert not controller._coordinator.controller_state["woosa_massage_active"]
-    assert controller.get_massage_state()["timer_mode"] == "0"
+    assert controller._coordinator.controller_state["massage_timer"] == 0
 
 
 @pytest.mark.parametrize(
@@ -630,20 +624,16 @@ async def test_alarm_supported_selectors(
 async def test_alarm_sound_preflight_checks_all_targets(hass, controller) -> None:
     motionflex = MagicMock(capability_controller=SolaceController(MagicMock(ble_device_name="SealyMF")))
     woosa = MagicMock(capability_controller=controller)
-    call = ServiceCall(
-        hass,
-        DOMAIN,
-        "solace_set_alarm",
-        {
-            "device_id": ["motionflex", "woosa"],
-            "enabled": True,
-            "time": time(7, 30),
-            "weekdays": [],
-            "mode": "no_action",
-            "massage": False,
-            "sound": "music_1",
-        },
-    )
+    await async_register_services(hass)
+    data = {
+        "device_id": ["motionflex", "woosa"],
+        "enabled": True,
+        "time": "07:30:00",
+        "weekdays": [],
+        "wake_action": "none",
+        "massage": False,
+        "sound": "music_1",
+    }
     with (
         patch(
             "custom_components.adjustable_bed.services._resolve_sided_targets",
@@ -654,7 +644,7 @@ async def test_alarm_sound_preflight_checks_all_targets(hass, controller) -> Non
         ) as execute,
         pytest.raises(ServiceValidationError, match="sound"),
     ):
-        await handle_solace_set_alarm(call)
+        await hass.services.async_call(DOMAIN, "set_alarm", data, blocking=True)
     execute.assert_not_awaited()
     controller.write_command.assert_not_awaited()
 
@@ -682,8 +672,8 @@ async def test_woosa_setup_restores_light_and_exposes_profile_controls(
     entry.add_to_hass(hass)
     registry = er.async_get(hass)
     preset_labels = {
-        "woosa_love": "Anti-Snore",
-        "woosa_program_love": "Save Anti-Snore position",
+        "woosa_love": "Anti-snore",
+        "woosa_program_love": "Save anti-snore position",
     }
     existing_preset_ids = {
         key: registry.async_get_or_create(
@@ -703,7 +693,7 @@ async def test_woosa_setup_restores_light_and_exposes_profile_controls(
         assert found is not None
         return found
 
-    light = entity_id("switch", "under_bed_lights")
+    light = entity_id("light", "under_bed_lights")
     entity_id("number", "light_level")
     for key, label in preset_labels.items():
         preset_id = entity_id("button", key)
@@ -723,19 +713,19 @@ async def test_woosa_setup_restores_light_and_exposes_profile_controls(
     def capture_auto_off(
         delay: float, callback: Callable[..., None], *args: object
     ) -> object:
-        if getattr(callback, "__name__", "") == "auto_off_callback":
+        if getattr(callback, "__name__", "") == "expire":
             scheduled_auto_off.append(lambda: callback(*args))
             scheduled_delays.append(delay)
             return MagicMock()
         return original_call_later(delay, callback, *args)
 
     with patch.object(hass.loop, "call_later", side_effect=capture_auto_off):
-        await hass.services.async_call("switch", "turn_on", {"entity_id": light}, blocking=True)
+        await hass.services.async_call("light", "turn_on", {"entity_id": light}, blocking=True)
         assert scheduled_auto_off
         coordinator = hass.data[DOMAIN][entry.entry_id]
         deadline = coordinator.controller_state["woosa_light_deadline"]
         with patch.object(hass.loop, "time", return_value=deadline - 60):
-            coordinator.handle_controller_state_updates({"woosa_massage_mode": 2})
+            coordinator.handle_controller_state_updates(MASSAGE_MODE(2))
         assert scheduled_delays[-1] == 60
         scheduled_auto_off[-1]()
         await hass.async_block_till_done()
@@ -745,13 +735,13 @@ async def test_woosa_setup_restores_light_and_exposes_profile_controls(
         assert hass.states.get(light).state == "off"
         assert hass.states.get(entity_id("select", "light_timer")).state == "Off"
         timer_count = len(scheduled_auto_off)
-        coordinator.handle_controller_state_updates({"woosa_massage_mode": 2})
+        coordinator.handle_controller_state_updates(MASSAGE_MODE(2))
         assert hass.states.get(light).state == "off"
         assert len(scheduled_auto_off) == timer_count
     mock_bleak_client.write_gatt_char.assert_any_call(
         SOLACE_CHAR_UUID, bytes.fromhex("FFFFFFFF050000001916CA"), response=True
     )
-    await hass.services.async_call("switch", "turn_off", {"entity_id": light}, blocking=True)
+    await hass.services.async_call("light", "turn_off", {"entity_id": light}, blocking=True)
     assert hass.states.get(entity_id("select", "light_timer")).state == "Off"
     mock_bleak_client.write_gatt_char.assert_any_call(
         SOLACE_CHAR_UUID, bytes.fromhex("FFFFFFFF050000004B9737"), response=True
@@ -783,13 +773,13 @@ async def test_woosa_setup_restores_light_and_exposes_profile_controls(
     device = dr.async_entries_for_config_entry(dr.async_get(hass), entry.entry_id)[0]
     await hass.services.async_call(
         DOMAIN,
-        "solace_set_alarm",
+        "set_alarm",
         {
             "device_id": [device.id],
             "enabled": True,
             "time": "07:30:00",
             "weekdays": ["monday", "wednesday"],
-            "mode": "zero_g",
+            "wake_action": "zero_g",
             "massage": True,
             "sound": "alarm",
         },
@@ -829,3 +819,17 @@ async def test_massage_restart_preserves_requested_levels(controller) -> None:
         "FFFFFFFF050000005A573B",
     ]
     assert controller._coordinator.controller_state["woosa_massage_active"]
+
+
+async def test_light_timer_counts_down_from_when_the_write_went_out(controller) -> None:
+    from tests.hold_lease_wire import virtual_clock
+
+    async def slow_write(*_args, **_kwargs) -> None:
+        await asyncio.sleep(5)  # The write waits for the link.
+
+    controller.write_command.side_effect = slow_write
+    with virtual_clock():
+        started = asyncio.get_running_loop().time()
+        await controller.set_light_timer("10 min")
+        deadline = controller._coordinator.controller_state["woosa_light_deadline"]
+    assert deadline == pytest.approx(started + 5 + 600)

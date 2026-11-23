@@ -12,96 +12,117 @@ from __future__ import annotations
 
 import asyncio
 import contextlib
+import dataclasses
 import logging
-from collections.abc import AsyncIterator, Callable, Collection, Coroutine, Mapping
-from dataclasses import dataclass
+import math
+from collections.abc import (
+    AsyncIterator,
+    Awaitable,
+    Callable,
+    Collection,
+    Coroutine,
+    Mapping,
+    Sequence,
+)
+from dataclasses import dataclass, field
+from datetime import datetime
 from decimal import Decimal, InvalidOperation
-from typing import TYPE_CHECKING, Any, Protocol, cast
-from uuid import uuid4
+from typing import TYPE_CHECKING, Any, Final, cast
 
 import voluptuous as vol
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.const import CONF_ADDRESS, CONF_DEVICE_ID, CONF_NAME
+from homeassistant.const import CONF_ADDRESS, CONF_DEVICE_ID
 from homeassistant.core import HomeAssistant, ServiceCall
 from homeassistant.exceptions import ServiceValidationError
 from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers import device_registry as dr
-from homeassistant.helpers.service import async_get_device_and_config_entry
+from homeassistant.helpers.service import (
+    async_get_device_and_config_entry,
+    async_register_admin_service,
+)
 from homeassistant.util import dt as dt_util
 
-from .alarm_table import AlarmTableSchedule, OneTimeAlarmRecord, WeeklyAlarmRecord
-from .beds.linak_protocol import LinakAlarmAction, LinakAlarmStep
-from .beds.reverie_comfort import ReverieComfortRequest
+from .alarm import (
+    ALARM_SOUNDS,
+    MASSAGE_ZONES,
+    MATTRESS_SIDES,
+    WAKE_ACTIONS,
+    AlarmCapability,
+    AlarmError,
+    AlarmRequest,
+)
+from .alarm import OPTIONAL_FIELDS as ALARM_OPTIONAL_FIELDS
+from .alarm import WEEKDAYS as ALARM_WEEKDAYS
+from .bed_traits import bed_type_has_position_feedback
+from .beds.base import BedController, controller_as
+from .beds.entity_specs import POSITION_UNIT_DEGREES, POSITION_UNIT_PERCENT
 from .command_scheduler import (
     ALL_COMMAND_RESOURCES,
-    CommandHandle,
-    PreparedCommandInvalidated,
+    CommandOutcome,
+    HoldClaim,
+    HoldLease,
+    HoldWindow,
+    StaleHoldLease,
     command_resources,
     current_command_context,
 )
 from .const import (
-    BED_TYPE_COMFORT_ENHANCEMENTS,
-    BED_TYPE_CUSTOMATIC_CLARITY,
-    BED_TYPE_CUSTOMATIC_JEROMES,
-    BED_TYPE_CUSTOMATIC_REMEDY,
     BED_TYPE_ERGOMOTION,
-    BED_TYPE_ESHINE_OKIN,
-    BED_TYPE_FSM_RELAX,
     BED_TYPE_FURNIMOVE,
-    BED_TYPE_GLIDEAWAY_MOTION,
-    BED_TYPE_JIECANG_APP,
-    BED_TYPE_KAIDI,
     BED_TYPE_KEESON,
-    BED_TYPE_LEGGETT_OKIN,
     BED_TYPE_LIMOSS_REMOTE,
     BED_TYPE_LINAK,
-    BED_TYPE_LOGICDATA_APP,
-    BED_TYPE_MALOUF_APP,
-    BED_TYPE_OCTO,
-    BED_TYPE_REVERIE,
-    BED_TYPE_REVERIE_NIGHTSTAND,
-    BED_TYPE_REVERIE_PAIRLINK,
-    BED_TYPE_SBI,
+    BED_TYPE_QPLUS_APP,
     BED_TYPE_SERTA_MP_REMOTE,
-    BED_TYPE_SIMMONS,
     BED_TYPE_SLEEP_NUMBER_MCR,
-    BED_TYPE_SLEEPYS_BOX25,
     BED_TYPE_SLEEPYS_ELITE_APP,
     BED_TYPE_SVANE,
+    BED_TYPE_SYMPHONY,
+    BED_TYPE_ULTRAMATIC_SMART_BED,
     BED_TYPE_VMATBASIC,
     BED_TYPE_ZSERIES,
     CONF_BED_TYPE,
     CONF_MOTOR_COUNT,
-    CONF_OCTO_PIN,
     CONF_PROTOCOL_VARIANT,
     DEFAULT_MOTOR_COUNT,
     DOMAIN,
+    PAIR_CONNECTION_MODE_CONCURRENT,
     PAIR_CONNECTION_MODE_SEQUENTIAL,
     SIDE_BOTH,
     SIDE_LEFT,
     SIDE_RIGHT,
-    bed_type_has_position_feedback,
-    resolve_explicit_bed_type,
+    TIMED_MOVE_MOTOR_OPTIONS,
 )
-from .octo_runtime import octo_controller
+from .download import register_download
+from .entity_runtime import controller_side_scope
+from .errors import invalid, rejected
+from .execution import HOLD_CEILING_MS
+from .import_executor import async_import_modules
 from .paired_coordinator import (
     BedChild,
     PairedBedCoordinator,
-    PairedSideError,
+    SingleAddressPairedCoordinator,
     SingleAddressSideCoordinator,
 )
 from .paired_devices import side_identifier
-from .pairing import is_paired, iter_children, pair_member_addresses
+from .paired_topology import PairedSideError, ready_disconnected_transport
+from .pairing import is_paired, pair_member_addresses
+from .position_estimate import (
+    invalidate_on_command,
+    track_held_control,
+    track_motor_command,
+    track_stream_member,
+)
+from .runtime_data import loaded_runtime
+from .support_logs import async_setup_support_logs
 
 if TYPE_CHECKING:
-    from .beds.base import BedController, ControllerMotorHoldSpec, SideBoundController
-    from .beds.comfort_enhancements import ComfortEnhancementsController
-    from .beds.limoss_remote import LimossRemoteController
-    from .beds.octo import OctoController
-    from .beds.reverie_pairlink_runtime import PairlinkComfortPlan
-    from .beds.serenity import ZSeriesController
-    from .beds.svane import SvaneHoldAdmission
+    from .beds.entity_specs import ControllerMotorHoldSpec
+    from .beds.limoss.remote import LimossRemoteController
+    from .beds.svane.controller import SvaneHoldAdmission
 
+# Bed service modules build their errors with this name.
+_invalid = invalid
 _LOGGER = logging.getLogger(__name__)
 
 # A service target: a single bed's coordinator, or a paired bed's parent.
@@ -128,9 +149,9 @@ def _capture_command_admission(
     """Capture the selected physical owners before live validation/connect waits."""
     scope = command_resources(*resources)
     if isinstance(coordinator, PairedBedCoordinator):
-        targets = coordinator._targets_for(side)
+        targets = coordinator.targets_for(side)
         pair_generations = {
-            target_side: coordinator._pair_cancel_generation(target_side, scope)
+            target_side: coordinator.pair_cancel_generation(target_side, scope)
             for target_side, _child in targets
         }
     else:
@@ -139,16 +160,11 @@ def _capture_command_admission(
 
     stop_epochs: dict[str, int] = {}
     for target_side, child in targets:
-        owner = getattr(child, "_single_inner", child)
-        scheduler = getattr(owner, "_command_scheduler", None)
-        stop_epoch = getattr(scheduler, "stop_epoch", None)
-        if isinstance(stop_epoch, int) and not isinstance(stop_epoch, bool):
-            stop_epochs[target_side] = stop_epoch
+        stop_epochs[target_side] = child.stop_epoch
     return _CommandAdmission(scope, pair_generations, stop_epochs)
 
 
 # Service names
-SERVICE_FLOYD_ACTION = "floyd_action"
 SERVICE_GOTO_PRESET = "goto_preset"
 SERVICE_GENERATE_SUPPORT_BUNDLE = "generate_support_bundle"
 SERVICE_SAVE_PRESET = "save_preset"
@@ -156,53 +172,11 @@ SERVICE_SET_POSITION = "set_position"
 SERVICE_SET_POSITIONS = "set_positions"
 SERVICE_STOP_ALL = "stop_all"
 SERVICE_TIMED_MOVE = "timed_move"
-SERVICE_REVERIE_SET_COMFORT = "reverie_set_comfort"
-SERVICE_REVERIE_PAIRLINK_ALARM_COMFORT = "reverie_pairlink_alarm_comfort"
-SERVICE_REVERIE_RUN_ROUTINE = "reverie_run_routine"
-SERVICE_REVERIE_TEST = "reverie_test"
-SERVICE_LINAK_MOVE_SIMULTANEOUS = "linak_move_simultaneously"
-SERVICE_LINAK_RENAME = "linak_rename"
-SERVICE_LINAK_SET_ALARM = "linak_set_alarm"
-SERVICE_SOLACE_AUDIO = "solace_audio"
-SERVICE_SOLACE_SET_ALARM = "solace_set_alarm"
-SERVICE_LEGGETT_SLEEP_TIMER = "leggett_sleep_timer"
-SERVICE_LEGGETT_ALARM_TIMER = "leggett_alarm_timer"
 SERVICE_HOLD_CONTROL = "hold_control"
-SERVICE_OCTO_ENROLL_PIN = "octo_enroll_pin"
-SERVICE_OCTO_RESET_DEFAULTS = "octo_reset_defaults"
 SERVICE_RENAME = "rename"
 SERVICE_SYNC_CLOCK = "sync_clock"
-SERVICE_CONFIGURE_ALARM_SCHEDULE = "configure_alarm_schedule"
-# Released per-app names that now alias the generic actions above (linak_rename
-# sits with the other Linak actions).
-SERVICE_LEGGETT_HOLD_CONTROL = "leggett_hold_control"
-SERVICE_LOGICDATA_RENAME = "logicdata_rename"
-SERVICE_JIECANG_RENAME = "jiecang_rename"
-SERVICE_MALOUF_SYNC_CLOCK = "malouf_sync_clock"
-SERVICE_SVANE_RELEASE_AXIS = "svane_release_axis"
-SERVICE_ESHINE_SET_ALARM = "eshine_set_alarm"
-SERVICE_GLIDEAWAY_SET_ALARM = "glideaway_set_alarm"
-SERVICE_ZSERIES_SET_ALARM = "zseries_set_alarm"
-SERVICE_SIMMONS_SET_ALARM = "simmons_set_alarm"
+SERVICE_SET_ALARM = "set_alarm"
 ATTR_SLOT = "slot"
-ATTR_MODE = "mode"
-ATTR_CONFIRM_CUSTOM_MODE = "confirm_custom_mode"
-SERVICE_FURNIMOVE_ACTION = "furnimove_action"
-SERVICE_FURNIMOVE_MASSAGE_PROGRAM = "furnimove_massage_program"
-SERVICE_FURNIMOVE_MASSAGE_DURATION = "furnimove_massage_duration"
-SERVICE_FURNIMOVE_MOVE_SIMULTANEOUSLY = "furnimove_move_simultaneously"
-SERVICE_LIMOSS_REMOTE_RENAME_MEMORY = "limoss_remote_rename_memory"
-SERVICE_LIMOSS_REMOTE_CALIBRATE = "limoss_remote_calibrate"
-SERVICE_LIMOSS_REMOTE_FEATURES = "limoss_remote_features"
-SERVICE_FSM_RELAX_CALIBRATE = "fsm_relax_calibrate"
-SERVICE_CUSTOMATIC_HOLD_MEMORY = "customatic_hold_memory"
-SERVICE_CUSTOMATIC_MOVE_SIMULTANEOUSLY = "customatic_move_simultaneously"
-SERVICE_LOGICDATA_SET_ALARM = "logicdata_set_alarm"
-SERVICE_LOGICDATA_HOLD_PRESET = "logicdata_hold_preset"
-SERVICE_JIECANG_SET_ALARM = "jiecang_set_alarm"
-SERVICE_JIECANG_WAKE = "jiecang_wake"
-SERVICE_JIECANG_STOP_WAKE = "jiecang_stop_wake"
-SERVICE_MALOUF_SET_ALARM = "malouf_set_alarm"
 
 # Service call attributes
 ATTR_PRESET = "preset"
@@ -214,6 +188,8 @@ ATTR_CAPTURE_DURATION = "capture_duration"
 ATTR_INCLUDE_LOGS = "include_logs"
 ATTR_DIRECTION = "direction"
 ATTR_DURATION_MS = "duration_ms"
+ATTR_HOLD_OWNER = "hold_owner"
+ATTR_HOLD_GENERATION = "hold_generation"
 ATTR_DURATION = "duration"
 ATTR_SIDE = "side"
 ATTR_FIRST_MOTOR = "first_motor"
@@ -221,17 +197,11 @@ ATTR_FIRST_DIRECTION = "first_direction"
 ATTR_SECOND_MOTOR = "second_motor"
 ATTR_SECOND_DIRECTION = "second_direction"
 ATTR_NAME = "name"
-ATTR_SECONDS = "seconds"
 ATTR_ACTIONS = "actions"
 ATTR_ACTION = "action"
-ATTR_LIFETIME = "lifetime"
-ATTR_PAUSE = "pause"
-ATTR_RECURRENCE_COUNT = "recurrence_count"
-ATTR_RECURRENCE_MINUTES = "recurrence_minutes"
 ATTR_ENABLED = "enabled"
 ATTR_TIME = "time"
 ATTR_WEEKDAYS = "weekdays"
-ATTR_MODE = "mode"
 ATTR_MASSAGE = "massage"
 ATTR_SOUND = "sound"
 ATTR_TRACK = "track"
@@ -240,44 +210,8 @@ ATTR_MINUTES = "minutes"
 ATTR_CONTROL = "control"
 ATTR_HEAD_LEVEL = "head_level"
 ATTR_FOOT_LEVEL = "foot_level"
-ATTR_WAKE_MODE = "wake_mode"
 
-LINAK_MOTOR_OPTIONS = ("base", "feet", "head", "legs", "back")
-MALOUF_ALARM_PRESETS = ("zero_g", "lounge", "tv", "anti_snore", "memory_1", "memory_2")
-LINAK_DIRECTION_OPTIONS = ("up", "down")
-LINAK_ALARM_ACTION_SCHEMA = vol.Schema(
-    {
-        vol.Required(ATTR_ACTION): vol.In(tuple(action.value for action in LinakAlarmAction)),
-        vol.Optional(ATTR_LIFETIME, default=1): vol.All(vol.Coerce(int), vol.Range(min=0, max=255)),
-        vol.Optional(ATTR_PAUSE, default=0): vol.All(vol.Coerce(int), vol.Range(min=0, max=255)),
-    }
-)
 
-SOLACE_AUDIO_ACTIONS = ("select", "preview", "query", "set_volume")
-SOLACE_WEEKDAY_OPTIONS = (
-    "monday",
-    "tuesday",
-    "wednesday",
-    "thursday",
-    "friday",
-    "saturday",
-    "sunday",
-)
-SOLACE_ALARM_MODES = ("zero_g", "memory_1", "no_action")
-SOLACE_ALARM_SOUNDS = (
-    "none",
-    "alarm",
-    "music_1",
-    "music_2",
-    "music_3",
-    "music_4",
-    "music_5",
-)
-JIECANG_WAKE_PRESETS = ("flat", "zero_g", "anti_snore", "memory_1", "memory_2")
-JIECANG_ALARM_PRESETS = (*JIECANG_WAKE_PRESETS, "yoga")
-
-LOGICDATA_ALARM_PRESETS = ("flat", "zero_g", "anti_snore", "memory_1", "memory_2")
-LOGICDATA_HOLD_PRESETS = ("flat", "zero_g", "anti_snore", "memory_1", "memory_2")
 
 POSITION_MOTOR_OPTIONS = (
     "back",
@@ -291,41 +225,6 @@ POSITION_MOTOR_OPTIONS = (
     "right_legs",
 )
 
-TIMED_MOVE_MOTOR_OPTIONS = (
-    "tv_lift",
-    "back",
-    "right_back",
-    "legs",
-    "head",
-    "feet",
-    "tilt",
-    "pillow",
-    "lumbar",
-    "bed_height",
-    "stair",
-    "m1x12_part_1",
-    "m1x12_part_2",
-    "m1x12_part_4",
-    "m1x12_part_8",
-    "m1x12_part_16",
-    "elevate_actuator_1",
-    "elevate_actuator_2",
-    "elevate_both",
-)
-LEGGETT_HELD_CONTROLS = (
-    "flat",
-    "snore",
-    "lights_toggle",
-    "massage_toggle",
-    "massage_wave",
-    "massage_head_up",
-    "massage_head_down",
-    "massage_foot_up",
-    "massage_foot_down",
-    "memory_1",
-    "memory_2",
-    "store",
-)
 
 # Default capture duration for diagnostics (seconds)
 DEFAULT_CAPTURE_DURATION = 120
@@ -342,66 +241,33 @@ MAX_CAPTURE_DURATION = 300
 # Timed move duration limits (milliseconds)
 MIN_TIMED_MOVE_DURATION_MS = 100
 MAX_TIMED_MOVE_DURATION_MS = 30000  # 30 seconds max
-
-
-class _ReverieComfortController(Protocol):
-    """Typed bed-specific surface used by Reverie direct-action services."""
-
-    def validate_comfort_request(self, request: ReverieComfortRequest) -> None: ...
-
-    async def async_set_comfort(self, request: ReverieComfortRequest) -> None: ...
-
-    def validate_routine(
-        self, steps: list[tuple[ReverieComfortRequest | None, int | None]]
-    ) -> None: ...
-
-    async def async_start_routine(
-        self, steps: list[tuple[ReverieComfortRequest | None, int | None]]
-    ) -> None: ...
-
-    def validate_diagnostic(self) -> None: ...
-
-    async def async_start_diagnostic(self) -> None: ...
-
-
-class _PairlinkComfortController(_ReverieComfortController, Protocol):
-    """Private Pairlink extension used for all-target live comfort planning."""
-
-    def comfort_runtime_identity(self) -> object: ...
-
-    def prepare_comfort(self, request: ReverieComfortRequest) -> PairlinkComfortPlan: ...
-
-    def comfort_plan_is_current(
-        self,
-        request: ReverieComfortRequest,
-        plan: PairlinkComfortPlan,
-    ) -> bool: ...
-
-    async def async_set_comfort(
-        self,
-        request: ReverieComfortRequest,
-        *,
-        prepared_plan: PairlinkComfortPlan | None = None,
-    ) -> None: ...
-
-    async def async_start_diagnostic(self) -> None: ...
-
-    def validate_diagnostic(self) -> None: ...
-
-
-@dataclass(frozen=True, slots=True)
-class _ReverieComfortPhysicalTarget:
-    """One physical coordinator selected by a Reverie comfort service call."""
-
-    target: BedChild
-    parent: PairedBedCoordinator | None
-    side: str | None
+# A renewable hold (#483) lasts each call's lease within these bounds. The
+# ceiling also bounds one hold in total: it never streams past it, however
+# often it is renewed.
+MIN_HOLD_LEASE_MS = MIN_TIMED_MOVE_DURATION_MS
+MAX_HOLD_LEASE_MS = HOLD_CEILING_MS
+HOLD_LEASE_FIELDS = {
+    vol.Inclusive(ATTR_HOLD_OWNER, "hold_lease"): vol.All(
+        cv.string, vol.Length(min=1, max=64)
+    ),
+    vol.Inclusive(ATTR_HOLD_GENERATION, "hold_lease"): vol.All(
+        vol.Coerce(int), vol.Range(min=0, max=2**53)
+    ),
+}
 
 
 # Optional left/right/both target (paired beds). No default: when omitted, a call
 # that targets one side's child device acts on just that side, otherwise it falls
 # back to 'both' - so single-bed automations are unchanged.
 SIDE_FIELD = {vol.Optional(ATTR_SIDE): vol.In([SIDE_LEFT, SIDE_RIGHT, SIDE_BOTH])}
+# One or more target devices, for actions that act on every selected bed.
+DEVICE_IDS = vol.All(cv.ensure_list, vol.Length(min=1))
+
+
+def local_datetime(value: object) -> datetime:
+    """A date and time; one without a zone, as the action form sends it, is local time."""
+    when = cv.datetime(value)
+    return when if when.tzinfo else when.replace(tzinfo=dt_util.get_default_time_zone())
 
 
 def _resolve_sided_target(
@@ -412,7 +278,8 @@ def _resolve_sided_target(
     ``inferred_side`` is the left/right of a targeted paired child sub-device
     (matched by its MAC identifier), or ``None`` for a single bed or the
     paired parent device. Lets a caller targeting one side's device act on
-    just that side without passing ``side`` explicitly.
+    just that side without passing ``side`` explicitly. ``SIDE_BOTH`` marks a
+    device of a paired entry that is neither a side nor the pair itself.
     """
     selected = dr.async_get(hass).async_get(device_id)
     # HA's validation helper accepts full devices only. Validate a native
@@ -423,7 +290,7 @@ def _resolve_sided_target(
     device, entry = async_get_device_and_config_entry(hass, DOMAIN, validation_id)
     if isinstance(selected, dr.ChildDeviceEntry):
         device = selected
-    coordinator = hass.data.get(DOMAIN, {}).get(entry.entry_id)
+    coordinator = loaded_runtime(hass, entry.entry_id)
     if coordinator is None:
         return None
     inferred_side: str | None = None
@@ -439,11 +306,7 @@ def _resolve_sided_target(
             if domain == DOMAIN
         }
         if inferred_side is None and not identifiers.intersection(parent_identifiers):
-            raise ServiceValidationError(
-                "The selected bed side is unavailable",
-                translation_domain=DOMAIN,
-                translation_key="side_unavailable",
-            )
+            inferred_side = SIDE_BOTH
     return coordinator, inferred_side
 
 
@@ -451,6 +314,8 @@ def _resolve_sided_targets(
     hass: HomeAssistant,
     device_ids: list[str],
     explicit_side: str | None,
+    *,
+    problems: list[BaseException] | None = None,
 ) -> tuple[list[tuple[BedTarget, str]], list[str]]:
     """Group sided-service targets by coordinator, merging inferred sides.
 
@@ -458,27 +323,40 @@ def _resolve_sided_targets(
     collapses to a single ``both`` fan-out - preserving the both-failure
     contract - instead of two separate side commands. Each coordinator
     appears once in first-seen order. Returns (targets, missing_device_ids).
+
+    With ``problems`` (STOP), nothing raises: a device that cannot be resolved
+    is recorded there and skipped, and a side that cannot be honoured is
+    recorded and widened to the whole bed, so every reachable bed still stops.
     """
     ordered: list[int] = []
     by_key: dict[int, tuple[BedTarget, set[str | None]]] = {}
     missing: list[str] = []
     for device_id in device_ids:
-        resolved = _resolve_sided_target(hass, device_id)
+        try:
+            resolved = _resolve_sided_target(hass, device_id)
+        except Exception as err:
+            if problems is None:
+                raise
+            problems.append(err)
+            continue
         if resolved is None:
+            if problems is not None:
+                problems.append(invalid("devices_not_found", device_ids=device_id))
             missing.append(device_id)
             continue
         coordinator, inferred_side = resolved
-        if (
-            inferred_side is not None
-            and explicit_side is not None
-            and explicit_side != inferred_side
-        ):
-            raise ServiceValidationError(
-                f"The selected {inferred_side} child device conflicts with side {explicit_side}",
-                translation_domain=DOMAIN,
-                translation_key="side_selection_conflict",
-                translation_placeholders={"inferred_side": inferred_side, "side": explicit_side},
+        problem: ServiceValidationError | None = None
+        if inferred_side == SIDE_BOTH:
+            problem = invalid("side_unavailable")
+        elif inferred_side is not None and explicit_side not in (None, inferred_side):
+            problem = invalid(
+                "side_selection_conflict", inferred_side=inferred_side, side=explicit_side
             )
+        if problem is not None:
+            if problems is None:
+                raise problem
+            problems.append(problem)
+            inferred_side = SIDE_BOTH
         key = id(coordinator)
         if key not in by_key:
             by_key[key] = (coordinator, set())
@@ -488,7 +366,10 @@ def _resolve_sided_targets(
     targets: list[tuple[BedTarget, str]] = []
     for key in ordered:
         coordinator, sides = by_key[key]
-        if explicit_side is not None:
+        if SIDE_BOTH in sides:
+            # Only a STOP whose side could not be honoured gets here.
+            side = SIDE_BOTH
+        elif explicit_side is not None:
             side = explicit_side
         elif sides == {SIDE_LEFT}:
             side = SIDE_LEFT
@@ -501,14 +382,32 @@ def _resolve_sided_targets(
     return targets, missing
 
 
+def _whole_number(value: object) -> int:
+    """Accept a whole number, also as 2.0 or "2"; reject Booleans and fractions."""
+    if isinstance(value, str) and value.strip().isdigit():
+        return int(value)
+    if (
+        isinstance(value, bool)
+        or not isinstance(value, (int, float))
+        # YAML accepts .inf and .nan, which have no whole-number value.
+        or (isinstance(value, float) and not math.isfinite(value))
+        or value != int(value)
+    ):
+        raise invalid("whole_number_required", value=value)
+    return int(value)
+
+
+def _validation_error(err: ValueError) -> ServiceValidationError:
+    """Turn a controller's rejection into a validation error, translated where it can be."""
+    key = getattr(err, "translation_key", None)
+    if key is None:
+        return rejected(err)
+    return invalid(key, **(getattr(err, "translation_placeholders", None) or {}))
+
+
 def _missing_device_error(device_id: str) -> ServiceValidationError:
     """Build the error for a service target that resolved to no bed."""
-    return ServiceValidationError(
-        f"Could not find Adjustable Bed device with ID {device_id}",
-        translation_domain=DOMAIN,
-        translation_key="device_not_found",
-        translation_placeholders={"device_id": device_id},
-    )
+    return invalid("device_not_found", device_id=device_id)
 
 
 def _get_support_bundle_target_from_device(
@@ -539,17 +438,12 @@ def _get_support_bundle_target_from_device(
             # The synthetic parent device (pair_id identifier) covers both
             # sides; a bundle is per-address, so make the user pick one
             # side's device instead of silently capturing only the first.
-            raise ServiceValidationError(
-                f"{entry.title} is a paired bed; target one side's device for the support bundle.",
-                translation_domain=DOMAIN,
-                translation_key="bundle_needs_side_for_paired",
-                translation_placeholders={"device_name": entry.title},
-            )
+            raise invalid("bundle_needs_side_for_paired", device_name=entry.title)
     if not isinstance(address, str):
         return None
 
     coordinator: BedChild | None = None
-    stored = hass.data.get(DOMAIN, {}).get(entry_id)
+    stored = loaded_runtime(hass, entry_id)
     if isinstance(stored, PairedBedCoordinator):
         # Reuse the matching live child coordinator so the bundle pauses
         # and reuses its connection instead of opening a second BLE link
@@ -563,9 +457,18 @@ def _get_support_bundle_target_from_device(
     return address, coordinator, entry
 
 
+def _require_disconnected_transport_ready(target: BedChild, controller: BedController) -> None:
+    """Refuse a controller whose selected non-central transport cannot take commands."""
+    if controller.requires_disconnected_transport and not controller.disconnected_transport_ready:
+        raise invalid(
+            "pairlink_not_ready",
+            device_name=target.name,
+        )
+
+
 async def _get_controller_for_service(
     coordinator: BedChild,
-) -> BedController | SideBoundController:
+) -> BedController:
     """Return an active controller for service validation/execution.
 
     Service calls may arrive while the coordinator is idle-disconnected and
@@ -574,28 +477,18 @@ async def _get_controller_for_service(
     """
     controller = coordinator.controller
     if controller is not None:
-        if getattr(controller, "requires_disconnected_transport", False) is True:
-            if getattr(controller, "disconnected_transport_ready", False) is not True:
-                raise ServiceValidationError(
-                    f"Device '{coordinator.name}' local Pairlink session is not ready"
-                )
+        _require_disconnected_transport_ready(coordinator, controller)
         return controller
 
     capability_controller = coordinator.capability_controller
-    if (
-        capability_controller is not None
-        and getattr(capability_controller, "requires_disconnected_transport", False) is True
-    ):
-        if getattr(capability_controller, "disconnected_transport_ready", False) is not True:
-            raise ServiceValidationError(
-                f"Device '{coordinator.name}' local Pairlink session is not ready"
-            )
+    if capability_controller is not None and capability_controller.requires_disconnected_transport:
+        _require_disconnected_transport_ready(coordinator, capability_controller)
         return capability_controller
 
-    runtime = getattr(coordinator, "_pairlink_runtime", None)
-    if getattr(getattr(runtime, "role", None), "value", None) == "peripheral":
-        raise ServiceValidationError(
-            f"Device '{coordinator.name}' local Pairlink controller is unavailable"
+    if coordinator.pairlink_peripheral:
+        raise invalid(
+            "pairlink_not_ready",
+            device_name=coordinator.name,
         )
 
     _LOGGER.debug(
@@ -605,8 +498,9 @@ async def _get_controller_for_service(
     connected = await coordinator.async_ensure_connected(reset_timer=False)
     controller = coordinator.controller
     if not connected or controller is None:
-        raise ServiceValidationError(
-            f"Device '{coordinator.name}' is currently unavailable (unable to connect)",
+        raise invalid(
+            "bed_unavailable",
+            device_name=coordinator.name,
         )
     return controller
 
@@ -615,7 +509,7 @@ async def _validation_controller(
     coordinator: BedTarget,
     target: BedChild,
     preflighted: PreflightedSides,
-) -> BedController | SideBoundController:
+) -> BedController:
     """Return a controller for capability VALIDATION without opening a BLE link
     when avoidable.
 
@@ -631,12 +525,7 @@ async def _validation_controller(
     """
     controller = target.capability_controller
     if controller is not None:
-        if getattr(controller, "requires_disconnected_transport", False) is True and getattr(
-            controller, "disconnected_transport_ready", False
-        ) is not True:
-            raise ServiceValidationError(
-                f"Device '{target.name}' local Pairlink session is not ready"
-            )
+        _require_disconnected_transport_ready(target, controller)
         return controller
     controller = await _get_controller_for_service(target)
     preflighted.append((coordinator, target))
@@ -656,20 +545,11 @@ def _command_targets(coordinator: BedTarget, side: str) -> list[BedChild]:
             return list(coordinator.children.values())
         child = coordinator.child_for_side(side)
         if child is None:
-            raise ServiceValidationError(
-                f"This bed has no {side} side",
-                translation_domain=DOMAIN,
-                translation_key="side_not_available",
-                translation_placeholders={"side": side},
-            )
+            raise invalid("side_not_available", side=side)
         return [child]
 
     if side != SIDE_BOTH:
-        raise ServiceValidationError(
-            "This is a single bed; the Left/Right/Both option only applies to paired beds.",
-            translation_domain=DOMAIN,
-            translation_key="side_not_supported",
-        )
+        raise invalid("side_not_supported")
     return [coordinator]
 
 
@@ -686,11 +566,12 @@ async def _execute_sided(
     expected_stop_epoch: int | None = None,
     expected_pair_generations: Mapping[str, tuple[int, ...]] | None = None,
     expected_stop_epochs: Mapping[str, int] | None = None,
+    lease: HoldLease | None = None,
 ) -> None:
     """Run a command on the targeted side(s).
 
     A paired bed fans out (with the both-failure stop-the-other contract); a
-    single bed runs exactly as before.
+    single bed runs exactly as before. A ``lease`` makes it a renewable hold.
     """
     if admission is not None:
         expected_pair_generations = admission.expected_pair_generations
@@ -706,25 +587,168 @@ async def _execute_sided(
             resources=resources,
             expected_pair_generations=expected_pair_generations,
             expected_stop_epochs=expected_stop_epochs,
+            lease=lease,
         )
     else:
-        if expected_stop_epoch is None:
-            await coordinator.async_execute_controller_command(
-                command_fn,
-                cancel_running=cancel_running,
-                skip_disconnect=skip_disconnect,
-                resource=resource,
-                resources=resources,
-            )
+        await coordinator.async_execute_controller_command(
+            command_fn,
+            cancel_running=cancel_running,
+            skip_disconnect=skip_disconnect,
+            resource=resource,
+            resources=resources,
+            expected_stop_epoch=expected_stop_epoch,
+            lease=lease,
+        )
+
+
+async def _execute_sided_translated(
+    coordinator: BedTarget,
+    side: str,
+    command_fn: Callable[[BedController], Coroutine[Any, Any, None]],
+    **kwargs: Any,
+) -> None:
+    """Run ``_execute_sided``, surfacing a combined bed's one translated side error.
+
+    A combined bed wraps each side's failure in one combined error. When only
+    one thing failed and it is a request the user can correct, raise that error
+    instead, with the combined one as cause. More failures keep the combined
+    error, which names each one.
+    """
+    try:
+        await _execute_sided(coordinator, side, command_fn, **kwargs)
+    except PairedSideError as err:
+        [*errors] = err.side_errors.values()
+        if (
+            len(errors) == 1
+            and isinstance(errors[0], ServiceValidationError)
+            and errors[0].translation_key
+        ):
+            raise errors[0] from err
+        raise
+
+
+@dataclass(slots=True)
+class _LiveCheck:
+    """A preflight check, run again on any controller it has not checked.
+
+    Preflight may check a cached or offline controller, and the one that
+    connects can differ. A side the writing controller rejects is refused
+    with that controller's own reason instead of being written.
+    """
+
+    check: Callable[[BedChild, BedController], None]
+    checked: list[BedController] = field(default_factory=list)
+
+    def preflight(self, target: BedChild, controller: BedController) -> None:
+        self.check(target, controller)
+        self.checked.append(controller)
+
+    def command(
+        self,
+        targets: Sequence[tuple[BedTarget, str]],
+        command: Callable[[BedController], Coroutine[Any, Any, None]],
+    ) -> Callable[[BedController], Coroutine[Any, Any, None]]:
+        physical = [
+            target for parent, side in targets for target in _command_targets(parent, side)
+        ]
+
+        async def run(controller: BedController) -> None:
+            if all(controller is not checked for checked in self.checked):
+                # The scheduler has already bound a combined bed's side.
+                target = next(
+                    (item for item in physical if item.controller is controller), physical[0]
+                )
+                try:
+                    self.check(target, controller)
+                except ValueError as err:
+                    # The same rejection preflight would have shown.
+                    raise _validation_error(err) from err
+            await command(controller)
+
+        return run
+
+
+def _bed_changed() -> ServiceValidationError:
+    return invalid("bed_changed")
+
+
+def _pair_mode(parent: BedTarget) -> str | None:
+    return parent.connection_mode if isinstance(parent, PairedBedCoordinator) else None
+
+
+def _child_side(parent: BedTarget, side: str, child: BedChild) -> str:
+    """Return the side that runs ``child`` on its own."""
+    if not isinstance(parent, PairedBedCoordinator):
+        return side
+    return next(name for name, item in parent.children.items() if item is child)
+
+
+def _stop_marks(
+    targets: Sequence[tuple[BedTarget, str]], children: Sequence[Sequence[BedChild]]
+) -> tuple[int, ...]:
+    """Counters that only a STOP advances, for every selected side.
+
+    Commands preempting each other never move them, so a call can tell a
+    user's STOP apart from its own earlier steps.
+    """
+    marks: list[int] = []
+    for (parent, side), group in zip(targets, children, strict=True):
+        if isinstance(parent, PairedBedCoordinator):
+            sides = (SIDE_LEFT, SIDE_RIGHT) if side == SIDE_BOTH else (side,)
+            marks.extend(parent.stop_count(name) for name in sides)
+            marks.extend(child.stop_epoch for child in group)
         else:
-            await coordinator.async_execute_controller_command(
-                command_fn,
-                cancel_running=cancel_running,
-                skip_disconnect=skip_disconnect,
-                resource=resource,
-                resources=resources,
-                expected_stop_epoch=expected_stop_epoch,
+            marks.append(parent.stop_epoch)
+    return tuple(marks)
+
+
+@dataclass(frozen=True, slots=True)
+class _Selection:
+    """The physical sides a call selected, captured before its first await."""
+
+    targets: tuple[tuple[BedTarget, str], ...]
+    children: tuple[tuple[BedChild, ...], ...]
+    modes: tuple[str | None, ...]
+    stops: tuple[int, ...]
+
+    @classmethod
+    def capture(cls, targets: Sequence[tuple[BedTarget, str]]) -> _Selection:
+        children = tuple(tuple(_command_targets(parent, side)) for parent, side in targets)
+        return cls(
+            tuple(targets),
+            children,
+            tuple(_pair_mode(parent) for parent, _ in targets),
+            _stop_marks(targets, children),
+        )
+
+    def stopped(self) -> bool:
+        """Return whether a STOP reached any selected side since the capture."""
+        return _stop_marks(self.targets, self.children) != self.stops
+
+    def require_unchanged(self, call: ServiceCall) -> None:
+        """Refuse a selection whose beds were replaced, removed or re-paired."""
+        try:
+            current = _call_targets(call)
+            children = [tuple(_command_targets(parent, side)) for parent, side in current]
+        except ServiceValidationError as err:
+            raise _bed_changed() from err
+        same = (
+            len(current) == len(self.targets)
+            and all(
+                parent is old_parent and side == old_side
+                for (parent, side), (old_parent, old_side) in zip(
+                    current, self.targets, strict=True
+                )
             )
+            and all(
+                len(group) == len(old)
+                and all(child is old_child for child, old_child in zip(group, old, strict=True))
+                for group, old in zip(children, self.children, strict=True)
+            )
+            and tuple(_pair_mode(parent) for parent, _ in current) == self.modes
+        )
+        if not same:
+            raise _bed_changed()
 
 
 async def _release_preflighted(preflighted: PreflightedSides) -> None:
@@ -740,16 +764,21 @@ async def _release_preflighted(preflighted: PreflightedSides) -> None:
 
 
 @contextlib.asynccontextmanager
-async def _release_idle_on_validation_failure(
+async def _side_validation(
+    parent: BedTarget,
     coordinator: BedChild,
-) -> AsyncIterator[None]:
-    """Release a bed reconnected for a per-motor service if validation fails.
+    preflighted: PreflightedSides,
+) -> AsyncIterator[BedController]:
+    """Yield one side's validation controller, bound to that side.
 
+    Release a bed reconnected for a per-motor service if validation fails.
     _get_controller_for_service reconnects with reset_timer=False; without
     this an invalid set_position/timed_move would leave the BLE link open
     with no idle timer (the preset preflight path already guards this way)."""
     try:
-        yield
+        controller = await _validation_controller(parent, coordinator, preflighted)
+        with controller_side_scope(coordinator):
+            yield controller
     except ServiceValidationError:
         if coordinator.is_connected:
             with contextlib.suppress(Exception):
@@ -759,24 +788,37 @@ async def _release_idle_on_validation_failure(
 
 def _plan_key(target: BedChild) -> int:
     """Stable per-side key for a validated plan (a proxy shares its child's identity)."""
-    return getattr(target, "operation_identity", id(target))
+    return target.operation_identity
 
 
 def _timed_move_resource(target: BedChild, motor: str) -> str:
     """Read the selected motor's existing scheduler resource without awaiting."""
     controller = target.capability_controller
     if controller is not None:
-        spec = next(
-            (item for item in controller.motor_control_specs if item.key == motor),
-            None,
-        )
+        with controller_side_scope(target):
+            spec = next(
+                (item for item in controller.motor_control_specs if item.key == motor),
+                None,
+            )
         if spec is not None:
             return spec.scheduler_resource or f"motor:{spec.position_key or spec.key}"
     return f"motor:{motor}"
 
 
+def _require_preset_slot(target: BedChild, controller: BedController, preset: int) -> None:
+    """Reject a memory preset beyond the controller's slot count."""
+    slot_count = controller.memory_slot_count
+    if preset > slot_count:
+        raise invalid("invalid_preset_number", device_name=target.name, max_preset=str(slot_count), requested_preset=str(preset))
+
+
 async def handle_goto_preset(call: ServiceCall) -> None:
     """Handle goto_preset service call with sided all-target preflight."""
+    from .beds.limoss.remote_services import (
+        _limoss_remote_reload_transaction,
+        _preflight_live_limoss_remote,
+    )
+
     hass = call.hass
     preset = call.data[ATTR_PRESET]
     device_ids = call.data.get(CONF_DEVICE_ID, [])
@@ -796,66 +838,39 @@ async def handle_goto_preset(call: ServiceCall) -> None:
     if missing:
         raise _missing_device_error(missing[0])
 
+    def check(target: BedChild, controller: BedController) -> None:
+        if not controller.supports_memory_presets:
+            raise invalid("memory_presets_not_supported", device_name=target.name)
+        _require_preset_slot(target, controller, preset)
+        if hold_ms is not None and not controller.supports_held_memory_recall:
+            raise invalid("preset_duration_not_supported", device_name=target.name)
+        try:
+            controller.validate_memory_recall(preset)
+        except ValueError as error:
+            raise rejected(error) from error
+
+    async def recall(controller: BedController) -> None:
+        if hold_ms is None:
+            await controller.preset_memory(preset)
+        else:
+            await controller.recall_memory(preset, hold_ms=hold_ms)
+
+    admissions = [_capture_command_admission(coordinator, side) for coordinator, side in targets]
     async with _limoss_remote_reload_transaction(targets):
         await _preflight_live_limoss_remote(
             targets, lambda ctrl: ctrl.validate_memory_recall(preset)
         )
-
-        # Phase 1: validate the preset on EVERY targeted side before moving any
-        # bed, so a multi-target call never half-executes.
-        preflighted: PreflightedSides = []
+        # Validate the preset on EVERY targeted side before moving any bed, so a
+        # multi-target call never half-executes.
+        live = _LiveCheck(check)
+        preflighted = await _preflight_each(targets, live.preflight)
+        command = invalidate_on_command(hass, live.command(targets, recall))
+        # Every target validated - now move them. If one bed's command fails,
+        # release the still-connected preflighted beds that never ran (and so
+        # never reset their idle timer) before propagating.
         try:
-            for coordinator, side in targets:
-                for target in _command_targets(coordinator, side):
-                    controller = await _validation_controller(coordinator, target, preflighted)
-                    if not controller.supports_memory_presets:
-                        raise ServiceValidationError(
-                            f"Device '{target.name}' does not support memory presets",
-                            translation_domain=DOMAIN,
-                            translation_key="memory_presets_not_supported",
-                            translation_placeholders={"device_name": target.name},
-                        )
-                    # Validate preset against controller's memory slot count
-                    slot_count = controller.memory_slot_count
-                    if preset > slot_count:
-                        raise ServiceValidationError(
-                            f"Device '{target.name}' only supports memory presets 1-{slot_count}. "
-                            f"Preset {preset} is not available for this bed type.",
-                            translation_domain=DOMAIN,
-                            translation_key="invalid_preset_number",
-                            translation_placeholders={
-                                "device_name": target.name,
-                                "max_preset": str(slot_count),
-                                "requested_preset": str(preset),
-                            },
-                        )
-                    if hold_ms is not None and not controller.supports_held_memory_recall:
-                        raise ServiceValidationError(
-                            f"Device '{target.name}' does not accept a preset hold duration",
-                            translation_domain=DOMAIN,
-                            translation_key="preset_duration_not_supported",
-                            translation_placeholders={"device_name": target.name},
-                        )
-                    try:
-                        controller.validate_memory_recall(preset)
-                    except ValueError as error:
-                        raise ServiceValidationError(str(error)) from error
-        except ServiceValidationError:
-            await _release_preflighted(preflighted)
-            raise
-
-        async def recall(controller: BedController | SideBoundController) -> None:
-            if hold_ms is None:
-                await controller.preset_memory(preset)
-            else:
-                await controller.recall_memory(preset, hold_ms=hold_ms)
-
-        # Phase 2: every target validated - now move them. If one bed's command
-        # fails, release the still-connected preflighted beds that never ran (and
-        # so never reset their idle timer) before propagating.
-        try:
-            for coordinator, side in targets:
-                await _execute_sided(coordinator, side, recall)
+            for (coordinator, side), admission in zip(targets, admissions, strict=True):
+                await _execute_sided(coordinator, side, command, admission=admission)
         except Exception:
             await _release_preflighted(preflighted)
             raise
@@ -863,6 +878,11 @@ async def handle_goto_preset(call: ServiceCall) -> None:
 
 async def handle_save_preset(call: ServiceCall) -> None:
     """Handle save_preset service call with sided all-target preflight."""
+    from .beds.limoss.remote_services import (
+        _limoss_remote_reload_transaction,
+        _preflight_live_limoss_remote,
+    )
+
     hass = call.hass
     preset = call.data[ATTR_PRESET]
     device_ids = call.data.get(CONF_DEVICE_ID, [])
@@ -874,57 +894,34 @@ async def handle_save_preset(call: ServiceCall) -> None:
     if missing:
         raise _missing_device_error(missing[0])
 
-    def validate_remote_slot(controller: LimossRemoteController | SideBoundController) -> None:
+    admissions = [_capture_command_admission(coordinator, side) for coordinator, side in targets]
+
+    def check(target: BedChild, controller: BedController) -> None:
+        if not controller.supports_memory_programming:
+            raise invalid("memory_programming_not_supported", device_name=target.name)
+        _require_preset_slot(target, controller, preset)
+
+    def validate_remote_slot(controller: LimossRemoteController) -> None:
         if (
             not controller.supports_memory_programming
             or not 1 <= preset <= controller.memory_slot_count
         ):
-            raise ValueError("The fresh Limoss Remote profile cannot program this memory slot")
+            raise ValueError("This remote cannot save to that memory position. Choose another position")
 
     async with _limoss_remote_reload_transaction(targets):
         await _preflight_live_limoss_remote(targets, validate_remote_slot)
 
-        # Phase 1: validate that every targeted side can program this slot before
+        # Validate that every targeted side can program this slot before
         # programming any, so a multi-target call never half-executes.
-        preflighted: PreflightedSides = []
-        try:
-            for coordinator, side in targets:
-                for target in _command_targets(coordinator, side):
-                    controller = await _validation_controller(coordinator, target, preflighted)
-                    if not controller.supports_memory_programming:
-                        raise ServiceValidationError(
-                            f"Device '{target.name}' does not support programming memory presets",
-                            translation_domain=DOMAIN,
-                            translation_key="memory_programming_not_supported",
-                            translation_placeholders={"device_name": target.name},
-                        )
-                    # Validate preset against controller's memory slot count
-                    slot_count = controller.memory_slot_count
-                    if preset > slot_count:
-                        raise ServiceValidationError(
-                            f"Device '{target.name}' only supports memory presets 1-{slot_count}. "
-                            f"Preset {preset} is not available for this bed type.",
-                            translation_domain=DOMAIN,
-                            translation_key="invalid_preset_number",
-                            translation_placeholders={
-                                "device_name": target.name,
-                                "max_preset": str(slot_count),
-                                "requested_preset": str(preset),
-                            },
-                        )
-        except ServiceValidationError:
-            await _release_preflighted(preflighted)
-            raise
-
-        # Phase 2: every target validated - now program them. Release any
+        live = _LiveCheck(check)
+        preflighted = await _preflight_each(targets, live.preflight)
+        program = live.command(targets, lambda ctrl: ctrl.program_memory(preset))
+        # Every target validated - now program them. Release any
         # still-connected preflighted bed that never ran if one fails.
         try:
-            for coordinator, side in targets:
-                await _execute_sided(
-                    coordinator,
-                    side,
-                    lambda ctrl, p=preset: ctrl.program_memory(p),  # type: ignore[misc]
-                    cancel_running=False,
+            for (coordinator, side), admission in zip(targets, admissions, strict=True):
+                await _execute_sided_translated(
+                    coordinator, side, program, cancel_running=False, admission=admission
                 )
         except Exception:
             await _release_preflighted(preflighted)
@@ -939,35 +936,30 @@ async def handle_stop_all(call: ServiceCall) -> None:
 
     _LOGGER.info("Service stop_all called (side=%s)", explicit_side)
 
-    targets, missing_device_ids = _resolve_sided_targets(hass, device_ids, explicit_side)
+    # STOP is a safety action: attempt every bed that resolves before surfacing
+    # an error, so one bad target never leaves another bed still moving.
+    problems: list[BaseException] = []
+    targets, _missing = _resolve_sided_targets(hass, device_ids, explicit_side, problems=problems)
 
     async def _stop_one(coordinator: BedTarget, side: str) -> None:
-        # Validate that side applies (rejects left/right on a single bed).
-        _command_targets(coordinator, side)
+        try:
+            _command_targets(coordinator, side)
+        except ServiceValidationError as err:
+            # A side this bed does not have stops the whole bed.
+            problems.append(err)
+            side = SIDE_BOTH
         if isinstance(coordinator, PairedBedCoordinator):
             await coordinator.async_stop_command(side=side)
         else:
             await coordinator.async_stop_command()
 
-    # STOP is a safety action: attempt every target before surfacing an
-    # error, so one bed's failure never leaves another still moving.
     results = await asyncio.gather(
         *(_stop_one(coordinator, side) for coordinator, side in targets),
         return_exceptions=True,
     )
-    stop_errors = [r for r in results if isinstance(r, BaseException)]
-
-    if missing_device_ids:
-        raise ServiceValidationError(
-            f"Could not find Adjustable Bed device(s) with ID(s): {', '.join(missing_device_ids)}",
-            translation_domain=DOMAIN,
-            translation_key="devices_not_found",
-            translation_placeholders={"device_ids": ", ".join(missing_device_ids)},
-        )
-
-    if stop_errors:
-        # Every target was attempted; surface the first failure.
-        raise stop_errors[0]
+    problems.extend(r for r in results if isinstance(r, BaseException))
+    if problems:
+        raise problems[0]
 
 
 async def _set_position_plan(
@@ -978,227 +970,144 @@ async def _set_position_plan(
     position: float,
 ) -> dict[str, Any]:
     """Validate one physical side and return its seek configuration."""
-    async with _release_idle_on_validation_failure(coordinator):
-        controller = await _validation_controller(parent, coordinator, preflighted)
+    async with _side_validation(parent, coordinator, preflighted) as controller:
+        return _position_config(coordinator, controller, motor, position)
 
-        # Bed type / motor count come from the coordinator's own entry (the
-        # child's ChildEntryView for a paired-side target - children aren't in
-        # hass.data, so don't scan it).
-        entry = coordinator.entry
-        bed_type = entry.data.get(CONF_BED_TYPE)
-        motor_count = entry.data.get(CONF_MOTOR_COUNT, DEFAULT_MOTOR_COUNT)
-        protocol_variant = entry.data.get(CONF_PROTOCOL_VARIANT)
-        supports_direct_position_control = controller.supports_direct_position_control
 
-        # Validate bed supports position feedback
-        if (
-            not bed_type_has_position_feedback(bed_type, protocol_variant)
-            and not supports_direct_position_control
-        ):
-            raise ServiceValidationError(
-                f"Device '{coordinator.name}' (type: {bed_type}) does not support position feedback",
-                translation_domain=DOMAIN,
-                translation_key="position_feedback_not_supported",
-                translation_placeholders={
-                    "device_name": coordinator.name,
-                    "bed_type": bed_type or "unknown",
-                },
-            )
+def _position_config(
+    coordinator: BedChild, controller: BedController, motor: str, position: float
+) -> dict[str, Any]:
+    """Check one motor target against ``controller`` and return its seek configuration."""
+    # Bed type / motor count come from the coordinator's own entry (the
+    # child's ChildEntryView for a paired-side target - children aren't in
+    # hass.data, so don't scan it).
+    entry = coordinator.entry
+    bed_type = entry.data.get(CONF_BED_TYPE)
+    motor_count = entry.data.get(CONF_MOTOR_COUNT, DEFAULT_MOTOR_COUNT)
+    protocol_variant = entry.data.get(CONF_PROTOCOL_VARIANT)
+    supports_direct_position_control = controller.supports_direct_position_control
 
-        # Validate angle sensing is enabled
-        if coordinator.disable_angle_sensing:
-            raise ServiceValidationError(
-                f"Angle sensing is disabled for device '{coordinator.name}'",
-                translation_domain=DOMAIN,
-                translation_key="angle_sensing_disabled",
-                translation_placeholders={"device_name": coordinator.name},
-            )
+    # Validate bed supports position feedback. Q-Plus's MX layout reports none.
+    if (
+        not bed_type_has_position_feedback(bed_type, protocol_variant)
+        or (bed_type == BED_TYPE_QPLUS_APP and not controller.supports_position_feedback)
+    ) and not supports_direct_position_control:
+        raise invalid("position_feedback_not_supported", device_name=coordinator.name)
 
-        # Define motor configurations.
-        # For Keeson/Ergomotion: only head and feet are valid, they map to back/legs keys.
-        # For BOX25: head, feet, and lumbar are valid, using direct percentage positions.
-        # For Kaidi: direct position writes expose back/legs percentage targets.
-        # For standard beds: based on motor_count (2=back/legs, 3=+head, 4=+feet).
-        uses_percentage_positions = bed_type in (
-            BED_TYPE_KEESON,
-            BED_TYPE_ERGOMOTION,
-            BED_TYPE_SLEEPYS_BOX25,
-            BED_TYPE_SVANE,
-            BED_TYPE_SLEEP_NUMBER_MCR,
-        ) or (bed_type == BED_TYPE_KAIDI and supports_direct_position_control) or (
-            controller.reports_percentage_position is True
-        )
+    # Validate angle sensing is enabled
+    if coordinator.disable_angle_sensing:
+        raise invalid("angle_sensing_disabled", device_name=coordinator.name)
 
-        if bed_type in (BED_TYPE_SLEEP_NUMBER_MCR, BED_TYPE_SERTA_MP_REMOTE, BED_TYPE_SBI):
-            # These controllers' position specs own their axes and native bounds,
-            # independently of generic angle overrides (SBI reports back/legs
-            # only, within its pulse tables). Validate every axis/target before
-            # scheduling.
-            motor_configs = {
-                spec.position_key: {
-                    "position_key": spec.position_key,
-                    "move_up_fn": spec.open_fn,
-                    "move_down_fn": spec.close_fn,
-                    "move_stop_fn": spec.stop_fn,
-                    "max_value": spec.native_max_value,
-                }
-                for spec in controller.position_number_specs
+    # Define motor configurations.
+    # Direct setters with percentage sliders (Kaidi, BOX25 and others) and
+    # setters with their own native bounds target their position sliders.
+    # For Keeson/Ergomotion: only head and feet are valid, they map to back/legs keys.
+    # For standard beds: based on motor_count (2=back/legs, 3=+head, 4=+feet).
+    specs = controller.position_number_specs
+    # A percentage bed with no sliders (for example articulation disabled)
+    # keeps an empty axis set rather than falling back to generic motors.
+    percentage_targets = controller.reports_percentage_position is True or (
+        bool(specs)
+        and all(spec.native_unit_of_measurement == POSITION_UNIT_PERCENT for spec in specs)
+    )
+    # Q-Plus reports back/legs only, within its pulse tables.
+    if bed_type in (BED_TYPE_SLEEP_NUMBER_MCR, BED_TYPE_SERTA_MP_REMOTE, BED_TYPE_QPLUS_APP) or (
+        supports_direct_position_control and percentage_targets
+    ):
+        motor_configs = {
+            spec.position_key: {
+                "position_key": spec.position_key,
+                "move_up_fn": spec.open_fn,
+                "move_down_fn": spec.close_fn,
+                "move_stop_fn": spec.stop_fn,
+                "max_value": spec.native_max_value,
+                "unit": spec.native_unit_of_measurement,
             }
-            valid_motors = set(motor_configs)
-        elif bed_type == BED_TYPE_KAIDI and supports_direct_position_control:
-            valid_motors = {"back", "legs"}
-            motor_configs = {
-                "back": {
-                    "position_key": "back",
-                    "move_up_fn": lambda ctrl: ctrl.move_back_up(),
-                    "move_down_fn": lambda ctrl: ctrl.move_back_down(),
-                    "move_stop_fn": lambda ctrl: ctrl.move_back_stop(),
-                    "max_value": 100.0,
-                },
-                "legs": {
-                    "position_key": "legs",
-                    "move_up_fn": lambda ctrl: ctrl.move_legs_up(),
-                    "move_down_fn": lambda ctrl: ctrl.move_legs_down(),
-                    "move_stop_fn": lambda ctrl: ctrl.move_legs_stop(),
-                    "max_value": 100.0,
-                },
-            }
-        elif supports_direct_position_control and controller.reports_percentage_position is True:
-            motor_configs = {
-                spec.position_key: {
-                    "position_key": spec.position_key,
-                    "move_up_fn": spec.open_fn,
-                    "move_down_fn": spec.close_fn,
-                    "move_stop_fn": spec.stop_fn,
-                    "max_value": spec.native_max_value,
-                }
-                for spec in controller.position_number_specs
-            }
-            valid_motors = set(motor_configs)
-        elif bed_type in (BED_TYPE_KEESON, BED_TYPE_ERGOMOTION):
-            # Keeson/Ergomotion only have head and feet motors
-            valid_motors = {"head", "feet"}
-            motor_configs = {
-                "head": {
-                    "position_key": "back",  # Maps to "back" in position_data
-                    "move_up_fn": lambda ctrl: ctrl.move_head_up(),
-                    "move_down_fn": lambda ctrl: ctrl.move_head_down(),
-                    "move_stop_fn": lambda ctrl: ctrl.move_head_stop(),
-                    "max_value": 100.0,  # Percentage
-                },
-                "feet": {
-                    "position_key": "legs",  # Maps to "legs" in position_data
-                    "move_up_fn": lambda ctrl: ctrl.move_feet_up(),
-                    "move_down_fn": lambda ctrl: ctrl.move_feet_down(),
-                    "move_stop_fn": lambda ctrl: ctrl.move_feet_stop(),
-                    "max_value": 100.0,  # Percentage
-                },
-            }
-        elif bed_type == BED_TYPE_SLEEPYS_BOX25:
-            valid_motors = {"head", "feet", "lumbar"}
-            motor_configs = {
-                "head": {
-                    "position_key": "head",
-                    "move_up_fn": lambda ctrl: ctrl.move_head_up(),
-                    "move_down_fn": lambda ctrl: ctrl.move_head_down(),
-                    "move_stop_fn": lambda ctrl: ctrl.move_head_stop(),
-                    "max_value": 100.0,
-                },
-                "feet": {
-                    "position_key": "feet",
-                    "move_up_fn": lambda ctrl: ctrl.move_feet_up(),
-                    "move_down_fn": lambda ctrl: ctrl.move_feet_down(),
-                    "move_stop_fn": lambda ctrl: ctrl.move_feet_stop(),
-                    "max_value": 100.0,
-                },
-                "lumbar": {
-                    "position_key": "lumbar",
-                    "move_up_fn": lambda ctrl: ctrl.move_lumbar_up(),
-                    "move_down_fn": lambda ctrl: ctrl.move_lumbar_down(),
-                    "move_stop_fn": lambda ctrl: ctrl.move_lumbar_stop(),
-                    "max_value": 100.0,
-                },
-            }
+            for spec in specs
+        }
+        valid_motors = set(motor_configs)
+    elif bed_type in (BED_TYPE_KEESON, BED_TYPE_ERGOMOTION):
+        # Keeson/Ergomotion only have head and feet motors
+        valid_motors = {"head", "feet"}
+        motor_configs = {
+            "head": {
+                "position_key": "back",  # Maps to "back" in position_data
+                "move_up_fn": lambda ctrl: ctrl.move_head_up(),
+                "move_down_fn": lambda ctrl: ctrl.move_head_down(),
+                "move_stop_fn": lambda ctrl: ctrl.move_head_stop(),
+                "max_value": 100.0,  # Percentage
+            },
+            "feet": {
+                "position_key": "legs",  # Maps to "legs" in position_data
+                "move_up_fn": lambda ctrl: ctrl.move_feet_up(),
+                "move_down_fn": lambda ctrl: ctrl.move_feet_down(),
+                "move_stop_fn": lambda ctrl: ctrl.move_feet_stop(),
+                "max_value": 100.0,  # Percentage
+            },
+        }
+    else:
+        # Standard beds: motor availability depends on motor_count
+        motor_configs = {
+            "back": {
+                "position_key": "back",
+                "move_up_fn": lambda ctrl: ctrl.move_back_up(),
+                "move_down_fn": lambda ctrl: ctrl.move_back_down(),
+                "move_stop_fn": lambda ctrl: ctrl.move_back_stop(),
+                "max_value": coordinator.get_max_angle("back"),  # Degrees
+                "min_motors": 2,
+            },
+            "legs": {
+                "position_key": "legs",
+                "move_up_fn": lambda ctrl: ctrl.move_legs_up(),
+                "move_down_fn": lambda ctrl: ctrl.move_legs_down(),
+                "move_stop_fn": lambda ctrl: ctrl.move_legs_stop(),
+                "max_value": coordinator.get_max_angle("legs"),  # Degrees
+                "min_motors": 2,
+            },
+            "head": {
+                "position_key": "head",
+                "move_up_fn": lambda ctrl: ctrl.move_head_up(),
+                "move_down_fn": lambda ctrl: ctrl.move_head_down(),
+                "move_stop_fn": lambda ctrl: ctrl.move_head_stop(),
+                "max_value": coordinator.get_max_angle("head"),  # Degrees
+                "min_motors": 3,
+            },
+            "feet": {
+                "position_key": "feet",
+                "move_up_fn": lambda ctrl: ctrl.move_feet_up(),
+                "move_down_fn": lambda ctrl: ctrl.move_feet_down(),
+                "move_stop_fn": lambda ctrl: ctrl.move_feet_stop(),
+                "max_value": coordinator.get_max_angle("feet"),  # Degrees
+                "min_motors": 4,
+            },
+        }
+        if bed_type == BED_TYPE_LINAK:
+            valid_motors = {spec.position_key for spec in controller.position_number_specs}
         else:
-            # Standard beds: motor availability depends on motor_count
-            motor_configs = {
-                "back": {
-                    "position_key": "back",
-                    "move_up_fn": lambda ctrl: ctrl.move_back_up(),
-                    "move_down_fn": lambda ctrl: ctrl.move_back_down(),
-                    "move_stop_fn": lambda ctrl: ctrl.move_back_stop(),
-                    "max_value": coordinator.get_max_angle("back"),  # Degrees
-                    "min_motors": 2,
-                },
-                "legs": {
-                    "position_key": "legs",
-                    "move_up_fn": lambda ctrl: ctrl.move_legs_up(),
-                    "move_down_fn": lambda ctrl: ctrl.move_legs_down(),
-                    "move_stop_fn": lambda ctrl: ctrl.move_legs_stop(),
-                    "max_value": coordinator.get_max_angle("legs"),  # Degrees
-                    "min_motors": 2,
-                },
-                "head": {
-                    "position_key": "head",
-                    "move_up_fn": lambda ctrl: ctrl.move_head_up(),
-                    "move_down_fn": lambda ctrl: ctrl.move_head_down(),
-                    "move_stop_fn": lambda ctrl: ctrl.move_head_stop(),
-                    "max_value": coordinator.get_max_angle("head"),  # Degrees
-                    "min_motors": 3,
-                },
-                "feet": {
-                    "position_key": "feet",
-                    "move_up_fn": lambda ctrl: ctrl.move_feet_up(),
-                    "move_down_fn": lambda ctrl: ctrl.move_feet_down(),
-                    "move_stop_fn": lambda ctrl: ctrl.move_feet_stop(),
-                    "max_value": coordinator.get_max_angle("feet"),  # Degrees
-                    "min_motors": 4,
-                },
+            # Filter standard beds to motors enabled by their configured count.
+            valid_motors = {
+                motor
+                for motor, config in motor_configs.items()
+                if motor_count >= config.get("min_motors", 2)
             }
-            if bed_type == BED_TYPE_LINAK:
-                valid_motors = {spec.position_key for spec in controller.position_number_specs}
-            else:
-                # Filter standard beds to motors enabled by their configured count.
-                valid_motors = {
-                    motor
-                    for motor, config in motor_configs.items()
-                    if motor_count >= config.get("min_motors", 2)
-                }
 
-        # Validate motor is valid for this bed
-        if motor not in valid_motors:
-            raise ServiceValidationError(
-                f"Motor '{motor}' is not valid for device '{coordinator.name}'. "
-                f"Valid motors: {', '.join(sorted(valid_motors))}",
-                translation_domain=DOMAIN,
-                translation_key="invalid_motor_for_bed_type",
-                translation_placeholders={
-                    "motor": motor,
-                    "device_name": coordinator.name,
-                    "valid_motors": ", ".join(sorted(valid_motors)),
-                },
-            )
+    # Validate motor is valid for this bed
+    if motor not in valid_motors:
+        raise invalid("invalid_motor_for_bed_type", motor=motor, device_name=coordinator.name, valid_motors=", ".join(sorted(valid_motors)))
 
-        config = motor_configs[motor]
-        max_value = config["max_value"]
+    config = motor_configs[motor]
+    max_value = config["max_value"]
 
-        # Validate position is in range
-        if position < 0 or position > max_value:
-            unit = "%" if uses_percentage_positions else "°"
-            raise ServiceValidationError(
-                f"Position {position} is out of range for motor '{motor}'. "
-                f"Valid range: 0-{max_value}{unit}",
-                translation_domain=DOMAIN,
-                translation_key="invalid_position_range",
-                translation_placeholders={
-                    "position": str(position),
-                    "motor": motor,
-                    "max_value": str(max_value),
-                    "unit": unit,
-                },
-            )
+    # Validate position is in range
+    if position < 0 or position > max_value:
+        unit = config.get("unit") or (
+            POSITION_UNIT_PERCENT
+            if controller.reports_percentage_position is True
+            else POSITION_UNIT_DEGREES
+        )
+        raise invalid("invalid_position_range", position=str(position), motor=motor, max_value=str(max_value), unit=unit)
 
-        return config
+    return config
 
 
 async def handle_set_position(call: ServiceCall) -> None:
@@ -1233,8 +1142,8 @@ async def handle_set_positions(call: ServiceCall) -> None:
     ]
     motors = [motor for motor, _ in requests]
     if len(motors) != len(set(motors)):
-        raise ServiceValidationError(
-            "Each motor may appear only once in a set_positions call",
+        raise invalid(
+            "duplicate_motor_positions"
         )
     _LOGGER.info(
         "Service set_positions called: motors=%s (side=%s)",
@@ -1242,660 +1151,6 @@ async def handle_set_positions(call: ServiceCall) -> None:
         explicit_side,
     )
     await _execute_position_requests(hass, device_ids, explicit_side, requests)
-
-
-def _reverie_comfort_request(
-    data: dict[str, Any], *, force: bool = False
-) -> ReverieComfortRequest:
-    return ReverieComfortRequest(
-        head_position=data.get("head_position"),
-        foot_position=data.get("foot_position"),
-        lumbar_position=data.get("lumbar_position"),
-        head_massage=data.get("head_massage"),
-        foot_massage=data.get("foot_massage"),
-        timer_byte=data.get("timer_byte"),
-        mode=data.get("mode"),
-        force=force,
-    )
-
-
-def _strict_int_range(minimum: int, maximum: int | None = None) -> Callable[[object], int]:
-    def validate(value: object) -> int:
-        if isinstance(value, bool) or not isinstance(value, int):
-            raise vol.Invalid("expected integer")
-        if value < minimum or (maximum is not None and value > maximum):
-            raise vol.Invalid("integer is outside the allowed range")
-        return value
-
-    return validate
-
-
-_REVERIE_COMFORT_SCHEMA = vol.Schema(
-    {
-        vol.Optional("head_position"): _strict_int_range(-(2**31), 2**31 - 1),
-        vol.Optional("foot_position"): _strict_int_range(-(2**31), 2**31 - 1),
-        vol.Optional("lumbar_position"): _strict_int_range(-(2**31), 2**31 - 1),
-        vol.Optional("head_massage"): _strict_int_range(-(2**31), 2**31 - 1),
-        vol.Optional("foot_massage"): _strict_int_range(-(2**31), 2**31 - 1),
-        vol.Optional("timer_byte"): _strict_int_range(-(2**31), 2**31 - 1),
-        vol.Optional("mode"): _strict_int_range(-(2**31), 2**31 - 1),
-    }
-)
-
-_REVERIE_ALARM_COMFORT_SCHEMA = vol.Schema(
-    {
-        vol.Required("head_position"): _strict_int_range(-(2**31), 2**31 - 1),
-        vol.Required("foot_position"): _strict_int_range(-(2**31), 2**31 - 1),
-        vol.Optional("lumbar_position"): _strict_int_range(-(2**31), 2**31 - 1),
-        vol.Required("head_massage"): _strict_int_range(-(2**31), 2**31 - 1),
-        vol.Required("foot_massage"): _strict_int_range(-(2**31), 2**31 - 1),
-        vol.Required("timer_byte"): _strict_int_range(-(2**31), 2**31 - 1),
-        vol.Required("mode"): _strict_int_range(-(2**31), 2**31 - 1),
-    }
-)
-
-
-def _reverie_comfort_controller(
-    coordinator: BedChild,
-    controller: BedController | SideBoundController,
-) -> _ReverieComfortController:
-    if coordinator.bed_type not in (
-        BED_TYPE_REVERIE,
-        BED_TYPE_REVERIE_NIGHTSTAND,
-        BED_TYPE_REVERIE_PAIRLINK,
-    ):
-        raise ServiceValidationError(
-            f"Device '{coordinator.name}' is not a supported Reverie protocol target"
-        )
-    return cast(_ReverieComfortController, controller)
-
-
-async def _prepare_reverie_comfort_target(
-    parent: BedTarget,
-    target: BedChild,
-    request: ReverieComfortRequest,
-    preflighted: PreflightedSides,
-    pairlink_plans: dict[object, PairlinkComfortPlan],
-) -> None:
-    """Validate one physical target and prepare P4 against its live generation."""
-    if target.bed_type != BED_TYPE_REVERIE_PAIRLINK:
-        controller = await _validation_controller(parent, target, preflighted)
-        if target.bed_type == BED_TYPE_REVERIE:
-            _validate_reverie_deferred_target(parent, controller)
-        reverie = _reverie_comfort_controller(target, controller)
-        try:
-            reverie.validate_comfort_request(request)
-        except ValueError as err:
-            raise ServiceValidationError(str(err)) from err
-        return
-
-    controller = target.controller or target.capability_controller
-    if controller is not None and (
-        getattr(controller, "requires_disconnected_transport", False) is True
-    ):
-        if getattr(controller, "disconnected_transport_ready", False) is not True:
-            raise ServiceValidationError(
-                f"Device '{target.name}' local Pairlink session is not ready"
-            )
-    elif not target.is_connected or target.controller is None:
-        connected = await target.async_ensure_connected(reset_timer=False)
-        if not connected or target.controller is None:
-            raise ServiceValidationError(
-                f"Device '{target.name}' cannot prepare a current Pairlink session"
-            )
-        preflighted.append((parent, target))
-        controller = target.controller
-
-    if controller is None:
-        raise ServiceValidationError(
-            f"Device '{target.name}' has no active Pairlink controller"
-        )
-    pairlink = cast(_PairlinkComfortController, controller)
-    try:
-        pairlink.validate_comfort_request(request)
-        plan = pairlink.prepare_comfort(request)
-    except (ValueError, RuntimeError, PermissionError, ConnectionError) as err:
-        raise ServiceValidationError(str(err)) from err
-    pairlink_plans[pairlink.comfort_runtime_identity()] = plan
-
-
-def _reverie_comfort_physical_targets(
-    targets: list[tuple[BedTarget, str]],
-) -> list[_ReverieComfortPhysicalTarget]:
-    """Expand selected HA devices to their actual physical command lanes."""
-    physical: list[_ReverieComfortPhysicalTarget] = []
-    seen: set[tuple[int, str | None]] = set()
-    for coordinator, side in targets:
-        if isinstance(coordinator, PairedBedCoordinator):
-            sides = coordinator.sides if side == SIDE_BOTH else (side,)
-            for physical_side in sides:
-                target = coordinator.child_for_side(physical_side)
-                if target is None:
-                    continue
-                key = (id(target), physical_side)
-                if key not in seen:
-                    seen.add(key)
-                    physical.append(
-                        _ReverieComfortPhysicalTarget(target, coordinator, physical_side)
-                    )
-            continue
-        key = (id(coordinator), None)
-        if key not in seen:
-            seen.add(key)
-            physical.append(_ReverieComfortPhysicalTarget(coordinator, None, None))
-    return physical
-
-
-@contextlib.asynccontextmanager
-async def _reverie_comfort_pair_lanes(
-    targets: list[_ReverieComfortPhysicalTarget],
-) -> AsyncIterator[None]:
-    """Acquire paired side lanes in stable order around reservation and commit."""
-    grouped: dict[PairedBedCoordinator, list[tuple[str, BedChild]]] = {}
-    for target in targets:
-        if target.parent is not None and target.side is not None:
-            grouped.setdefault(target.parent, []).append((target.side, target.target))
-    async with contextlib.AsyncExitStack() as stack:
-        for parent in sorted(grouped, key=id):
-            await stack.enter_async_context(parent._locked_target_sides(grouped[parent]))
-        yield
-
-
-async def _execute_prepared_reverie_comfort(
-    targets: list[tuple[BedTarget, str]],
-    request: ReverieComfortRequest,
-    pairlink_plans: dict[object, PairlinkComfortPlan],
-    admissions: dict[tuple[int, str], _CommandAdmission],
-) -> bool:
-    """Reserve every selected command lane before dispatching comfort frames.
-
-    Returns false only for lightweight coordinator doubles without the
-    production scheduler reservation API. Pairlink plans are revalidated after
-    all reservations are ready and immediately before the first dispatched
-    controller action enters its command lock.
-    """
-    physical = _reverie_comfort_physical_targets(targets)
-    if not physical or not pairlink_plans:
-        return False
-    if not all(
-        callable(getattr(target.target, "async_prepare_command_operation", None))
-        for target in physical
-    ):
-        return False
-    if any(
-        callable(getattr(controller, "comfort_runtime_identity", None))
-        and not callable(getattr(controller, "comfort_plan_is_current", None))
-        for target in physical
-        for controller in (target.target.controller or target.target.capability_controller,)
-    ):
-        return False
-
-    by_parent: dict[PairedBedCoordinator, set[str]] = {}
-    for target in physical:
-        if target.parent is not None and target.side is not None:
-            by_parent.setdefault(target.parent, set()).add(target.side)
-    if any(
-        parent.connection_mode == PAIR_CONNECTION_MODE_SEQUENTIAL and len(sides) > 1
-        for parent, sides in by_parent.items()
-    ):
-        raise ServiceValidationError(
-            "Pairlink comfort requires all selected pair sides to remain live for preflight; "
-            "use concurrent paired connection mode"
-        )
-
-    def admission_for(target: _ReverieComfortPhysicalTarget) -> _CommandAdmission:
-        key = (id(target.parent or target.target), target.side or SIDE_BOTH)
-        if key not in admissions:
-            key = (key[0], SIDE_BOTH)
-        return admissions[key]
-
-    def stop_epoch_for(target: _ReverieComfortPhysicalTarget) -> int | None:
-        return admission_for(target).expected_stop_epochs.get(target.side or SIDE_BOTH)
-
-    def validate_pairlink_plans() -> None:
-        for coordinator, side in targets:
-            admission = admissions[(id(coordinator), side)]
-            if isinstance(coordinator, PairedBedCoordinator):
-                invalidated = coordinator._pair_admission_was_cancelled(
-                    coordinator._targets_for(side),
-                    admission.resources,
-                    admission.expected_pair_generations,
-                    admission.expected_stop_epochs,
-                )
-            else:
-                epoch = admission.expected_stop_epochs.get(SIDE_BOTH)
-                invalidated = epoch is not None and _target_stop_epoch(coordinator) != epoch
-            if invalidated:
-                raise PreparedCommandInvalidated("Comfort request was stopped during preflight")
-        for target in physical:
-            controller = target.target.controller or target.target.capability_controller
-            identity = getattr(controller, "comfort_runtime_identity", None)
-            if not callable(identity):
-                continue
-            plan = pairlink_plans.get(identity())
-            current = getattr(controller, "comfort_plan_is_current", None)
-            if plan is None or not callable(current) or not current(request, plan):
-                raise ServiceValidationError(
-                    f"Device '{target.target.name}' Pairlink comfort state changed during preflight"
-                )
-
-    dispatch_checked = False
-
-    async def execute_target(target: _ReverieComfortPhysicalTarget) -> None:
-        async def apply(controller: BedController) -> None:
-            nonlocal dispatch_checked
-            if not dispatch_checked:
-                validate_pairlink_plans()
-                dispatch_checked = True
-            identity = getattr(controller, "comfort_runtime_identity", None)
-            if callable(identity):
-                plan = pairlink_plans.get(identity())
-                current = getattr(controller, "comfort_plan_is_current", None)
-                if plan is None or not callable(current) or not current(request, plan):
-                    raise ServiceValidationError(
-                        f"Device '{target.target.name}' Pairlink comfort state is no longer current"
-                    )
-                await cast(_PairlinkComfortController, controller).async_set_comfort(
-                    request,
-                    prepared_plan=plan,
-                )
-                return
-            await cast(_ReverieComfortController, controller).async_set_comfort(request)
-
-        await target.target.async_execute_controller_command(
-            apply,
-            cancel_running=False,
-            resource="reverie:comfort",
-            read_positions_after_operation=False,
-            expected_stop_epoch=stop_epoch_for(target),
-        )
-
-    group_id = uuid4().hex
-    prepared: list[tuple[_ReverieComfortPhysicalTarget, CommandHandle]] = []
-    result_tasks: list[asyncio.Task[None]] = []
-    committed = False
-    stop_attempted = False
-    try:
-        async with _reverie_comfort_pair_lanes(physical):
-            for target in physical:
-                validate_pairlink_plans()
-                handle = await target.target.async_prepare_command_operation(
-                    lambda target=target: execute_target(target),
-                    resource="reverie:comfort",
-                    cancel_running=True,
-                    group_id=group_id,
-                    expected_stop_epoch=stop_epoch_for(target),
-                )
-                prepared.append((target, handle))
-
-        ready = await asyncio.gather(
-            *(
-                target.target.async_wait_prepared_command(handle)
-                for target, handle in prepared
-            ),
-            return_exceptions=True,
-        )
-        error = next(
-            (result for result in ready if isinstance(result, BaseException)),
-            None,
-        )
-        if error is not None:
-            raise error
-
-        async with _reverie_comfort_pair_lanes(physical):
-            revalidated = await asyncio.gather(
-                *(
-                    target.target.async_wait_prepared_command(handle)
-                    for target, handle in prepared
-                ),
-                return_exceptions=True,
-            )
-            error = next(
-                (result for result in revalidated if isinstance(result, BaseException)),
-                None,
-            )
-            if error is not None:
-                raise error
-            validate_pairlink_plans()
-            for target, handle in prepared:
-                target.target.commit_prepared_command(handle)
-            committed = True
-
-            result_tasks = [
-                asyncio.create_task(
-                    target.target.async_wait_prepared_command_result(handle)
-                )
-                for target, handle in prepared
-            ]
-            done, pending = await asyncio.wait(
-                result_tasks,
-                return_when=asyncio.FIRST_EXCEPTION,
-            )
-            failures: list[BaseException] = []
-            for task in done:
-                if task.cancelled():
-                    continue
-                error = task.exception()
-                if error is not None:
-                    failures.append(error)
-            if failures:
-                paired_both = [
-                    parent for parent, sides in by_parent.items() if len(sides) > 1
-                ]
-                stop_errors: dict[str, BaseException] = {}
-                for parent in paired_both:
-                    try:
-                        await parent.async_stop_command(side=SIDE_BOTH)
-                    except BaseException as stop_error:
-                        stop_errors[f"pair-{id(parent)}"] = stop_error
-                stop_attempted = bool(paired_both)
-                if pending:
-                    await asyncio.gather(*pending, return_exceptions=True)
-                if paired_both:
-                    side_errors = {
-                        f"target-{index}": error
-                        for index, error in enumerate(failures)
-                    }
-                    side_errors.update(
-                        {f"{key} (stop)": error for key, error in stop_errors.items()}
-                    )
-                    raise PairedSideError("Reverie comfort", side_errors)
-                raise failures[0]
-            if pending:
-                await asyncio.gather(*pending)
-    except BaseException:
-        if not committed:
-            await asyncio.gather(
-                *(
-                    target.target.async_abort_prepared_command(handle)
-                    for target, handle in prepared
-                ),
-                return_exceptions=True,
-            )
-        else:
-            if not stop_attempted:
-                for parent in (
-                    parent for parent, sides in by_parent.items() if len(sides) > 1
-                ):
-                    try:
-                        await parent.async_stop_command(side=SIDE_BOTH)
-                    except BaseException:
-                        pass
-            for task in result_tasks:
-                if not task.done():
-                    task.cancel()
-            if result_tasks:
-                await asyncio.gather(*result_tasks, return_exceptions=True)
-        raise
-    return True
-
-
-async def handle_reverie_set_comfort(call: ServiceCall) -> None:
-    """Validate every selected target, then send one typed Reverie comfort request."""
-    request = _reverie_comfort_request(call.data["comfort"])
-    explicit_side = call.data.get(ATTR_SIDE)
-    targets, missing = _resolve_sided_targets(
-        call.hass, call.data.get(CONF_DEVICE_ID, []), explicit_side
-    )
-    if missing:
-        raise _missing_device_error(missing[0])
-
-    admissions = {
-        (id(coordinator), side): _capture_command_admission(
-            coordinator, side, ("reverie:comfort",)
-        )
-        for coordinator, side in targets
-    }
-    preflighted: PreflightedSides = []
-    pairlink_plans: dict[object, PairlinkComfortPlan] = {}
-    try:
-        for coordinator, side in targets:
-            for target in _command_targets(coordinator, side):
-                await _prepare_reverie_comfort_target(
-                    coordinator,
-                    target,
-                    request,
-                    preflighted,
-                    pairlink_plans,
-                )
-    except (Exception, asyncio.CancelledError):
-        await _release_preflighted(preflighted)
-        raise
-
-    async def set_comfort(controller: BedController) -> None:
-        pairlink_identity = getattr(controller, "comfort_runtime_identity", None)
-        if callable(pairlink_identity):
-            plan = pairlink_plans.get(pairlink_identity())
-            if plan is None:
-                raise ServiceValidationError("Pairlink comfort plan is missing for this target")
-            await cast(_PairlinkComfortController, controller).async_set_comfort(
-                request,
-                prepared_plan=plan,
-            )
-            return
-        await cast(_ReverieComfortController, controller).async_set_comfort(request)
-
-    try:
-        if pairlink_plans and await _execute_prepared_reverie_comfort(
-            targets,
-            request,
-            pairlink_plans,
-            admissions,
-        ):
-            return
-        for coordinator, side in targets:
-            async def apply_comfort(
-                controller: BedController,
-                parent: BedTarget = coordinator,
-                selected_side: str = side,
-            ) -> None:
-                if any(
-                    target.bed_type == BED_TYPE_REVERIE
-                    for target in _command_targets(parent, selected_side)
-                ):
-                    _validate_reverie_deferred_target(parent, controller)
-                await set_comfort(controller)
-
-            await _execute_sided(
-                coordinator,
-                side,
-                apply_comfort,
-                resource="reverie:comfort",
-                admission=admissions[(id(coordinator), side)],
-            )
-    except (Exception, asyncio.CancelledError):
-        await _release_preflighted(preflighted)
-        raise
-
-
-async def handle_reverie_pairlink_alarm_comfort(call: ServiceCall) -> None:
-    """Send the accepted complete Pairlink alarm setting after all-target preflight."""
-    request = _reverie_comfort_request(call.data["comfort"], force=True)
-    explicit_side = call.data.get(ATTR_SIDE)
-    targets, missing = _resolve_sided_targets(
-        call.hass, call.data.get(CONF_DEVICE_ID, []), explicit_side
-    )
-    if missing:
-        raise _missing_device_error(missing[0])
-
-    admissions = {
-        (id(coordinator), side): _capture_command_admission(
-            coordinator, side, ("reverie:comfort",)
-        )
-        for coordinator, side in targets
-    }
-    preflighted: PreflightedSides = []
-    pairlink_plans: dict[object, PairlinkComfortPlan] = {}
-    try:
-        for coordinator, side in targets:
-            for target in _command_targets(coordinator, side):
-                if target.bed_type != BED_TYPE_REVERIE_PAIRLINK:
-                    raise ServiceValidationError(
-                        "Pairlink alarm comfort requires a Pairlink target"
-                    )
-                await _prepare_reverie_comfort_target(
-                    coordinator,
-                    target,
-                    request,
-                    preflighted,
-                    pairlink_plans,
-                )
-    except (Exception, asyncio.CancelledError):
-        await _release_preflighted(preflighted)
-        raise
-
-    async def send_alarm_comfort(controller: BedController) -> None:
-        pairlink_identity = getattr(controller, "comfort_runtime_identity", None)
-        if not callable(pairlink_identity):
-            raise ServiceValidationError("Pairlink alarm comfort received a non-Pairlink target")
-        plan = pairlink_plans.get(pairlink_identity())
-        if plan is None:
-            raise ServiceValidationError("Pairlink comfort plan is missing for this target")
-        await cast(_PairlinkComfortController, controller).async_set_comfort(
-            request,
-            prepared_plan=plan,
-        )
-
-    try:
-        if pairlink_plans and await _execute_prepared_reverie_comfort(
-            targets,
-            request,
-            pairlink_plans,
-            admissions,
-        ):
-            return
-        for coordinator, side in targets:
-            await _execute_sided(
-                coordinator,
-                side,
-                send_alarm_comfort,
-                resource="reverie:comfort",
-                admission=admissions[(id(coordinator), side)],
-            )
-    except (Exception, asyncio.CancelledError):
-        await _release_preflighted(preflighted)
-        raise
-
-
-def _validate_reverie_deferred_target(
-    coordinator: BedTarget, controller: BedController | SideBoundController
-) -> None:
-    """Deferred work must survive the paired command's connection policy."""
-    if (
-        isinstance(coordinator, PairedBedCoordinator)
-        and coordinator.connection_mode == PAIR_CONNECTION_MODE_SEQUENTIAL
-        and not controller.requires_disconnected_transport
-    ):
-        raise ServiceValidationError(
-            "Deferred Reverie actions require concurrent paired connection mode "
-            "for central Bluetooth receivers"
-        )
-
-
-async def handle_reverie_run_routine(call: ServiceCall) -> None:
-    """Preflight all routine rows on every target before starting any queue."""
-    explicit_side = call.data.get(ATTR_SIDE)
-    raw_steps = call.data["steps"]
-    steps: list[tuple[ReverieComfortRequest | None, int | None]] = []
-    for item in raw_steps:
-        request_data = item.get("comfort")
-        request = _reverie_comfort_request(request_data) if request_data is not None else None
-        steps.append((request, item.get("duration_minutes")))
-
-    targets, missing = _resolve_sided_targets(
-        call.hass, call.data.get(CONF_DEVICE_ID, []), explicit_side
-    )
-    if missing:
-        raise _missing_device_error(missing[0])
-
-    admissions = {
-        (id(coordinator), side): _capture_command_admission(
-            coordinator, side, ("reverie:routine",)
-        )
-        for coordinator, side in targets
-    }
-    preflighted: PreflightedSides = []
-    try:
-        for coordinator, side in targets:
-            for target in _command_targets(coordinator, side):
-                controller = await _validation_controller(coordinator, target, preflighted)
-                _validate_reverie_deferred_target(coordinator, controller)
-                reverie = _reverie_comfort_controller(target, controller)
-                try:
-                    reverie.validate_routine(steps)
-                except ValueError as err:
-                    raise ServiceValidationError(str(err)) from err
-    except (Exception, asyncio.CancelledError):
-        await _release_preflighted(preflighted)
-        raise
-
-    try:
-        for coordinator, side in targets:
-            async def start_routine(
-                controller: BedController, parent: BedTarget = coordinator
-            ) -> None:
-                _validate_reverie_deferred_target(parent, controller)
-                await cast(_ReverieComfortController, controller).async_start_routine(steps)
-
-            await _execute_sided(
-                coordinator,
-                side,
-                start_routine,
-                resource="reverie:routine",
-                admission=admissions[(id(coordinator), side)],
-            )
-    except (Exception, asyncio.CancelledError):
-        await _release_preflighted(preflighted)
-        raise
-
-
-async def handle_reverie_test(call: ServiceCall) -> None:
-    """Validate every selected target before starting its timed direct test."""
-    targets, missing = _resolve_sided_targets(
-        call.hass, call.data.get(CONF_DEVICE_ID, []), call.data.get(ATTR_SIDE)
-    )
-    if missing:
-        raise _missing_device_error(missing[0])
-
-    admissions = {
-        (id(coordinator), side): _capture_command_admission(
-            coordinator, side, ("reverie:diagnostic",)
-        )
-        for coordinator, side in targets
-    }
-    preflighted: PreflightedSides = []
-    try:
-        for coordinator, side in targets:
-            for target in _command_targets(coordinator, side):
-                controller = await _validation_controller(coordinator, target, preflighted)
-                _validate_reverie_deferred_target(coordinator, controller)
-                reverie = _reverie_comfort_controller(target, controller)
-                try:
-                    reverie.validate_diagnostic()
-                except ValueError as err:
-                    raise ServiceValidationError(str(err)) from err
-    except (Exception, asyncio.CancelledError):
-        await _release_preflighted(preflighted)
-        raise
-
-    try:
-        for coordinator, side in targets:
-            async def start_diagnostic(
-                controller: BedController, parent: BedTarget = coordinator
-            ) -> None:
-                _validate_reverie_deferred_target(parent, controller)
-                await cast(_ReverieComfortController, controller).async_start_diagnostic()
-
-            await _execute_sided(
-                coordinator,
-                side,
-                start_diagnostic,
-                resource="reverie:diagnostic",
-                admission=admissions[(id(coordinator), side)],
-            )
-    except (Exception, asyncio.CancelledError):
-        await _release_preflighted(preflighted)
-        raise
 
 
 async def _execute_position_requests(
@@ -1909,6 +1164,8 @@ async def _execute_position_requests(
     if missing:
         raise _missing_device_error(missing[0])
 
+    # A STOP pressed while preflight connects or checks keeps every bed still.
+    selection = _Selection.capture(targets)
     preflighted: PreflightedSides = []
     plans: dict[tuple[int, str], dict[str, Any]] = {}
     try:
@@ -1922,8 +1179,35 @@ async def _execute_position_requests(
         await _release_preflighted(preflighted)
         raise
 
+    def resources(target: BedChild) -> tuple[str, ...]:
+        return tuple(
+            f"motor:{plans[(_plan_key(target), motor)]['position_key']}" for motor, _ in requests
+        )
+
+    async def recheck(target: BedChild) -> dict[str, dict[str, Any]] | None:
+        """Plan every axis again on the controller that moves the bed.
+
+        Returns None when a STOP reached any selected bed meanwhile.
+        """
+        controller = await _get_controller_for_service(target)
+        # A link this opened gets its idle timer back if the call ends early.
+        preflighted.append((target, target))
+        configs: dict[str, dict[str, Any]] = {}
+        with controller_side_scope(target):
+            for motor, position in requests:
+                configs[motor] = _position_config(target, controller, motor, position)
+        for motor, _ in requests:
+            checked = plans[(_plan_key(target), motor)]
+            if any(configs[motor].get(key) != checked.get(key) for key in _CHECKED_SEEK_FIELDS):
+                raise _bed_changed()
+        return None if selection.stopped() else configs
+
     async def seek(target: BedChild, motor: str, position: float) -> None:
-        config = plans[(_plan_key(target), motor)]
+        # Seek only what preflight checked, on the controller that moves the bed.
+        configs = await recheck(target)
+        if configs is None:
+            return
+        config = configs[motor]
         await target.async_seek_position(
             position_key=cast(str, config["position_key"]),
             target_angle=position,
@@ -1932,45 +1216,66 @@ async def _execute_position_requests(
             move_stop_fn=config["move_stop_fn"],  # type: ignore[arg-type]
         )
 
-    async def seek_all(target: BedChild) -> None:
-        operations: list[Callable[[], Coroutine[Any, Any, None]]] = []
-        for motor, position in requests:
+    def seek_all(
+        stop_epochs: Mapping[int, int],
+    ) -> Callable[[BedChild], Coroutine[Any, Any, None]]:
+        async def run(target: BedChild) -> None:
+            async def check_all() -> None:
+                await recheck(target)
 
-            async def operation(
-                motor: str = motor,
-                position: float = position,
-            ) -> None:
-                await seek(target, motor, position)
+            # Every axis is checked before the first one moves.
+            operations: list[Callable[[], Coroutine[Any, Any, None]]] = [check_all]
+            for motor, position in requests:
 
-            operations.append(operation)
+                async def operation(
+                    motor: str = motor,
+                    position: float = position,
+                ) -> None:
+                    await seek(target, motor, position)
 
-        await target.async_execute_command_group(
-            operations,
-            resources=tuple(
-                f"motor:{plans[(_plan_key(target), motor)]['position_key']}"
-                for motor, _ in requests
-            ),
-        )
+                operations.append(operation)
+
+            await target.async_execute_command_group(
+                operations,
+                resources=resources(target),
+                expected_stop_epoch=stop_epochs.get(id(target)),
+            )
+
+        return run
 
     try:
         for coordinator, side in targets:
+            if selection.stopped():
+                await _release_preflighted(preflighted)
+                return
+            # Captured with no await since the STOP check above.
             if isinstance(coordinator, PairedBedCoordinator):
-                resources = {
-                    f"motor:{plans[(_plan_key(target), motor)]['position_key']}"
+                pair_targets = coordinator.targets_for(side)
+                group = {
+                    item
                     for target in _command_targets(coordinator, side)
-                    for motor, _ in requests
+                    for item in resources(target)
                 }
+                admission = _capture_command_admission(coordinator, side, group)
                 await coordinator.async_run_child_operation(
                     "set positions",
-                    seek_all,
+                    seek_all({id(child): child.stop_epoch for _, child in pair_targets}),
                     side=side,
-                    resources=resources,
+                    resources=group,
+                    expected_pair_generations=admission.expected_pair_generations,
+                    expected_stop_epochs=admission.expected_stop_epochs,
                 )
             else:
-                await seek_all(coordinator)
+                await seek_all({id(coordinator): coordinator.stop_epoch})(coordinator)
     except Exception:
         await _release_preflighted(preflighted)
         raise
+    if selection.stopped():
+        await _release_preflighted(preflighted)
+
+
+# A seek runs only when the live controller plans the same axis and range.
+_CHECKED_SEEK_FIELDS: Final = ("position_key", "max_value", "unit")
 
 
 async def _timed_move_plan(
@@ -1981,11 +1286,12 @@ async def _timed_move_plan(
     direction: str,
     duration_ms: int,
     svane_admission: SvaneHoldAdmission | None = None,
+    *,
+    hold_lease: bool = False,
+    shared_motors: set[int] | None = None,
 ) -> tuple[Callable[[BedController], Coroutine[Any, Any, None]], int, int, str]:
     """Validate one physical side and build its timed command."""
-    async with _release_idle_on_validation_failure(coordinator):
-        controller = await _validation_controller(parent, coordinator, preflighted)
-
+    async with _side_validation(parent, coordinator, preflighted) as controller:
         motor_specs = {
             spec.key: spec
             for spec in controller.motor_control_specs
@@ -1995,37 +1301,43 @@ async def _timed_move_plan(
 
         # Validate motor is valid for this bed
         if motor not in valid_motors:
-            raise ServiceValidationError(
-                f"Motor '{motor}' is not valid for device '{coordinator.name}'. "
-                f"Valid motors: {', '.join(sorted(valid_motors))}",
-                translation_domain=DOMAIN,
-                translation_key="invalid_motor_for_bed_type",
-                translation_placeholders={
-                    "motor": motor,
-                    "device_name": coordinator.name,
-                    "valid_motors": ", ".join(sorted(valid_motors)),
-                },
-            )
+            raise invalid("invalid_motor_for_bed_type", motor=motor, device_name=coordinator.name, valid_motors=", ".join(sorted(valid_motors)))
 
         spec = motor_specs[motor]
+        if hold_lease:
+            control = (
+                spec.hold.up_control if direction == "up" else spec.hold.down_control
+            ) if spec.hold is not None else None
+            _require_hold_execution(coordinator, controller, control)
+            duration_ms = _hold_ceiling(controller, duration_ms)
         try:
             controller.validate_timed_movement(motor, direction, duration_ms)
         except ValueError as err:
-            raise ServiceValidationError(str(err)) from err
+            raise rejected(err) from err
 
-        from .beds.svane import SvaneController
+        if (
+            shared_motors is not None
+            and isinstance(coordinator, SingleAddressSideCoordinator)
+            and spec.shared_across_sides
+        ):
+            shared_motors.add(_plan_key(coordinator))
 
-        if coordinator.bed_type == BED_TYPE_SVANE and isinstance(controller, SvaneController):
-            svane_admission = svane_admission or controller.prepare_svane_hold_admission()
-            if (parent, coordinator) not in preflighted:
-                preflighted.append((parent, coordinator))
-            await _preflight_live_svane(
-                parent,
-                coordinator,
-                svane_admission,
-                f"{'head' if motor == 'back' else 'feet'}_{direction}",
-                duration_ms,
-            )
+        if coordinator.bed_type == BED_TYPE_SVANE:
+            # The factory imported the Svane controller module, off the event loop.
+            from .beds.svane.controller import SvaneController
+            from .beds.svane.services import _preflight_live_svane
+
+            if isinstance(controller, SvaneController):
+                svane_admission = svane_admission or controller.prepare_svane_hold_admission()
+                if (parent, coordinator) not in preflighted:
+                    preflighted.append((parent, coordinator))
+                await _preflight_live_svane(
+                    parent,
+                    coordinator,
+                    svane_admission,
+                    f"{'head' if motor == 'back' else 'feet'}_{direction}",
+                    duration_ms,
+                )
 
         # The explicit app profile's direction is a held route. timed_move has
         # an elapsed duration, so delegate its bounded window and release to
@@ -2038,7 +1350,7 @@ async def _timed_move_plan(
             try:
                 controller.validate_hold_control(hold_control, duration_ms)
             except ValueError as err:
-                raise ServiceValidationError(str(err)) from err
+                raise rejected(err) from err
 
         move_fn = spec.open_fn if direction == "up" else spec.close_fn
         stop_fn = spec.stop_fn
@@ -2053,13 +1365,17 @@ async def _timed_move_plan(
 
         if hold_control is not None:
             if hold_control not in controller.held_control_options:
-                raise ServiceValidationError(
-                    f"Motor '{motor}' declares unsupported held control '{hold_control}'"
+                # The bed declares a motor it cannot hold: it has no such timed move.
+                raise invalid(
+                    "invalid_motor_for_bed_type",
+                    motor=motor,
+                    device_name=coordinator.name,
+                    valid_motors=", ".join(sorted(valid_motors - {motor})),
                 )
             try:
                 controller.validate_hold_control(hold_control, duration_ms)
             except ValueError as err:
-                raise ServiceValidationError(str(err)) from err
+                raise rejected(err) from err
 
         # Preserve the controller's repeat planning and cadence. An elapsed
         # ceiling below also bounds slow acknowledged writes and proxy latency.
@@ -2086,11 +1402,23 @@ async def _timed_move_plan(
             calculated_repeat_count,
         )
 
+        async def held_movement(ctrl: BedController, _control: str | None = hold_control) -> None:
+            assert _control is not None
+            await ctrl.hold_control(_control, duration_ms)
+
+        # Only the movement itself is timed: hold start and release delays and
+        # the STOP cleanup around it are not travel. Single-address side views
+        # carry no hass and are never estimated.
+        estimate_hass = getattr(coordinator, "hass", None)
+        tracked_hold = track_motor_command(estimate_hass, motor, direction, held_movement)
+        tracked_move = track_motor_command(estimate_hass, motor, direction, move_fn)
+
         # Bind closure variables as defaults to avoid late-binding bugs
         async def timed_movement(
             ctrl: BedController,
             *,
-            _move_fn: Callable[..., Coroutine[Any, Any, None]] = move_fn,
+            _move_fn: Callable[..., Coroutine[Any, Any, None]] = tracked_move,
+            _held: Callable[..., Coroutine[Any, Any, None]] = tracked_hold,
             _stop_fn: Callable[..., Coroutine[Any, Any, None]] = stop_fn,
             _hold_control: str | None = hold_control,
             _hold_spec: ControllerMotorHoldSpec | None = hold_spec,
@@ -2107,7 +1435,7 @@ async def _timed_move_plan(
                     await ctrl.prepare_for_movement()
                     if _hold_spec.start_delay_ms:
                         await asyncio.sleep(_hold_spec.start_delay_ms / 1000)
-                    await ctrl.hold_control(_hold_control, duration_ms)
+                    await _held(ctrl)
                     if _hold_spec.release_delay_ms:
                         await asyncio.sleep(_hold_spec.release_delay_ms / 1000)
                     return
@@ -2115,7 +1443,7 @@ async def _timed_move_plan(
                 try:
                     await ctrl.prepare_for_movement()
                     if _hold_control is not None:
-                        await ctrl.hold_control(_hold_control, duration_ms)
+                        await _held(ctrl)
                     else:
                         deadline = asyncio.timeout(duration_ms / 1000)
                         try:
@@ -2152,6 +1480,121 @@ async def _timed_move_plan(
         )
 
 
+def _hold_lease(call: ServiceCall, action: str, duration_ms: int) -> HoldLease | None:
+    """Return the call's renewable hold lease, or None for a finite move."""
+    owner = call.data.get(ATTR_HOLD_OWNER)
+    if owner is None:
+        return None
+    if not MIN_HOLD_LEASE_MS <= duration_ms <= MAX_HOLD_LEASE_MS:
+        raise invalid(
+            "hold_lease_duration",
+            min=MIN_HOLD_LEASE_MS,
+            max=MAX_HOLD_LEASE_MS,
+        )
+    return HoldLease(
+        owner=owner,
+        generation=call.data[ATTR_HOLD_GENERATION],
+        action=action,
+        duration_s=duration_ms / 1000,
+    )
+
+
+def _hold_ceiling(controller: BedController, duration_ms: int) -> int:
+    """Bound a renewable hold by its mode's ceiling: latched beds move until STOP."""
+    return min(duration_ms, controller.execution.hold_ceiling_ms or duration_ms)
+
+
+def _require_hold_execution(
+    target: BedChild,
+    controller: BedController,
+    control: str | None = None,
+) -> None:
+    """Allow a lease only where the controller declares an open-ended hold.
+
+    ``control`` names a ``hold_control`` control; None is a motor route. A hold
+    scoped to some controls refuses the others exactly as an undeclared one.
+    """
+    if controller.execution.hold_for(control) is None:
+        raise invalid(
+            "hold_renewal_not_supported",
+            device_name=target.name,
+        )
+
+
+async def _async_with_hold_lease(
+    targets: list[tuple[BedTarget, str]],
+    lease: HoldLease,
+    resource_for: Callable[[BedChild], str | None],
+    start: Callable[[], Awaitable[None]],
+) -> None:
+    """Renew a live hold of this generation, or start one (#483).
+
+    A renewal writes no frame and never starts motion on a side whose hold has
+    ended. A generation that has ended everywhere is refused. A new hold
+    reserves its generation before preflight, so renewals that arrive meanwhile
+    extend the reservation and a STOP before admission ends it.
+    """
+    if len(targets) != 1:
+        raise invalid("hold_one_bed")
+    _require_hold_topology(targets)
+    coordinator, side = targets[0]
+    if (isinstance(coordinator, PairedBedCoordinator) and side == SIDE_BOTH
+            and coordinator.connection_mode == PAIR_CONNECTION_MODE_SEQUENTIAL):
+        raise invalid(
+            "hold_needs_concurrent",
+        )
+    # Key every claim by the target that executes the command: a native
+    # single-address Both runs once on its combined side view.
+    executing = (
+        list({id(child): child for _, child in coordinator.targets_for(side)}.values())
+        if isinstance(coordinator, PairedBedCoordinator)
+        else _command_targets(coordinator, side)
+    )
+    if len(executing) > 1 and isinstance(coordinator, PairedBedCoordinator) and not coordinator.supports_simultaneous_side_holds:
+        raise invalid(
+            "hold_select_side"
+        )
+    physical = [(target, resource_for(target)) for target in executing]
+    if (
+        isinstance(coordinator, PairedBedCoordinator)
+        and not isinstance(coordinator, SingleAddressPairedCoordinator)
+        and len(executing) > 1
+        and coordinator.connection_mode != PAIR_CONNECTION_MODE_CONCURRENT
+    ):
+        raise invalid(
+            "hold_needs_concurrent",
+        )
+    claims = [
+        target.claim_hold_lease(lease, resource=resource, reserve=False)
+        for target, resource in physical
+    ]
+    if HoldClaim.RENEW in claims:
+        for (target, resource), claim in zip(physical, claims, strict=True):
+            if claim is HoldClaim.RENEW:
+                target.claim_hold_lease(lease, resource=resource)
+        return
+    if HoldClaim.STALE in claims:
+        raise invalid("hold_ended")
+    modes = {
+        controller.execution.hold
+        for target, _resource in physical
+        if (controller := target.capability_controller) is not None
+    }
+    if len(modes) > 1:
+        raise invalid(
+            "hold_modes_differ"
+        )
+    for target, resource in physical:
+        target.claim_hold_lease(lease, resource=resource)
+    try:
+        await start()
+    except StaleHoldLease as err:
+        raise rejected(err) from err
+    finally:
+        for target, resource in physical:
+            target.release_hold_claim(lease, resource=resource)
+
+
 async def handle_timed_move(call: ServiceCall) -> None:
     """Handle timed_move service call with sided all-target preflight."""
     hass = call.hass
@@ -2172,7 +1615,17 @@ async def handle_timed_move(call: ServiceCall) -> None:
     if missing:
         raise _missing_device_error(missing[0])
 
-    await _async_timed_move(targets, motor, direction, duration_ms)
+    lease = _hold_lease(call, direction, duration_ms)
+    if lease is None:
+        await _async_timed_move(targets, motor, direction, duration_ms)
+        return
+    await _async_with_hold_lease(
+        targets,
+        lease,
+        lambda target: _timed_move_resource(target, motor),
+        # The lease ends the hold; the ceiling only bounds it in total.
+        lambda: _async_timed_move(targets, motor, direction, MAX_HOLD_LEASE_MS, lease=lease),
+    )
 
 
 async def _async_timed_move(
@@ -2180,6 +1633,8 @@ async def _async_timed_move(
     motor: str,
     direction: str,
     duration_ms: int,
+    *,
+    lease: HoldLease | None = None,
 ) -> None:
     """Share the bounded service path with declared-hold entity fallbacks."""
     # Resolve each selected motor resource from any offline capability
@@ -2195,21 +1650,30 @@ async def _async_timed_move(
             coordinator, side, physical_resources
         )
 
-    from .beds.svane import SvaneController
-
-    svane_admissions = {
-        _plan_key(target): controller.prepare_svane_hold_admission()
+    svane_controllers = [
+        (target, controller)
         for parent, side in targets
         for target in _command_targets(parent, side)
         if target.bed_type == BED_TYPE_SVANE
-        and isinstance(controller := target.capability_controller, SvaneController)
-    }
+        and (controller := target.capability_controller) is not None
+    ]
+    svane_admissions: dict[int, SvaneHoldAdmission] = {}
+    if svane_controllers:
+        # The factory imported the Svane controller module, off the event loop.
+        from .beds.svane.controller import SvaneController
+
+        svane_admissions = {
+            _plan_key(target): controller.prepare_svane_hold_admission()
+            for target, controller in svane_controllers
+            if isinstance(controller, SvaneController)
+        }
     preflighted: PreflightedSides = []
     plans: dict[
         int,
         tuple[Callable[[BedController], Coroutine[Any, Any, None]], int, int, str],
     ] = {}
     stop_epoch_by_target: dict[int, int] = {}
+    shared_motors: set[int] = set()
     try:
         for coordinator, side in targets:
             for target in _command_targets(coordinator, side):
@@ -2218,7 +1682,7 @@ async def _async_timed_move(
                 if isinstance(coordinator, PairedBedCoordinator):
                     target_side = next(
                         target_side
-                        for target_side, child in coordinator._targets_for(side)
+                        for target_side, child in coordinator.targets_for(side)
                         if child is target
                     )
                 else:
@@ -2230,29 +1694,91 @@ async def _async_timed_move(
                 plans[_plan_key(target)] = await _timed_move_plan(
                     coordinator, target, preflighted, motor, direction, duration_ms,
                     svane_admissions.get(target_key),
+                    hold_lease=lease is not None,
+                    shared_motors=shared_motors,
                 )
             admission = command_admissions[(id(coordinator), side)]
             actual_resources = {
-                plans[_plan_key(target)][3]
-                for target in _command_targets(coordinator, side)
-            }
+                    plans[_plan_key(target)][3] for target in _command_targets(coordinator, side)
+                }
             if actual_resources != set(admission.resources):
-                raise ServiceValidationError(
-                    "The selected motor resource changed during timed-move preflight"
+                raise invalid(
+                    "bed_changed"
                 )
     except Exception, asyncio.CancelledError:
         await _release_preflighted(preflighted)
         raise
 
+    # #516: merge into one stream only on a standalone bed whose controller
+    # declares this motor concurrent. Paired topologies run each side inside a
+    # prepared reservation, where a streamer cannot start, so they stay serial.
+    physical = [
+        target for coordinator, side in targets for target in _command_targets(coordinator, side)
+    ]
+    streamed = not any(
+        isinstance(coordinator, PairedBedCoordinator) for coordinator, _ in targets
+    ) and all(
+        not isinstance(target, SingleAddressSideCoordinator)
+        and (resources := target.stream_resources()) is not None
+        and plans[_plan_key(target)][3] in resources
+        for target in physical
+    )
+
+    completed_shared_motors: set[int] = set()
+
     async def move(target: BedChild) -> None:
-        command, pulse_count, pulse_delay_ms, resource = plans[_plan_key(target)]
-        await target.async_execute_controller_command(
-            command,
-            resource=resource,
-            pulse_count=pulse_count,
-            pulse_delay_ms=pulse_delay_ms,
-            expected_stop_epoch=stop_epoch_by_target.get(_plan_key(target)),
-        )
+        target_key = _plan_key(target)
+        if target_key in completed_shared_motors:
+            return
+        command, pulse_count, pulse_delay_ms, resource = plans[target_key]
+        if streamed:
+            assert not isinstance(target, SingleAddressSideCoordinator)
+            svane_admission = svane_admissions.get(_plan_key(target))
+            if svane_admission is not None and svane_admission.released(
+                "head" if motor == "back" else "feet"
+            ):
+                # svane_release_axis arrived during preflight: admit no motion,
+                # and give the link preflight opened its normal idle disconnect.
+                if target.is_connected:
+                    with contextlib.suppress(Exception):
+                        await target.async_ensure_connected(reset_timer=True)
+                return
+            # Timed from the member's first write to its retirement, like the
+            # serial move's own span; a renewal never starts a new move.
+            tracker = track_stream_member(
+                getattr(target, "hass", None), target.capability_controller, motor, direction
+            )
+            await target.async_execute_stream_member(
+                motor=motor,
+                resource=resource,
+                action=direction,
+                duration_s=lease.duration_s if lease is not None else duration_ms / 1000,
+                ceiling_s=duration_ms / 1000 if lease is not None else None,
+                lease=lease,
+                expected_stop_epoch=stop_epoch_by_target.get(_plan_key(target)),
+                on_wire=tracker.started if tracker is not None else None,
+                on_left=tracker.finished if tracker is not None else None,
+            )
+            return
+        if lease is not None:
+            await target.async_execute_controller_command(
+                command,
+                resource=resource,
+                pulse_count=pulse_count,
+                pulse_delay_ms=pulse_delay_ms,
+                expected_stop_epoch=stop_epoch_by_target.get(_plan_key(target)),
+                lease=lease,
+            )
+        else:
+            await target.async_execute_controller_command(
+                command,
+                resource=resource,
+                pulse_count=pulse_count,
+                pulse_delay_ms=pulse_delay_ms,
+                expected_stop_epoch=stop_epoch_by_target.get(_plan_key(target)),
+            )
+        if target_key in shared_motors:
+            completed_shared_motors.add(target_key)
 
     try:
         for coordinator, side in targets:
@@ -2278,7 +1804,7 @@ async def _async_timed_move(
 
 async def _preflight_each(
     targets: list[tuple[BedTarget, str]],
-    check: Callable[[BedChild, BedController | SideBoundController], None],
+    check: Callable[[BedChild, BedController], None],
 ) -> PreflightedSides:
     """Check every physical target before any write.
 
@@ -2289,33 +1815,157 @@ async def _preflight_each(
     try:
         for coordinator, side in targets:
             for target in _command_targets(coordinator, side):
-                check(target, await _validation_controller(coordinator, target, preflighted))
+                controller = await _validation_controller(coordinator, target, preflighted)
+                with controller_side_scope(target):
+                    check(target, controller)
     except asyncio.CancelledError:
         await _release_preflighted(preflighted)
         raise
     except (ServiceValidationError, ValueError) as err:
         await _release_preflighted(preflighted)
         if isinstance(err, ValueError):
-            raise ServiceValidationError(str(err)) from err
+            raise _validation_error(err) from err
         raise
     return preflighted
 
 
-async def _preflight_capability(
+async def _preflight_capability[T](
     targets: list[tuple[BedTarget, str]],
-    capability: str,
-    label: str,
-    validate: Callable[[BedController | SideBoundController], None] | None = None,
+    interface: type[T],
+    supported: Callable[[T], bool] | None = None,
+    validate: Callable[[T], None] | None = None,
 ) -> PreflightedSides:
-    """Validate a capability on every physical target before any write."""
+    """Validate a family capability on every physical target before any write.
 
-    def check(target: BedChild, controller: BedController | SideBoundController) -> None:
-        if not getattr(controller, capability, False):
-            raise ServiceValidationError(f"Device '{target.name}' does not support {label}")
+    A target supports the action when its controller implements ``interface``
+    and, if given, ``supported`` accepts it.
+    """
+
+    def check(target: BedChild, controller: BedController) -> None:
+        family = controller_as(controller, interface)
+        if family is None or (supported is not None and not supported(family)):
+            raise invalid(
+                "feature_not_supported",
+                device_name=target.name,
+                feature="this action",
+            )
         if validate is not None:
-            validate(controller)
+            validate(family)
 
     return await _preflight_each(targets, check)
+
+
+def _family_command[T](
+    interface: type[T], command: Callable[[T], Awaitable[None]]
+) -> Callable[[BedController], Coroutine[Any, Any, None]]:
+    """Adapt a family command to the scheduler; a ``ValueError`` is a validation error."""
+
+    async def execute(controller: BedController) -> None:
+        family = controller_as(controller, interface)
+        if family is None:
+            raise invalid(
+                "feature_not_supported",
+                device_name=controller._coordinator.name,
+                feature="this action",
+            )
+        try:
+            await command(family)
+        except ValueError as err:
+            raise _validation_error(err) from err
+
+    return execute
+
+
+async def _preflight_and_execute[T](
+    targets: list[tuple[BedTarget, str]],
+    interface: type[T],
+    command: Callable[[T], Awaitable[None]],
+    *,
+    supported: Callable[[T], bool] | None = None,
+    validate: Callable[[T], None] | None = None,
+    cancel_running: bool = False,
+    skip_disconnect: bool = False,
+    resource: str | None = "configuration",
+    admit: bool = False,
+    admissions: Sequence[_CommandAdmission | None] | None = None,
+    prepare: Callable[[], None] | None = None,
+) -> None:
+    """Preflight every physical target, then run ``command`` on each in turn.
+
+    A ``ValueError`` from validation or the command becomes a
+    ``ServiceValidationError``. Any failure or cancellation hands the links
+    opened only for validation back to their idle timer. ``admit`` lets a STOP
+    pressed during the preflight cancel the command. ``admissions`` can carry
+    snapshots captured before a lazy import awaits. ``prepare`` publishes
+    synchronous ingress input after the complete batch passes validation and
+    its captured STOP generations still match, before queued execution.
+    """
+    if admissions is None:
+        admissions = [
+            _capture_command_admission(
+                coordinator, side, ALL_COMMAND_RESOURCES if resource is None else (resource,)
+            )
+            if admit
+            else None
+            for coordinator, side in targets
+        ]
+    preflighted = await _preflight_capability(targets, interface, supported, validate)
+    if prepare is not None:
+        try:
+            # An ingress update may affect an already running operation. Admit
+            # the complete batch before publishing it, with no await between
+            # the owner/STOP checks and the synchronous update.
+            if all(
+                admission is not None
+                and _capture_command_admission(parent, side, admission.resources) == admission
+                for (parent, side), admission in zip(targets, admissions, strict=True)
+            ):
+                prepare()
+        except BaseException:
+            await _release_preflighted(preflighted)
+            raise
+    await _execute_preflighted(
+        targets,
+        preflighted,
+        _family_command(interface, command),
+        cancel_running=cancel_running,
+        skip_disconnect=skip_disconnect,
+        resource=resource,
+        admissions=admissions,
+    )
+
+
+async def _execute_preflighted(
+    targets: list[tuple[BedTarget, str]],
+    preflighted: PreflightedSides,
+    command_fn: Callable[[BedController], Coroutine[Any, Any, None]],
+    *,
+    cancel_running: bool = False,
+    skip_disconnect: bool = False,
+    resource: str | None = "configuration",
+    resources: Collection[str] | None = None,
+    admissions: Sequence[_CommandAdmission | None] | None = None,
+) -> None:
+    """Run a preflighted command on each target in turn.
+
+    Any failure or cancellation hands the links opened only for validation
+    back to their idle timer.
+    """
+    try:
+        for index, (coordinator, side) in enumerate(targets):
+            await _execute_sided(
+                coordinator,
+                side,
+                command_fn,
+                cancel_running=cancel_running,
+                skip_disconnect=skip_disconnect,
+                resource=resource,
+                resources=resources,
+                admission=None if admissions is None else admissions[index],
+            )
+    except BaseException:
+        await _release_preflighted(preflighted)
+        raise
 
 
 def _call_targets(call: ServiceCall) -> list[tuple[BedTarget, str]]:
@@ -2342,82 +1992,17 @@ def _profile_route(
         for target in _command_targets(coordinator, side)
     }
     if len(selected) > 1:
-        raise ServiceValidationError(
-            f"These beds use different app profiles; call {action} separately for each",
-            translation_domain=DOMAIN,
-            translation_key="mixed_profile_targets",
-            translation_placeholders={"action": action},
-        )
+        raise invalid("mixed_profile_targets", action=action)
     return next(iter(selected), None)
-
-
-async def handle_linak_move_simultaneously(call: ServiceCall) -> None:
-    """Drive two sections with one native combined-motion command."""
-    hass = call.hass
-    first_motor = call.data[ATTR_FIRST_MOTOR]
-    second_motor = call.data[ATTR_SECOND_MOTOR]
-    first_up = call.data[ATTR_FIRST_DIRECTION] == "up"
-    second_up = call.data[ATTR_SECOND_DIRECTION] == "up"
-    duration_ms = call.data[ATTR_DURATION_MS]
-    explicit_side = call.data.get(ATTR_SIDE)
-    if first_motor == second_motor:
-        raise ServiceValidationError("Select two different motors")
-
-    targets, missing = _resolve_sided_targets(
-        hass,
-        call.data.get(CONF_DEVICE_ID, []),
-        explicit_side,
-    )
-    if missing:
-        raise _missing_device_error(missing[0])
-    preflighted = await _preflight_capability(
-        targets,
-        "supports_simultaneous_movement",
-        "simultaneous movement",
-    )
-    try:
-        for coordinator, side in targets:
-            for target in _command_targets(coordinator, side):
-                controller = await _validation_controller(
-                    coordinator,
-                    target,
-                    preflighted,
-                )
-                unavailable = {first_motor, second_motor} - set(
-                    controller.simultaneous_movement_axes
-                )
-                if unavailable:
-                    axes = ", ".join(sorted(unavailable))
-                    raise ServiceValidationError(
-                        f"Device '{target.name}' cannot combine motor: {axes}",
-                    )
-    except ServiceValidationError:
-        await _release_preflighted(preflighted)
-        raise
-
-    async def move(controller: BedController | SideBoundController) -> None:
-        await controller.move_simultaneously(
-            first_motor,
-            first_up,
-            second_motor,
-            second_up,
-            duration_ms,
-        )
-
-    try:
-        resources = tuple(
-            f"motor:{'bed_height' if motor == 'base' else motor}"
-            for motor in (first_motor, second_motor)
-        )
-        for coordinator, side in targets:
-            await _execute_sided(coordinator, side, move, resources=resources)
-    except Exception:
-        await _release_preflighted(preflighted)
-        raise
 
 
 async def handle_rename(call: ServiceCall) -> None:
     """Write a new Bluetooth name to every targeted controller that supports it."""
+    # The other family action modules load with the services, this one does not.
+    await async_import_modules(call.hass, "beds.vmatbasic.services")
+    from .beds.furnimove.services import _rename_furnimove
+    from .beds.vmatbasic.services import _rename_vmatbasic
+
     name = call.data[ATTR_NAME]
     targets = _call_targets(call)
     route = _profile_route(
@@ -2429,32 +2014,35 @@ async def handle_rename(call: ServiceCall) -> None:
         await _rename_furnimove(call, targets, name)
         return
     if route == "vmatbasic":
+        await async_import_modules(call.hass, "beds.vmatbasic.controller")
         await _rename_vmatbasic(targets, name)
         return
 
     disconnect: set[int] = set()
 
-    def check(target: BedChild, controller: BedController | SideBoundController) -> None:
+    def check(target: BedChild, controller: BedController) -> None:
         if not controller.supports_device_rename:
-            raise ServiceValidationError(
-                f"Device '{target.name}' does not support Bluetooth rename",
-                translation_domain=DOMAIN,
-                translation_key="device_rename_not_supported",
-                translation_placeholders={"device_name": target.name},
-            )
+            raise invalid("device_rename_not_supported", device_name=target.name)
         # Each app has its own name rule; reject before any target writes.
         controller.validate_device_rename(name)
+
+    live = _LiveCheck(check)
+
+    def preflight(target: BedChild, controller: BedController) -> None:
+        live.preflight(target, controller)
         if controller.disconnects_after_rename:
             disconnect.add(id(target))
 
-    preflighted = await _preflight_each(targets, check)
+    preflighted = await _preflight_each(targets, preflight)
 
-    async def rename(controller: BedController | SideBoundController) -> None:
+    async def write_name(controller: BedController) -> None:
         await controller.rename_device(name)
+
+    rename = live.command(targets, write_name)
 
     try:
         for coordinator, side in targets:
-            await _execute_sided(
+            await _execute_sided_translated(
                 coordinator, side, rename, cancel_running=False, resource="configuration"
             )
             for target in _command_targets(coordinator, side):
@@ -2463,172 +2051,6 @@ async def handle_rename(call: ServiceCall) -> None:
     except Exception, asyncio.CancelledError:
         await _release_preflighted(preflighted)
         raise
-
-
-async def handle_linak_set_alarm(call: ServiceCall) -> None:
-    """Program a Linak alarm using event, recurrence, and commit writes."""
-    hass = call.hass
-    steps = tuple(
-        LinakAlarmStep(
-            action=LinakAlarmAction(item[ATTR_ACTION]),
-            lifetime=item[ATTR_LIFETIME],
-            pause=item[ATTR_PAUSE],
-        )
-        for item in call.data[ATTR_ACTIONS]
-    )
-    explicit_side = call.data.get(ATTR_SIDE)
-    targets, missing = _resolve_sided_targets(
-        hass,
-        call.data.get(CONF_DEVICE_ID, []),
-        explicit_side,
-    )
-    if missing:
-        raise _missing_device_error(missing[0])
-    preflighted = await _preflight_capability(
-        targets,
-        "supports_alarm",
-        "Linak alarm programming",
-    )
-
-    async def program(controller: BedController | SideBoundController) -> None:
-        await controller.program_alarm(
-            call.data[ATTR_SECONDS],
-            steps,
-            call.data[ATTR_RECURRENCE_COUNT],
-            call.data[ATTR_RECURRENCE_MINUTES],
-        )
-
-    try:
-        for coordinator, side in targets:
-            await _execute_sided(
-                coordinator,
-                side,
-                program,
-                cancel_running=False,
-                resource="configuration",
-            )
-    except Exception:
-        await _release_preflighted(preflighted)
-        raise
-
-
-async def handle_solace_audio(call: ServiceCall) -> None:
-    """Control MotionFlex music selection, preview, query, or volume."""
-    action = call.data[ATTR_ACTION]
-    track = call.data.get(ATTR_TRACK)
-    volume = call.data.get(ATTR_VOLUME)
-    if action in {"select", "preview"} and track is None:
-        raise ServiceValidationError(f"Solace audio action '{action}' requires track")
-    if action == "set_volume" and volume is None:
-        raise ServiceValidationError("Solace audio action 'set_volume' requires volume")
-    track_value = int(track) if track is not None else 0
-    volume_value = int(volume) if volume is not None else 0
-
-    targets, missing = _resolve_sided_targets(
-        call.hass,
-        call.data.get(CONF_DEVICE_ID, []),
-        call.data.get(ATTR_SIDE),
-    )
-    if missing:
-        raise _missing_device_error(missing[0])
-    preflighted = await _preflight_capability(
-        targets,
-        "supports_solace_audio",
-        "Solace music/audio control",
-    )
-
-    async def control(controller: BedController | SideBoundController) -> None:
-        if action == "query":
-            await controller.solace_query_audio_volume()
-        elif action == "set_volume":
-            await controller.solace_set_audio_volume(volume_value)
-        else:
-            await controller.solace_select_music(
-                track_value,
-                preview=action == "preview",
-            )
-
-    try:
-        for coordinator, side in targets:
-            await _execute_sided(
-                coordinator,
-                side,
-                control,
-                cancel_running=False,
-                skip_disconnect=action == "query",
-                resource="audio",
-            )
-    except Exception:
-        await _release_preflighted(preflighted)
-        raise
-
-
-async def handle_solace_set_alarm(call: ServiceCall) -> None:
-    """Program the selected app profile's alarm packet family."""
-    weekday_numbers = tuple(
-        SOLACE_WEEKDAY_OPTIONS.index(day) + 1 for day in call.data[ATTR_WEEKDAYS]
-    )
-    alarm_time = call.data[ATTR_TIME]
-    targets, missing = _resolve_sided_targets(
-        call.hass,
-        call.data.get(CONF_DEVICE_ID, []),
-        call.data.get(ATTR_SIDE),
-    )
-    if missing:
-        raise _missing_device_error(missing[0])
-
-    def validate_sound(controller: BedController | SideBoundController) -> None:
-        if call.data[ATTR_SOUND] not in controller.solace_alarm_sound_options:
-            raise ServiceValidationError(
-                "This bed profile does not support the selected alarm sound"
-            )
-
-    preflighted = await _preflight_capability(
-        targets,
-        "supports_solace_alarm",
-        "Solace alarm programming",
-        validate_sound,
-    )
-
-    async def program(controller: BedController | SideBoundController) -> None:
-        await controller.program_solace_alarm(
-            enabled=call.data[ATTR_ENABLED],
-            hour=alarm_time.hour,
-            minute=alarm_time.minute,
-            weekdays=weekday_numbers,
-            mode=call.data[ATTR_MODE],
-            massage=call.data[ATTR_MASSAGE],
-            sound=call.data[ATTR_SOUND],
-        )
-
-    try:
-        for coordinator, side in targets:
-            await _execute_sided(
-                coordinator,
-                side,
-                program,
-                cancel_running=False,
-                resource="configuration",
-            )
-    except Exception:
-        await _release_preflighted(preflighted)
-        raise
-
-
-async def _preflight_leggett(
-    targets: list[tuple[BedTarget, str]], capability: str, label: str
-) -> PreflightedSides:
-    """Check exact protocol and capability before commanding any physical side."""
-    for coordinator, side in targets:
-        for target in _command_targets(coordinator, side):
-            bed_type = resolve_explicit_bed_type(
-                target.bed_type, target.entry.data.get(CONF_PROTOCOL_VARIANT)
-            )
-            if bed_type != BED_TYPE_LEGGETT_OKIN:
-                raise ServiceValidationError(
-                    f"Device '{target.name}' is not a Leggett Okin controller"
-                )
-    return await _preflight_capability(targets, capability, label)
 
 
 def _leggett_integer(value: object) -> int:
@@ -2652,135 +2074,54 @@ def _hold_seconds(value: object) -> Decimal:
     return duration
 
 
-async def _handle_leggett_timer(call: ServiceCall, *, alarm: bool) -> None:
-    """Validate all timer targets, then program or cancel each through its queue."""
-    start = call.data[ATTR_ACTION] == "start"
-    minutes = call.data.get(ATTR_MINUTES)
-    if start and minutes is None:
-        raise ServiceValidationError("Starting a timer requires minutes")
-    memory_num = call.data.get(ATTR_PRESET, 1)
-    targets, missing = _resolve_sided_targets(
-        call.hass, call.data[CONF_DEVICE_ID], call.data.get(ATTR_SIDE)
-    )
-    if missing:
-        raise _missing_device_error(missing[0])
-    preflighted = await _preflight_leggett(
-        targets,
-        "supports_alarm_timer" if alarm else "supports_sleep_timer",
-        "Leggett alarm timers" if alarm else "Leggett sleep timers",
-    )
-    try:
-        if start and not alarm:
-            for coordinator, side in targets:
-                for target in _command_targets(coordinator, side):
-                    controller = await _validation_controller(coordinator, target, preflighted)
-                    if memory_num not in controller.sleep_timer_memory_options:
-                        raise ServiceValidationError(
-                            f"Device '{target.name}' does not support sleep action {memory_num}"
-                        )
-                    options = controller.sleep_timer_duration_options
-                    if options and minutes not in options:
-                        raise ServiceValidationError(
-                            f"Device '{target.name}' requires a sleep duration from {options} minutes"
-                        )
-
-        async def timer(controller: BedController | SideBoundController) -> None:
-            if start:
-                assert minutes is not None
-                if alarm:
-                    await controller.set_alarm_timer(minutes)
-                else:
-                    await controller.set_sleep_timer(minutes, memory_num)
-            elif alarm:
-                await controller.cancel_alarm_timer()
-            else:
-                await controller.cancel_sleep_timer()
-
-        for coordinator, side in targets:
-            await _execute_sided(
-                coordinator, side, timer, cancel_running=False, resource="configuration"
-            )
-    except Exception:
-        await _release_preflighted(preflighted)
-        raise
-
-
-async def handle_leggett_sleep_timer(call: ServiceCall) -> None:
-    """Start or cancel the profile's delayed-preset timer."""
-    await _handle_leggett_timer(call, alarm=False)
-
-
-async def handle_leggett_alarm_timer(call: ServiceCall) -> None:
-    """Start or cancel the profile's alarm delay."""
-    await _handle_leggett_timer(call, alarm=True)
-
-
-async def handle_floyd_action(call: ServiceCall) -> None:
-    """Run Floyd presets or explicitly assign one unassigned standalone node."""
-    from .coordinator import AdjustableBedCoordinator
-
-    targets = _call_targets(call)
-    action = call.data["action"]
-    internal_side = call.data.get("internal_side", "first")
-    confirm = call.data.get("confirm", False)
-    room_id = call.data.get("room_id")
-    if action == "assign_room" and (
-        len(targets) != 1 or not isinstance(targets[0][0], AdjustableBedCoordinator)
-    ):
-        raise ServiceValidationError("Assign one standalone Floyd bed at a time")
-
-    def validate(controller: BedController | SideBoundController) -> None:
-        controller.validate_floyd_action(action, internal_side, confirm, room_id)
-
-    preflighted = await _preflight_capability(
-        targets, "supports_floyd_actions", "Floyd Home actions", validate,
-    )
-    try:
-        for coordinator, side in targets:
-            assignment_completed = False
-
-            async def execute(
-                controller: BedController, *, target: BedTarget = coordinator,
-            ) -> None:
-                nonlocal assignment_completed
-                await controller.floyd_action(action, internal_side, confirm, room_id)
-                if action == "assign_room":
-                    assert isinstance(target, AdjustableBedCoordinator)
-                    assert isinstance(room_id, int)
-                    target.remember_floyd_room(room_id)
-                    assignment_completed = True
-
-            try:
-                await _execute_sided(
-                    coordinator, side, execute,
-                    resource="configuration" if action.startswith("save_") or action in {"assign_room", "confirm_add"} else None,
-                )
-            finally:
-                if action == "assign_room":
-                    await coordinator.async_disconnect()
-            if action == "assign_room":
-                if not assignment_completed:
-                    raise ServiceValidationError("Floyd room assignment was cancelled before acknowledgement")
-                await _execute_sided(
-                    coordinator, side,
-                    lambda controller: controller.floyd_action("confirm_add", "first", True, None),
-                    resource="configuration",
-                )
-    except (Exception, asyncio.CancelledError):
-        await _release_preflighted(preflighted)
-        raise
-
-
 async def handle_hold_control(call: ServiceCall) -> None:
     """Hold one controller-declared control, then run its protocol release."""
-    control = call.data[ATTR_CONTROL]
-    duration_ms = int(call.data[ATTR_DURATION] * 1000)
     targets = _call_targets(call)
+    admissions = [_capture_command_admission(coordinator, side) for coordinator, side in targets]
+    # The other family action modules load with the services, this one does not.
+    await async_import_modules(call.hass, "beds.vmatbasic.services")
+    from .beds.limoss.remote_services import _hold_limoss_remote
+    from .beds.richmat_classic.profiles import current_control_name
+    from .beds.svane.services import _hold_svane
+    from .beds.vmatbasic.services import _hold_vmatbasic_floor
+
+    control = current_control_name(call.data[ATTR_CONTROL])
+    duration_ms = int(call.data[ATTR_DURATION] * 1000)
     route = _profile_route(
         targets,
         {BED_TYPE_SVANE: "svane", BED_TYPE_LIMOSS_REMOTE: "limoss_remote"},
         SERVICE_HOLD_CONTROL,
     )
+    lease = _hold_lease(call, control, duration_ms)
+    if lease is not None:
+        if route == "svane" or control == "floor_hold":
+            raise invalid(
+                "control_hold_renewal_not_supported",
+            )
+        if route is None and _windowed_press(targets, lease, control):
+            await _async_hold_window(
+                call.hass,
+                targets,
+                lease,
+                lambda window: _hold_targets(
+                    targets, control, HOLD_CEILING_MS, admissions=admissions, window=window
+                ),
+            )
+            return
+        held = lease
+        await _async_with_hold_lease(
+            targets,
+            held,
+            lambda _target: None,
+            (
+                lambda: _hold_limoss_remote(
+                    call, control, MAX_HOLD_LEASE_MS, targets=targets, lease=held
+                )
+            )
+            if route == "limoss_remote"
+            else lambda: _hold_targets(targets, control, MAX_HOLD_LEASE_MS, lease=held, admissions=admissions),
+        )
+        return
     if route == "svane":
         await _hold_svane(call, control, duration_ms)
     elif route == "limoss_remote":
@@ -2790,214 +2131,239 @@ async def handle_hold_control(call: ServiceCall) -> None:
         for coordinator, side in targets
         for target in _command_targets(coordinator, side)
     ):
+        await async_import_modules(call.hass, "beds.vmatbasic.controller")
         await _hold_vmatbasic_floor(targets, control, duration_ms)
     else:
-        await _hold_targets(targets, control, duration_ms)
+        await _hold_targets(targets, control, duration_ms, admissions=admissions)
 
 
-async def _single_octo_service_target(
-    call: ServiceCall,
-) -> tuple[BedTarget, str, BedChild, OctoController]:
-    """Connect and return exactly one physical Standard Octo target."""
-    targets = _call_targets(call)
-    if len(targets) != 1:
-        raise ServiceValidationError("Select exactly one OCTO physical receiver")
-    coordinator, side = targets[0]
-    physical_targets = _command_targets(coordinator, side)
-    if len(physical_targets) != 1:
-        raise ServiceValidationError(
-            "Select one paired side for this OCTO action",
-            translation_domain=DOMAIN,
-            translation_key="octo_single_side_required",
-        )
-    target = physical_targets[0]
-    if target.bed_type != BED_TYPE_OCTO:
-        raise ServiceValidationError("This action is only available for OCTO Smart Control")
-
-    candidate = target.capability_controller
-    if candidate is not None and octo_controller(candidate) is None:
-        raise ServiceValidationError("This action is not available for the selected OCTO variant")
-    controller = await _get_controller_for_service(target)
-    octo = octo_controller(controller)
-    if octo is None:
-        raise ServiceValidationError("This action is not available for the selected OCTO variant")
-    return coordinator, side, target, octo
-
-
-async def handle_octo_enroll_pin(call: ServiceCall) -> None:
-    """Enroll a matching four-digit PIN on one unlocked OCTO receiver."""
-    pin = call.data[CONF_OCTO_PIN]
-    confirmation = call.data["octo_pin_confirmation"]
-    if not isinstance(pin, str) or len(pin) != 4 or not pin.isascii() or not pin.isdecimal():
-        raise ServiceValidationError("OCTO PIN must contain exactly four ASCII digits")
-    if pin != confirmation:
-        raise ServiceValidationError("OCTO PIN entries do not match")
-
-    coordinator, side, target, _controller = await _single_octo_service_target(call)
-    enrollment_completed = False
-
-    async def enroll(controller: BedController | SideBoundController) -> None:
-        nonlocal enrollment_completed
-        octo = octo_controller(controller)
-        if octo is None:
-            raise ServiceValidationError(
-                "This action is not available for the selected OCTO variant"
-            )
-        await octo.enroll_pin(pin)
-        enrollment_completed = True
-
-    try:
-        await _execute_sided(
-            coordinator,
-            side,
-            enroll,
-            cancel_running=False,
-            resource="configuration",
-        )
-        if not enrollment_completed:
-            raise ServiceValidationError(
-                "OCTO PIN enrollment was cancelled before the PIN was sent"
-            )
-    except (PermissionError, ValueError) as err:
-        raise ServiceValidationError(str(err)) from err
-
-    physical_coordinator = (
-        target._single_inner if isinstance(target, SingleAddressSideCoordinator) else target
+def _declares_hold(targets: list[tuple[BedTarget, str]], control: str) -> bool:
+    """Whether every executing target declares a renewable hold on ``control``."""
+    controllers = [
+        target.capability_controller
+        for coordinator, side in targets
+        for target in _command_targets(coordinator, side)
+    ]
+    return bool(controllers) and all(
+        controller is not None and controller.execution.hold_for(control) is not None
+        for controller in controllers
     )
-    physical_coordinator._octo_pin = pin
-    entry = target.entry
-    data = {**entry.data, CONF_OCTO_PIN: pin}
-    if isinstance(entry, ConfigEntry):
-        call.hass.config_entries.async_update_entry(entry, data=data)
-    else:
-        from .coordinator import ChildEntryView
-
-        if not isinstance(entry, ChildEntryView):
-            raise ServiceValidationError("Could not persist the OCTO PIN for this receiver")
-        entry.persist_data(data, keys=(CONF_OCTO_PIN,))
 
 
-async def handle_octo_reset_defaults(call: ServiceCall) -> None:
-    """Reset one unlocked OCTO receiver after explicit user confirmation."""
-    if call.data.get("confirmed") is not True:
-        raise ServiceValidationError("Confirm the OCTO factory reset before continuing")
-    coordinator, side, _target, _controller = await _single_octo_service_target(call)
+def _windowed_press(
+    targets: list[tuple[BedTarget, str]], lease: HoldLease, control: str
+) -> bool:
+    """Route a press once, so its renewals follow it when capabilities change.
 
-    async def reset(controller: BedController | SideBoundController) -> None:
-        octo = octo_controller(controller)
-        if octo is None:
-            raise ServiceValidationError(
-                "This action is not available for the selected OCTO variant"
-            )
-        await octo.reset_defaults()
-
-    try:
-        await _execute_sided(
-            coordinator,
+    A press of a control the bed declares no renewable hold for takes a window;
+    the rest take the scheduler lease. A Good Vibe memory save, for one, makes
+    its control a sustained press the moment it lands.
+    """
+    if len(targets) != 1:
+        return not _declares_hold(targets, control)
+    coordinator, side = targets[0]
+    press = coordinator.hold_windows.get(side, lease.owner)
+    if press is not None and press.generation >= lease.generation:
+        return press.windowed
+    if _declares_hold(targets, control):
+        coordinator.hold_windows.remember(
             side,
-            reset,
-            cancel_running=False,
-            resource="configuration",
+            lease.owner,
+            HoldWindow(control, lease.generation, math.inf, windowed=False, ended=True),
         )
-    except (PermissionError, ValueError) as err:
-        raise ServiceValidationError(str(err)) from err
+        return False
+    return True
+
+
+async def _async_hold_window(
+    hass: HomeAssistant,
+    targets: list[tuple[BedTarget, str]],
+    lease: HoldLease,
+    run: Callable[[HoldWindow], Awaitable[None]],
+) -> None:
+    """Hold a control that declares no renewable hold until its renewals stop.
+
+    The hold is the bounded one ``hold_control`` always runs, so the bed gets
+    the same frames. A renewal (same owner, generation and control) only moves
+    the deadline and writes nothing. When the deadline passes, the commands
+    this press started are cancelled as a STOP cancels them, so each runs its
+    release, and nothing else is touched; one not yet started never starts.
+    """
+    if len(targets) != 1:
+        raise invalid("hold_one_bed")
+    coordinator, side = targets[0]
+    now = asyncio.get_running_loop().time()
+    window = coordinator.hold_windows.get(side, lease.owner)
+    if window is not None and window.generation >= lease.generation:
+        if window.generation > lease.generation or window.control != lease.action:
+            raise invalid("hold_ended")
+        # A renewal in flight when the hold ended moves nothing.
+        if not window.ended:
+            window.deadline = now + lease.duration_s
+        return
+    window = HoldWindow(lease.action, lease.generation, now + lease.duration_s)
+    coordinator.hold_windows.remember(side, lease.owner, window)
+    # A dropped caller (a closed dashboard) must not take the deadline with it.
+    task = hass.async_create_background_task(
+        _run_hold_window(window, run), "adjustable_bed hold window"
+    )
+    await asyncio.shield(task)
+
+
+async def _run_hold_window(
+    window: HoldWindow, run: Callable[[HoldWindow], Awaitable[None]]
+) -> None:
+    loop = asyncio.get_running_loop()
+    hold = asyncio.ensure_future(run(window))
+    try:
+        while not hold.done():
+            remaining = window.deadline - loop.time()
+            if remaining <= 0:
+                _LOGGER.debug("Held %s stopped renewing; ending its hold", window.control)
+                window.expired = True
+                for context in window.commands:
+                    # Ended as a STOP ends it, so a pair takes it as cleanup;
+                    # a command already cancelled keeps its own reason.
+                    if not context.cancel_event.is_set():
+                        context.request_cancel(CommandOutcome.STOPPED)
+                break
+            await asyncio.wait((hold,), timeout=remaining)
+        await asyncio.wait((hold,))
+        if not hold.cancelled():
+            hold.result()
+    except asyncio.CancelledError:
+        # Shutdown or unload: the hold must not outlive its deadline keeper.
+        hold.cancel()
+        raise
+    finally:
+        window.ended = True
 
 
 def _require_held_control(
-    target: BedChild, controller: BedController | SideBoundController, control: str
+    target: BedChild, controller: BedController, control: str
 ) -> None:
     """Reject a control the target's controller does not declare, listing valid ones."""
     options = controller.held_control_options
     if not options:
-        raise ServiceValidationError(
-            f"Device '{target.name}' has no held controls",
-            translation_domain=DOMAIN,
-            translation_key="held_controls_not_supported",
-            translation_placeholders={"device_name": target.name},
-        )
+        raise invalid("held_controls_not_supported", device_name=target.name)
     if control not in options:
-        raise ServiceValidationError(
-            f"Device '{target.name}' does not support held control '{control}'. "
-            f"Valid controls: {', '.join(options)}",
-            translation_domain=DOMAIN,
-            translation_key="held_control_not_supported",
-            translation_placeholders={
-                "device_name": target.name,
-                "control": control,
-                "valid_controls": ", ".join(options),
-            },
+        raise invalid("held_control_not_supported", device_name=target.name, control=control, valid_controls=", ".join(options))
+
+
+def _require_hold_topology(targets: list[tuple[BedTarget, str]]) -> None:
+    """A sequential link cannot sustain Both, before any lease reservation."""
+    if any(
+        isinstance(coordinator, PairedBedCoordinator)
+        and side == SIDE_BOTH
+        and coordinator.connection_mode == "sequential"
+        for coordinator, side in targets
+    ):
+        raise invalid(
+            "hold_needs_concurrent",
         )
-
-
-@dataclass(frozen=True, slots=True)
-class _HoldAdmission:
-    """Cancellation state captured before hold capability preflight awaits."""
-
-    stop_epoch: int | None = None
-    pair_generations: Mapping[str, tuple[int, ...]] | None = None
-    stop_epochs: Mapping[str, int] | None = None
-
-
-def _target_stop_epoch(target: BedChild) -> int | None:
-    """Read the owning physical scheduler's STOP epoch for one service target."""
-    owner = getattr(target, "_single_inner", target)
-    scheduler = getattr(owner, "_command_scheduler", None)
-    epoch = getattr(scheduler, "stop_epoch", None)
-    return epoch if isinstance(epoch, int) else None
-
-
-def _hold_admission(coordinator: BedTarget, side: str) -> _HoldAdmission:
-    """Snapshot STOP ownership before a hold's possibly blocking preflight."""
-    if not isinstance(coordinator, PairedBedCoordinator):
-        return _HoldAdmission(stop_epoch=_target_stop_epoch(coordinator))
-
-    pair_generations: dict[str, tuple[int, ...]] = {}
-    stop_epochs: dict[str, int] = {}
-    for target_side, target in coordinator._targets_for(side):
-        pair_generations[target_side] = coordinator._pair_cancel_generation(
-            target_side, ALL_COMMAND_RESOURCES
-        )
-        stop_epoch = _target_stop_epoch(target)
-        if stop_epoch is not None:
-            stop_epochs[target_side] = stop_epoch
-    return _HoldAdmission(
-        pair_generations=pair_generations,
-        stop_epochs=stop_epochs or None,
-    )
 
 
 async def _hold_targets(
-    targets: list[tuple[BedTarget, str]], control: str, duration_ms: int
+    targets: list[tuple[BedTarget, str]],
+    control: str,
+    duration_ms: int,
+    *,
+    lease: HoldLease | None = None,
+    admissions: Sequence[_CommandAdmission] | None = None,
+    window: HoldWindow | None = None,
 ) -> None:
     """Preflight the whole selection before starting any held write sequence."""
+    bounded_catalog = lease is None and all(
+        child.bed_type == "bobpowerbase"
+        for parent, side in targets for child in _command_targets(parent, side)
+    )
+    if not bounded_catalog:
+        _require_hold_topology(targets)
+    shared_receivers: set[int] = set()
+
+    def check(target: BedChild, controller: BedController) -> None:
+        _require_held_control(target, controller, control)
+        if lease is not None:
+            _require_hold_execution(target, controller, control)
+        controller.validate_hold_control(control, duration_ms)
+        if isinstance(target, SingleAddressSideCoordinator) and any(
+            spec.shared_across_sides
+            and spec.hold is not None
+            and control in (spec.hold.up_control, spec.hold.down_control)
+            for spec in controller.motor_control_specs
+        ):
+            shared_receivers.add(_plan_key(target))
 
     # A STOP during any per-side capability/connect wait owns the event that
     # was current when the user pressed. Capture before _preflight_each awaits.
-    admissions = [
-        (coordinator, side, _capture_command_admission(coordinator, side))
-        for coordinator, side in targets
-    ]
+    if admissions is None:
+        admissions = [_capture_command_admission(coordinator, side) for coordinator, side in targets]
+    live = _LiveCheck(check)
+    preflighted = await _preflight_each(targets, live.preflight)
+    completed_shared_receivers: set[int] = set()
 
-    def check(target: BedChild, controller: BedController | SideBoundController) -> None:
-        _require_held_control(target, controller, control)
-        controller.validate_hold_control(control, duration_ms)
+    async def hold_checked(controller: BedController) -> None:
+        # Automatic link-slot fallback may have changed topology after admission.
+        if not bounded_catalog:
+            _require_hold_topology(targets)
+        if window is not None:
+            # Renewals stopped before this command began: start nothing.
+            if window.lapsed:
+                return
+            if (context := current_command_context()) is not None:
+                window.commands.append(context)
+        await controller.hold_control(
+            control, duration_ms if lease is None else _hold_ceiling(controller, duration_ms)
+        )
 
-    admissions = [_hold_admission(coordinator, side) for coordinator, side in targets]
-    preflighted = await _preflight_each(targets, check)
-
-    async def hold(controller: BedController | SideBoundController) -> None:
-        await controller.hold_control(control, duration_ms)
+    hold = live.command(targets, hold_checked)
 
     try:
         for (coordinator, side), admission in zip(targets, admissions, strict=True):
+            if window is not None and window.lapsed:
+                # Renewals stopped during preflight: never replace another command.
+                break
+            if isinstance(coordinator, SingleAddressPairedCoordinator) and any(
+                _plan_key(target) in shared_receivers
+                for target in _command_targets(coordinator, side)
+            ):
+                stop_epochs = {
+                    id(child): admission.expected_stop_epochs.get(target_side)
+                    for target_side, child in coordinator.targets_for(side)
+                }
+
+                async def hold_shared(
+                    target: BedChild,
+                    _stop_epochs: dict[int, int | None] = stop_epochs,
+                ) -> None:
+                    receiver = _plan_key(target)
+                    # Skip the duplicate before its scheduler can reconnect the receiver.
+                    if receiver in completed_shared_receivers:
+                        return
+                    await target.async_execute_controller_command(
+                        track_held_control(getattr(target, "hass", None), control, hold),
+                        cancel_running=True,
+                        expected_stop_epoch=_stop_epochs[id(target)],
+                        lease=lease,
+                    )
+                    if receiver in shared_receivers:
+                        completed_shared_receivers.add(receiver)
+
+                await coordinator.async_run_child_operation(
+                    "hold control",
+                    hold_shared,
+                    side=side,
+                    expected_pair_generations=admission.expected_pair_generations,
+                    expected_stop_epochs=admission.expected_stop_epochs,
+                )
+                continue
             await _execute_sided(
                 coordinator,
                 side,
-                hold,
+                track_held_control(getattr(coordinator, "hass", None), control, hold),
                 cancel_running=True,
-                expected_stop_epoch=admission.stop_epoch,
-                expected_pair_generations=admission.pair_generations,
-                expected_stop_epochs=admission.stop_epochs,
+                admission=admission,
+                lease=lease,
             )
     except (Exception, asyncio.CancelledError):
         await _release_preflighted(preflighted)
@@ -3008,1365 +2374,463 @@ async def _hold_targets(
         await _release_preflighted(preflighted)
 
 
-CUSTOMATIC_MEMORY_ACTIONS = ("flat", "zg", "anti", "program", "incline")
-
-
-def _customatic_memory_actions(value: object) -> list[str]:
-    """Validate a nonempty subset before any bed receives a command."""
-    if not isinstance(value, list) or not value or len(value) > 5:
-        raise vol.Invalid("Select one to five memory actions")
-    if any(
-        not isinstance(action, str) or action not in CUSTOMATIC_MEMORY_ACTIONS for action in value
-    ):
-        raise vol.Invalid("Unknown Customatic memory action")
-    if len(set(value)) != len(value):
-        raise vol.Invalid("Memory actions must be unique")
-    return [action for action in CUSTOMATIC_MEMORY_ACTIONS if action in value]
-
-
-async def handle_customatic_hold_memory(call: ServiceCall) -> None:
-    """Hold an artifact-proven memory subset on every validated physical target."""
-    actions = _customatic_memory_actions(call.data[ATTR_ACTIONS])
-    control = "+".join(actions)
-    await _handle_customatic_hold(
-        call, control, {BED_TYPE_CUSTOMATIC_CLARITY, BED_TYPE_CUSTOMATIC_REMEDY}
-    )
-
-
-def _customatic_movement_actions(value: object) -> dict[str, str]:
-    """Allow one direction per physical axis, never contradictory motor bits."""
-    if not isinstance(value, dict) or not 1 <= len(value) <= 3:
-        raise vol.Invalid("Select one to three motor directions")
-    if any(
-        axis not in {"back", "legs", "lumbar"}
-        or not isinstance(direction, str)
-        or direction not in {"up", "down"}
-        for axis, direction in value.items()
-    ):
-        raise vol.Invalid("Select back, legs or lumbar, with direction up or down")
-    return {axis: value[axis] for axis in ("back", "legs", "lumbar") if axis in value}
-
-
-async def handle_customatic_move_simultaneously(call: ServiceCall) -> None:
-    """Move the selected safe axes using one native command mask."""
-    movements = _customatic_movement_actions(call.data[ATTR_ACTIONS])
-    control = "+".join(f"{axis}_{direction}" for axis, direction in movements.items())
-    await _handle_customatic_hold(
-        call,
-        control,
-        {BED_TYPE_CUSTOMATIC_CLARITY, BED_TYPE_CUSTOMATIC_JEROMES, BED_TYPE_CUSTOMATIC_REMEDY},
-    )
-
-
-def _furnimove_targets(call: ServiceCall) -> list[tuple[BedTarget, str]]:
-    targets, missing = _resolve_sided_targets(
-        call.hass, call.data[CONF_DEVICE_ID], call.data.get(ATTR_SIDE)
-    )
-    if missing:
-        raise _missing_device_error(missing[0])
-    for coordinator, side in targets:
-        for target in _command_targets(coordinator, side):
-            if target.bed_type != BED_TYPE_FURNIMOVE:
-                raise ServiceValidationError(f"Device '{target.name}' is not a FurniMove profile")
-    return targets
-
-
-async def _execute_furnimove(
-    call: ServiceCall,
-    validate: Callable[[BedController | SideBoundController], None],
-    operation: Callable[[BedController | SideBoundController], Coroutine[Any, Any, None]],
-    *,
-    cancel_running: bool = True,
-) -> None:
-    targets = _furnimove_targets(call)
-    preflighted = await _preflight_capability(
-        targets, "furnimove_action_specs", "FurniMove app controls", validate
-    )
-    try:
-        for coordinator, side in targets:
-            # Every consumer uses one mutable write role and global release.
-            await _execute_sided(
-                coordinator, side, operation, cancel_running=cancel_running, resource="*"
-            )
-    except Exception, asyncio.CancelledError:
-        await _release_preflighted(preflighted)
-        raise
-
-
-async def handle_furnimove_action(call: ServiceCall) -> None:
-    """Dispatch an ordered row through its artifact-proven consumer."""
-    row_index = call.data["row_index"]
-    duration = call.data.get(ATTR_DURATION)
-    duration_ms = int(duration * 1000) if duration is not None else None
-    consumer = call.data["consumer"]
-    selected_action: tuple[str, str] | None = None
-
-    def validate(controller: BedController | SideBoundController) -> None:
-        nonlocal selected_action
-        action = controller.validate_furnimove_action(
-            row_index, duration_ms=duration_ms, consumer=consumer
-        )
-        if selected_action is not None and action != selected_action:
-            raise ValueError(
-                "The selected row represents different actions; target one device or side"
-            )
-        selected_action = action
-
-    async def execute(controller: BedController | SideBoundController) -> None:
-        await controller.async_execute_furnimove_action(
-            row_index, duration_ms=duration_ms, consumer=consumer
-        )
-
-    await _execute_furnimove(call, validate, execute)
-
-
-async def _rename_furnimove(
-    call: ServiceCall, targets: list[tuple[BedTarget, str]], name: str
-) -> None:
-    """Write the original validated name to this app's discovered rename role."""
-    from .beds.furnimove import validate_furnimove_name
-
-    try:
-        validate_furnimove_name(name)
-    except ValueError as err:
-        raise ServiceValidationError(str(err)) from err
-    physical = [
-        target for coordinator, side in targets for target in _command_targets(coordinator, side)
-    ]
-    if len(physical) != 1:
-        raise ServiceValidationError("Rename one physical FurniMove receiver at a time")
-    names = {physical[0].name.strip().lower()}
-    for entry in call.hass.config_entries.async_entries(DOMAIN):
-        names.add(entry.title.strip().lower())
-        for data in (entry.data, *iter_children(entry.data)):
-            stored = data.get(CONF_NAME)
-            if isinstance(stored, str):
-                names.add(stored.strip().lower())
-    if name.strip().lower() in names:
-        raise ServiceValidationError("Choose a different, unique FurniMove name")
-
-    def validate(controller: BedController | SideBoundController) -> None:
-        controller.validate_furnimove_rename(name)
-        if not controller.supports_device_rename:
-            raise ValueError("This receiver has no writable rename characteristic")
-
-    async def execute(controller: BedController | SideBoundController) -> None:
-        await controller.rename_device(name)
-
-    try:
-        if not await physical[0].async_ensure_connected():
-            raise ServiceValidationError("Could not connect to the FurniMove receiver")
-        await _execute_furnimove(call, validate, execute)
-    except Exception, asyncio.CancelledError:
-        await _release_preflighted([(targets[0][0], physical[0])])
-        raise
-    entry = physical[0].entry
-    data = {**entry.data, CONF_NAME: name.strip()}
-    if isinstance(entry, ConfigEntry):
-        call.hass.config_entries.async_update_entry(entry, title=name.strip(), data=data)
-    else:
-        from .coordinator import ChildEntryView
-
-        if isinstance(entry, ChildEntryView):
-            entry.persist_data(data, keys=(CONF_NAME,))
-
-
-async def handle_furnimove_massage_program(call: ServiceCall) -> None:
-    """Choose an app massage program independently of arbitrary row labels."""
-    program = call.data["program"]
-
-    def validate(controller: BedController | SideBoundController) -> None:
-        controller.validate_furnimove_massage_program(program)
-
-    async def execute(controller: BedController | SideBoundController) -> None:
-        await controller.set_furnimove_massage_program(program)
-
-    await _execute_furnimove(call, validate, execute)
-
-
-async def handle_furnimove_massage_duration(call: ServiceCall) -> None:
-    """Store the app's advisory duration without programming a hardware timer."""
-    from .coordinator import AdjustableBedCoordinator
-
-    minutes = call.data["minutes"]
-    physical_targets: list[AdjustableBedCoordinator] = []
-    for coordinator, side in _furnimove_targets(call):
-        for target in _command_targets(coordinator, side):
-            if not isinstance(target, AdjustableBedCoordinator):
-                raise ServiceValidationError("FurniMove requires a physical receiver target")
-            await target.async_prime_offline_controller()
-            physical_targets.append(target)
-
-    for target in physical_targets:
-        controller = target.capability_controller
-        if controller is None:
-            raise ServiceValidationError("No selected FurniMove handset is available")
-        if not controller.supports_massage or minutes not in controller.massage_timer_options:
-            raise ServiceValidationError("This handset has no supported local massage duration")
-
-    for target in physical_targets:
-        await target.async_set_furnimove_massage_duration(minutes)
-
-
-async def handle_furnimove_move_simultaneously(call: ServiceCall) -> None:
-    """Combine two supported axes by OR, retaining the app's checksum rule."""
-    first = call.data[ATTR_FIRST_MOTOR]
-    second = call.data[ATTR_SECOND_MOTOR]
-    first_up = call.data[ATTR_FIRST_DIRECTION] == "up"
-    second_up = call.data[ATTR_SECOND_DIRECTION] == "up"
-    duration_ms = call.data[ATTR_DURATION_MS]
-
-    def validate(controller: BedController | SideBoundController) -> None:
-        controller.validate_furnimove_simultaneous(first, first_up, second, second_up, duration_ms)
-
-    async def execute(controller: BedController | SideBoundController) -> None:
-        await controller.move_simultaneously(first, first_up, second, second_up, duration_ms)
-
-    await _execute_furnimove(call, validate, execute)
-
-
-async def _preflight_live_svane(
-    parent: BedTarget,
-    target: BedChild,
-    admission: SvaneHoldAdmission,
-    control: str,
-    duration_ms: int,
-) -> None:
-    """Validate the live role through the pair's guarded connection lane."""
-    from .beds.svane import SvaneController
-
-    validated = False
-
-    async def inspect(child: BedChild) -> None:
-        nonlocal validated
-        controller = await _get_controller_for_service(child)
-        if (
-            not isinstance(controller, SvaneController)
-            or controller.session is not admission.session
-        ):
-            raise ServiceValidationError("Svane physical session changed during preflight")
-        try:
-            controller.validate_svane_hold_control(control, duration_ms)
-        except ValueError as err:
-            raise ServiceValidationError(str(err)) from err
-        validated = True
-
-    if isinstance(parent, PairedBedCoordinator):
-        side = next(key for key, child in parent.children.items() if child is target)
-        await parent.async_run_child_operation(
-            "Svane live preflight",
-            inspect,
-            side=side,
-            cancel_running=False,
-        )
-    else:
-        await inspect(target)
-    if not validated:
-        raise ServiceValidationError("Svane live preflight was interrupted")
-
-
-async def _svane_live_targets(
-    call: ServiceCall,
-    control: str,
-    duration_ms: int,
-) -> tuple[list[tuple[BedTarget, str]], PreflightedSides, dict[int, SvaneHoldAdmission]]:
-    """Capture all release boundaries, then validate each guarded live link."""
-    targets, missing = _resolve_sided_targets(
-        call.hass, call.data[CONF_DEVICE_ID], call.data.get(ATTR_SIDE)
-    )
-    if missing:
-        raise _missing_device_error(missing[0])
-    from .beds.svane import SvaneController
-
-    admissions: dict[int, SvaneHoldAdmission] = {}
-    for parent, side in targets:
-        for target in _command_targets(parent, side):
-            controller = target.capability_controller
-            if (
-                target.bed_type != BED_TYPE_SVANE
-                or controller is None
-                or not isinstance(controller, SvaneController)
-            ):
-                raise ServiceValidationError("Select a Svane Remote app profile")
-            _require_held_control(target, controller, control)
-            try:
-                controller.validate_svane_hold_constraints(control, duration_ms)
-            except ValueError as err:
-                raise ServiceValidationError(str(err)) from err
-            admissions[id(controller.session)] = controller.prepare_svane_hold_admission()
-    preflighted: PreflightedSides = []
-    try:
-        for parent, side in targets:
-            for target in _command_targets(parent, side):
-                preflighted.append((parent, target))
-                controller = target.capability_controller
-                if (
-                    not isinstance(controller, SvaneController)
-                    or id(controller.session) not in admissions
-                ):
-                    raise ServiceValidationError("Svane physical session changed during preflight")
-                await _preflight_live_svane(
-                    parent,
-                    target,
-                    admissions[id(controller.session)],
-                    control,
-                    duration_ms,
-                )
-    except Exception, asyncio.CancelledError:
-        await _release_preflighted(preflighted)
-        raise
-    return targets, preflighted, admissions
-
-
-async def _hold_svane(call: ServiceCall, control: str, duration_ms: int) -> None:
-    """Preflight exact roles on all sides before serialized source held writes."""
-    targets, preflighted, admissions = await _svane_live_targets(call, control, duration_ms)
-    try:
-
-        async def hold(controller: BedController | SideBoundController) -> None:
-            from .beds.svane import SvaneController
-
-            if not isinstance(controller, SvaneController):
-                raise ValueError("Svane controller changed before held command admission")
-            admission = admissions.get(id(controller.session))
-            if admission is None:
-                raise ValueError("Svane physical session changed before held command admission")
-            with admission.activate(controller):
-                await controller.hold_control(control, duration_ms)
-
-        for parent, side in targets:
-            await _execute_sided(parent, side, hold, cancel_running=True)
-    except (Exception, asyncio.CancelledError) as error:
-        await _release_preflighted(preflighted)
-        if isinstance(error, ValueError):
-            raise ServiceValidationError(str(error)) from error
-        raise
-
-
-async def handle_svane_release_axis(call: ServiceCall) -> None:
-    """Signal only the active writer, allowing the other held axis to continue."""
-    targets, missing = _resolve_sided_targets(
-        call.hass, call.data[CONF_DEVICE_ID], call.data.get(ATTR_SIDE)
-    )
-    if missing:
-        raise _missing_device_error(missing[0])
-    controllers: list[BedController | SideBoundController] = []
-    for parent, side in targets:
-        for target in _command_targets(parent, side):
-            if target.bed_type != BED_TYPE_SVANE:
-                raise ServiceValidationError("Select an active Svane Remote app profile")
-            controller = target.controller or target.capability_controller
-            if controller is None:
-                continue
-            if not controller.supports_held_control:
-                raise ServiceValidationError("Select an active Svane Remote app profile")
-            controllers.append(controller)
-    for controller in controllers:
-        controller.request_svane_axis_release(call.data[ATTR_MOTOR])
-
-
-async def handle_fsm_relax_calibrate(call: ServiceCall) -> None:
-    """Send exactly one positively confirmed calibration write."""
-    targets = _call_targets(call)
-    if call.data.get("confirmed") is not True:
-        raise ServiceValidationError("Calibration requires explicit confirmation")
-    for coordinator, side in targets:
-        for target in _command_targets(coordinator, side):
-            if target.bed_type != BED_TYPE_FSM_RELAX:
-                raise ServiceValidationError("This action requires the FSM Relax app profile")
-    await _preflight_capability(targets, "supports_confirmed_calibration", "FSM Relax local action")
-
-    async def execute(controller: BedController | SideBoundController) -> None:
-        await controller.calibrate(confirmed=True)
-
-    for coordinator, side in targets:
-        await _execute_sided(coordinator, side, execute, cancel_running=True)
-
-
-def _limoss_boolean(value: object) -> bool:
-    if type(value) is not bool:
-        raise vol.Invalid("Select true or false")
-    return value
-
-
-async def _hold_limoss_remote(call: ServiceCall, control: str, duration_ms: int) -> None:
-    """Hold a rendered literal app action using its five-frame release."""
-
-    def validate(controller: LimossRemoteController | SideBoundController) -> None:
-        if control not in controller.held_control_options:
-            raise ValueError(f"The selected profile does not support combination '{control}'")
-
-    await _execute_limoss_remote(
-        call, validate, lambda ctrl: ctrl.hold_control(control, duration_ms)
-    )
-
-
-def _limoss_remote_controller(
-    controller: BedController | SideBoundController,
-) -> LimossRemoteController | SideBoundController:
-    from .beds.base import SideBoundController
-    from .beds.limoss_remote import LimossRemoteController
-
-    if isinstance(controller, LimossRemoteController):
-        return controller
-    if isinstance(controller, SideBoundController) and isinstance(
-        controller._controller, LimossRemoteController
-    ):
-        return controller
-    raise ServiceValidationError("This action requires the explicit Limoss Remote profile")
-
-
-@contextlib.asynccontextmanager
-async def _limoss_remote_reload_transaction(
-    targets: list[tuple[BedTarget, str]],
-) -> AsyncIterator[None]:
-    """Defer selected receivers' entity reloads through all service phases."""
-    from .coordinator import AdjustableBedCoordinator
-
-    async with contextlib.AsyncExitStack() as stack:
-        physical: dict[int, BedChild] = {}
-        for coordinator, side in targets:
-            selected = [
-                target
-                for target in _command_targets(coordinator, side)
-                if target.bed_type == BED_TYPE_LIMOSS_REMOTE
-            ]
-            if selected and isinstance(coordinator, PairedBedCoordinator):
-                # Any child's capability update reloads this same parent entry.
-                selected = list(coordinator.children.values())
-            physical.update((id(target), target) for target in selected)
-        for _, target in sorted(physical.items()):
-            if not isinstance(target, AdjustableBedCoordinator):
-                raise ServiceValidationError("Limoss Remote requires a physical receiver target")
-            await stack.enter_async_context(target.async_defer_capability_reload())
-        yield
-
-
-async def _preflight_live_limoss_remote(
-    targets: list[tuple[BedTarget, str]],
-    validate: Callable[[LimossRemoteController | SideBoundController], object],
-) -> None:
-    """Require each receiver's completed live startup before selected movement.
-
-    Cached layouts remain useful offline, but do not establish a new receiver
-    session. Paired routing releases each sequential validation link normally.
-    """
-    for coordinator, side in targets:
-        for target in _command_targets(coordinator, side):
-            if target.bed_type != BED_TYPE_LIMOSS_REMOTE:
-                continue
-            refreshed: list[LimossRemoteController | SideBoundController] = []
-
-            async def query(
-                controller: BedController,
-            ) -> LimossRemoteController | SideBoundController:
-                selected = _limoss_remote_controller(controller)
-                await selected.start_notify()
-                return selected
-
-            async def inspect(
-                child: BedChild,
-                results: list[LimossRemoteController | SideBoundController] = refreshed,
-            ) -> None:
-                selected = await child.async_execute_controller_query(query, cancel_running=False)
-                if selected is not None:
-                    results.append(selected)
-
-            if isinstance(coordinator, PairedBedCoordinator):
-                child_side = next(
-                    key for key, child in coordinator.children.items() if child is target
-                )
-                await coordinator.async_run_child_operation(
-                    "Limoss Remote preflight",
-                    inspect,
-                    side=child_side,
-                    cancel_running=False,
-                )
-            else:
-                await inspect(target)
-            if not refreshed:
-                raise ServiceValidationError("Limoss Remote capability preflight was interrupted")
-            try:
-                validate(refreshed[0])
-            except ValueError as error:
-                raise ServiceValidationError(str(error)) from error
-
-
-async def _execute_limoss_remote(
-    call: ServiceCall,
-    validate: Callable[[LimossRemoteController | SideBoundController], object],
-    execute: Callable[[LimossRemoteController | SideBoundController], Coroutine[Any, Any, None]],
-    *,
-    targets: list[tuple[BedTarget, str]] | None = None,
-) -> None:
-    targets = _limoss_remote_targets(call) if targets is None else targets
-
-    def check(controller: BedController | SideBoundController) -> None:
-        try:
-            validate(_limoss_remote_controller(controller))
-        except ValueError as error:
-            raise ServiceValidationError(str(error)) from error
-
-    async with _limoss_remote_reload_transaction(targets):
-        await _preflight_live_limoss_remote(targets, validate)
-        preflighted = await _preflight_capability(
-            targets, "requires_notification_channel", "Limoss Remote", check
-        )
-        completed = 0
-
-        async def run(controller: BedController | SideBoundController) -> None:
-            from .beds.base import SideBoundController
-
-            nonlocal completed
-            selected = _limoss_remote_controller(controller)
-            check(selected)
-            await execute(selected)
-            physical = (
-                selected._controller if isinstance(selected, SideBoundController) else selected
-            )
-            if physical._coordinator.cancel_command.is_set():
-                raise asyncio.CancelledError
-            completed += 1
-
-        try:
-            for coordinator, side in targets:
-                before = completed
-                await _execute_sided(coordinator, side, run, cancel_running=True)
-                if completed - before != len(_command_targets(coordinator, side)):
-                    raise ServiceValidationError(
-                        "Limoss Remote action was interrupted before completion"
-                    )
-        except Exception, asyncio.CancelledError:
-            await _release_preflighted(preflighted)
-            raise
-
-
-def _limoss_remote_targets(call: ServiceCall) -> list[tuple[BedTarget, str]]:
-    targets, missing = _resolve_sided_targets(
-        call.hass, call.data[CONF_DEVICE_ID], call.data.get(ATTR_SIDE)
-    )
-    if missing:
-        raise _missing_device_error(missing[0])
-    for coordinator, side in targets:
-        if any(
-            target.bed_type != BED_TYPE_LIMOSS_REMOTE
-            for target in _command_targets(coordinator, side)
-        ):
-            raise ServiceValidationError("This action requires the explicit Limoss Remote profile")
-    return targets
-
-
-async def handle_limoss_remote_rename_memory(call: ServiceCall) -> None:
-    slot, name = call.data[ATTR_PRESET], call.data[ATTR_NAME]
-    controllers: list[LimossRemoteController | SideBoundController] = []
-    for coordinator, side in _limoss_remote_targets(call):
-        for target in _command_targets(coordinator, side):
-            controller = target.capability_controller
-            if controller is None:
-                raise ServiceValidationError("This receiver has no cached memory capacity")
-            local = _limoss_remote_controller(controller)
-            try:
-                local._slot(slot)
-            except ValueError as error:
-                raise ServiceValidationError(str(error)) from error
-            controllers.append(local)
-    # No receiver access or suspension occurs during this local edit.
-    for controller in controllers:
-        await controller.rename_memory(slot, name)
-
-
-async def handle_limoss_remote_calibrate(call: ServiceCall) -> None:
-    def validate(controller: LimossRemoteController | SideBoundController) -> None:
-        if call.data["confirmed"] is not True or controller.memory_slot_count == 0:
-            raise ValueError(
-                "Calibration requires explicit confirmation and a memory-capable profile"
-            )
-
-    await _execute_limoss_remote(
-        call,
-        validate,
-        lambda ctrl: ctrl.hold_calibration(int(call.data[ATTR_DURATION] * 1000), confirmed=True),
-    )
-
-
-async def handle_limoss_remote_features(call: ServiceCall) -> None:
-    from .beds.base import SideBoundController
-    from .beds.limoss_remote import LimossRemoteController
-
-    light, massage = call.data["underbed_light"], call.data["massage"]
-    targets = _limoss_remote_targets(call)
-    async with _limoss_remote_reload_transaction(targets):
-        touched: list[tuple[LimossRemoteController, bool, bool]] = []
-        online: list[tuple[BedTarget, str]] = []
-        local: list[BedChild] = []
-        for coordinator, side in targets:
-            physical_targets = _command_targets(coordinator, side)
-            disabling: list[BedChild] = []
-            for target in physical_targets:
-                cached = target.capability_controller
-                if cached is None:
-                    raise ServiceValidationError("This receiver has no cached app profile")
-                selected = _limoss_remote_controller(cached)
-                physical = (
-                    selected._controller if isinstance(selected, SideBoundController) else selected
-                )
-                assert isinstance(physical, LimossRemoteController)
-                if (physical.underbed_light and not light) or (physical.massage and not massage):
-                    disabling.append(target)
-                else:
-                    local.append(target)
-            if len(disabling) == len(physical_targets):
-                online.append((coordinator, side))
-            elif isinstance(coordinator, PairedBedCoordinator):
-                online.extend(
-                    (coordinator, child_side)
-                    for child_side, child in coordinator.children.items()
-                    if child in disabling
-                )
-
-        async def apply(controller: LimossRemoteController | SideBoundController) -> None:
-            physical = (
-                controller._controller
-                if isinstance(controller, SideBoundController)
-                else controller
-            )
-            assert isinstance(physical, LimossRemoteController)
-            touched.append((physical, physical.underbed_light, physical.massage))
-            await controller.set_optional_features(light, massage, persist=False)
-
-        try:
-            # Only disabling an enabled feature has native OFF frames to deliver.
-            if online:
-                await _execute_limoss_remote(call, lambda ctrl: None, apply, targets=online)
-            async with contextlib.AsyncExitStack() as stack:
-                # Shared guards use one process-local order across multi-target calls.
-                owners = {id(coordinator): coordinator for coordinator, _ in targets}
-                for _, coordinator in sorted(owners.items()):
-                    guard = (
-                        coordinator.async_capability_reload_guard()
-                        if isinstance(coordinator, PairedBedCoordinator)
-                        else coordinator.async_command_operation_guard()
-                    )
-                    await stack.enter_async_context(guard)
-                for target in local:
-                    cached = target.capability_controller
-                    if cached is None:
-                        raise ServiceValidationError("This receiver has no cached app profile")
-                    selected = _limoss_remote_controller(cached)
-                    physical = (
-                        selected._controller
-                        if isinstance(selected, SideBoundController)
-                        else selected
-                    )
-                    assert isinstance(physical, LimossRemoteController)
-                    if (physical.underbed_light and not light) or (
-                        physical.massage and not massage
-                    ):
-                        raise ServiceValidationError(
-                            "The local feature selection changed; retry the action"
-                        )
-                    await apply(selected)
-                for controller, _, _ in touched:
-                    controller._coordinator.remember_limoss_remote_features(light, massage)
-        except Exception, asyncio.CancelledError:
-            # Flags describe the selected local layout, not a hardware acknowledgement.
-            for controller, previous_light, previous_massage in touched:
-                controller.underbed_light, controller.massage = previous_light, previous_massage
-            raise
-
-
-def _zseries_controller(controller: BedController | SideBoundController) -> ZSeriesController:
-    """Return the Z-Series controller behind a possibly side-bound proxy."""
-    from .beds.base import SideBoundController as Bound
-    from .beds.serenity import ZSeriesController as ZSeries
-
-    inner = controller._controller if isinstance(controller, Bound) else controller
-    if not isinstance(inner, ZSeries):
-        raise ServiceValidationError("This action requires a Customatic Z-Series app controller")
-    return inner
-
-
-async def _execute_zseries_alarm(
-    call: ServiceCall,
-    label: str,
-    command: Callable[[BedController | SideBoundController], Coroutine[Any, Any, None]],
-) -> None:
-    """Preflight every physical Z-Series target before any alarm or clock write."""
-    targets, missing = _resolve_sided_targets(
-        call.hass, call.data[CONF_DEVICE_ID], call.data.get(ATTR_SIDE)
-    )
-    if missing:
-        raise _missing_device_error(missing[0])
-    for coordinator, side in targets:
-        for target in _command_targets(coordinator, side):
-            if target.bed_type != BED_TYPE_ZSERIES:
-                raise ServiceValidationError(
-                    f"Device '{target.name}' is not a Customatic Z-Series app controller"
-                )
-    # The alarm page exists only after an exact CST13/CST14 manufacturer read.
-    # A cached controller can only rule a bed out on a confirmed other string.
-    preflighted = await _preflight_capability(targets, "alarm_not_ruled_out", label)
-    try:
-        # All-or-nothing: resolve every unknown state on a live connection before
-        # any bed receives a clock or alarm frame.
-        physical = [
-            (coordinator, target)
-            for coordinator, side in targets
-            for target in _command_targets(coordinator, side)
-        ]
-        for coordinator, target in physical:
-            cached = target.capability_controller
-            state = _zseries_controller(cached).alarm_state if cached is not None else None
-            if state is None:
-                opened = not target.is_connected
-                if not any(known is target for _, known in preflighted):
-                    preflighted.append((coordinator, target))
-                live = _zseries_controller(await _get_controller_for_service(target))
-                state = await live.resolve_alarm_state()
-                if opened and len(physical) > 1:
-                    # Like _validation_controller, never hold a capability-only link
-                    # while probing the next target: a sequential or one-slot path
-                    # cannot open a second one. The read result is persisted, and
-                    # execution reconnects each side through its normal path.
-                    released = await target.async_disconnect("capability_probe")
-                    if released is False or target.is_connected:
-                        raise ServiceValidationError(
-                            f"Could not release '{target.name}' before checking the next bed"
-                        )
-                    preflighted[:] = [item for item in preflighted if item[1] is not target]
-            if state is None:
-                raise ServiceValidationError(
-                    f"Could not read the manufacturer string of '{target.name}' that "
-                    "enables Z-Series alarms; try again"
-                )
-            if not state:
-                raise ServiceValidationError(f"Device '{target.name}' does not support {label}")
-        for coordinator, side in targets:
-            # The app cancels the running stream first; HA also releases it safely.
-            await _execute_sided(coordinator, side, command)
-    except ValueError as err:
-        await _release_preflighted(preflighted)
-        raise ServiceValidationError(str(err)) from err
-    except BaseException:
-        await _release_preflighted(preflighted)
-        raise
-
-
-async def handle_eshine_set_alarm(call: ServiceCall) -> None:
-    """Configure the explicit com.okin.eshine profile's next-occurrence alarm."""
-    enabled = call.data[ATTR_ENABLED]
-    alarm_time = call.data.get(ATTR_TIME)
-    preset = call.data.get(ATTR_WAKE_MODE, "zero_g")
+def _alarm_request(call: ServiceCall) -> AlarmRequest:
+    """Build the call's one alarm request, captured against one local time."""
+    data = call.data
+    enabled = data[ATTR_ENABLED]
+    alarm_time = data.get(ATTR_TIME)
     if enabled and alarm_time is None:
-        raise ServiceValidationError("Choose an eShine alarm time")
+        raise invalid("alarm_time_required")
     if alarm_time is not None and (alarm_time.second or alarm_time.microsecond):
-        raise ServiceValidationError("eShine alarms use minute precision")
-    targets = _call_targets(call)
-    for coordinator, side in targets:
-        for target in _command_targets(coordinator, side):
-            if target.bed_type != BED_TYPE_ESHINE_OKIN:
-                raise ServiceValidationError("Choose an eShine E2000/E3000/E3100/E5000 app bed")
-
-    def validate(controller: BedController | SideBoundController) -> None:
-        if enabled and preset not in controller.clock_alarm_preset_options:
-            raise ServiceValidationError("This eShine profile does not expose the selected alarm action")
-
-    preflighted = await _preflight_capability(
-        targets, "supports_clock_alarm", "eShine alarms", validate=validate,
-    )
-    async def program(controller: BedController | SideBoundController) -> None:
-        if enabled:
-            await controller.sync_clock()
-        await controller.configure_clock_alarm(
-            enabled=enabled, weekdays=(), hour=alarm_time.hour if alarm_time else 0,
-            minute=alarm_time.minute if alarm_time else 0, preset=preset,
-        )
-    try:
-        for coordinator, side in targets:
-            await _execute_sided(coordinator, side, program)
-    except (Exception, asyncio.CancelledError):
-        await _release_preflighted(preflighted)
-        raise
-
-
-async def handle_glideaway_set_alarm(call: ServiceCall) -> None:
-    """Use the Glideaway app's automatic day selection and exact clock encoding."""
-    enabled = call.data[ATTR_ENABLED]
-    alarm_time = call.data.get(ATTR_TIME)
-    if enabled and alarm_time is None:
-        raise ServiceValidationError("Choose a Glideaway alarm time")
-    if alarm_time is not None and (alarm_time.second or alarm_time.microsecond):
-        raise ServiceValidationError("Glideaway alarms use minute precision")
-    targets = _call_targets(call)
-    for coordinator, side in targets:
-        for target in _command_targets(coordinator, side):
-            if target.bed_type != BED_TYPE_GLIDEAWAY_MOTION:
-                raise ServiceValidationError(f"Device '{target.name}' is not a Glideaway Motion app bed")
-    preflighted = await _preflight_capability(targets, "supports_clock_alarm", "Glideaway alarms")
-
-    async def program(controller: BedController | SideBoundController) -> None:
-        await controller.configure_clock_alarm(
-            enabled=enabled, weekdays=(),
-            hour=alarm_time.hour if alarm_time is not None else 0,
-            minute=alarm_time.minute if alarm_time is not None else 0,
-            preset=call.data[ATTR_WAKE_MODE],
-        )
-
-    try:
-        for coordinator, side in targets:
-            await _execute_sided(coordinator, side, program)
-    except (Exception, asyncio.CancelledError):
-        await _release_preflighted(preflighted)
-        raise
-
-
-async def handle_zseries_set_alarm(call: ServiceCall) -> None:
-    """Set or clear the Z-Series app alarm, using Home Assistant's local time."""
-    enabled = call.data[ATTR_ENABLED]
-    alarm_time = call.data.get(ATTR_TIME)
-    wake_mode = call.data.get(ATTR_WAKE_MODE)
-    if enabled and alarm_time is None:
-        raise ServiceValidationError(
-            "Choose an alarm time",
-            translation_domain=DOMAIN,
-            translation_key="zseries_alarm_time_required",
-        )
-    if enabled and wake_mode is None:
-        # The app refuses to enable an alarm until a wake-up mode is chosen.
-        raise ServiceValidationError(
-            "Choose a wake-up mode",
-            translation_domain=DOMAIN,
-            translation_key="zseries_alarm_wake_mode_required",
-        )
-    if alarm_time is not None and (alarm_time.second or alarm_time.microsecond):
-        raise ServiceValidationError("Z-Series alarms use minute precision")
-    hour, minute = (alarm_time.hour, alarm_time.minute) if alarm_time is not None else (0, 0)
-
-    async def program(controller: BedController | SideBoundController) -> None:
-        await controller.configure_clock_alarm(
-            enabled=enabled,
-            weekdays=(),
-            hour=hour,
-            minute=minute,
-            preset=wake_mode or "massage",  # Ignored when clearing the alarm.
-        )
-
-    await _execute_zseries_alarm(call, "Z-Series app alarms", program)
-
-
-async def handle_simmons_set_alarm(call: ServiceCall) -> None:
-    """Program or disable one of the two SIMMONS alarms through the command queue."""
-    from .beds.base import SideBoundController
-    from .beds.simmons import SimmonsController
-
-    alarm_time = call.data[ATTR_TIME]
-    if alarm_time.second or alarm_time.microsecond:
-        raise ServiceValidationError("SIMMONS alarms use minute precision")
-    weekdays = tuple(SOLACE_WEEKDAY_OPTIONS.index(day) for day in call.data[ATTR_WEEKDAYS])
-    options = {
-        "slot": call.data[ATTR_SLOT],
-        "enabled": call.data[ATTR_ENABLED],
-        "mode": call.data.get(ATTR_MODE),
-        "confirm_custom_mode": call.data[ATTR_CONFIRM_CUSTOM_MODE],
-    }
-    targets, missing = _resolve_sided_targets(
-        call.hass, call.data[CONF_DEVICE_ID], call.data.get(ATTR_SIDE)
-    )
-    if missing:
-        raise _missing_device_error(missing[0])
-    for coordinator, side in targets:
-        for target in _command_targets(coordinator, side):
-            if target.bed_type != BED_TYPE_SIMMONS:
-                raise ServiceValidationError(f"Device '{target.name}' is not a SIMMONS app bed")
-
-    def simmons(controller: BedController | SideBoundController) -> SimmonsController:
-        target = (
-            controller._controller if isinstance(controller, SideBoundController) else controller
-        )
-        if not isinstance(target, SimmonsController):
-            raise ServiceValidationError("Requires the SIMMONS app profile")
-        return target
-
-    preflighted = await _preflight_capability(
-        targets,
-        "supports_clock_sync",
-        "SIMMONS alarms",
-        lambda controller: simmons(controller).validate_simmons_alarm(**options),
-    )
-
-    fields = {**options, "hour": alarm_time.hour, "minute": alarm_time.minute, "weekdays": weekdays}
-
-    async def check(controller: BedController | SideBoundController) -> None:
-        await simmons(controller).check_simmons_alarm(**fields)
-
-    async def program(controller: BedController | SideBoundController) -> None:
-        await simmons(controller).configure_simmons_alarm(**fields)
-
-    try:
-        # All-or-nothing: every bed reports its records and passes the peer
-        # rules before the first bed is programmed.
-        for step in (check, program):
-            for coordinator, side in targets:
-                await _execute_sided(
-                    coordinator, side, step, cancel_running=False, resource="configuration"
-                )
-    except ValueError as err:
-        await _release_preflighted(preflighted)
-        raise ServiceValidationError(str(err)) from err
-    except BaseException:
-        # Includes cancellation: beds connected only for preflight still need
-        # their normal idle disconnect.
-        await _release_preflighted(preflighted)
-        raise
-
-
-async def _hold_vmatbasic_floor(
-    targets: list[tuple[BedTarget, str]], control: str, duration_ms: int
-) -> None:
-    """Refresh the XT floor light; it belongs to one physical receiver, never mirrored."""
-    physical = [
-        target for coordinator, side in targets for target in _command_targets(coordinator, side)
-    ]
-    if len(physical) != 1 or physical[0].bed_type != BED_TYPE_VMATBASIC:
-        raise ServiceValidationError("Target one physical V-MAT Basic receiver for floor refresh")
-
-    def validate(controller: BedController | SideBoundController) -> None:
-        if control not in controller.held_control_options:
-            raise ServiceValidationError("XT floor refresh requires the XT-Box profile")
-
-    preflighted = await _preflight_capability(
-        targets, "supports_held_control", "V-MAT Basic floor refresh", validate
-    )
-    try:
-        await _execute_sided(
-            targets[0][0],
-            targets[0][1],
-            lambda controller: controller.hold_control(control, duration_ms),
-            resource="lighting",
-        )
-    except BaseException:
-        await _release_preflighted(preflighted)
-        raise
-
-
-async def _rename_vmatbasic(targets: list[tuple[BedTarget, str]], name: str) -> None:
-    """Rename exactly one selected primary receiver, retaining the old name on failure."""
-    from .beds.vmatbasic_protocol import rename
-    from .coordinator import AdjustableBedCoordinator
-
-    try:
-        packet = rename(name)
-        if len(packet) > 20:
-            raise ValueError("Encoded name exceeds the safe twenty-byte write payload")
-    except (ValueError, UnicodeError) as error:
-        raise ServiceValidationError(str(error)) from error
-    physical = [
-        target for coordinator, side in targets for target in _command_targets(coordinator, side)
-    ]
-    if len(physical) != 1:
-        raise ServiceValidationError("Rename one physical V-MAT Basic receiver at a time")
-    receiver = physical[0]
-    if (
-        not isinstance(receiver, AdjustableBedCoordinator)
-        or receiver.bed_type != BED_TYPE_VMATBASIC
-    ):
-        raise ServiceValidationError("Rename one physical V-MAT Basic receiver at a time")
-    preflighted = await _preflight_capability(
-        targets, "supports_device_rename", "V-MAT Basic rename"
-    )
-    name = packet.decode("utf-8")
-
-    async def rename_and_remember(controller: BedController) -> None:
-        await controller.rename_device(name)
-        receiver.remember_vmatbasic_name(name)
-
-    try:
-        await _execute_sided(
-            targets[0][0], targets[0][1], rename_and_remember, resource="configuration"
-        )
-    except BaseException:
-        await _release_preflighted(preflighted)
-        raise
-
-
-async def _handle_customatic_hold(
-    call: ServiceCall, control: str, bed_types: Collection[str]
-) -> None:
-    """Hold a Customatic combination after checking every target's profile."""
-    duration_ms = int(call.data[ATTR_DURATION] * 1000)
-    targets = _call_targets(call)
-    for coordinator, side in targets:
-        for target in _command_targets(coordinator, side):
-            if target.bed_type not in bed_types:
-                raise ServiceValidationError(
-                    f"Device '{target.name}' does not support this Customatic action"
-                )
-    await _hold_targets(targets, control, duration_ms)
-
-
-async def _preflight_logicdata(
-    targets: list[tuple[BedTarget, str]],
-    capability: str,
-    label: str,
-    validate: Callable[[BedController | SideBoundController], None] | None = None,
-    bed_types: Collection[str] = (BED_TYPE_LOGICDATA_APP,),
-) -> PreflightedSides:
-    """Restrict app-specific services before connecting or commanding any side."""
-    for coordinator, side in targets:
-        for target in _command_targets(coordinator, side):
-            if target.bed_type not in bed_types:
-                raise ServiceValidationError(
-                    f"Device '{target.name}' is not a Logicdata app controller"
-                )
-    return await _preflight_capability(targets, capability, label, validate)
-
-
-async def _preflight_malouf(
-    targets: list[tuple[BedTarget, str]],
-    capability: str,
-    label: str,
-    validate: Callable[[BedController | SideBoundController], None] | None = None,
-) -> PreflightedSides:
-    """Validate the explicit app profile on every physical target before writing."""
-    for coordinator, side in targets:
-        for target in _command_targets(coordinator, side):
-            if target.bed_type != BED_TYPE_MALOUF_APP:
-                raise ServiceValidationError(
-                    f"Device '{target.name}' is not a Malouf Base / Lucid Base app controller"
-                )
-    return await _preflight_capability(targets, capability, label, validate=validate)
-
-
-async def handle_malouf_set_alarm(call: ServiceCall) -> None:
-    """Set or clear the app profile's clock alarm through its command lock."""
-    alarm_time = call.data[ATTR_TIME]
-    if alarm_time.second or alarm_time.microsecond:
-        raise ServiceValidationError("Malouf alarms use minute precision")
-    weekdays = tuple(SOLACE_WEEKDAY_OPTIONS.index(day) for day in call.data[ATTR_WEEKDAYS])
-    targets, missing = _resolve_sided_targets(
-        call.hass, call.data[CONF_DEVICE_ID], call.data.get(ATTR_SIDE)
-    )
-    if missing:
-        raise _missing_device_error(missing[0])
-
-    def validate_alarm(controller: BedController | SideBoundController) -> None:
-        if (
-            call.data[ATTR_ENABLED]
-            and call.data[ATTR_PRESET] not in controller.clock_alarm_preset_options
-        ):
-            raise ServiceValidationError("The selected alarm preset is unavailable on this model")
-
-    preflighted = await _preflight_malouf(
-        targets, "supports_clock_alarm", "Malouf clock alarms", validate=validate_alarm
-    )
-
-    async def program(controller: BedController | SideBoundController) -> None:
-        await controller.configure_clock_alarm(
-            enabled=call.data[ATTR_ENABLED],
-            weekdays=weekdays,
-            hour=alarm_time.hour,
-            minute=alarm_time.minute,
-            preset=call.data[ATTR_PRESET],
-        )
-
-    try:
-        for coordinator, side in targets:
-            await _execute_sided(
-                coordinator, side, program, cancel_running=False, resource="configuration"
-            )
-    except Exception:
-        await _release_preflighted(preflighted)
-        raise
-
-
-async def handle_configure_alarm_schedule(call: ServiceCall) -> None:
-    """Preflight both tables on all physical targets before encoding or writing."""
-    schedule = AlarmTableSchedule(
-        weekly=tuple(WeeklyAlarmRecord(**{**row, "weekdays": tuple(row["weekdays"])}) for row in call.data["weekly"]),
-        one_time=tuple(OneTimeAlarmRecord(**row) for row in call.data["one_time"]),
-        dispatch=call.data["dispatch"],
+        raise invalid("alarm_time_whole_minutes")
+    optional = {name: data[name] for name in ALARM_OPTIONAL_FIELDS if name in data}
+    if "weekdays" in optional:
+        optional["weekdays"] = tuple(sorted({ALARM_WEEKDAYS.index(day) for day in optional["weekdays"]}))
+    return AlarmRequest(
+        enabled=enabled,
+        hour=alarm_time.hour if alarm_time is not None else 0,
+        minute=alarm_time.minute if alarm_time is not None else 0,
         reference_time=dt_util.now(),
+        **optional,
     )
-    targets = _call_targets(call)
-    # A table call cannot connect merely to discover whether it is valid:
-    # initialization can write clock/zero/query frames. These static profiles
-    # are offline-mintable, and all other controllers lack this contract.
-    for coordinator, side in targets:
-        for target in _command_targets(coordinator, side):
-            controller = target.capability_controller
-            if controller is None or controller.alarm_table_schedule_spec is None:
-                raise ServiceValidationError(f"Device '{target.name}' has no available alarm-table contract")
 
-    def check(target: BedChild, controller: BedController | SideBoundController) -> None:
-        spec = controller.alarm_table_schedule_spec
-        if spec is None:
-            raise ServiceValidationError(f"Device '{target.name}' has no alarm-table contract")
-        spec.validate(schedule)
+
+def _check_alarm(
+    device_name: str, controller: BedController, alarm: AlarmRequest, given: Collection[str]
+) -> AlarmRequest:
+    """Validate one physical target's alarm and return it with its defaults filled in."""
+    capability = controller.alarm_capability
+    if capability is None:
+        raise invalid("alarm_not_supported", device_name=device_name)
+    if capability.requires_slot and "slot" not in given:
+        raise invalid("alarm_slot_required", device_name=device_name)
+    for name in given:
+        if not capability.accepts(name):
+            raise invalid("alarm_option_not_supported", device_name=device_name, option=name)
+    wake_action = alarm.wake_action if "wake_action" in given else None
+    if wake_action is not None and wake_action not in capability.wake_actions:
+        raise invalid("alarm_wake_action_not_supported", device_name=device_name, wake_action=wake_action, wake_actions=", ".join(capability.wake_actions))
+    if (
+        alarm.enabled
+        and capability.requires_wake_action
+        and wake_action is None
+        and "mattress_side" not in given
+    ):
+        raise invalid("alarm_wake_action_required", device_name=device_name)
+    limits = (
+        ("slot", alarm.slot, capability.first_slot, capability.slots),
+        ("head_massage_level", alarm.head_massage_level, 0, capability.massage_levels),
+        ("foot_massage_level", alarm.foot_massage_level, 0, capability.massage_levels),
+        ("massage_intensity", alarm.massage_intensity, 1, capability.massage_intensities),
+    )
+    for name, value, low, high in limits:
+        if name == "slot" and capability.live_slots:
+            continue  # The controller admits the exact identity during check_alarm.
+        if name in given and not low <= value <= high:
+            raise invalid("alarm_value_out_of_range", device_name=device_name, option=name, min=str(low), max=str(high))
+    if "massage_duration" in given and alarm.massage_duration not in capability.massage_durations:
+        raise invalid("alarm_massage_duration_not_supported", device_name=device_name, durations=", ".join(map(str, capability.massage_durations)))
+    if "massage_zone" in given and alarm.massage_zone not in capability.massage_zones:
+        raise invalid("alarm_massage_zone_not_supported", device_name=device_name, zone=str(alarm.massage_zone))
+    if "mattress_side" in given and alarm.mattress_side not in capability.mattress_sides:
+        raise invalid("alarm_mattress_side_not_supported", device_name=device_name, mattress_side=str(alarm.mattress_side))
+    if "sound" in given and alarm.sound not in capability.sounds:
+        raise invalid("alarm_sound_not_supported", device_name=device_name, sound=alarm.sound)
+    resolved = _with_bed_defaults(alarm, capability, given)
+    if (
+        resolved.enabled
+        and resolved.wake_action in capability.confirm_actions
+        and not resolved.confirm_custom_position
+    ):
+        raise invalid("alarm_confirmation_required", device_name=device_name)
+    controller.validate_alarm(resolved)
+    return resolved
+
+
+def _with_bed_defaults(
+    alarm: AlarmRequest, capability: AlarmCapability, given: Collection[str]
+) -> AlarmRequest:
+    """Fill in the bed's own default for each choice the caller left out."""
+    defaults: dict[str, object] = {}
+    # A mattress topper alarm has no wake action, so none is filled in for it.
+    bed_alarm = "mattress_side" not in given
+    for name, choices in (
+        ("wake_action", capability.wake_actions if bed_alarm else ()),
+        ("sound", capability.sounds),
+        ("massage_duration", capability.massage_durations),
+        ("massage_zone", capability.massage_zones if capability.default_massage_zone else ()),
+    ):
+        if name not in given and choices:
+            defaults[name] = choices[0]
+    return dataclasses.replace(alarm, **defaults) if defaults else alarm
+
+
+# Values of set_alarm fields that ask nothing of the bed.
+_ALARM_NOTHING: Final[dict[str, object]] = {
+    ATTR_WEEKDAYS: [],
+    ATTR_MASSAGE: False,
+    "light": False,
+}
+
+
+async def handle_set_alarm(call: ServiceCall) -> None:
+    """Validate one alarm on every physical target, then write it to each."""
+    alarm = _alarm_request(call)
+    # No repeat days, no massage and no light ask nothing of a bed without
+    # those options, so a bed is not refused for them.
+    given = [
+        name
+        for name in ALARM_OPTIONAL_FIELDS
+        if name in call.data
+        and (name not in _ALARM_NOTHING or call.data[name] != _ALARM_NOTHING[name])
+    ]
+    targets = _call_targets(call)
+
+    route = _profile_route(
+        targets,
+        {
+            BED_TYPE_ZSERIES: "zseries",
+            "betterliving2": "betterliving2",
+            BED_TYPE_SYMPHONY: "symphony",
+            BED_TYPE_ULTRAMATIC_SMART_BED: "ultramatic",
+        },
+        SERVICE_SET_ALARM,
+    )
+    if route == "betterliving2":
+        from .beds.keeson.betterliving2_services import set_alarm
+
+        await set_alarm(call, alarm, given)
+        return
+    if route == "ultramatic":
+        # Its fenced A/AB/B plans capture every target before their first await.
+        from .beds.ultramatic.services import set_ultramatic_alarm
+
+        await set_ultramatic_alarm(call, alarm, given)
+        return
+    if route == "symphony":
+        # Symphony reads the current alarm table live before rewriting one side.
+        from .beds.symphony.services import set_symphony_alarm
+
+        await set_symphony_alarm(call, alarm, given)
+        return
+    if route == "zseries":
+        await async_import_modules(call.hass, "beds.serenity.services")
+        from .beds.serenity.services import _execute_zseries_alarm
+
+        # Z-Series alarms exist only after a live manufacturer read. The options
+        # are checked on every target, connecting where needed, before anything
+        # is scheduled.
+        async def write_zseries(controller: BedController) -> None:
+            await controller.configure_alarm(
+                _check_alarm(controller._coordinator.name, controller, alarm, given)
+            )
+
+        def check_zseries(controller: BedController) -> None:
+            _check_alarm(controller._coordinator.name, controller, alarm, given)
+
+        await _execute_zseries_alarm(call, write_zseries, validate=check_zseries)
+        return
+
+    selection = _Selection.capture(targets)
+    # Each physical side's scheduling, from the capability preflight checked.
+    plans: dict[int, AlarmCapability] = {}
+
+    def check(target: BedChild, controller: BedController) -> None:
+        _check_alarm(target.name, controller, alarm, given)
+        capability = cast("AlarmCapability", controller.alarm_capability)
+        if not alarm.enabled and capability.time_to_turn_off and ATTR_TIME not in call.data:
+            raise invalid("alarm_time_required_to_turn_off", device_name=target.name)
+        plans[id(target)] = capability
 
     preflighted = await _preflight_each(targets, check)
-
-    async def configure(controller: BedController) -> None:
-        await controller.configure_alarm_table_schedule(schedule)
-
     try:
-        for coordinator, side in targets:
-            await _execute_sided(coordinator, side, configure, cancel_running=False, resource="configuration")
+        finished = await _write_checked_alarms(call, selection, plans, alarm, given)
     except BaseException:
         await _release_preflighted(preflighted)
         raise
-
-
-async def handle_comfort_enhancements_set_alarm(call: ServiceCall) -> None:
-    """Program the app's current-day alarm, validating every side before writes."""
-    enabled = call.data[ATTR_ENABLED]
-    alarm_time = call.data.get(ATTR_TIME)
-    if enabled and alarm_time is None:
-        raise ServiceValidationError("Choose an alarm time")
-    if alarm_time is not None and (alarm_time.second or alarm_time.microsecond):
-        raise ServiceValidationError("Comfort Enhancements alarms use minute precision")
-    fields = {
-        "enabled": enabled,
-        "hour": alarm_time.hour if alarm_time is not None else 0,
-        "minute": alarm_time.minute if alarm_time is not None else 0,
-        "memory": call.data["memory"],
-        "massage": call.data["massage"],
-    }
-    targets = _call_targets(call)
-
-    def validate(target: BedChild, controller: BedController | SideBoundController) -> None:
-        if target.bed_type != BED_TYPE_COMFORT_ENHANCEMENTS:
-            raise ServiceValidationError("Choose a Comfort Enhancements app controller")
-        cast("ComfortEnhancementsController", controller).validate_alarm(**fields)
-
-    preflighted = await _preflight_each(targets, validate)
-
-    async def program(controller: BedController | SideBoundController) -> None:
-        await cast("ComfortEnhancementsController", controller).set_alarm(**fields)
-
-    try:
-        for coordinator, side in targets:
-            await _execute_sided(coordinator, side, program, cancel_running=False, resource="configuration")
-    except Exception:
+    if not finished:
+        # STOP won: hand the links opened for the check back to their idle timer.
         await _release_preflighted(preflighted)
-        raise
+
+
+@dataclass(frozen=True, slots=True)
+class _CheckedSession:
+    """The connection a side's alarm was checked on."""
+
+    controller: BedController
+    generation: object
+    alarm_identity: tuple[int, int] | None = None
+
+
+def _connection_generation(child: BedChild) -> object:
+    """Return the side's connection generation; each new connection advances it."""
+    return None if isinstance(child, SingleAddressSideCoordinator) else child.connection_generation
+
+
+async def _write_checked_alarms(
+    call: ServiceCall,
+    selection: _Selection,
+    plans: Mapping[int, AlarmCapability],
+    alarm: AlarmRequest,
+    given: Collection[str],
+) -> bool:
+    """Prepare every side, verify the whole selection, then write each target.
+
+    Every write verifies the whole selection again once it owns its link.
+    Returns False when a STOP ended the call early: one before the first
+    write leaves every bed unwritten, one during the writes skips the rest.
+    """
+    call_task = asyncio.current_task()
+    groups = list(zip(selection.targets, selection.children, strict=True))
+    sessions: dict[int, _CheckedSession] = {}
+
+    # Beds that read their stored alarms, and every side of a combined bed, are
+    # prepared on a live link before anything is written.
+    prepare: list[tuple[BedTarget, str, BedChild]] = []
+    for (parent, side), group in groups:
+        combined = len({child.operation_identity for child in group}) > 1
+        for child in group:
+            if (plans[id(child)].live_check or combined) and all(
+                child is not other for _, _, other in prepare
+            ):
+                prepare.append((parent, _child_side(parent, side, child), child))
+
+    def step(
+        run: Callable[[BedController, AlarmCapability], Awaitable[None]],
+    ) -> Callable[[BedController], Coroutine[Any, Any, None]]:
+        async def execute(controller: BedController) -> None:
+            capability = controller.alarm_capability
+            if capability is None:
+                raise AlarmError(
+                    "alarm_lost", "This bed no longer reports an alarm; reload it and try again"
+                )
+            await run(controller, capability)
+
+        return _family_command(BedController, execute)
+
+    async def prepare_side(parent: BedTarget, side: str, child: BedChild) -> None:
+        plan = plans[id(child)]
+
+        async def check_live(controller: BedController, _capability: AlarmCapability) -> None:
+            request = _check_alarm(child.name, controller, alarm, given)
+            if plan.live_check:
+                await controller.check_alarm(request)
+            identity = controller.alarm_record_identity(request) if plan.live_slots else None
+            if plan.live_slots and request.mattress_side is None and identity is None:
+                raise _bed_changed()
+            sessions[id(child)] = _CheckedSession(
+                controller,
+                _connection_generation(child),
+                identity,
+            )
+
+        # One side at a time, and a read never preempts movement: a failed
+        # check is not a reason to stop anything.
+        await _execute_alarm_step(parent, side, step(check_live), plan, cancel_running=False)
+
+    def unchanged(skip: Collection[int]) -> bool:
+        """Verify every selected side; False when a STOP reached one.
+
+        ``skip`` holds sides already written, or writing now, whose link this
+        call may have changed itself.
+        """
+        selection.require_unchanged(call)
+        for (parent, _side), group in groups:
+            sequential = _pair_mode(parent) == PAIR_CONNECTION_MODE_SEQUENTIAL
+            for child in group:
+                session = sessions.get(id(child))
+                if session is None or id(child) in skip:
+                    continue
+                if _connection_generation(child) == session.generation and (
+                    child.is_connected
+                    or ready_disconnected_transport(child)
+                    # A sequential pair releases each side after its check, by plan.
+                    or (sequential and child.last_disconnect_reason == "sequential_switch")
+                ):
+                    continue
+                raise _bed_changed()
+        return not selection.stopped()
+
+    def require_write_session(
+        parent: BedTarget, group: tuple[BedChild, ...], controller: BedController
+    ) -> BedChild:
+        """Return the side writing on ``controller``, if it writes on its checked session."""
+        checked = [item for item in group if id(item) in sessions]
+        owner = next(
+            (item for item in checked if sessions[id(item)].controller is controller), None
+        )
+        if owner is not None or not checked:
+            return owner or next(
+                (item for item in group if item.controller is controller), group[0]
+            )
+        # Only the sequential cycle of this call may open a new session.
+        child = next((item for item in checked if item.controller is controller), None)
+        cycle = parent.sequential_cycle if isinstance(parent, PairedBedCoordinator) else None
+        if (
+            child is not None
+            and cycle is not None
+            and cycle.task is call_task
+            and isinstance(parent, PairedBedCoordinator)
+            and parent.cycle_is_current(cycle)
+            and not isinstance(child, SingleAddressSideCoordinator)
+            and child.connection_creator_task is cycle.task
+            and _connection_generation(child)
+            == cast("int", sessions[id(child)].generation) + 1
+        ):
+            return child
+        raise _bed_changed()
+
+    written: set[int] = set()
+    stopped = False
+
+    def write(
+        parent: BedTarget, group: tuple[BedChild, ...]
+    ) -> Callable[[BedController], Coroutine[Any, Any, None]]:
+        async def configure(controller: BedController, _capability: AlarmCapability) -> None:
+            nonlocal stopped
+            child = require_write_session(parent, group, controller)
+            # Verify the whole selection again once this side owns its link.
+            if stopped or not unchanged({*written, id(child)}):
+                stopped = True
+                return
+            # Check the request again on the controller that actually writes.
+            request = _check_alarm(child.name, controller, alarm, given)
+            if (session := sessions.get(id(child))) is not None and session.alarm_identity is not None:
+                request = dataclasses.replace(request, record_identity=session.alarm_identity)
+            if _capability.live_slots and request.mattress_side is None and request.record_identity is None:
+                raise _bed_changed()
+            await controller.configure_alarm(request)
+            written.add(id(child))
+
+        return step(configure)
+
+    with contextlib.ExitStack() as held:
+        # Keep checked links up until written, whatever the idle setting.
+        for _, _, child in prepare:
+            held.enter_context(child.hold_command_connection())
+        for parent, side, child in prepare:
+            if selection.stopped():
+                return False
+            await prepare_side(parent, side, child)
+        if any(id(child) not in sessions for _, _, child in prepare):
+            return False
+
+        for (parent, side), group in groups:
+            if not unchanged(written):
+                return False
+            await _execute_alarm_step(parent, side, write(parent, group), plans[id(group[0])])
+            if stopped:
+                return False
+            written.update(id(child) for child in group)
+    return True
+
+
+async def _execute_alarm_step(
+    parent: BedTarget,
+    side: str,
+    command: Callable[[BedController], Coroutine[Any, Any, None]],
+    plan: AlarmCapability,
+    *,
+    cancel_running: bool | None = None,
+) -> None:
+    """Run one alarm step, owning the STOP state current right now."""
+    resources = ALL_COMMAND_RESOURCES if plan.resource is None else (plan.resource,)
+    await _execute_sided_translated(
+        parent,
+        side,
+        command,
+        cancel_running=plan.cancel_running if cancel_running is None else cancel_running,
+        resource=plan.resource,
+        admission=_capture_command_admission(parent, side, resources),
+    )
 
 
 async def handle_sync_clock(call: ServiceCall) -> None:
     """Synchronize each targeted device clock to Home Assistant's local time."""
     targets = _call_targets(call)
+    synced: set[int] = set()
 
-    async def sync(controller: BedController | SideBoundController) -> None:
+    async def sync(controller: BedController) -> None:
+        # Both sides of a one-receiver bed share its coordinator, and its clock.
+        receiver = id(controller._coordinator)
+        if receiver in synced:
+            return
         await controller.sync_clock()
+        synced.add(receiver)
 
     if _profile_route(targets, {BED_TYPE_ZSERIES: "zseries"}, SERVICE_SYNC_CLOCK):
+        await async_import_modules(call.hass, "beds.serenity.services")
+        from .beds.serenity.services import _execute_zseries_alarm
+
         # Z-Series clocks live on the alarm page, gated by a live manufacturer read.
-        await _execute_zseries_alarm(call, "Z-Series clock synchronization", sync)
+        await _execute_zseries_alarm(call, sync)
         return
 
-    def check(target: BedChild, controller: BedController | SideBoundController) -> None:
+    def check(target: BedChild, controller: BedController) -> None:
         if not controller.supports_clock_sync:
-            raise ServiceValidationError(
-                f"Device '{target.name}' does not support clock synchronization",
-                translation_domain=DOMAIN,
-                translation_key="clock_sync_not_supported",
-                translation_placeholders={"device_name": target.name},
-            )
+            raise invalid("clock_sync_not_supported", device_name=target.name)
 
-    preflighted = await _preflight_each(targets, check)
+        controller.validate_clock_sync()
+
+    admissions = [
+        _capture_command_admission(coordinator, side, ("configuration",))
+        for coordinator, side in targets
+    ]
+    live = _LiveCheck(check)
+    preflighted = await _preflight_each(targets, live.preflight)
+    command = live.command(targets, sync)
     try:
-        for coordinator, side in targets:
-            await _execute_sided(
-                coordinator, side, sync, cancel_running=False, resource="configuration"
-            )
-    except Exception, asyncio.CancelledError:
-        await _release_preflighted(preflighted)
-        raise
-
-
-async def handle_logicdata_set_alarm(call: ServiceCall) -> None:
-    """Configure the Logicdata app controller's recurring clock alarm."""
-    alarm_time = call.data[ATTR_TIME]
-    weekdays = tuple(SOLACE_WEEKDAY_OPTIONS.index(day) for day in call.data[ATTR_WEEKDAYS])
-    targets, missing = _resolve_sided_targets(
-        call.hass,
-        call.data[CONF_DEVICE_ID],
-        call.data.get(ATTR_SIDE),
-    )
-    if missing:
-        raise _missing_device_error(missing[0])
-    preflighted = await _preflight_logicdata(
-        targets, "supports_clock_alarm", "Logicdata clock alarms"
-    )
-
-    async def program(controller: BedController | SideBoundController) -> None:
-        await controller.configure_clock_alarm(
-            enabled=call.data[ATTR_ENABLED],
-            weekdays=weekdays,
-            hour=alarm_time.hour,
-            minute=alarm_time.minute,
-            preset=call.data[ATTR_PRESET],
-            head_level=call.data[ATTR_HEAD_LEVEL],
-            foot_level=call.data[ATTR_FOOT_LEVEL],
-        )
-
-    try:
-        for coordinator, side in targets:
-            await _execute_sided(
-                coordinator, side, program, cancel_running=False, resource="configuration"
+        for (coordinator, side), admission in zip(targets, admissions, strict=True):
+            await _execute_sided_translated(
+                coordinator,
+                side,
+                command,
+                cancel_running=False,
+                resource="configuration",
+                admission=admission,
             )
     except Exception, asyncio.CancelledError:
         await _release_preflighted(preflighted)
         raise
 
 
-def _preset_hold_duration_seconds(value: object) -> Decimal:
-    """Accept bounded seconds that convert exactly to whole milliseconds."""
-    try:
-        duration = Decimal(str(value))
-    except InvalidOperation as err:
-        raise vol.Invalid("Duration must be a number of seconds") from err
-    if not duration.is_finite() or not Decimal("0.2") <= duration <= 60:
-        raise vol.Invalid("Duration must be between 0.2 and 60 seconds")
-    milliseconds = int(duration * 1000)
-    if duration != Decimal(milliseconds) / 1000:
-        raise vol.Invalid("Duration must resolve to whole milliseconds")
-    return duration
+# English text of the support-bundle notifications, used when no translation loads.
+_NOTICES: Final = {
+    "support_bundle_ready_title": "Adjustable bed: support bundle ready",
+    "support_bundle_ready_message": (
+        "[**Download the support bundle**]({url})\n\n"
+        "Bluetooth messages captured: {count}, over {seconds} seconds.\n\n"
+        "Next, attach the file to your bug report or bed support request. The download "
+        "link works for one hour or until Home Assistant restarts; the file stays saved "
+        "at `{path}`."
+    ),
+    "support_bundle_warnings": "**While capturing:**",
+    "support_bundle_no_logs_title": "Adjustable bed: this bundle will have no logs",
+    "support_bundle_no_logs_message": (
+        "The capture is running anyway, so you will still get a bundle with the Bluetooth details."
+    ),
+    "support_bundle_timeout_title": "Adjustable bed: support bundle timed out",
+    "support_bundle_timeout_message": (
+        "The capture for {address} did not finish within {seconds} seconds. Move the bed "
+        "closer to its Bluetooth adapter or proxy, then run the action again."
+    ),
+    "support_bundle_failed_title": "Adjustable bed: support bundle failed",
+    "support_bundle_failed_message": (
+        "The support bundle for {address} could not be created. Check the Home Assistant "
+        "log for details, then run the action again."
+    ),
+}
 
 
-async def handle_logicdata_hold_preset(call: ServiceCall) -> None:
-    """Hold a MOTIONrelax P2 or Sleep Smart preset through the cancellable command queue."""
-    duration_ms = int(call.data[ATTR_DURATION] * 1000)
-    targets, missing = _resolve_sided_targets(
-        call.hass,
-        call.data[CONF_DEVICE_ID],
-        call.data.get(ATTR_SIDE),
+async def _notice(hass: HomeAssistant, key: str, **placeholders: object) -> str:
+    """Return one support-bundle notification text in the user's language."""
+    from homeassistant.helpers.translation import async_get_translations
+
+    translations = await async_get_translations(
+        hass, hass.config.language, "exceptions", {DOMAIN}
     )
-    if missing:
-        raise _missing_device_error(missing[0])
-    preset = call.data[ATTR_PRESET]
-
-    def validate(controller: BedController | SideBoundController) -> None:
-        if preset not in controller.held_preset_options:
-            raise ServiceValidationError(
-                f"The selected app profile cannot hold the {preset} preset"
-            )
-
-    preflighted = await _preflight_logicdata(
-        targets, "supports_preset_hold", "Logicdata held preset recall", validate
-    )
-
-    async def hold(controller: BedController | SideBoundController) -> None:
-        await controller.hold_preset(preset, duration_ms)
-
-    try:
-        for coordinator, side in targets:
-            await _execute_sided(coordinator, side, hold, cancel_running=True)
-    except Exception, asyncio.CancelledError:
-        await _release_preflighted(preflighted)
-        raise
-
-
-async def _preflight_jiecang(
-    targets: list[tuple[BedTarget, str]], capability: str, label: str
-) -> PreflightedSides:
-    """Restrict app-specific services before connecting or commanding any side."""
-    for coordinator, side in targets:
-        for target in _command_targets(coordinator, side):
-            if target.bed_type != BED_TYPE_JIECANG_APP:
-                raise ServiceValidationError(
-                    f"Device '{target.name}' is not a Jiecang app controller"
-                )
-    return await _preflight_capability(targets, capability, label)
-
-
-async def handle_jiecang_set_alarm(call: ServiceCall) -> None:
-    """Configure the Jiecang app controller's recurring clock alarm."""
-    alarm_time = call.data[ATTR_TIME]
-    weekdays = tuple(SOLACE_WEEKDAY_OPTIONS.index(day) for day in call.data[ATTR_WEEKDAYS])
-    targets, missing = _resolve_sided_targets(
-        call.hass,
-        call.data[CONF_DEVICE_ID],
-        call.data.get(ATTR_SIDE),
-    )
-    if missing:
-        raise _missing_device_error(missing[0])
-    preflighted = await _preflight_jiecang(targets, "supports_clock_alarm", "Jiecang clock alarms")
-
-    async def program(controller: BedController | SideBoundController) -> None:
-        await controller.configure_clock_alarm(
-            enabled=call.data[ATTR_ENABLED],
-            weekdays=weekdays,
-            hour=alarm_time.hour,
-            minute=alarm_time.minute,
-            preset=call.data[ATTR_PRESET],
-            head_level=call.data[ATTR_HEAD_LEVEL],
-            foot_level=call.data[ATTR_FOOT_LEVEL],
-        )
-
-    try:
-        if call.data[ATTR_PRESET] == "yoga":
-            preflighted.extend(
-                await _preflight_capability(targets, "supports_preset_yoga", "Yoga alarms")
-            )
-        for coordinator, side in targets:
-            await _execute_sided(
-                coordinator, side, program, cancel_running=False, resource="configuration"
-            )
-    except Exception:
-        await _release_preflighted(preflighted)
-        raise
-
-
-async def handle_jiecang_wake(call: ServiceCall) -> None:
-    """Start the app's wake routine with its preset and massage levels."""
-    targets, missing = _resolve_sided_targets(
-        call.hass,
-        call.data[CONF_DEVICE_ID],
-        call.data.get(ATTR_SIDE),
-    )
-    if missing:
-        raise _missing_device_error(missing[0])
-    preflighted = await _preflight_jiecang(
-        targets, "supports_wake_routine", "Jiecang wake routines"
-    )
-
-    async def wake(controller: BedController | SideBoundController) -> None:
-        await controller.execute_wake_routine(
-            preset=call.data[ATTR_PRESET],
-            head_level=call.data[ATTR_HEAD_LEVEL],
-            foot_level=call.data[ATTR_FOOT_LEVEL],
-        )
-
-    try:
-        for coordinator, side in targets:
-            await _execute_sided(coordinator, side, wake, cancel_running=True)
-    except Exception:
-        await _release_preflighted(preflighted)
-        raise
-
-
-async def handle_jiecang_stop_wake(call: ServiceCall) -> None:
-    """Stop active wake massage without changing the stored clock alarm."""
-    targets, missing = _resolve_sided_targets(
-        call.hass,
-        call.data[CONF_DEVICE_ID],
-        call.data.get(ATTR_SIDE),
-    )
-    if missing:
-        raise _missing_device_error(missing[0])
-    preflighted = await _preflight_jiecang(
-        targets, "supports_wake_routine", "Jiecang wake routines"
-    )
-
-    async def stop(controller: BedController | SideBoundController) -> None:
-        await controller.stop_wake_routine()
-
-    try:
-        for coordinator, side in targets:
-            await _execute_sided(coordinator, side, stop, cancel_running=True)
-    except Exception:
-        await _release_preflighted(preflighted)
-        raise
+    template = translations.get(f"component.{DOMAIN}.exceptions.{key}.message", _NOTICES[key])
+    return template.format(**placeholders)
 
 
 async def handle_generate_support_bundle(call: ServiceCall) -> None:
@@ -4377,7 +2841,8 @@ async def handle_generate_support_bundle(call: ServiceCall) -> None:
         async_dismiss,
     )
 
-    from .download import register_download
+    # support_bundle imports support_report.
+    await async_import_modules(hass, "support_bundle")
     from .support_bundle import generate_support_bundle, save_support_bundle
     from .support_report import async_check_log_file, build_missing_log_notice
 
@@ -4396,50 +2861,25 @@ async def handle_generate_support_bundle(call: ServiceCall) -> None:
 
         address = str(target_address).upper().replace("-", ":")
         if not is_valid_mac_address(address):
-            raise ServiceValidationError(
-                f"Invalid MAC address format: {target_address}. "
-                "Please provide a valid MAC address in the format "
-                "XX:XX:XX:XX:XX:XX or XX-XX-XX-XX-XX-XX.",
-                translation_domain=DOMAIN,
-                translation_key="invalid_mac_address",
-            )
+            raise invalid("invalid_mac_address", address=str(target_address))
         _LOGGER.info(
             "Generating support bundle for unconfigured device at %s",
             address,
         )
     elif device_ids:
         if len(device_ids) > 1:
-            raise ServiceValidationError(
-                "Support bundle generation only supports one configured device at a time. "
-                "Select a single device or use target_address for an unconfigured bed.",
-                translation_domain=DOMAIN,
-                translation_key="multiple_device_targets_not_supported",
-            )
+            raise invalid("multiple_device_targets_not_supported")
         # str() narrows the untyped service-call value for the str-typed parameter
         selected_device_id = str(device_ids[0])
         target = _get_support_bundle_target_from_device(hass, selected_device_id)
         if target is not None:
             address, coordinator, entry = target
-            device_name = coordinator.name if coordinator is not None else entry.title
-            _LOGGER.info(
-                "Generating support bundle for configured device %s at %s",
-                device_name,
-                address,
-            )
+            # By address only: the device name is typed text the bundle leaves out.
+            _LOGGER.info("Generating support bundle for configured device at %s", address)
         else:
-            raise ServiceValidationError(
-                f"Could not find Adjustable Bed device with ID: {selected_device_id}. "
-                "Please verify the device is configured and try again.",
-                translation_domain=DOMAIN,
-                translation_key="device_not_found",
-            )
+            raise _missing_device_error(selected_device_id)
     else:
-        raise ServiceValidationError(
-            "No device_id or target_address was provided. "
-            "Please specify either a configured device or a target MAC address.",
-            translation_domain=DOMAIN,
-            translation_key="missing_target",
-        )
+        raise invalid("missing_target")
 
     assert address is not None
 
@@ -4501,9 +2941,9 @@ async def handle_generate_support_bundle(call: ServiceCall) -> None:
                 async_create(
                     hass,
                     build_missing_log_notice(log_check["reason"], log_check["error"], future=True)
-                    + "\n\nThe capture is running anyway, so you will still get a "
-                    "bundle with Bluetooth diagnostics.",
-                    title="Adjustable Bed: this bundle will have no logs",
+                    + "\n\n"
+                    + await _notice(hass, "support_bundle_no_logs_message"),
+                    title=await _notice(hass, "support_bundle_no_logs_title"),
                     notification_id=log_notification_id,
                 )
                 hass.data.setdefault(_LOG_NOTICE_OWNERS, {}).setdefault(
@@ -4537,7 +2977,7 @@ async def handle_generate_support_bundle(call: ServiceCall) -> None:
         evidence_warnings = evidence.get("warnings", [])
         warning_summary = ""
         if evidence_warnings:
-            warning_summary = "\n\n**Capture warnings:**\n" + "\n".join(
+            warning_summary = "\n\n" + await _notice(hass, "support_bundle_warnings") + "\n" + "\n".join(
                 f"- {warning}" for warning in evidence_warnings
             )
 
@@ -4567,16 +3007,17 @@ async def handle_generate_support_bundle(call: ServiceCall) -> None:
 
         async_create(
             hass,
-            f"[**Download support bundle**]({download_url})\n\n"
-            "The download link expires in one hour or when Home Assistant restarts. "
-            "The saved file remains available at the path below.\n\n"
-            f"Captured {notification_count} notifications. "
-            f"Requested capture window: {capture_duration} seconds."
-            f"{logging_notice}"
-            f"{warning_summary}\n\n"
-            "Attach this JSON file when reporting unsupported or broken beds.\n\n"
-            f"File path: `{filepath}`",
-            title="Adjustable Bed Support Bundle Ready",
+            await _notice(
+                hass,
+                "support_bundle_ready_message",
+                url=download_url,
+                path=filepath,
+                count=notification_count,
+                seconds=capture_duration,
+            )
+            + logging_notice
+            + warning_summary,
+            title=await _notice(hass, "support_bundle_ready_title"),
             notification_id=f"adjustable_bed_support_bundle_{address.replace(':', '_').lower()}",
         )
         _LOGGER.info("Support bundle saved to %s", filepath)
@@ -4588,19 +3029,22 @@ async def handle_generate_support_bundle(call: ServiceCall) -> None:
         )
         async_create(
             hass,
-            f"Support bundle generation timed out after {capture_duration + 120} seconds "
-            f"for {address}.\n\n"
-            "The BLE diagnostics may be hanging. Check Bluetooth connectivity and try again.",
-            title="Adjustable Bed Support Bundle Timeout",
+            await _notice(
+                hass,
+                "support_bundle_timeout_message",
+                address=address,
+                seconds=capture_duration + 120,
+            ),
+            title=await _notice(hass, "support_bundle_timeout_title"),
             notification_id=f"adjustable_bed_support_bundle_error_{address.replace(':', '_').lower()}",
         )
         raise
-    except Exception as err:
+    except Exception:
         _LOGGER.exception("Failed to generate support bundle for %s", address)
         async_create(
             hass,
-            f"Failed to generate support bundle for {address}:\n\n{err}",
-            title="Adjustable Bed Support Bundle Error",
+            await _notice(hass, "support_bundle_failed_message", address=address),
+            title=await _notice(hass, "support_bundle_failed_title"),
             notification_id=f"adjustable_bed_support_bundle_error_{address.replace(':', '_').lower()}",
         )
         raise
@@ -4621,56 +3065,157 @@ async def handle_generate_support_bundle(call: ServiceCall) -> None:
                 async_dismiss(hass, log_notification_id)
 
 
+def _import_service_registrars() -> tuple[Callable[[HomeAssistant], None], ...]:
+    """Import the family action modules, which import this one, in the import executor."""
+    from .beds.baseremote.services import register_services as register_baseremote_services
+    from .beds.bedgear.services import async_register_bedgear_services
+    from .beds.bedtech.services import register_services as register_bedtech_services
+    from .beds.casper_base.services import async_register_casper_base_services
+    from .beds.cheerssleep.services import register_services as register_cheerssleep_services
+    from .beds.comfort_enhancement3.services import register_services as register_apex_services
+    from .beds.customatic.services import async_register_customatic_services
+    from .beds.doublesleep.services import async_register_doublesleep_services
+    from .beds.dreamsense.services import async_register_dreamsense_services
+    from .beds.fsm_relax.services import async_register_fsm_relax_services
+    from .beds.furnimove.services import async_register_furnimove_services
+    from .beds.gmmotor.services import async_register_gmmotor_services
+    from .beds.goodvibe.services import async_register_goodvibe_services
+    from .beds.hjbed.services import async_register_hjbed_services
+    from .beds.instant_comfort.services import (
+        register_services as register_instant_comfort_services,
+    )
+    from .beds.jiecang.app_services import async_register_jiecang_app_services
+    from .beds.kaidi.comfy_services import async_register_comfy_services
+    from .beds.kaidi.floyd_services import async_register_floyd_services
+    from .beds.kaidi.rize_services import async_register_rize_services
+    from .beds.keeson.agingplace_services import register_services as register_agingplace_services
+    from .beds.keeson.betterliving2_services import (
+        register_services as register_betterliving2_services,
+    )
+    from .beds.keeson.somos_services import register_services as register_somos_services
+    from .beds.leggett.okin_services import async_register_leggett_okin_services
+    from .beds.limoss.remote_services import async_register_limoss_remote_services
+    from .beds.linak.services import async_register_linak_services
+    from .beds.linx.services import register_services as register_linx_services
+    from .beds.logicdata.app_services import async_register_logicdata_app_services
+    from .beds.majestichome.services import async_register_majestichome_services
+    from .beds.mlily_remote.services import register_services as register_mlily_remote_services
+    from .beds.mline.services import register_services as register_mline_services
+    from .beds.motion_bed.services import async_register_motion_bed_services
+    from .beds.motomotion.services import async_register_motomotion_services
+    from .beds.octo.services import async_register_octo_services
+    from .beds.okimiki.services import register_services as register_okimiki_services
+    from .beds.onlysnore.services import register_services as register_onlysnore_services
+    from .beds.personal_comfort.services import (
+        register_services as register_personal_comfort_services,
+    )
+    from .beds.reverie.services import async_register_reverie_services
+    from .beds.richmat_app.services import async_register_richmat_app_services
+    from .beds.richmat_classic.jerome_services import async_register_jerome_services
+    from .beds.richmat_classic.lp2_services import async_register_lp2_services
+    from .beds.richmat_classic.resource_services import async_register_resource_bed_services
+    from .beds.richmat_classic.rise_services import async_register_richmat_rise_services
+    from .beds.richmat_classic.services import async_register_richmat_classic_services
+    from .beds.richmat_classic.sleepfunction_services import async_register_sleepfunction_services
+    from .beds.richmat_legacy.services import async_register_richmat_legacy_services
+    from .beds.richmat_mh.app_services import (
+        register_services as register_mh_app_services,
+    )
+    from .beds.richmat_mh.services import async_register_richmat_mh_services
+    from .beds.rmcontrol.services import async_register_rmcontrol_services
+    from .beds.sleep_number.services import async_register_sleep_number_services
+    from .beds.sleeptracker.services import async_register_sleeptracker_services
+    from .beds.solace.services import async_register_solace_services
+    from .beds.sonicsleep.services import async_register_sonicsleep_services
+    from .beds.starcode.accessory_group import register_group_services
+    from .beds.superior_sleep.services import register_services as register_superior_sleep_services
+    from .beds.suta.services import register_services as register_suta_services
+    from .beds.svane.services import async_register_svane_services
+    from .beds.symphony.services import register_services as register_symphony_sense_services
+
+    # Ultramatic registers no action of its own; set_alarm uses this module.
+    from .beds.ultramatic import services as _ultramatic_alarm  # noqa: F401
+    from .position_estimate_services import async_register_position_estimate_services
+
+    return (
+        async_register_bedgear_services,
+        register_mline_services,
+        register_instant_comfort_services,
+        register_personal_comfort_services,
+        register_mlily_remote_services,
+        register_bedtech_services,
+        register_linx_services,
+        register_somos_services,
+        register_cheerssleep_services,
+        register_symphony_sense_services,
+        async_register_motion_bed_services,
+        async_register_casper_base_services,
+        async_register_gmmotor_services,
+        async_register_richmat_mh_services,
+        register_mh_app_services,
+        async_register_position_estimate_services,
+        async_register_richmat_classic_services,
+        async_register_sleepfunction_services,
+        async_register_lp2_services,
+        async_register_jerome_services,
+        register_baseremote_services,
+        async_register_resource_bed_services,
+        async_register_dreamsense_services,
+        async_register_richmat_legacy_services,
+        async_register_richmat_rise_services,
+        async_register_motomotion_services,
+        async_register_hjbed_services,
+        async_register_richmat_app_services,
+        async_register_goodvibe_services,
+        register_okimiki_services,
+        async_register_rmcontrol_services,
+        async_register_sleep_number_services,
+        async_register_doublesleep_services,
+        async_register_sleeptracker_services,
+        async_register_reverie_services,
+        async_register_linak_services,
+        async_register_solace_services,
+        async_register_sonicsleep_services,
+        async_register_majestichome_services,
+        register_suta_services,
+        async_register_leggett_okin_services,
+        async_register_floyd_services,
+        async_register_rize_services,
+        async_register_comfy_services,
+        async_register_octo_services,
+        async_register_customatic_services,
+        async_register_furnimove_services,
+        async_register_fsm_relax_services,
+        async_register_limoss_remote_services,
+        register_apex_services,
+        register_betterliving2_services,
+        register_agingplace_services,
+        register_onlysnore_services,
+        async_register_logicdata_app_services,
+        async_register_jiecang_app_services,
+        async_register_svane_services,
+        register_group_services,
+        register_superior_sleep_services,
+    )
+
+
 async def async_register_services(hass: HomeAssistant) -> None:
     """Register the Adjustable Bed services (idempotent)."""
-    from .support_logs import async_setup_support_logs
-
+    registrars = await hass.async_add_import_executor_job(_import_service_registrars)
     async_setup_support_logs(hass)
     if hass.services.has_service(DOMAIN, SERVICE_GOTO_PRESET):
         return  # Services already registered
 
-    from .bf_cherish_services import register_services as register_bf_cherish_services
-    from .casper_base_services import async_register_casper_base_services
-    from .cluster018_services import async_register_cluster018_services
-    from .doublesleep_services import async_register_doublesleep_services
-    from .gmmotor_services import async_register_gmmotor_services
-    from .goodvibe_services import async_register_goodvibe_services
-    from .hjbed_services import async_register_hjbed_services
-    from .motion_bed_services import async_register_motion_bed_services
-    from .motomotion_services import async_register_motomotion_services
-    from .richmat_mh_services import async_register_richmat_mh_services
-    from .rmcontrol_services import async_register_rmcontrol_services
-    from .sleep_number_services import async_register_sleep_number_services
-    from .sleeptracker_services import async_register_sleeptracker_services
-
-    register_bf_cherish_services(hass)
-    async_register_motion_bed_services(hass)
-    async_register_casper_base_services(hass)
-    async_register_gmmotor_services(hass)
-    async_register_richmat_mh_services(hass)
-    from .ruf_richmat_services import async_register_ruf_richmat_services
-
-    async_register_ruf_richmat_services(hass)
-    async_register_cluster018_services(hass)
-    async_register_motomotion_services(hass)
-    async_register_hjbed_services(hass)
-    async_register_goodvibe_services(hass)
-    async_register_rmcontrol_services(hass)
-    async_register_sleep_number_services(hass)
-    async_register_doublesleep_services(hass)
-    async_register_sleeptracker_services(hass)
-
-    from .starcode_accessory_group import register_group_services
-
-    register_group_services(hass)
+    for register in registrars:
+        register(hass)
     hass.services.async_register(
         DOMAIN,
         SERVICE_GOTO_PRESET,
         handle_goto_preset,
         schema=vol.Schema(
             {
-                vol.Required(CONF_DEVICE_ID): cv.ensure_list,
-                vol.Required(ATTR_PRESET): vol.All(vol.Coerce(int), vol.Range(min=1)),
+                vol.Required(CONF_DEVICE_ID): DEVICE_IDS,
+                vol.Required(ATTR_PRESET): vol.All(_whole_number, vol.Range(min=1)),
                 vol.Optional(ATTR_DURATION): _hold_seconds,
                 **SIDE_FIELD,
             }
@@ -4682,8 +3227,8 @@ async def async_register_services(hass: HomeAssistant) -> None:
         handle_save_preset,
         schema=vol.Schema(
             {
-                vol.Required(CONF_DEVICE_ID): cv.ensure_list,
-                vol.Required(ATTR_PRESET): vol.All(vol.Coerce(int), vol.Range(min=1)),
+                vol.Required(CONF_DEVICE_ID): DEVICE_IDS,
+                vol.Required(ATTR_PRESET): vol.All(_whole_number, vol.Range(min=1)),
                 **SIDE_FIELD,
             }
         ),
@@ -4694,7 +3239,7 @@ async def async_register_services(hass: HomeAssistant) -> None:
         handle_stop_all,
         schema=vol.Schema(
             {
-                vol.Required(CONF_DEVICE_ID): cv.ensure_list,
+                vol.Required(CONF_DEVICE_ID): DEVICE_IDS,
                 **SIDE_FIELD,
             }
         ),
@@ -4705,7 +3250,7 @@ async def async_register_services(hass: HomeAssistant) -> None:
         handle_set_position,
         schema=vol.Schema(
             {
-                vol.Required(CONF_DEVICE_ID): cv.ensure_list,
+                vol.Required(CONF_DEVICE_ID): DEVICE_IDS,
                 vol.Required(ATTR_MOTOR): vol.In(POSITION_MOTOR_OPTIONS),
                 # No max cap here - per-motor validation handles bed-specific limits
                 vol.Required(ATTR_POSITION): vol.All(vol.Coerce(float), vol.Range(min=0)),
@@ -4719,7 +3264,7 @@ async def async_register_services(hass: HomeAssistant) -> None:
         handle_set_positions,
         schema=vol.Schema(
             {
-                vol.Required(CONF_DEVICE_ID): cv.ensure_list,
+                vol.Required(CONF_DEVICE_ID): DEVICE_IDS,
                 vol.Required(ATTR_POSITIONS): vol.All(
                     [
                         {
@@ -4737,65 +3282,11 @@ async def async_register_services(hass: HomeAssistant) -> None:
     )
     hass.services.async_register(
         DOMAIN,
-        SERVICE_REVERIE_SET_COMFORT,
-        handle_reverie_set_comfort,
-        schema=vol.Schema(
-            {
-                vol.Required(CONF_DEVICE_ID): cv.ensure_list,
-                vol.Required("comfort"): _REVERIE_COMFORT_SCHEMA,
-                **SIDE_FIELD,
-            }
-        ),
-    )
-    hass.services.async_register(
-        DOMAIN,
-        SERVICE_REVERIE_PAIRLINK_ALARM_COMFORT,
-        handle_reverie_pairlink_alarm_comfort,
-        schema=vol.Schema(
-            {
-                vol.Required(CONF_DEVICE_ID): cv.ensure_list,
-                vol.Required("comfort"): _REVERIE_ALARM_COMFORT_SCHEMA,
-                **SIDE_FIELD,
-            }
-        ),
-    )
-    hass.services.async_register(
-        DOMAIN,
-        SERVICE_REVERIE_RUN_ROUTINE,
-        handle_reverie_run_routine,
-        schema=vol.Schema(
-            {
-                vol.Required(CONF_DEVICE_ID): cv.ensure_list,
-                vol.Required("steps"): [
-                    {
-                        vol.Optional("duration_minutes"): _strict_int_range(
-                            -(2**31), 2**31 - 1
-                        ),
-                        vol.Optional("comfort"): vol.Any(None, _REVERIE_COMFORT_SCHEMA),
-                    }
-                ],
-                **SIDE_FIELD,
-            }
-        ),
-    )
-    hass.services.async_register(
-        DOMAIN,
-        SERVICE_REVERIE_TEST,
-        handle_reverie_test,
-        schema=vol.Schema(
-            {
-                vol.Required(CONF_DEVICE_ID): cv.ensure_list,
-                **SIDE_FIELD,
-            }
-        ),
-    )
-    hass.services.async_register(
-        DOMAIN,
         SERVICE_TIMED_MOVE,
         handle_timed_move,
         schema=vol.Schema(
             {
-                vol.Required(CONF_DEVICE_ID): cv.ensure_list,
+                vol.Required(CONF_DEVICE_ID): DEVICE_IDS,
                 vol.Required(ATTR_MOTOR): vol.In(TIMED_MOVE_MOTOR_OPTIONS),
                 vol.Required(ATTR_DIRECTION): vol.In(["up", "down"]),
                 vol.Required(ATTR_DURATION_MS): vol.All(
@@ -4803,28 +3294,7 @@ async def async_register_services(hass: HomeAssistant) -> None:
                     vol.Range(min=MIN_TIMED_MOVE_DURATION_MS, max=MAX_TIMED_MOVE_DURATION_MS),
                 ),
                 **SIDE_FIELD,
-            }
-        ),
-    )
-    hass.services.async_register(
-        DOMAIN,
-        SERVICE_LINAK_MOVE_SIMULTANEOUS,
-        handle_linak_move_simultaneously,
-        schema=vol.Schema(
-            {
-                vol.Required(CONF_DEVICE_ID): cv.ensure_list,
-                vol.Required(ATTR_FIRST_MOTOR): vol.In(LINAK_MOTOR_OPTIONS),
-                vol.Required(ATTR_FIRST_DIRECTION): vol.In(LINAK_DIRECTION_OPTIONS),
-                vol.Required(ATTR_SECOND_MOTOR): vol.In(LINAK_MOTOR_OPTIONS),
-                vol.Required(ATTR_SECOND_DIRECTION): vol.In(LINAK_DIRECTION_OPTIONS),
-                vol.Required(ATTR_DURATION_MS): vol.All(
-                    vol.Coerce(int),
-                    vol.Range(
-                        min=MIN_TIMED_MOVE_DURATION_MS,
-                        max=MAX_TIMED_MOVE_DURATION_MS,
-                    ),
-                ),
-                **SIDE_FIELD,
+                **HOLD_LEASE_FIELDS,
             }
         ),
     )
@@ -4834,161 +3304,18 @@ async def async_register_services(hass: HomeAssistant) -> None:
         handle_rename,
         schema=vol.Schema(
             {
-                vol.Required(CONF_DEVICE_ID): vol.All(cv.ensure_list, vol.Length(min=1)),
+                vol.Required(CONF_DEVICE_ID): DEVICE_IDS,
                 # Each target's controller applies its app's own name rule.
                 vol.Required(ATTR_NAME): cv.string,
                 **SIDE_FIELD,
             }
         ),
     )
-    # Released per-app rename actions keep their original schemas.
-    for service, devices, name_rule in (
-        (SERVICE_LINAK_RENAME, cv.ensure_list, vol.Length(min=1, max=17)),
-        (
-            SERVICE_LOGICDATA_RENAME,
-            vol.All(cv.ensure_list, vol.Length(min=1)),
-            vol.Match(r"\A[\x20-\x7eäöüÄÖÜß]{1,255}\Z"),
-        ),
-        (
-            SERVICE_JIECANG_RENAME,
-            vol.All(cv.ensure_list, vol.Length(min=1)),
-            vol.Match(r"\A[A-Za-z0-9]{1,20}\Z"),
-        ),
-    ):
-        hass.services.async_register(
-            DOMAIN,
-            service,
-            handle_rename,
-            schema=vol.Schema(
-                {
-                    vol.Required(CONF_DEVICE_ID): devices,
-                    vol.Required(ATTR_NAME): vol.All(cv.string, name_rule),
-                    **SIDE_FIELD,
-                }
-            ),
-        )
-    hass.services.async_register(
-        DOMAIN,
-        SERVICE_LINAK_SET_ALARM,
-        handle_linak_set_alarm,
-        schema=vol.Schema(
-            {
-                vol.Required(CONF_DEVICE_ID): cv.ensure_list,
-                vol.Required(ATTR_SECONDS): vol.All(
-                    vol.Coerce(int),
-                    vol.Range(min=0, max=0x1FFFF),
-                ),
-                vol.Required(ATTR_ACTIONS): vol.All(
-                    [LINAK_ALARM_ACTION_SCHEMA],
-                    vol.Length(min=1, max=4),
-                ),
-                vol.Optional(ATTR_RECURRENCE_COUNT, default=0): vol.All(
-                    vol.Coerce(int),
-                    vol.Range(min=0, max=31),
-                ),
-                vol.Optional(ATTR_RECURRENCE_MINUTES, default=0): vol.All(
-                    vol.Coerce(int),
-                    vol.Range(min=0, max=2047),
-                ),
-                **SIDE_FIELD,
-            }
-        ),
-    )
-    hass.services.async_register(
-        DOMAIN,
-        SERVICE_SOLACE_AUDIO,
-        handle_solace_audio,
-        schema=vol.Schema(
-            {
-                vol.Required(CONF_DEVICE_ID): cv.ensure_list,
-                vol.Required(ATTR_ACTION): vol.In(SOLACE_AUDIO_ACTIONS),
-                vol.Optional(ATTR_TRACK): vol.All(vol.Coerce(int), vol.Range(min=1, max=5)),
-                vol.Optional(ATTR_VOLUME): vol.All(vol.Coerce(int), vol.Range(min=1, max=5)),
-                **SIDE_FIELD,
-            }
-        ),
-    )
-    hass.services.async_register(
-        DOMAIN,
-        SERVICE_SOLACE_SET_ALARM,
-        handle_solace_set_alarm,
-        schema=vol.Schema(
-            {
-                vol.Required(CONF_DEVICE_ID): cv.ensure_list,
-                vol.Required(ATTR_ENABLED): cv.boolean,
-                vol.Optional(ATTR_TIME, default="00:00:00"): cv.time,
-                vol.Optional(ATTR_WEEKDAYS, default=[]): vol.All(
-                    cv.ensure_list,
-                    [vol.In(SOLACE_WEEKDAY_OPTIONS)],
-                ),
-                vol.Optional(ATTR_MODE, default="no_action"): vol.In(SOLACE_ALARM_MODES),
-                vol.Optional(ATTR_MASSAGE, default=False): cv.boolean,
-                vol.Optional(ATTR_SOUND, default="alarm"): vol.In(SOLACE_ALARM_SOUNDS),
-                **SIDE_FIELD,
-            }
-        ),
-    )
-    hass.services.async_register(
-        DOMAIN,
-        SERVICE_LEGGETT_SLEEP_TIMER,
-        handle_leggett_sleep_timer,
-        schema=vol.Schema(
-            {
-                vol.Required(CONF_DEVICE_ID): vol.All(cv.ensure_list, vol.Length(min=1)),
-                vol.Required(ATTR_ACTION): vol.In(("start", "cancel")),
-                vol.Optional(ATTR_MINUTES): vol.All(_leggett_integer, vol.Range(min=1, max=1439)),
-                vol.Optional(ATTR_PRESET, default=1): vol.All(
-                    _leggett_integer, vol.Range(min=0, max=4)
-                ),
-                **SIDE_FIELD,
-            }
-        ),
-    )
-    hass.services.async_register(
-        DOMAIN,
-        SERVICE_LEGGETT_ALARM_TIMER,
-        handle_leggett_alarm_timer,
-        schema=vol.Schema(
-            {
-                vol.Required(CONF_DEVICE_ID): vol.All(cv.ensure_list, vol.Length(min=1)),
-                vol.Required(ATTR_ACTION): vol.In(("start", "cancel")),
-                vol.Optional(ATTR_MINUTES): vol.All(_leggett_integer, vol.Range(min=1, max=1440)),
-                **SIDE_FIELD,
-            }
-        ),
-    )
     hold_fields = {
-        vol.Required(CONF_DEVICE_ID): vol.All(cv.ensure_list, vol.Length(min=1)),
+        vol.Required(CONF_DEVICE_ID): DEVICE_IDS,
         vol.Required(ATTR_DURATION): _hold_seconds,
         **SIDE_FIELD,
     }
-    octo_target_fields = {
-        vol.Required(CONF_DEVICE_ID): vol.All(cv.ensure_list, vol.Length(min=1)),
-        **SIDE_FIELD,
-    }
-    hass.services.async_register(
-        DOMAIN,
-        SERVICE_OCTO_ENROLL_PIN,
-        handle_octo_enroll_pin,
-        schema=vol.Schema(
-            {
-                **octo_target_fields,
-                vol.Required(CONF_OCTO_PIN): cv.string,
-                vol.Required("octo_pin_confirmation"): cv.string,
-            }
-        ),
-    )
-    hass.services.async_register(
-        DOMAIN,
-        SERVICE_OCTO_RESET_DEFAULTS,
-        handle_octo_reset_defaults,
-        schema=vol.Schema(
-            {
-                **octo_target_fields,
-                vol.Required("confirmed"): vol.All(cv.boolean, vol.In((True,))),
-            }
-        ),
-    )
     hass.services.async_register(
         DOMAIN,
         SERVICE_HOLD_CONTROL,
@@ -4997,356 +3324,47 @@ async def async_register_services(hass: HomeAssistant) -> None:
         schema=vol.Schema(
             {
                 **hold_fields,
+                **HOLD_LEASE_FIELDS,
                 vol.Required(ATTR_CONTROL): cv.string,
             }
         ),
     )
     hass.services.async_register(
         DOMAIN,
-        SERVICE_LEGGETT_HOLD_CONTROL,
-        handle_hold_control,
-        schema=vol.Schema(
-            {**hold_fields, vol.Required(ATTR_CONTROL): vol.In(LEGGETT_HELD_CONTROLS)}
-        ),
-    )
-    hass.services.async_register(
-        DOMAIN, "comfort_enhancements_set_alarm", handle_comfort_enhancements_set_alarm,
-        schema=vol.Schema({
-            vol.Required(CONF_DEVICE_ID): vol.All(cv.ensure_list, vol.Length(min=1)),
-            vol.Required(ATTR_ENABLED): cv.boolean,
-            vol.Optional(ATTR_TIME): cv.time,
-            vol.Optional("memory", default=0): vol.All(vol.Coerce(int), vol.In((0, 1, 2))),
-            vol.Optional("massage", default=False): cv.boolean,
-            **SIDE_FIELD,
-        }),
-    )
-    device_fields = {
-        vol.Required(CONF_DEVICE_ID): vol.All(cv.ensure_list, vol.Length(min=1)),
-        **SIDE_FIELD,
-    }
-    hass.services.async_register(
-        DOMAIN,
-        SERVICE_LIMOSS_REMOTE_RENAME_MEMORY,
-        handle_limoss_remote_rename_memory,
+        SERVICE_SET_ALARM,
+        handle_set_alarm,
+        # Each target's controller declares which of these its alarm accepts.
         schema=vol.Schema(
             {
-                **device_fields,
-                vol.Required(ATTR_PRESET): vol.All(_leggett_integer, vol.Range(min=1, max=8)),
-                vol.Required(ATTR_NAME): cv.string,
-            }
-        ),
-    )
-    hass.services.async_register(
-        DOMAIN,
-        SERVICE_LIMOSS_REMOTE_CALIBRATE,
-        handle_limoss_remote_calibrate,
-        schema=vol.Schema(
-            {
-                **device_fields,
-                vol.Required("confirmed"): _limoss_boolean,
-                vol.Required(ATTR_DURATION): _hold_seconds,
-            }
-        ),
-    )
-    hass.services.async_register(
-        DOMAIN,
-        SERVICE_LIMOSS_REMOTE_FEATURES,
-        handle_limoss_remote_features,
-        schema=vol.Schema(
-            {
-                **device_fields,
-                vol.Required("underbed_light"): _limoss_boolean,
-                vol.Required("massage"): _limoss_boolean,
-            }
-        ),
-    )
-    hass.services.async_register(
-        DOMAIN,
-        SERVICE_FURNIMOVE_ACTION,
-        handle_furnimove_action,
-        schema=vol.Schema(
-            {
-                **device_fields,
-                vol.Required("row_index"): vol.All(_leggett_integer, vol.Range(min=0)),
-                vol.Optional(ATTR_DURATION): _hold_seconds,
-                vol.Optional("consumer", default="app"): vol.In(("app", "widget")),
-            }
-        ),
-    )
-    hass.services.async_register(
-        DOMAIN,
-        SERVICE_FURNIMOVE_MASSAGE_PROGRAM,
-        handle_furnimove_massage_program,
-        schema=vol.Schema(
-            {
-                **device_fields,
-                vol.Required("program"): vol.All(_leggett_integer, vol.Range(min=1, max=4)),
-            }
-        ),
-    )
-    hass.services.async_register(
-        DOMAIN,
-        SERVICE_FURNIMOVE_MOVE_SIMULTANEOUSLY,
-        handle_furnimove_move_simultaneously,
-        schema=vol.Schema(
-            {
-                **device_fields,
-                vol.Required(ATTR_FIRST_MOTOR): vol.In(("head", "back", "legs", "feet")),
-                vol.Required(ATTR_SECOND_MOTOR): vol.In(("head", "back", "legs", "feet")),
-                vol.Required(ATTR_FIRST_DIRECTION): vol.In(("up", "down")),
-                vol.Required(ATTR_SECOND_DIRECTION): vol.In(("up", "down")),
-                vol.Required(ATTR_DURATION_MS): vol.All(
-                    _leggett_integer, vol.Range(min=1, max=60000)
-                ),
-            }
-        ),
-    )
-    hass.services.async_register(
-        DOMAIN,
-        SERVICE_FURNIMOVE_MASSAGE_DURATION,
-        handle_furnimove_massage_duration,
-        schema=vol.Schema(
-            {
-                **device_fields,
-                vol.Required("minutes"): vol.All(
-                    vol.In((10, 15, 20, 30, "10", "15", "20", "30")), vol.Coerce(int)
-                ),
-            }
-        ),
-    )
-    hass.services.async_register(
-        DOMAIN,
-        SERVICE_SVANE_RELEASE_AXIS,
-        handle_svane_release_axis,
-        schema=vol.Schema({**device_fields, vol.Required(ATTR_MOTOR): vol.In(("head", "feet"))}),
-    )
-    hass.services.async_register(
-        DOMAIN,
-        SERVICE_FSM_RELAX_CALIBRATE,
-        handle_fsm_relax_calibrate,
-        schema=vol.Schema(
-            {
-                vol.Required(CONF_DEVICE_ID): vol.All(cv.ensure_list, vol.Length(min=1)),
-                vol.Required("confirmed"): vol.All(cv.boolean, vol.In((True,))),
-                **SIDE_FIELD,
-            }
-        ),
-    )
-    hass.services.async_register(
-        DOMAIN, SERVICE_ESHINE_SET_ALARM, handle_eshine_set_alarm,
-        schema=vol.Schema({
-            vol.Required(CONF_DEVICE_ID): vol.All(cv.ensure_list, vol.Length(min=1)),
-            vol.Required(ATTR_ENABLED): cv.boolean,
-            vol.Optional(ATTR_TIME): cv.time,
-            vol.Optional(ATTR_WAKE_MODE, default="zero_g"): vol.In(("zero_g", "flat", "massage")),
-            **SIDE_FIELD,
-        }),
-    )
-    hass.services.async_register(
-        DOMAIN, SERVICE_GLIDEAWAY_SET_ALARM, handle_glideaway_set_alarm,
-        schema=vol.Schema({
-            vol.Required(CONF_DEVICE_ID): vol.All(cv.ensure_list, vol.Length(min=1)),
-            vol.Required(ATTR_ENABLED): cv.boolean,
-            vol.Optional(ATTR_TIME): cv.time,
-            vol.Optional(ATTR_WAKE_MODE, default="none"): vol.In(("none", "memory_1", "memory_2")),
-            **SIDE_FIELD,
-        }),
-    )
-    hass.services.async_register(
-        DOMAIN,
-        SERVICE_ZSERIES_SET_ALARM,
-        handle_zseries_set_alarm,
-        schema=vol.Schema(
-            {
-                vol.Required(CONF_DEVICE_ID): vol.All(cv.ensure_list, vol.Length(min=1)),
+                vol.Required(CONF_DEVICE_ID): DEVICE_IDS,
                 vol.Required(ATTR_ENABLED): cv.boolean,
                 vol.Optional(ATTR_TIME): cv.time,
-                vol.Optional(ATTR_WAKE_MODE): vol.In(("massage", "memory_1")),
+                vol.Optional(ATTR_WEEKDAYS): vol.All(cv.ensure_list, [vol.In(ALARM_WEEKDAYS)]),
+                vol.Optional(ATTR_SLOT): vol.All(_whole_number, vol.Range(min=0, max=255)),
+                vol.Optional("wake_action"): vol.In(WAKE_ACTIONS),
+                vol.Optional(ATTR_MASSAGE): cv.boolean,
+                vol.Optional("head_massage_level"): vol.All(_whole_number, vol.Range(min=0, max=10)),
+                vol.Optional("foot_massage_level"): vol.All(_whole_number, vol.Range(min=0, max=10)),
+                vol.Optional("massage_intensity"): vol.All(_whole_number, vol.Range(min=1, max=10)),
+                vol.Optional("massage_duration"): vol.All(_whole_number, vol.Range(min=1, max=120)),
+                vol.Optional("massage_zone"): vol.In(MASSAGE_ZONES),
+                vol.Optional("mattress_side"): vol.In(MATTRESS_SIDES),
+                vol.Optional(ATTR_SOUND): vol.In(ALARM_SOUNDS),
+                vol.Optional("light"): cv.boolean,
+                vol.Optional("confirm_custom_position"): cv.boolean,
                 **SIDE_FIELD,
             }
         ),
     )
     hass.services.async_register(
         DOMAIN,
-        SERVICE_SIMMONS_SET_ALARM,
-        handle_simmons_set_alarm,
-        schema=vol.Schema(
-            {
-                vol.Required(CONF_DEVICE_ID): vol.All(cv.ensure_list, vol.Length(min=1)),
-                vol.Required(ATTR_SLOT): vol.All(vol.Coerce(int), vol.In((1, 2))),
-                vol.Required(ATTR_ENABLED): cv.boolean,
-                vol.Optional(ATTR_TIME, default="00:00:00"): cv.time,
-                vol.Optional(ATTR_WEEKDAYS, default=[]): vol.All(
-                    cv.ensure_list, [vol.In(SOLACE_WEEKDAY_OPTIONS)]
-                ),
-                vol.Optional(ATTR_MODE): vol.In(("custom_mode", "flat", "anti_snore")),
-                vol.Optional(ATTR_CONFIRM_CUSTOM_MODE, default=False): cv.boolean,
-                **SIDE_FIELD,
-            }
-        ),
+        SERVICE_SYNC_CLOCK,
+        handle_sync_clock,
+        schema=vol.Schema({vol.Required(CONF_DEVICE_ID): DEVICE_IDS, **SIDE_FIELD}),
     )
-    hass.services.async_register(
-        DOMAIN,
-        SERVICE_CUSTOMATIC_HOLD_MEMORY,
-        handle_customatic_hold_memory,
-        schema=vol.Schema(
-            {
-                vol.Required(CONF_DEVICE_ID): vol.All(cv.ensure_list, vol.Length(min=1)),
-                vol.Required(ATTR_ACTIONS): _customatic_memory_actions,
-                vol.Required(ATTR_DURATION): _hold_seconds,
-                **SIDE_FIELD,
-            }
-        ),
-    )
-    hass.services.async_register(
-        DOMAIN,
-        SERVICE_CUSTOMATIC_MOVE_SIMULTANEOUSLY,
-        handle_customatic_move_simultaneously,
-        schema=vol.Schema(
-            {
-                vol.Required(CONF_DEVICE_ID): vol.All(cv.ensure_list, vol.Length(min=1)),
-                vol.Required(ATTR_ACTIONS): _customatic_movement_actions,
-                vol.Required(ATTR_DURATION): _hold_seconds,
-                **SIDE_FIELD,
-            }
-        ),
-    )
-    hass.services.async_register(
-        DOMAIN,
-        SERVICE_LOGICDATA_SET_ALARM,
-        handle_logicdata_set_alarm,
-        schema=vol.Schema(
-            {
-                vol.Required(CONF_DEVICE_ID): vol.All(cv.ensure_list, vol.Length(min=1)),
-                vol.Required(ATTR_ENABLED): cv.boolean,
-                vol.Optional(ATTR_TIME, default="00:00:00"): cv.time,
-                vol.Optional(ATTR_WEEKDAYS, default=[]): vol.All(
-                    cv.ensure_list, [vol.In(SOLACE_WEEKDAY_OPTIONS)]
-                ),
-                vol.Optional(ATTR_PRESET, default="flat"): vol.In(LOGICDATA_ALARM_PRESETS),
-                vol.Optional(ATTR_HEAD_LEVEL, default=0): vol.All(
-                    vol.Coerce(int), vol.Range(min=0, max=3)
-                ),
-                vol.Optional(ATTR_FOOT_LEVEL, default=0): vol.All(
-                    vol.Coerce(int), vol.Range(min=0, max=3)
-                ),
-                **SIDE_FIELD,
-            }
-        ),
-    )
-    hass.services.async_register(
-        DOMAIN,
-        SERVICE_LOGICDATA_HOLD_PRESET,
-        handle_logicdata_hold_preset,
-        schema=vol.Schema(
-            {
-                vol.Required(CONF_DEVICE_ID): vol.All(cv.ensure_list, vol.Length(min=1)),
-                vol.Required(ATTR_PRESET): vol.In(LOGICDATA_HOLD_PRESETS),
-                vol.Required(ATTR_DURATION): _preset_hold_duration_seconds,
-                **SIDE_FIELD,
-            }
-        ),
-    )
-    hass.services.async_register(
-        DOMAIN,
-        SERVICE_JIECANG_SET_ALARM,
-        handle_jiecang_set_alarm,
-        schema=vol.Schema(
-            {
-                vol.Required(CONF_DEVICE_ID): vol.All(cv.ensure_list, vol.Length(min=1)),
-                vol.Required(ATTR_ENABLED): cv.boolean,
-                vol.Optional(ATTR_TIME, default="00:00:00"): cv.time,
-                vol.Optional(ATTR_WEEKDAYS, default=[]): vol.All(
-                    cv.ensure_list, [vol.In(SOLACE_WEEKDAY_OPTIONS)]
-                ),
-                vol.Optional(ATTR_PRESET, default="flat"): vol.In(JIECANG_ALARM_PRESETS),
-                vol.Optional(ATTR_HEAD_LEVEL, default=0): vol.All(
-                    vol.Coerce(int), vol.Range(min=0, max=3)
-                ),
-                vol.Optional(ATTR_FOOT_LEVEL, default=0): vol.All(
-                    vol.Coerce(int), vol.Range(min=0, max=3)
-                ),
-                **SIDE_FIELD,
-            }
-        ),
-    )
-    hass.services.async_register(
-        DOMAIN,
-        SERVICE_JIECANG_WAKE,
-        handle_jiecang_wake,
-        schema=vol.Schema(
-            {
-                vol.Required(CONF_DEVICE_ID): vol.All(cv.ensure_list, vol.Length(min=1)),
-                vol.Optional(ATTR_PRESET, default="flat"): vol.In(JIECANG_WAKE_PRESETS),
-                vol.Optional(ATTR_HEAD_LEVEL, default=0): vol.All(
-                    vol.Coerce(int), vol.Range(min=0, max=3)
-                ),
-                vol.Optional(ATTR_FOOT_LEVEL, default=0): vol.All(
-                    vol.Coerce(int), vol.Range(min=0, max=3)
-                ),
-                **SIDE_FIELD,
-            }
-        ),
-    )
-    hass.services.async_register(
-        DOMAIN,
-        SERVICE_JIECANG_STOP_WAKE,
-        handle_jiecang_stop_wake,
-        schema=vol.Schema(
-            {
-                vol.Required(CONF_DEVICE_ID): vol.All(cv.ensure_list, vol.Length(min=1)),
-                **SIDE_FIELD,
-            }
-        ),
-    )
-    hass.services.async_register(
-        DOMAIN,
-        SERVICE_MALOUF_SET_ALARM,
-        handle_malouf_set_alarm,
-        schema=vol.Schema(
-            {
-                vol.Required(CONF_DEVICE_ID): vol.All(cv.ensure_list, vol.Length(min=1)),
-                vol.Required(ATTR_ENABLED): cv.boolean,
-                vol.Optional(ATTR_TIME, default="00:00:00"): cv.time,
-                vol.Optional(ATTR_WEEKDAYS, default=[]): vol.All(
-                    cv.ensure_list, [vol.In(SOLACE_WEEKDAY_OPTIONS)]
-                ),
-                vol.Optional(ATTR_PRESET, default="zero_g"): vol.In(MALOUF_ALARM_PRESETS),
-                **SIDE_FIELD,
-            }
-        ),
-    )
-    alarm_fields = {
-        vol.Optional("enabled", default=False): cv.boolean,
-        vol.Optional("wake", default=False): cv.boolean,
-        vol.Optional("hour", default=0): vol.All(int, vol.Range(min=0, max=23)),
-        vol.Optional("minute", default=0): vol.All(int, vol.Range(min=0, max=59)),
-    }
-    hass.services.async_register(
-        DOMAIN,
-        SERVICE_CONFIGURE_ALARM_SCHEDULE,
-        handle_configure_alarm_schedule,
-        schema=vol.Schema({
-            vol.Required(CONF_DEVICE_ID): vol.All(cv.ensure_list, vol.Length(min=1)),
-            vol.Required("weekly"): [vol.Schema({**alarm_fields, vol.Optional("weekdays", default=[]): [vol.All(int, vol.Range(min=0, max=6))]})],
-            vol.Required("one_time"): [vol.Schema(alarm_fields)],
-            vol.Required("dispatch"): vol.In(("both", "weekly", "one_time")),
-            **SIDE_FIELD,
-        }),
-    )
-    for service in (SERVICE_SYNC_CLOCK, SERVICE_MALOUF_SYNC_CLOCK):
-        hass.services.async_register(
-            DOMAIN,
-            service,
-            handle_sync_clock,
-            schema=vol.Schema(
-                {
-                    vol.Required(CONF_DEVICE_ID): vol.All(cv.ensure_list, vol.Length(min=1)),
-                    **SIDE_FIELD,
-                }
-            ),
-        )
-    hass.services.async_register(
+    # Admin only: it captures any address and writes a file anyone can download.
+    async_register_admin_service(
+        hass,
         DOMAIN,
         SERVICE_GENERATE_SUPPORT_BUNDLE,
         handle_generate_support_bundle,
@@ -5363,19 +3381,5 @@ async def async_register_services(hass: HomeAssistant) -> None:
         ),
     )
 
-    hass.services.async_register(
-        DOMAIN, SERVICE_FLOYD_ACTION, handle_floyd_action,
-        schema=vol.Schema({
-            vol.Required(CONF_DEVICE_ID): vol.All(cv.ensure_list, vol.Length(min=1)),
-            vol.Required("action"): vol.In((
-                "zero_g", "flat", "anti_snore", "memory_1", "memory_2", "memory_3",
-                "save_zero_g", "save_anti_snore", "assign_room", "confirm_add",
-            )),
-            vol.Optional("internal_side", default="first"): vol.In(("first", "both", "second")),
-            vol.Optional("confirm", default=False): cv.boolean,
-            vol.Optional("room_id"): vol.All(vol.Coerce(int), vol.Range(min=1, max=0xFFFFFFFF)),
-            **SIDE_FIELD,
-        }),
-    )
 
     _LOGGER.debug("Registered Adjustable Bed services")

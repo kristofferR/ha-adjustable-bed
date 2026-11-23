@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import asyncio
 from collections.abc import Awaitable, Callable
+from datetime import UTC, datetime
 from pathlib import Path
 from types import SimpleNamespace
 from typing import cast
@@ -14,23 +15,25 @@ from homeassistant.config_entries import ConfigEntryState
 from homeassistant.const import CONF_ADDRESS, CONF_NAME
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import device_registry as dr
-from pytest_homeassistant_custom_component.common import MockConfigEntry
+from pytest_homeassistant.common import MockConfigEntry
 
 # Import enable_custom_integrations fixture
 from custom_components.adjustable_bed import (
     SERVICE_GENERATE_SUPPORT_BUNDLE,
     SERVICE_GOTO_PRESET,
-    SERVICE_LINAK_MOVE_SIMULTANEOUS,
-    SERVICE_LINAK_RENAME,
-    SERVICE_LINAK_SET_ALARM,
     SERVICE_SAVE_PRESET,
     SERVICE_SET_POSITION,
     SERVICE_SET_POSITIONS,
-    SERVICE_SOLACE_AUDIO,
-    SERVICE_SOLACE_SET_ALARM,
     SERVICE_STOP_ALL,
     SERVICE_TIMED_MOVE,
     async_migrate_entry,
+)
+from custom_components.adjustable_bed.bed_traits import reads_positions
+from custom_components.adjustable_bed.beds.linak.services import SERVICE_LINAK_MOVE_SIMULTANEOUS
+from custom_components.adjustable_bed.beds.solace.services import SERVICE_SOLACE_AUDIO
+from custom_components.adjustable_bed.bluetooth_freshness import (
+    AdvertisementEvidence,
+    FreshnessStatus,
 )
 from custom_components.adjustable_bed.const import (
     BED_TYPE_BEDTECH,
@@ -53,6 +56,7 @@ from custom_components.adjustable_bed.const import (
     CONF_BACK_MAX_ANGLE,
     CONF_BED_TYPE,
     CONF_BLE_BOND_ESTABLISHED,
+    CONF_CONNECTION_MODE,
     CONF_DISABLE_ANGLE_SENSING,
     CONF_HAS_MASSAGE,
     CONF_KAIDI_PRODUCT_ID,
@@ -61,10 +65,16 @@ from custom_components.adjustable_bed.const import (
     CONF_MOTOR_PULSE_COUNT,
     CONF_MOTOR_PULSE_DELAY_MS,
     CONF_OCTO_MOTOR_COUNT_OVERRIDE,
+    CONF_PAIR_CHILDREN,
+    CONF_PAIR_ID,
+    CONF_PAIR_MODE,
     CONF_PREFERRED_ADAPTER,
+    CONF_PROFILE_ID,
+    CONF_PROFILE_MIGRATION,
     CONF_PROFILE_REVIEW_PENDING,
     CONF_PROTOCOL_VARIANT,
     CONF_RICHMAT_REMOTE,
+    CONNECTION_MODE_IDLE,
     DOMAIN,
     KAIDI_VARIANT_SEAT_1,
     KEESON_KSBT_CHAR_UUID,
@@ -78,8 +88,12 @@ from custom_components.adjustable_bed.const import (
     LINAK_TIMER_SERVICE_UUID,
     MALOUF_LAYOUT_HILO,
     OCTO_VARIANT_STANDARD,
+    PAIR_MODE_SEPARATE_ADDRESS,
+    PAIR_MODE_SINGLE_ADDRESS,
 )
 from custom_components.adjustable_bed.pairing import is_paired
+from custom_components.adjustable_bed.services import SERVICE_RENAME, SERVICE_SET_ALARM
+from tests.error_helpers import raises_key
 
 
 def _configure_linak_advanced(
@@ -152,22 +166,21 @@ class TestIntegrationSetup:
         assert hass.services.has_service(DOMAIN, SERVICE_GENERATE_SUPPORT_BUNDLE)
         assert hass.services.has_service(DOMAIN, SERVICE_SET_POSITIONS)
         assert hass.services.has_service(DOMAIN, SERVICE_LINAK_MOVE_SIMULTANEOUS)
-        assert hass.services.has_service(DOMAIN, SERVICE_LINAK_RENAME)
-        assert hass.services.has_service(DOMAIN, SERVICE_LINAK_SET_ALARM)
+        assert hass.services.has_service(DOMAIN, SERVICE_RENAME)
+        assert hass.services.has_service(DOMAIN, SERVICE_SET_ALARM)
         assert hass.services.has_service(DOMAIN, SERVICE_SOLACE_AUDIO)
-        assert hass.services.has_service(DOMAIN, SERVICE_SOLACE_SET_ALARM)
 
     async def test_setup_entry_connection_timeout(
         self,
         hass: HomeAssistant,
         mock_config_entry,
         mock_async_ble_device_from_address,
-        mock_bluetooth_adapters,
+        mock_bluetooth_api,
         enable_custom_integrations,
     ):
         """Test setup fails on connection timeout."""
         with patch(
-            "custom_components.adjustable_bed.coordinator.establish_connection",
+            "custom_components.adjustable_bed.coordinator_connection.establish_connection",
             new_callable=AsyncMock,
             side_effect=TimeoutError("Connection timed out"),
         ):
@@ -183,7 +196,7 @@ class TestIntegrationSetup:
         hass: HomeAssistant,
         mock_config_entry,
         mock_async_ble_device_from_address,
-        mock_bluetooth_adapters,
+        mock_bluetooth_api,
         enable_custom_integrations,
     ):
         """A setup timeout must tear down the half-open connection."""
@@ -206,14 +219,14 @@ class TestIntegrationSetup:
             await hass.async_block_till_done()
 
         assert mock_config_entry.state == ConfigEntryState.SETUP_RETRY
-        mock_disconnect.assert_awaited_once_with(reason="setup timeout cleanup")
+        mock_disconnect.assert_any_await(reason="setup timeout cleanup")
 
     async def test_setup_entry_timeout_bounds_disconnect_cleanup(
         self,
         hass: HomeAssistant,
         mock_config_entry,
         mock_async_ble_device_from_address,
-        mock_bluetooth_adapters,
+        mock_bluetooth_api,
         enable_custom_integrations,
     ):
         """A stalled cleanup disconnect must not block the setup retry."""
@@ -239,7 +252,7 @@ class TestIntegrationSetup:
                 await hass.async_block_till_done()
 
         assert mock_config_entry.state == ConfigEntryState.SETUP_RETRY
-        mock_disconnect.assert_awaited_once_with(reason="setup timeout cleanup")
+        mock_disconnect.assert_any_await(reason="setup timeout cleanup")
 
     @pytest.mark.parametrize(
         "attempts,expected",
@@ -257,13 +270,18 @@ class TestIntegrationSetup:
                 "powered on and in range",
             ),
             ([{"result": "device_not_found"}], "powered on and in range"),
+            # The default bed is a Linak: advertising, attempted, no link came up.
+            (
+                [{"result": "failed", "error_type": "BleakAbortedError"}],
+                "pairs only during the first 3 minutes after power-on",
+            ),
         ],
     )
     async def test_setup_retry_reason_distinguishes_startup_from_reachability(
         self,
         hass: HomeAssistant,
         mock_config_entry,
-        mock_bluetooth_adapters,
+        mock_bluetooth_api,
         enable_custom_integrations,
         attempts,
         expected,
@@ -280,6 +298,10 @@ class TestIntegrationSetup:
                 new_callable=PropertyMock,
                 return_value=attempts,
             ),
+            patch(
+                "custom_components.adjustable_bed.coordinator_connection.async_check_advertisement",
+                return_value=AdvertisementEvidence(FreshnessStatus.FRESH),
+            ),
         ):
             await hass.config_entries.async_setup(mock_config_entry.entry_id)
             await hass.async_block_till_done()
@@ -291,7 +313,7 @@ class TestIntegrationSetup:
         self,
         hass: HomeAssistant,
         mock_config_entry,
-        mock_bluetooth_adapters,
+        mock_bluetooth_api,
         enable_custom_integrations,
     ):
         """Test setup fails when connection fails."""
@@ -306,11 +328,45 @@ class TestIntegrationSetup:
         assert hass.services.has_service(DOMAIN, SERVICE_GOTO_PRESET)
         assert hass.services.has_service(DOMAIN, SERVICE_GENERATE_SUPPORT_BUNDLE)
 
+    async def test_failed_setup_stops_its_coordinator(
+        self,
+        hass: HomeAssistant,
+        mock_config_entry,
+        mock_bluetooth_api,
+        enable_custom_integrations,
+    ):
+        """A link that came up and dropped must not leave its recovery running.
+
+        Otherwise the setup retry's new coordinator competes with the abandoned
+        one for the bed's single connection.
+        """
+        coordinators = []
+
+        async def _connect_then_drop(coordinator) -> bool:
+            coordinators.append(coordinator)
+            coordinator._reconnect_timer = hass.loop.call_later(
+                5.0, coordinator._schedule_auto_reconnect
+            )
+            return False
+
+        with patch(
+            "custom_components.adjustable_bed.coordinator.AdjustableBedCoordinator.async_connect",
+            new=_connect_then_drop,
+        ):
+            await hass.config_entries.async_setup(mock_config_entry.entry_id)
+            await hass.async_block_till_done()
+
+        assert mock_config_entry.state == ConfigEntryState.SETUP_RETRY
+        assert len(coordinators) == 1
+        assert coordinators[0]._shutting_down is True
+        assert coordinators[0]._reconnect_timer is None
+        assert mock_config_entry.entry_id not in hass.data.get(DOMAIN, {})
+
     async def test_setup_entry_connection_failed_still_creates_device(
         self,
         hass: HomeAssistant,
         mock_config_entry,
-        mock_bluetooth_adapters,
+        mock_bluetooth_api,
         enable_custom_integrations,
     ):
         """Setup-retry entries should still have a device registry target for diagnostics."""
@@ -332,7 +388,7 @@ class TestIntegrationSetup:
     async def test_setup_gen2_connect_failure_creates_pairing_repair(
         self,
         hass: HomeAssistant,
-        mock_bluetooth_adapters,
+        mock_bluetooth_api,
         enable_custom_integrations,
     ):
         """An unbonded Gen2 timeout gets the guided pairing repair from #385."""
@@ -371,7 +427,7 @@ class TestIntegrationSetup:
     async def test_setup_gen2_connect_failure_with_bond_skips_pairing_repair(
         self,
         hass: HomeAssistant,
-        mock_bluetooth_adapters,
+        mock_bluetooth_api,
         enable_custom_integrations,
     ):
         """A bonded Gen2 entry that cannot connect is a transient failure, not
@@ -410,7 +466,7 @@ class TestIntegrationSetup:
     async def test_setup_gen2_failure_after_bond_skips_pairing_repair(
         self,
         hass: HomeAssistant,
-        mock_bluetooth_adapters,
+        mock_bluetooth_api,
         enable_custom_integrations,
     ):
         """A bond established during this setup attempt must be observed dynamically."""
@@ -463,7 +519,7 @@ class TestIntegrationSetup:
     async def test_setup_non_gated_pairing_bed_connect_failure_skips_repair(
         self,
         hass: HomeAssistant,
-        mock_bluetooth_adapters,
+        mock_bluetooth_api,
         enable_custom_integrations,
     ):
         """Ordinary pairing-required beds (e.g. Okin CST) keep the existing
@@ -501,7 +557,7 @@ class TestIntegrationSetup:
     async def test_setup_entry_loads_diagnostic_device_without_connection(
         self,
         hass: HomeAssistant,
-        mock_bluetooth_adapters,
+        mock_bluetooth_api,
         enable_custom_integrations,
     ):
         """Diagnostic entries should still load so they can be targeted by actions."""
@@ -539,6 +595,21 @@ class TestIntegrationSetup:
         device_registry = dr.async_get(hass)
         devices = dr.async_entries_for_config_entry(device_registry, entry.entry_id)
         assert len(devices) == 1
+
+        # Options saved while it is still offline reload it like any other entry.
+        with (
+            patch(
+                "custom_components.adjustable_bed.coordinator.bluetooth.async_ble_device_from_address",
+                return_value=None,
+            ),
+            patch.object(
+                hass.config_entries, "async_reload", AsyncMock(return_value=True)
+            ) as reload,
+        ):
+            hass.config_entries.async_update_entry(entry, options={"motor_pulse_count": 5})
+            await hass.async_block_till_done()
+
+        reload.assert_awaited_once_with(entry.entry_id)
 
     async def test_setup_entry_reclassifies_bedtech_qrrm_richmat_entry(
         self,
@@ -751,6 +822,65 @@ class TestIntegrationSetup:
         coordinator = hass.data[DOMAIN][entry.entry_id]
         assert coordinator.controller.__class__.__name__ == "BedTechController"
 
+    async def test_paired_entry_without_sides_fails_permanently(
+        self,
+        hass: HomeAssistant,
+        enable_custom_integrations,
+    ):
+        """A pair with no saved sides cannot recover, so setup does not retry."""
+        entry = MockConfigEntry(
+            domain=DOMAIN,
+            title="Empty pair",
+            data={
+                CONF_PAIR_ID: "pair_empty",
+                CONF_PAIR_MODE: PAIR_MODE_SEPARATE_ADDRESS,
+                CONF_PAIR_CHILDREN: [],
+            },
+            version=5,
+            minor_version=1,
+        )
+        entry.add_to_hass(hass)
+
+        assert not await hass.config_entries.async_setup(entry.entry_id)
+
+        assert entry.state is ConfigEntryState.SETUP_ERROR
+        assert entry.error_reason_translation_key == "paired_entry_has_no_sides"
+
+    async def test_single_address_pair_without_side_selector_fails_permanently(
+        self,
+        hass: HomeAssistant,
+        mock_config_entry_data: dict,
+        mock_coordinator_connected,
+        enable_custom_integrations,
+    ):
+        """A protocol without a side selector cannot expose sides on any retry."""
+        from custom_components.adjustable_bed.beds.linak.controller import LinakController
+
+        entry = MockConfigEntry(
+            domain=DOMAIN,
+            title="One-address pair",
+            data={
+                **mock_config_entry_data,
+                CONF_PAIR_ID: "pair_one_address",
+                CONF_PAIR_MODE: PAIR_MODE_SINGLE_ADDRESS,
+            },
+            version=5,
+            minor_version=1,
+        )
+        entry.add_to_hass(hass)
+
+        with patch.object(
+            LinakController,
+            "supports_single_address_pairing",
+            new_callable=PropertyMock,
+            return_value=False,
+        ):
+            assert not await hass.config_entries.async_setup(entry.entry_id)
+
+        assert entry.state is ConfigEntryState.SETUP_ERROR
+        assert entry.error_reason_translation_key == "single_address_pair_unsupported"
+        assert entry.entry_id not in hass.data[DOMAIN]
+
 
 class TestIntegrationUnload:
     """Test integration unload."""
@@ -773,6 +903,26 @@ class TestIntegrationUnload:
         assert result is True
         assert mock_config_entry.state == ConfigEntryState.NOT_LOADED
         mock_bleak_client.disconnect.assert_called()
+
+    async def test_failed_platform_unload_keeps_the_bed(
+        self,
+        hass: HomeAssistant,
+        mock_config_entry,
+        mock_coordinator_connected,
+        mock_bleak_client: MagicMock,
+        enable_custom_integrations,
+    ):
+        """A platform that fails to unload leaves the coordinator in charge of the bed."""
+        await hass.config_entries.async_setup(mock_config_entry.entry_id)
+        await hass.async_block_till_done()
+        mock_bleak_client.disconnect.reset_mock()
+
+        with patch.object(hass.config_entries, "async_unload_platforms", return_value=False):
+            assert not await hass.config_entries.async_unload(mock_config_entry.entry_id)
+
+        assert mock_config_entry.state is ConfigEntryState.FAILED_UNLOAD
+        assert mock_config_entry.entry_id in hass.data[DOMAIN]
+        mock_bleak_client.disconnect.assert_not_called()
 
     async def test_unload_last_entry_keeps_services_available(
         self,
@@ -806,7 +956,7 @@ class TestIntegrationUnload:
         enable_custom_integrations,
     ):
         """Test services are kept when other entries remain."""
-        from pytest_homeassistant_custom_component.common import MockConfigEntry
+        from pytest_homeassistant.common import MockConfigEntry
 
         # Set up first entry
         await hass.config_entries.async_setup(mock_config_entry.entry_id)
@@ -865,11 +1015,10 @@ class TestMigration:
         )
         entry.add_to_hass(hass)
 
-        result = await async_migrate_entry(hass, entry)
+        await async_migrate_entry(hass, entry)
 
-        assert result is True
-        assert entry.version == 4
-        assert entry.data[CONF_DISABLE_ANGLE_SENSING] is False
+        assert entry.version == 5
+        assert reads_positions(entry.data)
 
     async def test_migrate_v1_non_vibradorm_keeps_existing_setting(
         self,
@@ -891,10 +1040,9 @@ class TestMigration:
         )
         entry.add_to_hass(hass)
 
-        result = await async_migrate_entry(hass, entry)
+        await async_migrate_entry(hass, entry)
 
-        assert result is True
-        assert entry.version == 4
+        assert entry.version == 5
         assert entry.data[CONF_DISABLE_ANGLE_SENSING] is True
 
     async def test_migrate_v2_vibradorm_enables_angle_sensing(
@@ -916,11 +1064,10 @@ class TestMigration:
         )
         entry.add_to_hass(hass)
 
-        result = await async_migrate_entry(hass, entry)
+        await async_migrate_entry(hass, entry)
 
-        assert result is True
-        assert entry.version == 4
-        assert entry.data[CONF_DISABLE_ANGLE_SENSING] is False
+        assert entry.version == 5
+        assert reads_positions(entry.data)
 
     async def test_migrate_v1_vibradorm_keeps_existing_enabled_angle_setting(
         self,
@@ -942,11 +1089,10 @@ class TestMigration:
         )
         entry.add_to_hass(hass)
 
-        result = await async_migrate_entry(hass, entry)
+        await async_migrate_entry(hass, entry)
 
-        assert result is True
-        assert entry.version == 4
-        assert entry.data[CONF_DISABLE_ANGLE_SENSING] is False
+        assert entry.version == 5
+        assert reads_positions(entry.data)
 
     async def test_migrate_v2_non_vibradorm_keeps_existing_setting(
         self,
@@ -968,10 +1114,9 @@ class TestMigration:
         )
         entry.add_to_hass(hass)
 
-        result = await async_migrate_entry(hass, entry)
+        await async_migrate_entry(hass, entry)
 
-        assert result is True
-        assert entry.version == 4
+        assert entry.version == 5
         assert entry.data[CONF_DISABLE_ANGLE_SENSING] is True
 
     @pytest.mark.parametrize(
@@ -1010,14 +1155,21 @@ class TestMigration:
         )
         entry.add_to_hass(hass)
 
-        result = await async_migrate_entry(hass, entry)
+        await async_migrate_entry(hass, entry)
 
-        assert result is True
-        assert entry.version == 4
+        assert entry.version == 5
         # Byte-identical apart from the later minor-version review mark, which
-        # only routes that gained app profiles receive.
+        # only routes that gained app profiles receive, and the schema 5 profile
+        # id and migration record.
         migrated = dict(entry.data)
         migrated.pop(CONF_PROFILE_REVIEW_PENDING, None)
+        assert migrated.pop(CONF_PROFILE_ID) == bed_type
+        assert migrated.pop(CONF_PROFILE_MIGRATION)["from_version"] == 3
+        # The connection 4.x ran the entry with, which it had not saved.
+        assert migrated.pop(CONF_CONNECTION_MODE) == CONNECTION_MODE_IDLE
+        # Schema 5.6 drops an angle-sensing value equal to the bed type's default.
+        if CONF_DISABLE_ANGLE_SENSING not in migrated:
+            before.pop(CONF_DISABLE_ANGLE_SENSING)
         assert migrated == before
         assert is_paired(entry.data) is False
 
@@ -1026,20 +1178,23 @@ class TestMigration:
         hass: HomeAssistant,
         mock_config_entry_data: dict,
     ):
-        """An entry from a newer (v5) schema must be refused, not silently mangled."""
+        """An entry from a newer (v6) schema is refused before migration runs."""
         entry = MockConfigEntry(
             domain=DOMAIN,
             title="Future version",
             data={**mock_config_entry_data},
             unique_id="AA:BB:CC:DD:E5:01",
-            entry_id="migration_future_v5",
-            version=5,
+            entry_id="migration_future_v6",
+            version=6,
         )
         entry.add_to_hass(hass)
 
-        result = await async_migrate_entry(hass, entry)
+        with patch("custom_components.adjustable_bed.async_migrate_entry") as migrate:
+            assert not await hass.config_entries.async_setup(entry.entry_id)
 
-        assert result is False
+        migrate.assert_not_called()
+        assert entry.state is ConfigEntryState.MIGRATION_ERROR
+        assert (entry.version, dict(entry.data)) == (6, mock_config_entry_data)
 
 
 class TestServices:
@@ -1097,13 +1252,12 @@ class TestServices:
         enable_custom_integrations,
     ):
         """Test generate_support_bundle validates raw MAC addresses."""
-        import pytest
         from homeassistant.exceptions import ServiceValidationError
 
         await hass.config_entries.async_setup(mock_config_entry.entry_id)
         await hass.async_block_till_done()
 
-        with pytest.raises(ServiceValidationError, match="Invalid MAC address format"):
+        with raises_key("invalid_mac_address", ServiceValidationError):
             await hass.services.async_call(
                 DOMAIN,
                 SERVICE_GENERATE_SUPPORT_BUNDLE,
@@ -1115,12 +1269,12 @@ class TestServices:
         self,
         hass: HomeAssistant,
         mock_config_entry,
-        mock_bluetooth_adapters,
+        mock_bluetooth_api,
         enable_custom_integrations,
         tmp_path: Path,
     ):
         """Support bundles should still target devices whose entry is in SETUP_RETRY."""
-        del mock_bluetooth_adapters, enable_custom_integrations
+        del mock_bluetooth_api, enable_custom_integrations
         from homeassistant.helpers import device_registry as dr
 
         with patch(
@@ -1296,7 +1450,6 @@ class TestServices:
         enable_custom_integrations,
     ):
         """Test goto_preset raises error when preset exceeds memory_slot_count."""
-        import pytest
         from homeassistant.exceptions import ServiceValidationError
 
         await hass.config_entries.async_setup(mock_config_entry.entry_id)
@@ -1322,7 +1475,7 @@ class TestServices:
             patch.object(
                 type(controller), "memory_slot_count", new_callable=lambda: property(lambda self: 3)
             ),
-            pytest.raises(ServiceValidationError, match="only supports memory presets 1-3"),
+            raises_key("invalid_preset_number", ServiceValidationError),
         ):
             await hass.services.async_call(
                 DOMAIN,
@@ -1358,6 +1511,88 @@ class TestServices:
 
         # Verify command was sent
         mock_bleak_client.write_gatt_char.assert_called()
+
+    async def test_stop_all_stops_a_loaded_bed_when_another_is_not_loaded(
+        self,
+        hass: HomeAssistant,
+        mock_config_entry,
+        mock_coordinator_connected,
+        enable_custom_integrations,
+    ):
+        """A bed in setup retry is reported only after every other bed got its STOP."""
+        from homeassistant.exceptions import ServiceValidationError
+
+        await hass.config_entries.async_setup(mock_config_entry.entry_id)
+        await hass.async_block_till_done()
+        device_registry = dr.async_get(hass)
+        loaded_id = dr.async_entries_for_config_entry(
+            device_registry, mock_config_entry.entry_id
+        )[0].id
+        retrying = MockConfigEntry(
+            domain=DOMAIN, data=dict(mock_config_entry.data), unique_id="AA:BB:CC:DD:EE:01"
+        )
+        retrying.add_to_hass(hass)
+        retrying_id = device_registry.async_get_or_create(
+            config_entry_id=retrying.entry_id, identifiers={(DOMAIN, "AA:BB:CC:DD:EE:01")}
+        ).id
+        coordinator = hass.data[DOMAIN][mock_config_entry.entry_id]
+
+        with (
+            patch.object(coordinator, "async_stop_command", new=AsyncMock()) as stop,
+            pytest.raises(ServiceValidationError),
+        ):
+            await hass.services.async_call(
+                DOMAIN,
+                SERVICE_STOP_ALL,
+                {"device_id": [retrying_id, loaded_id]},
+                blocking=True,
+            )
+
+        stop.assert_awaited_once_with()
+
+    async def test_stop_all_rejects_an_empty_device_list(
+        self, hass: HomeAssistant, mock_config_entry, enable_custom_integrations
+    ):
+        """A template that renders no beds is an error, never a silent success."""
+        import voluptuous as vol
+
+        await hass.config_entries.async_setup(mock_config_entry.entry_id)
+        await hass.async_block_till_done()
+
+        with pytest.raises(vol.Invalid):
+            await hass.services.async_call(
+                DOMAIN, SERVICE_STOP_ALL, {"device_id": []}, blocking=True
+            )
+
+    async def test_stop_all_with_a_side_stops_a_single_bed_whole(
+        self,
+        hass: HomeAssistant,
+        mock_config_entry,
+        mock_coordinator_connected,
+        enable_custom_integrations,
+    ):
+        """A side a single bed lacks stops the whole bed, then reports the side."""
+        from homeassistant.exceptions import ServiceValidationError
+
+        await hass.config_entries.async_setup(mock_config_entry.entry_id)
+        await hass.async_block_till_done()
+        device_id = dr.async_entries_for_config_entry(
+            dr.async_get(hass), mock_config_entry.entry_id
+        )[0].id
+        coordinator = hass.data[DOMAIN][mock_config_entry.entry_id]
+
+        with (
+            patch.object(coordinator, "async_stop_command", new=AsyncMock()) as stop,
+            raises_key("side_not_supported", ServiceValidationError),
+        ):
+            await hass.services.async_call(
+                DOMAIN,
+                SERVICE_STOP_ALL,
+                {"device_id": [device_id], "side": "left"},
+                blocking=True,
+            )
+
+        stop.assert_awaited_once_with()
 
     async def test_linak_simultaneous_move_service_uses_combined_opcode_and_release(
         self,
@@ -1434,7 +1669,7 @@ class TestServices:
 
         await hass.services.async_call(
             DOMAIN,
-            SERVICE_LINAK_RENAME,
+            SERVICE_RENAME,
             {"device_id": [device_id], "name": "Seng Å"},
             blocking=True,
         )
@@ -1465,7 +1700,7 @@ class TestServices:
         ].id
         mock_bleak_client.write_gatt_char.reset_mock()
 
-        with pytest.raises(ServiceValidationError, match="cannot combine motor: base"):
+        with raises_key("feature_not_supported", ServiceValidationError):
             await hass.services.async_call(
                 DOMAIN,
                 SERVICE_LINAK_MOVE_SIMULTANEOUS,
@@ -1553,7 +1788,7 @@ class TestServices:
             0
         ].id
 
-        with pytest.raises(ServiceValidationError, match="Valid motors: back"):
+        with raises_key("invalid_motor_for_bed_type", ServiceValidationError):
             await hass.services.async_call(
                 DOMAIN,
                 SERVICE_SET_POSITION,
@@ -1630,18 +1865,20 @@ class TestServices:
         ].id
         mock_bleak_client.write_gatt_char.reset_mock()
 
-        await hass.services.async_call(
-            DOMAIN,
-            SERVICE_LINAK_SET_ALARM,
-            {
-                "device_id": [device_id],
-                "seconds": 3600,
-                "actions": [{"action": "memory_1"}],
-                "recurrence_count": 31,
-                "recurrence_minutes": 1440,
-            },
-            blocking=True,
-        )
+        now = datetime(2026, 11, 18, 6, 0, tzinfo=UTC)
+        with (
+            patch("custom_components.adjustable_bed.services.dt_util.now", return_value=now),
+            patch(
+                "custom_components.adjustable_bed.beds.linak.controller.dt_util.now",
+                return_value=now,
+            ),
+        ):
+            await hass.services.async_call(
+                DOMAIN,
+                SERVICE_SET_ALARM,
+                {"device_id": [device_id], "enabled": True, "time": "07:00:00", "wake_action": "memory_1"},
+                blocking=True,
+            )
 
         assert mock_bleak_client.write_gatt_char.await_args_list == [
             call(LINAK_CONFIG_CHAR_UUID, bytes.fromhex("89 3B 80 00 01"), response=True),
@@ -1650,7 +1887,7 @@ class TestServices:
                 bytes.fromhex("00 10 0E 01 0E 00 01 00"),
                 response=True,
             ),
-            call(LINAK_TIMER_CHAR_UUID, bytes.fromhex("10 A0 FD"), response=True),
+            call(LINAK_TIMER_CHAR_UUID, bytes.fromhex("10 00 00"), response=True),
             call(LINAK_TIMER_CHAR_UUID, bytes.fromhex("20"), response=True),
         ]
 
@@ -1905,7 +2142,6 @@ class TestServices:
         enable_custom_integrations,
     ):
         """Timed move should reject bed_height for beds that do not expose it."""
-        import pytest
         from homeassistant.exceptions import ServiceValidationError
 
         await hass.config_entries.async_setup(mock_config_entry.entry_id)
@@ -1918,7 +2154,7 @@ class TestServices:
         assert len(devices) == 1
         device_id = devices[0].id
 
-        with pytest.raises(ServiceValidationError, match="Valid motors: back, legs"):
+        with raises_key("invalid_motor_for_bed_type", ServiceValidationError):
             await hass.services.async_call(
                 DOMAIN,
                 SERVICE_TIMED_MOVE,
@@ -2053,7 +2289,6 @@ class TestServices:
         enable_custom_integrations,
     ):
         """BOX25 set_position should reject legacy back/legs motors."""
-        import pytest
         from homeassistant.exceptions import ServiceValidationError
 
         entry = MockConfigEntry(
@@ -2086,7 +2321,7 @@ class TestServices:
         assert len(devices) == 1
         device_id = devices[0].id
 
-        with pytest.raises(ServiceValidationError, match="Valid motors: feet, head, lumbar"):
+        with raises_key("invalid_motor_for_bed_type", ServiceValidationError):
             await hass.services.async_call(
                 DOMAIN,
                 SERVICE_SET_POSITION,
@@ -2137,13 +2372,9 @@ class TestServices:
         assert len(devices) == 1
         device_id = devices[0].id
 
-        import pytest
         from homeassistant.exceptions import ServiceValidationError
 
-        with pytest.raises(
-            ServiceValidationError,
-            match="does not support position feedback",
-        ):
+        with raises_key("position_feedback_not_supported", ServiceValidationError):
             await hass.services.async_call(
                 DOMAIN,
                 SERVICE_SET_POSITION,
@@ -2259,8 +2490,8 @@ class TestServices:
         coordinator.entry = entry
         coordinator.controller = MagicMock()
         coordinator.controller.position_number_specs = (
-            SimpleNamespace(position_key="back"),
-            SimpleNamespace(position_key="legs"),
+            SimpleNamespace(position_key="back", native_unit_of_measurement="°"),
+            SimpleNamespace(position_key="legs", native_unit_of_measurement="°"),
         )
         coordinator.capability_controller = coordinator.controller
         coordinator.name = entry.title
@@ -2335,7 +2566,6 @@ class TestServices:
         hass: HomeAssistant,
     ):
         """Standard set_position validation should reject targets above configured calibration."""
-        import pytest
         from homeassistant.exceptions import ServiceValidationError
         from homeassistant.helpers import device_registry as dr
 
@@ -2371,8 +2601,8 @@ class TestServices:
         coordinator.entry = entry
         coordinator.controller = MagicMock()
         coordinator.controller.position_number_specs = (
-            SimpleNamespace(position_key="back"),
-            SimpleNamespace(position_key="legs"),
+            SimpleNamespace(position_key="back", native_unit_of_measurement="°"),
+            SimpleNamespace(position_key="legs", native_unit_of_measurement="°"),
         )
         coordinator.capability_controller = coordinator.controller
         coordinator.name = entry.title
@@ -2390,7 +2620,7 @@ class TestServices:
 
         await async_register_services(hass)
 
-        with pytest.raises(ServiceValidationError, match=r"Valid range: 0-50.0°"):
+        with raises_key("invalid_position_range", ServiceValidationError) as raised:
             await hass.services.async_call(
                 DOMAIN,
                 SERVICE_SET_POSITION,
@@ -2401,6 +2631,7 @@ class TestServices:
                 },
                 blocking=True,
             )
+        assert raised.value.translation_placeholders["max_value"] == "50.0"
 
         # A failed validation must release the bed it reconnected for the check,
         # so it doesn't sit connected with no idle timer.
@@ -2562,8 +2793,9 @@ class TestServices:
         device_id = devices[0].id
 
         controller = hass.data[DOMAIN][entry.entry_id].controller
-        controller.move_pillow_up = AsyncMock()
-        controller.move_pillow_stop = AsyncMock()
+        # Prodigy CE motors are concurrent (#516), so the move joins the stream.
+        controller.write_stream_tick = AsyncMock()
+        controller.release_stream = AsyncMock()
 
         await hass.services.async_call(
             DOMAIN,
@@ -2572,10 +2804,11 @@ class TestServices:
                 "device_id": [device_id],
                 "motor": "pillow",
                 "direction": "up",
-                "duration_ms": 1000,
+                "duration_ms": 200,
             },
             blocking=True,
         )
 
-        controller.move_pillow_up.assert_awaited_once()
-        controller.move_pillow_stop.assert_awaited_once()
+        (members,) = controller.write_stream_tick.await_args_list[0].args
+        assert [(member.motor, member.action) for member in members] == [("pillow", "up")]
+        controller.release_stream.assert_awaited_once()

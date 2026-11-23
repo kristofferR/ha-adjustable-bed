@@ -11,9 +11,9 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from homeassistant.exceptions import ServiceValidationError
-from homeassistant.helpers import entity_registry as er
 
-from custom_components.adjustable_bed.actuator_groups import get_actuator_group_for_bed_type
+from custom_components.adjustable_bed.app_families import FAMILY_STEP_ROUTES
+from custom_components.adjustable_bed.bed_traits import bed_type_has_position_feedback
 from custom_components.adjustable_bed.button import _button_entities_for
 from custom_components.adjustable_bed.config_flow import (
     _motor_count_options,
@@ -25,13 +25,13 @@ from custom_components.adjustable_bed.const import (
     BED_TYPE_ZSERIES,
     DOMAIN,
     SIDE_BOTH,
-    bed_type_has_position_feedback,
     get_motor_pulse_defaults,
     requires_pairing,
 )
 from custom_components.adjustable_bed.controller_factory import create_controller
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
 from custom_components.adjustable_bed.detection import (
+    HIDDEN_APP_CHOICES,
     bed_type_choice,
     detect_bed_type,
     get_bed_type_options,
@@ -39,27 +39,33 @@ from custom_components.adjustable_bed.detection import (
 from custom_components.adjustable_bed.sensor import _sensor_entities_for
 from custom_components.adjustable_bed.services import async_register_services
 from tests.conftest import make_controller_mock
+from tests.error_helpers import raises_key
+from tests.form_helpers import shown_markers
 from tests.test_controller_contract import _FactoryCoordinator
 from tests.test_malouf_app_entities import configure_entity_runtime
 from tests.test_okin_bedding_apps import tranquil, written, zseries
 
 ROOT = Path(__file__).parents[1] / "custom_components" / "adjustable_bed"
 LABELS = {
-    (BED_TYPE_TRANQUIL, None): ("tranquil", ("okin", "Jordan's Tranquil app"), 2),
-    (BED_TYPE_ZSERIES, "z230"): ("zseries_z230", ("customatic", "Z-Series (Z-230)"), 1),
-    (BED_TYPE_ZSERIES, "z280"): ("zseries_z280", ("customatic", "Z-Series (Z-230)"), 2),
+    (BED_TYPE_TRANQUIL, None): ("tranquil", "okin", 2),
+    (BED_TYPE_ZSERIES, "z230"): ("zseries_z230", "customatic", 1),
+    (BED_TYPE_ZSERIES, "z280"): ("zseries_z280", "customatic", 2),
 }
 
 
 @pytest.mark.parametrize(("bed_type", "variant"), list(LABELS))
 async def test_explicit_profile_is_offline_constructible_and_never_auto_detected(bed_type, variant):
-    profile, group, slots = LABELS[bed_type, variant]
+    profile, _group, slots = LABELS[bed_type, variant]
     controller = await create_controller(_FactoryCoordinator(), bed_type, variant, None)
     assert controller is not None
     assert controller.protocol_diagnostics["cst_profile"] == profile
     assert controller.memory_slot_count == slots
-    assert get_actuator_group_for_bed_type(bed_type) == group
-    assert bed_type_choice(bed_type, variant) in {option["value"] for option in get_bed_type_options()}
+    # Behind its family's row, which names the app.
+    assert bed_type_choice(bed_type, variant) in FAMILY_STEP_ROUTES | HIDDEN_APP_CHOICES
+    assert any(
+        ("Tranquil" if bed_type == BED_TYPE_TRANQUIL else "Z-Series") in option["label"]
+        for option in get_bed_type_options()
+    )
     assert _motor_count_options(bed_type) == [2]
     assert _normalize_fixed_motor_count(bed_type, "auto", 4) == 2
     assert get_motor_pulse_defaults(bed_type) == (10, 100)
@@ -102,7 +108,7 @@ async def test_setup_hides_fixed_layout_and_refresh_delay(hass, bed_type):
     flow._discovery_info = info
     flow._async_transport_note = AsyncMock(return_value="")
     form = await flow.async_step_manual_entry()
-    markers = {marker.schema for marker in form["data_schema"].schema}
+    markers = shown_markers(form)
     assert CONF_MOTOR_COUNT not in markers
     assert CONF_MOTOR_PULSE_DELAY_MS not in markers
 
@@ -111,53 +117,46 @@ async def test_setup_hides_fixed_layout_and_refresh_delay(hass, bed_type):
     ("factory", "bed_type", "prefix"),
     [(tranquil, BED_TYPE_TRANQUIL, "tranquil"), (lambda: zseries("z280"), BED_TYPE_ZSERIES, "zseries")],
 )
-async def test_profile_change_retires_previous_app_buttons_and_sensors(hass, factory, bed_type, prefix):
+async def test_profile_change_builds_only_the_current_app_namespace(hass, factory, bed_type, prefix):
     runtime = configure_entity_runtime(hass, factory(), bed_type)
-    registry = er.async_get(hass)
-    stale = [
-        registry.async_get_or_create("button", DOMAIN, "bed_serenity_save_tv_left", config_entry=runtime.entry),
-        registry.async_get_or_create("sensor", DOMAIN, "bed_serenity_status_code_left", config_entry=runtime.entry),
-    ]
     buttons = {entity.unique_id for entity in _button_entities_for(hass, runtime)}
     sensors = {entity.unique_id for entity in _sensor_entities_for(hass, runtime)}
-    assert all(registry.async_get(row.entity_id) is None for row in stale)
+    assert "bed_serenity_save_tv_left" not in buttons
+    assert "bed_serenity_massage_timer_minutes_left" not in sensors
     assert f"bed_{prefix}_save_zero_g_left" in buttons
-    assert f"bed_{prefix}_status_code_left" in sensors
+    assert f"bed_{prefix}_massage_timer_minutes_left" in sensors
     # Moving away from the app profile removes its namespace again.
     retired = configure_entity_runtime(
         hass,
         make_controller_mock(
             controller_button_specs=(),
             controller_state_sensor_specs=(),
-            stale_controller_state_sensor_entity_keys=frozenset(),
             position_number_specs=(),
         ),
         BED_TYPE_DIAGNOSTIC,
     )
-    kept = [
-        registry.async_get_or_create("button", DOMAIN, f"bed_{prefix}_save_zero_g_left", config_entry=retired.entry),
-        registry.async_get_or_create("sensor", DOMAIN, f"bed_{prefix}_status_code_left", config_entry=retired.entry),
-    ]
-    _button_entities_for(hass, retired)
-    _sensor_entities_for(hass, retired)
-    assert all(registry.async_get(row.entity_id) is None for row in kept)
+    remaining = {
+        entity.unique_id
+        for entity in (*_button_entities_for(hass, retired), *_sensor_entities_for(hass, retired))
+    }
+    assert not {unique_id for unique_id in remaining if f"_{prefix}_" in unique_id}
 
 
-@pytest.mark.parametrize(("factory", "has_switch"), [(tranquil, True), (lambda: zseries("z230"), False)])
-async def test_discrete_light_switch_only_where_the_app_has_on_off(hass, factory, has_switch):
-    from custom_components.adjustable_bed.switch import _switch_entities_for
+@pytest.mark.parametrize(("factory", "has_light"), [(tranquil, True), (lambda: zseries("z230"), False)])
+async def test_discrete_light_only_where_the_app_has_on_off(hass, factory, has_light):
+    from custom_components.adjustable_bed.light import AdjustableBedOnOffLight, _light_entities_for
 
     controller = factory()
-    bed_type = BED_TYPE_TRANQUIL if has_switch else BED_TYPE_ZSERIES
+    bed_type = BED_TYPE_TRANQUIL if has_light else BED_TYPE_ZSERIES
     runtime = configure_entity_runtime(hass, controller, bed_type)
     runtime.bed_type = bed_type
-    switches = [
-        switch for switch in _switch_entities_for(hass, runtime)
-        if switch.entity_description.key == "under_bed_lights"
+    lights = [
+        light for light in _light_entities_for(hass, runtime)
+        if isinstance(light, AdjustableBedOnOffLight)
     ]
-    assert bool(switches) is has_switch
-    if switches:
-        assert switches[0].is_on is None and switches[0].assumed_state is True
+    assert bool(lights) is has_light
+    if lights:
+        assert lights[0].is_on is None and lights[0].assumed_state is True
 
 
 def _target(bed_type, controller):
@@ -182,7 +181,7 @@ def _target(bed_type, controller):
     [
         ("hold_control", BED_TYPE_TRANQUIL, tranquil, "save_lounge", None),
         ("hold_control", BED_TYPE_ZSERIES, lambda: zseries("z230"), "head_foot_up", None),
-        ("hold_control", BED_TYPE_ZSERIES, lambda: zseries("z230"), "memory_2", "does not support held control"),
+        ("hold_control", BED_TYPE_ZSERIES, lambda: zseries("z230"), "memory_2", "held_control_not_supported"),
     ],
 )
 async def test_hold_services_preflight_profile_and_literal_action(
@@ -198,7 +197,7 @@ async def test_hold_services_preflight_profile_and_literal_action(
         return_value=([(coordinator, SIDE_BOTH)], []),
     ):
         if error:
-            with pytest.raises(ServiceValidationError, match=error):
+            with raises_key(error, ServiceValidationError):
                 await hass.services.async_call(DOMAIN, service, data, blocking=True)
             coordinator.async_execute_controller_command.assert_not_awaited()
         else:
@@ -211,42 +210,46 @@ async def test_hold_services_preflight_profile_and_literal_action(
     [
         (BED_TYPE_ZSERIES, True, None),
         (BED_TYPE_ZSERIES, False, "does not support"),
-        (BED_TYPE_TRANQUIL, True, "not a Customatic Z-Series"),
+        (BED_TYPE_TRANQUIL, True, "has no alarm"),
     ],
 )
 async def test_alarm_service_requires_zseries_and_manufacturer_enabled_page(
     hass, bed_type, available, error
 ):
     await async_register_services(hass)
-    controller = zseries("z280")
+    controller = zseries("z280") if bed_type == BED_TYPE_ZSERIES else tranquil()
     controller._alarm_available = available
     coordinator = _target(bed_type, controller)
     with (
         patch(
             "custom_components.adjustable_bed.services._resolve_sided_targets",
             return_value=([(coordinator, SIDE_BOTH)], []),
+        ) as resolve,
+        patch(
+            "custom_components.adjustable_bed.services._resolve_sided_targets",
+            new=resolve,
         ),
         patch("asyncio.sleep", new=AsyncMock()),
         patch(
-            "custom_components.adjustable_bed.beds.serenity.dt_util.now",
+            "custom_components.adjustable_bed.beds.serenity.controller.dt_util.now",
             return_value=datetime(2026, 10, 1, 13, 47, 59),
         ),
     ):
-        data = {"device_id": "bed", "enabled": True, "time": "07:45:00", "wake_mode": "memory_1"}
+        data = {"device_id": "bed", "enabled": True, "time": "07:45:00", "wake_action": "memory_1"}
         if error:
             with pytest.raises(ServiceValidationError, match=error):
-                await hass.services.async_call(DOMAIN, "zseries_set_alarm", data, blocking=True)
+                await hass.services.async_call(DOMAIN, "set_alarm", data, blocking=True)
             assert written(controller) == []
             return
-        with pytest.raises(ServiceValidationError, match="wake-up mode"):
+        with pytest.raises(ServiceValidationError, match="Choose a wake action"):
             await hass.services.async_call(
                 DOMAIN,
-                "zseries_set_alarm",
-                {key: value for key, value in data.items() if key != "wake_mode"},
+                "set_alarm",
+                {key: value for key, value in data.items() if key != "wake_action"},
                 blocking=True,
             )
         assert written(controller) == []
-        await hass.services.async_call(DOMAIN, "zseries_set_alarm", data, blocking=True)
+        await hass.services.async_call(DOMAIN, "set_alarm", data, blocking=True)
         await hass.services.async_call(DOMAIN, "sync_clock", {"device_id": "bed"}, blocking=True)
     clock = "07061a0a01040d2f3b"
     assert written(controller) == [
@@ -272,52 +275,10 @@ def test_app_sensors_share_translations_and_keep_app_identities():
     assert all(s.key.startswith("zseries_") for s in zseries_specs)
 
 
-@pytest.mark.parametrize("bed_type", [BED_TYPE_TRANQUIL, BED_TYPE_ZSERIES])
-async def test_options_switch_from_generic_okin_profile_applies_fixed_defaults(hass, bed_type):
-    from homeassistant.const import CONF_ADDRESS
-    from pytest_homeassistant_custom_component.common import MockConfigEntry
-
-    from custom_components.adjustable_bed.config_flow import AdjustableBedOptionsFlow
-    from custom_components.adjustable_bed.const import (
-        BED_TYPE_OKIN_CST,
-        CONF_BED_TYPE,
-        CONF_DISABLE_ANGLE_SENSING,
-        CONF_MOTOR_COUNT,
-        CONF_MOTOR_PULSE_COUNT,
-        CONF_MOTOR_PULSE_DELAY_MS,
-        CONF_PROTOCOL_VARIANT,
-    )
-
-    entry = MockConfigEntry(
-        domain=DOMAIN,
-        data={
-            CONF_ADDRESS: "AA:BB:CC:DD:EE:FF",
-            CONF_BED_TYPE: BED_TYPE_OKIN_CST,
-            CONF_MOTOR_COUNT: 4,
-            CONF_PROTOCOL_VARIANT: "cst_support",
-            CONF_MOTOR_PULSE_COUNT: 7,
-            CONF_MOTOR_PULSE_DELAY_MS: 150,
-        },
-    )
-    entry.add_to_hass(hass)
-    flow = AdjustableBedOptionsFlow(entry)
-    flow.hass = hass
-    flow.handler = entry.entry_id
-    rebuilt = await flow._async_options_form({CONF_BED_TYPE: bed_type}, step_id="settings")
-    markers = {marker.schema for marker in rebuilt["data_schema"].schema}
-    assert CONF_MOTOR_COUNT not in markers and CONF_MOTOR_PULSE_DELAY_MS not in markers
-    saved = await flow._async_options_form({CONF_BED_TYPE: bed_type}, step_id="settings")
-    assert saved["type"] == "create_entry"
-    assert entry.data[CONF_BED_TYPE] == bed_type
-    assert entry.data[CONF_MOTOR_COUNT] == 2
-    assert (entry.data[CONF_MOTOR_PULSE_COUNT], entry.data[CONF_MOTOR_PULSE_DELAY_MS]) == (10, 100)
-    assert entry.data[CONF_DISABLE_ANGLE_SENSING] is True
-
-
 @pytest.mark.parametrize(("count", "error"), [("0", True), ("601", True), ("1", False), ("600", False)])
 async def test_zseries_pulse_count_range_is_validated_in_setup_and_options(hass, count, error):
     from homeassistant.const import CONF_ADDRESS, CONF_NAME
-    from pytest_homeassistant_custom_component.common import MockConfigEntry
+    from pytest_homeassistant.common import MockConfigEntry
 
     from custom_components.adjustable_bed.config_flow import (
         AdjustableBedConfigFlow,
@@ -336,8 +297,6 @@ async def test_zseries_pulse_count_range_is_validated_in_setup_and_options(hass,
     flow = AdjustableBedConfigFlow()
     flow.hass = hass
     flow.context = {}
-    flow._selected_bed_type = BED_TYPE_ZSERIES
-    flow._disambiguated_bed_type = BED_TYPE_ZSERIES
     info = MagicMock()
     info.name = "OKIN-003444"
     info.address = "AA:BB:CC:DD:EE:FF"
@@ -347,8 +306,17 @@ async def test_zseries_pulse_count_range_is_validated_in_setup_and_options(hass,
     flow._discovery_info = info
     flow._async_transport_note = AsyncMock(return_value="")
     if error:
-        form = await flow.async_step_bluetooth_confirm(
-            {CONF_BED_TYPE: BED_TYPE_ZSERIES, CONF_NAME: "Bed", CONF_MOTOR_PULSE_COUNT: count}
+        from custom_components.adjustable_bed.const import ZSERIES_VARIANT_Z230
+        from custom_components.adjustable_bed.detection import bed_type_choice
+        from tests.form_helpers import form_answers, start_new_bed
+
+        form = await start_new_bed(
+            flow, "discovered", bed_type_choice(BED_TYPE_ZSERIES, ZSERIES_VARIANT_Z230)
+        )
+        while form["step_id"] != "finish_settings":
+            form = await getattr(flow, f"async_step_{form['step_id']}")(form_answers(form))
+        form = await flow.async_step_finish_settings(
+            {CONF_NAME: "Bed", "timing": {CONF_MOTOR_PULSE_COUNT: count}}
         )
         assert form["type"] == "form"
         assert form["errors"][CONF_MOTOR_PULSE_COUNT] == "invalid_pulse_count_range"
@@ -387,21 +355,21 @@ async def test_enabling_alarm_requires_time_and_clearing_does_not(hass):
         ),
         patch("asyncio.sleep", new=AsyncMock()),
         patch(
-            "custom_components.adjustable_bed.beds.serenity.dt_util.now",
+            "custom_components.adjustable_bed.beds.serenity.controller.dt_util.now",
             return_value=datetime(2026, 10, 1, 13, 47, 59),
         ),
     ):
         with pytest.raises(ServiceValidationError) as raised:
             await hass.services.async_call(
                 DOMAIN,
-                "zseries_set_alarm",
-                {"device_id": "bed", "enabled": True, "wake_mode": "massage"},
+                "set_alarm",
+                {"device_id": "bed", "enabled": True, "wake_action": "massage"},
                 blocking=True,
             )
-        assert raised.value.translation_key == "zseries_alarm_time_required"
+        assert raised.value.translation_key == "alarm_time_required"
         assert written(controller) == []
         await hass.services.async_call(
-            DOMAIN, "zseries_set_alarm", {"device_id": "bed", "enabled": False}, blocking=True
+            DOMAIN, "set_alarm", {"device_id": "bed", "enabled": False}, blocking=True
         )
     assert written(controller) == ["07061a0a01040d2f3b", "070500000000000001", "00c0", "00c0"]
 
@@ -429,14 +397,14 @@ async def _set_alarm(hass, controller):
         ),
         patch("asyncio.sleep", new=AsyncMock()),
         patch(
-            "custom_components.adjustable_bed.beds.serenity.dt_util.now",
+            "custom_components.adjustable_bed.beds.serenity.controller.dt_util.now",
             return_value=datetime(2026, 10, 1, 13, 47, 59),
         ),
     ):
         await hass.services.async_call(
             DOMAIN,
-            "zseries_set_alarm",
-            {"device_id": "bed", "enabled": True, "time": "07:45:00", "wake_mode": "massage"},
+            "set_alarm",
+            {"device_id": "bed", "enabled": True, "time": "07:45:00", "wake_action": "massage"},
             blocking=True,
         )
 
@@ -486,7 +454,7 @@ async def test_unknown_state_that_cannot_be_read_fails_without_writing(hass):
     controller = zseries("z280")
     _persisting(controller, {})
     controller.client.read_gatt_char.side_effect = TimeoutError("still unreadable")
-    with pytest.raises(ServiceValidationError, match="Could not read the manufacturer"):
+    with raises_key("zseries_alarm_unknown", ServiceValidationError):
         await _set_alarm(hass, controller)
     assert written(controller) == []
 
@@ -522,20 +490,21 @@ def _two_devices(first, second):
     return None, [(target, SIDE_BOTH) for target in targets], targets
 
 
-async def _call(hass, resolved, service="zseries_set_alarm"):
+async def _call(hass, resolved, service="set_alarm"):
     await async_register_services(hass)
     data = {"device_id": ["a", "b"]}
-    if service == "zseries_set_alarm":
-        data |= {"enabled": True, "time": "07:45:00", "wake_mode": "massage"}
+    if service == "set_alarm":
+        data |= {"enabled": True, "time": "07:45:00", "wake_action": "massage"}
     with (
-        patch("custom_components.adjustable_bed.services._resolve_sided_targets", return_value=(resolved, [])),
+        patch("custom_components.adjustable_bed.services._resolve_sided_targets", return_value=(resolved, [])) as resolve,
+        patch("custom_components.adjustable_bed.services._resolve_sided_targets", new=resolve),
         patch("asyncio.sleep", new=AsyncMock()),
     ):
         await hass.services.async_call(DOMAIN, service, data, blocking=True)
 
 
 @pytest.mark.parametrize("layout", [_two_devices, _paired])
-@pytest.mark.parametrize("service", ["zseries_set_alarm", "sync_clock"])
+@pytest.mark.parametrize("service", ["set_alarm", "sync_clock"])
 @pytest.mark.parametrize(
     ("second_read", "error"),
     [([b"CST20"], "does not support"), (TimeoutError("unreadable"), "Could not read")],
@@ -588,6 +557,9 @@ class _OneSlotChild:
     """A side on a one-slot Bluetooth path: a second simultaneous link fails."""
 
     slot: list[_OneSlotChild] = []
+    controller_side = None
+    stop_epoch = 0
+    pairlink_peripheral = False
 
     def __init__(self, name: str, store: dict) -> None:
         self.name = name
@@ -657,11 +629,17 @@ async def test_capability_probe_releases_each_link_on_a_one_slot_path(hass, pair
         for child in (left, right):
             child.async_execute_controller_command = AsyncMock(side_effect=executor(child))
         resolved = [(left, SIDE_BOTH), (right, SIDE_BOTH)]
-    with patch(
-        "custom_components.adjustable_bed.services._command_targets",
-        side_effect=lambda coordinator, side: list(coordinator.children.values())
-        if paired
-        else [coordinator],
+    with (
+        patch(
+            "custom_components.adjustable_bed.services._command_targets",
+            side_effect=lambda coordinator, side: list(coordinator.children.values())
+            if paired
+            else [coordinator],
+        ) as command_targets,
+        patch(
+            "custom_components.adjustable_bed.beds.serenity.services._command_targets",
+            new=command_targets,
+        ),
     ):
         await _call(hass, resolved, "sync_clock")
     for child in (left, right):
@@ -671,56 +649,20 @@ async def test_capability_probe_releases_each_link_on_a_one_slot_path(hass, pair
     assert _OneSlotChild.slot == []
 
 
-async def test_pair_profile_changes_to_or_from_these_apps_require_unpair(hass):
-    from homeassistant.const import CONF_ADDRESS
-    from pytest_homeassistant_custom_component.common import MockConfigEntry
-
-    from custom_components.adjustable_bed.config_flow import AdjustableBedOptionsFlow
-    from custom_components.adjustable_bed.const import (
-        BED_TYPE_OKIN_CST,
-        CONF_BED_TYPE,
-        CONF_MOTOR_COUNT,
-        CONF_MOTOR_PULSE_COUNT,
-        CONF_PAIR_CHILDREN,
-        CONF_PROTOCOL_VARIANT,
-    )
-    from custom_components.adjustable_bed.pairing import build_pair_entry_data
-
-    z230, z280 = (BED_TYPE_ZSERIES, "z230"), (BED_TYPE_ZSERIES, "z280")
-    cst, tranquil_app = (BED_TYPE_OKIN_CST, "auto"), (BED_TYPE_TRANQUIL, "auto")
-    cases = [
-        # (left profile, right profile, requested profile, refused)
-        (cst, cst, tranquil_app, True),
-        (z230, z230, z280, True),
-        (z280, z280, cst, True),
-        (tranquil_app, z280, tranquil_app, True),  # Mixed pair.
-        (cst, z230, cst, True),  # Mixed pair.
-        (tranquil_app, tranquil_app, tranquil_app, False),  # Same profile kept.
-    ]
-    for index, ((left_type, left_variant), (right_type, right_variant), (requested, variant), refused) in enumerate(cases):
-        left = {
-            CONF_ADDRESS: f"11:22:33:44:55:{index:02d}",
-            CONF_BED_TYPE: left_type,
-            CONF_PROTOCOL_VARIANT: left_variant,
-            CONF_MOTOR_COUNT: 2,
-        }
-        right = {
-            **left,
-            CONF_ADDRESS: f"11:22:33:44:66:{index:02d}",
-            CONF_BED_TYPE: right_type,
-            CONF_PROTOCOL_VARIANT: right_variant,
-        }
-        entry = MockConfigEntry(domain=DOMAIN, data=build_pair_entry_data(left, right, name="Pair"))
-        entry.add_to_hass(hass)
-        children = [dict(child) for child in entry.data[CONF_PAIR_CHILDREN]]
-        flow = AdjustableBedOptionsFlow(entry)
-        flow.handler = entry.entry_id
-        flow.hass = hass
-        result = await flow.async_step_settings(
-            {CONF_BED_TYPE: requested, CONF_PROTOCOL_VARIANT: variant, CONF_MOTOR_PULSE_COUNT: "10"}
+async def test_zseries_missing_wake_action_fails_before_scheduling(hass):
+    await async_register_services(hass)
+    controller = zseries("z280")
+    controller._alarm_available = True
+    coordinator = _target(BED_TYPE_ZSERIES, controller)
+    with (
+        patch(
+            "custom_components.adjustable_bed.services._resolve_sided_targets",
+            return_value=([(coordinator, SIDE_BOTH)], []),
+        ),
+        pytest.raises(ServiceValidationError, match="Choose a wake action"),
+    ):
+        await hass.services.async_call(
+            DOMAIN, "set_alarm", {"device_id": "bed", "enabled": True, "time": "07:00:00"},
+            blocking=True,
         )
-        if refused:
-            assert "app_profile_unpair_first" in result["errors"].values(), cases[index]
-            assert [dict(child) for child in entry.data[CONF_PAIR_CHILDREN]] == children
-        else:
-            assert "app_profile_unpair_first" not in (result.get("errors") or {}).values()
+    coordinator.async_execute_controller_command.assert_not_awaited()

@@ -5,39 +5,48 @@ from __future__ import annotations
 import asyncio
 import logging
 import math
-from collections.abc import Callable
+from collections.abc import Callable, Mapping
 from functools import partial
 from typing import TYPE_CHECKING, Any
 
 from bleak.exc import BleakError
-
-# These constants are defined here in HA 2026.9 and re-exported in 2026.10.
 from homeassistant.components.light import (
-    ATTR_BRIGHTNESS,  # pyright: ignore[reportPrivateImportUsage]
-    ATTR_RGB_COLOR,  # pyright: ignore[reportPrivateImportUsage]
-    ATTR_RGBW_COLOR,  # pyright: ignore[reportPrivateImportUsage]
+    ATTR_BRIGHTNESS,
+    ATTR_RGB_COLOR,
+    ATTR_RGBW_COLOR,
     LightEntity,
     LightEntityDescription,
 )
 from homeassistant.components.light.const import ColorMode
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.const import STATE_OFF, STATE_ON
+from homeassistant.const import STATE_OFF, STATE_ON, Platform
 from homeassistant.core import HomeAssistant, callback
-from homeassistant.exceptions import HomeAssistantError, ServiceValidationError
-from homeassistant.helpers import entity_registry as er
-from homeassistant.helpers.entity_platform import AddEntitiesCallback
+from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers.restore_state import RestoreEntity
 
-from .const import BED_TYPE_LINAK, BED_TYPE_SLEEP_NUMBER_MCR, DOMAIN
+from .beds.octo.runtime import octo_controller
+from .card import CARD_LIGHTING
+from .command_scheduler import Delivery, delivered
+from .controller_state import ControllerState, sided
 from .entity import AdjustableBedEntity
 from .entity_discovery import async_setup_dynamic_entities
 from .entity_runtime import EntityRuntime
-from .octo_runtime import octo_controller
+from .entity_sweep import PlatformEntities, records_entities
+from .errors import invalid
 from .paired_coordinator import entity_runtimes
+from .runtime_data import entry_runtime
+from .state_keys import (
+    LIGHT_INTENSITY,
+    LIGHT_LEVEL,
+    OCTO_LIGHT_DURATION,
+    UNDER_BED_LIGHTS_ON,
+    UNDER_BED_LIGHTS_RGB,
+    UNDER_BED_LIGHTS_RGBW,
+)
 
 if TYPE_CHECKING:
     from .beds.base import BedController
-    from .beds.octo import OctoController
+    from .beds.octo.controller import OctoController
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -96,16 +105,16 @@ def _normalize_rgbw_color(value: Any) -> tuple[int, int, int, int] | None:
     return rgbw
 
 
+@records_entities(Platform.LIGHT)
 async def async_setup_entry(
     hass: HomeAssistant,
     entry: ConfigEntry,
-    async_add_entities: AddEntitiesCallback,
+    async_add_entities: PlatformEntities,
 ) -> None:
     """Set up Adjustable Bed light entities."""
-    coordinator = hass.data[DOMAIN][entry.entry_id]
+    coordinator = entry_runtime(hass, entry.entry_id)
     for runtime in entity_runtimes(coordinator):
         async_setup_dynamic_entities(
-            hass,
             entry,
             runtime,
             async_add_entities,
@@ -119,22 +128,16 @@ def _light_entities_for(hass: HomeAssistant, coordinator: EntityRuntime) -> list
 
     if controller is None:
         # No controller to read capabilities from (e.g. a paired side offline at
-        # setup whose type can't be offline-minted). Don't run the stale cleanup
-        # here — we can't tell whether the bed has a light, and removing the
-        # existing registry entry would drop a real light that won't be recreated
-        # until the side reconnects and the platform re-runs.
+        # setup whose type can't be offline-minted).
         return []
 
     octo = octo_controller(controller)
     if octo is not None and not octo.controller_entity_discovery_complete:
-        # Preserve any existing registry row, but defer runtime construction:
-        # legacy snapshots cannot provide a legal HA color mode until CAP_END.
-        # No authoritative discovery means no registry cleanup or new capability.
+        # Defer construction: legacy snapshots cannot provide a legal HA color
+        # mode until CAP_END. The incomplete discovery also keeps the row.
         return []
 
     if octo is not None and not octo.supports_lights:
-        _async_remove_stale_light_entity(hass, coordinator)
-        _async_remove_stale_light_entity(hass, coordinator, ASSUMED_LIGHT_DESCRIPTION)
         return []
 
     toggle_only = (
@@ -144,62 +147,21 @@ def _light_entities_for(hass: HomeAssistant, coordinator: EntityRuntime) -> list
         and not controller.supports_light_state_feedback
         and not controller.light_color_control_pending
     )
-    if not toggle_only:
-        _async_remove_stale_light_entity(hass, coordinator, ASSUMED_LIGHT_DESCRIPTION)
 
     if controller.supports_light_color_control:
-        if octo is None:
-            _async_remove_stale_switch_entity(hass, coordinator)
         return [AdjustableBedLight(coordinator, LIGHT_DESCRIPTION)]
 
     if octo is not None and octo.supports_discrete_light_control:
         # Main exposed OCTO's on/off-only capability as a switch. Keep its
         # registry identity and automations stable across this upgrade.
-        _async_remove_stale_light_entity(hass, coordinator)
         return []
 
-    if (
-        controller.supports_light_state_feedback
-        or coordinator.bed_type in (BED_TYPE_LINAK, BED_TYPE_SLEEP_NUMBER_MCR)
-        and controller.supports_discrete_light_control
-    ):
-        if octo is None:
-            _async_remove_stale_switch_entity(hass, coordinator)
+    if controller.supports_light_state_feedback or controller.supports_discrete_light_control:
         return [AdjustableBedOnOffLight(coordinator, LIGHT_DESCRIPTION)]
 
-    if not controller.light_color_control_pending:
-        _async_remove_stale_light_entity(hass, coordinator)
-    if toggle_only:
+    if toggle_only and controller.exposes_assumed_toggle_light:
         return [AdjustableBedAssumedLight(coordinator)]
     return []
-
-
-def _async_remove_stale_light_entity(
-    hass: HomeAssistant,
-    coordinator: EntityRuntime,
-    description: LightEntityDescription = LIGHT_DESCRIPTION,
-) -> None:
-    """Remove stale light entities when the controller no longer supports them."""
-    registry = er.async_get(hass)
-    entity_id = registry.async_get_entity_id(
-        "light",
-        DOMAIN,
-        coordinator.entity_unique_id(description.key),
-    )
-    if entity_id is not None:
-        registry.async_remove(entity_id)
-
-
-def _async_remove_stale_switch_entity(hass: HomeAssistant, coordinator: EntityRuntime) -> None:
-    """Remove the legacy switch when a light entity owns under-bed lights."""
-    registry = er.async_get(hass)
-    entity_id = registry.async_get_entity_id(
-        "switch",
-        DOMAIN,
-        coordinator.entity_unique_id(LIGHT_DESCRIPTION.key),
-    )
-    if entity_id is not None:
-        registry.async_remove(entity_id)
 
 
 class AdjustableBedAssumedLight(AdjustableBedEntity, RestoreEntity, LightEntity):
@@ -213,9 +175,9 @@ class AdjustableBedAssumedLight(AdjustableBedEntity, RestoreEntity, LightEntity)
 
     def __init__(self, coordinator: EntityRuntime) -> None:
         """Start with an off estimate without sending a command to the bed."""
-        super().__init__(coordinator)
+        super().__init__(coordinator, CARD_LIGHTING)
         description = self.entity_description
-        self._set_sided_translation_key(description.translation_key, description.key)
+        self._attr_translation_key = description.translation_key or description.key
         self._attr_unique_id = coordinator.entity_unique_id(description.key)
         self._attr_is_on = False
 
@@ -241,9 +203,7 @@ class AdjustableBedAssumedLight(AdjustableBedEntity, RestoreEntity, LightEntity)
 
         async def set_state(ctrl: BedController) -> None:
             if self._attr_is_on != is_on:
-                await ctrl.lights_toggle()
-                self._attr_is_on = is_on
-                self.async_write_ha_state()
+                await self._async_toggle_to(ctrl, is_on)
 
         await self._coordinator.async_execute_controller_command(set_state, cancel_running=False)
 
@@ -251,11 +211,25 @@ class AdjustableBedAssumedLight(AdjustableBedEntity, RestoreEntity, LightEntity)
         """Always send one native toggle, then invert the estimate."""
 
         async def toggle(ctrl: BedController) -> None:
-            await ctrl.lights_toggle()
-            self._attr_is_on = not self._attr_is_on
-            self.async_write_ha_state()
+            await self._async_toggle_to(ctrl, not self._attr_is_on)
 
         await self._coordinator.async_execute_controller_command(toggle, cancel_running=False)
+
+    async def _async_toggle_to(self, ctrl: BedController, is_on: bool) -> None:
+        """Toggle, then move the estimate only if the toggle reached the light.
+
+        An unsent toggle must not invert the estimate for good. Its first frame
+        is the toggle, so a partly sent one counts, also when cancellation
+        interrupts its release frames.
+        """
+
+        def show(delivery: Delivery) -> None:
+            if delivery is not Delivery.NONE:
+                self._attr_is_on = is_on
+                self.async_write_ha_state()
+
+        with delivered(show):
+            await ctrl.lights_toggle()
 
 
 class AdjustableBedLight(AdjustableBedEntity, RestoreEntity, LightEntity):
@@ -273,9 +247,9 @@ class AdjustableBedLight(AdjustableBedEntity, RestoreEntity, LightEntity):
         description: LightEntityDescription,
     ) -> None:
         """Initialize the light."""
-        super().__init__(coordinator)
+        super().__init__(coordinator, CARD_LIGHTING)
         self.entity_description = description
-        self._set_sided_translation_key(description.translation_key, description.key)
+        self._attr_translation_key = description.translation_key or description.key
         self._attr_unique_id = coordinator.entity_unique_id(description.key)
 
         # Use the capability controller (live when connected, else the client-free
@@ -311,8 +285,8 @@ class AdjustableBedLight(AdjustableBedEntity, RestoreEntity, LightEntity):
             self._attr_color_mode = next(iter(supported_modes), None)
 
         default_rgb = controller.default_light_rgb_color if controller is not None else None
-        self._supports_discrete_light_control = (
-            controller is not None and controller.supports_discrete_light_control
+        self._supports_desired_light_off = controller is not None and (
+            controller.supports_discrete_light_control or controller.supports_light_state_feedback
         )
         self._default_rgb_color = _normalize_rgb_color(default_rgb)
         # HA brightness maps onto the bed's native 1..max levels when it has them.
@@ -322,15 +296,17 @@ class AdjustableBedLight(AdjustableBedEntity, RestoreEntity, LightEntity):
             else None
         )
         self._attr_is_on = False
-        current_rgb = getattr(controller, "current_light_rgb_color", None)
+        current_rgb = controller.current_light_rgb_color if controller is not None else None
         if current_rgb is None:
-            current_rgb = coordinator.controller_state.get("under_bed_lights_rgb")
+            current_rgb = coordinator.controller_state.get(UNDER_BED_LIGHTS_RGB)
         self._attr_rgb_color = _normalize_rgb_color(current_rgb) or self._default_rgb_color
         if ColorMode.RGBW in supported_modes:
             # Keep RGB, RGBW and intensity independent when both records exist.
-            current_rgbw = getattr(controller, "current_light_rgbw_color", None)
+            current_rgbw = (
+                controller.current_light_rgbw_color if controller is not None else None
+            )
             if current_rgbw is None:
-                current_rgbw = coordinator.controller_state.get("under_bed_lights_rgbw")
+                current_rgbw = coordinator.controller_state.get(UNDER_BED_LIGHTS_RGBW)
             normalized_rgbw = _normalize_rgbw_color(current_rgbw)
             if normalized_rgbw is not None:
                 self._attr_rgbw_color = normalized_rgbw
@@ -339,9 +315,9 @@ class AdjustableBedLight(AdjustableBedEntity, RestoreEntity, LightEntity):
                 self._attr_rgbw_color = (r, g, b, 255)
             elif not is_octo:
                 self._attr_rgbw_color = (255, 255, 255, 255)
-            current_intensity = getattr(controller, "light_intensity", None)
+            current_intensity = controller.light_intensity if controller is not None else None
             if current_intensity is None:
-                current_intensity = coordinator.controller_state.get("light_intensity")
+                current_intensity = coordinator.controller_state.get(LIGHT_INTENSITY)
             if type(current_intensity) is int and (
                 0 <= current_intensity <= 255 if is_octo else 1 <= current_intensity <= 255
             ):
@@ -358,6 +334,7 @@ class AdjustableBedLight(AdjustableBedEntity, RestoreEntity, LightEntity):
         )
         self._light_turn_on_in_progress = False
         self._light_turn_off_in_progress = False
+        self._last_controller_entity_available = self.available
 
     @property
     def available(self) -> bool:
@@ -371,7 +348,10 @@ class AdjustableBedLight(AdjustableBedEntity, RestoreEntity, LightEntity):
                 and bool(octo.supported_color_modes)
                 and octo.normal_controls_available
             )
-        return super().available
+        return super().available and (
+            controller is None
+            or self.entity_description.key not in controller.unavailable_controller_entity_keys
+        )
 
     async def async_added_to_hass(self) -> None:
         """Restore the last light state and subscribe to live light state."""
@@ -410,13 +390,15 @@ class AdjustableBedLight(AdjustableBedEntity, RestoreEntity, LightEntity):
         await super().async_will_remove_from_hass()
 
     @callback
-    def _handle_light_state(self, state: dict[str, Any]) -> None:
+    def _handle_light_state(self, state: ControllerState) -> None:
         """Update on/off + colour from controller-reported light state.
 
         Only writes HA state when a value actually changes, to avoid event churn
         on repeated/identical telemetry packets.
         """
-        changed = False
+        available = self.available
+        changed = available != self._last_controller_entity_available
+        self._last_controller_entity_available = available
         was_on = self._attr_is_on
         controller = self._coordinator.capability_controller
         octo = octo_controller(controller)
@@ -461,31 +443,31 @@ class AdjustableBedLight(AdjustableBedEntity, RestoreEntity, LightEntity):
             if not active_modes and self._attr_is_on:
                 self._attr_is_on = False
                 changed = True
-        if "under_bed_lights_on" in state:
-            reported_state = state["under_bed_lights_on"]
+        if UNDER_BED_LIGHTS_ON in state:
+            reported_state = state[UNDER_BED_LIGHTS_ON]
             if not (octo is not None and reported_state is None):
                 is_on = bool(reported_state)
                 if is_on != self._attr_is_on:
                     self._attr_is_on = is_on
                     changed = True
         octo_modes = active_modes if octo is not None else {ColorMode.RGB, ColorMode.RGBW}
-        rgb = _normalize_rgb_color(state.get("under_bed_lights_rgb"))
+        rgb = _normalize_rgb_color(state.get(UNDER_BED_LIGHTS_RGB))
         if (
-            "under_bed_lights_rgb" in state
+            UNDER_BED_LIGHTS_RGB in state
             and ColorMode.RGB in octo_modes
             and rgb != self._attr_rgb_color
         ):
             self._attr_rgb_color = rgb
             changed = True
-        rgbw = _normalize_rgbw_color(state.get("under_bed_lights_rgbw"))
+        rgbw = _normalize_rgbw_color(state.get(UNDER_BED_LIGHTS_RGBW))
         if (
-            "under_bed_lights_rgbw" in state
+            UNDER_BED_LIGHTS_RGBW in state
             and ColorMode.RGBW in octo_modes
             and rgbw != self._attr_rgbw_color
         ):
             self._attr_rgbw_color = rgbw
             changed = True
-        intensity = state.get("light_intensity")
+        intensity = state.get(LIGHT_INTENSITY)
         normalized_intensity = (
             intensity
             if type(intensity) is int
@@ -493,7 +475,7 @@ class AdjustableBedLight(AdjustableBedEntity, RestoreEntity, LightEntity):
             else None
         )
         if (
-            "light_intensity" in state
+            LIGHT_INTENSITY in state
             and (octo is None or ColorMode.RGBW in octo_modes)
             and normalized_intensity != self._attr_brightness
         ):
@@ -506,7 +488,7 @@ class AdjustableBedLight(AdjustableBedEntity, RestoreEntity, LightEntity):
             if octo.controller_entity_discovery_complete and not octo.supports_lights:
                 self._cancel_light_auto_off_timer()
             else:
-                if "octo_light_duration" in state:
+                if OCTO_LIGHT_DURATION in state:
                     duration = (
                         octo.light_auto_off_seconds
                         if octo.controller_entity_discovery_complete
@@ -519,16 +501,20 @@ class AdjustableBedLight(AdjustableBedEntity, RestoreEntity, LightEntity):
                         else:
                             self._cancel_light_auto_off_timer()
 
-                if "under_bed_lights_on" in state:
-                    reported_state = state["under_bed_lights_on"]
+                if UNDER_BED_LIGHTS_ON in state:
+                    reported_state = state[UNDER_BED_LIGHTS_ON]
                     if reported_state is True:
                         if not was_on or self._light_auto_off_timer is None:
                             self._schedule_light_auto_off_timer()
                     elif reported_state is False:
                         self._cancel_light_auto_off_timer()
-        level = state.get("light_level")
-        if self._light_level_max is not None and type(level) is int and level > 0:
-            brightness = _level_to_brightness(level, self._light_level_max)
+        level = state.get(LIGHT_LEVEL)
+        if LIGHT_LEVEL in state and self._light_level_max is not None:
+            brightness = (
+                _level_to_brightness(level, self._light_level_max)
+                if type(level) is int and 0 <= level <= self._light_level_max
+                else None
+            )
             if brightness != self._attr_brightness:
                 self._attr_brightness = brightness
                 changed = True
@@ -540,40 +526,57 @@ class AdjustableBedLight(AdjustableBedEntity, RestoreEntity, LightEntity):
         requested_rgbw = _normalize_rgbw_color(kwargs.get(ATTR_RGBW_COLOR))
         requested_rgb = _normalize_rgb_color(kwargs.get(ATTR_RGB_COLOR))
         supported_modes = self._attr_supported_color_modes or set()
-        self._light_turn_on_in_progress = True
-        try:
-            if requested_rgbw is not None:
-                if ColorMode.RGBW not in supported_modes:
-                    raise ValueError("RGBW color is not supported by this light")
-                self._attr_color_mode = ColorMode.RGBW
-                await self._turn_on_rgbw(**kwargs)
-            elif requested_rgb is not None:
-                if ColorMode.RGB not in supported_modes:
-                    raise ValueError("RGB color is not supported by this light")
-                self._attr_color_mode = ColorMode.RGB
-                await self._turn_on_rgb(**kwargs)
-            elif self._attr_color_mode == ColorMode.RGBW:
-                await self._turn_on_rgbw(**kwargs)
-            elif self._attr_color_mode == ColorMode.RGB:
-                await self._turn_on_rgb(**kwargs)
-            elif self._attr_color_mode == ColorMode.ONOFF:
+        if requested_rgbw is not None and ColorMode.RGBW not in supported_modes:
+            raise ValueError("RGBW color is not supported by this light")
+        if requested_rgb is not None and ColorMode.RGB not in supported_modes:
+            raise ValueError("RGB color is not supported by this light")
+        explicit = (
+            ColorMode.RGBW
+            if requested_rgbw is not None
+            else ColorMode.RGB
+            if requested_rgb is not None
+            else None
+        )
+        shown: Callable[[], None] | None = None
 
-                async def _turn_on(ctrl: BedController) -> None:
-                    await ctrl.lights_on()
-
-                await self._coordinator.async_execute_controller_command(
-                    _turn_on, cancel_running=False
-                )
-                self._attr_is_on = True
-                self.async_write_ha_state()
+        async def turn_on(ctrl: BedController) -> None:
+            nonlocal shown
+            # Resolved inside the serialized command, so a request without a
+            # color follows the last mode actually sent, never a dropped one.
+            mode = explicit or self._attr_color_mode
+            if mode == ColorMode.RGBW:
+                shown = await self._send_rgbw(ctrl, kwargs)
+            elif mode == ColorMode.RGB:
+                shown = await self._send_rgb(ctrl, kwargs)
+            elif mode == ColorMode.ONOFF:
+                await ctrl.lights_on()
+                shown = self._shown_on
             else:
                 raise ValueError("This light has no active color mode")
+
+        def show(delivery: Delivery) -> None:
+            if delivery is Delivery.NONE:
+                return
+            if delivery is Delivery.SENT and shown is not None:
+                shown()
+            else:
+                # Part of the request reached the light.
+                self._attr_is_on = None
+            self.async_write_ha_state()
+
+        self._light_turn_on_in_progress = True
+        try:
+            delivery = await self._async_send(turn_on, on_delivery=show, cancel_running=False)
         finally:
             self._light_turn_on_in_progress = False
-        self._schedule_light_auto_off_timer()
+        if delivery is Delivery.SENT:
+            self._schedule_light_auto_off_timer()
 
-    async def _turn_on_rgb(self, **kwargs: Any) -> None:
-        """Turn on with RGB color mode."""
+    def _shown_on(self) -> None:
+        self._attr_is_on = True
+
+    async def _send_rgb(self, ctrl: BedController, kwargs: Mapping[str, Any]) -> Callable[[], None]:
+        """Send an RGB turn-on; return how to show it once it was sent."""
         requested_rgb = _normalize_rgb_color(kwargs.get(ATTR_RGB_COLOR))
         target_rgb = requested_rgb or self._attr_rgb_color or self._default_rgb_color
         # Turning on from off resends the known brightness: the bed may not keep
@@ -592,55 +595,57 @@ class AdjustableBedLight(AdjustableBedEntity, RestoreEntity, LightEntity):
             and requested_rgb is None
             and self._attr_is_on
         )
+        if not brightness_only:
+            if ctrl.supports_explicit_light_on_control:
+                await ctrl.lights_on()
+            elif target_rgb is None:
+                if ctrl.supports_light_toggle_control:
+                    if not self._attr_is_on:
+                        await ctrl.lights_toggle()
+                else:
+                    raise ValueError("No RGB color available for this light")
+            if target_rgb is not None:
+                await ctrl.set_light_color(target_rgb)
+        if level is not None:
+            await ctrl.set_light_level(level)
 
-        async def _turn_on(ctrl: BedController) -> None:
-            if not brightness_only:
-                if getattr(ctrl, "supports_explicit_light_on_control", False):
-                    await ctrl.lights_on()
-                elif target_rgb is None:
-                    if ctrl.supports_light_toggle_control:
-                        if not self._attr_is_on:
-                            await ctrl.lights_toggle()
-                    else:
-                        raise ValueError("No RGB color available for this light")
-                if target_rgb is not None:
-                    await ctrl.set_light_color(target_rgb)
-            if level is not None:
-                await ctrl.set_light_level(level)
+        def shown() -> None:
+            self._attr_color_mode = ColorMode.RGB
+            self._attr_is_on = True
+            self._attr_rgb_color = target_rgb
+            if level is not None and self._light_level_max is not None:
+                self._attr_brightness = _level_to_brightness(level, self._light_level_max)
 
-        await self._coordinator.async_execute_controller_command(_turn_on, cancel_running=False)
-        self._attr_is_on = True
-        self._attr_rgb_color = target_rgb
-        if level is not None and self._light_level_max is not None:
-            self._attr_brightness = _level_to_brightness(level, self._light_level_max)
-        self.async_write_ha_state()
+        return shown
 
-    async def _turn_on_rgbw(self, **kwargs: Any) -> None:
-        """Turn on with RGBW color mode."""
+    async def _send_rgbw(
+        self, ctrl: BedController, kwargs: Mapping[str, Any]
+    ) -> Callable[[], None]:
+        """Send an RGBW turn-on; return how to show it once it was sent."""
         requested_rgbw = _normalize_rgbw_color(kwargs.get(ATTR_RGBW_COLOR))
         target_rgbw = requested_rgbw or self._attr_rgbw_color or (255, 255, 255, 255)
         requested_brightness = kwargs.get(ATTR_BRIGHTNESS)
         intensity = (
             max(0, min(255, requested_brightness)) if type(requested_brightness) is int else None
         )
+        if ctrl.supports_explicit_light_on_control:
+            await ctrl.lights_on()
+        await ctrl.set_light_color_rgbw(target_rgbw, intensity)
 
-        async def _turn_on(ctrl: BedController) -> None:
-            if getattr(ctrl, "supports_explicit_light_on_control", False):
-                await ctrl.lights_on()
-            await ctrl.set_light_color_rgbw(target_rgbw, intensity)
+        def shown() -> None:
+            self._attr_color_mode = ColorMode.RGBW
+            self._attr_is_on = True
+            self._attr_rgbw_color = target_rgbw
+            if intensity is not None:
+                self._attr_brightness = intensity
 
-        await self._coordinator.async_execute_controller_command(_turn_on, cancel_running=False)
-        self._attr_is_on = True
-        self._attr_rgbw_color = target_rgbw
-        if intensity is not None:
-            self._attr_brightness = intensity
-        self.async_write_ha_state()
+        return shown
 
     async def async_turn_off(self, **kwargs: Any) -> None:
         """Turn the light off using the controller's light-off semantics."""
         del kwargs
 
-        if not self._attr_is_on and not self._supports_discrete_light_control:
+        if not self._attr_is_on and not self._supports_desired_light_off:
             _LOGGER.debug(
                 "Skipping toggle-based light off for %s because HA already believes it is off",
                 self._coordinator.name,
@@ -648,24 +653,29 @@ class AdjustableBedLight(AdjustableBedEntity, RestoreEntity, LightEntity):
             return
 
         async def _turn_off(ctrl: BedController) -> None:
-            if getattr(ctrl, "supports_discrete_light_control", False):
+            if ctrl.supports_discrete_light_control or ctrl.supports_light_state_feedback:
                 await ctrl.lights_off()
                 return
-            if getattr(ctrl, "supports_light_toggle_control", False):
+            if ctrl.supports_light_toggle_control:
                 await ctrl.lights_toggle()
                 return
             raise NotImplementedError("Light off control not supported on this bed")
 
+        def show(delivery: Delivery) -> None:
+            # Shown inside the command, before a queued turn-on reads it.
+            if delivery is not Delivery.NONE:
+                # Partly sent leaves the light unknown.
+                self._attr_is_on = False if delivery is Delivery.SENT else None
+                self.async_write_ha_state()
+
+        delivery = Delivery.NONE
         self._light_turn_off_in_progress = True
         try:
-            await self._coordinator.async_execute_controller_command(
-                _turn_off, cancel_running=False
-            )
-            self._attr_is_on = False
-            self.async_write_ha_state()
+            delivery = await self._async_send(_turn_off, on_delivery=show, cancel_running=False)
         finally:
             self._light_turn_off_in_progress = False
-        self._cancel_light_auto_off_timer()
+        if delivery is not Delivery.NONE:
+            self._cancel_light_auto_off_timer()
 
     def _current_octo_timer_controller(self) -> OctoController | None:
         """Return this light's authoritative live OCTO controller, if any."""
@@ -732,16 +742,33 @@ class AdjustableBedOnOffLight(AdjustableBedEntity, RestoreEntity, LightEntity):
         description: LightEntityDescription,
     ) -> None:
         """Initialize the on/off light."""
-        super().__init__(coordinator)
+        super().__init__(coordinator, CARD_LIGHTING)
         self.entity_description = description
-        self._set_sided_translation_key(description.translation_key, description.key)
+        self._attr_translation_key = description.translation_key or description.key
         self._attr_unique_id = coordinator.entity_unique_id(description.key)
         self._attr_is_on: bool | None = None
         controller = coordinator.capability_controller
         self._feedback_only = controller is not None and controller.supports_light_state_feedback
-        self._initialize_off = coordinator.bed_type == BED_TYPE_LINAK
+        self._initialize_off = controller is not None and controller.light_state_starts_off
+        # The app's intended level stands in for a readback the bed never sends.
+        self._level_intent = (
+            controller is not None and controller.light_switch_follows_level_intent
+        )
+        self._attr_assumed_state = self._level_intent or (
+            controller is not None and controller.light_state_is_assumed
+        )
+        if self._level_intent:
+            self._attr_is_on = self._level_is_on(coordinator.controller_state.get(LIGHT_LEVEL))
+        self._auto_off_timer: asyncio.TimerHandle | None = None
+        # Counts published light state, so a command's assumed result never
+        # overwrites state the bed published while the command ran.
+        self._state_generation = 0
         self._unregister_callback: Callable[[], None] | None = None
         self._unregister_connection: Callable[[], None] | None = None
+
+    @staticmethod
+    def _level_is_on(level: object) -> bool | None:
+        return level > 0 if type(level) is int and level >= 0 else None
 
     async def async_added_to_hass(self) -> None:
         """Subscribe to controller-state updates for the light."""
@@ -749,6 +776,7 @@ class AdjustableBedOnOffLight(AdjustableBedEntity, RestoreEntity, LightEntity):
         if (
             not self._feedback_only
             and not self._initialize_off
+            and not self._attr_assumed_state
             and (last_state := await self.async_get_last_state()) is not None
             and last_state.state in (STATE_ON, STATE_OFF)
         ):
@@ -776,6 +804,7 @@ class AdjustableBedOnOffLight(AdjustableBedEntity, RestoreEntity, LightEntity):
 
     async def async_will_remove_from_hass(self) -> None:
         """Clean up controller-state callback registration."""
+        self._cancel_auto_off()
         if self._unregister_callback is not None:
             self._unregister_callback()
             self._unregister_callback = None
@@ -791,50 +820,115 @@ class AdjustableBedOnOffLight(AdjustableBedEntity, RestoreEntity, LightEntity):
             self._attr_is_on = None
             self.async_write_ha_state()
         else:
-            self._handle_controller_state_update({})
+            self._handle_controller_state_update(self._coordinator.controller_state)
 
     @callback
-    def _handle_controller_state_update(self, state: dict[str, Any]) -> None:
-        """Update state from controller light telemetry when available."""
-        if self._feedback_only:
-            controller = self._coordinator.controller
-            value = controller.get_light_state().get("is_on") if controller is not None else None
-        elif "under_bed_lights_on" in state:
-            value = state["under_bed_lights_on"]
+    def _handle_controller_state_update(self, state: ControllerState) -> None:
+        """Update state from published light state.
+
+        Feedback controllers publish what the bed reported on the current link,
+        so the light is unknown while no controller is connected.
+        """
+        if self._level_intent:
+            if LIGHT_LEVEL not in state or (is_on := self._level_is_on(state[LIGHT_LEVEL])) is None:
+                return
+            self._attr_is_on = is_on
         else:
-            return
-        self._attr_is_on = None if value is None else bool(value)
+            key = sided(UNDER_BED_LIGHTS_ON, self._coordinator.controller_side)
+            if key not in state:
+                key = UNDER_BED_LIGHTS_ON
+            if key not in state:
+                return
+            value = state[key]
+            if self._feedback_only and self._coordinator.controller is None:
+                value = None
+            self._attr_is_on = None if value is None else bool(value)
+        self._state_generation += 1
+        self._schedule_auto_off()
         self.async_write_ha_state()
+
+    def _cancel_auto_off(self) -> None:
+        if self._auto_off_timer is not None:
+            self._auto_off_timer.cancel()
+            self._auto_off_timer = None
+
+    def _schedule_auto_off(self) -> None:
+        """Follow a bed whose light switches itself off after a set time."""
+        controller = self._coordinator.controller
+        if controller is None and self._attr_is_on:
+            return  # Offline: the bed's own timer keeps running, so keep ours.
+        self._cancel_auto_off()
+        if controller is None or not self._attr_is_on:
+            return
+        seconds = controller.light_auto_off_seconds
+        if seconds is None:
+            return
+
+        def expire() -> None:
+            # The bed's own timer runs on after an idle disconnect.
+            self._auto_off_timer = None
+            if not self._attr_is_on:
+                return
+            controller.on_light_auto_off()
+            self._attr_is_on = False
+            self.async_write_ha_state()
+
+        self._auto_off_timer = self.hass.loop.call_later(seconds, expire)
 
     async def async_turn_on(self, **kwargs: object) -> None:
         """Turn the under-bed light on."""
         del kwargs
 
+        generation = self._state_generation
+        owner: BedController | None = None
+
         async def _turn_on(ctrl: BedController) -> None:
+            nonlocal generation, owner
+            owner = ctrl
+            generation = self._state_generation
             await ctrl.lights_on()
-            if not self._feedback_only:
-                self._attr_is_on = True
+
+        def show(delivery: Delivery) -> None:
+            # Published state wins; a value sent only in part is unknown.
+            if (
+                not self._feedback_only
+                and owner is self._coordinator.controller
+                and delivery is not Delivery.NONE
+                and generation == self._state_generation
+            ):
+                self._attr_is_on = True if delivery is Delivery.SENT else None
+                if delivery is Delivery.SENT:
+                    self._schedule_auto_off()
                 self.async_write_ha_state()
 
-        await self._coordinator.async_execute_controller_command(
-            _turn_on,
-            cancel_running=False,
-        )
+        await self._async_send(_turn_on, on_delivery=show, cancel_running=False)
 
     async def async_turn_off(self, **kwargs: object) -> None:
         """Turn the under-bed light off."""
         del kwargs
 
+        generation = self._state_generation
+        owner: BedController | None = None
+
         async def _turn_off(ctrl: BedController) -> None:
+            nonlocal generation, owner
+            owner = ctrl
+            generation = self._state_generation
             await ctrl.lights_off()
-            if not self._feedback_only:
-                self._attr_is_on = False
+
+        def show(delivery: Delivery) -> None:
+            if (
+                not self._feedback_only
+                and owner is self._coordinator.controller
+                and delivery is not Delivery.NONE
+                and generation == self._state_generation
+            ):
+                self._attr_is_on = False if delivery is Delivery.SENT else None
+                if delivery is Delivery.SENT:
+                    self._cancel_auto_off()
                 self.async_write_ha_state()
 
-        await self._coordinator.async_execute_controller_command(
-            _turn_off,
-            cancel_running=False,
-        )
+        await self._async_send(_turn_off, on_delivery=show, cancel_running=False)
 
     async def async_toggle(self, **kwargs: object) -> None:
         """Use discrete commands with known feedback, or a native toggle."""
@@ -847,12 +941,12 @@ class AdjustableBedOnOffLight(AdjustableBedEntity, RestoreEntity, LightEntity):
                 await ctrl.lights_toggle()
             elif ctrl.supports_discrete_light_control:
                 if not isinstance(self.is_on, bool):
-                    raise ServiceValidationError("Light state is unknown; use turn_on or turn_off")
+                    raise invalid("light_toggle_state_unknown")
                 if self.is_on:
                     await ctrl.lights_off()
                 else:
                     await ctrl.lights_on()
             else:
-                raise ServiceValidationError("No supported light toggle action")
+                raise invalid("not_supported_by_bed", feature="toggling the light")
 
         await self._coordinator.async_execute_controller_command(toggle, cancel_running=False)

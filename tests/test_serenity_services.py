@@ -18,6 +18,7 @@ from custom_components.adjustable_bed.const import (
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
 from custom_components.adjustable_bed.paired_coordinator import PairedBedCoordinator
 from custom_components.adjustable_bed.services import async_register_services
+from tests.error_helpers import raises_key
 from tests.test_paired_coordinator import RecordingChild
 from tests.test_serenity import make_controller, written
 
@@ -30,7 +31,10 @@ def target(profile=BED_TYPE_SERENITY, *, record_only=True):
     coordinator.name = "Serenity"
     coordinator.bed_type = profile
     coordinator.entry = SimpleNamespace(data={})
+    coordinator.controller_side = None
     coordinator.capability_controller = controller
+    coordinator.stop_epoch = 0
+    coordinator.pairlink_peripheral = False
 
     async def execute(command, **kwargs):
         await command(controller)
@@ -43,7 +47,7 @@ def target(profile=BED_TYPE_SERENITY, *, record_only=True):
     "profile,control,error",
     [
         (BED_TYPE_SERENITY, "save_memory_1", None),
-        (BED_TYPE_SERENITY, "head_up+foot_up", "does not support held control"),
+        (BED_TYPE_SERENITY, "head_up+foot_up", "held_control_not_supported"),
     ],
 )
 async def test_serenity_hold_preflights_profile_and_literal_action(hass, profile, control, error):
@@ -54,7 +58,7 @@ async def test_serenity_hold_preflights_profile_and_literal_action(hass, profile
         return_value=([(coordinator, SIDE_BOTH)], []),
     ):
         if error:
-            with pytest.raises(ServiceValidationError, match=error):
+            with raises_key(error, ServiceValidationError):
                 await hass.services.async_call(
                     DOMAIN,
                     "hold_control",
@@ -97,13 +101,14 @@ async def test_later_incompatible_target_rejects_before_any_write(hass):
     await async_register_services(hass)
     first, controller = target()
     second, _ = target("okin_cst")
-    second.capability_controller = SimpleNamespace(held_control_options=())
+    second.controller_side = None
+    second.capability_controller = SimpleNamespace(held_control_options=(), requires_disconnected_transport=False)
     with (
         patch(
             "custom_components.adjustable_bed.services._resolve_sided_targets",
             return_value=([(first, SIDE_BOTH), (second, SIDE_BOTH)], []),
         ),
-        pytest.raises(ServiceValidationError, match="has no held controls"),
+        raises_key("held_controls_not_supported", ServiceValidationError),
     ):
         await hass.services.async_call(
             DOMAIN,
@@ -127,6 +132,7 @@ async def test_real_pair_preserves_requested_side_and_literal_action(hass, side)
             self.bed_type = BED_TYPE_SERENITY
             self.entry = SimpleNamespace(data={})
             _, self.controller = target()
+            self.controller_side = None
             self.capability_controller = self.controller
 
         async def async_execute_controller_command(
@@ -136,6 +142,7 @@ async def test_real_pair_preserves_requested_side_and_literal_action(hass, side)
             skip_disconnect=False,
             resource=None,
             resources=None,
+            expected_stop_epoch=None,
         ):
             await command_fn(self.controller)
 

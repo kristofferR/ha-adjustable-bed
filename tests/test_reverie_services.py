@@ -9,7 +9,11 @@ import pytest
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import ServiceValidationError
 
-from custom_components.adjustable_bed.beds.reverie_comfort import ReverieComfortRequest
+from custom_components.adjustable_bed.beds.reverie.comfort import (
+    PairlinkComfortActions,
+    ReverieComfortActions,
+    ReverieComfortRequest,
+)
 from custom_components.adjustable_bed.const import (
     BED_TYPE_REVERIE,
     BED_TYPE_REVERIE_NIGHTSTAND,
@@ -22,22 +26,28 @@ from custom_components.adjustable_bed.const import (
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
 from custom_components.adjustable_bed.paired_coordinator import PairedBedCoordinator
 from custom_components.adjustable_bed.services import async_register_services
+from tests.error_helpers import raises_key
 
 
 def _target(*, invalid: bool = False, bed_type: str = BED_TYPE_REVERIE_NIGHTSTAND):
     runtime_identity = object()
     plan = object()
-    controller = SimpleNamespace(
+    interface = (
+        PairlinkComfortActions if bed_type == BED_TYPE_REVERIE_PAIRLINK else ReverieComfortActions
+    )
+    controller = MagicMock(
+        spec=interface,
+        requires_disconnected_transport=False,
         validate_comfort_request=MagicMock(
             side_effect=ValueError("unsupported selected model field") if invalid else None
         ),
         async_set_comfort=AsyncMock(),
         validate_routine=MagicMock(),
         async_start_routine=AsyncMock(),
-        validate_diagnostic=MagicMock(),
-        async_start_diagnostic=AsyncMock(),
     )
     coordinator = MagicMock(spec=AdjustableBedCoordinator)
+    # A lightweight double: no scheduler reservation API, so no prepared dispatch.
+    del coordinator.async_prepare_command_operation
     coordinator.name = "Reverie bed"
     coordinator.bed_type = bed_type
     coordinator.entry = SimpleNamespace(data={})
@@ -64,7 +74,7 @@ async def test_comfort_service_sends_one_typed_request_under_command_lock(
     coordinator, controller = _target()
     await async_register_services(hass)
     with patch(
-        "custom_components.adjustable_bed.services._resolve_sided_targets",
+        "custom_components.adjustable_bed.beds.reverie.services._resolve_sided_targets",
         return_value=([(coordinator, SIDE_BOTH)], []),
     ):
         await hass.services.async_call(
@@ -90,7 +100,7 @@ async def test_comfort_service_preflights_every_target_before_any_write(
     await async_register_services(hass)
     with (
         patch(
-            "custom_components.adjustable_bed.services._resolve_sided_targets",
+            "custom_components.adjustable_bed.beds.reverie.services._resolve_sided_targets",
             return_value=([(first, SIDE_BOTH), (second, SIDE_BOTH)], []),
         ),
         pytest.raises(ServiceValidationError, match="unsupported selected model field"),
@@ -123,7 +133,7 @@ async def test_pairlink_alarm_comfort_forces_complete_typed_request(
         "mode": 2,
     }
     with patch(
-        "custom_components.adjustable_bed.services._resolve_sided_targets",
+        "custom_components.adjustable_bed.beds.reverie.services._resolve_sided_targets",
         return_value=([(coordinator, SIDE_BOTH)], []),
     ):
         await hass.services.async_call(
@@ -160,7 +170,7 @@ async def test_pairlink_alarm_comfort_preflights_all_targets_before_any_write(
     }
     with (
         patch(
-            "custom_components.adjustable_bed.services._resolve_sided_targets",
+            "custom_components.adjustable_bed.beds.reverie.services._resolve_sided_targets",
             return_value=([(first, SIDE_BOTH), (second, SIDE_BOTH)], []),
         ),
         pytest.raises(ServiceValidationError, match="unsupported selected model field"),
@@ -184,7 +194,7 @@ async def test_routine_service_uses_selected_target_queue_without_scheduler(
     coordinator, controller = _target()
     await async_register_services(hass)
     with patch(
-        "custom_components.adjustable_bed.services._resolve_sided_targets",
+        "custom_components.adjustable_bed.beds.reverie.services._resolve_sided_targets",
         return_value=([(coordinator, SIDE_BOTH)], []),
     ):
         await hass.services.async_call(
@@ -206,7 +216,7 @@ async def test_routine_service_uses_selected_target_queue_without_scheduler(
     controller.async_start_routine.assert_awaited_once_with(expected_steps)
 
 
-@pytest.mark.parametrize("service", ["reverie_run_routine", "reverie_test"])
+@pytest.mark.parametrize("service", ["reverie_run_routine"])
 @pytest.mark.parametrize("mode", ["sequential", "concurrent"])
 @pytest.mark.parametrize("local_role", [False, True])
 @pytest.mark.parametrize("side", [SIDE_BOTH, SIDE_LEFT])
@@ -235,11 +245,11 @@ async def test_deferred_actions_preflight_pair_connection_policy(
     if service == "reverie_run_routine":
         data["steps"] = [{"comfort": {"head_position": 25}, "duration_minutes": 1}]
     with patch(
-        "custom_components.adjustable_bed.services._resolve_sided_targets",
+        "custom_components.adjustable_bed.beds.reverie.services._resolve_sided_targets",
         return_value=([(first, SIDE_BOTH), (pair, side)], []),
     ):
         if mode == "sequential" and not local_role:
-            with pytest.raises(ServiceValidationError, match="require concurrent"):
+            with raises_key("long_action_needs_connection", ServiceValidationError):
                 await hass.services.async_call(DOMAIN, service, data, blocking=True)
             first.async_execute_controller_command.assert_not_awaited()
             pair.async_execute_controller_command.assert_not_awaited()
@@ -247,7 +257,7 @@ async def test_deferred_actions_preflight_pair_connection_policy(
             await hass.services.async_call(DOMAIN, service, data, blocking=True)
             first.async_execute_controller_command.assert_awaited_once()
             pair.async_execute_controller_command.assert_awaited_once()
-    method = "async_start_routine" if service == "reverie_run_routine" else "async_start_diagnostic"
+    method = "async_start_routine"
     rejected = mode == "sequential" and not local_role
     assert getattr(first_controller, method).await_count == (0 if rejected else 1)
     assert getattr(left_controller, method).await_count == (0 if rejected else 1)
@@ -279,7 +289,7 @@ async def test_comfort_rejects_only_deferred_sequential_targets(hass, bed_type, 
     await async_register_services(hass)
     rejected = bed_type == BED_TYPE_REVERIE and mode != "concurrent"
     with patch(
-        "custom_components.adjustable_bed.services._resolve_sided_targets",
+        "custom_components.adjustable_bed.beds.reverie.services._resolve_sided_targets",
         return_value=([(first, SIDE_BOTH), (pair, side)], []),
     ):
         call = hass.services.async_call(
@@ -288,7 +298,7 @@ async def test_comfort_rejects_only_deferred_sequential_targets(hass, bed_type, 
             blocking=True,
         )
         if rejected:
-            with pytest.raises(ServiceValidationError, match="require concurrent"):
+            with raises_key("long_action_needs_connection", ServiceValidationError):
                 await call
         else:
             await call

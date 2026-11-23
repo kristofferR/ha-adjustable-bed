@@ -6,34 +6,44 @@ import asyncio
 import logging
 from collections.abc import Callable, Coroutine
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Final
 
 from homeassistant.components.switch import SwitchEntity, SwitchEntityDescription
 from homeassistant.config_entries import ConfigEntry
+from homeassistant.const import Platform
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers import entity_registry as er
-from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
-from .const import (
-    BED_TYPE_LINAK,
-    BED_TYPE_REMACRO,
-    BED_TYPE_SLEEP_NUMBER_MCR,
-    BED_TYPE_SVANE,
-    BED_TYPE_VIBRADORM_APP,
-    DOMAIN,
-    OKIN_BEDDING_APP_BED_TYPES,
-)
+from .beds.entity_specs import ControllerSwitchSpec
+from .beds.octo.runtime import octo_controller
+from .card import CARD_LIGHTING, CARD_UTILITY, CardPlacement, CardSection
+from .command_scheduler import Delivery, delivered
+from .const import DOMAIN
+from .controller_state import ControllerState, StateKey, sided
 from .entity import AdjustableBedEntity
 from .entity_discovery import async_setup_dynamic_entities
 from .entity_runtime import EntityRuntime
-from .octo_runtime import octo_controller
-from .paired_coordinator import entity_runtimes
+from .entity_sweep import PlatformEntities, records_entities
+from .errors import invalid
+from .paired_coordinator import PairedSideError, entity_runtimes
+from .runtime_data import entry_runtime
+from .state_keys import (
+    AUTOMATIC_LIGHT,
+    LINAK_AUTOMATIC_DRIVE,
+    OCTO_LIGHT_DURATION,
+    REMOTE_CONTROL_LOCK,
+    SYNCHRO_MODE,
+    UNDER_BED_LIGHTS_ON,
+)
 
 if TYPE_CHECKING:
     from .beds.base import BedController
-    from .beds.octo import OctoController
+    from .beds.octo.controller import OctoController
 
 _LOGGER = logging.getLogger(__name__)
+
+# Disconnects the integration did not make itself: the bed may have changed.
+_LINK_LOST_REASONS: Final = frozenset({None, "unexpected", "connect_failed"})
 
 
 @dataclass(frozen=True, kw_only=True)
@@ -42,15 +52,14 @@ class AdjustableBedSwitchEntityDescription(SwitchEntityDescription):
 
     turn_on_fn: Callable[[BedController], Coroutine[Any, Any, None]]
     turn_off_fn: Callable[[BedController], Coroutine[Any, Any, None]]
-    # Capability property name to check on controller (e.g., "supports_lights")
-    required_capability: str | None = None
-    # Only create entity for these bed types (None = all bed types)
-    required_bed_types: tuple[str, ...] | None = None
+    # Controller capability gating the entity, e.g. ``lambda c: c.supports_lights``.
+    is_supported: Callable[[BedController], bool] | None = None
     # True if the switch has separate on/off commands (enables state tracking)
     # When False, the switch is treated as toggle-only (no state tracking)
     has_discrete_control: bool = False
     # Optional controller-state key for readback/assumed-state publication.
-    state_key: str | None = None
+    state_key: StateKey[bool | None] | None = None
+    card: CardPlacement = CARD_UTILITY
 
 
 SWITCH_DESCRIPTIONS: tuple[AdjustableBedSwitchEntityDescription, ...] = (
@@ -60,17 +69,18 @@ SWITCH_DESCRIPTIONS: tuple[AdjustableBedSwitchEntityDescription, ...] = (
         icon="mdi:lightbulb-auto",
         turn_on_fn=lambda ctrl: ctrl.set_automatic_light(True),
         turn_off_fn=lambda ctrl: ctrl.set_automatic_light(False),
-        required_capability="supports_automatic_light",
+        is_supported=lambda c: c.supports_automatic_light,
         has_discrete_control=True,
-        state_key="automatic_light",
+        state_key=AUTOMATIC_LIGHT,
     ),
     AdjustableBedSwitchEntityDescription(
         key="under_bed_lights",
         translation_key="under_bed_lights",
+        card=CARD_LIGHTING,
         icon="mdi:lightbulb",
         turn_on_fn=lambda ctrl: ctrl.lights_on(),
         turn_off_fn=lambda ctrl: ctrl.lights_off(),
-        required_capability="supports_discrete_light_control",
+        is_supported=lambda c: c.supports_discrete_light_control,
     ),
     AdjustableBedSwitchEntityDescription(
         key="linak_automatic_drive",
@@ -78,21 +88,22 @@ SWITCH_DESCRIPTIONS: tuple[AdjustableBedSwitchEntityDescription, ...] = (
         icon="mdi:car-shift-pattern",
         turn_on_fn=lambda ctrl: ctrl.set_automatic_drive(True),
         turn_off_fn=lambda ctrl: ctrl.set_automatic_drive(False),
-        required_capability="supports_automatic_drive",
+        is_supported=lambda c: c.supports_automatic_drive,
         entity_registry_enabled_default=False,
         has_discrete_control=True,
-        state_key="linak_automatic_drive",
+        state_key=LINAK_AUTOMATIC_DRIVE,
     ),
     AdjustableBedSwitchEntityDescription(
         key="synchro_mode",
         translation_key="synchro_mode",
+        card=CardPlacement(CardSection.MOTORS),
         icon="mdi:link-variant",
         turn_on_fn=lambda ctrl: ctrl.set_synchro(True),
         turn_off_fn=lambda ctrl: ctrl.set_synchro(False),
-        required_capability="supports_synchro",
+        is_supported=lambda c: c.supports_synchro,
         entity_registry_enabled_default=False,
         has_discrete_control=True,
-        state_key="synchro_mode",
+        state_key=SYNCHRO_MODE,
     ),
     AdjustableBedSwitchEntityDescription(
         key="remote_control_lock",
@@ -100,23 +111,23 @@ SWITCH_DESCRIPTIONS: tuple[AdjustableBedSwitchEntityDescription, ...] = (
         icon="mdi:remote-lock",
         turn_on_fn=lambda ctrl: ctrl.set_remote_control_lock(True),
         turn_off_fn=lambda ctrl: ctrl.set_remote_control_lock(False),
-        required_capability="supports_remote_control_lock",
+        is_supported=lambda c: c.supports_remote_control_lock,
         has_discrete_control=True,
-        state_key="remote_control_lock",
+        state_key=REMOTE_CONTROL_LOCK,
     ),
 )
 
 
+@records_entities(Platform.SWITCH)
 async def async_setup_entry(
     hass: HomeAssistant,
     entry: ConfigEntry,
-    async_add_entities: AddEntitiesCallback,
+    async_add_entities: PlatformEntities,
 ) -> None:
     """Set up Adjustable Bed switch entities."""
-    coordinator = hass.data[DOMAIN][entry.entry_id]
+    coordinator = entry_runtime(hass, entry.entry_id)
     for runtime in entity_runtimes(coordinator):
         async_setup_dynamic_entities(
-            hass,
             entry,
             runtime,
             async_add_entities,
@@ -124,9 +135,7 @@ async def async_setup_entry(
         )
 
 
-def _switch_entities_for(
-    hass: HomeAssistant, coordinator: EntityRuntime
-) -> list[AdjustableBedSwitch]:
+def _switch_entities_for(hass: HomeAssistant, coordinator: EntityRuntime) -> list[SwitchEntity]:
     """Build switch entities for a single (child or standalone) coordinator."""
     # capability_controller: an offline paired side (e.g. Linak under-bed lights)
     # still gets its switches built from a client-free controller minted from
@@ -163,7 +172,7 @@ def _switch_entities_for(
                     ),
                 )
             )
-        return entities
+        return list(entities)
 
     entities = []
     for description in SWITCH_DESCRIPTIONS:
@@ -173,64 +182,170 @@ def _switch_entities_for(
                 DOMAIN,
                 coordinator.entity_unique_id(description.key),
             )
-            if existing is not None and not octo.supports_lights:
-                registry.async_remove(existing)
-                existing = None
             if (
-                existing is not None
+                (existing is not None and octo.supports_lights)
                 or octo.legacy_light_fallback
                 or (octo.supports_discrete_light_control and not octo.supports_light_color_control)
             ):
                 entities.append(AdjustableBedSwitch(coordinator, description))
             # OCTO keeps this legacy switch identity. Color surfaces use the
-            # light platform without deleting a user's existing switch row.
+            # light platform without retiring a user's existing switch row.
             continue
-        if (
-            description.key == "under_bed_lights"
-            and controller is not None
-            and (
-                controller.supports_light_color_control
-                or controller.supports_light_state_feedback
-                or controller.supported_color_modes == frozenset(("onoff",))
-                or (
-                    coordinator.bed_type in (BED_TYPE_LINAK, BED_TYPE_SLEEP_NUMBER_MCR)
-                    and controller.supports_discrete_light_control
-                )
-            )
-        ):
-            entity_id = registry.async_get_entity_id(
-                "switch",
-                DOMAIN,
-                coordinator.entity_unique_id(description.key),
-            )
-            if entity_id is not None:
-                registry.async_remove(entity_id)
+        if description.key == "under_bed_lights":
+            # Every other bed's on/off light is a light entity.
             continue
-        # Skip switches restricted to specific bed types
-        if description.required_bed_types is not None:
-            if coordinator.bed_type not in description.required_bed_types:
-                continue
         # Skip switches that require capabilities the controller doesn't have
-        if description.required_capability is not None:
+        if description.is_supported is not None:
             if controller is None:
                 continue
-            # Default to False: only create entity if controller explicitly supports it
-            if not getattr(controller, description.required_capability, False):
-                # Older releases may have created this switch before the
-                # capability was dropped (e.g. BedTech discrete lights, #410);
-                # remove the stale registry entry so a dead control doesn't
-                # linger in the UI and card.
-                entity_id = registry.async_get_entity_id(
-                    "switch",
-                    DOMAIN,
-                    coordinator.entity_unique_id(description.key),
-                )
-                if entity_id is not None:
-                    registry.async_remove(entity_id)
+            if not description.is_supported(controller):
                 continue
         entities.append(AdjustableBedSwitch(coordinator, description))
 
-    return entities
+    if controller is None:
+        return list(entities)
+    return [
+        *entities,
+        *(
+            AdjustableBedControllerSwitch(coordinator, spec)
+            for spec in controller.controller_switch_specs
+        ),
+    ]
+
+
+class AdjustableBedControllerSwitch(AdjustableBedEntity, SwitchEntity):
+    """A declared on/off product setting, unknown until the bed reports it."""
+
+    _attr_should_poll = False
+
+    def __init__(self, coordinator: EntityRuntime, spec: ControllerSwitchSpec) -> None:
+        super().__init__(coordinator, spec.card)
+        self._spec = spec
+        self.entity_description = SwitchEntityDescription(
+            key=f"controller_switch_{spec.key}",
+            translation_key=spec.translation_key,
+            icon=spec.icon,
+            entity_registry_enabled_default=spec.entity_registry_enabled_default,
+            entity_category=spec.entity_category,
+        )
+        self._attr_unique_id = coordinator.entity_unique_id(self.entity_description.key)
+        self._attr_translation_key = spec.translation_key
+        if spec.translation_placeholders is not None:
+            self._attr_translation_placeholders = dict(spec.translation_placeholders)
+        self._attr_assumed_state = spec.assumed_state or spec.state_key is None
+        # The last command actually sent, for a switch the bed never reports.
+        self._commanded: bool | None = None
+        # Local turn-offs, so an earlier turn-on still waiting for the link is dropped.
+        self._local_offs = 0
+        self._unregister_callbacks: list[Callable[[], None]] = []
+
+    async def async_added_to_hass(self) -> None:
+        await super().async_added_to_hass()
+        self._unregister_callbacks = [
+            self._coordinator.register_controller_state_callback(
+                self._handle_controller_state_update
+            ),
+            self._coordinator.register_connection_state_callback(self._handle_connection_state),
+        ]
+
+    async def async_will_remove_from_hass(self) -> None:
+        for unregister in self._unregister_callbacks:
+            unregister()
+        self._unregister_callbacks = []
+        await super().async_will_remove_from_hass()
+
+    @callback
+    def _handle_controller_state_update(self, state: ControllerState) -> None:
+        if self._spec.state_key is not None and self._spec.state_key in state:
+            self.async_write_ha_state()
+
+    @callback
+    def _handle_connection_state(self, connected: bool) -> None:
+        # Without a readback the bed may change while unwatched, so a link that
+        # dropped on its own makes the last command unknown rather than stale.
+        # The integration's own disconnects (idle, after a command, switching
+        # the side of a sequential pair) say nothing about the bed.
+        cleared = (
+            not connected
+            and self._spec.state_key is None
+            and self._commanded is not None
+            and self._coordinator.last_disconnect_reason in _LINK_LOST_REASONS
+        )
+        if cleared:
+            self._commanded = None
+        if cleared or self._spec.available_fn is not None:
+            self.async_write_ha_state()
+
+    @property
+    def is_on(self) -> bool | None:
+        if self._spec.state_key is None:
+            return self._commanded
+        value = self._coordinator.controller_state.get(self._spec.state_key)
+        # A cleared or mistyped report is unknown, never "off".
+        if value is None or type(value) is not type(self._spec.on_value):
+            return None
+        return value == self._spec.on_value
+
+    @property
+    def available(self) -> bool:
+        if not super().available:
+            return False
+        if self._spec.available_fn is None:
+            return True
+        controller = self._coordinator.capability_controller
+        if controller is None:
+            return False
+        with self._side_scope():
+            return self._spec.available_fn(controller)
+
+    async def _async_set(self, on: bool) -> None:
+        if not on and self._spec.local_off_fn is not None:
+            controller = self._coordinator.capability_controller
+            specs = controller.controller_switch_specs if controller is not None else ()
+            live = next((spec for spec in specs if spec.key == self._spec.key), None)
+            if live is None or live.local_off_fn is None:
+                raise invalid("option_unavailable")
+            live.local_off_fn()
+            self._local_offs += 1
+            return
+        if self._spec.local_set_fn is not None:
+            # No frame is sent, so do not take the bed's single BLE link.
+            controller = self._coordinator.capability_controller
+            specs = controller.controller_switch_specs if controller is not None else ()
+            live = next((spec for spec in specs if spec.key == self._spec.key), None)
+            if live is None or live.local_set_fn is None:
+                raise invalid("option_unavailable")
+            live.local_set_fn(on)
+            return
+
+        offs = self._local_offs
+
+        async def apply(ctrl: BedController) -> None:
+            if on and offs != self._local_offs:
+                return  # Turned off while this waited for the link.
+            live = next(
+                (spec for spec in ctrl.controller_switch_specs if spec.key == self._spec.key), None
+            )
+            if live is None:
+                raise invalid("option_unavailable")
+            # Record it while the link that sent it is still up: a sequential
+            # pair releases the side before the command returns.
+            def show(delivery: Delivery) -> None:
+                if delivery is not Delivery.NONE and self._spec.state_key is None:
+                    # A value sent only in part is unknown.
+                    self._commanded = on if delivery is Delivery.SENT else None
+                    self.async_write_ha_state()
+
+            with delivered(show):
+                await live.set_fn(ctrl, on)
+
+        await self._coordinator.async_execute_controller_command(apply)
+
+    async def async_turn_on(self, **kwargs: Any) -> None:
+        await self._async_set(True)
+
+    async def async_turn_off(self, **kwargs: Any) -> None:
+        await self._async_set(False)
 
 
 class AdjustableBedSwitch(AdjustableBedEntity, SwitchEntity):
@@ -269,29 +384,13 @@ class AdjustableBedSwitch(AdjustableBedEntity, SwitchEntity):
         description: AdjustableBedSwitchEntityDescription,
     ) -> None:
         """Initialize the switch."""
-        super().__init__(coordinator)
+        super().__init__(coordinator, description.card)
         self.entity_description = description
-        self._set_sided_translation_key(description.translation_key, description.key)
+        self._attr_translation_key = description.translation_key or description.key
         self._attr_unique_id = coordinator.entity_unique_id(description.key)
-        self._app_floor_intent = (
-            description.key == "under_bed_lights" and coordinator.bed_type == BED_TYPE_VIBRADORM_APP
-        )
         controller = coordinator.capability_controller
         if description.state_key is None:
             self._attr_is_on = False
-            if description.key == "under_bed_lights" and (
-                coordinator.bed_type
-                in {*OKIN_BEDDING_APP_BED_TYPES, BED_TYPE_REMACRO, BED_TYPE_SVANE}
-                or (controller is not None and controller.light_state_is_assumed)
-            ):
-                # These apps have on/off commands but no physical state response.
-                self._attr_is_on = None
-                self._attr_assumed_state = True
-            elif self._app_floor_intent:
-                # The selected app publishes intended level, never physical readback.
-                level = coordinator.controller_state.get("light_level")
-                self._attr_is_on = level > 0 if type(level) is int and level >= 0 else None
-                self._attr_assumed_state = True
         else:
             initial_state = coordinator.controller_state.get(description.state_key)
             self._attr_is_on = initial_state if isinstance(initial_state, bool) else None
@@ -318,6 +417,7 @@ class AdjustableBedSwitch(AdjustableBedEntity, SwitchEntity):
             else None
         )
         self._state_unregister_callback: Callable[[], None] | None = None
+        self._state_update_generation = 0
 
     async def async_added_to_hass(self) -> None:
         """Register for controller-state updates when available."""
@@ -332,22 +432,24 @@ class AdjustableBedSwitch(AdjustableBedEntity, SwitchEntity):
         )
 
     @callback
-    def _handle_controller_state_update(self, state: dict[str, Any]) -> None:
+    def _handle_controller_state_update(self, state: ControllerState) -> None:
         """Update the switch when the controller publishes light state."""
-        if self.entity_description.key == "under_bed_lights" and "octo_light_duration" in state:
+        if self.entity_description.key == "under_bed_lights" and OCTO_LIGHT_DURATION in state:
             octo = self._current_octo_timer_controller()
             if octo is not None:
                 self._schedule_octo_auto_off_timer(octo)
-        state_key = (
-            "light_level"
-            if self._app_floor_intent
-            else self.entity_description.state_key or "under_bed_lights_on"
-        )
+        state_key = self.entity_description.state_key or UNDER_BED_LIGHTS_ON
+        side_key = sided(state_key, self._coordinator.controller_side)
+        if side_key in state:
+            state_key = side_key
         if state_key not in state:
             return
-        if self._app_floor_intent and (type(state[state_key]) is not int or state[state_key] < 0):
-            return
-        self._attr_is_on = bool(state[state_key])
+        value = state[state_key]
+        # A described setting published as None is unknown, not off.
+        self._attr_is_on = (
+            None if value is None and self.entity_description.state_key is not None else bool(value)
+        )
+        self._state_update_generation += 1
         if self.entity_description.key != "under_bed_lights":
             self.async_write_ha_state()
             return
@@ -417,50 +519,12 @@ class AdjustableBedSwitch(AdjustableBedEntity, SwitchEntity):
         self._auto_off_timer = self.hass.loop.call_later(auto_off_seconds, auto_off_callback)
 
     def _schedule_auto_off_timer(self, *, reset_octo_deadline: bool = False) -> None:
-        """Schedule auto-off timer if controller reports a light auto-off timeout.
-
-        Some beds (e.g., Octo) have hardware-enforced light timeouts where the
-        lights automatically turn off after a fixed duration. This method
-        schedules a timer to update the HA state to reflect the hardware behavior.
-        """
+        """Follow Octo's hardware light timeout, which switches the light off itself."""
         if self.entity_description.key != "under_bed_lights":
             return
-
         octo = self._current_octo_timer_controller()
         if octo is not None:
             self._schedule_octo_auto_off_timer(octo, reset_deadline=reset_octo_deadline)
-            return
-
-        controller = self._coordinator.controller
-        if controller is None:
-            return
-
-        auto_off_seconds = controller.light_auto_off_seconds
-        if auto_off_seconds is None:
-            return
-
-        # Cancel any existing timer first
-        self._cancel_auto_off_timer()
-
-        def auto_off_callback() -> None:
-            """Update state to off when hardware auto-off occurs."""
-            _LOGGER.debug(
-                "Auto-off timer fired for %s after %d seconds",
-                self.entity_description.key,
-                auto_off_seconds,
-            )
-            self._auto_off_timer = None
-            controller.on_light_auto_off()
-            self._attr_is_on = False
-            self.async_write_ha_state()
-
-        # Schedule the timer using the event loop
-        self._auto_off_timer = self.hass.loop.call_later(auto_off_seconds, auto_off_callback)
-        _LOGGER.debug(
-            "Scheduled auto-off timer for %s in %d seconds",
-            self.entity_description.key,
-            auto_off_seconds,
-        )
 
     async def async_will_remove_from_hass(self) -> None:
         """Clean up when entity is removed."""
@@ -476,37 +540,12 @@ class AdjustableBedSwitch(AdjustableBedEntity, SwitchEntity):
             self.entity_description.key,
             self._coordinator.name,
         )
-
-        try:
-            _LOGGER.debug("Sending turn on command for %s", self.entity_description.key)
-            await self._coordinator.async_execute_controller_command(
-                self.entity_description.turn_on_fn,
-                cancel_running=False,
-            )
-            # Only update assumed state if controller supports discrete on/off
-            # Toggle-only controllers can't reliably track state
-            if self._supports_discrete_control():
-                self._attr_is_on = True
-                self.async_write_ha_state()
-                # Schedule auto-off timer if the bed has hardware auto-off
-                self._schedule_auto_off_timer(reset_octo_deadline=True)
-            else:
-                _LOGGER.debug(
-                    "Toggle-only controller - state tracking unreliable for %s",
-                    self.entity_description.key,
-                )
-            _LOGGER.debug("Switch %s turned on successfully", self.entity_description.key)
-        except NotImplementedError:
-            _LOGGER.warning(
-                "This bed does not support %s feature",
-                self.entity_description.key,
-            )
-        except Exception:
-            _LOGGER.exception(
-                "Failed to turn on switch %s",
-                self.entity_description.key,
-            )
-            raise
+        timer_was_running = self._auto_off_timer is not None
+        if not await self._async_switch(True, self.entity_description.turn_on_fn):
+            return
+        if self._supports_discrete_control() and self._attr_is_on:
+            self._schedule_auto_off_timer(reset_octo_deadline=timer_was_running)
+        _LOGGER.debug("Switch %s turned on successfully", self.entity_description.key)
 
     async def async_turn_off(self, **kwargs: Any) -> None:
         """Turn off the switch."""
@@ -515,36 +554,59 @@ class AdjustableBedSwitch(AdjustableBedEntity, SwitchEntity):
             self.entity_description.key,
             self._coordinator.name,
         )
+        if not await self._async_switch(False, self.entity_description.turn_off_fn):
+            return
+        _LOGGER.debug("Switch %s turned off successfully", self.entity_description.key)
+
+    async def _async_switch(
+        self, on: bool, command: Callable[[BedController], Coroutine[Any, Any, None]]
+    ) -> bool:
+        """Send one on/off command and show its state; return whether all of it was sent.
+
+        A STOP or a replacing command cancels it quietly: the switch keeps its
+        previous state when nothing was sent, and is unknown when only part was.
+        """
+        state_generation = self._state_update_generation
+
+        async def run(controller: BedController) -> None:
+            nonlocal state_generation
+            state_generation = self._state_update_generation
+            await command(controller)
 
         try:
-            _LOGGER.debug("Sending turn off command for %s", self.entity_description.key)
-            await self._coordinator.async_execute_controller_command(
-                self.entity_description.turn_off_fn,
-                cancel_running=False,
-            )
-            # Only update assumed state if controller supports discrete on/off
-            # Toggle-only controllers can't reliably track state
-            if self._supports_discrete_control():
-                # Cancel any pending auto-off timer only after the command succeeds.
+            try:
+                delivery = await self._async_send(run, cancel_running=False)
+            except PairedSideError as err:
+                # A sequential pair wraps the side's own error.
+                errors = list(err.side_errors.values())
+                if errors and all(isinstance(error, NotImplementedError) for error in errors):
+                    raise errors[0] from err
+                raise
+        except NotImplementedError as err:
+            feature = self.entity_description.key.replace("_", " ")
+            raise invalid(
+                "feature_not_supported", device_name=self._coordinator.name, feature=feature
+            ) from err
+        if delivery is Delivery.NONE:
+            _LOGGER.debug("Switch %s command was cancelled", self.entity_description.key)
+            return False
+        if delivery is Delivery.PARTIAL:
+            self._cancel_auto_off_timer()
+            self._attr_is_on = None
+            self.async_write_ha_state()
+            return False
+        # Preserve state published during the command, including a changed local side.
+        if self._supports_discrete_control() and state_generation == self._state_update_generation:
+            if not on:
+                # Cancel any pending auto-off timer only after the command was sent.
                 # If transport fails, keep the timer so HA can still reflect the
                 # hardware-enforced auto-off when it happens.
                 self._cancel_auto_off_timer()
-                self._attr_is_on = False
-                self.async_write_ha_state()
-            else:
-                _LOGGER.debug(
-                    "Toggle-only controller - state tracking unreliable for %s",
-                    self.entity_description.key,
-                )
-            _LOGGER.debug("Switch %s turned off successfully", self.entity_description.key)
-        except NotImplementedError:
-            _LOGGER.warning(
-                "This bed does not support %s feature",
+            self._attr_is_on = on
+            self.async_write_ha_state()
+        else:
+            _LOGGER.debug(
+                "Keeping controller-published or toggle-only state for %s",
                 self.entity_description.key,
             )
-        except Exception:
-            _LOGGER.exception(
-                "Failed to turn off switch %s",
-                self.entity_description.key,
-            )
-            raise
+        return True

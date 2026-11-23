@@ -8,13 +8,14 @@ import pytest
 from homeassistant.const import CONF_ADDRESS, CONF_NAME
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import entity_registry as er
-from pytest_homeassistant_custom_component.common import MockConfigEntry
+from pytest_homeassistant.common import MockConfigEntry
 
 from custom_components.adjustable_bed import const
-from custom_components.adjustable_bed.beds.starcode_abm5_4 import StarcodeAbm5_4Controller
-from custom_components.adjustable_bed.beds.starcode_abm5_4_profiles import SELECTORS
+from custom_components.adjustable_bed.beds.starcode.abm5_4 import StarcodeAbm5_4Controller
+from custom_components.adjustable_bed.beds.starcode.abm5_4_profiles import SELECTORS
 from custom_components.adjustable_bed.controller_factory import create_controller
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
+from custom_components.adjustable_bed.errors import BedNotConnectedError
 from tests.test_starcode_abm5_4 import make_controller
 
 POSITIVE = frozenset(("BOX1220", "BOX3633", "BOX25", "BOX25_STAR"))
@@ -73,12 +74,11 @@ async def test_actual_offline_factory_only_mints_invariant_selector_catalog(
     assert controller.client is None and not controller._ready
     assert controller.controller_entity_discovery_complete
     assert controller.ui_selector == ui
-    assert bool(controller.controller_select_specs) == (command in POSITIVE)
+    assert controller.supports_massage_timer == (command in POSITIVE)
     assert bool(controller.controller_number_specs) == (command in POSITIVE)
-    assert controller.get_light_state()["is_on"] is None
     assert not controller._massage_on and not controller._ui_state_observed
     if command in POSITIVE:
-        with pytest.raises(ValueError, match="observed"):
+        with pytest.raises(ValueError, match="Turn on the light or massage"):
             await controller.set_app_timer("20")
 
 
@@ -96,7 +96,7 @@ async def test_manufacturer_catalog_mutation_preserves_U_and_proves_offline_boun
     await controller._classify()
     assert controller.ui_selector == "BOX15"
     assert controller.command_selector == ("BOX25_STAR" if manufacturer == b"star" else "BOX25")
-    assert controller.controller_number_specs and controller.controller_select_specs
+    assert controller.controller_number_specs and controller.supports_massage_timer
     assert before == (command in POSITIVE)
     assert not controller._massage_on and not controller._ui_state_observed
 
@@ -129,7 +129,6 @@ async def test_registered_pair_reload_restores_unreachable_invariant_side(
             const.CONF_BED_TYPE: const.BED_TYPE_STARCODE_ABM5_4,
             const.CONF_PAIR_ID: "app-offline-pair",
             const.CONF_PAIR_MODE: const.PAIR_MODE_SEPARATE_ADDRESS,
-            const.CONF_PAIR_SCHEMA_VERSION: 1,
             const.CONF_PAIR_MEMBER_ADDRESSES: [left, right],
             const.CONF_PAIR_CHILDREN: [
                 {
@@ -159,7 +158,7 @@ async def test_registered_pair_reload_restores_unreachable_invariant_side(
         descriptors[1][CONF_NAME] = "BLE display alias"
     entry.add_to_hass(hass)
     er.async_get(hass).async_get_or_create(
-        "button", const.DOMAIN, right + "_starcode_abm5_4_wake", config_entry=entry
+        "button", const.DOMAIN, right + "_starcode_abm5_4_save_tv", config_entry=entry
     )
 
     async def connect(child: AdjustableBedCoordinator) -> bool:
@@ -191,7 +190,7 @@ async def test_registered_pair_reload_restores_unreachable_invariant_side(
             for row in er.async_entries_for_config_entry(er.async_get(hass), entry.entry_id)
             if row.unique_id.startswith(right)
         }
-        assert any("_starcode_abm5_4_wake" in key for key in first)
+        assert any("_starcode_abm5_4_save_tv" in key for key in first)
         assert any("controller_number_starcode_abm5_4_light_level" in key for key in first) == (
             offline_command in POSITIVE
         )
@@ -206,15 +205,27 @@ async def test_registered_pair_reload_restores_unreachable_invariant_side(
         controls = [
             entity_id
             for key, entity_id in first.items()
-            if "starcode_abm5_4" in key and not entity_id.startswith("sensor.")
+            if "starcode_abm5_4" in key
+            and not entity_id.startswith("sensor.")
+            # The diagnostic query and the reset are disabled by default, so they have no state.
+            and not key.endswith(("_starcode_abm5_4_refresh", "_starcode_abm5_4_reset"))
         ]
         assert controls
         for entity_id in controls:
             state = hass.states.get(entity_id)
             assert state is not None and state.state in ("unknown", "unavailable")
-        wake_id = next(
-            entity_id for key, entity_id in first.items() if key.endswith("_starcode_abm5_4_wake")
+        # The reset survives the reload as a row, disabled by the integration, without state.
+        reset_id = next(
+            entity_id for key, entity_id in second.items() if key.endswith("_starcode_abm5_4_reset")
         )
-        with pytest.raises(ConnectionError, match="Not connected"):
-            await hass.services.async_call("button", "press", {"entity_id": wake_id}, blocking=True)
+        reset = er.async_get(hass).async_get(reset_id)
+        assert reset is not None and reset.disabled_by is er.RegistryEntryDisabler.INTEGRATION
+        assert hass.states.get(reset_id) is None
+        save_id = next(
+            entity_id
+            for key, entity_id in first.items()
+            if key.endswith("_starcode_abm5_4_save_tv")
+        )
+        with pytest.raises(BedNotConnectedError):
+            await hass.services.async_call("button", "press", {"entity_id": save_id}, blocking=True)
         assert await hass.config_entries.async_unload(entry.entry_id)

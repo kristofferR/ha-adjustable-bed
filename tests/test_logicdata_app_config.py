@@ -7,19 +7,18 @@ import pytest
 import voluptuous as vol
 from homeassistant.const import CONF_ADDRESS, CONF_NAME
 from homeassistant.data_entry_flow import FlowResultType
-from pytest_homeassistant_custom_component.common import MockConfigEntry
+from pytest_homeassistant.common import MockConfigEntry
 
+from custom_components.adjustable_bed.bed_traits import bed_traits, reads_positions
 from custom_components.adjustable_bed.config_flow import (
     AdjustableBedConfigFlow,
     AdjustableBedOptionsFlow,
 )
 from custom_components.adjustable_bed.const import (
-    BED_TYPE_LOGICDATA,
     BED_TYPE_LOGICDATA_APP,
-    BEDS_WITHOUT_ANGLE_FEEDBACK,
     CONF_BED_TYPE,
+    CONF_CONNECTION_MODE,
     CONF_DISABLE_ANGLE_SENSING,
-    CONF_DISCONNECT_AFTER_COMMAND,
     CONF_HAS_LIGHT,
     CONF_HAS_MASSAGE,
     CONF_LOGICDATA_APP_FAMILY,
@@ -34,124 +33,72 @@ from custom_components.adjustable_bed.const import (
 )
 from custom_components.adjustable_bed.controller_factory import create_controller
 from custom_components.adjustable_bed.pairing import build_pair_entry_data
+from tests.form_helpers import NEW_BED_ROUTES, finish_new_bed, start_new_bed
 
 
-@pytest.mark.parametrize("step", ["manual_entry", "manual_config", "bluetooth_confirm"])
-async def test_all_setup_routes_collect_explicit_profile(hass, mock_bluetooth_service_info, step):
-    """A user selecting the app type must choose its layout on every setup route."""
+@pytest.mark.parametrize("route", NEW_BED_ROUTES)
+async def test_all_setup_routes_collect_explicit_profile(hass, mock_bluetooth_service_info, route):
+    """A user selecting the app row must choose the app and its layout on every setup route."""
     flow = AdjustableBedConfigFlow()
     flow.context = {}
     flow.hass = hass
     flow._discovery_info = mock_bluetooth_service_info
-    flow._disconnect_choice_confirmed = True
-    result = await getattr(flow, f"async_step_{step}")(
-        {
-            CONF_ADDRESS: "11:22:33:44:55:66",
-            CONF_BED_TYPE: BED_TYPE_LOGICDATA_APP,
-            CONF_NAME: "App Bed",
-            CONF_MOTOR_COUNT: 2,
-            CONF_HAS_MASSAGE: True,
-            CONF_DISABLE_ANGLE_SENSING: False,
-            CONF_DISCONNECT_AFTER_COMMAND: False,
-            CONF_PREFERRED_ADAPTER: "auto",
-        }
-    )
-    assert result["step_id"] == "logicdata_app"
+    settings = {
+        CONF_NAME: "App Bed",
+        CONF_MOTOR_COUNT: 2,
+        CONF_HAS_MASSAGE: True,
+        CONF_DISABLE_ANGLE_SENSING: False,
+        CONF_CONNECTION_MODE: "idle",
+        CONF_PREFERRED_ADAPTER: "auto",
+    }
+    result = await start_new_bed(flow, route, BED_TYPE_LOGICDATA_APP)
+    assert result["step_id"] == "logicdata_family"
+    result = await flow.async_step_logicdata_family({"choice": "phone"})
+    assert result["step_id"] == "profile_questions"
     schema = result["data_schema"]
     assert schema is not None
     with pytest.raises(vol.Invalid, match="required key"):
         schema({})
-    values = result["data_schema"](
-        {
-            CONF_LOGICDATA_APP_PROFILE: "phone",
-            CONF_LOGICDATA_APP_FAMILY: "p1",
-            CONF_LOGICDATA_APP_LAYOUT: "standard_3_split_upper",
-        }
-    )
+    values = schema({CONF_LOGICDATA_APP_FAMILY: "p1", CONF_LOGICDATA_APP_LAYOUT: "standard_3_split_upper"})
     with patch.object(
         flow,
         "_finish_with_verify",
         new=AsyncMock(return_value={"type": FlowResultType.CREATE_ENTRY}),
     ) as finish:
-        await flow.async_step_logicdata_app(values)
+        result = await finish_new_bed(flow, await flow.async_step_profile_questions(values), settings)
     saved = finish.call_args.args[0]
     assert saved[CONF_LOGICDATA_APP_PROFILE] == "phone"
     assert saved[CONF_LOGICDATA_APP_LAYOUT] == "standard_3_split_upper"
     assert saved[CONF_LOGICDATA_APP_TRANSPORT] == "auto"
     assert saved[CONF_HAS_LIGHT] is True
-    assert saved[CONF_DISABLE_ANGLE_SENSING] is True
+    assert not reads_positions(saved)
     assert saved[CONF_HAS_MASSAGE] is True
+
+
+async def _app_questions(hass, app: str) -> AdjustableBedConfigFlow:
+    """A flow on the app's own questions, chosen in the LOGICDATA question."""
+    flow = AdjustableBedConfigFlow()
+    flow.context = {}
+    flow.hass = hass
+    flow._manual_data = {CONF_ADDRESS: "11:22:33:44:55:66", CONF_BED_TYPE: BED_TYPE_LOGICDATA_APP}
+    result = await flow.async_step_logicdata_family({"choice": app})
+    assert result["step_id"] == "profile_questions"
+    return flow
 
 
 async def test_transport_selection_preserves_explicit_family(hass):
     """Changing transports must not change the configured command family."""
-    flow = AdjustableBedConfigFlow()
-    flow.context = {}
-    flow.hass = hass
-    flow._manual_data = {CONF_BED_TYPE: BED_TYPE_LOGICDATA_APP}
+    flow = await _app_questions(hass, "phone")
     with patch.object(flow, "_finish_with_verify", new=AsyncMock()) as finish:
-        await flow.async_step_logicdata_app(
+        await flow.async_step_profile_questions(
             {
-                CONF_LOGICDATA_APP_PROFILE: "phone",
                 CONF_LOGICDATA_APP_FAMILY: "p1",
                 CONF_LOGICDATA_APP_LAYOUT: "standard_2",
-                CONF_LOGICDATA_APP_TRANSPORT: "t2",
+                "advanced": {CONF_LOGICDATA_APP_TRANSPORT: "t2"},
             }
         )
-    assert finish.call_args.args[0][CONF_LOGICDATA_APP_TRANSPORT] == "t2"
-
-
-async def test_options_keep_app_layout_and_transport(hass):
-    entry = MockConfigEntry(
-        domain=DOMAIN,
-        data={
-            CONF_ADDRESS: "11:22:33:44:55:66",
-            CONF_BED_TYPE: BED_TYPE_LOGICDATA_APP,
-            CONF_MOTOR_COUNT: 2,
-            CONF_LOGICDATA_APP_PROFILE: "tablet",
-            CONF_LOGICDATA_APP_FAMILY: "p1",
-            CONF_LOGICDATA_APP_LAYOUT: "standard_4",
-            CONF_LOGICDATA_APP_TRANSPORT: "t3",
-            CONF_HAS_LIGHT: False,
-        },
-    )
-    entry.add_to_hass(hass)
-    flow = AdjustableBedOptionsFlow(entry)
-    flow.handler = entry.entry_id
-    flow.hass = hass
-    result = await flow.async_step_settings()
-    defaults = {marker.schema: marker.default() for marker in result["data_schema"].schema}
-    assert defaults[CONF_LOGICDATA_APP_LAYOUT] == "standard_4"
-    assert defaults[CONF_HAS_LIGHT] is False
-    result = await flow.async_step_settings(
-        {
-            CONF_LOGICDATA_APP_PROFILE: "tablet",
-            CONF_LOGICDATA_APP_FAMILY: "p1",
-            CONF_LOGICDATA_APP_LAYOUT: "standard_3_hi_low",
-            CONF_LOGICDATA_APP_TRANSPORT: "t2",
-            CONF_HAS_LIGHT: True,
-        }
-    )
-    assert result["type"] == FlowResultType.CREATE_ENTRY
-    assert entry.data[CONF_LOGICDATA_APP_LAYOUT] == "standard_3_hi_low"
-    assert entry.data[CONF_LOGICDATA_APP_TRANSPORT] == "t2"
-
-
-async def test_options_switch_from_legacy_requires_explicit_app_selection(hass):
-    entry = MockConfigEntry(
-        domain=DOMAIN, data={CONF_BED_TYPE: BED_TYPE_LOGICDATA, CONF_MOTOR_COUNT: 2}
-    )
-    entry.add_to_hass(hass)
-    flow = AdjustableBedOptionsFlow(entry)
-    flow.handler = entry.entry_id
-    flow.hass = hass
-    result = await flow.async_step_settings({CONF_BED_TYPE: BED_TYPE_LOGICDATA_APP})
-    assert result["type"] == FlowResultType.FORM
-    schema = result["data_schema"]
-    assert schema is not None
-    with pytest.raises(vol.Invalid, match="required key"):
-        schema({})
-    assert entry.data[CONF_BED_TYPE] == BED_TYPE_LOGICDATA
+    saved = finish.call_args.args[0]
+    assert (saved[CONF_LOGICDATA_APP_FAMILY], saved[CONF_LOGICDATA_APP_TRANSPORT]) == ("p1", "t2")
 
 
 async def test_factory_passes_explicit_settings_without_affecting_legacy(hass):
@@ -168,7 +115,7 @@ async def test_factory_passes_explicit_settings_without_affecting_legacy(hass):
         )
     )
     with patch(
-        "custom_components.adjustable_bed.beds.logicdata_app.LogicdataAppController"
+        "custom_components.adjustable_bed.beds.logicdata.app.LogicdataAppController"
     ) as controller:
         await create_controller(coordinator, BED_TYPE_LOGICDATA_APP, None, None)
     controller.assert_called_once_with(
@@ -180,44 +127,26 @@ async def test_factory_passes_explicit_settings_without_affecting_legacy(hass):
         has_light=False,
         has_massage=False,
     )
-    assert BED_TYPE_LOGICDATA_APP in BEDS_WITHOUT_ANGLE_FEEDBACK
+    assert bed_traits(BED_TYPE_LOGICDATA_APP).no_angle_feedback
 
 
-@pytest.mark.parametrize("family,layout", [("p2", "split_series"), ("p1", "middle")])
-async def test_setup_rejects_unsupported_family_layout(hass, family, layout):
-    """The app's final product routing overrides split/standard UI for P2."""
-    flow = AdjustableBedConfigFlow()
-    flow.context = {}
-    flow.hass = hass
-    flow._manual_data = {CONF_BED_TYPE: BED_TYPE_LOGICDATA_APP}
-    result = await flow.async_step_logicdata_app(
-        {
-            CONF_LOGICDATA_APP_PROFILE: "phone",
-            CONF_LOGICDATA_APP_FAMILY: family,
-            CONF_LOGICDATA_APP_LAYOUT: layout,
-        }
+async def test_a_motionrelax_layout_belongs_to_p1_and_p2_runs_the_middle_layout(hass):
+    """P2 is the middle layout, so it is never asked; every other layout is P1's."""
+    flow = await _app_questions(hass, "tablet")
+    result = await flow.async_step_profile_questions()
+    layouts = result["data_schema"].schema[
+        next(m for m in result["data_schema"].schema if m.schema == CONF_LOGICDATA_APP_LAYOUT)
+    ].container
+    assert "middle" not in layouts
+    result = await flow.async_step_profile_questions(
+        {CONF_LOGICDATA_APP_FAMILY: "p1", CONF_LOGICDATA_APP_LAYOUT: "middle"}
     )
     assert result["errors"] == {CONF_LOGICDATA_APP_LAYOUT: "logicdata_app_family_layout"}
     assert CONF_LOGICDATA_APP_FAMILY not in flow._manual_data
-
-
-async def test_options_rejects_unsupported_family_layout(hass):
-    entry = MockConfigEntry(
-        domain=DOMAIN,
-        data={
-            CONF_BED_TYPE: BED_TYPE_LOGICDATA_APP,
-            CONF_LOGICDATA_APP_PROFILE: "tablet",
-            CONF_LOGICDATA_APP_FAMILY: "p1",
-            CONF_LOGICDATA_APP_LAYOUT: "split_series",
-        },
-    )
-    entry.add_to_hass(hass)
-    flow = AdjustableBedOptionsFlow(entry)
-    flow.handler = entry.entry_id
-    flow.hass = hass
-    result = await flow.async_step_settings({CONF_LOGICDATA_APP_FAMILY: "p2"})
-    assert result["errors"] == {CONF_LOGICDATA_APP_LAYOUT: "logicdata_app_family_layout"}
-    assert entry.data[CONF_LOGICDATA_APP_FAMILY] == "p1"
+    with patch.object(flow, "_finish_with_verify", new=AsyncMock()) as finish:
+        await flow.async_step_profile_questions({CONF_LOGICDATA_APP_FAMILY: "p2"})
+    saved = finish.call_args.args[0]
+    assert (saved[CONF_LOGICDATA_APP_FAMILY], saved[CONF_LOGICDATA_APP_LAYOUT]) == ("p2", "middle")
 
 
 async def test_paired_options_preserve_distinct_app_packet_selectors(hass):
@@ -268,20 +197,3 @@ async def test_paired_options_preserve_distinct_app_packet_selectors(hass):
     assert not app_keys.intersection(entry.data)
 
 
-async def test_paired_options_require_unpair_before_selecting_app_type(hass):
-    left = {
-        CONF_ADDRESS: "11:22:33:44:55:66",
-        CONF_BED_TYPE: BED_TYPE_LOGICDATA,
-        CONF_MOTOR_COUNT: 2,
-    }
-    right = {**left, CONF_ADDRESS: "11:22:33:44:55:77"}
-    entry = MockConfigEntry(domain=DOMAIN, data=build_pair_entry_data(left, right, name="Pair"))
-    entry.add_to_hass(hass)
-    original = dict(entry.data)
-    flow = AdjustableBedOptionsFlow(entry)
-    flow.handler = entry.entry_id
-    flow.hass = hass
-    result = await flow.async_step_settings({CONF_BED_TYPE: BED_TYPE_LOGICDATA_APP})
-    assert result["errors"] == {CONF_BED_TYPE: "app_profile_unpair_first"}
-    assert entry.data == original
-    assert flow._pending_data == {}

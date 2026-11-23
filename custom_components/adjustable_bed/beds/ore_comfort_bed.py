@@ -1,17 +1,12 @@
 """ORE comfort-bed app controller for explicitly verified app profiles.
 
-Implements the accepted clean-room reports for com.ore.maxcoil 1.1.0 (5) and
-com.ore.Dynasty 1.0.2 (3), formal cluster-013
-(docs/apk-analysis/dispositions/row056-ore-maxcoil-dynasty.md), and for
-com.ore.sfmc2bedsence 1.1 (3), formal cluster-015
-(docs/apk-analysis/dispositions/row059-ore-bedsense-innova.md). MaxCoil Una and
-Dynasty Bases ship the same ``com.ore.okincomfortbed`` code base. Bedsense Bases
-is a separate package whose accepted report proves byte-identical frames,
-screens, timing, release and reply handling. Avanti Bases 1.0.5 (7),
-com.ore.AvantiBases, independently proves the same behavior (row065;
-docs/apk-analysis/dispositions/row065-avanti-bases.md).
-AMERICANSTAR 1.0 (1) independently proves the same behavior
-(docs/apk-analysis/dispositions/row062-americanstar.md).
+Implements com.ore.maxcoil 1.1.0 (5), com.ore.Dynasty 1.0.2 (3) and
+com.ore.sfmc2bedsence 1.1 (3). MaxCoil Una and Dynasty Bases ship the same
+``com.ore.okincomfortbed`` code base. Bedsense Bases is a separate package with
+byte-identical frames, screens, timing, release and reply handling. Avanti
+Bases 1.0.5 (7, com.ore.AvantiBases), AMERICANSTAR 1.0 (1) and OKIN Comfort Bed
+1.1.6 (8, com.ore.okincomfortbed) show the same behavior; the last with 104
+literal command/variant vectors.
 
 Every command is ``E5 FE 16`` + a big-endian 32-bit word + the complement of the
 byte sum, written to the last FFE9 characteristic found in any service. The app
@@ -31,22 +26,30 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, Final, cast
 
 from bleak.backends.characteristic import BleakGATTCharacteristic
-from homeassistant.exceptions import HomeAssistantError
 
+from ..card import CARD_MASSAGE, CARD_PRESET_SAVE, CARD_UTILITY
 from ..const import (
     KEESON_BASE_NOTIFY_CHAR_UUID,
     KEESON_BASE_WRITE_CHAR_UUID,
     KEESON_VARIANT_AMERICANSTAR,
     KEESON_VARIANT_AVANTI_BASES,
     KEESON_VARIANT_BEDSENSE_BASES,
+    KEESON_VARIANT_COMFORTFURNITURE,
     KEESON_VARIANT_DYNASTY_BASES,
     KEESON_VARIANT_MAXCOIL_UNA,
+    KEESON_VARIANT_OKIN_COMFORT_BED,
+    KEESON_VARIANT_ORE_ULTRAMATIC,
 )
-from .base import (
-    BedController,
+from ..controller_state import StateKey
+from ..errors import failed
+from ..profiles import keeson as profiles
+from ..profiles.keeson import KeesonProfile
+from ..state_keys import MASSAGE_TIMER_MINUTES
+from .base import BedController, ProfileExecution
+from .catalog_buttons import as_save
+from .entity_specs import (
     ControllerButtonSpec,
     ControllerNumberSpec,
-    ControllerSelectSpec,
     MotorCommandCallable,
     MotorControlSpec,
 )
@@ -68,8 +71,19 @@ class OreComfortBedApp:
 
 # Sibling apps of this code base register their own entry here.
 ORE_COMFORT_BED_APPS: Final[dict[str, OreComfortBedApp]] = {
-    KEESON_VARIANT_AVANTI_BASES: OreComfortBedApp("Avanti Bases", "com.ore.AvantiBases", "1.0.5 (7)"),
-    KEESON_VARIANT_AMERICANSTAR: OreComfortBedApp("AMERICANSTAR", "com.ore.americanstar", "1.0 (1)"),
+    KEESON_VARIANT_COMFORTFURNITURE: OreComfortBedApp("ComfortFurniture", "com.ore.comfortfurniture", "2.3 (10)"),
+    KEESON_VARIANT_ORE_ULTRAMATIC: OreComfortBedApp(
+        "ORE Ultramatic", "com.ore.ultramatic", "1.0.5 (9)"
+    ),
+    KEESON_VARIANT_OKIN_COMFORT_BED: OreComfortBedApp(
+        "OKIN Comfort Bed", "com.ore.okincomfortbed", "1.1.6 (8)"
+    ),
+    KEESON_VARIANT_AVANTI_BASES: OreComfortBedApp(
+        "Avanti Bases", "com.ore.AvantiBases", "1.0.5 (7)"
+    ),
+    KEESON_VARIANT_AMERICANSTAR: OreComfortBedApp(
+        "AMERICANSTAR", "com.ore.americanstar", "1.0 (1)"
+    ),
     KEESON_VARIANT_MAXCOIL_UNA: OreComfortBedApp("MaxCoil Una", "com.ore.maxcoil", "1.1.0 (5)"),
     KEESON_VARIANT_DYNASTY_BASES: OreComfortBedApp("Dynasty Bases", "com.ore.Dynasty", "1.0.2 (3)"),
     KEESON_VARIANT_BEDSENSE_BASES: OreComfortBedApp(
@@ -77,8 +91,7 @@ ORE_COMFORT_BED_APPS: Final[dict[str, OreComfortBedApp]] = {
     ),
 }
 
-# Action words (MainActivity key codes).
-STOP: Final = 0x00000000
+# Action words (MainActivity key codes); frames and timing are the profiles.
 BACK_UP: Final = 0x00000001
 BACK_DOWN: Final = 0x00000002
 FOOT_UP: Final = 0x00000004
@@ -103,13 +116,11 @@ MASSAGE_LEVEL_MAX: Final = 3
 MASSAGE_DEFAULT_LEVEL: Final = 1
 MASSAGE_TIMER: Final = {"10": 0x10000030, "20": 0x10000031, "30": 0x10000032}
 
-# sendSingleMessage sleeps 100 ms before every single write; holds repeat 100 ms
-# after each write.
-SINGLE_SEND_DELAY_S: Final = 0.1
-HOLD_INTERVAL_MS: Final = 100
-
-STATE_LEVEL: Final = {zone: f"ore_comfort_massage_{zone}_level" for zone in MASSAGE_BASE}
-STATE_TIMER: Final = "ore_comfort_massage_timer"
+STATE_LEVEL: Final = {
+    zone: StateKey[int | None](f"ore_comfort_massage_{zone}_level") for zone in MASSAGE_BASE
+}
+# The shared massage timer select reads this; the bed reports no timer.
+STATE_TIMER: Final = MASSAGE_TIMER_MINUTES
 
 # (cover key, translation key, up word, down word) for each app screen.
 _Axis = tuple[str, str, int, int]
@@ -128,18 +139,13 @@ LAYOUTS: Final[dict[int, tuple[_Axis, ...]]] = {
 _LAYOUT_NAMES: Final = {2: "bedding2 (2M)", 3: "bedding3 (3M)", 4: "bedding4 (4M)"}
 
 
-def build_frame(word: int) -> bytes:
-    """Encode an action word exactly as MainActivity.buildBluetoothPackage does."""
-    body = bytes((0xE5, 0xFE, 0x16)) + (word & 0xFFFFFFFF).to_bytes(4, "big")
-    return body + bytes(((~sum(body)) & 0xFF,))
-
-
-class OreComfortBedController(BedController):
+class OreComfortBedController(ProfileExecution[KeesonProfile], BedController):
     """Controller for the artifact-verified ORE comfort-bed app profiles."""
 
     def __init__(self, coordinator: AdjustableBedCoordinator, *, app: str) -> None:
         super().__init__(coordinator)
         self._app = ORE_COMFORT_BED_APPS[app]
+        self.profile: KeesonProfile = profiles.PROFILES[app]
         motor_count = coordinator.motor_count
         self._motor_count = motor_count if motor_count in LAYOUTS else 2
         self._axes = {key: (up, down) for key, _tk, up, down in LAYOUTS[self._motor_count]}
@@ -157,8 +163,9 @@ class OreComfortBedController(BedController):
 
         The app scans every service, ignores service UUIDs and properties, and
         keeps the last FFE9 and the last FFE4 it sees. Controls stay disabled
-        unless both exist. It never sets a write type, so Android's default
-        applies: write-without-response when the characteristic offers it.
+        unless both exist. The artifact never sets a write type; its effective
+        mode needs runtime evidence. HA chooses from the live properties,
+        preferring write-without-response when offered.
         """
         if self._write_char is not None:
             return self._write_char
@@ -176,9 +183,7 @@ class OreComfortBedController(BedController):
                     notify = char
         if write is None or notify is None:
             self.log_discovered_services(level=logging.INFO)
-            raise HomeAssistantError(
-                f"{self._app.name}: the bed must expose both FFE9 and FFE4 characteristics"
-            )
+            raise failed("bed_missing_service")
         props = {prop.lower() for prop in write.properties}
         self._write_with_response = "write-without-response" not in props
         self._write_char = write
@@ -191,7 +196,7 @@ class OreComfortBedController(BedController):
         repeat_delay_ms: int = 100,
         cancel_event: asyncio.Event | None = None,
     ) -> None:
-        """Write to the resolved FFE9 instance with Android's default write type."""
+        """Write to the resolved FFE9 instance using its live GATT properties."""
         characteristic = self._resolve_write_characteristic()
         await self._write_gatt_with_retry(
             KEESON_BASE_WRITE_CHAR_UUID,
@@ -203,24 +208,31 @@ class OreComfortBedController(BedController):
             characteristic=characteristic,
         )
 
+    def _frame(self, word: int) -> bytes:
+        return profiles.encode(self.profile, word)
+
     async def _send_single(self, word: int) -> None:
         """sendSingleMessage: sleep 100 ms, then write the frame once."""
-        await asyncio.sleep(SINGLE_SEND_DELAY_S)
-        await self.write_command(build_frame(word))
+        await asyncio.sleep(self.profile.tap_wait_ms / 1000)
+        await self.write_command(self._frame(word))
 
     async def _send_release(self) -> None:
         """buttonUp: the zero word after 100 ms, never suppressed by cancellation."""
+        ((wait_ms, word),) = self.profile.release.steps
+        assert isinstance(word, int)
         try:
-            await asyncio.sleep(SINGLE_SEND_DELAY_S)
+            await asyncio.sleep(wait_ms / 1000)
         finally:
-            await self.write_command(build_frame(STOP), cancel_event=asyncio.Event())
+            await self.write_command(self._frame(word), cancel_event=asyncio.Event())
 
     async def _hold(self, word: int) -> None:
         """Repeat a held key every 100 ms, then release with the zero word."""
         repeat_count, repeat_delay_ms = self.motor_pulse_settings()
+        # A leased hold (#483) refreshes until its lease ends.
+        repeat_count = self.leased_hold_refreshes(repeat_delay_ms) or repeat_count
         try:
             await self.write_command(
-                build_frame(word), repeat_count=repeat_count, repeat_delay_ms=repeat_delay_ms
+                self._frame(word), repeat_count=repeat_count, repeat_delay_ms=repeat_delay_ms
             )
         finally:
             await self._send_release()
@@ -235,7 +247,8 @@ class OreComfortBedController(BedController):
 
     def motor_pulse_settings(self) -> tuple[int, int]:
         """The configured hold length at the app's fixed 100 ms refresh."""
-        return self._coordinator.motor_pulse_count, HOLD_INTERVAL_MS
+        assert self.profile.refresh_ms is not None
+        return self._coordinator.motor_pulse_count, self.profile.refresh_ms
 
     async def start_notify(self, callback: Callable[[str, float], None] | None = None) -> None:
         """The app enables FFE4 locally only: it writes no CCCD and parses nothing."""
@@ -261,11 +274,6 @@ class OreComfortBedController(BedController):
             )
             for key, translation_key, _up, _down in LAYOUTS[self._motor_count]
         )
-
-    @property
-    def stale_motor_entity_keys(self) -> frozenset[str]:
-        # Covers from the other screens and from the generic Keeson profiles.
-        return frozenset({"back", "feet", "both", "head", "waist", "lumbar", "tilt", "legs"})
 
     @property
     def has_lumbar_support(self) -> bool:
@@ -401,7 +409,7 @@ class OreComfortBedController(BedController):
             raise ValueError(f"Invalid massage level {zone}={level}")
         # Like the app's preference, the level is kept even if the write fails.
         self._levels[zone] = level
-        self.forward_controller_state_updates({STATE_LEVEL[zone]: level})
+        self.forward_controller_state_updates(STATE_LEVEL[zone](level))
         await self._send_single(MASSAGE_BASE[zone] + level)
 
     async def massage_start(self) -> None:
@@ -413,14 +421,29 @@ class OreComfortBedController(BedController):
         """Stop: head then foot level zero; the timer indicator resets locally."""
         await self._send_single(MASSAGE_BASE["head"])
         await self._send_single(MASSAGE_BASE["foot"])
-        self.forward_controller_state_updates({STATE_TIMER: None})
+        self.forward_controller_state_updates(STATE_TIMER(None))
 
     async def set_massage_timer_option(self, option: str) -> None:
         """One of the 10/20/30 minute words the timer button cycles through."""
         if option not in MASSAGE_TIMER:
             raise ValueError(f"Invalid massage timer {option}")
         await self._send_single(MASSAGE_TIMER[option])
-        self.forward_controller_state_updates({STATE_TIMER: option})
+        self.forward_controller_state_updates(STATE_TIMER(int(option)))
+
+    @property
+    def supports_massage_timer(self) -> bool:
+        return True
+
+    @property
+    def massage_timer_options(self) -> list[int]:
+        return [int(option) for option in MASSAGE_TIMER]
+
+    @property
+    def massage_timer_can_turn_off(self) -> bool:
+        return False  # The timer words are durations; Stop is its own button.
+
+    async def set_massage_timer(self, minutes: int) -> None:
+        await self.set_massage_timer_option(str(minutes))
 
     @property
     def persisted_app_state(self) -> Mapping[str, Any] | None:
@@ -434,7 +457,7 @@ class OreComfortBedController(BedController):
         if any(type(v) is not int or not 0 <= v <= MASSAGE_LEVEL_MAX for v in levels.values()):
             raise ValueError("Invalid massage level preference")
         self._levels = levels
-        self.forward_controller_state_updates({STATE_LEVEL[z]: v for z, v in levels.items()})
+        self.forward_controller_state_updates(*(STATE_LEVEL[z](v) for z, v in levels.items()))
 
     @property
     def controller_number_specs(self) -> tuple[ControllerNumberSpec, ...]:
@@ -447,22 +470,9 @@ class OreComfortBedController(BedController):
                 native_max_value=MASSAGE_LEVEL_MAX,
                 native_step=1,
                 set_fn=_level_setter(zone),
+                card=CARD_MASSAGE,
             )
             for zone in ("head", "foot", "wave")
-        )
-
-    @property
-    def controller_select_specs(self) -> tuple[ControllerSelectSpec, ...]:
-        return (
-            ControllerSelectSpec(
-                key=STATE_TIMER,
-                translation_key=STATE_TIMER,
-                state_key=STATE_TIMER,
-                options=tuple(MASSAGE_TIMER),
-                select_fn=lambda ctrl, option: cast(
-                    OreComfortBedController, ctrl
-                ).set_massage_timer_option(option),
-            ),
         )
 
     @property
@@ -470,24 +480,32 @@ class OreComfortBedController(BedController):
         def spec(
             key: str, name: str, icon: str, press: Callable[[OreComfortBedController], Any]
         ) -> ControllerButtonSpec:
-            return ControllerButtonSpec(
+            button = ControllerButtonSpec(
                 key,
                 name,
                 lambda ctrl: press(cast(OreComfortBedController, ctrl)),
                 icon,
                 translation_key=key,
+                # Saving overwrites the stored preset, so the card asks first.
+                requires_confirmation=key.startswith("ore_comfort_program_"),
+                card=CARD_MASSAGE
+                if key == "ore_comfort_massage_start"
+                else CARD_PRESET_SAVE
+                if key.startswith("ore_comfort_program_")
+                else CARD_UTILITY,
             )
+            return as_save(button) if key.startswith("ore_comfort_program_") else button
 
         return (
             spec(
                 "ore_comfort_program_flat",
-                "Save Flat",
+                "Save flat",
                 "mdi:content-save",
                 lambda c: c.program_flat(),
             ),
             spec(
                 "ore_comfort_program_zero_g",
-                "Save Zero G",
+                "Save zero gravity",
                 "mdi:content-save",
                 lambda c: c.program_zero_g(),
             ),

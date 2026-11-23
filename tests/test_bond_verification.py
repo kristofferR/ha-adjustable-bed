@@ -35,7 +35,6 @@ from custom_components.adjustable_bed.bond_verification import (
 from custom_components.adjustable_bed.const import (
     BED_TYPE_LINAK,
     BED_TYPE_LOGICDATA,
-    BED_TYPE_OKIMAT,
     BED_TYPE_OKIN_CST,
     BED_TYPE_OKIN_UUID,
     BED_TYPE_SLEEP_NUMBER,
@@ -73,7 +72,7 @@ def _client(read: Any = None) -> MagicMock:
 class TestVerifierApplicability:
     """A read only proves a bond where the read is known to be bond-gated."""
 
-    @pytest.mark.parametrize("bed_type", [BED_TYPE_OKIMAT, BED_TYPE_OKIN_UUID])
+    @pytest.mark.parametrize("bed_type", [BED_TYPE_OKIN_UUID])
     def test_okin_uuid_protocol_has_a_verifier(self, bed_type: str) -> None:
         assert has_evidence_backed_verifier(bed_type, None)
 
@@ -394,7 +393,7 @@ class TestVerificationOutcomes:
     async def test_a_successful_read_verifies_the_bond(self) -> None:
         evidence = await async_verify_authenticated_access(
             _client(),
-            bed_type=BED_TYPE_OKIMAT,
+            bed_type=BED_TYPE_OKIN_UUID,
             protocol_variant=None,
             path=_LOCAL,
             operation="setup_pairing",
@@ -405,7 +404,7 @@ class TestVerificationOutcomes:
     async def test_an_authentication_error_is_a_definite_failure(self) -> None:
         evidence = await async_verify_authenticated_access(
             _client(BleakError("Insufficient authentication")),
-            bed_type=BED_TYPE_OKIMAT,
+            bed_type=BED_TYPE_OKIN_UUID,
             protocol_variant=None,
             path=_LOCAL,
             operation="setup_pairing",
@@ -425,7 +424,7 @@ class TestVerificationOutcomes:
         """The OKIN CST receiver never answers this read even when bonded."""
         evidence = await async_verify_authenticated_access(
             _client(error),
-            bed_type=BED_TYPE_OKIMAT,
+            bed_type=BED_TYPE_OKIN_UUID,
             protocol_variant=None,
             path=_LOCAL,
             operation="setup_pairing",
@@ -438,7 +437,7 @@ class TestVerificationOutcomes:
         client.is_connected = False
         evidence = await async_verify_authenticated_access(
             client,
-            bed_type=BED_TYPE_OKIMAT,
+            bed_type=BED_TYPE_OKIN_UUID,
             protocol_variant=None,
             path=_LOCAL,
             operation="setup_pairing",

@@ -1,78 +1,225 @@
 # Kaidi
 
-**Status:** ❓ Needs testing
+**Status:** Tested (a Rize Remedy III with a Mouselet controller in [#247](https://github.com/kristofferR/ha-adjustable-bed/issues/247)); other Kaidi product families, Floyd Home, ISleep, KomfyD and ComfyDS need testing
 
 **Credit:** Reverse engineering by [kristofferR](https://github.com/kristofferR/ha-adjustable-bed)
 
 > [!NOTE]
-> For **ISleep com.kaidi_test4**, choose the explicit [ISleep profile](isleep.md).
-> Its accepted row064 audit corrects movement lifecycle, side routing, massage
-> strengths and memory capacity independently of this legacy Kaidi route.
-> Existing entries do not change automatically. Reconfigure or add the explicit
-> ISleep profile and confirm product, actuator descriptor and room ID.
+> For **Rize Beds 1.4.2**, choose the [Rize Beds profile](#rize-beds). For the
+> **ISleep** app (`com.kaidi_test4`), choose the [ISleep profile](#isleep): it
+> moves the bed, picks sides, sets massage strength and counts memory slots the
+> way the app does, unlike the older Kaidi route. Existing Kaidi entries keep the
+> older route until you reconfigure them; for ISleep, confirm the product,
+> actuator descriptor and room ID when you do.
 
 ## Known Models
 
 - Rize Beds, Floyd Home and ISleep bases (Kaidi OEM)
 - Product names from the OEM apps: Remedy 3, Remedy 4, Contemporary 4,
   Contemporary 5, Tranquility II and the generic single/double layouts (see
-  [APK-backed product IDs](#apk-backed-product-ids))
+  [Product IDs](#product-ids))
 - Common Bluetooth name: `Mouselet`
+- Floyd Home beds advertising Kaidi product 139 (`TRANQUILITY_II`)
+- ISleep bases advertising one of eight products: 129, 130, 131, 132, 133, 134,
+  142 and 143. Choose **ISleep app** (`com.kaidi_test4`) in setup; setup
+  does not pick it from the name.
 
 ## Apps
 
-| Analyzed | App | Package ID |
-|----------|-----|------------|
-| ✅ | [Rize](https://play.google.com/store/apps/details?id=com.kaidi_test4.rize) 1.3.0 | `com.kaidi_test4.rize` |
-| ✅ | [Floyd Home](https://play.google.com/store/apps/details?id=com.kaidi_test4.floyd) 1.0.7 | `com.kaidi_test4.floyd` |
-| ✅ | [ISleep](https://play.google.com/store/apps/details?id=com.kaidi_test4) 1.6.3 | `com.kaidi_test4` |
+| Analyzed | App | Package ID | Profile |
+|----------|-----|------------|---------|
+| ✅ | [Rize Beds](https://play.google.com/store/apps/details?id=com.kaidi_test4.rize) 1.4.2 (57) | `com.kaidi_test4.rize` | [Rize Beds](#rize-beds) |
+| ✅ | [Rize](https://play.google.com/store/apps/details?id=com.kaidi_test4.rize) 1.3.0 | `com.kaidi_test4.rize` | [Seat profiles](#seat-profiles) |
+| ✅ | [Floyd Home](https://play.google.com/store/apps/details?id=com.kaidi_test4.floyd) 1.0.7 (7) | `com.kaidi_test4.floyd` | [Floyd Home](#floyd-home) |
+| ✅ | [ISleep](https://play.google.com/store/apps/details?id=com.kaidi_test4) 1.6.3 (45) | `com.kaidi_test4` | [ISleep](#isleep) |
+| ✅ | [KomfyD](https://play.google.com/store/apps/details?id=com.pairlink.kaidi.komfyD) 1.0.9 (8) | `com.pairlink.kaidi.komfyD` | [KomfyD](#komfyd-and-comfyds) |
+| ✅ | [ComfyDS](https://play.google.com/store/apps/details?id=com.pairlink.kaidi.ComfyDS) 1.0.0 (1) | `com.pairlink.kaidi.ComfyDS` | [ComfyDS](#comfyds) |
 
-Floyd Home now has a separately audited [product 139 profile](floyd.md).
-Its capabilities and control behavior come from its accepted artifact, not from
-other apps sharing this transport. The remaining sections describe the legacy
-Seat profiles unless stated otherwise. All three apps use only the Seat command
-values; the legacy Bed values in the shared library are not used by any of them.
+- The original Rize/Floyd/ISleep apps use only the Seat command values; the legacy Bed values in the
+  shared library are not used by any of them.
+- Rize Beds 1.4.2, Floyd Home and ISleep each have their own profile with that
+  app's controls. Existing Rize/Floyd and Kaidi entries keep their route; pick
+  the app you use when you set up a bed.
+
 
 ## Features
 
-| Feature | Supported |
-|---------|-----------|
-| Motor Control | ✅ (head and foot on every variant; back, waist/lumbar per product) |
-| Position Feedback | ❌ (direct targets are commands, not measured feedback) |
-| Direct Position Targets | ✅ (back/legs 0-100%, Seat 1, Seat 2, Seat 1+2) |
-| Memory Presets | ✅ (4 recall/save slots on the Seat variants; Floyd has 3) |
-| Flat / Zero G / Anti-Snore | ✅ (Seat 1, Seat 2, Seat 1+2) |
-| Book (TV) / Leisure (Lounge) | ⚠️ (product-gated) |
-| Massage | ⚠️ (start/stop and 15/30/45-minute timers on Seat 1, Seat 2, Seat 1+2; requires **Has massage**) |
-| Lights | ⚠️ (on/off, product-gated) |
-| Single-address Left/Right | ✅ (`seat_1_2` only) |
+| Feature | Seat profiles | Floyd Home | ISleep |
+|---------|---------------|------------|--------|
+| Motor Control | ✅ (head and foot on every variant; back, waist/lumbar per product) | ✅ (head/back and feet; start, timed hold, release) | ✅ (upper/back and feet; head and waist per product; press, timed hold, release) |
+| Combined up/down | ❌ | ⚠️ (`hold_control` only) | ✅ (**All up** / **All down** buttons) |
+| Position Feedback | ❌ | ❌ | ❌ (light and massage state are not reported either) |
+| Direct Position Targets | ✅ (back/legs 0-100%, Seat 1, Seat 2, Seat 1+2) | ❌ | ❌ |
+| Flat / Zero G / Anti-Snore | ✅ (Seat 1, Seat 2, Seat 1+2) | ✅ | ✅ |
+| Book (TV) / Leisure (Lounge) | ⚠️ (some products) | ❌ | ❌ |
+| Memory Presets | ✅ (4 recall/save slots) | ✅ (three recall/save slots) | ✅ (three slots, recall and save) |
+| Preset Programming | ❌ | ✅ (save over Zero gravity and Anti-snore; asks for confirmation) | ❌ |
+| Massage | ⚠️ (start/stop and 15/30/45-minute timers on Seat 1, Seat 2, Seat 1+2; requires **Has massage**) | ❌ | ✅ (on/off, patterns 1/2/3, strengths 0-100, timer; shows the last command sent) |
+| Lights | ⚠️ (on/off, some products) | ✅ (under-bed on/off; state not reported) | ✅ (on/off) |
+| Battery Mode | ❌ | ✅ (diagnostic sensor) | ❌ |
+| Left and right sides on one address | ✅ (`seat_1_2` only) | ❌ | ⚠️ (products 130 and 143 only, when the actuator descriptor is not 2) |
+| Room enrollment | ❌ (set it up in the official app) | ✅ (`assign_room` for a bed with no room yet) | ✅ (an action for mode09 beds with no room yet) |
+| Resetting a bed from another room | ❌ | ❌ (left out for safety) | ❌ (mode07, left out for safety) |
+| Hold until release | ✅ ([renewable](../SERVICES.md#renewable-holds), latched: up to 10 s, then STOP); ❌ dual-seat (`seat_1_2`) beds | ❌ | ✅ ([renewable](../SERVICES.md#renewable-holds), latched: up to 10 s, then STOP) |
 
-## Protocol Details
+| Rize Beds 1.4.2 feature | Supported |
+|---|---|
+| Motor Control | ✅ (the motors your product has, plus the app's voice controls) |
+| Position Feedback | ❌ |
+| Memory Presets | ✅ (three recall/save slots) |
+| Default Programming | ✅ (asks for confirmation; one bed at a time) |
+| Massage | ✅ (patterns, head strength, timers; leg strength and mode4 per product) |
+| Lights | ✅ (on/off) |
+| Motion Sensor Commands | ✅ (extended products) |
+| Battery Mode | ✅ (extended products, diagnostic sensor) |
+| Left and right sides | ✅ (products 130/141, when the actuator descriptor is not 2) |
+| Room Enrollment | ✅ (mode09 beds with no room yet) |
 
-**Service UUID:** `9e5d1e47-5c13-43a0-8635-82adffc0386f` (connected GATT service)
-**Write Characteristic:** `9e5d1e47-5c13-43a0-8635-82adffc1386f`
-**Notify Characteristic:** `9e5d1e47-5c13-43a0-8635-82adffc2386f`
-**Format:** 4-byte control payloads wrapped in Kaidi's mesh-style GATT frame
+- Floyd Home: a battery event can arrive unsolicited; unknown battery mode is
+  not interpreted as battery power. A reported battery mode blocks raising, but
+  never blocks lowering or release.
 
-### Packet Format
+## Choosing a profile
 
-All multi-byte addresses are little-endian.
+Detection suggests the `kaidi` bed type for a Kaidi advertisement (see
+[Seat setup](#seat-profiles)); its `auto` variant picks the profile from the
+advertised product ID. ISleep is never detected: choose **ISleep app**
+(`com.kaidi_test4`) explicitly. Each profile keeps its own command table and
+timing; none reuses a sibling's.
 
-| Packet | Bytes |
-|--------|-------|
-| Join | `01 16 01` + room ID (4) + ASCII `1122` |
-| Ping all (find target `vAddr`) | `03 FF FF FF FF FE` + source `vAddr` (4) |
-| Control | `03` + target `vAddr` (4) + `20` + source `vAddr` (4) + `01 cmd param 00` |
+<!-- generated:kaidi-profiles -->
+<!-- Generated by scripts/generate_codec_docs.py from the codec and profile data. Edit those, not this block. -->
 
-The source `vAddr` is the bed-assigned own address, or `FF FF FF FF` when none
-was reported. `param` is `00` except for direct position targets.
+| Profile | Bed type | Protocol variant | Products | Memory slots | Movement |
+|---|---|---|---|---|---|
+| Seat 1 | `kaidi` | `seat_1` | 129, 131, 132, 135, 136, 137, 138, 142 | 4 | pulse settings, then the axis stop |
+| Seat 2 | `kaidi` | `seat_2` | manual or single seat bar | 4 | pulse settings, then the axis stop |
+| Seat 3 | `kaidi` | `seat_3` | manual or single seat bar | 4 | pulse settings, then the axis stop |
+| Seat 1+2 | `kaidi` | `seat_1_2` | 130, 133, 134, 143 | 4 | pulse settings, then the axis stop |
+| Floyd Home | `kaidi` | `floyd` | 139 | 3 | one start, release after the hold; writes 50 ms apart |
+| ISleep | `isleep` | explicit app choice | 129, 130, 131, 132, 133, 134, 142, 143 | 3 | one press, release after the hold |
+| Rize Beds | `rize` | explicit app choice | 129, 130, 131, 132, 133, 134, 135, 136, 137, 138, 140, 141 | 3 | one start, release after hold; writes 50 ms apart |
+| KomfyD | `komfyd` | explicit app choice | 129 / 130 / 131 (129 alias) | 4 | one press, matching release; no refresh |
+| ComfyDS | `comfyds` | explicit app choice | 129 / 130 / 131 (129 alias) | 4 | one press, matching release; no refresh |
+<!-- /generated -->
 
-### Write Mode
+### Aliases
 
-Writes use response when the write characteristic reports the `write`
-property, otherwise write without response.
+None. No two bed types build the same controller and profile.
 
-## Detection / Setup
+## Wire codec
+
+`codec/kaidi.py` encodes Kaidi's PairLink mesh frames over GATT. A session
+joins the room carried in the bed's advertisement, finds the bed's virtual
+address (`vAddr`), then wraps every command in a control frame addressed to it. Rize Beds also
+uses the second parameter byte for its special massage operation.
+
+### Transports
+
+<!-- generated:kaidi-transports -->
+<!-- Generated by scripts/generate_codec_docs.py from the codec and profile data. Edit those, not this block. -->
+
+| Role | UUID |
+|---|---|
+| Service (Seat profiles' detection) | `9e5d1e47-5c13-43a0-8635-82adffc0386f` |
+| Write | `9e5d1e47-5c13-43a0-8635-82adffc1386f` |
+| Notify | `9e5d1e47-5c13-43a0-8635-82adffc2386f` |
+<!-- /generated -->
+
+- The Seat profiles detect the service; Floyd Home and ISleep find the write and
+  notify characteristics across discovered services and do not require the
+  server-only service UUID.
+- ISleep subscribes with notify or indicate. HA/Bleak own the CCCD, indication
+  selection and Bluetooth adapter/proxy access.
+
+### Framing and checksum
+
+<!-- generated:kaidi-frames -->
+<!-- Generated by scripts/generate_codec_docs.py from the codec and profile data. Edit those, not this block. -->
+
+| Frame | Layout | Example |
+|---|---|---|
+| Join | `01 16 01` + room (LE32) + ASCII `1122` | `01 16 01 78 56 34 12 31 31 32 32`, room `0x12345678` |
+| Enrollment | `01 03` + room (LE32) + ASCII `1122` + `00 00 00 00` | `01 03 78 56 34 12 31 31 32 32 00 00 00 00`, room `0x12345678` |
+| Ping all | `03 FF FF FF FF FE` + own address (LE32) | `03 FF FF FF FF FE FF FF FF FF`, own `0xFFFFFFFF` |
+| Control | `03` + target (LE32) + `20` + own (LE32) + `01 command parameter 00` | `03 78 56 34 12 20 EF CD AB 90 01 01 00 00`, command `0x01` from `0x90ABCDEF` to `0x12345678` |
+<!-- /generated -->
+
+- Rooms and addresses are 32-bit little-endian. A room is the signed 32-bit
+  identity sent during authentication, not a display name; a negative one is
+  its two's complement, so room `-1` joins with
+  `01 16 01 FF FF FF FF 31 31 32 32`.
+- `31 31 32 32` is ASCII `1122`.
+- There is no checksum, framing stream, fragmentation, sequence number, command
+  acknowledgment or position ACK.
+- Each profile chooses the own address and the parameter byte; see its section.
+
+More examples, from the pre-v5 builders:
+
+| Example | Bytes |
+| --- | --- |
+| Join, room `1` | `01 16 01 01 00 00 00 31 31 32 32` |
+| Enrollment, room `1` | `01 03 01 00 00 00 31 31 32 32 00 00 00 00` |
+| Head up, own `0x11223344`, target `0x55667788`, parameter `0` | `03 88 77 66 55 20 44 33 22 11 01 01 00 00` |
+| Flat, own `ffffffff`, target `0`, parameter 50 | `03 00 00 00 00 20 FF FF FF FF 01 1C 32 00` |
+
+### Command encoders
+
+| Encoder | Builds |
+| --- | --- |
+| `join(room)` | Join an existing room |
+| `enroll(room)` | Assign an unprovisioned bed to a room |
+| `ping(own)` | Ask every node for its `vAddr` |
+| `control(target, own, command, parameter)` | One command; `payload(command, parameter)` is its last four bytes |
+
+Command bytes are profile data: see the [Seat](#seat-profiles),
+[Floyd Home](#floyd-home) and [ISleep](#isleep) controls.
+
+### Responses
+
+`parse_notification()` decodes every reply the apps read. Each profile consumes
+only some of them:
+
+| Notification | Meaning | Seat | Floyd Home | ISleep |
+|--------------|---------|------|------------|--------|
+| `02 16` + status | Join reply; status `0` is accepted | ✅, a missing status fails setup | ✅ | ✅ |
+| `02 03` + status | Enrollment or room assignment reply; status `0` is accepted | | ✅ | ✅ |
+| `01 0A` + own `vAddr` (LE32) | Own address for this session; zero becomes `FFFFFFFF` | ✅ | ✅, zero also means one device | ✅ |
+| `01 02` …, count at bytes 8-9 (LE) | Count update; invalidates the node cache | | ✅ | ✅, roster invalidation |
+| `03` …, channel `FF` at byte 5 | Ping reply: bytes 6-11 node MAC (reversed), bytes 12-15 its `vAddr`; used only when the MAC matches the configured bed | ✅ | ✅, signed; zero becomes the `-2` sentinel | ✅; zero and signed `-2` become destination zero |
+| `03` …, channel `20` at byte 5 | Control reply: command at byte 11, value at byte 12 | | Battery event `0xA6`: value `1` means battery mode | |
+
+Other incoming routes have no bed-state consumer; raw diagnostics retain them.
+
+### STOP and release behavior
+
+- **Seat:** movement repeats the move command at the configured pulse count and
+  delay, then sends that motor's stop command with a fresh cancel event. Stop
+  all sends `stop_all`, or each motor's stop on Seat 3.
+- **Floyd Home:** one start, a timed hold, then the matching release to the
+  original node address; a cancellation never suppresses the release. Flat is
+  never the emergency release.
+- **ISleep:** one press, then its matching release with a fresh cancellation
+  event, to the original side, target, own address and connection. STOP never
+  reconnects or authenticates, and never sends Flat.
+
+### Vectors
+
+- `tests/kaidi_vectors.py` freezes each profile's command payloads, complete
+  session frames and replies; `tests/test_kaidi_vectors.py` proves that each
+  round-trips through the codec and that each profile sends exactly its frozen
+  payloads.
+- ISleep's opcodes come from `tests/fixtures/isleep_commands.json`.
+
+## Profiles
+
+### Seat profiles
+
+**App:** [Rize](https://play.google.com/store/apps/details?id=com.kaidi_test4.rize) 1.3.0, `com.kaidi_test4.rize`; the same tables ship in ISleep 1.6.3 and Floyd 1.0.7
+
+**Status:** Tested on a Rize Remedy III ([#247](https://github.com/kristofferR/ha-adjustable-bed/issues/247)); other product families need testing
+
+#### Setup
 
 Kaidi beds are identified primarily by manufacturer data, not by advertised
 service UUIDs.
@@ -86,7 +233,7 @@ service UUIDs.
 > accepts that payload too and filters on mesh room-ID membership, which the
 > integration cannot replicate. Detection therefore requires a corroborating
 > Kaidi signal (the `Mouselet` name, the FFC0/mesh service UUID, or a known
-> Kaidi MAC OUI) alongside a parseable payload. The separately audited Floyd
+> Kaidi MAC OUI) alongside a parseable payload. The Floyd
 > product 139 signature can also admit a bed without those shared signals.
 
 | Signal | Value |
@@ -97,12 +244,10 @@ service UUIDs.
 | Known MAC OUIs in OEM app | `00:95:69`, `F0:AC:D7` |
 | Advertised discovery service | `0000ffc0-0000-1000-8000-00805f9b34fb` |
 | Connected GATT service | `9e5d1e47-5c13-43a0-8635-82adffc0386f` |
-| Write characteristic | `9e5d1e47-5c13-43a0-8635-82adffc1386f` |
-| Notify characteristic | `9e5d1e47-5c13-43a0-8635-82adffc2386f` |
 
 Detection confidence is 0.95 with a Kaidi service UUID, otherwise 0.9.
 
-### Advertisement layouts
+##### Advertisement layouts
 
 Offsets count from the start of the payload including the `FF FF` company ID
 (Home Assistant strips it; the parser accepts both forms).
@@ -123,18 +268,12 @@ can see a valid advertisement:
 - advertisement type
 - resolved Kaidi variant and the source used to resolve it
 
-### APK-backed product IDs
+##### Product IDs
 
 The resolver recognizes these product IDs from Rize 1.3.0, ISleep 1.6.3,
-and Floyd 1.0.7:
-
-| Product IDs | Auto family |
-|-------------|-------------|
-| `129`, `131`, `132`, `135`, `136`, `137`, `138`, `142` | `seat_1` |
-| `130`, `133`, `134`, `143` | `seat_1_2` |
-| `139` | `floyd` |
-
-Per-product capability gates (from the apps' `bedUI` mapping):
+and Floyd 1.0.7; the [profile summary](#choosing-a-profile) lists the variant
+`auto` resolves for each. Per-product capability gates (from the apps' `bedUI`
+mapping):
 
 | ID | App name | Apps | bedUI | Extra controls |
 |----|----------|------|-------|----------------|
@@ -148,15 +287,15 @@ Per-product capability gates (from the apps' `bedUI` mapping):
 | 136 | `REMEDY_4` | Rize/Floyd | 6 | Back, waist, lights, Book, Leisure |
 | 137 | `CONTEMPORARY_4` | Rize/Floyd | 7 | Back, waist, lights, Leisure |
 | 138 | `CONTEMPORARY_5` | Rize/Floyd | 8 | Back, waist, lights, Leisure |
-| 139 | `TRANQUILITY_II` | Floyd | n/a | See the [Floyd guide](floyd.md) |
+| 139 | `TRANQUILITY_II` | Floyd | n/a | See [Floyd Home](#floyd-home) |
 | 142 | `BED_TYPE_SINGLE5` | ISleep | 5 | Back, waist, lights, Book, Leisure |
 | 143 | `BED_TYPE_DOUBLE_NEW` | ISleep | n/a (basic) | None |
 
-IDs `140` and `141` are not in those app versions and are not inferred from
+IDs `140` and `141` are not in those app versions and are not guessed from
 neighboring values. Other IDs use the narrow fallback below or require an
 explicit variant. Unknown products retain the basic head + foot layout.
 
-### `sofa_acu_no` heuristic
+##### `sofa_acu_no` heuristic
 
 `sofaAcuNo` holds seat-bar counts: Seat 1 in bits 0-3, Seat 2 in bits 4-7,
 Seat 3 in bits 8-11, and a store flag in bits 12-15.
@@ -172,38 +311,37 @@ from its recognized product ID, rather than relying on this fallback.
 If Kaidi metadata is present but does not map cleanly, `auto` refuses to guess
 and a manual Kaidi variant override is required.
 
-### Session Setup
+##### Session setup
 
 Home Assistant follows the same bootstrap flow as the OEM apps:
 
 1. Parse manufacturer data to recover the room/home ID and any advertised `vAddr`
-2. Send the Kaidi join packet with ASCII password `"1122"`
+2. Send the join frame with ASCII password `"1122"`
 3. Use the advertised `vAddr`, or ping to discover it if only a single-bed advertisement is visible
-4. Send 4-byte control payloads wrapped in Kaidi's mesh-style GATT frame
+4. Send each command in a control frame
 
-If no room ID is in the stored or constructor data, the controller tries Home
-Assistant's Bluetooth scanner before failing.
+- The own address is the bed-assigned one, or `FF FF FF FF` when none was
+  reported. The parameter byte is `00` except for direct position targets.
+- Writes use response when the write characteristic reports the `write`
+  property, otherwise write without response.
+- If no room ID is in the stored or constructor data, the controller tries Home
+  Assistant's Bluetooth scanner before failing.
 
-## Command Families
+##### Command families
 
-The integration exposes the Floyd app profile and four legacy Seat variants
-under the shared `kaidi` bed type.
-The current implementation uses the OEM apps' Seat commands; the old `bed_1`,
-`bed_2`, and `bed_12` choices are not current variants.
+The `kaidi` bed type exposes the Floyd app profile and four legacy Seat
+variants. The old `bed_1`, `bed_2`, and `bed_12` choices are not current
+variants.
 
 | Variant | Use |
 |---------|-----|
-| `floyd` | Floyd Home product 139, see [dedicated guide](floyd.md) |
+| `floyd` | Floyd Home product 139, see [Floyd Home](#floyd-home) |
 | `seat_1` | Single-base / lane 1 commands |
 | `seat_2` | Lane 2 commands |
 | `seat_3` | Lane 3 commands |
 | `seat_1_2` | Dual base, sends the matching Seat 1 and Seat 2 commands |
 
-### Features By Family
-
-- The legacy Seat variants expose core movement and four memory recall/save slots.
-- Floyd exposes three slots, a corrected Flat/release mapping, light controls and
-  confirmed built-in preset programming. It has no direct position or massage controls.
+- The Seat variants expose core movement and four memory recall/save slots.
 - Seat 1, Seat 2, and Seat 1+2 expose Flat, Zero G, Anti-Snore, direct back/legs
   percentage targets, and massage start/stop and 15/30/45-minute timers. Massage
   entities also require **Has massage** in configuration.
@@ -214,84 +352,57 @@ The current implementation uses the OEM apps' Seat commands; the old `bed_1`,
 - Direct targets are commands, not measured position feedback; an accepted target
   must not be interpreted as confirmation that the bed reached it.
 
-The current mappings and capability gates are in
-[`kaidi_variants.py`](../../custom_components/adjustable_bed/kaidi_variants.py) and
-[`beds/kaidi.py`](../../custom_components/adjustable_bed/beds/kaidi.py), with
-[focused tests](../../tests/test_kaidi.py). This documents the shipped
-implementation, not new physical validation.
+##### Single-address paired controls
 
-### Single-address paired controls
-
-Only `seat_1_2` can opt into **Enable Left / Right / Both controls** in the entry's
-options. Left binds Seat 1, Right binds Seat 2, and Both retains the dual-command
+Only `seat_1_2` offers **Add Left, Right and Both controls** in the entry's
+Configure menu. Left binds Seat 1, Right binds Seat 2, and Both retains the dual-command
 behavior over the same Bluetooth connection. Other Kaidi variants remain
 standalone. See [paired-side configuration](../CONFIGURATION.md#single-address-left--right-controls).
 
-## Commands
+#### Controls
 
-Values are the `cmd` byte of the control payload `01 cmd param 00`. `seat_1_2`
-sends the Seat 1 value, then the matching Seat 2 value (unless a Left or Right
-side control is bound to one seat).
+Values are the command byte of the control frame. `seat_1_2` sends the Seat 1
+value, then the matching Seat 2 value (unless a Left or Right side control is
+bound to one seat).
 
-### Motor Control
-
-| Command | Seat 1 | Seat 2 | Seat 3 | Notes |
-|---------|--------|--------|--------|-------|
-| Head up / down / stop | `0x01` / `0x02` / `0x03` | `0x0A` / `0x0B` / `0x0C` | `0x13` / `0x14` / `0x15` | |
-| Foot up / down / stop | `0x04` / `0x05` / `0x06` | `0x0D` / `0x0E` / `0x0F` | `0x16` / `0x17` / `0x18` | |
-| Back up / down / stop | `0x7A` / `0x7B` / `0x7C` | `0x7D` / `0x7E` / `0x7F` | none | Back products only; otherwise back uses the head commands |
-| Waist (lumbar) up / down / stop | `0x83` / `0x84` / `0x85` | `0x86` / `0x87` / `0x88` | `0x19` / `0x1A` / `0x1B` | Waist products; always on Seat 3 |
-| Stop all | `0x1C` | `0x1D` | none | Seat 3 sends each motor's stop instead |
-
-### Direct Position Targets
-
-| Command | Seat 1 | Seat 2 | `param` |
-|---------|--------|--------|---------|
-| Head (back) setting | `0x4D` | `0x4E` | Target 0-100 |
-| Leg setting | `0x4F` | `0x50` | Target 0-100 |
-
-### Presets
-
-| Command | Seat 1 | Seat 2 | Seat 3 | Notes |
-|---------|--------|--------|--------|-------|
-| Flat | `0x68` | `0x69` | none | |
-| Zero G | `0x62` | `0x63` | none | |
-| Anti-Snore | `0x65` | `0x66` | none | |
-| Book (TV preset) | `0x9E` | `0x9F` | `0xA0` | Book products only |
-| Leisure (Lounge preset) | `0xA1` | `0xA2` | `0xA3` | Leisure products only |
-
-### Memory
+<!-- generated:kaidi-seat-commands -->
+<!-- Generated by scripts/generate_codec_docs.py from the codec and profile data. Edit those, not this block. -->
 
 | Command | Seat 1 | Seat 2 | Seat 3 |
-|---------|--------|--------|--------|
+|---|---|---|---|
+| Head up / down / stop | `0x01` / `0x02` / `0x03` | `0x0A` / `0x0B` / `0x0C` | `0x13` / `0x14` / `0x15` |
+| Foot up / down / stop | `0x04` / `0x05` / `0x06` | `0x0D` / `0x0E` / `0x0F` | `0x16` / `0x17` / `0x18` |
+| Back up / down / stop | `0x7A` / `0x7B` / `0x7C` | `0x7D` / `0x7E` / `0x7F` | none |
+| Waist (lumbar) up / down / stop | `0x83` / `0x84` / `0x85` | `0x86` / `0x87` / `0x88` | `0x19` / `0x1A` / `0x1B` |
+| Stop all | `0x1C` | `0x1D` | none |
+| Head (back) setting | `0x4D` | `0x4E` | none |
+| Leg setting | `0x4F` | `0x50` | none |
+| Flat | `0x68` | `0x69` | none |
+| Zero G | `0x62` | `0x63` | none |
+| Anti-Snore | `0x65` | `0x66` | none |
+| Book (TV preset) | `0x9E` | `0x9F` | `0xA0` |
+| Leisure (Lounge preset) | `0xA1` | `0xA2` | `0xA3` |
+| Light on / off | `0x5C` / `0x5D` | `0x5E` / `0x5F` | `0x60` / `0x61` |
+| Massage start / stop | `0x47` / `0x48` | `0x49` / `0x4A` | none |
+| Massage timer 15 / 30 / 45 min | `0x53` / `0x54` / `0x55` | `0x56` / `0x57` / `0x58` | none |
+| Neck up / down / stop (not sent) | `0x8C` / `0x8D` / `0x8E` | `0x8F` / `0x90` / `0x91` | `0x92` / `0x93` / `0x94` |
+| All up / down / stop (not sent) | `0x07` / `0x08` / `0x09` | none | none |
+| New All up / down / stop (not sent) | `0x95` / `0x96` / `0x97` | `0x98` / `0x99` / `0x9A` | `0x9B` / `0x9C` / `0x9D` |
 | Save 1 / 2 / 3 / 4 | `0x25` / `0x26` / `0x27` / `0x28` | `0x2D` / `0x2E` / `0x2F` / `0x30` | `0x35` / `0x36` / `0x37` / `0x38` |
 | Recall 1 / 2 / 3 / 4 | `0x29` / `0x2A` / `0x2B` / `0x2C` | `0x31` / `0x32` / `0x33` / `0x34` | `0x39` / `0x3A` / `0x3B` / `0x3C` |
+<!-- /generated -->
 
-### Lights
+- **Back** sends the back row on back products; otherwise back uses the head row.
+- **Waist** needs a waist product; Seat 3 always has it.
+- **Stop all**: Seat 3 sends each motor's stop instead.
+- **Head and leg settings** carry the 0-100 target in the parameter byte.
+- **Book** and **Leisure** need a Book or Leisure product, and **lights** a
+  light product.
+- **Massage** toggle sends start or stop from local state.
+- The Neck, All and New All values come from the app tables; no entity sends
+  them.
 
-| Command | Seat 1 | Seat 2 | Seat 3 | Notes |
-|---------|--------|--------|--------|-------|
-| Light on / off | `0x5C` / `0x5D` | `0x5E` / `0x5F` | `0x60` / `0x61` | Light products only |
-
-### Massage
-
-| Command | Seat 1 | Seat 2 | Notes |
-|---------|--------|--------|-------|
-| Massage start / stop | `0x47` / `0x48` | `0x49` / `0x4A` | Toggle sends start or stop from local state |
-| Massage timer 15 / 30 / 45 min | `0x53` / `0x54` / `0x55` | `0x56` / `0x57` / `0x58` | |
-
-The command profiles also carry Neck, All and New All values from the app
-tables; no entity sends them.
-
-## Notifications
-
-| Notification | Meaning |
-|--------------|---------|
-| `02 16 status` | Join response; status `0` is accepted, anything else fails setup |
-| `01 0A` + `vAddr` (4) | The bed's own address for this session |
-| `03 …` with channel `FF` at byte 5 | Ping reply: bytes 6-11 are the node MAC (reversed), bytes 12-15 its `vAddr`; used only when the MAC matches the configured bed |
-
-## Command Timing
+#### Timing
 
 - Join and target-address waits time out after 5 seconds; the own-address wait
   after 1 second.
@@ -299,8 +410,891 @@ tables; no entity sends them.
   then sends that motor's stop command with a fresh cancel event.
 - Presets, memory, lights, position targets and massage are sent once.
 
+#### Notifications
+
+The join reply, the own address and a matching ping reply; see
+[Responses](#responses).
+
+#### Evidence
+
+The Seat tables are the frames the pre-v5 controller sent, from the Rize 1.3.0,
+ISleep 1.6.3 and Floyd 1.0.7 bundles. The mappings and capability gates are in
+[`profiles/kaidi.py`](../../custom_components/adjustable_bed/profiles/kaidi.py),
+with [focused tests](../../tests/test_kaidi.py). Not newly tested on
+hardware.
+
+### Floyd Home
+
+**App:** [Floyd Home](https://play.google.com/store/apps/details?id=com.kaidi_test4.floyd) 1.0.7 (7), `com.kaidi_test4.floyd`
+
+**Status:** Not yet tested
+
+#### Setup
+
+- Select **Floyd Home app** (Kaidi product 139), or leave the **Rize app (older
+  version)** row on **Automatic (recommended)** when the bed advertises product 139. It owns its two-axis
+  layout and disables unsupported massage/position controls.
+- Existing Kaidi discovery rules continue to apply to the Seat profiles.
+- Each physical address keeps its own BLE room and node metadata; do not copy
+  those fields to another side.
+
+| Signal | Value |
+| --- | --- |
+| Manufacturer data prefix | `ff ff c0 ff`, including its company ID |
+| Product 139 offset, type `01` | 9 |
+| Product 139 offset, type `02` | 17/25 |
+| Product 139 offset, type `09` | 15 |
+| Type `09` company | `4b44` at offset 11 (little endian) |
+| Actuator fields | `(acu >> 8) & 7 <= 5`, `acu & 15 <= 5`, `acu & 0xF0 <= 5` (the app's checks) |
+| RSSI | at least -92 dBm |
+
+- HA rejects short data rather than reproducing the app's out-of-bounds reads.
+
+##### Session
+
+- Existing rooms authenticate with the join frame.
+- Controls are blocked until authentication succeeds and a live ping matches
+  the selected node's MAC. Cached/advertised addresses alone never authorize
+  controls.
+- A ping's zero address is the app's special `-2` sentinel, encoded as zero on
+  the wire; a cached zero remains offline.
+- Ordinary controls retain signed 32-bit targets; conditional alarm selectors
+  require a positive target or the live zero sentinel.
+- Own identity starts zero and an explicit zero identity response remaps to
+  `ffffffff`.
+- Count updates invalidate the node cache; the next action authenticates and
+  pings again before issuing a new command.
+- Authentication failures and malformed notifications cannot enable movement.
+- Disconnect clears link/target and battery state; it does not claim that a
+  physical motor has stopped.
+- HA/Bleak handles the CCCD and chooses a supported write mode from discovered
+  properties. Physical GATT properties and actual write mode still need user
+  captures.
+- No read, MTU negotiation, Bluetooth bond, PIN exchange or
+  encryption protocol is added.
+
+##### Room assignment
+
+- Unassigned membership assignment uses the enrollment frame.
+- An acknowledged room is persisted inside the assignment operation without
+  reloading the entry mid-service.
+- Cancellation before acknowledgement cannot persist a room or start addition
+  confirmation.
+- A stale unassigned advertisement cannot undo that acknowledged room on
+  reconnect.
+- After an intentional external room reset, reconfigure to refresh saved
+  metadata.
+- Conflicting-room advertising reset is intentionally excluded for safety: HA
+  must not evict an existing room owner through an unauthenticated,
+  unacknowledged advertisement. Use the official app for an intentional room
+  takeover, then let HA adopt the resulting advertised room.
+- This is local BLE administration, not Wi-Fi provisioning.
+
+#### Controls
+
+Values are the command byte of the control frame. The parameter byte is the
+retained parameter unless stated: a preset overwrite sets it, subsequent
+ordinary commands retain it, including across connection renewal within the
+loaded HA entry, and a fresh integration load starts at zero.
+
+<!-- generated:kaidi-floyd-commands -->
+<!-- Generated by scripts/generate_codec_docs.py from the codec and profile data. Edit those, not this block. -->
+
+##### Held controls
+
+| Control | Start | Release |
+|---|---|---|
+| Head up (HA back) | `0x01` | `0x03` |
+| Head down (HA back) | `0x02` | `0x03` |
+| Feet up (HA legs) | `0x04` | `0x06` |
+| Feet down (HA legs) | `0x05` | `0x06` |
+| Head and feet up | `0x07` | `0x09` |
+| Head and feet down | `0x08` | `0x09` |
+
+##### Presets and recall per internal side
+
+| Command | `first` | `both` | `second` |
+|---|---|---|---|
+| Flat | `0x1C` | `0x1E` | `0x1D` |
+| Zero gravity | `0x62` | `0x64` | `0x63` |
+| Anti-snore | `0x65` | `0x67` | `0x66` |
+| Recall 1 | `0x29` | `0x39` | `0x31` |
+| Recall 2 | `0x2A` | `0x3A` | `0x32` |
+| Recall 3 | `0x2B` | `0x3B` | `0x33` |
+
+##### Other commands
+
+| Command | Command byte | Parameter |
+|---|---|---|
+| Stop all | `0x09` | retained |
+| Save 1 / 2 / 3 | `0x25` / `0x26` / `0x27` | retained |
+| Light on / off | `0x5C` / `0x5D` | retained |
+| `save_zero_g` | `0xA7` | `01` |
+| `save_anti_snore` | `0xA7` | `04` |
+| `confirm_add` | `0x45` | retained |
+<!-- /generated -->
+
+- A hold sends one start, waits for the selected duration or cancellation, then
+  sends the matching release using the original node address.
+- The app does not refresh a held movement. HA always releases on cancellation,
+  including abandoned card holds, instead of reproducing the app's missing
+  unmount/background release.
+- Authentication finishes before the timed-movement window starts.
+- Known battery mode is rejected during all-target preflight and rechecked
+  before execution.
+- Flat is opcode `1c`, a preset, never the emergency release. The combined
+  release is `09`; head and feet release with `03` and `06`.
+- Presets, memory writes and lighting are single-shot. Memory slots 1 through 3
+  use the standard buttons and `goto_preset` / `save_preset` actions. Lighting
+  has no measured state feedback.
+- `first` is the normal UI; `both` and `second` are the conditional
+  `internal_side` selectors.
+
+#### Timing
+
+- Writes are awaited and separated by at least the profile's write spacing
+  (see the [profile summary](#choosing-a-profile)), replacing the app's unsafe
+  callback queue without a timeout.
+- Authentication and ping waits time out after 5 seconds.
+- A hold sends one start and one release. Generic movement pulse settings bound
+  the HA hold duration, at most 30 seconds; they do not introduce repeated
+  hardware starts.
+
+#### Notifications
+
+Join, room assignment, own address, count update, matching ping and battery
+event replies; see [Responses](#responses).
+
+#### Services
+
+- Use `adjustable_bed.hold_control` with `head_up`, `head_down`, `feet_up`,
+  `feet_down`, `head_feet_up` or `head_feet_down` for an explicit duration in
+  seconds (maximum 30).
+
+##### Floyd action
+
+`adjustable_bed.floyd_action` adds these operations:
+
+| Action | Parameters and behavior |
+| --- | --- |
+| `zero_g`, `flat`, `anti_snore`, `memory_1` to `memory_3` | `internal_side: first` is normal UI behavior. `both` and `second` are conditional preset selectors the app's alarm receiver can send; their effect on the bed is not yet tested. They do not imply internal-side movement capability. |
+| `save_zero_g`, `save_anti_snore` | Requires `confirm: true`, `internal_side: first`. Overwrites the built-in preset with the current position. |
+| `assign_room` | Requires `confirm: true`, a nonzero 32-bit `room_id`, and exactly one standalone bed with an advertisement proving unassigned membership (type `09` or explicit room zero). Assigns **local BLE room membership**, disconnects, authenticates again, pings that node and sends addition confirmation. |
+| `confirm_add` | Requires `confirm: true`, `internal_side: first`. Retry addition confirmation if assignment succeeded but its reconnect was interrupted. |
+
+- `side` selects a physical child of a two-address paired HA device.
+- `internal_side` selects the separate conditional firmware preset opcode.
+- Normal controls use first-side commands for each physical address.
+- Selected physical beds all receive a confirmed preset overwrite; HA
+  deliberately corrects the app's bug that programs only the last selected
+  address. Put each physical bed in the intended position before confirming.
+- Placement/room names and phone alarms belong to HA devices and automations,
+  not to extra bed commands.
+
+#### Evidence
+
+Based on Floyd Home 1.0.7, product 139. Its capabilities and commands come from
+this app; only the transport is shared with the Seat profiles.
+
+### ISleep
+
+**App:** [ISleep](https://play.google.com/store/apps/details?id=com.kaidi_test4) 1.6.3 (45), `com.kaidi_test4`
+
+**Status:** Not yet tested
+
+#### Setup
+
+Choose **ISleep app** (`com.kaidi_test4`) and confirm its product ID,
+signed 32-bit room ID and advertised actuator descriptor. The profile form uses
+those fields as defaults when HA has a matching advertisement. The profile owns
+layout, massage, feedback and movement timing. Detection: none.
+
+| Signal | Value |
+| --- | --- |
+| Manufacturer payload marker | `FFFFC0FF` |
+| Advertisement modes | 01/02/09 |
+| Products | The eight allowed products above |
+| Mode09 company gate | `4B44` |
+| Actuator masks | `(acu >> 8) & 7 <= 5`, `acu & 15 <= 5`, `acu & 240 <= 5` (the app's masks) |
+
+- Truncated alternate mode 02 records are rejected safely.
+- Keep the existing numeric room ID to adopt a provisioned bed. Existing rooms
+  are adopted by explicit selection, without reset. Close the phone app before
+  connecting.
+
+##### Product controls
+
+| Product | Visible independent axes | One-address side selection |
+|---|---|---|
+| 129 | Upper/back, feet | No |
+| 130 | Upper/back, feet | Only when actuator descriptor is not 2 |
+| 131 | Upper/back, feet, head | No |
+| 132 | Upper/back, feet, head, waist | No |
+| 133 | Upper/back, feet, head | No |
+| 134 | Upper/back, feet, head, waist | No |
+| 142 | Upper/back, feet | No, UI5 does not mean five motors |
+| 143 | Upper/back, feet | Only when actuator descriptor is not 2 |
+
+- Every product also has combined up/down, Flat, Zero-G, anti-snore, three
+  memory slots (recall and explicit program), light on/off and massage on/off.
+- Product 143 has head strength only and displays 10/20/30-minute timer
+  choices. All others have head/foot strengths and 15/30/45-minute choices.
+- The firmware interpretation of product 143's timer labels remains unverified:
+  the phone's local countdown still uses 15-minute units. HA sends the
+  corresponding choice opcode and does not present that phone bookkeeping as
+  measured bed time.
+- HA axes: upper/back is the back control, feet is the legs control and waist
+  is the lumbar control.
+
+##### Session
+
+- Authentication must succeed and own/target addresses must be live before a
+  control write.
+- Incoming virtual zero and signed -2 normalize to destination zero; an absent
+  MAC mapping is offline.
+- Saved advertisement virtual addresses never authorize a control after
+  reconnect.
+- The own address comes from the bed; the parameter byte is the retained
+  strength.
+- Writes use the platform-default response write, one GATT write per command
+  with no retry or hold refresh.
+- Android queue polling and reconnection timers are replaced by HA's managed
+  Bluetooth lifecycle.
+
+##### Room enrollment
+
+For a genuinely unprovisioned mode 09 bed, set the desired room during setup,
+then press **Enroll unprovisioned bed in selected room** in the device's
+entities.
+
+- Requires the selected physical MAC's unprovisioned advertisement and matching
+  product.
+- Sends the enrollment frame once, waits up to the app's eight seconds,
+  and disconnects on either result.
+- Only an accepted reply saves a pending enrollment acknowledgment.
+- The next control authenticates the selected room, obtains a live roster match
+  for this MAC, then sends the acknowledgment (command `0x45`) before the action.
+- Failure, timeout, cancellation or another MAC cannot create a successful
+  target.
+- Retry after enrollment if the bed is not yet advertising its room.
+- Setup verification alone never enrolls a device.
+
+##### Room reset and app infrastructure
+
+- HA never advertises the destructive mode 07 foreign-room reset. This safety
+  exclusion preserves ownership by an existing room. Use the official app for a
+  room transfer/reset, then select that room in HA.
+- HA config entries replace the phone's random room generator, SQL row
+  allocation, role-conflict dialogs and room labels. HA does not reproduce the
+  app's SQL collision or optimistic success bugs.
+
+##### Paired beds
+
+- A two-address pair keeps these settings per side. For a two-address pair, add
+  both physical beds separately, then combine them. Each keeps its own product,
+  room, session and capabilities.
+- For one-address role 1 layouts, Left/Both/Right send the exact three-column
+  opcodes; Both is one combined opcode, not two sequential side commands.
+- Mixed-product combined controls use HA's capability intersection rather than
+  the phone's stale layout or wrong-target timer behavior.
+- All single-address side conversion is checked against the selected
+  product/actuator descriptor at runtime.
+- Paired options reject a product/descriptor that loses side controls until the
+  bed is reverted to standalone.
+
+#### Controls
+
+Values are the command byte of the control frame, from the ISleep profile's
+command table. The parameter byte is the retained strength parameter. Columns
+are the role 1 lanes; products without one-address sides always send the Left /
+single column.
+
+<!-- generated:kaidi-isleep-commands -->
+<!-- Generated by scripts/generate_codec_docs.py from the codec and profile data. Edit those, not this block. -->
+
+| Command | Left / single | Right | Both |
+|---|---|---|---|
+| Head up | `0x01` | `0x0A` | `0x13` |
+| Head down | `0x02` | `0x0B` | `0x14` |
+| Head release | `0x03` | `0x0C` | `0x15` |
+| Back up | `0x7A` | `0x7A` | `0x7A` |
+| Back down | `0x7B` | `0x7B` | `0x7B` |
+| Back release | `0x7C` | `0x7C` | `0x7C` |
+| Feet up | `0x04` | `0x0D` | `0x16` |
+| Feet down | `0x05` | `0x0E` | `0x17` |
+| Feet release | `0x06` | `0x0F` | `0x18` |
+| Waist up | `0x83` | `0x83` | `0x83` |
+| Waist down | `0x84` | `0x84` | `0x84` |
+| Waist release | `0x85` | `0x85` | `0x85` |
+| All up | `0x07` | `0x10` | `0x19` |
+| All down | `0x08` | `0x11` | `0x1A` |
+| All release | `0x09` | `0x12` | `0x1B` |
+| New All up | `0x95` | `0x95` | `0x95` |
+| New All down | `0x96` | `0x96` | `0x96` |
+| New All release | `0x97` | `0x97` | `0x97` |
+| Flat | `0x1C` | `0x1D` | `0x1E` |
+| Zero-G | `0x62` | `0x63` | `0x64` |
+| Anti-snore | `0x65` | `0x66` | `0x67` |
+| Recall 1 | `0x29` | `0x31` | `0x39` |
+| Recall 2 | `0x2A` | `0x32` | `0x3A` |
+| Recall 3 | `0x2B` | `0x33` | `0x3B` |
+| Program 1 | `0x25` | `0x2D` | `0x35` |
+| Program 2 | `0x26` | `0x2E` | `0x36` |
+| Program 3 | `0x27` | `0x2F` | `0x37` |
+| Light on | `0x5C` | `0x5E` | `0x60` |
+| Light off | `0x5D` | `0x5F` | `0x61` |
+| Massage on | `0x47` | `0x49` | `0x4B` |
+| Massage off | `0x48` | `0x4A` | `0x4C` |
+| Head strength | `0x4D` | `0x4E` | `0x51` |
+| Foot strength | `0x4F` | `0x50` | `0x52` |
+| Pattern 1 | `0x6B` | `0x6C` | `0x6D` |
+| Pattern 2 | `0x6E` | `0x6F` | `0x70` |
+| Pattern 3 | `0x71` | `0x72` | `0x73` |
+| Pattern cancel | `0x74` | `0x75` | `0x76` |
+| Timer choice 1 | `0x53` | `0x56` | `0x59` |
+| Timer choice 2 | `0x54` | `0x57` | `0x5A` |
+| Timer choice 3 | `0x55` | `0x58` | `0x5B` |
+| Timer cancel | `0x77` | `0x78` | `0x79` |
+| Enrollment acknowledgment | `0x45` |  |  |
+<!-- /generated -->
+
+- **Upper/back** sends the Head rows on products 129, 130 and 143 (all three
+  lanes), and the Back rows on 131, 132, 133, 134 and 142.
+- **Head** (131, 132, 133, 134) sends the Head rows, and **waist** (132, 134)
+  the Waist rows. **Feet** sends the Feet rows on every product.
+- **All up / down** sends the All rows, except product 142, which sends the New
+  All rows.
+- The Back, Waist and New All rows have one value for every lane.
+- Movement sends one press, waits for the HA gesture duration or cancellation,
+  then sends its matching release with a fresh cancellation event.
+- Cleanup retains the original side, target, own address and connection
+  identity, and never reconnects to send a release into a different session.
+- STOP sends supported axis/combined releases: the release of each product axis,
+  then the combined release.
+
+> [!WARNING]
+> Opcodes 28/29/30 (`0x1C`/`0x1D`/`0x1E`) are Flat in this app despite their
+> constant names and are never emergency STOP commands.
+
+##### Massage
+
+- Strength controls are 0-100 **massage intensity**, never motor positions.
+  Each strength command carries the new strength in its parameter byte; the
+  strength parameter starts at zero, changes on a strength write, and remains
+  in subsequent movement, preset and release packets.
+- Timer choices 1, 2 and 3 are 15, 30 and 45 minutes (10, 20 and 30 on
+  product 143).
+- Pattern buttons select 1/2/3; pressing the selected pattern again cancels it.
+  Pattern 0 explicitly cancels.
+- Selecting the current timer choice again or selecting Off cancels the timer
+  using its dedicated command; it does not turn massage off.
+- HA saves requested massage state and the retained strength byte per physical
+  address/profile. These are optimistic requests, with no feedback from the bed.
+- A profile/room change clears incompatible saved intent.
+- The requested timer and strength remain visible per side while disconnected.
+- HA retains that intent across restart as well as reconnect; the phone's static
+  wire byte resets at process startup.
+- No timer expiry or external remote use is inferred as telemetry.
+
+#### Timing
+
+- Five-second response deadlines are HA failure bounds, not the app's repeat
+  timings.
+- Enrollment waits up to eight seconds.
+- The configured pulse count at 100ms per count bounds the HA gesture; it does
+  not repeat the BLE packet.
+
+#### Notifications
+
+Join, enrollment, own address, roster invalidation and matching ping replies;
+see [Responses](#responses).
+
+- Channel20 has no position, light or massage telemetry.
+- Channel2F is a phone alarm trigger, not bed time reporting.
+- Library product/group/remote-response parsers do not feed the app's product
+  selector or controls and are excluded.
+
+#### Services
+
+- **Enroll unprovisioned bed in selected room** (see
+  [Room enrollment](#room-enrollment)), **All up** / **All down** and massage
+  pattern buttons.
+- Local phone alarms can be replaced with HA automations using the exposed
+  presets.
+
+#### Evidence
+
+Based on ISleep 1.6.3 (45). HA never resets an existing room.
+
+### Rize Beds
+
+**App:** [Rize Beds](https://play.google.com/store/apps/details?id=com.kaidi_test4.rize) 1.4.2 (57), `com.kaidi_test4.rize`
+
+**Status:** Not yet tested
+
+#### Setup
+
+1. Choose **Rize Beds app**.
+2. Confirm the product, the room number and, under **Advanced**, the actuator
+   number. Setup fills them in from the bed's advertisement.
+3. For a bed with two receivers, add each receiver and combine them. Each side
+   keeps its own product and room.
+
+The product decides which motors, massage and extra controls appear; the motor
+count does not add controls. An entry set up before v5 keeps its controls until
+you change it with **Reconfigure**.
+
+Choose **Rize Beds app**. Setup asks the product, signed room ID
+and advertised actuator descriptor. Manufacturer records suggest those values;
+there is no app name filter. The product and actuator parser gates are those of this app. HA additionally
+requires a Kaidi UUID, name or known OUI for automatic discovery because unrelated
+PairLink products also pass the app's manufacturer-only filter. Manual selection
+remains available. Shared mesh advertisements cannot identify the owning app, so
+Home Assistant offers Rize alongside the existing Kaidi/ISleep routes.
+
+Existing Kaidi entries retain their profile until reconfigured. Native
+single-address Left/Right controls require product 130 or 141 with descriptor
+other than 2. Other products use the single-node commands. Combine two physical
+entries for two-address side control; each retains its own room and product.
+The room password is local BLE authentication, independent of Wi-Fi or a cloud
+account. The enrollment button accepts only a live unprovisioned mode 09 bed
+whose product matches setup. Startup leaves such an unprovisioned connection
+available for enrollment; ordinary controls still require room authentication.
+It never resets a foreign room.
+
+#### Controls
+
+The generated tables list every command and product. HA back is the app's
+primary upper control: HEAD on layouts 2/5–8, BACK on 3/4. Clarity/layout9 uses
+BACK when descriptor 2 selects a single node, and HEAD with the appropriate
+left/right/both triple when native sides are available. STOP follows the same
+mapping. These are app UI/wire names, not measured physical actuator aliases.
+
+- One start per movement and the matching axis STOP at release. **All up/down**
+  use the app's combined control; Clarity has no such control. Extended
+  products include neck and combined movement reached through app voice,
+  even where the touch panel omits them.
+- Flat, Zero gravity, Anti-snore, three memory recall/program slots, and
+  discrete lights. Reading (TV) and Leisure (Lounge) belong to extended products.
+- Massage on/off, patterns 1–3, head strength 0–100 and 15/30/45-minute timers.
+  Extended products also expose leg strength, including the app's voice route.
+  Selecting the same pattern or timer cancels it. Remedy Pro4 adds pattern 4;
+  its second parameter distinguishes start/cancel from default programming.
+- **Motion sensor on/off** on extended products, also reached through voice.
+  These are commands, not a presence sensor or measured toggle state.
+- The battery-mode diagnostic reports the power flag. A positive report blocks
+  raising; lowering and STOP remain available. Unknown is not battery power.
+
+<!-- generated:kaidi-rize-commands -->
+<!-- Generated by scripts/generate_codec_docs.py from the codec and profile data. Edit those, not this block. -->
+
+##### Products
+
+| Product | Name | Layout | HA axes (touch or voice) | Native sides | Default programming |
+|---|---|---|---|---|---|
+| 129 | Single | 2 | back, legs | none | none |
+| 130 | Double 2/4 | 2 | back, legs | descriptor other than 2 | none |
+| 131 | Single 3 | 3 | back, legs, head | none | none |
+| 132 | Single 4 | 4 | back, legs, head, lumbar | none | none |
+| 133 | Double 3 | 3 | back, legs, head | none | none |
+| 134 | Double 4 | 4 | back, legs, head, lumbar | none | none |
+| 135 | Remedy 3 | 5 | back, legs, lumbar, neck | none | zero_g, anti_snore, book, leisure |
+| 136 | Remedy 4 | 6 | back, legs, lumbar, neck | none | zero_g, anti_snore, book, leisure |
+| 137 | Contemporary 4 | 7 | back, legs, lumbar, neck | none | zero_g, anti_snore, leisure |
+| 138 | Contemporary 5 | 8 | back, legs, lumbar, neck | none | zero_g, anti_snore, leisure |
+| 140 | Remedy Pro 4 | 6 | back, legs, lumbar, neck | none | zero_g, anti_snore, book, leisure |
+| 141 | Clarity | 9 | back, legs | descriptor other than 2 | none |
+
+##### Command payloads
+
+| Control | Left / single payload | Right payload | Both payload |
+|---|---|---|---|
+| head_up | `01 01 00 00` | `01 0A 00 00` | `01 13 00 00` |
+| head_down | `01 02 00 00` | `01 0B 00 00` | `01 14 00 00` |
+| head_stop | `01 03 00 00` | `01 0C 00 00` | `01 15 00 00` |
+| legs_up | `01 04 00 00` | `01 0D 00 00` | `01 16 00 00` |
+| legs_down | `01 05 00 00` | `01 0E 00 00` | `01 17 00 00` |
+| legs_stop | `01 06 00 00` | `01 0F 00 00` | `01 18 00 00` |
+| all_up | `01 07 00 00` | `01 10 00 00` | `01 19 00 00` |
+| all_down | `01 08 00 00` | `01 11 00 00` | `01 1A 00 00` |
+| all_stop | `01 09 00 00` | `01 12 00 00` | `01 1B 00 00` |
+| flat | `01 1C 00 00` | `01 1D 00 00` | `01 1E 00 00` |
+| save_1 | `01 25 00 00` | `01 2D 00 00` | `01 35 00 00` |
+| save_2 | `01 26 00 00` | `01 2E 00 00` | `01 36 00 00` |
+| save_3 | `01 27 00 00` | `01 2F 00 00` | `01 37 00 00` |
+| memory_1 | `01 29 00 00` | `01 31 00 00` | `01 39 00 00` |
+| memory_2 | `01 2A 00 00` | `01 32 00 00` | `01 3A 00 00` |
+| memory_3 | `01 2B 00 00` | `01 33 00 00` | `01 3B 00 00` |
+| massage_on | `01 47 00 00` | `01 49 00 00` | `01 4B 00 00` |
+| massage_off | `01 48 00 00` | `01 4A 00 00` | `01 4C 00 00` |
+| head_strength | `01 4D 00 00` | `01 4E 00 00` | `01 51 00 00` |
+| foot_strength | `01 4F 00 00` | `01 4F 00 00` | `01 4F 00 00` |
+| timer_1 | `01 53 00 00` | `01 56 00 00` | `01 59 00 00` |
+| timer_2 | `01 54 00 00` | `01 57 00 00` | `01 5A 00 00` |
+| timer_3 | `01 55 00 00` | `01 58 00 00` | `01 5B 00 00` |
+| light_on | `01 5C 00 00` | `01 5E 00 00` | `01 60 00 00` |
+| light_off | `01 5D 00 00` | `01 5F 00 00` | `01 61 00 00` |
+| zero_g | `01 62 00 00` | `01 63 00 00` | `01 64 00 00` |
+| anti_snore | `01 65 00 00` | `01 66 00 00` | `01 67 00 00` |
+| pattern_1 | `01 6B 00 00` | `01 6C 00 00` | `01 6D 00 00` |
+| pattern_2 | `01 6E 00 00` | `01 6F 00 00` | `01 70 00 00` |
+| pattern_3 | `01 71 00 00` | `01 72 00 00` | `01 73 00 00` |
+| pattern_cancel | `01 74 00 00` | `01 75 00 00` | `01 76 00 00` |
+| timer_cancel | `01 77 00 00` | `01 78 00 00` | `01 79 00 00` |
+| back_up | `01 7A 00 00` | `01 7A 00 00` | `01 7A 00 00` |
+| back_down | `01 7B 00 00` | `01 7B 00 00` | `01 7B 00 00` |
+| back_stop | `01 7C 00 00` | `01 7C 00 00` | `01 7C 00 00` |
+| lumbar_up | `01 83 00 00` | `01 83 00 00` | `01 83 00 00` |
+| lumbar_down | `01 84 00 00` | `01 84 00 00` | `01 84 00 00` |
+| lumbar_stop | `01 85 00 00` | `01 85 00 00` | `01 85 00 00` |
+| neck_up | `01 8C 00 00` | `01 8C 00 00` | `01 8C 00 00` |
+| neck_down | `01 8D 00 00` | `01 8D 00 00` | `01 8D 00 00` |
+| neck_stop | `01 8E 00 00` | `01 8E 00 00` | `01 8E 00 00` |
+| new_all_up | `01 95 00 00` | `01 95 00 00` | `01 95 00 00` |
+| new_all_down | `01 96 00 00` | `01 96 00 00` | `01 96 00 00` |
+| new_all_stop | `01 97 00 00` | `01 97 00 00` | `01 97 00 00` |
+| book | `01 9E 00 00` | `01 9E 00 00` | `01 9E 00 00` |
+| leisure | `01 A1 00 00` | `01 A1 00 00` | `01 A1 00 00` |
+| motion_on | `01 A4 00 00` | `01 A4 00 00` | `01 A4 00 00` |
+| motion_off | `01 A5 00 00` | `01 A5 00 00` | `01 A5 00 00` |
+| power_query | `01 A6 00 00` | `01 A6 00 00` | `01 A6 00 00` |
+| special | `01 A7 00 00` | `01 A7 00 00` | `01 A7 00 00` |
+
+Strength actions replace parameter1 with 0–100. Other ordinary commands reset both
+parameters to zero. Right/Both columns require a native-side product. Extended
+axes, reading, leisure, motion and power are single-side commands.
+
+##### Special operations
+
+| Operation | Payload |
+|---|---|
+| Program zero_g | `01 A7 01 00` |
+| Program anti_snore | `01 A7 04 00` |
+| Program book | `01 A7 07 00` |
+| Program leisure | `01 A7 0A 00` |
+| Remedy Pro 4 mode4 start | `01 A7 01 01` |
+| Remedy Pro 4 mode4 cancel | `01 A7 01 04` |
+| Enrollment acknowledgment | `01 45 00 00` |
+
+##### Timing
+
+| Setting | Value |
+|---|---|
+| Write spacing | 50 ms |
+| Power query on live extended-product link | 3 s |
+| Enrollment response ceiling | 30 s |
+<!-- /generated -->
+
+#### Timing
+
+See the generated timing table. A gesture sends no repeated refresh packets.
+The HA pulse settings bound its duration; renewable holds use the integration's
+latched ceiling. Cancellation, short taps and errors still run release cleanup
+on the same live session. HA does not reproduce the Android short-tap STOP
+suppression or reconnect into a new session to send an old release.
+
+#### Notifications
+
+Join/enrollment replies, own address, roster changes and current-MAC ping
+replies confirm authenticated live routing. Advertised or persisted virtual
+addresses never authorize a write. A zero address from a live ping is valid.
+
+Only the power flag on channel 20 is decoded as bed feedback. Its query runs
+on an already live extended-product connection and never reconnects or extends
+idle ownership. Light, massage strength/pattern/timer and graphic positions
+are app intent, not measured bed state. No position sliders or angle telemetry
+are inferred. Malformed notifications are ignored safely.
+
+#### Services
+
+`adjustable_bed.rize_program_preset` stores the current position as `zero_g`,
+`anti_snore`, `book` or `leisure`, with `confirm: true`. Target one standalone
+physical bed or one explicit side of a paired bed. Reading (`book`) programming
+requires layout 5/6 (products 135/136/140); Reading recall remains available on 7/8
+through the app's voice route. Both/multiple-target
+programming is rejected before writing. HA captures the target under command
+admission and sends one frame without a preliminary memory-slot write.
+
+Use HA automations for schedules calling the standard preset/memory actions;
+the app's phone alarms introduce no on-bed alarm protocol.
+
+#### Evidence
+
+Based on Rize Beds 1.4.2 (57); its 225 test vectors include 48
+topology/confirmation branch probes. This profile uses its own product gates and command
+table. How the bed responds still needs testing by owners.
+
+
+### KomfyD and ComfyDS
+
+**App:** [KomfyD](https://play.google.com/store/apps/details?id=com.pairlink.kaidi.komfyD) 1.0.9 (8), `com.pairlink.kaidi.komfyD`
+
+**Status:** Not yet tested
+
+#### Setup
+
+1. Set the bed up in the KomfyD or ComfyDS app first. Home Assistant joins the
+   room the app created; it cannot create one.
+2. Choose **KomfyD app** or **ComfyDS app**. The bed's name and services cannot
+   tell the two apps apart.
+3. Confirm the product (bed type 129, 130 or 131), the room number and, under
+   **Advanced**, the capability value. Setup fills them in from the bed's
+   advertisement.
+
+Only bed type 130 has separate Left and Right sides: use **Add Left, Right and
+Both controls** in Configure. The capability value decides whether the Save
+buttons appear; it does not change the motors.
+
+Choose **KomfyD app** or **ComfyDS app** explicitly. Shared names, services and
+manufacturer data cannot identify the app. Enter the existing signed room ID,
+raw bed type and capability word; a valid advertisement suggests these values.
+Provision the room using the official app first. Only the existing-room BLE
+session is supported here.
+
+The generated product table below includes the type 131 alias. The app renders
+Head, Foot and Waist independently of the capability nibbles; HA represents
+these as Back, Legs and Lumbar controls. These names do not validate motor
+wiring, count, travel, angles or feedback. A nonzero high capability nibble
+enables the four Save buttons. Product130 offers native Left/Both/Right and
+single-address pairing. It restores the local side record, with first selected
+for a new record; Home Assistant has no entity for that app screen choice, so
+use single-address pairing or the `comfy_control` action's `side` field. Lock
+and the local timer are switches (Control lock, Timer); the lock query runs on
+connect. The source's missing-record fallbacks are feature-specific:
+movement/presets right, light both, timer first, lock both. The shared lock
+handler also reads that record on 129/131 while normal controls stay first.
+
+GATT discovery locates the write/notify characteristics across all services.
+The Android default write requests a response. Bleak owns CCCD subscription,
+including indications where exposed. No phone-server UUID or bond/PIN route
+is used. HA owns scanning, adapter/proxy selection, reconnect and unload.
+The parser keeps signed room/node addresses and only maps the ping's zero to
+-2; direct helpers serialize -2 as zero. Ordinary touch commands require a
+positive destination or -2; direct memory/lock/query helpers accept other
+nonzero signed destinations.
+
+#### Controls
+
+<!-- generated:kaidi-comfy-commands -->
+<!-- Generated by scripts/generate_codec_docs.py from the codec and profile data. Edit those, not this block. -->
+
+##### Products
+
+| Raw type | App product | Normal side routing |
+|---|---|---|
+| 129 | 129 | fixed first bank |
+| 131 | 129 | fixed first bank |
+| 130 | 130 | Left / Both / Right |
+
+##### Command payloads
+
+| App | Action (source semantics) | Left | Right | Both |
+|---|---|---|---|---|
+| KomfyD | head_up | `01 01 00 00` | `01 0A 00 00` | `01 13 00 00` |
+| KomfyD | head_down | `01 02 00 00` | `01 0B 00 00` | `01 14 00 00` |
+| KomfyD | head_stop | `01 03 00 00` | `01 0C 00 00` | `01 15 00 00` |
+| KomfyD | legs_up | `01 04 00 00` | `01 0D 00 00` | `01 16 00 00` |
+| KomfyD | legs_down | `01 05 00 00` | `01 0E 00 00` | `01 17 00 00` |
+| KomfyD | legs_stop | `01 06 00 00` | `01 0F 00 00` | `01 18 00 00` |
+| KomfyD | lumbar_up | `01 07 00 00` | `01 10 00 00` | `01 19 00 00` |
+| KomfyD | lumbar_down | `01 08 00 00` | `01 11 00 00` | `01 1A 00 00` |
+| KomfyD | lumbar_stop | `01 09 00 00` | `01 12 00 00` | `01 1B 00 00` |
+| KomfyD | preset_stop | `01 1C 00 00` | `01 1D 00 00` | `01 1E 00 00` |
+| KomfyD | zero | `01 1F 00 00` | `01 20 00 00` | `01 21 00 00` |
+| KomfyD | flat | `01 22 00 00` | `01 23 00 00` | `01 24 00 00` |
+| KomfyD | save_1 | `01 25 00 00` | `01 25 00 00` | `01 25 00 00` |
+| KomfyD | save_2 | `01 26 00 00` | `01 26 00 00` | `01 26 00 00` |
+| KomfyD | save_3 | `01 27 00 00` | `01 27 00 00` | `01 27 00 00` |
+| KomfyD | save_4 | `01 28 00 00` | `01 28 00 00` | `01 28 00 00` |
+| KomfyD | memory_1 | `01 29 00 00` | `01 29 00 00` | `01 29 00 00` |
+| KomfyD | memory_2 | `01 2A 00 00` | `01 2A 00 00` | `01 2A 00 00` |
+| KomfyD | memory_3 | `01 2B 00 00` | `01 2B 00 00` | `01 2B 00 00` |
+| KomfyD | memory_4 | `01 2C 00 00` | `01 2C 00 00` | `01 2C 00 00` |
+| KomfyD | lock | `01 3D 00 00` | `01 3E 00 00` | `01 3F 00 00` |
+| KomfyD | unlock | `01 40 00 00` | `01 41 00 00` | `01 42 00 00` |
+| KomfyD | query | `01 46 00 00` | `01 46 00 00` | `01 46 00 00` |
+| KomfyD | h_increase | `01 47 00 00` | `01 4A 00 00` | `01 53 00 00` |
+| KomfyD | h_decrease | `01 48 00 00` | `01 4B 00 00` | `01 54 00 00` |
+| KomfyD | f_increase | `01 4D 00 00` | `01 50 00 00` | `01 56 00 00` |
+| KomfyD | f_decrease | `01 4E 00 00` | `01 51 00 00` | `01 57 00 00` |
+| KomfyD | timer_10 | `01 59 00 00` | `01 60 00 00` | `01 67 00 00` |
+| KomfyD | timer_20 | `01 5A 00 00` | `01 61 00 00` | `01 68 00 00` |
+| KomfyD | timer_30 | `01 5B 00 00` | `01 62 00 00` | `01 69 00 00` |
+| KomfyD | timer_40 | `01 5C 00 00` | `01 63 00 00` | `01 6A 00 00` |
+| KomfyD | timer_50 | `01 5D 00 00` | `01 64 00 00` | `01 6B 00 00` |
+| KomfyD | timer_start | `01 5E 00 00` | `01 65 00 00` | `01 6C 00 00` |
+| KomfyD | timer_stop | `01 5F 00 00` | `01 66 00 00` | `01 6D 00 00` |
+| KomfyD | light_on | `01 6E 00 00` | `01 70 00 00` | `01 72 00 00` |
+| KomfyD | light_off | `01 6F 00 00` | `01 71 00 00` | `01 73 00 00` |
+| ComfyDS | head_up | `01 01 00 00` | `01 0A 00 00` | `01 13 00 00` |
+| ComfyDS | head_down | `01 02 00 00` | `01 0B 00 00` | `01 14 00 00` |
+| ComfyDS | head_stop | `01 03 00 00` | `01 0C 00 00` | `01 15 00 00` |
+| ComfyDS | legs_up | `01 04 00 00` | `01 0D 00 00` | `01 16 00 00` |
+| ComfyDS | legs_down | `01 05 00 00` | `01 0E 00 00` | `01 17 00 00` |
+| ComfyDS | legs_stop | `01 06 00 00` | `01 0F 00 00` | `01 18 00 00` |
+| ComfyDS | lumbar_up | `01 07 00 00` | `01 10 00 00` | `01 19 00 00` |
+| ComfyDS | lumbar_down | `01 08 00 00` | `01 11 00 00` | `01 1A 00 00` |
+| ComfyDS | lumbar_stop | `01 09 00 00` | `01 12 00 00` | `01 1B 00 00` |
+| ComfyDS | preset_stop | `01 1C 00 00` | `01 1D 00 00` | `01 1E 00 00` |
+| ComfyDS | zero | `01 1F 00 00` | `01 20 00 00` | `01 21 00 00` |
+| ComfyDS | flat | `01 22 00 00` | `01 23 00 00` | `01 24 00 00` |
+| ComfyDS | save_1 | `01 25 00 00` | `01 25 00 00` | `01 25 00 00` |
+| ComfyDS | save_2 | `01 26 00 00` | `01 26 00 00` | `01 26 00 00` |
+| ComfyDS | save_3 | `01 27 00 00` | `01 27 00 00` | `01 27 00 00` |
+| ComfyDS | save_4 | `01 28 00 00` | `01 28 00 00` | `01 28 00 00` |
+| ComfyDS | memory_1 | `01 29 00 00` | `01 29 00 00` | `01 29 00 00` |
+| ComfyDS | memory_2 | `01 2A 00 00` | `01 2A 00 00` | `01 2A 00 00` |
+| ComfyDS | memory_3 | `01 2B 00 00` | `01 2B 00 00` | `01 2B 00 00` |
+| ComfyDS | memory_4 | `01 2C 00 00` | `01 2C 00 00` | `01 2C 00 00` |
+| ComfyDS | lock | `01 3D 00 00` | `01 3E 00 00` | `01 3F 00 00` |
+| ComfyDS | unlock | `01 40 00 00` | `01 41 00 00` | `01 42 00 00` |
+| ComfyDS | query | `01 46 00 00` | `01 46 00 00` | `01 46 00 00` |
+| ComfyDS | h_increase | `01 47 00 00` | `01 4A 00 00` | `01 53 00 00` |
+| ComfyDS | h_decrease | `01 48 00 00` | `01 4B 00 00` | `01 54 00 00` |
+| ComfyDS | f_increase | `01 4D 00 00` | `01 50 00 00` | `01 56 00 00` |
+| ComfyDS | f_decrease | `01 4E 00 00` | `01 51 00 00` | `01 57 00 00` |
+| ComfyDS | timer_10 | `01 59 00 00` | `01 60 00 00` | `01 67 00 00` |
+| ComfyDS | timer_20 | `01 5A 00 00` | `01 61 00 00` | `01 68 00 00` |
+| ComfyDS | timer_30 | `01 5B 00 00` | `01 62 00 00` | `01 69 00 00` |
+| ComfyDS | timer_40 | `01 5C 00 00` | `01 63 00 00` | `01 6A 00 00` |
+| ComfyDS | timer_50 | `01 5D 00 00` | `01 64 00 00` | `01 6B 00 00` |
+| ComfyDS | timer_start | `01 5E 00 00` | `01 65 00 00` | `01 6C 00 00` |
+| ComfyDS | timer_stop | `01 5F 00 00` | `01 66 00 00` | `01 6D 00 00` |
+| ComfyDS | light_on | `01 6E 00 00` | `01 70 00 00` | `01 72 00 00` |
+| ComfyDS | light_off | `01 6F 00 00` | `01 71 00 00` | `01 73 00 00` |
+
+##### Session and timing
+
+| App | Initial source | Reconnect source | Write queue | Recall | Join deadline |
+|---|---|---|---|---|---|
+| komfyd | await source callback | await source callback | 10 ms first / 50 ms spacing | 1000 ms until ACK/cancel/session loss | 8 s HA authentication deadline |
+| comfyds | zero | retain installed source | 10 ms first / 50 ms spacing | 1000 ms until ACK/cancel/session loss | 8 s HA authentication deadline |
+<!-- /generated -->
+
+Zero retains the app's name, without claiming a Zero Gravity posture. Head,
+Foot and Waist each send one press and their own release. Zero and Flat use
+preset releases, never a global emergency STOP. H/F buttons are relative app
+steps with unknown physical meaning and range. KomfyD does not identify them
+as massage; ComfyDS calls them massage. Neither exposes an absolute level.
+Timer selections and start/stop have the app's source semantics; no physical
+coupling to H/F is inferred. The remaining-time sensor is a local countdown,
+not bed feedback. Light state is requested on/off intent. These local choices
+survive restart and are kept separate from authentication and live routing.
+Memory banks 2/3 are seating routes, never Right/Both bed memories. Memory
+labels can be edited through Home Assistant's native entity naming.
+
+#### Timing
+
+See the generated session table. HA pulses and renewable motor holds retain
+one press, then the captured side/source/target release, even if the selected
+side or lock changes. No release crosses a disconnected session. Recall sends
+the first-bank slot immediately, then repeats until a memory ACK, cancellation
+or session loss. No memory STOP is invented. Android's surviving callbacks,
+long-save overlap, pre-auth writes and stale-link queue replay are not adopted:
+HA owns one cancellable operation across this receiver’s logical sides, and
+an old operation never resumes after reconnect. Source updates affect future frames; already constructed bytes keep
+the source and destination they captured.
+
+The app's scan-list and narrower room-reconnect predicates differ. HA safely
+bounds malformed AD/PDU lengths and uses its Bluetooth discovery/reconnect
+infrastructure instead of reproducing the apps' short-buffer faults, duplicate
+scan cache, UI-stage races or queue failure hangs. KomfyD's current-global
+stage 3 recovery is not interpreted as an inability to reconnect. The accepted
+counterpart gaps do not prove different firmware behavior.
+
+#### Notifications
+
+Each value is one PDU, with no fragment reassembly. Own-address and roster
+notifications trigger ping enumeration; the source-zero fallback is all ones.
+A matching-MAC ping installs the signed live destination. Registered channel 20
+uses exact eight-byte payloads without a selected-node filter:37–60 ends
+recall,61–63 stores the unsigned owner and 70 distinguishes unlocked, locally
+owned and other-owned locks. Neither app reports measured positions, angles,
+light/massage levels or firmware through these callbacks.
+
+#### Services
+
+`comfy_control` exposes Zero, H/F steps, timer start/stop and lock/unlock/query.
+It validates every targeted bed before starting an action and retains service
+STOP admission. The standard memory, light, movement and renewable-hold actions
+use the controller's capabilities. Only protocol-defined axis releases are sent
+by STOP; there is no asserted emergency or memory halt guarantee.
+
+#### Evidence
+
+Every KomfyD literal matches the existing Kaidi
+codec; app-specific routing and caller guards remain separate. Hardware
+validation belongs to reports from owners.
+
+### ComfyDS
+
+**App:** [ComfyDS](https://play.google.com/store/apps/details?id=com.pairlink.kaidi.ComfyDS) 1.0.0 (1), `com.pairlink.kaidi.ComfyDS`
+
+**Status:** Not yet tested
+
+Uses the [KomfyD and ComfyDS](#komfyd-and-comfyds) controls with its own
+command table and the following differences.
+
+#### Setup
+
+Choose the explicit ComfyDS app row. Its source starts at zero, remains installed
+through reconnect and is replaced by the next real source callback. HA still
+authenticates the new session before bed controls. No KomfyD initial-source or
+reconnect-source parity is assumed.
+
+#### Controls
+
+The app calls H/F steps and the timer “massage”. Their physical mapping and
+absolute range remain unknown, so HA keeps neutral step/timer labels. The four
+memory recalls/saves remain first-bank commands regardless of bed side. If a
+ComfyDS record has no saved side, choose a side before using H/F: that precise
+fallback is unknown for this app. KomfyD explicitly falls back to right.
+
+#### Timing
+
+The accepted Android runnable can survive offline/zero/nonrecall ticks and a
+long-save gesture, reading current command/destination/source on a later tick.
+Short release attempts a write before replacing the callback; queued bytes are
+not retracted by callback destruction. HA preserves the bed command effects
+under one admitted session-owned operation and cancels those unsafe incidentals.
+These details are not known to differ from KomfyD.
+
+#### Notifications
+
+Unregistered channels 23/24/25/28 may update the internal SDK node metadata.
+The signed product/group bytes and the existing-row virtual-address quirk
+remain parser state, without selecting a bed variant or exposing firmware,
+measured positions, a new capability or a new bed action.
+
+#### Services
+
+The same named actions use ComfyDS's table and per-target preflight.
+
+#### Evidence
+
+All 102 fixture records
+are retained, including the signed-sentinel command, advertisements and replies.
+No hardware confirmation or app equivalence is claimed.
+
 ## Notes
 
-1. The bed must already be provisioned in the official app. Home Assistant does not implement the add-device/reset workflow.
-2. Kaidi devices named `Mouselet` are valid beds when the manufacturer payload matches Kaidi; the generic `"mouse"` exclusion no longer applies in that case.
-3. If `auto` reports unresolved Kaidi metadata, switch the integration option to the verified layout: `seat_1`, `seat_2`, `seat_3`, or `seat_1_2`.
+1. Seat profiles: the bed must already be provisioned in the official app. Home
+   Assistant does not implement the add-device/reset workflow for them.
+2. Kaidi devices named `Mouselet` are valid beds when the manufacturer payload
+   matches Kaidi; the generic `"mouse"` exclusion no longer applies in that case.
+3. If `auto` reports unresolved Kaidi metadata, switch the integration option to
+   the verified layout: `seat_1`, `seat_2`, `seat_3`, or `seat_1_2`.
+4. Bed Wi-Fi provisioning, network administration, cloud/accounts, themes, QR
+   appearance downloads and unrelated app infrastructure remain outside this
+   integration.
+5. Deferred testing by owners covers Floyd's physical stopping, firmware
+   timeout, lighting and preset effects, internal-side selectors, room
+   assignment and optional battery events, and ISleep's physical axis
+   semantics, held/released/link-loss behavior, room enrollment and product 143
+   timers. Owners can help by sending captures.
+
+### Analysis provenance
+
+Based on Floyd Home 1.0.7 (`com.kaidi_test4.floyd`), ISleep 1.6.3
+(`com.kaidi_test4`), Rize Beds 1.4.2 (`com.kaidi_test4.rize`), KomfyD 1.0.9
+(`com.pairlink.kaidi.komfyD`) and ComfyDS 1.0.0 (`com.pairlink.kaidi.ComfyDS`).

@@ -1,30 +1,32 @@
 """Tests for the Jensen JMC400 controller.
 
-Frame vectors come from the frozen clean-room audit of
-air.no.jensen.adjustablesleep 2.0.29; position reports and calibration come
-from the JMC400 support bundle and capture in issue #631.
+Frame vectors live in ``tests/jmc_vectors.py``; position reports and calibration
+come from the JMC400 support bundle and capture in issue #631.
 """
 
 from __future__ import annotations
 
 import asyncio
+import json
+import re
 from unittest.mock import AsyncMock, MagicMock, call, patch
 
 import pytest
 from bleak.exc import BleakError
 from homeassistant.const import CONF_ADDRESS, CONF_NAME
 from homeassistant.core import HomeAssistant
-from pytest_homeassistant_custom_component.common import MockConfigEntry
+from pytest_homeassistant.common import MockConfigEntry
 
-from custom_components.adjustable_bed.beds.jensen import (
+from custom_components.adjustable_bed.beds.jensen.controller import (
     FOOT_POS_FLAT,
     FOOT_POS_MAX,
     HEAD_POS_FLAT,
     HEAD_POS_MAX,
-    JensenCommands,
     JensenController,
     JensenFeatureFlags,
 )
+from custom_components.adjustable_bed.ble_diagnostics import BLEDiagnosticRunner, DiagnosticReport
+from custom_components.adjustable_bed.codec import jmc
 from custom_components.adjustable_bed.const import (
     BED_TYPE_JENSEN,
     CONF_BED_TYPE,
@@ -37,10 +39,17 @@ from custom_components.adjustable_bed.const import (
     JENSEN_CHAR_UUID,
 )
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
+from custom_components.adjustable_bed.state_keys import massage_intensity
+from custom_components.adjustable_bed.support_bundle import generate_support_bundle
+from custom_components.adjustable_bed.support_logs import async_setup_support_logs
+from tests.state_helpers import published
 
 from .conftest import make_controller_mock
 
-JENSEN_MODULE = "custom_components.adjustable_bed.beds.jensen"
+JENSEN_MODULE = "custom_components.adjustable_bed.beds.jensen.controller"
+READ_POSITION = jmc.command(jmc.POSITION_QUERY)
+STOP = jmc.command(jmc.STOP)
+FLAT = jmc.command(jmc.FLAT)
 
 
 def report(state: int, head: int, foot: int) -> bytearray:
@@ -69,7 +78,7 @@ def reply_to_reads(controller: JensenController, *positions: tuple[int, int]) ->
     replies = list(positions)
 
     async def write(_uuid: str, frame: bytes, **_kwargs: object) -> None:
-        if frame == JensenCommands.READ_POSITION:
+        if frame == READ_POSITION:
             head, foot = replies.pop(0) if len(replies) > 1 else replies[0]
             asyncio.get_running_loop().call_soon(
                 controller._handle_notification, MagicMock(), report(0xFF, head, foot)
@@ -132,51 +141,6 @@ def written(controller: JensenController) -> list[bytes]:
     return [write_call.args[1] for write_call in mock.await_args_list]
 
 
-class TestJensenFrames:
-    """Frame builders against artifact and capture vectors."""
-
-    @pytest.mark.parametrize(
-        ("frame", "expected"),
-        [
-            (JensenCommands.pin_unlock("3060"), "1e03000600"),
-            (JensenCommands.CONFIG_READ_ALL, "0a00000000"),
-            (JensenCommands.MOTOR_STOP, "100000000000"),
-            (JensenCommands.motion(True, None), "100100000000"),
-            (JensenCommands.motion(False, None), "100200000000"),
-            (JensenCommands.motion(None, True), "101000000000"),
-            (JensenCommands.motion(None, False), "102000000000"),
-            (JensenCommands.motion(True, True), "101100000000"),
-            (JensenCommands.motion(True, False), "102100000000"),
-            (JensenCommands.motion(False, True), "101200000000"),
-            (JensenCommands.motion(False, False), "102200000000"),
-            (JensenCommands.PRESET_FLAT, "108100000000"),
-            (JensenCommands.PRESET_MEMORY_SAVE, "104000000000"),
-            (JensenCommands.PRESET_MEMORY_RECALL, "108000000000"),
-            # The #631 capture's Memory 1 recall: head 30771, foot 30000.
-            (JensenCommands.goto_position(30771, 30000), "100433783075"),
-            # The #631 capture's massage sweep: head 6, wave 6.
-            (JensenCommands.massage(6, 0, 6), "120600060000"),
-            (JensenCommands.MASSAGE_OFF, "120000000000"),
-            (JensenCommands.light(4), "130204000000"),
-            # 2.0.37 vector TV078.
-            (JensenCommands.LIGHT_OFF, "130200000032"),
-            (JensenCommands.fan(4), "140400000050"),
-            (JensenCommands.FAN_OFF, "140000000050"),
-        ],
-    )
-    def test_frame_bytes(self, frame: bytes, expected: str) -> None:
-        """Each builder emits the documented frame."""
-        assert frame.hex() == expected
-
-    def test_named_motion_frames_match_builder(self) -> None:
-        """The named single-section frames are the builder's frames."""
-        assert JensenCommands.motion(True, None) == JensenCommands.MOTOR_HEAD_UP
-        assert JensenCommands.motion(False, None) == JensenCommands.MOTOR_HEAD_DOWN
-        assert JensenCommands.motion(None, True) == JensenCommands.MOTOR_FOOT_UP
-        assert JensenCommands.motion(None, False) == JensenCommands.MOTOR_FOOT_DOWN
-        assert JensenCommands.motion(None, None) == JensenCommands.MOTOR_STOP
-
-
 class TestJensenController:
     """Controller setup and PIN handling."""
 
@@ -198,6 +162,7 @@ class TestJensenController:
         hass: HomeAssistant,
         mock_jensen_config_entry_data: dict,
         mock_coordinator_connected,
+        _shorten_mocked_config_timeout: None,
     ):
         """Test custom PIN from config entry."""
         mock_jensen_config_entry_data[CONF_JENSEN_PIN] = "1234"
@@ -263,7 +228,7 @@ class TestJensenWriteMode:
         await controller.start_notify(None)
 
         pin_write = controller._write_gatt_with_retry.await_args_list[0]
-        assert pin_write.args == (JENSEN_CHAR_UUID, JensenCommands.pin_unlock("3060"))
+        assert pin_write.args == (JENSEN_CHAR_UUID, jmc.pin("3060"))
         assert pin_write.kwargs["response"] is expected_response
 
 
@@ -285,8 +250,8 @@ class TestJensenNotificationStartup:
         await coordinator.controller.start_notify(None)
 
         calls = mock_bleak_client.write_gatt_char.call_args_list
-        assert calls[0].args == (JENSEN_CHAR_UUID, JensenCommands.pin_unlock("3060"))
-        assert calls[1].args == (JENSEN_CHAR_UUID, JensenCommands.READ_POSITION)
+        assert calls[0].args == (JENSEN_CHAR_UUID, jmc.pin("3060"))
+        assert calls[1].args == (JENSEN_CHAR_UUID, READ_POSITION)
         assert calls[0].kwargs == {"response": False}
 
     async def test_start_notify_waits_for_read_position_response(
@@ -307,7 +272,7 @@ class TestJensenNotificationStartup:
         assert not notify_task.done()
         assert mock_bleak_client.write_gatt_char.call_args_list[-1].args == (
             JENSEN_CHAR_UUID,
-            JensenCommands.READ_POSITION,
+            READ_POSITION,
         )
 
         coordinator.controller._handle_notification(MagicMock(), report(0xFF, 30000, 30000))
@@ -350,7 +315,15 @@ class TestJensenNotificationStartup:
 
 
 class TestJensenCoordinatorAuthRefresh:
-    """Test Jensen command auth refresh in coordinator command paths."""
+    """Test command paths refresh the controller's auth first."""
+
+    async def test_refresh_auth_sends_pin(self, hass: HomeAssistant, mock_jensen_config_entry):
+        """Jensen re-sends its PIN unlock on a reused link."""
+        coordinator = AdjustableBedCoordinator(hass, mock_jensen_config_entry)
+        controller = JensenController(coordinator)
+        with patch.object(controller, "send_pin", new=AsyncMock()) as send_pin:
+            await controller.async_refresh_auth()
+        send_pin.assert_awaited_once_with()
 
     async def test_async_execute_controller_command_refreshes_pin(
         self,
@@ -362,7 +335,7 @@ class TestJensenCoordinatorAuthRefresh:
         coordinator._client = MagicMock()
         coordinator._client.is_connected = True
         coordinator._controller = make_controller_mock()
-        coordinator._controller.send_pin = AsyncMock()
+        coordinator._controller.async_refresh_auth = AsyncMock()
         coordinator._controller.command_called = AsyncMock()
 
         async def _command_fn(_controller):
@@ -371,35 +344,9 @@ class TestJensenCoordinatorAuthRefresh:
         await coordinator.async_execute_controller_command(_command_fn, cancel_running=False)
 
         coordinator._controller.assert_has_calls(
-            [call.send_pin(), call.command_called()],
+            [call.async_refresh_auth(), call.command_called()],
             any_order=False,
         )
-
-    async def test_async_write_command_refreshes_pin(
-        self,
-        hass: HomeAssistant,
-        mock_jensen_config_entry,
-    ):
-        """Test coordinator refreshes Jensen PIN before raw write commands."""
-        coordinator = AdjustableBedCoordinator(hass, mock_jensen_config_entry)
-        coordinator._client = MagicMock()
-        coordinator._client.is_connected = True
-        coordinator._controller = make_controller_mock()
-        coordinator._controller.send_pin = AsyncMock()
-        coordinator._controller.write_command = AsyncMock()
-
-        await coordinator.async_write_command(
-            JensenCommands.PRESET_FLAT,
-            cancel_running=False,
-        )
-
-        send_pin_idx = coordinator._controller.mock_calls.index(call.send_pin())
-        write_idx = next(
-            idx
-            for idx, mock_call in enumerate(coordinator._controller.mock_calls)
-            if mock_call[0] == "write_command"
-        )
-        assert send_pin_idx < write_idx
 
     async def test_async_stop_command_refreshes_pin(
         self,
@@ -411,14 +358,14 @@ class TestJensenCoordinatorAuthRefresh:
         coordinator._client = MagicMock()
         coordinator._client.is_connected = True
         coordinator._controller = make_controller_mock()
-        coordinator._controller.send_pin = AsyncMock()
+        coordinator._controller.async_refresh_auth = AsyncMock()
         coordinator._controller.stop_all = AsyncMock()
 
         await coordinator.async_stop_command()
 
-        send_pin_idx = coordinator._controller.mock_calls.index(call.send_pin())
+        refresh_idx = coordinator._controller.mock_calls.index(call.async_refresh_auth())
         stop_all_idx = coordinator._controller.mock_calls.index(call.stop_all())
-        assert send_pin_idx < stop_all_idx
+        assert refresh_idx < stop_all_idx
 
     async def test_async_stop_command_continues_when_auth_refresh_fails(
         self,
@@ -430,12 +377,12 @@ class TestJensenCoordinatorAuthRefresh:
         coordinator._client = MagicMock()
         coordinator._client.is_connected = True
         coordinator._controller = MagicMock()
-        coordinator._controller.send_pin = AsyncMock(side_effect=BleakError("PIN failed"))
+        coordinator._controller.async_refresh_auth = AsyncMock(side_effect=BleakError("PIN failed"))
         coordinator._controller.stop_all = AsyncMock()
 
         await coordinator.async_stop_command()
 
-        coordinator._controller.send_pin.assert_awaited_once()
+        coordinator._controller.async_refresh_auth.assert_awaited_once()
         coordinator._controller.stop_all.assert_awaited_once()
 
     async def test_async_seek_position_uses_direct_control(
@@ -448,7 +395,7 @@ class TestJensenCoordinatorAuthRefresh:
         coordinator._client = MagicMock()
         coordinator._client.is_connected = True
         coordinator._controller = make_controller_mock()
-        coordinator._controller.send_pin = AsyncMock()
+        coordinator._controller.async_refresh_auth = AsyncMock()
         coordinator._controller.supports_direct_position_control = True
         coordinator._controller.angle_to_native_position = MagicMock(return_value=55)
         coordinator._controller.set_motor_position = AsyncMock()
@@ -458,11 +405,11 @@ class TestJensenCoordinatorAuthRefresh:
             "back", 20.0, lambda c: move(c), lambda c: move(c), lambda c: move(c)
         )
 
-        send_pin_idx = coordinator._controller.mock_calls.index(call.send_pin())
+        refresh_idx = coordinator._controller.mock_calls.index(call.async_refresh_auth())
         set_position_idx = coordinator._controller.mock_calls.index(
             call.set_motor_position("back", 55)
         )
-        assert send_pin_idx < set_position_idx
+        assert refresh_idx < set_position_idx
         move.assert_not_awaited()
 
 
@@ -568,8 +515,8 @@ class TestJensenConfig:
             "async_update_entry",
             wraps=hass.config_entries.async_update_entry,
         ) as update_entry:
-            coordinator._backfill_jensen_snapshot()
-            coordinator._backfill_jensen_snapshot()
+            coordinator._persist_capability_snapshot()
+            coordinator._persist_capability_snapshot()
 
         update_entry.assert_called_once()
         # Not loaded here, so no listener could consume a deferred reload.
@@ -590,7 +537,7 @@ class TestJensenConfig:
         await self._query(controller, bytes.fromhex("0a0503080175"))
         coordinator._controller = controller
 
-        coordinator._backfill_jensen_snapshot()
+        coordinator._persist_capability_snapshot()
 
         assert coordinator._pending_capability_reload
         assert coordinator.consume_internal_entry_update(mock_jensen_config_entry)
@@ -719,7 +666,7 @@ class TestJensenPositionParsing:
         read_task = asyncio.create_task(controller.read_positions())
         await asyncio.sleep(0)
 
-        assert written(controller) == [JensenCommands.READ_POSITION]
+        assert written(controller) == [READ_POSITION]
         assert not read_task.done()
 
         controller._handle_notification(MagicMock(), report(0xFF, 30000, 30000))
@@ -785,10 +732,10 @@ class TestJensenHeldMovement:
     @pytest.mark.parametrize(
         ("method", "frame"),
         [
-            ("move_head_up", JensenCommands.MOTOR_HEAD_UP),
-            ("move_back_down", JensenCommands.MOTOR_HEAD_DOWN),
-            ("move_legs_up", JensenCommands.MOTOR_FOOT_UP),
-            ("move_feet_down", JensenCommands.MOTOR_FOOT_DOWN),
+            ("move_head_up", jmc.motion(True, None)),
+            ("move_back_down", jmc.motion(False, None)),
+            ("move_legs_up", jmc.motion(None, True)),
+            ("move_feet_down", jmc.motion(None, False)),
         ],
     )
     async def test_held_move_ends_with_stop(self, method: str, frame: bytes):
@@ -798,7 +745,7 @@ class TestJensenHeldMovement:
 
         await getattr(controller, method)()
 
-        assert written(controller) == [frame, JensenCommands.MOTOR_STOP]
+        assert written(controller) == [frame, STOP]
         motion_write = controller._write_gatt_with_retry.await_args_list[0]
         assert motion_write.kwargs["repeat_count"] == 4
         assert motion_write.kwargs["repeat_delay_ms"] == 300
@@ -811,7 +758,7 @@ class TestJensenHeldMovement:
         with pytest.raises(BleakError):
             await controller.move_head_up()
 
-        assert written(controller)[-1] == JensenCommands.MOTOR_STOP
+        assert written(controller)[-1] == STOP
 
     @pytest.mark.parametrize(
         ("first", "second", "frame"),
@@ -859,7 +806,7 @@ class TestJensenMovementMonitoring:
         controller._raw_positions = (30600, 29500)
 
         task = await self._run(controller, controller.preset_flat())
-        assert written(controller)[0] == JensenCommands.PRESET_FLAT
+        assert written(controller)[0] == FLAT
         assert not task.done()
 
         # The first report may just restate the start; it does not end the move.
@@ -880,9 +827,9 @@ class TestJensenMovementMonitoring:
         await task
 
         # The settled move ends with two agreeing measured reads.
-        assert written(controller)[-2:] == [JensenCommands.READ_POSITION] * 2
+        assert written(controller)[-2:] == [READ_POSITION] * 2
 
-        assert JensenCommands.MOTOR_STOP not in written(controller)
+        assert STOP not in written(controller)
         legs = [c.args[1] for c in callback.call_args_list if c.args[0] == "legs"]
         assert legs[0] > legs[-1] == 0.0
 
@@ -897,7 +844,7 @@ class TestJensenMovementMonitoring:
         controller._handle_notification(MagicMock(), report(0x00, 30100, 30000))
         await asyncio.sleep(0.2)
 
-        assert written(controller)[-1] == JensenCommands.READ_POSITION
+        assert written(controller)[-1] == READ_POSITION
         assert not task.done()
         reply_to_reads(controller, (30100, 30000))
         controller._handle_notification(MagicMock(), report(0xFF, 30100, 30000))
@@ -919,10 +866,10 @@ class TestJensenMovementMonitoring:
             await asyncio.sleep(0.01)
         await task
 
-        reads = [f for f in written(controller) if f == JensenCommands.READ_POSITION]
+        reads = [f for f in written(controller) if f == READ_POSITION]
         assert len(reads) == 4
         assert callback.call_args_list[-2:] == [call("back", 0.0), call("legs", 0.0)]
-        assert JensenCommands.MOTOR_STOP not in written(controller)
+        assert STOP not in written(controller)
 
     async def test_long_sweep_is_read_until_it_settles(self):
         """Issue #631: a full head sweep takes about 20 s of changing reads."""
@@ -935,10 +882,10 @@ class TestJensenMovementMonitoring:
 
         await controller.set_motor_position("back", 80)
 
-        reads = [f for f in written(controller) if f == JensenCommands.READ_POSITION]
+        reads = [f for f in written(controller) if f == READ_POSITION]
         assert len(reads) == len(climb) + 2
         assert callback.call_args_list[-2][0] == ("back", pytest.approx(80.0, abs=0.1))
-        assert JensenCommands.MOTOR_STOP not in written(controller)
+        assert STOP not in written(controller)
 
     async def test_settle_reads_share_the_movement_bound(
         self, monkeypatch: pytest.MonkeyPatch, caplog: pytest.LogCaptureFixture
@@ -951,10 +898,10 @@ class TestJensenMovementMonitoring:
 
         await controller.preset_flat()
 
-        reads = [f for f in written(controller) if f == JensenCommands.READ_POSITION]
+        reads = [f for f in written(controller) if f == READ_POSITION]
         assert 2 <= len(reads) < 199
         assert "still reported movement" in caplog.text
-        assert written(controller)[-1] == JensenCommands.MOTOR_STOP
+        assert written(controller)[-1] == STOP
 
     async def test_cancel_during_settle_reads_sends_stop(self):
         """Stop while settling still ends the move with STOP."""
@@ -969,7 +916,7 @@ class TestJensenMovementMonitoring:
 
         with pytest.raises(asyncio.CancelledError):
             await task
-        assert written(controller)[-1] == JensenCommands.MOTOR_STOP
+        assert written(controller)[-1] == STOP
 
     async def test_no_movement_reported_ends_after_start_window(self):
         """A bed already at the target sends nothing; the command still finishes."""
@@ -978,7 +925,7 @@ class TestJensenMovementMonitoring:
 
         await controller.preset_flat()
 
-        assert written(controller)[0] == JensenCommands.PRESET_FLAT
+        assert written(controller)[0] == FLAT
 
     async def test_cancel_sends_stop_and_propagates(self):
         """A stop or replacement request ends the move with STOP."""
@@ -992,7 +939,7 @@ class TestJensenMovementMonitoring:
 
         with pytest.raises(asyncio.CancelledError):
             await task
-        assert written(controller)[-1] == JensenCommands.MOTOR_STOP
+        assert written(controller)[-1] == STOP
 
     async def test_task_cancellation_sends_stop(self):
         """Task cancellation (reload, shutdown) still releases the motors."""
@@ -1003,7 +950,7 @@ class TestJensenMovementMonitoring:
 
         with pytest.raises(asyncio.CancelledError):
             await task
-        assert written(controller)[-1] == JensenCommands.MOTOR_STOP
+        assert written(controller)[-1] == STOP
 
     async def test_cancellation_survives_a_disconnected_stop(self):
         """A STOP that cannot reach the bed does not replace the cancellation."""
@@ -1016,7 +963,7 @@ class TestJensenMovementMonitoring:
 
         with pytest.raises(asyncio.CancelledError):
             await task
-        assert written(controller)[-1] == JensenCommands.MOTOR_STOP
+        assert written(controller)[-1] == STOP
 
     async def test_bounded_timeout_releases_command(
         self, monkeypatch: pytest.MonkeyPatch, caplog: pytest.LogCaptureFixture
@@ -1039,7 +986,7 @@ class TestJensenMovementMonitoring:
             mover.cancel()
 
         assert "still reported movement" in caplog.text
-        assert written(controller)[-1] == JensenCommands.MOTOR_STOP
+        assert written(controller)[-1] == STOP
 
     async def test_disabled_angle_sensing_skips_monitoring(self):
         """With feedback disabled the frame is sent and the command returns."""
@@ -1048,7 +995,7 @@ class TestJensenMovementMonitoring:
 
         await controller.preset_flat()
 
-        assert set(written(controller)) == {JensenCommands.PRESET_FLAT}
+        assert set(written(controller)) == {FLAT}
 
 
 class TestJensenDirectPosition:
@@ -1063,7 +1010,7 @@ class TestJensenDirectPosition:
 
         await controller.set_motor_position("back", 50)
 
-        assert written(controller) == [JensenCommands.goto_position(30402, 29700)]
+        assert written(controller) == [jmc.goto(jmc.position(30402, 29700))]
 
     @pytest.mark.usefixtures("_fast_movement_monitor")
     async def test_legs_target_uses_falling_scale(self):
@@ -1074,7 +1021,7 @@ class TestJensenDirectPosition:
 
         await controller.set_motor_position("legs", 100)
 
-        assert written(controller) == [JensenCommands.goto_position(30300, FOOT_POS_MAX)]
+        assert written(controller) == [jmc.goto(jmc.position(30300, FOOT_POS_MAX))]
 
     async def test_unknown_position_is_read_first(self):
         """Without a report, the current position is queried before moving."""
@@ -1084,11 +1031,11 @@ class TestJensenDirectPosition:
 
         task = asyncio.create_task(controller.set_motor_position("legs", 0))
         await asyncio.sleep(0)
-        assert written(controller) == [JensenCommands.READ_POSITION]
+        assert written(controller) == [READ_POSITION]
         controller._handle_notification(MagicMock(), report(0xFF, 30500, 29600))
         await task
 
-        assert written(controller)[-1] == JensenCommands.goto_position(30500, FOOT_POS_FLAT)
+        assert written(controller)[-1] == jmc.goto(jmc.position(30500, FOOT_POS_FLAT))
 
     async def test_unknown_motor_is_rejected(self):
         """Only back/head and legs/feet exist."""
@@ -1111,8 +1058,8 @@ class TestJensenMemory:
         await controller.preset_memory(1)
 
         assert written(controller) == [
-            JensenCommands.PRESET_MEMORY_SAVE,
-            JensenCommands.PRESET_MEMORY_RECALL,
+            jmc.command(jmc.MEMORY_SAVE),
+            jmc.command(jmc.MEMORY_RECALL),
         ]
         with pytest.raises(ValueError, match="one memory slot"):
             await controller.preset_memory(2)
@@ -1126,7 +1073,7 @@ class TestJensenMemory:
 
         task = asyncio.create_task(controller.program_memory(3))
         await asyncio.sleep(0)
-        assert written(controller) == [JensenCommands.READ_POSITION]
+        assert written(controller) == [READ_POSITION]
         controller._handle_notification(MagicMock(), report(0xFF, 30771, 30000))
         await task
 
@@ -1204,10 +1151,7 @@ class TestJensenLightsAndFan:
             "130200000032",
             "130204000000",
         ]
-        controller._coordinator.handle_controller_state_updates.assert_called_with(
-            {"light_level": 4, "under_bed_lights_on": True}
-        )
-        assert controller.get_light_state() == {"is_on": True, "light_level": 4}
+        assert published(*controller._coordinator.handle_controller_state_updates.call_args.args) == {"light_level": 4, "under_bed_lights_on": True}
 
     async def test_lights_require_feature(self):
         """Beds without a light raise instead of writing."""
@@ -1257,7 +1201,8 @@ class TestJensenMassage:
             "1206030a0000",
             "1200030a0000",
         ]
-        assert controller.get_massage_state()["wave_intensity"] == 10
+        state = published(*controller._coordinator.handle_controller_state_updates.call_args.args)
+        assert state[massage_intensity("wave")] == 10
 
     async def test_toggles(self):
         """Toggles switch a zone between level 5 and off."""
@@ -1283,10 +1228,10 @@ class TestJensenMassage:
         publish = controller._coordinator.handle_controller_state_updates
 
         await controller.massage_head_toggle()
-        assert publish.call_args.args[0]["head_intensity"] == 5
+        assert published(*publish.call_args.args)[massage_intensity("head")] == 5
 
         await controller.massage_off()
-        assert publish.call_args.args[0]["head_intensity"] == 0
+        assert published(*publish.call_args.args)[massage_intensity("head")] == 0
 
     async def test_massage_requires_feature(self):
         """Beds without massage raise instead of writing."""
@@ -1395,6 +1340,127 @@ class TestJensenEntities:
         await hass.async_block_till_done()
 
         frames = [c.args[1] for c in mock_bleak_client.write_gatt_char.call_args_list]
-        assert JensenCommands.fan(5) in frames
+        assert bytes.fromhex("140500000050") in frames
         state = hass.states.get(fan)
         assert state is not None and float(state.state) == 5
+
+
+@pytest.mark.parametrize("massage", [True, False])
+async def test_a_jmc400_set_up_through_the_family_row_keeps_its_massage_buttons(
+    hass: HomeAssistant,
+    mock_jensen_config_entry_data: dict,
+    mock_coordinator_connected,
+    enable_custom_integrations,
+    monkeypatch: pytest.MonkeyPatch,
+    massage: bool,
+):
+    """The family row's form is drawn for Svane, so the JMC400 route asks massage itself."""
+    from unittest.mock import AsyncMock as _AsyncMock
+    from unittest.mock import patch as _patch
+
+    from homeassistant.helpers import entity_registry as er
+
+    from custom_components.adjustable_bed.config_flow import AdjustableBedConfigFlow
+    from custom_components.adjustable_bed.const import BED_TYPE_SVANE
+
+    del mock_coordinator_connected, enable_custom_integrations
+
+    async def reported_config(self: JensenController) -> None:
+        self._features = JensenFeatureFlags.MASSAGE_HEAD
+        self._box_type = 1
+        self._config_loaded = True
+
+    monkeypatch.setattr(JensenController, "query_config", reported_config)
+    flow = AdjustableBedConfigFlow()
+    flow.hass, flow.context = hass, {}
+    # What the generic form saves for the family row, which Svane's profile owns.
+    flow._manual_data = {
+        **mock_jensen_config_entry_data,
+        CONF_BED_TYPE: BED_TYPE_SVANE,
+        CONF_HAS_MASSAGE: False,
+    }
+    result = await flow.async_step_jensen_family({"choice": "jensen_jmc400"})
+    assert result["step_id"] == "profile_questions"
+    with _patch.object(flow, "_finish_with_verify", new=_AsyncMock()) as finish:
+        await flow.async_step_profile_questions({CONF_HAS_MASSAGE: massage})
+    saved = finish.call_args.args[0]
+    assert saved[CONF_BED_TYPE] == BED_TYPE_JENSEN
+    assert saved[CONF_HAS_MASSAGE] is massage
+
+    entry = MockConfigEntry(
+        domain=DOMAIN, title="Jensen Test Bed", data=saved, unique_id="AA:BB:CC:DD:EE:FF"
+    )
+    entry.add_to_hass(hass)
+    await hass.config_entries.async_setup(entry.entry_id)
+    await hass.async_block_till_done()
+    massage_buttons = [
+        item.unique_id
+        for item in er.async_entries_for_config_entry(er.async_get(hass), entry.entry_id)
+        if item.domain == "button" and "_massage_" in item.unique_id
+    ]
+    assert bool(massage_buttons) is massage
+
+
+async def test_support_bundle_never_contains_the_pin(
+    hass: HomeAssistant,
+    mock_jensen_config_entry_data: dict,
+    mock_coordinator_connected,
+    _shorten_mocked_config_timeout: None,
+) -> None:
+    """The PIN frame is in no trace, log line or notification of a bundle (PRIV-1)."""
+    mock_jensen_config_entry_data[CONF_JENSEN_PIN] = "8264"
+    entry = MockConfigEntry(
+        domain=DOMAIN,
+        data=mock_jensen_config_entry_data,
+        unique_id="AA:BB:CC:DD:EE:FF",
+        entry_id="jensen_bundle_entry",
+    )
+    entry.add_to_hass(hass)
+    coordinator = AdjustableBedCoordinator(hass, entry)
+    logs = async_setup_support_logs(hass)
+    with logs.capture_debug():
+        await coordinator.async_connect()
+        await coordinator.async_execute_controller_command(lambda _controller: asyncio.sleep(0))
+    pin_frame = jmc.pin("8264")
+    # The bed echoes nothing secret, but a capture records whatever it receives.
+    reply = {"characteristic": JENSEN_CHAR_UUID, "timestamp": "t", "data_hex": "1e01"}
+    capture = DiagnosticReport(
+        metadata={},
+        device={"address": entry.data[CONF_ADDRESS]},
+        advertisement=None,
+        advertisements_by_source=[],
+        detection={},
+        gatt_services=[],
+        gatt_summary={},
+        device_information={},
+        notifications=[reply],
+        notification_summary={},
+        adapter_details={},
+        connection_history={},
+        connection_attempt_details=[],
+        command_trace=list(coordinator.command_trace),
+        errors=[],
+    )
+    with (
+        patch.object(BLEDiagnosticRunner, "run_diagnostics", new=AsyncMock(return_value=capture)),
+        patch(
+            "custom_components.adjustable_bed.support_bundle.bluetooth.async_current_scanners",
+            return_value=[],
+        ),
+    ):
+        report = await generate_support_bundle(
+            hass,
+            address=entry.data[CONF_ADDRESS],
+            capture_duration=0,
+            include_logs=True,
+            coordinator=coordinator,
+            entry=entry,
+        )
+
+    assert sum(
+        trace["payload"]["hex"] == "**REDACTED**" for trace in report["command_trace"]
+    ) >= 2, "the PIN was sent on connect and before the command"
+    assert any("GATT write to" in log["message"] for log in report["recent_logs"])
+    dumped = json.dumps(report)
+    assert pin_frame.hex() not in dumped
+    assert re.search(r"(?<!\d)8264(?!\d)", dumped) is None

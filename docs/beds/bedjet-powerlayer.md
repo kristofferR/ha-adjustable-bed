@@ -1,6 +1,6 @@
 # BedJet PowerLayer
 
-**Status:** ✅ Tested (confirmed working on a BedJet PowerLayer by @rluengen)
+**Status:** Tested (confirmed working on a BedJet PowerLayer by @rluengen)
 
 **Credit:** GATT layout and command values ported from the MIT-licensed
 [`powerlayer` branch of natekspencer/ha-bedjet](https://github.com/natekspencer/ha-bedjet/tree/powerlayer).
@@ -23,8 +23,8 @@ and the GATT dump in [#343](https://github.com/kristofferR/ha-adjustable-bed/iss
 | n/a | BedJet (no PowerLayer control shipped) | `com.bedjet.app` |
 
 BedJet's own app did not control the frame at the time of writing; BedJet
-described app support as in development. There is therefore no APK to analyze
-for this protocol, and all evidence comes from live BLE captures.
+described app support as in development. Support here is built from captures of
+the frame's Bluetooth traffic.
 
 ## Not the BedJet climate unit
 

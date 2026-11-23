@@ -7,15 +7,13 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from homeassistant.const import CONF_ADDRESS, CONF_NAME
-from homeassistant.data_entry_flow import FlowResultType
 from homeassistant.exceptions import ServiceValidationError
-from homeassistant.helpers import entity_registry as er
-from pytest_homeassistant_custom_component.common import MockConfigEntry
+from pytest_homeassistant.common import MockConfigEntry
 
-from custom_components.adjustable_bed.actuator_groups import get_actuator_group_for_bed_type
+from custom_components.adjustable_bed.bed_traits import bed_traits, bed_type_has_position_feedback
 from custom_components.adjustable_bed.button import _button_entities_for
 from custom_components.adjustable_bed.config_flow import (
-    AdjustableBedOptionsFlow,
+    _family_rows,
     _motor_count_options,
     _name_rule_setup_name,
 )
@@ -23,31 +21,28 @@ from custom_components.adjustable_bed.const import (
     ADJUSTABLE_LUMBAR_VARIANTS,
     BED_TYPE_ADJUSTABLE_LUMBAR,
     BED_TYPE_DIAGNOSTIC,
-    BEDS_WITHOUT_ANGLE_FEEDBACK,
     CONF_BED_TYPE,
     CONF_BLE_DEVICE_NAME,
     CONF_DISABLE_ANGLE_SENSING,
-    CONF_IDLE_DISCONNECT_SECONDS,
     CONF_MOTOR_COUNT,
     CONF_PROTOCOL_VARIANT,
     DOMAIN,
     OFFLINE_CAPABILITY_SAFE_BED_TYPES,
     SIDE_BOTH,
     VARIANT_AUTO,
-    bed_type_has_position_feedback,
     get_motor_pulse_defaults,
     requires_pairing,
 )
 from custom_components.adjustable_bed.controller_factory import create_controller
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
 from custom_components.adjustable_bed.detection import detect_bed_type, get_bed_type_options
-from custom_components.adjustable_bed.pairing import build_pair_entry_data, effective_child_data
 from custom_components.adjustable_bed.services import async_register_services
 from custom_components.adjustable_bed.validators import (
     get_variants_for_bed_type,
     is_valid_variant_for_bed_type,
 )
 from tests.conftest import make_controller_mock
+from tests.error_helpers import raises_key
 from tests.test_adjustable_lumbar import make_controller
 from tests.test_controller_contract import _FactoryCoordinator
 from tests.test_malouf_app_entities import configure_entity_runtime
@@ -75,7 +70,7 @@ async def test_offline_factory_never_reads_the_display_name(variant, stored, bra
 
 def test_profile_constants_and_setup_options():
     assert BED_TYPE_ADJUSTABLE_LUMBAR in OFFLINE_CAPABILITY_SAFE_BED_TYPES
-    assert BED_TYPE_ADJUSTABLE_LUMBAR in BEDS_WITHOUT_ANGLE_FEEDBACK
+    assert bed_traits(BED_TYPE_ADJUSTABLE_LUMBAR).no_angle_feedback
     assert not bed_type_has_position_feedback(BED_TYPE_ADJUSTABLE_LUMBAR, VARIANT_AUTO)
     assert not requires_pairing(BED_TYPE_ADJUSTABLE_LUMBAR)
     assert get_motor_pulse_defaults(BED_TYPE_ADJUSTABLE_LUMBAR) == (10, 100)
@@ -83,10 +78,7 @@ def test_profile_constants_and_setup_options():
     assert get_variants_for_bed_type(BED_TYPE_ADJUSTABLE_LUMBAR) == ADJUSTABLE_LUMBAR_VARIANTS
     assert is_valid_variant_for_bed_type(BED_TYPE_ADJUSTABLE_LUMBAR, "adjustable_lumbar_star")
     assert not is_valid_variant_for_bed_type(BED_TYPE_ADJUSTABLE_LUMBAR, "simmons_okin")
-    assert get_actuator_group_for_bed_type(BED_TYPE_ADJUSTABLE_LUMBAR) == (
-        "okin",
-        "Adjustable bed (Lumbar) app",
-    )
+    assert BED_TYPE_ADJUSTABLE_LUMBAR in dict(_family_rows())
     assert any(
         option["value"] == BED_TYPE_ADJUSTABLE_LUMBAR for option in get_bed_type_options()
     )
@@ -134,13 +126,12 @@ async def test_buttons_expose_the_app_surface(hass):
 
 
 @pytest.mark.parametrize("retain", [True, False])
-async def test_app_buttons_retire_with_the_profile(hass, retain):
+async def test_app_buttons_follow_the_profile(hass, retain):
     controller = (
         make_controller("OKIN-1")
         if retain
         else make_controller_mock(
             controller_state_sensor_specs=(),
-            stale_controller_state_sensor_entity_keys=frozenset(),
             controller_button_specs=(),
             position_number_specs=(),
         )
@@ -148,12 +139,8 @@ async def test_app_buttons_retire_with_the_profile(hass, retain):
     runtime = configure_entity_runtime(
         hass, controller, BED_TYPE_ADJUSTABLE_LUMBAR if retain else BED_TYPE_DIAGNOSTIC
     )
-    registry = er.async_get(hass)
-    old = registry.async_get_or_create(
-        "button", DOMAIN, "bed_adjustable_lumbar_save_incline_left", config_entry=runtime.entry
-    )
-    _button_entities_for(hass, runtime)
-    assert (registry.async_get(old.entity_id) is not None) is retain
+    buttons = {entity.unique_id for entity in _button_entities_for(hass, runtime)}
+    assert ("bed_adjustable_lumbar_save_incline_left" in buttons) is retain
 
 
 def _service_target(profile=BED_TYPE_ADJUSTABLE_LUMBAR):
@@ -163,6 +150,7 @@ def _service_target(profile=BED_TYPE_ADJUSTABLE_LUMBAR):
     coordinator.name = "Lumbar"
     coordinator.bed_type = profile
     coordinator.entry = SimpleNamespace(data={})
+    coordinator.controller_side = None
     coordinator.capability_controller = controller
 
     async def execute(command, **kwargs):
@@ -174,7 +162,7 @@ def _service_target(profile=BED_TYPE_ADJUSTABLE_LUMBAR):
 
 @pytest.mark.parametrize(
     ("control", "error"),
-    [("save_lounge", None), ("massage_stop", "does not support held control"), ("tv", "does not support held control")],
+    [("save_lounge", None), ("massage_stop", "held_control_not_supported"), ("tv", "held_control_not_supported")],
 )
 async def test_hold_service_preflights_before_writing(hass, control, error):
     await async_register_services(hass)
@@ -185,7 +173,7 @@ async def test_hold_service_preflights_before_writing(hass, control, error):
         return_value=([(coordinator, SIDE_BOTH)], []),
     ):
         if error:
-            with pytest.raises(ServiceValidationError, match=error):
+            with raises_key(error, ServiceValidationError):
                 await hass.services.async_call(
                     DOMAIN, "hold_control", call, blocking=True
                 )
@@ -201,13 +189,14 @@ async def test_hold_service_refuses_a_mixed_selection_before_any_write(hass):
     await async_register_services(hass)
     lumbar, lumbar_controller = _service_target()
     other, _ = _service_target("okin_64bit")
-    other.capability_controller = SimpleNamespace(held_control_options=())
+    other.controller_side = None
+    other.capability_controller = SimpleNamespace(held_control_options=(), requires_disconnected_transport=False)
     with (
         patch(
             "custom_components.adjustable_bed.services._resolve_sided_targets",
             return_value=([(lumbar, SIDE_BOTH), (other, SIDE_BOTH)], []),
         ),
-        pytest.raises(ServiceValidationError, match="has no held controls"),
+        raises_key("held_controls_not_supported", ServiceValidationError),
     ):
         await hass.services.async_call(
             DOMAIN,
@@ -228,30 +217,6 @@ def _side(address: str, variant: str) -> dict[str, object]:
         CONF_MOTOR_COUNT: 3,
         CONF_DISABLE_ANGLE_SENSING: True,
     }
-
-
-async def test_two_address_pair_refuses_shared_variant_changes(hass):
-    entry = MockConfigEntry(
-        domain=DOMAIN,
-        data=build_pair_entry_data(
-            _side("AA:BB:CC:DD:EE:11", VARIANT_AUTO),
-            _side("AA:BB:CC:DD:EE:22", "adjustable_lumbar_star"),
-            name="Pair",
-        ),
-    )
-    entry.add_to_hass(hass)
-    flow = AdjustableBedOptionsFlow(entry)
-    flow.hass = hass
-    flow.handler = entry.entry_id
-    refused = await flow.async_step_settings({CONF_PROTOCOL_VARIANT: "adjustable_lumbar_okin"})
-    assert refused["type"] is FlowResultType.FORM
-    assert refused["errors"] == {CONF_PROTOCOL_VARIANT: "app_profile_unpair_first"}
-    saved = await flow.async_step_settings({CONF_IDLE_DISCONNECT_SECONDS: 60})
-    assert saved["type"] is FlowResultType.CREATE_ENTRY
-    assert effective_child_data(entry.data, "left")[CONF_PROTOCOL_VARIANT] == VARIANT_AUTO
-    assert effective_child_data(entry.data, "right")[CONF_PROTOCOL_VARIANT] == (
-        "adjustable_lumbar_star"
-    )
 
 
 @pytest.fixture
@@ -300,37 +265,3 @@ async def test_connection_reads_the_manufacturer_once_and_persists_the_raw_name(
     await coordinator.async_disconnect()
 
 
-async def test_options_switch_fixes_the_axes_and_refresh(hass):
-    from custom_components.adjustable_bed.const import (
-        BED_TYPE_OKIN_64BIT,
-        CONF_MOTOR_PULSE_COUNT,
-        CONF_MOTOR_PULSE_DELAY_MS,
-    )
-
-    entry = MockConfigEntry(
-        domain=DOMAIN,
-        data={
-            CONF_ADDRESS: "AA:BB:CC:DD:EE:FF",
-            CONF_BED_TYPE: BED_TYPE_OKIN_64BIT,
-            CONF_MOTOR_COUNT: 2,
-            CONF_MOTOR_PULSE_COUNT: 7,
-            CONF_MOTOR_PULSE_DELAY_MS: 150,
-        },
-    )
-    entry.add_to_hass(hass)
-    flow = AdjustableBedOptionsFlow(entry)
-    flow.hass = hass
-    flow.handler = entry.entry_id
-    rebuilt = await flow._async_options_form(
-        {CONF_BED_TYPE: BED_TYPE_ADJUSTABLE_LUMBAR}, step_id="settings"
-    )
-    markers = {marker.schema for marker in rebuilt["data_schema"].schema}
-    assert CONF_MOTOR_COUNT not in markers and CONF_MOTOR_PULSE_DELAY_MS not in markers
-    saved = await flow._async_options_form(
-        {CONF_BED_TYPE: BED_TYPE_ADJUSTABLE_LUMBAR, CONF_PROTOCOL_VARIANT: "adjustable_lumbar_star"},
-        step_id="settings",
-    )
-    assert saved["type"] == "create_entry"
-    assert entry.data[CONF_BED_TYPE] == BED_TYPE_ADJUSTABLE_LUMBAR
-    assert entry.data[CONF_MOTOR_COUNT] == 3
-    assert entry.data[CONF_MOTOR_PULSE_DELAY_MS] == 100

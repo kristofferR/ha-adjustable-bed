@@ -1,4 +1,4 @@
-"""Richmat MH app profiles (APK audit row055, cluster-020): artifact vectors and behavior."""
+"""Richmat MH app profiles: artifact vectors and behavior."""
 
 from __future__ import annotations
 
@@ -9,10 +9,8 @@ from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
-from custom_components.adjustable_bed import richmat_mh_catalog as catalog
-from custom_components.adjustable_bed.beds import richmat_mh_protocol as protocol
-from custom_components.adjustable_bed.beds.richmat_mh import (
-    ALARM_OPTIONS,
+from custom_components.adjustable_bed.beds.richmat_mh import catalog, protocol
+from custom_components.adjustable_bed.beds.richmat_mh.controller import (
     APP_GROUPS,
     RichmatMhController,
     SessionFlags,
@@ -20,11 +18,15 @@ from custom_components.adjustable_bed.beds.richmat_mh import (
     resolve_model,
     selectable_models,
 )
-from custom_components.adjustable_bed.const import (
-    RICHMAT_MH_APPS,
+from custom_components.adjustable_bed.beds.richmat_mh.models import (
     RICHMAT_MH_MODEL_CHOICES,
     RICHMAT_MH_VARIANTS_BY_APP,
 )
+from custom_components.adjustable_bed.beds.richmat_mh.protocol import ALARM_OPTIONS
+from custom_components.adjustable_bed.const import (
+    RICHMAT_MH_APPS,
+)
+from tests.state_helpers import state_writer
 
 NUS, W1, W2, W3, W4 = protocol.GATT_MAPS
 
@@ -57,7 +59,7 @@ def make(
     coordinator.handle_controller_state_update.side_effect = lambda key, value: (
         coordinator.controller_state.update({key: value})
     )
-    coordinator.handle_controller_state_updates.side_effect = coordinator.controller_state.update
+    coordinator.handle_controller_state_updates.side_effect = state_writer(coordinator.controller_state)
     data = {"capabilities": {"richmat_mh": snapshot}} if snapshot else {}
     coordinator.entry = SimpleNamespace(data=data)
     coordinator.client = MagicMock(is_connected=True, services=services or _default_services())
@@ -106,10 +108,10 @@ def sleeps(monkeypatch: pytest.MonkeyPatch) -> list[float]:
         (protocol.stop_frame(), "6e01006edd"),
         (protocol.stop_frame(1), "6e01016ede"),
         (protocol.stop_frame(2), "6e01026edf"),
-        (protocol.query_frame(protocol.TX_MATTRESS), "5e1a000179"),
-        (protocol.query_frame(protocol.TX_VERSION), "6e9a000008"),
-        (protocol.query_frame(protocol.TX_START_DETECTION), "6e88c210c8"),
-        (protocol.query_frame(protocol.TX_STOP_DETECTION), "6e88c220d8"),
+        (protocol.TX_MATTRESS, "5e1a000179"),
+        (protocol.TX_VERSION, "6e9a000008"),
+        (protocol.TX_START_DETECTION, "6e88c210c8"),
+        (protocol.TX_STOP_DETECTION, "6e88c220d8"),
         (protocol.rgb_frame(128, 1, 255), "6e0cff80f96e0d01ff7b"),
         (protocol.light_timer_frame(300), "6e0b012ca6"),  # LedFrag 300 s
         (protocol.light_timer_frame(15 * 60), "6e0b038400"),  # Blvd Home BtnLedFrag 15 min
@@ -152,20 +154,12 @@ def test_alarm_frames_match_artifact_vectors(minutes, action, expected) -> None:
 
 
 def test_alarm_cancel_delete_and_clock_frames() -> None:
-    assert tuple(protocol.query_frame(t).hex() for t in protocol.TX_ALARM_CANCEL) == (
+    assert tuple(t.hex() for t in protocol.TX_ALARM_CANCEL) == (
         "6e05000073", "6e06000074"
     )
     assert tuple(f.hex() for f in protocol.alarm_delete_frames(2)) == ("6e05000275", "6e06000074")
     assert tuple(f.hex() for f in protocol.alarm_frames(61, 0x2F, 3)) == ("6e053d03b3", "6e06002fa3")
     assert tuple(f.hex() for f in protocol.clock_frames(7, 5, 9)) == ("6e1307058d", "6e1409ff8a")
-
-
-@pytest.mark.parametrize(
-    ("target", "now", "expected"),
-    [(420, 420, 1440), (421, 420, 1), (419, 420, 1439), (0, 1439, 1), (1439, 0, 1439)],
-)
-def test_alarm_countdown_is_the_apps_wrapping_difference(target, now, expected) -> None:
-    assert protocol.alarm_countdown_minutes(target, now) == expected
 
 
 def test_alarm_combinations_two_massages_and_unmatched_pairs() -> None:
@@ -330,7 +324,7 @@ async def test_session_queries_version_then_ver1_list_and_persists_snapshot(slee
     await controller._init_task
     sent = frames(controller)
     assert sent[0] == "6e9a000008"
-    queries = [protocol.query_frame(t).hex() for t in protocol.INIT_VER1]
+    queries = [t.hex() for t in protocol.INIT_VER1]
     # The alarm reply mounts AlarmCallFrag, which sends the clock before the next query.
     assert sent[1:3] == queries[:2]
     assert sent[3][:4] == "6e13" and sent[4][:4] == "6e14"
@@ -351,7 +345,7 @@ async def test_session_without_version_reply_uses_the_ver0_list(sleeps) -> None:
     await controller.start_notify()
     assert controller._init_task is not None
     await controller._init_task
-    assert frames(controller)[1:] == [protocol.query_frame(t).hex() for t in protocol.INIT_VER0]
+    assert frames(controller)[1:] == [t.hex() for t in protocol.INIT_VER0]
     assert controller.route == "L"
 
 
@@ -445,6 +439,16 @@ async def test_legacy_init_replies_open_pages_and_snore_prefix_is_ver0_only() ->
     assert controller._dev == {} and controller._detection is False  # published on completion
 
 
+async def test_mattress_init_reply_marks_the_mattress_page() -> None:
+    """A 28-byte ``5E 1A`` init reply opens the mattress page, as the app's literal does."""
+    controller = make("revive", "CFRM0001")
+    controller._classifier.rx_type = "INIT"
+    session = controller._pending = SessionFlags()
+    body = bytes.fromhex("5e1a0001") + bytes(23)
+    controller._handle_notification(None, bytearray(body + bytes((sum(body) & 0xFF,))))
+    assert session.dev == {"mattress": True}
+
+
 # ------------------------------------------------------------------- features
 
 
@@ -469,7 +473,7 @@ async def test_legacy_alarm_combines_position_and_massage(sleeps) -> None:
         ({"position": "yoga", "massage": []}, "not on this model"),
         ({"position": None, "massage": []}, "position or a massage"),
         ({"position": "memory_1", "massage": ["heat"]}, "distinct options"),
-        ({"position": "head_massage", "massage": ["foot_massage"]}, "sends nothing"),
+        ({"position": "head_massage", "massage": ["foot_massage"]}, "no alarm for that position"),
     ],
 )
 async def test_alarm_requests_the_app_cannot_send_are_rejected(kwargs, message) -> None:
@@ -600,6 +604,8 @@ async def test_detection_buttons_status_and_results() -> None:
     controller = make("revive", "CFRM0001", snapshot={**vers0("cfrm"), "detection": True})
     await controller.async_discover_capabilities()
     start = next(s for s in controller.controller_button_specs if s.key == "richmat_mh_start_detection")
+    # The self-test is maintenance, not a dashboard control.
+    assert start.diagnostic
     await start.press_fn(controller)
     assert frames(controller) == ["6e88c210c8"]
     controller._classifier.rx_type = "INIT"
@@ -680,7 +686,6 @@ async def test_blvd_hnrm_factory_reset_uses_the_common_widget_frame(sleeps) -> N
 def test_legacy_route_has_no_ver1_entities_and_stale_keys_cover_them() -> None:
     controller = make(snapshot=vers0("7irm"))
     assert not controller.controller_number_specs and not controller.controller_select_specs
-    assert controller.stale_controller_state_sensor_entity_keys >= {"richmat_mh_memory_arrival"}
 
 
 def test_alarm_options_are_stable_service_values() -> None:
@@ -739,6 +744,10 @@ async def test_waist_page_state_selects_and_frames() -> None:
     assert (state["richmat_mh_waist_both_alarm"], state["richmat_mh_waist_both_alarm_repeat"],
             state["richmat_mh_waist_both_alarm_intensity"]) == ("06:30", "daily", 3)
     selects = {s.key: s for s in controller.controller_select_specs}
+    # The mode never turns the heat on, so the heat, pressure and duration selects are
+    # plain controls, as they were in 4.x.
+    heat = selects["richmat_mh_waist_left_heat"]
+    assert heat.entity_category is None and heat.entity_registry_enabled_default
     await selects["richmat_mh_waist_both_pressure"].select_fn(controller, "level_2")
     await selects["richmat_mh_waist_both_heat"].select_fn(controller, "8_hours")
     await selects["richmat_mh_waist_mode"].select_fn(controller, "both_relax")
@@ -785,7 +794,7 @@ async def test_stored_pages_stay_published_while_the_session_runs() -> None:
     controller = make(snapshot=vers1("7irm", alarm=True, led=True))
     await controller.async_discover_capabilities()
     hold = asyncio.Event()
-    queries = {protocol.query_frame(t).hex() for t in (protocol.TX_VERSION, *protocol.INIT_VER1)}
+    queries = {t.hex() for t in (protocol.TX_VERSION, *protocol.INIT_VER1)}
 
     async def write(char, data, response):
         if bytes(data).hex() in queries:
@@ -837,7 +846,7 @@ async def test_failed_session_keeps_the_stored_snapshot(sleeps) -> None:
     await controller.async_discover_capabilities()
 
     async def write(char, data, response):
-        if bytes(data).hex() == protocol.query_frame(protocol.TX_ALARM).hex():
+        if bytes(data).hex() == protocol.TX_ALARM.hex():
             raise ConnectionError("lost")
 
     controller.client.write_gatt_char.side_effect = write

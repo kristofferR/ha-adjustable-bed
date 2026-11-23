@@ -10,17 +10,13 @@ from pathlib import Path
 from unittest.mock import AsyncMock
 
 import pytest
-
-# HA 2026.9 defines this here; 2026.10 re-exports it from const.
-from homeassistant.components.cover import (
-    DATA_COMPONENT,  # pyright: ignore[reportPrivateImportUsage]
-)
 from homeassistant.core import HomeAssistant
 from homeassistant.setup import async_setup_component
-from pytest_homeassistant_custom_component.common import MockConfigEntry
+from pytest_homeassistant.common import MockConfigEntry
 
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
 from custom_components.adjustable_bed.cover import COVER_DESCRIPTIONS, AdjustableBedCover
+from tests.entry_entities import async_add_entry_entities
 
 BLUEPRINT_PATH = "adjustable_bed/section_control.yaml"
 BLUEPRINT_SOURCE = (
@@ -67,7 +63,7 @@ async def bed_covers(
             entity = AdjustableBedCover(coordinator, description)
             entity.entity_id = f"cover.bed_{description.key}"
             entities.append(entity)
-    await hass.data[DATA_COMPONENT].async_add_entities(entities)
+    await async_add_entry_entities(hass, mock_config_entry, "cover", entities)
     yield coordinator
     await coordinator.async_shutdown()
 

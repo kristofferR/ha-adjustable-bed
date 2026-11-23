@@ -1,4 +1,4 @@
-"""Row068 revision01 artifact vectors, not hardware captures.
+"""Glideaway Motion revision01 artifact vectors, not hardware captures.
 
 Accepted REPORT.SHA256 b3b4b2cc669d8050a68070aa3f9c1ad8021b0c7f9b244ab6703ae4d0caf3ec04.
 The R01-F01 timer comparison is intentional and covered explicitly.
@@ -17,11 +17,13 @@ from homeassistant.config_entries import ConfigEntryState
 from homeassistant.const import CONF_ADDRESS, CONF_NAME
 from homeassistant.exceptions import ServiceValidationError
 from homeassistant.helpers import device_registry as dr
-from pytest_homeassistant_custom_component.common import MockConfigEntry
+from pytest_homeassistant.common import MockConfigEntry
 
 from custom_components.adjustable_bed import services
 from custom_components.adjustable_bed.app_profiles import hidden_generic_fields, per_side_profile
-from custom_components.adjustable_bed.beds import glideaway_motion as gm
+from custom_components.adjustable_bed.bed_traits import bed_type_has_position_feedback
+from custom_components.adjustable_bed.beds.base import BedController
+from custom_components.adjustable_bed.beds.glideaway_motion import controller as gm
 from custom_components.adjustable_bed.const import (
     BED_TYPE_GLIDEAWAY_MOTION,
     BED_TYPE_OKIN_ORE,
@@ -34,13 +36,14 @@ from custom_components.adjustable_bed.const import (
     CONF_PROTOCOL_VARIANT,
     DOMAIN,
     GLIDEAWAY_MOTION_MODELS,
-    bed_type_has_position_feedback,
     requires_pairing,
 )
 from custom_components.adjustable_bed.controller_factory import create_controller
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
 from custom_components.adjustable_bed.detection import get_bed_type_options
 from custom_components.adjustable_bed.validators import is_valid_variant_for_bed_type
+from tests.form_helpers import finish_new_bed, start_new_bed
+from tests.state_helpers import state_writer
 
 ZERO = bytes.fromhex("e6fe16000000000005")
 # C01..C25, accepted command-table.md. Sustained saves share recall frames.
@@ -99,7 +102,7 @@ def coordinator():
         gm.NOTIFY_SERVICE: notify_service,
     }.get
     coordinator.controller_state = {}
-    coordinator.handle_controller_state_updates.side_effect = coordinator.controller_state.update
+    coordinator.handle_controller_state_updates.side_effect = state_writer(coordinator.controller_state)
     return coordinator
 
 
@@ -445,11 +448,15 @@ async def test_factory_manual_models_and_profile_ownership(hass):
     assert not is_valid_variant_for_bed_type(BED_TYPE_GLIDEAWAY_MOTION, "auto")
     assert not requires_pairing(BED_TYPE_GLIDEAWAY_MOTION)
     assert not bed_type_has_position_feedback(BED_TYPE_GLIDEAWAY_MOTION, "motion_400")
+    from custom_components.adjustable_bed.detection import bed_type_label
+
     choices = {o["value"]: o["label"] for o in get_bed_type_options()}
     assert all(
         "Glideaway" in choices[f"glideaway_motion:{model}"] for model in GLIDEAWAY_MOTION_MODELS
     )
-    assert "Glideaway" not in choices[BED_TYPE_OKIN_ORE]
+    # Okin ORE is a protocol route, off the list, and names no Glideaway app.
+    assert BED_TYPE_OKIN_ORE not in choices
+    assert "Glideaway" not in bed_type_label(BED_TYPE_OKIN_ORE)
     assert hidden_generic_fields(BED_TYPE_GLIDEAWAY_MOTION, "motion_400") == {
         CONF_MOTOR_COUNT,
         CONF_MOTOR_PULSE_DELAY_MS,
@@ -487,24 +494,31 @@ async def alarm_target(hass):
 
 async def test_alarm_service_validation_and_queue(hass, alarm_target):
     coordinator, device_id = alarm_target
-    calls = {"device_id": [device_id], "enabled": True, "time": "06:30:00", "wake_mode": "memory_1"}
-    await hass.services.async_call(DOMAIN, "glideaway_set_alarm", calls, blocking=True)
+    calls = {"device_id": [device_id], "enabled": True, "time": "06:30:00", "wake_action": "memory_1"}
+    await hass.services.async_call(DOMAIN, "set_alarm", calls, blocking=True)
     coordinator.async_execute_controller_command.assert_awaited_once()
     command = coordinator.async_execute_controller_command.await_args.args[0]
-    controller = MagicMock()
+    assert coordinator.async_execute_controller_command.await_args.kwargs["resource"] is None
+    controller = MagicMock(spec=gm.GlideawayMotionController)
     controller.configure_clock_alarm = AsyncMock()
+    # The write checks the request again on the controller that writes it.
+    controller.alarm_capability = coordinator.capability_controller.alarm_capability
     await command(controller)
-    controller.configure_clock_alarm.assert_awaited_once_with(
-        enabled=True, weekdays=(), hour=6, minute=30, preset="memory_1"
+    alarm = controller.configure_alarm.await_args.args[0]
+    assert (alarm.enabled, alarm.weekdays, alarm.hour, alarm.minute, alarm.wake_action) == (
+        True, (), 6, 30, "memory_1"
     )
     coordinator.async_execute_controller_command.reset_mock()
     for invalid in ({**calls, "time": "06:30:01"}, {"device_id": [device_id], "enabled": True}):
         with pytest.raises(ServiceValidationError):
-            await hass.services.async_call(DOMAIN, "glideaway_set_alarm", invalid, blocking=True)
+            await hass.services.async_call(DOMAIN, "set_alarm", invalid, blocking=True)
     coordinator.async_execute_controller_command.assert_not_awaited()
     coordinator._bed_type = BED_TYPE_OKIN_ORE
-    with pytest.raises(ServiceValidationError):
-        await hass.services.async_call(DOMAIN, "glideaway_set_alarm", calls, blocking=True)
+    coordinator._controller = MagicMock(
+        spec=BedController, requires_disconnected_transport=False, alarm_capability=None
+    )
+    with pytest.raises(ServiceValidationError, match="has no alarm"):
+        await hass.services.async_call(DOMAIN, "set_alarm", calls, blocking=True)
     coordinator.async_execute_controller_command.assert_not_awaited()
 
 
@@ -515,15 +529,9 @@ async def test_manual_setup_saves_explicit_app_model(hass, model):
     flow = AdjustableBedConfigFlow()
     flow.hass = hass
     flow.context = {}
-    flow._disconnect_choice_confirmed = True
     flow._finish_with_verify = AsyncMock(return_value={"type": "create_entry"})
-    await flow.async_step_manual_entry(
-        {
-            CONF_ADDRESS: "AA:BB:CC:DD:EE:68",
-            CONF_BED_TYPE: f"glideaway_motion:{model}",
-            CONF_PROTOCOL_VARIANT: "auto",
-        }
-    )
+    result = await start_new_bed(flow, "typed", f"glideaway_motion:{model}", "AA:BB:CC:DD:EE:68")
+    await finish_new_bed(flow, result)
     saved = flow._finish_with_verify.await_args.args[0]
     assert saved[CONF_BED_TYPE] == BED_TYPE_GLIDEAWAY_MOTION
     assert saved[CONF_PROTOCOL_VARIANT] == model
@@ -534,11 +542,9 @@ async def test_manual_setup_saves_explicit_app_model(hass, model):
     [("motion_400", False), ("motion_450", False), ("motion_500", True), ("motion_600", True)],
 )
 @pytest.mark.parametrize("retained_massage", [False, True])
-async def test_entity_exposure_and_stale_model_cleanup(
+async def test_entity_exposure_follows_the_model(
     hass, alarm_target, model, extra, retained_massage
 ):
-    from homeassistant.helpers import entity_registry as er
-
     from custom_components.adjustable_bed import sensor
     from custom_components.adjustable_bed.button import _button_entities_for
     from custom_components.adjustable_bed.cover import _cover_entities_for
@@ -547,13 +553,6 @@ async def test_entity_exposure_and_stale_model_cleanup(
     coordinator._has_massage = retained_massage
     controller = gm.GlideawayMotionController(coordinator, model=model)
     coordinator._controller = controller
-    registry = er.async_get(hass)
-    stale = registry.async_get_or_create(
-        "sensor",
-        DOMAIN,
-        coordinator.entity_unique_id(gm.STATE_TIMER),
-        config_entry=coordinator.entry,
-    )
     covers = _cover_entities_for(hass, coordinator)
     assert len(covers) == len(gm.LAYOUTS[model])
     buttons = _button_entities_for(hass, coordinator)
@@ -580,7 +579,6 @@ async def test_entity_exposure_and_stale_model_cleanup(
     assert (
         any(s.unique_id == coordinator.entity_unique_id(gm.STATE_TIMER) for s in received) == extra
     )
-    assert (registry.async_get(stale.entity_id) is not None) == extra
 
 
 @pytest.mark.parametrize(
@@ -626,7 +624,8 @@ async def test_public_hold_and_sync_clock_dispatch(hass, alarm_target):
         {"device_id": [device_id], "control": "back_up", "duration": 0.6},
         blocking=True,
     )
-    controller = MagicMock()
+    # The checked controller, so the hold is not checked again.
+    controller = coordinator.capability_controller
     controller.hold_control = AsyncMock()
     await coordinator.async_execute_controller_command.await_args.args[0](controller)
     controller.hold_control.assert_awaited_once_with("back_up", 600)
@@ -662,7 +661,7 @@ async def test_alarm_whole_selection_validation_before_dispatch(hass, alarm_targ
     with pytest.raises(ServiceValidationError):
         await hass.services.async_call(
             DOMAIN,
-            "glideaway_set_alarm",
+            "set_alarm",
             {"device_id": [device_id, device.id], "enabled": True, "time": "06:30:00"},
             blocking=True,
         )

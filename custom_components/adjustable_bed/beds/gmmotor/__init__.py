@@ -1,0 +1,1 @@
+"""gmmotor bed family."""

@@ -1,0 +1,336 @@
+[
+  {
+    "id": "light-300",
+    "protocol": "P4",
+    "action": "light-300",
+    "kind": "light_seconds",
+    "inputs": {
+      "seconds": 300
+    },
+    "expected_bytes": "6e0b012ca6"
+  },
+  {
+    "id": "light-always",
+    "protocol": "P4",
+    "action": "light-always",
+    "kind": "light_seconds",
+    "inputs": {
+      "seconds": 0
+    },
+    "expected_bytes": "6e0bffff77"
+  },
+  {
+    "id": "light-900",
+    "protocol": "P4",
+    "action": "light-900",
+    "kind": "light_seconds",
+    "inputs": {
+      "seconds": 900
+    },
+    "expected_bytes": "6e0b038400"
+  },
+  {
+    "id": "rgb-r255-b128",
+    "protocol": "P4",
+    "action": "rgb-r255-b128",
+    "kind": "light_color",
+    "inputs": {
+      "red": 255,
+      "green": 0,
+      "blue": 128
+    },
+    "expected_bytes": "6e0cffff786e0d0080fb"
+  },
+  {
+    "id": "rgb-123",
+    "protocol": "P4",
+    "action": "rgb-123",
+    "kind": "light_color",
+    "inputs": {
+      "red": 1,
+      "green": 2,
+      "blue": 3
+    },
+    "expected_bytes": "6e0cff017a6e0d020380"
+  },
+  {
+    "id": "single-300-lounge",
+    "protocol": "P4",
+    "action": "single-300-lounge",
+    "kind": "one_shot",
+    "inputs": {
+      "minutes": 300,
+      "opcode": 89
+    },
+    "expected_bytes": "6e052c009f6e060159ce"
+  },
+  {
+    "id": "single-60-lounge",
+    "protocol": "P4",
+    "action": "single-60-lounge",
+    "kind": "one_shot",
+    "inputs": {
+      "minutes": 60,
+      "opcode": 89
+    },
+    "expected_bytes": "6e053c00af6e060059cd"
+  },
+  {
+    "id": "single-cancel",
+    "protocol": "P4",
+    "action": "single-cancel",
+    "kind": "one_shot",
+    "inputs": {
+      "minutes": 0,
+      "opcode": 0
+    },
+    "expected_bytes": "6e050000736e06000074"
+  },
+  {
+    "id": "repeat-query",
+    "protocol": "P4",
+    "action": "repeat-query",
+    "kind": "repeat_query",
+    "inputs": {},
+    "expected_bytes": "6e0820050100009c"
+  },
+  {
+    "id": "repeat-delete7",
+    "protocol": "P4",
+    "action": "repeat-delete7",
+    "kind": "repeat_delete",
+    "inputs": {
+      "alarm_id": 7
+    },
+    "expected_bytes": "6e082005020107a5"
+  },
+  {
+    "id": "repeat-mon-fri",
+    "protocol": "P4",
+    "action": "repeat-mon-fri",
+    "kind": "repeat_alarm",
+    "inputs": {
+      "alarm_id": 1,
+      "hour": 7,
+      "minute": 30,
+      "opcode": 89,
+      "mask": 137
+    },
+    "expected_bytes": "6e0d200501010100071e5989aa"
+  },
+  {
+    "id": "repeat-everyday-memory2",
+    "protocol": "P4",
+    "action": "repeat-everyday-memory2",
+    "kind": "repeat_alarm",
+    "inputs": {
+      "alarm_id": 7,
+      "hour": 23,
+      "minute": 59,
+      "opcode": 47,
+      "mask": 255
+    },
+    "expected_bytes": "6e0d200501010700173b2fff29"
+  },
+  {
+    "id": "epoch-negative-zone",
+    "protocol": "P4",
+    "action": "epoch-negative-zone",
+    "kind": "time_epoch",
+    "inputs": {
+      "epoch_seconds": 16909060,
+      "timezone_minutes": -300
+    },
+    "expected_bytes": "6e0c2008020101020304fbaa"
+  },
+  {
+    "id": "calendar-2026",
+    "protocol": "P4",
+    "action": "calendar-2026",
+    "kind": "time_calendar",
+    "inputs": {
+      "year": 2026,
+      "month": 11,
+      "day": 17,
+      "hour": 16,
+      "minute": 30,
+      "second": 45
+    },
+    "expected_bytes": "6e0d20080301380b11101e2d56"
+  },
+  {
+    "id": "calendar-1970",
+    "protocol": "P4",
+    "action": "calendar-1970",
+    "kind": "time_calendar",
+    "inputs": {
+      "year": 1970,
+      "month": 1,
+      "day": 1,
+      "hour": 0,
+      "minute": 0,
+      "second": 0
+    },
+    "expected_bytes": "6e0d20080301000101000000a9"
+  },
+  {
+    "id": "ack-add",
+    "protocol": "P2",
+    "action": "ack-add",
+    "kind": "common_event",
+    "inputs": {
+      "frame": "6e07010177"
+    },
+    "expected_bytes": "6e07010177",
+    "expected_event": "alarm_add_success"
+  },
+  {
+    "id": "ack-cancel",
+    "protocol": "P2",
+    "action": "ack-cancel",
+    "kind": "common_event",
+    "inputs": {
+      "frame": "6e07010278"
+    },
+    "expected_bytes": "6e07010278",
+    "expected_event": "alarm_cancel_success"
+  },
+  {
+    "id": "repeat-list-item",
+    "protocol": "P2",
+    "action": "repeat-list-item",
+    "kind": "extra_alarm",
+    "inputs": {
+      "frame": "6e200d0501020100071e5989ab"
+    },
+    "expected_bytes": "6e200d0501020100071e5989ab",
+    "expected_fields": {
+      "event": "list_item",
+      "id": 1,
+      "reserved": 0,
+      "hour": 7,
+      "minute": 30,
+      "opcode": 89,
+      "repeat_mask": 137
+    }
+  },
+  {
+    "id": "epoch-fractional-zone",
+    "protocol": "P4",
+    "action": "epoch-fractional-zone",
+    "kind": "time_epoch",
+    "inputs": {
+      "epoch_seconds": 16909060,
+      "timezone_minutes": 330
+    },
+    "expected_bytes": "6e0c200802010102030405b4"
+  },
+  {
+    "id": "repeat-delete1",
+    "protocol": "P4",
+    "action": "repeat-delete1",
+    "kind": "repeat_delete",
+    "inputs": {
+      "alarm_id": 1
+    },
+    "expected_bytes": "6e0820050201019f"
+  },
+  {
+    "id": "query-clock-framed",
+    "protocol": "P2",
+    "action": "query-clock-framed",
+    "kind": "query",
+    "inputs": {
+      "kind": "clock"
+    },
+    "expected_bytes": "6e08010178"
+  },
+  {
+    "id": "query-light-framed",
+    "protocol": "P2",
+    "action": "query-light-framed",
+    "kind": "query",
+    "inputs": {
+      "kind": "light"
+    },
+    "expected_bytes": "6e0a000179"
+  },
+  {
+    "id": "query-clock-raw",
+    "protocol": "P1",
+    "action": "query-clock-raw",
+    "kind": "query",
+    "inputs": {
+      "kind": "clock",
+      "nordic": true
+    },
+    "expected_bytes": "01"
+  },
+  {
+    "id": "query-light-raw",
+    "protocol": "P1",
+    "action": "query-light-raw",
+    "kind": "query",
+    "inputs": {
+      "kind": "light",
+      "nordic": true
+    },
+    "expected_bytes": "01"
+  },
+  {
+    "id": "exit-limit-framed",
+    "protocol": "P2",
+    "action": "exit-limit-framed",
+    "kind": "control",
+    "inputs": {
+      "opcode": 0
+    },
+    "expected_bytes": "6e0100006f"
+  },
+  {
+    "id": "exit-limit-raw",
+    "protocol": "P1",
+    "action": "exit-limit-raw",
+    "kind": "control",
+    "inputs": {
+      "opcode": 0,
+      "nordic": true
+    },
+    "expected_bytes": "00"
+  },
+  {
+    "id": "light-off-framed",
+    "protocol": "P2",
+    "action": "light-off-framed",
+    "kind": "control",
+    "inputs": {
+      "opcode": 117
+    },
+    "expected_bytes": "6e010075e4"
+  },
+  {
+    "id": "light-off-raw",
+    "protocol": "P1",
+    "action": "light-off-raw",
+    "kind": "control",
+    "inputs": {
+      "opcode": 117,
+      "nordic": true
+    },
+    "expected_bytes": "75"
+  },
+  {
+    "id": "repeat-id-exhaustion",
+    "protocol": "P4",
+    "action": "app forwards exhausted ID -1; bridge serializes ff",
+    "kind": "repeat_alarm",
+    "inputs": {
+      "alarm_id": -1,
+      "hour": 7,
+      "minute": 30,
+      "opcode": 89,
+      "mask": 137
+    },
+    "expected_bytes": "6e0d20050101ff00071e5989a8"
+  }
+]

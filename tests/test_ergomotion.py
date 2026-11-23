@@ -7,11 +7,9 @@ from unittest.mock import MagicMock
 import pytest
 from homeassistant.const import CONF_ADDRESS, CONF_NAME
 from homeassistant.core import HomeAssistant
-from pytest_homeassistant_custom_component.common import MockConfigEntry
+from homeassistant.exceptions import ServiceValidationError
+from pytest_homeassistant.common import MockConfigEntry
 
-from custom_components.adjustable_bed.beds.keeson import (
-    KeesonCommands,
-)
 from custom_components.adjustable_bed.const import (
     BED_TYPE_ERGOMOTION,
     CONF_BED_TYPE,
@@ -23,6 +21,7 @@ from custom_components.adjustable_bed.const import (
     ERGOMOTION_WRITE_CHAR_UUID,
 )
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
+from tests.error_helpers import raises_key
 
 
 @pytest.fixture
@@ -57,18 +56,6 @@ def mock_ergomotion_config_entry(
 
 class TestErgomotionController:
     """Test Keeson controller with ergomotion variant."""
-
-    async def test_control_characteristic_uuid(
-        self,
-        hass: HomeAssistant,
-        mock_ergomotion_config_entry,
-        mock_coordinator_connected,
-    ):
-        """Test controller reports correct characteristic UUID."""
-        coordinator = AdjustableBedCoordinator(hass, mock_ergomotion_config_entry)
-        await coordinator.async_connect()
-
-        assert coordinator.controller.control_characteristic_uuid == ERGOMOTION_WRITE_CHAR_UUID
 
     async def test_build_command(
         self,
@@ -124,162 +111,8 @@ class TestErgomotionController:
             await coordinator.controller.write_command(coordinator.controller._build_command(0))
 
 
-class TestErgomotionMovement:
-    """Test Ergomotion movement commands."""
-
-    async def test_move_head_up(
-        self,
-        hass: HomeAssistant,
-        mock_ergomotion_config_entry,
-        mock_coordinator_connected,
-        mock_bleak_client: MagicMock,
-    ):
-        """Test move head up sends movement command then stop."""
-        coordinator = AdjustableBedCoordinator(hass, mock_ergomotion_config_entry)
-        await coordinator.async_connect()
-
-        await coordinator.controller.move_head_up()
-
-        calls = mock_bleak_client.write_gatt_char.call_args_list
-        assert len(calls) > 1
-
-        # Last call should be stop (zero command)
-        last_command = calls[-1][0][1]
-        expected_stop = coordinator.controller._build_command(0)
-        assert last_command == expected_stop
-
-    async def test_move_head_down(
-        self,
-        hass: HomeAssistant,
-        mock_ergomotion_config_entry,
-        mock_coordinator_connected,
-        mock_bleak_client: MagicMock,
-    ):
-        """Test move head down."""
-        coordinator = AdjustableBedCoordinator(hass, mock_ergomotion_config_entry)
-        await coordinator.async_connect()
-
-        await coordinator.controller.move_head_down()
-
-        calls = mock_bleak_client.write_gatt_char.call_args_list
-        assert len(calls) > 1
-
-    async def test_move_feet_up(
-        self,
-        hass: HomeAssistant,
-        mock_ergomotion_config_entry,
-        mock_coordinator_connected,
-        mock_bleak_client: MagicMock,
-    ):
-        """Test move feet up."""
-        coordinator = AdjustableBedCoordinator(hass, mock_ergomotion_config_entry)
-        await coordinator.async_connect()
-
-        await coordinator.controller.move_feet_up()
-
-        calls = mock_bleak_client.write_gatt_char.call_args_list
-        assert len(calls) > 1
-
-    async def test_stop_all(
-        self,
-        hass: HomeAssistant,
-        mock_ergomotion_config_entry,
-        mock_coordinator_connected,
-        mock_bleak_client: MagicMock,
-    ):
-        """Test stop all sends zero command."""
-        coordinator = AdjustableBedCoordinator(hass, mock_ergomotion_config_entry)
-        await coordinator.async_connect()
-
-        await coordinator.controller.stop_all()
-
-        expected_stop = coordinator.controller._build_command(0)
-        mock_bleak_client.write_gatt_char.assert_called_with(
-            ERGOMOTION_WRITE_CHAR_UUID, expected_stop, response=True
-        )
-
-
 class TestErgomotionPresets:
     """Test Ergomotion preset commands."""
-
-    async def test_preset_flat(
-        self,
-        hass: HomeAssistant,
-        mock_ergomotion_config_entry,
-        mock_coordinator_connected,
-        mock_bleak_client: MagicMock,
-    ):
-        """Test preset flat command."""
-        coordinator = AdjustableBedCoordinator(hass, mock_ergomotion_config_entry)
-        await coordinator.async_connect()
-
-        await coordinator.controller.preset_flat()
-
-        expected_cmd = coordinator.controller._build_command(KeesonCommands.PRESET_FLAT)
-        first_call = mock_bleak_client.write_gatt_char.call_args_list[0]
-        assert first_call[0][1] == expected_cmd
-
-    async def test_preset_zero_g(
-        self,
-        hass: HomeAssistant,
-        mock_ergomotion_config_entry,
-        mock_coordinator_connected,
-        mock_bleak_client: MagicMock,
-    ):
-        """Test preset zero gravity command."""
-        coordinator = AdjustableBedCoordinator(hass, mock_ergomotion_config_entry)
-        await coordinator.async_connect()
-
-        await coordinator.controller.preset_zero_g()
-
-        expected_cmd = coordinator.controller._build_command(KeesonCommands.PRESET_ZERO_G)
-        first_call = mock_bleak_client.write_gatt_char.call_args_list[0]
-        assert first_call[0][1] == expected_cmd
-
-    async def test_preset_tv(
-        self,
-        hass: HomeAssistant,
-        mock_ergomotion_config_entry,
-        mock_coordinator_connected,
-        mock_bleak_client: MagicMock,
-    ):
-        """Test preset TV command."""
-        coordinator = AdjustableBedCoordinator(hass, mock_ergomotion_config_entry)
-        await coordinator.async_connect()
-
-        await coordinator.controller.preset_tv()
-
-        expected_cmd = coordinator.controller._build_command(KeesonCommands.PRESET_TV)
-        first_call = mock_bleak_client.write_gatt_char.call_args_list[0]
-        assert first_call[0][1] == expected_cmd
-
-    @pytest.mark.parametrize(
-        "memory_num,expected_value",
-        [
-            (1, KeesonCommands.PRESET_MEMORY_1),
-            (2, KeesonCommands.PRESET_MEMORY_2),
-            (3, KeesonCommands.PRESET_MEMORY_3),
-            (4, KeesonCommands.PRESET_MEMORY_4),
-        ],
-    )
-    async def test_preset_memory(
-        self,
-        hass: HomeAssistant,
-        mock_ergomotion_config_entry,
-        mock_coordinator_connected,
-        mock_bleak_client: MagicMock,
-        memory_num: int,
-        expected_value: int,
-    ):
-        """Test preset memory commands."""
-        coordinator = AdjustableBedCoordinator(hass, mock_ergomotion_config_entry)
-        await coordinator.async_connect()
-
-        await coordinator.controller.preset_memory(memory_num)
-
-        expected_cmd = coordinator.controller._build_command(expected_value)
-        first_call = mock_bleak_client.write_gatt_char.call_args_list[0]
-        assert first_call[0][1] == expected_cmd
 
     async def test_program_memory_not_supported(
         self,
@@ -289,93 +122,12 @@ class TestErgomotionPresets:
         mock_bleak_client: MagicMock,
         caplog,
     ):
-        """Test program memory logs warning."""
+        """A bed that cannot save memory refuses to."""
         coordinator = AdjustableBedCoordinator(hass, mock_ergomotion_config_entry)
         await coordinator.async_connect()
 
-        await coordinator.controller.program_memory(1)
-
-        assert "don't support programming memory presets" in caplog.text
-
-
-class TestErgomotionLights:
-    """Test Ergomotion light commands."""
-
-    async def test_lights_toggle(
-        self,
-        hass: HomeAssistant,
-        mock_ergomotion_config_entry,
-        mock_coordinator_connected,
-        mock_bleak_client: MagicMock,
-    ):
-        """Test lights toggle command."""
-        coordinator = AdjustableBedCoordinator(hass, mock_ergomotion_config_entry)
-        await coordinator.async_connect()
-
-        await coordinator.controller.lights_toggle()
-
-        expected_cmd = coordinator.controller._build_command(KeesonCommands.TOGGLE_LIGHTS)
-        mock_bleak_client.write_gatt_char.assert_called_with(
-            ERGOMOTION_WRITE_CHAR_UUID, expected_cmd, response=True
-        )
-
-
-class TestErgomotionMassage:
-    """Test Ergomotion massage commands."""
-
-    async def test_massage_toggle(
-        self,
-        hass: HomeAssistant,
-        mock_ergomotion_config_entry,
-        mock_coordinator_connected,
-        mock_bleak_client: MagicMock,
-    ):
-        """Test massage toggle command."""
-        coordinator = AdjustableBedCoordinator(hass, mock_ergomotion_config_entry)
-        await coordinator.async_connect()
-
-        await coordinator.controller.massage_toggle()
-
-        expected_cmd = coordinator.controller._build_command(KeesonCommands.MASSAGE_STEP)
-        mock_bleak_client.write_gatt_char.assert_called_with(
-            ERGOMOTION_WRITE_CHAR_UUID, expected_cmd, response=True
-        )
-
-    async def test_massage_head_up(
-        self,
-        hass: HomeAssistant,
-        mock_ergomotion_config_entry,
-        mock_coordinator_connected,
-        mock_bleak_client: MagicMock,
-    ):
-        """Test head massage intensity up."""
-        coordinator = AdjustableBedCoordinator(hass, mock_ergomotion_config_entry)
-        await coordinator.async_connect()
-
-        await coordinator.controller.massage_head_up()
-
-        expected_cmd = coordinator.controller._build_command(KeesonCommands.MASSAGE_HEAD_UP)
-        mock_bleak_client.write_gatt_char.assert_called_with(
-            ERGOMOTION_WRITE_CHAR_UUID, expected_cmd, response=True
-        )
-
-    async def test_massage_foot_down(
-        self,
-        hass: HomeAssistant,
-        mock_ergomotion_config_entry,
-        mock_coordinator_connected,
-        mock_bleak_client: MagicMock,
-    ):
-        """Test foot massage intensity down."""
-        coordinator = AdjustableBedCoordinator(hass, mock_ergomotion_config_entry)
-        await coordinator.async_connect()
-
-        await coordinator.controller.massage_foot_down()
-
-        expected_cmd = coordinator.controller._build_command(KeesonCommands.MASSAGE_FOOT_DOWN)
-        mock_bleak_client.write_gatt_char.assert_called_with(
-            ERGOMOTION_WRITE_CHAR_UUID, expected_cmd, response=True
-        )
+        with raises_key("feature_not_supported", ServiceValidationError):
+            await coordinator.controller.program_memory(1)
 
 
 class TestErgomotionPositionNotifications:

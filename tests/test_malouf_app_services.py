@@ -8,49 +8,68 @@ import pytest
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import ServiceValidationError
 
-from custom_components.adjustable_bed.beds.malouf_app import MaloufAppController
+from custom_components.adjustable_bed.alarm import AlarmCapability
+from custom_components.adjustable_bed.beds.base import BedController
+from custom_components.adjustable_bed.beds.linak.services import SERVICE_LINAK_MOVE_SIMULTANEOUS
+from custom_components.adjustable_bed.beds.malouf.app import MaloufAppController
+from custom_components.adjustable_bed.codec.malouf import TRANSPORTS
 from custom_components.adjustable_bed.const import BED_TYPE_MALOUF_APP, DOMAIN, SIDE_BOTH
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
-from custom_components.adjustable_bed.malouf_app_protocol import TRANSPORTS
 from custom_components.adjustable_bed.services import (
-    SERVICE_LINAK_MOVE_SIMULTANEOUS,
-    SERVICE_MALOUF_SET_ALARM,
-    SERVICE_MALOUF_SYNC_CLOCK,
+    SERVICE_SET_ALARM,
+    SERVICE_SYNC_CLOCK,
     SERVICE_TIMED_MOVE,
     async_register_services,
 )
+from tests.error_helpers import raises_key
 
 
 @pytest.fixture
 async def service_target(hass: HomeAssistant):
     await async_register_services(hass)
-    controller = SimpleNamespace(
+    controller = MagicMock(
+        spec=MaloufAppController,
         supports_clock_alarm=True, supports_clock_sync=True,
         clock_alarm_preset_options=("zero_g", "lounge", "tv", "anti_snore", "memory_1"),
         configure_clock_alarm=AsyncMock(), sync_clock=AsyncMock(),
+        alarm_capability=AlarmCapability(
+            wake_actions=("zero_g", "lounge", "tv", "anti_snore", "memory_1"), weekdays=True
+        ),
     )
+    # The shared action's default mapping onto the clock-alarm writer.
+    async def configure_alarm(alarm):
+        await BedController.configure_alarm(controller, alarm)
+
+    controller.configure_alarm = AsyncMock(side_effect=configure_alarm)
     coordinator = MagicMock(spec=AdjustableBedCoordinator)
     coordinator.name = "App bed"
     coordinator.bed_type = BED_TYPE_MALOUF_APP
+    coordinator.controller_side = None
     coordinator.capability_controller = controller
+    controller._coordinator = coordinator
 
     async def execute(command, **kwargs):
         await command(controller)
 
     coordinator.async_execute_controller_command = AsyncMock(side_effect=execute)
-    with patch("custom_components.adjustable_bed.services._resolve_sided_targets",
-               return_value=([(coordinator, SIDE_BOTH)], [])) as resolve:
+    with (
+        patch("custom_components.adjustable_bed.services._resolve_sided_targets",
+              return_value=([(coordinator, SIDE_BOTH)], [])) as resolve,
+        patch("custom_components.adjustable_bed.services._resolve_sided_targets",
+              new=resolve),
+    ):
         yield coordinator, controller, resolve
 
 
 async def test_alarm_dispatches_local_time_and_weekdays(hass, service_target):
     coordinator, controller, _ = service_target
-    await hass.services.async_call(DOMAIN, SERVICE_MALOUF_SET_ALARM, {
+    await hass.services.async_call(DOMAIN, SERVICE_SET_ALARM, {
         "device_id": "bed", "enabled": True, "time": "07:35:00",
-        "weekdays": ["monday", "friday", "sunday"], "preset": "lounge",
+        "weekdays": ["monday", "friday", "sunday"], "wake_action": "lounge",
     }, blocking=True)
     controller.configure_clock_alarm.assert_awaited_once_with(
-        enabled=True, weekdays=(0, 4, 6), hour=7, minute=35, preset="lounge")
+        enabled=True, weekdays=(0, 4, 6), hour=7, minute=35, preset="lounge",
+        head_level=0, foot_level=0)
     kwargs = coordinator.async_execute_controller_command.await_args.kwargs
     assert kwargs["cancel_running"] is False
     assert kwargs["resource"] == "configuration"
@@ -58,16 +77,17 @@ async def test_alarm_dispatches_local_time_and_weekdays(hass, service_target):
 
 async def test_clear_alarm_defaults(hass, service_target):
     _, controller, _ = service_target
-    await hass.services.async_call(DOMAIN, SERVICE_MALOUF_SET_ALARM,
+    await hass.services.async_call(DOMAIN, SERVICE_SET_ALARM,
                                   {"device_id": "bed", "enabled": False}, blocking=True)
     controller.configure_clock_alarm.assert_awaited_once_with(
-        enabled=False, weekdays=(), hour=0, minute=0, preset="zero_g")
+        enabled=False, weekdays=(), hour=0, minute=0, preset="zero_g", head_level=0,
+        foot_level=0)
 
 
 async def test_alarm_seconds_rejected_before_target_resolution(hass, service_target):
     coordinator, _, resolve = service_target
-    with pytest.raises(ServiceValidationError, match="minute precision"):
-        await hass.services.async_call(DOMAIN, SERVICE_MALOUF_SET_ALARM,
+    with pytest.raises(ServiceValidationError, match="whole minutes"):
+        await hass.services.async_call(DOMAIN, SERVICE_SET_ALARM,
                                       {"device_id": "bed", "enabled": True, "time": "07:35:01"},
                                       blocking=True)
     resolve.assert_not_called()
@@ -76,16 +96,22 @@ async def test_alarm_seconds_rejected_before_target_resolution(hass, service_tar
 
 async def test_alarm_preset_is_validated_on_every_target_before_writing(hass, service_target):
     coordinator, controller, resolve = service_target
-    controller.clock_alarm_preset_options += ("memory_2",)
+    controller.alarm_capability = AlarmCapability(
+        wake_actions=(*controller.alarm_capability.wake_actions, "memory_2"), weekdays=True
+    )
     second = MagicMock(spec=AdjustableBedCoordinator)
     second.name = "One-slot bed"
     second.bed_type = BED_TYPE_MALOUF_APP
-    second.capability_controller = SimpleNamespace(supports_clock_alarm=True,
-        clock_alarm_preset_options=("zero_g", "memory_1"))
+    second.controller_side = None
+    second.capability_controller = MagicMock(spec=MaloufAppController, supports_clock_alarm=True,
+        alarm_capability=AlarmCapability(wake_actions=("zero_g", "memory_1"), weekdays=True))
+    second.operation_identity = 2
+    coordinator.operation_identity = 1
     resolve.return_value = ([(coordinator, SIDE_BOTH), (second, SIDE_BOTH)], [])
-    with pytest.raises(ServiceValidationError, match="unavailable"):
-        await hass.services.async_call(DOMAIN, SERVICE_MALOUF_SET_ALARM, {
-            "device_id": ["bed", "second"], "enabled": True, "preset": "memory_2",
+    with raises_key("alarm_wake_action_not_supported", ServiceValidationError):
+        await hass.services.async_call(DOMAIN, SERVICE_SET_ALARM, {
+            "device_id": ["bed", "second"], "enabled": True, "time": "07:00:00",
+            "wake_action": "memory_2",
         }, blocking=True)
     controller.configure_clock_alarm.assert_not_awaited()
     coordinator.async_execute_controller_command.assert_not_awaited()
@@ -94,7 +120,7 @@ async def test_alarm_preset_is_validated_on_every_target_before_writing(hass, se
 
 async def test_clock_sync_is_serialized(hass, service_target):
     coordinator, controller, _ = service_target
-    await hass.services.async_call(DOMAIN, SERVICE_MALOUF_SYNC_CLOCK,
+    await hass.services.async_call(DOMAIN, SERVICE_SYNC_CLOCK,
                                   {"device_id": "bed"}, blocking=True)
     controller.sync_clock.assert_awaited_once_with()
     assert coordinator.async_execute_controller_command.await_args.kwargs["resource"] == "configuration"
@@ -103,8 +129,8 @@ async def test_clock_sync_is_serialized(hass, service_target):
 async def test_clock_sync_rejects_transport_without_clock_before_any_write(hass, service_target):
     _, controller, _ = service_target
     controller.supports_clock_sync = False
-    with pytest.raises(ServiceValidationError, match="does not support clock synchronization"):
-        await hass.services.async_call(DOMAIN, SERVICE_MALOUF_SYNC_CLOCK,
+    with raises_key("clock_sync_not_supported", ServiceValidationError):
+        await hass.services.async_call(DOMAIN, SERVICE_SYNC_CLOCK,
                                       {"device_id": "bed"}, blocking=True)
     controller.sync_clock.assert_not_awaited()
 
@@ -130,6 +156,7 @@ async def test_explicit_split_head_actions_route_main_dual_and_partner_foot(hass
         controller = MaloufAppController(coordinator, app_profile="lucid", model="S755",
                                         transport="richmat_framed")
         coordinator.controller = controller
+        coordinator.controller_side = None
         coordinator.capability_controller = controller
 
         async def execute(command, *, _controller=controller, **kwargs):
@@ -141,8 +168,12 @@ async def test_explicit_split_head_actions_route_main_dual_and_partner_foot(hass
     def resolve(_hass, ids, _side):
         return [(coordinators[name], SIDE_BOTH) for name in ids], []
 
-    with patch("custom_components.adjustable_bed.services._resolve_sided_targets",
-               side_effect=resolve):
+    with (
+        patch("custom_components.adjustable_bed.services._resolve_sided_targets",
+              side_effect=resolve),
+        patch("custom_components.adjustable_bed.services._resolve_sided_targets",
+              side_effect=resolve),
+    ):
         await asyncio.gather(
             hass.services.async_call(DOMAIN, SERVICE_LINAK_MOVE_SIMULTANEOUS, {
                 "device_id": "main", "first_motor": "back", "first_direction": "up",

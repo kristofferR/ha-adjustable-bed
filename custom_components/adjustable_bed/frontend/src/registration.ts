@@ -1,4 +1,5 @@
 import { PLATFORM } from "./discovery";
+import { localizeLanguage } from "./localize";
 import type { AdjustableBedCardConfig, HomeAssistant } from "./types";
 
 export interface CustomCardSuggestion {
@@ -23,10 +24,16 @@ export interface CustomCardsWindow {
 
 const CARD_TYPE = "adjustable-bed-card";
 
-const cardEntry: CustomCardEntry = {
+// The card picker has no hass object yet, so it follows the page language.
+function pageLanguage(): string | undefined {
+  return typeof document !== "undefined"
+    ? document.documentElement.lang || navigator.language : undefined;
+}
+
+const cardEntry = (language?: string): CustomCardEntry => ({
   type: CARD_TYPE,
-  name: "Adjustable Bed Card",
-  description: "Native control card for the Adjustable Bed integration.",
+  name: localizeLanguage(language, "card.picker_name"),
+  description: localizeLanguage(language, "card.picker_description"),
   preview: true,
   documentationURL: "https://github.com/kristofferR/ha-adjustable-bed",
   getEntitySuggestion: (hass, entityId) => {
@@ -40,48 +47,32 @@ const cardEntry: CustomCardEntry = {
       },
     };
   },
-};
+});
 
-export function registerCustomCard(target: CustomCardsWindow): void {
+export function registerCustomCard(
+  target: CustomCardsWindow,
+  language: string | undefined = pageLanguage(),
+): void {
   const cards = (target.customCards ??= []);
   const existingIndex = cards.findIndex((card) => card.type === CARD_TYPE);
 
   if (existingIndex === -1) {
-    cards.push(cardEntry);
+    cards.push(cardEntry(language));
   } else {
-    cards[existingIndex] = cardEntry;
+    cards[existingIndex] = cardEntry(language);
   }
 }
 
-export interface ElementRegistryWindow {
-  customElements: CustomElementRegistry;
-}
-
-/**
- * Define an element where Lovelace will look it up.
- *
- * Home Assistant's app bundle replaces `window.customElements` with the
- * scoped-registry polyfill. When `add_extra_js_url` loads this bundle before
- * that happens, the native definition is invisible to Lovelace's `get()` and
- * `whenDefined()`, so the card shows "Custom element doesn't exist" until the
- * next page load (home-assistant/frontend#53890). The polyfill is in place
- * once `<home-assistant>` is defined, so define again in its registry then.
- */
+// Define once, so a cache-busted second copy of the bundle does not throw on a
+// duplicate definition. Since 2026.11 the frontend loads extra modules after its
+// scoped-registry polyfill (home-assistant/frontend#54444), so the element lands
+// in the registry Lovelace reads.
 export function defineElement(
   tag: string,
   element: CustomElementConstructor,
-  target: ElementRegistryWindow = window,
+  registry: CustomElementRegistry = window.customElements,
 ): void {
-  const registry = target.customElements;
-  if (!registry.get(tag)) {
-    registry.define(tag, element);
-  }
-  void registry.whenDefined("home-assistant").then(() => {
-    const current = target.customElements;
-    if (current !== registry && !current.get(tag)) {
-      current.define(tag, element);
-    }
-  });
+  if (!registry.get(tag)) registry.define(tag, element);
 }
 
 // Register before the custom elements are defined. A cache-busted second copy

@@ -5,14 +5,15 @@ from __future__ import annotations
 import asyncio
 import json
 from types import SimpleNamespace
-from unittest.mock import AsyncMock, MagicMock, call
+from unittest.mock import AsyncMock, MagicMock, call, patch
 
 import pytest
 from homeassistant.const import CONF_ADDRESS, CONF_NAME
 from homeassistant.core import HomeAssistant
-from pytest_homeassistant_custom_component.common import MockConfigEntry
+from homeassistant.exceptions import ServiceValidationError
+from pytest_homeassistant.common import MockConfigEntry
 
-from custom_components.adjustable_bed.beds.keeson import (
+from custom_components.adjustable_bed.beds.keeson.controller import (
     KeesonCommands,
     KeesonController,
     SinoCommands,
@@ -36,6 +37,7 @@ from custom_components.adjustable_bed.const import (
     VARIANT_AUTO,
 )
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
+from tests.error_helpers import raises_key
 
 
 @pytest.fixture
@@ -540,13 +542,12 @@ class TestKeesonPresets:
         mock_bleak_client: MagicMock,
         caplog,
     ):
-        """Test program memory logs warning."""
+        """A bed that cannot save memory refuses to."""
         coordinator = AdjustableBedCoordinator(hass, mock_keeson_config_entry)
         await coordinator.async_connect()
 
-        await coordinator.controller.program_memory(1)
-
-        assert "don't support programming memory presets" in caplog.text
+        with raises_key("feature_not_supported", ServiceValidationError):
+            await coordinator.controller.program_memory(1)
 
 
 class TestKeesonLights:
@@ -722,7 +723,6 @@ class TestKeesonMassage:
             ("sleep_harmony", False),
             ("ergomotion", False),
             ("okin", False),
-            ("serta", False),
             ("sino", False),
             ("purple", False),
         ],
@@ -1305,7 +1305,7 @@ class TestPurpleSmartBaseProtocol:
         controller.write_command = AsyncMock(side_effect=[RuntimeError("write failed"), None])
         sleep = AsyncMock()
         monkeypatch.setattr(
-            "custom_components.adjustable_bed.beds.keeson.asyncio.sleep",
+            "custom_components.adjustable_bed.beds.keeson.controller.asyncio.sleep",
             sleep,
         )
 
@@ -1336,7 +1336,7 @@ class TestPurpleSmartBaseProtocol:
         controller.write_command = AsyncMock()
         sleep = AsyncMock()
         monkeypatch.setattr(
-            "custom_components.adjustable_bed.beds.keeson.asyncio.sleep",
+            "custom_components.adjustable_bed.beds.keeson.controller.asyncio.sleep",
             sleep,
         )
 
@@ -1392,7 +1392,7 @@ class TestSleepHarmonyProtocol:
         controller.write_command = AsyncMock()
         sleep = AsyncMock()
         monkeypatch.setattr(
-            "custom_components.adjustable_bed.beds.keeson.asyncio.sleep",
+            "custom_components.adjustable_bed.beds.keeson.controller.asyncio.sleep",
             sleep,
         )
 
@@ -1426,7 +1426,7 @@ class TestSleepHarmonyProtocol:
         controller.write_command = AsyncMock()
         sleep = AsyncMock()
         monkeypatch.setattr(
-            "custom_components.adjustable_bed.beds.keeson.asyncio.sleep",
+            "custom_components.adjustable_bed.beds.keeson.controller.asyncio.sleep",
             sleep,
         )
 
@@ -1460,7 +1460,7 @@ class TestSleepHarmonyProtocol:
         controller.write_command = AsyncMock()
         sleep = AsyncMock()
         monkeypatch.setattr(
-            "custom_components.adjustable_bed.beds.keeson.asyncio.sleep",
+            "custom_components.adjustable_bed.beds.keeson.controller.asyncio.sleep",
             sleep,
         )
 
@@ -1492,7 +1492,7 @@ class TestSleepHarmonyProtocol:
         controller.write_command = AsyncMock()
         sleep = AsyncMock()
         monkeypatch.setattr(
-            "custom_components.adjustable_bed.beds.keeson.asyncio.sleep",
+            "custom_components.adjustable_bed.beds.keeson.controller.asyncio.sleep",
             sleep,
         )
 
@@ -1508,7 +1508,7 @@ class TestKsbt03cMotorLayout:
 
     def test_is_ksbt03c_name(self):
         """Test KSBT03C name detection."""
-        from custom_components.adjustable_bed.beds.keeson import is_ksbt03c_name
+        from custom_components.adjustable_bed.beds.keeson.controller import is_ksbt03c_name
 
         assert is_ksbt03c_name("KSBT03C300039050")
         assert is_ksbt03c_name("ksbt03c123")
@@ -1644,7 +1644,7 @@ class TestKsbt03cMotorLayout:
 
         assert isinstance(controller, KeesonController)
         assert controller._variant == KEESON_VARIANT_KSBT04C
-        assert not controller._is_sleep_harmony
+        assert controller.profile.key == "ksbt04c"
         assert "ambiguous name" in caplog.text
 
     async def test_factory_selects_sleep_harmony_only_when_explicit(
@@ -1669,7 +1669,7 @@ class TestKsbt03cMotorLayout:
 
         assert isinstance(controller, KeesonController)
         assert controller._variant == KEESON_VARIANT_SLEEP_HARMONY
-        assert controller._is_sleep_harmony
+        assert controller.profile.key == "sleep_harmony"
 
     async def test_present_device_name_overrides_configured_name(
         self,
@@ -1733,7 +1733,6 @@ class TestKsbt03cMotorLayout:
             ("ergomotion", 2, (10, 100)),
             ("okin", 2, (10, 100)),
             ("okin", 3, (5, 200)),
-            ("serta", 2, (10, 100)),
             ("sino", 2, (10, 100)),
             ("sino", 3, (5, 200)),
             ("purple", 2, (10, 100)),
@@ -1786,7 +1785,7 @@ class TestKsbt03cMotorLayout:
         """Test BetterLiving cadence follows the explicit preset flag."""
         coordinator = AdjustableBedCoordinator(hass, mock_keeson_config_entry)
         coordinator._motor_count = motor_count
-        controller = KeesonController(coordinator, variant="base", betterliving_presets=True)
+        controller = KeesonController(coordinator, variant="sino", betterliving_presets=True)
 
         assert controller.motor_pulse_settings() == expected
 
@@ -1805,7 +1804,7 @@ class TestKsbt03cMotorLayout:
         controller = KeesonController(coordinator, variant="ksbt", device_name="KSBT03C300039050")
         controller.write_command = AsyncMock()
         monkeypatch.setattr(
-            "custom_components.adjustable_bed.beds.keeson.asyncio.sleep",
+            "custom_components.adjustable_bed.beds.keeson.controller.asyncio.sleep",
             AsyncMock(),
         )
 
@@ -1851,7 +1850,7 @@ class TestKsbt03cMotorLayout:
         controller.write_command = AsyncMock()
         sleep = AsyncMock()
         monkeypatch.setattr(
-            "custom_components.adjustable_bed.beds.keeson.asyncio.sleep",
+            "custom_components.adjustable_bed.beds.keeson.controller.asyncio.sleep",
             sleep,
         )
 
@@ -1964,7 +1963,7 @@ class TestKsbt03cMotorLayout:
         controller.write_command = AsyncMock()
         sleep = AsyncMock()
         monkeypatch.setattr(
-            "custom_components.adjustable_bed.beds.keeson.asyncio.sleep",
+            "custom_components.adjustable_bed.beds.keeson.controller.asyncio.sleep",
             sleep,
         )
 
@@ -1972,43 +1971,6 @@ class TestKsbt03cMotorLayout:
 
         controller.write_command.assert_not_awaited()
         sleep.assert_not_awaited()
-
-    @pytest.mark.parametrize(
-        ("variant", "expected"),
-        [
-            ("ksbt", 1),
-            ("ksbt_cr", 1),
-            ("ksbt04c", 1),
-            ("sleep_harmony", 1),
-        ],
-    )
-    def test_ksbt_single_shot_count_matches_oem_app(
-        self,
-        hass: HomeAssistant,
-        mock_keeson_config_entry,
-        variant: str,
-        expected: int,
-    ):
-        """Test OEM app one-shots are sent once before any release sequence."""
-        coordinator = AdjustableBedCoordinator(hass, mock_keeson_config_entry)
-        controller = KeesonController(coordinator, variant=variant)
-
-        assert controller._single_shot_count == expected
-
-    async def test_stale_motor_entity_keys(
-        self,
-        hass: HomeAssistant,
-        mock_keeson_config_entry,
-        mock_coordinator_connected,
-    ):
-        """Test stale keys cover the optional motors and the Restonic BT combined cover."""
-        coordinator = AdjustableBedCoordinator(hass, mock_keeson_config_entry)
-        await coordinator.async_connect()
-
-        assert coordinator.controller.stale_motor_entity_keys == frozenset(
-            {"tilt", "lumbar", "back_legs"}
-        )
-
 
 class TestKeesonMassageOffGating:
     """Test massage-off capability gating (issue #408)."""
@@ -2115,7 +2077,7 @@ class TestKsbtMemoryPresets:
         first_call = mock_bleak_client.write_gatt_char.call_args_list[0]
         assert first_call[0][1] == expected_cmd
 
-    async def test_ksbt_preset_memory_invalid_slot_warns(
+    async def test_ksbt_preset_memory_invalid_slot_is_refused(
         self,
         hass: HomeAssistant,
         mock_keeson_config_entry,
@@ -2123,14 +2085,72 @@ class TestKsbtMemoryPresets:
         mock_bleak_client: MagicMock,
         caplog,
     ):
-        """Test out-of-range KSBT memory slot warns and sends nothing."""
+        """An out-of-range KSBT memory slot is refused and sends nothing."""
         coordinator = AdjustableBedCoordinator(hass, mock_keeson_config_entry)
         await coordinator.async_connect()
         controller = KeesonController(coordinator, variant="ksbt")
         coordinator._controller = controller
         mock_bleak_client.write_gatt_char.reset_mock()
 
-        await controller.preset_memory(4)
+        with raises_key("feature_not_supported", ServiceValidationError):
+            await controller.preset_memory(4)
 
-        assert "KSBT memory 4 not supported" in caplog.text
         mock_bleak_client.write_gatt_char.assert_not_called()
+
+
+def test_ergomotion_status_feeds_the_massage_sensors(
+    hass: HomeAssistant, mock_keeson_config_entry
+) -> None:
+    """Ergomotion status levels and timer reach the sensors; repeats publish nothing."""
+    from custom_components.adjustable_bed.sensor import (
+        MASSAGE_SENSOR_DESCRIPTIONS,
+        AdjustableBedMassageSensor,
+    )
+
+    coordinator = AdjustableBedCoordinator(hass, mock_keeson_config_entry)
+    controller = KeesonController(coordinator, variant="ergomotion")
+    head, foot, timer = (
+        AdjustableBedMassageSensor(coordinator, description)
+        for description in MASSAGE_SENSOR_DESCRIPTIONS
+    )
+    assert (head.native_value, foot.native_value, timer.native_value) == (None, None, None)
+    coordinator._controller = controller
+    # Connected before the first report: levels read zero, the timer unknown.
+    assert (head.native_value, foot.native_value, timer.native_value) == (0, 0, None)
+    status = bytearray(16)
+    status[0], status[5], status[6], status[14] = 0xED, 3, 5, 2
+    with patch.object(coordinator, "save_app_state"):
+        controller._parse_notification(bytes(status))
+        with patch.object(coordinator, "handle_controller_state_updates") as publish:
+            controller._parse_notification(bytes(status))
+        publish.assert_not_called()
+        assert (head.native_value, foot.native_value, timer.native_value) == (3, 5, 20)
+        assert timer.native_unit_of_measurement == "min"
+        status[14] = 0
+        controller._parse_notification(bytes(status))
+        assert timer.native_value is None
+    # Between connections the last report stays visible.
+    coordinator._controller = None
+    assert (head.native_value, foot.native_value) == (3, 5)
+
+
+@pytest.mark.parametrize(
+    ("variant", "has_stop"),
+    [("base", True), ("ergomotion", True), ("ksbt04c", True), ("ksbt", False)],
+)
+async def test_stop_follows_the_profile_release(
+    hass: HomeAssistant,
+    mock_keeson_config_entry,
+    mock_coordinator_connected,
+    mock_bleak_client,
+    variant,
+    has_stop,
+) -> None:
+    """Stop exists exactly where an explicit stop sends the profile's release key."""
+    coordinator = AdjustableBedCoordinator(hass, mock_keeson_config_entry)
+    await coordinator.async_connect()
+    controller = KeesonController(coordinator, variant=variant)
+    assert controller.supports_stop_all is has_stop
+    mock_bleak_client.write_gatt_char.reset_mock()
+    await controller.stop_all()
+    assert bool(mock_bleak_client.write_gatt_char.await_count) is has_stop

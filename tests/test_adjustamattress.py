@@ -1,4 +1,4 @@
-"""Row067 exact artifact vectors, all 28 layouts and finite command lifecycles."""
+"""AdjustaMattress exact artifact vectors, all 28 layouts and finite command lifecycles."""
 
 from __future__ import annotations
 
@@ -12,7 +12,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-from custom_components.adjustable_bed.beds.adjustamattress import (
+from custom_components.adjustable_bed.beds.adjustamattress.controller import (
     FFE_NOTIFY,
     FFE_NOTIFY_SERVICE,
     FFE_WRITE,
@@ -23,7 +23,7 @@ from custom_components.adjustable_bed.beds.adjustamattress import (
     NUS_WRITE,
     AdjustaMattressController,
 )
-from custom_components.adjustable_bed.beds.adjustamattress_protocol import (
+from custom_components.adjustable_bed.beds.adjustamattress.protocol import (
     BASE_ACTIONS,
     CYCLIC,
     DEDICATED,
@@ -35,7 +35,6 @@ from custom_components.adjustable_bed.beds.adjustamattress_protocol import (
     has_snore,
     model_from_name,
     parse,
-    scan_admits,
 )
 from custom_components.adjustable_bed.const import (
     ADJUSTAMATTRESS_VARIANTS,
@@ -149,9 +148,18 @@ async def test_all_28_profile_gates_roles_and_native_entities(model, layout):
     await c.async_discover_capabilities()
     assert set(c.position_actions) == set(BASE_ACTIONS + LAYOUT_ACTIONS[layout])
     assert c.control_characteristic_uuid == (NUS_WRITE if model in ("P3", "P4") else FFE_WRITE)
-    keys = {s.key for s in c.controller_select_specs}
-    assert ("adjustamattress_head_selector" in keys) == dedicated_massage(model, layout)
-    assert ("adjustamattress_snore_control" in keys) == has_snore(model, layout)
+    numbers = {s.key for s in c.controller_number_specs}
+    assert ("adjustamattress_head_massage" in numbers) == dedicated_massage(model, layout)
+    # Dedicated timer keys are the massage timer select; cyclic beds keep their cycle.
+    assert c.supports_massage_timer == dedicated_massage(model, layout)
+    assert c.massage_timer_options == ([10, 20, 30] if c.supports_massage_timer else [])
+    assert not c.massage_timer_can_turn_off
+    buttons = {s.key for s in c.controller_button_specs}
+    assert not any(key.startswith("adjustamattress_timer") for key in buttons)
+    assert ("adjustamattress_massage_timer" in buttons) == (not dedicated_massage(model, layout))
+    switches = {s.key for s in c.controller_switch_specs}
+    assert ("adjustamattress_snore_control" in switches) == has_snore(model, layout)
+    assert ("adjustamattress_sleep" in switches) == has_snore(model, layout)
     assert ("underbedLighting" in c.held_control_options) == (
         layout not in (2, 4) and model != "P2"
     )
@@ -164,19 +172,18 @@ async def test_all_28_profile_gates_roles_and_native_entities(model, layout):
 
 
 @pytest.mark.parametrize(
-    "name,scan,model,reconnect_model",
+    "name,model,reconnect_model",
     [
-        ("Smartbed-1", True, "P3", "P3"),
-        ("smartbed-1", True, "P1", "P1"),
-        ("OKIN-1", True, "P1", "P1"),
-        ("SLEEP_V1", True, "P4", "P4"),
-        ("sleep_v1", False, "P1", "P1"),
-        ("SleepBT-1", False, "P1", "P4"),
-        ("", False, "P1", "P1"),
+        ("Smartbed-1", "P3", "P3"),
+        ("smartbed-1", "P1", "P1"),
+        ("OKIN-1", "P1", "P1"),
+        ("SLEEP_V1", "P4", "P4"),
+        ("sleep_v1", "P1", "P1"),
+        ("SleepBT-1", "P1", "P4"),
+        ("", "P1", "P1"),
     ],
 )
-def test_name_constructor_is_separate_from_admission(name, scan, model, reconnect_model):
-    assert scan_admits(name) is scan
+def test_model_from_name(name, model, reconnect_model):
     assert model_from_name(name, reconnect=False) == model
     assert model_from_name(name) == reconnect_model
 
@@ -329,7 +336,7 @@ async def test_all_32_p4_sleep_states(sleeping, enabled, demo, strength):
     assert c.state.demonstration == demo
 
 
-async def test_alarm_commit_and_drafts_and_privacy_are_separate():
+async def test_alarm_switch_sends_the_set_alarm_and_anti_snore_needs_no_notice():
     c = await ready("P4")
     c.write_command = AsyncMock()
     with patch.object(c, "_delay", new=AsyncMock()):
@@ -340,16 +347,18 @@ async def test_alarm_commit_and_drafts_and_privacy_are_separate():
         await c.set_setting("alarm_commit", "on")
     assert c.write_command.call_args_list[0].args[0] == bytes((8, 5, 255, 5, 7, 30, 0, 1, 0, 0))
     assert c.write_command.call_args_list[-1].args[0] == b"\x00\xc0"
-    with pytest.raises(ValueError, match="privacy"):
-        await c.set_setting("snore_control", "on")
-    c.local_setting("privacy", "accepted")
     c.local_setting("strength_setting", "2")
-    await c.set_setting("snore_control", "on")
+    snore = next(s for s in c.controller_switch_specs if s.key == "adjustamattress_snore_control")
+    await snore.set_fn(c, True)
     assert c.write_command.call_args.args[0] == bytes((5, 11, 1, 6, 1, 35, 0))
-    assert c.persisted_app_state == {"privacy": True}
+    # The switch shows the sent setting until a status reply replaces it.
+    c._coordinator.handle_controller_state_update.assert_called_with(
+        "adjustamattress_snore_enabled", True
+    )
+    assert c.persisted_app_state is None
 
 
-async def test_p2_alarm_disable_sentinel_and_selectors():
+async def test_p2_alarm_disable_sentinel_and_massage_levels():
     c = await ready("P2")
     c.write_command = AsyncMock()
     with patch.object(c, "_delay", new=AsyncMock()):
@@ -358,11 +367,30 @@ async def test_p2_alarm_disable_sentinel_and_selectors():
     assert c.write_command.call_args_list[0].args[0][9:13] == b"\xff" * 4
     for zone in ("head", "foot", "wave"):
         spec = next(
-            s for s in c.controller_select_specs if s.key == f"adjustamattress_{zone}_selector"
+            s for s in c.controller_number_specs if s.key == f"adjustamattress_{zone}_massage"
         )
-        for i in range(4):
-            await spec.select_fn(c, str(i))
+        assert (spec.native_min_value, spec.native_max_value) == (1, 4)
+        for level in range(1, 5):
+            await spec.set_fn(c, level)
         assert c.client.start_notify.await_count == 0
+
+
+async def test_p2_massage_timer_select_holds_the_app_timer_key():
+    c = await ready("P2", 1)
+    held = []
+
+    async def hold(control, duration_ms):
+        held.append(control)
+
+    with patch.object(c, "hold_control", new=hold):
+        for minutes in (10, 20, 30):
+            await c.set_massage_timer(minutes)
+        with pytest.raises(ValueError):
+            await c.set_massage_timer(0)
+    # The same held keys the timer buttons pressed, one per duration.
+    assert held == ["timer10", "timer20", "timer30"]
+    (update,) = c._coordinator.handle_controller_state_updates.call_args.args
+    assert (update.key, update.value) == ("massage_timer", 30)
 
 
 async def test_notification_busy_timer_is_cancelled_on_disconnect():
@@ -411,18 +439,20 @@ async def test_failed_nus_subscription_does_not_send_hydration():
 
 async def test_declared_entity_actions_revalidate_current_profile_and_serialize(hass):
     from custom_components.adjustable_bed.number import AdjustableBedControllerNumber
-    from custom_components.adjustable_bed.select import AdjustableBedControllerSelect
     from tests.test_controller_custom_entities import runtime_for
 
     c = await ready("P2", 1)
     c.write_command = AsyncMock()
     runtime = runtime_for(hass, c)
-    select = AdjustableBedControllerSelect(
+    level = AdjustableBedControllerNumber(
         runtime,
-        next(s for s in c.controller_select_specs if s.key == "adjustamattress_head_selector"),
+        next(s for s in c.controller_number_specs if s.key == "adjustamattress_head_massage"),
     )
-    await select.async_select_option("2")
+    # Level 3 is the head's third dedicated key, as the old "Level 3" option sent.
+    await level.async_set_native_value(3)
     assert c.write_command.call_args.args[0] == bytes.fromhex("e5fe1610000012e4")
+    (update,) = c._coordinator.handle_controller_state_updates.call_args.args
+    assert (update.key, update.value) == ("adjustamattress_head_massage", 3)
     runtime.async_execute_controller_command.assert_awaited_once()
     c.write_command.reset_mock()
     number = AdjustableBedControllerNumber(runtime, c.controller_number_specs[0])
@@ -433,10 +463,10 @@ async def test_declared_entity_actions_revalidate_current_profile_and_serialize(
     from homeassistant.exceptions import ServiceValidationError
 
     with pytest.raises(ServiceValidationError):
-        await select.async_select_option("2")
+        await level.async_set_native_value(3)
 
 
-async def test_disabled_only_demonstration_and_persisted_privacy():
+async def test_disabled_only_demonstration():
     c = await ready("P4")
     c.write_command = AsyncMock()
     with pytest.raises(ValueError):
@@ -444,14 +474,10 @@ async def test_disabled_only_demonstration_and_persisted_privacy():
     c.state.snore_enabled = False
     await c.execute_action("demonstration")
     assert c.write_command.call_args.args[0] == bytes.fromhex("050b0201012300")
-    c.restore_persisted_app_state({"privacy": True})
-    assert c.persisted_app_state == {"privacy": True}
-    with pytest.raises(ValueError):
-        c.restore_persisted_app_state({"privacy": "true"})
 
 
 async def test_first_use_restore_and_reconnect_keep_local_choices(hass):
-    from pytest_homeassistant_custom_component.common import MockConfigEntry
+    from pytest_homeassistant.common import MockConfigEntry
 
     from custom_components.adjustable_bed.const import DOMAIN
     from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
@@ -470,13 +496,10 @@ async def test_first_use_restore_and_reconnect_keep_local_choices(hass):
     old = AdjustaMattressController(coordinator, protocol_variant="P4_L0")
     coordinator._controller = old
     await coordinator._async_restore_app_state(old)
-    assert old.persisted_app_state == {"privacy": False}
     saved = {s.key: s for s in old.controller_select_specs}
-    privacy = saved["adjustamattress_privacy"].local_select_fn
     alarm_type = saved["adjustamattress_alarm_draft_type"].local_select_fn
     strength = saved["adjustamattress_strength_setting"].local_select_fn
-    assert privacy is not None and alarm_type is not None and strength is not None
-    privacy("accepted")
+    assert alarm_type is not None and strength is not None
     await old.set_number("alarm_draft_hour", 8)
     await old.set_number("alarm_draft_minute", 30)
     old.on_disconnect()
@@ -488,7 +511,6 @@ async def test_first_use_restore_and_reconnect_keep_local_choices(hass):
     assert live._preferences is old._preferences
     assert (live._preferences.alarm_hour, live._preferences.alarm_minute) == (8, 30)
     assert live._preferences.alarm_type == 17
-    assert live.persisted_app_state == {"privacy": True}
     live.state.alarm_on = True
     with pytest.raises(ValueError, match="Turn off"):
         alarm_type("9")
@@ -504,7 +526,7 @@ async def test_first_use_restore_and_reconnect_keep_local_choices(hass):
     other = AdjustaMattressController(coordinator, protocol_variant="P4_L3")
     coordinator._controller = other
     with pytest.raises(ValueError, match="profile has changed"):
-        privacy("not_accepted")
+        strength("1")
 
 
 @pytest.mark.parametrize("model", MODELS)
@@ -727,7 +749,9 @@ async def test_sleep_status_timeout_cannot_reuse_earlier_reply_or_send_toggle():
     assert c._sleep_status.is_set()
     c.write_command = AsyncMock()
     with (
-        patch("custom_components.adjustable_bed.beds.adjustamattress.STATUS_TIMEOUT_S", 0),
+        patch(
+            "custom_components.adjustable_bed.beds.adjustamattress.controller.STATUS_TIMEOUT_S", 0
+        ),
         pytest.raises(ConnectionError, match="No fresh sleep status"),
     ):
         await c.execute_action("sleep")
@@ -748,3 +772,30 @@ async def test_cancelled_sleep_status_wait_sends_no_toggle():
         task.cancel()
         with pytest.raises(asyncio.CancelledError):
             await task
+
+
+async def test_sleep_switch_toggles_only_when_the_fresh_status_differs():
+    c = await ready("P4")
+    c.write_command = AsyncMock()
+    sleep = next(s for s in c.controller_switch_specs if s.key == "adjustamattress_sleep")
+    with (
+        patch.object(c, "_refresh_sleep_state", new=AsyncMock()),
+        patch.object(c, "_delay", new=AsyncMock()),
+    ):
+        c.state.sleeping = True
+        await sleep.set_fn(c, True)
+        c.write_command.assert_not_awaited()
+        await sleep.set_fn(c, False)
+    sent = [call.args[0] for call in c.write_command.call_args_list]
+    assert sent[0] == frame("P4", "toggleSleeping", sleeping=True)
+
+
+async def test_anti_snore_off_after_a_demonstration_publishes_no_setting():
+    c = await ready("P4")
+    c.write_command = AsyncMock()
+    c.state.demonstration = True
+    await c.set_setting("snore_control", "off")
+    assert not any(
+        call.args[0] == "adjustamattress_snore_enabled"
+        for call in c._coordinator.handle_controller_state_update.call_args_list
+    )

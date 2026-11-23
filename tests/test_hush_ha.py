@@ -10,16 +10,16 @@ from bleak.exc import BleakError
 from homeassistant.config_entries import ConfigEntryState
 from homeassistant.exceptions import ServiceValidationError
 from homeassistant.helpers import device_registry as dr
-from pytest_homeassistant_custom_component.common import MockConfigEntry
+from pytest_homeassistant.common import MockConfigEntry
 
 from custom_components.adjustable_bed import _async_ensure_paired_device_registry, button, cover
-from custom_components.adjustable_bed.beds.hush_base import HushBaseController
-from custom_components.adjustable_bed.beds.hush_sleep import HushSleepController
-from custom_components.adjustable_bed.casper_base_protocol import Request
-from custom_components.adjustable_bed.casper_base_services import (
+from custom_components.adjustable_bed.beds.casper_base.protocol import Request
+from custom_components.adjustable_bed.beds.casper_base.services import (
     async_register_casper_base_services,
 )
-from custom_components.adjustable_bed.casper_sleep_protocol import envelope
+from custom_components.adjustable_bed.beds.casper_sleep.protocol import envelope
+from custom_components.adjustable_bed.beds.hush_base.controller import HushBaseController
+from custom_components.adjustable_bed.beds.hush_sleep.controller import HushSleepController
 from custom_components.adjustable_bed.const import DOMAIN
 from custom_components.adjustable_bed.controller_factory import create_controller
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
@@ -140,14 +140,14 @@ async def test_service_preflight_and_public_buttons(hass):
     assert bytes(c.client.write_gatt_char.await_args.args[1]).hex() == "6e20090404010001a1"
     entities = []
     await button.async_setup_entry(hass, entry, entities.extend)
-    assert any(e.translation_key == "hush_base_action" for e in entities)
+    assert any((e.translation_key or "").startswith("catalog_") for e in entities)
     # Preflight capability is exposed separately from the Casper service.
     with pytest.raises(ServiceValidationError):
         await hass.services.async_call(
             DOMAIN, "hush_base", {"device_id": ["missing"], "operation": "rgb_power"}, blocking=True
         )
     c.client.write_gatt_char.reset_mock()
-    entity = next(e for e in entities if e.translation_key == "hush_base_action")
+    entity = next(e for e in entities if (e.translation_key or "").startswith("catalog_"))
     with patch.object(c, "async_connect", AsyncMock(return_value=True)):
         await entity.async_press()
     assert c.client.write_gatt_char.await_count
@@ -308,7 +308,7 @@ async def test_monitoring_recovers_through_actual_notify_and_write_paths(hass, f
         assert attempts >= 2
         assert controller.requests_connection_recovery
         assert controller.requires_persistent_connection
-        assert coordinator.controller_state["casper_sleep_L_heart"] == "65"
+        assert coordinator.controller_state["casper_sleep_L_heart"] == 65
         await controller.async_execute_casper_base_request(Request("sensor_stop"))
         await asyncio.gather(poll, return_exceptions=True)
     assert not controller.requests_connection_recovery

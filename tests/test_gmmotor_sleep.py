@@ -7,17 +7,22 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 from homeassistant.core import HomeAssistant
 
-from custom_components.adjustable_bed.beds.gmmotor_sleep import GmmotorSleepController
-from custom_components.adjustable_bed.gmmotor_requests import Request
-from custom_components.adjustable_bed.gmmotor_sleep_protocol import frame
-from custom_components.adjustable_bed.gmmotor_sleep_state import (
+from custom_components.adjustable_bed.beds.gmmotor.requests import Request
+from custom_components.adjustable_bed.beds.gmmotor.sleep import GmmotorSleepController
+from custom_components.adjustable_bed.beds.gmmotor.sleep_state import (
     ClockUpdate,
     Followup,
     ReportSize,
     Stream,
     dispatch,
 )
-from custom_components.adjustable_bed.gmmotor_transport import SLEEP_NOTIFY, SLEEP_WRITE, Transport
+from custom_components.adjustable_bed.beds.gmmotor.transport import (
+    SLEEP_NOTIFY,
+    SLEEP_WRITE,
+    Transport,
+)
+from custom_components.adjustable_bed.codec.sleep_envelope import frame
+from tests.state_helpers import published
 
 
 def controller(hass: HomeAssistant, *, sxb: bool = True) -> GmmotorSleepController:
@@ -37,7 +42,7 @@ def controller(hass: HomeAssistant, *, sxb: bool = True) -> GmmotorSleepControll
 
 async def test_frame_is_chunked_at_mtu_without_per_chunk_delay(hass: HomeAssistant) -> None:
     ctrl = controller(hass, sxb=False)
-    with patch("custom_components.adjustable_bed.beds.gmmotor_sleep._QUEUE_TICK", 0):
+    with patch("custom_components.adjustable_bed.beds.gmmotor.sleep._QUEUE_TICK", 0):
         await ctrl._send("q_part")
     calls = ctrl.client.write_gatt_char.call_args_list
     chunks = [call.args[1] for call in calls]
@@ -178,7 +183,7 @@ def test_live_receive_uses_actual_consumer_gates(hass: HomeAssistant) -> None:
         {"id": 7, "cmd": "q_realtime", "val": {"L": [0, -2, 65, 17, 1], "R": [1]}}
     ).encode()
     ctrl._receive(MagicMock(uuid="notify"), bytearray(frame(payload, 7)))
-    update = ctrl._coordinator.handle_controller_state_updates.call_args.args[0]
+    update = published(*ctrl._coordinator.handle_controller_state_updates.call_args.args)
     assert update["gmmotor_sleep_left"] == {
         "first_value": "65",
         "second_value": "17",
@@ -226,12 +231,12 @@ async def test_sxb_stale_window_keeps_a_seen_side_then_clears_each_empty_window(
         bytearray(frame(b'{"id":7,"cmd":"q_realtime","val":{"L":[0,1,65,17,0],"R":[1]}}', 7)),
     )
     ctrl._stale_tick()
-    updates = ctrl._coordinator.handle_controller_state_updates.call_args.args[0]
+    updates = published(*ctrl._coordinator.handle_controller_state_updates.call_args.args)
     assert "gmmotor_sleep_left" not in updates
     assert updates["gmmotor_sleep_right"]["online"] is False
     ctrl._stale_timer.cancel()
     ctrl._stale_tick()
-    updates = ctrl._coordinator.handle_controller_state_updates.call_args.args[0]
+    updates = published(*ctrl._coordinator.handle_controller_state_updates.call_args.args)
     assert updates["gmmotor_sleep_left"]["online"] is False
     assert updates["gmmotor_sleep_left"]["first_value"] is None
     ctrl.on_disconnect()
@@ -251,3 +256,92 @@ async def test_notification_cleanup_clears_resources_without_ending_live_intent(
     assert ctrl._live_enabled and ctrl._poll_timer is None and timer.cancelled()
     assert ctrl._transport is None and not ctrl._subscriptions
     ctrl.client.stop_notify.assert_awaited_once()
+
+
+async def test_turning_live_data_off_never_takes_the_link(hass: HomeAssistant) -> None:
+    from custom_components.adjustable_bed.switch import AdjustableBedControllerSwitch
+
+    ctrl = controller(hass)
+    ctrl._live_enabled = True
+    runtime = MagicMock(capability_controller=ctrl, controller=ctrl)
+    runtime.async_execute_controller_command = AsyncMock()
+    runtime.entity_unique_id.side_effect = lambda key: f"bed_{key}"
+    (spec,) = ctrl.controller_switch_specs
+    switch = AdjustableBedControllerSwitch(runtime, spec)
+    await switch.async_turn_off()
+    runtime.async_execute_controller_command.assert_not_awaited()
+    assert not ctrl._live_enabled
+    await switch.async_turn_on()
+    runtime.async_execute_controller_command.assert_awaited_once()
+
+
+async def test_off_drops_a_pending_on_and_queued_polls(hass: HomeAssistant) -> None:
+    from custom_components.adjustable_bed.switch import AdjustableBedControllerSwitch
+
+    ctrl = controller(hass)
+    runtime = MagicMock(capability_controller=ctrl, controller=ctrl)
+    admitted = asyncio.Event()
+    pending: list = []
+
+    async def execute(apply, **_kwargs):
+        pending.append(apply)
+        await admitted.wait()
+        await apply(ctrl)
+
+    runtime.async_execute_controller_command = execute
+    runtime.entity_unique_id.side_effect = lambda key: f"bed_{key}"
+    (spec,) = ctrl.controller_switch_specs
+    switch = AdjustableBedControllerSwitch(runtime, spec)
+    turning_on = asyncio.create_task(switch.async_turn_on())
+    await asyncio.sleep(0)
+    assert pending
+    generation = ctrl._generation
+    await switch.async_turn_off()
+    assert ctrl._generation > generation  # Queued polls of the old stream are void.
+    admitted.set()
+    await turning_on
+    assert not ctrl._live_enabled
+    ctrl._coordinator.client.write_gatt_char.assert_not_awaited()
+
+
+async def test_off_during_a_queued_polls_send_delay_sends_nothing(hass: HomeAssistant) -> None:
+    ctrl = controller(hass)
+    ctrl._live_enabled = True
+
+    async def execute(apply, **_kwargs):
+        await apply(ctrl)
+
+    ctrl._coordinator.async_execute_controller_command = execute
+    ctrl._queue("q_realtime")
+    for _ in range(3):
+        await asyncio.sleep(0)  # The poll is admitted and waits in the send delay.
+    ctrl._stop_live()
+    await asyncio.gather(*ctrl._tasks)
+    ctrl._coordinator.client.write_gatt_char.assert_not_awaited()
+
+
+async def test_off_while_a_poll_waits_for_the_write_lock_sends_nothing(
+    hass: HomeAssistant,
+) -> None:
+    ctrl = controller(hass)
+    ctrl._live_enabled = True
+
+    async def execute(apply, **_kwargs):
+        await apply(ctrl)
+
+    ctrl._coordinator.async_execute_controller_command = execute
+    async with ctrl._write_lock:
+        ctrl._queue("q_realtime")
+        await asyncio.sleep(0.2)  # Past the send delay, now waiting for the lock.
+        ctrl._stop_live()
+    await asyncio.gather(*ctrl._tasks)
+    ctrl._coordinator.client.write_gatt_char.assert_not_awaited()
+
+
+@pytest.mark.parametrize("sxb", [False, True])
+async def test_shared_clock_sync_sets_the_module_time(hass: HomeAssistant, sxb: bool) -> None:
+    ctrl = controller(hass, sxb=sxb)
+    assert ctrl.supports_clock_sync
+    with patch.object(ctrl, "async_execute_gmmotor_request", AsyncMock()) as request:
+        await ctrl.sync_clock()
+    request.assert_awaited_once_with(Request("sensor_time"))

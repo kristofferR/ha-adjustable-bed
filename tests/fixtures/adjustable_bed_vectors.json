@@ -1,0 +1,482 @@
+[
+  {
+    "table": "25_42_02",
+    "action": "check_massage",
+    "bytes": "02 04",
+    "mode": "RAW_QUERY"
+  },
+  {
+    "table": "25_42_02",
+    "action": "feet_down",
+    "bytes": "08 02 00 00 00 08 00 00 00 00",
+    "mode": "HOLD"
+  },
+  {
+    "table": "25_42_02",
+    "action": "feet_up",
+    "bytes": "08 02 00 00 00 04 00 00 00 00",
+    "mode": "HOLD"
+  },
+  {
+    "table": "25_42_02",
+    "action": "head_down",
+    "bytes": "08 02 00 00 00 02 00 00 00 00",
+    "mode": "HOLD"
+  },
+  {
+    "table": "25_42_02",
+    "action": "head_up",
+    "bytes": "08 02 00 00 00 01 00 00 00 00",
+    "mode": "HOLD"
+  },
+  {
+    "table": "25_42_02",
+    "action": "light",
+    "bytes": "08 02 00 02 00 00 00 00 00 00",
+    "mode": "HOLD"
+  },
+  {
+    "table": "25_42_02",
+    "action": "lumbar_down",
+    "bytes": "08 02 00 00 00 20 00 00 00 00",
+    "mode": "HOLD"
+  },
+  {
+    "table": "25_42_02",
+    "action": "lumbar_up",
+    "bytes": "08 02 00 00 00 10 00 00 00 00",
+    "mode": "HOLD"
+  },
+  {
+    "table": "25_42_02",
+    "action": "massage_on",
+    "bytes": "08 02 00 00 01 00 00 00 00 00",
+    "mode": "FINITE"
+  },
+  {
+    "table": "25_42_02",
+    "action": "massage_stop",
+    "bytes": "08 02 02 00 00 00 00 00 00 00",
+    "mode": "FINITE"
+  },
+  {
+    "table": "25_42_02",
+    "action": "anti_snore",
+    "bytes": "08 02 00 00 80 00 00 00 00 00",
+    "mode": "HOLD"
+  },
+  {
+    "table": "25_42_02",
+    "action": "flat",
+    "bytes": "08 02 08 00 00 00 00 00 00 00",
+    "mode": "HOLD"
+  },
+  {
+    "table": "25_42_02",
+    "action": "lounge",
+    "bytes": "08 02 00 00 20 00 00 00 00 00",
+    "mode": "HOLD"
+  },
+  {
+    "table": "25_42_02",
+    "action": "incline",
+    "bytes": "08 02 00 00 40 00 00 00 00 00",
+    "mode": "HOLD"
+  },
+  {
+    "table": "25_42_02",
+    "action": "zero_g",
+    "bytes": "08 02 00 00 10 00 00 00 00 00",
+    "mode": "HOLD"
+  },
+  {
+    "table": "25_42_02",
+    "action": "save_anti_snore",
+    "bytes": "08 02 08 00 80 00 00 00 00 00",
+    "mode": "HOLD"
+  },
+  {
+    "table": "25_42_02",
+    "action": "save_lounge",
+    "bytes": "08 02 08 00 20 00 00 00 00 00",
+    "mode": "HOLD"
+  },
+  {
+    "table": "25_42_02",
+    "action": "save_incline",
+    "bytes": "08 02 08 00 40 00 00 00 00 00",
+    "mode": "HOLD"
+  },
+  {
+    "table": "25_42_02",
+    "action": "save_zero_g",
+    "bytes": "08 02 08 00 10 00 00 00 00 00",
+    "mode": "HOLD"
+  },
+  {
+    "table": "25_42_02",
+    "action": "stop",
+    "bytes": "08 02 00 00 00 00 00 00 00 00",
+    "mode": "STOP"
+  },
+  {
+    "table": "25_42_02",
+    "action": "massage_down",
+    "bytes": "08 02 01 80 00 00 00 00 00 00",
+    "mode": "HOLD"
+  },
+  {
+    "table": "25_42_02",
+    "action": "massage_up",
+    "bytes": "08 02 00 00 0c 00 00 00 00 00",
+    "mode": "HOLD"
+  },
+  {
+    "table": "25_42_02",
+    "action": "wave_1",
+    "bytes": "08 02 00 00 00 00 00 08 00 00",
+    "mode": "HOLD"
+  },
+  {
+    "table": "25_42_02",
+    "action": "wave_2",
+    "bytes": "08 02 00 00 00 00 00 10 00 00",
+    "mode": "HOLD"
+  },
+  {
+    "table": "25_42_02",
+    "action": "wave_3",
+    "bytes": "08 02 00 00 00 00 00 20 00 00",
+    "mode": "HOLD"
+  },
+  {
+    "table": "35_22_01",
+    "action": "check_massage",
+    "bytes": "5a b0 00 a5",
+    "mode": "RAW_QUERY"
+  },
+  {
+    "table": "35_22_01",
+    "action": "feet_down",
+    "bytes": "5a 01 03 10 30 03 a5",
+    "mode": "HOLD"
+  },
+  {
+    "table": "35_22_01",
+    "action": "feet_up",
+    "bytes": "5a 01 03 10 30 02 a5",
+    "mode": "HOLD"
+  },
+  {
+    "table": "35_22_01",
+    "action": "head_down",
+    "bytes": "5a 01 03 10 30 01 a5",
+    "mode": "HOLD"
+  },
+  {
+    "table": "35_22_01",
+    "action": "head_up",
+    "bytes": "5a 01 03 10 30 00 a5",
+    "mode": "HOLD"
+  },
+  {
+    "table": "35_22_01",
+    "action": "light",
+    "bytes": "5a 01 03 10 30 71 a5",
+    "mode": "HOLD"
+  },
+  {
+    "table": "35_22_01",
+    "action": "massage_on",
+    "bytes": "5a 01 03 10 30 52 a5",
+    "mode": "FINITE"
+  },
+  {
+    "table": "35_22_01",
+    "action": "massage_stop",
+    "bytes": "5a 01 03 10 30 6f a5",
+    "mode": "FINITE"
+  },
+  {
+    "table": "35_22_01",
+    "action": "anti_snore",
+    "bytes": "5a 01 03 10 30 16 a5",
+    "mode": "HOLD"
+  },
+  {
+    "table": "35_22_01",
+    "action": "flat",
+    "bytes": "5a 01 03 10 30 10 a5",
+    "mode": "HOLD"
+  },
+  {
+    "table": "35_22_01",
+    "action": "lounge",
+    "bytes": "5a 01 03 10 30 12 a5",
+    "mode": "HOLD"
+  },
+  {
+    "table": "35_22_01",
+    "action": "incline",
+    "bytes": "5a 01 03 10 30 11 a5",
+    "mode": "HOLD"
+  },
+  {
+    "table": "35_22_01",
+    "action": "zero_g",
+    "bytes": "5a 01 03 10 30 13 a5",
+    "mode": "HOLD"
+  },
+  {
+    "table": "35_22_01",
+    "action": "save_anti_snore",
+    "bytes": "5a 01 03 10 30 93 a5",
+    "mode": "HOLD"
+  },
+  {
+    "table": "35_22_01",
+    "action": "save_lounge",
+    "bytes": "5a 01 03 10 30 91 a5",
+    "mode": "HOLD"
+  },
+  {
+    "table": "35_22_01",
+    "action": "save_incline",
+    "bytes": "5a 01 03 10 30 92 a5",
+    "mode": "HOLD"
+  },
+  {
+    "table": "35_22_01",
+    "action": "save_zero_g",
+    "bytes": "5a 01 03 10 30 90 a5",
+    "mode": "HOLD"
+  },
+  {
+    "table": "35_22_01",
+    "action": "stop",
+    "bytes": "5a 01 03 10 30 0f a5",
+    "mode": "STOP"
+  },
+  {
+    "table": "35_22_01",
+    "action": "massage_down",
+    "bytes": "5a 01 03 10 40 61 a5",
+    "mode": "HOLD"
+  },
+  {
+    "table": "35_22_01",
+    "action": "massage_up",
+    "bytes": "5a 01 03 10 40 60 a5",
+    "mode": "HOLD"
+  },
+  {
+    "table": "35_22_01",
+    "action": "wave_1",
+    "bytes": "5a 01 03 10 30 52 a5",
+    "mode": "HOLD"
+  },
+  {
+    "table": "35_22_01",
+    "action": "wave_2",
+    "bytes": "5a 01 03 10 30 53 a5",
+    "mode": "HOLD"
+  },
+  {
+    "table": "35_22_01",
+    "action": "wave_3",
+    "bytes": "5a 01 03 10 30 54 a5",
+    "mode": "HOLD"
+  },
+  {
+    "table": "35_22_01",
+    "action": "voice_feet_down",
+    "bytes": "5a 01 03 10 40 03 a5",
+    "mode": "VOICE_SINGLE"
+  },
+  {
+    "table": "35_22_01",
+    "action": "voice_feet_up",
+    "bytes": "5a 01 03 10 40 02 a5",
+    "mode": "VOICE_SINGLE"
+  },
+  {
+    "table": "35_22_01",
+    "action": "voice_head_down",
+    "bytes": "5a 01 03 10 40 01 a5",
+    "mode": "VOICE_SINGLE"
+  },
+  {
+    "table": "35_22_01",
+    "action": "voice_head_up",
+    "bytes": "5a 01 03 10 40 00 a5",
+    "mode": "VOICE_SINGLE"
+  },
+  {
+    "table": "35_22_01",
+    "action": "voice_lumbar_down",
+    "bytes": "5a 01 03 10 40 07 a5",
+    "mode": "VOICE_SINGLE"
+  },
+  {
+    "table": "35_22_01",
+    "action": "voice_lumbar_up",
+    "bytes": "5a 01 03 10 40 06 a5",
+    "mode": "VOICE_SINGLE"
+  },
+  {
+    "table": "35_22_01",
+    "action": "voice_stop",
+    "bytes": "5a 01 03 10 30 1f a5",
+    "mode": "VOICE_SINGLE"
+  },
+  {
+    "table": "36_33_04a",
+    "action": "check_massage",
+    "bytes": "02 04",
+    "mode": "RAW_QUERY"
+  },
+  {
+    "table": "36_33_04a",
+    "action": "feet_down",
+    "bytes": "08 02 00 00 00 08 00 00 00 00",
+    "mode": "HOLD"
+  },
+  {
+    "table": "36_33_04a",
+    "action": "feet_up",
+    "bytes": "08 02 00 00 00 04 00 00 00 00",
+    "mode": "HOLD"
+  },
+  {
+    "table": "36_33_04a",
+    "action": "head_down",
+    "bytes": "08 02 00 00 00 02 00 00 00 00",
+    "mode": "HOLD"
+  },
+  {
+    "table": "36_33_04a",
+    "action": "head_up",
+    "bytes": "08 02 00 00 00 01 00 00 00 00",
+    "mode": "HOLD"
+  },
+  {
+    "table": "36_33_04a",
+    "action": "light",
+    "bytes": "08 02 00 02 00 00 00 00 00 00",
+    "mode": "HOLD"
+  },
+  {
+    "table": "36_33_04a",
+    "action": "lumbar_down",
+    "bytes": "08 02 00 00 00 20 00 00 00 00",
+    "mode": "HOLD"
+  },
+  {
+    "table": "36_33_04a",
+    "action": "lumbar_up",
+    "bytes": "08 02 00 00 00 10 00 00 00 00",
+    "mode": "HOLD"
+  },
+  {
+    "table": "36_33_04a",
+    "action": "massage_on",
+    "bytes": "08 02 00 00 01 00 00 00 00 00",
+    "mode": "FINITE"
+  },
+  {
+    "table": "36_33_04a",
+    "action": "massage_stop",
+    "bytes": "08 02 02 00 00 00 00 00 00 00",
+    "mode": "FINITE"
+  },
+  {
+    "table": "36_33_04a",
+    "action": "anti_snore",
+    "bytes": "08 02 00 00 80 00 00 00 00 00",
+    "mode": "HOLD"
+  },
+  {
+    "table": "36_33_04a",
+    "action": "flat",
+    "bytes": "08 02 08 00 00 00 00 00 00 00",
+    "mode": "HOLD"
+  },
+  {
+    "table": "36_33_04a",
+    "action": "lounge",
+    "bytes": "08 02 00 00 20 00 00 00 00 00",
+    "mode": "HOLD"
+  },
+  {
+    "table": "36_33_04a",
+    "action": "incline",
+    "bytes": "08 02 00 00 40 00 00 00 00 00",
+    "mode": "HOLD"
+  },
+  {
+    "table": "36_33_04a",
+    "action": "zero_g",
+    "bytes": "08 02 00 00 10 00 00 00 00 00",
+    "mode": "HOLD"
+  },
+  {
+    "table": "36_33_04a",
+    "action": "save_anti_snore",
+    "bytes": "08 02 08 00 80 00 00 00 00 00",
+    "mode": "HOLD"
+  },
+  {
+    "table": "36_33_04a",
+    "action": "save_lounge",
+    "bytes": "08 02 08 00 20 00 00 00 00 00",
+    "mode": "HOLD"
+  },
+  {
+    "table": "36_33_04a",
+    "action": "save_incline",
+    "bytes": "08 02 08 00 40 00 00 00 00 00",
+    "mode": "HOLD"
+  },
+  {
+    "table": "36_33_04a",
+    "action": "save_zero_g",
+    "bytes": "08 02 08 00 10 00 00 00 00 00",
+    "mode": "HOLD"
+  },
+  {
+    "table": "36_33_04a",
+    "action": "stop",
+    "bytes": "08 02 00 00 00 00 00 00 00 00",
+    "mode": "STOP"
+  },
+  {
+    "table": "36_33_04a",
+    "action": "massage_down",
+    "bytes": "08 02 01 80 00 00 00 00 00 00",
+    "mode": "HOLD"
+  },
+  {
+    "table": "36_33_04a",
+    "action": "massage_up",
+    "bytes": "08 02 00 00 0c 00 00 00 00 00",
+    "mode": "HOLD"
+  },
+  {
+    "table": "36_33_04a",
+    "action": "wave_1",
+    "bytes": "08 02 00 00 00 00 00 08 00 00",
+    "mode": "HOLD"
+  },
+  {
+    "table": "36_33_04a",
+    "action": "wave_2",
+    "bytes": "08 02 00 00 00 00 00 10 00 00",
+    "mode": "HOLD"
+  },
+  {
+    "table": "36_33_04a",
+    "action": "wave_3",
+    "bytes": "08 02 00 00 00 00 00 20 00 00",
+    "mode": "HOLD"
+  }
+]

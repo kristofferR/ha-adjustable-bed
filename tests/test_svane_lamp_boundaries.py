@@ -2,12 +2,11 @@
 
 import asyncio
 from types import SimpleNamespace
-from unittest.mock import patch
 
 import pytest
 from homeassistant.exceptions import ServiceValidationError
 
-from custom_components.adjustable_bed.beds.svane import SvaneController
+from custom_components.adjustable_bed.beds.svane.controller import SvaneController
 from custom_components.adjustable_bed.const import (
     BED_TYPE_SVANE,
     CONF_PROTOCOL_VARIANT,
@@ -17,6 +16,7 @@ from custom_components.adjustable_bed.const import (
 from custom_components.adjustable_bed.controller_factory import create_controller
 from custom_components.adjustable_bed.number import _number_entities_for
 from tests.app_state_helpers import stored_app_state, write_app_state
+from tests.service_patches import patch_with_family
 from tests.test_svane import LIGHT, OLD, OLD_CHAR, SvaneCommands, uuid, written
 from tests.test_svane_light_timed_host import runtime as imported_runtime
 
@@ -27,7 +27,7 @@ def virtual_hold(monkeypatch, controller):
     clock = [0.0]
     local = SimpleNamespace(**vars(asyncio))
     local.get_running_loop = lambda: SimpleNamespace(time=lambda: clock[0])
-    monkeypatch.setattr('custom_components.adjustable_bed.beds.svane.asyncio', local)
+    monkeypatch.setattr('custom_components.adjustable_bed.beds.svane.controller.asyncio', local)
 
     async def wait(seconds):
         clock[0] += seconds
@@ -38,7 +38,7 @@ def virtual_hold(monkeypatch, controller):
 
 
 async def hold(hass, coordinator):
-    with patch('custom_components.adjustable_bed.services._resolve_sided_targets',
+    with patch_with_family("beds.svane.services", 'custom_components.adjustable_bed.services._resolve_sided_targets',
                return_value=([(coordinator, SIDE_BOTH)], [])):
         await hass.services.async_call(DOMAIN, 'hold_control', {
             'device_id': 'bed', 'control': 'light_adjust', 'duration': .201,
@@ -83,7 +83,7 @@ async def test_public_hold_rejects_nonstep_session_before_mutation_or_io(
     controller.session.light_on = True
     before = dict(coordinator.entry.data)
     virtual_hold(monkeypatch, controller)
-    with pytest.raises(ServiceValidationError, match='steps of five'):
+    with pytest.raises(ServiceValidationError, match='steps of 5'):
         await hold(hass, coordinator)
     assert controller.session.intensity == initial and controller.session.light_step == step
     assert coordinator.entry.data == before
