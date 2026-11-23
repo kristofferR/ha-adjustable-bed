@@ -297,6 +297,8 @@ class ReveriePairlinkController(BedController, PairlinkComfortActions):
         self._routine_generation = 0
         self._routine_owner: tuple[int, PairlinkPeerIdentity] | None = None
         self._routine_connection_release: Callable[[], None] | None = None
+        # Home Assistant is closing this link itself; the bed is still there.
+        self._released_by_host = False
         self._status_sync_timer: asyncio.TimerHandle | None = None
         self._status_sync_generation = 0
         self._backup_check_timer: asyncio.TimerHandle | None = None
@@ -1977,6 +1979,7 @@ class ReveriePairlinkController(BedController, PairlinkComfortActions):
 
     async def start_notify(self, callback: Callable[[str, float], None] | None = None) -> None:
         self._notify_callback = callback
+        self._released_by_host = False
         async with self._sdk_receive_lock:
             await self._async_initialize_sdk()
         if not self._has_supported_model:
@@ -2003,7 +2006,7 @@ class ReveriePairlinkController(BedController, PairlinkComfortActions):
             self._state = {}
             if state:
                 self.forward_controller_state_updates(*_state_updates(dict.fromkeys(state)))
-            self._coordinator.clear_position_feedback(("back", "legs"))
+            # The last known positions stay until this session reports its own.
         connection_epoch = self._runtime.epoch
         try:
 
@@ -2825,6 +2828,10 @@ class ReveriePairlinkController(BedController, PairlinkComfortActions):
         self._cancel_backup_check()
         self._cancel_routine()
 
+    def on_connection_release(self, reason: str) -> None:
+        del reason
+        self._released_by_host = True
+
     def on_disconnect(self) -> None:
         self._cancel_runtime_owned_activity()
         self._active_notifications.clear()
@@ -2834,7 +2841,10 @@ class ReveriePairlinkController(BedController, PairlinkComfortActions):
             self._state = {}
             if state:
                 self.forward_controller_state_updates(*_state_updates(dict.fromkeys(state)))
-            self._coordinator.clear_position_feedback(("back", "legs"))
+            if not self._released_by_host:
+                # A lost link says nothing about where the bed is now. A link
+                # Home Assistant released leaves the bed where it was last read.
+                self._coordinator.clear_position_feedback(("back", "legs"))
             self._runtime.central_disconnected(self._runtime.target_mac)
         else:
             self._clear_sdk_device_addresses()

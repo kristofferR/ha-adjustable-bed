@@ -560,6 +560,38 @@ Pairlink local routines stay with their original peer session. Disconnecting or
 replacing that peer cancels pending steps; a replacement receiver needs a new
 routine request. Feedback and unrelated backup disconnects preserve the routine.
 
+### Pairlink positions and the Bluetooth connection
+
+Pairlink reports back and legs positions (0–100%) only over a live session.
+The bed answers the active status sync with which values changed, and Home
+Assistant then asks for each one with a state request. There is no separate
+position read.
+
+On the central route, a new Pairlink bed defaults to **Stay connected for a
+while**. The link stays open for **Seconds to stay connected** after the last
+command. A state request is a command, so every reported change restarts that
+window and the sliders follow a preset or a slider move the bed finishes on
+its own. Whether the bed accepts the phone app while Home Assistant holds its
+link is not known; choose **Release right after each command** if the app
+cannot connect.
+
+When Home Assistant releases the link itself (the idle timeout, **Release right
+after each command**, the Disconnect button), the sliders keep the last
+positions read, and the next session replaces them as soon as the bed reports.
+A link the bed or the adapter drops clears them, because nothing is known about
+the bed after that. Massage and light feedback is cleared on every disconnect.
+
+A bed set up before this default changed keeps the setting saved with it,
+**Release right after each command** unless you chose another; an entry with
+no saved setting follows the new default. With **Release right after each
+command** the link closes about a second after a command, so the sliders can
+keep a value from the middle of a move. Choose **Stay connected for a while**
+in **Configure** to follow the whole move.
+
+When Home Assistant joins the Pairlink network from this host, the setting has
+no effect: the bed holds the link. Positions follow the primary bed while it
+stays joined and are cleared when it leaves.
+
 ## Command Timing
 
 | Route | Timing / cleanup |

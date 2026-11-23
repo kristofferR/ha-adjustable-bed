@@ -368,8 +368,12 @@ _BED_TRAITS: Final[dict[str, BedTraits]] = {
         connection_scoped_state=True,
         max_angles=_REVERIE_MAX_ANGLES,
     ),
+    # Positions and the other feedback arrive only on a live mesh session.
     BED_TYPE_REVERIE_PAIRLINK: BedTraits(
-        position_feedback=True, percentage_positions=True, angle_sensors=True
+        position_feedback=True,
+        percentage_positions=True,
+        angle_sensors=True,
+        connection_scoped_state=True,
     ),
     "richmat_sleep_receiver": _NO_ANGLES_PERSISTENT,
     # Head and foot angles come from the app's pulse lookup tables (#239).
