@@ -760,6 +760,31 @@ def current_command_context() -> CommandContext | None:
     return context if context is None or context.active else None
 
 
+_MORE_COMMANDS_FOLLOW: ContextVar[bool] = ContextVar(
+    "adjustable_bed_more_commands_follow", default=False
+)
+
+
+@contextlib.contextmanager
+def more_commands_follow(more: bool = True) -> Iterator[None]:
+    """Mark that a sequence still has frames to send after the commands in this block.
+
+    A controller must then not wait on the bed after its own frames, or the
+    rest of the sequence starts late.
+    """
+    token = _MORE_COMMANDS_FOLLOW.set(more)
+    try:
+        yield
+    finally:
+        _MORE_COMMANDS_FOLLOW.reset(token)
+
+
+def sequence_continues() -> bool:
+    """Return whether more commands of the same sequence follow the current one."""
+    context = current_command_context()
+    return _MORE_COMMANDS_FOLLOW.get() or (context is not None and context.defer_disconnect)
+
+
 class Delivery(StrEnum):
     """What of a command reached the bed."""
 

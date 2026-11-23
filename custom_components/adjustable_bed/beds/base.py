@@ -39,7 +39,12 @@ from ..alarm_table import (
     WeeklyAlarmRecord as WeeklyAlarmRecord,
 )
 from ..bed_traits import BedTraits
-from ..command_scheduler import Delivery, current_command_context, delivered
+from ..command_scheduler import (
+    Delivery,
+    current_command_context,
+    delivered,
+    sequence_continues,
+)
 from ..controller_state import (
     StateKey,
     StateUpdate,
@@ -659,10 +664,15 @@ class BedController(GattWriter):
         to. Once they have been unchanged for a while the bed is asked, and a
         report that changes nothing ends the move; a bed that does not answer
         is asked once more. Stop, a newer command and a lost link end it at
-        once; Stop itself is the coordinator's to send.
+        once; Stop itself is the coordinator's to send. A command that is not
+        the last of its sequence does not wait, so the rest is not held back.
         """
         coordinator = self._coordinator
-        if coordinator.disable_angle_sensing or not self.supports_position_feedback:
+        if (
+            coordinator.disable_angle_sensing
+            or not self.supports_position_feedback
+            or sequence_continues()
+        ):
             return
         cancel_event = coordinator.cancel_command
         loop = asyncio.get_running_loop()

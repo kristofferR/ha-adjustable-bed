@@ -39,6 +39,7 @@ from .command_scheduler import (
     CommandOutcome,
     PreparedCommandInvalidated,
     command_resources,
+    more_commands_follow,
 )
 from .const import (
     PAIR_CONNECTION_MODE_CONCURRENT,
@@ -1265,6 +1266,7 @@ class SequentialTwoLinkTopology(PairTopology):
                 self._admission.was_cancelled(s, resources, entry_cancel) for s, _ in targets
             )
 
+        last_side = targets[-1][0]
         for side, child in targets:
             if cycle_cancelled():
                 # A STOP / newer command landed mid-cycle — abort before
@@ -1310,7 +1312,8 @@ class SequentialTwoLinkTopology(PairTopology):
 
             op_error: BaseException | None = None
             try:
-                await op(child)
+                with more_commands_follow(side != last_side):
+                    await op(child)
             except asyncio.CancelledError:
                 # Release this side before propagating the cancellation.
                 if not local_role:
@@ -1527,7 +1530,8 @@ class SingleLinkSideAwareTopology(_SideLaneTopology):
                 ) or not admission.stop_epochs_match(targets, expected_stop_epochs):
                     return
                 try:
-                    await op(child)
+                    with more_commands_follow(side != targets[-1][0]):
+                        await op(child)
                 except Exception as err:
                     errors[side] = err
                     break

@@ -23,6 +23,7 @@ from homeassistant.exceptions import ServiceValidationError
 from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers.service import async_get_device_and_config_entry
 
+from ...command_scheduler import more_commands_follow
 from ...const import (
     BED_TYPE_STAR_ELEVATE,
     BED_TYPE_STARCODE_M1X12,
@@ -177,7 +178,9 @@ def _group_dispatch() -> Iterator[None]:
     """Suppress cross-interrupt only inside this scheduled group command."""
     token = _GROUP_DISPATCH.set(True)
     try:
-        yield
+        # The group sends each member's frames on its own schedule.
+        with more_commands_follow():
+            yield
     finally:
         _GROUP_DISPATCH.reset(token)
 

@@ -21,7 +21,12 @@ from custom_components.adjustable_bed.beds.sleepys.box25 import (
     Box25Commands,
     SleepysBox25Controller,
 )
+from custom_components.adjustable_bed.beds.starcode import accessory_group
 from custom_components.adjustable_bed.codec import limoss as limoss_codec
+from custom_components.adjustable_bed.command_scheduler import (
+    more_commands_follow,
+    sequence_continues,
+)
 from custom_components.adjustable_bed.const import (
     BED_TYPE_SLEEPYS_BOX25,
     CONF_BED_TYPE,
@@ -198,6 +203,18 @@ class TestFollow:
 
         assert coordinator.position_data["head"] == 14.0
 
+    async def test_a_command_with_more_to_follow_does_not_wait(
+        self, hass: HomeAssistant
+    ) -> None:
+        """A pair's first side, or a group's earlier frames, must not hold the rest back."""
+        coordinator, _controller, _report = await _box25(hass)
+
+        with more_commands_follow():
+            async with asyncio.timeout(QUIET / 2):
+                await coordinator.async_execute_controller_command(
+                    lambda bed: bed.follow_autonomous_move()
+                )
+
     async def test_stop_is_not_held_back_by_a_stalled_read(
         self, hass: HomeAssistant, mock_bleak_client: MagicMock
     ) -> None:
@@ -348,6 +365,13 @@ def _mock_controller[T: BedController](cls: Callable[[Any], T]) -> tuple[T, Asyn
     follow = AsyncMock()
     controller.follow_autonomous_move = follow  # type: ignore[method-assign]
     return controller, follow
+
+
+def test_m5x5_group_frames_are_not_held_back() -> None:
+    """The group sends the lifts' frames 1.6 s after the main flat, not after it settles."""
+    assert not sequence_continues()
+    with accessory_group._group_dispatch():
+        assert sequence_continues()
 
 
 async def test_sleepstar_recall_and_target_follow() -> None:

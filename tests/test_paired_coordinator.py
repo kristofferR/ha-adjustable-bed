@@ -31,6 +31,7 @@ from custom_components.adjustable_bed.command_scheduler import (
     DeviceCommandScheduler,
     command_resources,
     current_command_context,
+    sequence_continues,
 )
 from custom_components.adjustable_bed.const import (
     BED_TYPE_KAIDI,
@@ -1477,6 +1478,18 @@ class TestSingleAddressCoordinator:
 
         assert sides == [SIDE_LEFT, SIDE_RIGHT]
 
+    async def test_both_lets_only_the_last_side_wait_on_the_bed(self):
+        """A side that followed its move would hold the other side's frames back."""
+        coordinator = self._coordinator(BED_TYPE_SLEEP_NUMBER, SleepNumberController)
+        continues = []
+
+        async def record(_controller):
+            continues.append(sequence_continues())
+
+        await coordinator.async_execute_controller_command(record, side=SIDE_BOTH)
+
+        assert continues == [True, False]
+
     @pytest.mark.parametrize("side", [SIDE_LEFT, SIDE_RIGHT, SIDE_BOTH])
     @pytest.mark.parametrize("bed_type", [BED_TYPE_KAIDI, BED_TYPE_SLEEP_NUMBER])
     async def test_direct_seek_does_not_publish_unverified_positions(self, side, bed_type):
@@ -2769,6 +2782,18 @@ class TestSequentialCycle:
             (SIDE_RIGHT, "command"),
             (SIDE_RIGHT, "disconnect"),
         ]
+
+    async def test_both_lets_only_the_last_side_wait_on_the_bed(self):
+        coord, left, right = self._seq([])
+        continues = []
+        for child in (left, right):
+            child.async_execute_controller_command = AsyncMock(
+                side_effect=lambda *_a, **_k: continues.append(sequence_continues())
+            )
+
+        await coord.async_execute_controller_command(_noop, side=SIDE_BOTH)
+
+        assert continues == [True, False]
 
     async def test_single_side_connects_acts_disconnects(self):
         log: list = []
