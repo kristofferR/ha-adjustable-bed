@@ -3438,7 +3438,7 @@ SETUP_PROFILES: Final[dict[str, SetupProfile]] = {
         owns={
             CONF_MOTOR_COUNT: SET_BY_PROFILE,
             CONF_HAS_MASSAGE: True,
-            CONF_DISABLE_ANGLE_SENSING: True,
+            CONF_DISABLE_ANGLE_SENSING: False,
             CONF_MOTOR_PULSE_DELAY_MS: 100,
             CONF_PROTOCOL_VARIANT: SET_BY_PROFILE,
         },

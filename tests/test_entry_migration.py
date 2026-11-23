@@ -24,6 +24,7 @@ from custom_components.adjustable_bed.const import (
     BED_TYPE_LOGICDATA_APP,
     BED_TYPE_OCTO,
     BED_TYPE_SLEEPYS_ELITE_APP,
+    BED_TYPE_STARCODE_M1X12,
     CONF_BED_TYPE,
     CONF_CONNECTION_MODE,
     CONF_DISABLE_ANGLE_SENSING,
@@ -744,6 +745,8 @@ def test_schema_5_6_rewrites_the_connection_settings(stored: dict, expected: dic
         (BED_TYPE_LINAK, True, True),
         # A choice against the route's default stays.
         (BED_TYPE_KEESON, False, True),
+        # M1X12's setup saved "off" itself before its positions were read.
+        (BED_TYPE_STARCODE_M1X12, True, False),
     ],
 )
 def test_schema_5_6_keeps_only_a_position_choice_against_the_route(

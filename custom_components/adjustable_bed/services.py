@@ -76,6 +76,7 @@ from .const import (
     BED_TYPE_SERTA_MP_REMOTE,
     BED_TYPE_SLEEP_NUMBER_MCR,
     BED_TYPE_SLEEPYS_ELITE_APP,
+    BED_TYPE_STARCODE_M1X12,
     BED_TYPE_SVANE,
     BED_TYPE_SYMPHONY,
     BED_TYPE_ULTRAMATIC_SMART_BED,
@@ -987,10 +988,15 @@ def _position_config(
     protocol_variant = entry.data.get(CONF_PROTOCOL_VARIANT)
     supports_direct_position_control = controller.supports_direct_position_control
 
-    # Validate bed supports position feedback. Q-Plus's MX layout reports none.
+    # Validate bed supports position feedback. Q-Plus's MX layout reports none;
+    # M1X12 and the Elite app's control boxes without a target offer no slider.
     if (
         not bed_type_has_position_feedback(bed_type, protocol_variant)
         or (bed_type == BED_TYPE_QPLUS_APP and not controller.supports_position_feedback)
+        or (
+            bed_type in (BED_TYPE_SLEEPYS_ELITE_APP, BED_TYPE_STARCODE_M1X12)
+            and not controller.position_number_specs
+        )
     ) and not supports_direct_position_control:
         raise invalid("position_feedback_not_supported", device_name=coordinator.name)
 

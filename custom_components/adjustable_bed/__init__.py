@@ -55,6 +55,7 @@ from .const import (
     BED_TYPE_SLEEP_NUMBER,
     BED_TYPE_SLEEPYS_ELITE_APP,
     BED_TYPE_SMARTBED,
+    BED_TYPE_STARCODE_M1X12,
     BED_TYPE_VIBRADORM,
     CB24_BED_SELECTION_A,
     CB24_BED_SELECTION_B,
@@ -700,7 +701,11 @@ def _v5_6_settings(
     if (
         isinstance(disabled, bool)
         and not paired
-        and disabled is not feedback
+        and (
+            disabled is not feedback
+            # M1X12's setup saved "off" itself, before its positions were read (#628).
+            or view.get(CONF_BED_TYPE) == BED_TYPE_STARCODE_M1X12
+        )
         # Dropping it must not uncover an opposite value in the layer below.
         and below_disabled in (None, disabled)
     ):

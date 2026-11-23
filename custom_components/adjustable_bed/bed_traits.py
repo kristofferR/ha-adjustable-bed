@@ -407,8 +407,8 @@ _BED_TRAITS: Final[dict[str, BedTraits]] = {
         connection_scoped_state=True,
         connection_timeout=STARCODE_APP_CONNECTION_TIMEOUT_SECONDS,
     ),
-    # M1X12 feedback reports opaque Part percentages, not named degree axes.
-    BED_TYPE_STARCODE_M1X12: _NO_ANGLES,
+    # Head, foot and lumbar percentages, read only: the app has no way to set one.
+    BED_TYPE_STARCODE_M1X12: BedTraits(position_feedback=True, percentage_positions=True),
     BED_TYPE_STARCODE_M5X5: BedTraits(position_feedback=True, percentage_positions=True),
     BED_TYPE_SUTA: _SCOPED,
     BED_TYPE_SVANE: _SCOPED,
