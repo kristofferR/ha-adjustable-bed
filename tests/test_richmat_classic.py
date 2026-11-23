@@ -618,3 +618,26 @@ async def test_a_nordic_bed_lists_what_its_buttons_send(instant):
     save = next(s for s in saving.controller_button_specs if s.key == "richmat_classic_10_raw")
     assert save.name == "Save M1" and save.hold is None
     assert save.key not in saving.held_control_options
+
+
+def test_desk_height_is_the_cm_height_the_desk_screen_keeps():
+    def height(ctrl, coord, frame):
+        ctrl._reply_unit = MagicMock()  # the unit reply is its own test
+        ctrl._notification(ctrl._session, ctrl._session.notify, bytearray.fromhex(frame))
+        return published(*coord.handle_controller_state_updates.call_args.args).get("desk_height")
+
+    ctrl, coord = controller(layout="FWRM")
+    spec = ctrl.controller_state_sensor_specs[0]
+    assert (spec.key, spec.native_unit_of_measurement) == ("desk_height", "cm")
+    assert height(ctrl, coord, "6e900000060408") == 60.4
+    # The range report carries both readings: 29.5 in and 74.9 cm.
+    assert height(ctrl, coord, "6e94010224045c06000c32025f073166") == 74.9
+    # A live report in inches is tenths of an inch: 32.5 in is 82.6 cm.
+    assert height(ctrl, coord, "6e90000103191b") == 82.6
+    # A report that is not a height keeps the last one.
+    assert height(ctrl, coord, "6e09010078") == 82.6
+    ctrl, coord = controller(layout="WFRM")
+    assert height(ctrl, coord, "6e080064da") == 100.0
+    bed_ctrl, bed_coord = controller()
+    assert [spec.key for spec in bed_ctrl.controller_state_sensor_specs] == ["richmat_classic_status"]
+    assert height(bed_ctrl, bed_coord, "6e900000060408") is None

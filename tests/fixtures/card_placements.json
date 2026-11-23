@@ -4010,6 +4010,9 @@
  "sensor:customatic_software_revision": {
   "card_section": "hidden"
  },
+ "sensor:desk_height": {
+  "card_section": "utility"
+ },
  "sensor:doublesleep_alarm": {
   "card_section": "utility"
  },

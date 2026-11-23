@@ -35,6 +35,9 @@ def rgb_triple(value: object) -> tuple[int, int, int] | None:
 OCTO_LIGHT_DURATION: Final = StateKey[int | None]("octo_light_duration")
 FAN_LEVEL: Final = StateKey[int | None]("fan_level")
 
+# A standing desk's height in cm.
+DESK_HEIGHT: Final = StateKey[float | None]("desk_height")
+
 # Switches backed by published state.
 AUTOMATIC_LIGHT: Final = StateKey[bool | None]("automatic_light")
 SYNCHRO_MODE: Final = StateKey[bool | None]("synchro_mode")

@@ -9,10 +9,11 @@ from typing import TYPE_CHECKING, Any, Final, Literal
 
 from homeassistant.components.binary_sensor import BinarySensorDeviceClass
 from homeassistant.components.sensor import SensorDeviceClass, SensorStateClass
-from homeassistant.const import EntityCategory
+from homeassistant.const import EntityCategory, UnitOfLength
 
 from ..card import CARD_HIDDEN, CARD_UTILITY, CardPlacement
 from ..controller_state import AnyStateKey, StateKey
+from ..state_keys import DESK_HEIGHT
 
 if TYPE_CHECKING:
     from .base import BedController
@@ -253,6 +254,22 @@ class ControllerStateSensorSpec:
     entity_category: EntityCategory | None = field(default=EntityCategory.DIAGNOSTIC, kw_only=True)
     # A timestamp reading publishes an aware datetime.
     device_class: SensorDeviceClass | None = field(default=None, kw_only=True)
+
+
+# A standing desk's height. Always cm, whichever unit the desk reports in: Home
+# Assistant converts a distance to the unit the user wants.
+DESK_HEIGHT_SENSOR: Final = ControllerStateSensorSpec(
+    "desk_height",
+    "desk_height",
+    DESK_HEIGHT,
+    "mdi:desk",
+    native_unit_of_measurement=UnitOfLength.CENTIMETERS,
+    entity_registry_enabled_default=True,
+    suggested_display_precision=1,
+    card=CARD_UTILITY,
+    entity_category=None,
+    device_class=SensorDeviceClass.DISTANCE,
+)
 
 
 @dataclass(frozen=True, slots=True)
