@@ -546,7 +546,7 @@ Behaves as the [MotoSleep and Power Bob family](#motosleep-and-power-bob-family)
 ##### Power Bob profiles (14-character names)
 
 First matching rule wins. Power Bob always sends raw actions. Every profile
-except Panel Eight also routes to the RGB settings.
+except Panel Seven and Panel Eight also routes to the RGB settings.
 
 | Profile | Rule (chars 8, 9) | Motors (up/down) | Presets and memory | Light and massage | Release STOP |
 |---|---|---|---|---|---|
@@ -560,7 +560,7 @@ except Panel Eight also routes to the RGB settings.
 | Three | char 8 `3` | Back, legs | All four, memory | `$A` | `$b` |
 | Five | char 8 `5` | Back | None | None | None |
 | Six | char 8 `6` | Back, legs | None | None | None |
-| Seven | char 8 `7` | Back, legs | Flat, memory | `$A`; massage `$C`/`$B`/`$D` | None |
+| Seven | char 8 `7` | Back, legs | Flat, memory | `$A` only, no RGB; massage `$C`/`$B`/`$D` | None |
 | Eight | char 8 `8` | Back, legs | All four (`$O` per [issue #468](https://github.com/kristofferR/ha-adjustable-bed/issues/468)), memory | `$A` only, no RGB | None |
 | Nine | char 8 `9` | Back, legs | Flat | None | `$b` |
 | Six ZG | char 8 `D` | Back, legs | None | None | `$b` |
@@ -574,6 +574,10 @@ except Panel Eight also routes to the RGB settings.
   the root `$A` toggle. It does not support the generic Power Bob RGB settings,
   so Home Assistant keeps the toggle button and does not expose RGB controls
   ([issue #470](https://github.com/kristofferR/ha-adjustable-bed/issues/470)).
+- A reported Panel Seven bed has a single-colour light that ignores the RGB
+  settings, so Home Assistant sends the root `$A` toggle and exposes no RGB
+  controls. The toggle is not yet confirmed on that bed
+  ([issue #973](https://github.com/kristofferR/ha-adjustable-bed/issues/973)).
 
 The Power Bob app's RGB settings route is independent of the selected root
 motor panel. Advertised-name character 10 selects the Mood configuration when
