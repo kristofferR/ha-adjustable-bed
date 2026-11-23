@@ -18,7 +18,6 @@ from custom_components.adjustable_bed.const import (
     BED_TYPE_COOLBASE,
     BED_TYPE_KEESON,
     BED_TYPE_LEGGETT_LP_LEGACY,
-    BED_TYPE_LEGGETT_PLATT,
     BED_TYPE_OCTO,
     BED_TYPE_RICHMAT,
     CONF_LP_LEGACY_MODE,
@@ -28,7 +27,6 @@ from custom_components.adjustable_bed.const import (
     KEESON_VARIANT_JSON,
     KEESON_VARIANT_OKIN,
     KEESON_VARIANT_SINO,
-    LEGGETT_VARIANT_OKIN,
     MALOUF_LAYOUT_AUTO,
     MALOUF_MEMORY_SLOTS_AUTO,
     OCTO_VARIANT_STANDARD,
@@ -161,8 +159,6 @@ def _protocol_variant_for_bed_type(bed_type: str) -> str | None:
         return "adjustable_bed_okin"
     if bed_type == BED_TYPE_RICHMAT:
         return RICHMAT_VARIANT_NORDIC
-    if bed_type == BED_TYPE_LEGGETT_PLATT:
-        return LEGGETT_VARIANT_OKIN
     if bed_type == BED_TYPE_OCTO:
         return OCTO_VARIANT_STANDARD
     if bed_type == "dreamsense":

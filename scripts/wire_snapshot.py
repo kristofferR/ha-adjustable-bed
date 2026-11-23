@@ -1363,7 +1363,6 @@ def default_scenario(bed_type: str) -> Scenario:
         return Scenario(id=bed_type, bed_type=bed_type, protocol_variant="A1",
             entry_data={const.CONF_PROTOCOL_VARIANT: "A1"}, layout_id="sonicsleep:Nordic")
     variant: str | None = {
-        const.BED_TYPE_LEGGETT_PLATT: const.LEGGETT_VARIANT_OKIN,
         const.BED_TYPE_OCTO: const.OCTO_VARIANT_STANDARD,
         const.BED_TYPE_CASPER_BASE: "casperpro",
         const.BED_TYPE_HUSH_BASE: "hushl400",
@@ -1548,7 +1547,6 @@ def default_scenario(bed_type: str) -> Scenario:
 VARIANT_ROUTES: dict[str, str] = {
     "keeson": "KEESON_VARIANTS",
     "richmat": "RICHMAT_VARIANTS",
-    "leggett_platt": "LEGGETT_VARIANTS",
     "linak": "LINAK_VARIANTS",
     "octo": "OCTO_VARIANTS",
     "smartbed": "SMARTBED_VARIANTS",

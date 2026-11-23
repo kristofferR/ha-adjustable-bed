@@ -10,16 +10,14 @@ from homeassistant.core import HomeAssistant
 from pytest_homeassistant.common import MockConfigEntry
 
 from custom_components.adjustable_bed.const import (
-    BED_TYPE_LEGGETT_PLATT,
+    BED_TYPE_LEGGETT_WILINKE,
     CONF_BED_TYPE,
     CONF_DISABLE_ANGLE_SENSING,
     CONF_HAS_MASSAGE,
     CONF_MOTOR_COUNT,
     CONF_PREFERRED_ADAPTER,
-    CONF_PROTOCOL_VARIANT,
     DOMAIN,
     LEGGETT_RICHMAT_CHAR_UUID,
-    LEGGETT_VARIANT_MLRM,
 )
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
 
@@ -30,8 +28,7 @@ def mock_leggett_wilinke_config_entry_data() -> dict:
     return {
         CONF_ADDRESS: "AA:BB:CC:DD:EE:FF",
         CONF_NAME: "L&P WiLinke Test Bed",
-        CONF_BED_TYPE: BED_TYPE_LEGGETT_PLATT,
-        CONF_PROTOCOL_VARIANT: LEGGETT_VARIANT_MLRM,
+        CONF_BED_TYPE: BED_TYPE_LEGGETT_WILINKE,
         CONF_MOTOR_COUNT: 2,
         CONF_HAS_MASSAGE: True,
         CONF_DISABLE_ANGLE_SENSING: True,

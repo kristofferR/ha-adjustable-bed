@@ -290,7 +290,6 @@ from .const import (
     KEESON_LAYOUT_APP_BED_TYPES,
     LEGGETT_APP_MOTOR_COUNTS,
     LEGGETT_APP_PROFILES,
-    LEGGETT_VARIANT_GEN2,
     MAX_IDLE_DISCONNECT_SECONDS,
     NAME_RULE_VARIANTS_BY_BED_TYPE,
     OCTO_VARIANT_STAR2,
@@ -332,7 +331,6 @@ from .const import (
     grants_one_connection_per_pairing_window,
     requires_pairing,
     requires_pairing_after_service_discovery,
-    resolve_explicit_bed_type,
 )
 from .detection import (
     APP_VARIANT_CHOICES,
@@ -1536,11 +1534,6 @@ def _confident_auto_detect(result: DetectionResult) -> str | None:
     return None
 
 
-def _is_leggett_app_type(bed_type: str | None, variant: str | None = None) -> bool:
-    """Resolve only the explicit Okin route of the legacy umbrella type."""
-    return resolve_explicit_bed_type(bed_type, variant) == BED_TYPE_LEGGETT_OKIN
-
-
 def _starcode_initial_transport(data: Mapping[str, Any], observed_name: str | None) -> str | None:
     """Resolve D from an explicit choice or original BLE identity, never a label."""
     from .beds.starcode.abm5_4_profiles import constructor_selector
@@ -2333,18 +2326,15 @@ def _with_family(option: SelectOptionDict) -> SelectOptionDict:
     return SelectOptionDict(value=option["value"], label=f"{app}{FAMILY_ROW_SEPARATOR}{family}")
 
 
-def _skips_setup_connection_probe(bed_type: str | None, variant: str | None) -> bool:
+def _skips_setup_connection_probe(bed_type: str | None) -> bool:
     """Return True when setup should avoid a redundant Gen2 connection cycle.
 
     LP Comfort Connect must establish its first bond during the short pairing
     window. After the explicit pairing attempt, skip the optional read-only probe
     and let ``async_setup_entry`` make the meaningful bonded connection directly.
+    The automatic Leggett & Platt setup may turn out to be that bed.
     """
-    if bed_type == BED_TYPE_LEGGETT_GEN2:
-        return True
-    if bed_type == BED_TYPE_LEGGETT_PLATT:
-        return variant in (VARIANT_AUTO, LEGGETT_VARIANT_GEN2, None)
-    return False
+    return bed_type in (BED_TYPE_LEGGETT_GEN2, BED_TYPE_LEGGETT_PLATT)
 
 
 @dataclass
@@ -2392,7 +2382,7 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
     # whose profile has no massage; minor version 5 stores each Octo setup's
     # motor layout as its override.
     VERSION = 5
-    MINOR_VERSION = 10
+    MINOR_VERSION = 11
 
     @staticmethod
     def _mark_ble_bond_established(entry_data: dict[str, Any]) -> dict[str, Any]:
@@ -3202,7 +3192,6 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         """Stage an answer's route and settings, ask its own questions, then continue."""
         assert self._manual_data is not None
         data = self._manual_data
-        answer = family.saved_id(visit.incoming[0], answer)
         changed = family.changes_route(data, answer)
         if changed:
             for key in family.clears:
@@ -3504,9 +3493,7 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                 "1. Put your bed in pairing mode (hold the side pairing button until the blue light blinks)\n"
                 "2. Choose **Pair now**, then select **Submit**.",
             )
-        if bed_type == BED_TYPE_LEGGETT_GEN2 or (
-            bed_type == BED_TYPE_LEGGETT_PLATT and protocol_variant == LEGGETT_VARIANT_GEN2
-        ):
+        if bed_type == BED_TYPE_LEGGETT_GEN2:
             # LP Comfort Connect pairing steps, from the LP Control app's
             # pairing_mode_instructions_gen2 / settings_pair_another_phone_msg.
             return await self._get_config_translation(
@@ -3521,7 +3508,6 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
             BED_TYPE_OKIN_CST,
             BED_TYPE_OKIN_RF_ECO_BT,
             BED_TYPE_LEGGETT_OKIN,
-            BED_TYPE_LEGGETT_PLATT,
             # Their guides send the user to the same OKIN pairing mode.
             BED_TYPE_OKIN_64BIT,
             BED_TYPE_RESIDENT,
@@ -3723,29 +3709,16 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         return dict(legacy) if isinstance(legacy, Mapping) else None
 
     def _offline_safe_bed_type(self, entry: ConfigEntry) -> str | None:
-        """Resolve a concrete bed type for pairing compatibility.
-
-        Legacy entries may store their concrete type under protocol_variant.
-        Use the same resolver as offline controller creation and pair descriptors.
-        """
-        return resolve_explicit_bed_type(
-            entry.data.get(CONF_BED_TYPE), entry.data.get(CONF_PROTOCOL_VARIANT)
-        )
+        """Return the bed type pairing compares."""
+        return entry.data.get(CONF_BED_TYPE)
 
     def _resolved_pair_side_data(self, entry: ConfigEntry) -> dict[str, Any]:
-        """Merged ``data`` + ``options`` for a pair child, with an explicit legacy
-        variant resolved to its concrete bed type.
+        """Return the merged ``data`` and ``options`` a pair child is built from.
 
         Options (e.g. customized angle limits, which the coordinator reads before
-        data) are merged in so they survive the original being absorbed. Resolve
-        bed_type consistently with the compatibility check and offline controller
-        creation, so an explicit legacy variant keeps its concrete type.
+        data) are merged in so they survive the original being absorbed.
         """
-        data = {**entry.data, **dict(entry.options)}
-        data[CONF_BED_TYPE] = resolve_explicit_bed_type(
-            data.get(CONF_BED_TYPE), data.get(CONF_PROTOCOL_VARIANT)
-        )
-        return data
+        return {**entry.data, **dict(entry.options)}
 
     def _is_octo_star2(self, entry: ConfigEntry) -> bool:
         """Whether ``entry`` is an Octo Remote Star2 bed — a different protocol with
@@ -4834,11 +4807,6 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                 # identical addresses and so collide on {address}_{key} unique IDs.
                 errors[CONF_PAIR_SELECTION] = "same_address"
             elif self._offline_safe_bed_type(left) != self._offline_safe_bed_type(right):
-                # Compare RESOLVED bed types: two legacy leggett_platt entries with
-                # DIFFERENT explicit variants (gen2 vs mlrm) are different concrete
-                # protocols, so they're an incompatible pair even though their raw
-                # umbrella type matches — and would otherwise be stored as mismatched
-                # concrete child types by _resolved_pair_side_data below.
                 errors["base"] = "mismatched_bed_types"
             elif self._offline_safe_bed_type(left) == BED_TYPE_VMATBASIC and any(
                 entry.data.get(CONF_VMATBASIC_PROFILE) not in {"cbi", "xtbox"}
@@ -6551,9 +6519,7 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
             self._migration is None
             and not needs_pin_check
             and not self._verification_possible()
-        ) or _skips_setup_connection_probe(
-            entry_data.get(CONF_BED_TYPE), entry_data.get(CONF_PROTOCOL_VARIANT)
-        ):
+        ) or _skips_setup_connection_probe(entry_data.get(CONF_BED_TYPE)):
             return await self._async_create_selected_app_entry(title=title, data=entry_data)
         self._pending_entry = entry_data
         self._pending_title = title
@@ -7580,7 +7546,7 @@ class AdjustableBedOptionsFlow(
                     data.pop(key, None)
         if not get_variants_for_bed_type(bed_type):
             data.pop(CONF_PROTOCOL_VARIANT, None)
-        if not _is_leggett_app_type(bed_type, data.get(CONF_PROTOCOL_VARIANT)):
+        if bed_type != BED_TYPE_LEGGETT_OKIN:
             data.pop(CONF_LEGGETT_APP_PROFILE, None)
         if not supports_passive_position_reconciliation(bed_type):
             data.pop(CONF_PASSIVE_POSITION_RECONCILIATION, None)
@@ -8117,9 +8083,7 @@ class AdjustableBedOptionsFlow(
         # The bed type and route change only through Reconfigure; this form
         # shows the settings the saved route reads.
         unused = _unused_generic_fields(bed_type, form_variant)
-        if _is_leggett_app_type(bed_type, form_variant) and current_data.get(
-            CONF_LEGGETT_APP_PROFILE
-        ):
+        if bed_type == BED_TYPE_LEGGETT_OKIN and current_data.get(CONF_LEGGETT_APP_PROFILE):
             # The saved Leggett app fixes the motor count.
             unused.add(CONF_MOTOR_COUNT)
 
@@ -8154,7 +8118,7 @@ class AdjustableBedOptionsFlow(
         # The declared questions this form asks, which keep their fields.
         question_keys: set[str] = set()
         # The Leggett app is chosen in Reconfigure's guided change.
-        if not separate_address_pair and not _is_leggett_app_type(bed_type, form_variant):
+        if not separate_address_pair and bed_type != BED_TYPE_LEGGETT_OKIN:
             if (
                 questions := _configure_questions(
                     {**current_data, CONF_BED_TYPE: bed_type},
@@ -8371,7 +8335,7 @@ class AdjustableBedOptionsFlow(
                 )
             # A profile can hide this field; still persist its normalized default.
             user_input[CONF_MOTOR_COUNT] = requested_motor_count
-            if _is_leggett_app_type(bed_type, requested_variant) and not separate_address_pair:
+            if bed_type == BED_TYPE_LEGGETT_OKIN and not separate_address_pair:
                 profile = user_input.get(
                     CONF_LEGGETT_APP_PROFILE, current_data.get(CONF_LEGGETT_APP_PROFILE)
                 )

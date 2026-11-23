@@ -222,7 +222,6 @@ from .const import (
     LEGGETT_GEN2_SERVICE_UUID,
     LEGGETT_OKIN_NAME_PATTERNS,
     LEGGETT_RICHMAT_NAME_PATTERNS,
-    LEGGETT_VARIANT_OKIN,
     LIMOSS_NAME_PATTERNS,
     LINAK_CONTROL_SERVICE_UUID,
     LINAK_NAME_PATTERNS,
@@ -581,10 +580,8 @@ def _rests_on_shared_service(
     )
 
 
-# Display names for bed types shown in the UI selector
-# Note: Legacy types (dewertokin, okimat, nectar, mattressfirm, leggett_platt)
-# are NOT included here - they're only kept for backward compatibility with
-# existing config entries. New users should select the protocol-based equivalents.
+# Display names for bed types shown in the UI selector. The automatic
+# Leggett & Platt setup is not offered to a new bed, so it is not listed here.
 BED_TYPE_DISPLAY_NAMES: dict[str, str] = {
     "nerum": "Nerum app",
     "relax_motion": "Relax Motion app",
@@ -890,22 +887,17 @@ def resolve_bed_type_choice(choice: str) -> tuple[str, str | None]:
 
 
 def bed_type_label(bed_type: str | None) -> str:
-    """Return the friendly label of a bed type, including saved compatibility IDs.
-
-    A compatibility ID shows the label of the route it runs; the saved ID itself
-    is never rewritten.
-    """
+    """Return the friendly label of a bed type, including one no list offers."""
     if bed_type is None:
         return ""
     if (label := BED_TYPE_DISPLAY_NAMES.get(bed_type)) is not None:
         return label
-    return _COMPATIBILITY_LABELS.get(bed_type, bed_type)
+    return _UNLISTED_LABELS.get(bed_type, bed_type)
 
 
-# Each compatibility ID, saved by an older version, gets its own label naming
-# the product, so a label always maps back to exactly one saved ID.
-_COMPATIBILITY_LABELS: Final[dict[str, str]] = {
-    BED_TYPE_LEGGETT_PLATT: "Leggett & Platt bed (older setup)",
+# A bed type the lists do not offer is still named where a bed's setup is shown.
+_UNLISTED_LABELS: Final[dict[str, str]] = {
+    BED_TYPE_LEGGETT_PLATT: "Gen2 or MlRM, found automatically (Leggett & Platt)",
 }
 
 
@@ -1161,10 +1153,7 @@ def refine_okin_shared_uuid_protocol_from_gatt(
     _log_correction: bool = True,
 ) -> str:
     """Correct shared OKIN UUID profiles once connected GATT services are known."""
-    is_leggett_okin_variant = (
-        bed_type == BED_TYPE_LEGGETT_PLATT and protocol_variant == LEGGETT_VARIANT_OKIN
-    )
-    if bed_type not in OKIN_SHARED_UUID_GATT_REFINABLE_TYPES and not is_leggett_okin_variant:
+    if bed_type not in OKIN_SHARED_UUID_GATT_REFINABLE_TYPES:
         return bed_type
 
     gatt_detection = detect_bed_type_from_gatt_services(gatt_services, device_name)

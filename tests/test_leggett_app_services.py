@@ -21,9 +21,6 @@ from custom_components.adjustable_bed.const import (
     BED_TYPE_LINAK,
     CONF_PROTOCOL_VARIANT,
     DOMAIN,
-    LEGGETT_VARIANT_GEN2,
-    LEGGETT_VARIANT_MLRM,
-    LEGGETT_VARIANT_OKIN,
     SIDE_BOTH,
     SIDE_RIGHT,
 )
@@ -325,37 +322,11 @@ async def test_hold_preserves_paired_side_dispatch(hass: HomeAssistant, service_
     coordinator.async_execute_controller_command.assert_not_awaited()
 
 
-@pytest.mark.parametrize(
-    ("service", "data", "method"),
-    [
-        (SERVICE_LEGGETT_SLEEP_TIMER, {"action": "cancel"}, "cancel_sleep_timer"),
-        (SERVICE_SET_ALARM, {"enabled": False}, "cancel_alarm_timer"),
-        (
-            SERVICE_HOLD_CONTROL,
-            {"control": "snore", "duration": 1},
-            "hold_control",
-        ),
-    ],
-)
-async def test_explicit_legacy_okin_alias_accepts_services(
-    hass: HomeAssistant, service_target, service, data, method
-):
-    coordinator, controller, _ = service_target
-    coordinator.bed_type = BED_TYPE_LEGGETT_PLATT
-    coordinator.entry.data = {CONF_PROTOCOL_VARIANT: LEGGETT_VARIANT_OKIN}
-    await hass.services.async_call(DOMAIN, service, {"device_id": "bed", **data}, blocking=True)
-    getattr(controller, method).assert_awaited_once()
-    coordinator.async_execute_controller_command.assert_awaited_once()
-
-
-@pytest.mark.parametrize("variant", [LEGGETT_VARIANT_GEN2, LEGGETT_VARIANT_MLRM, "auto", None])
-async def test_other_legacy_variants_reject_before_dispatch(
-    hass: HomeAssistant, service_target, variant
-):
+async def test_the_automatic_setup_rejects_before_dispatch(hass: HomeAssistant, service_target):
     coordinator, _, _ = service_target
     coordinator.bed_type = BED_TYPE_LEGGETT_PLATT
-    coordinator.entry.data = {CONF_PROTOCOL_VARIANT: variant}
-    # Other routes build other controllers, which lack the Okin timers.
+    coordinator.entry.data = {CONF_PROTOCOL_VARIANT: "auto"}
+    # It builds the Gen2 or MlRM controller, which lack the Okin timers.
     coordinator.capability_controller = MagicMock(spec=BedController)
     with pytest.raises(ServiceValidationError, match="does not support this action"):
         await hass.services.async_call(

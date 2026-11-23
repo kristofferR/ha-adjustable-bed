@@ -82,7 +82,7 @@ async def test_ore_alias_becomes_sino(hass: HomeAssistant) -> None:
 
     await async_migrate_entry(hass, entry)
 
-    assert (entry.version, entry.minor_version) == (5, 10)
+    assert (entry.version, entry.minor_version) == (5, 11)
     assert entry.data[CONF_PROTOCOL_VARIANT] == KEESON_VARIANT_SINO
     assert entry.data[CONF_PROFILE_ID] == "keeson:sino"
 
@@ -139,7 +139,7 @@ async def test_other_entries_keep_their_settings(hass: HomeAssistant) -> None:
 
     await async_migrate_entry(hass, entry)
 
-    assert (entry.version, entry.minor_version) == (5, 10)
+    assert (entry.version, entry.minor_version) == (5, 11)
     migrated = dict(entry.data)
     assert migrated.pop(CONF_PROFILE_ID) == BED_TYPE_LINAK
     assert migrated.pop(CONF_PROFILE_MIGRATION)["fields"] == {
@@ -280,7 +280,7 @@ async def test_a_4x_pair_drops_obsolete_keys_on_its_way_to_5_2(hass: HomeAssista
 
     await async_migrate_entry(hass, entry)
 
-    assert (entry.version, entry.minor_version) == (5, 10)
+    assert (entry.version, entry.minor_version) == (5, 11)
     assert "pair_schema_version" not in entry.data
     assert dict(entry.options) == {"later_key": 3}
     migrated_left, migrated_right = entry.data[CONF_PAIR_CHILDREN]
@@ -318,7 +318,7 @@ async def test_a_5_1_entry_without_obsolete_keys_only_moves_to_the_current_schem
 
     await async_migrate_entry(hass, entry)
 
-    assert (entry.version, entry.minor_version) == (5, 10)
+    assert (entry.version, entry.minor_version) == (5, 11)
     assert dict(entry.data) == data
     assert dict(entry.options) == {"later_key": 2}
 
@@ -382,7 +382,7 @@ async def test_schema_5_3_turns_massage_off_without_a_massage_page(
 
     await async_migrate_entry(hass, entry)
 
-    assert (entry.version, entry.minor_version) == (5, 10)
+    assert (entry.version, entry.minor_version) == (5, 11)
     assert entry.data[CONF_HAS_MASSAGE] is False
     assert entry.data[CONF_PROFILE_MIGRATION] == {
         "from_version": 5,
@@ -406,7 +406,7 @@ async def test_schema_5_3_leaves_a_layout_with_massage_alone(
 
     await async_migrate_entry(hass, entry)
 
-    assert (entry.version, entry.minor_version) == (5, 10)
+    assert (entry.version, entry.minor_version) == (5, 11)
     assert dict(entry.data) == data
 
 
@@ -515,7 +515,7 @@ async def test_a_4x_entry_turns_massage_off_on_its_way_to_5_3(hass: HomeAssistan
 
     await async_migrate_entry(hass, entry)
 
-    assert (entry.version, entry.minor_version) == (5, 10)
+    assert (entry.version, entry.minor_version) == (5, 11)
     assert entry.data[CONF_HAS_MASSAGE] is False
     record = entry.data[CONF_PROFILE_MIGRATION]
     assert (record["from_version"], record["from_minor_version"]) == (4, 1)
@@ -623,7 +623,7 @@ async def test_schema_5_5_stores_an_octo_layout_as_its_override(
 
     await async_migrate_entry(hass, entry)
 
-    assert (entry.version, entry.minor_version) == (5, 10)
+    assert (entry.version, entry.minor_version) == (5, 11)
     assert entry.data[CONF_OCTO_MOTOR_COUNT_OVERRIDE] == expected
     assert entry.data[CONF_PROFILE_MIGRATION]["octo_motor_count_override"] == ["data"]
 
@@ -869,7 +869,7 @@ async def test_a_5_5_entry_moves_to_5_6(hass: HomeAssistant) -> None:
 
     await async_migrate_entry(hass, entry)
 
-    assert (entry.version, entry.minor_version) == (5, 10)
+    assert (entry.version, entry.minor_version) == (5, 11)
     assert entry.data[CONF_CONNECTION_MODE] == CONNECTION_MODE_RELEASE
     assert "connection_profile" not in entry.data
     assert entry.data[CONF_PROFILE_MIGRATION]["settings_5_6"]["data"] == [
@@ -1232,7 +1232,7 @@ async def test_a_5_6_okin_cb24_bed_loads_as_smartbed_with_its_entity_ids(
     await hass.async_block_till_done()
 
     assert entry.state is ConfigEntryState.LOADED
-    assert (entry.version, entry.minor_version) == (5, 10)
+    assert (entry.version, entry.minor_version) == (5, 11)
     assert entry.data[CONF_BED_TYPE] == "smartbed"
     runtime = loaded_runtime(hass, entry.entry_id)
     assert runtime is not None and type(runtime.controller) is SmartBedController
@@ -1657,7 +1657,7 @@ async def test_a_5_8_sbi_one_address_pair_loads_as_the_qplus_app_and_keeps_its_s
     await hass.async_block_till_done()
 
     assert entry.state is ConfigEntryState.LOADED
-    assert (entry.version, entry.minor_version) == (5, 10)
+    assert (entry.version, entry.minor_version) == (5, 11)
     # The bed stored no selection, which is Both on either route; its sides keep theirs.
     assert [entry.data[CONF_PROFILE_ID], *(c[CONF_PROFILE_ID] for c in entry.data[CONF_PAIR_CHILDREN])] == [
         "qplus_app",
@@ -1979,10 +1979,210 @@ async def test_a_5_9_serta_bed_loads_as_the_serta_mp_remote_app(
     await hass.async_block_till_done()
 
     assert entry.state is ConfigEntryState.LOADED
-    assert (entry.version, entry.minor_version) == (5, 10)
+    assert (entry.version, entry.minor_version) == (5, 11)
     assert entry.data[CONF_PROFILE_ID] == "serta_mp_remote"
     assert type(loaded_runtime(hass, entry.entry_id).controller) is SertaMPRemoteController
     for key, row in kept.items():
         assert registry.async_get(row.entity_id).unique_id == f"{address}_{key}"
         assert hass.states.get(row.entity_id) is not None
     assert [registry.async_get(row.entity_id) for row in gone] == [None] * len(gone)
+
+
+_LEGGETT = "leggett_platt"
+
+
+@pytest.mark.parametrize(
+    ("stored", "bed_type"),
+    [
+        pytest.param({CONF_BED_TYPE: _LEGGETT, CONF_PROTOCOL_VARIANT: "gen2"}, "leggett_gen2", id="gen2"),
+        pytest.param(
+            {CONF_BED_TYPE: _LEGGETT, CONF_PROTOCOL_VARIANT: "okin", "leggett_app_profile": "prodigy2"},
+            "leggett_okin",
+            id="okin",
+        ),
+        pytest.param({CONF_BED_TYPE: _LEGGETT, CONF_PROTOCOL_VARIANT: "mlrm"}, "leggett_wilinke", id="mlrm"),
+        # Pairing, and a correction on connecting, saved the bed type beside the model.
+        pytest.param(
+            {CONF_BED_TYPE: "leggett_gen2", CONF_PROTOCOL_VARIANT: "gen2"},
+            "leggett_gen2",
+            id="model name left beside its bed type",
+        ),
+    ],
+)
+def test_schema_5_11_saves_a_leggett_model_as_its_bed_type(stored: dict, bed_type: str) -> None:
+    from custom_components.adjustable_bed import migrate_v5_11_entry
+
+    base = {CONF_ADDRESS: "AA:BB:CC:DD:EE:90", CONF_NAME: "Bed", CONF_MOTOR_COUNT: 3}
+    options = {CONF_PREFERRED_ADAPTER: "hci1"}
+    data, new_options = migrate_v5_11_entry(
+        {**base, **stored}, options, from_version=5, from_minor_version=10
+    )
+
+    assert data.pop(CONF_PROFILE_MIGRATION)["leggett_models"] == ["data"]
+    assert data == {**base, **stored, CONF_BED_TYPE: bed_type, CONF_PROTOCOL_VARIANT: "auto"}
+    assert new_options == options
+
+
+@pytest.mark.parametrize(
+    "other",
+    [
+        # The automatic setup finds its model when it connects.
+        {CONF_BED_TYPE: _LEGGETT},
+        {CONF_BED_TYPE: _LEGGETT, CONF_PROTOCOL_VARIANT: "auto"},
+        {CONF_BED_TYPE: "leggett_okin", "leggett_app_profile": "useries"},
+        {CONF_BED_TYPE: BED_TYPE_KEESON, CONF_PROTOCOL_VARIANT: "okin"},
+    ],
+)
+def test_schema_5_11_leaves_the_automatic_setup_and_other_routes(other: dict) -> None:
+    from custom_components.adjustable_bed import migrate_v5_11_entry
+
+    options = {CONF_PREFERRED_ADAPTER: "hci1"}
+    assert migrate_v5_11_entry(other, options, from_version=5, from_minor_version=10) == (
+        other,
+        options,
+    )
+
+
+@pytest.mark.parametrize(
+    ("stored", "ran"),
+    [
+        ({CONF_BED_TYPE: _LEGGETT, CONF_PROTOCOL_VARIANT: "auto"}, (_LEGGETT, "auto")),
+        ({CONF_BED_TYPE: _LEGGETT, CONF_PROTOCOL_VARIANT: "gen2"}, ("leggett_gen2", "auto")),
+    ],
+)
+def test_schema_5_11_keeps_a_beds_options_from_naming_a_model(
+    stored: dict, ran: tuple[str, str]
+) -> None:
+    """A bed runs its own data; pairing and Reconfigure read its options over it."""
+    from custom_components.adjustable_bed import migrate_v5_11_entry
+
+    data, options = migrate_v5_11_entry(
+        stored,
+        {CONF_PROTOCOL_VARIANT: "okin", CONF_PREFERRED_ADAPTER: "hci1"},
+        from_version=5,
+        from_minor_version=10,
+    )
+
+    assert "options" in data[CONF_PROFILE_MIGRATION]["leggett_models"]
+    assert options == {CONF_PREFERRED_ADAPTER: "hci1"}
+    merged = {**data, **options}
+    assert (merged[CONF_BED_TYPE], merged[CONF_PROTOCOL_VARIANT]) == ran
+
+
+def test_schema_5_11_stores_on_each_side_of_a_pair_the_route_it_ran() -> None:
+    from custom_components.adjustable_bed import migrate_v5_11_entry
+
+    left, right = "AA:BB:CC:DD:EE:91", "AA:BB:CC:DD:EE:92"
+    stored = {
+        CONF_PAIR_ID: "pair_leggett",
+        CONF_PAIR_CHILDREN: [
+            {
+                CONF_SIDE: "left",
+                CONF_ADDRESS: left,
+                CONF_BED_TYPE: _LEGGETT,
+                # Unpair restores this bed: its data ran MlRM, whatever its options say.
+                KEY_ORIGIN_DATA: {
+                    CONF_ADDRESS: left,
+                    CONF_BED_TYPE: _LEGGETT,
+                    CONF_PROTOCOL_VARIANT: "mlrm",
+                },
+                KEY_ORIGIN_OPTIONS: {CONF_PROTOCOL_VARIANT: "gen2", CONF_PREFERRED_ADAPTER: "hci1"},
+            },
+            # This side chose its own bed type; the pair's model name reached it too.
+            {CONF_SIDE: "right", CONF_ADDRESS: right, CONF_BED_TYPE: BED_TYPE_LINAK},
+        ],
+    }
+    # A pair's options override both sides: they named the model and its app.
+    stored_options = {
+        CONF_PROTOCOL_VARIANT: "okin",
+        "leggett_app_profile": "prodigy2",
+        CONF_MOTOR_COUNT: 3,
+    }
+
+    def read(data: dict, options: dict) -> list[dict]:
+        views = [effective_child_data(data, side, options) for side in ("left", "right")]
+        originals = (KEY_ORIGIN_DATA, KEY_ORIGIN_OPTIONS)
+        return [{k: v for k, v in view.items() if k not in originals} for view in views]
+
+    before = read(stored, stored_options)
+
+    data, options = migrate_v5_11_entry(
+        stored, stored_options, from_version=5, from_minor_version=10
+    )
+
+    assert data.pop(CONF_PROFILE_MIGRATION)["leggett_models"] == [
+        "data.left",
+        f"data.left.{KEY_ORIGIN_DATA}",
+        f"data.left.{KEY_ORIGIN_OPTIONS}",
+    ]
+    # The options no longer decide a route, so the renamed side cannot fall back.
+    assert options == {"leggett_app_profile": "prodigy2", CONF_MOTOR_COUNT: 3}
+    # Each side reads what it read before, the left under its model's bed type.
+    assert read(data, options) == [
+        {**before[0], CONF_BED_TYPE: "leggett_okin", CONF_PROTOCOL_VARIANT: "auto"},
+        before[1],
+    ]
+    # The Okin bed type keeps its app to itself, so the side stores the one it ran.
+    assert data[CONF_PAIR_CHILDREN][0]["leggett_app_profile"] == "prodigy2"
+    origin = data[CONF_PAIR_CHILDREN][0]
+    assert origin[KEY_ORIGIN_DATA] == {
+        CONF_ADDRESS: left,
+        CONF_BED_TYPE: "leggett_wilinke",
+        CONF_PROTOCOL_VARIANT: "auto",
+    }
+    assert origin[KEY_ORIGIN_OPTIONS] == {CONF_PREFERRED_ADAPTER: "hci1"}
+
+
+async def test_a_5_10_leggett_mlrm_bed_loads_as_the_mlrm_bed_type(
+    hass: HomeAssistant,
+    mock_bleak_client,
+    mock_coordinator_connected,
+    enable_custom_integrations,
+) -> None:
+    """The bed runs the controller it ran before, and its entities keep their IDs."""
+    from homeassistant.config_entries import ConfigEntryState
+    from homeassistant.helpers import entity_registry as er
+
+    from custom_components.adjustable_bed.beds.leggett.wilinke import LeggettWilinkeController
+    from custom_components.adjustable_bed.runtime_data import loaded_runtime
+
+    address = "AA:BB:CC:DD:EE:FF"
+    entry = _entry(
+        hass,
+        {
+            CONF_ADDRESS: address,
+            CONF_NAME: "Bed",
+            CONF_BED_TYPE: _LEGGETT,
+            CONF_PROTOCOL_VARIANT: "mlrm",
+            CONF_MOTOR_COUNT: 2,
+            CONF_HAS_MASSAGE: True,
+            "motor_pulse_delay_ms": 100,
+        },
+        version=5,
+        minor_version=10,
+    )
+    hass.config_entries.async_update_entry(entry, unique_id=address)
+    registry = er.async_get(hass)
+    kept = {
+        key: registry.async_get_or_create(domain, DOMAIN, f"{address}_{key}", config_entry=entry)
+        for domain, key in (
+            ("button", "head_up"),
+            ("button", "preset_lounge"),
+            ("button", "massage_foot_toggle"),
+            ("light", "under_bed_lights_assumed"),
+        )
+    }
+
+    assert await hass.config_entries.async_setup(entry.entry_id)
+    await hass.async_block_till_done()
+
+    assert entry.state is ConfigEntryState.LOADED
+    assert (entry.version, entry.minor_version) == (5, 11)
+    assert entry.data[CONF_PROFILE_ID] == "leggett_wilinke"
+    runtime = loaded_runtime(hass, entry.entry_id)
+    assert type(runtime.controller) is LeggettWilinkeController
+    # A saved repeat interval stays; only a bed without one takes the MlRM cadence.
+    assert runtime.motor_pulse_delay_ms == 100
+    for key, row in kept.items():
+        assert registry.async_get(row.entity_id).unique_id == f"{address}_{key}"
+        assert hass.states.get(row.entity_id) is not None

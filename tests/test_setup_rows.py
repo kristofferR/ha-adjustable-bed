@@ -176,10 +176,9 @@ async def test_an_app_whose_route_is_its_product_is_reachable_from_the_app_list(
         assert saved[const.CONF_HAS_MASSAGE] is False
 
 
-# Saved compatibility IDs from older releases: detection and Configure keep
-# them for existing entries, and each runs as a route the lists do offer.
+# A bed type only 4.x could set up: its beds keep it, and no list offers it.
 _DETECTION_ONLY = {
-    const.BED_TYPE_LEGGETT_PLATT: "older entries; runs as a Leggett & Platt route",
+    const.BED_TYPE_LEGGETT_PLATT: "finds Gen2 or MlRM when it connects",
 }
 
 

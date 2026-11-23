@@ -73,10 +73,8 @@ from .const import (
     CONNECTION_MODE_IDLE,
     CONNECTION_MODE_RELEASE,
     IDLE_DISCONNECT_KEEP_CONNECTED,
-    LEGGETT_VARIANT_GEN2,
     OKIMAT_SERVICE_UUID,
     PAIRLINK_ROLE_PERIPHERAL,
-    VARIANT_AUTO,
     VIBRADORM_APP_ONBOARDING_TIMEOUT_SECONDS,
     VIBRADORM_VMAT_ONBOARDING_TIMEOUT_SECONDS,
     grants_one_connection_per_pairing_window,
@@ -465,14 +463,11 @@ class CoordinatorConnectionMixin:
             return True
 
         # LP Comfort Connect's bond makes an unexpected drop recoverable, so a
-        # held link reconnects promptly. A Leggett & Platt entry on Auto or Gen2
+        # held link reconnects promptly. The automatic Leggett & Platt setup
         # counts while its controller is Gen2 or not yet known.
         if self._bed_type == BED_TYPE_LEGGETT_GEN2:
             return True
-        if self._bed_type == BED_TYPE_LEGGETT_PLATT and self._protocol_variant in (
-            VARIANT_AUTO,
-            LEGGETT_VARIANT_GEN2,
-        ):
+        if self._bed_type == BED_TYPE_LEGGETT_PLATT:
             resolved = self.capability_controller
             return resolved is None or resolved.holds_link_after_stalled_reconnect
         return False

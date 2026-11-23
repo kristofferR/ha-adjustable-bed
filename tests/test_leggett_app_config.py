@@ -14,7 +14,6 @@ from custom_components.adjustable_bed.config_flow import (
 )
 from custom_components.adjustable_bed.const import (
     BED_TYPE_LEGGETT_OKIN,
-    BED_TYPE_LEGGETT_PLATT,
     CONF_BED_TYPE,
     CONF_CONNECTION_MODE,
     CONF_HAS_MASSAGE,
@@ -25,7 +24,6 @@ from custom_components.adjustable_bed.const import (
     CONF_PREFERRED_ADAPTER,
     CONF_PROTOCOL_VARIANT,
     DOMAIN,
-    LEGGETT_VARIANT_OKIN,
     requires_pairing,
 )
 from custom_components.adjustable_bed.controller_factory import create_controller
@@ -74,17 +72,13 @@ async def test_legacy_options_without_profile_keep_existing_motor_count(hass):
     assert entry.data[CONF_MOTOR_COUNT] == 2
 
 
-@pytest.mark.parametrize(
-    "bed_type,variant",
-    [(BED_TYPE_LEGGETT_OKIN, None), (BED_TYPE_LEGGETT_PLATT, LEGGETT_VARIANT_OKIN)],
-)
-async def test_factory_routes_profile_and_legacy_default(hass, bed_type, variant):
+async def test_factory_routes_profile_and_legacy_default(hass):
     for data, expected in [({}, "prodigy4"), ({CONF_LEGGETT_APP_PROFILE: "useries"}, "useries")]:
         coordinator = SimpleNamespace(hass=hass, entry=SimpleNamespace(data=data))
         with patch(
             "custom_components.adjustable_bed.beds.leggett.okin.LeggettOkinController"
         ) as controller:
-            await create_controller(coordinator, bed_type, variant, None)
+            await create_controller(coordinator, BED_TYPE_LEGGETT_OKIN, None, None)
         controller.assert_called_once_with(coordinator, app_profile=expected)
 
 
@@ -131,22 +125,16 @@ async def test_stored_explicit_profile_keeps_its_motor_count(hass):
     assert entry.data[CONF_MOTOR_COUNT] == 3
 
 
-@pytest.mark.parametrize(
-    ("bed_type", "variant"),
-    [(BED_TYPE_LEGGETT_OKIN, None), (BED_TYPE_LEGGETT_PLATT, LEGGETT_VARIANT_OKIN)],
-)
 async def test_untouched_configure_form_keeps_a_legacy_entrys_controls(
-    hass, enable_custom_integrations, bed_type, variant
+    hass, enable_custom_integrations
 ):
     """#676: saving the ordinary form unchanged keeps the controls the entry runs."""
     data = {
         CONF_ADDRESS: "11:22:33:44:55:66",
         CONF_NAME: "Prodigy",
-        CONF_BED_TYPE: bed_type,
+        CONF_BED_TYPE: BED_TYPE_LEGGETT_OKIN,
         CONF_MOTOR_COUNT: 2,
     }
-    if variant is not None:
-        data[CONF_PROTOCOL_VARIANT] = variant
     entry = MockConfigEntry(domain=DOMAIN, data=data)
     entry.add_to_hass(hass)
     before = await _async_preview_labels(hass, entry, dict(entry.data))
@@ -163,7 +151,7 @@ async def test_untouched_configure_form_keeps_a_legacy_entrys_controls(
 
     assert result["type"] == FlowResultType.CREATE_ENTRY, result
     saved = {**entry.data, **entry.options}
-    assert saved[CONF_BED_TYPE] == bed_type
-    assert saved.get(CONF_PROTOCOL_VARIANT) == variant
+    assert saved[CONF_BED_TYPE] == BED_TYPE_LEGGETT_OKIN
+    assert CONF_PROTOCOL_VARIANT not in saved
     assert CONF_LEGGETT_APP_PROFILE not in saved
     assert await _async_preview_labels(hass, entry, saved) == before

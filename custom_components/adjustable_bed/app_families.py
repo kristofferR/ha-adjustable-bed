@@ -145,9 +145,6 @@ from .const import (
     KEESON_VARIANT_SLEEP_HARMONY,
     LEGGETT_APP_DEFAULT_PROFILE,
     LEGGETT_APP_MOTOR_COUNTS,
-    LEGGETT_VARIANT_GEN2,
-    LEGGETT_VARIANT_MLRM,
-    LEGGETT_VARIANT_OKIN,
     OKIN_CST_VARIANTS,
     REMACRO_VARIANT_JEROMES,
     REMACRO_VARIANT_THE_BRICK,
@@ -361,9 +358,6 @@ class AppFamily:
     clears: tuple[str, ...] = ()
     # A changed route drops every setting another bed type's profiles own.
     clears_other_profiles: bool = False
-    # Answers staged under a saved compatibility ID, by that ID: the answer's
-    # route and the (ID, variant) that runs it. The saved ID is never rewritten.
-    aliases: Mapping[str, Mapping[str, tuple[str, str | None]]] = _NOTHING
     # Whether the app or layout can change in place through the guided change.
     guided: bool = False
     # Routes of a guided family that never change in place.
@@ -398,13 +392,6 @@ class AppFamily:
         if self.offers_keep(visit) and "keep" not in answers:
             answers["keep"] = KEEP
         return answers
-
-    def saved_id(self, incoming: str, answer: Answer) -> Answer:
-        """Return the answer under the saved compatibility ID that runs its route."""
-        alias = self.aliases.get(incoming, {}).get(answer.bed_type)
-        if alias is None:
-            return answer
-        return replace(answer, bed_type=alias[0], variant=alias[1])
 
     def changes_route(self, data: Mapping[str, Any], answer: Answer) -> bool:
         """Return True when the answer stages another route or app than the staged one."""
@@ -1075,6 +1062,7 @@ LEGGETT_FAMILY: Final = AppFamily(
         "lp_legacy": Answer(BED_TYPE_LEGGETT_LP_LEGACY, data=_NO_LEGGETT_APP, member=False),
     },
     routes=frozenset({BED_TYPE_LEGGETT_GEN2, BED_TYPE_LEGGETT_WILINKE}),
+    # The automatic setup of 4.x: its beds keep it, or take the app chosen here.
     also=frozenset({BED_TYPE_LEGGETT_PLATT}),
     offers_keep=keep_always,
     placeholders=_current,
@@ -1086,13 +1074,6 @@ LEGGETT_FAMILY: Final = AppFamily(
         CONF_LP_LEGACY_READ_UUID,
         CONF_RICHMAT_REMOTE,
     ),
-    aliases={
-        BED_TYPE_LEGGETT_PLATT: {
-            BED_TYPE_LEGGETT_GEN2: (BED_TYPE_LEGGETT_PLATT, LEGGETT_VARIANT_GEN2),
-            BED_TYPE_LEGGETT_OKIN: (BED_TYPE_LEGGETT_PLATT, LEGGETT_VARIANT_OKIN),
-            BED_TYPE_LEGGETT_WILINKE: (BED_TYPE_LEGGETT_PLATT, LEGGETT_VARIANT_MLRM),
-        }
-    },
     guided=True,
     route_keys=(CONF_PROTOCOL_VARIANT, CONF_LEGGETT_APP_PROFILE),
     requires_check=lambda data: requires_pairing(
@@ -1651,6 +1632,6 @@ def shown_row(route: str, *, configure: bool) -> str | None:
     for family in APP_FAMILIES:
         if not family.routes_show_row or (configure and family is not VIBRADORM_FAMILY):
             continue
-        if route in family.routes or route in family.aliases:
+        if route in family.routes:
             return family.row
     return None

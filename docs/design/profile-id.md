@@ -24,13 +24,12 @@ A profile id names the route an entry runs:
   and `auto` are the same route, because the coordinator has always passed `auto`
   for both.
 - The app profile appears for bed types that pick one with an app key, read
-  from that key. `leggett_platt` with the `okin` variant reads
-  `leggett_app_profile`, like `leggett_okin`.
+  from that key.
 - `%`, `:` and `@` inside a saved value are escaped as `%25`, `%3A` and `%40`, so
   every id round-trips. Other characters, including spaces, stay as saved.
 
 Examples: `linak`, `keeson:sino`, `reverie:Skye 500`, `jiecang_app@dreamask`,
-`leggett_platt:okin@prodigy`.
+`leggett_okin@prodigy2`.
 
 The id space is every codec family profile route plus every standalone
 controller: each bed type, each listed variant and each app key choice.
@@ -54,10 +53,10 @@ The surface for later work, such as setup questions per profile
 
 ## Saved fields stay
 
-The maintainer's rule for v5: the original `bed_type`, `protocol_variant` and app
-keys stay in the entry unchanged, and users see them only in Configure Advanced
-and in diagnostics. No saved ID is rewritten. The profile id is stored beside
-them.
+The step to schema 5.1 leaves the original `bed_type`, `protocol_variant` and app
+keys in the entry unchanged and stores the profile id beside them. Later steps
+rename a saved route only where two bed types ran the same thing; see
+[Aliases](#aliases).
 
 ## Storage
 
@@ -177,8 +176,7 @@ non-wire difference per group:
 |-------|-----------------------|
 | `comfort_motion`, `jiecang` | Repairs: the app profile review lists the LOGICDATA app for `comfort_motion` only. Device manufacturer: "Comfort Motion" against "Jiecang". |
 | `ergomotion`, `keeson:ergomotion` | Capabilities: only the bed type mints its controller and entities before the first connection. Device manufacturer: "Ergomotion" against "Keeson". |
-| `leggett_okin`, `leggett_platt`, `leggett_platt:okin` | Setup offers only `leggett_okin`. `leggett_platt` without a variant chooses its controller from GATT at connect. |
-| `leggett_gen2`, `leggett_platt:gen2` | Setup offers only `leggett_gen2`. |
+| `leggett_gen2`, `leggett_platt` | Setup offers only `leggett_gen2`. `leggett_platt` finds Gen2 or MlRM from the connected bed's services, so it builds no controller before connecting. |
 | `keeson:americanstar`, `avanti_bases`, `bedsense_bases`, `dynasty_bases`, `maxcoil_una` | Setup fields: Avanti Bases hides more generic fields. Each app has its own setup label. |
 | `richmat_best_mattress:model_bfrm`, `richmat_blvd_home:model_bfrm` | Two bed types built for different apps, with their own setup labels. |
 | `fsm_relax`, `fsm_relax:massage_light` | Already one id, `fsm_relax`: the light and massage flags are settings, not routes. |
@@ -188,7 +186,8 @@ are merged: schema 5.8 saves them as `okin_uuid`, `okin_handle`, `okin_7byte`
 and `okin_nordic`. Their device manufacturer now reads "Okin", and the app
 review that listed apps for `dewertokin` follows the entry to `okin_handle`.
 Schema 5.10 saves `serta` and `keeson:serta` as `serta_mp_remote`, the app
-whose keys that route sent.
+whose keys that route sent. Schema 5.11 saves `leggett_platt` with the `gen2`,
+`okin` or `mlrm` model as `leggett_gen2`, `leggett_okin` or `leggett_wilinke`.
 
 Merging a group later means: remove each difference or prove it immaterial with a
 test, map the alias to the canonical id in `resolve_profile_id`, bump

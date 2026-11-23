@@ -238,10 +238,10 @@ are unchanged.
 | Customatic Clarity | `clarity` | `customatic_clarity` | 32-bit | plain frame | from the characteristic's properties | back, legs | 0 |
 | Customatic Jerome's | `jeromes` | `customatic_jeromes` | 32-bit | plain frame | from the characteristic's properties | back, legs | 0 |
 | Customatic Remedy | `remedy` | `customatic_remedy` | 32-bit | plain frame | from the characteristic's properties | back, legs, lumbar | 0 |
-| Prodigy 2L | `prodigy2l` | `leggett_okin`, `leggett_platt` | 32-bit | plain (R1) or envelope (R0), by selector characteristic | without response | head, feet, lumbar | 4 |
-| Prodigy 2 | `prodigy2` | `leggett_okin`, `leggett_platt` | 32-bit | plain (R1) or envelope (R0), by selector characteristic | without response | head, feet, pillow | 4 |
-| Prodigy CE | `prodigy4` | `leggett_okin`, `leggett_platt` | 32-bit | plain (R1) or envelope (R0), by selector characteristic | without response | head, feet, pillow, lumbar | 4 |
-| U Series | `useries` | `leggett_okin`, `leggett_platt` | 32-bit | plain (R1) or envelope (R0), by selector characteristic | without response | head, feet, pillow | 2 |
+| Prodigy 2L | `prodigy2l` | `leggett_okin` | 32-bit | plain (R1) or envelope (R0), by selector characteristic | without response | head, feet, lumbar | 4 |
+| Prodigy 2 | `prodigy2` | `leggett_okin` | 32-bit | plain (R1) or envelope (R0), by selector characteristic | without response | head, feet, pillow | 4 |
+| Prodigy CE | `prodigy4` | `leggett_okin` | 32-bit | plain (R1) or envelope (R0), by selector characteristic | without response | head, feet, pillow, lumbar | 4 |
+| U Series | `useries` | `leggett_okin` | 32-bit | plain (R1) or envelope (R0), by selector characteristic | without response | head, feet, pillow | 2 |
 | DewertOkin DOT handset table | `okin_dot` | `okin_dot` | 40-bit | plain frame | without response | handset table | handset table |
 | SIMMONS SmartBed names | `simmons_smartbed` | `simmons` | 40-bit | plain frame | without response | back, legs | 1 |
 | SIMMONS OKIN names | `simmons_okin` | `simmons` | 40-bit | Keeson E6 frame; inclined keys plain | with response | back, legs | 1 |
@@ -426,14 +426,9 @@ save chord has no threshold; see their profiles.
 
 ### Aliases
 
-`leggett_platt` with variant `okin` builds the same controller over the same
-profile as `leggett_okin`, with the same default timing, so they send identical
-bytes; the wire snapshot (`tests/test_wire_snapshot.py`) proves it by capture.
-`leggett_platt` is kept for existing entries and is not offered in the bed-type
-list. Without a variant it picks its controller from GATT at connect, and its
-variant `gen2` stays apart from `leggett_gen2` because only `leggett_gen2` is in
-the bed-type list. Each route keeps its own
-[profile id](../design/profile-id.md#aliases).
+A bed that 4.x saved as `leggett_platt` with the `okin` model is saved as
+`leggett_okin`, the bed type it ran (schema 5.11). The automatic
+[`leggett_platt` setup](leggett-platt.md#aliases) never builds this controller.
 
 Entries 4.x saved as `okimat` or `dewertokin` are saved as `okin_uuid` and
 `okin_handle`, the routes they always ran.
@@ -1587,7 +1582,7 @@ Adds the lumbar motor. Flat sends the Flat word once.
 
 #### Setup
 
-- Bed type `leggett_okin`, or `leggett_platt` with its `okin` variant (see
+- Bed type `leggett_okin` (see
   [Leggett & Platt](leggett-platt.md)). **Detection:** device names containing
   "leggett", "l&p" or "lp bed" tell these beds from Okimat and Nectar beds on the
   same service UUID.

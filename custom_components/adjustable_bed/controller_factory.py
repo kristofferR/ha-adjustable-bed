@@ -162,7 +162,6 @@ from .const import (
     RICHMAT_MH_APPS,
     RICHMAT_WILINKE_SERVICE_UUIDS,
     SLEEPYS_BOX24_WRITE_CHAR_UUID,
-    VARIANT_AUTO,
 )
 
 if TYPE_CHECKING:
@@ -525,9 +524,9 @@ async def create_controller(
         ValueError: If the bed type is unknown or its configuration is invalid.
         ConnectionError: If the route needs a live link that is missing.
     """
-    if bed_type == BED_TYPE_LEGGETT_PLATT and protocol_variant in (None, "", VARIANT_AUTO):
-        # Resolve the automatic route first, so the controller carries the traits
-        # of the protocol it actually speaks.
+    if bed_type == BED_TYPE_LEGGETT_PLATT:
+        # Find the model first, so the controller carries the traits of the
+        # protocol it actually speaks.
         protocol_variant = await _detect_leggett_platt_variant(client)
     spec = _BUILDERS.get(bed_type)
     if spec is not None:
@@ -568,7 +567,7 @@ async def _detect_leggett_platt_variant(client: BleakClient | None) -> str:
             raise ConnectionError(
                 "Cannot auto-detect Leggett & Platt variant: "
                 "failed to discover BLE services. "
-                "Please manually select a protocol variant in settings."
+                "Choose the bed's app in Reconfigure."
             )
 
     wilinke_uuids_lower = [uuid.lower() for uuid in RICHMAT_WILINKE_SERVICE_UUIDS]

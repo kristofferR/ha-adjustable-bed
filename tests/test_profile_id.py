@@ -21,7 +21,8 @@ from custom_components.adjustable_bed import _async_sync_profile_ids, async_migr
 from custom_components.adjustable_bed.const import (
     BED_TYPE_DIAGNOSTIC,
     BED_TYPE_JIECANG_APP,
-    BED_TYPE_LEGGETT_PLATT,
+    BED_TYPE_LEGGETT_GEN2,
+    BED_TYPE_LEGGETT_OKIN,
     BED_TYPE_LINAK,
     BED_TYPE_LOGICDATA_APP,
     BED_TYPE_MALOUF_LEGACY_OKIN,
@@ -53,8 +54,6 @@ from custom_components.adjustable_bed.const import (
     DOMAIN,
     JIECANG_APP_PROFILES,
     LEGGETT_APP_PROFILES,
-    LEGGETT_VARIANT_GEN2,
-    LEGGETT_VARIANT_OKIN,
     LOGICDATA_APP_PROFILES,
     MALOUF_APP_PROFILES,
     PAIR_MODE_SEPARATE_ADDRESS,
@@ -115,20 +114,12 @@ def former_routes() -> Iterator[dict[str, Any]]:
     for bed_type, key in APP_PROFILE_KEYS.items():
         for choice in _APP_CHOICES[key]:
             yield {CONF_BED_TYPE: bed_type, key: choice}
-    for choice in LEGGETT_APP_PROFILES:
-        yield {
-            CONF_BED_TYPE: BED_TYPE_LEGGETT_PLATT,
-            CONF_PROTOCOL_VARIANT: LEGGETT_VARIANT_OKIN,
-            CONF_LEGGETT_APP_PROFILE: choice,
-        }
 
 
 def _expected_route(data: dict[str, Any]) -> ProfileRoute:
     variant = data.get(CONF_PROTOCOL_VARIANT)
     variant = None if variant in (None, VARIANT_AUTO) else variant
     key = APP_PROFILE_KEYS.get(data[CONF_BED_TYPE])
-    if data[CONF_BED_TYPE] == BED_TYPE_LEGGETT_PLATT and variant == LEGGETT_VARIANT_OKIN:
-        key = CONF_LEGGETT_APP_PROFILE
     return ProfileRoute(data[CONF_BED_TYPE], variant, data.get(key) if key else None)
 
 
@@ -156,21 +147,13 @@ def test_every_former_route_resolves_to_its_own_round_tripping_id() -> None:
         ({CONF_BED_TYPE: "reverie", CONF_PROTOCOL_VARIANT: "Skye 500"}, "reverie:Skye 500"),
         ({CONF_BED_TYPE: BED_TYPE_JIECANG_APP, CONF_JIECANG_APP_PROFILE: "dreamask"}, "jiecang_app@dreamask"),
         (
-            {
-                CONF_BED_TYPE: BED_TYPE_LEGGETT_PLATT,
-                CONF_PROTOCOL_VARIANT: LEGGETT_VARIANT_OKIN,
-                CONF_LEGGETT_APP_PROFILE: "prodigy",
-            },
-            "leggett_platt:okin@prodigy",
+            {CONF_BED_TYPE: BED_TYPE_LEGGETT_OKIN, CONF_LEGGETT_APP_PROFILE: "prodigy"},
+            "leggett_okin@prodigy",
         ),
         # An app key only counts on the route that reads it.
         (
-            {
-                CONF_BED_TYPE: BED_TYPE_LEGGETT_PLATT,
-                CONF_PROTOCOL_VARIANT: LEGGETT_VARIANT_GEN2,
-                CONF_LEGGETT_APP_PROFILE: "prodigy",
-            },
-            "leggett_platt:gen2",
+            {CONF_BED_TYPE: BED_TYPE_LEGGETT_GEN2, CONF_LEGGETT_APP_PROFILE: "prodigy"},
+            "leggett_gen2",
         ),
         ({CONF_BED_TYPE: BED_TYPE_LINAK, CONF_JIECANG_APP_PROFILE: "dreamask"}, "linak"),
         # A classic Richmat app is its variant; its layout is a setting, not the route.
@@ -217,7 +200,7 @@ async def test_migration_stores_an_id_for_every_former_route(hass: HomeAssistant
         record = migrated.pop(CONF_PROFILE_MIGRATION)
         # Only a route that gained an app in v5 is asked about it once more.
         assert migrated.pop(CONF_PROFILE_REVIEW_PENDING, None) == v5_profile_review_mark(stored)
-        assert (entry.version, entry.minor_version) == (5, 10)
+        assert (entry.version, entry.minor_version) == (5, 11)
         # Schema 5.5 stores an Octo setup's motor layout as its override.
         octo = data.get(CONF_BED_TYPE) == BED_TYPE_OCTO
         assert migrated.pop(CONF_OCTO_MOTOR_COUNT_OVERRIDE, None) == ("auto" if octo else None)

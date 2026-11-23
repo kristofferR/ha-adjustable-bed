@@ -156,7 +156,6 @@ from .const import (
     IDLE_DISCONNECT_KEEP_CONNECTED,
     KEESON_VARIANT_ORE_ULTRAMATIC,
     LEGGETT_OKIN_SUPERSEDED_PULSE_DEFAULTS,
-    LEGGETT_VARIANT_OKIN,
     LINAK_VARIANT_PERFORMANCE,
     NAME_RULE_VARIANTS_BY_BED_TYPE,
     OCTO_VARIANT_STAR2,
@@ -169,7 +168,6 @@ from .const import (
     STARCODE_GROUP_BED_TYPES,
     get_motor_pulse_defaults,
     get_richmat_motor_count,
-    resolve_explicit_bed_type,
     resolve_richmat_remote_code,
 )
 from .controller_factory import create_controller
@@ -857,13 +855,8 @@ class AdjustableBedCoordinator(
                 corrected_bed_type,
             )
         previous_defaults = BED_MOTOR_PULSE_DEFAULTS.get(previous_bed_type)
-        corrected_uses_leggett_okin = corrected_bed_type == BED_TYPE_LEGGETT_OKIN or (
-            corrected_bed_type == BED_TYPE_LEGGETT_PLATT
-            and self._protocol_variant == LEGGETT_VARIANT_OKIN
-        )
-        corrected_defaults = BED_MOTOR_PULSE_DEFAULTS.get(
-            BED_TYPE_LEGGETT_OKIN if corrected_uses_leggett_okin else corrected_bed_type
-        )
+        corrected_uses_leggett_okin = corrected_bed_type == BED_TYPE_LEGGETT_OKIN
+        corrected_defaults = BED_MOTOR_PULSE_DEFAULTS.get(corrected_bed_type)
         # Only swap in the corrected protocol's defaults if the user never set
         # their own pulse values. Comparing against ``previous_defaults`` alone is
         # not enough: an explicit override can coincidentally equal the previous
@@ -878,10 +871,7 @@ class AdjustableBedCoordinator(
         # user did not customize them, so the presence of the pulse keys proves
         # nothing on its own. Restrict this migration to the Leggett Okin upgrade
         # paths so unrelated explicit settings remain intact.
-        previous_uses_leggett_okin = previous_bed_type == BED_TYPE_LEGGETT_OKIN or (
-            previous_bed_type == BED_TYPE_LEGGETT_PLATT
-            and self._protocol_variant == LEGGETT_VARIANT_OKIN
-        )
+        previous_uses_leggett_okin = previous_bed_type == BED_TYPE_LEGGETT_OKIN
         # Entries carrying the superseded (5, 200) cadence got it from an earlier
         # release of this migration rather than from the user, so move them to the
         # cadence the Prodigy CE analysis proved. CONF_MOTOR_PULSE_USER_SET is the
@@ -1162,12 +1152,7 @@ class AdjustableBedCoordinator(
         """
         if self._offline_controller is not None or self._controller is not None:
             return
-        # Resolve a legacy umbrella bed type (leggett_platt) with an explicit
-        # variant to its concrete type, so a Gen2/WiLinke side that the pairing
-        # gate accepted as offline-safe is actually minted here (the raw umbrella
-        # type is not in OFFLINE_CAPABILITY_SAFE_BED_TYPES). Idempotent for a
-        # descriptor already normalised at pairing, and for every other bed type.
-        bed_type = resolve_explicit_bed_type(self._bed_type, self._protocol_variant)
+        bed_type = self._bed_type
         # Octo is not statically offline-safe (it discovers capabilities post
         # connect), but a paired side that captured a capability snapshot AT
         # PAIRING can be minted offline from that snapshot.
@@ -1760,12 +1745,7 @@ class AdjustableBedCoordinator(
         out transiently we must not latch a partial read as complete, or the
         bed would be misrouted to the stair profile on every future reconnect.
         """
-        if self._bed_type in OKIN_SHARED_UUID_GATT_REFINABLE_TYPES:
-            return True
-        return (
-            self._bed_type == BED_TYPE_LEGGETT_PLATT
-            and self._protocol_variant == LEGGETT_VARIANT_OKIN
-        )
+        return self._bed_type in OKIN_SHARED_UUID_GATT_REFINABLE_TYPES
 
     def _store_ble_device_info(
         self,

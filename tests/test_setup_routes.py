@@ -255,8 +255,9 @@ async def test_a_discovered_okimat_asks_the_okin_question_with_another_app(
 
 
 
-def test_leggett_umbrella_route_has_a_friendly_label():
-    assert bed_type_label(const.BED_TYPE_LEGGETT_PLATT) != const.BED_TYPE_LEGGETT_PLATT
+def test_the_automatic_leggett_setup_has_a_plain_label():
+    label = bed_type_label(const.BED_TYPE_LEGGETT_PLATT)
+    assert label.endswith("(Leggett & Platt)") and "older" not in label
 
 
 @pytest.mark.parametrize(

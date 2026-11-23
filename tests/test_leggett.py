@@ -25,6 +25,7 @@ from custom_components.adjustable_bed.codec.okin_nframe import (
 )
 from custom_components.adjustable_bed.const import (
     BED_TYPE_LEGGETT_GEN2,
+    BED_TYPE_LEGGETT_OKIN,
     BED_TYPE_LEGGETT_PLATT,
     BED_TYPE_OKIN_UUID,
     CONF_BED_TYPE,
@@ -42,9 +43,6 @@ from custom_components.adjustable_bed.const import (
     LEGGETT_OKIN_PULSE_DEFAULTS,
     LEGGETT_OKIN_REVISION_SELECTOR_CHAR_UUID,
     LEGGETT_OKIN_SERVICE_UUID,
-    LEGGETT_VARIANT_GEN2,
-    LEGGETT_VARIANT_MLRM,
-    LEGGETT_VARIANT_OKIN,
     OKIN_SMART_REMOTE_CSS_NOTIFY_CHAR_UUID,
     OKIN_SMART_REMOTE_CSS_WRITE_CHAR_UUID,
     RICHMAT_WILINKE_SERVICE_UUIDS,
@@ -655,10 +653,7 @@ class TestLeggettGen2Connection:
         [
             # LP Comfort Connect follows the connection mode like other beds.
             (BED_TYPE_LEGGETT_GEN2, VARIANT_AUTO, False),
-            (BED_TYPE_LEGGETT_PLATT, LEGGETT_VARIANT_GEN2, False),
             (BED_TYPE_LEGGETT_PLATT, VARIANT_AUTO, False),
-            (BED_TYPE_LEGGETT_PLATT, LEGGETT_VARIANT_MLRM, False),
-            (BED_TYPE_LEGGETT_PLATT, LEGGETT_VARIANT_OKIN, False),
         ],
     )
     async def test_persistent_connection_fallback(
@@ -719,10 +714,7 @@ class TestLeggettGen2Connection:
         [
             (BED_TYPE_LEGGETT_GEN2, None, True),
             (BED_TYPE_LEGGETT_GEN2, VARIANT_AUTO, True),
-            (BED_TYPE_LEGGETT_PLATT, LEGGETT_VARIANT_GEN2, True),
-            (BED_TYPE_LEGGETT_PLATT, LEGGETT_VARIANT_OKIN, True),
             (BED_TYPE_LEGGETT_PLATT, VARIANT_AUTO, False),
-            (BED_TYPE_LEGGETT_PLATT, LEGGETT_VARIANT_MLRM, False),
         ],
     )
     async def test_gen2_requires_pairing(
@@ -736,10 +728,9 @@ class TestLeggettGen2Connection:
         [
             (BED_TYPE_LEGGETT_GEN2, None, True),
             (BED_TYPE_LEGGETT_GEN2, VARIANT_AUTO, True),
-            (BED_TYPE_LEGGETT_PLATT, LEGGETT_VARIANT_GEN2, True),
             # Okin-style pairing beds accept the connection and only gate GATT
             # access, so a connect timeout there is not a pairing symptom.
-            (BED_TYPE_LEGGETT_PLATT, LEGGETT_VARIANT_OKIN, False),
+            (BED_TYPE_LEGGETT_OKIN, None, False),
             (BED_TYPE_LEGGETT_PLATT, VARIANT_AUTO, False),
             (BED_TYPE_OKIN_UUID, None, False),
         ],
@@ -754,8 +745,7 @@ class TestLeggettGen2Connection:
         ("bed_type", "variant", "expected"),
         [
             (BED_TYPE_LEGGETT_GEN2, None, True),
-            (BED_TYPE_LEGGETT_PLATT, LEGGETT_VARIANT_GEN2, True),
-            (BED_TYPE_LEGGETT_PLATT, LEGGETT_VARIANT_OKIN, False),
+            (BED_TYPE_LEGGETT_OKIN, None, False),
             (BED_TYPE_LEGGETT_PLATT, VARIANT_AUTO, False),
             (BED_TYPE_OKIN_UUID, None, False),
         ],
