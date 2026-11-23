@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import asyncio
-from unittest.mock import AsyncMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from bleak.exc import BleakError
@@ -27,7 +27,10 @@ from custom_components.adjustable_bed.const import (
     CONF_PREFERRED_ADAPTER,
     CONF_PROTOCOL_VARIANT,
     DOMAIN,
+    REVERIE_NIGHTSTAND_FOOT_POSITION_UUID,
+    REVERIE_NIGHTSTAND_FOOT_WAVE_UUID,
     REVERIE_NIGHTSTAND_HEAD_POSITION_UUID,
+    REVERIE_NIGHTSTAND_HEAD_WAVE_UUID,
     REVERIE_NIGHTSTAND_LED_UUID,
     REVERIE_NIGHTSTAND_LINEAR_FOOT_UUID,
     REVERIE_NIGHTSTAND_LINEAR_HEAD_UUID,
@@ -763,6 +766,47 @@ class TestReverieNightstandMultiCharacteristic:
             response=True,
         )
         controller._cancel_routine()
+
+    async def test_massage_levels_without_notify_do_not_block_startup(
+        self,
+        hass: HomeAssistant,
+        mock_reverie_nightstand_config_entry,
+        mock_coordinator_connected,
+    ) -> None:
+        """A control box with read/write-only massage levels still starts (#1016)."""
+        coordinator = AdjustableBedCoordinator(
+            hass, mock_reverie_nightstand_config_entry
+        )
+        await coordinator.async_connect()
+        client = coordinator._client
+        assert client is not None
+        wave_uuids = {
+            REVERIE_NIGHTSTAND_HEAD_WAVE_UUID,
+            REVERIE_NIGHTSTAND_FOOT_WAVE_UUID,
+        }
+        read_write_only = MagicMock(properties=["read", "write"])
+        notifying = MagicMock(properties=["read", "write", "notify"])
+        client.services.get_characteristic.side_effect = lambda uuid: (
+            read_write_only if uuid in wave_uuids else notifying
+        )
+
+        async def start_notify(uuid: str, _handler: object) -> None:
+            if uuid in wave_uuids:
+                raise BleakError(
+                    f"Characteristic {uuid} does not have notify or indicate property set."
+                )
+
+        client.start_notify.reset_mock()
+        client.start_notify.side_effect = start_notify
+
+        controller = ReverieNightstandController(coordinator)
+        assert controller.model.massage
+        await controller.start_notify()
+
+        subscribed = [call.args[0] for call in client.start_notify.call_args_list]
+        assert REVERIE_NIGHTSTAND_HEAD_POSITION_UUID in subscribed
+        assert REVERIE_NIGHTSTAND_FOOT_POSITION_UUID in subscribed
+        assert wave_uuids.isdisjoint(subscribed)
 
     async def test_v1_negative_lumbar_routine_is_a_source_defined_no_write(
         self,

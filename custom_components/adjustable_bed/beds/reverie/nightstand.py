@@ -587,14 +587,20 @@ class ReverieNightstandController(BedController, ReverieComfortActions):
                 )
                 started.append(REVERIE_NIGHTSTAND_LUMBAR_UUID)
             if self.model.massage:
-                await self.client.start_notify(
-                    REVERIE_NIGHTSTAND_HEAD_WAVE_UUID, head_wave_handler
-                )
-                started.append(REVERIE_NIGHTSTAND_HEAD_WAVE_UUID)
-                await self.client.start_notify(
-                    REVERIE_NIGHTSTAND_FOOT_WAVE_UUID, foot_wave_handler
-                )
-                started.append(REVERIE_NIGHTSTAND_FOOT_WAVE_UUID)
+                for char_uuid, wave_handler in (
+                    (REVERIE_NIGHTSTAND_HEAD_WAVE_UUID, head_wave_handler),
+                    (REVERIE_NIGHTSTAND_FOOT_WAVE_UUID, foot_wave_handler),
+                ):
+                    # Some control boxes (RevCB_A1) offer the massage levels
+                    # as read and write only. They are still read and written.
+                    characteristic = self.client.services.get_characteristic(char_uuid)
+                    if characteristic is not None and not {
+                        "notify",
+                        "indicate",
+                    }.intersection(characteristic.properties):
+                        continue
+                    await self.client.start_notify(char_uuid, wave_handler)
+                    started.append(char_uuid)
             self._active_notify_characteristics = started.copy()
             _LOGGER.debug("Started Reverie Nightstand position notifications")
         except BaseException as subscribe_error:
