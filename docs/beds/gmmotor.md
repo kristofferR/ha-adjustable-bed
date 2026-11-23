@@ -23,7 +23,7 @@
 | Feature | Product controller | FWRM / WFRM desk | MM / SXB module |
 |---------|--------------------|------------------|-----------------|
 | Motor Control | The app's controls for your product, with the app's names | Up, down, reset | None |
-| Position Feedback | ❌ Not shown as bed positions | Desk height, unit, limits and state | None |
+| Position Feedback | ❌ Not shown as bed positions | **Desk height** sensor; unit, limits and state on the **Status** sensor | None |
 | Memory Presets | Your product's recall and save controls; where the app saves with a long press, you get a **Save …** button | Three memory recalls; no save | None |
 | Massage | Your product's controls; a countdown where the product has one; **Massage timer** select for products with several fixed timers | None | None |
 | Lights | Your product's controls; the RGB and timeout controls appear once the bed reports it has them | None | None |
@@ -236,6 +236,12 @@ the coordinator's next connection attempt.
 
 ## Position Feedback / Notifications
 
+- A desk's **Desk height** sensor is the height the app's desk page shows, in
+  cm; Home Assistant shows it in the unit you choose for the sensor. A 7-byte
+  height report (`90` at byte 1) carries the unit and one value. A 16-byte
+  report, or an extended category `0F` report, carries both readings and the
+  unit selects one: the cm reading, or for a desk in inches the inch reading,
+  which is multiplied by 2.54 as the page does to place its ruler.
 - The disabled-by-default **Status** sensor exposes parsed event values, raw indexed motor and
   desk reports, alarm records and the selected catalog's local UI state.
 - The sleep-module state sensor exposes raw stream DTOs, clock state, separate

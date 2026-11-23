@@ -340,3 +340,24 @@ async def test_single_address_both_uses_two_admitted_frames_and_right_cleanup(ha
     ]
     assert ctrl.command_side is None
     c._cancel_disconnect_timer()
+
+
+async def test_desk_height_sensor_reads_cm_whichever_unit_the_desk_reports(hass):
+    c, ctrl = physical(hass, "FWRM")
+    sensor = AdjustableBedControllerStateSensor(c, ctrl.controller_state_sensor_specs[0])
+    assert sensor.device_class == "distance" and sensor.native_unit_of_measurement == "cm"
+    assert sensor.entity_registry_enabled_default and sensor.native_value is None
+    notify = MagicMock(uuid="notify")
+    # Height reports carry one value in the desk's unit: 73.5 cm, then 29.5 in.
+    ctrl._receive(notify, bytearray.fromhex("6e90000007230e"))
+    assert sensor.native_value == 73.5
+    ctrl._receive(notify, bytearray.fromhex("6e900001025f60"))
+    assert sensor.native_value == 74.93
+    # A full report carries 29.5 in and 74.9 cm; the desk's unit selects the reading.
+    full = "0224045c06000c32025f0731"
+    ctrl._receive(notify, bytearray.fromhex("6e9400" + full + "65"))
+    assert sensor.native_value == 74.9
+    ctrl._receive(notify, bytearray.fromhex("6e9401" + full + "66"))
+    assert sensor.native_value == 74.93
+    ctrl._cancel_remainder()
+    c._cancel_disconnect_timer()

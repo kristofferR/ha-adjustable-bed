@@ -5,8 +5,15 @@ from __future__ import annotations
 import asyncio
 from typing import TYPE_CHECKING
 
-from ..entity_specs import ControllerButtonSpec, ControllerHoldSpec
+from ...state_keys import DESK_HEIGHT
+from ..entity_specs import (
+    DESK_HEIGHT_SENSOR,
+    ControllerButtonSpec,
+    ControllerHoldSpec,
+    ControllerStateSensorSpec,
+)
 from .controller import GmmotorController
+from .notifications import Event
 from .protocol import Material, desk_packet, stop_packet
 from .requests import Request
 
@@ -62,6 +69,23 @@ class GmmotorDeskController(GmmotorController):
             )
             for control in _DESK_ACTIONS
         )
+
+    @property
+    def controller_state_sensor_specs(self) -> tuple[ControllerStateSensorSpec, ...]:
+        return (DESK_HEIGHT_SENSOR, *super().controller_state_sensor_specs)
+
+    def _accept(self, event: Event) -> None:
+        super()._accept(event)
+        if event.name not in ("desk_height", "desk_data") or not isinstance(event.value, dict):
+            return
+        # The desk page reads the inch field of a report in inches and the cm
+        # field of one in cm, and places its ruler at the inch reading x 2.54.
+        inch = event.value.get("unit") == "inch"
+        height = event.value.get("height" if inch else "monitor_height")
+        if isinstance(height, float):
+            self.forward_controller_state_update(
+                DESK_HEIGHT, round(height * 2.54, 2) if inch else height
+            )
 
     async def hold_control(self, control: str, duration_ms: int) -> None:
         self.validate_hold_control(control, duration_ms)

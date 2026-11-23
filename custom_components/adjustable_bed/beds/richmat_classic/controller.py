@@ -26,14 +26,16 @@ from ...const import (
     CONF_PROTOCOL_VARIANT,
     CONF_RICHMAT_CLASSIC_THIRD_SERVICE,
 )
-from ...controller_state import StateKey
+from ...controller_state import StateKey, StateUpdate
 from ...errors import invalid
 from ...execution import NO_EXECUTION_CAPABILITIES, ExecutionCapabilities
 from ...profiles.richmat import RICHMAT_CLASSIC
+from ...state_keys import DESK_HEIGHT
 from ..base import CONTROLLER_GESTURE_RELEASE, BedController
 from ..builder import BuildContext
 from ..catalog_buttons import Kind, catalog_button, classify, unique_buttons
 from ..entity_specs import (
+    DESK_HEIGHT_SENSOR,
     ControllerButtonSpec,
     ControllerHoldSpec,
     ControllerNumberSpec,
@@ -281,7 +283,19 @@ class RichmatClassicController(BedController):
             _selection_key("hold")("hold" if self._selection.hold else "release"),
             _selection_key("head_foot")("head" if self._selection.head else "foot"),
             LAMP_SECONDS(self._lamp_seconds),
+            *self._desk_height(),
         )
+
+    def _desk_height(self) -> tuple[StateUpdate, ...]:
+        """The cm height the desk screen keeps, whichever unit the desk reports in.
+
+        The last one stays through a reconnect, until the desk reports again.
+        """
+        height = self._receive.height_cm
+        if self.layout not in ("FWRM", "WFRM") or height is None:
+            return ()
+        # The app's binary32 one-decimal value, as the decimal it displays.
+        return (DESK_HEIGHT(round(height, 1)),)
 
     @property
     def has_dynamic_controller_entities(self) -> bool:
@@ -319,12 +333,13 @@ class RichmatClassicController(BedController):
 
     @property
     def controller_state_sensor_specs(self) -> tuple[ControllerStateSensorSpec, ...]:
-        return (ControllerStateSensorSpec(
+        status = ControllerStateSensorSpec(
             "richmat_classic_status", "richmat_classic_status", STATUS, "mdi:bed",
             attribute_keys=(APP, LAYOUT, STATE, PREFERENCES, REJECTION),
             card=CARD_UTILITY,
-                    entity_registry_enabled_default=False,
-        ),)
+            entity_registry_enabled_default=False,
+        )
+        return (DESK_HEIGHT_SENSOR, status) if self.layout in ("FWRM", "WFRM") else (status,)
 
     def _notification(self, session: Transport, _sender: BleakGATTCharacteristic, data: bytearray) -> None:
         if self._session is not session or self.client is not session.client or not session.client.is_connected:
