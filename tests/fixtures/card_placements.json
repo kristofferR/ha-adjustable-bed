@@ -4569,6 +4569,15 @@
  "sensor:sleeptracker_right_commanded_timer_seconds": {
   "card_section": "hidden"
  },
+ "sensor:sleepys_app_position_axis_0": {
+  "card_section": "utility"
+ },
+ "sensor:sleepys_app_position_axis_1": {
+  "card_section": "utility"
+ },
+ "sensor:sleepys_app_position_axis_2": {
+  "card_section": "utility"
+ },
  "sensor:smart_comfort_model": {
   "card_section": "hidden"
  },

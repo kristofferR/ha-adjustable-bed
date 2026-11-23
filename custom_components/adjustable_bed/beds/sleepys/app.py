@@ -53,6 +53,7 @@ from ..entity_specs import (
     ControllerHoldSpec,
     ControllerMotorHoldSpec,
     ControllerNumberSpec,
+    ControllerStateSensorSpec,
     ControllerSwitchSpec,
     MotorControlSpec,
     PositionNumberSpec,
@@ -268,7 +269,7 @@ class SleepysEliteAppController(BedController):
             "app_profile": "sleepys_elite_app",
             "selector": self.selector,
             "canonical_route_sha256": CANONICAL_ROUTE_SHA256,
-            # Parsed app state fields; of these only the timer is an entity.
+            # Parsed app state fields; only positions and the timer are entities.
             "app_fields": dict(self._app_fields),
         }
 
@@ -641,9 +642,11 @@ class SleepysEliteAppController(BedController):
         positions = cast(dict[str, float] | None, updates.pop("_positions", None))
         if positions is not None:
             self._position_data.update(positions)
-            if self._notify_callback is not None:
-                for axis, value in positions.items():
-                    self._notify_callback(axis, value)
+            for index, axis in enumerate(_POSITION_AXES):
+                # The sensors existing entries already have keep their values.
+                updates[f"position_axis_{index}"] = positions[axis]
+                if self._notify_callback is not None:
+                    self._notify_callback(axis, positions[axis])
         if updates:
             state_updates: list[StateUpdate] = []
             for key, value in updates.items():
@@ -1201,6 +1204,27 @@ class SleepysEliteAppController(BedController):
                 context.cleanup_stop_sent = False
         if recall:
             await self.follow_autonomous_move()
+
+    @property
+    def controller_state_sensor_specs(self) -> tuple[ControllerStateSensorSpec, ...]:
+        # The app's state fields carry no proven meaning beyond the timer and
+        # light level the select and number show; they stay in diagnostics.
+        # The position sensors predate the sliders and stay for existing setups.
+        if self.selector not in _BOX25_SELECTORS:
+            return ()
+        return tuple(
+            ControllerStateSensorSpec(
+                key=f"sleepys_app_position_axis_{axis}",
+                translation_key=f"sleepys_app_position_axis_{axis}",
+                state_key=_field_key(f"position_axis_{axis}"),
+                icon="mdi:bed-outline",
+                native_unit_of_measurement="%",
+                entity_registry_enabled_default=True,
+                suggested_display_precision=0,
+                card=CARD_UTILITY,
+            )
+            for axis in range(3)
+        )
 
     async def set_position_target(self, axis: int, target: int) -> None:
         if self.selector not in _POSITION_UI_SELECTORS:

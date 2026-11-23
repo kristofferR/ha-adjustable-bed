@@ -1214,10 +1214,18 @@ async def test_box25_reports_reach_the_position_system_and_its_sliders(
         "lumbar_position",
     ]
     assert len({entity.unique_id for entity in numbers}) == len(numbers)
-    # The same value is not shown a second time as a sensor.
-    assert not any(
-        "position" in str(entity.unique_id) for entity in _sensor_entities_for(hass, coordinator)
-    )
+    # The position sensors existing setups have stay, with the same values.
+    sensors = [
+        entity
+        for entity in _sensor_entities_for(hass, coordinator)
+        if "sleepys_app_position_axis_" in str(entity.unique_id)
+    ]
+    assert len(sensors) == 3
+    assert [coordinator.controller_state[f"sleepys_app_position_axis_{axis}"] for axis in range(3)] == [
+        22.0,
+        0.0,
+        40.0,
+    ]
     head = next(spec for spec in controller.motor_control_specs if spec.key == "head")
     cover = AdjustableBedCover(coordinator, _build_cover_description(head))
     assert cover.current_cover_position == 22

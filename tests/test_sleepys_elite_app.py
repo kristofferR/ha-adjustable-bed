@@ -373,8 +373,12 @@ def test_ha_surfaces_follow_proven_selector_and_feature_domains() -> None:
 
         # Voice shortcuts repeat the position sliders and light controls.
         assert not any(key.startswith("sleepys_app_voice_") for key in button_keys)
-        # Unlabelled app fields stay in diagnostics.
-        assert state_keys == set()
+        # Unlabelled app fields stay in diagnostics; the BOX25 position sensors stay.
+        assert state_keys == (
+            {f"sleepys_app_position_axis_{axis}" for axis in range(3)}
+            if selector in _VOICE_SELECTORS
+            else set()
+        )
 
 
 async def test_dynamic_vectors_retain_frozen_provenance_and_current_route_counts() -> None:

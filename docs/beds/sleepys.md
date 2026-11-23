@@ -122,8 +122,7 @@ physical side's explicit selector.
   gone quiet, not while reports keep arriving.
 - A slider is the target number's own entity: it keeps its entity ID and
   settings, and now shows the reported position instead of the last target. The
-  separate head, foot and lumbar position sensors are gone, because the sliders
-  show the same value.
+  head, foot and lumbar position sensors stay and show the same value.
 - A slider commit and the preset and memory buttons are followed: the command
   stays running until the reported positions have been unchanged for 2 seconds;
   it then asks once, and an answer that changes nothing ends the move. Stop, a
