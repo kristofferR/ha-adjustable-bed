@@ -1,10 +1,10 @@
 name: Validate
 
-# A pull request runs once through pull_request; push covers only the
-# integration branches, so a same-repo PR branch is not validated twice.
+# A pull request runs once through pull_request; push covers only main,
+# so a same-repo PR branch is not validated twice.
 on:
   push:
-    branches: [main, v5]
+    branches: [main]
   pull_request:
   schedule:
     - cron: "0 0 * * *"
@@ -133,7 +133,7 @@ jobs:
   # this job: download the test-durations artifact of a scheduled or manually
   # dispatched run and commit it on its own. Durations recorded locally, on a
   # loaded machine, skew the shards. Schedules run only on the default branch;
-  # for another branch dispatch it: gh workflow run validate.yml --ref v5
+  # for another branch dispatch it: gh workflow run validate.yml --ref <branch>
   durations:
     needs: test
     if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'

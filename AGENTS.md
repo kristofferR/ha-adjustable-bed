@@ -33,7 +33,7 @@ For every current and future bed integration, implement direct BLE bed features 
 
 **Current status:** Dozens of bed protocols implemented. The README's "Supported Beds" table is the single source of truth for which protocols exist and which are confirmed working — don't duplicate that list here.
 
-**Baseline:** Work from `v5` while v5 is in beta. It requires Home Assistant 2026.11.0+
+**Baseline:** Work from `main`. It requires Home Assistant 2026.11.0+
 and Python 3.14.2+. Start with the [documentation index](docs/README.md).
 
 ## GitHub Comment Approval
@@ -427,16 +427,6 @@ When creating a release:
      minimum Home Assistant version, saying that a Home Assistant backup taken
      before the upgrade is the only way back, and linking the upgrade page
      (`docs/V5_BREAKING_CHANGES.md` for 5.0.0).
-
-### First stable 5.0.0
-
-These lines are true only while v5 is in beta. Change them in the 5.0.0
-release work, after `v5` is merged into `main` (merge, never reset) and before
-the tag is published:
-
-- `AGENTS.md` **Baseline**: work from `main`, not `v5`.
-- `.github/workflows/validate.yml`: drop `v5` from the branch list, or replace
-  it with a maintenance branch if there is one.
 
 ## Frontend (Lovelace Card)
 
