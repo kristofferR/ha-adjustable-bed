@@ -40,6 +40,10 @@ MODELS: Final = {
     0x86: ("ThreeSeatNoMid", 3, (2, 1, 0), (2, 0)),
     0x89: ("TurnSeat", 3, (2, 1, 0), (2, 1, 0)),
 }
+# The apps' Position screen: each counter's value at Home, and the travel it
+# divides the counter by, in frame order (head, reclining, lumbar).
+POSITION_BASELINE: Final = 0x80000000
+POSITION_TRAVEL: Final = (0x1F3C, 0x2E5B, 0x272C)
 ACCESSORIES: Final = {
     "base_on": (0, 1, 0x10),
     "base_off": (1, 1, 0x10),
@@ -119,6 +123,19 @@ class DeviceState:
 class RippleState:
     # Frame/display order, not the app callback's reordered arguments.
     counters: tuple[int, int, int]
+
+    @property
+    def percentages(self) -> tuple[float, float, float]:
+        """Head, reclining and lumbar travel as the apps' Position screen scales it.
+
+        The apps read a counter at or below the baseline as 0 and draw
+        everything past their top step alike, so 100 is the ceiling here.
+        """
+        head, reclining, lumbar = (
+            min(100.0, 100 * max(0, raw - POSITION_BASELINE) / travel)
+            for raw, travel in zip(self.counters, POSITION_TRAVEL, strict=True)
+        )
+        return head, reclining, lumbar
 
 
 def parse_notification(data: bytes) -> SystemState | DeviceState | RippleState | None:

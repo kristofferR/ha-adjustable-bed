@@ -2393,11 +2393,11 @@ async def _connect(controller: Any, recorder: Recorder, clock: FakeClock) -> dic
             await controller.async_on_connect(session)
             await controller.async_after_connect(session)
             return
-        if controller._coordinator.bed_type in {"smart_comfort_synargy", "smart_comfort_synergy", "smart_sleep", "cheerssleep", "relax_motion"}:
+        if controller._coordinator.bed_type in {"smart_sleep", "cheerssleep", "relax_motion"}:
             # These v5 profiles own startup in their hook, without session helpers.
             await controller.async_on_connect(None)
             return
-        if controller._coordinator.bed_type in {"rize_home", "superior_sleep", "okin_64bit", "betterliving2", "ultramatic_smart_bed"}:
+        if controller._coordinator.bed_type in {"rize_home", "superior_sleep", "okin_64bit", "betterliving2", "ultramatic_smart_bed", "smart_comfort_synargy", "smart_comfort_synergy"}:
             session = SimpleNamespace(async_start_notify=controller.start_notify, is_current=lambda: True)
             if controller._coordinator.bed_type == "betterliving2":
                 session.store_device_info = lambda *_: None

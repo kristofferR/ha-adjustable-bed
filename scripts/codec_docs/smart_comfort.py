@@ -103,9 +103,29 @@ def models() -> str:
     )
 
 
+def positions() -> str:
+    return _block(
+        _table(
+            ("Position", "Counter bytes", "Counter at 0 %", "Counts to 100 %"),
+            (
+                (
+                    motor,
+                    f"{3 + 4 * index}..{6 + 4 * index}",
+                    f"`{codec.POSITION_BASELINE:08X}`",
+                    f"`{travel:04X}` ({travel})",
+                )
+                for index, (motor, travel) in enumerate(
+                    zip(("Head", "Reclining", "Lumbar"), codec.POSITION_TRAVEL, strict=True)
+                )
+            ),
+        )
+    )
+
+
 BLOCKS: list[Block] = [
     (GUIDE, "smart-comfort-profiles", profiles),
     (GUIDE, "smart-comfort-transports", transports),
     (GUIDE, "smart-comfort-commands", commands),
+    (GUIDE, "smart-comfort-positions", positions),
     (GUIDE, "smart-comfort-models", models),
 ]

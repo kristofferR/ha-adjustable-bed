@@ -225,8 +225,9 @@ _BED_TRAITS: Final[dict[str, BedTraits]] = {
     "smart_sleep": replace(_NO_ANGLES_SCOPED, owns_device_info_reads=True, connection_timeout=5),
     "sleep_assistant": _NO_ANGLES_SCOPED,
     "onlysnore": replace(_NO_ANGLES_SCOPED, owns_device_info_reads=True, connection_timeout=5),
-    "smart_comfort_synargy": _NO_ANGLES_SCOPED,
-    "smart_comfort_synergy": _NO_ANGLES_SCOPED,
+    # Head, reclining and lumbar travel as the apps' Position screen scales it.
+    "smart_comfort_synargy": _PERCENT_FEEDBACK_SCOPED,
+    "smart_comfort_synergy": _PERCENT_FEEDBACK_SCOPED,
     **dict.fromkeys(RICHMAT_MH_BED_TYPES, _NO_ANGLES),
     # Q-Plus and Serta MP Remote are the Keeson layout apps with position feedback.
     **dict.fromkeys(
