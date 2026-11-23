@@ -105,7 +105,10 @@ a cancelled command cannot leave a motor running.
 
 Presets and memory recalls are **not** watchdogged: the frame drives all the way
 to the stored position on a single write. They are sent exactly once; repeating
-them would re-trigger the move partway through.
+them would re-trigger the move partway through. The preset or recall stays the
+running command until the reported angles have been unchanged for 2 seconds, so
+the connection is not handed back while the frame is still travelling; the
+status is then read once more. A newer command or a lost link end it at once.
 
 > **Unverified:** every capture spaced its writes further apart than the watchdog,
 > so sub-watchdog streaming has never been observed on hardware. The watchdog

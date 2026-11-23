@@ -350,6 +350,14 @@ and delay, then sends STOP; see the generated timing table for the defaults,
 which follow the apps' sending interval. Position queries are spaced 30 ms apart.
 Recall writes each stored motor once, at the recall interval, with no release.
 
+The receiver then travels to the targets on its own. The Limoss apps read
+positions only when saving a memory and show no live position, so nothing in
+them says how to follow a recall. Home Assistant keeps the recall as the running
+command and asks for positions only once they have been unchanged for 2
+seconds; an answer that changes nothing ends the move. Stop, a newer command or
+a lost link end it at once. Whether the receiver reports positions unasked
+while it moves is not known.
+
 #### Notifications
 
 - On connect, the route subscribes, sends the capability query and waits up to

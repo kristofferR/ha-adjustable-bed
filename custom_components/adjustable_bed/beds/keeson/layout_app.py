@@ -26,7 +26,7 @@ from ...command_scheduler import note_frame_skipped, note_frame_written
 from ...controller_state import StateKey
 from ...profiles.keeson import AppAction, AppProfile
 from ..base import BedController, ProfileExecution
-from ..catalog_buttons import Kind, catalog_button, unique_buttons
+from ..catalog_buttons import Kind, catalog_button, classify, unique_buttons
 from ..entity_specs import (
     ControllerButtonSpec,
     ControllerHoldSpec,
@@ -532,6 +532,12 @@ class AppController(ProfileExecution[AppProfile], BedController):
             await self.write_command(self._frame(action.mask))
             if self._mx:
                 await self._queries((500, 800))
+            name, kind = _APP_CONTROLS.get(key, (action.name, None))
+            control = classify(name, kind=kind)
+            if control is not None and control.kind is Kind.PRESET:
+                # One frame starts a move the bed finishes alone. Staying on the
+                # link keeps its position notifications coming until it stops.
+                await self.follow_autonomous_move()
 
     async def stop_all(self) -> None:
         await self._release()

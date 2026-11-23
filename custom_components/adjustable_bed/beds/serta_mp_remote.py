@@ -348,6 +348,7 @@ class SertaMPRemoteController(AppController):
                 table[position] if motor == "legs" else 0x8000,
             )
         )
+        await self.follow_autonomous_move()
 
     async def preset_memory(self, memory_num: int) -> None:
         if not 1 <= memory_num <= 4:
@@ -372,6 +373,8 @@ class SertaMPRemoteController(AppController):
 
         handle = asyncio.get_running_loop().call_later(1.5, activate)
         self._setters.append(handle)
+        # One frame starts the recall; staying on the link lets it be seen through.
+        await self.follow_autonomous_move()
 
     def on_disconnect(self) -> None:
         self._local_release_stop = None

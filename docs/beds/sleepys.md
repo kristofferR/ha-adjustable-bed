@@ -466,6 +466,13 @@ notification `A5 0D 11 01 16 00 00 ...` therefore reports head position 22.
 Parsing is selected by this notification header, not by a pending-query token
 or the runtime dialect.
 
+The app asks for positions once, 500 ms after connecting and when its position
+tab opens, and never while the bed moves: after a target it only listens for the
+reports the bed sends. Home Assistant does the same after a preset, a memory
+recall or a target. The command stays running until the reported positions have
+been unchanged for 2 seconds; it then asks once, and an answer that changes
+nothing ends the move. Stop, a newer command or a lost link end it at once.
+
 `A5 0B` is the massage/status branch. Remaining duration is the big-endian
 value `(byte[4] << 8) | byte[5]`; 1-600, 601-1200, and 1201-1800 seconds map to
 the 10, 20, and 30 minute timer choices. The OEM parser consumes each BLE value

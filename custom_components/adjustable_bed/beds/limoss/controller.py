@@ -337,6 +337,10 @@ class LimossController(ProfileExecution[LimossProfile], BedController):
             await self.write_command(codec.ask_position(index))
             await asyncio.sleep(_POSITION_QUERY_GAP)
 
+    def _move_feedback(self) -> object:
+        # A value past the largest seen so far keeps the same estimated angle.
+        return dict(self._last_positions_raw)
+
     async def _send_stop(self) -> None:
         """Send STOP with a fresh cancel event."""
         stop = self.profile.stop
@@ -467,6 +471,8 @@ class LimossController(ProfileExecution[LimossProfile], BedController):
                 continue
             await self.write_command(codec.set_position(index, raw_pos, signed=False))
             await asyncio.sleep(self.profile.recall_ms / 1000)
+        # The receiver travels to the targets on its own after one frame each.
+        await self.follow_autonomous_move()
 
     async def program_memory(self, memory_num: int) -> None:
         """Save current motor positions to a memory slot."""

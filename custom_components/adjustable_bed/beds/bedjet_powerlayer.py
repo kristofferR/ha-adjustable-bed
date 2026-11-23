@@ -285,8 +285,10 @@ class BedJetPowerLayerController(ProfileExecution[PowerLayerProfile], BedControl
 
         Presets and memory recalls are not watchdogged: the frame drives to the
         stored position on a single write, so repeating would re-trigger them.
+        The status keeps notifying while the frame travels there.
         """
         await self.write_command(codec.command(key))
+        await self.follow_autonomous_move()
 
     # Motor control
     async def move_back_up(self) -> None:

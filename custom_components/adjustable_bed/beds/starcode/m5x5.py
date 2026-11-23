@@ -764,7 +764,7 @@ class StarcodeM5X5Controller(BedController, StarcodeGroupMember):
                 await self._send_stop()
             return
         held = action.endswith(("_up", "_down"))
-        if (held and not action.startswith("massage_")) or action in (
+        recall = action in (
             "flat",
             "tv",
             "zero_g",
@@ -772,7 +772,8 @@ class StarcodeM5X5Controller(BedController, StarcodeGroupMember):
             "lounge",
             "memory_1",
             "memory_2",
-        ):
+        )
+        if (held and not action.startswith("massage_")) or recall:
             from .accessory_group import interrupt_conflicting_group
 
             await interrupt_conflicting_group(self._coordinator)
@@ -785,6 +786,9 @@ class StarcodeM5X5Controller(BedController, StarcodeGroupMember):
             await self._send_stop()
             if held and action.startswith("massage_"):
                 await self.write_command(query_packet(self.dialect), cancel_event=asyncio.Event())
+        if recall:
+            # The recall runs on after its neutral frame; its reports say when it ends.
+            await self.follow_autonomous_move()
 
     async def query_status(self) -> None:
         await self.write_command(
