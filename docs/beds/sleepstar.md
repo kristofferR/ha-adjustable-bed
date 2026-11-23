@@ -220,6 +220,12 @@ Both forms below are accepted:
 | Sleep, environment, config and report responses | Retained in controller state as hex |
 
 - Identical notifications inside 200 ms are ignored, matching the app.
+- The app asks for motor status once, when it connects or opens its position
+  page, and never while the bed moves: after a recall or a target it only
+  listens for the status the box sends. Home Assistant does the same. A recall
+  or target stays the running command until the reported positions have been
+  unchanged for 2 seconds; it then asks once, and an answer that changes
+  nothing ends the move. Stop, a newer command or a lost link end it at once.
 - Sleep/environment/config/report responses are retained in controller state as
   hex so support bundles keep the raw protocol data. The integration
   does not guess the physical meaning of values that the analyzed app leaves

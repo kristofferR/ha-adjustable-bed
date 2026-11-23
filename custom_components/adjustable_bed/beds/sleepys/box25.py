@@ -504,6 +504,7 @@ class SleepysBox25Controller(BedController):
 
         pos = max(0, min(100, int(position)))
         await self._write_motor_command(star.position_target(zone, pos))
+        await self.follow_autonomous_move()
 
     def angle_to_native_position(self, motor: str, angle: float) -> int:
         """Convert angle to position (0-100 percentage-based)."""
@@ -624,6 +625,8 @@ class SleepysBox25Controller(BedController):
                 repeat_delay_ms=_PRESET_REPEAT_DELAY_MS,
             )
             await asyncio.sleep(_PRESET_COMMIT_DELAY)
+        # The bed moves on after the commit; the app only listens from here.
+        await self.follow_autonomous_move()
 
     async def preset_flat(self) -> None:
         await self._send_preset(Box25Commands.STAR_PRESET_FLAT)

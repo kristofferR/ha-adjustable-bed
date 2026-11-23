@@ -23,6 +23,7 @@ from contextvars import ContextVar
 from typing import TYPE_CHECKING, Any, Final
 
 from bleak import BleakClient
+from bleak.exc import BleakError
 
 if TYPE_CHECKING:
     from homeassistant.exceptions import ServiceValidationError
@@ -75,6 +76,14 @@ _LOGGER = logging.getLogger(__name__)
 
 # Host-side bound for a toggle-only light's first report on a fresh link.
 LIGHT_REPORT_WAIT_SECONDS: Final = 2.0
+
+# Host-side bounds for following a move the bed finishes on its own. None is a
+# protocol value: the bed is only asked once its reports have stopped changing.
+_FOLLOW_STEP_SECONDS = 0.25
+_FOLLOW_QUIET_SECONDS = 2.0
+_FOLLOW_REPLY_SECONDS = 1.0
+_FOLLOW_ASKS = 2
+_FOLLOW_BOUND_SECONDS = 90.0
 
 CONTROLLER_GESTURE_RELEASE: ContextVar[bool] = ContextVar("controller_gesture_release", default=False)
 
@@ -637,6 +646,85 @@ class BedController(GattWriter):
             )
         finally:
             await self._send_stop()
+
+    def _move_feedback(self) -> object:
+        """What a move in progress keeps changing; compared to see the bed settle."""
+        return dict(self._coordinator.position_data)
+
+    async def follow_autonomous_move(self) -> None:
+        """Keep the command, and so the link, until the bed has stopped moving.
+
+        For a preset, memory recall or target the bed finishes on its own after
+        the frames are sent. Position reports the bed pushes are only listened
+        to. Once they have been unchanged for a while the bed is asked, and a
+        report that changes nothing ends the move; a bed that does not answer
+        is asked once more. Stop, a newer command and a lost link end it at
+        once; Stop itself is the coordinator's to send.
+        """
+        coordinator = self._coordinator
+        if coordinator.disable_angle_sensing or not self.supports_position_feedback:
+            return
+        cancel_event = coordinator.cancel_command
+        loop = asyncio.get_running_loop()
+        bound = loop.time() + _FOLLOW_BOUND_SECONDS
+        reports = 0
+
+        def reported(_positions: dict[str, float]) -> None:
+            nonlocal reports
+            reports += 1
+
+        def ended() -> bool:
+            return (
+                cancel_event.is_set()
+                or coordinator.command_scheduler.has_pending
+                or not coordinator.is_connected
+                or loop.time() >= bound
+            )
+
+        stop_counting = coordinator.register_position_callback(reported)
+        try:
+            seen = self._move_feedback()
+            quiet_until = loop.time() + _FOLLOW_QUIET_SECONDS
+            asks = reports_when_asked = 0
+            while not ended():
+                current = self._move_feedback()
+                if current != seen:
+                    seen, asks = current, 0
+                    quiet_until = loop.time() + _FOLLOW_QUIET_SECONDS
+                elif loop.time() >= quiet_until:
+                    if asks and (reports != reports_when_asked or asks == _FOLLOW_ASKS):
+                        return
+                    asks, reports_when_asked = asks + 1, reports
+                    # A read that stalls must not hold back Stop or a queued command.
+                    # Started at once, so nothing can be queued between the check and the read.
+                    read = asyncio.create_task(
+                        self.read_positions(coordinator.motor_count), eager_start=True
+                    )
+                    stop = asyncio.ensure_future(cancel_event.wait())
+                    try:
+                        while not read.done():
+                            await asyncio.wait(
+                                (read, stop),
+                                timeout=_FOLLOW_STEP_SECONDS,
+                                return_when=asyncio.FIRST_COMPLETED,
+                            )
+                            if not read.done() and ended():
+                                return
+                        read.result()
+                    except (BleakError, ConnectionError, TimeoutError) as err:
+                        _LOGGER.debug("Position read after a move failed: %s", err)
+                        return
+                    finally:
+                        read.cancel()
+                        stop.cancel()
+                        await asyncio.gather(read, stop, return_exceptions=True)
+                    quiet_until = loop.time() + _FOLLOW_REPLY_SECONDS
+                try:
+                    await asyncio.wait_for(cancel_event.wait(), _FOLLOW_STEP_SECONDS)
+                except TimeoutError:
+                    pass
+        finally:
+            stop_counting()
 
     async def read_non_notifying_positions(self) -> None:
         """Read positions only for motors that don't support notifications.

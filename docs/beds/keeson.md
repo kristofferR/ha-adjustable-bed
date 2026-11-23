@@ -1987,6 +1987,10 @@ report nothing.
   Choosing MX saves **Read bed position** off.
 - The app reads these counts but has no reachable screen that shows them, so
   the angles are untested on a real bed.
+- A preset the app sends as one frame, such as Flat or Zero G, stays the running
+  command until the reported angles have been unchanged for 2 seconds, so the
+  connection is not handed back while the bed is still moving. Stop, a newer
+  command or a lost link end it at once.
 - With Left and Right controls on one address, the frames do not say which half
   they are from. Each side shows what was reported after its own last command.
 - A Q-Plus app bed set up before this was added keeps positions unread until
@@ -2141,6 +2145,10 @@ physical meaning is assumed for it.
 - The app's request state turns active 1500 ms after a recall. It completes when
   the reported angles equal the target or neither motion flag is set. It is UI
   state, not an acknowledgement; a disconnect cancels it.
+- A recall, a position target or a one-frame preset stays the running command
+  until the reported angles have been unchanged for 2 seconds, so the
+  connection is not handed back while the bed is still moving. Stop, a newer
+  command or a lost link end it at once.
 
 #### Notifications
 

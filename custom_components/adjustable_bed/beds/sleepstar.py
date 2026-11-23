@@ -798,6 +798,7 @@ class SleepStarController(BedController):
         await self.write_command(
             wrap_control_box(star.position_target(zone, max(0, min(100, int(position)))))
         )
+        await self.follow_autonomous_move()
 
     def angle_to_native_position(self, motor: str, angle: float) -> int:
         """Clamp an integration percentage to the native 0-100 range."""
@@ -937,6 +938,8 @@ class SleepStarController(BedController):
         finally:
             with contextlib.suppress(BleakError, ConnectionError):
                 await self._send_stop()
+        # The recall runs on after its STOP; the app only listens from here.
+        await self.follow_autonomous_move()
 
     async def preset_flat(self) -> None:
         """Recall the flat preset."""

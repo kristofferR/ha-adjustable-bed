@@ -163,6 +163,9 @@ def _shorten_unanswered_probe_timeouts(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr("custom_components.adjustable_bed.beds.octo.controller.OCTO_FEATURE_TIMEOUT", 0.01)
     monkeypatch.setattr("custom_components.adjustable_bed.beds.octo.controller.OCTO_SESSION_RESPONSE_TIMEOUT", 0.01)
     monkeypatch.setattr("custom_components.adjustable_bed.beds.rmcontrol.controller._CAPABILITY_TIMEOUT", 0.01)
+    # A mocked bed never moves, so following its move would only wait. Tests of
+    # the follow set their own bound.
+    monkeypatch.setattr("custom_components.adjustable_bed.beds.base._FOLLOW_BOUND_SECONDS", 0)
 
 
 @pytest.fixture

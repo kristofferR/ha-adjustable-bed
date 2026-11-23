@@ -202,7 +202,10 @@ below.
 | Five named/memory saves and reset | 55 attempts after STOP | Safe release cleanup |
 
 Completion means awaited transport delivery, never proof of physical motion or
-retained memory.
+retained memory. A recall then stays the running command until the reported
+positions have been unchanged for 2 seconds, so the connection is not handed
+back while the bed is still moving. Stop, a newer command or a lost link end it
+at once.
 
 ## Feedback and public controls
 
