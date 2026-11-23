@@ -131,7 +131,6 @@ from custom_components.adjustable_bed.pairing_candidates import (
 )
 from custom_components.adjustable_bed.profile_id import resolve_profile_id
 from custom_components.adjustable_bed.profile_recommendations import _watches
-from tests.coordinator_patches import patch_coordinator_global
 from tests.error_helpers import raises_key
 from tests.pair_mode import CONF_PAIR_CONNECTION_MODE
 
@@ -2123,84 +2122,9 @@ class TestPairBedsConversion:
         assert flow._octo_capability_snapshot(right) == rsnap
         assert flow._octo_capability_snapshot(left) == lsnap
 
-    async def test_leggett_platt_explicit_variant_is_offline_safe(self, hass: HomeAssistant):
-        """A legacy leggett_platt entry with an EXPLICIT gen2/mlrm variant resolves
-        to leggett_gen2 / leggett_wilinke (both offline-capability-safe), so the
-        pairing gate must NOT block it even though a Gen2 entry exposes a light
-        entity. okin resolves to leggett_okin (OS-bonds, not offline-safe); auto
-        can't be resolved without a live client. Regression for the gate keying
-        off the umbrella bed_type instead of the resolved variant."""
-        from custom_components.adjustable_bed.config_flow import (
-            AdjustableBedConfigFlow,
-        )
-
-        flow = AdjustableBedConfigFlow()
-        flow.hass = hass
-
-        def _entry(address: str, variant: str) -> MockConfigEntry:
-            return MockConfigEntry(
-                domain=DOMAIN,
-                data={
-                    CONF_ADDRESS: address,
-                    CONF_BED_TYPE: BED_TYPE_LEGGETT_PLATT,
-                    CONF_PROTOCOL_VARIANT: variant,
-                },
-                unique_id=address,
-                version=4,
-            )
-
-        # Resolver mirrors controller_factory's explicit-variant mapping.
-        assert (
-            flow._offline_safe_bed_type(_entry(LEFT_ADDR, LEGGETT_VARIANT_GEN2))
-            == BED_TYPE_LEGGETT_GEN2
-        )
-        assert (
-            flow._offline_safe_bed_type(_entry(LEFT_ADDR, LEGGETT_VARIANT_MLRM))
-            == BED_TYPE_LEGGETT_WILINKE
-        )
-        assert (
-            flow._offline_safe_bed_type(_entry(LEFT_ADDR, LEGGETT_VARIANT_OKIN))
-            == BED_TYPE_LEGGETT_OKIN
-        )
-        assert flow._offline_safe_bed_type(_entry(LEFT_ADDR, "auto")) == BED_TYPE_LEGGETT_PLATT
-
-        # Gate <-> minting consistency: the resolved type the gate calls safe is a
-        # concrete type async_prime_offline_controller can actually mint (it is in
-        # the offline-safe set). The umbrella type is NOT, which is why the pair
-        # descriptor must store the resolved type (asserted in the conversion test).
-        assert BED_TYPE_LEGGETT_GEN2 in OFFLINE_CAPABILITY_SAFE_BED_TYPES
-        assert BED_TYPE_LEGGETT_WILINKE in OFFLINE_CAPABILITY_SAFE_BED_TYPES
-        assert BED_TYPE_LEGGETT_PLATT not in OFFLINE_CAPABILITY_SAFE_BED_TYPES
-
-        # Two leggett_platt entries with DIFFERENT explicit variants resolve to
-        # different concrete protocols, so the pairing mismatch check (now over
-        # resolved types) rejects them even though their raw umbrella type matches.
-        assert flow._offline_safe_bed_type(
-            _entry(LEFT_ADDR, LEGGETT_VARIANT_GEN2)
-        ) != flow._offline_safe_bed_type(_entry(RIGHT_ADDR, LEGGETT_VARIANT_MLRM))
-
-        # The pair descriptor is built through the SAME resolver, so a stored
-        # child carries the concrete (mintable) type — not the umbrella — and
-        # options are merged in. Without this the gate would pass but
-        # async_prime_offline_controller would refuse to mint the side.
-        gen2_with_opts = MockConfigEntry(
-            domain=DOMAIN,
-            data={
-                CONF_ADDRESS: LEFT_ADDR,
-                CONF_BED_TYPE: BED_TYPE_LEGGETT_PLATT,
-                CONF_PROTOCOL_VARIANT: LEGGETT_VARIANT_GEN2,
-            },
-            options={CONF_PREFERRED_ADAPTER: "hci1"},
-            unique_id="leggett-resolve-test",
-            version=4,
-        )
-        resolved = flow._resolved_pair_side_data(gen2_with_opts)
-        assert resolved[CONF_BED_TYPE] == BED_TYPE_LEGGETT_GEN2
-        assert resolved[CONF_PREFERRED_ADAPTER] == "hci1"  # option merged in
-
     def test_resolve_explicit_bed_type_pure(self):
-        """The shared resolver: explicit Leggett variants -> concrete types,
-        everything else (other beds, auto/unset) passes through unchanged."""
+        """A Leggett & Platt model resolves to its bed type, as the automatic
+        setup's connection finds it; everything else passes through unchanged."""
         from custom_components.adjustable_bed.const import resolve_explicit_bed_type
 
         assert (
@@ -4594,41 +4518,6 @@ class TestOfflineSideEntities:
         left.cache_capability_controller()
         left._controller = None
         assert left.capability_controller is refreshed
-
-    async def test_leggett_platt_explicit_variant_side_is_offline_minted(self, hass: HomeAssistant):
-        # Even if a child descriptor still carries the UMBRELLA leggett_platt with
-        # an explicit gen2 variant, the coordinator resolves it before the
-        # mintability check and mints the concrete Gen2 controller offline — so the
-        # side the pairing gate accepted as offline-safe actually gets its
-        # light/select/climate entities without waiting for a reload-while-online.
-        data = _paired_entry_data()
-        data[CONF_BED_TYPE] = BED_TYPE_LEGGETT_PLATT
-        for child in data[CONF_PAIR_CHILDREN]:
-            child[CONF_BED_TYPE] = BED_TYPE_LEGGETT_PLATT
-            child[CONF_PROTOCOL_VARIANT] = LEGGETT_VARIANT_GEN2
-        entry = MockConfigEntry(
-            domain=DOMAIN,
-            title="L&P",
-            data=data,
-            unique_id="pair_lp",
-            version=4,
-        )
-        entry.add_to_hass(hass)
-        left = _build_paired_children(hass, entry)[SIDE_LEFT]
-
-
-        from custom_components.adjustable_bed import coordinator as coordinator_mod
-
-        with patch_coordinator_global(
-            "create_controller",
-            wraps=coordinator_mod.create_controller,
-        ) as create_controller:
-            await left.async_prime_offline_controller()
-        assert left.capability_controller is not None
-        # Minted with the RESOLVED concrete type, not the umbrella leggett_platt —
-        # that is the gate/minting consistency this regression guards.
-        assert create_controller.await_args is not None
-        assert create_controller.await_args.kwargs["bed_type"] == BED_TYPE_LEGGETT_GEN2
 
     async def test_no_op_bed_type_correction_keeps_offline_controller(self, hass: HomeAssistant):
         # A connect-time correction that does NOT change the bed type must keep

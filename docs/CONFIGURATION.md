@@ -487,16 +487,20 @@ lists the remotes.
 
 ### Leggett & Platt Models
 
-New setups answer the [L&P question](beds/leggett-platt.md#home-assistant-setup),
-which picks the model from the app you use. These choices apply only to an
-entry saved with the older `leggett_platt` ID.
+Setup asks the [L&P question](beds/leggett-platt.md#home-assistant-setup),
+which picks the model from the app you use and saves it as that model's bed
+type.
 
-| Choice | Model | Chosen by the L&P answer |
-|--------|-------|--------------------------|
-| **Automatic (recommended)** | MlRM when the bed has the WiLinke service, otherwise Gen2 | None; kept for existing entries |
-| **Gen2 base (most common)** | [Gen2](beds/leggett-platt.md#gen2-variant), needs Bluetooth pairing | LP Control app with an LP Comfort Connect base |
-| **Okin base (needs Bluetooth pairing)** | [Leggett Okin](beds/okin-nframe.md#leggett-okin-family) | Prodigy CE, Prodigy 2, Prodigy 2L or U Series app, or LP Control with an LP BED receiver |
-| **MlRM remote (separate massage buttons)** | [MlRM](beds/leggett-platt.md#mlrm-variant) | L&P Adjustable Base app with an MlRM base |
+| Model | Chosen by the L&P answer |
+|-------|--------------------------|
+| [Gen2](beds/leggett-platt.md#gen2-variant), needs Bluetooth pairing | LP Control app with an LP Comfort Connect base |
+| [Leggett Okin](beds/okin-nframe.md#leggett-okin-family), needs Bluetooth pairing | Prodigy CE, Prodigy 2, Prodigy 2L or U Series app, or LP Control with an LP BED receiver |
+| [MlRM](beds/leggett-platt.md#mlrm-variant) | L&P Adjustable Base app with an MlRM base |
+
+A bed that 4.x set up on **Automatic** keeps that setup, shown as **Gen2 or
+MlRM, found automatically (Leggett & Platt)**: each time it connects it uses MlRM
+when the bed has the WiLinke service and Gen2 otherwise. To fix its model, open
+**Reconfigure** and answer the L&P question.
 
 ### Richmat Receivers
 
@@ -571,10 +575,7 @@ its bed guide.
    You can type an app's name to search the bed-type list, for example
    **INNOVA app**, **Power Bob** or **HomeKobo**. Not every app is named in
    the list. If yours is not found, its guide's **Apps** table names the
-   profile it uses. Choosing an app sets its bed model or remote for you. A
-   saved compatibility ID, such as `okimat`, keeps working; setup shows its
-   friendly name, and Reconfigure's bed-type list adds the saved ID in
-   brackets.
+   profile it uses. Choosing an app sets its bed model or remote for you.
 3. Match any requested model or remote to your physical bed. Shared Bluetooth
    names and services do not always identify the right layout.
 

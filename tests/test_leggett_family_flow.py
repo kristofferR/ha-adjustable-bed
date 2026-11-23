@@ -91,14 +91,14 @@ async def test_mlrm_base_and_the_legacy_app_keep_their_routes(hass):
     assert result["step_id"] == "profile_questions"
 
 
-async def test_umbrella_entry_keeps_its_saved_id_through_a_bonded_change(
+async def test_the_automatic_setup_becomes_the_chosen_app_through_a_bonded_change(
     hass, enable_custom_integrations
 ):
     entry = entry_for(
         hass,
         **{
             const.CONF_BED_TYPE: const.BED_TYPE_LEGGETT_PLATT,
-            const.CONF_PROTOCOL_VARIANT: const.LEGGETT_VARIANT_GEN2,
+            const.CONF_PROTOCOL_VARIANT: const.VARIANT_AUTO,
         },
     )
     manager = hass.config_entries.flow
@@ -113,8 +113,8 @@ async def test_umbrella_entry_keeps_its_saved_id_through_a_bonded_change(
         assert result["step_id"] == "migration_confirm"
         result = await manager.async_configure(result["flow_id"], {"action": "apply"})
     assert result["reason"] == "migration_applied"
-    assert entry.data[const.CONF_BED_TYPE] == const.BED_TYPE_LEGGETT_PLATT
-    assert entry.data[const.CONF_PROTOCOL_VARIANT] == const.LEGGETT_VARIANT_OKIN
+    assert entry.data[const.CONF_BED_TYPE] == const.BED_TYPE_LEGGETT_OKIN
+    assert entry.data.get(const.CONF_PROTOCOL_VARIANT, const.VARIANT_AUTO) == const.VARIANT_AUTO
     assert entry.data[const.CONF_LEGGETT_APP_PROFILE] == "prodigy2"
     assert entry.data[const.CONF_MOTOR_COUNT] == 3
     assert entry.data[const.CONF_PROFILE_ID] == resolve_profile_id(entry.data)

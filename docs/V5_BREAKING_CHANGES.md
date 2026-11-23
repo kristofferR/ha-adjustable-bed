@@ -164,6 +164,21 @@ it always ran: Okimat and Lucid remotes, DewertOkin and A H Beard beds, Nectar
 beds, and Mattress Firm 900 and iFlex beds. Entities, entity IDs, commands and
 settings stay the same. The device's manufacturer reads **Okin**.
 
+### Leggett & Platt beds saved with a model
+
+4.x could save a Leggett & Platt bed under one shared bed type with a model. A
+bed saved with the **Gen2**, **Okin** or **MlRM** model is now saved as that
+model's own bed type, which it always ran. Entities, entity IDs, commands and settings stay
+the same. One timing differs: an MlRM bed without a saved repeat interval now
+repeats a held motor command every 110 ms, the MlRM cadence, instead of every
+100 ms.
+
+A bed left on **Automatic** keeps that setup, now shown as **Gen2 or MlRM,
+found automatically (Leggett & Platt)**. It finds the model each time it
+connects. To fix the model, open **Reconfigure** and choose the bed's app; the
+bed is then saved as that model's bed type. See the
+[Leggett & Platt guide](beds/leggett-platt.md#aliases).
+
 ### SBI/Q-Plus beds
 
 A bed set up as **SBI/Q-Plus (Costco)** becomes a **Q-Plus Adjustable Remote

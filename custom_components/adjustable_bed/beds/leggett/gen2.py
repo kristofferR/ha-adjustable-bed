@@ -43,7 +43,6 @@ from ...const import (
     LEGGETT_GEN2_READ_CHAR_UUID,
     LEGGETT_GEN2_WRITE_CHAR_UUID,
     LEGGETT_VARIANT_MLRM,
-    LEGGETT_VARIANT_OKIN,
 )
 from ...controller_state import StateUpdate
 from ...execution import ExecutionCapabilities
@@ -675,18 +674,12 @@ async def build_controller(ctx: BuildContext) -> LeggettGen2Controller:
 
 
 async def build_leggett_platt(ctx: BuildContext) -> BedController:
-    """Build the controller for a Leggett & Platt variant the factory resolved."""
+    """Build the controller for the model the factory found on the connected bed."""
     if ctx.variant == LEGGETT_VARIANT_MLRM:
         await ctx.preload("leggett.wilinke")
         from .wilinke import LeggettWilinkeController
 
-        _LOGGER.debug("Using MlRM Leggett & Platt variant")
+        _LOGGER.debug("Using the MlRM Leggett & Platt model")
         return LeggettWilinkeController(ctx.coordinator)
-    if ctx.variant == LEGGETT_VARIANT_OKIN:
-        await ctx.preload("leggett.okin")
-        from .okin import build_controller as build_okin
-
-        _LOGGER.debug("Using Okin Leggett & Platt variant (configured)")
-        return await build_okin(ctx)
-    _LOGGER.debug("Using Gen2 Leggett & Platt variant")
+    _LOGGER.debug("Using the Gen2 Leggett & Platt model")
     return await build_controller(ctx)

@@ -54,8 +54,7 @@ def _coordinator(hass: HomeAssistant, route: str) -> AdjustableBedCoordinator:
     [
         ("comfort_motion", "jiecang"),
         ("ergomotion", "keeson:ergomotion"),
-        ("leggett_okin", "leggett_platt", "leggett_platt:okin"),
-        ("leggett_gen2", "leggett_platt:gen2"),
+        ("leggett_gen2", "leggett_platt"),
         (
             "keeson:americanstar",
             "keeson:avanti_bases",
@@ -125,7 +124,9 @@ async def test_offline_entities_differ(hass: HomeAssistant, alias: str, canonica
     assert unminted.capability_controller is None
 
 
-async def test_leggett_umbrella_picks_its_controller_at_connect(hass: HomeAssistant) -> None:
+async def test_the_automatic_leggett_setup_picks_its_controller_at_connect(
+    hass: HomeAssistant,
+) -> None:
     coordinator = _coordinator(hass, "leggett_platt")
     with pytest.raises(ConnectionError):
         await create_controller(coordinator, "leggett_platt", "auto", None)

@@ -318,6 +318,7 @@ _BY_VARIANT: Final[dict[tuple[str, str], SideProfile]] = {
     (BED_TYPE_SOLACE, SOLACE_VARIANT_WOOSA): SideProfile("Woosa Sleep"),
     (BED_TYPE_SOLACE, SOLACE_VARIANT_SOPHIE): SideProfile("Sophie"),
     (BED_TYPE_OKIN_CST, OKIN_CST_VARIANT_NECTAR_MOVE): SideProfile("Nectar Move"),
+    # Saved before schema 5.11; the migration steps read a side as it was read then.
     (BED_TYPE_LEGGETT_PLATT, LEGGETT_VARIANT_OKIN): SideProfile(
         "Leggett & Platt app", frozenset({CONF_LEGGETT_APP_PROFILE})
     ),

@@ -24,7 +24,6 @@ from .const import (
     CONF_STARCODE_LIFT_ENTRIES,
     DOMAIN,
     STARCODE_GROUP_BED_TYPES,
-    resolve_explicit_bed_type,
 )
 from .pairing import is_paired, pair_member_addresses
 from .profiles.saatva import TWO_RECEIVER_PROFILES as SAATVA_TWO_RECEIVER_PROFILES
@@ -82,10 +81,8 @@ def active_pairing_candidates(hass: HomeAssistant) -> list[ConfigEntry]:
 
 
 def _protocol(entry: ConfigEntry) -> str | None:
-    """Return the concrete protocol the pairing flow compares, as it resolves it."""
-    return resolve_explicit_bed_type(
-        entry.data.get(CONF_BED_TYPE), entry.data.get(CONF_PROTOCOL_VARIANT)
-    )
+    """Return the bed type the pairing flow compares."""
+    return entry.data.get(CONF_BED_TYPE)
 
 
 def encode_pair_selection(left_entry_id: str, right_entry_id: str) -> str:

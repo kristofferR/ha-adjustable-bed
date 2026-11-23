@@ -883,7 +883,8 @@ Behaves as the Richmat remotes route with WiLinke framing on W1, except as below
 
 #### Setup
 
-The `leggett_wilinke` bed type, and the `mlrm` app profile of `leggett_platt`.
+The `leggett_wilinke` bed type. The automatic `leggett_platt` setup builds the
+same controller when the bed exposes a WiLinke service.
 Detection: name prefix `MlRM` with a WiLinke service. Writes use the W1 write
 characteristic `d44bc439-abfd-45a2-b575-925416129600` with response. See
 [Leggett & Platt](leggett-platt.md) for the other Leggett variants.

@@ -44,6 +44,10 @@ from .const import (
     BED_TYPE_COMFORT_ENHANCEMENTS,
     BED_TYPE_FURNIMOVE,
     BED_TYPE_KEESON,
+    BED_TYPE_LEGGETT_GEN2,
+    BED_TYPE_LEGGETT_OKIN,
+    BED_TYPE_LEGGETT_PLATT,
+    BED_TYPE_LEGGETT_WILINKE,
     BED_TYPE_OCTO,
     BED_TYPE_QPLUS_APP,
     BED_TYPE_RICHMAT_CLASSIC_APPS,
@@ -1423,6 +1427,155 @@ def _async_migrate_v5_10_entities(hass: HomeAssistant, entry: ConfigEntry) -> No
             registry.async_update_entity(entity.entity_id, new_unique_id=unique_id)
 
 
+# The model a Leggett & Platt bed could be saved with before schema 5.11, and
+# the bed type that is that model.
+_LEGGETT_MODELS: Final = {
+    "gen2": BED_TYPE_LEGGETT_GEN2,
+    "okin": BED_TYPE_LEGGETT_OKIN,
+    "mlrm": BED_TYPE_LEGGETT_WILINKE,
+}
+_LEGGETT_ROUTE_KEYS: Final = (CONF_BED_TYPE, CONF_PROTOCOL_VARIANT)
+
+
+def _leggett_model(view: Mapping[str, Any]) -> str | None:
+    """Return the bed type of the model these Leggett & Platt settings name.
+
+    Pairing, and a correction on connecting, saved the model's bed type and
+    left the model's name beside it. That name goes too.
+    """
+    bed_type, variant = view.get(CONF_BED_TYPE), view.get(CONF_PROTOCOL_VARIANT)
+    if not isinstance(variant, str) or variant not in _LEGGETT_MODELS:
+        return None
+    if bed_type == BED_TYPE_LEGGETT_PLATT:
+        return _LEGGETT_MODELS[variant]
+    return bed_type if bed_type in _LEGGETT_MODELS.values() else None
+
+
+def _as_leggett_model(own: Mapping[str, Any]) -> dict[str, Any]:
+    """Return settings that name a Leggett & Platt model as that model's bed type."""
+    if (bed_type := _leggett_model(own)) is None:
+        return dict(own)
+    return {**own, CONF_BED_TYPE: bed_type, CONF_PROTOCOL_VARIANT: VARIANT_AUTO}
+
+
+def migrate_v5_11_entry(
+    data: Mapping[str, Any],
+    options: Mapping[str, Any],
+    *,
+    from_version: int,
+    from_minor_version: int,
+) -> tuple[dict[str, Any], dict[str, Any]]:
+    """Return entry data and options with each Leggett & Platt model saved as its bed type.
+
+    A Leggett & Platt bed saved with the Gen2, Okin or MlRM model ran that
+    model's bed type, so only the name changes, and a bed already saved as
+    that bed type drops the model's name. A bed on Automatic keeps its bed
+    type, which finds the model when it connects. A bed reads its route from
+    its own data, so options that would name a model over it lose their route:
+    pairing and Reconfigure read both together. In a two-address pair that
+    names a model anywhere, each side stores the route it ran and the settings
+    its bed type keeps to itself, and the pair's options no longer decide the
+    route. The original entries a pair restores on unpair are written too, and
+    an open or kept app review follows the renamed route. The migration record
+    lists each place under ``leggett_models``. Any other entry is returned
+    unchanged.
+    """
+    from .profile_review import carry_profile_review_to_renamed_route
+
+    moved: list[str] = []
+
+    def bed(own: Mapping[str, Any], location: str) -> dict[str, Any]:
+        new = _as_leggett_model(own)
+        if new != dict(own):
+            moved.append(location)
+        return new
+
+    def bed_options(
+        own: Mapping[str, Any], own_options: Mapping[str, Any], location: str
+    ) -> dict[str, Any]:
+        """Return a bed's options without a route that names a model over its data."""
+        new = dict(own_options)
+        if _leggett_model({**own, **own_options}) is not None and new.keys() & set(
+            _LEGGETT_ROUTE_KEYS
+        ):
+            for key in _LEGGETT_ROUTE_KEYS:
+                new.pop(key, None)
+            moved.append(location)
+        return new
+
+    children = data.get(CONF_PAIR_CHILDREN)
+    two_address = (
+        isinstance(children, list) and data.get(CONF_PAIR_MODE) != PAIR_MODE_SINGLE_ADDRESS
+    )
+    new_data = bed(data, "data")
+    # A two-address pair's options are a layer its sides share, not a bed's.
+    new_options = dict(options) if two_address else bed_options(data, options, "options")
+    if isinstance(children, list):
+        sides = {
+            side: child
+            for child in children
+            if isinstance(child, Mapping) and (side := child.get(CONF_SIDE)) in PAIR_SIDES
+        }
+        # The sides of a one-address pair are one bed, which reads its own data.
+        views = (
+            {side: effective_child_data(data, side, options) for side in sides}
+            if two_address
+            else {}
+        )
+        stores = bool(views) and any(
+            _leggett_model(layer) is not None
+            for layer in (data, options, *sides.values(), *views.values())
+        )
+        if stores:
+            if _leggett_model(options) is not None:
+                moved.append("options")
+            for key in _LEGGETT_ROUTE_KEYS:
+                new_options.pop(key, None)
+        updated: list[Any] = []
+        for child in children:
+            side = child.get(CONF_SIDE) if isinstance(child, Mapping) else None
+            if side not in PAIR_SIDES:
+                updated.append(child)
+                continue
+            child = dict(child)
+            if stores:
+                view = views[side]
+                route = _as_leggett_model(view)
+                if route != view or _leggett_model(child) is not None:
+                    moved.append(f"data.{side}")
+                child.update({key: route[key] for key in _LEGGETT_ROUTE_KEYS if key in route})
+                # The pair's options no longer reach what this bed type keeps to itself.
+                child.update(
+                    {
+                        key: view[key]
+                        for key in side_owned_profile_fields(child)
+                        if key in view and key not in _LEGGETT_ROUTE_KEYS
+                    }
+                )
+            else:
+                child = bed(child, f"data.{side}")
+            if isinstance(origin := child.get(KEY_ORIGIN_DATA), Mapping):
+                restored = bed(origin, f"data.{side}.{KEY_ORIGIN_DATA}")
+                carry_profile_review_to_renamed_route(origin, restored)
+                child[KEY_ORIGIN_DATA] = restored
+                if isinstance(origin_options := child.get(KEY_ORIGIN_OPTIONS), Mapping):
+                    child[KEY_ORIGIN_OPTIONS] = bed_options(
+                        origin, origin_options, f"data.{side}.{KEY_ORIGIN_OPTIONS}"
+                    )
+            updated.append(child)
+        new_data[CONF_PAIR_CHILDREN] = updated
+    if not moved:
+        return dict(data), dict(options)
+    carry_profile_review_to_renamed_route(data, new_data)
+    _with_migration_record(
+        new_data,
+        from_version=from_version,
+        from_minor_version=from_minor_version,
+        leggett_models=moved,
+    )
+    return new_data, new_options
+
+
 def _massage_button_unique_ids(data: Mapping[str, Any], turned_off: list[str]) -> set[str]:
     """Return the unique ids of the massage buttons Massage on gave these runtimes."""
     from .button import BUTTON_DESCRIPTIONS
@@ -1716,6 +1869,22 @@ async def async_migrate_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
             _async_migrate_v5_10_entities(hass, entry)
         hass.config_entries.async_update_entry(
             entry, data=data, options=options, minor_version=10
+        )
+        if renamed:
+            _async_sync_profile_ids(hass, entry)
+
+    if entry.version == 5 and entry.minor_version < 11:
+        # v5.10 -> v5.11: a Leggett & Platt bed saved with a model is saved as
+        # that model's bed type, which it ran. Its entities keep their IDs.
+        data, options = migrate_v5_11_entry(
+            entry.data,
+            entry.options,
+            from_version=original_version[0],
+            from_minor_version=original_version[1],
+        )
+        renamed = data != dict(entry.data)
+        hass.config_entries.async_update_entry(
+            entry, data=data, options=options, minor_version=11
         )
         if renamed:
             _async_sync_profile_ids(hass, entry)

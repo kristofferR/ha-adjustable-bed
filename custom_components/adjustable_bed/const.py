@@ -477,7 +477,7 @@ BED_TYPE_SOLACE: Final = "solace"
 BED_TYPE_MOTOSLEEP: Final = "motosleep"
 
 BED_TYPE_REVERIE: Final = "reverie"
-BED_TYPE_LEGGETT_PLATT: Final = "leggett_platt"  # -> leggett_gen2 or leggett_okin
+BED_TYPE_LEGGETT_PLATT: Final = "leggett_platt"  # Finds Gen2 or MlRM when it connects
 BED_TYPE_KEESON: Final = "keeson"
 BED_TYPE_ERGOMOTION: Final = "ergomotion"
 BED_TYPE_JIECANG: Final = "jiecang"
@@ -834,7 +834,7 @@ SUPPORTED_BED_TYPES: Final = [
     BED_TYPE_JIECANG,
     BED_TYPE_JIECANG_APP,
     BED_TYPE_OCTO,
-    # Saved by 4.x; its variant or the connected bed picks the Leggett route.
+    # Saved by 4.x; the connected bed picks the Gen2 or MlRM route.
     BED_TYPE_LEGGETT_PLATT,
     BED_TYPE_FSM_RELAX,
     BED_TYPE_SERENITY,
@@ -2031,16 +2031,11 @@ KEESON_VARIANTS: Final = {
     KEESON_VARIANT_PURPLE: "Purple Smart Base (Premium / Premium Plus)",
 }
 
-# Leggett & Platt variants
+# The models of the automatic Leggett & Platt setup. It finds Gen2 or MlRM
+# when it connects; before schema 5.11 an entry could also save one.
 LEGGETT_VARIANT_GEN2: Final = "gen2"
 LEGGETT_VARIANT_OKIN: Final = "okin"
 LEGGETT_VARIANT_MLRM: Final = "mlrm"
-LEGGETT_VARIANTS: Final = {
-    VARIANT_AUTO: AUTOMATIC_LABEL,
-    LEGGETT_VARIANT_GEN2: "Gen2 base (most common)",
-    LEGGETT_VARIANT_OKIN: "Okin base (needs Bluetooth pairing)",
-    LEGGETT_VARIANT_MLRM: "MlRM remote (separate massage buttons)",
-}
 
 
 @overload
@@ -2052,18 +2047,14 @@ def resolve_explicit_bed_type(bed_type: None, protocol_variant: str | None) -> N
 
 
 def resolve_explicit_bed_type(bed_type: str | None, protocol_variant: str | None) -> str | None:
-    """Resolve a legacy umbrella bed type to the concrete type an EXPLICIT
-    protocol variant selects.
+    """Return the bed type a saved bed type and model run.
 
-    The offline-capability path must agree across three places — the pairing
-    gate, offline minting (``async_prime_offline_controller``), and the pair
-    child descriptors — so they all funnel a stored bed type + variant through
-    this one resolver. Currently only ``leggett_platt`` needs it: an explicit
-    variant maps to leggett_wilinke (mlrm) / leggett_okin (okin) / leggett_gen2
-    (gen2), mirroring the explicit-variant branches of
-    ``controller_factory.create_controller``. ``auto``/unset can only be resolved
-    from a live connection, so the umbrella type is returned unchanged (and stays
-    offline-unsafe, which is correct — it can't be minted without connecting).
+    A bed type 4.x saved under a brand runs its Okin receiver route. The
+    automatic ``leggett_platt`` setup runs the model its connection found:
+    leggett_wilinke (mlrm) or leggett_gen2 (gen2). Before schema 5.11 an entry
+    could save that model, or okin for leggett_okin, and the migration steps
+    before it still meet those. Without a model the bed type is returned
+    unchanged: only a live connection finds it.
     """
     if bed_type in RETIRED_BED_TYPES:
         return RETIRED_BED_TYPES[bed_type]
@@ -2802,7 +2793,6 @@ BEDS_REQUIRING_PAIRING: Final[set[str]] = {
 # Maps bed type to set of variants that require pairing for that specific bed type
 # Note: Keeson's "okin" variant (OKIN FFE) does NOT require pairing - it's a different protocol
 BED_TYPE_VARIANTS_REQUIRING_PAIRING: Final[dict[str, set[str]]] = {
-    BED_TYPE_LEGGETT_PLATT: {LEGGETT_VARIANT_OKIN, LEGGETT_VARIANT_GEN2},
     # Custom OKIN (62741525) drives the same Resident base, which needs the
     # bond above. The Nordic variant does not.
     BED_TYPE_OKIN_64BIT: {OKIN_64BIT_VARIANT_CUSTOM},
@@ -2813,8 +2803,8 @@ def requires_pairing(bed_type: str, protocol_variant: str | None = None) -> bool
     """Check if a bed configuration requires BLE pairing.
 
     Args:
-        bed_type: The bed type constant (e.g., BED_TYPE_LEGGETT_PLATT)
-        protocol_variant: Optional protocol variant (e.g., "okin", "gen2")
+        bed_type: The bed type constant (e.g., BED_TYPE_OKIN_64BIT)
+        protocol_variant: Optional protocol variant (e.g., "custom")
 
     Returns:
         True if this bed/variant combination requires OS-level BLE pairing
@@ -2854,9 +2844,12 @@ def requires_pairing_after_service_discovery(
     BlueZ's usual ``pair=True`` path instead invokes
     ``Device1.Pair`` without first making the ordinary unbonded GATT connection.
     """
-    if bed_type in (BED_TYPE_LEGGETT_GEN2, BED_TYPE_SLEEP_NUMBER, BED_TYPE_VIBRADORM_APP, BED_TYPE_SILVERMOTION):
-        return True
-    return bed_type == BED_TYPE_LEGGETT_PLATT and protocol_variant == LEGGETT_VARIANT_GEN2
+    return bed_type in (
+        BED_TYPE_LEGGETT_GEN2,
+        BED_TYPE_SLEEP_NUMBER,
+        BED_TYPE_VIBRADORM_APP,
+        BED_TYPE_SILVERMOTION,
+    )
 
 
 def connection_gated_by_bond(bed_type: str, protocol_variant: str | None = None) -> bool:
@@ -2869,9 +2862,7 @@ def connection_gated_by_bond(bed_type: str, protocol_variant: str | None = None)
     symptom; the controller firmware's exact link-layer filtering is not
     visible in the Android APK.
     """
-    if bed_type == BED_TYPE_LEGGETT_GEN2:
-        return True
-    return bed_type == BED_TYPE_LEGGETT_PLATT and protocol_variant == LEGGETT_VARIANT_GEN2
+    return bed_type == BED_TYPE_LEGGETT_GEN2
 
 
 def grants_one_connection_per_pairing_window(

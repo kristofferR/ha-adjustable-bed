@@ -71,8 +71,6 @@ from custom_components.adjustable_bed.const import (
     KEESON_FALLBACK_GATT_PAIRS,
     KEESON_JSON_SERVICE_UUID,
     LEGGETT_GEN2_SERVICE_UUID,
-    LEGGETT_VARIANT_GEN2,
-    LEGGETT_VARIANT_OKIN,
     LIMOSS_SERVICE_UUID,
     LINAK_CONTROL_SERVICE_UUID,
     MALOUF_LEGACY_OKIN_WRITE_CHAR_UUID,
@@ -1382,8 +1380,8 @@ class TestOkinUUIDDisambiguation:
             == BED_TYPE_OKIN_CST
         )
 
-    def test_shared_okin_gatt_refinement_keeps_legacy_leggett_okin_variant(self):
-        """A legacy Leggett OKIN entry is not moved to CST by CSS plus DFU."""
+    def test_shared_okin_gatt_refinement_keeps_leggett_okin(self):
+        """A Leggett OKIN entry is not moved to CST by CSS plus DFU."""
         gatt_services = [
             SimpleNamespace(
                 uuid=OKIMAT_SERVICE_UUID,
@@ -1404,16 +1402,12 @@ class TestOkinUUIDDisambiguation:
         ]
 
         assert (
-            refine_okin_shared_uuid_protocol_from_gatt(
-                BED_TYPE_LEGGETT_PLATT,
-                gatt_services,
-                LEGGETT_VARIANT_OKIN,
-            )
-            == BED_TYPE_LEGGETT_PLATT
+            refine_okin_shared_uuid_protocol_from_gatt(BED_TYPE_LEGGETT_OKIN, gatt_services)
+            == BED_TYPE_LEGGETT_OKIN
         )
 
-    def test_shared_okin_gatt_refinement_ignores_legacy_leggett_gen2_variant(self):
-        """Only the legacy Leggett OKIN variant should enter the OKIN GATT refiner."""
+    def test_shared_okin_gatt_refinement_ignores_the_automatic_leggett_setup(self):
+        """The automatic Leggett & Platt setup finds Gen2 or MlRM, never an OKIN profile."""
         gatt_services = [
             SimpleNamespace(
                 uuid=OKIMAT_SERVICE_UUID,
@@ -1434,11 +1428,7 @@ class TestOkinUUIDDisambiguation:
         ]
 
         assert (
-            refine_okin_shared_uuid_protocol_from_gatt(
-                BED_TYPE_LEGGETT_PLATT,
-                gatt_services,
-                LEGGETT_VARIANT_GEN2,
-            )
+            refine_okin_shared_uuid_protocol_from_gatt(BED_TYPE_LEGGETT_PLATT, gatt_services)
             == BED_TYPE_LEGGETT_PLATT
         )
 
@@ -1615,7 +1605,7 @@ class TestOkinUUIDDisambiguation:
             ),
         ]
 
-        for stale_type in (BED_TYPE_OKIN_7BYTE,):
+        for stale_type in (BED_TYPE_OKIN_7BYTE, BED_TYPE_LEGGETT_OKIN):
             assert (
                 refine_okin_shared_uuid_protocol_from_gatt(
                     stale_type,
@@ -1624,18 +1614,6 @@ class TestOkinUUIDDisambiguation:
                 )
                 == BED_TYPE_OKIN_UUID
             )
-
-        # The legacy Leggett/OKIN variant takes its own entry path into the
-        # refiner and must promote to okin_uuid too.
-        assert (
-            refine_okin_shared_uuid_protocol_from_gatt(
-                BED_TYPE_LEGGETT_PLATT,
-                gatt_services,
-                LEGGETT_VARIANT_OKIN,
-                ble_model="OKIMAT 4 IPS/M",
-            )
-            == BED_TYPE_OKIN_UUID
-        )
 
     def test_shared_okin_gatt_refinement_keeps_cst_for_okimat_model(self):
         """An explicit OKIN CST entry is preserved even with an OKIMAT model."""

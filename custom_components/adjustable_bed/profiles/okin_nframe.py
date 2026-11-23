@@ -32,7 +32,6 @@ from ..const import (
     BED_TYPE_DOUBLESLEEP,
     BED_TYPE_ESHINE_OKIN,
     BED_TYPE_LEGGETT_OKIN,
-    BED_TYPE_LEGGETT_PLATT,
     BED_TYPE_OKIN_64BIT,
     BED_TYPE_OKIN_CST,
     BED_TYPE_OKIN_DOT,
@@ -391,8 +390,7 @@ def _leggett(
     return OkinNFrameProfile(
         key=key,
         name=name,
-        # ``leggett_platt`` reaches these profiles through its ``okin`` variant.
-        bed_types=(BED_TYPE_LEGGETT_OKIN, BED_TYPE_LEGGETT_PLATT),
+        bed_types=(BED_TYPE_LEGGETT_OKIN,),
         # CU170 hardware accepts unconfirmed writes. Waiting for a response
         # pushes the stream past its 217-218 ms motion watchdog on proxies.
         write="no_response",

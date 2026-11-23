@@ -3,7 +3,7 @@
 A profile id names the route an entry runs: its bed type, then the protocol
 variant when one is stored, then the app profile for the bed types that choose
 one through an app key. Examples: ``linak``, ``keeson:sino``,
-``jiecang_app@dreamask``, ``leggett_platt:okin@prodigy``.
+``jiecang_app@dreamask``, ``leggett_okin@prodigy2``.
 
 The saved ``bed_type``, ``protocol_variant`` and app keys stay exactly as the
 user chose them. The id is derived from them by :func:`resolve_profile_id`,

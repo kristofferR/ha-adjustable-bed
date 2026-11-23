@@ -137,7 +137,6 @@ from custom_components.adjustable_bed.const import (
     DOMAIN,
     KAIDI_VARIANT_SEAT_1,
     KEESON_VARIANT_ERGOMOTION,
-    LEGGETT_VARIANT_GEN2,
     MALOUF_LAYOUT_HILO,
     NORDIC_UART_SERVICE_UUID,
     OCTO_STAR2_SERVICE_UUID,
@@ -181,16 +180,15 @@ def test_skips_setup_connection_probe_for_pairing_window_beds() -> None:
     single pairing-window connection is left for setup (issue #385 review)."""
     from custom_components.adjustable_bed.config_flow import _skips_setup_connection_probe
 
-    assert _skips_setup_connection_probe(BED_TYPE_LEGGETT_GEN2, "auto") is True
-    assert _skips_setup_connection_probe(BED_TYPE_LEGGETT_PLATT, "auto") is True
-    assert _skips_setup_connection_probe(BED_TYPE_LEGGETT_PLATT, "gen2") is True
-    assert _skips_setup_connection_probe(BED_TYPE_LEGGETT_PLATT, None) is True
-    # MlRM/Okin Leggett beds reconnect normally, so the probe is fine.
-    assert _skips_setup_connection_probe(BED_TYPE_LEGGETT_PLATT, "mlrm") is False
-    assert _skips_setup_connection_probe(BED_TYPE_LEGGETT_PLATT, "okin") is False
+    assert _skips_setup_connection_probe(BED_TYPE_LEGGETT_GEN2) is True
+    # The automatic setup may turn out to be that bed.
+    assert _skips_setup_connection_probe(BED_TYPE_LEGGETT_PLATT) is True
+    # MlRM and Okin Leggett beds reconnect normally, so the probe is fine.
+    assert _skips_setup_connection_probe(BED_TYPE_LEGGETT_WILINKE) is False
+    assert _skips_setup_connection_probe(BED_TYPE_LEGGETT_OKIN) is False
     # Unrelated beds are unaffected.
-    assert _skips_setup_connection_probe(BED_TYPE_KEESON, "auto") is False
-    assert _skips_setup_connection_probe(None, None) is False
+    assert _skips_setup_connection_probe(BED_TYPE_KEESON) is False
+    assert _skips_setup_connection_probe(None) is False
 
 
 def test_octo_one_motor_count_is_limited_to_standard_tv_lifts() -> None:
@@ -1810,7 +1808,6 @@ class TestBluetoothDiscoveryFlow:
             BED_TYPE_SVANE,
             BED_TYPE_VIBRADORM,
             KEESON_VARIANT_SINO,
-            LEGGETT_VARIANT_MLRM,
             VARIANT_AUTO,
         )
 
@@ -1845,15 +1842,6 @@ class TestBluetoothDiscoveryFlow:
         assert (default_connection_mode(BED_TYPE_SUTA, None) == "release") is False
         assert (default_connection_mode(BED_TYPE_SVANE, None) == "release") is False
         assert (default_connection_mode(BED_TYPE_VIBRADORM, None) == "release") is False
-        # An umbrella type resolves through its explicit variant.
-        assert (
-            (default_connection_mode(BED_TYPE_LEGGETT_PLATT, LEGGETT_VARIANT_GEN2) == "release")
-            is False
-        )
-        assert (
-            (default_connection_mode(BED_TYPE_LEGGETT_PLATT, LEGGETT_VARIANT_MLRM) == "release")
-            is False
-        )
         assert (
             (default_connection_mode(BED_TYPE_LEGGETT_PLATT, VARIANT_AUTO) == "release") is False
         )

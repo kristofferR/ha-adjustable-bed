@@ -66,7 +66,8 @@ For an existing bed, open the entry's three-dot menu and **Reconfigure** (see
 **Keep the detected or saved controls** leaves the entry as it is. An entry on the legacy app or on the L&P
 app's QRRM remote gets the same question. A change to the Okin or Gen2 route pairs the
 bed before the review, as setup does; the MlRM, Richmat and legacy routes switch
-unchecked, as Configure did. A saved `leggett_platt` entry keeps that ID. A
+unchecked, as Configure did. A bed on the automatic setup of 4.x becomes the
+route you choose. A
 review lists the added and removed controls before **Apply this change** saves
 it. **Configure** keeps routine settings; the app, layout and route change only
 through **Reconfigure**.
@@ -210,13 +211,20 @@ See also: the [brand lookup](../SUPPORTED_ACTUATORS.md)
 
 ### Aliases
 
-`leggett_platt` is kept for existing entries and is not offered in the bed-type
-list. With variant `gen2`, or `auto` when the bed exposes no WiLinke service,
-it builds the same Gen2 controller with the same timing as `leggett_gen2`, so
-the two send identical bytes; with variant
-`okin` it is an alias of `leggett_okin` (see the
-[Okin N-frame aliases](okin-nframe.md#aliases)). The
-wire snapshot (`tests/test_wire_snapshot.py`) proves both by capture.
+`leggett_platt` is the automatic setup of 4.x, shown as **Gen2 or MlRM, found
+automatically (Leggett & Platt)**. It is kept for the beds that use it and is not
+offered in the bed-type list. Each time it connects it builds the MlRM
+controller when the bed exposes a WiLinke service, and otherwise the same Gen2
+controller with the same timing as `leggett_gen2`, so the two send identical
+bytes; the wire snapshot (`tests/test_wire_snapshot.py`) proves it by capture.
+It does not get the Gen2 route's pairing handling. To fix the model, open
+**Reconfigure** and choose the bed's app.
+
+A bed that 4.x saved with the Gen2, Okin or MlRM model is saved as
+`leggett_gen2`, `leggett_okin` or `leggett_wilinke`, the bed type it ran
+(schema 5.11). Its entities, entity IDs and commands are unchanged. An MlRM bed
+without a saved repeat interval now repeats a held motor command every 110 ms,
+the MlRM cadence, instead of every 100 ms.
 
 ## Gen2 Variant (ASCII Commands)
 

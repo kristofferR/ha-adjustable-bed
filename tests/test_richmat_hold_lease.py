@@ -39,7 +39,6 @@ CASES: dict[str, tuple[int, str]] = {
     "richmat_harmony:model_t3rm": (100, WILINKE_STOP),
     "richmat_idealbed:model_p6rm": (100, WILINKE_STOP),
     "leggett_wilinke": (110, WILINKE_STOP),
-    "leggett_platt:mlrm": (100, WILINKE_STOP),
     "hjbed": (100, WILINKE_STOP),
     # Eshine's N1 scenario refreshes the bare code at its fixed 100 ms.
     "eshine": (100, "6e"),

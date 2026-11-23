@@ -29,7 +29,6 @@ from custom_components.adjustable_bed.const import (
     BED_TYPE_BEDTECH,
     BED_TYPE_KEESON,
     BED_TYPE_LEGGETT_OKIN,
-    BED_TYPE_LEGGETT_PLATT,
     BED_TYPE_LINAK,
     BED_TYPE_MALOUF_LEGACY_OKIN,
     BED_TYPE_MALOUF_NEW_OKIN,
@@ -62,7 +61,6 @@ from custom_components.adjustable_bed.const import (
     DOMAIN,
     LEGGETT_OKIN_PULSE_DEFAULTS,
     LEGGETT_OKIN_SUPERSEDED_PULSE_DEFAULTS,
-    LEGGETT_VARIANT_OKIN,
     NORDIC_DFU_SERVICE_UUID,
     OCTO_STAR2_PULSE_DEFAULTS,
     OCTO_VARIANT_STANDARD,
@@ -2046,34 +2044,6 @@ class TestRuntimeBedTypeCorrection:
         assert (coordinator.motor_pulse_count, coordinator.motor_pulse_delay_ms) == (8, 150)
         assert coordinator.entry.data[CONF_MOTOR_PULSE_COUNT] == 8
         assert coordinator.entry.data[CONF_MOTOR_PULSE_DELAY_MS] == 150
-
-    async def test_legacy_leggett_okin_variant_migrates_persisted_generic_defaults(
-        self,
-        hass: HomeAssistant,
-        mock_config_entry_data: dict,
-    ):
-        """The legacy Leggett umbrella type should use the Okin variant cadence."""
-        coordinator = self._make_coordinator(
-            hass,
-            mock_config_entry_data,
-            {
-                CONF_PROTOCOL_VARIANT: LEGGETT_VARIANT_OKIN,
-                CONF_MOTOR_PULSE_COUNT: LEGGETT_OKIN_SUPERSEDED_PULSE_DEFAULTS[0],
-                CONF_MOTOR_PULSE_DELAY_MS: LEGGETT_OKIN_SUPERSEDED_PULSE_DEFAULTS[1],
-            },
-            bed_type=BED_TYPE_LEGGETT_PLATT,
-        )
-
-        changed = coordinator._apply_runtime_bed_type_correction(BED_TYPE_LEGGETT_PLATT)
-
-        assert changed is True
-        assert coordinator.bed_type == BED_TYPE_LEGGETT_PLATT
-        assert (
-            coordinator.motor_pulse_count,
-            coordinator.motor_pulse_delay_ms,
-        ) == LEGGETT_OKIN_PULSE_DEFAULTS
-        assert coordinator.entry.data[CONF_MOTOR_PULSE_COUNT] == LEGGETT_OKIN_PULSE_DEFAULTS[0]
-        assert coordinator.entry.data[CONF_MOTOR_PULSE_DELAY_MS] == LEGGETT_OKIN_PULSE_DEFAULTS[1]
 
     async def test_correction_updates_shared_okin_bed_type(
         self,
