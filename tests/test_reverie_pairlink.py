@@ -10,6 +10,7 @@ from unittest.mock import AsyncMock, Mock
 
 import pytest
 
+from custom_components.adjustable_bed.bed_traits import default_connection_mode
 from custom_components.adjustable_bed.beds.reverie.comfort import ReverieComfortRequest
 from custom_components.adjustable_bed.beds.reverie.pairlink import ReveriePairlinkController
 from custom_components.adjustable_bed.beds.reverie.pairlink_protocol import (
@@ -179,6 +180,85 @@ async def _join_central(
     await _notify(client, tasks, _login_packet())
     await _notify(client, tasks, b"\x02\x31\x08")
     assert runtime.joined
+
+
+def _back_position_event(value: int) -> bytes:
+    return b"\x03\xff\xff\xff\xff\x20" + bytes.fromhex("11223344") + bytes((0x02, 0xA7, 0x01, value))
+
+
+async def _join_reporting_positions(
+    controller: ReveriePairlinkController,
+    client: _GattClient,
+    tasks: list[asyncio.Task[None]],
+    positions: dict[str, float],
+) -> None:
+    """Join the bed with the coordinator's position store behind the fake."""
+
+    def clear(axes: tuple[str, ...]) -> None:
+        for axis in axes:
+            positions.pop(axis, None)
+
+    controller._coordinator.clear_position_feedback = clear
+    await controller.start_notify(positions.__setitem__)
+    await _notify(client, tasks, _login_packet())
+    await _notify(client, tasks, b"\x02\x31\x08")
+
+
+async def test_central_release_by_home_assistant_keeps_the_last_positions() -> None:
+    """The bed is where it was last read once the link is handed back."""
+    pytest.importorskip("cryptography")
+    controller, client, _runtime, tasks = _controller()
+    positions: dict[str, float] = {}
+    await _join_reporting_positions(controller, client, tasks, positions)
+    await _notify(client, tasks, _back_position_event(55))
+    assert positions == {"back": 55.0}
+
+    # What the coordinator does at the idle timeout or a manual disconnect.
+    controller.on_connection_release("idle_timeout")
+    await controller.stop_notify()
+    controller.on_disconnect()
+    assert positions == {"back": 55.0}
+
+    # The next session shows that reading until the bed reports its own.
+    await _join_reporting_positions(controller, client, tasks, positions)
+    assert positions == {"back": 55.0}
+    await _notify(client, tasks, _back_position_event(20))
+    assert positions == {"back": 20.0}
+
+
+async def test_central_link_loss_clears_the_positions() -> None:
+    """A link the bed or the adapter dropped says nothing about the bed now."""
+    pytest.importorskip("cryptography")
+    controller, client, _runtime, tasks = _controller()
+    positions: dict[str, float] = {}
+    await _join_reporting_positions(controller, client, tasks, positions)
+    await _notify(client, tasks, _back_position_event(55))
+
+    controller.on_disconnect()
+
+    assert positions == {}
+
+
+async def test_central_release_that_left_the_link_up_does_not_excuse_a_later_loss() -> None:
+    """A session restored after a failed close is a live session again."""
+    pytest.importorskip("cryptography")
+    controller, client, _runtime, tasks = _controller()
+    positions: dict[str, float] = {}
+    await _join_reporting_positions(controller, client, tasks, positions)
+    controller.on_connection_release("idle_timeout")
+    await controller.stop_notify()
+
+    await controller.start_notify(positions.__setitem__)
+    await _notify(client, tasks, _back_position_event(55))
+    controller.on_disconnect()
+
+    assert positions == {}
+
+
+def test_pairlink_stays_connected_for_a_while_by_default() -> None:
+    """Feedback arrives only on a live session, so the link outlives one command."""
+    assert default_connection_mode("reverie_pairlink", "R510L") == "idle"
+    assert default_connection_mode("reverie_pairlink", None) == "idle"
 
 
 async def test_central_login_callback_replies_and_dispatches_with_learned_session() -> None:
