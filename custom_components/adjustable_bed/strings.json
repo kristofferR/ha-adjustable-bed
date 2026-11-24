@@ -6163,9 +6163,6 @@
       "light_level": {
         "name": "Light level"
       },
-      "reverie_massage_wave": {
-        "name": "Massage wave"
-      },
       "reverie_stk_head_wave": {
         "name": "Head massage wave"
       },
@@ -6595,6 +6592,16 @@
         "state": {
           "wireless": "Wireless",
           "wired": "Wired"
+        }
+      },
+      "reverie_massage_wave": {
+        "name": "Massage wave",
+        "state": {
+          "off": "Off",
+          "1": "Wave 1",
+          "2": "Wave 2",
+          "3": "Wave 3",
+          "4": "Wave 4"
         }
       },
       "reverie_stk_side": {

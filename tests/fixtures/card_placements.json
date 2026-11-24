@@ -3719,9 +3719,6 @@
   "card_section": "motors",
   "card_motor": "lumbar"
  },
- "number:reverie_massage_wave": {
-  "card_section": "massage"
- },
  "number:reverie_pairlink_massage_timer": {
   "card_section": "massage",
   "card_role": "timer"
@@ -3992,6 +3989,9 @@
  },
  "select:remacro_control_side": {
   "card_section": "motors"
+ },
+ "select:reverie_massage_wave": {
+  "card_section": "massage"
  },
  "select:reverie_pairlink_massage_mode": {
   "card_section": "massage"

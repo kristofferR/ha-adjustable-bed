@@ -62,6 +62,7 @@ class ControllerSelectSpec:
     select_fn: Callable[[BedController, str], Awaitable[None]]
     # An app-local choice that sends no frame: applied without connecting.
     local_select_fn: Callable[[str], None] | None = field(default=None, kw_only=True)
+    available_fn: Callable[[BedController], bool] | None = field(default=None, kw_only=True)
     card: CardPlacement = field(default=CARD_UTILITY, kw_only=True)
     entity_category: EntityCategory | None = field(default=None, kw_only=True)
     entity_registry_enabled_default: bool = field(default=True, kw_only=True)

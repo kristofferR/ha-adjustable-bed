@@ -36,7 +36,9 @@ from custom_components.adjustable_bed.const import (
     REVERIE_NIGHTSTAND_LINEAR_HEAD_UUID,
     REVERIE_NIGHTSTAND_LINEAR_LUMBAR_UUID,
     REVERIE_NIGHTSTAND_LUMBAR_UUID,
+    REVERIE_NIGHTSTAND_MASSAGE_WAVE_UUID,
     REVERIE_NIGHTSTAND_PRESETS_UUID,
+    REVERIE_NIGHTSTAND_RGB_UUID,
     REVERIE_STK_SIDE_DATA_UUID,
     REVERIE_STK_SIDE_NO_DATA_UUID,
 )
@@ -691,6 +693,83 @@ class TestReverieNightstandLights:
             if call.args[0] == REVERIE_NIGHTSTAND_LED_UUID
         ]
         assert writes == [bytes((0,)), bytes((41,))]
+
+    async def test_box_without_the_rgb_characteristic_has_an_on_off_light(
+        self,
+        hass: HomeAssistant,
+        mock_reverie_nightstand_config_entry,
+        mock_coordinator_connected,
+    ):
+        """A RevCB_A1 box has no RGB characteristic; the app then only toggles (#1172)."""
+        coordinator = AdjustableBedCoordinator(
+            hass, mock_reverie_nightstand_config_entry
+        )
+        await coordinator.async_connect()
+        client = coordinator._client
+        controller = ReverieNightstandController(coordinator)
+        assert controller.supports_light_level_control
+        assert controller.capability_snapshot() is None
+
+        client.services.get_characteristic.side_effect = lambda uuid: (
+            None if uuid == REVERIE_NIGHTSTAND_RGB_UUID else MagicMock()
+        )
+        await controller.async_discover_capabilities()
+
+        assert controller.supports_lights
+        assert not controller.supports_light_level_control
+        assert not controller.supports_light_color_control
+        assert controller.supported_color_mode is None
+        assert controller.capability_snapshot() == {"rgb_light": False}
+        client.read_gatt_char = AsyncMock(return_value=bytes((0,)))
+        await controller.lights_toggle()
+        assert REVERIE_NIGHTSTAND_RGB_UUID not in [
+            call.args[0] for call in client.read_gatt_char.call_args_list
+        ]
+        assert client.write_gatt_char.call_args.args[:2] == (
+            REVERIE_NIGHTSTAND_LED_UUID,
+            bytes((ReverieNightstandCommands.LED_ON,)),
+        )
+        with pytest.raises(ValueError):
+            await controller.set_light_level(50)
+
+        # The stored answer shapes the entities before the next connection.
+        stored = ReverieNightstandController(
+            coordinator, capability_snapshot={"rgb_light": False}
+        )
+        assert not stored.supports_light_level_control
+
+    async def test_wave_select_writes_the_app_pattern_numbers(
+        self,
+        hass: HomeAssistant,
+        mock_reverie_nightstand_config_entry,
+        mock_coordinator_connected,
+    ):
+        """The app's wave buttons write 1-4 and Stop writes 0 (#1172)."""
+        coordinator = AdjustableBedCoordinator(
+            hass, mock_reverie_nightstand_config_entry
+        )
+        await coordinator.async_connect()
+        client = coordinator._client
+        controller = ReverieNightstandController(coordinator)
+        assert "wave" not in controller.massage_intensity_zones
+        wave = next(
+            spec
+            for spec in controller.controller_select_specs
+            if spec.key == "reverie_massage_wave"
+        )
+        assert wave.options == ("off", "1", "2", "3", "4")
+
+        for option in ("3", "off"):
+            await wave.select_fn(controller, option)
+            assert coordinator.controller_state[wave.state_key] == option
+        writes = [
+            call.args[1]
+            for call in client.write_gatt_char.call_args_list
+            if call.args[0] == REVERIE_NIGHTSTAND_MASSAGE_WAVE_UUID
+        ]
+        assert writes == [bytes((3,)), bytes((0,))]
+        with pytest.raises(ValueError):
+            await controller.set_massage_intensity("wave", 5)
 
 
 class TestReverieNightstandMultiCharacteristic:

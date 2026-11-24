@@ -2610,11 +2610,6 @@ class BedController(GattWriter):
         """
         raise NotImplementedError("Massage timer selection not supported on this bed")
 
-    @property
-    def legacy_massage_wave_available(self) -> bool:
-        """Return False while the legacy wave massage zone cannot be driven."""
-        return True
-
     async def read_light_state(self) -> tuple[StateUpdate, ...]:
         """Query current light state from the bed when supported.
 
