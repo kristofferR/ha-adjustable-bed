@@ -467,6 +467,19 @@ async def test_registered_channel20_updates_state_without_sdk_fallthrough() -> N
     ] == [{"back_position": 55}]
 
 
+async def test_reported_massage_timer_is_published_as_the_shared_timer_minutes() -> None:
+    controller, client, _runtime, tasks = _controller()
+    await controller.start_notify()
+    packet = b"\x03\xFF\xFF\xFF\xFF\x20" + bytes.fromhex("11223344") + bytes.fromhex("02A70E14")
+    controller._coordinator.handle_controller_state_updates.reset_mock()
+    await _notify(client, tasks, packet)
+
+    assert [
+        published(*call.args)
+        for call in controller._coordinator.handle_controller_state_updates.call_args_list
+    ] == [{"massage_timer": 20}]
+
+
 async def test_raw_registered_selector_accepts_six_through_nine_bytes_before_sdk() -> None:
     controller, client, _runtime, tasks = _controller()
     await controller.start_notify()
@@ -607,17 +620,18 @@ async def test_channel12_status8_requires_a_currently_bound_virtual_address() ->
     assert client.writes == []
 
 
-async def test_pairlink_timer_number_keeps_the_raw_byte_out_of_minute_api() -> None:
+async def test_pairlink_massage_timer_is_the_apps_five_minute_buttons() -> None:
     controller, _client, _runtime, _tasks = _controller()
     controller.async_send_payload = AsyncMock()
 
-    assert controller.supports_massage_timer is False
-    spec = controller.controller_number_specs[0]
-    await spec.set_fn(controller, 23)
+    assert controller.supports_massage_timer is True
+    assert controller.massage_timer_options == [10, 15, 20, 25, 30]
+    assert controller.massage_timer_can_turn_off is False
+    await controller.set_massage_timer(15)
 
-    controller.async_send_payload.assert_awaited_once_with(a7_payload(22, 23))
-    with pytest.raises(NotImplementedError):
-        await controller.set_massage_timer(23)
+    controller.async_send_payload.assert_awaited_once_with(a7_payload(22, 15))
+    with pytest.raises(ValueError):
+        await controller.set_massage_timer(0)
 
 
 async def test_pairlink_action_methods_match_source_command_vectors() -> None:

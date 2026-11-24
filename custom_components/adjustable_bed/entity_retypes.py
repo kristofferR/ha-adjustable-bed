@@ -130,6 +130,10 @@ RETYPES: Final[tuple[Retype, ...]] = (
             "jerome_massage_timer",
         )
     ),
+    # The Reverie Pairlink timer byte is the app's five minute buttons.
+    Retype(
+        "number", "controller_number_reverie_pairlink_massage_timer", "select", "massage_timer"
+    ),
     # Bed-specific light durations that became the shared light timer.
     Retype("select", "controller_select_goodvibe_light_duration", "select", "light_timer"),
     # Light colors that were a 1-7 number are the app's seven swatches.

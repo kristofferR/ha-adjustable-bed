@@ -100,13 +100,13 @@ class ReverieCommands:
 
     @staticmethod
     def massage_head(level: int) -> list[int]:
-        """Create the level-times-four head massage command (0-10)."""
-        return [0x53, level * 4]
+        """Create the head massage command; the app sends the level 0-10 as is."""
+        return [0x53, level]
 
     @staticmethod
     def massage_foot(level: int) -> list[int]:
-        """Create the level-times-four foot massage command (0-10)."""
-        return [0x54, level * 4]
+        """Create the foot massage command; the app sends the level 0-10 as is."""
+        return [0x54, level]
 
     @staticmethod
     def massage_wave(level: int) -> str:
@@ -463,8 +463,8 @@ class ReverieController(BedController, ReverieComfortActions):
 
         head_position = data[2]
         foot_position = data[3]
-        head_wave = data[4] // 4
-        foot_wave = data[5] // 4
+        head_wave = data[4]
+        foot_wave = data[5]
 
         _LOGGER.debug(
             "Reverie position update: head=%d%%, foot=%d%%, head_wave=%d, foot_wave=%d",
