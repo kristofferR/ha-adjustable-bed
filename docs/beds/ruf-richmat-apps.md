@@ -164,8 +164,7 @@ is separate from recall; a long-code field alone never enables a held command.
 Massage buttons, timers, heat, resets and additional app-labelled actions use
 only their app/model catalog bindings. A model with more than one of the 10, 20
 and 30 minute massage timers shows them as one **Massage timer** select
-(durations only); each option sends that timer's button command. Timers the app labels
-in hours (2, 3 and 5 hours) show as `2 h`, `3 h` and `5 h`. Slider ranges come from that model's
+(durations only); each option sends that timer's button command. Slider ranges come from that model's
 entities; feedback clamps to those ranges. A checksum or GATT completion does
 not prove that a physical operation succeeded.
 
