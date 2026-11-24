@@ -415,6 +415,13 @@ class AdjustableBedControllerSelect(AdjustableBedEntity, SelectEntity):
         await self._coordinator.async_execute_controller_command(select)
 
 
+def _massage_timer_label(minutes: int | str) -> str:
+    """A timer's option: minutes, or hours for whole durations from two hours up."""
+    if isinstance(minutes, int) and minutes >= 120 and minutes % 60 == 0:
+        return f"{minutes // 60} h"
+    return f"{minutes} min"
+
+
 class AdjustableBedMassageTimerSelect(AdjustableBedEntity, SelectEntity):
     """Select entity for Adjustable Bed massage timer."""
 
@@ -440,7 +447,9 @@ class AdjustableBedMassageTimerSelect(AdjustableBedEntity, SelectEntity):
         self._has_off = has_off
 
         # The durations, after "Off" when the bed has an off command.
-        self._attr_options = (["Off"] if has_off else []) + [f"{m} min" for m in timer_options]
+        self._attr_options = (["Off"] if has_off else []) + [
+            _massage_timer_label(m) for m in timer_options
+        ]
         self._unregister_callback: Callable[[], None] | None = None
 
     async def async_added_to_hass(self) -> None:
@@ -476,8 +485,7 @@ class AdjustableBedMassageTimerSelect(AdjustableBedEntity, SelectEntity):
             # Nothing sent or reported yet.
             return None
         minutes = state[key]
-        formatted = f"{minutes} min"
-        if minutes and formatted in self._attr_options:
+        if minutes and (formatted := _massage_timer_label(minutes)) in self._attr_options:
             return formatted
         return "Off" if self._has_off and minutes in (None, 0) else None
 
@@ -492,12 +500,12 @@ class AdjustableBedMassageTimerSelect(AdjustableBedEntity, SelectEntity):
             self._coordinator.name,
         )
 
-        # Parse the option to get minutes
         if option == "Off":
             minutes = 0
         else:
-            # Extract number from "10 min", "20 min", etc.
-            minutes = int(option.split()[0])
+            # "20 min" or "2 h".
+            amount, unit = option.split()
+            minutes = int(amount) * (60 if unit == "h" else 1)
 
         async def _set_timer(ctrl: BedController) -> None:
             await ctrl.set_massage_timer(minutes)

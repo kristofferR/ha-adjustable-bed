@@ -782,3 +782,27 @@ def test_snore_page_without_preset_rows_has_no_select():
     ctrl = make("virm")
     ctrl._dev = {"snore": True}
     assert not [s for s in ctrl.controller_select_specs if s.key == "richmat_mh_snore"]
+
+
+async def test_hour_massage_timers_read_as_the_app_labels_them():
+    """J2RM's timer keys are the app's 2, 3 and 5 hours, not minute counts."""
+    from custom_components.adjustable_bed.select import (
+        MASSAGE_TIMER_DESCRIPTION,
+        AdjustableBedMassageTimerSelect,
+    )
+
+    ctrl = make("j2rm")
+    runtime = MagicMock(bed_type="bedtech_classic", entity_side=None, controller_side=None)
+    runtime.controller_state = {"massage_timer": 180}
+
+    async def run(command):
+        await command(ctrl)
+
+    runtime.async_execute_controller_command = run
+    select = AdjustableBedMassageTimerSelect(
+        runtime, MASSAGE_TIMER_DESCRIPTION, ctrl.massage_timer_options, has_off=False
+    )
+    assert select.options == ["2 h", "3 h", "5 h"]
+    assert select.current_option == "3 h"
+    await select.async_select_option("5 h")
+    assert frames(ctrl)[0] == "6e010061d0"
