@@ -435,6 +435,10 @@ def plan_commands(controller: Any) -> list[Command]:
             f"stop:{spec.key}_close", _stopped(spec.close_fn, scheduled=scheduled), True, movement=True
         ))
     for spec in _value(controller, "controller_button_specs", ()):
+        # For Leva the gesture button only cancels a hold. The movement and
+        # STOP phases already capture that hold's real release writes.
+        if spec.key == "leva_release" and spec.release_only:
+            continue
         plan.append(Command(f"button:{spec.key}", spec.press_fn, True))
     for spec in _value(controller, "controller_select_specs", ()):
         for option in spec.options:
@@ -1389,6 +1393,9 @@ def default_scenario(bed_type: str) -> Scenario:
     """The bed type in its default route, with the entry data it needs to build."""
     from custom_components.adjustable_bed import const
 
+    if bed_type == "leva":
+        return Scenario(id=bed_type, bed_type=bed_type, protocol_variant="nordic",
+                        entry_data={const.CONF_PRODUCT_TYPE: "ascent"}, layout_id="leva:nordic")
     if bed_type == const.BED_TYPE_SHUDA:
         return Scenario(
             id=bed_type, bed_type=bed_type, entry_data={const.CONF_BLE_DEVICE_NAME: "Smartbed"},
@@ -2343,6 +2350,16 @@ def build_scenarios() -> list[Scenario]:
             default_scenario("dreamsense"), id=f"dreamsense:gatt:{route}",
             layout_id=f"dreamsense:gatt:{route}",
         ))
+    from custom_components.adjustable_bed.profiles.leva import MODELS as LEVA_MODELS
+    for model, receiver in (
+        *((model, "nordic") for model in LEVA_MODELS if model != "ascent"),
+        ("elite500", "okin"), ("evolutionlx", "okin"), ("ascent", "dual"),
+        ("elite250", "dual"), ("questelite", "dual"),
+    ):
+        scenarios.append(Scenario(
+            id=f"leva:{model}:{receiver}", bed_type="leva", protocol_variant=receiver,
+            entry_data={"product_type": model}, layout_id=f"leva:{receiver}",
+        ))
     # Linx 1.0.7: all independent model/route combinations, preserving
     # the existing Keeson JSON scenarios and their characteristic fixtures.
     for model in ("quest", "orbes"):
@@ -2512,7 +2529,7 @@ async def _connect(controller: Any, recorder: Recorder, clock: FakeClock) -> dic
                 session.store_device_info = lambda *_: None
             await controller.async_on_connect(session)
             return
-        if controller._coordinator.bed_type in {"symphony", "linx", "agingplace", "sleep_assistant", "sinca_comfort"}:
+        if controller._coordinator.bed_type in {"symphony", "linx", "agingplace", "sleep_assistant", "sinca_comfort", "leva"}:
             session = SimpleNamespace(
                 client=controller.client, is_current=lambda: True,
                 async_start_notify=lambda: controller.start_notify(lambda *_: None),

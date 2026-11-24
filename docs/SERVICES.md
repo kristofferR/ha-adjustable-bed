@@ -338,6 +338,7 @@ entities, including the light colors, are separate.
 
 | Bed | Controls | Notes |
 |-----|----------|-------|
+| [Leva Bed Remote](beds/okin-nframe.md#leva-bed-remote) | `back_up`, `back_down`, `legs_up`, `legs_down`; Ascent, Evolution LX and Quest Elite with Nordic UART also have `pillow_up`, `pillow_down`, `lumbar_up` and `lumbar_down` | Remote motor directions only. Presets, light and massage run once. |
 | [Super Colchones](beds/richmat.md#super-colchones) | `head_up`, `head_down`, `foot_up`, `foot_down`; AFEG350 also `lumbar_up`, `lumbar_down` | |
 | [BedSmart / X-Series](beds/richmat.md#bedsmart--x-series) | The `richmat_classic_<node>` controls of the selected remote layout that can be held | Saves cannot be held |
 | [Base Remote](beds/richmat.md#base-remote) | The held controls of the selected layout and mode | Saves cannot be held |
@@ -417,8 +418,10 @@ other beds. SUTA Smart Home, SonicSleep, MLILY Remote, Good Vibe Sleep, Galaxy,
 MLILY, Power Bob Base, Majestic Home and Okimiki products with an alarm, GM
 Control products with an alarm, OKIN SleepEase, HJBed, Richmat app beds and
 their separate sleep sensor, Bed Tech (including its separate intervention
-receiver), Dream Sense Bed and Luuna + set their clock here too. On a Motion Bed it sets
-the clock of the motor or heating module; on a hub, select the module first.
+receiver), Dream Sense Bed, Luuna + and
+[Leva Bed Remote on the Ascent route](beds/okin-nframe.md#leva-bed-remote) set
+their clock here too. On a Motion Bed it sets the clock of the motor or heating
+module; on a hub, select the module first.
 [Shuda](beds/okin-nframe.md#shuda) also sets the bed clock on connection.
 HJBed's own `hjbed` action also keeps its Set bed clock operation, which does
 the same. A bed whose two sides share one receiver has its clock set once.

@@ -53,6 +53,7 @@ from .const import (
     BED_TYPE_LEGGETT_LP_LEGACY,
     BED_TYPE_LEGGETT_OKIN,
     BED_TYPE_LEGGETT_PLATT,
+    BED_TYPE_LEVA,
     BED_TYPE_LIMOSS_REMOTE,
     BED_TYPE_LINX,
     BED_TYPE_LOGICDATA_APP,
@@ -178,6 +179,9 @@ _BY_BED_TYPE: Final[dict[str, SideProfile]] = {
     "gmmotor": SideProfile("GM Control product", frozenset({CONF_BLE_DEVICE_NAME})),
     "gmmotor_sleep_mm": SideProfile("GM Control MM sleep module"),
     "gmmotor_sleep_sxb": SideProfile("GM Control SXB sleep module"),
+    BED_TYPE_LEVA: SideProfile(
+        "Leva Bed Remote", frozenset({CONF_MOTOR_COUNT, CONF_HAS_MASSAGE}), variant_owned=True
+    ),
     BED_TYPE_LINX: SideProfile("Linx", variant_owned=True),
     BED_TYPE_SYMPHONY_SLEEP: SideProfile("Symphony Sleep", variant_owned=True),
     BED_TYPE_JALON_BED: SideProfile("OkinComfortBed Ⅱ (Jalon)"),

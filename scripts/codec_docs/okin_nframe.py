@@ -19,9 +19,15 @@ from custom_components.adjustable_bed.const import (
     NORDIC_UART_WRITE_CHAR_UUID,
     OKIMAT_VARIANTS,
 )
+from custom_components.adjustable_bed.profiles import (
+    leva,
+    rize_home,
+    shuda,
+    simmons_blue,
+    ultramatic,
+)
 from custom_components.adjustable_bed.profiles import n32_motion_bed as n32
 from custom_components.adjustable_bed.profiles import okin_nframe as okin_profiles
-from custom_components.adjustable_bed.profiles import rize_home, shuda, simmons_blue, ultramatic
 from custom_components.adjustable_bed.profiles.adjustable_bed import (
     PROFILES as ADJUSTABLE_BED_PROFILES,
 )
@@ -776,6 +782,83 @@ def render_n32_session() -> str:
     )
 
 
+def render_leva_routes() -> str:
+    """Render the three Leva wire routes and independent app-screen choices."""
+    return _block(
+        _table(
+            ("Route", "Service", "Write characteristic", "Write mode"),
+            (
+                (route.title(), f"`{transport.service}`", f"`{transport.write}`",
+                 "With response" if transport.response else "Without response")
+                for route, transport in leva.TRANSPORTS.items()
+            ),
+        ),
+        _table(
+            ("Model", "Nordic UART Remote and Home", "OKIN Remote", "OKIN Home"),
+            (
+                (model.label, model.nordic_route.title(), "OKIN" if model.okin_remote else "None", "OKIN")
+                for model in leva.MODELS.values()
+            ),
+        ),
+    )
+
+
+def render_leva_controls() -> str:
+    """Show Remote controls for the routes on which each model has a Remote."""
+    names = {
+        "flat": "Flat", "zeroG": "zero gravity", "antiSnore": "anti-snore", "tv": "TV",
+        "memory1": "recall memory 1", "memory2": "recall memory 2",
+        "light": "light", "underBedLight": "under-bed light",
+        "massageHeadPlus": "head massage", "massageFeetPlus": "feet massage",
+        "massageTimer": "massage timer", "massageMode": "massage mode",
+    }
+    rows = []
+    for model in leva.MODELS.values():
+        profile = leva.LevaProfile(model, "nordic")
+        rows.append((
+            model.label,
+            ", ".join(profile.axes).capitalize(),
+            ", ".join(label for action, label in names.items() if profile.allows_tap(action, home=False)),
+        ))
+    return _block(_table(("Model", "Remote movement", "Remote presets and extras"), rows))
+
+
+def render_leva_commands() -> str:
+    """Render the literals through the actual encoder for each route."""
+    routes = tuple(leva.TRANSPORTS.values())
+    actions = dict.fromkeys(action for transport in routes for action in transport.words)
+    return _block(
+        _table(
+            ("App command", "Evolution", "Ascent", "OKIN"),
+            (
+                (f"`{action}`", *(
+                    _hex(transport.frame(action)) if action in transport.words else ""
+                    for transport in routes
+                ))
+                for action in actions
+            ),
+        ),
+    )
+
+
+def render_leva_timing() -> str:
+    return _block(
+        _table(
+            ("Route", "Held refresh", "Release copies", "Release gap", "Write retry gaps"),
+            (
+                (route.title(), f"{leva.REFRESH_MS} ms", str(transport.stop_copies),
+                 f"{transport.stop_gap * 1000:g} ms" if transport.stop_copies > 1 else "",
+                 ", ".join(f"{gap * 1000:g} ms" for gap in transport.retry_gaps))
+                for route, transport in leva.TRANSPORTS.items()
+            ),
+        ),
+        f"The link settles for {leva.SETUP_SECONDS * 1000:g} ms after notification setup. "
+        f"Ascent clock sync writes {leva.CLOCK_COPIES} records at "
+        f"{leva.CLOCK_GAP_SECONDS * 1000:g} ms gaps and settles for "
+        f"{leva.CLOCK_SETTLE_SECONDS * 1000:g} ms.",
+    )
+
+
 def render_shuda_controls() -> str:
     from datetime import datetime
 
@@ -868,6 +951,10 @@ def render_simmons_blue() -> str:
 
 
 BLOCKS: list[Block] = [
+    (GUIDE, "leva-routes", render_leva_routes),
+    (GUIDE, "leva-controls", render_leva_controls),
+    (GUIDE, "leva-commands", render_leva_commands),
+    (GUIDE, "leva-timing", render_leva_timing),
     (GUIDE, "ultramatic-controls", render_ultramatic),
     (GUIDE, "rize-home", render_rize_home),
     (GUIDE, "superior-sleep", render_superior_sleep),

@@ -841,6 +841,7 @@
       "vmatbasic_invalid": "Enter a whole number within the selected product range.",
       "vmatbasic_link_profile": "Combine only CBI or CBI with XT-Box receivers. The Basic profile has no linked control.",
       "vmatbasic_required": "Choose the V-MAT Basic product profile.",
+      "leva_receiver_mismatch": "This bed did not provide the Bluetooth receiver and write mode required by this Leva selection. Check the selected receiver and model.",
       "starcode_app_invalid": "Choose the settings the app shows for this bed, then try again.",
       "motion_bed_profile": "Enter the bed's Bluetooth name exactly as the Motion Bed app shows it, or turn off the restored profile.",
       "starcode_profile_mismatch": "Choose the bed class that matches the start of the bed's Bluetooth name.",
@@ -1726,6 +1727,14 @@
   },
   "entity": {
     "button": {
+      "leva_release": { "name": "Release motion control" },
+      "leva_massage_head": { "name": "Cycle head massage" },
+      "leva_massage_foot": { "name": "Cycle feet massage" },
+      "leva_massage_timer": { "name": "Cycle massage timer" },
+      "leva_home_flat": { "name": "Home quick flat" },
+      "leva_home_zero_g": { "name": "Home quick zero gravity" },
+      "leva_home_anti_snore": { "name": "Home quick anti-snore" },
+      "leva_home_tv": { "name": "Home quick TV" },
       "comfort_enhancements_quiet_sleep": {
         "name": "Quiet sleep"
       },
@@ -10617,6 +10626,18 @@
     }
   },
   "exceptions": {
+    "leva_profile_required": {
+      "message": "Choose a Leva model and Bluetooth receiver."
+    },
+    "leva_receiver_mismatch": {
+      "message": "The connected bed did not provide an unambiguous {receiver} receiver for the selected Leva model. Check the Bluetooth device and receiver selection."
+    },
+    "leva_hold_duration": {
+      "message": "Choose a Leva hold duration between 1 and 60000 milliseconds."
+    },
+    "leva_control_unavailable": {
+      "message": "This control is unavailable on the selected Leva model and receiver."
+    },
     "memory_presets_not_supported": {
       "message": "{device_name} has no memory presets."
     },
