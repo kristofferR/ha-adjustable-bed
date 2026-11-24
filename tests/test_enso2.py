@@ -7,8 +7,10 @@ from datetime import UTC, datetime
 from functools import partial
 from types import SimpleNamespace
 from unittest.mock import AsyncMock, Mock
+from zoneinfo import ZoneInfo
 
 import pytest
+from homeassistant.util import dt as dt_util
 
 from custom_components.adjustable_bed.alarm import AlarmRequest
 from custom_components.adjustable_bed.beds.enso2 import receive as rx
@@ -237,7 +239,7 @@ async def test_layout_gates_hold_alt_program_and_gvrm_alternate_zone():
     assert frames(client) == ["6e010031a0", "6e01006edd"]
 
 
-async def test_alarm_uses_layout_and_synthesizes_two_massage_zones():
+async def test_alarm_uses_layout_and_synthesizes_two_massage_zones(monkeypatch):
     controller, _, client, _ = await bed("A9RM")
     alarm = AlarmRequest(
         enabled=True,
@@ -247,6 +249,7 @@ async def test_alarm_uses_layout_and_synthesizes_two_massage_zones():
         massage_zone="both",
         reference_time=datetime(2026, 7, 14, 22, 30, tzinfo=UTC),
     )
+    monkeypatch.setattr(dt_util, "now", lambda: alarm.reference_time)
     with raises_key("enso2_alarm_unavailable"):
         await controller.check_alarm(alarm)
     await controller.start_notify()
@@ -256,6 +259,36 @@ async def test_alarm_uses_layout_and_synthesizes_two_massage_zones():
     with virtual_clock():
         await controller.configure_alarm(alarm)
     assert frames(client) == ["6e05010074", "6e060077eb"]
+
+
+@pytest.mark.parametrize(
+    ("start", "now", "hour", "minute", "enabled", "countdown"),
+    [
+        ("2026-03-29T00:30", "2026-03-29T00:30", 2, 30, True, "6e053c00af"),
+        ("2026-10-25T00:30", "2026-10-25T00:30", 2, 30, True, "6e05b40027"),
+        ("2026-10-25T01:45", "2026-10-25T01:45", 1, 30, True, "6e052d00a0"),
+        ("2026-07-14T06:00", "2026-07-14T06:02", 6, 5, True, "6e05030076"),
+        ("2026-03-29T00:30", "2026-03-29T00:30", 2, 30, False, "6e05000073"),
+    ],
+    ids=["spring-forward", "fall-back", "repeated-hour", "connection-delay", "disable"],
+)
+async def test_alarm_counts_real_minutes_to_the_selected_occurrence(
+    monkeypatch, start, now, hour, minute, enabled, countdown
+):
+    zone = ZoneInfo("Europe/London")
+    alarm = AlarmRequest(
+        enabled=enabled,
+        hour=hour,
+        minute=minute,
+        wake_action="tv",
+        reference_time=datetime.fromisoformat(start).replace(tzinfo=zone),
+    )
+    monkeypatch.setattr(dt_util, "now", lambda: datetime.fromisoformat(now).replace(tzinfo=zone))
+    controller, _, client, _ = await bed("A9RM")
+    controller._received(rx.ALARM_PRESENT)
+    with virtual_clock():
+        await controller.configure_alarm(alarm)
+    assert frames(client) == [countdown, "6e060058cc" if enabled else "6e06000074"]
 
 
 def test_receiver_recovers_from_noise_bad_checksums_and_combined_notifications():

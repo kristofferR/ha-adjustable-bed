@@ -9,6 +9,8 @@ from dataclasses import dataclass
 from functools import partial
 from typing import TYPE_CHECKING, Final, cast
 
+from homeassistant.util import dt as dt_util
+
 from ...alarm import AlarmCapability
 from ...card import CARD_LIGHTING, CARD_MASSAGE_TIMER
 from ...codec import richmat
@@ -165,6 +167,10 @@ class Enso2Controller(BedController):
 
     @property
     def has_dynamic_controller_entities(self) -> bool:
+        return True
+
+    @property
+    def has_dynamic_buttons(self) -> bool:
         return True
 
     @property
@@ -776,7 +782,15 @@ class Enso2Controller(BedController):
 
     @property
     def retained_entity_keys(self) -> frozenset[tuple[str, str]]:
-        return frozenset({("number", _LIGHT_TIMER_ENTITY_KEY), ("binary_sensor", "enso2_light_on")})
+        gesture_buttons = {
+            ("button", key)
+            for key, source in self._button_keys().items()
+            if self._controls[source].behavior in ("selectable", "hold_only")
+        }
+        return frozenset(
+            {("number", _LIGHT_TIMER_ENTITY_KEY), ("binary_sensor", "enso2_light_on")}
+            | gesture_buttons
+        )
 
     @property
     def unavailable_controller_entity_keys(self) -> tuple[str, ...]:
@@ -919,11 +933,8 @@ class Enso2Controller(BedController):
 
     async def configure_alarm(self, alarm: AlarmRequest) -> None:
         await self.check_alarm(alarm)
-        start = alarm.reference_time
-        minutes = ((alarm.hour - start.hour) * 60 + alarm.minute - start.minute) % 1440 or 1440
-        await self._sequence(
-            richmat.countdown(minutes if alarm.enabled else 0, self._alarm_key(alarm)), 0.3
-        )
+        minutes = alarm.minutes_until(dt_util.now()) if alarm.enabled else 0
+        await self._sequence(richmat.countdown(minutes, self._alarm_key(alarm)), 0.3)
 
 
 _TIMER_CHOICE: Final = StateKey[str | None]("enso2_timer_options")
