@@ -252,9 +252,10 @@ def runtime_variants(controllers: Iterable[BedController]) -> Iterator[BedContro
         StarcodeAbm5_4Controller,
     )
     from custom_components.adjustable_bed.beds.suta.controller import SutaController
+    from custom_components.adjustable_bed.beds.truemotion.controller import TrueMotionController
     from custom_components.adjustable_bed.beds.vibradorm.app import VibradormAppController
     from custom_components.adjustable_bed.beds.vmatbasic.controller import VMatBasicController
-    from custom_components.adjustable_bed.profiles import dorsal, relax_motion
+    from custom_components.adjustable_bed.profiles import dorsal, relax_motion, truemotion
     from custom_components.adjustable_bed.profiles import ore_ultramatic as ultramatic
     from custom_components.adjustable_bed.profiles import vmatbasic as vmat_profiles
     from custom_components.adjustable_bed.profiles.dreamsense import PROFILES as DREAMSENSE_PROFILES
@@ -295,6 +296,9 @@ def runtime_variants(controllers: Iterable[BedController]) -> Iterator[BedContro
         if isinstance(controller, EnsoController):
             for profile in ENSO_PROFILES.values():
                 yield variant(controller, profile=profile)
+        if isinstance(controller, TrueMotionController):
+            for profile in truemotion.PROFILES.values():
+                yield TrueMotionController(controller._coordinator, profile)
         if isinstance(controller, SutaController):
             for route in SUTA_ROUTES:
                 name = "SUTA-unknown" if route == "fallback" else "SUTA" if route == "short-name" else route.split("*")[0]

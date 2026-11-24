@@ -59,6 +59,7 @@ from .const import (
     BED_TYPE_SLEEP_NUMBER,
     BED_TYPE_SOMOS,
     BED_TYPE_SYMPHONY,
+    BED_TYPE_TRUEMOTION,
     BED_TYPE_YAMADA,
     CB24_BED_SELECTION_A,
     CB24_BED_SELECTION_B,
@@ -108,6 +109,7 @@ from .const import (
     VMATBASIC_CONFIG_KEYS,
 )
 from .errors import invalid
+from .profiles import truemotion
 from .profiles.bobpowerbase import PROFILE_CHOICES as BOB_PROFILES
 from .profiles.comfortbase import PRODUCTS as COMFORTBASE_PRODUCTS
 from .profiles.majestichome import PROFILE_CHOICES as MAJESTICHOME_PROFILES
@@ -695,6 +697,15 @@ def _descriptor_from_single(
     return descriptor
 
 
+def truemotion_pair_supported(left: Mapping[str, Any], right: Mapping[str, Any]) -> bool:
+    """The primary has a dual editor and the partner passes the app name filter."""
+    return (
+        left.get(CONF_BED_TYPE) == right.get(CONF_BED_TYPE) == BED_TYPE_TRUEMOTION
+        and truemotion.supports_pair_primary(left.get(CONF_BLE_DEVICE_NAME))
+        and truemotion.name_matches(right.get(CONF_BLE_DEVICE_NAME))
+    )
+
+
 def build_pair_entry_data(
     left_data: Mapping[str, Any],
     right_data: Mapping[str, Any],
@@ -747,6 +758,11 @@ def build_pair_entry_data(
         for item in (left_data, right_data)
     ):
         raise ValueError("Only configured Instant Comfort bases can be combined")
+    if (
+        BED_TYPE_TRUEMOTION in (left_data.get(CONF_BED_TYPE), right_data.get(CONF_BED_TYPE))
+        and not truemotion_pair_supported(left_data, right_data)
+    ):
+        raise invalid("truemotion_pair")
     left_addr = left_data[CONF_ADDRESS]
     right_addr = right_data[CONF_ADDRESS]
     left_entry_id, left_unique_id = left_origin or (None, None)

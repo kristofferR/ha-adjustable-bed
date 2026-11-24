@@ -159,6 +159,7 @@ if TYPE_CHECKING:
     from .tempur_au import TempurAUController as TempurAUController
     from .tempur_curve import TempurCurveController as TempurCurveController
     from .timotion_ahf import TiMOTIONAhfController as TiMOTIONAhfController
+    from .truemotion.controller import TrueMotionController as TrueMotionController
     from .ultramatic.controller import UltramaticController as UltramaticController
     from .vibradorm.app import VibradormAppController as VibradormAppController
     from .vibradorm.controller import VibradormController as VibradormController
@@ -308,6 +309,7 @@ _EXPORT_MODULES = {
     "SolaceController": "solace.controller",
     "StarElevateController": "starcode.star_elevate",
     "SutaController": "suta.controller",
+    "TrueMotionController": "truemotion.controller",
     "SvaneController": "svane.controller",
     "TiMOTIONAhfController": "timotion_ahf",
     "VibradormController": "vibradorm.controller",
