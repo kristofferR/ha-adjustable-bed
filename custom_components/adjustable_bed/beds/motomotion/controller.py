@@ -963,6 +963,13 @@ class MotoMotionController(BedController):
             self._targets = None
             self._posture = value
 
+    def controller_button_available(self, key: str) -> bool:
+        name = key.removeprefix("motomotion_posture_")
+        if name in _POSTURES:
+            # A posture needs the user's measurements or a saved target, as in the app.
+            return name in self._custom or set(self._dimensions) == set(_DIMENSIONS)
+        return super().controller_button_available(key)
+
     async def _go_to_posture(self, name: str) -> None:
         """Send a posture's target. It becomes the selection once the bed has it."""
         target = self._position(name)

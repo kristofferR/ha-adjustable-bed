@@ -337,7 +337,9 @@ async def test_posture_button_selects_and_moves_in_one_press(coordinator):
     with pytest.raises(ValueError, match="Set height"):
         await c.action("motomotion_posture_lay")
     assert written(coordinator) == [] and c._posture == "upright"
+    assert not c.controller_button_available("motomotion_posture_lay")
     c.restore_persisted_app_state({"dimensions": {"height": 170, "buttocks": 100, "knee": 55}})
+    assert c.controller_button_available("motomotion_posture_lay")
     # Choosing in the select stays local, so a restored scene cannot move the bed.
     await c.select("posture", "tv")
     assert written(coordinator) == []
