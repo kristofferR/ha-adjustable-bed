@@ -310,6 +310,9 @@ _BY_BED_TYPE: Final[dict[str, SideProfile]] = {
     BED_TYPE_SVANE: SideProfile("Svane Remote", variant_owned=True),
 }
 _BY_VARIANT: Final[dict[tuple[str, str], SideProfile]] = {
+    (BED_TYPE_RICHMAT_CLASSIC_APPS, "maxprime"): SideProfile(
+        "Maxprime layout", frozenset({CONF_BLE_DEVICE_NAME, CONF_PRODUCT_TYPE}), variant_owned=True
+    ),
     (BED_TYPE_STAR_ELEVATE, STAR_ELEVATE_VARIANT_M1X12): SideProfile(
         "Adjustable Comfort M1X12 Elevate lift", frozenset({CONF_PROTOCOL_VARIANT})
     ),

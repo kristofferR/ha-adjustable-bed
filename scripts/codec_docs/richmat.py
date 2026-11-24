@@ -64,6 +64,7 @@ from scripts.codec_docs._bedsmart import BLOCKS as BEDSMART_BLOCKS
 from scripts.codec_docs._common import Block, _block, _hex, _table
 from scripts.codec_docs._dreamsense import BLOCKS as DREAMSENSE_BLOCKS
 from scripts.codec_docs._lp2 import BLOCKS as LP2_BLOCKS
+from scripts.codec_docs._maxprime import render_maxprime
 from scripts.codec_docs._super_colchones import BLOCKS as SUPER_COLCHONES_BLOCKS
 
 GUIDE = "docs/beds/richmat.md"
@@ -1436,6 +1437,7 @@ def render_rise_commands() -> str:
 
 
 BLOCKS: list[Block] = [
+    (GUIDE, "maxprime", render_maxprime),
     (GUIDE, "luniosmart", render_luniosmart),
     (GUIDE, "sonicsleep", render_sonicsleep),
     (GUIDE, "saatva", render_saatva),

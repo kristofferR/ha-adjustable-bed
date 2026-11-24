@@ -336,6 +336,7 @@ entities, including the light colors, are separate.
 | [Super Colchones](beds/richmat.md#super-colchones) | `head_up`, `head_down`, `foot_up`, `foot_down`; AFEG350 also `lumbar_up`, `lumbar_down` | |
 | [BedSmart / X-Series](beds/richmat.md#bedsmart--x-series) | The `richmat_classic_<node>` controls of the selected remote layout that can be held | Saves cannot be held |
 | [Base Remote](beds/richmat.md#base-remote) | The held controls of the selected layout and mode | Saves cannot be held |
+| [Maxprime](beds/richmat.md#maxprime) | The selected layout's held controls, listed as `held_control` on the buttons | Applies the receiver mode selected when the hold starts. Save actions use confirmed buttons |
 | [Dream Sense Bed](beds/richmat.md#dream-sense-bed) | The selected product's held controls, such as `HeadUp` | Save buttons are separate |
 | [Sleepy's Elite app](beds/sleepys.md#explicit-sleepys-elite-app-profile) | Motor directions and app buttons that can be held | 100 to 60000 ms. Motion sensor actions end after five seconds. BOX25 voice positions run once |
 | [Glideaway Motion / Montion](beds/keeson.md#glideaway-motion) | Axes, presets, memories, light and massage controls by model, listed in the guide | At most 30 seconds. Memory recalls take under 5 seconds; save with `save_preset` |
@@ -474,6 +475,7 @@ data:
 | Luuna + | The product's alarm positions: `tv`, `zero_g`, `anti_snore`, `memory_1`, `memory_2`; required to turn the alarm on | Once, at the next occurrence. Needs the bed to report its alarm on the current connection |
 | Luuna Rise and Power Cool | From the selected layout's alarm controls; required to turn the alarm on | `massage` with the layout's zones (then `none` is allowed). Once, at the next occurrence. Needs the bed to report its alarm on the current connection |
 | M Line | `zero_g`, `flat`, `memory_1`, `memory_2`, `massage`, `anti_snore` | `weekdays` |
+| [Maxprime](beds/richmat.md#maxprime) | From the selected layout's alarm controls | One countdown alarm, with the layout's massage combinations. Layouts that open the alarm through Settings require a reply on the current connection |
 | Malouf / Lucid app | `zero_g`, `lounge`, `tv`, `anti_snore`, memories | `weekdays` |
 | Motion Bed | `none` (rings only), `zero_g`, `memory_1` | `weekdays`, `massage`, `sound` (the alarm tone by default; music 1 by default where the bed has audio) |
 | [Simmons Blue](beds/okin-nframe.md#simmons-blue) | `flat`, `lounge` (Relax), `tv`, `anti_snore`, `memory_1`, `memory_2` | `slot` 1–3, `weekdays`. Turning off keeps the time reported by the bed. |
@@ -1948,7 +1950,7 @@ part of the integration.
 ## Richmat (classic apps)
 
 <a id="richmat_classic"></a>
-**`richmat_classic`**: Sets the alarm, light, aroma and massage timer of an Avocado Eco Base, CoasterSleep, Forty Winks, Milemont or Superior bed, or moves its desk. Only the options your bed reports can run.
+**`richmat_classic`**: Sets the alarm, light, aroma and massage timer of an Avocado Eco Base, CoasterSleep, Forty Winks, Milemont or Superior bed, or moves its desk. Maxprime uses `query`, `rgb` and `aroma`. Settings depend on receiver replies.
 
 | Field | Name | Meaning |
 |-------|------|---------|
@@ -2031,6 +2033,19 @@ cloud settings are not available. See the
 | Field | Name | Meaning |
 |-------|------|---------|
 | `rgb_color` | Color | Red, green and blue, 0 to 255. |
+
+### Maxprime settings
+
+Use `richmat_classic` with `operation: query` to refresh the alarm, light and
+aroma options. Once the bed has reported support on the current connection,
+`operation: rgb` takes `rgb_color: [red, green, blue]` and `operation: aroma`
+takes `aroma_times: [mode_2_minutes, mode_3_minutes, pause_hours]`.
+Run times accept 1–60 minutes and the pause accepts 1–12 hours. For a combined
+bed with sequential connections, target each side in a separate settings call,
+including when another selected bed uses Maxprime.
+Use the **Light duration** number for 0–300 seconds, with 0 for keep-on. Use
+[`set_alarm`](#set_alarm) for the bed's one-time countdown alarm.
+See the [Maxprime guide](beds/richmat.md#maxprime).
 
 ### Richmat app aroma, light and alarms
 
