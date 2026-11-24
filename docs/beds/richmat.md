@@ -238,6 +238,7 @@ sends STOP.
 | Classic BedSmart / X-Series | `richmat_classic_apps` | W1, W2, N1, W4 | per-layout catalog | renewable lease on keep buttons |
 | Classic Jerome's power base | `richmat_classic_apps` | W1, W2, N1, W4 | per-layout catalog | renewable lease on keep buttons |
 | Classic Base Remote | `richmat_classic_apps` | W1, W2, N1, W4 | per-layout catalog | renewable lease on keep buttons |
+| Classic Maxprime | `richmat_classic_apps` | W1, W2, N1, W4 | per-layout catalog | renewable lease on keep buttons |
 | Classic Lady Americana | `richmat_classic_apps` | W1, W2, N1, W4 | per-layout catalog | renewable lease on keep buttons |
 | Classic ACAA | `richmat_classic_apps` | W1, W2, N1, W4 | per-layout catalog | renewable lease on keep buttons |
 | Classic STA Homecare | `richmat_classic_apps` | W1, W2, N1, W4 | per-layout catalog | renewable lease on keep buttons |
@@ -325,12 +326,12 @@ and timing.
 
 | Key | Service | Write | Notify | Commands | Profiles |
 |---|---|---|---|---|---|
-| N1 | `6e400001-b5a3-f393-e0a9-e50e24dcca9e` | `6e400002-b5a3-f393-e0a9-e50e24dcca9e` | `6e400003-b5a3-f393-e0a9-e50e24dcca9e` | bare code | Richmat WiLinke, Richmat Nordic, Richmat Prefix55, Richmat PrefixAA, HJBed, Richmat 4.2.0, Eshine, Richmat MH Revive Control, Richmat MH Best Mattress, Richmat MH Blvd Home, Richmat MH HARMONY, Richmat MH Idealbed, Richmat MH RUF Betten, Richmat MH W.Silver, Richmat MH AMERICANSTAR, Richmat MH Bailey, Richmat MH TX, Richmat MH Nisco, Richmat MH MLILY Supreme, Richmat MH Bed Tech, Classic Avocado Eco Base, Classic CoasterSleep, Classic Forty Winks, Classic Milemont, Classic Superior, Classic Luuna Rise, Classic Power Cool Sleep System, Classic SleepFunction Bed Control, Classic L&P Adjustable Base, Classic BedSmart / X-Series, Classic Jerome's power base, Classic Base Remote, Classic Lady Americana, Classic ACAA, Classic STA Homecare, Classic Zero Gravity, Galaxy Bed Control, Good Vibe Sleep, MLILY Control, Majestic Home, Okimiki, Power Bob Base, Casper Base, Hush Base, Luuna +, MLILY Remote, SonicSleep, Lunio Smart+ (framed controls on every route) |
+| N1 | `6e400001-b5a3-f393-e0a9-e50e24dcca9e` | `6e400002-b5a3-f393-e0a9-e50e24dcca9e` | `6e400003-b5a3-f393-e0a9-e50e24dcca9e` | bare code | Richmat WiLinke, Richmat Nordic, Richmat Prefix55, Richmat PrefixAA, HJBed, Richmat 4.2.0, Eshine, Richmat MH Revive Control, Richmat MH Best Mattress, Richmat MH Blvd Home, Richmat MH HARMONY, Richmat MH Idealbed, Richmat MH RUF Betten, Richmat MH W.Silver, Richmat MH AMERICANSTAR, Richmat MH Bailey, Richmat MH TX, Richmat MH Nisco, Richmat MH MLILY Supreme, Richmat MH Bed Tech, Classic Avocado Eco Base, Classic CoasterSleep, Classic Forty Winks, Classic Milemont, Classic Superior, Classic Luuna Rise, Classic Power Cool Sleep System, Classic SleepFunction Bed Control, Classic L&P Adjustable Base, Classic BedSmart / X-Series, Classic Jerome's power base, Classic Base Remote, Classic Maxprime, Classic Lady Americana, Classic ACAA, Classic STA Homecare, Classic Zero Gravity, Galaxy Bed Control, Good Vibe Sleep, MLILY Control, Majestic Home, Okimiki, Power Bob Base, Casper Base, Hush Base, Luuna +, MLILY Remote, SonicSleep, Lunio Smart+ (framed controls on every route) |
 | W0 | `8ebd4f76-da9d-4b5a-a96e-8ebfbeb622e7` | `d44bc439-abfd-45a2-b575-925416129600` | `d44bc439-abfd-45a2-b575-925416129601` | framed | Richmat WiLinke, Richmat Nordic, Richmat Prefix55, Richmat PrefixAA, Classic L&P Adjustable Base |
-| W1 | `0000fee9-0000-1000-8000-00805f9b34fb` | `d44bc439-abfd-45a2-b575-925416129600` | `d44bc439-abfd-45a2-b575-925416129601` | framed | Richmat WiLinke, Richmat Nordic, Richmat Prefix55, Richmat PrefixAA, BedTech legacy, Saatva Adjustable Base: standard, Saatva Adjustable Base: split (two receivers), Saatva Adjustable Base Plus: standard, Saatva Adjustable Base Plus: split (two receivers), Saatva Adjustable Base Plus: split top (one receiver), BedTech app BT2000, BedTech app BT2500, BedTech app BT3000, BedTech app BT3000FH, BedTech app BT6500, BedTech app BTX4, BedTech app BTX4FH, BedTech app BTX5, BedTech app BTX5FH, L&P MlRM, HJBed, Richmat 4.2.0, Eshine, Richmat MH Revive Control, Richmat MH Best Mattress, Richmat MH Blvd Home, Richmat MH HARMONY, Richmat MH Idealbed, Richmat MH RUF Betten, Richmat MH W.Silver, Richmat MH AMERICANSTAR, Richmat MH Bailey, Richmat MH TX, Richmat MH Nisco, Richmat MH MLILY Supreme, Richmat MH Bed Tech, Classic Avocado Eco Base, Classic CoasterSleep, Classic Forty Winks, Classic Milemont, Classic Superior, Classic Luuna Rise, Classic Power Cool Sleep System, Classic SleepFunction Bed Control, Classic L&P Adjustable Base, Classic BedSmart / X-Series, Classic Jerome's power base, Classic Base Remote, Classic Lady Americana, Classic ACAA, Classic STA Homecare, Classic Zero Gravity, Galaxy Bed Control, Good Vibe Sleep, MLILY Control, Majestic Home, Okimiki, Power Bob Base, Casper Base, Hush Base, Luuna +, MLILY Remote, SonicSleep, Lunio Smart+ (framed controls on every route) |
-| W2 | `0000fee9-0000-1000-8000-00805f9b34bb` | `d44bc439-abfd-45a2-b575-925416129622` | `d44bc439-abfd-45a2-b575-925416129611` | framed | Richmat WiLinke, Richmat Nordic, Richmat Prefix55, Richmat PrefixAA, HJBed, Richmat 4.2.0, Eshine, Richmat MH Revive Control, Richmat MH Best Mattress, Richmat MH Blvd Home, Richmat MH HARMONY, Richmat MH Idealbed, Richmat MH RUF Betten, Richmat MH W.Silver, Richmat MH AMERICANSTAR, Richmat MH Bailey, Richmat MH TX, Richmat MH Nisco, Richmat MH MLILY Supreme, Richmat MH Bed Tech, Classic Avocado Eco Base, Classic CoasterSleep, Classic Forty Winks, Classic Milemont, Classic Superior, Classic Luuna Rise, Classic Power Cool Sleep System, Classic SleepFunction Bed Control, Classic L&P Adjustable Base, Classic BedSmart / X-Series, Classic Jerome's power base, Classic Base Remote, Classic Lady Americana, Classic ACAA, Classic STA Homecare, Classic Zero Gravity, Galaxy Bed Control, Good Vibe Sleep, MLILY Control, Majestic Home, Okimiki, Power Bob Base, Casper Base, Hush Base, Luuna +, MLILY Remote, SonicSleep, Lunio Smart+ (framed controls on every route) |
+| W1 | `0000fee9-0000-1000-8000-00805f9b34fb` | `d44bc439-abfd-45a2-b575-925416129600` | `d44bc439-abfd-45a2-b575-925416129601` | framed | Richmat WiLinke, Richmat Nordic, Richmat Prefix55, Richmat PrefixAA, BedTech legacy, Saatva Adjustable Base: standard, Saatva Adjustable Base: split (two receivers), Saatva Adjustable Base Plus: standard, Saatva Adjustable Base Plus: split (two receivers), Saatva Adjustable Base Plus: split top (one receiver), BedTech app BT2000, BedTech app BT2500, BedTech app BT3000, BedTech app BT3000FH, BedTech app BT6500, BedTech app BTX4, BedTech app BTX4FH, BedTech app BTX5, BedTech app BTX5FH, L&P MlRM, HJBed, Richmat 4.2.0, Eshine, Richmat MH Revive Control, Richmat MH Best Mattress, Richmat MH Blvd Home, Richmat MH HARMONY, Richmat MH Idealbed, Richmat MH RUF Betten, Richmat MH W.Silver, Richmat MH AMERICANSTAR, Richmat MH Bailey, Richmat MH TX, Richmat MH Nisco, Richmat MH MLILY Supreme, Richmat MH Bed Tech, Classic Avocado Eco Base, Classic CoasterSleep, Classic Forty Winks, Classic Milemont, Classic Superior, Classic Luuna Rise, Classic Power Cool Sleep System, Classic SleepFunction Bed Control, Classic L&P Adjustable Base, Classic BedSmart / X-Series, Classic Jerome's power base, Classic Base Remote, Classic Maxprime, Classic Lady Americana, Classic ACAA, Classic STA Homecare, Classic Zero Gravity, Galaxy Bed Control, Good Vibe Sleep, MLILY Control, Majestic Home, Okimiki, Power Bob Base, Casper Base, Hush Base, Luuna +, MLILY Remote, SonicSleep, Lunio Smart+ (framed controls on every route) |
+| W2 | `0000fee9-0000-1000-8000-00805f9b34bb` | `d44bc439-abfd-45a2-b575-925416129622` | `d44bc439-abfd-45a2-b575-925416129611` | framed | Richmat WiLinke, Richmat Nordic, Richmat Prefix55, Richmat PrefixAA, HJBed, Richmat 4.2.0, Eshine, Richmat MH Revive Control, Richmat MH Best Mattress, Richmat MH Blvd Home, Richmat MH HARMONY, Richmat MH Idealbed, Richmat MH RUF Betten, Richmat MH W.Silver, Richmat MH AMERICANSTAR, Richmat MH Bailey, Richmat MH TX, Richmat MH Nisco, Richmat MH MLILY Supreme, Richmat MH Bed Tech, Classic Avocado Eco Base, Classic CoasterSleep, Classic Forty Winks, Classic Milemont, Classic Superior, Classic Luuna Rise, Classic Power Cool Sleep System, Classic SleepFunction Bed Control, Classic L&P Adjustable Base, Classic BedSmart / X-Series, Classic Jerome's power base, Classic Base Remote, Classic Maxprime, Classic Lady Americana, Classic ACAA, Classic STA Homecare, Classic Zero Gravity, Galaxy Bed Control, Good Vibe Sleep, MLILY Control, Majestic Home, Okimiki, Power Bob Base, Casper Base, Hush Base, Luuna +, MLILY Remote, SonicSleep, Lunio Smart+ (framed controls on every route) |
 | W3 | `0000ffe0-0000-1000-8000-00805f9b34fb` | `0000ffe2-0000-1000-8000-00805f9b34fb` | `0000ffe1-0000-1000-8000-00805f9b34fb` | framed | Richmat WiLinke, Richmat Nordic, Richmat Prefix55, Richmat PrefixAA, HJBed, Richmat 4.2.0, Eshine, Richmat MH Revive Control, Richmat MH Best Mattress, Richmat MH Blvd Home, Richmat MH HARMONY, Richmat MH Idealbed, Richmat MH RUF Betten, Richmat MH W.Silver, Richmat MH AMERICANSTAR, Richmat MH Bailey, Richmat MH TX, Richmat MH Nisco, Richmat MH MLILY Supreme, Richmat MH Bed Tech, Galaxy Bed Control, Good Vibe Sleep, MLILY Control, Majestic Home, Okimiki, Power Bob Base, Casper Base, Hush Base, Luuna +, MLILY Remote, SonicSleep, Lunio Smart+ (framed controls on every route) |
-| W4 | `0000fff0-0000-1000-8000-00805f9b34fb` | `0000fff2-0000-1000-8000-00805f9b34fb` | `0000fff1-0000-1000-8000-00805f9b34fb` | framed | Richmat WiLinke, Richmat Nordic, Richmat Prefix55, Richmat PrefixAA, HJBed, Richmat 4.2.0, Eshine, Richmat MH Revive Control, Richmat MH Best Mattress, Richmat MH Blvd Home, Richmat MH HARMONY, Richmat MH Idealbed, Richmat MH RUF Betten, Richmat MH W.Silver, Richmat MH AMERICANSTAR, Richmat MH Bailey, Richmat MH TX, Richmat MH Nisco, Richmat MH MLILY Supreme, Richmat MH Bed Tech, Classic Avocado Eco Base, Classic CoasterSleep, Classic Forty Winks, Classic Milemont, Classic Superior, Classic Luuna Rise, Classic Power Cool Sleep System, Classic SleepFunction Bed Control, Classic L&P Adjustable Base, Classic BedSmart / X-Series, Classic Jerome's power base, Classic Base Remote, Classic Lady Americana, Classic ACAA, Classic STA Homecare, Classic Zero Gravity, Galaxy Bed Control, Good Vibe Sleep, MLILY Control, Majestic Home, Okimiki, Power Bob Base, Casper Base, Hush Base, Luuna +, MLILY Remote, SonicSleep, Lunio Smart+ (framed controls on every route) |
+| W4 | `0000fff0-0000-1000-8000-00805f9b34fb` | `0000fff2-0000-1000-8000-00805f9b34fb` | `0000fff1-0000-1000-8000-00805f9b34fb` | framed | Richmat WiLinke, Richmat Nordic, Richmat Prefix55, Richmat PrefixAA, HJBed, Richmat 4.2.0, Eshine, Richmat MH Revive Control, Richmat MH Best Mattress, Richmat MH Blvd Home, Richmat MH HARMONY, Richmat MH Idealbed, Richmat MH RUF Betten, Richmat MH W.Silver, Richmat MH AMERICANSTAR, Richmat MH Bailey, Richmat MH TX, Richmat MH Nisco, Richmat MH MLILY Supreme, Richmat MH Bed Tech, Classic Avocado Eco Base, Classic CoasterSleep, Classic Forty Winks, Classic Milemont, Classic Superior, Classic Luuna Rise, Classic Power Cool Sleep System, Classic SleepFunction Bed Control, Classic L&P Adjustable Base, Classic BedSmart / X-Series, Classic Jerome's power base, Classic Base Remote, Classic Maxprime, Classic Lady Americana, Classic ACAA, Classic STA Homecare, Classic Zero Gravity, Galaxy Bed Control, Good Vibe Sleep, MLILY Control, Majestic Home, Okimiki, Power Bob Base, Casper Base, Hush Base, Luuna +, MLILY Remote, SonicSleep, Lunio Smart+ (framed controls on every route) |
 | W5 | `0000e0ff-3c17-d293-8e48-14fe2e4da212` | `00000002-3c17-d293-8e48-14fe2e4da212` | `00000003-3c17-d293-8e48-14fe2e4da212` | framed | Richmat WiLinke, Richmat Nordic, Richmat Prefix55, Richmat PrefixAA, HJBed, Richmat 4.2.0, Eshine, Galaxy Bed Control, Good Vibe Sleep, MLILY Control, Majestic Home, Okimiki, Power Bob Base, Casper Base, Hush Base, Luuna +, MLILY Remote, SonicSleep, Lunio Smart+ (framed controls on every route) |
 
 W0 is the legacy custom service, W4 and W5 are name-guarded (see the Richmat
@@ -16908,3 +16909,123 @@ bed product boundary.
 #### Provenance
 
 Based on Base Remote 1.0.1 (`com.richmat.baseremote`).
+
+### Maxprime
+
+**App:** [Maxprime](https://play.google.com/store/apps/details?id=com.richmat.maxprime) 1.0.7, `com.richmat.maxprime`
+
+**Status:** Not yet tested on a physical bed.
+
+#### Setup
+
+Choose **Maxprime app** in the Richmat app picker and confirm the four-character
+layout shown by the app. A known receiver service plus a matching Bluetooth
+name can suggest a layout after you select the app. The MPE and FC200 aliases
+apply to Bluetooth names. The 209A05 and QRRM/COOL TOUCH receivers need the
+layout code shown by the app. For a ZRS layout menu, choose its corresponding
+entry in the layout picker. The picker includes the app's four-character
+manual aliases. For the Russian OTRM layout, choose O0RM when the app shows
+that layout.
+
+The first present service in W1, W2, Nordic UART, W4 order selects the receiver
+and requires its matching command and notification roles. Nordic UART sends
+the raw resource bytes. The other three use the wrapped Richmat packet with
+the selected mode byte. The advanced **Third Bluetooth service** option
+allows the property fallback when none of the four fixed services is present.
+It uses the last writable and last readable, notifiable or indicatable
+characteristics of the third enumerated service. There is no bed PIN.
+
+#### Controls
+
+The selected layout and transport determine the available motor, preset,
+memory, massage, light, lock, synchronization and aroma controls. Button and
+hold action IDs are specific to the selected layout. A numbered
+receiver mode changes the byte sent on wrapped commands. The physical meaning
+of the numbered modes still needs hardware verification. U3RM's tagged presets
+select the additional motor for the next movement, and the **Additional motor**
+selector can change it directly. GVRM provides the head-selection commands.
+
+BRRM, YFRM and YGRM offer **Button press mode**. **Press and hold** makes the
+layout's supported recalls continuous and reveals their separate save
+controls. E3RM provides explicit save and held recall buttons. Every save asks
+for confirmation on the dashboard card.
+
+D1RM and D9RM expose the massage timer's 0–5 positions. Y6RM exposes the
+15-, 30- and 45-minute timer and a separate toggle.
+
+<!-- generated:maxprime -->
+<!-- Generated by scripts/generate_codec_docs.py from the codec and profile data. Edit those, not this block. -->
+
+| Layout | Control | Raw | Wrapped, mode 0 |
+|---|---|---|---|
+| 6BRM | Motor 1 up | `34` | `6E 01 00 24 93` |
+| DXRM | Enable synchronization | `BC` | `6E 01 00 BC 2B` |
+| AORM | Lock | `84` | `6E 01 00 84 F3` |
+| YRRM | TV | `58` | `6E 01 00 58 C7` |
+| E3RM | M1 | `2E` | `6E 01 00 2E 9D` |
+| E3RM | Save M1 | `2B` | `6E 01 00 2B 9A` |
+
+| Available mode bytes | Layouts |
+|---|---|
+| 0, 1 | DHRM, DIRM, DQRM, DWRM, ECRM, EPRM, F5RM, FNRM, G4RM |
+| 0, 1, 2 | BTRM, BURM, BVRM, BWRM, DRRM, EKRM |
+
+| Feature | Example frame or write sequence |
+|---|---|
+| Release, raw / wrapped mode 0 | `6E` / `6E 01 00 6E DD` |
+| Wrapped startup | `6E 02 01 00 71` |
+| Alarm / light / aroma probes | `6E 08 01 01 78` / `6E 0A 00 01 79` / `6E 1A 00 00 88` |
+| Alarm countdown, 1440 minutes to zero gravity | `6E 05 A0 00 13` then `6E 06 05 45 BE` |
+| Cancel alarm | `6E 05 00 00 73` then `6E 06 00 00 74` |
+| RGB 18, 52, 86 | `6E 0C FF 12 8B 6E 0D 34 56 05` |
+| Light duration, 300 s | `6E 0B 01 2C A6` |
+| Aroma 60 min / 2 min / 12 h | `6E 1B 00 3C C5` then `6E 1C 00 02 8C` then `6E 1D 00 0C 97` |
+| Massage slider position 0, D1RM / D9RM | `6E 01 00 5E CD` / `6E 01 00 8B FA` |
+| Y6RM 15 / 30 / 45 minutes | `6E 01 00 5F CE` / `6E 01 00 63 D2` / `6E 01 00 61 D0` |
+
+| Alarm position | Both zones | Head | Feet |
+|---|---|---|---|
+| tv | `77` | `7a` | `7d` |
+| anti snore | `78` | `7b` | `7e` |
+| zero g | `79` | `7c` | `7f` |
+| lounge | `ac` | `ad` | `ae` |
+| memory 1 | `81` | `82` | `83` |
+| memory 2 | `a6` | `a7` | `a8` |
+| memory 3 | `a9` | `aa` | `ab` |
+<!-- /generated -->
+
+#### Timing
+
+Held commands repeat every 150 ms, every 110 ms for Bluetooth names starting
+TWRM or MLRM, or every 170 ms for raw 6BRM receivers. Release follows sustained
+movement by 50 ms and ordinary taps by 150 ms. DXRM synchronization and
+AORM/E9RM lock use their own long-press thresholds. Their completed raw
+long-only gesture has no release frame, while the wrapped gesture releases
+after 50 ms. The controller cancels pending writes and drains release on the
+captured connection.
+
+On a wrapped connection, startup follows successful notification setup by
+300 ms. After subscription, best-effort settings probes use 500 ms spacing.
+Alarm frames use 300 ms spacing and
+aroma settings use 150 ms. Light duration accepts 0–300 seconds, with 0 for
+keep-on.
+
+#### Notifications
+
+Alarm, light and aroma settings depend on replies received on the current
+connection. Fragments use the classic Richmat parser's fixed widths, checksum
+and wider-match precedence. An alarm set/cancel reply updates the alarm
+indicator. LED replies report on or off. The bed provides no actuator position
+feedback or clock synchronization.
+
+#### Services
+
+Use [`hold_control`](../SERVICES.md#hold_control) with the ID exposed by a held
+button and [`set_alarm`](../SERVICES.md#set_alarm) for one countdown alarm.
+[`richmat_classic`](../SERVICES.md#richmat_classic) refreshes capability replies
+and sets the RGB color or all three aroma timings.
+
+#### Evidence
+
+Based on Maxprime 1.0.7 (11), `com.richmat.maxprime`, from the frozen
+2026-07-14 acquisition.

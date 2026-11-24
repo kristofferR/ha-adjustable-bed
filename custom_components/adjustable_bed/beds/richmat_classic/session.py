@@ -12,7 +12,7 @@ from bleak.backends.characteristic import BleakGATTCharacteristic
 from ...command_scheduler import note_frame_skipped, note_frame_written
 from ..base import BedController
 from ..cancellation import settled
-from .controller import RichmatClassicController
+from .controller import BEFORE_SETTINGS_WRITE, RichmatClassicController
 from .protocol import release
 from .transport import Transport
 
@@ -40,7 +40,7 @@ class SessionController(RichmatClassicController):
         return scope[1] if scope is not None and scope[0] is self else self._session
 
     async def _send(self, packet: bytes, cancel: asyncio.Event | None = None) -> None:
-        await self._send_at(packet, cancel=cancel)
+        await self._send_at(packet, cancel=cancel, before_write=BEFORE_SETTINGS_WRITE.get())
 
     async def _send_at(
         self,
