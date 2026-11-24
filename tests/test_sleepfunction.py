@@ -1130,6 +1130,7 @@ async def test_massage_timer_is_the_shared_select_and_the_popup_has_no_off():
         massage_popup,
         massage_timer,
     )
+    from custom_components.adjustable_bed.state_keys import MASSAGE_TIMER_MINUTES
 
     ctrl, coordinator = controller("D1RM")
     assert ctrl.supports_massage_timer and ctrl.auto_enable_massage
@@ -1140,6 +1141,14 @@ async def test_massage_timer_is_the_shared_select_and_the_popup_has_no_off():
         coordinator.client.write_gatt_char.reset_mock()
         await ctrl.set_massage_timer(minutes)
         assert packets(coordinator) == [massage_timer("D1RM", progress).hex()]
+    # A later notification republishes state without clearing the chosen timer.
+    coordinator.handle_controller_state_updates.reset_mock()
+    ctrl._publish()
+    assert not any(
+        update.key == MASSAGE_TIMER_MINUTES
+        for call in coordinator.handle_controller_state_updates.call_args_list
+        for update in call.args
+    )
 
     popup = next(
         layout

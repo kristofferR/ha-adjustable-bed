@@ -9,7 +9,7 @@ from datetime import time
 from functools import partial
 from math import ceil
 from time import monotonic
-from typing import TYPE_CHECKING, Final
+from typing import TYPE_CHECKING, ClassVar, Final
 
 from bleak.backends.characteristic import BleakGATTCharacteristic
 from homeassistant.util import dt as dt_util
@@ -56,6 +56,9 @@ LAMP_TIMEOUT: Final = StateKey[int | None]("richmat_resource_lamp_timeout")
 
 class ResourceBedController(SessionController):
     """Resource getters stay shared; app timing, parser and utilities are explicit."""
+
+    # A subclass that keeps its own timer state publishes it itself.
+    _publishes_massage_timer: ClassVar[bool] = True
 
     def __init__(
         self,
@@ -133,11 +136,17 @@ class ResourceBedController(SessionController):
             PREFERENCES(dict(self._preferences)),
             REJECTION(self._rejection),
             LAMP_TIMEOUT(self._lamp_timeout),
-            # The request's slider stop; the bed reports no timer.
-            MASSAGE_TIMER_MINUTES(
-                next((m for m, stop in SLIDER_MINUTES.items() if stop == self._massage_timer), None)
-            ),
         )
+        if self._publishes_massage_timer:
+            # The request's slider stop; the bed reports no timer.
+            self.forward_controller_state_updates(
+                MASSAGE_TIMER_MINUTES(
+                    next(
+                        (m for m, stop in SLIDER_MINUTES.items() if stop == self._massage_timer),
+                        None,
+                    )
+                )
+            )
         # Shared select entities use this typed state key as well.
         from .controller import _selection_key
 

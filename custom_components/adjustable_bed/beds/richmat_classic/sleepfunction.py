@@ -119,6 +119,9 @@ def _value_key(name: str) -> StateKey[int | None]:
 class SleepFunctionController(ResourceBedController):
     """One app/layout, with commands fenced to its admitted native owner/session."""
 
+    # Its timer setter publishes the chosen duration; the base would clear it.
+    _publishes_massage_timer = False
+
     def __init__(
         self,
         coordinator: AdjustableBedCoordinator,
