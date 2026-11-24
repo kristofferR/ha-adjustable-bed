@@ -132,6 +132,7 @@ if TYPE_CHECKING:
     from .serenity.controller import TranquilController as TranquilController
     from .serenity.controller import ZSeriesController as ZSeriesController
     from .serta_mp_remote import SertaMPRemoteController as SertaMPRemoteController
+    from .shuda.controller import ShudaController as ShudaController
     from .silvermotion.controller import SilvermotionController as SilvermotionController
     from .simmons.controller import SimmonsController as SimmonsController
     from .sinca_comfort.controller import SincaComfortController as SincaComfortController
@@ -170,6 +171,7 @@ _EXPORT_MODULES = {
     "RizeHomeController": "rize_home.controller",
     "ComfortEnhancement3Controller": "comfort_enhancement3.controller",
     "N32MotionBedController": "n32_motion_bed.controller",
+    "ShudaController": "shuda.controller",
     "LunioSmartController": "luniosmart.controller",
     "SaatvaController": "saatva",
     "SonicSleepController": "sonicsleep.controller",

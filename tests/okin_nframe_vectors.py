@@ -35,6 +35,7 @@ SIMMONS_BLUE_CONTROLS = {
 }
 
 FROZEN_FRAMES: dict[str, frozenset[str]] = {
+    "shuda": frozenset({"05020000000100", "05020000000200", "05020000000400", "05020000000800", "05020800000000", "05020000100000", "05020001000000", "05020000400000", "05020002000000", "05020000000000"}),
     **SUPERIOR_FRAMES,
     "simmons_blue": frozenset(SIMMONS_BLUE_CONTROLS.values()),
     # com.okin.motionbed 1.0 (2), all sixteen reachable literals.

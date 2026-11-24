@@ -103,6 +103,7 @@ from .const import (
     BED_TYPE_RIZE_HOME,
     BED_TYPE_RIZE_REMEDY_II,
     BED_TYPE_SERENITY,
+    BED_TYPE_SHUDA,
     BED_TYPE_SILVERMOTION,
     BED_TYPE_SIMMONS,
     BED_TYPE_SIMMONS_BLUE,
@@ -3447,6 +3448,15 @@ SETUP_PROFILES: Final[dict[str, SetupProfile]] = {
     BED_TYPE_N32_MOTION_BED: SetupProfile(
         owns={
             CONF_MOTOR_COUNT: 3,
+            CONF_HAS_MASSAGE: False,
+            CONF_DISABLE_ANGLE_SENSING: True,
+            CONF_PROTOCOL_VARIANT: "auto",
+            CONF_MOTOR_PULSE_DELAY_MS: 200,
+        },
+    ),
+    BED_TYPE_SHUDA: SetupProfile(
+        owns={
+            CONF_MOTOR_COUNT: 2,
             CONF_HAS_MASSAGE: False,
             CONF_DISABLE_ANGLE_SENSING: True,
             CONF_PROTOCOL_VARIANT: "auto",

@@ -193,6 +193,10 @@ memory slots are shared. Stop ends a held movement but not a preset that is
 already moving. Plus massage and light controls are buttons, with a 10/20 minute
 **Massage timer** select showing the last value sent.
 
+[Shuda](beds/okin-nframe.md#shuda) supports `goto_preset` and `save_preset`
+for memory slot 1, `timed_move` for `back` and `legs`, and `stop_all`.
+Save buttons for zero gravity and TV send the app's long press.
+
 Positions are in degrees or percent, depending on the bed: check its position
 entity and its [guide](README.md#bed-guides). Moving to a position needs the
 bed's position readings turned on. Older Sleep Number beds (i8, 360 FlexFit 2)
@@ -363,6 +367,7 @@ entities, including the light colors, are separate.
 | [Caresse / Werkmeister](beds/vibradorm.md#caresse-and-werkmeister) | Motor directions, `all_up`, `all_down`, `memory_1` to `memory_6`, Werkmeister `sync` | All down is a held direction, not a flat preset. Save memories with the Save buttons |
 | [V-MAT Basic](beds/vibradorm.md#v-mat-basic) | `all_up`, `all_down`, `back_up`, `back_down`, `legs_up`, `legs_down`, XT-only `floor_hold` | Both sides need two ready receivers. `floor_hold` acts on one receiver |
 | [OCTO Smart Control](beds/octo.md) | The bed's motor directions and `memory_1` up to its memory count | At most 60 seconds per call. The card starts another call only while you still hold the control |
+| [Shuda](beds/okin-nframe.md#shuda) | `head_up`, `head_down`, `feet_up`, `feet_down`, `flat`, `light`, `zero_g`, `tv`, `memory_1` | Hold zero gravity, TV and memory 1 for less than five seconds. Use their Save buttons to store a position |
 | [Superior sleep](beds/okin-nframe.md#superior-sleep-ss350--ss650) | The SS350/SS650 button controls that can be held | Saves, reset and the five-second motion activation are separate buttons |
 | [Svane Remote](beds/svane.md) | `head_up`, `head_down`, `feet_up`, `feet_down`, the four `head_*_feet_*` combinations, `light_adjust` | See [Svane Remote held controls](#svane-remote-held-controls) |
 | [Limoss Remote](beds/limoss.md#limoss-remote) | The controls of the remote's layout | |
@@ -417,6 +422,7 @@ Control products with an alarm, OKIN SleepEase, HJBed, Richmat app beds and
 their separate sleep sensor, Bed Tech (including its separate intervention
 receiver), Dream Sense Bed and Luuna + set their clock here too. On a Motion Bed it sets
 the clock of the motor or heating module; on a hub, select the module first.
+[Shuda](beds/okin-nframe.md#shuda) also sets the bed clock on connection.
 HJBed's own `hjbed` action also keeps its Set bed clock operation, which does
 the same. A bed whose two sides share one receiver has its clock set once.
 
@@ -439,7 +445,7 @@ and `light: false` ask nothing of the bed and are not refused as options it lack
 | `massage`, `massage_zone`, `massage_intensity`, `massage_duration`, `head_massage_level`, `foot_massage_level` | Wake-up massage, where the bed has one |
 | `light`, `sound` | Turn on the light or play a sound at the alarm, where available |
 | `mattress_side` | Set the alarm of a vibrating mattress topper on that side instead of the bed's |
-| `confirm_custom_position` | Required for SIMMONS saved custom positions and saved-memory wake actions on Jerome's power base and Dream Sense Bed |
+| `confirm_custom_position` | Required for SIMMONS saved custom positions and saved-memory wake actions on Shuda, Jerome's power base and Dream Sense Bed |
 | `side` | Side of a combined bed |
 
 ```yaml
@@ -491,6 +497,7 @@ data:
 | Richmat app beds | From the model's alarm page | Once (the bed counts down), `slot` 1–3 on three-alarm models, `massage` with zone. `mattress_side` sets the vibrating mattress alarm, once or every day, with intensity 1–3 |
 | Richmat app calendar models | From the model's alarm list | `slot` 1–7, `weekdays`; `mattress_side` for the vibrating mattress |
 | RMControl | From the product's alarm list; required to turn an alarm on | Repeating products: `slot` 1–7 with at least one weekday. Others: once, as a countdown |
+| Shuda | `memory_1`, `flat`, `zero_g` (required to turn on) | Slots 1 and 2, optionally repeating on `weekdays`. Memory 1 needs `confirm_custom_position: true`. Turning off keeps the reported schedule |
 | SIMMONS | `custom_position`, `flat`, `anti_snore` (regular bed) | `slot` 1–2, `weekdays`, `confirm_custom_position`. Both alarms are read from the bed first |
 | Solace | `none`, `zero_g`, `memory_1` | `weekdays`, `massage`, `sound` |
 | Sophie (Solace) | `none`, `zero_g`, `memory_1`; side models `none`, `zero_g_left`, `zero_g_right`, `zero_g` | `weekdays`, `massage` (not QMS2), `sound: alarm` rings. Once the bed reports alarm support |
