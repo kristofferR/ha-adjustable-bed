@@ -777,7 +777,7 @@ class BedTechClassicController(RichmatMHAppController):
             await super().normal_pillow(side, direction)
 
     async def normal_pillow_stop(self, side: str) -> None:
-        if not self._normal_side_ready(side):
+        if not self._normal_ready or side not in ("left", "right"):
             raise invalid("option_unavailable")
         owner = _OPERATION.get() or self._owner()
         if self.client is not owner.client or self._session_generation != owner.generation:
@@ -808,7 +808,6 @@ class BedTechClassicController(RichmatMHAppController):
         pending = self._pending = SessionFlags()
         self._normal_ready = False
         self._normal_values.clear()
-        self._normal_sides.clear()
         self._preparing = True
         try:
             with self._operation():

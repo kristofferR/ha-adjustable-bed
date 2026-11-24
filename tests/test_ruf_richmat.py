@@ -443,24 +443,9 @@ async def test_tx_legacy_memory_recall_and_save_do_not_alias(delays):
 async def test_normal_pillow_cancellation_uses_its_own_stop():
     c = make("wsilver2", "bfrm_mattress")
     c._normal_ready = True
-    c._normal_sides = {2}
     c._coordinator.cancel_command.set()
     await c.normal_pillow("right", 1)
     assert frames(c) == ["5e02060066"]
-
-
-async def test_a_mattress_side_takes_writes_only_after_its_own_startup_reply():
-    """The app reveals each side's tab when that side reports, never both from one."""
-    c = make("wsilver2", "bfrm_mattress")
-    raw = bytearray([0x5E, 0x1A] + [0, 1] + [0] * 23 + [0])
-    raw[19] = 1  # the left mattress reports
-    c._apply(Event("mattress_init", finalize(raw).hex()))
-    await c.normal_setting("left", "pressure", "low")
-    with pytest.raises(ValueError):
-        await c.normal_setting("right", "pressure", "low")
-    with pytest.raises(ValueError):
-        await c.normal_pillow("right", 1)
-    assert frames(c) == ["5e01010161"]
 
 
 def test_calendar_capability_and_position_gates_are_model_specific():
@@ -487,7 +472,6 @@ async def test_set_alarm_writes_the_mattress_alarm(hass):
 
     c = make("wsilver2", "bfrm_mattress")
     c._normal_ready = True
-    c._normal_sides = {2}
     await call_set_alarm(
         hass,
         c,
