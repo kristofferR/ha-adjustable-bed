@@ -131,6 +131,7 @@ bed has been tested on real hardware.
 | [MLILY Control](docs/beds/richmat.md#mlily-control) | MLILY Control, MLILY Control sleep sensors (RM- or HJ-) | MLILY |
 | [MLILY Remote](docs/beds/richmat.md#mlily-remote) | MS200, MS300, MS600, PowerCool and MS300-SH | MLILY |
 | [MLILY Supreme](docs/beds/richmat.md#mlily-supreme) | MLILY Supreme app and its separate HJ_Bed sleep receiver | MLILY |
+| [Sinca Comfort Bed](docs/beds/mline.md#sinca-comfort-bed) | The Comfort Bed App (Sinca) | OKIN |
 | [M Line](docs/beds/mline.md) | M Line | OKIN |
 | [MotoMotion](docs/beds/motomotion.md) | [MotoMotion](docs/beds/motomotion.md) | MotoMotion |
 | [MotoSleep / Power Bob](docs/beds/motomotion.md#motosleep-and-power-bob-family) | [MotoSleep / Power Bob app, HHC models](docs/beds/motomotion.md#hhc-profiles-names-longer-than-14-characters), [Power Bob and binary MOTO models](docs/beds/motomotion.md#power-bob-profiles-14-character-names) | HHC, Power Bob |

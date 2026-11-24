@@ -1514,6 +1514,11 @@ def default_scenario(bed_type: str) -> Scenario:
     if bed_type == "personal_comfort":
         data[const.CONF_PRODUCT_TYPE] = "pf4"
         variant = "malouf"
+    if bed_type == "sinca_comfort":
+        return Scenario(
+            id=bed_type, bed_type=bed_type, protocol_variant="sleep",
+            entry_data={const.CONF_PRODUCT_TYPE: "two"}, layout_id="mline",
+        )
     if bed_type == "mline":
         data[const.CONF_PRODUCT_TYPE] = "two"
         variant = "sleep"
@@ -1760,6 +1765,18 @@ def route_scenarios() -> list[Scenario]:
         for layout in ("nerum", "2", "3", "4"):
             scenarios.append(Scenario(id=f"nerum:{protocol}:{layout}", bed_type="nerum",
                 protocol_variant=protocol, entry_data={"product_type": layout}, layout_id=f"nerum:{protocol}"))
+    # Sinca protocol classification and the discovered carrier are independent.
+    for protocol, layout, carrier in (
+        ("smart", "triple", "mline"),
+        ("smartsainuo", "two", "mline:ffe"),
+        ("okin", "four", "mline"),
+        ("unknown", "unknown", "mline:overwrite"),
+    ):
+        scenarios.append(Scenario(
+            id=f"sinca_comfort:{protocol}:{layout}", bed_type="sinca_comfort",
+            protocol_variant=protocol, entry_data={const.CONF_PRODUCT_TYPE: layout},
+            layout_id=carrier,
+        ))
     # M Line selectors and physical layouts are independent source axes.
     for protocol in ("sleep", "smart", "smartsainuo", "okin", "unknown"):
         for layout in ("two", "triple", "four"):
@@ -2411,7 +2428,7 @@ async def _connect(controller: Any, recorder: Recorder, clock: FakeClock) -> dic
                 session.store_device_info = lambda *_: None
             await controller.async_on_connect(session)
             return
-        if controller._coordinator.bed_type in {"symphony", "linx", "agingplace", "sleep_assistant"}:
+        if controller._coordinator.bed_type in {"symphony", "linx", "agingplace", "sleep_assistant", "sinca_comfort"}:
             session = SimpleNamespace(
                 client=controller.client, is_current=lambda: True,
                 async_start_notify=lambda: controller.start_notify(lambda *_: None),

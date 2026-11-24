@@ -317,6 +317,7 @@ from .profiles.relax_motion import discovery_matches as relax_motion_matches
 from .profiles.saatva import SCAN_UUIDS as SAATVA_SCAN_UUIDS
 from .profiles.sealy import matches_name as sealy_name
 from .profiles.simmons_blue import NAME_PREFIX as SIMMONS_BLUE_PREFIX
+from .profiles.sinca_comfort import scan_name as sinca_scan_name
 from .profiles.smart_sleep import advertisement as smart_sleep_advertisement
 from .profiles.sophie import accepts_name as accepts_sophie_name
 from .profiles.vmatbasic import manufacturer_payload_matches
@@ -637,6 +638,7 @@ BED_TYPE_DISPLAY_NAMES: dict[str, str] = {
     "personal_comfort": "Personal Comfort app",
     "instant_comfort": "Instant Comfort app",
     "mline": "M Line app",
+    "sinca_comfort": "Sinca Comfort Bed app",
     "luniosmart": "Lunio Smart+ app",
     "sleep_evolution": "SleepEvolution app",
     "wsilver_legacy": "W.Silver Products app (older version)",
@@ -1670,6 +1672,11 @@ def _detect_with_first_pass(
             result = DetectionResult(BED_TYPE_SOMOS, 0.3, [*result.signals, "name:somos_app_candidate"])
         elif result.bed_type != BED_TYPE_SOMOS:
             result.ambiguous_types = list(dict.fromkeys([*(result.ambiguous_types or ()), BED_TYPE_SOMOS]))
+    # Shared names and a write-carrier advertisement offer a choice only.
+    if (result.confidence < 0.8 and first.service("sinca_comfort") and sinca_scan_name(platform_name or "")
+        and not any(signal.startswith("excluded:") for signal in result.signals)):
+        result.ambiguous_types = list(dict.fromkeys([*(result.ambiguous_types or ()), "sinca_comfort"]))
+        result.signals.append("name_service:sinca_comfort_app_candidate")
     # Shared names offer the app; they never replace a stronger receiver match.
     if first.name(BED_TYPE_MLINE) and not any(
         signal.startswith("excluded:") for signal in result.signals
