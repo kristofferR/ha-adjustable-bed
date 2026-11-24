@@ -486,8 +486,9 @@ class VMatBasicController(BedController):
     async def _send_floor_settings(self) -> None:
         if self.profile.floor_char is None:
             raise ValueError("The Basic profile has no floor controls")
-        # Settings UI absence means zero; the separate CBI ON button defaults to 255.
-        level = self._floor_level if self._floor_level is not None else self.profile.floor_levels[0]
+        # Both settings screens send zero until a level is picked; the separate
+        # CBI ON button defaults to 255.
+        level = self._floor_level if self._floor_level is not None else 0
         await self._write(
             codec.SERVICE_UUID,
             self.profile.floor_char,
