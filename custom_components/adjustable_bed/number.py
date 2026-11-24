@@ -431,6 +431,7 @@ def _number_entities_for(hass: HomeAssistant, coordinator: EntityRuntime) -> lis
                     LIGHT_LEVEL_DESCRIPTION,
                     native_min_value=controller.light_level_min,
                     native_max_value=max_level,
+                    native_step=controller.light_level_step,
                 ),
             )
         )

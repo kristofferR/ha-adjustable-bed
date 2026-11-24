@@ -77,7 +77,7 @@ controls.
 |---|---|---|---|
 | Basic (`basic`) | Back, legs, all up/down | None | None |
 | CBI (`cbi`) | Same single-byte movement | Toggle (reads the state first), level 0–255, timer 0–1439 minutes | None |
-| CBI with XT-Box (`xtbox`) | Same single-byte movement | Hold-to-use floor light, level 1–6, timer 0–255 minutes | Twenty-color mood palette, brightness 0–100%, three effects, speed 0–255, toggle/nightlight, six massage actions |
+| CBI with XT-Box (`xtbox`) | Same single-byte movement | Hold-to-use floor light, level 1–6, timer 0–255 minutes (a timer set before any level is chosen sends level 0, as the app does) | Twenty-color mood palette, brightness 0–100%, three effects, speed 0–255, toggle/nightlight, six massage actions |
 
 - V-MAT Basic has two movement groups, back and legs, whatever motors the bed
   has. It has no head, feet or extra motor controls, position sliders, flat

@@ -320,9 +320,10 @@ position, save position, recall position and flatten.
   Subsequent optimistic values are assumed; there is no native physical
   lamp-state feedback.
 - Lamp intensity is a persisted local preference, exposed through the existing
-  0-100 light level slider so existing entries keep their entity. Setting 0 turns
-  the lamp off; other values snap to the app's 5-100 steps of five and command the
-  lamp on.
+  0-100 light level slider so existing entries keep their entity. The slider
+  moves in the app's steps of five. Setting 0 turns the lamp off; a value an
+  action sends between steps snaps to the nearest one from 5 to 100 and commands
+  the lamp on.
 - Action buttons, the light level number and the assumed-state light share that
   local intent. Intent is published before delivery and remains local command
   intent after a failed or cancelled write, not physical readback.

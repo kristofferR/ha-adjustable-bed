@@ -180,7 +180,7 @@ async def test_real_number_select_callbacks_and_reconstruction_preserve_color_de
         assert written(coordinator.controller)[-1][1] == old_packet
         assert selects["vmatbasic_mood_palette"].current_option == "col1"
         await numbers["vmatbasic_floor_minutes"].async_set_native_value(255)
-        assert written(coordinator.controller)[-1][1] == bytes.fromhex("001101ff")
+        assert written(coordinator.controller)[-1][1] == bytes.fromhex("001100ff")
         assert coordinator.entry.data[const.CONF_VMATBASIC_FLOOR_MINUTES] == 255
     finally:
         await close(coordinator)

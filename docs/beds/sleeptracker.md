@@ -290,6 +290,8 @@ status snapshot, independent of the configured snapshot side.
   **Constant / Curve** controls.
 - The app's builder accepts levels 0–3; the stock app's heat UI chooses off or
   level 3.
+- Constant applies to cooling levels 1–3 only. Heat and off always send
+  constant `false`, as the app's heat and off actions do.
 - Every heat command carries a **3600-second timer** and every cooling command
   **36000 seconds**, including level 0. Timers are fixed wire values, not
   adjustable countdowns.

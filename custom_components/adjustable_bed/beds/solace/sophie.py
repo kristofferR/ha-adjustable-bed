@@ -411,8 +411,12 @@ class SophieController(SolaceController):
             raise ValueError("Invalid Sophie massage timer")
         selected = self._coordinator.controller_state.get(MASSAGE_TIMER_MINUTES)
         value = 0 if minutes == selected else minutes
-        await super().set_massage_timer(value)
-        self.forward_controller_state_updates(MASSAGE_TIMER_MINUTES(value))
+        updates: list[StateUpdate] = [MASSAGE_TIMER_MINUTES(value)]
+        if value == 0:
+            # Cancelling stops the massage; the app clears its three indicators too.
+            updates += [HEAD_LEVEL(0), FOOT_LEVEL(0), WAVE(0)]
+        with self.sent_state(*updates):
+            await super().set_massage_timer(value)
 
     @property
     def light_timer_options(self) -> list[str]:
