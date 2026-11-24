@@ -1,0 +1,266 @@
+{
+  "keys": {
+    "head_up": "05 02 00 00 00 01 00",
+    "head_down": "05 02 00 00 00 02 00",
+    "feet_up": "05 02 00 00 00 04 00",
+    "feet_down": "05 02 00 00 00 08 00",
+    "flat": "05 02 08 00 00 00 00",
+    "zero_g": "05 02 00 00 10 00 00",
+    "memory_1": "05 02 00 01 00 00 00",
+    "tv": "05 02 00 00 40 00 00",
+    "light": "05 02 00 02 00 00 00",
+    "stop": "05 02 00 00 00 00 00"
+  },
+  "settings": [
+    {
+      "id": "clock-2026",
+      "builder": "clock",
+      "inputs": {
+        "local_time": "2026-11-24T14:37:42"
+      },
+      "expected_bytes": "05 02 07 04 1A 0B 18 02 0E 25 2A 00"
+    },
+    {
+      "id": "clock-2024",
+      "builder": "clock",
+      "inputs": {
+        "local_time": "2024-01-07T23:59:00"
+      },
+      "expected_bytes": "05 02 07 04 18 01 07 07 17 3B 00 00"
+    },
+    {
+      "id": "enable-slot1",
+      "builder": "setup",
+      "inputs": {
+        "slot": 1,
+        "week": 62,
+        "mode": 5,
+        "hour": 7,
+        "minute": 30,
+        "enabled": 1
+      },
+      "expected_bytes": "05 02 07 05 3E 05 07 1E 00 01 00 00"
+    },
+    {
+      "id": "enable-slot2",
+      "builder": "setup",
+      "inputs": {
+        "slot": 2,
+        "week": 127,
+        "mode": 1,
+        "hour": 22,
+        "minute": 5,
+        "enabled": 1
+      },
+      "expected_bytes": "05 02 07 06 7F 01 16 05 00 01 00 00"
+    },
+    {
+      "id": "setup-builder-slot3-no-ui",
+      "builder": "setup",
+      "inputs": {
+        "slot": 3,
+        "week": 0,
+        "mode": 9,
+        "hour": 6,
+        "minute": 0,
+        "enabled": 1
+      },
+      "expected_bytes": "05 02 07 07 00 09 06 00 00 01 00 00"
+    },
+    {
+      "id": "disable-slot1",
+      "builder": "setup",
+      "inputs": {
+        "slot": 1,
+        "week": 62,
+        "mode": 5,
+        "hour": 7,
+        "minute": 30,
+        "enabled": 0
+      },
+      "expected_bytes": "05 02 07 05 3E 05 07 1E 00 00 00 00"
+    },
+    {
+      "id": "alarm-query-1",
+      "builder": "query",
+      "inputs": {
+        "slot": 1
+      },
+      "expected_bytes": "00 C0"
+    },
+    {
+      "id": "alarm-query-2",
+      "builder": "query",
+      "inputs": {
+        "slot": 2
+      },
+      "expected_bytes": "00 D0"
+    },
+    {
+      "id": "alarm-query-3",
+      "builder": "query",
+      "inputs": {
+        "slot": 3
+      },
+      "expected_bytes": "00 E0"
+    },
+    {
+      "id": "alarm-query-0",
+      "builder": "query",
+      "inputs": {
+        "slot": 0
+      },
+      "expected_bytes": "00 C0"
+    },
+    {
+      "id": "edited-week-empty",
+      "builder": "edited_setup",
+      "inputs": {
+        "initial_week": 129,
+        "toggles": [
+          "Sun"
+        ],
+        "slot": 1,
+        "mode": 5,
+        "hour": 7,
+        "minute": 30,
+        "enabled": 1
+      },
+      "expected_bytes": "05 02 07 05 00 05 07 1E 00 01 00 00"
+    },
+    {
+      "id": "edited-week-sunday",
+      "builder": "edited_setup",
+      "inputs": {
+        "initial_week": 0,
+        "toggles": [
+          "Sun"
+        ],
+        "slot": 1,
+        "mode": 5,
+        "hour": 7,
+        "minute": 30,
+        "enabled": 1
+      },
+      "expected_bytes": "05 02 07 05 81 05 07 1E 00 01 00 00"
+    },
+    {
+      "id": "edited-week-weekdays",
+      "builder": "edited_setup",
+      "inputs": {
+        "initial_week": 0,
+        "toggles": [
+          "Mon",
+          "Tue",
+          "Wed",
+          "Thu",
+          "Fri"
+        ],
+        "slot": 1,
+        "mode": 5,
+        "hour": 7,
+        "minute": 30,
+        "enabled": 1
+      },
+      "expected_bytes": "05 02 07 05 BE 05 07 1E 00 01 00 00"
+    },
+    {
+      "id": "edited-week-daily",
+      "builder": "edited_setup",
+      "inputs": {
+        "initial_week": 0,
+        "toggles": [
+          "Sun",
+          "Mon",
+          "Tue",
+          "Wed",
+          "Thu",
+          "Fri",
+          "Sat"
+        ],
+        "slot": 1,
+        "mode": 5,
+        "hour": 7,
+        "minute": 30,
+        "enabled": 1
+      },
+      "expected_bytes": "05 02 07 05 FF 05 07 1E 00 01 00 00"
+    }
+  ],
+  "notifications": [
+    {
+      "input_hex": "A5 0C 11 22 3E 05 07 1E 00 01",
+      "expected": {
+        "type": "alarm",
+        "slot": 1,
+        "week": 0,
+        "mode": 5,
+        "hour": 7,
+        "minute": 30,
+        "enabled": 1
+      }
+    },
+    {
+      "input_hex": "A5 0D 00 FF BE 01 16 05 00 01",
+      "expected": {
+        "type": "alarm",
+        "slot": 2,
+        "week": 190,
+        "mode": 1,
+        "hour": 22,
+        "minute": 5,
+        "enabled": 1
+      }
+    },
+    {
+      "input_hex": "A5 0E 00 00 41 05 16 05 00 00",
+      "expected": {
+        "type": "alarm",
+        "slot": 3,
+        "week": 65,
+        "mode": 9,
+        "hour": 22,
+        "minute": 5,
+        "enabled": 0
+      }
+    },
+    {
+      "input_hex": "A5 0C 00 00 00 00 00 00 00 01",
+      "expected": {
+        "type": "alarm",
+        "slot": 1,
+        "week": 0,
+        "mode": 9,
+        "hour": 0,
+        "minute": 0,
+        "enabled": 0
+      }
+    },
+    {
+      "input_hex": "A5 0B 13 42 01 02 03 04 05",
+      "expected": {
+        "type": "massage"
+      }
+    },
+    {
+      "input_hex": "A5 0B 00",
+      "expected": "IndexError"
+    },
+    {
+      "input_hex": "A5 0C 00",
+      "expected": "IndexError"
+    },
+    {
+      "input_hex": "A5 0C",
+      "expected": null
+    },
+    {
+      "input_hex": "A4 0C 00",
+      "expected": null
+    },
+    {
+      "input_hex": "A5 0F 00",
+      "expected": null
+    }
+  ]
+}

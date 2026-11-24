@@ -1912,6 +1912,12 @@
       "massage_circulation_hip": {
         "name": "Massage hip loop"
       },
+      "shuda_release": {
+        "name": "Release held control"
+      },
+      "shuda_refresh_alarms": {
+        "name": "Refresh alarms"
+      },
       "toggle_light": {
         "name": "Toggle light"
       },
@@ -4178,6 +4184,34 @@
       }
     },
     "sensor": {
+      "shuda_alarm_1": {
+        "name": "Alarm 1",
+        "state_attributes": {
+          "shuda_alarm_1_enabled": {
+            "name": "Enabled"
+          },
+          "shuda_alarm_1_week": {
+            "name": "Weekday mask"
+          },
+          "shuda_alarm_1_mode": {
+            "name": "Wake action"
+          }
+        }
+      },
+      "shuda_alarm_2": {
+        "name": "Alarm 2",
+        "state_attributes": {
+          "shuda_alarm_2_enabled": {
+            "name": "Enabled"
+          },
+          "shuda_alarm_2_week": {
+            "name": "Weekday mask"
+          },
+          "shuda_alarm_2_mode": {
+            "name": "Wake action"
+          }
+        }
+      },
       "timotion_ahf_status": {
         "name": "Status"
       },
@@ -10729,6 +10763,27 @@
     },
     "alarm_route_unknown": {
       "message": "Connect the bed once so Home Assistant can discover its bed route, then try again."
+    },
+    "shuda_gatt_roles": {
+      "message": "Shuda needs a Nordic UART receiver with a write-with-response and notification characteristic"
+    },
+    "shuda_hold_duration": {
+      "message": "Choose a Shuda hold duration from 0.1 to 60 seconds"
+    },
+    "shuda_recall_duration": {
+      "message": "Hold a Shuda recall for less than five seconds. Use its Save button to store a position"
+    },
+    "shuda_alarm_slot": {
+      "message": "Choose Shuda alarm 1 or 2"
+    },
+    "shuda_alarm_mode": {
+      "message": "Choose a Shuda wake action of memory 1, flat or zero gravity"
+    },
+    "shuda_alarm_conflict": {
+      "message": "Alarm {slot} overlaps another Shuda alarm at the same time"
+    },
+    "shuda_alarm_no_reply": {
+      "message": "Shuda did not report alarm {slot}. Confirm that the bed is in range and try again"
     },
     "alarm_route_changed": {
       "message": "The bed's controls changed since the alarm was checked. Choose one of: {wake_actions}."

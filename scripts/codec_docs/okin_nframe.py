@@ -21,7 +21,7 @@ from custom_components.adjustable_bed.const import (
 )
 from custom_components.adjustable_bed.profiles import n32_motion_bed as n32
 from custom_components.adjustable_bed.profiles import okin_nframe as okin_profiles
-from custom_components.adjustable_bed.profiles import rize_home, ultramatic
+from custom_components.adjustable_bed.profiles import rize_home, shuda, ultramatic
 from custom_components.adjustable_bed.profiles.adjustable_bed import (
     PROFILES as ADJUSTABLE_BED_PROFILES,
 )
@@ -142,6 +142,7 @@ _OKIN_GROUPS = {
     "OKIN Bedding apps": tuple(okin_profiles.BEDDING_PROFILES.values()),
     "OKIN Motion Bed": (okin_profiles.OKIN_MOTIONBED,),
     "N32 Motion Bed": (N32,),
+    "Shuda": (shuda.SHUDA,),
     "Resident Adjustable Base": (okin_profiles.RESIDENT,),
     "Ultramatic Smart Bed": (ultramatic.PROFILE,),
     "Okin 64-Bit": tuple(okin_profiles.OKIN_64BIT_PROFILES.values()),
@@ -311,7 +312,7 @@ def render_okin_nframe_transports() -> str:
         (
             "Notify",
             NORDIC_UART_READ_CHAR_UUID,
-            "SIMMONS, SleepEase, Sleepy's, AdjustableM5X4, eShine",
+            "SIMMONS, SleepEase, Sleepy's, AdjustableM5X4, eShine, Shuda",
         ),
     )
     return _block(
@@ -775,6 +776,41 @@ def render_n32_session() -> str:
     )
 
 
+def render_shuda_controls() -> str:
+    from datetime import datetime
+
+    alarm = okin_codec.ShortAlarmReport(
+        1, shuda.edited_week(range(5)), shuda.ALARM_MODES["memory_1"], 7, 30, 1
+    )
+    return _block(
+        _okin_key_table((shuda.SHUDA,), envelope=False),
+        _table(
+            ("Alarm and clock operation", "Example frame"),
+            (
+                ("Sync local clock (2026-11-24 14:37:42)", _hex(shuda.clock_frame(
+                    datetime(2026, 11, 24, 14, 37, 42)
+                ))),
+                ("Set slot 1, weekdays at 07:30, memory 1", _hex(shuda.alarm_frame(alarm))),
+                ("Turn off the same slot, retaining its schedule", _hex(shuda.alarm_frame(
+                    okin_codec.ShortAlarmReport(1, alarm.week, alarm.mode, 7, 30, 0)
+                ))),
+                *((f"Query slot {slot}", _hex(shuda.query_frame(slot)))
+                  for slot in (*shuda.ORDINARY_SLOTS, 3)),
+            ),
+        ),
+        _table(
+            ("Setting", "Value"),
+            (
+                ("Held refresh", f"{shuda.REFRESH_MS} ms"),
+                ("Save gesture", f"{shuda.SAVE_HOLD_MS / 1000:g} seconds"),
+                ("Maximum recall hold", f"Less than {shuda.RECALL_LIMIT_MS / 1000:g} seconds"),
+                ("Release", f"{shuda.SHUDA.hold.releases} STOP"),
+                ("Alarm wake actions", ", ".join(f"`{mode}` ({value})" for mode, value in shuda.ALARM_MODES.items())),
+            ),
+        ),
+    )
+
+
 BLOCKS: list[Block] = [
     (GUIDE, "ultramatic-controls", render_ultramatic),
     (GUIDE, "rize-home", render_rize_home),
@@ -783,6 +819,7 @@ BLOCKS: list[Block] = [
     (GUIDE, "rize-remedy-ii-controls", render_rize_remedy_ii_controls),
     (GUIDE, "apex-controls", render_apex),
     (GUIDE, "n32-session", render_n32_session),
+    (GUIDE, "shuda-controls", render_shuda_controls),
     (GUIDE, "adjustable-bed-commands", render_adjustable_bed),
     (GUIDE, "resident-session", render_resident_session),
     (GUIDE, "okin-nframe-profiles", render_okin_nframe_profiles),
