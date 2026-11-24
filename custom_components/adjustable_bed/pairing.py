@@ -247,7 +247,11 @@ def supports_single_address_pairing(
 ) -> bool:
     """Return whether a bed can expose the Phase 3 single-address surface."""
     if bed_type == "richmat_classic_apps":
+        from .profiles import dreamlab
         from .profiles.jerome2 import SIDE_LAYOUTS
+
+        if protocol_variant == dreamlab.APP:
+            return product_type in dreamlab.SIDE_LAYOUTS
 
         return protocol_variant == "jerome2" and product_type in SIDE_LAYOUTS
     if bed_type == "saatva":

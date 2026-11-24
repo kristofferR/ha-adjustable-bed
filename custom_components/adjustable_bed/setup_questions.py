@@ -1057,6 +1057,7 @@ _CLASSIC_EXCLUDED: Final = frozenset({"TEST", "RMCS", "ZRS6"})
 def _classic_layouts(data: Mapping[str, Any]) -> Mapping[Any, str]:
     """The chosen app's own layout codes, aliases and ZRS6 layout picks."""
     from .beds.richmat_classic.models import LAYOUT_PICKER_CHOICES, MANUAL_ALIASES, MODEL_CHOICES
+    from .profiles import dreamlab
     from .profiles.richmat_resource_apps import APPS
 
     app = str(data.get(CONF_PROTOCOL_VARIANT, ""))
@@ -1065,6 +1066,8 @@ def _classic_layouts(data: Mapping[str, Any]) -> Mapping[Any, str]:
         *MANUAL_ALIASES.get(app, {}),
         *LAYOUT_PICKER_CHOICES.get(app, {}),
     } - _CLASSIC_EXCLUDED
+    if app == dreamlab.APP:
+        codes -= dreamlab.NON_CONTROL_LAYOUTS
     if app == "bedsmart":
         from .profiles.bedsmart import ALIASES, EXCLUDED_LAYOUTS, NAVIGATION_LAYOUTS
 
@@ -1100,14 +1103,39 @@ def _classic_normalize(previous: Mapping[str, Any], answers: Mapping[str, Any]) 
     return data
 
 
+def _classic_seed(
+    _hass: HomeAssistant, data: Mapping[str, Any], discovered: BluetoothServiceInfoBleak | None,
+) -> dict[str, Any]:
+    from .bluetooth_transport import advertised_local_name
+    from .profiles import dreamlab
+
+    if data.get(CONF_PROTOCOL_VARIANT) == dreamlab.APP and discovered is not None:
+        name = advertised_local_name(discovered)
+        if name is not None and dreamlab.scan_matches(name):
+            return {**data, CONF_BLE_DEVICE_NAME: name}
+    return dict(data)
+
+
+def _classic_layout_default(data: Mapping[str, Any]) -> Any:
+    from .profiles import dreamlab
+
+    name = data.get(CONF_BLE_DEVICE_NAME)
+    if data.get(CONF_PROTOCOL_VARIANT) == dreamlab.APP and isinstance(name, str):
+        return dreamlab.layout_from_name(name) or REQUIRED
+    return REQUIRED
+
+
 def _classic_errors(data: Mapping[str, Any]) -> dict[str, str]:
     """Require a layout the chosen app ships; a shared service never selects one."""
     from .beds.richmat_classic.models import MODEL_CHOICES
+    from .profiles import dreamlab
     from .profiles.richmat_resource_apps import APPS
 
     layout = data.get(CONF_PRODUCT_TYPE)
     shipped = MODEL_CHOICES.get(str(data.get(CONF_PROTOCOL_VARIANT, "")), ())
     excluded = _CLASSIC_EXCLUDED
+    if data.get(CONF_PROTOCOL_VARIANT) == dreamlab.APP:
+        excluded = excluded | dreamlab.NON_CONTROL_LAYOUTS
     if data.get(CONF_PROTOCOL_VARIANT) in ("luunarise2", "powercool", "sleepfunction", "baseremote"):
         excluded = excluded | {"WFRM", "FWRM"}
     if data.get(CONF_PROTOCOL_VARIANT) == "sleepfunction":
@@ -2783,7 +2811,7 @@ SETUP_PROFILES: Final[dict[str, SetupProfile]] = {
             CONF_MOTOR_PULSE_DELAY_MS: SET_BY_PROFILE,
         },
         questions=(
-            Question(CONF_PRODUCT_TYPE, _classic_layouts, searchable=True),
+            Question(CONF_PRODUCT_TYPE, _classic_layouts, _classic_layout_default, searchable=True),
             # Base Remote shows some layouts under Left and Right tabs, also on
             # a bed whose two tabs move the same base.
             Question(
@@ -2799,10 +2827,18 @@ SETUP_PROFILES: Final[dict[str, SetupProfile]] = {
                 ],
             ),
             Question(CONF_RICHMAT_CLASSIC_THIRD_SERVICE, default=False, advanced=True),
+            Question(
+                CONF_BLE_DEVICE_NAME,
+                default=OPTIONAL,
+                text=True,
+                advanced=True,
+                when={"field": CONF_PROTOCOL_VARIANT, "value": "dreamlab2"},
+            ),
         ),
         normalize=_classic_normalize,
         validate=_classic_errors,
         title=_classic_title,
+        seed=_classic_seed,
     ),
     # The Jensen / Svane family step picks the app and bed, and the form before
     # it was drawn for Svane, which sets these itself. The JMC400 box asks for

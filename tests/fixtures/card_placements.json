@@ -1835,6 +1835,16 @@
   "card_role": "up",
   "card_motor": "ruf_richmat_mattress_right_pillow"
  },
+ "button:selected_motor_down": {
+  "card_section": "motors",
+  "card_role": "down",
+  "card_motor": "selected_motor"
+ },
+ "button:selected_motor_up": {
+  "card_section": "motors",
+  "card_role": "up",
+  "card_motor": "selected_motor"
+ },
  "button:set_back_reference": {
   "card_section": "motors",
   "card_role": "reference",
@@ -3208,6 +3218,12 @@
  "number:comfortfurniture_wave_level": {
   "card_section": "massage"
  },
+ "number:dreamlab_light_seconds": {
+  "card_section": "lighting"
+ },
+ "number:dreamlab_massage_progress": {
+  "card_section": "massage"
+ },
  "number:dreamsense_light_seconds": {
   "card_section": "lighting"
  },
@@ -3593,6 +3609,18 @@
   "card_section": "motors"
  },
  "select:comfy_timer_selection": {
+  "card_section": "utility"
+ },
+ "select:dreamlab_axis": {
+  "card_section": "utility"
+ },
+ "select:dreamlab_head_foot": {
+  "card_section": "utility"
+ },
+ "select:dreamlab_mode": {
+  "card_section": "utility"
+ },
+ "select:dreamlab_press_mode": {
   "card_section": "utility"
  },
  "select:dreamsense_selected_side": {

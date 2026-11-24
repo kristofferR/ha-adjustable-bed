@@ -1,6 +1,9 @@
 """The five apps' finite scan-name admission, offered only as an app hint."""
 
+from ...codec.richmat import TRANSPORTS
+from ...profiles import dreamlab
 from ...profiles.lp2 import scan_matches as lp2_matches
+from ...profiles.richmat import CLASSIC_TRANSPORTS
 from ...profiles.richmat_resource_apps import APPS, scan_matches
 from .models import MODEL_CHOICES
 
@@ -11,11 +14,20 @@ _PREFIXES = (
 )
 
 
-def matching_apps(name: str | None) -> tuple[str, ...]:
+def matching_apps(name: str | None, service_uuids: tuple[str, ...] = ()) -> tuple[str, ...]:
     if not isinstance(name, str) or len(name.strip()) < 4:
         return ()
     upper = name.upper()
-    return tuple(
+    matches = tuple(
         app for app, layouts in MODEL_CHOICES.items()
-        if (lp2_matches(name) if app == "lp2" else scan_matches(name) if app in APPS else upper.startswith(_PREFIXES) or upper[:4] in layouts)
+        if app != dreamlab.APP and (
+            lp2_matches(name) if app == "lp2"
+            else scan_matches(name) if app in APPS
+            else upper.startswith(_PREFIXES) or upper[:4] in layouts
+        )
     )
+    if dreamlab.scan_matches(name) and any(
+        TRANSPORTS[route].service_uuid in service_uuids for route in CLASSIC_TRANSPORTS
+    ):
+        return (*matches, dreamlab.APP)
+    return matches

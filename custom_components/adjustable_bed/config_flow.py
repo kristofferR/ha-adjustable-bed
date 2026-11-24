@@ -7899,7 +7899,7 @@ class AdjustableBedOptionsFlow(
         needs_transport_proof = (
             self.config_entry.data.get(CONF_BED_TYPE) in {"casper_base", "hush_base"}
             or self.config_entry.data.get(CONF_BED_TYPE) == "richmat_classic_apps"
-            and self.config_entry.data.get(CONF_PROTOCOL_VARIANT) == "jerome2"
+            and self.config_entry.data.get(CONF_PROTOCOL_VARIANT) in ("jerome2", "dreamlab2")
         )
         transport_not_connected = False
         if needs_transport_proof and self._side_transport_supported is None:

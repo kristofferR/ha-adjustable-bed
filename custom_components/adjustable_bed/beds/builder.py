@@ -26,6 +26,7 @@ class BuildContext:
     client: BleakClient | None
     device_name: str | None = None
     advertisement_name: str | None = None
+    advertisement_local_name: str | None = None
     manufacturer_data: dict[int, bytes] | None = None
     # Device Information Service manufacturer (0x2A29) and model (0x2A24).
     ble_manufacturer: str | None = None

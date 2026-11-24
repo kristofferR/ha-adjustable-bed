@@ -1816,7 +1816,9 @@ def _detect_bed_type_with_app_candidates(
     # The five classic apps' scan names are package-local layout codes, wider
     # than any manifest matcher, so they only add an app candidate.
     name = service_info.name
-    if name and richmat_classic_matching_apps(name) and name.upper()[:4] not in ("TEST", "RMCS"):
+    if name and richmat_classic_matching_apps(
+        name, tuple(uuid.lower() for uuid in service_info.service_uuids or ())
+    ) and name.upper()[:4] not in ("TEST", "RMCS"):
         if result.bed_type is not None and result.bed_type != BED_TYPE_RICHMAT_CLASSIC_APPS:
             if BED_TYPE_RICHMAT_CLASSIC_APPS not in (result.ambiguous_types or ()):
                 result.ambiguous_types = [*(result.ambiguous_types or ()), BED_TYPE_RICHMAT_CLASSIC_APPS]

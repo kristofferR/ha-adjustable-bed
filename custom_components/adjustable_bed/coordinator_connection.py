@@ -44,7 +44,12 @@ from .beds.gmmotor.sessions import sleep_intent
 from .ble_auth import is_ble_authentication_error as _is_ble_authentication_error
 from .bluetooth_diagnostics import connection_reachability
 from .bluetooth_freshness import async_check_advertisement
-from .bluetooth_transport import async_connection_paths, async_path_for_source, client_source
+from .bluetooth_transport import (
+    advertised_local_name,
+    async_connection_paths,
+    async_path_for_source,
+    client_source,
+)
 from .bond_verification import BondVerificationStatus
 from .command_scheduler import ALL_COMMAND_RESOURCES, CommandOutcome, command_frames_not_counted
 from .const import (
@@ -1564,11 +1569,12 @@ class CoordinatorConnectionMixin:
                     continue
 
                 manufacturer_data: dict[int, bytes] | None = None
-                advertisement = bluetooth.async_last_service_info(
+                connectable_advertisement = bluetooth.async_last_service_info(
                     self.hass,
                     self._address,
                     connectable=True,
                 )
+                advertisement = connectable_advertisement
                 if advertisement is None or not advertisement.manufacturer_data:
                     # Fall back to the non-connectable advert: this integration
                     # supports misclassified ESPHome/proxy advertisements, and the
@@ -1579,6 +1585,9 @@ class CoordinatorConnectionMixin:
                         self._address,
                         connectable=False,
                     )
+                advertisement_local_name = advertised_local_name(connectable_advertisement)
+                if not advertisement_local_name and advertisement is not connectable_advertisement:
+                    advertisement_local_name = advertised_local_name(advertisement)
                 if advertisement and advertisement.manufacturer_data:
                     manufacturer_data = dict(advertisement.manufacturer_data)
                     _LOGGER.debug(
@@ -1607,6 +1616,7 @@ class CoordinatorConnectionMixin:
                     ble_model=ble_model,
                     manufacturer_data=manufacturer_data,
                     advertisement_name=advertisement.name if advertisement is not None else None,
+                    advertisement_local_name=advertisement_local_name,
                 )
                 if self._bed_type == BED_TYPE_SLEEPYS_BOX25:
                     dialect = type(self._controller)

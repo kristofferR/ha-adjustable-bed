@@ -6225,6 +6225,12 @@
       "bedsmart_aroma_2": {
         "name": "Aroma pause"
       },
+      "dreamlab_light_seconds": {
+        "name": "Light timeout"
+      },
+      "dreamlab_massage_progress": {
+        "name": "Massage timer setting"
+      },
       "jerome_light_seconds": {
         "name": "Light duration"
       },
@@ -6655,6 +6661,38 @@
         "state": {
           "release": "Tap",
           "hold": "Press and hold"
+        }
+      },
+      "dreamlab_mode": {
+        "name": "Remote mode",
+        "state": {
+          "left": "Left",
+          "right": "Right",
+          "0": "Mode 1",
+          "1": "Mode 2",
+          "2": "Mode 3"
+        }
+      },
+      "dreamlab_head_foot": {
+        "name": "Head or foot control",
+        "state": {
+          "head": "Head",
+          "foot": "Foot"
+        }
+      },
+      "dreamlab_press_mode": {
+        "name": "Preset button mode",
+        "state": {
+          "release": "Release",
+          "hold": "Hold"
+        }
+      },
+      "dreamlab_axis": {
+        "name": "Selected motor",
+        "state": {
+          "3": "Motor 3",
+          "4": "Motor 4",
+          "5": "Motor 5"
         }
       },
       "richmat_classic_head_foot": {
@@ -10955,6 +10993,27 @@
     "jerome_layout": {
       "message": "Choose a bed layout with controls in Jerome’s power base."
     },
+    "dreamlab_layout": {
+      "message": "Choose a Dreamlab Control layout that contains bed controls."
+    },
+    "dreamlab_transport": {
+      "message": "No complete Dreamlab Control Bluetooth service was found. Select the third service option only if your receiver requires it."
+    },
+    "dreamlab_side": {
+      "message": "Choose a framed receiver side for movement or the whole receiver for settings."
+    },
+    "dreamlab_control": {
+      "message": "Choose a control available for the current Dreamlab Control layout and mode."
+    },
+    "dreamlab_alarm": {
+      "message": "Choose an alarm preset and massage combination offered by this layout."
+    },
+    "dreamlab_accessory": {
+      "message": "The receiver has not reported this accessory or its current state on this connection."
+    },
+    "dreamlab_settings": {
+      "message": "Choose Dreamlab Control settings with a color or three aroma timers in range."
+    },
     "jerome_action": {
       "message": "Choose an action offered by the selected bed layout."
     },
@@ -11837,6 +11896,7 @@
         "bedtech_classic": "Bed Tech app",
         "jerome2": "Jerome's power base app",
         "baseremote": "Base Remote app",
+        "dreamlab2": "Dreamlab Control app",
         "sleepfunction": "SleepFunction Bed Control app",
         "super_colchones": "Super Colchones app"
       }

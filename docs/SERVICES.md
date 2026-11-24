@@ -333,6 +333,7 @@ entities, including the light colors, are separate.
 |-----|----------|-------|
 | [Super Colchones](beds/richmat.md#super-colchones) | `head_up`, `head_down`, `foot_up`, `foot_down`; AFEG350 also `lumbar_up`, `lumbar_down` | |
 | [BedSmart / X-Series](beds/richmat.md#bedsmart--x-series) | The `richmat_classic_<node>` controls of the selected remote layout that can be held | Saves cannot be held |
+| [Dreamlab Control](beds/richmat.md#dreamlab-control) | The available `dreamlab_<node>` controls with a held gesture | Saves and one-shot controls cannot be held |
 | [Base Remote](beds/richmat.md#base-remote) | The held controls of the selected layout and mode | Saves cannot be held |
 | [Dream Sense Bed](beds/richmat.md#dream-sense-bed) | The selected product's held controls, such as `HeadUp` | Save buttons are separate |
 | [Sleepy's Elite app](beds/sleepys.md#explicit-sleepys-elite-app-profile) | Motor directions and app buttons that can be held | 100 to 60000 ms. Motion sensor actions end after five seconds. BOX25 voice positions run once |
@@ -469,6 +470,7 @@ data:
 | Linx | None | Turn off only (`enabled: false`), `slot` 1–6 |
 | Logicdata app | `flat`, `zero_g`, `anti_snore`, `memory_1`, `memory_2` | `weekdays`, head and foot massage levels 0–3 |
 | Luuna + | The product's alarm positions: `tv`, `zero_g`, `anti_snore`, `memory_1`, `memory_2`; required to turn the alarm on | Once, at the next occurrence. Needs the bed to report its alarm on the current connection |
+| Dreamlab Control | From the selected layout; required to turn the alarm on | One occurrence with optional supported massage zones. The receiver reports availability on the current connection, or the layout has a direct alarm button |
 | Luuna Rise and Power Cool | From the selected layout's alarm controls; required to turn the alarm on | `massage` with the layout's zones (then `none` is allowed). Once, at the next occurrence. Needs the bed to report its alarm on the current connection |
 | M Line | `zero_g`, `flat`, `memory_1`, `memory_2`, `massage`, `anti_snore` | `weekdays` |
 | Malouf / Lucid app | `zero_g`, `lounge`, `tv`, `anti_snore`, memories | `weekdays` |
@@ -1984,6 +1986,15 @@ off at the next occurrence of the time; the current minute means tomorrow. It
 does not repeat. Desk operations work only with a desk set up as one. Wi-Fi and
 cloud settings are not available. See the
 [classic Richmat guide](beds/richmat.md#classic-richmat-apps).
+
+[Dreamlab Control](beds/richmat.md#dreamlab-control) also uses this action for
+receiver-wide settings. Select `query` to check for accessories, `rgb` with
+`rgb_color` on a receiver that reports LED support, or `aroma` with
+`aroma_times` on a receiver that reports aroma support. Pass two durations
+(1 to 60 minutes each) and the mode 3 pause (1 to 12 hours) in order. Use
+[Set alarm](#set_alarm) for its alarm and the native entities for the light
+timeout and layout-dependent massage timers.
+
 
 ## Richmat app
 
