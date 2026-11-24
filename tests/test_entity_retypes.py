@@ -530,3 +530,27 @@ async def test_only_the_reverie_wave_slider_becomes_the_pattern_select(
     new = registry.async_get("select.bed_massage_wave_intensity")
     assert new is not None
     assert new.unique_id == f"{ADDRESS}_controller_select_reverie_massage_wave"
+
+
+async def test_only_a_dreamsense_bed_with_the_light_timer_gets_it_for_its_number(
+    hass: HomeAssistant,
+) -> None:
+    """Blue has the app's durations; the other products keep their seconds number."""
+    registry = er.async_get(hass)
+    entry = _entry(hass)
+    _row(registry, entry, "number", "controller_number_dreamsense_light_seconds", "bed_light")
+
+    def runtime(light_timer: bool) -> SimpleNamespace:
+        return SimpleNamespace(
+            bed_type="dreamsense",
+            entity_unique_id=lambda key: f"{ADDRESS}_{key}",
+            capability_controller=SimpleNamespace(supports_light_timer=light_timer),
+        )
+
+    async_carry_over_retyped_entities(hass, entry, runtime(False))
+    assert registry.async_get("number.bed_light") is not None
+
+    async_carry_over_retyped_entities(hass, entry, runtime(True))
+    assert registry.async_get("number.bed_light") is None
+    new = registry.async_get("select.bed_light")
+    assert new is not None and new.unique_id == f"{ADDRESS}_light_timer"
