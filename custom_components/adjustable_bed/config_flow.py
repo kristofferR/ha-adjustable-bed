@@ -224,7 +224,9 @@ from .const import (
     BED_TYPE_SOLACE,
     BED_TYPE_STARCODE_ABM5_4,
     BED_TYPE_STARCODE_M5X5,
+    BED_TYPE_SUTA,
     BED_TYPE_SVANE,
+    BED_TYPE_TRUEMOTION,
     BED_TYPE_VIBRADORM,
     BED_TYPE_VIBRADORM_APP,
     BED_TYPE_VMATBASIC,
@@ -372,6 +374,7 @@ from .pairing import (
     pair_member_addresses,
     side_owned_profile_fields,
     supports_single_address_pairing,
+    truemotion_pair_supported,
     with_updated_child,
 )
 from .pairing_candidates import (
@@ -440,7 +443,7 @@ _NAME_ONLY_CONFIDENCE = 0.3
 # Explicit app candidates offered beside a confident match are hints, not ambiguity.
 _EXPLICIT_APP_HINTS = frozenset(
     {BED_TYPE_DORSAL, BED_TYPE_ENSO2, BED_TYPE_MOODBASE, "super_colchones", "dreamsense", "saatva", "bobpowerbase", BED_TYPE_COMFORT_ENHANCEMENT3, BED_TYPE_RICHMAT_APP_SLEEP, BED_TYPE_RICHMAT_APP, BED_TYPE_RICHMAT_CLASSIC_APPS, BED_TYPE_MOTOMOTION, BED_TYPE_MLILY, BED_TYPE_GALAXY, BED_TYPE_GOODVIBE, BED_TYPE_HJBED, BED_TYPE_ESHINE_OKIN, BED_TYPE_ISLEEP, BED_TYPE_KOMFYD, BED_TYPE_COMFYDS, BED_TYPE_RIZE, BED_TYPE_STARCODE_ABM5_4, BED_TYPE_MOTION_BED, BED_TYPE_VMATBASIC, BED_TYPE_FURNIMOVE,
-     BED_TYPE_GMMOTOR, BED_TYPE_OKIMIKI, BED_TYPE_SIMMONS_BLUE, "gmmotor_sleep_mm", "gmmotor_sleep_sxb", "sealy_posturematic", "instant_comfort"}
+     BED_TYPE_GMMOTOR, BED_TYPE_OKIMIKI, BED_TYPE_SIMMONS_BLUE, "gmmotor_sleep_mm", "gmmotor_sleep_sxb", "sealy_posturematic", "instant_comfort", BED_TYPE_TRUEMOTION}
 )
 
 
@@ -535,6 +538,9 @@ _CHECK_FALLBACKS: Final[dict[str, str]] = {
     "check_no_commands": (
         "⚠️ The device connected but accepts no commands. It may not be your bed's "
         "controller. Check that you chose the right device."
+    ),
+    "check_truemotion_transport_missing": (
+        "⚠️ The receiver does not expose the trueMotion write and notification channels."
     ),
     "check_transport_missing": (
         "❌ The connection type chosen for this app isn't available on this bed. Choose "
@@ -1380,6 +1386,7 @@ _DECLARED_QUESTION_ROUTES: Final = frozenset(
         "l2motion",
         BED_TYPE_MOODBASE,
         "suta",
+        BED_TYPE_TRUEMOTION,
         "hush_base",
         "luuna",
         "dorsal",
@@ -1401,7 +1408,7 @@ _APP_SETUP_STEPS: Final[dict[str, str]] = {
 def _name_rule_setup_name(bed_type: str | None, name: str | None) -> dict[str, str]:
     """Keep the raw Bluetooth name an app name rule reads, never the display name."""
     if (
-        bed_type not in NAME_RULE_VARIANTS_BY_BED_TYPE and bed_type not in (BED_TYPE_GMMOTOR, BED_TYPE_MOTOMOTION, "bedgear", "l2motion", BED_TYPE_MOODBASE, "suta", "sleep_evolution", "wsilver_legacy")
+        bed_type not in NAME_RULE_VARIANTS_BY_BED_TYPE and bed_type not in (BED_TYPE_GMMOTOR, BED_TYPE_MOTOMOTION, "bedgear", "l2motion", BED_TYPE_MOODBASE, "suta", BED_TYPE_TRUEMOTION, "sleep_evolution", "wsilver_legacy")
     ) or name is None or is_mac_like_name(name):
         return {}
     return {CONF_BLE_DEVICE_NAME: name}
@@ -2375,6 +2382,7 @@ class CapabilityReport:
     octo_pin_status: OctoPinStatus | None = None
     leva_receiver_valid: bool | None = None
     starcode_transport_valid: bool | None = None
+    truemotion_transport_valid: bool | None = None
     starcode_transport_selector: str | None = None
     starcode_ble_device_name: str | None = None
     dorsal_endpoint_error: str | None = None
@@ -3459,7 +3467,11 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         self._disambiguated_bed_type = None
 
         bed_type = detection_result.bed_type
-        if bed_type is None or detection_result.confidence >= 0.7:
+        # The receiver can be known while its app remains ambiguous.
+        suta_app_choice = bed_type == BED_TYPE_SUTA and BED_TYPE_TRUEMOTION in (
+            detection_result.ambiguous_types or ()
+        )
+        if bed_type is None or (detection_result.confidence >= 0.7 and not suta_app_choice):
             return False
 
         candidates: list[str] = []
@@ -4854,11 +4866,15 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                 errors["base"] = "octo_pairing_needs_connection"
             elif left_layout is None or right_layout is None:
                 errors["base"] = "pairing_needs_capabilities"
+            elif self._offline_safe_bed_type(left) == BED_TYPE_TRUEMOTION and not truemotion_pair_supported(
+                left.data, right.data,
+            ):
+                errors["base"] = "truemotion_pair"
             elif (
                 left_layout != right_layout
                 # Leva selects each receiver's model independently. Combined
                 # controls still require a common capability on both sides.
-                and self._offline_safe_bed_type(left) != BED_TYPE_LEVA
+                and self._offline_safe_bed_type(left) not in (BED_TYPE_LEVA, BED_TYPE_TRUEMOTION)
                 and not (
                     self._offline_safe_bed_type(left) == "instant_comfort"
                     and {**left_layout, "motor_keys": [key for key in left_layout["motor_keys"] if key != "pillow"]}
@@ -6631,6 +6647,7 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
             not report.connected
             or report.leva_receiver_valid is False
             or report.starcode_transport_valid is False
+            or report.truemotion_transport_valid is False
             or (
                 # Reconfigure saves an AdjustableM5X4 only on a transport the
                 # live link proved; an unresolved one fails the check.
@@ -6942,6 +6959,10 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                             )
                             if not report.starcode_transport_valid:
                                 report.error = f"Selected app transport {selected_transport} is missing required GATT roles"
+                    if bed_type == BED_TYPE_TRUEMOTION:
+                        from .profiles.truemotion import gatt_roles
+
+                        report.truemotion_transport_valid = gatt_roles(client.services) is not None
                     if leva_profile is not None:
                         from .beds.leva import resolve_gatt
                         from .errors import BedNotConnectedError
@@ -7054,6 +7075,8 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         if not report.writable_count:
             lines.append(await line("check_no_commands"))
 
+        if report.truemotion_transport_valid is False:
+            lines.append(await line("check_truemotion_transport_missing"))
         if report.starcode_transport_valid is False:
             lines.append(await line("check_transport_missing"))
         elif report.starcode_transport_valid is True or report.leva_receiver_valid is True:
@@ -7144,6 +7167,15 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                 self._verify_form_shown = False
                 self._async_start_probe_operation()
                 return await self.async_step_setup_progress()
+            if report.truemotion_transport_valid is False:
+                self._verify_form_shown = False
+                self._manual_data = dict(self._pending_entry)
+                self._recheck_answers = True
+                profile = setup_profile_for(self._manual_data)
+                assert profile is not None
+                return self._show_profile_questions(
+                    profile, self._manual_data, {CONF_BLE_DEVICE_NAME: "truemotion_gatt"},
+                )
             if report.dorsal_endpoint_error is not None:
                 self._verify_form_shown = False
                 self._manual_data = dict(self._pending_entry)

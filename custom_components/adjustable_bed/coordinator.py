@@ -50,6 +50,7 @@ from .bond_verification import (
 )
 from .command_scheduler import (
     ALL_COMMAND_RESOURCES,
+    PAIRED_CLEANUP_STOP,
     CommandContext,
     CommandHandle,
     CommandIntent,
@@ -190,6 +191,7 @@ from .import_executor import async_import_modules
 from .pairing import (
     OFFLINE_CAPABILITY_SAFE_VARIANTS,
     filter_child_options,
+    get_child,
     is_paired,
     octo_snapshot_from_descriptor,
 )
@@ -270,6 +272,10 @@ class ChildEntryView:
     @property
     def options(self) -> Mapping[str, Any]:
         return filter_child_options(self._child_data, self._parent.options)
+
+    def paired_child(self, side: str) -> Mapping[str, Any] | None:
+        """Return the stored physical identity of a side of this pair."""
+        return get_child(self._parent.data, side)
 
     def persist_data(
         self,
@@ -1938,8 +1944,28 @@ class AdjustableBedCoordinator(
         self._cancel_counter += 1
         self._cancel_command.set()
 
+        controller = self.capability_controller
+        cleanup = (
+            controller.paired_cleanup_stop
+            if PAIRED_CLEANUP_STOP.get() and controller is not None
+            else None
+        )
+        generation = self.connection_generation
+
+        async def stop_current_session() -> None:
+            assert cleanup is not None
+            if (
+                self._controller is controller
+                and self.connection_generation == generation
+                and self.is_connected
+            ):
+                await cleanup()
+
         async def stop_operation(_context: CommandContext) -> None:
-            await self._async_send_stop_command()
+            if cleanup is None:
+                await self._async_send_stop_command()
+            else:
+                await self._async_send_stop_command(stop_current_session)
 
         stop_task = self._command_scheduler.admit_stop(stop_operation, ALL_COMMAND_RESOURCES)
 
@@ -1960,7 +1986,9 @@ class AdjustableBedCoordinator(
             return BedNotConnectedError("bed_pairing_window_closed")
         return BedNotConnectedError()
 
-    async def _async_send_stop_command(self) -> None:
+    async def _async_send_stop_command(
+        self, cleanup: Callable[[], Awaitable[None]] | None = None
+    ) -> None:
         """Send STOP while owning the legacy wire and connection lifecycle lane."""
         # STOP remains outside the ordinary scheduler lane so it can preempt it,
         # then waits for any cancelled controller cleanup to release the wire lock.
@@ -1973,6 +2001,10 @@ class AdjustableBedCoordinator(
                 controller.requires_disconnected_transport is True
             )
             try:
+                if cleanup is not None:
+                    with bluetooth_errors_translated():
+                        await cleanup()
+                    return
                 if disconnected_transport:
                     assert controller is not None
                     if controller.disconnected_transport_ready is not True:

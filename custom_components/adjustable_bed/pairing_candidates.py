@@ -19,13 +19,14 @@ from homeassistant.helpers.selector import (
 )
 
 from .const import (
+    BED_TYPE_TRUEMOTION,
     CONF_BED_TYPE,
     CONF_PROTOCOL_VARIANT,
     CONF_STARCODE_LIFT_ENTRIES,
     DOMAIN,
     STARCODE_GROUP_BED_TYPES,
 )
-from .pairing import is_paired, pair_member_addresses
+from .pairing import is_paired, pair_member_addresses, truemotion_pair_supported
 from .profiles.saatva import TWO_RECEIVER_PROFILES as SAATVA_TWO_RECEIVER_PROFILES
 
 CONF_PAIR_SELECTION = "pair_selection"
@@ -77,7 +78,20 @@ def active_pairing_candidates(hass: HomeAssistant) -> list[ConfigEntry]:
     # Only beds of one protocol can become two sides of one bed, so a bed with
     # no partner of its own type is never offered (or suggested in Repairs).
     protocols = Counter(_protocol(entry) for entry in standalone)
-    return [entry for entry in standalone if protocols[_protocol(entry)] >= 2]
+    return [
+        entry for entry in standalone if protocols[_protocol(entry)] >= 2 and (
+            _protocol(entry) != BED_TYPE_TRUEMOTION or any(
+                other is not entry and (_can_pair(entry, other) or _can_pair(other, entry))
+                for other in standalone
+            )
+        )
+    ]
+
+
+def _can_pair(left: ConfigEntry, right: ConfigEntry) -> bool:
+    return _protocol(left) == _protocol(right) and (
+        _protocol(left) != BED_TYPE_TRUEMOTION or truemotion_pair_supported(left.data, right.data)
+    )
 
 
 def _protocol(entry: ConfigEntry) -> str | None:
@@ -119,7 +133,7 @@ def ordered_pair_options(entries: list[ConfigEntry]) -> list[SelectOptionDict]:
         )
         for left in entries
         for right in entries
-        if left.entry_id != right.entry_id and _protocol(left) == _protocol(right)
+        if left.entry_id != right.entry_id and _can_pair(left, right)
     ]
 
 

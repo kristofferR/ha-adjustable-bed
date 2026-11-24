@@ -753,6 +753,7 @@ _CURRENT_COMMAND_CONTEXT: ContextVar[CommandContext | None] = ContextVar(
     "adjustable_bed_command_context", default=None
 )
 
+PAIRED_CLEANUP_STOP: ContextVar[bool] = ContextVar("paired_cleanup_stop", default=False)
 
 def current_command_context() -> CommandContext | None:
     """Return the command context bound to the current task, if any."""
