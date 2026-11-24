@@ -36,6 +36,7 @@ from homeassistant.helpers.field_visibility import (
     ConditionOperator,
     ConditionValue,
     FieldCondition,
+    is_field_visible,
 )
 from homeassistant.helpers.selector import (
     NumberSelector,
@@ -1905,13 +1906,13 @@ def _question_field(
     data: Mapping[str, Any],
     context: FlowContext,
     *,
-    visible: bool = False,
+    visible: FieldCondition | list[FieldCondition] | None = None,
     drivers: Collection[str] = (),
 ) -> tuple[vol.Marker, Any]:
     """Return one declared question's form marker and validator.
 
-    With ``visible`` the question's condition renders as a native conditional
-    field; otherwise the caller has already decided the question is asked.
+    ``visible`` is the condition that renders as a native conditional field;
+    the caller has already settled any other.
     """
     from homeassistant import data_entry_flow
 
@@ -1948,7 +1949,7 @@ def _question_field(
             if picker is not None
             else default
         ),
-        visible=question.when if visible else None,
+        visible=visible or None,
     )
     if picker is not None:
         return marker, picker
@@ -1999,12 +2000,18 @@ def _profile_question_schema(
         if question.key in skip:
             continue
         # A condition on an answer this form does not ask, such as a route
-        # Configure leaves to the guided change, is settled by the saved setup.
-        visible = question.condition_fields() <= shown
-        if not visible and not question.asked(data):
+        # Configure leaves to the guided change or an app chosen in an earlier
+        # step, is settled by the saved setup. The rest render natively.
+        conditions = question.conditions()
+        settled = [c for c in conditions if c["field"] not in shown]
+        if settled and not is_field_visible(settled, data):
             continue
         marker, validator = _question_field(
-            question, data, context, visible=visible, drivers=drivers
+            question,
+            data,
+            context,
+            visible=[c for c in conditions if c["field"] in shown] if settled else question.when,
+            drivers=drivers,
         )
         (advanced if question.advanced and advanced_section else schema)[marker] = validator
     if advanced:

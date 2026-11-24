@@ -14,7 +14,7 @@ from custom_components.adjustable_bed.beds.richmat_classic.transport import Tran
 from tests.hold_lease_wire import virtual_clock
 
 
-def controller(layout="6BRM", wire="FRAMED"):
+def controller(layout="6BRM", wire="FRAMED", **settings):
     coordinator = MagicMock()
     coordinator.address = "AA:BB:CC:DD:EE:66"
     coordinator.cancel_command = asyncio.Event()
@@ -23,6 +23,7 @@ def controller(layout="6BRM", wire="FRAMED"):
         "product_type": layout,
         "ble_device_name": "6BRM",
         "motor_pulse_count": 1,
+        **settings,
     }
     coordinator.client.is_connected = True
     coordinator.client.write_gatt_char = AsyncMock()
@@ -366,19 +367,54 @@ def test_mode_scoped_motion_and_memory_are_enabled_without_collapsing_card_targe
     from custom_components.adjustable_bed.card import CardSection
 
     ctrl, _ = controller("DHRM")
-    motor = [s for s in ctrl.controller_button_specs if "Motor 1 up" in s.name]
-    assert len(motor) == 2
-    assert {s.name for s in motor} == {"Left Motor 1 up", "Right Motor 1 up"}
-    assert all(
-        s.entity_registry_enabled_default and s.card.section is CardSection.MOTORS for s in motor
-    )
-    assert len({s.card.motor for s in motor}) == 2
+    assert {s.key for s in ctrl.motor_control_specs} == {
+        "left_head",
+        "left_feet",
+        "right_head",
+        "right_feet",
+    }
     memories = [s for s in ctrl.controller_button_specs if s.name in ("Left M1", "Right M1")]
     assert len(memories) == 2
     assert all(
         s.entity_registry_enabled_default and s.card.section is CardSection.PRESETS
         for s in memories
     )
+
+
+async def test_head_and_feet_are_covers_that_hold_each_sides_own_control():
+    """#1161: the operands the Richmat remotes move the head and feet with."""
+    ctrl, coordinator = controller("ECRM")
+    covers = {s.key: s for s in ctrl.motor_control_specs}
+    assert not [s for s in ctrl.controller_button_specs if "Motor" in s.name]
+    assert {s.hold.up_control for s in covers.values()} <= set(ctrl.held_control_options)
+    # The card looks the release button up by its translation key.
+    release = next(s for s in ctrl.controller_button_specs if s.release_only)
+    assert {s.hold.release_button_key for s in covers.values()} == {release.translation_key}
+    with virtual_clock():
+        await covers["left_head"].open_fn(ctrl)
+        await covers["right_feet"].close_fn(ctrl)
+    assert packets(coordinator) == ["6e01002493", "6e01006edd", "6e01012797", "6e01016ede"]
+
+
+def test_a_motor_that_another_connection_sends_differently_keeps_its_number():
+    ctrl, _ = controller("6BRM")
+    assert not ctrl.supports_motor_control
+    assert "Motor 1 up" in {s.name for s in ctrl.controller_button_specs}
+
+
+async def test_one_base_has_each_control_once_and_never_addresses_the_right_side():
+    ctrl, coordinator = controller("ECRM", baseremote_single_base=True)
+    assert [s.key for s in ctrl.motor_control_specs] == ["head", "feet"]
+    names = {s.name for s in ctrl.controller_button_specs}
+    assert {"Flat", "Zero Gravity", "Save M1"} <= names
+    assert not [name for name in names if "eft" in name or "ight" in name]
+    with virtual_clock():
+        await ctrl.motor_control_specs[1].open_fn(ctrl)
+        await ctrl.stop_all()
+    assert packets(coordinator) == ["6e01002695", "6e01006edd", "6e01006edd"]
+    # A layout without sides has nothing to merge.
+    ctrl, _ = controller("BTRM", baseremote_single_base=True)
+    assert "Mode 3 Flat" in {s.name for s in ctrl.controller_button_specs}
 
 
 async def test_stop_during_group_subscription_prevents_the_configuration_write():

@@ -504,6 +504,8 @@ BED_TYPE_MLILY_REMOTE: Final = "mlily_remote"
 BED_TYPE_RICHMAT_CLASSIC_APPS: Final = "richmat_classic_apps"
 # Opt-in to the classic apps' third-service fallback when no fixed service exists.
 CONF_RICHMAT_CLASSIC_THIRD_SERVICE: Final = "richmat_classic_third_service"
+# A Base Remote layout with Left and Right tabs on a bed that moves as one base.
+CONF_BASEREMOTE_SINGLE_BASE: Final = "baseremote_single_base"
 BED_TYPE_BEDGEAR: Final = "bedgear"
 BED_TYPE_L2MOTION: Final = "l2motion"
 BED_TYPE_MOTOMOTION: Final = "motomotion"

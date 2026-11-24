@@ -134,6 +134,7 @@ from .const import (
     CONF_AGINGPLACE_BED_MODE,
     CONF_AGINGPLACE_BED_SIDE,
     CONF_AGINGPLACE_SELECTED_SIDE,
+    CONF_BASEREMOTE_SINGLE_BASE,
     CONF_BED_TYPE,
     CONF_BLE_DEVICE_NAME,
     CONF_CB24_BED_SELECTION,
@@ -256,6 +257,7 @@ from .profiles import jiecang as jiecang_profiles
 from .profiles import logicdata as logicdata_profiles
 from .profiles import malouf as malouf_profiles
 from .profiles import sleep_assistant as sleep_assistant_app
+from .profiles.baseremote import SIDE_LAYOUTS as BASEREMOTE_SIDE_LAYOUTS
 from .profiles.bobpowerbase import LAYOUTS as BOB_LAYOUTS
 from .profiles.bobpowerbase import PROFILE_CHOICES as BOB_PROFILES
 from .profiles.comfort_enhancement3 import CHOICES_WITH_CODE, REMOTE_CODE, REMOTES
@@ -493,12 +495,15 @@ class Question:
 
         return self.when is None or is_field_visible(self.when, data)
 
+    def conditions(self) -> list[FieldCondition]:
+        """Return the conditions for asking, all of which must hold."""
+        if self.when is None:
+            return []
+        return self.when if isinstance(self.when, list) else [self.when]
+
     def condition_fields(self) -> frozenset[str]:
         """Return the fields the condition reads."""
-        if self.when is None:
-            return frozenset()
-        conditions = self.when if isinstance(self.when, list) else [self.when]
-        return frozenset(condition["field"] for condition in conditions)
+        return frozenset(condition["field"] for condition in self.conditions())
 
     def options(
         self, data: Mapping[str, Any], context: FlowContext | None = None
@@ -2779,6 +2784,20 @@ SETUP_PROFILES: Final[dict[str, SetupProfile]] = {
         },
         questions=(
             Question(CONF_PRODUCT_TYPE, _classic_layouts, searchable=True),
+            # Base Remote shows some layouts under Left and Right tabs, also on
+            # a bed whose two tabs move the same base.
+            Question(
+                CONF_BASEREMOTE_SINGLE_BASE,
+                default=False,
+                when=[
+                    {"field": CONF_PROTOCOL_VARIANT, "value": "baseremote"},
+                    {
+                        "field": CONF_PRODUCT_TYPE,
+                        "operator": ConditionOperator.IN,
+                        "value": sorted(BASEREMOTE_SIDE_LAYOUTS),
+                    },
+                ],
+            ),
             Question(CONF_RICHMAT_CLASSIC_THIRD_SERVICE, default=False, advanced=True),
         ),
         normalize=_classic_normalize,
