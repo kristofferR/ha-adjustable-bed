@@ -540,6 +540,7 @@ class RichmatMHAppController(RufRichmatController):
         generation = self._session_generation
         self._normal_ready = False
         self._normal_values.clear()
+        self._normal_sides.clear()
         try:
             await asyncio.sleep(0.3)
             await self._write_query(protocol.TX_VERSION)
