@@ -920,7 +920,9 @@ A full-state checkbox update is observed without automatically echoing a write.
 TEMP reports power, light, side setpoints/timers, current temperatures,
 water and circulation. Version is accepted only on A0/81; its outgoing
 version query remains A0/01. MOON's version decoder separately accepts A0/01.
-Signed byte observations retain their signed values.
+Signed byte observations retain their signed values. The acknowledgment
+that heating was turned on carries no setpoint, so both setpoint numbers are
+unknown until the full state requested right after it arrives.
 
 P1 date and alarm events require CRLF in the current callback, as in the app.
 Version uses an accumulated buffer. Fragmented date/alarm events are not

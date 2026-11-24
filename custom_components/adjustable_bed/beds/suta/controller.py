@@ -172,6 +172,7 @@ class SutaController(BedController):
         self._cycles: dict[str, str] = {}
         self._gesture_released = False
         self._cleanup_context = None
+        self._heating_refresh: asyncio.Task[None] | None = None
         self._clear_massage_levels()
 
     @property
@@ -551,6 +552,16 @@ class SutaController(BedController):
                         self._notify_callback("legs", float(foot))
             else:
                 state = self._receiver.feed(packet)
+            if "displayed_setpoint" in state:
+                # Heating was turned on. The acknowledgment names neither side's setpoint
+                # (the app only resets the one it shows), so both are unknown until the
+                # bed reports them again.
+                for side in (1, 2):
+                    self.observations.pop(f"side_{side}_setpoint", None)
+                if self._heating_refresh is None or self._heating_refresh.done():
+                    self._heating_refresh = self._coordinator.hass.async_create_task(
+                        self._refresh_heating_state()
+                    )
             self.observations.update(state)
             self._reports.update(state.keys())
             self._publish()
@@ -588,6 +599,19 @@ class SutaController(BedController):
             # HA needs one observation per field, without duplicate page jobs.
             for action in ("current_mattress_state", "mattress_temperature", "firmware_version"):
                 await self._send(link, codec.from_prefix(BINARY[action].prefixes[0]), cancel)
+
+    async def _refresh_heating_state(self) -> None:
+        """Ask for the full state, as the app does when it shows a side."""
+
+        async def send(controller: BedController) -> None:
+            if controller is self:
+                query = BINARY["temperature_controller_state"].prefixes[0]
+                await self._send(self._live(), codec.from_prefix(query), self._coordinator.cancel_command)
+
+        try:
+            await self._coordinator.async_execute_controller_command(send, cancel_running=False)
+        except Exception as err:  # noqa: BLE001 - the setpoints stay unknown
+            _LOGGER.debug("SUTA heating state was not refreshed: %s", err)
 
     def on_disconnect(self) -> None:
         self._link = None
