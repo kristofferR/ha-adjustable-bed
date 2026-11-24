@@ -4072,6 +4072,9 @@
  "select:sleep_assistant_palette": {
   "card_section": "lighting"
  },
+ "select:sleepiq_auto_light_level": {
+  "card_section": "utility"
+ },
  "select:sleeptracker_left_curve": {
   "card_section": "climate"
  },

@@ -6543,6 +6543,14 @@
       }
     },
     "select": {
+      "sleepiq_auto_light_level": {
+        "name": "Automatic under-bed light level",
+        "state": {
+          "low": "Low",
+          "medium": "Medium",
+          "high": "High"
+        }
+      },
       "enso2_mode": {
         "name": "Control mode",
         "state": {
@@ -11262,6 +11270,9 @@
     },
     "timer_minutes_required": {
       "message": "Choose how many minutes the timer runs."
+    },
+    "sleep_number_auto_light_not_reported": {
+      "message": "The bed did not report its automatic under-bed light setting, so nothing was changed. Try again."
     },
     "sleep_number_command_not_supported": {
       "message": "{device_name} does not accept the Sleep Number command \"{command}\"."

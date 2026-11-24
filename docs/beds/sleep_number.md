@@ -263,6 +263,9 @@ methods.
 |---------|--------|-------------|
 | Read light settings | `UBLG` | Level and timer |
 | Set light level and timer | `UBLS <off\|low\|medium\|high> <minutes>` | Untouched field is preserved |
+| Read automatic light | `UBAG` | On or off, and its level |
+| Turn automatic light on, or set its level | `UBAS true <low\|medium\|high>` | |
+| Turn automatic light off | `UBAS false low` | The app sends `low` with every disable |
 
 ### Bed Presence
 
@@ -321,7 +324,9 @@ Mode values come from the SleepIQ app's `ThermalMode` enum:
 | Entity | Transport | Notes |
 |--------|-----------|-------|
 | `Under-bed lights` light | Fuzion, MCR | |
-| `Light level` number | Fuzion | Values `0-3` |
+| `Light level` number | Fuzion | Values `0-3`; the manual light only |
+| `Automatic under-bed light` switch | Fuzion, MCR | |
+| `Automatic under-bed light level` select | Fuzion | `Low`, `Medium`, `High` |
 | `Light timer` select | Fuzion | `Off`, `15 min`, `30 min`, `45 min`, `1 hr`, `2 hr`, and `3 hr` |
 | `Left in bed` / `Right in bed` binary sensors | Fuzion | Enabled by default. They update only while the bed is connected and never keep it connected |
 | `Sleep Number setting` number | Fuzion | Configured side |
@@ -446,6 +451,14 @@ switches. Discrete under-bed lighting uses the light entity. MCR also offers a
 head-tilt switch for a HEADTILT chamber and local outlet/automatic night-light
 switches when their nodes are present. Extra local light/outlet and timer
 parameters remain on the structured action, which sends immediately.
+
+On Fuzion the automatic light has its own level, separate from the manual
+light's: **Automatic under-bed light level** changes it without turning the
+automatic light on or off, and without touching the manual light. The bed does
+not keep that level while the automatic light is off, so a level chosen then is
+kept by Home Assistant until the connection ends and is sent when the automatic
+light is turned on. If the bed does not report its automatic light setting, the
+level is unknown and cannot be set; the manual light keeps working.
 
 Fuzion has a **Reading** preset where the bed reports it. Once the bed's
 configuration has been read, it also has diagnostic **Restart bed**,

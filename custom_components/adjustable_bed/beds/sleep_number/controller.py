@@ -33,6 +33,7 @@ from ...const import (
     VARIANT_AUTO,
 )
 from ...controller_state import StateKey, StateUpdate, sided, sided_updates
+from ...errors import failed
 from ...profiles.sleepiq import FUZION
 from ...state_keys import (
     BED_PRESENCE,
@@ -61,13 +62,14 @@ from ...state_keys import (
     THERMAL_TIMER_OPTION,
     UNDER_BED_LIGHTS_ON,
 )
-from ..base import BedController
+from ..base import BedController, require_controller
 from ..builder import BuildContext
 from ..cancellation import cancellable, settled
 from ..catalog_buttons import Kind, catalog_button
 from ..entity_specs import (
     POSITION_UNIT_PERCENT,
     ControllerButtonSpec,
+    ControllerSelectSpec,
     ControllerSwitchSpec,
     MotorControlSpec,
     PositionNumberSpec,
@@ -81,9 +83,9 @@ from .commands import (
     format_command,
     parse_response,
 )
-from .entities import action, automatic_light
+from .entities import action
 from .link import ReplyTimeout, SleepIQLink, finish_frame
-from .state_keys import AUTO_LIGHT, PRIVACY, RESPONSIVE_AIR
+from .state_keys import AUTO_LIGHT, AUTO_LIGHT_LEVEL, PRIVACY, RESPONSIVE_AIR
 
 if TYPE_CHECKING:
     from ...coordinator import AdjustableBedCoordinator
@@ -138,6 +140,9 @@ _SLEEP_NUMBER_LIGHT_VALUE_TO_LEVEL = {
     value: key for key, value in _SLEEP_NUMBER_LIGHT_LEVEL_TO_VALUE.items()
 }
 _SLEEP_NUMBER_FOOTWARMING_LEVELS = ("low", "medium", "high")
+_AUTO_LIGHT_LEVELS = ("low", "medium", "high")
+_AUTO_LIGHT_ENABLED = "underbed_light_auto_mode_enable_status"
+_AUTO_LIGHT_INTENSITY = "underbed_light_auto_mode_intensity_level"
 _SLEEP_NUMBER_DEFAULT_FOOTWARMING_LEVEL = "low"
 
 # Backends for the unified thermal climate entity.
@@ -323,6 +328,10 @@ class SleepNumberController(BedController, SleepNumberActions):
         self._underbed_light_level: str | None = None
         self._underbed_light_timer_minutes: int | None = None
         self._underbed_light_last_active_level = "high"
+        # The app writes Low with every disable, so the bed keeps no automatic
+        # level while the mode is off; the level to turn it on with is held here
+        # for as long as this connection lasts.
+        self._auto_light_level: str | None = None
         self._bed_presence_states: dict[str, str] = {}
         self._bed_presence_state: str | None = None
         self._bed_presence_channel_primed = False
@@ -522,9 +531,9 @@ class SleepNumberController(BedController, SleepNumberActions):
                 )
             )
         elif spec.key == "UBAS":
-            updates.append(
-                AUTO_LIGHT(parameters["underbed_light_auto_mode_enable_status"] == "true")
-            )
+            updates.append(AUTO_LIGHT(args[0] == "true"))
+            if args[0] == "true" and args[1] in _AUTO_LIGHT_LEVELS:
+                updates.append(AUTO_LIGHT_LEVEL(args[1]))
         try:
             with self.sent_state(*updates):
                 values = await self._send_bamkey_command(
@@ -567,12 +576,64 @@ class SleepNumberController(BedController, SleepNumberActions):
                 sided(RESPONSIVE_AIR, str(parameters["side"]))(value in {"1", "2"})
             )
         elif spec.key in {"UBAG", "UBAS"}:
-            value = result.get(
-                "underbed_light_auto_mode_enable_status",
-                parameters.get("underbed_light_auto_mode_enable_status"),
+            enabled = result.get(_AUTO_LIGHT_ENABLED, parameters.get(_AUTO_LIGHT_ENABLED)) == "true"
+            level = result.get(_AUTO_LIGHT_INTENSITY, parameters.get(_AUTO_LIGHT_INTENSITY))
+            # A level reported or written with the mode off is the app's ignored
+            # Low: it only fills in for a level this controller does not hold.
+            if isinstance(level, str) and level in _AUTO_LIGHT_LEVELS:
+                if enabled or (spec.key == "UBAG" and self._auto_light_level is None):
+                    self._auto_light_level = level
+            self.forward_controller_state_updates(
+                AUTO_LIGHT(enabled), AUTO_LIGHT_LEVEL(self._auto_light_level)
             )
-            self.forward_controller_state_updates(AUTO_LIGHT(value == "true"))
         return result
+
+    async def set_sleepiq_auto_light(self, enabled: bool) -> None:
+        """Turn the automatic under-bed light on at its level, or off."""
+        with self._link.operation(self, self.profile):
+            await self._execute_command("get_underbed_light_auto_mode_status", {})
+            await self._execute_command(
+                "set_underbed_light_auto_mode",
+                {
+                    _AUTO_LIGHT_ENABLED: "true" if enabled else "false",
+                    # The app turns the mode on at Low when it has no level.
+                    _AUTO_LIGHT_INTENSITY: self._auto_light_level or "low",
+                },
+            )
+
+    async def set_sleepiq_auto_light_level(self, level: str) -> None:
+        """Set the automatic light's level without changing whether it is on."""
+        with self._link.operation(self, self.profile):
+            try:
+                state = await self._execute_command("get_underbed_light_auto_mode_status", {})
+            except ValueError as err:
+                # Writing needs the on/off flag, and guessing it could switch the mode.
+                raise failed("sleep_number_auto_light_not_reported") from err
+            if state[_AUTO_LIGHT_ENABLED] == "true":
+                await self._execute_command(
+                    "set_underbed_light_auto_mode",
+                    {_AUTO_LIGHT_ENABLED: "true", _AUTO_LIGHT_INTENSITY: level},
+                )
+                return
+            # No frame carries a level with the mode off: turning it on sends it.
+            self._auto_light_level = level
+            self.forward_controller_state_updates(AUTO_LIGHT_LEVEL(level))
+
+    @property
+    def controller_select_specs(self) -> tuple[ControllerSelectSpec, ...]:
+        if not self._system_config or not self.supports_lights:
+            return ()
+        return (
+            ControllerSelectSpec(
+                "sleepiq_auto_light_level",
+                "sleepiq_auto_light_level",
+                AUTO_LIGHT_LEVEL,
+                _AUTO_LIGHT_LEVELS,
+                lambda ctrl, level: require_controller(
+                    ctrl, SleepNumberController
+                ).set_sleepiq_auto_light_level(level),
+            ),
+        )
 
     @property
     def supports_clock_sync(self) -> bool:
@@ -620,7 +681,9 @@ class SleepNumberController(BedController, SleepNumberActions):
                 ControllerSwitchSpec(
                     "sleepiq_auto_light",
                     "sleepiq_auto_light",
-                    automatic_light,
+                    lambda ctrl, enabled: require_controller(
+                        ctrl, SleepNumberController
+                    ).set_sleepiq_auto_light(enabled),
                     AUTO_LIGHT,
                 )
             )
@@ -1287,6 +1350,7 @@ class SleepNumberController(BedController, SleepNumberActions):
         self.forward_controller_state_updates(
             PRIVACY(None),
             AUTO_LIGHT(None),
+            AUTO_LIGHT_LEVEL(None),
             *(sided(RESPONSIVE_AIR, side)(None) for side in _SLEEP_NUMBER_BED_PRESENCE_QUERY_SIDES),
         )
 
