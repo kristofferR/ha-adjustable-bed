@@ -6952,10 +6952,10 @@
       "adjustamattress_alarm_draft_type": {
         "name": "Alarm action",
         "state": {
-          "0": "Default",
-          "9": "Massage",
-          "17": "Action 17",
-          "19": "Position"
+          "0": "None",
+          "17": "Memory A",
+          "19": "Memory B",
+          "9": "Massage"
         }
       },
       "adjustamattress_strength_setting": {
