@@ -27,9 +27,9 @@
 | Motor Control | ✅ (head/back, foot/legs) | ✅ (head, foot; lumbar/body tilt by model) | ✅ (back, legs; lumbar on R510L) |
 | Position Feedback | ✅ (0–100%) | ✅ (0–100%, per side) | ✅ (from the connected bed) |
 | Memory Presets | ✅ (recall/save 1–4, by model) | ✅ (recall/save 1–4, by model) | ✅ (recall 1–4; no save) |
-| Massage | ✅ (head/foot 0–10, wave) | ✅ (head/foot 0–10, wave, by model) | ✅ (head/foot 0–10, mode/rhythm, timer) |
+| Massage | ✅ (head/foot 0–10, wave) | ✅ (head/foot 0–10, wave pattern, by model) | ✅ (head/foot 0–10, mode/rhythm, timer) |
 | Wave Massage | ✅ | ✅ (per side on STK) | See mode/rhythm controls |
-| Under-bed Lights | ✅ (toggle, by model) | ✅ (brightness/RGB, by model) | ✅ (on/off, level, RGB) |
+| Under-bed Lights | ✅ (toggle, by model) | ✅ (on/off; brightness/RGB where the control box has it) | ✅ (on/off, level, RGB) |
 | Zero-G / Anti-Snore / Flat | ✅ (by model) | ✅ (by model) | ✅ |
 | Routines and diagnostics | ✅ (per bed) | ✅ (per bed, by model) | ✅ |
 | Home Assistant joins the Pairlink network | ❌ | ❌ | ✅ (chosen in setup; needs a Linux Bluetooth adapter on the Home Assistant host and a paired, connected bed; see [Local peripheral role](#local-peripheral-role)) |
@@ -186,9 +186,9 @@ Model capability gates apply to every row.
 | Recall memory slot `n` (1–4) | `db8010d0` | `n + 3`, so `04`–`07` |
 | Save memory slot `n` (1–4) | `db8010d0` | `n + 83`, so `54`–`57` |
 | Head / foot massage intensity | `db801061` / `db801060` | `level × 4`, level 0–10 |
-| Global massage wave | `db801080` | Raw byte 0–255; compatibility slider retains its own UI range |
+| Massage wave off / pattern 1–4 | `db801080` | `00` / `01`–`04` |
 | Nightlight on / off | `db8010a0` | `40` / `00`; on uses retained nonzero brightness when available |
-| RGB color / brightness | `db8010a7` | `01 brightness red green blue`; brightness 0–100 and RGB channels 0–255, preserving the known values not being changed |
+| RGB color / brightness | `db8010a7` | `01 brightness red green blue`; brightness 0–100 and RGB channels 0–255, preserving the known values not being changed. Only on a control box that has this characteristic |
 | R650 Zero-G / Anti-Snore / Flat | `db8010d0` | `00 20 47 24 00 00 00 00 00 00` / `00 0C 00 24 00 00 00 00 00 00` / `00 00 00 24 00 00 00 00 00 00` |
 | STK side 2/3 head up / down | `db8010a5` | `side 01` / `side 03` |
 | STK side 2/3 head release | `db8010a6` | `side FF` |

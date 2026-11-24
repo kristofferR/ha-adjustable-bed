@@ -14,6 +14,7 @@ from pytest_homeassistant.common import MockConfigEntry
 from custom_components.adjustable_bed.beds.reverie.comfort import ReverieComfortRequest
 from custom_components.adjustable_bed.beds.reverie.controller import ReverieController
 from custom_components.adjustable_bed.beds.reverie.nightstand import (
+    STK_SIDE,
     ReverieNightstandController,
 )
 from custom_components.adjustable_bed.beds.reverie.pairlink import ReveriePairlinkController
@@ -302,25 +303,14 @@ async def test_pairlink_routine_replacement_cancels_old_timer_before_first_write
 
 
 @pytest.mark.parametrize("side", ["1", "2", "3"])
-def test_stk_side_changes_only_legacy_wave_number_availability(side):
-    from custom_components.adjustable_bed.number import (
-        MASSAGE_NUMBER_DESCRIPTIONS,
-        AdjustableBedMassageNumber,
-    )
-
+def test_stk_wave_select_is_only_available_on_side_1(side):
+    """Sides 2 and 3 use the side's own head wave number."""
     coordinator, _, _ = _coordinator()
     controller = ReverieNightstandController(coordinator, model="STK")
-    coordinator.capability_controller = controller
-    coordinator.entity_side = None
-    coordinator.device_info = {}
-    coordinator.entity_unique_id = lambda key: key
-    controller._set_stk_side(side)
-    numbers = {
-        description.massage_zone: AdjustableBedMassageNumber(coordinator, description)
-        for description in MASSAGE_NUMBER_DESCRIPTIONS
-        if description.massage_zone in ("head", "foot", "wave")
-    }
+    coordinator.controller_state[STK_SIDE] = side
+    wave = next(
+        spec for spec in controller.controller_select_specs if spec.key == "reverie_massage_wave"
+    )
 
-    assert numbers["head"].available
-    assert numbers["foot"].available
-    assert numbers["wave"].available is (side == "1")
+    assert wave.available_fn is not None
+    assert wave.available_fn(controller) is (side == "1")

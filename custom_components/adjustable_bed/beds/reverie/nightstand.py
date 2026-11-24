@@ -14,7 +14,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
-from collections.abc import Callable
+from collections.abc import Callable, Mapping
 from dataclasses import replace
 from typing import TYPE_CHECKING, Any, Final
 
@@ -60,6 +60,7 @@ from ..entity_specs import (
     PositionNumberSpec,
     build_position_number_spec,
 )
+from ..lifecycle import CapabilitySnapshotPolicy, ControllerSession
 from .comfort import (
     ReverieComfortActions,
     ReverieComfortRequest,
@@ -86,13 +87,19 @@ STK_SIDE_NO_DATA_UUID = REVERIE_STK_SIDE_NO_DATA_UUID
 STK_SIDE: Final = StateKey[str | None]("reverie_stk_side")
 MASSAGE_HEAD_INTENSITY: Final = massage_intensity("head")
 MASSAGE_FOOT_INTENSITY: Final = massage_intensity("foot")
-# The full wave byte; the generic wave slider shows the same value.
-MASSAGE_WAVE: Final = massage_intensity("wave")
+# The app's wave buttons: Stop writes 0 and patterns 1-4 write their number.
+WAVE_PATTERN: Final = StateKey[str | None]("reverie_massage_wave")
+WAVE_PATTERNS: Final = ("off", "1", "2", "3", "4")
 STK_HEAD_WAVE: Final = StateKey[int | None]("reverie_stk_head_wave")
 STK_GLOBAL_MASSAGE: Final = StateKey[int | None]("reverie_stk_global_massage")
 BODY_TILT: Final = StateKey[float | None]("reverie_body_tilt")
 STK_HEAD_POSITION: Final = StateKey[int]("reverie_stk_head_position")
 STK_HEAD2_POSITION: Final = StateKey[int]("reverie_stk_head2_position")
+
+
+def _wave_pattern(level: int) -> str:
+    """Return the pattern the app highlights for a wave byte read from the bed."""
+    return WAVE_PATTERNS[level] if 0 <= level < 4 else "4"
 
 
 def _position_key(axis: str) -> StateKey[float | None]:
@@ -144,7 +151,11 @@ class ReverieNightstandController(BedController, ReverieComfortActions):
     """
 
     def __init__(
-        self, coordinator: AdjustableBedCoordinator, *, model: str | None = None
+        self,
+        coordinator: AdjustableBedCoordinator,
+        *,
+        model: str | None = None,
+        capability_snapshot: Mapping[str, Any] | None = None,
     ) -> None:
         """Initialize the controller with its selected app model profile."""
         super().__init__(coordinator)
@@ -160,8 +171,12 @@ class ReverieNightstandController(BedController, ReverieComfortActions):
         self._massage_foot_level = 0
         self._massage_wave_level = 0
         self.forward_controller_state_updates(
-            MASSAGE_HEAD_INTENSITY(0), MASSAGE_FOOT_INTENSITY(0), MASSAGE_WAVE(0)
+            MASSAGE_HEAD_INTENSITY(0), MASSAGE_FOOT_INTENSITY(0), WAVE_PATTERN("off")
         )
+        # Like the app, level and color need the box's RGB characteristic; a
+        # box without it has an on/off light. Stored once a connection saw it.
+        self._stored_rgb_light = (capability_snapshot or {}).get("rgb_light")
+        self._rgb_light = self._stored_rgb_light is not False
         self._light_brightness: int | None = None
         self._last_nonzero_light_brightness: int | None = None
         self._light_rgb: tuple[int, int, int] | None = None
@@ -235,7 +250,7 @@ class ReverieNightstandController(BedController, ReverieComfortActions):
 
     @property
     def supports_light_level_control(self) -> bool:
-        return self.model.nightlight
+        return self.model.nightlight and self._rgb_light
 
     @property
     def light_level_min(self) -> int:
@@ -247,11 +262,33 @@ class ReverieNightstandController(BedController, ReverieComfortActions):
 
     @property
     def supports_light_color_control(self) -> bool:
-        return self.model.nightlight
+        return self.model.nightlight and self._rgb_light
 
     @property
     def supported_color_mode(self) -> str | None:
-        return "rgb" if self.model.nightlight else None
+        return "rgb" if self.supports_light_color_control else None
+
+    async def async_discover_capabilities(self) -> None:
+        services = self.client.services if self.client is not None else None
+        if services is not None:
+            self._rgb_light = services.get_characteristic(REVERIE_NIGHTSTAND_RGB_UUID) is not None
+
+    @property
+    def capability_snapshot_policy(self) -> CapabilitySnapshotPolicy:
+        # Entities change once the link is released, not under the command
+        # that opened it.
+        return CapabilitySnapshotPolicy(deferred_reload=True)
+
+    def capability_snapshot(self) -> dict[str, Any] | None:
+        # A box with the characteristic is the default, so it stores nothing
+        # unless an earlier connection stored otherwise.
+        if not self.model.nightlight or (self._rgb_light and self._stored_rgb_light is None):
+            return None
+        return {"rgb_light": self._rgb_light}
+
+    async def async_on_connect(self, session: ControllerSession) -> None:
+        await super().async_on_connect(session)
+        session.persist_capability_snapshot()
 
     @property
     def has_lumbar_support(self) -> bool:
@@ -289,15 +326,8 @@ class ReverieNightstandController(BedController, ReverieComfortActions):
 
     @property
     def massage_intensity_zones(self) -> list[str]:
-        # Keep the established generic wave number key for existing entries.
-        # The source-backed Reverie-specific number below exposes the full
-        # characteristic byte; the shared slider retains its legacy UI shape.
-        return ["head", "foot", "wave"] if self.model.massage else []
-
-    @property
-    def legacy_massage_wave_available(self) -> bool:
-        """Keep the old global wave entity usable only on its source side."""
-        return not self.model.tandem or self._stk_selected_side == "1"
+        # The wave is a pattern select, not an intensity.
+        return ["head", "foot"] if self.model.massage else []
 
     @property
     def massage_intensity_max(self) -> int:
@@ -359,7 +389,6 @@ class ReverieNightstandController(BedController, ReverieComfortActions):
 
     @property
     def controller_state_sensor_specs(self) -> tuple[ControllerStateSensorSpec, ...]:
-        # The massage wave number shows the wave; the strengths have no setter.
         if not self.model.massage:
             return ()
         return (
@@ -405,42 +434,44 @@ class ReverieNightstandController(BedController, ReverieComfortActions):
 
     @property
     def controller_select_specs(self) -> tuple[ControllerSelectSpec, ...]:
-        if not self.model.tandem:
-            return ()
-        return (
-            ControllerSelectSpec(
-                key="reverie_stk_side",
-                translation_key="reverie_stk_side",
-                state_key=STK_SIDE,
-                options=("1", "2", "3"),
-                select_fn=lambda _ctrl, side: self._select_stk_side(side),
-                local_select_fn=self._set_stk_side,
-                card=CARD_CONTROLLED_SIDE,
-            ),
-        )
+        specs: list[ControllerSelectSpec] = []
+        if self.model.tandem:
+            specs.append(
+                ControllerSelectSpec(
+                    key="reverie_stk_side",
+                    translation_key="reverie_stk_side",
+                    state_key=STK_SIDE,
+                    options=("1", "2", "3"),
+                    select_fn=lambda _ctrl, side: self._select_stk_side(side),
+                    local_select_fn=self._set_stk_side,
+                    card=CARD_CONTROLLED_SIDE,
+                )
+            )
+        if self.model.massage:
+            specs.append(
+                ControllerSelectSpec(
+                    key="reverie_massage_wave",
+                    translation_key="reverie_massage_wave",
+                    state_key=WAVE_PATTERN,
+                    options=WAVE_PATTERNS,
+                    select_fn=lambda _ctrl, pattern: self.set_massage_intensity(
+                        "wave", WAVE_PATTERNS.index(pattern)
+                    ),
+                    # STK sides 2 and 3 have their own head wave number. The
+                    # published side outlives a reconnect's controller.
+                    available_fn=lambda _ctrl: (
+                        not self.model.tandem
+                        or self._coordinator.controller_state.get(STK_SIDE, "1") == "1"
+                    ),
+                    card=CARD_MASSAGE,
+                )
+            )
+        return tuple(specs)
 
     @property
     def controller_number_specs(self) -> tuple[ControllerNumberSpec, ...]:
         specs: list[ControllerNumberSpec] = []
         if self.model.massage:
-            specs.append(
-                # The full raw wave byte, with no proven unit; the shared wave
-                # intensity number is the user control.
-                ControllerNumberSpec(
-                    key="reverie_massage_wave",
-                    translation_key="reverie_massage_wave",
-                    state_key=MASSAGE_WAVE,
-                    native_min_value=0,
-                    native_max_value=255,
-                    native_step=1,
-                    set_fn=lambda ctrl, value: ctrl.set_massage_intensity(
-                        "wave", int(value)
-                    ),
-                    card=CARD_MASSAGE,
-                    entity_category=EntityCategory.DIAGNOSTIC,
-                    entity_registry_enabled_default=False,
-                )
-            )
             if self.model.tandem:
                 specs.extend(
                     (
@@ -1328,6 +1359,8 @@ class ReverieNightstandController(BedController, ReverieComfortActions):
         """Write RGB brightness while preserving the last known RGB values."""
         if not self.model.nightlight:
             raise ValueError(f"Model {self.model_id} has no under-bed lights")
+        if not self._rgb_light:
+            raise ValueError("This bed's light only turns on and off")
         if not 0 <= level <= 100:
             raise ValueError("Reverie light brightness must be 0-100")
         if self._light_rgb is None:
@@ -1354,6 +1387,8 @@ class ReverieNightstandController(BedController, ReverieComfortActions):
         """Write an exact RGB color at the last known brightness."""
         if not self.model.nightlight:
             raise ValueError(f"Model {self.model_id} has no under-bed lights")
+        if not self._rgb_light:
+            raise ValueError("This bed's light only turns on and off")
         if len(rgb_color) != 3 or any(not 0 <= value <= 255 for value in rgb_color):
             raise ValueError("RGB values must each be in the range 0-255")
         if self._light_brightness is None:
@@ -1387,7 +1422,11 @@ class ReverieNightstandController(BedController, ReverieComfortActions):
             state: list[StateUpdate] = []
             if self.model.nightlight:
                 led_data = await self.client.read_gatt_char(REVERIE_NIGHTSTAND_LED_UUID)
-                rgb_data = await self.client.read_gatt_char(REVERIE_NIGHTSTAND_RGB_UUID)
+                rgb_data = (
+                    await self.client.read_gatt_char(REVERIE_NIGHTSTAND_RGB_UUID)
+                    if self._rgb_light
+                    else b""
+                )
                 if led_data:
                     brightness = led_data[0]
                     self._light_brightness = brightness
@@ -1424,7 +1463,7 @@ class ReverieNightstandController(BedController, ReverieComfortActions):
                 state += [
                     MASSAGE_HEAD_INTENSITY(self._massage_head_level),
                     MASSAGE_FOOT_INTENSITY(self._massage_foot_level),
-                    MASSAGE_WAVE(self._massage_wave_level),
+                    WAVE_PATTERN(_wave_pattern(self._massage_wave_level)),
                 ]
         self.forward_controller_state_updates(*state)
         return tuple(state)
@@ -1442,7 +1481,7 @@ class ReverieNightstandController(BedController, ReverieComfortActions):
         self.forward_controller_state_update(MASSAGE_FOOT_INTENSITY, 0)
         await self._write_to_char(REVERIE_NIGHTSTAND_MASSAGE_WAVE_UUID, 0)
         self._massage_wave_level = 0
-        self.forward_controller_state_updates(MASSAGE_WAVE(0))
+        self.forward_controller_state_updates(WAVE_PATTERN("off"))
 
     async def massage_head_up(self) -> None:
         """Increase head massage intensity (0-10, written as level * 4)."""
@@ -1503,11 +1542,11 @@ class ReverieNightstandController(BedController, ReverieComfortActions):
         if zone == "wave":
             if self.model.tandem and self._stk_selected_side != "1":
                 raise ValueError("Use the STK head wave number for side 2 or 3")
-            if not 0 <= level <= 255:
-                raise ValueError("Reverie global massage wave must be 0-255")
+            if not 0 <= level <= 4:
+                raise ValueError("Reverie massage wave must be 0 (off) or a pattern from 1 to 4")
             await self._write_to_char(REVERIE_NIGHTSTAND_MASSAGE_WAVE_UUID, level)
             self._massage_wave_level = level
-            self.forward_controller_state_update(MASSAGE_WAVE, level)
+            self.forward_controller_state_update(WAVE_PATTERN, WAVE_PATTERNS[level])
             return
         if zone == "stk_head_wave":
             if not self.model.tandem or self._stk_selected_side == "1":
@@ -1536,4 +1575,8 @@ class ReverieNightstandController(BedController, ReverieComfortActions):
 
 async def build_controller(ctx: BuildContext) -> ReverieNightstandController:
     """Build the controller for the selected Reverie model."""
-    return ReverieNightstandController(ctx.coordinator, model=ctx.variant)
+    return ReverieNightstandController(
+        ctx.coordinator,
+        model=ctx.variant,
+        capability_snapshot=ctx.stored_capabilities(ctx.bed_type),
+    )
