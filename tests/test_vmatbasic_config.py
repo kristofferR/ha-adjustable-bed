@@ -7,6 +7,8 @@ import voluptuous as vol
 from homeassistant.config_entries import SOURCE_RECONFIGURE
 from homeassistant.const import CONF_ADDRESS, CONF_NAME
 from homeassistant.data_entry_flow import FlowResultType
+from homeassistant.helpers import config_validation as cv
+from probatio import to_field_list
 from pytest_homeassistant.common import MockConfigEntry
 
 from custom_components.adjustable_bed import const
@@ -93,6 +95,31 @@ async def test_floor_fields_show_for_the_products_that_have_them(hass, profile):
             {const.CONF_VMATBASIC_PROFILE: profile, const.CONF_VMATBASIC_FLOOR_LEVEL: level}
         )
     assert finish.call_args.args[0][const.CONF_VMATBASIC_FLOOR_LEVEL] == level
+
+
+async def test_floor_fields_render_as_number_boxes_that_save_whole_numbers(hass):
+    """Home Assistant serializes every field before it shows the step (#1160)."""
+    flow = AdjustableBedConfigFlow()
+    flow.hass, flow.context, flow._manual_data = hass, {}, app_data()
+    schema = (await flow.async_step_profile_questions())["data_schema"]
+    assert schema is not None
+    fields = {
+        field["name"]: field
+        for field in to_field_list(schema, custom_serializer=cv.custom_serializer)
+    }
+    for key, maximum in (
+        (const.CONF_VMATBASIC_FLOOR_LEVEL, 255),
+        (const.CONF_VMATBASIC_FLOOR_MINUTES, 1439),
+    ):
+        assert fields[key]["selector"]["number"] == {
+            "min": 0,
+            "max": maximum,
+            "step": 1,
+            "mode": "box",
+        }
+        # The number box submits a float.
+        saved = schema({key: 6.0})[key]
+        assert saved == 6 and type(saved) is int
 
 
 @pytest.mark.parametrize("options", [False, True])

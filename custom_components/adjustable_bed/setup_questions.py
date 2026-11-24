@@ -15,12 +15,17 @@ from __future__ import annotations
 import math
 from collections.abc import Callable, Mapping
 from dataclasses import dataclass, field, replace
-from typing import TYPE_CHECKING, Any, Final, Literal
+from typing import TYPE_CHECKING, Any, Final, Literal, cast
 from uuid import UUID
 
 import voluptuous as vol
 from homeassistant.const import CONF_ADDRESS, CONF_NAME
 from homeassistant.helpers.field_visibility import ConditionOperator, FieldCondition
+from homeassistant.helpers.selector import (
+    NumberSelector,
+    NumberSelectorConfig,
+    NumberSelectorMode,
+)
 
 from .bed_traits import bed_type_has_position_feedback
 from .beds.ergomotion4.profiles import PRODUCT_CHOICES as ERGOMOTION4_PRODUCTS
@@ -1012,9 +1017,24 @@ def vmatbasic_integer(value: object) -> int:
     return int(value)
 
 
-def _whole_number(maximum: int) -> Any:
-    """A whole number up to ``maximum``; the product's own range is checked on save."""
-    return vol.All(vmatbasic_integer, vol.Range(min=0, max=maximum))
+class _WholeNumber(NumberSelector):
+    """A number box up to ``maximum`` that saves a whole number and rejects a fraction.
+
+    A plain function cannot be a form field: Home Assistant fails to serialize
+    it and the step never renders (#1160). The product's own range is checked
+    on save.
+    """
+
+    def __init__(self, maximum: int) -> None:
+        super().__init__(
+            NumberSelectorConfig(min=0, max=maximum, step=1, mode=NumberSelectorMode.BOX)
+        )
+
+    def __call__(self, data: Any) -> int:
+        value = vmatbasic_integer(data)
+        # Home Assistant's selector typing does not declare __call__.
+        cast(Any, super()).__call__(value)
+        return value
 
 
 _RESTORED: Final[FieldCondition] = {"field": CONF_VIBRADORM_RESTORED, "value": True}
@@ -2735,13 +2755,13 @@ SETUP_PROFILES: Final[dict[str, SetupProfile]] = {
                 CONF_VMATBASIC_FLOOR_LEVEL,
                 default=OPTIONAL,
                 when=_FLOOR_PRODUCTS,
-                validator=_whole_number(255),
+                validator=_WholeNumber(255),
             ),
             Question(
                 CONF_VMATBASIC_FLOOR_MINUTES,
                 default=0,
                 when=_FLOOR_PRODUCTS,
-                validator=_whole_number(1439),
+                validator=_WholeNumber(1439),
             ),
         ),
         normalize=_vmatbasic_normalize,
