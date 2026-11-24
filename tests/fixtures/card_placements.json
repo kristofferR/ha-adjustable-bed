@@ -1860,6 +1860,36 @@
   "card_role": "reference",
   "card_motor": "tv_lift"
  },
+ "button:simmons_blue_combined_down": {
+  "card_section": "motors",
+  "card_role": "down",
+  "card_motor": "combined_section"
+ },
+ "button:simmons_blue_combined_up": {
+  "card_section": "motors",
+  "card_role": "up",
+  "card_motor": "combined_section"
+ },
+ "button:simmons_blue_first_down": {
+  "card_section": "motors",
+  "card_role": "down",
+  "card_motor": "first_section"
+ },
+ "button:simmons_blue_first_up": {
+  "card_section": "motors",
+  "card_role": "up",
+  "card_motor": "first_section"
+ },
+ "button:simmons_blue_second_down": {
+  "card_section": "motors",
+  "card_role": "down",
+  "card_motor": "second_section"
+ },
+ "button:simmons_blue_second_up": {
+  "card_section": "motors",
+  "card_role": "up",
+  "card_motor": "second_section"
+ },
  "button:simmons_inclined_left": {
   "card_section": "presets"
  },
@@ -4543,6 +4573,15 @@
   "card_section": "hidden"
  },
  "sensor:simmons_alarm_2": {
+  "card_section": "hidden"
+ },
+ "sensor:simmons_blue_alarm_1_time": {
+  "card_section": "hidden"
+ },
+ "sensor:simmons_blue_alarm_2_time": {
+  "card_section": "hidden"
+ },
+ "sensor:simmons_blue_alarm_3_time": {
   "card_section": "hidden"
  },
  "sensor:sleep_assistant_alarm_1": {

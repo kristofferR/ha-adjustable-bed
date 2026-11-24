@@ -1966,6 +1966,24 @@
       "lumbar_down": {
         "name": "Lumbar down"
       },
+      "simmons_blue_first_up": {
+        "name": "Raise first section"
+      },
+      "simmons_blue_first_down": {
+        "name": "Lower first section"
+      },
+      "simmons_blue_second_up": {
+        "name": "Raise second section"
+      },
+      "simmons_blue_second_down": {
+        "name": "Lower second section"
+      },
+      "simmons_blue_combined_up": {
+        "name": "Raise combined sections"
+      },
+      "simmons_blue_combined_down": {
+        "name": "Lower combined sections"
+      },
       "remote_action": {
         "name": "Remote action"
       },
@@ -5035,6 +5053,15 @@
       },
       "smart_sleep_alarm_action": {
         "name": "Alarm action"
+      },
+      "simmons_blue_alarm_1_time": {
+        "name": "Alarm 1 time"
+      },
+      "simmons_blue_alarm_2_time": {
+        "name": "Alarm 2 time"
+      },
+      "simmons_blue_alarm_3_time": {
+        "name": "Alarm 3 time"
       },
       "smart_sleep_alarm_time": {
         "name": "Alarm time"
@@ -10516,6 +10543,15 @@
     },
     "bundle_needs_side_for_paired": {
       "message": "{device_name} is a combined bed. Choose one side's device to create a support bundle."
+    },
+    "simmons_blue_gatt": {
+      "message": "This bed did not provide the write and notification channels required by Simmons Blue."
+    },
+    "simmons_blue_alarm_not_reported": {
+      "message": "The bed did not report the time for alarm {slot}. Try refreshing the alarms before turning it off."
+    },
+    "simmons_blue_alarm_changed": {
+      "message": "Alarm {slot} changed while the command was waiting. Try again."
     },
     "simmons_alarm_not_reported": {
       "message": "The bed did not report both alarm records in this connection, so nothing was written. Try again, or press Refresh Alarms first."

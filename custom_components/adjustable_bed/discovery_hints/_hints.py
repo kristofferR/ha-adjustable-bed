@@ -6,6 +6,7 @@ import re
 from collections.abc import Iterable, Mapping
 from dataclasses import dataclass, field
 from enum import Enum
+from itertools import product
 from typing import NamedTuple
 
 # One entry of the manifest's ``bluetooth`` list.
@@ -83,20 +84,31 @@ class ManufacturerHint:
 class Case(Enum):
     """How Home Assistant's case-sensitive name matcher must spell a pattern.
 
-    Declare the spellings beds advertise, even when their app ignores case.
-    Other spellings stay reachable by choosing the app manually: admitting every
-    upper/lower combination would turn a four-letter ID into 16 matchers and let
-    unrelated names such as "Firmware" or "Sleep Sound" offer a bed.
+    Use the observed spellings for known receivers. An app whose full prefix
+    is an explicit case-insensitive admission rule can use character classes
+    after the three literal characters HA needs to index the matcher.
     """
 
     EXACT = "exact"  # only as declared
     FOLD = "fold"  # as declared and in lowercase
+    IGNORE_CASE = "ignore_case"
 
 
 def _spellings(pattern: str, case: Case) -> tuple[str, ...]:
     if case is Case.EXACT:
         return (pattern,)
-    return tuple(dict.fromkeys((pattern, pattern.lower())))
+    if case is Case.FOLD:
+        return tuple(dict.fromkeys((pattern, pattern.lower())))
+
+    def letters(char: str) -> tuple[str, ...]:
+        if char.isascii() and char.isalpha():
+            return char.lower(), char.upper()
+        return (char,)
+
+    prefix = pattern[:_LITERAL_PREFIX_LENGTH]
+    tail = "".join(f"[{char.lower()}{char.upper()}]" if len(letters(char)) == 2 else char
+                   for char in pattern[_LITERAL_PREFIX_LENGTH:])
+    return tuple("".join(chars) + tail for chars in product(*(letters(char) for char in prefix)))
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
@@ -126,8 +138,15 @@ class NameHint:
                     f"name hints need a {_LITERAL_PREFIX_LENGTH}-character literal prefix: {glob}"
                 )
         # A glob ends in "*", so it matches any name that starts with a match.
-        regex = "|".join(".*".join(map(re.escape, glob[:-1].split("*"))) for glob in self.globs)
-        object.__setattr__(self, "_regex", re.compile(regex, re.DOTALL))
+        patterns = (
+            self.patterns if self.case is Case.IGNORE_CASE
+            else tuple(glob[:-1] for glob in self.globs)
+        )
+        regex = "|".join(".*".join(map(re.escape, pattern.split("*"))) for pattern in patterns)
+        flags = re.DOTALL
+        if self.case is Case.IGNORE_CASE:
+            flags |= re.IGNORECASE | re.ASCII
+        object.__setattr__(self, "_regex", re.compile(regex, flags))
 
     @property
     def globs(self) -> tuple[str, ...]:

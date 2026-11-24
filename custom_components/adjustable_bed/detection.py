@@ -141,6 +141,7 @@ from .const import (
     BED_TYPE_SERTA_MP_REMOTE,
     BED_TYPE_SILVERMOTION,
     BED_TYPE_SIMMONS,
+    BED_TYPE_SIMMONS_BLUE,
     BED_TYPE_SLEEP_NUMBER,
     BED_TYPE_SLEEP_NUMBER_MCR,
     BED_TYPE_SLEEPSTAR,
@@ -315,6 +316,7 @@ from .profiles.onlysnore import advertisement as onlysnore_advertisement
 from .profiles.relax_motion import discovery_matches as relax_motion_matches
 from .profiles.saatva import SCAN_UUIDS as SAATVA_SCAN_UUIDS
 from .profiles.sealy import matches_name as sealy_name
+from .profiles.simmons_blue import NAME_PREFIX as SIMMONS_BLUE_PREFIX
 from .profiles.smart_sleep import advertisement as smart_sleep_advertisement
 from .profiles.sophie import accepts_name as accepts_sophie_name
 from .profiles.vmatbasic import manufacturer_payload_matches
@@ -664,6 +666,7 @@ BED_TYPE_DISPLAY_NAMES: dict[str, str] = {
     BED_TYPE_OKIN_MOTIONBED: "OKIN Motion Bed app",
     BED_TYPE_COMFORT_ENHANCEMENT3: "Comfort Enhancement 3 / Comfort Plus3 app",
     BED_TYPE_N32_MOTION_BED: "N32 Motion Bed app",
+    BED_TYPE_SIMMONS_BLUE: "Simmons Blue app",
     BED_TYPE_RESIDENT: "Resident Adjustable Base app",
     "enso": "Enso Remote",
     "sealy_posturematic": "Sealy Posturematic",
@@ -1399,7 +1402,7 @@ def detect_bed_type(service_info: BluetoothServiceInfoBleak) -> str | None:
         For detailed detection with confidence scores, use detect_new_bed().
     """
     result = detect_new_bed(service_info)
-    if result.bed_type in ("sleep_assistant", "super_colchones", "bobpowerbase", BED_TYPE_GALAXY, BED_TYPE_GOODVIBE, BED_TYPE_MLILY, BED_TYPE_MLILY_REMOTE, BED_TYPE_MOTOMOTION, BED_TYPE_N32_MOTION_BED, BED_TYPE_SYMPHONY, BED_TYPE_MLINE, BED_TYPE_OKIMIKI) and result.confidence < 0.7:
+    if result.bed_type in (BED_TYPE_SIMMONS_BLUE, "sleep_assistant", "super_colchones", "bobpowerbase", BED_TYPE_GALAXY, BED_TYPE_GOODVIBE, BED_TYPE_MLILY, BED_TYPE_MLILY_REMOTE, BED_TYPE_MOTOMOTION, BED_TYPE_N32_MOTION_BED, BED_TYPE_SYMPHONY, BED_TYPE_MLINE, BED_TYPE_OKIMIKI) and result.confidence < 0.7:
         return None  # An app name hint requires an explicit product choice.
     return result.bed_type
 
@@ -1591,6 +1594,15 @@ def _detect_with_first_pass(
     ) and result.bed_type != BED_TYPE_COMFORT_ENHANCEMENT3:
         result.ambiguous_types = list(dict.fromkeys([*(result.ambiguous_types or ()), BED_TYPE_COMFORT_ENHANCEMENT3]))
         result.signals.append("service:comfort_enhancement3_candidate")
+    if isinstance(platform_name, str) and platform_name.lower().startswith(SIMMONS_BLUE_PREFIX) and not any(
+        signal.startswith("excluded:") for signal in result.signals
+    ):
+        # SmartBed is shared across several apps, so the name can only offer a choice.
+        if result.bed_type is None:
+            result = DetectionResult(BED_TYPE_SIMMONS_BLUE, 0.3, ["name:simmons_blue_app_candidate"])
+        elif result.bed_type != BED_TYPE_SIMMONS_BLUE:
+            result.ambiguous_types = [*(result.ambiguous_types or ()), BED_TYPE_SIMMONS_BLUE]
+            result.signals.append("name:simmons_blue_app_candidate")
     # These shared app names are candidates only. Never replace a confident
     # receiver signature or infer N32 from the Nordic service alone.
     if (isinstance(platform_name, str)
