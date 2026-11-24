@@ -999,3 +999,8 @@ async def test_an_entry_without_a_stored_product_keeps_the_seconds_number(hass):
     ctrl._known = {"light"}
     assert not ctrl.supports_light_timer
     assert [spec.key for spec in ctrl.controller_number_specs] == ["dreamsense_light_seconds"]
+    # With no product to go by, the number and the action keep the older 0-300.
+    assert ctrl.controller_number_specs[0].native_max_value == 300
+    ctrl.validate_light(seconds=300)
+    with raises_key("dreamsense_action"):
+        ctrl.validate_light(seconds=301)

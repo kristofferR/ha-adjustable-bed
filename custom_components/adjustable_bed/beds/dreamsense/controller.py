@@ -112,6 +112,9 @@ class DreamSenseController(BedController):
         # Blue's light duration is its own slider; an entry that stores no
         # product keeps the plain seconds until it does.
         self._blue_light = product == "blue" and product_known
+        # The other products' slider reaches 900; an entry with no stored
+        # product keeps the older 300.
+        self._light_seconds_max = 900 if product_known and product != "blue" else 300
         self._session: Session | None = None
         self._last_write: float | None = None
         self._receive = Receive()
@@ -758,7 +761,7 @@ class DreamSenseController(BedController):
                     if timer.seconds == seconds:
                         return timer.wire, timer.option
             # Seconds as given: the slider's range, and on Blue the action's older one.
-            if 0 <= seconds <= (300 if self._blue_light else 900):
+            if 0 <= seconds <= self._light_seconds_max:
                 return seconds, None
         raise invalid("dreamsense_action")
 
@@ -772,7 +775,7 @@ class DreamSenseController(BedController):
                 "dreamsense_light_seconds",
                 LIGHT_SECONDS,
                 0,
-                900,
+                self._light_seconds_max,
                 1,
                 _light_time,
                 "s",
