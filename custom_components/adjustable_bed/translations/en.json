@@ -3874,6 +3874,18 @@
       "sinca_disable_alarm": {
         "name": "Disable alarm"
       },
+      "truemotion_combined_up": {
+        "name": "Combined movement up"
+      },
+      "truemotion_combined_down": {
+        "name": "Combined movement down"
+      },
+      "truemotion_tl_up": {
+        "name": "T/L movement up"
+      },
+      "truemotion_tl_down": {
+        "name": "T/L movement down"
+      },
       "truemotion_release": {
         "name": "Release motion"
       },
