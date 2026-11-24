@@ -1342,6 +1342,8 @@ def default_scenario(bed_type: str) -> Scenario:
     """The bed type in its default route, with the entry data it needs to build."""
     from custom_components.adjustable_bed import const
 
+    if bed_type == const.BED_TYPE_SIMMONS_BLUE:
+        return Scenario(id=bed_type, bed_type=bed_type, layout_id="n32_motion_bed")
     if bed_type == "super_colchones":
         return Scenario(id=bed_type, bed_type=bed_type, protocol_variant="afeg302",
                         entry_data={const.CONF_PROTOCOL_VARIANT: "afeg302"}, layout_id="super_colchones:n1")
@@ -2221,10 +2223,16 @@ def mh_app_scenarios() -> list[Scenario]:
 def build_scenarios() -> list[Scenario]:
     """Every bed type once, plus the routes that change the controller or its bytes."""
     from custom_components.adjustable_bed.const import RICHMAT_MH_APP_CATALOGS, SUPPORTED_BED_TYPES
+    from custom_components.adjustable_bed.profiles.simmons_blue import DEFAULT_LAYOUT, LAYOUTS
 
     scenarios = [default_scenario(bed_type) for bed_type in SUPPORTED_BED_TYPES
                  if bed_type not in RICHMAT_MH_APP_CATALOGS]
     scenarios.extend(route_scenarios())
+    scenarios.extend(
+        dataclasses.replace(default_scenario("simmons_blue"), id=f"simmons_blue:{layout}",
+                            entry_data={"product_type": layout})
+        for layout in LAYOUTS if layout != DEFAULT_LAYOUT
+    )
     # Dream Sense: each saved BED product plus all six accepted GATT routes.
     from custom_components.adjustable_bed.profiles.dreamsense import PROFILES as DREAMSENSE_PROFILES
     for product in DREAMSENSE_PROFILES:
@@ -2397,7 +2405,7 @@ async def _connect(controller: Any, recorder: Recorder, clock: FakeClock) -> dic
             # These v5 profiles own startup in their hook, without session helpers.
             await controller.async_on_connect(None)
             return
-        if controller._coordinator.bed_type in {"rize_home", "superior_sleep", "okin_64bit", "betterliving2", "ultramatic_smart_bed", "smart_comfort_synargy", "smart_comfort_synergy"}:
+        if controller._coordinator.bed_type in {"rize_home", "superior_sleep", "okin_64bit", "betterliving2", "ultramatic_smart_bed", "smart_comfort_synargy", "smart_comfort_synergy", "simmons_blue"}:
             session = SimpleNamespace(async_start_notify=controller.start_notify, is_current=lambda: True)
             if controller._coordinator.bed_type == "betterliving2":
                 session.store_device_info = lambda *_: None
