@@ -3794,9 +3794,6 @@
  "number:sleeptracker_wave_minutes": {
   "card_section": "massage"
  },
- "number:sleepys_app_color_code": {
-  "card_section": "lighting"
- },
  "number:sleepys_app_target_axis_0": {
   "card_section": "utility"
  },
@@ -3846,9 +3843,6 @@
   "card_section": "utility"
  },
  "number:symphony_light_brightness": {
-  "card_section": "lighting"
- },
- "number:symphony_light_color": {
   "card_section": "lighting"
  },
  "number:tv_lift_position_estimated": {
@@ -4122,6 +4116,9 @@
  "select:sleeptracker_wave_frequency": {
   "card_section": "massage"
  },
+ "select:sleepys_app_light_color": {
+  "card_section": "lighting"
+ },
  "select:smart_comfort_seat": {
   "card_section": "utility"
  },
@@ -4154,6 +4151,9 @@
  "select:starcode_color": {
   "card_section": "lighting",
   "card_role": "mood"
+ },
+ "select:symphony_light_color": {
+  "card_section": "lighting"
  },
  "select:thermal_timer": {
   "card_section": "climate"
