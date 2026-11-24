@@ -504,7 +504,7 @@ async def test_massage_slider_is_the_shared_timer_with_the_apps_four_stops(layou
             await controller.set_massage_timer(minutes)
     assert frames(client) == [off, "6e01005fce", "6e010063d2", "6e010061d0"]
     with raises_key("enso2_control_unavailable"):
-        await controller.set_massage_timer(10)
+        await controller.set_massage_timer(15)
 
 
 async def test_y6rm_popup_shows_ten_twenty_and_thirty_minutes():

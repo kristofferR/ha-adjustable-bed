@@ -659,7 +659,7 @@ async def test_massage_timer_is_the_shared_select_with_a_real_off(layout):
         await ctrl.set_massage_timer(minutes)
         assert packets(coordinator) == [massage_timer(layout, progress).hex()]
     with raises_key("baseremote_control"):
-        await ctrl.set_massage_timer(10)
+        await ctrl.set_massage_timer(15)
 
 
 def test_aroma_times_are_settings_that_start_disabled():
