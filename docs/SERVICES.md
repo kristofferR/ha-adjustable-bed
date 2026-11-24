@@ -178,7 +178,7 @@ the bed.
 
 `goto_preset` accepts an optional `duration`, 0.1 to 60 seconds, on beds that
 recall a memory by holding its button, such as Bedgear, FSM Relax, Limoss
-Remote, M Line, MotoMotion, Nerum, Octo, Paramount, Sealy and Symphony Sleep.
+Remote, M Line, MoodBase, MotoMotion, Nerum, Octo, Paramount, Sealy and Symphony Sleep.
 Other beds refuse it before any bed moves. Leave it unset to use the bed's own
 recall.
 
@@ -352,6 +352,7 @@ entities, including the light colors, are separate.
 | [Base Remote](beds/richmat.md#base-remote) | The held controls of the selected layout and mode | Saves cannot be held |
 | [Maxprime](beds/richmat.md#maxprime) | The selected layout's held controls, listed as `held_control` on the buttons | Applies the receiver mode selected when the hold starts. Save actions use confirmed buttons |
 | [Dream Sense Bed](beds/richmat.md#dream-sense-bed) | The selected product's held controls, such as `HeadUp` | Save buttons are separate |
+| [MoodBase](beds/motomotion.md#moodbase) | The layout’s motor directions, presets and memory recalls, prefixed with `moodbase_` | Up to 60 seconds. Motor release follows the layout’s STOP behavior |
 | [Sleepy's Elite app](beds/sleepys.md#explicit-sleepys-elite-app-profile) | Motor directions and app buttons that can be held | 100 to 60000 ms. Motion sensor actions end after five seconds. BOX25 voice positions run once |
 | [Glideaway Motion / Montion](beds/keeson.md#glideaway-motion) | Axes, presets, memories, light and massage controls by model, listed in the guide | At most 30 seconds. Memory recalls take under 5 seconds; save with `save_preset` |
 | [Leggett Okin app profiles](beds/okin-nframe.md#leggett-okin-family) | `flat`, `snore`, `lights_toggle`, `massage_toggle`, `massage_wave`, `massage_head_up`, `massage_head_down`, `massage_foot_up`, `massage_foot_down`; U Series adds `memory_1`, `memory_2`, `store` | |
@@ -485,6 +486,7 @@ data:
 | Jiecang apps | `flat`, `zero_g`, `anti_snore`, `memory_1`, `memory_2`, `yoga` where reported | `weekdays`, head and foot massage levels 0–3 |
 | Keeson app layouts (Ergomotion 4.0, Q-Plus and others) | None | `weekdays` or once, `massage` (wake vibration). One weekly and one one-time alarm; turning off clears both |
 | L2 Motion | None | Once; leave `slot` out. `massage_intensity` 1 or 2 |
+| MoodBase | None | Once on E-name layouts; leave `slot` out. `massage_intensity` 1 or 2 |
 | Jerome's power base | The selected layout's wake positions; `none` only with `massage: true` and a supported zone | `massage` with the layout's zones. `memory_1` to `memory_3` need `confirm_custom_position: true`. Once, as a countdown to the time. Standalone beds and the physical sides of a two-address pair only, not a one-address combined bed |
 | Lady Americana and partner beds | From the selected layout's alarm controls; required to turn the alarm on | `massage` with the layout's zones (then `none` is allowed). Once, at the next occurrence |
 | L&P Adjustable Base | From the selected layout's alarm page; required to turn the alarm on | `massage` with the layout's zones (then `none` is allowed). Once, at the next occurrence: leave out `weekdays` and `slot` |
@@ -1315,6 +1317,23 @@ timer number to change the timer, and [`set_alarm`](#set_alarm) for the alarm
 time and strength (`massage_intensity: 1` or `2`, or `enabled: false` to turn it
 off). The [L2 Motion guide](beds/motomotion.md#l2-motion) explains which beds
 are set up as L2 Motion.
+
+
+## MoodBase
+
+MoodBase uses the shared [hold control](#hold_control) action for the controls
+offered by its layout. Examples include `moodbase_head_up`,
+`moodbase_foot_down` and `moodbase_preset_flat`. On layouts with numbered
+memories, [recall memory](#movement-and-memory) holds the preset and
+[save preset](#movement-and-memory) saves it separately. Panel E has a separate
+**Save anti-snore position** button that the card asks you to confirm.
+
+Use [set alarm](#set_alarm) on a layout with an alarm. Enable it with a time
+and massage intensity 1 or 2, or turn it off with `enabled: false`. Light
+color, the light timer, vibration and base synchronization use their own
+Home Assistant entities when the layout supports them. The synchronization
+controls change how the bases move together. To change the bed's display
+name in Home Assistant, use its device settings. See [MoodBase](beds/motomotion.md#moodbase).
 
 ## Leggett & Platt
 

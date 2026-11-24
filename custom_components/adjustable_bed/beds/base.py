@@ -1065,6 +1065,11 @@ class BedController(GattWriter):
         return False
 
     @property
+    def publishes_rgb_light_state(self) -> bool:
+        """Return whether the controller publishes the complete state of an RGB command."""
+        return False
+
+    @property
     def light_color_control_pending(self) -> bool:
         """Return whether color support still awaits device discovery."""
         return False
@@ -2659,6 +2664,13 @@ class BedController(GattWriter):
             NotImplementedError: If the bed doesn't support direct RGB color control
         """
         raise NotImplementedError("Light color control not supported on this bed")
+
+    async def set_light_color_with_level(
+        self, rgb_color: tuple[int, int, int], level: int
+    ) -> None:
+        """Set color and brightness together when brightness is part of the color frame."""
+        await self.set_light_color(rgb_color)
+        await self.set_light_level(level)
 
     async def set_light_color_rgbw(
         self,

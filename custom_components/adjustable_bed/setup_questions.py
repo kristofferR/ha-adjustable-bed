@@ -85,6 +85,7 @@ from .const import (
     BED_TYPE_MALOUF_NEW_OKIN,
     BED_TYPE_MLILY,
     BED_TYPE_MLILY_REMOTE,
+    BED_TYPE_MOODBASE,
     BED_TYPE_MOTION_BED,
     BED_TYPE_MOTOMOTION,
     BED_TYPE_N32_MOTION_BED,
@@ -393,6 +394,7 @@ _OWNED_BY_BED_TYPE: Final[dict[str, frozenset[str]]] = {
     BED_TYPE_MOTION_BED: _APP_DEFINED,
     "bedgear": _APP_DEFINED,
     "l2motion": _APP_DEFINED,
+    BED_TYPE_MOODBASE: _APP_DEFINED,
     BED_TYPE_MOTOMOTION: _APP_DEFINED,
     BED_TYPE_DOUBLESLEEP: _APP_DEFINED - {CONF_MOTOR_PULSE_COUNT},
     BED_TYPE_SLEEPTRACKER: _APP_DEFINED,
@@ -1468,6 +1470,13 @@ def _motion_bed_seed(
     if discovered is None or not discovered.name:
         return dict(data)
     return {CONF_BLE_DEVICE_NAME: discovered.name, **data}
+
+
+def _moodbase_errors(data: Mapping[str, Any]) -> dict[str, str]:
+    from .profiles.bedgear import eligible
+
+    name = data.get(CONF_BLE_DEVICE_NAME)
+    return {} if isinstance(name, str) and eligible(name) else {CONF_BLE_DEVICE_NAME: "moodbase_profile"}
 
 
 def _l2motion_errors(data: Mapping[str, Any]) -> dict[str, str]:
@@ -3747,6 +3756,15 @@ SETUP_PROFILES: Final[dict[str, SetupProfile]] = {
         derive=lambda _data: _NO_PULSE_CHOICE,
         seed=_motion_bed_seed,
         title=lambda _data: "Bedgear",
+    ),
+    BED_TYPE_MOODBASE: _asking(
+        BED_TYPE_MOODBASE,
+        owns={**_BASE[BED_TYPE_MOODBASE].owns, CONF_HAS_MASSAGE: False, CONF_DISABLE_ANGLE_SENSING: True},
+        questions=(Question(CONF_BLE_DEVICE_NAME, default=lambda data: data.get(CONF_NAME, ""), text=True),),
+        validate=_moodbase_errors,
+        derive=lambda _data: _NO_PULSE_CHOICE,
+        seed=_motion_bed_seed,
+        title=lambda _data: "MoodBase",
     ),
     "l2motion": _asking(
         "l2motion",

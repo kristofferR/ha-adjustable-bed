@@ -100,6 +100,7 @@ from .const import (
     BED_TYPE_MLILY,
     BED_TYPE_MLILY_REMOTE,
     BED_TYPE_MLINE,
+    BED_TYPE_MOODBASE,
     BED_TYPE_MOTION_BED,
     BED_TYPE_MOTOMOTION,
     BED_TYPE_MOTOSLEEP,
@@ -312,6 +313,7 @@ from .profiles.bobpowerbase import SCAN_KEYWORDS as BOB_SCAN_KEYWORDS
 from .profiles.majestichome import PROFILE_CHOICES as MAJESTICHOME_PROFILES
 from .profiles.mlily_choices import PROFILE_CHOICES as MLILY_PROFILES
 from .profiles.mlily_remote import VARIANTS as MLILY_REMOTE_PROFILES
+from .profiles.moodbase import receiver_hint as moodbase_receiver_hint
 from .profiles.motomotion import eligible as motomotion_eligible
 from .profiles.okimiki import PROFILE_CHOICES as OKIMIKI_PROFILES
 from .profiles.okimiki import scan_matches as okimiki_scan_matches
@@ -762,6 +764,7 @@ BED_TYPE_DISPLAY_NAMES: dict[str, str] = {
     BED_TYPE_MALOUF_NEW_OKIN: "Malouf remote, newer receiver",
     "bedgear": "Bedgear app",
     "l2motion": "L2 Motion app",
+    BED_TYPE_MOODBASE: "MoodBase app",
     BED_TYPE_MOTOSLEEP: "MotoSleep / Power Bob app",
     BED_TYPE_OCTO: "OCTO Smart Control",
     BED_TYPE_REVERIE: "Reverie app",
@@ -1916,6 +1919,16 @@ def _detect_bed_type_with_app_candidates(
             # The exact name grammar also belongs to L2 Motion. A name alone
             # cannot select which app's independently proven controls to run.
             result.confidence = min(result.confidence, 0.6)
+    if (
+        first.name(BED_TYPE_MOODBASE)
+        and bedgear_eligible(service_info.name)
+        and not any(signal.startswith("excluded:") for signal in result.signals)
+    ):
+        # The app lists a name-only match, while FFE0 corroborates only its shared carrier.
+        result.ambiguous_types = list(dict.fromkeys([*(result.ambiguous_types or ()), BED_TYPE_MOODBASE]))
+        result.signals.append("name:moodbase_app_candidate")
+        if moodbase_receiver_hint(service_info.name, service_info.service_uuids):
+            result.signals.append("service:moodbase_app_candidate")
     if motomotion_eligible(service_info.name):
         if result.bed_type is None and not any(signal.startswith("excluded:") for signal in result.signals):
             return DetectionResult(bed_type=BED_TYPE_MOTOMOTION, confidence=0.3, signals=[*result.signals, "name:motomotion_app_candidate"])

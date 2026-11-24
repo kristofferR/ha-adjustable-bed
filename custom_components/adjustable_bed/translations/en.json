@@ -883,6 +883,7 @@
       "invalid_movement_per_tap": "Enter a whole number of 1 or more.",
       "cheerssleep_model_required": "Choose the bed model the CheersSleep app shows.",
       "suta_name": "Enter the complete case-sensitive SUTA Bluetooth name. Names shorter than nine characters and drawer controllers have no supported bed controls.",
+      "moodbase_profile": "Enter the exact 14-character Bluetooth name shown in MoodBase, including uppercase HHC.",
       "l2motion_profile": "Enter the bed's Bluetooth name exactly as L2 Motion shows it.",
       "pair_bed_missing": "One of the chosen beds is no longer set up. Choose two beds from the list.",
       "octo_tv_lift_pairing_unsupported": "A one-motor Octo TV or bed lift cannot have Left and Right controls. Keep it as a single bed.",
@@ -5717,6 +5718,12 @@
       "suta_right_automatic_adjustment": {
         "name": "Right automatic adjustment"
       },
+      "moodbase_light_timer_enabled": {
+        "name": "Light timer"
+      },
+      "moodbase_sync_enabled": {
+        "name": "Base synchronization"
+      },
       "l2motion_sync": {
         "name": "Synchronization"
       },
@@ -6402,6 +6409,12 @@
       "l2motion_vibration": {
         "name": "Vibration"
       },
+      "moodbase_light_timer": {
+        "name": "Light timer duration"
+      },
+      "moodbase_vibration": {
+        "name": "Vibration"
+      },
       "l2motion_light_timer": {
         "name": "Light timer"
       },
@@ -6518,6 +6531,13 @@
           "15": "15 minutes",
           "30": "30 minutes",
           "45": "45 minutes"
+        }
+      },
+      "moodbase_sync_mode": {
+        "name": "Base synchronization mode",
+        "state": {
+          "wireless": "Wireless",
+          "wired": "Wired"
         }
       },
       "reverie_stk_side": {
@@ -10953,6 +10973,27 @@
     },
     "alarm_not_supported": {
       "message": "{device_name} has no alarm."
+    },
+    "moodbase_name_mismatch": {
+      "message": "Use the exact Bluetooth name shown for this bed in MoodBase."
+    },
+    "moodbase_receiver_missing": {
+      "message": "The connected receiver does not offer the Bluetooth channel required by MoodBase."
+    },
+    "moodbase_sync_unavailable": {
+      "message": "Wait for the bed to report that the bases are bound."
+    },
+    "moodbase_sync_state_unknown": {
+      "message": "Wait for the bed to report whether the bases are bound."
+    },
+    "moodbase_sync_bound": {
+      "message": "Unbind the bases before changing how they synchronize."
+    },
+    "hhc_control_unavailable": {
+      "message": "This control is unavailable on the bed's layout."
+    },
+    "hhc_hold_unavailable": {
+      "message": "Choose a control this bed supports and a duration of up to 60 seconds."
     },
     "alarm_option_not_supported": {
       "message": "{device_name} has no alarm option \"{option}\". Remove it and try again."
