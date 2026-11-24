@@ -263,7 +263,6 @@ methods.
 |---------|--------|-------------|
 | Read light settings | `UBLG` | Level and timer |
 | Set light level and timer | `UBLS <off\|low\|medium\|high> <minutes>` | Untouched field is preserved |
-| Set light level with automatic lighting on | `UBLS off 0`, then `UBAS true <low\|medium\|high>` | The level becomes the automatic one, as in the app. Level off sends `UBAS false low` |
 
 ### Bed Presence
 
