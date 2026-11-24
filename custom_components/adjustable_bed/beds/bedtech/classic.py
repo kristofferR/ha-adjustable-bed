@@ -228,6 +228,7 @@ class BedTechClassicController(RichmatMHAppController):
         factory: Callable[[], bytes] | None = None,
         deadline: float | None = None,
         cleanup: bool = False,
+        abandon: bool = False,  # Only a followed move sets it, and this app's are not followed.
         on_write: Callable[[], None] | None = None,
     ) -> None:
         owner = _OPERATION.get() or self._owner()
