@@ -2647,6 +2647,8 @@ async def _async_setup_standalone_entry(
             return
         if coordinator.refused_outside_pairing_window:
             raise not_ready("setup_pairing_window_closed", name=entry.title) from None
+        if coordinator.stalls_on_host_adapter:
+            raise not_ready("setup_connection_stalls", name=entry.title) from None
         if initial_connection_timed_out:
             raise not_ready("setup_timed_out", name=entry.title, seconds=f"{SETUP_TIMEOUT:.0f}", hint=_connection_failure_hint(coordinator)) from None
         if _bond_gated_unbonded(coordinator):

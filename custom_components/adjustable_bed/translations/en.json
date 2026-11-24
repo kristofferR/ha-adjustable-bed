@@ -11377,6 +11377,9 @@
     "bed_not_connected": {
       "message": "The bed is not connected. Check that it is powered on and in range, then try again."
     },
+    "bed_connection_stalls": {
+      "message": "The bed is advertising with a strong signal, but the connection does not complete. Close any phone app connected to it. If none is, this Bluetooth adapter may not work with this bed: try an ESPHome Bluetooth proxy or another adapter near the bed."
+    },
     "bed_pairing_window_closed": {
       "message": "The bed is advertising but did not accept the connection, which usually means it has not paired with this Bluetooth adapter. It pairs only during the first 3 minutes after power-on: unplug the bed for 60 seconds, plug it back in, then try again within 3 minutes."
     },
@@ -11406,6 +11409,9 @@
     },
     "setup_connect_failed": {
       "message": "Could not connect to {name}. Check that it is powered on and in range of a Bluetooth adapter or proxy.{hint}"
+    },
+    "setup_connection_stalls": {
+      "message": "{name} is advertising with a strong signal, but the connection does not complete. Close any phone app connected to it. If none is, this Bluetooth adapter may not work with this bed: try an ESPHome Bluetooth proxy or another adapter near the bed. The integration will retry automatically."
     },
     "setup_pairing_window_closed": {
       "message": "{name} is advertising but did not accept the connection, which usually means it has not paired with this Bluetooth adapter. It pairs only during the first 3 minutes after power-on: unplug the bed for 60 seconds, plug it back in, then reload this integration within 3 minutes."

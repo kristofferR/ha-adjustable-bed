@@ -20,6 +20,7 @@ from custom_components.adjustable_bed.bluetooth_freshness import (
     AdvertisementEvidence,
     FreshnessStatus,
 )
+from custom_components.adjustable_bed.bluetooth_transport import ConnectionPath, TransportClass
 from custom_components.adjustable_bed.command_scheduler import (
     CommandKind,
     CommandOutcome,
@@ -1004,6 +1005,53 @@ class TestCoordinatorWriteCommand:
                     lambda controller: controller.write_command(bytes([0x01, 0x00]))
                 )
         assert raised.value.translation_key == expected
+
+    @pytest.mark.parametrize(
+        "transport,rssi,expected",
+        [
+            (TransportClass.LOCAL, -45, "bed_connection_stalls"),
+            # Range explains a weak bed, and a reachable proxy is no host fault.
+            (TransportClass.LOCAL, -85, "bed_not_connected"),
+            (TransportClass.PROXY, -45, "bed_not_connected"),
+        ],
+    )
+    async def test_stalled_connect_on_host_adapter_suggests_a_proxy(
+        self,
+        hass: HomeAssistant,
+        mock_config_entry,
+        mock_async_ble_device_from_address,
+        mock_bluetooth_api,
+        caplog: pytest.LogCaptureFixture,
+        transport,
+        rssi,
+        expected,
+    ):
+        """A strong advertising bed whose connect times out is not a range problem (#633)."""
+        source = "00:1A:7D:DA:71:05"
+        with (
+            patch(
+                "custom_components.adjustable_bed.coordinator_connection.establish_connection",
+                new_callable=AsyncMock,
+                side_effect=TimeoutError,
+            ),
+            patch(
+                "custom_components.adjustable_bed.coordinator_connection.async_check_advertisement",
+                return_value=AdvertisementEvidence(FreshnessStatus.FRESH, rssi=rssi),
+            ),
+            patch(
+                "custom_components.adjustable_bed.coordinator_connection.async_connection_paths",
+                return_value=(ConnectionPath(source=source, transport=transport, rssi=rssi),),
+            ),
+        ):
+            coordinator = AdjustableBedCoordinator(hass, mock_config_entry)
+
+            with pytest.raises(BedNotConnectedError) as raised:
+                await coordinator.async_execute_controller_command(
+                    lambda controller: controller.write_command(bytes([0x01, 0x00]))
+                )
+        assert raised.value.translation_key == expected
+        stalled = expected == "bed_connection_stalls"
+        assert ("try an ESPHome Bluetooth proxy" in caplog.text) is stalled
 
     async def test_unreachable_bed_warns_once_across_setup_retries(
         self,
