@@ -1,0 +1,63 @@
+{
+  "evolution": {
+    "stop": "040200000000",
+    "headUp": "040200000001",
+    "headDown": "040200000002",
+    "footUp": "040200000004",
+    "footDown": "040200000008",
+    "pillowTiltUp": "040200000010",
+    "pillowTiltDown": "040200000020",
+    "lumbarUp": "040200000040",
+    "lumbarDown": "040200000080",
+    "flat": "040208000000",
+    "zeroG": "040200001000",
+    "antiSnore": "040200008000",
+    "tv": "040200004000",
+    "memory1": "040200010000",
+    "memory2": "040200002000",
+    "underBedLight": "040200020000",
+    "massageHeadPlus": "040200000100",
+    "massageFeetPlus": "040200000400",
+    "massageTimer": "040200000800"
+  },
+  "ascent": {
+    "stop": "05020000000000",
+    "headUp": "05020000000100",
+    "headDown": "05020000000200",
+    "footUp": "05020000000700",
+    "footDown": "05020000000800",
+    "pillowTiltUp": "05020000005000",
+    "pillowTiltDown": "05020000002000",
+    "lumbarUp": "05020000004000",
+    "lumbarDown": "05020000008000",
+    "flat": "05020800000000",
+    "zeroG": "05020000100000",
+    "antiSnore": "05020000800000",
+    "tv": "05020000400000",
+    "light": "05020002000000",
+    "massageHeadPlus": "05020000080000",
+    "massageFeetPlus": "05020000040000",
+    "massageTimer": "05020000020000",
+    "massageMode": "05021000000000"
+  },
+  "okin": {
+    "stop": "e5fe160000000006",
+    "headUp": "e5fe160100000005",
+    "headDown": "e5fe160200000004",
+    "footUp": "e5fe160400000002",
+    "footDown": "e5fe1608000000fe",
+    "flat": "e5fe1600000008fe",
+    "zeroG": "e5fe1600100000f6",
+    "antiSnore": "e5fe160080000086",
+    "tv": "e5fe1600400000c6",
+    "light": "e5fe160000020004",
+    "massageHeadPlus": "e5fe1600080000fe",
+    "massageFeetPlus": "e5fe160004000002",
+    "massageTimer": "e5fe160002000004",
+    "massageMode": "e5fe1600004000c6"
+  },
+  "clock": {
+    "2026-11-24T23:58:59": "070426112402235859",
+    "2001-01-01T00:00:00": "070401010101000000"
+  }
+}
