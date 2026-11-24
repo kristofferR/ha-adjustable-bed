@@ -423,7 +423,9 @@ class BedTechClassicController(RichmatMHAppController):
         base = self.model.model_id.removesuffix("_mattress") if self.model else ""
         if not self._dev.get("snore") and base not in ("a5rn", "garm", "afrn"):
             return ()
-        return ("off", *(SNORE_OPTIONS[c] for c in f.snore_list if c in SNORE_OPTIONS))
+        # The page's only controls are its preset rows: none listed, nothing to choose.
+        options = tuple(SNORE_OPTIONS[c] for c in f.snore_list if c in SNORE_OPTIONS)
+        return ("off", *options) if options else ()
 
     def _smart_light_lock(self) -> bool:
         # Feedback is real even though the visible cfrm sender is unwired.

@@ -776,3 +776,9 @@ def test_a_memory_slot_outside_the_standard_ones_keeps_recall_and_save_together(
     recall, save = specs["richmat_mh_f4"], specs["richmat_mh_f5"]
     assert (recall.card.section, recall.card.slot) == (save.card.section, save.card.slot)
     assert recall.translation_key == "preset_memory_5" and save.translation_key == "program_memory_5"
+
+
+def test_snore_page_without_preset_rows_has_no_select():
+    ctrl = make("virm")
+    ctrl._dev = {"snore": True}
+    assert not [s for s in ctrl.controller_select_specs if s.key == "richmat_mh_snore"]
