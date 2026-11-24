@@ -725,14 +725,20 @@ class DreamSenseController(BedController):
                 "dreamsense_light_seconds",
                 "dreamsense_light_seconds",
                 LIGHT_SECONDS,
-                0,
-                300,
-                1,
+                *self._light_stops,
                 _light_time,
                 "s",
                 card=CARD_LIGHTING,
             ),
         )
+
+    @property
+    def _light_stops(self) -> tuple[int, int, int]:
+        """The app's light time slider: first stop, last stop and step, in seconds.
+
+        Blue runs from 30 minutes to 8 hours; the others from always on (0) to 15 minutes.
+        """
+        return (1800, 28800, 2700) if self.profile.product == "blue" else (0, 900, 60)
 
     def validate_light(
         self, color: tuple[int, int, int] | None = None, seconds: int | None = None
@@ -744,7 +750,10 @@ class DreamSenseController(BedController):
             len(color) != 3 or any(type(n) is not int or not 0 <= n <= 255 for n in color)
         ):
             raise invalid("dreamsense_action")
-        if seconds is not None and (type(seconds) is not int or not 0 <= seconds <= 300):
+        first, last, step = self._light_stops
+        if seconds is not None and (
+            type(seconds) is not int or not first <= seconds <= last or (seconds - first) % step
+        ):
             raise invalid("dreamsense_action")
 
     async def light_settings(

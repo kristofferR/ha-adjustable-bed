@@ -162,17 +162,29 @@ async def test_real_connect_startup_public_alarm_query_and_reconnect(hass, runti
 
 
 @pytest.mark.parametrize("runtime", [("sta2", "D1RM", "RAW")], indirect=True)
-async def test_real_massage_slider_keeps_direct_framing_and_literal_passthrough(runtime):
+async def test_real_massage_slider_is_the_timer_select_with_the_apps_four_stops(runtime):
+    """The slider snaps to four stops the app labels 0, 2H, 3H and 5H."""
+    from custom_components.adjustable_bed.select import (
+        MASSAGE_TIMER_DESCRIPTION,
+        AdjustableBedMassageTimerSelect,
+    )
+
     target, client = runtime
     assert await target.async_connect()
-    number = AdjustableBedControllerNumber(target, target.controller.controller_number_specs[0])
+    ctrl = target.controller
+    assert not any("massage" in spec.key for spec in ctrl.controller_number_specs)
+    select = AdjustableBedMassageTimerSelect(
+        target,
+        MASSAGE_TIMER_DESCRIPTION,
+        ctrl.massage_timer_options,
+        has_off=ctrl.massage_timer_can_turn_off,
+    )
+    assert select.options == ["Off", "120 min", "180 min", "300 min"]
     client.write_gatt_char.reset_mock()
-    for progress in range(6):
-        await number.async_set_native_value(progress)
-        assert number.native_value == progress
-    assert written(client) == [
-        "6e01005ecd", "6e01000170", "6e01005fce", "6e010063d2", "6e01000473", "6e010061d0"
-    ]
+    for option in select.options:
+        await select.async_select_option(option)
+        assert select.current_option == option
+    assert written(client) == ["6e01005ecd", "6e01005fce", "6e010063d2", "6e010061d0"]
 
 
 @pytest.mark.parametrize("runtime", [("acaa", "GVRM", "RAW")], indirect=True)

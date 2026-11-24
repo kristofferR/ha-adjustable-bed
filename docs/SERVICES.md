@@ -864,7 +864,7 @@ alarm.
 | Field | Name | Meaning |
 |-------|------|---------|
 | `rgb_color` | Color | Red, green and blue, each 0–255. |
-| `seconds` | Duration | 0 keeps the light on; otherwise 1–300 seconds. |
+| `seconds` | Duration | A stop of the app's slider: 0 (keeps the light on) to 900 seconds in steps of 60, or on the Blue product 1800 to 28800 seconds in steps of 2700. |
 
 Give `rgb_color`, `seconds` or both. The bed must report lighting support first.
 

@@ -55,7 +55,9 @@ from .protocol import (
     AROMA_QUERY,
     INITIALIZE,
     LAMP_QUERY,
+    POPUP_MINUTES,
     RELEASE,
+    SLIDER_MINUTES,
     STARTUP_MS,
     control,
     direct,
@@ -762,10 +764,10 @@ class SleepFunctionController(ResourceBedController):
     def _massage_timer_values(self) -> dict[int, int | str]:
         """What each timer choice sends, by its minutes (0 is off)."""
         if self.layout in ("D1RM", "D9RM"):
-            return {0: 0, 10: 2, 20: 3, 30: 5}
+            return dict(SLIDER_MINUTES)
         if any(c.tag == "65" for c in self._controls):
             # The popup's on/off row is a toggle, never an idempotent off.
-            return {15: "15", 30: "30", 45: "45"}
+            return dict(POPUP_MINUTES)
         return {}
 
     @property

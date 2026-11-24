@@ -73,7 +73,9 @@ from ..richmat_classic.protocol import (
     AROMA_QUERY,
     INITIALIZE,
     LAMP_QUERY,
+    POPUP_MINUTES,
     RELEASE,
+    SLIDER_MINUTES,
     aroma,
     control,
     massage_popup,
@@ -177,6 +179,8 @@ class BaseRemoteController(SessionController):
         self._group_only = False
         self._color_light_identity = False
         self._preferences = {}
+        # The app's own starting values, kept as it keeps the last saved ones.
+        self._aroma_times: tuple[int, int, int] = (1, 1, 2)
 
     @property
     def _modes(self) -> tuple[int, ...]:
@@ -188,11 +192,24 @@ class BaseRemoteController(SessionController):
 
     @property
     def persisted_app_state(self) -> Mapping[str, object]:
-        return {"color_light_identity": self._color_light_identity}
+        return {
+            "color_light_identity": self._color_light_identity,
+            "aroma_times": list(self._aroma_times),
+        }
 
     def restore_persisted_app_state(self, state: Mapping[str, object]) -> None:
         # Registry identity only, never permission to send a color command.
         self._color_light_identity = state.get("color_light_identity") is True
+        times = state.get("aroma_times")
+        if (
+            isinstance(times, list)
+            and len(times) == 3
+            and all(
+                type(time) is int and 1 <= time <= limit
+                for time, limit in zip(times, (60, 60, 12), strict=True)
+            )
+        ):
+            self._aroma_times = (times[0], times[1], times[2])
 
     @property
     def retain_live_controller_offline(self) -> bool:
@@ -257,10 +274,10 @@ class BaseRemoteController(SessionController):
         if self._group_only:
             return {}
         if self.layout in ("D1RM", "D9RM"):
-            return {0: 0, 15: 2, 30: 3, 45: 5}
+            return dict(SLIDER_MINUTES)
         if any(c.tag == "65" for c in self._controls):
             # The popup's on/off row is a toggle, never an idempotent off.
-            return {15: "15", 30: "30", 45: "45"}
+            return dict(POPUP_MINUTES)
         return {}
 
     @property
@@ -1100,7 +1117,6 @@ class BaseRemoteController(SessionController):
                     value: float,
                     *,
                     code: int = opcode,
-                    state_key: StateKey[int | None] = key,
                     maximum: int = limit,
                 ) -> None:
                     assert isinstance(controller, BaseRemoteController)
@@ -1111,11 +1127,7 @@ class BaseRemoteController(SessionController):
                         or not controller._receive.aroma_capable
                     ):
                         raise invalid("baseremote_control")
-                    with controller._transaction(), controller.sent_state(state_key(int(value))):
-                        await controller.write_command(aroma(code, int(value)))
-                    await controller._wait(
-                        SETTINGS_SPACING_MS, controller._coordinator.cancel_command
-                    )
+                    await controller._save_aroma(code - 0x1B, int(value))
 
                 specs.append(
                     ControllerNumberSpec(
@@ -1134,6 +1146,21 @@ class BaseRemoteController(SessionController):
                     )
                 )
         return tuple(specs)
+
+    async def _save_aroma(self, index: int, value: int) -> None:
+        """The app's Save: all three times in order, never one alone."""
+        times = [*self._aroma_times]
+        times[index] = value
+        keys = (AROMA_ON_TIME, AROMA_INTERVAL, AROMA_PAUSE)
+        with (
+            self._transaction(),
+            self.sent_state(*(key(time) for key, time in zip(keys, times, strict=True))),
+        ):
+            for offset, time in enumerate(times):
+                await self.write_command(aroma(0x1B + offset, time))
+                if not await self._wait(SETTINGS_SPACING_MS, self._coordinator.cancel_command):
+                    return
+        self._aroma_times = (times[0], times[1], times[2])
 
     def _light_toggle(self) -> int | None:
         if self._group_only or len(self._modes) > 1:

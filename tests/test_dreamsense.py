@@ -692,7 +692,7 @@ async def test_retired_delivery_never_repopulates_connection_state(hass, record)
             assert identity is not None
             await live.delete_alarm(7, identity)
         else:
-            await live.light_settings(seconds=30)
+            await live.light_settings(seconds=1800)
 
     task = asyncio.create_task(c.async_execute_controller_command(command))
     await entered.wait()
@@ -942,3 +942,21 @@ async def test_raw_cached_selector_stays_left_only_during_disconnect(hass):
     assert restored.controller_select_specs[0].options == ("left",)
     with raises_key("dreamsense_side"):
         restored.select_side("right")
+
+
+@pytest.mark.parametrize(
+    ("product", "stops", "refused"),
+    [("blue", (1800, 28800, 2700), 900), ("orange", (0, 900, 60), 1800)],
+)
+async def test_light_duration_has_the_stops_of_the_apps_slider(hass, product, stops, refused):
+    """Blue's slider runs 30 minutes to 8 hours in ten steps, the others 0 to 15 minutes."""
+    c, ctrl = await runtime(hass, product)
+    session = ctrl._session
+    ctrl._notification(session, session.notify, bytearray.fromhex("6e0e00037f"))
+    spec = ctrl.controller_number_specs[0]
+    assert (spec.native_min_value, spec.native_max_value, spec.native_step) == stops
+    await ctrl.light_settings(seconds=stops[1])
+    assert written(c) == [p.light_seconds(stops[1]).hex()]
+    for seconds in (refused, stops[0] + 1):
+        with raises_key("dreamsense_action"):
+            await ctrl.light_settings(seconds=seconds)

@@ -12,7 +12,7 @@ from typing import TYPE_CHECKING, Final, cast
 from homeassistant.util import dt as dt_util
 
 from ...alarm import AlarmCapability
-from ...card import CARD_LIGHTING, CARD_MASSAGE_TIMER
+from ...card import CARD_CONTROLLED_SIDE, CARD_LIGHTING, CARD_MASSAGE_TIMER, CARD_UTILITY
 from ...codec import richmat
 from ...command_scheduler import current_command_context, note_frame_skipped
 from ...const import CONF_BLE_DEVICE_NAME, CONF_ENSO2_PROPERTY_FALLBACK
@@ -20,7 +20,7 @@ from ...controller_state import StateKey
 from ...errors import BedNotConnectedError, failed, invalid
 from ...execution import ExecutionCapabilities
 from ...profiles import enso2 as app
-from ...state_keys import UNDER_BED_LIGHTS_ON, UNDER_BED_LIGHTS_RGB
+from ...state_keys import MASSAGE_TIMER_MINUTES, UNDER_BED_LIGHTS_ON, UNDER_BED_LIGHTS_RGB
 from ..base import BedController
 from ..cancellation import settled
 from ..catalog_buttons import Kind, catalog_button, classify, unique_buttons
@@ -49,12 +49,10 @@ if TYPE_CHECKING:
 _MODE: Final = StateKey[str | None]("enso2_mode")
 _LIGHT_TIMER: Final = StateKey[int | None]("enso2_light_timer")
 _LIGHT_TIMER_ENTITY_KEY: Final = f"controller_number_{_LIGHT_TIMER}"
-_MASSAGE_TIMER: Final = StateKey[int | None]("enso2_massage_timer")
 _ALARM_STATUS: Final = StateKey[str | None]("enso2_alarm_status")
 _AROMA_STATUS: Final = StateKey[str | None]("enso2_aroma_status")
 _WRITE: Final = {"write", "write-without-response"}
 _NOTIFY: Final = {"notify", "indicate"}
-_TIMER_LAYOUTS: Final = {"D1RM", "D9RM", "Y6RM"}
 
 
 @dataclass(frozen=True, slots=True)
@@ -719,13 +717,16 @@ class Enso2Controller(BedController):
     def controller_select_specs(self) -> tuple[ControllerSelectSpec, ...]:
         specs: list[ControllerSelectSpec] = []
         if self.layout.mode_count > 1 and self._raw is not True:
+            # The app labels a two-mode layout's tabs Left and Right.
+            sides = self.layout.mode_count == 2
             specs.append(
                 ControllerSelectSpec(
                     _MODE,
-                    _MODE,
+                    "enso2_side" if sides else _MODE,
                     _MODE,
                     tuple(f"mode_{i + 1}" for i in range(self.layout.mode_count)),
                     lambda c, option: cast(Enso2Controller, c).set_mode(option),
+                    card=CARD_CONTROLLED_SIDE if sides else CARD_UTILITY,
                 )
             )
         if self.layout.name == "Y6RM":
@@ -734,7 +735,7 @@ class Enso2Controller(BedController):
                     "enso2_timer_options",
                     "enso2_timer_options",
                     _TIMER_CHOICE,
-                    ("toggle", "15", "30", "45"),
+                    ("toggle", "10", "20", "30"),
                     lambda c, option: cast(Enso2Controller, c).set_timer_option(option),
                     card=CARD_MASSAGE_TIMER,
                 )
@@ -765,20 +766,34 @@ class Enso2Controller(BedController):
                     card=CARD_LIGHTING,
                 )
             )
-        if self.layout.name in ("D1RM", "D9RM"):
-            specs.append(
-                ControllerNumberSpec(
-                    _MASSAGE_TIMER,
-                    _MASSAGE_TIMER,
-                    _MASSAGE_TIMER,
-                    0,
-                    5,
-                    1,
-                    lambda c, value: cast(Enso2Controller, c).set_timer_position(int(value)),
-                    card=CARD_MASSAGE_TIMER,
-                )
-            )
         return tuple(specs)
+
+    # D1RM and D9RM have the massage slider: four stops, the first is off.
+    @property
+    def supports_massage_timer(self) -> bool:
+        return self.layout.name in ("D1RM", "D9RM")
+
+    @property
+    def auto_enable_massage(self) -> bool:
+        return super().auto_enable_massage or self.supports_massage_timer
+
+    @property
+    def massage_timer_options(self) -> list[int]:
+        if not self.supports_massage_timer:
+            return []
+        return [minutes for minutes in app.MASSAGE_SLIDER_MINUTES if minutes]
+
+    @property
+    def massage_timer_can_turn_off(self) -> bool:
+        return self.supports_massage_timer
+
+    async def set_massage_timer(self, minutes: int) -> None:
+        if not self.supports_massage_timer or minutes not in app.MASSAGE_SLIDER_MINUTES:
+            raise invalid("enso2_control_unavailable")
+        with self.sent_state(MASSAGE_TIMER_MINUTES(minutes)):
+            await self._direct(
+                app.massage_timer_frame(self.layout.name, app.MASSAGE_SLIDER_MINUTES[minutes])
+            )
 
     @property
     def retained_entity_keys(self) -> frozenset[tuple[str, str]]:
@@ -832,18 +847,12 @@ class Enso2Controller(BedController):
         )
 
     async def set_timer_option(self, option: str) -> None:
-        if self.layout.name != "Y6RM" or option not in ("toggle", "15", "30", "45"):
+        if self.layout.name != "Y6RM" or option not in ("toggle", "10", "20", "30"):
             raise invalid("enso2_control_unavailable")
         with self.sent_state(_TIMER_CHOICE(option)):
             await self._direct(
                 app.massage_timer_frame("Y6RM", 0 if option == "toggle" else int(option))
             )
-
-    async def set_timer_position(self, value: int) -> None:
-        if self.layout.name not in _TIMER_LAYOUTS - {"Y6RM"} or not 0 <= value <= 5:
-            raise invalid("enso2_control_unavailable")
-        with self.sent_state(_MASSAGE_TIMER(value)):
-            await self._direct(app.massage_timer_frame(self.layout.name, value))
 
     async def set_light_duration(self, value: int) -> None:
         if not self._light_present or not 0 <= value <= 300:

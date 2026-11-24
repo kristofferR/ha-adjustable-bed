@@ -40,7 +40,6 @@ from ...profiles.jerome2 import (
     COMBINATIONS,
     EXCLUDED_LAYOUTS,
     SIDE_LAYOUTS,
-    TIMER_PROGRESS,
 )
 from ...state_keys import MASSAGE_TIMER_MINUTES, UNDER_BED_LIGHTS_ON, UNDER_BED_LIGHTS_RGB
 from ..base import CONTROLLER_GESTURE_RELEASE, BedController, require_controller
@@ -479,13 +478,13 @@ class JeromeController(RichmatClassicController):
                 await self._release(p.HELD_RELEASE_MS)
 
     @property
-    def _massage_timer_values(self) -> dict[int, str]:
-        """The massage timer choices this layout sends, by their minutes (0 is off)."""
+    def _massage_timer_values(self) -> dict[int, int | str]:
+        """What each timer choice sends, by its minutes (0 is off)."""
         if self.layout == "Y6RM":
             # The popup's on/off row is a toggle, never an idempotent off.
-            return {15: "15_minutes", 30: "30_minutes", 45: "45_minutes"}
+            return dict(p.POPUP_MINUTES)
         if self.layout in ("D1RM", "D9RM"):
-            return {0 if value == "off" else int(value.split("_")[0]): value for value in TIMER_PROGRESS}
+            return dict(p.SLIDER_MINUTES)
         return {}
 
     @property
@@ -516,10 +515,10 @@ class JeromeController(RichmatClassicController):
         if value is None:
             raise invalid("jerome_timer")
         self._require_physical_settings()
-        if self.layout == "Y6RM":
-            frame = p.massage_popup(value.removesuffix("_minutes"))
+        if isinstance(value, str):
+            frame = p.massage_popup(value)
         else:
-            frame = p.massage_timer(self.layout, TIMER_PROGRESS[value])
+            frame = p.massage_timer(self.layout, value)
         # The bed reports no timer.
         with self._transaction(), self.sent_state(MASSAGE_TIMER_MINUTES(minutes)):
             await self._send(frame, self._coordinator.cancel_command)

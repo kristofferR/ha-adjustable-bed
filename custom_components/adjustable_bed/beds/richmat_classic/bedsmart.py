@@ -16,7 +16,7 @@ from homeassistant.const import CONF_ADDRESS, EntityCategory
 from homeassistant.exceptions import HomeAssistantError
 
 from ...alarm import AlarmCapability, AlarmRequest
-from ...card import CARD_CONTROLLED_SIDE, CARD_UTILITY, CardRole, CardSection
+from ...card import CARD_CONTROLLED_SIDE, CARD_MASSAGE, CARD_UTILITY, CardRole, CardSection
 from ...codec import richmat as codec
 from ...command_scheduler import note_frame_skipped
 from ...const import (
@@ -29,6 +29,7 @@ from ...const import (
 from ...controller_state import StateKey
 from ...errors import failed, invalid
 from ...profiles.bedsmart import ALARM_COMBINATIONS, EXCLUDED_LAYOUTS, MODE_LABELS
+from ...state_keys import MASSAGE_TIMER_MINUTES
 from ..base import CONTROLLER_GESTURE_RELEASE, BedController, require_controller
 from ..cancellation import cancellable, settled
 from ..entity_specs import ControllerButtonSpec, ControllerNumberSpec, ControllerSelectSpec
@@ -41,9 +42,11 @@ from .protocol import (
     AROMA_QUERY,
     INITIALIZE,
     LAMP_QUERY,
+    SLIDER_MINUTES,
     Wire,
     aroma,
     control,
+    massage_popup,
     massage_timer,
     release,
     worker_interval,
@@ -60,7 +63,7 @@ if TYPE_CHECKING:
 
 MODE: Final = StateKey[str | None]("bedsmart_mode")
 LAMP_SECONDS: Final = StateKey[int | None]("bedsmart_lamp_seconds")
-MASSAGE_INDEX: Final = StateKey[int | None]("bedsmart_massage_index")
+_SLIDER_LAYOUTS: Final = ("D1RM", "D9RM")
 AROMA_KEYS: Final = tuple(StateKey[int | None](f"bedsmart_aroma_{i}") for i in range(3))
 _ALARMS: Final = {
     0x58: "tv",
@@ -513,7 +516,7 @@ class BedSmartController(Lp2Controller):
         self._receive = ReceiveState()
         super().on_disconnect()
         self.forward_controller_state_updates(
-            LAMP_SECONDS(None), MASSAGE_INDEX(None), *(key(None) for key in AROMA_KEYS)
+            LAMP_SECONDS(None), *(key(None) for key in AROMA_KEYS)
         )
 
     async def query_settings(self, *, own: bool = True) -> None:
@@ -614,6 +617,16 @@ class BedSmartController(Lp2Controller):
             else s
             for s in specs
         ]
+        if self.layout == "Y6RM":
+            specs.append(
+                ControllerButtonSpec(
+                    "bedsmart_massage_timer_toggle",
+                    "Toggle massage timer",
+                    lambda c: require_controller(c, BedSmartController)._toggle_massage_timer(),
+                    translation_key="bedsmart_massage_timer_toggle",
+                    card=CARD_MASSAGE,
+                )
+            )
         specs.append(
             ControllerButtonSpec(
                 "bedsmart_query",
@@ -673,7 +686,7 @@ class BedSmartController(Lp2Controller):
             await self.execute_action(gesture.node)
 
     def controller_button_available(self, key: str) -> bool:
-        if key == "bedsmart_query":
+        if key in ("bedsmart_query", "bedsmart_massage_timer_toggle"):
             return True
         return super().controller_button_available(key)
 
@@ -696,24 +709,6 @@ class BedSmartController(Lp2Controller):
                     1,
                     timer,
                     "s",
-                )
-            )
-        if self.layout in ("D1RM", "D9RM"):
-
-            async def massage(c: BedController, value: float) -> None:
-                assert isinstance(c, BedSmartController)
-                with c._transaction(), c.sent_state(MASSAGE_INDEX(int(value))):
-                    await c._frames((massage_timer(c.layout, int(value)),))
-
-            specs.append(
-                ControllerNumberSpec(
-                    "bedsmart_massage_index",
-                    "bedsmart_massage_index",
-                    MASSAGE_INDEX,
-                    0,
-                    5,
-                    1,
-                    massage,
                 )
             )
         if self._known_aroma or self._receive.aroma_capable:
@@ -806,19 +801,38 @@ class BedSmartController(Lp2Controller):
                 await self._frames((aroma(0x1B + index, value),))
             await self._wait(150, self._coordinator.cancel_command)
 
+    # D1RM and D9RM have the massage slider instead of timer buttons.
+    @property
+    def supports_massage_timer(self) -> bool:
+        return self.layout in _SLIDER_LAYOUTS or super().supports_massage_timer
+
+    @property
+    def auto_enable_massage(self) -> bool:
+        return self.layout in _SLIDER_LAYOUTS or super().auto_enable_massage
+
+    @property
+    def massage_timer_options(self) -> list[int]:
+        if self.layout in _SLIDER_LAYOUTS:
+            return [minutes for minutes in SLIDER_MINUTES if minutes]
+        return super().massage_timer_options
+
     @property
     def massage_timer_can_turn_off(self) -> bool:
-        return self.layout == "Y6RM"
+        return self.layout in _SLIDER_LAYOUTS
 
     async def set_massage_timer(self, minutes: int) -> None:
-        if minutes == 0 and self.layout == "Y6RM":
-            from ...state_keys import MASSAGE_TIMER_MINUTES
-            from .protocol import massage_popup
-
-            with self._transaction(), self.sent_state(MASSAGE_TIMER_MINUTES(0)):
-                await self._frames((massage_popup("toggle"),))
+        if self.layout not in _SLIDER_LAYOUTS:
+            await super().set_massage_timer(minutes)
             return
-        await super().set_massage_timer(minutes)
+        if minutes not in SLIDER_MINUTES:
+            raise invalid("bedsmart_control")
+        with self._transaction(), self.sent_state(MASSAGE_TIMER_MINUTES(minutes)):
+            await self._frames((massage_timer(self.layout, SLIDER_MINUTES[minutes]),))
+
+    async def _toggle_massage_timer(self) -> None:
+        # The popup's fourth button turns the timer on or off; the bed reports neither.
+        with self._transaction(), self.sent_state(MASSAGE_TIMER_MINUTES(None)):
+            await self._frames((massage_popup("toggle"),))
 
     @property
     def alarm_capability(self) -> AlarmCapability | None:

@@ -157,6 +157,17 @@ RETYPES: Final[tuple[Retype, ...]] = (
         "controller_select_reverie_massage_wave",
         only_on=frozenset({BED_TYPE_REVERIE, BED_TYPE_REVERIE_NIGHTSTAND}),
     ),
+    # Richmat massage sliders that were a 0-5 number are the app's four stops.
+    *(
+        Retype("number", f"controller_number_{key}", "select", "massage_timer")
+        for key in (
+            "bedsmart_massage_index",
+            "dreamlab_massage_progress",
+            "enso2_massage_timer",
+            "maxprime_massage_position",
+            "richmat_resource_massage_timer",
+        )
+    ),
 )
 
 # Readings v5 enables by default that earlier versions created disabled.

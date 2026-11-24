@@ -1776,8 +1776,9 @@ observed list before replies; deletion removes the first selected full bean.
 Single-alarm countdowns subtract epoch seconds across DST changes and retain the
 86400-second fallback when the target is not later.
 
-Light timeout is 0 to 900 seconds (0 means always on), except blue, which offers
-1800 to 28800 seconds. Color sends one 10-byte GATT write containing both
+Light timeout is 0 to 900 seconds in 60-second steps (0 means always on), except
+blue, which offers 1800 to 28800 seconds in 2700-second steps. These are the
+stops of the app's slider. Color sends one 10-byte GATT write containing both
 checksummed RGB pieces. No brightness or extra lighting command is invented.
 
 The current 19 profiles have all advanced music/alarm/repeat/light-page flags
@@ -13690,8 +13691,8 @@ Utility, and scoped memory actions are separate presets with confirmed saves.
 Raw Nordic writes ignore the mode, as in the app.
 
 RGB lighting and its 0–300 second timeout appear after a valid LED reply.
-The **Massage timer** select offers off, 10, 20 or 30 minutes on D1RM and D9RM,
-and 15, 30 or 45 minutes on layouts with the timer popup, which has no
+The **Massage timer** select offers the slider's four stops on D1RM and D9RM (off, 120, 180 and 300 minutes: the app labels them 0, 2H, 3H and 5H, while its commands are named 10, 20 and 30 minutes, and the real duration is not verified on a bed),
+and 10, 20 or 30 minutes on layouts with the timer popup, which has no
 idempotent off. There is no measured bed position feedback.
 
 <!-- generated:sleepfunction-commands -->
@@ -13979,9 +13980,10 @@ The layout owns its motor, preset, recall, save, massage, light, sync and lock
 controls. Preset saves ask for confirmation; memory saves use the card's Set
 mode. Saves do not accept a renewable hold. Extras
 start disabled. A toggle-only light offers an optional estimated on/off light.
-Massage durations use the native timer selector where the layout names durations;
-D1RM and D9RM expose their exact slider indices, including indices 1 and 4.
-Y6RM keeps its app's 15/30/45-minute labels and corresponding operands.
+Massage durations use the **Massage timer** select. D1RM and D9RM offer
+the slider's four stops on D1RM and D9RM (off, 120, 180 and 300 minutes: the app labels them 0, 2H, 3H and 5H, while its commands are named 10, 20 and 30 minutes, and the real duration is not verified on a bed).
+Y6RM offers the popup's 10, 20 and 30 minutes, with a **Toggle massage timer**
+button for the popup's timer on/off button.
 E3RM separates sustained recall from immediate saving. YFRM, YGRM and BRRM
 offer separate tap and held recall, with explicit save buttons.
 U3RM's two selected-motor buttons appear once per motor, as Motor 3, Motor 4
@@ -15215,9 +15217,12 @@ combined beds retain each physical bed’s settings.
 #### Controls
 
 The entities expose named actions, inverse on/off pairs as switches, known
-light state through the light platform, the **Massage timer** select (off, 10,
-20 or 30 minutes on D1RM and D9RM; 15, 30 or 45 minutes on Y6RM, whose popup has
-no idempotent off), and the layout's real intensity range where present. Aroma
+light state through the light platform, the **Massage timer** select (the
+slider's four stops on D1RM and D9RM: off, 120, 180 and 300 minutes, which the
+app labels 0, 2H, 3H and 5H while naming their commands 10, 20 and 30 minutes,
+so the real duration is not verified on a bed; 10, 20 or 30 minutes on Y6RM,
+whose popup has no idempotent off), and the layout's real intensity range where
+present. Aroma
 times are configuration entities, disabled by default. Save controls use the card’s guarded Set mode or an explicit confirmation,
 and never support renewable holds. The `jerome_bed` action can request a layout
 action, a supported continuous gesture, or its explicit long-press variant.
@@ -15554,18 +15559,18 @@ hint.
 | Held release | `6E 01 00 6E DD` | 50 ms after the held action ends |
 | Tap release | `6E` | 150 ms after the tap; raw long-only controls define no release |
 
-| Massage duration | D1RM | D9RM |
+| Massage slider stop | D1RM | D9RM |
 |---|---|---|
-| off | `6E 01 00 5E CD` | `6E 01 00 8B FA` |
-| 10 minutes | `6E 01 00 5F CE` | `6E 01 00 5F CE` |
-| 20 minutes | `6E 01 00 63 D2` | `6E 01 00 63 D2` |
-| 30 minutes | `6E 01 00 61 D0` | `6E 01 00 61 D0` |
+| 0 | `6E 01 00 5E CD` | `6E 01 00 8B FA` |
+| 2H | `6E 01 00 5F CE` | `6E 01 00 5F CE` |
+| 3H | `6E 01 00 63 D2` | `6E 01 00 63 D2` |
+| 5H | `6E 01 00 61 D0` | `6E 01 00 61 D0` |
 
 | Y6RM popup label | Write |
 |---|---|
-| 15 minutes | `6E 01 00 5F CE` |
-| 30 minutes | `6E 01 00 63 D2` |
-| 45 minutes | `6E 01 00 61 D0` |
+| 10 minutes | `6E 01 00 5F CE` |
+| 20 minutes | `6E 01 00 63 D2` |
+| 30 minutes | `6E 01 00 61 D0` |
 
 | Alarm choice | Operand | Layouts |
 |---|---|---|
@@ -15891,10 +15896,11 @@ response characteristic allows raw keys but provides no notification data.
 
 The selected layout supplies the motor covers, fixed and saved positions,
 massage, light and other direct controls. Motor numbers follow the keys on
-the remote. Layouts with a mode selector offer two or three numbered modes
-on framed receivers. Raw receivers always send the raw key, and direct
-accessory writes use their own frames on either receiver. No physical
-left/right mapping has been verified for the numbered modes.
+the remote. Layouts with a selector offer it on framed receivers: the nine
+the app labels Left and Right as **Controlled side**, the six it labels Mode 1,
+Mode 2 and Mode 3 as **Control mode**. Raw receivers always send the raw key,
+and direct accessory writes use their own frames on either receiver. The
+Left/Right mapping has not been verified on a bed.
 
 E3RM has separate held recalls and confirmed Save buttons for memories 1–4.
 YFRM, YGRM and BRRM can change between Press and hold and Press and release;
@@ -16176,7 +16182,7 @@ adjustment keys. Its alternate zone supplies no decoded command.
 | LED auto-off, 300 seconds | `6E 0B 01 2C A6` | LED reply |
 | Aroma times 60 min, 1 min, 12 h | `6E 1B 00 3C C5` / `6E 1C 00 01 8B` / `6E 1D 00 0C 97` | Aroma reply |
 | Alarm countdown, 1440 minutes, zero gravity | `6E 05 A0 00 13` / `6E 06 05 45 BE` | Alarm menu and layout choice |
-| Y6RM timer | `6E 01 00 5E CD` / `6E 01 00 5F CE` / `6E 01 00 63 D2` / `6E 01 00 61 D0` | Layout |
+| Y6RM timer | `6E 01 00 5E CD` / `6E 01 00 5E CD` / `6E 01 00 61 D0` / `6E 01 00 5E CD` | Layout |
 | D1RM timer | `6E 01 00 5E CD` / `6E 01 00 01 70` / `6E 01 00 5F CE` / `6E 01 00 63 D2` / `6E 01 00 04 73` / `6E 01 00 61 D0` | Layout |
 | D9RM timer | `6E 01 00 8B FA` / `6E 01 00 01 70` / `6E 01 00 5F CE` / `6E 01 00 63 D2` / `6E 01 00 04 73` / `6E 01 00 61 D0` | Layout |
 
@@ -16959,9 +16965,12 @@ buttons. GVRM's unloaded alternate getter does not become a foot command.
 Hold-mode recall actions have their own Move to buttons rather than an app UI
 mode selector.
 
-The **Massage timer** select offers off, 15, 30 or 45 minutes on D1RM and D9RM,
-and 15, 30 or 45 minutes on layouts with the timer popup, which has no
+The **Massage timer** select offers the slider's four stops on D1RM and D9RM (off, 120, 180 and 300 minutes: the app labels them 0, 2H, 3H and 5H, while its commands are named 10, 20 and 30 minutes, and the real duration is not verified on a bed),
+and 10, 20 or 30 minutes on layouts with the timer popup, which has no
 idempotent off. Aroma times are configuration entities, disabled by default.
+Changing one sends all three, 150 ms apart, as the app's Save does; a time
+never set from Home Assistant goes out at the app's starting value (1 minute,
+1 minute, 2 hours).
 
 <!-- generated:baseremote -->
 <!-- Generated by scripts/generate_codec_docs.py from the codec and profile data. Edit those, not this block. -->
@@ -17311,8 +17320,10 @@ layout's supported recalls continuous and reveals their separate save
 controls. E3RM provides explicit save and held recall buttons. Every save asks
 for confirmation on the dashboard card.
 
-D1RM and D9RM expose the massage timer's 0–5 positions. Y6RM exposes the
-15-, 30- and 45-minute timer and a separate toggle.
+The **Massage timer** select offers the slider's four stops on D1RM and D9RM (off, 120, 180 and 300 minutes: the app labels them 0, 2H, 3H and 5H, while its commands are named 10, 20 and 30 minutes, and the real duration is not verified on a bed).
+Y6RM offers the popup's 10, 20 and 30 minutes and a separate toggle. The nine
+layouts whose selector the app labels Left and Right show it as **Controlled
+side**.
 
 <!-- generated:maxprime -->
 <!-- Generated by scripts/generate_codec_docs.py from the codec and profile data. Edit those, not this block. -->
@@ -17342,7 +17353,7 @@ D1RM and D9RM expose the massage timer's 0–5 positions. Y6RM exposes the
 | Light duration, 300 s | `6E 0B 01 2C A6` |
 | Aroma 60 min / 2 min / 12 h | `6E 1B 00 3C C5` then `6E 1C 00 02 8C` then `6E 1D 00 0C 97` |
 | Massage slider position 0, D1RM / D9RM | `6E 01 00 5E CD` / `6E 01 00 8B FA` |
-| Y6RM 15 / 30 / 45 minutes | `6E 01 00 5F CE` / `6E 01 00 63 D2` / `6E 01 00 61 D0` |
+| Y6RM 10 / 20 / 30 minutes | `6E 01 00 5F CE` / `6E 01 00 63 D2` / `6E 01 00 61 D0` |
 
 | Alarm position | Both zones | Head | Feet |
 |---|---|---|---|
