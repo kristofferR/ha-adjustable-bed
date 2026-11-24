@@ -1246,8 +1246,10 @@ class SleepysEliteAppController(BedController):
             await self.follow_autonomous_move()
             return
 
+        # The app's drag-end callback sends STOP and then recentres its slider at
+        # 50 through this same handler, which drops a change within 500 ms of
+        # the last one it accepted. A single commit therefore ends at STOP.
         context = current_command_context()
-        release_sent = False
         failed = False
         try:
             await self._send_position_value(axis, target)
@@ -1256,27 +1258,11 @@ class SleepysEliteAppController(BedController):
             raise
         finally:
             try:
-                release_sent = await self._send_with_cleanup("stop", acknowledge_context=context)
+                await self._send_with_cleanup("stop", acknowledge_context=context)
             except Exception:
                 if not failed:
                     raise
                 _LOGGER.debug("Sleepy's position STOP cleanup failed", exc_info=True)
-        # The seven position36 selectors end their finite HA commit with STOP,
-        # then issue the source's separately guarded midpoint target as another
-        # value write. HA has no separate drag-end callback, so the commit is
-        # treated as a complete value interaction. The STOP does not imply that
-        # midpoint50 is harmless or that it is a STOP frame.
-        if release_sent:
-            try:
-                await self._send_position_value(axis, 50)
-            except BaseException:
-                # The preceding STOP cannot release this later movement attempt.
-                # Settle a fresh release on the same serialized operation.
-                try:
-                    await self._send_with_cleanup("stop", acknowledge_context=context)
-                except BaseException:
-                    _LOGGER.debug("Sleepy's midpoint STOP cleanup failed", exc_info=True)
-                raise
 
     async def _send_position_value(self, axis: int, target: int) -> None:
         route = self._value_route(f"position_axis_{axis}", float(target))

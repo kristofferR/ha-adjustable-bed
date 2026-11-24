@@ -518,20 +518,19 @@ async def test_dynamic_domains_reject_noncaller_and_feature_values() -> None:
     star._write_route.assert_not_awaited()
 
 
-async def test_position36_commit_writes_target_stop_then_real_midpoint_value() -> None:
+async def test_position36_commit_writes_target_then_stop() -> None:
     controller = _controller("BOX2442", connected=True)
     controller._write_route = AsyncMock()
 
     await controller.set_position_target(2, 100)
 
     routes = [call.args[0] for call in controller._write_route.await_args_list]
-    assert [route.builder for route in routes] == ["changePosition", "stop", "changePosition"]
+    assert [route.builder for route in routes] == ["changePosition", "stop"]
     assert [route.payload for route in routes] == [
         bytes.fromhex("03 F0 02 64 00"),
         controller._route("stop").payload,
-        bytes.fromhex("03 F0 02 32 00"),
     ]
-    assert controller._targets[2] == 50
+    assert controller._targets[2] == 100
 
 
 async def test_brightness_ui_zero_is_off_but_controller_zero_is_brightness() -> None:
