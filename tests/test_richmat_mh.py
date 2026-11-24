@@ -893,3 +893,95 @@ def test_catalog_generator_reports_missing_frozen_inputs(tmp_path, monkeypatch, 
     assert generator.main() == 2
     err = capsys.readouterr().err
     assert str(tmp_path) in err and generator.PHASE4_ENV in err
+
+
+# ------------------------------------------------ following a one-frame move
+
+BASE = "custom_components.adjustable_bed.beds.base"
+MH = "custom_components.adjustable_bed.beds.richmat_mh.controller"
+QUIET = 0.2
+ANGLE_QUERIES = [frame.hex() for frame in protocol.TX_MOTOR_ANGLES]
+
+
+def _foot(angle: int) -> bytearray:
+    """The bed's angle frame for motor 01, the model's Foot slider."""
+    return bytearray(protocol.finalize([0x6E, 0x90, 0x34, angle, 0]))
+
+
+@pytest.fixture
+def followed(monkeypatch: pytest.MonkeyPatch) -> RichmatMhController:
+    """A VER1 bed whose command stays open until its move feedback settles."""
+    monkeypatch.setattr(f"{BASE}._FOLLOW_STEP_SECONDS", 0.01)
+    monkeypatch.setattr(f"{BASE}._FOLLOW_QUIET_SECONDS", QUIET)
+    monkeypatch.setattr(f"{BASE}._FOLLOW_REPLY_SECONDS", 0.05)
+    monkeypatch.setattr(f"{BASE}._FOLLOW_BOUND_SECONDS", 5.0)
+    for delay in ("INIT_TASK_SLEEP_S", "ANGLE_SEND_DELAY_S", "STOP_DELAY_S"):
+        monkeypatch.setattr(f"{MH}.{delay}", 0)
+    controller = make(snapshot=vers1("7irm"))
+    controller._coordinator.command_scheduler.has_pending = False
+    controller._coordinator.is_connected = True
+    return controller
+
+
+async def test_ver1_angle_target_is_asked_until_the_bed_rests(followed: RichmatMhController) -> None:
+    """The bed answers each round of queries; the number ends on what it measured."""
+    await followed.async_discover_capabilities()
+    answers = iter((12, 27, 31, 31, 31))
+
+    async def write(_char: object, data: bytes, **_kwargs: object) -> None:
+        if bytes(data) == protocol.TX_MOTOR_ANGLES[0]:
+            followed._handle_notification(None, _foot(next(answers)))
+
+    followed.client.write_gatt_char = AsyncMock(side_effect=write)
+    numbers = {s.key: s for s in followed.controller_number_specs}
+
+    async with asyncio.timeout(5):
+        await numbers["richmat_mh_foot_angle"].set_fn(followed, 30)
+
+    # The target, then the setup's four queries until the answers stop changing.
+    assert frames(followed) == ["6e88341e48", *ANGLE_QUERIES * 5]
+    assert followed._coordinator.controller_state["richmat_mh_foot_angle"] == 31
+
+
+async def test_ver1_recall_listens_until_its_arrival(followed: RichmatMhController) -> None:
+    """Frames the bed sends unasked keep the command open; a moving bed is not asked."""
+    await followed.async_discover_capabilities()
+    recall = asyncio.create_task(followed.preset_memory(1))
+    for angle in range(5, 30, 5):
+        await asyncio.sleep(QUIET / 2)
+        followed._handle_notification(None, _foot(angle))
+        assert not recall.done()
+    await asyncio.sleep(QUIET / 2)
+    followed._handle_notification(None, bytearray.fromhex("6e90402e6c"))
+    await asyncio.sleep(QUIET / 2)
+    assert not recall.done()
+    assert frames(followed) == ["6e01002e9d", "6e01006edd"]
+
+    async with asyncio.timeout(5):
+        await recall
+
+    state = followed._coordinator.controller_state
+    assert state["richmat_mh_memory_arrival"] == "M1"
+    assert state["richmat_mh_foot_angle"] == 25
+
+
+async def test_only_one_frame_moves_on_the_ver1_pages_are_followed() -> None:
+    controller = make(snapshot=vers1("7irm"))
+    await controller.async_discover_capabilities()
+    follow = AsyncMock()
+    controller.follow_autonomous_move = follow  # type: ignore[method-assign]
+
+    await controller.preset_flat()
+    await controller.preset_zero_g()
+    await controller.preset_memory(2)
+    assert follow.await_count == 3
+    await controller.program_memory(2)
+    await controller.lights_toggle()
+    await controller.move_axis("head", "up")
+    for code in (0x48, 0x62):  # Massage mode and Factory reset buttons
+        await controller.follow_recall(code)
+    assert follow.await_count == 3
+
+    assert controller._follows_moves()
+    # The legacy page shows no angle and gets no arrival frame.
+    assert not make(snapshot=vers0("7irm"))._follows_moves()

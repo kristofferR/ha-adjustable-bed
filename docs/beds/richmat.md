@@ -120,7 +120,7 @@ Bluetooth name does not tell which layout a bed has, so you pick it in setup (se
 | Motor Control | ✅ (up to 7 motors) | ✅ Back/legs; BT6500 pillow/lumbar; FH head banks | ✅ Head, Feet | ✅ The product's motors, as in the app | ✅ Two motors; which ones depends on the model | ✅ Head, foot, combined, pillow, lumbar, tilt, foot box and sofa, by product | ✅ Your layout's controls, named as in the app | ✅ Head, feet, lumbar and pillow; Stop all | ✅ Your product's controls, named and pressed as in the app | ⚠️ Your layout's app buttons; no separate head, foot or lumbar covers | ✅ By product; PRO back, legs and lumbar, MAX adds pillow | ✅ Back, legs, pillow, lumbar, combined and a third motor, by product |
 | Hold Until Release | ✅ ([renewable hold](../SERVICES.md#renewable-holds)) | ✅ Models chosen with the 7.1.3 app; the older route moves in steps | ✅ | ✅ Products whose app holds to move; others move in steps | ✅ | ✅ (controls the app holds) | ✅ Hold buttons, including the Hold presets ([renewable hold](../SERVICES.md#renewable-holds)); other buttons press as in the app | ✅ ([renewable hold](../SERVICES.md#renewable-holds) and `hold_control`, then STOP) | ✅ Controls the app holds ([renewable hold](../SERVICES.md#renewable-holds)); other buttons press as in the app | ❌ | ❌ (moves in steps) | ❌ (moves in steps) |
 | [Estimated Positions](../ESTIMATED_POSITIONS.md) | ✅ Opt-in head and feet | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
-| Position Feedback | ❌ | ❌ | ❌ | ❌ | ⚠️ Angle numbers on VER1 models; **Reached position** shows when a memory move ends | ⚠️ Raw travel, angle and height values; no move-to-position | ❌ Beds; desks (FWRM, WFRM) have a **Desk height** sensor | ❌ | ❌ (raw position messages only) | ❌ | ❌ (raw motor values in diagnostics only) | ❌ (raw values only) |
+| Position Feedback | ❌ | ❌ | ❌ | ❌ | ⚠️ Angle numbers on VER1 models, measured again after a preset, memory or angle target; **Reached position** shows when a memory move ends | ⚠️ Raw travel, angle and height values; no move-to-position | ❌ Beds; desks (FWRM, WFRM) have a **Desk height** sensor | ❌ | ❌ (raw position messages only) | ❌ | ❌ (raw motor values in diagnostics only) | ❌ (raw values only) |
 | Memory Presets | ✅ (1-5 slots, varies by model) | ✅ (2 slots) | ✅ (2 slots, held recall) | ✅ Where the product has them | ✅ The model's memory slots | ✅ Recall and save buttons by product, including memory 1–4 | ✅ Recall and save as in the app, including its memory and hold buttons | ❌ (named preset saves instead) | ✅ Recall and save as in the app, including its memory mode | ⚠️ Only as your layout's app buttons | ✅ The product's slots, recall and save (PRO and MAX: one) | ✅ Recall and save, by product |
 | Presets | ✅ Zero-G / Anti-Snore / TV / Lounge; Yoga / Read on some models | ✅ By model; Lounge only on the older route | ✅ Zero-G / Anti-Snore / TV / Lounge | ✅ Where the product has them | ✅ The model's standard presets | ✅ By product | ✅ Where the layout has them | ✅ Flat / Zero-G / Anti-Snore; saves Zero-G and Anti-Snore | ✅ Zero gravity, anti-snoring, TV and lounge where the product has them | ⚠️ Only as your layout's app buttons | ✅ TV, Lounge, Anti-snore and Zero-G, recall and save | ✅ By product, recall and save |
 | Massage | ✅ | ✅ Zone, mode and off by model; 20-minute **Massage timer** select | ✅ Head/foot up and down, timers | ✅ Including head/foot intensity up/down where both directions exist; **Massage timer** select where the main page has several timers | ✅ The app's buttons; head/foot intensity numbers on VER1 models; **Massage timer** select where the model has more than one of the 10, 20 and 30 minute timers | ✅ Mode and intensity buttons by product; **Massage timer** select (10, 20, 30 minutes) | ✅ Levels, patterns, timers and choices, as in the app | ✅ Head and foot strength, mode, off; **Massage timer** select (10, 20, 30 minutes or off) | ✅ Your product's controls; massage countdown | ⚠️ Only as your layout's app buttons | ✅ Head and foot intensity, mode, all off, 10/20/30-minute timers | ✅ The product's zones, modes and timers |
@@ -1233,7 +1233,7 @@ Answer the Richmat question with the app your phone uses, for example **Revive C
 | VER1 angles | Back/foot/pillow angle numbers in the model's range | `6e 88 (30\|bits<<2) angle`, 100 ms after release |
 | VER1 massage intensity | Head/foot intensity numbers (both zones sent) | `6e 88 a0 ((foot<<3)\|head)` |
 | VER1 motor mode | Select (left/right or mode 1–3) | `6e 88 (10\|bits<<2) 00` |
-| VER1 memory arrival | **Reached position** sensor | `6e904` reply |
+| VER1 memory arrival | **Reached position** sensor | `6e904` frame, sent by the bed when the move ends |
 | Waist mattress | Mode select, per-side heat, pressure and duration selects, per-side alarm sensors | `5e 03 cmd value SUM` |
 
 - The light pages write only colour and timeout. The motor page's light toggle
@@ -1350,6 +1350,19 @@ Three-slot alarms recall M1/M2/M3 with `2e`/`2f`/`30`.
 See [Catalog app timing](#catalog-app-timing). KEEP intervals are per control, in
 the catalog.
 
+After a VER1 angle target, or a preset, memory recall or Flat sent as one frame,
+the command stays open while the bed moves, so the link is kept in every
+connection mode:
+
+1. Angle and arrival frames the bed sends are only listened to.
+2. Once they have been quiet for 2 s, the four angle queries of connection setup
+   are sent again, 300 ms apart.
+3. A changed answer returns to step 1. Answers that agree end the command.
+
+Stop, a newer command or a lost link ends it at once, and it gives up after
+90 s. The apps hold the link for the whole session and send the angle queries
+only during connection setup, so the repeated queries are Home Assistant's own.
+
 #### Notifications
 
 | Reply | Meaning |
@@ -1372,8 +1385,9 @@ the catalog.
 - Detection results name the device type (`3` motor, `4` massager, `5` UBL, `6`
   USB) and status (`0` error, `1` pass, `2` control box error, `3`
   unplugged).
-- VER1 motor-angle replies set the matching angle number, clamped to its
-  slider range; massage replies set the head/foot intensity numbers.
+- VER1 motor-angle frames set the matching angle number, clamped to its
+  slider range; massage replies set the head/foot intensity numbers. Angle and
+  memory-arrival frames are accepted whenever they arrive, asked for or not.
 - Replies are matched in a shared lowercase-hex buffer, reset when a new `6e` or
   `5e` frame starts and the buffer exceeds 100 characters.
 

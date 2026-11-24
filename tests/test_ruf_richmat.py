@@ -820,3 +820,37 @@ def test_a_massage_stop_keeps_its_button_where_other_layouts_use_its_code_as_a_t
     """VERM's only massage stop is code 61 ("Start Stop", "All Off"), a 30-minute timer elsewhere."""
     spec = next(s for s in make(app, "verm").controller_button_specs if s.key == "richmat_mh_61")
     assert spec.translation_key == shape and spec.entity_registry_enabled_default
+
+
+async def test_extended_angle_target_is_asked_as_its_setup_asks(delays, monkeypatch):
+    """The 0002 setup's two angle queries are repeated until the bed's answers agree."""
+    base = "custom_components.adjustable_bed.beds.base"
+    monkeypatch.setattr(f"{base}._FOLLOW_STEP_SECONDS", 0.01)
+    monkeypatch.setattr(f"{base}._FOLLOW_QUIET_SECONDS", 0.1)
+    monkeypatch.setattr(f"{base}._FOLLOW_REPLY_SECONDS", 0.05)
+    monkeypatch.setattr(f"{base}._FOLLOW_BOUND_SECONDS", 5.0)
+    c = make("bailey2", "2i", "0002")
+    c._coordinator.command_scheduler.has_pending = False
+    c._coordinator.is_connected = True
+    queries = ["6e9a300139", "6e2008010300009a"]
+
+    async def write(_char, data, **_kwargs):
+        if bytes(data).hex() == queries[1]:
+            c._handle_notification(None, bytearray.fromhex("6e200a010301010014b2"))  # motor 1 at 20
+
+    c.client.write_gatt_char = AsyncMock(side_effect=write)
+
+    async with asyncio.timeout(5):
+        await c.set_angle(1, 25)
+
+    assert frames(c) == ["6e200a010301010019b7", *queries * 3]
+    assert delays.count(0.3) == 6
+    assert c._coordinator.controller_state["richmat_mh_back_angle"] == 20
+    # The legacy entity page asks for all four motors at its own setup spacing.
+    legacy = make("bailey2", "7irm", "0001")._angle_queries()
+    assert [f.hex() for f in legacy[0]] == ["6e9a300139", "6e9a30023a", "6e9a30033b", "6e9a30043c"]
+    assert legacy[1] == 0.4
+    # A 0002 bed on the legacy entity page was set up with the 0002 queries.
+    assert make("bailey2", "7irm", "0002")._angle_queries() == (c._angle_queries()[0], 0.3)
+    # RUF Betten's own page shows no angle, so nothing is followed.
+    assert not make("ruf", "bqrm", "0001")._follows_moves()

@@ -658,9 +658,17 @@ class BedController(GattWriter):
         finally:
             await self._send_stop()
 
+    def _follows_moves(self) -> bool:
+        """Whether the bed reports where a move it finishes on its own has got to."""
+        return not self._coordinator.disable_angle_sensing and self.supports_position_feedback
+
     def _move_feedback(self) -> object:
         """What a move in progress keeps changing; compared to see the bed settle."""
         return dict(self._coordinator.position_data)
+
+    async def _ask_move_feedback(self) -> None:
+        """Ask the bed for what ``_move_feedback`` compares."""
+        await self.read_positions(self._coordinator.motor_count)
 
     async def follow_autonomous_move(self) -> None:
         """Keep the command, and so the link, until the bed has stopped moving.
@@ -674,11 +682,7 @@ class BedController(GattWriter):
         the last of its sequence does not wait, so the rest is not held back.
         """
         coordinator = self._coordinator
-        if (
-            coordinator.disable_angle_sensing
-            or not self.supports_position_feedback
-            or sequence_continues()
-        ):
+        if not self._follows_moves() or sequence_continues():
             return
         cancel_event = coordinator.cancel_command
         loop = asyncio.get_running_loop()
@@ -713,9 +717,7 @@ class BedController(GattWriter):
                     asks, reports_when_asked = asks + 1, reports
                     # A read that stalls must not hold back Stop or a queued command.
                     # Started at once, so nothing can be queued between the check and the read.
-                    read = asyncio.create_task(
-                        self.read_positions(coordinator.motor_count), eager_start=True
-                    )
+                    read = asyncio.create_task(self._ask_move_feedback(), eager_start=True)
                     stop = asyncio.ensure_future(cancel_event.wait())
                     try:
                         while not read.done():

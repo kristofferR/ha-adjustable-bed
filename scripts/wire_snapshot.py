@@ -1231,7 +1231,9 @@ class Coordinator:
         self.stop_epoch = 0
         self.cancel_counter = 0
         self.connection_generation = 0
-        self.command_scheduler = SimpleNamespace(token=object(), stop_epoch=0)
+        # A scripted bed never moves: a queued command ends a followed move at once.
+        self.command_scheduler = SimpleNamespace(token=object(), stop_epoch=0, has_pending=True)
+        self.register_position_callback = lambda _callback: lambda: None
         self._command_lock = asyncio.Lock()
         self.address = "AA:BB:CC:DD:EE:FF"
         # Some protocols embed the device name; kept from the first capture.
