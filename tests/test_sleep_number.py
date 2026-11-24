@@ -947,6 +947,31 @@ class TestSleepNumberController:
         state = coordinator.controller._coordinator.controller_state
         assert (state["light_level"], state["light_timer_option"]) == (2, "30 min")
 
+    async def test_light_level_in_automatic_mode_sets_the_automatic_level(
+        self,
+        sleep_number_coordinator,
+    ) -> None:
+        """With automatic lighting on, the app turns the manual light off first."""
+        coordinator = await sleep_number_coordinator(
+            address="AA:BB:CC:DD:EE:2C",
+            name="Smart bed 0074F2",
+            entry_id="sleep_number_light_auto_level",
+        )
+        controller = coordinator.controller
+        controller._underbed_light_level = "off"
+        controller._underbed_light_timer_minutes = 15
+        controller._auto_light = True
+        controller._send_bamkey_command = AsyncMock(return_value=[])
+
+        await controller.set_light_level(2)
+
+        assert [call.args for call in controller._send_bamkey_command.await_args_list] == [
+            ("UBLS", "off", "0"),
+            ("UBAS", "true", "medium"),
+        ]
+        state = coordinator.controller_state
+        assert (state["light_level"], state["sleepiq_auto_light"]) == (2, True)
+
     async def test_set_light_timer_preserves_current_level(
         self,
         sleep_number_coordinator,

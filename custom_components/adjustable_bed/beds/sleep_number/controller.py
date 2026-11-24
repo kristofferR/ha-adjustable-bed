@@ -323,6 +323,7 @@ class SleepNumberController(BedController, SleepNumberActions):
         self._underbed_light_level: str | None = None
         self._underbed_light_timer_minutes: int | None = None
         self._underbed_light_last_active_level = "high"
+        self._auto_light: bool | None = None
         self._bed_presence_states: dict[str, str] = {}
         self._bed_presence_state: str | None = None
         self._bed_presence_channel_primed = False
@@ -571,7 +572,8 @@ class SleepNumberController(BedController, SleepNumberActions):
                 "underbed_light_auto_mode_enable_status",
                 parameters.get("underbed_light_auto_mode_enable_status"),
             )
-            self.forward_controller_state_updates(AUTO_LIGHT(value == "true"))
+            self._auto_light = value == "true"
+            self.forward_controller_state_updates(AUTO_LIGHT(self._auto_light))
         return result
 
     @property
@@ -1152,9 +1154,22 @@ class SleepNumberController(BedController, SleepNumberActions):
     async def set_light_level(self, level: int) -> None:
         """Set the Sleep Number underbed light level."""
         normalized = max(0, min(self.light_level_max, int(level)))
-        await self._apply_underbed_light_settings(
-            level=_SLEEP_NUMBER_LIGHT_VALUE_TO_LEVEL[normalized]
+        name = _SLEEP_NUMBER_LIGHT_VALUE_TO_LEVEL[normalized]
+        if not self._auto_light:
+            await self._apply_underbed_light_settings(level=name)
+            return
+        # With automatic lighting on, the app switches the manual light off
+        # and stores the level as the automatic one.
+        await self._send_bamkey_command(SleepNumberCommands.SET_UNDERBED_LIGHT_SETTINGS, "off", "0")
+        self._store_underbed_light_state("off", 0)
+        await self._execute_command(
+            "set_underbed_light_auto_mode",
+            {
+                "underbed_light_auto_mode_enable_status": "false" if name == "off" else "true",
+                "underbed_light_auto_mode_intensity_level": name,
+            },
         )
+        self.forward_controller_state_updates(LIGHT_LEVEL(normalized))
 
     async def set_light_timer(self, timer_option: str) -> None:
         """Set the Sleep Number underbed light auto-off timer."""
@@ -1284,6 +1299,7 @@ class SleepNumberController(BedController, SleepNumberActions):
     def _clear_switch_state(self) -> None:
         if not self._link.owns(self):
             return
+        self._auto_light = None
         self.forward_controller_state_updates(
             PRIVACY(None),
             AUTO_LIGHT(None),
