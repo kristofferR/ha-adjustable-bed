@@ -1,4 +1,4 @@
-"""Shared direct-BLE sessions for Bedgear and Leon's L2Motion."""
+"""Shared HHC letter sessions for Bedgear, L2 Motion and MoodBase."""
 
 from __future__ import annotations
 
@@ -23,14 +23,21 @@ from ...card import (
     CardSection,
 )
 from ...codec import motomotion as codec
-from ...command_scheduler import current_command_context
+from ...command_scheduler import (
+    command_frames_counted,
+    current_command_context,
+    note_frame_skipped,
+)
 from ...const import CONF_BLE_DEVICE_NAME
 from ...controller_state import StateKey
+from ...errors import invalid
 from ...labels import display_label
 from ...profiles.bedgear import BedgearProfile, Control
 from ...profiles.l2motion import L2MotionProfile
+from ...profiles.moodbase import MoodBaseProfile
 from ..base import CONTROLLER_GESTURE_RELEASE, BedController, ProfileExecution, require_controller
 from ..builder import BuildContext
+from ..cancellation import settled
 from ..catalog_buttons import save_button
 from ..entity_specs import (
     ControllerButtonSpec,
@@ -43,7 +50,7 @@ from ..entity_specs import (
     MotorControlSpec,
 )
 from .music import BASS, CHANNELS, MODE, MODES, TREBLE, VIBRATION, VOLUME, Music
-from .protocol import Receiver, color_parameters, token_fields
+from .protocol import Receiver, color_parameters, reported_color, token_fields
 
 if TYPE_CHECKING:
     from bleak import BleakClient
@@ -105,13 +112,13 @@ async def press(controller: BedController, *, key: str) -> None:
     await require_controller(controller, BedgearController).press(key)
 
 
-class BedgearController(ProfileExecution[BedgearProfile | L2MotionProfile], BedController):
+class BedgearController(ProfileExecution[BedgearProfile | L2MotionProfile | MoodBaseProfile], BedController):
     def __init__(
         self,
         coordinator: AdjustableBedCoordinator,
         *,
         name: str,
-        profile: L2MotionProfile | None = None,
+        profile: L2MotionProfile | MoodBaseProfile | None = None,
     ) -> None:
         super().__init__(coordinator)
         self.profile = profile if profile is not None else BedgearProfile(name)
@@ -123,7 +130,8 @@ class BedgearController(ProfileExecution[BedgearProfile | L2MotionProfile], BedC
         self._alarm: tuple[str, str, str] | None = None
         self._bind: tuple[bool, bool] | None = None
         self._sync: int | None = None
-        self._gesture_up = False
+        self._gesture_context: CommandContext | None = None
+        self._release_generation: int | None = None
         self._cleanup_context: CommandContext | None = None
         self._music = Music()
         self._music_sent: set[int] = set()
@@ -154,7 +162,7 @@ class BedgearController(ProfileExecution[BedgearProfile | L2MotionProfile], BedC
         return True
 
     def _control_label(self, key: str) -> str:
-        if not self.is_l2motion:
+        if isinstance(self.profile, BedgearProfile):
             return _control_name(key)
         labels = {
             "massage_head_up": "Increase head massage",
@@ -392,7 +400,7 @@ class BedgearController(ProfileExecution[BedgearProfile | L2MotionProfile], BedC
 
     @property
     def controller_state_sensor_specs(self) -> tuple[ControllerStateSensorSpec, ...]:
-        if self.is_l2motion:
+        if not isinstance(self.profile, BedgearProfile):
             return tuple(
                 ControllerStateSensorSpec(
                     str(key),
@@ -504,45 +512,41 @@ class BedgearController(ProfileExecution[BedgearProfile | L2MotionProfile], BedC
             ),
         )
 
+    def _link_is_current(self, link: Link) -> bool:
+        return (
+            self._link is link
+            and self.client is link.client
+            and link.client.is_connected
+            and self._coordinator.address == self._address
+            and self._coordinator.controller is self
+        )
+
     def _current(self) -> Link:
         link = self._link
-        if (
-            link is None
-            or self.client is not link.client
-            or not link.client.is_connected
-            or self._coordinator.address != self._address
-            or self._coordinator.controller is not self
-        ):
-            raise ConnectionError("Bedgear BLE session changed")
+        if link is None or not self._link_is_current(link):
+            raise ConnectionError("The bed's Bluetooth session changed")
         return link
 
+    def _status_fields(self, text: str) -> dict[str, object]:
+        return token_fields(text, alarm_indices=self.profile.alarm_indices)
+
     def _notification(self, link: Link, sender: BleakGATTCharacteristic, data: bytearray) -> None:
-        if (
-            self._link is not link
-            or self.client is not link.client
-            or not link.client.is_connected
-            or self._coordinator.address != self._address
-            or self._coordinator.controller is not self
-        ):
+        if not self._link_is_current(link) or not data:
             return
         self.forward_raw_notification(sender.uuid, bytes(data))
         for text in self._receiver.feed(bytes(data)):
-            fields = token_fields(text, alarm_indices=self.profile.alarm_indices)
+            fields = self._status_fields(text)
             rgb_timer = fields.get("rgb_timer")
             if isinstance(rgb_timer, list):
-                values = [
-                    int(v)
-                    if isinstance(v, str) and v.isascii() and v.isdecimal() and len(v) <= 10
-                    else None
-                    for v in rgb_timer
-                ]
+                values = [self._parse_status_number(v) for v in rgb_timer]
                 r, g, b = values[:3]
                 self._rgb = (
-                    (min(255, int(r * 2.125)), min(255, int(g * 2.125)), min(255, int(b * 2.125)))
+                    reported_color(r, g, b)
                     if r is not None and g is not None and b is not None
                     else None
                 )
                 self._timer = min(65535, values[3]) if values[3] is not None else None
+                self._on_rgb_report()
             alarm = fields.get("alarm")
             if isinstance(alarm, list) and all(isinstance(v, str) for v in alarm):
                 self._alarm = (alarm[0], alarm[1], alarm[2])
@@ -550,26 +554,28 @@ class BedgearController(ProfileExecution[BedgearProfile | L2MotionProfile], BedC
             if isinstance(bind, dict):
                 self._bind = (bind["available"] is True, bind["active"] is True)
                 value = fields.get("sync_type")
-                self._sync = value if isinstance(value, int) else None
+                if isinstance(value, int) or not isinstance(self.profile, MoodBaseProfile):
+                    self._sync = value if isinstance(value, int) else None
             self._publish()
+
+    def _on_rgb_report(self) -> None:
+        """Project a newly parsed RGB report if the controller exposes a light."""
+
+    def _parse_status_number(self, value: object) -> int | None:
+        if isinstance(value, str) and value.isascii() and value.isdecimal() and len(value) <= 10:
+            return int(value)
+        return None
+
+    def _select_transport(self, client: BleakClient) -> Link:
+        return select_transport(client)
 
     async def start_notify(self, callback: Callable[[str, float], None] | None = None) -> None:
         client = self.client
         if client is None or not client.is_connected:
             raise ConnectionError("Bedgear is disconnected")
-        link = select_transport(client)
+        link = self._select_transport(client)
         self._link = link
-        self._receiver = Receiver()
-        self._music = Music()
-        self._music_sent.clear()
-        self._mode_sent = False
-        self._cleanup_context = None
-        self._rgb = None
-        self._timer = None
-        self._alarm = None
-        self._bind = None
-        self._sync = None
-        self._publish()
+        self._reset_session_state()
         started = []
         try:
             for char in link.notify:
@@ -578,14 +584,26 @@ class BedgearController(ProfileExecution[BedgearProfile | L2MotionProfile], BedC
                 if self._current() is not link:
                     raise ConnectionError("Bedgear session changed during subscription")
         except BaseException:
-            self._link = None
+            if self._link is link:
+                self._link = None
+                self._reset_session_state()
             for char in started:
-                if client.is_connected:
-                    await client.stop_notify(char)
+                if client.is_connected and (self._link is None or self._link.client is not client):
+                    try:
+                        await client.stop_notify(char)
+                    except Exception:
+                        # Keep the original setup failure, even if cleanup also loses the link.
+                        continue
             raise
 
     async def stop_notify(self) -> None:
         link, self._link = self._link, None
+        self._reset_session_state()
+        if link and link.client.is_connected:
+            for char in link.notify:
+                await link.client.stop_notify(char)
+
+    def _reset_session_state(self) -> None:
         self._receiver = Receiver()
         self._music = Music()
         self._music_sent.clear()
@@ -597,9 +615,6 @@ class BedgearController(ProfileExecution[BedgearProfile | L2MotionProfile], BedC
         self._bind = None
         self._sync = None
         self._publish()
-        if link and link.client.is_connected:
-            for char in link.notify:
-                await link.client.stop_notify(char)
 
     async def _send(
         self,
@@ -609,8 +624,12 @@ class BedgearController(ProfileExecution[BedgearProfile | L2MotionProfile], BedC
         *,
         deadline: float | None = None,
         boundary_tick: bool = False,
+        before_dispatch: Callable[[], None] | None = None,
     ) -> None:
-        if command is None or cancel.is_set():
+        if command is None:
+            return
+        if cancel.is_set():
+            note_frame_skipped()
             return
 
         queued = self.ble_lock.locked()
@@ -628,6 +647,8 @@ class BedgearController(ProfileExecution[BedgearProfile | L2MotionProfile], BedC
                         and now < deadline + self.profile.refresh_ms / 1000
                     ):
                         raise _HoldElapsed
+            if before_dispatch is not None:
+                before_dispatch()
 
         await self._write_gatt_with_retry(
             link.write.uuid,
@@ -684,10 +705,16 @@ class BedgearController(ProfileExecution[BedgearProfile | L2MotionProfile], BedC
             or type(duration_ms) is not int
             or not 1 <= duration_ms <= 60000
         ):
+            if isinstance(self.profile, MoodBaseProfile):
+                raise invalid("hhc_hold_unavailable")
             raise ValueError("Choose a control this bed offers and a duration of up to 60 seconds")
 
     def on_gesture_release(self) -> None:
-        self._gesture_up = True
+        context = self._gesture_context
+        if context is not None and context.active and not context.cancel_event.is_set():
+            # The release button admits one STOP to end the gesture. A later
+            # STOP or replacement cancels any follow-up movement as well.
+            self._release_generation = context.cancel_generation + 1
 
     async def _stop(self, link: Link) -> None:
         started = monotonic()
@@ -704,7 +731,9 @@ class BedgearController(ProfileExecution[BedgearProfile | L2MotionProfile], BedC
             c for c in self.profile.controls if self.profile.key + "_" + c.key == control
         )
         link, cancel = self._current(), self._coordinator.cancel_command
-        count, self._gesture_up = 0, False
+        context = self._gesture_context = current_command_context()
+        self._release_generation = None
+        count = 0
         normal_up = False
         loop = asyncio.get_running_loop()
         start = loop.time()
@@ -749,6 +778,7 @@ class BedgearController(ProfileExecution[BedgearProfile | L2MotionProfile], BedC
                         boundary_tick=boundary_tick,
                     )
                 except _HoldElapsed:
+                    note_frame_skipped()
                     return
                 if not cancel.is_set():
                     count += 1
@@ -757,51 +787,49 @@ class BedgearController(ProfileExecution[BedgearProfile | L2MotionProfile], BedC
                     max(0, start + duration_ms / 1000 - loop.time()), cancel
                 )
         finally:
-            # Cleanup is pinned to the captured link and uses a fresh event.
-            # Cancellation without an up gesture never sends the short-up fallback.
-            if (
-                self._link is link
-                and self.client is link.client
-                and link.client.is_connected
-                and self._coordinator.address == self._address
-                and self._coordinator.controller is self
-            ):
-                up = (normal_up if self.is_l2motion else not cancel.is_set()) or self._gesture_up
-                await self._release(binding, link, count, up=up)
+            release_generation, self._release_generation = self._release_generation, None
+            self._gesture_context = None
+            if self._link_is_current(link):
+                if binding.release == "stop":
+                    await settled(self._stop_after_hold(link))
+                elif binding.release == "fallback" and count < 5:
+                    if (normal_up or not self.profile.delayed_first_tick) and not cancel.is_set():
+                        await self._short_release(binding, link, cancel)
+                    elif context is not None and release_generation == context.cancel_generation:
+                        # The coordinator may cancel the hold task for this
+                        # initial release. The next cancellation still fences
+                        # the fallback frames, including at the BLE lock.
+                        event = context.cancel_event_after(context.cancel_generation)
+                        await settled(self._short_release(binding, link, event))
 
-    async def _release(self, binding: Control, link: Link, count: int, *, up: bool) -> None:
-        if binding.release == "none" or (binding.release == "fallback" and (count >= 5 or not up)):
-            return
-
-        async def release() -> None:
-            if binding.release == "stop":
-                await self._stop(link)
-            else:
-                started = monotonic()
-                for tick in range(self.profile.fallback_count):
-                    if tick:
-                        await asyncio.sleep(max(0, started + tick * 0.1 - monotonic()))
-                    await self._send(self._letter(binding.letter), link, asyncio.Event())
-
-        # Drain the complete source release before freeing the command lane,
-        # even if STOP also cancels the coroutine while it is cleaning up.
-        task = asyncio.create_task(release())
-        interrupted = False
-        while not task.done():
-            try:
-                await asyncio.shield(task)
-            except asyncio.CancelledError:
-                interrupted = True
-        task.result()
-        if binding.release == "stop" and (context := current_command_context()) is not None:
+    async def _stop_after_hold(self, link: Link) -> None:
+        await self._stop(link)
+        if (context := current_command_context()) is not None:
             context.cleanup_stop_sent = True
             self._cleanup_context = context
-        if interrupted:
-            raise asyncio.CancelledError
+
+    async def _short_release(
+        self, binding: Control, link: Link, cancel: asyncio.Event
+    ) -> None:
+        start = monotonic()
+        interval = self.profile.refresh_ms / 1000
+        complete = False
+        try:
+            with command_frames_counted():
+                for tick in range(self.profile.fallback_count):
+                    if not await self._wait(start + tick * interval - monotonic(), cancel):
+                        return
+                    await self._send(self._letter(binding.letter), link, cancel)
+                complete = True
+        finally:
+            if not complete:
+                note_frame_skipped()
 
     async def press(self, key: str) -> None:
         control = next((c for c in self.profile.controls if c.key == key), None)
         if control is None:
+            if isinstance(self.profile, MoodBaseProfile):
+                raise invalid("hhc_control_unavailable")
             raise NotImplementedError("Unavailable Bedgear control")
         if control.held:
             await self.hold_control(self.profile.key + "_" + key, self.leased_hold_ms(1000))
@@ -897,7 +925,7 @@ class BedgearController(ProfileExecution[BedgearProfile | L2MotionProfile], BedC
     async def move_head_up(self) -> None:
         await self._move(
             "actuator"
-            if not self.is_l2motion and self.profile.panel in ("PanelE", "PanelFive")
+            if isinstance(self.profile, BedgearProfile) and self.profile.panel in ("PanelE", "PanelFive")
             else "head",
             True,
         )
@@ -905,7 +933,7 @@ class BedgearController(ProfileExecution[BedgearProfile | L2MotionProfile], BedC
     async def move_head_down(self) -> None:
         await self._move(
             "actuator"
-            if not self.is_l2motion and self.profile.panel in ("PanelE", "PanelFive")
+            if isinstance(self.profile, BedgearProfile) and self.profile.panel in ("PanelE", "PanelFive")
             else "head",
             False,
         )
@@ -988,6 +1016,8 @@ class BedgearController(ProfileExecution[BedgearProfile | L2MotionProfile], BedC
 
     async def program_memory(self, memory_num: int) -> None:
         if not 1 <= memory_num <= self.memory_slot_count:
+            if isinstance(self.profile, MoodBaseProfile):
+                raise invalid("hhc_control_unavailable")
             raise NotImplementedError("Unavailable Bedgear memory slot")
         await self._send(
             self._letter("Za"[memory_num - 1]), self._current(), self._coordinator.cancel_command
@@ -1077,6 +1107,8 @@ class BedgearController(ProfileExecution[BedgearProfile | L2MotionProfile], BedC
             await self._send(self._letter("z"), link, cancel)
             if await self._wait(0.05, cancel):
                 await self._send(frame, link, cancel)
+            else:
+                note_frame_skipped()
         elif op == "sync_mode":
             await self._send(codec.ascii_command(33049, int(request.wired)), link, cancel)
         elif op == "toggle_sync":

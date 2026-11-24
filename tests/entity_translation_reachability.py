@@ -135,6 +135,15 @@ async def factory_controllers() -> list[BedController]:
                         device_name=coordinator.entry.data.get(CONF_BLE_DEVICE_NAME),
                     )
                 )
+    from custom_components.adjustable_bed.beds.enso2.controller import Enso2Controller
+
+    enso2 = next(controller for controller in controllers if isinstance(controller, Enso2Controller))
+    enso2._light_present = True
+    for layout in ("ONRM", "A3RM", "GVRM", "R2RM"):
+        legacy = await _create_controller_for_bed_type("enso2", layout)
+        assert isinstance(legacy, Enso2Controller)
+        legacy._raw = True
+        controllers.append(legacy)
     from custom_components.adjustable_bed.beds.instant_comfort.air import InstantComfortAir
     from custom_components.adjustable_bed.profiles.instant_comfort import (
         PROFILES as INSTANT_PROFILES,
@@ -163,6 +172,11 @@ async def factory_controllers() -> list[BedController]:
         for mode in ("E", "M", "D"):
             selected = "HHC00000" + pair + "D" + mode + "0X"
             controllers.append(BedgearController(bedgear._coordinator, name=selected, profile=L2MotionProfile(selected)))
+    from custom_components.adjustable_bed.beds.bedgear.moodbase import MoodBaseController
+    from custom_components.adjustable_bed.profiles.moodbase import MoodBaseProfile
+
+    for name in ("HHC00000E1DE0X", "HHC0000001DM0X", "HHC0000015BM0H"):
+        controllers.append(MoodBaseController(_FactoryCoordinator(), profile=MoodBaseProfile(name)))
     # MotoMotion decodes its panels from the advertised name. This name adds the
     # users, RGB and music panels that the default name lacks.
     controller = await _create_controller_for_bed_type(BED_TYPE_MOTOMOTION)

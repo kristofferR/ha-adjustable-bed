@@ -381,6 +381,18 @@ TIMED_MOVE_MOTOR_OPTIONS: Final = (
     "elevate_actuator_1",
     "elevate_actuator_2",
     "elevate_both",
+    "motor_1",
+    "motor_2",
+    "motor_3",
+    "motor_4",
+    "motor_5",
+    "motor_6",
+    "motor_7",
+    "motors_1_2",
+    "motors_2_3",
+    "motors_3_4",
+    "motors_3_4_tilt",
+    "selected_motor",
 )
 
 # The two physical sides, in stable order (left first, right second).
@@ -515,6 +527,7 @@ CONF_RICHMAT_CLASSIC_THIRD_SERVICE: Final = "richmat_classic_third_service"
 CONF_BASEREMOTE_SINGLE_BASE: Final = "baseremote_single_base"
 BED_TYPE_BEDGEAR: Final = "bedgear"
 BED_TYPE_L2MOTION: Final = "l2motion"
+BED_TYPE_MOODBASE: Final = "moodbase"
 BED_TYPE_MOTOMOTION: Final = "motomotion"
 BED_TYPE_HJBED: Final = "hjbed"
 BED_TYPE_RICHMAT_APP: Final = "richmat_app"
@@ -541,6 +554,8 @@ ZSERIES_VARIANTS: Final = {
 }
 # Bed types whose variant is a user choice with no automatic default.
 BED_TYPE_ENSO: Final = "enso"
+BED_TYPE_ENSO2: Final = "enso2"
+CONF_ENSO2_PROPERTY_FALLBACK: Final = "enso2_property_fallback"
 BED_TYPE_SEALY_POSTUREMATIC: Final = "sealy_posturematic"
 BED_TYPE_YAMADA: Final = "yamada"
 BED_TYPE_BETTERLIVING2: Final = "betterliving2"
@@ -556,7 +571,7 @@ COMFORT_ENHANCEMENTS_VARIANTS: Final = {
     "mc5": "MC5: Hi Lo Lift / Massage Plus",
 }
 VARIANT_REQUIRED_BED_TYPES: Final = frozenset(
-    {BED_TYPE_DREAMSENSE, BED_TYPE_SAATVA, BED_TYPE_MAJESTICHOME, BED_TYPE_LEVA, BED_TYPE_LINX, BED_TYPE_SOMOS, BED_TYPE_BOBPOWERBASE, "sleep_evolution", "wsilver_legacy", BED_TYPE_SYMPHONY_SLEEP, "comfort_enhancement3", BED_TYPE_YAMADA, BED_TYPE_RICHMAT_APP, BED_TYPE_RICHMAT_APP_SLEEP, "luuna", "personal_comfort", "instant_comfort", "richmat_sleep_receiver", BED_TYPE_MLILY, BED_TYPE_MLILY_REMOTE, BED_TYPE_GALAXY, BED_TYPE_OKIMIKI, BED_TYPE_GOODVIBE, BED_TYPE_HJBED, BED_TYPE_ESHINE_OKIN, BED_TYPE_ZSERIES, BED_TYPE_GLIDEAWAY_MOTION, BED_TYPE_COMFORT_ENHANCEMENTS, BED_TYPE_COMFORTBASE, "casper_base", BED_TYPE_RICHMAT_CLASSIC_APPS}
+    {BED_TYPE_DREAMSENSE, BED_TYPE_SAATVA, BED_TYPE_MAJESTICHOME, BED_TYPE_LEVA, BED_TYPE_LINX, BED_TYPE_SOMOS, BED_TYPE_BOBPOWERBASE, "sleep_evolution", "wsilver_legacy", BED_TYPE_SYMPHONY_SLEEP, "comfort_enhancement3", BED_TYPE_YAMADA, BED_TYPE_RICHMAT_APP, BED_TYPE_RICHMAT_APP_SLEEP, BED_TYPE_ENSO2, "luuna", "personal_comfort", "instant_comfort", "richmat_sleep_receiver", BED_TYPE_MLILY, BED_TYPE_MLILY_REMOTE, BED_TYPE_GALAXY, BED_TYPE_OKIMIKI, BED_TYPE_GOODVIBE, BED_TYPE_HJBED, BED_TYPE_ESHINE_OKIN, BED_TYPE_ZSERIES, BED_TYPE_GLIDEAWAY_MOTION, BED_TYPE_COMFORT_ENHANCEMENTS, BED_TYPE_COMFORTBASE, "casper_base", BED_TYPE_RICHMAT_CLASSIC_APPS}
 ).union({BED_TYPE_BETTERLIVING2})
 # Aging in Place / Dawn House has one fixed profile; these filter observations.
 BED_TYPE_AGINGPLACE: Final = "agingplace"
@@ -777,11 +792,13 @@ SUPPORTED_BED_TYPES: Final = [
     BED_TYPE_SLEEP_ASSISTANT,
     BED_TYPE_ONLYSNORE,
     BED_TYPE_ENSO,
+    BED_TYPE_ENSO2,
     BED_TYPE_SEALY_POSTUREMATIC,
     BED_TYPE_YAMADA,
     BED_TYPE_BETTERLIVING2,
     BED_TYPE_BEDGEAR,
     BED_TYPE_L2MOTION,
+    BED_TYPE_MOODBASE,
     BED_TYPE_PARAMOUNT,
     BED_TYPE_RICHMAT_CLASSIC_APPS,
     BED_TYPE_ERGOMOTION_4,
@@ -991,6 +1008,7 @@ OFFLINE_CAPABILITY_SAFE_BED_TYPES: Final = frozenset(
         BED_TYPE_PERSONAL_COMFORT,
         BED_TYPE_BEDGEAR,
         BED_TYPE_L2MOTION,
+        BED_TYPE_MOODBASE,
         BED_TYPE_SLEEP_EVOLUTION,
         BED_TYPE_WSILVER_LEGACY,
         BED_TYPE_SUPER_COLCHONES,

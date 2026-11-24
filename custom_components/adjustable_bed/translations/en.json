@@ -452,6 +452,7 @@
               "jiecang_app_transport": "Bluetooth connection",
               "richmat_classic_third_service": "Bed without the app's usual connection",
               "ble_device_name": "Exact Bluetooth name",
+              "enso2_property_fallback": "Property-based Bluetooth receiver",
               "protocol_variant": "Control box type",
               "logicdata_app_transport": "Bluetooth connection",
               "malouf_app_transport": "Bluetooth connection",
@@ -478,6 +479,7 @@
             "data_description": {
               "jiecang_app_transport": "Automatic finds the bed's connection. Change it only if setup can't reach the bed.",
               "richmat_classic_third_service": "Turn on only if the bed offers none of the app's usual Bluetooth services. The app then uses another one it finds.",
+              "enso2_property_fallback": "Use the third Bluetooth service only when your receiver uses the app’s property-based fallback.",
               "protocol_variant": "Automatic reads the control box type from the bed. Change it only if the bed responds wrongly.",
               "logicdata_app_transport": "Automatic finds the bed's connection. Change it only if the bed has more than one.",
               "malouf_app_transport": "Automatic follows the bed's name. Change it only if setup can't reach the bed.",
@@ -882,6 +884,7 @@
       "invalid_movement_per_tap": "Enter a whole number of 1 or more.",
       "cheerssleep_model_required": "Choose the bed model the CheersSleep app shows.",
       "suta_name": "Enter the complete case-sensitive SUTA Bluetooth name. Names shorter than nine characters and drawer controllers have no supported bed controls.",
+      "moodbase_profile": "Enter the exact 14-character Bluetooth name shown in MoodBase, including uppercase HHC.",
       "l2motion_profile": "Enter the bed's Bluetooth name exactly as L2 Motion shows it.",
       "pair_bed_missing": "One of the chosen beds is no longer set up. Choose two beds from the list.",
       "octo_tv_lift_pairing_unsupported": "A one-motor Octo TV or bed lift cannot have Left and Right controls. Keep it as a single bed.",
@@ -974,6 +977,7 @@
           "motion_bed_preset": "Preset layout",
           "motion_bed_movement": "Movement layout",
           "ble_device_name": "Exact Bluetooth name",
+          "enso2_property_fallback": "Property-based Bluetooth receiver",
           "motion_bed_restored": "Use a profile restored by the app",
           "starcode_lift_entries": "Independently addressed lifts",
           "starcode_m5x5_profile": "AdjustableM5X5 bed class",
@@ -1172,6 +1176,7 @@
           "sleeptracker_restricted": "Restricted session",
           "sleeptracker_processor_type": "Processor type",
           "richmat_classic_third_service": "Bed without the app's usual connection",
+          "enso2_property_fallback": "Property-based Bluetooth receiver",
           "furnimove_remote": "FurniMove handset ID",
           "has_light": "Enable light controls",
           "has_massage": "Massage controls",
@@ -1262,6 +1267,7 @@
           "sleeptracker_processor_type": "Leave at 0. Change it only if the app cannot save presets on this bed: types 5, 6 and 7 turn preset saving off here too.",
           "idle_disconnect_seconds": "How long the link stays open after the last command, from 1 to 300 seconds.",
           "richmat_classic_third_service": "Turn on only if the bed offers none of the app's usual Bluetooth services. The app then uses another one it finds.",
+          "enso2_property_fallback": "Use the third Bluetooth service only when your receiver uses the app’s property-based fallback.",
           "has_light": "Show the light controls when this bed has under-bed lighting.",
           "jiecang_app_layout": "The layout set in the app.",
           "jiecang_app_transport": "Automatic finds the bed's connection. Change it only if setup can't reach the bed.",
@@ -1353,6 +1359,7 @@
           "sleeptracker_restricted": "Restricted session",
           "sleeptracker_processor_type": "Processor type",
           "richmat_classic_third_service": "Bed without the app's usual connection",
+          "enso2_property_fallback": "Property-based Bluetooth receiver",
           "furnimove_remote": "FurniMove handset ID",
           "has_light": "Enable light controls",
           "has_massage": "Massage controls",
@@ -1443,6 +1450,7 @@
           "sleeptracker_processor_type": "Leave at 0. Change it only if the app cannot save presets on this bed: types 5, 6 and 7 turn preset saving off here too.",
           "idle_disconnect_seconds": "How long the link stays open after the last command, from 1 to 300 seconds.",
           "richmat_classic_third_service": "Turn on only if the bed offers none of the app's usual Bluetooth services. The app then uses another one it finds.",
+          "enso2_property_fallback": "Use the third Bluetooth service only when your receiver uses the app’s property-based fallback.",
           "has_light": "Show the light controls when this bed has under-bed lighting.",
           "jiecang_app_layout": "The layout set in the app.",
           "jiecang_app_transport": "Automatic finds the bed's connection. Change it only if setup can't reach the bed.",
@@ -2119,6 +2127,12 @@
       },
       "main_motor_down": {
         "name": "Main motor down"
+      },
+      "motors_3_4_tilt_up": {
+        "name": "Motors 3 and 4 tilt up"
+      },
+      "motors_3_4_tilt_down": {
+        "name": "Motors 3 and 4 tilt down"
       },
       "selected_motor_up": {
         "name": "Selected motor up"
@@ -3868,6 +3882,39 @@
       "dorsal_zero_gravity": {
         "name": "Zero gravity motor"
       },
+      "motor_1": {
+        "name": "Motor 1"
+      },
+      "motor_2": {
+        "name": "Motor 2"
+      },
+      "motor_4": {
+        "name": "Motor 4"
+      },
+      "motor_5": {
+        "name": "Motor 5"
+      },
+      "motor_6": {
+        "name": "Motor 6"
+      },
+      "motor_7": {
+        "name": "Motor 7"
+      },
+      "motors_1_2": {
+        "name": "Motors 1 and 2"
+      },
+      "motors_2_3": {
+        "name": "Motors 2 and 3"
+      },
+      "motors_3_4": {
+        "name": "Motors 3 and 4"
+      },
+      "selected_motor": {
+        "name": "Selected motor"
+      },
+      "motors_3_4_tilt": {
+        "name": "Motors 3 and 4 tilt"
+      },
       "tv_lift": {
         "name": "TV lift"
       },
@@ -4290,6 +4337,12 @@
             "name": "Wake action"
           }
         }
+      },
+      "enso2_alarm_status": {
+        "name": "Alarm response"
+      },
+      "enso2_aroma_status": {
+        "name": "Aroma response"
       },
       "timotion_ahf_status": {
         "name": "Status"
@@ -5670,6 +5723,12 @@
       "suta_right_automatic_adjustment": {
         "name": "Right automatic adjustment"
       },
+      "moodbase_light_timer_enabled": {
+        "name": "Light timer"
+      },
+      "moodbase_sync_enabled": {
+        "name": "Base synchronization"
+      },
       "l2motion_sync": {
         "name": "Synchronization"
       },
@@ -5776,6 +5835,9 @@
     "binary_sensor": {
       "maxprime_alarm_enabled": {
         "name": "Alarm enabled"
+      },
+      "enso2_light_on": {
+        "name": "Bed light"
       },
       "rmcontrol_anti_snore_enabled": {
         "name": "Anti-snore intervention"
@@ -6013,6 +6075,12 @@
       }
     },
     "number": {
+      "enso2_light_timer": {
+        "name": "Light auto-off time"
+      },
+      "enso2_massage_timer": {
+        "name": "Massage timer position"
+      },
       "back_position": {
         "name": "Back position"
       },
@@ -6346,6 +6414,12 @@
       "l2motion_vibration": {
         "name": "Vibration"
       },
+      "moodbase_light_timer": {
+        "name": "Light timer duration"
+      },
+      "moodbase_vibration": {
+        "name": "Vibration"
+      },
       "l2motion_light_timer": {
         "name": "Light timer"
       },
@@ -6453,6 +6527,30 @@
       }
     },
     "select": {
+      "enso2_mode": {
+        "name": "Control mode",
+        "state": {
+          "mode_1": "Mode 1",
+          "mode_2": "Mode 2",
+          "mode_3": "Mode 3"
+        }
+      },
+      "enso2_timer_options": {
+        "name": "Massage timer",
+        "state": {
+          "toggle": "On/off",
+          "15": "15 minutes",
+          "30": "30 minutes",
+          "45": "45 minutes"
+        }
+      },
+      "moodbase_sync_mode": {
+        "name": "Base synchronization mode",
+        "state": {
+          "wireless": "Wireless",
+          "wired": "Wired"
+        }
+      },
       "reverie_stk_side": {
         "name": "Controlled side",
         "state": {
@@ -9414,6 +9512,50 @@
         }
       }
     },
+    "enso2_light_color": {
+      "name": "Set bed light color",
+      "description": "Set the RGB color on a bed that reports a color light.",
+      "fields": {
+        "side": {
+          "name": "Side",
+          "description": "Which side of a combined bed to control."
+        },
+        "device_id": {
+          "name": "Bed",
+          "description": "The adjustable bed to control."
+        },
+        "rgb_color": {
+          "name": "Color",
+          "description": "The color to send to the light."
+        }
+      }
+    },
+    "enso2_aroma_schedule": {
+      "name": "Set aroma schedule",
+      "description": "Set the startup and pause times of the bed’s aroma accessory.",
+      "fields": {
+        "side": {
+          "name": "Side",
+          "description": "Which side of a combined bed to control."
+        },
+        "device_id": {
+          "name": "Bed",
+          "description": "The adjustable bed to control."
+        },
+        "mode_2_minutes": {
+          "name": "Mode 2 startup",
+          "description": "Startup time in minutes."
+        },
+        "mode_3_minutes": {
+          "name": "Mode 3 startup",
+          "description": "Startup time in minutes."
+        },
+        "pause_hours": {
+          "name": "Mode 3 pause",
+          "description": "Pause time in hours."
+        }
+      }
+    },
     "richmat_mh_light_color": {
       "name": "Richmat app: light color",
       "description": "Sets the color of the light, or of the button lights, on a Richmat app bed.",
@@ -10875,6 +11017,27 @@
     "alarm_not_supported": {
       "message": "{device_name} has no alarm."
     },
+    "moodbase_name_mismatch": {
+      "message": "Use the exact Bluetooth name shown for this bed in MoodBase."
+    },
+    "moodbase_receiver_missing": {
+      "message": "The connected receiver does not offer the Bluetooth channel required by MoodBase."
+    },
+    "moodbase_sync_unavailable": {
+      "message": "Wait for the bed to report that the bases are bound."
+    },
+    "moodbase_sync_state_unknown": {
+      "message": "Wait for the bed to report whether the bases are bound."
+    },
+    "moodbase_sync_bound": {
+      "message": "Unbind the bases before changing how they synchronize."
+    },
+    "hhc_control_unavailable": {
+      "message": "This control is unavailable on the bed's layout."
+    },
+    "hhc_hold_unavailable": {
+      "message": "Choose a control this bed supports and a duration of up to 60 seconds."
+    },
     "alarm_option_not_supported": {
       "message": "{device_name} has no alarm option \"{option}\". Remove it and try again."
     },
@@ -11234,6 +11397,30 @@
     },
     "enso_gatt_missing": {
       "message": "The bed must expose writable and notification characteristics. Check the selected device."
+    },
+    "enso2_gatt_missing": {
+      "message": "The receiver does not expose the Bluetooth characteristics required by this app."
+    },
+    "enso2_layout_required": {
+      "message": "Choose the control layout shown in the app."
+    },
+    "enso2_control_unavailable": {
+      "message": "This control is unavailable in the current layout, mode or Bluetooth connection."
+    },
+    "enso2_alarm_unavailable": {
+      "message": "This layout or receiver does not offer the requested alarm."
+    },
+    "enso2_alarm_combination": {
+      "message": "Choose a wake position that can be combined with massage."
+    },
+    "enso2_light_unavailable": {
+      "message": "The bed has not reported a color light on this connection."
+    },
+    "enso2_aroma_unavailable": {
+      "message": "The bed has not reported an aroma accessory on this connection."
+    },
+    "enso2_aroma_range": {
+      "message": "Choose 1 to 60 minutes for each startup time and 1 to 12 hours for the pause."
     },
     "enso_control_invalid": {
       "message": "This control is not available for the selected bed layout."
@@ -12193,6 +12380,7 @@
     },
     "richmat_family_choice": {
       "options": {
+        "enso2": "ENSO Sleep Control (Enso 2)",
         "rmcontrol": "RMControl app",
         "revive": "Revive Control app",
         "best_mattress": "Best Mattress app",
@@ -12303,6 +12491,18 @@
     },
     "timed_move_motor": {
       "options": {
+        "motor_1": "Motor 1",
+        "motor_2": "Motor 2",
+        "motor_3": "Motor 3",
+        "motor_4": "Motor 4",
+        "motor_5": "Motor 5",
+        "motor_6": "Motor 6",
+        "motor_7": "Motor 7",
+        "motors_1_2": "Motors 1 and 2",
+        "motors_2_3": "Motors 2 and 3",
+        "motors_3_4": "Motors 3 and 4",
+        "motors_3_4_tilt": "Motors 3 and 4 tilt",
+        "selected_motor": "Selected motor",
         "axis_1": "Lift 1",
         "axis_2": "Lift 2",
         "axis_3": "Lift 3",

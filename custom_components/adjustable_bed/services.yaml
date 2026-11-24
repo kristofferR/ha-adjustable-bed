@@ -126,7 +126,8 @@ timed_move:
         select:
           options: [axis_1, axis_2, axis_3, lumbar_tilt, tv_lift, back, right_back, legs, head, feet, both, neck, tilt, lumbar, bed_height,
             elevate, stair, m1x12_part_1, m1x12_part_2, m1x12_part_4, m1x12_part_8, m1x12_part_16, elevate_actuator_1,
-            elevate_actuator_2, elevate_both]
+            elevate_actuator_2, elevate_both, motor_1, motor_2, motor_3, motor_4, motor_5, motor_6, motor_7,
+            motors_1_2, motors_2_3, motors_3_4, motors_3_4_tilt, selected_motor]
           translation_key: timed_move_motor
     direction:
       required: true
@@ -4254,3 +4255,56 @@ dorsal_alarm:
     confirm_custom_position:
       selector:
         boolean:
+
+enso2_light_color:
+  fields:
+    device_id:
+      required: true
+      selector:
+        device:
+          integration: adjustable_bed
+          multiple: true
+    rgb_color:
+      required: true
+      selector:
+        color_rgb:
+    side:
+      selector:
+        select:
+          options: [both, left, right]
+          translation_key: side
+
+enso2_aroma_schedule:
+  fields:
+    device_id:
+      required: true
+      selector:
+        device:
+          integration: adjustable_bed
+          multiple: true
+    mode_2_minutes:
+      required: true
+      selector:
+        number:
+          min: 1
+          max: 60
+          unit_of_measurement: min
+    mode_3_minutes:
+      required: true
+      selector:
+        number:
+          min: 1
+          max: 60
+          unit_of_measurement: min
+    pause_hours:
+      required: true
+      selector:
+        number:
+          min: 1
+          max: 12
+          unit_of_measurement: h
+    side:
+      selector:
+        select:
+          options: [both, left, right]
+          translation_key: side

@@ -55,6 +55,7 @@ from .const import (
     BED_TYPE_COMFORTBASE,
     BED_TYPE_COMFYDS,
     BED_TYPE_DOUBLESLEEP,
+    BED_TYPE_ENSO2,
     BED_TYPE_ESHINE,
     BED_TYPE_ESHINE_OKIN,
     BED_TYPE_FSM_RELAX,
@@ -84,6 +85,7 @@ from .const import (
     BED_TYPE_MALOUF_NEW_OKIN,
     BED_TYPE_MLILY,
     BED_TYPE_MLILY_REMOTE,
+    BED_TYPE_MOODBASE,
     BED_TYPE_MOTION_BED,
     BED_TYPE_MOTOMOTION,
     BED_TYPE_N32_MOTION_BED,
@@ -142,6 +144,7 @@ from .const import (
     CONF_BLE_DEVICE_NAME,
     CONF_CB24_BED_SELECTION,
     CONF_DISABLE_ANGLE_SENSING,
+    CONF_ENSO2_PROPERTY_FALLBACK,
     CONF_FSM_RELAX_MEMORY_NAMES,
     CONF_FURNIMOVE_REMOTE,
     CONF_GMMOTOR_SIDE,
@@ -256,6 +259,7 @@ from .const import (
     VMATBASIC_PROFILES,
 )
 from .import_executor import async_import_modules
+from .profiles import enso2 as enso2_profiles
 from .profiles import jiecang as jiecang_profiles
 from .profiles import logicdata as logicdata_profiles
 from .profiles import malouf as malouf_profiles
@@ -349,6 +353,7 @@ _OWNED_BY_BED_TYPE: Final[dict[str, frozenset[str]]] = {
     BED_TYPE_MLILY_REMOTE: _APP_DEFINED - {CONF_PROTOCOL_VARIANT},
     BED_TYPE_HJBED: _APP_DEFINED - {CONF_PROTOCOL_VARIANT, CONF_MOTOR_PULSE_COUNT},
     BED_TYPE_JALON: _APP_DEFINED - {CONF_MOTOR_PULSE_COUNT},
+    BED_TYPE_ENSO2: _APP_DEFINED - {CONF_PROTOCOL_VARIANT},
     BED_TYPE_RICHMAT_APP: _APP_DEFINED - {CONF_PROTOCOL_VARIANT},
     BED_TYPE_RICHMAT_APP_SLEEP: GENERIC_FIELDS - {CONF_PROTOCOL_VARIANT},
     BED_TYPE_GLIDEAWAY_MOTION: _APP_DEFINED - {CONF_PROTOCOL_VARIANT, CONF_MOTOR_PULSE_COUNT},
@@ -389,6 +394,7 @@ _OWNED_BY_BED_TYPE: Final[dict[str, frozenset[str]]] = {
     BED_TYPE_MOTION_BED: _APP_DEFINED,
     "bedgear": _APP_DEFINED,
     "l2motion": _APP_DEFINED,
+    BED_TYPE_MOODBASE: _APP_DEFINED,
     BED_TYPE_MOTOMOTION: _APP_DEFINED,
     BED_TYPE_DOUBLESLEEP: _APP_DEFINED - {CONF_MOTOR_PULSE_COUNT},
     BED_TYPE_SLEEPTRACKER: _APP_DEFINED,
@@ -1490,6 +1496,13 @@ def _motion_bed_seed(
     return {CONF_BLE_DEVICE_NAME: discovered.name, **data}
 
 
+def _moodbase_errors(data: Mapping[str, Any]) -> dict[str, str]:
+    from .profiles.bedgear import eligible
+
+    name = data.get(CONF_BLE_DEVICE_NAME)
+    return {} if isinstance(name, str) and eligible(name) else {CONF_BLE_DEVICE_NAME: "moodbase_profile"}
+
+
 def _l2motion_errors(data: Mapping[str, Any]) -> dict[str, str]:
     from .profiles.bedgear import eligible
 
@@ -2235,6 +2248,11 @@ def _smartbed_errors(data: Mapping[str, Any]) -> dict[str, str]:
     if data.get(CONF_MOTOR_COUNT, 2) in _smartbed_motor_counts(data):
         return {}
     return {CONF_MOTOR_COUNT: "invalid_motor_count_for_bed_type"}
+
+
+def _enso2_suggested_layout(name: str | None) -> object:
+    layout = enso2_profiles.advertised_layout(name)
+    return layout if layout in enso2_profiles.LAYOUT_CHOICES else REQUIRED
 
 
 def _asking(key: str, **declared: Any) -> SetupProfile:
@@ -3250,6 +3268,21 @@ SETUP_PROFILES: Final[dict[str, SetupProfile]] = {
         BED_TYPE_RICHMAT_APP_SLEEP,
         questions=(Question(CONF_PROTOCOL_VARIANT, RICHMAT_SLEEP_CHOICES),),
     ),
+    BED_TYPE_ENSO2: _asking(
+        BED_TYPE_ENSO2,
+        questions=(
+            Question(
+                CONF_PROTOCOL_VARIANT,
+                lambda data: enso2_profiles.setup_choices(data.get(CONF_BLE_DEVICE_NAME)),
+                default=lambda data: _enso2_suggested_layout(data.get(CONF_BLE_DEVICE_NAME)),
+                searchable=True,
+            ),
+            Question(CONF_ENSO2_PROPERTY_FALLBACK, default=False, advanced=True),
+        ),
+        seed=lambda _hass, data, discovered: (
+            {CONF_BLE_DEVICE_NAME: discovered.name, **data} if discovered else data
+        ),
+    ),
     BED_TYPE_RICHMAT_APP: _asking(
         BED_TYPE_RICHMAT_APP,
         questions=(Question(CONF_PROTOCOL_VARIANT, RICHMAT_APP_PRODUCTS, searchable=True),),
@@ -3754,6 +3787,15 @@ SETUP_PROFILES: Final[dict[str, SetupProfile]] = {
         derive=lambda _data: _NO_PULSE_CHOICE,
         seed=_motion_bed_seed,
         title=lambda _data: "Bedgear",
+    ),
+    BED_TYPE_MOODBASE: _asking(
+        BED_TYPE_MOODBASE,
+        owns={**_BASE[BED_TYPE_MOODBASE].owns, CONF_HAS_MASSAGE: False, CONF_DISABLE_ANGLE_SENSING: True},
+        questions=(Question(CONF_BLE_DEVICE_NAME, default=lambda data: data.get(CONF_NAME, ""), text=True),),
+        validate=_moodbase_errors,
+        derive=lambda _data: _NO_PULSE_CHOICE,
+        seed=_motion_bed_seed,
+        title=lambda _data: "MoodBase",
     ),
     "l2motion": _asking(
         "l2motion",

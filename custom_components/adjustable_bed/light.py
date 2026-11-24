@@ -538,9 +538,11 @@ class AdjustableBedLight(AdjustableBedEntity, RestoreEntity, LightEntity):
             else None
         )
         shown: Callable[[], None] | None = None
+        controller_publishes_state = False
 
         async def turn_on(ctrl: BedController) -> None:
-            nonlocal shown
+            nonlocal controller_publishes_state, shown
+            controller_publishes_state = ctrl.publishes_rgb_light_state is True
             # Resolved inside the serialized command, so a request without a
             # color follows the last mode actually sent, never a dropped one.
             mode = explicit or self._attr_color_mode
@@ -555,7 +557,7 @@ class AdjustableBedLight(AdjustableBedEntity, RestoreEntity, LightEntity):
                 raise ValueError("This light has no active color mode")
 
         def show(delivery: Delivery) -> None:
-            if delivery is Delivery.NONE:
+            if delivery is Delivery.NONE or controller_publishes_state:
                 return
             if delivery is Delivery.SENT and shown is not None:
                 shown()
@@ -605,8 +607,11 @@ class AdjustableBedLight(AdjustableBedEntity, RestoreEntity, LightEntity):
                 else:
                     raise ValueError("No RGB color available for this light")
             if target_rgb is not None:
-                await ctrl.set_light_color(target_rgb)
-        if level is not None:
+                if level is None:
+                    await ctrl.set_light_color(target_rgb)
+                else:
+                    await ctrl.set_light_color_with_level(target_rgb, level)
+        if level is not None and (brightness_only or target_rgb is None):
             await ctrl.set_light_level(level)
 
         def shown() -> None:
@@ -652,7 +657,11 @@ class AdjustableBedLight(AdjustableBedEntity, RestoreEntity, LightEntity):
             )
             return
 
+        controller_publishes_state = False
+
         async def _turn_off(ctrl: BedController) -> None:
+            nonlocal controller_publishes_state
+            controller_publishes_state = ctrl.publishes_rgb_light_state is True
             if ctrl.supports_discrete_light_control or ctrl.supports_light_state_feedback:
                 await ctrl.lights_off()
                 return
@@ -663,7 +672,7 @@ class AdjustableBedLight(AdjustableBedEntity, RestoreEntity, LightEntity):
 
         def show(delivery: Delivery) -> None:
             # Shown inside the command, before a queued turn-on reads it.
-            if delivery is not Delivery.NONE:
+            if delivery is not Delivery.NONE and not controller_publishes_state:
                 # Partly sent leaves the light unknown.
                 self._attr_is_on = False if delivery is Delivery.SENT else None
                 self.async_write_ha_state()

@@ -68,6 +68,8 @@ def target(
     if family is not None:
         for key, value in members.items():
             setattr(controller, key, value)
+    if "supports_memory_recall_duration" not in capabilities:
+        controller.supports_memory_recall_duration = lambda _slot: controller.supports_held_memory_recall
     coordinator = MagicMock(spec=AdjustableBedCoordinator)
     coordinator.name = name
     coordinator.bed_type = bed_type
@@ -468,3 +470,20 @@ def test_selector_option_keys_are_valid_translation_keys() -> None:
         if not pattern.fullmatch(option)
     }
     assert not bad
+
+async def test_goto_preset_duration_is_validated_per_slot_for_every_target(
+    hass: HomeAssistant, resolve
+) -> None:
+    held = target(supports_held_memory_recall=True)
+    mixed = target(
+        supports_held_memory_recall=True,
+        supports_memory_recall_duration=lambda slot: slot == 1,
+    )
+    select(resolve, held, mixed)
+    with raises_key("preset_duration_not_supported"):
+        await hass.services.async_call(
+            DOMAIN, "goto_preset", {"device_id": ["first", "second"], "preset": 2, "duration": 1},
+            blocking=True,
+        )
+    for _, controller in (held, mixed):
+        controller.recall_memory.assert_not_awaited()

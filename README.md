@@ -110,6 +110,7 @@ bed has been tested on real hardware.
 | [Dorsal / Roomi](docs/beds/richmat.md#dorsal--roomi) | Dorsal app (CPRN, CORN, saved projects and Roomi controls, not yet tested) | Dorsal, Roomi |
 | [Dream Sense Bed](docs/beds/richmat.md#dream-sense-bed) | Dream Sense Bed app, four colors and saved products | Dream Sense |
 | [eShine E2000 to E5000](docs/beds/okin-nframe.md#eshine) | [eShine app, E2000, E3000 / E3100 and E5000](docs/beds/okin-nframe.md#eshine) | eShine |
+| [ENSO Sleep Control](docs/beds/richmat.md#enso-sleep-control) | Enso 2 app, including framed and raw-key receivers | ENSO Sleep |
 | [eShine E6000](docs/beds/richmat.md#eshine) | [eShine app, E6000](docs/beds/richmat.md#eshine) | eShine |
 | [Galaxy Bed Control](docs/beds/richmat.md#galaxy-bed-control) | [Galaxy Bed Control](docs/beds/richmat.md#galaxy-bed-control) | Star International |
 | [GM Control](docs/beds/gmmotor.md) | [GM Control](docs/beds/gmmotor.md), [GM Control sleep module, MM or SXB](docs/beds/gmmotor.md#sleep-modules) | GM Control |
@@ -136,6 +137,7 @@ bed has been tested on real hardware.
 | [Sinca Comfort Bed](docs/beds/mline.md#sinca-comfort-bed) | The Comfort Bed App (Sinca) | OKIN |
 | [M Line](docs/beds/mline.md) | M Line | OKIN |
 | [MotoMotion](docs/beds/motomotion.md) | [MotoMotion](docs/beds/motomotion.md) | MotoMotion |
+| [MoodBase](docs/beds/motomotion.md#moodbase) | [MoodBase](docs/beds/motomotion.md#moodbase) | Bob Mills Furniture (HHC receivers) |
 | [MotoSleep / Power Bob](docs/beds/motomotion.md#motosleep-and-power-bob-family) | [MotoSleep / Power Bob app, HHC models](docs/beds/motomotion.md#hhc-profiles-names-longer-than-14-characters), [Power Bob and binary MOTO models](docs/beds/motomotion.md#power-bob-profiles-14-character-names) | HHC, Power Bob |
 | [Nerum](docs/beds/nerum.md) | Nerum | Nerum |
 | [Nisco](docs/beds/richmat.md#nisco) | Nisco app and its separate HJ_Bed sleep receiver | Nisco |
