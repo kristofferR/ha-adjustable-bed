@@ -496,11 +496,11 @@ async def test_massage_slider_is_the_shared_timer_with_the_apps_four_stops(layou
     """The slider snaps to four stops the app labels 0, 2H, 3H and 5H."""
     controller, _, client, _ = await bed(layout)
     assert controller.supports_massage_timer and controller.auto_enable_massage
-    assert controller.massage_timer_options == [120, 180, 300]
+    assert controller.massage_timer_options == [10, 20, 30]
     assert controller.massage_timer_can_turn_off
     assert not any("massage" in spec.key for spec in controller.controller_number_specs)
     with virtual_clock():
-        for minutes in (0, 120, 180, 300):
+        for minutes in (0, 10, 20, 30):
             await controller.set_massage_timer(minutes)
     assert frames(client) == [off, "6e01005fce", "6e010063d2", "6e010061d0"]
     with raises_key("enso2_control_unavailable"):

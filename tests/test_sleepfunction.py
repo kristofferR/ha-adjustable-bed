@@ -1133,10 +1133,10 @@ async def test_massage_timer_is_the_shared_select_and_the_popup_has_no_off():
 
     ctrl, coordinator = controller("D1RM")
     assert ctrl.supports_massage_timer and ctrl.auto_enable_massage
-    assert ctrl.massage_timer_options == [120, 180, 300] and ctrl.massage_timer_can_turn_off
+    assert ctrl.massage_timer_options == [10, 20, 30] and ctrl.massage_timer_can_turn_off
     assert ctrl.controller_select_specs == ()
     # The slider's four stops, which the app labels 0, 2H, 3H and 5H.
-    for minutes, progress in ((0, 0), (120, 2), (180, 3), (300, 5)):
+    for minutes, progress in ((0, 0), (10, 2), (20, 3), (30, 5)):
         coordinator.client.write_gatt_char.reset_mock()
         await ctrl.set_massage_timer(minutes)
         assert packets(coordinator) == [massage_timer("D1RM", progress).hex()]

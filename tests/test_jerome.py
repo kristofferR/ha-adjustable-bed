@@ -399,9 +399,9 @@ async def test_massage_timer_is_the_shared_select_sending_the_old_selects_frames
         if layout == "Y6RM"
         else {
             0: p.massage_timer(layout, 0),
-            120: p.massage_timer(layout, 2),
-            180: p.massage_timer(layout, 3),
-            300: p.massage_timer(layout, 5),
+            10: p.massage_timer(layout, 2),
+            20: p.massage_timer(layout, 3),
+            30: p.massage_timer(layout, 5),
         }
     )
     ctrl, coord = controller(layout)

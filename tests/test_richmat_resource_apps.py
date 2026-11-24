@@ -276,9 +276,9 @@ async def test_d1rm_massage_slider_is_the_shared_timer_with_the_apps_four_stops(
     """The slider snaps to four stops the app labels 0, 2H, 3H and 5H."""
     ctrl, coordinator = controller(layout="D1RM")
     assert ctrl.supports_massage_timer and ctrl.auto_enable_massage
-    assert ctrl.massage_timer_options == [120, 180, 300] and ctrl.massage_timer_can_turn_off
+    assert ctrl.massage_timer_options == [10, 20, 30] and ctrl.massage_timer_can_turn_off
     assert not any("massage" in spec.key for spec in ctrl.controller_number_specs)
-    for minutes in (0, 120, 180, 300):
+    for minutes in (0, 10, 20, 30):
         await ctrl.set_massage_timer(minutes)
     assert packets(coordinator) == ["6e01005ecd", "6e01005fce", "6e010063d2", "6e010061d0"]
     assert not controller()[0].supports_massage_timer

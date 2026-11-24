@@ -442,9 +442,9 @@ async def test_massage_slider_is_the_apps_four_stops(clock, layout, off):
     """The slider snaps to four stops the app labels 0, 2H, 3H and 5H."""
     c, co = controller(layout)
     assert c.supports_massage_timer and c.auto_enable_massage
-    assert c.massage_timer_options == [120, 180, 300] and c.massage_timer_can_turn_off
+    assert c.massage_timer_options == [10, 20, 30] and c.massage_timer_can_turn_off
     assert not any("massage" in s.key for s in c.controller_number_specs)
-    for minutes in (0, 120, 180, 300):
+    for minutes in (0, 10, 20, 30):
         await c.set_massage_timer(minutes)
     assert packets(co) == [off, "6e01005fce", "6e010063d2", "6e010061d0"]
     with pytest.raises(HomeAssistantError):

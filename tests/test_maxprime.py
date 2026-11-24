@@ -681,12 +681,12 @@ async def test_alarm_requires_current_reply_and_uses_next_target_minute():
 async def test_massage_slider_is_the_shared_timer_with_the_apps_four_stops(layout, off):
     """The slider snaps to four stops the app labels 0, 2H, 3H and 5H."""
     ctrl, coordinator = controller(layout)
-    assert ctrl.massage_timer_options == [120, 180, 300] and ctrl.massage_timer_can_turn_off
+    assert ctrl.massage_timer_options == [10, 20, 30] and ctrl.massage_timer_can_turn_off
     assert not any("massage" in spec.key for spec in ctrl.controller_number_specs)
     with virtual_clock():
         await ctrl.start_notify()
         coordinator.client.write_gatt_char.reset_mock()
-        for minutes in (0, 120, 180, 300):
+        for minutes in (0, 10, 20, 30):
             await ctrl.set_massage_timer(minutes)
     assert packets(coordinator) == [off, "6e01005fce", "6e010063d2", "6e010061d0"]
 

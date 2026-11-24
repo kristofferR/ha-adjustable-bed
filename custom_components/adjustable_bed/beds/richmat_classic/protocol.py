@@ -84,8 +84,11 @@ MASSAGE_POPUP: Final = {"15": 0x5F, "30": 0x63, "45": 0x61, "toggle": 0x5E}
 """The popup's buttons by the app's view names (rb15Min, rb30Min, rb45Min, rbOnOff)."""
 POPUP_MINUTES: Final = {10: "15", 20: "30", 30: "45"}
 """What the popup's three buttons show: 10, 20 and 30 minutes."""
-SLIDER_MINUTES: Final = {0: 0, 120: 2, 180: 3, 300: 5}
-"""The massage slider's four stops, labelled 0, 2H, 3H and 5H, and the progress each sends."""
+SLIDER_MINUTES: Final = {0: 0, 10: 2, 20: 3, 30: 5}
+"""The massage slider's four stops and the progress each sends.
+
+The stops send the popup's 10, 20 and 30 minute commands; their own labels
+(0, 2H, 3H, 5H) come from a string array the app reuses."""
 
 
 def control(payload: bytes, wire: Wire, mode: int = 0) -> bytes:

@@ -542,7 +542,7 @@ test("Sleepy's shared massage timer sits beside Pairlink selectors", () => {
 
 test("Pairlink massage controls and state join the massage section", () => {
   const hass = hassWith([
-    entry("number.pairlink_timer", "reverie_pairlink_massage_timer"),
+    entry("select.pairlink_timer", "massage_timer"),
     entry("select.pairlink_mode", "reverie_pairlink_massage_mode"),
     entry("switch.pairlink_rhythm", "reverie_pairlink_massage_rhythm"),
     entry("binary_sensor.pairlink_low_battery", "reverie_pairlink_low_battery"),
@@ -550,7 +550,7 @@ test("Pairlink massage controls and state join the massage section", () => {
 
   const bed = bedEntitiesForDevice(hass, "dev1");
 
-  expect(bed.massage.timer).toBe("number.pairlink_timer");
+  expect(bed.massage.timer).toBe("select.pairlink_timer");
   expect(bed.massage.switches).toEqual(["switch.pairlink_rhythm"]);
   expect(bed.massage.selects).toEqual(["select.pairlink_mode"]);
   // A reading, not a button: it sits with the other utility states.

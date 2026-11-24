@@ -13691,7 +13691,7 @@ Utility, and scoped memory actions are separate presets with confirmed saves.
 Raw Nordic writes ignore the mode, as in the app.
 
 RGB lighting and its 0–300 second timeout appear after a valid LED reply.
-The **Massage timer** select offers the slider's four stops on D1RM and D9RM (off, 120, 180 and 300 minutes: the app labels them 0, 2H, 3H and 5H, while its commands are named 10, 20 and 30 minutes, and the real duration is not verified on a bed),
+The **Massage timer** select offers the slider's four stops on D1RM and D9RM (off, 10, 20 and 30 minutes: the same three commands the popup shows as 10, 20 and 30 minutes, although the slider's own stop labels read 0, 2H, 3H and 5H; the real duration is not verified on a bed),
 and 10, 20 or 30 minutes on layouts with the timer popup, which has no
 idempotent off. There is no measured bed position feedback.
 
@@ -13981,7 +13981,7 @@ controls. Preset saves ask for confirmation; memory saves use the card's Set
 mode. Saves do not accept a renewable hold. Extras
 start disabled. A toggle-only light offers an optional estimated on/off light.
 Massage durations use the **Massage timer** select. D1RM and D9RM offer
-the slider's four stops on D1RM and D9RM (off, 120, 180 and 300 minutes: the app labels them 0, 2H, 3H and 5H, while its commands are named 10, 20 and 30 minutes, and the real duration is not verified on a bed).
+the slider's four stops on D1RM and D9RM (off, 10, 20 and 30 minutes: the same three commands the popup shows as 10, 20 and 30 minutes, although the slider's own stop labels read 0, 2H, 3H and 5H; the real duration is not verified on a bed).
 Y6RM offers the popup's 10, 20 and 30 minutes, with a **Toggle massage timer**
 button for the popup's timer on/off button.
 E3RM separates sustained recall from immediate saving. YFRM, YGRM and BRRM
@@ -15218,8 +15218,9 @@ combined beds retain each physical bed’s settings.
 
 The entities expose named actions, inverse on/off pairs as switches, known
 light state through the light platform, the **Massage timer** select (the
-slider's four stops on D1RM and D9RM: off, 120, 180 and 300 minutes, which the
-app labels 0, 2H, 3H and 5H while naming their commands 10, 20 and 30 minutes,
+slider's four stops on D1RM and D9RM: off, 10, 20 and 30 minutes, the same
+three commands the popup shows as 10, 20 and 30 minutes although the slider's
+own stop labels read 0, 2H, 3H and 5H,
 so the real duration is not verified on a bed; 10, 20 or 30 minutes on Y6RM,
 whose popup has no idempotent off), and the layout's real intensity range where
 present. Aroma
@@ -16965,7 +16966,7 @@ buttons. GVRM's unloaded alternate getter does not become a foot command.
 Hold-mode recall actions have their own Move to buttons rather than an app UI
 mode selector.
 
-The **Massage timer** select offers the slider's four stops on D1RM and D9RM (off, 120, 180 and 300 minutes: the app labels them 0, 2H, 3H and 5H, while its commands are named 10, 20 and 30 minutes, and the real duration is not verified on a bed),
+The **Massage timer** select offers the slider's four stops on D1RM and D9RM (off, 10, 20 and 30 minutes: the same three commands the popup shows as 10, 20 and 30 minutes, although the slider's own stop labels read 0, 2H, 3H and 5H; the real duration is not verified on a bed),
 and 10, 20 or 30 minutes on layouts with the timer popup, which has no
 idempotent off. Aroma times are configuration entities, disabled by default.
 Changing one sends all three, 150 ms apart, as the app's Save does; a time
@@ -17320,7 +17321,7 @@ layout's supported recalls continuous and reveals their separate save
 controls. E3RM provides explicit save and held recall buttons. Every save asks
 for confirmation on the dashboard card.
 
-The **Massage timer** select offers the slider's four stops on D1RM and D9RM (off, 120, 180 and 300 minutes: the app labels them 0, 2H, 3H and 5H, while its commands are named 10, 20 and 30 minutes, and the real duration is not verified on a bed).
+The **Massage timer** select offers the slider's four stops on D1RM and D9RM (off, 10, 20 and 30 minutes: the same three commands the popup shows as 10, 20 and 30 minutes, although the slider's own stop labels read 0, 2H, 3H and 5H; the real duration is not verified on a bed).
 Y6RM offers the popup's 10, 20 and 30 minutes and a separate toggle. The nine
 layouts whose selector the app labels Left and Right show it as **Controlled
 side**.

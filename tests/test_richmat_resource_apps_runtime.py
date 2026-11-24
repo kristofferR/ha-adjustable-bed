@@ -179,7 +179,7 @@ async def test_real_massage_slider_is_the_timer_select_with_the_apps_four_stops(
         ctrl.massage_timer_options,
         has_off=ctrl.massage_timer_can_turn_off,
     )
-    assert select.options == ["Off", "120 min", "180 min", "300 min"]
+    assert select.options == ["Off", "10 min", "20 min", "30 min"]
     client.write_gatt_char.reset_mock()
     for option in select.options:
         await select.async_select_option(option)
