@@ -353,7 +353,10 @@ and model.
   frames. The card shows P2 presets as normal recall buttons with separate save
   buttons; the 5.5-second hold is available through `hold_control`. A cancelled
   hold cleans up without starting a new recall.
-- The **Massage timer** select offers the app's three timers as Step 1 to 3.
+- The **Massage timer** select offers the app's three timers: 10, 20 and
+  30 minutes.
+- The **Automatic anti-snore** select offers the app's Low, Medium and High
+  angle, which send levels 1, 3 and 6.
   The bed reports the remaining time in steps of 600 units with no known
   unit, so the steps are not shown as minutes.
 

@@ -7248,9 +7248,9 @@
         "name": "Automatic anti-snore",
         "state": {
           "off": "Off",
-          "1": "Level 1",
-          "3": "Level 3",
-          "6": "Level 6",
+          "1": "Low angle",
+          "3": "Medium angle",
+          "6": "High angle",
           "demo": "Demonstration"
         }
       },
@@ -7292,9 +7292,9 @@
       "smart_sleep_timer": {
         "name": "Massage timer",
         "state": {
-          "1": "Step 1",
-          "2": "Step 2",
-          "3": "Step 3"
+          "1": "10 minutes",
+          "2": "20 minutes",
+          "3": "30 minutes"
         }
       },
       "goodvibe_side": {
@@ -7316,9 +7316,9 @@
       "onlysnore_intervention": {
         "name": "Anti-snore intervention",
         "state": {
-          "1": "Level 1",
-          "3": "Level 3",
-          "6": "Level 6",
+          "1": "Low angle",
+          "3": "Medium angle",
+          "6": "High angle",
           "off": "Off"
         }
       },

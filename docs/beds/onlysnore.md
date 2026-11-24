@@ -25,7 +25,7 @@ tell how many motors your bed has.
 | Save | Six non-flat presets |
 | Massage | Massage switch (on while the bed reports a massage timer), wave, timer and head/foot strength steps |
 | Lights | One light button; no separate on and off, state not shown |
-| Local settings | Privacy and snore detection switches, anti-snore intervention select and level tests |
+| Local settings | Privacy and snore detection switches, anti-snore intervention select (Low, Medium or High angle, which send levels 1, 3 and 6) and level tests |
 | Alarms | One or three, depending on the bed |
 
 ## Choosing a profile
