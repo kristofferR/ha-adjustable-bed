@@ -127,6 +127,9 @@ async def test_selection_survives_disconnect_and_controller_replacement(
     c._client.is_connected = True
     c._client.stop_notify = AsyncMock()
     c._client.disconnect = AsyncMock(side_effect=lambda: setattr(c._client, "is_connected", False))
+    c._client.write_gatt_char = AsyncMock()
+    first_char = SimpleNamespace(uuid="ffe1", handle=13)
+    ctrl._session = (c._client, first_char, first_char)
     selection = AdjustableBedControllerSelect(
         c, next(s for s in ctrl.controller_select_specs if s.key == "motomotion_" + key)
     )
@@ -135,6 +138,9 @@ async def test_selection_survives_disconnect_and_controller_replacement(
         patch.object(c, "_async_refresh_controller_auth", AsyncMock()),
     ):
         await selection.async_select_option(value)
+    if key == "posture":
+        # Choosing a posture moves the bed, as tapping it in the app does.
+        assert c._client.write_gatt_char.await_args.args[1] == expected
     await c.async_disconnect("idle_timeout")
     assert c.controller is None
 

@@ -320,9 +320,23 @@ async def test_restore_rejects_invalid_posture(coordinator, value):
     with pytest.raises(ValueError, match="Select a MotoMotion posture"):
         await c.action("motomotion_posture_recall")
     assert written(coordinator) == []
+    # The app's posture tap moves the bed at once; Recall repeats the target.
     await c.select("posture", "tv")
-    await c.action("motomotion_posture_recall")
     assert written(coordinator) == [posture("tv", 170, 100, 55).to_bytes()]
+    await c.action("motomotion_posture_recall")
+    assert written(coordinator) == [posture("tv", 170, 100, 55).to_bytes()] * 2
+
+
+async def test_posture_choice_without_measurements_stays_local(coordinator):
+    c = controller(coordinator, "SOFA000001A000H")
+    await c.select("posture", "lay")
+    assert c._posture == "lay" and written(coordinator) == []
+
+
+def test_height_is_bounded_to_the_app_pickers(coordinator):
+    c = controller(coordinator, "SOFA000001A000H")
+    height = next(s for s in c.controller_number_specs if s.key == "motomotion_height")
+    assert (height.native_min_value, height.native_max_value) == (122, 271)
 
 
 @pytest.mark.parametrize("mismatch", ["user", "posture", "dimensions", "range", "bool", "shape"])
@@ -782,11 +796,9 @@ async def test_switch_posture_invalidates_save_and_rebuilds_five_target_axes(coo
         await c.async_execute_motomotion_request(Request("save_posture", posture="lay"))
     assert c._posture == "tv" and c._custom == {}
     await c.select("posture", "lay")
-    assert c._targets is None
-    with pytest.raises(ValueError):
-        await c.action("motomotion_posture_save")
-    await c.set_number("target_lumbar", 20)
     lay = posture("lay", 170, 100, 55)
+    assert c._targets == lay and written(coordinator)[-1] == lay.to_bytes()
+    await c.set_number("target_lumbar", 20)
     assert c._targets == Position(lay.head, lay.base, lay.back, 20, lay.tilt)
     await c.action("motomotion_posture_save")
     restored = controller(coordinator, "SOFA000001A000H")

@@ -113,6 +113,8 @@ async def select(controller: BedController, value: str, *, key: str) -> None:
 
 # A user's body dimensions, in centimetres as the app enters them.
 _DIMENSIONS: Final = ("height", "buttocks", "knee")
+# Whole centimetres its height pickers reach: 140-220 cm, or 4 ft 0 in to 8 ft 11 in.
+_HEIGHT_CM: Final = (122, 271)
 
 # Entity names for actions whose key does not read as one.
 _ACTION_NAMES: Final = {
@@ -1069,6 +1071,11 @@ class MotoMotionController(BedController):
             self._side = value
         elif key == "posture":
             self._select_posture(value)
+            # The app's posture tap writes the target at once. Without a user's
+            # measurements it only asks for a user, so the choice stays local.
+            if value in self._custom or set(self._dimensions) == set(_DIMENSIONS):
+                self._targets = self._position()
+                await self.write_command(self._targets.to_bytes())
         else:
             self._music_mode = value
             profile = self._custom_eq if value == "custom" else list(MUSIC[value])
@@ -1112,6 +1119,7 @@ class MotoMotionController(BedController):
             ranges["timer"] = (0, 7259)
         if self.profile.users:
             ranges.update(dict.fromkeys(_DIMENSIONS, (0, 65535)))
+            ranges["height"] = _HEIGHT_CM
             ranges.update({"target_" + k: (0, v) for k, v in FINE_LIMITS.items()})
         return tuple(
             ControllerNumberSpec(

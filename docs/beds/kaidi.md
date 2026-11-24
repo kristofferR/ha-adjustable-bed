@@ -792,6 +792,8 @@ single column.
   address/profile. These are optimistic requests, with no feedback from the bed.
 - A profile/room change clears incompatible saved intent.
 - The requested timer and strength remain visible per side while disconnected.
+  Stopping massage sets both displayed strengths of that side to zero, as
+  the app does.
 - HA retains that intent across restart as well as reconnect; the phone's static
   wire byte resets at process startup.
 - No timer expiry or external remote use is inferred as telemetry.
@@ -1060,7 +1062,8 @@ single-address pairing. It restores the local side record, with first selected
 for a new record; Home Assistant has no entity for that app screen choice, so
 use single-address pairing or the `comfy_control` action's `side` field. Lock
 and the local timer are switches (Control lock, Timer); the lock query runs on
-connect. The source's missing-record fallbacks are feature-specific:
+connect. Choosing a duration while the timer runs restarts its countdown
+from the new duration, as in the app. The source's missing-record fallbacks are feature-specific:
 movement/presets right, light both, timer first, lock both. The shared lock
 handler also reads that record on 129/131 while normal controls stay first.
 

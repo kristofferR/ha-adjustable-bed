@@ -685,6 +685,10 @@ class ComfyController(KaidiAppController):
         await self._ensure_session()
         self._ordinary_guard()
         await self._send_opcode(self._opcode(f"timer_{minutes}", lane))
+        start = self._timer_started[lane]
+        if start and time.time() < start + self._timer_minutes[lane] * 60:
+            # A duration chosen while the timer runs restarts the app's countdown.
+            self._timer_started[lane] = time.time()
         self._timer_minutes[lane] = minutes
         self._save_local()
 

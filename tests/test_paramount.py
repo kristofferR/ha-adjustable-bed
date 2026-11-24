@@ -510,3 +510,41 @@ async def test_prohibition_switches_allow_the_physical_control_when_on(
         ("call_prohibition", False),
         ("call_prohibition", True),
     ]
+
+
+async def test_range_numbers_keep_minimum_below_maximum(bed: ParamountController) -> None:
+    numbers = {spec.key: spec for spec in bed.controller_number_specs}
+    await numbers["paramount_legs_max"].set_fn(bed, 20)
+    with pytest.raises(ValueError, match="lower than maximum"):
+        await numbers["paramount_legs_min"].set_fn(bed, 20)
+    await numbers["paramount_legs_min"].set_fn(bed, 19)
+    assert bed._ranges["legs"] == (19, 20)
+
+
+async def test_narrowed_range_turns_linked_movement_off_in_state(
+    bed: ParamountController,
+) -> None:
+    from custom_components.adjustable_bed.beds.paramount.controller import (
+        RANGE_ENABLED_KEYS,
+    )
+
+    state = bed._coordinator.controller_state
+    bed._coordinator.handle_controller_state_updates.side_effect = (
+        bed._coordinator.forward_controller_state_updates.side_effect
+    )
+    link = next(
+        spec for spec in bed.controller_switch_specs if spec.key == "paramount_gearing_range"
+    )
+    assert link.local_set_fn is not None
+    link.local_set_fn(True)
+    assert state[RANGE_ENABLED_KEYS["gearing"]] == "enabled"
+    head_max = next(s for s in bed.controller_number_specs if s.key == "paramount_head_max")
+    await head_max.set_fn(bed, 40)
+    assert state[RANGE_ENABLED_KEYS["gearing"]] == "disabled"
+    with pytest.raises(ValueError, match="cannot move together"):
+        link.local_set_fn(True)
+    # Turning the narrowed axis off lifts the gate, but the switch stays off.
+    bed._set_range_enabled("head", False)
+    assert state[RANGE_ENABLED_KEYS["gearing"]] == "disabled"
+    link.local_set_fn(True)
+    assert state[RANGE_ENABLED_KEYS["gearing"]] == "enabled"

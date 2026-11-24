@@ -920,7 +920,9 @@ A full-state checkbox update is observed without automatically echoing a write.
 TEMP reports power, light, side setpoints/timers, current temperatures,
 water and circulation. Version is accepted only on A0/81; its outgoing
 version query remains A0/01. MOON's version decoder separately accepts A0/01.
-Signed byte observations retain their signed values.
+Signed byte observations retain their signed values. When the
+controller confirms that heating was turned on, both setpoint numbers show
+30 °C, as the app's display does, until the next reported setpoint.
 
 P1 date and alarm events require CRLF in the current callback, as in the app.
 Version uses an accumulated buffer. Fragmented date/alarm events are not
@@ -1494,6 +1496,8 @@ write to a replacement connection.
 Text DT/LV/fan actions use the app's `suffix`; MOON/TEMP actions use
 `logical_side` (`left` or `right`) and `value` when their payload requires them.
 The physical paired `side` remains separate from the binary payload side.
+Starting the head or foot massage zone puts the overall level back to 0,
+as the app's shared strength display does.
 
 Text layouts take alarms through the shared `set_alarm` action. Each chosen
 weekday becomes one `AT+SA` frame (Sunday 0 on the wire) with the app's Loop

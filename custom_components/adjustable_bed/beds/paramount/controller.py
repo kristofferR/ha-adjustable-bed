@@ -61,6 +61,10 @@ RANGE_ENABLED_KEYS: Final = {
     if axis != "memory"
 }
 DURATION: Final = StateKey[str | None]("paramount_duration")
+_LINK_LIMITED: Final = (
+    "Head and legs cannot move together while the head or leg movement range is limited. "
+    "Reset that range or turn it off first"
+)
 
 
 class ParamountPositionSeekPolicy(PositionSeekPolicy):
@@ -200,7 +204,17 @@ class ParamountController(ProfileExecution, BedController):
         low = min(full[1], max(full[0], low))
         return low, max(low, min(full[1], high))
 
+    def _link_limited(self) -> bool:
+        """Whether an enabled head or leg range has left its full range."""
+        return any(
+            self._range_enabled.get(axis, True) and self._bounds(axis) != (0, maximum)
+            for axis, maximum in (("head", self.profile.head_max), ("legs", self.profile.legs_max))
+        )
+
     def _publish_preferences(self) -> None:
+        if self._link_limited():
+            # The app unchecks linked movement here and disables its switch.
+            self._range_enabled["gearing"] = False
         self.forward_controller_state_updates(DURATION(self._duration), SERIAL(self._serial))
         for axis in RANGE_ENABLED_KEYS:
             low, high = self._bounds(axis)
@@ -226,13 +240,8 @@ class ParamountController(ProfileExecution, BedController):
     def validate_hold_control(self, control: str, duration_ms: int) -> None:
         if control not in self.held_control_options or duration_ms <= 0:
             raise ValueError("Choose a control this bed offers and a duration longer than zero")
-        if control.startswith("gearing_") and any(
-            self._range_enabled.get(axis, True) and self._bounds(axis) != (0, maximum)
-            for axis, maximum in (("head", self.profile.head_max), ("legs", self.profile.legs_max))
-        ):
-            raise ValueError(
-                "Head and legs cannot move together while the head or leg movement range is limited. Reset that range or turn it off first"
-            )
+        if control.startswith("gearing_") and self._link_limited():
+            raise ValueError(_LINK_LIMITED)
 
     @property
     def motor_control_specs(self) -> tuple[MotorControlSpec, ...]:
@@ -380,6 +389,8 @@ class ParamountController(ProfileExecution, BedController):
         return tuple(specs)
 
     def _set_range_enabled(self, axis: str, enabled: bool) -> None:
+        if axis == "gearing" and enabled and self._link_limited():
+            raise ValueError(_LINK_LIMITED)
         self._range_enabled[axis] = enabled
         self._publish_preferences()
 
@@ -396,8 +407,9 @@ class ParamountController(ProfileExecution, BedController):
                 if isinstance(ctrl, ParamountController):
                     low, high = ctrl._bounds(name)
                     low, high = (int(value), high) if limit == "min" else (low, int(value))
-                    if low > high:
-                        raise ValueError("Minimum must not exceed maximum")
+                    # The app's pickers stop one short of the other end.
+                    if low >= high:
+                        raise ValueError("Minimum must be lower than maximum")
                     ctrl._ranges[name] = (low, high)
                     ctrl._publish_preferences()
 

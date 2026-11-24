@@ -214,7 +214,7 @@ legs use their named axes; height has its own cover and cm sensor. Linked motion
 has its own cover. Concurrent Push remains the app's named action, without an
 assumed axis combination. There are no split-side selectors.
 
-Use the speed select and the **Call button** and **Bed switches** switches (on
+Use the speed select (Normal or Fast) and the **Call button** and **Bed switches** switches (on
 allows the physical control) to change bed settings. Changes first read
 current settings, preserve every unrelated byte and both memories, then compare
 all readback fields. HA fails a mismatch without automatically repeating the
@@ -223,8 +223,10 @@ write; it does not copy the app's collision-prone XOR-only confirmation.
 Per-axis minimum and maximum numbers and the movement switches are local
 preferences, persisted per bed. Disabling an axis prevents its manual movement. Limits select neutral
 from feedback and constrain recall targets. Linked motion uses head feedback.
+A minimum stays below its maximum, as in the app's pickers.
 Linked movement is unavailable while an enabled head or leg range is narrowed,
-including after restoring preferences. These are software bounds, not physical
+including after restoring preferences: the **Linked motion movement** switch
+turns off and cannot be turned on until that range is reset or turned off. These are software bounds, not physical
 safety interlocks. The duration select
 chooses hold or 1–4 seconds for native actions. A hold-mode tap uses HA's bounded
 one-second pulse; the dashboard's pressed gesture uses the renewable hold service.

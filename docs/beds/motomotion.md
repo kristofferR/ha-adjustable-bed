@@ -296,7 +296,7 @@ The status sensor retains RGB/D/comfort/HSW fields and parse errors. Heat, massa
 
 #### Services
 
-The `adjustable_bed.motomotion` action manages named local users and postures. `dimensions` is `[height, buttocks_height, knee_height]` in centimetres. All must be finite. The four posture keys are `upright`, `recline`, `tv`, and `lay`. Fine-tuning targets require all five keys: head 0–863, base 0–3174, back 0–1454, lumbar 0–874, tilt 0–629. Generated head targets can reach 867; that source mismatch is preserved. Local custom saves do not program hardware memory. Switching user or posture invalidates unsent working targets; a save request must match the user and posture that own those targets.
+The `adjustable_bed.motomotion` action manages named local users and postures. `dimensions` is `[height, buttocks_height, knee_height]` in centimetres. All must be finite. The Height number accepts 122 to 271 cm, the span of the app's pickers (140 to 220 cm, or 4 ft 0 in to 8 ft 11 in). Choosing a posture in the Posture select moves the bed to it at once when the selected user's measurements or a saved custom posture exist, as tapping a posture does in the app; without them the choice is only stored. The four posture keys are `upright`, `recline`, `tv`, and `lay`. Fine-tuning targets require all five keys: head 0–863, base 0–3174, back 0–1454, lumbar 0–874, tilt 0–629. Generated head targets can reach 867; that source mismatch is preserved. Local custom saves do not program hardware memory. Switching user or posture invalidates unsent working targets; a save request must match the user and posture that own those targets.
 
 #### Evidence
 
