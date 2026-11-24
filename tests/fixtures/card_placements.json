@@ -3485,6 +3485,12 @@
  "number:comfortfurniture_wave_level": {
   "card_section": "massage"
  },
+ "number:dreamlab_light_seconds": {
+  "card_section": "lighting"
+ },
+ "number:dreamlab_massage_progress": {
+  "card_section": "massage"
+ },
  "number:dreamsense_light_seconds": {
   "card_section": "lighting"
  },
@@ -3890,6 +3896,18 @@
   "card_section": "motors"
  },
  "select:comfy_timer_selection": {
+  "card_section": "utility"
+ },
+ "select:dreamlab_axis": {
+  "card_section": "utility"
+ },
+ "select:dreamlab_head_foot": {
+  "card_section": "utility"
+ },
+ "select:dreamlab_mode": {
+  "card_section": "utility"
+ },
+ "select:dreamlab_press_mode": {
   "card_section": "utility"
  },
  "select:dreamsense_selected_side": {

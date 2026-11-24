@@ -55,6 +55,7 @@ from custom_components.adjustable_bed.profiles.richmat_legacy import profiles as
 from scripts.codec_docs import (
     _bedtech_classic,
     _dorsal,
+    _dreamlab,
     _galaxy,
     _okimiki,
     _richmat_legacy,
@@ -1777,6 +1778,7 @@ BLOCKS.append((GUIDE, "mlily-remote-commands", render_mlily_remote))
 BLOCKS += _sleepfunction.BLOCKS
 
 BLOCKS += _bedtech_classic.BLOCKS
+BLOCKS += _dreamlab.BLOCKS
 
 
 BLOCKS += LP2_BLOCKS

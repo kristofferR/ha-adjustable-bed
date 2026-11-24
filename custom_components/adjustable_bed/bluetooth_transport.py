@@ -28,6 +28,7 @@ from dataclasses import dataclass
 from enum import StrEnum
 from typing import TYPE_CHECKING, Any, TypeGuard
 
+from bluetooth_data_tools import parse_advertisement_data
 from homeassistant.components import bluetooth
 from homeassistant.core import HomeAssistant, callback
 
@@ -44,6 +45,18 @@ _ESPHOME_DOMAIN = "esphome"
 _CONF_SOURCE = "source"
 _CONF_SOURCE_DOMAIN = "source_domain"
 _CONF_SOURCE_MODEL = "source_model"
+
+
+def advertised_local_name(info: bluetooth.BluetoothServiceInfoBleak | None) -> str | None:
+    """Get the BLE local name from packet data or the original Bleak scan."""
+    if info is None:
+        return None
+    if isinstance(info.raw, bytes):
+        return parse_advertisement_data((info.raw,)).local_name
+    advertisement = info.advertisement
+    # HA rebuilds AdvertisementData with empty platform data when injecting a
+    # cached name. The name on that rebuilt object has no packet provenance.
+    return advertisement.local_name if advertisement.platform_data else None
 
 
 class TransportClass(StrEnum):

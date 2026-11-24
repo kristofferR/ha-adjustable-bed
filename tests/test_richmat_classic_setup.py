@@ -29,7 +29,7 @@ from custom_components.adjustable_bed.setup_questions import SetupProfile, setup
 
 PROFILE = setup_profile(BED_TYPE_RICHMAT_CLASSIC_APPS)
 assert isinstance(PROFILE, SetupProfile)
-LAYOUT, SINGLE_BASE, THIRD_SERVICE = PROFILE.questions
+LAYOUT, SINGLE_BASE, THIRD_SERVICE, BLE_NAME = PROFILE.questions
 
 
 def _layouts(app: str) -> set[str]:
@@ -60,6 +60,7 @@ def test_all_app_choices_are_findable_and_model_inventories_are_distinct():
         'jerome2': 532,
         'baseremote': 558,
         'maxprime': 554,
+        'dreamlab2': 554,
         **dict.fromkeys(RESOURCE_APPS, 243),
     }
     for app, models in MODEL_CHOICES.items():
@@ -163,7 +164,7 @@ def test_factory_test_layouts_are_never_offered(app):
 def test_name_admission_is_only_an_app_hint_and_excludes_diagnostic_names():
     from custom_components.adjustable_bed.beds.richmat_classic.discovery import matching_apps
     from custom_components.adjustable_bed.detection import detect_bed_type_detailed
-    assert set(matching_apps('6BRM-123')) == set(APP_NAMES)
+    assert set(matching_apps('6BRM-123')) == set(APP_NAMES) - {'dreamlab2'}
     assert matching_apps(' B6RU') == ()
     assert matching_apps(None) == ()
     raw = SimpleNamespace(name='6BRM-123',service_uuids=[],manufacturer_data={},address='AA:BB:CC:DD:EE:FF')
@@ -375,3 +376,26 @@ async def test_a_beta_bed_on_a_factory_test_layout_loads_without_connecting(
     # Configure refuses the saved layout until the bed's own is chosen.
     with pytest.raises(ValueError):
         _setup({**entry.data})
+
+
+def test_dreamlab_layout_suggests_advertised_name_and_honors_picker_boundaries():
+    data = {"protocol_variant": "dreamlab2"}
+    assert PROFILE.seed is not None
+    discovered = SimpleNamespace(
+        name="MPE_HJ001",
+        raw=None,
+        advertisement=SimpleNamespace(local_name="MPE_HJ006-1", platform_data=("scanner",)),
+    )
+    staged = PROFILE.seed(None, data, discovered)
+    assert LAYOUT.default_for(staged) == "BNRM"
+    discovered.advertisement.local_name = None
+    assert PROFILE.seed(None, data, discovered) == data
+    assert BLE_NAME.asked(data)
+    assert not BLE_NAME.asked({"protocol_variant": "baseremote"})
+    assert "ZRS0:B8TT" in _layouts("dreamlab2")
+    assert _setup({**data, "product_type": "ZRS0:B8TT"})["product_type"] == "B8TT"
+    assert _setup({**data, "product_type": "ZR90"})["product_type"] == "S9RM"
+    for layout in ("QRRM", "ZRS0", "6HRM", "FWRM", "WFRM", "TEST", "RMCS"):
+        assert layout not in _layouts("dreamlab2")
+        with pytest.raises(ValueError, match="richmat_classic_layout"):
+            _setup({**data, "product_type": layout})

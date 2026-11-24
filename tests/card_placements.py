@@ -222,6 +222,7 @@ def runtime_variants(controllers: Iterable[BedController]) -> Iterator[BedContro
     from custom_components.adjustable_bed.beds.paramount.controller import ParamountController
     from custom_components.adjustable_bed.beds.relax_motion.controller import RelaxMotionController
     from custom_components.adjustable_bed.beds.richmat_classic.bedsmart import BedSmartController
+    from custom_components.adjustable_bed.beds.richmat_classic.dreamlab import DreamlabController
     from custom_components.adjustable_bed.beds.richmat_classic.jerome import JeromeController
     from custom_components.adjustable_bed.beds.richmat_classic.lp2 import Lp2Controller
     from custom_components.adjustable_bed.beds.richmat_classic.maxprime import MaxprimeController
@@ -375,6 +376,11 @@ def runtime_variants(controllers: Iterable[BedController]) -> Iterator[BedContro
         elif isinstance(controller, Lp2Controller):
             for wire in ("RAW", "FRAMED"):
                 yield variant(controller, _wire=wire)
+        elif isinstance(controller, DreamlabController):
+            for layout in ("D1RM", "F5RM", "Y6RM", "U3RM", "GVRM", "YFRM", "E3RM"):
+                model = load_catalog(controller.app).models[layout]
+                yield variant(controller, layout=layout, _model=model, _controls=model.controls,
+                              _known_light=True)
         elif isinstance(controller, JeromeController):
             for layout in ("D1RM", "D9RM", "Y6RM", "R2RM", "DXRM", "B9TT"):
                 model = load_catalog("jerome2").models[layout]

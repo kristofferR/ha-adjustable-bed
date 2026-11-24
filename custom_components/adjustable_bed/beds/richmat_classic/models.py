@@ -4,7 +4,7 @@ Data extracted outside this repository from the apps' catalogs in
 ``beds/richmat_classic/data``; not edited by hand.
 """
 
-from ...profiles import baseremote, maxprime
+from ...profiles import baseremote, dreamlab, maxprime
 from ...profiles.bedsmart import ALIASES as BEDSMART_ALIASES
 from ...profiles.bedsmart import LAYOUTS as BEDSMART_LAYOUTS
 from ...profiles.bedsmart import NAVIGATION_LAYOUTS as BEDSMART_NAVIGATION
@@ -433,3 +433,13 @@ LAYOUT_PICKER_CHOICES["bedsmart"] = {
 # Jerome's power base has its own complete, frozen resource domain.
 MODEL_CHOICES['jerome2'] = JEROME_LAYOUTS
 MANUAL_ALIASES['jerome2'] = {key: value for key, value in JEROME_ALIASES.items() if not key.startswith("L&P") and value not in JEROME_EXCLUDED}
+
+
+MODEL_CHOICES[dreamlab.APP] = tuple(sorted((*dreamlab.LAYOUTS, "6HRM", "QRRM", *dreamlab.LAYOUT_PICKERS)))
+MANUAL_ALIASES[dreamlab.APP] = {
+    name: target for name, target in dreamlab.ALIASES.items()
+    if len(name) == 4 and target in dreamlab.LAYOUTS
+}
+LAYOUT_PICKER_CHOICES[dreamlab.APP] = {
+    key: value for choices in dreamlab.LAYOUT_PICKERS.values() for key, value in choices.items()
+}

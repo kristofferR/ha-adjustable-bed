@@ -1603,6 +1603,8 @@ async def test_central_entry_factory_routes_real_notify_callback_and_action(
         manufacturer_data=_manufacturer_data(),
         service_uuids=(PAIRLINK_SERVICE_UUID,),
         service_data={},
+        raw=None,
+        advertisement=SimpleNamespace(local_name="R510L", platform_data=()),
     )
     monkeypatch.setattr(
         bluetooth,

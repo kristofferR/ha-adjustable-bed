@@ -520,6 +520,7 @@ async def create_controller(
     ble_model: str | None = None,
     manufacturer_data: dict[int, bytes] | None = None,
     advertisement_name: str | None = None,
+    advertisement_local_name: str | None = None,
 ) -> BedController:
     """Create the controller for a bed type, carrying its static traits.
 
@@ -532,7 +533,8 @@ async def create_controller(
         device_name: BLE name of the live link, else the display name.
         ble_manufacturer, ble_model: Device Information Service 0x2A29 and 0x2A24.
         manufacturer_data: Last advertisement manufacturer payloads by Company ID.
-        advertisement_name: Name in the last advertisement.
+        advertisement_name: Home Assistant's name for the last advertisement.
+        advertisement_local_name: BLE local name, without a display alias fallback.
 
     Raises:
         ValueError: If the bed type is unknown or its configuration is invalid.
@@ -554,6 +556,7 @@ async def create_controller(
                 client=client,
                 device_name=device_name,
                 advertisement_name=advertisement_name,
+                advertisement_local_name=advertisement_local_name,
                 manufacturer_data=manufacturer_data,
                 ble_manufacturer=ble_manufacturer,
                 ble_model=ble_model,

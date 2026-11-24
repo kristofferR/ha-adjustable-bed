@@ -18,6 +18,7 @@ from typing import Final, Literal
 from ..codec import richmat as codec
 from ..codec.richmat import COMPAT_STOP, STOP, Framing, Transport, TransportKey
 from ..execution import NO_EXECUTION_CAPABILITIES, STREAM_HOLD, ExecutionCapabilities
+from .dreamlab import APP as DREAMLAB_APP
 from .richmat_resource_apps import APPS as RESOURCE_APPS
 
 Button = Literal[
@@ -317,7 +318,7 @@ MLILY_REMOTE: Final = RichmatProfile(key="mlily_remote", transports=("n1", "w1",
 CLASSIC_TRANSPORTS: Final[tuple[TransportKey, ...]] = ("w1", "w2", "n1", "w4")
 RICHMAT_CLASSIC: Final[dict[str, RichmatProfile]] = {
     app: RichmatProfile(key=f"richmat_classic_{app}", transports=CLASSIC_TRANSPORTS)
-    for app in ("avocadoecobase", "coastersleep", "fortywinks", "milemont", "superior", "luunarise2", "powercool", "sleepfunction", "lp2", "bedsmart", "jerome2", "baseremote", "maxprime", *RESOURCE_APPS)
+    for app in ("avocadoecobase", "coastersleep", "fortywinks", "milemont", "superior", "luunarise2", "powercool", "sleepfunction", "lp2", "bedsmart", "jerome2", "baseremote", "maxprime", DREAMLAB_APP, *RESOURCE_APPS)
 }
 
 RICHMAT_CLASSIC["lp2"] = RichmatProfile(key="richmat_classic_lp2", transports=("w0", *CLASSIC_TRANSPORTS))

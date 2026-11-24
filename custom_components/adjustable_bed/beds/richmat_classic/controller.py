@@ -1027,6 +1027,16 @@ async def build_controller(ctx: BuildContext) -> RichmatClassicController:
     from .profiles import load_catalog
 
     await ctx.coordinator.hass.async_add_executor_job(load_catalog, ctx.variant)
+    if ctx.variant == "dreamlab2":
+        await ctx.preload("richmat_classic.dreamlab")
+        from .dreamlab import DreamlabController
+
+        return DreamlabController(
+            ctx.coordinator,
+            app=ctx.variant,
+            device_name=ctx.advertisement_local_name,
+            capability_snapshot=ctx.stored_capabilities("richmat_classic_apps"),
+        )
     if ctx.variant == "jerome2":
         await ctx.preload("richmat_classic.jerome")
         from .jerome import JeromeController

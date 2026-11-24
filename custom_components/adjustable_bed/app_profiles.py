@@ -237,7 +237,7 @@ _BY_BED_TYPE: Final[dict[str, SideProfile]] = {
     "saatva": SideProfile("Saatva", frozenset({CONF_PRODUCT_TYPE}), variant_owned=True),
     "bobpowerbase": SideProfile("Power Bob Base", variant_owned=True),
     BED_TYPE_MLILY_REMOTE: SideProfile("MLILY Remote", variant_owned=True),
-    BED_TYPE_RICHMAT_CLASSIC_APPS: SideProfile("Classic Richmat apps", frozenset({CONF_BLE_DEVICE_NAME}), variant_owned=True),
+    BED_TYPE_RICHMAT_CLASSIC_APPS: SideProfile("Classic Richmat apps", variant_owned=True),
     "bedgear": SideProfile("Bedgear"),
     "l2motion": SideProfile("L2 Motion"),
     BED_TYPE_MOODBASE: SideProfile("MoodBase"),
@@ -329,7 +329,7 @@ _BY_BED_TYPE: Final[dict[str, SideProfile]] = {
 }
 _BY_VARIANT: Final[dict[tuple[str, str], SideProfile]] = {
     (BED_TYPE_RICHMAT_CLASSIC_APPS, "maxprime"): SideProfile(
-        "Maxprime layout", frozenset({CONF_BLE_DEVICE_NAME}), variant_owned=True
+        "Maxprime layout", variant_owned=True
     ),
     (BED_TYPE_STAR_ELEVATE, STAR_ELEVATE_VARIANT_M1X12): SideProfile(
         "Adjustable Comfort M1X12 Elevate lift", frozenset({CONF_PROTOCOL_VARIANT})
@@ -340,6 +340,9 @@ _BY_VARIANT: Final[dict[tuple[str, str], SideProfile]] = {
     ),
     (BED_TYPE_SOLACE, SOLACE_VARIANT_WOOSA): SideProfile("Woosa Sleep"),
     (BED_TYPE_SOLACE, SOLACE_VARIANT_SOPHIE): SideProfile("Sophie"),
+    (BED_TYPE_RICHMAT_CLASSIC_APPS, "dreamlab2"): SideProfile(
+        "Dreamlab Control", variant_owned=True
+    ),
     (BED_TYPE_OKIN_CST, OKIN_CST_VARIANT_NECTAR_MOVE): SideProfile("Nectar Move"),
     # Saved before schema 5.11; the migration steps read a side as it was read then.
     (BED_TYPE_LEGGETT_PLATT, LEGGETT_VARIANT_OKIN): SideProfile(
