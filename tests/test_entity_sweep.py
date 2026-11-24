@@ -598,6 +598,129 @@ async def test_rows_a_controller_still_expects_are_kept(hass: HomeAssistant) -> 
     assert not _exists(hass, other_domain)
 
 
+async def test_enso2_keeps_custom_light_timer_until_capability_returns(hass: HomeAssistant) -> None:
+    from custom_components.adjustable_bed.beds.enso2.controller import Enso2Controller
+    from custom_components.adjustable_bed.beds.enso2.receive import LIGHT_ON
+    from custom_components.adjustable_bed.number import AdjustableBedControllerNumber
+    from custom_components.adjustable_bed.profiles.enso2 import LAYOUTS
+
+    entry = _entry(hass, bed_type="enso2", protocol_variant="6BRM", ble_device_name="6BRM")
+    coordinator = AdjustableBedCoordinator(hass, entry)
+    controller = Enso2Controller(coordinator, LAYOUTS["6BRM"], "6BRM")
+    coordinator._controller = controller
+    controller._received(LIGHT_ON)
+    created = await async_setup_platforms_and_sweep(hass, entry, coordinator, (Platform.NUMBER,))
+    timer = next(entity for entity in created if isinstance(entity, AdjustableBedControllerNumber))
+    assert timer.available
+    registry = er.async_get(hass)
+    row = registry.async_update_entity(
+        _row(hass, entry, "number", timer.entity_description.key).entity_id,
+        new_entity_id="number.bedroom_light_timeout",
+        name="Bedroom light timeout",
+    )
+
+    # A rebuilt controller has not received the LED capability on this session.
+    reloaded = Enso2Controller(coordinator, LAYOUTS["6BRM"], "6BRM")
+    coordinator._controller = reloaded
+    coordinator.cache_capability_controller()
+    missing = await async_setup_platforms_and_sweep(hass, entry, coordinator, (Platform.NUMBER,))
+    assert timer.unique_id not in {entity.unique_id for entity in missing}
+    assert registry.async_get(row.entity_id) == row
+    assert not timer.available
+
+    reloaded._received(LIGHT_ON)
+    restored = await async_setup_platforms_and_sweep(hass, entry, coordinator, (Platform.NUMBER,))
+    replacement = next(
+        entity for entity in restored if isinstance(entity, AdjustableBedControllerNumber)
+    )
+    assert replacement.unique_id == timer.unique_id
+    assert replacement.available
+    assert registry.async_get(row.entity_id) == row
+
+
+@pytest.mark.parametrize("layout", ["YFRM", "YGRM", "BRRM"])
+async def test_enso2_gesture_changes_discover_buttons_without_reload(
+    hass: HomeAssistant, layout: str
+) -> None:
+    from custom_components.adjustable_bed import button
+    from custom_components.adjustable_bed.beds.enso2.controller import Enso2Controller
+    from custom_components.adjustable_bed.button import ControllerActionButton
+    from custom_components.adjustable_bed.profiles.enso2 import LAYOUTS
+    from tests.hold_lease_wire import virtual_clock
+    from tests.test_enso2 import bed
+
+    entry = _entry(hass, bed_type="enso2", protocol_variant=layout, ble_device_name=layout)
+    coordinator = AdjustableBedCoordinator(hass, entry)
+    _, _, client, _ = await bed(layout)
+    coordinator._client = client
+    controller = Enso2Controller(coordinator, LAYOUTS[layout], layout)
+    coordinator._controller = controller
+    await controller.async_discover_capabilities()
+    hass.data.setdefault(DOMAIN, {})[entry.entry_id] = coordinator
+    registry = er.async_get(hass)
+    created: list[Entity] = []
+
+    def add(entities: Iterable[Entity], update_before_add: bool = False) -> None:
+        for entity in entities:
+            assert entity.unique_id is not None
+            row = registry.async_get_or_create(
+                "button", DOMAIN, entity.unique_id, config_entry=entry
+            )
+            entity.entity_id = row.entity_id
+            created.append(entity)
+
+    await button.async_setup_entry(hass, entry, add)
+    async_sweep_after_setup(hass, entry, (Platform.BUTTON,))
+
+    def buttons() -> dict[str, ControllerActionButton]:
+        return {
+            entity._spec.key: entity
+            for entity in created
+            if isinstance(entity, ControllerActionButton)
+        }
+
+    def customize(entity: ControllerActionButton, name: str) -> er.RegistryEntry:
+        row = registry.async_update_entity(
+            entity.entity_id, new_entity_id=f"button.bedroom_{name}", name=f"Bedroom {name}"
+        )
+        entity.entity_id = row.entity_id
+        return row
+
+    tap = buttons()["enso2_memory_1"]
+    tap_row = customize(tap, "recall")
+    assert tap.available
+    assert "enso2_memory_1_held" not in buttons()
+    assert "enso2_save_memory_1" not in buttons()
+
+    with virtual_clock():
+        await controller.press("press_and_hold")
+        await hass.async_block_till_done()
+        assert registry.async_get(tap_row.entity_id) == tap_row
+        held = buttons()["enso2_memory_1_held"]
+        save = buttons()["enso2_save_memory_1"]
+        held_row = customize(held, "held_recall")
+        save_row = customize(save, "save")
+        assert held.available and save.available
+        assert held.extra_state_attributes["held_control"] == "memory_1"
+        assert not tap.available
+
+        await controller.press("press_and_release")
+        await hass.async_block_till_done()
+        assert tap.available
+        assert not held.available and not save.available
+        for row in (tap_row, held_row, save_row):
+            assert registry.async_get(row.entity_id) == row
+
+        await controller.press("press_and_hold")
+        await hass.async_block_till_done()
+        assert held.available and save.available
+        for row in (tap_row, held_row, save_row):
+            assert registry.async_get(row.entity_id) == row
+
+    identities = [entity.unique_id for entity in created]
+    assert len(identities) == len(set(identities))
+
+
 async def test_motion_bed_hub_expects_every_module_control(hass: HomeAssistant) -> None:
     """Replaces the button helper's hub allowance: modules report after connecting."""
     from custom_components.adjustable_bed.beds.motion_bed.controller import MotionBedController

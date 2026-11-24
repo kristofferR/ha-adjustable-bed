@@ -35,6 +35,7 @@ from .const import (
     BED_TYPE_COMFORTBASE,
     BED_TYPE_COMFYDS,
     BED_TYPE_DOUBLESLEEP,
+    BED_TYPE_ENSO2,
     BED_TYPE_ESHINE,
     BED_TYPE_ESHINE_OKIN,
     BED_TYPE_FSM_RELAX,
@@ -172,6 +173,10 @@ _BY_BED_TYPE: Final[dict[str, SideProfile]] = {
     "smartbed": SideProfile("SmartBed", frozenset({CONF_HAS_MASSAGE}), variant_owned=True),
     "cheerssleep": SideProfile("CheersSleep"),
     "enso": SideProfile("Enso Remote", frozenset({CONF_MOTOR_COUNT})),
+    BED_TYPE_ENSO2: SideProfile(
+        "ENSO Sleep Control", frozenset({CONF_BLE_DEVICE_NAME}),
+        variant_owned=True,
+    ),
     "sealy_posturematic": SideProfile("Sealy Posturematic", frozenset({CONF_MOTOR_COUNT})),
     "agingplace": SideProfile("Aging in Place / Dawn House"),
     "sleep_assistant": SideProfile("Sleep Assist"),

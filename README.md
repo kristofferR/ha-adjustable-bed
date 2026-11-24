@@ -110,6 +110,7 @@ bed has been tested on real hardware.
 | [Dorsal / Roomi](docs/beds/richmat.md#dorsal--roomi) | Dorsal app (CPRN, CORN, saved projects and Roomi controls, not yet tested) | Dorsal, Roomi |
 | [Dream Sense Bed](docs/beds/richmat.md#dream-sense-bed) | Dream Sense Bed app, four colors and saved products | Dream Sense |
 | [eShine E2000 to E5000](docs/beds/okin-nframe.md#eshine) | [eShine app, E2000, E3000 / E3100 and E5000](docs/beds/okin-nframe.md#eshine) | eShine |
+| [ENSO Sleep Control](docs/beds/richmat.md#enso-sleep-control) | Enso 2 app, including framed and raw-key receivers | ENSO Sleep |
 | [eShine E6000](docs/beds/richmat.md#eshine) | [eShine app, E6000](docs/beds/richmat.md#eshine) | eShine |
 | [Galaxy Bed Control](docs/beds/richmat.md#galaxy-bed-control) | [Galaxy Bed Control](docs/beds/richmat.md#galaxy-bed-control) | Star International |
 | [GM Control](docs/beds/gmmotor.md) | [GM Control](docs/beds/gmmotor.md), [GM Control sleep module, MM or SXB](docs/beds/gmmotor.md#sleep-modules) | GM Control |

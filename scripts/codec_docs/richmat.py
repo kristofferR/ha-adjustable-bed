@@ -1939,3 +1939,8 @@ def render_baseremote() -> str:
 
 
 BLOCKS.append((GUIDE, "baseremote", render_baseremote))
+
+
+from scripts.codec_docs import _enso2  # noqa: E402
+
+BLOCKS.append((GUIDE, "enso2", _enso2.render))

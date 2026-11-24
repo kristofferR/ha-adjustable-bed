@@ -32,6 +32,7 @@ from .const import (
     BED_TYPE_ADJUSTABLE_LUMBAR,
     BED_TYPE_BETTERLIVING2,
     BED_TYPE_COMFORT_ENHANCEMENT3,
+    BED_TYPE_ENSO2,
     BED_TYPE_ESHINE_OKIN,
     BED_TYPE_GALAXY,
     BED_TYPE_GOODVIBE,
@@ -105,7 +106,9 @@ from .validators import get_variants_for_bed_type
 # These name hints ask the user which companion app they use. They are not
 # competing receiver signatures for an already configured physical device.
 _GMMOTOR_APP_HINTS: Final = frozenset({"gmmotor", "gmmotor_sleep_mm", "gmmotor_sleep_sxb"})
-_APP_HINTS: Final = _GMMOTOR_APP_HINTS | {"instant_comfort", BED_TYPE_SIMMONS_BLUE, "dorsal", BED_TYPE_MOODBASE}
+_APP_HINTS: Final = _GMMOTOR_APP_HINTS | {
+    "instant_comfort", BED_TYPE_SIMMONS_BLUE, "dorsal", BED_TYPE_ENSO2, BED_TYPE_MOODBASE,
+}
 
 if TYPE_CHECKING:
     from .coordinator import AdjustableBedCoordinator
@@ -311,7 +314,7 @@ def recommend_profile(
             "name:resident_app_candidate", "name:mline_app_candidate", "name:yamada_app_candidate",
             "name:n32_app_candidate", "name:betterliving2_app_candidate", "name:okimiki_app_candidate",
             "name:richmat_app_candidate", "name:richmat_sleep_candidate", "name:simmons_blue_app_candidate",
-            "name:dorsal_app_candidate", "name:moodbase_app_candidate",
+            "name:dorsal_app_candidate", "name:enso2_app_candidate", "name:moodbase_app_candidate",
         )
         for signal in detected.signals
     ):

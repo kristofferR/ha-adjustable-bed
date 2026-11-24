@@ -885,6 +885,10 @@ class BedController(GattWriter):
         """Whether ``goto_preset`` may choose the recall hold duration."""
         return type(self).recall_memory is not BedController.recall_memory
 
+    def supports_memory_recall_duration(self, slot: int) -> bool:
+        """Whether the selected memory slot can use an explicit hold duration."""
+        return self.supports_held_memory_recall
+
     @abstractmethod
     async def program_memory(self, memory_num: int) -> None:
         """Save the current bed position to a memory preset.

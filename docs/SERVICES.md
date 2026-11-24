@@ -115,6 +115,8 @@ For named raise/lower/stop voice commands and Apple Home controls, see
 | [`richmat_mh_control`](#richmat_mh_control) | Nisco and MLILY Supreme: run control | Run one of the selected app and model's controls, read one setting from the bed, or set the app mode used by later controls. |
 | [`richmat_mh_sleep_mode`](#richmat_mh_sleep_mode) | Nisco: sleep sensor mode | Set the separate sleep sensor for one or two sleepers. |
 | [`richmat_legacy`](#richmat_legacy) | SleepEvolution and W.Silver Products: run control | Run a control from the selected app and name prefix, as a press or a save. |
+| [`enso2_light_color`](#enso2-accessories) | Set bed light color | Sends one RGB update after the receiver reports a color light. |
+| [`enso2_aroma_schedule`](#enso2-accessories) | Set aroma schedule | Saves startup and pause times after the receiver reports an aroma accessory. |
 | [`mlily_remote`](#mlily_remote) | MLILY Remote: settings | Sets the countdown alarm of an MLILY MS600 remote, or runs the anti-snore movement of an MS300-SH remote on the left side. Set the clock with Set bed clock. |
 | [`rize_program_preset`](#rize_program_preset) | Rize: set default preset | Store the current position as a default preset on one physical Rize bed. Select one side of a combined bed and explicitly confirm. |
 | [`sleep_number_command`](#sleep_number_command) | Sleep Number: run control | Runs a Sleep Number control or reading. Readings return their results. See the actions guide for each command's options. |
@@ -197,6 +199,11 @@ already moving. Plus massage and light controls are buttons, with a 10/20 minute
 [Shuda](beds/okin-nframe.md#shuda) supports `goto_preset` and `save_preset`
 for memory slot 1, `timed_move` for `back` and `legs`, and `stop_all`.
 Save buttons for zero gravity and TV send the app's long press.
+
+[ENSO Sleep Control](beds/richmat.md#enso-sleep-control) supports `goto_preset` and
+`save_preset` on the selected layout’s available numeric memories, `timed_move`
+on its numbered motor covers and `stop_all` for the current receiver mode.
+A duration is available only for a memory the selected layout can hold.
 
 Positions are in degrees or percent, depending on the bed: check its position
 entity and its [guide](README.md#bed-guides). Moving to a position needs the
@@ -359,6 +366,7 @@ entities, including the light colors, are separate.
 | [Simon Li / Heal Every Night / OKIN-Seating](beds/keeson.md#simon-li-heal-every-night-and-okin-seating-profiles) | Simon Li: `back_up`, `back_down`, `foot_up`, `foot_down`, `lumbar_up`, `lumbar_down`, `home`, `memory_1`, `memory_2`. OKIN-Seating: `back_up`, `back_down`, `foot_up`, `foot_down`, `home`. Heal Every Night: `head_up`, `head_down`, `foot_up`, `foot_down`, plus `tilt_up`, `tilt_down`, `lumbar_up`, `lumbar_down` on Healing 7 and 8 | Holding a Simon Li memory for 2.1 seconds or more saves it, as in the app |
 | [Restonic BT (Keeson)](beds/keeson.md#restonic-bt-profiles) | Remote A: `head_up`, `head_down`, `feet_up`, `feet_down`, `flat`, `zero_g`. Remote B adds `back_legs_up`, `back_legs_down`, `light`, `zzz` | Directions, remote B's back and legs and remote A's `zero_g` keep going while held; the others run once |
 | [Bed Tech](beds/richmat.md#bed-tech) | The selected model's held `mh_XX` controls, such as `mh_24` (head up) and `mh_25` (head down) on 5I | At most 30 seconds. Save buttons cannot be held. The separate intervention receiver has no held controls |
+| [ENSO Sleep Control](beds/richmat.md#enso-sleep-control) | The current layout’s held directions and recalls, such as `motor_1_up` and E3RM `memory_1` | Save and alternate actions have separate buttons |
 | [Enso Remote](beds/keeson.md#enso-remote) | `head_up`, `head_down` (back), `feet_up`, `feet_down`, plus `both_up`/`both_down` (2 motors), `lumbar_up`/`lumbar_down` (3 and 4 motors) and `tilt_up`/`tilt_down` (waist, 4 motors); `memory_A`, `memory_B`, `timer_memory_page`, and `massage_mode` on 3 motors | |
 | [Jerome's power base](beds/richmat.md#jeromes-power-base) | `jerome_` controls of the selected layout that can be held, such as `jerome_head_up` | Saves cannot be held |
 | [INNOVA](beds/keeson.md#innova-profile) | `back_up`, `back_down`, `legs_up`, `legs_down`, `memory_a`, `memory_b`, `memory_timer`, plus `combined_up`/`combined_down` (2M), `lumbar_up`/`lumbar_down` (3M, 4M) and `waist_up`/`waist_down` (4M) | |
@@ -472,6 +480,7 @@ data:
 | ComfortBase | `memory_1`, `memory_2` | Once only |
 | Customatic Z-Series | `massage`, `memory_1` (required to turn on) | Once. Needs a Z-Series bed with an alarm page |
 | Dream Sense Bed | The selected product's presets; required to turn on. Saved memories need `confirm_custom_position: true` | One-time alarms go off at the next occurrence of the time. Products with repeating alarms accept `weekdays` and need the `slot` of an alarm the bed reported (0 to 255); new alarms cannot be added |
+| ENSO Sleep Control (Enso 2) | Choices from the layout, including `tv`, `zero_g`, `anti_snore` and supported memories | One-time countdown. Optional `massage_zone` follows the layout and supported position combinations |
 | eShine | `zero_g`, `flat`, `massage` (by model) | Once; the bed clock is set first |
 | Glideaway Motion | `none`, `memory_1`, `memory_2` | Once |
 | Jiecang apps | `flat`, `zero_g`, `anti_snore`, `memory_1`, `memory_2`, `yoga` where reported | `weekdays`, head and foot massage levels 0–3 |
@@ -2536,3 +2545,15 @@ offer renewable holds on Left or Right, while timed Both moves still work. The
 motor covers support renewable holds through `timed_move` and `hold_control`;
 presets run once.
 
+
+
+### Enso 2 accessories
+
+Use `enso2_light_color` with the bed’s `device_id` and `rgb_color` as three
+channels from 0 to 255. The light timer entity sets 0 to 300 seconds. Zero keeps
+the light on.
+
+Use `enso2_aroma_schedule` with `device_id`, `mode_2_minutes` and
+`mode_3_minutes` (1 to 60), and `pause_hours` (1 to 12). Each action can target
+the side of a two-address pair through the standard `side` field. The receiver
+must report the corresponding accessory over Bluetooth.

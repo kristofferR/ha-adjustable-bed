@@ -404,6 +404,8 @@ def plan_commands(controller: Any) -> list[Command]:
         )
     if _flag(controller, "supports_held_memory_recall"):
         for slot in range(1, slots + 1):
+            if not controller.supports_memory_recall_duration(slot):
+                continue
             plan.append(
                 Command(f"recall_memory_{slot}", _method("recall_memory", slot, hold_ms=1000), True)
             )
@@ -1443,6 +1445,11 @@ def default_scenario(bed_type: str) -> Scenario:
         )
     if bed_type == const.BED_TYPE_SIMMONS_BLUE:
         return Scenario(id=bed_type, bed_type=bed_type, layout_id="n32_motion_bed")
+    if bed_type == "enso2":
+        return Scenario(
+            id=bed_type, bed_type=bed_type, protocol_variant="E3RM",
+            replies={"write:6e0a000179": "6e0e00037f", "write:6e1a000088": "6e1a000189"},
+        )
     if bed_type == "super_colchones":
         return Scenario(id=bed_type, bed_type=bed_type, protocol_variant="afeg302",
                         entry_data={const.CONF_PROTOCOL_VARIANT: "afeg302"}, layout_id="super_colchones:n1")
@@ -2386,6 +2393,18 @@ def build_scenarios() -> list[Scenario]:
                             entry_data={"product_type": layout})
         for layout in LAYOUTS if layout != DEFAULT_LAYOUT
     )
+    for name, layout, gatt in (
+        ("raw", "6BRM", "enso2:nordic"),
+        ("w2", "U3RM", "enso2:w2"),
+        ("w4", "A9RM", "enso2:w4"),
+        ("property", "Y6RM", "enso2:property"),
+    ):
+        scenarios.append(Scenario(
+            id=f"enso2:{name}", bed_type="enso2", protocol_variant=layout, layout_id=gatt,
+            entry_data={"ble_device_name": layout, "enso2_property_fallback": name == "property"},
+            replies={"write:6e08010178": "6e09010078", "write:6e0a000179": "6e0e00017d"},
+        ))
+
     # Dream Sense: each saved BED product plus all six accepted GATT routes.
     from custom_components.adjustable_bed.profiles.dreamsense import PROFILES as DREAMSENSE_PROFILES
     for product in DREAMSENSE_PROFILES:
@@ -2580,7 +2599,7 @@ async def _connect(controller: Any, recorder: Recorder, clock: FakeClock) -> dic
             await controller.async_on_connect(session)
             await controller.async_after_connect(session)
             return
-        if controller._coordinator.bed_type in {"smart_sleep", "cheerssleep", "relax_motion"}:
+        if controller._coordinator.bed_type in {"smart_sleep", "cheerssleep", "enso2", "relax_motion"}:
             # These v5 profiles own startup in their hook, without session helpers.
             await controller.async_on_connect(None)
             return
