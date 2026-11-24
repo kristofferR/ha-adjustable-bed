@@ -16441,9 +16441,35 @@ visibility, but never admits writes on a new connection.
 
 #### Services
 
-Use `dreamsense_light` for RGB color and 0–300 second duration; zero means always
-on. Lighting settings and light off require a current light reply. A native
-light-duration number appears once lighting support has been reported.
+A light duration control appears once lighting support has been reported. On
+every product but Blue it is the **Light duration** number, 0 to 900 seconds as
+on the app's slider (always on and 1 to 15 minutes); zero means always on.
+
+On the Blue product it is the **Light timer** select, with the eleven durations
+the app's slider shows. That slider sends its own position (1800 to 28800 in ten
+steps of 2700) and shows these durations for it, so the select offers what the
+app shows and sends what the app sends. The real duration on a Blue bed is not
+verified.
+
+| Blue's light timer | Sent |
+|---|---|
+| 30 min | 1800 |
+| 40 min | 4500 |
+| 50 min | 7200 |
+| 1 hour | 9900 |
+| 2 hours | 12600 |
+| 3 hours | 15300 |
+| 4 hours | 18000 |
+| 5 hours | 20700 |
+| 6 hours | 23400 |
+| 7 hours | 26100 |
+| 8 hours | 28800 |
+
+Use `dreamsense_light` for RGB color and the duration in seconds: 0 to 900, sent
+as given. On Blue it takes the select's durations (1800, 2400, 3000 and 3600 to
+28800 in whole hours, sent as in the table) and, as before, 0 to 300 seconds
+sent as given, which is no stop of the slider and leaves the select unknown.
+Lighting settings and light off require a current light reply.
 
 Clock-enabled products use shared `sync_clock` and `set_alarm`. Repeat alarm
 updates require an explicit `slot` returned by the current connection's list.

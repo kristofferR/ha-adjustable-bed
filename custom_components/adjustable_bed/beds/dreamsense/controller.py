@@ -31,8 +31,16 @@ from ...const import CONF_PRODUCT_TYPE, CONF_PROTOCOL_VARIANT, SIDE_LEFT, SIDE_R
 from ...controller_state import StateKey, StateUpdate
 from ...errors import invalid
 from ...execution import NO_EXECUTION_CAPABILITIES, ExecutionCapabilities
-from ...profiles.dreamsense import ALARM_NAMES, EXPIRY_MS, PROBE_MS, PROFILES, TICK_MS, Action
-from ...state_keys import MASSAGE_TIMER_MINUTES, UNDER_BED_LIGHTS_RGB
+from ...profiles.dreamsense import (
+    ALARM_NAMES,
+    BLUE_LIGHT_TIMERS,
+    EXPIRY_MS,
+    PROBE_MS,
+    PROFILES,
+    TICK_MS,
+    Action,
+)
+from ...state_keys import LIGHT_TIMER_OPTION, MASSAGE_TIMER_MINUTES, UNDER_BED_LIGHTS_RGB
 from ..base import CONTROLLER_GESTURE_RELEASE, BedController, require_controller
 from ..builder import BuildContext
 from ..cancellation import cancellable, settled
@@ -71,6 +79,7 @@ async def build_controller(ctx: BuildContext) -> BedController:
         product=ctx.variant
         if ctx.variant in PROFILES
         else str(ctx.data.get(CONF_PRODUCT_TYPE, "blue")),
+        product_known=ctx.variant in PROFILES or CONF_PRODUCT_TYPE in ctx.data,
         capability_snapshot=ctx.stored_capabilities("dreamsense"),
     )
 
@@ -93,12 +102,16 @@ class DreamSenseController(BedController):
         coordinator: AdjustableBedCoordinator,
         *,
         product: str = "blue",
+        product_known: bool = True,
         capability_snapshot: Mapping[str, object] | None = None,
     ) -> None:
         super().__init__(coordinator)
         if product not in PROFILES:
             raise invalid("dreamsense_product")
         self.profile = PROFILES[product]
+        # Blue's light duration is its own slider; an entry that stores no
+        # product keeps the plain seconds until it does.
+        self._blue_light = product == "blue" and product_known
         self._session: Session | None = None
         self._last_write: float | None = None
         self._receive = Receive()
@@ -398,6 +411,7 @@ class DreamSenseController(BedController):
             SPLIT(None),
             SYNC(None),
             LIGHT_SECONDS(None),
+            LIGHT_TIMER_OPTION(None),
             StateUpdate(MASSAGE_TIMER_MINUTES, STATE_UNKNOWN),
             UNDER_BED_LIGHTS_RGB(None),
             ALARMS(None),
@@ -717,8 +731,40 @@ class DreamSenseController(BedController):
         await self.press(f"Massage{minutes}MinuteTimer", updates=(MASSAGE_TIMER_MINUTES(minutes),))
 
     @property
+    def _has_light(self) -> bool:
+        return self.profile.light and "light" in self._known | self._receive.capabilities
+
+    @property
+    def supports_light_timer(self) -> bool:
+        return self._blue_light and self._has_light
+
+    @property
+    def light_timer_options(self) -> list[str]:
+        if not self.supports_light_timer:
+            return []
+        return [timer.option for timer in BLUE_LIGHT_TIMERS]
+
+    async def set_light_timer(self, timer_option: str) -> None:
+        timer = next((t for t in BLUE_LIGHT_TIMERS if t.option == timer_option), None)
+        if timer is None or not self._blue_light:
+            raise invalid("dreamsense_action")
+        await self.light_settings(seconds=timer.seconds)
+
+    def _light_wire(self, seconds: int) -> tuple[int, str | None]:
+        """What a duration sends, and Blue's slider stop it is, if any."""
+        if type(seconds) is int:
+            if self._blue_light:
+                for timer in BLUE_LIGHT_TIMERS:
+                    if timer.seconds == seconds:
+                        return timer.wire, timer.option
+            # Seconds as given: the slider's range, and on Blue the action's older one.
+            if 0 <= seconds <= (300 if self._blue_light else 900):
+                return seconds, None
+        raise invalid("dreamsense_action")
+
+    @property
     def controller_number_specs(self) -> tuple[ControllerNumberSpec, ...]:
-        if not self.profile.light or "light" not in self._known | self._receive.capabilities:
+        if self._blue_light or not self._has_light:
             return ()
         return (
             ControllerNumberSpec(
@@ -726,7 +772,7 @@ class DreamSenseController(BedController):
                 "dreamsense_light_seconds",
                 LIGHT_SECONDS,
                 0,
-                300,
+                900,
                 1,
                 _light_time,
                 "s",
@@ -744,8 +790,8 @@ class DreamSenseController(BedController):
             len(color) != 3 or any(type(n) is not int or not 0 <= n <= 255 for n in color)
         ):
             raise invalid("dreamsense_action")
-        if seconds is not None and (type(seconds) is not int or not 0 <= seconds <= 300):
-            raise invalid("dreamsense_action")
+        if seconds is not None:
+            self._light_wire(seconds)
 
     async def light_settings(
         self, *, color: tuple[int, int, int] | None = None, seconds: int | None = None
@@ -755,8 +801,11 @@ class DreamSenseController(BedController):
             raise invalid("dreamsense_capability")
         with self._transaction():
             if seconds is not None:
-                with self.sent_state(LIGHT_SECONDS(seconds)):
-                    await self._send(p.light_seconds(seconds), self._coordinator.cancel_command)
+                wire, option = self._light_wire(seconds)
+                # On Blue a duration between the slider's stops is none of its options.
+                state = LIGHT_TIMER_OPTION(option) if self._blue_light else LIGHT_SECONDS(seconds)
+                with self.sent_state(state):
+                    await self._send(p.light_seconds(wire), self._coordinator.cancel_command)
             if color is not None:
                 with self.sent_state(UNDER_BED_LIGHTS_RGB(color)):
                     await self._send(codec.rgb(*color), self._coordinator.cancel_command)

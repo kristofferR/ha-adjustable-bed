@@ -74,7 +74,7 @@ def async_register_dreamsense_services(hass: HomeAssistant) -> None:
                 vol.Optional("rgb_color"): vol.All(
                     vol.ExactSequence([cv.byte, cv.byte, cv.byte]), list
                 ),
-                vol.Optional("seconds"): vol.All(vol.Coerce(int), vol.Range(min=0, max=300)),
+                vol.Optional("seconds"): vol.All(vol.Coerce(int), vol.Range(min=0, max=28800)),
                 **SIDE_FIELD,
             }
         ),
