@@ -1,6 +1,7 @@
 """Letter-family projections and bounded, source-shaped stream framing."""
 
 import re
+from collections.abc import Callable
 from dataclasses import dataclass, field
 
 
@@ -10,6 +11,14 @@ def color_parameters(rgb: tuple[int, int, int], brightness: float = 1) -> tuple[
         values[0] if values[0] >= 10 else 0,
         values[1] if values[1] >= 30 else 0,
         values[2] if values[2] >= 30 else 0,
+    )
+
+
+def reported_color(red: int, green: int, blue: int) -> tuple[int, int, int]:
+    return (
+        min(255, int(red * 2.125)),
+        min(255, int(green * 2.125)),
+        min(255, int(blue * 2.125)),
     )
 
 
@@ -46,7 +55,8 @@ class Receiver:
 
 
 def token_fields(
-    text: str, *, alarm_indices: tuple[int, int, int] = (11, 12, 14)
+    text: str, *, alarm_indices: tuple[int, int, int] = (11, 12, 14),
+    parse_sync: Callable[[str], int | None] | None = None,
 ) -> dict[str, object]:
     tokens = text.split(" ")
     result: dict[str, object] = {}
@@ -61,7 +71,13 @@ def token_fields(
             "available": tokens[27] in ("00065", "00066"),
             "active": tokens[27] == "00065",
         }
-        if tokens[24].isascii() and tokens[24].isdecimal() and len(tokens[24]) <= 10:
-            result["sync_type"] = int(tokens[24])
+        raw = tokens[24]
+        sync_type = (
+            parse_sync(raw) if parse_sync is not None
+            else int(raw) if raw.isascii() and raw.isdecimal() and len(raw) <= 10
+            else None
+        )
+        if sync_type is not None:
+            result["sync_type"] = sync_type
             result["event"] = "OK"
     return result

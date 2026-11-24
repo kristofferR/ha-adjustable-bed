@@ -1415,6 +1415,7 @@ RICHMAT_FAMILY: Final = AppFamily(
     apps="RMControl and SVEN & SON apps, and Richmat remotes",
     answers={
         "richmat_420": Answer("richmat_app"),
+        "enso2": Answer("enso2", data=_NO_RMCONTROL),
         "rmcontrol": Answer(BED_TYPE_RICHMAT, data={CONF_RMCONTROL_PRODUCT: None}),
         "luuna": Answer("luuna", data=_NO_RMCONTROL),
         "luniosmart": Answer("luniosmart", data=_NO_RMCONTROL),
@@ -1434,7 +1435,7 @@ RICHMAT_FAMILY: Final = AppFamily(
         },
         "remote": Answer(BED_TYPE_RICHMAT, data={CONF_RMCONTROL_PRODUCT: ""}),
     },
-    routes=RICHMAT_MH_BED_TYPES | {"super_colchones", "luuna", "sonicsleep", "majestichome", "luniosmart", "sleep_evolution", "wsilver_legacy", BED_TYPE_MLILY, BED_TYPE_MLILY_REMOTE, BED_TYPE_OKIMIKI},
+    routes=RICHMAT_MH_BED_TYPES | {"enso2", "super_colchones", "luuna", "sonicsleep", "majestichome", "luniosmart", "sleep_evolution", "wsilver_legacy", BED_TYPE_MLILY, BED_TYPE_MLILY_REMOTE, BED_TYPE_OKIMIKI},
     routes_show_row=False,
     lists_members=True,
     offers_keep=keep_never,

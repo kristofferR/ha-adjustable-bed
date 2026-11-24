@@ -59,6 +59,7 @@ from .const import (
     BED_TYPE_CUSTOMATIC_REMEDY,
     BED_TYPE_DIAGNOSTIC,
     BED_TYPE_DOUBLESLEEP,
+    BED_TYPE_ENSO2,
     BED_TYPE_ERGOMOTION,
     BED_TYPE_ERGOMOTION_4,
     BED_TYPE_ESHINE,
@@ -99,6 +100,7 @@ from .const import (
     BED_TYPE_MLILY,
     BED_TYPE_MLILY_REMOTE,
     BED_TYPE_MLINE,
+    BED_TYPE_MOODBASE,
     BED_TYPE_MOTION_BED,
     BED_TYPE_MOTOMOTION,
     BED_TYPE_MOTOSLEEP,
@@ -312,6 +314,7 @@ from .profiles.bobpowerbase import SCAN_KEYWORDS as BOB_SCAN_KEYWORDS
 from .profiles.majestichome import PROFILE_CHOICES as MAJESTICHOME_PROFILES
 from .profiles.mlily_choices import PROFILE_CHOICES as MLILY_PROFILES
 from .profiles.mlily_remote import VARIANTS as MLILY_REMOTE_PROFILES
+from .profiles.moodbase import receiver_hint as moodbase_receiver_hint
 from .profiles.motomotion import eligible as motomotion_eligible
 from .profiles.okimiki import PROFILE_CHOICES as OKIMIKI_PROFILES
 from .profiles.okimiki import scan_matches as okimiki_scan_matches
@@ -676,6 +679,7 @@ BED_TYPE_DISPLAY_NAMES: dict[str, str] = {
     BED_TYPE_SIMMONS_BLUE: "Simmons Blue app",
     BED_TYPE_RESIDENT: "Resident Adjustable Base app",
     "enso": "Enso Remote",
+    BED_TYPE_ENSO2: "ENSO Sleep Control (Enso 2)",
     "sealy_posturematic": "Sealy Posturematic",
     BED_TYPE_YAMADA: "アシステック / ASSISTEC / Yamada app",
     BED_TYPE_BETTERLIVING2: "BetterLiving / BetterLiving2 app",
@@ -761,6 +765,7 @@ BED_TYPE_DISPLAY_NAMES: dict[str, str] = {
     BED_TYPE_MALOUF_NEW_OKIN: "Malouf remote, newer receiver",
     "bedgear": "Bedgear app",
     "l2motion": "L2 Motion app",
+    BED_TYPE_MOODBASE: "MoodBase app",
     BED_TYPE_MOTOSLEEP: "MotoSleep / Power Bob app",
     BED_TYPE_OCTO: "OCTO Smart Control",
     BED_TYPE_REVERIE: "Reverie app",
@@ -950,7 +955,7 @@ _HIDDEN_APP_ROWS: Final = frozenset(
 HIDDEN_APP_CHOICES: Final = frozenset(bed_type_choice(*row) for row in _HIDDEN_APP_ROWS)
 # Bed types whose one row asks for the product, although each product is an app entry.
 PRODUCT_QUESTION_BED_TYPES: Final = frozenset(
-    {"dreamsense", "saatva", "majestichome", BED_TYPE_LEVA, BED_TYPE_LINX, BED_TYPE_SOMOS, "bobpowerbase", BED_TYPE_COMFORT_ENHANCEMENT3, BED_TYPE_SYMPHONY_SLEEP, BED_TYPE_YAMADA, BED_TYPE_RICHMAT_APP, BED_TYPE_RICHMAT_APP_SLEEP, BED_TYPE_GALAXY, BED_TYPE_MLILY, BED_TYPE_MLILY_REMOTE, BED_TYPE_OKIMIKI, "luuna", BED_TYPE_GOODVIBE, BED_TYPE_HJBED, BED_TYPE_CASPER_BASE, BED_TYPE_COMFORT_ENHANCEMENTS, BED_TYPE_COMFORTBASE, "sleep_evolution", "wsilver_legacy", "personal_comfort", "instant_comfort"}
+    {BED_TYPE_ENSO2, "dreamsense", "saatva", "majestichome", BED_TYPE_LEVA, BED_TYPE_LINX, BED_TYPE_SOMOS, "bobpowerbase", BED_TYPE_COMFORT_ENHANCEMENT3, BED_TYPE_SYMPHONY_SLEEP, BED_TYPE_YAMADA, BED_TYPE_RICHMAT_APP, BED_TYPE_RICHMAT_APP_SLEEP, BED_TYPE_GALAXY, BED_TYPE_MLILY, BED_TYPE_MLILY_REMOTE, BED_TYPE_OKIMIKI, "luuna", BED_TYPE_GOODVIBE, BED_TYPE_HJBED, BED_TYPE_CASPER_BASE, BED_TYPE_COMFORT_ENHANCEMENTS, BED_TYPE_COMFORTBASE, "sleep_evolution", "wsilver_legacy", "personal_comfort", "instant_comfort"}
 ).union({BED_TYPE_BETTERLIVING2, "sealy_posturematic"})
 # Routes named after their protocol, not an app or brand. They stay off the
 # bed-type list and are reached through detection, the brand list and Configure.
@@ -1928,6 +1933,16 @@ def _detect_bed_type_with_app_candidates(
             # The exact name grammar also belongs to L2 Motion. A name alone
             # cannot select which app's independently proven controls to run.
             result.confidence = min(result.confidence, 0.6)
+    if (
+        first.name(BED_TYPE_MOODBASE)
+        and bedgear_eligible(service_info.name)
+        and not any(signal.startswith("excluded:") for signal in result.signals)
+    ):
+        # The app lists a name-only match, while FFE0 corroborates only its shared carrier.
+        result.ambiguous_types = list(dict.fromkeys([*(result.ambiguous_types or ()), BED_TYPE_MOODBASE]))
+        result.signals.append("name:moodbase_app_candidate")
+        if moodbase_receiver_hint(service_info.name, service_info.service_uuids):
+            result.signals.append("service:moodbase_app_candidate")
     if motomotion_eligible(service_info.name):
         if result.bed_type is None and not any(signal.startswith("excluded:") for signal in result.signals):
             return DetectionResult(bed_type=BED_TYPE_MOTOMOTION, confidence=0.3, signals=[*result.signals, "name:motomotion_app_candidate"])
@@ -1953,6 +1968,22 @@ def _detect_bed_type_with_app_candidates(
             result.ambiguous_types = list(dict.fromkeys([*(result.ambiguous_types or ()), BED_TYPE_RICHMAT_APP]))
             result.signals.append("name:richmat_app_candidate")
 
+    from .profiles.enso2 import admitted_name as enso2_name
+
+    if first.name(BED_TYPE_ENSO2) and enso2_name(service_info.name) and not any(
+        signal.startswith("excluded:") for signal in result.signals
+    ):
+        signal = "name:enso2_app_candidate"
+        if result.bed_type is None:
+            result = DetectionResult(
+                BED_TYPE_ENSO2, 0.3, [*result.signals, signal],
+                ambiguous_types=result.ambiguous_types,
+            )
+        elif result.bed_type != BED_TYPE_ENSO2:
+            result.ambiguous_types = list(dict.fromkeys(
+                [*(result.ambiguous_types or ()), BED_TYPE_ENSO2]
+            ))
+            result.signals.append(signal)
     if first.name(BED_TYPE_HJBED):
         if result.bed_type is None:
             if not any(signal.startswith("excluded:") for signal in result.signals):

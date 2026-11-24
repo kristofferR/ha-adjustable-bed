@@ -843,7 +843,7 @@ async def handle_goto_preset(call: ServiceCall) -> None:
         if not controller.supports_memory_presets:
             raise invalid("memory_presets_not_supported", device_name=target.name)
         _require_preset_slot(target, controller, preset)
-        if hold_ms is not None and not controller.supports_held_memory_recall:
+        if hold_ms is not None and not controller.supports_memory_recall_duration(preset):
             raise invalid("preset_duration_not_supported", device_name=target.name)
         try:
             controller.validate_memory_recall(preset)
@@ -3083,6 +3083,7 @@ def _import_service_registrars() -> tuple[Callable[[HomeAssistant], None], ...]:
     from .beds.dorsal.services import register_services as register_dorsal_services
     from .beds.doublesleep.services import async_register_doublesleep_services
     from .beds.dreamsense.services import async_register_dreamsense_services
+    from .beds.enso2.services import register_services as register_enso2_services
     from .beds.fsm_relax.services import async_register_fsm_relax_services
     from .beds.furnimove.services import async_register_furnimove_services
     from .beds.gmmotor.services import async_register_gmmotor_services
@@ -3156,6 +3157,7 @@ def _import_service_registrars() -> tuple[Callable[[HomeAssistant], None], ...]:
         register_linx_services,
         register_somos_services,
         register_cheerssleep_services,
+        register_enso2_services,
         register_symphony_sense_services,
         async_register_motion_bed_services,
         async_register_casper_base_services,

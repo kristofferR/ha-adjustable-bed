@@ -891,6 +891,10 @@ class BedController(GattWriter):
         """Whether ``goto_preset`` may choose the recall hold duration."""
         return type(self).recall_memory is not BedController.recall_memory
 
+    def supports_memory_recall_duration(self, slot: int) -> bool:
+        """Whether the selected memory slot can use an explicit hold duration."""
+        return self.supports_held_memory_recall
+
     @abstractmethod
     async def program_memory(self, memory_num: int) -> None:
         """Save the current bed position to a memory preset.
@@ -1064,6 +1068,11 @@ class BedController(GattWriter):
     @property
     def supports_light_color_control(self) -> bool:
         """Return True if bed supports setting light RGB color directly."""
+        return False
+
+    @property
+    def publishes_rgb_light_state(self) -> bool:
+        """Return whether the controller publishes the complete state of an RGB command."""
         return False
 
     @property
@@ -2661,6 +2670,13 @@ class BedController(GattWriter):
             NotImplementedError: If the bed doesn't support direct RGB color control
         """
         raise NotImplementedError("Light color control not supported on this bed")
+
+    async def set_light_color_with_level(
+        self, rgb_color: tuple[int, int, int], level: int
+    ) -> None:
+        """Set color and brightness together when brightness is part of the color frame."""
+        await self.set_light_color(rgb_color)
+        await self.set_light_level(level)
 
     async def set_light_color_rgbw(
         self,
