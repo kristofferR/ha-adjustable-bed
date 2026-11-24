@@ -551,9 +551,6 @@ class SutaController(BedController):
                         self._notify_callback("legs", float(foot))
             else:
                 state = self._receiver.feed(packet)
-            if state.pop("displayed_setpoint", None) == 30:
-                # Its one setpoint display goes back to 30 when heating is turned on.
-                state.update(side_1_setpoint=30, side_2_setpoint=30)
             self.observations.update(state)
             self._reports.update(state.keys())
             self._publish()

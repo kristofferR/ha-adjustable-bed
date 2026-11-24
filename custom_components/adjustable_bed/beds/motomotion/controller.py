@@ -1071,11 +1071,6 @@ class MotoMotionController(BedController):
             self._side = value
         elif key == "posture":
             self._select_posture(value)
-            # The app's posture tap writes the target at once. Without a user's
-            # measurements it only asks for a user, so the choice stays local.
-            if value in self._custom or set(self._dimensions) == set(_DIMENSIONS):
-                self._targets = self._position()
-                await self.write_command(self._targets.to_bytes())
         else:
             self._music_mode = value
             profile = self._custom_eq if value == "custom" else list(MUSIC[value])

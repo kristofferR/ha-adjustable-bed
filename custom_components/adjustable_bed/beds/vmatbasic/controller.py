@@ -495,7 +495,9 @@ class VMatBasicController(BedController):
             self.profile.floor(level, self._floor_minutes),
         )
         self.forward_controller_state_updates(
-            FLOOR_LEVEL_REQUESTED(level), FLOOR_MINUTES_REQUESTED(self._floor_minutes)
+            # Zero is only the wire value; no level has been chosen yet.
+            FLOOR_LEVEL_REQUESTED(self._floor_level),
+            FLOOR_MINUTES_REQUESTED(self._floor_minutes),
         )
 
     async def set_floor_level(self, value: float) -> None:
