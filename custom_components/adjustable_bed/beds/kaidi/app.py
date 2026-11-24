@@ -577,12 +577,16 @@ class KaidiAppController(BedController):
         active = not self._massage[lane]
         for affected in self._affected_lanes:
             self._massage[affected] = active
+            if not active:
+                # Stopping massage clears both strengths the app shows.
+                self._strengths[affected] = {"head": 0, "foot": 0}
         self._save_intent()
 
     async def massage_off(self) -> None:
         await self._action("massage_off")
         for affected in self._affected_lanes:
             self._massage[affected] = False
+            self._strengths[affected] = {"head": 0, "foot": 0}
         self._save_intent()
 
     async def set_massage_intensity(self, zone: str, level: int) -> None:

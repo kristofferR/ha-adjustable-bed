@@ -767,3 +767,23 @@ async def test_configure_rejects_an_out_of_range_room(hass, enable_custom_integr
         )
     assert CONF_KAIDI_ROOM_ID in error.value.schema_errors
     assert dict(entry.data) == data
+
+
+async def test_stopping_massage_clears_the_strengths_the_app_shows():
+    c, co, _ = make_controller(130, split=True)
+    head, foot = massage_intensity("head"), massage_intensity("foot")
+    for side in ("left", "right"):
+        with c.side_scope(side):
+            await c.massage_toggle()
+            await c.set_massage_intensity("head", 60)
+            await c.set_massage_intensity("foot", 40)
+    with c.side_scope("left"):
+        await c.massage_off()
+    assert co.controller_state[sided(head, "left")] == 0
+    assert co.controller_state[sided(foot, "left")] == 0
+    assert co.controller_state[sided(head, "right")] == 60
+    with c.side_scope("right"):
+        await c.massage_toggle()
+    assert co.controller_state[sided(head, "right")] == 0
+    assert co.controller_state[sided(foot, "right")] == 0
+    assert c.persisted_app_state["strengths"] == [{"head": 0, "foot": 0}] * 3

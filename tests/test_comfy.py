@@ -12,6 +12,7 @@ from custom_components.adjustable_bed import const
 from custom_components.adjustable_bed.beds.kaidi.comfy import (
     LOCK_STATUS,
     LOCKED,
+    TIMER_REMAINING,
     TIMER_RUNNING,
     ComfyController,
 )
@@ -281,6 +282,18 @@ def test_unsigned_lock_ownership_and_exact_payload(owner):
     status = c._lock_status
     notify(c, codec.control(0, 8, 70, 0).hex() + "00")
     assert c._lock_status == status
+
+
+async def test_duration_chosen_while_timer_runs_restarts_the_countdown():
+    c, co, _ = make_controller("comfyds")
+    await c.select_timer(30)
+    await c.control("timer_start")
+    lane = c._feature_lane("timer")
+    c._timer_started[lane] = time.time() - 15 * 60
+    await c.select_timer(10)
+    assert time.time() - c._timer_started[lane] < 5
+    assert co.controller_state[TIMER_REMAINING] > 9 * 60
+    c._stop_countdown()
 
 
 async def test_restore_local_side_timer_light_without_wire_or_recall():
