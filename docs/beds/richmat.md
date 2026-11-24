@@ -10669,6 +10669,11 @@ controls require the normal-mattress selection and initialization. Waist mode,
 warmth, pressure, duration and alarms retain their separate left/right/both
 setting domains. Pad selectors do not create another BLE recipient.
 
+The pressure and duration selects (mattress pressure, heat duration, pillow
+duration, waist pressure and waist duration) offer only what the app's dialogs
+send, so they have no Off: a reported zero shows as unknown. Heat is turned off
+with the heat level, and the pillow is lowered with its own control.
+
 #### Timing
 
 The shared query schedule and ordinary/fixed-remote caller timings apply only
