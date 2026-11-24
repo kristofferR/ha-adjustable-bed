@@ -61,6 +61,7 @@ APPS = [
     "zerogravity",
     "baseremote",
     "maxprime",
+    "enso2",
     "remote",
 ]
 

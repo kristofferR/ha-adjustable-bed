@@ -896,7 +896,7 @@ class Enso2Controller(BedController):
         if zone is None:
             if action:
                 return action
-            raise invalid("alarm_needs_effect", device_name=self._coordinator.name)
+            raise invalid("alarm_needs_effect")
         massage = app.ALARM_MASSAGE.get(zone, 0)
         if not (massage in tags or zone == "both" and {0x4C, 0x4E} <= tags):
             raise invalid("enso2_alarm_unavailable")
