@@ -250,10 +250,6 @@ Every other saved setting, bed type and ID loads unchanged.
 
 ### Setup, Configure and Reconfigure
 
-**Simmons Blue** is a new app choice in v5. Choose it in setup or
-Reconfigure, then choose Simmons E Balance or the corresponding iD Motion
-layout. [Simmons Blue setup](beds/okin-nframe.md#simmons-blue)
-
 - **Setup starts from the app or remote** that controls the bed. Choose **Set
   up by app or remote** or **Pick any Bluetooth device**, then search for the
   app. Many brands have one row that asks which app, remote or control box runs
