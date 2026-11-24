@@ -125,6 +125,12 @@
  "binary_sensor:rize_home_active": {
   "card_section": "massage"
  },
+ "binary_sensor:sinca_alarm_enabled": {
+  "card_section": "hidden"
+ },
+ "binary_sensor:sinca_anti_snore": {
+  "card_section": "hidden"
+ },
  "binary_sensor:sleeptracker_light_on": {
   "card_section": "lighting"
  },
@@ -1885,6 +1891,42 @@
   "card_role": "reference",
   "card_motor": "tv_lift"
  },
+ "button:shuda_refresh_alarms": {
+  "card_section": "hidden"
+ },
+ "button:shuda_release": {
+  "card_section": "hidden"
+ },
+ "button:simmons_blue_combined_down": {
+  "card_section": "motors",
+  "card_role": "down",
+  "card_motor": "combined_section"
+ },
+ "button:simmons_blue_combined_up": {
+  "card_section": "motors",
+  "card_role": "up",
+  "card_motor": "combined_section"
+ },
+ "button:simmons_blue_first_down": {
+  "card_section": "motors",
+  "card_role": "down",
+  "card_motor": "first_section"
+ },
+ "button:simmons_blue_first_up": {
+  "card_section": "motors",
+  "card_role": "up",
+  "card_motor": "first_section"
+ },
+ "button:simmons_blue_second_down": {
+  "card_section": "motors",
+  "card_role": "down",
+  "card_motor": "second_section"
+ },
+ "button:simmons_blue_second_up": {
+  "card_section": "motors",
+  "card_role": "up",
+  "card_motor": "second_section"
+ },
  "button:simmons_inclined_left": {
   "card_section": "presets"
  },
@@ -1895,6 +1937,15 @@
   "card_section": "presets"
  },
  "button:simmons_refresh_alarms": {
+  "card_section": "utility"
+ },
+ "button:sinca_disable_alarm": {
+  "card_section": "utility"
+ },
+ "button:sinca_refresh_alarm": {
+  "card_section": "utility"
+ },
+ "button:sinca_refresh_settings": {
   "card_section": "utility"
  },
  "button:sleepfunction_scoped_catalog_action": {
@@ -4564,11 +4615,38 @@
   "card_section": "massage",
   "card_role": "timer"
  },
+ "sensor:shuda_alarm_1": {
+  "card_section": "utility"
+ },
+ "sensor:shuda_alarm_2": {
+  "card_section": "utility"
+ },
  "sensor:simmons_alarm_1": {
   "card_section": "hidden"
  },
  "sensor:simmons_alarm_2": {
   "card_section": "hidden"
+ },
+ "sensor:simmons_blue_alarm_1_time": {
+  "card_section": "hidden"
+ },
+ "sensor:simmons_blue_alarm_2_time": {
+  "card_section": "hidden"
+ },
+ "sensor:simmons_blue_alarm_3_time": {
+  "card_section": "hidden"
+ },
+ "sensor:sinca_alarm_time": {
+  "card_section": "hidden"
+ },
+ "sensor:sinca_anti_snore_level": {
+  "card_section": "hidden"
+ },
+ "sensor:sinca_massage_timer": {
+  "card_section": "massage"
+ },
+ "sensor:sinca_massage_wave": {
+  "card_section": "massage"
  },
  "sensor:sleep_assistant_alarm_1": {
   "card_section": "utility"
@@ -5022,6 +5100,9 @@
  },
  "switch:sealy_massage": {
   "card_section": "massage"
+ },
+ "switch:sinca_privacy": {
+  "card_section": "utility"
  },
  "switch:sleep_assistant_storage": {
   "card_section": "utility"

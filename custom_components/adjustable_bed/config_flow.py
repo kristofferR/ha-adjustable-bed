@@ -214,6 +214,7 @@ from .const import (
     BED_TYPE_RIZE,
     BED_TYPE_RIZE_REMEDY_II,
     BED_TYPE_SIMMONS,
+    BED_TYPE_SIMMONS_BLUE,
     BED_TYPE_SLEEP_NUMBER,
     BED_TYPE_SLEEPTRACKER,
     BED_TYPE_SOLACE,
@@ -435,7 +436,7 @@ _NAME_ONLY_CONFIDENCE = 0.3
 # Explicit app candidates offered beside a confident match are hints, not ambiguity.
 _EXPLICIT_APP_HINTS = frozenset(
     {"super_colchones", "dreamsense", "saatva", "bobpowerbase", BED_TYPE_COMFORT_ENHANCEMENT3, BED_TYPE_RICHMAT_APP_SLEEP, BED_TYPE_RICHMAT_APP, BED_TYPE_RICHMAT_CLASSIC_APPS, BED_TYPE_MOTOMOTION, BED_TYPE_MLILY, BED_TYPE_GALAXY, BED_TYPE_GOODVIBE, BED_TYPE_HJBED, BED_TYPE_ESHINE_OKIN, BED_TYPE_ISLEEP, BED_TYPE_KOMFYD, BED_TYPE_COMFYDS, BED_TYPE_RIZE, BED_TYPE_STARCODE_ABM5_4, BED_TYPE_MOTION_BED, BED_TYPE_VMATBASIC, BED_TYPE_FURNIMOVE,
-     BED_TYPE_GMMOTOR, BED_TYPE_OKIMIKI, "gmmotor_sleep_mm", "gmmotor_sleep_sxb", "sealy_posturematic", "instant_comfort"}
+     BED_TYPE_GMMOTOR, BED_TYPE_OKIMIKI, BED_TYPE_SIMMONS_BLUE, "gmmotor_sleep_mm", "gmmotor_sleep_sxb", "sealy_posturematic", "instant_comfort"}
 )
 
 
@@ -1377,6 +1378,7 @@ _DECLARED_QUESTION_ROUTES: Final = frozenset(
         "hush_base",
         "luuna",
         "mline",
+        "sinca_comfort",
         "nerum",
         "cheerssleep",
         BED_TYPE_LEGGETT_LP_LEGACY,

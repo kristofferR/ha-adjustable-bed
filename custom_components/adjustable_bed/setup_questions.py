@@ -104,8 +104,10 @@ from .const import (
     BED_TYPE_RIZE_HOME,
     BED_TYPE_RIZE_REMEDY_II,
     BED_TYPE_SERENITY,
+    BED_TYPE_SHUDA,
     BED_TYPE_SILVERMOTION,
     BED_TYPE_SIMMONS,
+    BED_TYPE_SIMMONS_BLUE,
     BED_TYPE_SLEEP_NUMBER,
     BED_TYPE_SLEEP_NUMBER_MCR,
     BED_TYPE_SLEEPTRACKER,
@@ -321,6 +323,7 @@ _OWNED_BY_BED_TYPE: Final[dict[str, frozenset[str]]] = {
     "instant_comfort": frozenset({CONF_MOTOR_COUNT, CONF_HAS_MASSAGE, CONF_DISABLE_ANGLE_SENSING}),
     "personal_comfort": frozenset({CONF_MOTOR_COUNT, CONF_HAS_MASSAGE, CONF_DISABLE_ANGLE_SENSING}),
     "mline": GENERIC_FIELDS - {CONF_PROTOCOL_VARIANT, CONF_HAS_MASSAGE, CONF_MOTOR_PULSE_COUNT},
+    "sinca_comfort": GENERIC_FIELDS - {CONF_PROTOCOL_VARIANT},
     "luniosmart": GENERIC_FIELDS - {CONF_MOTOR_PULSE_COUNT},
     "sleep_evolution": GENERIC_FIELDS,
     "wsilver_legacy": GENERIC_FIELDS,
@@ -1673,6 +1676,34 @@ def _limoss_remote_errors(data: Mapping[str, Any]) -> dict[str, str]:
     return errors(dict(data))
 
 
+def _sinca_setup_seed(
+    _hass: HomeAssistant, data: Mapping[str, Any], discovered: BluetoothServiceInfoBleak | None
+) -> dict[str, Any]:
+    from .profiles.sinca_comfort import protocol_from_scan
+
+    result = dict(data)
+    if discovered is not None:
+        name = discovered.device.name or discovered.name or ""
+        result[CONF_BLE_DEVICE_NAME] = name
+        if result.get(CONF_PROTOCOL_VARIANT) in (None, VARIANT_AUTO):
+            result[CONF_PROTOCOL_VARIANT] = protocol_from_scan(name, discovered.manufacturer_data)
+    return result
+
+
+def _sinca_setup_settings(data: Mapping[str, Any]) -> dict[str, Any]:
+    return {
+        CONF_MOTOR_COUNT: 2 if data.get(CONF_PRODUCT_TYPE, "two") == "two" else 3,
+        CONF_HAS_MASSAGE: True,
+        CONF_DISABLE_ANGLE_SENSING: True,
+    }
+
+
+def _sinca_layouts(_data: Mapping[str, Any]) -> Mapping[str, str]:
+    from .profiles.sinca_comfort import LAYOUT_LABELS
+
+    return LAYOUT_LABELS
+
+
 def _mline_settings(data: Mapping[str, Any]) -> dict[str, Any]:
     return {CONF_MOTOR_COUNT: {"two": 2, "triple": 3, "four": 4}.get(str(data.get(CONF_PRODUCT_TYPE)), 2),
             CONF_DISABLE_ANGLE_SENSING: True, CONF_MOTOR_PULSE_DELAY_MS: 200}
@@ -2501,6 +2532,12 @@ def _legacy_errors(data: Mapping[str, Any]) -> dict[str, str]:
     return {} if data.get(CONF_PROTOCOL_VARIANT) in _legacy_choices(data) else {CONF_PROTOCOL_VARIANT: "invalid_selection"}
 
 
+def _simmons_blue_layouts(_data: Mapping[str, Any]) -> Mapping[str, str]:
+    from .profiles.simmons_blue import LAYOUTS
+
+    return {key: layout.label for key, layout in LAYOUTS.items()}
+
+
 SETUP_PROFILES: Final[dict[str, SetupProfile]] = {
     BED_TYPE_BETTERLIVING2: SetupProfile(
         owns={CONF_MOTOR_COUNT: SET_BY_PROFILE, CONF_HAS_MASSAGE: True,
@@ -3144,6 +3181,12 @@ SETUP_PROFILES: Final[dict[str, SetupProfile]] = {
     },
     # The product the Hush Base app shows sets every control; nothing detects it.
     "hush_base": _asking("hush_base", questions=(Question(CONF_PROTOCOL_VARIANT, _hush_products),)),
+    "sinca_comfort": _asking(
+        "sinca_comfort",
+        questions=(Question(CONF_PROTOCOL_VARIANT, _routes("sinca_comfort"), VARIANT_AUTO),
+                   Question(CONF_PRODUCT_TYPE, _sinca_layouts, "two")),
+        seed=_sinca_setup_seed, derive=_sinca_setup_settings, imports=("profiles.sinca_comfort",),
+    ),
     "mline": _asking(
         "mline", questions=(Question(CONF_PROTOCOL_VARIANT, _mline_protocols, "auto"),
             Question(CONF_PRODUCT_TYPE, _mline_layouts, "two"),
@@ -3411,6 +3454,17 @@ SETUP_PROFILES: Final[dict[str, SetupProfile]] = {
             CONF_MOTOR_PULSE_DELAY_MS: 200,
         },
     ),
+    BED_TYPE_SIMMONS_BLUE: SetupProfile(
+        owns={
+            CONF_MOTOR_COUNT: 2,  # Compatibility field; the layout declares the controls.
+            CONF_HAS_MASSAGE: False,
+            CONF_DISABLE_ANGLE_SENSING: True,
+            CONF_PROTOCOL_VARIANT: VARIANT_AUTO,
+            CONF_MOTOR_PULSE_DELAY_MS: 200,
+        },
+        questions=(Question(CONF_PRODUCT_TYPE, _simmons_blue_layouts, "balance"),),
+        imports=("profiles.simmons_blue",),
+    ),
     BED_TYPE_N32_MOTION_BED: SetupProfile(
         owns={
             CONF_MOTOR_COUNT: 3,
@@ -3428,6 +3482,15 @@ SETUP_PROFILES: Final[dict[str, SetupProfile]] = {
         validate=_leva_errors, derive=_leva_settings,
         title=lambda _data: "Leva Bed Remote",
         imports=("profiles.leva",),
+    ),
+    BED_TYPE_SHUDA: SetupProfile(
+        owns={
+            CONF_MOTOR_COUNT: 2,
+            CONF_HAS_MASSAGE: False,
+            CONF_DISABLE_ANGLE_SENSING: True,
+            CONF_PROTOCOL_VARIANT: "auto",
+            CONF_MOTOR_PULSE_DELAY_MS: 200,
+        },
     ),
     BED_TYPE_LINX: SetupProfile(
         owns={CONF_MOTOR_COUNT: 2, CONF_HAS_MASSAGE: SET_BY_PROFILE,

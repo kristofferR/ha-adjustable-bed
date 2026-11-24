@@ -165,7 +165,7 @@ diagnostics, often points to its family:
 - `Limoss*`, `Stawett*` → Limoss
 - `OKIN-BLE*` → [Malouf / Lucid](beds/malouf.md) or another Okin family; setup asks which
 - `Rize*` → Often [DewertOkin](beds/okin-nframe.md#dewertokin), but `Mouselet*` devices are [Kaidi](beds/kaidi.md)
-- `Simmons*`, `Glory*`, `Symphony*` → See [DewertOkin](beds/okin-nframe.md#dewertokin); beds you control with the SIMMONS app → [SIMMONS app](beds/okin-nframe.md#simmons)
+- `Simmons*`, `Glory*`, `Symphony*` → See [DewertOkin](beds/okin-nframe.md#dewertokin); beds you control with the SIMMONS app → [SIMMONS app](beds/okin-nframe.md#simmons); Simmons E Balance and iD Motion beds using Simmons Blue → [Simmons Blue app](beds/okin-nframe.md#simmons-blue)
 - `Star35*` → [Okin CB35](beds/okin-5a.md#sealy-posturematic-cb35) (Sealy Posturematic)
 - `SILVERmotion*` → [LOGICDATA](beds/logicdata.md)
 

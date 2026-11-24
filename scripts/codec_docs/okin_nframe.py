@@ -19,7 +19,13 @@ from custom_components.adjustable_bed.const import (
     NORDIC_UART_WRITE_CHAR_UUID,
     OKIMAT_VARIANTS,
 )
-from custom_components.adjustable_bed.profiles import leva, rize_home, ultramatic
+from custom_components.adjustable_bed.profiles import (
+    leva,
+    rize_home,
+    shuda,
+    simmons_blue,
+    ultramatic,
+)
 from custom_components.adjustable_bed.profiles import n32_motion_bed as n32
 from custom_components.adjustable_bed.profiles import okin_nframe as okin_profiles
 from custom_components.adjustable_bed.profiles.adjustable_bed import (
@@ -142,6 +148,7 @@ _OKIN_GROUPS = {
     "OKIN Bedding apps": tuple(okin_profiles.BEDDING_PROFILES.values()),
     "OKIN Motion Bed": (okin_profiles.OKIN_MOTIONBED,),
     "N32 Motion Bed": (N32,),
+    "Shuda": (shuda.SHUDA,),
     "Resident Adjustable Base": (okin_profiles.RESIDENT,),
     "Ultramatic Smart Bed": (ultramatic.PROFILE,),
     "Okin 64-Bit": tuple(okin_profiles.OKIN_64BIT_PROFILES.values()),
@@ -311,7 +318,7 @@ def render_okin_nframe_transports() -> str:
         (
             "Notify",
             NORDIC_UART_READ_CHAR_UUID,
-            "SIMMONS, SleepEase, Sleepy's, AdjustableM5X4, eShine",
+            "SIMMONS, Simmons Blue, SleepEase, Sleepy's, AdjustableM5X4, eShine, Shuda",
         ),
     )
     return _block(
@@ -852,6 +859,97 @@ def render_leva_timing() -> str:
     )
 
 
+def render_shuda_controls() -> str:
+    from datetime import datetime
+
+    alarm = okin_codec.ShortAlarmReport(
+        1, shuda.edited_week(range(5)), shuda.ALARM_MODES["memory_1"], 7, 30, 1
+    )
+    return _block(
+        _okin_key_table((shuda.SHUDA,), envelope=False),
+        _table(
+            ("Alarm and clock operation", "Example frame"),
+            (
+                ("Sync local clock (2026-11-24 14:37:42)", _hex(shuda.clock_frame(
+                    datetime(2026, 11, 24, 14, 37, 42)
+                ))),
+                ("Set slot 1, weekdays at 07:30, memory 1", _hex(shuda.alarm_frame(alarm))),
+                ("Turn off the same slot, retaining its schedule", _hex(shuda.alarm_frame(
+                    okin_codec.ShortAlarmReport(1, alarm.week, alarm.mode, 7, 30, 0)
+                ))),
+                *((f"Query slot {slot}", _hex(shuda.query_frame(slot)))
+                  for slot in (*shuda.ORDINARY_SLOTS, 3)),
+            ),
+        ),
+        _table(
+            ("Setting", "Value"),
+            (
+                ("Held refresh", f"{shuda.REFRESH_MS} ms"),
+                ("Save gesture", f"{shuda.SAVE_HOLD_MS / 1000:g} seconds"),
+                ("Maximum recall hold", f"Less than {shuda.RECALL_LIMIT_MS / 1000:g} seconds"),
+                ("Release", f"{shuda.SHUDA.hold.releases} STOP"),
+                ("Alarm wake actions", ", ".join(f"`{mode}` ({value})" for mode, value in shuda.ALARM_MODES.items())),
+            ),
+        ),
+    )
+
+
+def render_simmons_blue() -> str:
+    from datetime import datetime
+
+    app = simmons_blue
+    common = ("stop", "flat", "memory_1", "memory_2", "light")
+    return _block(
+        _table(
+            ("Layout", "Additional held controls"),
+            (
+                (layout.label, ", ".join(f"`{control}`" for control in layout.held))
+                for layout in app.LAYOUTS.values()
+            ),
+        ),
+        _table(
+            ("Control", "Frame", "Layouts"),
+            (
+                (
+                    f"`{key}`",
+                    _hex(app.control(key)),
+                    "All" if key in common else ", ".join(
+                        layout.label for layout in app.LAYOUTS.values() if key in layout.held
+                    ),
+                )
+                for key in app.PROFILE.keys
+            ),
+        ),
+        _table(
+            ("Operation", "Frame"),
+            (
+                *((f"Query alarm {slot}", _hex(app.query_alarm(slot))) for slot in app.SLOTS),
+                ("Alarm 1, Monday 07:30, Memory 1", _hex(app.alarm_frame(
+                    1, app.alarm_week((0,)), app.WAKE_MODES["memory_1"], 7, 30, 1
+                ))),
+                ("Turn off alarm 2 at 08:15", _hex(app.alarm_frame(
+                    2, 0, app.WAKE_MODES["flat"], 8, 15, 0
+                ))),
+                ("Clock (2026-11-24 13:45:06 local)", _hex(app.clock_frame(
+                    datetime(2026, 11, 24, 13, 45, 6)
+                ))),
+            ),
+        ),
+        _table(
+            ("Behavior", "Value"),
+            (
+                ("Write", "Nordic UART, with response"),
+                ("Held refresh", f"{app.REFRESH_MS} ms"),
+                ("Release", f"{app.PROFILE.hold.releases} STOP"),
+                ("Memory save hold", f"{app.SAVE_HOLD_MS} ms"),
+                ("Alarm modes", ", ".join(
+                    f"{app.WAKE_LABELS[mode]} ({value})" for mode, value in app.WAKE_MODES.items()
+                )),
+            ),
+        ),
+    )
+
+
 BLOCKS: list[Block] = [
     (GUIDE, "leva-routes", render_leva_routes),
     (GUIDE, "leva-controls", render_leva_controls),
@@ -864,6 +962,8 @@ BLOCKS: list[Block] = [
     (GUIDE, "rize-remedy-ii-controls", render_rize_remedy_ii_controls),
     (GUIDE, "apex-controls", render_apex),
     (GUIDE, "n32-session", render_n32_session),
+    (GUIDE, "shuda-controls", render_shuda_controls),
+    (GUIDE, "simmons-blue", render_simmons_blue),
     (GUIDE, "adjustable-bed-commands", render_adjustable_bed),
     (GUIDE, "resident-session", render_resident_session),
     (GUIDE, "okin-nframe-profiles", render_okin_nframe_profiles),

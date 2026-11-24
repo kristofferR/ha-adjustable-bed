@@ -413,7 +413,9 @@ actions; its bounded `hold_control` behavior has separate timing in the
 | Resident Adjustable Base app | `resident` | 4 | 300 ms |
 | Richmat / RMControl app | `richmat` | 7 | 150 ms |
 | Rize Home app | `rize_home` | 3 | 200 ms |
+| Shuda app | `shuda` | 5 | 200 ms |
 | SIMMONS app | `simmons` | 4 | 300 ms |
+| Simmons Blue app | `simmons_blue` | 5 | 200 ms |
 | Somos / SomosBeds app | `somos` | 10 | 300 ms |
 | SUTA Smart Home app | `suta` | 7 | 150 ms |
 | Symphony Sleep app | `symphony_sleep` | 4 | 300 ms |
@@ -624,6 +626,7 @@ beds, Reconfigure that bed, then combine them again.
 | Leva Bed Remote (Leva Smart App) | Choose the model and Bluetooth receiver for each bed. See the [setup steps](beds/okin-nframe.md#leva-bed-remote). |
 | Linx | See the [setup steps](beds/linx.md#setup). |
 | LOGICDATA | One question for the app ([SILVERmotion / SimplicityFrame](beds/logicdata.md), [MOTIONrelax phone or tablet](beds/jiecang.md#motionrelax-phone-and-tablet), or [Sleep Smart](beds/jiecang.md#sleep-smart-air-mattress-bed) bed base or [separate air pump](beds/logicdata-sleep-smart.md)), then the app's command family, the layouts it offers, the light and the connection. Configure keeps the light; another app or layout goes through Reconfigure. |
+| Sinca Comfort Bed | Choose the receiver and motor layout from the [Sinca Comfort Bed setup steps](beds/mline.md#sinca-comfort-bed). Shared Bluetooth names and services leave the app choice to you. |
 | M Line | See the [setup steps](beds/mline.md#m-line-family). |
 | Malouf / Lucid | Answer the [Malouf question](beds/malouf.md#choosing-a-profile) with your app or receiver: the [Malouf Base and Lucid Base apps](beds/malouf.md#malouf-base--lucid-base-family) ask the exact model, primary/secondary role and transport; the Nordic UART and FFE5 receivers ask the [layout and memory positions](#malouflucid-layout-and-memory). Change an existing bed's app with **Reconfigure**. |
 | MLILY Control | The product the app shows, or the remote. Sleep sensors (RM- or HJ-) are added as their own beds. See the [product table](beds/richmat.md#mlily-control). |
@@ -645,6 +648,7 @@ beds, Reconfigure that bed, then combine them again.
 | Richmat app | See the [setup steps](beds/richmat.md#richmat-420). |
 | Rize Beds | See the [setup steps](beds/kaidi.md#rize-beds). |
 | Rize Remedy II | See the [setup steps](beds/okin-nframe.md#rize-remedy-ii). |
+| Shuda | Choose the [Shuda app](beds/okin-nframe.md#shuda). The profile sets the fixed head and foot layout. |
 | SIMMONS | [Regular/inclined bed and packet format](beds/okin-nframe.md#simmons). |
 | Sleep Number | [Setup confirms the transport](beds/sleep_number.md#detection) from its advertised service (Fuzion or BAM/MCR), then a Fuzion entry asks its side. Reconfigure lists both transports. |
 | SleepEvolution / W.Silver Products 3.x | See the [setup steps](beds/richmat.md#sleepevolution--wsilver-products-3x). |

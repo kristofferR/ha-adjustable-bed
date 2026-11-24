@@ -1921,6 +1921,12 @@
       "massage_circulation_hip": {
         "name": "Massage hip loop"
       },
+      "shuda_release": {
+        "name": "Release held control"
+      },
+      "shuda_refresh_alarms": {
+        "name": "Refresh alarms"
+      },
       "toggle_light": {
         "name": "Toggle light"
       },
@@ -1974,6 +1980,24 @@
       },
       "lumbar_down": {
         "name": "Lumbar down"
+      },
+      "simmons_blue_first_up": {
+        "name": "Raise first section"
+      },
+      "simmons_blue_first_down": {
+        "name": "Lower first section"
+      },
+      "simmons_blue_second_up": {
+        "name": "Raise second section"
+      },
+      "simmons_blue_second_down": {
+        "name": "Lower second section"
+      },
+      "simmons_blue_combined_up": {
+        "name": "Raise combined sections"
+      },
+      "simmons_blue_combined_down": {
+        "name": "Lower combined sections"
       },
       "remote_action": {
         "name": "Remote action"
@@ -3789,6 +3813,15 @@
       },
       "smartbed_alarm_refresh": {
         "name": "Refresh alarm"
+      },
+      "sinca_refresh_settings": {
+        "name": "Refresh settings"
+      },
+      "sinca_refresh_alarm": {
+        "name": "Refresh alarm"
+      },
+      "sinca_disable_alarm": {
+        "name": "Disable alarm"
       }
     },
     "cover": {
@@ -4187,6 +4220,34 @@
       }
     },
     "sensor": {
+      "shuda_alarm_1": {
+        "name": "Alarm 1",
+        "state_attributes": {
+          "shuda_alarm_1_enabled": {
+            "name": "Enabled"
+          },
+          "shuda_alarm_1_week": {
+            "name": "Weekday mask"
+          },
+          "shuda_alarm_1_mode": {
+            "name": "Wake action"
+          }
+        }
+      },
+      "shuda_alarm_2": {
+        "name": "Alarm 2",
+        "state_attributes": {
+          "shuda_alarm_2_enabled": {
+            "name": "Enabled"
+          },
+          "shuda_alarm_2_week": {
+            "name": "Weekday mask"
+          },
+          "shuda_alarm_2_mode": {
+            "name": "Wake action"
+          }
+        }
+      },
       "timotion_ahf_status": {
         "name": "Status"
       },
@@ -5045,6 +5106,15 @@
       "smart_sleep_alarm_action": {
         "name": "Alarm action"
       },
+      "simmons_blue_alarm_1_time": {
+        "name": "Alarm 1 time"
+      },
+      "simmons_blue_alarm_2_time": {
+        "name": "Alarm 2 time"
+      },
+      "simmons_blue_alarm_3_time": {
+        "name": "Alarm 3 time"
+      },
       "smart_sleep_alarm_time": {
         "name": "Alarm time"
       },
@@ -5397,6 +5467,23 @@
       },
       "smartbed_alarm_time": {
         "name": "Alarm time"
+      },
+      "sinca_alarm_time": {
+        "name": "Alarm time"
+      },
+      "sinca_anti_snore_level": {
+        "name": "Anti-snore level",
+        "state": {
+          "low": "Low",
+          "medium": "Medium",
+          "high": "High"
+        }
+      },
+      "sinca_massage_wave": {
+        "name": "Massage wave"
+      },
+      "sinca_massage_timer": {
+        "name": "Massage timer setting"
       }
     },
     "light": {
@@ -5635,6 +5722,9 @@
       },
       "smartbed_sonic": {
         "name": "Sonic massage"
+      },
+      "sinca_privacy": {
+        "name": "Privacy mode"
       }
     },
     "binary_sensor": {
@@ -5865,6 +5955,12 @@
       },
       "smartbed_alarm_on": {
         "name": "Alarm enabled"
+      },
+      "sinca_alarm_enabled": {
+        "name": "Alarm enabled"
+      },
+      "sinca_anti_snore": {
+        "name": "Automatic anti-snore"
       }
     },
     "number": {
@@ -10469,6 +10565,44 @@
           "description": "How long a motor control runs, 1 to 60000 milliseconds. Default 1000. Other controls keep their own timing."
         }
       }
+    },
+    "sinca_comfort_command": {
+      "name": "Sinca Comfort Bed controls",
+      "description": "Refresh settings, read or disable the alarm, adjust automatic anti-snore, or consume local history.",
+      "fields": {
+        "device_id": {
+          "name": "Devices",
+          "description": "Select one or more Sinca Comfort Bed devices."
+        },
+        "side": {
+          "name": "Side",
+          "description": "Select the left or right side of a combined bed."
+        },
+        "action": {
+          "name": "Action",
+          "description": "Choose which bed operation to run."
+        },
+        "enabled": {
+          "name": "Enable anti-snore",
+          "description": "Turn automatic anti-snore on or off."
+        },
+        "position": {
+          "name": "Adjustment",
+          "description": "Choose head or elevation."
+        },
+        "level": {
+          "name": "Level",
+          "description": "Choose the automatic anti-snore level."
+        },
+        "all_records": {
+          "name": "All records",
+          "description": "Request all stored history instead of just new records."
+        },
+        "confirmed": {
+          "name": "Confirm history acknowledgement",
+          "description": "Let the bed mark report-length history as received. Home Assistant does not save a sleep report."
+        }
+      }
     }
   },
   "exceptions": {
@@ -10537,6 +10671,15 @@
     },
     "bundle_needs_side_for_paired": {
       "message": "{device_name} is a combined bed. Choose one side's device to create a support bundle."
+    },
+    "simmons_blue_gatt": {
+      "message": "This bed did not provide the write and notification channels required by Simmons Blue."
+    },
+    "simmons_blue_alarm_not_reported": {
+      "message": "The bed did not report the time for alarm {slot}. Try refreshing the alarms before turning it off."
+    },
+    "simmons_blue_alarm_changed": {
+      "message": "Alarm {slot} changed while the command was waiting. Try again."
     },
     "simmons_alarm_not_reported": {
       "message": "The bed did not report both alarm records in this connection, so nothing was written. Try again, or press Refresh Alarms first."
@@ -10750,6 +10893,27 @@
     },
     "alarm_route_unknown": {
       "message": "Connect the bed once so Home Assistant can discover its bed route, then try again."
+    },
+    "shuda_gatt_roles": {
+      "message": "Shuda needs a Nordic UART receiver with a write-with-response and notification characteristic"
+    },
+    "shuda_hold_duration": {
+      "message": "Choose a Shuda hold duration from 0.1 to 60 seconds"
+    },
+    "shuda_recall_duration": {
+      "message": "Hold a Shuda recall for less than five seconds. Use its Save button to store a position"
+    },
+    "shuda_alarm_slot": {
+      "message": "Choose Shuda alarm 1 or 2"
+    },
+    "shuda_alarm_mode": {
+      "message": "Choose a Shuda wake action of memory 1, flat or zero gravity"
+    },
+    "shuda_alarm_conflict": {
+      "message": "Alarm {slot} overlaps another Shuda alarm at the same time"
+    },
+    "shuda_alarm_no_reply": {
+      "message": "Shuda did not report alarm {slot}. Confirm that the bed is in range and try again"
     },
     "alarm_route_changed": {
       "message": "The bed's controls changed since the alarm was checked. Choose one of: {wake_actions}."
@@ -11143,6 +11307,30 @@
     },
     "smartbed_choose_receiver": {
       "message": "Choose the exact SmartBed receiver in Reconfigure before using saved side controls. Select CB24AB only for a receiver that supports separate Left and Right controls."
+    },
+    "sinca_gatt_roles": {
+      "message": "This receiver is missing the write or notification channel required by Sinca Comfort Bed."
+    },
+    "sinca_hold_invalid": {
+      "message": "Choose an available motor and a hold between 1 millisecond and 60 seconds."
+    },
+    "sinca_receiver_invalid": {
+      "message": "Choose a supported Sinca Comfort Bed receiver."
+    },
+    "sinca_sleep_required": {
+      "message": "This action is available only on the Sleep receiver."
+    },
+    "sinca_history_busy": {
+      "message": "Another history transfer is already running."
+    },
+    "sinca_history_timeout": {
+      "message": "The history transfer did not finish in time."
+    },
+    "sinca_history_limit": {
+      "message": "The history transfer exceeded the local record limit."
+    },
+    "sinca_history_confirm": {
+      "message": "This bed has report-length history. Confirm that the bed may mark those records as received."
     }
   },
   "issues": {
@@ -13269,6 +13457,29 @@
       "options": {
         "central": "Connect to this bed",
         "peripheral": "Join the Pairlink network from this host"
+      }
+    },
+    "sinca_comfort_action": {
+      "options": {
+        "refresh_settings": "Refresh settings",
+        "refresh_alarm": "Refresh alarm",
+        "disable_alarm": "Disable alarm",
+        "anti_snore": "Set automatic anti-snore",
+        "demo_anti_snore": "Demonstrate automatic anti-snore",
+        "consume_history": "Consume local history"
+      }
+    },
+    "sinca_comfort_position": {
+      "options": {
+        "head": "Head",
+        "elevation": "Elevation"
+      }
+    },
+    "sinca_comfort_level": {
+      "options": {
+        "low": "Low",
+        "medium": "Medium",
+        "high": "High"
       }
     }
   }
