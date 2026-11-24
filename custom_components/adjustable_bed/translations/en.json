@@ -6172,9 +6172,6 @@
       "reverie_body_tilt": {
         "name": "Body tilt"
       },
-      "reverie_pairlink_massage_timer": {
-        "name": "Massage timer"
-      },
       "fan_level": {
         "name": "Fan level"
       },

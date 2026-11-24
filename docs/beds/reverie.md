@@ -279,7 +279,7 @@ frame, not complete plaintext GATT writes.
 | Stop massage | `01 48 00 00` | Massage off |
 | Light on / off | `01 5C 00 00` / `01 5D 00 00` | Discrete light commands |
 | Brightness / red / green / blue | `01 A7 10 value` / `01 A7 11 value` / `01 A7 12 value` / `01 A7 13 value` | Level 0–100; RGB channels 0–255 |
-| Rhythm / mode / timer | `01 A7 14 value` / `01 A7 15 value` / `01 A7 16 value` | Boolean 0/1; mode 0–4; raw timer 0–255 |
+| Rhythm / mode / timer | `01 A7 14 value` / `01 A7 15 value` / `01 A7 16 value` | Boolean 0/1; mode 0–4; timer in minutes (the app's buttons send 10, 15, 20, 25 or 30) |
 | Comfort/alarm prefix | `01 A7 17 01` | Followed by supported fields in source order |
 | State request | `01 A7 20 type` | Types and order below |
 | Active status sync | `01 A8 00 00` / `01 A9 00 00` | Separate requests |
@@ -481,8 +481,8 @@ alone does not run physical-disconnect cleanup.
 ## Home Assistant actions and automation
 
 `reverie_set_comfort` accepts typed position, massage, mode, and raw timer-byte
-fields. Pairlink's massage timer number sends that byte and does not claim a
-minute conversion. Every selected physical target validates the request before any target
+fields. Pairlink's massage timer offers the app's 10, 15, 20, 25 and 30 minute
+buttons. Every selected physical target validates the request before any target
 writes. Protocol 110 Composer requests require its five accepted values.
 Protocol 108 applies changed values after notification feedback. Pairlink
 ordinary requests send only changed values. Its alarm route starts alarm mode

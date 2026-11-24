@@ -3719,16 +3719,6 @@
   "card_section": "motors",
   "card_motor": "lumbar"
  },
- "number:reverie_pairlink_massage_timer": {
-  "card_section": "massage",
-  "card_role": "timer"
- },
- "number:reverie_stk_global_massage": {
-  "card_section": "massage"
- },
- "number:reverie_stk_head_wave": {
-  "card_section": "massage"
- },
  "number:richmat_app_angle": {
   "card_section": "utility"
  },
