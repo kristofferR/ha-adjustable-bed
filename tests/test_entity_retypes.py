@@ -515,14 +515,14 @@ def test_v5_builds_the_new_entity_and_not_the_old_one() -> None:
             assert (retype.old_domain, retype.old_key) not in built, retype
 
 
-async def test_only_the_nightstand_wave_slider_becomes_the_pattern_select(
+async def test_only_the_reverie_wave_slider_becomes_the_pattern_select(
     hass: HomeAssistant,
 ) -> None:
     registry = er.async_get(hass)
     entry = _entry(hass)
     _row(registry, entry, "number", "massage_wave_intensity", "bed_massage_wave_intensity")
 
-    async_carry_over_retyped_entities(hass, entry, _runtime("reverie"))
+    async_carry_over_retyped_entities(hass, entry, _runtime("keeson"))
     assert registry.async_get("number.bed_massage_wave_intensity") is not None
 
     async_carry_over_retyped_entities(hass, entry, _runtime("reverie_nightstand"))

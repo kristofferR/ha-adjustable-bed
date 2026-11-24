@@ -22,8 +22,9 @@ from typing import TYPE_CHECKING, Any, ClassVar, Final
 
 from bleak.exc import BleakError
 
+from ...card import CARD_MASSAGE
 from ...const import REVERIE_BACK_MAX_ANGLE, REVERIE_CHAR_UUID
-from ...controller_state import StateKey
+from ...controller_state import StateKey, StateUpdate
 from ...execution import ExecutionCapabilities
 from ...state_keys import massage_intensity
 from ..base import BedController
@@ -31,6 +32,7 @@ from ..builder import BuildContext
 from ..entity_specs import (
     POSITION_UNIT_DEGREES,
     ControllerMotorHoldSpec,
+    ControllerSelectSpec,
     MotorControlSpec,
     PositionNumberSpec,
     build_position_number_spec,
@@ -46,6 +48,7 @@ from .profiles import (
     ReverieModelProfile,
     resolve_reverie_model,
 )
+from .wave import WAVE_PATTERN, WAVE_PATTERNS
 
 if TYPE_CHECKING:
     from ...coordinator import AdjustableBedCoordinator
@@ -57,7 +60,6 @@ HEAD_POSITION: Final = StateKey[int]("reverie_head_position")
 FOOT_POSITION: Final = StateKey[int]("reverie_foot_position")
 MASSAGE_HEAD_INTENSITY: Final = massage_intensity("head")
 MASSAGE_FOOT_INTENSITY: Final = massage_intensity("foot")
-MASSAGE_WAVE_INTENSITY: Final = massage_intensity("wave")
 
 
 class ReverieCommands:
@@ -140,7 +142,7 @@ class ReverieController(BedController, ReverieComfortActions):
         self._massage_foot_level = 0
         self._massage_wave_level = 0
         self.forward_controller_state_updates(
-            MASSAGE_HEAD_INTENSITY(0), MASSAGE_FOOT_INTENSITY(0), MASSAGE_WAVE_INTENSITY(0)
+            MASSAGE_HEAD_INTENSITY(0), MASSAGE_FOOT_INTENSITY(0), WAVE_PATTERN("off")
         )
         self._last_notification_hex: str | None = None
         self._comfort_request: ReverieComfortRequest | None = None
@@ -292,8 +294,35 @@ class ReverieController(BedController, ReverieComfortActions):
 
     @property
     def massage_intensity_zones(self) -> list[str]:
-        """Return zones with direct intensity control: head, foot, wave."""
-        return ["head", "foot", "wave"] if self.model.massage else []
+        # The wave is a pattern select, not an intensity.
+        return ["head", "foot"] if self.model.massage else []
+
+    @property
+    def controller_select_specs(self) -> tuple[ControllerSelectSpec, ...]:
+        if not self.model.massage:
+            return ()
+        return (
+            ControllerSelectSpec(
+                key="reverie_massage_wave",
+                translation_key="reverie_massage_wave",
+                state_key=WAVE_PATTERN,
+                options=WAVE_PATTERNS,
+                select_fn=lambda _ctrl, pattern: self._select_wave(pattern),
+                card=CARD_MASSAGE,
+            ),
+        )
+
+    async def _select_wave(self, pattern: str) -> None:
+        """Send a wave button's number; the app's Stop stops all massage."""
+        if pattern == "off":
+            await self.massage_off()
+        else:
+            await self.set_massage_intensity("wave", WAVE_PATTERNS.index(pattern))
+
+    def _wave_pattern(self) -> StateUpdate:
+        level = self._massage_wave_level
+        # A level no wave button sends has no pattern to show.
+        return WAVE_PATTERN(WAVE_PATTERNS[level] if 0 <= level <= 4 else None)
 
     @property
     def position_number_specs(self) -> tuple[PositionNumberSpec, ...]:
@@ -453,7 +482,7 @@ class ReverieController(BedController, ReverieComfortActions):
             FOOT_POSITION(foot_position),
             MASSAGE_HEAD_INTENSITY(head_wave),
             MASSAGE_FOOT_INTENSITY(foot_wave),
-            MASSAGE_WAVE_INTENSITY(self._massage_wave_level),
+            self._wave_pattern(),
         )
 
         if self._notify_callback:
@@ -923,7 +952,7 @@ class ReverieController(BedController, ReverieComfortActions):
         self.forward_controller_state_updates(
             MASSAGE_HEAD_INTENSITY(0),
             MASSAGE_FOOT_INTENSITY(0),
-            MASSAGE_WAVE_INTENSITY(0),
+            WAVE_PATTERN("off"),
         )
 
     async def massage_head_up(self) -> None:
@@ -978,7 +1007,7 @@ class ReverieController(BedController, ReverieComfortActions):
         command = self._build_command(ReverieCommands.massage_wave(next_level))
         await self.write_command(command)
         self._massage_wave_level = next_level
-        self.forward_controller_state_update(MASSAGE_WAVE_INTENSITY, next_level)
+        self.forward_controller_state_updates(self._wave_pattern())
 
     async def preset_zero_g(self) -> None:
         """Go to zero gravity position."""
@@ -1020,7 +1049,7 @@ class ReverieController(BedController, ReverieComfortActions):
                 raise ValueError("Reverie wave level must be an integer")
             await self.write_command(self._build_command(ReverieCommands.massage_wave(level)))
             self._massage_wave_level = level
-            self.forward_controller_state_update(MASSAGE_WAVE_INTENSITY, level)
+            self.forward_controller_state_updates(self._wave_pattern())
         else:
             _LOGGER.warning("Unknown massage zone: %s", zone)
 

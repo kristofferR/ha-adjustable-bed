@@ -270,9 +270,10 @@ async def test_nightstand_actual_factory_preserves_only_legacy_default_lumbar(
     await coordinator.async_shutdown()
 
 
-async def test_legacy_wave_registry_id_survives_actual_platform_setup(
+async def test_legacy_wave_slider_becomes_the_wave_select_on_platform_setup(
     hass, mock_coordinator_connected, enable_custom_integrations,
 ):
+    """The app's wave buttons send 41-44 and its Stop stops all massage (#1172)."""
     from homeassistant.helpers import entity_registry as er
     entry = MockConfigEntry(
         domain=DOMAIN, title="Legacy Reverie",
@@ -283,23 +284,23 @@ async def test_legacy_wave_registry_id_survives_actual_platform_setup(
     )
     entry.add_to_hass(hass)
     registry = er.async_get(hass)
-    original = registry.async_get_or_create(
+    registry.async_get_or_create(
         "number", DOMAIN, "AA:BB:CC:DD:EE:FD_massage_wave_intensity",
         config_entry=entry, suggested_object_id="my_existing_wave_automation",
     )
     assert await hass.config_entries.async_setup(entry.entry_id)
     await hass.async_block_till_done()
-    current = registry.async_get(original.entity_id)
-    assert current is not None and current.id == original.id
-    assert current.unique_id == original.unique_id
+    assert registry.async_get("number.my_existing_wave_automation") is None
+    select_id = "select.my_existing_wave_automation"
+    assert hass.states.get(select_id) is not None
     coordinator = hass.data[DOMAIN][entry.entry_id]
-    assert hass.states.get(original.entity_id) is not None
-    await hass.services.async_call(
-        "number", "set_value", {"entity_id": original.entity_id, "value": 1}, blocking=True,
-    )
-    assert coordinator.client.write_gatt_char.call_args.args[1] == bytes.fromhex("554114")
-    await hass.async_block_till_done()
-    assert float(hass.states.get(original.entity_id).state) == 1
+    for option, wire in (("1", "554114"), ("off", "553560")):
+        await hass.services.async_call(
+            "select", "select_option", {"entity_id": select_id, "option": option}, blocking=True,
+        )
+        assert coordinator.client.write_gatt_char.call_args.args[1] == bytes.fromhex(wire)
+        await hass.async_block_till_done()
+        assert hass.states.get(select_id).state == option
     await hass.config_entries.async_unload(entry.entry_id)
 
 

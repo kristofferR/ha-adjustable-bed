@@ -74,6 +74,7 @@ from .profiles import (
     ReverieModelProfile,
     resolve_reverie_model,
 )
+from .wave import WAVE_PATTERN, WAVE_PATTERNS
 
 if TYPE_CHECKING:
     from ...coordinator import AdjustableBedCoordinator
@@ -87,9 +88,6 @@ STK_SIDE_NO_DATA_UUID = REVERIE_STK_SIDE_NO_DATA_UUID
 STK_SIDE: Final = StateKey[str | None]("reverie_stk_side")
 MASSAGE_HEAD_INTENSITY: Final = massage_intensity("head")
 MASSAGE_FOOT_INTENSITY: Final = massage_intensity("foot")
-# The app's wave buttons: Stop writes 0 and patterns 1-4 write their number.
-WAVE_PATTERN: Final = StateKey[str | None]("reverie_massage_wave")
-WAVE_PATTERNS: Final = ("off", "1", "2", "3", "4")
 STK_HEAD_WAVE: Final = StateKey[int | None]("reverie_stk_head_wave")
 STK_GLOBAL_MASSAGE: Final = StateKey[int | None]("reverie_stk_global_massage")
 BODY_TILT: Final = StateKey[float | None]("reverie_body_tilt")

@@ -24,7 +24,7 @@ from homeassistant.helpers import issue_registry as ir
 from homeassistant.helpers.start import async_at_started
 
 from .automation_references import entity_users
-from .const import BED_TYPE_OCTO, BED_TYPE_REVERIE_NIGHTSTAND, DOMAIN
+from .const import BED_TYPE_OCTO, BED_TYPE_REVERIE, BED_TYPE_REVERIE_NIGHTSTAND, DOMAIN
 from .paired_coordinator import entity_runtimes
 
 if TYPE_CHECKING:
@@ -132,13 +132,13 @@ RETYPES: Final[tuple[Retype, ...]] = (
     ),
     # Bed-specific light durations that became the shared light timer.
     Retype("select", "controller_select_goodvibe_light_duration", "select", "light_timer"),
-    # The Nightstand app's wave is a pattern choice, not an intensity.
+    # The Reverie app's wave is a pattern choice, not an intensity.
     Retype(
         "number",
         "massage_wave_intensity",
         "select",
         "controller_select_reverie_massage_wave",
-        only_on=frozenset({BED_TYPE_REVERIE_NIGHTSTAND}),
+        only_on=frozenset({BED_TYPE_REVERIE, BED_TYPE_REVERIE_NIGHTSTAND}),
     ),
 )
 

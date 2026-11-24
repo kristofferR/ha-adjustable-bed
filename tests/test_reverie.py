@@ -24,7 +24,6 @@ from custom_components.adjustable_bed.const import (
     REVERIE_CHAR_UUID,
 )
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
-from custom_components.adjustable_bed.number import MASSAGE_NUMBER_DESCRIPTIONS
 
 
 @pytest.fixture
@@ -60,7 +59,7 @@ def mock_reverie_config_entry(
 class TestReverieController:
     """Test Reverie controller."""
 
-    async def test_wave_intensity_keeps_legacy_number_identity(
+    async def test_wave_is_the_app_pattern_select(
         self,
         hass: HomeAssistant,
         mock_reverie_config_entry,
@@ -69,16 +68,10 @@ class TestReverieController:
         coordinator = AdjustableBedCoordinator(hass, mock_reverie_config_entry)
         await coordinator.async_connect()
 
-        wave = next(
-            description
-            for description in MASSAGE_NUMBER_DESCRIPTIONS
-            if description.massage_zone == "wave"
-        )
-        assert wave.key == "massage_wave_intensity"
-        assert "wave" in coordinator.controller.massage_intensity_zones
-        assert coordinator.entity_unique_id(wave.key) == (
-            "AA:BB:CC:DD:EE:FF_massage_wave_intensity"
-        )
+        assert "wave" not in coordinator.controller.massage_intensity_zones
+        (wave,) = coordinator.controller.controller_select_specs
+        assert wave.key == "reverie_massage_wave"
+        assert wave.options == ("off", "1", "2", "3", "4")
 
     async def test_build_command_checksum(
         self,
