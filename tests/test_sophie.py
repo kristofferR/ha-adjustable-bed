@@ -35,6 +35,7 @@ from custom_components.adjustable_bed.profiles.ff_frame import SolaceCommands as
 from custom_components.adjustable_bed.state_keys import (
     LIGHT_LEVEL,
     LIGHT_TIMER_OPTION,
+    MASSAGE_TIMER_MINUTES,
     SYNCHRO_MODE,
 )
 from tests.state_helpers import state_writer
@@ -264,6 +265,20 @@ async def test_timer_toggle_and_all_brightness_levels(controller):
         assert written(controller)[-1] == VECTORS[60 + index]["expected_bytes"]
     await controller.lights_off()
     assert controller._coordinator.controller_state[LIGHT_TIMER_OPTION] == "Off"
+
+
+async def test_cancelling_the_timer_clears_the_massage_indicators(controller):
+    """The app's cancel stops the massage and resets head, foot and wave."""
+    state = controller._coordinator.controller_state
+    controller._parse_notification(app.MASSAGE_REPLIES["head"][2])
+    controller._parse_notification(app.MASSAGE_REPLIES["foot"][3])
+    controller._parse_notification(app.MASSAGE_REPLIES["wave"][1])
+    await controller.set_massage_timer(20)
+    assert (state[HEAD_LEVEL], state[FOOT_LEVEL], state[WAVE]) == (2, 3, 2)
+    await controller.set_massage_timer(20)
+    assert written(controller)[-1] == VECTORS[47]["expected_bytes"]
+    assert (state[HEAD_LEVEL], state[FOOT_LEVEL], state[WAVE]) == (0, 0, 0)
+    assert state[MASSAGE_TIMER_MINUTES] == 0
 
 
 @pytest.mark.parametrize("zone,state", [("head", HEAD_LEVEL), ("foot", FOOT_LEVEL), ("wave", WAVE)])

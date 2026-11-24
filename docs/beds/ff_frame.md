@@ -1125,7 +1125,9 @@ the matching **… position saved** binary sensors. Home Assistant exposes confi
 instead of delayed Android long-press callbacks that can survive cancellation.
 
 Massage has head and foot minus/plus, wave minus/plus and three timers. Selecting
-an already selected massage timer sends the app's timer deselect/stop frame.
+an already selected massage timer sends the app's timer deselect/stop frame. That
+frame stops the massage, so the head, foot and wave levels return to 0, as the
+app's indicators do.
 The minus/plus labels describe app intent; physical stepping still needs testing.
 Brightness uses the shared literal levels after a brightness reply; the
 brightness query is part of every connection's startup. Light timers are receiver commands;
