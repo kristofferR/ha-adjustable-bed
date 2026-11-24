@@ -603,6 +603,11 @@ MODE_LABELS: Final = {
     "FNRM": {0: "Left", 1: "Right"},
     "G4RM": {0: "Left", 1: "Right"},
 }
+# The app shows these layouts under Left and Right tabs. A bed that moves as
+# one base answers both alike (#1161), so it can be set up with one of them.
+SIDE_LAYOUTS: Final = frozenset(
+    layout for layout, labels in MODE_LABELS.items() if labels == {0: "Left", 1: "Right"}
+)
 EXCLUDED_LAYOUTS: Final = frozenset({"WFRM", "FWRM", "TEST", "RMCS"})
 
 STARTUP_MS: Final = 300

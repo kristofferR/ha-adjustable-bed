@@ -24,6 +24,7 @@ from ...card import (
     motor_card,
 )
 from ...command_scheduler import current_command_context, note_frame_skipped
+from ...const import CONF_BASEREMOTE_SINGLE_BASE
 from ...controller_state import StateKey
 from ...errors import failed, invalid
 from ...execution import NO_EXECUTION_CAPABILITIES, ExecutionCapabilities
@@ -35,10 +36,12 @@ from ...profiles.baseremote import (
     MODE_LABELS,
     QUERY_SPACING_MS,
     SETTINGS_SPACING_MS,
+    SIDE_LAYOUTS,
     STARTUP_MS,
     TAP_RELEASE_MS,
     sender_interval,
 )
+from ...profiles.richmat import RICHMAT_CODES
 from ...state_keys import MASSAGE_TIMER_MINUTES, UNDER_BED_LIGHTS_ON, UNDER_BED_LIGHTS_RGB
 from ..base import CONTROLLER_GESTURE_RELEASE, BedController
 from ..cancellation import settled
@@ -46,10 +49,12 @@ from ..catalog_buttons import Kind, catalog_button, classify, on_off_switch, uni
 from ..entity_specs import (
     ControllerButtonSpec,
     ControllerHoldSpec,
+    ControllerMotorHoldSpec,
     ControllerNumberSpec,
     ControllerSelectSpec,
     ControllerStateSensorSpec,
     ControllerSwitchSpec,
+    MotorControlSpec,
 )
 from ..richmat.labels import resource_label
 from ..richmat_classic.caller import (
@@ -106,6 +111,18 @@ AROMA_ON_TIME: Final = StateKey[int | None]("baseremote_aroma_on_time")
 AROMA_INTERVAL: Final = StateKey[int | None]("baseremote_aroma_interval")
 AROMA_PAUSE: Final = StateKey[int | None]("baseremote_aroma_pause")
 
+# The card finds a held control's release button by its translation key.
+_RELEASE: Final = "richmat_classic_release"
+
+# What the Richmat remotes move the head and the feet with. A control that sends
+# one of these is that motor, whatever number the app's layout gives it (#1161).
+_MOTORS: Final = {
+    bytes((RICHMAT_CODES["head_up"],)): ("head", "up"),
+    bytes((RICHMAT_CODES["head_down"],)): ("head", "down"),
+    bytes((RICHMAT_CODES["feet_up"],)): ("feet", "up"),
+    bytes((RICHMAT_CODES["feet_down"],)): ("feet", "down"),
+}
+
 
 @dataclass(frozen=True, slots=True)
 class Gesture:
@@ -152,10 +169,22 @@ class BaseRemoteController(SessionController):
         )
         if self.layout in EXCLUDED_LAYOUTS:
             raise invalid("baseremote_layout")
+        self._single_base = (
+            self.layout in SIDE_LAYOUTS
+            and coordinator.entry.data.get(CONF_BASEREMOTE_SINGLE_BASE) is True
+        )
         self._receive = ReceiveState()
         self._group_only = False
         self._color_light_identity = False
         self._preferences = {}
+
+    @property
+    def _modes(self) -> tuple[int, ...]:
+        # One base answers Left and Right alike, so it keeps the first.
+        return (0,) if self._single_base else self._model.modes
+
+    def _mode_label(self, mode: int) -> str:
+        return "" if self._single_base else MODE_LABELS.get(self.layout, {}).get(mode, "")
 
     @property
     def persisted_app_state(self) -> Mapping[str, object]:
@@ -434,9 +463,8 @@ class BaseRemoteController(SessionController):
         if self._group_only:
             return ()
         gestures = []
-        modes = self._model.modes
-        for mode in modes:
-            prefix = MODE_LABELS.get(self.layout, {}).get(mode, "")
+        for mode in self._modes:
+            prefix = self._mode_label(mode)
             for button in self._controls:
                 if button.excluded_short and button.excluded_long or button.status not in (1, 2, 3):
                     continue
@@ -525,6 +553,63 @@ class BaseRemoteController(SessionController):
                     groups.setdefault((gesture.mode, label[: -len(ending)]), {})[value] = gesture
         return {key: pair for key, pair in groups.items() if len(pair) == 2}
 
+    def _motors(self) -> dict[tuple[int, str], dict[str, Gesture]]:
+        """The held controls that move the head or the feet, by mode and motor.
+
+        Only a control that sends the motor's operand on both connections, so a
+        bed's entities never depend on its connection. Numbered modes keep
+        their buttons: only a side names a motor of its own.
+        """
+        motors: dict[tuple[int, str], dict[str, Gesture]] = {}
+        for gesture in self._contexts():
+            if (
+                gesture.long
+                or not self._held(gesture)
+                or self._mode_label(gesture.mode) not in ("", "Left", "Right")
+            ):
+                continue
+            button = self._button(gesture.node)
+            operands = {
+                selected_operand(button, wire, 1, gesture.selection) for wire in ("RAW", "FRAMED")
+            }
+            operand = operands.pop()
+            if not operands and isinstance(operand, bytes) and operand in _MOTORS:
+                motor, direction = _MOTORS[operand]
+                motors.setdefault((gesture.mode, motor), {})[direction] = gesture
+        return {key: pair for key, pair in motors.items() if len(pair) == 2}
+
+    @property
+    def supports_motor_control(self) -> bool:
+        return bool(self._motors())
+
+    @property
+    def motor_control_specs(self) -> tuple[MotorControlSpec, ...]:
+        specs = []
+        for (mode, motor), pair in self._motors().items():
+            side = self._mode_label(mode).lower()
+            key = f"{side}_{motor}" if side else motor
+            specs.append(
+                MotorControlSpec(
+                    key,
+                    key,
+                    partial(_press, gesture=pair["up"]),
+                    partial(_press, gesture=pair["down"]),
+                    lambda c: c.stop_all(),
+                    max_angle=45 if motor == "feet" else 68,
+                    # One worker sends every held control.
+                    scheduler_resource="*",
+                    # A press moves for the bed's "Movement per tap", as its buttons do.
+                    hold=ControllerMotorHoldSpec(
+                        pair["up"].key,
+                        pair["down"].key,
+                        release_button_key=_RELEASE,
+                        stop_scope="side",
+                        press_hold_ms=None,
+                    ),
+                )
+            )
+        return tuple(specs)
+
     @property
     def controller_switch_specs(self) -> tuple[ControllerSwitchSpec, ...]:
         result = []
@@ -546,6 +631,8 @@ class BaseRemoteController(SessionController):
     @property
     def controller_button_specs(self) -> tuple[ControllerButtonSpec, ...]:
         paired = {g.key for pair in self._pair_groups().values() for g in pair.values()}
+        # The head and feet covers send these.
+        paired |= {g.key for pair in self._motors().values() for g in pair.values()}
         specs = []
         seen = set()
         for gesture in self._contexts():
@@ -555,7 +642,7 @@ class BaseRemoteController(SessionController):
                 "light" in gesture.label.lower()
                 and not gesture.long
                 and self._light_toggle() == gesture.node
-                and len(self._model.modes) == 1
+                and len(self._modes) == 1
             ):
                 # The light entity is this toggle; a separate long-press off stays a button.
                 continue
@@ -589,7 +676,7 @@ class BaseRemoteController(SessionController):
                 if signature in seen:
                     continue
                 seen.add(signature)
-            prefix = MODE_LABELS.get(self.layout, {}).get(gesture.mode, "")
+            prefix = self._mode_label(gesture.mode)
             meaning = gesture.label.removeprefix(prefix + " ") if prefix else gesture.label
             semantic = classify(meaning)
             kind = Kind.SAVE if save else Kind.PRESET if gesture.selection.hold else None
@@ -604,7 +691,7 @@ class BaseRemoteController(SessionController):
                 gesture.label,
                 partial(_press, gesture=gesture),
                 kind=kind,
-                hold=ControllerHoldSpec(gesture.key, release_button_key="baseremote_release")
+                hold=ControllerHoldSpec(gesture.key, release_button_key=_RELEASE)
                 if self._held(gesture)
                 else None,
             )
@@ -635,7 +722,7 @@ class BaseRemoteController(SessionController):
                 "baseremote_release",
                 "Stop",
                 lambda c: c.stop_all(),
-                translation_key="richmat_classic_release",
+                translation_key=_RELEASE,
                 release_only=True,
                 card=CARD_HIDDEN,
             )
@@ -959,7 +1046,7 @@ class BaseRemoteController(SessionController):
         if self._group_only or CONTROLLER_GESTURE_RELEASE.get():
             return
         with self._transaction() as session:
-            for mode in (0,) if session.wire == "RAW" else self._model.modes:
+            for mode in (0,) if session.wire == "RAW" else self._modes:
                 await self._release(HELD_RELEASE_MS, mode=mode)
 
     async def set_massage_timer(self, minutes: int) -> None:
@@ -1049,7 +1136,7 @@ class BaseRemoteController(SessionController):
         return tuple(specs)
 
     def _light_toggle(self) -> int | None:
-        if self._group_only or len(self._model.modes) > 1:
+        if self._group_only or len(self._modes) > 1:
             return None
         return next(
             (

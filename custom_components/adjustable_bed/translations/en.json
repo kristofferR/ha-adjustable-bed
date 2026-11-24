@@ -360,6 +360,7 @@
           "malouf_app_profile": "App",
           "rmcontrol_product": "RMControl product",
           "rmcontrol_side": "RMControl side",
+          "baseremote_single_base": "One base, not separate left and right sides",
           "richmat_remote": "Richmat remote",
           "reverse_motor_1": "Reverse motor 1",
           "reverse_motor_2": "Reverse motor 2",
@@ -423,6 +424,7 @@
           "malouf_app_profile": "The app you use with this bed.",
           "rmcontrol_product": "The product code RMControl shows for this bed. Choose None to use the Richmat remote controls instead.",
           "rmcontrol_side": "The side selected in RMControl. It picks the side the app's commands address, not a paired bed's left or right in Home Assistant.",
+          "baseremote_single_base": "Turn on when the app's Left and Right tabs move the same base. Each control then appears once.",
           "richmat_remote": "The code on your Richmat remote. It is filled in when the bed name carries it; keep Automatic if you are not sure.",
           "octo_pin": "Enter the four-digit PIN, or leave empty if the bed does not require one.",
           "octo_motor_count_override": "Automatic uses the number of motors the bed reports.",
@@ -921,6 +923,7 @@
           "richmat_remote": "Richmat remote",
           "rmcontrol_product": "RMControl product",
           "rmcontrol_side": "RMControl side",
+          "baseremote_single_base": "One base, not separate left and right sides",
           "motor_pulse_count": "Movement per tap",
           "idle_disconnect_seconds": "Seconds to stay connected",
           "octo_pin": "Octo PIN",
@@ -1023,6 +1026,7 @@
           "richmat_remote": "The code on your Richmat remote. It is filled in when the bed name carries it; keep Automatic if you are not sure.",
           "rmcontrol_product": "The product code RMControl shows for this bed. Choose None to use the Richmat remote controls instead.",
           "rmcontrol_side": "The side selected in RMControl. It picks the side the app's commands address, not a paired bed's left or right in Home Assistant.",
+          "baseremote_single_base": "Turn on when the app's Left and Right tabs move the same base. Each control then appears once.",
           "motor_pulse_count": "How many times a tap repeats its command. Higher numbers move further per tap.",
           "idle_disconnect_seconds": "How long the link stays open after the last command, from 1 to 300 seconds.",
           "octo_pin": "Enter the four-digit PIN, or leave empty if the bed does not require one.",
@@ -1206,6 +1210,7 @@
           "malouf_app_profile": "App",
           "rmcontrol_product": "RMControl product",
           "rmcontrol_side": "RMControl side",
+          "baseremote_single_base": "One base, not separate left and right sides",
           "richmat_remote": "Richmat remote",
           "reverse_motor_1": "Reverse motor 1",
           "reverse_motor_2": "Reverse motor 2",
@@ -1286,6 +1291,7 @@
           "malouf_app_profile": "The app you use with this bed.",
           "rmcontrol_product": "The product code RMControl shows for this bed. Choose None to use the Richmat remote controls instead.",
           "rmcontrol_side": "The side selected in RMControl. It picks the side the app's commands address, not a paired bed's left or right in Home Assistant.",
+          "baseremote_single_base": "Turn on when the app's Left and Right tabs move the same base. Each control then appears once.",
           "richmat_remote": "The code on your Richmat remote. It is filled in when the bed name carries it; keep Automatic if you are not sure.",
           "octo_pin": "Enter the four-digit PIN, or leave empty if the bed does not require one.",
           "octo_motor_count_override": "Automatic uses the number of motors the bed reports.",
@@ -1385,6 +1391,7 @@
           "malouf_app_profile": "App",
           "rmcontrol_product": "RMControl product",
           "rmcontrol_side": "RMControl side",
+          "baseremote_single_base": "One base, not separate left and right sides",
           "richmat_remote": "Richmat remote",
           "reverse_motor_1": "Reverse motor 1",
           "reverse_motor_2": "Reverse motor 2",
@@ -1465,6 +1472,7 @@
           "malouf_app_profile": "The app you use with this bed.",
           "rmcontrol_product": "The product code RMControl shows for this bed. Choose None to use the Richmat remote controls instead.",
           "rmcontrol_side": "The side selected in RMControl. It picks the side the app's commands address, not a paired bed's left or right in Home Assistant.",
+          "baseremote_single_base": "Turn on when the app's Left and Right tabs move the same base. Each control then appears once.",
           "richmat_remote": "The code on your Richmat remote. It is filled in when the bed name carries it; keep Automatic if you are not sure.",
           "octo_pin": "Enter the four-digit PIN, or leave empty if the bed does not require one.",
           "octo_motor_count_override": "Automatic uses the number of motors the bed reports.",
@@ -2972,6 +2980,30 @@
       "limoss_remote_motor_1_down": {
         "name": "Motor 1 down"
       },
+      "left_head_up": {
+        "name": "Left head up"
+      },
+      "left_head_down": {
+        "name": "Left head down"
+      },
+      "left_feet_up": {
+        "name": "Left feet up"
+      },
+      "left_feet_down": {
+        "name": "Left feet down"
+      },
+      "right_head_up": {
+        "name": "Right head up"
+      },
+      "right_head_down": {
+        "name": "Right head down"
+      },
+      "right_feet_up": {
+        "name": "Right feet up"
+      },
+      "right_feet_down": {
+        "name": "Right feet down"
+      },
       "right_back_up": {
         "name": "Right back up"
       },
@@ -3834,6 +3866,18 @@
       },
       "head_right": {
         "name": "Right head"
+      },
+      "left_head": {
+        "name": "Left head"
+      },
+      "right_head": {
+        "name": "Right head"
+      },
+      "left_feet": {
+        "name": "Left feet"
+      },
+      "right_feet": {
+        "name": "Right feet"
       },
       "back_left": {
         "name": "Left back"

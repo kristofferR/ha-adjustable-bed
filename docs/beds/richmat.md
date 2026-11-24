@@ -16099,12 +16099,15 @@ Legacy BedTech and L&P MlRM routes send the pre-v5 controllers' frames.
 
 **App:** [Base Remote](https://play.google.com/store/apps/details?id=com.richmat.baseremote) 1.0.1, `com.richmat.baseremote`
 
-**Status:** Not yet tested on physical hardware.
+**Status:** Partly tested (head and feet movement on ECRM)
 
 #### Setup
 
 Choose **Base Remote app** in the Richmat app picker, then the four-character
 layout that matches the app. The layout picker is searchable and remains available through Reconfigure.
+A layout the app shows under Left and Right tabs also asks **One base, not
+separate left and right sides**. Turn it on when both tabs move the same base:
+each control then appears once, without a side in its name. Configure changes it.
 A Bluetooth name or shared service identifies a candidate, never its feature set.
 Aliases retain the app's prefix precedence; manual selection is explicit.
 
@@ -16117,15 +16120,21 @@ the Android app does not explicitly select its write type.
 
 #### Controls
 
-Only controls belonging to the selected layout appear. Motor numbers retain the
-app's labels, without assigning an unverified physical actuator. Named presets,
+Only controls belonging to the selected layout appear. Motor 1 and motor 2 are
+the **Head** and **Feet** covers where they send, on both connections, the
+operands the [Richmat remotes](#richmat-remotes) move the head and the feet
+with (`24`/`25` and `26`/`27`). A press moves for the bed's **Movement per
+tap**. Every other motor keeps the app's number, without assigning an
+unverified physical actuator, and so do motors 1 and 2 of a layout whose Nordic
+connection sends another operand, or of a layout with numbered modes. Named presets,
 memory, massage, locks and synchronization follow their own resource operands.
 The permanently hidden lock controls are absent. Saves require confirmation and
 never accept renewable holds. E3RM has separate recall and save actions rather
 than an armed next-command switch.
 
 Mode labels and commands are scoped together. Left/Right labels come from the
-layout and do not establish a supported physical paired-bed topology. Nordic
+layout and do not establish a supported physical paired-bed topology: a single
+base answers both alike, which the one-base setting is for. Nordic
 ignores the mode field. U3RM's selectable motors have independent movement
 buttons. GVRM's unloaded alternate getter does not become a foot command.
 Hold-mode recall actions have their own Move to buttons rather than an app UI

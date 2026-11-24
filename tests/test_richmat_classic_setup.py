@@ -29,7 +29,7 @@ from custom_components.adjustable_bed.setup_questions import SetupProfile, setup
 
 PROFILE = setup_profile(BED_TYPE_RICHMAT_CLASSIC_APPS)
 assert isinstance(PROFILE, SetupProfile)
-LAYOUT, THIRD_SERVICE = PROFILE.questions
+LAYOUT, SINGLE_BASE, THIRD_SERVICE = PROFILE.questions
 
 
 def _layouts(app: str) -> set[str]:
@@ -278,6 +278,49 @@ async def test_configure_rejects_another_apps_layout_and_saves_the_fallback(hass
     assert result["type"] == FlowResultType.CREATE_ENTRY
     assert entry.data[CONF_PRODUCT_TYPE] == "B6RM"
     assert entry.data[CONF_RICHMAT_CLASSIC_THIRD_SERVICE] is True
+
+
+async def test_only_base_remote_asks_whether_a_left_right_layout_is_one_base(hass):
+    """#1161: the app shows Left and Right tabs also on a bed that moves as one base."""
+    from homeassistant.const import CONF_ADDRESS
+    from homeassistant.data_entry_flow import FlowResultType
+    from pytest_homeassistant.common import MockConfigEntry
+
+    from custom_components.adjustable_bed.config_flow import AdjustableBedOptionsFlow
+    from custom_components.adjustable_bed.const import (
+        CONF_BED_TYPE,
+        CONF_PRODUCT_TYPE,
+        CONF_PROTOCOL_VARIANT,
+        DOMAIN,
+    )
+
+    async def configure(app: str) -> tuple[MockConfigEntry, AdjustableBedOptionsFlow, dict]:
+        entry = MockConfigEntry(
+            domain=DOMAIN,
+            data={
+                CONF_ADDRESS: "AA:BB:CC:DD:EE:18",
+                CONF_BED_TYPE: BED_TYPE_RICHMAT_CLASSIC_APPS,
+                CONF_PROTOCOL_VARIANT: app,
+                CONF_PRODUCT_TYPE: "ECRM",
+            },
+        )
+        entry.add_to_hass(hass)
+        flow = AdjustableBedOptionsFlow(entry)
+        flow.hass = hass
+        flow.handler = entry.entry_id
+        form = await flow.async_step_settings()
+        return entry, flow, {str(key): key for key in form["data_schema"].schema}
+
+    _entry, _flow, shown = await configure("milemont")
+    assert SINGLE_BASE.key not in shown
+    entry, flow, shown = await configure("baseremote")
+    # The layout is asked in the same form, so its part of the condition is live.
+    (condition,) = shown[SINGLE_BASE.key].visible
+    assert condition["field"] == CONF_PRODUCT_TYPE
+    assert "ECRM" in condition["value"] and "6BRM" not in condition["value"]
+    result = await flow.async_step_settings({CONF_PRODUCT_TYPE: "ECRM", SINGLE_BASE.key: True})
+    assert result["type"] == FlowResultType.CREATE_ENTRY
+    assert entry.data[SINGLE_BASE.key] is True
 
 
 # What a v5 beta's setup stored for a bed on a factory-test layout (5.6, captured from that flow).
