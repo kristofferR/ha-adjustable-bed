@@ -6,13 +6,16 @@ from ..const import (
     BED_TYPE_OKIN_UUID,
     BED_TYPE_RESIDENT,
     BED_TYPE_RIZE_REMEDY_II,
+    BED_TYPE_SHUDA,
     MANUFACTURER_ID_OKIN,
+    NORDIC_UART_SERVICE_UUID,
     OKIMAT_SERVICE_UUID,
 )
 from ._hints import Case, Hint, manufacturer, names, services
 
 HINTS: tuple[Hint, ...] = (
     names("OKIN", case=Case.FOLD, bed_types={BED_TYPE_RIZE_REMEDY_II}),
+    *services(NORDIC_UART_SERVICE_UUID, bed_types={BED_TYPE_SHUDA}, connectable=True),
     *services(
         OKIMAT_SERVICE_UUID,
         bed_types={BED_TYPE_OKIN_UUID, BED_TYPE_LEGGETT_OKIN, BED_TYPE_OKIN_7BYTE, BED_TYPE_RESIDENT},

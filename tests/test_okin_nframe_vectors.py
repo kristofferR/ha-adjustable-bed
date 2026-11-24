@@ -20,6 +20,7 @@ from custom_components.adjustable_bed.profiles import okin_nframe as profiles
 from custom_components.adjustable_bed.profiles import simmons_blue
 from custom_components.adjustable_bed.profiles.comfort_enhancement3 import PROFILES as APEX_PROFILES
 from custom_components.adjustable_bed.profiles.n32_motion_bed import N32
+from custom_components.adjustable_bed.profiles.shuda import SHUDA
 from tests.okin_nframe_vectors import (
     COMPOSED_FRAMES,
     FIELD_FRAMES,
@@ -38,6 +39,7 @@ PROFILES: dict[str, profiles.OkinNFrameProfile] = {
         profiles.RESIDENT,
         profiles.OKIN_MOTIONBED,
         N32,
+        SHUDA,
         simmons_blue.PROFILE,
         profiles.DEWERTOKIN,
         profiles.RF_ECO_BT,
@@ -341,6 +343,7 @@ def test_hold_declarations_follow_the_evidence_matrix():
         profiles.OKIN_MOTIONBED.key,
         *APEX_PROFILES,
         N32.key,
+        SHUDA.key,
         simmons_blue.PROFILE.key,
         profiles.RESIDENT.key,
         *profiles.LEGGETT_PROFILES,
