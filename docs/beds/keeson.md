@@ -3062,6 +3062,8 @@ command.
 - Off: intensity 0, then wave 0 after 100 ms, keeping the selected levels and
   timer.
 - At the bounds, +/- does not write.
+- The timer is the app's three buttons, 10, 20 and 30 minutes, with no off
+  choice; massage is stopped with Off.
 - Selecting a timer sends only its timer command and disables level changes
   until massage is started again; it does not prove that the receiver stopped
   massage.
