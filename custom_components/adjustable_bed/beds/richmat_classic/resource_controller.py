@@ -20,6 +20,7 @@ from ...command_scheduler import current_command_context
 from ...const import CONF_MOTOR_PULSE_COUNT, CONF_RICHMAT_CLASSIC_THIRD_SERVICE
 from ...controller_state import StateKey
 from ...profiles.richmat_resource_apps import APPS, worker_interval
+from ...state_keys import MASSAGE_TIMER_MINUTES
 from ..base import CONTROLLER_GESTURE_RELEASE, BedController
 from ..entity_specs import ControllerButtonSpec, ControllerNumberSpec
 from . import resource_protocol as p
@@ -33,6 +34,7 @@ from .protocol import (
     LAMP_QUERY,
     QUERY_SPACING_MS,
     SETTINGS_SPACING_MS,
+    SLIDER_MINUTES,
     alarm,
     alarm_capability,
     alarm_choices,
@@ -50,7 +52,6 @@ if TYPE_CHECKING:
     from .requests import Request
 
 LAMP_TIMEOUT: Final = StateKey[int | None]("richmat_resource_lamp_timeout")
-MASSAGE_TIMER: Final = StateKey[int | None]("richmat_resource_massage_timer")
 
 
 class ResourceBedController(SessionController):
@@ -132,7 +133,10 @@ class ResourceBedController(SessionController):
             PREFERENCES(dict(self._preferences)),
             REJECTION(self._rejection),
             LAMP_TIMEOUT(self._lamp_timeout),
-            MASSAGE_TIMER(self._massage_timer),
+            # The request's slider stop; the bed reports no timer.
+            MASSAGE_TIMER_MINUTES(
+                next((m for m, stop in SLIDER_MINUTES.items() if stop == self._massage_timer), None)
+            ),
         )
         # Shared select entities use this typed state key as well.
         from .controller import _selection_key
@@ -285,27 +289,29 @@ class ResourceBedController(SessionController):
                     card=CARD_UTILITY,
                 )
             )
-        if self.layout == "D1RM":
-
-            async def timer(controller: BedController, value: float) -> None:
-                if isinstance(controller, ResourceBedController):
-                    await controller.execute_request(
-                        p.Request("massage_timer", progress=int(value))
-                    )
-
-            specs.append(
-                ControllerNumberSpec(
-                    "richmat_resource_massage_timer",
-                    "richmat_resource_massage_timer",
-                    MASSAGE_TIMER,
-                    0,
-                    5,
-                    1,
-                    timer,
-                    card=CARD_UTILITY,
-                )
-            )
         return tuple(specs)
+
+    # D1RM's massage slider: four stops the app labels 0, 2H, 3H and 5H.
+    @property
+    def supports_massage_timer(self) -> bool:
+        return self.layout == "D1RM"
+
+    @property
+    def auto_enable_massage(self) -> bool:
+        return super().auto_enable_massage or self.supports_massage_timer
+
+    @property
+    def massage_timer_options(self) -> list[int]:
+        return [m for m in SLIDER_MINUTES if m] if self.supports_massage_timer else []
+
+    @property
+    def massage_timer_can_turn_off(self) -> bool:
+        return self.supports_massage_timer
+
+    async def set_massage_timer(self, minutes: int) -> None:
+        if minutes not in SLIDER_MINUTES:
+            raise ValueError("Choose a massage timer this bed model offers")
+        await self.execute_request(p.Request("massage_timer", progress=SLIDER_MINUTES[minutes]))
 
     def validate_richmat_classic_request(self, request: Request) -> None:
         raise ValueError("Use the Lady Americana / ACAA / STA Homecare / Zero Gravity bed action")

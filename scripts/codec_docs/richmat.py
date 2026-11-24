@@ -1804,7 +1804,6 @@ def render_jerome_controls() -> str:
         EXCLUDED_LAYOUTS,
         LAYOUTS,
         SIDE_LAYOUTS,
-        TIMER_PROGRESS,
     )
 
     catalog = load_catalog("jerome2")
@@ -1857,12 +1856,12 @@ def render_jerome_controls() -> str:
             ("Held release", _hex(classic_frames.release("FRAMED")), "50 ms after the held action ends"),
             ("Tap release", _hex(classic_frames.release("RAW")), "150 ms after the tap; raw long-only controls define no release"),
         )),
-        _table(("Massage duration", "D1RM", "D9RM"), (
-            (name.replace("_", " "), _hex(classic_frames.massage_timer("D1RM", progress)), _hex(classic_frames.massage_timer("D9RM", progress)))
-            for name, progress in TIMER_PROGRESS.items()
+        _table(("Massage slider stop", "D1RM", "D9RM"), (
+            (label, _hex(classic_frames.massage_timer("D1RM", progress)), _hex(classic_frames.massage_timer("D9RM", progress)))
+            for label, progress in zip(("0", "2H", "3H", "5H"), classic_frames.SLIDER_MINUTES.values(), strict=True)
         )),
         _table(("Y6RM popup label", "Write"), (
-            (choice + " minutes", _hex(classic_frames.massage_popup(choice))) for choice in ("15", "30", "45")
+            (f"{minutes} minutes", _hex(classic_frames.massage_popup(choice))) for minutes, choice in classic_frames.POPUP_MINUTES.items()
         )),
         _table(("Alarm choice", "Operand", "Layouts"), (
             (name.replace("_", " "), _code_hex(code), ", ".join(layout for layout, model in catalog.models.items() if any(c.alarm_clock and int(c.alarm_clock, 16) == code for c in model.controls)))

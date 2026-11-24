@@ -3728,6 +3728,9 @@
       "maxprime_massage_timer_toggle": {
         "name": "Toggle massage timer"
       },
+      "bedsmart_massage_timer_toggle": {
+        "name": "Toggle massage timer"
+      },
       "bedsmart_query": {
         "name": "Refresh bed features"
       },
@@ -6124,9 +6127,6 @@
       "enso2_light_timer": {
         "name": "Light auto-off time"
       },
-      "enso2_massage_timer": {
-        "name": "Massage timer position"
-      },
       "back_position": {
         "name": "Back position"
       },
@@ -6397,9 +6397,6 @@
       "richmat_resource_lamp_timeout": {
         "name": "Light timeout"
       },
-      "richmat_resource_massage_timer": {
-        "name": "Massage timer"
-      },
       "agingplace_brightness": {
         "name": "Light brightness"
       },
@@ -6478,14 +6475,8 @@
       "maxprime_lamp_seconds": {
         "name": "Light duration"
       },
-      "maxprime_massage_position": {
-        "name": "Massage timer position"
-      },
       "bedsmart_lamp_seconds": {
         "name": "Light timeout"
-      },
-      "bedsmart_massage_index": {
-        "name": "Massage timer setting"
       },
       "bedsmart_aroma_0": {
         "name": "Aroma mode 2 startup"
@@ -6498,9 +6489,6 @@
       },
       "dreamlab_light_seconds": {
         "name": "Light timeout"
-      },
-      "dreamlab_massage_progress": {
-        "name": "Massage timer setting"
       },
       "jerome_light_seconds": {
         "name": "Light duration"
@@ -6576,9 +6564,9 @@
         "name": "Massage timer",
         "state": {
           "toggle": "On/off",
-          "15": "15 minutes",
-          "30": "30 minutes",
-          "45": "45 minutes"
+          "10": "10 minutes",
+          "20": "20 minutes",
+          "30": "30 minutes"
         }
       },
       "moodbase_sync_mode": {
@@ -7365,6 +7353,20 @@
         "state": {
           "left": "Left",
           "right": "Right"
+        }
+      },
+      "enso2_side": {
+        "name": "Controlled side",
+        "state": {
+          "mode_1": "Left",
+          "mode_2": "Right"
+        }
+      },
+      "maxprime_side": {
+        "name": "Controlled side",
+        "state": {
+          "0": "Left",
+          "1": "Right"
         }
       },
       "dreamsense_selected_side": {

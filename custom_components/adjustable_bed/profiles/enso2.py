@@ -46,7 +46,9 @@ ALARM_COMBINED: Final = {
     0x30: (0xA9, 0xAA, 0xAB),
 }
 SELECTED_MOTOR_KEYS: Final = {53: (0x3F, 0x40), 54: (0x41, 0x42), 55: (0x71, 0x72)}
-MASSAGE_TIMER_CODES: Final = {15: 0x5F, 30: 0x63, 45: 0x61}
+# The popup shows 10, 20 and 30 minutes; the slider's stops are labelled 0, 2H, 3H and 5H.
+MASSAGE_TIMER_CODES: Final = {10: 0x5F, 20: 0x63, 30: 0x61}
+MASSAGE_SLIDER_MINUTES: Final = {0: 0, 120: 2, 180: 3, 300: 5}
 
 
 class Control(NamedTuple):

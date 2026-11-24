@@ -493,7 +493,7 @@ class Lp2Controller(RichmatClassicController):
 
     def _timers(self, wire: Wire) -> dict[int, int]:
         if any(c.tag == "65" for c in self._controls):
-            return {15: -1, 30: -2, 45: -3}
+            return {10: -1, 20: -2, 30: -3}
         if self.layout == "APRM":
             return {}  # Its minute resources and button artwork disagree.
         result = {}
@@ -534,10 +534,10 @@ class Lp2Controller(RichmatClassicController):
             raise ValueError("Choose a massage duration this layout offers")
         with self.sent_state(MASSAGE_TIMER_MINUTES(minutes)):
             if node < 0:
-                from .protocol import massage_popup
+                from .protocol import POPUP_MINUTES, massage_popup
 
                 with self._transaction():
-                    await self._frames((massage_popup(str(minutes)),))
+                    await self._frames((massage_popup(POPUP_MINUTES[minutes]),))
             else:
                 await self.execute_action(node)
 

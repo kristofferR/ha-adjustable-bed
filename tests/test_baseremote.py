@@ -249,7 +249,11 @@ def test_translated_rejections_for_excluded_layouts_and_bad_controls():
 
 
 async def test_partial_settings_publish_only_the_delivered_step():
-    from custom_components.adjustable_bed.beds.baseremote.controller import AROMA_ON_TIME
+    from custom_components.adjustable_bed.beds.baseremote.controller import (
+        AROMA_INTERVAL,
+        AROMA_ON_TIME,
+        AROMA_PAUSE,
+    )
     from custom_components.adjustable_bed.command_scheduler import (
         _CURRENT_COMMAND_CONTEXT,
         CommandContext,
@@ -277,10 +281,27 @@ async def test_partial_settings_publish_only_the_delivered_step():
         with virtual_clock():
             await spec.set_fn(ctrl, 12)
         assert coordinator.published_state[AROMA_ON_TIME] == 12
-        assert context.frames_written == 1
+        # The app's Save writes all three times, the unchanged ones at its starting values.
+        assert coordinator.published_state[AROMA_INTERVAL] == 1
+        assert coordinator.published_state[AROMA_PAUSE] == 2
+        assert context.frames_written == 3
+        pause = next(s for s in ctrl.controller_number_specs if s.state_key == AROMA_PAUSE)
+        with virtual_clock():
+            started = asyncio.get_running_loop().time()
+            await pause.set_fn(ctrl, 5)
+            # 150 ms after each write.
+            assert asyncio.get_running_loop().time() - started == pytest.approx(0.45)
     finally:
         _CURRENT_COMMAND_CONTEXT.reset(token)
-    assert packets(coordinator) == ["6e1b000c95"]
+    assert packets(coordinator) == [
+        "6e1b000c95",
+        "6e1c00018b",
+        "6e1d00028d",
+        "6e1b000c95",
+        "6e1c00018b",
+        "6e1d000590",
+    ]
+    assert ctrl.persisted_app_state["aroma_times"] == [12, 1, 5]
 
 
 async def test_group_cleanup_cannot_disconnect_a_replacement_session():
@@ -497,7 +518,7 @@ async def test_configuration_only_receiver_rejects_a_previously_created_timer():
     assert not ctrl.supports_massage_timer
     assert not ctrl.supports_lights
     with raises_key("baseremote_control"):
-        await ctrl.set_massage_timer(15)
+        await ctrl.set_massage_timer(120)
     assert packets(coordinator) == []
 
 
@@ -630,9 +651,10 @@ async def test_massage_timer_is_the_shared_select_with_a_real_off(layout):
 
     ctrl, coordinator = controller(layout)
     assert ctrl.supports_massage_timer and ctrl.auto_enable_massage
-    assert ctrl.massage_timer_options == [15, 30, 45] and ctrl.massage_timer_can_turn_off
+    assert ctrl.massage_timer_options == [120, 180, 300] and ctrl.massage_timer_can_turn_off
     assert ctrl.controller_select_specs == ()
-    for minutes, progress in ((0, 0), (15, 2), (30, 3), (45, 5)):
+    # The slider's four stops, which the app labels 0, 2H, 3H and 5H.
+    for minutes, progress in ((0, 0), (120, 2), (180, 3), (300, 5)):
         coordinator.client.write_gatt_char.reset_mock()
         await ctrl.set_massage_timer(minutes)
         assert packets(coordinator) == [massage_timer(layout, progress).hex()]
