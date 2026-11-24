@@ -59,6 +59,7 @@ from .const import (
     BED_TYPE_CUSTOMATIC_REMEDY,
     BED_TYPE_DIAGNOSTIC,
     BED_TYPE_DOUBLESLEEP,
+    BED_TYPE_ENSO2,
     BED_TYPE_ERGOMOTION,
     BED_TYPE_ERGOMOTION_4,
     BED_TYPE_ESHINE,
@@ -666,6 +667,7 @@ BED_TYPE_DISPLAY_NAMES: dict[str, str] = {
     BED_TYPE_N32_MOTION_BED: "N32 Motion Bed app",
     BED_TYPE_RESIDENT: "Resident Adjustable Base app",
     "enso": "Enso Remote",
+    BED_TYPE_ENSO2: "ENSO Sleep Control (Enso 2)",
     "sealy_posturematic": "Sealy Posturematic",
     BED_TYPE_YAMADA: "アシステック / ASSISTEC / Yamada app",
     BED_TYPE_BETTERLIVING2: "BetterLiving / BetterLiving2 app",
@@ -938,7 +940,7 @@ _HIDDEN_APP_ROWS: Final = frozenset(
 HIDDEN_APP_CHOICES: Final = frozenset(bed_type_choice(*row) for row in _HIDDEN_APP_ROWS)
 # Bed types whose one row asks for the product, although each product is an app entry.
 PRODUCT_QUESTION_BED_TYPES: Final = frozenset(
-    {"dreamsense", "saatva", "majestichome", BED_TYPE_LINX, BED_TYPE_SOMOS, "bobpowerbase", BED_TYPE_COMFORT_ENHANCEMENT3, BED_TYPE_SYMPHONY_SLEEP, BED_TYPE_YAMADA, BED_TYPE_RICHMAT_APP, BED_TYPE_RICHMAT_APP_SLEEP, BED_TYPE_GALAXY, BED_TYPE_MLILY, BED_TYPE_MLILY_REMOTE, BED_TYPE_OKIMIKI, "luuna", BED_TYPE_GOODVIBE, BED_TYPE_HJBED, BED_TYPE_CASPER_BASE, BED_TYPE_COMFORT_ENHANCEMENTS, BED_TYPE_COMFORTBASE, "sleep_evolution", "wsilver_legacy", "personal_comfort", "instant_comfort"}
+    {BED_TYPE_ENSO2, "dreamsense", "saatva", "majestichome", BED_TYPE_LINX, BED_TYPE_SOMOS, "bobpowerbase", BED_TYPE_COMFORT_ENHANCEMENT3, BED_TYPE_SYMPHONY_SLEEP, BED_TYPE_YAMADA, BED_TYPE_RICHMAT_APP, BED_TYPE_RICHMAT_APP_SLEEP, BED_TYPE_GALAXY, BED_TYPE_MLILY, BED_TYPE_MLILY_REMOTE, BED_TYPE_OKIMIKI, "luuna", BED_TYPE_GOODVIBE, BED_TYPE_HJBED, BED_TYPE_CASPER_BASE, BED_TYPE_COMFORT_ENHANCEMENTS, BED_TYPE_COMFORTBASE, "sleep_evolution", "wsilver_legacy", "personal_comfort", "instant_comfort"}
 ).union({BED_TYPE_BETTERLIVING2, "sealy_posturematic"})
 # Routes named after their protocol, not an app or brand. They stay off the
 # bed-type list and are reached through detection, the brand list and Configure.
@@ -1878,6 +1880,19 @@ def _detect_bed_type_with_app_candidates(
             result.ambiguous_types = list(dict.fromkeys([*(result.ambiguous_types or ()), BED_TYPE_RICHMAT_APP]))
             result.signals.append("name:richmat_app_candidate")
 
+    from .profiles.enso2 import admitted_name as enso2_name
+
+    if first.name(BED_TYPE_ENSO2) and enso2_name(service_info.name) and not any(
+        signal.startswith("excluded:") for signal in result.signals
+    ):
+        signal = "name:enso2_app_candidate"
+        if result.bed_type is None:
+            result = DetectionResult(BED_TYPE_ENSO2, 0.3, [*result.signals, signal])
+        elif result.bed_type != BED_TYPE_ENSO2:
+            result.ambiguous_types = list(dict.fromkeys(
+                [*(result.ambiguous_types or ()), BED_TYPE_ENSO2]
+            ))
+            result.signals.append(signal)
     if first.name(BED_TYPE_HJBED):
         if result.bed_type is None:
             if not any(signal.startswith("excluded:") for signal in result.signals):

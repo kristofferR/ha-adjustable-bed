@@ -132,6 +132,15 @@ async def factory_controllers() -> list[BedController]:
                         device_name=coordinator.entry.data.get(CONF_BLE_DEVICE_NAME),
                     )
                 )
+    from custom_components.adjustable_bed.beds.enso2.controller import Enso2Controller
+
+    enso2 = next(controller for controller in controllers if isinstance(controller, Enso2Controller))
+    enso2._light_present = True
+    for layout in ("ONRM", "A3RM", "GVRM", "R2RM"):
+        legacy = await _create_controller_for_bed_type("enso2", layout)
+        assert isinstance(legacy, Enso2Controller)
+        legacy._raw = True
+        controllers.append(legacy)
     from custom_components.adjustable_bed.beds.instant_comfort.air import InstantComfortAir
     from custom_components.adjustable_bed.profiles.instant_comfort import (
         PROFILES as INSTANT_PROFILES,

@@ -67,7 +67,7 @@ app. Every guide follows the [bed guide format](BED_GUIDE_FORMAT.md).
 | [Remacro](beds/remacro.md) | The Slumberland, The Brick and Jerome's apps | |
 | [Reverie](beds/reverie.md) | The Reverie Nightstand app and Reverie receivers | |
 | [Reverie Pairlink](beds/reverie-pairlink-sdk.md) | Reverie Pairlink (R510L / Harmoniq) | |
-| [Richmat](beds/richmat.md) | Richmat remotes, RMControl, BedTech and Bed Tech, BedSmart / X-Series, L&P MlRM and both L&P Adjustable Base apps, the Richmat MH apps, HJBed, eShine E6000, Good Vibe Sleep, Lunio, Luuna, Majestic Home, MLILY, Saatva, Dream Sense Bed, Super Colchones, SleepEvolution and other Richmat-based apps | Shared |
+| [Richmat](beds/richmat.md) | Richmat remotes, RMControl, BedTech and Bed Tech, BedSmart / X-Series, L&P MlRM and both L&P Adjustable Base apps, the Richmat MH apps, ENSO Sleep Control, HJBed, eShine E6000, Good Vibe Sleep, Lunio, Luuna, Majestic Home, MLILY, Saatva, Dream Sense Bed, Super Colchones, SleepEvolution and other Richmat-based apps | Shared |
 | [RUF and related apps](beds/ruf-richmat-apps.md) | RUF Betten, W.Silver Products, AMERICANSTAR, Bailey's Bed Control and TX | |
 | [Sleep Assist](beds/sleep-assistant.md) | The original Sleep Assist app | |
 | [Sleep Number](beds/sleep_number.md) | Sleep Number Fuzion and BAM/MCR bases ([commands](beds/sleep-number-services.md)) | |

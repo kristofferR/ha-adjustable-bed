@@ -353,6 +353,7 @@
           "gmmotor_side": "App bed side",
           "kaidi_room_id": "Room number",
           "ble_device_name": "Exact Bluetooth name",
+          "enso2_property_fallback": "Property-based Bluetooth receiver",
           "motion_bed_restored": "Use a profile restored by the app",
           "motion_bed_preset": "Preset layout",
           "motion_bed_movement": "Movement layout",
@@ -388,6 +389,7 @@
           "sleep_assistant_lighting": "Lighting model"
         },
         "data_description": {
+          "enso2_property_fallback": "Use the third Bluetooth service only when your receiver uses the app’s property-based fallback.",
           "jiecang_app_layout": "The layout set in the app.",
           "has_light": "Show the light controls when this bed has under-bed lighting.",
           "furnimove_remote": "The handset ID printed on your remote or shown in the FurniMove / OKIN Smart Remote app.",
@@ -969,6 +971,7 @@
           "motion_bed_preset": "Preset layout",
           "motion_bed_movement": "Movement layout",
           "ble_device_name": "Exact Bluetooth name",
+          "enso2_property_fallback": "Property-based Bluetooth receiver",
           "motion_bed_restored": "Use a profile restored by the app",
           "starcode_lift_entries": "Independently addressed lifts",
           "starcode_m5x5_profile": "AdjustableM5X5 bed class",
@@ -2058,6 +2061,12 @@
       },
       "main_motor_down": {
         "name": "Main motor down"
+      },
+      "motors_3_4_tilt_up": {
+        "name": "Motors 3 and 4 tilt up"
+      },
+      "motors_3_4_tilt_down": {
+        "name": "Motors 3 and 4 tilt down"
       },
       "selected_motor_up": {
         "name": "Selected motor up"
@@ -3783,6 +3792,39 @@
       }
     },
     "cover": {
+      "motor_1": {
+        "name": "Motor 1"
+      },
+      "motor_2": {
+        "name": "Motor 2"
+      },
+      "motor_4": {
+        "name": "Motor 4"
+      },
+      "motor_5": {
+        "name": "Motor 5"
+      },
+      "motor_6": {
+        "name": "Motor 6"
+      },
+      "motor_7": {
+        "name": "Motor 7"
+      },
+      "motors_1_2": {
+        "name": "Motors 1 and 2"
+      },
+      "motors_2_3": {
+        "name": "Motors 2 and 3"
+      },
+      "motors_3_4": {
+        "name": "Motors 3 and 4"
+      },
+      "selected_motor": {
+        "name": "Selected motor"
+      },
+      "motors_3_4_tilt": {
+        "name": "Motors 3 and 4 tilt"
+      },
       "tv_lift": {
         "name": "TV lift"
       },
@@ -4178,6 +4220,12 @@
       }
     },
     "sensor": {
+      "enso2_alarm_status": {
+        "name": "Alarm response"
+      },
+      "enso2_aroma_status": {
+        "name": "Aroma response"
+      },
       "timotion_ahf_status": {
         "name": "Status"
       },
@@ -5629,6 +5677,9 @@
       }
     },
     "binary_sensor": {
+      "enso2_light_on": {
+        "name": "Bed light"
+      },
       "rmcontrol_anti_snore_enabled": {
         "name": "Anti-snore intervention"
       },
@@ -5859,6 +5910,12 @@
       }
     },
     "number": {
+      "enso2_light_timer": {
+        "name": "Light auto-off time"
+      },
+      "enso2_massage_timer": {
+        "name": "Massage timer position"
+      },
       "back_position": {
         "name": "Back position"
       },
@@ -6287,6 +6344,23 @@
       }
     },
     "select": {
+      "enso2_mode": {
+        "name": "Control mode",
+        "state": {
+          "mode_1": "Mode 1",
+          "mode_2": "Mode 2",
+          "mode_3": "Mode 3"
+        }
+      },
+      "enso2_timer_options": {
+        "name": "Massage timer",
+        "state": {
+          "toggle": "On/off",
+          "15": "15 minutes",
+          "30": "30 minutes",
+          "45": "45 minutes"
+        }
+      },
       "reverie_stk_side": {
         "name": "Controlled side",
         "state": {
@@ -9193,6 +9267,50 @@
         }
       }
     },
+    "enso2_light_color": {
+      "name": "Set bed light color",
+      "description": "Set the RGB color on a bed that reports a color light.",
+      "fields": {
+        "side": {
+          "name": "Side",
+          "description": "Which side of a combined bed to control."
+        },
+        "device_id": {
+          "name": "Bed",
+          "description": "The adjustable bed to control."
+        },
+        "rgb_color": {
+          "name": "Color",
+          "description": "The color to send to the light."
+        }
+      }
+    },
+    "enso2_aroma_schedule": {
+      "name": "Set aroma schedule",
+      "description": "Set the startup and pause times of the bed’s aroma accessory.",
+      "fields": {
+        "side": {
+          "name": "Side",
+          "description": "Which side of a combined bed to control."
+        },
+        "device_id": {
+          "name": "Bed",
+          "description": "The adjustable bed to control."
+        },
+        "mode_2_minutes": {
+          "name": "Mode 2 startup",
+          "description": "Startup time in minutes."
+        },
+        "mode_3_minutes": {
+          "name": "Mode 3 startup",
+          "description": "Startup time in minutes."
+        },
+        "pause_hours": {
+          "name": "Mode 3 pause",
+          "description": "Pause time in hours."
+        }
+      }
+    },
     "richmat_mh_light_color": {
       "name": "Richmat app: light color",
       "description": "Sets the color of the light, or of the button lights, on a Richmat app bed.",
@@ -10934,6 +11052,30 @@
     "enso_gatt_missing": {
       "message": "The bed must expose writable and notification characteristics. Check the selected device."
     },
+    "enso2_gatt_missing": {
+      "message": "The receiver does not expose the Bluetooth characteristics required by this app."
+    },
+    "enso2_layout_required": {
+      "message": "Choose the control layout shown in the app."
+    },
+    "enso2_control_unavailable": {
+      "message": "This control is unavailable in the current layout, mode or Bluetooth connection."
+    },
+    "enso2_alarm_unavailable": {
+      "message": "This layout or receiver does not offer the requested alarm."
+    },
+    "enso2_alarm_combination": {
+      "message": "Choose a wake position that can be combined with massage."
+    },
+    "enso2_light_unavailable": {
+      "message": "The bed has not reported a color light on this connection."
+    },
+    "enso2_aroma_unavailable": {
+      "message": "The bed has not reported an aroma accessory on this connection."
+    },
+    "enso2_aroma_range": {
+      "message": "Choose 1 to 60 minutes for each startup time and 1 to 12 hours for the pause."
+    },
     "enso_control_invalid": {
       "message": "This control is not available for the selected bed layout."
     },
@@ -11796,6 +11938,7 @@
     },
     "richmat_family_choice": {
       "options": {
+        "enso2": "ENSO Sleep Control (Enso 2)",
         "rmcontrol": "RMControl app",
         "revive": "Revive Control app",
         "best_mattress": "Best Mattress app",
@@ -11904,6 +12047,18 @@
     },
     "timed_move_motor": {
       "options": {
+        "motor_1": "Motor 1",
+        "motor_2": "Motor 2",
+        "motor_3": "Motor 3",
+        "motor_4": "Motor 4",
+        "motor_5": "Motor 5",
+        "motor_6": "Motor 6",
+        "motor_7": "Motor 7",
+        "motors_1_2": "Motors 1 and 2",
+        "motors_2_3": "Motors 2 and 3",
+        "motors_3_4": "Motors 3 and 4",
+        "motors_3_4_tilt": "Motors 3 and 4 tilt",
+        "selected_motor": "Selected motor",
         "axis_1": "Lift 1",
         "axis_2": "Lift 2",
         "axis_3": "Lift 3",

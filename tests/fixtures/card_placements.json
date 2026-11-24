@@ -47,6 +47,9 @@
  "binary_sensor:cheerssleep_right_asleep": {
   "card_section": "hidden"
  },
+ "binary_sensor:enso2_light_on": {
+  "card_section": "hidden"
+ },
  "binary_sensor:ergomotion4_light": {
   "card_section": "hidden"
  },
@@ -1387,6 +1390,26 @@
   "card_role": "up",
   "card_motor": "motor_5"
  },
+ "button:motor_6_down": {
+  "card_section": "motors",
+  "card_role": "down",
+  "card_motor": "motor_6"
+ },
+ "button:motor_6_up": {
+  "card_section": "motors",
+  "card_role": "up",
+  "card_motor": "motor_6"
+ },
+ "button:motor_7_down": {
+  "card_section": "motors",
+  "card_role": "down",
+  "card_motor": "motor_7"
+ },
+ "button:motor_7_up": {
+  "card_section": "motors",
+  "card_role": "up",
+  "card_motor": "motor_7"
+ },
  "button:motors_1_2_down": {
   "card_section": "motors",
   "card_role": "down",
@@ -1397,10 +1420,30 @@
   "card_role": "up",
   "card_motor": "motors_1_2"
  },
+ "button:motors_2_3_down": {
+  "card_section": "motors",
+  "card_role": "down",
+  "card_motor": "motors_2_3"
+ },
+ "button:motors_2_3_up": {
+  "card_section": "motors",
+  "card_role": "up",
+  "card_motor": "motors_2_3"
+ },
  "button:motors_3_4_down": {
   "card_section": "motors",
   "card_role": "down",
   "card_motor": "motors_3_4"
+ },
+ "button:motors_3_4_tilt_down": {
+  "card_section": "motors",
+  "card_role": "down",
+  "card_motor": "motors_3_4_tilt"
+ },
+ "button:motors_3_4_tilt_up": {
+  "card_section": "motors",
+  "card_role": "up",
+  "card_motor": "motors_3_4_tilt"
  },
  "button:motors_3_4_up": {
   "card_section": "motors",
@@ -1834,6 +1877,16 @@
   "card_section": "motors",
   "card_role": "up",
   "card_motor": "ruf_richmat_mattress_right_pillow"
+ },
+ "button:selected_motor_down": {
+  "card_section": "motors",
+  "card_role": "down",
+  "card_motor": "selected_motor"
+ },
+ "button:selected_motor_up": {
+  "card_section": "motors",
+  "card_role": "up",
+  "card_motor": "selected_motor"
  },
  "button:set_back_reference": {
   "card_section": "motors",
@@ -2901,9 +2954,49 @@
   "card_section": "motors",
   "card_motor": "motionbed_middle"
  },
+ "cover:motor_1": {
+  "card_section": "motors",
+  "card_motor": "motor_1"
+ },
+ "cover:motor_2": {
+  "card_section": "motors",
+  "card_motor": "motor_2"
+ },
  "cover:motor_3": {
   "card_section": "motors",
   "card_motor": "motor_3"
+ },
+ "cover:motor_4": {
+  "card_section": "motors",
+  "card_motor": "motor_4"
+ },
+ "cover:motor_5": {
+  "card_section": "motors",
+  "card_motor": "motor_5"
+ },
+ "cover:motor_6": {
+  "card_section": "motors",
+  "card_motor": "motor_6"
+ },
+ "cover:motor_7": {
+  "card_section": "motors",
+  "card_motor": "motor_7"
+ },
+ "cover:motors_1_2": {
+  "card_section": "motors",
+  "card_motor": "motors_1_2"
+ },
+ "cover:motors_2_3": {
+  "card_section": "motors",
+  "card_motor": "motors_2_3"
+ },
+ "cover:motors_3_4": {
+  "card_section": "motors",
+  "card_motor": "motors_3_4"
+ },
+ "cover:motors_3_4_tilt": {
+  "card_section": "motors",
+  "card_motor": "motors_3_4_tilt"
  },
  "cover:n32_cervical": {
   "card_section": "motors",
@@ -2976,6 +3069,10 @@
  "cover:ruf_richmat_mattress_right_pillow": {
   "card_section": "motors",
   "card_motor": "ruf_richmat_mattress_right_pillow"
+ },
+ "cover:selected_motor": {
+  "card_section": "motors",
+  "card_motor": "selected_motor"
  },
  "cover:smart_comfort_reclining": {
   "card_section": "motors",
@@ -3210,6 +3307,13 @@
  },
  "number:dreamsense_light_seconds": {
   "card_section": "lighting"
+ },
+ "number:enso2_light_timer": {
+  "card_section": "lighting"
+ },
+ "number:enso2_massage_timer": {
+  "card_section": "massage",
+  "card_role": "timer"
  },
  "number:fan_level": {
   "card_section": "climate"
@@ -3597,6 +3701,13 @@
  },
  "select:dreamsense_selected_side": {
   "card_section": "utility"
+ },
+ "select:enso2_mode": {
+  "card_section": "utility"
+ },
+ "select:enso2_timer_options": {
+  "card_section": "massage",
+  "card_role": "timer"
  },
  "select:footwarming_timer": {
   "card_section": "climate"
@@ -4089,6 +4200,12 @@
   "card_section": "utility"
  },
  "sensor:dreamsense_alarm_ack": {
+  "card_section": "hidden"
+ },
+ "sensor:enso2_alarm_status": {
+  "card_section": "hidden"
+ },
+ "sensor:enso2_aroma_status": {
   "card_section": "hidden"
  },
  "sensor:enso_massage_timer": {

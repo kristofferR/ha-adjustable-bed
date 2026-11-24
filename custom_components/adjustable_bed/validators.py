@@ -31,6 +31,7 @@ from .const import (
     BED_TYPE_COMFORT_ENHANCEMENTS,
     BED_TYPE_COMFORTBASE,
     BED_TYPE_DOUBLESLEEP,
+    BED_TYPE_ENSO2,
     BED_TYPE_ESHINE_OKIN,
     BED_TYPE_GALAXY,
     BED_TYPE_GLIDEAWAY_MOTION,
@@ -99,6 +100,7 @@ from .profiles.bobpowerbase import PROFILE_CHOICES as BOB_PROFILES
 from .profiles.casper import CASPER_BASE_VARIANTS
 from .profiles.comfort_enhancement3 import CHOICES as APEX_CHOICES
 from .profiles.comfortbase import PRODUCTS as COMFORTBASE_PRODUCTS
+from .profiles.enso2 import LAYOUT_CHOICES as ENSO2_LAYOUT_CHOICES
 from .profiles.hush import HUSH_BASE_VARIANTS
 from .profiles.instant_comfort import ROUTES as INSTANT_COMFORT_ROUTES
 from .profiles.linx import TRANSPORT_CHOICES as LINX_TRANSPORTS
@@ -173,6 +175,7 @@ VARIANTS_BY_BED_TYPE: dict[str, dict[str, str]] = {
     "bobpowerbase": BOB_PROFILES,
     BED_TYPE_RICHMAT_CLASSIC_APPS: RICHMAT_CLASSIC_APPS,
     BED_TYPE_HJBED: HJBED_PROFILES,
+    BED_TYPE_ENSO2: ENSO2_LAYOUT_CHOICES,
     BED_TYPE_RICHMAT_APP: RICHMAT_APP_PRODUCTS,
     BED_TYPE_RICHMAT_APP_SLEEP: RICHMAT_SLEEP_CHOICES,
     BED_TYPE_ESHINE_OKIN: ESHINE_OKIN_PROFILES,
