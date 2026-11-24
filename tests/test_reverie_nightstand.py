@@ -39,7 +39,6 @@ from custom_components.adjustable_bed.const import (
     REVERIE_NIGHTSTAND_MASSAGE_WAVE_UUID,
     REVERIE_NIGHTSTAND_PRESETS_UUID,
     REVERIE_NIGHTSTAND_RGB_UUID,
-    REVERIE_STK_SIDE_DATA_UUID,
     REVERIE_STK_SIDE_NO_DATA_UUID,
 )
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
@@ -409,7 +408,7 @@ class TestReverieNightstandMovement:
 
         calls = client.write_gatt_char.call_args_list
         assert [(call.args[0], call.args[1]) for call in calls] == [
-            (REVERIE_STK_SIDE_DATA_UUID, bytes((2, 0x01))),
+            (REVERIE_STK_SIDE_NO_DATA_UUID, bytes((2, 0x01))),
             (REVERIE_STK_SIDE_NO_DATA_UUID, bytes((2, 0xFF))),
         ]
 
@@ -464,7 +463,10 @@ class TestReverieNightstandMovement:
                 ]
             else:
                 expected = [
-                    (REVERIE_STK_SIDE_DATA_UUID, bytes((int(side), 1 if direction == "up" else 3))),
+                    (
+                        REVERIE_STK_SIDE_NO_DATA_UUID,
+                        bytes((int(side), 1 if direction == "up" else 3)),
+                    ),
                     (REVERIE_STK_SIDE_NO_DATA_UUID, bytes((int(side), 0xFF))),
                 ]
             assert writes == expected

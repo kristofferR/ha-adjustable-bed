@@ -188,17 +188,18 @@ Model capability gates apply to every row.
 | Nightlight on / off | `db8010a0` | `40` / `00`; on uses retained nonzero brightness when available |
 | RGB color / brightness | `db8010a7` | `01 brightness red green blue`; brightness 0–100 and RGB channels 0–255, preserving the known values not being changed. Only on a control box that has this characteristic |
 | R650 Zero-G / Anti-Snore / Flat | `db8010d0` | `00 20 47 24 00 00 00 00 00 00` / `00 0C 00 24 00 00 00 00 00 00` / `00 00 00 24 00 00 00 00 00 00` |
-| STK side 2/3 head up / down | `db8010a5` | `side 01` / `side 03` |
+| STK side 2/3 head up / down | `db8010a6` | `side 01` / `side 03` |
 | STK side 2/3 head release | `db8010a6` | `side FF` |
-| STK side 2/3 Zero-G / Anti-Snore / Flat | `db8010a5` | `side 21` / `side 22` / `side 05` |
+| STK side 2/3 Zero-G / Anti-Snore / Flat | `db8010a6` | `side 15` / `side 16` / `side 05` |
 | STK side 2/3 head strength | `db8010a5` | `side 53 (level × 4)` |
-| STK side 2/3 head wave | `db8010a5` | `side 40 (level × 4)` |
-| STK side 2/3 memory recall / save | `db8010a5` | `side (n + 16)` / `side (n + 32)` |
+| STK side 2/3 head position | `db8010a5` | `side 51 position` |
+| STK side 2/3 wave pattern 1–4 / stop | `db8010a6` | `side (40 + n)` / `side 35` |
+| STK side 2/3 memory recall / save | `db8010a6` | `side (n + 16)` / `side (n + 32)` |
 
 STK uses numeric side bytes `01`, `02`, `03`; side 1 uses the ordinary
 characteristic route. The `db8010a6` no-data route and R650 body-tilt preset
 payloads remain distinct. Their exact builders are `hold_control()`,
-`_write_stk_axis()` and `_write_preset_mode()` in the controller; no generic
+`_write_stk_command()` and `_write_preset_mode()` in the controller; no generic
 preset byte is substituted for those model-specific frames.
 
 Protocol 110 uses service `db801000-f324-29c3-38d1-85c0c2e86885` and separate

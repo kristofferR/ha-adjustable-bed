@@ -6163,12 +6163,6 @@
       "light_level": {
         "name": "Light level"
       },
-      "reverie_stk_head_wave": {
-        "name": "Head massage wave"
-      },
-      "reverie_stk_global_massage": {
-        "name": "Overall massage level"
-      },
       "reverie_body_tilt": {
         "name": "Body tilt"
       },
