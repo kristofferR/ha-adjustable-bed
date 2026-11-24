@@ -607,9 +607,7 @@ entry's three-dot menu, **Reconfigure**, and answer **Woosa Sleep app**.
 - Massage: back and leg levels 0-3, four modes, mode step, timers, steps and Off
   ([Massage](#massage)). Massage start sends Off, timer, back level, leg level and
   mode from the stored preferences (back 2, leg 2, mode 2, 10 min until set),
-  and sends Off if interrupted. Steps stay within 0-3. Like the app's timer
-  wheel, the **Massage timer** select only stores the duration: it is sent with
-  the next massage start, and the timer's Off stops massage.
+  and sends Off if interrupted. Steps stay within 0-3.
 - No HomeKobo hip, lumbar or cycle controls, and no wave controls.
 
 #### Timing
