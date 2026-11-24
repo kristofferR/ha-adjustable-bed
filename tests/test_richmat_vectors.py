@@ -379,7 +379,7 @@ def _census(key: str) -> set[str]:
         frames.update(classic.massage_timer(layout, progress) for layout in ("D1RM", "D9RM") for progress in (0, 2, 3, 5))
         frames.update(classic.massage_popup(choice) for choice in classic.MASSAGE_POPUP)
         return {frame.hex() for frame in frames}
-    if key == "richmat_classic_maxprime":
+    if key in ("richmat_classic_maxprime", "richmat_classic_dreamlab2"):
         return {frame.hex() for frame in (
             classic.release("RAW"), *(classic.release("FRAMED", mode) for mode in (0, 1, 2)),
             classic.INITIALIZE, classic.ALARM_QUERY, classic.LAMP_QUERY, classic.AROMA_QUERY,

@@ -2337,3 +2337,9 @@ FROZEN_FRAMES["richmat_classic_maxprime"] = frozenset({
     "6e", "6e01006edd", "6e01016ede", "6e01026edf",
     "6e02010071", "6e08010178", "6e0a000179", "6e1a000088",
 })
+
+# Dreamlab 5.1.8 session frames; control and accessory vectors have their own harness.
+FROZEN_FRAMES["richmat_classic_dreamlab2"] = frozenset({
+    "6e", "6e01006edd", "6e01016ede", "6e01026edf",
+    "6e02010071", "6e08010178", "6e0a000179", "6e1a000088",
+})
