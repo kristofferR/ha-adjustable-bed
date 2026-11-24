@@ -60,6 +60,7 @@ APPS = [
     "sta2",
     "zerogravity",
     "baseremote",
+    "maxprime",
     "dreamlab2",
     "remote",
 ]

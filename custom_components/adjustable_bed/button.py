@@ -48,7 +48,7 @@ from .entity import AdjustableBedEntity, PlacedInCard, RenamesInPlace, hold_leas
 from .entity_discovery import async_setup_dynamic_entities
 from .entity_runtime import EntityRuntime, controller_side_scope
 from .entity_sweep import PlatformEntities, records_entities
-from .errors import BedNotConnectedError
+from .errors import BedNotConnectedError, invalid
 from .labels import display_label
 from .paired_coordinator import (
     PairedBedCoordinator,
@@ -974,7 +974,74 @@ def _combined_button_entities_for(
     # buttons, and paired setup creates no combined cover — so add per-motor
     # "both sides" up/down motion buttons from the cover descriptors.
     entities.extend(_combined_motor_buttons_for(coordinator, eligible))
+    if not isinstance(coordinator, SingleAddressPairedCoordinator):
+        entities.extend(_combined_controller_buttons_for(coordinator, eligible))
     return entities
+
+
+def _combined_spec(
+    controller: BedController, common: ControllerButtonSpec
+) -> ControllerButtonSpec | None:
+    """Match actions that each controller explicitly lets a pair combine."""
+    return next(
+        (
+            candidate
+            for candidate in controller.controller_button_specs
+            if candidate.combine_sides
+            and not (candidate.diagnostic or candidate.release_only or candidate.requires_confirmation)
+            and candidate.key == common.key
+            and candidate.card == common.card
+            and candidate.translation_key == common.translation_key
+            and candidate.translation_placeholders == common.translation_placeholders
+            and candidate.hold == common.hold
+        ),
+        None,
+    )
+
+
+def _child_combined_spec(
+    child: EntityRuntime, common: ControllerButtonSpec
+) -> ControllerButtonSpec | None:
+    controller = child.capability_controller
+    if controller is None:
+        return None
+    with controller_side_scope(child):
+        if not controller.controller_button_available(common.key):
+            return None
+        return _combined_spec(controller, common)
+
+
+def _combined_controller_buttons_for(
+    coordinator: PairedBedCoordinator, children: Sequence[EntityRuntime]
+) -> Iterable[ButtonEntity]:
+    controller = children[0].capability_controller
+    if controller is None:
+        return
+    with controller_side_scope(children[0]):
+        specs = controller.controller_button_specs
+    for spec in specs:
+        if not spec.combine_sides or not all(_child_combined_spec(child, spec) for child in children):
+            continue
+
+        async def press(ctrl: BedController, common: ControllerButtonSpec = spec) -> None:
+            current = _combined_spec(ctrl, common)
+            if current is None or not ctrl.controller_button_available(common.key):
+                raise invalid("not_supported_by_bed", feature=common.name)
+            await current.press_fn(ctrl)
+
+        yield PairedBedCombinedButton(
+            coordinator,
+            AdjustableBedButtonEntityDescription(
+                key=spec.key,
+                name=spec.name if spec.translation_key is None else None,
+                translation_key=spec.translation_key,
+                icon=spec.icon,
+                press_fn=press,
+                cancel_movement=spec.cancel_movement,
+                card=spec.card,
+            ),
+            spec=spec,
+        )
 
 
 def _child_should_add_button(
@@ -1125,6 +1192,8 @@ def _should_add_button(
         # hardware refuses.
         slot = description.memory_slot
         if slot is not None:
+            if slot in controller.memory_slots_programmed_by_presets:
+                return False
             if not controller.is_memory_slot_programmable(slot):
                 return False
         elif not controller.supports_memory_programming:
@@ -1509,9 +1578,12 @@ class PairedBedCombinedButton(RenamesInPlace, PlacedInCard, ButtonEntity):
         self,
         coordinator: PairedBedCoordinator,
         description: AdjustableBedButtonEntityDescription,
+        *,
+        spec: ControllerButtonSpec | None = None,
     ) -> None:
         """Initialize the combined button."""
         self._coordinator = coordinator
+        self._spec = spec
         self.entity_description = description
         self._attr_translation_key = _button_translation_key(
             description,
@@ -1520,6 +1592,10 @@ class PairedBedCombinedButton(RenamesInPlace, PlacedInCard, ButtonEntity):
         self._attr_unique_id = _paired_entity_unique_id(coordinator, f"{description.key}_both")
         self._attr_device_info = coordinator.device_info
         self._card = _button_card(description)
+        if spec is not None:
+            self._attr_entity_registry_enabled_default = spec.entity_registry_enabled_default
+            if spec.translation_placeholders is not None:
+                self._attr_translation_placeholders = dict(spec.translation_placeholders)
         if isinstance(coordinator, SingleAddressPairedCoordinator):
             self._attr_extra_state_attributes = {"bed_side": SIDE_BOTH}
 
@@ -1530,6 +1606,10 @@ class PairedBedCombinedButton(RenamesInPlace, PlacedInCard, ButtonEntity):
     @property
     def available(self) -> bool:
         """Hide combined actions when a Standard Octo side is PIN-locked."""
+        if (spec := self._spec) is not None:
+            return all(
+                _child_combined_spec(child, spec) for child in self._coordinator.children.values()
+            )
         return self.entity_description.key == "stop" or not _paired_controls_locked(
             self._coordinator
         )
@@ -1539,6 +1619,8 @@ class PairedBedCombinedButton(RenamesInPlace, PlacedInCard, ButtonEntity):
         description = self.entity_description
         if description.press_fn is None:
             return
+        if self._spec is not None and not self.available:
+            raise invalid("not_supported_by_bed", feature=self._spec.name)
         _LOGGER.info(
             "Combined button %s pressed for paired bed %s",
             description.key,
@@ -1555,19 +1637,38 @@ class PairedBedCombinedButton(RenamesInPlace, PlacedInCard, ButtonEntity):
                 with controller_side_scope(child):
                     controller.validate_memory_recall(description.memory_slot)
         press_fn = description.press_fn
-        if _moves_untimed(description.key):
+        if (
+            self._spec is not None and (self._spec.invalidates_position or self._spec.hold is not None)
+        ) or _moves_untimed(description.key):
             press_fn = invalidate_on_command(self.hass, press_fn)
         await self._coordinator.async_execute_controller_command(
             press_fn,
             side=SIDE_BOTH,
             cancel_running=description.cancel_movement,
-            resource=_button_resource(description.key),
+            resource=(
+                self._spec.scheduler_resource
+                if self._spec is not None
+                else _button_resource(description.key)
+            ),
         )
 
     @property
     def extra_state_attributes(self) -> dict[str, Any]:
         """Expose a bounded Both timed move when both sides own that motor."""
         attributes = dict(getattr(self, "_attr_extra_state_attributes", None) or {})
+        if self._spec is not None:
+            if self._spec.card.role in (CardRole.UP, CardRole.DOWN):
+                attributes["timed_move"] = False
+            if (hold := self._spec.hold) is not None and self.available:
+                lease = _paired_hold_lease_attributes(self._coordinator, control=hold.control)
+                if lease:
+                    attributes.update(
+                        held_control=hold.control,
+                        hold_start_delay_ms=hold.start_delay_ms,
+                        hold_release_delay_ms=hold.release_delay_ms,
+                        **lease,
+                    )
+            return attributes
         action = self.entity_description.key
         motor = next(
             (candidate for candidate in ("head", "legs") if action.startswith(f"{candidate}_")),

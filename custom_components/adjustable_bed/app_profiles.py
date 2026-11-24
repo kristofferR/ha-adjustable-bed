@@ -53,6 +53,7 @@ from .const import (
     BED_TYPE_LEGGETT_LP_LEGACY,
     BED_TYPE_LEGGETT_OKIN,
     BED_TYPE_LEGGETT_PLATT,
+    BED_TYPE_LEVA,
     BED_TYPE_LIMOSS_REMOTE,
     BED_TYPE_LINX,
     BED_TYPE_LOGICDATA_APP,
@@ -76,8 +77,10 @@ from .const import (
     BED_TYPE_RIZE,
     BED_TYPE_RIZE_HOME,
     BED_TYPE_RIZE_REMEDY_II,
+    BED_TYPE_SHUDA,
     BED_TYPE_SILVERMOTION,
     BED_TYPE_SIMMONS,
+    BED_TYPE_SIMMONS_BLUE,
     BED_TYPE_SLEEPTRACKER,
     BED_TYPE_SLEEPYS_ELITE_APP,
     BED_TYPE_SOLACE,
@@ -162,6 +165,7 @@ class SideProfile:
 
 _BY_BED_TYPE: Final[dict[str, SideProfile]] = {
     "ormatek": SideProfile("OrmatekTechnoSmart", frozenset({CONF_MOTOR_COUNT, CONF_HAS_MASSAGE, CONF_BLE_DEVICE_NAME}), variant_owned=True),
+    "dorsal": SideProfile("Dorsal project and Roomi route", variant_owned=True),
     "nerum": SideProfile("Nerum", variant_owned=True),
     "relax_motion": SideProfile("Relax Motion", variant_owned=True),
     "smartbed": SideProfile("SmartBed", frozenset({CONF_HAS_MASSAGE}), variant_owned=True),
@@ -176,6 +180,9 @@ _BY_BED_TYPE: Final[dict[str, SideProfile]] = {
     "gmmotor": SideProfile("GM Control product", frozenset({CONF_BLE_DEVICE_NAME})),
     "gmmotor_sleep_mm": SideProfile("GM Control MM sleep module"),
     "gmmotor_sleep_sxb": SideProfile("GM Control SXB sleep module"),
+    BED_TYPE_LEVA: SideProfile(
+        "Leva Bed Remote", frozenset({CONF_MOTOR_COUNT, CONF_HAS_MASSAGE}), variant_owned=True
+    ),
     BED_TYPE_LINX: SideProfile("Linx", variant_owned=True),
     BED_TYPE_SYMPHONY_SLEEP: SideProfile("Symphony Sleep", variant_owned=True),
     BED_TYPE_JALON_BED: SideProfile("OkinComfortBed Ⅱ (Jalon)"),
@@ -197,6 +204,9 @@ _BY_BED_TYPE: Final[dict[str, SideProfile]] = {
     "instant_comfort": SideProfile("Instant Comfort", variant_owned=True),
     "personal_comfort": SideProfile("Personal Comfort", variant_owned=True),
     "mline": SideProfile("M Line protocol and layout", frozenset({CONF_BLE_DEVICE_NAME}), variant_owned=True),
+    "sinca_comfort": SideProfile(
+        "Sinca Comfort Bed", frozenset({CONF_BLE_DEVICE_NAME, CONF_MOTOR_COUNT}), variant_owned=True
+    ),
     "suta": SideProfile("SUTA Smart Home name-selected layout"),
     "luniosmart": SideProfile("Lunio Smart+", frozenset()),
     "sleep_evolution": SideProfile("SleepEvolution", frozenset({CONF_BLE_DEVICE_NAME}), variant_owned=True),
@@ -220,7 +230,7 @@ _BY_BED_TYPE: Final[dict[str, SideProfile]] = {
     "saatva": SideProfile("Saatva", frozenset({CONF_PRODUCT_TYPE}), variant_owned=True),
     "bobpowerbase": SideProfile("Power Bob Base", variant_owned=True),
     BED_TYPE_MLILY_REMOTE: SideProfile("MLILY Remote", variant_owned=True),
-    BED_TYPE_RICHMAT_CLASSIC_APPS: SideProfile("Classic Richmat apps", frozenset({CONF_BLE_DEVICE_NAME}), variant_owned=True),
+    BED_TYPE_RICHMAT_CLASSIC_APPS: SideProfile("Classic Richmat apps", variant_owned=True),
     "bedgear": SideProfile("Bedgear"),
     "l2motion": SideProfile("L2 Motion"),
     BED_TYPE_MOTOMOTION: SideProfile("MotoMotion"),
@@ -279,11 +289,13 @@ _BY_BED_TYPE: Final[dict[str, SideProfile]] = {
     BED_TYPE_OKIN_MOTIONBED: SideProfile("OKIN Motion Bed"),
     BED_TYPE_COMFORT_ENHANCEMENT3: SideProfile("Comfort Enhancement 3", variant_owned=True),
     BED_TYPE_N32_MOTION_BED: SideProfile("N32 Motion Bed"),
+    BED_TYPE_SHUDA: SideProfile("Shuda"),
     BED_TYPE_RESIDENT: SideProfile("Resident Adjustable Base"),
     "ultramatic_smart_bed": SideProfile("Ultramatic Smart Bed"),
     BED_TYPE_YAMADA: SideProfile("アシステック / Yamada", variant_owned=True),
     BED_TYPE_BETTERLIVING2: SideProfile("BetterLiving2", variant_owned=True),
     BED_TYPE_SIMMONS: SideProfile("SIMMONS", variant_owned=True),
+    BED_TYPE_SIMMONS_BLUE: SideProfile("Simmons Blue"),
     **dict.fromkeys(RICHMAT_MH_BED_TYPES, SideProfile("Richmat app model", variant_owned=True)),
     "richmat_sleep_receiver": SideProfile("Richmat sleep receiver app", variant_owned=True),
     BED_TYPE_REMACRO: SideProfile("Remacro app", variant_owned=True),
@@ -308,6 +320,9 @@ _BY_BED_TYPE: Final[dict[str, SideProfile]] = {
     BED_TYPE_SVANE: SideProfile("Svane Remote", variant_owned=True),
 }
 _BY_VARIANT: Final[dict[tuple[str, str], SideProfile]] = {
+    (BED_TYPE_RICHMAT_CLASSIC_APPS, "maxprime"): SideProfile(
+        "Maxprime layout", variant_owned=True
+    ),
     (BED_TYPE_STAR_ELEVATE, STAR_ELEVATE_VARIANT_M1X12): SideProfile(
         "Adjustable Comfort M1X12 Elevate lift", frozenset({CONF_PROTOCOL_VARIANT})
     ),
@@ -318,7 +333,7 @@ _BY_VARIANT: Final[dict[tuple[str, str], SideProfile]] = {
     (BED_TYPE_SOLACE, SOLACE_VARIANT_WOOSA): SideProfile("Woosa Sleep"),
     (BED_TYPE_SOLACE, SOLACE_VARIANT_SOPHIE): SideProfile("Sophie"),
     (BED_TYPE_RICHMAT_CLASSIC_APPS, "dreamlab2"): SideProfile(
-        "Dreamlab Control", frozenset({CONF_BLE_DEVICE_NAME}), variant_owned=True
+        "Dreamlab Control", variant_owned=True
     ),
     (BED_TYPE_OKIN_CST, OKIN_CST_VARIANT_NECTAR_MOVE): SideProfile("Nectar Move"),
     # Saved before schema 5.11; the migration steps read a side as it was read then.

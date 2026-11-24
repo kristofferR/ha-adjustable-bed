@@ -113,7 +113,7 @@ def render_settings() -> str:
                 (
                     "Cancel alarm",
                     " / ".join(map(_hex, frames.alarm(0, 0))),
-                    "Live alarm capability",
+                    "Direct-alarm layout or live alarm capability",
                 ),
                 (
                     "TV at the same minute tomorrow",
