@@ -3667,6 +3667,9 @@
       "enso_massage_mode": {
         "name": "Cycle massage mode"
       },
+      "maxprime_massage_timer_toggle": {
+        "name": "Toggle massage timer"
+      },
       "bedsmart_query": {
         "name": "Refresh bed features"
       },
@@ -5719,6 +5722,9 @@
       }
     },
     "binary_sensor": {
+      "maxprime_alarm_enabled": {
+        "name": "Alarm enabled"
+      },
       "rmcontrol_anti_snore_enabled": {
         "name": "Anti-snore intervention"
       },
@@ -6306,6 +6312,12 @@
       "massage_left_intensity": {
         "name": "Left massage intensity"
       },
+      "maxprime_lamp_seconds": {
+        "name": "Light duration"
+      },
+      "maxprime_massage_position": {
+        "name": "Massage timer position"
+      },
       "bedsmart_lamp_seconds": {
         "name": "Light timeout"
       },
@@ -6730,6 +6742,14 @@
       },
       "hjbed_layout": {
         "name": "Remote layout"
+      },
+      "maxprime_axis": {
+        "name": "Additional motor",
+        "state": {
+          "53": "Motor 3",
+          "54": "Motor 4",
+          "55": "Motor 5"
+        }
       },
       "richmat_classic_mode": {
         "name": "Remote mode",
@@ -11197,6 +11217,24 @@
     "sleep_assistant_control_unavailable": {
       "message": "This control is unavailable for the selected bed settings."
     },
+    "maxprime_layout": {
+      "message": "Choose the Maxprime layout code shown in your app."
+    },
+    "maxprime_transport": {
+      "message": "The receiver did not provide a complete Maxprime Bluetooth command and notification pair."
+    },
+    "maxprime_control": {
+      "message": "Choose a control available on this layout, mode and Bluetooth connection."
+    },
+    "maxprime_alarm": {
+      "message": "Choose an alarm action and massage combination offered by this layout."
+    },
+    "maxprime_settings_sequential": {
+      "message": "Send this setting in a separate call to each side of a bed that connects sequentially."
+    },
+    "maxprime_settings": {
+      "message": "Check the values and wait for the bed to report support for this setting."
+    },
     "baseremote_layout": {
       "message": "Choose a bed layout. Desk, manufacturing and test layouts are excluded."
     },
@@ -12025,6 +12063,7 @@
         "bedtech_classic": "Bed Tech app",
         "jerome2": "Jerome's power base app",
         "baseremote": "Base Remote app",
+        "maxprime": "Maxprime app",
         "sleepfunction": "SleepFunction Bed Control app",
         "super_colchones": "Super Colchones app"
       }

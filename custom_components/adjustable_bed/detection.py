@@ -1853,6 +1853,18 @@ def _detect_bed_type_with_app_candidates(
     # than any manifest matcher, so they only add an app candidate.
     name = service_info.name
     if name and richmat_classic_matching_apps(name) and name.upper()[:4] not in ("TEST", "RMCS"):
+        from .profiles import maxprime
+
+        if (
+            result.bed_type is None
+            and not any(signal.startswith("excluded:") for signal in result.signals)
+            and maxprime.scan_matches(name)
+            and any(uuid.lower() in maxprime.RECEIVER_SERVICES for uuid in service_info.service_uuids)
+        ):
+            result = DetectionResult(
+                BED_TYPE_RICHMAT_CLASSIC_APPS, 0.3, result.signals,
+                ambiguous_types=result.ambiguous_types,
+            )
         if result.bed_type is not None and result.bed_type != BED_TYPE_RICHMAT_CLASSIC_APPS:
             if BED_TYPE_RICHMAT_CLASSIC_APPS not in (result.ambiguous_types or ()):
                 result.ambiguous_types = [*(result.ambiguous_types or ()), BED_TYPE_RICHMAT_CLASSIC_APPS]

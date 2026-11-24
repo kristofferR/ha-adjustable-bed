@@ -1087,6 +1087,11 @@ def _classic_layouts(data: Mapping[str, Any]) -> Mapping[Any, str]:
         from .profiles.jerome2 import EXCLUDED_LAYOUTS as JEROME_EXCLUDED_LAYOUTS
 
         codes -= JEROME_EXCLUDED_LAYOUTS
+    from .profiles import maxprime
+
+    if app == maxprime.APP:
+        codes -= maxprime.NAVIGATION.keys()
+        return {code: code.replace(":", " → ") for code in sorted(codes)}
     return {code: code for code in sorted(codes)}
 
 
@@ -1097,7 +1102,15 @@ def _classic_normalize(previous: Mapping[str, Any], answers: Mapping[str, Any]) 
     data = {**previous, **answers}
     if CONF_PRODUCT_TYPE in answers:
         app = str(data.get(CONF_PROTOCOL_VARIANT, ""))
-        layout = str(data[CONF_PRODUCT_TYPE]).strip().upper()
+        from .profiles import maxprime
+
+        raw = str(data[CONF_PRODUCT_TYPE])
+        if app == maxprime.APP:
+            data[CONF_PRODUCT_TYPE] = (
+                LAYOUT_PICKER_CHOICES[app].get(raw) or maxprime.manual_layout(raw) or raw
+            )
+            return data
+        layout = raw.strip().upper()
         layout = MANUAL_ALIASES.get(app, {}).get(layout, layout)
         data[CONF_PRODUCT_TYPE] = LAYOUT_PICKER_CHOICES.get(app, {}).get(layout, layout)
     return data
@@ -1129,9 +1142,32 @@ def _classic_errors(data: Mapping[str, Any]) -> dict[str, str]:
         from .profiles.jerome2 import EXCLUDED_LAYOUTS as JEROME_EXCLUDED_LAYOUTS
 
         excluded = excluded | JEROME_EXCLUDED_LAYOUTS
+    from .profiles import maxprime
+
+    if data.get(CONF_PROTOCOL_VARIANT) == maxprime.APP:
+        excluded |= maxprime.NAVIGATION.keys()
     if layout in excluded or layout not in shipped:
         return {CONF_PRODUCT_TYPE: "richmat_classic_layout"}
     return {}
+
+
+def _classic_seed(
+    hass: HomeAssistant, data: Mapping[str, Any], discovered: BluetoothServiceInfoBleak | None
+) -> dict[str, Any]:
+    """An explicitly chosen Maxprime app can suggest a corroborated layout."""
+    from .profiles import maxprime
+
+    if data.get(CONF_PROTOCOL_VARIANT) != maxprime.APP or discovered is None:
+        return dict(data)
+    seeded = _discovered_name_seed(hass, data, discovered)
+    offered_services = {uuid.lower() for uuid in discovered.service_uuids}
+    if offered_services & maxprime.RECEIVER_SERVICES:
+        layout = maxprime.advertised_layout(
+            discovered.name, russian=hass.config.language.partition("-")[0] == "ru"
+        )
+        if layout and layout not in maxprime.NAVIGATION:
+            seeded.setdefault(CONF_PRODUCT_TYPE, layout)
+    return seeded
 
 
 def _classic_title(data: Mapping[str, Any]) -> str:
@@ -2840,6 +2876,7 @@ SETUP_PROFILES: Final[dict[str, SetupProfile]] = {
         normalize=_classic_normalize,
         validate=_classic_errors,
         title=_classic_title,
+        seed=_classic_seed,
     ),
     # The Jensen / Svane family step picks the app and bed, and the form before
     # it was drawn for Svane, which sets these itself. The JMC400 box asks for
