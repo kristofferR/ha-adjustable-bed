@@ -118,6 +118,9 @@ async def factory_controllers() -> list[BedController]:
                     **default._coordinator.entry.data,
                     CONF_PROTOCOL_VARIANT: variant,
                 }
+                if bed_type == "dorsal":
+                    coordinator.entry.data["product_type"] = "A3RM" if variant == "restored" else ""
+                    coordinator.entry.data[CONF_BLE_DEVICE_NAME] = "QRRM0001"
                 if bed_type == "instant_comfort":
                     coordinator.entry.data["product_type"] = "two" if variant == "anm5" else "pf4"
                 coordinator.entry.options = {}

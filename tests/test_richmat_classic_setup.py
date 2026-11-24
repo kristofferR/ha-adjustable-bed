@@ -59,6 +59,7 @@ def test_all_app_choices_are_findable_and_model_inventories_are_distinct():
         'bedsmart': 558,
         'jerome2': 532,
         'baseremote': 558,
+        'maxprime': 554,
         **dict.fromkeys(RESOURCE_APPS, 243),
     }
     for app, models in MODEL_CHOICES.items():

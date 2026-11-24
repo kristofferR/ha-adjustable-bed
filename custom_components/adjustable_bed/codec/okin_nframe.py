@@ -302,3 +302,28 @@ def schedule_step(slot: int, step: int, delay_ticks: int, command: int, duration
         if isinstance(value, bool) or not isinstance(value, int) or not 0 <= value <= maximum:
             raise ValueError(f"{name} outside the schedule wire-format domain")
     return bytes.fromhex(f"0b0d{slot:02d}{step:02d}{delay_ticks:08x}{command:08x}{duration:02x}")
+
+
+def wrapped_setting(record: bytes) -> bytes:
+    """Wrap a setting record in Shuda's fixed 05 02 envelope and zero suffix."""
+    return b"\x05\x02" + record + b"\x00"
+
+
+@dataclass(frozen=True, slots=True)
+class ShortAlarmReport:
+    """The five model fields in the 10-byte Shuda alarm reply."""
+
+    slot: int
+    week: int
+    mode: int
+    hour: int
+    minute: int
+    enabled: int
+
+
+def parse_short_alarm(data: bytes) -> ShortAlarmReport | None:
+    """Decode the short A5 0C/0D/0E form, which omits N32's tail fields."""
+    if len(data) < 10 or data[0] != 0xA5 or data[1] not in (0x0C, 0x0D, 0x0E):
+        return None
+    week, mode, hour, minute = data[4:8]
+    return ShortAlarmReport(data[1] - 0x0B, week, mode, hour, minute, data[9])

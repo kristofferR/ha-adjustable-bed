@@ -207,6 +207,9 @@ async def _create_controller_for_bed_type(
         variant = "okin15" if not variant or variant == VARIANT_AUTO else variant
     if bed_type in {"personal_comfort", "instant_comfort"}:
         coordinator.entry.data[const.CONF_PRODUCT_TYPE] = "two" if bed_type == "instant_comfort" and variant == "anm5" else "other"
+    if bed_type == const.BED_TYPE_LEVA:
+        coordinator.entry.data[const.CONF_PRODUCT_TYPE] = "ascent"
+        return await create_controller(coordinator, bed_type, variant or "nordic", client)
     if bed_type == const.BED_TYPE_LINX:
         coordinator.entry.data.update({const.CONF_PRODUCT_TYPE: "quest", const.CONF_PROTOCOL_VARIANT: "a00a", const.CONF_BLE_DEVICE_NAME: "KSWF07D00000000"})
         return await create_controller(coordinator, bed_type, variant or "a00a", client)
