@@ -110,6 +110,7 @@ For named raise/lower/stop voice commands and Apple Home controls, see
 | [`richmat_app`](#richmat_app) | Richmat app: settings | Sets the light, alarm, heated blanket, sleep sensing and other options of a Richmat app bed. Only the options your product has can run. Read a setting first before changing it. |
 | [`richmat_mh_aroma`](#richmat_mh_aroma) | Richmat app: aroma timing | Sets the three aroma timing sliders of a Richmat app bed. |
 | [`richmat_mh_light_color`](#richmat_mh_light_color) | Richmat app: light color | Sets the color of the light, or of the button lights, on a Richmat app bed. |
+| [`dorsal_alarm`](#dorsal_alarm) | Manage Dorsal alarms | Reads, creates, replaces, toggles or deletes an alarm on a Dorsal receiver. |
 | [`majestichome`](#majestichome) | Majestic Home: settings | Read, create, edit, turn on or off, or delete the bed's alarms. Set the clock with Set bed clock. |
 | [`richmat_mh_control`](#richmat_mh_control) | Nisco and MLILY Supreme: run control | Run one of the selected app and model's controls, read one setting from the bed, or set the app mode used by later controls. |
 | [`richmat_mh_sleep_mode`](#richmat_mh_sleep_mode) | Nisco: sleep sensor mode | Set the separate sleep sensor for one or two sleepers. |
@@ -342,9 +343,11 @@ entities, including the light colors, are separate.
 
 | Bed | Controls | Notes |
 |-----|----------|-------|
+| [Leva Bed Remote](beds/okin-nframe.md#leva-bed-remote) | `back_up`, `back_down`, `legs_up`, `legs_down`; Ascent, Evolution LX and Quest Elite with Nordic UART also have `pillow_up`, `pillow_down`, `lumbar_up` and `lumbar_down` | Remote motor directions only. Presets, light and massage run once. |
 | [Super Colchones](beds/richmat.md#super-colchones) | `head_up`, `head_down`, `foot_up`, `foot_down`; AFEG350 also `lumbar_up`, `lumbar_down` | |
 | [BedSmart / X-Series](beds/richmat.md#bedsmart--x-series) | The `richmat_classic_<node>` controls of the selected remote layout that can be held | Saves cannot be held |
 | [Base Remote](beds/richmat.md#base-remote) | The held controls of the selected layout and mode | Saves cannot be held |
+| [Maxprime](beds/richmat.md#maxprime) | The selected layout's held controls, listed as `held_control` on the buttons | Applies the receiver mode selected when the hold starts. Save actions use confirmed buttons |
 | [Dream Sense Bed](beds/richmat.md#dream-sense-bed) | The selected product's held controls, such as `HeadUp` | Save buttons are separate |
 | [Sleepy's Elite app](beds/sleepys.md#explicit-sleepys-elite-app-profile) | Motor directions and app buttons that can be held | 100 to 60000 ms. Motion sensor actions end after five seconds. BOX25 voice positions run once |
 | [Glideaway Motion / Montion](beds/keeson.md#glideaway-motion) | Axes, presets, memories, light and massage controls by model, listed in the guide | At most 30 seconds. Memory recalls take under 5 seconds; save with `save_preset` |
@@ -420,8 +423,10 @@ other beds. SUTA Smart Home, SonicSleep, MLILY Remote, Good Vibe Sleep, Galaxy,
 MLILY, Power Bob Base, Majestic Home and Okimiki products with an alarm, GM
 Control products with an alarm, OKIN SleepEase, HJBed, Richmat app beds and
 their separate sleep sensor, Bed Tech (including its separate intervention
-receiver), Dream Sense Bed and Luuna + set their clock here too. On a Motion Bed it sets
-the clock of the motor or heating module; on a hub, select the module first.
+receiver), Dream Sense Bed, Luuna + and
+[Leva Bed Remote on the Ascent route](beds/okin-nframe.md#leva-bed-remote) set
+their clock here too. On a Motion Bed it sets the clock of the motor or heating
+module; on a hub, select the module first.
 [Shuda](beds/okin-nframe.md#shuda) also sets the bed clock on connection.
 HJBed's own `hjbed` action also keeps its Set bed clock operation, which does
 the same. A bed whose two sides share one receiver has its clock set once.
@@ -485,6 +490,7 @@ data:
 | Luuna + | The product's alarm positions: `tv`, `zero_g`, `anti_snore`, `memory_1`, `memory_2`; required to turn the alarm on | Once, at the next occurrence. Needs the bed to report its alarm on the current connection |
 | Luuna Rise and Power Cool | From the selected layout's alarm controls; required to turn the alarm on | `massage` with the layout's zones (then `none` is allowed). Once, at the next occurrence. Needs the bed to report its alarm on the current connection |
 | M Line | `zero_g`, `flat`, `memory_1`, `memory_2`, `massage`, `anti_snore` | `weekdays` |
+| [Maxprime](beds/richmat.md#maxprime) | From the selected layout's alarm controls | One countdown alarm, with the layout's massage combinations. Layouts that open the alarm through Settings require a reply on the current connection |
 | Malouf / Lucid app | `zero_g`, `lounge`, `tv`, `anti_snore`, memories | `weekdays` |
 | Motion Bed | `none` (rings only), `zero_g`, `memory_1` | `weekdays`, `massage`, `sound` (the alarm tone by default; music 1 by default where the bed has audio) |
 | [Simmons Blue](beds/okin-nframe.md#simmons-blue) | `flat`, `lounge` (Relax), `tv`, `anti_snore`, `memory_1`, `memory_2` | `slot` 1–3, `weekdays`. Turning off keeps the time reported by the bed. |
@@ -495,6 +501,7 @@ data:
 | OkinComfortBed II (Jalon) | By app version | `weekdays` |
 | OrmatekTechnoSmart | New: `massage`, `memory_1`, `flat`. Lite: `zero_g`, `tv` | Daily, one alarm |
 | Richmat app beds | From the model's alarm page | Once (the bed counts down), `slot` 1–3 on three-alarm models, `massage` with zone. `mattress_side` sets the vibrating mattress alarm, once or every day, with intensity 1–3 |
+| Dorsal saved projects with alarm modes | [From the project’s wake actions](beds/richmat.md#dorsal--roomi) | `slot` 1–7, `weekdays` or once. Turning off preserves the stored time, mode and weekdays. |
 | Richmat app calendar models | From the model's alarm list | `slot` 1–7, `weekdays`; `mattress_side` for the vibrating mattress |
 | RMControl | From the product's alarm list; required to turn an alarm on | Repeating products: `slot` 1–7 with at least one weekday. Others: once, as a countdown |
 | Shuda | `memory_1`, `flat`, `zero_g` (required to turn on) | Slots 1 and 2, optionally repeating on `weekdays`. Memory 1 needs `confirm_custom_position: true`. Turning off keeps the reported schedule |
@@ -1989,10 +1996,40 @@ Use automations to run `reverie_set_comfort`, `reverie_run_routine`,
 `goto_preset` and `save_preset` at set times. The app's phone alarms are not
 part of the integration.
 
+## Dorsal / Roomi
+
+Use [`hold_control`](#hold_control) for a held movement. Its control value is the
+`held_control` attribute of the button, or `held_control_open` /
+`held_control_close` on the cover. Use [`set_alarm`](#set_alarm) to edit an
+alarm the bed reported on a saved project with alarm modes. Omit the wake action to keep a
+reported slot's mode when changing its time or weekdays. The [Dorsal guide](beds/richmat.md#dorsal--roomi)
+lists the project-specific choices.
+
+### `dorsal_alarm`
+
+Choose one physical Dorsal receiver. The optional response to `list` gives
+each reported slot's time, weekdays and on/off state. The bed sends records
+individually, so an empty response can also mean that no records arrived
+during the read window. Use `create_or_replace` only for a slot you intend
+to overwrite if it already holds an alarm. The integration refuses to
+replace a reported alarm that carries extra firmware settings.
+
+| Field | Label | Meaning |
+|---|---|---|
+| `device_id` | Bed | The Dorsal bed. |
+| `side` | Bed side | Select the left or right receiver of a combined bed. |
+| `operation` | Operation | `list`, `toggle`, `delete` or `create_or_replace`. |
+| `slot` | Alarm slot | A slot from 1 to 7. Required for every operation except `list`; `toggle` and `delete` require a reported slot. |
+| `enabled` | On | Used only for `toggle`. All other stored alarm settings are preserved. |
+| `time` | Wake time | Required for `create_or_replace`, in whole minutes. |
+| `weekdays` | Weekdays | Days to repeat the new alarm. Omit them to run once. |
+| `wake_action` | Wake action | Required for `create_or_replace`. The project must support it. |
+| `confirm_custom_position` | Confirm saved position | Required if the wake action recalls a saved memory position. |
+
 ## Richmat (classic apps)
 
 <a id="richmat_classic"></a>
-**`richmat_classic`**: Sets the alarm, light, aroma and massage timer of an Avocado Eco Base, CoasterSleep, Forty Winks, Milemont or Superior bed, or moves its desk. Only the options your bed reports can run.
+**`richmat_classic`**: Sets the alarm, light, aroma and massage timer of an Avocado Eco Base, CoasterSleep, Forty Winks, Milemont or Superior bed, or moves its desk. Maxprime uses `query`, `rgb` and `aroma`. Settings depend on receiver replies.
 
 | Field | Name | Meaning |
 |-------|------|---------|
@@ -2075,6 +2112,19 @@ cloud settings are not available. See the
 | Field | Name | Meaning |
 |-------|------|---------|
 | `rgb_color` | Color | Red, green and blue, 0 to 255. |
+
+### Maxprime settings
+
+Use `richmat_classic` with `operation: query` to refresh the alarm, light and
+aroma options. Once the bed has reported support on the current connection,
+`operation: rgb` takes `rgb_color: [red, green, blue]` and `operation: aroma`
+takes `aroma_times: [mode_2_minutes, mode_3_minutes, pause_hours]`.
+Run times accept 1–60 minutes and the pause accepts 1–12 hours. For a combined
+bed with sequential connections, target each side in a separate settings call,
+including when another selected bed uses Maxprime.
+Use the **Light duration** number for 0–300 seconds, with 0 for keep-on. Use
+[`set_alarm`](#set_alarm) for the bed's one-time countdown alarm.
+See the [Maxprime guide](beds/richmat.md#maxprime).
 
 ### Richmat app aroma, light and alarms
 

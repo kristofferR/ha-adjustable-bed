@@ -11,6 +11,7 @@ from inspect import isawaitable
 from typing import TYPE_CHECKING, Final
 
 from bleak.exc import BleakError
+from homeassistant.const import EntityCategory
 
 from ...app_session import app_session
 from ...card import CARD_HIDDEN, CARD_MASSAGE_TIMER
@@ -612,7 +613,8 @@ class TrueMotionController(ProfileExecution[app.Profile], BedController):
             return ()
         return (
             ControllerSwitchSpec(
-                "truemotion_lock", "truemotion_lock", _lock, assumed_state=True, icon="mdi:lock"
+                "truemotion_lock", "truemotion_lock", _lock, assumed_state=True, icon="mdi:lock",
+                entity_category=EntityCategory.CONFIG,
             ),
         )
 

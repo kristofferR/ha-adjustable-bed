@@ -435,6 +435,10 @@ def plan_commands(controller: Any) -> list[Command]:
             f"stop:{spec.key}_close", _stopped(spec.close_fn, scheduled=scheduled), True, movement=True
         ))
     for spec in _value(controller, "controller_button_specs", ()):
+        # For Leva the gesture button only cancels a hold. The movement and
+        # STOP phases already capture that hold's real release writes.
+        if spec.key == "leva_release" and spec.release_only:
+            continue
         plan.append(Command(f"button:{spec.key}", spec.press_fn, True))
     for spec in _value(controller, "controller_select_specs", ()):
         for option in spec.options:
@@ -1391,6 +1395,14 @@ def default_scenario(bed_type: str) -> Scenario:
     """The bed type in its default route, with the entry data it needs to build."""
     from custom_components.adjustable_bed import const
 
+    if bed_type == "dorsal":
+        return Scenario(
+            id=bed_type, bed_type=bed_type, protocol_variant="cprn",
+            replies={"write:6e0a000179": "6e200903010200019e"},
+        )
+    if bed_type == "leva":
+        return Scenario(id=bed_type, bed_type=bed_type, protocol_variant="nordic",
+                        entry_data={const.CONF_PRODUCT_TYPE: "ascent"}, layout_id="leva:nordic")
     if bed_type == const.BED_TYPE_SHUDA:
         return Scenario(
             id=bed_type, bed_type=bed_type, entry_data={const.CONF_BLE_DEVICE_NAME: "Smartbed"},
@@ -2010,6 +2022,32 @@ def route_scenarios() -> list[Scenario]:
                     layout_id=layout_id,
                 )
             )
+    if const.BED_TYPE_RICHMAT_CLASSIC_APPS in const.SUPPORTED_BED_TYPES:
+        for layout, receiver, gatt in (
+            ("6BRM", "6BRM", "richmat_classic_apps_nordic"),
+            ("6BRM", "6BRM", "richmat_classic_apps"),
+            ("DHRM", "DHRM", "richmat_classic_apps"),
+            ("D9RM", "MLRM", "richmat_classic_apps"),
+            ("DXRM", "TWRM", "richmat_classic_apps_nordic"),
+            ("AORM", "AORM", "richmat_classic_apps"),
+            ("E3RM", "E3RM", "richmat_classic_apps"),
+            ("U3RM", "U3RM", "richmat_classic_apps"),
+            ("Y6RM", "Y6RM", "richmat_classic_apps"),
+        ):
+            wire = "raw" if gatt.endswith("nordic") else "wrapped"
+            scenarios.append(Scenario(
+                id=f"richmat_classic_apps:maxprime:{layout}:{wire}",
+                bed_type=const.BED_TYPE_RICHMAT_CLASSIC_APPS,
+                protocol_variant="maxprime",
+                entry_data={const.CONF_PRODUCT_TYPE: layout},
+                factory_kwargs={"device_name": receiver},
+                layout_id=gatt,
+                replies={
+                    "write:6e08010178": "6e09010078",
+                    "write:6e0a000179": "6e0e00037f",
+                    "write:6e1a000088": "6e1a000189",
+                },
+            ))
     # MotoMotion: the panels whose controls differ from the default one.
     if const.BED_TYPE_MOTOMOTION in const.SUPPORTED_BED_TYPES:
         for name in MOTOMOTION_NAMES[1:]:
@@ -2315,6 +2353,17 @@ def build_scenarios() -> list[Scenario]:
     scenarios = [default_scenario(bed_type) for bed_type in SUPPORTED_BED_TYPES
                  if bed_type not in RICHMAT_MH_APP_CATALOGS]
     scenarios.extend(route_scenarios())
+    scenarios.extend((
+        Scenario(id="dorsal:corn", bed_type="dorsal", protocol_variant="corn",
+                 layout_id="dorsal:n1", replies={"write:01": "6e200903010200019e"}),
+        Scenario(id="dorsal:restored", bed_type="dorsal", protocol_variant="restored",
+                 entry_data={"product_type": "A3RM"}, layout_id="dorsal:n1",
+                 replies={"write:01": "6e200903010200019e"}),
+        Scenario(id="dorsal:roomi", bed_type="dorsal", protocol_variant="roomi",
+                 entry_data={"product_type": ""}, factory_kwargs={"device_name": "QRRM0001"},
+                 layout_id="dorsal:n1",
+                 replies={"write:01": "6e200903010200019e", "6e400003-b5a3-f393-e0a9-e50e24dcca9e": "6e200903010200019e"}),
+    ))
     scenarios.extend(
         dataclasses.replace(default_scenario("simmons_blue"), id=f"simmons_blue:{layout}",
                             entry_data={"product_type": layout})
@@ -2331,6 +2380,16 @@ def build_scenarios() -> list[Scenario]:
         scenarios.append(dataclasses.replace(
             default_scenario("dreamsense"), id=f"dreamsense:gatt:{route}",
             layout_id=f"dreamsense:gatt:{route}",
+        ))
+    from custom_components.adjustable_bed.profiles.leva import MODELS as LEVA_MODELS
+    for model, receiver in (
+        *((model, "nordic") for model in LEVA_MODELS if model != "ascent"),
+        ("elite500", "okin"), ("evolutionlx", "okin"), ("ascent", "dual"),
+        ("elite250", "dual"), ("questelite", "dual"),
+    ):
+        scenarios.append(Scenario(
+            id=f"leva:{model}:{receiver}", bed_type="leva", protocol_variant=receiver,
+            entry_data={"product_type": model}, layout_id=f"leva:{receiver}",
         ))
     # Linx 1.0.7: all independent model/route combinations, preserving
     # the existing Keeson JSON scenarios and their characteristic fixtures.
@@ -2517,7 +2576,7 @@ async def _connect(controller: Any, recorder: Recorder, clock: FakeClock) -> dic
                 session.store_device_info = lambda *_: None
             await controller.async_on_connect(session)
             return
-        if controller._coordinator.bed_type in {"symphony", "linx", "agingplace", "sleep_assistant", "sinca_comfort"}:
+        if controller._coordinator.bed_type in {"symphony", "linx", "agingplace", "sleep_assistant", "sinca_comfort", "leva"}:
             session = SimpleNamespace(
                 client=controller.client, is_current=lambda: True,
                 async_start_notify=lambda: controller.start_notify(lambda *_: None),
@@ -2530,6 +2589,8 @@ async def _connect(controller: Any, recorder: Recorder, clock: FakeClock) -> dic
             await controller.async_after_connect(None)
             return
         await controller.start_notify(lambda *_: None)
+        if controller._coordinator.bed_type == "richmat_classic_apps" and getattr(controller, "app", None) == "maxprime":
+            await controller.async_after_connect(SimpleNamespace(is_current=lambda: True))
         if controller._coordinator.bed_type in {"komfyd", "comfyds", "suta"}:
             await controller.async_after_connect(None)
         if controller._coordinator.bed_type == "solace" and controller.profile.key == "sophie":

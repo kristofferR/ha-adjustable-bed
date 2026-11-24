@@ -75,6 +75,7 @@ if TYPE_CHECKING:
     from .leggett.lp_legacy import LeggettLpLegacyController as LeggettLpLegacyController
     from .leggett.okin import LeggettOkinController as LeggettOkinController
     from .leggett.wilinke import LeggettWilinkeController as LeggettWilinkeController
+    from .leva import LevaController as LevaController
     from .limoss.controller import LimossController as LimossController
     from .limoss.remote import LimossRemoteController as LimossRemoteController
     from .linak.controller import LinakController as LinakController
@@ -256,6 +257,7 @@ _EXPORT_MODULES = {
     "RizeController": "kaidi.rize",
     "ComfyController": "kaidi.comfy",
     "KaidiController": "kaidi.controller",
+    "LevaController": "leva",
     "LinxController": "linx.controller",
     "SymphonySleepController": ("keeson.symphony_sleep", "SymphonySleepController"),
     "KeesonController": "keeson.controller",
@@ -371,6 +373,7 @@ __all__ = [
     "SymphonyController",
     "LimossController",
     "LinakController",
+    "LevaController",
     "LinxController",
     "LogicdataController",
     "LogicdataAppController",

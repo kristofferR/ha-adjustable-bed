@@ -1779,3 +1779,18 @@ def test_simmons_app_hint_preserves_confirmed_profile(current):
     assert detected.bed_type == BED_TYPE_MALOUF_NEW_OKIN
     assert "simmons_blue" in (detected.ambiguous_types or ())
     assert recommend_profile({CONF_BED_TYPE: current}, observed, {}) is None
+
+
+@pytest.mark.parametrize("current", ["malouf_new_okin", "dorsal"])
+def test_dorsal_app_hint_preserves_confirmed_profile(current):
+    from custom_components.adjustable_bed.const import (
+        BED_TYPE_MALOUF_NEW_OKIN,
+        MALOUF_NEW_OKIN_ADVERTISED_SERVICE_UUID,
+    )
+    from custom_components.adjustable_bed.detection import detect_bed_type_detailed
+
+    observed = advertisement("QRRM", [MALOUF_NEW_OKIN_ADVERTISED_SERVICE_UUID])
+    detected = detect_bed_type_detailed(observed)
+    assert detected.bed_type == BED_TYPE_MALOUF_NEW_OKIN
+    assert "dorsal" in (detected.ambiguous_types or ())
+    assert recommend_profile({CONF_BED_TYPE: current}, observed, {}) is None

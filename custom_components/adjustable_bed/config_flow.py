@@ -31,6 +31,7 @@ from homeassistant.const import CONF_ADDRESS, CONF_NAME
 from homeassistant.const import __version__ as HA_VERSION
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.data_entry_flow import FlowResultType, section
+from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.field_visibility import (
     ConditionOperator,
@@ -167,6 +168,7 @@ from .const import (
     BED_TYPE_CUSTOMATIC_JEROMES,
     BED_TYPE_CUSTOMATIC_REMEDY,
     BED_TYPE_DIAGNOSTIC,
+    BED_TYPE_DORSAL,
     BED_TYPE_DOUBLESLEEP,
     BED_TYPE_ESHINE_OKIN,
     BED_TYPE_FURNIMOVE,
@@ -182,6 +184,7 @@ from .const import (
     BED_TYPE_LEGGETT_LP_LEGACY,
     BED_TYPE_LEGGETT_OKIN,
     BED_TYPE_LEGGETT_PLATT,
+    BED_TYPE_LEVA,
     BED_TYPE_LIMOSS_REMOTE,
     BED_TYPE_LOGICDATA_AIR_PUMP,
     BED_TYPE_MLILY,
@@ -423,6 +426,7 @@ if TYPE_CHECKING:
     from bleak.backends.device import BLEDevice
 
     from .beds.base import BedController
+    from .profiles.leva import LevaProfile
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -436,7 +440,7 @@ _AUTO_DETECT_MIN_CONFIDENCE = 0.7
 _NAME_ONLY_CONFIDENCE = 0.3
 # Explicit app candidates offered beside a confident match are hints, not ambiguity.
 _EXPLICIT_APP_HINTS = frozenset(
-    {"super_colchones", "dreamsense", "saatva", "bobpowerbase", BED_TYPE_COMFORT_ENHANCEMENT3, BED_TYPE_RICHMAT_APP_SLEEP, BED_TYPE_RICHMAT_APP, BED_TYPE_RICHMAT_CLASSIC_APPS, BED_TYPE_MOTOMOTION, BED_TYPE_MLILY, BED_TYPE_GALAXY, BED_TYPE_GOODVIBE, BED_TYPE_HJBED, BED_TYPE_ESHINE_OKIN, BED_TYPE_ISLEEP, BED_TYPE_KOMFYD, BED_TYPE_COMFYDS, BED_TYPE_RIZE, BED_TYPE_STARCODE_ABM5_4, BED_TYPE_MOTION_BED, BED_TYPE_VMATBASIC, BED_TYPE_FURNIMOVE,
+    {BED_TYPE_DORSAL, "super_colchones", "dreamsense", "saatva", "bobpowerbase", BED_TYPE_COMFORT_ENHANCEMENT3, BED_TYPE_RICHMAT_APP_SLEEP, BED_TYPE_RICHMAT_APP, BED_TYPE_RICHMAT_CLASSIC_APPS, BED_TYPE_MOTOMOTION, BED_TYPE_MLILY, BED_TYPE_GALAXY, BED_TYPE_GOODVIBE, BED_TYPE_HJBED, BED_TYPE_ESHINE_OKIN, BED_TYPE_ISLEEP, BED_TYPE_KOMFYD, BED_TYPE_COMFYDS, BED_TYPE_RIZE, BED_TYPE_STARCODE_ABM5_4, BED_TYPE_MOTION_BED, BED_TYPE_VMATBASIC, BED_TYPE_FURNIMOVE,
      BED_TYPE_GMMOTOR, BED_TYPE_OKIMIKI, BED_TYPE_SIMMONS_BLUE, "gmmotor_sleep_mm", "gmmotor_sleep_sxb", "sealy_posturematic", "instant_comfort", BED_TYPE_TRUEMOTION}
 )
 
@@ -1382,6 +1386,7 @@ _DECLARED_QUESTION_ROUTES: Final = frozenset(
         BED_TYPE_TRUEMOTION,
         "hush_base",
         "luuna",
+        "dorsal",
         "mline",
         "sinca_comfort",
         "nerum",
@@ -2372,10 +2377,12 @@ class CapabilityReport:
     # pairing window does to an adapter it has not paired with.
     connection_aborted: bool = False
     octo_pin_status: OctoPinStatus | None = None
+    leva_receiver_valid: bool | None = None
     starcode_transport_valid: bool | None = None
     truemotion_transport_valid: bool | None = None
     starcode_transport_selector: str | None = None
     starcode_ble_device_name: str | None = None
+    dorsal_endpoint_error: str | None = None
     # Which path the probe expected to take, and which one it really took. They
     # can differ: Home Assistant re-ranks every scanner when it connects, so a
     # prediction is never a promise (issue #456).
@@ -2704,6 +2711,8 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
     @property
     def _migration_requires_check(self) -> bool:
         staged = self._pending_entry if self._pending_entry is not None else self._manual_data
+        if staged is not None and staged.get(CONF_BED_TYPE) == BED_TYPE_DORSAL:
+            return True
         if self._migration_family is None:
             return False
         return _checked_family(self._migration_family, staged or {}).requires_check(staged or {})
@@ -4858,9 +4867,12 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                 left.data, right.data,
             ):
                 errors["base"] = "truemotion_pair"
-            elif left_layout != right_layout and not (
-                self._offline_safe_bed_type(left) == BED_TYPE_TRUEMOTION
-                or (
+            elif (
+                left_layout != right_layout
+                # Leva selects each receiver's model independently. Combined
+                # controls still require a common capability on both sides.
+                and self._offline_safe_bed_type(left) not in (BED_TYPE_LEVA, BED_TYPE_TRUEMOTION)
+                and not (
                     self._offline_safe_bed_type(left) == "instant_comfort"
                     and {**left_layout, "motor_keys": [key for key in left_layout["motor_keys"] if key != "pillow"]}
                     == {**right_layout, "motor_keys": [key for key in right_layout["motor_keys"] if key != "pillow"]}
@@ -6539,8 +6551,8 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
             self._migration is not None
             and not self._migration_requires_check
             and not needs_pin_check
-            # AdjustableM5X4 resolves and checks its transport on the live link.
-            and entry_data.get(CONF_BED_TYPE) != BED_TYPE_STARCODE_ABM5_4
+            # These profiles check the selected transport on the live link.
+            and entry_data.get(CONF_BED_TYPE) not in (BED_TYPE_LEVA, BED_TYPE_STARCODE_ABM5_4)
         ):
             return await self._async_create_selected_app_entry(title=title, data=entry_data)
         if (
@@ -6595,6 +6607,15 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
             else None
         )
         await self._async_import_endpoint_check(self._pending_entry)
+        leva_profile = None
+        if self._pending_entry.get(CONF_BED_TYPE) == BED_TYPE_LEVA:
+            await async_import_modules(self.hass, "beds.leva")
+            from .profiles.leva import selected_profile
+
+            leva_profile = selected_profile(
+                self._pending_entry.get(CONF_PRODUCT_TYPE),
+                self._pending_entry.get(CONF_PROTOCOL_VARIANT),
+            )
         report = await self._probe_capabilities(
             self._pending_entry[CONF_ADDRESS],
             self._pending_entry.get(CONF_PREFERRED_ADAPTER, ADAPTER_AUTO),
@@ -6606,6 +6627,7 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
             client_tracker=self.async_track_client,
             octo_pin=self._pending_entry.get(CONF_OCTO_PIN, ""),
             starcode_transport_selector=starcode_transport,
+            leva_profile=leva_profile,
             migration_check=self._migration_probe_check(),
         )
         if report.starcode_transport_selector is not None:
@@ -6620,6 +6642,7 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
             outcome = OperationOutcome.NOT_ADVERTISING
         elif (
             not report.connected
+            or report.leva_receiver_valid is False
             or report.starcode_transport_valid is False
             or report.truemotion_transport_valid is False
             or (
@@ -6765,6 +6788,7 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         client_tracker: Callable[[BleakClient | None], None] | None = None,
         octo_pin: str = "",
         starcode_transport_selector: str | None = None,
+        leva_profile: LevaProfile | None = None,
         migration_check: Callable[[BleakClient], None] | None = None,
     ) -> CapabilityReport:
         """Connect once and report device information and Octo PIN acceptance.
@@ -6897,6 +6921,20 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                             path_reporter(report.actual_path)
                     _report(SetupAction.DISCOVERING_SERVICES)
                     await discover_services(client, address)
+                    if bed_type == BED_TYPE_DORSAL:
+                        await async_import_modules(self.hass, "beds.dorsal.transport")
+                        from .beds.dorsal.transport import select_link, validate_name
+
+                        try:
+                            validate_name(
+                                self.hass, address, protocol_variant, device.name,
+                            )
+                            select_link(client)
+                        except HomeAssistantError as error:
+                            report.dorsal_endpoint_error = (
+                                error.translation_key or "dorsal_receiver_unavailable"
+                            )
+                            raise
                     if migration_check is not None:
                         migration_check(client)
                     services = list(client.services) if client.services else []
@@ -6922,6 +6960,18 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                         from .profiles.truemotion import gatt_roles
 
                         report.truemotion_transport_valid = gatt_roles(client.services) is not None
+                    if leva_profile is not None:
+                        from .beds.leva import resolve_gatt
+                        from .errors import BedNotConnectedError
+
+                        try:
+                            resolve_gatt(client, leva_profile, device.name or "")
+                        except BedNotConnectedError as err:
+                            report.leva_receiver_valid = False
+                            report.error = str(err)
+                        else:
+                            report.leva_receiver_valid = True
+                        return report
                     _report(SetupAction.READING_CAPABILITIES)
                     report.manufacturer, report.model = await read_ble_device_info(client, address)
                     if bed_type == BED_TYPE_OCTO:
@@ -6952,7 +7002,7 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                             if migration_check is not None and client.is_connected:
                                 self.async_retain_failed_setup_client(client, address)
         except Exception as err:
-            if migration_check is not None:
+            if migration_check is not None or bed_type == BED_TYPE_DORSAL:
                 report.connected = False
             report.error = str(err) or err.__class__.__name__
             report.connection_aborted = isinstance(err, BleakAbortedError)
@@ -7002,6 +7052,8 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                     else "check_not_connected"
                 )
             )
+            if report.dorsal_endpoint_error is not None and report.error:
+                lines.append(report.error)
             return "\n".join(lines)
 
         if report.actual_path is not None:
@@ -7024,7 +7076,7 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
             lines.append(await line("check_truemotion_transport_missing"))
         if report.starcode_transport_valid is False:
             lines.append(await line("check_transport_missing"))
-        elif report.starcode_transport_valid is True:
+        elif report.starcode_transport_valid is True or report.leva_receiver_valid is True:
             lines.append(await line("check_transport_ok"))
 
         if details := " · ".join(part for part in (report.manufacturer, report.model) if part):
@@ -7066,6 +7118,16 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
             # without it). Say so rather than running a blocking probe here:
             # this is the step that exists so that nothing blocks.
             report = CapabilityReport(freshness=FreshnessStatus.MISSING)
+
+        if report.leva_receiver_valid is False:
+            self._verify_form_shown = False
+            self._manual_data = dict(self._pending_entry)
+            self._recheck_answers = True
+            profile = setup_profile_for(self._manual_data)
+            assert profile is not None
+            return self._show_profile_questions(
+                profile, self._manual_data, {CONF_PROTOCOL_VARIANT: "leva_receiver_mismatch"}
+            )
 
         if self._migration is not None:
             if self._migration_verified:
@@ -7110,6 +7172,15 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                 assert profile is not None
                 return self._show_profile_questions(
                     profile, self._manual_data, {CONF_BLE_DEVICE_NAME: "truemotion_gatt"},
+                )
+            if report.dorsal_endpoint_error is not None:
+                self._verify_form_shown = False
+                self._manual_data = dict(self._pending_entry)
+                self._recheck_answers = True
+                profile = setup_profile_for(self._manual_data)
+                assert profile is not None
+                return self._show_profile_questions(
+                    profile, self._manual_data, {CONF_PROTOCOL_VARIANT: report.dorsal_endpoint_error}
                 )
             if report.starcode_transport_valid is False or (
                 self._pending_entry.get(CONF_BED_TYPE) == BED_TYPE_STARCODE_ABM5_4

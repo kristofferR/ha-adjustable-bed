@@ -73,6 +73,7 @@ from .const import (
     BED_TYPE_KEESON,
     BED_TYPE_KOMFYD,
     BED_TYPE_LEGGETT_LP_LEGACY,
+    BED_TYPE_LEVA,
     BED_TYPE_LIMOSS_REMOTE,
     BED_TYPE_LINX,
     BED_TYPE_LOGICDATA,
@@ -1088,6 +1089,11 @@ def _classic_layouts(data: Mapping[str, Any]) -> Mapping[Any, str]:
         from .profiles.jerome2 import EXCLUDED_LAYOUTS as JEROME_EXCLUDED_LAYOUTS
 
         codes -= JEROME_EXCLUDED_LAYOUTS
+    from .profiles import maxprime
+
+    if app == maxprime.APP:
+        codes -= maxprime.NAVIGATION.keys()
+        return {code: code.replace(":", " → ") for code in sorted(codes)}
     return {code: code for code in sorted(codes)}
 
 
@@ -1098,7 +1104,15 @@ def _classic_normalize(previous: Mapping[str, Any], answers: Mapping[str, Any]) 
     data = {**previous, **answers}
     if CONF_PRODUCT_TYPE in answers:
         app = str(data.get(CONF_PROTOCOL_VARIANT, ""))
-        layout = str(data[CONF_PRODUCT_TYPE]).strip().upper()
+        from .profiles import maxprime
+
+        raw = str(data[CONF_PRODUCT_TYPE])
+        if app == maxprime.APP:
+            data[CONF_PRODUCT_TYPE] = (
+                LAYOUT_PICKER_CHOICES[app].get(raw) or maxprime.manual_layout(raw) or raw
+            )
+            return data
+        layout = raw.strip().upper()
         layout = MANUAL_ALIASES.get(app, {}).get(layout, layout)
         data[CONF_PRODUCT_TYPE] = LAYOUT_PICKER_CHOICES.get(app, {}).get(layout, layout)
     return data
@@ -1130,9 +1144,32 @@ def _classic_errors(data: Mapping[str, Any]) -> dict[str, str]:
         from .profiles.jerome2 import EXCLUDED_LAYOUTS as JEROME_EXCLUDED_LAYOUTS
 
         excluded = excluded | JEROME_EXCLUDED_LAYOUTS
+    from .profiles import maxprime
+
+    if data.get(CONF_PROTOCOL_VARIANT) == maxprime.APP:
+        excluded |= maxprime.NAVIGATION.keys()
     if layout in excluded or layout not in shipped:
         return {CONF_PRODUCT_TYPE: "richmat_classic_layout"}
     return {}
+
+
+def _classic_seed(
+    hass: HomeAssistant, data: Mapping[str, Any], discovered: BluetoothServiceInfoBleak | None
+) -> dict[str, Any]:
+    """An explicitly chosen Maxprime app can suggest a corroborated layout."""
+    from .profiles import maxprime
+
+    if data.get(CONF_PROTOCOL_VARIANT) != maxprime.APP or discovered is None:
+        return dict(data)
+    seeded = _discovered_name_seed(hass, data, discovered)
+    offered_services = {uuid.lower() for uuid in discovered.service_uuids}
+    if offered_services & maxprime.RECEIVER_SERVICES:
+        layout = maxprime.advertised_layout(
+            discovered.name, russian=hass.config.language.partition("-")[0] == "ru"
+        )
+        if layout and layout not in maxprime.NAVIGATION:
+            seeded.setdefault(CONF_PRODUCT_TYPE, layout)
+    return seeded
 
 
 def _classic_title(data: Mapping[str, Any]) -> str:
@@ -2297,6 +2334,39 @@ def _linx_errors(data: Mapping[str, Any]) -> dict[str, str]:
     return errors
 
 
+def _leva_models(_data: Mapping[str, Any]) -> dict[str, str]:
+    from .profiles.leva import MODELS
+
+    return {key: model.label for key, model in MODELS.items()}
+
+
+def _leva_receivers(_data: Mapping[str, Any]) -> dict[str, str]:
+    from .profiles.leva import RECEIVERS
+
+    return dict(RECEIVERS)
+
+
+def _leva_errors(data: Mapping[str, Any]) -> dict[str, str]:
+    errors = {}
+    if str(data.get(CONF_PRODUCT_TYPE)) not in _leva_models(data):
+        errors[CONF_PRODUCT_TYPE] = "invalid_selection"
+    if str(data.get(CONF_PROTOCOL_VARIANT)) not in _leva_receivers(data):
+        errors[CONF_PROTOCOL_VARIANT] = "invalid_selection"
+    return errors
+
+
+def _leva_settings(data: Mapping[str, Any]) -> Mapping[str, Any]:
+    from .profiles.leva import selected_profile
+
+    profile = selected_profile(data.get(CONF_PRODUCT_TYPE), data.get(CONF_PROTOCOL_VARIANT))
+    if profile is None:
+        return {}
+    return {
+        CONF_MOTOR_COUNT: max(2, len(profile.axes)),
+        CONF_HAS_MASSAGE: profile.expanded_remote,
+    }
+
+
 def _symphony_sleep_choices(_data: Mapping[str, Any]) -> dict[str, str]:
     from .profiles.symphony_sleep import MODELS
     return {key: model.label for key, model in MODELS.items()}
@@ -2409,6 +2479,21 @@ def relax_motion_seed_input(data: Mapping[str, Any], answers: Mapping[str, Any],
         if previous is not None and previous == detected and model_number(answers.get(CONF_PRODUCT_TYPE)) == previous:
             result.pop(CONF_PRODUCT_TYPE, None)
     return result
+
+
+def _dorsal_routes(_data: Mapping[str, Any]) -> Mapping[str, str]:
+    from .profiles.dorsal import ROUTES
+
+    return ROUTES
+
+
+def _dorsal_errors(data: Mapping[str, Any]) -> dict[str, str]:
+    from .profiles.dorsal import code_for
+
+    route, code = data.get(CONF_PROTOCOL_VARIANT), data.get(CONF_PRODUCT_TYPE)
+    if (route == "restored" or route == "roomi" and code) and code_for(route, code) is None:
+        return {CONF_PRODUCT_TYPE: "dorsal_project_code"}
+    return {}
 
 
 def _relax_motion_seed(hass: HomeAssistant, data: Mapping[str, Any], discovered: BluetoothServiceInfoBleak | None) -> dict[str, Any]:
@@ -2536,6 +2621,17 @@ SETUP_PROFILES: Final[dict[str, SetupProfile]] = {
               CONF_PROTOCOL_VARIANT: "sophie"},
         questions=(Question(CONF_BLE_DEVICE_NAME, default="", text=True),),
         title=lambda _data: "Sophie",
+    ),
+    "dorsal": SetupProfile(
+        owns={CONF_MOTOR_COUNT: 2, CONF_HAS_MASSAGE: False, CONF_DISABLE_ANGLE_SENSING: True,
+              CONF_MOTOR_PULSE_DELAY_MS: 100},
+        questions=(
+            Question(CONF_PROTOCOL_VARIANT, _dorsal_routes, "cprn"),
+            Question(CONF_PRODUCT_TYPE, default="", text=True,
+                     when={"field": CONF_PROTOCOL_VARIANT, "operator": ConditionOperator.IN,
+                           "value": ["restored", "roomi"]}),
+        ),
+        validate=_dorsal_errors, imports=("profiles.dorsal",),
     ),
     "nerum": SetupProfile(
         owns={CONF_MOTOR_COUNT: SET_BY_PROFILE, CONF_HAS_MASSAGE: False,
@@ -2854,6 +2950,7 @@ SETUP_PROFILES: Final[dict[str, SetupProfile]] = {
         normalize=_classic_normalize,
         validate=_classic_errors,
         title=_classic_title,
+        seed=_classic_seed,
     ),
     # The Jensen / Svane family step picks the app and bed, and the form before
     # it was drawn for Svane, which sets these itself. The JMC400 box asks for
@@ -3453,6 +3550,15 @@ SETUP_PROFILES: Final[dict[str, SetupProfile]] = {
             CONF_PROTOCOL_VARIANT: "auto",
             CONF_MOTOR_PULSE_DELAY_MS: 200,
         },
+    ),
+    BED_TYPE_LEVA: SetupProfile(
+        owns={CONF_MOTOR_COUNT: SET_BY_PROFILE, CONF_HAS_MASSAGE: SET_BY_PROFILE,
+              CONF_DISABLE_ANGLE_SENSING: True, CONF_MOTOR_PULSE_DELAY_MS: 100},
+        questions=(Question(CONF_PRODUCT_TYPE, _leva_models),
+                   Question(CONF_PROTOCOL_VARIANT, _leva_receivers)),
+        validate=_leva_errors, derive=_leva_settings,
+        title=lambda _data: "Leva Bed Remote",
+        imports=("profiles.leva",),
     ),
     BED_TYPE_SHUDA: SetupProfile(
         owns={

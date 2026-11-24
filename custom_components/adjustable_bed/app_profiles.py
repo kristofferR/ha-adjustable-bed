@@ -53,6 +53,7 @@ from .const import (
     BED_TYPE_LEGGETT_LP_LEGACY,
     BED_TYPE_LEGGETT_OKIN,
     BED_TYPE_LEGGETT_PLATT,
+    BED_TYPE_LEVA,
     BED_TYPE_LIMOSS_REMOTE,
     BED_TYPE_LINX,
     BED_TYPE_LOGICDATA_APP,
@@ -164,6 +165,7 @@ class SideProfile:
 
 _BY_BED_TYPE: Final[dict[str, SideProfile]] = {
     "ormatek": SideProfile("OrmatekTechnoSmart", frozenset({CONF_MOTOR_COUNT, CONF_HAS_MASSAGE, CONF_BLE_DEVICE_NAME}), variant_owned=True),
+    "dorsal": SideProfile("Dorsal project and Roomi route", variant_owned=True),
     "nerum": SideProfile("Nerum", variant_owned=True),
     "relax_motion": SideProfile("Relax Motion", variant_owned=True),
     "smartbed": SideProfile("SmartBed", frozenset({CONF_HAS_MASSAGE}), variant_owned=True),
@@ -178,6 +180,9 @@ _BY_BED_TYPE: Final[dict[str, SideProfile]] = {
     "gmmotor": SideProfile("GM Control product", frozenset({CONF_BLE_DEVICE_NAME})),
     "gmmotor_sleep_mm": SideProfile("GM Control MM sleep module"),
     "gmmotor_sleep_sxb": SideProfile("GM Control SXB sleep module"),
+    BED_TYPE_LEVA: SideProfile(
+        "Leva Bed Remote", frozenset({CONF_MOTOR_COUNT, CONF_HAS_MASSAGE}), variant_owned=True
+    ),
     BED_TYPE_LINX: SideProfile("Linx", variant_owned=True),
     BED_TYPE_SYMPHONY_SLEEP: SideProfile("Symphony Sleep", variant_owned=True),
     BED_TYPE_JALON_BED: SideProfile("OkinComfortBed Ⅱ (Jalon)"),
@@ -316,6 +321,9 @@ _BY_BED_TYPE: Final[dict[str, SideProfile]] = {
     BED_TYPE_SVANE: SideProfile("Svane Remote", variant_owned=True),
 }
 _BY_VARIANT: Final[dict[tuple[str, str], SideProfile]] = {
+    (BED_TYPE_RICHMAT_CLASSIC_APPS, "maxprime"): SideProfile(
+        "Maxprime layout", frozenset({CONF_BLE_DEVICE_NAME}), variant_owned=True
+    ),
     (BED_TYPE_STAR_ELEVATE, STAR_ELEVATE_VARIANT_M1X12): SideProfile(
         "Adjustable Comfort M1X12 Elevate lift", frozenset({CONF_PROTOCOL_VARIANT})
     ),
