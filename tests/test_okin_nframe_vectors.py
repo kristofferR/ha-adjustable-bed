@@ -17,6 +17,7 @@ from custom_components.adjustable_bed.beds.okin_uuid.controller import (
 from custom_components.adjustable_bed.codec import keeson
 from custom_components.adjustable_bed.codec import okin_nframe as codec
 from custom_components.adjustable_bed.profiles import okin_nframe as profiles
+from custom_components.adjustable_bed.profiles import simmons_blue
 from custom_components.adjustable_bed.profiles.comfort_enhancement3 import PROFILES as APEX_PROFILES
 from custom_components.adjustable_bed.profiles.n32_motion_bed import N32
 from custom_components.adjustable_bed.profiles.shuda import SHUDA
@@ -27,6 +28,7 @@ from tests.okin_nframe_vectors import (
     GATEWAY_FRAMES,
     SETTING_FRAMES,
     SETUP_FRAMES,
+    SIMMONS_BLUE_CONTROLS,
 )
 
 PROFILES: dict[str, profiles.OkinNFrameProfile] = {
@@ -38,6 +40,7 @@ PROFILES: dict[str, profiles.OkinNFrameProfile] = {
         profiles.OKIN_MOTIONBED,
         N32,
         SHUDA,
+        simmons_blue.PROFILE,
         profiles.DEWERTOKIN,
         profiles.RF_ECO_BT,
         *profiles.CUSTOMATIC_PROFILES.values(),
@@ -168,6 +171,68 @@ def test_alarm_slots() -> None:
         codec.alarm(bytes(7), 4)
 
 
+def test_simmons_blue_controls_match_every_literal():
+    assert {
+        action: simmons_blue.control(action).hex() for action in simmons_blue.PROFILE.keys
+    } == SIMMONS_BLUE_CONTROLS
+
+
+@pytest.mark.parametrize(
+    ("slot", "literal"), ((1, "00c0"), (2, "00d0"), (3, "00e0"), (0, "00c0"))
+)
+def test_simmons_blue_queries(slot, literal):
+    assert simmons_blue.query_alarm(slot) == bytes.fromhex(literal)
+
+
+@pytest.mark.parametrize(
+    ("fields", "literal"),
+    (
+        ((1, 0x82, 5, 7, 30, 1), "050207058205071e00010000"),
+        ((2, 0, 9, 8, 15, 0), "050207060009080f00000000"),
+        ((3, 0xFF, 2, 6, 0, 1), "05020707ff02060000010000"),
+        ((0, 0, 6, 23, 59, 1), "050207050006173b00010000"),
+    ),
+)
+def test_simmons_blue_alarm_frames(fields, literal):
+    assert simmons_blue.alarm_frame(*fields) == bytes.fromhex(literal)
+
+
+@pytest.mark.parametrize(
+    ("local", "literal"),
+    (
+        ("2026-11-24T13:45:06", "050207041a0b18020d2d0600"),
+        ("2025-01-01T00:00:00", "050207041901010300000000"),
+    ),
+)
+def test_simmons_blue_clock_frames(local, literal):
+    assert simmons_blue.clock_frame(datetime.fromisoformat(local)) == bytes.fromhex(literal)
+
+
+@pytest.mark.parametrize(
+    ("literal", "fields"),
+    (
+        ("a50c00008205071e0001", (1, 0x82, 5, 7, 30, 1)),
+        ("a50d00000009080f0000", (2, 0, 9, 8, 15, 0)),
+        ("a50e00007f0206000001", (3, 0, 2, 6, 0, 1)),
+        ("a50c0000000000000001", (1, 0, 9, 0, 0, 0)),
+        ("a50b00000102030405", None),
+        ("a50f", None),
+        ("000c", None),
+        ("a5", None),
+        ("a50c", None),
+        ("a50c00", None),
+        ("a50c00008205071e00", None),
+        ("a50b", None),
+        ("a50b00", None),
+        ("a50b000001020304", None),
+        ("a50f00", None),
+    ),
+)
+def test_simmons_blue_alarm_reports(literal, fields):
+    expected = None if fields is None else simmons_blue.AlarmRecord(*fields)
+    assert simmons_blue.parse_alarm(bytes.fromhex(literal)) == expected
+
+
 @pytest.mark.parametrize(
     ("profile", "literal"),
     [
@@ -279,6 +344,7 @@ def test_hold_declarations_follow_the_evidence_matrix():
         *APEX_PROFILES,
         N32.key,
         SHUDA.key,
+        simmons_blue.PROFILE.key,
         profiles.RESIDENT.key,
         *profiles.LEGGETT_PROFILES,
         *profiles.CUSTOMATIC_PROFILES,
