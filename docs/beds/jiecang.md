@@ -747,13 +747,10 @@ sections list what differs.
 - Massage level writes one frame. In bilateral layouts it is followed by the
   profile's recall release (see [One-shot timing](#one-shot-timing)).
 - Massage mode writes one frame, then a long release after 1000 ms.
-- Lights: color, brightness and timer write the full RGB state. When no
+- Lights: on, off, color, brightness and timer write the full RGB state. When no
   light state has been received, HA first sends the light query twice (100 ms
   apart) and waits up to 1 s; without a reply it refuses the change, preserving
   unknown color and timer settings.
-- Light on and off: the light toggle sequence below when the reported state
-  differs, as the apps' power button sends it. Otherwise only the RGB state is
-  written again.
 - Light toggle: RGB state write, the toggle after 150 ms, then short and long
   release 80 ms later.
 - Automatic light: the toggle frame is written once, only when the reported state

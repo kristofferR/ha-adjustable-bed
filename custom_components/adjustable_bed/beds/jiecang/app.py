@@ -580,26 +580,15 @@ class JiecangAppController(JiecangProfileController, YogaPresetActions):
         finally:
             await self._schedule(((0, codec.SHORT_RELEASE), (0, codec.LONG_RELEASE)), cleanup=True)
 
-    async def _set_light_power(self, on: bool) -> None:
-        """Switch the light as the apps' one power button does.
-
-        A change is that button's whole press: the state write followed by the
-        light command. A light already in the requested state only has its
-        state written again.
-        """
+    async def lights_on(self) -> None:
         if not self.supports_lights:
             raise ValueError("Lighting was not configured")
-        state = await self._known_rgb()
-        if state.on is on:
-            await self._write_rgb(state)
-        else:
-            await self.lights_toggle()
-
-    async def lights_on(self) -> None:
-        await self._set_light_power(True)
+        await self._write_rgb(replace(await self._known_rgb(), on=True))
 
     async def lights_off(self) -> None:
-        await self._set_light_power(False)
+        if not self.supports_lights:
+            raise ValueError("Lighting was not configured")
+        await self._write_rgb(replace(await self._known_rgb(), on=False))
 
     async def set_light_color(self, rgb_color: tuple[int, int, int]) -> None:
         if not self.supports_light_color_control:

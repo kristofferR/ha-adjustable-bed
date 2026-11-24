@@ -362,32 +362,6 @@ async def test_light_toggle_and_partial_changes_preserve_reported_fields(make_co
     ]
 
 
-async def test_light_power_is_the_apps_whole_power_press(make_controller):
-    controller, _, client = make_controller()
-    sender = SimpleNamespace(uuid=astuple(TRANSPORTS["g1"])[2])
-    controller._handle_notification(sender, bytearray.fromhex("f2f20e00070000"))
-    controller._handle_notification(sender, bytearray.fromhex("f2f2520733221164012c01517e"))
-    await controller.lights_off()
-    assert packets(client) == [
-        codec.rgb(17, 34, 51, 100, 300, False),
-        codec.light_toggle(codec.BILATERAL),
-        codec.SHORT_RELEASE,
-        codec.LONG_RELEASE,
-    ]
-    client.write_gatt_char.reset_mock()
-    await controller.lights_on()
-    assert packets(client) == [
-        codec.rgb(17, 34, 51, 100, 300, True),
-        codec.light_toggle(codec.BILATERAL),
-        codec.SHORT_RELEASE,
-        codec.LONG_RELEASE,
-    ]
-    # Already on: no second press, which would switch the light back off.
-    client.write_gatt_char.reset_mock()
-    await controller.lights_on()
-    assert packets(client) == [codec.rgb(17, 34, 51, 100, 300, True)]
-
-
 async def test_missing_light_state_does_not_invent_settings(make_controller):
     controller, _, client = make_controller()
     with patch(
