@@ -149,8 +149,8 @@ Command bytes below are wrapped by the Protocol 108 packet builder.
 
 | Command | Payload | Description |
 |---------|---------|-------------|
-| Head Massage | `0x53 {level×4}` | Set head massage level (0–10) |
-| Foot Massage | `0x54 {level×4}` | Set foot massage level (0–10) |
+| Head Massage | `0x53 {level}` | Set head massage level (0–10) |
+| Foot Massage | `0x54 {level}` | Set foot massage level (0–10) |
 | Wave Massage | Decimal text `4n` through `BLE108CRC` / `hex2Byte` | Wave pattern `n`, 1–4; Stop Massage turns it off |
 | Stop Massage | `0x35` | Stop all massage |
 
@@ -518,7 +518,7 @@ See [Actions and Automations](../SERVICES.md) for action schemas and examples.
 | --- | --- |
 | 0–1 | Header |
 | 2 / 3 | Head / foot position (0–100%) |
-| 4 / 5 | Head / foot raw massage feedback |
+| 4 / 5 | Head / foot massage level (0–10) |
 | 6–8 | Unknown; no additional state inferred |
 
 ### Protocol 108 feedback and Composer timing
