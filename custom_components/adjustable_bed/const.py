@@ -434,6 +434,13 @@ BED_TYPE_OKIN_UUID: Final = "okin_uuid"  # Okin 6-byte via UUID (requires pairin
 BED_TYPE_OKIN_7BYTE: Final = "okin_7byte"  # 7-byte via Okin service UUID
 BED_TYPE_OKIN_NORDIC: Final = "okin_nordic"  # 7-byte via Nordic UART
 BED_TYPE_OKIN_DOT: Final = "okin_dot"  # DOT PROTOCOL: CB24-style frames, FurniMove remote keycodes
+BED_TYPE_DORSAL: Final = "dorsal"
+DORSAL_ROUTES: Final = {
+    "cprn": "CPRN",
+    "corn": "CORN",
+    "restored": "Saved Dorsal project",
+    "roomi": "Roomi controls",
+}
 BED_TYPE_NERUM: Final = "nerum"
 BED_TYPE_RELAX_MOTION: Final = "relax_motion"
 BED_TYPE_SMARTBED: Final = "smartbed"  # The SmartBed app's receivers (Okin CB24 family and others)
@@ -756,6 +763,7 @@ BED_TYPE_TEMPUR_AU: Final = 'tempur_au'
 KEESON_LAYOUT_APP_BED_TYPES: Final = frozenset({BED_TYPE_TEMPUR_CURVE, BED_TYPE_QPLUS_APP, BED_TYPE_SERTA_MP_REMOTE, BED_TYPE_OMAZZ_ADJUSTO_III, BED_TYPE_ERGOMOTION_APP, BED_TYPE_ROW_CONTROL, BED_TYPE_ERGO_SLIM, BED_TYPE_TEMPUR_AU})
 
 SUPPORTED_BED_TYPES: Final = [
+    BED_TYPE_DORSAL,
     BED_TYPE_NERUM,
     BED_TYPE_RELAX_MOTION,
     BED_TYPE_SMARTBED,
@@ -970,6 +978,7 @@ SUPPORTED_BED_TYPES: Final = [
 # every member, so adding a post-connect mutation later fails loudly.
 OFFLINE_CAPABILITY_SAFE_BED_TYPES: Final = frozenset(
     {
+        BED_TYPE_DORSAL,
         BED_TYPE_DREAMSENSE,
         BED_TYPE_PERSONAL_COMFORT,
         BED_TYPE_BEDGEAR,

@@ -4158,3 +4158,55 @@ instant_comfort_firmness:
           min: 5
           max: 50
           step: 1
+
+dorsal_alarm:
+  fields:
+    device_id:
+      required: true
+      selector:
+        device:
+          integration: adjustable_bed
+    side:
+      selector:
+        select:
+          options:
+            - left
+            - right
+    operation:
+      required: true
+      selector:
+        select:
+          options:
+            - label: Read alarms
+              value: list
+            - label: Turn on or off
+              value: toggle
+            - label: Delete alarm
+              value: delete
+            - label: Create or replace alarm
+              value: create_or_replace
+    slot:
+      selector:
+        number:
+          min: 1
+          max: 7
+          mode: box
+    enabled:
+      selector:
+        boolean:
+    time:
+      selector:
+        time:
+    weekdays:
+      selector:
+        select:
+          options: [monday, tuesday, wednesday, thursday, friday, saturday, sunday]
+          translation_key: weekday
+          multiple: true
+    wake_action:
+      example: zero_g
+      selector:
+        text:
+    confirm_custom_position:
+      selector:
+        boolean:

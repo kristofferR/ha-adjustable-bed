@@ -583,6 +583,7 @@ def _rests_on_shared_service(
 # Display names for bed types shown in the UI selector. The automatic
 # Leggett & Platt setup is not offered to a new bed, so it is not listed here.
 BED_TYPE_DISPLAY_NAMES: dict[str, str] = {
+    "dorsal": "Dorsal app / Roomi",
     "nerum": "Nerum app",
     "relax_motion": "Relax Motion app",
     "cheerssleep": "CheersSleep app",
@@ -1399,7 +1400,7 @@ def detect_bed_type(service_info: BluetoothServiceInfoBleak) -> str | None:
         For detailed detection with confidence scores, use detect_new_bed().
     """
     result = detect_new_bed(service_info)
-    if result.bed_type in ("sleep_assistant", "super_colchones", "bobpowerbase", BED_TYPE_GALAXY, BED_TYPE_GOODVIBE, BED_TYPE_MLILY, BED_TYPE_MLILY_REMOTE, BED_TYPE_MOTOMOTION, BED_TYPE_N32_MOTION_BED, BED_TYPE_SYMPHONY, BED_TYPE_MLINE, BED_TYPE_OKIMIKI) and result.confidence < 0.7:
+    if result.bed_type in ("dorsal", "sleep_assistant", "super_colchones", "bobpowerbase", BED_TYPE_GALAXY, BED_TYPE_GOODVIBE, BED_TYPE_MLILY, BED_TYPE_MLILY_REMOTE, BED_TYPE_MOTOMOTION, BED_TYPE_N32_MOTION_BED, BED_TYPE_SYMPHONY, BED_TYPE_MLINE, BED_TYPE_OKIMIKI) and result.confidence < 0.7:
         return None  # An app name hint requires an explicit product choice.
     return result.bed_type
 
@@ -1658,6 +1659,13 @@ def _detect_with_first_pass(
             result = DetectionResult(BED_TYPE_SOMOS, 0.3, [*result.signals, "name:somos_app_candidate"])
         elif result.bed_type != BED_TYPE_SOMOS:
             result.ambiguous_types = list(dict.fromkeys([*(result.ambiguous_types or ()), BED_TYPE_SOMOS]))
+    # Dorsal's scan words are shared and do not identify the selected project.
+    if first.name("dorsal") and not any(signal.startswith("excluded:") for signal in result.signals):
+        if result.bed_type is None:
+            result = DetectionResult("dorsal", 0.3, [*result.signals, "name:dorsal_app_candidate"])
+        else:
+            result.ambiguous_types = list(dict.fromkeys([*(result.ambiguous_types or ()), "dorsal"]))
+            result.signals.append("name:dorsal_app_candidate")
     # Shared names offer the app; they never replace a stronger receiver match.
     if first.name(BED_TYPE_MLINE) and not any(
         signal.startswith("excluded:") for signal in result.signals

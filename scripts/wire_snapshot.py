@@ -1342,6 +1342,11 @@ def default_scenario(bed_type: str) -> Scenario:
     """The bed type in its default route, with the entry data it needs to build."""
     from custom_components.adjustable_bed import const
 
+    if bed_type == "dorsal":
+        return Scenario(
+            id=bed_type, bed_type=bed_type, protocol_variant="cprn",
+            replies={"write:6e0a000179": "6e200903010200019e"},
+        )
     if bed_type == "super_colchones":
         return Scenario(id=bed_type, bed_type=bed_type, protocol_variant="afeg302",
                         entry_data={const.CONF_PROTOCOL_VARIANT: "afeg302"}, layout_id="super_colchones:n1")
@@ -2225,6 +2230,17 @@ def build_scenarios() -> list[Scenario]:
     scenarios = [default_scenario(bed_type) for bed_type in SUPPORTED_BED_TYPES
                  if bed_type not in RICHMAT_MH_APP_CATALOGS]
     scenarios.extend(route_scenarios())
+    scenarios.extend((
+        Scenario(id="dorsal:corn", bed_type="dorsal", protocol_variant="corn",
+                 layout_id="dorsal:n1", replies={"write:01": "6e200903010200019e"}),
+        Scenario(id="dorsal:restored", bed_type="dorsal", protocol_variant="restored",
+                 entry_data={"product_type": "A3RM"}, layout_id="dorsal:n1",
+                 replies={"write:01": "6e200903010200019e"}),
+        Scenario(id="dorsal:roomi", bed_type="dorsal", protocol_variant="roomi",
+                 entry_data={"product_type": ""}, factory_kwargs={"device_name": "QRRM0001"},
+                 layout_id="dorsal:n1",
+                 replies={"write:01": "6e200903010200019e", "6e400003-b5a3-f393-e0a9-e50e24dcca9e": "6e200903010200019e"}),
+    ))
     # Dream Sense: each saved BED product plus all six accepted GATT routes.
     from custom_components.adjustable_bed.profiles.dreamsense import PROFILES as DREAMSENSE_PROFILES
     for product in DREAMSENSE_PROFILES:

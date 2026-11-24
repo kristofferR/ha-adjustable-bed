@@ -1198,6 +1198,11 @@ class BedController(GattWriter):
         return frozenset()
 
     @property
+    def memory_slots_programmed_by_presets(self) -> frozenset[int]:
+        """Slots whose controller-declared save button replaces the generic button."""
+        return frozenset()
+
+    @property
     def memory_slot_names_allow_blank(self) -> bool:
         """Whether a blank bed-reported memory name replaces the translated one."""
         return False
