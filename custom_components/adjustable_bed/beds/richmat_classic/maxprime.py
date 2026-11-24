@@ -166,6 +166,20 @@ class MaxprimeController(SessionController):
             UNDER_BED_LIGHTS_RGB(None),
         )
 
+    @property
+    def restore_notifications_after_cancel(self) -> bool:
+        # Subscription registration drains uncancellable BLE work. Recover under
+        # the next command's admission instead of a bounded pairing rollback.
+        return False
+
+    async def async_refresh_auth(self) -> None:
+        if self._session is None:
+            async with self._coordinator.async_connection_operation_guard():
+                if self._coordinator.controller is not self:
+                    raise ConnectionError("The bed controller changed before session recovery")
+                if self._session is None:
+                    await self.start_notify()
+
     async def start_notify(self, callback: Callable[[str, float], None] | None = None) -> None:
         client = self.client
         if client is None or not client.is_connected:
@@ -237,7 +251,7 @@ class MaxprimeController(SessionController):
         session, self._session = self._session, None
         self._clear_link_state()
         if session is not None:
-            await settled(self._unsubscribe(session))
+            await self._unsubscribe(session)
         self._publish()
 
     def on_disconnect(self) -> None:

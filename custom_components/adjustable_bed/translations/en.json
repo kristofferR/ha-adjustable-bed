@@ -3801,6 +3801,15 @@
       },
       "smartbed_alarm_refresh": {
         "name": "Refresh alarm"
+      },
+      "sinca_refresh_settings": {
+        "name": "Refresh settings"
+      },
+      "sinca_refresh_alarm": {
+        "name": "Refresh alarm"
+      },
+      "sinca_disable_alarm": {
+        "name": "Disable alarm"
       }
     },
     "cover": {
@@ -5418,6 +5427,23 @@
       },
       "smartbed_alarm_time": {
         "name": "Alarm time"
+      },
+      "sinca_alarm_time": {
+        "name": "Alarm time"
+      },
+      "sinca_anti_snore_level": {
+        "name": "Anti-snore level",
+        "state": {
+          "low": "Low",
+          "medium": "Medium",
+          "high": "High"
+        }
+      },
+      "sinca_massage_wave": {
+        "name": "Massage wave"
+      },
+      "sinca_massage_timer": {
+        "name": "Massage timer setting"
       }
     },
     "light": {
@@ -5656,6 +5682,9 @@
       },
       "smartbed_sonic": {
         "name": "Sonic massage"
+      },
+      "sinca_privacy": {
+        "name": "Privacy mode"
       }
     },
     "binary_sensor": {
@@ -5889,6 +5918,12 @@
       },
       "smartbed_alarm_on": {
         "name": "Alarm enabled"
+      },
+      "sinca_alarm_enabled": {
+        "name": "Alarm enabled"
+      },
+      "sinca_anti_snore": {
+        "name": "Automatic anti-snore"
       }
     },
     "number": {
@@ -10507,6 +10542,44 @@
           "description": "How long a motor control runs, 1 to 60000 milliseconds. Default 1000. Other controls keep their own timing."
         }
       }
+    },
+    "sinca_comfort_command": {
+      "name": "Sinca Comfort Bed controls",
+      "description": "Refresh settings, read or disable the alarm, adjust automatic anti-snore, or consume local history.",
+      "fields": {
+        "device_id": {
+          "name": "Devices",
+          "description": "Select one or more Sinca Comfort Bed devices."
+        },
+        "side": {
+          "name": "Side",
+          "description": "Select the left or right side of a combined bed."
+        },
+        "action": {
+          "name": "Action",
+          "description": "Choose which bed operation to run."
+        },
+        "enabled": {
+          "name": "Enable anti-snore",
+          "description": "Turn automatic anti-snore on or off."
+        },
+        "position": {
+          "name": "Adjustment",
+          "description": "Choose head or elevation."
+        },
+        "level": {
+          "name": "Level",
+          "description": "Choose the automatic anti-snore level."
+        },
+        "all_records": {
+          "name": "All records",
+          "description": "Request all stored history instead of just new records."
+        },
+        "confirmed": {
+          "name": "Confirm history acknowledgement",
+          "description": "Let the bed mark report-length history as received. Home Assistant does not save a sleep report."
+        }
+      }
     }
   },
   "exceptions": {
@@ -11196,6 +11269,30 @@
     },
     "smartbed_choose_receiver": {
       "message": "Choose the exact SmartBed receiver in Reconfigure before using saved side controls. Select CB24AB only for a receiver that supports separate Left and Right controls."
+    },
+    "sinca_gatt_roles": {
+      "message": "This receiver is missing the write or notification channel required by Sinca Comfort Bed."
+    },
+    "sinca_hold_invalid": {
+      "message": "Choose an available motor and a hold between 1 millisecond and 60 seconds."
+    },
+    "sinca_receiver_invalid": {
+      "message": "Choose a supported Sinca Comfort Bed receiver."
+    },
+    "sinca_sleep_required": {
+      "message": "This action is available only on the Sleep receiver."
+    },
+    "sinca_history_busy": {
+      "message": "Another history transfer is already running."
+    },
+    "sinca_history_timeout": {
+      "message": "The history transfer did not finish in time."
+    },
+    "sinca_history_limit": {
+      "message": "The history transfer exceeded the local record limit."
+    },
+    "sinca_history_confirm": {
+      "message": "This bed has report-length history. Confirm that the bed may mark those records as received."
     }
   },
   "issues": {
@@ -13323,6 +13420,29 @@
       "options": {
         "central": "Connect to this bed",
         "peripheral": "Join the Pairlink network from this host"
+      }
+    },
+    "sinca_comfort_action": {
+      "options": {
+        "refresh_settings": "Refresh settings",
+        "refresh_alarm": "Refresh alarm",
+        "disable_alarm": "Disable alarm",
+        "anti_snore": "Set automatic anti-snore",
+        "demo_anti_snore": "Demonstrate automatic anti-snore",
+        "consume_history": "Consume local history"
+      }
+    },
+    "sinca_comfort_position": {
+      "options": {
+        "head": "Head",
+        "elevation": "Elevation"
+      }
+    },
+    "sinca_comfort_level": {
+      "options": {
+        "low": "Low",
+        "medium": "Medium",
+        "high": "High"
       }
     }
   }

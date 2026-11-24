@@ -197,6 +197,65 @@ async def test_optional_probe_failure_keeps_bed_command_session():
     assert packets(coordinator) == ["6e02010071", "6e0a000179", "6e1a000088", "6e01006edd"]
 
 
+async def test_notification_teardown_respects_pairing_cancellation():
+    ctrl, coordinator = controller("6BRM")
+    client = coordinator.client
+
+    async def stalled_unsubscribe(_characteristic):
+        await asyncio.sleep(5)
+
+    with virtual_clock() as clock:
+        await ctrl.start_notify()
+        original_session = ctrl._session
+        client.stop_notify.side_effect = stalled_unsubscribe
+        start = clock.now
+        with pytest.raises(TimeoutError):
+            async with asyncio.timeout(0.05):
+                await ctrl.stop_notify()
+        assert clock.now - start == pytest.approx(0.05)
+
+        client.stop_notify.side_effect = None
+        await ctrl.start_notify()
+        assert ctrl._session is not original_session
+        assert client.start_notify.await_count == 2
+        await ctrl.stop_all()
+    assert packets(coordinator)[-1] == "6e01006edd"
+
+
+async def test_cancelled_pairing_defers_stalled_resubscription_until_a_command(hass):
+    ctrl, coordinator = connected_coordinator(hass, "6BRM", "AA:BB:CC:DD:EE:49")
+    client = coordinator.client
+
+    async def stalled_io(*_args):
+        await asyncio.sleep(30)
+
+    with virtual_clock() as clock:
+        await ctrl.start_notify()
+        original_session = ctrl._session
+        coordinator._link_ready = True
+        client.stop_notify.side_effect = stalled_io
+        client.start_notify.side_effect = stalled_io
+        start = clock.now
+        with pytest.raises(TimeoutError):
+            async with asyncio.timeout(0.05):
+                await coordinator.async_release_for_pairing_transfer()
+        assert clock.now - start == pytest.approx(0.05)
+        assert ctrl._session is None
+        assert client.start_notify.await_count == 1
+        assert coordinator.client is client and coordinator.is_connected
+        assert not coordinator._pairing_transfer_active
+        assert not coordinator._lock.locked() and not coordinator._command_lock.locked()
+
+        client.stop_notify.side_effect = None
+        client.start_notify.side_effect = None
+        await coordinator.async_execute_controller_command(lambda current: current.stop_all())
+        assert ctrl._session is not None and ctrl._session is not original_session
+        assert client.start_notify.await_count == 2
+        assert packets(coordinator)[-1] == "6e01006edd"
+    client.is_connected = False
+    await coordinator.async_shutdown()
+
+
 async def test_execution_defaults_for_unconnected_and_one_shot_layouts():
     ctrl, _ = controller("6BRM")
     assert ctrl.execution.hold != "stream"
