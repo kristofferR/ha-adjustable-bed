@@ -177,3 +177,107 @@ BLOCKS.extend(
         (GUIDE, "l2motion-auxiliary", l2motion_auxiliary),
     ]
 )
+
+
+def moodbase_layouts() -> str:
+    from custom_components.adjustable_bed.profiles.moodbase import LAYOUT_EXAMPLES, MoodBaseProfile
+
+    return _block(_table(
+        ("Name selector", "Layout", "Axes and letter pairs", "Memory slots", "Presets"),
+        (
+            (
+                pair + (" / H" if marker == "H" else ""),
+                p.panel,
+                ", ".join(f"{axis} ({up}/{down})" for axis, up, down in p.axes),
+                str(p.memory_slots),
+                ", ".join(key.replace("_", " ") for key, _ in p.presets),
+            )
+            for pair in LAYOUT_EXAMPLES
+            for marker in (("X", "H") if pair in ("15", "35", "45", "85", "C1") else ("X",))
+            for p in (MoodBaseProfile(f"HHC00000{pair}D00{marker}"),)
+        ),
+    ))
+
+
+def moodbase_controls() -> str:
+    from custom_components.adjustable_bed.profiles.moodbase import (
+        LAYOUT_EXAMPLES,
+        SAVE_SNORE,
+        MoodBaseProfile,
+    )
+
+    controls = dict.fromkeys(
+        (c.key, c.letter, c.held, c.release)
+        for pair in LAYOUT_EXAMPLES
+        for flag in ("X", "H")
+        for c in MoodBaseProfile(f"HHC00000{pair}D00{flag}").controls
+    )
+    controls.update(dict.fromkeys((
+        ("save memory 1", "Z", False, "none"),
+        ("save memory 2", "a", False, "none"),
+        ("save anti-snore position", SAVE_SNORE, False, "none"),
+        ("motion stop", "b", False, "five writes"),
+        ("status query", "z", False, "never sent on M"),
+    )))
+    return _block(_table(
+        ("Control", "Plain bytes", "M-name bytes", "Gesture", "Release"),
+        (
+            (
+                key.replace("_", " "),
+                _hex(codec.letter_command(letter)),
+                _hex(wrapped) if (wrapped := codec.short_transport(f"${letter}", wrapped=True)) else "suppressed",
+                "Periodic" if held else "Completed tap" if key == "light_toggle" else "Direct",
+                release,
+            )
+            for key, letter, held, release in controls
+        ),
+    ))
+
+
+def moodbase_auxiliary() -> str:
+    from custom_components.adjustable_bed.profiles.moodbase import (
+        CARRIER_SERVICE_UUID,
+        CHARACTERISTIC_UUID,
+        COLOR_COMMANDS,
+        COLOR_INTERVAL_MS,
+        SETTINGS_DELAY_MS,
+        SYNC_DISABLE,
+        SYNC_ENABLE,
+        SYNC_MODE_COMMAND,
+        TIMER_COMMAND,
+        TIMER_DEFAULT_MINUTES,
+        TIMER_MAX_MINUTES,
+        VIBRATION_MAX,
+        MoodBaseProfile,
+        lighting_frame,
+    )
+
+    p = MoodBaseProfile("HHC0000001DM0X")
+    rows = [
+        ("Service and write/notify channel", f"`{CARRIER_SERVICE_UUID}` / `{CHARACTERISTIC_UUID}`", "Case-insensitive identifier substrings; write without response"),
+        ("Held controls", f"First tick at {p.refresh_ms} ms; repeat every {p.refresh_ms} ms", f"STOP, where used, sends {p.stop_count} writes {p.stop_interval_ms} ms apart"),
+        ("Short release fallback", f"{p.fallback_count} extra frames {p.refresh_ms} ms apart", "Only after a completed release with fewer than five ticks and no release callback"),
+    ]
+    for index, (channel, command) in enumerate(zip(("Red", "Green", "Blue"), COLOR_COMMANDS, strict=True)):
+        rows.append((channel, _hex(lighting_frame(command, 120)), f"Maximum channel value at +{index * COLOR_INTERVAL_MS} ms nominally"))
+    rows.extend((
+        ("Light timer on", _hex(lighting_frame(TIMER_COMMAND, TIMER_DEFAULT_MINUTES)), f"Set {TIMER_DEFAULT_MINUTES} minutes, after {SETTINGS_DELAY_MS} ms"),
+        ("Light timer off", _hex(lighting_frame(TIMER_COMMAND, 0)), f"Set zero, after {SETTINGS_DELAY_MS} ms"),
+        ("Light timer maximum", _hex(lighting_frame(TIMER_COMMAND, TIMER_MAX_MINUTES)), f"Minutes from 0 to {TIMER_MAX_MINUTES}"),
+        ("Alarm off", _hex(codec.decimal_fields("073000", "0017")), f"07:30 example, {SETTINGS_DELAY_MS} ms after query"),
+        ("Alarm strength 1", _hex(codec.decimal_fields("073000", "0118")), f"07:30 example, {SETTINGS_DELAY_MS} ms after query"),
+        ("Alarm strength 2", _hex(codec.decimal_fields("064500", "0219")), f"06:45 example, {SETTINGS_DELAY_MS} ms after query"),
+        ("Synchronize bases", _hex(codec.ascii_command(SYNC_ENABLE)), "Available when the bed reports bound and unsynchronized"),
+        ("Stop synchronization", _hex(codec.ascii_command(SYNC_DISABLE)), "Available when the bed reports bound and synchronized"),
+        ("Wireless mode", _hex(codec.ascii_command(SYNC_MODE_COMMAND, 0)), "Sync settings when unbound"),
+        ("Wired mode", _hex(codec.ascii_command(SYNC_MODE_COMMAND, 1)), "Sync settings when unbound"),
+        ("Vibration", _hex(codec.music_command("V", VIBRATION_MAX)), f"Level 0–{VIBRATION_MAX}; M names add the shared envelope"),
+    ))
+    return _block(_table(("Behavior", "Value or example bytes", "Notes"), rows))
+
+
+BLOCKS.extend([
+    (GUIDE, "moodbase-layouts", moodbase_layouts),
+    (GUIDE, "moodbase-controls", moodbase_controls),
+    (GUIDE, "moodbase-auxiliary", moodbase_auxiliary),
+])

@@ -39,6 +39,7 @@ from .const import (
     BED_TYPE_KEESON,
     BED_TYPE_MLILY,
     BED_TYPE_MLINE,
+    BED_TYPE_MOODBASE,
     BED_TYPE_N32_MOTION_BED,
     BED_TYPE_OCTO,
     BED_TYPE_OKIMIKI,
@@ -103,7 +104,7 @@ from .validators import get_variants_for_bed_type
 # These name hints ask the user which companion app they use. They are not
 # competing receiver signatures for an already configured physical device.
 _GMMOTOR_APP_HINTS: Final = frozenset({"gmmotor", "gmmotor_sleep_mm", "gmmotor_sleep_sxb"})
-_APP_HINTS: Final = _GMMOTOR_APP_HINTS | {"instant_comfort"}
+_APP_HINTS: Final = _GMMOTOR_APP_HINTS | {"instant_comfort", BED_TYPE_MOODBASE}
 
 if TYPE_CHECKING:
     from .coordinator import AdjustableBedCoordinator
@@ -195,6 +196,7 @@ def _reported_recommendation(
         or set(detected.ambiguous_types or ())
         - {BED_TYPE_STARCODE_ABM5_4, "sealy_posturematic"}
         - _GMMOTOR_APP_HINTS
+        - {BED_TYPE_MOODBASE}
     ):
         return None
     # This key changes only for materially different evidence, not releases,
@@ -308,6 +310,7 @@ def recommend_profile(
             "name:resident_app_candidate", "name:mline_app_candidate", "name:yamada_app_candidate",
             "name:n32_app_candidate", "name:betterliving2_app_candidate", "name:okimiki_app_candidate",
             "name:richmat_app_candidate", "name:richmat_sleep_candidate",
+            "name:moodbase_app_candidate",
         )
         for signal in detected.signals
     ):
