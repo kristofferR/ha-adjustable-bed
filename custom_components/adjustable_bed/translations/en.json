@@ -185,6 +185,7 @@
           "check_connected": "Check: connected",
           "check_connected_via": "Check: connected through",
           "check_no_commands": "Check: no commands",
+          "check_truemotion_transport_missing": "⚠️ The receiver does not expose the trueMotion write and notification channels.",
           "check_transport_missing": "Check: connection type missing",
           "check_transport_ok": "Check: connection type available",
           "check_device_info": "Check: device information",
@@ -887,7 +888,10 @@
       "relax_motion_model": "Enter the model number the Relax Motion app shows for your bed.",
       "sleep_assistant_invalid_settings": "Check the selected model settings and device identity.",
       "choice_not_listed": "Pick a row from the list. Type part of a name to search, then choose the matching row.",
-      "invalid_idle_seconds": "Enter a number of seconds from 1 to 300."
+      "invalid_idle_seconds": "Enter a number of seconds from 1 to 300.",
+      "truemotion_name": "Enter the complete Bluetooth name, starting with SUTA-.",
+      "truemotion_gatt": "The receiver does not expose the trueMotion write and notification channels.",
+      "truemotion_pair": "Choose a trueMotion receiver that supports split control as the left side."
     }
   },
   "options": {
@@ -1697,7 +1701,10 @@
       "invalid_variant_for_bed_type": "This bed model or remote does not fit the chosen app. Choose another one, or Automatic.",
       "sleep_assistant_invalid_settings": "Check the selected model settings and device identity.",
       "choice_not_listed": "Pick a row from the list. Type part of a name to search, then choose the matching row.",
-      "invalid_idle_seconds": "Enter a number of seconds from 1 to 300."
+      "invalid_idle_seconds": "Enter a number of seconds from 1 to 300.",
+      "truemotion_name": "Enter the complete Bluetooth name, starting with SUTA-.",
+      "truemotion_gatt": "The receiver does not expose the trueMotion write and notification channels.",
+      "truemotion_pair": "Choose a trueMotion receiver that supports split control as the left side."
     },
     "progress": {
       "connecting": "Connecting over Bluetooth…",
@@ -3807,6 +3814,21 @@
       },
       "sinca_disable_alarm": {
         "name": "Disable alarm"
+      },
+      "truemotion_release": {
+        "name": "Release motion"
+      },
+      "truemotion_version": {
+        "name": "Read firmware version"
+      },
+      "truemotion_beep": {
+        "name": "Enable beep"
+      },
+      "truemotion_timer_head": {
+        "name": "Head massage timer"
+      },
+      "truemotion_timer_foot": {
+        "name": "Foot massage timer"
       }
     },
     "cover": {
@@ -4202,6 +4224,12 @@
       },
       "head_tilt": {
         "name": "Head tilt"
+      },
+      "truemotion_combined": {
+        "name": "Combined movement"
+      },
+      "truemotion_tl": {
+        "name": "T/L movement"
       }
     },
     "sensor": {
@@ -5441,6 +5469,9 @@
       },
       "sinca_massage_timer": {
         "name": "Massage timer setting"
+      },
+      "truemotion_firmware": {
+        "name": "Firmware version"
       }
     },
     "light": {
@@ -5682,6 +5713,9 @@
       },
       "sinca_privacy": {
         "name": "Privacy mode"
+      },
+      "truemotion_lock": {
+        "name": "Child lock"
       }
     },
     "binary_sensor": {
@@ -11255,6 +11289,21 @@
     },
     "sinca_history_confirm": {
       "message": "This bed has report-length history. Confirm that the bed may mark those records as received."
+    },
+    "truemotion_name": {
+      "message": "Enter the complete Bluetooth name, starting with SUTA-."
+    },
+    "truemotion_pair": {
+      "message": "Choose a trueMotion receiver that supports split control as the left side."
+    },
+    "truemotion_gatt": {
+      "message": "The receiver does not expose the trueMotion write and notification channels."
+    },
+    "truemotion_control": {
+      "message": "This trueMotion layout does not offer the {control} control or the requested duration."
+    },
+    "truemotion_massage_off": {
+      "message": "Start a massage timer before changing the massage level."
     }
   },
   "issues": {

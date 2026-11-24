@@ -4613,6 +4613,10 @@ class TestOfflineSafeBedTypes:
                 child[CONF_BLE_DEVICE_NAME] = (
                     "QMS4-left" if child[CONF_SIDE] == SIDE_LEFT else "SealyMF-right"
                 )
+            elif bed_type == "truemotion":
+                child[CONF_BLE_DEVICE_NAME] = (
+                    "SUTA-B604-left" if child[CONF_SIDE] == SIDE_LEFT else "SUTA-B202D-right"
+                )
             elif bed_type == BED_TYPE_LEGGETT_LP_LEGACY:
                 child.update(
                     {

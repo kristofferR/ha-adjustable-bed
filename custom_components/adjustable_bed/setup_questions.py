@@ -328,6 +328,7 @@ _OWNED_BY_BED_TYPE: Final[dict[str, frozenset[str]]] = {
     "super_colchones": GENERIC_FIELDS - {CONF_PROTOCOL_VARIANT, CONF_MOTOR_PULSE_COUNT},
     "sonicsleep": GENERIC_FIELDS - {CONF_MOTOR_PULSE_COUNT},
     "suta": GENERIC_FIELDS - {CONF_MOTOR_PULSE_COUNT},
+    "truemotion": GENERIC_FIELDS,
     "agingplace": GENERIC_FIELDS,
     "hush_sleep_mm": GENERIC_FIELDS,
     "hush_sleep_sxb": GENERIC_FIELDS,
@@ -2381,6 +2382,12 @@ def _suta_derive(data: Mapping[str, Any]) -> dict[str, Any]:
             CONF_MOTOR_PULSE_DELAY_MS: profile.refresh_ms or 150 if profile else 150}
 
 
+def _truemotion_errors(data: Mapping[str, Any]) -> dict[str, str]:
+    from .profiles.truemotion import name_matches
+
+    return {} if name_matches(data.get(CONF_BLE_DEVICE_NAME)) else {CONF_BLE_DEVICE_NAME: "truemotion_name"}
+
+
 def _suta_errors(data: Mapping[str, Any]) -> dict[str, str]:
     from .profiles.suta import profile_for_name
 
@@ -2623,6 +2630,13 @@ SETUP_PROFILES: Final[dict[str, SetupProfile]] = {
         title=lambda _data: "OkinComfortBed Ⅱ (Jalon)",
     ),
     **_BASE,
+    "truemotion": SetupProfile(
+        owns={CONF_MOTOR_COUNT: 2, CONF_HAS_MASSAGE: False, CONF_DISABLE_ANGLE_SENSING: True,
+              CONF_MOTOR_PULSE_COUNT: 1, CONF_MOTOR_PULSE_DELAY_MS: 150},
+        questions=(Question(CONF_BLE_DEVICE_NAME, default="", text=True),),
+        validate=_truemotion_errors, seed=_motion_bed_seed,
+        imports=("profiles.truemotion",),
+    ),
     "suta": SetupProfile(
         owns={CONF_MOTOR_COUNT: 2, CONF_HAS_MASSAGE: False,
               CONF_DISABLE_ANGLE_SENSING: SET_BY_PROFILE, CONF_MOTOR_PULSE_DELAY_MS: SET_BY_PROFILE},

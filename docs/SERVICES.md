@@ -314,6 +314,10 @@ data:
   side: both
 ```
 
+On [trueMotion](beds/suta.md#truemotion), Stop all sends the motor-only
+release on motion-only layouts. On layouts with a dedicated Stop button it
+sends motor STOP followed by separate Head and Foot massage timer-off bursts.
+
 ## Held Controls, Rename and Clock
 
 

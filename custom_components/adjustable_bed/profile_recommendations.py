@@ -51,6 +51,7 @@ from .const import (
     BED_TYPE_SLEEPYS_BOX25,
     BED_TYPE_SOMOS,
     BED_TYPE_STARCODE_ABM5_4,
+    BED_TYPE_TRUEMOTION,
     BED_TYPE_YAMADA,
     CONF_BED_TYPE,
     CONF_PROTOCOL_VARIANT,
@@ -104,7 +105,7 @@ from .validators import get_variants_for_bed_type
 # These name hints ask the user which companion app they use. They are not
 # competing receiver signatures for an already configured physical device.
 _GMMOTOR_APP_HINTS: Final = frozenset({"gmmotor", "gmmotor_sleep_mm", "gmmotor_sleep_sxb"})
-_APP_HINTS: Final = _GMMOTOR_APP_HINTS | {"instant_comfort", BED_TYPE_SIMMONS_BLUE}
+_APP_HINTS: Final = _GMMOTOR_APP_HINTS | {"instant_comfort", BED_TYPE_SIMMONS_BLUE, BED_TYPE_TRUEMOTION}
 
 if TYPE_CHECKING:
     from .coordinator import AdjustableBedCoordinator
@@ -195,7 +196,7 @@ def _reported_recommendation(
         or detected.requires_characteristic_check
         or set(detected.ambiguous_types or ())
         - {BED_TYPE_STARCODE_ABM5_4, "sealy_posturematic"}
-        - _GMMOTOR_APP_HINTS
+        - (_GMMOTOR_APP_HINTS | {BED_TYPE_TRUEMOTION})
     ):
         return None
     # This key changes only for materially different evidence, not releases,

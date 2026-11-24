@@ -2503,6 +2503,43 @@
   "card_section": "lighting",
   "card_role": "toggle"
  },
+ "button:truemotion_beep": {
+  "card_section": "utility"
+ },
+ "button:truemotion_combined_down": {
+  "card_section": "motors",
+  "card_role": "down",
+  "card_motor": "truemotion_combined"
+ },
+ "button:truemotion_combined_up": {
+  "card_section": "motors",
+  "card_role": "up",
+  "card_motor": "truemotion_combined"
+ },
+ "button:truemotion_release": {
+  "card_section": "hidden"
+ },
+ "button:truemotion_timer_foot": {
+  "card_section": "massage",
+  "card_role": "timer"
+ },
+ "button:truemotion_timer_head": {
+  "card_section": "massage",
+  "card_role": "timer"
+ },
+ "button:truemotion_tl_down": {
+  "card_section": "motors",
+  "card_role": "down",
+  "card_motor": "truemotion_tl"
+ },
+ "button:truemotion_tl_up": {
+  "card_section": "motors",
+  "card_role": "up",
+  "card_motor": "truemotion_tl"
+ },
+ "button:truemotion_version": {
+  "card_section": "utility"
+ },
  "button:ultramatic_foot_down": {
   "card_section": "motors",
   "card_role": "down",
@@ -3129,6 +3166,14 @@
  "cover:tilt": {
   "card_section": "motors",
   "card_motor": "tilt"
+ },
+ "cover:truemotion_combined": {
+  "card_section": "motors",
+  "card_motor": "truemotion_combined"
+ },
+ "cover:truemotion_tl": {
+  "card_section": "motors",
+  "card_motor": "truemotion_tl"
  },
  "cover:tv_lift": {
   "card_section": "motors",
@@ -4863,6 +4908,9 @@
  "sensor:timotion_ahf_status": {
   "card_section": "hidden"
  },
+ "sensor:truemotion_firmware": {
+  "card_section": "hidden"
+ },
  "sensor:ultramatic_a_alarm": {
   "card_section": "utility"
  },
@@ -5155,6 +5203,9 @@
   "card_section": "motors"
  },
  "switch:synchronization": {
+  "card_section": "utility"
+ },
+ "switch:truemotion_lock": {
   "card_section": "utility"
  },
  "switch:under_bed_lights": {

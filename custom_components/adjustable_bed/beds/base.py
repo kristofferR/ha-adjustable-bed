@@ -12,6 +12,7 @@ import logging
 from abc import abstractmethod
 from collections.abc import (
     AsyncIterator,
+    Awaitable,
     Callable,
     Coroutine,
     Iterator,
@@ -257,6 +258,11 @@ class BedController(GattWriter):
     def reconnect_for_explicit_stop(self) -> bool:
         """Whether a released paired side must reconnect for a user-requested STOP."""
         return False
+
+    @property
+    def paired_cleanup_stop(self) -> Callable[[], Awaitable[None]] | None:
+        """Motor-only cleanup to run on the current link after a paired failure."""
+        return None
 
     @property
     def execution(self) -> ExecutionCapabilities:

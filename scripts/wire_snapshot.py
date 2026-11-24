@@ -1262,6 +1262,8 @@ class Scenario:
     layout_id: str | None = None
     # Properties every characteristic advertises, overriding the stored layout.
     properties: tuple[str, ...] | None = None
+    # BLE name of the primary receiver, when capturing a split editor.
+    pair_primary: str | None = None
 
 
 def _base_entry_data() -> dict[str, Any]:
@@ -1398,6 +1400,10 @@ def default_scenario(bed_type: str) -> Scenario:
         variant = "a00a"
         data.update({const.CONF_PRODUCT_TYPE: "quest", const.CONF_PROTOCOL_VARIANT: variant,
                      const.CONF_BLE_DEVICE_NAME: "KSWF07D00000000"})
+    if bed_type == const.BED_TYPE_TRUEMOTION:
+        return Scenario(id=bed_type, bed_type=bed_type,
+                        entry_data={const.CONF_BLE_DEVICE_NAME: "SUTA-M510"},
+                        layout_id="truemotion")
     if bed_type == const.BED_TYPE_SUTA:
         data[const.CONF_BLE_DEVICE_NAME] = "SUTA-unknown"
     if bed_type == const.BED_TYPE_ULTRAMATIC_SMART_BED:
@@ -2165,6 +2171,15 @@ def feature_scenarios(by_id: dict[str, Scenario]) -> list[Scenario]:
             entry_data={"product_type": "2", "ble_device_name": "okin-ble123"},
             replies={"*": "edfe00000000000005000000000023"},
         ))
+    for name in ("B202", "B205", "B206A", "B207", "B301", "B402", "B603", "B903"):
+        routes.append(Scenario(id=f"truemotion:{name}", bed_type="truemotion",
+                               entry_data={"ble_device_name": f"SUTA-{name}"}, layout_id="truemotion"))
+
+    for name in ("B202D", "B205", "B604"):
+        routes.append(Scenario(id=f"truemotion:split:{name}", bed_type="truemotion",
+                               entry_data={"ble_device_name": "SUTA-B202D-right"},
+                               layout_id="truemotion", pair_primary=f"SUTA-{name}"))
+
     # Accepted SUTA name partition, including the full-name service distinction.
     from custom_components.adjustable_bed.profiles.suta import ROUTES as SUTA_ROUTES
     from custom_components.adjustable_bed.profiles.suta import service_for_name
@@ -2370,6 +2385,22 @@ async def _build(scenario: Scenario, client: Any) -> Any:
         {**_base_entry_data(), **scenario.entry_data},
     )
     coordinator.client = client
+    if scenario.pair_primary is not None:
+        from custom_components.adjustable_bed.const import CONF_BED_TYPE, CONF_BLE_DEVICE_NAME
+        from custom_components.adjustable_bed.coordinator import ChildEntryView
+        from custom_components.adjustable_bed.pairing import (
+            build_pair_entry_data,
+            effective_child_data,
+        )
+
+        right = {**coordinator.entry.data, CONF_BED_TYPE: scenario.bed_type,
+                 "address": coordinator.address}
+        left = {**right, CONF_BLE_DEVICE_NAME: scenario.pair_primary, "address": "AA:BB:CC:DD:EE:01"}
+        coordinator.entry.data = build_pair_entry_data(left, right, name="Wire Snapshot Pair")
+        parent = cast(Any, coordinator.entry)
+        cast(Any, coordinator).entry = ChildEntryView(
+            parent, effective_child_data(parent.data, "right"), lambda _data: None,
+        )
     controller = await create_controller(
         cast(Any, coordinator),
         scenario.bed_type,

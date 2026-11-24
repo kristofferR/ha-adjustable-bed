@@ -163,6 +163,7 @@ from .const import (
     BED_TYPE_SYMPHONY_SLEEP,
     BED_TYPE_TIMOTION_AHF,
     BED_TYPE_TRANQUIL,
+    BED_TYPE_TRUEMOTION,
     BED_TYPE_VIBRADORM,
     BED_TYPE_VIBRADORM_APP,
     BED_TYPE_VMATBASIC,
@@ -782,6 +783,7 @@ BED_TYPE_DISPLAY_NAMES: dict[str, str] = {
     BED_TYPE_STAR_ELEVATE: "DewertOkin Elevate lift (two motors)",
     BED_TYPE_SOLACE: "Solace (HomeKobo, Sealy MotionFlex and Sweet Night apps)",
     BED_TYPE_SUTA: "SUTA Smart Home app",
+    BED_TYPE_TRUEMOTION: "trueMotion app",
     "paramount": "Paramount Bed Operation (ベッド操作)",
     BED_TYPE_BEDJET_POWERLAYER: "BedJet PowerLayer adjustable frame",
     BED_TYPE_SVANE: "Svane Remote app",
@@ -1449,6 +1451,18 @@ def _detect_with_first_pass(
 ) -> DetectionResult:
     """Offer Good Vibe Sleep without changing an existing receiver/app choice."""
     result = _detect_bed_type_with_app_candidates(service_info, first)
+    # The scan name chooses a trueMotion layout after explicit app selection.
+    # It is shared with the SUTA receiver route and supplies no receiver evidence.
+    if first.name(BED_TYPE_TRUEMOTION) and not any(
+        signal.startswith("excluded:") or signal == "name:suta_accessory"
+        for signal in result.signals
+    ):
+        signal = "app_hint:truemotion"
+        if result.bed_type is None:
+            result = DetectionResult(BED_TYPE_TRUEMOTION, 0.3, [*result.signals, signal])
+        else:
+            result.ambiguous_types = [*(result.ambiguous_types or ()), BED_TYPE_TRUEMOTION]
+            result.signals.append(signal)
     from .profiles.sleep_assistant import discovered as sleep_assistant_discovered
     if sleep_assistant_discovered(service_info.name or ""):
         if result.bed_type is None:

@@ -33,6 +33,7 @@ from .beds.base import CONTROLLER_GESTURE_RELEASE, BedController
 from .beds.cancellation import settled
 from .beds.remacro.discovery import remacro_side_lacks_global_stop
 from .command_scheduler import (
+    PAIRED_CLEANUP_STOP,
     CommandHandle,
     CommandKind,
     HoldClaim,
@@ -569,8 +570,12 @@ class PairedBedCoordinator:
                 child.request_command_cancel(resources=resources)
 
     async def _stop_children(self, targets: list[PairTarget]) -> dict[str, BaseException]:
-        """Send STOP through the current topology's fan-out, collecting failures."""
-        return await self._topology.stop_children(targets)
+        """Send cleanup STOP through the current topology, collecting failures."""
+        token = PAIRED_CLEANUP_STOP.set(True)
+        try:
+            return await self._topology.stop_children(targets)
+        finally:
+            PAIRED_CLEANUP_STOP.reset(token)
 
     async def async_stop_motor(
         self,

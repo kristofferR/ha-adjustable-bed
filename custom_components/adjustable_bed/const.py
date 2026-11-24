@@ -703,6 +703,7 @@ BED_TYPE_REMACRO: Final = (
 )
 BED_TYPE_COOLBASE: Final = "coolbase"  # Cool Base (Keeson BaseI5 with fan control)
 BED_TYPE_SCOTT_LIVING: Final = "scott_living"  # Scott Living 9-byte protocol
+BED_TYPE_TRUEMOTION: Final = "truemotion"
 BED_TYPE_SUTA: Final = "suta"  # SUTA Smart Home AT protocol (ASCII + CRLF)
 BED_TYPE_PARAMOUNT: Final = "paramount"
 BED_TYPE_TIMOTION_AHF: Final = "timotion_ahf"  # TiMOTION AHF 11-byte bitmask protocol
@@ -933,6 +934,7 @@ SUPPORTED_BED_TYPES: Final = [
     BED_TYPE_SCOTT_LIVING,
     # SUTA Smart Home AT protocol
     BED_TYPE_SUTA,
+    BED_TYPE_TRUEMOTION,
     # TiMOTION AHF protocol
     BED_TYPE_TIMOTION_AHF,
     # Kaidi (Rize/Floyd/ISleep)
@@ -1011,6 +1013,7 @@ OFFLINE_CAPABILITY_SAFE_BED_TYPES: Final = frozenset(
         BED_TYPE_RONDURE,
         BED_TYPE_SCOTT_LIVING,
         BED_TYPE_SUTA,
+        BED_TYPE_TRUEMOTION,
         BED_TYPE_TIMOTION_AHF,
         # One fixed frame layout; the GATT name is cosmetic and grants no controls.
         BED_TYPE_BEDJET_POWERLAYER,
