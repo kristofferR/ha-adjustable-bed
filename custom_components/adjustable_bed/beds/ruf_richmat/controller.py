@@ -243,6 +243,7 @@ class RufRichmatController(RichmatMhController):
             bool(self._stored_snapshot.get("normal_ready")) and self._normal_selected
         )
         self._normal_values: dict[tuple[int, int], int] = {}
+        self._normal_sides: set[int] = set()
         self._ranges: dict[int, tuple[int, int]] = {}
         self._calendar_alarms: dict[int, dict[str, int]] = {}
 
@@ -476,6 +477,7 @@ class RufRichmatController(RichmatMhController):
         pending = self._pending = SessionFlags()
         self._normal_ready = False
         self._normal_values.clear()
+        self._normal_sides.clear()
         try:
             await asyncio.sleep(0.1 if self._app in ("ruf", "bailey2", "americanstar") else 0.3)
             await self._write_query(TX_VERSION)
@@ -666,11 +668,16 @@ class RufRichmatController(RichmatMhController):
         if side not in (1, 2):
             return
         self._normal_ready = True
+        self._normal_sides.add(side)
         for offset in range(0, 20, 2):
             self._normal_values[side, body[offset]] = body[offset + 1]
         if body[20] == 0x0B:
             self._normal_reply(finalize([0x5E, side, *body[20:25], 0]))
         self._publish_normal()
+
+    def _normal_side_ready(self, side: str | None) -> bool:
+        """The app shows a side only after that side's own startup reply."""
+        return self._normal_ready and {"left": 1, "right": 2}.get(side or "") in self._normal_sides
 
     def _normal_reply(self, raw: bytes) -> None:
         if not self._normal_ready or len(raw) not in (5, 8) or raw[1] not in (1, 2):
@@ -783,26 +790,21 @@ class RufRichmatController(RichmatMhController):
 
     async def normal_setting(self, side: str, setting: str, option: str) -> None:
         spec = self.normal_settings.get(setting)
-        if (
-            not self._normal_ready
-            or side not in ("left", "right")
-            or spec is None
-            or option not in spec[1]
-        ):
+        if not self._normal_side_ready(side) or spec is None or option not in spec[1]:
             raise ValueError("The selected mattress has not reported this setting")
         await self.write_command(
             mattress_frame(1 if side == "left" else 2, spec[0], spec[1][option])
         )
 
     async def normal_pillow_stop(self, side: str) -> None:
-        if not self._normal_ready or side not in ("left", "right"):
+        if not self._normal_side_ready(side):
             raise ValueError("The selected mattress has no initialized pillow")
         await self.write_command(
             mattress_frame(1 if side == "left" else 2, 6, 0), cancel_event=asyncio.Event()
         )
 
     async def normal_pillow(self, side: str, direction: int) -> None:
-        if not self._normal_ready or side not in ("left", "right") or direction not in (1, 2):
+        if not self._normal_side_ready(side) or direction not in (1, 2):
             raise ValueError("The selected mattress has no initialized pillow")
         try:
             await self.write_command(mattress_frame(1 if side == "left" else 2, 6, direction))
@@ -955,7 +957,7 @@ class RufRichmatController(RichmatMhController):
         if request.family == "calendar" and not request.delete and self.model:
             if request.mode not in _ints(_feature(self._app, self.model.model_id, "alarmList")):
                 raise ValueError("Choose an alarm position from this model's alarm list")
-        if request.family == "mattress" and not self._normal_ready:
+        if request.family == "mattress" and not self._normal_side_ready(request.mattress_side):
             raise ValueError(
                 "This alarm needs the normal mattress model. Choose it in Reconfigure, then wait until the bed has started up"
             )
@@ -997,4 +999,5 @@ class RufRichmatController(RichmatMhController):
         super().on_disconnect()
         self._normal_ready = False
         self._normal_values.clear()
+        self._normal_sides.clear()
         self._ranges.clear()

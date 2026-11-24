@@ -164,7 +164,8 @@ is separate from recall; a long-code field alone never enables a held command.
 Massage buttons, timers, heat, resets and additional app-labelled actions use
 only their app/model catalog bindings. A model with more than one of the 10, 20
 and 30 minute massage timers shows them as one **Massage timer** select
-(durations only); each option sends that timer's button command. Slider ranges come from that model's
+(durations only); each option sends that timer's button command. Timers the app labels
+in hours (2, 3 and 5 hours) show as `2 h`, `3 h` and `5 h`. Slider ranges come from that model's
 entities; feedback clamps to those ranges. A checksum or GATT completion does
 not prove that a physical operation succeeded.
 
@@ -226,8 +227,9 @@ month/day/hour/minute/second. The app format loses DST/fractional-hour precision
 - `6e20` carries extended motor, range, massage, mode and calendar records.
   RUF's extended angle offset differs and does not expose a generic slider.
 - Exactly 28-byte powered/checksummed `5e1a` initialization enables an explicitly
-  selected normal mattress; exactly 31-byte powered/checksummed `5e1b` enables
-  waist controls. `5e01/02` and `5e03` update the respective state families.
+  selected normal mattress, and a side accepts settings, pillow moves and alarms
+  only after that side's own `5e1a` reply; exactly 31-byte powered/checksummed
+  `5e1b` enables waist controls. `5e01/02` and `5e03` update the respective state families.
 - Waist warmth initialization routes by property key; duplicate keys use the
   last reported value. Alarm and setting replies are asynchronous state, not
   correlated command acknowledgments.
