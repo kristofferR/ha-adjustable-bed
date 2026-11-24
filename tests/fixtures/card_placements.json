@@ -3469,6 +3469,13 @@
  "number:maxprime_massage_position": {
   "card_section": "massage"
  },
+ "number:moodbase_light_timer": {
+  "card_section": "lighting",
+  "card_role": "timer_minutes"
+ },
+ "number:moodbase_vibration": {
+  "card_section": "massage"
+ },
  "number:motion_bed_brightness": {
   "card_section": "lighting",
   "card_role": "level"
@@ -3790,6 +3797,9 @@
   "card_role": "timer"
  },
  "select:maxprime_axis": {
+  "card_section": "utility"
+ },
+ "select:moodbase_sync_mode": {
   "card_section": "utility"
  },
  "select:motion_bed_active_module": {
@@ -5118,6 +5128,13 @@
  },
  "switch:massage": {
   "card_section": "massage"
+ },
+ "switch:moodbase_light_timer_enabled": {
+  "card_section": "lighting",
+  "card_role": "timer_toggle"
+ },
+ "switch:moodbase_sync_enabled": {
+  "card_section": "utility"
  },
  "switch:motion_bed_night_light_enabled": {
   "card_section": "lighting"

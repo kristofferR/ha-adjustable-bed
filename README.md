@@ -136,6 +136,7 @@ bed has been tested on real hardware.
 | [Sinca Comfort Bed](docs/beds/mline.md#sinca-comfort-bed) | The Comfort Bed App (Sinca) | OKIN |
 | [M Line](docs/beds/mline.md) | M Line | OKIN |
 | [MotoMotion](docs/beds/motomotion.md) | [MotoMotion](docs/beds/motomotion.md) | MotoMotion |
+| [MoodBase](docs/beds/motomotion.md#moodbase) | [MoodBase](docs/beds/motomotion.md#moodbase) | Bob Mills Furniture (HHC receivers) |
 | [MotoSleep / Power Bob](docs/beds/motomotion.md#motosleep-and-power-bob-family) | [MotoSleep / Power Bob app, HHC models](docs/beds/motomotion.md#hhc-profiles-names-longer-than-14-characters), [Power Bob and binary MOTO models](docs/beds/motomotion.md#power-bob-profiles-14-character-names) | HHC, Power Bob |
 | [Nerum](docs/beds/nerum.md) | Nerum | Nerum |
 | [Nisco](docs/beds/richmat.md#nisco) | Nisco app and its separate HJ_Bed sleep receiver | Nisco |

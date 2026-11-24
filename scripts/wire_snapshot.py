@@ -445,7 +445,9 @@ def plan_commands(controller: Any) -> list[Command]:
             plan.append(
                 Command(
                     f"select:{spec.key}={option}",
-                    lambda ctrl, fn=spec.select_fn, o=option: fn(ctrl, o),
+                    lambda ctrl, fn=spec.select_fn, o=option, key=spec.key: (
+                        _moodbase_mode(ctrl, o) if key == "moodbase_sync_mode" else fn(ctrl, o)
+                    ),
                     True,
                 )
             )
@@ -454,7 +456,9 @@ def plan_commands(controller: Any) -> list[Command]:
             plan.append(
                 Command(
                     f"switch:{spec.key}={'on' if on else 'off'}",
-                    lambda ctrl, fn=spec.set_fn, v=on: fn(ctrl, v),
+                    lambda ctrl, fn=spec.set_fn, v=on, spec_key=spec.key: (
+                        _moodbase_sync(ctrl, v) if spec_key == "moodbase_sync_enabled" else fn(ctrl, v)
+                    ),
                     True,
                 )
             )
@@ -469,6 +473,15 @@ def plan_commands(controller: Any) -> list[Command]:
             )
     if _value(_value(controller, "_coordinator", None), "bed_type", None) == "betterliving2":
         plan = _betterliving2_historical_actions(plan, _value(controller, "wire", ""))
+    if controller._coordinator.bed_type == "moodbase" and controller.alarm_capability:
+        from custom_components.adjustable_bed.alarm import AlarmRequest
+
+        for intensity in (0, 1, 2):
+            alarm = AlarmRequest(
+                enabled=bool(intensity), hour=6, minute=45, massage_intensity=intensity or 1,
+                reference_time=datetime.datetime.fromisoformat(FROZEN_NOW),
+            )
+            plan.append(Command(f"set_alarm:{intensity}", _method("configure_alarm", alarm), True))
     for name in sorted(LATE_ACTIONS):
         if _overrides(controller, name):
             plan.append(Command(name, _method(name), _flag(controller, ACTION_FLAGS.get(name))))
@@ -585,6 +598,25 @@ def _betterliving2_historical_actions(plan: list[Command], protocol: str) -> lis
             )
         )
     return result
+
+
+def _moodbase_report_binding(controller: Any, binding: str) -> None:
+    link = controller._current()
+    fields = ["0"] * 39
+    fields[27] = binding
+    controller._notification(link, link.write, bytearray(b"$" + " ".join(fields).encode()))
+    controller._notification(link, link.write, bytearray(b"R\r"))
+
+
+async def _moodbase_sync(controller: Any, enabled: bool) -> None:
+    # Exercise each switch direction from the opposite receiver state.
+    _moodbase_report_binding(controller, "00066" if enabled else "00065")
+    await controller.set_sync(enabled)
+
+
+async def _moodbase_mode(controller: Any, mode: str) -> None:
+    _moodbase_report_binding(controller, "00000")
+    await controller.set_sync_mode(mode)
 
 
 def _argument_commands(controller: Any) -> list[Command]:
@@ -1491,7 +1523,7 @@ def default_scenario(bed_type: str) -> Scenario:
     if bed_type == const.BED_TYPE_SYMPHONY_SLEEP:
         variant = "box1"
         data.update({const.CONF_PRODUCT_TYPE: "400E", const.CONF_PROTOCOL_VARIANT: variant})
-    if bed_type in (const.BED_TYPE_BEDGEAR, const.BED_TYPE_L2MOTION):
+    if bed_type in (const.BED_TYPE_BEDGEAR, const.BED_TYPE_L2MOTION, const.BED_TYPE_MOODBASE):
         data[const.CONF_BLE_DEVICE_NAME] = "HHC0000001D00X"
     if bed_type == const.BED_TYPE_JALON:
         data.update({const.CONF_PRODUCT_TYPE: "2", const.CONF_BLE_DEVICE_NAME: "smartbed123"})
@@ -1608,7 +1640,7 @@ def default_scenario(bed_type: str) -> Scenario:
         replies = {"write:a0b156": "a0b15689070707ba"}
     return Scenario(
         id=bed_type,
-        layout_id="bedgear" if bed_type == const.BED_TYPE_L2MOTION else "adjustable_lumbar" if bed_type == const.BED_TYPE_ADJUSTABLE_BED else None,
+        layout_id="bedgear" if bed_type in (const.BED_TYPE_L2MOTION, const.BED_TYPE_MOODBASE) else "adjustable_lumbar" if bed_type == const.BED_TYPE_ADJUSTABLE_BED else None,
         bed_type=bed_type,
         protocol_variant=variant,
         entry_data=data,
@@ -2425,6 +2457,22 @@ def build_scenarios() -> list[Scenario]:
     for suffix in ("DMH", "DE0", "B00", "CD0"):
         scenarios.append(Scenario(id=f"l2motion:flags:{suffix}", bed_type="l2motion", layout_id="bedgear",
             entry_data={"ble_device_name": "HHC0000015" + suffix[:2] + "0" + suffix[2]}))
+
+    from custom_components.adjustable_bed.profiles.moodbase import (
+        LAYOUT_EXAMPLES as MOODBASE_LAYOUTS,
+    )
+
+    for pair in MOODBASE_LAYOUTS:
+        if pair != "01":
+            scenarios.append(Scenario(id=f"moodbase:{pair}", bed_type="moodbase", layout_id="bedgear",
+                entry_data={"ble_device_name": f"HHC00000{pair}D000"}))
+    for label, suffix in (
+        ("rgb", "15DM0X"), ("timer", "15CM00"), ("alarm", "E1DE00"),
+        ("vibration", "01B000"), ("wrapped_vibration", "01BM00"),
+        ("extra_lowercase", "35D00H"),
+    ):
+        scenarios.append(Scenario(id=f"moodbase:{label}", bed_type="moodbase", layout_id="bedgear",
+            entry_data={"ble_device_name": "HHC00000" + suffix}))
 
     by_id = {scenario.id: scenario for scenario in scenarios}
     scenarios.extend(feature_scenarios(by_id))
