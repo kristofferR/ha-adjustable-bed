@@ -7205,7 +7205,7 @@
       "paramount_speed": {
         "name": "Bed speed",
         "state": {
-          "slow": "Slow",
+          "slow": "Normal",
           "fast": "Fast"
         }
       },
