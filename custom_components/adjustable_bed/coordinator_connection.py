@@ -45,6 +45,7 @@ from .ble_auth import is_ble_authentication_error as _is_ble_authentication_erro
 from .bluetooth_diagnostics import connection_reachability
 from .bluetooth_freshness import async_check_advertisement
 from .bluetooth_transport import (
+    TransportClass,
     advertised_local_name,
     async_connection_paths,
     async_path_for_source,
@@ -112,6 +113,8 @@ _LOGGER = logging.getLogger(f"{__package__}.coordinator")
 # Share a connection across rapid taps, then give the physical remote back its link.
 _COMMAND_BURST_GRACE_SECONDS = 1.0
 _PAIRING_RELEASE_RESTORE_TIMEOUT = 5.0
+# Weaker than this, a connect that times out is explained by range alone.
+_STALL_MIN_RSSI = -70
 # Delay before recovering a link the bed or adapter dropped.
 _AUTO_RECONNECT_DELAY_SECONDS = 5.0
 # A bed that asks for recovery is retried half as often after each failure,
@@ -320,6 +323,34 @@ class CoordinatorConnectionMixin:
             and last.get("error_type") == BleakAbortedError.__name__
             and async_check_advertisement(self.hass, self._address).is_fresh
         )
+
+    @property
+    def stalls_on_host_adapter(self: AdjustableBedCoordinator) -> bool:
+        """Return whether the last connection failure points at the host adapter.
+
+        The bed is advertising with a strong signal and only adapters in the Home
+        Assistant host can reach it, yet the connect timed out before a link came
+        up. Power and range are then not the problem: either a phone holds the
+        link, or this adapter cannot complete a link to this bed (#633), which a
+        Bluetooth proxy sidesteps.
+        """
+        attempts = self.connection_attempt_details
+        last = attempts[-1] if attempts else {}
+        if (
+            last.get("result") != "failed"
+            or last.get("error_category") != "CONNECTION TIMEOUT"
+            # A link came up, so its startup or pairing failed, not the adapter.
+            or last.get("link_up")
+        ):
+            return False
+        paths = async_connection_paths(self.hass, self._address)
+        if not paths or any(path.transport is not TransportClass.LOCAL for path in paths):
+            return False
+        for path in paths:
+            evidence = async_check_advertisement(self.hass, self._address, source=path.source)
+            if evidence.is_fresh and evidence.rssi is not None and evidence.rssi >= _STALL_MIN_RSSI:
+                return True
+        return False
 
     @property
     def connection_settings(self: AdjustableBedCoordinator) -> ConnectionSettings:
@@ -1147,6 +1178,7 @@ class CoordinatorConnectionMixin:
                                 pair=use_pairing and not pair_after_service_discovery,
                                 use_services_cache=not disable_cache,
                             )
+                        attempt_details["link_up"] = True
                         self._start_furnimove_bond_request(device)
                         if self._bed_type == BED_TYPE_VIBRADORM_APP:
                             # Pairing must use the path actually selected by HA,
@@ -1924,6 +1956,13 @@ class CoordinatorConnectionMixin:
                 "means it has not paired with this Bluetooth adapter. It pairs only "
                 "during the first 3 minutes after power-on: unplug it for 60 seconds, "
                 "plug it back in, then use it within 3 minutes"
+            )
+        elif self.stalls_on_host_adapter:
+            advice = (
+                "The bed is advertising with a strong signal but the connection does "
+                "not complete. Close any phone app connected to it. If none is, this "
+                "Bluetooth adapter may not work with this bed: try an ESPHome "
+                "Bluetooth proxy or another adapter near the bed"
             )
         else:
             advice = (

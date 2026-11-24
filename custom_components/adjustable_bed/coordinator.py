@@ -1984,6 +1984,8 @@ class AdjustableBedCoordinator(
         """Return why the bed could not be reached, naming a closed pairing window."""
         if self.refused_outside_pairing_window:
             return BedNotConnectedError("bed_pairing_window_closed")
+        if self.stalls_on_host_adapter:
+            return BedNotConnectedError("bed_connection_stalls")
         return BedNotConnectedError()
 
     async def _async_send_stop_command(
