@@ -6271,9 +6271,6 @@
       "sleepys_app_target_axis_2": {
         "name": "Lumbar target position"
       },
-      "sleepys_app_color_code": {
-        "name": "Light color"
-      },
       "adjustamattress_alarm_draft_hour": {
         "name": "Alarm hour"
       },
@@ -6393,9 +6390,6 @@
       },
       "richmat_rise_lamp_seconds": {
         "name": "Lamp timer"
-      },
-      "symphony_light_color": {
-        "name": "Light color"
       },
       "symphony_light_brightness": {
         "name": "Light brightness"
@@ -6592,6 +6586,30 @@
         "state": {
           "wireless": "Wireless",
           "wired": "Wired"
+        }
+      },
+      "sleepys_app_light_color": {
+        "name": "Light color",
+        "state": {
+          "white": "White",
+          "red": "Red",
+          "orange": "Orange",
+          "yellow": "Yellow",
+          "green": "Green",
+          "blue": "Blue",
+          "purple": "Purple"
+        }
+      },
+      "symphony_light_color": {
+        "name": "Light color",
+        "state": {
+          "white": "White",
+          "red": "Red",
+          "orange": "Orange",
+          "yellow": "Yellow",
+          "green": "Green",
+          "blue": "Blue",
+          "purple": "Purple"
         }
       },
       "reverie_massage_wave": {

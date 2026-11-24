@@ -57405,7 +57405,7 @@
 "preset_lounge": {"error":"ValueError","status":"error","writes":[]}
 }},
 "symphony:12:9": {
-"info": {"bed_type": "symphony", "controller": "SymphonyController", "gaps": ["button:symphony_massage_head_strength", "button:symphony_massage_foot_strength", "button:symphony_massage_wave_next", "button:symphony_massage_timer", "number:symphony_light_color=1", "number:symphony_light_color=7", "number:symphony_light_brightness=20", "number:symphony_light_brightness=80"], "module": "symphony.controller", "pulse": [10, 100]},
+"info": {"bed_type": "symphony", "controller": "SymphonyController", "gaps": ["button:symphony_massage_head_strength", "button:symphony_massage_foot_strength", "button:symphony_massage_wave_next", "button:symphony_massage_timer", "select:symphony_light_color=white", "select:symphony_light_color=red", "select:symphony_light_color=orange", "select:symphony_light_color=yellow", "select:symphony_light_color=green", "select:symphony_light_color=blue", "select:symphony_light_color=purple", "number:symphony_light_brightness=20", "number:symphony_light_brightness=80"], "module": "symphony.controller", "pulse": [10, 100]},
 "commands": {
 "connect": {"status":"ok","writes":[[0,"6e400003","notify","",1,0],[0,"6e400002",true,"2a000005810901ffff00002225124b",1,0],[7,"00002a26","read","",1,0],[7,"00002a27","read","",1,0],[107,"6e400002",true,"aa00000301071a010205030405",1,0],[114,"6e400002",true,"2a0000078100",1,0],[121,"6e400002",true,"2a0000068100",1,0],[128,"6e400002",true,"2a0000048100",1,0],[235,"6e400002",true,"2a000003810101",1,0]]},
 "head_up": {"status":"ok","writes":[[0,"6e400002",true,"aa000001010401000000",1,0],[1000,"6e400002",true,"aa000001010400000000",1,0],[1007,"6e400002",true,"aa0000010200",1,0]]},
@@ -57485,6 +57485,13 @@
 "button:symphony_massage_foot_strength": {"error":"ValueError","status":"error","writes":[[0,"6e400002",true,"2a0000068100",1,0]]},
 "button:symphony_massage_wave_next": {"error":"ValueError","status":"error","writes":[[0,"6e400002",true,"2a0000068100",1,0]]},
 "button:symphony_massage_timer": {"error":"ValueError","status":"error","writes":[[0,"6e400002",true,"2a0000068100",1,0]]},
+"select:symphony_light_color=white": {"error":"ValueError","status":"error","writes":[[0,"6e400002",true,"2a0000048100",1,0]]},
+"select:symphony_light_color=red": {"error":"ValueError","status":"error","writes":[[0,"6e400002",true,"2a0000048100",1,0]]},
+"select:symphony_light_color=orange": {"error":"ValueError","status":"error","writes":[[0,"6e400002",true,"2a0000048100",1,0]]},
+"select:symphony_light_color=yellow": {"error":"ValueError","status":"error","writes":[[0,"6e400002",true,"2a0000048100",1,0]]},
+"select:symphony_light_color=green": {"error":"ValueError","status":"error","writes":[[0,"6e400002",true,"2a0000048100",1,0]]},
+"select:symphony_light_color=blue": {"error":"ValueError","status":"error","writes":[[0,"6e400002",true,"2a0000048100",1,0]]},
+"select:symphony_light_color=purple": {"error":"ValueError","status":"error","writes":[[0,"6e400002",true,"2a0000048100",1,0]]},
 "switch:symphony_massage_running=on": {"status":"ok","writes":[[0,"6e400002",true,"aa0000060c020001",1,0],[7,"6e400002",true,"2a0000078100",1,0],[14,"6e400002",true,"2a0000068100",1,0]]},
 "switch:symphony_massage_running=off": {"status":"ok","writes":[[0,"6e400002",true,"aa0000060c020000",1,0],[7,"6e400002",true,"2a0000078100",1,0],[14,"6e400002",true,"2a0000068100",1,0]]},
 "switch:symphony_sonic=on": {"status":"ok","writes":[[0,"6e400002",true,"aa00000605020001",1,0],[7,"6e400002",true,"2a0000078100",1,0],[14,"6e400002",true,"2a0000068100",1,0]]},
@@ -57495,14 +57502,12 @@
 "switch:symphony_privacy=off": {"status":"ok","writes":[[0,"6e400002",true,"aa000007020100",1,0],[7,"6e400002",true,"2a0000078100",1,0],[14,"6e400002",true,"2a0000068100",1,0]]},
 "switch:symphony_light=on": {"status":"ok","writes":[[0,"6e400002",true,"aa00000401050001",1,0],[7,"6e400002",true,"2a0000048100",1,0]]},
 "switch:symphony_light=off": {"status":"ok","writes":[[0,"6e400002",true,"aa00000401050000",1,0],[7,"6e400002",true,"2a0000048100",1,0]]},
-"number:symphony_light_color=1": {"error":"ValueError","status":"error","writes":[[0,"6e400002",true,"2a0000048100",1,0]]},
-"number:symphony_light_color=7": {"error":"ValueError","status":"error","writes":[[0,"6e400002",true,"2a0000048100",1,0]]},
 "number:symphony_light_brightness=20": {"error":"ValueError","status":"error","writes":[[0,"6e400002",true,"2a0000048100",1,0]]},
 "number:symphony_light_brightness=80": {"error":"ValueError","status":"error","writes":[[0,"6e400002",true,"2a0000048100",1,0]]},
 "preset_lounge": {"error":"ValueError","status":"error","writes":[]}
 }},
 "symphony:13:4": {
-"info": {"bed_type": "symphony", "controller": "SymphonyController", "gaps": ["number:symphony_light_color=1", "number:symphony_light_color=7", "number:symphony_light_brightness=20", "number:symphony_light_brightness=80"], "module": "symphony.controller", "pulse": [10, 100]},
+"info": {"bed_type": "symphony", "controller": "SymphonyController", "gaps": ["select:symphony_light_color=white", "select:symphony_light_color=red", "select:symphony_light_color=orange", "select:symphony_light_color=yellow", "select:symphony_light_color=green", "select:symphony_light_color=blue", "select:symphony_light_color=purple", "number:symphony_light_brightness=20", "number:symphony_light_brightness=80"], "module": "symphony.controller", "pulse": [10, 100]},
 "commands": {
 "connect": {"status":"ok","writes":[[0,"6e400003","notify","",1,0],[0,"00002a26","read","",1,0],[0,"00002a27","read","",1,0],[100,"6e400002",true,"e780017e00020304050b",2,7],[114,"6e400002",true,"e6fe16000000000005",1,0],[121,"6e400002",true,"2a0000048100",1,0],[228,"6e400002",true,"2a000003810101",1,0]]},
 "head_up": {"status":"ok","writes":[[0,"6e400002",true,"e6fe16010000000004",1,0],[1300,"6e400002",true,"e6fe16000000000005",1,0]]},
@@ -57585,12 +57590,17 @@
 "button:symphony_save_zero_g": {"status":"ok","writes":[[0,"6e400002",true,"aa000001050121",1,0]]},
 "button:symphony_save_anti_snore": {"status":"ok","writes":[[0,"6e400002",true,"aa000001050124",1,0]]},
 "button:symphony_light_refresh": {"status":"ok","writes":[[0,"6e400002",true,"2a0000048100",1,0]]},
+"select:symphony_light_color=white": {"error":"ValueError","status":"error","writes":[[0,"6e400002",true,"2a0000048100",1,0]]},
+"select:symphony_light_color=red": {"error":"ValueError","status":"error","writes":[[0,"6e400002",true,"2a0000048100",1,0]]},
+"select:symphony_light_color=orange": {"error":"ValueError","status":"error","writes":[[0,"6e400002",true,"2a0000048100",1,0]]},
+"select:symphony_light_color=yellow": {"error":"ValueError","status":"error","writes":[[0,"6e400002",true,"2a0000048100",1,0]]},
+"select:symphony_light_color=green": {"error":"ValueError","status":"error","writes":[[0,"6e400002",true,"2a0000048100",1,0]]},
+"select:symphony_light_color=blue": {"error":"ValueError","status":"error","writes":[[0,"6e400002",true,"2a0000048100",1,0]]},
+"select:symphony_light_color=purple": {"error":"ValueError","status":"error","writes":[[0,"6e400002",true,"2a0000048100",1,0]]},
 "switch:symphony_child_mode=on": {"status":"no_writes"},
 "switch:symphony_child_mode=off": {"status":"no_writes"},
 "switch:symphony_light=on": {"status":"ok","writes":[[0,"6e400002",true,"aa00000401050001",1,0],[7,"6e400002",true,"2a0000048100",1,0]]},
 "switch:symphony_light=off": {"status":"ok","writes":[[0,"6e400002",true,"aa00000401050000",1,0],[7,"6e400002",true,"2a0000048100",1,0]]},
-"number:symphony_light_color=1": {"error":"ValueError","status":"error","writes":[[0,"6e400002",true,"2a0000048100",1,0]]},
-"number:symphony_light_color=7": {"error":"ValueError","status":"error","writes":[[0,"6e400002",true,"2a0000048100",1,0]]},
 "number:symphony_light_brightness=20": {"error":"ValueError","status":"error","writes":[[0,"6e400002",true,"2a0000048100",1,0]]},
 "number:symphony_light_brightness=80": {"error":"ValueError","status":"error","writes":[[0,"6e400002",true,"2a0000048100",1,0]]},
 "preset_lounge": {"error":"ValueError","status":"error","writes":[]}

@@ -349,7 +349,8 @@ def test_ha_surfaces_follow_proven_selector_and_feature_domains() -> None:
         assert not any("alarm" in key.casefold() for key in button_keys | number_keys | select_keys)
         assert "sleepys_app_query_position" in button_keys
         assert ("sleepys_app_massage_query" in button_keys) is (selector in _VOICE_SELECTORS)
-        assert ("sleepys_app_color_code" in number_keys) is (selector in _VOICE_SELECTORS)
+        assert "sleepys_app_color_code" not in number_keys
+        assert ("sleepys_app_light_color" in select_keys) is (selector in _VOICE_SELECTORS)
         # Timer codes 1/2/3 are the shared massage timer select's 10/20/30 minutes.
         assert controller.supports_massage_timer is (selector in _VOICE_SELECTORS)
         assert not controller.massage_timer_can_turn_off

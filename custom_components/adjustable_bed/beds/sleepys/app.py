@@ -53,6 +53,7 @@ from ..entity_specs import (
     ControllerHoldSpec,
     ControllerMotorHoldSpec,
     ControllerNumberSpec,
+    ControllerSelectSpec,
     ControllerStateSensorSpec,
     ControllerSwitchSpec,
     MotorControlSpec,
@@ -163,7 +164,9 @@ def _same_uuid(left: str, right: str) -> bool:
     return _normalize_uuid(left) == _normalize_uuid(right)
 
 
-COLOR_CODE: Final = StateKey[int | None]("sleepys_app_color_code")
+# The app's seven swatches, in the order of their codes 1 to 7.
+LIGHT_COLORS: Final = ("white", "red", "orange", "yellow", "green", "blue", "purple")
+LIGHT_COLOR: Final = StateKey[str | None]("sleepys_app_light_color")
 MASSAGE_INTENSITY: Final = massage_intensity("all")
 
 
@@ -994,21 +997,24 @@ class SleepysEliteAppController(BedController):
                     card=CARD_LIGHT_LEVEL,
                 )
             )
-            specs.append(
-                ControllerNumberSpec(
-                    key="sleepys_app_color_code",
-                    translation_key="sleepys_app_color_code",
-                    state_key=COLOR_CODE,
-                    native_min_value=1,
-                    native_max_value=7,
-                    native_step=1,
-                    set_fn=lambda ctrl, value: cast(
-                        SleepysEliteAppController, ctrl
-                    ).set_light_color_code(int(value)),
-                    card=CARD_LIGHTING,
-                )
-            )
         return tuple(specs)
+
+    @property
+    def controller_select_specs(self) -> tuple[ControllerSelectSpec, ...]:
+        if not self.supports_lights:
+            return ()
+        return (
+            ControllerSelectSpec(
+                key="sleepys_app_light_color",
+                translation_key="sleepys_app_light_color",
+                state_key=LIGHT_COLOR,
+                options=LIGHT_COLORS,
+                select_fn=lambda ctrl, color: cast(
+                    SleepysEliteAppController, ctrl
+                ).set_light_color_code(LIGHT_COLORS.index(color) + 1),
+                card=CARD_LIGHTING,
+            ),
+        )
 
     @property
     def controller_button_specs(self) -> tuple[ControllerButtonSpec, ...]:
@@ -1303,7 +1309,7 @@ class SleepysEliteAppController(BedController):
             raise ValueError("Sleepy's light palette requires enabled under-bed lighting")
         await self._send_dynamic(route.builder, route.logical_values)
         self._light_color_code = code
-        self.forward_controller_state_updates(COLOR_CODE(code))
+        self.forward_controller_state_updates(LIGHT_COLOR(LIGHT_COLORS[code - 1]))
 
     async def set_massage_timer_code(self, code: int) -> None:
         route = self._value_route("massage_timer_code", float(code))

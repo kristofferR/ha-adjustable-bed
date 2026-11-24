@@ -299,7 +299,7 @@ parameter cycles likewise hydrate their current session state.
 | Action | Purpose |
 |---|---|
 | `set_alarm` | Set or close the product's alarm; weekdays use Monday 1 through Sunday 7 |
-| `symphony_set_light` | Explicit color code 1–7 and brightness 20–80 on ES700/SS800 |
+| `symphony_set_light` | Explicit color code 1–7 (white, red, orange, yellow, green, blue, purple, the Light color select's choices) and brightness 20–80 on ES700/SS800 |
 | `symphony_anti_snore` | Head/Elevation, enabled state, source-specific strength, or demonstration |
 | `sync_clock` | Source-specific bed clock synchronization |
 | `timed_move`, `hold_control` | Bounded motors and renewable motor leases |

@@ -145,7 +145,8 @@ selection also skips the already-selected code. The source sends brightness
 after slider end/active cancellation, timer choices on button up/cancel, and
 intensity on slider end/active cancellation or button up/cancel; its intensity
 down callback is inert. HA numbers/selects are single commits, each sending
-one frame with no implicit STOP. The color number exposes codes `1..7`.
+one frame with no implicit STOP. The color select offers the app's seven swatches (white, red, orange,
+yellow, green, blue, purple), sent as codes `1..7`.
 Palette/cycle up and cancel are speak-mode callers: each commit attempts one
 frame, starts no repeat timer, and sends no STOP. The app's event-4 interrupt
 clears only its pending position-event queue before massage time/intensity

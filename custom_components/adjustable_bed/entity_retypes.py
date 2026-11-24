@@ -132,6 +132,19 @@ RETYPES: Final[tuple[Retype, ...]] = (
     ),
     # Bed-specific light durations that became the shared light timer.
     Retype("select", "controller_select_goodvibe_light_duration", "select", "light_timer"),
+    # Light colors that were a 1-7 number are the app's seven swatches.
+    Retype(
+        "number",
+        "controller_number_sleepys_app_color_code",
+        "select",
+        "controller_select_sleepys_app_light_color",
+    ),
+    Retype(
+        "number",
+        "controller_number_symphony_light_color",
+        "select",
+        "controller_select_symphony_light_color",
+    ),
     # The Reverie app's wave is a pattern choice, not an intensity.
     Retype(
         "number",

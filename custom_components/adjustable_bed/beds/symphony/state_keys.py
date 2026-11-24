@@ -12,6 +12,9 @@ SNORE: Final = StateKey[bool | None]("symphony_anti_snore")
 STRENGTH: Final = StateKey[int | None]("symphony_anti_snore_strength")
 LIGHT_ON: Final = StateKey[bool | None]("symphony_light_on")
 COLOR: Final = StateKey[int | None]("symphony_light_color")
+# The app's seven swatches, in the order of their codes 1 to 7.
+COLORS: Final = ("white", "red", "orange", "yellow", "green", "blue", "purple")
+COLOR_NAME: Final = StateKey[str | None]("symphony_light_color_name")
 BRIGHTNESS: Final = StateKey[int | None]("symphony_light_brightness")
 MASSAGE: Final = StateKey[bool | None]("symphony_massage_running")
 # Each timer step is ten minutes (the app writes step * 600 seconds).
