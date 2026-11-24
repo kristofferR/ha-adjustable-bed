@@ -113,6 +113,7 @@ from .profiles.richmat import BEDTECH_VARIANTS
 from .profiles.richmat_legacy import APP_NAMES as LEGACY_APPS
 from .profiles.richmat_legacy import choices as legacy_choices
 from .profiles.saatva import CHOICES as SAATVA_CHOICES
+from .profiles.sinca_comfort import PROTOCOL_LABELS as SINCA_RECEIVERS
 from .profiles.somos import CHOICES as SOMOS_CHOICES
 from .profiles.super_colchones import VARIANTS as SUPER_COLCHONES_VARIANTS
 from .profiles.symphony import SELECTORS as SYMPHONY_SELECTORS
@@ -190,6 +191,7 @@ VARIANTS_BY_BED_TYPE: dict[str, dict[str, str]] = {
     "instant_comfort": INSTANT_COMFORT_ROUTES,
     "mlily_remote": MLILY_REMOTE_PROFILES,
     "mline": {"auto": AUTOMATIC_LABEL, **MLINE_PROTOCOL_LABELS},
+    "sinca_comfort": {"auto": AUTOMATIC_LABEL, **SINCA_RECEIVERS},
     BED_TYPE_KAIDI: KAIDI_VARIANTS,
     "smartbed": SMARTBED_VARIANTS,
     BED_TYPE_OKIN_CST: OKIN_CST_VARIANTS,

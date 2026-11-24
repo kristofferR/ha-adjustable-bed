@@ -135,6 +135,7 @@ if TYPE_CHECKING:
     from .shuda.controller import ShudaController as ShudaController
     from .silvermotion.controller import SilvermotionController as SilvermotionController
     from .simmons.controller import SimmonsController as SimmonsController
+    from .sinca_comfort.controller import SincaComfortController as SincaComfortController
     from .sleep_assistant.controller import SleepAssistantController as SleepAssistantController
     from .sleep_number.controller import SleepNumberController as SleepNumberController
     from .sleep_number.mcr import SleepNumberMcrController as SleepNumberMcrController
@@ -207,6 +208,7 @@ _EXPORT_MODULES = {
     "RichmatLegacyController": "richmat_legacy.controller",
     "LuunaController": "luuna.controller",
     "MLineController": "mline.controller",
+    "SincaComfortController": "sinca_comfort.controller",
     "HushSleepController": "hush_sleep.controller",
     "CasperSleepController": "casper_sleep.controller",
     "ComfortEnhancementsController": "comfort_enhancements.controller",

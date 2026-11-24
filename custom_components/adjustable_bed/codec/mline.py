@@ -66,7 +66,11 @@ PROTOCOL_STRING: Final = "00002a27-0000-1000-8000-00805f9b34fb"
 
 
 def control(action: str, protocol: Protocol) -> bytes:
-    word = WORDS[action]
+    return control_word(WORDS[action], protocol)
+
+
+def control_word(word: int, protocol: Protocol) -> bytes:
+    """Encode an app profile's control word using its selected carrier."""
     if protocol == "okin":
         return keeson.frame(word, header=0xE6, order="little", side=0)
     return okin_nframe.frame40(word)

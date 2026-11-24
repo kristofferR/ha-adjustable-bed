@@ -83,6 +83,7 @@ For named raise/lower/stop voice commands and Apple Home controls, see
 | [`logicdata_hold_preset`](#logicdata_hold_preset) | LOGICDATA: hold preset | Holds a flat, preset or memory button for a set time, then releases it. |
 | [`luuna`](#luuna) | Luuna: settings | Sets the light of a Luuna bed, or reads the name of its sleep sensor. Set its alarm with Set alarm and its clock with Set bed clock. Only the options your bed reports can run. |
 | [`richmat_rise`](#richmat_rise) | Luuna Rise and Power Cool: settings | Sets the light and massage timer of a Luuna Rise or Power Cool bed. Set its alarm with Set alarm. Light settings need the bed to report them first. |
+| [`sinca_comfort_command`](#sinca_comfort_command) | Sinca Comfort Bed controls | Refresh settings, read or disable the alarm, adjust automatic anti-snore, or consume local history. |
 | [`mline_command`](#mline_command) | M Line: settings | Sets sleep privacy or anti-snore, reads the current settings or alarm, or downloads sleep history. |
 | [`mlily`](#mlily) | MLILY: settings | Sets the alarm, light, massage and anti-snore options of an MLILY bed, or reads and sets its separate sleep sensor. |
 | [`motion_bed_action`](#motion_bed_action) | Motion Bed: run control | Run a control by its name, such as kuaijie_k2mfragment_flat. The Motion Bed guide lists the common names; the bed's diagnostics list every name it accepts. Saving, clearing, resetting and changing modules need confirmation. |
@@ -1435,6 +1436,38 @@ massage timer menu. Alarm and lamp settings need the bed to report them on the
 current connection, also after it reconnects.
 
 See the [Luuna Rise and Power Cool guide](beds/richmat.md#luuna-rise--power-cool).
+
+## Sinca Comfort Bed
+
+Use [`goto_preset`](#movement-and-memory) for either memory and [`save_preset`](#movement-and-memory)
+to run the app's long memory press. Use [`sync_clock`](#sync_clock) to set bed time.
+Alarm queries and disable use the action below. See the [bed guide](beds/mline.md#sinca-comfort-bed).
+
+<a id="sinca_comfort_command"></a>
+**`sinca_comfort_command`** refreshes settings, reads or disables the wake alarm,
+adjusts automatic anti-snore, or handles a local history transfer.
+
+| Field | Name | Description |
+|---|---|---|
+| `device_id` | Devices | Select one or more Sinca Comfort Bed devices. Choose one physical receiver for history. |
+| `side` | Side | Select the left or right side of a combined bed. |
+| `action` | Action | Choose `refresh_settings`, `refresh_alarm`, `disable_alarm`, `anti_snore`, `demo_anti_snore`, or `consume_history`. |
+| `enabled` | Enable anti-snore | Turn automatic anti-snore on or off. Defaults to on. |
+| `position` | Adjustment | Choose `head` or `elevation`. Defaults to `head`. |
+| `level` | Level | Choose `low`, `medium`, or `high` for automatic anti-snore. Defaults to `low`. |
+| `all_records` | All records | Request all stored history. The default asks for new records. |
+| `confirmed` | Confirm history acknowledgement | Let the bed mark report-length history as received. Home Assistant does not save a sleep report. Defaults to false. |
+
+Anti-snore settings and demonstrations require the Sleep receiver. A demonstration
+only uses the selected adjustment. Disable writes the alarm-off frame and then
+queries the resulting alarm state.
+
+History runs on one current connection. An aligned transfer with no report-length
+groups is acknowledged automatically. To also acknowledge a report-length
+group, run the action with `confirmed: true`. The optional response gives
+`acknowledged` and the number of distinct admitted `records`. A transfer with
+no aligned data returns zero records and leaves the bed's history unchanged.
+
 
 ## M Line
 

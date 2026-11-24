@@ -581,6 +581,7 @@ BED_TYPE_PERSONAL_COMFORT: Final = "personal_comfort"
 BED_TYPE_INSTANT_COMFORT: Final = "instant_comfort"
 BED_TYPE_LUUNA: Final = "luuna"
 BED_TYPE_MLINE: Final = "mline"
+BED_TYPE_SINCA_COMFORT: Final = "sinca_comfort"
 CONF_MLINE_CHILD_MODE: Final = "mline_child_mode"
 BED_TYPE_SLEEP_EVOLUTION: Final = "sleep_evolution"
 BED_TYPE_WSILVER_LEGACY: Final = "wsilver_legacy"
@@ -807,6 +808,7 @@ SUPPORTED_BED_TYPES: Final = [
     BED_TYPE_PERSONAL_COMFORT,
     BED_TYPE_INSTANT_COMFORT,
     BED_TYPE_MLINE,
+    BED_TYPE_SINCA_COMFORT,
     BED_TYPE_SLEEP_EVOLUTION,
     BED_TYPE_WSILVER_LEGACY,
     BED_TYPE_SUPER_COLCHONES,
