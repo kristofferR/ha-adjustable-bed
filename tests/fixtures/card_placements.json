@@ -1030,6 +1030,31 @@
   "card_role": "up",
   "card_motor": "legs"
  },
+ "button:leva_home_anti_snore": {
+  "card_section": "presets"
+ },
+ "button:leva_home_flat": {
+  "card_section": "presets"
+ },
+ "button:leva_home_tv": {
+  "card_section": "presets"
+ },
+ "button:leva_home_zero_g": {
+  "card_section": "presets"
+ },
+ "button:leva_massage_foot": {
+  "card_section": "massage"
+ },
+ "button:leva_massage_head": {
+  "card_section": "massage"
+ },
+ "button:leva_massage_timer": {
+  "card_section": "massage",
+  "card_role": "timer"
+ },
+ "button:leva_release": {
+  "card_section": "hidden"
+ },
  "button:light_cycle": {
   "card_section": "lighting",
   "card_role": "cycle"

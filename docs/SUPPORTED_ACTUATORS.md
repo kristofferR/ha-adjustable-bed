@@ -57,6 +57,7 @@ Devices & services > Adjustable Bed** and choose **Reconfigure**.
 | Leggett & Platt | [Leggett & Platt](beds/leggett-platt.md) |
 | Leon's | [L2 Motion](beds/motomotion.md#l2-motion) |
 | Limoss | [Limoss / Stawett](beds/limoss.md) |
+| Leva | [Leva Bed Remote](beds/okin-nframe.md#leva-bed-remote) |
 | Linx | [Linx](beds/linx.md) |
 | LOGICDATA | [Jiecang](beds/jiecang.md), [LOGICDATA](beds/logicdata.md) |
 | Lucid | [Malouf / Lucid](beds/malouf.md), [Okin](beds/okin-nframe.md) |
