@@ -16,6 +16,7 @@ from custom_components.adjustable_bed.beds.okin_uuid.controller import (
     OkinUuidComplexCommand,
     OkinUuidController,
 )
+from custom_components.adjustable_bed.codec import okin_nframe as codec
 from custom_components.adjustable_bed.const import (
     BED_TYPE_OKIN_UUID,
     CONF_BED_TYPE,
@@ -29,6 +30,7 @@ from custom_components.adjustable_bed.const import (
     VARIANT_AUTO,
 )
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
+from custom_components.adjustable_bed.sensor import _sensor_entities_for
 from tests.error_helpers import raises_key
 
 # Remote codes are plain strings now that the table is generated from the
@@ -798,6 +800,33 @@ class TestOkinUuidPositionNotifications:
 
         # Okin UUID uses OkinPositionMixin which supports position notifications
         assert "Position notifications active for Okin UUID bed" in caplog.text
+
+    async def test_receiver_without_the_position_characteristic_reports_nothing(
+        self,
+        hass: HomeAssistant,
+        mock_okin_uuid_config_entry,
+        mock_coordinator_connected,
+        mock_bleak_client: MagicMock,
+    ):
+        """Some receivers have no position characteristic; they get no angle sensors."""
+        mock_bleak_client.services.get_characteristic.side_effect = lambda uuid: (
+            None if uuid == codec.POSITION_UUID else MagicMock()
+        )
+        coordinator = AdjustableBedCoordinator(hass, mock_okin_uuid_config_entry)
+        await coordinator.async_connect()
+        controller = coordinator.controller
+
+        assert not controller.supports_position_feedback
+        assert controller.capability_snapshot() == {"position_feedback": False}
+        stored = mock_okin_uuid_config_entry.data["capabilities"]
+        assert stored == {mock_okin_uuid_config_entry.data["bed_type"]: {"position_feedback": False}}
+        mock_bleak_client.read_gatt_char.reset_mock()
+        await controller.read_positions()
+        mock_bleak_client.read_gatt_char.assert_not_awaited()
+        assert codec.POSITION_UUID not in [
+            notify.args[0] for notify in mock_bleak_client.start_notify.call_args_list
+        ]
+        assert not _sensor_entities_for(hass, coordinator)
 
     async def test_read_positions_noop(
         self,

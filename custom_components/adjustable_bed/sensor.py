@@ -161,9 +161,11 @@ def _sensor_entities_for(
     # capability_controller: an offline paired side still gets its sensors built
     # from a client-free controller minted from config (see coordinator).
     controller = coordinator.capability_controller
-    has_angle_feedback = bed_traits(bed_type, protocol_variant).angle_sensors or (
-        controller is not None and controller.reports_angles
-    )
+    # A controller narrows the trait when this bed turned out to report nothing.
+    has_angle_feedback = (
+        bed_traits(bed_type, protocol_variant).angle_sensors
+        and (controller is None or controller.supports_position_feedback)
+    ) or (controller is not None and controller.reports_angles)
     if controller is not None and controller.auto_enable_massage:
         has_massage = True
     position_number_keys = (

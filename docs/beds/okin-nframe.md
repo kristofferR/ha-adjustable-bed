@@ -1184,7 +1184,8 @@ sends the zero/standby keycode. It does not use the backend UBL `duration` or
 
 Some receivers report positions on the position characteristic (service
 `0000ffe0-0000-1000-8000-00805f9b34fb`); it is not part of every controller's
-GATT layout. See [Responses](#responses). FurniMove 2.2.0 exposes no alternate
+GATT layout, and a receiver without it gets no angle sensors. See
+[Responses](#responses). FurniMove 2.2.0 exposes no alternate
 position path for receivers without it: its `62741625...` parser reports only
 under-bed light, sync and child-lock state, and it ignores notifications on
 `90311725...`. The app parses no angle or motor position from either channel.
