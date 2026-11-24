@@ -128,6 +128,12 @@
  "binary_sensor:rize_home_active": {
   "card_section": "massage"
  },
+ "binary_sensor:sinca_alarm_enabled": {
+  "card_section": "hidden"
+ },
+ "binary_sensor:sinca_anti_snore": {
+  "card_section": "hidden"
+ },
  "binary_sensor:sleeptracker_light_on": {
   "card_section": "lighting"
  },
@@ -760,6 +766,46 @@
   "card_section": "connection",
   "card_role": "disconnect"
  },
+ "button:dorsal_lumbar_pillow_down": {
+  "card_section": "motors",
+  "card_role": "down",
+  "card_motor": "dorsal_lumbar_pillow"
+ },
+ "button:dorsal_lumbar_pillow_up": {
+  "card_section": "motors",
+  "card_role": "up",
+  "card_motor": "dorsal_lumbar_pillow"
+ },
+ "button:dorsal_motor_4_down": {
+  "card_section": "motors",
+  "card_role": "down",
+  "card_motor": "dorsal_motor_4"
+ },
+ "button:dorsal_motor_4_up": {
+  "card_section": "motors",
+  "card_role": "up",
+  "card_motor": "dorsal_motor_4"
+ },
+ "button:dorsal_second_pillow_down": {
+  "card_section": "motors",
+  "card_role": "down",
+  "card_motor": "dorsal_second_pillow"
+ },
+ "button:dorsal_second_pillow_up": {
+  "card_section": "motors",
+  "card_role": "up",
+  "card_motor": "dorsal_second_pillow"
+ },
+ "button:dorsal_zero_gravity_down": {
+  "card_section": "motors",
+  "card_role": "down",
+  "card_motor": "dorsal_zero_gravity"
+ },
+ "button:dorsal_zero_gravity_up": {
+  "card_section": "motors",
+  "card_role": "up",
+  "card_motor": "dorsal_zero_gravity"
+ },
  "button:elevate_actuator_1_down": {
   "card_section": "motors",
   "card_role": "down",
@@ -1033,6 +1079,31 @@
   "card_role": "up",
   "card_motor": "legs"
  },
+ "button:leva_home_anti_snore": {
+  "card_section": "presets"
+ },
+ "button:leva_home_flat": {
+  "card_section": "presets"
+ },
+ "button:leva_home_tv": {
+  "card_section": "presets"
+ },
+ "button:leva_home_zero_g": {
+  "card_section": "presets"
+ },
+ "button:leva_massage_foot": {
+  "card_section": "massage"
+ },
+ "button:leva_massage_head": {
+  "card_section": "massage"
+ },
+ "button:leva_massage_timer": {
+  "card_section": "massage",
+  "card_role": "timer"
+ },
+ "button:leva_release": {
+  "card_section": "hidden"
+ },
  "button:light_cycle": {
   "card_section": "lighting",
   "card_role": "cycle"
@@ -1189,6 +1260,9 @@
   "card_section": "massage"
  },
  "button:massage_wave_previous": {
+  "card_section": "massage"
+ },
+ "button:maxprime_massage_timer_toggle": {
   "card_section": "massage"
  },
  "button:mid_body_down": {
@@ -1913,6 +1987,42 @@
   "card_role": "reference",
   "card_motor": "tv_lift"
  },
+ "button:shuda_refresh_alarms": {
+  "card_section": "hidden"
+ },
+ "button:shuda_release": {
+  "card_section": "hidden"
+ },
+ "button:simmons_blue_combined_down": {
+  "card_section": "motors",
+  "card_role": "down",
+  "card_motor": "combined_section"
+ },
+ "button:simmons_blue_combined_up": {
+  "card_section": "motors",
+  "card_role": "up",
+  "card_motor": "combined_section"
+ },
+ "button:simmons_blue_first_down": {
+  "card_section": "motors",
+  "card_role": "down",
+  "card_motor": "first_section"
+ },
+ "button:simmons_blue_first_up": {
+  "card_section": "motors",
+  "card_role": "up",
+  "card_motor": "first_section"
+ },
+ "button:simmons_blue_second_down": {
+  "card_section": "motors",
+  "card_role": "down",
+  "card_motor": "second_section"
+ },
+ "button:simmons_blue_second_up": {
+  "card_section": "motors",
+  "card_role": "up",
+  "card_motor": "second_section"
+ },
  "button:simmons_inclined_left": {
   "card_section": "presets"
  },
@@ -1923,6 +2033,15 @@
   "card_section": "presets"
  },
  "button:simmons_refresh_alarms": {
+  "card_section": "utility"
+ },
+ "button:sinca_disable_alarm": {
+  "card_section": "utility"
+ },
+ "button:sinca_refresh_alarm": {
+  "card_section": "utility"
+ },
+ "button:sinca_refresh_settings": {
   "card_section": "utility"
  },
  "button:sleepfunction_scoped_catalog_action": {
@@ -2818,6 +2937,22 @@
   "card_section": "motors",
   "card_motor": "comfy_waist"
  },
+ "cover:dorsal_lumbar_pillow": {
+  "card_section": "motors",
+  "card_motor": "dorsal_lumbar_pillow"
+ },
+ "cover:dorsal_motor_4": {
+  "card_section": "motors",
+  "card_motor": "dorsal_motor_4"
+ },
+ "cover:dorsal_second_pillow": {
+  "card_section": "motors",
+  "card_motor": "dorsal_second_pillow"
+ },
+ "cover:dorsal_zero_gravity": {
+  "card_section": "motors",
+  "card_motor": "dorsal_zero_gravity"
+ },
  "cover:elevate_actuator_1": {
   "card_section": "motors",
   "card_motor": "elevate_actuator_1"
@@ -3422,6 +3557,12 @@
  "number:massage_wave_intensity": {
   "card_section": "massage"
  },
+ "number:maxprime_lamp_seconds": {
+  "card_section": "utility"
+ },
+ "number:maxprime_massage_position": {
+  "card_section": "massage"
+ },
  "number:motion_bed_brightness": {
   "card_section": "lighting",
   "card_role": "level"
@@ -3749,6 +3890,9 @@
   "card_section": "massage",
   "card_role": "timer"
  },
+ "select:maxprime_axis": {
+  "card_section": "utility"
+ },
  "select:motion_bed_active_module": {
   "card_section": "utility"
  },
@@ -3784,6 +3928,12 @@
  },
  "select:richmat_app_side": {
   "card_section": "motors"
+ },
+ "select:richmat_classic_hold": {
+  "card_section": "utility"
+ },
+ "select:richmat_classic_mode": {
+  "card_section": "utility"
  },
  "select:richmat_mh_motor_mode": {
   "card_section": "utility"
@@ -4656,11 +4806,38 @@
   "card_section": "massage",
   "card_role": "timer"
  },
+ "sensor:shuda_alarm_1": {
+  "card_section": "utility"
+ },
+ "sensor:shuda_alarm_2": {
+  "card_section": "utility"
+ },
  "sensor:simmons_alarm_1": {
   "card_section": "hidden"
  },
  "sensor:simmons_alarm_2": {
   "card_section": "hidden"
+ },
+ "sensor:simmons_blue_alarm_1_time": {
+  "card_section": "hidden"
+ },
+ "sensor:simmons_blue_alarm_2_time": {
+  "card_section": "hidden"
+ },
+ "sensor:simmons_blue_alarm_3_time": {
+  "card_section": "hidden"
+ },
+ "sensor:sinca_alarm_time": {
+  "card_section": "hidden"
+ },
+ "sensor:sinca_anti_snore_level": {
+  "card_section": "hidden"
+ },
+ "sensor:sinca_massage_timer": {
+  "card_section": "massage"
+ },
+ "sensor:sinca_massage_wave": {
+  "card_section": "massage"
  },
  "sensor:sleep_assistant_alarm_1": {
   "card_section": "utility"
@@ -5013,6 +5190,9 @@
  "switch:comfy_timer": {
   "card_section": "utility"
  },
+ "switch:dorsal_massage": {
+  "card_section": "massage"
+ },
  "switch:doublesleep_child_lock": {
   "card_section": "utility"
  },
@@ -5114,6 +5294,9 @@
  },
  "switch:sealy_massage": {
   "card_section": "massage"
+ },
+ "switch:sinca_privacy": {
+  "card_section": "utility"
  },
  "switch:sleep_assistant_storage": {
   "card_section": "utility"

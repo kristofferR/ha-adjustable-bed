@@ -16,6 +16,9 @@ and declares `HINTS`, built with the helpers in `_hints.py`:
   glob without its trailing `*`, with a literal first three characters as Home
   Assistant requires. The gate is case-sensitive, so `case` lists the
   spellings it needs: `EXACT` or `FOLD` (as declared and lowercase).
+  `IGNORE_CASE` is for an app's explicit case-insensitive prefix rule.
+  It uses up to eight literal spellings of the first three characters
+  and case pairs for the rest of the prefix.
   `anywhere=True` records that detection also accepts the
   pattern after the start of the name, which the gate cannot express.
 

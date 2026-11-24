@@ -8,6 +8,7 @@ from __future__ import annotations
 import asyncio
 import math
 from collections.abc import Callable, Mapping
+from contextvars import ContextVar
 from dataclasses import asdict, replace
 from datetime import time
 from functools import partial
@@ -95,6 +96,12 @@ def control_node(key: str) -> int:
     for suffix in ("_hold", "_long", "_raw"):
         node = node.removesuffix(suffix)
     return int(node)
+
+
+# Set only by an admitted multi-receiver settings write, including mixed classic apps.
+BEFORE_SETTINGS_WRITE: Final[ContextVar[Callable[[], bool] | None]] = ContextVar(
+    "richmat_before_settings_write", default=None
+)
 
 
 # Settings rows a capability reply reveals (``ReceiveState.menu``).
@@ -441,6 +448,13 @@ class RichmatClassicController(BedController):
         # Calls are admitted under the coordinator command lock. Never retry an
         # actuator write or carry cached Android objects across connections.
         async with self._ble_lock:
+            before_write = BEFORE_SETTINGS_WRITE.get()
+            if before_write is not None:
+                if self._session is not session or self.client is not session.client or not session.client.is_connected:
+                    raise ConnectionError("The captured bed session has ended")
+                if (cancel is not None and cancel.is_set()) or not before_write():
+                    note_frame_skipped()
+                    return
             await session.client.write_gatt_char(session.write, packet, response=session.response)
         note_frame_written(cancel)
 
@@ -760,6 +774,14 @@ class RichmatClassicController(BedController):
         allowed = set(load_catalog(self.app).alarm_allowlist.values())
         return {f"node_{c.node}": int(c.alarm_clock, 16) for c in self._controls if c.rich_button and c.alarm_clock in allowed and c.alarm_clock is not None}
 
+    @property
+    def settings_transport(self) -> Transport | None:
+        """Return the live transport whose settings have been admitted."""
+        session = self._session
+        if session is not None and self.client is session.client and session.client.is_connected:
+            return session
+        return None
+
     def validate_richmat_classic_request(self, request: Request) -> None:
         if self.app in RISE_APPS:
             raise ValueError("Use the Luuna Rise / Power Cool bed settings action")
@@ -1013,6 +1035,11 @@ async def build_controller(ctx: BuildContext) -> RichmatClassicController:
             ctx.coordinator, app=ctx.variant, device_name=ctx.device_name,
             capability_snapshot=ctx.stored_capabilities("richmat_classic_apps"),
         )
+    if ctx.variant == "maxprime":
+        await ctx.preload("richmat_classic.maxprime")
+        from .maxprime import MaxprimeController
+
+        return MaxprimeController(ctx.coordinator, device_name=ctx.device_name)
     if ctx.variant == "baseremote":
         await ctx.preload("baseremote.controller")
         from ..baseremote.controller import BaseRemoteController

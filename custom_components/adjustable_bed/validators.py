@@ -68,6 +68,7 @@ from .const import (
     BED_TYPE_ZSERIES,
     BEDSENSE_VARIANTS,
     COMFORT_ENHANCEMENTS_VARIANTS,
+    DORSAL_ROUTES,
     DOUBLESLEEP_VARIANTS,
     ESHINE_OKIN_PROFILES,
     GLIDEAWAY_MOTION_MODELS,
@@ -103,6 +104,7 @@ from .profiles.comfortbase import PRODUCTS as COMFORTBASE_PRODUCTS
 from .profiles.enso2 import LAYOUT_CHOICES as ENSO2_LAYOUT_CHOICES
 from .profiles.hush import HUSH_BASE_VARIANTS
 from .profiles.instant_comfort import ROUTES as INSTANT_COMFORT_ROUTES
+from .profiles.leva import RECEIVERS as LEVA_RECEIVERS
 from .profiles.linx import TRANSPORT_CHOICES as LINX_TRANSPORTS
 from .profiles.luuna import VARIANTS as LUUNA_VARIANTS
 from .profiles.majestichome import PROFILE_CHOICES as MAJESTICHOME_PROFILES
@@ -115,6 +117,7 @@ from .profiles.richmat import BEDTECH_VARIANTS
 from .profiles.richmat_legacy import APP_NAMES as LEGACY_APPS
 from .profiles.richmat_legacy import choices as legacy_choices
 from .profiles.saatva import CHOICES as SAATVA_CHOICES
+from .profiles.sinca_comfort import PROTOCOL_LABELS as SINCA_RECEIVERS
 from .profiles.somos import CHOICES as SOMOS_CHOICES
 from .profiles.super_colchones import VARIANTS as SUPER_COLCHONES_VARIANTS
 from .profiles.symphony import SELECTORS as SYMPHONY_SELECTORS
@@ -159,6 +162,7 @@ MLINE_PROTOCOL_LABELS: Final = {
 # Single source of truth for bed types with variants
 VARIANTS_BY_BED_TYPE: dict[str, dict[str, str]] = {
     "ormatek": {"okin15": "Bluetooth name starts with Okin", "okin24": "Bluetooth name starts with SmartBed"},
+    "leva": dict(LEVA_RECEIVERS),
     "linx": LINX_TRANSPORTS,
     "nerum": {"p1": "Receiver type P1 (one memory)", "p2": "Receiver type P2 (two memories, alarms)", "p3": "Receiver type P3 (two memories, alarms)"},
     **{app: legacy_choices(app) for app in LEGACY_APPS},
@@ -193,6 +197,7 @@ VARIANTS_BY_BED_TYPE: dict[str, dict[str, str]] = {
     "instant_comfort": INSTANT_COMFORT_ROUTES,
     "mlily_remote": MLILY_REMOTE_PROFILES,
     "mline": {"auto": AUTOMATIC_LABEL, **MLINE_PROTOCOL_LABELS},
+    "sinca_comfort": {"auto": AUTOMATIC_LABEL, **SINCA_RECEIVERS},
     BED_TYPE_KAIDI: KAIDI_VARIANTS,
     "smartbed": SMARTBED_VARIANTS,
     BED_TYPE_OKIN_CST: OKIN_CST_VARIANTS,
@@ -211,6 +216,7 @@ VARIANTS_BY_BED_TYPE: dict[str, dict[str, str]] = {
     BED_TYPE_COMFORT_ENHANCEMENTS: COMFORT_ENHANCEMENTS_VARIANTS,
     BED_TYPE_SOMOS: SOMOS_CHOICES,
     BED_TYPE_COMFORTBASE: {key: p.name for key, p in COMFORTBASE_PRODUCTS.items()},
+    "dorsal": DORSAL_ROUTES,
     "relax_motion": RELAX_MOTION_ROUTES,
     BED_TYPE_YAMADA: {"p1": "P1 control box", "p2": "P2 control box"},
     BED_TYPE_BETTERLIVING2: {"p1": "P1 control box", "p2": "P2 control box", "p3": "P3 control box"},

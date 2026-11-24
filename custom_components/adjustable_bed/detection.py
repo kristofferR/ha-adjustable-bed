@@ -86,6 +86,7 @@ from .const import (
     BED_TYPE_LEGGETT_OKIN,
     BED_TYPE_LEGGETT_PLATT,
     BED_TYPE_LEGGETT_WILINKE,
+    BED_TYPE_LEVA,
     BED_TYPE_LIMOSS,
     BED_TYPE_LIMOSS_REMOTE,
     BED_TYPE_LINAK,
@@ -140,8 +141,10 @@ from .const import (
     BED_TYPE_SCOTT_LIVING,
     BED_TYPE_SERENITY,
     BED_TYPE_SERTA_MP_REMOTE,
+    BED_TYPE_SHUDA,
     BED_TYPE_SILVERMOTION,
     BED_TYPE_SIMMONS,
+    BED_TYPE_SIMMONS_BLUE,
     BED_TYPE_SLEEP_NUMBER,
     BED_TYPE_SLEEP_NUMBER_MCR,
     BED_TYPE_SLEEPSTAR,
@@ -316,6 +319,8 @@ from .profiles.onlysnore import advertisement as onlysnore_advertisement
 from .profiles.relax_motion import discovery_matches as relax_motion_matches
 from .profiles.saatva import SCAN_UUIDS as SAATVA_SCAN_UUIDS
 from .profiles.sealy import matches_name as sealy_name
+from .profiles.simmons_blue import NAME_PREFIX as SIMMONS_BLUE_PREFIX
+from .profiles.sinca_comfort import scan_name as sinca_scan_name
 from .profiles.smart_sleep import advertisement as smart_sleep_advertisement
 from .profiles.sophie import accepts_name as accepts_sophie_name
 from .profiles.vmatbasic import manufacturer_payload_matches
@@ -584,6 +589,7 @@ def _rests_on_shared_service(
 # Display names for bed types shown in the UI selector. The automatic
 # Leggett & Platt setup is not offered to a new bed, so it is not listed here.
 BED_TYPE_DISPLAY_NAMES: dict[str, str] = {
+    "dorsal": "Dorsal app / Roomi",
     "nerum": "Nerum app",
     "relax_motion": "Relax Motion app",
     "cheerssleep": "CheersSleep app",
@@ -636,6 +642,7 @@ BED_TYPE_DISPLAY_NAMES: dict[str, str] = {
     "personal_comfort": "Personal Comfort app",
     "instant_comfort": "Instant Comfort app",
     "mline": "M Line app",
+    "sinca_comfort": "Sinca Comfort Bed app",
     "luniosmart": "Lunio Smart+ app",
     "sleep_evolution": "SleepEvolution app",
     "wsilver_legacy": "W.Silver Products app (older version)",
@@ -665,12 +672,15 @@ BED_TYPE_DISPLAY_NAMES: dict[str, str] = {
     BED_TYPE_OKIN_MOTIONBED: "OKIN Motion Bed app",
     BED_TYPE_COMFORT_ENHANCEMENT3: "Comfort Enhancement 3 / Comfort Plus3 app",
     BED_TYPE_N32_MOTION_BED: "N32 Motion Bed app",
+    BED_TYPE_SHUDA: "Shuda app",
+    BED_TYPE_SIMMONS_BLUE: "Simmons Blue app",
     BED_TYPE_RESIDENT: "Resident Adjustable Base app",
     "enso": "Enso Remote",
     BED_TYPE_ENSO2: "ENSO Sleep Control (Enso 2)",
     "sealy_posturematic": "Sealy Posturematic",
     BED_TYPE_YAMADA: "アシステック / ASSISTEC / Yamada app",
     BED_TYPE_BETTERLIVING2: "BetterLiving / BetterLiving2 app",
+    BED_TYPE_LEVA: "Leva Bed Remote (Leva Smart App)",
     BED_TYPE_LINX: "Linx app",
     BED_TYPE_SOMOS: "Somos / SomosBeds app",
     BED_TYPE_COMFORTBASE: "ComfortBaseForBluetooth app",
@@ -940,7 +950,7 @@ _HIDDEN_APP_ROWS: Final = frozenset(
 HIDDEN_APP_CHOICES: Final = frozenset(bed_type_choice(*row) for row in _HIDDEN_APP_ROWS)
 # Bed types whose one row asks for the product, although each product is an app entry.
 PRODUCT_QUESTION_BED_TYPES: Final = frozenset(
-    {BED_TYPE_ENSO2, "dreamsense", "saatva", "majestichome", BED_TYPE_LINX, BED_TYPE_SOMOS, "bobpowerbase", BED_TYPE_COMFORT_ENHANCEMENT3, BED_TYPE_SYMPHONY_SLEEP, BED_TYPE_YAMADA, BED_TYPE_RICHMAT_APP, BED_TYPE_RICHMAT_APP_SLEEP, BED_TYPE_GALAXY, BED_TYPE_MLILY, BED_TYPE_MLILY_REMOTE, BED_TYPE_OKIMIKI, "luuna", BED_TYPE_GOODVIBE, BED_TYPE_HJBED, BED_TYPE_CASPER_BASE, BED_TYPE_COMFORT_ENHANCEMENTS, BED_TYPE_COMFORTBASE, "sleep_evolution", "wsilver_legacy", "personal_comfort", "instant_comfort"}
+    {BED_TYPE_ENSO2, "dreamsense", "saatva", "majestichome", BED_TYPE_LEVA, BED_TYPE_LINX, BED_TYPE_SOMOS, "bobpowerbase", BED_TYPE_COMFORT_ENHANCEMENT3, BED_TYPE_SYMPHONY_SLEEP, BED_TYPE_YAMADA, BED_TYPE_RICHMAT_APP, BED_TYPE_RICHMAT_APP_SLEEP, BED_TYPE_GALAXY, BED_TYPE_MLILY, BED_TYPE_MLILY_REMOTE, BED_TYPE_OKIMIKI, "luuna", BED_TYPE_GOODVIBE, BED_TYPE_HJBED, BED_TYPE_CASPER_BASE, BED_TYPE_COMFORT_ENHANCEMENTS, BED_TYPE_COMFORTBASE, "sleep_evolution", "wsilver_legacy", "personal_comfort", "instant_comfort"}
 ).union({BED_TYPE_BETTERLIVING2, "sealy_posturematic"})
 # Routes named after their protocol, not an app or brand. They stay off the
 # bed-type list and are reached through detection, the brand list and Configure.
@@ -1401,7 +1411,7 @@ def detect_bed_type(service_info: BluetoothServiceInfoBleak) -> str | None:
         For detailed detection with confidence scores, use detect_new_bed().
     """
     result = detect_new_bed(service_info)
-    if result.bed_type in ("sleep_assistant", "super_colchones", "bobpowerbase", BED_TYPE_GALAXY, BED_TYPE_GOODVIBE, BED_TYPE_MLILY, BED_TYPE_MLILY_REMOTE, BED_TYPE_MOTOMOTION, BED_TYPE_N32_MOTION_BED, BED_TYPE_SYMPHONY, BED_TYPE_MLINE, BED_TYPE_OKIMIKI) and result.confidence < 0.7:
+    if result.bed_type in ("dorsal", BED_TYPE_SIMMONS_BLUE, "sleep_assistant", "super_colchones", "bobpowerbase", BED_TYPE_GALAXY, BED_TYPE_GOODVIBE, BED_TYPE_MLILY, BED_TYPE_MLILY_REMOTE, BED_TYPE_MOTOMOTION, BED_TYPE_N32_MOTION_BED, BED_TYPE_SYMPHONY, BED_TYPE_MLINE, BED_TYPE_OKIMIKI) and result.confidence < 0.7:
         return None  # An app name hint requires an explicit product choice.
     return result.bed_type
 
@@ -1425,6 +1435,9 @@ def detect_new_bed(service_info: BluetoothServiceInfoBleak) -> DetectionResult:
             return DetectionResult(None, 0.0, ["shared_service:no_name"])
         result.confidence = min(result.confidence, 0.5)
         result.signals.append("shared_service:no_name_match")
+    if result.bed_type == "smartbed" and "name:shuda_app_candidate" in result.signals:
+        # Nordic's shared company ID and service cannot tell these apps apart.
+        result.confidence = min(result.confidence, 0.6)
     local_name = getattr(getattr(service_info, "advertisement", None), "local_name", None)
     if relax_motion_matches(local_name, service_info.service_uuids or ()):
         # Apps with different model gates share this service, so a new setup
@@ -1586,6 +1599,18 @@ def _detect_with_first_pass(
         elif result.bed_type != BED_TYPE_SUPERIOR_SLEEP:
             result.ambiguous_types = list(dict.fromkeys([*(result.ambiguous_types or ()), BED_TYPE_SUPERIOR_SLEEP]))
             result.signals.append("name:superior_sleep_app_candidate")
+    # The Shuda app uses a shared name and UART route. Neither identifies it.
+    if (
+        isinstance(device_name, str)
+        and device_name.lower().startswith("smartbed")
+        and first.service(BED_TYPE_SHUDA)
+        and result.confidence < 0.8
+        and not any(signal.startswith("excluded:") for signal in result.signals)
+    ):
+        result.ambiguous_types = list(dict.fromkeys([
+            *(result.ambiguous_types or ()), BED_TYPE_SHUDA,
+        ]))
+        result.signals.append("name:shuda_app_candidate")
     # A shared service makes this app a choice, never overrides a stronger
     # receiver signature and never infers a remote from the Bluetooth name.
     if OKIMAT_SERVICE_UUID.lower() in {u.lower() for u in (service_info.service_uuids or ())} and not any(
@@ -1593,6 +1618,15 @@ def _detect_with_first_pass(
     ) and result.bed_type != BED_TYPE_COMFORT_ENHANCEMENT3:
         result.ambiguous_types = list(dict.fromkeys([*(result.ambiguous_types or ()), BED_TYPE_COMFORT_ENHANCEMENT3]))
         result.signals.append("service:comfort_enhancement3_candidate")
+    if isinstance(platform_name, str) and platform_name.lower().startswith(SIMMONS_BLUE_PREFIX) and not any(
+        signal.startswith("excluded:") for signal in result.signals
+    ):
+        # SmartBed is shared across several apps, so the name can only offer a choice.
+        if result.bed_type is None:
+            result = DetectionResult(BED_TYPE_SIMMONS_BLUE, 0.3, ["name:simmons_blue_app_candidate"])
+        elif result.bed_type != BED_TYPE_SIMMONS_BLUE:
+            result.ambiguous_types = [*(result.ambiguous_types or ()), BED_TYPE_SIMMONS_BLUE]
+            result.signals.append("name:simmons_blue_app_candidate")
     # These shared app names are candidates only. Never replace a confident
     # receiver signature or infer N32 from the Nordic service alone.
     if (isinstance(platform_name, str)
@@ -1660,6 +1694,21 @@ def _detect_with_first_pass(
             result = DetectionResult(BED_TYPE_SOMOS, 0.3, [*result.signals, "name:somos_app_candidate"])
         elif result.bed_type != BED_TYPE_SOMOS:
             result.ambiguous_types = list(dict.fromkeys([*(result.ambiguous_types or ()), BED_TYPE_SOMOS]))
+    # Shared names and a write-carrier advertisement offer a choice only.
+    if (result.confidence < 0.8 and first.service("sinca_comfort") and sinca_scan_name(platform_name or "")
+        and not any(signal.startswith("excluded:") for signal in result.signals)):
+        result.ambiguous_types = list(dict.fromkeys([*(result.ambiguous_types or ()), "sinca_comfort"]))
+        result.signals.append("name_service:sinca_comfort_app_candidate")
+    # Dorsal's scan words are shared and do not identify the selected project.
+    if first.name("dorsal") and not any(signal.startswith("excluded:") for signal in result.signals):
+        if result.bed_type is None:
+            result = DetectionResult(
+                "dorsal", 0.3, [*result.signals, "name:dorsal_app_candidate"],
+                ambiguous_types=result.ambiguous_types,
+            )
+        else:
+            result.ambiguous_types = list(dict.fromkeys([*(result.ambiguous_types or ()), "dorsal"]))
+            result.signals.append("name:dorsal_app_candidate")
     # Shared names offer the app; they never replace a stronger receiver match.
     if first.name(BED_TYPE_MLINE) and not any(
         signal.startswith("excluded:") for signal in result.signals
@@ -1819,6 +1868,18 @@ def _detect_bed_type_with_app_candidates(
     # than any manifest matcher, so they only add an app candidate.
     name = service_info.name
     if name and richmat_classic_matching_apps(name) and name.upper()[:4] not in ("TEST", "RMCS"):
+        from .profiles import maxprime
+
+        if (
+            result.bed_type is None
+            and not any(signal.startswith("excluded:") for signal in result.signals)
+            and maxprime.scan_matches(name)
+            and any(uuid.lower() in maxprime.RECEIVER_SERVICES for uuid in service_info.service_uuids)
+        ):
+            result = DetectionResult(
+                BED_TYPE_RICHMAT_CLASSIC_APPS, 0.3, result.signals,
+                ambiguous_types=result.ambiguous_types,
+            )
         if result.bed_type is not None and result.bed_type != BED_TYPE_RICHMAT_CLASSIC_APPS:
             if BED_TYPE_RICHMAT_CLASSIC_APPS not in (result.ambiguous_types or ()):
                 result.ambiguous_types = [*(result.ambiguous_types or ()), BED_TYPE_RICHMAT_CLASSIC_APPS]
@@ -1887,7 +1948,10 @@ def _detect_bed_type_with_app_candidates(
     ):
         signal = "name:enso2_app_candidate"
         if result.bed_type is None:
-            result = DetectionResult(BED_TYPE_ENSO2, 0.3, [*result.signals, signal])
+            result = DetectionResult(
+                BED_TYPE_ENSO2, 0.3, [*result.signals, signal],
+                ambiguous_types=result.ambiguous_types,
+            )
         elif result.bed_type != BED_TYPE_ENSO2:
             result.ambiguous_types = list(dict.fromkeys(
                 [*(result.ambiguous_types or ()), BED_TYPE_ENSO2]

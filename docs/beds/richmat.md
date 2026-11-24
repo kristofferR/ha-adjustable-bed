@@ -44,6 +44,7 @@ Brands using Richmat actuators:
 - Forty Winks ActivFlex
 - Superior
 - Richmat HJA5 series
+- [Dorsal / Roomi](#dorsal--roomi), including CPRN, CORN and saved Dorsal projects
 - [Dream Sense Bed](#dream-sense-bed)
 - [Saatva](#saatva)
 - Lucid L300
@@ -60,6 +61,7 @@ Bluetooth name does not tell which layout a bed has, so you pick it in setup (se
 
 | Analyzed | App | Package ID | Profile |
 |----------|-----|------------|---------|
+| ✅ | [Dorsal](https://play.google.com/store/apps/details?id=com.germany.dorsal) 1.0.4 | `com.germany.dorsal` | [Dorsal / Roomi](#dorsal--roomi) |
 | Partial | ENSO Sleep Control 1.0.7 (8) | `com.richmat.enso2` | [ENSO Sleep Control](#enso-sleep-control) |
 | ✅ | [Dream Sense Bed](https://play.google.com/store/apps/details?id=com.richmat.dreamsense) 1.0.4 | `com.richmat.dreamsense` | [Dream Sense Bed](#dream-sense-bed) |
 | ✅ | [Jerome's power base](https://play.google.com/store/apps/details?id=com.richmat.jerome2) 1.0.9 | `com.richmat.jerome2` | [Jerome's power base](#jeromes-power-base) |
@@ -237,6 +239,7 @@ sends STOP.
 | Classic BedSmart / X-Series | `richmat_classic_apps` | W1, W2, N1, W4 | per-layout catalog | renewable lease on keep buttons |
 | Classic Jerome's power base | `richmat_classic_apps` | W1, W2, N1, W4 | per-layout catalog | renewable lease on keep buttons |
 | Classic Base Remote | `richmat_classic_apps` | W1, W2, N1, W4 | per-layout catalog | renewable lease on keep buttons |
+| Classic Maxprime | `richmat_classic_apps` | W1, W2, N1, W4 | per-layout catalog | renewable lease on keep buttons |
 | Classic Lady Americana | `richmat_classic_apps` | W1, W2, N1, W4 | per-layout catalog | renewable lease on keep buttons |
 | Classic ACAA | `richmat_classic_apps` | W1, W2, N1, W4 | per-layout catalog | renewable lease on keep buttons |
 | Classic STA Homecare | `richmat_classic_apps` | W1, W2, N1, W4 | per-layout catalog | renewable lease on keep buttons |
@@ -324,12 +327,12 @@ and timing.
 
 | Key | Service | Write | Notify | Commands | Profiles |
 |---|---|---|---|---|---|
-| N1 | `6e400001-b5a3-f393-e0a9-e50e24dcca9e` | `6e400002-b5a3-f393-e0a9-e50e24dcca9e` | `6e400003-b5a3-f393-e0a9-e50e24dcca9e` | bare code | Richmat WiLinke, Richmat Nordic, Richmat Prefix55, Richmat PrefixAA, HJBed, Richmat 4.2.0, Eshine, Richmat MH Revive Control, Richmat MH Best Mattress, Richmat MH Blvd Home, Richmat MH HARMONY, Richmat MH Idealbed, Richmat MH RUF Betten, Richmat MH W.Silver, Richmat MH AMERICANSTAR, Richmat MH Bailey, Richmat MH TX, Richmat MH Nisco, Richmat MH MLILY Supreme, Richmat MH Bed Tech, Classic Avocado Eco Base, Classic CoasterSleep, Classic Forty Winks, Classic Milemont, Classic Superior, Classic Luuna Rise, Classic Power Cool Sleep System, Classic SleepFunction Bed Control, Classic L&P Adjustable Base, Classic BedSmart / X-Series, Classic Jerome's power base, Classic Base Remote, Classic Lady Americana, Classic ACAA, Classic STA Homecare, Classic Zero Gravity, Galaxy Bed Control, Good Vibe Sleep, MLILY Control, Majestic Home, Okimiki, Power Bob Base, Casper Base, Hush Base, Luuna +, MLILY Remote, SonicSleep, Lunio Smart+ (framed controls on every route) |
+| N1 | `6e400001-b5a3-f393-e0a9-e50e24dcca9e` | `6e400002-b5a3-f393-e0a9-e50e24dcca9e` | `6e400003-b5a3-f393-e0a9-e50e24dcca9e` | bare code | Richmat WiLinke, Richmat Nordic, Richmat Prefix55, Richmat PrefixAA, HJBed, Richmat 4.2.0, Eshine, Richmat MH Revive Control, Richmat MH Best Mattress, Richmat MH Blvd Home, Richmat MH HARMONY, Richmat MH Idealbed, Richmat MH RUF Betten, Richmat MH W.Silver, Richmat MH AMERICANSTAR, Richmat MH Bailey, Richmat MH TX, Richmat MH Nisco, Richmat MH MLILY Supreme, Richmat MH Bed Tech, Classic Avocado Eco Base, Classic CoasterSleep, Classic Forty Winks, Classic Milemont, Classic Superior, Classic Luuna Rise, Classic Power Cool Sleep System, Classic SleepFunction Bed Control, Classic L&P Adjustable Base, Classic BedSmart / X-Series, Classic Jerome's power base, Classic Base Remote, Classic Maxprime, Classic Lady Americana, Classic ACAA, Classic STA Homecare, Classic Zero Gravity, Galaxy Bed Control, Good Vibe Sleep, MLILY Control, Majestic Home, Okimiki, Power Bob Base, Casper Base, Hush Base, Luuna +, MLILY Remote, SonicSleep, Lunio Smart+ (framed controls on every route) |
 | W0 | `8ebd4f76-da9d-4b5a-a96e-8ebfbeb622e7` | `d44bc439-abfd-45a2-b575-925416129600` | `d44bc439-abfd-45a2-b575-925416129601` | framed | Richmat WiLinke, Richmat Nordic, Richmat Prefix55, Richmat PrefixAA, Classic L&P Adjustable Base |
-| W1 | `0000fee9-0000-1000-8000-00805f9b34fb` | `d44bc439-abfd-45a2-b575-925416129600` | `d44bc439-abfd-45a2-b575-925416129601` | framed | Richmat WiLinke, Richmat Nordic, Richmat Prefix55, Richmat PrefixAA, BedTech legacy, Saatva Adjustable Base: standard, Saatva Adjustable Base: split (two receivers), Saatva Adjustable Base Plus: standard, Saatva Adjustable Base Plus: split (two receivers), Saatva Adjustable Base Plus: split top (one receiver), BedTech app BT2000, BedTech app BT2500, BedTech app BT3000, BedTech app BT3000FH, BedTech app BT6500, BedTech app BTX4, BedTech app BTX4FH, BedTech app BTX5, BedTech app BTX5FH, L&P MlRM, HJBed, Richmat 4.2.0, Eshine, Richmat MH Revive Control, Richmat MH Best Mattress, Richmat MH Blvd Home, Richmat MH HARMONY, Richmat MH Idealbed, Richmat MH RUF Betten, Richmat MH W.Silver, Richmat MH AMERICANSTAR, Richmat MH Bailey, Richmat MH TX, Richmat MH Nisco, Richmat MH MLILY Supreme, Richmat MH Bed Tech, Classic Avocado Eco Base, Classic CoasterSleep, Classic Forty Winks, Classic Milemont, Classic Superior, Classic Luuna Rise, Classic Power Cool Sleep System, Classic SleepFunction Bed Control, Classic L&P Adjustable Base, Classic BedSmart / X-Series, Classic Jerome's power base, Classic Base Remote, Classic Lady Americana, Classic ACAA, Classic STA Homecare, Classic Zero Gravity, Galaxy Bed Control, Good Vibe Sleep, MLILY Control, Majestic Home, Okimiki, Power Bob Base, Casper Base, Hush Base, Luuna +, MLILY Remote, SonicSleep, Lunio Smart+ (framed controls on every route) |
-| W2 | `0000fee9-0000-1000-8000-00805f9b34bb` | `d44bc439-abfd-45a2-b575-925416129622` | `d44bc439-abfd-45a2-b575-925416129611` | framed | Richmat WiLinke, Richmat Nordic, Richmat Prefix55, Richmat PrefixAA, HJBed, Richmat 4.2.0, Eshine, Richmat MH Revive Control, Richmat MH Best Mattress, Richmat MH Blvd Home, Richmat MH HARMONY, Richmat MH Idealbed, Richmat MH RUF Betten, Richmat MH W.Silver, Richmat MH AMERICANSTAR, Richmat MH Bailey, Richmat MH TX, Richmat MH Nisco, Richmat MH MLILY Supreme, Richmat MH Bed Tech, Classic Avocado Eco Base, Classic CoasterSleep, Classic Forty Winks, Classic Milemont, Classic Superior, Classic Luuna Rise, Classic Power Cool Sleep System, Classic SleepFunction Bed Control, Classic L&P Adjustable Base, Classic BedSmart / X-Series, Classic Jerome's power base, Classic Base Remote, Classic Lady Americana, Classic ACAA, Classic STA Homecare, Classic Zero Gravity, Galaxy Bed Control, Good Vibe Sleep, MLILY Control, Majestic Home, Okimiki, Power Bob Base, Casper Base, Hush Base, Luuna +, MLILY Remote, SonicSleep, Lunio Smart+ (framed controls on every route) |
+| W1 | `0000fee9-0000-1000-8000-00805f9b34fb` | `d44bc439-abfd-45a2-b575-925416129600` | `d44bc439-abfd-45a2-b575-925416129601` | framed | Richmat WiLinke, Richmat Nordic, Richmat Prefix55, Richmat PrefixAA, BedTech legacy, Saatva Adjustable Base: standard, Saatva Adjustable Base: split (two receivers), Saatva Adjustable Base Plus: standard, Saatva Adjustable Base Plus: split (two receivers), Saatva Adjustable Base Plus: split top (one receiver), BedTech app BT2000, BedTech app BT2500, BedTech app BT3000, BedTech app BT3000FH, BedTech app BT6500, BedTech app BTX4, BedTech app BTX4FH, BedTech app BTX5, BedTech app BTX5FH, L&P MlRM, HJBed, Richmat 4.2.0, Eshine, Richmat MH Revive Control, Richmat MH Best Mattress, Richmat MH Blvd Home, Richmat MH HARMONY, Richmat MH Idealbed, Richmat MH RUF Betten, Richmat MH W.Silver, Richmat MH AMERICANSTAR, Richmat MH Bailey, Richmat MH TX, Richmat MH Nisco, Richmat MH MLILY Supreme, Richmat MH Bed Tech, Classic Avocado Eco Base, Classic CoasterSleep, Classic Forty Winks, Classic Milemont, Classic Superior, Classic Luuna Rise, Classic Power Cool Sleep System, Classic SleepFunction Bed Control, Classic L&P Adjustable Base, Classic BedSmart / X-Series, Classic Jerome's power base, Classic Base Remote, Classic Maxprime, Classic Lady Americana, Classic ACAA, Classic STA Homecare, Classic Zero Gravity, Galaxy Bed Control, Good Vibe Sleep, MLILY Control, Majestic Home, Okimiki, Power Bob Base, Casper Base, Hush Base, Luuna +, MLILY Remote, SonicSleep, Lunio Smart+ (framed controls on every route) |
+| W2 | `0000fee9-0000-1000-8000-00805f9b34bb` | `d44bc439-abfd-45a2-b575-925416129622` | `d44bc439-abfd-45a2-b575-925416129611` | framed | Richmat WiLinke, Richmat Nordic, Richmat Prefix55, Richmat PrefixAA, HJBed, Richmat 4.2.0, Eshine, Richmat MH Revive Control, Richmat MH Best Mattress, Richmat MH Blvd Home, Richmat MH HARMONY, Richmat MH Idealbed, Richmat MH RUF Betten, Richmat MH W.Silver, Richmat MH AMERICANSTAR, Richmat MH Bailey, Richmat MH TX, Richmat MH Nisco, Richmat MH MLILY Supreme, Richmat MH Bed Tech, Classic Avocado Eco Base, Classic CoasterSleep, Classic Forty Winks, Classic Milemont, Classic Superior, Classic Luuna Rise, Classic Power Cool Sleep System, Classic SleepFunction Bed Control, Classic L&P Adjustable Base, Classic BedSmart / X-Series, Classic Jerome's power base, Classic Base Remote, Classic Maxprime, Classic Lady Americana, Classic ACAA, Classic STA Homecare, Classic Zero Gravity, Galaxy Bed Control, Good Vibe Sleep, MLILY Control, Majestic Home, Okimiki, Power Bob Base, Casper Base, Hush Base, Luuna +, MLILY Remote, SonicSleep, Lunio Smart+ (framed controls on every route) |
 | W3 | `0000ffe0-0000-1000-8000-00805f9b34fb` | `0000ffe2-0000-1000-8000-00805f9b34fb` | `0000ffe1-0000-1000-8000-00805f9b34fb` | framed | Richmat WiLinke, Richmat Nordic, Richmat Prefix55, Richmat PrefixAA, HJBed, Richmat 4.2.0, Eshine, Richmat MH Revive Control, Richmat MH Best Mattress, Richmat MH Blvd Home, Richmat MH HARMONY, Richmat MH Idealbed, Richmat MH RUF Betten, Richmat MH W.Silver, Richmat MH AMERICANSTAR, Richmat MH Bailey, Richmat MH TX, Richmat MH Nisco, Richmat MH MLILY Supreme, Richmat MH Bed Tech, Galaxy Bed Control, Good Vibe Sleep, MLILY Control, Majestic Home, Okimiki, Power Bob Base, Casper Base, Hush Base, Luuna +, MLILY Remote, SonicSleep, Lunio Smart+ (framed controls on every route) |
-| W4 | `0000fff0-0000-1000-8000-00805f9b34fb` | `0000fff2-0000-1000-8000-00805f9b34fb` | `0000fff1-0000-1000-8000-00805f9b34fb` | framed | Richmat WiLinke, Richmat Nordic, Richmat Prefix55, Richmat PrefixAA, HJBed, Richmat 4.2.0, Eshine, Richmat MH Revive Control, Richmat MH Best Mattress, Richmat MH Blvd Home, Richmat MH HARMONY, Richmat MH Idealbed, Richmat MH RUF Betten, Richmat MH W.Silver, Richmat MH AMERICANSTAR, Richmat MH Bailey, Richmat MH TX, Richmat MH Nisco, Richmat MH MLILY Supreme, Richmat MH Bed Tech, Classic Avocado Eco Base, Classic CoasterSleep, Classic Forty Winks, Classic Milemont, Classic Superior, Classic Luuna Rise, Classic Power Cool Sleep System, Classic SleepFunction Bed Control, Classic L&P Adjustable Base, Classic BedSmart / X-Series, Classic Jerome's power base, Classic Base Remote, Classic Lady Americana, Classic ACAA, Classic STA Homecare, Classic Zero Gravity, Galaxy Bed Control, Good Vibe Sleep, MLILY Control, Majestic Home, Okimiki, Power Bob Base, Casper Base, Hush Base, Luuna +, MLILY Remote, SonicSleep, Lunio Smart+ (framed controls on every route) |
+| W4 | `0000fff0-0000-1000-8000-00805f9b34fb` | `0000fff2-0000-1000-8000-00805f9b34fb` | `0000fff1-0000-1000-8000-00805f9b34fb` | framed | Richmat WiLinke, Richmat Nordic, Richmat Prefix55, Richmat PrefixAA, HJBed, Richmat 4.2.0, Eshine, Richmat MH Revive Control, Richmat MH Best Mattress, Richmat MH Blvd Home, Richmat MH HARMONY, Richmat MH Idealbed, Richmat MH RUF Betten, Richmat MH W.Silver, Richmat MH AMERICANSTAR, Richmat MH Bailey, Richmat MH TX, Richmat MH Nisco, Richmat MH MLILY Supreme, Richmat MH Bed Tech, Classic Avocado Eco Base, Classic CoasterSleep, Classic Forty Winks, Classic Milemont, Classic Superior, Classic Luuna Rise, Classic Power Cool Sleep System, Classic SleepFunction Bed Control, Classic L&P Adjustable Base, Classic BedSmart / X-Series, Classic Jerome's power base, Classic Base Remote, Classic Maxprime, Classic Lady Americana, Classic ACAA, Classic STA Homecare, Classic Zero Gravity, Galaxy Bed Control, Good Vibe Sleep, MLILY Control, Majestic Home, Okimiki, Power Bob Base, Casper Base, Hush Base, Luuna +, MLILY Remote, SonicSleep, Lunio Smart+ (framed controls on every route) |
 | W5 | `0000e0ff-3c17-d293-8e48-14fe2e4da212` | `00000002-3c17-d293-8e48-14fe2e4da212` | `00000003-3c17-d293-8e48-14fe2e4da212` | framed | Richmat WiLinke, Richmat Nordic, Richmat Prefix55, Richmat PrefixAA, HJBed, Richmat 4.2.0, Eshine, Galaxy Bed Control, Good Vibe Sleep, MLILY Control, Majestic Home, Okimiki, Power Bob Base, Casper Base, Hush Base, Luuna +, MLILY Remote, SonicSleep, Lunio Smart+ (framed controls on every route) |
 
 W0 is the legacy custom service, W4 and W5 are name-guarded (see the Richmat
@@ -16446,6 +16449,461 @@ phone controls, network and device administration are outside the integration.
 Based on Dream Sense Bed 1.0.4 (`com.richmat.dreamsense`), as delivered by
 Google Play on November 18, 2026. Not yet tested on hardware.
 
+### Dorsal / Roomi
+
+**App:** [Dorsal](https://play.google.com/store/apps/details?id=com.germany.dorsal) 1.0.4, `com.germany.dorsal`
+
+**Status:** Not yet tested
+
+#### Setup
+
+Choose **Dorsal app / Roomi** and select **CPRN** or **CORN** to match the
+app’s picker. Choose **Saved Dorsal project** for an existing four-character
+project code and enter it exactly. A saved project can have an empty layout.
+The Bluetooth name does not identify a project.
+
+Choose **Roomi controls** for the Roomi page and a receiver with `QRRM` in its
+Bluetooth name. The saved code is optional here and controls only the startup
+queries and available alarm modes. Reconfigure checks the receiver live
+before applying the route. The Roomi controls use one receiver.
+Two-address combinations keep each receiver's setup separate.
+
+Bluetooth names containing `ZRS6` or `QRRM` can suggest this app. These names
+are shared by other Richmat receivers. The exact writer on one of the six
+supported GATT services corroborates transport during connection. W5 is
+checked on the live link.
+
+#### Controls
+
+| Profile | Movement and presets | Other controls |
+|---|---|---|
+| CPRN | Head, foot, flat, zero gravity and anti-snore | Under-bed light and synchronized movement |
+| CORN | Head, foot, combined head and foot, lumbar, pillow, zero gravity, anti-snore and memory 1–2 | Under-bed light and synchronized movement |
+| Saved project | Layout-specific movement, presets and memory | Some layouts add levels, timers, massage, fans, vibration, air or other accessories |
+| Roomi | Head, foot, lumbar, pillow, flat, zero gravity, anti-snore, read, relax and memory 1–2 | Under-bed light, massage pattern, head and foot intensity steps and 10-, 20- and 30-minute timers |
+
+The Save controls send the preset’s alternate command once, on confirmation.
+Use [Hold control](../SERVICES.md#hold_control) for a sustained operation.
+The receiver has no independently addressed left or right command on these
+routes. Clock and name writes are unavailable. Raw travel and angle reports
+appear in protocol diagnostics when received. Their units and the mapping
+to specific actuators are unknown.
+
+#### Bluetooth startup and release
+
+The receiver's first exact writable characteristic and first notifying
+characteristic can come from different matching services. The last matching
+service selects bare or framed opcodes. Roomi widget commands always use the
+framed command and framed STOP. The standard Service Changed subscription is
+separate from proprietary notifications.
+
+After each GATT setup, the controller sends Exit limit. Initial or changed
+project admission adds Exit limit, Check clock and Check light at 300 ms
+intervals. The movement gesture refreshes every 100 ms. Writes serialize,
+and one-shot writes can follow each other as soon as the link accepts them.
+Ending a hold drops pending refreshes before sending STOP. Dorsal alternates
+without a release in the app send once. Roomi frame-based controls send STOP
+at release.
+
+#### Alarms and notifications
+
+[Set alarm](../SERVICES.md#set_alarm) edits an alarm the bed reports on a
+project with alarm modes. Omit the wake action to preserve the stored mode
+and extra bytes. Once means an empty weekday mask.
+[Manage Dorsal alarms](../SERVICES.md#dorsal_alarm) can read reported slots,
+toggle or delete an existing alarm, or explicitly create or replace an
+alarm. The receiver sends no end-of-list marker. A slot missing from the
+list may still contain an alarm. Choose a slot you intend to overwrite
+and use the table below to find the wake actions the project accepts.
+
+Extended notifications use `6E 20 length` and a final sum8. Variable common
+`6E 90` reports have no checksum test. An incomplete extended record expires
+after 500 ms without another notification.
+
+#### Commands
+
+<!-- generated:dorsal-controls -->
+<!-- Generated by scripts/generate_codec_docs.py from the codec and profile data. Edit those, not this block. -->
+
+| GATT mode | Service | Exact writer | Reference RX |
+|---|---|---|---|
+| N1 | `6e400001-b5a3-f393-e0a9-e50e24dcca9e` | `6e400002-b5a3-f393-e0a9-e50e24dcca9e` | `6e400003-b5a3-f393-e0a9-e50e24dcca9e` |
+| W1 | `0000fee9-0000-1000-8000-00805f9b34fb` | `d44bc439-abfd-45a2-b575-925416129600` | `d44bc439-abfd-45a2-b575-925416129601` |
+| W2 | `0000fee9-0000-1000-8000-00805f9b34bb` | `d44bc439-abfd-45a2-b575-925416129622` | `d44bc439-abfd-45a2-b575-925416129611` |
+| W3 | `0000ffe0-0000-1000-8000-00805f9b34fb` | `0000ffe2-0000-1000-8000-00805f9b34fb` | `0000ffe1-0000-1000-8000-00805f9b34fb` |
+| W4 | `0000fff0-0000-1000-8000-00805f9b34fb` | `0000fff2-0000-1000-8000-00805f9b34fb` | `0000fff1-0000-1000-8000-00805f9b34fb` |
+| W5 | `0000e0ff-3c17-d293-8e48-14fe2e4da212` | `00000002-3c17-d293-8e48-14fe2e4da212` | `00000003-3c17-d293-8e48-14fe2e4da212` |
+
+| Startup request | Nordic | Framed |
+|---|---|---|
+| ExitLimit | `00` | `6E 02 01 00 71` |
+| CheckClock | `01` | `6E 08 01 01 78` |
+| CheckLight | `01` | `6E 0A 00 01 79` |
+
+##### CPRN operations (framed)
+
+| Control | Tap | Refresh | Alternate |
+|---|---|---|---|
+| Head up |  | `6E 01 00 24 93` |  |
+| Foot up |  | `6E 01 00 26 95` |  |
+| Flat |  | `6E 01 00 31 A0` |  |
+| Foot down |  | `6E 01 00 27 96` |  |
+| Head down |  | `6E 01 00 25 94` |  |
+| Zero gravity | `6E 01 00 45 B4` |  | `6E 01 00 66 D5` |
+| Anti-snore | `6E 01 00 46 B5` |  | `6E 01 00 69 D8` |
+| Toggle under-bed light | `6E 01 00 3C AB` |  |  |
+| Sync on | `6E 01 00 BC 2B` |  |  |
+| Sync off | `6E 01 00 BD 2C` |  |  |
+
+##### CORN operations (framed)
+
+| Control | Tap | Refresh | Alternate |
+|---|---|---|---|
+| Zero gravity | `6E 01 00 45 B4` |  | `6E 01 00 66 D5` |
+| Memory position 1 | `6E 01 00 2E 9D` |  | `6E 01 00 2B 9A` |
+| Anti-snore | `6E 01 00 46 B5` |  | `6E 01 00 69 D8` |
+| Head up |  | `6E 01 00 24 93` |  |
+| Foot up |  | `6E 01 00 26 95` |  |
+| Memory position 2 | `6E 01 00 2F 9E` |  | `6E 01 00 2C 9B` |
+| Foot down |  | `6E 01 00 27 96` |  |
+| Head down |  | `6E 01 00 25 94` |  |
+| Lumbar up |  | `6E 01 00 3F AE` |  |
+| Head and foot up |  | `6E 01 00 29 98` |  |
+| Toggle under-bed light | `6E 01 00 3C AB` |  |  |
+| Lumbar down |  | `6E 01 00 40 AF` |  |
+| Head and foot down |  | `6E 01 00 2A 99` |  |
+| Pillow up |  | `6E 01 00 41 B0` |  |
+| Sync on | `6E 01 00 BC 2B` |  |  |
+| Sync off | `6E 01 00 BD 2C` |  |  |
+| Pillow down |  | `6E 01 00 42 B1` |  |
+
+##### Roomi fixed frames
+
+| Control | Tap | Refresh | Alternate |
+|---|---|---|---|
+| Head up |  | `6E 01 00 24 93` |  |
+| Head down |  | `6E 01 00 25 94` |  |
+| Foot up |  | `6E 01 00 26 95` |  |
+| Foot down |  | `6E 01 00 27 96` |  |
+| Lumbar up |  | `6E 01 00 3F AE` |  |
+| Lumbar down |  | `6E 01 00 40 AF` |  |
+| Pillow up |  | `6E 01 00 41 B0` |  |
+| Pillow down |  | `6E 01 00 42 B1` |  |
+| Flat | `6E 01 00 31 A0` |  |  |
+| Toggle under-bed light | `6E 01 00 3C AB` |  |  |
+| Memory position 1 | `6E 01 00 2E 9D` |  | `6E 01 00 2B 9A` |
+| Memory position 2 | `6E 01 00 2F 9E` |  | `6E 01 00 2C 9B` |
+| Anti-snore | `6E 01 00 46 B5` |  | `6E 01 00 69 D8` |
+| Relax position | `6E 01 00 59 C8` |  | `6E 01 00 65 D4` |
+| Reading position | `6E 01 00 58 C7` |  | `6E 01 00 64 D3` |
+| Zero gravity | `6E 01 00 45 B4` |  | `6E 01 00 66 D5` |
+| Massage 10 minute timer | `6E 01 00 5F CE` |  |  |
+| Massage 20 minute timer | `6E 01 00 63 D2` |  |  |
+| Massage 30 minute timer | `6E 01 00 61 D0` |  |  |
+| Massage on/off | `6E 01 00 5E CD` |  |  |
+| Massage mode change | `6E 01 00 48 B7` |  |  |
+| Massage head intensity up | `6E 01 00 4C BB` |  |  |
+| Massage foot intensity up | `6E 01 00 4E BD` |  |  |
+
+##### Restored control operands
+
+| Control | Tap N1 / P2 | Refresh N1 / P2 | Alternate N1 / P2 |
+|---|---|---|---|
+| Airbag all on/off | `CB` / `CB` |  |  |
+| Airbag back on/off | `CC` / `CC` |  |  |
+| Airbag foot on/off | `CD` / `CD` |  |  |
+| Airbag lumbar on/off | `CE` / `CE` |  |  |
+| Airbag pillow on/off | `CF` / `CF` |  |  |
+| All motor down |  | `44` / `44` |  |
+| All motor down |  | `57` / `57` |  |
+| All motor down |  | `5C` / `5C` |  |
+| All motor down | `57` / `57` |  |  |
+| All motor up |  | `43` / `43` |  |
+| All motor up |  | `56` / `56` |  |
+| All motor up |  | `5B` / `5B` |  |
+| All motor up | `56` / `56` |  |  |
+| Anti-snore |  | `46` / `46` |  |
+| Anti-snore | `46` / `46` |  |  |
+| Anti-snore | `46` / `46` |  | `69` / `69` |
+| Anti-snore setting | `CB` / `CB` |  |  |
+| Aromatherapy | `3B` / `3B` |  | `00` / `00` |
+| Controller lock on/off | `84` / `84` |  |  |
+| Controller lock on/off | `84` / `84` |  | `84` / `84` |
+| Deep sleep position | `F6` / `F6` |  | `F7` / `F7` |
+| Deep sleep position | `F7` / `F7` |  | `F6` / `F6` |
+| Fan 1 intensity up | `8A` / `8A` |  |  |
+| Fan 2 intensity up | `8B` / `8B` |  |  |
+| Fan all off | `A1` / `A1` |  |  |
+| Fan change mode | `A2` / `A2` |  |  |
+| Fan timer 2 hours | `A6` / `A6` |  |  |
+| Fan timer 3 hours | `A7` / `A7` |  |  |
+| Fan timer 5 hours | `A8` / `A8` |  |  |
+| Flat |  | `31` / `31` |  |
+| Flat | `30` / `30` |  |  |
+| Flat | `31` / `31` |  |  |
+| Flat | `38` / `31` |  |  |
+| Flat position 2 | `6C` / `6C` |  |  |
+| Foot down |  | `27` / `27` |  |
+| Foot down |  | `41` / `27` |  |
+| Foot down | `21` / `21` |  |  |
+| Foot down | `27` / `27` |  |  |
+| Foot up |  | `26` / `26` |  |
+| Foot up |  | `36` / `26` |  |
+| Foot up |  | `37` / `26` |  |
+| Foot up | `26` / `26` |  |  |
+| Foot up | `3E` / `3E` |  |  |
+| Get-up assist | `3D` / `3D` |  |  |
+| Get-up assist position | `3D` / `3D` |  |  |
+| Get-up assist position | `3D` / `3D` |  | `F8` / `F8` |
+| Head and foot all up | `23` / `23` |  |  |
+| Head and foot down |  | `2A` / `2A` |  |
+| Head and foot down |  | `39` / `2A` |  |
+| Head and foot down | `2A` / `2A` |  |  |
+| Head and foot up |  | `29` / `29` |  |
+| Head and foot up |  | `36` / `29` |  |
+| Head and foot up |  | `38` / `29` |  |
+| Head and foot up | `29` / `29` |  |  |
+| Head down |  | `25` / `25` |  |
+| Head down |  | `37` / `25` |  |
+| Head down |  | `38` / `25` |  |
+| Head down | `22` / `22` |  |  |
+| Head down | `25` / `25` |  |  |
+| Head down | `25` / `25` |  | `00` / `00` |
+| Head down and foot up |  | `22` / `22` |  |
+| Head down and foot up | `22` / `22` |  |  |
+| Head up |  | `24` / `24` |  |
+| Head up |  | `34` / `24` |  |
+| Head up |  | `35` / `24` |  |
+| Head up | `24` / `24` |  |  |
+| Head up | `24` / `24` |  | `00` / `00` |
+| Head up | `3D` / `3D` |  |  |
+| Head up and foot down |  | `21` / `21` |  |
+| Head up and foot down | `21` / `21` |  |  |
+| Lounge position |  | `59` / `59` |  |
+| Lounge position | `32` / `59` |  |  |
+| Lounge position | `32` / `59` |  | `65` / `65` |
+| Lounge position | `59` / `59` |  |  |
+| Lounge position | `59` / `59` |  | `65` / `65` |
+| Lumbar and pillow down |  | `44` / `44` |  |
+| Lumbar and pillow up |  | `43` / `43` |  |
+| Lumbar down |  | `40` / `40` |  |
+| Lumbar down |  | `42` / `42` |  |
+| Lumbar down |  | `43` / `40` |  |
+| Lumbar down | `40` / `40` |  |  |
+| Lumbar position | `91` / `91` |  | `92` / `92` |
+| Lumbar up |  | `3F` / `3F` |  |
+| Lumbar up |  | `41` / `41` |  |
+| Lumbar up |  | `42` / `3F` |  |
+| Massage 1 intensity | `A4` / `A4` |  |  |
+| Massage 1 on/off | `32` / `32` |  |  |
+| Massage 10 minute timer | `5F` / `5F` |  |  |
+| Massage 10 minute timer | `A1` / `A1` |  |  |
+| Massage 15 minute spine guard | `76` / `76` |  |  |
+| Massage 15 minute up and down | `76` / `76` |  |  |
+| Massage 2 intensity | `A5` / `A5` |  |  |
+| Massage 2 on/off | `33` / `33` |  |  |
+| Massage 20 minute timer | `63` / `63` |  |  |
+| Massage 20 minute timer | `A2` / `A2` |  |  |
+| Massage 30 minute timer | `61` / `61` |  |  |
+| Massage 30 minute timer | `90` / `90` |  |  |
+| Massage 30 minute timer | `A3` / `A3` |  |  |
+| Massage 30 minute up and down | `90` / `90` |  |  |
+| Massage foot intensity down | `4B` / `4F` |  |  |
+| Massage foot intensity down | `4F` / `4F` |  |  |
+| Massage foot intensity mode 1 | `9D` / `9D` |  |  |
+| Massage foot intensity mode 2 | `9E` / `9E` |  |  |
+| Massage foot intensity mode 3 | `9F` / `9F` |  |  |
+| Massage foot intensity up | `44` / `4E` |  |  |
+| Massage foot intensity up | `48` / `4E` |  |  |
+| Massage foot intensity up | `4E` / `4E` |  |  |
+| Massage foot off | `9C` / `9C` |  |  |
+| Massage head intensity down | `49` / `4D` |  |  |
+| Massage head intensity down | `4A` / `4D` |  |  |
+| Massage head intensity down | `4D` / `4D` |  |  |
+| Massage head intensity mode 1 | `99` / `99` |  |  |
+| Massage head intensity mode 2 | `9A` / `9A` |  |  |
+| Massage head intensity mode 3 | `9B` / `9B` |  |  |
+| Massage head intensity up | `42` / `4C` |  |  |
+| Massage head intensity up | `46` / `4C` |  |  |
+| Massage head intensity up | `49` / `4C` |  |  |
+| Massage head intensity up | `4C` / `4C` |  |  |
+| Massage head off | `98` / `98` |  |  |
+| Massage intensity down | `35` / `35` |  |  |
+| Massage intensity down | `4B` / `35` |  |  |
+| Massage intensity level 1 | `4C` / `67` |  |  |
+| Massage intensity level 1 | `67` / `67` |  |  |
+| Massage intensity level 2 | `4D` / `4D` |  |  |
+| Massage intensity level 3 | `4E` / `68` |  |  |
+| Massage intensity level 3 | `68` / `68` |  |  |
+| Massage intensity up | `34` / `34` |  |  |
+| Massage intensity up | `48` / `34` |  |  |
+| Massage intensity up | `4A` / `34` |  |  |
+| Massage lumbar intensity up | `E0` / `E0` |  |  |
+| Massage mode change | `39` / `39` |  |  |
+| Massage mode change | `47` / `47` |  |  |
+| Massage mode change | `48` / `48` |  |  |
+| Massage mode change | `4A` / `48` |  |  |
+| Massage mode constant | `3A` / `3A` |  |  |
+| Massage mode constant | `47` / `3A` |  |  |
+| Massage mode off and motor reset | `5A` / `5A` |  |  |
+| Massage mode pulse | `38` / `38` |  |  |
+| Massage mode pulse | `46` / `38` |  |  |
+| Massage mode wave | `39` / `39` |  |  |
+| Massage mode wave | `45` / `39` |  |  |
+| Massage mode wave | `48` / `48` |  | `47` / `47` |
+| Massage mode wave mode 1 | `49` / `49` |  |  |
+| Massage mode wave mode 2 | `4A` / `4A` |  |  |
+| Massage mode wave mode 3 | `4B` / `4B` |  |  |
+| Massage off |  | `5E` / `5E` |  |
+| Massage off | `39` / `5F` |  |  |
+| Massage off | `47` / `47` |  |  |
+| Massage off | `47` / `5F` |  |  |
+| Massage off | `49` / `5F` |  |  |
+| Massage off | `4C` / `4C` |  | `5E` / `5E` |
+| Massage off | `4C` / `5F` |  |  |
+| Massage off | `50` / `5F` |  |  |
+| Massage off | `5D` / `5D` |  |  |
+| Massage off | `5E` / `5E` |  |  |
+| Massage off | `5F` / `5F` |  |  |
+| Massage off | `61` / `61` |  |  |
+| Massage on | `5D` / `5D` |  |  |
+| Massage on/off | `4C` / `4C` |  | `00` / `00` |
+| Massage on/off | `5D` / `5D` |  |  |
+| Massage on/off | `6F` / `6F` |  |  |
+| Massage speed down | `37` / `37` |  |  |
+| Massage speed down | `49` / `37` |  |  |
+| Massage speed up | `36` / `36` |  |  |
+| Massage speed up | `48` / `36` |  |  |
+| Memory position 1 |  |  | `2B` / `2B` |
+| Memory position 1 |  | `2B` / `2B` |  |
+| Memory position 1 |  | `2E` / `2E` |  |
+| Memory position 1 | `2B` / `2B` |  |  |
+| Memory position 1 | `2E` / `2E` |  |  |
+| Memory position 1 | `2E` / `2E` |  | `2B` / `2B` |
+| Memory position 1 | `35` / `45` |  |  |
+| Memory position 1 | `42` / `2E` |  |  |
+| Memory position 1 | `42` / `2E` |  | `2B` / `2B` |
+| Memory position 1 | `43` / `2B` |  |  |
+| Memory position 2 |  |  | `2C` / `2C` |
+| Memory position 2 |  | `2C` / `2C` |  |
+| Memory position 2 |  | `2F` / `2F` |  |
+| Memory position 2 | `2C` / `2C` |  |  |
+| Memory position 2 | `2F` / `2F` |  |  |
+| Memory position 2 | `2F` / `2F` |  | `2C` / `2C` |
+| Memory position 2 | `44` / `2F` |  |  |
+| Memory position 2 | `44` / `2F` |  | `2C` / `2C` |
+| Memory position 2 | `45` / `2C` |  |  |
+| Memory position 3 |  | `30` / `30` |  |
+| Memory position 3 | `2D` / `2D` |  |  |
+| Memory position 3 | `30` / `30` |  |  |
+| Memory position 3 | `30` / `30` |  | `2D` / `2D` |
+| Memory position 4 |  | `B2` / `B2` |  |
+| Memory position 4 | `B2` / `B2` |  |  |
+| Memory position 4 | `B2` / `B2` |  | `B3` / `B3` |
+| Memory position 5 | `F4` / `F4` |  | `F5` / `F5` |
+| Motor 3 down |  | `72` / `72` |  |
+| Motor 3 up |  | `71` / `71` |  |
+| Motor 4 down |  | `74` / `74` |  |
+| Motor 4 up |  | `73` / `73` |  |
+| Motor 5 down |  | `D1` / `D1` |  |
+| Motor 5 up |  | `D0` / `D0` |  |
+| Motor and massage all off | `47` / `47` |  |  |
+| Music vibration level 1 | `DD` / `DD` |  |  |
+| Music vibration level 2 | `DE` / `DE` |  |  |
+| Music vibration level 3 | `DF` / `DF` |  |  |
+| Music vibration mode | `D6` / `D6` |  |  |
+| Music vibration off | `DC` / `DC` |  |  |
+| Pillow 2 down |  | `7B` / `7B` |  |
+| Pillow 2 up |  | `7A` / `7A` |  |
+| Pillow down |  | `40` / `40` |  |
+| Pillow down |  | `42` / `42` |  |
+| Pillow down |  | `45` / `42` |  |
+| Pillow down | `42` / `42` |  |  |
+| Pillow up |  | `3F` / `3F` |  |
+| Pillow up |  | `41` / `41` |  |
+| Pillow up |  | `44` / `44` |  |
+| Pillow up | `41` / `41` |  |  |
+| Raise head and stop foot | `3D` / `3D` |  |  |
+| Reading position | `F2` / `F2` |  |  |
+| Reading position | `F2` / `F2` |  | `F3` / `F3` |
+| Reading position | `F3` / `F3` |  | `F2` / `F2` |
+| Relax position | `70` / `70` |  | `95` / `95` |
+| Side sleep position | `BA` / `BA` |  | `BB` / `BB` |
+| Sit position |  | `E5` / `E5` |  |
+| Sleep aid | `86` / `86` |  |  |
+| Sleep aid | `86` / `86` |  | `89` / `89` |
+| Sleep aid 1 | `86` / `86` |  | `00` / `00` |
+| Sleep aid 2 | `87` / `87` |  |  |
+| Sleep aid 3 | `88` / `88` |  |  |
+| Sleep position | `8E` / `8E` |  | `8F` / `8F` |
+| Sofa backward |  | `5C` / `5C` |  |
+| Sofa forward |  | `5B` / `5B` |  |
+| Swing sleep aid |  | `76` / `76` |  |
+| Sync off |  |  | `BD` / `BD` |
+| Sync off | `BD` / `BD` |  |  |
+| Sync off | `BD` / `BD` |  | `BD` / `BD` |
+| Sync on |  |  | `BC` / `BC` |
+| Sync on | `BC` / `BC` |  |  |
+| Sync on | `BC` / `BC` |  | `BC` / `BC` |
+| TV position |  | `58` / `58` |  |
+| TV position | `33` / `58` |  |  |
+| TV position | `58` / `58` |  |  |
+| TV position | `58` / `58` |  | `64` / `64` |
+| Tilt down |  | `44` / `44` |  |
+| Tilt down |  | `5C` / `5C` |  |
+| Tilt up |  | `43` / `43` |  |
+| Tilt up |  | `5B` / `5B` |  |
+| Toggle under-bed light | `36` / `3C` |  |  |
+| Toggle under-bed light | `3C` / `3C` |  |  |
+| Toggle under-bed light | `43` / `3C` |  |  |
+| Toggle under-bed light | `46` / `3C` |  |  |
+| Under-bed light off | `75` / `75` |  |  |
+| Unwind position | `8C` / `8C` |  | `8D` / `8D` |
+| Wake up | `85` / `85` |  | `00` / `00` |
+| Wake up position | `93` / `93` |  | `94` / `94` |
+| Yoga position | `6B` / `6B` |  |  |
+| Yoga position | `6B` / `6B` |  | `6A` / `6A` |
+| Yoga position | `F0` / `F0` |  | `F1` / `F1` |
+| Zero gravity |  | `45` / `45` |  |
+| Zero gravity | `34` / `45` |  |  |
+| Zero gravity | `45` / `45` |  |  |
+| Zero gravity | `45` / `45` |  | `66` / `66` |
+| Zero gravity 2 | `6B` / `6B` |  | `6A` / `6A` |
+| Zero gravity motor down |  | `72` / `72` |  |
+| Zero gravity motor up |  | `71` / `71` |  |
+| Zero gravity setting |  | `62` / `62` |  |
+| Zero gravity setting | `22` / `22` |  |  |
+| Zero gravity setting | `62` / `62` |  |  |
+
+##### Repeating alarm selectors
+
+| Wake action | Selector | Saved projects |
+|---|---|---|
+| `all_up` | `56` | N4RN |
+| `anti_snore` | `46` | A4RN, ADRM, AJRN, BDRM, CBRN, DDRM, EYRN, F4RN, FARM, FERM, FFRM, FPRN, G1RN, G5RN, GFRN, HRRM, HZRM, JWRM, KKRM, KRRM, KSRN, LCRM, LCRN, LDRN, LQRM, LRRM, LSRM, OARM, OTRM, P9RN, PLRN, PNRN, QKRN, RARN, RXRN, T2RN, T9RM, TDRN, TERN, TLRN, TWRN, TXRN, U3RN, UBRN, URRM, WLRM, WWRM, X1RM, XERM, XFRM, XLRM, Y6RM, Y8RM, YERM, YPRM, YQRM, Z8RM, Z9RM, ZDRM, ZGRM |
+| `deep_sleep` | `F6` | FERM, FFRM |
+| `flat` | `31` | MXRN |
+| `flat_reset` | `57` | N4RN |
+| `foot_massage` | `4E` | ADRM, DPRM, EYRN, FARM, G1RN, JWRM, KERM, KKRM, LQRM, LYRM, OARM, OTRM, RARN, XERM, XFRM, XLRM, YERM, YPRM, Z5RM, Z8RM, ZGRM, ZHRM, ZIRM |
+| `get_up` | `3D` | MXRN |
+| `head_massage` | `4C` | ADRM, AIRM, DPRM, EYRN, F4RN, FARM, G1RN, JWRM, KERM, KKRM, LQRM, LYRM, OARM, OTRM, RARN, XERM, XFRM, XLRM, YERM, YPRM, Z5RM, Z8RM, ZGRM, ZIRM |
+| `lounge` | `59` | ADRM, AJRN, BDRM, CARN, CBRN, DDRM, EKRN, FFRM, FPRN, HRRM, HZRM, KWRN, LCRM, LQRM, LRRM, LSRM, MXRN, P9RN, PNRN, SZRN, TDRN, TKRN, WLRM, XERM, Y8RM, YERM, YPRM, YRRM, Z5RM, Z8RM, ZURM |
+| `massage` | `5D` | T9RM |
+| `memory_1` | `2E` | CARN, CBRN, DDRM, DPRM, EYRN, FARM, FERM, FFRM, FPRN, G1RN, G5RN, GERN, HRRM, JWRM, KERM, KKRM, KSRN, KWRN, LCRM, LCRN, LSRM, MJRN, MXRN, OARM, OTRM, P9RN, PLRN, PNRN, QKRN, RARN, RXRN, SZRN, T2RN, TDRN, TERN, TKRN, TLRN, U2RN, U3RN, URRM, XARM, XERM, XVRM, Y6RM, Y8RM, YERM, YPRM, YQRM, YRRM, Z5RM, Z8RM, Z9RM, ZDRM, ZGRM |
+| `memory_2` | `2F` | A4RN, CARN, CBRN, DDRM, DPRM, EYRN, FARM, FERM, FFRM, FPRN, G1RN, G5RN, GERN, KWRN, LCRM, LCRN, LQRM, LRRM, MJRN, MXRN, OARM, P9RN, PNRN, RARN, RXRN, SZRN, T2RN, TDRN, TKRN, U3RN, WLRM, XVRM, Y6RM, Y8RM, YERM, YPRM, YVRM, Z5RM, Z8RM, ZDRM, ZGRM |
+| `memory_3` | `30` | CMRM, DDRM, G5RN, LQRM, WLRM, YPRM |
+| `memory_4` | `B2` | G2RN |
+| `memory_5` | `F4` | LQRM |
+| `reading` | `F2` | AJRN, EKRN, G1RN, MXRN, TDRN, UBRN |
+| `tv` | `58` | A4RN, ADRM, AJRN, BDRM, CARN, CBRN, DDRM, EKRN, EYRN, F4RN, FFRM, FPRN, G1RN, G5RN, GFRN, HRRM, JWRM, KERM, LCRM, LCRN, LDRN, LQRM, LRRM, LSRM, MJRN, MXRN, OARM, P9RN, PLRN, PNRN, RARN, RXRN, SZRN, TDRN, TERN, TKRN, TLRN, TWRN, TXRN, U3RN, UBRN, WLRM, XERM, XFRM, Y8RM, YERM, YMRM, YPRM, YRRM, YXRM, Z5RM, Z8RM, Z9RM, ZDRM, ZGRM |
+| `wake_mode_1` | `B0` | ESRN, YORM |
+| `wake_mode_2` | `B1` | YORM |
+| `wake_up` | `85` | LQRM |
+| `yoga` | `6B` | MXRN |
+| `zero_g` | `45` | A4RN, ADRM, AJRN, BDRM, CARN, CBRN, DDRM, DPRM, EKRN, EYRN, F4RN, FARM, FERM, FFRM, FPRN, G1RN, G5RN, GERN, GFRN, HRRM, HZRM, JWRM, KERM, KRRM, KSRN, KWRN, LCRM, LCRN, LDRN, LQRM, LRRM, LYRM, MXRN, OTRM, P9RN, PLRN, PNRN, QKRN, RARN, RXRN, SZRN, T2RN, T9RM, TDRN, TERN, TKRN, TLRN, TWRN, TXRN, U3RN, UBRN, WLRM, X1RM, XERM, XFRM, XLRM, Y6RM, Y8RM, YERM, YGRM, YPRM, YQRM, YXRM, Z5RM, Z8RM, Z9RM, ZDRM, ZGRM |
+| `zero_g_2` | `6B` | FFRM, LCRM |
+<!-- /generated -->
+
 ## Notes
 
 ### Analysis provenance
@@ -16811,3 +17269,123 @@ bed product boundary.
 #### Provenance
 
 Based on Base Remote 1.0.1 (`com.richmat.baseremote`).
+
+### Maxprime
+
+**App:** [Maxprime](https://play.google.com/store/apps/details?id=com.richmat.maxprime) 1.0.7, `com.richmat.maxprime`
+
+**Status:** Not yet tested on a physical bed.
+
+#### Setup
+
+Choose **Maxprime app** in the Richmat app picker and confirm the four-character
+layout shown by the app. A known receiver service plus a matching Bluetooth
+name can suggest a layout after you select the app. The MPE and FC200 aliases
+apply to Bluetooth names. The 209A05 and QRRM/COOL TOUCH receivers need the
+layout code shown by the app. For a ZRS layout menu, choose its corresponding
+entry in the layout picker. The picker includes the app's four-character
+manual aliases. For the Russian OTRM layout, choose O0RM when the app shows
+that layout.
+
+The first present service in W1, W2, Nordic UART, W4 order selects the receiver
+and requires its matching command and notification roles. Nordic UART sends
+the raw resource bytes. The other three use the wrapped Richmat packet with
+the selected mode byte. The advanced **Third Bluetooth service** option
+allows the property fallback when none of the four fixed services is present.
+It uses the last writable and last readable, notifiable or indicatable
+characteristics of the third enumerated service. There is no bed PIN.
+
+#### Controls
+
+The selected layout and transport determine the available motor, preset,
+memory, massage, light, lock, synchronization and aroma controls. Button and
+hold action IDs are specific to the selected layout. A numbered
+receiver mode changes the byte sent on wrapped commands. The physical meaning
+of the numbered modes still needs hardware verification. U3RM's tagged presets
+select the additional motor for the next movement, and the **Additional motor**
+selector can change it directly. GVRM provides the head-selection commands.
+
+BRRM, YFRM and YGRM offer **Button press mode**. **Press and hold** makes the
+layout's supported recalls continuous and reveals their separate save
+controls. E3RM provides explicit save and held recall buttons. Every save asks
+for confirmation on the dashboard card.
+
+D1RM and D9RM expose the massage timer's 0–5 positions. Y6RM exposes the
+15-, 30- and 45-minute timer and a separate toggle.
+
+<!-- generated:maxprime -->
+<!-- Generated by scripts/generate_codec_docs.py from the codec and profile data. Edit those, not this block. -->
+
+| Layout | Control | Raw | Wrapped, mode 0 |
+|---|---|---|---|
+| 6BRM | Motor 1 up | `34` | `6E 01 00 24 93` |
+| DXRM | Enable synchronization | `BC` | `6E 01 00 BC 2B` |
+| AORM | Lock | `84` | `6E 01 00 84 F3` |
+| YRRM | TV | `58` | `6E 01 00 58 C7` |
+| E3RM | M1 | `2E` | `6E 01 00 2E 9D` |
+| E3RM | Save M1 | `2B` | `6E 01 00 2B 9A` |
+
+| Available mode bytes | Layouts |
+|---|---|
+| 0, 1 | DHRM, DIRM, DQRM, DWRM, ECRM, EPRM, F5RM, FNRM, G4RM |
+| 0, 1, 2 | BTRM, BURM, BVRM, BWRM, DRRM, EKRM |
+
+| Feature | Example frame or write sequence |
+|---|---|
+| Release, raw / wrapped mode 0 | `6E` / `6E 01 00 6E DD` |
+| Wrapped startup | `6E 02 01 00 71` |
+| Alarm / light / aroma probes | `6E 08 01 01 78` / `6E 0A 00 01 79` / `6E 1A 00 00 88` |
+| Alarm countdown, 1440 minutes to zero gravity | `6E 05 A0 00 13` then `6E 06 05 45 BE` |
+| Cancel alarm | `6E 05 00 00 73` then `6E 06 00 00 74` |
+| RGB 18, 52, 86 | `6E 0C FF 12 8B 6E 0D 34 56 05` |
+| Light duration, 300 s | `6E 0B 01 2C A6` |
+| Aroma 60 min / 2 min / 12 h | `6E 1B 00 3C C5` then `6E 1C 00 02 8C` then `6E 1D 00 0C 97` |
+| Massage slider position 0, D1RM / D9RM | `6E 01 00 5E CD` / `6E 01 00 8B FA` |
+| Y6RM 15 / 30 / 45 minutes | `6E 01 00 5F CE` / `6E 01 00 63 D2` / `6E 01 00 61 D0` |
+
+| Alarm position | Both zones | Head | Feet |
+|---|---|---|---|
+| tv | `77` | `7a` | `7d` |
+| anti snore | `78` | `7b` | `7e` |
+| zero g | `79` | `7c` | `7f` |
+| lounge | `ac` | `ad` | `ae` |
+| memory 1 | `81` | `82` | `83` |
+| memory 2 | `a6` | `a7` | `a8` |
+| memory 3 | `a9` | `aa` | `ab` |
+<!-- /generated -->
+
+#### Timing
+
+Held commands repeat every 150 ms, every 110 ms for Bluetooth names starting
+TWRM or MLRM, or every 170 ms for raw 6BRM receivers. Release follows sustained
+movement by 50 ms and ordinary taps by 150 ms. DXRM synchronization and
+AORM/E9RM lock use their own long-press thresholds. Their completed raw
+long-only gesture has no release frame, while the wrapped gesture releases
+after 50 ms. The controller cancels pending writes and drains release on the
+captured connection.
+
+On a wrapped connection, startup follows successful notification setup by
+300 ms. After subscription, best-effort settings probes use 500 ms spacing.
+Alarm frames use 300 ms spacing and
+aroma settings use 150 ms. Light duration accepts 0–300 seconds, with 0 for
+keep-on.
+
+#### Notifications
+
+Alarm, light and aroma settings depend on replies received on the current
+connection. Fragments use the classic Richmat parser's fixed widths, checksum
+and wider-match precedence. An alarm set/cancel reply updates the alarm
+indicator. LED replies report on or off. The bed provides no actuator position
+feedback or clock synchronization.
+
+#### Services
+
+Use [`hold_control`](../SERVICES.md#hold_control) with the ID exposed by a held
+button and [`set_alarm`](../SERVICES.md#set_alarm) for one countdown alarm.
+[`richmat_classic`](../SERVICES.md#richmat_classic) refreshes capability replies
+and sets the RGB color or all three aroma timings.
+
+#### Evidence
+
+Based on Maxprime 1.0.7 (11), `com.richmat.maxprime`, from the frozen
+2026-07-14 acquisition.

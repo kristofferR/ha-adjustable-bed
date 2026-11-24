@@ -3043,6 +3043,14 @@
       "connectable": true
     },
     {
+      "local_name": "SMA[rR][tT][bB][eE][dD]*",
+      "connectable": true
+    },
+    {
+      "local_name": "SMa[rR][tT][bB][eE][dD]*",
+      "connectable": true
+    },
+    {
       "local_name": "SOFA*",
       "connectable": true
     },
@@ -3060,6 +3068,14 @@
     },
     {
       "local_name": "Sleep Function*"
+    },
+    {
+      "local_name": "SmA[rR][tT][bB][eE][dD]*",
+      "connectable": true
+    },
+    {
+      "local_name": "Sma[rR][tT][bB][eE][dD]*",
+      "connectable": true
     },
     {
       "local_name": "SmartBed*",
@@ -3918,10 +3934,26 @@
       "local_name": "s4-y-*"
     },
     {
+      "local_name": "sMA[rR][tT][bB][eE][dD]*",
+      "connectable": true
+    },
+    {
+      "local_name": "sMa[rR][tT][bB][eE][dD]*",
+      "connectable": true
+    },
+    {
       "local_name": "sealymf*"
     },
     {
       "local_name": "sleepstar*"
+    },
+    {
+      "local_name": "smA[rR][tT][bB][eE][dD]*",
+      "connectable": true
+    },
+    {
+      "local_name": "sma[rR][tT][bB][eE][dD]*",
+      "connectable": true
     },
     {
       "local_name": "smartbed*",

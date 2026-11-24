@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import re
 from itertools import count
 from pathlib import Path
 from unittest.mock import MagicMock
@@ -19,6 +20,7 @@ from custom_components.adjustable_bed.discovery_hints import (
     manifest_matchers,
 )
 from custom_components.adjustable_bed.discovery_hints._hints import (
+    Case,
     Hint,
     ManufacturerHint,
     NameHint,
@@ -67,7 +69,10 @@ def _advertisements(hint: Hint) -> list[MagicMock]:
             return [_info(manufacturer_data={hint.company_id: hint.data_start + b"\x00"})]
         case NameHint():
             # TOO_BROAD patterns are first-pass only and have no matcher.
-            return [_info(name=m["local_name"].replace("*", "x")) for m in hint.matchers()]
+            return [
+                _info(name=re.sub(r"\[([a-z])[A-Z]\]", r"\1", str(m["local_name"])).replace("*", "x"))
+                for m in hint.matchers()
+            ]
     raise AssertionError(hint)
 
 
@@ -84,6 +89,16 @@ def test_manifest_is_current() -> None:
     assert generator.main(["--check"]) == 0, (
         "Run `uv run --no-sync python scripts/generate_bluetooth_matchers.py` and commit"
     )
+
+
+def test_simmons_blue_gate_admits_mixed_case_without_other_evidence() -> None:
+    gate = _gate()
+    mixed = _info(name="sMaRtBeD Blue")
+    unrelated = _info(name="sMaRtBlender")
+    assert DOMAIN in gate.match_domains(mixed)
+    assert first_pass(mixed).name(const.BED_TYPE_SIMMONS_BLUE)
+    assert DOMAIN not in gate.match_domains(unrelated)
+    assert not first_pass(unrelated).name(const.BED_TYPE_SIMMONS_BLUE)
 
 
 def test_every_manifest_matcher_maps_to_a_declared_hint() -> None:
@@ -118,7 +133,9 @@ def test_name_hints_spell_only_case_variants() -> None:
     for family, hint in HINTS:
         if isinstance(hint, NameHint):
             folded = {pattern.lower() + "*" for pattern in hint.patterns}
-            assert {glob.lower() for glob in hint.globs} == folded, family
+            assert {
+                re.sub(r"\[([a-z])[A-Z]\]", r"\1", glob).lower() for glob in hint.globs
+            } == folded, family
 
 
 def test_anywhere_names_match_after_the_start_but_the_gate_needs_a_prefix() -> None:
@@ -129,10 +146,11 @@ def test_anywhere_names_match_after_the_start_but_the_gate_needs_a_prefix() -> N
 
 
 def test_matcher_count_stays_bounded() -> None:
-    """Each pattern is spelled at most twice, so no hint expands into case permutations."""
+    """Only an opted-in prefix expands, using HA's three literal characters."""
     for family, hint in HINTS:
         if isinstance(hint, NameHint):
-            assert len(hint.matchers()) <= 2 * len(hint.patterns), family
+            bound = 8 if hint.case is Case.IGNORE_CASE else 2
+            assert len(hint.matchers()) <= bound * len(hint.patterns), family
     assert len(manifest_matchers()) <= 2000
 
 

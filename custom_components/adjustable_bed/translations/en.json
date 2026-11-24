@@ -353,7 +353,6 @@
           "gmmotor_side": "App bed side",
           "kaidi_room_id": "Room number",
           "ble_device_name": "Exact Bluetooth name",
-          "enso2_property_fallback": "Property-based Bluetooth receiver",
           "motion_bed_restored": "Use a profile restored by the app",
           "motion_bed_preset": "Preset layout",
           "motion_bed_movement": "Movement layout",
@@ -389,7 +388,6 @@
           "sleep_assistant_lighting": "Lighting model"
         },
         "data_description": {
-          "enso2_property_fallback": "Use the third Bluetooth service only when your receiver uses the app’s property-based fallback.",
           "jiecang_app_layout": "The layout set in the app.",
           "has_light": "Show the light controls when this bed has under-bed lighting.",
           "furnimove_remote": "The handset ID printed on your remote or shown in the FurniMove / OKIN Smart Remote app.",
@@ -453,6 +451,7 @@
             "data": {
               "jiecang_app_transport": "Bluetooth connection",
               "richmat_classic_third_service": "Bed without the app's usual connection",
+              "enso2_property_fallback": "Property-based Bluetooth receiver",
               "protocol_variant": "Control box type",
               "logicdata_app_transport": "Bluetooth connection",
               "malouf_app_transport": "Bluetooth connection",
@@ -479,6 +478,7 @@
             "data_description": {
               "jiecang_app_transport": "Automatic finds the bed's connection. Change it only if setup can't reach the bed.",
               "richmat_classic_third_service": "Turn on only if the bed offers none of the app's usual Bluetooth services. The app then uses another one it finds.",
+              "enso2_property_fallback": "Use the third Bluetooth service only when your receiver uses the app’s property-based fallback.",
               "protocol_variant": "Automatic reads the control box type from the bed. Change it only if the bed responds wrongly.",
               "logicdata_app_transport": "Automatic finds the bed's connection. Change it only if the bed has more than one.",
               "malouf_app_transport": "Automatic follows the bed's name. Change it only if setup can't reach the bed.",
@@ -843,6 +843,7 @@
       "vmatbasic_invalid": "Enter a whole number within the selected product range.",
       "vmatbasic_link_profile": "Combine only CBI or CBI with XT-Box receivers. The Basic profile has no linked control.",
       "vmatbasic_required": "Choose the V-MAT Basic product profile.",
+      "leva_receiver_mismatch": "This bed did not provide the Bluetooth receiver and write mode required by this Leva selection. Check the selected receiver and model.",
       "starcode_app_invalid": "Choose the settings the app shows for this bed, then try again.",
       "motion_bed_profile": "Enter the bed's Bluetooth name exactly as the Motion Bed app shows it, or turn off the restored profile.",
       "starcode_profile_mismatch": "Choose the bed class that matches the start of the bed's Bluetooth name.",
@@ -886,6 +887,9 @@
       "pair_bed_missing": "One of the chosen beds is no longer set up. Choose two beds from the list.",
       "octo_tv_lift_pairing_unsupported": "A one-motor Octo TV or bed lift cannot have Left and Right controls. Keep it as a single bed.",
       "invalid_angle": "Enter an angle greater than 0 and up to 180 degrees.",
+      "dorsal_project_code": "Enter the exact saved Dorsal project code.",
+      "dorsal_receiver_unavailable": "This receiver did not expose a supported Dorsal Bluetooth writer.",
+      "dorsal_roomi_receiver": "Choose a receiver whose Bluetooth name contains QRRM for Roomi controls.",
       "relax_motion_model": "Enter the model number the Relax Motion app shows for your bed.",
       "sleep_assistant_invalid_settings": "Check the selected model settings and device identity.",
       "choice_not_listed": "Pick a row from the list. Type part of a name to search, then choose the matching row.",
@@ -1729,6 +1733,38 @@
   },
   "entity": {
     "button": {
+      "dorsal_lumbar_pillow_up": {
+        "name": "Lumbar and pillow up"
+      },
+      "dorsal_lumbar_pillow_down": {
+        "name": "Lumbar and pillow down"
+      },
+      "dorsal_second_pillow_up": {
+        "name": "Second pillow up"
+      },
+      "dorsal_second_pillow_down": {
+        "name": "Second pillow down"
+      },
+      "dorsal_motor_4_up": {
+        "name": "Motor 4 up"
+      },
+      "dorsal_motor_4_down": {
+        "name": "Motor 4 down"
+      },
+      "dorsal_zero_gravity_up": {
+        "name": "Zero gravity motor up"
+      },
+      "dorsal_zero_gravity_down": {
+        "name": "Zero gravity motor down"
+      },
+      "leva_release": { "name": "Release motion control" },
+      "leva_massage_head": { "name": "Cycle head massage" },
+      "leva_massage_foot": { "name": "Cycle feet massage" },
+      "leva_massage_timer": { "name": "Cycle massage timer" },
+      "leva_home_flat": { "name": "Home quick flat" },
+      "leva_home_zero_g": { "name": "Home quick zero gravity" },
+      "leva_home_anti_snore": { "name": "Home quick anti-snore" },
+      "leva_home_tv": { "name": "Home quick TV" },
       "comfort_enhancements_quiet_sleep": {
         "name": "Quiet sleep"
       },
@@ -1915,6 +1951,12 @@
       "massage_circulation_hip": {
         "name": "Massage hip loop"
       },
+      "shuda_release": {
+        "name": "Release held control"
+      },
+      "shuda_refresh_alarms": {
+        "name": "Refresh alarms"
+      },
       "toggle_light": {
         "name": "Toggle light"
       },
@@ -1968,6 +2010,24 @@
       },
       "lumbar_down": {
         "name": "Lumbar down"
+      },
+      "simmons_blue_first_up": {
+        "name": "Raise first section"
+      },
+      "simmons_blue_first_down": {
+        "name": "Lower first section"
+      },
+      "simmons_blue_second_up": {
+        "name": "Raise second section"
+      },
+      "simmons_blue_second_down": {
+        "name": "Lower second section"
+      },
+      "simmons_blue_combined_up": {
+        "name": "Raise combined sections"
+      },
+      "simmons_blue_combined_down": {
+        "name": "Lower combined sections"
       },
       "remote_action": {
         "name": "Remote action"
@@ -3652,6 +3712,9 @@
       "enso_massage_mode": {
         "name": "Cycle massage mode"
       },
+      "maxprime_massage_timer_toggle": {
+        "name": "Toggle massage timer"
+      },
       "bedsmart_query": {
         "name": "Refresh bed features"
       },
@@ -3789,9 +3852,30 @@
       },
       "smartbed_alarm_refresh": {
         "name": "Refresh alarm"
+      },
+      "sinca_refresh_settings": {
+        "name": "Refresh settings"
+      },
+      "sinca_refresh_alarm": {
+        "name": "Refresh alarm"
+      },
+      "sinca_disable_alarm": {
+        "name": "Disable alarm"
       }
     },
     "cover": {
+      "dorsal_lumbar_pillow": {
+        "name": "Lumbar and pillow"
+      },
+      "dorsal_second_pillow": {
+        "name": "Second pillow"
+      },
+      "dorsal_motor_4": {
+        "name": "Motor 4"
+      },
+      "dorsal_zero_gravity": {
+        "name": "Zero gravity motor"
+      },
       "motor_1": {
         "name": "Motor 1"
       },
@@ -4220,6 +4304,34 @@
       }
     },
     "sensor": {
+      "shuda_alarm_1": {
+        "name": "Alarm 1",
+        "state_attributes": {
+          "shuda_alarm_1_enabled": {
+            "name": "Enabled"
+          },
+          "shuda_alarm_1_week": {
+            "name": "Weekday mask"
+          },
+          "shuda_alarm_1_mode": {
+            "name": "Wake action"
+          }
+        }
+      },
+      "shuda_alarm_2": {
+        "name": "Alarm 2",
+        "state_attributes": {
+          "shuda_alarm_2_enabled": {
+            "name": "Enabled"
+          },
+          "shuda_alarm_2_week": {
+            "name": "Weekday mask"
+          },
+          "shuda_alarm_2_mode": {
+            "name": "Wake action"
+          }
+        }
+      },
       "enso2_alarm_status": {
         "name": "Alarm response"
       },
@@ -5084,6 +5196,15 @@
       "smart_sleep_alarm_action": {
         "name": "Alarm action"
       },
+      "simmons_blue_alarm_1_time": {
+        "name": "Alarm 1 time"
+      },
+      "simmons_blue_alarm_2_time": {
+        "name": "Alarm 2 time"
+      },
+      "simmons_blue_alarm_3_time": {
+        "name": "Alarm 3 time"
+      },
       "smart_sleep_alarm_time": {
         "name": "Alarm time"
       },
@@ -5436,6 +5557,23 @@
       },
       "smartbed_alarm_time": {
         "name": "Alarm time"
+      },
+      "sinca_alarm_time": {
+        "name": "Alarm time"
+      },
+      "sinca_anti_snore_level": {
+        "name": "Anti-snore level",
+        "state": {
+          "low": "Low",
+          "medium": "Medium",
+          "high": "High"
+        }
+      },
+      "sinca_massage_wave": {
+        "name": "Massage wave"
+      },
+      "sinca_massage_timer": {
+        "name": "Massage timer setting"
       }
     },
     "light": {
@@ -5444,6 +5582,9 @@
       }
     },
     "switch": {
+      "dorsal_massage": {
+        "name": "Massage"
+      },
       "under_bed_lights": {
         "name": "Under-bed lights"
       },
@@ -5674,9 +5815,15 @@
       },
       "smartbed_sonic": {
         "name": "Sonic massage"
+      },
+      "sinca_privacy": {
+        "name": "Privacy mode"
       }
     },
     "binary_sensor": {
+      "maxprime_alarm_enabled": {
+        "name": "Alarm enabled"
+      },
       "enso2_light_on": {
         "name": "Bed light"
       },
@@ -5907,6 +6054,12 @@
       },
       "smartbed_alarm_on": {
         "name": "Alarm enabled"
+      },
+      "sinca_alarm_enabled": {
+        "name": "Alarm enabled"
+      },
+      "sinca_anti_snore": {
+        "name": "Automatic anti-snore"
       }
     },
     "number": {
@@ -6266,6 +6419,12 @@
       },
       "massage_left_intensity": {
         "name": "Left massage intensity"
+      },
+      "maxprime_lamp_seconds": {
+        "name": "Light duration"
+      },
+      "maxprime_massage_position": {
+        "name": "Massage timer position"
       },
       "bedsmart_lamp_seconds": {
         "name": "Light timeout"
@@ -6709,6 +6868,14 @@
       "hjbed_layout": {
         "name": "Remote layout"
       },
+      "maxprime_axis": {
+        "name": "Additional motor",
+        "state": {
+          "53": "Motor 3",
+          "54": "Motor 4",
+          "55": "Motor 5"
+        }
+      },
       "richmat_classic_mode": {
         "name": "Remote mode",
         "state": {
@@ -7111,6 +7278,21 @@
     }
   },
   "services": {
+    "dorsal_alarm": {
+      "name": "Manage Dorsal alarms",
+      "description": "Read, create, replace, turn on or off, or delete a Dorsal alarm.",
+      "fields": {
+        "device_id": {"name": "Bed", "description": "The Dorsal bed."},
+        "side": {"name": "Bed side", "description": "Select one side of a combined bed."},
+        "operation": {"name": "Operation", "description": "Read alarms, create or replace an alarm, turn it on or off, or delete it."},
+        "slot": {"name": "Alarm slot", "description": "Choose the slot to change. Creating or replacing may overwrite an unreported slot."},
+        "enabled": {"name": "On", "description": "Whether the existing alarm should be on."},
+        "time": {"name": "Wake time", "description": "Time for the new alarm, in whole minutes."},
+        "weekdays": {"name": "Weekdays", "description": "Days to repeat the alarm. Leave empty to run once."},
+        "wake_action": {"name": "Wake action", "description": "Choose an action supported by this Dorsal project."},
+        "confirm_custom_position": {"name": "Confirm saved position", "description": "Confirm the bed can safely move to the selected memory position."}
+      }
+    },
     "goto_preset": {
       "name": "Go to preset",
       "description": "Move bed to a saved memory position.",
@@ -10578,9 +10760,59 @@
           "description": "How long a motor control runs, 1 to 60000 milliseconds. Default 1000. Other controls keep their own timing."
         }
       }
+    },
+    "sinca_comfort_command": {
+      "name": "Sinca Comfort Bed controls",
+      "description": "Refresh settings, read or disable the alarm, adjust automatic anti-snore, or consume local history.",
+      "fields": {
+        "device_id": {
+          "name": "Devices",
+          "description": "Select one or more Sinca Comfort Bed devices."
+        },
+        "side": {
+          "name": "Side",
+          "description": "Select the left or right side of a combined bed."
+        },
+        "action": {
+          "name": "Action",
+          "description": "Choose which bed operation to run."
+        },
+        "enabled": {
+          "name": "Enable anti-snore",
+          "description": "Turn automatic anti-snore on or off."
+        },
+        "position": {
+          "name": "Adjustment",
+          "description": "Choose head or elevation."
+        },
+        "level": {
+          "name": "Level",
+          "description": "Choose the automatic anti-snore level."
+        },
+        "all_records": {
+          "name": "All records",
+          "description": "Request all stored history instead of just new records."
+        },
+        "confirmed": {
+          "name": "Confirm history acknowledgement",
+          "description": "Let the bed mark report-length history as received. Home Assistant does not save a sleep report."
+        }
+      }
     }
   },
   "exceptions": {
+    "leva_profile_required": {
+      "message": "Choose a Leva model and Bluetooth receiver."
+    },
+    "leva_receiver_mismatch": {
+      "message": "The connected bed did not provide an unambiguous {receiver} receiver for the selected Leva model. Check the Bluetooth device and receiver selection."
+    },
+    "leva_hold_duration": {
+      "message": "Choose a Leva hold duration between 1 and 60000 milliseconds."
+    },
+    "leva_control_unavailable": {
+      "message": "This control is unavailable on the selected Leva model and receiver."
+    },
     "memory_presets_not_supported": {
       "message": "{device_name} has no memory presets."
     },
@@ -10634,6 +10866,15 @@
     },
     "bundle_needs_side_for_paired": {
       "message": "{device_name} is a combined bed. Choose one side's device to create a support bundle."
+    },
+    "simmons_blue_gatt": {
+      "message": "This bed did not provide the write and notification channels required by Simmons Blue."
+    },
+    "simmons_blue_alarm_not_reported": {
+      "message": "The bed did not report the time for alarm {slot}. Try refreshing the alarms before turning it off."
+    },
+    "simmons_blue_alarm_changed": {
+      "message": "Alarm {slot} changed while the command was waiting. Try again."
     },
     "simmons_alarm_not_reported": {
       "message": "The bed did not report both alarm records in this connection, so nothing was written. Try again, or press Refresh Alarms first."
@@ -10847,6 +11088,27 @@
     },
     "alarm_route_unknown": {
       "message": "Connect the bed once so Home Assistant can discover its bed route, then try again."
+    },
+    "shuda_gatt_roles": {
+      "message": "Shuda needs a Nordic UART receiver with a write-with-response and notification characteristic"
+    },
+    "shuda_hold_duration": {
+      "message": "Choose a Shuda hold duration from 0.1 to 60 seconds"
+    },
+    "shuda_recall_duration": {
+      "message": "Hold a Shuda recall for less than five seconds. Use its Save button to store a position"
+    },
+    "shuda_alarm_slot": {
+      "message": "Choose Shuda alarm 1 or 2"
+    },
+    "shuda_alarm_mode": {
+      "message": "Choose a Shuda wake action of memory 1, flat or zero gravity"
+    },
+    "shuda_alarm_conflict": {
+      "message": "Alarm {slot} overlaps another Shuda alarm at the same time"
+    },
+    "shuda_alarm_no_reply": {
+      "message": "Shuda did not report alarm {slot}. Confirm that the bed is in range and try again"
     },
     "alarm_route_changed": {
       "message": "The bed's controls changed since the alarm was checked. Choose one of: {wake_actions}."
@@ -11139,6 +11401,39 @@
     "sealy_gatt_missing": {
       "message": "The Sealy bed control and notification characteristics were not found."
     },
+    "dorsal_project_code": {
+      "message": "Enter the exact saved Dorsal project code."
+    },
+    "dorsal_receiver_unavailable": {
+      "message": "This receiver did not expose a supported Dorsal Bluetooth writer."
+    },
+    "dorsal_roomi_receiver": {
+      "message": "Choose a receiver whose Bluetooth name contains QRRM for Roomi controls."
+    },
+    "dorsal_control_unavailable": {
+      "message": "The selected Dorsal project does not offer this control."
+    },
+    "dorsal_hold_duration": {
+      "message": "Select a held control from this Dorsal project and a duration from 100 to 60000 milliseconds."
+    },
+    "dorsal_alarm_report_missing": {
+      "message": "The selected alarm slot or its notification channel was unavailable."
+    },
+    "dorsal_alarm_fields": {
+      "message": "Choose a slot to change, and choose on or off when toggling."
+    },
+    "dorsal_alarm_create_enabled": {
+      "message": "Omit the on setting when creating or replacing an alarm. Use Toggle to turn a stored alarm on or off."
+    },
+    "dorsal_alarm_create_fields": {
+      "message": "Choose a slot, wake time and wake action to create or replace an alarm."
+    },
+    "dorsal_alarm_choose_mode": {
+      "message": "The bed did not report an alarm in this slot. Choose a wake action to create one."
+    },
+    "dorsal_alarm_opaque": {
+      "message": "This alarm stores extra settings. Keep its wake action or choose another slot."
+    },
     "relax_motion_model": {
       "message": "Enter the model number the Relax Motion app shows for your bed."
     },
@@ -11174,6 +11469,24 @@
     },
     "sleep_assistant_control_unavailable": {
       "message": "This control is unavailable for the selected bed settings."
+    },
+    "maxprime_layout": {
+      "message": "Choose the Maxprime layout code shown in your app."
+    },
+    "maxprime_transport": {
+      "message": "The receiver did not provide a complete Maxprime Bluetooth command and notification pair."
+    },
+    "maxprime_control": {
+      "message": "Choose a control available on this layout, mode and Bluetooth connection."
+    },
+    "maxprime_alarm": {
+      "message": "Choose an alarm action and massage combination offered by this layout."
+    },
+    "maxprime_settings_sequential": {
+      "message": "Send this setting in a separate call to each side of a bed that connects sequentially."
+    },
+    "maxprime_settings": {
+      "message": "Check the values and wait for the bed to report support for this setting."
     },
     "baseremote_layout": {
       "message": "Choose a bed layout. Desk, manufacturing and test layouts are excluded."
@@ -11264,6 +11577,30 @@
     },
     "smartbed_choose_receiver": {
       "message": "Choose the exact SmartBed receiver in Reconfigure before using saved side controls. Select CB24AB only for a receiver that supports separate Left and Right controls."
+    },
+    "sinca_gatt_roles": {
+      "message": "This receiver is missing the write or notification channel required by Sinca Comfort Bed."
+    },
+    "sinca_hold_invalid": {
+      "message": "Choose an available motor and a hold between 1 millisecond and 60 seconds."
+    },
+    "sinca_receiver_invalid": {
+      "message": "Choose a supported Sinca Comfort Bed receiver."
+    },
+    "sinca_sleep_required": {
+      "message": "This action is available only on the Sleep receiver."
+    },
+    "sinca_history_busy": {
+      "message": "Another history transfer is already running."
+    },
+    "sinca_history_timeout": {
+      "message": "The history transfer did not finish in time."
+    },
+    "sinca_history_limit": {
+      "message": "The history transfer exceeded the local record limit."
+    },
+    "sinca_history_confirm": {
+      "message": "This bed has report-length history. Confirm that the bed may mark those records as received."
     }
   },
   "issues": {
@@ -11980,6 +12317,7 @@
         "bedtech_classic": "Bed Tech app",
         "jerome2": "Jerome's power base app",
         "baseremote": "Base Remote app",
+        "maxprime": "Maxprime app",
         "sleepfunction": "SleepFunction Bed Control app",
         "super_colchones": "Super Colchones app"
       }
@@ -13403,6 +13741,29 @@
       "options": {
         "central": "Connect to this bed",
         "peripheral": "Join the Pairlink network from this host"
+      }
+    },
+    "sinca_comfort_action": {
+      "options": {
+        "refresh_settings": "Refresh settings",
+        "refresh_alarm": "Refresh alarm",
+        "disable_alarm": "Disable alarm",
+        "anti_snore": "Set automatic anti-snore",
+        "demo_anti_snore": "Demonstrate automatic anti-snore",
+        "consume_history": "Consume local history"
+      }
+    },
+    "sinca_comfort_position": {
+      "options": {
+        "head": "Head",
+        "elevation": "Elevation"
+      }
+    },
+    "sinca_comfort_level": {
+      "options": {
+        "low": "Low",
+        "medium": "Medium",
+        "high": "High"
       }
     }
   }
