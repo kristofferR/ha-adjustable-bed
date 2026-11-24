@@ -1416,6 +1416,9 @@ class ReverieNightstandController(BedController, ReverieComfortActions):
         """Turn off massage."""
         if not self.model.massage:
             raise ValueError(f"Model {self.model_id} does not support massage")
+        if self.model.tandem and self._stk_selected_side != "1":
+            await self._stop_stk_massage()
+            return
         await self._write_to_char(REVERIE_NIGHTSTAND_HEAD_WAVE_UUID, 0)
         self._massage_head_level = 0
         self.forward_controller_state_update(MASSAGE_HEAD_INTENSITY, 0)
@@ -1425,6 +1428,20 @@ class ReverieNightstandController(BedController, ReverieComfortActions):
         await self._write_to_char(REVERIE_NIGHTSTAND_MASSAGE_WAVE_UUID, 0)
         self._massage_wave_level = 0
         self.forward_controller_state_updates(WAVE_PATTERN("off"))
+
+    async def _stop_stk_massage(self) -> None:
+        """Send the app's Stop for a tandem side, which ends all of its massage."""
+
+        def show(delivery: Delivery) -> None:
+            if delivery is Delivery.NONE:
+                return
+            self._massage_head_level = self._massage_foot_level = self._massage_wave_level = 0
+            self.forward_controller_state_updates(
+                MASSAGE_HEAD_INTENSITY(0), MASSAGE_FOOT_INTENSITY(0), WAVE_PATTERN("off")
+            )
+
+        with delivered(show):
+            await self._write_stk_command(0x35)
 
     async def massage_head_up(self) -> None:
         """Increase head massage intensity (0-10, written as level * 4)."""
@@ -1486,13 +1503,19 @@ class ReverieNightstandController(BedController, ReverieComfortActions):
             if not 0 <= level <= 4:
                 raise ValueError("Reverie massage wave must be 0 (off) or a pattern from 1 to 4")
             if self.model.tandem and self._stk_selected_side != "1":
-                # The app's Stop on a tandem side stops that side's massage.
-                await self._write_stk_command(0x40 + level if level else 0x35)
                 if not level:
-                    self._massage_head_level = 0
-                    self.forward_controller_state_update(MASSAGE_HEAD_INTENSITY, 0)
-            else:
-                await self._write_to_char(REVERIE_NIGHTSTAND_MASSAGE_WAVE_UUID, level)
+                    await self._stop_stk_massage()
+                    return
+
+                def show(delivery: Delivery) -> None:
+                    if delivery is not Delivery.NONE:
+                        self._massage_wave_level = level
+                        self.forward_controller_state_update(WAVE_PATTERN, WAVE_PATTERNS[level])
+
+                with delivered(show):
+                    await self._write_stk_command(0x40 + level)
+                return
+            await self._write_to_char(REVERIE_NIGHTSTAND_MASSAGE_WAVE_UUID, level)
             self._massage_wave_level = level
             self.forward_controller_state_update(WAVE_PATTERN, WAVE_PATTERNS[level])
             return

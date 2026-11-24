@@ -158,9 +158,16 @@ async def test_stk_side_wave_select_sends_the_pattern_and_stop(
     assert coordinator.controller_state["reverie_massage_wave"] == "3"
     await wave.select_fn(controller, "off")
 
+    # Massage off is the same Stop, and it ends the side's head and foot massage too.
+    await wave.select_fn(controller, "2")
+    await controller.massage_off()
+
     assert [call.args[:2] for call in coordinator.client.write_gatt_char.await_args_list] == [
         (REVERIE_STK_SIDE_NO_DATA_UUID, bytes((side, 0x43))),
         (REVERIE_STK_SIDE_NO_DATA_UUID, bytes((side, 0x35))),
+        (REVERIE_STK_SIDE_NO_DATA_UUID, bytes((side, 0x42))),
+        (REVERIE_STK_SIDE_NO_DATA_UUID, bytes((side, 0x35))),
     ]
     assert coordinator.controller_state["reverie_massage_wave"] == "off"
+    assert coordinator.controller_state["massage_foot_intensity"] == 0
     await coordinator.async_shutdown()
