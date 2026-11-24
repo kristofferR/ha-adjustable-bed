@@ -561,8 +561,12 @@ async def test_actual_cherish_timer_select_retains_commanded_selection_when_disc
     runtime = configure_entity_runtime(hass, ctrl, BED_TYPE_CHERISH)
     runtime.controller_state = {}
     owner.handle_controller_state_updates.side_effect = state_writer(runtime.controller_state)
-    select = AdjustableBedMassageTimerSelect(runtime, MASSAGE_TIMER_DESCRIPTION, [10, 20, 30])
-    # No timer published yet: unknown, not "Off".
+    assert not ctrl.massage_timer_can_turn_off
+    select = AdjustableBedMassageTimerSelect(
+        runtime, MASSAGE_TIMER_DESCRIPTION, [10, 20, 30], has_off=ctrl.massage_timer_can_turn_off
+    )
+    # The app's timer buttons are 10, 20 and 30 minutes; it has no off choice.
+    assert select.options == ["10 min", "20 min", "30 min"]
     assert select.current_option is None
     await ctrl.set_massage_timer(20)
     assert select.current_option == "20 min"
@@ -573,10 +577,8 @@ async def test_actual_cherish_timer_select_retains_commanded_selection_when_disc
         await ctrl.massage_on()
         assert select.current_option == "20 min"
         await ctrl.massage_off()
-    assert select.current_option == "Off"
+    assert select.current_option is None
     assert ctrl.state.timer == 20  # Off retains the next start's selection.
-    runtime.controller = None
-    assert select.current_option == "Off"
 
 
 @pytest.mark.parametrize("cherish", [False, True])

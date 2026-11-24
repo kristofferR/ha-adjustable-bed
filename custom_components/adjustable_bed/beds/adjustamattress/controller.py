@@ -746,7 +746,8 @@ class AdjustaMattressController(
     @property
     def controller_select_specs(self) -> tuple[ControllerSelectSpec, ...]:
         definitions: list[tuple[str, tuple[str, ...], bool]] = [
-            ("alarm_draft_type", ("0", "9", "17", "19"), True)
+            # The app's Memory A, Memory B and Massage choices; 0 is none chosen.
+            ("alarm_draft_type", ("0", "17", "19", "9"), True)
         ]
         if self._snore:
             definitions += [("strength_setting", ("0", "1", "2"), True)]

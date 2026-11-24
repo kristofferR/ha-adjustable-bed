@@ -210,8 +210,9 @@ async def test_massage_modes_and_timer_vectors(controller) -> None:
     for mode in range(1, 5):
         await controller.set_massage_mode(mode)
     await controller.massage_mode_step()
-    for minutes in (10, 20, 30, 0):
-        await controller.set_massage_timer(minutes)
+    for minutes in (10, 20, 30):
+        await controller._send_massage_timer(minutes)
+    await controller.set_massage_timer(0)
     assert written(controller) == [
         "FFFFFFFF050000005796FE",
         "FFFFFFFF0500000058D6FA",
@@ -223,6 +224,19 @@ async def test_massage_modes_and_timer_vectors(controller) -> None:
         "FFFFFFFF0500000018D70A",
         "FFFFFFFF050000001CD6C9",
     ]
+
+
+async def test_timer_choice_is_stored_and_sent_with_massage_start(controller) -> None:
+    """The app's timer wheel writes nothing; its massage switch sends the duration."""
+    await controller.set_massage_timer(30)
+    state = controller._coordinator.controller_state
+    assert written(controller) == []
+    assert state["massage_timer"] == 30
+    assert controller._massage_expiry_handle is None and "woosa_massage_deadline" not in state
+    with patch("custom_components.adjustable_bed.beds.woosa.asyncio.sleep", new_callable=AsyncMock):
+        await controller.massage_toggle()
+    assert written(controller)[:2] == ["FFFFFFFF050000001CD6C9", "FFFFFFFF0500000018D70A"]
+    assert state["woosa_massage_deadline"] is not None
 
 
 def test_massage_entities_retain_state_without_live_controller(controller) -> None:
@@ -255,10 +269,10 @@ def test_massage_entities_retain_state_without_live_controller(controller) -> No
 async def test_massage_timer_expiry_clears_activity_and_preserves_preferences(controller) -> None:
     await controller.set_massage_intensity("head", 2)
     await controller.set_massage_intensity("foot", 3)
-    await controller.set_massage_timer(10)
+    await controller._send_massage_timer(10)
     state = controller._coordinator.controller_state
     old_deadline = state["woosa_massage_deadline"]
-    await controller.set_massage_timer(20)
+    await controller._send_massage_timer(20)
     controller._expire_massage(old_deadline)
     assert state["massage_timer"] == 20
 

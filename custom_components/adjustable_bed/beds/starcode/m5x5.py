@@ -428,7 +428,7 @@ class StarcodeM5X5Controller(BedController, StarcodeGroupMember):
                 "starcode_brightness",
                 "starcode_brightness",
                 LIGHT_BRIGHTNESS,
-                1,
+                0,
                 6,
                 1,
                 brightness,
@@ -447,7 +447,8 @@ class StarcodeM5X5Controller(BedController, StarcodeGroupMember):
                 "starcode_color",
                 "starcode_color",
                 LIGHT_COLOR_OPTION,
-                tuple(str(i) for i in range(8)),
+                # The app's seven swatches; its light power is separate.
+                tuple(str(i) for i in range(1, 8)),
                 color,
                 card=CARD_LIGHT_MOOD,
             ),
@@ -827,14 +828,18 @@ class StarcodeM5X5Controller(BedController, StarcodeGroupMember):
         )
 
     async def set_brightness(self, value: float) -> None:
-        if not math.isfinite(value) or value != int(value) or not 1 <= value <= 6:
-            raise ValueError("AdjustableM5X5 brightness must be an integer from 1 to 6")
+        if not math.isfinite(value) or value != int(value) or not 0 <= value <= 6:
+            raise ValueError("AdjustableM5X5 brightness must be an integer from 0 to 6")
+        if value == 0:
+            # The app's slider turns the light off at zero.
+            await self.lights_off()
+            return
         dialect = "star" if self.profile in ("f23", "kneading") else self.dialect
         await self._rgb(extended_packet(0, int(value), dialect))
 
     async def set_color_index(self, index: int) -> None:
-        if isinstance(index, bool) or not isinstance(index, int) or not 0 <= index <= 7:
-            raise ValueError("AdjustableM5X5 palette index must be from 0 to 7")
+        if isinstance(index, bool) or not isinstance(index, int) or not 1 <= index <= 7:
+            raise ValueError("AdjustableM5X5 palette index must be from 1 to 7")
         dialect = "star" if self.profile in ("f23", "kneading") else self.dialect
         await self._rgb(extended_packet(1, index, dialect))
 

@@ -91,11 +91,10 @@ targets truncated to integer `0..100`; the app's tagged `0xc8` argument is
 integer `100`, not `200`.
 The app's 25-position layouts commit the requested target once at drag end or
 active cancellation, with no appended STOP. Its seven 36-position selectors
-commit the changed target, send STOP at interaction end, then separately try
-midpoint `50`. Home Assistant numbers provide one commit and no drag-end
-callback, so a 36-selector number commit is adapted as target, STOP, then a
-separate midpoint value write. That midpoint is a real position command, not a
-STOP substitute. The app's private StoppedState delta thresholds (3/3/5),
+commit the changed target, send STOP at interaction end, then recentre the
+slider at `50` through the same handler, which drops a change within 500 ms of
+the last one it accepted. A Home Assistant number is one commit, so it sends
+the target and then STOP, and never the midpoint. The app's private StoppedState delta thresholds (3/3/5),
 running-axis queue and deduplication, same-axis reset `(7, 0)`, event-4
 queue-clear without reset, STOP, or transition, and event-5 completion/replay
 are source facts; the final duplicate target event is ignored. Event
@@ -112,7 +111,7 @@ physical side's explicit selector.
 | Entities | Head, feet and lumbar position sliders; each cover shows its position | Head, foot and lumbar target numbers |
 | `set_position` action | Head, feet and lumbar | Refused |
 | Position request | The app's `queryPosition` frame | Never sent, except by the refresh button |
-| After a target | One frame, then the move is followed | Target, STOP, then the midpoint value |
+| After a target | One frame, then the move is followed | Target, then STOP |
 
 - The reports are the `A5 0D` frames of [Notification Parsing](#notification-parsing):
   bytes 4, 6 and 8, each limited to 100. The app's head, foot and lumbar
@@ -406,7 +405,8 @@ query is `5A B0 00 A5`.
 | `0x73` | Turn under-bed light on |
 | `0x74` | Turn under-bed light off |
 
-Direct brightness uses `5A E0 04 00 [level 0-6] 00 00 A5`.
+Direct brightness uses `5A E0 04 00 [level 1-6] 00 00 A5`. The app's slider sends
+the light-off command (`0x74`) at zero, and so does the light level number.
 
 Arbitrary color uses `5A E0 04 02 [R] [G] [B] A5`, for example
 `5A E0 04 02 00 FF FF A5` for cyan. These observations come from a reporter's
@@ -422,7 +422,7 @@ offers preset colors:
 - Brightness frames keep the current color.
 - Levels above 6 (`07` through `FF`) had no effect on the hardware.
 - The RGB light entity maps Home Assistant brightness onto levels 1-6. The light
-  level number entity still covers 0-6.
+  level number entity covers 0-6, where 0 turns the light off.
 - RX notifications appear to carry the current RGB value and brightness. The
   reported fragments (`... 18 11 00 FF FF ...` at level 1, `... 68 11 00 FF FF ...`
   at level 6) lack a frame header and offsets, so the integration does not parse
@@ -451,7 +451,8 @@ encoded as zero; positive levels are encoded as 2-8:
 5A E0 04 06 [encoded] [encoded] 00 A5
 ```
 
-The 10/20/30 minute timer maps to values 1/2/3:
+The 10/20/30 minute timer maps to values 1/2/3. The app has no timer off; its
+Massage off control stops massage:
 
 ```text
 5A E0 04 07 [1-3] 00 00 A5

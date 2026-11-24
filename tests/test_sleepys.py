@@ -1204,9 +1204,12 @@ class TestSleepysBox25Controller:
         assert coordinator.controller_state["light_level"] == 6
         assert coordinator.controller_state["under_bed_lights_on"] is True
 
-        with patch.object(controller, "write_command", AsyncMock()):
+        # The app's slider sends its light-off command at zero, never brightness 0.
+        with patch.object(controller, "write_command", AsyncMock()) as mock_write:
             await controller.set_light_level(0)
 
+        assert [call.args[0] for call in mock_write.await_args_list] == [Box25Commands.LIGHT_OFF]
+        assert not controller.massage_timer_can_turn_off
         assert coordinator.controller_state["light_level"] == 0
         assert coordinator.controller_state["under_bed_lights_on"] is False
 

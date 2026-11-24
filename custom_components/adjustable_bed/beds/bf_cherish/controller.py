@@ -522,6 +522,11 @@ class BfCherishController(ProfileExecution[keeson_profiles.KeesonProfile], BedCo
     def massage_timer_options(self) -> list[int]:
         return [10, 20, 30] if self.cherish else []
 
+    @property
+    def massage_timer_can_turn_off(self) -> bool:
+        # The app's timer is three duration buttons; its Off button is separate.
+        return False
+
     def _massage(self) -> None:
         if not self.cherish:
             raise NotImplementedError("BF has no massage page")

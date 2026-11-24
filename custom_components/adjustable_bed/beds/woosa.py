@@ -350,6 +350,13 @@ class WoosaController(SolaceController):
         if minutes == 0:
             await self.massage_off()
             return
+        # The app's timer wheel only stores the duration; massage start sends it.
+        self.forward_controller_state_updates(
+            MASSAGE_TIMER_MINUTES(minutes), MASSAGE_TIMER_PREFERENCE(minutes)
+        )
+
+    async def _send_massage_timer(self, minutes: int) -> None:
+        """Send the stored duration as part of massage start and count it down."""
         await super().set_massage_timer(minutes)
         if self._massage_expiry_handle is not None:
             self._massage_expiry_handle.cancel()
@@ -402,7 +409,7 @@ class WoosaController(SolaceController):
             await asyncio.sleep(self.profile.massage_step_ms / 1000)
             if self._coordinator.cancel_command.is_set():
                 raise asyncio.CancelledError
-            await self.set_massage_timer(timer)
+            await self._send_massage_timer(timer)
             await asyncio.sleep(self.profile.massage_step_ms / 1000)
             if self._coordinator.cancel_command.is_set():
                 raise asyncio.CancelledError
