@@ -192,6 +192,9 @@ class LeggettGen2Controller(BedController):
         # Live under-bed light on/off, populated from 45e25103 STATE notifications.
         self._light_on: bool | None = None
         self._light_rgb: tuple[int, int, int] | None = None
+        # Brightness byte the app appends to every colour it sends: the last
+        # reported one, 0xFF until a report arrives or while the light is off.
+        self._light_alpha = 0xFF
         self._notify_started = False
         # Index into the model's massage-mode cycle for massage_mode_step().
         self._massage_mode_idx = 0
@@ -549,11 +552,14 @@ class LeggettGen2Controller(BedController):
         This is also the RGB turn-on path (the light entity calls it without a
         separate lights_on), so reflect that the light is now on in the cache —
         otherwise a following lights_off() would hit the off-guard and no-op.
+
+        The colour keeps the light's current brightness, as the app's colour
+        picker does; a brightness of zero becomes full, as it does there.
         """
         r, g, b = rgb_color
         if not all(0 <= v <= 255 for v in (r, g, b)):
             raise ValueError(f"RGB values must be 0-255, got {rgb_color}")
-        await self.write_command(LeggettGen2Commands.rgb_set(r, g, b))
+        await self.write_command(LeggettGen2Commands.rgb_set(r, g, b, self._light_alpha or 0xFF))
         self._light_on = any(rgb_color)
 
     # ---- Live light state from 45e25103 STATE notifications -----------------
@@ -603,12 +609,14 @@ class LeggettGen2Controller(BedController):
         updates: list[StateUpdate] = []
         if mode == 0x01:
             light_on = True
+            self._light_alpha = data[10]
             rgb = (data[7], data[8], data[9])
             if rgb != self._light_rgb:
                 self._light_rgb = rgb
                 updates.append(UNDER_BED_LIGHTS_RGB(rgb))
         elif mode == 0x04:
             light_on = False
+            self._light_alpha = 0xFF
         else:
             return
         if light_on != self._light_on:
