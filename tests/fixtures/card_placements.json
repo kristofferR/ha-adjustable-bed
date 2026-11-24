@@ -1906,6 +1906,12 @@
   "card_role": "reference",
   "card_motor": "tv_lift"
  },
+ "button:shuda_refresh_alarms": {
+  "card_section": "hidden"
+ },
+ "button:shuda_release": {
+  "card_section": "hidden"
+ },
  "button:simmons_blue_combined_down": {
   "card_section": "motors",
   "card_role": "down",
@@ -4639,6 +4645,12 @@
  "sensor:sealy_massage_timer": {
   "card_section": "massage",
   "card_role": "timer"
+ },
+ "sensor:shuda_alarm_1": {
+  "card_section": "utility"
+ },
+ "sensor:shuda_alarm_2": {
+  "card_section": "utility"
  },
  "sensor:simmons_alarm_1": {
   "card_section": "hidden"

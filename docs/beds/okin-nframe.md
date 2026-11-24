@@ -42,6 +42,7 @@ their setup choices, controls and alarms.
 | [OKIN Motion Bed](#okin-motion-bed) | Beds controlled with OKIN Motion Bed; which button moves which motor is not yet tested on hardware |
 | [Comfort Enhancement 3 / Comfort Plus3](#comfort-enhancement-3) | All 15 remotes in the app; not yet tested on hardware |
 | [N32 Motion Bed](#n32-motion-bed) | Beds controlled with N32 Motion Bed; not yet tested on hardware |
+| [Shuda](#shuda) | Beds controlled with the Shuda app |
 | [Resident Adjustable Base](#resident-adjustable-base) | Beds controlled with Resident Adjustable Base; not yet tested on hardware |
 | [Ultramatic Smart Bed](#ultramatic-smart-bed) | Beds controlled with Ultramatic Smart Bed; not yet tested on hardware |
 | [Superior sleep](#superior-sleep-ss350--ss650) | SS350 and SS650 |
@@ -90,6 +91,7 @@ Customatic app profiles.
 | ✅ | [Jordan's Serenity](https://play.google.com/store/apps/details?id=com.okin.bedding.serenity) 1.0.1 (code 2) | `com.okin.bedding.serenity` | [Jordan's Serenity](#jordans-serenity) |
 | ✅ | [Superior sleep](https://play.google.com/store/apps/details?id=com.okin.bedding.superior.superior) 1.0.0 (2) | `com.okin.bedding.superior.superior` | [SS350 / SS650](#superior-sleep-ss350--ss650) |
 | ✅ | [Rize Home](https://play.google.com/store/apps/details?id=com.okin.rize) 1.1.2 (12) | `com.okin.rize` | [Remedy III / Contempo IV](#rize-home-remedy-iii--contempo-iv) |
+| ✅ | Shuda 1.0.6 (19) | `com.okin.shuda` | [Shuda](#shuda) |
 | ✅ | [N32 Motion Bed](https://play.google.com/store/apps/details?id=com.okin.simmonskorea) 1.1.14 (38) | `com.okin.simmonskorea` | [N32 Motion Bed](#n32-motion-bed) |
 | ✅ | [Resident Adjustable Base](https://play.google.com/store/apps/details?id=com.okin.resident.release) 1.0.0 (1) | `com.okin.resident.release` | [Resident Adjustable Base](#resident-adjustable-base) |
 | ✅ | [Ultramatic Smart Bed](https://play.google.com/store/apps/details?id=com.okin.ultramaticSmartBed) 1.1.2 (5) | `com.okin.ultramaticSmartBed` | [Ultramatic Smart Bed](#ultramatic-smart-bed) |
@@ -136,6 +138,10 @@ The 40-bit profiles:
 | Left and right on one address | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
 | Hold until release | ❌ | ✅ | ❌ | ✅ | ✅ | ✅ |
 | BLE pairing | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
+
+Shuda provides head and foot movement, flat, zero gravity, TV, one custom
+memory, an under-bed light toggle and two configurable wake alarms. See the
+[Shuda controls](#shuda) for hold and save behavior.
 
 The 96-bit profiles:
 
@@ -274,6 +280,7 @@ are unchanged.
 | Rize Remedy II | `rize_remedy_ii` | `rize_remedy_ii` | 96-bit | plain frame | from the characteristic's properties | head, feet, lumbar | 3 |
 | OKIN Motion Bed | `okin_motionbed` | `okin_motionbed` | 32-bit | fixed E5 gateway envelope | with response | back, middle, legs | 2 |
 | N32 Motion Bed | `n32_motion_bed` | `n32_motion_bed` | 40-bit | plain frame | with response | back, legs, head | 3 |
+| Shuda | `shuda` | `shuda` | 40-bit | plain frame | with response | back, legs | 1 |
 | Resident Adjustable Base | `resident` | `resident` | 64-bit | plain frame | with response | head, feet | 2 |
 | Ultramatic Smart Bed | `ultramatic_smart_bed` | `ultramatic_smart_bed` | 40-bit | plain frame | without response | head, foot, headtilt, lumbar, hips | 2 |
 | OKIN 64-bit Nordic UART | `okin_64bit_nordic` | `okin_64bit` | 64-bit | plain frame | without response | head, feet, lumbar | 2 |
@@ -340,6 +347,7 @@ are unchanged.
 | Rize Remedy II | 100 ms | entry pulse count; until release with a renewable hold | 2 STOP at 100 ms, 100 ms after the last write |
 | OKIN Motion Bed | 200 ms | entry pulse count; until release with a renewable hold | 1 STOP |
 | N32 Motion Bed | 200 ms | entry pulse count; until release with a renewable hold | 1 STOP |
+| Shuda | 200 ms | entry pulse count; until release with a renewable hold | 1 STOP |
 | Resident Adjustable Base | 300 ms | entry pulse count; until release with a renewable hold | 2 STOP at 300 ms |
 | Ultramatic Smart Bed | 300 ms | entry pulse count; until release with a renewable hold | 1 STOP, 100 ms after the last write |
 | OKIN 64-bit Nordic UART | entry pulse delay | entry pulse count | 1 STOP |
@@ -408,6 +416,7 @@ Entry pulse settings are the configured motor pulse count and delay.
 | Rize Remedy II | held to its deadline, 2 STOP | held to its deadline, 2 STOP | held to its deadline, 2 STOP | n/a | held to its deadline, 2 STOP | n/a |
 | OKIN Motion Bed | once, no STOP | once, no STOP | once, no STOP | n/a | once, no STOP | n/a |
 | N32 Motion Bed | once, 1 STOP | once, 1 STOP | n/a | n/a | n/a | n/a |
+| Shuda | once, 1 STOP | once, 1 STOP | 28 × 200 ms, 1 STOP | n/a | once, 1 STOP | n/a |
 | Resident Adjustable Base | once, 2 STOP | once, 2 STOP | n/a | n/a | once, 2 STOP | n/a |
 | Ultramatic Smart Bed | held recall | held M1/M2 | same frame, bounded save hold | n/a | one-shot, see profile | n/a |
 | OKIN 64-bit Nordic UART | once, no STOP | once, no STOP | n/a | n/a | once, no STOP | n/a |
@@ -464,7 +473,7 @@ times them. Every frame table in this section is generated from the codec.
 | Settings notify | `90311725-25fa-3346-12ef-3cfb7a2556ac` | Leggett Okin Prodigy profiles |
 | Service | `6e400001-b5a3-f393-e0a9-e50e24dcca9e` | 40-bit profiles |
 | Write | `6e400002-b5a3-f393-e0a9-e50e24dcca9e` | 40-bit profiles |
-| Notify | `6e400003-b5a3-f393-e0a9-e50e24dcca9e` | SIMMONS, Simmons Blue, SleepEase, Sleepy's, AdjustableM5X4, eShine |
+| Notify | `6e400003-b5a3-f393-e0a9-e50e24dcca9e` | SIMMONS, Simmons Blue, SleepEase, Sleepy's, AdjustableM5X4, eShine, Shuda |
 
 The settings channel opens with `01 02` after subscribing. SIMMONS also accepts
 FFE5/FFE9 with FFE0/FFE4, and AdjustableM5X4 two more transports; see their
@@ -955,6 +964,7 @@ frames, listed in its profile.
 
 | Parser | Profiles | Input |
 |---|---|---|
+| `parse_short_alarm` | Shuda | Alarm notification, 10+ bytes with prefix `A5 0C`, `A5 0D` or `A5 0E` and the enabled byte at offset 9 |
 | `parse_position` | Okimat | Position notification on the position characteristic, 7+ bytes: head raw at bytes 3-4 and foot raw at bytes 5-6, little-endian |
 | `parse_status` | Leggett Okin | Status notification: the app's LED mask (operations 6, 7, 8, 9 and 11) and signed status byte |
 | `parse_receipt` | Prodigy CE | 20-byte CU170 status frame: `09 0B`, two identical big-endian status dwords, ten trailing bytes |
@@ -985,6 +995,7 @@ Okimat angles are `raw / max_raw × max_angle`, clamped:
   commits the recall. SIMMONS sends two STOPs 100 and 400 ms after
   every release. SleepEase P1 sends its index 1 STOP after every hold. eShine
   sends one STOP 200 ms after the last held write.
+- Shuda releases its held keys with one zero-word STOP on the same connection.
 - Every cleanup runs with a fresh cancel event, so a stop request cannot
   suppress it.
 
@@ -5876,6 +5887,103 @@ Based on Superior sleep 1.0.0 (2), as available on November 18, 2026, which
 sends these frames on both product routes. Hardware, physical save effects and
 notification scaling have not been tested.
 
+
+### Shuda
+
+**App:** Shuda 1.0.6 (19), `com.okin.shuda`
+
+**Status:** Not yet tested on hardware.
+
+#### Setup
+
+Choose **Shuda app** for the bed. Home Assistant offers it as a choice for a
+Bluetooth device whose name starts with `smartbed` and advertises the shared
+Nordic UART service. Use manual setup if your receiver only advertises its
+name. Shuda uses one layout with head and foot movement. Each connected
+receiver needs the Nordic UART write-with-response and notify or indicate
+characteristics. The app sends no PIN or authentication frame.
+
+#### Controls
+
+The two covers move the back and legs. The preset buttons recall Flat, Zero
+gravity, TV or Memory 1. **Toggle light** sends the under-bed light key. The
+receiver supplies alarm state only. The light has no reported on/off state.
+
+Use **Save memory 1**, **Save zero gravity** or **Save TV** to send the app's
+long-press save gesture. Physical memory retention still needs testing.
+
+<!-- generated:shuda-controls -->
+<!-- Generated by scripts/generate_codec_docs.py from the codec and profile data. Edit those, not this block. -->
+
+| Command | Word | Frame |
+|---|---|---|
+| Head up | `0x0000000001` | `05 02 00 00 00 01 00` |
+| Head down | `0x0000000002` | `05 02 00 00 00 02 00` |
+| Feet up | `0x0000000004` | `05 02 00 00 00 04 00` |
+| Feet down | `0x0000000008` | `05 02 00 00 00 08 00` |
+| Flat | `0x0008000000` | `05 02 08 00 00 00 00` |
+| Zero-G | `0x0000001000` | `05 02 00 00 10 00 00` |
+| Memory 1 | `0x0000010000` | `05 02 00 01 00 00 00` |
+| TV | `0x0000004000` | `05 02 00 00 40 00 00` |
+| Under-bed light toggle | `0x0000020000` | `05 02 00 02 00 00 00` |
+| STOP / release | `0x00000000` | `05 02 00 00 00 00 00` |
+
+| Alarm and clock operation | Example frame |
+|---|---|
+| Sync local clock (2026-11-24 14:37:42) | `05 02 07 04 1A 0B 18 02 0E 25 2A 00` |
+| Set slot 1, weekdays at 07:30, memory 1 | `05 02 07 05 BE 05 07 1E 00 01 00 00` |
+| Turn off the same slot, retaining its schedule | `05 02 07 05 BE 05 07 1E 00 00 00 00` |
+| Query slot 1 | `00 C0` |
+| Query slot 2 | `00 D0` |
+| Query slot 3 | `00 E0` |
+
+| Setting | Value |
+|---|---|
+| Held refresh | 200 ms |
+| Save gesture | 5.5 seconds |
+| Maximum recall hold | Less than 5 seconds |
+| Release | 1 STOP |
+| Alarm wake actions | `memory_1` (5), `flat` (9), `zero_g` (1) |
+<!-- /generated -->
+
+#### Timing
+
+The controller refreshes the held key at the interval above and sends STOP
+when the press ends or is cancelled. The dashboard can renew holds for motor
+directions, Flat and Toggle light. A normal recall sends one press and release.
+The controls shared with a save gesture have a bounded recall duration.
+Clock and alarm settings wrap an Okin setting record in the fixed
+`05 02` prefix and a zero trailer. Query frames are standalone. These
+frames carry no checksum.
+
+#### Notifications
+
+On connection, the controller subscribes, sets the local bed clock and queries
+the two alarm slots. Each alarm sensor shows the last reported time and
+carries its enabled state, wake action and weekday mask. Editing a repeat
+schedule sets bit 7 and uses Sunday through Saturday for bits 0 through 6.
+An empty selection sends zero. Turning off a slot keeps its reported schedule
+fields without re-encoding the weekday selection.
+
+If a receiver reports a third slot, Home Assistant remembers it and can
+query it on a later refresh or connection when its saved weekday byte is below
+128. Setup still exposes two alarm slots. The reply has no movement or light
+fields. Massage notifications carry no usable app state.
+
+#### Services
+
+Use [hold_control](../SERVICES.md#hold_control) for a timed press and
+[sync_clock](../SERVICES.md#sync_clock) to set the clock explicitly.
+[Set alarm](../SERVICES.md#set_alarm) configures slot 1 or 2 with
+`weekdays` and an explicit wake action. Choose `memory_1` with
+`confirm_custom_position: true` to wake to the saved position. To check for
+overlaps, enabling an alarm requires a report for the other ordinary slot on
+the current connection. Turning one off requires a report for its own slot.
+
+#### Evidence
+
+Based on the Shuda 1.0.6 (19) Android app. The command, clock and alarm vectors
+are checked in `tests/test_shuda.py`.
 
 ## Notes
 

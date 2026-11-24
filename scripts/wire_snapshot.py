@@ -290,12 +290,39 @@ def _method(name: str, *args: Any, **kwargs: Any) -> Call:
 STOP_AFTER_S = 0.3
 
 
-def _stopped(call: Call) -> Call:
+def _stopped(call: Call, *, scheduled: bool = False) -> Call:
     """Run a movement and STOP it after ``STOP_AFTER_S``, as ``async_stop_command`` does.
 
     The coordinator bumps the cancel counter, sets ``cancel_command``, waits for the
     running command's cleanup to release the wire, then sends ``stop_all``.
     """
+
+    async def run_scheduled(ctrl: Any) -> None:
+        from custom_components.adjustable_bed.command_scheduler import (
+            CommandIntent,
+            DeviceCommandScheduler,
+        )
+
+        coordinator = ctrl._coordinator  # noqa: SLF001
+        scheduler = DeviceCommandScheduler("wire-snapshot")
+
+        async def move(context: Any) -> None:
+            async with coordinator._command_lock:
+                coordinator.cancel_command = context.cancel_event
+                await call(ctrl)
+
+        async def stop(_context: Any) -> None:
+            async with coordinator._command_lock:
+                await ctrl.stop_all()
+
+        previous_cancel = coordinator.cancel_command
+        try:
+            handle = await scheduler.enqueue(CommandIntent(move))
+            await asyncio.sleep(STOP_AFTER_S)
+            await scheduler.admit_stop(stop)
+            await handle.future
+        finally:
+            coordinator.cancel_command = previous_cancel
 
     async def run(ctrl: Any) -> None:
         coordinator = ctrl._coordinator  # noqa: SLF001
@@ -306,7 +333,7 @@ def _stopped(call: Call) -> Call:
         await asyncio.gather(movement, return_exceptions=True)
         await ctrl.stop_all()
 
-    return run
+    return run_scheduled if scheduled else run
 
 
 def _base_actions() -> list[str]:
@@ -398,8 +425,15 @@ def plan_commands(controller: Any) -> list[Command]:
     plan.extend(_argument_commands(controller))
     # The user presses STOP while each cover moves.
     for spec in specs:
-        plan.append(Command(f"stop:{spec.key}_open", _stopped(spec.open_fn), True, movement=True))
-        plan.append(Command(f"stop:{spec.key}_close", _stopped(spec.close_fn), True, movement=True))
+        # Shuda's STOP consumes the interrupted command's release receipt.
+        # Keep older synthetic STOP rows stable.
+        scheduled = controller._coordinator.bed_type == "shuda"
+        plan.append(Command(
+            f"stop:{spec.key}_open", _stopped(spec.open_fn, scheduled=scheduled), True, movement=True
+        ))
+        plan.append(Command(
+            f"stop:{spec.key}_close", _stopped(spec.close_fn, scheduled=scheduled), True, movement=True
+        ))
     for spec in _value(controller, "controller_button_specs", ()):
         plan.append(Command(f"button:{spec.key}", spec.press_fn, True))
     for spec in _value(controller, "controller_select_specs", ()):
@@ -466,6 +500,18 @@ def plan_commands(controller: Any) -> list[Command]:
             await ctrl.set_alarm(plan)
 
         plan.append(Command("ultramatic_alarm_disable", disable_ultramatic_alarm, True))
+    if controller._coordinator.bed_type == "shuda":
+        from custom_components.adjustable_bed.alarm import AlarmRequest
+
+        plan.extend((
+            Command("shuda_alarm_weekdays", _method("configure_alarm", AlarmRequest(
+                enabled=True, slot=1, hour=7, minute=30, weekdays=(0, 1, 2, 3, 4),
+                wake_action="memory_1", confirm_custom_position=True, reference_time=FROZEN_BASE,
+            )), True),
+            Command("shuda_alarm_disable", _method("configure_alarm", AlarmRequest(
+                enabled=False, slot=2, reference_time=FROZEN_BASE,
+            )), True),
+        ))
     if late_clock and _overrides(controller, "sync_clock"):
         plan.append(
             Command("sync_clock", _method("sync_clock"), _flag(controller, "supports_clock_sync"))
@@ -1236,6 +1282,7 @@ class Coordinator:
     remember_vibradorm_app_floor_default = remember_remacro_led_level = _ignore
     remember_sleep_number_mcr_client_id = remember_richmat_mh_snapshot = _ignore
     _ble_bond_established = False
+    save_app_state = _ignore
     remember_vmatbasic_settings = _begin_internal_entry_update = _ignore
     _async_persist_config = _schedule_pending_capability_reload = _ignore
 
@@ -1346,6 +1393,14 @@ def default_scenario(bed_type: str) -> Scenario:
         return Scenario(
             id=bed_type, bed_type=bed_type, protocol_variant="cprn",
             replies={"write:6e0a000179": "6e200903010200019e"},
+        )
+    if bed_type == const.BED_TYPE_SHUDA:
+        return Scenario(
+            id=bed_type, bed_type=bed_type, entry_data={const.CONF_BLE_DEVICE_NAME: "Smartbed"},
+            replies={
+                "write:00c0": "a50c0000000000000000",
+                "write:00d0": "a50d00ffbe0116050001",
+            },
         )
     if bed_type == const.BED_TYPE_SIMMONS_BLUE:
         return Scenario(id=bed_type, bed_type=bed_type, layout_id="n32_motion_bed")
@@ -2437,6 +2492,9 @@ async def _connect(controller: Any, recorder: Recorder, clock: FakeClock) -> dic
         if controller._coordinator.bed_type in {"smart_sleep", "cheerssleep", "relax_motion"}:
             # These v5 profiles own startup in their hook, without session helpers.
             await controller.async_on_connect(None)
+            return
+        if controller._coordinator.bed_type == "shuda":
+            await controller.async_on_connect(SimpleNamespace(async_start_notify=controller.start_notify))
             return
         if controller._coordinator.bed_type in {"rize_home", "superior_sleep", "okin_64bit", "betterliving2", "ultramatic_smart_bed", "smart_comfort_synargy", "smart_comfort_synergy", "simmons_blue"}:
             session = SimpleNamespace(async_start_notify=controller.start_notify, is_current=lambda: True)
