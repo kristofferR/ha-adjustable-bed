@@ -6543,6 +6543,14 @@
       }
     },
     "select": {
+      "sleepiq_auto_light_level": {
+        "name": "Automatic under-bed light level",
+        "state": {
+          "low": "Low",
+          "medium": "Medium",
+          "high": "High"
+        }
+      },
       "enso2_mode": {
         "name": "Control mode",
         "state": {
@@ -10847,7 +10855,7 @@
         },
         "seconds": {
           "name": "Duration",
-          "description": "0 keeps the light on; otherwise 1–300 seconds."
+          "description": "0 keeps the light on; otherwise up to 900 seconds (15 minutes). On the Blue product: 30, 40 or 50 minutes or 1 to 8 hours, in seconds, or as before up to 300 seconds sent as given."
         }
       }
     },
@@ -11262,6 +11270,9 @@
     },
     "timer_minutes_required": {
       "message": "Choose how many minutes the timer runs."
+    },
+    "sleep_number_auto_light_not_reported": {
+      "message": "The bed did not report its automatic under-bed light setting, so nothing was changed. Try again."
     },
     "sleep_number_command_not_supported": {
       "message": "{device_name} does not accept the Sleep Number command \"{command}\"."

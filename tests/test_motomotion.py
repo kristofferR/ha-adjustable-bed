@@ -7,6 +7,7 @@ from types import SimpleNamespace
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
+from bleak.exc import BleakError
 
 from custom_components.adjustable_bed.beds.motomotion import controller as bed
 from custom_components.adjustable_bed.beds.motomotion.protocol import (
@@ -323,6 +324,42 @@ async def test_restore_rejects_invalid_posture(coordinator, value):
     await c.select("posture", "tv")
     await c.action("motomotion_posture_recall")
     assert written(coordinator) == [posture("tv", 170, 100, 55).to_bytes()]
+
+
+async def test_posture_button_selects_and_moves_in_one_press(coordinator):
+    c = controller(coordinator, "SOFA000001A000H")
+    names = {s.key: (s.translation_placeholders or {}).get("action", s.translation_key)
+             for s in c.controller_button_specs}
+    assert [names["motomotion_posture_" + k] for k in ("upright", "recline", "tv", "lay")] == [
+        "Upright", "Recline", "preset_tv", "Lie flat",
+    ]
+    # Without the user's measurements the app only asks for a user.
+    with pytest.raises(ValueError, match="Set height"):
+        await c.action("motomotion_posture_lay")
+    assert written(coordinator) == [] and c._posture == "upright"
+    assert not c.controller_button_available("motomotion_posture_lay")
+    c.restore_persisted_app_state({"dimensions": {"height": 170, "buttocks": 100, "knee": 55}})
+    assert c.controller_button_available("motomotion_posture_lay")
+    # Choosing in the select stays local, so a restored scene cannot move the bed.
+    await c.select("posture", "tv")
+    assert written(coordinator) == []
+    await c.action("motomotion_posture_lay")
+    lay = posture("lay", 170, 100, 55)
+    assert written(coordinator) == [lay.to_bytes()]
+    assert c._posture == "lay" and c._targets == lay
+    assert coordinator.controller_state["motomotion_posture"] == "lay"
+
+
+async def test_undelivered_posture_press_changes_nothing(coordinator):
+    c = controller(coordinator, "SOFA000001A000H")
+    c.restore_persisted_app_state({"dimensions": {"height": 170, "buttocks": 100, "knee": 55}})
+    coordinator.client.write_gatt_char.side_effect = BleakError("lost")
+    with pytest.raises(BleakError):
+        await c.action("motomotion_posture_tv")
+    assert c._posture == "upright" and c._targets is None
+    with pytest.raises(ValueError, match="Recall or fine tune"):
+        await c.action("motomotion_posture_save")
+    assert c._custom == {} and coordinator.controller_state["motomotion_posture"] == "upright"
 
 
 @pytest.mark.parametrize("mismatch", ["user", "posture", "dimensions", "range", "bool", "shape"])

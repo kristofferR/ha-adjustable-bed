@@ -14,13 +14,19 @@ from typing import TYPE_CHECKING, Final
 from ...card import CARD_CONTROLLED_SIDE, CARD_HIDDEN, CARD_UTILITY
 from ...codec import motomotion as codec
 from ...codec.motomotion import Position, ascii_command, binary_command, music_command
-from ...command_scheduler import note_frame_skipped, note_frame_written, note_write_not_counted
+from ...command_scheduler import (
+    Delivery,
+    delivered,
+    note_frame_skipped,
+    note_frame_written,
+    note_write_not_counted,
+)
 from ...const import CONF_BLE_DEVICE_NAME
 from ...controller_state import StateKey
 from ...profiles.motomotion import Profile
 from ..base import CONTROLLER_GESTURE_RELEASE, BedController, require_controller
 from ..builder import BuildContext
-from ..catalog_buttons import EXTRA_KEY, catalog_button, unique_buttons
+from ..catalog_buttons import EXTRA_KEY, Kind, catalog_button, unique_buttons
 from ..entity_specs import (
     ControllerButtonSpec,
     ControllerHoldSpec,
@@ -135,6 +141,8 @@ _ACTION_NAMES: Final = {
     "posture_reset": "Reset posture",
     "unbind": "Remove app binding",
 }
+# The app's posture bar: a tap sends that posture's target for the selected user.
+_POSTURES: Final = {"upright": "Upright", "recline": "Recline", "tv": "TV", "lay": "Lie flat"}
 
 class MotoMotionController(BedController):
     def __init__(
@@ -904,6 +912,8 @@ class MotoMotionController(BedController):
             await self.write_command(
                 binary_command({"music_play": 14, "music_next": 12, "music_previous": 13}[key])
             )
+        elif key.removeprefix("posture_") in _POSTURES:
+            await self._go_to_posture(key.removeprefix("posture_"))
         elif key.startswith("posture_"):
             if self._posture is None:
                 raise ValueError("Select a MotoMotion posture before using posture controls")
@@ -916,8 +926,7 @@ class MotoMotionController(BedController):
                 if key == "posture_reset":
                     self._custom.pop(self._posture, None)
                     self._coordinator.save_app_state(self)
-                self._targets = self._position()
-                await self.write_command(self._targets.to_bytes())
+                await self._go_to_posture(self._posture)
         elif key == "unbind":
             session = self._session
             unpair = self._unpair_write
@@ -954,17 +963,37 @@ class MotoMotionController(BedController):
             self._targets = None
             self._posture = value
 
-    def _position(self) -> Position:
-        if self._posture is None:
+    def controller_button_available(self, key: str) -> bool:
+        name = key.removeprefix("motomotion_posture_")
+        if name in _POSTURES:
+            # A posture needs the user's measurements or a saved target, as in the app.
+            return name in self._custom or set(self._dimensions) == set(_DIMENSIONS)
+        return super().controller_button_available(key)
+
+    async def _go_to_posture(self, name: str) -> None:
+        """Send a posture's target. It becomes the selection once the bed has it."""
+        target = self._position(name)
+
+        def show(delivery: Delivery) -> None:
+            if delivery is Delivery.SENT:
+                self._posture, self._targets = name, target
+                self._coordinator.save_app_state(self)
+
+        with delivered(show):
+            await self.write_command(target.to_bytes())
+
+    def _position(self, name: str | None = None) -> Position:
+        name = name or self._posture
+        if name is None:
             raise ValueError("Select a MotoMotion posture before using posture controls")
-        if self._posture in self._custom:
-            return self._custom[self._posture]
+        if name in self._custom:
+            return self._custom[name]
         if set(self._dimensions) != {"height", "buttocks", "knee"}:
             raise ValueError(
                 "Set height, buttocks height and knee height before recalling a posture"
             )
         return posture(
-            self._posture,
+            name,
             self._dimensions["height"],
             self._dimensions["buttocks"],
             self._dimensions["knee"],
@@ -1008,7 +1037,7 @@ class MotoMotionController(BedController):
         if self.profile.panel == "Binary music":
             keys.extend("motomotion_music_" + s for s in ("play", "next", "previous"))
         if self.profile.users:
-            keys.extend("motomotion_posture_" + s for s in ("recall", "save", "reset"))
+            keys.extend("motomotion_posture_" + s for s in (*_POSTURES, "recall", "save", "reset"))
         if self.held_control_options:
             keys.append("motomotion_release")
         keys.append("motomotion_unbind")
@@ -1031,6 +1060,13 @@ class MotoMotionController(BedController):
                     translation_key=EXTRA_KEY,
                     translation_placeholders={"action": self._action_label(key)},
                     diagnostic=True,
+                ))
+            elif key.removeprefix("motomotion_posture_") in _POSTURES:
+                specs.append(catalog_button(
+                    key,
+                    _POSTURES[key.removeprefix("motomotion_posture_")],
+                    partial(action, key=key),
+                    kind=Kind.PRESET,
                 ))
             else:
                 specs.append(catalog_button(

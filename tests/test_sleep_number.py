@@ -8,6 +8,7 @@ from unittest.mock import ANY, AsyncMock, MagicMock, call
 import pytest
 from homeassistant.const import CONF_ADDRESS, CONF_NAME
 from homeassistant.core import HomeAssistant
+from homeassistant.exceptions import HomeAssistantError
 from pytest_homeassistant.common import MockConfigEntry
 
 from custom_components.adjustable_bed.beds.sleep_number.controller import (
@@ -970,3 +971,103 @@ class TestSleepNumberController:
         )
         assert coordinator.controller._coordinator.controller_state["light_timer_minutes"] == 120
         assert coordinator.controller.light_auto_off_seconds == 7200
+
+
+class _AutoLightBed:
+    """A bed's automatic and manual under-bed light settings behind the command writer."""
+
+    def __init__(self, controller: SleepNumberController, *, enabled: bool, level: str) -> None:
+        self.auto = ["true" if enabled else "false", level]
+        self.manual = ["off", "0"]
+        self.read_error: Exception | None = None
+        self.sent: list[tuple[str, ...]] = []
+        self._controller = controller
+        controller._auto_light_level = None
+        controller._send_bamkey_command = self._send
+
+    async def _send(self, key: str, *args: str, expected_args: int = 0) -> list[str]:
+        if key == "UBAG":
+            if self.read_error is not None:
+                raise self.read_error
+            return list(self.auto)
+        if key == "UBLG":
+            return list(self.manual)
+        self.sent.append((key, *args))
+        if key == "UBAS":
+            self.auto = list(args)
+        elif key == "UBLS":
+            self.manual = list(args)
+        return []
+
+    async def switch(self, enabled: bool) -> None:
+        spec = next(
+            spec
+            for spec in self._controller.controller_switch_specs
+            if spec.key == "sleepiq_auto_light"
+        )
+        await spec.set_fn(self._controller, enabled)
+
+    async def select(self, level: str) -> None:
+        (spec,) = self._controller.controller_select_specs
+        await spec.select_fn(self._controller, level)
+
+    @property
+    def shown(self) -> tuple[object, object]:
+        state = self._controller._coordinator.controller_state
+        return state["sleepiq_auto_light"], state["sleepiq_auto_light_level"]
+
+
+class TestSleepNumberAutomaticLightLevel:
+    """The automatic light's level is its own setting, beside its on/off switch."""
+
+    @pytest.mark.parametrize("saved_enabled", [True, False])
+    @pytest.mark.parametrize("switch_first", [True, False])
+    async def test_scene_restores_switch_and_level_in_either_order(
+        self, sleep_number_coordinator, saved_enabled: bool, switch_first: bool
+    ) -> None:
+        coordinator = await sleep_number_coordinator(
+            address="AA:BB:CC:DD:EE:3A",
+            name="Smart bed 0074F0",
+            entry_id=f"sleep_number_auto_scene_{saved_enabled}_{switch_first}",
+        )
+        bed = _AutoLightBed(coordinator.controller, enabled=not saved_enabled, level="low")
+
+        if switch_first:
+            await bed.switch(saved_enabled)
+            await bed.select("high")
+        else:
+            await bed.select("high")
+            await bed.switch(saved_enabled)
+
+        assert bed.shown == (saved_enabled, "high")
+        # A disable carries the app's ignored Low; no frame touches the manual light.
+        assert bed.auto == (["true", "high"] if saved_enabled else ["false", "low"])
+        assert all(frame[0] == "UBAS" for frame in bed.sent)
+
+        if not saved_enabled:
+            await bed.switch(True)
+            assert bed.auto == ["true", "high"]
+
+    async def test_unreadable_automatic_setting_refuses_only_its_own_level(
+        self, sleep_number_coordinator
+    ) -> None:
+        coordinator = await sleep_number_coordinator(
+            address="AA:BB:CC:DD:EE:3C",
+            name="Smart bed 0074F0",
+            entry_id="sleep_number_auto_unreadable",
+        )
+        bed = _AutoLightBed(coordinator.controller, enabled=True, level="low")
+        bed.read_error = ValueError("UBAG failed: generic protocol error")
+        coordinator.controller._underbed_light_level = "off"
+        coordinator.controller._underbed_light_timer_minutes = 30
+
+        with pytest.raises(HomeAssistantError) as refused:
+            await bed.select("high")
+        assert refused.value.translation_key == "sleep_number_auto_light_not_reported"
+        assert bed.sent == []
+
+        # The manual level number sends its one frame and never asks about the mode.
+        await coordinator.controller.set_light_level(2)
+        await coordinator.controller.lights_off()
+        assert bed.sent == [("UBLS", "medium", "30"), ("UBLS", "off", "30")]
+        assert bed.auto == ["true", "low"]

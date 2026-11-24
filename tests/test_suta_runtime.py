@@ -364,3 +364,33 @@ async def test_only_rbhc_gets_angle_sensors(hass, runtime):
     target._disable_angle_sensing = False
     keys = {e.entity_description.key for e in _sensor_entities_for(hass, target) if isinstance(e, AdjustableBedAngleSensor)}
     assert keys == ({"back_angle", "legs_angle"} if target.capability_controller.name.startswith("SUTA-RBHC") else set())
+
+
+@pytest.mark.parametrize("runtime", ["SUTA-TEMP"], indirect=True)
+async def test_heating_power_on_asks_the_bed_for_both_setpoints(hass, runtime):
+    target, client, _ = runtime
+    assert await target.async_connect()
+    sender, callback = client.start_notify.call_args.args
+    state = codec.binary(0xA1, 0x85, bytes((25, 33, 26, 28, 6, 6, 0, 0, 0)))
+    callback(sender, bytearray(state))
+    assert target.controller_state[bed.LEFT_SETPOINT] == 33
+    assert target.controller_state[bed.RIGHT_SETPOINT] == 28
+    client.write_gatt_char.reset_mock()
+
+    # The power-on acknowledgment carries no setpoint: neither side is known from it.
+    callback(sender, bytearray(codec.binary(0xA1, 0x81, b"\x01")))
+    assert target.controller_state[bed.LEFT_SETPOINT] is None
+    assert target.controller_state[bed.RIGHT_SETPOINT] is None
+    await hass.async_block_till_done()
+    assert written(client) == [codec.binary(0xA1, 5, b"\x0f")]
+
+    callback(sender, bytearray(codec.binary(0xA1, 0x85, bytes((25, 30, 26, 28, 6, 6, 0, 1, 0)))))
+    assert target.controller_state[bed.LEFT_SETPOINT] == 30
+    assert target.controller_state[bed.RIGHT_SETPOINT] == 28
+    assert target.controller_state[bed.HEATING_ON] is True
+
+    # Turning heating off resets nothing in the app, so nothing is dropped or asked.
+    client.write_gatt_char.reset_mock()
+    callback(sender, bytearray(codec.binary(0xA1, 0x81, b"\x00")))
+    await hass.async_block_till_done()
+    assert target.controller_state[bed.LEFT_SETPOINT] == 30 and not written(client)

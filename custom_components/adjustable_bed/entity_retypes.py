@@ -13,7 +13,7 @@ a restart that cut the first one short, until nothing names the old entity.
 from __future__ import annotations
 
 import json
-from collections.abc import Collection, Iterable
+from collections.abc import Callable, Collection, Iterable
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Final
 
@@ -24,10 +24,17 @@ from homeassistant.helpers import issue_registry as ir
 from homeassistant.helpers.start import async_at_started
 
 from .automation_references import entity_users
-from .const import BED_TYPE_OCTO, BED_TYPE_REVERIE, BED_TYPE_REVERIE_NIGHTSTAND, DOMAIN
+from .const import (
+    BED_TYPE_DREAMSENSE,
+    BED_TYPE_OCTO,
+    BED_TYPE_REVERIE,
+    BED_TYPE_REVERIE_NIGHTSTAND,
+    DOMAIN,
+)
 from .paired_coordinator import entity_runtimes
 
 if TYPE_CHECKING:
+    from .beds.base import BedController
     from .coordinator import AdjustableBedCoordinator
     from .paired_coordinator import PairedBedCoordinator
 
@@ -44,6 +51,9 @@ class Retype:
     keep_on: frozenset[str] = frozenset()
     # When set, the only bed types the change applies to.
     only_on: frozenset[str] = frozenset()
+    # When set, the change applies only to a bed whose controller says so
+    # (a product of the bed type, known before the first connection).
+    applies: Callable[[BedController], bool] | None = None
 
 
 def _same_key(old_domain: str, new_domain: str, keys: Iterable[str]) -> tuple[Retype, ...]:
@@ -149,6 +159,15 @@ RETYPES: Final[tuple[Retype, ...]] = (
         "select",
         "controller_select_symphony_light_color",
     ),
+    # DreamSense's Blue product has the app's durations instead of seconds.
+    Retype(
+        "number",
+        "controller_number_dreamsense_light_seconds",
+        "select",
+        "light_timer",
+        only_on=frozenset({BED_TYPE_DREAMSENSE}),
+        applies=lambda controller: controller.supports_light_timer,
+    ),
     # The Reverie app's wave is a pattern choice, not an intensity.
     Retype(
         "number",
@@ -209,6 +228,10 @@ def async_carry_over_retyped_entities(
                 retype.only_on and runtime.bed_type not in retype.only_on
             ):
                 continue
+            if retype.applies is not None:
+                controller = runtime.capability_controller
+                if controller is None or not retype.applies(controller):
+                    continue
             _carry_over(
                 registry,
                 entry,

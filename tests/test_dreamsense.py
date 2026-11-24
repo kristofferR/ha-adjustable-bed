@@ -667,7 +667,8 @@ async def test_sync_setting_delivery_finishes_before_release_failure(hass):
 
 @pytest.mark.parametrize("record", (False, True))
 async def test_retired_delivery_never_repopulates_connection_state(hass, record):
-    from custom_components.adjustable_bed.beds.dreamsense.controller import ALARMS, LIGHT_SECONDS
+    from custom_components.adjustable_bed.beds.dreamsense.controller import ALARMS
+    from custom_components.adjustable_bed.state_keys import LIGHT_TIMER_OPTION
 
     c, ctrl = await runtime(hass, "AFEG300" if record else "blue")
     session = ctrl._session
@@ -692,14 +693,14 @@ async def test_retired_delivery_never_repopulates_connection_state(hass, record)
             assert identity is not None
             await live.delete_alarm(7, identity)
         else:
-            await live.light_settings(seconds=30)
+            await live.light_settings(seconds=1800)
 
     task = asyncio.create_task(c.async_execute_controller_command(command))
     await entered.wait()
     ctrl.on_disconnect()
     finish.set()
     await task
-    assert c.controller_state[ALARMS if record else LIGHT_SECONDS] is None
+    assert c.controller_state[ALARMS if record else LIGHT_TIMER_OPTION] is None
 
 
 @pytest.mark.parametrize("number", (7.9, True))
@@ -942,3 +943,64 @@ async def test_raw_cached_selector_stays_left_only_during_disconnect(hass):
     assert restored.controller_select_specs[0].options == ("left",)
     with raises_key("dreamsense_side"):
         restored.select_side("right")
+
+
+LIGHT_REPLY = "6e0e00037f"
+
+
+async def test_blue_light_timer_offers_what_the_app_shows_and_sends_its_stop(hass):
+    from custom_components.adjustable_bed.state_keys import LIGHT_TIMER_OPTION
+
+    c, ctrl = await runtime(hass, "blue")
+    assert not ctrl.supports_light_timer
+    session = ctrl._session
+    ctrl._notification(session, session.notify, bytearray.fromhex(LIGHT_REPLY))
+    assert ctrl.controller_number_specs == ()
+    assert ctrl.light_timer_options == [
+        "30 min", "40 min", "50 min", "1 hour", *(f"{n} hours" for n in range(2, 9))
+    ]  # fmt: skip
+    # The app shows 40 minutes for the slider position 4500 it sends.
+    await c.async_execute_controller_command(lambda live: live.set_light_timer("40 min"))
+    assert c.controller_state[LIGHT_TIMER_OPTION] == "40 min"
+    # Two hours is the fifth stop, which sends 12600.
+    await c.async_execute_controller_command(lambda live: live.light_settings(seconds=7200))
+    assert c.controller_state[LIGHT_TIMER_OPTION] == "2 hours"
+    # The range the action always took goes out as given and is no stop of the slider.
+    await c.async_execute_controller_command(lambda live: live.light_settings(seconds=30))
+    assert c.controller_state[LIGHT_TIMER_OPTION] is None
+    assert written(c) == [p.light_seconds(n).hex() for n in (4500, 12600, 30)]
+    for seconds in (301, 4500, 28801):
+        with raises_key("dreamsense_action"):
+            ctrl.validate_light(seconds=seconds)
+
+
+async def test_other_products_keep_the_seconds_number_up_to_the_sliders_end(hass):
+    from custom_components.adjustable_bed.beds.dreamsense.controller import LIGHT_SECONDS
+
+    c, ctrl = await runtime(hass, "orange")
+    session = ctrl._session
+    ctrl._notification(session, session.notify, bytearray.fromhex(LIGHT_REPLY))
+    assert not ctrl.supports_light_timer
+    (spec,) = ctrl.controller_number_specs
+    assert (spec.key, spec.native_min_value, spec.native_max_value, spec.native_step) == (
+        "dreamsense_light_seconds", 0, 900, 1
+    )  # fmt: skip
+    for seconds in (30, 900):
+        await c.async_execute_controller_command(lambda live, n=seconds: spec.set_fn(live, n))
+        assert c.controller_state[LIGHT_SECONDS] == seconds
+    assert written(c) == [p.light_seconds(n).hex() for n in (30, 900)]
+    with raises_key("dreamsense_action"):
+        ctrl.validate_light(seconds=901)
+
+
+async def test_an_entry_without_a_stored_product_keeps_the_seconds_number(hass):
+    c, _ = await runtime(hass, "blue")
+    ctrl = DreamSenseController(c, product="blue", product_known=False)
+    ctrl._known = {"light"}
+    assert not ctrl.supports_light_timer
+    assert [spec.key for spec in ctrl.controller_number_specs] == ["dreamsense_light_seconds"]
+    # With no product to go by, the number and the action keep the older 0-300.
+    assert ctrl.controller_number_specs[0].native_max_value == 300
+    ctrl.validate_light(seconds=300)
+    with raises_key("dreamsense_action"):
+        ctrl.validate_light(seconds=301)

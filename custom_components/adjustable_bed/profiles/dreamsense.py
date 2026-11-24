@@ -114,6 +114,42 @@ def _load() -> dict[str, DreamSenseProfile]:
 
 
 PROFILES: Final = _load()
+
+
+@dataclass(frozen=True, slots=True)
+class LightTimer:
+    """One stop of the Blue product's light duration slider."""
+
+    option: str
+    # The duration the app shows for the stop, in seconds.
+    seconds: int
+    # What the stop sends.
+    wire: int
+
+
+def _blue_light_timers() -> tuple[LightTimer, ...]:
+    """Blue's slider sends its own position, 1800 to 28800 in ten steps.
+
+    The app shows it in whole minutes below an hour and in whole hours from there.
+    """
+    timers = []
+    for position in range(1800, 28801, 2700):
+        if position <= 9600:
+            shown = int((position - 1800) / 7800 * 1800 + 1800)
+        elif position <= 18000:
+            shown = int((position - 9600) / 8400 * 10800 + 3600)
+        else:
+            shown = int((position - 18000) / 10800 * 14400 + 14400)
+        hours, minutes = shown // 3600, shown // 60
+        timers.append(
+            LightTimer(f"{hours} hour" + ("s" if hours > 1 else ""), hours * 3600, position)
+            if hours
+            else LightTimer(f"{minutes} min", minutes * 60, position)
+        )
+    return tuple(timers)
+
+
+BLUE_LIGHT_TIMERS: Final = _blue_light_timers()
 CHOICES: Final = {
     key: key.title()
     if p.normal

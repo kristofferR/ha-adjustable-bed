@@ -34549,7 +34549,7 @@
 "number:motomotion_vibration=15": {"status":"ok","writes":[[0,"0000fff1",true,"24235631350d",1,0]]}
 }},
 "motomotion:SOFA000006AD00H": {
-"info": {"bed_type": "motomotion", "controller": "MotoMotionController", "gaps": ["recall_memory_1", "button:motomotion_posture_recall", "button:motomotion_posture_save", "button:motomotion_posture_reset", "button:motomotion_unbind"], "module": "motomotion.controller", "pulse": [10, 100]},
+"info": {"bed_type": "motomotion", "controller": "MotoMotionController", "gaps": ["recall_memory_1", "button:motomotion_posture_upright", "button:motomotion_posture_recline", "button:motomotion_posture_tv", "button:motomotion_posture_lay", "button:motomotion_posture_recall", "button:motomotion_posture_save", "button:motomotion_posture_reset", "button:motomotion_unbind"], "module": "motomotion.controller", "pulse": [10, 100]},
 "commands": {
 "connect": {"status":"ok","writes":[[0,"0000fff2","notify","",1,0]]},
 "head_up": {"status":"ok","writes":[[100,"0000fff1",true,"2423303030303230303030303030303032520d",10,100],[1057,"0000fff1",true,"2423303030303030303030303030303030520d",3,7]]},
@@ -34592,6 +34592,10 @@
 "button:motomotion_tilt_down": {"status":"ok","writes":[[100,"0000fff1",true,"2423303033333830303030303030303038520d",10,100],[1057,"0000fff1",true,"2423303030303030303030303030303030520d",3,7]]},
 "button:motomotion_light_toggle": {"status":"ok","writes":[[0,"0000fff1",true,"2423303032363230303030303030303036520d",1,0]]},
 "button:motomotion_heat_cycle": {"status":"ok","writes":[[200,"0000fff1",true,"2423303033333230303030303030303032520d",1,0]]},
+"button:motomotion_posture_upright": {"error":"ValueError","status":"error","writes":[]},
+"button:motomotion_posture_recline": {"error":"ValueError","status":"error","writes":[]},
+"button:motomotion_posture_tv": {"error":"ValueError","status":"error","writes":[]},
+"button:motomotion_posture_lay": {"error":"ValueError","status":"error","writes":[]},
 "button:motomotion_posture_recall": {"error":"ValueError","status":"error","writes":[]},
 "button:motomotion_posture_save": {"error":"ValueError","status":"error","writes":[]},
 "button:motomotion_posture_reset": {"error":"ValueError","status":"error","writes":[]},

@@ -864,7 +864,7 @@ alarm.
 | Field | Name | Meaning |
 |-------|------|---------|
 | `rgb_color` | Color | Red, green and blue, each 0–255. |
-| `seconds` | Duration | 0 keeps the light on; otherwise 1–300 seconds. |
+| `seconds` | Duration | 0 keeps the light on; otherwise up to 900 seconds (15 minutes). On the Blue product: 30, 40 or 50 minutes or 1 to 8 hours, in seconds, or as before up to 300 seconds sent as given. |
 
 Give `rgb_color`, `seconds` or both. The bed must report lighting support first.
 

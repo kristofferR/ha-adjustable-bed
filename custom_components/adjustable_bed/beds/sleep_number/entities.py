@@ -16,20 +16,3 @@ def action(command: str, parameters: Mapping[str, object]) -> MotorCommandCallab
 
     return execute
 
-
-async def automatic_light(controller: BedController, enabled: bool) -> None:
-    actions = controller_as(controller, SleepNumberActions)
-    if actions is None:
-        raise ValueError("Automatic lighting is not supported by this controller")
-    state = await actions.async_execute_sleep_number_command(
-        "get_underbed_light_auto_mode_status", {}
-    )
-    await actions.async_execute_sleep_number_command(
-        "set_underbed_light_auto_mode",
-        {
-            "underbed_light_auto_mode_enable_status": "true" if enabled else "false",
-            "underbed_light_auto_mode_intensity_level": state[
-                "underbed_light_auto_mode_intensity_level"
-            ],
-        },
-    )
