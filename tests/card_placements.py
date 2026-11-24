@@ -223,6 +223,7 @@ def runtime_variants(controllers: Iterable[BedController]) -> Iterator[BedContro
     from custom_components.adjustable_bed.beds.richmat_classic.bedsmart import BedSmartController
     from custom_components.adjustable_bed.beds.richmat_classic.jerome import JeromeController
     from custom_components.adjustable_bed.beds.richmat_classic.lp2 import Lp2Controller
+    from custom_components.adjustable_bed.beds.richmat_classic.maxprime import MaxprimeController
     from custom_components.adjustable_bed.beds.richmat_classic.profiles import load_catalog
     from custom_components.adjustable_bed.beds.richmat_classic.receive import ReceiveState
     from custom_components.adjustable_bed.beds.richmat_classic.resource_controller import (
@@ -342,6 +343,15 @@ def runtime_variants(controllers: Iterable[BedController]) -> Iterator[BedContro
                 model=load_catalog("sleepfunction").models[layout]
                 yield variant(controller,layout=layout,_model=model,_controls=model.controls,
                               _receive=SleepFunctionReceive(light_capable=True))
+        elif isinstance(controller, MaxprimeController):
+            for layout in ("AORM", "DHRM", "D9RM", "DXRM", "E3RM", "GVRM", "U3RM", "Y6RM", "YFRM"):
+                model = load_catalog(controller.app).models[layout]
+                for wire in ("RAW", "FRAMED"):
+                    yield variant(
+                        controller, layout=layout, _model=model, _controls=model.controls,
+                        _receive=ReceiveState(menu={"alarm", "light", "aroma"}, light_capable=True),
+                        _wire=wire,
+                    )
         elif isinstance(controller, BedSmartController):
             # Each command format lists its own controls once the bed connected.
             for layout in ("DHRM", "D1RM", "U3RM", "GVRM"):

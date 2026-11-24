@@ -1219,6 +1219,9 @@
  "button:massage_wave_previous": {
   "card_section": "massage"
  },
+ "button:maxprime_massage_timer_toggle": {
+  "card_section": "massage"
+ },
  "button:mid_body_down": {
   "card_section": "motors",
   "card_role": "down",
@@ -1865,6 +1868,16 @@
   "card_section": "motors",
   "card_role": "up",
   "card_motor": "ruf_richmat_mattress_right_pillow"
+ },
+ "button:selected_motor_down": {
+  "card_section": "motors",
+  "card_role": "down",
+  "card_motor": "selected_motor"
+ },
+ "button:selected_motor_up": {
+  "card_section": "motors",
+  "card_role": "up",
+  "card_motor": "selected_motor"
  },
  "button:set_back_reference": {
   "card_section": "motors",
@@ -3394,6 +3407,12 @@
  "number:massage_wave_intensity": {
   "card_section": "massage"
  },
+ "number:maxprime_lamp_seconds": {
+  "card_section": "utility"
+ },
+ "number:maxprime_massage_position": {
+  "card_section": "massage"
+ },
  "number:motion_bed_brightness": {
   "card_section": "lighting",
   "card_role": "level"
@@ -3714,6 +3733,9 @@
   "card_section": "massage",
   "card_role": "timer"
  },
+ "select:maxprime_axis": {
+  "card_section": "utility"
+ },
  "select:motion_bed_active_module": {
   "card_section": "utility"
  },
@@ -3749,6 +3771,12 @@
  },
  "select:richmat_app_side": {
   "card_section": "motors"
+ },
+ "select:richmat_classic_hold": {
+  "card_section": "utility"
+ },
+ "select:richmat_classic_mode": {
+  "card_section": "utility"
  },
  "select:richmat_mh_motor_mode": {
   "card_section": "utility"

@@ -2011,6 +2011,32 @@ def route_scenarios() -> list[Scenario]:
                     layout_id=layout_id,
                 )
             )
+    if const.BED_TYPE_RICHMAT_CLASSIC_APPS in const.SUPPORTED_BED_TYPES:
+        for layout, receiver, gatt in (
+            ("6BRM", "6BRM", "richmat_classic_apps_nordic"),
+            ("6BRM", "6BRM", "richmat_classic_apps"),
+            ("DHRM", "DHRM", "richmat_classic_apps"),
+            ("D9RM", "MLRM", "richmat_classic_apps"),
+            ("DXRM", "TWRM", "richmat_classic_apps_nordic"),
+            ("AORM", "AORM", "richmat_classic_apps"),
+            ("E3RM", "E3RM", "richmat_classic_apps"),
+            ("U3RM", "U3RM", "richmat_classic_apps"),
+            ("Y6RM", "Y6RM", "richmat_classic_apps"),
+        ):
+            wire = "raw" if gatt.endswith("nordic") else "wrapped"
+            scenarios.append(Scenario(
+                id=f"richmat_classic_apps:maxprime:{layout}:{wire}",
+                bed_type=const.BED_TYPE_RICHMAT_CLASSIC_APPS,
+                protocol_variant="maxprime",
+                entry_data={const.CONF_PRODUCT_TYPE: layout},
+                factory_kwargs={"device_name": receiver},
+                layout_id=gatt,
+                replies={
+                    "write:6e08010178": "6e09010078",
+                    "write:6e0a000179": "6e0e00037f",
+                    "write:6e1a000088": "6e1a000189",
+                },
+            ))
     # MotoMotion: the panels whose controls differ from the default one.
     if const.BED_TYPE_MOTOMOTION in const.SUPPORTED_BED_TYPES:
         for name in MOTOMOTION_NAMES[1:]:
@@ -2516,6 +2542,8 @@ async def _connect(controller: Any, recorder: Recorder, clock: FakeClock) -> dic
             await controller.async_after_connect(None)
             return
         await controller.start_notify(lambda *_: None)
+        if controller._coordinator.bed_type == "richmat_classic_apps" and getattr(controller, "app", None) == "maxprime":
+            await controller.async_after_connect(SimpleNamespace(is_current=lambda: True))
         if controller._coordinator.bed_type in {"komfyd", "comfyds", "suta"}:
             await controller.async_after_connect(None)
         if controller._coordinator.bed_type == "solace" and controller.profile.key == "sophie":
