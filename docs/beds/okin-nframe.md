@@ -2963,7 +2963,7 @@ Choose the **AdjustableM5X4, AdjustableM5X5 and Adjustable Comfort M1X12 apps ·
 | Presets | ✅ Flat, TV, Lounge, Zero Gravity, Anti-Snore |
 | Memory Presets | ✅ Memory A only (recall/save); named TV/Lounge/Zero Gravity saves and reset |
 | Massage | ✅ Toggle; relative head/foot intensity, wave and 10/20/30-minute timer behind the observed massage-on gate |
-| Floor light | ✅ Toggle, plus/minus, raw 1–6 brightness where available; feedback light, or an on/off light with assumed state where the app has on and off buttons |
+| Floor light | ✅ Toggle, plus/minus, raw 0–6 brightness where available (0 sends light off, as the app's slider does); feedback light, or an on/off light with assumed state where the app has on and off buttons |
 | Automatic white | ✅ (U8/9-consumed field 47 while connected) |
 | Paired beds | ✅ Two-address pairs; no one-address left/right selector |
 

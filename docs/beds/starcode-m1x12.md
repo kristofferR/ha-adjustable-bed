@@ -31,7 +31,7 @@ ELEVATE entries keep their current behavior until you reconfigure them.
 | Presets | ✅ Flat, TV, zero gravity, anti-snore, lounge |
 | Memory Presets | ✅ Memory 1/2 recall and save, reset; one more saved position (MemoryType 8) through the memory action only |
 | Massage | ✅ Toggle/off, 10/20/30-minute timer, held wave and head/foot/both intensity |
-| Lights | ✅ On/off/cycle, light modes 0/1 on models that have them, brightness 1–6 |
+| Lights | ✅ On/off/cycle, light modes 0/1 on models that have them, brightness 0–6 (0 turns the light off) |
 | Alarm, EQ, USB, sonic and kneading state | ⚠️ Shown, but cannot be changed |
 | ELEVATE lifts | ✅ Up to two, each added as an M1X12 ELEVATE entry |
 | Hold until release | ✅ ([renewable](../SERVICES.md#renewable-holds) `timed_move` and `hold_control`: 100 ms refresh, then STOP) |
@@ -298,6 +298,8 @@ The main profile exposes:
   advanced alarm, EQ and USB state; kneading additionally exposes kneading
   on/demo/mode/time state. These notifications do not imply setters that the
   app does not provide.
+- The brightness number spans 0–6. Like the app's slider, 0 sends light off
+  instead of a brightness frame.
 - One brightness number entity and stable `starcode_m1x12_*` entity translation
   keys.
 

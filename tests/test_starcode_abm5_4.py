@@ -303,7 +303,7 @@ def test_default_raw_state_and_no_unknown_position_semantics():
     assert not c.supports_light_color_control
 
 
-@pytest.mark.parametrize("value", [0, 7, 15, 30, 255, True, 2.5])
+@pytest.mark.parametrize("value", [-1, 7, 15, 30, 255, True, 2.5])
 async def test_public_brightness_rejects_private_builder_domain(value):
     c = make_controller()
     c._light_on = True
@@ -480,7 +480,19 @@ async def test_every_light_path_shares_strict_elapsed_gate(first, second):
     assert c._last_light_time_ms == 1501
 
 
-@pytest.mark.parametrize("value", [0, 7, 15, 30, 255, True, 2.5])
+async def test_brightness_zero_sends_the_apps_light_off():
+    c = make_controller()
+    c._light_on = True
+    (number,) = c.controller_number_specs
+    assert number.native_min_value == 0
+    await number.set_fn(c, 0)
+    c.client.write_gatt_char.assert_called_once()
+    assert c.client.write_gatt_char.call_args.args[1] == build_frame(
+        c.command_selector, "turnoffUnderbedLighting"
+    )
+
+
+@pytest.mark.parametrize("value", [-1, 7, 15, 30, 255, True, 2.5])
 async def test_invalid_brightness_does_not_consume_shared_light_gate(value):
     c = make_controller()
     c._light_on = True

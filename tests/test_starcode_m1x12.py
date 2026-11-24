@@ -10,7 +10,7 @@ from datetime import datetime
 from pathlib import Path
 from types import SimpleNamespace
 from typing import Any
-from unittest.mock import AsyncMock
+from unittest.mock import AsyncMock, patch
 
 import pytest
 from homeassistant.config_entries import ConfigEntryState
@@ -380,7 +380,7 @@ async def test_m1x12_entities_follow_explicit_app_profile(
     }
     (brightness,) = controller.controller_number_specs
     assert (brightness.native_min_value, brightness.native_max_value, brightness.native_step) == (
-        1,
+        0,
         6,
         1,
     )
@@ -1261,3 +1261,14 @@ async def test_m1x12_held_action_failure_sends_fresh_stop(
     ]
     assert events[-1][1] is not coordinator.cancel_command
     assert events[-1][1] is not None and events[-1][1].is_set() is False
+
+
+async def test_brightness_zero_sends_light_off_like_the_app_slider(hass: HomeAssistant) -> None:
+    _coordinator, controller = await _create_controller(hass)
+    with patch.object(controller, "write_command", AsyncMock()) as expected:
+        await controller.lights_off()
+    (number,) = controller.controller_number_specs
+    with patch.object(controller, "write_command", AsyncMock()) as writes:
+        await number.set_fn(controller, 0)
+    sent = [call.args[0] for call in writes.await_args_list]
+    assert sent and sent == [call.args[0] for call in expected.await_args_list]

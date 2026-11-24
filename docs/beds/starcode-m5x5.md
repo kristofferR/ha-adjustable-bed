@@ -31,7 +31,7 @@ bed type, which joins this app's lift groups.
 | Presets | ✅ Flat, Ascent (TV), Zero Gravity, Anti-Snore, Lounge |
 | Memory Presets | ✅ M1 / M2 recall and save; save Ascent / Zero Gravity / Lounge; reset saved positions |
 | Massage | ✅ Head / foot / wave increase and decrease, toggle / off, 10/20/30-minute timer |
-| Lights | ✅ Feedback light on/off, cycle, palette, brightness 1–6, **Light mode 1** |
+| Lights | ✅ Feedback light on/off, cycle, palette, brightness 0–6 (0 turns the light off), **Light mode 1** |
 | Alarm, EQ, sonic and kneading state | ⚠️ Shown, but cannot be changed |
 | Lift groups | ✅ One main plus three lifts |
 | Hold until release | ✅ ([renewable](../SERVICES.md#renewable-holds) `timed_move`: 100 ms refresh, then STOP) |
@@ -160,11 +160,11 @@ high bytes, for example Head up is `5a 01 03 10 30 00 a5`.
 | Light mode 1, CB25 remotes `252201`, `254202`, `352201` | Key `00020004` | Low byte `7a` | 35 attempts, no extra neutral |
 | Light mode 1, other names and F23/kneading | Star `8a` | Star `8a` | Followed by Star `0f` |
 | Brightness 1–6 | `04 e0 00 value 00 00` | `5a e0 04 00 value 00 00 a5` | F23/kneading always Star |
-| Palette index 0–7 | `04 e0 01 index 00 00` | `5a e0 04 01 index 00 00 a5` | F23/kneading always Star |
+| Palette index 1–7 | `04 e0 01 index 00 00` | `5a e0 04 01 index 00 00 a5` | F23/kneading always Star |
 | Massage 10/20/30 minutes | `04 e0 07 n 00 00` | `5a e0 04 07 n 00 00 a5` | `n` = 1/2/3; manufacturer-selected framing |
 | Status query | `00 b0` | `5a b0 00 a5` | F23/kneading always Star |
 
-- Extended keys `0`, `1`, `7` select brightness 1–6, palette index 0–7 and
+- Extended keys `0`, `1`, `7` select brightness 1–6, palette index 1–7 and
   massage 10/20/30-minute choices respectively. No arbitrary RGB or absolute
   massage-intensity setter is inferred.
 - F23/kneading RGB on/off/cycle/mode use Star low bytes `73/74/70/8a`, and their
@@ -242,8 +242,10 @@ enabled.
 - Wire indices 0–7 map through `max(index-1,0)`; larger nibbles use bytes 16–18
   as direct RGB and select the nearest palette by RGB distance.
 - HA reports that nearest palette color in the same wire numbering the palette
-  select writes (0 off, 1 white through 7 purple), so a direct white reads as
-  `1`, not off.
+  select writes (1 white through 7 purple), so a direct white reads as `1`.
+  The select offers the app's seven swatches; a reported `0` shows no choice.
+- The brightness number spans 0–6. Like the app's slider, 0 sends light off
+  instead of a brightness frame.
 - Diagnostics expose the original/direct branch, RGB value, light mode and raw
   index. The physical meaning of index 7 still requires real-user validation.
 
