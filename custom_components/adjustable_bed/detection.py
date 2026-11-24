@@ -139,6 +139,7 @@ from .const import (
     BED_TYPE_SCOTT_LIVING,
     BED_TYPE_SERENITY,
     BED_TYPE_SERTA_MP_REMOTE,
+    BED_TYPE_SHUDA,
     BED_TYPE_SILVERMOTION,
     BED_TYPE_SIMMONS,
     BED_TYPE_SIMMONS_BLUE,
@@ -668,6 +669,7 @@ BED_TYPE_DISPLAY_NAMES: dict[str, str] = {
     BED_TYPE_OKIN_MOTIONBED: "OKIN Motion Bed app",
     BED_TYPE_COMFORT_ENHANCEMENT3: "Comfort Enhancement 3 / Comfort Plus3 app",
     BED_TYPE_N32_MOTION_BED: "N32 Motion Bed app",
+    BED_TYPE_SHUDA: "Shuda app",
     BED_TYPE_SIMMONS_BLUE: "Simmons Blue app",
     BED_TYPE_RESIDENT: "Resident Adjustable Base app",
     "enso": "Enso Remote",
@@ -1428,6 +1430,9 @@ def detect_new_bed(service_info: BluetoothServiceInfoBleak) -> DetectionResult:
             return DetectionResult(None, 0.0, ["shared_service:no_name"])
         result.confidence = min(result.confidence, 0.5)
         result.signals.append("shared_service:no_name_match")
+    if result.bed_type == "smartbed" and "name:shuda_app_candidate" in result.signals:
+        # Nordic's shared company ID and service cannot tell these apps apart.
+        result.confidence = min(result.confidence, 0.6)
     local_name = getattr(getattr(service_info, "advertisement", None), "local_name", None)
     if relax_motion_matches(local_name, service_info.service_uuids or ()):
         # Apps with different model gates share this service, so a new setup
@@ -1589,6 +1594,18 @@ def _detect_with_first_pass(
         elif result.bed_type != BED_TYPE_SUPERIOR_SLEEP:
             result.ambiguous_types = list(dict.fromkeys([*(result.ambiguous_types or ()), BED_TYPE_SUPERIOR_SLEEP]))
             result.signals.append("name:superior_sleep_app_candidate")
+    # The Shuda app uses a shared name and UART route. Neither identifies it.
+    if (
+        isinstance(device_name, str)
+        and device_name.lower().startswith("smartbed")
+        and first.service(BED_TYPE_SHUDA)
+        and result.confidence < 0.8
+        and not any(signal.startswith("excluded:") for signal in result.signals)
+    ):
+        result.ambiguous_types = list(dict.fromkeys([
+            *(result.ambiguous_types or ()), BED_TYPE_SHUDA,
+        ]))
+        result.signals.append("name:shuda_app_candidate")
     # A shared service makes this app a choice, never overrides a stronger
     # receiver signature and never infers a remote from the Bluetooth name.
     if OKIMAT_SERVICE_UUID.lower() in {u.lower() for u in (service_info.service_uuids or ())} and not any(
