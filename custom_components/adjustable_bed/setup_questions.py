@@ -105,6 +105,7 @@ from .const import (
     BED_TYPE_SERENITY,
     BED_TYPE_SILVERMOTION,
     BED_TYPE_SIMMONS,
+    BED_TYPE_SIMMONS_BLUE,
     BED_TYPE_SLEEP_NUMBER,
     BED_TYPE_SLEEP_NUMBER_MCR,
     BED_TYPE_SLEEPTRACKER,
@@ -320,7 +321,7 @@ _OWNED_BY_BED_TYPE: Final[dict[str, frozenset[str]]] = {
     "instant_comfort": frozenset({CONF_MOTOR_COUNT, CONF_HAS_MASSAGE, CONF_DISABLE_ANGLE_SENSING}),
     "personal_comfort": frozenset({CONF_MOTOR_COUNT, CONF_HAS_MASSAGE, CONF_DISABLE_ANGLE_SENSING}),
     "mline": GENERIC_FIELDS - {CONF_PROTOCOL_VARIANT, CONF_HAS_MASSAGE, CONF_MOTOR_PULSE_COUNT},
-    "sinca_comfort": GENERIC_FIELDS,
+    "sinca_comfort": GENERIC_FIELDS - {CONF_PROTOCOL_VARIANT},
     "luniosmart": GENERIC_FIELDS - {CONF_MOTOR_PULSE_COUNT},
     "sleep_evolution": GENERIC_FIELDS,
     "wsilver_legacy": GENERIC_FIELDS,
@@ -2496,6 +2497,12 @@ def _legacy_errors(data: Mapping[str, Any]) -> dict[str, str]:
     return {} if data.get(CONF_PROTOCOL_VARIANT) in _legacy_choices(data) else {CONF_PROTOCOL_VARIANT: "invalid_selection"}
 
 
+def _simmons_blue_layouts(_data: Mapping[str, Any]) -> Mapping[str, str]:
+    from .profiles.simmons_blue import LAYOUTS
+
+    return {key: layout.label for key, layout in LAYOUTS.items()}
+
+
 SETUP_PROFILES: Final[dict[str, SetupProfile]] = {
     BED_TYPE_BETTERLIVING2: SetupProfile(
         owns={CONF_MOTOR_COUNT: SET_BY_PROFILE, CONF_HAS_MASSAGE: True,
@@ -3411,6 +3418,17 @@ SETUP_PROFILES: Final[dict[str, SetupProfile]] = {
             CONF_PROTOCOL_VARIANT: "auto",
             CONF_MOTOR_PULSE_DELAY_MS: 200,
         },
+    ),
+    BED_TYPE_SIMMONS_BLUE: SetupProfile(
+        owns={
+            CONF_MOTOR_COUNT: 2,  # Compatibility field; the layout declares the controls.
+            CONF_HAS_MASSAGE: False,
+            CONF_DISABLE_ANGLE_SENSING: True,
+            CONF_PROTOCOL_VARIANT: VARIANT_AUTO,
+            CONF_MOTOR_PULSE_DELAY_MS: 200,
+        },
+        questions=(Question(CONF_PRODUCT_TYPE, _simmons_blue_layouts, "balance"),),
+        imports=("profiles.simmons_blue",),
     ),
     BED_TYPE_N32_MOTION_BED: SetupProfile(
         owns={

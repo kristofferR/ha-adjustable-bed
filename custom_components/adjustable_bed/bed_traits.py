@@ -99,6 +99,7 @@ from .const import (
     BED_TYPE_SERTA_MP_REMOTE,
     BED_TYPE_SILVERMOTION,
     BED_TYPE_SIMMONS,
+    BED_TYPE_SIMMONS_BLUE,
     BED_TYPE_SLEEP_NUMBER,
     BED_TYPE_SLEEP_NUMBER_MCR,
     BED_TYPE_SLEEPSTAR,
@@ -396,6 +397,7 @@ _BED_TRAITS: Final[dict[str, BedTraits]] = {
         },
     ),
     BED_TYPE_SIMMONS: _NO_ANGLES,
+    BED_TYPE_SIMMONS_BLUE: replace(_NO_ANGLES, connection_timeout=5.0),
     BED_TYPE_SLEEP_NUMBER: _PERCENT_FEEDBACK_SCOPED,
     # MCR exposes positions only for actuators foundation discovery proves.
     BED_TYPE_SLEEP_NUMBER_MCR: BedTraits(

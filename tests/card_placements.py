@@ -235,6 +235,7 @@ def runtime_variants(controllers: Iterable[BedController]) -> Iterator[BedContro
         RichmatMHAppController,
     )
     from custom_components.adjustable_bed.beds.ruf_richmat.controller import RufRichmatController
+    from custom_components.adjustable_bed.beds.simmons_blue import SimmonsBlueController
     from custom_components.adjustable_bed.beds.sleeptracker.controller import SleeptrackerController
     from custom_components.adjustable_bed.beds.sleepys.app import (
         SLEEPYS_ELITE_SELECTORS,
@@ -256,6 +257,9 @@ def runtime_variants(controllers: Iterable[BedController]) -> Iterator[BedContro
     from custom_components.adjustable_bed.profiles import vmatbasic as vmat_profiles
     from custom_components.adjustable_bed.profiles.dreamsense import PROFILES as DREAMSENSE_PROFILES
     from custom_components.adjustable_bed.profiles.enso import PROFILES as ENSO_PROFILES
+    from custom_components.adjustable_bed.profiles.simmons_blue import (
+        LAYOUTS as SIMMONS_BLUE_LAYOUTS,
+    )
     from custom_components.adjustable_bed.profiles.suta import ROUTES as SUTA_ROUTES
 
     def variant(controller: BedController, **attributes: object) -> BedController:
@@ -266,6 +270,8 @@ def runtime_variants(controllers: Iterable[BedController]) -> Iterator[BedContro
 
     for controller in controllers:
         yield controller
+        if isinstance(controller, SimmonsBlueController):
+            yield from (variant(controller, _layout=layout) for layout in SIMMONS_BLUE_LAYOUTS.values())
         if isinstance(controller, SmartBedController) and controller.protocol == 5:
             yield variant(controller, _sonic=True, _rgb=True, _motors=5)
         if isinstance(controller, RelaxMotionController):

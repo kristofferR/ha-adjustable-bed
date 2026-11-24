@@ -21,7 +21,7 @@ from custom_components.adjustable_bed.const import (
 )
 from custom_components.adjustable_bed.profiles import n32_motion_bed as n32
 from custom_components.adjustable_bed.profiles import okin_nframe as okin_profiles
-from custom_components.adjustable_bed.profiles import rize_home, ultramatic
+from custom_components.adjustable_bed.profiles import rize_home, simmons_blue, ultramatic
 from custom_components.adjustable_bed.profiles.adjustable_bed import (
     PROFILES as ADJUSTABLE_BED_PROFILES,
 )
@@ -311,7 +311,7 @@ def render_okin_nframe_transports() -> str:
         (
             "Notify",
             NORDIC_UART_READ_CHAR_UUID,
-            "SIMMONS, SleepEase, Sleepy's, AdjustableM5X4, eShine",
+            "SIMMONS, Simmons Blue, SleepEase, Sleepy's, AdjustableM5X4, eShine",
         ),
     )
     return _block(
@@ -775,6 +775,62 @@ def render_n32_session() -> str:
     )
 
 
+def render_simmons_blue() -> str:
+    from datetime import datetime
+
+    app = simmons_blue
+    common = ("stop", "flat", "memory_1", "memory_2", "light")
+    return _block(
+        _table(
+            ("Layout", "Additional held controls"),
+            (
+                (layout.label, ", ".join(f"`{control}`" for control in layout.held))
+                for layout in app.LAYOUTS.values()
+            ),
+        ),
+        _table(
+            ("Control", "Frame", "Layouts"),
+            (
+                (
+                    f"`{key}`",
+                    _hex(app.control(key)),
+                    "All" if key in common else ", ".join(
+                        layout.label for layout in app.LAYOUTS.values() if key in layout.held
+                    ),
+                )
+                for key in app.PROFILE.keys
+            ),
+        ),
+        _table(
+            ("Operation", "Frame"),
+            (
+                *((f"Query alarm {slot}", _hex(app.query_alarm(slot))) for slot in app.SLOTS),
+                ("Alarm 1, Monday 07:30, Memory 1", _hex(app.alarm_frame(
+                    1, app.alarm_week((0,)), app.WAKE_MODES["memory_1"], 7, 30, 1
+                ))),
+                ("Turn off alarm 2 at 08:15", _hex(app.alarm_frame(
+                    2, 0, app.WAKE_MODES["flat"], 8, 15, 0
+                ))),
+                ("Clock (2026-11-24 13:45:06 local)", _hex(app.clock_frame(
+                    datetime(2026, 11, 24, 13, 45, 6)
+                ))),
+            ),
+        ),
+        _table(
+            ("Behavior", "Value"),
+            (
+                ("Write", "Nordic UART, with response"),
+                ("Held refresh", f"{app.REFRESH_MS} ms"),
+                ("Release", f"{app.PROFILE.hold.releases} STOP"),
+                ("Memory save hold", f"{app.SAVE_HOLD_MS} ms"),
+                ("Alarm modes", ", ".join(
+                    f"{app.WAKE_LABELS[mode]} ({value})" for mode, value in app.WAKE_MODES.items()
+                )),
+            ),
+        ),
+    )
+
+
 BLOCKS: list[Block] = [
     (GUIDE, "ultramatic-controls", render_ultramatic),
     (GUIDE, "rize-home", render_rize_home),
@@ -783,6 +839,7 @@ BLOCKS: list[Block] = [
     (GUIDE, "rize-remedy-ii-controls", render_rize_remedy_ii_controls),
     (GUIDE, "apex-controls", render_apex),
     (GUIDE, "n32-session", render_n32_session),
+    (GUIDE, "simmons-blue", render_simmons_blue),
     (GUIDE, "adjustable-bed-commands", render_adjustable_bed),
     (GUIDE, "resident-session", render_resident_session),
     (GUIDE, "okin-nframe-profiles", render_okin_nframe_profiles),
