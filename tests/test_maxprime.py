@@ -675,3 +675,40 @@ async def test_alarm_requires_current_reply_and_uses_next_target_minute():
         ):
             await ctrl.configure_alarm(alarm)
     assert packets(coordinator) == ["6e05a00013", "6e060545be"]
+
+
+@pytest.mark.parametrize(("layout", "off"), [("D1RM", "6e01005ecd"), ("D9RM", "6e01008bfa")])
+async def test_massage_slider_is_the_shared_timer_with_the_apps_four_stops(layout, off):
+    """The slider snaps to four stops the app labels 0, 2H, 3H and 5H."""
+    ctrl, coordinator = controller(layout)
+    assert ctrl.massage_timer_options == [10, 20, 30] and ctrl.massage_timer_can_turn_off
+    assert not any("massage" in spec.key for spec in ctrl.controller_number_specs)
+    with virtual_clock():
+        await ctrl.start_notify()
+        coordinator.client.write_gatt_char.reset_mock()
+        for minutes in (0, 10, 20, 30):
+            await ctrl.set_massage_timer(minutes)
+    assert packets(coordinator) == [off, "6e01005fce", "6e010063d2", "6e010061d0"]
+
+
+async def test_y6rm_popup_shows_ten_twenty_and_thirty_minutes():
+    ctrl, coordinator = controller("Y6RM")
+    assert ctrl.massage_timer_options == [10, 20, 30] and not ctrl.massage_timer_can_turn_off
+    with virtual_clock():
+        await ctrl.start_notify()
+        coordinator.client.write_gatt_char.reset_mock()
+        for minutes in (10, 20, 30):
+            await ctrl.set_massage_timer(minutes)
+    assert packets(coordinator) == ["6e01005fce", "6e010063d2", "6e010061d0"]
+
+
+@pytest.mark.parametrize(
+    ("layout", "translation"),
+    [("DHRM", "maxprime_side"), ("G4RM", "maxprime_side"), ("BTRM", "richmat_classic_mode")],
+)
+async def test_two_mode_layouts_are_the_apps_left_and_right(layout, translation):
+    """The app labels a two-mode layout's tabs Left and Right, a three-mode one's Mode 1 to 3."""
+    ctrl, _ = controller(layout)
+    with virtual_clock():
+        await ctrl.start_notify()
+    assert ctrl.controller_select_specs[0].translation_key == translation

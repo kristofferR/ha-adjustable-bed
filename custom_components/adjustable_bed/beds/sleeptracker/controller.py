@@ -6,7 +6,7 @@ import asyncio
 import logging
 from collections.abc import Callable, Mapping
 from contextlib import suppress
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from typing import TYPE_CHECKING, Final, Literal
 
 from ...card import (
@@ -866,6 +866,9 @@ class SleeptrackerController(BedController):
                 fast=not request.save,
             )
         elif request.kind == "climate":
+            if request.heating or request.level == 0:
+                # Only the app's cooling levels choose constant; heat and off send false.
+                request = replace(request, constant=False)
             await self._control(p.fan(request, None if self._restricted else self._token))
             for side in ("left", "right") if request.fan_side == "both" else (request.fan_side,):
                 self._state[side + "_commanded_constant"] = request.constant

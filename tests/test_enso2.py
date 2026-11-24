@@ -339,7 +339,7 @@ async def test_accessories_use_live_capability_and_fixed_frames_on_raw_routes():
         await controller.set_light_color((18, 52, 86))
         await controller.set_light_duration(300)
         await controller.set_aroma(60, 1, 12)
-        await controller.set_timer_position(0)
+        await controller.set_massage_timer(0)
     assert frames(client) == [
         "6e0cff128b6e0d345605",
         "6e0b012ca6",
@@ -489,3 +489,39 @@ async def test_goto_preset_preflights_the_latest_offline_gesture_on_each_bed(has
                 await hass.services.async_call(DOMAIN, "goto_preset", data, blocking=True)
             first[1].recall_memory.assert_not_awaited()
             second[0].async_execute_controller_command.assert_not_awaited()
+
+
+@pytest.mark.parametrize(("layout", "off"), [("D1RM", "6e01005ecd"), ("D9RM", "6e01008bfa")])
+async def test_massage_slider_is_the_shared_timer_with_the_apps_four_stops(layout, off):
+    """The slider snaps to four stops the app labels 0, 2H, 3H and 5H."""
+    controller, _, client, _ = await bed(layout)
+    assert controller.supports_massage_timer and controller.auto_enable_massage
+    assert controller.massage_timer_options == [10, 20, 30]
+    assert controller.massage_timer_can_turn_off
+    assert not any("massage" in spec.key for spec in controller.controller_number_specs)
+    with virtual_clock():
+        for minutes in (0, 10, 20, 30):
+            await controller.set_massage_timer(minutes)
+    assert frames(client) == [off, "6e01005fce", "6e010063d2", "6e010061d0"]
+    with raises_key("enso2_control_unavailable"):
+        await controller.set_massage_timer(15)
+
+
+async def test_y6rm_popup_shows_ten_twenty_and_thirty_minutes():
+    controller, _, client, _ = await bed("Y6RM")
+    timer = next(s for s in controller.controller_select_specs if s.key == "enso2_timer_options")
+    assert timer.options == ("toggle", "10", "20", "30")
+    with virtual_clock():
+        for option in timer.options:
+            await controller.set_timer_option(option)
+    assert frames(client) == ["6e01005ecd", "6e01005fce", "6e010063d2", "6e010061d0"]
+
+
+@pytest.mark.parametrize(
+    ("layout", "translation"), [("DHRM", "enso2_side"), ("G4RM", "enso2_side"), ("BTRM", "enso2_mode")]
+)
+async def test_two_mode_layouts_are_the_apps_left_and_right(layout, translation):
+    """The app labels a two-mode layout's tabs Left and Right, a three-mode one's Mode 1 to 3."""
+    controller, _, _, _ = await bed(layout)
+    mode = next(s for s in controller.controller_select_specs if s.key == "enso2_mode")
+    assert mode.translation_key == translation

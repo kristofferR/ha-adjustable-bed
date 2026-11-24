@@ -2644,6 +2644,11 @@ class BedController(GattWriter):
         """
         return 10
 
+    @property
+    def light_level_step(self) -> int:
+        """Return the slider step, for a bed whose app moves in larger steps."""
+        return 1
+
     async def set_light_level(self, level: int) -> None:
         """Set light brightness level.
 

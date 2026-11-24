@@ -37,6 +37,7 @@ from ..entity_specs import (
     ControllerButtonSpec,
     ControllerMotorHoldSpec,
     ControllerNumberSpec,
+    ControllerSelectSpec,
     ControllerStateBinarySensorSpec,
     ControllerStateSensorSpec,
     ControllerSwitchSpec,
@@ -825,16 +826,6 @@ class SymphonyController(KeesonController):
             return ()
         return (
             ControllerNumberSpec(
-                "symphony_light_color",
-                "symphony_light_color",
-                k.COLOR,
-                1,
-                7,
-                1,
-                lambda c, value: selected(c).set_light(color=int(value)),
-                card=CARD_LIGHTING,
-            ),
-            ControllerNumberSpec(
                 "symphony_light_brightness",
                 "symphony_light_brightness",
                 k.BRIGHTNESS,
@@ -842,6 +833,21 @@ class SymphonyController(KeesonController):
                 80,
                 1,
                 lambda c, value: selected(c).set_light(brightness=int(value)),
+                card=CARD_LIGHTING,
+            ),
+        )
+
+    @property
+    def controller_select_specs(self) -> tuple[ControllerSelectSpec, ...]:
+        if self.app.product.page != "soundwave":
+            return ()
+        return (
+            ControllerSelectSpec(
+                "symphony_light_color",
+                "symphony_light_color",
+                k.COLOR_NAME,
+                k.COLORS,
+                lambda c, color: selected(c).set_light(color=k.COLORS.index(color) + 1),
                 card=CARD_LIGHTING,
             ),
         )
@@ -1055,7 +1061,10 @@ class SymphonyController(KeesonController):
             self._light = value
             self._light_received.set()
             self.forward_controller_state_updates(
-                k.COLOR(value.color), k.BRIGHTNESS(value.brightness), k.LIGHT_ON(value.on)
+                k.COLOR(value.color),
+                k.COLOR_NAME(k.COLORS[value.color - 1] if 1 <= value.color <= 7 else None),
+                k.BRIGHTNESS(value.brightness),
+                k.LIGHT_ON(value.on),
             )
         elif isinstance(value, state.Snore):
             self.forward_controller_state_updates(
@@ -1149,6 +1158,7 @@ class SymphonyController(KeesonController):
             k.SNORE,
             k.STRENGTH,
             k.COLOR,
+            k.COLOR_NAME,
             k.BRIGHTNESS,
             k.LIGHT_ON,
         ):

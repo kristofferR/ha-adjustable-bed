@@ -626,6 +626,20 @@ async def test_hold_ending_mid_reply_keeps_session_and_reported_state() -> None:
     await target.bed.stop_notify()
 
 
+@pytest.mark.parametrize(("heating", "level"), [(True, 3), (True, 0), (False, 0)])
+async def test_heat_and_off_never_send_constant(heating: bool, level: int) -> None:
+    """Constant is a cooling choice: the app's heat and off actions send false."""
+    target = Processor(model="activebreeze_small")
+    await target.bed.start_notify()
+    await target.bed.async_execute_sleeptracker_request(
+        p.Request("climate", fan_side="left", level=level, heating=heating, constant=True)
+    )
+    fan = target.requests[-1][1]["request"]["fanControl"]
+    assert fan["leftIsConstant"] is False
+    assert target.states["sleeptracker_left_curve"] == "curve"
+    await target.bed.stop_notify()
+
+
 async def test_service_and_entity_climate_model_gates() -> None:
     target = Processor(model="activebreeze_small")
     await target.bed.start_notify()

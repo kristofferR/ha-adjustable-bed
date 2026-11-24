@@ -640,3 +640,23 @@ async def test_moon_strength_from_a_replaced_link_is_not_shown(clock):
         if u.key == bed.MASSAGE_STRENGTH[1]
     ]
     assert 3 not in published
+
+
+async def test_starting_a_zone_resets_the_shared_massage_strength(clock):
+    controller, c = make("SUTA-M510")
+    await controller.start_notify()
+    await controller.set_massage_intensity("head", 1)
+    await controller.set_massage_intensity("all", 2)
+    c.handle_controller_state_updates.reset_mock()
+    await controller.set_massage_intensity("foot", 2)
+    states = {
+        u.key: u.value for call in c.handle_controller_state_updates.call_args_list for u in call.args
+    }
+    assert states[massage_intensity("foot")] == 2
+    assert states[massage_intensity("all")] == 0
+    c.handle_controller_state_updates.reset_mock()
+    await controller.set_massage_intensity("foot", 0)
+    states = {
+        u.key: u.value for call in c.handle_controller_state_updates.call_args_list for u in call.args
+    }
+    assert massage_intensity("all") not in states

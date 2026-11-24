@@ -511,7 +511,7 @@ class StarcodeM1X12Controller(BedController, StarcodeGroupMember):
                 key="starcode_m1x12_brightness",
                 translation_key="starcode_m1x12_brightness",
                 state_key=LIGHT_BRIGHTNESS,
-                native_min_value=1,
+                native_min_value=0,
                 native_max_value=6,
                 native_step=1,
                 set_fn=brightness,
@@ -999,9 +999,13 @@ class StarcodeM1X12Controller(BedController, StarcodeGroupMember):
             isinstance(value, bool)
             or not math.isfinite(value)
             or value != int(value)
-            or not 1 <= value <= 6
+            or not 0 <= value <= 6
         ):
-            raise ValueError("M1X12 brightness must be an integer from 1 to 6")
+            raise ValueError("M1X12 brightness must be an integer from 0 to 6")
+        if value == 0:
+            # The app's slider turns the light off at zero.
+            await self.lights_off()
+            return
         dialect = "star" if self.profile in ("f23", "kneading") else self.dialect
         await self._rgb(extended_packet(0, int(value), dialect), dialect=dialect)
 

@@ -799,3 +799,18 @@ async def test_anti_snore_off_after_a_demonstration_publishes_no_setting():
         call.args[0] == "adjustamattress_snore_enabled"
         for call in c._coordinator.handle_controller_state_update.call_args_list
     )
+
+
+def test_alarm_action_select_names_the_apps_three_choices():
+    c = make_controller("P1", 0)
+    spec = next(s for s in c.controller_select_specs if s.key == "adjustamattress_alarm_draft_type")
+    labels = json.loads(
+        (Path(__file__).parents[1] / "custom_components/adjustable_bed/strings.json").read_text()
+    )["entity"]["select"][spec.translation_key]["state"]
+    # The app lists Memory A (17), Memory B (19) and Massage (9); 0 is none chosen.
+    assert [(option, labels[option]) for option in spec.options] == [
+        ("0", "None"),
+        ("17", "Memory A"),
+        ("19", "Memory B"),
+        ("9", "Massage"),
+    ]

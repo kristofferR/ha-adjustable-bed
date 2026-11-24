@@ -204,6 +204,7 @@ async def test_native_entities_expose_literals_raw_records_and_unknown_assumed_l
     # The established 0-100 light slider stays; levels snap to the app's steps.
     intensity = next(n for n in numbers if n.entity_description.key == "light_level")
     assert (intensity.native_min_value, intensity.native_max_value) == (0, 100)
+    assert intensity.native_step == 5
     assert not any("position" in n.unique_id for n in numbers)
     assert not any(
         s.entity_description.key == "under_bed_lights" for s in _switch_entities_for(hass, runtime)

@@ -1494,6 +1494,8 @@ write to a replacement connection.
 Text DT/LV/fan actions use the app's `suffix`; MOON/TEMP actions use
 `logical_side` (`left` or `right`) and `value` when their payload requires them.
 The physical paired `side` remains separate from the binary payload side.
+Starting the head or foot massage zone puts the overall level back to 0,
+as the app's shared strength display does.
 
 Text layouts take alarms through the shared `set_alarm` action. Each chosen
 weekday becomes one `AT+SA` frame (Sunday 0 on the wire) with the app's Loop

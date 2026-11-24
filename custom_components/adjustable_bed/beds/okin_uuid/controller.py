@@ -32,7 +32,7 @@ from __future__ import annotations
 
 import logging
 import re
-from collections.abc import Callable
+from collections.abc import Callable, Mapping
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, ClassVar, Final
 
@@ -58,6 +58,7 @@ from ..base import BedController, ProfileExecution
 from ..builder import BuildContext
 from ..entity_specs import MotorControlSpec
 from ..furnimove.profiles import FURNIMOVE_PRODUCTION_IDS, FurniMoveProfile, get_furnimove_profile
+from ..lifecycle import CapabilitySnapshotPolicy, ControllerSession
 from ..okin_nframe import OkinNFrameController
 from .remotes import DEFAULT_OKIN_UUID_REMOTE, OKIN_UUID_REMOTE_DATA
 
@@ -251,6 +252,10 @@ class OkinUuidController(ProfileExecution[OkinNFrameProfile], OkinNFrameControll
         self._motor_state: dict[str, int] = {}
         # Cycles the discrete massage programs for handsets without a wave key.
         self._massage_mode_index = 0
+        # Not every receiver has the position characteristic. A connection
+        # that finds it missing stores that, so no angle sensors are created.
+        self._stored_position_feedback: bool | None = None
+        self._position_feedback = True
 
         # Resolve variant to remote config
         if variant == VARIANT_AUTO or variant not in OKIN_UUID_REMOTES:
@@ -360,6 +365,40 @@ class OkinUuidController(ProfileExecution[OkinNFrameProfile], OkinNFrameControll
         """Return False - only supports toggle, not discrete on/off."""
         return False
 
+    def restore_capabilities(self, snapshot: Mapping[str, Any] | None) -> None:
+        """Apply what an earlier connection stored about this receiver."""
+        self._stored_position_feedback = (snapshot or {}).get("position_feedback")
+        self._position_feedback = self._stored_position_feedback is not False
+
+    @property
+    def supports_position_feedback(self) -> bool:
+        return super().supports_position_feedback and self._position_feedback
+
+    async def async_discover_capabilities(self) -> None:
+        services = self.client.services if self.client is not None else None
+        if services is not None:
+            self._position_feedback = services.get_characteristic(codec.POSITION_UUID) is not None
+
+    @property
+    def capability_snapshot_policy(self) -> CapabilitySnapshotPolicy:
+        # Entities change once the link is released, not under the command
+        # that opened it.
+        return CapabilitySnapshotPolicy(deferred_reload=True)
+
+    def capability_snapshot(self) -> dict[str, Any] | None:
+        # A receiver with the characteristic is the default, so it stores
+        # nothing unless an earlier connection stored otherwise.
+        # Routes whose traits already rule out position feedback store nothing either.
+        if not self.static_traits.position_feedback or (
+            self._position_feedback and self._stored_position_feedback is None
+        ):
+            return None
+        return {"position_feedback": self._position_feedback}
+
+    async def async_on_connect(self, session: ControllerSession) -> None:
+        await super().async_on_connect(session)
+        session.persist_capability_snapshot()
+
     async def start_notify(self, callback: Callable[[str, float], None] | None = None) -> None:
         """Start listening for position notifications.
 
@@ -368,6 +407,8 @@ class OkinUuidController(ProfileExecution[OkinNFrameProfile], OkinNFrameControll
         """
         self._notify_callback = callback
 
+        if not self._position_feedback:
+            return
         if self.client is None or not self.client.is_connected:
             _LOGGER.warning("Cannot start position notifications: not connected")
             return
@@ -439,6 +480,8 @@ class OkinUuidController(ProfileExecution[OkinNFrameProfile], OkinNFrameControll
         OKIN beds typically use notifications rather than reads for position
         data. This method attempts a read but may not work on all beds.
         """
+        if not self._position_feedback:
+            return
         if self.client is None or not self.client.is_connected:
             _LOGGER.debug("Cannot read positions: not connected")
             return
@@ -777,6 +820,12 @@ class OkinUuidController(ProfileExecution[OkinNFrameProfile], OkinNFrameControll
 
 async def build_controller(ctx: BuildContext) -> BedController:
     """Build the Okin UUID controller, or the receiver the live link turns out to be."""
+    controller = await _build_controller(ctx)
+    controller.restore_capabilities(ctx.stored_capabilities(ctx.bed_type))
+    return controller
+
+
+async def _build_controller(ctx: BuildContext) -> OkinUuidController:
     variant = ctx.variant or "auto"
     await ctx.preload("dewertokin_rf_gateway")
     from ..dewertokin_rf_gateway import DewertOkinUuidRfGatewayController, is_rf_gateway

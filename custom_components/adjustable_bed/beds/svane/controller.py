@@ -267,6 +267,10 @@ class SvaneController(BedController):
         return 100
 
     @property
+    def light_level_step(self) -> int:
+        return 5
+
+    @property
     def requires_notification_channel(self) -> bool:
         return True
 

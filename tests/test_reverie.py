@@ -24,7 +24,6 @@ from custom_components.adjustable_bed.const import (
     REVERIE_CHAR_UUID,
 )
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
-from custom_components.adjustable_bed.number import MASSAGE_NUMBER_DESCRIPTIONS
 
 
 @pytest.fixture
@@ -60,7 +59,7 @@ def mock_reverie_config_entry(
 class TestReverieController:
     """Test Reverie controller."""
 
-    async def test_wave_intensity_keeps_legacy_number_identity(
+    async def test_wave_is_the_app_pattern_select(
         self,
         hass: HomeAssistant,
         mock_reverie_config_entry,
@@ -69,16 +68,10 @@ class TestReverieController:
         coordinator = AdjustableBedCoordinator(hass, mock_reverie_config_entry)
         await coordinator.async_connect()
 
-        wave = next(
-            description
-            for description in MASSAGE_NUMBER_DESCRIPTIONS
-            if description.massage_zone == "wave"
-        )
-        assert wave.key == "massage_wave_intensity"
-        assert "wave" in coordinator.controller.massage_intensity_zones
-        assert coordinator.entity_unique_id(wave.key) == (
-            "AA:BB:CC:DD:EE:FF_massage_wave_intensity"
-        )
+        assert "wave" not in coordinator.controller.massage_intensity_zones
+        (wave,) = coordinator.controller.controller_select_specs
+        assert wave.key == "reverie_massage_wave"
+        assert wave.options == ("off", "1", "2", "3", "4")
 
     async def test_build_command_checksum(
         self,
@@ -401,8 +394,8 @@ class TestReverieMassage:
 
         await coordinator.controller.massage_head_up()
 
-        # Level should increment from 0 to 1
-        expected = coordinator.controller._build_command(ReverieCommands.massage_head(1))
+        # The app sends the level itself: 55 53 01 and the XOR checksum.
+        expected = bytes.fromhex("55530107")
         mock_bleak_client.write_gatt_char.assert_called_with(
             REVERIE_CHAR_UUID, expected, response=True
         )
@@ -601,8 +594,12 @@ class TestReveriePositionNotifications:
         # 9-byte notification: [header0, header1, head_pos, foot_pos, head_wave, foot_wave, unk, unk, unk]
         head_pos = 50
         foot_pos = 30
-        data = bytearray([0x00, 0x00, head_pos, foot_pos, 0, 0, 0, 0, 0])
+        data = bytearray([0x00, 0x00, head_pos, foot_pos, 5, 7, 0, 0, 0])
         coordinator.controller._parse_position_data(data)
+
+        # The massage bytes are the levels themselves.
+        assert coordinator.controller_state["massage_head_intensity"] == 5
+        assert coordinator.controller_state["massage_foot_intensity"] == 7
 
         # Callback should be called twice: once for back, once for legs
         assert callback.call_count == 2

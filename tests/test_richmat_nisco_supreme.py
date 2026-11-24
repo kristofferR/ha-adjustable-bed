@@ -432,3 +432,33 @@ def test_every_button_name_runs_its_own_control(app: str, model: str) -> None:
         code = next((c.code for c in controller._controls() if spec.key.endswith(f"_{c.code:02x}")), None)
         if code is not None:
             assert controller.control_named(_shown_name(spec)) == code, spec.key
+
+
+def test_mattress_selects_offer_only_what_the_dialogs_send() -> None:
+    """The dialogs send pressure 1-3 and fixed durations; zero is feedback only."""
+    controller = make("mlily_supreme")
+    controller._waist = controller._normal_ready = True
+    specs = {spec.key: spec for spec in controller.controller_select_specs}
+    for key in (
+        "richmat_mh_waist_left_pressure",
+        "richmat_mh_waist_both_duration",
+        "ruf_richmat_mattress_left_pressure",
+        "ruf_richmat_mattress_right_heat_duration",
+        "ruf_richmat_mattress_right_pillow_duration",
+    ):
+        assert "off" not in specs[key].options
+    # Heat keeps its own Off.
+    assert "off" in specs["ruf_richmat_mattress_left_heat_level"].options
+    assert "off" in specs["richmat_mh_waist_left_heat"].options
+
+
+def test_nisco_shows_snore_from_the_model_alone() -> None:
+    """Nisco adds its snore page from the model's flag; MLILY waits for the bed's reply."""
+    assert make("nisco", "cfrm")._snore_options() == ("off", "anti_snore", "zero_g")
+    assert make("mlily_supreme", "cfrm")._snore_options() == ()
+
+
+def test_snore_page_without_preset_rows_has_no_select() -> None:
+    controller = make("nisco", "virm")
+    controller._dev = {"snore": True}
+    assert not [s for s in controller.controller_select_specs if s.key == "richmat_mh_snore"]

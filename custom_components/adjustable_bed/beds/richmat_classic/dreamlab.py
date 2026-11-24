@@ -15,7 +15,7 @@ from bleak.exc import BleakError
 from homeassistant.util import dt as dt_util
 
 from ...alarm import AlarmCapability, AlarmRequest
-from ...card import CARD_HIDDEN, CARD_LIGHTING, CARD_MASSAGE
+from ...card import CARD_HIDDEN, CARD_LIGHTING
 from ...command_scheduler import current_command_context, note_frame_skipped
 from ...const import (
     CONF_BLE_DEVICE_NAME,
@@ -56,7 +56,6 @@ HEAD_FOOT: Final = StateKey[str | None]("dreamlab_head_foot")
 PRESS_MODE: Final = StateKey[str | None]("dreamlab_press_mode")
 AXIS: Final = StateKey[str | None]("dreamlab_axis")
 LIGHT_SECONDS: Final = StateKey[int | None]("dreamlab_light_seconds")
-MASSAGE_PROGRESS: Final = StateKey[int | None]("dreamlab_massage_progress")
 RELEASE_KEY: Final = "dreamlab_release"
 _PAIRED_SIDES: Final = (SIDE_LEFT, SIDE_RIGHT)
 
@@ -240,7 +239,6 @@ class DreamlabController(SessionController):
         self._light_on = None
         self.forward_controller_state_updates(
             LIGHT_SECONDS(None),
-            MASSAGE_PROGRESS(None),
             MASSAGE_TIMER_MINUTES(None),
             UNDER_BED_LIGHTS_RGB(None),
         )
@@ -511,8 +509,13 @@ class DreamlabController(SessionController):
         )
 
     @property
+    def _slider(self) -> bool:
+        """D1RM and D9RM have the massage slider instead of the timer popup."""
+        return self.layout in ("D1RM", "D9RM")
+
+    @property
     def supports_massage_timer(self) -> bool:
-        return self.layout == "Y6RM" and self.command_side not in _PAIRED_SIDES
+        return (self.layout == "Y6RM" or self._slider) and self.command_side not in _PAIRED_SIDES
 
     @property
     def auto_enable_massage(self) -> bool:
@@ -520,17 +523,29 @@ class DreamlabController(SessionController):
 
     @property
     def massage_timer_options(self) -> list[int]:
-        return [10, 20, 30] if self.supports_massage_timer else []
+        if not self.supports_massage_timer:
+            return []
+        return [m for m in p.SLIDER_MINUTES if m] if self._slider else [10, 20, 30]
 
     @property
     def massage_timer_can_turn_off(self) -> bool:
-        return False
+        return self._slider and self.supports_massage_timer
 
     async def set_massage_timer(self, minutes: int) -> None:
-        if not self.supports_massage_timer or minutes not in self.massage_timer_options:
+        if not self.supports_massage_timer or minutes not in (0, *self.massage_timer_options):
+            raise invalid("dreamlab_control")
+        if not self._slider and not minutes:
             raise invalid("dreamlab_control")
         with self.sent_state(MASSAGE_TIMER_MINUTES(minutes)):
-            await self._massage_popup(minutes)
+            if self._slider:
+                self._require_receiver()
+                with self._transaction():
+                    await self._send(
+                        p.massage_timer(self.layout, p.SLIDER_MINUTES[minutes]),
+                        self._coordinator.cancel_command,
+                    )
+            else:
+                await self._massage_popup(minutes)
 
     async def _massage_popup(self, minutes: int) -> None:
         self._require_receiver()
@@ -561,19 +576,6 @@ class DreamlabController(SessionController):
                     _set_light_seconds,
                     "s",
                     card=CARD_LIGHTING,
-                )
-            )
-        if self.layout in ("D1RM", "D9RM"):
-            result.append(
-                ControllerNumberSpec(
-                    MASSAGE_PROGRESS,
-                    MASSAGE_PROGRESS,
-                    MASSAGE_PROGRESS,
-                    0,
-                    5,
-                    1,
-                    _set_massage_progress,
-                    card=CARD_MASSAGE,
                 )
             )
         return tuple(result)
@@ -751,13 +753,6 @@ async def _select_press_mode(controller: BedController, value: str) -> None:
 
 async def _toggle_massage(controller: BedController) -> None:
     await require_controller(controller, DreamlabController)._massage_popup(0)
-
-
-async def _set_massage_progress(controller: BedController, value: float) -> None:
-    ctrl = require_controller(controller, DreamlabController)
-    ctrl._require_receiver()
-    with ctrl._transaction(), ctrl.sent_state(MASSAGE_PROGRESS(int(value))):
-        await ctrl._send(p.massage_timer(ctrl.layout, int(value)), ctrl._coordinator.cancel_command)
 
 
 async def _set_light_seconds(controller: BedController, value: float) -> None:

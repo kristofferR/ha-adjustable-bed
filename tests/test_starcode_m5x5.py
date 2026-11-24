@@ -471,7 +471,7 @@ async def test_profile_capability_boundaries(hass: HomeAssistant) -> None:
         assert c.memory_slot_count == 2
         assert len(c.motor_control_specs) == 4
         assert [s.key for s in c.controller_number_specs] == ["starcode_brightness"]
-        assert c.controller_select_specs[0].options == tuple(str(i) for i in range(8))
+        assert c.controller_select_specs[0].options == tuple(str(i) for i in range(1, 8))
         assert not c.supports_massage_intensity_control
 
 
@@ -521,3 +521,20 @@ def test_all_frozen_existing_leaf_proofs(case: dict[str, object]) -> None:
         actual = _elevate_command(arguments[0])
         replacement = normal_packet(0x03103000 | arguments[0], "star")
     assert actual == replacement == expected
+
+
+@pytest.mark.parametrize("profile", ["cb25", "f23"])
+async def test_brightness_zero_sends_light_off_like_the_app_slider(
+    hass: HomeAssistant, profile: str
+) -> None:
+    off, zero = (make_controller(hass, profile, "star") for _ in range(2))
+    with patch.object(off, "write_command", AsyncMock()) as expected:
+        await off.lights_off()
+    (number,) = zero.controller_number_specs
+    assert number.native_min_value == 0
+    with patch.object(zero, "write_command", AsyncMock()) as writes:
+        await number.set_fn(zero, 0)
+    sent = [call.args[0] for call in writes.await_args_list]
+    assert sent and sent == [call.args[0] for call in expected.await_args_list]
+    with pytest.raises(ValueError):
+        await zero.set_color_index(0)

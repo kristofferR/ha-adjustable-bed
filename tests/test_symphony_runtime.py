@@ -263,6 +263,7 @@ async def test_single_address_stop_all_stops_both_captured_sides(hass, monkeypat
 async def test_real_platform_builders_retire_product_specific_controls(hass, monkeypatch):
     from custom_components.adjustable_bed.cover import AdjustableBedCover
     from custom_components.adjustable_bed.number import AdjustableBedControllerNumber
+    from custom_components.adjustable_bed.select import AdjustableBedControllerSelect
     from tests.test_entity_sweep import async_setup_platforms_and_sweep
 
     coordinator, controller, _, _, _ = await target(hass, monkeypatch, product="13")
@@ -270,12 +271,17 @@ async def test_real_platform_builders_retire_product_specific_controls(hass, mon
     assert {e.entity_description.key for e in created if isinstance(e, AdjustableBedCover)} == set(
         controller.app.product.axes
     )
-    assert len([e for e in created if isinstance(e, AdjustableBedControllerNumber)]) == 2
+    # Brightness is the number; the color is a select of the app's swatches.
+    assert len([e for e in created if isinstance(e, AdjustableBedControllerNumber)]) == 1
+    assert len([e for e in created if isinstance(e, AdjustableBedControllerSelect)]) == 1
     coordinator._controller = SymphonyController(
         coordinator, app.SymphonyProfile(app.PRODUCTS["2"], 4)
     )
     changed = await async_setup_platforms_and_sweep(hass, coordinator.entry, coordinator)
-    assert not any(isinstance(e, AdjustableBedControllerNumber) for e in changed)
+    assert not any(
+        isinstance(e, (AdjustableBedControllerNumber, AdjustableBedControllerSelect))
+        for e in changed
+    )
     assert {e.entity_description.key for e in changed if isinstance(e, AdjustableBedCover)} == {
         "head",
         "feet",
@@ -682,3 +688,16 @@ async def test_split_product_pairing_is_reachable_from_options(
     else:
         with pytest.raises(ValueError, match="does not support"):
             build_single_address_pair_entry_data(original, name="Not split")
+
+
+async def test_light_color_select_uses_the_swatch_codes(hass, monkeypatch):
+    """The app's seven swatches are codes 1 to 7; the third is orange, the fifth green."""
+    coordinator, controller, _, receivers, _ = await target(hass, monkeypatch)
+    (color,) = controller.controller_select_specs
+    assert color.options == k.COLORS
+    receivers[0](None, bytes.fromhex("2a0000048106020300000032"))
+    assert coordinator.controller_state[color.state_key] == "orange"
+    set_light = AsyncMock()
+    monkeypatch.setattr(controller, "set_light", set_light)
+    await color.select_fn(controller, "green")
+    set_light.assert_awaited_once_with(color=5)

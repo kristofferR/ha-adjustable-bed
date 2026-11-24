@@ -298,7 +298,7 @@ Under-bed light (LightID `0`). The toggle is the only on/off primitive.
 | Command | Text | Description |
 |---------|------|-------------|
 | Toggle | `UBL TOGGLE` | Toggle the under-bed light on/off |
-| Set colour | `RGBSET 0:RRGGBBAA` | Set colour (8 hex: red, green, blue, alpha/brightness) |
+| Set colour | `RGBSET 0:RRGGBBAA` | Set colour (8 hex: red, green, blue, alpha/brightness). A new colour keeps the brightness the bed last reported; full when the light is off or reports zero |
 | Set brightness | `RGBBRT 0:AA` | Set brightness (2 hex) |
 | Default colour | `RGD 0[,<decimal>]` | Get/set the stored default colour |
 

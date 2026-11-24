@@ -20,16 +20,16 @@ from typing import TYPE_CHECKING, Any, Final
 
 from bleak.exc import BleakError
 from homeassistant.components.binary_sensor import BinarySensorDeviceClass
-from homeassistant.const import EntityCategory
 from homeassistant.helpers.storage import Store
 
 from ...app_state_store import pairlink_sdk_store_key
-from ...card import CARD_MASSAGE, CARD_MASSAGE_TIMER, CARD_UTILITY
+from ...card import CARD_MASSAGE, CARD_UTILITY
 from ...command_scheduler import note_frame_skipped, note_frame_written
 from ...const import CONF_SIDE
 from ...controller_state import StateKey, StateUpdate
 from ...state_keys import (
     LIGHT_LEVEL,
+    MASSAGE_TIMER_MINUTES,
     UNDER_BED_LIGHTS_ON,
     UNDER_BED_LIGHTS_RGB,
     massage_intensity,
@@ -40,7 +40,6 @@ from ..builder import BuildContext
 from ..entity_specs import (
     POSITION_UNIT_PERCENT,
     ControllerMotorHoldSpec,
-    ControllerNumberSpec,
     ControllerSelectSpec,
     ControllerStateBinarySensorSpec,
     ControllerSwitchSpec,
@@ -173,6 +172,9 @@ def _state_update(name: str, value: object) -> StateUpdate:
         return UNDER_BED_LIGHTS_RGB(rgb_triple(value))
     if (integer_key := _INTEGER_KEYS.get(name)) is not None:
         integer = value if isinstance(value, int) and not isinstance(value, bool) else None
+        if integer_key is MASSAGE_TIMER:
+            # The shared timer select reads the minutes under its own key.
+            return MASSAGE_TIMER_MINUTES(integer)
         return integer_key(integer)
     if (option_key := _OPTION_KEYS.get(name)) is not None:
         return option_key(value if isinstance(value, str) else None)
@@ -586,24 +588,18 @@ class ReveriePairlinkController(BedController, PairlinkComfortActions):
         )
 
     @property
-    def controller_number_specs(self) -> tuple[ControllerNumberSpec, ...]:
-        if not self._has_supported_model:
-            return ()
-        return (
-            # The app's raw timer byte: no proven minute conversion, so no unit.
-            ControllerNumberSpec(
-                key="reverie_pairlink_massage_timer",
-                translation_key="reverie_pairlink_massage_timer",
-                state_key=MASSAGE_TIMER,
-                native_min_value=0,
-                native_max_value=255,
-                native_step=1,
-                set_fn=lambda _controller, value: self.set_massage_timer_byte(int(value)),
-                card=CARD_MASSAGE_TIMER,
-                entity_category=EntityCategory.DIAGNOSTIC,
-                entity_registry_enabled_default=False,
-            ),
-        )
+    def supports_massage_timer(self) -> bool:
+        return self._has_supported_model
+
+    @property
+    def massage_timer_options(self) -> list[int]:
+        """The app's five timer buttons, in minutes."""
+        return [10, 15, 20, 25, 30] if self._has_supported_model else []
+
+    @property
+    def massage_timer_can_turn_off(self) -> bool:
+        # Tapping the selected button again only clears it in the app.
+        return False
 
     async def async_discover_capabilities(self) -> None:
         """Resolve only the exact primary or low-power central GATT profile."""
@@ -2523,8 +2519,13 @@ class ReveriePairlinkController(BedController, PairlinkComfortActions):
             raise ValueError(f"Pairlink {zone} massage intensity is unknown")
         await self.set_massage_intensity(zone, current + delta)
 
+    async def set_massage_timer(self, minutes: int) -> None:
+        if minutes not in self.massage_timer_options:
+            raise ValueError("Choose a massage timer of 10, 15, 20, 25 or 30 minutes")
+        await self.set_massage_timer_byte(minutes)
+
     async def set_massage_timer_byte(self, value: int) -> None:
-        """Set the source timer byte without claiming a minute conversion."""
+        """Set the timer in minutes; a comfort setting may hold any byte."""
         if not self._has_supported_model:
             raise ValueError("Pairlink massage is unavailable for the selected model")
         if isinstance(value, bool) or not isinstance(value, int) or not 0 <= value <= 255:

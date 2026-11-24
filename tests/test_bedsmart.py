@@ -425,11 +425,30 @@ async def test_memory_three_alarm_combines_with_layout_massage(clock, zone, code
     assert bytes.fromhex(packets(co)[1])[3] == code
 
 
-async def test_y6_native_timer_off_uses_popup_frame(clock):
+async def test_y6_popup_is_ten_twenty_thirty_minutes_and_a_timer_toggle(clock):
+    """The popup's artwork reads 10MIN, 20MIN and 30min; its fourth button toggles."""
     c, co = controller("Y6RM", "RAW")
-    assert c.massage_timer_can_turn_off
-    await c.set_massage_timer(0)
-    assert packets(co) == ["6e01005ecd"]
+    assert c.massage_timer_options == [10, 20, 30] and not c.massage_timer_can_turn_off
+    for minutes in (10, 20, 30):
+        await c.set_massage_timer(minutes)
+    toggle = next(s for s in c.controller_button_specs if s.key == "bedsmart_massage_timer_toggle")
+    assert c.controller_button_available(toggle.key)
+    await toggle.press_fn(c)
+    assert packets(co) == ["6e01005fce", "6e010063d2", "6e010061d0", "6e01005ecd"]
+
+
+@pytest.mark.parametrize(("layout", "off"), [("D1RM", "6e01005ecd"), ("D9RM", "6e01008bfa")])
+async def test_massage_slider_is_the_apps_four_stops(clock, layout, off):
+    """The slider snaps to four stops the app labels 0, 2H, 3H and 5H."""
+    c, co = controller(layout)
+    assert c.supports_massage_timer and c.auto_enable_massage
+    assert c.massage_timer_options == [10, 20, 30] and c.massage_timer_can_turn_off
+    assert not any("massage" in s.key for s in c.controller_number_specs)
+    for minutes in (0, 10, 20, 30):
+        await c.set_massage_timer(minutes)
+    assert packets(co) == [off, "6e01005fce", "6e010063d2", "6e010061d0"]
+    with pytest.raises(HomeAssistantError):
+        await c.set_massage_timer(15)
 
 
 async def test_configuration_changed_before_operation_rejects_cached_catalog(clock):

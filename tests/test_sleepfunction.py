@@ -1130,15 +1130,25 @@ async def test_massage_timer_is_the_shared_select_and_the_popup_has_no_off():
         massage_popup,
         massage_timer,
     )
+    from custom_components.adjustable_bed.state_keys import MASSAGE_TIMER_MINUTES
 
     ctrl, coordinator = controller("D1RM")
     assert ctrl.supports_massage_timer and ctrl.auto_enable_massage
     assert ctrl.massage_timer_options == [10, 20, 30] and ctrl.massage_timer_can_turn_off
     assert ctrl.controller_select_specs == ()
+    # The slider's four stops, which the app labels 0, 2H, 3H and 5H.
     for minutes, progress in ((0, 0), (10, 2), (20, 3), (30, 5)):
         coordinator.client.write_gatt_char.reset_mock()
         await ctrl.set_massage_timer(minutes)
         assert packets(coordinator) == [massage_timer("D1RM", progress).hex()]
+    # A later notification republishes state without clearing the chosen timer.
+    coordinator.handle_controller_state_updates.reset_mock()
+    ctrl._publish()
+    assert not any(
+        update.key == MASSAGE_TIMER_MINUTES
+        for call in coordinator.handle_controller_state_updates.call_args_list
+        for update in call.args
+    )
 
     popup = next(
         layout
@@ -1147,9 +1157,10 @@ async def test_massage_timer_is_the_shared_select_and_the_popup_has_no_off():
         and any(c.tag == "65" for c in model.controls)
     )
     ctrl, coordinator = controller(popup)
-    assert ctrl.massage_timer_options == [15, 30, 45] and not ctrl.massage_timer_can_turn_off
-    await ctrl.set_massage_timer(30)
-    assert packets(coordinator) == [massage_popup("30").hex()]
+    # The popup's artwork reads 10MIN, 20MIN and 30min.
+    assert ctrl.massage_timer_options == [10, 20, 30] and not ctrl.massage_timer_can_turn_off
+    await ctrl.set_massage_timer(20)
+    assert packets(coordinator) == [massage_popup("30").hex()] == ["6e010063d2"]
     with raises_key("sleepfunction_control"):
         await ctrl.set_massage_timer(0)
 

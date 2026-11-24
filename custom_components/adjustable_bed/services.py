@@ -72,6 +72,7 @@ from .const import (
     BED_TYPE_KEESON,
     BED_TYPE_LIMOSS_REMOTE,
     BED_TYPE_LINAK,
+    BED_TYPE_OKIN_UUID,
     BED_TYPE_QPLUS_APP,
     BED_TYPE_SERTA_MP_REMOTE,
     BED_TYPE_SLEEP_NUMBER_MCR,
@@ -988,11 +989,15 @@ def _position_config(
     protocol_variant = entry.data.get(CONF_PROTOCOL_VARIANT)
     supports_direct_position_control = controller.supports_direct_position_control
 
-    # Validate bed supports position feedback. Q-Plus's MX layout reports none;
-    # M1X12 and the Elite app's control boxes without a target offer no slider.
+    # Validate bed supports position feedback. Q-Plus's MX layout and an Okin
+    # UUID receiver without the position characteristic report none; M1X12 and
+    # the Elite app's control boxes without a target offer no slider.
     if (
         not bed_type_has_position_feedback(bed_type, protocol_variant)
-        or (bed_type == BED_TYPE_QPLUS_APP and not controller.supports_position_feedback)
+        or (
+            bed_type in (BED_TYPE_QPLUS_APP, BED_TYPE_OKIN_UUID)
+            and not controller.supports_position_feedback
+        )
         or (
             bed_type in (BED_TYPE_SLEEPYS_ELITE_APP, BED_TYPE_STARCODE_M1X12)
             and not controller.position_number_specs

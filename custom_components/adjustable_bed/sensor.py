@@ -23,6 +23,7 @@ from .bed_traits import bed_traits
 from .card import CARD_HIDDEN, motor_card
 from .const import (
     BED_TYPE_LINAK,
+    BED_TYPE_OKIN_UUID,
     CONF_BED_TYPE,
     CONF_HAS_MASSAGE,
     CONF_MOTOR_COUNT,
@@ -161,9 +162,15 @@ def _sensor_entities_for(
     # capability_controller: an offline paired side still gets its sensors built
     # from a client-free controller minted from config (see coordinator).
     controller = coordinator.capability_controller
-    has_angle_feedback = bed_traits(bed_type, protocol_variant).angle_sensors or (
-        controller is not None and controller.reports_angles
-    )
+    # An Okin UUID receiver without the position characteristic reports nothing.
+    has_angle_feedback = (
+        bed_traits(bed_type, protocol_variant).angle_sensors
+        and (
+            bed_type != BED_TYPE_OKIN_UUID
+            or controller is None
+            or controller.supports_position_feedback
+        )
+    ) or (controller is not None and controller.reports_angles)
     if controller is not None and controller.auto_enable_massage:
         has_massage = True
     position_number_keys = (

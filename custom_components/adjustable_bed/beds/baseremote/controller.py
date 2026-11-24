@@ -73,7 +73,9 @@ from ..richmat_classic.protocol import (
     AROMA_QUERY,
     INITIALIZE,
     LAMP_QUERY,
+    POPUP_MINUTES,
     RELEASE,
+    SLIDER_MINUTES,
     aroma,
     control,
     massage_popup,
@@ -257,10 +259,10 @@ class BaseRemoteController(SessionController):
         if self._group_only:
             return {}
         if self.layout in ("D1RM", "D9RM"):
-            return {0: 0, 15: 2, 30: 3, 45: 5}
+            return dict(SLIDER_MINUTES)
         if any(c.tag == "65" for c in self._controls):
             # The popup's on/off row is a toggle, never an idempotent off.
-            return {15: "15", 30: "30", 45: "45"}
+            return dict(POPUP_MINUTES)
         return {}
 
     @property

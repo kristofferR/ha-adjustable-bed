@@ -143,7 +143,7 @@ async def test_actual_entity_catalog_ranges_names_and_locked_dispatch(hass):
         app_numbers[0].native_min_value,
         app_numbers[0].native_max_value,
         app_numbers[0].native_step,
-    ) == (1, 6, 1)
+    ) == (0, 6, 1)
     assert not any(n.translation_key.endswith("_position") for n in numbers)
     selects = _select_entities_for(hass, runtime)
     timer = next(s for s in selects if s.translation_key == "massage_timer")

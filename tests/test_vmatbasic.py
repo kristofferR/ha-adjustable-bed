@@ -310,6 +310,13 @@ async def test_floor_numbers_write_exact_parameters_and_persist_requested_intent
     assert "vmatbasic_floor_level_observed" not in controller._coordinator.controller_state
 
 
+async def test_xt_timer_before_any_level_sends_level_zero():
+    """The XT settings screen starts with no level chosen and sends zero."""
+    controller = make_controller("xtbox")
+    await controller.set_floor_minutes(12)
+    assert written(controller)[-1][1] == bytes.fromhex("0011000c")
+
+
 async def test_cbi_settings_absent_level_zero_differs_from_toggle_button_default():
     controller = make_controller("cbi")
     await controller.set_floor_minutes(12)

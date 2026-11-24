@@ -910,7 +910,11 @@ class SutaController(BedController):
         zone = next((zone for zone, step in _MASSAGE_STEPS.items() if step == key), None)
         if zone is None:
             return ()
-        return (massage_intensity(zone)(self.commands[key].suffixes.index(suffix)),)
+        step = (massage_intensity(zone)(self.commands[key].suffixes.index(suffix)),)
+        if zone != "all" and suffix != "00" and _MASSAGE_STEPS["all"] in self.commands:
+            # Starting a zone puts the strength the app shows for both back to 00.
+            step += (massage_intensity("all")(0),)
+        return step
 
     @property
     def supports_clock_sync(self) -> bool:

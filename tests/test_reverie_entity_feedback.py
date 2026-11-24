@@ -10,6 +10,7 @@ from custom_components.adjustable_bed.button import _button_entities_for
 from custom_components.adjustable_bed.const import (
     REVERIE_NIGHTSTAND_HEAD_WAVE_UUID,
     REVERIE_STK_SIDE_DATA_UUID,
+    REVERIE_STK_SIDE_NO_DATA_UUID,
 )
 from custom_components.adjustable_bed.cover import AdjustableBedCover, _build_cover_description
 from custom_components.adjustable_bed.light import LIGHT_DESCRIPTION, AdjustableBedLight
@@ -110,4 +111,63 @@ async def test_pairlink_rgb_feedback_drives_light_and_later_turn_on(hass, monkey
     report(8, 99)
     assert coordinator.controller_state["under_bed_lights_rgb"] is None
     unsubscribe()
+    await coordinator.async_shutdown()
+
+
+@pytest.mark.parametrize("side", [2, 3])
+async def test_stk_side_buttons_write_the_app_bytes_without_data(
+    hass, mock_coordinator_connected, side
+):
+    """The app sends a tandem side's two-byte commands to the no-data characteristic."""
+    coordinator = await _central(hass)
+    controller = ReverieNightstandController(coordinator, model="STK")
+    coordinator._controller = controller
+    controller._set_stk_side(str(side))
+    coordinator.client.write_gatt_char.reset_mock()
+
+    await controller.preset_zero_g()
+    await controller.preset_anti_snore()
+    await controller.preset_flat()
+    await controller.preset_memory(2)
+    await controller.program_memory(2)
+    await controller.move_head_up()
+    await controller.move_head_down()
+    await controller.move_head_stop()
+
+    assert [call.args[:2] for call in coordinator.client.write_gatt_char.await_args_list] == [
+        (REVERIE_STK_SIDE_NO_DATA_UUID, bytes((side, command)))
+        for command in (0x15, 0x16, 0x05, 0x12, 0x22, 0x01, 0x03, 0xFF)
+    ]
+    await coordinator.async_shutdown()
+
+
+@pytest.mark.parametrize("side", [2, 3])
+async def test_stk_side_wave_select_sends_the_pattern_and_stop(
+    hass, mock_coordinator_connected, side
+):
+    coordinator = await _central(hass)
+    controller = ReverieNightstandController(coordinator, model="STK")
+    coordinator._controller = controller
+    controller._set_stk_side(str(side))
+    wave = next(
+        spec for spec in controller.controller_select_specs if spec.key == "reverie_massage_wave"
+    )
+    coordinator.client.write_gatt_char.reset_mock()
+
+    await wave.select_fn(controller, "3")
+    assert coordinator.controller_state["reverie_massage_wave"] == "3"
+    await wave.select_fn(controller, "off")
+
+    # Massage off is the same Stop, and it ends the side's head and foot massage too.
+    await wave.select_fn(controller, "2")
+    await controller.massage_off()
+
+    assert [call.args[:2] for call in coordinator.client.write_gatt_char.await_args_list] == [
+        (REVERIE_STK_SIDE_NO_DATA_UUID, bytes((side, 0x43))),
+        (REVERIE_STK_SIDE_NO_DATA_UUID, bytes((side, 0x35))),
+        (REVERIE_STK_SIDE_NO_DATA_UUID, bytes((side, 0x42))),
+        (REVERIE_STK_SIDE_NO_DATA_UUID, bytes((side, 0x35))),
+    ]
+    assert coordinator.controller_state["reverie_massage_wave"] == "off"
+    assert coordinator.controller_state["massage_foot_intensity"] == 0
     await coordinator.async_shutdown()

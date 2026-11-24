@@ -429,3 +429,15 @@ async def test_refresh_uses_advertised_then_saved_name_ignoring_alias(
         assert ctrl._worker.tick_ms == expected
     finally:
         await coordinator.async_shutdown()
+
+
+@pytest.mark.parametrize(("layout", "off"), [("D1RM", "6e01005ecd"), ("D9RM", "6e01008bfa")])
+async def test_massage_slider_is_the_shared_timer_with_the_apps_four_stops(layout, off):
+    """The slider snaps to four stops the app labels 0, 2H, 3H and 5H."""
+    ctrl, coord = controller(layout)
+    assert ctrl.supports_massage_timer and ctrl.auto_enable_massage
+    assert ctrl.massage_timer_options == [10, 20, 30] and ctrl.massage_timer_can_turn_off
+    assert not any("massage" in spec.key for spec in ctrl.controller_number_specs)
+    for minutes in (0, 10, 20, 30):
+        await ctrl.set_massage_timer(minutes)
+    assert packets(coord) == [off, "6e01005fce", "6e010063d2", "6e010061d0"]

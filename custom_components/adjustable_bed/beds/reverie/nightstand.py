@@ -18,8 +18,6 @@ from collections.abc import Callable, Mapping
 from dataclasses import replace
 from typing import TYPE_CHECKING, Any, Final
 
-from homeassistant.const import EntityCategory
-
 from ...card import CARD_CONTROLLED_SIDE, CARD_MASSAGE, motor_card
 from ...command_scheduler import (
     Delivery,
@@ -74,6 +72,7 @@ from .profiles import (
     ReverieModelProfile,
     resolve_reverie_model,
 )
+from .wave import WAVE_PATTERN, WAVE_PATTERNS
 
 if TYPE_CHECKING:
     from ...coordinator import AdjustableBedCoordinator
@@ -87,11 +86,6 @@ STK_SIDE_NO_DATA_UUID = REVERIE_STK_SIDE_NO_DATA_UUID
 STK_SIDE: Final = StateKey[str | None]("reverie_stk_side")
 MASSAGE_HEAD_INTENSITY: Final = massage_intensity("head")
 MASSAGE_FOOT_INTENSITY: Final = massage_intensity("foot")
-# The app's wave buttons: Stop writes 0 and patterns 1-4 write their number.
-WAVE_PATTERN: Final = StateKey[str | None]("reverie_massage_wave")
-WAVE_PATTERNS: Final = ("off", "1", "2", "3", "4")
-STK_HEAD_WAVE: Final = StateKey[int | None]("reverie_stk_head_wave")
-STK_GLOBAL_MASSAGE: Final = StateKey[int | None]("reverie_stk_global_massage")
 BODY_TILT: Final = StateKey[float | None]("reverie_body_tilt")
 STK_HEAD_POSITION: Final = StateKey[int]("reverie_stk_head_position")
 STK_HEAD2_POSITION: Final = StateKey[int]("reverie_stk_head2_position")
@@ -457,12 +451,6 @@ class ReverieNightstandController(BedController, ReverieComfortActions):
                     select_fn=lambda _ctrl, pattern: self.set_massage_intensity(
                         "wave", WAVE_PATTERNS.index(pattern)
                     ),
-                    # STK sides 2 and 3 have their own head wave number. The
-                    # published side outlives a reconnect's controller.
-                    available_fn=lambda _ctrl: (
-                        not self.model.tandem
-                        or self._coordinator.controller_state.get(STK_SIDE, "1") == "1"
-                    ),
                     card=CARD_MASSAGE,
                 )
             )
@@ -471,39 +459,6 @@ class ReverieNightstandController(BedController, ReverieComfortActions):
     @property
     def controller_number_specs(self) -> tuple[ControllerNumberSpec, ...]:
         specs: list[ControllerNumberSpec] = []
-        if self.model.massage:
-            if self.model.tandem:
-                specs.extend(
-                    (
-                        ControllerNumberSpec(
-                            key="reverie_stk_head_wave",
-                            translation_key="reverie_stk_head_wave",
-                            state_key=STK_HEAD_WAVE,
-                            native_min_value=0,
-                            native_max_value=10,
-                            native_step=1,
-                            set_fn=lambda ctrl, value: ctrl.set_massage_intensity(
-                                "stk_head_wave", int(value)
-                            ),
-                            card=CARD_MASSAGE,
-                        ),
-                        # 0-191 is only what fits the offset byte; no proven unit.
-                        ControllerNumberSpec(
-                            key="reverie_stk_global_massage",
-                            translation_key="reverie_stk_global_massage",
-                            state_key=STK_GLOBAL_MASSAGE,
-                            native_min_value=0,
-                            native_max_value=191,
-                            native_step=1,
-                            set_fn=lambda ctrl, value: ctrl.set_massage_intensity(
-                                "stk_global", int(value)
-                            ),
-                            card=CARD_MASSAGE,
-                            entity_category=EntityCategory.DIAGNOSTIC,
-                            entity_registry_enabled_default=False,
-                        ),
-                    )
-                )
         if self.model.body_tilt:
             specs.append(
                 ControllerNumberSpec(
@@ -1017,7 +972,7 @@ class ReverieNightstandController(BedController, ReverieComfortActions):
         """Move head up."""
         if self.model.tandem and self._stk_selected_side != "1":
             self._active_stk_motion_side = int(self._stk_selected_side)
-            await self._write_stk_axis(0x01, side=self._active_stk_motion_side)
+            await self._write_stk_command(0x01, side=self._active_stk_motion_side)
             return
         if self.model.tandem:
             self._active_stk_motion_side = 1
@@ -1029,7 +984,7 @@ class ReverieNightstandController(BedController, ReverieComfortActions):
         """Move head down."""
         if self.model.tandem and self._stk_selected_side != "1":
             self._active_stk_motion_side = int(self._stk_selected_side)
-            await self._write_stk_axis(0x03, side=self._active_stk_motion_side)
+            await self._write_stk_command(0x03, side=self._active_stk_motion_side)
             return
         if self.model.tandem:
             self._active_stk_motion_side = 1
@@ -1048,9 +1003,8 @@ class ReverieNightstandController(BedController, ReverieComfortActions):
                 side = int(self._stk_selected_side)
             if side is not None and side != 1:
                 try:
-                    await self._write_stk_axis(
+                    await self._write_stk_command(
                         0xFF,
-                        no_data=True,
                         side=side,
                         cancel_event=asyncio.Event(),
                     )
@@ -1163,20 +1117,19 @@ class ReverieNightstandController(BedController, ReverieComfortActions):
         if failures:
             raise ExceptionGroup("Reverie motor STOP writes failed", failures)
 
-    async def _write_stk_axis(
+    async def _write_stk_command(
         self,
         command: int,
         *,
-        no_data: bool = False,
         side: int | None = None,
         cancel_event: asyncio.Event | None = None,
     ) -> None:
+        """Write a two-byte side command; the app sends these without data."""
         selected_side = side if side is not None else int(self._stk_selected_side)
-        char_uuid = STK_SIDE_NO_DATA_UUID if no_data else STK_SIDE_DATA_UUID
         await self._write_bytes_to_char(
-            char_uuid,
+            STK_SIDE_NO_DATA_UUID,
             bytes((selected_side, command)),
-            cancel_event=cancel_event or (asyncio.Event() if no_data else None),
+            cancel_event=cancel_event,
         )
 
     def validate_hold_control(self, control: str, duration_ms: int) -> None:
@@ -1219,7 +1172,7 @@ class ReverieNightstandController(BedController, ReverieComfortActions):
         try:
             if stk_side is not None and stk_side != 1:
                 self._active_stk_motion_side = stk_side
-                await self._write_stk_axis(0x01 if is_up else 0x03, side=stk_side)
+                await self._write_stk_command(0x01 if is_up else 0x03, side=stk_side)
             else:
                 await start()
             await asyncio.sleep(duration_ms / 1000)
@@ -1254,11 +1207,7 @@ class ReverieNightstandController(BedController, ReverieComfortActions):
         if not self.model.presets:
             raise ValueError(f"Model {self.model_id} has no preset modes")
         if self.model.tandem and self._stk_selected_side != "1":
-            command = {1: 0x21, 2: 0x22}.get(mode, 0x05)
-            await self._write_bytes_to_char(
-                STK_SIDE_DATA_UUID,
-                bytes((int(self._stk_selected_side), command)),
-            )
+            await self._write_stk_command({1: 0x15, 2: 0x16}.get(mode, 0x05))
             return
         if self.model.body_tilt:
             command = {
@@ -1283,10 +1232,7 @@ class ReverieNightstandController(BedController, ReverieComfortActions):
         ):
             raise ValueError("This model does not support the requested memory slot")
         if self.model.tandem and self._stk_selected_side != "1":
-            await self._write_bytes_to_char(
-                STK_SIDE_DATA_UUID,
-                bytes((int(self._stk_selected_side), memory_num + 16)),
-            )
+            await self._write_stk_command(memory_num + 16)
             return
         command = ReverieNightstandCommands.memory_preset(memory_num)
         await self._write_to_char(REVERIE_NIGHTSTAND_PRESETS_UUID, command)
@@ -1301,10 +1247,7 @@ class ReverieNightstandController(BedController, ReverieComfortActions):
         ):
             raise ValueError("This model does not support the requested memory slot")
         if self.model.tandem and self._stk_selected_side != "1":
-            await self._write_bytes_to_char(
-                STK_SIDE_DATA_UUID,
-                bytes((int(self._stk_selected_side), memory_num + 32)),
-            )
+            await self._write_stk_command(memory_num + 32)
             return
         command = ReverieNightstandCommands.store_memory(memory_num)
         await self._write_to_char(REVERIE_NIGHTSTAND_PRESETS_UUID, command)
@@ -1473,6 +1416,9 @@ class ReverieNightstandController(BedController, ReverieComfortActions):
         """Turn off massage."""
         if not self.model.massage:
             raise ValueError(f"Model {self.model_id} does not support massage")
+        if self.model.tandem and self._stk_selected_side != "1":
+            await self._stop_stk_massage()
+            return
         await self._write_to_char(REVERIE_NIGHTSTAND_HEAD_WAVE_UUID, 0)
         self._massage_head_level = 0
         self.forward_controller_state_update(MASSAGE_HEAD_INTENSITY, 0)
@@ -1482,6 +1428,20 @@ class ReverieNightstandController(BedController, ReverieComfortActions):
         await self._write_to_char(REVERIE_NIGHTSTAND_MASSAGE_WAVE_UUID, 0)
         self._massage_wave_level = 0
         self.forward_controller_state_updates(WAVE_PATTERN("off"))
+
+    async def _stop_stk_massage(self) -> None:
+        """Send the app's Stop for a tandem side, which ends all of its massage."""
+
+        def show(delivery: Delivery) -> None:
+            if delivery is Delivery.NONE:
+                return
+            self._massage_head_level = self._massage_foot_level = self._massage_wave_level = 0
+            self.forward_controller_state_updates(
+                MASSAGE_HEAD_INTENSITY(0), MASSAGE_FOOT_INTENSITY(0), WAVE_PATTERN("off")
+            )
+
+        with delivered(show):
+            await self._write_stk_command(0x35)
 
     async def massage_head_up(self) -> None:
         """Increase head massage intensity (0-10, written as level * 4)."""
@@ -1540,35 +1500,24 @@ class ReverieNightstandController(BedController, ReverieComfortActions):
             self.forward_controller_state_update(massage_intensity(zone), level)
             return
         if zone == "wave":
-            if self.model.tandem and self._stk_selected_side != "1":
-                raise ValueError("Use the STK head wave number for side 2 or 3")
             if not 0 <= level <= 4:
                 raise ValueError("Reverie massage wave must be 0 (off) or a pattern from 1 to 4")
+            if self.model.tandem and self._stk_selected_side != "1":
+                if not level:
+                    await self._stop_stk_massage()
+                    return
+
+                def show(delivery: Delivery) -> None:
+                    if delivery is not Delivery.NONE:
+                        self._massage_wave_level = level
+                        self.forward_controller_state_update(WAVE_PATTERN, WAVE_PATTERNS[level])
+
+                with delivered(show):
+                    await self._write_stk_command(0x40 + level)
+                return
             await self._write_to_char(REVERIE_NIGHTSTAND_MASSAGE_WAVE_UUID, level)
             self._massage_wave_level = level
             self.forward_controller_state_update(WAVE_PATTERN, WAVE_PATTERNS[level])
-            return
-        if zone == "stk_head_wave":
-            if not self.model.tandem or self._stk_selected_side == "1":
-                raise ValueError("STK head wave requires numeric side 2 or 3")
-            if not 0 <= level <= 10:
-                raise ValueError("STK head wave must be between 0 and 10")
-            await self._write_bytes_to_char(
-                STK_SIDE_DATA_UUID,
-                bytes((int(self._stk_selected_side), 0x40, level * 4)),
-            )
-            self.forward_controller_state_update(STK_HEAD_WAVE, level)
-            return
-        if zone == "stk_global":
-            if not self.model.tandem or self._stk_selected_side == "1":
-                raise ValueError("Whole-bed massage is not available for this bed or side")
-            if not 0 <= level <= 191:
-                raise ValueError("Choose a whole-bed massage value from 0 to 191")
-            await self._write_bytes_to_char(
-                STK_SIDE_DATA_UUID,
-                bytes((int(self._stk_selected_side), level + 64)),
-            )
-            self.forward_controller_state_update(STK_GLOBAL_MASSAGE, level)
             return
         raise ValueError(f"Unsupported Reverie massage zone: {zone}")
 

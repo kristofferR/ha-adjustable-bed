@@ -24,7 +24,7 @@ from homeassistant.helpers import issue_registry as ir
 from homeassistant.helpers.start import async_at_started
 
 from .automation_references import entity_users
-from .const import BED_TYPE_OCTO, BED_TYPE_REVERIE_NIGHTSTAND, DOMAIN
+from .const import BED_TYPE_OCTO, BED_TYPE_REVERIE, BED_TYPE_REVERIE_NIGHTSTAND, DOMAIN
 from .paired_coordinator import entity_runtimes
 
 if TYPE_CHECKING:
@@ -130,15 +130,43 @@ RETYPES: Final[tuple[Retype, ...]] = (
             "jerome_massage_timer",
         )
     ),
+    # The Reverie Pairlink timer byte is the app's five minute buttons.
+    Retype(
+        "number", "controller_number_reverie_pairlink_massage_timer", "select", "massage_timer"
+    ),
     # Bed-specific light durations that became the shared light timer.
     Retype("select", "controller_select_goodvibe_light_duration", "select", "light_timer"),
-    # The Nightstand app's wave is a pattern choice, not an intensity.
+    # Light colors that were a 1-7 number are the app's seven swatches.
+    Retype(
+        "number",
+        "controller_number_sleepys_app_color_code",
+        "select",
+        "controller_select_sleepys_app_light_color",
+    ),
+    Retype(
+        "number",
+        "controller_number_symphony_light_color",
+        "select",
+        "controller_select_symphony_light_color",
+    ),
+    # The Reverie app's wave is a pattern choice, not an intensity.
     Retype(
         "number",
         "massage_wave_intensity",
         "select",
         "controller_select_reverie_massage_wave",
-        only_on=frozenset({BED_TYPE_REVERIE_NIGHTSTAND}),
+        only_on=frozenset({BED_TYPE_REVERIE, BED_TYPE_REVERIE_NIGHTSTAND}),
+    ),
+    # Richmat massage sliders that were a 0-5 number are the app's four stops.
+    *(
+        Retype("number", f"controller_number_{key}", "select", "massage_timer")
+        for key in (
+            "bedsmart_massage_index",
+            "dreamlab_massage_progress",
+            "enso2_massage_timer",
+            "maxprime_massage_position",
+            "richmat_resource_massage_timer",
+        )
     ),
 )
 

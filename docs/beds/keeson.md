@@ -3062,6 +3062,8 @@ command.
 - Off: intensity 0, then wave 0 after 100 ms, keeping the selected levels and
   timer.
 - At the bounds, +/- does not write.
+- The timer is the app's three buttons, 10, 20 and 30 minutes, with no off
+  choice; massage is stopped with Off.
 - Selecting a timer sends only its timer command and disables level changes
   until massage is started again; it does not prove that the receiver stopped
   massage.
@@ -4493,9 +4495,9 @@ State sensors:
   from the bed's reported alarm. Editing an enabled alarm is rejected.
 - On commits repeat 255; Off commits repeat 0 on P1/P3/P4, while P2 uses its
   all-255 disable sentinel (hour, minute, action and repeat all 255).
-- Action codes are 0 (app default), 9 (massage), 17 (neutral action code) and 19
-  (position). No weekday-bit interpretation or physical posture for action 17 is
-  invented.
+- The Alarm action select offers the app's three choices, Memory A (17),
+  Memory B (19) and Massage (9), and None (0), which the app stores when the
+  selected choice is switched off. No weekday-bit interpretation is invented.
 - The commit writes at +200 ms and refreshes the alarm at +600 ms.
 - The Alarm switch shows the reported alarm state and waits for replies.
 - Uncommitted alarm and strength edits survive BLE reconnects through the

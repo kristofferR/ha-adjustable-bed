@@ -3728,6 +3728,9 @@
       "maxprime_massage_timer_toggle": {
         "name": "Toggle massage timer"
       },
+      "bedsmart_massage_timer_toggle": {
+        "name": "Toggle massage timer"
+      },
       "bedsmart_query": {
         "name": "Refresh bed features"
       },
@@ -6124,9 +6127,6 @@
       "enso2_light_timer": {
         "name": "Light auto-off time"
       },
-      "enso2_massage_timer": {
-        "name": "Massage timer position"
-      },
       "back_position": {
         "name": "Back position"
       },
@@ -6163,17 +6163,8 @@
       "light_level": {
         "name": "Light level"
       },
-      "reverie_stk_head_wave": {
-        "name": "Head massage wave"
-      },
-      "reverie_stk_global_massage": {
-        "name": "Overall massage level"
-      },
       "reverie_body_tilt": {
         "name": "Body tilt"
-      },
-      "reverie_pairlink_massage_timer": {
-        "name": "Massage timer"
       },
       "fan_level": {
         "name": "Fan level"
@@ -6270,9 +6261,6 @@
       },
       "sleepys_app_target_axis_2": {
         "name": "Lumbar target position"
-      },
-      "sleepys_app_color_code": {
-        "name": "Light color"
       },
       "adjustamattress_alarm_draft_hour": {
         "name": "Alarm hour"
@@ -6394,17 +6382,11 @@
       "richmat_rise_lamp_seconds": {
         "name": "Lamp timer"
       },
-      "symphony_light_color": {
-        "name": "Light color"
-      },
       "symphony_light_brightness": {
         "name": "Light brightness"
       },
       "richmat_resource_lamp_timeout": {
         "name": "Light timeout"
-      },
-      "richmat_resource_massage_timer": {
-        "name": "Massage timer"
       },
       "agingplace_brightness": {
         "name": "Light brightness"
@@ -6484,14 +6466,8 @@
       "maxprime_lamp_seconds": {
         "name": "Light duration"
       },
-      "maxprime_massage_position": {
-        "name": "Massage timer position"
-      },
       "bedsmart_lamp_seconds": {
         "name": "Light timeout"
-      },
-      "bedsmart_massage_index": {
-        "name": "Massage timer setting"
       },
       "bedsmart_aroma_0": {
         "name": "Aroma mode 2 startup"
@@ -6504,9 +6480,6 @@
       },
       "dreamlab_light_seconds": {
         "name": "Light timeout"
-      },
-      "dreamlab_massage_progress": {
-        "name": "Massage timer setting"
       },
       "jerome_light_seconds": {
         "name": "Light duration"
@@ -6582,9 +6555,9 @@
         "name": "Massage timer",
         "state": {
           "toggle": "On/off",
-          "15": "15 minutes",
-          "30": "30 minutes",
-          "45": "45 minutes"
+          "10": "10 minutes",
+          "20": "20 minutes",
+          "30": "30 minutes"
         }
       },
       "moodbase_sync_mode": {
@@ -6592,6 +6565,30 @@
         "state": {
           "wireless": "Wireless",
           "wired": "Wired"
+        }
+      },
+      "sleepys_app_light_color": {
+        "name": "Light color",
+        "state": {
+          "white": "White",
+          "red": "Red",
+          "orange": "Orange",
+          "yellow": "Yellow",
+          "green": "Green",
+          "blue": "Blue",
+          "purple": "Purple"
+        }
+      },
+      "symphony_light_color": {
+        "name": "Light color",
+        "state": {
+          "white": "White",
+          "red": "Red",
+          "orange": "Orange",
+          "yellow": "Yellow",
+          "green": "Green",
+          "blue": "Blue",
+          "purple": "Purple"
         }
       },
       "reverie_massage_wave": {
@@ -6725,7 +6722,6 @@
       "starcode_color": {
         "name": "Light color",
         "state": {
-          "0": "Off",
           "1": "White",
           "2": "Red",
           "3": "Orange",
@@ -6935,10 +6931,10 @@
       "adjustamattress_alarm_draft_type": {
         "name": "Alarm action",
         "state": {
-          "0": "Default",
-          "9": "Massage",
-          "17": "Action 17",
-          "19": "Position"
+          "0": "None",
+          "17": "Memory A",
+          "19": "Memory B",
+          "9": "Massage"
         }
       },
       "adjustamattress_strength_setting": {
@@ -7187,7 +7183,7 @@
       "paramount_speed": {
         "name": "Bed speed",
         "state": {
-          "slow": "Slow",
+          "slow": "Normal",
           "fast": "Fast"
         }
       },
@@ -7230,9 +7226,9 @@
         "name": "Automatic anti-snore",
         "state": {
           "off": "Off",
-          "1": "Level 1",
-          "3": "Level 3",
-          "6": "Level 6",
+          "1": "Low angle",
+          "3": "Medium angle",
+          "6": "High angle",
           "demo": "Demonstration"
         }
       },
@@ -7274,9 +7270,9 @@
       "smart_sleep_timer": {
         "name": "Massage timer",
         "state": {
-          "1": "Step 1",
-          "2": "Step 2",
-          "3": "Step 3"
+          "1": "10 minutes",
+          "2": "20 minutes",
+          "3": "30 minutes"
         }
       },
       "goodvibe_side": {
@@ -7298,9 +7294,9 @@
       "onlysnore_intervention": {
         "name": "Anti-snore intervention",
         "state": {
-          "1": "Level 1",
-          "3": "Level 3",
-          "6": "Level 6",
+          "1": "Low angle",
+          "3": "Medium angle",
+          "6": "High angle",
           "off": "Off"
         }
       },
@@ -7347,6 +7343,20 @@
         "state": {
           "left": "Left",
           "right": "Right"
+        }
+      },
+      "enso2_side": {
+        "name": "Controlled side",
+        "state": {
+          "mode_1": "Left",
+          "mode_2": "Right"
+        }
+      },
+      "maxprime_side": {
+        "name": "Controlled side",
+        "state": {
+          "0": "Left",
+          "1": "Right"
         }
       },
       "dreamsense_selected_side": {

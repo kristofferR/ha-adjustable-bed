@@ -380,7 +380,7 @@ async def test_real_timer_choices_and_inverse_switches(clock):
     for layout, minutes, expected in (
         ("D1RM", 0, "6e01005ecd"),
         ("D9RM", 0, "6e01008bfa"),
-        ("Y6RM", 45, "6e010061d0"),
+        ("Y6RM", 30, "6e010061d0"),
     ):
         ctrl, coord = controller(layout)
         await ctrl.set_massage_timer(minutes)
@@ -393,16 +393,15 @@ async def test_real_timer_choices_and_inverse_switches(clock):
 @pytest.mark.parametrize("layout", ["D1RM", "D9RM", "Y6RM"])
 async def test_massage_timer_is_the_shared_select_sending_the_old_selects_frames(clock, layout):
     """Each choice of the former Jerome timer select is the shared select's same frame."""
-    from custom_components.adjustable_bed.profiles.jerome2 import TIMER_PROGRESS
-
+    # The popup shows 10, 20 and 30 minutes; the slider's stops read 0, 2H, 3H and 5H.
     old = (
-        {15: p.massage_popup("15"), 30: p.massage_popup("30"), 45: p.massage_popup("45")}
+        {10: p.massage_popup("15"), 20: p.massage_popup("30"), 30: p.massage_popup("45")}
         if layout == "Y6RM"
         else {
-            0: p.massage_timer(layout, TIMER_PROGRESS["off"]),
-            10: p.massage_timer(layout, TIMER_PROGRESS["10_minutes"]),
-            20: p.massage_timer(layout, TIMER_PROGRESS["20_minutes"]),
-            30: p.massage_timer(layout, TIMER_PROGRESS["30_minutes"]),
+            0: p.massage_timer(layout, 0),
+            10: p.massage_timer(layout, 2),
+            20: p.massage_timer(layout, 3),
+            30: p.massage_timer(layout, 5),
         }
     )
     ctrl, coord = controller(layout)

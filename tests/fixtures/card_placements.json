@@ -487,6 +487,9 @@
   "card_role": "up",
   "card_motor": "bedsense_waist"
  },
+ "button:bedsmart_massage_timer_toggle": {
+  "card_section": "massage"
+ },
  "button:bedsmart_query": {
   "card_section": "utility"
  },
@@ -3458,9 +3461,6 @@
  "number:bedsmart_lamp_seconds": {
   "card_section": "utility"
  },
- "number:bedsmart_massage_index": {
-  "card_section": "utility"
- },
  "number:betterliving2_massage_feet": {
   "card_section": "massage"
  },
@@ -3488,18 +3488,11 @@
  "number:dreamlab_light_seconds": {
   "card_section": "lighting"
  },
- "number:dreamlab_massage_progress": {
-  "card_section": "massage"
- },
  "number:dreamsense_light_seconds": {
   "card_section": "lighting"
  },
  "number:enso2_light_timer": {
   "card_section": "lighting"
- },
- "number:enso2_massage_timer": {
-  "card_section": "massage",
-  "card_role": "timer"
  },
  "number:fan_level": {
   "card_section": "climate"
@@ -3611,9 +3604,6 @@
  "number:maxprime_lamp_seconds": {
   "card_section": "utility"
  },
- "number:maxprime_massage_position": {
-  "card_section": "massage"
- },
  "number:moodbase_light_timer": {
   "card_section": "lighting",
   "card_role": "timer_minutes"
@@ -3719,16 +3709,6 @@
   "card_section": "motors",
   "card_motor": "lumbar"
  },
- "number:reverie_pairlink_massage_timer": {
-  "card_section": "massage",
-  "card_role": "timer"
- },
- "number:reverie_stk_global_massage": {
-  "card_section": "massage"
- },
- "number:reverie_stk_head_wave": {
-  "card_section": "massage"
- },
  "number:richmat_app_angle": {
   "card_section": "utility"
  },
@@ -3764,9 +3744,6 @@
  "number:richmat_resource_lamp_timeout": {
   "card_section": "utility"
  },
- "number:richmat_resource_massage_timer": {
-  "card_section": "utility"
- },
  "number:richmat_rise_lamp_seconds": {
   "card_section": "utility"
  },
@@ -3793,9 +3770,6 @@
  },
  "number:sleeptracker_wave_minutes": {
   "card_section": "massage"
- },
- "number:sleepys_app_color_code": {
-  "card_section": "lighting"
  },
  "number:sleepys_app_target_axis_0": {
   "card_section": "utility"
@@ -3846,9 +3820,6 @@
   "card_section": "utility"
  },
  "number:symphony_light_brightness": {
-  "card_section": "lighting"
- },
- "number:symphony_light_color": {
   "card_section": "lighting"
  },
  "number:tv_lift_position_estimated": {
@@ -3913,6 +3884,9 @@
  "select:enso2_mode": {
   "card_section": "utility"
  },
+ "select:enso2_side": {
+  "card_section": "motors"
+ },
  "select:enso2_timer_options": {
   "card_section": "massage",
   "card_role": "timer"
@@ -3960,6 +3934,9 @@
  "select:maxprime_axis": {
   "card_section": "utility"
  },
+ "select:maxprime_side": {
+  "card_section": "motors"
+ },
  "select:moodbase_sync_mode": {
   "card_section": "utility"
  },
@@ -4003,9 +3980,6 @@
   "card_section": "motors"
  },
  "select:richmat_classic_hold": {
-  "card_section": "utility"
- },
- "select:richmat_classic_mode": {
   "card_section": "utility"
  },
  "select:richmat_mh_motor_mode": {
@@ -4122,6 +4096,9 @@
  "select:sleeptracker_wave_frequency": {
   "card_section": "massage"
  },
+ "select:sleepys_app_light_color": {
+  "card_section": "lighting"
+ },
  "select:smart_comfort_seat": {
   "card_section": "utility"
  },
@@ -4154,6 +4131,9 @@
  "select:starcode_color": {
   "card_section": "lighting",
   "card_role": "mood"
+ },
+ "select:symphony_light_color": {
+  "card_section": "lighting"
  },
  "select:thermal_timer": {
   "card_section": "climate"

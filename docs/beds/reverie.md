@@ -27,7 +27,7 @@
 | Motor Control | ✅ (head/back, foot/legs) | ✅ (head, foot; lumbar/body tilt by model) | ✅ (back, legs; lumbar on R510L) |
 | Position Feedback | ✅ (0–100%) | ✅ (0–100%, per side) | ✅ (from the connected bed) |
 | Memory Presets | ✅ (recall/save 1–4, by model) | ✅ (recall/save 1–4, by model) | ✅ (recall 1–4; no save) |
-| Massage | ✅ (head/foot 0–10, wave) | ✅ (head/foot 0–10, wave pattern, by model) | ✅ (head/foot 0–10, mode/rhythm, timer) |
+| Massage | ✅ (head/foot 0–10, wave pattern) | ✅ (head/foot 0–10, wave pattern, by model) | ✅ (head/foot 0–10, mode/rhythm, timer) |
 | Wave Massage | ✅ | ✅ (per side on STK) | See mode/rhythm controls |
 | Under-bed Lights | ✅ (toggle, by model) | ✅ (on/off; brightness/RGB where the control box has it) | ✅ (on/off, level, RGB) |
 | Zero-G / Anti-Snore / Flat | ✅ (by model) | ✅ (by model) | ✅ |
@@ -149,9 +149,9 @@ Command bytes below are wrapped by the Protocol 108 packet builder.
 
 | Command | Payload | Description |
 |---------|---------|-------------|
-| Head Massage | `0x53 {level×4}` | Set head massage level (0–10) |
-| Foot Massage | `0x54 {level×4}` | Set foot massage level (0–10) |
-| Wave Massage | Decimal text `4n` through `BLE108CRC` / `hex2Byte` | Source integer input; no inferred protocol range or cycle |
+| Head Massage | `0x53 {level}` | Set head massage level (0–10) |
+| Foot Massage | `0x54 {level}` | Set foot massage level (0–10) |
+| Wave Massage | Decimal text `4n` through `BLE108CRC` / `hex2Byte` | Wave pattern `n`, 1–4; Stop Massage turns it off |
 | Stop Massage | `0x35` | Stop all massage |
 
 #### Other Commands
@@ -160,13 +160,11 @@ Command bytes below are wrapped by the Protocol 108 packet builder.
 |---------|---------|
 | Lights Toggle | `0x5B 0x00` |
 
-The existing HA wave slider retains its compatibility range, but that UI
-limit is not a Protocol 108 range taken from the app. The packet builder
-appends the supplied decimal integer to the text `4`, then applies the source
-checksum and complete-hex-pair decoder. For example, the existing slider's
-level 10 emits `55 41 04 45`, rather than treating 10 as a single nibble or
-adding it to `40`. This preserves the compatibility UI range without claiming
-that range is a protocol limit. The builder does not clamp or cycle the value.
+The app's four wave buttons send patterns 1 to 4, and tapping the active one
+or Stop sends Stop Massage, so the wave select's Off stops head and foot
+massage too. The packet builder appends the decimal integer to the text `4`,
+then applies the source checksum and complete-hex-pair decoder. It does not
+clamp or cycle the value, which the massage mode step button relies on.
 
 ### Protocol 110 and STK
 
@@ -190,17 +188,18 @@ Model capability gates apply to every row.
 | Nightlight on / off | `db8010a0` | `40` / `00`; on uses retained nonzero brightness when available |
 | RGB color / brightness | `db8010a7` | `01 brightness red green blue`; brightness 0–100 and RGB channels 0–255, preserving the known values not being changed. Only on a control box that has this characteristic |
 | R650 Zero-G / Anti-Snore / Flat | `db8010d0` | `00 20 47 24 00 00 00 00 00 00` / `00 0C 00 24 00 00 00 00 00 00` / `00 00 00 24 00 00 00 00 00 00` |
-| STK side 2/3 head up / down | `db8010a5` | `side 01` / `side 03` |
+| STK side 2/3 head up / down | `db8010a6` | `side 01` / `side 03` |
 | STK side 2/3 head release | `db8010a6` | `side FF` |
-| STK side 2/3 Zero-G / Anti-Snore / Flat | `db8010a5` | `side 21` / `side 22` / `side 05` |
+| STK side 2/3 Zero-G / Anti-Snore / Flat | `db8010a6` | `side 15` / `side 16` / `side 05` |
 | STK side 2/3 head strength | `db8010a5` | `side 53 (level × 4)` |
-| STK side 2/3 head wave | `db8010a5` | `side 40 (level × 4)` |
-| STK side 2/3 memory recall / save | `db8010a5` | `side (n + 16)` / `side (n + 32)` |
+| STK side 2/3 head position | `db8010a5` | `side 51 position` |
+| STK side 2/3 wave pattern 1–4 / stop | `db8010a6` | `side (40 + n)` / `side 35` |
+| STK side 2/3 memory recall / save | `db8010a6` | `side (n + 16)` / `side (n + 32)` |
 
 STK uses numeric side bytes `01`, `02`, `03`; side 1 uses the ordinary
 characteristic route. The `db8010a6` no-data route and R650 body-tilt preset
 payloads remain distinct. Their exact builders are `hold_control()`,
-`_write_stk_axis()` and `_write_preset_mode()` in the controller; no generic
+`_write_stk_command()` and `_write_preset_mode()` in the controller; no generic
 preset byte is substituted for those model-specific frames.
 
 Protocol 110 uses service `db801000-f324-29c3-38d1-85c0c2e86885` and separate
@@ -281,7 +280,7 @@ frame, not complete plaintext GATT writes.
 | Stop massage | `01 48 00 00` | Massage off |
 | Light on / off | `01 5C 00 00` / `01 5D 00 00` | Discrete light commands |
 | Brightness / red / green / blue | `01 A7 10 value` / `01 A7 11 value` / `01 A7 12 value` / `01 A7 13 value` | Level 0–100; RGB channels 0–255 |
-| Rhythm / mode / timer | `01 A7 14 value` / `01 A7 15 value` / `01 A7 16 value` | Boolean 0/1; mode 0–4; raw timer 0–255 |
+| Rhythm / mode / timer | `01 A7 14 value` / `01 A7 15 value` / `01 A7 16 value` | Boolean 0/1; mode 0–4; timer in minutes (the app's buttons send 10, 15, 20, 25 or 30) |
 | Comfort/alarm prefix | `01 A7 17 01` | Followed by supported fields in source order |
 | State request | `01 A7 20 type` | Types and order below |
 | Active status sync | `01 A8 00 00` / `01 A9 00 00` | Separate requests |
@@ -483,8 +482,8 @@ alone does not run physical-disconnect cleanup.
 ## Home Assistant actions and automation
 
 `reverie_set_comfort` accepts typed position, massage, mode, and raw timer-byte
-fields. Pairlink's massage timer number sends that byte and does not claim a
-minute conversion. Every selected physical target validates the request before any target
+fields. Pairlink's massage timer offers the app's 10, 15, 20, 25 and 30 minute
+buttons. Every selected physical target validates the request before any target
 writes. Protocol 110 Composer requests require its five accepted values.
 Protocol 108 applies changed values after notification feedback. Pairlink
 ordinary requests send only changed values. Its alarm route starts alarm mode
@@ -520,7 +519,7 @@ See [Actions and Automations](../SERVICES.md) for action schemas and examples.
 | --- | --- |
 | 0–1 | Header |
 | 2 / 3 | Head / foot position (0–100%) |
-| 4 / 5 | Head / foot raw massage feedback |
+| 4 / 5 | Head / foot massage level (0–10) |
 | 6–8 | Unknown; no additional state inferred |
 
 ### Protocol 108 feedback and Composer timing

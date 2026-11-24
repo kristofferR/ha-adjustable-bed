@@ -444,7 +444,8 @@ class OkimikiController(GoodVibeController):
                 DURATION,
                 0,
                 900,
-                1,
+                # The app's slider has fifteen one-minute steps.
+                60,
                 duration,
                 "s",
                 card=CardPlacement(CardSection.LIGHTING),

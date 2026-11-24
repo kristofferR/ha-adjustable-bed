@@ -70,15 +70,6 @@ _COMPONENT_LABELS: Final = {
 _RESULT_LABELS: Final = {
     "0": "Error", "1": "Pass", "2": "Control box error", "3": "Device is not plugged in",
 }
-_NORMAL_SETTINGS: Final = {
-    "pressure": (1, {"off": 0, "low": 1, "medium": 2, "high": 3}),
-    "heat_level": (2, {"off": 0, "low": 1, "medium": 2, "high": 3}),
-    "heat_duration": (3, {"off": 0, "2_hours": 1, "4_hours": 2, "6_hours": 3, "8_hours": 4}),
-    "heat_area": (4, {"off": 0, "back": 1, "legs": 2, "both": 3}),
-    "mode": (5, {"off": 0, "sleep": 1, "wake": 2, "decompress": 3, "leg": 4}),
-    "pillow_duration": (7, {"off": 0, "20_minutes": 1, "40_minutes": 2, "60_minutes": 3}),
-    "sleep_duration": (9, {"15_minutes": 1, "20_minutes": 2, "30_minutes": 3}),
-}
 
 
 
@@ -160,18 +151,6 @@ class RichmatMHAppController(RufRichmatController):
     def _features(self) -> Features | None:
         return self.model.features if self.model else None
 
-    @property
-    def normal_settings(self) -> dict[str, tuple[int, dict[str, int]]]:
-        return _NORMAL_SETTINGS
-
-    @property
-    def waist_fields(self) -> Mapping[str, Mapping[str, int]]:
-        return {
-            "heat": protocol.WAIST_HEAT,
-            "pressure": {"off": 0, **protocol.WAIST_PRESSURE},
-            "duration": {"off": 0, **protocol.WAIST_DURATION},
-        }
-
     def _angles(self) -> tuple[tuple[int, str, int, int, int], ...]:
         return RichmatMhController._angles(self)
 
@@ -203,9 +182,12 @@ class RichmatMHAppController(RufRichmatController):
         f = self._features
         if self.route != "L" or f is None or not f.snore:
             return ()
-        if not self._dev.get("snore") and not (self.app == "nisco" and self.model and self.model.model_id == "garm"):
+        # Nisco adds the page from the model's own flag; the others wait for the bed's reply.
+        if not self._dev.get("snore") and self.app != "nisco":
             return ()
-        return ("off", *(SNORE_OPTIONS[code] for code in f.snore_list if code in SNORE_OPTIONS))
+        # The page's only controls are its preset rows: none listed, nothing to choose.
+        options = tuple(SNORE_OPTIONS[code] for code in f.snore_list if code in SNORE_OPTIONS)
+        return ("off", *options) if options else ()
 
     def _smart_light_lock(self) -> bool:
         return self.app == "mlily_supreme" and bool(self.model and self.model.model_id.removesuffix("_mattress") == "cfrm") and self._light_page() is not None

@@ -90,7 +90,7 @@ def render_maxprime() -> str:
                     f"{_hex(p.massage_timer('D1RM', 0))} / {_hex(p.massage_timer('D9RM', 0))}",
                 ),
                 (
-                    "Y6RM 15 / 30 / 45 minutes",
+                    "Y6RM 10 / 20 / 30 minutes",
                     " / ".join(_hex(p.massage_popup(value)) for value in ("15", "30", "45")),
                 ),
             ],

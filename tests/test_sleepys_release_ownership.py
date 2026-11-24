@@ -7,7 +7,6 @@ from typing import Literal, cast
 from unittest.mock import AsyncMock, patch
 
 import pytest
-from bleak.exc import BleakError
 
 from custom_components.adjustable_bed.beds.sleepys.app import SleepysEliteAppController
 from custom_components.adjustable_bed.beds.sleepys.app_routes import ROUTES
@@ -304,52 +303,12 @@ async def test_admitted_stop_consumes_release_completed_during_cancellation(
     assert not operation_context.cleanup_stop_sent
 
 
-async def test_position_recenter_invalidates_older_stop_before_admitted_release(
-    sleepys_runtime: SleepysRuntime,  # noqa: F811 - pytest fixture argument
-) -> None:
-    _hass, coordinator, _old, client = sleepys_runtime
-    controller = await _factory_controller(coordinator, client, "BOX2442")
-
-    target = controller._value_route("position_axis_0", 100).payload
-    midpoint = controller._value_route("position_axis_0", 50).payload
-    stop = controller._route("stop").payload
-    midpoint_started = asyncio.Event()
-    writes: list[bytes] = []
-
-    async def write(_characteristic, payload, *, response):
-        frame = bytes(payload)
-        writes.append(frame)
-        if frame == midpoint:
-            midpoint_started.set()
-            await asyncio.Event().wait()
-
-    client.write_gatt_char.side_effect = write
-    spec = next(
-        spec
-        for spec in controller.controller_number_specs
-        if spec.key == "sleepys_app_target_axis_0"
-    )
-    number = AdjustableBedControllerNumber(coordinator, spec)
-    with _ready_command_lane(coordinator):
-        position = asyncio.create_task(number.async_set_native_value(100))
-        await midpoint_started.wait()
-        active = coordinator._command_scheduler._active
-        assert active is not None and not active.context.cleanup_stop_sent
-
-        await coordinator.async_stop_command()
-        await position
-        await coordinator.async_stop_command()
-
-    assert writes == [target, stop, midpoint, stop, stop]
-
-
-async def test_position_midpoint_success_keeps_three_frame_sequence(
+async def test_position_commit_ends_at_stop_without_recentring(
     sleepys_runtime: SleepysRuntime,  # noqa: F811 - pytest fixture argument
 ) -> None:
     _hass, coordinator, _old, client = sleepys_runtime
     controller = await _factory_controller(coordinator, client, "BOX2442")
     target = controller._value_route("position_axis_0", 100).payload
-    midpoint = controller._value_route("position_axis_0", 50).payload
     stop = controller._route("stop").payload
     clock = _VirtualClock()
     writes: list[bytes] = []
@@ -371,117 +330,4 @@ async def test_position_midpoint_success_keeps_three_frame_sequence(
     ):
         await number.async_set_native_value(100)
 
-    assert writes == [target, stop, midpoint]
-
-
-async def test_position_midpoint_caller_cancel_settles_release(
-    sleepys_runtime: SleepysRuntime,  # noqa: F811 - pytest fixture argument
-) -> None:
-    _hass, coordinator, _old, client = sleepys_runtime
-    controller = await _factory_controller(coordinator, client, "BOX2442")
-    target = controller._value_route("position_axis_0", 100).payload
-    midpoint = controller._value_route("position_axis_0", 50).payload
-    stop = controller._route("stop").payload
-    clock = _VirtualClock()
-    midpoint_started = asyncio.Event()
-    allow_midpoint = asyncio.Event()
-    writes: list[bytes] = []
-    context: CommandContext | None = None
-
-    async def write(_characteristic, payload, *, response):
-        nonlocal context
-        frame = bytes(payload)
-        writes.append(frame)
-        if frame == target:
-            context = current_command_context()
-        if frame == midpoint:
-            midpoint_started.set()
-            await allow_midpoint.wait()
-
-    client.write_gatt_char.side_effect = write
-    spec = next(
-        spec
-        for spec in controller.controller_number_specs
-        if spec.key == "sleepys_app_target_axis_0"
-    )
-    number = AdjustableBedControllerNumber(coordinator, spec)
-    with (
-        _ready_command_lane(coordinator),
-        patch.object(controller, "_monotonic", clock.monotonic),
-        patch.object(controller, "_sleep", clock.sleep),
-    ):
-        position = asyncio.create_task(number.async_set_native_value(100))
-        await midpoint_started.wait()
-        assert context is not None and not context.cleanup_stop_sent
-        position.cancel()
-        with pytest.raises(asyncio.CancelledError):
-            await position
-        assert context.cleanup_stop_sent
-
-        # A new idle STOP is a separate operation and must still reach the bed.
-        await coordinator.async_stop_command()
-
-    assert writes == [target, stop, midpoint, stop, stop]
-
-
-@pytest.mark.parametrize("cleanup_mode", ["success", "failure", "skipped"])
-async def test_position_midpoint_failure_preserves_error_and_retries_release(
-    sleepys_runtime: SleepysRuntime,  # noqa: F811 - pytest fixture argument
-    cleanup_mode: Literal["success", "failure", "skipped"],
-) -> None:
-    _hass, coordinator, _old, client = sleepys_runtime
-    controller = await _factory_controller(coordinator, client, "BOX2442")
-    target = controller._value_route("position_axis_0", 100).payload
-    midpoint = controller._value_route("position_axis_0", 50).payload
-    stop = controller._route("stop").payload
-    midpoint_started = asyncio.Event()
-    fail_midpoint = asyncio.Event()
-    stop_attempts = 0
-    writes: list[bytes] = []
-    context: CommandContext | None = None
-
-    async def write(_characteristic, payload, *, response):
-        nonlocal context, stop_attempts
-        frame = bytes(payload)
-        writes.append(frame)
-        if frame == target:
-            context = current_command_context()
-        elif frame == midpoint:
-            midpoint_started.set()
-            await fail_midpoint.wait()
-            if cleanup_mode == "skipped":
-                client.is_connected = False
-            raise BleakError("midpoint write failed")
-        elif frame == stop:
-            stop_attempts += 1
-            if cleanup_mode == "failure" and stop_attempts == 2:
-                raise BleakError("cleanup write failed")
-
-    client.write_gatt_char.side_effect = write
-    spec = next(
-        spec
-        for spec in controller.controller_number_specs
-        if spec.key == "sleepys_app_target_axis_0"
-    )
-    number = AdjustableBedControllerNumber(coordinator, spec)
-    with _ready_command_lane(coordinator):
-        position = asyncio.create_task(number.async_set_native_value(100))
-        await midpoint_started.wait()
-        fail_midpoint.set()
-        with pytest.raises(BleakError, match="midpoint write failed"):
-            await position
-
-        assert context is not None
-        assert context.cleanup_stop_sent is (cleanup_mode == "success")
-        if cleanup_mode == "skipped":
-            assert writes == [target, stop, midpoint]
-            client.is_connected = True
-        # A later independent STOP retries failed cleanup and is never hidden by
-        # the operation's earlier successful target-release acknowledgement.
-        await coordinator.async_stop_command()
-
-    expected = [target, stop, midpoint]
-    if cleanup_mode != "skipped":
-        expected.append(stop)
-    expected.append(stop)
-    assert writes == expected
+    assert writes == [target, stop]

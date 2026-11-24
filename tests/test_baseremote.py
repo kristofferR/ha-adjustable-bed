@@ -249,7 +249,9 @@ def test_translated_rejections_for_excluded_layouts_and_bad_controls():
 
 
 async def test_partial_settings_publish_only_the_delivered_step():
-    from custom_components.adjustable_bed.beds.baseremote.controller import AROMA_ON_TIME
+    from custom_components.adjustable_bed.beds.baseremote.controller import (
+        AROMA_ON_TIME,
+    )
     from custom_components.adjustable_bed.command_scheduler import (
         _CURRENT_COMMAND_CONTEXT,
         CommandContext,
@@ -497,7 +499,7 @@ async def test_configuration_only_receiver_rejects_a_previously_created_timer():
     assert not ctrl.supports_massage_timer
     assert not ctrl.supports_lights
     with raises_key("baseremote_control"):
-        await ctrl.set_massage_timer(15)
+        await ctrl.set_massage_timer(10)
     assert packets(coordinator) == []
 
 
@@ -630,14 +632,15 @@ async def test_massage_timer_is_the_shared_select_with_a_real_off(layout):
 
     ctrl, coordinator = controller(layout)
     assert ctrl.supports_massage_timer and ctrl.auto_enable_massage
-    assert ctrl.massage_timer_options == [15, 30, 45] and ctrl.massage_timer_can_turn_off
+    assert ctrl.massage_timer_options == [10, 20, 30] and ctrl.massage_timer_can_turn_off
     assert ctrl.controller_select_specs == ()
-    for minutes, progress in ((0, 0), (15, 2), (30, 3), (45, 5)):
+    # The slider's four stops, which the app labels 0, 2H, 3H and 5H.
+    for minutes, progress in ((0, 0), (10, 2), (20, 3), (30, 5)):
         coordinator.client.write_gatt_char.reset_mock()
         await ctrl.set_massage_timer(minutes)
         assert packets(coordinator) == [massage_timer(layout, progress).hex()]
     with raises_key("baseremote_control"):
-        await ctrl.set_massage_timer(10)
+        await ctrl.set_massage_timer(15)
 
 
 def test_aroma_times_are_settings_that_start_disabled():

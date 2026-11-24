@@ -2386,13 +2386,16 @@ def mh_app_scenarios() -> list[Scenario]:
         ))
         if app == "mlily_supreme":
             for name, variant, query, fixture_id in (
-                ("normal", "garm_mattress", "5e1a000179", "p3-parse-init-1"),
-                ("waist", "garm", "5e1b00017a", "p3-parse-waist-init"),
+                # Each mattress side takes writes only after its own startup reply.
+                ("normal", "garm_mattress", "5e1a000179", ("p3-parse-init-1", "p3-parse-init-2")),
+                ("waist", "garm", "5e1b00017a", ("p3-parse-waist-init",)),
             ):
                 routes.append(Scenario(
                     id=f"{bed_type}:{name}", bed_type=bed_type,
                     protocol_variant=f"model_{variant}", layout_id=bed_type,
-                    replies={**common, f"write:{query}": bytes(inputs[fixture_id]).hex()},
+                    replies={**common, f"write:{query}": ",".join(
+                        bytes(inputs[fixture]).hex() for fixture in fixture_id
+                    )},
                 ))
     return routes
 

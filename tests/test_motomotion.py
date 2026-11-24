@@ -948,3 +948,9 @@ async def test_restore_rejects_invalid_working_targets(coordinator, targets):
     with pytest.raises(ValueError, match="Recall or fine tune"):
         await c.action("motomotion_posture_save")
     assert written(coordinator) == []
+
+
+def test_height_is_bounded_to_the_app_pickers(coordinator):
+    c = controller(coordinator, "SOFA000001A000H")
+    height = next(s for s in c.controller_number_specs if s.key == "motomotion_height")
+    assert (height.native_min_value, height.native_max_value) == (122, 271)

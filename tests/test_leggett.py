@@ -1250,6 +1250,36 @@ class TestLeggettGen2RgbLights:
             LEGGETT_GEN2_WRITE_CHAR_UUID, expected, response=True
         )
 
+    async def test_set_light_color_keeps_reported_brightness(
+        self,
+        hass: HomeAssistant,
+        mock_leggett_gen2_config_entry,
+        mock_coordinator_connected,
+        mock_bleak_client: MagicMock,
+    ):
+        """A new colour carries the brightness the bed last reported, as in the app."""
+        coordinator = AdjustableBedCoordinator(hass, mock_leggett_gen2_config_entry)
+        await coordinator.async_connect()
+        controller = coordinator.controller
+
+        # On, red, dimmed to 0x40.
+        controller._handle_state_notification(
+            None, bytearray([0x6E, 0x20, 0x00, 0x04, 0x01, 0x03, 0x01, 0xFF, 0x00, 0x00, 0x40])
+        )
+        await controller.set_light_color((0, 255, 0))
+        mock_bleak_client.write_gatt_char.assert_called_with(
+            LEGGETT_GEN2_WRITE_CHAR_UUID, b"RGBSET 0:00FF0040", response=True
+        )
+
+        # Off: the app's picker starts again from full brightness.
+        controller._handle_state_notification(
+            None, bytearray([0x6E, 0x20, 0x00, 0x04, 0x01, 0x03, 0x04, 0x00, 0x00, 0x00, 0x00])
+        )
+        await controller.set_light_color((0, 0, 255))
+        mock_bleak_client.write_gatt_char.assert_called_with(
+            LEGGETT_GEN2_WRITE_CHAR_UUID, b"RGBSET 0:0000FFFF", response=True
+        )
+
     async def test_set_light_color_red(
         self,
         hass: HomeAssistant,

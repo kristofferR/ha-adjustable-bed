@@ -56,6 +56,7 @@ from custom_components.adjustable_bed.number import (
 )
 from custom_components.adjustable_bed.select import (
     MASSAGE_TIMER_DESCRIPTION,
+    AdjustableBedControllerSelect,
     AdjustableBedMassageTimerSelect,
 )
 from custom_components.adjustable_bed.sensor import _sensor_entities_for
@@ -603,14 +604,11 @@ async def test_native_button_cover_number_and_select_use_bounded_paths(
         with patch.object(cover, "async_write_ha_state"):
             await clock.run_until(asyncio.create_task(cover.async_open_cover()))
 
-        number_spec = next(
-            spec
-            for spec in controller.controller_number_specs
-            if spec.key == "sleepys_app_color_code"
-        )
-        number = AdjustableBedControllerNumber(coordinator, number_spec)
+        (color_spec,) = controller.controller_select_specs
+        color = AdjustableBedControllerSelect(coordinator, color_spec)
         controller._app_fields["field_0x53"] = 1
-        await clock.run_until(asyncio.create_task(number.async_set_native_value(5)))
+        # The fifth swatch, green, is color code 5.
+        await clock.run_until(asyncio.create_task(color.async_select_option("green")))
 
         select = AdjustableBedMassageTimerSelect(
             coordinator, MASSAGE_TIMER_DESCRIPTION, [10, 20, 30], has_off=False

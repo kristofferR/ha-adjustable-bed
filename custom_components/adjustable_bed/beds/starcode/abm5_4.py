@@ -471,7 +471,7 @@ class StarcodeAbm5_4Controller(ProfileExecution[OkinNFrameProfile | None], BedCo
                 "starcode_abm5_4_light_level",
                 "starcode_abm5_4_light_level",
                 LIGHT_LEVEL,
-                1,
+                0,
                 6,
                 1,
                 _brightness,
@@ -788,9 +788,16 @@ class StarcodeAbm5_4Controller(ProfileExecution[OkinNFrameProfile | None], BedCo
             and not value.is_integer()
         ):
             raise ValueError("Choose a whole-number brightness")
-        if not 1 <= value <= 6:
-            raise ValueError("Choose a brightness from 1 to 6")
+        if not 0 <= value <= 6:
+            raise ValueError("Choose a brightness from 0 to 6")
         if not self._accept_light_action():
+            return
+        if value == 0:
+            # The app's slider turns the light off at zero.
+            self._level = 0
+            self._publish()
+            with self.sent_state(*self._assumed_light(False)):
+                await self._once("turnoffUnderbedLighting")
             return
         self._level = int(value)
         self._publish()

@@ -53,6 +53,7 @@ from ..entity_specs import (
     ControllerHoldSpec,
     ControllerMotorHoldSpec,
     ControllerNumberSpec,
+    ControllerSelectSpec,
     ControllerStateSensorSpec,
     ControllerSwitchSpec,
     MotorControlSpec,
@@ -163,7 +164,9 @@ def _same_uuid(left: str, right: str) -> bool:
     return _normalize_uuid(left) == _normalize_uuid(right)
 
 
-COLOR_CODE: Final = StateKey[int | None]("sleepys_app_color_code")
+# The app's seven swatches, in the order of their codes 1 to 7.
+LIGHT_COLORS: Final = ("white", "red", "orange", "yellow", "green", "blue", "purple")
+LIGHT_COLOR: Final = StateKey[str | None]("sleepys_app_light_color")
 MASSAGE_INTENSITY: Final = massage_intensity("all")
 
 
@@ -994,21 +997,24 @@ class SleepysEliteAppController(BedController):
                     card=CARD_LIGHT_LEVEL,
                 )
             )
-            specs.append(
-                ControllerNumberSpec(
-                    key="sleepys_app_color_code",
-                    translation_key="sleepys_app_color_code",
-                    state_key=COLOR_CODE,
-                    native_min_value=1,
-                    native_max_value=7,
-                    native_step=1,
-                    set_fn=lambda ctrl, value: cast(
-                        SleepysEliteAppController, ctrl
-                    ).set_light_color_code(int(value)),
-                    card=CARD_LIGHTING,
-                )
-            )
         return tuple(specs)
+
+    @property
+    def controller_select_specs(self) -> tuple[ControllerSelectSpec, ...]:
+        if not self.supports_lights:
+            return ()
+        return (
+            ControllerSelectSpec(
+                key="sleepys_app_light_color",
+                translation_key="sleepys_app_light_color",
+                state_key=LIGHT_COLOR,
+                options=LIGHT_COLORS,
+                select_fn=lambda ctrl, color: cast(
+                    SleepysEliteAppController, ctrl
+                ).set_light_color_code(LIGHT_COLORS.index(color) + 1),
+                card=CARD_LIGHTING,
+            ),
+        )
 
     @property
     def controller_button_specs(self) -> tuple[ControllerButtonSpec, ...]:
@@ -1240,8 +1246,10 @@ class SleepysEliteAppController(BedController):
             await self.follow_autonomous_move()
             return
 
+        # The app's drag-end callback sends STOP and then recentres its slider at
+        # 50 through this same handler, which drops a change within 500 ms of
+        # the last one it accepted. A single commit therefore ends at STOP.
         context = current_command_context()
-        release_sent = False
         failed = False
         try:
             await self._send_position_value(axis, target)
@@ -1250,27 +1258,11 @@ class SleepysEliteAppController(BedController):
             raise
         finally:
             try:
-                release_sent = await self._send_with_cleanup("stop", acknowledge_context=context)
+                await self._send_with_cleanup("stop", acknowledge_context=context)
             except Exception:
                 if not failed:
                     raise
                 _LOGGER.debug("Sleepy's position STOP cleanup failed", exc_info=True)
-        # The seven position36 selectors end their finite HA commit with STOP,
-        # then issue the source's separately guarded midpoint target as another
-        # value write. HA has no separate drag-end callback, so the commit is
-        # treated as a complete value interaction. The STOP does not imply that
-        # midpoint50 is harmless or that it is a STOP frame.
-        if release_sent:
-            try:
-                await self._send_position_value(axis, 50)
-            except BaseException:
-                # The preceding STOP cannot release this later movement attempt.
-                # Settle a fresh release on the same serialized operation.
-                try:
-                    await self._send_with_cleanup("stop", acknowledge_context=context)
-                except BaseException:
-                    _LOGGER.debug("Sleepy's midpoint STOP cleanup failed", exc_info=True)
-                raise
 
     async def _send_position_value(self, axis: int, target: int) -> None:
         route = self._value_route(f"position_axis_{axis}", float(target))
@@ -1303,7 +1295,7 @@ class SleepysEliteAppController(BedController):
             raise ValueError("Sleepy's light palette requires enabled under-bed lighting")
         await self._send_dynamic(route.builder, route.logical_values)
         self._light_color_code = code
-        self.forward_controller_state_updates(COLOR_CODE(code))
+        self.forward_controller_state_updates(LIGHT_COLOR(LIGHT_COLORS[code - 1]))
 
     async def set_massage_timer_code(self, code: int) -> None:
         route = self._value_route("massage_timer_code", float(code))

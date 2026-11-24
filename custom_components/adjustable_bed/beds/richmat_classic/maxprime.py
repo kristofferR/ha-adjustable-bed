@@ -14,7 +14,7 @@ from bleak.exc import BleakError
 from homeassistant.util import dt as dt_util
 
 from ...alarm import AlarmCapability, AlarmRequest
-from ...card import CARD_HIDDEN, CARD_MASSAGE, CARD_UTILITY
+from ...card import CARD_CONTROLLED_SIDE, CARD_HIDDEN, CARD_MASSAGE, CARD_UTILITY, CardPlacement
 from ...codec import richmat as codec
 from ...command_scheduler import (
     CommandContext,
@@ -56,7 +56,6 @@ MODE: Final = StateKey[str | None]("maxprime_mode")
 PRESS: Final = StateKey[str | None]("maxprime_press")
 AXIS: Final = StateKey[str | None]("maxprime_axis")
 LAMP_SECONDS: Final = StateKey[int | None]("maxprime_lamp_seconds")
-MASSAGE_POSITION: Final = StateKey[int | None]("maxprime_massage_position")
 SYNCHRONIZED: Final = StateKey[bool | None]("maxprime_synchronized")
 MASSAGE_ON: Final = StateKey[bool | None]("maxprime_massage_on")
 ALARM_ENABLED: Final = StateKey[bool | None]("maxprime_alarm_enabled")
@@ -160,7 +159,6 @@ class MaxprimeController(SessionController):
             LAMP_SECONDS(None),
             SYNCHRONIZED(None),
             MASSAGE_ON(None),
-            MASSAGE_POSITION(None),
             MASSAGE_TIMER_MINUTES(None),
             UNDER_BED_LIGHTS_ON(None),
             UNDER_BED_LIGHTS_RGB(None),
@@ -389,8 +387,15 @@ class MaxprimeController(SessionController):
     def controller_select_specs(self) -> tuple[ControllerSelectSpec, ...]:
         specs = []
         if len(self._model.modes) > 1 and self._resolved_wire == "FRAMED":
+            # The app labels a two-mode layout's tabs Left and Right.
+            sides = len(self._model.modes) == 2
             specs.append(
-                self._local_select("richmat_classic_mode", MODE, tuple(map(str, self._model.modes)))
+                self._local_select(
+                    "maxprime_side" if sides else "richmat_classic_mode",
+                    MODE,
+                    tuple(map(str, self._model.modes)),
+                    card=CARD_CONTROLLED_SIDE if sides else CARD_UTILITY,
+                )
             )
         if any(button.hold_affected for button in self._controls):
             specs.append(self._local_select("richmat_classic_hold", PRESS, ("release", "hold")))
@@ -399,7 +404,12 @@ class MaxprimeController(SessionController):
         return tuple(specs)
 
     def _local_select(
-        self, translation: str, state: StateKey[str | None], options: tuple[str, ...]
+        self,
+        translation: str,
+        state: StateKey[str | None],
+        options: tuple[str, ...],
+        *,
+        card: CardPlacement = CARD_UTILITY,
     ) -> ControllerSelectSpec:
         def choose(value: str) -> None:
             if value not in options or state is MODE and self._resolved_wire != "FRAMED":
@@ -418,7 +428,7 @@ class MaxprimeController(SessionController):
             choose(value)
 
         return ControllerSelectSpec(
-            state, translation, state, options, selected, local_select_fn=choose
+            state, translation, state, options, selected, local_select_fn=choose, card=card
         )
 
     def _switch_gestures(self) -> dict[str, tuple[str, str]]:
@@ -694,29 +704,40 @@ class MaxprimeController(SessionController):
             await self._frames((codec.rgb(*rgb_color),), p.SETTINGS_SPACING_MS)
 
     @property
+    def _slider(self) -> bool:
+        """D1RM and D9RM have the massage slider instead of the timer popup."""
+        return self.layout in ("D1RM", "D9RM")
+
+    @property
     def supports_massage_timer(self) -> bool:
-        return self.layout == "Y6RM"
+        return self.layout == "Y6RM" or self._slider
 
     @property
     def massage_timer_can_turn_off(self) -> bool:
-        return False
+        return self._slider
 
     @property
     def massage_timer_options(self) -> list[int]:
-        return [15, 30, 45] if self.supports_massage_timer else []
+        if self._slider:
+            return [minutes for minutes in p.SLIDER_MINUTES if minutes]
+        return list(p.POPUP_MINUTES) if self.supports_massage_timer else []
 
     @property
     def auto_enable_massage(self) -> bool:
         return self.supports_massage_timer
 
     async def set_massage_timer(self, minutes: int) -> None:
-        if minutes not in self.massage_timer_options:
+        if self._slider and minutes in p.SLIDER_MINUTES:
+            frame = p.massage_timer(self.layout, p.SLIDER_MINUTES[minutes])
+        elif not self._slider and minutes in self.massage_timer_options:
+            frame = p.massage_popup(p.POPUP_MINUTES[minutes])
+        else:
             raise invalid("maxprime_control")
         with self.sent_state(MASSAGE_TIMER_MINUTES(minutes)):
-            await self._frames((p.massage_popup(str(minutes)),))
+            await self._frames((frame,))
 
     async def _toggle_massage_timer(self) -> None:
-        if not self.supports_massage_timer:
+        if self.layout != "Y6RM":
             raise invalid("maxprime_control")
         with self.sent_state(MASSAGE_TIMER_MINUTES(None)):
             await self._frames((p.massage_popup("toggle"),))
@@ -739,27 +760,6 @@ class MaxprimeController(SessionController):
                     1,
                     lamp,
                     "s",
-                )
-            )
-        if self.layout in ("D1RM", "D9RM"):
-
-            async def timer(controller: BedController, value: float) -> None:
-                current = require_controller(controller, MaxprimeController)
-                if not 0 <= value <= 5 or int(value) != value:
-                    raise invalid("maxprime_control")
-                with current.sent_state(MASSAGE_POSITION(int(value))):
-                    await current._frames((p.massage_timer(current.layout, int(value)),))
-
-            specs.append(
-                ControllerNumberSpec(
-                    MASSAGE_POSITION,
-                    MASSAGE_POSITION,
-                    MASSAGE_POSITION,
-                    0,
-                    5,
-                    1,
-                    timer,
-                    card=CARD_MASSAGE,
                 )
             )
         return tuple(specs)

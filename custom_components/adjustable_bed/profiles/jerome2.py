@@ -587,4 +587,3 @@ COMBINATIONS: Final = {
     0x2F: (0xA6, 0xA7, 0xA8),
     0x30: (0xA9, 0xAA, 0xAB),
 }
-TIMER_PROGRESS: Final = {"off": 0, "10_minutes": 2, "20_minutes": 3, "30_minutes": 5}

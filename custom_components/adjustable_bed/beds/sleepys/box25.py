@@ -278,6 +278,11 @@ class SleepysBox25Controller(BedController):
         return [10, 20, 30]
 
     @property
+    def massage_timer_can_turn_off(self) -> bool:
+        # The app's timer is three duration buttons; Massage off is separate.
+        return False
+
+    @property
     def supports_light_level_control(self) -> bool:
         return True
 
@@ -702,8 +707,12 @@ class SleepysBox25Controller(BedController):
             await self._write_massage_light_command(star.extended(0x02, red, green, blue))
 
     async def set_light_level(self, level: int) -> None:
-        """Set the exact OEM 0-6 under-bed light brightness value."""
+        """Set the app's 1-6 brightness; its slider turns the light off at zero."""
         normalized = max(0, min(self.light_level_max, int(level)))
+        if normalized == 0:
+            with self._sent_step(LIGHT_LEVEL(0), UNDER_BED_LIGHTS_ON(False), level=0):
+                await self._write_massage_light_command(Box25Commands.LIGHT_OFF)
+            return
         with self._sent_step(
             LIGHT_LEVEL(normalized), UNDER_BED_LIGHTS_ON(normalized > 0), level=normalized
         ):
@@ -762,7 +771,7 @@ class SleepysBox25Controller(BedController):
         self.forward_controller_state_update(massage_intensity("all"), normalized)
 
     async def set_massage_timer(self, minutes: int) -> None:
-        """Select the OEM massage timer (10/20/30 minutes), or turn it off."""
+        """Select the OEM massage timer (10/20/30 minutes)."""
         if minutes == 0:
             await self.massage_off()
             return

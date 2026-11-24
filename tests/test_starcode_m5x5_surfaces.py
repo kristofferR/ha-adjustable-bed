@@ -171,10 +171,10 @@ async def test_controls_state_and_readonly_domains(hass: HomeAssistant) -> None:
     assert any(n.entity_description.translation_key == "starcode_brightness" for n in numbers)
     selects = _select_entities_for(hass, c)
     color = next(s for s in selects if s.entity_description.translation_key == "starcode_color")
-    # The app's light enum names every index: 0 is off, 1 white, 7 purple.
+    # The app's seven swatches send 1 (white) to 7 (purple); light power is separate.
     states = _entity_strings()["select"]["starcode_color"]["state"]
-    assert list(states) == color.options
-    assert (states["0"], states["1"], states["7"]) == ("Off", "White", "Purple")
+    assert list(states) == color.options == [str(i) for i in range(1, 8)]
+    assert (states["1"], states["7"]) == ("White", "Purple")
     sensors = _sensor_entities_for(hass, c)
     sensor_keys = {s.translation_key for s in sensors}
     assert {
