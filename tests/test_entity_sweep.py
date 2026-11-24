@@ -598,6 +598,46 @@ async def test_rows_a_controller_still_expects_are_kept(hass: HomeAssistant) -> 
     assert not _exists(hass, other_domain)
 
 
+async def test_enso2_keeps_custom_light_timer_until_capability_returns(hass: HomeAssistant) -> None:
+    from custom_components.adjustable_bed.beds.enso2.controller import Enso2Controller
+    from custom_components.adjustable_bed.beds.enso2.receive import LIGHT_ON
+    from custom_components.adjustable_bed.number import AdjustableBedControllerNumber
+    from custom_components.adjustable_bed.profiles.enso2 import LAYOUTS
+
+    entry = _entry(hass, bed_type="enso2", protocol_variant="6BRM", ble_device_name="6BRM")
+    coordinator = AdjustableBedCoordinator(hass, entry)
+    controller = Enso2Controller(coordinator, LAYOUTS["6BRM"], "6BRM")
+    coordinator._controller = controller
+    controller._received(LIGHT_ON)
+    created = await async_setup_platforms_and_sweep(hass, entry, coordinator, (Platform.NUMBER,))
+    timer = next(entity for entity in created if isinstance(entity, AdjustableBedControllerNumber))
+    assert timer.available
+    registry = er.async_get(hass)
+    row = registry.async_update_entity(
+        _row(hass, entry, "number", timer.entity_description.key).entity_id,
+        new_entity_id="number.bedroom_light_timeout",
+        name="Bedroom light timeout",
+    )
+
+    # A rebuilt controller has not received the LED capability on this session.
+    reloaded = Enso2Controller(coordinator, LAYOUTS["6BRM"], "6BRM")
+    coordinator._controller = reloaded
+    coordinator.cache_capability_controller()
+    missing = await async_setup_platforms_and_sweep(hass, entry, coordinator, (Platform.NUMBER,))
+    assert timer.unique_id not in {entity.unique_id for entity in missing}
+    assert registry.async_get(row.entity_id) == row
+    assert not timer.available
+
+    reloaded._received(LIGHT_ON)
+    restored = await async_setup_platforms_and_sweep(hass, entry, coordinator, (Platform.NUMBER,))
+    replacement = next(
+        entity for entity in restored if isinstance(entity, AdjustableBedControllerNumber)
+    )
+    assert replacement.unique_id == timer.unique_id
+    assert replacement.available
+    assert registry.async_get(row.entity_id) == row
+
+
 async def test_motion_bed_hub_expects_every_module_control(hass: HomeAssistant) -> None:
     """Replaces the button helper's hub allowance: modules report after connecting."""
     from custom_components.adjustable_bed.beds.motion_bed.controller import MotionBedController

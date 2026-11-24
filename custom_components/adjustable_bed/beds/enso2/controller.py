@@ -46,6 +46,7 @@ if TYPE_CHECKING:
 
 _MODE: Final = StateKey[str | None]("enso2_mode")
 _LIGHT_TIMER: Final = StateKey[int | None]("enso2_light_timer")
+_LIGHT_TIMER_ENTITY_KEY: Final = f"controller_number_{_LIGHT_TIMER}"
 _MASSAGE_TIMER: Final = StateKey[int | None]("enso2_massage_timer")
 _ALARM_STATUS: Final = StateKey[str | None]("enso2_alarm_status")
 _AROMA_STATUS: Final = StateKey[str | None]("enso2_aroma_status")
@@ -775,11 +776,11 @@ class Enso2Controller(BedController):
 
     @property
     def retained_entity_keys(self) -> frozenset[tuple[str, str]]:
-        return frozenset({("number", _LIGHT_TIMER), ("binary_sensor", "enso2_light_on")})
+        return frozenset({("number", _LIGHT_TIMER_ENTITY_KEY), ("binary_sensor", "enso2_light_on")})
 
     @property
     def unavailable_controller_entity_keys(self) -> tuple[str, ...]:
-        return () if self._light_present else (_LIGHT_TIMER,)
+        return () if self._light_present else (_LIGHT_TIMER_ENTITY_KEY,)
 
     @property
     def controller_state_binary_sensor_specs(self) -> tuple[ControllerStateBinarySensorSpec, ...]:
