@@ -4129,7 +4129,7 @@ dreamsense_light:
       selector:
         number:
           min: 0
-          max: 300
+          max: 28800
           mode: box
 
 

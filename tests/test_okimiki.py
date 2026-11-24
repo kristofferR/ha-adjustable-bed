@@ -217,6 +217,13 @@ def test_capability_gates_and_alarm_ack_never_music(obj, coordinator, code):
     )
     obj._notification(obj._link, obj._link.rx, bytearray.fromhex("6e0e00037f"))
     assert obj.supports_lights and obj.controller_number_specs
+    # The app's slider: 0 to 900 seconds in fifteen steps.
+    duration = obj.controller_number_specs[0]
+    assert (duration.native_min_value, duration.native_max_value, duration.native_step) == (
+        0,
+        900,
+        60,
+    )
     obj._notification(obj._link, obj._link.rx, bytearray.fromhex("6e09010078"))
     assert obj.menu_available("alarm") == (PRODUCTS[code].alarm != "none")
     for frame, event in (

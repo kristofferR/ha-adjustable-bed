@@ -10857,7 +10857,7 @@
         },
         "seconds": {
           "name": "Duration",
-          "description": "0 keeps the light on; otherwise 1–300 seconds."
+          "description": "A stop of the app's slider: 0 (keeps the light on) to 900 seconds in steps of 60, or on the Blue product 1800 to 28800 seconds in steps of 2700."
         }
       }
     },

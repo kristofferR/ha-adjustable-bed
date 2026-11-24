@@ -1776,8 +1776,9 @@ observed list before replies; deletion removes the first selected full bean.
 Single-alarm countdowns subtract epoch seconds across DST changes and retain the
 86400-second fallback when the target is not later.
 
-Light timeout is 0 to 900 seconds (0 means always on), except blue, which offers
-1800 to 28800 seconds. Color sends one 10-byte GATT write containing both
+Light timeout is 0 to 900 seconds in 60-second steps (0 means always on), except
+blue, which offers 1800 to 28800 seconds in 2700-second steps. These are the
+stops of the app's slider. Color sends one 10-byte GATT write containing both
 checksummed RGB pieces. No brightness or extra lighting command is invented.
 
 The current 19 profiles have all advanced music/alarm/repeat/light-page flags
