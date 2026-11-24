@@ -31,6 +31,7 @@ from custom_components.adjustable_bed.const import (
 )
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
 from custom_components.adjustable_bed.sensor import _sensor_entities_for
+from custom_components.adjustable_bed.services import _position_config
 from tests.error_helpers import raises_key
 
 # Remote codes are plain strings now that the table is generated from the
@@ -827,6 +828,8 @@ class TestOkinUuidPositionNotifications:
             notify.args[0] for notify in mock_bleak_client.start_notify.call_args_list
         ]
         assert not _sensor_entities_for(hass, coordinator)
+        with raises_key("position_feedback_not_supported", ServiceValidationError):
+            _position_config(coordinator, controller, "back", 30)
 
     async def test_read_positions_noop(
         self,

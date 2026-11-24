@@ -388,7 +388,10 @@ class OkinUuidController(ProfileExecution[OkinNFrameProfile], OkinNFrameControll
     def capability_snapshot(self) -> dict[str, Any] | None:
         # A receiver with the characteristic is the default, so it stores
         # nothing unless an earlier connection stored otherwise.
-        if self._position_feedback and self._stored_position_feedback is None:
+        # Routes whose traits already rule out position feedback store nothing either.
+        if not self.static_traits.position_feedback or (
+            self._position_feedback and self._stored_position_feedback is None
+        ):
             return None
         return {"position_feedback": self._position_feedback}
 
