@@ -1192,6 +1192,8 @@ def _should_add_button(
         # hardware refuses.
         slot = description.memory_slot
         if slot is not None:
+            if slot in controller.memory_slots_programmed_by_presets:
+                return False
             if not controller.is_memory_slot_programmable(slot):
                 return False
         elif not controller.supports_memory_programming:

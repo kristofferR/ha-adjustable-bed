@@ -763,6 +763,46 @@
   "card_section": "connection",
   "card_role": "disconnect"
  },
+ "button:dorsal_lumbar_pillow_down": {
+  "card_section": "motors",
+  "card_role": "down",
+  "card_motor": "dorsal_lumbar_pillow"
+ },
+ "button:dorsal_lumbar_pillow_up": {
+  "card_section": "motors",
+  "card_role": "up",
+  "card_motor": "dorsal_lumbar_pillow"
+ },
+ "button:dorsal_motor_4_down": {
+  "card_section": "motors",
+  "card_role": "down",
+  "card_motor": "dorsal_motor_4"
+ },
+ "button:dorsal_motor_4_up": {
+  "card_section": "motors",
+  "card_role": "up",
+  "card_motor": "dorsal_motor_4"
+ },
+ "button:dorsal_second_pillow_down": {
+  "card_section": "motors",
+  "card_role": "down",
+  "card_motor": "dorsal_second_pillow"
+ },
+ "button:dorsal_second_pillow_up": {
+  "card_section": "motors",
+  "card_role": "up",
+  "card_motor": "dorsal_second_pillow"
+ },
+ "button:dorsal_zero_gravity_down": {
+  "card_section": "motors",
+  "card_role": "down",
+  "card_motor": "dorsal_zero_gravity"
+ },
+ "button:dorsal_zero_gravity_up": {
+  "card_section": "motors",
+  "card_role": "up",
+  "card_motor": "dorsal_zero_gravity"
+ },
  "button:elevate_actuator_1_down": {
   "card_section": "motors",
   "card_role": "down",
@@ -2853,6 +2893,22 @@
  "cover:comfy_waist": {
   "card_section": "motors",
   "card_motor": "comfy_waist"
+ },
+ "cover:dorsal_lumbar_pillow": {
+  "card_section": "motors",
+  "card_motor": "dorsal_lumbar_pillow"
+ },
+ "cover:dorsal_motor_4": {
+  "card_section": "motors",
+  "card_motor": "dorsal_motor_4"
+ },
+ "cover:dorsal_second_pillow": {
+  "card_section": "motors",
+  "card_motor": "dorsal_second_pillow"
+ },
+ "cover:dorsal_zero_gravity": {
+  "card_section": "motors",
+  "card_motor": "dorsal_zero_gravity"
  },
  "cover:elevate_actuator_1": {
   "card_section": "motors",
@@ -5026,6 +5082,9 @@
  },
  "switch:comfy_timer": {
   "card_section": "utility"
+ },
+ "switch:dorsal_massage": {
+  "card_section": "massage"
  },
  "switch:doublesleep_child_lock": {
   "card_section": "utility"

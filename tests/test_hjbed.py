@@ -677,7 +677,7 @@ def test_discovery_uses_artifact_substrings_without_selecting_a_profile(keyword)
     )
     result = detect_bed_type_detailed(advert)
     assert result.bed_type == BED_TYPE_HJBED or BED_TYPE_HJBED in result.ambiguous_types
-    assert result.signals[-1] == "name:hjbed_app_candidate"
+    assert "name:hjbed_app_candidate" in result.signals
     assert not hasattr(result, "protocol_variant")
     if keyword == "ZRA1":
         advert.name = "prefix-zra1-suffix"

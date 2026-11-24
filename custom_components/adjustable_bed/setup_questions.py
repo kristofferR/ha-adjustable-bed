@@ -2474,6 +2474,21 @@ def relax_motion_seed_input(data: Mapping[str, Any], answers: Mapping[str, Any],
     return result
 
 
+def _dorsal_routes(_data: Mapping[str, Any]) -> Mapping[str, str]:
+    from .profiles.dorsal import ROUTES
+
+    return ROUTES
+
+
+def _dorsal_errors(data: Mapping[str, Any]) -> dict[str, str]:
+    from .profiles.dorsal import code_for
+
+    route, code = data.get(CONF_PROTOCOL_VARIANT), data.get(CONF_PRODUCT_TYPE)
+    if (route == "restored" or route == "roomi" and code) and code_for(route, code) is None:
+        return {CONF_PRODUCT_TYPE: "dorsal_project_code"}
+    return {}
+
+
 def _relax_motion_seed(hass: HomeAssistant, data: Mapping[str, Any], discovered: BluetoothServiceInfoBleak | None) -> dict[str, Any]:
     from .profiles.relax_motion import advertisement, discovery_matches, route_name
     result = dict(data)
@@ -2599,6 +2614,17 @@ SETUP_PROFILES: Final[dict[str, SetupProfile]] = {
               CONF_PROTOCOL_VARIANT: "sophie"},
         questions=(Question(CONF_BLE_DEVICE_NAME, default="", text=True),),
         title=lambda _data: "Sophie",
+    ),
+    "dorsal": SetupProfile(
+        owns={CONF_MOTOR_COUNT: 2, CONF_HAS_MASSAGE: False, CONF_DISABLE_ANGLE_SENSING: True,
+              CONF_MOTOR_PULSE_DELAY_MS: 100},
+        questions=(
+            Question(CONF_PROTOCOL_VARIANT, _dorsal_routes, "cprn"),
+            Question(CONF_PRODUCT_TYPE, default="", text=True,
+                     when={"field": CONF_PROTOCOL_VARIANT, "operator": ConditionOperator.IN,
+                           "value": ["restored", "roomi"]}),
+        ),
+        validate=_dorsal_errors, imports=("profiles.dorsal",),
     ),
     "nerum": SetupProfile(
         owns={CONF_MOTOR_COUNT: SET_BY_PROFILE, CONF_HAS_MASSAGE: False,

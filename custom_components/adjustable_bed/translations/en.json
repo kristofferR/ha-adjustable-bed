@@ -885,6 +885,9 @@
       "pair_bed_missing": "One of the chosen beds is no longer set up. Choose two beds from the list.",
       "octo_tv_lift_pairing_unsupported": "A one-motor Octo TV or bed lift cannot have Left and Right controls. Keep it as a single bed.",
       "invalid_angle": "Enter an angle greater than 0 and up to 180 degrees.",
+      "dorsal_project_code": "Enter the exact saved Dorsal project code.",
+      "dorsal_receiver_unavailable": "This receiver did not expose a supported Dorsal Bluetooth writer.",
+      "dorsal_roomi_receiver": "Choose a receiver whose Bluetooth name contains QRRM for Roomi controls.",
       "relax_motion_model": "Enter the model number the Relax Motion app shows for your bed.",
       "sleep_assistant_invalid_settings": "Check the selected model settings and device identity.",
       "choice_not_listed": "Pick a row from the list. Type part of a name to search, then choose the matching row.",
@@ -1727,6 +1730,30 @@
   },
   "entity": {
     "button": {
+      "dorsal_lumbar_pillow_up": {
+        "name": "Lumbar and pillow up"
+      },
+      "dorsal_lumbar_pillow_down": {
+        "name": "Lumbar and pillow down"
+      },
+      "dorsal_second_pillow_up": {
+        "name": "Second pillow up"
+      },
+      "dorsal_second_pillow_down": {
+        "name": "Second pillow down"
+      },
+      "dorsal_motor_4_up": {
+        "name": "Motor 4 up"
+      },
+      "dorsal_motor_4_down": {
+        "name": "Motor 4 down"
+      },
+      "dorsal_zero_gravity_up": {
+        "name": "Zero gravity motor up"
+      },
+      "dorsal_zero_gravity_down": {
+        "name": "Zero gravity motor down"
+      },
       "leva_release": { "name": "Release motion control" },
       "leva_massage_head": { "name": "Cycle head massage" },
       "leva_massage_foot": { "name": "Cycle feet massage" },
@@ -3828,6 +3855,18 @@
       }
     },
     "cover": {
+      "dorsal_lumbar_pillow": {
+        "name": "Lumbar and pillow"
+      },
+      "dorsal_second_pillow": {
+        "name": "Second pillow"
+      },
+      "dorsal_motor_4": {
+        "name": "Motor 4"
+      },
+      "dorsal_zero_gravity": {
+        "name": "Zero gravity motor"
+      },
       "tv_lift": {
         "name": "TV lift"
       },
@@ -5495,6 +5534,9 @@
       }
     },
     "switch": {
+      "dorsal_massage": {
+        "name": "Massage"
+      },
       "under_bed_lights": {
         "name": "Under-bed lights"
       },
@@ -7162,6 +7204,21 @@
     }
   },
   "services": {
+    "dorsal_alarm": {
+      "name": "Manage Dorsal alarms",
+      "description": "Read, create, replace, turn on or off, or delete a Dorsal alarm.",
+      "fields": {
+        "device_id": {"name": "Bed", "description": "The Dorsal bed."},
+        "side": {"name": "Bed side", "description": "Select one side of a combined bed."},
+        "operation": {"name": "Operation", "description": "Read alarms, create or replace an alarm, turn it on or off, or delete it."},
+        "slot": {"name": "Alarm slot", "description": "Choose the slot to change. Creating or replacing may overwrite an unreported slot."},
+        "enabled": {"name": "On", "description": "Whether the existing alarm should be on."},
+        "time": {"name": "Wake time", "description": "Time for the new alarm, in whole minutes."},
+        "weekdays": {"name": "Weekdays", "description": "Days to repeat the alarm. Leave empty to run once."},
+        "wake_action": {"name": "Wake action", "description": "Choose an action supported by this Dorsal project."},
+        "confirm_custom_position": {"name": "Confirm saved position", "description": "Confirm the bed can safely move to the selected memory position."}
+      }
+    },
     "goto_preset": {
       "name": "Go to preset",
       "description": "Move bed to a saved memory position.",
@@ -11201,6 +11258,39 @@
     },
     "sealy_gatt_missing": {
       "message": "The Sealy bed control and notification characteristics were not found."
+    },
+    "dorsal_project_code": {
+      "message": "Enter the exact saved Dorsal project code."
+    },
+    "dorsal_receiver_unavailable": {
+      "message": "This receiver did not expose a supported Dorsal Bluetooth writer."
+    },
+    "dorsal_roomi_receiver": {
+      "message": "Choose a receiver whose Bluetooth name contains QRRM for Roomi controls."
+    },
+    "dorsal_control_unavailable": {
+      "message": "The selected Dorsal project does not offer this control."
+    },
+    "dorsal_hold_duration": {
+      "message": "Select a held control from this Dorsal project and a duration from 100 to 60000 milliseconds."
+    },
+    "dorsal_alarm_report_missing": {
+      "message": "The selected alarm slot or its notification channel was unavailable."
+    },
+    "dorsal_alarm_fields": {
+      "message": "Choose a slot to change, and choose on or off when toggling."
+    },
+    "dorsal_alarm_create_enabled": {
+      "message": "Omit the on setting when creating or replacing an alarm. Use Toggle to turn a stored alarm on or off."
+    },
+    "dorsal_alarm_create_fields": {
+      "message": "Choose a slot, wake time and wake action to create or replace an alarm."
+    },
+    "dorsal_alarm_choose_mode": {
+      "message": "The bed did not report an alarm in this slot. Choose a wake action to create one."
+    },
+    "dorsal_alarm_opaque": {
+      "message": "This alarm stores extra settings. Keep its wake action or choose another slot."
     },
     "relax_motion_model": {
       "message": "Enter the model number the Relax Motion app shows for your bed."

@@ -110,6 +110,7 @@ For named raise/lower/stop voice commands and Apple Home controls, see
 | [`richmat_app`](#richmat_app) | Richmat app: settings | Sets the light, alarm, heated blanket, sleep sensing and other options of a Richmat app bed. Only the options your product has can run. Read a setting first before changing it. |
 | [`richmat_mh_aroma`](#richmat_mh_aroma) | Richmat app: aroma timing | Sets the three aroma timing sliders of a Richmat app bed. |
 | [`richmat_mh_light_color`](#richmat_mh_light_color) | Richmat app: light color | Sets the color of the light, or of the button lights, on a Richmat app bed. |
+| [`dorsal_alarm`](#dorsal_alarm) | Manage Dorsal alarms | Reads, creates, replaces, toggles or deletes an alarm on a Dorsal receiver. |
 | [`majestichome`](#majestichome) | Majestic Home: settings | Read, create, edit, turn on or off, or delete the bed's alarms. Set the clock with Set bed clock. |
 | [`richmat_mh_control`](#richmat_mh_control) | Nisco and MLILY Supreme: run control | Run one of the selected app and model's controls, read one setting from the bed, or set the app mode used by later controls. |
 | [`richmat_mh_sleep_mode`](#richmat_mh_sleep_mode) | Nisco: sleep sensor mode | Set the separate sleep sensor for one or two sleepers. |
@@ -496,6 +497,7 @@ data:
 | OkinComfortBed II (Jalon) | By app version | `weekdays` |
 | OrmatekTechnoSmart | New: `massage`, `memory_1`, `flat`. Lite: `zero_g`, `tv` | Daily, one alarm |
 | Richmat app beds | From the model's alarm page | Once (the bed counts down), `slot` 1–3 on three-alarm models, `massage` with zone. `mattress_side` sets the vibrating mattress alarm, once or every day, with intensity 1–3 |
+| Dorsal saved projects with alarm modes | [From the project’s wake actions](beds/richmat.md#dorsal--roomi) | `slot` 1–7, `weekdays` or once. Turning off preserves the stored time, mode and weekdays. |
 | Richmat app calendar models | From the model's alarm list | `slot` 1–7, `weekdays`; `mattress_side` for the vibrating mattress |
 | RMControl | From the product's alarm list; required to turn an alarm on | Repeating products: `slot` 1–7 with at least one weekday. Others: once, as a countdown |
 | Shuda | `memory_1`, `flat`, `zero_g` (required to turn on) | Slots 1 and 2, optionally repeating on `weekdays`. Memory 1 needs `confirm_custom_position: true`. Turning off keeps the reported schedule |
@@ -1989,6 +1991,36 @@ stay connected to both receivers at once.
 Use automations to run `reverie_set_comfort`, `reverie_run_routine`,
 `goto_preset` and `save_preset` at set times. The app's phone alarms are not
 part of the integration.
+
+## Dorsal / Roomi
+
+Use [`hold_control`](#hold_control) for a held movement. Its control value is the
+`held_control` attribute of the button, or `held_control_open` /
+`held_control_close` on the cover. Use [`set_alarm`](#set_alarm) to edit an
+alarm the bed reported on a saved project with alarm modes. Omit the wake action to keep a
+reported slot's mode when changing its time or weekdays. The [Dorsal guide](beds/richmat.md#dorsal--roomi)
+lists the project-specific choices.
+
+### `dorsal_alarm`
+
+Choose one physical Dorsal receiver. The optional response to `list` gives
+each reported slot's time, weekdays and on/off state. The bed sends records
+individually, so an empty response can also mean that no records arrived
+during the read window. Use `create_or_replace` only for a slot you intend
+to overwrite if it already holds an alarm. The integration refuses to
+replace a reported alarm that carries extra firmware settings.
+
+| Field | Label | Meaning |
+|---|---|---|
+| `device_id` | Bed | The Dorsal bed. |
+| `side` | Bed side | Select the left or right receiver of a combined bed. |
+| `operation` | Operation | `list`, `toggle`, `delete` or `create_or_replace`. |
+| `slot` | Alarm slot | A slot from 1 to 7. Required for every operation except `list`; `toggle` and `delete` require a reported slot. |
+| `enabled` | On | Used only for `toggle`. All other stored alarm settings are preserved. |
+| `time` | Wake time | Required for `create_or_replace`, in whole minutes. |
+| `weekdays` | Weekdays | Days to repeat the new alarm. Omit them to run once. |
+| `wake_action` | Wake action | Required for `create_or_replace`. The project must support it. |
+| `confirm_custom_position` | Confirm saved position | Required if the wake action recalls a saved memory position. |
 
 ## Richmat (classic apps)
 

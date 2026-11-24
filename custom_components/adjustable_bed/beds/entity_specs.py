@@ -97,7 +97,7 @@ class ControllerSwitchSpec:
     key: str
     translation_key: str
     set_fn: Callable[[BedController, bool], Awaitable[None]]
-    state_key: StateKey[bool | None] | StateKey[str | None] | None = None
+    state_key: StateKey[bool] | StateKey[bool | None] | StateKey[str | None] | None = None
     on_value: bool | str = True
     icon: str | None = None
     # The published state echoes the last command rather than a bed readback.

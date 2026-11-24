@@ -211,6 +211,7 @@ def runtime_variants(controllers: Iterable[BedController]) -> Iterator[BedContro
     offline configuration reaches.
     """
     from custom_components.adjustable_bed.beds.baseremote.controller import BaseRemoteController
+    from custom_components.adjustable_bed.beds.dorsal.controller import DorsalController
     from custom_components.adjustable_bed.beds.dreamsense.controller import DreamSenseController
     from custom_components.adjustable_bed.beds.keeson.enso import EnsoController
     from custom_components.adjustable_bed.beds.okimiki.controller import OkimikiController
@@ -253,8 +254,8 @@ def runtime_variants(controllers: Iterable[BedController]) -> Iterator[BedContro
     from custom_components.adjustable_bed.beds.suta.controller import SutaController
     from custom_components.adjustable_bed.beds.vibradorm.app import VibradormAppController
     from custom_components.adjustable_bed.beds.vmatbasic.controller import VMatBasicController
+    from custom_components.adjustable_bed.profiles import dorsal, relax_motion
     from custom_components.adjustable_bed.profiles import ore_ultramatic as ultramatic
-    from custom_components.adjustable_bed.profiles import relax_motion
     from custom_components.adjustable_bed.profiles import vmatbasic as vmat_profiles
     from custom_components.adjustable_bed.profiles.dreamsense import PROFILES as DREAMSENSE_PROFILES
     from custom_components.adjustable_bed.profiles.enso import PROFILES as ENSO_PROFILES
@@ -269,6 +270,7 @@ def runtime_variants(controllers: Iterable[BedController]) -> Iterator[BedContro
             setattr(clone, name, value)
         return clone
 
+    dorsal_catalog_covered = False
     for controller in controllers:
         yield controller
         if isinstance(controller, SimmonsBlueController):
@@ -281,6 +283,12 @@ def runtime_variants(controllers: Iterable[BedController]) -> Iterator[BedContro
                     yield variant(controller, number=number, route=route,
                                   model=relax_motion.model(number, route),
                                   profile=relax_motion.PROFILES["p2" if number > 450 and route == "relax" else "p1"])
+        if isinstance(controller, DorsalController) and not dorsal_catalog_covered:
+            dorsal_catalog_covered = True
+            yield DorsalController(controller._coordinator, "roomi", None)
+            for code, product in dorsal.products().items():
+                if product.controls or product.alarm_modes:
+                    yield DorsalController(controller._coordinator, "restored", code)
         if isinstance(controller, DreamSenseController):
             for profile in DREAMSENSE_PROFILES.values():
                 yield variant(controller, profile=profile, _known={"clock", "light", "music"})

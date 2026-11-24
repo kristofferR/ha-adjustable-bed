@@ -54,6 +54,7 @@ from custom_components.adjustable_bed.profiles.okimiki import WIRE as OKIMIKI
 from custom_components.adjustable_bed.profiles.richmat_legacy import profiles as legacy_profiles
 from scripts.codec_docs import (
     _bedtech_classic,
+    _dorsal,
     _galaxy,
     _okimiki,
     _richmat_legacy,
@@ -1437,6 +1438,7 @@ def render_rise_commands() -> str:
 
 
 BLOCKS: list[Block] = [
+    (GUIDE, "dorsal-controls", _dorsal.render),
     (GUIDE, "maxprime", render_maxprime),
     (GUIDE, "luniosmart", render_luniosmart),
     (GUIDE, "sonicsleep", render_sonicsleep),
