@@ -197,6 +197,9 @@ _BY_BED_TYPE: Final[dict[str, SideProfile]] = {
     "instant_comfort": SideProfile("Instant Comfort", variant_owned=True),
     "personal_comfort": SideProfile("Personal Comfort", variant_owned=True),
     "mline": SideProfile("M Line protocol and layout", frozenset({CONF_BLE_DEVICE_NAME}), variant_owned=True),
+    "sinca_comfort": SideProfile(
+        "Sinca Comfort Bed", frozenset({CONF_BLE_DEVICE_NAME, CONF_MOTOR_COUNT}), variant_owned=True
+    ),
     "suta": SideProfile("SUTA Smart Home name-selected layout"),
     "luniosmart": SideProfile("Lunio Smart+", frozenset()),
     "sleep_evolution": SideProfile("SleepEvolution", frozenset({CONF_BLE_DEVICE_NAME}), variant_owned=True),

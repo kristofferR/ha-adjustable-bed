@@ -1375,6 +1375,7 @@ _DECLARED_QUESTION_ROUTES: Final = frozenset(
         "hush_base",
         "luuna",
         "mline",
+        "sinca_comfort",
         "nerum",
         "cheerssleep",
         BED_TYPE_LEGGETT_LP_LEGACY,

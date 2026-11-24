@@ -53,7 +53,7 @@ app. Every guide follows the [bed guide format](BED_GUIDE_FORMAT.md).
 | [Linx](beds/linx.md) | The Linx app | |
 | [LOGICDATA SimplicityFrame](beds/logicdata.md) | SILVERmotion / SimplicityFrame | |
 | [LOGICDATA Sleep Smart](beds/logicdata-sleep-smart.md) | The Sleep Smart air mattress pump | |
-| [M Line](beds/mline.md) | The M Line app | |
+| [M Line and Sinca Comfort Bed](beds/mline.md) | The M Line and Sinca Comfort Bed apps | Shared |
 | [Malouf / Lucid](beds/malouf.md) | The Malouf Base and Lucid Base apps and receivers | Shared |
 | [MotoMotion, MotoSleep and others](beds/motomotion.md) | MotoMotion, MotoSleep, Power Bob, Bedgear and L2 Motion | Shared |
 | [Nerum](beds/nerum.md) | The Nerum app | |

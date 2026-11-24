@@ -125,6 +125,12 @@
  "binary_sensor:rize_home_active": {
   "card_section": "massage"
  },
+ "binary_sensor:sinca_alarm_enabled": {
+  "card_section": "hidden"
+ },
+ "binary_sensor:sinca_anti_snore": {
+  "card_section": "hidden"
+ },
  "binary_sensor:sleeptracker_light_on": {
   "card_section": "lighting"
  },
@@ -1870,6 +1876,15 @@
   "card_section": "presets"
  },
  "button:simmons_refresh_alarms": {
+  "card_section": "utility"
+ },
+ "button:sinca_disable_alarm": {
+  "card_section": "utility"
+ },
+ "button:sinca_refresh_alarm": {
+  "card_section": "utility"
+ },
+ "button:sinca_refresh_settings": {
   "card_section": "utility"
  },
  "button:sleepfunction_scoped_catalog_action": {
@@ -4545,6 +4560,18 @@
  "sensor:simmons_alarm_2": {
   "card_section": "hidden"
  },
+ "sensor:sinca_alarm_time": {
+  "card_section": "hidden"
+ },
+ "sensor:sinca_anti_snore_level": {
+  "card_section": "hidden"
+ },
+ "sensor:sinca_massage_timer": {
+  "card_section": "massage"
+ },
+ "sensor:sinca_massage_wave": {
+  "card_section": "massage"
+ },
  "sensor:sleep_assistant_alarm_1": {
   "card_section": "utility"
  },
@@ -4997,6 +5024,9 @@
  },
  "switch:sealy_massage": {
   "card_section": "massage"
+ },
+ "switch:sinca_privacy": {
+  "card_section": "utility"
  },
  "switch:sleep_assistant_storage": {
   "card_section": "utility"
