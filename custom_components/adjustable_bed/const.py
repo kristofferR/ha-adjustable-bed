@@ -569,6 +569,7 @@ OKIN_BEDDING_APP_BED_TYPES: Final = frozenset(
 # A Z-Series button press holds pulse_count x 100 ms, within the 60 s hold limit.
 ZSERIES_PULSE_COUNT_RANGE: Final = (1, 600)
 BED_TYPE_SIMMONS: Final = "simmons"  # Explicit SIMMONS app profile (com.okin.simmons)
+BED_TYPE_SIMMONS_BLUE: Final = "simmons_blue"
 # Explicit Adjustable bed (Lumbar) app profile (com.okin.bedding.adjustablelumbar)
 BED_TYPE_ADJUSTAMATTRESS: Final = "adjustamattress"
 BED_TYPE_ADJUSTABLE_BED: Final = "adjustable_bed"
@@ -586,6 +587,7 @@ BED_TYPE_PERSONAL_COMFORT: Final = "personal_comfort"
 BED_TYPE_INSTANT_COMFORT: Final = "instant_comfort"
 BED_TYPE_LUUNA: Final = "luuna"
 BED_TYPE_MLINE: Final = "mline"
+BED_TYPE_SINCA_COMFORT: Final = "sinca_comfort"
 CONF_MLINE_CHILD_MODE: Final = "mline_child_mode"
 BED_TYPE_SLEEP_EVOLUTION: Final = "sleep_evolution"
 BED_TYPE_WSILVER_LEGACY: Final = "wsilver_legacy"
@@ -813,6 +815,7 @@ SUPPORTED_BED_TYPES: Final = [
     BED_TYPE_PERSONAL_COMFORT,
     BED_TYPE_INSTANT_COMFORT,
     BED_TYPE_MLINE,
+    BED_TYPE_SINCA_COMFORT,
     BED_TYPE_SLEEP_EVOLUTION,
     BED_TYPE_WSILVER_LEGACY,
     BED_TYPE_SUPER_COLCHONES,
@@ -851,6 +854,7 @@ SUPPORTED_BED_TYPES: Final = [
     BED_TYPE_TRANQUIL,
     BED_TYPE_RIZE_REMEDY_II,
     BED_TYPE_SIMMONS,
+    BED_TYPE_SIMMONS_BLUE,
     BED_TYPE_ADJUSTAMATTRESS,
     BED_TYPE_ADJUSTABLE_BED,
     BED_TYPE_ADJUSTABLE_LUMBAR,
@@ -1025,6 +1029,7 @@ OFFLINE_CAPABILITY_SAFE_BED_TYPES: Final = frozenset(
         # Layout and protocol come from the stored variant; the BLE name only
         # chooses a protocol when the variant leaves it on auto.
         BED_TYPE_SIMMONS,
+        BED_TYPE_SIMMONS_BLUE,
         # Controls are identical for all three tables; only the live link picks one.
         BED_TYPE_ADJUSTABLE_BED,
         BED_TYPE_ADJUSTABLE_LUMBAR,
@@ -2981,6 +2986,7 @@ BED_MOTOR_PULSE_DEFAULTS: Final = {
     BED_TYPE_TRANQUIL: (10, 100),  # APK refresh cadence; bounded HA movement duration
     # 100 ms is the app refresh; the count also bounds a Z-Series button press.
     BED_TYPE_ZSERIES: (10, 100),
+    BED_TYPE_SIMMONS_BLUE: (5, 200),  # Finite HA press at the app's hold cadence.
     BED_TYPE_SIMMONS: (4, 300),  # APK 300 ms hold refresh; ~1.2 s HA movement
     BED_TYPE_SOMOS: (10, 300),
     BED_TYPE_COMFORTBASE: (10, 100),

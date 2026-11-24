@@ -1818,6 +1818,50 @@ mlily:
       selector:
         object:
 
+sinca_comfort_command:
+  fields:
+    device_id:
+      required: true
+      selector:
+        device:
+          integration: adjustable_bed
+          multiple: true
+    side:
+      selector:
+        select:
+          options: [both, left, right]
+          translation_key: side
+    action:
+      required: true
+      selector:
+        select:
+          options: [refresh_settings, refresh_alarm, disable_alarm, anti_snore, demo_anti_snore, consume_history]
+          translation_key: sinca_comfort_action
+    enabled:
+      default: true
+      selector:
+        boolean:
+    position:
+      default: head
+      selector:
+        select:
+          options: [head, elevation]
+          translation_key: sinca_comfort_position
+    level:
+      default: low
+      selector:
+        select:
+          options: [low, medium, high]
+          translation_key: sinca_comfort_level
+    all_records:
+      default: false
+      selector:
+        boolean:
+    confirmed:
+      default: false
+      selector:
+        boolean:
+
 mline_command:
   fields:
     device_id:

@@ -33,6 +33,8 @@ class ControllerButtonSpec:
     cancel_movement: bool = field(default=True, kw_only=True)
     scheduler_resource: str | None = field(default=None, kw_only=True)
     hold: ControllerHoldSpec | None = field(default=None, kw_only=True)
+    # Offer the matching action on the parent of a separate-address pair.
+    combine_sides: bool = field(default=False, kw_only=True)
     # Untimed movement without a hold still invalidates travel-time estimates.
     invalidates_position: bool = field(default=False, kw_only=True)
     # Cancel held admission; only the held task owns its protocol release frame.

@@ -99,6 +99,7 @@ from .const import (
     BED_TYPE_SERTA_MP_REMOTE,
     BED_TYPE_SILVERMOTION,
     BED_TYPE_SIMMONS,
+    BED_TYPE_SIMMONS_BLUE,
     BED_TYPE_SLEEP_NUMBER,
     BED_TYPE_SLEEP_NUMBER_MCR,
     BED_TYPE_SLEEPSTAR,
@@ -309,6 +310,7 @@ _BED_TRAITS: Final[dict[str, BedTraits]] = {
     "instant_comfort": replace(_NO_ANGLES_SCOPED, owns_device_info_reads=True, single_address_native_both=False),
     "personal_comfort": replace(_NO_ANGLES_SCOPED, owns_device_info_reads=True, single_address_native_both=False),
     "mline": replace(_NO_ANGLES_SCOPED, owns_device_info_reads=True),
+    "sinca_comfort": replace(_NO_ANGLES_SCOPED, owns_device_info_reads=True, connection_timeout=8),
     "luniosmart": replace(_NO_ANGLES_SCOPED, owns_device_info_reads=True, connection_timeout=5),
     "sleep_evolution": replace(_NO_ANGLES_SCOPED, owns_device_info_reads=True),
     "wsilver_legacy": replace(_NO_ANGLES_SCOPED, owns_device_info_reads=True),
@@ -396,6 +398,7 @@ _BED_TRAITS: Final[dict[str, BedTraits]] = {
         },
     ),
     BED_TYPE_SIMMONS: _NO_ANGLES,
+    BED_TYPE_SIMMONS_BLUE: replace(_NO_ANGLES, connection_timeout=5.0),
     BED_TYPE_SLEEP_NUMBER: _PERCENT_FEEDBACK_SCOPED,
     # MCR exposes positions only for actuators foundation discovery proves.
     BED_TYPE_SLEEP_NUMBER_MCR: BedTraits(
@@ -541,7 +544,7 @@ MASSAGE_SETTING_UNUSED_BED_TYPES: Final = frozenset(
      "hjbed", "hush_base", "hush_remote", "hush_sleep_mm", "hush_sleep_sxb", "jalon",
      "leggett_lp_legacy", "logicdata_air_pump", "luuna", "malouf_app", "mlily",
      "motion_bed", "motomotion", "motosleep", "octo", "okin_motionbed", "okin_rf_eco_bt",
-     "omazz_adjusto_iii", "personal_comfort", "instant_comfort", "paramount", "qplus_app", "remacro", "resident", "reverie",
+     "sinca_comfort", "omazz_adjusto_iii", "personal_comfort", "instant_comfort", "paramount", "qplus_app", "remacro", "resident", "reverie",
      "reverie_nightstand", "richmat_americanstar", "richmat_app", "richmat_app_sleep",
      "richmat_best_mattress", "richmat_blvd_home", "richmat_classic_apps",
      "richmat_harmony", "richmat_idealbed", "richmat_revive", "richmat_sleep_receiver",

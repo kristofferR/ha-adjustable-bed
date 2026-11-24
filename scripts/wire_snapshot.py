@@ -1347,6 +1347,8 @@ def default_scenario(bed_type: str) -> Scenario:
             id=bed_type, bed_type=bed_type, protocol_variant="cprn",
             replies={"write:6e0a000179": "6e200903010200019e"},
         )
+    if bed_type == const.BED_TYPE_SIMMONS_BLUE:
+        return Scenario(id=bed_type, bed_type=bed_type, layout_id="n32_motion_bed")
     if bed_type == "super_colchones":
         return Scenario(id=bed_type, bed_type=bed_type, protocol_variant="afeg302",
                         entry_data={const.CONF_PROTOCOL_VARIANT: "afeg302"}, layout_id="super_colchones:n1")
@@ -1517,6 +1519,11 @@ def default_scenario(bed_type: str) -> Scenario:
     if bed_type == "personal_comfort":
         data[const.CONF_PRODUCT_TYPE] = "pf4"
         variant = "malouf"
+    if bed_type == "sinca_comfort":
+        return Scenario(
+            id=bed_type, bed_type=bed_type, protocol_variant="sleep",
+            entry_data={const.CONF_PRODUCT_TYPE: "two"}, layout_id="mline",
+        )
     if bed_type == "mline":
         data[const.CONF_PRODUCT_TYPE] = "two"
         variant = "sleep"
@@ -1763,6 +1770,18 @@ def route_scenarios() -> list[Scenario]:
         for layout in ("nerum", "2", "3", "4"):
             scenarios.append(Scenario(id=f"nerum:{protocol}:{layout}", bed_type="nerum",
                 protocol_variant=protocol, entry_data={"product_type": layout}, layout_id=f"nerum:{protocol}"))
+    # Sinca protocol classification and the discovered carrier are independent.
+    for protocol, layout, carrier in (
+        ("smart", "triple", "mline"),
+        ("smartsainuo", "two", "mline:ffe"),
+        ("okin", "four", "mline"),
+        ("unknown", "unknown", "mline:overwrite"),
+    ):
+        scenarios.append(Scenario(
+            id=f"sinca_comfort:{protocol}:{layout}", bed_type="sinca_comfort",
+            protocol_variant=protocol, entry_data={const.CONF_PRODUCT_TYPE: layout},
+            layout_id=carrier,
+        ))
     # M Line selectors and physical layouts are independent source axes.
     for protocol in ("sleep", "smart", "smartsainuo", "okin", "unknown"):
         for layout in ("two", "triple", "four"):
@@ -2226,6 +2245,7 @@ def mh_app_scenarios() -> list[Scenario]:
 def build_scenarios() -> list[Scenario]:
     """Every bed type once, plus the routes that change the controller or its bytes."""
     from custom_components.adjustable_bed.const import RICHMAT_MH_APP_CATALOGS, SUPPORTED_BED_TYPES
+    from custom_components.adjustable_bed.profiles.simmons_blue import DEFAULT_LAYOUT, LAYOUTS
 
     scenarios = [default_scenario(bed_type) for bed_type in SUPPORTED_BED_TYPES
                  if bed_type not in RICHMAT_MH_APP_CATALOGS]
@@ -2241,6 +2261,11 @@ def build_scenarios() -> list[Scenario]:
                  layout_id="dorsal:n1",
                  replies={"write:01": "6e200903010200019e", "6e400003-b5a3-f393-e0a9-e50e24dcca9e": "6e200903010200019e"}),
     ))
+    scenarios.extend(
+        dataclasses.replace(default_scenario("simmons_blue"), id=f"simmons_blue:{layout}",
+                            entry_data={"product_type": layout})
+        for layout in LAYOUTS if layout != DEFAULT_LAYOUT
+    )
     # Dream Sense: each saved BED product plus all six accepted GATT routes.
     from custom_components.adjustable_bed.profiles.dreamsense import PROFILES as DREAMSENSE_PROFILES
     for product in DREAMSENSE_PROFILES:
@@ -2413,13 +2438,13 @@ async def _connect(controller: Any, recorder: Recorder, clock: FakeClock) -> dic
             # These v5 profiles own startup in their hook, without session helpers.
             await controller.async_on_connect(None)
             return
-        if controller._coordinator.bed_type in {"rize_home", "superior_sleep", "okin_64bit", "betterliving2", "ultramatic_smart_bed", "smart_comfort_synargy", "smart_comfort_synergy"}:
+        if controller._coordinator.bed_type in {"rize_home", "superior_sleep", "okin_64bit", "betterliving2", "ultramatic_smart_bed", "smart_comfort_synargy", "smart_comfort_synergy", "simmons_blue"}:
             session = SimpleNamespace(async_start_notify=controller.start_notify, is_current=lambda: True)
             if controller._coordinator.bed_type == "betterliving2":
                 session.store_device_info = lambda *_: None
             await controller.async_on_connect(session)
             return
-        if controller._coordinator.bed_type in {"symphony", "linx", "agingplace", "sleep_assistant"}:
+        if controller._coordinator.bed_type in {"symphony", "linx", "agingplace", "sleep_assistant", "sinca_comfort"}:
             session = SimpleNamespace(
                 client=controller.client, is_current=lambda: True,
                 async_start_notify=lambda: controller.start_notify(lambda *_: None),

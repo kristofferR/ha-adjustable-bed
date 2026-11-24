@@ -4,11 +4,9 @@ from __future__ import annotations
 
 import asyncio
 from collections.abc import Callable, Sequence
-from dataclasses import dataclass
 from typing import TYPE_CHECKING, Final
 from uuid import uuid4
 
-from bleak import BleakClient
 from bleak.backends.characteristic import BleakGATTCharacteristic
 from bleak.exc import BleakError
 from homeassistant.const import EntityCategory
@@ -17,7 +15,7 @@ from homeassistant.util.json import JsonValueType
 
 from ...alarm import AlarmCapability, AlarmRequest
 from ...codec import mline as codec
-from ...command_scheduler import current_command_context, note_frame_skipped, note_frame_written
+from ...command_scheduler import current_command_context
 from ...const import CONF_BLE_DEVICE_NAME, CONF_HAS_MASSAGE, CONF_PRODUCT_TYPE
 from ...controller_state import AnyStateKey
 from ...profiles import mline as app
@@ -37,6 +35,7 @@ from ..entity_specs import (
 )
 from ..lifecycle import ControllerSession
 from . import history, state
+from .transport import Link, MLineTransportController
 
 if TYPE_CHECKING:
     from ...coordinator import AdjustableBedCoordinator
@@ -56,15 +55,6 @@ _MASSAGE_LABELS: Final = {
 }
 
 
-@dataclass(frozen=True)
-class Link:
-    client: BleakClient
-    write: BleakGATTCharacteristic
-    notify: BleakGATTCharacteristic
-    firmware: BleakGATTCharacteristic | None
-    protocol: BleakGATTCharacteristic | None
-
-
 # Shared wake actions and the app's own mode names, default first.
 _ALARM_MODES: Final = {
     "zero_g": "zg",
@@ -76,7 +66,7 @@ _ALARM_MODES: Final = {
 }
 
 
-class MLineController(ProfileExecution[app.MLineProfile], BedController):
+class MLineController(ProfileExecution[app.MLineProfile], MLineTransportController):
     def __init__(
         self, coordinator: AdjustableBedCoordinator, protocol: codec.Protocol = "sleep"
     ) -> None:
@@ -106,98 +96,6 @@ class MLineController(ProfileExecution[app.MLineProfile], BedController):
     @property
     def requires_notification_channel(self) -> bool:
         return True
-
-    @property
-    def control_characteristic_uuid(self) -> str:
-        return self._link.write.uuid if self._link else codec.NORDIC_WRITE
-
-    def _live(self, link: Link | None = None) -> Link:
-        current = self._link
-        if (
-            current is None
-            or link is not None
-            and current is not link
-            or self.client is not current.client
-            or not current.client.is_connected
-        ):
-            raise ConnectionError("M Line BLE session changed or disconnected")
-        return current
-
-    async def async_discover_capabilities(self) -> None:
-        self.on_disconnect()
-        client = self.client
-        if client is None or not client.is_connected:
-            raise ConnectionError("M Line is disconnected")
-        write = notify = firmware = protocol = None
-        # Iterate actual GATT order, preserving independent later-role overwrite.
-        for service in client.services:
-            for char in service.characteristics:
-                role = (service.uuid.lower(), char.uuid.lower())
-                if role in (
-                    (codec.NORDIC_SERVICE, codec.NORDIC_WRITE),
-                    (codec.FFE_SERVICE, codec.FFE_WRITE),
-                ):
-                    write = char
-                if role in (
-                    (codec.NORDIC_SERVICE, codec.NORDIC_NOTIFY),
-                    (codec.FFE_NOTIFY_SERVICE, codec.FFE_NOTIFY),
-                ):
-                    notify = char
-                if role == (codec.INFO_SERVICE, codec.FIRMWARE):
-                    firmware = char
-                if role == (codec.INFO_SERVICE, codec.PROTOCOL_STRING):
-                    protocol = char
-        if (
-            write is None
-            or notify is None
-            or "write-without-response" not in write.properties
-            or not {"notify", "indicate"}.intersection(notify.properties)
-        ):
-            raise ValueError("M Line requires its writable no-response and notification GATT roles")
-        self._link = Link(client, write, notify, firmware, protocol)
-
-    async def _write(
-        self, link: Link, data: bytes, cancel: asyncio.Event, deadline: float | None = None
-    ) -> None:
-        async with self._ble_lock:
-            self._live(link)
-            if (
-                cancel.is_set()
-                or deadline is not None
-                and asyncio.get_running_loop().time() >= deadline - 1e-9
-            ):
-                note_frame_skipped()
-                return
-            self._record_command_trace(
-                link.write.uuid, data, response=False, characteristic=link.write
-            )
-            await settled(link.client.write_gatt_char(link.write, data, response=False))
-            note_frame_written(cancel)
-            self._live(link)
-
-    async def write_command(
-        self,
-        command: bytes,
-        repeat_count: int = 1,
-        repeat_delay_ms: int = 200,
-        cancel_event: asyncio.Event | None = None,
-    ) -> None:
-        link = self._live()
-        cancel = self._coordinator.cancel_command if cancel_event is None else cancel_event
-        for index in range(repeat_count):
-            if index and await self._pause(repeat_delay_ms / 1000, cancel):
-                note_frame_skipped()
-                return
-            await self._write(link, bytes(command), cancel)
-
-    @staticmethod
-    async def _pause(seconds: float, cancel: asyncio.Event) -> bool:
-        try:
-            async with asyncio.timeout(seconds):
-                await cancel.wait()
-            return True
-        except TimeoutError:
-            return False
 
     def validate_action(self, action: str) -> None:
         if (

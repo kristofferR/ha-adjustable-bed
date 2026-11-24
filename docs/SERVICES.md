@@ -83,6 +83,7 @@ For named raise/lower/stop voice commands and Apple Home controls, see
 | [`logicdata_hold_preset`](#logicdata_hold_preset) | LOGICDATA: hold preset | Holds a flat, preset or memory button for a set time, then releases it. |
 | [`luuna`](#luuna) | Luuna: settings | Sets the light of a Luuna bed, or reads the name of its sleep sensor. Set its alarm with Set alarm and its clock with Set bed clock. Only the options your bed reports can run. |
 | [`richmat_rise`](#richmat_rise) | Luuna Rise and Power Cool: settings | Sets the light and massage timer of a Luuna Rise or Power Cool bed. Set its alarm with Set alarm. Light settings need the bed to report them first. |
+| [`sinca_comfort_command`](#sinca_comfort_command) | Sinca Comfort Bed controls | Refresh settings, read or disable the alarm, adjust automatic anti-snore, or consume local history. |
 | [`mline_command`](#mline_command) | M Line: settings | Sets sleep privacy or anti-snore, reads the current settings or alarm, or downloads sleep history. |
 | [`mlily`](#mlily) | MLILY: settings | Sets the alarm, light, massage and anti-snore options of an MLILY bed, or reads and sets its separate sleep sensor. |
 | [`motion_bed_action`](#motion_bed_action) | Motion Bed: run control | Run a control by its name, such as kuaijie_k2mfragment_flat. The Motion Bed guide lists the common names; the bed's diagnostics list every name it accepts. Saving, clearing, resetting and changing modules need confirmation. |
@@ -183,6 +184,8 @@ M1X12 beds use the `m1x12_part_1` (head), `m1x12_part_2` (foot),
 `m1x12_part_4` (lumbar), `m1x12_part_8` and `m1x12_part_16` motors. ELEVATE
 uses `elevate_actuator_1`, `elevate_actuator_2` and `elevate_both`. Only the
 motors your bed has are accepted.
+
+[Simmons Blue](beds/okin-nframe.md#simmons-blue) uses slots 1–2 for memory recall and save. The bed receives a longer press to save.
 
 [Saatva](beds/richmat.md#saatva) supports `goto_preset` and `save_preset` slots
 1 and 2, `timed_move` for `back` and `legs`, and `stop_all` to end held movement.
@@ -342,6 +345,7 @@ entities, including the light colors, are separate.
 | [Jordan's Serenity](beds/okin-nframe.md#app-commands) | 31 of the app's controls | |
 | [Jordan's Tranquil](beds/okin-nframe.md#app-commands-1) | 30 of the app's controls | |
 | [Customatic Z-Series](beds/okin-nframe.md#app-commands-2) | The Z-230 or Z-280 controls | A Z-230 refuses Z-280-only controls and the other way round |
+| [Simmons Blue](beds/okin-nframe.md#simmons-blue) | `first_up`, `first_down`; iD Motion adds `second_up`, `second_down`, `flat`, `relax`, `tv`, `anti_snore`; 3 and 4 motors add `combined_up`, `combined_down`; 4 motors adds `incline` | Use `goto_preset` and `save_preset` for memories 1–2. |
 | [SIMMONS](beds/okin-nframe.md#simmons) | `head_up`, `head_down`, `legs_up`, `legs_down`, `flat`, `memory`, `light`, plus `zero_g`, `tv`, `anti_snore` on a regular bed or `inclined_left`, `inclined_middle`, `inclined_right` on an inclined bed | Holding `memory` for 5 seconds saves Custom Mode, as in the app; not yet confirmed on a real bed |
 | [AdjustaMattress](beds/keeson.md#adjustamattress) | The app's control names, such as `headUp`, `footDown`, `unionUp`, `neckTiltUp`, `lumbarDown`, `flatPosition`, `zeroGravity`, `m1`, `underbedLighting`, `headStrengthAdd`, `timer10`, by model and layout | |
 | [Adjustable bed (Lumbar)](beds/okin-nframe.md#timing-and-controls) | `head_up`, `head_down`, `feet_up`, `feet_down`, `lumbar_up`, `lumbar_down`, `flat`, `zero_g`, `lounge`, `incline`, `anti_snore`, `save_zero_g`, `save_lounge`, `save_incline`, `save_anti_snore`, `light`, `wave_1`, `wave_2`, `wave_3`, `massage_up`, `massage_down` | Not yet confirmed on a real bed whether a save stores the position |
@@ -401,7 +405,7 @@ Sets the clock of each selected bed to Home Assistant's local time. Beds that
 set their clock here include [RMControl](beds/richmat.md#rmcontrol) products
 with a clock, the [Malouf Base / Lucid Base](beds/malouf.md#malouf-base--lucid-base-family)
 app beds, [Glideaway Motion / Montion](beds/keeson.md#alarm-and-clock),
-[SIMMONS](beds/okin-nframe.md#alarms-and-clock), and
+[SIMMONS](beds/okin-nframe.md#alarms-and-clock), [Simmons Blue](beds/okin-nframe.md#simmons-blue), and
 [Customatic Z-Series](beds/okin-nframe.md#customatic-z-series) beds with an alarm
 page (see [`set_alarm`](#set_alarm)); Z-Series beds cannot share a call with
 other beds. SUTA Smart Home, SonicSleep, MLILY Remote, Good Vibe Sleep, Galaxy,
@@ -474,6 +478,7 @@ data:
 | M Line | `zero_g`, `flat`, `memory_1`, `memory_2`, `massage`, `anti_snore` | `weekdays` |
 | Malouf / Lucid app | `zero_g`, `lounge`, `tv`, `anti_snore`, memories | `weekdays` |
 | Motion Bed | `none` (rings only), `zero_g`, `memory_1` | `weekdays`, `massage`, `sound` (the alarm tone by default; music 1 by default where the bed has audio) |
+| [Simmons Blue](beds/okin-nframe.md#simmons-blue) | `flat`, `lounge` (Relax), `tv`, `anti_snore`, `memory_1`, `memory_2` | `slot` 1–3, `weekdays`. Turning off keeps the time reported by the bed. |
 | N32 Motion Bed | `none`, `memory_1` … `memory_3`, `flat` | `slot` 1–3, `weekdays`; turning off keeps the slot's time |
 | Nerum (P2, P3) | `none`, `memory_1`, `memory_2`, `light` | `slot` 1–3, `weekdays` or once. The other two alarms are read from the bed first |
 | OKIN Smart Sleep | `memory_1`, `memory_2`, `zero_g`, `flat`, `massage`, plus `lounge`, `tv`, `anti_snore`, `light` on newer models | `weekdays` on newer models |
@@ -1426,6 +1431,38 @@ massage timer menu. Alarm and lamp settings need the bed to report them on the
 current connection, also after it reconnects.
 
 See the [Luuna Rise and Power Cool guide](beds/richmat.md#luuna-rise--power-cool).
+
+## Sinca Comfort Bed
+
+Use [`goto_preset`](#movement-and-memory) for either memory and [`save_preset`](#movement-and-memory)
+to run the app's long memory press. Use [`sync_clock`](#sync_clock) to set bed time.
+Alarm queries and disable use the action below. See the [bed guide](beds/mline.md#sinca-comfort-bed).
+
+<a id="sinca_comfort_command"></a>
+**`sinca_comfort_command`** refreshes settings, reads or disables the wake alarm,
+adjusts automatic anti-snore, or handles a local history transfer.
+
+| Field | Name | Description |
+|---|---|---|
+| `device_id` | Devices | Select one or more Sinca Comfort Bed devices. Choose one physical receiver for history. |
+| `side` | Side | Select the left or right side of a combined bed. |
+| `action` | Action | Choose `refresh_settings`, `refresh_alarm`, `disable_alarm`, `anti_snore`, `demo_anti_snore`, or `consume_history`. |
+| `enabled` | Enable anti-snore | Turn automatic anti-snore on or off. Defaults to on. |
+| `position` | Adjustment | Choose `head` or `elevation`. Defaults to `head`. |
+| `level` | Level | Choose `low`, `medium`, or `high` for automatic anti-snore. Defaults to `low`. |
+| `all_records` | All records | Request all stored history. The default asks for new records. |
+| `confirmed` | Confirm history acknowledgement | Let the bed mark report-length history as received. Home Assistant does not save a sleep report. Defaults to false. |
+
+Anti-snore settings and demonstrations require the Sleep receiver. A demonstration
+only uses the selected adjustment. Disable writes the alarm-off frame and then
+queries the resulting alarm state.
+
+History runs on one current connection. An aligned transfer with no report-length
+groups is acknowledged automatically. To also acknowledge a report-length
+group, run the action with `confirmed: true`. The optional response gives
+`acknowledged` and the number of distinct admitted `records`. A transfer with
+no aligned data returns zero records and leaves the bed's history unchanged.
+
 
 ## M Line
 
