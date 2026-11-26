@@ -69,6 +69,7 @@ For named raise/lower/stop voice commands and Apple Home controls, see
 | [`goodvibe`](#goodvibe) | Good Vibe Sleep: settings | Sets the alarm, light, massage and anti-snore options of a Good Vibe Sleep bed or its sleep sensor. |
 | [`hjbed`](#hjbed) | HJBed: settings | Sets the alarm, light and other options of an HJBed bed. The bed must report the feature first. |
 | [`hush_base`](#hush_base) | Hush Base: settings | Sets the light, alarms and clock of a Hush Base, reads and sets its separate sleep sensor, or finds its remote. Only the options your product has can run. See the Hush Base guide. |
+| [`jerome_repeat_alarm`](#jerome_repeat_alarm) | Jerome’s Adjustable Base: manage repeat alarms | Refresh, enable or delete alarms on SH models. |
 | [`jerome_bed`](#jerome_bed) | Jerome’s power base: control bed | Run an action from the selected bed layout. Preset saves and long-press controls require confirmation. |
 | [`jiecang_stop_wake`](#jiecang_stop_wake) | Jiecang: stop wake massage | Stop active wake massage without disabling the stored weekly clock alarm. |
 | [`jiecang_wake`](#jiecang_wake) | Jiecang: start wake routine | Move to a preset and start the selected wake massage levels immediately. |
@@ -374,6 +375,7 @@ entities, including the light colors, are separate.
 | [Bed Tech](beds/richmat.md#bed-tech) | The selected model's held `mh_XX` controls, such as `mh_24` (head up) and `mh_25` (head down) on 5I | At most 30 seconds. Save buttons cannot be held. The separate intervention receiver has no held controls |
 | [ENSO Sleep Control](beds/richmat.md#enso-sleep-control) | The current layout’s held directions and recalls, such as `motor_1_up` and E3RM `memory_1` | Save and alternate actions have separate buttons |
 | [Enso Remote](beds/keeson.md#enso-remote) | `head_up`, `head_down` (back), `feet_up`, `feet_down`, plus `both_up`/`both_down` (2 motors), `lumbar_up`/`lumbar_down` (3 and 4 motors) and `tilt_up`/`tilt_down` (waist, 4 motors); `memory_A`, `memory_B`, `timer_memory_page`, and `massage_mode` on 3 motors | |
+| [Jerome's Adjustable Base](beds/richmat.md#jeromes-adjustable-base) | `jerome_adjustable_base_head_up`, `jerome_adjustable_base_feet_up`, `jerome_adjustable_base_head_feet_up` and their down directions | Sends STOP on the admitted side |
 | [Jerome's power base](beds/richmat.md#jeromes-power-base) | `jerome_` controls of the selected layout that can be held, such as `jerome_head_up` | Saves cannot be held |
 | [INNOVA](beds/keeson.md#innova-profile) | `back_up`, `back_down`, `legs_up`, `legs_down`, `memory_a`, `memory_b`, `memory_timer`, plus `combined_up`/`combined_down` (2M), `lumbar_up`/`lumbar_down` (3M, 4M) and `waist_up`/`waist_down` (4M) | |
 | [AdjustableM5X4](beds/okin-nframe.md#adjustablem5x4) | Movement, preset, save and massage controls | Flat runs 600 ms; save and reset always take six seconds. Massage controls work only while massage is on. One receiver at a time |
@@ -496,6 +498,7 @@ data:
 | Keeson app layouts (Ergomotion 4.0, Q-Plus and others) | None | `weekdays` or once, `massage` (wake vibration). One weekly and one one-time alarm; turning off clears both |
 | L2 Motion | None | Once; leave `slot` out. `massage_intensity` 1 or 2 |
 | MoodBase | None | Once on E-name layouts; leave `slot` out. `massage_intensity` 1 or 2 |
+| Jerome's Adjustable Base | TV, Anti-snore, Zero gravity and Memory 1. Wave models add Lounge and Memory 2. | Countdown on non-SH models. SH models use slots 1–7 and optional weekdays. Saved-memory actions need `confirm_custom_position: true`. |
 | Jerome's power base | The selected layout's wake positions; `none` only with `massage: true` and a supported zone | `massage` with the layout's zones. `memory_1` to `memory_3` need `confirm_custom_position: true`. Once, as a countdown to the time. Standalone beds and the physical sides of a two-address pair only, not a one-address combined bed |
 | Lady Americana and partner beds | From the selected layout's alarm controls; required to turn the alarm on | `massage` with the layout's zones (then `none` is allowed). Once, at the next occurrence |
 | L&P Adjustable Base | From the selected layout's alarm page; required to turn the alarm on | `massage` with the layout's zones (then `none` is allowed). Once, at the next occurrence: leave out `weekdays` and `slot` |
@@ -1152,6 +1155,26 @@ units take only `firmness` and cannot stop the pump. See the
 
 Bases set up with the Instant Comfort app also run
 [`personal_comfort_sequence`](#personal_comfort_sequence).
+
+## Jerome's Adjustable Base
+
+<a id="jerome_repeat_alarm"></a>
+**`jerome_repeat_alarm`** refreshes, enables or deletes stored alarms on ELEVATE
+2.0 SH and WAVE SH. The clock capability reply must arrive first. Use
+[`set_alarm`](#set_alarm) to add, replace or disable a slot.
+Enable and delete check every selected receiver before sending the first
+change. Each enable or delete call can select at most one receiver from a
+pair that connects to one side at a time. After editing or deleting a slot,
+`list` may reconnect to distinguish new reports from replies still arriving
+on the previous connection. If the connection cannot be renewed, the refresh
+fails and the integration keeps blocking ambiguous records.
+
+| Field | Value |
+|-------|-------|
+| `device_id` | One or more adjustable beds |
+| `operation` | `list` refreshes the **Bed alarm status** sensor's reported records. `enable` turns on a stored record. `delete` removes it. |
+| `slot` | From 1 to 7. Required for enable and delete. |
+| `side` | Optional physical target in a two-address combination. The alarm belongs to the receiver. |
 
 ## Jerome's power base
 

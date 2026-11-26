@@ -167,6 +167,8 @@ def _protocol_variant_for_bed_type(bed_type: str) -> str | None:
         return "bt2000_standard"
     if bed_type == const.BED_TYPE_CASPER_BASE:
         return "casperpro"
+    if bed_type == const.BED_TYPE_JEROME_ADJUSTABLE_BASE:
+        return "JERN"
     if bed_type == const.BED_TYPE_SOMOS:
         return "a"
     if bed_type == const.BED_TYPE_YAMADA:

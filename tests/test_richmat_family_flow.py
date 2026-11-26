@@ -21,6 +21,7 @@ ADDRESS = "11:22:33:44:55:66"
 APPS = [
     "richmat_420",
     "atlas_lift",
+    "jerome_adjustable_base",
     "rmcontrol",
     "luuna",
     "luniosmart",
@@ -129,7 +130,27 @@ def test_every_app_has_a_searchable_row_and_the_family_row_stays_short():
     assert rows["richmat_classic_apps:fortywinks"] == "Forty Winks app"
     assert rows["richmat_classic_apps:sleepfunction"] == "SleepFunction Bed Control app"
     assert rows[const.BED_TYPE_MLILY] == "MLILY Control app"
+    assert rows[const.BED_TYPE_JEROME_ADJUSTABLE_BASE] == "Jerome's Adjustable Base app"
     assert bed_type_label(const.BED_TYPE_RICHMAT_REVIVE) == "Revive Control app"
+
+
+async def test_jerome_model_picker_requires_one_of_the_four_products(hass):
+    flow = setup_flow(hass, "BED-Test")
+    flow._discovery_info = None
+    with patch.object(flow, "_verification_possible", return_value=False):
+        result = await flow.async_step_richmat_family({"choice": "jerome_adjustable_base"})
+        assert result["step_id"] == "profile_questions"
+        schema = result["data_schema"]
+        assert schema is not None
+        for unsupported in ("auto", "QRRM", "58"):
+            with pytest.raises(vol.Invalid):
+                schema({const.CONF_PROTOCOL_VARIANT: unsupported})
+        chosen = await flow.async_step_profile_questions(
+            schema({const.CONF_PROTOCOL_VARIANT: "JERN"})
+        )
+    assert chosen["type"] is FlowResultType.CREATE_ENTRY
+    assert chosen["data"][const.CONF_BED_TYPE] == const.BED_TYPE_JEROME_ADJUSTABLE_BASE
+    assert chosen["data"][const.CONF_PROTOCOL_VARIANT] == "JERN"
 
 
 def test_configure_accepts_the_hidden_apps_by_id():

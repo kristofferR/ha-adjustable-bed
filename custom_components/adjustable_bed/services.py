@@ -66,6 +66,7 @@ from .command_scheduler import (
     command_resources,
     current_command_context,
 )
+from .command_target import capture_command_targets, command_target_scope
 from .const import (
     BED_TYPE_ERGOMOTION,
     BED_TYPE_FURNIMOVE,
@@ -146,6 +147,7 @@ class _CommandAdmission:
     resources: frozenset[str]
     expected_pair_generations: dict[str, tuple[int, ...]]
     expected_stop_epochs: dict[str, int]
+    command_targets: dict[int, str]
 
 
 def _capture_command_admission(
@@ -168,7 +170,9 @@ def _capture_command_admission(
     stop_epochs: dict[str, int] = {}
     for target_side, child in targets:
         stop_epochs[target_side] = child.stop_epoch
-    return _CommandAdmission(scope, pair_generations, stop_epochs)
+    return _CommandAdmission(
+        scope, pair_generations, stop_epochs, capture_command_targets(child for _, child in targets)
+    )
 
 
 # Service names
@@ -584,28 +588,29 @@ async def _execute_sided(
         expected_pair_generations = admission.expected_pair_generations
         expected_stop_epochs = admission.expected_stop_epochs
         expected_stop_epoch = admission.expected_stop_epochs.get(SIDE_BOTH)
-    if isinstance(coordinator, PairedBedCoordinator):
-        await coordinator.async_execute_controller_command(
-            command_fn,
-            side=side,
-            cancel_running=cancel_running,
-            skip_disconnect=skip_disconnect,
-            resource=resource,
-            resources=resources,
-            expected_pair_generations=expected_pair_generations,
-            expected_stop_epochs=expected_stop_epochs,
-            lease=lease,
-        )
-    else:
-        await coordinator.async_execute_controller_command(
-            command_fn,
-            cancel_running=cancel_running,
-            skip_disconnect=skip_disconnect,
-            resource=resource,
-            resources=resources,
-            expected_stop_epoch=expected_stop_epoch,
-            lease=lease,
-        )
+    with command_target_scope(admission.command_targets if admission is not None else None):
+        if isinstance(coordinator, PairedBedCoordinator):
+            await coordinator.async_execute_controller_command(
+                command_fn,
+                side=side,
+                cancel_running=cancel_running,
+                skip_disconnect=skip_disconnect,
+                resource=resource,
+                resources=resources,
+                expected_pair_generations=expected_pair_generations,
+                expected_stop_epochs=expected_stop_epochs,
+                lease=lease,
+            )
+        else:
+            await coordinator.async_execute_controller_command(
+                command_fn,
+                cancel_running=cancel_running,
+                skip_disconnect=skip_disconnect,
+                resource=resource,
+                resources=resources,
+                expected_stop_epoch=expected_stop_epoch,
+                lease=lease,
+            )
 
 
 async def _execute_sided_translated(
@@ -1809,21 +1814,22 @@ async def _async_timed_move(
 
     try:
         for coordinator, side in targets:
-            if isinstance(coordinator, PairedBedCoordinator):
-                resources = {
-                    plans[_plan_key(target)][3] for target in _command_targets(coordinator, side)
-                }
-                admission = command_admissions[(id(coordinator), side)]
-                await coordinator.async_run_child_operation(
-                    "timed move",
-                    move,
-                    side=side,
-                    resources=resources,
-                    expected_pair_generations=admission.expected_pair_generations,
-                    expected_stop_epochs=admission.expected_stop_epochs,
-                )
-            else:
-                await move(coordinator)
+            admission = command_admissions[(id(coordinator), side)]
+            with command_target_scope(admission.command_targets):
+                if isinstance(coordinator, PairedBedCoordinator):
+                    resources = {
+                        plans[_plan_key(target)][3] for target in _command_targets(coordinator, side)
+                    }
+                    await coordinator.async_run_child_operation(
+                        "timed move",
+                        move,
+                        side=side,
+                        resources=resources,
+                        expected_pair_generations=admission.expected_pair_generations,
+                        expected_stop_epochs=admission.expected_stop_epochs,
+                    )
+                else:
+                    await move(coordinator)
     except Exception, asyncio.CancelledError:
         await _release_preflighted(preflighted)
         raise
@@ -3195,6 +3201,7 @@ def _import_service_registrars() -> tuple[Callable[[HomeAssistant], None], ...]:
         register_services as register_personal_comfort_services,
     )
     from .beds.reverie.services import async_register_reverie_services
+    from .beds.richmat.jerome_services import async_register_jerome_repeat_alarm
     from .beds.richmat_app.services import async_register_richmat_app_services
     from .beds.richmat_classic.jerome_services import async_register_jerome_services
     from .beds.richmat_classic.lp2_services import async_register_lp2_services
@@ -3246,6 +3253,7 @@ def _import_service_registrars() -> tuple[Callable[[HomeAssistant], None], ...]:
         async_register_sleepfunction_services,
         async_register_lp2_services,
         async_register_jerome_services,
+        async_register_jerome_repeat_alarm,
         register_baseremote_services,
         async_register_resource_bed_services,
         async_register_dreamsense_services,

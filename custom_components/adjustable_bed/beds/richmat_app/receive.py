@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import math
-from collections.abc import Callable
+from collections.abc import Callable, Iterator
 from dataclasses import dataclass, field
 
 from ...codec import richmat as codec
@@ -218,11 +218,10 @@ def extended(b: bytes) -> dict[str, Value]:
 
 
 @dataclass
-class Receiver:
-    emit: Callable[[str, dict[str, Value]], None]
+class FrameBuffer:
     pending: bytearray = field(default_factory=bytearray)
 
-    def feed(self, chunk: bytes) -> None:
+    def frames(self, chunk: bytes) -> Iterator[bytes]:
         self.pending.extend(chunk)
         while len(self.pending) >= 3:
             try:
@@ -242,14 +241,29 @@ class Receiver:
                 size = self.pending[2]
             else:
                 size = 5
-            if not size:
+            if size < (4 if kind == 64 else 3):
                 self.pending.clear()
                 raise ValueError("Nonprogressing Richmat frame")
             if len(self.pending) < size:
                 return
-            b = bytes(self.pending[:size])
+            frame = bytes(self.pending[:size])
             del self.pending[:size]
-            if kind == 32 and codec.is_valid(b):
+            yield frame
+
+
+@dataclass
+class Receiver:
+    emit: Callable[[str, dict[str, Value]], None]
+    buffer: FrameBuffer = field(default_factory=FrameBuffer)
+
+    @property
+    def pending(self) -> bytearray:
+        return self.buffer.pending
+
+    def feed(self, chunk: bytes) -> None:
+        for b in self.buffer.frames(chunk):
+            kind = b[1]
+            if kind == 32 and len(b) >= 7 and codec.is_valid(b):
                 self.emit(f"group_{b[3]}_{b[4]}", extended(b))
             elif kind not in (32, 33, 64):
                 if event := EXACT.get(b.hex()):
