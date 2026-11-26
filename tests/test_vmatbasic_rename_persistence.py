@@ -151,9 +151,9 @@ async def test_registered_paired_child_rename_persists_only_that_physical_receiv
     pair.entry._async_set_state(hass, ConfigEntryState.LOADED, None)
     hass.data.setdefault(const.DOMAIN, {})[pair.entry.entry_id] = pair
     registry = dr.async_get(hass)
-    parent = registry.async_get_or_create(
+    parent = registry.async_get_or_create_from_info(
         config_entry_id=pair.entry.entry_id,
-        **pair.device_info,
+        device_info=pair.device_info,
     )
     selected = pair.children[side]
     other = right if side == const.SIDE_LEFT else left

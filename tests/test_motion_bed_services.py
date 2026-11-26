@@ -84,7 +84,7 @@ def make_target(
     controller._characteristic = characteristic
     coordinator.controller = controller
     coordinator.capability_controller = controller
-    coordinator.device_info = {"identifiers": {(DOMAIN, address)}, "name": name}
+    coordinator.device_info = dr.DeviceInfo(identifiers={(DOMAIN, address)}, name=name)
 
     async def execute(
         command: Callable[[BedController], Awaitable[None]], **_kwargs: object

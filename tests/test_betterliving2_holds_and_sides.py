@@ -409,7 +409,9 @@ async def native_pair(hass, stack, action, mode, initial, events, hook=None):
     _async_ensure_paired_device_registry(hass, entry, parent)
     registry = dr.async_get(hass)
     parent_identifier = next(
-        identifier for identifier in parent.device_info["identifiers"] if identifier[0] == DOMAIN
+        identifier
+        for identifier in parent.device_info.as_dict()["identifiers"]
+        if identifier[0] == DOMAIN
     )
     parent_device = registry.async_get_device_by_identifier(parent_identifier, entry.entry_id)
     assert parent_device is not None

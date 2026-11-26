@@ -83,10 +83,12 @@ async def _connected_pair(hass, monkeypatch):
     pair = PairedBedCoordinator(hass, entry, {side: triple[0] for side, triple in triples.items()})
     hass.data[DOMAIN][entry.entry_id] = pair
     registry = dr.async_get(hass)
-    parent = registry.async_get_or_create(config_entry_id=entry.entry_id, **pair.device_info)
+    parent = registry.async_get_or_create_from_info(
+        config_entry_id=entry.entry_id, device_info=pair.device_info
+    )
     children = {
-        side: registry.async_get_or_create_child(
-            config_entry_id=entry.entry_id, **child_device_info(pair, side)
+        side: registry.async_get_or_create_child_from_info(
+            config_entry_id=entry.entry_id, device_info=child_device_info(pair, side)
         )
         for side in triples
     }
@@ -130,8 +132,8 @@ async def test_stop_invalidates_hold_waiting_for_scheduler_admission(
         await finish_hold.wait()
 
     monkeypatch.setattr(controller, "hold_control", hold_control)
-    device = dr.async_get(hass).async_get_or_create(
-        config_entry_id=coordinator.entry.entry_id, **coordinator.device_info
+    device = dr.async_get(hass).async_get_or_create_from_info(
+        config_entry_id=coordinator.entry.entry_id, device_info=coordinator.device_info
     )
     await async_register_services(hass)
 
@@ -192,8 +194,8 @@ async def test_hold_preflight_failure_or_cancellation_never_admits(
         held.append(control)
 
     monkeypatch.setattr(controller, "hold_control", hold_control)
-    device = dr.async_get(hass).async_get_or_create(
-        config_entry_id=coordinator.entry.entry_id, **coordinator.device_info
+    device = dr.async_get(hass).async_get_or_create_from_info(
+        config_entry_id=coordinator.entry.entry_id, device_info=coordinator.device_info
     )
     await async_register_services(hass)
     service = asyncio.create_task(
@@ -497,8 +499,8 @@ async def test_stop_during_hold_preflight_cannot_cancel_a_newer_hold(
         await finish_new_hold.wait()
 
     monkeypatch.setattr(controller, "hold_control", hold_control)
-    device = dr.async_get(hass).async_get_or_create(
-        config_entry_id=coordinator.entry.entry_id, **coordinator.device_info
+    device = dr.async_get(hass).async_get_or_create_from_info(
+        config_entry_id=coordinator.entry.entry_id, device_info=coordinator.device_info
     )
     await async_register_services(hass)
     released_hold = asyncio.create_task(
@@ -547,8 +549,8 @@ async def test_valid_registered_hold_executes_source_bytes_and_release(
     target, controller, client = await _target(hass, mx=mx)
     target._client, target._controller = client, controller
     monkeypatch.setattr(target, "async_ensure_connected", AsyncMock(return_value=True))
-    device = dr.async_get(hass).async_get_or_create(
-        config_entry_id=target.entry.entry_id, **target.device_info
+    device = dr.async_get(hass).async_get_or_create_from_info(
+        config_entry_id=target.entry.entry_id, device_info=target.device_info
     )
     await async_register_services(hass)
     await hass.services.async_call(
