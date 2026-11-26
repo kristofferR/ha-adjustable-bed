@@ -417,6 +417,7 @@ actions; its bounded `hold_control` behavior has separate timing in the
 | Shuda app | `shuda` | 5 | 200 ms |
 | SIMMONS app | `simmons` | 4 | 300 ms |
 | Simmons Blue app | `simmons_blue` | 5 | 200 ms |
+| Sleep Assist Pro | `sleep_assist_pro` | 10 | 200 ms |
 | Sleeptime Australia app (SmartBed205, 402, 404, 405) | `sleeptime` | 4 | 300 ms |
 | Somos / SomosBeds app | `somos` | 10 | 300 ms |
 | SUTA Smart Home app | `suta` | 7 | 150 ms |

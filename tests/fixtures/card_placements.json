@@ -2092,6 +2092,24 @@
  "button:sinca_refresh_settings": {
   "card_section": "utility"
  },
+ "button:sleep_assist_pro_light_toggle": {
+  "card_section": "lighting",
+  "card_role": "toggle"
+ },
+ "button:sleep_assist_pro_massage_timer": {
+  "card_section": "massage",
+  "card_role": "timer"
+ },
+ "button:sleep_assist_pro_side_b_down": {
+  "card_section": "motors",
+  "card_role": "down",
+  "card_motor": "sleep_assist_pro_side_b"
+ },
+ "button:sleep_assist_pro_side_b_up": {
+  "card_section": "motors",
+  "card_role": "up",
+  "card_motor": "sleep_assist_pro_side_b"
+ },
  "button:sleepfunction_scoped_catalog_action": {
   "card_section": "utility"
  },
@@ -3340,6 +3358,10 @@
   "card_section": "motors",
   "card_motor": "selected_motor"
  },
+ "cover:sleep_assist_pro_side_b": {
+  "card_section": "motors",
+  "card_motor": "sleep_assist_pro_side_b"
+ },
  "cover:smart_comfort_reclining": {
   "card_section": "motors",
   "card_motor": "smart_comfort_reclining"
@@ -4159,6 +4181,9 @@
  },
  "select:ruf_richmat_sleep_mode": {
   "card_section": "utility"
+ },
+ "select:sleep_assist_pro_rgb_intensity": {
+  "card_section": "lighting"
  },
  "select:sleep_assistant_anti_snore": {
   "card_section": "utility"
@@ -4991,6 +5016,13 @@
  },
  "sensor:sinca_massage_wave": {
   "card_section": "massage"
+ },
+ "sensor:sleep_assist_pro_massage_countdown": {
+  "card_section": "hidden"
+ },
+ "sensor:sleep_assist_pro_massage_timer": {
+  "card_section": "massage",
+  "card_role": "timer"
  },
  "sensor:sleep_assistant_alarm_1": {
   "card_section": "utility"

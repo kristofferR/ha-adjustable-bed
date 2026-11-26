@@ -106,6 +106,7 @@ from .const import (
     BED_TYPE_SILVERMOTION,
     BED_TYPE_SIMMONS,
     BED_TYPE_SIMMONS_BLUE,
+    BED_TYPE_SLEEP_ASSIST_PRO,
     BED_TYPE_SLEEP_NUMBER,
     BED_TYPE_SLEEP_NUMBER_MCR,
     BED_TYPE_SLEEPSTAR,
@@ -235,6 +236,7 @@ _BED_TRAITS: Final[dict[str, BedTraits]] = {
     "cheerssleep": replace(_NO_ANGLES_SCOPED, owns_device_info_reads=True, single_address_native_both=False),
     "smart_sleep": replace(_NO_ANGLES_SCOPED, owns_device_info_reads=True, connection_timeout=5),
     "sleep_assistant": _NO_ANGLES_SCOPED,
+    BED_TYPE_SLEEP_ASSIST_PRO: _NO_ANGLES_SCOPED,
     "onlysnore": replace(_NO_ANGLES_SCOPED, owns_device_info_reads=True, connection_timeout=5),
     # Head, reclining and lumbar travel as the apps' Position screen scales it.
     "smart_comfort_synargy": _PERCENT_FEEDBACK_SCOPED,

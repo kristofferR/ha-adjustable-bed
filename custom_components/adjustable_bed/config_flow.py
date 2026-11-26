@@ -4466,7 +4466,8 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
             context = FlowContext(self.hass)
             entry = questions.staged(entry, _profile_answers(questions, submitted, entry, context))
             errors.update(questions.errors(entry, context))
-            entry.update(questions.settled(entry))
+            if not errors:
+                entry.update(questions.settled(entry))
         elif (profile := setup_profile_for(entry)) is not None and not profile.questions:
             # A fixed app still owns its defaults when it has no questions to ask.
             entry.update(profile.settled(entry))
