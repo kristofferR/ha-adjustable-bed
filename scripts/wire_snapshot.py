@@ -1463,6 +1463,15 @@ def default_scenario(bed_type: str) -> Scenario:
             entry_data={"ble_device_name": "Smartbed123"},
             layout_id="superior_sleep:nordic",
         )
+    if bed_type == const.BED_TYPE_LIKIMIO:
+        return Scenario(
+            id=bed_type,
+            bed_type=bed_type,
+            protocol_variant="ABM10",
+            entry_data={const.CONF_BED_TYPE: bed_type, const.CONF_PROTOCOL_VARIANT: "ABM10"},
+            layout_id="dreamsense:gatt:1",
+            replies={"write:6e0a000179": "6e0e00037f"},
+        )
     if bed_type == "dreamsense":
         return Scenario(id=bed_type, bed_type=bed_type, protocol_variant="blue",
                         entry_data={const.CONF_PROTOCOL_VARIANT: "blue", const.CONF_PRODUCT_TYPE: "blue"})
@@ -2450,6 +2459,22 @@ def build_scenarios() -> list[Scenario]:
             default_scenario("dreamsense"), id=f"dreamsense:gatt:{route}",
             layout_id=f"dreamsense:gatt:{route}",
         ))
+    from custom_components.adjustable_bed.profiles.likimio import NO_PRODUCT as LIKIMIO_NO_PRODUCT
+
+    scenarios.append(Scenario(
+        id="likimio:no_product",
+        bed_type="likimio",
+        protocol_variant=LIKIMIO_NO_PRODUCT,
+        entry_data={"bed_type": "likimio", "protocol_variant": LIKIMIO_NO_PRODUCT},
+        layout_id="dreamsense:gatt:1",
+        replies={"write:6e08010178": "6e09010078"},
+    ))
+    scenarios.append(dataclasses.replace(
+        default_scenario("likimio"),
+        id="likimio:nordic",
+        layout_id="dreamsense",
+        replies={},
+    ))
     from custom_components.adjustable_bed.profiles.leva import MODELS as LEVA_MODELS
     for model, receiver in (
         *((model, "nordic") for model in LEVA_MODELS if model != "ascent"),

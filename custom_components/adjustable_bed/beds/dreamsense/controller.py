@@ -9,7 +9,7 @@ from contextvars import ContextVar
 from dataclasses import asdict, dataclass
 from functools import partial
 from time import monotonic
-from typing import TYPE_CHECKING, Final
+from typing import TYPE_CHECKING, ClassVar, Final
 
 from bleak.backends.characteristic import BleakGATTCharacteristic
 from homeassistant.const import STATE_UNKNOWN
@@ -39,6 +39,7 @@ from ...profiles.dreamsense import (
     PROFILES,
     TICK_MS,
     Action,
+    DreamSenseProfile,
 )
 from ...state_keys import LIGHT_TIMER_OPTION, MASSAGE_TIMER_MINUTES, UNDER_BED_LIGHTS_RGB
 from ..base import CONTROLLER_GESTURE_RELEASE, BedController, require_controller
@@ -57,7 +58,7 @@ from ..entity_specs import (
 from ..lifecycle import CapabilitySnapshotPolicy, ControllerSession
 from . import protocol as p
 from .receive import Receive
-from .transport import ROUTES, Session, select
+from .transport import ROUTES, GattRoute, Session, select
 
 if TYPE_CHECKING:
     from ...coordinator import AdjustableBedCoordinator
@@ -97,18 +98,25 @@ class Selection:
 class DreamSenseController(BedController):
     """No retained FIFO intent can cross a connection or product change."""
 
+    _receive_type: ClassVar[type[Receive]] = Receive
+    _requires_notify: ClassVar[bool] = True
+    _routes: ClassVar[tuple[GattRoute, ...]] = ROUTES
+
     def __init__(
         self,
         coordinator: AdjustableBedCoordinator,
         *,
-        product: str = "blue",
+        product: str | DreamSenseProfile = "blue",
         product_known: bool = True,
         capability_snapshot: Mapping[str, object] | None = None,
     ) -> None:
         super().__init__(coordinator)
-        if product not in PROFILES:
-            raise invalid("dreamsense_product")
-        self.profile = PROFILES[product]
+        if isinstance(product, str):
+            if product not in PROFILES:
+                raise invalid("dreamsense_product")
+            product = PROFILES[product]
+        self.profile = product
+        product = product.product
         # Blue's light duration is its own slider; an entry that stores no
         # product keeps the plain seconds until it does.
         self._blue_light = product == "blue" and product_known
@@ -116,8 +124,10 @@ class DreamSenseController(BedController):
         # product keeps the older 300.
         self._light_seconds_max = 900 if product_known and product != "blue" else 300
         self._session: Session | None = None
+        # Commands outside the startup transaction wait for the selected link to be ready.
+        self._ready: Session | None = None
         self._last_write: float | None = None
-        self._receive = Receive()
+        self._receive = self._receive_type()
         self._expiry: asyncio.TimerHandle | None = None
         self._alarm_event = asyncio.Event()
         self._selection = app_session(
@@ -142,7 +152,7 @@ class DreamSenseController(BedController):
 
     @property
     def control_characteristic_uuid(self) -> str:
-        return self._session.write.uuid if self._session else ROUTES[0][1]
+        return self._session.write.uuid if self._session else self._routes[0][1]
 
     @property
     def has_dynamic_controller_entities(self) -> bool:
@@ -176,11 +186,10 @@ class DreamSenseController(BedController):
         return int(side == SIDE_RIGHT)
 
     @contextmanager
-    def _transaction(self) -> Iterator[Session]:
-        session = self._live()
-        token = _SCOPE.set((self, session))
+    def _transaction(self, startup: Session | None = None) -> Iterator[Session]:
+        token = _SCOPE.set((self, startup or self._live()))
         try:
-            yield session
+            yield self._live()
         finally:
             _SCOPE.reset(token)
 
@@ -194,19 +203,21 @@ class DreamSenseController(BedController):
         )
 
     def _current(self, session: Session) -> bool:
+        return self._owns(session) and self._matches_product(session.product)
+
+    def _matches_product(self, product: str) -> bool:
         return (
-            self._owns(session)
-            and self._coordinator.entry.data.get(CONF_PROTOCOL_VARIANT, session.product)
-            in (session.product, "auto")
+            self._coordinator.entry.data.get(CONF_PROTOCOL_VARIANT, product)
+            in (product, "auto")
             and self._coordinator.entry.data.get(
                 CONF_PRODUCT_TYPE, self._coordinator.entry.data.get(CONF_PROTOCOL_VARIANT, "blue")
             )
-            == session.product
+            == product
         )
 
     def _live(self) -> Session:
         scope = _SCOPE.get()
-        session = scope[1] if scope and scope[0] is self else self._session
+        session = scope[1] if scope and scope[0] is self else self._ready
         if session is None or not self._current(session):
             raise invalid("dreamsense_session")
         return session
@@ -327,19 +338,26 @@ class DreamSenseController(BedController):
             ):
                 return
             self.on_disconnect()
-        selected = select(client, self._coordinator.connection_generation, self.profile.product)
+        selected = select(
+            client,
+            self._coordinator.connection_generation,
+            self.profile.product,
+            routes=self._routes,
+            requires_notify=self._requires_notify,
+        )
         self._session = selected
         self._selection.single = selected.single
         self._last_write = None
-        self._receive = Receive()
+        self._receive = self._receive_type()
         self.forward_controller_state_updates(SELECTED_SIDE(self._selection.side))
         try:
-            with self._transaction():
-                subscribed = await client.start_notify(
-                    selected.notify, partial(self._notification, selected)
-                )
-                if subscribed is False:
-                    raise invalid("dreamsense_transport")
+            with self._transaction(startup=selected):
+                if selected.notify is not None:
+                    subscribed = await client.start_notify(
+                        selected.notify, partial(self._notification, selected)
+                    )
+                    if subscribed is False:
+                        raise invalid("dreamsense_transport")
                 await self._send(
                     self.profile.frame(
                         0, single=selected.single, action="deviceFunctionItemExitLimit"
@@ -362,28 +380,19 @@ class DreamSenseController(BedController):
                     )
                 if self.profile.split:
                     await self._send(p.split_query(), own=False)
+                self._ready = self._live()
         except BaseException:
-            self.on_disconnect()
+            if self._session is selected:
+                self.on_disconnect()
             raise
 
     def _notification(
         self, session: Session, _sender: BleakGATTCharacteristic, data: bytearray
     ) -> None:
-        if (
-            self._session is not session
-            or self.client is not session.client
-            or self._coordinator.controller is not self
-            or not session.client.is_connected
-            or self._coordinator.connection_generation != session.generation
-            or self._coordinator.entry.data.get(CONF_PROTOCOL_VARIANT, session.product)
-            not in (session.product, "auto")
-            or self._coordinator.entry.data.get(
-                CONF_PRODUCT_TYPE, self._coordinator.entry.data.get(CONF_PROTOCOL_VARIANT, "blue")
-            )
-            != session.product
-        ):
+        if not self._current(session):
             return
-        self.forward_raw_notification(session.notify.uuid, bytes(data))
+        if session.notify is not None:
+            self.forward_raw_notification(session.notify.uuid, bytes(data))
         if self._expiry is not None:
             self._expiry.cancel()
             self._expiry = None
@@ -404,11 +413,12 @@ class DreamSenseController(BedController):
 
     def on_disconnect(self) -> None:
         self._session = None
+        self._ready = None
         self._local_stop.set()
         if self._expiry is not None:
             self._expiry.cancel()
             self._expiry = None
-        self._receive = Receive()
+        self._receive = self._receive_type()
         self._alarm_event.set()
         self.forward_controller_state_updates(
             SPLIT(None),
@@ -424,7 +434,7 @@ class DreamSenseController(BedController):
     async def stop_notify(self) -> None:
         session = self._session
         self.on_disconnect()
-        if session is not None and session.client.is_connected:
+        if session is not None and session.notify is not None and session.client.is_connected:
             await session.client.stop_notify(session.notify)
 
     @property

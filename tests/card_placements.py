@@ -213,6 +213,7 @@ def runtime_variants(controllers: Iterable[BedController]) -> Iterator[BedContro
     from custom_components.adjustable_bed.beds.baseremote.controller import BaseRemoteController
     from custom_components.adjustable_bed.beds.dorsal.controller import DorsalController
     from custom_components.adjustable_bed.beds.dreamsense.controller import DreamSenseController
+    from custom_components.adjustable_bed.beds.dreamsense.likimio import LikimioController
     from custom_components.adjustable_bed.beds.keeson.enso import EnsoController
     from custom_components.adjustable_bed.beds.okimiki.controller import OkimikiController
     from custom_components.adjustable_bed.beds.onlysnore.controller import OnlySnoreController
@@ -256,7 +257,7 @@ def runtime_variants(controllers: Iterable[BedController]) -> Iterator[BedContro
     from custom_components.adjustable_bed.beds.truemotion.controller import TrueMotionController
     from custom_components.adjustable_bed.beds.vibradorm.app import VibradormAppController
     from custom_components.adjustable_bed.beds.vmatbasic.controller import VMatBasicController
-    from custom_components.adjustable_bed.profiles import dorsal, relax_motion, truemotion
+    from custom_components.adjustable_bed.profiles import dorsal, likimio, relax_motion, truemotion
     from custom_components.adjustable_bed.profiles import ore_ultramatic as ultramatic
     from custom_components.adjustable_bed.profiles import vmatbasic as vmat_profiles
     from custom_components.adjustable_bed.profiles.dreamsense import PROFILES as DREAMSENSE_PROFILES
@@ -291,7 +292,10 @@ def runtime_variants(controllers: Iterable[BedController]) -> Iterator[BedContro
             for code, product in dorsal.products().items():
                 if product.controls or product.alarm_modes:
                     yield DorsalController(controller._coordinator, "restored", code)
-        if isinstance(controller, DreamSenseController):
+        if isinstance(controller, LikimioController):
+            yield variant(controller, _known={"light"})
+            yield variant(controller, profile=likimio.PROFILES[likimio.NO_PRODUCT], _known={"clock"})
+        elif isinstance(controller, DreamSenseController):
             for profile in DREAMSENSE_PROFILES.values():
                 yield variant(controller, profile=profile, _known={"clock", "light", "music"})
         if isinstance(controller, EnsoController):

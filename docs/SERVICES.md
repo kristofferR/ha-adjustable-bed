@@ -56,7 +56,7 @@ For named raise/lower/stop voice commands and Apple Home controls, see
 | [`customatic_hold_memory`](#customatic_hold_memory) | Customatic: hold memory buttons | Holds one or more buttons of the memory page on a Clarity or Remedy remote, as if pressed together. Combinations with Program can change saved positions. |
 | [`customatic_move_simultaneously`](#customatic_move_simultaneously) | Customatic: move motors together | Moves up to three motors together, then stops them. |
 | [`dreamsense_delete_alarm`](#dreamsense_delete_alarm) | Dream Sense: delete alarm | Deletes a repeating alarm from the bed's alarm list. |
-| [`dreamsense_light`](#dreamsense_light) | Dream Sense: lighting | Set the bed light color or duration after the bed reports lighting support. |
+| [`dreamsense_light`](#dreamsense_light) | Dream Sense and Likimio lighting | Set the bed light color or duration after a Dream Sense Bed or Likimio receiver reports lighting support. |
 | [`fsm_relax_calibrate`](#fsm_relax_calibrate) | FSM Relax: calibrate | Calibrate the bed with its configured motor directions. Calibration is sent once; if Home Assistant reports an error, check the bed before you try again. |
 | [`floyd_action`](#floyd_action) | Floyd: settings | Moves to a preset, saves over a built-in preset, or links a bed to a room in the app. |
 | [`furnimove_action`](#furnimove_action) | FurniMove: press button | Presses one of the handset's buttons, optionally holding it. |
@@ -859,7 +859,7 @@ the **Alarm response** sensor's attributes. Every selected bed must have that
 alarm.
 
 <a id="dreamsense_light"></a>
-**`dreamsense_light`**: Set the bed light color or duration after the bed reports lighting support.
+**`dreamsense_light`**: Set the bed light color or duration after a Dream Sense Bed or Likimio receiver reports lighting support.
 
 | Field | Name | Meaning |
 |-------|------|---------|

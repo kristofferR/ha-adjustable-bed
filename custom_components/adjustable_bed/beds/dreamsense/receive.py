@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Final
+from typing import ClassVar, Final
 
 from ...codec import richmat as codec
 
@@ -28,6 +28,7 @@ class Alarm:
 
 @dataclass(slots=True)
 class Receive:
+    _extended_types: ClassVar[tuple[int, ...]] = (0x20, 0x21, 0x40)
     pending: bytearray = field(default_factory=bytearray)
     capabilities: set[str] = field(default_factory=set)
     alarms: dict[int, Alarm] = field(default_factory=dict)
@@ -51,7 +52,7 @@ class Receive:
             if len(self.pending) < 3:
                 return
             kind = self.pending[1]
-            if kind in (0x20, 0x21, 0x40):
+            if kind in self._extended_types:
                 if kind == 0x40 and len(self.pending) < 4:
                     return
                 size = int.from_bytes(self.pending[2:4], "big") if kind == 0x40 else self.pending[2]

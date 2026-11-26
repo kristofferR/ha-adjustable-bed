@@ -65,6 +65,7 @@ from scripts.codec_docs import (
 from scripts.codec_docs._bedsmart import BLOCKS as BEDSMART_BLOCKS
 from scripts.codec_docs._common import Block, _block, _hex, _table
 from scripts.codec_docs._dreamsense import BLOCKS as DREAMSENSE_BLOCKS
+from scripts.codec_docs._likimio import BLOCKS as LIKIMIO_BLOCKS
 from scripts.codec_docs._lp2 import BLOCKS as LP2_BLOCKS
 from scripts.codec_docs._maxprime import render_maxprime
 from scripts.codec_docs._super_colchones import BLOCKS as SUPER_COLCHONES_BLOCKS
@@ -1881,7 +1882,7 @@ def render_jerome_controls() -> str:
 BLOCKS.append((GUIDE, "jerome-controls", render_jerome_controls))
 
 
-BLOCKS += DREAMSENSE_BLOCKS
+BLOCKS += DREAMSENSE_BLOCKS + LIKIMIO_BLOCKS
 
 
 def render_baseremote() -> str:
