@@ -475,7 +475,7 @@ async def test_native_paired_child_target_keeps_physical_bed_and_side_owned_prod
     _async_ensure_paired_device_registry(hass, entry, pair)
     registry = dr.async_get(hass)
     parent = registry.async_get_device_by_identifier(
-        next(iter(pair.device_info["identifiers"])), entry.entry_id
+        next(iter(pair.device_info.as_dict()["identifiers"])), entry.entry_id
     )
     right = registry.async_get_child_device_by_identifier(
         side_identifier(pair, "right"), entry.entry_id

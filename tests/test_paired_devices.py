@@ -93,7 +93,7 @@ async def test_single_address_sides_carry_their_side_in_the_device_name(hass):
     _async_ensure_paired_device_registry(hass, entry, coordinator)
     registry = dr.async_get(hass)
     parent = registry.async_get_device_by_identifier(
-        next(iter(coordinator.device_info["identifiers"])), entry.entry_id
+        next(iter(coordinator.device_info.as_dict()["identifiers"])), entry.entry_id
     )
     assert parent is not None
     bed_name = coordinator.children["left"].name

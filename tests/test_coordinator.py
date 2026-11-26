@@ -119,11 +119,11 @@ class TestCoordinatorInit:
         coordinator = AdjustableBedCoordinator(hass, mock_config_entry)
         device_info = coordinator.device_info
 
-        assert device_info["identifiers"] == {("adjustable_bed", TEST_ADDRESS)}
-        assert device_info["name"] == TEST_NAME
-        assert device_info["manufacturer"] == "Linak"
-        assert "2 motors" in device_info["model"]
-        assert device_info["model_id"] is None
+        assert device_info.identifiers == {("adjustable_bed", TEST_ADDRESS)}
+        assert device_info.name == TEST_NAME
+        assert device_info.manufacturer == "Linak"
+        assert "2 motors" in device_info.model
+        assert device_info.model_id is None
 
     async def test_linak_model_variant_is_device_metadata(
         self,
@@ -134,7 +134,7 @@ class TestCoordinatorInit:
         coordinator = AdjustableBedCoordinator(hass, mock_config_entry)
         coordinator.handle_controller_state_update(LINAK_MODEL_VARIANT, "advanced")
 
-        assert coordinator.device_info["model_id"] == "Advanced"
+        assert coordinator.device_info.model_id == "Advanced"
 
 
 class TestCoordinatorControllerStateCallbacks:
@@ -3136,7 +3136,7 @@ class TestMultiMotorConfiguration:
             coordinator = AdjustableBedCoordinator(hass, entry)
             device_info = coordinator.device_info
 
-            assert f"{motor_count} motors" in device_info["model"]
+            assert f"{motor_count} motors" in device_info.model
 
 
 class TestStopAfterCancel:

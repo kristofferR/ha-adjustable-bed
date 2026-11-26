@@ -166,8 +166,8 @@ async def beds(hass, count=2, *, capability=LIVE, topology=None, connected=True)
         made.pair = PairedBedCoordinator(
             hass, entry, {"left": made.items[0], "right": made.items[1]}, connection_mode=topology
         )
-        dr.async_get(hass).async_get_or_create(
-            config_entry_id=entry.entry_id, **made.pair.device_info
+        dr.async_get(hass).async_get_or_create_from_info(
+            config_entry_id=entry.entry_id, device_info=made.pair.device_info
         )
         async_register_children(hass, made.pair)
     try:

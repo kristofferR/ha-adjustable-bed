@@ -41,8 +41,8 @@ async def test_registered_comfort_cannot_cross_stop_during_reconnect(
     controller._coordinator = coordinator
     client.disconnect = AsyncMock()
     hass.data.setdefault(DOMAIN, {})[entry.entry_id] = coordinator
-    device = dr.async_get(hass).async_get_or_create(
-        config_entry_id=entry.entry_id, **coordinator.device_info
+    device = dr.async_get(hass).async_get_or_create_from_info(
+        config_entry_id=entry.entry_id, device_info=coordinator.device_info
     )
     await async_register_services(hass)
     entered, release = asyncio.Event(), asyncio.Event()

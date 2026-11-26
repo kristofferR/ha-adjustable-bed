@@ -365,8 +365,8 @@ async def test_settings_batch_uses_loaded_profile_during_entry_reload(hass):
     for co in (left, right):
         hass.data.setdefault(const.DOMAIN, {})[co.entry.entry_id] = co
         device_ids.append(
-            registry.async_get_or_create(
-                config_entry_id=co.entry.entry_id, **co.device_info
+            registry.async_get_or_create_from_info(
+                config_entry_id=co.entry.entry_id, device_info=co.device_info
             ).id
         )
     await services.async_register_services(hass)
