@@ -55,6 +55,7 @@ from .const import (
     BED_TYPE_COMFYDS,
     BED_TYPE_COOLBASE,
     BED_TYPE_CUSTOMATIC_CLARITY,
+    BED_TYPE_CUSTOMATIC_DEMO,
     BED_TYPE_CUSTOMATIC_JEROMES,
     BED_TYPE_CUSTOMATIC_REMEDY,
     BED_TYPE_DIAGNOSTIC,
@@ -311,6 +312,7 @@ from .discovery_hints._hints import ManufacturerHint, NameHint
 from .profiles.bedgear import eligible as bedgear_eligible
 from .profiles.bobpowerbase import PROFILE_CHOICES as BOB_PROFILES
 from .profiles.bobpowerbase import SCAN_KEYWORDS as BOB_SCAN_KEYWORDS
+from .profiles.customatic_demo import NAME_PREFIX as CUSTOMATIC_DEMO_NAME_PREFIX
 from .profiles.majestichome import PROFILE_CHOICES as MAJESTICHOME_PROFILES
 from .profiles.mlily_choices import PROFILE_CHOICES as MLILY_PROFILES
 from .profiles.mlily_remote import VARIANTS as MLILY_REMOTE_PROFILES
@@ -696,6 +698,7 @@ BED_TYPE_DISPLAY_NAMES: dict[str, str] = {
     BED_TYPE_RICHMAT_HARMONY: "HARMONY app",
     BED_TYPE_RICHMAT_IDEALBED: "Idealbed app",
     "ultramatic_smart_bed": "Ultramatic Smart Bed app",
+    BED_TYPE_CUSTOMATIC_DEMO: "Independence app (Customatic Demo)",
     BED_TYPE_CUSTOMATIC_CLARITY: "Customatic Clarity app (Rize Clarity)",
     BED_TYPE_CUSTOMATIC_JEROMES: "Customatic Jerome's C app",
     BED_TYPE_CUSTOMATIC_REMEDY: "Customatic Remedy app (Rize Remedy)",
@@ -1450,6 +1453,17 @@ def detect_new_bed(service_info: BluetoothServiceInfoBleak) -> DetectionResult:
         result.ambiguous_types = list(dict.fromkeys([*(result.ambiguous_types or ()), "relax_motion"]))
         result.signals.append("service:relax_motion_app_candidate")
         result.confidence = min(result.confidence, 0.5)
+    platform_name = getattr(service_info.device, "name", None)
+    if (
+        isinstance(platform_name, str)
+        and platform_name.lower().startswith(CUSTOMATIC_DEMO_NAME_PREFIX)
+        and not any(signal.startswith("excluded:") for signal in result.signals)
+    ):
+        # Independence has the shared Okin prefix, never a unique receiver identity.
+        result.ambiguous_types = list(dict.fromkeys([
+            *(result.ambiguous_types or ()), BED_TYPE_CUSTOMATIC_DEMO,
+        ]))
+        result.signals.append("name:customatic_demo_app_candidate")
     return result
 
 

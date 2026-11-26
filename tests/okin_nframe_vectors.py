@@ -10,6 +10,7 @@ report is quarantined) list the frames the pre-v5 controller sent.
 
 
 
+from tests.customatic_demo_vectors import FRAMES as CUSTOMATIC_DEMO_FRAMES
 from tests.rize_remedy_ii_vectors import VECTORS as RIZE_REMEDY_II_VECTORS
 from tests.superior_sleep_vectors import FROZEN_FRAMES as SUPERIOR_FRAMES
 from tests.superior_sleep_vectors import RECORD_FRAMES as SUPERIOR_RECORDS
@@ -35,6 +36,7 @@ SIMMONS_BLUE_CONTROLS = {
 }
 
 FROZEN_FRAMES: dict[str, frozenset[str]] = {
+    "customatic_demo": frozenset(CUSTOMATIC_DEMO_FRAMES.values()),
     "shuda": frozenset({"05020000000100", "05020000000200", "05020000000400", "05020000000800", "05020800000000", "05020000100000", "05020001000000", "05020000400000", "05020002000000", "05020000000000"}),
     **SUPERIOR_FRAMES,
     "simmons_blue": frozenset(SIMMONS_BLUE_CONTROLS.values()),
