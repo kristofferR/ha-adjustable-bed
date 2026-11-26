@@ -601,7 +601,7 @@ async def test_real_ha_native_child_target_keeps_right_side_and_rejects_conflict
             return
         register_services(hass)
         parent = registry.async_get_device_by_identifier(
-            next(iter(pair.device_info["identifiers"])), entry.entry_id
+            next(iter(pair.device_info.as_dict()["identifiers"])), entry.entry_id
         )
         assert parent is not None
         target_id = right.id if operation == "sonic_mode_1" else parent.id
@@ -700,7 +700,7 @@ async def _exercise_native_p1_movement(
     _async_ensure_paired_device_registry(hass, entry, pair)
     hass.data.setdefault(DOMAIN, {})[entry.entry_id] = pair
     parent = dr.async_get(hass).async_get_device_by_identifier(
-        next(iter(pair.device_info["identifiers"])), entry.entry_id
+        next(iter(pair.device_info.as_dict()["identifiers"])), entry.entry_id
     )
     assert parent is not None
     entry.mock_state(hass, ConfigEntryState.LOADED)
