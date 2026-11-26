@@ -21,7 +21,7 @@ from __future__ import annotations
 import asyncio
 import contextlib
 import logging
-from collections.abc import AsyncIterator, Callable, Collection, Coroutine, Mapping
+from collections.abc import AsyncIterator, Awaitable, Callable, Collection, Coroutine, Mapping
 from typing import TYPE_CHECKING, Any
 
 from homeassistant.config_entries import ConfigEntry
@@ -612,9 +612,14 @@ class PairedBedCoordinator:
             for _side, child in targets:
                 child.request_command_cancel(resources=resources)
 
-    async def _stop_children(self, targets: list[PairTarget]) -> dict[str, BaseException]:
+    async def _stop_children(
+        self,
+        targets: list[PairTarget],
+        *,
+        original_stops: Mapping[str, Callable[[], Awaitable[None]]] | None = None,
+    ) -> dict[str, BaseException]:
         """Send cleanup STOP through the current topology, collecting failures."""
-        token = PAIRED_CLEANUP_STOP.set(True)
+        token = PAIRED_CLEANUP_STOP.set(original_stops or {})
         try:
             return await self._topology.stop_children(targets)
         finally:
@@ -640,11 +645,22 @@ class PairedBedCoordinator:
             self._admission.note_stop(
                 target_side, self._topology.command_scope(command_resources(resource))
             )
+
+        active_stop = None
+        if isinstance(topology := self._topology, SequentialTwoLinkTopology):
+            # The cycle keeps this receiver until its admitted STOP settles.
+            active_stop = topology.admit_active_motor_stop(targets, stop_fn, resource)
+            if active_stop is not None:
+                targets.remove(active_stop[0])
+
         # Like an ordinary motor STOP, preempt any motion holding the writer.
         scope = command_resources("motor:*" if resource.startswith("motor:") else resource)
         self._cancel_before_stop(targets, scope)
         targets, admitted, errors = self._admit_sequential_stops(targets, scope)
+
         async def stop() -> dict[str, BaseException]:
+            if active_stop is not None:
+                errors.update(await active_stop[1])
             await self._collect_admitted_stops(admitted, errors)
             if targets:
                 async with self._connection_mode_transition_lock:

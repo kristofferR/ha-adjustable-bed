@@ -1440,6 +1440,7 @@ def render_rise_commands() -> str:
 
 BLOCKS: list[Block] = [
     (GUIDE, "dorsal-controls", _dorsal.render),
+    (GUIDE, "roomi-s655-plus-controls", _dorsal.render_roomi),
     (GUIDE, "maxprime", render_maxprime),
     (GUIDE, "luniosmart", render_luniosmart),
     (GUIDE, "sonicsleep", render_sonicsleep),

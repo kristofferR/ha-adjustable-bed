@@ -28,6 +28,7 @@ import logging
 from abc import ABC, abstractmethod
 from collections.abc import AsyncIterator, Callable, Collection, Coroutine, Iterator, Mapping
 from dataclasses import dataclass
+from functools import partial
 from typing import TYPE_CHECKING, Any
 from uuid import uuid4
 
@@ -803,6 +804,16 @@ class ConcurrentTwoLinkTopology(_SideLaneTopology):
                 prepared[side][1].outcome in {CommandOutcome.REPLACED, CommandOutcome.STOPPED}
             )
 
+        async def stop_linked_children() -> dict[str, BaseException]:
+            original_stops = {
+                child.address: partial(stop, handle.context)
+                for child, handle in prepared.values()
+                if (stop := handle.context.paired_abort_stop) is not None
+            }
+            if original_stops:
+                return await self._pair._stop_children(targets, original_stops=original_stops)
+            return await self._pair._stop_children(targets)
+
         try:
             async with self.locked_target_sides(targets):
                 if admission.admission_was_cancelled(
@@ -952,7 +963,7 @@ class ConcurrentTwoLinkTopology(_SideLaneTopology):
                             elif error is not None:
                                 errors[side] = error
                     if errors:
-                        stop_errors = await self._pair._stop_children(targets)
+                        stop_errors = await stop_linked_children()
                         raise PairedSideError(action, merge_stop_errors(errors, stop_errors))
 
                     if expected_invalidations:
@@ -966,14 +977,14 @@ class ConcurrentTwoLinkTopology(_SideLaneTopology):
                             and not is_expected_invalidation(side, result)
                         }
                         if late_errors:
-                            stop_errors = await self._pair._stop_children(targets)
+                            stop_errors = await stop_linked_children()
                             raise PairedSideError(
                                 action, merge_stop_errors(late_errors, stop_errors)
                             )
                     else:
                         await asyncio.gather(*result_tasks.values())
                 except asyncio.CancelledError:
-                    await self._pair._stop_children(targets)
+                    await stop_linked_children()
                     raise
                 finally:
                     for task in result_tasks.values():
@@ -1159,6 +1170,14 @@ class ConcurrentTwoLinkTopology(_SideLaneTopology):
             )
 
 
+@dataclass
+class SequentialActiveSide:
+    """The receiver currently operating on the sequential link."""
+
+    target: PairTarget
+    stop: asyncio.Task[dict[str, BaseException]] | None = None
+
+
 class SequentialTwoLinkTopology(PairTopology):
     """Two receivers sharing one link lane: connect, operate, then disconnect.
 
@@ -1171,6 +1190,7 @@ class SequentialTwoLinkTopology(PairTopology):
         # Orders connection switching; one command cycle owns the link lane.
         self.command_lock = asyncio.Lock()
         self._cycle: SequentialCycle | None = None
+        self._active_side: SequentialActiveSide | None = None
 
     @property
     def cycle(self) -> SequentialCycle | None:
@@ -1319,22 +1339,25 @@ class SequentialTwoLinkTopology(PairTopology):
                     errors[side] = failed("side_not_released", side=side)
                 break
 
+            active_side = SequentialActiveSide((side, child))
+            self._active_side = active_side
             op_error: BaseException | None = None
             try:
                 with more_commands_follow(side != last_side):
                     await op(child)
-            except asyncio.CancelledError:
-                # Release this side before propagating the cancellation.
-                if not local_role:
-                    await safe_disconnect(side, child)
-                raise
             except Exception as err:
                 op_error = err
+            finally:
+                try:
+                    # STOP owns any fallback on this link after the movement exits.
+                    if (stop := active_side.stop) is not None:
+                        async def wait_for_stop(task: asyncio.Task[dict[str, BaseException]]) -> None:
+                            await task
 
-            # Release the slot before opening the next side. A failed disconnect
-            # aborts the cycle; protocol cleanup belongs to the controller and
-            # link loss alone does not prove that every firmware halted motion.
-            disconnected = local_role or await safe_disconnect(side, child)
+                        await settle_cancellation(wait_for_stop(stop))
+                finally:
+                    self._active_side = None
+                    disconnected = local_role or await safe_disconnect(side, child)
             if op_error is not None or not disconnected:
                 if op_error is not None:
                     errors[side] = op_error
@@ -1380,6 +1403,44 @@ class SequentialTwoLinkTopology(PairTopology):
             async with self.command_lock:
                 return await self._stop_with_link_guard(targets, stop_targets)
         return await self.stop_children(targets)
+
+    def admit_active_motor_stop(
+        self, targets: list[PairTarget], stop_fn: ChildCommand, resource: str
+    ) -> tuple[PairTarget, asyncio.Task[dict[str, BaseException]]] | None:
+        """Reserve a side-wide STOP on the cycle's live link before waiting on any gate."""
+        active = self._active_side
+        if resource != "motor:*" or active is None or active.target not in targets:
+            return None
+        if active.stop is not None:
+            return active.target, active.stop
+
+        from .coordinator import AdjustableBedCoordinator
+
+        side, child = active.target
+        if not isinstance(child, AdjustableBedCoordinator):
+            return None
+        controller = child.controller
+        if (
+            not child.is_connected
+            or controller is None
+            or controller.stop_on_active_sequential_link is not True
+        ):
+            return None
+
+        async def stop() -> dict[str, BaseException]:
+            try:
+                with child.hold_command_connection():
+                    await child.async_stop_motor(
+                        stop_fn, resource, stream_member=False, require_current_link=True
+                    )
+            except (Exception, asyncio.CancelledError) as err:
+                _LOGGER.warning("Motor STOP failed on %s side (%s): %s", side, child.address, err)
+                return {side: err}
+            return {}
+
+        # Capture the scheduler owner before the movement sees cancellation.
+        active.stop = asyncio.create_task(stop(), eager_start=True)
+        return active.target, active.stop
 
     async def stop_motor(
         self, targets: list[PairTarget], stop_fn: ChildCommand, resource: str

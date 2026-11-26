@@ -60,6 +60,7 @@ from .const import (
     BED_TYPE_CUSTOMATIC_JEROMES,
     BED_TYPE_CUSTOMATIC_REMEDY,
     BED_TYPE_DIAGNOSTIC,
+    BED_TYPE_DORSAL,
     BED_TYPE_DOUBLESLEEP,
     BED_TYPE_ENSO2,
     BED_TYPE_ERGOBED,
@@ -84,6 +85,7 @@ from .const import (
     BED_TYPE_KAIDI,
     BED_TYPE_KEESON,
     BED_TYPE_KOMFYD,
+    BED_TYPE_LANGJUE,
     BED_TYPE_LEGGETT_GEN2,
     BED_TYPE_LEGGETT_LP_LEGACY,
     BED_TYPE_LEGGETT_OKIN,
@@ -150,9 +152,11 @@ from .const import (
     BED_TYPE_SILVERMOTION,
     BED_TYPE_SIMMONS,
     BED_TYPE_SIMMONS_BLUE,
+    BED_TYPE_SLEEP_ASSIST_PRO,
     BED_TYPE_SLEEP_NUMBER,
     BED_TYPE_SLEEP_NUMBER_MCR,
     BED_TYPE_SLEEPSTAR,
+    BED_TYPE_SLEEPTIME,
     BED_TYPE_SLEEPTRACKER,
     BED_TYPE_SLEEPYS_BOX15,
     BED_TYPE_SLEEPYS_BOX24,
@@ -192,6 +196,8 @@ from .const import (
     DEWERTOKIN_RF_GATEWAY_DEVICE_NAME_CHAR_UUID,
     DEWERTOKIN_RF_GATEWAY_SERVICE_UUID,
     DEWERTOKIN_SERVICE_UUID,
+    DORSAL_ROOMI_S655_PLUS,
+    DORSAL_ROUTES,
     ERGOMOTION_NAME_PATTERNS,
     ESHINE_OKIN_PROFILES,
     GLIDEAWAY_MOTION_MODELS,
@@ -606,6 +612,7 @@ BED_TYPE_DISPLAY_NAMES: dict[str, str] = {
     "agingplace": "Aging in Place / Dawn House app",
     "smart_sleep": "OKIN Smart Sleep app",
     "sleep_assistant": "Sleep Assist",
+    BED_TYPE_SLEEP_ASSIST_PRO: "Sleep Assist Pro",
     "onlysnore": "Snore Monitor app",
     "smart_comfort_synargy": "Smart Comfort by SYNARGY app",
     "smart_comfort_synergy": "Smart Comfort app",
@@ -686,12 +693,14 @@ BED_TYPE_DISPLAY_NAMES: dict[str, str] = {
     BED_TYPE_SHUDA: "Shuda app",
     BED_TYPE_SIMMONS_BLUE: "Simmons Blue app",
     BED_TYPE_RESIDENT: "Resident Adjustable Base app",
+    BED_TYPE_SLEEPTIME: "Sleeptime Australia app (SmartBed205, 402, 404, 405)",
     "enso": "Enso Remote",
     BED_TYPE_ENSO2: "ENSO Sleep Control (Enso 2)",
     "sealy_posturematic": "Sealy Posturematic",
     BED_TYPE_YAMADA: "アシステック / ASSISTEC / Yamada app",
     BED_TYPE_BETTERLIVING2: "BetterLiving / BetterLiving2 app",
     BED_TYPE_LEVA: "Leva Bed Remote (Leva Smart App)",
+    BED_TYPE_LANGJUE: "Comfort Smart Bed app (Langjue)",
     BED_TYPE_LINX: "Linx app",
     BED_TYPE_SOMOS: "Somos / SomosBeds app",
     BED_TYPE_COMFORTBASE: "ComfortBaseForBluetooth app",
@@ -832,6 +841,7 @@ def is_jensen_linon_name(name: str | None) -> bool:
 # users find them by app name. A bed type's own entry names the app its auto
 # variant selects; see AGENTS.md "Adding a New Bed Type".
 APP_VARIANT_CHOICES: dict[tuple[str, str], str] = {
+    (BED_TYPE_DORSAL, DORSAL_ROOMI_S655_PLUS): DORSAL_ROUTES[DORSAL_ROOMI_S655_PLUS],
     **{("majestichome", profile): f"Majestic Home ({label})" for profile, label in MAJESTICHOME_PROFILES.items()},
     **{("richmat_sleep_receiver", app): f"{label} separate sleep receiver"
        for app, label in (("wsilver2", "W.Silver Products"), ("americanstar", "AMERICANSTAR"),
@@ -967,7 +977,7 @@ HIDDEN_APP_CHOICES: Final = frozenset(bed_type_choice(*row) for row in _HIDDEN_A
 # Bed types whose one row asks for the product, although each product is an app entry.
 PRODUCT_QUESTION_BED_TYPES: Final = frozenset(
     {BED_TYPE_ENSO2, "dreamsense", "saatva", "majestichome", BED_TYPE_LEVA, BED_TYPE_LINX, BED_TYPE_SOMOS, "bobpowerbase", BED_TYPE_COMFORT_ENHANCEMENT3, BED_TYPE_SYMPHONY_SLEEP, BED_TYPE_YAMADA, BED_TYPE_RICHMAT_APP, BED_TYPE_RICHMAT_APP_SLEEP, BED_TYPE_GALAXY, BED_TYPE_MLILY, BED_TYPE_MLILY_REMOTE, BED_TYPE_OKIMIKI, "luuna", BED_TYPE_GOODVIBE, BED_TYPE_HJBED, BED_TYPE_CASPER_BASE, BED_TYPE_COMFORT_ENHANCEMENTS, BED_TYPE_COMFORTBASE, "sleep_evolution", "wsilver_legacy", "personal_comfort", "instant_comfort"}
-).union({BED_TYPE_BETTERLIVING2, "sealy_posturematic"})
+).union({BED_TYPE_BETTERLIVING2, BED_TYPE_SLEEPTIME, "sealy_posturematic"})
 # Routes named after their protocol, not an app or brand. They stay off the
 # bed-type list and are reached through detection, the brand list and Configure.
 PROTOCOL_ROUTES: Final = frozenset(
@@ -1427,7 +1437,7 @@ def detect_bed_type(service_info: BluetoothServiceInfoBleak) -> str | None:
         For detailed detection with confidence scores, use detect_new_bed().
     """
     result = detect_new_bed(service_info)
-    if result.bed_type in ("dorsal", BED_TYPE_SIMMONS_BLUE, "sleep_assistant", "super_colchones", "bobpowerbase", BED_TYPE_GALAXY, BED_TYPE_GOODVIBE, BED_TYPE_MLILY, BED_TYPE_MLILY_REMOTE, BED_TYPE_MOTOMOTION, BED_TYPE_N32_MOTION_BED, BED_TYPE_SYMPHONY, BED_TYPE_MLINE, BED_TYPE_OKIMIKI) and result.confidence < 0.7:
+    if result.bed_type in ("dorsal", BED_TYPE_SIMMONS_BLUE, "sleep_assistant", BED_TYPE_SLEEP_ASSIST_PRO, "super_colchones", "bobpowerbase", BED_TYPE_GALAXY, BED_TYPE_GOODVIBE, BED_TYPE_MLILY, BED_TYPE_MLILY_REMOTE, BED_TYPE_MOTOMOTION, BED_TYPE_N32_MOTION_BED, BED_TYPE_SYMPHONY, BED_TYPE_MLINE, BED_TYPE_OKIMIKI) and result.confidence < 0.7:
         return None  # An app name hint requires an explicit product choice.
     return result.bed_type
 
@@ -1507,6 +1517,19 @@ def _detect_with_first_pass(
         elif result.bed_type != "sleep_assistant":
             result.ambiguous_types = list(dict.fromkeys([*(result.ambiguous_types or ()), "sleep_assistant"]))
             result.signals.append("name:sleep_assistant_candidate")
+    from .profiles.sleep_assist_pro import route_for_id
+
+    if route_for_id(service_info.name) and not any(
+        signal.startswith("excluded:") for signal in result.signals
+    ):
+        signal = "app_hint:sleep_assist_pro"
+        if result.bed_type is None:
+            result = DetectionResult(BED_TYPE_SLEEP_ASSIST_PRO, 0.3, [*result.signals, signal])
+        elif result.bed_type != BED_TYPE_SLEEP_ASSIST_PRO:
+            result.ambiguous_types = [
+                *(result.ambiguous_types or ()), BED_TYPE_SLEEP_ASSIST_PRO
+            ]
+            result.signals.append(signal)
     # The current Linx scan filter is a case-sensitive substring, not a model
     # or service selector. Preserve existing receiver detection as an alternative.
     if isinstance(service_info.name, str) and "KSWF07D" in service_info.name:
@@ -1668,6 +1691,20 @@ def _detect_with_first_pass(
         elif result.bed_type != BED_TYPE_SIMMONS_BLUE:
             result.ambiguous_types = [*(result.ambiguous_types or ()), BED_TYPE_SIMMONS_BLUE]
             result.signals.append("name:simmons_blue_app_candidate")
+    from .profiles.sleeptime import select as sleeptime_selector
+
+    # The stock picker names a layout but the shared UART does not identify the app.
+    if (
+        isinstance(platform_name, str)
+        and sleeptime_selector(platform_name) is not None
+        and result.confidence < 0.8
+        and not any(signal.startswith("excluded:") for signal in result.signals)
+    ):
+        if result.bed_type is None:
+            result = DetectionResult(BED_TYPE_SLEEPTIME, 0.3, ["name:sleeptime_app_candidate"])
+        elif result.bed_type != BED_TYPE_SLEEPTIME:
+            result.ambiguous_types = list(dict.fromkeys([*(result.ambiguous_types or ()), BED_TYPE_SLEEPTIME]))
+            result.signals.append("name:sleeptime_app_candidate")
     # These shared app names are candidates only. Never replace a confident
     # receiver signature or infer N32 from the Nordic service alone.
     if (isinstance(platform_name, str)

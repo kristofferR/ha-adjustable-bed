@@ -4,6 +4,8 @@ from dataclasses import dataclass, field
 from enum import IntFlag
 from typing import Final, overload
 
+from .profiles import langjue as langjue_profile
+
 # How every automatic choice reads in setup and Configure.
 AUTOMATIC_LABEL: Final = "Automatic (recommended)"
 DOMAIN: Final = "adjustable_bed"
@@ -368,6 +370,7 @@ TIMED_MOVE_MOTOR_OPTIONS: Final = (
     "feet",
     "both",
     "tilt",
+    "foot_tilt",
     "pillow",
     "lumbar",
     "bed_height",
@@ -447,17 +450,20 @@ BED_TYPE_OKIN_7BYTE: Final = "okin_7byte"  # 7-byte via Okin service UUID
 BED_TYPE_OKIN_NORDIC: Final = "okin_nordic"  # 7-byte via Nordic UART
 BED_TYPE_OKIN_DOT: Final = "okin_dot"  # DOT PROTOCOL: CB24-style frames, FurniMove remote keycodes
 BED_TYPE_DORSAL: Final = "dorsal"
+DORSAL_ROOMI_S655_PLUS: Final = "roomi_s655_plus"
 DORSAL_ROUTES: Final = {
     "cprn": "CPRN",
     "corn": "CORN",
     "restored": "Saved Dorsal project",
     "roomi": "Roomi controls",
+    DORSAL_ROOMI_S655_PLUS: "ROOMI bed (S655 Plus)",
 }
 BED_TYPE_NERUM: Final = "nerum"
 BED_TYPE_RELAX_MOTION: Final = "relax_motion"
 BED_TYPE_SMARTBED: Final = "smartbed"  # The SmartBed app's receivers (Okin CB24 family and others)
 BED_TYPE_CHEERSSLEEP: Final = "cheerssleep"
 BED_TYPE_SMART_SLEEP: Final = "smart_sleep"
+BED_TYPE_SLEEP_ASSIST_PRO: Final = "sleep_assist_pro"
 BED_TYPE_SLEEP_ASSISTANT: Final = "sleep_assistant"
 BED_TYPE_ONLYSNORE: Final = "onlysnore"
 BED_TYPE_JALON_BED: Final = "jalon_bed"
@@ -563,6 +569,7 @@ BED_TYPE_BETTERLIVING2: Final = "betterliving2"
 BED_TYPE_SOMOS: Final = "somos"
 BED_TYPE_COMFORTBASE: Final = "comfortbase"
 BED_TYPE_LEVA: Final = "leva"
+BED_TYPE_LANGJUE: Final = "langjue"
 BED_TYPE_LINX: Final = "linx"
 BED_TYPE_COMFORT_ENHANCEMENTS: Final = "comfort_enhancements"
 COMFORT_ENHANCEMENTS_VARIANTS: Final = {
@@ -571,9 +578,10 @@ COMFORT_ENHANCEMENTS_VARIANTS: Final = {
     "mc4": "MC4: Lumbar Support / Massage Plus",
     "mc5": "MC5: Hi Lo Lift / Massage Plus",
 }
+BED_TYPE_SLEEPTIME: Final = "sleeptime"
 VARIANT_REQUIRED_BED_TYPES: Final = frozenset(
     {BED_TYPE_DREAMSENSE, BED_TYPE_SAATVA, BED_TYPE_MAJESTICHOME, BED_TYPE_LEVA, BED_TYPE_LINX, BED_TYPE_SOMOS, BED_TYPE_BOBPOWERBASE, "sleep_evolution", "wsilver_legacy", BED_TYPE_SYMPHONY_SLEEP, "comfort_enhancement3", BED_TYPE_YAMADA, BED_TYPE_RICHMAT_APP, BED_TYPE_RICHMAT_APP_SLEEP, BED_TYPE_ENSO2, "luuna", "personal_comfort", "instant_comfort", "richmat_sleep_receiver", BED_TYPE_MLILY, BED_TYPE_MLILY_REMOTE, BED_TYPE_GALAXY, BED_TYPE_OKIMIKI, BED_TYPE_GOODVIBE, BED_TYPE_HJBED, BED_TYPE_ESHINE_OKIN, BED_TYPE_ZSERIES, BED_TYPE_GLIDEAWAY_MOTION, BED_TYPE_COMFORT_ENHANCEMENTS, BED_TYPE_COMFORTBASE, "casper_base", BED_TYPE_RICHMAT_CLASSIC_APPS}
-).union({BED_TYPE_BETTERLIVING2})
+).union({BED_TYPE_BETTERLIVING2, BED_TYPE_SLEEPTIME})
 # Aging in Place / Dawn House has one fixed profile; these filter observations.
 BED_TYPE_AGINGPLACE: Final = "agingplace"
 CONF_AGINGPLACE_BED_MODE: Final = "agingplace_bed_mode"
@@ -794,6 +802,7 @@ SUPPORTED_BED_TYPES: Final = [
     BED_TYPE_AGINGPLACE,
     BED_TYPE_SMART_SLEEP,
     BED_TYPE_SLEEP_ASSISTANT,
+    BED_TYPE_SLEEP_ASSIST_PRO,
     BED_TYPE_ONLYSNORE,
     BED_TYPE_ENSO,
     BED_TYPE_ENSO2,
@@ -828,6 +837,7 @@ SUPPORTED_BED_TYPES: Final = [
     BED_TYPE_BF,
     BED_TYPE_JALON_BED,
     BED_TYPE_LEVA,
+    BED_TYPE_LANGJUE,
     BED_TYPE_LINX,
     BED_TYPE_SYMPHONY_SLEEP,
     BED_TYPE_SYMPHONY,
@@ -886,6 +896,7 @@ SUPPORTED_BED_TYPES: Final = [
     BED_TYPE_RESIDENT,
     BED_TYPE_RIZE_HOME,
     BED_TYPE_SUPERIOR_SLEEP,
+    BED_TYPE_SLEEPTIME,
     BED_TYPE_ULTRAMATIC_SMART_BED,
     BED_TYPE_OKIN_MOTIONBED,
     BED_TYPE_OKIMATTMOTION,
@@ -3009,6 +3020,7 @@ BED_MOTOR_PULSE_DEFAULTS: Final = {
     # Keeson: 100ms delay → 10 repeats = 1.0s total
     # Source: com.sfd.ergomotion ANALYSIS.md
     BED_TYPE_KEESON: (10, 100),
+    BED_TYPE_SLEEP_ASSIST_PRO: (10, 200),
     # Ergomotion: 100ms delay → 10 repeats = 1.0s total
     # Source: com.sfd.ergomotion ANALYSIS.md
     BED_TYPE_ERGOMOTION: (10, 100),
@@ -3043,11 +3055,13 @@ BED_MOTOR_PULSE_DEFAULTS: Final = {
     BED_TYPE_COMFORT_ENHANCEMENT3: (10, 100),
     BED_TYPE_N32_MOTION_BED: (5, 200),  # Finite caller pulse; app refresh is 200 ms.
     BED_TYPE_SHUDA: (5, 200),
+    BED_TYPE_LANGJUE: (2, langjue_profile.MOTOR_REFRESH_MS),  # HA tap at the app's refresh rate.
     BED_TYPE_LINX: (334, 3),  # HA finite tap bound; Linx attempts held refresh every 3 ms.
     BED_TYPE_SYMPHONY_SLEEP: (4, 300),
     BED_TYPE_YAMADA: (4, 300),  # HA finite tap default at the app refresh cadence.
     BED_TYPE_BETTERLIVING2: (10, 100),  # The chosen layout owns the actual refresh cadence.
     BED_TYPE_RESIDENT: (4, 300),  # Resident 300 ms refresh; four pulses bound an HA tap.
+    BED_TYPE_SLEEPTIME: (4, 300),
     BED_TYPE_ULTRAMATIC_SMART_BED: (4, 300),  # HA finite tap; app held refresh is 300 ms.
     BED_TYPE_ADJUSTABLE_LUMBAR: (10, 100),  # APK 100 ms hold refresh; ~1 s HA movement
     # Richmat MH apps: KEEP repeats at each control's own interval (100 ms for

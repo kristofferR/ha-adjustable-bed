@@ -31,6 +31,8 @@ WAKE_ACTIONS: Final = (
     "lounge",
     "tv",
     "reading",
+    "stretch",
+    "backrest",
     "yoga",
     "memory_1",
     "memory_2",
