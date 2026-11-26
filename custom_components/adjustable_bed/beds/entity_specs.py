@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import math
 from collections.abc import Awaitable, Callable, Coroutine, Mapping
+from contextlib import AbstractContextManager
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any, Final, Literal
 
@@ -107,6 +108,10 @@ class ControllerSwitchSpec:
     local_set_fn: Callable[[bool], None] | None = field(default=None, kw_only=True)
     # Turning off sends no frame (only turning on does): applied without connecting.
     local_off_fn: Callable[[], None] | None = field(default=None, kw_only=True)
+    # Claim shared state before submitting a command that can preempt another owner.
+    command_admission: Callable[[], AbstractContextManager[None]] | None = field(
+        default=None, kw_only=True
+    )
     available_fn: Callable[[BedController], bool] | None = field(default=None, kw_only=True)
     entity_registry_enabled_default: bool = field(default=True, kw_only=True)
     entity_category: EntityCategory | None = field(default=None, kw_only=True)
@@ -199,6 +204,10 @@ class MotorControlSpec:
     stop_scope: Literal["motor", "side"] | None = field(default=None, kw_only=True)
     # Logical sides drive the same physical actuator on a single receiver.
     shared_across_sides: bool = field(default=False, kw_only=True)
+    # Timed move (up, duration in ms) when the motor owns timing and release.
+    timed_move_fn: Callable[[BedController, bool, int], Coroutine[Any, Any, None]] | None = field(
+        default=None, kw_only=True
+    )
 
 
 # Units a position slider can be scaled in.

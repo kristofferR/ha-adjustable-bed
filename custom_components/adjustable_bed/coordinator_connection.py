@@ -56,6 +56,7 @@ from .command_scheduler import ALL_COMMAND_RESOURCES, CommandOutcome, command_fr
 from .const import (
     ADAPTER_AUTO,
     BED_TYPE_ADJUSTABLE_LUMBAR,
+    BED_TYPE_ATLAS_LIFT,
     BED_TYPE_FURNIMOVE,
     BED_TYPE_GMMOTOR_SLEEP_MM,
     BED_TYPE_GMMOTOR_SLEEP_SXB,
@@ -1145,7 +1146,11 @@ class CoordinatorConnectionMixin:
                     # see live services to confirm the bond instead of looping.
                     # FurniMove startup subscribes immediately. On BlueZ a
                     # cached collection can precede the live GATT objects (#633).
-                    disable_cache = bed_requires_pairing or self._bed_type == BED_TYPE_FURNIMOVE
+                    # Atlas needs the full service table to reject ambiguous framing.
+                    disable_cache = bed_requires_pairing or self._bed_type in (
+                        BED_TYPE_ATLAS_LIFT,
+                        BED_TYPE_FURNIMOVE,
+                    )
                     onboarding_deadline = (
                         asyncio.get_running_loop().time() + (
                             VIBRADORM_VMAT_ONBOARDING_TIMEOUT_SECONDS

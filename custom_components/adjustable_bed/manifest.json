@@ -2225,10 +2225,22 @@
       "connectable": true
     },
     {
+      "local_name": "KSB[tT]*",
+      "connectable": true
+    },
+    {
+      "local_name": "KSP[sS][bB][eE][dD]*",
+      "connectable": true
+    },
+    {
       "local_name": "KSRM*"
     },
     {
       "local_name": "KSRN*"
+    },
+    {
+      "local_name": "KSS[lL][bB][eE][dD]*",
+      "connectable": true
     },
     {
       "local_name": "KSWF07D*",
@@ -2240,6 +2252,26 @@
     },
     {
       "local_name": "KSWF19S*",
+      "connectable": true
+    },
+    {
+      "local_name": "KSW[fF]*",
+      "connectable": true
+    },
+    {
+      "local_name": "KSb[tT]*",
+      "connectable": true
+    },
+    {
+      "local_name": "KSp[sS][bB][eE][dD]*",
+      "connectable": true
+    },
+    {
+      "local_name": "KSs[lL][bB][eE][dD]*",
+      "connectable": true
+    },
+    {
+      "local_name": "KSw[fF]*",
       "connectable": true
     },
     {
@@ -2277,6 +2309,38 @@
     },
     {
       "local_name": "KZRN*"
+    },
+    {
+      "local_name": "KsB[tT]*",
+      "connectable": true
+    },
+    {
+      "local_name": "KsP[sS][bB][eE][dD]*",
+      "connectable": true
+    },
+    {
+      "local_name": "KsS[lL][bB][eE][dD]*",
+      "connectable": true
+    },
+    {
+      "local_name": "KsW[fF]*",
+      "connectable": true
+    },
+    {
+      "local_name": "Ksb[tT]*",
+      "connectable": true
+    },
+    {
+      "local_name": "Ksp[sS][bB][eE][dD]*",
+      "connectable": true
+    },
+    {
+      "local_name": "Kss[lL][bB][eE][dD]*",
+      "connectable": true
+    },
+    {
+      "local_name": "Ksw[fF]*",
+      "connectable": true
     },
     {
       "local_name": "L&P *"
@@ -3884,6 +3948,70 @@
     },
     {
       "local_name": "hhc*"
+    },
+    {
+      "local_name": "kSB[tT]*",
+      "connectable": true
+    },
+    {
+      "local_name": "kSP[sS][bB][eE][dD]*",
+      "connectable": true
+    },
+    {
+      "local_name": "kSS[lL][bB][eE][dD]*",
+      "connectable": true
+    },
+    {
+      "local_name": "kSW[fF]*",
+      "connectable": true
+    },
+    {
+      "local_name": "kSb[tT]*",
+      "connectable": true
+    },
+    {
+      "local_name": "kSp[sS][bB][eE][dD]*",
+      "connectable": true
+    },
+    {
+      "local_name": "kSs[lL][bB][eE][dD]*",
+      "connectable": true
+    },
+    {
+      "local_name": "kSw[fF]*",
+      "connectable": true
+    },
+    {
+      "local_name": "ksB[tT]*",
+      "connectable": true
+    },
+    {
+      "local_name": "ksP[sS][bB][eE][dD]*",
+      "connectable": true
+    },
+    {
+      "local_name": "ksS[lL][bB][eE][dD]*",
+      "connectable": true
+    },
+    {
+      "local_name": "ksW[fF]*",
+      "connectable": true
+    },
+    {
+      "local_name": "ksb[tT]*",
+      "connectable": true
+    },
+    {
+      "local_name": "ksp[sS][bB][eE][dD]*",
+      "connectable": true
+    },
+    {
+      "local_name": "kss[lL][bB][eE][dD]*",
+      "connectable": true
+    },
+    {
+      "local_name": "ksw[fF]*",
+      "connectable": true
     },
     {
       "local_name": "motob*"

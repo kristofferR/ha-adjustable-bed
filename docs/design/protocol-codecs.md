@@ -25,6 +25,11 @@ control, current-time and alarm literals through `codec/keeson.py`. Its model
 byte stays zero and establishes no side addressing; its session and gesture
 behavior lives in `beds/jalon_bed/`, separate from the other ORE apps.
 
+OkimattMotion's 31 control literals reproduce through Keeson's big-endian
+E5 encoder. Its 10 alarm literals use the shared checksum with the EA clock
+field encoder and OkimattMotion's own option bytes. The Cherish clock differs
+in those fields, and the OkimattMotion profile has its own control sequences.
+
 ## Codec families
 
 Each codec module's docstring describes its frame; each profile module's
@@ -91,6 +96,18 @@ No existing codec reproduces every relevant command and response format, so this
 family owns its encoders and parser. `tests/test_smart_comfort.py` verifies both
 members' frozen literals, rather than selecting a family by UUID or brand.
 See the [Smart Comfort guide](../beds/smart-comfort.md).
+
+## Sleeptime
+
+Sleeptime 1.0.1 reproduces the frozen writes through Okin N-frame's
+`frame40`, `request`, `clock` and `alarm` encoders. Its motion suffix is
+`01`. Ultramatic's side selector, BCD fields and paired seven-byte status
+records have different meanings. Sleeptime adds one single-record dispatcher
+for massage and alarm updates. The app profile owns the three layouts,
+weekday mapping and cadence. The controller binds the delayed release and
+settings writes to their starting UART session. See the
+[Sleeptime guide](../beds/okin-nframe.md#sleeptime) and
+`tests/test_sleeptime.py`.
 
 ## Ultramatic Smart Bed
 

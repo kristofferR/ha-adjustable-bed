@@ -214,6 +214,7 @@ def runtime_variants(controllers: Iterable[BedController]) -> Iterator[BedContro
     from custom_components.adjustable_bed.beds.dorsal.controller import DorsalController
     from custom_components.adjustable_bed.beds.dreamsense.controller import DreamSenseController
     from custom_components.adjustable_bed.beds.keeson.enso import EnsoController
+    from custom_components.adjustable_bed.beds.langjue import LangjueController
     from custom_components.adjustable_bed.beds.okimiki.controller import OkimikiController
     from custom_components.adjustable_bed.beds.onlysnore.controller import OnlySnoreController
     from custom_components.adjustable_bed.beds.ore_ultramatic.controller import (
@@ -256,6 +257,7 @@ def runtime_variants(controllers: Iterable[BedController]) -> Iterator[BedContro
     from custom_components.adjustable_bed.beds.truemotion.controller import TrueMotionController
     from custom_components.adjustable_bed.beds.vibradorm.app import VibradormAppController
     from custom_components.adjustable_bed.beds.vmatbasic.controller import VMatBasicController
+    from custom_components.adjustable_bed.const import DORSAL_ROOMI_S655_PLUS
     from custom_components.adjustable_bed.profiles import dorsal, relax_motion, truemotion
     from custom_components.adjustable_bed.profiles import vmatbasic as vmat_profiles
     from custom_components.adjustable_bed.profiles.dreamsense import PROFILES as DREAMSENSE_PROFILES
@@ -274,6 +276,8 @@ def runtime_variants(controllers: Iterable[BedController]) -> Iterator[BedContro
     dorsal_catalog_covered = False
     for controller in controllers:
         yield controller
+        if isinstance(controller, LangjueController):
+            yield variant(controller, _head_foot=True, _has_light=True, _has_massage=True)
         if isinstance(controller, SimmonsBlueController):
             yield from (variant(controller, _layout=layout) for layout in SIMMONS_BLUE_LAYOUTS.values())
         if isinstance(controller, SmartBedController) and controller.protocol == 5:
@@ -287,6 +291,7 @@ def runtime_variants(controllers: Iterable[BedController]) -> Iterator[BedContro
         if isinstance(controller, DorsalController) and not dorsal_catalog_covered:
             dorsal_catalog_covered = True
             yield DorsalController(controller._coordinator, "roomi", None)
+            yield DorsalController(controller._coordinator, DORSAL_ROOMI_S655_PLUS, None)
             for code, product in dorsal.products().items():
                 if product.controls or product.alarm_modes:
                     yield DorsalController(controller._coordinator, "restored", code)

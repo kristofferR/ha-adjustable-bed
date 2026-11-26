@@ -17,8 +17,10 @@ from custom_components.adjustable_bed.beds.dorsal.controller import (
 from custom_components.adjustable_bed.beds.dorsal.receive import Alarm, Stream, decode
 from custom_components.adjustable_bed.beds.richmat.transport import select_app_link
 from custom_components.adjustable_bed.codec import richmat
+from custom_components.adjustable_bed.const import DORSAL_ROOMI_S655_PLUS
 from custom_components.adjustable_bed.discovery_hints.dorsal import DORSAL_TRANSPORTS
 from custom_components.adjustable_bed.profiles import dorsal
+from tests import roomi_vectors
 from tests.dorsal_vectors import CONTROL, ROOMI, STATUS
 
 _STD = "00001801-0000-1000-8000-00805f9b34fb"
@@ -242,11 +244,158 @@ async def test_roomi_stage3_does_not_probe_and_fixed_writes_use_nordic(monkeypat
     ]
 
 
-async def test_cancel_pending_refresh_then_release_the_same_link(monkeypatch):
+def test_s655_plus_app_choice_selects_its_own_profile():
+    from custom_components.adjustable_bed.detection import (
+        bed_type_choice,
+        get_bed_type_options,
+        resolve_bed_type_choice,
+    )
+    from custom_components.adjustable_bed.profile_id import resolve_profile_id
+
+    choice = bed_type_choice("dorsal", DORSAL_ROOMI_S655_PLUS)
+    assert {"value": choice, "label": "ROOMI bed (S655 Plus)"} in get_bed_type_options()
+    bed_type, variant = resolve_bed_type_choice(choice)
+    assert (bed_type, variant) == ("dorsal", DORSAL_ROOMI_S655_PLUS)
+    assert resolve_profile_id({"bed_type": bed_type, "protocol_variant": variant}) == (
+        "dorsal:roomi_s655_plus"
+    )
+
+
+@pytest.mark.parametrize(("writer_key", "other_key", "index"), [("n1", "w1", 0), ("w2", "n1", 1)])
+async def test_s655_plus_uses_frozen_frames_and_releases_only_movement(
+    monkeypatch, writer_key, other_key, index
+):
+    writer_route, other_route = (richmat.TRANSPORTS[key] for key in (writer_key, other_key))
+    writer = _gatt(writer_route.service_uuid, writer_route.write_uuid, writer_route.notify_uuid)
+    other = _gatt(other_route.service_uuid, other_route.write_uuid, other_route.notify_uuid)
+    # An earlier receive-only service and a later matching service cannot
+    # supply the selected writer's RX or change its framing.
+    other_rx_only = SimpleNamespace(uuid=other.uuid, characteristics=other.characteristics[1:])
+    client = _client(other_rx_only, writer, other)
+    writer_tx, writer_rx = writer.characteristics
+    writer_tx.properties = (
+        ("write", "write-without-response") if writer_key == "n1" else ("write",)
+    )
+    coordinator = Coordinator(client)
+    controller = DorsalController(coordinator, DORSAL_ROOMI_S655_PLUS, None)
+    session = SimpleNamespace(async_start_notify=controller.start_notify)
+    await controller.async_on_connect(session)
+    assert _wire(client) == [row[1 + index] for row in roomi_vectors.STARTUP]
+    assert all(
+        args[0] is writer_tx and kwargs["response"] == (writer_key != "n1")
+        for args, kwargs in client.write_gatt_char.await_args_list
+    )
+    assert client.start_notify.await_args.args[0] is writer_rx
+
+    # Reconnection runs the same startup sequence, even with an existing profile.
+    controller.on_disconnect()
+    client.write_gatt_char.reset_mock()
+    await controller.async_on_connect(session)
+    assert _wire(client) == [row[1 + index] for row in roomi_vectors.STARTUP]
+
+    assert {item.key for item in controller.controls} == {
+        f"roomi_{key}" for key in roomi_vectors.CONTROLS
+    }
+    delay = AsyncMock(return_value=True)
+    monkeypatch.setattr(controller, "_delay", delay)
+    for key, expected in roomi_vectors.CONTROLS.items():
+        client.write_gatt_char.reset_mock()
+        await controller.run_control(f"roomi_{key}", duration_ms=100)
+        frames = [expected[index]]
+        if key.endswith(("Up", "Down")):
+            frames.append(roomi_vectors.STOP[index])
+        assert _wire(client) == frames
+    assert delay.await_count == 8
+    assert all(0 <= args[0] <= 0.1 for args, _ in delay.await_args_list)
+
+    for key, expected in roomi_vectors.SAVES.items():
+        client.write_gatt_char.reset_mock()
+        await controller.run_control(f"roomi_{key}", save=True)
+        assert _wire(client) == [expected[index]]
+
+    client.write_gatt_char.reset_mock()
+    await controller.preset_tv()
+    await controller.preset_anti_snore()
+    await controller.stop_all()
+    assert _wire(client) == [
+        roomi_vectors.CONTROLS["ReadingPosition"][index],
+        roomi_vectors.AUTO_SNORE_RECALL[index],
+        roomi_vectors.STOP[index],
+    ]
+
+
+async def test_s655_plus_admits_saved_route_and_keeps_shared_reports_raw(monkeypatch):
+    transport = richmat.TRANSPORTS["w4"]
+    service = _gatt(transport.service_uuid, transport.write_uuid, transport.notify_uuid)
+    client = _client(service)
+    coordinator = Coordinator(client)
+    context = BuildContext(
+        coordinator=coordinator, bed_type="dorsal", variant=DORSAL_ROOMI_S655_PLUS, client=client
+    )
+    controller = await build_controller(context)
+    await controller.start_notify()
+    assert len(controller.motor_control_specs) == 4
+    assert controller.memory_slot_count == 2
+    assert controller.massage_timer_options == [10, 20, 30]
+    assert controller.supports_lights
+    assert not controller.supports_light_state_feedback
+    assert controller.alarm_capability is None
+    assert len(controller.held_control_options) == 8
+    assert "roomi_snore_trigger" not in {item.key for item in controller.controls}
+    buttons = controller.controller_button_specs
+    assert "Massage off" in {spec.name for spec in buttons}
+    assert "roomi_BedLight" not in {spec.key for spec in buttons}
+    saves = [spec for spec in buttons if spec.key.endswith("_save")]
+    assert len(saves) == 6
+    assert all(spec.requires_confirmation and spec.hold is None for spec in saves)
+
+    raw = MagicMock()
+    monkeypatch.setattr(controller, "forward_raw_notification", raw)
+    sender, callback = client.start_notify.await_args.args
+    payload = bytes.fromhex("6e 20 09 03 01 02 00 01 9e")
+    callback(sender, bytearray(payload))
+    raw.assert_called_once_with(sender.uuid, payload)
+    coordinator.handle_controller_state_updates.assert_not_called()
+    assert controller.protocol_diagnostics["dorsal"] == {"project": None, "alarm_slots": []}
+
+    service.characteristics[0].properties = ("write-without-response",)
+    controller.on_disconnect()
+    client.start_notify.reset_mock()
+    from homeassistant.exceptions import HomeAssistantError
+
+    with pytest.raises(HomeAssistantError, match="Bluetooth writer"):
+        await controller.async_on_connect(SimpleNamespace(async_start_notify=controller.start_notify))
+    client.start_notify.assert_not_awaited()
+    client.write_gatt_char.assert_not_awaited()
+
+
+async def test_s655_plus_cancellation_releases_only_after_an_attempt(monkeypatch):
+    n1 = richmat.TRANSPORTS["n1"]
+    client = _client(_gatt(n1.service_uuid, n1.write_uuid, n1.notify_uuid))
+    coordinator = Coordinator(client)
+    controller = DorsalController(coordinator, DORSAL_ROOMI_S655_PLUS, None)
+    await controller.start_notify()
+    coordinator.cancel_command.set()
+    await controller.hold_control("roomi_HeadUp", 100)
+    client.write_gatt_char.assert_not_awaited()
+    coordinator.cancel_command.clear()
+
+    async def write(_char, wire, **_kwargs):
+        if wire == bytes.fromhex(roomi_vectors.CONTROLS["HeadUp"][0]):
+            coordinator.cancel_command.set()
+
+    monkeypatch.setattr(controller, "_delay", AsyncMock(return_value=True))
+    client.write_gatt_char.side_effect = write
+    await controller.hold_control("roomi_HeadUp", 600)
+    assert _wire(client) == [roomi_vectors.CONTROLS["HeadUp"][0], roomi_vectors.STOP[0]]
+
+
+@pytest.mark.parametrize(("route", "project"), [("cprn", "CPRN"), (DORSAL_ROOMI_S655_PLUS, None)])
+async def test_cancel_pending_refresh_then_release_the_same_link(monkeypatch, route, project):
     transport = richmat.TRANSPORTS["w1"]
     client = _client(_gatt(transport.service_uuid, transport.write_uuid, transport.notify_uuid))
     coordinator = Coordinator(client)
-    controller = DorsalController(coordinator, "cprn", "CPRN")
+    controller = DorsalController(coordinator, route, project)
     await controller.start_notify()
     first_write = asyncio.Event()
     finish_write = asyncio.Event()
@@ -386,6 +535,7 @@ async def test_shared_alarm_edit_requires_a_current_slot_report(monkeypatch):
     assert _wire(client) == ["6e 20 0d 05 01 01 02 00 07 0a 45 01 fb"]
 
 
+@pytest.mark.parametrize("variant", ["roomi", DORSAL_ROOMI_S655_PLUS])
 @pytest.mark.parametrize(
     ("name", "connectable_name", "all_name", "writable", "error"),
     [
@@ -397,7 +547,7 @@ async def test_shared_alarm_edit_requires_a_current_slot_report(monkeypatch):
     ],
 )
 async def test_roomi_setup_probe_checks_the_exact_receiver(
-    hass, monkeypatch, name, connectable_name, all_name, writable, error
+    hass, monkeypatch, name, connectable_name, all_name, writable, error, variant
 ):
     from custom_components.adjustable_bed import config_flow
     from tests.test_config_flow import _fresh_gate
@@ -428,7 +578,7 @@ async def test_roomi_setup_probe_checks_the_exact_receiver(
     monkeypatch.setattr(config_flow, "discover_services", AsyncMock())
     monkeypatch.setattr(config_flow, "read_ble_device_info", AsyncMock(return_value=(None, None)))
 
-    result = await flow._probe_capabilities("AA:BB:CC:DD:EE:01", "auto", "dorsal", "roomi")
+    result = await flow._probe_capabilities("AA:BB:CC:DD:EE:01", "auto", "dorsal", variant)
     assert result.connected is (error is None)
     assert result.dorsal_endpoint_error == error
     assert _wire(client) == []
@@ -439,21 +589,75 @@ async def test_roomi_setup_probe_checks_the_exact_receiver(
     context = BuildContext(
         coordinator=coordinator,
         bed_type="dorsal",
-        variant="roomi",
+        variant=variant,
         client=client,
         device_name=name,
         advertisement_name=all_name,
     )
-    if error == "dorsal_roomi_receiver":
+    if error == "dorsal_roomi_receiver" and variant == "roomi":
         from homeassistant.exceptions import ServiceValidationError
 
         with pytest.raises(ServiceValidationError, match="QRRM"):
             await build_controller(context)
     elif error is None:
-        assert (await build_controller(context)).route == "roomi"
+        assert (await build_controller(context)).route == variant
 
-    flow._manual_data = {"bed_type": "dorsal", "protocol_variant": "roomi"}
+    flow._manual_data = {"bed_type": "dorsal", "protocol_variant": variant}
     assert flow._migration_requires_check
+
+
+@pytest.mark.parametrize(
+    "endpoint_error", [None, "dorsal_roomi_receiver", "dorsal_receiver_unavailable"]
+)
+async def test_roomi_s655_requires_a_successful_setup_probe(hass, monkeypatch, endpoint_error):
+    from custom_components.adjustable_bed import config_flow
+    from custom_components.adjustable_bed.setup_operation import OperationOutcome, OperationResult
+
+    flow = config_flow.AdjustableBedConfigFlow()
+    flow.hass = hass
+    entry_data = {
+        "address": "AA:BB:CC:DD:EE:01",
+        "bed_type": "dorsal",
+        "protocol_variant": DORSAL_ROOMI_S655_PLUS,
+    }
+    progress = {"type": "show_progress"}
+    show_progress = AsyncMock(return_value=progress)
+    create = AsyncMock()
+    monkeypatch.setattr(flow, "_verification_possible", lambda: False)
+    monkeypatch.setattr(flow, "async_step_setup_progress", show_progress)
+    monkeypatch.setattr(flow, "_async_create_selected_app_entry", create)
+
+    assert await flow._finish_with_verify(entry_data, "Roomi") is progress
+    create.assert_not_awaited()
+
+    flow.operation.result = OperationResult(
+        outcome=OperationOutcome.CONNECTION_FAILED,
+        payload=config_flow.CapabilityReport(
+            device_found=True, error="No link", dorsal_endpoint_error=endpoint_error
+        ),
+    )
+    form = await flow.async_step_verify_connection()
+    assert form["type"] == "form"
+    if endpoint_error is not None:
+        assert form["step_id"] == "profile_questions"
+        assert form["errors"] == {"protocol_variant": endpoint_error}
+        create.assert_not_awaited()
+        return
+    assert form["step_id"] == "retry_roomi_receiver"
+    assert form["data_schema"] is None
+    forged = await flow.async_step_retry_roomi_receiver({"action": "finish"})
+    assert forged["step_id"] == "retry_roomi_receiver"
+    create.assert_not_awaited()
+    assert await flow.async_step_retry_roomi_receiver({}) is progress
+
+    flow.operation.result = OperationResult(
+        outcome=OperationOutcome.SUCCESS,
+        payload=config_flow.CapabilityReport(connected=True),
+    )
+    verified = await flow.async_step_verify_connection()
+    assert verified["step_id"] == "verify_connection"
+    await flow.async_step_verify_connection({"action": "finish"})
+    create.assert_awaited_once_with(title="Roomi", data=entry_data)
 
 
 async def test_compound_move_sends_one_write_then_stop_at_release(monkeypatch):

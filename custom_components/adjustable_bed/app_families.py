@@ -22,6 +22,7 @@ from homeassistant.helpers.translation import async_get_cached_translations
 
 from .beds.richmat_classic.profiles import APP_NAMES as RICHMAT_CLASSIC_APP_NAMES
 from .const import (
+    BED_TYPE_ATLAS_LIFT,
     BED_TYPE_BEDSENSE,
     BED_TYPE_COMFORT_MOTION,
     BED_TYPE_COOLBASE,
@@ -1416,6 +1417,7 @@ RICHMAT_FAMILY: Final = AppFamily(
     answers={
         "richmat_420": Answer("richmat_app"),
         "enso2": Answer("enso2", data=_NO_RMCONTROL),
+        "atlas_lift": Answer(BED_TYPE_ATLAS_LIFT, data=_NO_RMCONTROL),
         "rmcontrol": Answer(BED_TYPE_RICHMAT, data={CONF_RMCONTROL_PRODUCT: None}),
         "luuna": Answer("luuna", data=_NO_RMCONTROL),
         "luniosmart": Answer("luniosmart", data=_NO_RMCONTROL),
@@ -1435,7 +1437,7 @@ RICHMAT_FAMILY: Final = AppFamily(
         },
         "remote": Answer(BED_TYPE_RICHMAT, data={CONF_RMCONTROL_PRODUCT: ""}),
     },
-    routes=RICHMAT_MH_BED_TYPES | {"enso2", "super_colchones", "luuna", "sonicsleep", "majestichome", "luniosmart", "sleep_evolution", "wsilver_legacy", BED_TYPE_MLILY, BED_TYPE_MLILY_REMOTE, BED_TYPE_OKIMIKI},
+    routes=RICHMAT_MH_BED_TYPES | {BED_TYPE_ATLAS_LIFT, "enso2", "super_colchones", "luuna", "sonicsleep", "majestichome", "luniosmart", "sleep_evolution", "wsilver_legacy", BED_TYPE_MLILY, BED_TYPE_MLILY_REMOTE, BED_TYPE_OKIMIKI},
     routes_show_row=False,
     lists_members=True,
     offers_keep=keep_never,

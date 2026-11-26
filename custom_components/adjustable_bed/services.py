@@ -70,6 +70,7 @@ from .const import (
     BED_TYPE_ERGOMOTION,
     BED_TYPE_FURNIMOVE,
     BED_TYPE_KEESON,
+    BED_TYPE_LANGJUE,
     BED_TYPE_LIMOSS_REMOTE,
     BED_TYPE_LINAK,
     BED_TYPE_OKIN_UUID,
@@ -108,7 +109,10 @@ from .paired_coordinator import (
     SingleAddressSideCoordinator,
 )
 from .paired_devices import side_identifier
-from .paired_topology import PairedSideError, ready_disconnected_transport
+from .paired_topology import (
+    PairedSideError,
+    ready_disconnected_transport,
+)
 from .pairing import is_paired, pair_member_addresses
 from .position_estimate import (
     invalidate_on_command,
@@ -1351,6 +1355,17 @@ async def _timed_move_plan(
                     duration_ms,
                 )
 
+        resource = spec.scheduler_resource or f"motor:{spec.position_key or spec.key}"
+        if (native_timed_move := spec.timed_move_fn) is not None:
+            async def native_move(ctrl: BedController) -> None:
+                await ctrl.prepare_for_movement()
+                await native_timed_move(ctrl, direction == "up", duration_ms)
+
+            tracked = track_motor_command(
+                getattr(coordinator, "hass", None), motor, direction, native_move
+            )
+            return tracked, 1, 0, resource
+
         # The explicit app profile's direction is a held route. timed_move has
         # an elapsed duration, so delegate its bounded window and release to
         # the controller instead of treating one press frame as a full move.
@@ -1488,7 +1503,7 @@ async def _timed_move_plan(
             timed_movement,
             calculated_repeat_count,
             pulse_delay_ms,
-            spec.scheduler_resource or f"motor:{spec.position_key or spec.key}",
+            resource,
         )
 
 
@@ -2443,6 +2458,8 @@ def _check_alarm(
             raise invalid("alarm_value_out_of_range", device_name=device_name, option=name, min=str(low), max=str(high))
     if "massage_duration" in given and alarm.massage_duration not in capability.massage_durations:
         raise invalid("alarm_massage_duration_not_supported", device_name=device_name, durations=", ".join(map(str, capability.massage_durations)))
+    if "sleep_timer" in given and alarm.sleep_timer not in capability.sleep_timers:
+        raise invalid("alarm_sleep_timer_not_supported", device_name=device_name, durations=", ".join(map(str, capability.sleep_timers)))
     if "massage_zone" in given and alarm.massage_zone not in capability.massage_zones:
         raise invalid("alarm_massage_zone_not_supported", device_name=device_name, zone=str(alarm.massage_zone))
     if "mattress_side" in given and alarm.mattress_side not in capability.mattress_sides:
@@ -2555,6 +2572,12 @@ async def handle_set_alarm(call: ServiceCall) -> None:
             raise invalid("alarm_time_required_to_turn_off", device_name=target.name)
         plans[id(target)] = capability
 
+    langjue_addresses = {
+        child.address
+        for children in selection.children
+        for child in children
+        if child.bed_type == BED_TYPE_LANGJUE
+    }
     async with contextlib.AsyncExitStack() as transaction:
         # A sibling's reload would replace the same parent. Defer both sides'
         # reloads even when the action targets just one side of the pair.
@@ -2567,6 +2590,12 @@ async def handle_set_alarm(call: ServiceCall) -> None:
                     receivers[id(receiver)] = receiver
         for receiver in receivers.values():
             await transaction.enter_async_context(receiver.async_defer_capability_reload())
+
+        if langjue_addresses:
+            await async_import_modules(call.hass, "beds.langjue")
+            from .beds.langjue import reserve_alarm_receivers
+
+            transaction.enter_context(reserve_alarm_receivers(call.hass, langjue_addresses))
 
         preflighted = await _preflight_each(targets, check)
         try:
@@ -2609,6 +2638,17 @@ async def _write_checked_alarms(
     call_task = asyncio.current_task()
     groups = list(zip(selection.targets, selection.children, strict=True))
     sessions: dict[int, _CheckedSession] = {}
+    sequential_langjue = {
+        id(child)
+        for (parent, _), group in groups
+        if _pair_mode(parent) == PAIR_CONNECTION_MODE_SEQUENTIAL
+        for child in group
+        if child.bed_type == BED_TYPE_LANGJUE
+    }
+    if sequential_langjue and sum(map(len, selection.children)) > 1:
+        # The sequential topology releases each checked session before the next
+        # receiver can connect. A Langjue alarm must be written on its checked link.
+        raise invalid("langjue_alarm_sequential")
 
     # Beds that read their stored alarms, and every side of a combined bed, are
     # prepared on a live link before anything is written.
@@ -2616,7 +2656,7 @@ async def _write_checked_alarms(
     for (parent, side), group in groups:
         combined = len({child.operation_identity for child in group}) > 1
         for child in group:
-            if (plans[id(child)].live_check or combined) and all(
+            if id(child) not in sequential_langjue and (plans[id(child)].live_check or combined) and all(
                 child is not other for _, _, other in prepare
             ):
                 prepare.append((parent, _child_side(parent, side, child), child))
@@ -2725,15 +2765,29 @@ async def _write_checked_alarms(
                 request = dataclasses.replace(request, record_identity=session.alarm_identity)
             if _capability.live_slots and request.mattress_side is None and request.record_identity is None:
                 raise _bed_changed()
+            if id(child) in sequential_langjue:
+                # This is the sole target. Read and write within one link cycle.
+                await controller.check_alarm(request)
             await controller.configure_alarm(request)
             written.add(id(child))
 
         return step(configure)
 
+    async def check_linked(_controller: BedController, _capability: AlarmCapability) -> None:
+        # The topology checks all reserved receivers before invoking this callback.
+        return None
+
     with contextlib.ExitStack() as held:
         # Keep checked links up until written, whatever the idle setting.
         for _, _, child in prepare:
             held.enter_context(child.hold_command_connection())
+        for (parent, side), group in groups:
+            if len(group) > 1 and any(child.bed_type == BED_TYPE_LANGJUE for child in group):
+                if selection.stopped():
+                    return False
+                await _execute_alarm_step(
+                    parent, side, step(check_linked), plans[id(group[0])], cancel_running=False
+                )
         for parent, side, child in prepare:
             if selection.stopped():
                 return False
@@ -3383,6 +3437,7 @@ async def async_register_services(hass: HomeAssistant) -> None:
                 vol.Optional("foot_massage_level"): vol.All(_whole_number, vol.Range(min=0, max=10)),
                 vol.Optional("massage_intensity"): vol.All(_whole_number, vol.Range(min=1, max=10)),
                 vol.Optional("massage_duration"): vol.All(_whole_number, vol.Range(min=1, max=120)),
+                vol.Optional("sleep_timer"): vol.All(_whole_number, vol.Range(min=1, max=120)),
                 vol.Optional("massage_zone"): vol.In(MASSAGE_ZONES),
                 vol.Optional("mattress_side"): vol.In(MATTRESS_SIDES),
                 vol.Optional(ATTR_SOUND): vol.In(ALARM_SOUNDS),

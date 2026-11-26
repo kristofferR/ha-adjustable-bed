@@ -1974,9 +1974,11 @@ class AdjustableBedCoordinator(
         self._cancel_command.set()
 
         controller = self.capability_controller
+        paired_cleanup = PAIRED_CLEANUP_STOP.get()
+        original_stop = paired_cleanup.get(self.address) if paired_cleanup is not None else None
         cleanup = (
             controller.paired_cleanup_stop
-            if PAIRED_CLEANUP_STOP.get() and controller is not None
+            if paired_cleanup is not None and original_stop is None and controller is not None
             else None
         )
         generation = self.connection_generation
@@ -1997,6 +1999,9 @@ class AdjustableBedCoordinator(
                 raise BedNotConnectedError
 
         async def stop_operation(context: CommandContext) -> None:
+            if original_stop is not None:
+                await self._async_send_stop_command(original_stop)
+                return
             if current_link_only or cleanup is not None:
                 await self._async_send_stop_command(
                     lambda: stop_current_session(context),
@@ -2573,6 +2578,7 @@ class AdjustableBedCoordinator(
         resource: str,
         *,
         stream_member: bool = True,
+        require_current_link: bool = False,
     ) -> None:
         """Stop a motor at once, never behind another motor's command (#516).
 
@@ -2580,7 +2586,8 @@ class AdjustableBedCoordinator(
         stream that owns the motor ends only that member, and its cleanup runs
         in the streamer. Otherwise this is a STOP admission: it pre-empts the
         motion holding the writer, whichever motor of the bed that is, then
-        runs ``stop_fn`` as an ordinary command runs it.
+        runs ``stop_fn`` as an ordinary command runs it. With
+        ``require_current_link``, STOP is bound to the link present at admission.
         """
         if stream_member and self.stop_stream_member(resource):
             return
@@ -2592,7 +2599,26 @@ class AdjustableBedCoordinator(
         self._cancel_counter += 1
         self._cancel_command.set()
 
+        client = self._client
+        controller = self._controller
+        generation = self.connection_generation
+
+        async def stop_current_link() -> None:
+            if (
+                client is None
+                or not client.is_connected
+                or client is not self._client
+                or controller is None
+                or controller is not self._controller
+                or generation != self.connection_generation
+            ):
+                raise self._not_connected_error()
+            await stop_fn(controller)
+
         async def stop_operation(_context: CommandContext) -> None:
+            if require_current_link:
+                await self._async_send_stop_command(stop_current_link)
+                return
             await self._async_execute_controller_operation(
                 stop_fn,
                 cancel_running=False,
