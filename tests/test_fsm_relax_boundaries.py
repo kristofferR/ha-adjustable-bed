@@ -122,7 +122,9 @@ async def test_offline_paired_first_capability_reloads_parent_and_action_entitie
     }
     pair = PairedBedCoordinator(hass, entry, children)
     entry._async_set_state(hass, ConfigEntryState.LOADED, None)
-    dr.async_get(hass).async_get_or_create(config_entry_id=entry.entry_id, **pair.device_info)
+    dr.async_get(hass).async_get_or_create_from_info(
+        config_entry_id=entry.entry_id, device_info=pair.device_info
+    )
     hass.data[const.DOMAIN] = {entry.entry_id: pair}
     left = children["left"]
     await left.async_prime_offline_controller()

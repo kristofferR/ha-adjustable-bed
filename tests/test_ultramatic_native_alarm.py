@@ -45,7 +45,7 @@ async def native_alarm(hass):
     _async_ensure_paired_device_registry(hass, pair_entry, pair)
     registry = dr.async_get(hass)
     parent = registry.async_get_device_by_identifier(
-        next(iter(pair.device_info["identifiers"])), pair_entry.entry_id
+        next(iter(pair.device_info.as_dict()["identifiers"])), pair_entry.entry_id
     )
     assert parent is not None
     devices = {"parent": parent.id}

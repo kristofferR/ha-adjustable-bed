@@ -1056,7 +1056,7 @@ async def test_completed_pair_leaves_later_pair_stop_to_native_admission(hass, d
             parent = PairedBedCoordinator(hass, entry, members, connection_mode="sequential")
             hass.data[DOMAIN][entry.entry_id] = parent
             _async_ensure_paired_device_registry(hass, entry, parent)
-            identifier = next(iter(parent.device_info["identifiers"]))
+            identifier = next(iter(parent.device_info.as_dict()["identifiers"]))
             device = dr.async_get(hass).async_get_device_by_identifier(identifier, entry.entry_id)
             assert device is not None
             return parent, members, device.id

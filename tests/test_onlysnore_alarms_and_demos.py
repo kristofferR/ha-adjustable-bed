@@ -120,7 +120,9 @@ async def receivers(
             await connect(item)
         hass.data.setdefault(DOMAIN, {})[entry.entry_id] = coordinator
         devices.append(
-            registry.async_get_or_create(config_entry_id=entry.entry_id, **coordinator.device_info)
+            registry.async_get_or_create_from_info(
+                config_entry_id=entry.entry_id, device_info=coordinator.device_info
+            )
         )
     pair = None
     if topology != "standalone":
@@ -134,12 +136,14 @@ async def receivers(
             connection_mode=topology,
         )
         hass.data[DOMAIN][entry.entry_id] = pair
-        parent = registry.async_get_or_create(config_entry_id=entry.entry_id, **pair.device_info)
+        parent = registry.async_get_or_create_from_info(
+            config_entry_id=entry.entry_id, device_info=pair.device_info
+        )
         async_register_children(hass, pair)
         assert len(dr.async_child_entries_for_config_entry(registry, entry.entry_id)) == 2
         assert (
             registry.async_get_device_by_identifier(
-                next(iter(pair.device_info["identifiers"])), entry.entry_id
+                next(iter(pair.device_info.as_dict()["identifiers"])), entry.entry_id
             )
             is not None
         )
