@@ -3919,7 +3919,8 @@ the original link before a sequential pair can release it. On either public
 STOP route, the pair reserves STOP before yielding and the Flat write checks
 that no STOP has intervened. If the fresh neutral pair fails, sequential
 teardown waits for the admitted same-link fallback to finish. Link loss, a
-reported problem or a demo-mode off transition prevents the next phase.
+reported problem or a demo-mode off transition ends the demo. A status abort
+during a press ends its movement refreshes and releases with the neutral pair.
 STOP sends neutral only.
 
 ##### Analysis provenance

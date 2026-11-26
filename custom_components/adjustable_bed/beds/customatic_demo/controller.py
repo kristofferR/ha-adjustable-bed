@@ -44,6 +44,10 @@ BED_PROBLEM: Final = StateKey[bool | None]("customatic_demo_problem")
 _WRITE_TIMEOUT_S: Final = 5.0  # HA transport bound for each GATT attempt.
 
 
+class _DemoPhaseAborted(Exception):
+    """A status notification retired this phase before the write reached BLE."""
+
+
 @dataclass(frozen=True, slots=True)
 class _Link:
     client: BleakClient
@@ -219,6 +223,7 @@ class CustomaticDemoController(ProfileExecution[OkinNFrameProfile], BedControlle
         track: bool = True,
         deadline: float | None = None,
         still_admitted: Callable[[], bool] | None = None,
+        abort: asyncio.Event | None = None,
     ) -> None:
         def require_session() -> None:
             self._require_link(link)
@@ -226,22 +231,28 @@ class CustomaticDemoController(ProfileExecution[OkinNFrameProfile], BedControlle
             if still_admitted is not None and not still_admitted():
                 note_frame_skipped()
                 raise asyncio.CancelledError
+            if abort is not None and abort.is_set():
+                note_frame_skipped()
+                raise _DemoPhaseAborted
 
         self._require_link(link)
         timeout_at = asyncio.get_running_loop().time() + _WRITE_TIMEOUT_S
         if deadline is not None:
             timeout_at = min(timeout_at, deadline)
-        async with asyncio.timeout_at(timeout_at):
-            await self._write_gatt_with_retry(
-                codec.WRITE_UUID,
-                command,
-                cancel_event=cancel_event,
-                response="write" in link.write.properties,
-                characteristic=link.write,
-                expected_client=link.client,
-                before_write=require_session,
-                track_command_write=track,
-            )
+        try:
+            async with asyncio.timeout_at(timeout_at):
+                await self._write_gatt_with_retry(
+                    codec.WRITE_UUID,
+                    command,
+                    cancel_event=cancel_event,
+                    response="write" in link.write.properties,
+                    characteristic=link.write,
+                    expected_client=link.client,
+                    before_write=require_session,
+                    track_command_write=track,
+                )
+        except _DemoPhaseAborted:
+            return
 
     async def _release(self, link: _Link) -> None:
         cancel = asyncio.Event()
@@ -266,6 +277,7 @@ class CustomaticDemoController(ProfileExecution[OkinNFrameProfile], BedControlle
         duration_ms: int | None = None,
         *,
         still_admitted: Callable[[], bool] | None = None,
+        abort: asyncio.Event | None = None,
     ) -> None:
         cancel = self._coordinator.cancel_command
         if cancel.is_set():
@@ -278,7 +290,7 @@ class CustomaticDemoController(ProfileExecution[OkinNFrameProfile], BedControlle
         command = codec.frame(self.profile.keys[control], self.profile.width)
         async with self.releasing(lambda: self._release(link)):
             if duration_ms is None:
-                await self._write(link, command, cancel, still_admitted=still_admitted)
+                await self._write(link, command, cancel, still_admitted=still_admitted, abort=abort)
                 return
 
             loop = asyncio.get_running_loop()
@@ -286,14 +298,21 @@ class CustomaticDemoController(ProfileExecution[OkinNFrameProfile], BedControlle
             count = (duration_ms + app.REFRESH_MS - 1) // app.REFRESH_MS
             for _ in range(count):
                 started = loop.time()
-                if cancel.is_set() or started >= deadline:
+                if cancel.is_set() or (abort is not None and abort.is_set()) or started >= deadline:
                     break
                 await self._write(
-                    link, command, cancel, deadline=deadline, still_admitted=still_admitted
+                    link,
+                    command,
+                    cancel,
+                    deadline=deadline,
+                    still_admitted=still_admitted,
+                    abort=abort,
                 )
                 try:
                     async with asyncio.timeout_at(min(deadline, started + app.REFRESH_MS / 1000)):
-                        await cancel.wait()
+                        # Scheduled STOP cancels the operation task. The demo's
+                        # notification event also wakes this wait on its own.
+                        await (abort or cancel).wait()
                 except TimeoutError:
                     pass
 
@@ -480,7 +499,9 @@ class CustomaticDemoController(ProfileExecution[OkinNFrameProfile], BedControlle
             return stop.is_set() or (still_admitted is not None and not still_admitted())
 
         try:
-            await self._press("auto_sit", app.DEMO_PRESS_MS, still_admitted=still_admitted)
+            await self._press(
+                "auto_sit", app.DEMO_PRESS_MS, still_admitted=still_admitted, abort=abort
+            )
             if stopped() or abort.is_set():
                 return
             remaining = deadline - loop.time()
@@ -509,6 +530,8 @@ class CustomaticDemoController(ProfileExecution[OkinNFrameProfile], BedControlle
                 if (stopped() or interrupted) and self._link_is_current(link):
                     await settled(self._release(link))
             if not stopped() and not abort.is_set() and self._link_is_current(link):
-                await self._press("auto_flat", app.DEMO_PRESS_MS, still_admitted=still_admitted)
+                await self._press(
+                    "auto_flat", app.DEMO_PRESS_MS, still_admitted=still_admitted, abort=abort
+                )
         finally:
             self._demo_cancel = None

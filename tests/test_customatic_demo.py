@@ -225,29 +225,72 @@ async def test_lost_link_cannot_send_release_on_replacement_link() -> None:
     assert written(ctrl) == []
 
 
-@pytest.mark.parametrize("abort", [None, "problem", "demo_off"])
-async def test_demo_phases_and_status_abort(abort: str | None) -> None:
+async def test_demo_phase_timing() -> None:
     ctrl = await connected()
-    receive = ctrl.client.start_notify.call_args.args[1]
     times = []
 
-    async def report(_char, data, **_kwargs):
+    async def record(*_args, **_kwargs):
         times.append(asyncio.get_running_loop().time())
-        if abort == "problem":
-            receive(None, bytearray(10) + bytearray([0, 1, 0, 1]))
-        elif abort == "demo_off":
-            receive(None, bytearray(10) + bytearray([0, 0, 0, 3]))
-            receive(None, bytearray(14))
 
-    ctrl.client.write_gatt_char.side_effect = report
+    ctrl.client.write_gatt_char.side_effect = record
     with virtual_clock():
         await ctrl.run_demo()
-    expected = [FRAMES["auto_sit"]] * 3 + STOP
+    assert written(ctrl) == [FRAMES["auto_sit"]] * 3 + STOP + [FRAMES["auto_flat"]] * 3 + STOP
     assert times[:5] == pytest.approx([0, 0.1, 0.2, 0.4, 0.5])
-    if abort is None:
-        expected += [FRAMES["auto_flat"]] * 3 + STOP
-        assert times[5:] == pytest.approx([120, 120.1, 120.2, 120.4, 120.5])
+    assert times[5:] == pytest.approx([120, 120.1, 120.2, 120.4, 120.5])
+
+
+@pytest.mark.parametrize("phase", ["auto_sit", "auto_flat"])
+@pytest.mark.parametrize("notification", ["problem", "demo_off"])
+@pytest.mark.parametrize("queued_refresh", [False, True])
+async def test_status_abort_stops_refreshes_and_releases_original_link(
+    monkeypatch, phase, notification, queued_refresh
+) -> None:
+    ctrl = await connected()
+    client = ctrl.client
+    receive = client.start_notify.call_args.args[1]
+    receive(None, bytearray(10) + bytearray([0, 0, 0, 3]))
+    phase_frame = FRAMES[phase]
+    notice_at = None
+    neutral_times = []
+
+    def report() -> None:
+        nonlocal notice_at
+        notice_at = asyncio.get_running_loop().time()
+        payload = bytearray(14)
+        if notification == "problem":
+            payload[11], payload[13] = 1, 3
+        receive(None, payload)
+
+    async def write(_char, data, **_kwargs):
+        if not queued_refresh and data.hex() == phase_frame:
+            report()
+        elif data.hex() == FRAMES["stop"] and notice_at is not None:
+            neutral_times.append(asyncio.get_running_loop().time())
+
+    client.write_gatt_char.side_effect = write
+    if queued_refresh:
+        write_frame = ctrl._write_gatt_with_retry
+
+        async def report_before_refresh(uuid, command, **kwargs):
+            if command.hex() == phase_frame and phase_frame in written(ctrl):
+                # The press already admitted its refresh, but the writer has
+                # not checked the movement under the BLE lock yet.
+                report()
+            await write_frame(uuid, command, **kwargs)
+
+        monkeypatch.setattr(ctrl, "_write_gatt_with_retry", report_before_refresh)
+
+    with virtual_clock():
+        await ctrl.run_demo()
+
+    expected = [phase_frame] + STOP
+    if phase == "auto_flat":
+        expected = [FRAMES["auto_sit"]] * 3 + STOP + expected
     assert written(ctrl) == expected
+    assert notice_at is not None
+    assert neutral_times == pytest.approx([notice_at + 0.1, notice_at + 0.2])
+    assert ctrl.client is client
 
 
 @pytest.mark.parametrize(("name", "candidate"), [("oKiN-X", True), ("other", False)])
