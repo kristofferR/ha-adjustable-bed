@@ -191,7 +191,9 @@ async def test_real_entity_projection_matches_card_fixture(hass):
     entry.add_to_hass(hass)
     parent = PairedBedCoordinator(hass, entry,
         {SIDE_LEFT: left, SIDE_RIGHT: right}, connection_mode="concurrent")
-    dr.async_get(hass).async_get_or_create(config_entry_id=entry.entry_id, **parent.device_info)
+    dr.async_get(hass).async_get_or_create_from_info(
+        config_entry_id=entry.entry_id, device_info=parent.device_info
+    )
     spec = next(spec for spec in ctrl.motor_control_specs if spec.key == "back")
     cover = AdjustableBedCover(left, _build_cover_description(spec))
     combined = PairedBedCombinedMotorButton(parent, spec, "up")

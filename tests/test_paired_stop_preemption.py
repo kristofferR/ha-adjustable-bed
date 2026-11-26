@@ -302,9 +302,11 @@ async def test_a_paired_cover_stop_takes_the_preempting_path(
     wire = Wire()
     pair = _two_address(hass, wire, "concurrent")
     registry = dr.async_get(hass)
-    registry.async_get_or_create(config_entry_id=pair.entry.entry_id, **pair.device_info)
-    registry.async_get_or_create_child(
-        config_entry_id=pair.entry.entry_id, **child_device_info(pair, SIDE_LEFT)
+    registry.async_get_or_create_from_info(
+        config_entry_id=pair.entry.entry_id, device_info=pair.device_info
+    )
+    registry.async_get_or_create_child_from_info(
+        config_entry_id=pair.entry.entry_id, device_info=child_device_info(pair, SIDE_LEFT)
     )
     covers = {
         cover.entity_description.key: cover

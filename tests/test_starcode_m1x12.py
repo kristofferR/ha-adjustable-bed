@@ -282,9 +282,9 @@ async def test_held_entity_metadata_reaches_real_bounded_service_and_controller(
         row for row in button_entities if row.unique_id == coordinator.entity_unique_id("stop")
     )
 
-    device = dr.async_get(hass).async_get_or_create(
+    device = dr.async_get(hass).async_get_or_create_from_info(
         config_entry_id=coordinator.entry.entry_id,
-        **coordinator.device_info,
+        device_info=coordinator.device_info,
     )
     await async_register_services(hass)
     writes: list[bytes] = []

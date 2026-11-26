@@ -134,8 +134,8 @@ async def target(hass, model="quest", route="a00a"):
     entry.mock_state(hass, ConfigEntryState.LOADED)
     hass.data.setdefault(DOMAIN, {})[entry.entry_id] = coord
     targets.append(coord)
-    device = dr.async_get(hass).async_get_or_create(
-        config_entry_id=entry.entry_id, **coord.device_info
+    device = dr.async_get(hass).async_get_or_create_from_info(
+        config_entry_id=entry.entry_id, device_info=coord.device_info
     )
     return coord, bed, client, device
 
@@ -502,9 +502,11 @@ async def test_paired_child_routes_only_to_its_physical_receiver(hass):
     pair = PairedBedCoordinator(hass, entry, {side: values[0] for side, values in triples.items()})
     hass.data[DOMAIN][entry.entry_id] = pair
     registry = dr.async_get(hass)
-    registry.async_get_or_create(config_entry_id=entry.entry_id, **pair.device_info)
-    right = registry.async_get_or_create_child(
-        config_entry_id=entry.entry_id, **child_device_info(pair, "right")
+    registry.async_get_or_create_from_info(
+        config_entry_id=entry.entry_id, device_info=pair.device_info
+    )
+    right = registry.async_get_or_create_child_from_info(
+        config_entry_id=entry.entry_id, device_info=child_device_info(pair, "right")
     )
     await async_register_services(hass)
     await hass.services.async_call(
