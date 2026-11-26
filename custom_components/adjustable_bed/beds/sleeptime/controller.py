@@ -655,6 +655,7 @@ class SleeptimeController(ProfileExecution[OkinNFrameProfile], OkinNFrameControl
                     lambda c, f=frame: c.write_command(f),
                     translation_key=f"sleeptime_query_{kind}",
                     scheduler_resource="*",
+                    diagnostic=True,
                     card=CARD_UTILITY,
                 )
                 for kind, label, frame in (
