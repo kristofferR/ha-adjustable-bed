@@ -390,6 +390,7 @@ actions; its bounded `hold_control` behavior has separate timing in the
 | AdjustaMattress app | `adjustamattress` | 5 | 200 ms |
 | Aging in Place / Dawn House app | `agingplace` | 5 | 200 ms |
 | Comfort Enhancements app | `comfort_enhancements` | 5 | 200 ms |
+| Comfort Smart Bed app (Langjue) | `langjue` | 2 | 500 ms |
 | Customatic Clarity app (Rize Clarity) | `customatic_clarity` | 8 | 120 ms |
 | Customatic Jerome's C app | `customatic_jeromes` | 8 | 120 ms |
 | Customatic Remedy app (Rize Remedy) | `customatic_remedy` | 8 | 120 ms |
@@ -416,6 +417,7 @@ actions; its bounded `hold_control` behavior has separate timing in the
 | Shuda app | `shuda` | 5 | 200 ms |
 | SIMMONS app | `simmons` | 4 | 300 ms |
 | Simmons Blue app | `simmons_blue` | 5 | 200 ms |
+| Sleep Assist Pro | `sleep_assist_pro` | 10 | 200 ms |
 | Sleeptime Australia app (SmartBed205, 402, 404, 405) | `sleeptime` | 4 | 300 ms |
 | Somos / SomosBeds app | `somos` | 10 | 300 ms |
 | SUTA Smart Home app | `suta` | 7 | 150 ms |

@@ -1443,6 +1443,14 @@ def default_scenario(bed_type: str) -> Scenario:
     """The bed type in its default route, with the entry data it needs to build."""
     from custom_components.adjustable_bed import const
 
+    if bed_type == const.BED_TYPE_LANGJUE:
+        return Scenario(id=bed_type, bed_type=bed_type, replies={
+            "write:558d000081": "55000000810102",
+            "write:5500000082": "550000008200",
+            "write:5500000083": "550000008300",
+            "write:5500000018": "55000000180102",
+            "write:5500000032": "5500000032080001010300080000",
+        })
     if bed_type == const.BED_TYPE_SLEEPTIME:
         return Scenario(
             id=bed_type, bed_type=bed_type, protocol_variant="205",
@@ -1526,6 +1534,12 @@ def default_scenario(bed_type: str) -> Scenario:
         )
     if bed_type == "sealy_posturematic":
         data.update({const.CONF_PRODUCT_TYPE: "0", const.CONF_BED_TYPE: "sealy_posturematic"})
+    if bed_type == const.BED_TYPE_SLEEP_ASSIST_PRO:
+        return Scenario(
+            id=bed_type, bed_type=bed_type, layout_id="sleep_assistant",
+            entry_data={const.CONF_BLE_DEVICE_NAME: "KSBT012345678",
+                        "sleep_assist_pro_controls": ["head", "feet", "flat", "zero_g"]},
+        )
     if bed_type == "sleep_assistant":
         return Scenario(id=bed_type, bed_type=bed_type, layout_id="sleep_assistant")
     if bed_type == const.BED_TYPE_LINX:
@@ -2443,6 +2457,10 @@ def build_scenarios() -> list[Scenario]:
         id="jerome_adjustable_base:nordic", bed_type="jerome_adjustable_base",
         protocol_variant="HDRN", layout_id="dorsal:n1",
     ))
+    scenarios.append(dataclasses.replace(
+        default_scenario("langjue"), id="langjue:head_foot", layout_id="langjue",
+        entry_data={"product_type": "head_foot", "has_light": True, "has_massage": True},
+    ))
     scenarios.extend(
         dataclasses.replace(default_scenario("sleeptime"), id=f"sleeptime:{selector}",
                             protocol_variant=selector)
@@ -2714,7 +2732,7 @@ async def _connect(controller: Any, recorder: Recorder, clock: FakeClock) -> dic
                 session.store_device_info = lambda *_: None
             await controller.async_on_connect(session)
             return
-        if controller._coordinator.bed_type in {"symphony", "linx", "agingplace", "sleep_assistant", "sinca_comfort", "leva"}:
+        if controller._coordinator.bed_type in {"symphony", "linx", "agingplace", "sleep_assistant", "sinca_comfort", "leva", "sleep_assist_pro"}:
             session = SimpleNamespace(
                 client=controller.client, is_current=lambda: True,
                 async_start_notify=lambda: controller.start_notify(lambda *_: None),

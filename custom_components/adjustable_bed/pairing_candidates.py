@@ -26,7 +26,12 @@ from .const import (
     DOMAIN,
     STARCODE_GROUP_BED_TYPES,
 )
-from .pairing import is_paired, pair_member_addresses, truemotion_pair_supported
+from .pairing import (
+    is_paired,
+    pair_member_addresses,
+    standalone_only_app,
+    truemotion_pair_supported,
+)
 from .profiles.saatva import TWO_RECEIVER_PROFILES as SAATVA_TWO_RECEIVER_PROFILES
 
 CONF_PAIR_SELECTION = "pair_selection"
@@ -65,7 +70,8 @@ def active_pairing_candidates(hass: HomeAssistant) -> list[ConfigEntry]:
         for entry in entries
         if entry.state is ConfigEntryState.LOADED
         and not is_paired(entry.data)
-        and entry.data.get(CONF_BED_TYPE) != "sleep_assistant"
+        and standalone_only_app(entry.data.get(CONF_BED_TYPE)) is None
+        and standalone_only_app(entry.options.get(CONF_BED_TYPE)) is None
         and not (entry.data.get(CONF_BED_TYPE) in {"personal_comfort", "instant_comfort"}
                  and (entry.data.get(CONF_PROTOCOL_VARIANT) not in {"malouf", "reverie_v1", "reverie_v2"}
                       or entry.data.get("product_type") == "none"))

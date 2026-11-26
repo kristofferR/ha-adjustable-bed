@@ -86,6 +86,7 @@ from .const import (
     BED_TYPE_KAIDI,
     BED_TYPE_KEESON,
     BED_TYPE_KOMFYD,
+    BED_TYPE_LANGJUE,
     BED_TYPE_LEGGETT_GEN2,
     BED_TYPE_LEGGETT_LP_LEGACY,
     BED_TYPE_LEGGETT_OKIN,
@@ -151,6 +152,7 @@ from .const import (
     BED_TYPE_SILVERMOTION,
     BED_TYPE_SIMMONS,
     BED_TYPE_SIMMONS_BLUE,
+    BED_TYPE_SLEEP_ASSIST_PRO,
     BED_TYPE_SLEEP_NUMBER,
     BED_TYPE_SLEEP_NUMBER_MCR,
     BED_TYPE_SLEEPSTAR,
@@ -610,6 +612,7 @@ BED_TYPE_DISPLAY_NAMES: dict[str, str] = {
     "agingplace": "Aging in Place / Dawn House app",
     "smart_sleep": "OKIN Smart Sleep app",
     "sleep_assistant": "Sleep Assist",
+    BED_TYPE_SLEEP_ASSIST_PRO: "Sleep Assist Pro",
     "onlysnore": "Snore Monitor app",
     "smart_comfort_synargy": "Smart Comfort by SYNARGY app",
     "smart_comfort_synergy": "Smart Comfort app",
@@ -696,6 +699,7 @@ BED_TYPE_DISPLAY_NAMES: dict[str, str] = {
     BED_TYPE_YAMADA: "アシステック / ASSISTEC / Yamada app",
     BED_TYPE_BETTERLIVING2: "BetterLiving / BetterLiving2 app",
     BED_TYPE_LEVA: "Leva Bed Remote (Leva Smart App)",
+    BED_TYPE_LANGJUE: "Comfort Smart Bed app (Langjue)",
     BED_TYPE_LINX: "Linx app",
     BED_TYPE_SOMOS: "Somos / SomosBeds app",
     BED_TYPE_COMFORTBASE: "ComfortBaseForBluetooth app",
@@ -1433,7 +1437,7 @@ def detect_bed_type(service_info: BluetoothServiceInfoBleak) -> str | None:
         For detailed detection with confidence scores, use detect_new_bed().
     """
     result = detect_new_bed(service_info)
-    if result.bed_type in ("dorsal", BED_TYPE_SIMMONS_BLUE, "sleep_assistant", "super_colchones", "bobpowerbase", BED_TYPE_GALAXY, BED_TYPE_GOODVIBE, BED_TYPE_MLILY, BED_TYPE_MLILY_REMOTE, BED_TYPE_MOTOMOTION, BED_TYPE_N32_MOTION_BED, BED_TYPE_SYMPHONY, BED_TYPE_MLINE, BED_TYPE_OKIMIKI) and result.confidence < 0.7:
+    if result.bed_type in ("dorsal", BED_TYPE_SIMMONS_BLUE, "sleep_assistant", BED_TYPE_SLEEP_ASSIST_PRO, "super_colchones", "bobpowerbase", BED_TYPE_GALAXY, BED_TYPE_GOODVIBE, BED_TYPE_MLILY, BED_TYPE_MLILY_REMOTE, BED_TYPE_MOTOMOTION, BED_TYPE_N32_MOTION_BED, BED_TYPE_SYMPHONY, BED_TYPE_MLINE, BED_TYPE_OKIMIKI) and result.confidence < 0.7:
         return None  # An app name hint requires an explicit product choice.
     return result.bed_type
 
@@ -1513,6 +1517,19 @@ def _detect_with_first_pass(
         elif result.bed_type != "sleep_assistant":
             result.ambiguous_types = list(dict.fromkeys([*(result.ambiguous_types or ()), "sleep_assistant"]))
             result.signals.append("name:sleep_assistant_candidate")
+    from .profiles.sleep_assist_pro import route_for_id
+
+    if route_for_id(service_info.name) and not any(
+        signal.startswith("excluded:") for signal in result.signals
+    ):
+        signal = "app_hint:sleep_assist_pro"
+        if result.bed_type is None:
+            result = DetectionResult(BED_TYPE_SLEEP_ASSIST_PRO, 0.3, [*result.signals, signal])
+        elif result.bed_type != BED_TYPE_SLEEP_ASSIST_PRO:
+            result.ambiguous_types = [
+                *(result.ambiguous_types or ()), BED_TYPE_SLEEP_ASSIST_PRO
+            ]
+            result.signals.append(signal)
     # The current Linx scan filter is a case-sensitive substring, not a model
     # or service selector. Preserve existing receiver detection as an alternative.
     if isinstance(service_info.name, str) and "KSWF07D" in service_info.name:

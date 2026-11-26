@@ -4,6 +4,8 @@ from dataclasses import dataclass, field
 from enum import IntFlag
 from typing import Final, overload
 
+from .profiles import langjue as langjue_profile
+
 # How every automatic choice reads in setup and Configure.
 AUTOMATIC_LABEL: Final = "Automatic (recommended)"
 DOMAIN: Final = "adjustable_bed"
@@ -461,6 +463,7 @@ BED_TYPE_RELAX_MOTION: Final = "relax_motion"
 BED_TYPE_SMARTBED: Final = "smartbed"  # The SmartBed app's receivers (Okin CB24 family and others)
 BED_TYPE_CHEERSSLEEP: Final = "cheerssleep"
 BED_TYPE_SMART_SLEEP: Final = "smart_sleep"
+BED_TYPE_SLEEP_ASSIST_PRO: Final = "sleep_assist_pro"
 BED_TYPE_SLEEP_ASSISTANT: Final = "sleep_assistant"
 BED_TYPE_ONLYSNORE: Final = "onlysnore"
 BED_TYPE_JALON_BED: Final = "jalon_bed"
@@ -567,6 +570,7 @@ BED_TYPE_BETTERLIVING2: Final = "betterliving2"
 BED_TYPE_SOMOS: Final = "somos"
 BED_TYPE_COMFORTBASE: Final = "comfortbase"
 BED_TYPE_LEVA: Final = "leva"
+BED_TYPE_LANGJUE: Final = "langjue"
 BED_TYPE_LINX: Final = "linx"
 BED_TYPE_COMFORT_ENHANCEMENTS: Final = "comfort_enhancements"
 COMFORT_ENHANCEMENTS_VARIANTS: Final = {
@@ -798,6 +802,7 @@ SUPPORTED_BED_TYPES: Final = [
     BED_TYPE_AGINGPLACE,
     BED_TYPE_SMART_SLEEP,
     BED_TYPE_SLEEP_ASSISTANT,
+    BED_TYPE_SLEEP_ASSIST_PRO,
     BED_TYPE_ONLYSNORE,
     BED_TYPE_ENSO,
     BED_TYPE_ENSO2,
@@ -833,6 +838,7 @@ SUPPORTED_BED_TYPES: Final = [
     BED_TYPE_BF,
     BED_TYPE_JALON_BED,
     BED_TYPE_LEVA,
+    BED_TYPE_LANGJUE,
     BED_TYPE_LINX,
     BED_TYPE_SYMPHONY_SLEEP,
     BED_TYPE_SYMPHONY,
@@ -3013,6 +3019,7 @@ BED_MOTOR_PULSE_DEFAULTS: Final = {
     # Keeson: 100ms delay → 10 repeats = 1.0s total
     # Source: com.sfd.ergomotion ANALYSIS.md
     BED_TYPE_KEESON: (10, 100),
+    BED_TYPE_SLEEP_ASSIST_PRO: (10, 200),
     # Ergomotion: 100ms delay → 10 repeats = 1.0s total
     # Source: com.sfd.ergomotion ANALYSIS.md
     BED_TYPE_ERGOMOTION: (10, 100),
@@ -3047,6 +3054,7 @@ BED_MOTOR_PULSE_DEFAULTS: Final = {
     BED_TYPE_COMFORT_ENHANCEMENT3: (10, 100),
     BED_TYPE_N32_MOTION_BED: (5, 200),  # Finite caller pulse; app refresh is 200 ms.
     BED_TYPE_SHUDA: (5, 200),
+    BED_TYPE_LANGJUE: (2, langjue_profile.MOTOR_REFRESH_MS),  # HA tap at the app's refresh rate.
     BED_TYPE_LINX: (334, 3),  # HA finite tap bound; Linx attempts held refresh every 3 ms.
     BED_TYPE_SYMPHONY_SLEEP: (4, 300),
     BED_TYPE_YAMADA: (4, 300),  # HA finite tap default at the app refresh cadence.

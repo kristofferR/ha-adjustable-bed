@@ -56,6 +56,8 @@ from .const import (
     BED_TYPE_RICHMAT_APP_SLEEP,
     BED_TYPE_RIZE,
     BED_TYPE_RONDURE,
+    BED_TYPE_SLEEP_ASSIST_PRO,
+    BED_TYPE_SLEEP_ASSISTANT,
     BED_TYPE_SLEEP_NUMBER,
     BED_TYPE_SOMOS,
     BED_TYPE_SYMPHONY,
@@ -210,6 +212,10 @@ KEY_SINGLE_ADDRESS_ORIGIN_ENTITY_UNIQUE_IDS: Final = (
     "single_address_origin_entity_unique_ids"
 )
 PAIR_LAYOUT_CAPABILITY_KEY: Final = "pair_layout"
+_STANDALONE_ONLY_APP_NAMES: Final = {
+    BED_TYPE_SLEEP_ASSIST_PRO: "Sleep Assist Pro",
+    BED_TYPE_SLEEP_ASSISTANT: "Sleep Assist",
+}
 SINGLE_ADDRESS_SIDE_AWARE_BED_TYPES: Final = frozenset(
     {
         "cheerssleep",
@@ -236,6 +242,11 @@ SINGLE_ADDRESS_SIDE_AWARE_BED_TYPES: Final = frozenset(
         BED_TYPE_SYMPHONY,
     }
 )
+
+
+def standalone_only_app(bed_type: object) -> str | None:
+    """Return the display name of a profile that only supports standalone setup."""
+    return _STANDALONE_ONLY_APP_NAMES.get(bed_type) if isinstance(bed_type, str) else None
 
 
 def supports_single_address_pairing(
@@ -744,8 +755,9 @@ def build_pair_entry_data(
     pair's setup re-homes that entry's registry rows in place instead of letting
     the platforms recreate them (preserving per-side history/customizations).
     """
-    if any(item.get(CONF_BED_TYPE) == "sleep_assistant" for item in (left_data, right_data)):
-        raise ValueError("Sleep Assist supports standalone entries only")
+    for item in (left_data, right_data):
+        if (app := standalone_only_app(item.get(CONF_BED_TYPE))) is not None:
+            raise ValueError(f"{app} supports standalone entries only")
     if any(item.get(CONF_BED_TYPE) == "personal_comfort" for item in (left_data, right_data)) and any(
         item.get(CONF_BED_TYPE) != "personal_comfort"
         or item.get(CONF_PROTOCOL_VARIANT) not in {"malouf", "reverie_v1", "reverie_v2"}

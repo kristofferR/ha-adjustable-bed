@@ -21,7 +21,7 @@ from __future__ import annotations
 import asyncio
 import contextlib
 import logging
-from collections.abc import AsyncIterator, Callable, Collection, Coroutine, Mapping
+from collections.abc import AsyncIterator, Awaitable, Callable, Collection, Coroutine, Mapping
 from typing import TYPE_CHECKING, Any
 
 from homeassistant.config_entries import ConfigEntry
@@ -623,9 +623,14 @@ class PairedBedCoordinator:
             for _side, child in targets:
                 child.request_command_cancel(resources=resources)
 
-    async def _stop_children(self, targets: list[PairTarget]) -> dict[str, BaseException]:
+    async def _stop_children(
+        self,
+        targets: list[PairTarget],
+        *,
+        original_stops: Mapping[str, Callable[[], Awaitable[None]]] | None = None,
+    ) -> dict[str, BaseException]:
         """Send cleanup STOP through the current topology, collecting failures."""
-        token = PAIRED_CLEANUP_STOP.set(True)
+        token = PAIRED_CLEANUP_STOP.set(original_stops or {})
         try:
             return await self._topology.stop_children(targets)
         finally:

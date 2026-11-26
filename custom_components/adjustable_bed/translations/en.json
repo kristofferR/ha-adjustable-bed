@@ -390,6 +390,7 @@
           "agingplace_bed_side": "Sensor side",
           "agingplace_selected_side": "Chosen sensor side",
           "read_positions": "Read bed position",
+          "sleep_assist_pro_controls": "Controls shown in Sleep Assist Pro",
           "sleep_assistant_presets": "Presets",
           "sleep_assistant_controls": "Additional controls",
           "sleep_assistant_lighting": "Lighting model"
@@ -448,6 +449,7 @@
           "agingplace_bed_side": "The side whose occupancy, heart rate and breathing rate are shown when the bed has two sensors. It does not change which side the controls move.",
           "agingplace_selected_side": "The sensor side shown when Selectable side is chosen. This setting belongs to this physical bed.",
           "read_positions": "Show the bed's position and allow moving to a set position. Turn off if reading the position stops the physical remote from working.",
+          "sleep_assist_pro_controls": "Select the controls the app shows for this bed.",
           "sleep_assistant_presets": "Select the presets shown for this bed, in their displayed order.",
           "sleep_assistant_controls": "Select only the controls shown for this bed.",
           "sleep_assistant_lighting": "Choose the lighting model selected in Sleep Assist."
@@ -819,6 +821,7 @@
     },
     "error": {
       "scan_failed": "Bluetooth scanning is unavailable. Check your adapters and try again, or choose a device from the list.",
+      "langjue_receiver_mismatch": "Choose the Bluetooth device used to control the bed in Comfort Smart Bed. The selected device is missing the required channels.",
       "invalid_mac_address": "Invalid Bluetooth address format. Use XX:XX:XX:XX:XX:XX.",
       "invalid_number": "Enter a valid number.",
       "invalid_pin": "PIN must be empty or exactly 4 digits.",
@@ -901,6 +904,7 @@
       "dorsal_receiver_unavailable": "This receiver did not expose a supported Dorsal Bluetooth writer.",
       "dorsal_roomi_receiver": "Choose a receiver whose Bluetooth name contains QRRM for Roomi controls.",
       "relax_motion_model": "Enter the model number the Relax Motion app shows for your bed.",
+      "sleep_assist_pro_invalid_selection": "Check the Bluetooth ID and select the controls shown in Sleep Assist Pro for this bed.",
       "sleep_assistant_invalid_settings": "Check the selected model settings and device identity.",
       "choice_not_listed": "Pick a row from the list. Type part of a name to search, then choose the matching row.",
       "invalid_idle_seconds": "Enter a number of seconds from 1 to 300.",
@@ -1030,6 +1034,7 @@
           "agingplace_bed_mode": "Sensor display mode",
           "agingplace_bed_side": "Sensor side",
           "agingplace_selected_side": "Chosen sensor side",
+          "sleep_assist_pro_controls": "Controls shown in Sleep Assist Pro",
           "sleep_assistant_presets": "Presets",
           "sleep_assistant_controls": "Additional controls",
           "sleep_assistant_lighting": "Lighting model",
@@ -1125,6 +1130,7 @@
           "serta_mp_memory_4_head": "Only if you changed memory 4 in the app: its head angle, in degrees.",
           "serta_mp_memory_4_foot": "Only if you changed memory 4 in the app: its foot angle, in degrees.",
           "symphony_side": "For a standalone ES500 split-head product, choose the side this entry operates. Paired child controls use their own Left/Right target.",
+          "sleep_assist_pro_controls": "Select the controls the app shows for this bed.",
           "sleep_assistant_presets": "Select the presets shown for this bed, in their displayed order.",
           "sleep_assistant_controls": "Select only the controls shown for this bed.",
           "sleep_assistant_lighting": "Choose the lighting model selected in Sleep Assist.",
@@ -1267,6 +1273,7 @@
           "agingplace_bed_side": "Sensor side",
           "agingplace_selected_side": "Chosen sensor side",
           "read_positions": "Read bed position",
+          "sleep_assist_pro_controls": "Controls shown in Sleep Assist Pro",
           "sleep_assistant_presets": "Presets",
           "sleep_assistant_controls": "Additional controls",
           "sleep_assistant_lighting": "Lighting model",
@@ -1352,6 +1359,7 @@
           "serta_mp_memory_4_head": "Only if you changed memory 4 in the app: its head angle, in degrees.",
           "serta_mp_memory_4_foot": "Only if you changed memory 4 in the app: its foot angle, in degrees.",
           "symphony_side": "For a standalone ES500 split-head product, choose the side this entry operates. Paired child controls use their own Left/Right target.",
+          "sleep_assist_pro_controls": "Select the controls the app shows for this bed.",
           "sleep_assistant_presets": "Select the presets shown for this bed, in their displayed order.",
           "sleep_assistant_controls": "Select only the controls shown for this bed.",
           "sleep_assistant_lighting": "Choose the lighting model selected in Sleep Assist.",
@@ -1450,6 +1458,7 @@
           "agingplace_bed_side": "Sensor side",
           "agingplace_selected_side": "Chosen sensor side",
           "read_positions": "Read bed position",
+          "sleep_assist_pro_controls": "Controls shown in Sleep Assist Pro",
           "sleep_assistant_presets": "Presets",
           "sleep_assistant_controls": "Additional controls",
           "sleep_assistant_lighting": "Lighting model",
@@ -1535,6 +1544,7 @@
           "serta_mp_memory_4_head": "Only if you changed memory 4 in the app: its head angle, in degrees.",
           "serta_mp_memory_4_foot": "Only if you changed memory 4 in the app: its foot angle, in degrees.",
           "symphony_side": "For a standalone ES500 split-head product, choose the side this entry operates. Paired child controls use their own Left/Right target.",
+          "sleep_assist_pro_controls": "Select the controls the app shows for this bed.",
           "sleep_assistant_presets": "Select the presets shown for this bed, in their displayed order.",
           "sleep_assistant_controls": "Select only the controls shown for this bed.",
           "sleep_assistant_lighting": "Choose the lighting model selected in Sleep Assist.",
@@ -1720,6 +1730,7 @@
       "cheerssleep_model_required": "Choose the bed model the CheersSleep app shows.",
       "suta_name": "Enter the complete case-sensitive SUTA Bluetooth name. Names shorter than nine characters and drawer controllers have no supported bed controls.",
       "invalid_variant_for_bed_type": "This bed model or remote does not fit the chosen app. Choose another one, or Automatic.",
+      "sleep_assist_pro_invalid_selection": "Check the Bluetooth ID and select the controls shown in Sleep Assist Pro for this bed.",
       "sleep_assistant_invalid_settings": "Check the selected model settings and device identity.",
       "choice_not_listed": "Pick a row from the list. Type part of a name to search, then choose the matching row.",
       "invalid_idle_seconds": "Enter a number of seconds from 1 to 300.",
@@ -1754,6 +1765,18 @@
   },
   "entity": {
     "button": {
+      "sleep_assist_pro_side_b_up": {
+        "name": "Side B head up"
+      },
+      "sleep_assist_pro_side_b_down": {
+        "name": "Side B head down"
+      },
+      "sleep_assist_pro_massage_timer": {
+        "name": "Cycle massage timer"
+      },
+      "sleep_assist_pro_light_toggle": {
+        "name": "Toggle under-bed light"
+      },
       "customatic_demo_auto_sit": {
         "name": "Automatic sitting up"
       },
@@ -3975,6 +3998,9 @@
       }
     },
     "cover": {
+      "sleep_assist_pro_side_b": {
+        "name": "Side B head"
+      },
       "customatic_demo_seat": {
         "name": "Seat"
       },
@@ -4430,6 +4456,12 @@
       }
     },
     "sensor": {
+      "sleep_assist_pro_massage_countdown": {
+        "name": "Massage countdown"
+      },
+      "sleep_assist_pro_massage_timer": {
+        "name": "Massage timer"
+      },
       "customatic_demo_light_timer": {
         "name": "Under-bed light timer"
       },
@@ -5728,6 +5760,9 @@
       }
     },
     "switch": {
+      "langjue_alarm_enabled": {
+        "name": "Bed alarm"
+      },
       "dorsal_massage": {
         "name": "Massage"
       },
@@ -6646,6 +6681,10 @@
       }
     },
     "select": {
+      "sleep_assist_pro_rgb_intensity": {
+        "name": "RGB brightness",
+        "state": {"20": "20%", "60": "60%", "100": "100%"}
+      },
       "sleepiq_auto_light_level": {
         "name": "Automatic under-bed light level",
         "state": {
@@ -11229,6 +11268,9 @@
     "paired_entry_has_no_sides": {
       "message": "This combined bed has no sides saved. Delete it and add the beds again."
     },
+    "paired_member_requires_standalone": {
+      "message": "{app} beds must be set up as standalone entries. Open Configure and separate the beds."
+    },
     "single_address_pair_unsupported": {
       "message": "This bed has no side selector, so it cannot show separate sides. Open its options and choose Separate to use it as one bed."
     },
@@ -11865,6 +11907,15 @@
     "sleep_assistant_light_unknown": {
       "message": "Wait for the bed to report the light state. Choose a color before changing brightness after reconnect."
     },
+    "sleep_assist_pro_control_unavailable": {
+      "message": "This control is unavailable for the selected Sleep Assist Pro bed."
+    },
+    "sleep_assist_pro_color_unknown": {
+      "message": "Choose a light color before changing RGB brightness on this connection."
+    },
+    "sleep_assist_pro_light_off": {
+      "message": "The bed must report that its light is on before you can change the color or brightness."
+    },
     "sleep_assistant_control_unavailable": {
       "message": "This control is unavailable for the selected bed settings."
     },
@@ -11879,6 +11930,12 @@
     },
     "maxprime_alarm": {
       "message": "Choose an alarm action and massage combination offered by this layout."
+    },
+    "langjue_alarm_busy": {
+      "message": "An alarm action is already running for a selected receiver. Try again when it finishes."
+    },
+    "langjue_alarm_sequential": {
+      "message": "Set the alarm on one receiver at a time when this bed connects to its sides sequentially."
     },
     "maxprime_settings_sequential": {
       "message": "Send this setting in a separate call to each side of a bed that connects sequentially."
@@ -13679,6 +13736,8 @@
         "lounge": "Lounge",
         "tv": "TV",
         "reading": "Reading",
+        "stretch": "Stretch",
+        "backrest": "Backrest",
         "yoga": "Yoga",
         "memory_1": "Memory 1",
         "memory_2": "Memory 2",

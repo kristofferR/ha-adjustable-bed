@@ -62,7 +62,7 @@ def rgb(mode: int, value: int, red: int = 0, green: int = 0, blue: int = 0) -> b
     return body + bytes((~sum(body[1:18]) & 255, 0x55))
 
 
-def rgb_channels(red: int, green: int, blue: int, level: float) -> bytes:
+def scaled_rgb(color: tuple[int, int, int], level: float) -> tuple[int, int, int]:
     """Java float32 multiplication, then truncation, of the inverted channels."""
 
     def channel(value: int) -> int:
@@ -73,7 +73,12 @@ def rgb_channels(red: int, green: int, blue: int, level: float) -> bytes:
             )[0]
         )
 
-    return rgb(1, 1, *(channel(v) for v in (red, green, blue)))
+    red, green, blue = color
+    return channel(red), channel(green), channel(blue)
+
+
+def rgb_channels(red: int, green: int, blue: int, level: float) -> bytes:
+    return rgb(1, 1, *scaled_rgb((red, green, blue), level))
 
 
 def light(value: int = 0, query: bool = True) -> bytes:
