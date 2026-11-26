@@ -553,10 +553,12 @@ async def test_real_registry_parent_and_child_alarm_targets_keep_side_and_confli
     )
     hass.data.setdefault(DOMAIN, {})[pair_entry.entry_id] = pair
     registry = dr.async_get(hass)
-    parent = registry.async_get_or_create(config_entry_id=pair_entry.entry_id, **pair.device_info)
+    parent = registry.async_get_or_create_from_info(
+        config_entry_id=pair_entry.entry_id, device_info=pair.device_info
+    )
     children = {
-        side: registry.async_get_or_create_child(
-            config_entry_id=pair_entry.entry_id, **child_device_info(pair, side)
+        side: registry.async_get_or_create_child_from_info(
+            config_entry_id=pair_entry.entry_id, device_info=child_device_info(pair, side)
         )
         for side in physical
     }

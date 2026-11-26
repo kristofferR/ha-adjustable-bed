@@ -12,6 +12,7 @@ from homeassistant.helpers import area_registry as ar
 from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers import issue_registry as ir
+from homeassistant.helpers import label_registry as lr
 from homeassistant.setup import async_setup_component
 from pytest_homeassistant.common import MockConfigEntry
 
@@ -66,12 +67,13 @@ async def test_light_takes_over_the_switch_with_the_users_settings(hass: HomeAss
     entry = _entry(hass)
     old = _row(registry, entry, "switch", "under_bed_lights", "bed_under_bed_lights")
     area = ar.async_get(hass).async_create("Bedroom")
+    label = lr.async_get(hass).async_create("Night")
     registry.async_update_entity(
         old.entity_id,
         name="Glow",
         icon="mdi:lamp",
         area_id=area.id,
-        labels={"night"},
+        labels={label.label_id},
         aliases=["bed glow"],
         disabled_by=er.RegistryEntryDisabler.USER,
         hidden_by=er.RegistryEntryHider.USER,
@@ -86,7 +88,7 @@ async def test_light_takes_over_the_switch_with_the_users_settings(hass: HomeAss
     assert new is not None
     assert new.unique_id == f"{ADDRESS}_under_bed_lights"
     assert (new.name, new.icon, new.area_id) == ("Glow", "mdi:lamp", area.id)
-    assert new.labels == {"night"}
+    assert new.labels == {label.label_id}
     assert list(new.aliases) == ["bed glow"]
     assert new.disabled_by is er.RegistryEntryDisabler.USER
     assert new.hidden_by is er.RegistryEntryHider.USER
