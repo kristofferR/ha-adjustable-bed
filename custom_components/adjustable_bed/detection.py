@@ -30,7 +30,6 @@ from .beds.richmat_classic.profiles import APP_NAMES as RICHMAT_CLASSIC_APPS
 from .beds.silvermotion.discovery import scan_matches as silvermotion_scan_matches
 from .beds.starcode.abm5_4_profiles import TRANSPORTS as STARCODE_ABM5_4_TRANSPORTS
 from .beds.svane.state import is_svane_discovery_name
-from .bluetooth_transport import advertised_local_name
 from .const import (
     BED_TYPE_ADJUSTABLE_BED,
     BED_TYPE_ADJUSTABLE_LUMBAR,
@@ -313,7 +312,6 @@ from .discovery_hints._hints import ManufacturerHint, NameHint
 from .profiles.bedgear import eligible as bedgear_eligible
 from .profiles.bobpowerbase import PROFILE_CHOICES as BOB_PROFILES
 from .profiles.bobpowerbase import SCAN_KEYWORDS as BOB_SCAN_KEYWORDS
-from .profiles.likimio import SCAN_WORDS as LIKIMIO_SCAN_WORDS
 from .profiles.majestichome import PROFILE_CHOICES as MAJESTICHOME_PROFILES
 from .profiles.mlily_choices import PROFILE_CHOICES as MLILY_PROFILES
 from .profiles.mlily_remote import VARIANTS as MLILY_REMOTE_PROFILES
@@ -1752,11 +1750,8 @@ def _detect_with_first_pass(
             result = DetectionResult("dreamsense", 0.3, ["name:dreamsense_app_candidate"])
         elif result.bed_type != "dreamsense":
             result.ambiguous_types = list(dict.fromkeys([*(result.ambiguous_types or ()), "dreamsense"]))
-    local_name = advertised_local_name(service_info)
-    if (
-        isinstance(local_name, str)
-        and any(word in local_name for word in LIKIMIO_SCAN_WORDS)
-        and not any(signal.startswith("excluded:") for signal in result.signals)
+    if first.name(BED_TYPE_LIKIMIO) and not any(
+        signal.startswith("excluded:") for signal in result.signals
     ):
         if result.bed_type is None:
             result = DetectionResult(BED_TYPE_LIKIMIO, 0.3, ["name:likimio_app_candidate"])

@@ -69,10 +69,15 @@ def _advertisements(hint: Hint) -> list[MagicMock]:
             return [_info(manufacturer_data={hint.company_id: hint.data_start + b"\x00"})]
         case NameHint():
             # TOO_BROAD patterns are first-pass only and have no matcher.
-            return [
+            infos = [
                 _info(name=re.sub(r"\[([a-z])[A-Z]\]", r"\1", str(m["local_name"])).replace("*", "x"))
                 for m in hint.matchers()
             ]
+            if hint.packet_name_only:
+                for info in infos:
+                    name = info.name.encode()
+                    info.raw = bytes((len(name) + 1, 0x09)) + name
+            return infos
     raise AssertionError(hint)
 
 

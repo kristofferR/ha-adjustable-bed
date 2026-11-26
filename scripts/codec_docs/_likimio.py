@@ -9,6 +9,12 @@ from custom_components.adjustable_bed.profiles.likimio import ABM10, PROFILES
 from scripts.codec_docs._common import _block, _hex, _table
 
 
+def _generic_frames(code: int, *, action: str = "") -> tuple[str, str]:
+    nordic = codec.function(code, action=action, single=True)
+    checksummed = codec.function(code, action=action)
+    return _hex(nordic), _hex(checksummed)
+
+
 def render() -> str:
     profile = PROFILES[ABM10]
     return _block(
@@ -50,21 +56,13 @@ def render() -> str:
         _table(
             ("Operation", "Nordic", "W1–W5"),
             (
-                (
-                    "STOP",
-                    _hex(codec.function(codec.STOP, single=True)),
-                    _hex(codec.function(codec.STOP)),
-                ),
-                (
-                    "Exit limit",
-                    "`00`",
-                    _hex(codec.function(0, action="deviceFunctionItemExitLimit")),
-                ),
+                ("STOP", *_generic_frames(codec.STOP)),
+                ("Exit limit", *_generic_frames(0, action="deviceFunctionItemExitLimit")),
                 *(
-                    (name, "`01`", _hex(codec.function(1, action="deviceFunctionItemCheck" + name)))
+                    (name, *_generic_frames(1, action="deviceFunctionItemCheck" + name))
                     for name in ("Clock", "Light", "Music")
                 ),
-                ("Light off", _hex(codec.function(0x75, single=True)), _hex(codec.function(0x75))),
+                ("Light off", *_generic_frames(0x75)),
                 (
                     "Light duration, 0 or 300 seconds",
                     "Same as W1–W5",

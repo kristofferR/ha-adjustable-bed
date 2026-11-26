@@ -25,6 +25,7 @@ from collections.abc import Mapping
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
+from ..bluetooth_transport import advertised_local_name
 from ._excluded import EXCLUDED_DEVICE_PATTERNS, GENERIC_SHARED_SERVICE_UUIDS
 from ._hints import (
     Advertisement,
@@ -143,6 +144,7 @@ def advertisement(service_info: BluetoothServiceInfoBleak) -> Advertisement:
         name=service_info.name or "",
         service_uuids=frozenset(str(uuid).lower() for uuid in service_info.service_uuids or ()),
         manufacturer_data=service_info.manufacturer_data or {},
+        local_name=advertised_local_name(service_info),
     )
 
 

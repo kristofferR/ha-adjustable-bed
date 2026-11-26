@@ -8,6 +8,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from homeassistant.const import CONF_ADDRESS, CONF_NAME
+from homeassistant.data_entry_flow import FlowResultType
 from pytest_homeassistant.common import MockConfigEntry
 
 from custom_components.adjustable_bed import _async_sync_profile_ids, button, const, services
@@ -18,21 +19,22 @@ from custom_components.adjustable_bed.beds.dreamsense.likimio import (
     LikimioReceive,
 )
 from custom_components.adjustable_bed.beds.dreamsense.transport import LIKIMIO_ROUTES
+from custom_components.adjustable_bed.config_flow import AdjustableBedConfigFlow
 from custom_components.adjustable_bed.controller_factory import create_controller
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
 from custom_components.adjustable_bed.detection import detect_bed_type_detailed
+from custom_components.adjustable_bed.discovery_hints import first_pass
 from custom_components.adjustable_bed.profiles.likimio import ABM10, CHOICES, NO_PRODUCT, SCAN_WORDS
 from tests.error_helpers import raises_key
-from tests.form_helpers import finish_new_bed
+from tests.form_helpers import form_fields, options_of
 from tests.test_dreamsense import make_client, written
-from tests.test_richmat_family_flow import setup_flow
 
 GATT = json.loads((Path(__file__).parent / "fixtures/likimio/gatt.json").read_text())
 
 
 @pytest.mark.parametrize("word", SCAN_WORDS)
 def test_shared_advertisement_suggests_likimio_without_selecting_its_product(word):
-    def detect(name, alias=None, *, raw=None, cached=False):
+    def advertisement(name, alias=None, *, raw=None, cached=False):
         info = MagicMock(
             advertisement=SimpleNamespace(
                 local_name=name, platform_data=() if cached else (object(),)
@@ -43,37 +45,60 @@ def test_shared_advertisement_suggests_likimio_without_selecting_its_product(wor
             service_data={},
         )
         info.name = alias or name
-        return detect_bed_type_detailed(info)
+        return info
 
-    result = detect("prefix" + word + "suffix")
+    live = advertisement(f"prefix{word}suffix")
+    assert first_pass(live).name(const.BED_TYPE_LIKIMIO)
+    result = detect_bed_type_detailed(live)
     assert const.BED_TYPE_LIKIMIO in (result.ambiguous_types or ())
-    for name in ("prefix" + word.lower() + "suffix", "UTRM"):
-        result = detect(name)
+    for info in (
+        advertisement(f"prefix{word.lower()}suffix"),
+        advertisement("UTRM"),
+        advertisement(None, alias=word),
+        advertisement(word, cached=True),
+        advertisement(word, raw=b"\x02\x01\x06"),
+    ):
+        assert not first_pass(info).name(const.BED_TYPE_LIKIMIO)
+        result = detect_bed_type_detailed(info)
         assert result.bed_type != const.BED_TYPE_LIKIMIO
         assert const.BED_TYPE_LIKIMIO not in (result.ambiguous_types or ())
-    assert const.BED_TYPE_LIKIMIO not in (detect(None, alias=word).ambiguous_types or ())
-    cached = detect(word, cached=True)
-    assert cached.bed_type != const.BED_TYPE_LIKIMIO
-    assert const.BED_TYPE_LIKIMIO not in (cached.ambiguous_types or ())
     packet_name = f"prefix{word}suffix".encode()
     raw = bytes((len(packet_name) + 1, 0x09)) + packet_name
-    packet = detect("Unrelated name", raw=raw, cached=True)
+    info = advertisement("Unrelated name", raw=raw, cached=True)
+    assert first_pass(info).name(const.BED_TYPE_LIKIMIO)
+    packet = detect_bed_type_detailed(info)
     assert const.BED_TYPE_LIKIMIO in {packet.bed_type, *(packet.ambiguous_types or ())}
-
 
 
 @pytest.mark.parametrize("product", CHOICES)
 async def test_native_setup_persists_likimio_profile(hass, product):
-    flow = setup_flow(hass, **{const.CONF_BED_TYPE: const.BED_TYPE_LIKIMIO})
-    flow._discovery_info = None
+    flow = AdjustableBedConfigFlow()
+    flow.hass, flow.context = hass, {"source": "user"}
+    flow._selected_bed_type = const.BED_TYPE_LIKIMIO
+    result = await flow.async_step_manual_entry({CONF_ADDRESS: "11:22:33:44:55:68"})
+    assert result["step_id"] == "profile_questions"
+    assert options_of(form_fields(result["data_schema"])[const.CONF_PROTOCOL_VARIANT]) == list(
+        CHOICES
+    )
     with patch.object(flow, "_verification_possible", return_value=False):
         result = await flow.async_step_profile_questions({const.CONF_PROTOCOL_VARIANT: product})
-        result = await finish_new_bed(flow, result)
-    entry = MockConfigEntry(domain=const.DOMAIN, data=result["data"])
+        assert result["step_id"] == "finish_settings"
+        assert const.CONF_PROTOCOL_VARIANT not in form_fields(result["data_schema"])
+        result = await flow.async_step_finish_settings(
+            {CONF_NAME: "Likimio bed", const.CONF_CONNECTION_MODE: "idle"}
+        )
+    assert result["type"] is FlowResultType.CREATE_ENTRY
+    assert result["title"] == "Likimio bed"
+    data = result["data"]
+    assert data[CONF_ADDRESS] == "11:22:33:44:55:68"
+    assert data[const.CONF_BED_TYPE] == const.BED_TYPE_LIKIMIO
+    assert data[const.CONF_PROTOCOL_VARIANT] == product
+    assert data[const.CONF_CONNECTION_MODE] == "idle"
+    assert data[const.CONF_HAS_MASSAGE] is (product == ABM10)
+    entry = MockConfigEntry(domain=const.DOMAIN, data=data)
     entry.add_to_hass(hass)
     _async_sync_profile_ids(hass, entry)
     assert entry.data[const.CONF_PROFILE_ID] == f"likimio:{product}"
-    assert result["data"][const.CONF_HAS_MASSAGE] is (product == ABM10)
 
 
 async def make_runtime(hass, product=ABM10, layout=1, *, notify=True, response=False):

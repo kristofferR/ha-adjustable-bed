@@ -29,6 +29,7 @@ class Advertisement(NamedTuple):
     name: str
     service_uuids: frozenset[str]
     manufacturer_data: Mapping[int, bytes]
+    local_name: str | None = None
 
 
 def _bed_types(bed_types: Iterable[str]) -> frozenset[str]:
@@ -119,12 +120,14 @@ class NameHint:
     spellings the case-sensitive gate needs. ``anywhere`` records that
     detection also accepts a pattern after the start of the name, which the
     prefix-indexed gate cannot express.
+    ``packet_name_only`` requires the local name from the advertisement itself.
     """
 
     patterns: tuple[str, ...]
     bed_types: frozenset[str]
     case: Case = Case.EXACT
     anywhere: bool = False
+    packet_name_only: bool = False
     connectable: bool | None = None
     _regex: re.Pattern[str] = field(init=False, repr=False, compare=False)
 
@@ -168,7 +171,8 @@ class NameHint:
         )
 
     def matches(self, advertisement: Advertisement) -> bool:
-        return self.matches_name(advertisement.name)
+        name = advertisement.local_name if self.packet_name_only else advertisement.name
+        return isinstance(name, str) and self.matches_name(name)
 
     def matches_name(self, name: str) -> bool:
         found = self._regex.search(name) if self.anywhere else self._regex.match(name)
@@ -193,6 +197,7 @@ def names(
     bed_types: Iterable[str],
     case: Case = Case.EXACT,
     anywhere: bool = False,
+    packet_name_only: bool = False,
     connectable: bool | None = None,
 ) -> NameHint:
     """A name hint over one or more patterns that share their bed types and case."""
@@ -201,6 +206,7 @@ def names(
         bed_types=_bed_types(bed_types),
         case=case,
         anywhere=anywhere,
+        packet_name_only=packet_name_only,
         connectable=connectable,
     )
 
