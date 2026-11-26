@@ -472,6 +472,10 @@ class LangjueController(BedController):
 
         context.paired_abort_stop = stop_on_original
 
+    @property
+    def reconnect_for_explicit_stop(self) -> bool:
+        return True
+
     async def stop_all(self) -> None:
         link = self._live(motion=True)
         if (context := current_command_context()) is not None:
@@ -695,8 +699,24 @@ class LangjueController(BedController):
             return codec.frame(Op.MASSAGE_PATTERN, 2, bytes((0, value)))
         raise ValueError("Unknown Langjue massage setting or value")
 
+    async def _write_massage(
+        self, link: _Link, event: asyncio.Event, setting: str, value: int
+    ) -> None:
+        frame = self._massage_frame(setting, value)
+        if event.is_set():
+            note_frame_skipped()
+            return
+        if setting in app.MASSAGE_ZONES:
+            updates = (massage_intensity(setting)(value),)
+        elif setting == "timer":
+            updates = (MASSAGE_TIMER_MINUTES(value),)
+        else:
+            updates = ()
+        with self.sent_state(*updates, is_current=lambda: self._is_current(link)):
+            await self._send(link, frame, event, response=True)
+
     async def _set_massage(self, setting: str, value: int) -> None:
-        await self._standard(self._massage_frame(setting, value))
+        await self._write_massage(self._live(), self._coordinator.cancel_command, setting, value)
 
     async def set_massage_intensity(self, zone: str, level: int) -> None:
         if zone not in app.MASSAGE_ZONES:
@@ -718,7 +738,7 @@ class LangjueController(BedController):
                 await asyncio.sleep(delay)
             if event.is_set():
                 break
-            await self._send(link, self._massage_frame(setting, value), event, response=True)
+            await self._write_massage(link, event, setting, value)
 
     async def massage_off(self) -> None:
         await self._massage_sequence(app.MASSAGE_STOP)

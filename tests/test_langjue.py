@@ -154,6 +154,30 @@ async def make_controller(hass, client, *, address=ADDRESS, **config):
     return coordinator, controller
 
 
+async def test_massage_writes_publish_state_without_notifications(hass):
+    client = make_client()
+    coord, ctrl = await make_controller(hass, client, has_massage=True)
+    try:
+        with virtual_clock():
+            await ctrl.start_notify()
+            with patch.object(coord, "async_ensure_connected", AsyncMock(return_value=True)):
+                await coord.async_execute_controller_command(
+                    lambda _: ctrl._massage_sequence(app.MASSAGE_START)
+                )
+                assert coord.controller_state.get(massage_intensity("head")) == 1
+                assert coord.controller_state.get(massage_intensity("foot")) == 1
+                assert coord.controller_state.get(MASSAGE_TIMER_MINUTES) == 10
+                await coord.async_execute_controller_command(
+                    lambda _: ctrl.set_massage_intensity("head", 3)
+                )
+                assert coord.controller_state.get(massage_intensity("head")) == 3
+                await coord.async_execute_controller_command(lambda _: ctrl.massage_off())
+                assert coord.controller_state.get(massage_intensity("head")) == 0
+                assert coord.controller_state.get(massage_intensity("foot")) == 0
+    finally:
+        await coord.async_shutdown()
+
+
 @pytest.mark.parametrize("route", NEW_BED_ROUTES)
 async def test_manual_setup_confirms_direction_and_features(hass, route):
     flow = AdjustableBedConfigFlow()
@@ -744,6 +768,41 @@ async def test_alarm_disable_uses_latest_record_at_gatt_admission(hass):
         (codec.alarm_enabled(latest[6:], False), True),
         (WIRE["P1-W16"], True),
     ]
+
+
+async def test_sequential_explicit_stop_reconnects_after_a_preset(hass):
+    client, peer = make_client(), make_client()
+    left, ctrl = await make_controller(hass, client)
+    right, _ = await make_controller(hass, peer, address="AA:BB:CC:DD:EE:77")
+    peer.is_connected = False
+    pair, _ = make_pair(hass, left, right, mode=PAIR_CONNECTION_MODE_SEQUENTIAL)
+
+    async def connect(**_kwargs):
+        if not client.is_connected:
+            client.is_connected = True
+            left._client = client
+            left._controller = ctrl
+            await ctrl.start_notify()
+        return True
+
+    try:
+        with (
+            virtual_clock(),
+            patch.object(left, "async_connect", side_effect=connect),
+            patch.object(left, "async_ensure_connected", side_effect=connect),
+        ):
+            await ctrl.start_notify()
+            left.cache_capability_controller()
+            client.write_gatt_char.reset_mock()
+            await pair.async_execute_controller_command(lambda bed: bed.preset_flat(), side="left")
+            assert not left.is_connected
+            assert (WIRE["P1-W08"], False) not in writes(client)
+            await pair.async_stop_command(side="left")
+            assert writes(client)[-1] == (WIRE["P1-W08"], False)
+            assert not left.is_connected
+            peer.write_gatt_char.assert_not_awaited()
+    finally:
+        await pair.async_shutdown()
 
 
 async def test_sequential_alarm_checks_and_writes_one_side_on_the_same_connection(hass):

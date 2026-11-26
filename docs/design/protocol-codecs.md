@@ -92,6 +92,18 @@ family owns its encoders and parser. `tests/test_smart_comfort.py` verifies both
 members' frozen literals, rather than selecting a family by UUID or brand.
 See the [Smart Comfort guide](../beds/smart-comfort.md).
 
+## Sleeptime
+
+Sleeptime 1.0.1 reproduces the frozen writes through Okin N-frame's
+`frame40`, `request`, `clock` and `alarm` encoders. Its motion suffix is
+`01`. Ultramatic's side selector, BCD fields and paired seven-byte status
+records have different meanings. Sleeptime adds one single-record dispatcher
+for massage and alarm updates. The app profile owns the three layouts,
+weekday mapping and cadence. The controller binds the delayed release and
+settings writes to their starting UART session. See the
+[Sleeptime guide](../beds/okin-nframe.md#sleeptime) and
+`tests/test_sleeptime.py`.
+
 ## Ultramatic Smart Bed
 
 Ultramatic Smart Bed 1.1.2 reproduces every app send through
@@ -372,6 +384,14 @@ its own name gates, axes and controls. The shared letter runtime preserves
 Bedgear's timing while L2Motion delays the first periodic write until its first
 timer tick. Neither synchronization commands nor accessory replies establish
 concurrent motors, position feedback or native side routing.
+
+ErgoBed Control 1.0.3 matches MotoMotion's plain letters and decimal R records
+in 40 frozen vectors. The remaining vector uses the same digit XOR and
+variable-width decimal fields with an A terminator. The codec exposes that
+terminator for the local clock. The ErgoBed profile sets its own panel and
+feature gates, record field order, and held behavior. Its shared letter
+controller extension handles the exact 75-token status records and fences
+settings writes to the current BLE connection.
 
 ## Linx
 

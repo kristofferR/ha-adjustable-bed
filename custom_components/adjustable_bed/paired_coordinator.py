@@ -645,11 +645,22 @@ class PairedBedCoordinator:
             self._admission.note_stop(
                 target_side, self._topology.command_scope(command_resources(resource))
             )
+
+        active_stop = None
+        if isinstance(topology := self._topology, SequentialTwoLinkTopology):
+            # The cycle keeps this receiver until its admitted STOP settles.
+            active_stop = topology.admit_active_motor_stop(targets, stop_fn, resource)
+            if active_stop is not None:
+                targets.remove(active_stop[0])
+
         # Like an ordinary motor STOP, preempt any motion holding the writer.
         scope = command_resources("motor:*" if resource.startswith("motor:") else resource)
         self._cancel_before_stop(targets, scope)
         targets, admitted, errors = self._admit_sequential_stops(targets, scope)
+
         async def stop() -> dict[str, BaseException]:
+            if active_stop is not None:
+                errors.update(await active_stop[1])
             await self._collect_admitted_stops(admitted, errors)
             if targets:
                 async with self._connection_mode_transition_lock:

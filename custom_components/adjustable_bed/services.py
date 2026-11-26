@@ -96,6 +96,7 @@ from .const import (
     SIDE_RIGHT,
     TIMED_MOVE_MOTOR_OPTIONS,
 )
+from .coordinator import AdjustableBedCoordinator
 from .download import register_download
 from .entity_runtime import controller_side_scope
 from .errors import invalid, rejected
@@ -2406,6 +2407,7 @@ def _alarm_request(call: ServiceCall) -> AlarmRequest:
         hour=alarm_time.hour if alarm_time is not None else 0,
         minute=alarm_time.minute if alarm_time is not None else 0,
         reference_time=dt_util.now(),
+        time_provided=alarm_time is not None,
         **optional,
     )
 
@@ -2563,12 +2565,25 @@ async def handle_set_alarm(call: ServiceCall) -> None:
         for child in children
         if child.bed_type == BED_TYPE_LANGJUE
     }
-    with contextlib.ExitStack() as alarm_reservations:
+    async with contextlib.AsyncExitStack() as transaction:
+        # A sibling's reload would replace the same parent. Defer both sides'
+        # reloads even when the action targets just one side of the pair.
+        receivers: dict[int, AdjustableBedCoordinator] = {}
+        for (parent, _), group in zip(selection.targets, selection.children, strict=True):
+            children = parent.children.values() if isinstance(parent, PairedBedCoordinator) else group
+            for child in children:
+                receiver = child.inner if isinstance(child, SingleAddressSideCoordinator) else child
+                if isinstance(receiver, AdjustableBedCoordinator):
+                    receivers[id(receiver)] = receiver
+        for receiver in receivers.values():
+            await transaction.enter_async_context(receiver.async_defer_capability_reload())
+
         if langjue_addresses:
             await async_import_modules(call.hass, "beds.langjue")
             from .beds.langjue import reserve_alarm_receivers
 
-            alarm_reservations.enter_context(reserve_alarm_receivers(call.hass, langjue_addresses))
+            transaction.enter_context(reserve_alarm_receivers(call.hass, langjue_addresses))
+
         preflighted = await _preflight_each(targets, check)
         try:
             finished = await _write_checked_alarms(call, selection, plans, alarm, given)

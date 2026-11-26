@@ -30,6 +30,7 @@ from .beds.richmat_classic.profiles import APP_NAMES as RICHMAT_CLASSIC_APPS
 from .beds.silvermotion.discovery import scan_matches as silvermotion_scan_matches
 from .beds.starcode.abm5_4_profiles import TRANSPORTS as STARCODE_ABM5_4_TRANSPORTS
 from .beds.svane.state import is_svane_discovery_name
+from .bluetooth_transport import advertised_local_name
 from .const import (
     BED_TYPE_ADJUSTABLE_BED,
     BED_TYPE_ADJUSTABLE_LUMBAR,
@@ -59,8 +60,10 @@ from .const import (
     BED_TYPE_CUSTOMATIC_JEROMES,
     BED_TYPE_CUSTOMATIC_REMEDY,
     BED_TYPE_DIAGNOSTIC,
+    BED_TYPE_DORSAL,
     BED_TYPE_DOUBLESLEEP,
     BED_TYPE_ENSO2,
+    BED_TYPE_ERGOBED,
     BED_TYPE_ERGOMOTION,
     BED_TYPE_ERGOMOTION_4,
     BED_TYPE_ESHINE,
@@ -151,6 +154,7 @@ from .const import (
     BED_TYPE_SLEEP_NUMBER,
     BED_TYPE_SLEEP_NUMBER_MCR,
     BED_TYPE_SLEEPSTAR,
+    BED_TYPE_SLEEPTIME,
     BED_TYPE_SLEEPTRACKER,
     BED_TYPE_SLEEPYS_BOX15,
     BED_TYPE_SLEEPYS_BOX24,
@@ -190,6 +194,8 @@ from .const import (
     DEWERTOKIN_RF_GATEWAY_DEVICE_NAME_CHAR_UUID,
     DEWERTOKIN_RF_GATEWAY_SERVICE_UUID,
     DEWERTOKIN_SERVICE_UUID,
+    DORSAL_ROOMI_S655_PLUS,
+    DORSAL_ROUTES,
     ERGOMOTION_NAME_PATTERNS,
     ESHINE_OKIN_PROFILES,
     GLIDEAWAY_MOTION_MODELS,
@@ -219,6 +225,7 @@ from .const import (
     KEESON_VARIANT_KSBT,
     KEESON_VARIANT_KSBT04C,
     KEESON_VARIANT_KSBT_CR,
+    KEESON_VARIANT_LEVA_SLEEP,
     KEESON_VARIANT_MAXCOIL_UNA,
     KEESON_VARIANT_OKIN_COMFORT_BED,
     KEESON_VARIANT_OKIN_SEATING,
@@ -311,6 +318,7 @@ from .discovery_hints import (
 )
 from .discovery_hints._hints import ManufacturerHint, NameHint
 from .profiles.bedgear import eligible as bedgear_eligible
+from .profiles.bedgear import ergobed_eligible
 from .profiles.bobpowerbase import PROFILE_CHOICES as BOB_PROFILES
 from .profiles.bobpowerbase import SCAN_KEYWORDS as BOB_SCAN_KEYWORDS
 from .profiles.customatic_demo import NAME_PREFIX as CUSTOMATIC_DEMO_NAME_PREFIX
@@ -681,6 +689,7 @@ BED_TYPE_DISPLAY_NAMES: dict[str, str] = {
     BED_TYPE_SHUDA: "Shuda app",
     BED_TYPE_SIMMONS_BLUE: "Simmons Blue app",
     BED_TYPE_RESIDENT: "Resident Adjustable Base app",
+    BED_TYPE_SLEEPTIME: "Sleeptime Australia app (SmartBed205, 402, 404, 405)",
     "enso": "Enso Remote",
     BED_TYPE_ENSO2: "ENSO Sleep Control (Enso 2)",
     "sealy_posturematic": "Sealy Posturematic",
@@ -770,6 +779,7 @@ BED_TYPE_DISPLAY_NAMES: dict[str, str] = {
     BED_TYPE_MALOUF_NEW_OKIN: "Malouf remote, newer receiver",
     "bedgear": "Bedgear app",
     "l2motion": "L2 Motion app",
+    BED_TYPE_ERGOBED: "ErgoBed Control app",
     BED_TYPE_MOODBASE: "MoodBase app",
     BED_TYPE_MOTOSLEEP: "MotoSleep / Power Bob app",
     BED_TYPE_OCTO: "OCTO Smart Control",
@@ -827,6 +837,7 @@ def is_jensen_linon_name(name: str | None) -> bool:
 # users find them by app name. A bed type's own entry names the app its auto
 # variant selects; see AGENTS.md "Adding a New Bed Type".
 APP_VARIANT_CHOICES: dict[tuple[str, str], str] = {
+    (BED_TYPE_DORSAL, DORSAL_ROOMI_S655_PLUS): DORSAL_ROUTES[DORSAL_ROOMI_S655_PLUS],
     **{("majestichome", profile): f"Majestic Home ({label})" for profile, label in MAJESTICHOME_PROFILES.items()},
     **{("richmat_sleep_receiver", app): f"{label} separate sleep receiver"
        for app, label in (("wsilver2", "W.Silver Products"), ("americanstar", "AMERICANSTAR"),
@@ -855,6 +866,7 @@ APP_VARIANT_CHOICES: dict[tuple[str, str], str] = {
     (BED_TYPE_KEESON, KEESON_VARIANT_OKIN_COMFORT_BED): "OKIN Comfort Bed app",
     (BED_TYPE_KEESON, KEESON_VARIANT_COMFORTFURNITURE): "ComfortFurniture app",
     (BED_TYPE_KEESON, KEESON_VARIANT_ORE_ULTRAMATIC): "Ultramatic app",
+    (BED_TYPE_KEESON, KEESON_VARIANT_LEVA_SLEEP): "Leva Sleep app",
     (BED_TYPE_KEESON, KEESON_VARIANT_AMERICANSTAR): "AMERICANSTAR app (Keeson)",
     (BED_TYPE_KEESON, KEESON_VARIANT_BEDSENSE_BASES): "Bedsense Bases app",
     (BED_TYPE_KEESON, KEESON_VARIANT_INNOVA): "INNOVA app",
@@ -961,7 +973,7 @@ HIDDEN_APP_CHOICES: Final = frozenset(bed_type_choice(*row) for row in _HIDDEN_A
 # Bed types whose one row asks for the product, although each product is an app entry.
 PRODUCT_QUESTION_BED_TYPES: Final = frozenset(
     {BED_TYPE_ENSO2, "dreamsense", "saatva", "majestichome", BED_TYPE_LEVA, BED_TYPE_LINX, BED_TYPE_SOMOS, "bobpowerbase", BED_TYPE_COMFORT_ENHANCEMENT3, BED_TYPE_SYMPHONY_SLEEP, BED_TYPE_YAMADA, BED_TYPE_RICHMAT_APP, BED_TYPE_RICHMAT_APP_SLEEP, BED_TYPE_GALAXY, BED_TYPE_MLILY, BED_TYPE_MLILY_REMOTE, BED_TYPE_OKIMIKI, "luuna", BED_TYPE_GOODVIBE, BED_TYPE_HJBED, BED_TYPE_CASPER_BASE, BED_TYPE_COMFORT_ENHANCEMENTS, BED_TYPE_COMFORTBASE, "sleep_evolution", "wsilver_legacy", "personal_comfort", "instant_comfort"}
-).union({BED_TYPE_BETTERLIVING2, "sealy_posturematic"})
+).union({BED_TYPE_BETTERLIVING2, BED_TYPE_SLEEPTIME, "sealy_posturematic"})
 # Routes named after their protocol, not an app or brand. They stay off the
 # bed-type list and are reached through detection, the brand list and Configure.
 PROTOCOL_ROUTES: Final = frozenset(
@@ -1442,6 +1454,8 @@ def detect_new_bed(service_info: BluetoothServiceInfoBleak) -> DetectionResult:
     service_uuids = [str(uuid).lower() for uuid in service_info.service_uuids or ()]
     if result.bed_type is not None and _rests_on_shared_service(service_uuids, first, result):
         if is_mac_like_name(service_info.name):
+            if "app_hint:ergobed" in result.signals:
+                return DetectionResult(BED_TYPE_ERGOBED, 0.3, ["app_hint:ergobed"])
             return DetectionResult(None, 0.0, ["shared_service:no_name"])
         result.confidence = min(result.confidence, 0.5)
         result.signals.append("shared_service:no_name_match")
@@ -1660,6 +1674,20 @@ def _detect_with_first_pass(
         elif result.bed_type != BED_TYPE_SIMMONS_BLUE:
             result.ambiguous_types = [*(result.ambiguous_types or ()), BED_TYPE_SIMMONS_BLUE]
             result.signals.append("name:simmons_blue_app_candidate")
+    from .profiles.sleeptime import select as sleeptime_selector
+
+    # The stock picker names a layout but the shared UART does not identify the app.
+    if (
+        isinstance(platform_name, str)
+        and sleeptime_selector(platform_name) is not None
+        and result.confidence < 0.8
+        and not any(signal.startswith("excluded:") for signal in result.signals)
+    ):
+        if result.bed_type is None:
+            result = DetectionResult(BED_TYPE_SLEEPTIME, 0.3, ["name:sleeptime_app_candidate"])
+        elif result.bed_type != BED_TYPE_SLEEPTIME:
+            result.ambiguous_types = list(dict.fromkeys([*(result.ambiguous_types or ()), BED_TYPE_SLEEPTIME]))
+            result.signals.append("name:sleeptime_app_candidate")
     # These shared app names are candidates only. Never replace a confident
     # receiver signature or infer N32 from the Nordic service alone.
     if (isinstance(platform_name, str)
@@ -1773,6 +1801,18 @@ def _detect_with_first_pass(
             result = DetectionResult("bobpowerbase", 0.3, ["name:bobpowerbase_app_candidate"])
         elif result.bed_type != "bobpowerbase":
             result.ambiguous_types = list(dict.fromkeys([*(result.ambiguous_types or ()), "bobpowerbase"]))
+    if (
+        getattr(service_info, "advertisement", None) is not None
+        and ergobed_eligible(advertised_local_name(service_info))
+        and not any(signal.startswith("excluded:") for signal in result.signals)
+    ):
+        # Keep a raw-name-only match visible in setup at app-choice confidence.
+        if result.bed_type is None:
+            result.bed_type = BED_TYPE_ERGOBED
+            result.confidence = 0.3
+        else:
+            result.ambiguous_types = [*(result.ambiguous_types or ()), BED_TYPE_ERGOBED]
+        result.signals.append("app_hint:ergobed")
     return result
 
 

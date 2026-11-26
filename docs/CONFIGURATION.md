@@ -417,6 +417,7 @@ actions; its bounded `hold_control` behavior has separate timing in the
 | Shuda app | `shuda` | 5 | 200 ms |
 | SIMMONS app | `simmons` | 4 | 300 ms |
 | Simmons Blue app | `simmons_blue` | 5 | 200 ms |
+| Sleeptime Australia app (SmartBed205, 402, 404, 405) | `sleeptime` | 4 | 300 ms |
 | Somos / SomosBeds app | `somos` | 10 | 300 ms |
 | SUTA Smart Home app | `suta` | 7 | 150 ms |
 | Symphony Sleep app | `symphony_sleep` | 4 | 300 ms |
@@ -623,6 +624,7 @@ beds, Reconfigure that bed, then combine them again.
 | Keeson app family | [Tempur Curve, Q-Plus Adjustable Remote, Serta MP Remote, Omazz Adjusto III, Ergomotion, ROW Control, Ergo Slim and TEMPUR AU](beds/keeson.md#keeson-layout-app-family): the exact app and the layout it shows; Q-Plus also has a Both/Side A/Side B selector. |
 | KomfyD / ComfyDS | See the [setup steps](beds/kaidi.md#komfyd-and-comfyds). |
 | L2 Motion | See the [setup steps](beds/motomotion.md#l2-motion). |
+| ErgoBed Control | Choose the app and enter the exact Bluetooth name. The name selects the motor layout and optional controls. See [ErgoBed Control setup](beds/motomotion.md#ergobed-control). |
 | MoodBase | Choose the MoodBase app and enter its exact Bluetooth name. That name controls which motors, presets and optional features appear. Each Bluetooth receiver keeps its own name when combined. See [MoodBase setup](beds/motomotion.md#moodbase). |
 | Leggett & Platt | Answer the [L&P question](beds/leggett-platt.md#home-assistant-setup) with your app: [Prodigy CE, Prodigy 2, Prodigy 2L or U Series](beds/okin-nframe.md#leggett-okin-family) sets the layout; LP Control and the L&P Adjustable Base app also name the receiver or remote. [L&P legacy](beds/richmat.md#lp-legacy-app): model, connection mode and characteristic IDs. |
 | Limoss | [One question](beds/limoss.md#home-assistant-setup) for the Limoss Remote or FSM Relax app, or the older controls. [Limoss Remote](beds/limoss.md#limoss-remote): bed/chair layout, light/massage and reversal settings. Change an existing bed's app with **Reconfigure**. |
@@ -649,6 +651,7 @@ beds, Reconfigure that bed, then combine them again.
 | Reverie | [Setup confirms the receiver](beds/reverie.md#setup-and-model-selection) from its advertised service (Protocol 110 or 108), then asks the model the app shows. Reconfigure lists both receivers. |
 | Richmat | [One question](beds/richmat.md#home-assistant-setup) for the app: [RMControl](beds/richmat.md#rmcontrol) then asks its product code and side; [Revive Control / Best Mattress / Blvd Home / HARMONY / Idealbed](beds/richmat.md#richmat-mh-apps) the app's model, or **Automatic (recommended)** from the Bluetooth name; [Avocado Eco Base / CoasterSleep / Forty Winks / Milemont / Superior](beds/richmat.md#classic-richmat-apps), [Luuna Rise / Power Cool Sleep System](beds/richmat.md#luuna-rise--power-cool), [Lady Americana / ACAA / STA Homecare / Zero Gravity](beds/richmat.md#lady-americana--acaa--sta-homecare--zero-gravity-family), [Jerome's power base](beds/richmat.md#jeromes-power-base), [Maxprime](beds/richmat.md#maxprime) and [Dreamlab Control](beds/richmat.md#dreamlab-control) ask for the app's layout code. [Base Remote](beds/richmat.md#base-remote) asks its layout code and, for a layout with Left and Right tabs, whether the bed is one base. Without one of these apps, the [Richmat remotes](beds/richmat.md#richmat-remotes) ask the remote code. Reconfigure changes the app and lists each one by name, so an entry can switch apps or opt in to RMControl and out of it; Configure changes the app's own settings. |
 | Dorsal app / Roomi | Choose CPRN, CORN, a saved Dorsal project, or Roomi controls. Enter the exact case-sensitive code for a saved project. Roomi needs a receiver with QRRM in its Bluetooth name and accepts an optional saved code. See the [Dorsal guide](beds/richmat.md#dorsal--roomi). |
+| ROOMI bed (S655 Plus) | Choose the S655 Plus profile and a receiver with QRRM in its Bluetooth name. No project code is needed. See the [ROOMI bed guide](beds/richmat.md#roomi-bed-s655-plus). |
 | ENSO Sleep Control (Enso 2) | Choose the layout shown in the app. The Bluetooth name suggests a layout when it has a recognized prefix. For a generic name, Cool Touch or 209A05, choose the app’s manual layout code. Enable **Property-based Bluetooth receiver** only for receivers that use the third-service fallback. See the [Enso 2 profile](beds/richmat.md#enso-sleep-control). |
 | Richmat app | See the [setup steps](beds/richmat.md#richmat-420). |
 | Rize Beds | See the [setup steps](beds/kaidi.md#rize-beds). |

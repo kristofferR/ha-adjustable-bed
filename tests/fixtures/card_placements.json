@@ -942,6 +942,16 @@
   "card_role": "up",
   "card_motor": "feet"
  },
+ "button:foot_tilt_down": {
+  "card_section": "motors",
+  "card_role": "down",
+  "card_motor": "foot_tilt"
+ },
+ "button:foot_tilt_up": {
+  "card_section": "motors",
+  "card_role": "up",
+  "card_motor": "foot_tilt"
+ },
  "button:glideaway_motion_query_alarm": {
   "card_section": "utility"
  },
@@ -2133,6 +2143,40 @@
  "button:sleepfunction_scoped_preset_zero_g": {
   "card_section": "presets"
  },
+ "button:sleeptime_massage_foot_down": {
+  "card_section": "massage"
+ },
+ "button:sleeptime_massage_foot_up": {
+  "card_section": "massage"
+ },
+ "button:sleeptime_massage_head_down": {
+  "card_section": "massage"
+ },
+ "button:sleeptime_massage_head_up": {
+  "card_section": "massage"
+ },
+ "button:sleeptime_massage_mode_next": {
+  "card_section": "massage"
+ },
+ "button:sleeptime_massage_mode_previous": {
+  "card_section": "massage"
+ },
+ "button:sleeptime_massage_timer": {
+  "card_section": "massage"
+ },
+ "button:sleeptime_query_alarm": {
+  "card_section": "utility"
+ },
+ "button:sleeptime_query_massage": {
+  "card_section": "utility"
+ },
+ "button:sleeptime_release": {
+  "card_section": "hidden"
+ },
+ "button:sleeptime_reset_memory": {
+  "card_section": "presets",
+  "card_role": "save"
+ },
  "button:sleeptracker_identify": {
   "card_section": "utility"
  },
@@ -3056,6 +3100,10 @@
   "card_section": "motors",
   "card_motor": "foot_end_tilt"
  },
+ "cover:foot_tilt": {
+  "card_section": "motors",
+  "card_motor": "foot_tilt"
+ },
  "cover:head": {
   "card_section": "motors",
   "card_motor": "head"
@@ -3535,6 +3583,9 @@
   "card_section": "lighting"
  },
  "number:enso2_light_timer": {
+  "card_section": "lighting"
+ },
+ "number:ergobed_light_timer": {
   "card_section": "lighting"
  },
  "number:fan_level": {
@@ -4958,6 +5009,12 @@
  },
  "sensor:sleep_assistant_alarm_6": {
   "card_section": "utility"
+ },
+ "sensor:sleeptime_alarm_status": {
+  "card_section": "utility"
+ },
+ "sensor:sleeptime_massage_status": {
+  "card_section": "massage"
  },
  "sensor:sleeptracker_layout": {
   "card_section": "hidden"

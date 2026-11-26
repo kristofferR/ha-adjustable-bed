@@ -180,6 +180,8 @@ class AlarmRequest:
     record_identity: tuple[int, int] | None = None
     # Home Assistant local time, captured once for the whole call.
     reference_time: datetime
+    # The service uses zero for omitted fields. Keep omission distinct from midnight.
+    time_provided: bool = True
 
     def occurrence(self) -> datetime:
         """Return the next local occurrence of the time, selected when the call arrived.

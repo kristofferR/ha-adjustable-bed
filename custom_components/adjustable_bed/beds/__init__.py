@@ -15,6 +15,7 @@ if TYPE_CHECKING:
     from .adjustamattress.controller import AdjustaMattressController as AdjustaMattressController
     from .baseremote.controller import BaseRemoteController as BaseRemoteController
     from .bedgear.controller import BedgearController as BedgearController
+    from .bedgear.ergobed import ErgoBedController as ErgoBedController
     from .bedjet_powerlayer import BedJetPowerLayerController as BedJetPowerLayerController
     from .bedsense import BedSenseController as BedSenseController
     from .bf_cherish.controller import BfCherishController as BfCherishController
@@ -143,6 +144,7 @@ if TYPE_CHECKING:
     from .sleep_number.controller import SleepNumberController as SleepNumberController
     from .sleep_number.mcr import SleepNumberMcrController as SleepNumberMcrController
     from .sleepstar import SleepStarController as SleepStarController
+    from .sleeptime.controller import SleeptimeController as SleeptimeController
     from .sleeptracker.controller import SleeptrackerController as SleeptrackerController
     from .sleepys.box25 import SleepysBox25Controller as SleepysBox25Controller
     from .sleepys.box25 import SleepysBox25LegacyController as SleepysBox25LegacyController
@@ -183,6 +185,7 @@ _EXPORT_MODULES = {
     "NerumController": "nerum.controller",
     "RelaxMotionController": "relax_motion.controller",
     "CheersSleepController": "cheerssleep.controller",
+    "SleeptimeController": "sleeptime.controller",
     "UltramaticController": "ultramatic.controller",
     "SmartSleepController": "smart_sleep.controller",
     "LangjueController": "langjue",
@@ -282,6 +285,7 @@ _EXPORT_MODULES = {
     "MaloufAppController": "malouf.app",
     "MotionBedController": "motion_bed.controller",
     "BedgearController": "bedgear.controller",
+    "ErgoBedController": "bedgear.ergobed",
     "MotoSleepController": "motosleep",
     "OctoController": "octo.controller",
     "OkimikiController": "okimiki.controller",

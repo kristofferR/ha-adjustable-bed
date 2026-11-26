@@ -1,0 +1,407 @@
+{
+  "wire": [
+    {
+      "id": "V01",
+      "builder": "wire",
+      "inputs": {
+        "text": "$K"
+      },
+      "expected_bytes": "24 4b"
+    },
+    {
+      "id": "V02",
+      "builder": "wire",
+      "inputs": {
+        "text": "$L"
+      },
+      "expected_bytes": "24 4c"
+    },
+    {
+      "id": "V03",
+      "builder": "wire",
+      "inputs": {
+        "text": "$M"
+      },
+      "expected_bytes": "24 4d"
+    },
+    {
+      "id": "V04",
+      "builder": "wire",
+      "inputs": {
+        "text": "$N"
+      },
+      "expected_bytes": "24 4e"
+    },
+    {
+      "id": "V05",
+      "builder": "wire",
+      "inputs": {
+        "text": "$p"
+      },
+      "expected_bytes": "24 70"
+    },
+    {
+      "id": "V06",
+      "builder": "wire",
+      "inputs": {
+        "text": "$q"
+      },
+      "expected_bytes": "24 71"
+    },
+    {
+      "id": "V07",
+      "builder": "wire",
+      "inputs": {
+        "text": "$P"
+      },
+      "expected_bytes": "24 50"
+    },
+    {
+      "id": "V08",
+      "builder": "wire",
+      "inputs": {
+        "text": "$Q"
+      },
+      "expected_bytes": "24 51"
+    },
+    {
+      "id": "V09",
+      "builder": "wire",
+      "inputs": {
+        "text": "$p"
+      },
+      "expected_bytes": "24 70"
+    },
+    {
+      "id": "V10",
+      "builder": "wire",
+      "inputs": {
+        "text": "$q"
+      },
+      "expected_bytes": "24 71"
+    },
+    {
+      "id": "V11",
+      "builder": "wire",
+      "inputs": {
+        "text": "$P"
+      },
+      "expected_bytes": "24 50"
+    },
+    {
+      "id": "V12",
+      "builder": "wire",
+      "inputs": {
+        "text": "$Q"
+      },
+      "expected_bytes": "24 51"
+    },
+    {
+      "id": "V13",
+      "builder": "wire",
+      "inputs": {
+        "text": "$O"
+      },
+      "expected_bytes": "24 4f"
+    },
+    {
+      "id": "V14",
+      "builder": "wire",
+      "inputs": {
+        "text": "$R"
+      },
+      "expected_bytes": "24 52"
+    },
+    {
+      "id": "V15",
+      "builder": "wire",
+      "inputs": {
+        "text": "$S"
+      },
+      "expected_bytes": "24 53"
+    },
+    {
+      "id": "V16",
+      "builder": "wire",
+      "inputs": {
+        "text": "$T"
+      },
+      "expected_bytes": "24 54"
+    },
+    {
+      "id": "V17",
+      "builder": "wire",
+      "inputs": {
+        "text": "$U"
+      },
+      "expected_bytes": "24 55"
+    },
+    {
+      "id": "V18",
+      "builder": "wire",
+      "inputs": {
+        "text": "$V"
+      },
+      "expected_bytes": "24 56"
+    },
+    {
+      "id": "V19",
+      "builder": "wire",
+      "inputs": {
+        "text": "$Z"
+      },
+      "expected_bytes": "24 5a"
+    },
+    {
+      "id": "V20",
+      "builder": "wire",
+      "inputs": {
+        "text": "$a"
+      },
+      "expected_bytes": "24 61"
+    },
+    {
+      "id": "V21",
+      "builder": "wire",
+      "inputs": {
+        "text": "$U"
+      },
+      "expected_bytes": "24 55"
+    },
+    {
+      "id": "V22",
+      "builder": "wire",
+      "inputs": {
+        "text": "$V"
+      },
+      "expected_bytes": "24 56"
+    },
+    {
+      "id": "V23",
+      "builder": "wire",
+      "inputs": {
+        "text": "$A"
+      },
+      "expected_bytes": "24 41"
+    },
+    {
+      "id": "V24",
+      "builder": "wire",
+      "inputs": {
+        "text": "$B"
+      },
+      "expected_bytes": "24 42"
+    },
+    {
+      "id": "V25",
+      "builder": "wire",
+      "inputs": {
+        "text": "$C"
+      },
+      "expected_bytes": "24 43"
+    },
+    {
+      "id": "V26",
+      "builder": "wire",
+      "inputs": {
+        "text": "$D"
+      },
+      "expected_bytes": "24 44"
+    },
+    {
+      "id": "V27",
+      "builder": "wire",
+      "inputs": {
+        "text": "$E"
+      },
+      "expected_bytes": "24 45"
+    },
+    {
+      "id": "V28",
+      "builder": "wire",
+      "inputs": {
+        "text": "$F"
+      },
+      "expected_bytes": "24 46"
+    },
+    {
+      "id": "V29",
+      "builder": "wire",
+      "inputs": {
+        "text": "$I"
+      },
+      "expected_bytes": "24 49"
+    },
+    {
+      "id": "V30",
+      "builder": "wire",
+      "inputs": {
+        "text": "$G"
+      },
+      "expected_bytes": "24 47"
+    },
+    {
+      "id": "V31",
+      "builder": "wire",
+      "inputs": {
+        "text": "$H"
+      },
+      "expected_bytes": "24 48"
+    },
+    {
+      "id": "V32",
+      "builder": "wire",
+      "inputs": {
+        "text": "$J"
+      },
+      "expected_bytes": "24 4a"
+    },
+    {
+      "id": "V33",
+      "builder": "wire",
+      "inputs": {
+        "text": "$z"
+      },
+      "expected_bytes": "24 7a"
+    },
+    {
+      "id": "V34",
+      "builder": "clock",
+      "inputs": {
+        "hour": 9,
+        "minute": 7,
+        "second": 5
+      },
+      "expected_bytes": "24 23 39 37 35 31 31 30 30 30 30 30 31 31 41 0d"
+    },
+    {
+      "id": "V35",
+      "builder": "rgb_channel",
+      "inputs": {
+        "channel": "red",
+        "value": 255
+      },
+      "expected_bytes": "24 23 30 30 33 31 35 30 30 31 32 30 30 30 30 30 34 52 0d"
+    },
+    {
+      "id": "V36",
+      "builder": "rgb_channel",
+      "inputs": {
+        "channel": "green",
+        "value": 128
+      },
+      "expected_bytes": "24 23 30 30 33 31 36 30 30 30 36 30 30 30 30 30 32 52 0d"
+    },
+    {
+      "id": "V37",
+      "builder": "rgb_channel",
+      "inputs": {
+        "channel": "blue",
+        "value": 0
+      },
+      "expected_bytes": "24 23 30 30 33 31 37 30 30 30 30 30 30 30 30 30 35 52 0d"
+    },
+    {
+      "id": "V38",
+      "builder": "light_timer",
+      "inputs": {
+        "seconds": 120
+      },
+      "expected_bytes": "24 23 30 30 33 31 39 30 30 31 32 30 30 30 30 30 38 52 0d"
+    },
+    {
+      "id": "V39",
+      "builder": "alarm",
+      "inputs": {
+        "strength": 0,
+        "hour": 7,
+        "minute": 30
+      },
+      "expected_bytes": "24 23 30 30 31 37 30 37 33 30 30 30 30 30 30 30 32 52 0d"
+    },
+    {
+      "id": "V40",
+      "builder": "alarm",
+      "inputs": {
+        "strength": 1,
+        "hour": 12,
+        "minute": 34
+      },
+      "expected_bytes": "24 23 30 31 31 38 31 32 33 34 30 30 30 30 30 31 32 52 0d"
+    },
+    {
+      "id": "V41",
+      "builder": "alarm",
+      "inputs": {
+        "strength": 2,
+        "hour": 23,
+        "minute": 45
+      },
+      "expected_bytes": "24 23 30 32 31 39 32 33 34 35 30 30 30 30 30 31 30 52 0d"
+    }
+  ],
+  "notifications": [
+    {
+      "id": "S01-original-55",
+      "chunks_ascii": [
+        "$0 1 2 3 4 5 6 7 8 9 10 11 12 13",
+        " 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 32 33 34 35 36 37 38 39 40 41 42 43 44 45 46 47 48 49 50 51 52 53 54",
+        "\r"
+      ],
+      "token_count": 55,
+      "expected_cache": null
+    },
+    {
+      "id": "S02-74",
+      "chunks_ascii": [
+        "$0 1 2 3 4 5 6 7 07 30 10 2 12 1",
+        "3 14 15 16 17 18 19 20 21 22 23 24 25 26 27 17 119 121 31 32 33 34 35 36 37 38 39 40 41 42 43 44 45 46 47 48 49 50 51 52 53 541 55 56 57 58 59 60 61 62 63 64 65 66 67 68 69 70 71 72 73",
+        "\r"
+      ],
+      "token_count": 74,
+      "expected_cache": null
+    },
+    {
+      "id": "S03-75",
+      "chunks_ascii": [
+        "$0 1 2 3 4 5 6 7 07 30 10 2 12 1",
+        "3 14 15 16 17 18 19 20 21 22 23 24 25 26 27 17 119 121 31 32 33 34 35 36 37 38 39 40 41 42 43 44 45 46 47 48 49 50 51 52 53 541 55 56 57 58 59 60 61 62 63 64 65 66 67 68 69 70 71 72 73 74",
+        "\r"
+      ],
+      "token_count": 75,
+      "expected_cache": {
+        "rgb": [
+          "17",
+          "119",
+          "121"
+        ],
+        "light_timer": "541",
+        "alarm": [
+          "07",
+          "30",
+          "2"
+        ]
+      }
+    },
+    {
+      "id": "S04-76",
+      "chunks_ascii": [
+        "$0 1 2 3 4 5 6 7 07 30 10 2 12 1",
+        "3 14 15 16 17 18 19 20 21 22 23 24 25 26 27 17 119 121 31 32 33 34 35 36 37 38 39 40 41 42 43 44 45 46 47 48 49 50 51 52 53 541 55 56 57 58 59 60 61 62 63 64 65 66 67 68 69 70 71 72 73 74 extra",
+        "\r"
+      ],
+      "token_count": 76,
+      "expected_cache": null
+    },
+    {
+      "id": "S05-extra-space-76",
+      "chunks_ascii": [
+        "$0 1 2 3 4 5  6 7 07 30 10 2 12 ",
+        "13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 17 119 121 31 32 33 34 35 36 37 38 39 40 41 42 43 44 45 46 47 48 49 50 51 52 53 541 55 56 57 58 59 60 61 62 63 64 65 66 67 68 69 70 71 72 73 74",
+        "\r"
+      ],
+      "token_count": 76,
+      "expected_cache": null
+    }
+  ]
+}
