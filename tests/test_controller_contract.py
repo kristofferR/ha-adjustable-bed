@@ -218,7 +218,10 @@ async def _create_controller_for_bed_type(
         return await create_controller(coordinator, bed_type, variant or "box1", client)
     if bed_type == const.BED_TYPE_SYMPHONY:
         coordinator.entry.data.update({const.CONF_PRODUCT_TYPE: "0", const.CONF_PROTOCOL_VARIANT: "0"})
-    if bed_type in (const.BED_TYPE_BEDGEAR, const.BED_TYPE_L2MOTION, const.BED_TYPE_MOODBASE):
+    if bed_type in (
+        const.BED_TYPE_BEDGEAR, const.BED_TYPE_L2MOTION, const.BED_TYPE_MOODBASE,
+        const.BED_TYPE_ERGOBED,
+    ):
         coordinator.entry.data[const.CONF_BLE_DEVICE_NAME] = "HHC0000001D00X"
     if bed_type == "cheerssleep":
         coordinator.entry.data[const.CONF_PRODUCT_TYPE] = "45"

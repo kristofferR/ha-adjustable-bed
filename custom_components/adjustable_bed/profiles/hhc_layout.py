@@ -18,7 +18,9 @@ class HhcLetterLayout:
     fallback_count: ClassVar[int] = 3
     delayed_first_tick: ClassVar[bool] = True
     alarm_indices: ClassVar[tuple[int, int, int]] = (8, 9, 11)
+    panel_a_h_extra: ClassVar[bool] = True
     panel_d_h_extra: ClassVar[bool] = False
+    panel_three_y4_extra: ClassVar[bool] = True
     panel_zero_massage_held: ClassVar[bool] = True
 
     def __post_init__(self) -> None:
@@ -74,7 +76,7 @@ class HhcLetterLayout:
                     "2": ("head", "foot"),
                     "3": ("neck", "head", "foot"),
                     "4": ("neck", "head", "lumbar", "foot")
-                    if layout in ("PanelThree", "PanelFour")
+                    if layout == "PanelFour" or (layout == "PanelThree" and self.panel_three_y4_extra)
                     else ("neck", "head", "foot")
                     if layout == "PanelOne"
                     else ("head", "foot"),
@@ -98,7 +100,7 @@ class HhcLetterLayout:
             if zone == "lumbar" and (
                 layout == "PanelD"
                 or t + v in ("25", "65")
-                or (layout == "PanelA" and self.char(13) != "H")
+                or (layout == "PanelA" and (not self.panel_a_h_extra or self.char(13) != "H"))
             ):
                 letters = "PQ"
             if (

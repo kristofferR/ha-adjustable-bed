@@ -260,6 +260,11 @@ class BedController(GattWriter):
         return False
 
     @property
+    def sequential_stop_on_current_link(self) -> bool:
+        """Whether an active sequential side uses one neutral release for both STOP routes."""
+        return False
+
+    @property
     def paired_cleanup_stop(self) -> Callable[[], Awaitable[None]] | None:
         """Motor-only cleanup to run on the current link after a paired failure."""
         return None
@@ -1075,6 +1080,11 @@ class BedController(GattWriter):
     @property
     def publishes_rgb_light_state(self) -> bool:
         """Return whether the controller publishes the complete state of an RGB command."""
+        return False
+
+    @property
+    def preserves_unknown_rgb_power(self) -> bool:
+        """Keep RGB power unknown until the current report establishes it."""
         return False
 
     @property

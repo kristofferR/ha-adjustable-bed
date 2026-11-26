@@ -520,6 +520,8 @@ def _valid_controller_number_value(spec: ControllerNumberSpec, value: float) -> 
 class AdjustableBedControllerNumber(AdjustableBedEntity, NumberEntity):
     """A declared product value, unknown until the controller publishes state."""
 
+    _attr_should_poll = False
+
     def __init__(self, coordinator: EntityRuntime, spec: ControllerNumberSpec) -> None:
         super().__init__(coordinator, spec.card)
         self._spec = spec

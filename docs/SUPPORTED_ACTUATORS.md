@@ -29,7 +29,7 @@ Devices & services > Adjustable Bed** and choose **Reconfigure**.
 | Casper | [Casper Base](beds/casper-base.md), [Richmat](beds/richmat.md) |
 | CheersSleep | [CheersSleep](beds/cheerssleep.md) |
 | Costco | [Keeson](beds/keeson.md) |
-| Customatic | [Customatic](beds/okin-nframe.md#customatic-family) |
+| Customatic | [Customatic](beds/okin-nframe.md#customatic-family), [Independence (Customatic Demo)](beds/okin-nframe.md#independence-customatic-demo) |
 | CVB | [Okin](beds/okin-nframe.md) |
 | Dawn House | [Aging in Place / Dawn House](beds/keeson.md#aging-in-place--dawn-house) |
 | DewertOkin | [DewertOkin ELEVATE](beds/okin-5a.md#dewertokin-elevate), [Okin](beds/okin-nframe.md) |

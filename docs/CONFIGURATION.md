@@ -606,7 +606,7 @@ beds, Reconfigure that bed, then combine them again.
 | CheersSleep | See the [setup steps](beds/cheerssleep.md#cheerssleep-profile). |
 | Comfort Enhancement 3 / Comfort Plus3 | See the [setup steps](beds/okin-nframe.md#comfort-enhancement-3). |
 | Comfort Enhancements | [Choose MC2/MC3/MC4/MC5](beds/keeson.md#comfort-enhancements). The layout sets the controls, massage, light and memories. Each bed of a combined pair keeps its own. |
-| Customatic / Jordan's | One question per brand: [Clarity / Jerome's / Remedy](beds/okin-nframe.md#customatic-family) or [Z-Series](beds/okin-nframe.md#customatic-z-series) with its model; [Serenity](beds/okin-nframe.md#jordans-serenity) or [Tranquil](beds/okin-nframe.md#jordans-tranquil). Change an existing bed's app with **Reconfigure**. |
+| Customatic / Jordan's | One question per brand: [Clarity / Jerome's / Remedy](beds/okin-nframe.md#customatic-family), [Independence](beds/okin-nframe.md#independence-customatic-demo) or [Z-Series](beds/okin-nframe.md#customatic-z-series) with its model; [Serenity](beds/okin-nframe.md#jordans-serenity) or [Tranquil](beds/okin-nframe.md#jordans-tranquil). Change an existing bed's app with **Reconfigure**. |
 | Ergomotion 4.0 | [Exact product, or another catalog product by name and feature keys](beds/keeson.md#ergomotion-40-home-assistant-setup). |
 | Eshine | [Explicit app profile](beds/richmat.md#eshine) with a fixed head, feet, lumbar, pillow, massage and light layout. |
 | eShine E2000 / E3000 / E3100 / E5000 | [The product the app shows](beds/okin-nframe.md#eshine); E3000 and E3100 are one choice. Each bed of a combined pair keeps its own; Left and Right controls on one address are not available. |
@@ -624,6 +624,7 @@ beds, Reconfigure that bed, then combine them again.
 | Keeson app family | [Tempur Curve, Q-Plus Adjustable Remote, Serta MP Remote, Omazz Adjusto III, Ergomotion, ROW Control, Ergo Slim and TEMPUR AU](beds/keeson.md#keeson-layout-app-family): the exact app and the layout it shows; Q-Plus also has a Both/Side A/Side B selector. |
 | KomfyD / ComfyDS | See the [setup steps](beds/kaidi.md#komfyd-and-comfyds). |
 | L2 Motion | See the [setup steps](beds/motomotion.md#l2-motion). |
+| ErgoBed Control | Choose the app and enter the exact Bluetooth name. The name selects the motor layout and optional controls. See [ErgoBed Control setup](beds/motomotion.md#ergobed-control). |
 | MoodBase | Choose the MoodBase app and enter its exact Bluetooth name. That name controls which motors, presets and optional features appear. Each Bluetooth receiver keeps its own name when combined. See [MoodBase setup](beds/motomotion.md#moodbase). |
 | Leggett & Platt | Answer the [L&P question](beds/leggett-platt.md#home-assistant-setup) with your app: [Prodigy CE, Prodigy 2, Prodigy 2L or U Series](beds/okin-nframe.md#leggett-okin-family) sets the layout; LP Control and the L&P Adjustable Base app also name the receiver or remote. [L&P legacy](beds/richmat.md#lp-legacy-app): model, connection mode and characteristic IDs. |
 | Limoss | [One question](beds/limoss.md#home-assistant-setup) for the Limoss Remote or FSM Relax app, or the older controls. [Limoss Remote](beds/limoss.md#limoss-remote): bed/chair layout, light/massage and reversal settings. Change an existing bed's app with **Reconfigure**. |
