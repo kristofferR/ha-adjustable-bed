@@ -5,8 +5,6 @@ from ._hints import Case, names
 
 HINTS = (
     names(
-        "BASE-I4",
-        "BASE-I5",
         "KSBT",
         "KSWF",
         "KSPSBED",

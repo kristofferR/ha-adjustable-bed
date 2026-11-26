@@ -495,22 +495,6 @@
       "local_name": "BARN*"
     },
     {
-      "local_name": "BAS[eE]-[iI]4*",
-      "connectable": true
-    },
-    {
-      "local_name": "BAS[eE]-[iI]5*",
-      "connectable": true
-    },
-    {
-      "local_name": "BAs[eE]-[iI]4*",
-      "connectable": true
-    },
-    {
-      "local_name": "BAs[eE]-[iI]5*",
-      "connectable": true
-    },
-    {
       "local_name": "BBRM*"
     },
     {
@@ -663,22 +647,6 @@
     },
     {
       "local_name": "BZRN*"
-    },
-    {
-      "local_name": "BaS[eE]-[iI]4*",
-      "connectable": true
-    },
-    {
-      "local_name": "BaS[eE]-[iI]5*",
-      "connectable": true
-    },
-    {
-      "local_name": "Bas[eE]-[iI]4*",
-      "connectable": true
-    },
-    {
-      "local_name": "Bas[eE]-[iI]5*",
-      "connectable": true
     },
     {
       "local_name": "Bed*"
@@ -3966,38 +3934,6 @@
     },
     {
       "local_name": "ZZRM*"
-    },
-    {
-      "local_name": "bAS[eE]-[iI]4*",
-      "connectable": true
-    },
-    {
-      "local_name": "bAS[eE]-[iI]5*",
-      "connectable": true
-    },
-    {
-      "local_name": "bAs[eE]-[iI]4*",
-      "connectable": true
-    },
-    {
-      "local_name": "bAs[eE]-[iI]5*",
-      "connectable": true
-    },
-    {
-      "local_name": "baS[eE]-[iI]4*",
-      "connectable": true
-    },
-    {
-      "local_name": "baS[eE]-[iI]5*",
-      "connectable": true
-    },
-    {
-      "local_name": "bas[eE]-[iI]4*",
-      "connectable": true
-    },
-    {
-      "local_name": "bas[eE]-[iI]5*",
-      "connectable": true
     },
     {
       "local_name": "base-i4*",
