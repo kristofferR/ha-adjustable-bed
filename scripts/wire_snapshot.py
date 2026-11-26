@@ -531,6 +531,18 @@ def plan_commands(controller: Any) -> list[Command]:
                 enabled=False, slot=2, reference_time=FROZEN_BASE,
             )), True),
         ))
+    if controller._coordinator.bed_type == "sleeptime":
+        from custom_components.adjustable_bed.alarm import AlarmRequest
+
+        plan.extend((
+            Command("sleeptime_alarm_weekdays", _method("configure_alarm", AlarmRequest(
+                enabled=True, hour=7, minute=30, weekdays=(0, 1, 2, 3, 4),
+                wake_action="memory_1", reference_time=FROZEN_BASE,
+            )), True),
+            Command("sleeptime_alarm_disable", _method("configure_alarm", AlarmRequest(
+                enabled=False, reference_time=FROZEN_BASE,
+            )), True),
+        ))
     if late_clock and _overrides(controller, "sync_clock"):
         plan.append(
             Command("sync_clock", _method("sync_clock"), _flag(controller, "supports_clock_sync"))
@@ -1431,6 +1443,12 @@ def default_scenario(bed_type: str) -> Scenario:
     """The bed type in its default route, with the entry data it needs to build."""
     from custom_components.adjustable_bed import const
 
+    if bed_type == const.BED_TYPE_SLEEPTIME:
+        return Scenario(
+            id=bed_type, bed_type=bed_type, protocol_variant="205",
+            layout_id="ultramatic_smart_bed",
+            replies={"write:00b0": "a50b0e000259030306", "write:00c0": "a50c0e000408061e0001"},
+        )
     if bed_type == "dorsal":
         return Scenario(
             id=bed_type, bed_type=bed_type, protocol_variant="cprn",
@@ -2425,6 +2443,11 @@ def build_scenarios() -> list[Scenario]:
         id="jerome_adjustable_base:nordic", bed_type="jerome_adjustable_base",
         protocol_variant="HDRN", layout_id="dorsal:n1",
     ))
+    scenarios.extend(
+        dataclasses.replace(default_scenario("sleeptime"), id=f"sleeptime:{selector}",
+                            protocol_variant=selector)
+        for selector in ("402", "404", "405")
+    )
     scenarios.extend((
         Scenario(id="dorsal:corn", bed_type="dorsal", protocol_variant="corn",
                  layout_id="dorsal:n1", replies={"write:01": "6e200903010200019e"}),
@@ -2682,7 +2705,7 @@ async def _connect(controller: Any, recorder: Recorder, clock: FakeClock) -> dic
             await controller.async_on_connect(session)
             await controller.async_read_device_info(session)
             return
-        if controller._coordinator.bed_type == "shuda":
+        if controller._coordinator.bed_type in {"shuda", "sleeptime"}:
             await controller.async_on_connect(SimpleNamespace(async_start_notify=controller.start_notify))
             return
         if controller._coordinator.bed_type in {"rize_home", "superior_sleep", "okin_64bit", "betterliving2", "ultramatic_smart_bed", "smart_comfort_synargy", "smart_comfort_synergy", "simmons_blue"}:

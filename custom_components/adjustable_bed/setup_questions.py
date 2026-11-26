@@ -115,6 +115,7 @@ from .const import (
     BED_TYPE_SIMMONS_BLUE,
     BED_TYPE_SLEEP_NUMBER,
     BED_TYPE_SLEEP_NUMBER_MCR,
+    BED_TYPE_SLEEPTIME,
     BED_TYPE_SLEEPTRACKER,
     BED_TYPE_SLEEPYS_BOX15,
     BED_TYPE_SLEEPYS_BOX24,
@@ -1924,6 +1925,30 @@ def _discovered_name_seed(
     return {CONF_BLE_DEVICE_NAME: discovered.name, **data}
 
 
+def _sleeptime_seed(
+    _hass: HomeAssistant, data: Mapping[str, Any], discovered: BluetoothServiceInfoBleak | None
+) -> dict[str, Any]:
+    from .profiles.sleeptime import select
+
+    if discovered is not None and (
+        selector := select(discovered.device.name or discovered.name or "")
+    ) is not None and data.get(CONF_PROTOCOL_VARIANT) in (None, VARIANT_AUTO):
+        return {**data, CONF_PROTOCOL_VARIANT: selector}
+    return dict(data)
+
+
+def _sleeptime_default(data: Mapping[str, Any]) -> str | object:
+    from .profiles.sleeptime import select
+
+    return select(str(data.get(CONF_BLE_DEVICE_NAME) or "")) or REQUIRED
+
+
+def _sleeptime_selectors(_data: Mapping[str, Any]) -> Mapping[str, str]:
+    from .profiles.sleeptime import SELECTORS
+
+    return SELECTORS
+
+
 def _starcode_selectors(_data: Mapping[str, Any]) -> Mapping[Any, str]:
     from .beds.starcode.abm5_4_profiles import SELECTORS
 
@@ -3712,6 +3737,18 @@ SETUP_PROFILES: Final[dict[str, SetupProfile]] = {
             CONF_PROTOCOL_VARIANT: "auto",
             CONF_MOTOR_PULSE_DELAY_MS: 300,
         },
+    ),
+    BED_TYPE_SLEEPTIME: SetupProfile(
+        owns={
+            CONF_MOTOR_COUNT: 2,  # Generic fallback; these layouts declare their own axes.
+            CONF_HAS_MASSAGE: True,
+            CONF_DISABLE_ANGLE_SENSING: True,
+            CONF_MOTOR_PULSE_DELAY_MS: 300,
+        },
+        questions=(Question(CONF_PROTOCOL_VARIANT, _sleeptime_selectors, _sleeptime_default),),
+        seed=_sleeptime_seed,
+        title=lambda _data: "Sleeptime Australia",
+        imports=("profiles.sleeptime",),
     ),
     "ultramatic_smart_bed": SetupProfile(
         owns={CONF_MOTOR_COUNT: 2, CONF_HAS_MASSAGE: True,

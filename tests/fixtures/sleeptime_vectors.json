@@ -1,0 +1,438 @@
+[
+  {
+    "id": "headup",
+    "inputs": {
+      "builder": "position",
+      "selector": 1,
+      "active": true
+    },
+    "expected_bytes": "05 02 00 00 00 01 01"
+  },
+  {
+    "id": "headdown",
+    "inputs": {
+      "builder": "position",
+      "selector": 2,
+      "active": true
+    },
+    "expected_bytes": "05 02 00 00 00 02 01"
+  },
+  {
+    "id": "footup",
+    "inputs": {
+      "builder": "position",
+      "selector": 4,
+      "active": true
+    },
+    "expected_bytes": "05 02 00 00 00 04 01"
+  },
+  {
+    "id": "footdown",
+    "inputs": {
+      "builder": "position",
+      "selector": 8,
+      "active": true
+    },
+    "expected_bytes": "05 02 00 00 00 08 01"
+  },
+  {
+    "id": "neckup",
+    "inputs": {
+      "builder": "position",
+      "selector": 16,
+      "active": true
+    },
+    "expected_bytes": "05 02 00 00 00 10 01"
+  },
+  {
+    "id": "neckdown",
+    "inputs": {
+      "builder": "position",
+      "selector": 32,
+      "active": true
+    },
+    "expected_bytes": "05 02 00 00 00 20 01"
+  },
+  {
+    "id": "lumbarup",
+    "inputs": {
+      "builder": "position",
+      "selector": 64,
+      "active": true
+    },
+    "expected_bytes": "05 02 00 00 00 40 01"
+  },
+  {
+    "id": "lumbardown",
+    "inputs": {
+      "builder": "position",
+      "selector": 128,
+      "active": true
+    },
+    "expected_bytes": "05 02 00 00 00 80 01"
+  },
+  {
+    "id": "headtiltup",
+    "inputs": {
+      "builder": "position",
+      "selector": 16,
+      "active": true
+    },
+    "expected_bytes": "05 02 00 00 00 10 01"
+  },
+  {
+    "id": "headtiltdown",
+    "inputs": {
+      "builder": "position",
+      "selector": 32,
+      "active": true
+    },
+    "expected_bytes": "05 02 00 00 00 20 01"
+  },
+  {
+    "id": "foottiltup",
+    "inputs": {
+      "builder": "position",
+      "selector": 64,
+      "active": true
+    },
+    "expected_bytes": "05 02 00 00 00 40 01"
+  },
+  {
+    "id": "foottiltdown",
+    "inputs": {
+      "builder": "position",
+      "selector": 128,
+      "active": true
+    },
+    "expected_bytes": "05 02 00 00 00 80 01"
+  },
+  {
+    "id": "liftingup",
+    "inputs": {
+      "builder": "position",
+      "selector": 80,
+      "active": true
+    },
+    "expected_bytes": "05 02 00 00 00 50 01"
+  },
+  {
+    "id": "ligtingdown",
+    "inputs": {
+      "builder": "position",
+      "selector": 160,
+      "active": true
+    },
+    "expected_bytes": "05 02 00 00 00 a0 01"
+  },
+  {
+    "id": "tv",
+    "inputs": {
+      "builder": "position",
+      "selector": 16384,
+      "active": true
+    },
+    "expected_bytes": "05 02 00 00 40 00 01"
+  },
+  {
+    "id": "zg",
+    "inputs": {
+      "builder": "position",
+      "selector": 4096,
+      "active": true
+    },
+    "expected_bytes": "05 02 00 00 10 00 01"
+  },
+  {
+    "id": "read",
+    "inputs": {
+      "builder": "position",
+      "selector": 8192,
+      "active": true
+    },
+    "expected_bytes": "05 02 00 00 20 00 01"
+  },
+  {
+    "id": "anti",
+    "inputs": {
+      "builder": "position",
+      "selector": 32768,
+      "active": true
+    },
+    "expected_bytes": "05 02 00 00 80 00 01"
+  },
+  {
+    "id": "flat",
+    "inputs": {
+      "builder": "position",
+      "selector": 134217728,
+      "active": true
+    },
+    "expected_bytes": "05 02 08 00 00 00 01"
+  },
+  {
+    "id": "m1",
+    "inputs": {
+      "builder": "position",
+      "selector": 65536,
+      "active": true
+    },
+    "expected_bytes": "05 02 00 01 00 00 01"
+  },
+  {
+    "id": "m2",
+    "inputs": {
+      "builder": "position",
+      "selector": 262144,
+      "active": true
+    },
+    "expected_bytes": "05 02 00 04 00 00 01"
+  },
+  {
+    "id": "light",
+    "inputs": {
+      "builder": "position",
+      "selector": 131072,
+      "active": true
+    },
+    "expected_bytes": "05 02 00 02 00 00 01"
+  },
+  {
+    "id": "release-stop",
+    "inputs": {
+      "builder": "position",
+      "selector": 0,
+      "active": false
+    },
+    "expected_bytes": "05 02 00 00 00 00 00"
+  },
+  {
+    "id": "memory-reset",
+    "inputs": {
+      "builder": "position",
+      "selector": 134221824,
+      "active": false
+    },
+    "expected_bytes": "05 02 08 00 10 00 00"
+  },
+  {
+    "id": "massage-all",
+    "inputs": {
+      "builder": "position",
+      "selector": 256,
+      "active": false
+    },
+    "expected_bytes": "05 02 00 00 01 00 00"
+  },
+  {
+    "id": "massage-timer",
+    "inputs": {
+      "builder": "position",
+      "selector": 512,
+      "active": false
+    },
+    "expected_bytes": "05 02 00 00 02 00 00"
+  },
+  {
+    "id": "massage-head-plus",
+    "inputs": {
+      "builder": "position",
+      "selector": 2048,
+      "active": false
+    },
+    "expected_bytes": "05 02 00 00 08 00 00"
+  },
+  {
+    "id": "massage-head-minus",
+    "inputs": {
+      "builder": "position",
+      "selector": 8388608,
+      "active": false
+    },
+    "expected_bytes": "05 02 00 80 00 00 00"
+  },
+  {
+    "id": "massage-foot-plus",
+    "inputs": {
+      "builder": "position",
+      "selector": 1024,
+      "active": false
+    },
+    "expected_bytes": "05 02 00 00 04 00 00"
+  },
+  {
+    "id": "massage-foot-minus",
+    "inputs": {
+      "builder": "position",
+      "selector": 16777216,
+      "active": false
+    },
+    "expected_bytes": "05 02 01 00 00 00 00"
+  },
+  {
+    "id": "massage-mode-plus",
+    "inputs": {
+      "builder": "position",
+      "selector": 268435456,
+      "active": false
+    },
+    "expected_bytes": "05 02 10 00 00 00 00"
+  },
+  {
+    "id": "massage-mode-minus",
+    "inputs": {
+      "builder": "position",
+      "selector": 67108864,
+      "active": false
+    },
+    "expected_bytes": "05 02 04 00 00 00 00"
+  },
+  {
+    "id": "massage-query",
+    "inputs": {
+      "builder": "query",
+      "opcode": 176
+    },
+    "expected_bytes": "00 b0"
+  },
+  {
+    "id": "alarm-query",
+    "inputs": {
+      "builder": "query",
+      "opcode": 192
+    },
+    "expected_bytes": "00 c0"
+  },
+  {
+    "id": "clock-thu",
+    "inputs": {
+      "builder": "clock",
+      "local_date": "2026-11-26T21:42:57"
+    },
+    "expected_bytes": "07 04 1a 0b 1a 04 15 2a 39"
+  },
+  {
+    "id": "clock-sun",
+    "inputs": {
+      "builder": "clock",
+      "local_date": "2027-01-03T00:01:02"
+    },
+    "expected_bytes": "07 04 1b 01 03 00 00 01 02"
+  },
+  {
+    "id": "alarm-repeat",
+    "inputs": {
+      "builder": "alarm",
+      "mode": 8,
+      "day_mask": 170,
+      "hour": 6,
+      "minute": 30,
+      "enabled": 1
+    },
+    "expected_bytes": "07 05 08 aa 06 1e 00 01 00"
+  },
+  {
+    "id": "alarm-disable",
+    "inputs": {
+      "builder": "alarm",
+      "mode": 6,
+      "day_mask": 4,
+      "hour": 23,
+      "minute": 59,
+      "enabled": 0
+    },
+    "expected_bytes": "07 05 06 04 17 3b 00 00 00"
+  },
+  {
+    "id": "alarm-once-sun",
+    "inputs": {
+      "builder": "next_alarm",
+      "current": "2026-11-28T09:00:00",
+      "mode": 5,
+      "hour": 7,
+      "minute": 5,
+      "enabled": 1
+    },
+    "expected_bytes": "07 05 05 01 07 05 00 01 00"
+  },
+  {
+    "id": "alarm-once-today",
+    "inputs": {
+      "builder": "next_alarm",
+      "current": "2026-11-26T14:00:00",
+      "mode": 9,
+      "hour": 21,
+      "minute": 7,
+      "enabled": 1
+    },
+    "expected_bytes": "07 05 09 10 15 07 00 01 00"
+  },
+  {
+    "id": "massage-state",
+    "inputs": {
+      "builder": "massage_state",
+      "expected_decoded": {
+        "timer_band": 2,
+        "head": 2,
+        "foot": 3,
+        "mode": 3
+      }
+    },
+    "expected_bytes": "a5 0b 0e 00 02 59 03 03 06"
+  },
+  {
+    "id": "massage-state-invalid-time",
+    "inputs": {
+      "builder": "massage_state",
+      "expected_decoded": {
+        "timer_band": 0,
+        "head": 0,
+        "foot": 1,
+        "mode": 1
+      }
+    },
+    "expected_bytes": "a5 0b 0e 00 07 09 01 00 01"
+  },
+  {
+    "id": "alarm-state",
+    "inputs": {
+      "builder": "alarm_state",
+      "expected_decoded": {
+        "hour": 6,
+        "minute": 30,
+        "day": 4,
+        "mode": 8,
+        "open": 1
+      }
+    },
+    "expected_bytes": "a5 0c 0e 00 04 08 06 1e 00 01"
+  },
+  {
+    "id": "alarm-ack",
+    "inputs": {
+      "builder": "alarm_state",
+      "expected_decoded": {
+        "hour": 7,
+        "minute": 45,
+        "day": 3,
+        "mode": 9,
+        "open": 1
+      }
+    },
+    "expected_bytes": "ed 80 03 00 03 09 07 2d 00 01"
+  },
+  {
+    "id": "fragment-unmatched",
+    "inputs": {
+      "builder": "fragment",
+      "next": "A5 0B 0E 00 02 59 03 03 06",
+      "expected": [
+        "buffered",
+        "ignored_prefix",
+        null,
+        null
+      ]
+    },
+    "expected_bytes": "0a fe 16 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00"
+  }
+]
