@@ -142,8 +142,8 @@ async def test_paused_demo_releases_its_original_sequential_link(
     entry.mock_state(hass, ConfigEntryState.LOADED)
     pair = PairedBedCoordinator(hass, entry, receivers, connection_mode="sequential")
     hass.data.setdefault(DOMAIN, {})[entry.entry_id] = pair
-    device = dr.async_get(hass).async_get_or_create(
-        config_entry_id=entry.entry_id, **pair.device_info
+    device = dr.async_get(hass).async_get_or_create_from_info(
+        config_entry_id=entry.entry_id, device_info=pair.device_info
     )
     async_register_children(hass, pair)
     left, right = receivers[SIDE_LEFT], receivers[SIDE_RIGHT]

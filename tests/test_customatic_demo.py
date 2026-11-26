@@ -324,9 +324,9 @@ async def test_confirmed_action_uses_the_live_scheduler_and_stop_never_moves(
     entry.mock_state(hass, ConfigEntryState.LOADED)
     coordinator = AdjustableBedCoordinator(hass, entry)
     hass.data.setdefault(DOMAIN, {})[entry.entry_id] = coordinator
-    device = dr.async_get(hass).async_get_or_create(
+    device = dr.async_get(hass).async_get_or_create_from_info(
         config_entry_id=entry.entry_id,
-        **coordinator.device_info,
+        device_info=coordinator.device_info,
     )
     client = _coordinator().client
     client.stop_notify = AsyncMock()
