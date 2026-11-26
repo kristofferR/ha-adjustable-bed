@@ -1,17 +1,22 @@
-"""Generated ORE Ultramatic tables from the shipped profile and shared controller."""
+"""Generated tables for the ORE apps that select E5 or E6 on connection."""
 
 from datetime import datetime
 
 from custom_components.adjustable_bed.beds import ore_comfort_bed as ore
 from custom_components.adjustable_bed.codec import keeson
 from custom_components.adjustable_bed.profiles import keeson as profiles
+from custom_components.adjustable_bed.profiles import leva_sleep
 from custom_components.adjustable_bed.profiles import ore_ultramatic as app
 from scripts.codec_docs._common import _block, _hex, _table
 
 
-def render() -> str:
+def render(*, leva: bool = False) -> str:
+    profile_for = leva_sleep.profile if leva else app.profile
+    p2_presets = leva_sleep.P2_PRESETS if leva else app.P2_PRESETS
+    alarm = leva_sleep.alarm if leva else app.alarm
+
     def frame(route, word):
-        return _hex(profiles.encode(app.profile(route), word))
+        return _hex(profiles.encode(profile_for(route), word))
 
     rows = []
     for route in ("P1", "P2"):
@@ -22,7 +27,7 @@ def render() -> str:
                 rows.append((route, str(count), key, frame(route, up), frame(route, down)))
     controls = []
     for route in ("P1", "P2"):
-        for name, word in (app.P1_RECALL if route == "P1" else app.P2_PRESETS).items():
+        for name, word in (app.P1_RECALL if route == "P1" else p2_presets).items():
             controls.append(
                 (
                     route,
@@ -71,7 +76,7 @@ def render() -> str:
                     route,
                     f"{'enable type' + str(kind) if enabled else 'disable'}",
                     _hex(
-                        app.alarm(
+                        alarm(
                             route, now, enabled=enabled, hour=7, minute=30, repeat=130, kind=kind
                         )
                     ),
@@ -99,4 +104,7 @@ def render() -> str:
     )
 
 
-BLOCKS = [("docs/beds/keeson.md", "keeson-ore-ultramatic", render)]
+BLOCKS = [
+    ("docs/beds/keeson.md", "keeson-ore-ultramatic", render),
+    ("docs/beds/keeson.md", "keeson-leva-sleep", lambda: render(leva=True)),
+]
