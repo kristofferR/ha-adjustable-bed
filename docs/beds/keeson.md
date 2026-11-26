@@ -97,6 +97,7 @@ Beautyrest bases that use one of the Keeson Bluetooth routes still work.
 | ✅ | [AdjustaMattress](https://play.google.com/store/apps/details?id=com.okin.adjustamattress) 1.6.0 (10) | `com.okin.adjustamattress` | [AdjustaMattress](#adjustamattress) |
 | ✅ | Scott Living | `com.keeson.scottlivingrelease` | [Scott Living](#scott-living) |
 | ✅ | [OkinComfortBed Ⅱ](https://apkpure.com/okin-comfortbed-%E2%85%B1/com.ore.jalon.neworebeding_android) 1.4 (4) | `com.ore.jalon.neworebeding_android` | [Jalon](#okincomfortbed-ⅱ-jalon) |
+| ✅ | [OkimattMotion](https://apkpure.com/okimattmotion/com.okin.jalon.okimatandroid) 1.1.1 (3) | `com.okin.jalon.okimatandroid` | [OkimattMotion](#okimattmotion) |
 | Own guide | Tempur Sleeptracker-AI ([guide](sleeptracker.md)) | `com.fullpower.applications.horizon` | none |
 
 **iDealBed 6i:** iDealBed 6i Adjustable (installed as iDealBed 6i Remote,
@@ -235,6 +236,7 @@ only through **Reconfigure**, and the app review in Repairs opens it.
 | Cool Base | bed type `coolbase` | K1 `E5`, little-endian | app controller | app controller | app controller | renewable lease |
 | BF | bed type `bf` | K1 `E5`, big-endian | app controller | app controller | app controller | renewable lease |
 | Cherish | bed type `cherish` | K1 `E5`, big-endian | app controller | app controller | app controller | renewable lease |
+| OkimattMotion | bed type `okimattmotion` | K1 `E5`, big-endian | app controller | app controller | app controller | renewable lease |
 | Comfort Enhancements | bed type `comfort_enhancements` | K1 `E5`, big-endian | app controller | app controller | app controller | renewable lease |
 | ComfortBaseForBluetooth | bed type `comfortbase` | K1 `E6`, little-endian, side `00` | app controller | app controller | app controller | renewable lease |
 | OkinComfortBed Ⅱ (Jalon) | bed type `jalon_bed` | K1 `E6`, little-endian, model `00` | app controller | app controller | app controller | renewable lease |
@@ -298,9 +300,9 @@ motors, BetterLiving2 P3, 2 motors, BetterLiving2 P3, 3 motors, BF, Cherish,
 Comfort Enhancements, ComfortBaseForBluetooth, ComfortFurniture, Cool Base,
 Dynasty Bases, Glideaway Motion, Heal Every Night, INNOVA, OkinComfortBed II P1,
 OkinComfortBed II P2, OkinComfortBed II P3, OkinComfortBed Ⅱ (Jalon), Malouf
-legacy OKIN, MaxCoil Una, OKIN Comfort Bed, OKIN-Seating, ORE Ultramatic, Rondure,
-Scott Living, Simon Li, Sleepy's BOX15, アシステック P1, アシステック P2 keep their key tables
-with their app controllers; see their sections.
+legacy OKIN, MaxCoil Una, OkimattMotion, OKIN Comfort Bed, OKIN-Seating, ORE
+Ultramatic, Rondure, Scott Living, Simon Li, Sleepy's BOX15, アシステック P1, アシステック P2
+keep their key tables with their app controllers; see their sections.
 
 | Profile | Flat | Zero G | Lounge | TV | Anti-snore | Memory recall | Memory save |
 |---|---|---|---|---|---|---|---|
@@ -425,7 +427,7 @@ family's codec exists.
 | P2 7-byte (`05`) | `05 02` + big-endian word + `00` | `05 02 00 00 00 01 00` | OkinComfortBed II P3, アシステック P2 |
 | K1 `E5`, little-endian | `header FE 16` + word + checksum | `E5 FE 16 01 00 00 00 05` | Base (BaseI4/I5), Ergomotion, Purple Premium, Restonic BT remote A, Restonic BT remote B, INNOVA, Rondure, Cool Base |
 | K1 `E6`, little-endian | `header FE 16` + word + checksum | `E6 FE 16 01 00 00 00 04` | OKIN FFE, BetterLiving CB1322 |
-| K1 `E5`, big-endian | `header FE 16` + word + checksum | `E5 FE 16 00 00 00 01 05` | Sino, BetterLiving, Simon Li, OKIN-Seating, Heal Every Night, OKIN Comfort Bed, ComfortFurniture, ORE Ultramatic, AMERICANSTAR, Avanti Bases, Bedsense Bases, Dynasty Bases, MaxCoil Una, AdjustaMattress P2, BF, Cherish, Comfort Enhancements, BetterLiving2 P1, 2 motors, BetterLiving2 P1, 3 motors |
+| K1 `E5`, big-endian | `header FE 16` + word + checksum | `E5 FE 16 00 00 00 01 05` | Sino, BetterLiving, Simon Li, OKIN-Seating, Heal Every Night, OKIN Comfort Bed, ComfortFurniture, ORE Ultramatic, AMERICANSTAR, Avanti Bases, Bedsense Bases, Dynasty Bases, MaxCoil Una, AdjustaMattress P2, BF, Cherish, OkimattMotion, Comfort Enhancements, BetterLiving2 P1, 2 motors, BetterLiving2 P1, 3 motors |
 | JSON | JSON envelope, see below | see JSON envelope | JSON/A00A |
 | P2 6-byte | `04 02` + big-endian word | `04 02 00 00 00 01` | KSBT, KSBT03C, Adjustable Lite (KSBT01C), Adjustable Lite (KSBT03C) |
 | P2 7-byte (`05`) | `05 02` + big-endian word + `00` | `05 02 00 00 00 01 00` | KSBT03CR |
@@ -2392,6 +2394,7 @@ frames of other families and keep it.
 | Cool Base | `coolbase` | K1 `E5`, little-endian | `E5 FE 16 01 00 00 00 05` | `E5 FE 16 00 00 00 00 06` | renewable lease | [Cool Base](#cool-base) |
 | BF | `bf` | K1 `E5`, big-endian | `E5 FE 16 00 00 00 01 05` | `E5 FE 16 00 00 00 00 06` | renewable lease | [BF and Cherish](#bf-and-cherish) |
 | Cherish | `cherish` | K1 `E5`, big-endian | `E5 FE 16 00 00 00 01 05` | `E5 FE 16 00 00 00 00 06` | renewable lease | [BF and Cherish](#bf-and-cherish) |
+| OkimattMotion | `okimattmotion` | K1 `E5`, big-endian | `E5 FE 16 00 00 00 01 05` | `E5 FE 16 00 00 00 00 06` | renewable lease | [OkimattMotion](#okimattmotion) |
 | ComfortBaseForBluetooth | `comfortbase` | K1 `E6`, little-endian, side `00` | `E6 FE 16 01 00 00 00 00 04` | `E6 FE 16 00 00 00 00 00 05` | renewable lease | [ComfortBaseForBluetooth](#comfortbaseforbluetooth) |
 | Comfort Enhancements | `comfort_enhancements` | K1 `E5`, big-endian | `E5 FE 16 00 00 00 01 05` | `E5 FE 16 00 00 00 00 06` | renewable lease | [Comfort Enhancements](#comfort-enhancements) |
 <!-- /generated -->
@@ -4692,6 +4695,146 @@ Based on AdjustaMattress 1.6.0 (10): all ten product choices, 31 actions, 43
 builders and 20 notification cases. The save gesture repeats the recall bytes;
 whether the bed stores the position still needs testing by owners.
 
+
+### OkimattMotion
+
+**App:** [OkimattMotion](https://apkpure.com/okimattmotion/com.okin.jalon.okimatandroid) 1.1.1 (3), `com.okin.jalon.okimatandroid`
+
+**Status:** ❓ Needs testing on hardware.
+
+#### Setup
+
+Choose **OkimattMotion app** for the Bluetooth address you use with this app.
+The scan prefixes below are shared across devices, so Home Assistant leaves
+the profile choice to you. The extended layout covers
+the app's fallback and adds combined movement and Book. Both layouts have
+the same two independently controlled axes and expect the same writable
+characteristic. Home Assistant chooses the write mode from its actual
+properties, preferring write with response when available. The APK inherits
+Android's write type. Its actual ATT mode remains unverified.
+
+<!-- generated:keeson-okimattmotion-setup -->
+<!-- Generated by scripts/generate_codec_docs.py from the codec and profile data. Edit those, not this block. -->
+
+Android scan prefixes: `okin`, `comfort`, `ble`.
+
+| App layout | Available movement |
+|---|---|
+| 20 | Back and legs |
+| 30 | Back and legs with combined movement and Book |
+
+| GATT role | Service | Characteristic |
+|---|---|---|
+| Write | `0000ffe5-0000-1000-8000-00805f9b34fb` | `0000ffe9-0000-1000-8000-00805f9b34fb` |
+| Android notification registration | `0000ffe0-0000-1000-8000-00805f9b34fb` | `0000ffe4-0000-1000-8000-00805f9b34fb` |
+<!-- /generated -->
+
+#### Controls
+
+Flat, Zero Gravity, Quiet Sleep and the two memory slots each have recall and
+save. Book recalls Quiet Sleep on the extended layout. The native preset
+buttons always recall the selected position. Use **Stop all** to cancel a
+recall. The motor controls' own Stop releases manual movement.
+
+The massage power switch, overall intensity, wave, duration and light show
+commanded state. Intensity and wave each retain the other level when changed.
+You can set the duration with massage off. Power on always sends the 10-minute
+timer, and power off clears the displayed choice. The timer select shows the
+last duration sent. It does not count down.
+
+<!-- generated:keeson-okimattmotion-controls -->
+<!-- Generated by scripts/generate_codec_docs.py from the codec and profile data. Edit those, not this block. -->
+
+| Movement | Frame |
+|---|---|
+| Back up | `E5 FE 16 00 00 00 01 05` |
+| Back down | `E5 FE 16 00 00 00 02 04` |
+| Legs up | `E5 FE 16 00 00 00 04 02` |
+| Legs down | `E5 FE 16 00 00 00 08 FE` |
+| Back and legs up | `E5 FE 16 00 00 00 05 01` |
+| Back and legs down | `E5 FE 16 00 00 00 0A FC` |
+| Manual release | `E5 FE 16 00 00 00 00 06` |
+| Preset STOP | `E5 FE 16 21 00 00 00 E5` |
+
+| Position | Recall | Save |
+|---|---|---|
+| Zero Gravity | `E5 FE 16 21 00 00 01 E4` | `E5 FE 16 21 00 00 11 D4` |
+| Flat | `E5 FE 16 21 00 00 02 E3` | `E5 FE 16 21 00 00 12 D3` |
+| Quiet Sleep / Book | `E5 FE 16 21 00 00 03 E2` | `E5 FE 16 21 00 00 13 D2` |
+| Memory A | `E5 FE 16 21 00 00 04 E1` | `E5 FE 16 21 00 00 14 D1` |
+| Memory B | `E5 FE 16 21 00 00 06 DF` | `E5 FE 16 21 00 00 16 CF` |
+
+| Massage level | Intensity frame | Wave frame |
+|---|---|---|
+| 0 | `E5 FE 16 10 00 00 10 E6` | `E5 FE 16 10 00 00 20 D6` |
+| 1 | `E5 FE 16 10 00 00 11 E5` | `E5 FE 16 10 00 00 21 D5` |
+| 2 | `E5 FE 16 10 00 00 12 E4` | `E5 FE 16 10 00 00 22 D4` |
+| 3 | `E5 FE 16 10 00 00 13 E3` | `E5 FE 16 10 00 00 23 D3` |
+
+| Control | Frame |
+|---|---|
+| Massage timer 10 min | `E5 FE 16 10 00 00 30 C6` |
+| Massage timer 20 min | `E5 FE 16 10 00 00 31 C5` |
+| Massage timer 30 min | `E5 FE 16 10 00 00 32 C4` |
+| Light off | `E5 FE 16 30 00 00 00 D6` |
+| Light on | `E5 FE 16 30 00 00 01 D5` |
+
+Example clock writes at 12:34:56 for a 07:45 alarm.
+
+| Sleep timer | Wake mode off | Wake mode on |
+|---|---|---|
+| Off | `EA FE 16 38 22 0C 2D 07 11 22 FF FF 36` | `EA FE 16 38 22 0C 2D 07 11 22 FF 04 31` |
+| 10 min | `EA FE 16 38 22 0C 2D 07 11 22 30 FF 05` | `EA FE 16 38 22 0C 2D 07 11 22 30 04 00` |
+| 20 min | `EA FE 16 38 22 0C 2D 07 11 22 31 FF 04` | `EA FE 16 38 22 0C 2D 07 11 22 31 04 FF` |
+| 30 min | `EA FE 16 38 22 0C 2D 07 11 22 32 FF 03` | `EA FE 16 38 22 0C 2D 07 11 22 32 04 FE` |
+
+Cancel frame in the same example: `EA FE 16 38 22 0C FF FF 11 22 FF FF 6C`.
+<!-- /generated -->
+
+#### Timing
+
+Both layouts support renewable holds for their movement controls, including
+combined movement when selected. Home Assistant serializes movement and sends
+manual release on the same connection when a move completes or is interrupted.
+A timed move uses its controller's completed release and retries an incomplete
+one. **Stop all** also sends the preset STOP. A sequential pair reopens a
+released target for **Stop all** while keeping one Bluetooth link open at a
+time. Delivery and physical braking after a lost link need testing.
+
+<!-- generated:keeson-okimattmotion-timing -->
+<!-- Generated by scripts/generate_codec_docs.py from the codec and profile data. Edit those, not this block. -->
+
+| Operation | Writes |
+|---|---|
+| Movement | Immediate, then every 100 ms. Finite pulses or a renewable hold. |
+| Manual release | 2 consecutive manual STOP writes. |
+| Preset, save, light or timer | One write per action. |
+| Massage power | Wave, 100 ms wait, then intensity. Power on then sends the 10 min timer. |
+| Massage level change | Intensity then wave in immediate succession. |
+| Set or cancel alarm | 2 consecutive writes, sampling local time for each. |
+<!-- /generated -->
+
+#### Notifications
+
+The Android app registers the inbound characteristic locally and its receive
+callback is empty. Home Assistant has no notification-dependent startup,
+position feedback, alarm readback or accessory readback for this profile.
+
+#### Services
+
+Use [Set alarm](../SERVICES.md#set_alarm) with a local time and optionally
+`wake_action: wake_mode_1` and `sleep_timer: 10`, `20` or `30`. Omit both
+options for the clock-only setting. Set `enabled: false` to send the bed's
+cancel frame. Matching hardware is needed to confirm the wake mode and sleep
+timer effects. For recurring schedules, use a Home Assistant automation.
+
+#### Evidence
+
+APK Protocol Audit row 137, version 1.1.1 (3), XAPK SHA-256
+`da76ca66808fb37655ef24ba78685e6a8bc5aef16b052857117bcdcad6c768dd`.
+The app's 41 frozen literals cover both layouts' shared control and alarm
+encodings. The Keeson big-endian E5 encoder reproduces the control words,
+and the EA clock encoder covers the app's explicit sleep and wake fields.
 
 ## Notes
 

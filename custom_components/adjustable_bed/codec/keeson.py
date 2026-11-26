@@ -14,8 +14,8 @@ words an app uses belongs to its profile (``profiles/keeson.py``).
 The checked setup frames (``E5 FE 17`` pulse targets, ``E7 80`` clock,
 ``E1 80`` alarm dismissal, ``E2 80`` alarm query, ``ED 80`` alarm record,
 ``EF 02`` rename) end with the same checksum, as do the ``E2``/``EA``/``EB FE 16``
-clock and alarm frames whose fields the BF, Cherish, Comfort Enhancements and
-AdjustaMattress P2 controllers fill in.
+clock and alarm frames used by BF, Cherish, Comfort Enhancements,
+AdjustaMattress P2 and OkimattMotion.
 
 Ergomotion 4.0 (com.sfd.hump 3.7) adds its ``07 D0`` custom massage frames and
 its ``09 0A`` and ``0A 02`` RGB frames, which carry no checksum.
@@ -26,7 +26,7 @@ from __future__ import annotations
 import json
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import datetime, time
 from typing import Final, Literal, cast
 
 from ..const import (
@@ -245,6 +245,12 @@ def clock(now: datetime) -> bytes:
     """Clock frame with year minus 1900, zero-based month, then day and time as they are."""
     year = (now.year - 1900) & 0xFF
     return clock_fields((year, now.month - 1, now.day, now.hour, now.minute, now.second))
+
+
+def ea_clock(now: datetime, target: time | None, options: tuple[int, int, int, int]) -> bytes:
+    """Encode an EA FE 16 clock write. The four option octets are app-specific."""
+    minute, hour = (0xFF, 0xFF) if target is None else (target.minute, target.hour)
+    return checked(bytes((0xEA, 0xFE, 0x16, now.second, now.minute, now.hour, minute, hour, *options)))
 
 
 # Dismisses a ringing wake alarm.

@@ -2441,6 +2441,8 @@ def _check_alarm(
             raise invalid("alarm_value_out_of_range", device_name=device_name, option=name, min=str(low), max=str(high))
     if "massage_duration" in given and alarm.massage_duration not in capability.massage_durations:
         raise invalid("alarm_massage_duration_not_supported", device_name=device_name, durations=", ".join(map(str, capability.massage_durations)))
+    if "sleep_timer" in given and alarm.sleep_timer not in capability.sleep_timers:
+        raise invalid("alarm_sleep_timer_not_supported", device_name=device_name, durations=", ".join(map(str, capability.sleep_timers)))
     if "massage_zone" in given and alarm.massage_zone not in capability.massage_zones:
         raise invalid("alarm_massage_zone_not_supported", device_name=device_name, zone=str(alarm.massage_zone))
     if "mattress_side" in given and alarm.mattress_side not in capability.mattress_sides:
@@ -3364,6 +3366,7 @@ async def async_register_services(hass: HomeAssistant) -> None:
                 vol.Optional("foot_massage_level"): vol.All(_whole_number, vol.Range(min=0, max=10)),
                 vol.Optional("massage_intensity"): vol.All(_whole_number, vol.Range(min=1, max=10)),
                 vol.Optional("massage_duration"): vol.All(_whole_number, vol.Range(min=1, max=120)),
+                vol.Optional("sleep_timer"): vol.All(_whole_number, vol.Range(min=1, max=120)),
                 vol.Optional("massage_zone"): vol.In(MASSAGE_ZONES),
                 vol.Optional("mattress_side"): vol.In(MATTRESS_SIDES),
                 vol.Optional(ATTR_SOUND): vol.In(ALARM_SOUNDS),

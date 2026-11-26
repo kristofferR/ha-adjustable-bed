@@ -93,6 +93,7 @@ if TYPE_CHECKING:
     from .n32_motion_bed.controller import N32MotionBedController as N32MotionBedController
     from .nerum.controller import NerumController as NerumController
     from .octo.controller import OctoController as OctoController
+    from .okimattmotion import OkimattMotionController as OkimattMotionController
     from .okimiki.controller import OkimikiController as OkimikiController
     from .okin_7byte import Okin7ByteController as Okin7ByteController
     from .okin_cb35 import OkinCB35Controller as OkinCB35Controller
@@ -286,6 +287,7 @@ _EXPORT_MODULES = {
     "OkinCstController": "okin_cst",
     "OkinDotController": "okin_dot",
     "OkinHandleController": "okin_handle",
+    "OkimattMotionController": "okimattmotion",
     "OkinMotionBedController": "okin_motionbed",
     "OkinNordicController": "okin_nordic",
     "BfCherishController": "bf_cherish.controller",

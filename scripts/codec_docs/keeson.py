@@ -21,6 +21,7 @@ from scripts.codec_docs._agingplace import BLOCKS as _AGINGPLACE_BLOCKS
 from scripts.codec_docs._betterliving2 import BLOCKS as _BETTERLIVING2_BLOCKS
 from scripts.codec_docs._common import Block, _block, _hex, _table
 from scripts.codec_docs._enso import BLOCKS as _ENSO_BLOCKS
+from scripts.codec_docs._okimattmotion import BLOCKS as _OKIMATTMOTION_BLOCKS
 from scripts.codec_docs._ore_ultramatic import BLOCKS as _ULTRAMATIC_BLOCKS
 from scripts.codec_docs._ormatek import BLOCKS as _ORMATEK_BLOCKS
 from scripts.codec_docs._somos import BLOCKS as _SOMOS_BLOCKS
@@ -77,6 +78,7 @@ _KEESON_NAMES: dict[str, str] = {
     "coolbase": "Cool Base",
     "bf": "BF",
     "cherish": "Cherish",
+    "okimattmotion": "OkimattMotion",
     "comfort_enhancements": "Comfort Enhancements",
     "comfortbase": "ComfortBaseForBluetooth",
     "jalon_bed": "OkinComfortBed Ⅱ (Jalon)",
@@ -103,6 +105,7 @@ _KEESON_CONTROLLERS: dict[str, tuple[str, str]] = {
     "coolbase": ("`coolbase`", "[Cool Base](#cool-base)"),
     "bf": ("`bf`", "[BF and Cherish](#bf-and-cherish)"),
     "cherish": ("`cherish`", "[BF and Cherish](#bf-and-cherish)"),
+    "okimattmotion": ("`okimattmotion`", "[OkimattMotion](#okimattmotion)"),
     "comfortbase": ("`comfortbase`", "[ComfortBaseForBluetooth](#comfortbaseforbluetooth)"),
     "comfort_enhancements": (
         "`comfort_enhancements`",
@@ -1073,6 +1076,7 @@ def render_comfortbase() -> str:
 
 
 BLOCKS: list[Block] = [
+    *_OKIMATTMOTION_BLOCKS,
     (GUIDE, "keeson-jalon-bed", render_jalon_bed),
     (GUIDE, "keeson-profiles", render_keeson_profiles),
     (GUIDE, "keeson-transports", render_keeson_transports),
