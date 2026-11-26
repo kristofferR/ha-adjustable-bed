@@ -503,6 +503,35 @@ async def test_lost_link_cannot_send_remaining_settings(runtime, clock):
     client.write_gatt_char.assert_not_awaited()
 
 
+@pytest.mark.parametrize(
+    ("stop_after", "expected_power"),
+    [(None, False), (0, True), (1, None)],
+)
+async def test_rgb_state_follows_delivered_channels(runtime, clock, stop_after, expected_power):
+    _hass, co = runtime
+    bed = await install(co, name())
+    status = status_sender(co, bed)
+    status(start=True, rgb=("0", "0", "120"))
+    sent = 0
+
+    def write(_char, frame, **_kwargs):
+        nonlocal sent
+        if frame == b"$z":
+            status(rgb=("0", "0", "120"))
+            if sent == stop_after:
+                co.cancel_command.set()
+        else:
+            sent += 1
+
+    co.client.write_gatt_char.side_effect = write
+    await co.async_execute_controller_command(lambda controller: controller.lights_off())
+    assert sent == (3 if stop_after is None else stop_after)
+    assert co.controller_state.get(UNDER_BED_LIGHTS_ON) is expected_power
+    assert co.controller_state.get(UNDER_BED_LIGHTS_RGB) == (
+        (0, 0, 255) if stop_after == 0 else None
+    )
+
+
 async def test_transport_requires_one_duplex_characteristic(runtime):
     _hass, co = runtime
     bed = await install(co, name())

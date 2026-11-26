@@ -8,9 +8,8 @@ from typing import ClassVar, Final
 from ..codec import motomotion
 from ..const import BED_TYPE_ERGOBED
 from .bedgear import Control
-from .bedgear import eligible as hhc_name
+from .bedgear import ergobed_eligible as eligible
 from .hhc_layout import HhcLetterLayout
-from .motomotion import name_character
 
 SERVICE_MARKER: Final = "ffe0"
 CHARACTERISTIC_MARKER: Final = "ffe1"
@@ -61,10 +60,6 @@ LAYOUT_EXAMPLES: Final = (
     "C1",
     "D1",
 )
-
-
-def eligible(name: str | None) -> bool:
-    return isinstance(name, str) and hhc_name(name) and name_character(name, 8) in "0123456789ABCD"
 
 
 def clock_frame(now: datetime) -> bytes:

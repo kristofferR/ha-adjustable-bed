@@ -12,7 +12,7 @@ from homeassistant.util import dt as dt_util
 
 from ...card import CARD_LIGHTING
 from ...codec.motomotion import TIMER_PREFIX
-from ...command_scheduler import note_frame_skipped
+from ...command_scheduler import Delivery, command_frames_not_counted, delivered, note_frame_skipped
 from ...const import CONF_BLE_DEVICE_NAME
 from ...controller_state import StateKey
 from ...errors import BedNotConnectedError, invalid, setup_stopped
@@ -178,7 +178,11 @@ class ErgoBedController(BedgearController):
         )
 
     async def _write_settings(
-        self, frames: tuple[bytes, ...], *, update: StateUpdate | None = None
+        self,
+        frames: tuple[bytes, ...],
+        *,
+        update: StateUpdate | None = None,
+        count_queries: bool = True,
     ) -> None:
         link, cancel = self._current(), self._coordinator.cancel_command
         for index, frame in enumerate(frames):
@@ -191,7 +195,12 @@ class ErgoBedController(BedgearController):
                 if update is not None and index == len(frames) - 1
                 else nullcontext()
             )
-            with state:
+            accounting = (
+                command_frames_not_counted()
+                if frame == TIMER_PREFIX and not count_queries
+                else nullcontext()
+            )
+            with state, accounting:
                 await self._send(frame, link, cancel)
 
     async def set_timer(self, seconds: float) -> None:
@@ -257,12 +266,33 @@ class ErgoBedController(BedgearController):
     async def set_light_color(self, rgb_color: tuple[int, int, int]) -> None:
         if not self.profile.rgb:
             raise invalid("hhc_control_unavailable")
+        link = self._current()
         frames = tuple(
             frame
             for command, value in zip(COLOR_COMMANDS, rgb_color, strict=True)
             for frame in (TIMER_PREFIX, color_frame(command, value))
         )
-        await self._write_settings(frames)
+        def current() -> bool:
+            return self._link_is_current(link)
+
+        def remember(delivery: Delivery) -> None:
+            if current() and delivery is not Delivery.NONE:
+                self._rgb = rgb_color if delivery is Delivery.SENT else None
+
+        on = any(rgb_color)
+        with (
+            delivered(remember),
+            self.sent_state(
+                UNDER_BED_LIGHTS_RGB(rgb_color if on else None),
+                UNDER_BED_LIGHTS_ON(on),
+                is_current=current,
+            ),
+        ):
+            try:
+                await self._write_settings(frames, count_queries=False)
+            except asyncio.CancelledError:
+                note_frame_skipped()
+                raise
 
 
 async def build_controller(ctx: BuildContext) -> ErgoBedController:

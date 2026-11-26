@@ -311,6 +311,7 @@ from .discovery_hints import (
 )
 from .discovery_hints._hints import ManufacturerHint, NameHint
 from .profiles.bedgear import eligible as bedgear_eligible
+from .profiles.bedgear import ergobed_eligible
 from .profiles.bobpowerbase import PROFILE_CHOICES as BOB_PROFILES
 from .profiles.bobpowerbase import SCAN_KEYWORDS as BOB_SCAN_KEYWORDS
 from .profiles.majestichome import PROFILE_CHOICES as MAJESTICHOME_PROFILES
@@ -1762,8 +1763,6 @@ def _detect_with_first_pass(
             result = DetectionResult("bobpowerbase", 0.3, ["name:bobpowerbase_app_candidate"])
         elif result.bed_type != "bobpowerbase":
             result.ambiguous_types = list(dict.fromkeys([*(result.ambiguous_types or ()), "bobpowerbase"]))
-    from .profiles.ergobed import eligible as ergobed_eligible
-
     if (
         getattr(service_info, "advertisement", None) is not None
         and ergobed_eligible(advertised_local_name(service_info))

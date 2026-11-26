@@ -266,6 +266,7 @@ from .profiles import logicdata as logicdata_profiles
 from .profiles import malouf as malouf_profiles
 from .profiles import sleep_assistant as sleep_assistant_app
 from .profiles.baseremote import SIDE_LAYOUTS as BASEREMOTE_SIDE_LAYOUTS
+from .profiles.bedgear import ergobed_eligible
 from .profiles.bobpowerbase import LAYOUTS as BOB_LAYOUTS
 from .profiles.bobpowerbase import PROFILE_CHOICES as BOB_PROFILES
 from .profiles.comfort_enhancement3 import CHOICES_WITH_CODE, REMOTE_CODE, REMOTES
@@ -1516,10 +1517,8 @@ def _ergobed_seed(
 
 
 def _ergobed_errors(data: Mapping[str, Any]) -> dict[str, str]:
-    from .profiles.ergobed import eligible
-
     name = data.get(CONF_BLE_DEVICE_NAME)
-    if not isinstance(name, str) or not eligible(name):
+    if not isinstance(name, str) or not ergobed_eligible(name):
         return {CONF_BLE_DEVICE_NAME: "ergobed_profile"}
     return {}
 
