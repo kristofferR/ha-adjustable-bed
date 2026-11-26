@@ -1830,6 +1830,10 @@
       "leva_home_zero_g": { "name": "Home quick zero gravity" },
       "leva_home_anti_snore": { "name": "Home quick anti-snore" },
       "leva_home_tv": { "name": "Home quick TV" },
+      "okimattmotion_save_zero_g": { "name": "Save zero gravity" },
+      "okimattmotion_save_flat": { "name": "Save flat" },
+      "okimattmotion_save_anti_snore": { "name": "Save quiet sleep" },
+      "okimattmotion_book": { "name": "Book" },
       "comfort_enhancements_quiet_sleep": {
         "name": "Quiet sleep"
       },
@@ -5752,6 +5756,7 @@
       }
     },
     "switch": {
+      "okimattmotion_massage_power": { "name": "Massage" },
       "langjue_alarm_enabled": {
         "name": "Bed alarm"
       },
@@ -7788,6 +7793,10 @@
         "massage_duration": {
           "name": "Massage duration",
           "description": "How long the wake-up massage runs."
+        },
+        "sleep_timer": {
+          "name": "Sleep timer",
+          "description": "The bed's sleep-timer choice in minutes. Leave empty to switch it off."
         },
         "light": {
           "name": "Light",
@@ -11293,6 +11302,9 @@
     },
     "alarm_massage_duration_not_supported": {
       "message": "{device_name} runs the wake-up massage for {durations} minutes. Choose one of those."
+    },
+    "alarm_sleep_timer_not_supported": {
+      "message": "{device_name} accepts a sleep timer of {durations} minutes. Choose one of those."
     },
     "alarm_massage_zone_not_supported": {
       "message": "{device_name} cannot massage \"{zone}\" at wake-up."

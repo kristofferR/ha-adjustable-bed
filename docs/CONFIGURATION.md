@@ -641,6 +641,7 @@ beds, Reconfigure that bed, then combine them again.
 | MotoMotion | [The exact Bluetooth name](beds/motomotion.md#motomotion), which selects the panel and its feature flags; preserve its case. |
 | Nerum | See the [setup steps](beds/nerum.md#detection--setup). |
 | Nisco / MLILY Supreme | Select the app, then its model, or **Automatic (recommended)** from the Bluetooth name. MLILY Supreme also offers six short model names and a normal-mattress option. Add the separate HJ_Bed sleep receiver for sleep sensing. Which side the app sends to is set with the `richmat_mh_control` action. See [Nisco](beds/richmat.md#nisco) and [MLILY Supreme](beds/richmat.md#mlily-supreme). |
+| OkimattMotion | [Choose the app manually and select its layout](beds/keeson.md#okimattmotion). The extended layout adds combined movement and Book. |
 | Okimiki | See the [setup steps](beds/richmat.md#okimiki). |
 | OKIN SleepEase / DoubleSleep | [SleepEase setup](beds/okin-nframe.md#okin-sleepease): choose the model the app shows; the bed's advertisement decides the control box type. Each bed of a combined pair keeps its own settings. |
 | OKIN Smart Sleep | See the [setup steps](beds/smart-sleep.md#setup). |
