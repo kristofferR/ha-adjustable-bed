@@ -41,8 +41,8 @@ async def _serta(hass, monkeypatch):
     await controller.start_notify()
     client.write_gatt_char.reset_mock()
     monkeypatch.setattr(target, "async_ensure_connected", AsyncMock(return_value=True))
-    device = dr.async_get(hass).async_get_or_create(
-        config_entry_id=target.entry.entry_id, **target.device_info
+    device = dr.async_get(hass).async_get_or_create_from_info(
+        config_entry_id=target.entry.entry_id, device_info=target.device_info
     )
     await async_register_services(hass)
     return target, controller, client, device
