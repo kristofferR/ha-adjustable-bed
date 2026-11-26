@@ -1355,6 +1355,17 @@ async def _timed_move_plan(
                     duration_ms,
                 )
 
+        resource = spec.scheduler_resource or f"motor:{spec.position_key or spec.key}"
+        if (native_timed_move := spec.timed_move_fn) is not None:
+            async def native_move(ctrl: BedController) -> None:
+                await ctrl.prepare_for_movement()
+                await native_timed_move(ctrl, direction == "up", duration_ms)
+
+            tracked = track_motor_command(
+                getattr(coordinator, "hass", None), motor, direction, native_move
+            )
+            return tracked, 1, 0, resource
+
         # The explicit app profile's direction is a held route. timed_move has
         # an elapsed duration, so delegate its bounded window and release to
         # the controller instead of treating one press frame as a full move.
@@ -1492,7 +1503,7 @@ async def _timed_move_plan(
             timed_movement,
             calculated_repeat_count,
             pulse_delay_ms,
-            spec.scheduler_resource or f"motor:{spec.position_key or spec.key}",
+            resource,
         )
 
 

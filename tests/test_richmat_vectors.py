@@ -32,6 +32,24 @@ from custom_components.adjustable_bed.profiles.okimiki import WIRE as OKIMIKI_WI
 from custom_components.adjustable_bed.profiles.richmat_resource_apps import APPS as RESOURCE_APPS
 from tests.richmat_vectors import FROZEN_FRAMES
 
+
+def test_atlas_lift_frozen_vectors() -> None:
+    """Both encodings use the shared codec, including the three function prefixes."""
+    vectors = json.loads(
+        (Path(__file__).parent / "fixtures/atlas_lift_vectors.json").read_text()
+    )["commands"]
+    selectors = {
+        "Exit-limit initialization": "deviceFunctionItemExitLimit",
+        "Clock capability query": "deviceFunctionItemCheckClock",
+        "Light capability query": "deviceFunctionItemCheckLight",
+    }
+    assert len(vectors) == 36
+    for action, vector in vectors.items():
+        for framing, single in (("nordic", True), ("framed", False)):
+            assert codec.function(
+                vector["opcode"], action=selectors.get(action, ""), single=single
+            ) == bytes.fromhex(vector[framing]), (action, framing)
+
 FIXED_ROUTES = {
     **{profile.key: profile for profile in profiles.RICHMAT.values()},
     "bedtech": profiles.BEDTECH,

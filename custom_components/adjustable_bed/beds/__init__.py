@@ -121,6 +121,7 @@ if TYPE_CHECKING:
     from .resident.controller import ResidentController as ResidentController
     from .reverie.controller import ReverieController as ReverieController
     from .reverie.nightstand import ReverieNightstandController as ReverieNightstandController
+    from .richmat.atlas_lift import AtlasLiftController as AtlasLiftController
     from .richmat.controller import RichmatController as RichmatController
     from .richmat_app.controller import RichmatAppController as RichmatAppController
     from .richmat_classic.controller import RichmatClassicController as RichmatClassicController
@@ -309,6 +310,7 @@ _EXPORT_MODULES = {
     "RemacroController": "remacro.controller",
     "ReverieController": "reverie.controller",
     "ReverieNightstandController": "reverie.nightstand",
+    "AtlasLiftController": "richmat.atlas_lift",
     "RichmatController": "richmat.controller",
     "RondureController": "rondure",
     "ScottLivingController": "scott_living",

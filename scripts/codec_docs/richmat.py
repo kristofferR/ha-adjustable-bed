@@ -1946,3 +1946,47 @@ BLOCKS.append((GUIDE, "baseremote", render_baseremote))
 from scripts.codec_docs import _enso2  # noqa: E402
 
 BLOCKS.append((GUIDE, "enso2", _enso2.render))
+
+
+def render_atlas_lift() -> str:
+    profile = richmat_profiles.ATLAS_LIFT
+    labels = {
+        **_BUTTON_LABELS,
+        "save_zero_g": "Save Zero Gravity",
+        "save_anti_snore": "Save Anti-snore",
+    }
+    recall, save = profile.memory[0]
+    assert profile.codes is not None and profile.stop is not None
+    startup = (
+        (label, code, selector)
+        for label, (selector, code) in zip(
+            ("Exit limit mode", "Check clock presence", "Check light presence"),
+            richmat_profiles.ATLAS_LIFT_INITIALIZATION,
+            strict=True,
+        )
+    )
+    commands = (
+        *startup,
+        *((labels[key], code, "") for key, code in profile.codes.items()),
+        ("Recall Memory 1", recall, ""),
+        ("Save Memory 1", save, ""),
+        ("Stop", profile.stop, ""),
+    )
+    return _block(
+        _table(("App discovery hint", "Motor refresh"), (
+            (f"`{richmat_profiles.ATLAS_LIFT_SCAN_KEYWORD}`", f"{profile.motor_repeat_ms} ms"),
+        )),
+        _table(("Transport", "Service", "Write characteristic", "Framing"), (
+            (key.upper(), f"`{route.service_uuid}`", f"`{route.write_uuid}`",
+             "Nordic" if route.single else "Richmat 6E")
+            for key, route in ((key, codec.TRANSPORTS[key]) for key in profile.transports)
+        )),
+        _table(("Action", "Nordic", "Richmat 6E"), (
+            (label, _hex(codec.function(code, action=selector, single=True)),
+             _hex(codec.function(code, action=selector)))
+            for label, code, selector in commands
+        )),
+    )
+
+
+BLOCKS.append((GUIDE, "atlas-lift", render_atlas_lift))
