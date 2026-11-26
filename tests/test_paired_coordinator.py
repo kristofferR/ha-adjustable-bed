@@ -1114,9 +1114,9 @@ class TestDeviceInfo:
         log: list = []
         coord, _, _ = _pair(log)
         info = coord.device_info
-        assert info["identifiers"] == {(DOMAIN, "pair_abc123")}
-        assert info["model"] == "Adjustable Bed (paired)"
-        assert info["manufacturer"] == "Linak"
+        assert info.identifiers == {(DOMAIN, "pair_abc123")}
+        assert info.model == "Adjustable Bed (paired)"
+        assert info.manufacturer == "Linak"
         assert coord.name == "Master Bed"
 
 
@@ -1980,9 +1980,7 @@ class TestSingleAddressCoordinator:
         assert coordinator.entity_unique_id("back_up_both") == (
             "AA:BB:CC:DD:EE:50_back_up_both"
         )
-        assert coordinator.device_info["identifiers"] == {
-            (DOMAIN, "AA:BB:CC:DD:EE:50")
-        }
+        assert coordinator.device_info.identifiers == {(DOMAIN, "AA:BB:CC:DD:EE:50")}
 
     async def test_position_updates_remain_side_scoped(self):
         coordinator = self._coordinator(BED_TYPE_QPLUS_APP, QPlusAppController)

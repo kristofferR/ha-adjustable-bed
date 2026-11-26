@@ -96,8 +96,8 @@ async def live(hass, monkeypatch, config, *, install=True):
     coord.async_ensure_connected.reset_mock()
     if install:
         hass.data.setdefault(DOMAIN, {})[config.entry_id] = coord
-    device = dr.async_get(hass).async_get_or_create(
-        config_entry_id=config.entry_id, **coord.device_info
+    device = dr.async_get(hass).async_get_or_create_from_info(
+        config_entry_id=config.entry_id, device_info=coord.device_info
     )
     return coord, ctrl, client, device
 
@@ -312,10 +312,12 @@ async def pair(hass, monkeypatch, app, layout=None):
     owner = PairedBedCoordinator(hass, config, {s: r[0] for s, r in rows.items()})
     hass.data.setdefault(DOMAIN, {})[config.entry_id] = owner
     registry = dr.async_get(hass)
-    parent = registry.async_get_or_create(config_entry_id=config.entry_id, **owner.device_info)
+    parent = registry.async_get_or_create_from_info(
+        config_entry_id=config.entry_id, device_info=owner.device_info
+    )
     children = {
-        s: registry.async_get_or_create_child(
-            config_entry_id=config.entry_id, **child_device_info(owner, s)
+        s: registry.async_get_or_create_child_from_info(
+            config_entry_id=config.entry_id, device_info=child_device_info(owner, s)
         )
         for s in rows
     }
@@ -415,8 +417,8 @@ async def validation_target(hass, monkeypatch, **fields):
         coord, "okin_uuid", protocol_variant="auto", client=None
     )
     hass.data.setdefault(DOMAIN, {})[config.entry_id] = coord
-    device = dr.async_get(hass).async_get_or_create(
-        config_entry_id=config.entry_id, **coord.device_info
+    device = dr.async_get(hass).async_get_or_create_from_info(
+        config_entry_id=config.entry_id, device_info=coord.device_info
     )
     # Validation is real; only the eventual motor execution boundary is a spy.
     monkeypatch.setattr(coord, "async_execute_command_group", AsyncMock())
