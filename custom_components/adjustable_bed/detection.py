@@ -1453,7 +1453,7 @@ def detect_new_bed(service_info: BluetoothServiceInfoBleak) -> DetectionResult:
         result.ambiguous_types = list(dict.fromkeys([*(result.ambiguous_types or ()), "relax_motion"]))
         result.signals.append("service:relax_motion_app_candidate")
         result.confidence = min(result.confidence, 0.5)
-    platform_name = getattr(service_info.device, "name", None)
+    platform_name = getattr(getattr(service_info, "device", None), "name", None)
     if (
         isinstance(platform_name, str)
         and platform_name.lower().startswith(CUSTOMATIC_DEMO_NAME_PREFIX)
