@@ -58,6 +58,7 @@ from .const import (
     BED_TYPE_CUSTOMATIC_JEROMES,
     BED_TYPE_CUSTOMATIC_REMEDY,
     BED_TYPE_DIAGNOSTIC,
+    BED_TYPE_DORSAL,
     BED_TYPE_DOUBLESLEEP,
     BED_TYPE_ENSO2,
     BED_TYPE_ERGOMOTION,
@@ -188,6 +189,8 @@ from .const import (
     DEWERTOKIN_RF_GATEWAY_DEVICE_NAME_CHAR_UUID,
     DEWERTOKIN_RF_GATEWAY_SERVICE_UUID,
     DEWERTOKIN_SERVICE_UUID,
+    DORSAL_ROOMI_S655_PLUS,
+    DORSAL_ROUTES,
     ERGOMOTION_NAME_PATTERNS,
     ESHINE_OKIN_PROFILES,
     GLIDEAWAY_MOTION_MODELS,
@@ -822,6 +825,7 @@ def is_jensen_linon_name(name: str | None) -> bool:
 # users find them by app name. A bed type's own entry names the app its auto
 # variant selects; see AGENTS.md "Adding a New Bed Type".
 APP_VARIANT_CHOICES: dict[tuple[str, str], str] = {
+    (BED_TYPE_DORSAL, DORSAL_ROOMI_S655_PLUS): DORSAL_ROUTES[DORSAL_ROOMI_S655_PLUS],
     **{("majestichome", profile): f"Majestic Home ({label})" for profile, label in MAJESTICHOME_PROFILES.items()},
     **{("richmat_sleep_receiver", app): f"{label} separate sleep receiver"
        for app, label in (("wsilver2", "W.Silver Products"), ("americanstar", "AMERICANSTAR"),

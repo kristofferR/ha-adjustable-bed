@@ -7,6 +7,28 @@ from custom_components.adjustable_bed.profiles import dorsal
 from scripts.codec_docs._common import _block, _hex, _table
 
 
+def render_roomi() -> str:
+    def frames(pair: dorsal.Opcode | None) -> tuple[str, str]:
+        if pair is None:
+            return "", ""
+        return _hex(richmat.function(pair[0], single=True)), _hex(richmat.command(pair[1]))
+
+    return _block(
+        _table(
+            ("Control", "Nordic", "WiLinke", "Save Nordic", "Save WiLinke"),
+            (
+                (
+                    label(item),
+                    *frames(item.sustain or item.short),
+                    *frames(item.long),
+                )
+                for item in dorsal.ROOMI_S655_PLUS
+            ),
+        ),
+        _table(("Release", "Nordic", "WiLinke"), [("STOP", *frames((richmat.STOP, richmat.STOP)))]),
+    )
+
+
 def render() -> str:
     products = dorsal.products()
     restored = {item for product in products.values() for item in product.controls}

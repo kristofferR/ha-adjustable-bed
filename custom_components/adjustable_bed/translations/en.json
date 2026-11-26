@@ -170,6 +170,11 @@
           "bond_state": "What this Home Assistant host already knows about a bond for this bed."
         }
       },
+      "retry_roomi_receiver": {
+        "title": "Check the Roomi receiver",
+        "description": "Setup needs a Bluetooth connection to the QRRM receiver. Close the Roomi app, wake the bed with its remote, and check again.",
+        "submit": "Check again"
+      },
       "verify_connection": {
         "title": "Check the connection",
         "description": "Checked the connection to **{name}**:\n\n{capabilities}\n\nSubmitting finishes setup. A failed connection does not block it: the integration keeps trying to connect afterwards.",

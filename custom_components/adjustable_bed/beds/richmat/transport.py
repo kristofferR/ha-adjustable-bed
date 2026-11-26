@@ -17,11 +17,13 @@ class AppLink:
     query_single: bool
 
 
-def select_app_link(client: BleakClient, transports: Iterable[TransportKey]) -> AppLink:
-    """First writer, first notify, last matched query selector, all independent.
+def select_app_link(
+    client: BleakClient, transports: Iterable[TransportKey], *, same_service: bool = False
+) -> AppLink:
+    """Select app-specific GATT roles from exact writable endpoints.
 
-    Each caller supplies only routes its own literals and accepted source prove.
-    A matching service without either role still updates the query selector.
+    By default the first writer, first notify and last matched query selector
+    are independent. With same_service, the writer's service supplies all three.
     """
     routes = {TRANSPORTS[key].service_uuid.lower(): TRANSPORTS[key] for key in transports}
     tx = rx = None
@@ -31,6 +33,7 @@ def select_app_link(client: BleakClient, transports: Iterable[TransportKey]) -> 
         if route is None:
             continue
         single = route.single
+        service_rx = None
         for characteristic in service.characteristics:
             if (
                 tx is None
@@ -38,8 +41,12 @@ def select_app_link(client: BleakClient, transports: Iterable[TransportKey]) -> 
                 and "write" in characteristic.properties
             ):
                 tx = characteristic
-            if rx is None and "notify" in characteristic.properties:
-                rx = characteristic
+            if service_rx is None and "notify" in characteristic.properties:
+                service_rx = characteristic
+        if same_service and tx is not None:
+            return AppLink(client, tx, service_rx, single)
+        if rx is None:
+            rx = service_rx
     if tx is None:
         raise ValueError("No supported writable app route")
     return AppLink(client, tx, rx, single)

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import gzip
 import json
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from functools import cache
 from pathlib import Path
 from typing import Final, Literal, cast
@@ -125,4 +125,21 @@ ROOMI: Final = (
 )
 ROOMI_SNORE: Final = Control(
     "roomi_snore_trigger", "deviceFunctionItemAntiSnoring", (0x46, 0x46), None, None, "none"
+)
+
+# ROOMI bed 1.0.3 independently matches the Roomi operands in both encodings.
+# Its widget only releases held directions, and the S655 Plus names differ.
+_S655_ACTIONS: Final = {
+    "deviceFunctionItemReadingPosition": "deviceFunctionItemTVPosition",
+    "deviceFunctionItemRelaxPosition": "deviceFunctionItemLoungePosition",
+    "deviceFunctionItemMassageSwitch": "deviceFunctionItemMassageModeAllOff",
+}
+ROOMI_S655_PLUS: Final = tuple(
+    replace(
+        control,
+        action=_S655_ACTIONS.get(control.action, control.action),
+        fixed=False,
+        release="stop_if_ticked" if control.sustain is not None else "none",
+    )
+    for control in ROOMI
 )

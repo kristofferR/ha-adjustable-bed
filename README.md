@@ -107,7 +107,7 @@ bed has been tested on real hardware.
 | [CheersSleep](docs/beds/cheerssleep.md) | CheersSleep | CheersSleep |
 | [Customatic](docs/beds/okin-nframe.md#customatic-family) | [Clarity](docs/beds/okin-nframe.md#customatic-clarity), [Jerome's C](docs/beds/okin-nframe.md#customatic-jeromes), [Remedy](docs/beds/okin-nframe.md#customatic-remedy), [Z-Series Z-230 / Z-280](docs/beds/okin-nframe.md#customatic-z-series) | Customatic, Rize (Clarity, Remedy), Jerome's |
 | [DewertOkin ELEVATE](docs/beds/okin-5a.md#dewertokin-elevate) | [DewertOkin ELEVATE two-actuator lift](docs/beds/okin-5a.md#dewertokin-elevate), [Adjustable Comfort M1X12 ELEVATE](docs/beds/starcode-m1x12.md) | DewertOkin |
-| [Dorsal / Roomi](docs/beds/richmat.md#dorsal--roomi) | Dorsal app (CPRN, CORN, saved projects and Roomi controls, not yet tested) | Dorsal, Roomi |
+| [Dorsal / Roomi](docs/beds/richmat.md#dorsal--roomi) | Dorsal app (CPRN, CORN, saved projects and Roomi controls), [ROOMI bed (S655 Plus)](docs/beds/richmat.md#roomi-bed-s655-plus) | Dorsal, Roomi |
 | [Dream Sense Bed](docs/beds/richmat.md#dream-sense-bed) | Dream Sense Bed app, four colors and saved products | Dream Sense |
 | [eShine E2000 to E5000](docs/beds/okin-nframe.md#eshine) | [eShine app, E2000, E3000 / E3100 and E5000](docs/beds/okin-nframe.md#eshine) | eShine |
 | [ENSO Sleep Control](docs/beds/richmat.md#enso-sleep-control) | Enso 2 app, including framed and raw-key receivers | ENSO Sleep |
