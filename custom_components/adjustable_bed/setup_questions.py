@@ -69,6 +69,7 @@ from .const import (
     BED_TYPE_JALON,
     BED_TYPE_JALON_BED,
     BED_TYPE_JENSEN,
+    BED_TYPE_JEROME_ADJUSTABLE_BASE,
     BED_TYPE_JIECANG_APP,
     BED_TYPE_KAIDI,
     BED_TYPE_KEESON,
@@ -271,6 +272,7 @@ from .profiles.comfort_enhancement3 import CHOICES_WITH_CODE, REMOTE_CODE, REMOT
 from .profiles.comfort_enhancement3 import resolve as resolve_apex
 from .profiles.dreamsense import CHOICES as DREAMSENSE_CHOICES
 from .profiles.dreamsense import PROFILES as DREAMSENSE_PROFILES
+from .profiles.jerome_adjustable_base import PRODUCT_CHOICES as JEROME_ADJUSTABLE_BASE_PRODUCTS
 from .profiles.majestichome import PROFILE_CHOICES as MAJESTICHOME_PROFILES
 from .profiles.mlily_choices import PROFILE_CHOICES as MLILY_PROFILES
 from .profiles.mlily_remote import VARIANTS as MLILY_REMOTE_PROFILES
@@ -355,6 +357,7 @@ _OWNED_BY_BED_TYPE: Final[dict[str, frozenset[str]]] = {
     BED_TYPE_HJBED: _APP_DEFINED - {CONF_PROTOCOL_VARIANT, CONF_MOTOR_PULSE_COUNT},
     BED_TYPE_JALON: _APP_DEFINED - {CONF_MOTOR_PULSE_COUNT},
     BED_TYPE_ENSO2: _APP_DEFINED - {CONF_PROTOCOL_VARIANT},
+    BED_TYPE_JEROME_ADJUSTABLE_BASE: _APP_DEFINED - {CONF_PROTOCOL_VARIANT},
     BED_TYPE_RICHMAT_APP: _APP_DEFINED - {CONF_PROTOCOL_VARIANT},
     BED_TYPE_RICHMAT_APP_SLEEP: GENERIC_FIELDS - {CONF_PROTOCOL_VARIANT},
     BED_TYPE_GLIDEAWAY_MOTION: _APP_DEFINED - {CONF_PROTOCOL_VARIANT, CONF_MOTOR_PULSE_COUNT},
@@ -3296,6 +3299,10 @@ SETUP_PROFILES: Final[dict[str, SetupProfile]] = {
         seed=lambda _hass, data, discovered: (
             {CONF_BLE_DEVICE_NAME: discovered.name, **data} if discovered else data
         ),
+    ),
+    BED_TYPE_JEROME_ADJUSTABLE_BASE: _asking(
+        BED_TYPE_JEROME_ADJUSTABLE_BASE,
+        questions=(Question(CONF_PROTOCOL_VARIANT, JEROME_ADJUSTABLE_BASE_PRODUCTS, searchable=True),),
     ),
     BED_TYPE_RICHMAT_APP: _asking(
         BED_TYPE_RICHMAT_APP,

@@ -66,6 +66,7 @@ from .command_scheduler import (
     command_resources,
     current_command_context,
 )
+from .command_target import capture_command_targets, command_target_scope
 from .const import (
     ADAPTER_AUTO,
     BED_MOTOR_PULSE_DEFAULTS,
@@ -1961,11 +1962,14 @@ class AdjustableBedCoordinator(
             ):
                 await cleanup()
 
+        targets = capture_command_targets((self,))
+
         async def stop_operation(_context: CommandContext) -> None:
-            if cleanup is None:
-                await self._async_send_stop_command()
-            else:
-                await self._async_send_stop_command(stop_current_session)
+            with command_target_scope(targets):
+                if cleanup is None:
+                    await self._async_send_stop_command()
+                else:
+                    await self._async_send_stop_command(stop_current_session)
 
         stop_task = self._command_scheduler.admit_stop(stop_operation, ALL_COMMAND_RESOURCES)
 
@@ -2473,17 +2477,20 @@ class AdjustableBedCoordinator(
         the lease deadline through its cancel event (#483).
         """
 
+        targets = capture_command_targets((self,))
+
         async def operation() -> None:
-            await self._async_execute_controller_operation(
-                command_fn,
-                cancel_running=False,
-                skip_disconnect=skip_disconnect,
-                raise_on_lock_cancel=False,
-                preemptible=True,
-                enable_position_polling=True,
-                read_positions_after_operation=read_positions_after_operation,
-                operation_name="command",
-            )
+            with command_target_scope(targets):
+                await self._async_execute_controller_operation(
+                    command_fn,
+                    cancel_running=False,
+                    skip_disconnect=skip_disconnect,
+                    raise_on_lock_cancel=False,
+                    preemptible=True,
+                    enable_position_polling=True,
+                    read_positions_after_operation=read_positions_after_operation,
+                    operation_name="command",
+                )
 
         await self._async_schedule_command_operation(
             operation,
@@ -2546,17 +2553,20 @@ class AdjustableBedCoordinator(
         self._cancel_counter += 1
         self._cancel_command.set()
 
+        targets = capture_command_targets((self,))
+
         async def stop_operation(_context: CommandContext) -> None:
-            await self._async_execute_controller_operation(
-                stop_fn,
-                cancel_running=False,
-                skip_disconnect=False,
-                raise_on_lock_cancel=False,
-                preemptible=True,
-                enable_position_polling=True,
-                read_positions_after_operation=True,
-                operation_name="motor stop",
-            )
+            with command_target_scope(targets):
+                await self._async_execute_controller_operation(
+                    stop_fn,
+                    cancel_running=False,
+                    skip_disconnect=False,
+                    raise_on_lock_cancel=False,
+                    preemptible=True,
+                    enable_position_polling=True,
+                    read_positions_after_operation=True,
+                    operation_name="motor stop",
+                )
 
         stop_task = self._command_scheduler.admit_stop(
             stop_operation, self._protocol_command_resources(command_resources(resource))

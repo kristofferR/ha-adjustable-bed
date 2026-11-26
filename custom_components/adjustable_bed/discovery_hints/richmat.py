@@ -5,18 +5,20 @@ are wider than a matcher, so detection offers them only beside these hints.
 """
 
 from ..const import (
+    BED_TYPE_JEROME_ADJUSTABLE_BASE,
     BED_TYPE_LEGGETT_WILINKE,
     BED_TYPE_RICHMAT,
     BED_TYPE_RICHMAT_CLASSIC_APPS,
     RICHMAT_NORDIC_SERVICE_UUID,
     RICHMAT_WILINKE_W4_SERVICE_UUID,
 )
+from ..profiles.jerome_adjustable_base import SCAN_TERMS
 from ._hints import Hint, names, services
 
 HINTS: tuple[Hint, ...] = (
     # Luuna's case-sensitive contains filters. HA can gate their prefix subset;
     # common services cover interior matches. They never select its product.
-    names("QRRM", "COOL", "MPE_", "209A", "BED-", bed_types={BED_TYPE_RICHMAT}, anywhere=True),
+    names(*SCAN_TERMS, bed_types={BED_TYPE_RICHMAT, BED_TYPE_JEROME_ADJUSTABLE_BASE}, anywhere=True),
     # Some Richmat remotes advertise a fixed name instead of a code.
     names("Sleep Function", bed_types={BED_TYPE_RICHMAT}),
     # Germany Motions beds on the W4 service (#163).

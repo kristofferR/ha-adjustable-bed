@@ -1945,3 +1945,109 @@ BLOCKS.append((GUIDE, "baseremote", render_baseremote))
 from scripts.codec_docs import _enso2  # noqa: E402
 
 BLOCKS.append((GUIDE, "enso2", _enso2.render))
+
+
+def render_jerome_adjustable_models() -> str:
+    from custom_components.adjustable_bed.profiles import jerome_adjustable_base as jerome
+
+    return _block(_table(
+        ("Model", "Product", "Memory slots", "Massage and light", "Alarm"),
+        (
+            (
+                model.name,
+                f"`{code}`",
+                "2" if model.wave else "1",
+                "Yes" if model.wave else "No",
+                "Repeat" if model.split_head else "Countdown",
+            )
+            for code, model in jerome.PRODUCTS.items()
+        ),
+    ))
+
+
+def render_jerome_adjustable_commands() -> str:
+    from custom_components.adjustable_bed.beds.richmat.jerome_adjustable_base import PRESET_NAMES
+    from custom_components.adjustable_bed.profiles import jerome_adjustable_base as jerome
+
+    rows = [
+        (f"{label} {direction}", code, "All models")
+        for name, label in (("head", "Head"), ("feet", "Foot"), ("head_feet", "Head and foot"))
+        for direction, code in zip(("up", "down"), jerome.MOTORS[name], strict=True)
+    ]
+    rows += [("STOP", codec.STOP, "All models"), ("Flat", jerome.FLAT, "All models")]
+    rows += [
+        (f"{PRESET_NAMES[name]} {gesture}", code, "Wave" if name in ("lounge", "memory_2") else "All models")
+        for name, codes in jerome.PRESETS.items()
+        for gesture, code in zip(("recall", "save"), codes, strict=True)
+    ]
+    rows += [(label, code, "Wave") for label, code in jerome.WAVE_MASSAGE.items()]
+    rows += [(f"Massage {minutes} min", code, "Wave") for minutes, code in jerome.MASSAGE_TIMERS.items()]
+    rows.append(("Light toggle", jerome.LIGHT_TOGGLE, "Wave after light reply"))
+    return _block(_table(
+        ("Control", "Models", "Nordic", "WiLinke left/default", "WiLinke right (SH)"),
+        (
+            (label, models, _hex(codec.encode("nordic", code)), _hex(codec.command(code)), _hex(codec.command(code, 1)))
+            for label, code, models in rows
+        ),
+    ))
+
+
+def render_jerome_adjustable_timing() -> str:
+    from custom_components.adjustable_bed.profiles import jerome_adjustable_base as jerome
+
+    return _block(
+        _table(
+            ("Startup", "Nordic", "WiLinke"),
+            (
+                (label, _hex(codec.function(code, action=action, single=True)),
+                 _hex(codec.function(code, action=action)))
+                for label, (action, code) in zip(
+                    ("Exit mode after discovery", "Check clock", "Check light", "Check music"),
+                    (jerome.EXIT_MODE, *jerome.PROBES), strict=True,
+                )
+            ),
+        ),
+        _table(
+            ("Operation", "Timing"),
+            (
+                ("Probes", f"Start {jerome.PROBE_DELAY_S:g} s after exit mode"),
+                ("Local clock", "After the probes"),
+                ("Movement", f"First tick after {jerome.TICK_MS} ms, then every {jerome.TICK_MS} ms"),
+                ("Preset save", f"One write after {jerome.PRESET_SAVE_S:g} s"),
+                ("Partial notification expiry", f"{jerome.RECEIVE_EXPIRY_S:g} s"),
+            ),
+        ),
+    )
+
+
+def render_jerome_adjustable_settings() -> str:
+    from custom_components.adjustable_bed.beds.richmat.jerome_alarm import RepeatAlarm
+    from custom_components.adjustable_bed.beds.richmat_app import protocol
+    from custom_components.adjustable_bed.profiles import jerome_adjustable_base as jerome
+
+    alarm = RepeatAlarm.edited(1, 6, 45, jerome.PRESETS["tv"][0], (0, 2))
+    return _block(_table(
+        ("Setting", "Write on either transport"),
+        (
+            ("TV countdown, 300 minutes", " / ".join(map(_hex, codec.countdown(300, alarm.action)))),
+            ("Cancel countdown", " / ".join(map(_hex, codec.countdown(0, 0)))),
+            ("List repeat alarms", _hex(protocol.QUERY["alarms"])),
+            ("Save slot 1, 06:45, Monday and Wednesday, TV", _hex(alarm.encode())),
+            ("Disable that alarm", _hex(alarm.with_enabled(False).encode())),
+            ("Delete slot 1", _hex(protocol.delete_alarm(1))),
+            ("Clock, 2026-11-26 23:59:05", _hex(codec.calendar(
+                datetime(2026, 11, 26, 23, 59, 5), build=codec.record_20_len
+            ))),
+            ("Select white light", _hex(codec.rgb(255, 255, 255))),
+            *((f"Light timeout, {label}", _hex(protocol.light_timer(seconds)))
+              for label, seconds in jerome.LIGHT_TIMERS.items()),
+        ),
+    ))
+
+
+BLOCKS += [
+    (GUIDE, "jerome-adjustable-models", render_jerome_adjustable_models),
+    (GUIDE, "jerome-adjustable-commands", render_jerome_adjustable_commands),
+    (GUIDE, "jerome-adjustable-timing", render_jerome_adjustable_timing),
+    (GUIDE, "jerome-adjustable-settings", render_jerome_adjustable_settings),
+]

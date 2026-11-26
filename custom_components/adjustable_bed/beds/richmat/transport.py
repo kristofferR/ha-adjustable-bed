@@ -17,7 +17,9 @@ class AppLink:
     query_single: bool
 
 
-def select_app_link(client: BleakClient, transports: Iterable[TransportKey]) -> AppLink:
+def select_app_link(
+    client: BleakClient, transports: Iterable[TransportKey], *, unique_service: bool = False
+) -> AppLink:
     """First writer, first notify, last matched query selector, all independent.
 
     Each caller supplies only routes its own literals and accepted source prove.
@@ -26,10 +28,14 @@ def select_app_link(client: BleakClient, transports: Iterable[TransportKey]) -> 
     routes = {TRANSPORTS[key].service_uuid.lower(): TRANSPORTS[key] for key in transports}
     tx = rx = None
     single = False
+    matched = False
     for service in client.services:
         route = routes.get(service.uuid.lower())
         if route is None:
             continue
+        if matched and unique_service:
+            raise ValueError("More than one supported app service is present")
+        matched = True
         single = route.single
         for characteristic in service.characteristics:
             if (

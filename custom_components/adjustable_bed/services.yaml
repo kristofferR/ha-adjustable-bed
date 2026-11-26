@@ -4060,6 +4060,31 @@ bedsmart:
           - voice_stop_request
           translation_key: bedsmart_command
 
+jerome_repeat_alarm:
+  fields:
+    device_id:
+      required: true
+      selector:
+        device:
+          integration: adjustable_bed
+          multiple: true
+    operation:
+      required: true
+      selector:
+        select:
+          options: [list, enable, delete]
+          translation_key: jerome_repeat_alarm_operation
+    slot:
+      selector:
+        number:
+          min: 1
+          max: 7
+          mode: box
+    side:
+      selector:
+        select:
+          options: [both, left, right]
+
 jerome_bed:
   fields:
     device_id:

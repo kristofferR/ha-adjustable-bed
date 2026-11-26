@@ -3915,6 +3915,9 @@
  "select:hjbed_layout": {
   "card_section": "utility"
  },
+ "select:jerome_adjustable_base_side": {
+  "card_section": "motors"
+ },
  "select:l2motion_sound_mode": {
   "card_section": "utility"
  },
@@ -4535,6 +4538,9 @@
   "card_role": "timer"
  },
  "sensor:jalon_massage_timer_bucket": {
+  "card_section": "hidden"
+ },
+ "sensor:jerome_adjustable_base_clock": {
   "card_section": "hidden"
  },
  "sensor:leggett_led_mask": {

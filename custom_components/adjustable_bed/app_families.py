@@ -34,6 +34,7 @@ from .const import (
     BED_TYPE_FSM_RELAX,
     BED_TYPE_FURNIMOVE,
     BED_TYPE_JENSEN,
+    BED_TYPE_JEROME_ADJUSTABLE_BASE,
     BED_TYPE_JIECANG,
     BED_TYPE_JIECANG_APP,
     BED_TYPE_KEESON,
@@ -1415,6 +1416,7 @@ RICHMAT_FAMILY: Final = AppFamily(
     apps="RMControl and SVEN & SON apps, and Richmat remotes",
     answers={
         "richmat_420": Answer("richmat_app"),
+        "jerome_adjustable_base": Answer(BED_TYPE_JEROME_ADJUSTABLE_BASE, data=_NO_RMCONTROL),
         "enso2": Answer("enso2", data=_NO_RMCONTROL),
         "rmcontrol": Answer(BED_TYPE_RICHMAT, data={CONF_RMCONTROL_PRODUCT: None}),
         "luuna": Answer("luuna", data=_NO_RMCONTROL),

@@ -142,6 +142,11 @@ class BedController(GattWriter):
         )
 
     @property
+    def selected_command_target(self) -> str | None:
+        """An app-local wire target that queued commands must capture at admission."""
+        return None
+
+    @property
     def command_side(self) -> str | None:
         """Return the logical side bound to the current command task."""
         return self._command_side.get()
