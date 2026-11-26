@@ -13,9 +13,14 @@ from homeassistant.util import dt as dt_util
 from ..alarm import AlarmCapability, AlarmRequest
 from ..app_session import app_session
 from ..card import CARD_MASSAGE, CARD_PRESETS
-from ..command_scheduler import command_frames_counted, current_command_context, note_frame_skipped
+from ..command_scheduler import (
+    command_frames_counted,
+    copy_context_without_command,
+    current_command_context,
+    note_frame_skipped,
+)
 from ..const import CONF_PRODUCT_TYPE
-from ..controller_state import StateKey
+from ..controller_state import StateKey, StateUpdate
 from ..profiles import okimattmotion as app
 from ..profiles.keeson import KeesonProfile
 from ..state_keys import MASSAGE_TIMER_MINUTES, UNDER_BED_LIGHTS_ON, massage_intensity
@@ -143,7 +148,13 @@ class OkimattMotionController(ProfileExecution[KeesonProfile], BedController):
             cancel_event=cancel_event,
         )
 
-    async def _key(self, word: int, *, link: _Link | None = None, cleanup: bool = False) -> bool:
+    async def _key(
+        self,
+        word: int,
+        *updates: StateUpdate,
+        link: _Link | None = None,
+        cleanup: bool = False,
+    ) -> bool:
         link = link if link is not None else self._connection()
         event = asyncio.Event() if cleanup else self._coordinator.cancel_command
         written = False
@@ -152,7 +163,8 @@ class OkimattMotionController(ProfileExecution[KeesonProfile], BedController):
             nonlocal written
             written = True
 
-        await self._write(link, app.control_frame(word), cancel_event=event, on_write=sent)
+        with self.sent_state(*updates, is_current=lambda: written and self._current(link)):
+            await self._write(link, app.control_frame(word), cancel_event=event, on_write=sent)
         return written and self._current(link)
 
     async def _release_manual(self, link: _Link, *, movement_cleanup: bool = False) -> None:
@@ -309,9 +321,9 @@ class OkimattMotionController(ProfileExecution[KeesonProfile], BedController):
                 card=CARD_PRESETS,
             )
             for name, label in (
-                ("zero_g", "Save Zero Gravity"),
-                ("flat", "Save Flat"),
-                ("anti_snore", "Save Quiet Sleep"),
+                ("zero_g", "Save zero gravity"),
+                ("flat", "Save flat"),
+                ("anti_snore", "Save quiet sleep"),
             )
         )
         if not self._combined:
@@ -341,8 +353,7 @@ class OkimattMotionController(ProfileExecution[KeesonProfile], BedController):
         return True
 
     async def _light(self, enabled: bool) -> None:
-        if await self._key(app.LIGHT[enabled]):
-            self.forward_controller_state_updates(UNDER_BED_LIGHTS_ON(enabled))
+        await self._key(app.LIGHT[enabled], UNDER_BED_LIGHTS_ON(enabled))
 
     async def lights_on(self) -> None:
         await self._light(True)
@@ -388,19 +399,7 @@ class OkimattMotionController(ProfileExecution[KeesonProfile], BedController):
     async def set_massage_timer(self, minutes: int) -> None:
         if minutes not in app.MASSAGE_TIMERS:
             raise self.not_supported("massage timer duration")
-        if await self._key(app.MASSAGE_TIMERS[minutes]):
-            self.forward_controller_state_updates(MASSAGE_TIMER_MINUTES(minutes))
-
-    def _set_intensity(self, level: int) -> None:
-        self._massage.intensity = level
-        self.forward_controller_state_updates(
-            massage_intensity("all")(level or None),
-            _MASSAGE_POWER(bool(level)),
-        )
-
-    def _set_wave(self, level: int) -> None:
-        self._massage.wave = level
-        self.forward_controller_state_updates(massage_intensity("wave")(level or None))
+        await self._key(app.MASSAGE_TIMERS[minutes], MASSAGE_TIMER_MINUTES(minutes))
 
     async def set_massage_intensity(self, zone: str, level: int) -> None:
         if zone not in self.massage_intensity_zones or level not in app.MASSAGE_LEVELS:
@@ -408,25 +407,44 @@ class OkimattMotionController(ProfileExecution[KeesonProfile], BedController):
         link = self._connection()
         intensity = level if zone == "all" else self._massage.intensity
         wave = level if zone == "wave" else self._massage.wave
-        if not await self._key(app.MASSAGE_INTENSITY + intensity, link=link):
+        if not await self._key(
+            app.MASSAGE_INTENSITY + intensity,
+            massage_intensity("all")(intensity or None),
+            _MASSAGE_POWER(bool(intensity)),
+            link=link,
+        ):
             return
-        self._set_intensity(intensity)
-        if await self._key(app.MASSAGE_WAVE + wave, link=link):
-            self._set_wave(wave)
+        self._massage.intensity = intensity
+        if await self._key(
+            app.MASSAGE_WAVE + wave, massage_intensity("wave")(wave or None), link=link
+        ):
+            self._massage.wave = wave
 
     async def _massage_off(self, link: _Link) -> None:
         try:
-            if await self._key(app.MASSAGE_WAVE, link=link, cleanup=True):
-                self._set_wave(0)
+            if await self._key(
+                app.MASSAGE_WAVE, massage_intensity("wave")(None), link=link, cleanup=True
+            ):
+                self._massage.wave = 0
         finally:
             await asyncio.sleep(app.MASSAGE_POWER_DELAY_S)
-            if await self._key(app.MASSAGE_INTENSITY, link=link, cleanup=True):
-                self._set_intensity(0)
-                self.forward_controller_state_updates(MASSAGE_TIMER_MINUTES(None))
+            if await self._key(
+                app.MASSAGE_INTENSITY,
+                massage_intensity("all")(None),
+                _MASSAGE_POWER(False),
+                MASSAGE_TIMER_MINUTES(None),
+                link=link,
+                cleanup=True,
+            ):
+                self._massage.intensity = 0
 
     async def massage_off(self) -> None:
         with command_frames_counted():
             await settled(self._massage_off(self._connection()))
+
+    async def _recover_massage(self, link: _Link) -> None:
+        # Give recovery writes their own scope for publishing commanded state.
+        await asyncio.create_task(self._massage_off(link), context=copy_context_without_command())
 
     async def _set_massage_power(self, enabled: bool) -> None:
         if not enabled:
@@ -438,22 +456,27 @@ class OkimattMotionController(ProfileExecution[KeesonProfile], BedController):
         link = self._connection()
         complete = False
         try:
-            if not await self._key(app.MASSAGE_WAVE + 1, link=link):
-                return
-            await asyncio.sleep(app.MASSAGE_POWER_DELAY_S)
-            if not await self._key(app.MASSAGE_INTENSITY + 1, link=link):
-                return
-            if (
-                await self._key(app.MASSAGE_TIMERS[10], link=link)
-                and not self._coordinator.cancel_command.is_set()
+            with self.sent_state(
+                massage_intensity("wave")(1),
+                massage_intensity("all")(1),
+                _MASSAGE_POWER(True),
+                MASSAGE_TIMER_MINUTES(10),
+                is_current=lambda: complete and self._current(link),
             ):
-                complete = True
-                self._set_wave(1)
-                self._set_intensity(1)
-                self.forward_controller_state_updates(MASSAGE_TIMER_MINUTES(10))
+                if not await self._key(app.MASSAGE_WAVE + 1, link=link):
+                    return
+                await asyncio.sleep(app.MASSAGE_POWER_DELAY_S)
+                if not await self._key(app.MASSAGE_INTENSITY + 1, link=link):
+                    return
+                if (
+                    await self._key(app.MASSAGE_TIMERS[10], link=link)
+                    and not self._coordinator.cancel_command.is_set()
+                ):
+                    complete = True
+                    self._massage.wave = self._massage.intensity = 1
         finally:
             if not complete and self._current(link):
-                await settled(self._massage_off(link))
+                await settled(self._recover_massage(link))
 
     @property
     def controller_switch_specs(self) -> tuple[ControllerSwitchSpec, ...]:

@@ -4700,7 +4700,7 @@ whether the bed stores the position still needs testing by owners.
 
 **App:** [OkimattMotion](https://apkpure.com/okimattmotion/com.okin.jalon.okimatandroid) 1.1.1 (3), `com.okin.jalon.okimatandroid`
 
-**Status:** ❓ Needs testing on hardware.
+**Status:** Not yet tested on hardware.
 
 #### Setup
 
@@ -4830,11 +4830,7 @@ timer effects. For recurring schedules, use a Home Assistant automation.
 
 #### Evidence
 
-APK Protocol Audit row 137, version 1.1.1 (3), XAPK SHA-256
-`da76ca66808fb37655ef24ba78685e6a8bc5aef16b052857117bcdcad6c768dd`.
-The app's 41 frozen literals cover both layouts' shared control and alarm
-encodings. The Keeson big-endian E5 encoder reproduces the control words,
-and the EA clock encoder covers the app's explicit sleep and wake fields.
+Based on OkimattMotion 1.1.1 (3).
 
 ## Notes
 

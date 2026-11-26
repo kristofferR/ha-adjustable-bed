@@ -1778,9 +1778,9 @@
       "leva_home_zero_g": { "name": "Home quick zero gravity" },
       "leva_home_anti_snore": { "name": "Home quick anti-snore" },
       "leva_home_tv": { "name": "Home quick TV" },
-      "okimattmotion_save_zero_g": { "name": "Save Zero Gravity" },
-      "okimattmotion_save_flat": { "name": "Save Flat" },
-      "okimattmotion_save_anti_snore": { "name": "Save Quiet Sleep" },
+      "okimattmotion_save_zero_g": { "name": "Save zero gravity" },
+      "okimattmotion_save_flat": { "name": "Save flat" },
+      "okimattmotion_save_anti_snore": { "name": "Save quiet sleep" },
       "okimattmotion_book": { "name": "Book" },
       "comfort_enhancements_quiet_sleep": {
         "name": "Quiet sleep"

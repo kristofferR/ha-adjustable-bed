@@ -19,7 +19,11 @@ from custom_components.adjustable_bed.alarm import AlarmRequest
 from custom_components.adjustable_bed.beds.okimattmotion import OkimattMotionController
 from custom_components.adjustable_bed.command_scheduler import (
     CommandContext,
+    CommandIntent,
+    Delivery,
+    DeviceCommandScheduler,
     current_command_context,
+    delivered,
 )
 from custom_components.adjustable_bed.const import (
     BED_TYPE_OKIMATTMOTION,
@@ -42,7 +46,11 @@ from custom_components.adjustable_bed.paired_coordinator import PairedBedCoordin
 from custom_components.adjustable_bed.profiles import okimattmotion as app
 from custom_components.adjustable_bed.services import async_register_services
 from custom_components.adjustable_bed.setup_questions import setup_profile
-from custom_components.adjustable_bed.state_keys import MASSAGE_TIMER_MINUTES, UNDER_BED_LIGHTS_ON
+from custom_components.adjustable_bed.state_keys import (
+    MASSAGE_TIMER_MINUTES,
+    UNDER_BED_LIGHTS_ON,
+    massage_intensity,
+)
 from tests.alarm_helpers import call_set_alarm
 from tests.error_helpers import raises_key
 from tests.pair_mode import CONF_PAIR_CONNECTION_MODE
@@ -492,19 +500,72 @@ async def test_light_and_massage_sequences(monkeypatch: pytest.MonkeyPatch) -> N
     assert [call.args for call in delay.await_args_list] == [(0.1,), (0.1,)]
 
 
+@pytest.mark.parametrize("link_replaced", [False, True])
+async def test_light_state_requires_a_write_on_the_current_link(link_replaced: bool) -> None:
+    controller, owner, _, state = await make_controller()
+    await controller.lights_off()
+    original = owner.client
+    if link_replaced:
+
+        async def replace_link(*_args, **_kwargs):
+            controller.on_disconnect()
+            owner.client, _ = make_client()
+            await controller.async_discover_capabilities()
+
+        original.write_gatt_char.side_effect = replace_link
+    else:
+        owner.cancel_command.set()
+
+    await controller.lights_on()
+    assert state[UNDER_BED_LIGHTS_ON] is False
+    assert writes(original) == [frame("light_off")] + ([frame("light_on")] if link_replaced else [])
+
+
+async def test_massage_level_keeps_the_delivered_part_of_a_pair() -> None:
+    controller, owner, _, state = await make_controller()
+    await controller.set_massage_intensity("wave", 3)
+    owner.client.write_gatt_char.side_effect = [None, BleakError("wave write failed")]
+
+    with pytest.raises(BleakError, match="wave write failed"):
+        await controller.set_massage_intensity("all", 2)
+    assert state[massage_intensity("all")] == 2
+    assert state[massage_intensity("wave")] == 3
+
+    owner.client.write_gatt_char.side_effect = None
+    await controller.set_massage_intensity("wave", 1)
+    assert writes(owner.client)[-2:] == [frame("massage_intensity_2"), frame("massage_wave_1")]
+
+
 async def test_cancel_massage_power_does_not_send_delayed_positive_writes(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    controller, owner, _, _ = await make_controller()
+    controller, owner, _, state = await make_controller()
+    power = controller.controller_switch_specs[0]
+    scheduler = DeviceCommandScheduler("okimattmotion")
+    deliveries: list[Delivery] = []
 
     async def cancel_during_delay(_seconds):
         owner.cancel_command.set()
 
-    monkeypatch.setattr(
-        "custom_components.adjustable_bed.beds.okimattmotion.asyncio.sleep",
-        cancel_during_delay,
-    )
-    await controller.controller_switch_specs[0].set_fn(controller, True)
+    pacing = SimpleNamespace(**vars(asyncio))
+    pacing.sleep = cancel_during_delay
+    monkeypatch.setattr("custom_components.adjustable_bed.beds.okimattmotion.asyncio", pacing)
+
+    async def enable(context):
+        owner.cancel_command = context.cancel_event
+        with delivered(deliveries.append):
+            await power.set_fn(controller, True)
+        assert context.frames_written == 1  # Only the initial positive wave write.
+
+    try:
+        operation = await scheduler.enqueue(CommandIntent(enable))
+        await operation.future
+    finally:
+        await scheduler.async_shutdown()
+
+    assert deliveries == [Delivery.PARTIAL]
+    assert state[power.key] is False
+    assert state[MASSAGE_TIMER_MINUTES] is None
     assert writes(owner.client) == [
         frame(key)
         for key in (
