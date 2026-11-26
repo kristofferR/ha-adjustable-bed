@@ -54,6 +54,40 @@ class Receiver:
         return tuple(texts)
 
 
+class ErgoBedReceiver(Receiver):
+    """Collect the app's fragmented status record, with a bounded buffer."""
+
+    def feed(self, data: bytes) -> tuple[str, ...]:
+        if not data:
+            return ()
+        texts = ()
+        if self.collecting:
+            end = data.find(b"\r")
+            fragment = data if end == -1 else data[:end]
+            if len(self.buffer) + len(fragment) > 8192:
+                self.collecting = False
+                self.buffer.clear()
+            else:
+                self.buffer.extend(fragment)
+                if end != -1:
+                    text = self.buffer.decode("latin-1").strip()
+                    self.buffer.clear()
+                    if len(text.split(" ")) == 75:
+                        texts = (text,)
+
+        # The app processes CR before it looks for a new dollar in this fragment.
+        start = data.find(b"$")
+        if start != -1:
+            tail = data[start + 1 :]
+            if len(self.buffer) + len(tail) <= 8192:
+                self.collecting = True
+                self.buffer.extend(tail)
+            else:
+                self.collecting = False
+                self.buffer.clear()
+        return texts
+
+
 def token_fields(
     text: str, *, alarm_indices: tuple[int, int, int] = (11, 12, 14),
     parse_sync: Callable[[str], int | None] | None = None,

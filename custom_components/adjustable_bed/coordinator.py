@@ -155,12 +155,12 @@ from .const import (
     DEFAULT_PROTOCOL_VARIANT,
     DOMAIN,
     IDLE_DISCONNECT_KEEP_CONNECTED,
-    KEESON_VARIANT_ORE_ULTRAMATIC,
     LEGGETT_OKIN_SUPERSEDED_PULSE_DEFAULTS,
     LINAK_VARIANT_PERFORMANCE,
     NAME_RULE_VARIANTS_BY_BED_TYPE,
     OCTO_VARIANT_STAR2,
     OFFLINE_CAPABILITY_SAFE_BED_TYPES,
+    ORE_GATT_ROUTE_SNAPSHOT_KEYS,
     PAIR_MODE_SINGLE_ADDRESS,
     PAIRLINK_ROLE_PERIPHERAL,
     RICHMAT_MH_BED_TYPES,
@@ -517,6 +517,7 @@ class AdjustableBedCoordinator(
         self._app_state_slots: WeakKeyDictionary[BedController, str] = WeakKeyDictionary()
         self._app_state_restoring = False
         self._controller_state_callbacks: set[Callable[[ControllerState], None]] = set()
+        self._capability_entity_callbacks: set[Callable[[], None]] = set()
         self._controller_state_refresh_task: asyncio.Task[None] | None = None
         self._controller_state_refresh_retry_timer: asyncio.TimerHandle | None = None
         self._controller_state_refresh_retry_count = 0
@@ -707,7 +708,7 @@ class AdjustableBedCoordinator(
             )
 
     def _schedule_pending_capability_reload(self) -> None:
-        """Reload capability-gated entities once this BLE link is released."""
+        """Reconcile changed entities at the next safe point."""
         if (
             not self._pending_capability_reload
             or self._capability_reload_scheduled
@@ -723,7 +724,7 @@ class AdjustableBedCoordinator(
         )
 
     async def _async_reload_after_capability_change(self) -> None:
-        """Wait for commands to release the link, then reconcile entity platforms.
+        """Wait for idle command lanes before reconciling capability-gated entities.
 
         The guard is released before the reload: the unload waits for every
         admitted STOP, and a STOP needs the command lock the guard holds.
@@ -741,10 +742,10 @@ class AdjustableBedCoordinator(
                     reload_guard,
                 )
                 async with typed_reload_guard():
-                    reload = self._claim_capability_reload()
+                    reload = self._claim_capability_reload(reconcile_connected=True)
             else:
                 async with self.async_command_operation_guard():
-                    reload = self._claim_capability_reload()
+                    reload = self._claim_capability_reload(reconcile_connected=True)
             if reload is not None:
                 await self._async_reload_capabilities(reload)
         finally:
@@ -771,7 +772,9 @@ class AdjustableBedCoordinator(
         if reload is not None:
             await self._async_reload_capabilities(reload)
 
-    def _claim_capability_reload(self) -> dict[tuple[str, str], RetainedAppState] | None:
+    def _claim_capability_reload(
+        self, *, reconcile_connected: bool = False
+    ) -> dict[tuple[str, str], RetainedAppState] | None:
         """Take a due reload; return the Starcode app state to carry over it."""
         if (
             not self._pending_capability_reload
@@ -780,8 +783,6 @@ class AdjustableBedCoordinator(
             or self._pairing_transfer_active
         ):
             return None
-        if self._client is not None and self._client.is_connected:
-            return None
         loaded = loaded_runtime(self.hass, self.entry.entry_id)
         owns_loaded_child = False
         if isinstance(self.entry, ChildEntryView) and loaded is not None:
@@ -789,6 +790,16 @@ class AdjustableBedCoordinator(
             side = self.entry.data.get(CONF_SIDE)
             owns_loaded_child = callable(child_for_side) and child_for_side(side) is self
         if loaded is not self and not owns_loaded_child:
+            return None
+        if self.is_connected:
+            if reconcile_connected and self._link_ready and self._reconciles_persistent_entities():
+                self._pending_capability_reload = False
+                self.cache_capability_controller()
+                for discover in list(self._capability_entity_callbacks):
+                    try:
+                        discover()
+                    except Exception:
+                        _LOGGER.exception("Error reconciling capabilities for %s", self._address)
             return None
         from .beds.starcode.abm5_4_profiles import RetainedAppState
 
@@ -801,6 +812,18 @@ class AdjustableBedCoordinator(
         }
         self._pending_capability_reload = False
         return retained_states
+
+    def _reconciles_persistent_entities(self) -> bool:
+        controller = self._controller
+        policy = controller.capability_snapshot_policy if controller else None
+        return bool(
+            policy and policy.reconcile_on_persistent_link and self._uses_persistent_connection()
+        )
+
+    def register_capability_entity_callback(self, discover: Callable[[], None]) -> Callable[[], None]:
+        """Subscribe an entity builder to quiescent capability reconciliation."""
+        self._capability_entity_callbacks.add(discover)
+        return lambda: self._capability_entity_callbacks.discard(discover)
 
     async def _async_reload_capabilities(
         self, retained_states: dict[tuple[str, str], RetainedAppState]
@@ -1185,16 +1208,17 @@ class AdjustableBedCoordinator(
             if bed_type in RICHMAT_MH_BED_TYPES and isinstance(capabilities, dict)
             else None
         )
-        # Ultramatic's route is discovered live, then stored on this entry/side.
-        ultramatic_snapshot = (
+        # ORE routes are discovered live, then stored on this entry/side.
+        ore_snapshot = (
             capabilities.get(BED_TYPE_KEESON) if isinstance(capabilities, dict) else None
         )
-        ultramatic_mintable = (
+        ore_route_key = ORE_GATT_ROUTE_SNAPSHOT_KEYS.get(self._protocol_variant or "")
+        ore_mintable = (
             bed_type == BED_TYPE_KEESON
-            and self._protocol_variant == KEESON_VARIANT_ORE_ULTRAMATIC
-            and isinstance(ultramatic_snapshot, dict)
-            and set(ultramatic_snapshot) == {"ultramatic_route"}
-            and ultramatic_snapshot.get("ultramatic_route") in ("P1", "P2")
+            and ore_route_key is not None
+            and isinstance(ore_snapshot, dict)
+            and set(ore_snapshot) == {ore_route_key}
+            and ore_snapshot.get(ore_route_key) in ("P1", "P2")
         )
         # Octo Remote Star2 is a different protocol with FIXED capabilities and no
         # PIN/snapshot, so it IS statically offline-mintable (like Linak) — its
@@ -1219,7 +1243,7 @@ class AdjustableBedCoordinator(
         mintable = (
             statically_mintable
             or variant_mintable
-            or ultramatic_mintable
+            or ore_mintable
             or remacro
             # FSM Relax mints from its exact stored capability body (entry data).
             # With no snapshot its action/memory descriptors remain empty.
@@ -1928,8 +1952,13 @@ class AdjustableBedCoordinator(
         self._cancel_command.set()
         self._command_scheduler.request_cancel(self._protocol_command_resources(command_scope))
 
-    async def async_stop_command(self) -> None:
-        """Immediately stop any running command and send stop to bed."""
+    def admit_stop_command(
+        self,
+        *,
+        current_link_only: bool = False,
+        resources: Collection[str] = ALL_COMMAND_RESOURCES,
+    ) -> asyncio.Task[None]:
+        """Reserve STOP before yielding, optionally on its admitted link alone."""
         _LOGGER.info("Stop requested - cancelling current command")
 
         if self._bed_type in STARCODE_GROUP_BED_TYPES:
@@ -1952,23 +1981,35 @@ class AdjustableBedCoordinator(
         )
         generation = self.connection_generation
 
-        async def stop_current_session() -> None:
-            assert cleanup is not None
+        async def stop_current_session(context: CommandContext) -> None:
+            # An active sequential operation may release the receiver before
+            # this STOP acquires the writer. Its acknowledged release owns STOP.
+            if current_link_only and any(c.cleanup_stop_sent for c in context.preempted_contexts):
+                return
             if (
-                self._controller is controller
+                controller is not None
+                and self._controller is controller
                 and self.connection_generation == generation
                 and self.is_connected
             ):
-                await cleanup()
+                await (controller.stop_all if cleanup is None else cleanup)()
+            elif current_link_only:
+                raise BedNotConnectedError
 
-        async def stop_operation(_context: CommandContext) -> None:
-            if cleanup is None:
-                await self._async_send_stop_command()
-            else:
-                await self._async_send_stop_command(stop_current_session)
+        async def stop_operation(context: CommandContext) -> None:
+            if current_link_only or cleanup is not None:
+                await self._async_send_stop_command(
+                    lambda: stop_current_session(context),
+                    expected_generation=generation if current_link_only else None,
+                )
+                return
+            await self._async_send_stop_command()
 
-        stop_task = self._command_scheduler.admit_stop(stop_operation, ALL_COMMAND_RESOURCES)
+        return self._command_scheduler.admit_stop(stop_operation, resources)
 
+    async def async_stop_command(self) -> None:
+        """Stop this receiver and settle the admitted wire operation."""
+        stop_task = self.admit_stop_command()
         try:
             await asyncio.shield(stop_task)
         except asyncio.CancelledError:
@@ -1989,13 +2030,17 @@ class AdjustableBedCoordinator(
         return BedNotConnectedError()
 
     async def _async_send_stop_command(
-        self, cleanup: Callable[[], Awaitable[None]] | None = None
+        self,
+        cleanup: Callable[[], Awaitable[None]] | None = None,
+        *,
+        expected_generation: int | None = None,
     ) -> None:
         """Send STOP while owning the legacy wire and connection lifecycle lane."""
         # STOP remains outside the ordinary scheduler lane so it can preempt it,
         # then waits for any cancelled controller cleanup to release the wire lock.
         async with self._command_demand_scope(), self._command_lock:
-            self._hold_link_for_command()
+            if expected_generation is None or self.connection_generation == expected_generation:
+                self._hold_link_for_command()
             if self._pairing_transfer_active:
                 raise BedNotConnectedError("bed_combining")
             controller = self._controller
@@ -2046,6 +2091,7 @@ class AdjustableBedCoordinator(
             finally:
                 if (
                     not disconnected_transport
+                    and (expected_generation is None or self.connection_generation == expected_generation)
                     and self._client is not None
                     and self._client.is_connected
                 ):

@@ -15,7 +15,10 @@ from homeassistant.exceptions import ServiceValidationError
 
 from custom_components.adjustable_bed import const
 from custom_components.adjustable_bed.beds.ore_ultramatic import state_keys as state
-from custom_components.adjustable_bed.beds.ore_ultramatic.controller import OreUltramaticController
+from custom_components.adjustable_bed.beds.ore_ultramatic.controller import (
+    LevaSleepController,
+    OreUltramaticController,
+)
 from custom_components.adjustable_bed.button import _button_entities_for
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
 from custom_components.adjustable_bed.cover import AdjustableBedCover, _build_cover_description
@@ -31,8 +34,8 @@ APP = const.KEESON_VARIANT_ORE_ULTRAMATIC
 async def target(hass, mock_coordinator_connected, mock_establish_connection):
     made = []
 
-    async def make(route="P1", count=2, address="AA:BB:CC:DD:01:58"):
-        entry = _entry(hass, APP, count, address)
+    async def make(route="P1", count=2, address="AA:BB:CC:DD:01:58", *, variant=APP):
+        entry = _entry(hass, variant, count, address)
         coordinator = AdjustableBedCoordinator(hass, entry)
         coordinator._max_retries = 1
         client = MagicMock(spec=BleakClient)
@@ -59,7 +62,9 @@ async def target(hass, mock_coordinator_connected, mock_establish_connection):
         ]
         hass.data.setdefault(const.DOMAIN, {})[entry.entry_id] = coordinator
         assert await coordinator.async_connect()
-        assert isinstance(coordinator.controller, OreUltramaticController)
+        expected = LevaSleepController if variant == const.KEESON_VARIANT_LEVA_SLEEP else OreUltramaticController
+        assert isinstance(coordinator.controller, expected)
+        client.write_gatt_char.assert_not_awaited()
         client.write_gatt_char.reset_mock()
         made.append(coordinator)
         return coordinator, client

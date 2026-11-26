@@ -265,6 +265,24 @@ def alarm_table(table: int, records: bytes) -> bytes:
     return checked(bytes((0xED, 0x80, table)) + records.ljust(12, b"\x00"))
 
 
+def ore_alarm_p1(
+    now: datetime, *, enabled: bool, hour: int, minute: int, repeat: int, kind: int
+) -> bytes:
+    """Encode the ORE E5 route's weekly alarm or its disabled sentinel."""
+    wake = (
+        17 if kind == 1 else 255,
+        17 if kind == 1 else 255,
+        {2: 8, 3: 9}.get(kind, 255),
+    ) if enabled else (255, 255, 255)
+    return checked(
+        bytes((
+            0xEB, 0xFE, 0x16, now.second, now.minute, now.hour,
+            minute if enabled else 255, hour if enabled else 255,
+            now.isoweekday() % 7, repeat & 255 if enabled else 255, *wake,
+        ))
+    )
+
+
 @dataclass(frozen=True)
 class PositionStatus:
     """An ``ED``/``F0``/``F1`` status notification; positions are percentages."""
@@ -398,9 +416,15 @@ class UltramaticParser:
     No checksum, header validation or action normalization is invented.
     """
 
+    _publish_prefix = False
+    _preserve_repeat_80 = True
+    _copy_unchanged_status = True
+    _publish_initial_status = False
+
     def __init__(self) -> None:
         self.state = UltramaticState()
         self.pending: bytes | None = None
+        self._status_seen = False
 
     @staticmethod
     def _signed(value: int) -> int:
@@ -422,22 +446,27 @@ class UltramaticParser:
         if len(data) <= 20:
             if len(data) > 3 and data[:3] == JALON_PREFIX:
                 self.pending = data
-                return ()
-            if len(data) not in (10, 16):
-                if self.pending is None:
+                if not self._publish_prefix:
                     return ()
-                data = self.pending + data
+            elif len(data) not in (10, 16):
+                if self.pending is not None:
+                    data = self.pending + data
+                elif not self._publish_prefix or len(data) <= 3:
+                    return ()
         if len(data) > 3 and data[:2] == b"\xed\x80":
             if len(data) < 7:
                 return ()
             hour, minute, repeat, kind = (self._signed(data[i]) for i in (3, 4, 5, 6))
-            if repeat == -128:
+            if self._preserve_repeat_80 and repeat == -128:
                 repeat = s.true_repeat
-            s.hour, s.minute, s.repeat, s.type = hour, minute, repeat, kind
-            changed = (hour, minute, repeat, kind) != (
+            status = (hour, minute, repeat, kind)
+            changed = status != (
                 s.true_hour, s.true_minute, s.true_repeat, s.true_type
-            )
-            s.true_hour, s.true_minute, s.true_repeat, s.true_type = hour, minute, repeat, kind
+            ) or (self._publish_initial_status and not self._status_seen)
+            self._status_seen = True
+            if changed or self._copy_unchanged_status:
+                s.hour, s.minute, s.repeat, s.type = status
+            s.true_hour, s.true_minute, s.true_repeat, s.true_type = status
             return ("alarm",) if changed else ()
         intensity = timer = 0
         if len(data) == 23:
@@ -449,6 +478,15 @@ class UltramaticParser:
         s.intensity = (intensity + 1) // 2 if 1 <= intensity <= 6 else 0
         s.timer = timer
         return ("massage",)
+
+
+class LevaSleepParser(UltramaticParser):
+    """Leva keeps F4 fall-through and publishes initial and changed ED alarms."""
+
+    _publish_prefix = True
+    _preserve_repeat_80 = False
+    _copy_unchanged_status = False
+    _publish_initial_status = True
 
 
 @dataclass(frozen=True, slots=True)

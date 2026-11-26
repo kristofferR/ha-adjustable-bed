@@ -95,6 +95,7 @@ from .const import (
     SIDE_RIGHT,
     TIMED_MOVE_MOTOR_OPTIONS,
 )
+from .coordinator import AdjustableBedCoordinator
 from .download import register_download
 from .entity_runtime import controller_side_scope
 from .errors import invalid, rejected
@@ -2413,6 +2414,7 @@ def _alarm_request(call: ServiceCall) -> AlarmRequest:
         hour=alarm_time.hour if alarm_time is not None else 0,
         minute=alarm_time.minute if alarm_time is not None else 0,
         reference_time=dt_util.now(),
+        time_provided=alarm_time is not None,
         **optional,
     )
 
@@ -2564,15 +2566,28 @@ async def handle_set_alarm(call: ServiceCall) -> None:
             raise invalid("alarm_time_required_to_turn_off", device_name=target.name)
         plans[id(target)] = capability
 
-    preflighted = await _preflight_each(targets, check)
-    try:
-        finished = await _write_checked_alarms(call, selection, plans, alarm, given)
-    except BaseException:
-        await _release_preflighted(preflighted)
-        raise
-    if not finished:
-        # STOP won: hand the links opened for the check back to their idle timer.
-        await _release_preflighted(preflighted)
+    async with contextlib.AsyncExitStack() as transaction:
+        # A sibling's reload would replace the same parent. Defer both sides'
+        # reloads even when the action targets just one side of the pair.
+        receivers: dict[int, AdjustableBedCoordinator] = {}
+        for (parent, _), group in zip(selection.targets, selection.children, strict=True):
+            children = parent.children.values() if isinstance(parent, PairedBedCoordinator) else group
+            for child in children:
+                receiver = child.inner if isinstance(child, SingleAddressSideCoordinator) else child
+                if isinstance(receiver, AdjustableBedCoordinator):
+                    receivers[id(receiver)] = receiver
+        for receiver in receivers.values():
+            await transaction.enter_async_context(receiver.async_defer_capability_reload())
+
+        preflighted = await _preflight_each(targets, check)
+        try:
+            finished = await _write_checked_alarms(call, selection, plans, alarm, given)
+        except BaseException:
+            await _release_preflighted(preflighted)
+            raise
+        if not finished:
+            # STOP won: hand the links opened for the check back to their idle timer.
+            await _release_preflighted(preflighted)
 
 
 @dataclass(frozen=True, slots=True)
@@ -3096,6 +3111,9 @@ def _import_service_registrars() -> tuple[Callable[[HomeAssistant], None], ...]:
     from .beds.cheerssleep.services import register_services as register_cheerssleep_services
     from .beds.comfort_enhancement3.services import register_services as register_apex_services
     from .beds.customatic.services import async_register_customatic_services
+    from .beds.customatic_demo.services import (
+        register_services as register_customatic_demo_services,
+    )
     from .beds.dorsal.services import register_services as register_dorsal_services
     from .beds.doublesleep.services import async_register_doublesleep_services
     from .beds.dreamsense.services import async_register_dreamsense_services
@@ -3219,6 +3237,7 @@ def _import_service_registrars() -> tuple[Callable[[HomeAssistant], None], ...]:
         register_betterliving2_services,
         register_agingplace_services,
         register_onlysnore_services,
+        register_customatic_demo_services,
         async_register_logicdata_app_services,
         async_register_jiecang_app_services,
         async_register_svane_services,

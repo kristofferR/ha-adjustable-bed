@@ -10,7 +10,7 @@ the Customatic apps and the Leggett & Platt Okin apps. The 40-bit profiles are
 Okin DOT, SIMMONS, OKIN SleepEase, the Sleepy's Elite legacy
 CB25 dialect, the AdjustableM5X4 key selectors and the eShine app's products. The 96-bit profiles are the
 Okin CST (CSTProtocol) products and the OKIN Bedding apps: Jordan's Serenity,
-Jordan's Tranquil and Customatic Z-Series. The 64-bit profiles are Okin 64-Bit
+Jordan's Tranquil, Customatic Z-Series and Independence (Customatic Demo). The 64-bit profiles are Okin 64-Bit
 the Adjustable bed (Lumbar) app, Rize Home and Resident Adjustable Base.
 
 ## Known Models
@@ -21,7 +21,7 @@ their setup choices, controls and alarms.
 
 | Profile | Models |
 |---|---|
-| [Okimat](#okimat) | Okimat beds, Lucid L600, Customatic Demo, RF ECO BT bed receivers, other beds with Okin motors; the apps marked ⚠️ under [Apps](#apps) are not fully checked |
+| [Okimat](#okimat) | Okimat beds, Lucid L600, RF ECO BT bed receivers, other beds with Okin motors; the apps marked ⚠️ under [Apps](#apps) are not fully checked |
 | [DewertOkin](#dewertokin) | A H Beard, Hankook Gallery, beds with the DewertOkin HE150 controller, DewertOkin Bluetooth RF-Gateway receivers; see [DewertOkin brands](#dewertokin-brands) |
 | [RF ECO BT stair lift](#rf-eco-bt-stair-lift) | Elda BTH / RF ECO BT / MEGAMAT staircase from [#344](https://github.com/kristofferR/ha-adjustable-bed/issues/344); Device Information model `MEGAMAT MBZ`, advertising as `OKIN-050226` |
 | [Customatic](#customatic-family) | Customatic Clarity, Jerome's C and Remedy bases |
@@ -34,6 +34,7 @@ their setup choices, controls and alarms.
 | [AdjustableM5X4](#adjustablem5x4) | StarCode beds operated with the AdjustableM5X4 app |
 | [eShine](#eshine) | eShine app products E2000, E3000/E3100 (one selector) and E5000 |
 | [Okin CST](#okin-cst) | Mattress Firm 900-O / Rize MF900, Rize Sanctuary, Resident, Aviada, Bob, Contempo, Rize II Carefree and Clarity, Support, Nectar Motion (Nectar Move) |
+| [Independence](#independence-customatic-demo) | Beds controlled with the Independence (Customatic Demo) app |
 | [Jordan's Serenity](#jordans-serenity) | Beds controlled with the Jordan's Serenity app |
 | [Jordan's Tranquil](#jordans-tranquil) | Beds controlled with the Jordan's Tranquil app |
 | [Customatic Z-Series](#customatic-z-series) | Customatic Z-230 and Z-280 bases with the Z-Series app |
@@ -57,6 +58,7 @@ Customatic app profiles.
 
 | Analyzed | App | Package ID | Profile |
 |---|---|---|---|
+| ✅ | Independence 1.1.0 (5), not yet tested on hardware | `com.okin.bedding.customaticdemo` | [Independence](#independence-customatic-demo), chosen in setup |
 | ✅ | OKIN Motion Bed 1.0 (2), not yet tested on hardware | `com.okin.motionbed` | [OKIN Motion Bed](#okin-motion-bed), chosen in setup |
 | ⚠️ | [OKIN ComfortBed II-N](https://play.google.com/store/apps/details?id=com.ore.jalon.neworebeding) | `com.ore.jalon.neworebeding` | [Okimat](#okimat), not fully checked |
 | ✅ | [OKIN Comfort Bed](https://play.google.com/store/apps/details?id=com.ore.okincomfortbed) 1.1.6 (8), not yet tested on hardware | `com.ore.okincomfortbed` | [ORE comfort-bed profile](keeson.md#okin-comfort-bed), a Keeson profile |
@@ -275,6 +277,7 @@ are unchanged.
 | Rize MF900 | `cst_mf900` | `okin_cst` | 96-bit | plain frame | with response | head, feet, lumbar | 3 |
 | Support | `cst_support` | `okin_cst` | 96-bit | plain frame | with response | head, feet, lumbar | 3 |
 | Nectar Move | `cst_nectar_move` | `okin_cst` | 96-bit | plain frame | with response | head, feet | 2 |
+| Independence (Customatic Demo) | `customatic_demo` | `customatic_demo` | 96-bit | plain frame | from the characteristic's properties | back, legs, seat, rotation | 0 |
 | Jordan's Serenity | `serenity` | `serenity` | 96-bit | plain frame | from the characteristic's properties | head, feet | 2 |
 | Jordan's Tranquil | `tranquil` | `tranquil` | 96-bit | plain frame | from the characteristic's properties | head, feet | 2 |
 | Customatic Z-230 | `zseries_z230` | `customatic_zseries` | 96-bit | plain frame | from the characteristic's properties | head, feet | 1 |
@@ -342,6 +345,7 @@ are unchanged.
 | Rize MF900 | entry pulse delay | entry pulse count; until release with a renewable hold | 2 STOP at 100 ms, 100 ms after the last write |
 | Support | entry pulse delay | entry pulse count; until release with a renewable hold | 2 STOP at 100 ms, 100 ms after the last write |
 | Nectar Move | 100 ms | entry pulse count; until release with a renewable hold | 2 STOP at 100 ms, 100 ms after the last write |
+| Independence (Customatic Demo) | 100 ms | entry pulse count; until release with a renewable hold | 2 STOP at 100 ms, 100 ms after release |
 | Jordan's Serenity | 100 ms | entry pulse count; until release with a renewable hold | 2 STOP at 100 ms, 100 ms after the last write |
 | Jordan's Tranquil | 100 ms | entry pulse count; until release with a renewable hold | 2 STOP at 100 ms, 100 ms after the last write |
 | Customatic Z-230 | 100 ms | entry pulse count; until release with a renewable hold | 2 STOP at 100 ms, 100 ms after the last write |
@@ -411,6 +415,7 @@ Entry pulse settings are the configured motor pulse count and delay.
 | Rize MF900 | 6 × 100 ms, 2 STOP | 6 × 100 ms, 2 STOP | n/a | n/a | 6 × 100 ms, 2 STOP | n/a |
 | Support | 6 × 100 ms, 2 STOP | 6 × 100 ms, 2 STOP | n/a | n/a | 6 × 100 ms, 2 STOP | n/a |
 | Nectar Move | once, 2 STOP | once, 2 STOP | n/a | n/a | once, 2 STOP | n/a |
+| Independence (Customatic Demo) | once, 2 STOP | n/a | n/a | n/a | once, 2 STOP | n/a |
 | Jordan's Serenity | held to its deadline, 2 STOP | held to its deadline, 2 STOP | held to its deadline, 2 STOP | n/a | held to its deadline, 2 STOP | n/a |
 | Jordan's Tranquil | held to its deadline, 2 STOP | held to its deadline, 2 STOP | held to its deadline, 2 STOP | n/a | held to its deadline, 2 STOP | n/a |
 | Customatic Z-230 | held to its deadline, 2 STOP | held to its deadline, 2 STOP | held to its deadline, 2 STOP | n/a | held to its deadline, 2 STOP | n/a |
@@ -1243,7 +1248,7 @@ Brands using DewertOkin/ORE actuators, from 79 analyzed apps:
   Sanctuary, Aviada, MF900), Resident Adjustable Base
 - **Simmons:** SIMMONS (US), Simmons Korea (시몬스). Beds controlled with the
   `com.okin.simmons` app use the explicit [SIMMONS app profile](#simmons).
-- **Customatic:** Customatic Demo; Clarity, Remedy and Jerome's C use the
+- **Customatic:** [Independence (Customatic Demo)](#independence-customatic-demo) uses its own CST profile. Clarity, Remedy and Jerome's C use the
   [Customatic app profiles](#customatic-family)
 - **Mattress brands:** Mattress Firm (except Sleepy's Elite, see
   [Sleepy's Elite](sleepys.md)), Nectar Motion, Glory Furniture, Tranquil Sleep,
@@ -3802,6 +3807,129 @@ Based on nine Rize and support apps: `com.okin.bedding.rizeSanctuary`,
 1.0.4, plus Nectar Move 1.0.1 (`com.okin.bedding.nectarmotion`). The protocol
 was first reverse-engineered from `CSTProtocol.java` in the Rize MF900 and
 Nectar Motion apps.
+
+### Independence (Customatic Demo)
+
+**App:** Independence 1.1.0 (5), `com.okin.bedding.customaticdemo`
+
+**Status:** Not yet tested on hardware.
+
+#### Setup
+
+[Choose **Independence app (Customatic Demo)**](../CONFIGURATION.md) in setup.
+The app accepts Bluetooth device names beginning with `okin`, ignoring case.
+This prefix can suggest the profile. Select the app explicitly because the
+same prefix and service are shared with other Okin receivers.
+
+##### Protocol Details
+
+| Role | UUID |
+| --- | --- |
+| CST service | `62741523-52f9-8864-b1ab-3b3a8d65950b` |
+| Write | `62741525-52f9-8864-b1ab-3b3a8d65950b` |
+| Notify | `62741625-52f9-8864-b1ab-3b3a8d65950b` |
+| Optional manufacturer read | `00002a29-0000-1000-8000-00805f9b34fb` in Device Information |
+
+Home Assistant requires the exact command and notification roles in the CST
+service. It prefers writes with response when the characteristic advertises
+`write`, with a fallback to `write-without-response` if advertised. The app
+uses Android's default characteristic write type. The physical ATT mode has
+yet to be verified.
+
+The integration subscribes before sending the status query 300 ms later.
+It reads Device Information Manufacturer Name once per connection when the
+characteristic is readable, about one second after startup. Manufacturer
+identifies the device in Home Assistant. The controls are fixed for this
+profile. No app PIN or authentication handshake is required.
+
+#### Controls
+
+##### Apps
+
+| App | Profile | Hardware |
+| --- | --- | --- |
+| Independence 1.1.0 (5) | `customatic_demo` | Unverified |
+
+##### Features
+
+| Feature | Support |
+| --- | --- |
+| Movement | Head, foot and seat up/down, turn left/right, bed-wide STOP |
+| Automatic positions | Flat and sitting up |
+| Lighting | Toggle, automatic mode and timer cycle |
+| Reports | Light timer duration, reported demo mode and bed problem |
+| Display demo | One confirmed sitting-up and flat cycle |
+| Position feedback, memory and massage | None |
+
+For the Rotation cover, Open turns left and Close turns right. The app's
+All Up and All Down controls move the seat. These are logical controls.
+
+##### Commands
+
+<!-- generated:customatic-demo-controls -->
+<!-- Generated by scripts/generate_codec_docs.py from the codec and profile data. Edit those, not this block. -->
+
+| Control | Frame |
+|---|---|
+| Head up | `0C 02 00 00 00 01 00 00 00 00 00 00 00 00` |
+| Head down | `0C 02 00 00 00 02 00 00 00 00 00 00 00 00` |
+| Foot up | `0C 02 00 00 00 04 00 00 00 00 00 00 00 00` |
+| Foot down | `0C 02 00 00 00 08 00 00 00 00 00 00 00 00` |
+| Turn left | `0C 02 00 00 00 10 00 00 00 00 00 00 00 00` |
+| Turn right | `0C 02 00 00 00 20 00 00 00 00 00 00 00 00` |
+| Seat up | `0C 02 00 00 00 40 00 00 00 00 00 00 00 00` |
+| Seat down | `0C 02 00 00 00 80 00 00 00 00 00 00 00 00` |
+| Automatic flat | `0C 02 00 10 00 00 00 00 00 00 00 00 00 00` |
+| Automatic sitting up | `0C 02 00 08 00 00 00 00 00 00 00 00 00 00` |
+| Under-bed light toggle | `0C 02 00 02 00 00 00 00 00 00 00 00 00 00` |
+| Automatic under-bed light | `0C 02 40 00 00 00 00 00 00 00 00 00 00 00` |
+| Cycle under-bed light timer | `0C 02 00 00 02 00 00 00 00 00 00 00 00 00` |
+| Neutral release / STOP | `0C 02 00 00 00 00 00 00 00 00 00 00 00 00` |
+| Demo status query | `04 04 00 00 00 00` |
+
+Held controls refresh every 100 ms. The first neutral attempt is 100 ms after
+release, followed by the second 100 ms later.
+<!-- /generated -->
+
+Ordinary motion buttons use the configured pulse count. Card holds and
+`adjustable_bed.hold_control` refresh the selected control until release, STOP
+or expiry. Preset and light taps send one control frame before the two
+neutral attempts. Neutral applies to the entire physical receiver.
+
+A status notification of at least 14 bytes reports the light timer in byte 10
+(`1` = 2 min, `2` = 3 min, `3` = 5 min). Other values clear the reading.
+Bytes 11 and 12, plus 14 and 15 when both are present, indicate a problem when
+any is nonzero. Byte 13 values `1` and `3` indicate reported demo mode. The
+mode sensor reflects the receiver's notification. The status sensors clear
+when the BLE session ends. Enable the diagnostic **Bed problem** sensor
+if you want to see the reported problem state.
+
+##### Demo and STOP
+
+Run `adjustable_bed.customatic_demo_run` for one physical receiver with
+**Confirm bed movement** enabled. Remain with the bed. The action holds
+sitting up for 300 ms, releases with the neutral pair and starts flat two
+minutes after sitting up began. Flat also holds for 300 ms and releases.
+The press deadline bounds in-flight movement writes. Each neutral attempt
+has its own five-second transport timeout, so a stalled first attempt leaves
+time for the second. A failed or overrun phase ends the demo.
+
+STOP or a replacement movement during the pause settles fresh neutral on
+the original link before a sequential pair can release it. On either public
+STOP route, the pair reserves STOP before yielding and the Flat write checks
+that no STOP has intervened. If the fresh neutral pair fails, sequential
+teardown waits for the admitted same-link fallback to finish. Link loss, a
+reported problem or a demo-mode off transition ends the demo. A status abort
+during a press ends its movement refreshes and releases with the neutral pair.
+STOP sends neutral only.
+
+##### Analysis provenance
+
+Independence APK Protocol Audit for `com.okin.bedding.customaticdemo` 1.1.0 (5),
+XAPK SHA-256 `24b3696d243b16653677cb7ad74f021096e43782b5b010e38e0e7816f64ff4d1`.
+The audit verified the app's BLE calls and frame construction. A hardware
+capture is needed for the characteristic properties, ATT write mode, release
+behavior and the actual effects of the four logical movement controls.
 
 ### Jordan's Serenity
 
