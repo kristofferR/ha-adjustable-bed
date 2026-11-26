@@ -1756,6 +1756,12 @@
   },
   "entity": {
     "button": {
+      "sleep_assist_pro_side_b_up": {
+        "name": "Side B head up"
+      },
+      "sleep_assist_pro_side_b_down": {
+        "name": "Side B head down"
+      },
       "sleep_assist_pro_massage_timer": {
         "name": "Cycle massage timer"
       },

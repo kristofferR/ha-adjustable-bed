@@ -176,6 +176,13 @@ async def test_manual_app_flow_requires_identity_and_remote_controls(hass):
     result = await finish_new_bed(
         flow,
         result,
+        {const.CONF_BLE_DEVICE_NAME: "unknown receiver", app.CONF_CONTROLS: ["head"]},
+    )
+    assert result["errors"][const.CONF_BLE_DEVICE_NAME] == "sleep_assist_pro_invalid_selection"
+    flow._finish_with_verify.assert_not_awaited()
+    result = await finish_new_bed(
+        flow,
+        result,
         {
             const.CONF_BLE_DEVICE_NAME: DEVICES["p5"],
             app.CONF_CONTROLS: ["head"],

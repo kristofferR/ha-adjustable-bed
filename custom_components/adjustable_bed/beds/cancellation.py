@@ -17,7 +17,9 @@ async def settled[T](operation: Coroutine[object, object, T], *, eager_start: bo
     interrupted: asyncio.CancelledError | None = None
     while not task.done():
         try:
-            await asyncio.shield(task)
+            # Retrieve failures directly after waiting, including when the caller
+            # is cancelled while the write is pending (CPython #156321).
+            await asyncio.wait((task,))
         except asyncio.CancelledError as err:
             interrupted = err
     result = task.result()
