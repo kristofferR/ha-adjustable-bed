@@ -11085,6 +11085,9 @@
     "alarm_time_whole_minutes": {
       "message": "Alarm times are set in whole minutes. Remove the seconds."
     },
+    "alarm_midnight_requires_action_or_repeat": {
+      "message": "Choose a wake action or a repeat day for a midnight alarm on this bed."
+    },
     "alarm_not_supported": {
       "message": "{device_name} has no alarm."
     },

@@ -1742,14 +1742,17 @@ def route_scenarios() -> list[Scenario]:
         scenarios.append(Scenario(id=f"personal_comfort:{key}", bed_type="personal_comfort",
                          protocol_variant=key, entry_data={const.CONF_PRODUCT_TYPE: "pf4"},
                          layout_id=f"personal_comfort:{key}", replies=replies))
-    # ORE Ultramatic: actual user layouts on both live transport-dependent builders.
-    for route in ("P1", "P2"):
-        for motors in (2, 3, 4):
-            scenarios.append(Scenario(
-                id=f"ore_ultramatic:{route}:{motors}", bed_type="keeson",
-                protocol_variant="ore_ultramatic", layout_id=f"ore_ultramatic:{route}",
-                entry_data={const.CONF_MOTOR_COUNT: motors},
-            ))
+    # ORE bedding apps: both GATT routes on each user-selected layout.
+    scenarios.extend(
+        Scenario(
+            id=f"{variant}:{route}:{motors}", bed_type="keeson",
+            protocol_variant=variant, layout_id=f"ore_ultramatic:{route}",
+            entry_data={const.CONF_MOTOR_COUNT: motors},
+        )
+        for variant in sorted(const.ORE_GATT_ROUTED_VARIANTS)
+        for route in ("P1", "P2")
+        for motors in (2, 3, 4)
+    )
     for app, codes in (("sleep_evolution", ("GV", "B6", "6B", "U3", "U5", "X1", "BE")), ("wsilver_legacy", ("GV",))):
         for code in codes:
             scenarios.append(Scenario(id=f"{app}:{code}", bed_type=app, protocol_variant=code,
@@ -1785,7 +1788,7 @@ def route_scenarios() -> list[Scenario]:
                     id=f"{bed_type}:{variant}",
                     protocol_variant=variant,
                     layout_id="ore_ultramatic:P1"
-                    if (bed_type, variant) == ("keeson", "ore_ultramatic")
+                    if bed_type == "keeson" and variant in const.ORE_GATT_ROUTED_VARIANTS
                     else base.layout_id,
                     entry_data={**base.entry_data, **ROUTE_ENTRY_DATA.get(bed_type, {})},
                     factory_kwargs=ROUTE_KWARGS.get(f"{bed_type}:{variant}")

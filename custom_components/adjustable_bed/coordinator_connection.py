@@ -1756,6 +1756,8 @@ class CoordinatorConnectionMixin:
                 self._recovery_retry_delay = _AUTO_RECONNECT_DELAY_SECONDS
                 self._retained_session_client = None
                 self._link_ready = True
+                if self._reconciles_persistent_entities():
+                    self._schedule_pending_capability_reload()
                 return True
 
             except asyncio.CancelledError:
