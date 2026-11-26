@@ -95,6 +95,7 @@ from .const import (
     SIDE_RIGHT,
     TIMED_MOVE_MOTOR_OPTIONS,
 )
+from .coordinator import AdjustableBedCoordinator
 from .download import register_download
 from .entity_runtime import controller_side_scope
 from .errors import invalid, rejected
@@ -2556,12 +2557,14 @@ async def handle_set_alarm(call: ServiceCall) -> None:
     async with contextlib.AsyncExitStack() as transaction:
         # A sibling's reload would replace the same parent. Defer both sides'
         # reloads even when the action targets just one side of the pair.
-        receivers = {
-            child.inner if isinstance(child, SingleAddressSideCoordinator) else child
-            for (parent, _), group in zip(selection.targets, selection.children, strict=True)
-            for child in (parent.children.values() if isinstance(parent, PairedBedCoordinator) else group)
-        }
-        for receiver in receivers:
+        receivers: dict[int, AdjustableBedCoordinator] = {}
+        for (parent, _), group in zip(selection.targets, selection.children, strict=True):
+            children = parent.children.values() if isinstance(parent, PairedBedCoordinator) else group
+            for child in children:
+                receiver = child.inner if isinstance(child, SingleAddressSideCoordinator) else child
+                if isinstance(receiver, AdjustableBedCoordinator):
+                    receivers[id(receiver)] = receiver
+        for receiver in receivers.values():
             await transaction.enter_async_context(receiver.async_defer_capability_reload())
 
         preflighted = await _preflight_each(targets, check)

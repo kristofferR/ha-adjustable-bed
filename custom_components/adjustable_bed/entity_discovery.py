@@ -5,6 +5,7 @@ from collections.abc import Callable, Iterable
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.helpers.entity import Entity
 
+from .beds.lifecycle import CapabilitySnapshotPolicy
 from .entity_runtime import EntityRuntime, controller_side_scope
 from .entity_sweep import PlatformEntities
 
@@ -66,7 +67,7 @@ def async_setup_dynamic_entities(
         if controller is None:
             continue
         policy = controller.capability_snapshot_policy
-        if policy is not None and policy.reconcile_on_persistent_link:
+        if isinstance(policy, CapabilitySnapshotPolicy) and policy.reconcile_on_persistent_link:
             entry.async_on_unload(runtime.register_capability_entity_callback(discover))
         elif controller.has_dynamic_controller_entities:
             entry.async_on_unload(runtime.register_controller_state_callback(lambda _state: discover()))
