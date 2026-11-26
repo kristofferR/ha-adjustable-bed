@@ -16,7 +16,7 @@ from ...alarm import AlarmCapability, AlarmRequest
 from ...card import CARD_MASSAGE
 from ...codec import richmat as codec
 from ...command_scheduler import note_frame_skipped
-from ...const import CONF_PRODUCT_TYPE
+from ...const import CONF_PRODUCT_TYPE, DORSAL_ROOMI_S655_PLUS
 from ...errors import failed, invalid
 from ...execution import STREAM_HOLD, ExecutionCapabilities
 from ...profiles import dorsal as app
@@ -104,11 +104,12 @@ class DorsalController(BedController):
         self.route = route
         self.code = code
         product = app.products().get(code) if code is not None else None
-        self.controls = (
-            app.ROOMI + (app.ROOMI_SNORE,)
-            if route == "roomi"
-            else (product.controls if product is not None else ())
-        )
+        if route == DORSAL_ROOMI_S655_PLUS:
+            self.controls = app.ROOMI_S655_PLUS
+        elif route == "roomi":
+            self.controls = app.ROOMI + (app.ROOMI_SNORE,)
+        else:
+            self.controls = product.controls if product is not None else ()
         self._controls = {item.key: item for item in self.controls}
         self._modes = controls.wake_modes(product.alarm_modes) if product else {}
         self._link: AppLink | None = None
@@ -327,7 +328,7 @@ class DorsalController(BedController):
 
     @property
     def supports_light_state_feedback(self) -> bool:
-        return self.supports_lights
+        return self.route != DORSAL_ROOMI_S655_PLUS and self.supports_lights
 
     async def lights_toggle(self) -> None:
         if (item := self._named("BedLight")) is None:
@@ -451,6 +452,8 @@ class DorsalController(BedController):
         represented.update(
             item.key for name in _STANDARD_PRESETS.values() if (item := self._named(name))
         )
+        if self.route == DORSAL_ROOMI_S655_PLUS and (item := self._named("BedLight")):
+            represented.add(item.key)  # The standard toggle button exposes it.
         if self.supports_synchro:
             represented.update(
                 item.key for name in ("SyncOn", "SyncOff") if (item := self._named(name))
@@ -671,6 +674,8 @@ class DorsalController(BedController):
         if client is None or not client.is_connected:
             raise failed("dorsal_receiver_unavailable")
         if self._link is None:
+            # For S655 Plus, prove the write endpoint before touching subscriptions.
+            link = select_link(client, self.route) if self.route == DORSAL_ROOMI_S655_PLUS else None
             service = next(
                 (s for s in client.services if s.uuid.lower() == _GENERIC_ATTRIBUTE), None
             )
@@ -684,7 +689,7 @@ class DorsalController(BedController):
             if changed is not None and {"indicate", "notify"}.intersection(changed.properties):
                 await client.start_notify(changed, self._service_changed)
                 self._subscriptions.append(changed)
-            self._link = select_link(client)
+            self._link = link or select_link(client, self.route)
         link = self._live()
         if link.rx is not None and link.rx not in self._subscriptions:
             await client.start_notify(link.rx, partial(self._receive, link))
@@ -699,6 +704,9 @@ class DorsalController(BedController):
         if not self._current(link):
             return
         self.forward_raw_notification(sender.uuid, bytes(data))
+        if self.route == DORSAL_ROOMI_S655_PLUS:
+            # ROOMI has no consumer for the shared library's bed status events.
+            return
         if self._expiry is not None:
             self._expiry.cancel()
             self._expiry = None
@@ -763,6 +771,15 @@ class DorsalController(BedController):
         await session.async_start_notify()
         link = self._live()
         cancel = asyncio.Event()
+        if self.route == DORSAL_ROOMI_S655_PLUS:
+            for action, opcode in app.PROFILE_PROBES:
+                await self._send(
+                    link,
+                    codec.function(opcode, action=action, single=link.query_single),
+                    cancel,
+                    counted=False,
+                )
+            return
         exit_action, exit_opcode = app.PROFILE_PROBES[0]
         await self._send(
             link,
@@ -891,6 +908,7 @@ async def build_controller(ctx: BuildContext) -> DorsalController:
     code = app.code_for(route, exact)
     if (route == "restored" or route == "roomi" and exact) and code is None:
         raise invalid("dorsal_project_code")
-    if ctx.client is not None:
+    # S655 Plus checks QRRM during receiver selection and reconnects by saved address.
+    if ctx.client is not None and route != DORSAL_ROOMI_S655_PLUS:
         validate_name(ctx.coordinator.hass, ctx.coordinator.address, route, ctx.live_device_name)
     return DorsalController(ctx.coordinator, route, code)
