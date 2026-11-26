@@ -368,6 +368,7 @@ TIMED_MOVE_MOTOR_OPTIONS: Final = (
     "feet",
     "both",
     "tilt",
+    "foot_tilt",
     "pillow",
     "lumbar",
     "bed_height",
@@ -570,9 +571,10 @@ COMFORT_ENHANCEMENTS_VARIANTS: Final = {
     "mc4": "MC4: Lumbar Support / Massage Plus",
     "mc5": "MC5: Hi Lo Lift / Massage Plus",
 }
+BED_TYPE_SLEEPTIME: Final = "sleeptime"
 VARIANT_REQUIRED_BED_TYPES: Final = frozenset(
     {BED_TYPE_DREAMSENSE, BED_TYPE_SAATVA, BED_TYPE_MAJESTICHOME, BED_TYPE_LEVA, BED_TYPE_LINX, BED_TYPE_SOMOS, BED_TYPE_BOBPOWERBASE, "sleep_evolution", "wsilver_legacy", BED_TYPE_SYMPHONY_SLEEP, "comfort_enhancement3", BED_TYPE_YAMADA, BED_TYPE_RICHMAT_APP, BED_TYPE_RICHMAT_APP_SLEEP, BED_TYPE_ENSO2, "luuna", "personal_comfort", "instant_comfort", "richmat_sleep_receiver", BED_TYPE_MLILY, BED_TYPE_MLILY_REMOTE, BED_TYPE_GALAXY, BED_TYPE_OKIMIKI, BED_TYPE_GOODVIBE, BED_TYPE_HJBED, BED_TYPE_ESHINE_OKIN, BED_TYPE_ZSERIES, BED_TYPE_GLIDEAWAY_MOTION, BED_TYPE_COMFORT_ENHANCEMENTS, BED_TYPE_COMFORTBASE, "casper_base", BED_TYPE_RICHMAT_CLASSIC_APPS}
-).union({BED_TYPE_BETTERLIVING2})
+).union({BED_TYPE_BETTERLIVING2, BED_TYPE_SLEEPTIME})
 # Aging in Place / Dawn House has one fixed profile; these filter observations.
 BED_TYPE_AGINGPLACE: Final = "agingplace"
 CONF_AGINGPLACE_BED_MODE: Final = "agingplace_bed_mode"
@@ -882,6 +884,7 @@ SUPPORTED_BED_TYPES: Final = [
     BED_TYPE_RESIDENT,
     BED_TYPE_RIZE_HOME,
     BED_TYPE_SUPERIOR_SLEEP,
+    BED_TYPE_SLEEPTIME,
     BED_TYPE_ULTRAMATIC_SMART_BED,
     BED_TYPE_OKIN_MOTIONBED,
     BED_TYPE_COMFORT_ENHANCEMENT3,
@@ -3033,6 +3036,7 @@ BED_MOTOR_PULSE_DEFAULTS: Final = {
     BED_TYPE_YAMADA: (4, 300),  # HA finite tap default at the app refresh cadence.
     BED_TYPE_BETTERLIVING2: (10, 100),  # The chosen layout owns the actual refresh cadence.
     BED_TYPE_RESIDENT: (4, 300),  # Resident 300 ms refresh; four pulses bound an HA tap.
+    BED_TYPE_SLEEPTIME: (4, 300),
     BED_TYPE_ULTRAMATIC_SMART_BED: (4, 300),  # HA finite tap; app held refresh is 300 ms.
     BED_TYPE_ADJUSTABLE_LUMBAR: (10, 100),  # APK 100 ms hold refresh; ~1 s HA movement
     # Richmat MH apps: KEEP repeats at each control's own interval (100 ms for

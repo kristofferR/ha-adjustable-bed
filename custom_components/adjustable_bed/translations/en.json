@@ -185,6 +185,7 @@
           "check_connected": "Check: connected",
           "check_connected_via": "Check: connected through",
           "check_no_commands": "Check: no commands",
+          "check_sleeptime_uart_missing": "❌ The Bluetooth device lacks the write and status channels Sleeptime needs.",
           "check_truemotion_transport_missing": "⚠️ The receiver does not expose the trueMotion write and notification channels.",
           "check_transport_missing": "Check: connection type missing",
           "check_transport_ok": "Check: connection type available",
@@ -898,6 +899,7 @@
       "choice_not_listed": "Pick a row from the list. Type part of a name to search, then choose the matching row.",
       "invalid_idle_seconds": "Enter a number of seconds from 1 to 300.",
       "truemotion_name": "Enter the complete Bluetooth name, starting with SUTA-.",
+      "sleeptime_gatt": "The Bluetooth device lacks the write and status channels Sleeptime needs. Check the device and selected app.",
       "truemotion_gatt": "The receiver does not expose the trueMotion write and notification channels.",
       "truemotion_pair": "Choose a trueMotion receiver that supports split control as the left side."
     }
@@ -2042,6 +2044,39 @@
       "simmons_blue_combined_down": {
         "name": "Lower combined sections"
       },
+      "sleeptime_massage_timer": {
+        "name": "Cycle massage timer"
+      },
+      "sleeptime_massage_head_up": {
+        "name": "Increase head massage"
+      },
+      "sleeptime_massage_head_down": {
+        "name": "Decrease head massage"
+      },
+      "sleeptime_massage_foot_up": {
+        "name": "Increase foot massage"
+      },
+      "sleeptime_massage_foot_down": {
+        "name": "Decrease foot massage"
+      },
+      "sleeptime_massage_mode_next": {
+        "name": "Next massage mode"
+      },
+      "sleeptime_massage_mode_previous": {
+        "name": "Previous massage mode"
+      },
+      "sleeptime_query_massage": {
+        "name": "Refresh massage"
+      },
+      "sleeptime_query_alarm": {
+        "name": "Refresh alarm"
+      },
+      "sleeptime_reset_memory": {
+        "name": "Reset saved positions"
+      },
+      "sleeptime_release": {
+        "name": "Release held control"
+      },
       "remote_action": {
         "name": "Remote action"
       },
@@ -2104,6 +2139,12 @@
       },
       "head_tilt_down": {
         "name": "Head tilt down"
+      },
+      "foot_tilt_up": {
+        "name": "Foot tilt up"
+      },
+      "foot_tilt_down": {
+        "name": "Foot tilt down"
       },
       "headrest_up": {
         "name": "Headrest up"
@@ -4342,6 +4383,9 @@
       "smartbed_right": {
         "name": "Right headboard"
       },
+      "foot_tilt": {
+        "name": "Foot tilt"
+      },
       "head_tilt": {
         "name": "Head tilt"
       },
@@ -5382,6 +5426,12 @@
       },
       "agingplace_version": {
         "name": "Firmware version"
+      },
+      "sleeptime_massage_status": {
+        "name": "Massage time remaining"
+      },
+      "sleeptime_alarm_status": {
+        "name": "Alarm editor time"
       },
       "ultramatic_a_timer": {
         "name": "Left massage timer"
@@ -11793,6 +11843,9 @@
     "truemotion_pair": {
       "message": "Choose a trueMotion receiver that supports split control as the left side."
     },
+    "sleeptime_gatt": {
+      "message": "The Bluetooth device lacks the write and status channels Sleeptime needs."
+    },
     "truemotion_gatt": {
       "message": "The receiver does not expose the trueMotion write and notification channels."
     },
@@ -12611,6 +12664,7 @@
         "both": "Head and foot together",
         "neck": "Neck",
         "tilt": "Tilt",
+        "foot_tilt": "Foot tilt",
         "lumbar": "Lumbar",
         "bed_height": "Bed height",
         "elevate": "Elevate",

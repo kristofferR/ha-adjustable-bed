@@ -260,6 +260,11 @@ class BedController(GattWriter):
         return False
 
     @property
+    def stop_on_active_sequential_link(self) -> bool:
+        """Whether a side-wide cover STOP must settle before its active pair link closes."""
+        return False
+
+    @property
     def paired_cleanup_stop(self) -> Callable[[], Awaitable[None]] | None:
         """Motor-only cleanup to run on the current link after a paired failure."""
         return None

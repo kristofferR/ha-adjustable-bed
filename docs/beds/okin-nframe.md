@@ -45,6 +45,7 @@ their setup choices, controls and alarms.
 | [N32 Motion Bed](#n32-motion-bed) | Beds controlled with N32 Motion Bed; not yet tested on hardware |
 | [Shuda](#shuda) | Beds controlled with the Shuda app |
 | [Resident Adjustable Base](#resident-adjustable-base) | Beds controlled with Resident Adjustable Base; not yet tested on hardware |
+| [Sleeptime](#sleeptime) | Sleeptime Australia bases with SmartBed205, 402, 404 or 405 names; hardware unverified |
 | [Ultramatic Smart Bed](#ultramatic-smart-bed) | Beds controlled with Ultramatic Smart Bed; not yet tested on hardware |
 | [Superior sleep](#superior-sleep-ss350--ss650) | SS350 and SS650 |
 | [Adjustable bed (Lumbar)](#adjustable-bed-lumbar) | Beds controlled with the Adjustable bed(Lumbar) app |
@@ -95,6 +96,7 @@ Customatic app profiles.
 | ✅ | Shuda 1.0.6 (19) | `com.okin.shuda` | [Shuda](#shuda) |
 | ✅ | [N32 Motion Bed](https://play.google.com/store/apps/details?id=com.okin.simmonskorea) 1.1.14 (38) | `com.okin.simmonskorea` | [N32 Motion Bed](#n32-motion-bed) |
 | ✅ | [Resident Adjustable Base](https://play.google.com/store/apps/details?id=com.okin.resident.release) 1.0.0 (1) | `com.okin.resident.release` | [Resident Adjustable Base](#resident-adjustable-base) |
+| ✅ | Sleeptime Australia 1.0.1 (2) | `com.okin.sleeptime` | [Sleeptime](#sleeptime) |
 | ✅ | [Ultramatic Smart Bed](https://play.google.com/store/apps/details?id=com.okin.ultramaticSmartBed) 1.1.2 (5) | `com.okin.ultramaticSmartBed` | [Ultramatic Smart Bed](#ultramatic-smart-bed) |
 | ✅ | [Adjustable bed](https://play.google.com/store/apps/details?id=com.okin.bedding.adjustbed) 1.2.1 (33) | `com.okin.bedding.adjustbed` | [Adjustable bed app](#adjustable-bed-app) |
 | ✅ | [Adjustable bed(Lumbar)](https://play.google.com/store/apps/details?id=com.okin.bedding.adjustablelumbar) 1.2.2 (code 33) | `com.okin.bedding.adjustablelumbar` | [Adjustable bed (Lumbar)](#adjustable-bed-lumbar) |
@@ -144,6 +146,10 @@ The 40-bit profiles:
 Shuda provides head and foot movement, flat, zero gravity, TV, one custom
 memory, an under-bed light toggle and two configurable wake alarms. See the
 [Shuda controls](#shuda) for hold and save behavior.
+
+[Sleeptime](#sleeptime) provides layout-specific held movement, presets, two
+memory slots, a light toggle, massage controls and one bed alarm. It has
+massage and alarm status feedback.
 
 The 96-bit profiles:
 
@@ -285,6 +291,7 @@ are unchanged.
 | Shuda | `shuda` | `shuda` | 40-bit | plain frame | with response | back, legs | 1 |
 | Resident Adjustable Base | `resident` | `resident` | 64-bit | plain frame | with response | head, feet | 2 |
 | Ultramatic Smart Bed | `ultramatic_smart_bed` | `ultramatic_smart_bed` | 40-bit | plain frame | without response | head, foot, headtilt, lumbar, hips | 2 |
+| Sleeptime | `sleeptime` | `sleeptime` | 40-bit | plain frame | without response | per selector | 2 |
 | OKIN 64-bit Nordic UART | `okin_64bit_nordic` | `okin_64bit` | 64-bit | plain frame | without response | head, feet, lumbar | 2 |
 | OKIN 64-bit OKIN service | `okin_64bit_custom` | `okin_64bit` | 64-bit | plain frame | with response | head, feet, lumbar | 2 |
 | Adjustable bed (Lumbar) 36_33_04a | `adjustable_lumbar_okin` | `adjustable_lumbar` | 64-bit | plain frame | with response | head, feet, lumbar | 0 |
@@ -352,6 +359,7 @@ are unchanged.
 | Shuda | 200 ms | entry pulse count; until release with a renewable hold | 1 STOP |
 | Resident Adjustable Base | 300 ms | entry pulse count; until release with a renewable hold | 2 STOP at 300 ms |
 | Ultramatic Smart Bed | 300 ms | entry pulse count; until release with a renewable hold | 1 STOP, 100 ms after the last write |
+| Sleeptime | 300 ms | entry pulse count; until release with a renewable hold | 1 STOP, 100 ms after release or cancellation |
 | OKIN 64-bit Nordic UART | entry pulse delay | entry pulse count | 1 STOP |
 | OKIN 64-bit OKIN service | entry pulse delay | entry pulse count | 1 STOP |
 | Adjustable bed (Lumbar) 36_33_04a | 100 ms | entry pulse count; until release with a renewable hold | 2 STOP at 300 ms |
@@ -421,6 +429,7 @@ Entry pulse settings are the configured motor pulse count and delay.
 | Shuda | once, 1 STOP | once, 1 STOP | 28 × 200 ms, 1 STOP | n/a | once, 1 STOP | n/a |
 | Resident Adjustable Base | once, 2 STOP | once, 2 STOP | n/a | n/a | once, 2 STOP | n/a |
 | Ultramatic Smart Bed | held recall | held M1/M2 | same frame, bounded save hold | n/a | one-shot, see profile | n/a |
+| Sleeptime | held recall | held M1/M2 | same frame, bounded save hold | n/a | one-shot, see profile | n/a |
 | OKIN 64-bit Nordic UART | once, no STOP | once, no STOP | n/a | n/a | once, no STOP | n/a |
 | OKIN 64-bit OKIN service | once, no STOP | once, no STOP | n/a | n/a | once, no STOP | n/a |
 | Adjustable bed (Lumbar) 36_33_04a | once, 2 STOP | once, 2 STOP | n/a | n/a | once, 2 STOP | n/a |
@@ -475,7 +484,7 @@ times them. Every frame table in this section is generated from the codec.
 | Settings notify | `90311725-25fa-3346-12ef-3cfb7a2556ac` | Leggett Okin Prodigy profiles |
 | Service | `6e400001-b5a3-f393-e0a9-e50e24dcca9e` | 40-bit profiles |
 | Write | `6e400002-b5a3-f393-e0a9-e50e24dcca9e` | 40-bit profiles |
-| Notify | `6e400003-b5a3-f393-e0a9-e50e24dcca9e` | SIMMONS, Simmons Blue, SleepEase, Sleepy's, AdjustableM5X4, eShine, Shuda |
+| Notify | `6e400003-b5a3-f393-e0a9-e50e24dcca9e` | SIMMONS, Simmons Blue, SleepEase, Sleepy's, AdjustableM5X4, eShine, Shuda, Sleeptime |
 
 The settings channel opens with `01 02` after subscribing. SIMMONS also accepts
 FFE5/FFE9 with FFE0/FFE4, and AdjustableM5X4 two more transports; see their
@@ -5578,6 +5587,154 @@ capture of the iPhone app and a replay over an ESPHome proxy (see
 writes fail with ATT Insufficient Authorization until the link is encrypted with
 a bond and the clock record and clock query were written on that connection.
 This profile's own startup and controls have not yet run on that hardware.
+
+### Sleeptime
+
+**App:** Sleeptime Australia 1.0.1 (2), `com.okin.sleeptime`
+
+**Status:** Not yet tested on hardware
+
+#### Setup
+
+Choose **Sleeptime Australia app** and the Bluetooth prefix shown by the bed.
+The app compares the platform name case-insensitively and accepts suffixes
+after the four listed prefixes. Home Assistant uses the name to offer the app
+and suggest its model. Confirm it during setup. The Nordic UART service is
+shared by other apps. If setup can read the receiver's GATT table, it checks
+the exact write and status roles before saving. Setup can finish if the
+receiver is offline. The profile uses one receiver, with no left/right
+selector, application PIN or pairing handshake.
+
+#### Controls
+
+The three layouts show the axes below. The 404 lift keys are the app's
+fixed two-bit commands. The layout labels alone do not identify the number
+of physical actuators. 404 exposes Flat only when choosing an alarm mode.
+
+<!-- generated:sleeptime-controls -->
+<!-- Generated by scripts/generate_codec_docs.py from the codec and profile data. Edit those, not this block. -->
+
+| Role | UUID | Operation |
+|---|---|---|
+| Service | `6e400001-b5a3-f393-e0a9-e50e24dcca9e` | Exact GATT lookup |
+| Write | `6e400002-b5a3-f393-e0a9-e50e24dcca9e` | Write without response |
+| Status | `6e400003-b5a3-f393-e0a9-e50e24dcca9e` | Notify or indicate |
+
+| Name prefix | Movement | Position presets | Alarm modes |
+|---|---|---|---|
+| SmartBed205 | back, legs | tv, zero_g, reading, anti_snore, flat, memory_1, memory_2 | massage (8), tv (3), zero_g (1), reading (2), anti_snore (4), flat (9), memory_1 (5), memory_2 (6) |
+| SmartBed404 | back, legs, head_tilt, foot_tilt, bed_height | reading, anti_snore, memory_1, memory_2 | massage (8), reading (2), anti_snore (4), flat (9), memory_1 (5), memory_2 (6) |
+| SmartBed405 | back, legs, neck, lumbar | tv, zero_g, reading, anti_snore, flat, memory_1, memory_2 | massage (8), tv (3), zero_g (1), reading (2), anti_snore (4), flat (9), memory_1 (5), memory_2 (6) |
+| SmartBed402 | back, legs, neck, lumbar | tv, zero_g, reading, anti_snore, flat, memory_1, memory_2 | massage (8), tv (3), zero_g (1), reading (2), anti_snore (4), flat (9), memory_1 (5), memory_2 (6) |
+
+| Action | Frame |
+|---|---|
+| back_up | `05 02 00 00 00 01 01` |
+| back_down | `05 02 00 00 00 02 01` |
+| legs_up | `05 02 00 00 00 04 01` |
+| legs_down | `05 02 00 00 00 08 01` |
+| neck_up | `05 02 00 00 00 10 01` |
+| neck_down | `05 02 00 00 00 20 01` |
+| lumbar_up | `05 02 00 00 00 40 01` |
+| lumbar_down | `05 02 00 00 00 80 01` |
+| head_tilt_up | `05 02 00 00 00 10 01` |
+| head_tilt_down | `05 02 00 00 00 20 01` |
+| foot_tilt_up | `05 02 00 00 00 40 01` |
+| foot_tilt_down | `05 02 00 00 00 80 01` |
+| bed_height_up | `05 02 00 00 00 50 01` |
+| bed_height_down | `05 02 00 00 00 A0 01` |
+| tv | `05 02 00 00 40 00 01` |
+| zero_g | `05 02 00 00 10 00 01` |
+| reading | `05 02 00 00 20 00 01` |
+| anti_snore | `05 02 00 00 80 00 01` |
+| flat | `05 02 08 00 00 00 01` |
+| memory_1 | `05 02 00 01 00 00 01` |
+| memory_2 | `05 02 00 04 00 00 01` |
+| Light toggle | `05 02 00 02 00 00 01` |
+| Release | `05 02 00 00 00 00 00` |
+| Flat + Zero-G reset | `05 02 08 00 10 00 00` |
+| massage_toggle | `05 02 00 00 01 00 00` |
+| massage_timer | `05 02 00 00 02 00 00` |
+| massage_head_up | `05 02 00 00 08 00 00` |
+| massage_head_down | `05 02 00 80 00 00 00` |
+| massage_foot_up | `05 02 00 00 04 00 00` |
+| massage_foot_down | `05 02 01 00 00 00 00` |
+| massage_mode_next | `05 02 10 00 00 00 00` |
+| massage_mode_previous | `05 02 04 00 00 00 00` |
+| Massage query | `00 B0` |
+| Alarm query | `00 C0` |
+| Clock example (2026-11-26 21:42:57) | `07 04 1A 0B 1A 04 15 2A 39` |
+| Vibration alarm example (daily at 06:30) | `07 05 08 FF 06 1E 00 01 00` |
+
+| Gesture | Timing |
+|---|---|
+| Motor/preset hold | Immediate, then every 300 ms |
+| Release | STOP 100 ms after release or cancellation |
+| Memory and named save gesture | 6300 ms including time to the first repeat |
+| Light | One toggle |
+| Massage timer | One write, query after 300 ms |
+| Other massage actions | One write, query after 200 ms |
+| Clock | On connect and manual sync, immediate plus 500 ms |
+| Alarm setting | set +0 ms, set +300 ms, query +500 ms, query +600 ms, query +700 ms |
+| Subscription failure | One retry after 1000 ms |
+<!-- /generated -->
+
+**Save to Memory 1/2** and the layout's named save buttons send the same frame
+as recall for the duration shown above. The app shows a local toast after the
+gesture. BLE feedback has no save or reset confirmation. **Reset saved
+positions** sends the Flat + Zero-G chord on the three selectors that expose
+both preset keys, once per explicit request.
+
+#### Timing
+
+Movement can use renewable holds. Normal preset presses are finite, and a
+bounded preset hold ends before the app's save gesture. Each attempted
+movement, preset hold or reset owns its delayed STOP on its connection.
+An explicit STOP can reuse the release of the movement it preempted. If that
+release fails, STOP retries on the same receiver. The integration serializes
+actions and binds all delayed writes to their own payload and connection.
+
+The clock uses binary local calendar fields with Sunday numbered zero. The
+alarm uses Sunday as bit 0, the app's `FF` daily selection or a bitmask for
+custom days. A once request chooses today's bit if the time is still ahead,
+otherwise tomorrow's. For a disable, the integration requests the current
+settings and sends them with the open field cleared.
+
+#### Notifications
+
+`A5 0B 0E` reports seconds remaining (big-endian at bytes 4–5), mode (6) and
+head/foot intensity (7 and 8, each divided by two and rounded up). The timer
+band is 1 for 1–600 seconds, 2 for 601–1200, 3 for 1201–1800, and 0 otherwise.
+
+`A5 0C 0E` and `ED 80 03` report weekday mask (4), mode (5),
+hour (6), minute (7) and open (9). A zero mask makes the editor show **06:30,
+daily, vibration, off**, independent of the raw open byte. The sensor keeps
+the raw weekday mask and open byte in attributes. The firmware meaning of
+the zero mask is unverified.
+
+An exact 20-byte chunk with `FE 16` at bytes 1–2 prefixes the next qualifying
+chunk before any dispatch and can be replaced by another matching fragment.
+The resulting prefix matches no decoded status, so it suppresses both A5
+and ED for that event. The fragment's physical purpose is unknown. Motor
+positions and light state are unavailable from these replies.
+
+#### Services
+
+Use `adjustable_bed.timed_move`, `adjustable_bed.hold_control` or the motor
+entities for movement. On 404, the timed-move keys for head and foot tilt
+are `tilt` and `foot_tilt`. Use the **Refresh massage** and **Refresh alarm**
+buttons to query their reports. `adjustable_bed.sync_clock` uses Home
+Assistant's local time. `adjustable_bed.set_alarm` accepts `time`, `weekdays`
+and a layout-supported `wake_action`. The `massage` wake action is the app's
+Vibrate option, and is the default.
+
+#### Evidence
+
+APK Protocol Audit row 172, `com.okin.sleeptime` 1.0.1 (2), verified the
+Flutter AOT selectors and application BLE paths against the complete arm64
+delivery and Android BLE plugin. Frozen command and receive vectors run in
+`tests/test_sleeptime.py`. Real transport, movement, memory, alarms and
+massage behavior remain to be verified on the corresponding hardware.
 
 ### Ultramatic Smart Bed
 

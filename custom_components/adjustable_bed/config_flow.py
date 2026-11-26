@@ -220,6 +220,7 @@ from .const import (
     BED_TYPE_SIMMONS,
     BED_TYPE_SIMMONS_BLUE,
     BED_TYPE_SLEEP_NUMBER,
+    BED_TYPE_SLEEPTIME,
     BED_TYPE_SLEEPTRACKER,
     BED_TYPE_SOLACE,
     BED_TYPE_STARCODE_ABM5_4,
@@ -538,6 +539,9 @@ _CHECK_FALLBACKS: Final[dict[str, str]] = {
     "check_no_commands": (
         "⚠️ The device connected but accepts no commands. It may not be your bed's "
         "controller. Check that you chose the right device."
+    ),
+    "check_sleeptime_uart_missing": (
+        "❌ The Bluetooth device lacks the write and status channels Sleeptime needs."
     ),
     "check_truemotion_transport_missing": (
         "⚠️ The receiver does not expose the trueMotion write and notification channels."
@@ -1370,6 +1374,7 @@ _DECLARED_QUESTION_ROUTES: Final = frozenset(
         # Each app's own answers.
         BED_TYPE_COMFORT_ENHANCEMENT3,
         BED_TYPE_MOTION_BED,
+        BED_TYPE_SLEEPTIME,
         "ultramatic_smart_bed",
         BED_TYPE_DOUBLESLEEP,
         "symphony",
@@ -2383,6 +2388,7 @@ class CapabilityReport:
     leva_receiver_valid: bool | None = None
     starcode_transport_valid: bool | None = None
     truemotion_transport_valid: bool | None = None
+    sleeptime_uart_valid: bool | None = None
     starcode_transport_selector: str | None = None
     starcode_ble_device_name: str | None = None
     dorsal_endpoint_error: str | None = None
@@ -6648,6 +6654,7 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
             or report.leva_receiver_valid is False
             or report.starcode_transport_valid is False
             or report.truemotion_transport_valid is False
+            or report.sleeptime_uart_valid is False
             or (
                 # Reconfigure saves an AdjustableM5X4 only on a transport the
                 # live link proved; an unresolved one fails the check.
@@ -6940,7 +6947,8 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                             raise
                     if migration_check is not None:
                         migration_check(client)
-                    services = list(client.services) if client.services else []
+                    service_table = client.services
+                    services = list(service_table) if service_table else []
                     report.service_count = len(services)
                     writable = 0
                     for service in services:
@@ -6951,6 +6959,16 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                             ):
                                 writable += 1
                     report.writable_count = writable
+                    if bed_type == BED_TYPE_SLEEPTIME:
+                        if report.connected and services:
+                            await async_import_modules(self.hass, "beds.sleeptime.transport")
+                            from .beds.sleeptime.transport import gatt_roles
+                            from .errors import BedNotConnectedError
+
+                            report.sleeptime_uart_valid = gatt_roles(service_table) is not None
+                            if not report.sleeptime_uart_valid:
+                                report.error = str(BedNotConnectedError("sleeptime_gatt"))
+                        return report
                     if bed_type == BED_TYPE_STARCODE_ABM5_4:
                         selected_transport = report.starcode_transport_selector
                         if selected_transport is not None:
@@ -7075,6 +7093,8 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         if not report.writable_count:
             lines.append(await line("check_no_commands"))
 
+        if report.sleeptime_uart_valid is False:
+            lines.append(await line("check_sleeptime_uart_missing"))
         if report.truemotion_transport_valid is False:
             lines.append(await line("check_truemotion_transport_missing"))
         if report.starcode_transport_valid is False:
@@ -7167,6 +7187,15 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                 self._verify_form_shown = False
                 self._async_start_probe_operation()
                 return await self.async_step_setup_progress()
+            if report.sleeptime_uart_valid is False:
+                self._verify_form_shown = False
+                self._manual_data = dict(self._pending_entry)
+                self._recheck_answers = True
+                profile = setup_profile_for(self._manual_data)
+                assert profile is not None
+                return self._show_profile_questions(
+                    profile, self._manual_data, {CONF_PROTOCOL_VARIANT: "sleeptime_gatt"}
+                )
             if report.truemotion_transport_valid is False:
                 self._verify_form_shown = False
                 self._manual_data = dict(self._pending_entry)

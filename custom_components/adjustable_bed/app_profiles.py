@@ -299,6 +299,7 @@ _BY_BED_TYPE: Final[dict[str, SideProfile]] = {
     BED_TYPE_N32_MOTION_BED: SideProfile("N32 Motion Bed"),
     BED_TYPE_SHUDA: SideProfile("Shuda"),
     BED_TYPE_RESIDENT: SideProfile("Resident Adjustable Base"),
+    "sleeptime": SideProfile("Sleeptime", variant_owned=True),
     "ultramatic_smart_bed": SideProfile("Ultramatic Smart Bed"),
     BED_TYPE_YAMADA: SideProfile("アシステック / Yamada", variant_owned=True),
     BED_TYPE_BETTERLIVING2: SideProfile("BetterLiving2", variant_owned=True),
