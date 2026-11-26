@@ -25,6 +25,11 @@ control, current-time and alarm literals through `codec/keeson.py`. Its model
 byte stays zero and establishes no side addressing; its session and gesture
 behavior lives in `beds/jalon_bed/`, separate from the other ORE apps.
 
+OkimattMotion's 31 control literals reproduce through Keeson's big-endian
+E5 encoder. Its 10 alarm literals use the shared checksum with the EA clock
+field encoder and OkimattMotion's own option bytes. The Cherish clock differs
+in those fields, and the OkimattMotion profile has its own control sequences.
+
 ## Codec families
 
 Each codec module's docstring describes its frame; each profile module's

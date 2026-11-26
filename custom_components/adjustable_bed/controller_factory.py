@@ -98,6 +98,7 @@ from .const import (
     BED_TYPE_MOTOSLEEP,
     BED_TYPE_N32_MOTION_BED,
     BED_TYPE_OCTO,
+    BED_TYPE_OKIMATTMOTION,
     BED_TYPE_OKIMIKI,
     BED_TYPE_OKIN_7BYTE,
     BED_TYPE_OKIN_64BIT,
@@ -278,6 +279,7 @@ class _BuilderSpec:
 # plus fixed kwargs".
 _SIMPLE_CONTROLLERS: Final[dict[str, _ControllerSpec]] = {
     BED_TYPE_OKIN_MOTIONBED: _ControllerSpec("okin_motionbed", "OkinMotionBedController"),
+    BED_TYPE_OKIMATTMOTION: _ControllerSpec("okimattmotion", "OkimattMotionController"),
     "luniosmart": _ControllerSpec("luniosmart.controller", "LunioSmartController"),
     "sonicsleep": _ControllerSpec("sonicsleep.controller", "SonicSleepController"),
     BED_TYPE_RESIDENT: _ControllerSpec("resident.controller", "ResidentController"),

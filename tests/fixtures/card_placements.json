@@ -1627,6 +1627,18 @@
  "button:octo_all_down": {
   "card_section": "utility"
  },
+ "button:okimattmotion_book": {
+  "card_section": "presets"
+ },
+ "button:okimattmotion_save_anti_snore": {
+  "card_section": "presets"
+ },
+ "button:okimattmotion_save_flat": {
+  "card_section": "presets"
+ },
+ "button:okimattmotion_save_zero_g": {
+  "card_section": "presets"
+ },
  "button:okin_app_home": {
   "card_section": "presets"
  },
@@ -5444,6 +5456,9 @@
  },
  "switch:motionbed_light": {
   "card_section": "lighting"
+ },
+ "switch:okimattmotion_massage_power": {
+  "card_section": "massage"
  },
  "switch:okin_app_actuator_1": {
   "card_section": "utility"

@@ -50,6 +50,7 @@ E6_CONTROLLERS = frozenset(
         "coolbase",
         "bf",
         "cherish",
+        "okimattmotion",
         "comfort_enhancements",
         "comfortbase",
     }
@@ -378,6 +379,11 @@ def test_frozen_frame_round_trips_through_codec(profile: str, literal: str) -> N
 def test_profile_sends_only_frozen_frames(key: str) -> None:
     profile = profiles.PROFILES[key]
     frozen = {bytes.fromhex(literal) for literal in FROZEN_FRAMES[key]}
+    if key == "okimattmotion":
+        from tests.test_okimattmotion import profile_frames
+
+        assert profile_frames() == frozen
+        return
     if key in ("jalon_13", "jalon_15", "jalon_24"):
         from custom_components.adjustable_bed.profiles.jalon import COMMANDS
         assert {profiles.encode(profile, word).hex() for word in COMMANDS.values()} == FROZEN_FRAMES[key]
