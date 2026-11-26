@@ -1579,6 +1579,10 @@ class DeviceCommandScheduler:
         # STOP is admitted outside the ordinary worker so it can preempt an
         # active command. It is still scheduler-owned and must settle before
         # coordinator teardown disconnects the BLE link.
+        await self.async_drain_admitted_stops()
+
+    async def async_drain_admitted_stops(self) -> None:
+        """Settle STOPs already admitted before their owner releases the link."""
         stop_tasks = tuple(task for _handle, task in self._active_stops.values())
         if stop_tasks:
             stop_drain = asyncio.gather(*stop_tasks, return_exceptions=True)

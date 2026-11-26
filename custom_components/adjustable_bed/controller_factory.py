@@ -43,6 +43,7 @@ from .const import (
     BED_TYPE_COMFYDS,
     BED_TYPE_COOLBASE,
     BED_TYPE_CUSTOMATIC_CLARITY,
+    BED_TYPE_CUSTOMATIC_DEMO,
     BED_TYPE_CUSTOMATIC_JEROMES,
     BED_TYPE_CUSTOMATIC_REMEDY,
     BED_TYPE_DIAGNOSTIC,
@@ -309,6 +310,7 @@ _SIMPLE_CONTROLLERS: Final[dict[str, _ControllerSpec]] = {
     BED_TYPE_SERENITY: _ControllerSpec("serenity.controller", "SerenityController"),
     BED_TYPE_RIZE_REMEDY_II: _ControllerSpec("serenity.rize", "RizeRemedyIIController"),
     BED_TYPE_TRANQUIL: _ControllerSpec("serenity.controller", "TranquilController"),
+    BED_TYPE_CUSTOMATIC_DEMO: _ControllerSpec("customatic_demo.controller", "CustomaticDemoController"),
     BED_TYPE_CUSTOMATIC_CLARITY: _ControllerSpec(
         "customatic.controller", "CustomaticController", MappingProxyType({"profile": "clarity"})
     ),

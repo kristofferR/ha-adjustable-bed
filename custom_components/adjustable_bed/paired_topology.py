@@ -34,6 +34,7 @@ from uuid import uuid4
 
 from homeassistant.exceptions import HomeAssistantError
 
+from .beds.cancellation import settled as settle_cancellation
 from .command_scheduler import (
     CommandHandle,
     CommandKind,
@@ -277,7 +278,15 @@ async def safe_disconnect(
     """
     try:
         disconnect_fn = disconnect or child.async_disconnect
-        disconnected = await disconnect_fn("sequential_switch")
+        releasing = disconnect_fn("sequential_switch")
+        if (
+            disconnect is None
+            and (controller := child.controller) is not None
+            and controller.sequential_stop_on_current_link is True
+        ):
+            disconnected = await settle_cancellation(releasing)
+        else:
+            disconnected = await releasing
     except Exception as err:
         _LOGGER.warning("Disconnect failed on %s side (%s): %s", side, child.address, err)
         return False

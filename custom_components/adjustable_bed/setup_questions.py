@@ -54,6 +54,7 @@ from .const import (
     BED_TYPE_COMFORT_ENHANCEMENTS,
     BED_TYPE_COMFORTBASE,
     BED_TYPE_COMFYDS,
+    BED_TYPE_CUSTOMATIC_DEMO,
     BED_TYPE_DOUBLESLEEP,
     BED_TYPE_ENSO2,
     BED_TYPE_ESHINE,
@@ -2820,6 +2821,15 @@ SETUP_PROFILES: Final[dict[str, SetupProfile]] = {
         ),
         seed=_motion_bed_seed,
         title=lambda _data: "Aging in Place / Dawn House",
+    ),
+    BED_TYPE_CUSTOMATIC_DEMO: SetupProfile(
+        owns={
+            CONF_MOTOR_COUNT: 4,
+            CONF_MOTOR_PULSE_DELAY_MS: 100,
+            CONF_HAS_MASSAGE: False,
+            CONF_DISABLE_ANGLE_SENSING: True,
+            CONF_PROTOCOL_VARIANT: VARIANT_AUTO,
+        },
     ),
     BED_TYPE_RIZE_REMEDY_II: SetupProfile(
         owns={CONF_MOTOR_COUNT: 3, CONF_MOTOR_PULSE_DELAY_MS: 100,

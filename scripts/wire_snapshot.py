@@ -2664,6 +2664,13 @@ async def _connect(controller: Any, recorder: Recorder, clock: FakeClock) -> dic
             # These v5 profiles own startup in their hook, without session helpers.
             await controller.async_on_connect(None)
             return
+        if controller._coordinator.bed_type == "customatic_demo":
+            session = SimpleNamespace(
+                async_start_notify=controller.start_notify, store_device_info=lambda *_: None,
+            )
+            await controller.async_on_connect(session)
+            await controller.async_read_device_info(session)
+            return
         if controller._coordinator.bed_type == "shuda":
             await controller.async_on_connect(SimpleNamespace(async_start_notify=controller.start_notify))
             return
