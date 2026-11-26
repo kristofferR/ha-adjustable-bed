@@ -427,9 +427,9 @@ def plan_commands(controller: Any) -> list[Command]:
     plan.extend(_argument_commands(controller))
     # The user presses STOP while each cover moves.
     for spec in specs:
-        # Shuda's STOP consumes the interrupted command's release receipt.
+        # These STOP paths consume the interrupted command's release receipt.
         # Keep older synthetic STOP rows stable.
-        scheduled = controller._coordinator.bed_type == "shuda"
+        scheduled = controller._coordinator.bed_type in {"shuda", "atlas_lift"}
         # Stop between OkimattMotion refresh ticks so equal deadlines cannot race.
         after_s = 0.35 if controller._coordinator.bed_type == "okimattmotion" else STOP_AFTER_S
         plan.append(Command(
@@ -1495,6 +1495,8 @@ def default_scenario(bed_type: str) -> Scenario:
     if bed_type == "super_colchones":
         return Scenario(id=bed_type, bed_type=bed_type, protocol_variant="afeg302",
                         entry_data={const.CONF_PROTOCOL_VARIANT: "afeg302"}, layout_id="super_colchones:n1")
+    if bed_type == const.BED_TYPE_ATLAS_LIFT:
+        return Scenario(id=bed_type, bed_type=bed_type, layout_id="atlas_lift:n1")
     if bed_type == "superior_sleep":
         return Scenario(
             id=bed_type, bed_type=bed_type, protocol_variant="ss350",
@@ -1819,6 +1821,8 @@ def route_scenarios() -> list[Scenario]:
         for route in ("n1", "w1", "w2", "w3", "w4", "w5"):
             scenarios.append(Scenario(id=f"super_colchones:{product}:{route}", bed_type="super_colchones",
                 protocol_variant=product, entry_data={const.CONF_PROTOCOL_VARIANT: product}, layout_id=f"super_colchones:{route}"))
+    scenarios.append(Scenario(id="atlas_lift:w1", bed_type=const.BED_TYPE_ATLAS_LIFT,
+                              layout_id="atlas_lift:w1"))
     for route in ("S1", "S3", "S4", "S5", "S6"):
         scenarios.append(Scenario(id=f"luniosmart:{route}", bed_type="luniosmart", layout_id=f"luniosmart:{route}"))
     for route in ("Nordic", "W2", "W3", "W4", "W5"):
@@ -2748,7 +2752,7 @@ async def _connect(controller: Any, recorder: Recorder, clock: FakeClock) -> dic
                 session.store_device_info = lambda *_: None
             await controller.async_on_connect(session)
             return
-        if controller._coordinator.bed_type in {"symphony", "linx", "agingplace", "sleep_assistant", "sinca_comfort", "leva", "sleep_assist_pro"}:
+        if controller._coordinator.bed_type in {"symphony", "linx", "agingplace", "sleep_assistant", "sinca_comfort", "leva", "sleep_assist_pro", "atlas_lift"}:
             session = SimpleNamespace(
                 client=controller.client, is_current=lambda: True,
                 async_start_notify=lambda: controller.start_notify(lambda *_: None),

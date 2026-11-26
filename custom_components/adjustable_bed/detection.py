@@ -35,6 +35,7 @@ from .const import (
     BED_TYPE_ADJUSTABLE_BED,
     BED_TYPE_ADJUSTABLE_LUMBAR,
     BED_TYPE_ADJUSTAMATTRESS,
+    BED_TYPE_ATLAS_LIFT,
     BED_TYPE_BEDJET_POWERLAYER,
     BED_TYPE_BEDSENSE,
     # Legacy/brand-specific bed types
@@ -320,6 +321,7 @@ from .discovery_hints import (
     first_pass,
 )
 from .discovery_hints._hints import ManufacturerHint, NameHint
+from .discovery_hints.richmat import ATLAS_LIFT_NAME_HINT
 from .profiles.bedgear import eligible as bedgear_eligible
 from .profiles.bedgear import ergobed_eligible
 from .profiles.bobpowerbase import PROFILE_CHOICES as BOB_PROFILES
@@ -792,6 +794,7 @@ BED_TYPE_DISPLAY_NAMES: dict[str, str] = {
     BED_TYPE_REVERIE: "Reverie app",
     BED_TYPE_REVERIE_NIGHTSTAND: "Reverie Nightstand app",
     BED_TYPE_REVERIE_PAIRLINK: "Reverie Pairlink (R510L / Harmoniq)",
+    BED_TYPE_ATLAS_LIFT: "Atlas Lift app (Cama Lift)",
     BED_TYPE_RICHMAT: "Richmat / RMControl app",
     BED_TYPE_RONDURE: "1500 Tilt Base (Rondure)",
     BED_TYPE_REMACRO: "Slumberland app (Remacro)",
@@ -1439,7 +1442,7 @@ def detect_bed_type(service_info: BluetoothServiceInfoBleak) -> str | None:
         For detailed detection with confidence scores, use detect_new_bed().
     """
     result = detect_new_bed(service_info)
-    if result.bed_type in ("dorsal", BED_TYPE_SIMMONS_BLUE, "sleep_assistant", BED_TYPE_SLEEP_ASSIST_PRO, "super_colchones", "bobpowerbase", BED_TYPE_GALAXY, BED_TYPE_GOODVIBE, BED_TYPE_MLILY, BED_TYPE_MLILY_REMOTE, BED_TYPE_MOTOMOTION, BED_TYPE_N32_MOTION_BED, BED_TYPE_SYMPHONY, BED_TYPE_MLINE, BED_TYPE_OKIMIKI) and result.confidence < 0.7:
+    if result.bed_type in (BED_TYPE_ATLAS_LIFT, "dorsal", BED_TYPE_SIMMONS_BLUE, "sleep_assistant", BED_TYPE_SLEEP_ASSIST_PRO, "super_colchones", "bobpowerbase", BED_TYPE_GALAXY, BED_TYPE_GOODVIBE, BED_TYPE_MLILY, BED_TYPE_MLILY_REMOTE, BED_TYPE_MOTOMOTION, BED_TYPE_N32_MOTION_BED, BED_TYPE_SYMPHONY, BED_TYPE_MLINE, BED_TYPE_OKIMIKI) and result.confidence < 0.7:
         return None  # An app name hint requires an explicit product choice.
     return result.bed_type
 
@@ -1820,9 +1823,23 @@ def _detect_with_first_pass(
             result = DetectionResult("bobpowerbase", 0.3, ["name:bobpowerbase_app_candidate"])
         elif result.bed_type != "bobpowerbase":
             result.ambiguous_types = list(dict.fromkeys([*(result.ambiguous_types or ()), "bobpowerbase"]))
+    local_name = advertised_local_name(service_info)
+    if (
+        isinstance(local_name, str)
+        and ATLAS_LIFT_NAME_HINT.matches_name(local_name)
+        and not any(signal.startswith("excluded:") for signal in result.signals)
+    ):
+        # QRRM is shared. Keep Atlas Lift available as an explicit app choice.
+        if result.bed_type is None:
+            result.bed_type, result.confidence = BED_TYPE_ATLAS_LIFT, 0.3
+        else:
+            result.ambiguous_types = list(
+                dict.fromkeys([*(result.ambiguous_types or ()), BED_TYPE_ATLAS_LIFT])
+            )
+        result.signals.append("name:atlas_lift_app_candidate")
     if (
         getattr(service_info, "advertisement", None) is not None
-        and ergobed_eligible(advertised_local_name(service_info))
+        and ergobed_eligible(local_name)
         and not any(signal.startswith("excluded:") for signal in result.signals)
     ):
         # Keep a raw-name-only match visible in setup at app-choice confidence.

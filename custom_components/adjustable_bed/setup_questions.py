@@ -45,6 +45,7 @@ from .const import (
     BED_TYPE_ADJUSTABLE_BED,
     BED_TYPE_ADJUSTABLE_LUMBAR,
     BED_TYPE_ADJUSTAMATTRESS,
+    BED_TYPE_ATLAS_LIFT,
     BED_TYPE_BEDSENSE,
     BED_TYPE_BETTERLIVING2,
     BED_TYPE_BF,
@@ -287,7 +288,7 @@ from .profiles.majestichome import PROFILE_CHOICES as MAJESTICHOME_PROFILES
 from .profiles.mlily_choices import PROFILE_CHOICES as MLILY_PROFILES
 from .profiles.mlily_remote import VARIANTS as MLILY_REMOTE_PROFILES
 from .profiles.okimiki import PROFILE_CHOICES as OKIMIKI_PROFILES
-from .profiles.richmat import BEDTECH_APP_PROFILES, BEDTECH_VARIANTS
+from .profiles.richmat import ATLAS_LIFT, BEDTECH_APP_PROFILES, BEDTECH_VARIANTS
 from .profiles.saatva import CHOICES as SAATVA_CHOICES
 from .profiles.saatva import LAYOUTS as SAATVA_LAYOUTS
 from .validators import MLINE_PROTOCOL_LABELS, SMART_SLEEP_CONTROLS
@@ -3689,6 +3690,15 @@ SETUP_PROFILES: Final[dict[str, SetupProfile]] = {
         validate=_motion_bed_errors,
         derive=lambda _data: _NO_PULSE_CHOICE,
         seed=_motion_bed_seed,
+    ),
+    BED_TYPE_ATLAS_LIFT: SetupProfile(
+        owns={
+            CONF_MOTOR_COUNT: 2,
+            CONF_HAS_MASSAGE: True,
+            CONF_DISABLE_ANGLE_SENSING: True,
+            CONF_MOTOR_PULSE_DELAY_MS: ATLAS_LIFT.motor_repeat_ms,
+            CONF_PROTOCOL_VARIANT: "auto",
+        },
     ),
     BED_TYPE_SUPERIOR_SLEEP: SetupProfile(
         owns={CONF_MOTOR_COUNT: 2, CONF_HAS_MASSAGE: True,

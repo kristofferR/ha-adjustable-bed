@@ -159,6 +159,7 @@ from .const import (
     AUTOMATIC_LABEL,
     BED_TYPE_ADJUSTABLE_BED,
     BED_TYPE_ADJUSTABLE_LUMBAR,
+    BED_TYPE_ATLAS_LIFT,
     BED_TYPE_BEDSENSE,
     BED_TYPE_BETTERLIVING2,
     BED_TYPE_BOBPOWERBASE,
@@ -447,7 +448,7 @@ _AUTO_DETECT_MIN_CONFIDENCE = 0.7
 _NAME_ONLY_CONFIDENCE = 0.3
 # Explicit app candidates offered beside a confident match are hints, not ambiguity.
 _EXPLICIT_APP_HINTS = frozenset(
-    {BED_TYPE_DORSAL, BED_TYPE_ENSO2, BED_TYPE_ERGOBED, BED_TYPE_MOODBASE, "super_colchones", "dreamsense", "saatva", "bobpowerbase", BED_TYPE_COMFORT_ENHANCEMENT3, BED_TYPE_RICHMAT_APP_SLEEP, BED_TYPE_RICHMAT_APP, BED_TYPE_RICHMAT_CLASSIC_APPS, BED_TYPE_MOTOMOTION, BED_TYPE_MLILY, BED_TYPE_GALAXY, BED_TYPE_GOODVIBE, BED_TYPE_HJBED, BED_TYPE_ESHINE_OKIN, BED_TYPE_ISLEEP, BED_TYPE_KOMFYD, BED_TYPE_COMFYDS, BED_TYPE_RIZE, BED_TYPE_STARCODE_ABM5_4, BED_TYPE_MOTION_BED, BED_TYPE_VMATBASIC, BED_TYPE_FURNIMOVE,
+    {BED_TYPE_ATLAS_LIFT, BED_TYPE_DORSAL, BED_TYPE_ENSO2, BED_TYPE_ERGOBED, BED_TYPE_MOODBASE, "super_colchones", "dreamsense", "saatva", "bobpowerbase", BED_TYPE_COMFORT_ENHANCEMENT3, BED_TYPE_RICHMAT_APP_SLEEP, BED_TYPE_RICHMAT_APP, BED_TYPE_RICHMAT_CLASSIC_APPS, BED_TYPE_MOTOMOTION, BED_TYPE_MLILY, BED_TYPE_GALAXY, BED_TYPE_GOODVIBE, BED_TYPE_HJBED, BED_TYPE_ESHINE_OKIN, BED_TYPE_ISLEEP, BED_TYPE_KOMFYD, BED_TYPE_COMFYDS, BED_TYPE_RIZE, BED_TYPE_STARCODE_ABM5_4, BED_TYPE_MOTION_BED, BED_TYPE_VMATBASIC, BED_TYPE_FURNIMOVE,
      BED_TYPE_GMMOTOR, BED_TYPE_OKIMIKI, BED_TYPE_SIMMONS_BLUE, "gmmotor_sleep_mm", "gmmotor_sleep_sxb", "sealy_posturematic", "instant_comfort", BED_TYPE_TRUEMOTION,
      BED_TYPE_JEROME_ADJUSTABLE_BASE}
 )
@@ -550,6 +551,10 @@ _CHECK_FALLBACKS: Final[dict[str, str]] = {
     ),
     "check_truemotion_transport_missing": (
         "⚠️ The receiver does not expose the trueMotion write and notification channels."
+    ),
+    "check_atlas_lift_transport_missing": (
+        "❌ Atlas Lift needs exactly one supported Bluetooth service with its writable "
+        "command characteristic."
     ),
     "check_transport_missing": (
         "❌ The connection type chosen for this app isn't available on this bed. Choose "
@@ -2394,6 +2399,7 @@ class CapabilityReport:
     leva_receiver_valid: bool | None = None
     starcode_transport_valid: bool | None = None
     truemotion_transport_valid: bool | None = None
+    atlas_lift_transport_valid: bool | None = None
     langjue_receiver_valid: bool | None = None
     sleeptime_uart_valid: bool | None = None
     starcode_transport_selector: str | None = None
@@ -6680,6 +6686,7 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
             or report.leva_receiver_valid is False
             or report.starcode_transport_valid is False
             or report.truemotion_transport_valid is False
+            or report.atlas_lift_transport_valid is False
             or report.langjue_receiver_valid is False
             or (
                 self._migration is not None
@@ -6936,7 +6943,7 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                             if bed_type == BED_TYPE_STARCODE_ABM5_4
                             else _PROBE_TIMEOUT_SECONDS
                         ),
-                        use_services_cache=bed_type != BED_TYPE_FURNIMOVE,
+                        use_services_cache=bed_type not in (BED_TYPE_FURNIMOVE, BED_TYPE_ATLAS_LIFT),
                     )
                     if client_tracker is not None:
                         # Registered before anything else can fail or be
@@ -6991,6 +6998,21 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                             ):
                                 writable += 1
                     report.writable_count = writable
+                    if bed_type == BED_TYPE_ATLAS_LIFT and report.connected:
+                        await async_import_modules(self.hass, "beds.richmat.atlas_lift")
+                        from .beds.richmat.atlas_lift import select_link as select_atlas_lift_link
+
+                        if not client.is_connected:
+                            report.connected = False
+                            return report
+                        try:
+                            select_atlas_lift_link(client)
+                        except HomeAssistantError as error:
+                            report.atlas_lift_transport_valid = False
+                            report.error = str(error)
+                        else:
+                            report.atlas_lift_transport_valid = True
+                        return report
                     if bed_type == BED_TYPE_SLEEPTIME:
                         if report.connected and services:
                             await async_import_modules(self.hass, "beds.sleeptime.transport")
@@ -7139,9 +7161,15 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
             lines.append(await line("check_sleeptime_uart_missing"))
         if report.truemotion_transport_valid is False:
             lines.append(await line("check_truemotion_transport_missing"))
+        if report.atlas_lift_transport_valid is False:
+            lines.append(await line("check_atlas_lift_transport_missing"))
         if report.starcode_transport_valid is False:
             lines.append(await line("check_transport_missing"))
-        elif report.starcode_transport_valid is True or report.leva_receiver_valid is True:
+        elif (
+            report.starcode_transport_valid is True
+            or report.leva_receiver_valid is True
+            or report.atlas_lift_transport_valid is True
+        ):
             lines.append(await line("check_transport_ok"))
 
         if details := " · ".join(part for part in (report.manufacturer, report.model) if part):
@@ -7257,6 +7285,17 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                 self._verify_form_shown = False
                 self._async_start_probe_operation()
                 return await self.async_step_setup_progress()
+            if report.atlas_lift_transport_valid is False and user_input.get("action") == "change_app":
+                self._verify_form_shown = False
+                self._operation = None
+                if self._discovery_info is None:
+                    self._typed_address = self._pending_entry[CONF_ADDRESS]
+                return await self._async_search_every_app()
+        if (
+            user_input is not None
+            and self._verify_form_shown
+            and report.atlas_lift_transport_valid is not False
+        ):
             if report.sleeptime_uart_valid is False:
                 self._verify_form_shown = False
                 self._manual_data = dict(self._pending_entry)
@@ -7301,7 +7340,15 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
             return self.async_show_form(step_id="retry_roomi_receiver")
 
         schema: dict[vol.Marker, Any] = {}
-        if (
+        if report.atlas_lift_transport_valid is False:
+            schema[vol.Required("action", default="retry")] = SelectSelector(
+                SelectSelectorConfig(
+                    options=["retry", "change_app"],
+                    mode=SelectSelectorMode.LIST,
+                    translation_key="verify_action",
+                )
+            )
+        elif (
             report.freshness is not None and report.freshness is not FreshnessStatus.FRESH
         ) or self._pending_pairing_window_closed(report):
             schema[vol.Required("action", default="finish")] = SelectSelector(
