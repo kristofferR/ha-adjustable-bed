@@ -447,11 +447,13 @@ BED_TYPE_OKIN_7BYTE: Final = "okin_7byte"  # 7-byte via Okin service UUID
 BED_TYPE_OKIN_NORDIC: Final = "okin_nordic"  # 7-byte via Nordic UART
 BED_TYPE_OKIN_DOT: Final = "okin_dot"  # DOT PROTOCOL: CB24-style frames, FurniMove remote keycodes
 BED_TYPE_DORSAL: Final = "dorsal"
+DORSAL_ROOMI_S655_PLUS: Final = "roomi_s655_plus"
 DORSAL_ROUTES: Final = {
     "cprn": "CPRN",
     "corn": "CORN",
     "restored": "Saved Dorsal project",
     "roomi": "Roomi controls",
+    DORSAL_ROOMI_S655_PLUS: "ROOMI bed (S655 Plus)",
 }
 BED_TYPE_NERUM: Final = "nerum"
 BED_TYPE_RELAX_MOTION: Final = "relax_motion"

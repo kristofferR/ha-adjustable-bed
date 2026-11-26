@@ -297,6 +297,7 @@ from .const import (
     DEFAULT_MOTOR_COUNT,
     DEFAULT_PROTOCOL_VARIANT,
     DOMAIN,
+    DORSAL_ROOMI_S655_PLUS,
     KEESON_LAYOUT_APP_BED_TYPES,
     LEGGETT_APP_MOTOR_COUNTS,
     LEGGETT_APP_PROFILES,
@@ -6546,23 +6547,23 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
             # An app step that finishes by itself still asks the bed's settings first.
             self._manual_data = entry_data
             return await self._async_new_bed_settings("verify")
-        needs_pin_check = (
+        needs_live_check = (
             entry_data.get(CONF_BED_TYPE) == BED_TYPE_OCTO
             and entry_data.get(CONF_PROTOCOL_VARIANT) != OCTO_VARIANT_STAR2
-        )
+        ) or entry_data.get(CONF_PROTOCOL_VARIANT) == DORSAL_ROOMI_S655_PLUS
         if self._migration is not None and self._migration.is_unchanged_by(entry_data):
             return await self._async_abort_unchanged()
         if (
             self._migration is not None
             and not self._migration_requires_check
-            and not needs_pin_check
+            and not needs_live_check
             # These profiles check the selected transport on the live link.
             and entry_data.get(CONF_BED_TYPE) not in (BED_TYPE_LEVA, BED_TYPE_STARCODE_ABM5_4)
         ):
             return await self._async_create_selected_app_entry(title=title, data=entry_data)
         if (
             self._migration is None
-            and not needs_pin_check
+            and not needs_live_check
             and not self._verification_possible()
         ) or _skips_setup_connection_probe(entry_data.get(CONF_BED_TYPE)):
             return await self._async_create_selected_app_entry(title=title, data=entry_data)
@@ -6934,7 +6935,7 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                             validate_name(
                                 self.hass, address, protocol_variant, device.name,
                             )
-                            select_link(client)
+                            select_link(client, protocol_variant)
                         except HomeAssistantError as error:
                             report.dorsal_endpoint_error = (
                                 error.translation_key or "dorsal_receiver_unavailable"
@@ -7111,7 +7112,8 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         ``user_input`` on every iteration of its progress-done loop, so a
         duplicated submission of the previous form arriving just as the probe
         finishes would otherwise be replayed here and read as confirmation -
-        creating an entry the user never saw a result for.
+        creating an entry the user never saw a result for. S655 Plus requires
+        a completed receiver check because reconnects use the saved address.
         """
         assert self._pending_entry is not None
 
@@ -7123,6 +7125,11 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
             # without it). Say so rather than running a blocking probe here:
             # this is the step that exists so that nothing blocks.
             report = CapabilityReport(freshness=FreshnessStatus.MISSING)
+
+        roomi_unverified = (
+            self._pending_entry.get(CONF_PROTOCOL_VARIANT) == DORSAL_ROOMI_S655_PLUS
+            and not report.connected
+        )
 
         if report.leva_receiver_valid is False:
             self._verify_form_shown = False
@@ -7164,6 +7171,19 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                 ),
             )
 
+        submitted = user_input if self._verify_form_shown else None
+        if report.dorsal_endpoint_error is not None and (
+            roomi_unverified or (submitted is not None and submitted.get("action") != "retry")
+        ):
+            self._verify_form_shown = False
+            self._manual_data = dict(self._pending_entry)
+            self._recheck_answers = True
+            profile = setup_profile_for(self._manual_data)
+            assert profile is not None
+            return self._show_profile_questions(
+                profile, self._manual_data, {CONF_PROTOCOL_VARIANT: report.dorsal_endpoint_error}
+            )
+
         if user_input is not None and self._verify_form_shown:
             if user_input.get("action") == "retry":
                 self._verify_form_shown = False
@@ -7177,15 +7197,6 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                 assert profile is not None
                 return self._show_profile_questions(
                     profile, self._manual_data, {CONF_BLE_DEVICE_NAME: "truemotion_gatt"},
-                )
-            if report.dorsal_endpoint_error is not None:
-                self._verify_form_shown = False
-                self._manual_data = dict(self._pending_entry)
-                self._recheck_answers = True
-                profile = setup_profile_for(self._manual_data)
-                assert profile is not None
-                return self._show_profile_questions(
-                    profile, self._manual_data, {CONF_PROTOCOL_VARIANT: report.dorsal_endpoint_error}
                 )
             if report.starcode_transport_valid is False or (
                 self._pending_entry.get(CONF_BED_TYPE) == BED_TYPE_STARCODE_ABM5_4
@@ -7201,19 +7212,21 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                     self._manual_data,
                     {CONF_STARCODE_TRANSPORT_SELECTOR: "starcode_app_invalid"},
                 )
-            return await self._async_create_selected_app_entry(
-                title=self._pending_title or self._pending_entry.get(CONF_NAME, "Adjustable Bed"),
-                data=self._pending_entry,
-            )
+            if not roomi_unverified:
+                return await self._async_create_selected_app_entry(
+                    title=self._pending_title
+                    or self._pending_entry.get(CONF_NAME, "Adjustable Bed"),
+                    data=self._pending_entry,
+                )
+
+        if roomi_unverified:
+            self._verify_form_shown = True
+            return self.async_show_form(step_id="retry_roomi_receiver")
 
         schema: dict[vol.Marker, Any] = {}
         if (
             report.freshness is not None and report.freshness is not FreshnessStatus.FRESH
         ) or self._pending_pairing_window_closed(report):
-            # "Finish" stays the default so Submit keeps meaning what it always
-            # meant here: setup is never blocked by a failed check. Retry is one
-            # click away for the common case of "let me go wake the bed first",
-            # or power-cycle a bed that pairs only after power-on.
             schema[vol.Required("action", default="finish")] = SelectSelector(
                 SelectSelectorConfig(
                     options=["finish", "retry"],
@@ -7230,6 +7243,14 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                 "name": self._pending_entry.get(CONF_NAME) or self._pending_entry[CONF_ADDRESS],
                 "capabilities": await self._format_capabilities(report),
             },
+        )
+
+    async def async_step_retry_roomi_receiver(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Retry the required Roomi connection check."""
+        return await self.async_step_verify_connection(
+            {"action": "retry"} if user_input == {} else None
         )
 
     async def async_step_verify_octo_pin(
