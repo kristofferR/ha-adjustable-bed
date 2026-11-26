@@ -1,6 +1,7 @@
 """Okin discovery hints: the shared 62741523 service, receivers and CB24."""
 
 from ..const import (
+    BED_TYPE_CUSTOMATIC_DEMO,
     BED_TYPE_LEGGETT_OKIN,
     BED_TYPE_OKIN_7BYTE,
     BED_TYPE_OKIN_UUID,
@@ -11,10 +12,11 @@ from ..const import (
     NORDIC_UART_SERVICE_UUID,
     OKIMAT_SERVICE_UUID,
 )
+from ..profiles.customatic_demo import NAME_PREFIX
 from ._hints import Case, Hint, manufacturer, names, services
 
 HINTS: tuple[Hint, ...] = (
-    names("OKIN", case=Case.FOLD, bed_types={BED_TYPE_RIZE_REMEDY_II}),
+    names(NAME_PREFIX.upper(), case=Case.FOLD, bed_types={BED_TYPE_RIZE_REMEDY_II, BED_TYPE_CUSTOMATIC_DEMO}),
     *services(NORDIC_UART_SERVICE_UUID, bed_types={BED_TYPE_SHUDA}, connectable=True),
     *services(
         OKIMAT_SERVICE_UUID,

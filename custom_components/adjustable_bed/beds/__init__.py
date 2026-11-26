@@ -30,6 +30,7 @@ if TYPE_CHECKING:
     from .comfort_motion import ComfortMotionController as ComfortMotionController
     from .coolbase import CoolBaseController as CoolBaseController
     from .customatic.controller import CustomaticController as CustomaticController
+    from .customatic_demo.controller import CustomaticDemoController as CustomaticDemoController
     from .dewertokin_rf_gateway import (
         DewertOkinRfGatewayController as DewertOkinRfGatewayController,
     )
@@ -244,6 +245,7 @@ _EXPORT_MODULES = {
     "RufRichmatSleepController": "ruf_richmat.sleep",
     "RichmatMhController": "richmat_mh.controller",
     "CustomaticController": "customatic.controller",
+    "CustomaticDemoController": "customatic_demo.controller",
     "CoolBaseController": "coolbase",
     "DewertOkinRfGatewayController": "dewertokin_rf_gateway",
     "DewertOkinUuidRfGatewayController": "dewertokin_rf_gateway",

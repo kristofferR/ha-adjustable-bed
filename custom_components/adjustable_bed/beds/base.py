@@ -260,6 +260,11 @@ class BedController(GattWriter):
         return False
 
     @property
+    def sequential_stop_on_current_link(self) -> bool:
+        """Whether an active sequential side uses one neutral release for both STOP routes."""
+        return False
+
+    @property
     def paired_cleanup_stop(self) -> Callable[[], Awaitable[None]] | None:
         """Motor-only cleanup to run on the current link after a paired failure."""
         return None

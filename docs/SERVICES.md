@@ -53,6 +53,7 @@ For named raise/lower/stop voice commands and Apple Home controls, see
 | [`casper_base`](#casper_base) | Casper Base: settings | Sets the light, alarms and clock of a Casper Base, reads its separate sleep sensor, or finds its remote. Only the options your product has can run. |
 | [`cheerssleep`](#cheerssleep) | CheersSleep: run control | Run one of the bed's controls, such as movement, presets, massage or the light. Every selected bed is checked before any of them changes. |
 | [`comfort_enhancement3_start_massage`](#comfort_enhancement3_start_massage) | Comfort Enhancement 3: start massage | Starts a massage program. The bed does not report massage back, so the values only describe what was sent. |
+| [`customatic_demo_run`](#customatic_demo_run) | Independence: run the demo | Runs one confirmed sitting-up and flat cycle on one receiver. |
 | [`customatic_hold_memory`](#customatic_hold_memory) | Customatic: hold memory buttons | Holds one or more buttons of the memory page on a Clarity or Remedy remote, as if pressed together. Combinations with Program can change saved positions. |
 | [`customatic_move_simultaneously`](#customatic_move_simultaneously) | Customatic: move motors together | Moves up to three motors together, then stops them. |
 | [`dreamsense_delete_alarm`](#dreamsense_delete_alarm) | Dream Sense: delete alarm | Deletes a repeating alarm from the bed's alarm list. |
@@ -821,6 +822,14 @@ Home Assistant is disconnected, but Home Assistant cannot list the programs
 already stored in it.
 
 ## Customatic
+
+<a id="customatic_demo_run"></a>
+**`customatic_demo_run`** runs one sitting-up and flat cycle on an
+[Independence receiver](beds/okin-nframe.md#independence-customatic-demo).
+The phases are two minutes apart. Select one physical bed, set `confirm: true`
+and stay with the bed. Use the bed's **Stop** control to end the demo. For a
+combined bed, target one side. During the pause, STOP sends fresh neutral
+before a sequential pair releases that receiver's link.
 
 <a id="customatic_hold_memory"></a>
 **`customatic_hold_memory`**: Holds one or more buttons of the memory page on a Clarity or Remedy remote, as if pressed together. Combinations with Program can change saved positions.
