@@ -153,6 +153,7 @@ from .const import (
     BED_TYPE_SLEEP_NUMBER,
     BED_TYPE_SLEEP_NUMBER_MCR,
     BED_TYPE_SLEEPSTAR,
+    BED_TYPE_SLEEPTIME,
     BED_TYPE_SLEEPTRACKER,
     BED_TYPE_SLEEPYS_BOX15,
     BED_TYPE_SLEEPYS_BOX24,
@@ -687,6 +688,7 @@ BED_TYPE_DISPLAY_NAMES: dict[str, str] = {
     BED_TYPE_SHUDA: "Shuda app",
     BED_TYPE_SIMMONS_BLUE: "Simmons Blue app",
     BED_TYPE_RESIDENT: "Resident Adjustable Base app",
+    BED_TYPE_SLEEPTIME: "Sleeptime Australia app (SmartBed205, 402, 404, 405)",
     "enso": "Enso Remote",
     BED_TYPE_ENSO2: "ENSO Sleep Control (Enso 2)",
     "sealy_posturematic": "Sealy Posturematic",
@@ -969,7 +971,7 @@ HIDDEN_APP_CHOICES: Final = frozenset(bed_type_choice(*row) for row in _HIDDEN_A
 # Bed types whose one row asks for the product, although each product is an app entry.
 PRODUCT_QUESTION_BED_TYPES: Final = frozenset(
     {BED_TYPE_ENSO2, "dreamsense", "saatva", "majestichome", BED_TYPE_LEVA, BED_TYPE_LINX, BED_TYPE_SOMOS, "bobpowerbase", BED_TYPE_COMFORT_ENHANCEMENT3, BED_TYPE_SYMPHONY_SLEEP, BED_TYPE_YAMADA, BED_TYPE_RICHMAT_APP, BED_TYPE_RICHMAT_APP_SLEEP, BED_TYPE_GALAXY, BED_TYPE_MLILY, BED_TYPE_MLILY_REMOTE, BED_TYPE_OKIMIKI, "luuna", BED_TYPE_GOODVIBE, BED_TYPE_HJBED, BED_TYPE_CASPER_BASE, BED_TYPE_COMFORT_ENHANCEMENTS, BED_TYPE_COMFORTBASE, "sleep_evolution", "wsilver_legacy", "personal_comfort", "instant_comfort"}
-).union({BED_TYPE_BETTERLIVING2, "sealy_posturematic"})
+).union({BED_TYPE_BETTERLIVING2, BED_TYPE_SLEEPTIME, "sealy_posturematic"})
 # Routes named after their protocol, not an app or brand. They stay off the
 # bed-type list and are reached through detection, the brand list and Configure.
 PROTOCOL_ROUTES: Final = frozenset(
@@ -1670,6 +1672,20 @@ def _detect_with_first_pass(
         elif result.bed_type != BED_TYPE_SIMMONS_BLUE:
             result.ambiguous_types = [*(result.ambiguous_types or ()), BED_TYPE_SIMMONS_BLUE]
             result.signals.append("name:simmons_blue_app_candidate")
+    from .profiles.sleeptime import select as sleeptime_selector
+
+    # The stock picker names a layout but the shared UART does not identify the app.
+    if (
+        isinstance(platform_name, str)
+        and sleeptime_selector(platform_name) is not None
+        and result.confidence < 0.8
+        and not any(signal.startswith("excluded:") for signal in result.signals)
+    ):
+        if result.bed_type is None:
+            result = DetectionResult(BED_TYPE_SLEEPTIME, 0.3, ["name:sleeptime_app_candidate"])
+        elif result.bed_type != BED_TYPE_SLEEPTIME:
+            result.ambiguous_types = list(dict.fromkeys([*(result.ambiguous_types or ()), BED_TYPE_SLEEPTIME]))
+            result.signals.append("name:sleeptime_app_candidate")
     # These shared app names are candidates only. Never replace a confident
     # receiver signature or infer N32 from the Nordic service alone.
     if (isinstance(platform_name, str)

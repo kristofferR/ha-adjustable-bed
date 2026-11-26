@@ -143,6 +143,7 @@ if TYPE_CHECKING:
     from .sleep_number.controller import SleepNumberController as SleepNumberController
     from .sleep_number.mcr import SleepNumberMcrController as SleepNumberMcrController
     from .sleepstar import SleepStarController as SleepStarController
+    from .sleeptime.controller import SleeptimeController as SleeptimeController
     from .sleeptracker.controller import SleeptrackerController as SleeptrackerController
     from .sleepys.box25 import SleepysBox25Controller as SleepysBox25Controller
     from .sleepys.box25 import SleepysBox25LegacyController as SleepysBox25LegacyController
@@ -183,6 +184,7 @@ _EXPORT_MODULES = {
     "NerumController": "nerum.controller",
     "RelaxMotionController": "relax_motion.controller",
     "CheersSleepController": "cheerssleep.controller",
+    "SleeptimeController": "sleeptime.controller",
     "UltramaticController": "ultramatic.controller",
     "SmartSleepController": "smart_sleep.controller",
     "JalonBedController": "jalon_bed.controller",
