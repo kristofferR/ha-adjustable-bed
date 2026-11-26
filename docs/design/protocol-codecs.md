@@ -378,6 +378,14 @@ Bedgear's timing while L2Motion delays the first periodic write until its first
 timer tick. Neither synchronization commands nor accessory replies establish
 concurrent motors, position feedback or native side routing.
 
+ErgoBed Control 1.0.3 matches MotoMotion's plain letters and decimal R records
+in 40 frozen vectors. The remaining vector uses the same digit XOR and
+variable-width decimal fields with an A terminator. The codec exposes that
+terminator for the local clock. The ErgoBed profile sets its own panel and
+feature gates, record field order, and held behavior. Its shared letter
+controller extension handles the exact 75-token status records and fences
+settings writes to the current BLE connection.
+
 ## Linx
 
 Linx 1.0.7 (27) adds `codec/linx.py` and typed Quest/Orbes

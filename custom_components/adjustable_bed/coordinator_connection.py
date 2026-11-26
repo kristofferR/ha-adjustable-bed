@@ -1756,6 +1756,8 @@ class CoordinatorConnectionMixin:
                 self._recovery_retry_delay = _AUTO_RECONNECT_DELAY_SECONDS
                 self._retained_session_client = None
                 self._link_ready = True
+                if self._reconciles_persistent_entities():
+                    self._schedule_pending_capability_reload()
                 return True
 
             except asyncio.CancelledError:
@@ -2286,6 +2288,14 @@ class CoordinatorConnectionMixin:
         # Stop recovery before waiting for the connection lane it may already own.
         self._cancel_auto_reconnect()
         self._recovered_link_window = False
+        if (
+            reason == "sequential_switch"
+            and (controller := self.controller) is not None
+            and controller.sequential_stop_on_current_link is True
+        ):
+            # A preempted phase may finish with failed neutral writes. Its
+            # already admitted STOP still owns the link for a bounded fallback.
+            await self._command_scheduler.async_drain_admitted_stops()
         if serialize_with_commands:
             # Without this, a disconnect requested while a connect is in flight
             # queues on self._lock and then tears the link down in the same tick

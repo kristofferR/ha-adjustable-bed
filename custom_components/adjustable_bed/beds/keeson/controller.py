@@ -39,6 +39,7 @@ from ...const import (
     KEESON_VARIANT_KSBT,
     KEESON_VARIANT_KSBT04C,
     KEESON_VARIANT_KSBT_CR,
+    KEESON_VARIANT_LEVA_SLEEP,
     KEESON_VARIANT_OKIN,
     KEESON_VARIANT_OKIN_SEATING,
     KEESON_VARIANT_PURPLE,
@@ -48,6 +49,7 @@ from ...const import (
     KEESON_VARIANT_SINO,
     KEESON_VARIANT_SLEEP_HARMONY,
     ORE_COMFORT_BED_VARIANTS,
+    ORE_GATT_ROUTED_VARIANTS,
     VARIANT_AUTO,
 )
 from ...controller_state import StateKey, StateUpdate
@@ -1255,15 +1257,16 @@ async def build_controller(ctx: BuildContext) -> BedController:
         from .comfortfurniture import ComfortFurnitureController
 
         return ComfortFurnitureController(coordinator)
-    if variant == "ore_ultramatic":
+    if variant in ORE_GATT_ROUTED_VARIANTS:
         await ctx.preload("ore_ultramatic.controller")
-        from ..ore_ultramatic.controller import OreUltramaticController
+        from ..ore_ultramatic.controller import LevaSleepController, OreUltramaticController
 
-        controller = OreUltramaticController(
-            coordinator, snapshot=ctx.stored_capabilities("keeson")
+        controller_type = (
+            LevaSleepController if variant == KEESON_VARIANT_LEVA_SLEEP else OreUltramaticController
         )
+        controller = controller_type(coordinator, snapshot=ctx.stored_capabilities("keeson"))
         if ctx.client is None and controller.capability_snapshot() is None:
-            raise ConnectionError("Connect ORE Ultramatic once to discover its bed route")
+            raise ConnectionError(f"Connect {controller._app.name} once to discover its bed route")
         return controller
     if variant in ORE_COMFORT_BED_VARIANTS:
         # Explicit app profile with its own controller; Auto never selects it.

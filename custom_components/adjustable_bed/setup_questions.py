@@ -54,8 +54,10 @@ from .const import (
     BED_TYPE_COMFORT_ENHANCEMENTS,
     BED_TYPE_COMFORTBASE,
     BED_TYPE_COMFYDS,
+    BED_TYPE_CUSTOMATIC_DEMO,
     BED_TYPE_DOUBLESLEEP,
     BED_TYPE_ENSO2,
+    BED_TYPE_ERGOBED,
     BED_TYPE_ESHINE,
     BED_TYPE_ESHINE_OKIN,
     BED_TYPE_FSM_RELAX,
@@ -229,7 +231,6 @@ from .const import (
     KEESON_VARIANT_INNOVA,
     KEESON_VARIANT_MAXCOIL_UNA,
     KEESON_VARIANT_OKIN_COMFORT_BED,
-    KEESON_VARIANT_ORE_ULTRAMATIC,
     LOGICDATA_APP_FAMILIES,
     LOGICDATA_APP_LAYOUTS,
     LOGICDATA_APP_PROFILES,
@@ -242,6 +243,7 @@ from .const import (
     MALOUF_MEMORY_SLOT_OPTIONS,
     MALOUF_MEMORY_SLOTS_AUTO,
     OKIN_CST_VARIANT_NECTAR_MOVE,
+    ORE_GATT_ROUTED_VARIANTS,
     PAIR_MODE_SINGLE_ADDRESS,
     PRODUCT_TYPES,
     RICHMAT_MH_APPS,
@@ -267,6 +269,7 @@ from .profiles import malouf as malouf_profiles
 from .profiles import okimattmotion as okimattmotion_app
 from .profiles import sleep_assistant as sleep_assistant_app
 from .profiles.baseremote import SIDE_LAYOUTS as BASEREMOTE_SIDE_LAYOUTS
+from .profiles.bedgear import ergobed_eligible
 from .profiles.bobpowerbase import LAYOUTS as BOB_LAYOUTS
 from .profiles.bobpowerbase import PROFILE_CHOICES as BOB_PROFILES
 from .profiles.comfort_enhancement3 import CHOICES_WITH_CODE, REMOTE_CODE, REMOTES
@@ -397,6 +400,7 @@ _OWNED_BY_BED_TYPE: Final[dict[str, frozenset[str]]] = {
     BED_TYPE_MOTION_BED: _APP_DEFINED,
     "bedgear": _APP_DEFINED,
     "l2motion": _APP_DEFINED,
+    BED_TYPE_ERGOBED: _APP_DEFINED,
     BED_TYPE_MOODBASE: _APP_DEFINED,
     BED_TYPE_MOTOMOTION: _APP_DEFINED,
     BED_TYPE_DOUBLESLEEP: _APP_DEFINED - {CONF_MOTOR_PULSE_COUNT},
@@ -417,9 +421,12 @@ _OWNED_BY_VARIANT: Final[dict[tuple[str, str], frozenset[str]]] = {
     (BED_TYPE_KAIDI, KAIDI_VARIANT_FLOYD): _APP_DEFINED - {CONF_MOTOR_PULSE_COUNT, CONF_MOTOR_PULSE_DELAY_MS},
     (BED_TYPE_SVANE, SVANE_VARIANT_JENSEN_LINON): frozenset(),
     (BED_TYPE_STAR_ELEVATE, STAR_ELEVATE_VARIANT_M1X12): _FIXED_LAYOUT | {CONF_PROTOCOL_VARIANT},
-    (BED_TYPE_KEESON, KEESON_VARIANT_ORE_ULTRAMATIC): frozenset(
-        {CONF_HAS_MASSAGE, CONF_DISABLE_ANGLE_SENSING, CONF_MOTOR_PULSE_DELAY_MS}
-    ),
+    **{
+        (BED_TYPE_KEESON, variant): frozenset(
+            {CONF_HAS_MASSAGE, CONF_DISABLE_ANGLE_SENSING, CONF_MOTOR_PULSE_DELAY_MS}
+        )
+        for variant in ORE_GATT_ROUTED_VARIANTS
+    },
     (BED_TYPE_KEESON, KEESON_VARIANT_OKIN_COMFORT_BED): frozenset(
         {CONF_HAS_MASSAGE, CONF_DISABLE_ANGLE_SENSING, CONF_MOTOR_PULSE_DELAY_MS}
     ),
@@ -921,7 +928,7 @@ _APP_SCREENS: Final[Mapping[Any, str]] = {
     4: "4M: back, feet, waist and lumbar",
 }
 _SCREEN_VARIANTS: Final = (
-    KEESON_VARIANT_ORE_ULTRAMATIC,
+    *sorted(ORE_GATT_ROUTED_VARIANTS),
     KEESON_VARIANT_AVANTI_BASES,
     KEESON_VARIANT_OKIN_COMFORT_BED,
     KEESON_VARIANT_AMERICANSTAR,
@@ -1504,6 +1511,22 @@ def _moodbase_errors(data: Mapping[str, Any]) -> dict[str, str]:
 
     name = data.get(CONF_BLE_DEVICE_NAME)
     return {} if isinstance(name, str) and eligible(name) else {CONF_BLE_DEVICE_NAME: "moodbase_profile"}
+
+
+def _ergobed_seed(
+    _hass: HomeAssistant, data: Mapping[str, Any], discovered: BluetoothServiceInfoBleak | None
+) -> dict[str, Any]:
+    from .bluetooth_transport import advertised_local_name
+
+    name = advertised_local_name(discovered)
+    return {CONF_BLE_DEVICE_NAME: name, **data} if name else dict(data)
+
+
+def _ergobed_errors(data: Mapping[str, Any]) -> dict[str, str]:
+    name = data.get(CONF_BLE_DEVICE_NAME)
+    if not isinstance(name, str) or not ergobed_eligible(name):
+        return {CONF_BLE_DEVICE_NAME: "ergobed_profile"}
+    return {}
 
 
 def _l2motion_errors(data: Mapping[str, Any]) -> dict[str, str]:
@@ -2801,6 +2824,15 @@ SETUP_PROFILES: Final[dict[str, SetupProfile]] = {
         seed=_motion_bed_seed,
         title=lambda _data: "Aging in Place / Dawn House",
     ),
+    BED_TYPE_CUSTOMATIC_DEMO: SetupProfile(
+        owns={
+            CONF_MOTOR_COUNT: 4,
+            CONF_MOTOR_PULSE_DELAY_MS: 100,
+            CONF_HAS_MASSAGE: False,
+            CONF_DISABLE_ANGLE_SENSING: True,
+            CONF_PROTOCOL_VARIANT: VARIANT_AUTO,
+        },
+    ),
     BED_TYPE_RIZE_REMEDY_II: SetupProfile(
         owns={CONF_MOTOR_COUNT: 3, CONF_MOTOR_PULSE_DELAY_MS: 100,
               CONF_HAS_MASSAGE: True, CONF_DISABLE_ANGLE_SENSING: True,
@@ -3815,6 +3847,19 @@ SETUP_PROFILES: Final[dict[str, SetupProfile]] = {
         derive=lambda _data: _NO_PULSE_CHOICE,
         seed=_motion_bed_seed,
         title=lambda _data: "Bedgear",
+    ),
+    BED_TYPE_ERGOBED: _asking(
+        BED_TYPE_ERGOBED,
+        owns={
+            **_BASE[BED_TYPE_ERGOBED].owns,
+            CONF_HAS_MASSAGE: False,
+            CONF_DISABLE_ANGLE_SENSING: True,
+        },
+        questions=(Question(CONF_BLE_DEVICE_NAME, default="", text=True),),
+        validate=_ergobed_errors,
+        derive=lambda _data: _NO_PULSE_CHOICE,
+        seed=_ergobed_seed,
+        title=lambda _data: "ErgoBed Control",
     ),
     BED_TYPE_MOODBASE: _asking(
         BED_TYPE_MOODBASE,

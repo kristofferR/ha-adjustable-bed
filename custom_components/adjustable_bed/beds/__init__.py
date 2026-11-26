@@ -15,6 +15,7 @@ if TYPE_CHECKING:
     from .adjustamattress.controller import AdjustaMattressController as AdjustaMattressController
     from .baseremote.controller import BaseRemoteController as BaseRemoteController
     from .bedgear.controller import BedgearController as BedgearController
+    from .bedgear.ergobed import ErgoBedController as ErgoBedController
     from .bedjet_powerlayer import BedJetPowerLayerController as BedJetPowerLayerController
     from .bedsense import BedSenseController as BedSenseController
     from .bf_cherish.controller import BfCherishController as BfCherishController
@@ -30,6 +31,7 @@ if TYPE_CHECKING:
     from .comfort_motion import ComfortMotionController as ComfortMotionController
     from .coolbase import CoolBaseController as CoolBaseController
     from .customatic.controller import CustomaticController as CustomaticController
+    from .customatic_demo.controller import CustomaticDemoController as CustomaticDemoController
     from .dewertokin_rf_gateway import (
         DewertOkinRfGatewayController as DewertOkinRfGatewayController,
     )
@@ -245,6 +247,7 @@ _EXPORT_MODULES = {
     "RufRichmatSleepController": "ruf_richmat.sleep",
     "RichmatMhController": "richmat_mh.controller",
     "CustomaticController": "customatic.controller",
+    "CustomaticDemoController": "customatic_demo.controller",
     "CoolBaseController": "coolbase",
     "DewertOkinRfGatewayController": "dewertokin_rf_gateway",
     "DewertOkinUuidRfGatewayController": "dewertokin_rf_gateway",
@@ -279,6 +282,7 @@ _EXPORT_MODULES = {
     "MaloufAppController": "malouf.app",
     "MotionBedController": "motion_bed.controller",
     "BedgearController": "bedgear.controller",
+    "ErgoBedController": "bedgear.ergobed",
     "MotoSleepController": "motosleep",
     "OctoController": "octo.controller",
     "OkimikiController": "okimiki.controller",
