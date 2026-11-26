@@ -71,6 +71,7 @@ app. Every guide follows the [bed guide format](BED_GUIDE_FORMAT.md).
 | [Richmat](beds/richmat.md) | Richmat remotes, RMControl, Maxprime, BedTech and Bed Tech, BedSmart / X-Series, L&P MlRM and both L&P Adjustable Base apps, the Richmat MH apps, ENSO Sleep Control, HJBed, eShine E6000, Good Vibe Sleep, Lunio, Luuna, Majestic Home, MLILY, Saatva, Dream Sense Bed, Dreamlab Control, Super Colchones, SleepEvolution and other Richmat-based apps | Shared |
 | [RUF and related apps](beds/ruf-richmat-apps.md) | RUF Betten, W.Silver Products, AMERICANSTAR, Bailey's Bed Control and TX | |
 | [Sleep Assist](beds/sleep-assistant.md) | The original Sleep Assist app | |
+| [Sleep Assist Pro](beds/sleep-assist-pro.md) | The Sleep Assist Pro app and its five Bluetooth routes | |
 | [Sleep Number](beds/sleep_number.md) | Sleep Number Fuzion and BAM/MCR bases ([commands](beds/sleep-number-services.md)) | |
 | [SleepSpa S9000AI](beds/sleepstar.md) | The SleepSpa S9000AI | |
 | [Sleeptracker](beds/sleeptracker.md) | The Tempur Sleeptracker-AI processor | |

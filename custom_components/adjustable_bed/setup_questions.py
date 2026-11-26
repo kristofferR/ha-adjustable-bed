@@ -110,6 +110,7 @@ from .const import (
     BED_TYPE_SILVERMOTION,
     BED_TYPE_SIMMONS,
     BED_TYPE_SIMMONS_BLUE,
+    BED_TYPE_SLEEP_ASSIST_PRO,
     BED_TYPE_SLEEP_NUMBER,
     BED_TYPE_SLEEP_NUMBER_MCR,
     BED_TYPE_SLEEPTRACKER,
@@ -263,6 +264,7 @@ from .profiles import enso2 as enso2_profiles
 from .profiles import jiecang as jiecang_profiles
 from .profiles import logicdata as logicdata_profiles
 from .profiles import malouf as malouf_profiles
+from .profiles import sleep_assist_pro as sleep_assist_pro_app
 from .profiles import sleep_assistant as sleep_assistant_app
 from .profiles.baseremote import SIDE_LAYOUTS as BASEREMOTE_SIDE_LAYOUTS
 from .profiles.bobpowerbase import LAYOUTS as BOB_LAYOUTS
@@ -2291,6 +2293,22 @@ def _smart_sleep_models(data: Mapping[str, Any]) -> Mapping[str, str]:
             if data.get(CONF_PROTOCOL_VARIANT) != "p2" or model == 80}
 
 
+def _sleep_assist_pro_validate(data: Mapping[str, Any]) -> dict[str, str]:
+    try:
+        sleep_assist_pro_app.selected(data)
+    except ValueError as err:
+        return {str(err): "sleep_assist_pro_invalid_selection"}
+    return {}
+
+
+def _sleep_assist_pro_derive(data: Mapping[str, Any]) -> Mapping[str, Any]:
+    profile = sleep_assist_pro_app.selected(data)
+    return {
+        CONF_MOTOR_COUNT: max(2, len(profile.controls & {"head", "feet", "tilt", "side_b", "lumbar"})),
+        CONF_HAS_MASSAGE: not sleep_assist_pro_app.MASSAGE.keys().isdisjoint(profile.controls),
+    }
+
+
 def _sleep_assistant_validate(data: Mapping[str, Any]) -> dict[str, str]:
     try:
         sleep_assistant_app.selected(data)
@@ -2696,6 +2714,25 @@ SETUP_PROFILES: Final[dict[str, SetupProfile]] = {
         owns={CONF_MOTOR_COUNT: SET_BY_PROFILE, CONF_HAS_MASSAGE: SET_BY_PROFILE, CONF_DISABLE_ANGLE_SENSING: True, CONF_PROTOCOL_VARIANT: "auto", CONF_MOTOR_PULSE_DELAY_MS: 100},
         questions=(Question(CONF_PRODUCT_TYPE, _cheerssleep_models, "45", searchable=True),),
         seed=_cheerssleep_seed, validate=_cheerssleep_errors, derive=_cheerssleep_settings, imports=("beds.cheerssleep.catalog",),
+    ),
+    BED_TYPE_SLEEP_ASSIST_PRO: SetupProfile(
+        owns={
+            CONF_MOTOR_COUNT: SET_BY_PROFILE,
+            CONF_HAS_MASSAGE: SET_BY_PROFILE,
+            CONF_DISABLE_ANGLE_SENSING: True,
+            CONF_PROTOCOL_VARIANT: "auto",
+            CONF_MOTOR_PULSE_DELAY_MS: sleep_assist_pro_app.MOTION_INTERVAL_MS,
+        },
+        questions=(
+            Question(CONF_BLE_DEVICE_NAME, text=True),
+            Question(CONF_PRODUCT_TYPE, default="", text=True),
+            Question(sleep_assist_pro_app.CONF_CONTROLS, sleep_assist_pro_app.CONTROL_CHOICES,
+                     [], multiple=True),
+            Question(CONF_HAS_LIGHT, default=False),
+        ),
+        seed=_discovered_name_seed,
+        validate=_sleep_assist_pro_validate,
+        derive=_sleep_assist_pro_derive,
     ),
     "sleep_assistant": SetupProfile(
         owns={CONF_MOTOR_COUNT: SET_BY_PROFILE, CONF_HAS_MASSAGE: SET_BY_PROFILE,

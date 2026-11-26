@@ -160,6 +160,7 @@ bed has been tested on real hardware.
 | [SleepSpa S9000AI](docs/beds/sleepstar.md) | [SleepSpa S9000AI (SLEEPSTAR)](docs/beds/sleepstar.md) | SleepSpa |
 | [Sleepy's Elite](docs/beds/sleepys.md) | [MFRM Sleepy's Elite app](docs/beds/sleepys.md#explicit-sleepys-elite-app-profile), [Sleepy's Elite BOX25 (STAR) receiver](docs/beds/sleepys.md#box25-protocol-nordic-uart), [Sleepy's Elite BOX15 and BOX24 receivers](docs/beds/sleepys.md#protocol-variants) | Sleepy's, Mattress Firm |
 | [Sleep Assist](docs/beds/sleep-assistant.md) | [Sleep Assist, Old Version](docs/beds/sleep-assistant.md) | KSBT receivers selected in the app, not yet hardware tested |
+| [Sleep Assist Pro](docs/beds/sleep-assist-pro.md) | [Sleep Assist Pro](docs/beds/sleep-assist-pro.md) | Base-i4/i5, KSBT, KSWF, KSPSBED and KSSLBED receivers selected in the app |
 | [Smart Comfort seats](docs/beds/smart-comfort.md) | [Smart Comfort by SYNARGY](docs/beds/smart-comfort.md#synargy), [Smart Comfort (SYNERGY)](docs/beds/smart-comfort.md#synergy) | SYNARGY, Smart Comfort reclining seats |
 | [SmartBed](docs/beds/smartbed.md) | SmartBed app: CB, Standard, Dacheng, CB24, CB27, CB24AB, CB1221 and CB27New receivers, and the 126 and 265 headboards | OKIN, Amada, Lucid L600 |
 | [Snore Monitor](docs/beds/onlysnore.md) | Snore Monitor | OKIN |

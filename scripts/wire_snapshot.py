@@ -1502,6 +1502,12 @@ def default_scenario(bed_type: str) -> Scenario:
     replies: dict[str, str] = {}
     if bed_type == "sealy_posturematic":
         data.update({const.CONF_PRODUCT_TYPE: "0", const.CONF_BED_TYPE: "sealy_posturematic"})
+    if bed_type == const.BED_TYPE_SLEEP_ASSIST_PRO:
+        return Scenario(
+            id=bed_type, bed_type=bed_type, layout_id="sleep_assistant",
+            entry_data={const.CONF_BLE_DEVICE_NAME: "KSBT012345678",
+                        "sleep_assist_pro_controls": ["head", "feet", "flat", "zero_g"]},
+        )
     if bed_type == "sleep_assistant":
         return Scenario(id=bed_type, bed_type=bed_type, layout_id="sleep_assistant")
     if bed_type == const.BED_TYPE_LINX:
@@ -2661,7 +2667,7 @@ async def _connect(controller: Any, recorder: Recorder, clock: FakeClock) -> dic
                 session.store_device_info = lambda *_: None
             await controller.async_on_connect(session)
             return
-        if controller._coordinator.bed_type in {"symphony", "linx", "agingplace", "sleep_assistant", "sinca_comfort", "leva"}:
+        if controller._coordinator.bed_type in {"symphony", "linx", "agingplace", "sleep_assistant", "sinca_comfort", "leva", "sleep_assist_pro"}:
             session = SimpleNamespace(
                 client=controller.client, is_current=lambda: True,
                 async_start_notify=lambda: controller.start_notify(lambda *_: None),

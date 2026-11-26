@@ -458,6 +458,7 @@ BED_TYPE_RELAX_MOTION: Final = "relax_motion"
 BED_TYPE_SMARTBED: Final = "smartbed"  # The SmartBed app's receivers (Okin CB24 family and others)
 BED_TYPE_CHEERSSLEEP: Final = "cheerssleep"
 BED_TYPE_SMART_SLEEP: Final = "smart_sleep"
+BED_TYPE_SLEEP_ASSIST_PRO: Final = "sleep_assist_pro"
 BED_TYPE_SLEEP_ASSISTANT: Final = "sleep_assistant"
 BED_TYPE_ONLYSNORE: Final = "onlysnore"
 BED_TYPE_JALON_BED: Final = "jalon_bed"
@@ -791,6 +792,7 @@ SUPPORTED_BED_TYPES: Final = [
     BED_TYPE_AGINGPLACE,
     BED_TYPE_SMART_SLEEP,
     BED_TYPE_SLEEP_ASSISTANT,
+    BED_TYPE_SLEEP_ASSIST_PRO,
     BED_TYPE_ONLYSNORE,
     BED_TYPE_ENSO,
     BED_TYPE_ENSO2,
@@ -2994,6 +2996,7 @@ BED_MOTOR_PULSE_DEFAULTS: Final = {
     # Keeson: 100ms delay → 10 repeats = 1.0s total
     # Source: com.sfd.ergomotion ANALYSIS.md
     BED_TYPE_KEESON: (10, 100),
+    BED_TYPE_SLEEP_ASSIST_PRO: (10, 200),
     # Ergomotion: 100ms delay → 10 repeats = 1.0s total
     # Source: com.sfd.ergomotion ANALYSIS.md
     BED_TYPE_ERGOMOTION: (10, 100),

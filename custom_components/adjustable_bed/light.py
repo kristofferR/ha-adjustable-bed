@@ -80,9 +80,9 @@ def _normalize_rgb_color(value: Any) -> tuple[int, int, int] | None:
     return rgb
 
 
-def _brightness_to_level(brightness: int, max_level: int) -> int:
-    """Map HA brightness 1-255 onto equal buckets of native levels 1..max."""
-    return max(1, math.ceil(brightness * max_level / 255))
+def _brightness_to_level(brightness: int, max_level: int, *, min_level: int) -> int:
+    """Map HA brightness to native buckets, respecting the bed's lit minimum."""
+    return max(1, min_level, math.ceil(brightness * max_level / 255))
 
 
 def _level_to_brightness(level: int, max_level: int) -> int:
@@ -289,7 +289,7 @@ class AdjustableBedLight(AdjustableBedEntity, RestoreEntity, LightEntity):
             controller.supports_discrete_light_control or controller.supports_light_state_feedback
         )
         self._default_rgb_color = _normalize_rgb_color(default_rgb)
-        # HA brightness maps onto the bed's native 1..max levels when it has them.
+        # The native maximum sets the brightness buckets and state readback.
         self._light_level_max: int | None = (
             controller.light_level_max
             if controller is not None and controller.supports_light_level_control
@@ -586,7 +586,7 @@ class AdjustableBedLight(AdjustableBedEntity, RestoreEntity, LightEntity):
         requested_brightness = kwargs.get(ATTR_BRIGHTNESS)
         brightness = requested_brightness or (None if self._attr_is_on else self._attr_brightness)
         level = (
-            _brightness_to_level(brightness, self._light_level_max)
+            _brightness_to_level(brightness, self._light_level_max, min_level=ctrl.light_level_min)
             if self._light_level_max is not None and isinstance(brightness, int) and brightness > 0
             else None
         )
