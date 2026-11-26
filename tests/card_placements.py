@@ -218,7 +218,7 @@ def runtime_variants(controllers: Iterable[BedController]) -> Iterator[BedContro
     from custom_components.adjustable_bed.beds.okimiki.controller import OkimikiController
     from custom_components.adjustable_bed.beds.onlysnore.controller import OnlySnoreController
     from custom_components.adjustable_bed.beds.ore_ultramatic.controller import (
-        OreUltramaticController,
+        OreDualRouteController,
     )
     from custom_components.adjustable_bed.beds.paramount.controller import ParamountController
     from custom_components.adjustable_bed.beds.relax_motion.controller import RelaxMotionController
@@ -258,7 +258,6 @@ def runtime_variants(controllers: Iterable[BedController]) -> Iterator[BedContro
     from custom_components.adjustable_bed.beds.vibradorm.app import VibradormAppController
     from custom_components.adjustable_bed.beds.vmatbasic.controller import VMatBasicController
     from custom_components.adjustable_bed.profiles import dorsal, likimio, relax_motion, truemotion
-    from custom_components.adjustable_bed.profiles import ore_ultramatic as ultramatic
     from custom_components.adjustable_bed.profiles import vmatbasic as vmat_profiles
     from custom_components.adjustable_bed.profiles.dreamsense import PROFILES as DREAMSENSE_PROFILES
     from custom_components.adjustable_bed.profiles.enso import PROFILES as ENSO_PROFILES
@@ -308,9 +307,9 @@ def runtime_variants(controllers: Iterable[BedController]) -> Iterator[BedContro
             for route in SUTA_ROUTES:
                 name = "SUTA-unknown" if route == "fallback" else "SUTA" if route == "short-name" else route.split("*")[0]
                 yield SutaController(controller._coordinator, name=name)
-        elif isinstance(controller, OreUltramaticController):
+        elif isinstance(controller, OreDualRouteController):
             for route in ("P1", "P2"):
-                yield variant(controller, _route=route, profile=ultramatic.profile(route))
+                yield variant(controller, _route=route, profile=controller._profile_for(route))
         elif isinstance(controller, OnlySnoreController):
             yield variant(controller, _alarm_count=3)
         elif isinstance(controller, ParamountController):

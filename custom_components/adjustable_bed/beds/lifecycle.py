@@ -71,5 +71,8 @@ class CapabilitySnapshotPolicy:
     # link is released. Otherwise the write reloads the entry and the live
     # controller becomes the offline capability controller.
     deferred_reload: bool = False
+    # For a deferred reload on a persistent link, refresh dynamic entities in
+    # place once the command lanes are idle. The platforms must opt in.
+    reconcile_on_persistent_link: bool = False
     # Also persist after each operation: the first command can resolve it.
     after_operations: bool = False

@@ -33,6 +33,7 @@ from .beds.base import CONTROLLER_GESTURE_RELEASE, BedController
 from .beds.cancellation import settled
 from .beds.remacro.discovery import remacro_side_lacks_global_stop
 from .command_scheduler import (
+    ALL_COMMAND_RESOURCES,
     PAIRED_CLEANUP_STOP,
     CommandHandle,
     CommandKind,
@@ -542,13 +543,55 @@ class PairedBedCoordinator:
             if not remacro_side_lacks_global_stop(child)
         ]
         self._cancel_before_stop(targets)
+        targets, admitted, errors = self._admit_sequential_stops(targets, ALL_COMMAND_RESOURCES)
         async def stop() -> dict[str, BaseException]:
-            async with self._connection_mode_transition_lock:
-                return await self._topology.explicit_stop_children(targets)
+            await self._collect_admitted_stops(admitted, errors)
+            if targets:
+                async with self._connection_mode_transition_lock:
+                    errors.update(await self._topology.explicit_stop_children(targets))
+            return errors
 
         errors = await settled(stop(), eager_start=True)
         if errors:
             raise PairedSideError("stop", errors)
+
+    def _admit_sequential_stops(
+        self, targets: list[PairTarget], resources: Collection[str]
+    ) -> tuple[list[PairTarget], dict[str, asyncio.Task[None]], dict[str, BaseException]]:
+        """Admit opted-in child STOPs in the same turn as the pair's STOP epoch."""
+        if self._topology is not self._sequential:
+            return targets, {}, {}
+        remaining: list[PairTarget] = []
+        tasks: dict[str, asyncio.Task[None]] = {}
+        errors: dict[str, BaseException] = {}
+        for side, child in targets:
+            controller = child.controller
+            if (
+                not isinstance(child, SingleAddressSideCoordinator)
+                and child in self._admission.active_children
+                and child.is_connected
+                and controller is not None
+                and controller.sequential_stop_on_current_link is True
+                and (active := child.command_scheduler.active) is not None
+                and not active.future.done()
+            ):
+                try:
+                    tasks[side] = child.admit_stop_command(current_link_only=True, resources=resources)
+                except Exception as err:
+                    errors[side] = err
+            else:
+                remaining.append((side, child))
+        return remaining, tasks, errors
+
+    @staticmethod
+    async def _collect_admitted_stops(
+        tasks: dict[str, asyncio.Task[None]], errors: dict[str, BaseException]
+    ) -> None:
+        if tasks:
+            results = await asyncio.gather(*tasks.values(), return_exceptions=True)
+            for side, result in zip(tasks, results, strict=True):
+                if isinstance(result, BaseException):
+                    errors[side] = result
 
     def _cancel_before_stop(
         self, targets: Collection[PairTarget], resources: Collection[str] | None = None
@@ -598,12 +641,15 @@ class PairedBedCoordinator:
                 target_side, self._topology.command_scope(command_resources(resource))
             )
         # Like an ordinary motor STOP, preempt any motion holding the writer.
-        self._cancel_before_stop(
-            targets, command_resources("motor:*" if resource.startswith("motor:") else resource)
-        )
+        scope = command_resources("motor:*" if resource.startswith("motor:") else resource)
+        self._cancel_before_stop(targets, scope)
+        targets, admitted, errors = self._admit_sequential_stops(targets, scope)
         async def stop() -> dict[str, BaseException]:
-            async with self._connection_mode_transition_lock:
-                return await self._topology.stop_motor(targets, stop_fn, resource)
+            await self._collect_admitted_stops(admitted, errors)
+            if targets:
+                async with self._connection_mode_transition_lock:
+                    errors.update(await self._topology.stop_motor(targets, stop_fn, resource))
+            return errors
 
         errors = await settled(stop(), eager_start=True)
         if errors:

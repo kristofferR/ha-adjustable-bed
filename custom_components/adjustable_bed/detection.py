@@ -30,6 +30,7 @@ from .beds.richmat_classic.profiles import APP_NAMES as RICHMAT_CLASSIC_APPS
 from .beds.silvermotion.discovery import scan_matches as silvermotion_scan_matches
 from .beds.starcode.abm5_4_profiles import TRANSPORTS as STARCODE_ABM5_4_TRANSPORTS
 from .beds.svane.state import is_svane_discovery_name
+from .bluetooth_transport import advertised_local_name
 from .const import (
     BED_TYPE_ADJUSTABLE_BED,
     BED_TYPE_ADJUSTABLE_LUMBAR,
@@ -55,11 +56,13 @@ from .const import (
     BED_TYPE_COMFYDS,
     BED_TYPE_COOLBASE,
     BED_TYPE_CUSTOMATIC_CLARITY,
+    BED_TYPE_CUSTOMATIC_DEMO,
     BED_TYPE_CUSTOMATIC_JEROMES,
     BED_TYPE_CUSTOMATIC_REMEDY,
     BED_TYPE_DIAGNOSTIC,
     BED_TYPE_DOUBLESLEEP,
     BED_TYPE_ENSO2,
+    BED_TYPE_ERGOBED,
     BED_TYPE_ERGOMOTION,
     BED_TYPE_ERGOMOTION_4,
     BED_TYPE_ESHINE,
@@ -218,6 +221,7 @@ from .const import (
     KEESON_VARIANT_KSBT,
     KEESON_VARIANT_KSBT04C,
     KEESON_VARIANT_KSBT_CR,
+    KEESON_VARIANT_LEVA_SLEEP,
     KEESON_VARIANT_MAXCOIL_UNA,
     KEESON_VARIANT_OKIN_COMFORT_BED,
     KEESON_VARIANT_OKIN_SEATING,
@@ -310,8 +314,10 @@ from .discovery_hints import (
 )
 from .discovery_hints._hints import ManufacturerHint, NameHint
 from .profiles.bedgear import eligible as bedgear_eligible
+from .profiles.bedgear import ergobed_eligible
 from .profiles.bobpowerbase import PROFILE_CHOICES as BOB_PROFILES
 from .profiles.bobpowerbase import SCAN_KEYWORDS as BOB_SCAN_KEYWORDS
+from .profiles.customatic_demo import NAME_PREFIX as CUSTOMATIC_DEMO_NAME_PREFIX
 from .profiles.majestichome import PROFILE_CHOICES as MAJESTICHOME_PROFILES
 from .profiles.mlily_choices import PROFILE_CHOICES as MLILY_PROFILES
 from .profiles.mlily_remote import VARIANTS as MLILY_REMOTE_PROFILES
@@ -697,6 +703,7 @@ BED_TYPE_DISPLAY_NAMES: dict[str, str] = {
     BED_TYPE_RICHMAT_HARMONY: "HARMONY app",
     BED_TYPE_RICHMAT_IDEALBED: "Idealbed app",
     "ultramatic_smart_bed": "Ultramatic Smart Bed app",
+    BED_TYPE_CUSTOMATIC_DEMO: "Independence app (Customatic Demo)",
     BED_TYPE_CUSTOMATIC_CLARITY: "Customatic Clarity app (Rize Clarity)",
     BED_TYPE_CUSTOMATIC_JEROMES: "Customatic Jerome's C app",
     BED_TYPE_CUSTOMATIC_REMEDY: "Customatic Remedy app (Rize Remedy)",
@@ -767,6 +774,7 @@ BED_TYPE_DISPLAY_NAMES: dict[str, str] = {
     BED_TYPE_MALOUF_NEW_OKIN: "Malouf remote, newer receiver",
     "bedgear": "Bedgear app",
     "l2motion": "L2 Motion app",
+    BED_TYPE_ERGOBED: "ErgoBed Control app",
     BED_TYPE_MOODBASE: "MoodBase app",
     BED_TYPE_MOTOSLEEP: "MotoSleep / Power Bob app",
     BED_TYPE_OCTO: "OCTO Smart Control",
@@ -852,6 +860,7 @@ APP_VARIANT_CHOICES: dict[tuple[str, str], str] = {
     (BED_TYPE_KEESON, KEESON_VARIANT_OKIN_COMFORT_BED): "OKIN Comfort Bed app",
     (BED_TYPE_KEESON, KEESON_VARIANT_COMFORTFURNITURE): "ComfortFurniture app",
     (BED_TYPE_KEESON, KEESON_VARIANT_ORE_ULTRAMATIC): "Ultramatic app",
+    (BED_TYPE_KEESON, KEESON_VARIANT_LEVA_SLEEP): "Leva Sleep app",
     (BED_TYPE_KEESON, KEESON_VARIANT_AMERICANSTAR): "AMERICANSTAR app (Keeson)",
     (BED_TYPE_KEESON, KEESON_VARIANT_BEDSENSE_BASES): "Bedsense Bases app",
     (BED_TYPE_KEESON, KEESON_VARIANT_INNOVA): "INNOVA app",
@@ -1439,6 +1448,8 @@ def detect_new_bed(service_info: BluetoothServiceInfoBleak) -> DetectionResult:
     service_uuids = [str(uuid).lower() for uuid in service_info.service_uuids or ()]
     if result.bed_type is not None and _rests_on_shared_service(service_uuids, first, result):
         if is_mac_like_name(service_info.name):
+            if "app_hint:ergobed" in result.signals:
+                return DetectionResult(BED_TYPE_ERGOBED, 0.3, ["app_hint:ergobed"])
             return DetectionResult(None, 0.0, ["shared_service:no_name"])
         result.confidence = min(result.confidence, 0.5)
         result.signals.append("shared_service:no_name_match")
@@ -1452,6 +1463,17 @@ def detect_new_bed(service_info: BluetoothServiceInfoBleak) -> DetectionResult:
         result.ambiguous_types = list(dict.fromkeys([*(result.ambiguous_types or ()), "relax_motion"]))
         result.signals.append("service:relax_motion_app_candidate")
         result.confidence = min(result.confidence, 0.5)
+    platform_name = getattr(getattr(service_info, "device", None), "name", None)
+    if (
+        isinstance(platform_name, str)
+        and platform_name.lower().startswith(CUSTOMATIC_DEMO_NAME_PREFIX)
+        and not any(signal.startswith("excluded:") for signal in result.signals)
+    ):
+        # Independence has the shared Okin prefix, never a unique receiver identity.
+        result.ambiguous_types = list(dict.fromkeys([
+            *(result.ambiguous_types or ()), BED_TYPE_CUSTOMATIC_DEMO,
+        ]))
+        result.signals.append("name:customatic_demo_app_candidate")
     return result
 
 
@@ -1768,6 +1790,18 @@ def _detect_with_first_pass(
             result = DetectionResult("bobpowerbase", 0.3, ["name:bobpowerbase_app_candidate"])
         elif result.bed_type != "bobpowerbase":
             result.ambiguous_types = list(dict.fromkeys([*(result.ambiguous_types or ()), "bobpowerbase"]))
+    if (
+        getattr(service_info, "advertisement", None) is not None
+        and ergobed_eligible(advertised_local_name(service_info))
+        and not any(signal.startswith("excluded:") for signal in result.signals)
+    ):
+        # Keep a raw-name-only match visible in setup at app-choice confidence.
+        if result.bed_type is None:
+            result.bed_type = BED_TYPE_ERGOBED
+            result.confidence = 0.3
+        else:
+            result.ambiguous_types = [*(result.ambiguous_types or ()), BED_TYPE_ERGOBED]
+        result.signals.append("app_hint:ergobed")
     return result
 
 

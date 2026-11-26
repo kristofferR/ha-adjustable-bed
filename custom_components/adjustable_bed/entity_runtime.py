@@ -123,6 +123,10 @@ class EntityRuntime(Protocol):
         self, callback_fn: Callable[[ControllerState], None]
     ) -> Callable[[], None]: ...
 
+    def register_capability_entity_callback(
+        self, discover: Callable[[], None]
+    ) -> Callable[[], None]: ...
+
     def register_connection_state_callback(
         self, callback_fn: Callable[[bool], None]
     ) -> Callable[[], None]: ...
@@ -321,6 +325,11 @@ class EntityRuntimeView(ABC):
         self, callback_fn: Callable[[ControllerState], None]
     ) -> Callable[[], None]:
         return self._entity_source.register_controller_state_callback(callback_fn)
+
+    def register_capability_entity_callback(
+        self, discover: Callable[[], None]
+    ) -> Callable[[], None]:
+        return self._entity_source.register_capability_entity_callback(discover)
 
     def register_connection_state_callback(
         self, callback_fn: Callable[[bool], None]

@@ -55,7 +55,7 @@ app. Every guide follows the [bed guide format](BED_GUIDE_FORMAT.md).
 | [LOGICDATA Sleep Smart](beds/logicdata-sleep-smart.md) | The Sleep Smart air mattress pump | |
 | [M Line and Sinca Comfort Bed](beds/mline.md) | The M Line and Sinca Comfort Bed apps | Shared |
 | [Malouf / Lucid](beds/malouf.md) | The Malouf Base and Lucid Base apps and receivers | Shared |
-| [MotoMotion, MotoSleep and others](beds/motomotion.md) | MotoMotion, MotoSleep, Power Bob, Bedgear, L2 Motion and MoodBase | Shared |
+| [MotoMotion, MotoSleep and others](beds/motomotion.md) | MotoMotion, MotoSleep, Power Bob, Bedgear, L2 Motion, MoodBase and ErgoBed Control | Shared |
 | [Nerum](beds/nerum.md) | The Nerum app | |
 | [OCTO Smart Control](beds/octo.md) | OCTO receivers, the RTV TV lift and Octo Remote Star2 | |
 | [Nectar, Mattress Firm 900 and Sealy (Okin)](beds/okin-5a.md) | Nectar, Mattress Firm 900 / iFlex, Sealy Posturematic (the CB35 receiver and the Sealy Posturematic app) and DewertOkin ELEVATE | Shared |

@@ -281,3 +281,91 @@ BLOCKS.extend([
     (GUIDE, "moodbase-controls", moodbase_controls),
     (GUIDE, "moodbase-auxiliary", moodbase_auxiliary),
 ])
+
+
+def ergobed_layouts() -> str:
+    from custom_components.adjustable_bed.profiles.ergobed import LAYOUT_EXAMPLES, ErgoBedProfile
+
+    layouts = {}
+    for selector in LAYOUT_EXAMPLES:
+        profile = ErgoBedProfile(f"HHC00000{selector}DE00")
+        layout = (
+            profile.panel,
+            ", ".join(f"{axis} ({up}/{down})" for axis, up, down in profile.axes),
+            ", ".join(key.replace("_", " ") for key, _ in profile.presets),
+            str(profile.memory_slots),
+        )
+        layouts.setdefault(layout, []).append(selector)
+    return _block(
+        _table(
+            ("Selector examples", "Panel", "Motor controls", "Presets", "Memory slots"),
+            ((", ".join(selectors), *layout) for layout, selectors in layouts.items()),
+        )
+    )
+
+
+def ergobed_controls() -> str:
+    from custom_components.adjustable_bed.profiles.ergobed import LAYOUT_EXAMPLES, ErgoBedProfile
+
+    controls = dict.fromkeys(
+        control
+        for selector in LAYOUT_EXAMPLES
+        for control in ErgoBedProfile(f"HHC00000{selector}DE00").controls
+    )
+    rows = [
+        (
+            control.key.replace("_", " "),
+            _hex(codec.letter_command(control.letter)),
+            f"First tick, then every {ErgoBedProfile.refresh_ms} ms" if control.held else "Once",
+        )
+        for control in controls
+    ]
+    rows.extend(
+        (f"Save memory {slot}", _hex(codec.letter_command(letter)), "Once")
+        for slot, letter in enumerate("Za", 1)
+    )
+    return _block(_table(("Control", "Bytes", "Writes"), rows))
+
+
+def ergobed_settings() -> str:
+    from datetime import datetime
+
+    from custom_components.adjustable_bed.profiles.ergobed import (
+        CHARACTERISTIC_MARKER,
+        COLOR_COMMANDS,
+        SERVICE_MARKER,
+        SETTINGS_INTERVAL_MS,
+        STARTUP_DELAY_MS,
+        TIMER_MAX_SECONDS,
+        alarm_frame,
+        clock_frame,
+        color_frame,
+        timer_frame,
+    )
+
+    rows = [
+        ("Transport", f"`{SERVICE_MARKER.upper()}` / `{CHARACTERISTIC_MARKER.upper()}`", "Service / shared write and notify characteristic, matched by UUID substring"),
+        ("Status query", _hex(codec.TIMER_PREFIX), f"Before each settings write and at {STARTUP_DELAY_MS} ms after discovery on alarm layouts"),
+        ("Local clock", _hex(clock_frame(datetime(2026, 1, 1, 9, 7, 5))), "09:07:05 example, immediately after the startup query"),
+    ]
+    rows.extend(
+        (channel, _hex(color_frame(command, value)), f"{value}/255, at +{(index * 2 + 1) * SETTINGS_INTERVAL_MS} ms")
+        for index, (channel, command, value) in enumerate(
+            zip(("Red", "Green", "Blue"), COLOR_COMMANDS, (255, 128, 0), strict=True)
+        )
+    )
+    rows.append(("Light timer", _hex(timer_frame(120)), f"120 s example. Range 0–{TIMER_MAX_SECONDS} s, {SETTINGS_INTERVAL_MS} ms after query"))
+    rows.extend(
+        (label, _hex(alarm_frame(hour, minute, strength)), f"{hour:02d}:{minute:02d} example, {SETTINGS_INTERVAL_MS} ms after query")
+        for strength, (label, hour, minute) in enumerate(
+            (("Alarm off", 7, 30), ("Alarm strength 1", 12, 34), ("Alarm strength 2", 23, 45))
+        )
+    )
+    return _block(_table(("Setting", "Value or example bytes", "Schedule"), rows))
+
+
+BLOCKS.extend([
+    (GUIDE, "ergobed-layouts", ergobed_layouts),
+    (GUIDE, "ergobed-controls", ergobed_controls),
+    (GUIDE, "ergobed-settings", ergobed_settings),
+])

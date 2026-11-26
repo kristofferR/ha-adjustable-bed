@@ -83,24 +83,8 @@ def alarm(
     if repeat in (0, 128):
         repeat = 1 << ((now.isoweekday() % 7 + int((hour, minute) < (now.hour, now.minute))) % 7)
     if route == "P1":
-        return codec.checked(
-            bytes(
-                (
-                    0xEB,
-                    0xFE,
-                    0x16,
-                    now.second,
-                    now.minute,
-                    now.hour,
-                    minute if enabled else 255,
-                    hour if enabled else 255,
-                    now.isoweekday() % 7,
-                    repeat & 255 if enabled else 255,
-                    17 if enabled and kind == 1 else 255,
-                    17 if enabled and kind == 1 else 255,
-                    {2: 8, 3: 9}.get(kind, 255) if enabled else 255,
-                )
-            )
+        return codec.ore_alarm_p1(
+            now, enabled=enabled, hour=hour, minute=minute, repeat=repeat, kind=kind
         )
     record = (
         bytes((hour, minute, repeat & 255, {1: 9, 3: 13}.get(kind, 15))) if enabled else bytes(4)
