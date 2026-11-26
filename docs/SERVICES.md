@@ -436,7 +436,7 @@ other beds. SUTA Smart Home, SonicSleep, MLILY Remote, Good Vibe Sleep, Galaxy,
 MLILY, Power Bob Base, Majestic Home and Okimiki products with an alarm, GM
 Control products with an alarm, OKIN SleepEase, HJBed, Richmat app beds and
 their separate sleep sensor, Bed Tech (including its separate intervention
-receiver), Dream Sense Bed, Luuna + and
+receiver), Dream Sense Bed, Luuna +, [ErgoBed Control](beds/motomotion.md#ergobed-control) on alarm layouts and
 [Leva Bed Remote on the Ascent route](beds/okin-nframe.md#leva-bed-remote) set
 their clock here too. On a Motion Bed it sets the clock of the motor or heating
 module; on a hub, select the module first.
@@ -480,6 +480,7 @@ data:
 |-----|--------------|---------------|
 | Bed Tech | From the selected model's alarm choices | Countdown or three-slot alarms on supported models. Calendar models use a uniquely reported `slot`, with `weekdays` or once. `mattress_side` selects the separate vibrating mattress alarm, with intensity 1–3 |
 | Bedgear | None | Once; leave `slot` out. `massage_intensity` 1 or 2 |
+| ErgoBed Control | None | Once on E-name layouts; leave `slot` out. `massage_intensity` 1 or 2. Turning off keeps the reported time unless you supply one. Supply a time if the current connection has no valid report |
 | BF and Cherish | `none`, `memory_1`, `memory_2` | Once only |
 | BedSmart / X-Series | From the selected layout's alarm page; left out, the layout's first wake action is used. `none` only with `massage: true` and a supported zone | The layout's `massage` zones and combinations. Once, at the next occurrence: leave out `weekdays` and `slot` |
 | BetterLiving2 | `massage`, `memory_1`, `memory_2` | `weekdays` or once, at the next occurrence |

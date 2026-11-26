@@ -15,6 +15,7 @@ if TYPE_CHECKING:
     from .adjustamattress.controller import AdjustaMattressController as AdjustaMattressController
     from .baseremote.controller import BaseRemoteController as BaseRemoteController
     from .bedgear.controller import BedgearController as BedgearController
+    from .bedgear.ergobed import ErgoBedController as ErgoBedController
     from .bedjet_powerlayer import BedJetPowerLayerController as BedJetPowerLayerController
     from .bedsense import BedSenseController as BedSenseController
     from .bf_cherish.controller import BfCherishController as BfCherishController
@@ -283,6 +284,7 @@ _EXPORT_MODULES = {
     "MaloufAppController": "malouf.app",
     "MotionBedController": "motion_bed.controller",
     "BedgearController": "bedgear.controller",
+    "ErgoBedController": "bedgear.ergobed",
     "MotoSleepController": "motosleep",
     "OctoController": "octo.controller",
     "OkimikiController": "okimiki.controller",

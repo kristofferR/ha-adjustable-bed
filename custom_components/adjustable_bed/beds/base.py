@@ -1088,6 +1088,11 @@ class BedController(GattWriter):
         return False
 
     @property
+    def preserves_unknown_rgb_power(self) -> bool:
+        """Keep RGB power unknown until the current report establishes it."""
+        return False
+
+    @property
     def light_color_control_pending(self) -> bool:
         """Return whether color support still awaits device discovery."""
         return False

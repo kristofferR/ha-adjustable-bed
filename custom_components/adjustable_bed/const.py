@@ -447,11 +447,13 @@ BED_TYPE_OKIN_7BYTE: Final = "okin_7byte"  # 7-byte via Okin service UUID
 BED_TYPE_OKIN_NORDIC: Final = "okin_nordic"  # 7-byte via Nordic UART
 BED_TYPE_OKIN_DOT: Final = "okin_dot"  # DOT PROTOCOL: CB24-style frames, FurniMove remote keycodes
 BED_TYPE_DORSAL: Final = "dorsal"
+DORSAL_ROOMI_S655_PLUS: Final = "roomi_s655_plus"
 DORSAL_ROUTES: Final = {
     "cprn": "CPRN",
     "corn": "CORN",
     "restored": "Saved Dorsal project",
     "roomi": "Roomi controls",
+    DORSAL_ROOMI_S655_PLUS: "ROOMI bed (S655 Plus)",
 }
 BED_TYPE_NERUM: Final = "nerum"
 BED_TYPE_RELAX_MOTION: Final = "relax_motion"
@@ -527,6 +529,7 @@ CONF_RICHMAT_CLASSIC_THIRD_SERVICE: Final = "richmat_classic_third_service"
 CONF_BASEREMOTE_SINGLE_BASE: Final = "baseremote_single_base"
 BED_TYPE_BEDGEAR: Final = "bedgear"
 BED_TYPE_L2MOTION: Final = "l2motion"
+BED_TYPE_ERGOBED: Final = "ergobed"
 BED_TYPE_MOODBASE: Final = "moodbase"
 BED_TYPE_MOTOMOTION: Final = "motomotion"
 BED_TYPE_HJBED: Final = "hjbed"
@@ -801,6 +804,7 @@ SUPPORTED_BED_TYPES: Final = [
     BED_TYPE_BETTERLIVING2,
     BED_TYPE_BEDGEAR,
     BED_TYPE_L2MOTION,
+    BED_TYPE_ERGOBED,
     BED_TYPE_MOODBASE,
     BED_TYPE_PARAMOUNT,
     BED_TYPE_RICHMAT_CLASSIC_APPS,
@@ -1014,6 +1018,7 @@ OFFLINE_CAPABILITY_SAFE_BED_TYPES: Final = frozenset(
         BED_TYPE_PERSONAL_COMFORT,
         BED_TYPE_BEDGEAR,
         BED_TYPE_L2MOTION,
+        BED_TYPE_ERGOBED,
         BED_TYPE_MOODBASE,
         BED_TYPE_SLEEP_EVOLUTION,
         BED_TYPE_WSILVER_LEGACY,
@@ -2023,6 +2028,12 @@ KEESON_VARIANT_AVANTI_BASES: Final = "avanti_bases"
 KEESON_VARIANT_OKIN_COMFORT_BED: Final = "okin_comfort_bed"
 KEESON_VARIANT_COMFORTFURNITURE: Final = "comfortfurniture"
 KEESON_VARIANT_ORE_ULTRAMATIC: Final = "ore_ultramatic"
+KEESON_VARIANT_LEVA_SLEEP: Final = "leva_sleep"
+ORE_GATT_ROUTE_SNAPSHOT_KEYS: Final = {
+    KEESON_VARIANT_ORE_ULTRAMATIC: "ultramatic_route",
+    KEESON_VARIANT_LEVA_SLEEP: "leva_sleep_route",
+}
+ORE_GATT_ROUTED_VARIANTS: Final = frozenset(ORE_GATT_ROUTE_SNAPSHOT_KEYS)
 # ORE comfort-bed apps (com.ore.okincomfortbed code base): explicit, never auto-selected.
 KEESON_VARIANT_AMERICANSTAR: Final = "americanstar"
 KEESON_VARIANT_MAXCOIL_UNA: Final = "maxcoil_una"
@@ -2035,14 +2046,14 @@ ORE_COMFORT_BED_VARIANTS: Final = frozenset(
         KEESON_VARIANT_AVANTI_BASES,
         KEESON_VARIANT_OKIN_COMFORT_BED,
         KEESON_VARIANT_COMFORTFURNITURE,
-        KEESON_VARIANT_ORE_ULTRAMATIC,
+        *ORE_GATT_ROUTED_VARIANTS,
         KEESON_VARIANT_AMERICANSTAR,
     }
 )
 # Keeson's share of ``pairing.OFFLINE_CAPABILITY_SAFE_VARIANTS``: variants whose
 # capabilities come only from stored config ("auto" detects its variant live).
 OFFLINE_CAPABILITY_SAFE_KEESON_VARIANTS: Final = (
-    (ORE_COMFORT_BED_VARIANTS - {KEESON_VARIANT_ORE_ULTRAMATIC})
+    (ORE_COMFORT_BED_VARIANTS - ORE_GATT_ROUTED_VARIANTS)
     | {KEESON_VARIANT_INNOVA} | frozenset(OKIN_APP_VARIANTS)
 )
 # Restonic BT Remote (com.keeson.restonicBT): the app's user-selected remote style.
@@ -2064,6 +2075,7 @@ KEESON_VARIANTS: Final = {
     KEESON_VARIANT_OKIN_COMFORT_BED: "OKIN Comfort Bed app (2M / 3M / 4M motor count)",
     KEESON_VARIANT_COMFORTFURNITURE: "ComfortFurniture app (bedding only)",
     KEESON_VARIANT_ORE_ULTRAMATIC: "ORE Ultramatic app (2M / 3M / 4M; automatic GATT route)",
+    KEESON_VARIANT_LEVA_SLEEP: "Leva Sleep app (2M / 3M / 4M; automatic GATT route)",
     KEESON_VARIANT_AMERICANSTAR: "AMERICANSTAR app (2M / 3M / 4M motor count)",
     KEESON_VARIANT_BEDSENSE_BASES: "Bedsense Bases app (2M / 3M / 4M motor count)",
     KEESON_VARIANT_INNOVA: "INNOVA app (2M / 3M / 4M motor count)",
