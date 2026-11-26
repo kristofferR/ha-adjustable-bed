@@ -34,7 +34,9 @@ async def test_sequential_pair_offline_memory_buttons_keep_each_sides_eight_name
         for side, child in zip(("left", "right"), entry.data[const.CONF_PAIR_CHILDREN], strict=True)
     }
     pair = PairedBedCoordinator(hass, entry, children)
-    dr.async_get(hass).async_get_or_create(config_entry_id=entry.entry_id, **pair.device_info)
+    dr.async_get(hass).async_get_or_create_from_info(
+        config_entry_id=entry.entry_id, device_info=pair.device_info
+    )
     hass.data[const.DOMAIN] = {entry.entry_id: pair}
     for child in children.values():
         await child.async_prime_offline_controller()

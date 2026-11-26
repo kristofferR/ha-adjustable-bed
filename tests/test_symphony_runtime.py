@@ -86,8 +86,8 @@ async def target(hass, monkeypatch, product="12", selector=9, side=1):
     monkeypatch.setattr(coordinator, "async_ensure_connected", AsyncMock(return_value=True))
     monkeypatch.setattr(coordinator, "_async_refresh_controller_auth", AsyncMock())
     hass.data.setdefault(DOMAIN, {})[entry.entry_id] = coordinator
-    device = dr.async_get(hass).async_get_or_create(
-        config_entry_id=entry.entry_id, **coordinator.device_info
+    device = dr.async_get(hass).async_get_or_create_from_info(
+        config_entry_id=entry.entry_id, device_info=coordinator.device_info
     )
     entry.mock_state(hass, ConfigEntryState.LOADED)
     rows.append(coordinator)
@@ -586,8 +586,8 @@ async def sequential_pair(hass, monkeypatch):
         hass, entry, {side: row[0] for side, row in triples.items()}, connection_mode="sequential"
     )
     hass.data[DOMAIN][entry.entry_id] = pair
-    device = dr.async_get(hass).async_get_or_create(
-        config_entry_id=entry.entry_id, **pair.device_info
+    device = dr.async_get(hass).async_get_or_create_from_info(
+        config_entry_id=entry.entry_id, device_info=pair.device_info
     )
     async_register_children(hass, pair)
     await async_register_services(hass)

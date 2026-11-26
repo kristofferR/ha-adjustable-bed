@@ -233,8 +233,8 @@ async def target(hass, monkeypatch, *, mode=0):
     monkeypatch.setattr(coordinator, "async_ensure_connected", AsyncMock(return_value=True))
     monkeypatch.setattr(coordinator, "_async_refresh_controller_auth", AsyncMock())
     hass.data.setdefault(DOMAIN, {})[entry.entry_id] = coordinator
-    device = dr.async_get(hass).async_get_or_create(
-        config_entry_id=entry.entry_id, **coordinator.device_info
+    device = dr.async_get(hass).async_get_or_create_from_info(
+        config_entry_id=entry.entry_id, device_info=coordinator.device_info
     )
     entry.mock_state(hass, ConfigEntryState.LOADED)
     rows.append(coordinator)
@@ -412,7 +412,9 @@ async def test_native_paired_children_keep_physical_targets(hass, monkeypatch, c
         hass, entry, {"left": left[0], "right": right[0]}, connection_mode=connection_mode
     )
     hass.data[DOMAIN] = {entry.entry_id: pair}
-    dr.async_get(hass).async_get_or_create(config_entry_id=entry.entry_id, **pair.device_info)
+    dr.async_get(hass).async_get_or_create_from_info(
+        config_entry_id=entry.entry_id, device_info=pair.device_info
+    )
     entry.mock_state(hass, ConfigEntryState.LOADED)
     async_register_children(hass, pair)
     devices = dr.async_get(hass)
