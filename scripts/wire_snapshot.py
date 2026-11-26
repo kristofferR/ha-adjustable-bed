@@ -290,8 +290,8 @@ def _method(name: str, *args: Any, **kwargs: Any) -> Call:
 STOP_AFTER_S = 0.3
 
 
-def _stopped(call: Call, *, scheduled: bool = False) -> Call:
-    """Run a movement and STOP it after ``STOP_AFTER_S``, as ``async_stop_command`` does.
+def _stopped(call: Call, *, scheduled: bool = False, after_s: float = STOP_AFTER_S) -> Call:
+    """Run a movement and STOP it after a delay, as ``async_stop_command`` does.
 
     The coordinator bumps the cancel counter, sets ``cancel_command``, waits for the
     running command's cleanup to release the wire, then sends ``stop_all``.
@@ -318,7 +318,7 @@ def _stopped(call: Call, *, scheduled: bool = False) -> Call:
         previous_cancel = coordinator.cancel_command
         try:
             handle = await scheduler.enqueue(CommandIntent(move))
-            await asyncio.sleep(STOP_AFTER_S)
+            await asyncio.sleep(after_s)
             await scheduler.admit_stop(stop)
             await handle.future
         finally:
@@ -327,7 +327,7 @@ def _stopped(call: Call, *, scheduled: bool = False) -> Call:
     async def run(ctrl: Any) -> None:
         coordinator = ctrl._coordinator  # noqa: SLF001
         movement = asyncio.ensure_future(call(ctrl))
-        await asyncio.sleep(STOP_AFTER_S)
+        await asyncio.sleep(after_s)
         coordinator.cancel_counter += 1
         coordinator.cancel_command.set()
         await asyncio.gather(movement, return_exceptions=True)
@@ -430,11 +430,13 @@ def plan_commands(controller: Any) -> list[Command]:
         # These STOP paths consume the interrupted command's release receipt.
         # Keep older synthetic STOP rows stable.
         scheduled = controller._coordinator.bed_type in {"shuda", "atlas_lift"}
+        # Stop between OkimattMotion refresh ticks so equal deadlines cannot race.
+        after_s = 0.35 if controller._coordinator.bed_type == "okimattmotion" else STOP_AFTER_S
         plan.append(Command(
-            f"stop:{spec.key}_open", _stopped(spec.open_fn, scheduled=scheduled), True, movement=True
+            f"stop:{spec.key}_open", _stopped(spec.open_fn, scheduled=scheduled, after_s=after_s), True, movement=True
         ))
         plan.append(Command(
-            f"stop:{spec.key}_close", _stopped(spec.close_fn, scheduled=scheduled), True, movement=True
+            f"stop:{spec.key}_close", _stopped(spec.close_fn, scheduled=scheduled, after_s=after_s), True, movement=True
         ))
     for spec in _value(controller, "controller_button_specs", ()):
         # For Leva the gesture button only cancels a hold. The movement and
@@ -475,6 +477,15 @@ def plan_commands(controller: Any) -> list[Command]:
             )
     if _value(_value(controller, "_coordinator", None), "bed_type", None) == "betterliving2":
         plan = _betterliving2_historical_actions(plan, _value(controller, "wire", ""))
+    if controller._coordinator.bed_type == "okimattmotion":
+        from custom_components.adjustable_bed.alarm import AlarmRequest
+
+        for enabled in (True, False):
+            alarm = AlarmRequest(
+                enabled=enabled, hour=7, minute=45, wake_action="wake_mode_1",
+                sleep_timer=20, reference_time=datetime.datetime.fromisoformat(FROZEN_NOW),
+            )
+            plan.append(Command(f"set_alarm:{enabled}", _method("configure_alarm", alarm), True))
     if controller._coordinator.bed_type in {"ergobed", "moodbase"} and controller.alarm_capability:
         from custom_components.adjustable_bed.alarm import AlarmRequest
 
@@ -672,7 +683,8 @@ def _argument_commands(controller: Any) -> list[Command]:
     if _flag(c, "supports_massage_intensity_control"):
         top = int(_value(c, "massage_intensity_max", 10))
         for zone in _value(c, "massage_intensity_zones", []):
-            for level in range(top + 1):
+            bottom = c.massage_intensity_min(zone) if c._coordinator.bed_type == "okimattmotion" else 0
+            for level in range(bottom, top + 1):
                 add(
                     "supports_massage_intensity_control",
                     "set_massage_intensity",
@@ -2451,6 +2463,10 @@ def build_scenarios() -> list[Scenario]:
     scenarios = [default_scenario(bed_type) for bed_type in SUPPORTED_BED_TYPES
                  if bed_type not in RICHMAT_MH_APP_CATALOGS]
     scenarios.extend(route_scenarios())
+    scenarios.append(
+        Scenario(id="okimattmotion:20", bed_type="okimattmotion",
+                 entry_data={"product_type": "20"}, layout_id="okimattmotion")
+    )
     scenarios.append(dataclasses.replace(
         default_scenario("langjue"), id="langjue:head_foot", layout_id="langjue",
         entry_data={"product_type": "head_foot", "has_light": True, "has_massage": True},

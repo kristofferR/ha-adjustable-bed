@@ -25,6 +25,10 @@ from pathlib import Path
 from pathlib import Path as _Path
 
 FROZEN_FRAMES: dict[str, frozenset[str]] = {
+    "okimattmotion": frozenset(
+        row["expected_bytes"].replace(" ", "")
+        for row in json.loads((Path(__file__).parent / "fixtures/okimattmotion/vectors.json").read_text())
+    ),
     "comfortfurniture": frozenset(v["expected_bytes"] for v in json.loads(
         (Path(__file__).parent / "fixtures/comfortfurniture/vectors.json").read_text()
     ) if v["kind"] == "command"),

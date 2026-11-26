@@ -94,6 +94,7 @@ from .const import (
     BED_TYPE_MOTOMOTION,
     BED_TYPE_N32_MOTION_BED,
     BED_TYPE_OCTO,
+    BED_TYPE_OKIMATTMOTION,
     BED_TYPE_OKIMIKI,
     BED_TYPE_OKIN_CST,
     BED_TYPE_OKIN_DOT,
@@ -270,6 +271,7 @@ from .profiles import jiecang as jiecang_profiles
 from .profiles import langjue as langjue_app
 from .profiles import logicdata as logicdata_profiles
 from .profiles import malouf as malouf_profiles
+from .profiles import okimattmotion as okimattmotion_app
 from .profiles import sleep_assist_pro as sleep_assist_pro_app
 from .profiles import sleep_assistant as sleep_assistant_app
 from .profiles.baseremote import SIDE_LAYOUTS as BASEREMOTE_SIDE_LAYOUTS
@@ -3711,6 +3713,18 @@ SETUP_PROFILES: Final[dict[str, SetupProfile]] = {
             "remedy_iii": "Remedy III", "contempo_iv": "Contempo IV",
         }, "remedy_iii"),),
         title=lambda _data: "Rize Home",
+    ),
+    BED_TYPE_OKIMATTMOTION: SetupProfile(
+        owns={
+            CONF_MOTOR_COUNT: 2,
+            CONF_HAS_MASSAGE: True,
+            CONF_DISABLE_ANGLE_SENSING: True,
+            CONF_PROTOCOL_VARIANT: VARIANT_AUTO,
+            CONF_MOTOR_PULSE_DELAY_MS: okimattmotion_app.REFRESH_MS,
+        },
+        questions=(Question(
+            CONF_PRODUCT_TYPE, okimattmotion_app.LAYOUTS, okimattmotion_app.DEFAULT_LAYOUT,
+        ),),
     ),
     BED_TYPE_OKIN_MOTIONBED: SetupProfile(
         owns={

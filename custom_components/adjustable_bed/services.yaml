@@ -271,6 +271,14 @@ set_alarm:
           step: 10
           unit_of_measurement: min
           mode: slider
+    sleep_timer:
+      selector:
+        number:
+          min: 10
+          max: 30
+          step: 10
+          unit_of_measurement: min
+          mode: slider
     light:
       selector:
         boolean:

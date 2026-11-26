@@ -77,6 +77,7 @@ OPTIONAL_FIELDS: Final = (
     "foot_massage_level",
     "massage_intensity",
     "massage_duration",
+    "sleep_timer",
     "massage_zone",
     "mattress_side",
     "sound",
@@ -104,6 +105,8 @@ class AlarmCapability:
     massage_levels: int = 0
     massage_intensities: int = 0
     massage_durations: tuple[int, ...] = ()
+    # Optional sleep selector sent with the alarm. Omitting it leaves sleep off.
+    sleep_timers: tuple[int, ...] = ()
     massage_zones: tuple[str, ...] = ()
     # Some beds combine massage with a wake action only when explicitly requested.
     default_massage_zone: bool = True
@@ -146,6 +149,7 @@ class AlarmCapability:
             "foot_massage_level": self.massage_levels > 0,
             "massage_intensity": self.massage_intensities > 0,
             "massage_duration": bool(self.massage_durations),
+            "sleep_timer": bool(self.sleep_timers),
             "massage_zone": bool(self.massage_zones),
             "mattress_side": bool(self.mattress_sides),
             "sound": bool(self.sounds),
@@ -170,6 +174,7 @@ class AlarmRequest:
     foot_massage_level: int = 0
     massage_intensity: int = 1
     massage_duration: int | None = None
+    sleep_timer: int | None = None
     massage_zone: str | None = None
     # Set to target the mattress topper's alarm instead of the bed's.
     mattress_side: str | None = None
