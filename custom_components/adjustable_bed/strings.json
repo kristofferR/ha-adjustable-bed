@@ -4354,9 +4354,6 @@
       }
     },
     "sensor": {
-      "langjue_massage_status": {
-        "name": "Massage status code"
-      },
       "shuda_alarm_1": {
         "name": "Alarm 1",
         "state_attributes": {

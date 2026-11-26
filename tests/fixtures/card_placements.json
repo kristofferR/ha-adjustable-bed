@@ -4537,9 +4537,6 @@
  "sensor:jalon_massage_timer_bucket": {
   "card_section": "hidden"
  },
- "sensor:langjue_massage_status": {
-  "card_section": "hidden"
- },
  "sensor:leggett_led_mask": {
   "card_section": "hidden"
  },

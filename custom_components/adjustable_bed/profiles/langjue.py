@@ -2,13 +2,11 @@
 
 from typing import Final, Literal
 
-from ..const import LANGJUE_MOTOR_REFRESH_MS, LANGJUE_SERVICE_UUID
-
-SERVICE: Final = LANGJUE_SERVICE_UUID
+SERVICE: Final = "5a020001-c591-e131-0eb8-a30e24fe1275"
 PRESETS_ONLY: Final = "presets_only"
 HEAD_FOOT: Final = "head_foot"
 HANDSHAKE_DELAY_MS: Final = 1000
-MOTOR_REFRESH_MS: Final = LANGJUE_MOTOR_REFRESH_MS
+MOTOR_REFRESH_MS: Final = 500
 DIRECTIONS: Final = {
     "back_up": (0, True),
     "back_down": (0, False),

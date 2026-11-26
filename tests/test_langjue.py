@@ -21,6 +21,7 @@ from pytest_homeassistant.common import MockConfigEntry
 from custom_components.adjustable_bed import services
 from custom_components.adjustable_bed.alarm import AlarmRequest
 from custom_components.adjustable_bed.beds import langjue as runtime
+from custom_components.adjustable_bed.button import ControllerActionButton
 from custom_components.adjustable_bed.codec import langjue as codec
 from custom_components.adjustable_bed.codec.langjue import Op
 from custom_components.adjustable_bed.command_scheduler import HoldLease
@@ -211,9 +212,17 @@ async def test_session_sequence_and_corrected_notifications(hass):
     emit(sender, bytearray.fromhex(fixtures[6]["bytes"]))
     assert coord.controller_state[massage_intensity("foot")] == 3
     assert coord.controller_state[MASSAGE_TIMER_MINUTES] == 10
-    assert coord.controller_state[runtime.MASSAGE_STATUS] == 3
+    assert ctrl.protocol_diagnostics["massage_status_code"] == 3
+    assert not ctrl.controller_state_sensor_specs
+    refresh = next(
+        spec for spec in ctrl.controller_button_specs if spec.key == "langjue_massage_refresh"
+    )
+    assert refresh.diagnostic
+    assert not ControllerActionButton(coord, refresh).entity_registry_enabled_default
     await ctrl.stop_notify()
     emit(sender, bytearray.fromhex(fixtures[3]["bytes"]))
+    emit(sender, bytearray.fromhex(fixtures[6]["bytes"]))
+    assert "massage_status_code" not in ctrl.protocol_diagnostics
     assert coord.controller_state.get(massage_intensity("head")) is None
     assert coord.controller_state.get(UNDER_BED_LIGHTS_ON) is None
 

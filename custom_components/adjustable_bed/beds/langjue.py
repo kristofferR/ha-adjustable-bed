@@ -35,7 +35,6 @@ from .catalog_buttons import PRESET_KEY, massage_button
 from .entity_specs import (
     ControllerButtonSpec,
     ControllerMotorHoldSpec,
-    ControllerStateSensorSpec,
     ControllerSwitchSpec,
     MotorControlSpec,
 )
@@ -48,7 +47,6 @@ if TYPE_CHECKING:
     from ..coordinator import AdjustableBedCoordinator
 
 _REPLY_TIMEOUT: Final = 2.0
-MASSAGE_STATUS: Final = StateKey[int | None]("langjue_massage_status")
 ALARM_ENABLED: Final = StateKey[bool | None]("langjue_alarm_enabled")
 _READ_ALARM: Final = codec.frame(Op.READ_ALARM, 1, b"\x00")
 _ALARM_RECEIVERS = DomainKey[set[str]]("langjue_alarm_receivers")
@@ -82,6 +80,7 @@ class _Link:
     cleanup_context: CommandContext | None = None
     alarm_payload: bytes | None = None
     checked_alarm: AlarmRequest | None = None
+    massage_status_code: int | None = None
 
 
 def resolve_gatt(client: BleakClient) -> tuple[BleakGATTCharacteristic, BleakGATTCharacteristic]:
@@ -132,6 +131,14 @@ class LangjueController(BedController):
     @property
     def control_characteristic_uuid(self) -> str:
         return self._link.writer.uuid if self._link is not None else ""
+
+    @property
+    def protocol_diagnostics(self) -> dict[str, object]:
+        """Report the raw massage status for the current connection."""
+        link = self._link
+        if link is None or not self._is_current(link) or link.massage_status_code is None:
+            return {}
+        return {"massage_status_code": link.massage_status_code}
 
     def _is_current(self, link: _Link) -> bool:
         return self._link is link and self.client is link.client and link.client.is_connected
@@ -193,7 +200,6 @@ class LangjueController(BedController):
             massage_intensity("head")(None),
             massage_intensity("foot")(None),
             MASSAGE_TIMER_MINUTES(None),
-            MASSAGE_STATUS(None),
             ALARM_ENABLED(None),
         )
 
@@ -228,7 +234,7 @@ class LangjueController(BedController):
             elif msg.op is Op.READ_MASSAGE_TIME:
                 self.forward_controller_state_updates(MASSAGE_TIMER_MINUTES(msg.decimal_value))
             elif msg.op is Op.READ_MASSAGE_STATE and msg.payload:
-                self.forward_controller_state_updates(MASSAGE_STATUS(msg.payload[0]))
+                link.massage_status_code = msg.payload[0]
 
     async def _query(
         self,
@@ -608,6 +614,7 @@ class LangjueController(BedController):
                 "langjue_massage_refresh",
                 "Refresh massage state",
                 lambda ctrl: cast(LangjueController, ctrl)._read_massage(),
+                diagnostic=True,
             ),
         )
 
@@ -726,19 +733,6 @@ class LangjueController(BedController):
         for zone in app.MASSAGE_ZONES.values():
             frame = codec.frame(Op.READ_MASSAGE_LEVEL, 1, bytes((zone,)))
             await self._send(link, frame, event, response=True)
-
-    @property
-    def controller_state_sensor_specs(self) -> tuple[ControllerStateSensorSpec, ...]:
-        if not self._has_massage:
-            return ()
-        return (
-            ControllerStateSensorSpec(
-                "langjue_massage_status",
-                "langjue_massage_status",
-                MASSAGE_STATUS,
-                "mdi:vibrate",
-            ),
-        )
 
     @property
     def supports_clock_sync(self) -> bool:
