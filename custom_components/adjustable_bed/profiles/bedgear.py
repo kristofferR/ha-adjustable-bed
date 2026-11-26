@@ -25,6 +25,10 @@ def eligible(name: str | None) -> bool:
     return name is not None and name_length(name) == 14 and "HHC" in name
 
 
+def ergobed_eligible(name: str | None) -> bool:
+    return isinstance(name, str) and eligible(name) and name_character(name, 8) in "0123456789ABCD"
+
+
 def panel(name: str | None) -> str:
     """Keep the source's selector priority, case and UTF-16 indexing."""
     if name is None or name_length(name) < 10:

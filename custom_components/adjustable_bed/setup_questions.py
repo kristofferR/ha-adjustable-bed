@@ -57,6 +57,7 @@ from .const import (
     BED_TYPE_CUSTOMATIC_DEMO,
     BED_TYPE_DOUBLESLEEP,
     BED_TYPE_ENSO2,
+    BED_TYPE_ERGOBED,
     BED_TYPE_ESHINE,
     BED_TYPE_ESHINE_OKIN,
     BED_TYPE_FSM_RELAX,
@@ -266,6 +267,7 @@ from .profiles import logicdata as logicdata_profiles
 from .profiles import malouf as malouf_profiles
 from .profiles import sleep_assistant as sleep_assistant_app
 from .profiles.baseremote import SIDE_LAYOUTS as BASEREMOTE_SIDE_LAYOUTS
+from .profiles.bedgear import ergobed_eligible
 from .profiles.bobpowerbase import LAYOUTS as BOB_LAYOUTS
 from .profiles.bobpowerbase import PROFILE_CHOICES as BOB_PROFILES
 from .profiles.comfort_enhancement3 import CHOICES_WITH_CODE, REMOTE_CODE, REMOTES
@@ -396,6 +398,7 @@ _OWNED_BY_BED_TYPE: Final[dict[str, frozenset[str]]] = {
     BED_TYPE_MOTION_BED: _APP_DEFINED,
     "bedgear": _APP_DEFINED,
     "l2motion": _APP_DEFINED,
+    BED_TYPE_ERGOBED: _APP_DEFINED,
     BED_TYPE_MOODBASE: _APP_DEFINED,
     BED_TYPE_MOTOMOTION: _APP_DEFINED,
     BED_TYPE_DOUBLESLEEP: _APP_DEFINED - {CONF_MOTOR_PULSE_COUNT},
@@ -1506,6 +1509,22 @@ def _moodbase_errors(data: Mapping[str, Any]) -> dict[str, str]:
 
     name = data.get(CONF_BLE_DEVICE_NAME)
     return {} if isinstance(name, str) and eligible(name) else {CONF_BLE_DEVICE_NAME: "moodbase_profile"}
+
+
+def _ergobed_seed(
+    _hass: HomeAssistant, data: Mapping[str, Any], discovered: BluetoothServiceInfoBleak | None
+) -> dict[str, Any]:
+    from .bluetooth_transport import advertised_local_name
+
+    name = advertised_local_name(discovered)
+    return {CONF_BLE_DEVICE_NAME: name, **data} if name else dict(data)
+
+
+def _ergobed_errors(data: Mapping[str, Any]) -> dict[str, str]:
+    name = data.get(CONF_BLE_DEVICE_NAME)
+    if not isinstance(name, str) or not ergobed_eligible(name):
+        return {CONF_BLE_DEVICE_NAME: "ergobed_profile"}
+    return {}
 
 
 def _l2motion_errors(data: Mapping[str, Any]) -> dict[str, str]:
@@ -3814,6 +3833,19 @@ SETUP_PROFILES: Final[dict[str, SetupProfile]] = {
         derive=lambda _data: _NO_PULSE_CHOICE,
         seed=_motion_bed_seed,
         title=lambda _data: "Bedgear",
+    ),
+    BED_TYPE_ERGOBED: _asking(
+        BED_TYPE_ERGOBED,
+        owns={
+            **_BASE[BED_TYPE_ERGOBED].owns,
+            CONF_HAS_MASSAGE: False,
+            CONF_DISABLE_ANGLE_SENSING: True,
+        },
+        questions=(Question(CONF_BLE_DEVICE_NAME, default="", text=True),),
+        validate=_ergobed_errors,
+        derive=lambda _data: _NO_PULSE_CHOICE,
+        seed=_ergobed_seed,
+        title=lambda _data: "ErgoBed Control",
     ),
     BED_TYPE_MOODBASE: _asking(
         BED_TYPE_MOODBASE,

@@ -475,7 +475,7 @@ def plan_commands(controller: Any) -> list[Command]:
             )
     if _value(_value(controller, "_coordinator", None), "bed_type", None) == "betterliving2":
         plan = _betterliving2_historical_actions(plan, _value(controller, "wire", ""))
-    if controller._coordinator.bed_type == "moodbase" and controller.alarm_capability:
+    if controller._coordinator.bed_type in {"ergobed", "moodbase"} and controller.alarm_capability:
         from custom_components.adjustable_bed.alarm import AlarmRequest
 
         for intensity in (0, 1, 2):
@@ -1540,6 +1540,8 @@ def default_scenario(bed_type: str) -> Scenario:
         data.update({const.CONF_PRODUCT_TYPE: "400E", const.CONF_PROTOCOL_VARIANT: variant})
     if bed_type in (const.BED_TYPE_BEDGEAR, const.BED_TYPE_L2MOTION, const.BED_TYPE_MOODBASE):
         data[const.CONF_BLE_DEVICE_NAME] = "HHC0000001D00X"
+    if bed_type == const.BED_TYPE_ERGOBED:
+        data[const.CONF_BLE_DEVICE_NAME] = "HHC0000097DE0X"
     if bed_type == const.BED_TYPE_JALON:
         data.update({const.CONF_PRODUCT_TYPE: "2", const.CONF_BLE_DEVICE_NAME: "smartbed123"})
         replies = {"*": "a50b00000258010106"}
@@ -1655,7 +1657,7 @@ def default_scenario(bed_type: str) -> Scenario:
         replies = {"write:a0b156": "a0b15689070707ba"}
     return Scenario(
         id=bed_type,
-        layout_id="bedgear" if bed_type in (const.BED_TYPE_L2MOTION, const.BED_TYPE_MOODBASE) else "adjustable_lumbar" if bed_type == const.BED_TYPE_ADJUSTABLE_BED else None,
+        layout_id="bedgear" if bed_type in (const.BED_TYPE_ERGOBED, const.BED_TYPE_L2MOTION, const.BED_TYPE_MOODBASE) else "adjustable_lumbar" if bed_type == const.BED_TYPE_ADJUSTABLE_BED else None,
         bed_type=bed_type,
         protocol_variant=variant,
         entry_data=data,
@@ -2528,6 +2530,14 @@ def build_scenarios() -> list[Scenario]:
     ):
         scenarios.append(Scenario(id=f"moodbase:{label}", bed_type="moodbase", layout_id="bedgear",
             entry_data={"ble_device_name": "HHC00000" + suffix}))
+    scenarios.append(
+        Scenario(
+            id="ergobed:night_light",
+            bed_type="ergobed",
+            layout_id="bedgear",
+            entry_data={"ble_device_name": "HHC0000001B00X"},
+        )
+    )
 
     by_id = {scenario.id: scenario for scenario in scenarios}
     scenarios.extend(feature_scenarios(by_id))
@@ -2684,6 +2694,11 @@ async def _connect(controller: Any, recorder: Recorder, clock: FakeClock) -> dic
             await controller.async_after_connect(None)
             return
         await controller.start_notify(lambda *_: None)
+        if controller._coordinator.bed_type == "ergobed":
+            session = SimpleNamespace(hass=controller._coordinator.hass, is_current=lambda: True)
+            await controller.async_after_connect(session)
+            if (startup_task := controller._startup_task) is not None:
+                await startup_task
         if controller._coordinator.bed_type == "richmat_classic_apps" and getattr(controller, "app", None) == "maxprime":
             await controller.async_after_connect(SimpleNamespace(is_current=lambda: True))
         if controller._coordinator.bed_type in {"komfyd", "comfyds", "suta"}:

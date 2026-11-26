@@ -30,6 +30,7 @@ from .beds.richmat_classic.profiles import APP_NAMES as RICHMAT_CLASSIC_APPS
 from .beds.silvermotion.discovery import scan_matches as silvermotion_scan_matches
 from .beds.starcode.abm5_4_profiles import TRANSPORTS as STARCODE_ABM5_4_TRANSPORTS
 from .beds.svane.state import is_svane_discovery_name
+from .bluetooth_transport import advertised_local_name
 from .const import (
     BED_TYPE_ADJUSTABLE_BED,
     BED_TYPE_ADJUSTABLE_LUMBAR,
@@ -61,6 +62,7 @@ from .const import (
     BED_TYPE_DIAGNOSTIC,
     BED_TYPE_DOUBLESLEEP,
     BED_TYPE_ENSO2,
+    BED_TYPE_ERGOBED,
     BED_TYPE_ERGOMOTION,
     BED_TYPE_ERGOMOTION_4,
     BED_TYPE_ESHINE,
@@ -311,6 +313,7 @@ from .discovery_hints import (
 )
 from .discovery_hints._hints import ManufacturerHint, NameHint
 from .profiles.bedgear import eligible as bedgear_eligible
+from .profiles.bedgear import ergobed_eligible
 from .profiles.bobpowerbase import PROFILE_CHOICES as BOB_PROFILES
 from .profiles.bobpowerbase import SCAN_KEYWORDS as BOB_SCAN_KEYWORDS
 from .profiles.customatic_demo import NAME_PREFIX as CUSTOMATIC_DEMO_NAME_PREFIX
@@ -769,6 +772,7 @@ BED_TYPE_DISPLAY_NAMES: dict[str, str] = {
     BED_TYPE_MALOUF_NEW_OKIN: "Malouf remote, newer receiver",
     "bedgear": "Bedgear app",
     "l2motion": "L2 Motion app",
+    BED_TYPE_ERGOBED: "ErgoBed Control app",
     BED_TYPE_MOODBASE: "MoodBase app",
     BED_TYPE_MOTOSLEEP: "MotoSleep / Power Bob app",
     BED_TYPE_OCTO: "OCTO Smart Control",
@@ -1442,6 +1446,8 @@ def detect_new_bed(service_info: BluetoothServiceInfoBleak) -> DetectionResult:
     service_uuids = [str(uuid).lower() for uuid in service_info.service_uuids or ()]
     if result.bed_type is not None and _rests_on_shared_service(service_uuids, first, result):
         if is_mac_like_name(service_info.name):
+            if "app_hint:ergobed" in result.signals:
+                return DetectionResult(BED_TYPE_ERGOBED, 0.3, ["app_hint:ergobed"])
             return DetectionResult(None, 0.0, ["shared_service:no_name"])
         result.confidence = min(result.confidence, 0.5)
         result.signals.append("shared_service:no_name_match")
@@ -1773,6 +1779,18 @@ def _detect_with_first_pass(
             result = DetectionResult("bobpowerbase", 0.3, ["name:bobpowerbase_app_candidate"])
         elif result.bed_type != "bobpowerbase":
             result.ambiguous_types = list(dict.fromkeys([*(result.ambiguous_types or ()), "bobpowerbase"]))
+    if (
+        getattr(service_info, "advertisement", None) is not None
+        and ergobed_eligible(advertised_local_name(service_info))
+        and not any(signal.startswith("excluded:") for signal in result.signals)
+    ):
+        # Keep a raw-name-only match visible in setup at app-choice confidence.
+        if result.bed_type is None:
+            result.bed_type = BED_TYPE_ERGOBED
+            result.confidence = 0.3
+        else:
+            result.ambiguous_types = [*(result.ambiguous_types or ()), BED_TYPE_ERGOBED]
+        result.signals.append("app_hint:ergobed")
     return result
 
 
