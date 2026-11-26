@@ -309,6 +309,7 @@ from .discovery_hints import (
     first_pass,
 )
 from .discovery_hints._hints import ManufacturerHint, NameHint
+from .discovery_hints.linak import matches_vindo_advertisement
 from .profiles.bedgear import eligible as bedgear_eligible
 from .profiles.bobpowerbase import PROFILE_CHOICES as BOB_PROFILES
 from .profiles.bobpowerbase import SCAN_KEYWORDS as BOB_SCAN_KEYWORDS
@@ -2665,9 +2666,7 @@ def _detect_bed_type_detailed(
             service_info.address,
             service_info.name,
         )
-        from .profiles.vindo import matches_advertisement
-
-        vindo = matches_advertisement(device_name, service_uuids)
+        vindo = matches_vindo_advertisement(device_name, service_uuids)
         if vindo:
             signals.append("app_hint:vindo")
         return DetectionResult(

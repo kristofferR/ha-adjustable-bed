@@ -240,7 +240,8 @@ async def test_real_discovery_preserves_receiver_choice_and_blocks_show_all_auto
 async def test_unrelated_unique_receiver_still_reaches_normal_confirm(
     hass: HomeAssistant, enable_custom_integrations, mock_bluetooth_service_info
 ) -> None:
-    mock_bluetooth_service_info.name = "Linak receiver"
+    # A Linak control receiver whose name does not match Vindö discovery.
+    mock_bluetooth_service_info.name = "Bed 1696"
     mock_bluetooth_service_info.service_uuids = [const.LINAK_CONTROL_SERVICE_UUID]
     result = await hass.config_entries.flow.async_init(
         const.DOMAIN, context={"source": SOURCE_BLUETOOTH}, data=mock_bluetooth_service_info

@@ -2,18 +2,15 @@
 
 from __future__ import annotations
 
-from collections.abc import Collection
 from enum import IntEnum
 from typing import Final, Literal
 
 from ..codec.linak import build_simultaneous_command, control_frame
-from ..const import LINAK_CONTROL_SERVICE_UUID
 
 type Axis = Literal["back", "legs"]
 type Positions = tuple[int, int]
 
 AXES: Final = ("back", "legs")
-NAMES: Final = ("linak", "lin2ble", "ble2lin")
 REFRESH_MS: Final = 300
 HOLD_LIMIT_MS: Final = 20_000
 MASSAGE_STEP_MS: Final = 800
@@ -44,10 +41,6 @@ class Opcode(IntEnum):
     LIGHT_TOGGLE = 0x94
     LIGHT_STEP_UP = 0x9E
     LIGHT_STEP_DOWN = 0x9F
-
-
-def matches_advertisement(name: str, services: Collection[str]) -> bool:
-    return LINAK_CONTROL_SERVICE_UUID in services and any(word in name.lower() for word in NAMES)
 
 
 def motion(back: bool | None, legs: bool | None) -> bytes:
