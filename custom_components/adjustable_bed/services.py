@@ -2402,6 +2402,7 @@ def _alarm_request(call: ServiceCall) -> AlarmRequest:
         hour=alarm_time.hour if alarm_time is not None else 0,
         minute=alarm_time.minute if alarm_time is not None else 0,
         reference_time=dt_util.now(),
+        time_provided=alarm_time is not None,
         **optional,
     )
 

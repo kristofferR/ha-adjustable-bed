@@ -477,6 +477,7 @@ data:
 |-----|--------------|---------------|
 | Bed Tech | From the selected model's alarm choices | Countdown or three-slot alarms on supported models. Calendar models use a uniquely reported `slot`, with `weekdays` or once. `mattress_side` selects the separate vibrating mattress alarm, with intensity 1–3 |
 | Bedgear | None | Once; leave `slot` out. `massage_intensity` 1 or 2 |
+| ErgoBed Control | None | Once on E-name layouts; leave `slot` out. `massage_intensity` 1 or 2. Turning off keeps the reported time unless you supply one. Supply a time if the current connection has no valid report |
 | BF and Cherish | `none`, `memory_1`, `memory_2` | Once only |
 | BedSmart / X-Series | From the selected layout's alarm page; left out, the layout's first wake action is used. `none` only with `massage: true` and a supported zone | The layout's `massage` zones and combinations. Once, at the next occurrence: leave out `weekdays` and `slot` |
 | BetterLiving2 | `massage`, `memory_1`, `memory_2` | `weekdays` or once, at the next occurrence |

@@ -9,7 +9,7 @@ from dataclasses import dataclass
 from functools import partial
 from math import isfinite
 from time import monotonic
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, ClassVar
 
 from homeassistant.components.sensor import SensorDeviceClass
 
@@ -33,6 +33,7 @@ from ...controller_state import StateKey
 from ...errors import invalid
 from ...labels import display_label
 from ...profiles.bedgear import BedgearProfile, Control
+from ...profiles.ergobed import ErgoBedProfile
 from ...profiles.l2motion import L2MotionProfile
 from ...profiles.moodbase import MoodBaseProfile
 from ..base import CONTROLLER_GESTURE_RELEASE, BedController, ProfileExecution, require_controller
@@ -112,19 +113,25 @@ async def press(controller: BedController, *, key: str) -> None:
     await require_controller(controller, BedgearController).press(key)
 
 
-class BedgearController(ProfileExecution[BedgearProfile | L2MotionProfile | MoodBaseProfile], BedController):
+class BedgearController(
+    ProfileExecution[BedgearProfile | L2MotionProfile | MoodBaseProfile | ErgoBedProfile],
+    BedController,
+):
+    _receiver_type: ClassVar[type[Receiver]] = Receiver
+    _timer_max: ClassVar[int] = 65535
+
     def __init__(
         self,
         coordinator: AdjustableBedCoordinator,
         *,
         name: str,
-        profile: L2MotionProfile | MoodBaseProfile | None = None,
+        profile: L2MotionProfile | MoodBaseProfile | ErgoBedProfile | None = None,
     ) -> None:
         super().__init__(coordinator)
         self.profile = profile if profile is not None else BedgearProfile(name)
         self._address = coordinator.address
         self._link: Link | None = None
-        self._receiver = Receiver()
+        self._receiver = self._receiver_type()
         self._rgb: tuple[int, int, int] | None = None
         self._timer: int | None = None
         self._alarm: tuple[str, str, str] | None = None
@@ -545,7 +552,7 @@ class BedgearController(ProfileExecution[BedgearProfile | L2MotionProfile | Mood
                     if r is not None and g is not None and b is not None
                     else None
                 )
-                self._timer = min(65535, values[3]) if values[3] is not None else None
+                self._timer = min(self._timer_max, values[3]) if values[3] is not None else None
                 self._on_rgb_report()
             alarm = fields.get("alarm")
             if isinstance(alarm, list) and all(isinstance(v, str) for v in alarm):
@@ -604,7 +611,7 @@ class BedgearController(ProfileExecution[BedgearProfile | L2MotionProfile | Mood
                 await link.client.stop_notify(char)
 
     def _reset_session_state(self) -> None:
-        self._receiver = Receiver()
+        self._receiver = self._receiver_type()
         self._music = Music()
         self._music_sent.clear()
         self._mode_sent = False
