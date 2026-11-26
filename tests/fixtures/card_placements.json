@@ -5379,6 +5379,9 @@
  "switch:l2motion_sync": {
   "card_section": "utility"
  },
+ "switch:langjue_alarm_enabled": {
+  "card_section": "utility"
+ },
  "switch:linak_automatic_drive": {
   "card_section": "utility"
  },

@@ -5,6 +5,7 @@ from __future__ import annotations
 import asyncio
 import logging
 from collections.abc import Callable, Coroutine
+from contextlib import nullcontext
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, Final
 
@@ -339,7 +340,9 @@ class AdjustableBedControllerSwitch(AdjustableBedEntity, SwitchEntity):
             with delivered(show):
                 await live.set_fn(ctrl, on)
 
-        await self._coordinator.async_execute_controller_command(apply)
+        admission = self._spec.command_admission
+        with admission() if admission is not None else nullcontext():
+            await self._coordinator.async_execute_controller_command(apply)
 
     async def async_turn_on(self, **kwargs: Any) -> None:
         await self._async_set(True)

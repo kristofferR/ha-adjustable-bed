@@ -390,6 +390,7 @@ actions; its bounded `hold_control` behavior has separate timing in the
 | AdjustaMattress app | `adjustamattress` | 5 | 200 ms |
 | Aging in Place / Dawn House app | `agingplace` | 5 | 200 ms |
 | Comfort Enhancements app | `comfort_enhancements` | 5 | 200 ms |
+| Comfort Smart Bed app (Langjue) | `langjue` | 2 | 500 ms |
 | Customatic Clarity app (Rize Clarity) | `customatic_clarity` | 8 | 120 ms |
 | Customatic Jerome's C app | `customatic_jeromes` | 8 | 120 ms |
 | Customatic Remedy app (Rize Remedy) | `customatic_remedy` | 8 | 120 ms |

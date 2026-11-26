@@ -182,6 +182,7 @@ from .const import (
     BED_TYPE_JENSEN,
     BED_TYPE_KAIDI,
     BED_TYPE_KOMFYD,
+    BED_TYPE_LANGJUE,
     BED_TYPE_LEGGETT_GEN2,
     BED_TYPE_LEGGETT_LP_LEGACY,
     BED_TYPE_LEGGETT_OKIN,
@@ -1374,6 +1375,7 @@ _DECLARED_QUESTION_ROUTES: Final = frozenset(
         # The layout is BedSense's own question.
         BED_TYPE_BEDSENSE,
         # Each app's own answers.
+        BED_TYPE_LANGJUE,
         BED_TYPE_COMFORT_ENHANCEMENT3,
         BED_TYPE_MOTION_BED,
         "ultramatic_smart_bed",
@@ -2390,6 +2392,7 @@ class CapabilityReport:
     leva_receiver_valid: bool | None = None
     starcode_transport_valid: bool | None = None
     truemotion_transport_valid: bool | None = None
+    langjue_receiver_valid: bool | None = None
     sleeptime_uart_valid: bool | None = None
     starcode_transport_selector: str | None = None
     starcode_ble_device_name: str | None = None
@@ -2722,7 +2725,7 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
     @property
     def _migration_requires_check(self) -> bool:
         staged = self._pending_entry if self._pending_entry is not None else self._manual_data
-        if staged is not None and staged.get(CONF_BED_TYPE) == BED_TYPE_DORSAL:
+        if staged is not None and staged.get(CONF_BED_TYPE) in (BED_TYPE_DORSAL, BED_TYPE_LANGJUE):
             return True
         if self._migration_family is None:
             return False
@@ -2997,6 +3000,11 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         self._migration_preview = {}
         if bed_type == "relax_motion" and data[CONF_BED_TYPE] != bed_type:
             data.pop(CONF_PRODUCT_TYPE, None)
+        langjue_settings = (CONF_PRODUCT_TYPE, CONF_HAS_LIGHT, CONF_HAS_MASSAGE)
+        entering_langjue = bed_type == BED_TYPE_LANGJUE and data[CONF_BED_TYPE] != bed_type
+        if entering_langjue:
+            for key in langjue_settings:
+                data.pop(key, None)
         if self._migration is not None:
             # Options win over data, as for the running entry.
             saved = {**self._migration.data, **self._migration.options}
@@ -3010,7 +3018,11 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                 data[CONF_BED_TYPE] = bed_type
                 if bed_type == "relax_motion" and CONF_PRODUCT_TYPE in saved:
                     data[CONF_PRODUCT_TYPE] = saved[CONF_PRODUCT_TYPE]
-                for key in _ROUTE_DEFAULT_KEYS:
+                restore = (
+                    (*_ROUTE_DEFAULT_KEYS, *langjue_settings)
+                    if entering_langjue else _ROUTE_DEFAULT_KEYS
+                )
+                for key in restore:
                     if key in saved:
                         data[key] = copy.deepcopy(saved[key])
                     else:
@@ -5041,7 +5053,12 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
             ),
         )
 
-    async def async_step_manual(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:
+    async def async_step_manual(
+        self,
+        user_input: dict[str, Any] | None = None,
+        *,
+        errors: dict[str, str] | None = None,
+    ) -> ConfigFlowResult:
         """Handle manual bed selection - show all BLE devices.
 
         Lists ALL visible BLE devices (not just recognized beds) so users can
@@ -5058,7 +5075,7 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                 if self._selected_bed_type is None:
                     self._app_after_device = "manual_entry"
                     return await self.async_step_select_app()
-                return await self.async_step_manual_entry()
+                return await self.async_step_manual_entry(errors=errors)
 
             _LOGGER.info("User selected device for manual setup: %s", address)
             # Normalize address to uppercase to match Bluetooth discovery
@@ -5116,7 +5133,7 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                 # Nothing to pick, so the address is typed after the app question.
                 self._app_after_device = "manual_entry"
                 return await self.async_step_select_app()
-            return await self.async_step_manual_entry()
+            return await self.async_step_manual_entry(errors=errors)
 
         # Sort devices: named devices first (alphabetically), then MAC-only/unnamed
         sorted_devices = sorted(
@@ -5156,6 +5173,7 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         return self.async_show_form(
             step_id="manual",
             data_schema=vol.Schema({vol.Required(CONF_ADDRESS): _SearchableSelect(devices)}),
+            errors=errors,
         )
 
     async def _async_device_rows(
@@ -5178,13 +5196,16 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         return [row for _later, row in sorted(rows, key=lambda row: row[0])]
 
     async def async_step_manual_entry(
-        self, user_input: dict[str, Any] | None = None
+        self,
+        user_input: dict[str, Any] | None = None,
+        *,
+        errors: dict[str, str] | None = None,
     ) -> ConfigFlowResult:
         """Ask the address of a bed that is not in range, once its app is chosen."""
         if self._selected_bed_type is None:
             self._app_after_device = "manual_entry"
             return await self.async_step_select_app()
-        errors: dict[str, str] = {}
+        errors = dict(errors or {})
         if user_input is not None:
             address = user_input[CONF_ADDRESS].strip().upper().replace("-", ":")
             if not is_valid_mac_address(address):
@@ -6656,6 +6677,12 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
             or report.leva_receiver_valid is False
             or report.starcode_transport_valid is False
             or report.truemotion_transport_valid is False
+            or report.langjue_receiver_valid is False
+            or (
+                self._migration is not None
+                and self._pending_entry.get(CONF_BED_TYPE) == BED_TYPE_LANGJUE
+                and report.langjue_receiver_valid is not True
+            )
             or report.sleeptime_uart_valid is False
             or (
                 # Reconfigure saves an AdjustableM5X4 only on a transport the
@@ -6979,6 +7006,16 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                             )
                             if not report.starcode_transport_valid:
                                 report.error = f"Selected app transport {selected_transport} is missing required GATT roles"
+                    if bed_type == BED_TYPE_LANGJUE:
+                        await async_import_modules(self.hass, "beds.langjue")
+                        from .beds.langjue import resolve_gatt
+
+                        try:
+                            resolve_gatt(client)
+                        except ConnectionError:
+                            report.langjue_receiver_valid = False
+                            return report
+                        report.langjue_receiver_valid = True
                     if bed_type == BED_TYPE_TRUEMOTION:
                         from .profiles.truemotion import gatt_roles
 
@@ -7025,7 +7062,7 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                             if migration_check is not None and client.is_connected:
                                 self.async_retain_failed_setup_client(client, address)
         except Exception as err:
-            if migration_check is not None or bed_type == BED_TYPE_DORSAL:
+            if migration_check is not None or bed_type in (BED_TYPE_DORSAL, BED_TYPE_LANGJUE):
                 report.connected = False
             report.error = str(err) or err.__class__.__name__
             report.connection_aborted = isinstance(err, BleakAbortedError)
@@ -7189,6 +7226,15 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                     probe if isinstance(probe, CapabilityReport) else None
                 ),
             )
+
+        if report.langjue_receiver_valid is False:
+            self._verify_form_shown = False
+            self._selected_bed_type = BED_TYPE_LANGJUE
+            self._selected_protocol_variant = None
+            self._operation = None
+            self._pending_entry = None
+            self._pending_title = None
+            return await self.async_step_manual(errors={"base": "langjue_receiver_mismatch"})
 
         submitted = user_input if self._verify_form_shown else None
         if report.dorsal_endpoint_error is not None and (

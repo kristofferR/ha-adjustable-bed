@@ -28,6 +28,7 @@ import logging
 from abc import ABC, abstractmethod
 from collections.abc import AsyncIterator, Callable, Collection, Coroutine, Iterator, Mapping
 from dataclasses import dataclass
+from functools import partial
 from typing import TYPE_CHECKING, Any
 from uuid import uuid4
 
@@ -803,6 +804,16 @@ class ConcurrentTwoLinkTopology(_SideLaneTopology):
                 prepared[side][1].outcome in {CommandOutcome.REPLACED, CommandOutcome.STOPPED}
             )
 
+        async def stop_linked_children() -> dict[str, BaseException]:
+            original_stops = {
+                child.address: partial(stop, handle.context)
+                for child, handle in prepared.values()
+                if (stop := handle.context.paired_abort_stop) is not None
+            }
+            if original_stops:
+                return await self._pair._stop_children(targets, original_stops=original_stops)
+            return await self._pair._stop_children(targets)
+
         try:
             async with self.locked_target_sides(targets):
                 if admission.admission_was_cancelled(
@@ -952,7 +963,7 @@ class ConcurrentTwoLinkTopology(_SideLaneTopology):
                             elif error is not None:
                                 errors[side] = error
                     if errors:
-                        stop_errors = await self._pair._stop_children(targets)
+                        stop_errors = await stop_linked_children()
                         raise PairedSideError(action, merge_stop_errors(errors, stop_errors))
 
                     if expected_invalidations:
@@ -966,14 +977,14 @@ class ConcurrentTwoLinkTopology(_SideLaneTopology):
                             and not is_expected_invalidation(side, result)
                         }
                         if late_errors:
-                            stop_errors = await self._pair._stop_children(targets)
+                            stop_errors = await stop_linked_children()
                             raise PairedSideError(
                                 action, merge_stop_errors(late_errors, stop_errors)
                             )
                     else:
                         await asyncio.gather(*result_tasks.values())
                 except asyncio.CancelledError:
-                    await self._pair._stop_children(targets)
+                    await stop_linked_children()
                     raise
                 finally:
                     for task in result_tasks.values():

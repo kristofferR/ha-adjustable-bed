@@ -73,6 +73,7 @@ if TYPE_CHECKING:
     from .keeson.somos import SomosController as SomosController
     from .keeson.symphony_sleep import SymphonySleepController as SymphonySleepController
     from .keeson.yamada import YamadaController as YamadaController
+    from .langjue import LangjueController as LangjueController
     from .leggett.gen2 import LeggettGen2Controller as LeggettGen2Controller
     from .leggett.lp_legacy import LeggettLpLegacyController as LeggettLpLegacyController
     from .leggett.okin import LeggettOkinController as LeggettOkinController
@@ -187,6 +188,7 @@ _EXPORT_MODULES = {
     "SleeptimeController": "sleeptime.controller",
     "UltramaticController": "ultramatic.controller",
     "SmartSleepController": "smart_sleep.controller",
+    "LangjueController": "langjue",
     "JalonBedController": "jalon_bed.controller",
     "SymphonyController": "symphony.controller",
     "GoodVibeController": "goodvibe.controller",

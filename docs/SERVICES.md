@@ -434,7 +434,8 @@ other beds. SUTA Smart Home, SonicSleep, MLILY Remote, Good Vibe Sleep, Galaxy,
 MLILY, Power Bob Base, Majestic Home and Okimiki products with an alarm, GM
 Control products with an alarm, OKIN SleepEase, HJBed, Richmat app beds and
 their separate sleep sensor, Bed Tech (including its separate intervention
-receiver), Dream Sense Bed, Luuna +, [ErgoBed Control](beds/motomotion.md#ergobed-control) on alarm layouts and
+receiver), Dream Sense Bed, Luuna +, [ErgoBed Control](beds/motomotion.md#ergobed-control) on alarm layouts,
+[Langjue](beds/langjue.md#clock-and-alarm) and
 [Leva Bed Remote on the Ascent route](beds/okin-nframe.md#leva-bed-remote) set
 their clock here too. On a Motion Bed it sets the clock of the motor or heating
 module; on a hub, select the module first.
@@ -516,6 +517,7 @@ data:
 | OkinComfortBed II (Jalon) | By app version | `weekdays` |
 | OrmatekTechnoSmart | New: `massage`, `memory_1`, `flat`. Lite: `zero_g`, `tv` | Daily, one alarm |
 | Richmat app beds | From the model's alarm page | Once (the bed counts down), `slot` 1–3 on three-alarm models, `massage` with zone. `mattress_side` sets the vibrating mattress alarm, once or every day, with intensity 1–3 |
+| [Langjue](beds/langjue.md#clock-and-alarm) | From the bed's preset list, required to turn on | One-time or repeating on `weekdays`. For sequential pairs, set each side in a separate action. |
 | Dorsal saved projects with alarm modes | [From the project’s wake actions](beds/richmat.md#dorsal--roomi) | `slot` 1–7, `weekdays` or once. Turning off preserves the stored time, mode and weekdays. |
 | Richmat app calendar models | From the model's alarm list | `slot` 1–7, `weekdays`; `mattress_side` for the vibrating mattress |
 | RMControl | From the product's alarm list; required to turn an alarm on | Repeating products: `slot` 1–7 with at least one weekday. Others: once, as a countdown |

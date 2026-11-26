@@ -1443,6 +1443,14 @@ def default_scenario(bed_type: str) -> Scenario:
     """The bed type in its default route, with the entry data it needs to build."""
     from custom_components.adjustable_bed import const
 
+    if bed_type == const.BED_TYPE_LANGJUE:
+        return Scenario(id=bed_type, bed_type=bed_type, replies={
+            "write:558d000081": "55000000810102",
+            "write:5500000082": "550000008200",
+            "write:5500000083": "550000008300",
+            "write:5500000018": "55000000180102",
+            "write:5500000032": "5500000032080001010300080000",
+        })
     if bed_type == const.BED_TYPE_SLEEPTIME:
         return Scenario(
             id=bed_type, bed_type=bed_type, protocol_variant="205",
@@ -2433,6 +2441,10 @@ def build_scenarios() -> list[Scenario]:
     scenarios = [default_scenario(bed_type) for bed_type in SUPPORTED_BED_TYPES
                  if bed_type not in RICHMAT_MH_APP_CATALOGS]
     scenarios.extend(route_scenarios())
+    scenarios.append(dataclasses.replace(
+        default_scenario("langjue"), id="langjue:head_foot", layout_id="langjue",
+        entry_data={"product_type": "head_foot", "has_light": True, "has_massage": True},
+    ))
     scenarios.extend(
         dataclasses.replace(default_scenario("sleeptime"), id=f"sleeptime:{selector}",
                             protocol_variant=selector)
