@@ -256,6 +256,7 @@ def runtime_variants(controllers: Iterable[BedController]) -> Iterator[BedContro
     from custom_components.adjustable_bed.beds.truemotion.controller import TrueMotionController
     from custom_components.adjustable_bed.beds.vibradorm.app import VibradormAppController
     from custom_components.adjustable_bed.beds.vmatbasic.controller import VMatBasicController
+    from custom_components.adjustable_bed.const import DORSAL_ROOMI_S655_PLUS
     from custom_components.adjustable_bed.profiles import dorsal, relax_motion, truemotion
     from custom_components.adjustable_bed.profiles import vmatbasic as vmat_profiles
     from custom_components.adjustable_bed.profiles.dreamsense import PROFILES as DREAMSENSE_PROFILES
@@ -287,6 +288,7 @@ def runtime_variants(controllers: Iterable[BedController]) -> Iterator[BedContro
         if isinstance(controller, DorsalController) and not dorsal_catalog_covered:
             dorsal_catalog_covered = True
             yield DorsalController(controller._coordinator, "roomi", None)
+            yield DorsalController(controller._coordinator, DORSAL_ROOMI_S655_PLUS, None)
             for code, product in dorsal.products().items():
                 if product.controls or product.alarm_modes:
                     yield DorsalController(controller._coordinator, "restored", code)

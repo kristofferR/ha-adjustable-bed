@@ -260,6 +260,11 @@ class BedController(GattWriter):
         return False
 
     @property
+    def stop_on_active_sequential_link(self) -> bool:
+        """Whether a side-wide cover STOP must settle before its active pair link closes."""
+        return False
+
+    @property
     def sequential_stop_on_current_link(self) -> bool:
         """Whether an active sequential side uses one neutral release for both STOP routes."""
         return False
