@@ -6,6 +6,7 @@ from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 from bleak.exc import BleakError
+from homeassistant.exceptions import HomeAssistantError, ServiceValidationError
 
 from custom_components.adjustable_bed.beds import vindo
 from custom_components.adjustable_bed.beds.vindo import VindoController
@@ -46,21 +47,15 @@ def receiver():
         stop_notify=AsyncMock(),
         write_gatt_char=AsyncMock(),
     )
-    state = {}
-
-    def update_state(*updates):
-        state.update((update.key, update.value) for update in updates)
-
     coordinator = SimpleNamespace(
         client=client,
         motor_pulse_count=2,
         motor_pulse_delay_ms=300,
         cancel_command=asyncio.Event(),
         address="AA:BB:CC:DD:EE:FF",
+        name="Vindö Bed",
         record_command_trace=MagicMock(),
         async_write_app_state=AsyncMock(),
-        handle_controller_state_updates=update_state,
-        handle_controller_state_update=state.__setitem__,
     )
 
     def notify(char, data):
@@ -80,7 +75,6 @@ def receiver():
         callbacks=callbacks,
         notify=notify,
         samples=samples,
-        state=state,
         position_roles=position_roles,
         frames=lambda: [call.args[1].hex() for call in client.write_gatt_char.await_args_list],
     )
@@ -114,16 +108,17 @@ async def test_position_subscriptions_gate_writes_and_guard_old_callbacks(receiv
         receiver.back,
     ]
     assert receiver.frames() == []
+    assert bed.controller_state_sensor_specs == ()
     receiver.notify(receiver.legs, bytes.fromhex("341299"))
     receiver.notify(receiver.back, bytes.fromhex("ffff"))
-    assert receiver.state == {"vindo_legs_raw": 4660, "vindo_back_raw": 65535}
+    assert bed.protocol_diagnostics == {"raw_positions": {"legs": 4660, "back": 65535}}
     receiver.notify(receiver.back, b"\xff")
-    assert receiver.state["vindo_back_raw"] is None
+    assert bed.protocol_diagnostics == {"raw_positions": {"legs": 4660}}
     late = receiver.callbacks[receiver.legs.uuid]
     await bed.stop_notify()
     await bed.start_notify()
     late(receiver.legs, bytearray.fromhex("1234"))
-    assert receiver.state == {"vindo_legs_raw": None, "vindo_back_raw": None}
+    assert bed.protocol_diagnostics == {}
     await bed.lights_toggle()
     receiver.client.write_gatt_char.assert_awaited_once_with(
         receiver.control,
@@ -218,6 +213,20 @@ async def test_raw_memory_saves_then_recalls_from_fresh_feedback(receiver, monke
     assert receiver.frames() == ["3700", "ff00"]
 
 
+async def test_empty_and_unavailable_memory_slots_use_translated_errors(receiver):
+    bed = receiver.controller
+    with pytest.raises(ServiceValidationError) as empty:
+        await bed.preset_memory(1)
+    assert empty.value.translation_key == "memory_slot_empty"
+    assert empty.value.translation_placeholders == {"device_name": "Vindö Bed", "preset": "1"}
+
+    for action in (bed.program_memory, bed.preset_memory):
+        with pytest.raises(ServiceValidationError) as unavailable:
+            await action(6)
+        assert unavailable.value.translation_key == "invalid_preset_number"
+    assert receiver.frames() == []
+
+
 async def test_recall_requires_both_recent_axes_and_stops_when_feedback_is_lost(
     receiver, monkeypatch
 ):
@@ -226,8 +235,13 @@ async def test_recall_requires_both_recent_axes_and_stops_when_feedback_is_lost(
     bed.restore_persisted_app_state({"1": [200, 200]})
     receiver.notify(receiver.back, bytes.fromhex("6400"))
     monkeypatch.setattr(vindo, "_POSITION_FRESH_S", 0.001)
-    with pytest.raises(ValueError, match="fresh positions from both motors"):
+    with pytest.raises(ServiceValidationError) as save_failed:
+        await bed.program_memory(2)
+    assert save_failed.value.translation_key == "memory_position_unknown"
+    receiver.coordinator.async_write_app_state.assert_not_awaited()
+    with pytest.raises(HomeAssistantError) as recall_failed:
         await bed.preset_memory(1)
+    assert recall_failed.value.translation_key == "memory_recall_position_unknown"
     assert receiver.frames() == []
 
     monkeypatch.setattr(vindo, "_POSITION_FRESH_S", 2.0)
@@ -237,9 +251,11 @@ async def test_recall_requires_both_recent_axes_and_stops_when_feedback_is_lost(
         receiver.notify(receiver.legs, bytes.fromhex("ffff"))
 
     monkeypatch.setattr(vindo, "_pause", expire)
-    with pytest.raises(ValueError, match="stopped receiving fresh positions"):
+    with pytest.raises(HomeAssistantError) as feedback_lost:
         await bed.preset_memory(1)
+    assert feedback_lost.value.translation_key == "memory_recall_position_lost"
     assert receiver.frames() == ["3700", "ff00"]
+    assert bed.protocol_diagnostics["raw_positions"] == {"back": 100, "legs": 65535}
 
 
 @pytest.mark.parametrize("feedback", ["changed", "arrived", "invalid", "expired"])
@@ -278,8 +294,9 @@ async def test_recall_selects_direction_only_when_the_write_lane_is_available(
             clock.now += vindo._POSITION_FRESH_S + 0.01
         bed.ble_lock.release()
         if feedback in ("invalid", "expired"):
-            with pytest.raises(ValueError, match="stopped receiving fresh positions"):
+            with pytest.raises(HomeAssistantError) as feedback_lost:
                 await recall
+            assert feedback_lost.value.translation_key == "memory_recall_position_lost"
         else:
             await recall
     expected = ["3700", "3400", "ff00"] if feedback == "changed" else ["3700", "ff00"]
@@ -355,8 +372,9 @@ async def test_recall_uses_fresh_starting_direction_and_reports_unreached_target
 
     receiver.samples(100, 100)
     monkeypatch.setattr(vindo.app, "REFRESH_MS", vindo.app.HOLD_LIMIT_MS)
-    with pytest.raises(ValueError, match="did not reach the saved position"):
+    with pytest.raises(HomeAssistantError) as recall_failed:
         await bed.preset_memory(1)
+    assert recall_failed.value.translation_key == "memory_recall_not_reached"
     assert receiver.frames() == ["ff00", "3700", "ff00"]
 
 

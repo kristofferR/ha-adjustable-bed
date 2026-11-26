@@ -5234,12 +5234,6 @@
  "sensor:vibradorm_app_xmc_status": {
   "card_section": "hidden"
  },
- "sensor:vindo_back_raw": {
-  "card_section": "hidden"
- },
- "sensor:vindo_legs_raw": {
-  "card_section": "hidden"
- },
  "sensor:vmatbasic_firmware": {
   "card_section": "hidden"
  },

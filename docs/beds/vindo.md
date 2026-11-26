@@ -127,10 +127,10 @@ current reading becomes unusable. Each bed address has its own saved positions.
 ## Position Feedback / Notifications
 
 The first two bytes of each report are an unsigned little-endian count.
-Additional bytes are ignored. Enable the raw position diagnostic sensors to
-see these counts. The physical scale has yet to be verified, so Vindö provides
-no position percentage or angle slider. Memories use counts saved from the same
-bed. Verify travel and resting position on your hardware.
+Additional bytes are ignored. Download Home Assistant diagnostics while the
+bed is connected to see its latest raw counts. Memories use counts saved from
+the same bed. Physical scale, travel limits and resting positions still need
+hardware verification.
 
 ## Command Timing
 

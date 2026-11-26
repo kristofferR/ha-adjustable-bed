@@ -9,6 +9,7 @@ from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Final
 
 from bleak.exc import BleakError
+from homeassistant.exceptions import HomeAssistantError
 
 from ..card import CARD_HIDDEN, CARD_LIGHTING, CARD_MASSAGE, CARD_PRESETS
 from ..codec.linak import control_frame, parse_vindo_position
@@ -25,14 +26,13 @@ from ..const import (
     LINAK_POSITION_LEG_UUID,
     LINAK_POSITION_SERVICE_UUID,
 )
-from ..controller_state import StateKey
-from ..errors import BedNotConnectedError
+from ..errors import BedNotConnectedError, failed, invalid
 from ..execution import STREAM_HOLD, ExecutionCapabilities
 from ..profiles import vindo as app
 from ..profiles.vindo import Opcode
 from .base import BedController, require_controller
 from .cancellation import cancellable, settled
-from .entity_specs import ControllerButtonSpec, ControllerStateSensorSpec
+from .entity_specs import ControllerButtonSpec
 
 if TYPE_CHECKING:
     from bleak import BleakClient
@@ -41,15 +41,13 @@ if TYPE_CHECKING:
 
     from ..coordinator import AdjustableBedCoordinator
 
-_BACK_RAW: Final = StateKey[int | None]("vindo_back_raw")
-_LEGS_RAW: Final = StateKey[int | None]("vindo_legs_raw")
 # A memory must use two recent samples from this live link, even on reconnect.
 _POSITION_FRESH_S: Final = 2.0
 _MEMORY_SLOTS: Final = 5
 _STOP: Final = control_frame(Opcode.STOP)
-_POSITION_ROLES: Final = (
-    (LINAK_POSITION_LEG_UUID, "legs", _LEGS_RAW),
-    (LINAK_POSITION_BACK_UUID, "back", _BACK_RAW),
+_POSITION_ROLES: Final[tuple[tuple[str, app.Axis], ...]] = (
+    (LINAK_POSITION_LEG_UUID, "legs"),
+    (LINAK_POSITION_BACK_UUID, "back"),
 )
 
 
@@ -58,7 +56,7 @@ class _Link:
     client: BleakClient
     write: BleakGATTCharacteristic
     subscribed: list[BleakGATTCharacteristic] = field(default_factory=list)
-    samples: dict[str, tuple[int, float]] = field(default_factory=dict)
+    samples: dict[app.Axis, tuple[int, float]] = field(default_factory=dict)
     position_updated: asyncio.Event = field(default_factory=asyncio.Event)
     ready: bool = False
 
@@ -77,19 +75,16 @@ def validate_gatt(
     services: BleakGATTServiceCollection,
 ) -> tuple[
     BleakGATTCharacteristic,
-    tuple[tuple[BleakGATTCharacteristic, str, StateKey[int | None]], ...],
+    tuple[tuple[BleakGATTCharacteristic, app.Axis], ...],
 ]:
     """Resolve the exact runtime roles, without subscribing or writing."""
     write = _role(services, LINAK_CONTROL_SERVICE_UUID, LINAK_CONTROL_CHAR_UUID)
     if "write" not in write.properties:
         raise BleakError("Vindö requires control writes with response")
-    notifications = tuple(
-        (_role(services, LINAK_POSITION_SERVICE_UUID, uuid), axis, key)
-        for uuid, axis, key in _POSITION_ROLES
+    notifications: tuple[tuple[BleakGATTCharacteristic, app.Axis], ...] = tuple(
+        (_role(services, LINAK_POSITION_SERVICE_UUID, uuid), axis) for uuid, axis in _POSITION_ROLES
     )
-    if any(
-        not {"notify", "indicate"}.intersection(char.properties) for char, _, _ in notifications
-    ):
+    if any(not {"notify", "indicate"}.intersection(char.properties) for char, _ in notifications):
         raise BleakError("Vindö requires both position notification characteristics")
     return write, notifications
 
@@ -175,7 +170,7 @@ class VindoController(BedController):
         self.on_disconnect()
         link = self._link = _Link(client, write)
         try:
-            for char, axis, key in notifications:
+            for char, axis in notifications:
                 if not self._current(link):
                     raise BedNotConnectedError
                 link.subscribed.append(char)
@@ -184,12 +179,11 @@ class VindoController(BedController):
                     sender: BleakGATTCharacteristic,
                     data: bytearray,
                     *,
-                    axis: str = axis,
-                    key: StateKey[int | None] = key,
+                    axis: app.Axis = axis,
                     source: BleakGATTCharacteristic = char,
                 ) -> None:
                     if self._current(link) and sender.handle == source.handle:
-                        self._receive(link, source.uuid, axis, key, data)
+                        self._receive(link, source.uuid, axis, data)
 
                 await client.start_notify(char, receive)
             if not self._current(link):
@@ -204,26 +198,29 @@ class VindoController(BedController):
         self,
         link: _Link,
         uuid: str,
-        axis: str,
-        key: StateKey[int | None],
+        axis: app.Axis,
         data: bytearray,
     ) -> None:
         self.forward_raw_notification(uuid, bytes(data))
         value = parse_vindo_position(data)
-        # Retain the exact unsigned diagnostic value. A short or all-ones
-        # sample cannot establish a safe target or direction for a recall.
-        if value is None or value == 0xFFFF:
+        if value is None:
             link.samples.pop(axis, None)
         else:
             link.samples[axis] = (value, asyncio.get_running_loop().time())
         link.position_updated.set()
-        self.forward_controller_state_update(key, value)
+
+    @property
+    def protocol_diagnostics(self) -> dict[str, object]:
+        """Report the live counts without publishing them as entity state."""
+        link = self._link
+        if link is None or not self._current(link) or not link.samples:
+            return {}
+        return {"raw_positions": {axis: value for axis, (value, _) in link.samples.items()}}
 
     def on_disconnect(self) -> None:
         link, self._link = self._link, None
         if link is not None:
             link.position_updated.set()
-            self.forward_controller_state_updates(_BACK_RAW(None), _LEGS_RAW(None))
 
     async def stop_notify(self) -> None:
         link = self._link
@@ -274,7 +271,7 @@ class VindoController(BedController):
             if callable(frame):
                 try:
                     outbound = frame()
-                except ValueError:
+                except HomeAssistantError:
                     note_frame_skipped()
                     raise
                 if outbound == _STOP:
@@ -484,10 +481,21 @@ class VindoController(BedController):
                 memories[slot] = (pair[0], pair[1])
         self._memories = memories
 
+    def _validate_memory_slot(self, memory_num: int) -> None:
+        if not 1 <= memory_num <= self.memory_slot_count:
+            raise invalid(
+                "invalid_preset_number",
+                device_name=self._coordinator.name,
+                max_preset=self.memory_slot_count,
+                requested_preset=memory_num,
+            )
+
     def validate_memory_recall(self, memory_num: int) -> None:
-        super().validate_memory_recall(memory_num)
+        self._validate_memory_slot(memory_num)
         if memory_num not in self._memories:
-            raise ValueError("Save the current bed position in this memory before recalling it")
+            raise invalid(
+                "memory_slot_empty", device_name=self._coordinator.name, preset=memory_num
+            )
 
     def _fresh_positions(self, link: _Link) -> app.Positions | None:
         if self._live() is not link:
@@ -496,6 +504,9 @@ class VindoController(BedController):
         if (
             back is not None
             and legs is not None
+            # Diagnostics keep all-ones samples, but they cannot guide motion.
+            and back[0] != 0xFFFF
+            and legs[0] != 0xFFFF
             and asyncio.get_running_loop().time() - min(back[1], legs[1]) <= _POSITION_FRESH_S
         ):
             return back[0], legs[0]
@@ -509,18 +520,17 @@ class VindoController(BedController):
                     return positions
                 await link.position_updated.wait()
 
-        try:
-            async with asyncio.timeout(_POSITION_FRESH_S):
-                return await cancellable(wait(), self._coordinator.cancel_command)
-        except TimeoutError as err:
-            raise ValueError(
-                "Vindö needs fresh positions from both motors on the current connection"
-            ) from err
+        async with asyncio.timeout(_POSITION_FRESH_S):
+            return await cancellable(wait(), self._coordinator.cancel_command)
 
     async def program_memory(self, memory_num: int) -> None:
-        if not 1 <= memory_num <= self.memory_slot_count:
-            raise ValueError("This memory slot is unavailable")
-        positions = await self._wait_for_positions(self._live())
+        self._validate_memory_slot(memory_num)
+        try:
+            positions = await self._wait_for_positions(self._live())
+        except TimeoutError as err:
+            raise invalid(
+                "memory_position_unknown", device_name=self._coordinator.name, preset=memory_num
+            ) from err
         state = {**self.persisted_app_state, str(memory_num): list(positions)}
 
         async def save() -> None:
@@ -533,30 +543,34 @@ class VindoController(BedController):
         self.validate_memory_recall(memory_num)
         link = self._live()
         target = self._memories[memory_num]
-        await self._wait_for_positions(link)
+        try:
+            await self._wait_for_positions(link)
+        except TimeoutError as err:
+            raise failed(
+                "memory_recall_position_unknown",
+                device_name=self._coordinator.name,
+                preset=memory_num,
+            ) from err
 
         def select() -> bytes:
             current = self._fresh_positions(link)
             if current is None:
-                raise ValueError("Vindö stopped receiving fresh positions during memory recall")
+                raise failed(
+                    "memory_recall_position_lost",
+                    device_name=self._coordinator.name,
+                    preset=memory_num,
+                )
             return app.seek(current, target)
 
         reached = await self._run_motion(
             link, select, math.ceil(app.HOLD_LIMIT_MS / app.REFRESH_MS)
         )
         if not reached and not self._coordinator.cancel_command.is_set() and select() != _STOP:
-            raise ValueError("Vindö did not reach the saved position before the movement ended")
-
-    @property
-    def controller_state_sensor_specs(self) -> tuple[ControllerStateSensorSpec, ...]:
-        return (
-            ControllerStateSensorSpec(
-                "vindo_back_raw", "vindo_back_raw", _BACK_RAW, "mdi:arrow-expand-vertical"
-            ),
-            ControllerStateSensorSpec(
-                "vindo_legs_raw", "vindo_legs_raw", _LEGS_RAW, "mdi:arrow-expand-vertical"
-            ),
-        )
+            raise failed(
+                "memory_recall_not_reached",
+                device_name=self._coordinator.name,
+                preset=memory_num,
+            )
 
     @property
     def controller_button_specs(self) -> tuple[ControllerButtonSpec, ...]:

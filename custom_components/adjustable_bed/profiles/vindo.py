@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from collections.abc import Collection
 from enum import IntEnum
 from typing import Final, Literal
 
@@ -45,7 +46,7 @@ class Opcode(IntEnum):
     LIGHT_STEP_DOWN = 0x9F
 
 
-def matches_advertisement(name: str, services: set[str]) -> bool:
+def matches_advertisement(name: str, services: Collection[str]) -> bool:
     return LINAK_CONTROL_SERVICE_UUID in services and any(word in name.lower() for word in NAMES)
 
 
