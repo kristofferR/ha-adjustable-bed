@@ -1996,3 +1996,10 @@ FROZEN_FRAMES["ore_ultramatic"] = frozenset(
     for row in json.loads((Path(__file__).parent / "fixtures/ore_ultramatic/vectors.json").read_text())
     if row["inputs"]["builder"] != "notification"
 )
+
+# Leva Sleep 1.0.2: all outbound literals, with its receive vectors tested separately.
+FROZEN_FRAMES["leva_sleep"] = frozenset(
+    row["expected_bytes"].replace(" ", "")
+    for row in json.loads((Path(__file__).parent / "fixtures/leva_sleep/vectors.json").read_text())
+    if row["inputs"]["kind"] != "parser"
+)

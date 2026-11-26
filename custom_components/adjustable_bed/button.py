@@ -1271,6 +1271,17 @@ class AdjustableBedButton(AdjustableBedEntity, ButtonEntity):
     async def async_added_to_hass(self) -> None:
         await super().async_added_to_hass()
         controller = self._coordinator.capability_controller
+        policy = controller.capability_snapshot_policy if controller is not None else None
+        if (
+            policy is not None
+            and policy.reconcile_on_persistent_link
+            and self.entity_description.key.startswith("preset_")
+        ):
+            # Presets can keep their identity when the live route changes
+            # whether they advertise a held gesture.
+            self.async_on_remove(
+                self._coordinator.register_capability_entity_callback(self.async_write_ha_state)
+            )
         if octo_controller(controller) is not None:
             self.async_on_remove(
                 self._coordinator.register_controller_state_callback(

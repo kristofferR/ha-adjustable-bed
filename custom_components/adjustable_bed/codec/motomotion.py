@@ -1,11 +1,12 @@
 """HHC ``$#`` wire codec: the MotoMotion, MotoSleep and Power Bob apps.
 
 The forms come from MotoMotion 3.1.9; MotoSleep
-5.1.5 and Power Bob 2.0.3 send the ASCII, binary and letter forms. The apps
-write six frame forms:
+5.1.5 and Power Bob 2.0.3 send the ASCII, binary and letter forms.
 
 - ASCII command: ``$#``, then the command, the parameter and the XOR of their
   decimal digits, each as five decimal digits, then ``R\\r``.
+- ErgoBed Control's local clock uses variable-width decimal fields, the same
+  digit XOR, and ``A\\r``.
 - Binary command: ``$#``, the command and parameter as big-endian 16-bit words,
   the XOR of those four bytes, then ``A\\r``.
 - Music: ``$#``, a channel letter (M, T, B or V), two decimal digits, ``\\r``.
@@ -28,7 +29,7 @@ from collections.abc import Iterable
 from dataclasses import dataclass
 from functools import reduce
 from operator import xor
-from typing import Final
+from typing import Final, Literal
 
 
 def ascii_command(command: int, parameter: int = 0) -> bytes:
@@ -38,13 +39,13 @@ def ascii_command(command: int, parameter: int = 0) -> bytes:
     return decimal_fields(f"{command:05d}", f"{parameter:05d}")
 
 
-def decimal_fields(left: str, right: str) -> bytes:
-    """Encode decimal strings without changing their widths (Bedgear alarms)."""
+def decimal_fields(left: str, right: str, *, record_type: Literal["R", "A"] = "R") -> bytes:
+    """Encode decimal strings without changing their widths."""
     digits = left + right
     if not digits.isascii() or not digits.isdecimal():
         raise ValueError("HHC fields must contain decimal digits")
     checksum = reduce(xor, (ord(c) - 48 for c in digits), 0)
-    return f"$#{left}{right}{checksum:05d}R\r".encode("ascii")
+    return f"$#{left}{right}{checksum:05d}{record_type}\r".encode("ascii")
 
 
 def short_transport(command: str, *, wrapped: bool) -> bytes | None:

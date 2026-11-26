@@ -295,7 +295,15 @@ class AdjustableBedLight(AdjustableBedEntity, RestoreEntity, LightEntity):
             if controller is not None and controller.supports_light_level_control
             else None
         )
-        self._attr_is_on = False
+        self._preserves_unknown_power = (
+            controller is not None and controller.preserves_unknown_rgb_power is True
+        )
+        self._attr_assumed_state = not self._preserves_unknown_power
+        self._attr_is_on = (
+            coordinator.controller_state.get(UNDER_BED_LIGHTS_ON)
+            if self._preserves_unknown_power
+            else False
+        )
         current_rgb = controller.current_light_rgb_color if controller is not None else None
         if current_rgb is None:
             current_rgb = coordinator.controller_state.get(UNDER_BED_LIGHTS_RGB)
@@ -361,7 +369,8 @@ class AdjustableBedLight(AdjustableBedEntity, RestoreEntity, LightEntity):
         # callback can fire immediately with live bed state, which must win over
         # the older restored value rather than be overwritten by it.
         if (last_state := await self.async_get_last_state()) is not None:
-            self._attr_is_on = last_state.state == STATE_ON
+            if not self._preserves_unknown_power:
+                self._attr_is_on = last_state.state == STATE_ON
             if self._attr_color_mode == ColorMode.RGBW:
                 restored_rgbw = _normalize_rgbw_color(last_state.attributes.get(ATTR_RGBW_COLOR))
                 if restored_rgbw is not None:
@@ -446,7 +455,7 @@ class AdjustableBedLight(AdjustableBedEntity, RestoreEntity, LightEntity):
         if UNDER_BED_LIGHTS_ON in state:
             reported_state = state[UNDER_BED_LIGHTS_ON]
             if not (octo is not None and reported_state is None):
-                is_on = bool(reported_state)
+                is_on = reported_state if self._preserves_unknown_power else bool(reported_state)
                 if is_on != self._attr_is_on:
                     self._attr_is_on = is_on
                     changed = True
@@ -645,6 +654,11 @@ class AdjustableBedLight(AdjustableBedEntity, RestoreEntity, LightEntity):
                 self._attr_brightness = intensity
 
         return shown
+
+    async def async_toggle(self, **kwargs: Any) -> None:
+        if self._preserves_unknown_power and self.is_on is None:
+            raise invalid("light_toggle_state_unknown")
+        await super().async_toggle(**kwargs)
 
     async def async_turn_off(self, **kwargs: Any) -> None:
         """Turn the light off using the controller's light-off semantics."""

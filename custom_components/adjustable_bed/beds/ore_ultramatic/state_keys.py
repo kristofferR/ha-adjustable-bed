@@ -1,4 +1,4 @@
-"""Connection-owned ORE Ultramatic reported state, never inferred positions."""
+"""Connection-owned reported state for the dual-route ORE apps."""
 
 from typing import Final
 
@@ -13,3 +13,5 @@ ACTION: Final = StateKey[int | None]("ore_ultramatic_alarm_action")
 TIMER: Final = StateKey[int | None]("ore_ultramatic_massage_timer")
 INTENSITY: Final = StateKey[int | None]("ore_ultramatic_massage_intensity")
 ALL: Final = (TIME, REPEAT, ACTION, TIMER, INTENSITY)
+ALARM_ENABLED: Final = StateKey[bool | None]("alarm_enabled")
+REPORTED_MASSAGE_TIMER_MINUTES: Final = StateKey[int | None]("reported_massage_timer_minutes")

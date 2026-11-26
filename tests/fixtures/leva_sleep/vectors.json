@@ -1,0 +1,1032 @@
+[
+  {
+    "id": "V01",
+    "protocol": "P1",
+    "action": "Back raise",
+    "inputs": {
+      "kind": "frame",
+      "key": "00000001"
+    },
+    "expected_bytes": "e5 fe 16 00 00 00 01 05"
+  },
+  {
+    "id": "V02",
+    "protocol": "P1",
+    "action": "Back lower",
+    "inputs": {
+      "kind": "frame",
+      "key": "00000002"
+    },
+    "expected_bytes": "e5 fe 16 00 00 00 02 04"
+  },
+  {
+    "id": "V03",
+    "protocol": "P1",
+    "action": "Foot raise",
+    "inputs": {
+      "kind": "frame",
+      "key": "00000004"
+    },
+    "expected_bytes": "e5 fe 16 00 00 00 04 02"
+  },
+  {
+    "id": "V04",
+    "protocol": "P1",
+    "action": "Foot lower",
+    "inputs": {
+      "kind": "frame",
+      "key": "00000008"
+    },
+    "expected_bytes": "e5 fe 16 00 00 00 08 fe"
+  },
+  {
+    "id": "V05",
+    "protocol": "P1",
+    "action": "Combined Back + Foot raise",
+    "inputs": {
+      "kind": "frame",
+      "key": "00000010"
+    },
+    "expected_bytes": "e5 fe 16 00 00 00 10 f6"
+  },
+  {
+    "id": "V06",
+    "protocol": "P1",
+    "action": "Combined Back + Foot lower",
+    "inputs": {
+      "kind": "frame",
+      "key": "00000020"
+    },
+    "expected_bytes": "e5 fe 16 00 00 00 20 e6"
+  },
+  {
+    "id": "V07",
+    "protocol": "P1",
+    "action": "Head raise",
+    "inputs": {
+      "kind": "frame",
+      "key": "00000010"
+    },
+    "expected_bytes": "e5 fe 16 00 00 00 10 f6"
+  },
+  {
+    "id": "V08",
+    "protocol": "P1",
+    "action": "Head lower",
+    "inputs": {
+      "kind": "frame",
+      "key": "00000020"
+    },
+    "expected_bytes": "e5 fe 16 00 00 00 20 e6"
+  },
+  {
+    "id": "V09",
+    "protocol": "P1",
+    "action": "Waist raise",
+    "inputs": {
+      "kind": "frame",
+      "key": "00000010"
+    },
+    "expected_bytes": "e5 fe 16 00 00 00 10 f6"
+  },
+  {
+    "id": "V10",
+    "protocol": "P1",
+    "action": "Waist lower",
+    "inputs": {
+      "kind": "frame",
+      "key": "00000020"
+    },
+    "expected_bytes": "e5 fe 16 00 00 00 20 e6"
+  },
+  {
+    "id": "V11",
+    "protocol": "P1",
+    "action": "Lumbar raise",
+    "inputs": {
+      "kind": "frame",
+      "key": "00000040"
+    },
+    "expected_bytes": "e5 fe 16 00 00 00 40 c6"
+  },
+  {
+    "id": "V12",
+    "protocol": "P1",
+    "action": "Lumbar lower",
+    "inputs": {
+      "kind": "frame",
+      "key": "00000080"
+    },
+    "expected_bytes": "e5 fe 16 00 00 00 80 86"
+  },
+  {
+    "id": "V13",
+    "protocol": "P1",
+    "action": "Zero-key STOP/release",
+    "inputs": {
+      "kind": "frame",
+      "key": "00000000"
+    },
+    "expected_bytes": "e5 fe 16 00 00 00 00 06"
+  },
+  {
+    "id": "V14",
+    "protocol": "P2",
+    "action": "Back raise",
+    "inputs": {
+      "kind": "frame",
+      "key": "00000001"
+    },
+    "expected_bytes": "e6 fe 16 01 00 00 00 00 04"
+  },
+  {
+    "id": "V15",
+    "protocol": "P2",
+    "action": "Back lower",
+    "inputs": {
+      "kind": "frame",
+      "key": "00000002"
+    },
+    "expected_bytes": "e6 fe 16 02 00 00 00 00 03"
+  },
+  {
+    "id": "V16",
+    "protocol": "P2",
+    "action": "Foot raise",
+    "inputs": {
+      "kind": "frame",
+      "key": "00000004"
+    },
+    "expected_bytes": "e6 fe 16 04 00 00 00 00 01"
+  },
+  {
+    "id": "V17",
+    "protocol": "P2",
+    "action": "Foot lower",
+    "inputs": {
+      "kind": "frame",
+      "key": "00000008"
+    },
+    "expected_bytes": "e6 fe 16 08 00 00 00 00 fd"
+  },
+  {
+    "id": "V18",
+    "protocol": "P2",
+    "action": "Combined Back + Foot raise",
+    "inputs": {
+      "kind": "frame",
+      "key": "00000005"
+    },
+    "expected_bytes": "e6 fe 16 05 00 00 00 00 00"
+  },
+  {
+    "id": "V19",
+    "protocol": "P2",
+    "action": "Combined Back + Foot lower",
+    "inputs": {
+      "kind": "frame",
+      "key": "0000000a"
+    },
+    "expected_bytes": "e6 fe 16 0a 00 00 00 00 fb"
+  },
+  {
+    "id": "V20",
+    "protocol": "P2",
+    "action": "Head raise",
+    "inputs": {
+      "kind": "frame",
+      "key": "00000010"
+    },
+    "expected_bytes": "e6 fe 16 10 00 00 00 00 f5"
+  },
+  {
+    "id": "V21",
+    "protocol": "P2",
+    "action": "Head lower",
+    "inputs": {
+      "kind": "frame",
+      "key": "00000020"
+    },
+    "expected_bytes": "e6 fe 16 20 00 00 00 00 e5"
+  },
+  {
+    "id": "V22",
+    "protocol": "P2",
+    "action": "Waist raise",
+    "inputs": {
+      "kind": "frame",
+      "key": "00000010"
+    },
+    "expected_bytes": "e6 fe 16 10 00 00 00 00 f5"
+  },
+  {
+    "id": "V23",
+    "protocol": "P2",
+    "action": "Waist lower",
+    "inputs": {
+      "kind": "frame",
+      "key": "00000020"
+    },
+    "expected_bytes": "e6 fe 16 20 00 00 00 00 e5"
+  },
+  {
+    "id": "V24",
+    "protocol": "P2",
+    "action": "Lumbar raise",
+    "inputs": {
+      "kind": "frame",
+      "key": "00000040"
+    },
+    "expected_bytes": "e6 fe 16 40 00 00 00 00 c5"
+  },
+  {
+    "id": "V25",
+    "protocol": "P2",
+    "action": "Lumbar lower",
+    "inputs": {
+      "kind": "frame",
+      "key": "00000080"
+    },
+    "expected_bytes": "e6 fe 16 80 00 00 00 00 85"
+  },
+  {
+    "id": "V26",
+    "protocol": "P2",
+    "action": "Zero-key STOP/release",
+    "inputs": {
+      "kind": "frame",
+      "key": "00000000"
+    },
+    "expected_bytes": "e6 fe 16 00 00 00 00 00 05"
+  },
+  {
+    "id": "V27",
+    "protocol": "P1",
+    "action": "Flat recall",
+    "inputs": {
+      "kind": "frame",
+      "key": "01000002"
+    },
+    "expected_bytes": "e5 fe 16 01 00 00 02 03"
+  },
+  {
+    "id": "V28",
+    "protocol": "P1",
+    "action": "Flat save/program",
+    "inputs": {
+      "kind": "frame",
+      "key": "20000002"
+    },
+    "expected_bytes": "e5 fe 16 20 00 00 02 e4"
+  },
+  {
+    "id": "V29",
+    "protocol": "P2",
+    "action": "Flat held preset",
+    "inputs": {
+      "kind": "frame",
+      "key": "08000000"
+    },
+    "expected_bytes": "e6 fe 16 00 00 00 08 00 fd"
+  },
+  {
+    "id": "V30",
+    "protocol": "P1",
+    "action": "Memory A (M1) recall",
+    "inputs": {
+      "kind": "frame",
+      "key": "01000008"
+    },
+    "expected_bytes": "e5 fe 16 01 00 00 08 fd"
+  },
+  {
+    "id": "V31",
+    "protocol": "P1",
+    "action": "Memory A (M1) save/program",
+    "inputs": {
+      "kind": "frame",
+      "key": "20000008"
+    },
+    "expected_bytes": "e5 fe 16 20 00 00 08 de"
+  },
+  {
+    "id": "V32",
+    "protocol": "P2",
+    "action": "Memory A (M1) held preset",
+    "inputs": {
+      "kind": "frame",
+      "key": "00010000"
+    },
+    "expected_bytes": "e6 fe 16 00 00 01 00 00 04"
+  },
+  {
+    "id": "V33",
+    "protocol": "P1",
+    "action": "Memory B (M2) recall",
+    "inputs": {
+      "kind": "frame",
+      "key": "01000009"
+    },
+    "expected_bytes": "e5 fe 16 01 00 00 09 fc"
+  },
+  {
+    "id": "V34",
+    "protocol": "P1",
+    "action": "Memory B (M2) save/program",
+    "inputs": {
+      "kind": "frame",
+      "key": "20000009"
+    },
+    "expected_bytes": "e5 fe 16 20 00 00 09 dd"
+  },
+  {
+    "id": "V35",
+    "protocol": "P2",
+    "action": "Memory B (M2) held preset",
+    "inputs": {
+      "kind": "frame",
+      "key": "00040000"
+    },
+    "expected_bytes": "e6 fe 16 00 00 04 00 00 01"
+  },
+  {
+    "id": "V36",
+    "protocol": "P1",
+    "action": "Zero gravity recall",
+    "inputs": {
+      "kind": "frame",
+      "key": "01000001"
+    },
+    "expected_bytes": "e5 fe 16 01 00 00 01 04"
+  },
+  {
+    "id": "V37",
+    "protocol": "P1",
+    "action": "Zero gravity save/program",
+    "inputs": {
+      "kind": "frame",
+      "key": "20000001"
+    },
+    "expected_bytes": "e5 fe 16 20 00 00 01 e5"
+  },
+  {
+    "id": "V38",
+    "protocol": "P2",
+    "action": "Zero gravity held preset",
+    "inputs": {
+      "kind": "frame",
+      "key": "00001000"
+    },
+    "expected_bytes": "e6 fe 16 00 10 00 00 00 f5"
+  },
+  {
+    "id": "V39",
+    "protocol": "P1",
+    "action": "Under-bed light explicit on (local toggle)",
+    "inputs": {
+      "kind": "frame",
+      "key": "31000001"
+    },
+    "expected_bytes": "e5 fe 16 31 00 00 01 d4"
+  },
+  {
+    "id": "V40",
+    "protocol": "P1",
+    "action": "Under-bed light explicit off (local toggle)",
+    "inputs": {
+      "kind": "frame",
+      "key": "31000000"
+    },
+    "expected_bytes": "e5 fe 16 31 00 00 00 d5"
+  },
+  {
+    "id": "V41",
+    "protocol": "P2",
+    "action": "Under-bed light toggle",
+    "inputs": {
+      "kind": "frame",
+      "key": "00020000"
+    },
+    "expected_bytes": "e6 fe 16 00 00 02 00 00 03"
+  },
+  {
+    "id": "V42",
+    "protocol": "P2",
+    "action": "Massage on/off button",
+    "inputs": {
+      "kind": "frame",
+      "key": "00000100"
+    },
+    "expected_bytes": "e6 fe 16 00 01 00 00 00 04"
+  },
+  {
+    "id": "V43",
+    "protocol": "P2",
+    "action": "Massage timer cycle button",
+    "inputs": {
+      "kind": "frame",
+      "key": "00000200"
+    },
+    "expected_bytes": "e6 fe 16 00 02 00 00 00 03"
+  },
+  {
+    "id": "V44",
+    "protocol": "P2",
+    "action": "Massage Head button",
+    "inputs": {
+      "kind": "frame",
+      "key": "00000800"
+    },
+    "expected_bytes": "e6 fe 16 00 08 00 00 00 fd"
+  },
+  {
+    "id": "V45",
+    "protocol": "P2",
+    "action": "Massage Foot button",
+    "inputs": {
+      "kind": "frame",
+      "key": "00000400"
+    },
+    "expected_bytes": "e6 fe 16 00 04 00 00 00 01"
+  },
+  {
+    "id": "V46",
+    "protocol": "P2",
+    "action": "Massage Wave button",
+    "inputs": {
+      "kind": "frame",
+      "key": "10000000"
+    },
+    "expected_bytes": "e6 fe 16 00 00 00 10 00 f5"
+  },
+  {
+    "id": "V47",
+    "protocol": "P1",
+    "action": "Massage Wave slider",
+    "inputs": {
+      "kind": "slider",
+      "base": "10000020",
+      "progress": 0
+    },
+    "expected_bytes": "e5 fe 16 10 00 00 20 d6"
+  },
+  {
+    "id": "V48",
+    "protocol": "P1",
+    "action": "Massage Wave slider",
+    "inputs": {
+      "kind": "slider",
+      "base": "10000020",
+      "progress": 10
+    },
+    "expected_bytes": "e5 fe 16 10 00 00 21 d5"
+  },
+  {
+    "id": "V49",
+    "protocol": "P1",
+    "action": "Massage Wave slider",
+    "inputs": {
+      "kind": "slider",
+      "base": "10000020",
+      "progress": 29
+    },
+    "expected_bytes": "e5 fe 16 10 00 00 22 d4"
+  },
+  {
+    "id": "V50",
+    "protocol": "P1",
+    "action": "Massage Wave slider",
+    "inputs": {
+      "kind": "slider",
+      "base": "10000020",
+      "progress": 39
+    },
+    "expected_bytes": "e5 fe 16 10 00 00 23 d3"
+  },
+  {
+    "id": "V51",
+    "protocol": "P1",
+    "action": "Massage Head intensity slider",
+    "inputs": {
+      "kind": "slider",
+      "base": "10000010",
+      "progress": 0
+    },
+    "expected_bytes": "e5 fe 16 10 00 00 10 e6"
+  },
+  {
+    "id": "V52",
+    "protocol": "P1",
+    "action": "Massage Head intensity slider",
+    "inputs": {
+      "kind": "slider",
+      "base": "10000010",
+      "progress": 10
+    },
+    "expected_bytes": "e5 fe 16 10 00 00 11 e5"
+  },
+  {
+    "id": "V53",
+    "protocol": "P1",
+    "action": "Massage Head intensity slider",
+    "inputs": {
+      "kind": "slider",
+      "base": "10000010",
+      "progress": 29
+    },
+    "expected_bytes": "e5 fe 16 10 00 00 12 e4"
+  },
+  {
+    "id": "V54",
+    "protocol": "P1",
+    "action": "Massage Head intensity slider",
+    "inputs": {
+      "kind": "slider",
+      "base": "10000010",
+      "progress": 39
+    },
+    "expected_bytes": "e5 fe 16 10 00 00 13 e3"
+  },
+  {
+    "id": "V55",
+    "protocol": "P1",
+    "action": "Massage Foot intensity slider",
+    "inputs": {
+      "kind": "slider",
+      "base": "11000010",
+      "progress": 0
+    },
+    "expected_bytes": "e5 fe 16 11 00 00 10 e5"
+  },
+  {
+    "id": "V56",
+    "protocol": "P1",
+    "action": "Massage Foot intensity slider",
+    "inputs": {
+      "kind": "slider",
+      "base": "11000010",
+      "progress": 10
+    },
+    "expected_bytes": "e5 fe 16 11 00 00 11 e4"
+  },
+  {
+    "id": "V57",
+    "protocol": "P1",
+    "action": "Massage Foot intensity slider",
+    "inputs": {
+      "kind": "slider",
+      "base": "11000010",
+      "progress": 29
+    },
+    "expected_bytes": "e5 fe 16 11 00 00 12 e3"
+  },
+  {
+    "id": "V58",
+    "protocol": "P1",
+    "action": "Massage Foot intensity slider",
+    "inputs": {
+      "kind": "slider",
+      "base": "11000010",
+      "progress": 39
+    },
+    "expected_bytes": "e5 fe 16 11 00 00 13 e2"
+  },
+  {
+    "id": "V59",
+    "protocol": "P1",
+    "action": "Massage Start",
+    "inputs": {
+      "kind": "frame",
+      "key": "10000021"
+    },
+    "expected_bytes": "e5 fe 16 10 00 00 21 d5"
+  },
+  {
+    "id": "V60",
+    "protocol": "P1",
+    "action": "Massage Start",
+    "inputs": {
+      "kind": "frame",
+      "key": "10000011"
+    },
+    "expected_bytes": "e5 fe 16 10 00 00 11 e5"
+  },
+  {
+    "id": "V61",
+    "protocol": "P1",
+    "action": "Massage Start",
+    "inputs": {
+      "kind": "frame",
+      "key": "11000011"
+    },
+    "expected_bytes": "e5 fe 16 11 00 00 11 e4"
+  },
+  {
+    "id": "V62",
+    "protocol": "P1",
+    "action": "Massage Stop",
+    "inputs": {
+      "kind": "frame",
+      "key": "10000010"
+    },
+    "expected_bytes": "e5 fe 16 10 00 00 10 e6"
+  },
+  {
+    "id": "V63",
+    "protocol": "P1",
+    "action": "Massage Stop",
+    "inputs": {
+      "kind": "frame",
+      "key": "11000010"
+    },
+    "expected_bytes": "e5 fe 16 11 00 00 10 e5"
+  },
+  {
+    "id": "V64",
+    "protocol": "P1",
+    "action": "Massage timer 10 min",
+    "inputs": {
+      "kind": "frame",
+      "key": "10000030"
+    },
+    "expected_bytes": "e5 fe 16 10 00 00 30 c6"
+  },
+  {
+    "id": "V65",
+    "protocol": "P1",
+    "action": "Massage timer 20 min",
+    "inputs": {
+      "kind": "frame",
+      "key": "10000031"
+    },
+    "expected_bytes": "e5 fe 16 10 00 00 31 c5"
+  },
+  {
+    "id": "V66",
+    "protocol": "P1",
+    "action": "Massage timer 30 min",
+    "inputs": {
+      "kind": "frame",
+      "key": "10000032"
+    },
+    "expected_bytes": "e5 fe 16 10 00 00 32 c4"
+  },
+  {
+    "id": "V67",
+    "protocol": "P1",
+    "action": "Alarm query",
+    "inputs": {
+      "kind": "query",
+      "second": 44,
+      "minute": 23,
+      "hour": 10,
+      "weekday": 4
+    },
+    "expected_bytes": "e2 fe 16 2c 17 0a 04 b8"
+  },
+  {
+    "id": "V68",
+    "protocol": "P1",
+    "action": "Alarm off",
+    "inputs": {
+      "kind": "off",
+      "second": 44,
+      "minute": 23,
+      "hour": 10,
+      "weekday": 4
+    },
+    "expected_bytes": "eb fe 16 2c 17 0a ff ff 04 ff ff ff ff b5"
+  },
+  {
+    "id": "V69",
+    "protocol": "P1",
+    "action": "Alarm on",
+    "inputs": {
+      "kind": "on",
+      "second": 44,
+      "minute": 23,
+      "hour": 10,
+      "weekday": 4,
+      "alarm_minute": 35,
+      "alarm_hour": 6,
+      "repeat": 131,
+      "mode": 0
+    },
+    "expected_bytes": "eb fe 16 2c 17 0a 23 06 04 83 ff ff ff 06"
+  },
+  {
+    "id": "V70",
+    "protocol": "P1",
+    "action": "Alarm on",
+    "inputs": {
+      "kind": "on",
+      "second": 44,
+      "minute": 23,
+      "hour": 10,
+      "weekday": 4,
+      "alarm_minute": 35,
+      "alarm_hour": 6,
+      "repeat": 131,
+      "mode": 1
+    },
+    "expected_bytes": "eb fe 16 2c 17 0a 23 06 04 83 11 11 ff e2"
+  },
+  {
+    "id": "V71",
+    "protocol": "P1",
+    "action": "Alarm on",
+    "inputs": {
+      "kind": "on",
+      "second": 44,
+      "minute": 23,
+      "hour": 10,
+      "weekday": 4,
+      "alarm_minute": 35,
+      "alarm_hour": 6,
+      "repeat": 131,
+      "mode": 2
+    },
+    "expected_bytes": "eb fe 16 2c 17 0a 23 06 04 83 ff ff 08 fd"
+  },
+  {
+    "id": "V72",
+    "protocol": "P1",
+    "action": "Alarm on",
+    "inputs": {
+      "kind": "on",
+      "second": 44,
+      "minute": 23,
+      "hour": 10,
+      "weekday": 4,
+      "alarm_minute": 35,
+      "alarm_hour": 6,
+      "repeat": 131,
+      "mode": 3
+    },
+    "expected_bytes": "eb fe 16 2c 17 0a 23 06 04 83 ff ff 09 fc"
+  },
+  {
+    "id": "V73",
+    "protocol": "P1",
+    "action": "Alarm on",
+    "inputs": {
+      "kind": "on",
+      "second": 44,
+      "minute": 23,
+      "hour": 10,
+      "weekday": 4,
+      "alarm_minute": -1,
+      "alarm_hour": -1,
+      "repeat": 131,
+      "mode": 2
+    },
+    "expected_bytes": "eb fe 16 2c 17 0a 00 00 04 83 ff ff 08 26"
+  },
+  {
+    "id": "V74",
+    "protocol": "P2",
+    "action": "Alarm query",
+    "inputs": {
+      "kind": "query"
+    },
+    "expected_bytes": "e2 80 03 00 9a"
+  },
+  {
+    "id": "V75",
+    "protocol": "P2",
+    "action": "Alarm off",
+    "inputs": {
+      "kind": "off"
+    },
+    "expected_bytes": "ed 80 03 00 00 00 00 00 00 00 00 00 00 00 00 8f"
+  },
+  {
+    "id": "V76",
+    "protocol": "P2",
+    "action": "Alarm clock",
+    "inputs": {
+      "kind": "clock",
+      "year": 2026,
+      "month0": 10,
+      "day": 26,
+      "hour": 10,
+      "minute": 23,
+      "second": 44
+    },
+    "expected_bytes": "e7 80 01 7e 0a 1a 0a 17 2c a8"
+  },
+  {
+    "id": "V77",
+    "protocol": "P2",
+    "action": "Alarm on",
+    "inputs": {
+      "kind": "on",
+      "alarm_minute": 35,
+      "alarm_hour": 6,
+      "repeat": 131,
+      "mode": 0
+    },
+    "expected_bytes": "ed 80 03 06 23 83 00 00 00 00 00 00 00 00 00 e3"
+  },
+  {
+    "id": "V78",
+    "protocol": "P2",
+    "action": "Alarm on",
+    "inputs": {
+      "kind": "on",
+      "alarm_minute": 35,
+      "alarm_hour": 6,
+      "repeat": 131,
+      "mode": 1
+    },
+    "expected_bytes": "ed 80 03 06 23 83 09 00 00 00 00 00 00 00 00 da"
+  },
+  {
+    "id": "V79",
+    "protocol": "P2",
+    "action": "Alarm on",
+    "inputs": {
+      "kind": "on",
+      "alarm_minute": 35,
+      "alarm_hour": 6,
+      "repeat": 131,
+      "mode": 2
+    },
+    "expected_bytes": "ed 80 03 06 23 83 11 00 00 00 00 00 00 00 00 d2"
+  },
+  {
+    "id": "V80",
+    "protocol": "P2",
+    "action": "Alarm on",
+    "inputs": {
+      "kind": "on",
+      "alarm_minute": 35,
+      "alarm_hour": 6,
+      "repeat": 131,
+      "mode": 3
+    },
+    "expected_bytes": "ed 80 03 06 23 83 13 00 00 00 00 00 00 00 00 d0"
+  },
+  {
+    "id": "V81",
+    "protocol": "P2",
+    "action": "Alarm on",
+    "inputs": {
+      "kind": "on",
+      "alarm_minute": -1,
+      "alarm_hour": -1,
+      "repeat": 131,
+      "mode": 2
+    },
+    "expected_bytes": "ed 80 03 00 00 83 11 00 00 00 00 00 00 00 00 fb"
+  },
+  {
+    "id": "V82",
+    "protocol": "P1",
+    "action": "Alarm query reply M1",
+    "inputs": {
+      "kind": "parser",
+      "fragments": [
+        "e2 fe 16 23 06 00 83 ff ff 08"
+      ],
+      "initial_alarm_type": 0
+    },
+    "expected_bytes": "e2 fe 16 23 06 00 83 ff ff 08",
+    "expected_decoded": {
+      "kind": "query-reply",
+      "hour": 6,
+      "minute": 35,
+      "repeat": -125,
+      "mode": 2
+    }
+  },
+  {
+    "id": "V83",
+    "protocol": "P1",
+    "action": "Alarm query reply massage takes precedence",
+    "inputs": {
+      "kind": "parser",
+      "fragments": [
+        "e2 fe 16 23 06 00 83 01 05 09"
+      ],
+      "initial_alarm_type": 0
+    },
+    "expected_bytes": "e2 fe 16 23 06 00 83 01 05 09",
+    "expected_decoded": {
+      "kind": "query-reply",
+      "hour": 6,
+      "minute": 35,
+      "repeat": -125,
+      "mode": 1
+    }
+  },
+  {
+    "id": "V84",
+    "protocol": "P1",
+    "action": "Alarm query reply preserves previous mode on unrecognized type",
+    "inputs": {
+      "kind": "parser",
+      "fragments": [
+        "e2 fe 16 ff ff 00 83 ff ff ff"
+      ],
+      "initial_alarm_type": 3
+    },
+    "expected_bytes": "e2 fe 16 ff ff 00 83 ff ff ff",
+    "expected_decoded": {
+      "kind": "query-reply",
+      "hour": -1,
+      "minute": -1,
+      "repeat": -125,
+      "mode": 3
+    }
+  },
+  {
+    "id": "V85",
+    "protocol": "P2",
+    "action": "16-byte alarm status",
+    "inputs": {
+      "kind": "parser",
+      "fragments": [
+        "ed 80 03 06 23 83 11 00 00 00 00 00 00 00 00 00"
+      ],
+      "initial_alarm_type": 0
+    },
+    "expected_bytes": "ed 80 03 06 23 83 11 00 00 00 00 00 00 00 00 00",
+    "expected_decoded": {
+      "kind": "alarm-status",
+      "hour": 6,
+      "minute": 35,
+      "repeat": -125,
+      "mode": 17
+    }
+  },
+  {
+    "id": "V86",
+    "protocol": "P2",
+    "action": "16-byte massage reply",
+    "inputs": {
+      "kind": "parser",
+      "fragments": [
+        "00 00 00 00 00 00 00 a6 00 00 00 00 00 00 93 00"
+      ],
+      "initial_alarm_type": 0
+    },
+    "expected_bytes": "00 00 00 00 00 00 00 a6 00 00 00 00 00 00 93 00",
+    "expected_decoded": {
+      "kind": "massage",
+      "timer": 3,
+      "intensity": 3
+    }
+  },
+  {
+    "id": "V87",
+    "protocol": "P2",
+    "action": "23-byte massage reply assembled from 20+3",
+    "inputs": {
+      "kind": "parser",
+      "fragments": [
+        "f4 fe 16 00 00 00 00 00 00 00 00 a4 00 00 00 00 00 00 00 02",
+        "00 00 00"
+      ],
+      "initial_alarm_type": 0
+    },
+    "expected_bytes": "00 00 00",
+    "expected_decoded": {
+      "kind": "massage",
+      "timer": 2,
+      "intensity": 2
+    }
+  },
+  {
+    "id": "V88",
+    "protocol": "P2",
+    "action": "10-byte massage reply",
+    "inputs": {
+      "kind": "parser",
+      "fragments": [
+        "00 00 00 00 00 00 00 00 01 00"
+      ],
+      "initial_alarm_type": 0
+    },
+    "expected_bytes": "00 00 00 00 00 00 00 00 01 00",
+    "expected_decoded": {
+      "kind": "massage",
+      "timer": 1,
+      "intensity": 0
+    }
+  },
+  {
+    "id": "V89",
+    "protocol": "P2",
+    "action": "Short fragment before prefix",
+    "inputs": {
+      "kind": "parser",
+      "fragments": [
+        "00 00 00"
+      ],
+      "initial_alarm_type": 0
+    },
+    "expected_bytes": "00 00 00",
+    "expected_decoded": null
+  }
+]

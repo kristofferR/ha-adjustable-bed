@@ -3559,6 +3559,9 @@
  "number:enso2_light_timer": {
   "card_section": "lighting"
  },
+ "number:ergobed_light_timer": {
+  "card_section": "lighting"
+ },
  "number:fan_level": {
   "card_section": "climate"
  },

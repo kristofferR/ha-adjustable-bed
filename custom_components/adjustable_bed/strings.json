@@ -887,6 +887,7 @@
       "invalid_movement_per_tap": "Enter a whole number of 1 or more.",
       "cheerssleep_model_required": "Choose the bed model the CheersSleep app shows.",
       "suta_name": "Enter the complete case-sensitive SUTA Bluetooth name. Names shorter than nine characters and drawer controllers have no supported bed controls.",
+      "ergobed_profile": "Enter the exact Bluetooth name shown in ErgoBed Control, including uppercase HHC and a supported model selector.",
       "moodbase_profile": "Enter the exact 14-character Bluetooth name shown in MoodBase, including uppercase HHC.",
       "l2motion_profile": "Enter the bed's Bluetooth name exactly as L2 Motion shows it.",
       "pair_bed_missing": "One of the chosen beds is no longer set up. Choose two beds from the list.",
@@ -6506,6 +6507,9 @@
       "l2motion_vibration": {
         "name": "Vibration"
       },
+      "ergobed_light_timer": {
+        "name": "Light timer"
+      },
       "moodbase_light_timer": {
         "name": "Light timer duration"
       },
@@ -11183,8 +11187,17 @@
     "alarm_time_whole_minutes": {
       "message": "Alarm times are set in whole minutes. Remove the seconds."
     },
+    "alarm_midnight_requires_action_or_repeat": {
+      "message": "Choose a wake action or a repeat day for a midnight alarm on this bed."
+    },
     "alarm_not_supported": {
       "message": "{device_name} has no alarm."
+    },
+    "ergobed_name_mismatch": {
+      "message": "The Bluetooth name does not match the configured ErgoBed Control model. Check the name in Reconfigure."
+    },
+    "ergobed_receiver_missing": {
+      "message": "The ErgoBed Control Bluetooth characteristic could not be found or does not support writes and notifications."
     },
     "moodbase_name_mismatch": {
       "message": "Use the exact Bluetooth name shown for this bed in MoodBase."
