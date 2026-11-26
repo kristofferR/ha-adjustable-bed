@@ -103,7 +103,6 @@ from .const import (
     BED_TYPE_ZSERIES,
     CONF_BLE_DEVICE_NAME,
     CONF_DISABLE_ANGLE_SENSING,
-    CONF_HAS_LIGHT,
     CONF_HAS_MASSAGE,
     CONF_JIECANG_APP_PROFILE,
     CONF_KAIDI_PRODUCT_ID,
@@ -191,9 +190,7 @@ _BY_BED_TYPE: Final[dict[str, SideProfile]] = {
     BED_TYPE_LEVA: SideProfile(
         "Leva Bed Remote", frozenset({CONF_MOTOR_COUNT, CONF_HAS_MASSAGE}), variant_owned=True
     ),
-    BED_TYPE_LANGJUE: SideProfile(
-        "Comfort Smart Bed (Langjue)", frozenset({CONF_PRODUCT_TYPE, CONF_HAS_LIGHT, CONF_HAS_MASSAGE}),
-    ),
+    BED_TYPE_LANGJUE: SideProfile("Comfort Smart Bed (Langjue)"),
     BED_TYPE_LINX: SideProfile("Linx", variant_owned=True),
     BED_TYPE_SYMPHONY_SLEEP: SideProfile("Symphony Sleep", variant_owned=True),
     BED_TYPE_JALON_BED: SideProfile("OkinComfortBed Ⅱ (Jalon)"),

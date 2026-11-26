@@ -585,7 +585,7 @@ class LangjueController(BedController):
                 name,
                 lambda ctrl, mode=app.PRESETS[key]: cast(LangjueController, ctrl)._preset(mode),
                 translation_key=PRESET_KEY,
-                translation_placeholders={"preset": name},
+                translation_placeholders={"action": name},
                 card=CARD_PRESETS,
                 invalidates_position=True,
             )
