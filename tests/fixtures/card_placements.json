@@ -47,6 +47,12 @@
  "binary_sensor:cheerssleep_right_asleep": {
   "card_section": "hidden"
  },
+ "binary_sensor:customatic_demo_mode": {
+  "card_section": "hidden"
+ },
+ "binary_sensor:customatic_demo_problem": {
+  "card_section": "hidden"
+ },
  "binary_sensor:enso2_light_on": {
   "card_section": "hidden"
  },
@@ -764,6 +770,35 @@
  },
  "button:coolbase_star": {
   "card_section": "utility"
+ },
+ "button:customatic_demo_auto_sit": {
+  "card_section": "presets"
+ },
+ "button:customatic_demo_light_auto": {
+  "card_section": "lighting"
+ },
+ "button:customatic_demo_light_timer_cycle": {
+  "card_section": "lighting"
+ },
+ "button:customatic_demo_rotation_down": {
+  "card_section": "motors",
+  "card_role": "down",
+  "card_motor": "customatic_demo_rotation"
+ },
+ "button:customatic_demo_rotation_up": {
+  "card_section": "motors",
+  "card_role": "up",
+  "card_motor": "customatic_demo_rotation"
+ },
+ "button:customatic_demo_seat_down": {
+  "card_section": "motors",
+  "card_role": "down",
+  "card_motor": "customatic_demo_seat"
+ },
+ "button:customatic_demo_seat_up": {
+  "card_section": "motors",
+  "card_role": "up",
+  "card_motor": "customatic_demo_seat"
  },
  "button:disconnect": {
   "card_section": "connection",
@@ -2977,6 +3012,14 @@
   "card_section": "motors",
   "card_motor": "comfy_waist"
  },
+ "cover:customatic_demo_rotation": {
+  "card_section": "motors",
+  "card_motor": "customatic_demo_rotation"
+ },
+ "cover:customatic_demo_seat": {
+  "card_section": "motors",
+  "card_motor": "customatic_demo_seat"
+ },
  "cover:dorsal_lumbar_pillow": {
   "card_section": "motors",
   "card_motor": "dorsal_lumbar_pillow"
@@ -4313,6 +4356,9 @@
   "card_section": "hidden"
  },
  "sensor:coolbase_right_fan_level": {
+  "card_section": "hidden"
+ },
+ "sensor:customatic_demo_light_timer": {
   "card_section": "hidden"
  },
  "sensor:customatic_firmware_revision": {
