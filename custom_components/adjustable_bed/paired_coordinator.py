@@ -235,7 +235,7 @@ class PairedBedCoordinator:
         return DeviceInfo(
             identifiers={(DOMAIN, self._pair_id)},
             name=self._name,
-            manufacturer=first.device_info.get("manufacturer"),
+            manufacturer=first.device_info.as_dict().get("manufacturer"),
             model="Adjustable Bed (paired)",
         )
 

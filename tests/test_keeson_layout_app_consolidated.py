@@ -79,10 +79,12 @@ async def pair(hass, monkeypatch):
     owner = PairedBedCoordinator(hass, entry, {side: row[0] for side, row in triples.items()})
     hass.data.setdefault(DOMAIN, {})[entry.entry_id] = owner
     registry = dr.async_get(hass)
-    parent = registry.async_get_or_create(config_entry_id=entry.entry_id, **owner.device_info)
+    parent = registry.async_get_or_create_from_info(
+        config_entry_id=entry.entry_id, device_info=owner.device_info
+    )
     devices = {
-        side: registry.async_get_or_create_child(
-            config_entry_id=entry.entry_id, **child_device_info(owner, side)
+        side: registry.async_get_or_create_child_from_info(
+            config_entry_id=entry.entry_id, device_info=child_device_info(owner, side)
         )
         for side in triples
     }
@@ -227,8 +229,8 @@ async def rename_targets(hass, monkeypatch, apps):
     for app in apps:
         coord, ctrl, client = await target(hass, monkeypatch, app)
         hass.data.setdefault(DOMAIN, {})[coord.entry.entry_id] = coord
-        device = dr.async_get(hass).async_get_or_create(
-            config_entry_id=coord.entry.entry_id, **coord.device_info
+        device = dr.async_get(hass).async_get_or_create_from_info(
+            config_entry_id=coord.entry.entry_id, device_info=coord.device_info
         )
         result.append((coord, ctrl, client, device))
     await async_register_services(hass)

@@ -97,8 +97,8 @@ def _register_service_device(
     """Register a real service target for direct Home Assistant dispatch."""
     entry.mock_state(hass, ConfigEntryState.LOADED)
     hass.data.setdefault(DOMAIN, {})[entry.entry_id] = coordinator
-    return dr.async_get(hass).async_get_or_create(
-        config_entry_id=entry.entry_id, **coordinator.device_info
+    return dr.async_get(hass).async_get_or_create_from_info(
+        config_entry_id=entry.entry_id, device_info=coordinator.device_info
     )
 
 

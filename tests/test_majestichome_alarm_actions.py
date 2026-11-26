@@ -145,7 +145,7 @@ async def live_pair(hass, mock_coordinator_connected, clock):
         await async_register_services(hass)
         registry = dr.async_get(hass)
         parent = registry.async_get_device_by_identifier(
-            next(iter(pair.device_info["identifiers"])), entry.entry_id
+            next(iter(pair.device_info.as_dict()["identifiers"])), entry.entry_id
         )
         native = dr.async_entries_for_parent_device(registry, parent.id)
         left = next(device for device in native if "Left" in device.name)

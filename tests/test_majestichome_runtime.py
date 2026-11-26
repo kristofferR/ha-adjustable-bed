@@ -293,7 +293,7 @@ async def test_real_native_pair_parent_and_child_devices_route_settings(
     await async_register_services(hass)
     registry = dr.async_get(hass)
     parent = registry.async_get_device_by_identifier(
-        next(iter(pair.device_info["identifiers"])), entry.entry_id
+        next(iter(pair.device_info.as_dict()["identifiers"])), entry.entry_id
     )
     assert parent is not None
     native = dr.async_entries_for_parent_device(registry, parent.id)
