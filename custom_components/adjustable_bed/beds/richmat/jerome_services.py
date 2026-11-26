@@ -8,7 +8,7 @@ from homeassistant.const import CONF_DEVICE_ID
 from homeassistant.core import HomeAssistant, ServiceCall
 
 from ...const import DOMAIN, PAIR_CONNECTION_MODE_SEQUENTIAL
-from ...errors import invalid
+from ...errors import failed, invalid
 from ...import_executor import async_import_modules
 from ...services import (
     DEVICE_IDS,
@@ -34,6 +34,20 @@ async def handle_repeat_alarm(call: ServiceCall) -> None:
     admissions = [
         _capture_command_admission(parent, side, ("configuration",)) for parent, side in targets
     ]
+    operation = call.data["operation"]
+    slot = call.data.get("slot")
+    if (operation == "list") != (slot is None):
+        raise invalid("jerome_repeat_alarm_slot")
+
+    sequential = (
+        [i for i, mode in enumerate(selection.modes) if mode == PAIR_CONNECTION_MODE_SEQUENTIAL]
+        if operation != "list"
+        else []
+    )
+    if any(len(selection.children[index]) > 1 for index in sequential):
+        raise invalid("jerome_alarm_needs_two_links")
+    if len(sequential) > 1:
+        raise invalid("jerome_alarm_needs_separate_calls")
     checks = [
         (
             parent,
@@ -41,19 +55,13 @@ async def handle_repeat_alarm(call: ServiceCall) -> None:
             child,
             _capture_command_admission(parent, child_side, ("configuration",)),
         )
-        for (parent, side), group in zip(targets, selection.children, strict=True)
+        for index, ((parent, side), group) in enumerate(
+            zip(targets, selection.children, strict=True)
+        )
+        if index not in sequential
         for child in group
         for child_side in (_child_side(parent, side, child),)
     ]
-    operation = call.data["operation"]
-    slot = call.data.get("slot")
-    if (operation == "list") != (slot is None):
-        raise invalid("jerome_repeat_alarm_slot")
-    if operation != "list" and any(
-        mode == PAIR_CONNECTION_MODE_SEQUENTIAL and len(group) > 1
-        for mode, group in zip(selection.modes, selection.children, strict=True)
-    ):
-        raise invalid("jerome_alarm_needs_two_links")
 
     await async_import_modules(call.hass, "beds.richmat.jerome_adjustable_base")
     from .jerome_adjustable_base import JeromeAdjustableBaseController, PreparedRepeatAlarm
@@ -63,6 +71,7 @@ async def handle_repeat_alarm(call: ServiceCall) -> None:
     )
     prepared: dict[JeromeAdjustableBaseController, PreparedRepeatAlarm] = {}
     started: set[JeromeAdjustableBaseController] = set()
+    delivered: set[JeromeAdjustableBaseController] = set()
 
     async def prepare(controller: JeromeAdjustableBaseController) -> None:
         if not controller.profile.split_head:
@@ -85,18 +94,30 @@ async def handle_repeat_alarm(call: ServiceCall) -> None:
             raise invalid("bed_changed")
         return True
 
-    async def execute(controller: JeromeAdjustableBaseController) -> None:
-        plan = prepared.get(controller)
-        if plan is None:
-            raise invalid("bed_changed")
-
+    async def dispatch(
+        controller: JeromeAdjustableBaseController, plan: PreparedRepeatAlarm
+    ) -> None:
         def admit_write() -> bool:
             if not ready():
                 return False
             started.add(controller)
             return True
 
-        await controller.execute_repeat_alarm(plan, admit_write=admit_write)
+        await controller.execute_repeat_alarm(
+            plan, admit_write=admit_write, on_delivery=lambda: delivered.add(controller)
+        )
+
+    async def execute(controller: JeromeAdjustableBaseController) -> None:
+        plan = prepared.get(controller)
+        if plan is None:
+            raise invalid("bed_changed")
+        await dispatch(controller, plan)
+
+    async def execute_sequential(controller: JeromeAdjustableBaseController) -> None:
+        if not ready():
+            return
+        await prepare(controller)
+        await dispatch(controller, prepared[controller])
 
     try:
         if operation == "list":
@@ -128,13 +149,37 @@ async def handle_repeat_alarm(call: ServiceCall) -> None:
                     cancel_running=False,
                     admission=admission,
                 )
-            if ready():
-                await _execute_preflighted(
-                    targets,
-                    preflighted,
-                    _family_command(JeromeAdjustableBaseController, execute),
-                    admissions=admissions,
+            if not ready():
+                return
+            # A sequential cycle releases its link when the callback ends.
+            # Validate the other receivers first, then check and write the
+            # sequential receiver within one cycle.
+            if sequential:
+                index = sequential[0]
+                parent, side = targets[index]
+                await _execute_sided_translated(
+                    parent,
+                    side,
+                    _family_command(JeromeAdjustableBaseController, execute_sequential),
+                    resource="configuration",
+                    cancel_running=False,
+                    admission=admissions[index],
                 )
+            if not sequential or delivered:
+                for index, ((parent, side), admission) in enumerate(
+                    zip(targets, admissions, strict=True)
+                ):
+                    if index not in sequential and ready():
+                        await _execute_sided_translated(
+                            parent,
+                            side,
+                            _family_command(JeromeAdjustableBaseController, execute),
+                            resource="configuration",
+                            cancel_running=False,
+                            admission=admission,
+                        )
+            if started and len(delivered) != len(checks) + len(sequential):
+                raise failed("action_stopped")
     finally:
         await _release_preflighted(preflighted)
 

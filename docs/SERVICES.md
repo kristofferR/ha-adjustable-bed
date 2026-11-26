@@ -1149,8 +1149,11 @@ Bases set up with the Instant Comfort app also run
 2.0 SH and WAVE SH. The clock capability reply must arrive first. Use
 [`set_alarm`](#set_alarm) to add, replace or disable a slot.
 Enable and delete check every selected receiver before sending the first
-change. When two receivers share one Bluetooth connection slot, select one
-side per enable or delete call.
+change. Each enable or delete call can select at most one receiver from a
+pair that connects to one side at a time. After editing or deleting a slot,
+`list` may reconnect to distinguish new reports from replies still arriving
+on the previous connection. If the connection cannot be renewed, the refresh
+fails and the integration keeps blocking ambiguous records.
 
 | Field | Value |
 |-------|-------|

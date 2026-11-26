@@ -23,7 +23,7 @@ from ...command_scheduler import (
 )
 from ...command_target import admitted_command_target
 from ...controller_state import StateKey
-from ...errors import invalid
+from ...errors import BedNotConnectedError, invalid
 from ...profiles import jerome_adjustable_base as profile
 from ...state_keys import LIGHT_TIMER_OPTION, MASSAGE_TIMER_MINUTES
 from ..base import BedController, ProfileExecution, require_controller
@@ -95,7 +95,7 @@ class JeromeAdjustableBaseController(ProfileExecution[profile.Product], BedContr
     def __init__(self, coordinator: AdjustableBedCoordinator, *, product: str) -> None:
         super().__init__(coordinator)
         if product not in profile.PRODUCTS:
-            raise ValueError("Choose a model from Jerome's Adjustable Base")
+            raise invalid("jerome_model_required")
         self.profile = profile.PRODUCTS[product]
         self._link: AppLink | None = None
         self._cleanup_context: CommandContext | None = None
@@ -107,6 +107,7 @@ class JeromeAdjustableBaseController(ProfileExecution[profile.Product], BedContr
         self._light_ready = False
         self._records: list[RepeatAlarm] = []
         self._edited_schedules: dict[int, RepeatAlarm] = {}
+        self._deleted_slots: set[int] = set()
         self._buffer = FrameBuffer()
         self._record_changed = asyncio.Event()
         self._expiry: asyncio.TimerHandle | None = None
@@ -169,7 +170,7 @@ class JeromeAdjustableBaseController(ProfileExecution[profile.Product], BedContr
     def _current_link(self) -> AppLink:
         link = self._link
         if link is None or not self._is_current(link):
-            raise ConnectionError("The Jerome bed session has ended")
+            raise BedNotConnectedError("jerome_session_ended")
         return link
 
     async def _send(
@@ -180,12 +181,13 @@ class JeromeAdjustableBaseController(ProfileExecution[profile.Product], BedContr
         *,
         expires_at: float | None = None,
         admit_write: Callable[[], bool] | None = None,
+        on_delivery: Callable[[], None] | None = None,
         after_write: Callable[[], None] | None = None,
     ) -> bool:
         async with self.ble_lock:
             await asyncio.sleep(max(0, self._next_write - monotonic()))
             if not self._is_current(link):
-                raise ConnectionError("The Jerome bed session has ended")
+                raise BedNotConnectedError("jerome_session_ended")
             if (cancel is not None and cancel.is_set()) or (
                 expires_at is not None and monotonic() >= expires_at
             ):
@@ -207,6 +209,8 @@ class JeromeAdjustableBaseController(ProfileExecution[profile.Product], BedContr
                     note_write_not_counted()
                 else:
                     note_frame_written(cancel)
+                if on_delivery is not None:
+                    on_delivery()
                 if after_write is not None and self._is_current(link):
                     after_write()
 
@@ -231,9 +235,12 @@ class JeromeAdjustableBaseController(ProfileExecution[profile.Product], BedContr
     async def start_notify(self, callback: Callable[[str, float], None] | None = None) -> None:
         client = self.client
         if client is None or not client.is_connected:
-            raise ConnectionError("The Jerome bed is disconnected")
+            raise BedNotConnectedError
         self.on_disconnect()
-        link = select_app_link(client, profile.TRANSPORTS, unique_service=True)
+        try:
+            link = select_app_link(client, profile.TRANSPORTS, unique_service=True)
+        except ValueError as err:
+            raise invalid("jerome_gatt_route") from err
         self._link = link
         self._side_supported = not link.query_single
         self.forward_controller_state_update(SIDE, self._side)
@@ -288,6 +295,8 @@ class JeromeAdjustableBaseController(ProfileExecution[profile.Product], BedContr
             self.forward_controller_state_update(CLOCK, self._clock_status)
         elif self.profile.split_head and (decoded := RepeatAlarm.decode(frame)) is not None:
             direction, record = decoded
+            if record.slot in self._deleted_slots:
+                return
             if (expected := self._edited_schedules.get(record.slot)) is not None:
                 # Earlier replies can still arrive after the new schedule is confirmed.
                 # Keep matching by schedule while the receiver reports the enabled
@@ -332,6 +341,7 @@ class JeromeAdjustableBaseController(ProfileExecution[profile.Product], BedContr
             self._expiry = None
         self._records.clear()
         self._edited_schedules.clear()
+        self._deleted_slots.clear()
         self._record_changed.set()
         self.forward_controller_state_updates(
             CLOCK(None),
@@ -343,7 +353,7 @@ class JeromeAdjustableBaseController(ProfileExecution[profile.Product], BedContr
 
     def _select_side(self, side: str) -> None:
         if not self.profile.split_head or side not in self._side_options:
-            raise ValueError("This connection cannot control the selected side")
+            raise invalid("jerome_side_unavailable")
         self._side = side
         self.forward_controller_state_update(SIDE, side)
 
@@ -474,7 +484,7 @@ class JeromeAdjustableBaseController(ProfileExecution[profile.Product], BedContr
             or type(duration_ms) is not int
             or not 1 <= duration_ms <= 60000
         ):
-            raise ValueError("Choose a Jerome direction and a hold of up to 60 seconds")
+            raise invalid("jerome_hold_control")
 
     async def hold_control(self, control: str, duration_ms: int) -> None:
         self.validate_hold_control(control, duration_ms)
@@ -516,7 +526,7 @@ class JeromeAdjustableBaseController(ProfileExecution[profile.Product], BedContr
 
     async def _preset(self, name: str, *, save: bool = False) -> None:
         if name not in self.profile.preset_names:
-            raise ValueError("This model does not offer that preset")
+            raise invalid("jerome_preset_unavailable")
         await self.press(profile.PRESETS[name][int(save)], save=save)
 
     async def preset_flat(self) -> None:
@@ -558,7 +568,7 @@ class JeromeAdjustableBaseController(ProfileExecution[profile.Product], BedContr
 
     async def set_massage_timer(self, minutes: int) -> None:
         if not self.profile.wave or minutes not in profile.MASSAGE_TIMERS:
-            raise ValueError("Choose a massage duration for this model")
+            raise invalid("jerome_massage_duration")
         link = self._current_link()
         frame = codec.function(
             profile.MASSAGE_TIMERS[minutes], self._wire_side(link), single=link.query_single
@@ -585,7 +595,7 @@ class JeromeAdjustableBaseController(ProfileExecution[profile.Product], BedContr
     async def set_light_timer(self, timer_option: str) -> None:
         self._require_light()
         if timer_option not in profile.LIGHT_TIMERS:
-            raise ValueError("Choose a Jerome light timeout")
+            raise invalid("jerome_light_timeout")
         link = self._current_link()
         with self.sent_state(
             LIGHT_TIMER_OPTION(timer_option), is_current=lambda: self._is_current(link)
@@ -598,7 +608,7 @@ class JeromeAdjustableBaseController(ProfileExecution[profile.Product], BedContr
 
     def _require_light(self) -> None:
         if not self._light_ready:
-            raise ValueError("The bed has not reported the Wave light capability")
+            raise invalid("jerome_light_not_reported")
 
     async def toggle_light(self) -> None:
         self._require_light()
@@ -681,7 +691,7 @@ class JeromeAdjustableBaseController(ProfileExecution[profile.Product], BedContr
         except TimeoutError:
             raise invalid("jerome_clock_not_reported") from None
         if not self._is_current(link):
-            raise ConnectionError("The Jerome bed session has ended")
+            raise BedNotConnectedError("jerome_session_ended")
 
     async def check_alarm(self, alarm: AlarmRequest) -> None:
         link = self._current_link()
@@ -730,7 +740,9 @@ class JeromeAdjustableBaseController(ProfileExecution[profile.Product], BedContr
     def _invalidate_record(self, slot: int, *, edited: RepeatAlarm | None = None) -> None:
         if edited is None:
             self._edited_schedules.pop(slot, None)
+            self._deleted_slots.add(slot)
         else:
+            self._deleted_slots.discard(slot)
             self._edited_schedules[slot] = edited.with_enabled(False)
         self._records = [record for record in self._records if record.slot != slot]
         self._publish_records()
@@ -763,39 +775,89 @@ class JeromeAdjustableBaseController(ProfileExecution[profile.Product], BedContr
             record is None or self._first_record(record.slot) == record
         )
 
+    async def _refresh_repeat_alarms(self, link: AppLink, cancel: asyncio.Event) -> None:
+        controller = self
+        if self._edited_schedules or self._deleted_slots:
+            # List records have no request ID or end marker. A full BLE reconnect
+            # is the only way to retire delayed replies to the old requests.
+            if cancel.is_set():
+                return
+            coordinator = self._coordinator
+            generation = coordinator.connection_generation
+            edits, deleted = self._edited_schedules.copy(), self._deleted_slots.copy()
+
+            async def retire() -> None:
+                try:
+                    released = await coordinator.async_disconnect("jerome_alarm_refresh")
+                finally:
+                    # A failed release can restart notifications on the old BLE link.
+                    if link.client.is_connected:
+                        live = coordinator.controller
+                        if isinstance(live, JeromeAdjustableBaseController):
+                            live._edited_schedules.update(edits)
+                            live._deleted_slots.update(deleted)
+                            blocked = edits.keys() | deleted
+                            live._records = [r for r in live._records if r.slot not in blocked]
+                            live._publish_records()
+                if not released or link.client.is_connected:
+                    raise BedNotConnectedError("jerome_alarm_refresh_needs_link")
+
+            await settled(retire())
+            if cancel.is_set():
+                return
+            if not await coordinator.async_ensure_connected(reset_timer=False):
+                raise BedNotConnectedError
+            if coordinator.connection_generation == generation:
+                raise BedNotConnectedError("jerome_alarm_refresh_needs_link")
+            live = coordinator.controller
+            if not isinstance(live, JeromeAdjustableBaseController) or not live.profile.split_head:
+                raise invalid("bed_changed")
+            controller = live
+            link = controller._current_link()
+            await controller._require_clock(link)
+
+        def begin_query() -> bool:
+            # A notification can arrive within the write, so clear before it.
+            controller._records.clear()
+            controller._publish_records()
+            return True
+
+        await controller._send(link, protocol.QUERY["alarms"], cancel, admit_write=begin_query)
+
     async def execute_repeat_alarm(
-        self, plan: PreparedRepeatAlarm, *, admit_write: Callable[[], bool] | None = None
+        self,
+        plan: PreparedRepeatAlarm,
+        *,
+        admit_write: Callable[[], bool] | None = None,
+        on_delivery: Callable[[], None] | None = None,
     ) -> None:
         def current() -> bool:
             if not self.repeat_alarm_plan_is_current(plan):
                 raise invalid("bed_changed")
             return admit_write is None or admit_write()
 
-        def clear_list() -> None:
-            self._records.clear()
-            self._publish_records()
-
         link, record = plan.link, plan.record
         cancel = self._coordinator.cancel_command
         if record is None:
-            # A notification can arrive within the write, so clear before it.
-            def begin_query() -> bool:
-                if not current():
-                    return False
-                clear_list()
-                return True
-
-            await self._send(link, protocol.QUERY["alarms"], cancel, admit_write=begin_query)
+            if current():
+                await self._refresh_repeat_alarms(link, cancel)
         elif plan.operation == "delete":
             await self._send(
                 link,
                 protocol.delete_alarm(record.slot),
                 cancel,
                 admit_write=current,
+                on_delivery=on_delivery,
                 after_write=partial(self._invalidate_record, record.slot),
             )
         else:
-            await self._send(link, record.with_enabled(True).encode(), cancel, admit_write=current)
+            await self._send(
+                link,
+                record.with_enabled(True).encode(),
+                cancel,
+                admit_write=current,
+                on_delivery=on_delivery,
+            )
 
     async def sync_clock(self) -> None:
         await self.write_command(codec.calendar(dt_util.now(), build=codec.record_20_len))

@@ -19,6 +19,7 @@ from custom_components.adjustable_bed.beds.richmat_app import protocol
 from custom_components.adjustable_bed.beds.richmat_app.receive import EXACT, FrameBuffer
 from custom_components.adjustable_bed.codec import richmat as codec
 from custom_components.adjustable_bed.profiles import jerome_adjustable_base as p
+from tests.error_helpers import raises_key
 from tests.state_helpers import state_writer
 
 VECTORS = json.loads((Path(__file__).parent / "fixtures/jerome_adjustable_base.json").read_text())
@@ -202,7 +203,11 @@ def create(monkeypatch):
 
 
 def writes(coordinator):
-    return [call.args[1].hex() for call in coordinator.client.write_gatt_char.await_args_list]
+    return written_frames(coordinator.client)
+
+
+def written_frames(client):
+    return [call.args[1].hex() for call in client.write_gatt_char.await_args_list]
 
 
 def notify(coordinator, raw):
@@ -323,7 +328,7 @@ async def test_alarm_reply_stream_and_record_toggle_preserve_opaque_byte(create)
 async def test_wave_light_gate_and_single_alarm_ack(create):
     coordinator, controller = await create("HDRN", "w5")
     coordinator.client.write_gatt_char.reset_mock()
-    with pytest.raises(ValueError, match="light capability"):
+    with raises_key("jerome_light_not_reported", ServiceValidationError):
         await controller.toggle_light()
     notify(coordinator, "6e0e00037f")
     notify(coordinator, "6e09010078")
@@ -372,10 +377,12 @@ async def ha_beds(hass, mock_coordinator_connected, mock_establish_connection, m
     monkeypatch.setattr(bed, "TICK_S", 0.005)
     monkeypatch.setattr(bed, "ALARM_REPLY_WAIT_S", 0.05)
     await async_register_services(hass)
-    monkeypatch.setattr(
-        "custom_components.adjustable_bed.services._resolve_sided_targets",
-        lambda *_args, **_kwargs: (list(targets), []),
-    )
+
+    def resolve(_hass, device_id):
+        target, side = targets[int(device_id)]
+        return target, None if side == "both" else side
+
+    monkeypatch.setattr("custom_components.adjustable_bed.services._resolve_sided_target", resolve)
 
     async def add(model="JERN"):
         entry = MockConfigEntry(
@@ -410,7 +417,7 @@ async def ha_beds(hass, mock_coordinator_connected, mock_establish_connection, m
         await hass.services.async_call(
             const.DOMAIN,
             service,
-            {"device_id": "bed", **data},
+            {"device_id": [str(index) for index in range(len(targets))], **data},
             blocking=True,
         )
 
@@ -435,7 +442,7 @@ async def _select_ha_side(target, side):
     await selector.async_select_option(side)
 
 
-async def _ha_pair(hass, targets, left, right):
+async def _ha_pair(hass, targets, left, right, *, mode="concurrent", side="both"):
     from pytest_homeassistant.common import MockConfigEntry
 
     from custom_components.adjustable_bed import const
@@ -443,10 +450,8 @@ async def _ha_pair(hass, targets, left, right):
 
     entry = MockConfigEntry(domain=const.DOMAIN, data={const.CONF_PAIR_ID: "jerome-pair"})
     entry.add_to_hass(hass)
-    pair = PairedBedCoordinator(
-        hass, entry, {"left": left, "right": right}, connection_mode="concurrent"
-    )
-    targets[:] = [(pair, "both")]
+    pair = PairedBedCoordinator(hass, entry, {"left": left, "right": right}, connection_mode=mode)
+    targets[:] = [(pair, side)]
     return pair
 
 
@@ -542,9 +547,9 @@ async def test_public_repeat_edit_refreshes_before_disabling_the_slot(ha_beds):
 
 
 @pytest.mark.parametrize("confirm_edit", [True, False])
-async def test_public_repeat_disable_uses_only_a_confirmed_schedule(ha_beds, monkeypatch, confirm_edit):
-    from tests.error_helpers import raises_key
-
+async def test_public_repeat_disable_uses_only_a_confirmed_schedule(
+    ha_beds, monkeypatch, confirm_edit
+):
     _, add, call = ha_beds
     target = await add()
     await call("jerome_repeat_alarm", operation="list")
@@ -579,6 +584,72 @@ async def test_public_repeat_disable_ignores_update_from_before_confirmed_edit(h
     before_disable = len(writes(target))
     await call("set_alarm", enabled=False, slot=1)
     assert writes(target)[before_disable:] == ["6e200d050101018b070f450089"]
+
+
+@pytest.mark.parametrize("local_edit", ["replace", "delete"])
+async def test_public_explicit_list_accepts_external_edit_on_a_fresh_link(
+    ha_beds, mock_establish_connection, local_edit
+):
+    _, add, call = ha_beds
+    target = await add()
+    old_client = target.client
+    receiver, retired = old_client.start_notify.await_args.args
+    old_generation = target.connection_generation
+    edited = codec.record_20_len(5, 1, 2, (1, 0x8B, 7, 15, 0x45, 1))
+    external = codec.record_20_len(5, 1, 2, (1, 0x99, 8, 30, 0x58, 0xA1))
+    if local_edit == "replace":
+        await call("set_alarm", enabled=True, time="07:15", slot=1, wake_action="zero_g")
+        notify(target, edited.hex())
+    else:
+        notify(target, edited.hex())
+        await call("jerome_repeat_alarm", operation="delete", slot=1)
+    notify(target, external.hex())
+    assert [record.raw_7 for record in target.controller._records] == (
+        [0x8B] if local_edit == "replace" else []
+    )
+
+    client = make_client(codec.TRANSPORTS["w1"])
+    client.mtu_size = 23
+    client.disconnect = AsyncMock()
+    client.read_gatt_char = AsyncMock()
+    mock_establish_connection.side_effect = AsyncMock(return_value=client)
+
+    async def reply(_char, frame, **_kwargs):
+        if frame == bytes.fromhex("6e08010178"):
+            notify(target, "6e09010078")
+        elif frame == protocol.QUERY["alarms"]:
+            notify(target, external.hex())
+
+    client.write_gatt_char.side_effect = reply
+    await call("jerome_repeat_alarm", operation="list")
+    assert target.client is client and target.connection_generation != old_generation
+    assert not old_client.is_connected
+    assert target.controller._records == [RepeatAlarm(1, 0x99, 8, 30, 0x58, 0xA1)]
+
+    retired(receiver, bytearray(edited))
+    retired(receiver, bytearray(codec.record_20_len(5, 1, 3, (1, 0x8B, 7, 15, 0x45, 1))))
+    await call("set_alarm", enabled=False, slot=1)
+    assert writes(target)[-2:] == [
+        protocol.QUERY["alarms"].hex(),
+        RepeatAlarm(1, 0x99, 8, 30, 0x58, 0xA0).encode().hex(),
+    ]
+
+
+async def test_public_explicit_list_keeps_the_guard_when_the_ble_link_cannot_close(ha_beds):
+    _, add, call = ha_beds
+    target = await add()
+    await call("set_alarm", enabled=True, time="07:15", slot=1, wake_action="zero_g")
+    target.client.disconnect.side_effect = None
+    with raises_key("jerome_alarm_refresh_needs_link"):
+        await call("jerome_repeat_alarm", operation="list")
+
+    assert target.client.is_connected
+    notify(target, "6e09010078")
+    notify(target, "6e200d050102018a062d58a15a")
+    before_disable = len(writes(target))
+    with raises_key("jerome_alarm_slot_not_reported"):
+        await call("set_alarm", enabled=False, slot=1)
+    assert writes(target)[before_disable:] == [protocol.QUERY["alarms"].hex()]
 
 
 async def test_public_repeat_disable_reads_recovered_notification_session(ha_beds):
@@ -617,8 +688,6 @@ async def test_public_repeat_disable_reads_recovered_notification_session(ha_bed
 
 
 async def test_public_repeat_enable_ignores_delayed_update_for_a_deleted_slot(ha_beds):
-    from tests.error_helpers import raises_key
-
     _, add, call = ha_beds
     target = await add()
     await call("set_alarm", enabled=True, time="07:15", slot=1, wake_action="zero_g")
@@ -626,6 +695,7 @@ async def test_public_repeat_enable_ignores_delayed_update_for_a_deleted_slot(ha
     await call("set_alarm", enabled=False, slot=1)
     await call("jerome_repeat_alarm", operation="delete", slot=1)
     notify(target, codec.record_20_len(5, 1, 3, (1, 0x8C, 7, 15, 0x45, 0)).hex())
+    notify(target, codec.record_20_len(5, 1, 2, (1, 0x8B, 7, 15, 0x45, 1)).hex())
 
     before_enable = len(writes(target))
     with raises_key("jerome_alarm_slot_not_reported"):
@@ -696,6 +766,79 @@ async def test_repeat_mutation_first_checks_all_receivers(hass, ha_beds, paired,
     assert writes(right) == ["6e2008050100009c", expected]
     if pair is not None:
         await pair.async_shutdown()
+
+
+@pytest.mark.parametrize(
+    ("operation", "expected"),
+    [("enable", "6e200d0501010100062d58a1cf"), ("delete", "6e2008050201019f")],
+)
+async def test_public_repeat_mutation_keeps_selected_sequential_link(
+    hass, ha_beds, operation, expected
+):
+    targets, add, call = ha_beds
+    left, right = await add(), await add()
+    left_client, right_client = left.client, right.client
+    pair = await _ha_pair(hass, targets, left, right, mode="sequential")
+
+    async def write(_char, frame, **_kwargs):
+        assert left_client.is_connected and not right_client.is_connected
+        if frame == protocol.QUERY["alarms"]:
+            notify(left, "6e200d0501020100062d58a1d0")
+
+    left_client.write_gatt_char.side_effect = write
+    try:
+        with raises_key("jerome_alarm_needs_two_links", ServiceValidationError):
+            await call("jerome_repeat_alarm", operation=operation, slot=1)
+        assert not written_frames(left_client) and not written_frames(right_client)
+
+        await call("jerome_repeat_alarm", operation=operation, slot=1, side="left")
+        assert written_frames(left_client) == [protocol.QUERY["alarms"].hex(), expected]
+        assert not written_frames(right_client)
+        assert not left_client.is_connected
+    finally:
+        await pair.async_shutdown()
+
+
+async def test_public_repeat_mutation_validates_mixed_receivers_before_writing(hass, ha_beds):
+    targets, add, call = ha_beds
+    left, right, standalone = await add(), await add(), await add()
+    left_client = left.client
+    pair = await _ha_pair(hass, targets, left, right, mode="sequential", side="left")
+    targets.append((standalone, "both"))
+    record = "6e200d0501020100062d58a1d0"
+    notify(left, record)
+
+    try:
+        with raises_key("jerome_alarm_slot_not_reported", ServiceValidationError):
+            await call("jerome_repeat_alarm", operation="enable", slot=1)
+        assert not written_frames(left_client)
+        assert not written_frames(right.client)
+        assert writes(standalone) == [protocol.QUERY["alarms"].hex()]
+
+        notify(standalone, record)
+        await call("jerome_repeat_alarm", operation="enable", slot=1)
+        assert written_frames(left_client) == ["6e200d0501010100062d58a1cf"]
+        assert writes(standalone) == [protocol.QUERY["alarms"].hex(), "6e200d0501010100062d58a1cf"]
+    finally:
+        await pair.async_shutdown()
+
+
+async def test_public_repeat_mutation_reports_stop_after_partial_write(ha_beds):
+    _, add, call = ha_beds
+    first, second = await add(), await add()
+    for target in (first, second):
+        notify(target, "6e200d0501020100062d58a1d0")
+    change = "6e2008050201019f"
+
+    async def write(_char, frame, **_kwargs):
+        if frame.hex() == change:
+            await second.async_stop_command()
+
+    first.client.write_gatt_char.side_effect = write
+    with raises_key("action_stopped"):
+        await call("jerome_repeat_alarm", operation="delete", slot=1)
+    assert writes(first) == [change]
+    assert change not in writes(second)
 
 
 async def test_repeat_alarm_service_lists_from_connected_controller(ha_beds):

@@ -11581,6 +11581,39 @@
     "dreamlab_settings": {
       "message": "Choose Dreamlab Control settings with a color or three aroma timers in range."
     },
+    "jerome_model_required": {
+      "message": "Choose a model from Jerome's Adjustable Base."
+    },
+    "jerome_side_unavailable": {
+      "message": "This connection cannot control the selected side."
+    },
+    "jerome_hold_control": {
+      "message": "Choose a Jerome direction and a hold of up to 60 seconds."
+    },
+    "jerome_preset_unavailable": {
+      "message": "This model does not offer that preset."
+    },
+    "jerome_massage_duration": {
+      "message": "Choose a massage duration for this model."
+    },
+    "jerome_light_timeout": {
+      "message": "Choose a Jerome light timeout."
+    },
+    "jerome_light_not_reported": {
+      "message": "The bed has not reported the Wave light capability."
+    },
+    "jerome_gatt_route": {
+      "message": "The bed must provide one supported writable Jerome Bluetooth service."
+    },
+    "jerome_session_ended": {
+      "message": "The Jerome bed session has ended."
+    },
+    "jerome_alarm_refresh_needs_link": {
+      "message": "The alarm list could not be refreshed on a new Bluetooth connection. Disconnect the bed and try again."
+    },
+    "jerome_alarm_needs_separate_calls": {
+      "message": "Select at most one receiver from a pair that shares a Bluetooth connection slot, then run the alarm action again for the other receivers."
+    },
     "jerome_select_left": {
       "message": "Choose Left before using this connection."
     },
