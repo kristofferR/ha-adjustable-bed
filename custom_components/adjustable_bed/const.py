@@ -653,6 +653,7 @@ RICHMAT_MH_APPS: Final[dict[str, str]] = {
 }
 RICHMAT_MH_BED_TYPES: Final = frozenset(RICHMAT_MH_APPS)
 BED_TYPE_CUSTOMATIC_CLARITY: Final = "customatic_clarity"
+BED_TYPE_CUSTOMATIC_DEMO: Final = "customatic_demo"
 BED_TYPE_CUSTOMATIC_JEROMES: Final = "customatic_jeromes"
 BED_TYPE_CUSTOMATIC_REMEDY: Final = "customatic_remedy"
 BED_TYPE_OKIN_FFE: Final = "okin_ffe"  # OKIN 13/15 series via FFE5 service (0xE6 prefix)
@@ -906,6 +907,7 @@ SUPPORTED_BED_TYPES: Final = [
     # Explicit Customatic app profiles
     BED_TYPE_ZSERIES,
     BED_TYPE_CUSTOMATIC_CLARITY,
+    BED_TYPE_CUSTOMATIC_DEMO,
     BED_TYPE_CUSTOMATIC_JEROMES,
     BED_TYPE_CUSTOMATIC_REMEDY,
     # Malouf protocols
