@@ -353,6 +353,30 @@ def status_sender(co, bed):
     return send
 
 
+@pytest.mark.parametrize("outcome", ["sent", "skipped", "old_link"])
+async def test_timer_state_requires_delivery_on_current_link(runtime, clock, outcome):
+    _hass, co = runtime
+    bed = await install(co, name(mode="E"))
+    status = status_sender(co, bed)
+    status(start=True, timer="90")
+
+    def write(_characteristic, data, **_kwargs):
+        if data == b"$z":
+            status(timer="90")
+            if outcome == "skipped":
+                co.cancel_command.set()
+        elif outcome == "old_link":
+            bed._link = None
+
+    co.client.write_gatt_char.side_effect = write
+    number = AdjustableBedControllerNumber(co, bed.controller_number_specs[0])
+    await number.async_set_native_value(120)
+
+    expected = [b"$z"] if outcome == "skipped" else [b"$z", timer_frame(120)]
+    assert writes(co) == expected
+    assert number.native_value == (120 if outcome == "sent" else 90)
+
+
 async def test_rejected_records_and_stale_callbacks_preserve_state(runtime):
     _hass, co = runtime
     bed = await install(co, name(mode="E"))

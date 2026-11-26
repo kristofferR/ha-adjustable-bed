@@ -75,9 +75,13 @@ def color_frame(command: int, value: int) -> bytes:
     return motomotion.ascii_command(command, int(value / 255 * 120))
 
 
-def timer_frame(seconds: float) -> bytes:
+def rounded_timer_seconds(seconds: float) -> int:
     # The slider's nonnegative range makes half-up rounding equivalent to LibcRound.
-    return motomotion.ascii_command(TIMER_COMMAND, floor(seconds + 0.5))
+    return floor(seconds + 0.5)
+
+
+def timer_frame(seconds: float) -> bytes:
+    return motomotion.ascii_command(TIMER_COMMAND, rounded_timer_seconds(seconds))
 
 
 def alarm_frame(hour: int, minute: int, strength: int) -> bytes:

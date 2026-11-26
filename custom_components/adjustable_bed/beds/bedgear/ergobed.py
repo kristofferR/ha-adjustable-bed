@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
+from contextlib import nullcontext
 from typing import TYPE_CHECKING
 
 from bleak.exc import BleakError
@@ -27,6 +28,7 @@ from ...profiles.ergobed import (
     clock_frame,
     color_frame,
     eligible,
+    rounded_timer_seconds,
     timer_frame,
 )
 from ...state_keys import UNDER_BED_LIGHTS_ON, UNDER_BED_LIGHTS_RGB
@@ -40,6 +42,7 @@ if TYPE_CHECKING:
     from bleak import BleakClient
 
     from ...alarm import AlarmRequest
+    from ...controller_state import StateUpdate
     from ...coordinator import AdjustableBedCoordinator
     from ..base import BedController
     from ..builder import BuildContext
@@ -174,18 +177,29 @@ class ErgoBedController(BedgearController):
             ),
         )
 
-    async def _write_settings(self, frames: tuple[bytes, ...]) -> None:
+    async def _write_settings(
+        self, frames: tuple[bytes, ...], *, update: StateUpdate | None = None
+    ) -> None:
         link, cancel = self._current(), self._coordinator.cancel_command
         for index, frame in enumerate(frames):
             if index and not await self._wait(SETTINGS_INTERVAL_MS / 1000, cancel):
                 note_frame_skipped()
                 return
-            await self._send(frame, link, cancel)
+            # The status request can succeed even if the setting is never sent.
+            state = (
+                self.sent_state(update, is_current=lambda: self._link_is_current(link))
+                if update is not None and index == len(frames) - 1
+                else nullcontext()
+            )
+            with state:
+                await self._send(frame, link, cancel)
 
     async def set_timer(self, seconds: float) -> None:
         if not 0 <= seconds <= TIMER_MAX_SECONDS:
             raise invalid("value_out_of_range", min=0, max=TIMER_MAX_SECONDS, step=1)
-        await self._write_settings((TIMER_PREFIX, timer_frame(seconds)))
+        await self._write_settings(
+            (TIMER_PREFIX, timer_frame(seconds)), update=LIGHT_TIMER(rounded_timer_seconds(seconds))
+        )
 
     def validate_alarm(self, alarm: AlarmRequest) -> None:
         super().validate_alarm(alarm)
