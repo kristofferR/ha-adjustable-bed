@@ -20,6 +20,7 @@ from custom_components.adjustable_bed.const import (
     OKIMAT_VARIANTS,
 )
 from custom_components.adjustable_bed.profiles import (
+    customatic_demo,
     leva,
     rize_home,
     shuda,
@@ -147,6 +148,7 @@ _OKIN_GROUPS = {
     ),
     "eShine": tuple(okin_profiles.ESHINE_PROFILES.values()),
     "Okin CST": tuple(okin_profiles.CST_PROFILES.values()),
+    "Independence": (customatic_demo.PROFILE,),
     "OKIN Bedding apps": tuple(okin_profiles.BEDDING_PROFILES.values()),
     "OKIN Motion Bed": (okin_profiles.OKIN_MOTIONBED,),
     "N32 Motion Bed": (N32,),
@@ -188,7 +190,11 @@ def _okin_hold(profile: okin_profiles.OkinNFrameProfile) -> tuple[str, str, str]
         if hold.releases > 1:
             release += f" at {hold.release_ms} ms"
         if hold.release_after_ms:
-            anchor = "release or cancellation" if profile is sleeptime.PROFILE else "the last write"
+            anchor = "the last write"
+            if profile is sleeptime.PROFILE:
+                anchor = "release or cancellation"
+            elif profile is customatic_demo.PROFILE:
+                anchor = "release"
             release += f", {hold.release_after_ms} ms after {anchor}"
     return refresh, repeats, release
 
@@ -266,7 +272,7 @@ def render_okin_nframe_profiles() -> str:
             else (
                 profile.name,
                 _okin_tap(profile.recall),
-                _okin_tap(profile.memory_recall or profile.recall),
+                "n/a" if profile is customatic_demo.PROFILE else _okin_tap(profile.memory_recall or profile.recall),
                 _okin_tap(profile.memory_save)
                 + (" (or the handset's hold)" if not profile.keys else ""),
                 _okin_tap(profile.long_press),
@@ -712,6 +718,30 @@ def render_okin_motionbed() -> str:
     )
 
 
+def render_customatic_demo_controls() -> str:
+    profile = customatic_demo.PROFILE
+    labels = {
+        "back_up": "Head up", "back_down": "Head down",
+        "legs_up": "Foot up", "legs_down": "Foot down",
+        "rotation_up": "Turn left", "rotation_down": "Turn right",
+        "seat_up": "Seat up", "seat_down": "Seat down",
+        "auto_flat": "Automatic flat", "auto_sit": "Automatic sitting up",
+        "light_toggle": "Under-bed light toggle",
+        "light_auto": "Automatic under-bed light",
+        "light_timer": "Cycle under-bed light timer",
+        "stop": "Neutral release / STOP",
+    }
+    return _block(
+        _table(("Control", "Frame"), (
+            *((labels[key], _hex(okin_codec.frame(word, profile.width))) for key, word in profile.keys.items()),
+            ("Demo status query", _hex(customatic_demo.STATUS_QUERY)),
+        )),
+        f"Held controls refresh every {profile.hold.repeat_ms} ms. The first neutral attempt is "
+        f"{profile.hold.release_after_ms} ms after release, followed by the second "
+        f"{profile.hold.release_ms} ms later.",
+    )
+
+
 def render_rize_remedy_ii_controls() -> str:
     profile = okin_profiles.RIZE_REMEDY_II
     return _block(_table(
@@ -964,6 +994,7 @@ BLOCKS: list[Block] = [
     (GUIDE, "rize-home", render_rize_home),
     (GUIDE, "superior-sleep", render_superior_sleep),
     (GUIDE, "okin-motionbed", render_okin_motionbed),
+    (GUIDE, "customatic-demo-controls", render_customatic_demo_controls),
     (GUIDE, "rize-remedy-ii-controls", render_rize_remedy_ii_controls),
     (GUIDE, "apex-controls", render_apex),
     (GUIDE, "n32-session", render_n32_session),

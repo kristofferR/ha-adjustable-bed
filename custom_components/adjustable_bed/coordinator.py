@@ -1928,8 +1928,13 @@ class AdjustableBedCoordinator(
         self._cancel_command.set()
         self._command_scheduler.request_cancel(self._protocol_command_resources(command_scope))
 
-    async def async_stop_command(self) -> None:
-        """Immediately stop any running command and send stop to bed."""
+    def admit_stop_command(
+        self,
+        *,
+        current_link_only: bool = False,
+        resources: Collection[str] = ALL_COMMAND_RESOURCES,
+    ) -> asyncio.Task[None]:
+        """Reserve STOP before yielding, optionally on its admitted link alone."""
         _LOGGER.info("Stop requested - cancelling current command")
 
         if self._bed_type in STARCODE_GROUP_BED_TYPES:
@@ -1952,23 +1957,35 @@ class AdjustableBedCoordinator(
         )
         generation = self.connection_generation
 
-        async def stop_current_session() -> None:
-            assert cleanup is not None
+        async def stop_current_session(context: CommandContext) -> None:
+            # An active sequential operation may release the receiver before
+            # this STOP acquires the writer. Its acknowledged release owns STOP.
+            if current_link_only and any(c.cleanup_stop_sent for c in context.preempted_contexts):
+                return
             if (
-                self._controller is controller
+                controller is not None
+                and self._controller is controller
                 and self.connection_generation == generation
                 and self.is_connected
             ):
-                await cleanup()
+                await (controller.stop_all if cleanup is None else cleanup)()
+            elif current_link_only:
+                raise BedNotConnectedError
 
-        async def stop_operation(_context: CommandContext) -> None:
-            if cleanup is None:
-                await self._async_send_stop_command()
-            else:
-                await self._async_send_stop_command(stop_current_session)
+        async def stop_operation(context: CommandContext) -> None:
+            if current_link_only or cleanup is not None:
+                await self._async_send_stop_command(
+                    lambda: stop_current_session(context),
+                    expected_generation=generation if current_link_only else None,
+                )
+                return
+            await self._async_send_stop_command()
 
-        stop_task = self._command_scheduler.admit_stop(stop_operation, ALL_COMMAND_RESOURCES)
+        return self._command_scheduler.admit_stop(stop_operation, resources)
 
+    async def async_stop_command(self) -> None:
+        """Stop this receiver and settle the admitted wire operation."""
+        stop_task = self.admit_stop_command()
         try:
             await asyncio.shield(stop_task)
         except asyncio.CancelledError:
@@ -1989,13 +2006,17 @@ class AdjustableBedCoordinator(
         return BedNotConnectedError()
 
     async def _async_send_stop_command(
-        self, cleanup: Callable[[], Awaitable[None]] | None = None
+        self,
+        cleanup: Callable[[], Awaitable[None]] | None = None,
+        *,
+        expected_generation: int | None = None,
     ) -> None:
         """Send STOP while owning the legacy wire and connection lifecycle lane."""
         # STOP remains outside the ordinary scheduler lane so it can preempt it,
         # then waits for any cancelled controller cleanup to release the wire lock.
         async with self._command_demand_scope(), self._command_lock:
-            self._hold_link_for_command()
+            if expected_generation is None or self.connection_generation == expected_generation:
+                self._hold_link_for_command()
             if self._pairing_transfer_active:
                 raise BedNotConnectedError("bed_combining")
             controller = self._controller
@@ -2046,6 +2067,7 @@ class AdjustableBedCoordinator(
             finally:
                 if (
                     not disconnected_transport
+                    and (expected_generation is None or self.connection_generation == expected_generation)
                     and self._client is not None
                     and self._client.is_connected
                 ):

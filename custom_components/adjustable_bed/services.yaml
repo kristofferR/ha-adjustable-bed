@@ -4308,3 +4308,19 @@ enso2_aroma_schedule:
         select:
           options: [both, left, right]
           translation_key: side
+
+customatic_demo_run:
+  fields:
+    device_id:
+      required: true
+      selector:
+        device:
+          integration: adjustable_bed
+    side:
+      selector:
+        select:
+          options: [left, right]
+    confirm:
+      default: false
+      selector:
+        boolean:

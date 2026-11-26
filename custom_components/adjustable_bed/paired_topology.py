@@ -33,7 +33,7 @@ from uuid import uuid4
 
 from homeassistant.exceptions import HomeAssistantError
 
-from .beds.cancellation import settled
+from .beds.cancellation import settled as settle_cancellation
 from .command_scheduler import (
     CommandHandle,
     CommandKind,
@@ -277,7 +277,15 @@ async def safe_disconnect(
     """
     try:
         disconnect_fn = disconnect or child.async_disconnect
-        disconnected = await disconnect_fn("sequential_switch")
+        releasing = disconnect_fn("sequential_switch")
+        if (
+            disconnect is None
+            and (controller := child.controller) is not None
+            and controller.sequential_stop_on_current_link is True
+        ):
+            disconnected = await settle_cancellation(releasing)
+        else:
+            disconnected = await releasing
     except Exception as err:
         _LOGGER.warning("Disconnect failed on %s side (%s): %s", side, child.address, err)
         return False
@@ -1335,7 +1343,7 @@ class SequentialTwoLinkTopology(PairTopology):
                         async def wait_for_stop(task: asyncio.Task[dict[str, BaseException]]) -> None:
                             await task
 
-                        await settled(wait_for_stop(stop))
+                        await settle_cancellation(wait_for_stop(stop))
                 finally:
                     self._active_side = None
                     disconnected = local_role or await safe_disconnect(side, child)
