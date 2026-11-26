@@ -506,7 +506,9 @@ async def test_sequential_paired_cover_stop_settles_before_disconnect(hass, monk
         hass, entry, {SIDE_LEFT: left, SIDE_RIGHT: right},
         connection_mode=PAIR_CONNECTION_MODE_SEQUENTIAL,
     )
-    dr.async_get(hass).async_get_or_create(config_entry_id=entry.entry_id, **pair.device_info)
+    dr.async_get(hass).async_get_or_create_from_info(
+        config_entry_id=entry.entry_id, device_info=pair.device_info
+    )
     client = _client()
     client.is_connected = False
     left._client = client
