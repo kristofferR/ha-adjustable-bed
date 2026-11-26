@@ -7169,6 +7169,19 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                 ),
             )
 
+        submitted = user_input if self._verify_form_shown else None
+        if report.dorsal_endpoint_error is not None and (
+            roomi_unverified or (submitted is not None and submitted.get("action") != "retry")
+        ):
+            self._verify_form_shown = False
+            self._manual_data = dict(self._pending_entry)
+            self._recheck_answers = True
+            profile = setup_profile_for(self._manual_data)
+            assert profile is not None
+            return self._show_profile_questions(
+                profile, self._manual_data, {CONF_PROTOCOL_VARIANT: report.dorsal_endpoint_error}
+            )
+
         if user_input is not None and self._verify_form_shown:
             if user_input.get("action") == "retry":
                 self._verify_form_shown = False
@@ -7182,15 +7195,6 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                 assert profile is not None
                 return self._show_profile_questions(
                     profile, self._manual_data, {CONF_BLE_DEVICE_NAME: "truemotion_gatt"},
-                )
-            if report.dorsal_endpoint_error is not None:
-                self._verify_form_shown = False
-                self._manual_data = dict(self._pending_entry)
-                self._recheck_answers = True
-                profile = setup_profile_for(self._manual_data)
-                assert profile is not None
-                return self._show_profile_questions(
-                    profile, self._manual_data, {CONF_PROTOCOL_VARIANT: report.dorsal_endpoint_error}
                 )
             if report.starcode_transport_valid is False or (
                 self._pending_entry.get(CONF_BED_TYPE) == BED_TYPE_STARCODE_ABM5_4

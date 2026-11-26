@@ -606,7 +606,10 @@ async def test_roomi_setup_probe_checks_the_exact_receiver(
     assert flow._migration_requires_check
 
 
-async def test_roomi_s655_requires_a_successful_setup_probe(hass, monkeypatch):
+@pytest.mark.parametrize(
+    "endpoint_error", [None, "dorsal_roomi_receiver", "dorsal_receiver_unavailable"]
+)
+async def test_roomi_s655_requires_a_successful_setup_probe(hass, monkeypatch, endpoint_error):
     from custom_components.adjustable_bed import config_flow
     from custom_components.adjustable_bed.setup_operation import OperationOutcome, OperationResult
 
@@ -629,11 +632,17 @@ async def test_roomi_s655_requires_a_successful_setup_probe(hass, monkeypatch):
 
     flow.operation.result = OperationResult(
         outcome=OperationOutcome.CONNECTION_FAILED,
-        payload=config_flow.CapabilityReport(device_found=True, error="No link"),
+        payload=config_flow.CapabilityReport(
+            device_found=True, error="No link", dorsal_endpoint_error=endpoint_error
+        ),
     )
-    await flow.async_step_verify_connection()
-    form = await flow.async_step_verify_connection({"action": "finish"})
+    form = await flow.async_step_verify_connection()
     assert form["type"] == "form"
+    if endpoint_error is not None:
+        assert form["step_id"] == "profile_questions"
+        assert form["errors"] == {"protocol_variant": endpoint_error}
+        create.assert_not_awaited()
+        return
     assert form["step_id"] == "retry_roomi_receiver"
     assert form["data_schema"] is None
     forged = await flow.async_step_retry_roomi_receiver({"action": "finish"})
