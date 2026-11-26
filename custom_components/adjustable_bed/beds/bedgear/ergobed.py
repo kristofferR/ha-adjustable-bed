@@ -74,6 +74,18 @@ class ErgoBedController(BedgearController):
             raise BedNotConnectedError("ergobed_receiver_missing")
         return Link(client, chars[-1], (chars[-1],))
 
+    @property
+    def supports_clock_sync(self) -> bool:
+        return self.profile.alarm
+
+    async def sync_clock(self) -> None:
+        await self._sync_clock(self._current())
+
+    async def _sync_clock(self, link: Link) -> None:
+        cancel = self._coordinator.cancel_command
+        await self._send(TIMER_PREFIX, link, cancel)
+        await self._send(clock_frame(dt_util.now()), link, cancel)
+
     async def async_after_connect(self, session: ControllerSession) -> None:
         if self.profile.alarm:
             self._startup_task = self._coordinator.entry.async_create_background_task(
@@ -86,9 +98,7 @@ class ErgoBedController(BedgearController):
 
         async def initialize(controller: BedController) -> None:
             if controller is self and current():
-                cancel = self._coordinator.cancel_command
-                await self._send(TIMER_PREFIX, link, cancel)
-                await self._send(clock_frame(dt_util.now()), link, cancel)
+                await self._sync_clock(link)
 
         try:
             await asyncio.sleep(STARTUP_DELAY_MS / 1000)

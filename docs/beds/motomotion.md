@@ -1279,7 +1279,8 @@ panels with a three-button massage group. Saving a position sends no extra
 recall on release.
 
 The clock and status query run once per connection when the name has `E` at
-index 11. Settings writes run in order on the current connection. Each query
+index 11. Use `adjustable_bed.sync_clock` to set the clock on those layouts.
+Settings writes run in order on the current connection. Each query
 and subsequent write follows the schedule below without waiting for a reply.
 
 <!-- generated:ergobed-settings -->

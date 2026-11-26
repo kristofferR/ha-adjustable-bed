@@ -376,6 +376,31 @@ async def test_rejected_records_and_stale_callbacks_preserve_state(runtime):
     assert co.controller_state.get(ALARM) is None
 
 
+@pytest.mark.parametrize("alarm_enabled", [True, False])
+async def test_public_sync_clock_is_specific_to_alarm_layouts(runtime, alarm_enabled):
+    hass, co = runtime
+    await install(co, name(mode="E") if alarm_enabled else name("51", light="B"))
+
+    async def sync():
+        await hass.services.async_call(
+            const.DOMAIN, "sync_clock", {"device_id": ["bed"]}, blocking=True
+        )
+
+    if not alarm_enabled:
+        with pytest.raises(ServiceValidationError) as unsupported:
+            await sync()
+        assert unsupported.value.translation_key == "clock_sync_not_supported"
+        assert not writes(co)
+        return
+
+    with patch(
+        "custom_components.adjustable_bed.beds.bedgear.ergobed.dt_util.now",
+        return_value=datetime(2026, 1, 1, 9, 7, 5),
+    ):
+        await sync()
+    assert writes(co) == [b"$z", b"$#975110000011A\r"]
+
+
 async def test_alarm_off_keeps_observed_time_or_requires_explicit_time(runtime, clock):
     hass, co = runtime
     bed = await install(co, name(mode="E"))

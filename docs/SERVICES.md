@@ -433,7 +433,7 @@ other beds. SUTA Smart Home, SonicSleep, MLILY Remote, Good Vibe Sleep, Galaxy,
 MLILY, Power Bob Base, Majestic Home and Okimiki products with an alarm, GM
 Control products with an alarm, OKIN SleepEase, HJBed, Richmat app beds and
 their separate sleep sensor, Bed Tech (including its separate intervention
-receiver), Dream Sense Bed, Luuna + and
+receiver), Dream Sense Bed, Luuna +, [ErgoBed Control](beds/motomotion.md#ergobed-control) on alarm layouts and
 [Leva Bed Remote on the Ascent route](beds/okin-nframe.md#leva-bed-remote) set
 their clock here too. On a Motion Bed it sets the clock of the motor or heating
 module; on a hub, select the module first.
