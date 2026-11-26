@@ -1542,6 +1542,7 @@ def default_scenario(bed_type: str) -> Scenario:
         const.BED_TYPE_YAMADA: "p1",
         const.BED_TYPE_BETTERLIVING2: "p1",
         const.BED_TYPE_RICHMAT_APP: "6BRM",
+        const.BED_TYPE_JEROME_ADJUSTABLE_BASE: "JERN",
         const.BED_TYPE_RICHMAT_APP_SLEEP: "hj",
         const.BED_TYPE_DOUBLESLEEP: "p1",
         const.BED_TYPE_RICHMAT_CLASSIC_APPS: "avocadoecobase",
@@ -1549,6 +1550,11 @@ def default_scenario(bed_type: str) -> Scenario:
     }.get(bed_type)
     kwargs: dict[str, Any] = {}
     replies: dict[str, str] = {}
+    if bed_type == const.BED_TYPE_JEROME_ADJUSTABLE_BASE:
+        return Scenario(
+            id=bed_type, bed_type=bed_type, protocol_variant=variant, layout_id="dorsal",
+            replies={"write:6e08010178": "6e09010078", "write:6e0a000179": "6e0e00037f"},
+        )
     if bed_type == "sealy_posturematic":
         data.update({const.CONF_PRODUCT_TYPE: "0", const.CONF_BED_TYPE: "sealy_posturematic"})
     if bed_type == const.BED_TYPE_SLEEP_ASSIST_PRO:
@@ -2472,6 +2478,10 @@ def build_scenarios() -> list[Scenario]:
     scenarios = [default_scenario(bed_type) for bed_type in SUPPORTED_BED_TYPES
                  if bed_type not in RICHMAT_MH_APP_CATALOGS]
     scenarios.extend(route_scenarios())
+    scenarios.append(Scenario(
+        id="jerome_adjustable_base:nordic", bed_type="jerome_adjustable_base",
+        protocol_variant="HDRN", layout_id="dorsal:n1",
+    ))
     scenarios.append(
         Scenario(id="okimattmotion:20", bed_type="okimattmotion",
                  entry_data={"product_type": "20"}, layout_id="okimattmotion")

@@ -5318,6 +5318,14 @@
       "galaxy_status": {
         "name": "Status"
       },
+      "jerome_adjustable_base_clock": {
+        "name": "Bed alarm status",
+        "state": {
+          "available": "Available",
+          "saved": "Saved",
+          "cancelled": "Cancelled"
+        }
+      },
       "richmat_app_status": {
         "name": "Status"
       },
@@ -7429,6 +7437,13 @@
           "0": "Left",
           "1": "Right",
           "2": "Both"
+        }
+      },
+      "jerome_adjustable_base_side": {
+        "name": "Controlled side",
+        "state": {
+          "left": "Left",
+          "right": "Right"
         }
       },
       "richmat_app_side": {
@@ -10893,6 +10908,28 @@
         }
       }
     },
+    "jerome_repeat_alarm": {
+      "name": "Jerome’s Adjustable Base: manage repeat alarms",
+      "description": "Refresh, enable or delete a stored alarm on an SH model.",
+      "fields": {
+        "device_id": {
+          "name": "Bed",
+          "description": "The bed to manage."
+        },
+        "operation": {
+          "name": "Operation",
+          "description": "Refresh the alarm list, enable a stored alarm, or delete it."
+        },
+        "slot": {
+          "name": "Alarm slot",
+          "description": "The stored alarm to enable or delete."
+        },
+        "side": {
+          "name": "Side",
+          "description": "Physical bed to target when two beds are combined."
+        }
+      }
+    },
     "jerome_bed": {
       "name": "Jerome’s power base: control bed",
       "description": "Run an action from the selected bed layout. Preset saves and long-press controls require confirmation.",
@@ -11726,6 +11763,54 @@
     },
     "dreamlab_settings": {
       "message": "Choose Dreamlab Control settings with a color or three aroma timers in range."
+    },
+    "jerome_model_required": {
+      "message": "Choose a model from Jerome's Adjustable Base."
+    },
+    "jerome_side_unavailable": {
+      "message": "This connection cannot control the selected side."
+    },
+    "jerome_hold_control": {
+      "message": "Choose a Jerome direction and a hold of up to 60 seconds."
+    },
+    "jerome_preset_unavailable": {
+      "message": "This model does not offer that preset."
+    },
+    "jerome_massage_duration": {
+      "message": "Choose a massage duration for this model."
+    },
+    "jerome_light_timeout": {
+      "message": "Choose a Jerome light timeout."
+    },
+    "jerome_light_not_reported": {
+      "message": "The bed has not reported the Wave light capability."
+    },
+    "jerome_gatt_route": {
+      "message": "The bed must provide one supported writable Jerome Bluetooth service."
+    },
+    "jerome_session_ended": {
+      "message": "The Jerome bed session has ended."
+    },
+    "jerome_alarm_refresh_needs_link": {
+      "message": "The alarm list could not be refreshed on a new Bluetooth connection. Disconnect the bed and try again."
+    },
+    "jerome_alarm_needs_separate_calls": {
+      "message": "Select at most one receiver from a pair that shares a Bluetooth connection slot, then run the alarm action again for the other receivers."
+    },
+    "jerome_select_left": {
+      "message": "Choose Left before using this connection."
+    },
+    "jerome_clock_not_reported": {
+      "message": "The bed has not reported clock capability."
+    },
+    "jerome_alarm_slot_not_reported": {
+      "message": "The bed did not report that alarm slot."
+    },
+    "jerome_alarm_needs_two_links": {
+      "message": "Choose one side at a time to manage alarms when the beds share a Bluetooth connection slot."
+    },
+    "jerome_repeat_alarm_slot": {
+      "message": "Choose an alarm slot for enable or delete. Leave the slot empty to refresh the list."
     },
     "jerome_action": {
       "message": "Choose an action offered by the selected bed layout."
@@ -12678,6 +12763,13 @@
         "keep": "Keep the detected or saved controls"
       }
     },
+    "jerome_repeat_alarm_operation": {
+      "options": {
+        "list": "Refresh alarm list",
+        "enable": "Enable alarm",
+        "delete": "Delete alarm"
+      }
+    },
     "richmat_family_choice": {
       "options": {
         "atlas_lift": "Atlas Lift (Cama Lift)",
@@ -12722,6 +12814,7 @@
         "bedsmart": "BedSmart / X-Series app",
         "bedtech_classic": "Bed Tech app",
         "jerome2": "Jerome's power base app",
+        "jerome_adjustable_base": "Jerome's Adjustable Base app",
         "baseremote": "Base Remote app",
         "maxprime": "Maxprime app",
         "dreamlab2": "Dreamlab Control app",
