@@ -1945,9 +1945,11 @@ class AdjustableBedCoordinator(
         self._cancel_command.set()
 
         controller = self.capability_controller
+        paired_cleanup = PAIRED_CLEANUP_STOP.get()
+        original_stop = paired_cleanup.get(self.address) if paired_cleanup is not None else None
         cleanup = (
             controller.paired_cleanup_stop
-            if PAIRED_CLEANUP_STOP.get() and controller is not None
+            if paired_cleanup is not None and original_stop is None and controller is not None
             else None
         )
         generation = self.connection_generation
@@ -1962,7 +1964,9 @@ class AdjustableBedCoordinator(
                 await cleanup()
 
         async def stop_operation(_context: CommandContext) -> None:
-            if cleanup is None:
+            if original_stop is not None:
+                await self._async_send_stop_command(original_stop)
+            elif cleanup is None:
                 await self._async_send_stop_command()
             else:
                 await self._async_send_stop_command(stop_current_session)

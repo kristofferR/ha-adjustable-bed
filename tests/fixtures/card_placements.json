@@ -4537,6 +4537,9 @@
  "sensor:jalon_massage_timer_bucket": {
   "card_section": "hidden"
  },
+ "sensor:langjue_massage_status": {
+  "card_section": "hidden"
+ },
  "sensor:leggett_led_mask": {
   "card_section": "hidden"
  },
@@ -5274,6 +5277,9 @@
   "card_section": "utility"
  },
  "switch:l2motion_sync": {
+  "card_section": "utility"
+ },
+ "switch:langjue_alarm_enabled": {
   "card_section": "utility"
  },
  "switch:linak_automatic_drive": {

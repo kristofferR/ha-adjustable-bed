@@ -562,6 +562,9 @@ BED_TYPE_BETTERLIVING2: Final = "betterliving2"
 BED_TYPE_SOMOS: Final = "somos"
 BED_TYPE_COMFORTBASE: Final = "comfortbase"
 BED_TYPE_LEVA: Final = "leva"
+BED_TYPE_LANGJUE: Final = "langjue"
+LANGJUE_SERVICE_UUID: Final = "5a020001-c591-e131-0eb8-a30e24fe1275"
+LANGJUE_MOTOR_REFRESH_MS: Final = 500
 BED_TYPE_LINX: Final = "linx"
 BED_TYPE_COMFORT_ENHANCEMENTS: Final = "comfort_enhancements"
 COMFORT_ENHANCEMENTS_VARIANTS: Final = {
@@ -824,6 +827,7 @@ SUPPORTED_BED_TYPES: Final = [
     BED_TYPE_BF,
     BED_TYPE_JALON_BED,
     BED_TYPE_LEVA,
+    BED_TYPE_LANGJUE,
     BED_TYPE_LINX,
     BED_TYPE_SYMPHONY_SLEEP,
     BED_TYPE_SYMPHONY,
@@ -3028,6 +3032,7 @@ BED_MOTOR_PULSE_DEFAULTS: Final = {
     BED_TYPE_COMFORT_ENHANCEMENT3: (10, 100),
     BED_TYPE_N32_MOTION_BED: (5, 200),  # Finite caller pulse; app refresh is 200 ms.
     BED_TYPE_SHUDA: (5, 200),
+    BED_TYPE_LANGJUE: (2, LANGJUE_MOTOR_REFRESH_MS),  # HA tap bound at the app refresh cadence.
     BED_TYPE_LINX: (334, 3),  # HA finite tap bound; Linx attempts held refresh every 3 ms.
     BED_TYPE_SYMPHONY_SLEEP: (4, 300),
     BED_TYPE_YAMADA: (4, 300),  # HA finite tap default at the app refresh cadence.

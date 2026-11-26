@@ -51,6 +51,7 @@ from .const import (
     BED_TYPE_KAIDI,
     BED_TYPE_KEESON,
     BED_TYPE_KOMFYD,
+    BED_TYPE_LANGJUE,
     BED_TYPE_LEGGETT_LP_LEGACY,
     BED_TYPE_LEGGETT_OKIN,
     BED_TYPE_LEGGETT_PLATT,
@@ -102,6 +103,7 @@ from .const import (
     BED_TYPE_ZSERIES,
     CONF_BLE_DEVICE_NAME,
     CONF_DISABLE_ANGLE_SENSING,
+    CONF_HAS_LIGHT,
     CONF_HAS_MASSAGE,
     CONF_JIECANG_APP_PROFILE,
     CONF_KAIDI_PRODUCT_ID,
@@ -188,6 +190,9 @@ _BY_BED_TYPE: Final[dict[str, SideProfile]] = {
     "gmmotor_sleep_sxb": SideProfile("GM Control SXB sleep module"),
     BED_TYPE_LEVA: SideProfile(
         "Leva Bed Remote", frozenset({CONF_MOTOR_COUNT, CONF_HAS_MASSAGE}), variant_owned=True
+    ),
+    BED_TYPE_LANGJUE: SideProfile(
+        "Comfort Smart Bed (Langjue)", frozenset({CONF_PRODUCT_TYPE, CONF_HAS_LIGHT, CONF_HAS_MASSAGE}),
     ),
     BED_TYPE_LINX: SideProfile("Linx", variant_owned=True),
     BED_TYPE_SYMPHONY_SLEEP: SideProfile("Symphony Sleep", variant_owned=True),

@@ -73,6 +73,7 @@ from .const import (
     BED_TYPE_KAIDI,
     BED_TYPE_KEESON,
     BED_TYPE_KOMFYD,
+    BED_TYPE_LANGJUE,
     BED_TYPE_LEGGETT_LP_LEGACY,
     BED_TYPE_LEVA,
     BED_TYPE_LIMOSS_REMOTE,
@@ -261,6 +262,7 @@ from .const import (
 from .import_executor import async_import_modules
 from .profiles import enso2 as enso2_profiles
 from .profiles import jiecang as jiecang_profiles
+from .profiles import langjue as langjue_app
 from .profiles import logicdata as logicdata_profiles
 from .profiles import malouf as malouf_profiles
 from .profiles import sleep_assistant as sleep_assistant_app
@@ -2754,6 +2756,26 @@ SETUP_PROFILES: Final[dict[str, SetupProfile]] = {
               CONF_DISABLE_ANGLE_SENSING: True},
         questions=(Question(CONF_PROTOCOL_VARIANT, {"p1": "P1: E6 / ED", "p2": "P2: 05 / A5"}),),
         title=lambda _data: "アシステック / Yamada",
+    ),
+    BED_TYPE_LANGJUE: SetupProfile(
+        owns={
+            CONF_MOTOR_COUNT: SET_BY_PROFILE,
+            CONF_DISABLE_ANGLE_SENSING: True,
+            CONF_MOTOR_PULSE_DELAY_MS: langjue_app.MOTOR_REFRESH_MS,
+        },
+        questions=(
+            Question(
+                CONF_PRODUCT_TYPE,
+                {
+                    langjue_app.PRESETS_ONLY: "Presets and STOP",
+                    langjue_app.HEAD_FOOT: "Two motors, confirmed Head then Foot in the app",
+                },
+                langjue_app.PRESETS_ONLY,
+            ),
+            Question(CONF_HAS_LIGHT, default=False),
+            Question(CONF_HAS_MASSAGE, default=False),
+        ),
+        title=lambda _data: "Comfort Smart Bed (Langjue)",
     ),
     BED_TYPE_JALON_BED: SetupProfile(
         owns={CONF_MOTOR_COUNT: SET_BY_PROFILE, CONF_HAS_MASSAGE: True,

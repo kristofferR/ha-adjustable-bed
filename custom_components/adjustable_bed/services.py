@@ -70,6 +70,7 @@ from .const import (
     BED_TYPE_ERGOMOTION,
     BED_TYPE_FURNIMOVE,
     BED_TYPE_KEESON,
+    BED_TYPE_LANGJUE,
     BED_TYPE_LIMOSS_REMOTE,
     BED_TYPE_LINAK,
     BED_TYPE_OKIN_UUID,
@@ -107,7 +108,10 @@ from .paired_coordinator import (
     SingleAddressSideCoordinator,
 )
 from .paired_devices import side_identifier
-from .paired_topology import PairedSideError, ready_disconnected_transport
+from .paired_topology import (
+    PairedSideError,
+    ready_disconnected_transport,
+)
 from .pairing import is_paired, pair_member_addresses
 from .position_estimate import (
     invalidate_on_command,
@@ -2553,15 +2557,27 @@ async def handle_set_alarm(call: ServiceCall) -> None:
             raise invalid("alarm_time_required_to_turn_off", device_name=target.name)
         plans[id(target)] = capability
 
-    preflighted = await _preflight_each(targets, check)
-    try:
-        finished = await _write_checked_alarms(call, selection, plans, alarm, given)
-    except BaseException:
-        await _release_preflighted(preflighted)
-        raise
-    if not finished:
-        # STOP won: hand the links opened for the check back to their idle timer.
-        await _release_preflighted(preflighted)
+    langjue_addresses = {
+        child.address
+        for children in selection.children
+        for child in children
+        if child.bed_type == BED_TYPE_LANGJUE
+    }
+    with contextlib.ExitStack() as alarm_reservations:
+        if langjue_addresses:
+            await async_import_modules(call.hass, "beds.langjue")
+            from .beds.langjue import reserve_alarm_receivers
+
+            alarm_reservations.enter_context(reserve_alarm_receivers(call.hass, langjue_addresses))
+        preflighted = await _preflight_each(targets, check)
+        try:
+            finished = await _write_checked_alarms(call, selection, plans, alarm, given)
+        except BaseException:
+            await _release_preflighted(preflighted)
+            raise
+        if not finished:
+            # STOP won: hand the links opened for the check back to their idle timer.
+            await _release_preflighted(preflighted)
 
 
 @dataclass(frozen=True, slots=True)
@@ -2594,6 +2610,17 @@ async def _write_checked_alarms(
     call_task = asyncio.current_task()
     groups = list(zip(selection.targets, selection.children, strict=True))
     sessions: dict[int, _CheckedSession] = {}
+    sequential_langjue = {
+        id(child)
+        for (parent, _), group in groups
+        if _pair_mode(parent) == PAIR_CONNECTION_MODE_SEQUENTIAL
+        for child in group
+        if child.bed_type == BED_TYPE_LANGJUE
+    }
+    if sequential_langjue and sum(map(len, selection.children)) > 1:
+        # The sequential topology releases each checked session before the next
+        # receiver can connect. A Langjue alarm must be written on its checked link.
+        raise invalid("langjue_alarm_sequential")
 
     # Beds that read their stored alarms, and every side of a combined bed, are
     # prepared on a live link before anything is written.
@@ -2601,7 +2628,7 @@ async def _write_checked_alarms(
     for (parent, side), group in groups:
         combined = len({child.operation_identity for child in group}) > 1
         for child in group:
-            if (plans[id(child)].live_check or combined) and all(
+            if id(child) not in sequential_langjue and (plans[id(child)].live_check or combined) and all(
                 child is not other for _, _, other in prepare
             ):
                 prepare.append((parent, _child_side(parent, side, child), child))
@@ -2710,15 +2737,29 @@ async def _write_checked_alarms(
                 request = dataclasses.replace(request, record_identity=session.alarm_identity)
             if _capability.live_slots and request.mattress_side is None and request.record_identity is None:
                 raise _bed_changed()
+            if id(child) in sequential_langjue:
+                # This is the sole target. Read and write within one link cycle.
+                await controller.check_alarm(request)
             await controller.configure_alarm(request)
             written.add(id(child))
 
         return step(configure)
 
+    async def check_linked(_controller: BedController, _capability: AlarmCapability) -> None:
+        # The topology checks all reserved receivers before invoking this callback.
+        return None
+
     with contextlib.ExitStack() as held:
         # Keep checked links up until written, whatever the idle setting.
         for _, _, child in prepare:
             held.enter_context(child.hold_command_connection())
+        for (parent, side), group in groups:
+            if len(group) > 1 and any(child.bed_type == BED_TYPE_LANGJUE for child in group):
+                if selection.stopped():
+                    return False
+                await _execute_alarm_step(
+                    parent, side, step(check_linked), plans[id(group[0])], cancel_running=False
+                )
         for parent, side, child in prepare:
             if selection.stopped():
                 return False

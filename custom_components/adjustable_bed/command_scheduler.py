@@ -29,7 +29,7 @@ import contextlib
 import logging
 import time
 from collections import OrderedDict, deque
-from collections.abc import Awaitable, Callable, Collection, Coroutine, Iterator
+from collections.abc import Awaitable, Callable, Collection, Coroutine, Iterator, Mapping
 from contextvars import Context, ContextVar, Token, copy_context
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
@@ -633,11 +633,16 @@ class CommandContext:
     # to avoid sending a duplicate STOP after it acquires the lane.
     preempted_contexts: tuple[CommandContext, ...] = ()
     cleanup_stop_sent: bool = False
+    # A submitted linked frame can bind abort cleanup to its actual wire session.
+    paired_abort_stop: CommandOperation | None = field(default=None, repr=False)
     active: bool = True
     defer_disconnect: bool = False
     lease: HoldLease | None = None
     hold_deadline: float | None = None
     """Event-loop time at which a held command's lease expires, if any."""
+    # Wire admission can see a pending task cancellation before the scheduler
+    # caller resumes and signals cancel_event.
+    caller_is_cancelling: Callable[[], bool] | None = field(default=None, repr=False)
     cancel_generation: int = 0
     _cancel_changed: asyncio.Event = field(default_factory=asyncio.Event, repr=False)
     # Frames this operation handed to the bed, and frames a cancellation
@@ -753,7 +758,22 @@ _CURRENT_COMMAND_CONTEXT: ContextVar[CommandContext | None] = ContextVar(
     "adjustable_bed_command_context", default=None
 )
 
-PAIRED_CLEANUP_STOP: ContextVar[bool] = ContextVar("paired_cleanup_stop", default=False)
+# None denotes an explicit STOP. Paired aborts can carry a session-bound STOP per address.
+PAIRED_CLEANUP_STOP: ContextVar[Mapping[str, Callable[[], Awaitable[None]]] | None] = ContextVar(
+    "paired_cleanup_stop", default=None
+)
+
+
+def capture_caller_cancellation() -> Callable[[], bool]:
+    """Observe new cancel requests before the caller can propagate cancellation."""
+    task = asyncio.current_task()
+    initial_requests = task.cancelling() if task is not None else 0
+
+    def cancelling() -> bool:
+        return task is not None and task.cancelling() > initial_requests
+
+    return cancelling
+
 
 def current_command_context() -> CommandContext | None:
     """Return the command context bound to the current task, if any."""
@@ -1444,6 +1464,7 @@ class DeviceCommandScheduler:
             prepared=prepared,
         )
         if not prepared:
+            context.caller_is_cancelling = capture_caller_cancellation()
             handle.commit.set()
         return handle
 
@@ -1461,7 +1482,10 @@ class DeviceCommandScheduler:
 
     def commit(self, handle: CommandHandle) -> None:
         """Release a prepared command from READY into execution."""
-        if handle.state is CommandState.PREPARED:
+        if handle.state is CommandState.PREPARED and not handle.commit.is_set():
+            # The group owner commits its reservations. The enqueue tasks may
+            # already have finished by the time the group can send a frame.
+            handle.context.caller_is_cancelling = capture_caller_cancellation()
             handle.commit.set()
 
     async def wait_prepared_result(self, handle: CommandHandle) -> None:
@@ -2015,6 +2039,7 @@ class DeviceCommandScheduler:
         finished_at = datetime.now(UTC)
         finished_monotonic = time.monotonic()
         handle.context.active = False
+        handle.context.caller_is_cancelling = None
         handle.outcome = outcome
         handle.finished_at = finished_at
         handle.finished_monotonic = finished_monotonic
