@@ -380,8 +380,8 @@ async def _live_entry(hass, address, model, receiver):
 async def test_public_hold_stop_and_clock_share_one_session_lane(hass):
     """STOP finishes a pending P2 init, then a new action can sync and move."""
     entry, coordinator, client = await _live_entry(hass, "AA:BB:CC:DD:EE:62", "ascent", "nordic")
-    device = dr.async_get(hass).async_get_or_create(
-        config_entry_id=entry.entry_id, **coordinator.device_info
+    device = dr.async_get(hass).async_get_or_create_from_info(
+        config_entry_id=entry.entry_id, device_info=coordinator.device_info
     )
     await async_register_services(hass)
 
@@ -512,12 +512,12 @@ async def test_mixed_pair_keeps_its_models_and_rejects_both_for_one_side_only_ax
         pair = PairedBedCoordinator(hass, paired_entry, {"left": left_coord, "right": right_coord})
         hass.data[DOMAIN][paired_entry.entry_id] = pair
         registry = dr.async_get(hass)
-        parent = registry.async_get_or_create(
-            config_entry_id=paired_entry.entry_id, **pair.device_info
+        parent = registry.async_get_or_create_from_info(
+            config_entry_id=paired_entry.entry_id, device_info=pair.device_info
         )
         children = {
-            side: registry.async_get_or_create_child(
-                config_entry_id=paired_entry.entry_id, **child_device_info(pair, side)
+            side: registry.async_get_or_create_child_from_info(
+                config_entry_id=paired_entry.entry_id, device_info=child_device_info(pair, side)
             )
             for side in ("left", "right")
         }

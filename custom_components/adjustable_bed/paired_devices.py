@@ -48,7 +48,9 @@ def child_device_info(coordinator: PairedBedCoordinator, side: str) -> dr.ChildD
     entities' names need not.
     """
     registry = dr.async_get(coordinator.hass)
-    parent_identifier = next(iter(coordinator.device_info.get("identifiers", set())))
+    identifiers = coordinator.device_info.identifiers
+    assert isinstance(identifiers, set)
+    parent_identifier = next(iter(identifiers))
     parent = registry.async_get_device_by_identifier(parent_identifier, coordinator.entry.entry_id)
     if parent is None:
         raise RuntimeError("Paired parent device must be registered before its entities")
@@ -90,7 +92,7 @@ def async_register_children(hass: HomeAssistant, coordinator: PairedBedCoordinat
                 "connections": sorted(existing.connections),
             }
         else:
-            info = child.device_info
+            info = child.device_info.as_dict()
             metadata[side] = {
                 **metadata.get(side, {}),
                 **{

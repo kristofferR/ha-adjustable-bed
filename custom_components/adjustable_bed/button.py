@@ -13,7 +13,6 @@ from homeassistant.const import EntityCategory, Platform
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
-from homeassistant.helpers.typing import UndefinedType
 
 from .beds.base import CONTROLLER_GESTURE_RELEASE, controller_as, require_controller
 from .beds.entity_specs import ProductButtonSpec
@@ -1301,7 +1300,7 @@ class AdjustableBedButton(AdjustableBedEntity, ButtonEntity):
         )
 
     @property
-    def name(self) -> str | UndefinedType | None:
+    def name(self):
         """Keep editable local memory names current without rebuilding the entity."""
         slot_name = _discovered_memory_slot_name(self._coordinator, self.entity_description)
         return slot_name if slot_name is not None else super().name

@@ -59,8 +59,8 @@ async def test_real_two_address_entity_views_keep_feedback_and_setters_on_their_
     )
     parent_entry.add_to_hass(hass)
     parent = PairedBedCoordinator(hass, parent_entry, children)
-    dr.async_get(hass).async_get_or_create(
-        config_entry_id=parent_entry.entry_id, **parent.device_info
+    dr.async_get(hass).async_get_or_create_from_info(
+        config_entry_id=parent_entry.entry_id, device_info=parent.device_info
     )
     views = {view.entity_side: view for view in entity_runtimes(parent)}
     timers = {

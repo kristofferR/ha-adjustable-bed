@@ -80,7 +80,7 @@ async def record_pair(
             await child.async_prime_offline_controller()
         _async_ensure_paired_device_registry(hass, entry, pair)
         parent = dr.async_get(hass).async_get_device_by_identifier(
-            next(iter(pair.device_info["identifiers"])), entry.entry_id
+            next(iter(pair.device_info.as_dict()["identifiers"])), entry.entry_id
         )
         assert parent is not None
         state = SimpleNamespace(
