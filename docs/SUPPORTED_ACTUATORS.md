@@ -21,6 +21,7 @@ Devices & services > Adjustable Bed** and choose **Reconfigure**.
 | Bedgear | [Bedgear](beds/motomotion.md#bedgear) |
 | BedJet | [BedJet PowerLayer](beds/bedjet-powerlayer.md) (the frame, not the BedJet climate unit) |
 | Bedre Nætter | [Linak](beds/linak.md) |
+| Carpe Diem Beds | [Vindö](beds/vindo.md) |
 | Bed Tech | [Bed Tech, older app](beds/richmat.md#bed-tech) |
 | BedSmart / X-Series | [Richmat](beds/richmat.md#bedsmart--x-series) |
 | BedTech | [BedTech, newer app](beds/richmat.md#bedtech), [Bed Tech, older app](beds/richmat.md#bed-tech) |

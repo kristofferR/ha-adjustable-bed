@@ -170,6 +170,7 @@ from .const import (
     BED_TYPE_TRUEMOTION,
     BED_TYPE_VIBRADORM,
     BED_TYPE_VIBRADORM_APP,
+    BED_TYPE_VINDO,
     BED_TYPE_VMATBASIC,
     BED_TYPE_YAMADA,
     BED_TYPE_ZSERIES,
@@ -761,6 +762,7 @@ BED_TYPE_DISPLAY_NAMES: dict[str, str] = {
     BED_TYPE_COMFYDS: "ComfyDS app",
     BED_TYPE_KAIDI: "Rize app (older version)",
     BED_TYPE_LINAK: "Linak (Bed Control, Bed Connect and Performance Series apps)",
+    BED_TYPE_VINDO: "Vindö (Carpe Diem Beds)",
     BED_TYPE_MALOUF_LEGACY_OKIN: "Malouf remote, older receiver",
     BED_TYPE_MALOUF_NEW_OKIN: "Malouf remote, newer receiver",
     "bedgear": "Bedgear app",
@@ -2663,7 +2665,17 @@ def _detect_bed_type_detailed(
             service_info.address,
             service_info.name,
         )
-        return DetectionResult(bed_type=BED_TYPE_LINAK, confidence=1.0, signals=signals)
+        from .profiles.vindo import matches_advertisement
+
+        vindo = matches_advertisement(device_name, service_uuids)
+        if vindo:
+            signals.append("app_hint:vindo")
+        return DetectionResult(
+            bed_type=BED_TYPE_LINAK,
+            confidence=1.0,
+            signals=signals,
+            ambiguous_types=[BED_TYPE_VINDO] if vindo else None,
+        )
 
     # Check for Linak by name pattern (e.g., "Bed 1696")
     # Some Linak beds don't advertise service UUIDs in their BLE beacon

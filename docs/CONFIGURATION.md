@@ -421,6 +421,7 @@ actions; its bounded `hold_control` behavior has separate timing in the
 | Symphony Sleep app | `symphony_sleep` | 4 | 300 ms |
 | Ultramatic Smart Bed app | `ultramatic_smart_bed` | 4 | 300 ms |
 | V-MAT Basic app | `vmatbasic` | 34 | 30 ms |
+| Vindö (Carpe Diem Beds) | `vindo` | 4 | 300 ms |
 | アシステック / ASSISTEC / Yamada app | `yamada` | 4 | 300 ms |
 
 Every other bed type defaults to 10 pulses 100 ms apart.
@@ -462,6 +463,7 @@ and Reconfigure's bed-type list keeps them by name.
 |----------|-----------------------------|
 | [Sleepy's Elite app](beds/sleepys.md#explicit-sleepys-elite-app-profile) | The control box the app lists, asked after the [Sleepy's question](beds/sleepys.md#home-assistant-setup) |
 | [Linak](beds/linak.md#profiles-and-model-variants) | Bed Control and Performance Series |
+| [Vindö](beds/vindo.md#detection--setup) | Carpe Diem Beds Vindö |
 | [Kaidi](beds/kaidi.md#command-families) | Seat 1, Seat 2, Seat 3, Seat 1+2 |
 | [Okin CST](beds/okin-nframe.md#okin-cst) | The Rize and Support products, asked by app name in the Okin question |
 | [Sleepy's BOX25](beds/sleepys.md#box25-protocol-nordic-uart) | Automatic, StarCode or Legacy CB25, under **Advanced** after the Sleepy's question |

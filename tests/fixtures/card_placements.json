@@ -2784,6 +2784,42 @@
  "button:vibradorm_app_refresh_info": {
   "card_section": "utility"
  },
+ "button:vindo_identify": {
+  "card_section": "hidden"
+ },
+ "button:vindo_light_brighter": {
+  "card_section": "lighting"
+ },
+ "button:vindo_light_dimmer": {
+  "card_section": "lighting"
+ },
+ "button:vindo_massage_pattern_1": {
+  "card_section": "massage"
+ },
+ "button:vindo_massage_pattern_2": {
+  "card_section": "massage"
+ },
+ "button:vindo_massage_pattern_3": {
+  "card_section": "massage"
+ },
+ "button:vindo_massage_pattern_4": {
+  "card_section": "massage"
+ },
+ "button:vindo_massage_pattern_5": {
+  "card_section": "massage"
+ },
+ "button:vindo_move_back_down_legs_up": {
+  "card_section": "presets"
+ },
+ "button:vindo_move_back_up_legs_down": {
+  "card_section": "presets"
+ },
+ "button:vindo_move_both_down": {
+  "card_section": "presets"
+ },
+ "button:vindo_move_both_up": {
+  "card_section": "presets"
+ },
  "button:vmatbasic_floor_hold": {
   "card_section": "lighting",
   "card_role": "toggle"
@@ -5196,6 +5232,12 @@
   "card_section": "hidden"
  },
  "sensor:vibradorm_app_xmc_status": {
+  "card_section": "hidden"
+ },
+ "sensor:vindo_back_raw": {
+  "card_section": "hidden"
+ },
+ "sensor:vindo_legs_raw": {
   "card_section": "hidden"
  },
  "sensor:vmatbasic_firmware": {

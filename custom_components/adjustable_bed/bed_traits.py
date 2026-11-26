@@ -122,6 +122,7 @@ from .const import (
     BED_TYPE_TRUEMOTION,
     BED_TYPE_VIBRADORM,
     BED_TYPE_VIBRADORM_APP,
+    BED_TYPE_VINDO,
     BED_TYPE_VMATBASIC,
     BED_TYPE_YAMADA,
     BED_TYPE_ZSERIES,
@@ -349,6 +350,7 @@ _BED_TRAITS: Final[dict[str, BedTraits]] = {
     BED_TYPE_LEGGETT_WILINKE: _SCOPED,
     BED_TYPE_LIMOSS: BedTraits(position_feedback=True, connection_scoped_state=True),
     BED_TYPE_LIMOSS_REMOTE: _NO_ANGLES,
+    BED_TYPE_VINDO: replace(_NO_ANGLES, owns_device_info_reads=True),
     BED_TYPE_LINAK: BedTraits(
         position_feedback=True,
         angle_sensors=True,

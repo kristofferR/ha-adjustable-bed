@@ -800,6 +800,7 @@
       "configured_retrying_suffix": "(already added, still starting)",
       "configured_retrying": "**{name}** is already configured at `{address}`, but Home Assistant is still retrying its previous setup.\n\nOpen the existing bed under **Settings > Devices & services** and reload it, or open **Reconfigure** from its three-dot menu, instead of adding it again. If it keeps failing, run **Adjustable Bed: Create support bundle** for that bed from **Developer tools > Actions**.",
       "not_supported": "This device is not a bed the integration recognizes. If it is a bed, add the integration and set it up by app or remote.",
+      "vindo_receiver_mismatch": "This device is missing the Bluetooth control or position channels required by Vindö. Check the device or select the app you use with it.",
       "discovery_disabled": "Finding new beds automatically is turned off. To turn it back on, add the integration and choose Find new beds automatically.",
       "diagnostic_browser_ready": "**{name}** ({address})\n\nFound by: {source}. {connectable}\n\nTo capture its data for a support request, open **Developer tools > Actions**, choose **Adjustable Bed: Create support bundle**, and enter `{address}` as the **Target address**.",
       "not_enough_beds": "You need at least two set-up beds of the same type to combine.",
@@ -1746,6 +1747,42 @@
   },
   "entity": {
     "button": {
+      "vindo_massage_pattern_1": {
+        "name": "Hard wave"
+      },
+      "vindo_massage_pattern_2": {
+        "name": "Soft wave"
+      },
+      "vindo_massage_pattern_3": {
+        "name": "Hard pulse"
+      },
+      "vindo_massage_pattern_4": {
+        "name": "Soft pulse"
+      },
+      "vindo_massage_pattern_5": {
+        "name": "Constant"
+      },
+      "vindo_move_both_up": {
+        "name": "Raise back and legs"
+      },
+      "vindo_move_both_down": {
+        "name": "Lower back and legs"
+      },
+      "vindo_move_back_up_legs_down": {
+        "name": "Raise back and lower legs"
+      },
+      "vindo_move_back_down_legs_up": {
+        "name": "Lower back and raise legs"
+      },
+      "vindo_light_brighter": {
+        "name": "Increase under-bed light"
+      },
+      "vindo_light_dimmer": {
+        "name": "Decrease under-bed light"
+      },
+      "vindo_identify": {
+        "name": "Identify Vindö bed"
+      },
       "dorsal_lumbar_pillow_up": {
         "name": "Lumbar and pillow up"
       },
@@ -4353,6 +4390,12 @@
       }
     },
     "sensor": {
+      "vindo_back_raw": {
+        "name": "Back position (raw)"
+      },
+      "vindo_legs_raw": {
+        "name": "Legs position (raw)"
+      },
       "shuda_alarm_1": {
         "name": "Alarm 1",
         "state_attributes": {
@@ -8781,11 +8824,11 @@
     },
     "linak_move_simultaneously": {
       "name": "Linak: move two motors together",
-      "description": "Moves two motors together for a set time on a Linak Bed Control or Jensen JMC400, then stops them.",
+      "description": "Moves two motors together for a set time on Linak Bed Control, Jensen JMC400 or Vindö, then stops them.",
       "fields": {
         "device_id": {
           "name": "Bed",
-          "description": "A Linak Bed Control or Jensen JMC400 device."
+          "description": "A Linak Bed Control, Jensen JMC400 or Vindö device."
         },
         "first_motor": {
           "name": "First motor",

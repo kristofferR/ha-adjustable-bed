@@ -48,6 +48,7 @@ app. Every guide follows the [bed guide format](BED_GUIDE_FORMAT.md).
 | [Kaidi](beds/kaidi.md) | Rize Beds, Rize Seat, Floyd Home, ISleep, KomfyD and ComfyDS | Shared |
 | [Keeson](beds/keeson.md) | Keeson remotes, Ergomotion, Serta, Tempur, Purple, Sino, the ORE apps, Ergomotion 4.0, OrmatekTechnoSmart, Somos, Yamada and other Keeson-based apps | Shared |
 | [Leggett & Platt](beds/leggett-platt.md) | LP Control, LP Comfort Connect and the L&P remotes | |
+| [Vindö](beds/vindo.md) | Carpe Diem Beds Vindö (Linak two-byte controls) |
 | [Limoss](beds/limoss.md) | Limoss Remote, FSM Relax, Stawett and older Limoss controls | Shared |
 | [Linak](beds/linak.md) | Linak Bed Control, Bed Connect and Performance Series | |
 | [Linx](beds/linx.md) | The Linx app | |

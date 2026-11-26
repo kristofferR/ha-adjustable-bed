@@ -19,6 +19,7 @@ from homeassistant.components.bluetooth import BluetoothServiceInfoBleak
 from homeassistant.config_entries import (
     SOURCE_BLUETOOTH,
     SOURCE_IGNORE,
+    SOURCE_RECONFIGURE,
     SOURCE_USER,
     ConfigEntryState,
 )
@@ -102,6 +103,7 @@ from custom_components.adjustable_bed.const import (
     BED_TYPE_SUTA,
     BED_TYPE_TIMOTION_AHF,
     BED_TYPE_VIBRADORM,
+    BED_TYPE_VINDO,
     CONF_BACK_MAX_ANGLE,
     CONF_BED_TYPE,
     CONF_BLE_BOND_ATTEMPTED_SOURCE,
@@ -137,6 +139,11 @@ from custom_components.adjustable_bed.const import (
     DOMAIN,
     KAIDI_VARIANT_SEAT_1,
     KEESON_VARIANT_ERGOMOTION,
+    LINAK_CONTROL_CHAR_UUID,
+    LINAK_CONTROL_SERVICE_UUID,
+    LINAK_POSITION_BACK_UUID,
+    LINAK_POSITION_LEG_UUID,
+    LINAK_POSITION_SERVICE_UUID,
     MALOUF_LAYOUT_HILO,
     NORDIC_UART_SERVICE_UUID,
     OCTO_STAR2_SERVICE_UUID,
@@ -1604,6 +1611,27 @@ async def _discover(hass: HomeAssistant, name: str, service_uuids: list[str] | N
 
 class TestBluetoothDiscoveryFlow:
     """Test Bluetooth discovery flow."""
+
+    async def test_shared_linak_discovery_offers_vindo_without_changing_other_receivers(
+        self, hass: HomeAssistant, enable_custom_integrations
+    ) -> None:
+        result = await _discover(hass, "LIN2BLE 34", [LINAK_CONTROL_SERVICE_UUID])
+        assert result["step_id"] == "bluetooth_disambiguate"
+        assert list(select_options(result, "bed_type_choice")) == [
+            BED_TYPE_LINAK, BED_TYPE_VINDO, "show_all",
+        ]
+        result = await hass.config_entries.flow.async_configure(
+            result["flow_id"], {"bed_type_choice": BED_TYPE_LINAK}
+        )
+        assert result["step_id"] == "bluetooth_confirm"
+        assert BED_TYPE_LINAK in select_options(result, CONF_BED_TYPE)
+        hass.config_entries.flow.async_abort(result["flow_id"])
+
+        result = await _discover(hass, "Other bed", [LINAK_CONTROL_SERVICE_UUID])
+        assert result["step_id"] == "bluetooth_confirm"
+        assert BED_TYPE_LINAK in select_options(result, CONF_BED_TYPE)
+        assert BED_TYPE_VINDO not in select_options(result, CONF_BED_TYPE)
+        hass.config_entries.flow.async_abort(result["flow_id"])
 
     async def test_reverie_uuid_reaches_bluetooth_confirm(
         self, hass, mock_bluetooth_service_info_reverie,
@@ -3816,6 +3844,153 @@ def _fake_connected_client() -> MagicMock:
     client.services = [service]
     client.disconnect = AsyncMock()
     return client
+
+
+def _vindo_probe_client(receiver: str) -> MagicMock:
+    def service(uuid, *characteristics):
+        chars = {
+            key: SimpleNamespace(uuid=key, properties=[mode], descriptors=[])
+            for key, mode in characteristics
+        }
+        return SimpleNamespace(uuid=uuid, characteristics=tuple(chars.values()), get_characteristic=chars.get)
+
+    write_mode = "write-without-response" if receiver == "wrong_write_mode" else "write"
+    control = service(LINAK_CONTROL_SERVICE_UUID, (LINAK_CONTROL_CHAR_UUID, write_mode))
+    axes = [(LINAK_POSITION_LEG_UUID, "notify")]
+    if receiver != "missing_position":
+        axes.append((LINAK_POSITION_BACK_UUID, "indicate"))
+    position = service(LINAK_POSITION_SERVICE_UUID, *axes)
+    client = _fake_connected_client()
+    client.services = MagicMock()
+    client.services.__iter__.return_value = [control, position]
+    client.services.get_service.side_effect = {control.uuid: control, position.uuid: position}.get
+    return client
+
+
+@pytest.mark.parametrize(
+    "receiver", ["compatible", "missing_position", "wrong_write_mode", "unreachable", "offline"]
+)
+async def test_vindo_setup_checks_observed_gatt_and_allows_offline_setup(
+    hass: HomeAssistant, enable_custom_integrations, receiver: str
+) -> None:
+    result = await _discover(hass, "LIN2BLE 34", [LINAK_CONTROL_SERVICE_UUID])
+    result = await hass.config_entries.flow.async_configure(
+        result["flow_id"], {"bed_type_choice": BED_TYPE_VINDO}
+    )
+    result = await _to_settings(hass, result)
+
+    client = _vindo_probe_client(receiver)
+    connect = AsyncMock(
+        return_value=client,
+        side_effect=BleakError("No connection") if receiver == "unreachable" else None,
+    )
+    client.read_gatt_char = AsyncMock()
+    client.write_gatt_char = AsyncMock()
+    client.start_notify = AsyncMock()
+    with (
+        patch.object(AdjustableBedConfigFlow, "_verification_possible", return_value=receiver != "offline"),
+        _patch_gate("hci0", -55),
+        patch("bleak_retry_connector.establish_connection", connect),
+    ):
+        result = await hass.config_entries.flow.async_configure(
+            result["flow_id"], {CONF_NAME: "Vindö Bed"}
+        )
+        result = await _advance_progress(hass, result)
+
+    client.read_gatt_char.assert_not_awaited()
+    client.write_gatt_char.assert_not_awaited()
+    client.start_notify.assert_not_awaited()
+    if receiver == "offline":
+        connect.assert_not_awaited()
+    elif receiver == "unreachable":
+        connect.assert_awaited_once()
+        client.disconnect.assert_not_awaited()
+    else:
+        client.disconnect.assert_awaited_once()
+    if receiver in ("missing_position", "wrong_write_mode"):
+        assert result["type"] == FlowResultType.ABORT
+        assert result["reason"] == "vindo_receiver_mismatch"
+        assert not hass.config_entries.async_entries(DOMAIN)
+        return
+    if receiver in ("compatible", "unreachable"):
+        assert result["step_id"] == "verify_connection"
+        result = await hass.config_entries.flow.async_configure(result["flow_id"], {})
+    assert result["type"] == FlowResultType.CREATE_ENTRY
+    assert result["data"][CONF_BED_TYPE] == BED_TYPE_VINDO
+
+
+@pytest.mark.parametrize(
+    "receiver", ["incompatible", "unreachable", "offline", "unreleased", "retained", "active_unreleased"]
+)
+async def test_reconfigure_linak_to_vindo_checks_observed_roles(hass, enable_custom_integrations, receiver):
+    address = "AA:BB:CC:DD:EE:01"
+    entry = MockConfigEntry(
+        domain=DOMAIN,
+        title="Linak Bed",
+        unique_id=address,
+        data={CONF_ADDRESS: address, CONF_BED_TYPE: BED_TYPE_LINAK},
+        version=5,
+    )
+    entry.add_to_hass(hass)
+    client = _vindo_probe_client("missing_position" if receiver == "incompatible" else "compatible")
+    if receiver == "retained":
+        async_get_connect_lock(hass, address).retain_setup_client(client)
+    if receiver == "active_unreleased":
+        from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
+
+        runtime = AdjustableBedCoordinator(hass, entry)
+        runtime._client = client
+        runtime._link_ready = True
+        hass.data.setdefault(DOMAIN, {})[entry.entry_id] = runtime
+    connect = AsyncMock(
+        return_value=client,
+        side_effect=BleakError("No connection") if receiver == "unreachable" else None,
+    )
+    result = await hass.config_entries.flow.async_init(
+        DOMAIN, context={"source": SOURCE_RECONFIGURE, "entry_id": entry.entry_id},
+    )
+    assert result["step_id"] == "reconfigure_bed_type"
+
+    with (
+        patch.object(
+            AdjustableBedConfigFlow, "_verification_possible", return_value=receiver != "offline",
+        ),
+        _patch_gate("hci0", -55),
+        patch("bleak_retry_connector.establish_connection", connect),
+    ):
+        result = await hass.config_entries.flow.async_configure(
+            result["flow_id"], {CONF_BED_TYPE: BED_TYPE_VINDO},
+        )
+        result = await _past_app_question(hass, result)
+        result = await _advance_progress(hass, result)
+
+    assert entry.data[CONF_BED_TYPE] == BED_TYPE_LINAK
+    if receiver in {"offline", "retained", "active_unreleased"}:
+        connect.assert_not_awaited()
+    else:
+        connect.assert_awaited_once()
+        assert connect.await_args.kwargs["use_services_cache"] is False
+    if receiver == "incompatible":
+        assert result["type"] == FlowResultType.ABORT
+        assert result["reason"] == "vindo_receiver_mismatch"
+    else:
+        expected_step = (
+            "migration_check_failed"
+            if receiver in {"unreleased", "retained", "active_unreleased"}
+            else "migration_confirm"
+        )
+        try:
+            assert result["step_id"] == expected_step
+            retained_client = async_get_connect_lock(hass, address).retained_setup_client
+            if receiver in {"unreleased", "retained"}:
+                assert retained_client is client
+            elif receiver == "active_unreleased":
+                assert retained_client is None
+                assert client.is_connected
+                assert client.disconnect.await_count == 2
+        finally:
+            client.is_connected = False
+            hass.config_entries.flow.async_abort(result["flow_id"])
 
 
 async def test_verify_connection_success_then_creates_entry(

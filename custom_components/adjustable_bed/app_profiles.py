@@ -97,6 +97,7 @@ from .const import (
     BED_TYPE_SYMPHONY_SLEEP,
     BED_TYPE_TRANQUIL,
     BED_TYPE_VIBRADORM_APP,
+    BED_TYPE_VINDO,
     BED_TYPE_VMATBASIC,
     BED_TYPE_YAMADA,
     BED_TYPE_ZSERIES,
@@ -190,6 +191,7 @@ _BY_BED_TYPE: Final[dict[str, SideProfile]] = {
         "Leva Bed Remote", frozenset({CONF_MOTOR_COUNT, CONF_HAS_MASSAGE}), variant_owned=True
     ),
     BED_TYPE_LINX: SideProfile("Linx", variant_owned=True),
+    BED_TYPE_VINDO: SideProfile("Vindö"),
     BED_TYPE_SYMPHONY_SLEEP: SideProfile("Symphony Sleep", variant_owned=True),
     BED_TYPE_JALON_BED: SideProfile("OkinComfortBed Ⅱ (Jalon)"),
     BED_TYPE_SYMPHONY: SideProfile("Symphony Sleep Sense", frozenset({CONF_MOTOR_COUNT, CONF_HAS_MASSAGE, CONF_BLE_DEVICE_NAME}), variant_owned=True),
