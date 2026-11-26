@@ -1374,7 +1374,6 @@ _DECLARED_QUESTION_ROUTES: Final = frozenset(
         # Each app's own answers.
         BED_TYPE_COMFORT_ENHANCEMENT3,
         BED_TYPE_MOTION_BED,
-        BED_TYPE_SLEEPTIME,
         "ultramatic_smart_bed",
         BED_TYPE_DOUBLESLEEP,
         "symphony",

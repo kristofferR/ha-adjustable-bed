@@ -173,10 +173,14 @@ def test_frozen_sleeptime_vectors(vector):
 async def test_new_install_asks_and_saves_layout(hass, route):
     flow = AdjustableBedConfigFlow()
     flow.hass, flow.context = hass, {}
+    app_form = await flow.async_step_select_app()
+    picker = app_form["data_schema"].schema[CONF_BED_TYPE]
+    choice = picker.rows()["Sleeptime Australia app (SmartBed205, 402, 404, 405)"]
+    assert choice == BED_TYPE_SLEEPTIME
     flow._discovery_info = _make_service_info(name="advertisement")
     flow._discovery_info.device.name = "sMaRtBeD404-123"
     flow._async_transport_note = AsyncMock(return_value="")
-    form = await start_new_bed(flow, route, BED_TYPE_SLEEPTIME)
+    form = await start_new_bed(flow, route, choice)
     assert form["step_id"] == "profile_questions"
     field = next(
         mark for mark in form_fields(form["data_schema"]) if mark.schema == CONF_PROTOCOL_VARIANT
@@ -476,7 +480,12 @@ async def test_stop_reuses_only_successful_release_before_next_movement(
             lambda ctrl: ctrl.hold_control("bed_height_down", 1),
         )
         await stopping
-        await asyncio.gather(active, return_exceptions=release_fails)
+        (move_result,) = await asyncio.gather(active, return_exceptions=True)
+        if release_fails:
+            assert isinstance(move_result, BleakError)
+            assert "first release failed" in str(move_result)
+        else:
+            assert move_result is None
         assert [frame for _, frame in sent] == [up, up, app.STOP, down, app.STOP]
         assert sent[2][0] == (550 if release_fails else 450)
         assert failed is release_fails
