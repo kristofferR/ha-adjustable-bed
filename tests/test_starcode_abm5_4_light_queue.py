@@ -91,7 +91,9 @@ async def test_public_light_button_queues_after_native_movement_release(
         )
         entry.add_to_hass(hass)
         target = PairedBedCoordinator(hass, entry, children)
-        dr.async_get(hass).async_get_or_create(config_entry_id=entry.entry_id, **target.device_info)
+        dr.async_get(hass).async_get_or_create_from_info(
+            config_entry_id=entry.entry_id, device_info=target.device_info
+        )
         views = {view.entity_side: view for view in entity_runtimes(target)}
         button_side = "left" if side == "both" else side
         runtime = views[button_side]

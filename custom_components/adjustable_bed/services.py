@@ -302,12 +302,12 @@ def _resolve_sided_target(
             if side_identifier(coordinator, side)[1].upper() in identifiers:
                 inferred_side = side
                 break
-        parent_identifiers = {
-            value.upper()
-            for domain, value in coordinator.device_info.get("identifiers", set())
-            if domain == DOMAIN
-        }
-        if inferred_side is None and not identifiers.intersection(parent_identifiers):
+        parent_identifiers = coordinator.device_info.identifiers
+        is_parent = isinstance(parent_identifiers, set) and any(
+            domain == DOMAIN and value.upper() in identifiers
+            for domain, value in parent_identifiers
+        )
+        if inferred_side is None and not is_parent:
             inferred_side = SIDE_BOTH
     return coordinator, inferred_side
 

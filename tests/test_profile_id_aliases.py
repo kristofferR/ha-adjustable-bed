@@ -80,8 +80,8 @@ async def test_device_manufacturer_differs(
     hass: HomeAssistant, alias: str, canonical: str, alias_maker: str, canonical_maker: str
 ) -> None:
     """The device registry's fallback manufacturer is keyed by bed type."""
-    assert _coordinator(hass, alias).device_info["manufacturer"] == alias_maker
-    assert _coordinator(hass, canonical).device_info["manufacturer"] == canonical_maker
+    assert _coordinator(hass, alias).device_info.manufacturer == alias_maker
+    assert _coordinator(hass, canonical).device_info.manufacturer == canonical_maker
 
 
 @pytest.mark.parametrize(

@@ -165,8 +165,8 @@ async def test_registered_source_specific_release_policy_probe(hass, monkeypatch
         return True
 
     monkeypatch.setattr(controller, "_wait", wait)
-    device = dr.async_get(hass).async_get_or_create(
-        config_entry_id=target.entry.entry_id, **target.device_info
+    device = dr.async_get(hass).async_get_or_create_from_info(
+        config_entry_id=target.entry.entry_id, device_info=target.device_info
     )
     await async_register_services(hass)
     held = asyncio.create_task(

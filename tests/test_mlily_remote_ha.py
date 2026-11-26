@@ -301,7 +301,9 @@ async def test_default_left_intervention_resolves_real_registry_targets_before_a
     hass.data.setdefault(const.DOMAIN, {})[entry.entry_id] = pair
     _async_ensure_paired_device_registry(hass, entry, pair)
     registry = dr.async_get(hass)
-    parent = registry.async_get_device_by_identifier(next(iter(pair.device_info["identifiers"])), entry.entry_id)
+    parent = registry.async_get_device_by_identifier(
+        next(iter(pair.device_info.as_dict()["identifiers"])), entry.entry_id
+    )
     left = registry.async_get_child_device_by_identifier(side_identifier(pair, "left"), entry.entry_id)
     right = registry.async_get_child_device_by_identifier(side_identifier(pair, "right"), entry.entry_id)
     assert parent is not None and left is not None and right is not None
@@ -357,7 +359,9 @@ async def test_shared_receiver_clock_runs_once_for_the_bed(hass, selection):
     hass.data.setdefault(const.DOMAIN, {})[entry.entry_id] = pair
     _async_ensure_paired_device_registry(hass, entry, pair)
     registry = dr.async_get(hass)
-    parent = registry.async_get_device_by_identifier(next(iter(pair.device_info["identifiers"])), entry.entry_id)
+    parent = registry.async_get_device_by_identifier(
+        next(iter(pair.device_info.as_dict()["identifiers"])), entry.entry_id
+    )
     left = registry.async_get_child_device_by_identifier(side_identifier(pair, "left"), entry.entry_id)
     assert parent is not None and left is not None
     hass.services.async_register(

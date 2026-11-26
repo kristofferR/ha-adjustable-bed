@@ -302,7 +302,7 @@ async def test_single_address_paired_card_release_keeps_its_short_callback_and_s
     pair.entry.add_to_hass(hass)
     dr.async_get(hass).async_get_or_create(
         config_entry_id=pair.entry.entry_id,
-        identifiers=pair.device_info["identifiers"],
+        identifiers=pair.device_info.as_dict()["identifiers"],
     )
     proxy = next(view for view in entity_runtimes(pair) if view.entity_side == "right")
     entered = asyncio.Event()
@@ -564,7 +564,7 @@ async def test_other_side_button_does_not_revoke_active_right_release(hass):
     pair.entry.add_to_hass(hass)
     dr.async_get(hass).async_get_or_create(
         config_entry_id=pair.entry.entry_id,
-        identifiers=pair.device_info["identifiers"],
+        identifiers=pair.device_info.as_dict()["identifiers"],
     )
     proxy = next(view for view in entity_runtimes(pair) if view.entity_side == "right")
     entered = asyncio.Event()
@@ -669,7 +669,7 @@ async def test_public_release_and_other_side_button_concurrently(hass):
     pair.entry.add_to_hass(hass)
     dr.async_get(hass).async_get_or_create(
         config_entry_id=pair.entry.entry_id,
-        identifiers=pair.device_info["identifiers"],
+        identifiers=pair.device_info.as_dict()["identifiers"],
     )
     proxy = next(view for view in entity_runtimes(pair) if view.entity_side == "right")
     entered = asyncio.Event()
@@ -762,7 +762,7 @@ async def test_other_side_button_after_release_waits_for_short_wire(hass):
     pair.entry.add_to_hass(hass)
     dr.async_get(hass).async_get_or_create(
         config_entry_id=pair.entry.entry_id,
-        identifiers=pair.device_info["identifiers"],
+        identifiers=pair.device_info.as_dict()["identifiers"],
     )
     proxy = next(view for view in entity_runtimes(pair) if view.entity_side == "right")
     entered = asyncio.Event()
