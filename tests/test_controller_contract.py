@@ -210,6 +210,12 @@ async def _create_controller_for_bed_type(
     if bed_type == const.BED_TYPE_LEVA:
         coordinator.entry.data[const.CONF_PRODUCT_TYPE] = "ascent"
         return await create_controller(coordinator, bed_type, variant or "nordic", client)
+    if bed_type == const.BED_TYPE_SLEEP_ASSIST_PRO:
+        coordinator.entry.data.update({
+            const.CONF_BLE_DEVICE_NAME: "KSBT012345678",
+            const.CONF_HAS_LIGHT: True,
+            "sleep_assist_pro_controls": ["head", "feet", "side_b", "rgb", "massage_timer", "tv"],
+        })
     if bed_type == const.BED_TYPE_LINX:
         coordinator.entry.data.update({const.CONF_PRODUCT_TYPE: "quest", const.CONF_PROTOCOL_VARIANT: "a00a", const.CONF_BLE_DEVICE_NAME: "KSWF07D00000000"})
         return await create_controller(coordinator, bed_type, variant or "a00a", client)

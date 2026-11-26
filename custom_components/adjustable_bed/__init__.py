@@ -127,6 +127,7 @@ from .pairing import (
     iter_children,
     pair_member_addresses,
     side_owned_profile_fields,
+    standalone_only_app,
     with_updated_child,
 )
 from .position_estimate import (
@@ -2093,6 +2094,10 @@ async def _async_release_absorbed_singles(
 
 async def _async_setup_paired_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
     """Set up a paired (Dual Bed 4.0) entry as one logical device."""
+    for data in (entry.data, entry.options, *iter_children(entry.data)):
+        if (app := standalone_only_app(data.get(CONF_BED_TYPE))) is not None:
+            raise setup_stopped("paired_member_requires_standalone", app=app)
+
     # HA only clears pending flows matching the new entry's unique_id. A pair's
     # synthetic ID does not match its members' existing Bluetooth discovery cards.
     members = set(pair_member_addresses(entry.data))
