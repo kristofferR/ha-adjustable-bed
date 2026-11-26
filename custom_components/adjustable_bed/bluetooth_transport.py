@@ -55,11 +55,13 @@ def advertised_local_name(info: bluetooth.BluetoothServiceInfoBleak | None) -> s
     if isinstance(raw, bytes):
         return parse_advertisement_data((raw,)).local_name
     advertisement = getattr(info, "advertisement", None)
-    if advertisement is None:
-        return None
     # HA rebuilds AdvertisementData with empty platform data when injecting a
     # cached name. The name on that rebuilt object has no packet provenance.
-    return advertisement.local_name if advertisement.platform_data else None
+    return (
+        getattr(advertisement, "local_name", None)
+        if getattr(advertisement, "platform_data", ())
+        else None
+    )
 
 
 class TransportClass(StrEnum):
