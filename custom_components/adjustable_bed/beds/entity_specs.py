@@ -199,6 +199,10 @@ class MotorControlSpec:
     stop_scope: Literal["motor", "side"] | None = field(default=None, kw_only=True)
     # Logical sides drive the same physical actuator on a single receiver.
     shared_across_sides: bool = field(default=False, kw_only=True)
+    # Timed move (up, duration in ms) when the motor owns timing and release.
+    timed_move_fn: Callable[[BedController, bool, int], Coroutine[Any, Any, None]] | None = field(
+        default=None, kw_only=True
+    )
 
 
 # Units a position slider can be scaled in.

@@ -20,6 +20,7 @@ from tests.form_helpers import finish_new_bed
 ADDRESS = "11:22:33:44:55:66"
 APPS = [
     "richmat_420",
+    "atlas_lift",
     "rmcontrol",
     "luuna",
     "luniosmart",
@@ -407,6 +408,7 @@ async def test_luuna_asks_explicit_product_and_derives_its_controls(hass):
         ("BedSmart / X-Series app · Richmat", const.BED_TYPE_RICHMAT_CLASSIC_APPS),
         ("MLILY Control app · Richmat", const.BED_TYPE_MLILY),
         ("Majestic Home app · Richmat", "majestichome"),
+        ("Atlas Lift app (Cama Lift) · Richmat", const.BED_TYPE_ATLAS_LIFT),
         ("MLILY Remote app · Richmat", const.BED_TYPE_MLILY_REMOTE),
     ],
 )

@@ -185,6 +185,7 @@
           "check_connected": "Check: connected",
           "check_connected_via": "Check: connected through",
           "check_no_commands": "Check: no commands",
+          "check_atlas_lift_transport_missing": "❌ Atlas Lift needs exactly one supported Bluetooth service with its writable command characteristic.",
           "check_truemotion_transport_missing": "⚠️ The receiver does not expose the trueMotion write and notification channels.",
           "check_transport_missing": "Check: connection type missing",
           "check_transport_ok": "Check: connection type available",
@@ -11754,6 +11755,9 @@
     "super_colchones_session": {
       "message": "The Super Colchones connection or product changed. Reconnect and try again."
     },
+    "atlas_lift_gatt": {
+      "message": "Atlas Lift needs exactly one supported Bluetooth service with its writable command characteristic."
+    },
     "super_colchones_route": {
       "message": "Super Colchones needs a supported writable Bluetooth service and a notification characteristic."
     },
@@ -12230,7 +12234,8 @@
     "verify_action": {
       "options": {
         "finish": "Finish setup anyway",
-        "retry": "Check again"
+        "retry": "Check again",
+        "change_app": "Choose another app"
       }
     },
     "migration_check_action": {
@@ -12475,6 +12480,7 @@
     },
     "richmat_family_choice": {
       "options": {
+        "atlas_lift": "Atlas Lift (Cama Lift)",
         "enso2": "ENSO Sleep Control (Enso 2)",
         "rmcontrol": "RMControl app",
         "revive": "Revive Control app",
