@@ -290,8 +290,8 @@ def _method(name: str, *args: Any, **kwargs: Any) -> Call:
 STOP_AFTER_S = 0.3
 
 
-def _stopped(call: Call, *, scheduled: bool = False) -> Call:
-    """Run a movement and STOP it after ``STOP_AFTER_S``, as ``async_stop_command`` does.
+def _stopped(call: Call, *, scheduled: bool = False, after_s: float = STOP_AFTER_S) -> Call:
+    """Run a movement and STOP it after a delay, as ``async_stop_command`` does.
 
     The coordinator bumps the cancel counter, sets ``cancel_command``, waits for the
     running command's cleanup to release the wire, then sends ``stop_all``.
@@ -318,7 +318,7 @@ def _stopped(call: Call, *, scheduled: bool = False) -> Call:
         previous_cancel = coordinator.cancel_command
         try:
             handle = await scheduler.enqueue(CommandIntent(move))
-            await asyncio.sleep(STOP_AFTER_S)
+            await asyncio.sleep(after_s)
             await scheduler.admit_stop(stop)
             await handle.future
         finally:
@@ -327,7 +327,7 @@ def _stopped(call: Call, *, scheduled: bool = False) -> Call:
     async def run(ctrl: Any) -> None:
         coordinator = ctrl._coordinator  # noqa: SLF001
         movement = asyncio.ensure_future(call(ctrl))
-        await asyncio.sleep(STOP_AFTER_S)
+        await asyncio.sleep(after_s)
         coordinator.cancel_counter += 1
         coordinator.cancel_command.set()
         await asyncio.gather(movement, return_exceptions=True)
@@ -427,14 +427,16 @@ def plan_commands(controller: Any) -> list[Command]:
     plan.extend(_argument_commands(controller))
     # The user presses STOP while each cover moves.
     for spec in specs:
-        # Shuda's STOP consumes the interrupted command's release receipt.
+        # These STOP paths consume the interrupted command's release receipt.
         # Keep older synthetic STOP rows stable.
-        scheduled = controller._coordinator.bed_type == "shuda"
+        scheduled = controller._coordinator.bed_type in {"shuda", "atlas_lift"}
+        # Stop between OkimattMotion refresh ticks so equal deadlines cannot race.
+        after_s = 0.35 if controller._coordinator.bed_type == "okimattmotion" else STOP_AFTER_S
         plan.append(Command(
-            f"stop:{spec.key}_open", _stopped(spec.open_fn, scheduled=scheduled), True, movement=True
+            f"stop:{spec.key}_open", _stopped(spec.open_fn, scheduled=scheduled, after_s=after_s), True, movement=True
         ))
         plan.append(Command(
-            f"stop:{spec.key}_close", _stopped(spec.close_fn, scheduled=scheduled), True, movement=True
+            f"stop:{spec.key}_close", _stopped(spec.close_fn, scheduled=scheduled, after_s=after_s), True, movement=True
         ))
     for spec in _value(controller, "controller_button_specs", ()):
         # For Leva the gesture button only cancels a hold. The movement and
@@ -475,6 +477,15 @@ def plan_commands(controller: Any) -> list[Command]:
             )
     if _value(_value(controller, "_coordinator", None), "bed_type", None) == "betterliving2":
         plan = _betterliving2_historical_actions(plan, _value(controller, "wire", ""))
+    if controller._coordinator.bed_type == "okimattmotion":
+        from custom_components.adjustable_bed.alarm import AlarmRequest
+
+        for enabled in (True, False):
+            alarm = AlarmRequest(
+                enabled=enabled, hour=7, minute=45, wake_action="wake_mode_1",
+                sleep_timer=20, reference_time=datetime.datetime.fromisoformat(FROZEN_NOW),
+            )
+            plan.append(Command(f"set_alarm:{enabled}", _method("configure_alarm", alarm), True))
     if controller._coordinator.bed_type in {"ergobed", "moodbase"} and controller.alarm_capability:
         from custom_components.adjustable_bed.alarm import AlarmRequest
 
@@ -529,6 +540,18 @@ def plan_commands(controller: Any) -> list[Command]:
             )), True),
             Command("shuda_alarm_disable", _method("configure_alarm", AlarmRequest(
                 enabled=False, slot=2, reference_time=FROZEN_BASE,
+            )), True),
+        ))
+    if controller._coordinator.bed_type == "sleeptime":
+        from custom_components.adjustable_bed.alarm import AlarmRequest
+
+        plan.extend((
+            Command("sleeptime_alarm_weekdays", _method("configure_alarm", AlarmRequest(
+                enabled=True, hour=7, minute=30, weekdays=(0, 1, 2, 3, 4),
+                wake_action="memory_1", reference_time=FROZEN_BASE,
+            )), True),
+            Command("sleeptime_alarm_disable", _method("configure_alarm", AlarmRequest(
+                enabled=False, reference_time=FROZEN_BASE,
             )), True),
         ))
     if late_clock and _overrides(controller, "sync_clock"):
@@ -660,7 +683,8 @@ def _argument_commands(controller: Any) -> list[Command]:
     if _flag(c, "supports_massage_intensity_control"):
         top = int(_value(c, "massage_intensity_max", 10))
         for zone in _value(c, "massage_intensity_zones", []):
-            for level in range(top + 1):
+            bottom = c.massage_intensity_min(zone) if c._coordinator.bed_type == "okimattmotion" else 0
+            for level in range(bottom, top + 1):
                 add(
                     "supports_massage_intensity_control",
                     "set_massage_intensity",
@@ -1431,6 +1455,20 @@ def default_scenario(bed_type: str) -> Scenario:
     """The bed type in its default route, with the entry data it needs to build."""
     from custom_components.adjustable_bed import const
 
+    if bed_type == const.BED_TYPE_LANGJUE:
+        return Scenario(id=bed_type, bed_type=bed_type, replies={
+            "write:558d000081": "55000000810102",
+            "write:5500000082": "550000008200",
+            "write:5500000083": "550000008300",
+            "write:5500000018": "55000000180102",
+            "write:5500000032": "5500000032080001010300080000",
+        })
+    if bed_type == const.BED_TYPE_SLEEPTIME:
+        return Scenario(
+            id=bed_type, bed_type=bed_type, protocol_variant="205",
+            layout_id="ultramatic_smart_bed",
+            replies={"write:00b0": "a50b0e000259030306", "write:00c0": "a50c0e000408061e0001"},
+        )
     if bed_type == "dorsal":
         return Scenario(
             id=bed_type, bed_type=bed_type, protocol_variant="cprn",
@@ -1457,6 +1495,8 @@ def default_scenario(bed_type: str) -> Scenario:
     if bed_type == "super_colchones":
         return Scenario(id=bed_type, bed_type=bed_type, protocol_variant="afeg302",
                         entry_data={const.CONF_PROTOCOL_VARIANT: "afeg302"}, layout_id="super_colchones:n1")
+    if bed_type == const.BED_TYPE_ATLAS_LIFT:
+        return Scenario(id=bed_type, bed_type=bed_type, layout_id="atlas_lift:n1")
     if bed_type == "superior_sleep":
         return Scenario(
             id=bed_type, bed_type=bed_type, protocol_variant="ss350",
@@ -1511,6 +1551,12 @@ def default_scenario(bed_type: str) -> Scenario:
     replies: dict[str, str] = {}
     if bed_type == "sealy_posturematic":
         data.update({const.CONF_PRODUCT_TYPE: "0", const.CONF_BED_TYPE: "sealy_posturematic"})
+    if bed_type == const.BED_TYPE_SLEEP_ASSIST_PRO:
+        return Scenario(
+            id=bed_type, bed_type=bed_type, layout_id="sleep_assistant",
+            entry_data={const.CONF_BLE_DEVICE_NAME: "KSBT012345678",
+                        "sleep_assist_pro_controls": ["head", "feet", "flat", "zero_g"]},
+        )
     if bed_type == "sleep_assistant":
         return Scenario(id=bed_type, bed_type=bed_type, layout_id="sleep_assistant")
     if bed_type == const.BED_TYPE_LINX:
@@ -1778,6 +1824,8 @@ def route_scenarios() -> list[Scenario]:
         for route in ("n1", "w1", "w2", "w3", "w4", "w5"):
             scenarios.append(Scenario(id=f"super_colchones:{product}:{route}", bed_type="super_colchones",
                 protocol_variant=product, entry_data={const.CONF_PROTOCOL_VARIANT: product}, layout_id=f"super_colchones:{route}"))
+    scenarios.append(Scenario(id="atlas_lift:w1", bed_type=const.BED_TYPE_ATLAS_LIFT,
+                              layout_id="atlas_lift:w1"))
     for route in ("S1", "S3", "S4", "S5", "S6"):
         scenarios.append(Scenario(id=f"luniosmart:{route}", bed_type="luniosmart", layout_id=f"luniosmart:{route}"))
     for route in ("Nordic", "W2", "W3", "W4", "W5"):
@@ -2424,6 +2472,19 @@ def build_scenarios() -> list[Scenario]:
     scenarios = [default_scenario(bed_type) for bed_type in SUPPORTED_BED_TYPES
                  if bed_type not in RICHMAT_MH_APP_CATALOGS]
     scenarios.extend(route_scenarios())
+    scenarios.append(
+        Scenario(id="okimattmotion:20", bed_type="okimattmotion",
+                 entry_data={"product_type": "20"}, layout_id="okimattmotion")
+    )
+    scenarios.append(dataclasses.replace(
+        default_scenario("langjue"), id="langjue:head_foot", layout_id="langjue",
+        entry_data={"product_type": "head_foot", "has_light": True, "has_massage": True},
+    ))
+    scenarios.extend(
+        dataclasses.replace(default_scenario("sleeptime"), id=f"sleeptime:{selector}",
+                            protocol_variant=selector)
+        for selector in ("402", "404", "405")
+    )
     scenarios.extend((
         Scenario(id="dorsal:corn", bed_type="dorsal", protocol_variant="corn",
                  layout_id="dorsal:n1", replies={"write:01": "6e200903010200019e"}),
@@ -2697,7 +2758,7 @@ async def _connect(controller: Any, recorder: Recorder, clock: FakeClock) -> dic
             await controller.async_on_connect(session)
             await controller.async_read_device_info(session)
             return
-        if controller._coordinator.bed_type == "shuda":
+        if controller._coordinator.bed_type in {"shuda", "sleeptime"}:
             await controller.async_on_connect(SimpleNamespace(async_start_notify=controller.start_notify))
             return
         if controller._coordinator.bed_type in {"rize_home", "superior_sleep", "okin_64bit", "betterliving2", "ultramatic_smart_bed", "smart_comfort_synargy", "smart_comfort_synergy", "simmons_blue"}:
@@ -2706,7 +2767,7 @@ async def _connect(controller: Any, recorder: Recorder, clock: FakeClock) -> dic
                 session.store_device_info = lambda *_: None
             await controller.async_on_connect(session)
             return
-        if controller._coordinator.bed_type in {"symphony", "linx", "agingplace", "sleep_assistant", "sinca_comfort", "leva"}:
+        if controller._coordinator.bed_type in {"symphony", "linx", "agingplace", "sleep_assistant", "sinca_comfort", "leva", "sleep_assist_pro", "atlas_lift"}:
             session = SimpleNamespace(
                 client=controller.client, is_current=lambda: True,
                 async_start_notify=lambda: controller.start_notify(lambda *_: None),

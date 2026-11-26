@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING
 
 from homeassistant.components import bluetooth
 
+from ...const import DORSAL_ROOMI_S655_PLUS
 from ...discovery_hints.dorsal import DORSAL_TRANSPORTS, ROOMI_SCAN
 from ...errors import failed, invalid
 from ..richmat.transport import AppLink, select_app_link
@@ -19,7 +20,7 @@ def validate_name(
     hass: HomeAssistant, address: str, route: str | None, device_name: str | None
 ) -> None:
     """Corroborate Roomi using either advertisement history for this address."""
-    if route != "roomi" or device_name and ROOMI_SCAN in device_name:
+    if route not in ("roomi", DORSAL_ROOMI_S655_PLUS) or device_name and ROOMI_SCAN in device_name:
         return
     for connectable in (True, False):
         advert = bluetooth.async_last_service_info(hass, address, connectable=connectable)
@@ -28,8 +29,8 @@ def validate_name(
     raise invalid("dorsal_roomi_receiver")
 
 
-def select_link(client: BleakClient) -> AppLink:
+def select_link(client: BleakClient, route: str | None) -> AppLink:
     try:
-        return select_app_link(client, DORSAL_TRANSPORTS)
+        return select_app_link(client, DORSAL_TRANSPORTS, same_service=route == DORSAL_ROOMI_S655_PLUS)
     except ValueError as error:
         raise failed("dorsal_receiver_unavailable") from error

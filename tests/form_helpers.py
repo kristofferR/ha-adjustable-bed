@@ -95,6 +95,7 @@ def form_answers(
 ) -> dict[str, Any]:
     """Defaults, or a listed answer for a required or refused field, sections nested."""
     errors = result.get("errors") or {}
+    sleep_assist_pro = "sleep_assist_pro_controls" in form_fields(result["data_schema"])
     answers: dict[str, Any] = {}
     for marker, validator in (schema or result["data_schema"]).schema.items():
         if isinstance(inner := getattr(validator, "schema", None), probatio.Schema):
@@ -102,7 +103,13 @@ def form_answers(
             continue
         key, default = marker.schema, marker_default(marker)
         options = [option for option in options_of(validator) if option != "auto"]
-        if key in errors and options:
+        if sleep_assist_pro and key == "ble_device_name" and (
+            key in errors or not isinstance(default, str) or not default
+        ):
+            answers[key] = "BASE-I40000001"
+        elif sleep_assist_pro and key == "sleep_assist_pro_controls" and not default:
+            answers[key] = ["head"]
+        elif key in errors and options:
             answers[key] = options[attempt % len(options)]
         elif not isinstance(default, probatio.Undefined):
             answers[key] = default

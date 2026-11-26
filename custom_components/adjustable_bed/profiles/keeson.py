@@ -504,6 +504,12 @@ COOLBASE: Final = KeesonProfile(key="coolbase", execution=STREAM_HOLD, hold=None
 # BF and Cherish (beds/bf_cherish/controller.py), Comfort Enhancements: big-endian E5 frames.
 BF: Final = KeesonProfile(key="bf", execution=STREAM_HOLD, order="big", hold=None)
 CHERISH: Final = KeesonProfile(key="cherish", execution=STREAM_HOLD, order="big", hold=None)
+OKIMATTMOTION_REFRESH_MS: Final = 100
+OKIMATTMOTION: Final = KeesonProfile(
+    key="okimattmotion", execution=STREAM_HOLD, order="big", fixed_write=True,
+    hold=(10, OKIMATTMOTION_REFRESH_MS), refresh_ms=OKIMATTMOTION_REFRESH_MS,
+    release=Release(steps=((0, codec.RELEASE), (0, codec.RELEASE))),
+)
 COMFORT_ENHANCEMENTS: Final = KeesonProfile(
     key="comfort_enhancements", execution=STREAM_HOLD, order="big", hold=None
 )
@@ -632,6 +638,7 @@ PROFILES: Final[dict[str, KeesonProfile]] = {
         COOLBASE,
         BF,
         CHERISH,
+        OKIMATTMOTION,
         COMFORT_ENHANCEMENTS,
         COMFORTBASE,
         JALON_BED,

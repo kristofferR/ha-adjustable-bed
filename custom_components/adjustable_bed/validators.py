@@ -60,6 +60,7 @@ from .const import (
     BED_TYPE_RONDURE,
     BED_TYPE_SIMMONS,
     BED_TYPE_SLEEP_NUMBER,
+    BED_TYPE_SLEEPTIME,
     BED_TYPE_SLEEPYS_BOX25,
     BED_TYPE_SOLACE,
     BED_TYPE_SOMOS,
@@ -120,6 +121,7 @@ from .profiles.richmat_legacy import APP_NAMES as LEGACY_APPS
 from .profiles.richmat_legacy import choices as legacy_choices
 from .profiles.saatva import CHOICES as SAATVA_CHOICES
 from .profiles.sinca_comfort import PROTOCOL_LABELS as SINCA_RECEIVERS
+from .profiles.sleeptime import SELECTORS as SLEEPTIME_SELECTORS
 from .profiles.somos import CHOICES as SOMOS_CHOICES
 from .profiles.super_colchones import VARIANTS as SUPER_COLCHONES_VARIANTS
 from .profiles.symphony import SELECTORS as SYMPHONY_SELECTORS
@@ -163,6 +165,7 @@ MLINE_PROTOCOL_LABELS: Final = {
 
 # Single source of truth for bed types with variants
 VARIANTS_BY_BED_TYPE: dict[str, dict[str, str]] = {
+    BED_TYPE_SLEEPTIME: dict(SLEEPTIME_SELECTORS),
     "ormatek": {"okin15": "Bluetooth name starts with Okin", "okin24": "Bluetooth name starts with SmartBed"},
     "leva": dict(LEVA_RECEIVERS),
     BED_TYPE_LIKIMIO: LIKIMIO_CHOICES,

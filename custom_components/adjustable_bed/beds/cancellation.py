@@ -17,7 +17,9 @@ async def settled[T](operation: Coroutine[object, object, T], *, eager_start: bo
     interrupted: asyncio.CancelledError | None = None
     while not task.done():
         try:
-            await asyncio.shield(task)
+            # Wait for completion without cancelling the task or attaching a shield
+            # that can report the failure before we retrieve it (CPython #156321).
+            await asyncio.wait((task,))
         except asyncio.CancelledError as err:
             interrupted = err
     result = task.result()

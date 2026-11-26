@@ -71,9 +71,11 @@ if TYPE_CHECKING:
     from .keeson.enso import EnsoController as EnsoController
     from .keeson.jalon import JalonController as JalonController
     from .keeson.ormatek import OrmatekController as OrmatekController
+    from .keeson.sleep_assist_pro import SleepAssistProController as SleepAssistProController
     from .keeson.somos import SomosController as SomosController
     from .keeson.symphony_sleep import SymphonySleepController as SymphonySleepController
     from .keeson.yamada import YamadaController as YamadaController
+    from .langjue import LangjueController as LangjueController
     from .leggett.gen2 import LeggettGen2Controller as LeggettGen2Controller
     from .leggett.lp_legacy import LeggettLpLegacyController as LeggettLpLegacyController
     from .leggett.okin import LeggettOkinController as LeggettOkinController
@@ -96,6 +98,7 @@ if TYPE_CHECKING:
     from .n32_motion_bed.controller import N32MotionBedController as N32MotionBedController
     from .nerum.controller import NerumController as NerumController
     from .octo.controller import OctoController as OctoController
+    from .okimattmotion import OkimattMotionController as OkimattMotionController
     from .okimiki.controller import OkimikiController as OkimikiController
     from .okin_7byte import Okin7ByteController as Okin7ByteController
     from .okin_cb35 import OkinCB35Controller as OkinCB35Controller
@@ -119,6 +122,7 @@ if TYPE_CHECKING:
     from .resident.controller import ResidentController as ResidentController
     from .reverie.controller import ReverieController as ReverieController
     from .reverie.nightstand import ReverieNightstandController as ReverieNightstandController
+    from .richmat.atlas_lift import AtlasLiftController as AtlasLiftController
     from .richmat.controller import RichmatController as RichmatController
     from .richmat_app.controller import RichmatAppController as RichmatAppController
     from .richmat_classic.controller import RichmatClassicController as RichmatClassicController
@@ -144,6 +148,7 @@ if TYPE_CHECKING:
     from .sleep_number.controller import SleepNumberController as SleepNumberController
     from .sleep_number.mcr import SleepNumberMcrController as SleepNumberMcrController
     from .sleepstar import SleepStarController as SleepStarController
+    from .sleeptime.controller import SleeptimeController as SleeptimeController
     from .sleeptracker.controller import SleeptrackerController as SleeptrackerController
     from .sleepys.box25 import SleepysBox25Controller as SleepysBox25Controller
     from .sleepys.box25 import SleepysBox25LegacyController as SleepysBox25LegacyController
@@ -184,8 +189,10 @@ _EXPORT_MODULES = {
     "NerumController": "nerum.controller",
     "RelaxMotionController": "relax_motion.controller",
     "CheersSleepController": "cheerssleep.controller",
+    "SleeptimeController": "sleeptime.controller",
     "UltramaticController": "ultramatic.controller",
     "SmartSleepController": "smart_sleep.controller",
+    "LangjueController": "langjue",
     "JalonBedController": "jalon_bed.controller",
     "SymphonyController": "symphony.controller",
     "GoodVibeController": "goodvibe.controller",
@@ -223,6 +230,7 @@ _EXPORT_MODULES = {
     "SomosController": ("keeson.somos", "SomosController"),
     "EnsoController": ("keeson.enso", "EnsoController"),
     "SealyController": ("sealy.controller", "SealyController"),
+    "SleepAssistProController": "keeson.sleep_assist_pro",
     "SleepAssistantController": "sleep_assistant.controller",
     "YamadaController": ("keeson.yamada", "YamadaController"),
     "BetterLiving2Controller": ("keeson.betterliving2", "BetterLiving2Controller"),
@@ -292,6 +300,7 @@ _EXPORT_MODULES = {
     "OkinCstController": "okin_cst",
     "OkinDotController": "okin_dot",
     "OkinHandleController": "okin_handle",
+    "OkimattMotionController": "okimattmotion",
     "OkinMotionBedController": "okin_motionbed",
     "OkinNordicController": "okin_nordic",
     "BfCherishController": "bf_cherish.controller",
@@ -303,6 +312,7 @@ _EXPORT_MODULES = {
     "RemacroController": "remacro.controller",
     "ReverieController": "reverie.controller",
     "ReverieNightstandController": "reverie.nightstand",
+    "AtlasLiftController": "richmat.atlas_lift",
     "RichmatController": "richmat.controller",
     "RondureController": "rondure",
     "ScottLivingController": "scott_living",

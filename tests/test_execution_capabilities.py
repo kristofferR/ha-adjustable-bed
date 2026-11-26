@@ -5,7 +5,7 @@ from __future__ import annotations
 import pytest
 
 from custom_components.adjustable_bed.beds.base import BedController
-from custom_components.adjustable_bed.const import SUPPORTED_BED_TYPES
+from custom_components.adjustable_bed.const import BED_TYPE_SLEEP_ASSIST_PRO, SUPPORTED_BED_TYPES
 from custom_components.adjustable_bed.execution import (
     NO_EXECUTION_CAPABILITIES,
     ExecutionCapabilities,
@@ -29,6 +29,13 @@ async def test_concurrent_declaration_implements_the_stream_hooks(bed_type: str)
             bed_type,
             hook,
         )
+
+
+async def test_sleep_assist_pro_renewable_hold_is_serialized() -> None:
+    """A16 Remote starts one 200 ms refresh timer for the selected control."""
+    controller = await _create_controller_for_bed_type(BED_TYPE_SLEEP_ASSIST_PRO)
+    assert controller.execution.declared == {"hold"}
+    assert controller.execution.hold_for("head_up") == "stream"
 
 
 def test_default_declares_nothing() -> None:

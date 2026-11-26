@@ -390,6 +390,7 @@ actions; its bounded `hold_control` behavior has separate timing in the
 | AdjustaMattress app | `adjustamattress` | 5 | 200 ms |
 | Aging in Place / Dawn House app | `agingplace` | 5 | 200 ms |
 | Comfort Enhancements app | `comfort_enhancements` | 5 | 200 ms |
+| Comfort Smart Bed app (Langjue) | `langjue` | 2 | 500 ms |
 | Customatic Clarity app (Rize Clarity) | `customatic_clarity` | 8 | 120 ms |
 | Customatic Jerome's C app | `customatic_jeromes` | 8 | 120 ms |
 | Customatic Remedy app (Rize Remedy) | `customatic_remedy` | 8 | 120 ms |
@@ -416,6 +417,8 @@ actions; its bounded `hold_control` behavior has separate timing in the
 | Shuda app | `shuda` | 5 | 200 ms |
 | SIMMONS app | `simmons` | 4 | 300 ms |
 | Simmons Blue app | `simmons_blue` | 5 | 200 ms |
+| Sleep Assist Pro | `sleep_assist_pro` | 10 | 200 ms |
+| Sleeptime Australia app (SmartBed205, 402, 404, 405) | `sleeptime` | 4 | 300 ms |
 | Somos / SomosBeds app | `somos` | 10 | 300 ms |
 | SUTA Smart Home app | `suta` | 7 | 150 ms |
 | Symphony Sleep app | `symphony_sleep` | 4 | 300 ms |
@@ -638,6 +641,7 @@ beds, Reconfigure that bed, then combine them again.
 | MotoMotion | [The exact Bluetooth name](beds/motomotion.md#motomotion), which selects the panel and its feature flags; preserve its case. |
 | Nerum | See the [setup steps](beds/nerum.md#detection--setup). |
 | Nisco / MLILY Supreme | Select the app, then its model, or **Automatic (recommended)** from the Bluetooth name. MLILY Supreme also offers six short model names and a normal-mattress option. Add the separate HJ_Bed sleep receiver for sleep sensing. Which side the app sends to is set with the `richmat_mh_control` action. See [Nisco](beds/richmat.md#nisco) and [MLILY Supreme](beds/richmat.md#mlily-supreme). |
+| OkimattMotion | [Choose the app manually and select its layout](beds/keeson.md#okimattmotion). The extended layout adds combined movement and Book. |
 | Okimiki | See the [setup steps](beds/richmat.md#okimiki). |
 | OKIN SleepEase / DoubleSleep | [SleepEase setup](beds/okin-nframe.md#okin-sleepease): choose the model the app shows; the bed's advertisement decides the control box type. Each bed of a combined pair keeps its own settings. |
 | OKIN Smart Sleep | See the [setup steps](beds/smart-sleep.md#setup). |
@@ -649,6 +653,7 @@ beds, Reconfigure that bed, then combine them again.
 | Reverie | [Setup confirms the receiver](beds/reverie.md#setup-and-model-selection) from its advertised service (Protocol 110 or 108), then asks the model the app shows. Reconfigure lists both receivers. |
 | Richmat | [One question](beds/richmat.md#home-assistant-setup) for the app: [RMControl](beds/richmat.md#rmcontrol) then asks its product code and side; [Revive Control / Best Mattress / Blvd Home / HARMONY / Idealbed](beds/richmat.md#richmat-mh-apps) the app's model, or **Automatic (recommended)** from the Bluetooth name; [Avocado Eco Base / CoasterSleep / Forty Winks / Milemont / Superior](beds/richmat.md#classic-richmat-apps), [Luuna Rise / Power Cool Sleep System](beds/richmat.md#luuna-rise--power-cool), [Lady Americana / ACAA / STA Homecare / Zero Gravity](beds/richmat.md#lady-americana--acaa--sta-homecare--zero-gravity-family), [Jerome's power base](beds/richmat.md#jeromes-power-base), [Maxprime](beds/richmat.md#maxprime) and [Dreamlab Control](beds/richmat.md#dreamlab-control) ask for the app's layout code. [Base Remote](beds/richmat.md#base-remote) asks its layout code and, for a layout with Left and Right tabs, whether the bed is one base. Without one of these apps, the [Richmat remotes](beds/richmat.md#richmat-remotes) ask the remote code. Reconfigure changes the app and lists each one by name, so an entry can switch apps or opt in to RMControl and out of it; Configure changes the app's own settings. |
 | Dorsal app / Roomi | Choose CPRN, CORN, a saved Dorsal project, or Roomi controls. Enter the exact case-sensitive code for a saved project. Roomi needs a receiver with QRRM in its Bluetooth name and accepts an optional saved code. See the [Dorsal guide](beds/richmat.md#dorsal--roomi). |
+| ROOMI bed (S655 Plus) | Choose the S655 Plus profile and a receiver with QRRM in its Bluetooth name. No project code is needed. See the [ROOMI bed guide](beds/richmat.md#roomi-bed-s655-plus). |
 | ENSO Sleep Control (Enso 2) | Choose the layout shown in the app. The Bluetooth name suggests a layout when it has a recognized prefix. For a generic name, Cool Touch or 209A05, choose the app’s manual layout code. Enable **Property-based Bluetooth receiver** only for receivers that use the third-service fallback. See the [Enso 2 profile](beds/richmat.md#enso-sleep-control). |
 | Richmat app | See the [setup steps](beds/richmat.md#richmat-420). |
 | Rize Beds | See the [setup steps](beds/kaidi.md#rize-beds). |

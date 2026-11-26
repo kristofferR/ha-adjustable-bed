@@ -327,3 +327,42 @@ def parse_short_alarm(data: bytes) -> ShortAlarmReport | None:
         return None
     week, mode, hour, minute = data[4:8]
     return ShortAlarmReport(data[1] - 0x0B, week, mode, hour, minute, data[9])
+
+
+@dataclass(frozen=True, slots=True)
+class MassageReport:
+    """A single-zone-pair A5 0B 0E status, in decoded app units."""
+
+    seconds: int
+    mode: int
+    head: int
+    foot: int
+
+
+class SingleRecordParser:
+    """One massage or alarm record with current-chunk FE16 buffering.
+
+    A saved FE16 prefix cannot match any known header. Track only whether
+    the selected list for dispatch carries that prefix.
+    """
+
+    def __init__(self) -> None:
+        self.pending = False
+
+    def feed(self, data: bytes) -> MassageReport | ShortAlarmReport | None:
+        if len(data) < 3:
+            return None
+        prefixed = self.pending
+        self.pending = len(data) == 20 and data[1:3] == b"\xfe\x16"
+        if prefixed or self.pending:
+            return None
+        if data[:3] == b"\xed\x80\x03" and len(data) >= 10:
+            week, mode, hour, minute = data[4:8]
+            return ShortAlarmReport(1, week, mode, hour, minute, data[9])
+        if data[:3] == b"\xa5\x0c\x0e":
+            return parse_short_alarm(data)
+        if data[:3] == b"\xa5\x0b\x0e" and len(data) >= 9:
+            return MassageReport(
+                int.from_bytes(data[4:6], "big"), data[6], (data[7] + 1) // 2, (data[8] + 1) // 2
+            )
+        return None

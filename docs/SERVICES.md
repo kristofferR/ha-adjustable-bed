@@ -434,7 +434,8 @@ other beds. SUTA Smart Home, SonicSleep, MLILY Remote, Good Vibe Sleep, Galaxy,
 MLILY, Power Bob Base, Majestic Home and Okimiki products with an alarm, GM
 Control products with an alarm, OKIN SleepEase, HJBed, Richmat app beds and
 their separate sleep sensor, Bed Tech (including its separate intervention
-receiver), Dream Sense Bed, Luuna +, [ErgoBed Control](beds/motomotion.md#ergobed-control) on alarm layouts and
+receiver), Dream Sense Bed, Luuna +, [ErgoBed Control](beds/motomotion.md#ergobed-control) on alarm layouts,
+[Langjue](beds/langjue.md#clock-and-alarm) and
 [Leva Bed Remote on the Ascent route](beds/okin-nframe.md#leva-bed-remote) set
 their clock here too. On a Motion Bed it sets the clock of the motor or heating
 module; on a hub, select the module first.
@@ -459,6 +460,7 @@ and `light: false` ask nothing of the bed and are not refused as options it lack
 | `wake_action` | What the bed does at the alarm, for example `flat`, `zero_g`, `memory_1`, `massage` or `none`. Leave empty for the bed's usual choice |
 | `slot` | Alarm number on beds that store more than one |
 | `massage`, `massage_zone`, `massage_intensity`, `massage_duration`, `head_massage_level`, `foot_massage_level` | Wake-up massage, where the bed has one |
+| `sleep_timer` | Sleep-timer choice in minutes, on OkimattMotion. Leave it empty for off |
 | `light`, `sound` | Turn on the light or play a sound at the alarm, where available |
 | `mattress_side` | Set the alarm of a vibrating mattress topper on that side instead of the bed's |
 | `confirm_custom_position` | Required for SIMMONS saved custom positions and saved-memory wake actions on Shuda, Jerome's power base and Dream Sense Bed |
@@ -512,10 +514,12 @@ data:
 | N32 Motion Bed | `none`, `memory_1` … `memory_3`, `flat` | `slot` 1–3, `weekdays`; turning off keeps the slot's time |
 | Nerum (P2, P3) | `none`, `memory_1`, `memory_2`, `light` | `slot` 1–3, `weekdays` or once. The other two alarms are read from the bed first |
 | OKIN Smart Sleep | `memory_1`, `memory_2`, `zero_g`, `flat`, `massage`, plus `lounge`, `tv`, `anti_snore`, `light` on newer models | `weekdays` on newer models |
+| [OkimattMotion](beds/keeson.md#okimattmotion) | `none`, `wake_mode_1` | One clock setting with optional `sleep_timer` of 10, 20 or 30 minutes |
 | OkinComfortBed II (bed) | `none`, `memory_1`, `memory_2`, `massage` | `weekdays` |
 | OkinComfortBed II (Jalon) | By app version | `weekdays` |
 | OrmatekTechnoSmart | New: `massage`, `memory_1`, `flat`. Lite: `zero_g`, `tv` | Daily, one alarm |
 | Richmat app beds | From the model's alarm page | Once (the bed counts down), `slot` 1–3 on three-alarm models, `massage` with zone. `mattress_side` sets the vibrating mattress alarm, once or every day, with intensity 1–3 |
+| [Langjue](beds/langjue.md#clock-and-alarm) | From the bed's preset list, required to turn on | One-time or repeating on `weekdays`. For sequential pairs, set each side in a separate action. |
 | Dorsal saved projects with alarm modes | [From the project’s wake actions](beds/richmat.md#dorsal--roomi) | `slot` 1–7, `weekdays` or once. Turning off preserves the stored time, mode and weekdays. |
 | Richmat app calendar models | From the model's alarm list | `slot` 1–7, `weekdays`; `mattress_side` for the vibrating mattress |
 | RMControl | From the product's alarm list; required to turn an alarm on | Repeating products: `slot` 1–7 with at least one weekday. Others: once, as a countdown |

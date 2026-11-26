@@ -45,6 +45,7 @@ from .const import (
     BED_TYPE_ADJUSTABLE_BED,
     BED_TYPE_ADJUSTABLE_LUMBAR,
     BED_TYPE_ADJUSTAMATTRESS,
+    BED_TYPE_ATLAS_LIFT,
     BED_TYPE_BEDSENSE,
     BED_TYPE_BETTERLIVING2,
     BED_TYPE_BF,
@@ -75,6 +76,7 @@ from .const import (
     BED_TYPE_KAIDI,
     BED_TYPE_KEESON,
     BED_TYPE_KOMFYD,
+    BED_TYPE_LANGJUE,
     BED_TYPE_LEGGETT_LP_LEGACY,
     BED_TYPE_LEVA,
     BED_TYPE_LIKIMIO,
@@ -93,6 +95,7 @@ from .const import (
     BED_TYPE_MOTOMOTION,
     BED_TYPE_N32_MOTION_BED,
     BED_TYPE_OCTO,
+    BED_TYPE_OKIMATTMOTION,
     BED_TYPE_OKIMIKI,
     BED_TYPE_OKIN_CST,
     BED_TYPE_OKIN_DOT,
@@ -113,8 +116,10 @@ from .const import (
     BED_TYPE_SILVERMOTION,
     BED_TYPE_SIMMONS,
     BED_TYPE_SIMMONS_BLUE,
+    BED_TYPE_SLEEP_ASSIST_PRO,
     BED_TYPE_SLEEP_NUMBER,
     BED_TYPE_SLEEP_NUMBER_MCR,
+    BED_TYPE_SLEEPTIME,
     BED_TYPE_SLEEPTRACKER,
     BED_TYPE_SLEEPYS_BOX15,
     BED_TYPE_SLEEPYS_BOX24,
@@ -264,8 +269,11 @@ from .const import (
 from .import_executor import async_import_modules
 from .profiles import enso2 as enso2_profiles
 from .profiles import jiecang as jiecang_profiles
+from .profiles import langjue as langjue_app
 from .profiles import logicdata as logicdata_profiles
 from .profiles import malouf as malouf_profiles
+from .profiles import okimattmotion as okimattmotion_app
+from .profiles import sleep_assist_pro as sleep_assist_pro_app
 from .profiles import sleep_assistant as sleep_assistant_app
 from .profiles.baseremote import SIDE_LAYOUTS as BASEREMOTE_SIDE_LAYOUTS
 from .profiles.bedgear import ergobed_eligible
@@ -281,7 +289,7 @@ from .profiles.majestichome import PROFILE_CHOICES as MAJESTICHOME_PROFILES
 from .profiles.mlily_choices import PROFILE_CHOICES as MLILY_PROFILES
 from .profiles.mlily_remote import VARIANTS as MLILY_REMOTE_PROFILES
 from .profiles.okimiki import PROFILE_CHOICES as OKIMIKI_PROFILES
-from .profiles.richmat import BEDTECH_APP_PROFILES, BEDTECH_VARIANTS
+from .profiles.richmat import ATLAS_LIFT, BEDTECH_APP_PROFILES, BEDTECH_VARIANTS
 from .profiles.saatva import CHOICES as SAATVA_CHOICES
 from .profiles.saatva import LAYOUTS as SAATVA_LAYOUTS
 from .validators import MLINE_PROTOCOL_LABELS, SMART_SLEEP_CONTROLS
@@ -1925,6 +1933,30 @@ def _discovered_name_seed(
     return {CONF_BLE_DEVICE_NAME: discovered.name, **data}
 
 
+def _sleeptime_seed(
+    _hass: HomeAssistant, data: Mapping[str, Any], discovered: BluetoothServiceInfoBleak | None
+) -> dict[str, Any]:
+    from .profiles.sleeptime import select
+
+    if discovered is not None and (
+        selector := select(discovered.device.name or discovered.name or "")
+    ) is not None and data.get(CONF_PROTOCOL_VARIANT) in (None, VARIANT_AUTO):
+        return {**data, CONF_PROTOCOL_VARIANT: selector}
+    return dict(data)
+
+
+def _sleeptime_default(data: Mapping[str, Any]) -> str | object:
+    from .profiles.sleeptime import select
+
+    return select(str(data.get(CONF_BLE_DEVICE_NAME) or "")) or REQUIRED
+
+
+def _sleeptime_selectors(_data: Mapping[str, Any]) -> Mapping[str, str]:
+    from .profiles.sleeptime import SELECTORS
+
+    return SELECTORS
+
+
 def _starcode_selectors(_data: Mapping[str, Any]) -> Mapping[Any, str]:
     from .beds.starcode.abm5_4_profiles import SELECTORS
 
@@ -2316,6 +2348,22 @@ def _smart_sleep_models(data: Mapping[str, Any]) -> Mapping[str, str]:
     from .profiles.smart_sleep import MODELS
     return {str(model): f"{label} ({model})" for model, label in MODELS.items()
             if data.get(CONF_PROTOCOL_VARIANT) != "p2" or model == 80}
+
+
+def _sleep_assist_pro_validate(data: Mapping[str, Any]) -> dict[str, str]:
+    try:
+        sleep_assist_pro_app.selected(data)
+    except ValueError as err:
+        return {str(err): "sleep_assist_pro_invalid_selection"}
+    return {}
+
+
+def _sleep_assist_pro_derive(data: Mapping[str, Any]) -> Mapping[str, Any]:
+    profile = sleep_assist_pro_app.selected(data)
+    return {
+        CONF_MOTOR_COUNT: max(2, len(profile.controls & {"head", "feet", "tilt", "side_b", "lumbar"})),
+        CONF_HAS_MASSAGE: not sleep_assist_pro_app.MASSAGE.keys().isdisjoint(profile.controls),
+    }
 
 
 def _sleep_assistant_validate(data: Mapping[str, Any]) -> dict[str, str]:
@@ -2724,6 +2772,25 @@ SETUP_PROFILES: Final[dict[str, SetupProfile]] = {
         questions=(Question(CONF_PRODUCT_TYPE, _cheerssleep_models, "45", searchable=True),),
         seed=_cheerssleep_seed, validate=_cheerssleep_errors, derive=_cheerssleep_settings, imports=("beds.cheerssleep.catalog",),
     ),
+    BED_TYPE_SLEEP_ASSIST_PRO: SetupProfile(
+        owns={
+            CONF_MOTOR_COUNT: SET_BY_PROFILE,
+            CONF_HAS_MASSAGE: SET_BY_PROFILE,
+            CONF_DISABLE_ANGLE_SENSING: True,
+            CONF_PROTOCOL_VARIANT: "auto",
+            CONF_MOTOR_PULSE_DELAY_MS: sleep_assist_pro_app.MOTION_INTERVAL_MS,
+        },
+        questions=(
+            Question(CONF_BLE_DEVICE_NAME, text=True),
+            Question(CONF_PRODUCT_TYPE, default="", text=True),
+            Question(sleep_assist_pro_app.CONF_CONTROLS, sleep_assist_pro_app.CONTROL_CHOICES,
+                     [], multiple=True),
+            Question(CONF_HAS_LIGHT, default=False),
+        ),
+        seed=_discovered_name_seed,
+        validate=_sleep_assist_pro_validate,
+        derive=_sleep_assist_pro_derive,
+    ),
     "sleep_assistant": SetupProfile(
         owns={CONF_MOTOR_COUNT: SET_BY_PROFILE, CONF_HAS_MASSAGE: SET_BY_PROFILE,
               CONF_DISABLE_ANGLE_SENSING: True, CONF_PROTOCOL_VARIANT: "auto"},
@@ -2781,6 +2848,26 @@ SETUP_PROFILES: Final[dict[str, SetupProfile]] = {
               CONF_DISABLE_ANGLE_SENSING: True},
         questions=(Question(CONF_PROTOCOL_VARIANT, {"p1": "P1: E6 / ED", "p2": "P2: 05 / A5"}),),
         title=lambda _data: "アシステック / Yamada",
+    ),
+    BED_TYPE_LANGJUE: SetupProfile(
+        owns={
+            CONF_MOTOR_COUNT: SET_BY_PROFILE,
+            CONF_DISABLE_ANGLE_SENSING: True,
+            CONF_MOTOR_PULSE_DELAY_MS: langjue_app.MOTOR_REFRESH_MS,
+        },
+        questions=(
+            Question(
+                CONF_PRODUCT_TYPE,
+                {
+                    langjue_app.PRESETS_ONLY: "Presets and STOP",
+                    langjue_app.HEAD_FOOT: "Two motors, confirmed Head then Foot in the app",
+                },
+                langjue_app.PRESETS_ONLY,
+            ),
+            Question(CONF_HAS_LIGHT, default=False),
+            Question(CONF_HAS_MASSAGE, default=False),
+        ),
+        title=lambda _data: "Comfort Smart Bed (Langjue)",
     ),
     BED_TYPE_JALON_BED: SetupProfile(
         owns={CONF_MOTOR_COUNT: SET_BY_PROFILE, CONF_HAS_MASSAGE: True,
@@ -3612,6 +3699,15 @@ SETUP_PROFILES: Final[dict[str, SetupProfile]] = {
         derive=lambda _data: _NO_PULSE_CHOICE,
         seed=_motion_bed_seed,
     ),
+    BED_TYPE_ATLAS_LIFT: SetupProfile(
+        owns={
+            CONF_MOTOR_COUNT: 2,
+            CONF_HAS_MASSAGE: True,
+            CONF_DISABLE_ANGLE_SENSING: True,
+            CONF_MOTOR_PULSE_DELAY_MS: ATLAS_LIFT.motor_repeat_ms,
+            CONF_PROTOCOL_VARIANT: "auto",
+        },
+    ),
     BED_TYPE_SUPERIOR_SLEEP: SetupProfile(
         owns={CONF_MOTOR_COUNT: 2, CONF_HAS_MASSAGE: True,
               CONF_DISABLE_ANGLE_SENSING: True, CONF_MOTOR_PULSE_DELAY_MS: 100},
@@ -3632,6 +3728,18 @@ SETUP_PROFILES: Final[dict[str, SetupProfile]] = {
             "remedy_iii": "Remedy III", "contempo_iv": "Contempo IV",
         }, "remedy_iii"),),
         title=lambda _data: "Rize Home",
+    ),
+    BED_TYPE_OKIMATTMOTION: SetupProfile(
+        owns={
+            CONF_MOTOR_COUNT: 2,
+            CONF_HAS_MASSAGE: True,
+            CONF_DISABLE_ANGLE_SENSING: True,
+            CONF_PROTOCOL_VARIANT: VARIANT_AUTO,
+            CONF_MOTOR_PULSE_DELAY_MS: okimattmotion_app.REFRESH_MS,
+        },
+        questions=(Question(
+            CONF_PRODUCT_TYPE, okimattmotion_app.LAYOUTS, okimattmotion_app.DEFAULT_LAYOUT,
+        ),),
     ),
     BED_TYPE_OKIN_MOTIONBED: SetupProfile(
         owns={
@@ -3720,6 +3828,18 @@ SETUP_PROFILES: Final[dict[str, SetupProfile]] = {
             CONF_PROTOCOL_VARIANT: "auto",
             CONF_MOTOR_PULSE_DELAY_MS: 300,
         },
+    ),
+    BED_TYPE_SLEEPTIME: SetupProfile(
+        owns={
+            CONF_MOTOR_COUNT: 2,  # Generic fallback; these layouts declare their own axes.
+            CONF_HAS_MASSAGE: True,
+            CONF_DISABLE_ANGLE_SENSING: True,
+            CONF_MOTOR_PULSE_DELAY_MS: 300,
+        },
+        questions=(Question(CONF_PROTOCOL_VARIANT, _sleeptime_selectors, _sleeptime_default),),
+        seed=_sleeptime_seed,
+        title=lambda _data: "Sleeptime Australia",
+        imports=("profiles.sleeptime",),
     ),
     "ultramatic_smart_bed": SetupProfile(
         owns={CONF_MOTOR_COUNT: 2, CONF_HAS_MASSAGE: True,

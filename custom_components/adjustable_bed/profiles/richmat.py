@@ -104,6 +104,34 @@ class RichmatProfile:
         return codec.TRANSPORTS[self.transports[index]]
 
 
+ATLAS_LIFT_SCAN_KEYWORD: Final = "QRRM"
+ATLAS_LIFT_INITIALIZATION: Final = (
+    ("deviceFunctionItemExitLimit", 0x00),
+    ("deviceFunctionItemCheckClock", 0x01),
+    ("deviceFunctionItemCheckLight", 0x01),
+)
+ATLAS_LIFT: Final = RichmatProfile(
+    key="atlas_lift",
+    execution=STREAM_HOLD,
+    transports=("n1", "w1", "w2", "w3", "w4", "w5"),
+    codes={
+        "head_up": 0x24,
+        "head_down": 0x25,
+        "feet_up": 0x26,
+        "feet_down": 0x27,
+        "flat": 0x31,
+        "zero_g": 0x45,
+        "save_zero_g": 0x66,
+        "anti_snore": 0x46,
+        "save_anti_snore": 0x69,
+        "massage_head_up": 0x4C,
+    },
+    memory=((0x2E, 0x2B),),
+    stop=0x6E,
+    motor_repeat_ms=100,
+)
+
+
 # The pre-v5 controller tried every WiLinke service before Nordic UART.
 _LEGACY_TRANSPORTS: Final[tuple[TransportKey, ...]] = ("w0", "w1", "w2", "w3", "w4", "w5", "n1")
 

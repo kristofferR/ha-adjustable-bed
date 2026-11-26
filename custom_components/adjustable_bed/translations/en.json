@@ -170,6 +170,11 @@
           "bond_state": "What this Home Assistant host already knows about a bond for this bed."
         }
       },
+      "retry_roomi_receiver": {
+        "title": "Check the Roomi receiver",
+        "description": "Setup needs a Bluetooth connection to the QRRM receiver. Close the Roomi app, wake the bed with its remote, and check again.",
+        "submit": "Check again"
+      },
       "verify_connection": {
         "title": "Check the connection",
         "description": "Checked the connection to **{name}**:\n\n{capabilities}\n\nSubmitting finishes setup. A failed connection does not block it: the integration keeps trying to connect afterwards.",
@@ -185,6 +190,8 @@
           "check_connected": "Check: connected",
           "check_connected_via": "Check: connected through",
           "check_no_commands": "Check: no commands",
+          "check_atlas_lift_transport_missing": "❌ Atlas Lift needs exactly one supported Bluetooth service with its writable command characteristic.",
+          "check_sleeptime_uart_missing": "❌ The Bluetooth device lacks the write and status channels Sleeptime needs.",
           "check_truemotion_transport_missing": "⚠️ The receiver does not expose the trueMotion write and notification channels.",
           "check_transport_missing": "Check: connection type missing",
           "check_transport_ok": "Check: connection type available",
@@ -384,6 +391,7 @@
           "agingplace_bed_side": "Sensor side",
           "agingplace_selected_side": "Chosen sensor side",
           "read_positions": "Read bed position",
+          "sleep_assist_pro_controls": "Controls shown in Sleep Assist Pro",
           "sleep_assistant_presets": "Presets",
           "sleep_assistant_controls": "Additional controls",
           "sleep_assistant_lighting": "Lighting model"
@@ -442,6 +450,7 @@
           "agingplace_bed_side": "The side whose occupancy, heart rate and breathing rate are shown when the bed has two sensors. It does not change which side the controls move.",
           "agingplace_selected_side": "The sensor side shown when Selectable side is chosen. This setting belongs to this physical bed.",
           "read_positions": "Show the bed's position and allow moving to a set position. Turn off if reading the position stops the physical remote from working.",
+          "sleep_assist_pro_controls": "Select the controls the app shows for this bed.",
           "sleep_assistant_presets": "Select the presets shown for this bed, in their displayed order.",
           "sleep_assistant_controls": "Select only the controls shown for this bed.",
           "sleep_assistant_lighting": "Choose the lighting model selected in Sleep Assist."
@@ -813,6 +822,7 @@
     },
     "error": {
       "scan_failed": "Bluetooth scanning is unavailable. Check your adapters and try again, or choose a device from the list.",
+      "langjue_receiver_mismatch": "Choose the Bluetooth device used to control the bed in Comfort Smart Bed. The selected device is missing the required channels.",
       "invalid_mac_address": "Invalid Bluetooth address format. Use XX:XX:XX:XX:XX:XX.",
       "invalid_number": "Enter a valid number.",
       "invalid_pin": "PIN must be empty or exactly 4 digits.",
@@ -895,10 +905,12 @@
       "dorsal_receiver_unavailable": "This receiver did not expose a supported Dorsal Bluetooth writer.",
       "dorsal_roomi_receiver": "Choose a receiver whose Bluetooth name contains QRRM for Roomi controls.",
       "relax_motion_model": "Enter the model number the Relax Motion app shows for your bed.",
+      "sleep_assist_pro_invalid_selection": "Check the Bluetooth ID and select the controls shown in Sleep Assist Pro for this bed.",
       "sleep_assistant_invalid_settings": "Check the selected model settings and device identity.",
       "choice_not_listed": "Pick a row from the list. Type part of a name to search, then choose the matching row.",
       "invalid_idle_seconds": "Enter a number of seconds from 1 to 300.",
       "truemotion_name": "Enter the complete Bluetooth name, starting with SUTA-.",
+      "sleeptime_gatt": "The Bluetooth device lacks the write and status channels Sleeptime needs. Check the device and selected app.",
       "truemotion_gatt": "The receiver does not expose the trueMotion write and notification channels.",
       "truemotion_pair": "Choose a trueMotion receiver that supports split control as the left side."
     }
@@ -1023,6 +1035,7 @@
           "agingplace_bed_mode": "Sensor display mode",
           "agingplace_bed_side": "Sensor side",
           "agingplace_selected_side": "Chosen sensor side",
+          "sleep_assist_pro_controls": "Controls shown in Sleep Assist Pro",
           "sleep_assistant_presets": "Presets",
           "sleep_assistant_controls": "Additional controls",
           "sleep_assistant_lighting": "Lighting model",
@@ -1118,6 +1131,7 @@
           "serta_mp_memory_4_head": "Only if you changed memory 4 in the app: its head angle, in degrees.",
           "serta_mp_memory_4_foot": "Only if you changed memory 4 in the app: its foot angle, in degrees.",
           "symphony_side": "For a standalone ES500 split-head product, choose the side this entry operates. Paired child controls use their own Left/Right target.",
+          "sleep_assist_pro_controls": "Select the controls the app shows for this bed.",
           "sleep_assistant_presets": "Select the presets shown for this bed, in their displayed order.",
           "sleep_assistant_controls": "Select only the controls shown for this bed.",
           "sleep_assistant_lighting": "Choose the lighting model selected in Sleep Assist.",
@@ -1260,6 +1274,7 @@
           "agingplace_bed_side": "Sensor side",
           "agingplace_selected_side": "Chosen sensor side",
           "read_positions": "Read bed position",
+          "sleep_assist_pro_controls": "Controls shown in Sleep Assist Pro",
           "sleep_assistant_presets": "Presets",
           "sleep_assistant_controls": "Additional controls",
           "sleep_assistant_lighting": "Lighting model",
@@ -1345,6 +1360,7 @@
           "serta_mp_memory_4_head": "Only if you changed memory 4 in the app: its head angle, in degrees.",
           "serta_mp_memory_4_foot": "Only if you changed memory 4 in the app: its foot angle, in degrees.",
           "symphony_side": "For a standalone ES500 split-head product, choose the side this entry operates. Paired child controls use their own Left/Right target.",
+          "sleep_assist_pro_controls": "Select the controls the app shows for this bed.",
           "sleep_assistant_presets": "Select the presets shown for this bed, in their displayed order.",
           "sleep_assistant_controls": "Select only the controls shown for this bed.",
           "sleep_assistant_lighting": "Choose the lighting model selected in Sleep Assist.",
@@ -1443,6 +1459,7 @@
           "agingplace_bed_side": "Sensor side",
           "agingplace_selected_side": "Chosen sensor side",
           "read_positions": "Read bed position",
+          "sleep_assist_pro_controls": "Controls shown in Sleep Assist Pro",
           "sleep_assistant_presets": "Presets",
           "sleep_assistant_controls": "Additional controls",
           "sleep_assistant_lighting": "Lighting model",
@@ -1528,6 +1545,7 @@
           "serta_mp_memory_4_head": "Only if you changed memory 4 in the app: its head angle, in degrees.",
           "serta_mp_memory_4_foot": "Only if you changed memory 4 in the app: its foot angle, in degrees.",
           "symphony_side": "For a standalone ES500 split-head product, choose the side this entry operates. Paired child controls use their own Left/Right target.",
+          "sleep_assist_pro_controls": "Select the controls the app shows for this bed.",
           "sleep_assistant_presets": "Select the presets shown for this bed, in their displayed order.",
           "sleep_assistant_controls": "Select only the controls shown for this bed.",
           "sleep_assistant_lighting": "Choose the lighting model selected in Sleep Assist.",
@@ -1713,6 +1731,7 @@
       "cheerssleep_model_required": "Choose the bed model the CheersSleep app shows.",
       "suta_name": "Enter the complete case-sensitive SUTA Bluetooth name. Names shorter than nine characters and drawer controllers have no supported bed controls.",
       "invalid_variant_for_bed_type": "This bed model or remote does not fit the chosen app. Choose another one, or Automatic.",
+      "sleep_assist_pro_invalid_selection": "Check the Bluetooth ID and select the controls shown in Sleep Assist Pro for this bed.",
       "sleep_assistant_invalid_settings": "Check the selected model settings and device identity.",
       "choice_not_listed": "Pick a row from the list. Type part of a name to search, then choose the matching row.",
       "invalid_idle_seconds": "Enter a number of seconds from 1 to 300.",
@@ -1747,6 +1766,18 @@
   },
   "entity": {
     "button": {
+      "sleep_assist_pro_side_b_up": {
+        "name": "Side B head up"
+      },
+      "sleep_assist_pro_side_b_down": {
+        "name": "Side B head down"
+      },
+      "sleep_assist_pro_massage_timer": {
+        "name": "Cycle massage timer"
+      },
+      "sleep_assist_pro_light_toggle": {
+        "name": "Toggle under-bed light"
+      },
       "customatic_demo_auto_sit": {
         "name": "Automatic sitting up"
       },
@@ -1800,6 +1831,10 @@
       "leva_home_zero_g": { "name": "Home quick zero gravity" },
       "leva_home_anti_snore": { "name": "Home quick anti-snore" },
       "leva_home_tv": { "name": "Home quick TV" },
+      "okimattmotion_save_zero_g": { "name": "Save zero gravity" },
+      "okimattmotion_save_flat": { "name": "Save flat" },
+      "okimattmotion_save_anti_snore": { "name": "Save quiet sleep" },
+      "okimattmotion_book": { "name": "Book" },
       "comfort_enhancements_quiet_sleep": {
         "name": "Quiet sleep"
       },
@@ -2064,6 +2099,39 @@
       "simmons_blue_combined_down": {
         "name": "Lower combined sections"
       },
+      "sleeptime_massage_timer": {
+        "name": "Cycle massage timer"
+      },
+      "sleeptime_massage_head_up": {
+        "name": "Increase head massage"
+      },
+      "sleeptime_massage_head_down": {
+        "name": "Decrease head massage"
+      },
+      "sleeptime_massage_foot_up": {
+        "name": "Increase foot massage"
+      },
+      "sleeptime_massage_foot_down": {
+        "name": "Decrease foot massage"
+      },
+      "sleeptime_massage_mode_next": {
+        "name": "Next massage mode"
+      },
+      "sleeptime_massage_mode_previous": {
+        "name": "Previous massage mode"
+      },
+      "sleeptime_query_massage": {
+        "name": "Refresh massage"
+      },
+      "sleeptime_query_alarm": {
+        "name": "Refresh alarm"
+      },
+      "sleeptime_reset_memory": {
+        "name": "Reset saved positions"
+      },
+      "sleeptime_release": {
+        "name": "Release held control"
+      },
       "remote_action": {
         "name": "Remote action"
       },
@@ -2126,6 +2194,12 @@
       },
       "head_tilt_down": {
         "name": "Head tilt down"
+      },
+      "foot_tilt_up": {
+        "name": "Foot tilt up"
+      },
+      "foot_tilt_down": {
+        "name": "Foot tilt down"
       },
       "headrest_up": {
         "name": "Headrest up"
@@ -3929,6 +4003,9 @@
       }
     },
     "cover": {
+      "sleep_assist_pro_side_b": {
+        "name": "Side B head"
+      },
       "customatic_demo_seat": {
         "name": "Seat"
       },
@@ -4370,6 +4447,9 @@
       "smartbed_right": {
         "name": "Right headboard"
       },
+      "foot_tilt": {
+        "name": "Foot tilt"
+      },
       "head_tilt": {
         "name": "Head tilt"
       },
@@ -4381,6 +4461,12 @@
       }
     },
     "sensor": {
+      "sleep_assist_pro_massage_countdown": {
+        "name": "Massage countdown"
+      },
+      "sleep_assist_pro_massage_timer": {
+        "name": "Massage timer"
+      },
       "customatic_demo_light_timer": {
         "name": "Under-bed light timer"
       },
@@ -5414,6 +5500,12 @@
       "agingplace_version": {
         "name": "Firmware version"
       },
+      "sleeptime_massage_status": {
+        "name": "Massage time remaining"
+      },
+      "sleeptime_alarm_status": {
+        "name": "Alarm editor time"
+      },
       "ultramatic_a_timer": {
         "name": "Left massage timer"
       },
@@ -5665,6 +5757,10 @@
       }
     },
     "switch": {
+      "okimattmotion_massage_power": { "name": "Massage" },
+      "langjue_alarm_enabled": {
+        "name": "Bed alarm"
+      },
       "dorsal_massage": {
         "name": "Massage"
       },
@@ -6583,6 +6679,10 @@
       }
     },
     "select": {
+      "sleep_assist_pro_rgb_intensity": {
+        "name": "RGB brightness",
+        "state": {"20": "20%", "60": "60%", "100": "100%"}
+      },
       "sleepiq_auto_light_level": {
         "name": "Automatic under-bed light level",
         "state": {
@@ -7694,6 +7794,10 @@
         "massage_duration": {
           "name": "Massage duration",
           "description": "How long the wake-up massage runs."
+        },
+        "sleep_timer": {
+          "name": "Sleep timer",
+          "description": "The bed's sleep-timer choice in minutes. Leave empty to switch it off."
         },
         "light": {
           "name": "Light",
@@ -11137,6 +11241,9 @@
     "paired_entry_has_no_sides": {
       "message": "This combined bed has no sides saved. Delete it and add the beds again."
     },
+    "paired_member_requires_standalone": {
+      "message": "{app} beds must be set up as standalone entries. Open Configure and separate the beds."
+    },
     "single_address_pair_unsupported": {
       "message": "This bed has no side selector, so it cannot show separate sides. Open its options and choose Separate to use it as one bed."
     },
@@ -11196,6 +11303,9 @@
     },
     "alarm_massage_duration_not_supported": {
       "message": "{device_name} runs the wake-up massage for {durations} minutes. Choose one of those."
+    },
+    "alarm_sleep_timer_not_supported": {
+      "message": "{device_name} accepts a sleep timer of {durations} minutes. Choose one of those."
     },
     "alarm_massage_zone_not_supported": {
       "message": "{device_name} cannot massage \"{zone}\" at wake-up."
@@ -11725,6 +11835,15 @@
     "sleep_assistant_light_unknown": {
       "message": "Wait for the bed to report the light state. Choose a color before changing brightness after reconnect."
     },
+    "sleep_assist_pro_control_unavailable": {
+      "message": "This control is unavailable for the selected Sleep Assist Pro bed."
+    },
+    "sleep_assist_pro_color_unknown": {
+      "message": "Choose a light color before changing RGB brightness on this connection."
+    },
+    "sleep_assist_pro_light_off": {
+      "message": "The bed must report that its light is on before you can change the color or brightness."
+    },
     "sleep_assistant_control_unavailable": {
       "message": "This control is unavailable for the selected bed settings."
     },
@@ -11739,6 +11858,12 @@
     },
     "maxprime_alarm": {
       "message": "Choose an alarm action and massage combination offered by this layout."
+    },
+    "langjue_alarm_busy": {
+      "message": "An alarm action is already running for a selected receiver. Try again when it finishes."
+    },
+    "langjue_alarm_sequential": {
+      "message": "Set the alarm on one receiver at a time when this bed connects to its sides sequentially."
     },
     "maxprime_settings_sequential": {
       "message": "Send this setting in a separate call to each side of a bed that connects sequentially."
@@ -11827,6 +11952,9 @@
     "super_colchones_session": {
       "message": "The Super Colchones connection or product changed. Reconnect and try again."
     },
+    "atlas_lift_gatt": {
+      "message": "Atlas Lift needs exactly one supported Bluetooth service with its writable command characteristic."
+    },
     "super_colchones_route": {
       "message": "Super Colchones needs a supported writable Bluetooth service and a notification characteristic."
     },
@@ -11865,6 +11993,9 @@
     },
     "truemotion_pair": {
       "message": "Choose a trueMotion receiver that supports split control as the left side."
+    },
+    "sleeptime_gatt": {
+      "message": "The Bluetooth device lacks the write and status channels Sleeptime needs."
     },
     "truemotion_gatt": {
       "message": "The receiver does not expose the trueMotion write and notification channels."
@@ -12303,7 +12434,8 @@
     "verify_action": {
       "options": {
         "finish": "Finish setup anyway",
-        "retry": "Check again"
+        "retry": "Check again",
+        "change_app": "Choose another app"
       }
     },
     "migration_check_action": {
@@ -12548,6 +12680,7 @@
     },
     "richmat_family_choice": {
       "options": {
+        "atlas_lift": "Atlas Lift (Cama Lift)",
         "enso2": "ENSO Sleep Control (Enso 2)",
         "rmcontrol": "RMControl app",
         "revive": "Revive Control app",
@@ -12684,6 +12817,7 @@
         "both": "Head and foot together",
         "neck": "Neck",
         "tilt": "Tilt",
+        "foot_tilt": "Foot tilt",
         "lumbar": "Lumbar",
         "bed_height": "Bed height",
         "elevate": "Elevate",
@@ -13527,6 +13661,8 @@
         "lounge": "Lounge",
         "tv": "TV",
         "reading": "Reading",
+        "stretch": "Stretch",
+        "backrest": "Backrest",
         "yoga": "Yoga",
         "memory_1": "Memory 1",
         "memory_2": "Memory 2",
