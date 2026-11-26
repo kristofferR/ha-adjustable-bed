@@ -66,6 +66,7 @@ from .command_scheduler import (
     command_resources,
     current_command_context,
 )
+from .command_target import capture_command_targets, command_target_scope
 from .const import (
     ADAPTER_AUTO,
     BED_MOTOR_PULSE_DEFAULTS,
@@ -1998,17 +1999,19 @@ class AdjustableBedCoordinator(
             elif current_link_only:
                 raise BedNotConnectedError
 
+        targets = capture_command_targets((self,))
+
         async def stop_operation(context: CommandContext) -> None:
-            if original_stop is not None:
-                await self._async_send_stop_command(original_stop)
-                return
-            if current_link_only or cleanup is not None:
-                await self._async_send_stop_command(
-                    lambda: stop_current_session(context),
-                    expected_generation=generation if current_link_only else None,
-                )
-                return
-            await self._async_send_stop_command()
+            with command_target_scope(targets):
+                if original_stop is not None:
+                    await self._async_send_stop_command(original_stop)
+                elif current_link_only or cleanup is not None:
+                    await self._async_send_stop_command(
+                        lambda: stop_current_session(context),
+                        expected_generation=generation if current_link_only else None,
+                    )
+                else:
+                    await self._async_send_stop_command()
 
         return self._command_scheduler.admit_stop(stop_operation, resources)
 
@@ -2524,17 +2527,20 @@ class AdjustableBedCoordinator(
         the lease deadline through its cancel event (#483).
         """
 
+        targets = capture_command_targets((self,))
+
         async def operation() -> None:
-            await self._async_execute_controller_operation(
-                command_fn,
-                cancel_running=False,
-                skip_disconnect=skip_disconnect,
-                raise_on_lock_cancel=False,
-                preemptible=True,
-                enable_position_polling=True,
-                read_positions_after_operation=read_positions_after_operation,
-                operation_name="command",
-            )
+            with command_target_scope(targets):
+                await self._async_execute_controller_operation(
+                    command_fn,
+                    cancel_running=False,
+                    skip_disconnect=skip_disconnect,
+                    raise_on_lock_cancel=False,
+                    preemptible=True,
+                    enable_position_polling=True,
+                    read_positions_after_operation=read_positions_after_operation,
+                    operation_name="command",
+                )
 
         await self._async_schedule_command_operation(
             operation,
@@ -2599,6 +2605,8 @@ class AdjustableBedCoordinator(
         self._cancel_counter += 1
         self._cancel_command.set()
 
+        targets = capture_command_targets((self,))
+
         client = self._client
         controller = self._controller
         generation = self.connection_generation
@@ -2616,19 +2624,20 @@ class AdjustableBedCoordinator(
             await stop_fn(controller)
 
         async def stop_operation(_context: CommandContext) -> None:
-            if require_current_link:
-                await self._async_send_stop_command(stop_current_link)
-                return
-            await self._async_execute_controller_operation(
-                stop_fn,
-                cancel_running=False,
-                skip_disconnect=False,
-                raise_on_lock_cancel=False,
-                preemptible=True,
-                enable_position_polling=True,
-                read_positions_after_operation=True,
-                operation_name="motor stop",
-            )
+            with command_target_scope(targets):
+                if require_current_link:
+                    await self._async_send_stop_command(stop_current_link)
+                    return
+                await self._async_execute_controller_operation(
+                    stop_fn,
+                    cancel_running=False,
+                    skip_disconnect=False,
+                    raise_on_lock_cancel=False,
+                    preemptible=True,
+                    enable_position_polling=True,
+                    read_positions_after_operation=True,
+                    operation_name="motor stop",
+                )
 
         stop_task = self._command_scheduler.admit_stop(
             stop_operation, self._protocol_command_resources(command_resources(resource))

@@ -42,6 +42,7 @@ from .command_scheduler import (
     HoldWindows,
     command_resources,
 )
+from .command_target import capture_command_targets, command_target_scope
 from .const import (
     BED_TYPE_ERGOMOTION,
     BED_TYPE_GMMOTOR,
@@ -492,11 +493,17 @@ class PairedBedCoordinator:
                     child.request_command_cancel(resources=cancel_scope)
         entry_cancel = {s: admission.generation(s, command_scope) for s in target_sides}
 
+        command_targets = capture_command_targets(child for _, child in targets)
+
+        async def bound(child: BedChild) -> None:
+            with command_target_scope(command_targets):
+                await op(child)
+
         try:
             await topology.run(
                 action,
                 targets,
-                op,
+                bound,
                 cancel_running=cancel_running,
                 resources=command_scope,
                 entry_cancel=entry_cancel,
@@ -515,7 +522,7 @@ class PairedBedCoordinator:
             await self._sequential.run(
                 action,
                 targets,
-                op,
+                bound,
                 cancel_running=cancel_running,
                 resources=command_scope,
                 entry_cancel=entry_cancel,
@@ -543,12 +550,16 @@ class PairedBedCoordinator:
             if not remacro_side_lacks_global_stop(child)
         ]
         self._cancel_before_stop(targets)
-        targets, admitted, errors = self._admit_sequential_stops(targets, ALL_COMMAND_RESOURCES)
+        command_targets = capture_command_targets(child for _, child in targets)
+        with command_target_scope(command_targets):
+            targets, admitted, errors = self._admit_sequential_stops(targets, ALL_COMMAND_RESOURCES)
+
         async def stop() -> dict[str, BaseException]:
-            await self._collect_admitted_stops(admitted, errors)
-            if targets:
-                async with self._connection_mode_transition_lock:
-                    errors.update(await self._topology.explicit_stop_children(targets))
+            with command_target_scope(command_targets):
+                await self._collect_admitted_stops(admitted, errors)
+                if targets:
+                    async with self._connection_mode_transition_lock:
+                        errors.update(await self._topology.explicit_stop_children(targets))
             return errors
 
         errors = await settled(stop(), eager_start=True)
@@ -656,15 +667,18 @@ class PairedBedCoordinator:
         # Like an ordinary motor STOP, preempt any motion holding the writer.
         scope = command_resources("motor:*" if resource.startswith("motor:") else resource)
         self._cancel_before_stop(targets, scope)
-        targets, admitted, errors = self._admit_sequential_stops(targets, scope)
+        command_targets = capture_command_targets(child for _, child in targets)
+        with command_target_scope(command_targets):
+            targets, admitted, errors = self._admit_sequential_stops(targets, scope)
 
         async def stop() -> dict[str, BaseException]:
-            if active_stop is not None:
-                errors.update(await active_stop[1])
-            await self._collect_admitted_stops(admitted, errors)
-            if targets:
-                async with self._connection_mode_transition_lock:
-                    errors.update(await self._topology.stop_motor(targets, stop_fn, resource))
+            with command_target_scope(command_targets):
+                if active_stop is not None:
+                    errors.update(await active_stop[1])
+                await self._collect_admitted_stops(admitted, errors)
+                if targets:
+                    async with self._connection_mode_transition_lock:
+                        errors.update(await self._topology.stop_motor(targets, stop_fn, resource))
             return errors
 
         errors = await settled(stop(), eager_start=True)
