@@ -7,7 +7,7 @@ alarm. Extended frames carry their own length: ``6E len 20 domain command
 operation data sum8``; notifications, Good Vibe Sleep's settings and the Casper
 Base and Hush Base apps' records put the length after ``20`` instead. ``6E 40``
 notifications carry a two-byte length and end in a CRC-16/XMODEM. Nordic UART
-transports take the bare command byte.
+routes usually take the bare command byte; TOP CARE reverses that selection.
 
 Legacy Richmat routes also frame the command behind a ``55`` or ``AA`` header,
 and the RGB-strip remotes use ``04 len cmd 01 00 payload 00 00 sum8``. Which
