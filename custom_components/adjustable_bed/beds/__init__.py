@@ -71,6 +71,7 @@ if TYPE_CHECKING:
     from .keeson.controller import KeesonController as KeesonController
     from .keeson.enso import EnsoController as EnsoController
     from .keeson.jalon import JalonController as JalonController
+    from .keeson.kingkoil import KingKoilController as KingKoilController
     from .keeson.ormatek import OrmatekController as OrmatekController
     from .keeson.sleep_assist_pro import SleepAssistProController as SleepAssistProController
     from .keeson.somos import SomosController as SomosController
@@ -133,6 +134,7 @@ if TYPE_CHECKING:
     from .richmat_legacy.controller import RichmatLegacyController as RichmatLegacyController
     from .richmat_mh.controller import RichmatMhController as RichmatMhController
     from .rize_home.controller import RizeHomeController as RizeHomeController
+    from .ronco_motion.controller import RoncoMotionController as RoncoMotionController
     from .rondure import RondureController as RondureController
     from .row_control import RowControlController as RowControlController
     from .ruf_richmat.controller import RufRichmatController as RufRichmatController
@@ -233,6 +235,7 @@ _EXPORT_MODULES = {
     "EshineController": "eshine.controller",
     "EshineOkinController": "eshine_okin.controller",
     "JalonController": "keeson.jalon",
+    "KingKoilController": ("keeson.kingkoil", "KingKoilController"),
     "SomosController": ("keeson.somos", "SomosController"),
     "EnsoController": ("keeson.enso", "EnsoController"),
     "SealyController": ("sealy.controller", "SealyController"),
@@ -302,6 +305,7 @@ _EXPORT_MODULES = {
     "BedgearController": "bedgear.controller",
     "ErgoBedController": "bedgear.ergobed",
     "MotoSleepController": "motosleep",
+    "RoncoMotionController": "ronco_motion.controller",
     "OctoController": "octo.controller",
     "OkimikiController": "okimiki.controller",
     "Okin7ByteController": "okin_7byte",

@@ -59,6 +59,24 @@
  "binary_sensor:ergomotion4_light": {
   "card_section": "hidden"
  },
+ "binary_sensor:flexirest_alarm_enabled": {
+  "card_section": "hidden"
+ },
+ "binary_sensor:flexirest_anti_snore_saved": {
+  "card_section": "hidden"
+ },
+ "binary_sensor:flexirest_memory_1_saved": {
+  "card_section": "hidden"
+ },
+ "binary_sensor:flexirest_memory_2_saved": {
+  "card_section": "hidden"
+ },
+ "binary_sensor:flexirest_tv_saved": {
+  "card_section": "hidden"
+ },
+ "binary_sensor:flexirest_zero_g_saved": {
+  "card_section": "hidden"
+ },
  "binary_sensor:floyd_battery_mode": {
   "card_section": "hidden"
  },
@@ -67,6 +85,9 @@
  },
  "binary_sensor:furnimove_sync": {
   "card_section": "hidden"
+ },
+ "binary_sensor:kingkoil_light_report": {
+  "card_section": "lighting"
  },
  "binary_sensor:leggett_alarm_indicator": {
   "card_section": "hidden"
@@ -984,6 +1005,27 @@
   "card_role": "up",
   "card_motor": "feet"
  },
+ "button:flexirest_leg_relaxation": {
+  "card_section": "presets"
+ },
+ "button:flexirest_program_anti_snore": {
+  "card_section": "presets",
+  "card_role": "save"
+ },
+ "button:flexirest_program_tv": {
+  "card_section": "presets",
+  "card_role": "save"
+ },
+ "button:flexirest_program_zero_g": {
+  "card_section": "presets",
+  "card_role": "save"
+ },
+ "button:flexirest_query_fault": {
+  "card_section": "utility"
+ },
+ "button:flexirest_reapply_alarm": {
+  "card_section": "utility"
+ },
  "button:foot_tilt_down": {
   "card_section": "motors",
   "card_role": "down",
@@ -1159,6 +1201,64 @@
   "card_role": "up",
   "card_motor": "keeson_legs"
  },
+ "button:kingkoil_feet_down": {
+  "card_section": "motors",
+  "card_role": "down",
+  "card_motor": "kingkoil_feet"
+ },
+ "button:kingkoil_feet_up": {
+  "card_section": "motors",
+  "card_role": "up",
+  "card_motor": "kingkoil_feet"
+ },
+ "button:kingkoil_head_a_down": {
+  "card_section": "motors",
+  "card_role": "down",
+  "card_motor": "kingkoil_head_a"
+ },
+ "button:kingkoil_head_a_up": {
+  "card_section": "motors",
+  "card_role": "up",
+  "card_motor": "kingkoil_head_a"
+ },
+ "button:kingkoil_head_b_down": {
+  "card_section": "motors",
+  "card_role": "down",
+  "card_motor": "kingkoil_head_b"
+ },
+ "button:kingkoil_head_b_up": {
+  "card_section": "motors",
+  "card_role": "up",
+  "card_motor": "kingkoil_head_b"
+ },
+ "button:kingkoil_head_down": {
+  "card_section": "motors",
+  "card_role": "down",
+  "card_motor": "kingkoil_head"
+ },
+ "button:kingkoil_head_up": {
+  "card_section": "motors",
+  "card_role": "up",
+  "card_motor": "kingkoil_head"
+ },
+ "button:kingkoil_light": {
+  "card_section": "lighting"
+ },
+ "button:kingkoil_massage_foot": {
+  "card_section": "massage"
+ },
+ "button:kingkoil_massage_head": {
+  "card_section": "massage"
+ },
+ "button:kingkoil_massage_mode": {
+  "card_section": "massage"
+ },
+ "button:kingkoil_massage_timer": {
+  "card_section": "massage"
+ },
+ "button:kingkoil_status_query": {
+  "card_section": "utility"
+ },
  "button:legs_down": {
   "card_section": "motors",
   "card_role": "down",
@@ -1197,6 +1297,10 @@
  "button:light_cycle": {
   "card_section": "lighting",
   "card_role": "cycle"
+ },
+ "button:lights_toggle": {
+  "card_section": "lighting",
+  "card_role": "toggle"
  },
  "button:linx_massage_foot": {
   "card_section": "massage"
@@ -2023,6 +2127,14 @@
  },
  "button:rize_remedy_ii_wave_3": {
   "card_section": "massage"
+ },
+ "button:ronco_motion_save_anti_snore": {
+  "card_section": "presets",
+  "card_role": "save"
+ },
+ "button:ronco_motion_save_zero_g": {
+  "card_section": "presets",
+  "card_role": "save"
  },
  "button:ruf_richmat_lift_down": {
   "card_section": "motors",
@@ -3251,6 +3363,22 @@
  "cover:keeson_legs": {
   "card_section": "motors",
   "card_motor": "keeson_legs"
+ },
+ "cover:kingkoil_feet": {
+  "card_section": "motors",
+  "card_motor": "kingkoil_feet"
+ },
+ "cover:kingkoil_head": {
+  "card_section": "motors",
+  "card_motor": "kingkoil_head"
+ },
+ "cover:kingkoil_head_a": {
+  "card_section": "motors",
+  "card_motor": "kingkoil_head_a"
+ },
+ "cover:kingkoil_head_b": {
+  "card_section": "motors",
+  "card_motor": "kingkoil_head_b"
  },
  "cover:legs": {
   "card_section": "motors",
@@ -4742,6 +4870,18 @@
   "card_section": "motors",
   "card_motor": "feet"
  },
+ "sensor:flexirest_fault": {
+  "card_section": "hidden"
+ },
+ "sensor:flexirest_foot_level": {
+  "card_section": "hidden"
+ },
+ "sensor:flexirest_head_level": {
+  "card_section": "hidden"
+ },
+ "sensor:flexirest_wave": {
+  "card_section": "hidden"
+ },
  "sensor:fsm_relax_hardware_version": {
   "card_section": "hidden"
  },
@@ -4820,6 +4960,9 @@
  },
  "sensor:jerome_adjustable_base_clock": {
   "card_section": "hidden"
+ },
+ "sensor:kingkoil_timer_ui": {
+  "card_section": "massage"
  },
  "sensor:leggett_led_mask": {
   "card_section": "hidden"
@@ -5117,6 +5260,9 @@
  },
  "sensor:rize_remedy_ii_save_acknowledged": {
   "card_section": "utility"
+ },
+ "sensor:ronco_motion_alarm": {
+  "card_section": "hidden"
  },
  "sensor:ruf_richmat_calendar_alarms": {
   "card_section": "utility"

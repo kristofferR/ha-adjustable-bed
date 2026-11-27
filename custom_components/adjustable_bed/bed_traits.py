@@ -106,6 +106,7 @@ from .const import (
     BED_TYPE_RIZE,
     BED_TYPE_RIZE_HOME,
     BED_TYPE_RIZE_REMEDY_II,
+    BED_TYPE_RONCO_MOTION,
     BED_TYPE_SERENITY,
     BED_TYPE_SERTA_MP_REMOTE,
     BED_TYPE_SHUDA,
@@ -177,6 +178,8 @@ class BedTraits:
     no_angle_feedback: bool = False
     # The controller holds the BLE link for the entry's lifetime.
     persistent_connection: bool = False
+    # STOP only ends admitted refresh; no packet or replacement link is needed.
+    cancellation_only_stop: bool = False
     # Controls keep state in the connection-scoped controller, so a new entry
     # keeps the link between commands by default.
     connection_scoped_state: bool = False
@@ -289,6 +292,7 @@ _BED_TRAITS: Final[dict[str, BedTraits]] = {
     BED_TYPE_YAMADA: replace(_NO_ANGLES_SCOPED, owns_device_info_reads=True),
     BED_TYPE_BETTERLIVING2: replace(_NO_ANGLES_SCOPED, owns_device_info_reads=True),
     BED_TYPE_CASPER_BASE: _NO_ANGLES,
+    BED_TYPE_RONCO_MOTION: _NO_ANGLES_SCOPED,
     "casper_remote": _NO_ANGLES,
     BED_TYPE_CASPER_SLEEP_MM: _NO_ANGLES,
     BED_TYPE_CASPER_SLEEP_SXB: _NO_ANGLES,
@@ -296,6 +300,10 @@ _BED_TRAITS: Final[dict[str, BedTraits]] = {
     BED_TYPE_RICHMAT_CLASSIC_APPS: _NO_ANGLES,
     # Preset repeat-tap and massage cycles depend on connection-local state.
     BED_TYPE_COMFORT_ENHANCEMENTS: _NO_ANGLES_SCOPED,
+    "kingkoil": replace(
+        _NO_ANGLES_SCOPED, owns_device_info_reads=True, connection_timeout=5,
+        cancellation_only_stop=True,
+    ),
     BED_TYPE_SOMOS: replace(_NO_ANGLES_SCOPED, owns_device_info_reads=True, connection_timeout=5),
     BED_TYPE_COMFORTBASE: _NO_ANGLES_SCOPED,
     BED_TYPE_COMFORT_MOTION: _SCOPED,
@@ -483,7 +491,7 @@ def bed_traits(bed_type: str | None, protocol_variant: str | None = None) -> Bed
         return replace(traits, single_address_native_both=False)
     if resolved == "richmat_classic_apps" and protocol_variant == "dreamlab2":
         return replace(traits, single_address_native_both=False, owns_device_info_reads=True)
-    if resolved == "solace" and protocol_variant == "sophie":
+    if resolved == "solace" and protocol_variant in ("sophie", "flexirest"):
         return replace(traits, no_angle_feedback=True, connection_scoped_state=True, owns_device_info_reads=True)
     if resolved in ("richmat_nisco", "richmat_mlily_supreme", "bedtech_classic") and protocol_variant == "sleep":
         return replace(traits, persistent_connection=True)

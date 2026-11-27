@@ -477,6 +477,11 @@ def plan_commands(controller: Any) -> list[Command]:
             )
     if _value(_value(controller, "_coordinator", None), "bed_type", None) == "betterliving2":
         plan = _betterliving2_historical_actions(plan, _value(controller, "wire", ""))
+    if controller._coordinator.bed_type == "ronco_motion":
+        from custom_components.adjustable_bed.alarm import AlarmRequest
+        for enabled, wake_action in ((True, "zero_g"), (True, "anti_snore"), (True, "memory_1"), (False, "none")):
+            alarm = AlarmRequest(enabled=enabled, hour=7, minute=15, wake_action=wake_action, reference_time=datetime.datetime.fromisoformat(FROZEN_NOW))
+            plan.append(Command(f"set_alarm:{enabled}:{wake_action}", _method("configure_alarm", alarm), True))
     if controller._coordinator.bed_type == "okimattmotion":
         from custom_components.adjustable_bed.alarm import AlarmRequest
 
@@ -1490,6 +1495,8 @@ def default_scenario(bed_type: str) -> Scenario:
     """The bed type in its default route, with the entry data it needs to build."""
     from custom_components.adjustable_bed import const
 
+    if bed_type == "ronco_motion":
+        return Scenario(id=bed_type, bed_type=bed_type, protocol_variant="economy", layout_id="ronco_motion:0")
     if bed_type == const.BED_TYPE_AMBIENT:
         return _ambient_scenario()
     if bed_type == const.BED_TYPE_LANGJUE:
@@ -1575,6 +1582,7 @@ def default_scenario(bed_type: str) -> Scenario:
         const.BED_TYPE_OKIMIKI: "HCRN",
         const.BED_TYPE_HJBED: "hj_bedbjrn",
         const.BED_TYPE_COMFORTBASE: "accord",
+        "kingkoil": "KSBT03CK",
         const.BED_TYPE_SOMOS: "a",
         const.BED_TYPE_YAMADA: "p1",
         const.BED_TYPE_BETTERLIVING2: "p1",
@@ -1813,6 +1821,7 @@ def route_scenarios() -> list[Scenario]:
     from custom_components.adjustable_bed import const
 
     scenarios: list[Scenario] = [Scenario(id=f"enso:{n}", bed_type="enso", entry_data={"product_type": str(n), "motor_count": n}, layout_id="enso") for n in (3, 4)]
+    scenarios.extend(Scenario(id=f"ronco_motion:{layout}:{transport}", bed_type="ronco_motion", protocol_variant=layout, layout_id=f"ronco_motion:{transport}") for layout in ("economy", "premium") for transport in range(5))
     scenarios.extend(Scenario(id=f"sealy_posturematic:{n}", bed_type="sealy_posturematic",
                               entry_data={"product_type": str(n), "bed_type": "sealy_posturematic"}, layout_id="sealy_posturematic")
                      for n in (1, 2))
@@ -1885,6 +1894,9 @@ def route_scenarios() -> list[Scenario]:
         if (sample := SAMPLED_ROUTES.get(bed_type)) is not None:
             variants = [*variants[:sample], variants[-1]]
         for variant in variants:
+            if bed_type == "solace" and variant == "flexirest":
+                # Its explicit app/name cases below supply actual config data.
+                continue
             scenarios.append(
                 dataclasses.replace(
                     base,
@@ -1907,6 +1919,17 @@ def route_scenarios() -> list[Scenario]:
             entry_data={const.CONF_BLE_DEVICE_NAME: name}, layout_id="sophie",
             replies={"write:ffffffff01000a0b0f": "ffffffff01000a0b01",
                      "*": "ffffffff010004130f0730008a01020100"},
+        ))
+    for suffix, name, status in (("standard", "Sealy-K1", "0f"), ("qms2", "QMS2", "1f"), ("fault", "S4-6", "0f")):
+        scenarios.append(Scenario(
+            id=f"solace:flexirest:{suffix}", bed_type="solace", protocol_variant="flexirest",
+            entry_data={const.CONF_BLE_DEVICE_NAME: name, const.CONF_BED_TYPE: "solace",
+                        const.CONF_PROTOCOL_VARIANT: "flexirest"}, layout_id="sophie",
+            replies={"write:ffffffff01000a0b0f": "ffffffff01000a0b01",
+                     "write:ffffffff050005ff23": "ffffffff05000105",
+                     "write:ffffffff030028": "ffffffff0306000a",
+                     "write:ffffffff030030": "ffffffff0306000b",
+                     "*": f"ffffffff01000413{status}0730008a01020100"},
         ))
     # Every Comfy bed type/alias, without sampling the product inventory.
     for bed_type in (const.BED_TYPE_KOMFYD, const.BED_TYPE_COMFYDS):
@@ -2020,6 +2043,7 @@ def route_scenarios() -> list[Scenario]:
     # The Q-Plus layout with every key the sbi route sent; schema 5.9 moves those beds to it.
     scenarios.append(Scenario(id="qplus_app:H", bed_type="qplus_app", layout_id="qplus_app",
         entry_data={const.CONF_PRODUCT_TYPE: "H"}))
+    scenarios.append(dataclasses.replace(default_scenario("kingkoil"), id="kingkoil:KSBT03CL", protocol_variant="KSBT03CL", layout_id="kingkoil"))
     for variant in "bcde":
         scenarios.append(dataclasses.replace(default_scenario("somos"), id=f"somos:{variant}", protocol_variant=variant, layout_id="somos:uart" if variant in "bde" else "somos"))
     scenarios.append(Scenario(id="yamada:p2", bed_type="yamada", protocol_variant="p2", layout_id="yamada"))
@@ -2738,6 +2762,15 @@ async def _build(scenario: Scenario, client: Any) -> Any:
         {**_base_entry_data(), **scenario.entry_data},
     )
     coordinator.client = client
+    if scenario.bed_type == "solace" and scenario.protocol_variant == "flexirest":
+        # New profile gates are driven by its scripted notifications, not by
+        # invented initial state. Keep all pre-existing scenarios unchanged.
+        from custom_components.adjustable_bed.controller_state import StateUpdate
+
+        def receive(*updates: StateUpdate) -> None:
+            coordinator.controller_state.update((update.key, update.value) for update in updates)
+
+        coordinator.handle_controller_state_updates = receive
     if scenario.pair_primary is not None:
         from custom_components.adjustable_bed.const import CONF_BED_TYPE, CONF_BLE_DEVICE_NAME
         from custom_components.adjustable_bed.coordinator import ChildEntryView
@@ -2822,7 +2855,7 @@ async def _connect(controller: Any, recorder: Recorder, clock: FakeClock) -> dic
                 session.store_device_info = lambda *_: None
             await controller.async_on_connect(session)
             return
-        if controller._coordinator.bed_type in {"symphony", "linx", "agingplace", "sleep_assistant", "sinca_comfort", "leva", "sleep_assist_pro", "atlas_lift", "ambient"}:
+        if controller._coordinator.bed_type in {"symphony", "linx", "agingplace", "sleep_assistant", "sinca_comfort", "leva", "sleep_assist_pro", "atlas_lift", "ambient", "ronco_motion"}:
             session = SimpleNamespace(
                 client=controller.client, is_current=lambda: True,
                 async_start_notify=lambda: controller.start_notify(lambda *_: None),
@@ -2844,7 +2877,7 @@ async def _connect(controller: Any, recorder: Recorder, clock: FakeClock) -> dic
             await controller.async_after_connect(SimpleNamespace(is_current=lambda: True))
         if controller._coordinator.bed_type in {"komfyd", "comfyds", "suta"}:
             await controller.async_after_connect(None)
-        if controller._coordinator.bed_type == "solace" and controller.profile.key == "sophie":
+        if controller._coordinator.bed_type == "solace" and controller.profile.key in ("sophie", "flexirest"):
             session = SimpleNamespace(is_current=lambda: True)
             await controller.async_after_connect(session)
             await controller._startup_task

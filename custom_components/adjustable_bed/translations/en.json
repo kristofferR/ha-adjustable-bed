@@ -1768,6 +1768,15 @@
   },
   "entity": {
     "button": {
+      "lights_toggle": {
+        "name": "Toggle under-bed light"
+      },
+      "ronco_motion_save_zero_g": {
+        "name": "Save zero gravity"
+      },
+      "ronco_motion_save_anti_snore": {
+        "name": "Save anti-snore"
+      },
       "sleep_assist_pro_side_b_up": {
         "name": "Side B head up"
       },
@@ -3817,6 +3826,24 @@
       "sophie_program_anti_snore": {
         "name": "Save or clear anti-snore position"
       },
+      "flexirest_program_tv": {
+        "name": "Save or clear TV position"
+      },
+      "flexirest_program_zero_g": {
+        "name": "Save or clear zero gravity position"
+      },
+      "flexirest_program_anti_snore": {
+        "name": "Save or clear anti-snore position"
+      },
+      "flexirest_leg_relaxation": {
+        "name": "Leg relaxation"
+      },
+      "flexirest_reapply_alarm": {
+        "name": "Reapply reported alarm"
+      },
+      "flexirest_query_fault": {
+        "name": "Refresh bed fault"
+      },
       "ormatek_light": {
         "name": "Toggle light"
       },
@@ -4039,6 +4066,24 @@
       "truemotion_timer_foot": {
         "name": "Foot massage timer"
       },
+      "kingkoil_light": {
+        "name": "Light button"
+      },
+      "kingkoil_massage_mode": {
+        "name": "Massage mode button"
+      },
+      "kingkoil_massage_head": {
+        "name": "Head massage button"
+      },
+      "kingkoil_massage_foot": {
+        "name": "Foot massage button"
+      },
+      "kingkoil_massage_timer": {
+        "name": "Massage timer button"
+      },
+      "kingkoil_status_query": {
+        "name": "Refresh reported status"
+      },
       "ambient_flat": {
         "name": "Flat position"
       },
@@ -4080,6 +4125,30 @@
       },
       "ambient_refresh": {
         "name": "Refresh bed state"
+      },
+      "kingkoil_head_up": {
+        "name": "Head up"
+      },
+      "kingkoil_head_down": {
+        "name": "Head down"
+      },
+      "kingkoil_head_a_up": {
+        "name": "Head A up"
+      },
+      "kingkoil_head_a_down": {
+        "name": "Head A down"
+      },
+      "kingkoil_head_b_up": {
+        "name": "Head B up"
+      },
+      "kingkoil_head_b_down": {
+        "name": "Head B down"
+      },
+      "kingkoil_feet_up": {
+        "name": "Foot up"
+      },
+      "kingkoil_feet_down": {
+        "name": "Foot down"
       }
     },
     "cover": {
@@ -4538,9 +4607,28 @@
       },
       "truemotion_tl": {
         "name": "T/L movement"
+      },
+      "kingkoil_head": {
+        "name": "Head"
+      },
+      "kingkoil_head_a": {
+        "name": "Head A"
+      },
+      "kingkoil_head_b": {
+        "name": "Head B"
+      },
+      "kingkoil_feet": {
+        "name": "Foot"
       }
     },
     "sensor": {
+      "ronco_motion_alarm": {
+        "name": "Last alarm result",
+        "state": {
+          "added": "Added",
+          "deleted": "Deleted"
+        }
+      },
       "sleep_assist_pro_massage_countdown": {
         "name": "Massage countdown"
       },
@@ -5687,6 +5775,18 @@
       "sophie_wave": {
         "name": "Massage wave"
       },
+      "flexirest_head_level": {
+        "name": "Head massage level"
+      },
+      "flexirest_foot_level": {
+        "name": "Foot massage level"
+      },
+      "flexirest_wave": {
+        "name": "Massage frequency"
+      },
+      "flexirest_fault": {
+        "name": "Bed fault"
+      },
       "personal_comfort_adjustment": {
         "name": "Firmness adjustment",
         "state": {
@@ -5837,6 +5937,9 @@
       },
       "truemotion_firmware": {
         "name": "Firmware version"
+      },
+      "kingkoil_timer_ui": {
+        "name": "Massage timer indicator"
       },
       "ambient_power_supply": {
         "name": "Power supply"
@@ -6313,6 +6416,24 @@
       "sophie_anti_snore_saved": {
         "name": "Anti-snore position saved"
       },
+      "flexirest_alarm_enabled": {
+        "name": "Bed alarm"
+      },
+      "flexirest_memory_1_saved": {
+        "name": "Memory 1 saved"
+      },
+      "flexirest_memory_2_saved": {
+        "name": "Memory 2 saved"
+      },
+      "flexirest_tv_saved": {
+        "name": "TV position saved"
+      },
+      "flexirest_zero_g_saved": {
+        "name": "Zero gravity position saved"
+      },
+      "flexirest_anti_snore_saved": {
+        "name": "Anti-snore position saved"
+      },
       "ormatek_massage": {
         "name": "Massage"
       },
@@ -6348,6 +6469,9 @@
       },
       "sinca_anti_snore": {
         "name": "Automatic anti-snore"
+      },
+      "kingkoil_light_report": {
+        "name": "Reported light"
       }
     },
     "number": {
@@ -11403,6 +11527,9 @@
     }
   },
   "exceptions": {
+    "ronco_motion_request": {
+      "message": "This action is unavailable for the selected Ronco Motion layout."
+    },
     "customatic_demo_gatt_missing": {
       "message": "The selected device does not expose the command and status characteristics required by the Independence app."
     },
@@ -12411,6 +12538,18 @@
     "truemotion_massage_off": {
       "message": "Start a massage timer before changing the massage level."
     },
+    "kingkoil_layout": {
+      "message": "Choose the King Koil remote layout in Reconfigure."
+    },
+    "kingkoil_control": {
+      "message": "Choose a control offered by this King Koil layout and a hold duration from 0.1 to 60 seconds."
+    },
+    "kingkoil_session": {
+      "message": "The King Koil Bluetooth session changed. Try the control again."
+    },
+    "kingkoil_gatt": {
+      "message": "The King Koil receiver must offer its Nordic UART write and notification characteristics in the Nordic UART service. Select the correct receiver and try again."
+    },
     "ambient_position_side": {
       "message": "Choose left or right for a split M3 Ambient bed and omit the side for a one-piece bed."
     },
@@ -12983,7 +13122,8 @@
         "bedsense": "BedSense app",
         "another": "Another app or remote: search every app",
         "keep": "Keep the detected or saved controls",
-        "sophie": "Sophie app"
+        "sophie": "Sophie app",
+        "flexirest": "Sealy FlexiRest app"
       }
     },
     "leggett_family_choice": {

@@ -2655,3 +2655,11 @@ for the selected layout’s slider; `massage_popup` takes `popup` (`15`, `30`,
 `45` or `toggle`) for layouts offering that popup. Its timer buttons display
 10, 20 and 30 minutes. Lighting and aroma require a reply on the current link.
 Use [`set_alarm`](#set_alarm) for the layout’s alarm.
+
+## Ronco Motion once alarm
+
+Use `adjustable_bed.set_alarm` with a Ronco Motion `device_id` and optional paired
+`side`. Set `enabled: true`, `time: "07:15:00"`, and `wake_action: zero_g`,
+`anti_snore` or `memory_1`. Equal local times schedule tomorrow. Set
+`enabled: false` to delete the once alarm. The last alarm result records a
+received acknowledgement. See [Ronco Motion](beds/richmat.md#ronco-motion).

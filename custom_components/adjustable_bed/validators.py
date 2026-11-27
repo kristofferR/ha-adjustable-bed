@@ -108,6 +108,7 @@ from .profiles.comfortbase import PRODUCTS as COMFORTBASE_PRODUCTS
 from .profiles.enso2 import LAYOUT_CHOICES as ENSO2_LAYOUT_CHOICES
 from .profiles.hush import HUSH_BASE_VARIANTS
 from .profiles.instant_comfort import ROUTES as INSTANT_COMFORT_ROUTES
+from .profiles.kingkoil import CHOICES as KINGKOIL_CHOICES
 from .profiles.leva import RECEIVERS as LEVA_RECEIVERS
 from .profiles.likimio import CHOICES as LIKIMIO_CHOICES
 from .profiles.linx import TRANSPORT_CHOICES as LINX_TRANSPORTS
@@ -121,6 +122,7 @@ from .profiles.relax_motion import ROUTES as RELAX_MOTION_ROUTES
 from .profiles.richmat import BEDTECH_VARIANTS
 from .profiles.richmat_legacy import APP_NAMES as LEGACY_APPS
 from .profiles.richmat_legacy import choices as legacy_choices
+from .profiles.ronco_motion import CHOICES as RONCO_MOTION_VARIANTS
 from .profiles.saatva import CHOICES as SAATVA_CHOICES
 from .profiles.sinca_comfort import PROTOCOL_LABELS as SINCA_RECEIVERS
 from .profiles.sleeptime import SELECTORS as SLEEPTIME_SELECTORS
@@ -200,6 +202,7 @@ VARIANTS_BY_BED_TYPE: dict[str, dict[str, str]] = {
     BED_TYPE_BEDSENSE: BEDSENSE_VARIANTS,
     BED_TYPE_CASPER_BASE: CASPER_BASE_VARIANTS,
     "hush_base": HUSH_BASE_VARIANTS,
+    "ronco_motion": RONCO_MOTION_VARIANTS,
     "luuna": LUUNA_VARIANTS,
     "super_colchones": SUPER_COLCHONES_VARIANTS,
     "personal_comfort": PERSONAL_COMFORT_ROUTES,
@@ -223,6 +226,7 @@ VARIANTS_BY_BED_TYPE: dict[str, dict[str, str]] = {
     BED_TYPE_ADJUSTABLE_BED: ADJUSTABLE_BED_VARIANTS,
     BED_TYPE_ADJUSTABLE_LUMBAR: ADJUSTABLE_LUMBAR_VARIANTS,
     BED_TYPE_COMFORT_ENHANCEMENTS: COMFORT_ENHANCEMENTS_VARIANTS,
+    "kingkoil": KINGKOIL_CHOICES,
     BED_TYPE_SOMOS: SOMOS_CHOICES,
     BED_TYPE_COMFORTBASE: {key: p.name for key, p in COMFORTBASE_PRODUCTS.items()},
     "dorsal": DORSAL_ROUTES,

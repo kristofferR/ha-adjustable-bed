@@ -149,6 +149,7 @@ from .const import (
     BED_TYPE_RIZE,
     BED_TYPE_RIZE_HOME,
     BED_TYPE_RIZE_REMEDY_II,
+    BED_TYPE_RONCO_MOTION,
     BED_TYPE_RONDURE,
     BED_TYPE_SCOTT_LIVING,
     BED_TYPE_SERENITY,
@@ -298,6 +299,7 @@ from .const import (
     SLEEPYS_NAME_PATTERNS,
     SOLACE_NAME_PATTERNS,
     SOLACE_SERVICE_UUID,
+    SOLACE_VARIANT_FLEXIREST,
     SOLACE_VARIANT_SOPHIE,
     SOLACE_VARIANT_WOOSA,
     STAR_ELEVATE_NAME_PATTERNS,
@@ -333,6 +335,7 @@ from .profiles.bedgear import ergobed_eligible
 from .profiles.bobpowerbase import PROFILE_CHOICES as BOB_PROFILES
 from .profiles.bobpowerbase import SCAN_KEYWORDS as BOB_SCAN_KEYWORDS
 from .profiles.customatic_demo import NAME_PREFIX as CUSTOMATIC_DEMO_NAME_PREFIX
+from .profiles.flexirest import accepts_name as accepts_flexirest_name
 from .profiles.majestichome import PROFILE_CHOICES as MAJESTICHOME_PROFILES
 from .profiles.mlily_choices import PROFILE_CHOICES as MLILY_PROFILES
 from .profiles.mlily_remote import VARIANTS as MLILY_REMOTE_PROFILES
@@ -712,6 +715,7 @@ BED_TYPE_DISPLAY_NAMES: dict[str, str] = {
     BED_TYPE_LEVA: "Leva Bed Remote (Leva Smart App)",
     BED_TYPE_LANGJUE: "Comfort Smart Bed app (Langjue)",
     BED_TYPE_LINX: "Linx app",
+    "kingkoil": "King Koil Bed app",
     BED_TYPE_SOMOS: "Somos / SomosBeds app",
     BED_TYPE_COMFORTBASE: "ComfortBaseForBluetooth app",
     BED_TYPE_COMFORT_ENHANCEMENTS: "Comfort Enhancements app",
@@ -800,6 +804,7 @@ BED_TYPE_DISPLAY_NAMES: dict[str, str] = {
     BED_TYPE_ERGOBED: "ErgoBed Control app",
     BED_TYPE_MOODBASE: "MoodBase app",
     BED_TYPE_MOTOSLEEP: "MotoSleep / Power Bob app",
+    BED_TYPE_RONCO_MOTION: "Ronco Motion app (ECONOMY / PREMIUM)",
     BED_TYPE_OCTO: "OCTO Smart Control",
     BED_TYPE_REVERIE: "Reverie app",
     BED_TYPE_REVERIE_NIGHTSTAND: "Reverie Nightstand app",
@@ -897,6 +902,7 @@ APP_VARIANT_CHOICES: dict[tuple[str, str], str] = {
     (BED_TYPE_KEESON, KEESON_VARIANT_RESTONIC_B): "Restonic BT app, remote B",
     (BED_TYPE_SOLACE, SOLACE_VARIANT_WOOSA): "Woosa Sleep app",
     (BED_TYPE_SOLACE, SOLACE_VARIANT_SOPHIE): "Sophie app",
+    (BED_TYPE_SOLACE, SOLACE_VARIANT_FLEXIREST): "Sealy FlexiRest app",
     # Each Okin CST app is its own row.
     **{
         (BED_TYPE_OKIN_CST, variant): label
@@ -994,7 +1000,7 @@ HIDDEN_APP_CHOICES: Final = frozenset(bed_type_choice(*row) for row in _HIDDEN_A
 # Bed types whose one row asks for the product, although each product is an app entry.
 PRODUCT_QUESTION_BED_TYPES: Final = frozenset(
     {
-        BED_TYPE_AMBIENT, BED_TYPE_ENSO2, BED_TYPE_LIKIMIO, "dreamsense", "saatva", "majestichome", BED_TYPE_LEVA, BED_TYPE_LINX, BED_TYPE_SOMOS, "bobpowerbase", BED_TYPE_COMFORT_ENHANCEMENT3, BED_TYPE_SYMPHONY_SLEEP, BED_TYPE_YAMADA, BED_TYPE_RICHMAT_APP, BED_TYPE_RICHMAT_APP_SLEEP, BED_TYPE_GALAXY, BED_TYPE_MLILY, BED_TYPE_MLILY_REMOTE, BED_TYPE_OKIMIKI, "luuna", BED_TYPE_GOODVIBE, BED_TYPE_HJBED, BED_TYPE_CASPER_BASE, BED_TYPE_COMFORT_ENHANCEMENTS, BED_TYPE_COMFORTBASE, "sleep_evolution", "wsilver_legacy", "personal_comfort", "instant_comfort"}
+        BED_TYPE_RONCO_MOTION, BED_TYPE_AMBIENT, "kingkoil", BED_TYPE_ENSO2, BED_TYPE_LIKIMIO, "dreamsense", "saatva", "majestichome", BED_TYPE_LEVA, BED_TYPE_LINX, BED_TYPE_SOMOS, "bobpowerbase", BED_TYPE_COMFORT_ENHANCEMENT3, BED_TYPE_SYMPHONY_SLEEP, BED_TYPE_YAMADA, BED_TYPE_RICHMAT_APP, BED_TYPE_RICHMAT_APP_SLEEP, BED_TYPE_GALAXY, BED_TYPE_MLILY, BED_TYPE_MLILY_REMOTE, BED_TYPE_OKIMIKI, "luuna", BED_TYPE_GOODVIBE, BED_TYPE_HJBED, BED_TYPE_CASPER_BASE, BED_TYPE_COMFORT_ENHANCEMENTS, BED_TYPE_COMFORTBASE, "sleep_evolution", "wsilver_legacy", "personal_comfort", "instant_comfort"}
 ).union({BED_TYPE_BETTERLIVING2, BED_TYPE_JEROME_ADJUSTABLE_BASE, BED_TYPE_SLEEPTIME, "sealy_posturematic"})
 # Routes named after their protocol, not an app or brand. They stay off the
 # bed-type list and are reached through detection, the brand list and Configure.
@@ -1455,7 +1461,7 @@ def detect_bed_type(service_info: BluetoothServiceInfoBleak) -> str | None:
         For detailed detection with confidence scores, use detect_new_bed().
     """
     result = detect_new_bed(service_info)
-    if result.bed_type in (BED_TYPE_AMBIENT, BED_TYPE_ATLAS_LIFT, BED_TYPE_LIKIMIO, "dorsal", BED_TYPE_SIMMONS_BLUE, "sleep_assistant", BED_TYPE_SLEEP_ASSIST_PRO, "super_colchones", "bobpowerbase", BED_TYPE_GALAXY, BED_TYPE_GOODVIBE, BED_TYPE_MLILY, BED_TYPE_MLILY_REMOTE, BED_TYPE_MOTOMOTION, BED_TYPE_N32_MOTION_BED, BED_TYPE_SYMPHONY, BED_TYPE_MLINE, BED_TYPE_OKIMIKI) and result.confidence < 0.7:
+    if result.bed_type in (BED_TYPE_RONCO_MOTION, BED_TYPE_AMBIENT, BED_TYPE_ATLAS_LIFT, BED_TYPE_LIKIMIO, "dorsal", BED_TYPE_SIMMONS_BLUE, "sleep_assistant", BED_TYPE_SLEEP_ASSIST_PRO, "super_colchones", "bobpowerbase", BED_TYPE_GALAXY, BED_TYPE_GOODVIBE, BED_TYPE_MLILY, BED_TYPE_MLILY_REMOTE, BED_TYPE_MOTOMOTION, BED_TYPE_N32_MOTION_BED, BED_TYPE_SYMPHONY, BED_TYPE_MLINE, BED_TYPE_OKIMIKI) and result.confidence < 0.7:
         return None  # An app name hint requires an explicit product choice.
     return result.bed_type
 
@@ -1516,6 +1522,14 @@ def _detect_with_first_pass(
 ) -> DetectionResult:
     """Offer Good Vibe Sleep without changing an existing receiver/app choice."""
     result = _detect_bed_type_with_app_candidates(service_info, first)
+    from .profiles.ronco_motion import accepts_name as ronco_name
+
+    if ronco_name(service_info.name or "") and not any(signal.startswith("excluded:") for signal in result.signals):
+        if result.bed_type is None:
+            result = DetectionResult(BED_TYPE_RONCO_MOTION, 0.3, result.signals)
+        elif result.bed_type != BED_TYPE_RONCO_MOTION:
+            result.ambiguous_types = list(dict.fromkeys([*(result.ambiguous_types or ()), BED_TYPE_RONCO_MOTION]))
+        result.signals.append("name:ronco_motion_app_candidate")
     # CONTROL_BOX is the app's scan filter. It cannot identify the receiver or layout.
     if first.name(BED_TYPE_AMBIENT) and not any(
         signal.startswith("excluded:") for signal in result.signals
@@ -1795,6 +1809,11 @@ def _detect_with_first_pass(
             result = DetectionResult("nerum", 0.3, ["name:nerum_app_candidate"])
         elif result.bed_type != "nerum":
             result.ambiguous_types = list(dict.fromkeys([*(result.ambiguous_types or ()), "nerum"]))
+    if first.name("kingkoil") and not any(signal.startswith("excluded:") for signal in result.signals):
+        if result.bed_type is None:
+            result = DetectionResult("kingkoil", 0.3, [*result.signals, "name:kingkoil_app_candidate"])
+        elif result.bed_type != "kingkoil":
+            result.ambiguous_types = list(dict.fromkeys([*(result.ambiguous_types or ()), "kingkoil"]))
     if first.name(BED_TYPE_SOMOS) and not any(signal.startswith("excluded:") for signal in result.signals):
         if result.bed_type is None:
             result = DetectionResult(BED_TYPE_SOMOS, 0.3, [*result.signals, "name:somos_app_candidate"])
@@ -2029,15 +2048,18 @@ def _detect_bed_type_with_app_candidates(
         result.signals.append("name:richmat_classic_app_candidate")
     # App name rules add candidates without replacing an existing route.
     # Each app reads the exact name, not a normalized shared prefix.
-    if accepts_sophie_name(service_info.name) and not any(
+    if (accepts_sophie_name(service_info.name) or accepts_flexirest_name(service_info.name)) and not any(
         signal.startswith("excluded:") for signal in result.signals
     ):
         if result.bed_type is None:
             result = DetectionResult(bed_type=BED_TYPE_SOLACE, confidence=0.3,
-                signals=[*result.signals, "name:sophie_app_candidate"])
+                signals=list(result.signals))
         elif result.bed_type != BED_TYPE_SOLACE:
             result.ambiguous_types = list(dict.fromkeys([*(result.ambiguous_types or ()), BED_TYPE_SOLACE]))
+        if accepts_sophie_name(service_info.name):
             result.signals.append("name:sophie_app_candidate")
+        if accepts_flexirest_name(service_info.name):
+            result.signals.append("name:flexirest_app_candidate")
     if bedgear_eligible(service_info.name) and not any(
         signal.startswith("excluded:") for signal in result.signals
     ):
