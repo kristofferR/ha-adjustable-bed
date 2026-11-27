@@ -5543,6 +5543,9 @@
       "sonicsleep": {
         "name": "Model"
       },
+      "mlily0": {
+        "name": "MLILY product state"
+      },
       "mlily_remote": {
         "name": "Model"
       },
@@ -13074,6 +13077,7 @@
         "sta2": "STA Homecare app",
         "zerogravity": "Zero Gravity app",
         "mlily_remote": "MLILY Remote app",
+        "mlily0": "MLILY 3.1.1 app",
         "sleep_evolution": "SleepEvolution app",
         "wsilver_legacy": "W.Silver Products app (older version)",
         "nisco": "Nisco app",

@@ -81,6 +81,12 @@ class MlilyRemoteController(CasperBaseController):
 
     profiles = PROFILES
     action_catalog = ACTIONS
+    action_prefix = "mlily_remote_"
+    button_labels = LABELS
+
+    @property
+    def cooling(self) -> bool:
+        return PROFILES[self.model].cooling
 
     def __init__(
         self, coordinator: AdjustableBedCoordinator, *, product: str, layout: str = "single"
@@ -105,7 +111,7 @@ class MlilyRemoteController(CasperBaseController):
     @property
     def massage_timer_actions(self) -> dict[int, str]:
         # PowerCool's timer actions are its fans' 2, 3 and 5 hour timers.
-        return {} if PROFILES[self.model].cooling else super().massage_timer_actions
+        return {} if self.cooling else super().massage_timer_actions
 
     @property
     def auto_stops_on_idle(self) -> bool:
@@ -174,7 +180,7 @@ class MlilyRemoteController(CasperBaseController):
         loop = asyncio.get_running_loop()
         async with self._ble_lock:
             await asyncio.sleep(max(0, self._next_write - loop.time()))
-            if self._current() is not link:
+            if not (cleanup and self._can_release_link(link)) and self._current() is not link:
                 raise ConnectionError("MLILY Remote link was replaced while queued")
             if not cleanup and cancel.is_set():
                 note_frame_skipped()
@@ -196,13 +202,16 @@ class MlilyRemoteController(CasperBaseController):
             if submitted is not None:
                 submitted()
             # A non-idempotent command is never replayed after a write failure.
-            await link.client.write_gatt_char(link.tx, packet, response=response)
+            await self._write_packet(link, packet, response=response)
             if cleanup:
                 # A cleanup STOP bypasses the cancel gate; it is not the command.
                 note_write_not_counted()
             else:
                 note_frame_written(cancel)
         return True
+
+    async def _write_packet(self, link: Link, packet: bytes, *, response: bool) -> None:
+        await link.client.write_gatt_char(link.tx, packet, response=response)
 
     async def _send(self, packet: bytes, *, cleanup: bool = False) -> None:
         await self._write(packet, self._current(), cleanup=cleanup)
@@ -215,9 +224,19 @@ class MlilyRemoteController(CasperBaseController):
         return False
 
     @property
+    def movement_actions(self) -> frozenset[str]:
+        # A preset such as HelpGetUp is not a motor merely because it ends in Up.
+        return frozenset(
+            axis + direction
+            for axis in ("Head", "Foot", "Pillow", "Lumber", "HeadAndFoot")
+            for direction in ("Up", "Down")
+            if axis + direction in self.actions
+        )
+
+    @property
     def held_control_options(self) -> tuple[str, ...]:
         return tuple(
-            "mlily_remote_" + name for name in self.actions if name.endswith(("Up", "Down"))
+            self.action_prefix + name for name in self.actions if name in self.movement_actions
         )
 
     def validate_hold_control(self, control: str, duration_ms: int) -> None:
@@ -226,7 +245,7 @@ class MlilyRemoteController(CasperBaseController):
 
     async def hold_control(self, control: str, duration_ms: int) -> None:
         self.validate_hold_control(control, duration_ms)
-        action = control.removeprefix("mlily_remote_")
+        action = control.removeprefix(self.action_prefix)
         link = self._current()
         side = self._side(link)
         loop = asyncio.get_running_loop()
@@ -255,15 +274,16 @@ class MlilyRemoteController(CasperBaseController):
                     due + TICK_S, start + (math.floor((loop.time() - start) / TICK_S) + 1) * TICK_S
                 )
         finally:
-            if (
-                attempted
-                and self._link is link
-                and self.client is link.client
-                and link.client.is_connected
-            ):
-                await self._write(
-                    codec.function(codec.STOP, side, single=link.legacy), link, cleanup=True
-                )
+            if attempted and self._can_release_link(link):
+                await self._release_link(link, side)
+
+    def _can_release_link(self, link: Link) -> bool:
+        return self._link is link and self.client is link.client and link.client.is_connected
+
+    async def _release_link(self, link: Link, side: int) -> None:
+        await self._write(
+            codec.function(codec.STOP, side, single=link.legacy), link, cleanup=True
+        )
 
     async def async_perform_casper_base_action(
         self,
@@ -275,8 +295,8 @@ class MlilyRemoteController(CasperBaseController):
         item = self.actions.get(action)
         if music_page or item is None or save and item[1] is None:
             raise ValueError("Action unavailable for this MLILY Remote product")
-        if action.endswith(("Up", "Down")):
-            await self.hold_control("mlily_remote_" + action, 1000)
+        if action in self.movement_actions:
+            await self.hold_control(self.action_prefix + action, 1000)
             return
         link = self._current()
         side = self._side(link)
@@ -291,8 +311,8 @@ class MlilyRemoteController(CasperBaseController):
             replace(
                 spec,
                 hold=ControllerMotorHoldSpec(
-                    "mlily_remote_" + name + "Up",
-                    "mlily_remote_" + name + "Down",
+                    self.action_prefix + name + "Up",
+                    self.action_prefix + name + "Down",
                     stop_scope="side",
                     press_is_native=True,
                 ),
@@ -316,10 +336,10 @@ class MlilyRemoteController(CasperBaseController):
     def controller_button_specs(self) -> tuple[ControllerButtonSpec, ...]:
         # Flat and the memory slots are the shared preset_flat/preset_memory/
         # program_memory buttons; this adds only the product's other actions.
-        cooling = PROFILES[self.model].cooling
+        cooling = self.cooling
         specs: list[ControllerButtonSpec | None] = []
         for name, (_, long) in self.actions.items():
-            label = (COOLING_LABELS if cooling else LABELS).get(name)
+            label = (COOLING_LABELS if cooling else self.button_labels).get(name)
             if label is None or name in self.massage_timer_actions.values():
                 continue
             kind = (
@@ -330,7 +350,7 @@ class MlilyRemoteController(CasperBaseController):
                 else Kind.PRESET
             )
             for save in (False, True) if long is not None else (False,):
-                prefix = "mlily_remote_"
+                prefix = self.action_prefix
                 if cooling and name.startswith("Massage"):
                     prefix += "cooling_"
                 specs.append(
@@ -385,23 +405,30 @@ class MlilyRemoteController(CasperBaseController):
         self.on_disconnect()
         # Bind encoding and notify to the write service, never the app's unsafe
         # last-route/first-write mixture on multi-service devices.
-        from ...profiles.richmat import MLILY_REMOTE
-
-        link = select_link(client, 1, MLILY_REMOTE, bind_framing=True, coherent_service=True)
+        link = select_link(client, 1, self.transport_profile, bind_framing=True, coherent_service=True)
         self._link = link
         self._write_char, self._notify_char, self._single = link.tx, link.rx, link.legacy
         self._next_write = asyncio.get_running_loop().time() + TICK_S
         try:
             await client.start_notify(link.rx, partial(self._notification, link))
-            for action, code in STARTUP:
-                if not await self._write(codec.function(code, action=action, single=link.legacy), link):
-                    raise asyncio.CancelledError
-            if not await self._write(codec.calendar(dt_util.now(), build=codec.record_20_len), link):
-                raise asyncio.CancelledError
+            await self._initialize_link(link)
         except BaseException:
             await self.stop_notify()
             raise
         self._publish()
+
+    @property
+    def transport_profile(self):
+        from ...profiles.richmat import MLILY_REMOTE
+
+        return MLILY_REMOTE
+
+    async def _initialize_link(self, link: Link) -> None:
+        for action, code in STARTUP:
+            if not await self._write(codec.function(code, action=action, single=link.legacy), link):
+                raise asyncio.CancelledError
+        if not await self._write(codec.calendar(dt_util.now(), build=codec.record_20_len), link):
+            raise asyncio.CancelledError
 
     def _notification(self, link: Link, _sender: BleakGATTCharacteristic, data: bytearray) -> None:
         if self._link is not link or self.client is not link.client or not link.client.is_connected:

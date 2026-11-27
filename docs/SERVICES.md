@@ -2643,3 +2643,7 @@ Use `enso2_aroma_schedule` with `device_id`, `mode_2_minutes` and
 `mode_3_minutes` (1 to 60), and `pause_hours` (1 to 12). Each action can target
 the side of a two-address pair through the standard `side` field. The receiver
 must report the corresponding accessory over Bluetooth.
+
+MLILY 3.1.1 (`com.richmat.mlily0`) uses **Set alarm** for its product-specific
+wake actions and once/daily repeat, and **Set bed clock** for local time. See
+[MLILY 3.1.1](beds/richmat.md#mlily-311).

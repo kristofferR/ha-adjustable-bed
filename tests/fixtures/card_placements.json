@@ -4896,6 +4896,9 @@
  "sensor:massage_timer_mode": {
   "card_section": "hidden"
  },
+ "sensor:mlily0": {
+  "card_section": "hidden"
+ },
  "sensor:mlily_remote": {
   "card_section": "hidden"
  },

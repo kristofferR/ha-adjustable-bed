@@ -165,6 +165,8 @@ def _protocol_variant_for_bed_type(bed_type: str) -> str | None:
         return "blue"
     if bed_type == "saatva":
         return "bt2000_standard"
+    if bed_type == const.BED_TYPE_MLILY0:
+        return "bedc"
     if bed_type == const.BED_TYPE_CASPER_BASE:
         return "casperpro"
     if bed_type == const.BED_TYPE_JEROME_ADJUSTABLE_BASE:

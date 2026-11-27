@@ -137,6 +137,7 @@ bed has been tested on real hardware.
 | [Majestic Home](docs/beds/richmat.md#majestic-home) | Majestic Home | Majestic Home |
 | [Malouf / Lucid](docs/beds/malouf.md) | [Malouf Base](docs/beds/malouf.md#malouf-base), [Lucid Base](docs/beds/malouf.md#lucid-base), [Nordic UART receiver](docs/beds/malouf.md#new_okin), [FFE5 receiver](docs/beds/malouf.md#legacy-ffe5-route) | Malouf, Lucid, Structures |
 | [MLILY Control](docs/beds/richmat.md#mlily-control) | MLILY Control, MLILY Control sleep sensors (RM- or HJ-) | MLILY |
+| [MLILY 3.1.1](docs/beds/richmat.md#mlily-311) | 27 explicit bed products, C, HP, M-series, NL400, P, PowerCool, S, SA, SE, SL, Smart, ThreePro, X3 and Zero | MLILY |
 | [MLILY Remote](docs/beds/richmat.md#mlily-remote) | MS200, MS300, MS600, PowerCool and MS300-SH | MLILY |
 | [MLILY Supreme](docs/beds/richmat.md#mlily-supreme) | MLILY Supreme app and its separate HJ_Bed sleep receiver | MLILY |
 | [Sinca Comfort Bed](docs/beds/mline.md#sinca-comfort-bed) | The Comfort Bed App (Sinca) | OKIN |

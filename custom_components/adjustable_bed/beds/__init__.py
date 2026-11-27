@@ -92,6 +92,7 @@ if TYPE_CHECKING:
     from .luniosmart.controller import LunioSmartController as LunioSmartController
     from .majestichome.controller import MajesticHomeController as MajesticHomeController
     from .malouf.app import MaloufAppController as MaloufAppController
+    from .mlily0.controller import MlilyController as MlilyController
     from .mlily_remote.controller import MlilyRemoteController as MlilyRemoteController
     from .motion_bed.controller import MotionBedController as MotionBedController
     from .motomotion.controller import MotoMotionController as MotoMotionController
@@ -190,6 +191,7 @@ _EXPORT_MODULES = {
     "LunioSmartController": "luniosmart.controller",
     "SaatvaController": "saatva",
     "SonicSleepController": "sonicsleep.controller",
+    "MlilyController": "mlily0.controller",
     "MlilyRemoteController": "mlily_remote.controller",
     "ResidentController": "resident.controller",
     "NerumController": "nerum.controller",

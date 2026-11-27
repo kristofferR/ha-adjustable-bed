@@ -1,0 +1,3486 @@
+[
+  {
+    "key": "bedc",
+    "label": "C",
+    "repeat": true,
+    "groups": [
+      [
+        {
+          "name": "HeadUp",
+          "short": 36,
+          "save": null
+        },
+        {
+          "name": "HeadDown",
+          "short": 37,
+          "save": null
+        },
+        {
+          "name": "FootUp",
+          "short": 38,
+          "save": null
+        },
+        {
+          "name": "FootDown",
+          "short": 39,
+          "save": null
+        }
+      ],
+      [
+        {
+          "name": "MassageFootInstensityStrengthen",
+          "short": 78,
+          "save": null
+        },
+        {
+          "name": "MassageModeChange",
+          "short": 72,
+          "save": null
+        },
+        {
+          "name": "MassageModeAllOff",
+          "short": 94,
+          "save": null
+        },
+        {
+          "name": "Massage10MinuteTimer",
+          "short": 95,
+          "save": null
+        },
+        {
+          "name": "Massage20MinuteTimer",
+          "short": 99,
+          "save": null
+        },
+        {
+          "name": "Massage30MinuteTimer",
+          "short": 97,
+          "save": null
+        }
+      ],
+      [
+        {
+          "name": "ZeroGravity",
+          "short": 69,
+          "save": 102
+        },
+        {
+          "name": "YogaPosition",
+          "short": 107,
+          "save": 106
+        },
+        {
+          "name": "TVPosition",
+          "short": 88,
+          "save": 100
+        },
+        {
+          "name": "MotorReset",
+          "short": 49,
+          "save": null
+        },
+        {
+          "name": "AntiSnoring",
+          "short": 70,
+          "save": 105
+        },
+        {
+          "name": "HelpGetUp",
+          "short": 61,
+          "save": null
+        },
+        {
+          "name": "ReadingPosition",
+          "short": 48,
+          "save": 45
+        }
+      ],
+      [
+        {
+          "name": "ZeroGravity",
+          "short": 69,
+          "save": null
+        },
+        {
+          "name": "YogaPosition",
+          "short": 107,
+          "save": null
+        },
+        {
+          "name": "TVPosition",
+          "short": 88,
+          "save": null
+        },
+        {
+          "name": "ReadingPosition",
+          "short": 48,
+          "save": null
+        },
+        {
+          "name": "MotorReset",
+          "short": 49,
+          "save": null
+        },
+        {
+          "name": "AntiSnoring",
+          "short": 70,
+          "save": null
+        },
+        {
+          "name": "HelpGetUp",
+          "short": 61,
+          "save": null
+        },
+        {
+          "name": "MemoryPosition1",
+          "short": 46,
+          "save": null
+        },
+        {
+          "name": "MemoryPosition2",
+          "short": 47,
+          "save": null
+        }
+      ],
+      [
+        {
+          "name": "MemoryPosition1",
+          "short": 46,
+          "save": 43
+        },
+        {
+          "name": "MemoryPosition2",
+          "short": 47,
+          "save": 44
+        }
+      ]
+    ]
+  },
+  {
+    "key": "bedHP",
+    "label": "HP",
+    "repeat": true,
+    "groups": [
+      [
+        {
+          "name": "HeadUp",
+          "short": 36,
+          "save": null
+        },
+        {
+          "name": "HeadDown",
+          "short": 37,
+          "save": null
+        },
+        {
+          "name": "FootUp",
+          "short": 38,
+          "save": null
+        },
+        {
+          "name": "FootDown",
+          "short": 39,
+          "save": null
+        },
+        {
+          "name": "LumberUp",
+          "short": 63,
+          "save": null
+        },
+        {
+          "name": "LumberDown",
+          "short": 64,
+          "save": null
+        },
+        {
+          "name": "PillowUp",
+          "short": 65,
+          "save": null
+        },
+        {
+          "name": "PillowDown",
+          "short": 66,
+          "save": null
+        }
+      ],
+      [
+        {
+          "name": "MassageHeadInstensityStrengthen",
+          "short": 76,
+          "save": null
+        },
+        {
+          "name": "MassageFootInstensityStrengthen",
+          "short": 78,
+          "save": null
+        },
+        {
+          "name": "MassageModeAllOff",
+          "short": 94,
+          "save": null
+        },
+        {
+          "name": "BedLight",
+          "short": 60,
+          "save": null
+        },
+        {
+          "name": "MassageModeChange",
+          "short": 72,
+          "save": null
+        },
+        {
+          "name": "Massage10MinuteTimer",
+          "short": 95,
+          "save": null
+        },
+        {
+          "name": "Massage20MinuteTimer",
+          "short": 99,
+          "save": null
+        },
+        {
+          "name": "Massage30MinuteTimer",
+          "short": 97,
+          "save": null
+        }
+      ],
+      [
+        {
+          "name": "ZeroGravity",
+          "short": 69,
+          "save": 102
+        },
+        {
+          "name": "YogaPosition",
+          "short": 107,
+          "save": 106
+        },
+        {
+          "name": "TVPosition",
+          "short": 88,
+          "save": 100
+        },
+        {
+          "name": "MotorReset",
+          "short": 49,
+          "save": null
+        },
+        {
+          "name": "AntiSnoring",
+          "short": 70,
+          "save": 105
+        },
+        {
+          "name": "HelpGetUp",
+          "short": 61,
+          "save": 248
+        },
+        {
+          "name": "ReadingPosition",
+          "short": 242,
+          "save": 243
+        },
+        {
+          "name": "LoungePosition",
+          "short": 89,
+          "save": 101
+        }
+      ],
+      [
+        {
+          "name": "TVPosition",
+          "short": 88,
+          "save": null
+        },
+        {
+          "name": "AntiSnoring",
+          "short": 70,
+          "save": null
+        },
+        {
+          "name": "YogaPosition",
+          "short": 107,
+          "save": null
+        },
+        {
+          "name": "ReadingPosition",
+          "short": 242,
+          "save": null
+        },
+        {
+          "name": "MotorReset",
+          "short": 49,
+          "save": null
+        },
+        {
+          "name": "HelpGetUp",
+          "short": 61,
+          "save": null
+        },
+        {
+          "name": "ZeroGravity",
+          "short": 69,
+          "save": null
+        },
+        {
+          "name": "LoungePosition",
+          "short": 89,
+          "save": null
+        },
+        {
+          "name": "MemoryPosition1",
+          "short": 46,
+          "save": null
+        }
+      ],
+      [
+        {
+          "name": "MemoryPosition1",
+          "short": 46,
+          "save": 43
+        }
+      ]
+    ]
+  },
+  {
+    "key": "bedm10",
+    "label": "M10",
+    "repeat": true,
+    "groups": [
+      [
+        {
+          "name": "HeadUp",
+          "short": 36,
+          "save": null
+        },
+        {
+          "name": "HeadDown",
+          "short": 37,
+          "save": null
+        },
+        {
+          "name": "FootUp",
+          "short": 38,
+          "save": null
+        },
+        {
+          "name": "FootDown",
+          "short": 39,
+          "save": null
+        }
+      ],
+      [
+        {
+          "name": "MassageHeadInstensityStrengthen",
+          "short": 76,
+          "save": null
+        },
+        {
+          "name": "MassageFootInstensityStrengthen",
+          "short": 78,
+          "save": null
+        },
+        {
+          "name": "MassageModeAllOff",
+          "short": 94,
+          "save": null
+        },
+        {
+          "name": "MassageModeChange",
+          "short": 72,
+          "save": null
+        },
+        {
+          "name": "Massage10MinuteTimer",
+          "short": 95,
+          "save": null
+        },
+        {
+          "name": "Massage20MinuteTimer",
+          "short": 99,
+          "save": null
+        },
+        {
+          "name": "Massage30MinuteTimer",
+          "short": 97,
+          "save": null
+        }
+      ],
+      [
+        {
+          "name": "ZeroGravity",
+          "short": 69,
+          "save": 102
+        },
+        {
+          "name": "YogaPosition",
+          "short": 107,
+          "save": 106
+        },
+        {
+          "name": "TVPosition",
+          "short": 88,
+          "save": 100
+        },
+        {
+          "name": "MotorReset",
+          "short": 49,
+          "save": null
+        },
+        {
+          "name": "AntiSnoring",
+          "short": 70,
+          "save": 105
+        },
+        {
+          "name": "HelpGetUp",
+          "short": 61,
+          "save": null
+        },
+        {
+          "name": "ReadingPosition",
+          "short": 48,
+          "save": 45
+        }
+      ],
+      [
+        {
+          "name": "TVPosition",
+          "short": 88,
+          "save": null
+        },
+        {
+          "name": "AntiSnoring",
+          "short": 70,
+          "save": null
+        },
+        {
+          "name": "YogaPosition",
+          "short": 107,
+          "save": null
+        },
+        {
+          "name": "ReadingPosition",
+          "short": 48,
+          "save": null
+        },
+        {
+          "name": "HelpGetUp",
+          "short": 61,
+          "save": null
+        },
+        {
+          "name": "ZeroGravity",
+          "short": 69,
+          "save": null
+        },
+        {
+          "name": "MotorReset",
+          "short": 49,
+          "save": null
+        },
+        {
+          "name": "MemoryPosition1",
+          "short": 46,
+          "save": null
+        },
+        {
+          "name": "MemoryPosition2",
+          "short": 47,
+          "save": null
+        }
+      ],
+      [
+        {
+          "name": "MemoryPosition1",
+          "short": 46,
+          "save": 43
+        },
+        {
+          "name": "MemoryPosition2",
+          "short": 47,
+          "save": 44
+        }
+      ]
+    ]
+  },
+  {
+    "key": "bedM11",
+    "label": "M11",
+    "repeat": true,
+    "groups": [
+      [
+        {
+          "name": "HeadUp",
+          "short": 36,
+          "save": null
+        },
+        {
+          "name": "HeadDown",
+          "short": 37,
+          "save": null
+        },
+        {
+          "name": "FootUp",
+          "short": 38,
+          "save": null
+        },
+        {
+          "name": "FootDown",
+          "short": 39,
+          "save": null
+        }
+      ],
+      [],
+      [
+        {
+          "name": "ZeroGravity",
+          "short": 69,
+          "save": 102
+        },
+        {
+          "name": "YogaPosition",
+          "short": 107,
+          "save": 106
+        },
+        {
+          "name": "TVPosition",
+          "short": 88,
+          "save": 100
+        },
+        {
+          "name": "MotorReset",
+          "short": 49,
+          "save": null
+        },
+        {
+          "name": "AntiSnoring",
+          "short": 70,
+          "save": 105
+        },
+        {
+          "name": "HelpGetUp",
+          "short": 61,
+          "save": null
+        },
+        {
+          "name": "ReadingPosition",
+          "short": 242,
+          "save": 243
+        }
+      ],
+      [
+        {
+          "name": "TVPosition",
+          "short": 88,
+          "save": null
+        },
+        {
+          "name": "AntiSnoring",
+          "short": 70,
+          "save": null
+        },
+        {
+          "name": "YogaPosition",
+          "short": 107,
+          "save": null
+        },
+        {
+          "name": "ReadingPosition",
+          "short": 242,
+          "save": null
+        },
+        {
+          "name": "MotorReset",
+          "short": 49,
+          "save": null
+        },
+        {
+          "name": "HelpGetUp",
+          "short": 61,
+          "save": null
+        },
+        {
+          "name": "ZeroGravity",
+          "short": 69,
+          "save": null
+        },
+        {
+          "name": "MemoryPosition1",
+          "short": 46,
+          "save": null
+        },
+        {
+          "name": "MemoryPosition2",
+          "short": 47,
+          "save": null
+        }
+      ],
+      [
+        {
+          "name": "MemoryPosition1",
+          "short": 46,
+          "save": 43
+        },
+        {
+          "name": "MemoryPosition2",
+          "short": 47,
+          "save": 44
+        }
+      ]
+    ]
+  },
+  {
+    "key": "bedM11P",
+    "label": "M11P",
+    "repeat": true,
+    "groups": [
+      [
+        {
+          "name": "HeadUp",
+          "short": 36,
+          "save": null
+        },
+        {
+          "name": "HeadDown",
+          "short": 37,
+          "save": null
+        },
+        {
+          "name": "FootUp",
+          "short": 38,
+          "save": null
+        },
+        {
+          "name": "FootDown",
+          "short": 39,
+          "save": null
+        },
+        {
+          "name": "LumberUp",
+          "short": 63,
+          "save": null
+        },
+        {
+          "name": "LumberDown",
+          "short": 64,
+          "save": null
+        }
+      ],
+      [
+        {
+          "name": "MassageHeadInstensityStrengthen",
+          "short": 76,
+          "save": null
+        },
+        {
+          "name": "MassageFootInstensityStrengthen",
+          "short": 78,
+          "save": null
+        },
+        {
+          "name": "MassageModeAllOff",
+          "short": 94,
+          "save": null
+        },
+        {
+          "name": "MassageModeChange",
+          "short": 72,
+          "save": null
+        },
+        {
+          "name": "Massage10MinuteTimer",
+          "short": 95,
+          "save": null
+        },
+        {
+          "name": "Massage20MinuteTimer",
+          "short": 99,
+          "save": null
+        },
+        {
+          "name": "Massage30MinuteTimer",
+          "short": 97,
+          "save": null
+        }
+      ],
+      [
+        {
+          "name": "ZeroGravity",
+          "short": 69,
+          "save": 102
+        },
+        {
+          "name": "YogaPosition",
+          "short": 107,
+          "save": 106
+        },
+        {
+          "name": "TVPosition",
+          "short": 88,
+          "save": 100
+        },
+        {
+          "name": "MotorReset",
+          "short": 49,
+          "save": null
+        },
+        {
+          "name": "AntiSnoring",
+          "short": 70,
+          "save": 105
+        },
+        {
+          "name": "HelpGetUp",
+          "short": 61,
+          "save": null
+        },
+        {
+          "name": "ReadingPosition",
+          "short": 242,
+          "save": 243
+        }
+      ],
+      [
+        {
+          "name": "ZeroGravity",
+          "short": 69,
+          "save": null
+        },
+        {
+          "name": "YogaPosition",
+          "short": 107,
+          "save": null
+        },
+        {
+          "name": "TVPosition",
+          "short": 88,
+          "save": null
+        },
+        {
+          "name": "ReadingPosition",
+          "short": 242,
+          "save": null
+        },
+        {
+          "name": "MotorReset",
+          "short": 49,
+          "save": null
+        },
+        {
+          "name": "AntiSnoring",
+          "short": 70,
+          "save": null
+        },
+        {
+          "name": "HelpGetUp",
+          "short": 61,
+          "save": null
+        },
+        {
+          "name": "MemoryPosition1",
+          "short": 46,
+          "save": null
+        },
+        {
+          "name": "MemoryPosition2",
+          "short": 47,
+          "save": null
+        }
+      ],
+      [
+        {
+          "name": "MemoryPosition1",
+          "short": 46,
+          "save": 43
+        },
+        {
+          "name": "MemoryPosition2",
+          "short": 47,
+          "save": 44
+        }
+      ]
+    ]
+  },
+  {
+    "key": "bedM11W",
+    "label": "M11W",
+    "repeat": true,
+    "groups": [
+      [
+        {
+          "name": "HeadUp",
+          "short": 36,
+          "save": null
+        },
+        {
+          "name": "HeadDown",
+          "short": 37,
+          "save": null
+        },
+        {
+          "name": "FootUp",
+          "short": 38,
+          "save": null
+        },
+        {
+          "name": "FootDown",
+          "short": 39,
+          "save": null
+        },
+        {
+          "name": "LumberUp",
+          "short": 63,
+          "save": null
+        },
+        {
+          "name": "LumberDown",
+          "short": 64,
+          "save": null
+        }
+      ],
+      [],
+      [
+        {
+          "name": "ZeroGravity",
+          "short": 69,
+          "save": 102
+        },
+        {
+          "name": "YogaPosition",
+          "short": 107,
+          "save": 106
+        },
+        {
+          "name": "TVPosition",
+          "short": 88,
+          "save": 100
+        },
+        {
+          "name": "MotorReset",
+          "short": 49,
+          "save": null
+        },
+        {
+          "name": "AntiSnoring",
+          "short": 70,
+          "save": 105
+        },
+        {
+          "name": "HelpGetUp",
+          "short": 61,
+          "save": null
+        },
+        {
+          "name": "ReadingPosition",
+          "short": 242,
+          "save": 243
+        }
+      ],
+      [
+        {
+          "name": "ZeroGravity",
+          "short": 69,
+          "save": null
+        },
+        {
+          "name": "YogaPosition",
+          "short": 107,
+          "save": null
+        },
+        {
+          "name": "TVPosition",
+          "short": 88,
+          "save": null
+        },
+        {
+          "name": "ReadingPosition",
+          "short": 242,
+          "save": null
+        },
+        {
+          "name": "MotorReset",
+          "short": 49,
+          "save": null
+        },
+        {
+          "name": "AntiSnoring",
+          "short": 70,
+          "save": null
+        },
+        {
+          "name": "HelpGetUp",
+          "short": 61,
+          "save": null
+        },
+        {
+          "name": "MemoryPosition1",
+          "short": 46,
+          "save": null
+        },
+        {
+          "name": "MemoryPosition2",
+          "short": 47,
+          "save": null
+        }
+      ],
+      [
+        {
+          "name": "MemoryPosition1",
+          "short": 46,
+          "save": 43
+        },
+        {
+          "name": "MemoryPosition2",
+          "short": 47,
+          "save": 44
+        }
+      ]
+    ]
+  },
+  {
+    "key": "bedM12",
+    "label": "M12",
+    "repeat": true,
+    "groups": [
+      [
+        {
+          "name": "HeadUp",
+          "short": 36,
+          "save": null
+        },
+        {
+          "name": "HeadDown",
+          "short": 37,
+          "save": null
+        },
+        {
+          "name": "FootUp",
+          "short": 38,
+          "save": null
+        },
+        {
+          "name": "FootDown",
+          "short": 39,
+          "save": null
+        }
+      ],
+      [],
+      [
+        {
+          "name": "ZeroGravity",
+          "short": 69,
+          "save": 102
+        },
+        {
+          "name": "YogaPosition",
+          "short": 107,
+          "save": 106
+        },
+        {
+          "name": "TVPosition",
+          "short": 88,
+          "save": 100
+        },
+        {
+          "name": "MotorReset",
+          "short": 49,
+          "save": null
+        },
+        {
+          "name": "AntiSnoring",
+          "short": 70,
+          "save": 105
+        },
+        {
+          "name": "HelpGetUp",
+          "short": 61,
+          "save": null
+        },
+        {
+          "name": "ReadingPosition",
+          "short": 242,
+          "save": 243
+        }
+      ],
+      [
+        {
+          "name": "TVPosition",
+          "short": 88,
+          "save": null
+        },
+        {
+          "name": "AntiSnoring",
+          "short": 70,
+          "save": null
+        },
+        {
+          "name": "YogaPosition",
+          "short": 107,
+          "save": null
+        },
+        {
+          "name": "ReadingPosition",
+          "short": 242,
+          "save": null
+        },
+        {
+          "name": "MotorReset",
+          "short": 49,
+          "save": null
+        },
+        {
+          "name": "HelpGetUp",
+          "short": 61,
+          "save": null
+        },
+        {
+          "name": "ZeroGravity",
+          "short": 69,
+          "save": null
+        },
+        {
+          "name": "MemoryPosition1",
+          "short": 46,
+          "save": null
+        },
+        {
+          "name": "MemoryPosition2",
+          "short": 47,
+          "save": null
+        }
+      ],
+      [
+        {
+          "name": "MemoryPosition1",
+          "short": 46,
+          "save": 43
+        },
+        {
+          "name": "MemoryPosition2",
+          "short": 47,
+          "save": 44
+        }
+      ]
+    ]
+  },
+  {
+    "key": "bedM12P",
+    "label": "M12P",
+    "repeat": true,
+    "groups": [
+      [
+        {
+          "name": "HeadUp",
+          "short": 36,
+          "save": null
+        },
+        {
+          "name": "HeadDown",
+          "short": 37,
+          "save": null
+        },
+        {
+          "name": "FootUp",
+          "short": 38,
+          "save": null
+        },
+        {
+          "name": "FootDown",
+          "short": 39,
+          "save": null
+        },
+        {
+          "name": "LumberUp",
+          "short": 63,
+          "save": null
+        },
+        {
+          "name": "LumberDown",
+          "short": 64,
+          "save": null
+        }
+      ],
+      [
+        {
+          "name": "MassageHeadInstensityStrengthen",
+          "short": 76,
+          "save": null
+        },
+        {
+          "name": "MassageFootInstensityStrengthen",
+          "short": 78,
+          "save": null
+        },
+        {
+          "name": "MassageModeAllOff",
+          "short": 94,
+          "save": null
+        },
+        {
+          "name": "MassageModeChange",
+          "short": 72,
+          "save": null
+        },
+        {
+          "name": "Massage10MinuteTimer",
+          "short": 95,
+          "save": null
+        },
+        {
+          "name": "Massage20MinuteTimer",
+          "short": 99,
+          "save": null
+        },
+        {
+          "name": "Massage30MinuteTimer",
+          "short": 97,
+          "save": null
+        }
+      ],
+      [
+        {
+          "name": "ZeroGravity",
+          "short": 69,
+          "save": 102
+        },
+        {
+          "name": "YogaPosition",
+          "short": 107,
+          "save": 106
+        },
+        {
+          "name": "TVPosition",
+          "short": 88,
+          "save": 100
+        },
+        {
+          "name": "MotorReset",
+          "short": 49,
+          "save": null
+        },
+        {
+          "name": "AntiSnoring",
+          "short": 70,
+          "save": 105
+        },
+        {
+          "name": "HelpGetUp",
+          "short": 61,
+          "save": null
+        },
+        {
+          "name": "ReadingPosition",
+          "short": 242,
+          "save": 243
+        }
+      ],
+      [
+        {
+          "name": "ZeroGravity",
+          "short": 69,
+          "save": null
+        },
+        {
+          "name": "YogaPosition",
+          "short": 107,
+          "save": null
+        },
+        {
+          "name": "TVPosition",
+          "short": 88,
+          "save": null
+        },
+        {
+          "name": "ReadingPosition",
+          "short": 242,
+          "save": null
+        },
+        {
+          "name": "MotorReset",
+          "short": 49,
+          "save": null
+        },
+        {
+          "name": "AntiSnoring",
+          "short": 70,
+          "save": null
+        },
+        {
+          "name": "HelpGetUp",
+          "short": 61,
+          "save": null
+        },
+        {
+          "name": "MemoryPosition1",
+          "short": 46,
+          "save": null
+        },
+        {
+          "name": "MemoryPosition2",
+          "short": 47,
+          "save": null
+        }
+      ],
+      [
+        {
+          "name": "MemoryPosition1",
+          "short": 46,
+          "save": 43
+        },
+        {
+          "name": "MemoryPosition2",
+          "short": 47,
+          "save": 44
+        }
+      ]
+    ]
+  },
+  {
+    "key": "bedM12W",
+    "label": "M12W",
+    "repeat": true,
+    "groups": [
+      [
+        {
+          "name": "HeadUp",
+          "short": 36,
+          "save": null
+        },
+        {
+          "name": "HeadDown",
+          "short": 37,
+          "save": null
+        },
+        {
+          "name": "FootUp",
+          "short": 38,
+          "save": null
+        },
+        {
+          "name": "FootDown",
+          "short": 39,
+          "save": null
+        },
+        {
+          "name": "LumberUp",
+          "short": 63,
+          "save": null
+        },
+        {
+          "name": "LumberDown",
+          "short": 64,
+          "save": null
+        }
+      ],
+      [],
+      [
+        {
+          "name": "ZeroGravity",
+          "short": 69,
+          "save": 102
+        },
+        {
+          "name": "YogaPosition",
+          "short": 107,
+          "save": 106
+        },
+        {
+          "name": "TVPosition",
+          "short": 88,
+          "save": 100
+        },
+        {
+          "name": "MotorReset",
+          "short": 49,
+          "save": null
+        },
+        {
+          "name": "AntiSnoring",
+          "short": 70,
+          "save": 105
+        },
+        {
+          "name": "HelpGetUp",
+          "short": 61,
+          "save": null
+        },
+        {
+          "name": "ReadingPosition",
+          "short": 242,
+          "save": 243
+        }
+      ],
+      [
+        {
+          "name": "ZeroGravity",
+          "short": 69,
+          "save": null
+        },
+        {
+          "name": "YogaPosition",
+          "short": 107,
+          "save": null
+        },
+        {
+          "name": "TVPosition",
+          "short": 88,
+          "save": null
+        },
+        {
+          "name": "ReadingPosition",
+          "short": 242,
+          "save": null
+        },
+        {
+          "name": "MotorReset",
+          "short": 49,
+          "save": null
+        },
+        {
+          "name": "AntiSnoring",
+          "short": 70,
+          "save": null
+        },
+        {
+          "name": "HelpGetUp",
+          "short": 61,
+          "save": null
+        },
+        {
+          "name": "MemoryPosition1",
+          "short": 46,
+          "save": null
+        },
+        {
+          "name": "MemoryPosition2",
+          "short": 47,
+          "save": null
+        }
+      ],
+      [
+        {
+          "name": "MemoryPosition1",
+          "short": 46,
+          "save": 43
+        },
+        {
+          "name": "MemoryPosition2",
+          "short": 47,
+          "save": 44
+        }
+      ]
+    ]
+  },
+  {
+    "key": "M2Pro",
+    "label": "M2Pro",
+    "repeat": true,
+    "groups": [
+      [
+        {
+          "name": "HeadUp",
+          "short": 36,
+          "save": null
+        },
+        {
+          "name": "HeadDown",
+          "short": 37,
+          "save": null
+        },
+        {
+          "name": "FootUp",
+          "short": 38,
+          "save": null
+        },
+        {
+          "name": "FootDown",
+          "short": 39,
+          "save": null
+        }
+      ],
+      [
+        {
+          "name": "MassageFootInstensityStrengthen",
+          "short": 78,
+          "save": null
+        },
+        {
+          "name": "MassageModeChange",
+          "short": 72,
+          "save": null
+        },
+        {
+          "name": "MassageModeAllOff",
+          "short": 94,
+          "save": null
+        },
+        {
+          "name": "Massage10MinuteTimer",
+          "short": 95,
+          "save": null
+        },
+        {
+          "name": "Massage20MinuteTimer",
+          "short": 99,
+          "save": null
+        },
+        {
+          "name": "Massage30MinuteTimer",
+          "short": 97,
+          "save": null
+        },
+        {
+          "name": "BedLight",
+          "short": 60,
+          "save": null
+        }
+      ],
+      [
+        {
+          "name": "ZeroGravity",
+          "short": 69,
+          "save": 102
+        },
+        {
+          "name": "YogaPosition",
+          "short": 107,
+          "save": 106
+        },
+        {
+          "name": "TVPosition",
+          "short": 88,
+          "save": 100
+        },
+        {
+          "name": "MotorReset",
+          "short": 49,
+          "save": null
+        },
+        {
+          "name": "AntiSnoring",
+          "short": 70,
+          "save": 105
+        },
+        {
+          "name": "HelpGetUp",
+          "short": 61,
+          "save": null
+        },
+        {
+          "name": "ReadingPosition",
+          "short": 242,
+          "save": 243
+        },
+        {
+          "name": "SleepPosition",
+          "short": 197,
+          "save": null
+        }
+      ],
+      [
+        {
+          "name": "ZeroGravity",
+          "short": 69,
+          "save": null
+        },
+        {
+          "name": "YogaPosition",
+          "short": 107,
+          "save": null
+        },
+        {
+          "name": "TVPosition",
+          "short": 88,
+          "save": null
+        },
+        {
+          "name": "ReadingPosition",
+          "short": 242,
+          "save": null
+        },
+        {
+          "name": "MotorReset",
+          "short": 49,
+          "save": null
+        },
+        {
+          "name": "AntiSnoring",
+          "short": 70,
+          "save": null
+        },
+        {
+          "name": "HelpGetUp",
+          "short": 61,
+          "save": null
+        },
+        {
+          "name": "SleepPosition",
+          "short": 197,
+          "save": null
+        },
+        {
+          "name": "MemoryPosition1",
+          "short": 46,
+          "save": null
+        },
+        {
+          "name": "MemoryPosition2",
+          "short": 47,
+          "save": null
+        }
+      ],
+      [
+        {
+          "name": "MemoryPosition1",
+          "short": 46,
+          "save": 43
+        },
+        {
+          "name": "MemoryPosition2",
+          "short": 47,
+          "save": 44
+        }
+      ]
+    ]
+  },
+  {
+    "key": "bedm3",
+    "label": "M3",
+    "repeat": false,
+    "groups": [
+      [
+        {
+          "name": "HeadUp",
+          "short": 36,
+          "save": null
+        },
+        {
+          "name": "HeadDown",
+          "short": 37,
+          "save": null
+        },
+        {
+          "name": "FootUp",
+          "short": 38,
+          "save": null
+        },
+        {
+          "name": "FootDown",
+          "short": 39,
+          "save": null
+        }
+      ],
+      [],
+      [
+        {
+          "name": "ZeroGravity",
+          "short": 69,
+          "save": 102
+        },
+        {
+          "name": "YogaPosition",
+          "short": 47,
+          "save": 44
+        },
+        {
+          "name": "TVPosition",
+          "short": 88,
+          "save": 100
+        },
+        {
+          "name": "MotorReset",
+          "short": 49,
+          "save": null
+        },
+        {
+          "name": "AntiSnoring",
+          "short": 70,
+          "save": 105
+        },
+        {
+          "name": "HelpGetUp",
+          "short": 48,
+          "save": 45
+        },
+        {
+          "name": "ReadingPosition",
+          "short": 89,
+          "save": 101
+        }
+      ],
+      [],
+      [
+        {
+          "name": "MemoryPosition1",
+          "short": 46,
+          "save": 43
+        }
+      ]
+    ]
+  },
+  {
+    "key": "bedm3pro",
+    "label": "M3Pro",
+    "repeat": false,
+    "groups": [
+      [
+        {
+          "name": "HeadUp",
+          "short": 36,
+          "save": null
+        },
+        {
+          "name": "HeadDown",
+          "short": 37,
+          "save": null
+        },
+        {
+          "name": "FootUp",
+          "short": 38,
+          "save": null
+        },
+        {
+          "name": "FootDown",
+          "short": 39,
+          "save": null
+        }
+      ],
+      [
+        {
+          "name": "MassageHeadInstensityStrengthen",
+          "short": 76,
+          "save": null
+        },
+        {
+          "name": "MassageModeChange",
+          "short": 72,
+          "save": null
+        },
+        {
+          "name": "MassageModeAllOff",
+          "short": 94,
+          "save": null
+        },
+        {
+          "name": "Massage10MinuteTimer",
+          "short": 95,
+          "save": null
+        },
+        {
+          "name": "Massage20MinuteTimer",
+          "short": 99,
+          "save": null
+        },
+        {
+          "name": "Massage30MinuteTimer",
+          "short": 97,
+          "save": null
+        }
+      ],
+      [
+        {
+          "name": "ZeroGravity",
+          "short": 69,
+          "save": 102
+        },
+        {
+          "name": "YogaPosition",
+          "short": 107,
+          "save": 106
+        },
+        {
+          "name": "TVPosition",
+          "short": 88,
+          "save": 100
+        },
+        {
+          "name": "MotorReset",
+          "short": 49,
+          "save": null
+        },
+        {
+          "name": "AntiSnoring",
+          "short": 70,
+          "save": 105
+        },
+        {
+          "name": "HelpGetUp",
+          "short": 61,
+          "save": null
+        },
+        {
+          "name": "ReadingPosition",
+          "short": 48,
+          "save": 45
+        }
+      ],
+      [],
+      [
+        {
+          "name": "MemoryPosition1",
+          "short": 46,
+          "save": 43
+        },
+        {
+          "name": "MemoryPosition2",
+          "short": 47,
+          "save": 44
+        }
+      ]
+    ]
+  },
+  {
+    "key": "bedm3promusic",
+    "label": "M3ProMusic",
+    "repeat": true,
+    "groups": [
+      [
+        {
+          "name": "HeadUp",
+          "short": 36,
+          "save": null
+        },
+        {
+          "name": "HeadDown",
+          "short": 37,
+          "save": null
+        },
+        {
+          "name": "FootUp",
+          "short": 38,
+          "save": null
+        },
+        {
+          "name": "FootDown",
+          "short": 39,
+          "save": null
+        }
+      ],
+      [
+        {
+          "name": "MassageHeadInstensityStrengthen",
+          "short": 76,
+          "save": null
+        },
+        {
+          "name": "MassageFootInstensityStrengthen",
+          "short": 78,
+          "save": null
+        },
+        {
+          "name": "MassageModeAllOff",
+          "short": 94,
+          "save": null
+        },
+        {
+          "name": "MassageModeChange",
+          "short": 72,
+          "save": null
+        },
+        {
+          "name": "Massage10MinuteTimer",
+          "short": 95,
+          "save": null
+        },
+        {
+          "name": "Massage20MinuteTimer",
+          "short": 99,
+          "save": null
+        },
+        {
+          "name": "Massage30MinuteTimer",
+          "short": 97,
+          "save": null
+        }
+      ],
+      [
+        {
+          "name": "ZeroGravity",
+          "short": 69,
+          "save": 102
+        },
+        {
+          "name": "YogaPosition",
+          "short": 107,
+          "save": 106
+        },
+        {
+          "name": "TVPosition",
+          "short": 88,
+          "save": 100
+        },
+        {
+          "name": "MotorReset",
+          "short": 49,
+          "save": null
+        },
+        {
+          "name": "AntiSnoring",
+          "short": 70,
+          "save": 105
+        },
+        {
+          "name": "HelpGetUp",
+          "short": 61,
+          "save": null
+        },
+        {
+          "name": "ReadingPosition",
+          "short": 48,
+          "save": 45
+        }
+      ],
+      [
+        {
+          "name": "TVPosition",
+          "short": 88,
+          "save": null
+        },
+        {
+          "name": "AntiSnoring",
+          "short": 70,
+          "save": null
+        },
+        {
+          "name": "YogaPosition",
+          "short": 107,
+          "save": null
+        },
+        {
+          "name": "ReadingPosition",
+          "short": 48,
+          "save": null
+        },
+        {
+          "name": "HelpGetUp",
+          "short": 61,
+          "save": null
+        },
+        {
+          "name": "ZeroGravity",
+          "short": 69,
+          "save": null
+        },
+        {
+          "name": "MotorReset",
+          "short": 49,
+          "save": null
+        },
+        {
+          "name": "MemoryPosition1",
+          "short": 46,
+          "save": null
+        },
+        {
+          "name": "MemoryPosition2",
+          "short": 47,
+          "save": null
+        }
+      ],
+      [
+        {
+          "name": "MemoryPosition1",
+          "short": 46,
+          "save": 43
+        },
+        {
+          "name": "MemoryPosition2",
+          "short": 47,
+          "save": 44
+        }
+      ]
+    ]
+  },
+  {
+    "key": "bedm4",
+    "label": "M4",
+    "repeat": false,
+    "groups": [
+      [
+        {
+          "name": "HeadUp",
+          "short": 36,
+          "save": null
+        },
+        {
+          "name": "HeadDown",
+          "short": 37,
+          "save": null
+        },
+        {
+          "name": "FootUp",
+          "short": 38,
+          "save": null
+        },
+        {
+          "name": "FootDown",
+          "short": 39,
+          "save": null
+        },
+        {
+          "name": "LumberUp",
+          "short": 63,
+          "save": null
+        },
+        {
+          "name": "LumberDown",
+          "short": 64,
+          "save": null
+        }
+      ],
+      [
+        {
+          "name": "MassageHeadInstensityStrengthen",
+          "short": 76,
+          "save": null
+        },
+        {
+          "name": "MassageModeChange",
+          "short": 72,
+          "save": null
+        },
+        {
+          "name": "MassageModeAllOff",
+          "short": 94,
+          "save": null
+        },
+        {
+          "name": "Massage10MinuteTimer",
+          "short": 95,
+          "save": null
+        },
+        {
+          "name": "Massage20MinuteTimer",
+          "short": 99,
+          "save": null
+        },
+        {
+          "name": "Massage30MinuteTimer",
+          "short": 97,
+          "save": null
+        }
+      ],
+      [
+        {
+          "name": "ZeroGravity",
+          "short": 69,
+          "save": 102
+        },
+        {
+          "name": "YogaPosition",
+          "short": 107,
+          "save": 106
+        },
+        {
+          "name": "MotorReset",
+          "short": 49,
+          "save": null
+        },
+        {
+          "name": "AntiSnoring",
+          "short": 70,
+          "save": 105
+        },
+        {
+          "name": "HelpGetUp",
+          "short": 61,
+          "save": null
+        }
+      ],
+      [],
+      [
+        {
+          "name": "MemoryPosition1",
+          "short": 46,
+          "save": 43
+        },
+        {
+          "name": "MemoryPosition2",
+          "short": 47,
+          "save": 44
+        }
+      ]
+    ]
+  },
+  {
+    "key": "bedm5",
+    "label": "M5",
+    "repeat": false,
+    "groups": [
+      [
+        {
+          "name": "HeadUp",
+          "short": 36,
+          "save": null
+        },
+        {
+          "name": "HeadDown",
+          "short": 37,
+          "save": null
+        },
+        {
+          "name": "FootUp",
+          "short": 38,
+          "save": null
+        },
+        {
+          "name": "FootDown",
+          "short": 39,
+          "save": null
+        }
+      ],
+      [
+        {
+          "name": "MassageHeadInstensityStrengthen",
+          "short": 76,
+          "save": null
+        },
+        {
+          "name": "MassageFootInstensityStrengthen",
+          "short": 78,
+          "save": null
+        },
+        {
+          "name": "MassageModeChange",
+          "short": 72,
+          "save": null
+        },
+        {
+          "name": "MassageModeAllOff",
+          "short": 94,
+          "save": null
+        },
+        {
+          "name": "BedLight",
+          "short": 60,
+          "save": null
+        },
+        {
+          "name": "Massage10MinuteTimer",
+          "short": 95,
+          "save": null
+        },
+        {
+          "name": "Massage20MinuteTimer",
+          "short": 99,
+          "save": null
+        },
+        {
+          "name": "Massage30MinuteTimer",
+          "short": 97,
+          "save": null
+        }
+      ],
+      [
+        {
+          "name": "AntiSnoring",
+          "short": 70,
+          "save": 105
+        },
+        {
+          "name": "ZeroGravity",
+          "short": 69,
+          "save": 102
+        },
+        {
+          "name": "YogaPosition",
+          "short": 107,
+          "save": 106
+        },
+        {
+          "name": "MotorReset",
+          "short": 49,
+          "save": null
+        },
+        {
+          "name": "HelpGetUp",
+          "short": 61,
+          "save": null
+        }
+      ],
+      [],
+      [
+        {
+          "name": "MemoryPosition1",
+          "short": 46,
+          "save": 43
+        },
+        {
+          "name": "MemoryPosition2",
+          "short": 47,
+          "save": 44
+        }
+      ]
+    ]
+  },
+  {
+    "key": "bedM6",
+    "label": "M6",
+    "repeat": true,
+    "groups": [
+      [
+        {
+          "name": "HeadUp",
+          "short": 36,
+          "save": null
+        },
+        {
+          "name": "HeadDown",
+          "short": 37,
+          "save": null
+        },
+        {
+          "name": "FootUp",
+          "short": 38,
+          "save": null
+        },
+        {
+          "name": "FootDown",
+          "short": 39,
+          "save": null
+        }
+      ],
+      [],
+      [
+        {
+          "name": "ZeroGravity",
+          "short": 69,
+          "save": 102
+        },
+        {
+          "name": "YogaPosition",
+          "short": 47,
+          "save": 44
+        },
+        {
+          "name": "TVPosition",
+          "short": 88,
+          "save": 100
+        },
+        {
+          "name": "MotorReset",
+          "short": 49,
+          "save": null
+        },
+        {
+          "name": "AntiSnoring",
+          "short": 70,
+          "save": 105
+        },
+        {
+          "name": "HelpGetUp",
+          "short": 89,
+          "save": null
+        },
+        {
+          "name": "ReadingPosition",
+          "short": 48,
+          "save": 45
+        }
+      ],
+      [
+        {
+          "name": "TVPosition",
+          "short": 88,
+          "save": null
+        },
+        {
+          "name": "AntiSnoring",
+          "short": 70,
+          "save": null
+        },
+        {
+          "name": "YogaPosition",
+          "short": 47,
+          "save": null
+        },
+        {
+          "name": "MotorReset",
+          "short": 49,
+          "save": null
+        },
+        {
+          "name": "ReadingPosition",
+          "short": 48,
+          "save": null
+        },
+        {
+          "name": "HelpGetUp",
+          "short": 89,
+          "save": null
+        },
+        {
+          "name": "ZeroGravity",
+          "short": 69,
+          "save": null
+        },
+        {
+          "name": "MemoryPosition1",
+          "short": 46,
+          "save": null
+        },
+        {
+          "name": "MemoryPosition2",
+          "short": 240,
+          "save": null
+        }
+      ],
+      [
+        {
+          "name": "MemoryPosition1",
+          "short": 46,
+          "save": 43
+        },
+        {
+          "name": "MemoryPosition2",
+          "short": 240,
+          "save": 241
+        }
+      ]
+    ]
+  },
+  {
+    "key": "bednl400",
+    "label": "NL400",
+    "repeat": false,
+    "groups": [
+      [
+        {
+          "name": "HeadUp",
+          "short": 36,
+          "save": null
+        },
+        {
+          "name": "HeadDown",
+          "short": 37,
+          "save": null
+        },
+        {
+          "name": "FootUp",
+          "short": 38,
+          "save": null
+        },
+        {
+          "name": "FootDown",
+          "short": 39,
+          "save": null
+        },
+        {
+          "name": "PillowUp",
+          "short": 63,
+          "save": null
+        },
+        {
+          "name": "PillowDown",
+          "short": 64,
+          "save": null
+        }
+      ],
+      [
+        {
+          "name": "MassageHeadInstensityStrengthen",
+          "short": 76,
+          "save": null
+        },
+        {
+          "name": "MassageFootInstensityStrengthen",
+          "short": 78,
+          "save": null
+        },
+        {
+          "name": "BedLight",
+          "short": 60,
+          "save": null
+        },
+        {
+          "name": "MassageModeChange",
+          "short": 72,
+          "save": null
+        },
+        {
+          "name": "MassageModeAllOff",
+          "short": 94,
+          "save": null
+        },
+        {
+          "name": "Massage10MinuteTimer",
+          "short": 95,
+          "save": null
+        },
+        {
+          "name": "Massage20MinuteTimer",
+          "short": 99,
+          "save": null
+        },
+        {
+          "name": "Massage30MinuteTimer",
+          "short": 97,
+          "save": null
+        }
+      ],
+      [
+        {
+          "name": "AntiSnoring",
+          "short": 70,
+          "save": 105
+        },
+        {
+          "name": "ZeroGravity",
+          "short": 69,
+          "save": 102
+        },
+        {
+          "name": "MotorReset",
+          "short": 49,
+          "save": null
+        }
+      ],
+      [
+        {
+          "name": "AntiSnoring",
+          "short": 70,
+          "save": null
+        },
+        {
+          "name": "ZeroGravity",
+          "short": 69,
+          "save": null
+        },
+        {
+          "name": "MotorReset",
+          "short": 49,
+          "save": null
+        },
+        {
+          "name": "MemoryPosition1",
+          "short": 46,
+          "save": null
+        },
+        {
+          "name": "MemoryPosition2",
+          "short": 47,
+          "save": null
+        }
+      ],
+      [
+        {
+          "name": "MemoryPosition1",
+          "short": 46,
+          "save": 43
+        },
+        {
+          "name": "MemoryPosition2",
+          "short": 47,
+          "save": 44
+        }
+      ]
+    ]
+  },
+  {
+    "key": "bedp",
+    "label": "P",
+    "repeat": true,
+    "groups": [
+      [
+        {
+          "name": "HeadUp",
+          "short": 36,
+          "save": null
+        },
+        {
+          "name": "HeadDown",
+          "short": 37,
+          "save": null
+        },
+        {
+          "name": "FootUp",
+          "short": 38,
+          "save": null
+        },
+        {
+          "name": "FootDown",
+          "short": 39,
+          "save": null
+        },
+        {
+          "name": "LumberUp",
+          "short": 65,
+          "save": null
+        },
+        {
+          "name": "LumberDown",
+          "short": 66,
+          "save": null
+        }
+      ],
+      [
+        {
+          "name": "MassageHeadInstensityStrengthen",
+          "short": 76,
+          "save": null
+        },
+        {
+          "name": "MassageFootInstensityStrengthen",
+          "short": 78,
+          "save": null
+        },
+        {
+          "name": "MassageModeAllOff",
+          "short": 94,
+          "save": null
+        },
+        {
+          "name": "MassageModeChange",
+          "short": 72,
+          "save": null
+        },
+        {
+          "name": "Massage10MinuteTimer",
+          "short": 95,
+          "save": null
+        },
+        {
+          "name": "Massage20MinuteTimer",
+          "short": 99,
+          "save": null
+        },
+        {
+          "name": "Massage30MinuteTimer",
+          "short": 97,
+          "save": null
+        }
+      ],
+      [
+        {
+          "name": "ZeroGravity",
+          "short": 69,
+          "save": 102
+        },
+        {
+          "name": "YogaPosition",
+          "short": 107,
+          "save": 106
+        },
+        {
+          "name": "TVPosition",
+          "short": 88,
+          "save": 100
+        },
+        {
+          "name": "MotorReset",
+          "short": 49,
+          "save": null
+        },
+        {
+          "name": "AntiSnoring",
+          "short": 70,
+          "save": 105
+        },
+        {
+          "name": "HelpGetUp",
+          "short": 61,
+          "save": null
+        },
+        {
+          "name": "ReadingPosition",
+          "short": 48,
+          "save": 45
+        }
+      ],
+      [
+        {
+          "name": "ZeroGravity",
+          "short": 69,
+          "save": null
+        },
+        {
+          "name": "YogaPosition",
+          "short": 107,
+          "save": null
+        },
+        {
+          "name": "TVPosition",
+          "short": 88,
+          "save": null
+        },
+        {
+          "name": "ReadingPosition",
+          "short": 48,
+          "save": null
+        },
+        {
+          "name": "MotorReset",
+          "short": 49,
+          "save": null
+        },
+        {
+          "name": "AntiSnoring",
+          "short": 70,
+          "save": null
+        },
+        {
+          "name": "HelpGetUp",
+          "short": 61,
+          "save": null
+        },
+        {
+          "name": "MemoryPosition1",
+          "short": 46,
+          "save": null
+        },
+        {
+          "name": "MemoryPosition2",
+          "short": 47,
+          "save": null
+        }
+      ],
+      [
+        {
+          "name": "MemoryPosition1",
+          "short": 46,
+          "save": 43
+        },
+        {
+          "name": "MemoryPosition2",
+          "short": 47,
+          "save": 44
+        }
+      ]
+    ]
+  },
+  {
+    "key": "bedpowercool",
+    "label": "PowerCool",
+    "repeat": false,
+    "groups": [
+      [
+        {
+          "name": "HeadUp",
+          "short": 36,
+          "save": null
+        },
+        {
+          "name": "HeadDown",
+          "short": 37,
+          "save": null
+        },
+        {
+          "name": "FootUp",
+          "short": 38,
+          "save": null
+        },
+        {
+          "name": "FootDown",
+          "short": 39,
+          "save": null
+        }
+      ],
+      [
+        {
+          "name": "MassageHeadInstensityStrengthen",
+          "short": 76,
+          "save": null
+        },
+        {
+          "name": "MassageFootInstensityStrengthen",
+          "short": 78,
+          "save": null
+        },
+        {
+          "name": "MassageModeAllOff",
+          "short": 94,
+          "save": null
+        },
+        {
+          "name": "BedLight",
+          "short": 60,
+          "save": null
+        },
+        {
+          "name": "Massage10MinuteTimer",
+          "short": 95,
+          "save": null
+        },
+        {
+          "name": "Massage20MinuteTimer",
+          "short": 99,
+          "save": null
+        },
+        {
+          "name": "Massage30MinuteTimer",
+          "short": 97,
+          "save": null
+        }
+      ],
+      [
+        {
+          "name": "ZeroGravity",
+          "short": 69,
+          "save": 102
+        },
+        {
+          "name": "AntiSnoring",
+          "short": 70,
+          "save": 105
+        },
+        {
+          "name": "MotorReset",
+          "short": 49,
+          "save": null
+        }
+      ],
+      [
+        {
+          "name": "AntiSnoring",
+          "short": 70,
+          "save": null
+        },
+        {
+          "name": "MotorReset",
+          "short": 49,
+          "save": null
+        }
+      ],
+      [
+        {
+          "name": "MemoryPosition1",
+          "short": 46,
+          "save": 43
+        },
+        {
+          "name": "MemoryPosition2",
+          "short": 47,
+          "save": 44
+        }
+      ]
+    ]
+  },
+  {
+    "key": "beds",
+    "label": "S",
+    "repeat": false,
+    "groups": [
+      [
+        {
+          "name": "HeadUp",
+          "short": 36,
+          "save": null
+        },
+        {
+          "name": "HeadDown",
+          "short": 37,
+          "save": null
+        },
+        {
+          "name": "FootUp",
+          "short": 38,
+          "save": null
+        },
+        {
+          "name": "FootDown",
+          "short": 39,
+          "save": null
+        }
+      ],
+      [],
+      [
+        {
+          "name": "ZeroGravity",
+          "short": 69,
+          "save": 102
+        },
+        {
+          "name": "YogaPosition",
+          "short": 47,
+          "save": 44
+        },
+        {
+          "name": "TVPosition",
+          "short": 88,
+          "save": 100
+        },
+        {
+          "name": "MotorReset",
+          "short": 49,
+          "save": null
+        },
+        {
+          "name": "AntiSnoring",
+          "short": 70,
+          "save": 105
+        },
+        {
+          "name": "HelpGetUp",
+          "short": 48,
+          "save": 45
+        },
+        {
+          "name": "ReadingPosition",
+          "short": 48,
+          "save": 45
+        }
+      ],
+      [],
+      [
+        {
+          "name": "MemoryPosition1",
+          "short": 46,
+          "save": 43
+        }
+      ]
+    ]
+  },
+  {
+    "key": "bedsa",
+    "label": "SA",
+    "repeat": true,
+    "groups": [
+      [
+        {
+          "name": "HeadUp",
+          "short": 36,
+          "save": null
+        },
+        {
+          "name": "HeadDown",
+          "short": 37,
+          "save": null
+        },
+        {
+          "name": "FootUp",
+          "short": 38,
+          "save": null
+        },
+        {
+          "name": "FootDown",
+          "short": 39,
+          "save": null
+        }
+      ],
+      [],
+      [
+        {
+          "name": "ZeroGravity",
+          "short": 69,
+          "save": 102
+        },
+        {
+          "name": "YogaPosition",
+          "short": 47,
+          "save": 44
+        },
+        {
+          "name": "TVPosition",
+          "short": 88,
+          "save": 100
+        },
+        {
+          "name": "MotorReset",
+          "short": 49,
+          "save": null
+        },
+        {
+          "name": "AntiSnoring",
+          "short": 70,
+          "save": 105
+        },
+        {
+          "name": "HelpGetUp",
+          "short": 89,
+          "save": null
+        },
+        {
+          "name": "ReadingPosition",
+          "short": 48,
+          "save": 45
+        }
+      ],
+      [
+        {
+          "name": "TVPosition",
+          "short": 88,
+          "save": null
+        },
+        {
+          "name": "AntiSnoring",
+          "short": 70,
+          "save": null
+        },
+        {
+          "name": "YogaPosition",
+          "short": 47,
+          "save": null
+        },
+        {
+          "name": "ReadingPosition",
+          "short": 48,
+          "save": null
+        },
+        {
+          "name": "MotorReset",
+          "short": 49,
+          "save": null
+        },
+        {
+          "name": "HelpGetUp",
+          "short": 89,
+          "save": null
+        },
+        {
+          "name": "ZeroGravity",
+          "short": 69,
+          "save": null
+        },
+        {
+          "name": "MemoryPosition1",
+          "short": 46,
+          "save": null
+        },
+        {
+          "name": "MemoryPosition2",
+          "short": 240,
+          "save": null
+        }
+      ],
+      [
+        {
+          "name": "MemoryPosition1",
+          "short": 46,
+          "save": 43
+        },
+        {
+          "name": "MemoryPosition2",
+          "short": 240,
+          "save": 241
+        }
+      ]
+    ]
+  },
+  {
+    "key": "bedse",
+    "label": "SE",
+    "repeat": false,
+    "groups": [
+      [
+        {
+          "name": "HeadUp",
+          "short": 36,
+          "save": null
+        },
+        {
+          "name": "HeadDown",
+          "short": 37,
+          "save": null
+        },
+        {
+          "name": "FootUp",
+          "short": 38,
+          "save": null
+        },
+        {
+          "name": "FootDown",
+          "short": 39,
+          "save": null
+        }
+      ],
+      [],
+      [
+        {
+          "name": "ZeroGravity",
+          "short": 69,
+          "save": 102
+        },
+        {
+          "name": "YogaPosition",
+          "short": 107,
+          "save": 106
+        },
+        {
+          "name": "TVPosition",
+          "short": 88,
+          "save": 100
+        },
+        {
+          "name": "MotorReset",
+          "short": 49,
+          "save": null
+        },
+        {
+          "name": "AntiSnoring",
+          "short": 70,
+          "save": 105
+        },
+        {
+          "name": "HelpGetUp",
+          "short": 61,
+          "save": null
+        },
+        {
+          "name": "ReadingPosition",
+          "short": 242,
+          "save": 243
+        }
+      ],
+      [],
+      [
+        {
+          "name": "MemoryPosition1",
+          "short": 46,
+          "save": 43
+        }
+      ]
+    ]
+  },
+  {
+    "key": "bedsl",
+    "label": "SL",
+    "repeat": true,
+    "groups": [
+      [
+        {
+          "name": "HeadUp",
+          "short": 36,
+          "save": null
+        },
+        {
+          "name": "HeadDown",
+          "short": 37,
+          "save": null
+        },
+        {
+          "name": "FootUp",
+          "short": 38,
+          "save": null
+        },
+        {
+          "name": "FootDown",
+          "short": 39,
+          "save": null
+        },
+        {
+          "name": "LumberUp",
+          "short": 63,
+          "save": null
+        },
+        {
+          "name": "LumberDown",
+          "short": 64,
+          "save": null
+        }
+      ],
+      [
+        {
+          "name": "MassageHeadInstensityStrengthen",
+          "short": 76,
+          "save": null
+        },
+        {
+          "name": "MassageFootInstensityStrengthen",
+          "short": 78,
+          "save": null
+        },
+        {
+          "name": "MassageModeAllOff",
+          "short": 94,
+          "save": null
+        },
+        {
+          "name": "MassageModeChange",
+          "short": 72,
+          "save": null
+        },
+        {
+          "name": "Massage10MinuteTimer",
+          "short": 95,
+          "save": null
+        },
+        {
+          "name": "Massage20MinuteTimer",
+          "short": 99,
+          "save": null
+        },
+        {
+          "name": "Massage30MinuteTimer",
+          "short": 97,
+          "save": null
+        }
+      ],
+      [
+        {
+          "name": "ZeroGravity",
+          "short": 69,
+          "save": 102
+        },
+        {
+          "name": "YogaPosition",
+          "short": 107,
+          "save": 106
+        },
+        {
+          "name": "TVPosition",
+          "short": 88,
+          "save": 100
+        },
+        {
+          "name": "MotorReset",
+          "short": 49,
+          "save": null
+        },
+        {
+          "name": "AntiSnoring",
+          "short": 70,
+          "save": 105
+        },
+        {
+          "name": "HelpGetUp",
+          "short": 61,
+          "save": null
+        },
+        {
+          "name": "ReadingPosition",
+          "short": 242,
+          "save": 243
+        }
+      ],
+      [
+        {
+          "name": "ZeroGravity",
+          "short": 69,
+          "save": null
+        },
+        {
+          "name": "YogaPosition",
+          "short": 107,
+          "save": null
+        },
+        {
+          "name": "TVPosition",
+          "short": 88,
+          "save": null
+        },
+        {
+          "name": "ReadingPosition",
+          "short": 242,
+          "save": null
+        },
+        {
+          "name": "MotorReset",
+          "short": 49,
+          "save": null
+        },
+        {
+          "name": "AntiSnoring",
+          "short": 70,
+          "save": null
+        },
+        {
+          "name": "HelpGetUp",
+          "short": 61,
+          "save": null
+        },
+        {
+          "name": "MemoryPosition1",
+          "short": 46,
+          "save": null
+        },
+        {
+          "name": "MemoryPosition2",
+          "short": 47,
+          "save": null
+        }
+      ],
+      [
+        {
+          "name": "MemoryPosition1",
+          "short": 46,
+          "save": 43
+        },
+        {
+          "name": "MemoryPosition2",
+          "short": 47,
+          "save": 44
+        }
+      ]
+    ]
+  },
+  {
+    "key": "bedsmart",
+    "label": "Smart",
+    "repeat": false,
+    "groups": [
+      [
+        {
+          "name": "HeadUp",
+          "short": 36,
+          "save": null
+        },
+        {
+          "name": "HeadDown",
+          "short": 37,
+          "save": null
+        },
+        {
+          "name": "FootUp",
+          "short": 38,
+          "save": null
+        },
+        {
+          "name": "FootDown",
+          "short": 39,
+          "save": null
+        }
+      ],
+      [],
+      [
+        {
+          "name": "ZeroGravity",
+          "short": 69,
+          "save": 102
+        },
+        {
+          "name": "YogaPosition",
+          "short": 47,
+          "save": 44
+        },
+        {
+          "name": "TVPosition",
+          "short": 88,
+          "save": 100
+        },
+        {
+          "name": "MotorReset",
+          "short": 49,
+          "save": null
+        },
+        {
+          "name": "AntiSnoring",
+          "short": 70,
+          "save": 105
+        },
+        {
+          "name": "ReadingPosition",
+          "short": 48,
+          "save": 45
+        }
+      ],
+      [],
+      [
+        {
+          "name": "MemoryPosition1",
+          "short": 46,
+          "save": 43
+        }
+      ]
+    ]
+  },
+  {
+    "key": "bedthreepro",
+    "label": "ThreePro",
+    "repeat": false,
+    "groups": [
+      [
+        {
+          "name": "HeadUp",
+          "short": 36,
+          "save": null
+        },
+        {
+          "name": "HeadDown",
+          "short": 37,
+          "save": null
+        },
+        {
+          "name": "FootUp",
+          "short": 38,
+          "save": null
+        },
+        {
+          "name": "FootDown",
+          "short": 39,
+          "save": null
+        }
+      ],
+      [
+        {
+          "name": "BedLight",
+          "short": 60,
+          "save": null
+        }
+      ],
+      [
+        {
+          "name": "ZeroGravity",
+          "short": 69,
+          "save": 102
+        },
+        {
+          "name": "AntiSnoring",
+          "short": 70,
+          "save": 105
+        },
+        {
+          "name": "MotorReset",
+          "short": 49,
+          "save": null
+        }
+      ],
+      [],
+      [
+        {
+          "name": "MemoryPosition1",
+          "short": 46,
+          "save": 43
+        }
+      ]
+    ]
+  },
+  {
+    "key": "bedx3",
+    "label": "X3",
+    "repeat": true,
+    "groups": [
+      [
+        {
+          "name": "HeadUp",
+          "short": 36,
+          "save": null
+        },
+        {
+          "name": "HeadDown",
+          "short": 37,
+          "save": null
+        },
+        {
+          "name": "FootUp",
+          "short": 38,
+          "save": null
+        },
+        {
+          "name": "FootDown",
+          "short": 39,
+          "save": null
+        },
+        {
+          "name": "LumberUp",
+          "short": 65,
+          "save": null
+        },
+        {
+          "name": "LumberDown",
+          "short": 66,
+          "save": null
+        }
+      ],
+      [
+        {
+          "name": "MassageHeadInstensityStrengthen",
+          "short": 76,
+          "save": null
+        },
+        {
+          "name": "MassageFootInstensityStrengthen",
+          "short": 78,
+          "save": null
+        },
+        {
+          "name": "MassageModeAllOff",
+          "short": 94,
+          "save": null
+        },
+        {
+          "name": "MassageModeChange",
+          "short": 72,
+          "save": null
+        },
+        {
+          "name": "Massage10MinuteTimer",
+          "short": 95,
+          "save": null
+        },
+        {
+          "name": "Massage20MinuteTimer",
+          "short": 99,
+          "save": null
+        },
+        {
+          "name": "Massage30MinuteTimer",
+          "short": 97,
+          "save": null
+        }
+      ],
+      [
+        {
+          "name": "ZeroGravity",
+          "short": 69,
+          "save": 102
+        },
+        {
+          "name": "YogaPosition",
+          "short": 107,
+          "save": 106
+        },
+        {
+          "name": "TVPosition",
+          "short": 88,
+          "save": 100
+        },
+        {
+          "name": "MotorReset",
+          "short": 49,
+          "save": null
+        },
+        {
+          "name": "AntiSnoring",
+          "short": 70,
+          "save": 105
+        },
+        {
+          "name": "HelpGetUp",
+          "short": 61,
+          "save": null
+        },
+        {
+          "name": "ReadingPosition",
+          "short": 48,
+          "save": 45
+        }
+      ],
+      [
+        {
+          "name": "ZeroGravity",
+          "short": 69,
+          "save": null
+        },
+        {
+          "name": "YogaPosition",
+          "short": 107,
+          "save": null
+        },
+        {
+          "name": "TVPosition",
+          "short": 88,
+          "save": null
+        },
+        {
+          "name": "ReadingPosition",
+          "short": 48,
+          "save": null
+        },
+        {
+          "name": "MotorReset",
+          "short": 49,
+          "save": null
+        },
+        {
+          "name": "AntiSnoring",
+          "short": 70,
+          "save": null
+        },
+        {
+          "name": "HelpGetUp",
+          "short": 61,
+          "save": null
+        },
+        {
+          "name": "MemoryPosition1",
+          "short": 46,
+          "save": null
+        },
+        {
+          "name": "MemoryPosition2",
+          "short": 47,
+          "save": null
+        }
+      ],
+      [
+        {
+          "name": "MemoryPosition1",
+          "short": 46,
+          "save": 43
+        },
+        {
+          "name": "MemoryPosition2",
+          "short": 47,
+          "save": 44
+        }
+      ]
+    ]
+  },
+  {
+    "key": "bedzero",
+    "label": "Zero",
+    "repeat": false,
+    "groups": [
+      [
+        {
+          "name": "HeadUp",
+          "short": 36,
+          "save": null
+        },
+        {
+          "name": "HeadDown",
+          "short": 37,
+          "save": null
+        },
+        {
+          "name": "FootUp",
+          "short": 38,
+          "save": null
+        },
+        {
+          "name": "FootDown",
+          "short": 39,
+          "save": null
+        }
+      ],
+      [],
+      [
+        {
+          "name": "ZeroGravity",
+          "short": 69,
+          "save": 102
+        },
+        {
+          "name": "YogaPosition",
+          "short": 47,
+          "save": 44
+        },
+        {
+          "name": "TVPosition",
+          "short": 88,
+          "save": 100
+        },
+        {
+          "name": "MotorReset",
+          "short": 49,
+          "save": null
+        },
+        {
+          "name": "AntiSnoring",
+          "short": 70,
+          "save": 105
+        },
+        {
+          "name": "HelpGetUp",
+          "short": 48,
+          "save": 45
+        },
+        {
+          "name": "ReadingPosition",
+          "short": 89,
+          "save": 101
+        }
+      ],
+      [],
+      [
+        {
+          "name": "MemoryPosition1",
+          "short": 46,
+          "save": 43
+        }
+      ]
+    ]
+  }
+]
