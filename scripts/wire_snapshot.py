@@ -1495,6 +1495,17 @@ def default_scenario(bed_type: str) -> Scenario:
     """The bed type in its default route, with the entry data it needs to build."""
     from custom_components.adjustable_bed import const
 
+    if bed_type == "ergobq":
+        from custom_components.adjustable_bed.codec import ergobq as codec
+        status = codec.publish((codec.boolean(18, False), codec.raw(12, codec.Massage().encode()),
+                                codec.raw(14, codec.Massage().encode()), codec.boolean(50, False)))
+        status = codec.frame(5, status[6:-2]).hex()
+        return Scenario(id=bed_type, bed_type=bed_type,
+            entry_data={"product_type": "txbazdssmqcnndfc", "ergobq_stamp": "12"},
+            replies={"write:" + codec.auth("12").hex(): codec.frame(3, b"\x01").hex(),
+                     "write:" + codec.frame(1, b"\x00").hex(): codec.frame(1, b"\x01\x01\x01A").hex(),
+                     "*": status})
+
     if bed_type == "flexispot":
         return Scenario(id=bed_type, bed_type=bed_type, entry_data={"product_type": "eb632"})
     if bed_type == "ronco_motion":
@@ -2873,7 +2884,7 @@ async def _connect(controller: Any, recorder: Recorder, clock: FakeClock) -> dic
                 session.store_device_info = lambda *_: None
             await controller.async_on_connect(session)
             return
-        if controller._coordinator.bed_type in {"symphony", "linx", "agingplace", "sleep_assistant", "sinca_comfort", "leva", "sleep_assist_pro", "atlas_lift", "ambient", "ronco_motion"}:
+        if controller._coordinator.bed_type in {"symphony", "linx", "agingplace", "sleep_assistant", "sinca_comfort", "leva", "sleep_assist_pro", "atlas_lift", "ambient", "ergobq", "ronco_motion"}:
             session = SimpleNamespace(
                 client=controller.client, is_current=lambda: True,
                 async_start_notify=lambda: controller.start_notify(lambda *_: None),

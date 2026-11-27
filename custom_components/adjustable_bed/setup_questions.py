@@ -25,6 +25,9 @@ from homeassistant.helpers.selector import (
     NumberSelector,
     NumberSelectorConfig,
     NumberSelectorMode,
+    TextSelector,
+    TextSelectorConfig,
+    TextSelectorType,
 )
 
 from .bed_traits import bed_type_has_position_feedback
@@ -360,6 +363,7 @@ _OWNED_BY_BED_TYPE: Final[dict[str, frozenset[str]]] = {
     "sleep_evolution": GENERIC_FIELDS,
     "wsilver_legacy": GENERIC_FIELDS,
     "super_colchones": GENERIC_FIELDS - {CONF_PROTOCOL_VARIANT, CONF_MOTOR_PULSE_COUNT},
+    "ergobq": GENERIC_FIELDS,
     "sonicsleep": GENERIC_FIELDS - {CONF_MOTOR_PULSE_COUNT},
     "suta": GENERIC_FIELDS - {CONF_MOTOR_PULSE_COUNT},
     "truemotion": GENERIC_FIELDS,
@@ -2466,6 +2470,24 @@ def _smart_sleep_normalize(previous: Mapping[str, Any], answers: Mapping[str, An
     return result
 
 
+def _ergobq_products(_data: Mapping[str, Any]) -> dict[str, str]:
+    from .profiles.ergobq import PRODUCTS
+    return PRODUCTS
+
+
+def _ergobq_errors(data: Mapping[str, Any]) -> dict[str, str]:
+    from .profiles.ergobq import validate_setup
+    return validate_setup(data)
+
+
+def _ergobq_settings(data: Mapping[str, Any]) -> dict[str, Any]:
+    from .profiles.ergobq import motor_count
+    try:
+        return {CONF_MOTOR_COUNT: motor_count(data.get("ergobq_serial", ""))}
+    except (ValueError, TypeError):
+        return {}
+
+
 def _flexispot_models(_data: Mapping[str, Any]) -> dict[str, str]:
     from .profiles.flexispot import PROFILES
     return {key: profile.label for key, profile in PROFILES.items()}
@@ -3618,6 +3640,15 @@ SETUP_PROFILES: Final[dict[str, SetupProfile]] = {
         )
         for app in ("sleep_evolution", "wsilver_legacy")
     },
+    "ergobq": SetupProfile(
+        owns={CONF_MOTOR_COUNT: SET_BY_PROFILE, CONF_HAS_MASSAGE: True,
+              CONF_DISABLE_ANGLE_SENSING: True, CONF_MOTOR_PULSE_DELAY_MS: 100},
+        questions=(Question(CONF_PRODUCT_TYPE, _ergobq_products),
+                   Question("ergobq_serial", text=True, default=""),
+                   Question("ergobq_stamp", default="", validator=TextSelector(TextSelectorConfig(type=TextSelectorType.PASSWORD)))),
+        derive=_ergobq_settings, validate=_ergobq_errors,
+        title=lambda _data: "ErgoBQ BED", imports=("profiles.ergobq",),
+    ),
     "sonicsleep": SetupProfile(
         owns={
             CONF_MOTOR_COUNT: 2,
