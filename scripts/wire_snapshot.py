@@ -1604,6 +1604,7 @@ def default_scenario(bed_type: str) -> Scenario:
         const.BED_TYPE_OCTO: const.OCTO_VARIANT_STANDARD,
         const.BED_TYPE_CASPER_BASE: "casperpro",
         const.BED_TYPE_HUSH_BASE: "hushl400",
+        "silksnow": "slikpremier",
         const.BED_TYPE_LUUNA: "rise",
         const.BED_TYPE_MLILY_REMOTE: "ms200",
         const.BED_TYPE_MLILY0: "bedc",
@@ -1630,6 +1631,8 @@ def default_scenario(bed_type: str) -> Scenario:
     }.get(bed_type)
     kwargs: dict[str, Any] = {}
     replies: dict[str, str] = {}
+    if bed_type == "silksnow":
+        return Scenario(id=bed_type, bed_type=bed_type, protocol_variant=variant, replies={"write:6e08010178": "6e09010078", "write:6e0a000179": "6e0e00037f"})
     if bed_type == const.BED_TYPE_JEROME_ADJUSTABLE_BASE:
         return Scenario(
             id=bed_type, bed_type=bed_type, protocol_variant=variant, layout_id="dorsal",

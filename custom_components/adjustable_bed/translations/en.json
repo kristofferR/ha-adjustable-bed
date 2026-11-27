@@ -4750,6 +4750,7 @@
       }
     },
     "sensor": {
+      "silksnow": {"name": "Model"},
       "berun_head_massage": {
         "name": "Head massage level"
       },
@@ -12087,6 +12088,22 @@
   "exceptions": {
     "suta_king_koil_calibrate": {
       "message": "Set the bed clock, then wait for its clock reply before adding or refreshing alarms."
+    },
+    "silksnow_global_control": {"message": "These S&S Base settings apply to the whole receiver. Target the parent bed instead of one side."},
+    "silksnow_product": {
+      "message": "Choose an S&S Base product."
+    },
+    "silksnow_gatt": {
+      "message": "The bed has no supported writable S&S Base service."
+    },
+    "silksnow_action": {
+      "message": "This S&S Base product does not offer that control."
+    },
+    "silksnow_light": {
+      "message": "The bed has not reported its light controls on this connection. Reconnect and try again."
+    },
+    "silksnow_alarm_selection": {
+      "message": "Creating S&S Base alarms is unavailable until its wake-position selection can be verified. Set the alarm in the app."
     },
     "ergobq_request_invalid": {
       "message": "Check the bed schedule or DIY program. Without program data, choose a saved mode from 11 to 30. Synchronized massage needs matching head and leg settings."

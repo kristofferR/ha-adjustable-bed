@@ -5590,6 +5590,9 @@
  "sensor:shuda_alarm_2": {
   "card_section": "utility"
  },
+ "sensor:silksnow": {
+  "card_section": "hidden"
+ },
  "sensor:simmons_alarm_1": {
   "card_section": "hidden"
  },
