@@ -5555,6 +5555,10 @@
  "sensor:saved_positions": {
   "card_section": "saved_positions"
  },
+ "sensor:scott_living_timer_indicator": {
+  "card_section": "massage",
+  "card_role": "timer"
+ },
  "sensor:sealy_massage_foot_level": {
   "card_section": "massage"
  },

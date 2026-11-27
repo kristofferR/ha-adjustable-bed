@@ -490,7 +490,10 @@ _E6: Final = KeesonProfile(key="e6", header=0xE6, side=0, hold=None)
 GLIDEAWAY_MOTION: Final = replace(_E6, key="glideaway_motion", execution=STREAM_HOLD)
 MALOUF_LEGACY_OKIN: Final = replace(_E6, key="malouf_legacy_okin", execution=STREAM_HOLD)
 SLEEPYS_BOX15: Final = replace(_E6, key="sleepys_box15")
-SCOTT_LIVING: Final = replace(_E6, key="scott_living", side=1)
+SCOTT_LIVING: Final = replace(
+    _E6, key="scott_living", side=1, execution=STREAM_HOLD,
+    release=Release(steps=(), on_stop=False),
+)
 # AdjustaMattress 1.6.0: model P1 sends E6 frames, P2 big-endian E5 frames.
 ADJUSTAMATTRESS: Final = replace(_E6, key="adjustamattress", execution=STREAM_HOLD)
 ADJUSTAMATTRESS_P2: Final = KeesonProfile(

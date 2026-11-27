@@ -308,6 +308,10 @@ _BED_TRAITS: Final[dict[str, BedTraits]] = {
     BED_TYPE_RICHMAT_CLASSIC_APPS: _NO_ANGLES,
     # Preset repeat-tap and massage cycles depend on connection-local state.
     BED_TYPE_COMFORT_ENHANCEMENTS: _NO_ANGLES_SCOPED,
+    "scott_living": replace(
+        _NO_ANGLES_SCOPED, owns_device_info_reads=True, connection_timeout=10,
+        cancellation_only_stop=True,
+    ),
     BED_TYPE_RESTONIC: replace(_NO_ANGLES_SCOPED, owns_device_info_reads=True, connection_timeout=5, single_address_native_both=False),
     "kingkoil": replace(
         _NO_ANGLES_SCOPED, owns_device_info_reads=True, connection_timeout=5,

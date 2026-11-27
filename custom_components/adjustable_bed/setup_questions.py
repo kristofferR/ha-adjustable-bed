@@ -2156,6 +2156,10 @@ def _app_layouts(bed_type: str) -> Callable[[Mapping[str, Any]], Mapping[Any, st
     def choices(_data: Mapping[str, Any]) -> Mapping[Any, str]:
         if bed_type == "ergomotion_4":
             return ERGOMOTION4_PRODUCTS
+        if bed_type == "scott_living":
+            from .profiles.scott_living import LAYOUTS
+
+            return LAYOUTS
         from .profiles.keeson import APP_LAYOUTS
 
         return {layout: layout for layout in APP_LAYOUTS[bed_type]}
@@ -2167,6 +2171,8 @@ def _app_layout_default(bed_type: str) -> Callable[[Mapping[str, Any]], str]:
     def default(_data: Mapping[str, Any]) -> str:
         if bed_type == "ergomotion_4":
             return "H"
+        if bed_type == "scott_living":
+            return "A"
         from .profiles.keeson import DEFAULT_LAYOUTS
 
         return DEFAULT_LAYOUTS[bed_type]
@@ -2204,7 +2210,7 @@ def _app_layout_errors(data: Mapping[str, Any]) -> dict[str, str]:
 def _app_layout_title(data: Mapping[str, Any]) -> str:
     from .profiles.keeson import APP_NAMES
 
-    return APP_NAMES.get(data[CONF_BED_TYPE], "Ergomotion 4.0")
+    return "Scott Living" if data[CONF_BED_TYPE] == "scott_living" else APP_NAMES.get(data[CONF_BED_TYPE], "Ergomotion 4.0")
 
 
 # What each of the app's feature keys adds to an Other product, read from the
@@ -2302,14 +2308,19 @@ def _app_layout_profile(bed_type: str) -> SetupProfile:
         owns=owns,
         questions=questions,
         validate=_app_layout_errors,
-        derive=_qplus_derive if bed_type == "qplus_app" else lambda _data: _NO_PULSE_CHOICE,
+        derive=_qplus_derive if bed_type == "qplus_app" else _scott_living_derive if bed_type == "scott_living" else lambda _data: _NO_PULSE_CHOICE,
         title=_app_layout_title,
         imports=(
             ("profiles.keeson", "beds.ergomotion4.controller")
             if bed_type == "ergomotion_4"
+            else ("profiles.keeson", "profiles.scott_living") if bed_type == "scott_living"
             else ("profiles.keeson",)
         ),
     )
+
+
+def _scott_living_derive(data: Mapping[str, Any]) -> Mapping[str, Any]:
+    return {**_NO_PULSE_CHOICE, CONF_MOTOR_COUNT: 3 if data.get(CONF_PRODUCT_TYPE) == "C" else 2}
 
 
 def _qplus_derive(data: Mapping[str, Any]) -> Mapping[str, Any]:
@@ -4134,7 +4145,7 @@ SETUP_PROFILES: Final[dict[str, SetupProfile]] = {
     # Each app's exact layout, chosen from its own list.
     **{
         bed_type: _app_layout_profile(bed_type)
-        for bed_type in sorted(KEESON_LAYOUT_APP_BED_TYPES | {"ergomotion_4"})
+        for bed_type in sorted(KEESON_LAYOUT_APP_BED_TYPES | {"ergomotion_4", "scott_living"})
     },
     # Standard OCTO Smart Control's PIN, and an explicit motor layout over the
     # advertised one. A route without an app step asks these in its final settings.

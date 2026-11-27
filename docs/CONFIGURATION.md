@@ -610,6 +610,7 @@ beds, Reconfigure that bed, then combine them again.
 | BF / Cherish | [The exact app](beds/keeson.md#bf-and-cherish); it sets the layout. |
 | Casper Base | [PRO/MAX product](beds/casper-base.md#home-assistant-setup); sleep sensors and the RCRM handset are separate entries. |
 | Relax Motion | Numeric advertisement model, preserved across reconnects, and the exact app page / label language. See [setup](beds/relax-motion.md#detection--setup). |
+| Scott Living | [A (8 buttons), B (13 buttons), or C (17 buttons)](beds/keeson.md#scott-living). Existing entries default to A. The layout sets the motors and utility controls. |
 | SmartBed app | The receiver, the motor count and the bed's Bluetooth name. A CB24AB receiver also asks which side of a split bed the entry controls. See [choosing a profile](beds/smartbed.md#choosing-a-profile). |
 | trueMotion app | [Complete case-sensitive Bluetooth name](beds/suta.md#truemotion). Each receiver keeps its own name in a pair, and the left receiver selects the split editor. |
 | CheersSleep | See the [setup steps](beds/cheerssleep.md#cheerssleep-profile). |
