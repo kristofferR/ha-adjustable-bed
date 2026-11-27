@@ -305,15 +305,6 @@
   "card_role": "up",
   "card_motor": "all_motors"
  },
- "button:alya_action": {
-  "card_section": "utility"
- },
- "button:alya_light_action": {
-  "card_section": "lighting"
- },
- "button:alya_massage_action": {
-  "card_section": "massage"
- },
  "button:alya_release": {
   "card_section": "hidden"
  },

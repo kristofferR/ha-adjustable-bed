@@ -305,7 +305,7 @@ _BY_BED_TYPE: Final[dict[str, SideProfile]] = {
     BED_TYPE_STARCODE_M1X12: SideProfile("Adjustable Comfort M1X12"),
     BED_TYPE_VIBRADORM_APP: SideProfile("Vibradorm app", frozenset({CONF_VIBRADORM_APP_PROFILE})),
     BED_TYPE_VMATBASIC: SideProfile("V-MAT Basic"),
-    BED_TYPE_ALYA: SideProfile("Alya Smart Furnishing", variant_owned=True, keys=frozenset({"cb24_bed_selection"})),
+    BED_TYPE_ALYA: SideProfile("Alya Smart Furnishing", variant_owned=True),
     BED_TYPE_ESHINE_OKIN: SideProfile("eShine E2000/E3000/E3100/E5000", variant_owned=True),
     BED_TYPE_ESHINE: SideProfile("Eshine E6000"),
     BED_TYPE_TRANQUIL: SideProfile("Tranquil"),

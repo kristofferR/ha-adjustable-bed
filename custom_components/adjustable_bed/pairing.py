@@ -29,6 +29,7 @@ from .beds.richmat_app.sleep_profiles import CHOICES as RICHMAT_SLEEP_CHOICES
 from .const import (
     ADJUSTAMATTRESS_VARIANTS,
     BED_TYPE_ADJUSTAMATTRESS,
+    BED_TYPE_ALYA,
     BED_TYPE_AMBIENT,
     BED_TYPE_BETTERLIVING2,
     BED_TYPE_CASPER_BASE,
@@ -220,6 +221,7 @@ _STANDALONE_ONLY_APP_NAMES: Final = {
 }
 SINGLE_ADDRESS_SIDE_AWARE_BED_TYPES: Final = frozenset(
     {
+        BED_TYPE_ALYA,
         "cheerssleep",
         "ultramatic_smart_bed",
         "bobpowerbase",
@@ -275,6 +277,11 @@ def supports_single_address_pairing(
         return protocol_variant in ("elite_sh", "ultra_sh")
     if bed_type not in SINGLE_ADDRESS_SIDE_AWARE_BED_TYPES:
         return False
+    if bed_type == BED_TYPE_ALYA:
+        from .profiles.alya import PROFILES
+
+        profile = PROFILES.get(protocol_variant or "")
+        return profile is not None and profile.side_controls
     if bed_type == "cheerssleep":
         return str(product_type) in {"51", "52", "140", "141", "172"}
     if bed_type == BED_TYPE_MLILY_REMOTE:
@@ -886,7 +893,7 @@ def build_single_address_pair_entry_data(
     elif bed_type == BED_TYPE_RONDURE:
         left[CONF_PROTOCOL_VARIANT] = RONDURE_VARIANT_SIDE_A
         right[CONF_PROTOCOL_VARIANT] = RONDURE_VARIANT_SIDE_B
-    elif bed_type == "smartbed":
+    elif bed_type in ("smartbed", BED_TYPE_ALYA):
         left[CONF_CB24_BED_SELECTION] = CB24_BED_SELECTION_A
         right[CONF_CB24_BED_SELECTION] = CB24_BED_SELECTION_B
     elif bed_type == "ultramatic_smart_bed":

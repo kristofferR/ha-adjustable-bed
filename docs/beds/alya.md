@@ -22,7 +22,7 @@ Movement, preset recall, massage, light toggle and weekly alarms depend on the e
 
 Search for **Alya Smart Furnishing** and select the exact app BLE type and motor count. Shared UUIDs and raw Android scan offsets cannot identify this app safely in Home Assistant. Setup checks the selected layout's exact write and notification roles when the bed is reachable. An offline check remains inconclusive; runtime repeats the same check before control.
 
-Only DACHENG five-motor offers side A / B / both. A maps to the logical left child, B to right; verify this convention on your bed. CB24 five-motor always addresses both. Two-address entries retain their own layout and side settings. BLUETOOTH layouts also ask whether the app shows a massage page; its advertised identity can disable that page.
+Only DACHENG five-motor offers side A / B / both. For separate left and right entities on its one Bluetooth address, open Configure and choose **Add Left, Right and Both controls**; splitting it again restores the standalone settings. A maps to the logical left child, B to right; verify this convention on your bed. CB24 five-motor always addresses both. Two-address entries retain their own layout and side settings. BLUETOOTH layouts also ask whether the app shows a massage page; its advertised identity can disable that page.
 
 ## Protocol Details
 
@@ -582,7 +582,7 @@ Memory actions recall only. The app's save-named success callback sends no progr
 
 ### Massage and Lights
 
-Controls retain the app's action tags. Massage adjustments require a current-session report showing active head or foot massage. Toggle-only commands do not claim on/off state. Light on/off requires an actual current-session light report; toggle remains available. Refresh reports explicitly; no polling runs while idle.
+Use the massage timer select for 10, 20 or 30 minutes, and the intensity sliders for levels 1 to 3. The selected layout determines whether one combined intensity slider or separate head and foot sliders exist. No Off timer option or level zero is inferred. These settings remain unknown in HA; received fields stay in the diagnostic report, without guessing an aggregate level or which side a report describes. Other massage adjustments use the shared catalog buttons. All adjustments require a current-session report showing active head or foot massage. Toggle-only commands do not claim on/off state. Light on/off requires an actual current-session light report; toggle remains available. Refresh reports explicitly; no polling runs while idle.
 
 ### Clock and Alarms
 

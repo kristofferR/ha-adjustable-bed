@@ -11,7 +11,7 @@ from homeassistant.exceptions import ServiceValidationError
 from homeassistant.util import dt as dt_util
 
 from ...alarm import AlarmCapability
-from ...card import CARD_HIDDEN, CARD_LIGHTING, CARD_MASSAGE, CARD_UTILITY
+from ...card import CARD_HIDDEN
 from ...command_scheduler import current_command_context, note_frame_skipped, note_frame_written
 from ...const import CONF_CB24_BED_SELECTION, CONF_HAS_MASSAGE, CONF_PROTOCOL_VARIANT
 from ...controller_state import StateKey
@@ -21,6 +21,7 @@ from ...state_keys import UNDER_BED_LIGHTS_ON
 from ..base import CONTROLLER_GESTURE_RELEASE, BedController, ProfileExecution
 from ..builder import BuildContext
 from ..cancellation import settled
+from ..catalog_buttons import Kind, catalog_button, unique_buttons
 from ..entity_specs import (
     ControllerButtonSpec,
     ControllerHoldSpec,
@@ -204,6 +205,59 @@ class AlyaController(ProfileExecution[AlyaProfile], BedController):
         return "intensity" in control or control.startswith(("massage-", "wave", "time"))
 
     @property
+    def auto_enable_massage(self) -> bool:
+        return self._has_massage
+
+    @property
+    def supports_massage(self) -> bool:
+        return self._has_massage
+
+    @property
+    def supports_massage_timer(self) -> bool:
+        return self._has_massage and bool(self.massage_timer_options)
+
+    @property
+    def massage_timer_options(self) -> list[int]:
+        return [minutes for minutes in (10, 20, 30) if f"time{minutes}" in self.profile.commands]
+
+    @property
+    def massage_timer_can_turn_off(self) -> bool:
+        return False
+
+    async def set_massage_timer(self, minutes: int) -> None:
+        if type(minutes) is not int or minutes not in self.massage_timer_options:
+            raise self._unavailable("Unsupported massage timer")
+        await self.execute(f"time{minutes}")
+
+    @property
+    def supports_massage_intensity_control(self) -> bool:
+        return self._has_massage and bool(self.massage_intensity_zones)
+
+    @property
+    def massage_intensity_zones(self) -> list[str]:
+        return [
+            zone
+            for zone, prefix in (("all", ""), ("head", "head"), ("foot", "foot"))
+            if all(f"{prefix}intensity{level}" in self.profile.commands for level in (1, 2, 3))
+        ]
+
+    @property
+    def massage_intensity_max(self) -> int:
+        return 3
+
+    def massage_intensity_min(self, zone: str) -> int:
+        return 1
+
+    async def set_massage_intensity(self, zone: str, level: int) -> None:
+        if (
+            zone not in self.massage_intensity_zones
+            or type(level) is not int
+            or not 1 <= level <= 3
+        ):
+            raise self._unavailable("Unsupported massage zone or level")
+        await self.execute(f"{'' if zone == 'all' else zone}intensity{level}")
+
+    @property
     def held_control_options(self) -> tuple[str, ...]:
         return tuple(
             k
@@ -238,6 +292,12 @@ class AlyaController(ProfileExecution[AlyaProfile], BedController):
             "memory",
             "m1",
             "m2",
+            *(f"time{minutes}" for minutes in self.massage_timer_options),
+            *(
+                f"{prefix}intensity{level}"
+                for prefix in ("", "head", "foot")
+                for level in (1, 2, 3)
+            ),
             *(prefix + direction for prefix in _AXIS.values() for direction in ("up", "down")),
         }
         names = {
@@ -266,32 +326,26 @@ class AlyaController(ProfileExecution[AlyaProfile], BedController):
         if self._has_massage:
             names["query-massage"] = "Refresh massage report"
         if self.supports_clock_alarm:
-            names.update({"query-alarm": "Refresh alarm report", "set-clock": "Synchronize clock"})
+            names["query-alarm"] = "Refresh alarm report"
         specs: list[ControllerButtonSpec] = []
         for k, name in names.items():
-            specs.append(
-                ControllerButtonSpec(
-                    "alya_" + k,
-                    name,
-                    action(k),
-                    translation_key="alya_light_action"
-                    if k == "light"
-                    else "alya_action"
-                    if k.startswith(("query-", "set-", "hps", "union"))
-                    else "alya_massage_action",
-                    translation_placeholders={"action": name},
-                    entity_registry_enabled_default=not k.startswith("query-"),
-                    diagnostic=k.startswith("query-"),
-                    hold=ControllerHoldSpec(k, release_button_key="alya_release")
-                    if k in self.held_control_options
-                    else None,
-                    card=CARD_LIGHTING
-                    if k == "light"
-                    else CARD_UTILITY
-                    if k.startswith(("query-", "set-", "hps", "union"))
-                    else CARD_MASSAGE,
-                )
+            spec = catalog_button(
+                "alya_" + k,
+                name,
+                action(k),
+                kind=Kind.EXTRA
+                if k.startswith("query-")
+                else Kind.MASSAGE
+                if self._massage_control(k)
+                else None,
+                enabled=not k.startswith("query-"),
+                diagnostic=k.startswith("query-"),
+                hold=ControllerHoldSpec(k, release_button_key="alya_release")
+                if k in self.held_control_options
+                else None,
             )
+            if spec is not None:
+                specs.append(spec)
         specs.append(
             ControllerButtonSpec(
                 "alya_release",
@@ -302,7 +356,7 @@ class AlyaController(ProfileExecution[AlyaProfile], BedController):
                 card=CARD_HIDDEN,
             )
         )
-        return tuple(specs)
+        return unique_buttons(specs)
 
     @property
     def controller_state_sensor_specs(self) -> tuple[ControllerStateSensorSpec, ...]:
@@ -537,8 +591,6 @@ class AlyaController(ProfileExecution[AlyaProfile], BedController):
     async def execute(self, control: str) -> None:
         if control == "stop":
             await self.stop_all()
-        elif control == "set-clock":
-            await self.sync_clock()
         elif control.startswith("query-"):
             if control == "query-massage" and not self._has_massage:
                 raise self._unavailable("This layout has no massage page")
