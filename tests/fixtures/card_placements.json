@@ -4477,6 +4477,9 @@
  "select:bedsmart_side": {
   "card_section": "motors"
  },
+ "select:comfort_bed_side": {
+  "card_section": "utility"
+ },
  "select:comfy_timer_selection": {
   "card_section": "utility"
  },
@@ -4974,6 +4977,9 @@
   "card_section": "hidden"
  },
  "sensor:cheerssleep_right_snore_power": {
+  "card_section": "hidden"
+ },
+ "sensor:comfort_bed_features": {
   "card_section": "hidden"
  },
  "sensor:comfy_lock_status": {

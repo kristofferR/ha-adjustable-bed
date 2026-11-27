@@ -11,7 +11,7 @@ from ...card import CARD_MASSAGE, CARD_PRESET_SAVE
 from ...codec import richmat as codec
 from ...command_scheduler import CommandContext, current_command_context, note_frame_skipped
 from ...errors import BedNotConnectedError, failed
-from ...profiles.richmat import ATLAS_LIFT, ATLAS_LIFT_INITIALIZATION, Button
+from ...profiles.richmat import ATLAS_LIFT, ATLAS_LIFT_INITIALIZATION, Button, RichmatProfile
 from ..base import BedController
 from ..cancellation import cancellable, settled
 from ..entity_specs import ControllerButtonSpec, MotorControlSpec
@@ -67,8 +67,10 @@ def select_link(client: BleakClient) -> _Link:
 class AtlasLiftController(RichmatProfileController):
     """Fixed product controls with an encoder and characteristic tied to the connection."""
 
-    def __init__(self, coordinator: AdjustableBedCoordinator) -> None:
-        super().__init__(coordinator, ATLAS_LIFT, char_uuid="")
+    def __init__(
+        self, coordinator: AdjustableBedCoordinator, *, profile: RichmatProfile = ATLAS_LIFT
+    ) -> None:
+        super().__init__(coordinator, profile, char_uuid="")
         self._link: _Link | None = None
         self._notifying = False
         self._cleanup_context: CommandContext | None = None
@@ -149,7 +151,10 @@ class AtlasLiftController(RichmatProfileController):
         self._cleanup_context = None
 
     def _build_command(self, command_byte: int) -> bytes:
-        return codec.function(command_byte, single=self._current_link().single)
+        return self._encode(self._current_link(), command_byte)
+
+    def _encode(self, link: _Link, command_byte: int) -> bytes:
+        return codec.function(command_byte, single=link.single)
 
     async def _write_on(
         self,
@@ -208,7 +213,7 @@ class AtlasLiftController(RichmatProfileController):
         link = self._current_link()
         cancel = self._coordinator.cancel_command
         count, repeat_ms = self.motor_pulse_settings()
-        command = codec.function(command_byte, single=link.single)
+        command = self._encode(link, command_byte)
         attempted = False
         loop = asyncio.get_running_loop()
         repeat_s = repeat_ms / 1000
@@ -270,7 +275,7 @@ class AtlasLiftController(RichmatProfileController):
         assert self.profile.stop is not None
         await self._write_on(
             link,
-            codec.function(self.profile.stop, single=link.single),
+            self._encode(link, self.profile.stop),
             asyncio.Event(),
             track_command_write=False,
         )

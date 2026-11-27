@@ -112,10 +112,11 @@ async def test_mixed_supported_services_fail_before_notifying_or_writing(routes)
     client.start_notify.assert_not_awaited()
 
 
-async def test_runtime_rejects_mixed_roles_even_with_one_cached_service(hass):
+@pytest.mark.parametrize("bed_type", [const.BED_TYPE_ATLAS_LIFT, const.BED_TYPE_COMFORT_BED])
+async def test_runtime_rejects_mixed_roles_even_with_one_cached_service(hass, bed_type):
     entry = MockConfigEntry(
         domain=const.DOMAIN,
-        data={CONF_ADDRESS: ADDRESS, CONF_NAME: "Atlas Lift", const.CONF_BED_TYPE: const.BED_TYPE_ATLAS_LIFT},
+        data={CONF_ADDRESS: ADDRESS, CONF_NAME: bed_type, const.CONF_BED_TYPE: bed_type},
     )
     entry.add_to_hass(hass)
     cached = client_on(service("n1", "write"))
@@ -237,6 +238,7 @@ async def discover_cama_lift(hass):
     assert chooser["step_id"] == "bluetooth_disambiguate"
     assert set(select_options(chooser, "bed_type_choice")) == {
         const.BED_TYPE_ATLAS_LIFT,
+        const.BED_TYPE_COMFORT_BED,
         const.BED_TYPE_LIKIMIO,
         "show_all",
     }
