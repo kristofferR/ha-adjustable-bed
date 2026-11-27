@@ -1886,6 +1886,9 @@ def route_scenarios() -> list[Scenario]:
         if (sample := SAMPLED_ROUTES.get(bed_type)) is not None:
             variants = [*variants[:sample], variants[-1]]
         for variant in variants:
+            if bed_type == "solace" and variant == "flexirest":
+                # Its explicit app/name cases below supply actual config data.
+                continue
             scenarios.append(
                 dataclasses.replace(
                     base,
@@ -1908,6 +1911,17 @@ def route_scenarios() -> list[Scenario]:
             entry_data={const.CONF_BLE_DEVICE_NAME: name}, layout_id="sophie",
             replies={"write:ffffffff01000a0b0f": "ffffffff01000a0b01",
                      "*": "ffffffff010004130f0730008a01020100"},
+        ))
+    for suffix, name, status in (("standard", "Sealy-K1", "0f"), ("qms2", "QMS2", "1f"), ("fault", "S4-6", "0f")):
+        scenarios.append(Scenario(
+            id=f"solace:flexirest:{suffix}", bed_type="solace", protocol_variant="flexirest",
+            entry_data={const.CONF_BLE_DEVICE_NAME: name, const.CONF_BED_TYPE: "solace",
+                        const.CONF_PROTOCOL_VARIANT: "flexirest"}, layout_id="sophie",
+            replies={"write:ffffffff01000a0b0f": "ffffffff01000a0b01",
+                     "write:ffffffff050005ff23": "ffffffff05000105",
+                     "write:ffffffff030028": "ffffffff0306000a",
+                     "write:ffffffff030030": "ffffffff0306000b",
+                     "*": f"ffffffff01000413{status}0730008a01020100"},
         ))
     # Every Comfy bed type/alias, without sampling the product inventory.
     for bed_type in (const.BED_TYPE_KOMFYD, const.BED_TYPE_COMFYDS):
@@ -2735,6 +2749,15 @@ async def _build(scenario: Scenario, client: Any) -> Any:
         {**_base_entry_data(), **scenario.entry_data},
     )
     coordinator.client = client
+    if scenario.bed_type == "solace" and scenario.protocol_variant == "flexirest":
+        # New profile gates are driven by its scripted notifications, not by
+        # invented initial state. Keep all pre-existing scenarios unchanged.
+        from custom_components.adjustable_bed.controller_state import StateUpdate
+
+        def receive(*updates: StateUpdate) -> None:
+            coordinator.controller_state.update((update.key, update.value) for update in updates)
+
+        coordinator.handle_controller_state_updates = receive
     if scenario.pair_primary is not None:
         from custom_components.adjustable_bed.const import CONF_BED_TYPE, CONF_BLE_DEVICE_NAME
         from custom_components.adjustable_bed.coordinator import ChildEntryView
@@ -2841,7 +2864,7 @@ async def _connect(controller: Any, recorder: Recorder, clock: FakeClock) -> dic
             await controller.async_after_connect(SimpleNamespace(is_current=lambda: True))
         if controller._coordinator.bed_type in {"komfyd", "comfyds", "suta"}:
             await controller.async_after_connect(None)
-        if controller._coordinator.bed_type == "solace" and controller.profile.key == "sophie":
+        if controller._coordinator.bed_type == "solace" and controller.profile.key in ("sophie", "flexirest"):
             session = SimpleNamespace(is_current=lambda: True)
             await controller.async_after_connect(session)
             await controller._startup_task

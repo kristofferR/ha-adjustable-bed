@@ -489,7 +489,7 @@ def bed_traits(bed_type: str | None, protocol_variant: str | None = None) -> Bed
         return replace(traits, single_address_native_both=False)
     if resolved == "richmat_classic_apps" and protocol_variant == "dreamlab2":
         return replace(traits, single_address_native_both=False, owns_device_info_reads=True)
-    if resolved == "solace" and protocol_variant == "sophie":
+    if resolved == "solace" and protocol_variant in ("sophie", "flexirest"):
         return replace(traits, no_angle_feedback=True, connection_scoped_state=True, owns_device_info_reads=True)
     if resolved in ("richmat_nisco", "richmat_mlily_supreme", "bedtech_classic") and protocol_variant == "sleep":
         return replace(traits, persistent_connection=True)

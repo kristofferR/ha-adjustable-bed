@@ -3817,6 +3817,24 @@
       "sophie_program_anti_snore": {
         "name": "Save or clear anti-snore position"
       },
+      "flexirest_program_tv": {
+        "name": "Save or clear TV position"
+      },
+      "flexirest_program_zero_g": {
+        "name": "Save or clear zero gravity position"
+      },
+      "flexirest_program_anti_snore": {
+        "name": "Save or clear anti-snore position"
+      },
+      "flexirest_leg_relaxation": {
+        "name": "Leg relaxation"
+      },
+      "flexirest_reapply_alarm": {
+        "name": "Reapply reported alarm"
+      },
+      "flexirest_query_fault": {
+        "name": "Refresh bed fault"
+      },
       "ormatek_light": {
         "name": "Toggle light"
       },
@@ -5741,6 +5759,18 @@
       "sophie_wave": {
         "name": "Massage wave"
       },
+      "flexirest_head_level": {
+        "name": "Head massage level"
+      },
+      "flexirest_foot_level": {
+        "name": "Foot massage level"
+      },
+      "flexirest_wave": {
+        "name": "Massage frequency"
+      },
+      "flexirest_fault": {
+        "name": "Bed fault"
+      },
       "personal_comfort_adjustment": {
         "name": "Firmness adjustment",
         "state": {
@@ -6368,6 +6398,24 @@
         "name": "Zero gravity position saved"
       },
       "sophie_anti_snore_saved": {
+        "name": "Anti-snore position saved"
+      },
+      "flexirest_alarm_enabled": {
+        "name": "Bed alarm"
+      },
+      "flexirest_memory_1_saved": {
+        "name": "Memory 1 saved"
+      },
+      "flexirest_memory_2_saved": {
+        "name": "Memory 2 saved"
+      },
+      "flexirest_tv_saved": {
+        "name": "TV position saved"
+      },
+      "flexirest_zero_g_saved": {
+        "name": "Zero gravity position saved"
+      },
+      "flexirest_anti_snore_saved": {
         "name": "Anti-snore position saved"
       },
       "ormatek_massage": {
@@ -12984,7 +13032,8 @@
         "bedsense": "BedSense app",
         "another": "Another app or remote: search every app",
         "keep": "Keep the detected or saved controls",
-        "sophie": "Sophie app"
+        "sophie": "Sophie app",
+        "flexirest": "Sealy FlexiRest app"
       }
     },
     "leggett_family_choice": {
