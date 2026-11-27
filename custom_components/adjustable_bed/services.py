@@ -1978,15 +1978,17 @@ async def _execute_preflighted(
     resource: str | None = "configuration",
     resources: Collection[str] | None = None,
     admissions: Sequence[_CommandAdmission | None] | None = None,
+    translate_side_errors: bool = False,
 ) -> None:
     """Run a preflighted command on each target in turn.
 
     Any failure or cancellation hands the links opened only for validation
     back to their idle timer.
     """
+    execute = _execute_sided_translated if translate_side_errors else _execute_sided
     try:
         for index, (coordinator, side) in enumerate(targets):
-            await _execute_sided(
+            await execute(
                 coordinator,
                 side,
                 command_fn,

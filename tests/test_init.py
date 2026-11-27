@@ -86,6 +86,7 @@ from custom_components.adjustable_bed.const import (
     LINAK_POSITION_SERVICE_UUID,
     LINAK_TIMER_CHAR_UUID,
     LINAK_TIMER_SERVICE_UUID,
+    LINAK_VARIANT_AA_CONTROL_MY_BED,
     MALOUF_LAYOUT_HILO,
     OCTO_VARIANT_STANDARD,
     PAIR_MODE_SEPARATE_ADDRESS,
@@ -1648,6 +1649,9 @@ class TestServices:
             call(LINAK_CONTROL_CHAR_UUID, bytes.fromhex("FF 00"), response=True),
         ]
 
+    @pytest.mark.parametrize(
+        ("aa_control", "replace_link"), [(False, False), (True, False), (True, True)]
+    )
     async def test_linak_rename_service_writes_utf8_name_then_disconnects(
         self,
         hass: HomeAssistant,
@@ -1655,8 +1659,18 @@ class TestServices:
         mock_coordinator_connected,
         mock_bleak_client: MagicMock,
         enable_custom_integrations,
+        aa_control: bool,
+        replace_link: bool,
     ):
         """Rename writes raw UTF-8 bytes and releases the BLE connection."""
+        if aa_control:
+            hass.config_entries.async_update_entry(
+                mock_config_entry,
+                data={
+                    **mock_config_entry.data,
+                    CONF_PROTOCOL_VARIANT: LINAK_VARIANT_AA_CONTROL_MY_BED,
+                },
+            )
         await hass.config_entries.async_setup(mock_config_entry.entry_id)
         await hass.async_block_till_done()
 
@@ -1665,20 +1679,62 @@ class TestServices:
             0
         ].id
         mock_bleak_client.write_gatt_char.reset_mock()
+        mock_bleak_client.read_gatt_char.reset_mock()
         mock_bleak_client.disconnect.reset_mock()
 
-        await hass.services.async_call(
-            DOMAIN,
-            SERVICE_RENAME,
-            {"device_id": [device_id], "name": "Seng Å"},
-            blocking=True,
-        )
+        name = "Å" * 15 + "😀" if aa_control else "Seng Å"
+        if aa_control:
+            from homeassistant.exceptions import ServiceValidationError
 
+            with pytest.raises(ServiceValidationError, match="17 UTF-16 code units"):
+                await hass.services.async_call(
+                    DOMAIN,
+                    SERVICE_RENAME,
+                    {"device_id": [device_id], "name": name + "x"},
+                    blocking=True,
+                )
+            mock_bleak_client.write_gatt_char.assert_not_awaited()
+            mock_bleak_client.read_gatt_char.assert_not_awaited()
+
+        coordinator = hass.data[DOMAIN][mock_config_entry.entry_id]
+        original_write = mock_bleak_client.write_gatt_char.side_effect
+        replacement = MagicMock(is_connected=True, read_gatt_char=AsyncMock(), disconnect=AsyncMock())
+
+        async def write(uuid, data, **kwargs):
+            await original_write(uuid, data, **kwargs)
+            if replace_link and uuid == LINAK_DEVICE_NAME_UUID:
+                coordinator._client = replacement
+
+        try:
+            with patch.object(mock_bleak_client.write_gatt_char, "side_effect", write):
+                await hass.services.async_call(
+                    DOMAIN,
+                    SERVICE_RENAME,
+                    {"device_id": [device_id], "name": name},
+                    blocking=True,
+                )
+        finally:
+            if replace_link:
+                coordinator._client = mock_bleak_client
+
+        readiness = [call(LINAK_CONTROL_CHAR_UUID, b"\xff\x00", response=True)] if aa_control else []
         assert mock_bleak_client.write_gatt_char.await_args_list == [
-            call(LINAK_DEVICE_NAME_UUID, "Seng Å".encode(), response=True),
+            *readiness,
+            call(LINAK_DEVICE_NAME_UUID, name.encode(), response=True),
         ]
+        if replace_link:
+            mock_bleak_client.read_gatt_char.assert_not_awaited()
+            mock_bleak_client.disconnect.assert_not_awaited()
+            replacement.read_gatt_char.assert_not_awaited()
+            replacement.disconnect.assert_not_awaited()
+            return
+        if aa_control:
+            mock_bleak_client.read_gatt_char.assert_awaited_once_with(LINAK_DEVICE_NAME_UUID)
+        else:
+            mock_bleak_client.read_gatt_char.assert_not_awaited()
         mock_bleak_client.disconnect.assert_awaited_once()
 
+    @pytest.mark.parametrize("aa_control", [False, True])
     async def test_linak_simultaneous_move_rejects_axis_missing_from_model(
         self,
         hass: HomeAssistant,
@@ -1686,10 +1742,19 @@ class TestServices:
         mock_coordinator_connected,
         mock_bleak_client: MagicMock,
         enable_custom_integrations,
+        aa_control: bool,
     ):
         """Preflight rejects an actuator absent from the discovered mask."""
         from homeassistant.exceptions import ServiceValidationError
 
+        if aa_control:
+            hass.config_entries.async_update_entry(
+                mock_config_entry,
+                data={
+                    **mock_config_entry.data,
+                    CONF_PROTOCOL_VARIANT: LINAK_VARIANT_AA_CONTROL_MY_BED,
+                },
+            )
         _configure_linak_advanced(mock_bleak_client, actuator_mask=0xC0)
         await hass.config_entries.async_setup(mock_config_entry.entry_id)
         await hass.async_block_till_done()
@@ -1759,6 +1824,242 @@ class TestServices:
         assert execute.await_args.kwargs["resources"] == (
             "motor:bed_height",
             "motor:back",
+        )
+
+    @pytest.mark.parametrize("change", ["stop", "mixed", "missing_axis"])
+    async def test_aa_grouped_move_checks_admission_and_live_mask(
+        self, hass, mock_config_entry, mock_coordinator_connected, mock_bleak_client,
+        enable_custom_integrations, monkeypatch, change,
+    ) -> None:
+        from homeassistant.exceptions import ServiceValidationError
+
+        from custom_components.adjustable_bed.beds.linak import services as linak_services
+
+        hass.config_entries.async_update_entry(
+            mock_config_entry,
+            data={**mock_config_entry.data, CONF_PROTOCOL_VARIANT: LINAK_VARIANT_AA_CONTROL_MY_BED},
+        )
+        _configure_linak_advanced(mock_bleak_client)
+        await hass.config_entries.async_setup(mock_config_entry.entry_id)
+        await hass.async_block_till_done()
+        device_id = dr.async_entries_for_config_entry(
+            dr.async_get(hass), mock_config_entry.entry_id
+        )[0].id
+        coordinator = hass.data[DOMAIN][mock_config_entry.entry_id]
+        original_preflight = linak_services._preflight_each
+
+        async def after_preflight(*args):
+            checked = await original_preflight(*args)
+            if change == "stop":
+                await hass.services.async_call(
+                    DOMAIN, SERVICE_STOP_ALL, {"device_id": device_id}, blocking=True
+                )
+            elif change == "missing_axis":
+                _configure_linak_advanced(mock_bleak_client, actuator_mask=0x80)
+                await coordinator.controller.async_discover_capabilities()
+            return checked
+
+        monkeypatch.setattr(linak_services, "_preflight_each", after_preflight)
+        mock_bleak_client.write_gatt_char.reset_mock()
+        move = hass.services.async_call(
+            DOMAIN, SERVICE_LINAK_MOVE_SIMULTANEOUS,
+            {
+                "device_id": device_id, "duration_ms": 100,
+                "first_motor": "back", "first_direction": "up",
+                "second_motor": "legs", "second_direction": "down" if change == "mixed" else "up",
+            },
+            blocking=True,
+        )
+        if change == "stop":
+            await move
+        else:
+            error = "linak_aa_same_direction" if change == "mixed" else "feature_not_supported"
+            with raises_key(error, ServiceValidationError):
+                await move
+        commands = [write.args[1] for write in mock_bleak_client.write_gatt_char.await_args_list]
+        assert all(command == b"\xff\x00" for command in commands)
+        if change == "stop":
+            assert commands
+        elif change == "mixed":
+            assert not commands
+
+    @pytest.mark.parametrize(
+        ("service", "replace_after_first_write"), [(True, False), (False, False), (True, True)]
+    )
+    async def test_aa_grouped_move_never_crosses_ble_links(
+        self, hass, mock_config_entry, mock_coordinator_connected, mock_bleak_client,
+        enable_custom_integrations, service, replace_after_first_write,
+    ) -> None:
+        from custom_components.adjustable_bed.errors import BedNotConnectedError
+
+        hass.config_entries.async_update_entry(
+            mock_config_entry,
+            data={**mock_config_entry.data, CONF_PROTOCOL_VARIANT: LINAK_VARIANT_AA_CONTROL_MY_BED},
+        )
+        _configure_linak_advanced(mock_bleak_client)
+        await hass.config_entries.async_setup(mock_config_entry.entry_id)
+        await hass.async_block_till_done()
+        device_id = dr.async_entries_for_config_entry(
+            dr.async_get(hass), mock_config_entry.entry_id
+        )[0].id
+        coordinator = hass.data[DOMAIN][mock_config_entry.entry_id]
+        controller = coordinator.controller
+        await controller._await_control_ready()
+        mock_bleak_client.write_gatt_char.reset_mock()
+        replacement = MagicMock(is_connected=True, write_gatt_char=AsyncMock())
+        queued = asyncio.Event()
+
+        class ObservedLock(asyncio.Lock):
+            async def acquire(self):
+                if self.locked():
+                    queued.set()
+                return await super().acquire()
+
+        lock = controller._ble_lock = ObservedLock()
+
+        async def swap_after_write(_char, data, **_kwargs):
+            assert data == b"\x37\x00"
+            coordinator._client = replacement
+
+        if replace_after_first_write:
+            mock_bleak_client.write_gatt_char.side_effect = swap_after_write
+        else:
+            await lock.acquire()
+
+        if service:
+            command = hass.services.async_call(
+                DOMAIN, SERVICE_LINAK_MOVE_SIMULTANEOUS,
+                {
+                    "device_id": device_id, "duration_ms": 500,
+                    "first_motor": "back", "first_direction": "up",
+                    "second_motor": "legs", "second_direction": "up",
+                },
+                blocking=True,
+            )
+        else:
+            command = controller.move_simultaneously("back", True, "legs", True)
+        move = asyncio.create_task(command)
+        try:
+            if not replace_after_first_write:
+                await asyncio.wait_for(queued.wait(), 1)
+                coordinator._client = replacement
+                lock.release()
+            with pytest.raises(BedNotConnectedError):
+                await asyncio.wait_for(move, 1)
+        finally:
+            if not replace_after_first_write and not queued.is_set() and lock.locked():
+                lock.release()
+            coordinator._client = mock_bleak_client
+            await asyncio.gather(move, return_exceptions=True)
+        assert mock_bleak_client.write_gatt_char.await_count == int(replace_after_first_write)
+        replacement.write_gatt_char.assert_not_awaited()
+
+    async def test_aa_paired_abort_never_sends_stop_to_a_preparing_receiver(
+        self, hass, monkeypatch,
+    ) -> None:
+        from dataclasses import replace
+
+        from homeassistant.exceptions import ServiceValidationError
+
+        from custom_components.adjustable_bed import services
+        from custom_components.adjustable_bed.beds.linak.controller import LinakController
+        from custom_components.adjustable_bed.beds.linak.protocol import (
+            LinakCapabilitySnapshot,
+            LinakModelVariant,
+            LinakProfile,
+        )
+        from custom_components.adjustable_bed.const import (
+            PAIR_CONNECTION_MODE_CONCURRENT,
+            SIDE_BOTH,
+            SIDE_LEFT,
+            SIDE_RIGHT,
+        )
+        from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
+        from custom_components.adjustable_bed.paired_coordinator import PairedBedCoordinator
+
+        profile = LinakProfile.AA_CONTROL_MY_BED
+        snapshot = LinakCapabilitySnapshot(
+            profile=profile, model_variant=LinakModelVariant.ADVANCED,
+            actuator_mask=0xC0, discovery_complete=True,
+        )
+
+        def receiver(side: str, suffix: str) -> AdjustableBedCoordinator:
+            entry = MockConfigEntry(
+                domain=DOMAIN,
+                data={
+                    CONF_ADDRESS: f"AA:BB:CC:DD:EE:{suffix}",
+                    CONF_NAME: f"Bed {side}", CONF_BED_TYPE: BED_TYPE_LINAK,
+                    CONF_PROTOCOL_VARIANT: LINAK_VARIANT_AA_CONTROL_MY_BED,
+                    "capabilities": {"linak": snapshot.as_dict()},
+                },
+            )
+            entry.add_to_hass(hass)
+            child = AdjustableBedCoordinator(hass, entry)
+            client = MagicMock(is_connected=True, write_gatt_char=AsyncMock())
+            controller = LinakController(child, profile=profile, capability_snapshot=snapshot.as_dict())
+            child._client = client
+            child._controller = controller
+            child._link_ready = True
+            controller._mask_client = client
+            controller._session_ready = True
+            return child
+
+        left, right = receiver(SIDE_LEFT, "01"), receiver(SIDE_RIGHT, "02")
+        pair = PairedBedCoordinator(
+            hass, MockConfigEntry(domain=DOMAIN, data={CONF_PAIR_ID: "aa_pair"}),
+            {SIDE_LEFT: left, SIDE_RIGHT: right}, connection_mode=PAIR_CONNECTION_MODE_CONCURRENT,
+        )
+        monkeypatch.setattr(services, "_resolve_sided_targets", lambda *_args: ([(pair, SIDE_BOTH)], []))
+        await services.async_register_services(hass)
+        preparing = asyncio.Event()
+        abort_admitted = asyncio.Event()
+        original_client = left._client
+        replacement = MagicMock(is_connected=True, write_gatt_char=AsyncMock())
+        left_admit_stop = left.admit_stop_command
+
+        async def prepare_left(_operation):
+            preparing.set()
+            await abort_admitted.wait()
+            return left._controller
+
+        async def prepare_right(_operation):
+            await preparing.wait()
+            left._client = replacement
+            controller = right._controller
+            assert isinstance(controller, LinakController)
+            controller._capabilities = replace(snapshot, actuator_mask=0x80)
+            return controller
+
+        def admit_left_abort(**kwargs):
+            stop = left_admit_stop(**kwargs)
+            abort_admitted.set()
+            return stop
+
+        monkeypatch.setattr(left, "_async_prepare_controller_operation", prepare_left)
+        monkeypatch.setattr(right, "_async_prepare_controller_operation", prepare_right)
+        monkeypatch.setattr(left, "admit_stop_command", admit_left_abort)
+        connect = AsyncMock(return_value=True)
+        monkeypatch.setattr(left, "async_ensure_connected", connect)
+
+        with raises_key("feature_not_supported", ServiceValidationError):
+            async with asyncio.timeout(2):
+                await hass.services.async_call(
+                    DOMAIN, SERVICE_LINAK_MOVE_SIMULTANEOUS,
+                    {
+                        "device_id": "bed", "duration_ms": 100,
+                        "first_motor": "back", "first_direction": "up",
+                        "second_motor": "legs", "second_direction": "up",
+                    },
+                    blocking=True,
+                )
+        assert abort_admitted.is_set()
+        assert original_client is not None
+        original_client.write_gatt_char.assert_not_awaited()
+        replacement.write_gatt_char.assert_not_awaited()
+        connect.assert_not_awaited()
+        await left.async_stop_command()
+        replacement.write_gatt_char.assert_awaited_once_with(
+            LINAK_CONTROL_CHAR_UUID, b"\xff\x00", response=True
         )
 
     async def test_linak_set_position_rejects_axis_missing_from_model(
@@ -1890,6 +2191,163 @@ class TestServices:
             call(LINAK_TIMER_CHAR_UUID, bytes.fromhex("10 00 00"), response=True),
             call(LINAK_TIMER_CHAR_UUID, bytes.fromhex("20"), response=True),
         ]
+
+    @pytest.mark.parametrize("clear_reports", [False, True])
+    async def test_aa_control_alarm_service_uses_app_frames_and_explicit_daily_repeat(
+        self,
+        hass: HomeAssistant,
+        mock_config_entry,
+        mock_coordinator_connected,
+        mock_bleak_client: MagicMock,
+        enable_custom_integrations,
+        clear_reports: bool,
+    ):
+        """The named app route sends its own timer payloads and clear sequence."""
+        from homeassistant.exceptions import ServiceValidationError
+
+        from custom_components.adjustable_bed.alarm import WEEKDAYS
+        from custom_components.adjustable_bed.beds.linak.controller import (
+            ALARM_ENABLED,
+            ALARM_STATUS,
+        )
+
+        hass.config_entries.async_update_entry(
+            mock_config_entry,
+            data={
+                **mock_config_entry.data,
+                CONF_PROTOCOL_VARIANT: LINAK_VARIANT_AA_CONTROL_MY_BED,
+            },
+        )
+        _configure_linak_advanced(mock_bleak_client, with_timer=True)
+        await hass.config_entries.async_setup(mock_config_entry.entry_id)
+        await hass.async_block_till_done()
+
+        device_id = dr.async_entries_for_config_entry(
+            dr.async_get(hass), mock_config_entry.entry_id
+        )[0].id
+        target = {"device_id": [device_id]}
+        enabled = {**target, "enabled": True, "time": "06:01:00", "wake_action": "memory_1"}
+        mock_bleak_client.write_gatt_char.reset_mock()
+        mock_bleak_client.read_gatt_char.reset_mock()
+        now = datetime(2026, 11, 27, 6, 0, tzinfo=UTC)
+        coordinator = hass.data[DOMAIN][mock_config_entry.entry_id]
+        controller = coordinator.controller
+        report = bytes.fromhex("20 3C 00 01 0E 00 05 00")
+        controller._handle_timer_data(report)
+        assert coordinator.controller_state.get(ALARM_STATUS) == "scheduled"
+        original_write = mock_bleak_client.write_gatt_char.side_effect
+
+        async def write(uuid, data, **kwargs):
+            if clear_reports and uuid == LINAK_TIMER_CHAR_UUID and data == b"\x40":
+                controller._handle_timer_data(report)
+            await original_write(uuid, data, **kwargs)
+
+        with (
+            patch("custom_components.adjustable_bed.services.dt_util.now", return_value=now),
+            patch.object(mock_bleak_client.write_gatt_char, "side_effect", write),
+        ):
+            with raises_key("linak_alarm_once_or_daily", ServiceValidationError):
+                await hass.services.async_call(
+                    DOMAIN, SERVICE_SET_ALARM, {**enabled, "weekdays": ["monday"]}, blocking=True
+                )
+            mock_bleak_client.write_gatt_char.assert_not_awaited()
+            for repeat in ([], list(WEEKDAYS)):
+                await hass.services.async_call(
+                    DOMAIN, SERVICE_SET_ALARM, {**enabled, "weekdays": repeat}, blocking=True
+                )
+            await hass.services.async_call(
+                DOMAIN, SERVICE_SET_ALARM, {**target, "enabled": False}, blocking=True
+            )
+
+        assert mock_bleak_client.write_gatt_char.await_args_list == [
+            call(LINAK_CONTROL_CHAR_UUID, b"\xff\x00", response=True),
+            call(LINAK_CONFIG_CHAR_UUID, bytes.fromhex("89 3B 80 01"), response=True),
+            call(LINAK_TIMER_CHAR_UUID, bytes.fromhex("00 3C 00 01 0E 00 05 00"), response=True),
+            call(LINAK_TIMER_CHAR_UUID, bytes.fromhex("10 00 00"), response=True),
+            call(LINAK_TIMER_CHAR_UUID, b"\x20", response=True),
+            call(LINAK_CONFIG_CHAR_UUID, bytes.fromhex("89 3B 80 01"), response=True),
+            call(LINAK_TIMER_CHAR_UUID, bytes.fromhex("00 3C 00 01 0E 00 05 00"), response=True),
+            call(LINAK_TIMER_CHAR_UUID, bytes.fromhex("10 A0 FD"), response=True),
+            call(LINAK_TIMER_CHAR_UUID, b"\x20", response=True),
+            call(LINAK_CONFIG_CHAR_UUID, bytes.fromhex("89 3B 80 00"), response=True),
+            call(LINAK_TIMER_CHAR_UUID, b"\x40", response=True),
+        ]
+        mock_bleak_client.read_gatt_char.assert_not_awaited()
+        assert coordinator.controller_state.get(ALARM_STATUS) == ("scheduled" if clear_reports else None)
+        assert coordinator.controller_state.get(ALARM_ENABLED) is (True if clear_reports else None)
+
+    @pytest.mark.parametrize("route", ["mask_failed", "notify_failed", "auth_pending", "auth_ready"])
+    async def test_aa_alarm_requires_current_mask_and_timer_subscription(
+        self, hass, mock_config_entry, mock_coordinator_connected, mock_bleak_client,
+        enable_custom_integrations, route,
+    ) -> None:
+        from bleak.exc import BleakError
+        from homeassistant.exceptions import ServiceValidationError
+
+        from custom_components.adjustable_bed.beds.linak.protocol import (
+            LinakCapabilitySnapshot,
+            LinakModelVariant,
+            LinakProfile,
+        )
+
+        cached = LinakCapabilitySnapshot(
+            profile=LinakProfile.AA_CONTROL_MY_BED,
+            model_variant=LinakModelVariant.ADVANCED_WITH_ALARM,
+            actuator_mask=0xC0, timer_supported=True, discovery_complete=True,
+        )
+        hass.config_entries.async_update_entry(
+            mock_config_entry,
+            data={
+                **mock_config_entry.data,
+                CONF_PROTOCOL_VARIANT: LINAK_VARIANT_AA_CONTROL_MY_BED,
+                **({"capabilities": {"linak": cached.as_dict()}} if route != "auth_ready" else {}),
+            },
+        )
+        _configure_linak_advanced(mock_bleak_client, with_timer=True)
+        original_read = mock_bleak_client.read_gatt_char.side_effect
+        original_notify = mock_bleak_client.start_notify.side_effect
+        mask_reads = 0
+
+        async def read(uuid):
+            nonlocal mask_reads
+            if uuid == LINAK_POSITION_MASK_UUID:
+                mask_reads += 1
+                if route == "mask_failed":
+                    return b""
+                if route == "auth_pending" or (route == "auth_ready" and mask_reads == 1):
+                    raise BleakError("Insufficient authentication")
+            return await original_read(uuid)
+
+        async def subscribe(uuid, callback):
+            if route == "notify_failed" and uuid == LINAK_TIMER_CHAR_UUID:
+                raise BleakError("Timer subscription denied")
+            await original_notify(uuid, callback)
+
+        mock_bleak_client.read_gatt_char.side_effect = read
+        mock_bleak_client.start_notify.side_effect = subscribe
+        await hass.config_entries.async_setup(mock_config_entry.entry_id)
+        await hass.async_block_till_done()
+        device_id = dr.async_entries_for_config_entry(
+            dr.async_get(hass), mock_config_entry.entry_id
+        )[0].id
+        mock_bleak_client.write_gatt_char.reset_mock()
+        alarm = hass.services.async_call(
+            DOMAIN, SERVICE_SET_ALARM, {"device_id": device_id, "enabled": False}, blocking=True
+        )
+        if route == "auth_ready":
+            await alarm
+        else:
+            with raises_key("alarm_not_supported", ServiceValidationError):
+                await alarm
+        mutations = [
+            (write.args[0], write.args[1])
+            for write in mock_bleak_client.write_gatt_char.await_args_list
+            if write.args[0] in (LINAK_CONFIG_CHAR_UUID, LINAK_TIMER_CHAR_UUID)
+        ]
+        assert mutations == (
+            [(LINAK_CONFIG_CHAR_UUID, bytes.fromhex("89 3B 80 00")), (LINAK_TIMER_CHAR_UUID, b"\x40")]
+            if route == "auth_ready" else []
+        )
 
     async def test_timed_move_service_accepts_malouf_bed_height(
         self,

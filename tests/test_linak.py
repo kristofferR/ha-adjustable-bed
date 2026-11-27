@@ -34,6 +34,7 @@ from custom_components.adjustable_bed.const import (
     LINAK_POSITION_SERVICE_UUID,
     LINAK_TIMER_CHAR_UUID,
     LINAK_TIMER_SERVICE_UUID,
+    LINAK_VARIANT_AA_CONTROL_MY_BED,
     LINAK_VARIANT_PERFORMANCE,
     requires_pairing,
 )
@@ -1303,6 +1304,65 @@ class TestLinakCorpusProfiles:
         assert coordinator.controller.memory_slot_count == 4
         assert coordinator.controller.supports_position_feedback is False
         assert coordinator.controller.passive_position_reconciliation_interval is None
+
+    @pytest.mark.parametrize(
+        ("mask", "high", "flat"),
+        [(b"\x00", "37 00", "34 00"), (b"", "01 00", "00 00")],
+    )
+    async def test_aa_control_uses_td3_presets_only_with_a_confirmed_zero_mask(
+        self,
+        hass: HomeAssistant,
+        mock_config_entry,
+        mock_coordinator_connected,
+        mock_bleak_client: MagicMock,
+        mask: bytes,
+        high: str,
+        flat: str,
+    ) -> None:
+        hass.config_entries.async_update_entry(
+            mock_config_entry,
+            data={
+                **mock_config_entry.data,
+                CONF_PROTOCOL_VARIANT: LINAK_VARIANT_AA_CONTROL_MY_BED,
+            },
+        )
+        position_service = SimpleNamespace(uuid=LINAK_POSITION_SERVICE_UUID, characteristics=[])
+        timer_service = SimpleNamespace(uuid=LINAK_TIMER_SERVICE_UUID, characteristics=[])
+        mock_bleak_client.services.get_service = MagicMock(
+            side_effect={
+                LINAK_POSITION_SERVICE_UUID: position_service,
+                LINAK_TIMER_SERVICE_UUID: timer_service,
+            }.get
+        )
+        original_read = mock_bleak_client.read_gatt_char.side_effect
+
+        async def read(uuid: str) -> bytes:
+            if str(uuid).lower() == LINAK_POSITION_MASK_UUID:
+                return mask
+            return await original_read(uuid)
+
+        mock_bleak_client.read_gatt_char.side_effect = read
+        coordinator = AdjustableBedCoordinator(hass, mock_config_entry)
+        await coordinator.async_connect()
+        controller = coordinator.controller
+        assert not controller.supports_alarm
+        assert not controller.supports_simultaneous_movement
+        assert not any(
+            entry.args[0] == LINAK_TIMER_CHAR_UUID
+            for entry in mock_bleak_client.start_notify.await_args_list
+        )
+        _mark_session_ready(coordinator)
+
+        with patch.object(controller, "write_command", new_callable=AsyncMock) as write:
+            await controller.preset_both_up()
+            await controller.preset_flat()
+
+        assert [entry.args[0] for entry in write.await_args_list] == [
+            bytes.fromhex(high),
+            b"\xff\x00",
+            bytes.fromhex(flat),
+            b"\xff\x00",
+        ]
 
     async def test_timer_service_promotes_advanced_model_only_after_subscription(
         self,

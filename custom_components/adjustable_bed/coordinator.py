@@ -51,6 +51,7 @@ from .bond_verification import (
 from .command_scheduler import (
     ALL_COMMAND_RESOURCES,
     PAIRED_CLEANUP_STOP,
+    PAIRED_SESSION_BOUND_ABORTS,
     CommandContext,
     CommandHandle,
     CommandIntent,
@@ -1977,6 +1978,9 @@ class AdjustableBedCoordinator(
         controller = self.capability_controller
         paired_cleanup = PAIRED_CLEANUP_STOP.get()
         original_stop = paired_cleanup.get(self.address) if paired_cleanup is not None else None
+        session_bound_abort = (
+            paired_cleanup is not None and self.address in PAIRED_SESSION_BOUND_ABORTS.get()
+        )
         cleanup = (
             controller.paired_cleanup_stop
             if paired_cleanup is not None and original_stop is None and controller is not None
@@ -2003,7 +2007,13 @@ class AdjustableBedCoordinator(
 
         async def stop_operation(context: CommandContext) -> None:
             with command_target_scope(targets):
-                if original_stop is not None:
+                if session_bound_abort:
+                    # A pending member may have no release, even while it is connecting.
+                    async with self._command_lock:
+                        if original_stop is not None:
+                            with bluetooth_errors_translated():
+                                await original_stop()
+                elif original_stop is not None:
                     await self._async_send_stop_command(original_stop)
                 elif current_link_only or cleanup is not None:
                     await self._async_send_stop_command(

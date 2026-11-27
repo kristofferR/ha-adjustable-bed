@@ -404,7 +404,8 @@ the name against its own rules before any name changes:
 
 | Bed | Name rule |
 |-----|-----------|
-| [Linak Bed Control](beds/linak.md) | 1 to 17 characters (fewer for accented letters). The bed then disconnects so it can show the new name |
+| [Linak Bed Control](beds/linak.md) | Up to 17 UTF-8 bytes. The bed then disconnects so it can show the new name |
+| [AA Control My Bed](beds/linak.md#aa-control-my-bed) | Up to 17 UTF-16 code units. Most characters use one unit and supplementary characters such as emoji use two |
 | [LOGICDATA app profiles](beds/jiecang.md#logicdata-app-family) | Phone and tablet: 1 to 255 plain letters, digits, spaces and punctuation. Sleep Smart [beds](beds/jiecang.md#sleep-smart-air-mattress-bed) and [pumps](beds/logicdata-sleep-smart.md): 1 to 20 letters, digits, ä, ö, ü or ß |
 | [ERGOBALANCE](beds/jiecang.md#ergobalance-dreamask) and [Dream Motion](beds/jiecang.md#dream-motion-dreamotion) | 1 to 20 plain letters or digits |
 | [Dream Motion HD](beds/jiecang.md#dream-motion-hd) | 1 to 20 plain letters, digits, spaces and punctuation |
@@ -504,6 +505,7 @@ data:
 | L&P Adjustable Base | From the selected layout's alarm page; required to turn the alarm on | `massage` with the layout's zones (then `none` is allowed). Once, at the next occurrence: leave out `weekdays` and `slot` |
 | Leggett & Platt (Okin app) | None | Once; the bed counts down to the time |
 | Linak Bed Control | `none`, `memory_1` … `memory_4` | `massage`, `light`. Once; the bed counts down to the time |
+| [AA Control My Bed](beds/linak.md#aa-control-my-bed) | `none`, `memory_1` … `memory_4` | `massage`. Leave `weekdays` empty for a one-time alarm or select all seven for a 24-hour recurrence |
 | Linx | None | Turn off only (`enabled: false`), `slot` 1–6 |
 | Logicdata app | `flat`, `zero_g`, `anti_snore`, `memory_1`, `memory_2` | `weekdays`, head and foot massage levels 0–3 |
 | Luuna + | The product's alarm positions: `tv`, `zero_g`, `anti_snore`, `memory_1`, `memory_2`; required to turn the alarm on | Once, at the next occurrence. Needs the bed to report its alarm on the current connection |
@@ -1427,7 +1429,7 @@ A memory name can be empty. Each side of a combined bed keeps its own settings.
 ## Linak
 
 <a id="linak_move_simultaneously"></a>
-**`linak_move_simultaneously`**: Moves two motors together for a set time on Linak Bed Control, Jensen JMC400 or Vindö, then stops them.
+**`linak_move_simultaneously`** moves two motors together for a set time on Linak Bed Control, AA Control My Bed, Jensen JMC400 or Vindö, then stops them.
 
 | Field | Name | Meaning |
 |-------|------|---------|
@@ -1437,6 +1439,7 @@ A memory name can be empty. Each side of a combined bed keeps its own settings.
 | `second_direction` | Second direction | Direction of the second motor. One of `up` or `down`. |
 | `duration_ms` | Duration | How long to move before stopping, 100 to 30000 milliseconds. |
 
+AA Control My Bed requires both motors to move in the same direction.
 Vindö accepts the back and legs axes and limits movement to 20,000 milliseconds.
 At the elapsed limit, it finishes any write already in progress and sends STOP.
 

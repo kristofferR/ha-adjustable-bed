@@ -20,6 +20,7 @@ from homeassistant.util import dt as dt_util
 from ...alarm import AlarmCapability, AlarmError, AlarmRequest
 from ...bluetooth_transport import async_path_for_source, client_source, is_esphome_proxy_path
 from ...codec.linak import control_frame
+from ...command_scheduler import current_command_context
 from ...const import (
     LINAK_BACK_MAX_POSITION,
     LINAK_CONFIG_CHAR_UUID,
@@ -38,9 +39,11 @@ from ...const import (
     LINAK_POSITION_SERVICE_UUID,
     LINAK_TIMER_CHAR_UUID,
     LINAK_TIMER_SERVICE_UUID,
+    LINAK_VARIANT_AA_CONTROL_MY_BED,
     LINAK_VARIANT_PERFORMANCE,
 )
 from ...controller_state import AnyStateKey, StateKey
+from ...errors import BedNotConnectedError, invalid
 from ...execution import ExecutionCapabilities
 from ...position_seek import PositionSeekPolicy, SeekSample
 from ...runtime_data import DomainKey, domain_registry
@@ -76,6 +79,8 @@ from .protocol import (
 )
 
 if TYPE_CHECKING:
+    from bleak import BleakClient
+
     from ...coordinator import AdjustableBedCoordinator
     from ..lifecycle import ControllerSession
 
@@ -88,7 +93,7 @@ ALARM_SUPPORTED: Final = StateKey[bool]("linak_alarm_supported")
 PROTOCOL_ERROR: Final = StateKey[str]("linak_protocol_error")
 PROTOCOL_ERROR_CODE: Final = StateKey[int]("linak_protocol_error_code")
 PROTOCOL_ERROR_PAYLOAD: Final = StateKey[str]("linak_protocol_error_payload")
-ALARM_STATUS: Final = StateKey[str]("linak_alarm_status")
+ALARM_STATUS: Final = StateKey[str | None]("linak_alarm_status")
 ALARM_TIMER_INDEX: Final = StateKey[int | None]("linak_alarm_timer_index")
 ALARM_ENABLED: Final = StateKey[bool | None]("linak_alarm_enabled")
 ALARM_SECONDS: Final = StateKey[int | None]("linak_alarm_seconds")
@@ -343,6 +348,7 @@ class LinakCommands:
     WAKE = control_frame(0xFE)
     # Bed Control alarm transaction terminator.
     TIMER_COMMIT = bytes([0x20])
+    TIMER_CLEAR = bytes([0x40])
 
     # Motor movement commands
     # Note: 0x00 is INITIALIZE_DOWN, not stop. 0xFF is the correct stop command.
@@ -400,6 +406,9 @@ class LinakController(BedController):
         self._deferred_protocol_notifications: set[str] = set()
         self._capability_discovery_deferred = False
         self._timer_candidate = False
+        self._mask_client: BleakClient | None = None
+        self._aa_timer_client: BleakClient | None = None
+        self._timer_revision = 0
         self._performance_wave_active = False
         self._publish_capability_state()
         _LOGGER.debug(
@@ -487,7 +496,7 @@ class LinakController(BedController):
     @property
     def supports_preset_both_up(self) -> bool:
         """Return True for the native held all-up command."""
-        return self._profile is LinakProfile.BED_CONTROL
+        return self._profile is not LinakProfile.PERFORMANCE
 
     @property
     def supports_massage(self) -> bool:
@@ -502,7 +511,7 @@ class LinakController(BedController):
     @property
     def supports_massage_off_control(self) -> bool:
         """Return whether the selected app profile defines an all-off command."""
-        return self._profile is LinakProfile.BED_CONTROL
+        return self._profile is not LinakProfile.PERFORMANCE
 
     @property
     def supports_massage_toggle_control(self) -> bool:
@@ -512,17 +521,17 @@ class LinakController(BedController):
     @property
     def supports_massage_intensity_step_control(self) -> bool:
         """Return whether the profile exposes all-zone intensity steps."""
-        return self._profile is LinakProfile.BED_CONTROL
+        return self._profile is not LinakProfile.PERFORMANCE
 
     @property
     def supports_head_massage_toggle_control(self) -> bool:
         """Return whether the profile exposes app-reachable zone selection."""
-        return self._profile is LinakProfile.BED_CONTROL
+        return self._profile is not LinakProfile.PERFORMANCE
 
     @property
     def supports_foot_massage_toggle_control(self) -> bool:
         """Return whether the profile exposes app-reachable zone selection."""
-        return self._profile is LinakProfile.BED_CONTROL
+        return self._profile is not LinakProfile.PERFORMANCE
 
     @property
     def supports_massage_mode_step_control(self) -> bool:
@@ -556,7 +565,9 @@ class LinakController(BedController):
 
     @property
     def supports_automatic_drive(self) -> bool:
-        """Return whether modern Bed Control exposes automatic-drive config."""
+        """Return whether this route exposes automatic-drive config."""
+        if self._profile is LinakProfile.AA_CONTROL_MY_BED:
+            return self.supports_alarm
         return self._profile is LinakProfile.BED_CONTROL
 
     @property
@@ -572,21 +583,34 @@ class LinakController(BedController):
     @property
     def supports_device_rename(self) -> bool:
         """Return whether the modern Bed Control profile exposes Generic Access rename."""
-        return self._profile is LinakProfile.BED_CONTROL
+        return self._profile is not LinakProfile.PERFORMANCE
 
     @property
     def disconnects_after_rename(self) -> bool:
-        """Disconnect after renaming so advertising can refresh."""
-        return True
+        """The AA controller releases its own writing session."""
+        return self._profile is not LinakProfile.AA_CONTROL_MY_BED
 
     def validate_device_rename(self, name: str) -> None:
+        if self._profile is LinakProfile.AA_CONTROL_MY_BED:
+            if not name or len(name.encode("utf-16-le")) // 2 > 17:
+                raise ValueError("Use a name of 1 to 17 UTF-16 code units")
+            return
         if not name or len(name.encode()) > 17:
             raise ValueError("Use a name of 1 to 17 characters. Accented letters and symbols count as two or more")
 
     @property
     def supports_simultaneous_movement(self) -> bool:
-        """Return whether the modern profile exposes two-section opcodes."""
+        """Return whether the profile exposes two-section movement."""
+        if self._profile is LinakProfile.AA_CONTROL_MY_BED:
+            return self._has_resolved_mask and len(self._capabilities.position_axes) >= 2
         return self._profile is LinakProfile.BED_CONTROL
+
+    @property
+    def _has_resolved_mask(self) -> bool:
+        return (
+            self._capabilities.actuator_mask is not None
+            and not self._capabilities.actuator_mask_inferred
+        )
 
     @property
     def simultaneous_movement_axes(self) -> tuple[str, ...]:
@@ -598,6 +622,16 @@ class LinakController(BedController):
         return tuple(
             "base" if spec.key == "bed_height" else spec.key for spec in super().motor_control_specs
         )
+
+    def validate_simultaneous_directions(self, first_up: bool, second_up: bool) -> None:
+        """Enforce the AA app's same-direction movement table."""
+        if self._profile is LinakProfile.AA_CONTROL_MY_BED and first_up != second_up:
+            raise invalid("linak_aa_same_direction")
+
+    @property
+    def binds_grouped_abort_to_session(self) -> bool:
+        """Whether paired grouped-motion cleanup requires the admitted session."""
+        return self._profile is LinakProfile.AA_CONTROL_MY_BED
 
     @property
     def _stop_command(self) -> bytes:
@@ -616,7 +650,7 @@ class LinakController(BedController):
         if (count := self.leased_hold_refreshes(refresh)) is not None:
             return count, refresh
         pulse_count, pulse_delay = super().motor_pulse_settings()
-        if self._profile is LinakProfile.BED_CONTROL:
+        if self._profile is not LinakProfile.PERFORMANCE:
             return pulse_count, pulse_delay
         duration_ms = max(0, pulse_count - 1) * pulse_delay
         adjusted_count = max(
@@ -645,7 +679,10 @@ class LinakController(BedController):
     def capability_snapshot_policy(self) -> CapabilitySnapshotPolicy:
         # A cold link can defer its actuator mask and timer channel until the
         # first command, so the snapshot is also reconciled after operations.
-        return CapabilitySnapshotPolicy(after_operations=True)
+        return CapabilitySnapshotPolicy(
+            after_operations=True,
+            deferred_reload=self._profile is LinakProfile.AA_CONTROL_MY_BED,
+        )
 
     def capability_snapshot(self) -> dict[str, Any] | None:
         """Return a serializable snapshot for offline entity gating, once resolved."""
@@ -832,10 +869,13 @@ class LinakController(BedController):
             self._capability_discovery_deferred = False
             self._publish_capability_state()
             return
-        if self.client is None or not self.client.is_connected:
+        client = self.client
+        if client is None or not client.is_connected:
             return
 
         self._capability_discovery_deferred = False
+        self._mask_client = None
+        self._aa_timer_client = None
         if not self._has_service(LINAK_POSITION_SERVICE_UUID):
             self._capabilities = LinakCapabilitySnapshot(
                 profile=self._profile,
@@ -850,7 +890,9 @@ class LinakController(BedController):
         try:
             async with asyncio.timeout(LINAK_CAPABILITY_MASK_READ_TIMEOUT_S):
                 async with self._ble_lock:
-                    data = await self.client.read_gatt_char(LINAK_POSITION_MASK_UUID)
+                    if self.client is not client:
+                        return
+                    data = await client.read_gatt_char(LINAK_POSITION_MASK_UUID)
             if not data:
                 raise ValueError("Linak capability mask is empty")
         except BleakError as err:
@@ -869,6 +911,9 @@ class LinakController(BedController):
             self._publish_capability_state()
             return
 
+        if self.client is not client:
+            return
+        self._mask_client = client
         mask = data[0]
         self._capabilities = LinakCapabilitySnapshot(
             profile=self._profile,
@@ -882,7 +927,7 @@ class LinakController(BedController):
     def controller_state_sensor_specs(self) -> tuple[ControllerStateSensorSpec, ...]:
         """Expose parsed speed, errors, and timer state."""
         specs: list[ControllerStateSensorSpec] = []
-        if self._profile is LinakProfile.BED_CONTROL:
+        if self._profile is not LinakProfile.PERFORMANCE:
             specs.append(
                 ControllerStateSensorSpec(
                     key="linak_protocol_error",
@@ -1081,6 +1126,7 @@ class LinakController(BedController):
         except ValueError as err:
             _LOGGER.warning("Ignoring invalid Linak timer payload %s: %s", bytes(data).hex(), err)
             return
+        self._timer_revision += 1
         first_action = timer.first_action
         self.forward_controller_state_updates(
             ALARM_STATUS(timer.status),
@@ -1096,7 +1142,11 @@ class LinakController(BedController):
     def _make_timer_handler(self) -> Callable[[Any, bytearray], None]:
         """Build the timer notification handler."""
 
+        client = self.client
+
         def handler(_: Any, data: bytearray) -> None:
+            if self._profile is LinakProfile.AA_CONTROL_MY_BED and self.client is not client:
+                return
             self.forward_raw_notification(LINAK_TIMER_CHAR_UUID, bytes(data))
             self._handle_timer_data(data)
 
@@ -1106,14 +1156,20 @@ class LinakController(BedController):
         self,
         uuid: str,
         handler: Callable[[Any, bytearray], None],
+        *,
+        expected_client: BleakClient | None = None,
     ) -> bool:
         """Subscribe once to a non-position protocol characteristic."""
-        if uuid in self._protocol_notification_uuids:
+        if uuid in self._protocol_notification_uuids and (
+            expected_client is None or self._aa_timer_client is expected_client
+        ):
             return True
         if self.client is None or not self.client.is_connected:
             return False
         try:
             async with self._ble_lock:
+                if expected_client is not None and self.client is not expected_client:
+                    return False
                 await self.client.start_notify(uuid, handler)
         except BleakError as err:
             if self._is_authentication_window_error(err):
@@ -1127,6 +1183,8 @@ class LinakController(BedController):
             self._deferred_protocol_notifications.discard(uuid)
             _LOGGER.debug("Could not subscribe to Linak characteristic %s: %s", uuid, err)
             return False
+        if expected_client is not None and self.client is not expected_client:
+            return False
         self._protocol_notification_uuids.add(uuid)
         self._deferred_protocol_notifications.discard(uuid)
         return True
@@ -1134,20 +1192,28 @@ class LinakController(BedController):
     async def _read_protocol_characteristic(
         self,
         uuid: str,
-        handler: Callable[[bytes | bytearray], None],
-    ) -> None:
-        """Best-effort initial read for a subscribed protocol characteristic."""
-        if self.client is None or not self.client.is_connected:
-            return
+        handler: Callable[[bytes | bytearray], None] | None = None,
+        *,
+        expected_client: BleakClient | None = None,
+    ) -> bytes | bytearray | None:
+        """Make a bounded, best-effort protocol read."""
+        client = expected_client or self.client
+        if client is None or not client.is_connected:
+            return None
         try:
             async with asyncio.timeout(LINAK_PROTOCOL_READ_TIMEOUT_S):
                 async with self._ble_lock:
-                    data = await self.client.read_gatt_char(uuid)
+                    if self.client is not client:
+                        return None
+                    data = await client.read_gatt_char(uuid)
         except (BleakError, TimeoutError) as err:
             _LOGGER.debug("Could not read Linak characteristic %s: %s", uuid, err)
-            return
-        if data:
+            return None
+        if self.client is not client:
+            return None
+        if data and handler is not None:
             handler(data)
+        return data
 
     async def _start_protocol_notifications(self) -> None:
         """Start mandatory error/config and conditional timer channels."""
@@ -1160,13 +1226,13 @@ class LinakController(BedController):
             LINAK_ERROR_CHAR_UUID,
             error_handler,
         )
-        if error_ready and self._profile is LinakProfile.BED_CONTROL:
+        if error_ready and self._profile is not LinakProfile.PERFORMANCE:
             await self._read_protocol_characteristic(
                 LINAK_ERROR_CHAR_UUID,
                 self._handle_error_data,
             )
 
-        if self._profile is LinakProfile.BED_CONTROL:
+        if self._profile is not LinakProfile.PERFORMANCE:
             await self._subscribe_protocol_characteristic(
                 LINAK_CONFIG_CHAR_UUID,
                 self._make_config_handler(),
@@ -1174,12 +1240,24 @@ class LinakController(BedController):
 
         if not self._timer_candidate:
             return
+        aa_control = self._profile is LinakProfile.AA_CONTROL_MY_BED
+        client = self.client
+        if aa_control and (
+            client is None
+            or self._mask_client is not client
+            or self._capability_discovery_deferred
+            or not self._capabilities.actuator_mask
+        ):
+            return
         timer_ready = await self._subscribe_protocol_characteristic(
             LINAK_TIMER_CHAR_UUID,
             self._make_timer_handler(),
+            expected_client=client if aa_control else None,
         )
         if not timer_ready:
             return
+        if aa_control:
+            self._aa_timer_client = client
         self._capabilities = LinakCapabilitySnapshot(
             profile=self._profile,
             model_variant=LinakModelVariant.ADVANCED_WITH_ALARM,
@@ -1192,6 +1270,7 @@ class LinakController(BedController):
         await self._read_protocol_characteristic(
             LINAK_TIMER_CHAR_UUID,
             self._handle_timer_data,
+            expected_client=client if aa_control else None,
         )
 
     def _back_position_spec(self) -> LinakPositionSpec:
@@ -1431,7 +1510,9 @@ class LinakController(BedController):
                 ", ".join(failed),
             )
 
-    async def _await_control_ready(self, cancel_event: asyncio.Event | None = None) -> None:
+    async def _await_control_ready(
+        self, cancel_event: asyncio.Event | None = None, *, expected_client: BleakClient | None = None
+    ) -> None:
         """Wait until Linak accepts control writes after a fresh BLE connect."""
         if self._session_ready:
             await self._finish_control_setup()
@@ -1478,6 +1559,7 @@ class LinakController(BedController):
                     cancel_event=cancel_event,
                     log_errors=False,
                     on_write=mark_ready,
+                    expected_client=expected_client,
                     # A readiness probe only prepares the link.
                     track_command_write=False,
                 )
@@ -1522,7 +1604,9 @@ class LinakController(BedController):
             await self.async_discover_capabilities()
         if discovery_was_deferred or self._deferred_position_notifications:
             await self._ensure_position_notifications_started()
-        if self._deferred_protocol_notifications:
+        if self._deferred_protocol_notifications or (
+            discovery_was_deferred and self._profile is LinakProfile.AA_CONTROL_MY_BED
+        ):
             await self._start_protocol_notifications()
 
     async def write_command(
@@ -1774,6 +1858,7 @@ class LinakController(BedController):
     async def stop_notify(self) -> None:
         """Stop listening for position notifications."""
         self._notify_callback = None
+        self._aa_timer_client = None
         if self.client is None or not self.client.is_connected:
             return
 
@@ -1949,15 +2034,25 @@ class LinakController(BedController):
     # Preset methods
     async def preset_flat(self) -> None:
         """Run the app's held flat/initialise-down action."""
-        await self._held_preset(LinakCommands.MOVE_ALL_DOWN)
+        await self._held_preset(lambda: self._all_sections_command(up=False))
 
     async def preset_both_up(self) -> None:
         """Run the modern app's held all-up action."""
         if not self.supports_preset_both_up:
             raise NotImplementedError("All-up is not exposed by this Linak profile")
-        await self._held_preset(LinakCommands.MOVE_ALL_UP)
+        await self._held_preset(lambda: self._all_sections_command(up=True))
 
-    async def _held_preset(self, command: bytes) -> None:
+    def _all_sections_command(self, *, up: bool) -> bytes:
+        if (
+            self._profile is LinakProfile.AA_CONTROL_MY_BED
+            and self._mask_client is not None
+            and self._mask_client is self.client
+            and self._capabilities.model_variant is LinakModelVariant.TD3
+        ):
+            return build_simultaneous_command("back", up, "legs", up)
+        return LinakCommands.MOVE_ALL_UP if up else LinakCommands.MOVE_ALL_DOWN
+
+    async def _held_preset(self, command: bytes | Callable[[], bytes]) -> None:
         """Hold a favorite-like command for at most 30 seconds after startup."""
         interval_ms = (
             LINAK_PERFORMANCE_HOLD_INTERVAL_MS
@@ -1966,6 +2061,8 @@ class LinakController(BedController):
         )
         repeat_count = max(1, LINAK_MEMORY_RECALL_DURATION_S * 1000 // interval_ms)
         await self._await_control_ready()
+        if callable(command):
+            command = command()
         # Counting repeats alone adds every proxy acknowledgement to the hold
         # duration. The elapsed ceiling must still release the bed promptly.
         hold_timeout = asyncio.timeout(LINAK_MEMORY_RECALL_DURATION_S)
@@ -2126,10 +2223,20 @@ class LinakController(BedController):
         """Reset the controller settings exposed by both app profiles."""
         await self.write_command(LinakCommands.RESET_DEFAULTS)
 
-    async def _write_protected_characteristic(self, uuid: str, data: bytes) -> None:
+    async def _write_protected_characteristic(
+        self,
+        uuid: str,
+        data: bytes,
+        *,
+        expected_client: BleakClient | None = None,
+        on_write: Callable[[], None] | None = None,
+    ) -> None:
         """Wait out the cold-session auth window before a protected GATT write."""
-        await self._await_control_ready()
-        await self._write_gatt_with_retry(uuid, data)
+        if expected_client is None:
+            await self._await_control_ready()
+        await self._write_gatt_with_retry(
+            uuid, data, expected_client=expected_client, on_write=on_write
+        )
 
     async def factory_reset(self) -> None:
         """Run Bed Connect's distinct configuration-level factory reset."""
@@ -2147,38 +2254,97 @@ class LinakController(BedController):
         await self.write_command(LinakCommands.WAKE)
 
     async def set_automatic_drive(self, enabled: bool) -> None:
-        """Write modern Bed Control's automatic-drive configuration."""
+        """Write the active profile's automatic-drive configuration."""
+        if self._profile is LinakProfile.AA_CONTROL_MY_BED:
+            await self._set_automatic_drive(enabled, await self._require_aa_alarm_client())
+            return
         if not self.supports_automatic_drive:
-            raise NotImplementedError("Automatic drive is not exposed by this profile")
+            raise NotImplementedError("Automatic drive is unavailable")
+        await self._set_automatic_drive(enabled)
+
+    async def _set_automatic_drive(
+        self, enabled: bool, client: BleakClient | None = None
+    ) -> None:
         # A cancelled write returns without sending, so nothing changed; one
         # sent only in part leaves the setting unknown.
-        with self.sent_state(LINAK_AUTOMATIC_DRIVE(enabled)):
+        with self.sent_state(
+            LINAK_AUTOMATIC_DRIVE(enabled),
+            is_current=None if client is None else lambda: self.client is client,
+        ):
             await self._write_protected_characteristic(
                 LINAK_CONFIG_CHAR_UUID,
-                build_automatic_drive(enabled),
+                build_automatic_drive(
+                    enabled,
+                    include_reserved_byte=self._profile is not LinakProfile.AA_CONTROL_MY_BED,
+                ),
+                expected_client=client,
             )
+
+    async def _require_aa_alarm_client(self) -> BleakClient:
+        """Resolve cold-link discovery and require a subscription on this link."""
+        await self._await_control_ready()
+        client = self.client
+        if client is None or not client.is_connected or self._aa_timer_client is not client:
+            raise invalid("alarm_not_supported", device_name=self._coordinator.name)
+        return client
 
     async def rename_device(self, name: str) -> None:
         """Write the modern app's raw Generic Access device name."""
         if not self.supports_device_rename:
             raise NotImplementedError("Rename is not exposed by this Linak profile")
+        self.validate_device_rename(name)
         encoded = name.encode()
-        if not name or len(name) > 17 or len(encoded) > 17:
-            raise ValueError("Use a name of 1 to 17 characters. Accented letters and symbols count as two or more")
-        await self._write_protected_characteristic(LINAK_DEVICE_NAME_UUID, encoded)
+        if self._profile is not LinakProfile.AA_CONTROL_MY_BED:
+            await self._write_protected_characteristic(LINAK_DEVICE_NAME_UUID, encoded)
+            return
+
+        await self._await_control_ready()
+        client = self.client
+        if client is None or not client.is_connected:
+            raise BedNotConnectedError
+        written = False
+
+        def mark_written() -> None:
+            nonlocal written
+            written = True
+
+        await self._write_protected_characteristic(
+            LINAK_DEVICE_NAME_UUID, encoded, expected_client=client, on_write=mark_written
+        )
+        if not written or self._coordinator.cancel_command.is_set():
+            return
+        readback = await self._read_protocol_characteristic(
+            LINAK_DEVICE_NAME_UUID, expected_client=client
+        )
+        if readback is not None and readback != encoded:
+            _LOGGER.debug("Linak Device Name readback differs from the requested name")
+        async with self._coordinator.async_connection_operation_guard() as disconnect:
+            if self.client is client and client.is_connected:
+                await disconnect("intentional")
 
     @property
     def alarm_capability(self) -> AlarmCapability | None:
-        if not self.supports_alarm:
+        aa_control = self._profile is LinakProfile.AA_CONTROL_MY_BED
+        can_discover = aa_control and (
+            not self._capabilities.discovery_complete
+            or (self._capability_discovery_deferred and self._timer_candidate)
+            or LINAK_TIMER_CHAR_UUID in self._deferred_protocol_notifications
+        )
+        if not self.supports_alarm and not can_discover:
             return None
         return AlarmCapability(
             wake_actions=("none", "memory_1", "memory_2", "memory_3", "memory_4"),
+            weekdays=aa_control,
             massage=True,
-            light=True,
+            light=not aa_control,
+            live_check=aa_control,
         )
 
-    @staticmethod
-    def _alarm_steps(alarm: AlarmRequest) -> tuple[LinakAlarmStep, ...]:
+    async def check_alarm(self, alarm: AlarmRequest) -> None:
+        if self._profile is LinakProfile.AA_CONTROL_MY_BED:
+            await self._require_aa_alarm_client()
+
+    def _alarm_steps(self, alarm: AlarmRequest) -> tuple[LinakAlarmStep, ...]:
         actions = [
             *(() if alarm.wake_action == "none" else (LinakAlarmAction(alarm.wake_action),)),
             *((LinakAlarmAction.MASSAGE_TOGGLE,) if alarm.massage else ()),
@@ -2191,19 +2357,67 @@ class LinakController(BedController):
                 )
             # Turning the timer off still carries one action record.
             actions = [LinakAlarmAction.MEMORY_1]
+        if self._profile is LinakProfile.AA_CONTROL_MY_BED:
+            return tuple(LinakAlarmStep(action, lifetime=5) for action in actions)
         return tuple(LinakAlarmStep(action) for action in actions)
 
+    @staticmethod
+    def _aa_alarm_recurrence(alarm: AlarmRequest) -> tuple[int, int]:
+        if not alarm.weekdays:
+            return 0, 0
+        if alarm.weekdays == tuple(range(7)):
+            return 31, 1440
+        raise AlarmError(
+            "linak_alarm_once_or_daily",
+            "Select no days for a one-time alarm or all seven days for a daily alarm",
+        )
+
     def validate_alarm(self, alarm: AlarmRequest) -> None:
+        if self._profile is LinakProfile.AA_CONTROL_MY_BED:
+            if not alarm.enabled:
+                return
+            self._aa_alarm_recurrence(alarm)
         seconds = alarm.seconds_until(alarm.reference_time) if alarm.enabled else 0
         build_timer_event(seconds, self._alarm_steps(alarm))
 
     async def configure_alarm(self, alarm: AlarmRequest) -> None:
-        # Count down from the moment the timer event is built; zero turns it off.
+        recurrence_count, recurrence_minutes = 0, 0
+        if self._profile is LinakProfile.AA_CONTROL_MY_BED:
+            if not alarm.enabled:
+                await self._clear_aa_alarm()
+                return
+            recurrence_count, recurrence_minutes = self._aa_alarm_recurrence(alarm)
+        # Count down from the time the event frame is built.
         await self.program_alarm(
             (lambda: alarm.seconds_until(dt_util.now())) if alarm.enabled else 0,
             self._alarm_steps(alarm),
-            0,
-            0,
+            recurrence_count,
+            recurrence_minutes,
+        )
+
+    async def _clear_aa_alarm(self) -> None:
+        client = await self._require_aa_alarm_client()
+        await self._set_automatic_drive(False, client)
+        revision = self._timer_revision
+
+        def forget_old_alarm() -> None:
+            if self.client is client and self._timer_revision == revision:
+                self.forward_controller_state_updates(
+                    ALARM_STATUS(None),
+                    ALARM_TIMER_INDEX(None),
+                    ALARM_ENABLED(None),
+                    ALARM_SECONDS(None),
+                    ALARM_FIRST_ACTION(None),
+                    ALARM_LIFETIME(None),
+                    ALARM_PAUSE(None),
+                    ALARM_ERROR_CODE(None),
+                )
+
+        await self._write_protected_characteristic(
+            LINAK_TIMER_CHAR_UUID,
+            LinakCommands.TIMER_CLEAR,
+            expected_client=client,
+            on_write=forget_old_alarm,
         )
 
     async def program_alarm(
@@ -2214,12 +2428,17 @@ class LinakController(BedController):
         recurrence_minutes: int,
     ) -> None:
         """Program an alarm using the complete app write sequence."""
-        if not self.supports_alarm:
-            raise NotImplementedError("Alarm programming is unavailable for this model")
         if not all(isinstance(action, LinakAlarmStep) for action in actions):
             raise TypeError("Linak alarms require LinakAlarmStep actions")
         alarm_steps = tuple(action for action in actions if isinstance(action, LinakAlarmStep))
-        await self.set_automatic_drive(True)
+        client = None
+        if self._profile is LinakProfile.AA_CONTROL_MY_BED:
+            client = await self._require_aa_alarm_client()
+            await self._set_automatic_drive(True, client)
+        else:
+            if not self.supports_alarm:
+                raise NotImplementedError("Alarm programming is unavailable for this model")
+            await self.set_automatic_drive(True)
         if callable(seconds):
             seconds = seconds()
         for packet in (
@@ -2227,7 +2446,9 @@ class LinakController(BedController):
             build_timer_recurrence(recurrence_count, recurrence_minutes),
             LinakCommands.TIMER_COMMIT,
         ):
-            await self._write_protected_characteristic(LINAK_TIMER_CHAR_UUID, packet)
+            await self._write_protected_characteristic(
+                LINAK_TIMER_CHAR_UUID, packet, expected_client=client
+            )
 
     async def move_simultaneously(
         self,
@@ -2238,6 +2459,10 @@ class LinakController(BedController):
         duration_ms: int | None = None,
     ) -> None:
         """Move two different sections with one modern Bed Control opcode."""
+        if self.binds_grouped_abort_to_session:
+            self.validate_simultaneous_directions(first_up, second_up)
+            await self._move_aa_grouped(first_axis, second_axis, first_up, duration_ms)
+            return
         if not self.supports_simultaneous_movement:
             raise NotImplementedError("Simultaneous movement is unavailable")
         available_axes = set(self.simultaneous_movement_axes)
@@ -2276,14 +2501,98 @@ class LinakController(BedController):
         finally:
             await self._send_stop()
 
+    async def _move_aa_grouped(
+        self,
+        first_axis: str,
+        second_axis: str,
+        up: bool,
+        duration_ms: int | None,
+    ) -> None:
+        """Admit and release grouped motion on the link that supplied its mask."""
+        client = self.client
+        axes = {first_axis, second_axis}
+        feature = f"moving {first_axis} and {second_axis} together"
+        attempted = False
+        released = False
+
+        def validate_axes() -> None:
+            if (
+                client is None
+                or self._mask_client is not client
+                or axes.difference(self.simultaneous_movement_axes)
+            ):
+                raise self.not_supported(feature)
+
+        def mark_attempted() -> None:
+            nonlocal attempted
+            validate_axes()
+            attempted = True
+
+        def mark_released() -> None:
+            nonlocal released
+            released = True
+
+        async def release() -> None:
+            if not attempted or released or client is None or self.client is not client:
+                return
+            try:
+                await self._write_gatt_with_retry(
+                    self.control_characteristic_uuid,
+                    self._stop_command,
+                    cancel_event=asyncio.Event(),
+                    expected_client=client,
+                    on_write=mark_released,
+                )
+            except ConnectionError:
+                if self.client is client and client.is_connected:
+                    raise
+
+        if (context := current_command_context()) is not None and context.group_id is not None:
+            async def release_after_pair_failure(_operation: object) -> None:
+                await release()
+
+            context.paired_abort_stop = release_after_pair_failure
+
+        try:
+            await self._await_control_ready(expected_client=client)
+        except ConnectionError as err:
+            if client is not self.client:
+                raise BedNotConnectedError from err
+            raise
+        if client is not self.client:
+            raise BedNotConnectedError
+        validate_axes()
+        command = build_simultaneous_command(first_axis, up, second_axis, up)
+        repeat_count, delay = self.motor_pulse_settings()
+        if duration_ms is not None:
+            repeat_count = self.timed_move_repeat_count(duration_ms, delay)
+        timeout = asyncio.timeout(None if duration_ms is None else duration_ms / 1000)
+        async with self.releasing(release):
+            try:
+                async with timeout:
+                    await self._write_gatt_with_retry(
+                        self.control_characteristic_uuid,
+                        command,
+                        repeat_count=repeat_count,
+                        repeat_delay_ms=delay,
+                        expected_client=client,
+                        before_write=mark_attempted,
+                    )
+            except TimeoutError:
+                if not timeout.expired():
+                    raise
+            except ConnectionError as err:
+                if client is not self.client:
+                    raise BedNotConnectedError from err
+                raise
+
 
 async def build_controller(ctx: BuildContext) -> LinakController:
     """Build the controller for the selected profile and stored capabilities."""
-    profile = (
-        LinakProfile.PERFORMANCE
-        if ctx.variant == LINAK_VARIANT_PERFORMANCE
-        else LinakProfile.BED_CONTROL
-    )
+    profile = {
+        LINAK_VARIANT_AA_CONTROL_MY_BED: LinakProfile.AA_CONTROL_MY_BED,
+        LINAK_VARIANT_PERFORMANCE: LinakProfile.PERFORMANCE,
+    }.get(ctx.variant or "", LinakProfile.BED_CONTROL)
     return LinakController(
         ctx.coordinator, profile=profile, capability_snapshot=ctx.stored_capabilities("linak")
     )
