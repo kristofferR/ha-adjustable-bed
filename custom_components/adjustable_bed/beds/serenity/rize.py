@@ -179,6 +179,8 @@ class RizeRemedyIIController(OkinBeddingAppController):
     async def write_command(
         self, command: bytes, repeat_count: int = 1, repeat_delay_ms: int = 100,
         cancel_event: asyncio.Event | None = None,
+        *,
+        on_write: Callable[[], None] | None = None,
     ) -> None:
         client = self._command_client
         session = self._command_session
@@ -193,6 +195,7 @@ class RizeRemedyIIController(OkinBeddingAppController):
             repeat_count=repeat_count, repeat_delay_ms=repeat_delay_ms,
             cancel_event=cancel_event, response=self._write_response(),
             wall_clock_pacing=True, expected_client=client, before_write=require_session,
+            on_write=on_write,
         )
 
     async def stop_all(self) -> None:

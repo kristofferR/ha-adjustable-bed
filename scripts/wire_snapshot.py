@@ -2323,6 +2323,7 @@ PROPERTY_ROUTES: tuple[str, ...] = (
     "richmat",
     "richmat_classic_apps",
     "richmat_idealbed:model_3i",
+    "restful",
     "serenity",
     "svane",
     "timotion_ahf",

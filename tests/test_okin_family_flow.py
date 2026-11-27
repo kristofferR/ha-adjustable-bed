@@ -388,7 +388,7 @@ async def test_discovered_cst_bed_is_asked_with_its_apps_first(
     assert result["step_id"] == "okin_family"
     offered = choices(result)
     cst_apps = [f"okin_cst:{v}" for v in const.OKIN_CST_VARIANTS if v != const.VARIANT_AUTO]
-    apps = ["serenity", "tranquil", "customatic_zseries:z230", "customatic_zseries:z280"]
+    apps = ["serenity", "tranquil", "restful", "customatic_zseries:z230", "customatic_zseries:z280"]
     routes = ["furnimove", "okin_uuid", "okin_dot", "okin_rf_eco_bt"]
     # A discovered bed's question also searches every other app.
     assert offered == [*cst_apps, *apps, *routes, "another", "keep"]

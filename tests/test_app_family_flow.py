@@ -74,7 +74,7 @@ def test_each_family_has_one_row_naming_its_apps():
             # The accepted reports name two of the apps Rize Clarity and Rize Remedy.
             ("Clarity", "Rize Clarity", "Jerome's C", "Rize Remedy", "Z-Series"),
         ),
-        (const.BED_TYPE_SERENITY, ("Serenity", "Tranquil")),
+        (const.BED_TYPE_SERENITY, ("Serenity", "Tranquil", "Restful")),
         (const.BED_TYPE_STARCODE_ABM5_4, ("AdjustableM5X4", "AdjustableM5X5", "M1X12")),
     ):
         assert all(app in rows[row] for app in apps), rows[row]
@@ -84,6 +84,7 @@ def test_each_family_has_one_row_naming_its_apps():
         "customatic_zseries:z230",
         "customatic_zseries:z280",
         const.BED_TYPE_TRANQUIL,
+        const.BED_TYPE_RESTFUL,
         const.BED_TYPE_STARCODE_M5X5,
         const.BED_TYPE_STARCODE_M1X12,
     } & set(rows)
@@ -104,10 +105,10 @@ async def test_the_customatic_row_asks_the_app_and_the_z_series_model(hass):
     )
 
 
-async def test_the_jordans_row_asks_serenity_or_tranquil(hass):
+async def test_the_jordans_row_lists_each_app(hass):
     flow = setup_flow(hass, const.BED_TYPE_SERENITY)
     result = await flow.async_step_jordans_family()
-    assert choices(result) == ["serenity", "tranquil"]
+    assert choices(result) == ["serenity", "tranquil", "restful"]
     with patch.object(flow, "_finish_with_verify", new=AsyncMock()) as finish:
         await flow.async_step_jordans_family({"choice": "tranquil"})
     assert finish.call_args.args[0][const.CONF_BED_TYPE] == const.BED_TYPE_TRANQUIL
@@ -162,7 +163,8 @@ async def test_an_app_already_chosen_is_not_asked_again(hass, bed_type, step):
     assert finish.call_args.args[0][const.CONF_BED_TYPE] == bed_type
 
 
-async def test_the_jordans_row_asks_which_jordans_app(hass):
+@pytest.mark.parametrize("app", [const.BED_TYPE_TRANQUIL, const.BED_TYPE_RESTFUL])
+async def test_the_jordans_row_asks_which_jordans_app(hass, app):
     flow = AdjustableBedConfigFlow()
     flow.hass, flow.context = hass, {}
     info = MagicMock()
@@ -177,9 +179,9 @@ async def test_the_jordans_row_asks_which_jordans_app(hass):
     assert result["step_id"] == "jordans_family"
     with patch.object(flow, "_finish_with_verify", new=AsyncMock()) as finish:
         await finish_new_bed(
-            flow, await flow.async_step_jordans_family({"choice": "tranquil"}), {CONF_NAME: "Bed"}
+            flow, await flow.async_step_jordans_family({"choice": app}), {CONF_NAME: "Bed"}
         )
-    assert finish.call_args.args[0][const.CONF_BED_TYPE] == const.BED_TYPE_TRANQUIL
+    assert finish.call_args.args[0][const.CONF_BED_TYPE] == app
 
 
 async def test_another_familys_guided_change_never_offers_keep_here(hass):
@@ -234,8 +236,9 @@ async def test_z_series_change_is_refused_without_the_apps_roles(
     assert entry.data == before
 
 
-async def test_serenity_entry_changes_to_tranquil_after_checking_its_roles(
-    hass, enable_custom_integrations
+@pytest.mark.parametrize("app", [const.BED_TYPE_TRANQUIL, const.BED_TYPE_RESTFUL])
+async def test_serenity_entry_changes_to_another_app_after_checking_its_roles(
+    hass, enable_custom_integrations, app
 ):
     entry = entry_for(hass, {const.CONF_BED_TYPE: const.BED_TYPE_SERENITY})
     manager = hass.config_entries.flow
@@ -243,12 +246,13 @@ async def test_serenity_entry_changes_to_tranquil_after_checking_its_roles(
         bluetooth_patches(stack, gatt_client(BEDDING))
         result = await reconfigure(hass, entry)
         assert result["step_id"] == "jordans_family"
-        result = await manager.async_configure(result["flow_id"], {"choice": "tranquil"})
+        result = await manager.async_configure(result["flow_id"], {"choice": app})
         result = await finish_check(hass, result)
         assert result["step_id"] == "migration_confirm"
         result = await manager.async_configure(result["flow_id"], {"action": "apply"})
     assert result["reason"] == "migration_applied"
-    assert entry.data[const.CONF_BED_TYPE] == const.BED_TYPE_TRANQUIL
+    assert entry.data[const.CONF_BED_TYPE] == app
+    assert entry.data[const.CONF_PROFILE_ID] == resolve_profile_id(entry.data)
 
 
 async def test_keep_in_a_guided_change_leaves_the_entry_unchanged(hass, enable_custom_integrations):
