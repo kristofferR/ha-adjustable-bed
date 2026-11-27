@@ -461,3 +461,14 @@ ORE controller extension owns route capabilities and session-fenced callbacks,
 with corrected fragment early returns in the Keeson parser. The full 91-vector
 harness and 12 parser observations remain fixtures, with
 explicit bounds-safe/session-lifetime differences for Home Assistant.
+
+## ErgoBQ BED
+
+ErgoBQ 1.8.1 adds `codec/ergobq.py` for the versioned `55 AA` command,
+big-endian payload length, DP TLVs and big-endian reflected CRC16 envelope.
+The existing FF-frame, Richmat and Keeson carriers do not reproduce this
+format's complete literal set. The typed `profiles/ergobq.py` selects the two
+byte-identical BED products and serial-dependent axes. It has no mattress
+profile. `beds/ergobq/` uses the shared settled GATT writer with an expected
+client, while owning its authentication, notification stream and release.
+See [ErgoBQ BED](../beds/ergobq.md) and `tests/test_ergobq_vectors.py`.

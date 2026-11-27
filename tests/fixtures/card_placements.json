@@ -56,6 +56,36 @@
  "binary_sensor:enso2_light_on": {
   "card_section": "hidden"
  },
+ "binary_sensor:ergobq_fault_anti_pinch": {
+  "card_section": "hidden"
+ },
+ "binary_sensor:ergobq_fault_control_box_overheat": {
+  "card_section": "hidden"
+ },
+ "binary_sensor:ergobq_fault_foot_motor": {
+  "card_section": "hidden"
+ },
+ "binary_sensor:ergobq_fault_head_motor": {
+  "card_section": "hidden"
+ },
+ "binary_sensor:ergobq_fault_headrest_motor": {
+  "card_section": "hidden"
+ },
+ "binary_sensor:ergobq_fault_light": {
+  "card_section": "hidden"
+ },
+ "binary_sensor:ergobq_fault_massage": {
+  "card_section": "hidden"
+ },
+ "binary_sensor:ergobq_fault_waist_motor": {
+  "card_section": "hidden"
+ },
+ "binary_sensor:ergobq_partner_broadcast": {
+  "card_section": "hidden"
+ },
+ "binary_sensor:ergobq_partner_connected": {
+  "card_section": "hidden"
+ },
  "binary_sensor:ergomotion4_light": {
   "card_section": "hidden"
  },
@@ -936,6 +966,26 @@
  },
  "button:enso_timer_massage_page": {
   "card_section": "massage"
+ },
+ "button:ergobq_motor_1_down": {
+  "card_section": "motors",
+  "card_role": "down",
+  "card_motor": "ergobq_motor_1"
+ },
+ "button:ergobq_motor_1_up": {
+  "card_section": "motors",
+  "card_role": "up",
+  "card_motor": "ergobq_motor_1"
+ },
+ "button:ergobq_motor_2_down": {
+  "card_section": "motors",
+  "card_role": "down",
+  "card_motor": "ergobq_motor_2"
+ },
+ "button:ergobq_motor_2_up": {
+  "card_section": "motors",
+  "card_role": "up",
+  "card_motor": "ergobq_motor_2"
  },
  "button:eshine_massage_foot_strength": {
   "card_section": "massage"
@@ -3200,6 +3250,14 @@
   "card_section": "motors",
   "card_motor": "elevate_both"
  },
+ "cover:ergobq_motor_1": {
+  "card_section": "motors",
+  "card_motor": "ergobq_motor_1"
+ },
+ "cover:ergobq_motor_2": {
+  "card_section": "motors",
+  "card_motor": "ergobq_motor_2"
+ },
  "cover:feet": {
   "card_section": "motors",
   "card_motor": "feet"
@@ -3757,6 +3815,29 @@
  "number:ergobed_light_timer": {
   "card_section": "lighting"
  },
+ "number:ergobq_head_intensity": {
+  "card_section": "massage"
+ },
+ "number:ergobq_head_minutes": {
+  "card_section": "massage"
+ },
+ "number:ergobq_legs_intensity": {
+  "card_section": "massage"
+ },
+ "number:ergobq_legs_minutes": {
+  "card_section": "massage"
+ },
+ "number:ergobq_light_minutes": {
+  "card_section": "lighting"
+ },
+ "number:ergobq_target_1": {
+  "card_section": "motors",
+  "card_motor": "head"
+ },
+ "number:ergobq_target_2": {
+  "card_section": "motors",
+  "card_motor": "legs"
+ },
  "number:fan_level": {
   "card_section": "climate"
  },
@@ -4153,6 +4234,15 @@
  "select:enso2_timer_options": {
   "card_section": "massage",
   "card_role": "timer"
+ },
+ "select:ergobq_head_mode": {
+  "card_section": "massage"
+ },
+ "select:ergobq_legs_mode": {
+  "card_section": "massage"
+ },
+ "select:ergobq_side": {
+  "card_section": "utility"
  },
  "select:footwarming_timer": {
   "card_section": "climate"
@@ -4698,6 +4788,21 @@
  "sensor:enso_massage_timer": {
   "card_section": "massage",
   "card_role": "timer"
+ },
+ "sensor:ergobq_diy_remaining": {
+  "card_section": "hidden"
+ },
+ "sensor:ergobq_head_remaining": {
+  "card_section": "hidden"
+ },
+ "sensor:ergobq_identity": {
+  "card_section": "hidden"
+ },
+ "sensor:ergobq_legs_remaining": {
+  "card_section": "hidden"
+ },
+ "sensor:ergobq_light_remaining": {
+  "card_section": "hidden"
  },
  "sensor:eshine_alarm": {
   "card_section": "hidden"
@@ -5562,6 +5667,18 @@
   "card_section": "massage"
  },
  "switch:dreamsense_split": {
+  "card_section": "utility"
+ },
+ "switch:ergobq_child_lock": {
+  "card_section": "utility"
+ },
+ "switch:ergobq_head_on": {
+  "card_section": "massage"
+ },
+ "switch:ergobq_legs_on": {
+  "card_section": "massage"
+ },
+ "switch:ergobq_massage_sync": {
   "card_section": "utility"
  },
  "switch:jerome_massage": {

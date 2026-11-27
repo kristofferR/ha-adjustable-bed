@@ -42,6 +42,7 @@ if TYPE_CHECKING:
     from .doublesleep.controller import DoubleSleepController as DoubleSleepController
     from .dreamsense.likimio import LikimioController as LikimioController
     from .ergo_slim import ErgoSlimController as ErgoSlimController
+    from .ergobq.controller import ErgoBQController as ErgoBQController
     from .ergomotion4.controller import Ergomotion4Controller as Ergomotion4Controller
     from .ergomotion_app import ErgomotionAppController as ErgomotionAppController
     from .eshine.controller import EshineController as EshineController
@@ -219,6 +220,7 @@ _EXPORT_MODULES = {
     'RichmatClassicController': 'richmat_classic.controller',
     'Ergomotion4Controller': 'ergomotion4.controller',
     'RowControlController': 'row_control',
+    'ErgoBQController': 'ergobq.controller',
     'ErgoSlimController': 'ergo_slim',
     'TempurAUController': 'tempur_au',
     "CasperBaseController": "casper_base.controller",
@@ -357,6 +359,7 @@ __all__ = [
     'RichmatClassicController',
     'Ergomotion4Controller',
     'RowControlController',
+    'ErgoBQController',
     'ErgoSlimController',
     'TempurAUController',
 

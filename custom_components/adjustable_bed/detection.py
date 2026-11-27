@@ -674,6 +674,7 @@ BED_TYPE_DISPLAY_NAMES: dict[str, str] = {
     "wsilver_legacy": "W.Silver Products app (older version)",
     "super_colchones": "Super Colchones app (AFEG302, AFEG350)",
     "sonicsleep": "SonicSleep / 소닉슬립 app",
+    "ergobq": "ErgoBQ BED app",
     "hush_remote": "Hush Base remote finder",
     "hush_sleep_mm": "Hush Base sleep sensor (name starts with RM-)",
     "hush_sleep_sxb": "Hush Base sleep sensor (name starts with HJ-)",
@@ -1514,6 +1515,11 @@ def _detect_with_first_pass(
     service_info: BluetoothServiceInfoBleak, first: FirstPass
 ) -> DetectionResult:
     """Offer Good Vibe Sleep without changing an existing receiver/app choice."""
+    from .codec.ergobq import IDENTITY_SERVICE
+    from .profiles.ergobq import product as ergobq_product
+    identity = getattr(service_info, "service_data", {}).get(IDENTITY_SERVICE, b"")
+    if ergobq_product(identity, service_info.name) is not None:
+        return DetectionResult("ergobq", 0.99, ["service_data:ergobq_bed"])
     result = _detect_bed_type_with_app_candidates(service_info, first)
     # CONTROL_BOX is the app's scan filter. It cannot identify the receiver or layout.
     if first.name(BED_TYPE_AMBIENT) and not any(

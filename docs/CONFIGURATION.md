@@ -964,3 +964,11 @@ and massage setting when combined with another bed. No single-address side
 selection is inferred. The massage timer is a Home Assistant countdown, 1–40
 minutes, initially 10; it sends massage off on expiry while connected. It does
 not program a timer in the bed. See [SILVERmotion Android](beds/silvermotion.md).
+
+### ErgoBQ BED
+
+Select the BED product ID explicitly. Optionally enter its six-byte serial
+as hex; serial byte 4 selects the four-motor layout only when it equals 4.
+Blank uses the app's two-motor default. Enter an existing channel stamp if
+required; no account lookup is performed. The shared Nordic UART service alone
+does not choose an ErgoBQ product. See [ErgoBQ BED](beds/ergobq.md).

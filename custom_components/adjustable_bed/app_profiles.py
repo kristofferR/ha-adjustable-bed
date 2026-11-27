@@ -235,6 +235,7 @@ _BY_BED_TYPE: Final[dict[str, SideProfile]] = {
     "sleep_evolution": SideProfile("SleepEvolution", frozenset({CONF_BLE_DEVICE_NAME}), variant_owned=True),
     "wsilver_legacy": SideProfile("W.Silver Products (older version)", frozenset({CONF_BLE_DEVICE_NAME}), variant_owned=True),
     "super_colchones": SideProfile("Super Colchones product", variant_owned=True),
+    "ergobq": SideProfile("ErgoBQ BED", frozenset({"product_type", "ergobq_serial", "ergobq_stamp"})),
     "sonicsleep": SideProfile("SonicSleep IQRM", frozenset({"product_type"})),
     "casper_sleep_mm": SideProfile("Casper Base MM sensor"),
     "casper_sleep_sxb": SideProfile("Casper Base SXB sensor"),
