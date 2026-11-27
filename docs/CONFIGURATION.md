@@ -1006,3 +1006,12 @@ The searchable **Ronco Motion app** choice asks for ECONOMY (Fk9rm) or PREMIUM
 (Fk8rm). Select the layout used in Ronco Motion 1.2; Bluetooth names cannot
 identify it. PREMIUM adds Pillow and a light toggle. Layout settings belong to
 one physical side of a two-address pair. See [Ronco Motion](beds/richmat.md#ronco-motion).
+
+### MattressPoint app
+
+Select MattressPoint and explicitly choose BOX2422 or BOX2442. The shared
+SmartBed name and Nordic UART service do not identify the app or a safe default
+box. BOX2422 provides back, legs and combined movement; BOX2442 adds head tilt
+and lumbar. Massage and light controls are app-specific. Preset/save/reset
+controls and alarm programming are unavailable pending complete model and field
+mapping; alarm disable/query and clock synchronization are available.

@@ -555,6 +555,9 @@ _CHECK_FALLBACKS: Final[dict[str, str]] = {
         "⚠️ The device connected but accepts no commands. It may not be your bed's "
         "controller. Check that you chose the right device."
     ),
+    "check_mattresspoint_uart_missing": (
+        "❌ The Bluetooth device lacks the write-without-response and status channels MattressPoint needs."
+    ),
     "check_sleeptime_uart_missing": (
         "❌ The Bluetooth device lacks the write and status channels Sleeptime needs."
     ),
@@ -2419,6 +2422,7 @@ class CapabilityReport:
     truemotion_transport_valid: bool | None = None
     atlas_lift_transport_valid: bool | None = None
     langjue_receiver_valid: bool | None = None
+    mattresspoint_uart_valid: bool | None = None
     sleeptime_uart_valid: bool | None = None
     ambient_transport_valid: bool | None = None
     vindo_transport_valid: bool | None = None
@@ -6746,6 +6750,7 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                 and self._pending_entry.get(CONF_BED_TYPE) == BED_TYPE_LANGJUE
                 and report.langjue_receiver_valid is not True
             )
+            or report.mattresspoint_uart_valid is False
             or report.sleeptime_uart_valid is False
             or (
                 self._pending_entry.get(CONF_BED_TYPE) == BED_TYPE_AMBIENT
@@ -7093,6 +7098,16 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                         else:
                             report.atlas_lift_transport_valid = True
                         return report
+                    if bed_type == "mattresspoint":
+                        if report.connected and services:
+                            await async_import_modules(self.hass, "beds.uart_roles")
+                            from .beds.uart_roles import gatt_roles
+                            from .errors import BedNotConnectedError
+
+                            report.mattresspoint_uart_valid = gatt_roles(service_table) is not None
+                            if not report.mattresspoint_uart_valid:
+                                report.error = str(BedNotConnectedError("mattresspoint_gatt"))
+                        return report
                     if bed_type == BED_TYPE_SLEEPTIME:
                         if report.connected and services:
                             await async_import_modules(self.hass, "beds.sleeptime.transport")
@@ -7280,6 +7295,8 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         if not report.writable_count:
             lines.append(await line("check_no_commands"))
 
+        if report.mattresspoint_uart_valid is False:
+            lines.append(await line("check_mattresspoint_uart_missing"))
         if report.sleeptime_uart_valid is False:
             lines.append(await line("check_sleeptime_uart_missing"))
         if report.truemotion_transport_valid is False:
@@ -7447,6 +7464,15 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
             and report.kingkoil_transport_valid is not False
             and report.scott_living_transport_valid is not False
         ):
+            if report.mattresspoint_uart_valid is False:
+                self._verify_form_shown = False
+                self._manual_data = dict(self._pending_entry)
+                self._recheck_answers = True
+                profile = setup_profile_for(self._manual_data)
+                assert profile is not None
+                return self._show_profile_questions(
+                    profile, self._manual_data, {CONF_PROTOCOL_VARIANT: "mattresspoint_gatt"}
+                )
             if report.sleeptime_uart_valid is False:
                 self._verify_form_shown = False
                 self._manual_data = dict(self._pending_entry)

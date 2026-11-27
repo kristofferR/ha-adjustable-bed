@@ -181,6 +181,7 @@ VARIANTS_BY_BED_TYPE: dict[str, dict[str, str]] = {
     BED_TYPE_AMBIENT: AMBIENT_LAYOUTS,
     "berun": {key: f"Version {profile.version}" for key, profile in BERUN_PROFILES.items()},
     BED_TYPE_SLEEPTIME: dict(SLEEPTIME_SELECTORS),
+    "mattresspoint": {"BOX2422": "BOX2422", "BOX2442": "BOX2442"},
     "ormatek": {"okin15": "Bluetooth name starts with Okin", "okin24": "Bluetooth name starts with SmartBed"},
     "leva": dict(LEVA_RECEIVERS),
     BED_TYPE_LIKIMIO: LIKIMIO_CHOICES,

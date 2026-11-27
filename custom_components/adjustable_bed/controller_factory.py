@@ -404,6 +404,7 @@ _BUILDERS: Final[dict[str, _BuilderSpec]] = {
     "onlysnore": _BuilderSpec("onlysnore.controller"),
     BED_TYPE_COMFORT_ENHANCEMENT3: _BuilderSpec("comfort_enhancement3.controller"),
     BED_TYPE_N32_MOTION_BED: _BuilderSpec("n32_motion_bed.controller"),
+    "mattresspoint": _BuilderSpec("mattresspoint.controller"),
     BED_TYPE_SLEEPTIME: _BuilderSpec("sleeptime.controller"),
     BED_TYPE_ULTRAMATIC_SMART_BED: _BuilderSpec("ultramatic.controller"),
     "paramount": _BuilderSpec("paramount.controller"),
