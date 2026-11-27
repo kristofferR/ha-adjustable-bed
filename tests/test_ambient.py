@@ -7,7 +7,7 @@ from unittest.mock import AsyncMock, Mock, patch
 import pytest
 from bleak.exc import BleakError
 from homeassistant.config_entries import ConfigEntryState
-from homeassistant.const import CONF_ADDRESS, CONF_NAME
+from homeassistant.const import CONF_ADDRESS, CONF_NAME, EntityCategory
 from homeassistant.data_entry_flow import FlowResultType
 from homeassistant.helpers import device_registry as dr
 from pytest_homeassistant.common import MockConfigEntry
@@ -18,6 +18,7 @@ from custom_components.adjustable_bed import (
     const,
     light,
     number,
+    sensor,
     services,
 )
 from custom_components.adjustable_bed.codec import ambient as p1
@@ -256,6 +257,15 @@ async def test_startup_queries_only_after_notification_setup(hass):
     state = runtime.coordinator.controller_state
     assert state["ambient_power_supply"] == "DC"
     assert state["ambient_firmware"] == "1020304"
+    buttons = await _entities(runtime, button)
+    sensors = await _entities(runtime, sensor)
+    for entity in (
+        buttons["ambient_refresh"],
+        sensors["ambient_power_supply"],
+        sensors["ambient_firmware"],
+    ):
+        assert entity.entity_category is EntityCategory.DIAGNOSTIC
+        assert entity.entity_registry_enabled_default is False
 
 
 @pytest.mark.parametrize("roles", [{"write": False}, {"notify": False}])
@@ -547,6 +557,40 @@ async def test_heat_action_never_writes_from_old_or_incomplete_state(hass):
     with raises_key("ambient_heat_unknown"):
         await runtime.action("set_heat", heat_side="right", shoulder=6, torso=12, legs=18)
     assert runtime.frames() == [p2.query(p2.Query.HEAT_ZONES)]
+
+
+async def test_heat_confirmation_during_pending_target_write_allows_timer(hass):
+    runtime = await _runtime(hass)
+    await runtime.controller.start_notify()
+    query = p2.query(p2.Query.HEAT_ZONES)
+    expected = (7, 8, 9, 6, 12, 18)
+    target = p2.heat(expected)
+    submitted = asyncio.Event()
+    acknowledge = asyncio.Event()
+    query_count = 0
+
+    async def respond(_char, frame, **_kwargs):
+        nonlocal query_count
+        if frame == query:
+            query_count += 1
+            if query_count == 1:
+                runtime.receive(_heat_reply((7, 8, 9, 1, 2, 3)))
+        elif frame == target:
+            runtime.receive(_heat_reply(expected))
+            submitted.set()
+            await acknowledge.wait()
+
+    runtime.client.write_gatt_char.side_effect = respond
+    command = asyncio.create_task(
+        runtime.action("set_heat", heat_side="left", shoulder=6, torso=12, legs=18, timer_hours=2)
+    )
+    try:
+        await asyncio.wait_for(submitted.wait(), 1)
+        assert runtime.frames() == [query, target]
+    finally:
+        acknowledge.set()
+    await asyncio.wait_for(command, 1)
+    assert runtime.frames() == [query, target, query, p2.heat_timer(2)]
 
 
 @pytest.mark.parametrize("replace_link", [False, True])

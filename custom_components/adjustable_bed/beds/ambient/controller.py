@@ -472,6 +472,7 @@ class AmbientController(BedController):
         loop = asyncio.get_running_loop()
         requested_at = 0.0
         expected: p2.Zones | None = None
+        accepted: p2.Heat | None = None
 
         def query() -> bytes:
             nonlocal previous, requested_at
@@ -487,7 +488,7 @@ class AmbientController(BedController):
             raise failed("ambient_heat_unknown")
 
         def target() -> bytes:
-            nonlocal expected
+            nonlocal expected, accepted
             current = link.heat
             if (
                 current is None
@@ -500,10 +501,10 @@ class AmbientController(BedController):
             for index, value in zones.items():
                 values[offset + index] = value
             expected = cast(p2.Zones, tuple(values))
+            accepted = current
             return p2.heat(expected)
 
         await self._write(link, target)
-        accepted = link.heat
 
         def confirmation() -> p2.Heat | None:
             sample = link.heat
@@ -583,6 +584,7 @@ class AmbientController(BedController):
             _refresh,
             translation_key="ambient_refresh",
             cancel_movement=False,
+            diagnostic=True,
         )
         if self.split:
             return (*presets, refresh)
@@ -607,14 +609,12 @@ class AmbientController(BedController):
                 _POWER_SUPPLY,
                 _POWER_SUPPLY,
                 "mdi:power-plug",
-                entity_registry_enabled_default=True,
             ),
             ControllerStateSensorSpec(
                 _FIRMWARE,
                 _FIRMWARE,
                 _FIRMWARE,
                 "mdi:chip",
-                entity_registry_enabled_default=True,
             ),
         )
 
