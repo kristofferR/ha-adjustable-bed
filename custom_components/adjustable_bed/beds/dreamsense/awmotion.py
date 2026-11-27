@@ -25,7 +25,7 @@ class AwMotionController(DreamSenseController):
     _receive_type = AwMotionReceive
     _routes = LIKIMIO_ROUTES
     # Audio and its capability query are outside the direct-bed product boundary.
-    _probe_actions = ("CheckClock", "CheckLight")
+    _menu_queries = ("CheckClock", "CheckLight")
 
     def validate_light(
         self, color: tuple[int, int, int] | None = None, seconds: int | None = None

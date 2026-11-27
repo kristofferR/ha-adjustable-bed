@@ -110,8 +110,9 @@ async def runtime(hass, model="SN300", layout=1):
 
 
 @pytest.mark.parametrize("layout", range(6))
-async def test_startup_notify_and_wire_shape(hass, layout):
-    c, ctrl = await runtime(hass, layout=layout)
+@pytest.mark.parametrize("model", PROFILES)
+async def test_startup_notify_and_wire_shape(hass, layout, model):
+    c, ctrl = await runtime(hass, model, layout)
     assert written(c) == (
         ["00", "01", "01"] if layout == 0 else ["6e02010071", "6e08010178", "6e0a000179"]
     )

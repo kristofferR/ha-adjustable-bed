@@ -51,7 +51,34 @@ async def handle_light(call: ServiceCall) -> None:
     )
 
 
+async def handle_muuegm_enable(call: ServiceCall) -> None:
+    targets = _call_targets(call)
+    admissions = [_capture_command_admission(parent, side) for parent, side in targets]
+    await async_import_modules(call.hass, "beds.dreamsense.muuegm")
+    from .muuegm import MuuegmController
+
+    number = call.data["alarm_number"]
+    stamps: dict[MuuegmController, tuple[int, int]] = {}
+
+    def validate(controller: MuuegmController) -> None:
+        stamps[controller] = controller.validate_record(number)
+
+    preflighted = await _preflight_capability(targets, MuuegmController, None, validate)
+
+    async def execute(controller: MuuegmController) -> None:
+        await controller.enable_alarm(number, call.data["enabled"], stamps[controller])
+
+    await _execute_preflighted(targets, preflighted, _family_command(MuuegmController, execute),
+                              cancel_running=False, resource="configuration", admissions=admissions)
+
+
 def async_register_dreamsense_services(hass: HomeAssistant) -> None:
+    hass.services.async_register(DOMAIN, "muuegm_enable_alarm", handle_muuegm_enable, schema=vol.Schema({
+        vol.Required(CONF_DEVICE_ID): DEVICE_IDS,
+        vol.Required("alarm_number"): vol.All(_whole_number, vol.Range(min=1, max=7)),
+        vol.Required("enabled"): cv.boolean,
+        **SIDE_FIELD,
+    }))
     hass.services.async_register(
         DOMAIN,
         "dreamsense_delete_alarm",

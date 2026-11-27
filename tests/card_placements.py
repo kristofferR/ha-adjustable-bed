@@ -215,6 +215,7 @@ def runtime_variants(controllers: Iterable[BedController]) -> Iterator[BedContro
     from custom_components.adjustable_bed.beds.dreamsense.awmotion import AwMotionController
     from custom_components.adjustable_bed.beds.dreamsense.controller import DreamSenseController
     from custom_components.adjustable_bed.beds.dreamsense.likimio import LikimioController
+    from custom_components.adjustable_bed.beds.dreamsense.muuegm import MuuegmController
     from custom_components.adjustable_bed.beds.ergobq.controller import ErgoBQController
     from custom_components.adjustable_bed.beds.keeson.enso import EnsoController
     from custom_components.adjustable_bed.beds.langjue import LangjueController
@@ -267,6 +268,7 @@ def runtime_variants(controllers: Iterable[BedController]) -> Iterator[BedContro
     from custom_components.adjustable_bed.profiles.awmotion import PROFILES as AWMOTION_PROFILES
     from custom_components.adjustable_bed.profiles.dreamsense import PROFILES as DREAMSENSE_PROFILES
     from custom_components.adjustable_bed.profiles.enso import PROFILES as ENSO_PROFILES
+    from custom_components.adjustable_bed.profiles.muuegm import PROFILES as MUUEGM_PROFILES
     from custom_components.adjustable_bed.profiles.simmons_blue import (
         LAYOUTS as SIMMONS_BLUE_LAYOUTS,
     )
@@ -307,6 +309,9 @@ def runtime_variants(controllers: Iterable[BedController]) -> Iterator[BedContro
                     yield DorsalController(controller._coordinator, "restored", code)
         if isinstance(controller, AwMotionController):
             for profile in AWMOTION_PROFILES.values():
+                yield variant(controller, profile=profile, _known={"clock", "light"})
+        elif isinstance(controller, MuuegmController):
+            for profile in MUUEGM_PROFILES.values():
                 yield variant(controller, profile=profile, _known={"clock", "light"})
         elif isinstance(controller, LikimioController):
             yield variant(controller, _known={"light"})

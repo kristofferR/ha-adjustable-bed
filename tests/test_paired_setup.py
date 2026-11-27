@@ -4592,6 +4592,10 @@ class TestOfflineSafeBedTypes:
                 child.update({CONF_PROTOCOL_VARIANT: "malouf", "product_type": "pf4"})
             elif bed_type in ("sleep_evolution", "wsilver_legacy"):
                 child[CONF_PROTOCOL_VARIANT] = "GV"
+            elif bed_type == "muuegm":
+                child[CONF_PROTOCOL_VARIANT] = "ABF03"
+            elif bed_type == "awmotion":
+                child[CONF_PROTOCOL_VARIANT] = "SN300"
             elif bed_type == BED_TYPE_VIBRADORM_APP:
                 child.update({
                     CONF_VIBRADORM_APP_PROFILE: "caresse",
