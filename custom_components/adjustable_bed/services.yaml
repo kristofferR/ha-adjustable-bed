@@ -4843,3 +4843,64 @@ suta_king_koil_confirm_alarm:
           min: 0
           max: 59
           mode: box
+
+myside:
+  fields:
+    device_id:
+      required: true
+      selector:
+        device:
+          integration: adjustable_bed
+          multiple: true
+    side:
+      selector:
+        select:
+          options: [left, right, both]
+    operation:
+      required: true
+      selector:
+        select:
+          options: [query, add, edit, delete, enable, name]
+    alarm_id:
+      default: 1
+      selector:
+        number:
+          min: 1
+          max: 7
+          mode: box
+    hour:
+      default: 7
+      selector:
+        number:
+          min: 0
+          max: 23
+          mode: box
+    minute:
+      default: 0
+      selector:
+        number:
+          min: 0
+          max: 59
+          mode: box
+    mode:
+      default: zero_gravity
+      selector:
+        select:
+          options: [anti_snoring, zero_gravity, tv_position, memory1, memory2, memory3]
+    weekdays:
+      default: []
+      selector:
+        select:
+          multiple: true
+          options:
+            - {value: '0', label: Monday}
+            - {value: '1', label: Tuesday}
+            - {value: '2', label: Wednesday}
+            - {value: '3', label: Thursday}
+            - {value: '4', label: Friday}
+            - {value: '5', label: Saturday}
+            - {value: '6', label: Sunday}
+    enabled:
+      default: true
+      selector:
+        boolean:

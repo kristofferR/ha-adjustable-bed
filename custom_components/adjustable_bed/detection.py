@@ -120,6 +120,7 @@ from .const import (
     BED_TYPE_MOTION_BED,
     BED_TYPE_MOTOMOTION,
     BED_TYPE_MOTOSLEEP,
+    BED_TYPE_MYSIDE,
     BED_TYPE_N32_MOTION_BED,
     BED_TYPE_OCTO,
     BED_TYPE_OKIMATTMOTION,
@@ -354,6 +355,7 @@ from .profiles.mlily_choices import PROFILE_CHOICES as MLILY_PROFILES
 from .profiles.mlily_remote import VARIANTS as MLILY_REMOTE_PROFILES
 from .profiles.moodbase import receiver_hint as moodbase_receiver_hint
 from .profiles.motomotion import eligible as motomotion_eligible
+from .profiles.myside import CHOICES as MYSIDE_PRODUCTS
 from .profiles.okimiki import PROFILE_CHOICES as OKIMIKI_PROFILES
 from .profiles.okimiki import scan_matches as okimiki_scan_matches
 from .profiles.onlysnore import advertisement as onlysnore_advertisement
@@ -785,6 +787,7 @@ BED_TYPE_DISPLAY_NAMES: dict[str, str] = {
     BED_TYPE_SYMPHONY: "Symphony Sleep Sense app",
     BED_TYPE_ORMATEK: "OrmatekTechnoSmart app",
     BED_TYPE_JEROME_ADJUSTABLE_BASE: "Jerome's Adjustable Base app",
+    BED_TYPE_MYSIDE: "My Side app",
     BED_TYPE_RICHMAT_APP: "Richmat app",
     BED_TYPE_RICHMAT_APP_SLEEP: "Richmat app sleep sensor",
     BED_TYPE_GLIDEAWAY_MOTION: "Glideaway Motion app",
@@ -910,6 +913,7 @@ APP_VARIANT_CHOICES: dict[tuple[str, str], str] = {
     (BED_TYPE_RICHMAT_CLASSIC_APPS, "homezone"): "Home Zone Adjustable app",
     (BED_TYPE_RICHMAT_CLASSIC_APPS, "lp2"): "L&P Adjustable Base app (newer version)",
     **{(BED_TYPE_RICHMAT_APP_SLEEP, profile): f"Richmat app sleep sensor ({label})" for profile, label in RICHMAT_SLEEP_CHOICES.items()},
+    **{(BED_TYPE_MYSIDE, product): f"My Side ({label})" for product, label in MYSIDE_PRODUCTS.items()},
     **{(BED_TYPE_RICHMAT_APP, profile): f"Richmat app ({label})" for profile, label in RICHMAT_APP_PRODUCTS.items()},
     **{(BED_TYPE_HJBED, profile): f"HJBed app ({label})" for profile, label in HJBED_PROFILES.items()},
     **{(BED_TYPE_GLIDEAWAY_MOTION, model): f"Glideaway Motion app ({label.replace(' (', ', ').rstrip(')')})"
@@ -1023,6 +1027,7 @@ _HIDDEN_APP_ROWS: Final = frozenset(
         *((BED_TYPE_MLILY0, product) for product in MLILY0_PROFILES),
         *((BED_TYPE_MLILY_REMOTE, product) for product in MLILY_REMOTE_PROFILES),
         *((BED_TYPE_HJBED, product) for product in HJBED_PROFILES),
+        *((BED_TYPE_MYSIDE, product) for product in MYSIDE_PRODUCTS),
         *((BED_TYPE_RICHMAT_APP, product) for product in RICHMAT_APP_PRODUCTS),
         *((BED_TYPE_RICHMAT_APP_SLEEP, product) for product in RICHMAT_SLEEP_CHOICES),
     }
@@ -1032,7 +1037,7 @@ HIDDEN_APP_CHOICES: Final = frozenset(bed_type_choice(*row) for row in _HIDDEN_A
 # Bed types whose one row asks for the product, although each product is an app entry.
 PRODUCT_QUESTION_BED_TYPES: Final = frozenset(
     {
-        BED_TYPE_ALYA, BED_TYPE_RONCO_MOTION, BED_TYPE_AMBIENT, BED_TYPE_RESTONIC, BED_TYPE_FLEXISPOT, "kingkoil", BED_TYPE_ENSO2, BED_TYPE_LIKIMIO, "awmotion", "dreamsense", "muuegm", "saatva", "majestichome", BED_TYPE_LEVA, BED_TYPE_LINX, BED_TYPE_JUNASLEEP, BED_TYPE_SOMOS, "bobpowerbase", BED_TYPE_COMFORT_ENHANCEMENT3, BED_TYPE_SYMPHONY_SLEEP, BED_TYPE_YAMADA, BED_TYPE_RICHMAT_APP, BED_TYPE_RICHMAT_APP_SLEEP, BED_TYPE_GALAXY, BED_TYPE_MLILY, BED_TYPE_MLILY0, BED_TYPE_MLILY_REMOTE, BED_TYPE_OKIMIKI, "luuna", BED_TYPE_GOODVIBE, BED_TYPE_HJBED, BED_TYPE_CASPER_BASE, BED_TYPE_COMFORT_ENHANCEMENTS, BED_TYPE_COMFORTBASE, "sleep_evolution", "wsilver_legacy", "personal_comfort", "instant_comfort"}
+        BED_TYPE_ALYA, BED_TYPE_RONCO_MOTION, BED_TYPE_AMBIENT, BED_TYPE_RESTONIC, BED_TYPE_FLEXISPOT, "kingkoil", BED_TYPE_ENSO2, BED_TYPE_LIKIMIO, "awmotion", "dreamsense", "muuegm", "saatva", "majestichome", BED_TYPE_LEVA, BED_TYPE_LINX, BED_TYPE_JUNASLEEP, BED_TYPE_SOMOS, "bobpowerbase", BED_TYPE_COMFORT_ENHANCEMENT3, BED_TYPE_SYMPHONY_SLEEP, BED_TYPE_YAMADA, BED_TYPE_MYSIDE, BED_TYPE_RICHMAT_APP, BED_TYPE_RICHMAT_APP_SLEEP, BED_TYPE_GALAXY, BED_TYPE_MLILY, BED_TYPE_MLILY0, BED_TYPE_MLILY_REMOTE, BED_TYPE_OKIMIKI, "luuna", BED_TYPE_GOODVIBE, BED_TYPE_HJBED, BED_TYPE_CASPER_BASE, BED_TYPE_COMFORT_ENHANCEMENTS, BED_TYPE_COMFORTBASE, "sleep_evolution", "wsilver_legacy", "personal_comfort", "instant_comfort"}
 ).union({BED_TYPE_BETTERLIVING2, BED_TYPE_JEROME_ADJUSTABLE_BASE, BED_TYPE_SLEEPTIME, "sealy_posturematic"})
 # Routes named after their protocol, not an app or brand. They stay off the
 # bed-type list and are reached through detection, the brand list and Configure.
@@ -2226,6 +2231,14 @@ def _detect_bed_type_with_app_candidates(
         elif result.bed_type != BED_TYPE_RICHMAT_APP_SLEEP:
             result.ambiguous_types = list(dict.fromkeys([*(result.ambiguous_types or ()), BED_TYPE_RICHMAT_APP_SLEEP]))
 
+    if first.name(BED_TYPE_MYSIDE) and not any(
+        signal.startswith("excluded:") for signal in result.signals
+    ):
+        if result.bed_type is None:
+            result = DetectionResult(BED_TYPE_MYSIDE, 0.3, ["name:myside_candidate"])
+        elif result.bed_type != BED_TYPE_MYSIDE:
+            result.ambiguous_types = list(dict.fromkeys([*(result.ambiguous_types or ()), BED_TYPE_MYSIDE]))
+            result.signals.append("name:myside_candidate")
     if richmat_app_scan_matches(service_info.name) and not any(
         signal.startswith("excluded:") for signal in result.signals
     ):
