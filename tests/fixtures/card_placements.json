@@ -2006,39 +2006,12 @@
   "card_role": "up",
   "card_motor": "pillow"
  },
- "button:powersbedding_foot_down": {
-  "card_section": "massage"
- },
- "button:powersbedding_foot_up": {
-  "card_section": "massage"
- },
- "button:powersbedding_head_down": {
-  "card_section": "massage"
- },
- "button:powersbedding_head_up": {
-  "card_section": "massage"
- },
  "button:powersbedding_query_alarm": {
   "card_section": "utility"
  },
  "button:powersbedding_save_zero_g": {
   "card_section": "presets",
   "card_role": "save"
- },
- "button:powersbedding_start": {
-  "card_section": "massage"
- },
- "button:powersbedding_stop": {
-  "card_section": "massage"
- },
- "button:powersbedding_timer": {
-  "card_section": "massage"
- },
- "button:powersbedding_toggle": {
-  "card_section": "massage"
- },
- "button:powersbedding_wave": {
-  "card_section": "massage"
  },
  "button:preset_anti_snore": {
   "card_section": "presets"

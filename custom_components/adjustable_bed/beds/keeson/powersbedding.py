@@ -16,19 +16,21 @@ from ...alarm import AlarmCapability, AlarmRequest
 from ...card import CARD_MASSAGE, CARD_PRESET_SAVE, CARD_UTILITY
 from ...codec import keeson as codec
 from ...codec import okin_nframe
-from ...command_scheduler import Delivery, current_command_context, delivered
+from ...command_scheduler import Delivery, current_command_context, delivered, note_frame_skipped
 from ...const import CONF_BLE_DEVICE_NAME
 from ...controller_state import StateKey
 from ...errors import BedNotConnectedError, invalid
 from ...profiles import powersbedding as app
 from ...state_keys import MASSAGE_TIMER_MINUTES, UNDER_BED_LIGHTS_ON
 from ..cancellation import cancellable, settled
+from ..catalog_buttons import massage_button
 from ..entity_specs import (
     ControllerButtonSpec,
     ControllerMotorHoldSpec,
     ControllerNumberSpec,
     ControllerStateBinarySensorSpec,
     ControllerStateSensorSpec,
+    ControllerSwitchSpec,
     MotorControlSpec,
 )
 from ..lifecycle import CapabilitySnapshotPolicy
@@ -39,6 +41,7 @@ if TYPE_CHECKING:
     from ..lifecycle import ControllerSession
 
 LEVEL: Final = {z: StateKey[int | None](f"powersbedding_{z}") for z in app.LEVELS}
+MASSAGE_ON: Final = StateKey[bool | None]("powersbedding_massage")
 TIMER: Final = StateKey[str | None]("powersbedding_timer")
 ALARM_ENABLED: Final = StateKey[bool | None]("powersbedding_alarm_enabled")
 ALARM: Final = StateKey[str | None]("powersbedding_alarm")
@@ -129,7 +132,11 @@ class PowersBeddingController(KeesonController):
 
     @property
     def supports_massage_off_control(self) -> bool:
-        return self.supports_massage_timer
+        return self._live_route() != "p1" and super().supports_massage_off_control
+
+    @property
+    def supports_massage_toggle_control(self) -> bool:
+        return self._live_route() != "p1" and super().supports_massage_toggle_control
 
     @property
     def supports_massage_intensity_control(self) -> bool:
@@ -478,22 +485,41 @@ class PowersBeddingController(KeesonController):
         link, event = self._live(), self._coordinator.cancel_command
         if link.route != "p1":
             raise invalid("powersbedding_control")
-        if enabled and self._timer_level <= 0:
-            await self.set_massage_timer(10)
-        timer_state = (
-            self.sent_state(MASSAGE_TIMER_MINUTES(None), is_current=lambda: self._current(link))
-            if not enabled
-            else nullcontext()
-        )
-        with timer_state:
-            zones = ("foot", "head", "wave")
-            for index, zone in enumerate(zones):
-                if enabled or index:
-                    await cancellable(asyncio.sleep(0.1), event)
-                value = self._levels[zone] if enabled else 0
-                with self.sent_state(LEVEL[zone](value), is_current=lambda: self._current(link)):
-                    for _ in range(2):
-                        await self._word(app.LEVELS[zone] + value, link)
+        needs_timer = enabled and self._timer_level <= 0
+        remaining = 7 if needs_timer else 6
+
+        def sent(delivery: Delivery) -> None:
+            nonlocal remaining
+            if delivery is not Delivery.NONE:
+                remaining -= 1
+
+        with self.sent_state(MASSAGE_ON(enabled), is_current=lambda: self._current(link)):
+            try:
+                if needs_timer:
+                    with delivered(sent):
+                        await self.set_massage_timer(10)
+                timer_state = (
+                    self.sent_state(
+                        MASSAGE_TIMER_MINUTES(None), is_current=lambda: self._current(link)
+                    )
+                    if not enabled
+                    else nullcontext()
+                )
+                with timer_state:
+                    for index, zone in enumerate(("foot", "head", "wave")):
+                        if enabled or index:
+                            await cancellable(asyncio.sleep(0.1), event)
+                        value = self._levels[zone] if enabled else 0
+                        with self.sent_state(
+                            LEVEL[zone](value), is_current=lambda: self._current(link)
+                        ):
+                            for _ in range(2):
+                                with delivered(sent):
+                                    await self._word(app.LEVELS[zone] + value, link)
+            except BaseException:
+                if remaining:
+                    note_frame_skipped()
+                raise
 
     async def massage_off(self) -> None:
         await self.massage_sequence(False)
@@ -771,6 +797,7 @@ class PowersBeddingController(KeesonController):
             return
         self.forward_controller_state_updates(
             *(key(None) for key in LEVEL.values()),
+            MASSAGE_ON(None),
             TIMER(None),
             ALARM(None),
             ALARM_ENABLED(None),
@@ -831,32 +858,22 @@ class PowersBeddingController(KeesonController):
                 scheduler_resource="*",
             )
         ]
-        if self.supports_massage_timer:
-            for enabled, suffix, label in (
-                (True, "start", "Start massage"),
-                (False, "stop", "Stop massage"),
-            ):
-                buttons.append(
-                    ControllerButtonSpec(
-                        f"powersbedding_{suffix}",
-                        label,
-                        lambda c, enabled=enabled: cast(
-                            PowersBeddingController, c
-                        ).massage_sequence(enabled),
-                        translation_key=f"powersbedding_{suffix}",
-                        card=CARD_MASSAGE,
-                        scheduler_resource="*",
-                    )
-                )
         actions = ("timer",) if self.supports_massage_timer else tuple(app.STEPS)
+        labels = {
+            "toggle": "Toggle massage",
+            "head_up": "Increase head massage",
+            "head_down": "Decrease head massage",
+            "foot_up": "Increase foot massage",
+            "foot_down": "Decrease foot massage",
+            "wave": "Next massage wave",
+            "timer": "Cycle massage timer",
+        }
         for action in actions:
             buttons.append(
-                ControllerButtonSpec(
+                massage_button(
                     f"powersbedding_{action}",
-                    action,
+                    labels[action],
                     lambda c, action=action: cast(PowersBeddingController, c).massage_step(action),
-                    translation_key=f"powersbedding_{action}",
-                    card=CARD_MASSAGE,
                     scheduler_resource="*",
                 )
             )
@@ -872,6 +889,21 @@ class PowersBeddingController(KeesonController):
                 )
             )
         return tuple(buttons)
+
+    @property
+    def controller_switch_specs(self) -> tuple[ControllerSwitchSpec, ...]:
+        if self._live_route() != "p1":
+            return ()
+        return (
+            ControllerSwitchSpec(
+                "powersbedding_massage",
+                "massage",
+                lambda c, enabled: cast(PowersBeddingController, c).massage_sequence(enabled),
+                state_key=MASSAGE_ON,
+                assumed_state=True,
+                card=CARD_MASSAGE,
+            ),
+        )
 
     def _live_route(self) -> str:
         return self.profile.key.removeprefix("powersbedding_")

@@ -60,8 +60,8 @@ Beautyrest bases that use one of the Keeson Bluetooth routes still work.
 ## Apps
 
 | Analyzed | App | Package ID | Profile |
-| ✅ | [PowersBedding](https://play.google.com/store/apps/details?id=com.ore.powersbedding) 1.1.0 (2) | `com.ore.powersbedding` | [PowersBedding](#powersbedding) |
 |----------|-----|------------|---------|
+| ✅ | [PowersBedding](https://play.google.com/store/apps/details?id=com.ore.powersbedding) 1.1.0 (2) | `com.ore.powersbedding` | [PowersBedding](#powersbedding) |
 | ✅ | Hestia Motion 1.2 (3) | `com.ore.yorkfeng.hestiamotion` | [Hestia Motion](#hestia-motion) |
 | ✅ | BetterLiving 1.3.0 (16) | `com.ore.betterliving2` | [BetterLiving2](#betterliving2) |
 | ✅ | [OrmatekTechnoSmart](https://play.google.com/store/apps/details?id=com.okin.ormatek) | `com.okin.ormatek` | [Techno Smart New / Lite](#ormatek-technosmart) |
