@@ -39,7 +39,7 @@ from ...profiles.suta import (
     profile_for_name,
     service_for_name,
 )
-from ...state_keys import massage_intensity
+from ...state_keys import UNDER_BED_LIGHTS_ON, massage_intensity
 from ..base import CONTROLLER_GESTURE_RELEASE, BedController
 from ..catalog_buttons import Kind, catalog_button, unique_buttons
 from ..entity_specs import (
@@ -256,6 +256,11 @@ class SutaController(BedController):
     @property
     def supports_discrete_light_control(self) -> bool:
         return self.supports_lights
+
+    @property
+    def light_state_is_assumed(self) -> bool:
+        command = self.profile.commands.get("light_enable")
+        return command is not None and command.kind == "light"
 
     @property
     def supports_position_feedback(self) -> bool:
@@ -664,7 +669,15 @@ class SutaController(BedController):
             ),
         )
 
-    async def _send(self, link: Link, packet: bytes, cancel: asyncio.Event, *, deadline: float | None = None) -> float | None:
+    async def _send(
+        self,
+        link: Link,
+        packet: bytes,
+        cancel: asyncio.Event,
+        *,
+        deadline: float | None = None,
+        on_written: Callable[[], None] | None = None,
+    ) -> float | None:
         """Settle a submitted write, with no retry FIFO or stale refresh backfill."""
         stamp: float | None = None
 
@@ -681,6 +694,8 @@ class SutaController(BedController):
                 async with asyncio.timeout(WRITE_TIMEOUT):
                     await link.client.write_gatt_char(link.write, packet, response=True)
                     note_frame_written(cancel)
+                    if on_written is not None:
+                        on_written()
 
         task = asyncio.create_task(write())
         interrupted = False
@@ -704,6 +719,35 @@ class SutaController(BedController):
             if delay and await pause(delay / 1000, cancel):
                 return
             await self._send(link, codec.text(command.text + suffix), cancel)
+
+    async def _schedule_light(self, link: Link, command: Command, cancel: asyncio.Event) -> None:
+        """Follow the app's submission schedule on one serialized BLE link."""
+        packet = codec.text(command.text)
+        due = monotonic() + command.delay_ms / 1000
+        first_error: BleakError | TimeoutError | None = None
+        written = 0
+
+        def mark_written() -> None:
+            nonlocal written
+            written += 1
+
+        try:
+            for _ in range(command.count):
+                delay = due - monotonic()
+                if cancel.is_set() or (delay > 0 and await pause(delay, cancel)):
+                    break
+                try:
+                    await self._send(link, packet, cancel, on_written=mark_written)
+                except (BleakError, TimeoutError) as err:
+                    # The app's empty callback leaves the next submission due.
+                    if first_error is None:
+                        first_error = err
+                due += command.interval_ms / 1000
+            if first_error is not None:
+                raise first_error
+        finally:
+            if written < command.count:
+                note_frame_skipped()
 
     async def _release(self, link: Link) -> None:
         command = self.profile.commands.get("both_stop")
@@ -922,6 +966,12 @@ class SutaController(BedController):
             await self.hold_control(request.action, self._coordinator.motor_pulse_count * self.profile.refresh_ms)
         elif command.kind == "save":
             await self._run_control(request.action, None)
+        elif command.kind == "light":
+            with self.sent_state(
+                UNDER_BED_LIGHTS_ON(request.action == "light_enable"),
+                is_current=lambda: self._link is link,
+            ):
+                await self._schedule_light(link, command, cancel)
         else:
             suffix = (request.suffix or dt_util.now().strftime("%y%m%d%H%M")) if command.kind == "clock" else request.suffix
             # A massage step shows as its zone's level, as far as it reached the bed.

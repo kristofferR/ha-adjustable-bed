@@ -55249,8 +55249,6 @@
 "preset_tv": {"status":"ok","writes":[[0,"0000fff2",true,"41542b4d4f44453d424f54482054560d0a",1,0]]},
 "memory_recall_1": {"status":"ok","writes":[[0,"0000fff2",true,"41542b4d4f44453d424f5448204d310d0a",1,0]]},
 "memory_program_1": {"status":"ok","writes":[[3000,"0000fff2",true,"41542b5345544d4f44453d424f5448204d310d0a",2,207]]},
-"lights_on": {"error":"ValueError","status":"error","writes":[]},
-"lights_off": {"error":"ValueError","status":"error","writes":[]},
 "memory_program_2": {"status":"ok","writes":[[3000,"0000fff2",true,"41542b5345544d4f44453d424f5448204d320d0a",2,207]]},
 "memory_recall_2": {"status":"ok","writes":[[0,"0000fff2",true,"41542b4d4f44453d424f5448204d320d0a",1,0]]},
 "cover:back_open": {"as":"back_up","ok":"ok","status":"same"},
@@ -55284,7 +55282,9 @@
 "button:suta_set_mode_zerog": {"status":"ok","writes":[[3000,"0000fff2",true,"41542b5345544d4f44453d424f5448205a45524f470d0a",2,207]]},
 "button:suta_release": {"status":"ok","writes":[[100,"0000fff2",true,"41542b4354524c3d424f54482053544f500d0a",2,107]]},
 "button:suta_snore_cycle": {"status":"ok","writes":[[100,"0000fff2",true,"41542b4d4f44453d424f544820534e4f52450d0a",3,107]]},
-"sync_clock": {"status":"ok","writes":[[100,"0000fff2",true,"41542b53443d323630313032303330350d0a",3,107]]}
+"sync_clock": {"status":"ok","writes":[[100,"0000fff2",true,"41542b53443d323630313032303330350d0a",3,107]]},
+"lights_on": {"status":"ok","writes":[[100,"0000fff2",true,"41542b454e41424c453d4c494748540d0a",2,100]]},
+"lights_off": {"status":"ok","writes":[[100,"0000fff2",true,"41542b44495341424c453d4c494748540d0a",2,100]]}
 }},
 "suta:SUTA-B206* except A,H": {
 "info": {"bed_type": "suta", "controller": "SutaController", "module": "suta.controller", "pulse": [7, 150]},
@@ -55639,8 +55639,6 @@
 "preset_tv": {"status":"ok","writes":[[0,"0000fff2",true,"41542b4d4f44453d424f54482054560d0a",1,0]]},
 "memory_recall_1": {"status":"ok","writes":[[0,"0000fff2",true,"41542b4d4f44453d424f5448204d310d0a",1,0]]},
 "memory_program_1": {"status":"ok","writes":[[3000,"0000fff2",true,"41542b5345544d4f44453d424f5448204d310d0a",2,207]]},
-"lights_on": {"error":"ValueError","status":"error","writes":[]},
-"lights_off": {"error":"ValueError","status":"error","writes":[]},
 "memory_program_2": {"status":"ok","writes":[[3000,"0000fff2",true,"41542b5345544d4f44453d424f5448204d320d0a",2,207]]},
 "memory_recall_2": {"status":"ok","writes":[[0,"0000fff2",true,"41542b4d4f44453d424f5448204d320d0a",1,0]]},
 "cover:back_open": {"as":"back_up","ok":"ok","status":"same"},
@@ -55686,7 +55684,9 @@
 "button:suta_release": {"status":"ok","writes":[[100,"0000fff2",true,"41542b4354524c3d424f54482053544f500d0a",2,107]]},
 "button:suta_snore_cycle": {"status":"ok","writes":[[100,"0000fff2",true,"41542b4d4f44453d424f544820534e4f52450d0a",3,107]]},
 "button:suta_massage_off": {"status":"ok","writes":[[100,"0000fff2",true,"41542b4354524c3d424f54482053544f500d0a",1,0],[400,"0000fff2",true,"41542b4d4153533d424f5448204845414420445430300d0a",1,0],[700,"0000fff2",true,"41542b4d4153533d424f544820464f4f5420445430300d0a",1,0]]},
-"sync_clock": {"status":"ok","writes":[[100,"0000fff2",true,"41542b53443d323630313032303330350d0a",3,107]]}
+"sync_clock": {"status":"ok","writes":[[100,"0000fff2",true,"41542b53443d323630313032303330350d0a",3,107]]},
+"lights_on": {"status":"ok","writes":[[100,"0000fff2",true,"41542b454e41424c453d4c494748540d0a",2,100]]},
+"lights_off": {"status":"ok","writes":[[100,"0000fff2",true,"41542b44495341424c453d4c494748540d0a",2,100]]}
 }},
 "suta:SUTA-B301*": {
 "info": {"bed_type": "suta", "controller": "SutaController", "module": "suta.controller", "pulse": [7, 150]},
@@ -56797,8 +56797,6 @@
 "preset_tv": {"status":"ok","writes":[[0,"0000fff2",true,"41542b4d4f44453d424f54482054560d0a",1,0]]},
 "memory_recall_1": {"status":"ok","writes":[[0,"0000fff2",true,"41542b4d4f44453d424f5448204d310d0a",1,0]]},
 "memory_program_1": {"status":"ok","writes":[[3000,"0000fff2",true,"41542b5345544d4f44453d424f5448204d310d0a",2,207]]},
-"lights_on": {"error":"ValueError","status":"error","writes":[]},
-"lights_off": {"error":"ValueError","status":"error","writes":[]},
 "memory_program_2": {"status":"ok","writes":[[3000,"0000fff2",true,"41542b5345544d4f44453d424f5448204d320d0a",2,207]]},
 "memory_recall_2": {"status":"ok","writes":[[0,"0000fff2",true,"41542b4d4f44453d424f5448204d320d0a",1,0]]},
 "cover:back_open": {"as":"back_up","ok":"ok","status":"same"},
@@ -56850,7 +56848,9 @@
 "button:suta_set_mode_zerog": {"status":"ok","writes":[[3000,"0000fff2",true,"41542b5345544d4f44453d424f5448205a45524f470d0a",2,207]]},
 "button:suta_release": {"status":"ok","writes":[[100,"0000fff2",true,"41542b4354524c3d424f54482053544f500d0a",2,107]]},
 "button:suta_massage_off": {"status":"ok","writes":[[100,"0000fff2",true,"41542b4354524c3d424f54482053544f500d0a",1,0],[400,"0000fff2",true,"41542b4d4153533d424f5448204845414420445430300d0a",1,0],[700,"0000fff2",true,"41542b4d4153533d424f544820464f4f5420445430300d0a",1,0]]},
-"sync_clock": {"status":"ok","writes":[[100,"0000fff2",true,"41542b53443d323630313032303330350d0a",3,107]]}
+"sync_clock": {"status":"ok","writes":[[100,"0000fff2",true,"41542b53443d323630313032303330350d0a",3,107]]},
+"lights_on": {"status":"ok","writes":[[100,"0000fff2",true,"41542b454e41424c453d4c494748540d0a",2,100]]},
+"lights_off": {"status":"ok","writes":[[100,"0000fff2",true,"41542b44495341424c453d4c494748540d0a",2,100]]}
 }},
 "suta:SUTA-B905*": {
 "info": {"bed_type": "suta", "controller": "SutaController", "module": "suta.controller", "pulse": [7, 150]},
