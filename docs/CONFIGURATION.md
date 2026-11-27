@@ -400,6 +400,7 @@ actions; its bounded `hold_control` behavior has separate timing in the
 | FSM Relax app | `fsm_relax` | 10 | 60 ms |
 | Jensen Adjustable Sleep app, JMC400 bed | `jensen` | 4 | 300 ms |
 | JobsAI智能助眠床 / Jobs AI app | `jobs` | 10 | 200 ms |
+| JunaSleep app | `junasleep` | 10 | 300 ms |
 | King Koil (SUTA) app | `suta_king_koil` | 1 | 150 ms |
 | King Koil Bed app | `kingkoil` | 10 | 300 ms |
 | Leggett & Platt MlRM remote | `leggett_wilinke` | 10 | 110 ms |

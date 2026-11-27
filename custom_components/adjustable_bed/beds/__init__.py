@@ -76,6 +76,7 @@ if TYPE_CHECKING:
     from .keeson.controller import KeesonController as KeesonController
     from .keeson.enso import EnsoController as EnsoController
     from .keeson.jalon import JalonController as JalonController
+    from .keeson.junasleep import JunaSleepController as JunaSleepController
     from .keeson.kingkoil import KingKoilController as KingKoilController
     from .keeson.ormatek import OrmatekController as OrmatekController
     from .keeson.sleep_assist_pro import SleepAssistProController as SleepAssistProController
@@ -300,6 +301,7 @@ _EXPORT_MODULES = {
     "MuuegmController": "dreamsense.muuegm",
     "LinxController": "linx.controller",
     "SymphonySleepController": ("keeson.symphony_sleep", "SymphonySleepController"),
+    "JunaSleepController": ("keeson.junasleep", "JunaSleepController"),
     "KeesonController": "keeson.controller",
     "OrmatekController": "keeson.ormatek",
     "AgingPlaceController": "keeson.agingplace",

@@ -1508,6 +1508,10 @@ def default_scenario(bed_type: str) -> Scenario:
 
     if bed_type == "meisemobell":
         return Scenario(id=bed_type, bed_type=bed_type, protocol_variant="15_22_15a", layout_id="meisemobell:15_22_15a", replies={"write:e180039b": "ed8003061e8211072d841300"})
+    if bed_type == "junasleep":
+        return Scenario(id=bed_type, bed_type=bed_type, protocol_variant="a",
+                        entry_data={"ble_device_name": "KSBT02C000000000", "motor_count": 2,
+                                    "has_massage": True, "disable_angle_sensing": True})
     if bed_type == "ergobq":
         from custom_components.adjustable_bed.codec import ergobq as codec
         status = codec.publish((codec.boolean(18, False), codec.raw(12, codec.Massage().encode()),
@@ -2109,6 +2113,9 @@ def route_scenarios() -> list[Scenario]:
                 id=f"scott_living:{layout}{suffix}", layout_id="scott_living", properties=properties,
                 entry_data={"product_type": layout, "ble_device_name": "base00000000"}))
     scenarios.append(dataclasses.replace(default_scenario("kingkoil"), id="kingkoil:KSBT03CL", protocol_variant="KSBT03CL", layout_id="kingkoil"))
+    scenarios.append(Scenario(id="junasleep:b", bed_type="junasleep", protocol_variant="b",
+        layout_id="junasleep:b", entry_data={"ble_device_name": "base000000000000", "motor_count": 4,
+                                            "has_massage": True, "disable_angle_sensing": True}))
     for variant in "bcde":
         scenarios.append(dataclasses.replace(default_scenario("somos"), id=f"somos:{variant}", protocol_variant=variant, layout_id="somos:uart" if variant in "bde" else "somos"))
     scenarios.append(Scenario(id="yamada:p2", bed_type="yamada", protocol_variant="p2", layout_id="yamada"))
@@ -2873,6 +2880,8 @@ async def _build(scenario: Scenario, client: Any) -> Any:
         {**_base_entry_data(), **scenario.entry_data},
     )
     coordinator.client = client
+    if scenario.bed_type == "junasleep":
+        coordinator.ble_device_name = scenario.entry_data["ble_device_name"]
     if scenario.bed_type == "solace" and scenario.protocol_variant == "flexirest":
         # New profile gates are driven by its scripted notifications, not by
         # invented initial state. Keep all pre-existing scenarios unchanged.

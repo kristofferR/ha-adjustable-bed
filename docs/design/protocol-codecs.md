@@ -513,3 +513,13 @@ the existing family motion/session controller. Its ordinary RX dispatcher
 differs from Casper's complete-length receiver, so it has a scoped dispatcher
 with only its two verified announcements. See the
 [Comfort Bed section](../beds/richmat.md#comfort-bed) and `tests/test_comfort_bed.py`.
+
+## JunaSleep
+
+JunaSleep 1.0.3 (20) reproduces every frozen outgoing literal through Keeson's
+`p2`, `frame` and status-query encoders. Remote A uses big-endian `04 02`;
+remote B uses little-endian E5 words. The literal tail bytes all match the
+existing checked encoder, but this profile permits only the proven single
+commands. Its typed tables, notification quirks and connection ownership live
+in `profiles/junasleep.py` and the shared Keeson controller extension. Release
+ends refresh without a frame. See [JunaSleep](../beds/keeson.md#junasleep).
