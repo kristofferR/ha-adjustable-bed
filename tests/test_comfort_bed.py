@@ -23,7 +23,13 @@ from custom_components.adjustable_bed.cover import AdjustableBedCover, _build_co
 from custom_components.adjustable_bed.light import _light_entities_for
 from custom_components.adjustable_bed.profile_id import resolve_profile_id
 from custom_components.adjustable_bed.profiles.comfort_bed import PROFILE, QUERIES
+from custom_components.adjustable_bed.select import (
+    AdjustableBedMassageTimerSelect,
+    _select_entities_for,
+)
 from custom_components.adjustable_bed.services import async_register_services
+from custom_components.adjustable_bed.state_keys import MASSAGE_TIMER_MINUTES
+from tests.error_helpers import raises_key
 from tests.hold_lease_wire import virtual_clock
 from tests.test_atlas_lift import client_on, frames, session_for
 
@@ -100,11 +106,15 @@ async def test_startup_probes_use_exact_gatt_mode_order_and_early_notifications(
         for call in client.write_gatt_char.await_args_list
     )
     assert client.start_notify.await_args.args[0] is gatt.characteristics[1]
-    assert c._features == {"clock_feature": True, "light_feature": True}
+    assert c.protocol_diagnostics == {
+        "comfort_bed_capability_replies": {"clock_feature": True, "light_feature": True}
+    }
     assert not c.supports_clock_alarm and not c.supports_clock_sync
     assert not c.supports_lights and not c.supports_single_address_pairing
     c.on_disconnect()
-    assert c._features == {} and not c._receive.buffer
+    assert (
+        c.protocol_diagnostics == {"comfort_bed_capability_replies": {}} and not c._receive.buffer
+    )
 
 
 @pytest.mark.parametrize("bad", ("multiple", "missing_notify", "no_response_only"))
@@ -116,7 +126,7 @@ async def test_incoherent_gatt_fails_before_subscription_and_startup(bad):
         gatt.characteristics[0].properties = ["write-without-response"]
     client = client_on(gatt, *([service("n1", "write")] if bad == "multiple" else []))
     c = bed.ComfortBedController(MagicMock(client=client, cancel_command=asyncio.Event()))
-    with pytest.raises(ValueError):
+    with raises_key("comfort_bed_gatt"):
         await c.async_on_connect(session_for(c, client))
     client.start_notify.assert_not_awaited()
     client.write_gatt_char.assert_not_awaited()
@@ -186,19 +196,35 @@ async def test_native_controls_presets_saves_timers_sides_and_real_services(hass
         "comfort_bed_massage_foot_up": "Massage foot strengthen",
         "comfort_bed_massage_mode": "Massage mode change",
         "comfort_bed_massage_off": "Massage all off",
-        "comfort_bed_massage_timer_10": "Massage10 minute timer (short)",
-        "comfort_bed_massage_timer_20": "Massage20 minute timer (short)",
-        "comfort_bed_massage_timer_30": "Massage30 minute timer (short)",
         "comfort_bed_light_toggle": "Bed light button",
     }
+    selects = _select_entities_for(hass, coordinator)
+    timer = next(
+        entity for entity in selects if isinstance(entity, AdjustableBedMassageTimerSelect)
+    )
+    side_select = next(
+        entity for entity in selects if entity.unique_id.endswith("comfort_bed_side")
+    )
+    assert timer.options == ["10 min", "20 min", "30 min"]
+    assert timer.current_option is None
     for side in (0, 1):
-        c._select_side("right" if side else "left")
+        await side_select.async_select_option("right" if side else "left")
+        assert timer.current_option is None
         client.write_gatt_char.reset_mock()
         for suffix in actions:
             button = next(entity for entity in buttons if entity.unique_id.endswith("_" + suffix))
             await button.async_press()
         assert frames(client) == [
             literal(name, raw, 0 if raw else side) for name in actions.values()
+        ]
+        client.write_gatt_char.reset_mock()
+        for minutes in (10, 20, 30):
+            await timer.async_select_option(f"{minutes} min")
+            assert timer.current_option == f"{minutes} min"
+            assert coordinator.controller_state[MASSAGE_TIMER_MINUTES] == minutes
+        assert frames(client) == [
+            literal(f"Massage{minutes} minute timer (short)", raw, 0 if raw else side)
+            for minutes in (10, 20, 30)
         ]
         client.write_gatt_char.reset_mock()
         for slot in (1, 2):
@@ -295,7 +321,7 @@ async def test_replacement_session_never_receives_old_hold_or_queued_command():
         await c.async_on_connect(session_for(c, new))
     new.write_gatt_char.reset_mock()
     callback(old.services[0].characteristics[1], bytearray.fromhex("6e09010078"))
-    assert c._features == {}
+    assert c.protocol_diagnostics == {"comfort_bed_capability_replies": {}}
     old.write_gatt_char.assert_not_awaited()
     new.write_gatt_char.assert_not_awaited()
     c.on_disconnect()
@@ -361,10 +387,10 @@ async def test_notify_failure_revokes_early_reply_and_pending_startup():
     client.start_notify.side_effect = subscribe
     with pytest.raises(BleakError):
         await c.async_on_connect(session_for(c, client))
-    assert c._features == {} and c._link is None
+    assert c.protocol_diagnostics == {"comfort_bed_capability_replies": {}} and c._link is None
     char, callback = callbacks[0]
     callback(char, bytearray.fromhex("6e0e00037f"))
-    assert c._features == {}
+    assert c.protocol_diagnostics == {"comfort_bed_capability_replies": {}}
     client.write_gatt_char.assert_not_awaited()
 
 
@@ -424,3 +450,182 @@ async def test_disconnect_during_motion_never_claims_an_unsent_cleanup(runtime):
     assert frames(client) == [literal("Head up")]
     replacement.write_gatt_char.assert_not_awaited()
     assert c._cleanup_context is None
+
+
+def native_timer(hass, coordinator):
+    return next(
+        entity
+        for entity in _select_entities_for(hass, coordinator)
+        if isinstance(entity, AdjustableBedMassageTimerSelect)
+    )
+
+
+@pytest.mark.parametrize("minutes", (0, 15, 10.0, True))
+async def test_timer_rejects_unsupported_values_without_writes_or_state_changes(
+    hass, runtime, minutes
+):
+    coordinator, client, _ = runtime
+    assert await coordinator.async_connect()
+    timer = native_timer(hass, coordinator)
+    await timer.async_select_option("10 min")
+    client.write_gatt_char.reset_mock()
+    with raises_key("option_unavailable"):
+        await coordinator.async_execute_controller_command(lambda c: c.set_massage_timer(minutes))
+    assert timer.current_option == "10 min"
+    client.write_gatt_char.assert_not_awaited()
+
+
+async def test_failed_timer_write_retains_last_delivered_duration(hass, runtime):
+    coordinator, client, _ = runtime
+    assert await coordinator.async_connect()
+    timer = native_timer(hass, coordinator)
+    await timer.async_select_option("10 min")
+    client.write_gatt_char.reset_mock()
+    client.write_gatt_char.side_effect = BleakError("ATT write failed")
+    with pytest.raises(BleakError):
+        await timer.async_select_option("20 min")
+    assert timer.current_option == "10 min"
+    assert frames(client) == [literal("Massage20 minute timer (short)")]
+
+
+async def test_cancel_before_timer_dispatch_preserves_previous_duration(hass, runtime):
+    coordinator, client, _ = runtime
+    assert await coordinator.async_connect()
+    timer = native_timer(hass, coordinator)
+    await timer.async_select_option("10 min")
+    client.write_gatt_char.reset_mock()
+    async with coordinator.controller.ble_lock:
+        selection = asyncio.create_task(timer.async_select_option("20 min"))
+        await asyncio.sleep(0.01)
+        assert not selection.done()
+        selection.cancel()
+    await asyncio.gather(selection, return_exceptions=True)
+    client.write_gatt_char.assert_not_awaited()
+    assert timer.current_option == "10 min"
+
+
+async def test_cancel_during_delivered_timer_write_updates_the_native_select(hass, runtime):
+    coordinator, client, _ = runtime
+    assert await coordinator.async_connect()
+    timer = native_timer(hass, coordinator)
+    await timer.async_select_option("10 min")
+    client.write_gatt_char.reset_mock()
+    began, finish = asyncio.Event(), asyncio.Event()
+
+    async def write(_char, frame, **kwargs):
+        began.set()
+        await finish.wait()
+
+    client.write_gatt_char.side_effect = write
+    selection = asyncio.create_task(timer.async_select_option("20 min"))
+    await asyncio.wait_for(began.wait(), 2)
+    selection.cancel()
+    await asyncio.sleep(0)
+    assert not selection.done()
+    finish.set()
+    await asyncio.gather(selection, return_exceptions=True)
+    assert frames(client) == [literal("Massage20 minute timer (short)")]
+    assert timer.current_option == "20 min"
+
+
+@pytest.mark.parametrize("change", ("disconnect", "replace", "side"))
+async def test_inflight_timer_cannot_publish_into_another_session_or_side(hass, runtime, change):
+    coordinator, client, _ = runtime
+    assert await coordinator.async_connect()
+    controller = coordinator.controller
+    timer = native_timer(hass, coordinator)
+    await timer.async_select_option("10 min")
+    began, finish = asyncio.Event(), asyncio.Event()
+
+    async def write(_char, frame, **kwargs):
+        began.set()
+        await finish.wait()
+
+    client.write_gatt_char.side_effect = write
+    client.write_gatt_char.reset_mock()
+    selection = asyncio.create_task(timer.async_select_option("20 min"))
+    await asyncio.wait_for(began.wait(), 2)
+    replacement = client_on(service("n1", "write"))
+    replacement.disconnect = AsyncMock()
+    if change == "side":
+        side = next(
+            entity
+            for entity in _select_entities_for(hass, coordinator)
+            if entity.unique_id.endswith("comfort_bed_side")
+        )
+        await side.async_select_option("right")
+    else:
+        controller.on_disconnect()
+        if change == "replace":
+            coordinator._client = replacement
+    assert timer.current_option is None
+    finish.set()
+    await selection
+    assert frames(client) == [literal("Massage20 minute timer (short)")]
+    replacement.write_gatt_char.assert_not_awaited()
+    assert timer.current_option is None
+    if change == "replace":
+        coordinator._client = client
+
+
+async def test_capability_replies_are_in_support_diagnostics_without_feature_promotion(
+    hass, runtime
+):
+    from custom_components.adjustable_bed.diagnostics import async_get_config_entry_diagnostics
+    from custom_components.adjustable_bed.sensor import _sensor_entities_for
+
+    coordinator, client, _ = runtime
+    assert await coordinator.async_connect()
+    controller = coordinator.controller
+    char, callback = client.start_notify.await_args.args
+    callback(char, bytearray.fromhex("6e090100786e0e00037f"))
+    detail = controller.protocol_diagnostics
+    assert detail["comfort_bed_capability_replies"] == {
+        "clock_feature": True,
+        "light_feature": True,
+    }
+    detail["comfort_bed_capability_replies"].clear()
+    report = await async_get_config_entry_diagnostics(hass, coordinator.entry)
+    assert report["controller"]["protocol_state"]["comfort_bed_capability_replies"] == {
+        "clock_feature": True,
+        "light_feature": True,
+    }
+    assert not any(
+        entity.unique_id.endswith("comfort_bed_features")
+        for entity in _sensor_entities_for(hass, coordinator)
+    )
+    assert not controller.supports_clock_alarm and not controller.supports_clock_sync
+    assert not controller.supports_lights and not controller.supports_light_color_control
+    controller.on_disconnect()
+    assert controller.protocol_diagnostics["comfort_bed_capability_replies"] == {}
+
+
+async def test_expired_session_and_local_choices_use_translated_errors(runtime):
+    coordinator, client, _ = runtime
+    assert await coordinator.async_connect()
+    controller = coordinator.controller
+    client.write_gatt_char.reset_mock()
+    controller._is_current = lambda: False
+    with raises_key("bed_not_connected") as raised:
+        await controller.set_massage_timer(10)
+    assert isinstance(raised.value, ConnectionError)
+    with raises_key("held_control_not_supported"):
+        await controller.hold_control("not_a_control", 3000)
+    with raises_key("option_unavailable"):
+        controller._select_side("both")
+    client.write_gatt_char.assert_not_awaited()
+
+
+@pytest.mark.parametrize("stored_side", ("both", 7))
+async def test_invalid_saved_side_still_uses_coordinator_restore_fallback(runtime, stored_side):
+    coordinator, client, _ = runtime
+    assert await coordinator.async_connect()
+    controller = coordinator.controller
+    controller._select_side("right")
+    client.write_gatt_char.reset_mock()
+    with patch.object(
+        coordinator._app_state_store, "async_slot", AsyncMock(return_value={"side": stored_side})
+    ):
+        await coordinator._async_restore_app_state(controller)
+    assert controller.persisted_app_state == {"side": "left"}
+    client.write_gatt_char.assert_not_awaited()

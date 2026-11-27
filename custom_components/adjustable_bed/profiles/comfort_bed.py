@@ -7,13 +7,18 @@ The accepted literal vectors prove this profile uses codec/richmat.py.
 from typing import Final
 
 from ..execution import STREAM_HOLD
-from .richmat import RichmatProfile
+from .richmat import Button, RichmatProfile
 
 SCAN_KEYWORDS: Final = ("QRRM", "COOL", "MPE_", "209A", "BED-")
 TICK_S: Final = 0.1
 MENU_DELAY_S: Final = 1.0
 LONG_PRESS_MS: Final = 3000
 RX_TIMEOUT_S: Final = 0.5
+TIMER_CONTROLS: Final[dict[int, Button]] = {
+    10: "massage_timer_10",
+    20: "massage_timer_20",
+    30: "massage_timer_30",
+}
 QUERIES: Final = (
     ("deviceFunctionItemExitLimit", 0),
     ("deviceFunctionItemCheckClock", 1),

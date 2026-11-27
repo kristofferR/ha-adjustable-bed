@@ -4979,9 +4979,6 @@
  "sensor:cheerssleep_right_snore_power": {
   "card_section": "hidden"
  },
- "sensor:comfort_bed_features": {
-  "card_section": "hidden"
- },
  "sensor:comfy_lock_status": {
   "card_section": "hidden"
  },

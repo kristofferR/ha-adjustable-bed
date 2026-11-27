@@ -4751,9 +4751,6 @@
       }
     },
     "sensor": {
-      "comfort_bed_features": {
-        "name": "Comfort Bed capability replies"
-      },
       "silksnow": {"name": "Model"},
       "berun_head_massage": {
         "name": "Head massage level"
@@ -13084,6 +13081,9 @@
     },
     "super_colchones_session": {
       "message": "The Super Colchones connection or product changed. Reconnect and try again."
+    },
+    "comfort_bed_gatt": {
+      "message": "Comfort Bed needs exactly one supported Bluetooth service with its writable command characteristic and a notification channel."
     },
     "atlas_lift_gatt": {
       "message": "Atlas Lift needs exactly one supported Bluetooth service with its writable command characteristic."

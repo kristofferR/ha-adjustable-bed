@@ -12,6 +12,7 @@ from ...card import CARD_LIGHT_TOGGLE, CARD_PRESET_SAVE, CARD_UTILITY
 from ...codec import richmat as codec
 from ...command_scheduler import note_frame_skipped, note_frame_written
 from ...controller_state import StateKey
+from ...errors import BedNotConnectedError, failed, invalid
 from ...profiles.comfort_bed import (
     LONG_PRESS_MS,
     MENU_DELAY_S,
@@ -21,7 +22,9 @@ from ...profiles.comfort_bed import (
     SAVES,
     TEXT_LONG,
     TICK_S,
+    TIMER_CONTROLS,
 )
+from ...state_keys import MASSAGE_TIMER_MINUTES
 from ..base import BedController
 from ..cancellation import cancellable, settled
 from ..catalog_buttons import Kind, catalog_button
@@ -29,7 +32,6 @@ from ..entity_specs import (
     ControllerButtonSpec,
     ControllerHoldSpec,
     ControllerSelectSpec,
-    ControllerStateSensorSpec,
     MotorControlSpec,
 )
 from ..richmat.atlas_lift import AtlasLiftController, _Link
@@ -43,8 +45,6 @@ if TYPE_CHECKING:
     from ..lifecycle import ControllerSession
 
 SIDE: Final = StateKey[str | None]("comfort_bed_side")
-REPLY_STATUS: Final = StateKey[str]("comfort_bed_reply_status")
-FEATURES: Final = StateKey[dict[str, bool]]("comfort_bed_features")
 _SIDE: ContextVar[tuple[BedController, int] | None] = ContextVar(
     "comfort_bed_motion_side", default=None
 )
@@ -57,7 +57,7 @@ def select_link(client: BleakClient) -> _Link:
     }
     matches = [(s, routes[s.uuid.lower()]) for s in client.services if s.uuid.lower() in routes]
     if len(matches) != 1:
-        raise ValueError("Comfort Bed requires exactly one supported BLE service")
+        raise failed("comfort_bed_gatt")
     service, route = matches[0]
     writes = [
         c
@@ -66,15 +66,13 @@ def select_link(client: BleakClient) -> _Link:
     ]
     notify = next((c for c in service.characteristics if "notify" in c.properties), None)
     if len(writes) != 1 or notify is None:
-        raise ValueError(
-            "Comfort Bed requires its writable characteristic and a notification channel"
-        )
+        raise failed("comfort_bed_gatt")
     return _Link(client, writes[0], notify, route.single)
 
 
 async def invoke(controller: BedController, code: int) -> None:
     if not isinstance(controller, ComfortBedController):
-        raise TypeError("Comfort Bed controller required")
+        raise invalid("option_unavailable")
     await controller.write_command(controller._build_command(code))
 
 
@@ -89,12 +87,12 @@ class ComfortBedController(AtlasLiftController):
         self._features: dict[str, bool] = {}
         self._rx_expiry: asyncio.TimerHandle | None = None
         self._next_write = 0.0
-        self.forward_controller_state_updates(SIDE("left"), FEATURES({}), REPLY_STATUS("none"))
+        self.forward_controller_state_updates(SIDE("left"), MASSAGE_TIMER_MINUTES(None))
 
     def _current_link(self, expected: _Link | None = None) -> _Link:
         link = super()._current_link(expected)
         if not self._is_current():
-            raise ConnectionError("Comfort Bed's admitted session has ended")
+            raise BedNotConnectedError
         return link
 
     def _encode(self, link: _Link, command_byte: int) -> bytes:
@@ -105,7 +103,7 @@ class ComfortBedController(AtlasLiftController):
     async def async_on_connect(self, session: ControllerSession) -> None:
         client = session.client
         if client is None or not session.is_current():
-            raise ConnectionError("Comfort Bed has no current BLE session")
+            raise BedNotConnectedError
         self.on_disconnect()
         self._is_current = session.is_current
         self._link = link = select_link(client)
@@ -148,10 +146,6 @@ class ComfortBedController(AtlasLiftController):
             for frame in self._receive.feed(bytes(data)):
                 if event := EXACT.get(frame):
                     self._features[event] = True
-            self.forward_controller_state_updates(
-                FEATURES(dict(self._features)),
-                REPLY_STATUS(", ".join(sorted(self._features)) or "none"),
-            )
             if self._rx_expiry is not None:
                 self._rx_expiry.cancel()
             self._rx_expiry = asyncio.get_running_loop().call_later(
@@ -184,7 +178,7 @@ class ComfortBedController(AtlasLiftController):
             self._rx_expiry = None
         self._receive.expire()
         self._features.clear()
-        self.forward_controller_state_updates(FEATURES({}), REPLY_STATUS("none"))
+        self.forward_controller_state_update(MASSAGE_TIMER_MINUTES, None)
 
     async def _write_on(
         self,
@@ -264,7 +258,12 @@ class ComfortBedController(AtlasLiftController):
 
     async def hold_control(self, control: str, duration_ms: int) -> None:
         if control not in TEXT_LONG:
-            raise ValueError("Unknown Comfort Bed held control")
+            raise invalid(
+                "held_control_not_supported",
+                device_name=self._coordinator.name,
+                control=control,
+                valid_controls=", ".join(self.held_control_options),
+            )
         link, side = self._current_link(), self._side
         await cancellable(
             asyncio.sleep(min(duration_ms, LONG_PRESS_MS) / 1000), self._coordinator.cancel_command
@@ -286,14 +285,18 @@ class ComfortBedController(AtlasLiftController):
 
     def restore_persisted_app_state(self, state: Mapping[str, object]) -> None:
         side = state.get("side", "left")
-        if not isinstance(side, str):
-            raise ValueError("Invalid Comfort Bed side")
+        if not isinstance(side, str) or side not in ("left", "right"):
+            # The coordinator resets a rejected stored record to this profile's default.
+            raise ValueError
         self._select_side(side)
 
     def _select_side(self, side: str) -> None:
         if side not in ("left", "right"):
-            raise ValueError("Comfort Bed side must be left or right")
-        self._side = int(side == "right")
+            raise invalid("option_unavailable")
+        selected = int(side == "right")
+        if self._side != selected:
+            self.forward_controller_state_update(MASSAGE_TIMER_MINUTES, None)
+        self._side = selected
         self.forward_controller_state_update(SIDE, side)
 
     @property
@@ -310,17 +313,40 @@ class ComfortBedController(AtlasLiftController):
         )
 
     @property
-    def controller_state_sensor_specs(self) -> tuple[ControllerStateSensorSpec, ...]:
-        return (
-            ControllerStateSensorSpec(
-                "comfort_bed_features",
-                "comfort_bed_features",
-                REPLY_STATUS,
-                "mdi:bluetooth",
-                attribute_keys=(FEATURES,),
-                entity_registry_enabled_default=False,
+    def protocol_diagnostics(self) -> dict[str, object]:
+        return {"comfort_bed_capability_replies": dict(self._features)}
+
+    @property
+    def supports_massage_timer(self) -> bool:
+        return True
+
+    @property
+    def massage_timer_options(self) -> list[int]:
+        return sorted(TIMER_CONTROLS)
+
+    @property
+    def massage_timer_can_turn_off(self) -> bool:
+        return False
+
+    async def set_massage_timer(self, minutes: int) -> None:
+        if type(minutes) is not int or minutes not in TIMER_CONTROLS:
+            raise invalid("option_unavailable")
+        link, side = self._current_link(), self._side
+        with self.sent_state(
+            MASSAGE_TIMER_MINUTES(minutes),
+            is_current=lambda: (
+                self._link is link
+                and self.client is link.client
+                and link.client.is_connected
+                and self._is_current()
+                and self._side == side
             ),
-        )
+        ):
+            await self._write_on(
+                link,
+                codec.function(self._code(TIMER_CONTROLS[minutes]), side, single=link.single),
+                self._coordinator.cancel_command,
+            )
 
     @property
     def controller_button_specs(self) -> tuple[ControllerButtonSpec, ...]:
@@ -345,18 +371,12 @@ class ComfortBedController(AtlasLiftController):
                 partial(invoke, code=PROFILE.codes[key]),
                 kind=Kind.MASSAGE,
                 combine_sides=True,
-                hold=ControllerHoldSpec("timer_" + key.rsplit("_", 1)[1])
-                if key.startswith("massage_timer_")
-                else None,
             )
             for key in (
                 "massage_head_up",
                 "massage_foot_up",
                 "massage_mode",
                 "massage_off",
-                "massage_timer_10",
-                "massage_timer_20",
-                "massage_timer_30",
             )
         )
         return (
@@ -388,7 +408,7 @@ class ComfortBedController(AtlasLiftController):
 
 async def _combined(controller: BedController, up: bool, duration_ms: int | None) -> None:
     if not isinstance(controller, ComfortBedController):
-        raise TypeError("Comfort Bed controller required")
+        raise invalid("option_unavailable")
     await controller._move_with_stop(
         controller._code("head_feet_up" if up else "head_feet_down"), duration_ms=duration_ms
     )
@@ -396,5 +416,5 @@ async def _combined(controller: BedController, up: bool, duration_ms: int | None
 
 async def _select(controller: BedController, side: str) -> None:
     if not isinstance(controller, ComfortBedController):
-        raise TypeError("Comfort Bed controller required")
+        raise invalid("option_unavailable")
     controller._select_side(side)

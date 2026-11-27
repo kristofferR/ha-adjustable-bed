@@ -7090,7 +7090,7 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
 
                         try:
                             select_comfort_link(client)
-                        except ValueError as error:
+                        except HomeAssistantError as error:
                             report.comfort_bed_transport_valid = False
                             report.error = str(error)
                         else:
