@@ -149,6 +149,7 @@ _OKIN_GROUPS = {
     "eShine": tuple(okin_profiles.ESHINE_PROFILES.values()),
     "Okin CST": tuple(okin_profiles.CST_PROFILES.values()),
     "Independence": (customatic_demo.PROFILE,),
+    "JobsAI": tuple(okin_profiles.JOBS_PROFILES.values()),
     "OKIN Bedding apps": tuple(okin_profiles.BEDDING_PROFILES.values()),
     "OKIN Motion Bed": (okin_profiles.OKIN_MOTIONBED,),
     "N32 Motion Bed": (N32,),
@@ -984,6 +985,32 @@ def render_simmons_blue() -> str:
     )
 
 
+def render_jobs_settings() -> str:
+    from custom_components.adjustable_bed.beds.serenity.jobs import (
+        SLEEP_ACTIONS,
+        WAKE_ACTIONS,
+        AlarmKind,
+        alarm_frame,
+    )
+
+    rows = [
+        ("Clock", "local calendar", _hex(okin_codec.record(6, (26, 11, 27, 5, 8, 9, 10)))),
+        ("Read sleep", "", _hex(okin_codec.request(0xC0))),
+        ("Read wake", "", _hex(okin_codec.request(0xD0))),
+    ]
+    channels: tuple[tuple[AlarmKind, dict[str, int]], ...] = (
+        ("sleep", SLEEP_ACTIONS),
+        ("wake", {**WAKE_ACTIONS, "automatic mode1": 12, "automatic mode2": 7}),
+    )
+    for kind, actions in channels:
+        rows.append((f"Clear {kind}", "", _hex(alarm_frame(kind, 0, 0, 0, 0))))
+        rows.extend(
+            (kind, action, _hex(alarm_frame(kind, 255, code, 8, 0)))
+            for action, code in actions.items()
+        )
+    return _block(_table(("Setting", "Action (recurring daily at 08:00)", "Frame"), rows))
+
+
 BLOCKS: list[Block] = [
     (GUIDE, "leva-routes", render_leva_routes),
     (GUIDE, "leva-controls", render_leva_controls),
@@ -1002,6 +1029,7 @@ BLOCKS: list[Block] = [
     (GUIDE, "simmons-blue", render_simmons_blue),
     (GUIDE, "adjustable-bed-commands", render_adjustable_bed),
     (GUIDE, "resident-session", render_resident_session),
+    (GUIDE, "okin-nframe-jobs-settings", render_jobs_settings),
     (GUIDE, "okin-nframe-profiles", render_okin_nframe_profiles),
     (GUIDE, "okin-nframe-transports", render_okin_nframe_transports),
     (GUIDE, "okin-nframe-keys", render_okin_nframe_keys),

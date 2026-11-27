@@ -4080,6 +4080,42 @@
       },
       "ambient_refresh": {
         "name": "Refresh bed state"
+      },
+      "jobs_save_lounge": {
+        "name": "Save Lounge"
+      },
+      "jobs_save_zero_g": {
+        "name": "Save Zero Gravity"
+      },
+      "jobs_save_incline": {
+        "name": "Save Incline"
+      },
+      "jobs_massage_on": {
+        "name": "Massage on"
+      },
+      "jobs_wave_1": {
+        "name": "Massage mode 1"
+      },
+      "jobs_wave_2": {
+        "name": "Massage mode 2"
+      },
+      "jobs_wave_3": {
+        "name": "Massage mode 3"
+      },
+      "jobs_wave_4": {
+        "name": "Massage mode 4"
+      },
+      "jobs_smb_on": {
+        "name": "SMB on"
+      },
+      "jobs_smb_off": {
+        "name": "SMB off"
+      },
+      "jobs_query_sleep": {
+        "name": "Read sleep alarm"
+      },
+      "jobs_query_wake": {
+        "name": "Read wake alarm"
       }
     },
     "cover": {
@@ -5843,6 +5879,18 @@
       },
       "ambient_firmware": {
         "name": "Control box firmware"
+      },
+      "jobs_status": {
+        "name": "Jobs status code"
+      },
+      "jobs_save_event": {
+        "name": "Jobs save response code"
+      },
+      "jobs_sleep_alarm": {
+        "name": "Sleep alarm type"
+      },
+      "jobs_wake_alarm": {
+        "name": "Wake alarm type"
       }
     },
     "light": {
@@ -6348,6 +6396,12 @@
       },
       "sinca_anti_snore": {
         "name": "Automatic anti-snore"
+      },
+      "jobs_sleep_enabled": {
+        "name": "Sleep alarm enabled"
+      },
+      "jobs_wake_enabled": {
+        "name": "Wake alarm enabled"
       }
     },
     "number": {
@@ -12360,6 +12414,12 @@
     },
     "ambient_heat_unconfirmed": {
       "message": "The bed did not confirm all six requested heat levels."
+    },
+    "jobs_alarm_not_received": {
+      "message": "Read this alarm from the bed before keeping its received type."
+    },
+    "jobs_alarm_action_invalid": {
+      "message": "Choose an action supported by this alarm kind."
     }
   },
   "issues": {

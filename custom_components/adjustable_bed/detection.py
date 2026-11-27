@@ -85,6 +85,7 @@ from .const import (
     BED_TYPE_JEROME_ADJUSTABLE_BASE,
     BED_TYPE_JIECANG,
     BED_TYPE_JIECANG_APP,
+    BED_TYPE_JOBS,
     BED_TYPE_KAIDI,
     BED_TYPE_KEESON,
     BED_TYPE_KOMFYD,
@@ -687,6 +688,7 @@ BED_TYPE_DISPLAY_NAMES: dict[str, str] = {
     BED_TYPE_FURNIMOVE: "FurniMove / OKIN Smart Remote app",
     BED_TYPE_SERENITY: "Jordan's Serenity app",
     BED_TYPE_TRANQUIL: "Jordan's Tranquil app",
+    BED_TYPE_JOBS: "JobsAI智能助眠床 / Jobs AI app",
     BED_TYPE_RESTFUL: "Jordan's Restful app",
     BED_TYPE_RIZE_REMEDY_II: "Rize Remedy II app",
     BED_TYPE_ZSERIES: "Customatic Z-Series app",
@@ -1652,6 +1654,13 @@ def _detect_with_first_pass(
         elif result.bed_type != BED_TYPE_RESIDENT:
             result.ambiguous_types = list(dict.fromkeys([*(result.ambiguous_types or ()), BED_TYPE_RESIDENT]))
             result.signals.append("name:resident_app_candidate")
+    if (
+        isinstance(platform_name, str) and platform_name.lower().startswith("okin")
+        and not any(signal.startswith("excluded:") for signal in result.signals)
+    ):
+        # Jobs' shared platform-name rule offers an app, never identifies it.
+        result.ambiguous_types = list(dict.fromkeys([*(result.ambiguous_types or ()), BED_TYPE_JOBS]))
+        result.signals.append("name:jobs_app_candidate")
     if (
         isinstance(service_info.name, str)
         and service_info.name.lower().startswith("smartbed")

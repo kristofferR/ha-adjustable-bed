@@ -68,6 +68,12 @@
  "binary_sensor:furnimove_sync": {
   "card_section": "hidden"
  },
+ "binary_sensor:jobs_sleep_enabled": {
+  "card_section": "hidden"
+ },
+ "binary_sensor:jobs_wake_enabled": {
+  "card_section": "hidden"
+ },
  "binary_sensor:leggett_alarm_indicator": {
   "card_section": "hidden"
  },
@@ -1128,6 +1134,33 @@
  },
  "button:jalon_query_massage": {
   "card_section": "utility"
+ },
+ "button:jobs_massage_on": {
+  "card_section": "massage"
+ },
+ "button:jobs_query_sleep": {
+  "card_section": "utility"
+ },
+ "button:jobs_query_wake": {
+  "card_section": "utility"
+ },
+ "button:jobs_smb_off": {
+  "card_section": "massage"
+ },
+ "button:jobs_smb_on": {
+  "card_section": "massage"
+ },
+ "button:jobs_wave_1": {
+  "card_section": "massage"
+ },
+ "button:jobs_wave_2": {
+  "card_section": "massage"
+ },
+ "button:jobs_wave_3": {
+  "card_section": "massage"
+ },
+ "button:jobs_wave_4": {
+  "card_section": "massage"
  },
  "button:keeson_back_down": {
   "card_section": "motors",
@@ -4819,6 +4852,18 @@
   "card_section": "hidden"
  },
  "sensor:jerome_adjustable_base_clock": {
+  "card_section": "hidden"
+ },
+ "sensor:jobs_save_event": {
+  "card_section": "hidden"
+ },
+ "sensor:jobs_sleep_alarm": {
+  "card_section": "hidden"
+ },
+ "sensor:jobs_status": {
+  "card_section": "hidden"
+ },
+ "sensor:jobs_wake_alarm": {
   "card_section": "hidden"
  },
  "sensor:leggett_led_mask": {

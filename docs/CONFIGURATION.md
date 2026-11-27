@@ -397,6 +397,7 @@ actions; its bounded `hold_control` behavior has separate timing in the
 | eShine app (E2000 to E5000) | `eshine_okin` | 10 | 300 ms |
 | FSM Relax app | `fsm_relax` | 10 | 60 ms |
 | Jensen Adjustable Sleep app, JMC400 bed | `jensen` | 4 | 300 ms |
+| JobsAI智能助眠床 / Jobs AI app | `jobs` | 10 | 200 ms |
 | Leggett & Platt MlRM remote | `leggett_wilinke` | 10 | 110 ms |
 | Limoss and Stawett remotes | `limoss` | 12 | 80 ms |
 | Linak (Bed Control, Bed Connect and Performance Series apps): Performance Series app (older bases) | `linak` `performance_legacy` | 4 | 300 ms |
@@ -964,3 +965,6 @@ and massage setting when combined with another bed. No single-address side
 selection is inferred. The massage timer is a Home Assistant countdown, 1–40
 minutes, initially 10; it sends massage off on expiry while connected. It does
 not program a timer in the bed. See [SILVERmotion Android](beds/silvermotion.md).
+
+JobsAI智能助眠床 / Jobs AI uses an explicit app choice and mode 1 or mode 2.
+See the [JobsAI guide](beds/okin-nframe.md#jobsai).

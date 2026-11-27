@@ -2643,3 +2643,6 @@ Use `enso2_aroma_schedule` with `device_id`, `mode_2_minutes` and
 `mode_3_minutes` (1 to 60), and `pause_hours` (1 to 12). Each action can target
 the side of a two-address pair through the standard `side` field. The receiver
 must report the corresponding accessory over Bluetooth.
+
+JobsAI sleep and wake alarms use `adjustable_bed.set_alarm`, with slot 1 for
+sleep and slot 2 for wake. See the [JobsAI guide](beds/okin-nframe.md#jobsai).

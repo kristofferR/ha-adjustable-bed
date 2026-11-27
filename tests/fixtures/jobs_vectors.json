@@ -1,0 +1,679 @@
+[
+  {
+    "id": "V01",
+    "protocol": "P1",
+    "action": "Head up",
+    "inputs": {
+      "builder": "normal",
+      "a": 1,
+      "b": 0
+    },
+    "expected_bytes": "0c02000000010000000000000000",
+    "evidence": [
+      "E03",
+      "E06",
+      "E07",
+      "E09"
+    ]
+  },
+  {
+    "id": "V02",
+    "protocol": "P1",
+    "action": "Head down",
+    "inputs": {
+      "builder": "normal",
+      "a": 2,
+      "b": 0
+    },
+    "expected_bytes": "0c02000000020000000000000000",
+    "evidence": [
+      "E03",
+      "E06",
+      "E07",
+      "E09"
+    ]
+  },
+  {
+    "id": "V03",
+    "protocol": "P1",
+    "action": "Foot up",
+    "inputs": {
+      "builder": "normal",
+      "a": 4,
+      "b": 0
+    },
+    "expected_bytes": "0c02000000040000000000000000",
+    "evidence": [
+      "E03",
+      "E06",
+      "E07",
+      "E09"
+    ]
+  },
+  {
+    "id": "V04",
+    "protocol": "P1",
+    "action": "Foot down",
+    "inputs": {
+      "builder": "normal",
+      "a": 8,
+      "b": 0
+    },
+    "expected_bytes": "0c02000000080000000000000000",
+    "evidence": [
+      "E03",
+      "E06",
+      "E07",
+      "E09"
+    ]
+  },
+  {
+    "id": "V05",
+    "protocol": "P1",
+    "action": "STOP/release",
+    "inputs": {
+      "builder": "normal",
+      "a": 0,
+      "b": 0
+    },
+    "expected_bytes": "0c02000000000000000000000000",
+    "evidence": [
+      "E03",
+      "E06",
+      "E07",
+      "E09"
+    ]
+  },
+  {
+    "id": "V06",
+    "protocol": "P1",
+    "action": "Recall Anti-Snore",
+    "inputs": {
+      "builder": "normal",
+      "a": 32768,
+      "b": 0
+    },
+    "expected_bytes": "0c02000080000000000000000000",
+    "evidence": [
+      "E03",
+      "E06",
+      "E07",
+      "E09"
+    ]
+  },
+  {
+    "id": "V07",
+    "protocol": "P1",
+    "action": "Recall Lounge/Embrace",
+    "inputs": {
+      "builder": "normal",
+      "a": 8192,
+      "b": 0
+    },
+    "expected_bytes": "0c02000020000000000000000000",
+    "evidence": [
+      "E03",
+      "E06",
+      "E07",
+      "E09"
+    ]
+  },
+  {
+    "id": "V08",
+    "protocol": "P1",
+    "action": "Recall M1",
+    "inputs": {
+      "builder": "normal",
+      "a": 65536,
+      "b": 0
+    },
+    "expected_bytes": "0c02000100000000000000000000",
+    "evidence": [
+      "E03",
+      "E06",
+      "E07",
+      "E09"
+    ]
+  },
+  {
+    "id": "V09",
+    "protocol": "P1",
+    "action": "Recall Zero gravity",
+    "inputs": {
+      "builder": "normal",
+      "a": 4096,
+      "b": 0
+    },
+    "expected_bytes": "0c02000010000000000000000000",
+    "evidence": [
+      "E03",
+      "E06",
+      "E07",
+      "E09"
+    ]
+  },
+  {
+    "id": "V10",
+    "protocol": "P1",
+    "action": "Recall Incline/TV",
+    "inputs": {
+      "builder": "normal",
+      "a": 16384,
+      "b": 0
+    },
+    "expected_bytes": "0c02000040000000000000000000",
+    "evidence": [
+      "E03",
+      "E06",
+      "E07",
+      "E09"
+    ]
+  },
+  {
+    "id": "V11",
+    "protocol": "P1",
+    "action": "Recall M2",
+    "inputs": {
+      "builder": "normal",
+      "a": 262144,
+      "b": 0
+    },
+    "expected_bytes": "0c02000400000000000000000000",
+    "evidence": [
+      "E03",
+      "E06",
+      "E07",
+      "E09"
+    ]
+  },
+  {
+    "id": "V12",
+    "protocol": "P1",
+    "action": "Recall Flat",
+    "inputs": {
+      "builder": "normal",
+      "a": 134217728,
+      "b": 0
+    },
+    "expected_bytes": "0c02080000000000000000000000",
+    "evidence": [
+      "E03",
+      "E06",
+      "E07",
+      "E09"
+    ]
+  },
+  {
+    "id": "V13",
+    "protocol": "P1",
+    "action": "Save Lounge/Embrace",
+    "inputs": {
+      "builder": "normal",
+      "a": 134225920,
+      "b": 0
+    },
+    "expected_bytes": "0c02080020000000000000000000",
+    "evidence": [
+      "E03",
+      "E06",
+      "E07",
+      "E09"
+    ]
+  },
+  {
+    "id": "V14",
+    "protocol": "P1",
+    "action": "Save M1",
+    "inputs": {
+      "builder": "normal",
+      "a": 134283264,
+      "b": 0
+    },
+    "expected_bytes": "0c02080100000000000000000000",
+    "evidence": [
+      "E03",
+      "E06",
+      "E07",
+      "E09"
+    ]
+  },
+  {
+    "id": "V15",
+    "protocol": "P1",
+    "action": "Save Zero gravity",
+    "inputs": {
+      "builder": "normal",
+      "a": 134221824,
+      "b": 0
+    },
+    "expected_bytes": "0c02080010000000000000000000",
+    "evidence": [
+      "E03",
+      "E06",
+      "E07",
+      "E09"
+    ]
+  },
+  {
+    "id": "V16",
+    "protocol": "P1",
+    "action": "Save Incline/TV",
+    "inputs": {
+      "builder": "normal",
+      "a": 134234112,
+      "b": 0
+    },
+    "expected_bytes": "0c02080040000000000000000000",
+    "evidence": [
+      "E03",
+      "E06",
+      "E07",
+      "E09"
+    ]
+  },
+  {
+    "id": "V17",
+    "protocol": "P1",
+    "action": "Save M2",
+    "inputs": {
+      "builder": "normal",
+      "a": 134479872,
+      "b": 0
+    },
+    "expected_bytes": "0c02080400000000000000000000",
+    "evidence": [
+      "E03",
+      "E06",
+      "E07",
+      "E09"
+    ]
+  },
+  {
+    "id": "V18",
+    "protocol": "P1",
+    "action": "Massage on",
+    "inputs": {
+      "builder": "normal",
+      "a": 0,
+      "b": 256
+    },
+    "expected_bytes": "0c02000000000000010000000000",
+    "evidence": [
+      "E06",
+      "E08",
+      "E09",
+      "E10",
+      "E11"
+    ]
+  },
+  {
+    "id": "V19",
+    "protocol": "P1",
+    "action": "Massage off",
+    "inputs": {
+      "builder": "normal",
+      "a": 33554432,
+      "b": 33554432
+    },
+    "expected_bytes": "0c02020000000200000000000000",
+    "evidence": [
+      "E06",
+      "E08",
+      "E09",
+      "E10",
+      "E11"
+    ]
+  },
+  {
+    "id": "V20",
+    "protocol": "P1",
+    "action": "Massage intensity increase",
+    "inputs": {
+      "builder": "normal",
+      "a": 2048,
+      "b": 0
+    },
+    "expected_bytes": "0c02000008000000000000000000",
+    "evidence": [
+      "E06",
+      "E08",
+      "E09",
+      "E10",
+      "E11"
+    ]
+  },
+  {
+    "id": "V21",
+    "protocol": "P1",
+    "action": "Massage intensity decrease",
+    "inputs": {
+      "builder": "normal",
+      "a": 8388608,
+      "b": 0
+    },
+    "expected_bytes": "0c02008000000000000000000000",
+    "evidence": [
+      "E06",
+      "E08",
+      "E09",
+      "E10",
+      "E11"
+    ]
+  },
+  {
+    "id": "V22",
+    "protocol": "P1",
+    "action": "Massage mode 1",
+    "inputs": {
+      "builder": "normal",
+      "a": 524288,
+      "b": 524288
+    },
+    "expected_bytes": "0c02000800000008000000000000",
+    "evidence": [
+      "E06",
+      "E08",
+      "E09",
+      "E10",
+      "E11"
+    ]
+  },
+  {
+    "id": "V23",
+    "protocol": "P1",
+    "action": "Massage mode 2",
+    "inputs": {
+      "builder": "normal",
+      "a": 1048576,
+      "b": 1048576
+    },
+    "expected_bytes": "0c02001000000010000000000000",
+    "evidence": [
+      "E06",
+      "E08",
+      "E09",
+      "E10",
+      "E11"
+    ]
+  },
+  {
+    "id": "V24",
+    "protocol": "P1",
+    "action": "Massage mode 3",
+    "inputs": {
+      "builder": "normal",
+      "a": 2097152,
+      "b": 2097152
+    },
+    "expected_bytes": "0c02002000000020000000000000",
+    "evidence": [
+      "E06",
+      "E08",
+      "E09",
+      "E10",
+      "E11"
+    ]
+  },
+  {
+    "id": "V25",
+    "protocol": "P1",
+    "action": "Massage mode 4",
+    "inputs": {
+      "builder": "normal",
+      "a": 0,
+      "b": 512
+    },
+    "expected_bytes": "0c02000000000000020000000000",
+    "evidence": [
+      "E06",
+      "E08",
+      "E09",
+      "E10",
+      "E11"
+    ]
+  },
+  {
+    "id": "V26",
+    "protocol": "P1",
+    "action": "SMB on (Schumann label)",
+    "inputs": {
+      "builder": "normal",
+      "a": 4194304,
+      "b": 0
+    },
+    "expected_bytes": "0c02004000000000000000000000",
+    "evidence": [
+      "E06",
+      "E08",
+      "E09",
+      "E10",
+      "E11"
+    ]
+  },
+  {
+    "id": "V27",
+    "protocol": "P1",
+    "action": "SMB off (Schumann label)",
+    "inputs": {
+      "builder": "normal",
+      "a": 33554432,
+      "b": 0
+    },
+    "expected_bytes": "0c02020000000000000000000000",
+    "evidence": [
+      "E06",
+      "E08",
+      "E09",
+      "E10",
+      "E11"
+    ]
+  },
+  {
+    "id": "V28",
+    "protocol": "P1",
+    "action": "Spoken Stop alias (actual app behavior)",
+    "inputs": {
+      "builder": "normal",
+      "a": 1,
+      "b": 0
+    },
+    "expected_bytes": "0c02000000010000000000000000",
+    "evidence": [
+      "E06",
+      "E07",
+      "E10"
+    ]
+  },
+  {
+    "id": "V29",
+    "protocol": "P1",
+    "action": "Set sleep alarm",
+    "inputs": {
+      "builder": "alarm",
+      "kind": "sleep",
+      "hour": 22,
+      "minute": 30,
+      "action": 9,
+      "repeat": 190
+    },
+    "expected_bytes": "0705be09161e000100",
+    "evidence": [
+      "E08",
+      "E12"
+    ]
+  },
+  {
+    "id": "V30",
+    "protocol": "P1",
+    "action": "Set sleep alarm",
+    "inputs": {
+      "builder": "alarm",
+      "kind": "sleep",
+      "hour": 0,
+      "minute": 0,
+      "action": 0,
+      "repeat": 0
+    },
+    "expected_bytes": "070500000000000000",
+    "evidence": [
+      "E08",
+      "E12"
+    ]
+  },
+  {
+    "id": "V31",
+    "protocol": "P1",
+    "action": "Set wake alarm",
+    "inputs": {
+      "builder": "alarm",
+      "kind": "wake",
+      "hour": 8,
+      "minute": 0,
+      "action": 12,
+      "repeat": 255
+    },
+    "expected_bytes": "0707ff0c0800000100",
+    "evidence": [
+      "E08",
+      "E12"
+    ]
+  },
+  {
+    "id": "V32",
+    "protocol": "P1",
+    "action": "Set wake alarm",
+    "inputs": {
+      "builder": "alarm",
+      "kind": "wake",
+      "hour": 9,
+      "minute": 45,
+      "action": 7,
+      "repeat": 2
+    },
+    "expected_bytes": "07070207092d000100",
+    "evidence": [
+      "E08",
+      "E12"
+    ]
+  },
+  {
+    "id": "V33",
+    "protocol": "P1",
+    "action": "Set wake alarm",
+    "inputs": {
+      "builder": "alarm",
+      "kind": "wake",
+      "hour": 8,
+      "minute": 0,
+      "action": 8,
+      "repeat": 130
+    },
+    "expected_bytes": "070782080800000100",
+    "evidence": [
+      "E08",
+      "E12"
+    ]
+  },
+  {
+    "id": "V34",
+    "protocol": "P1",
+    "action": "DORMANT legacy checksum vector",
+    "inputs": {
+      "builder": "legacy",
+      "function": 13,
+      "subfunction": 3
+    },
+    "expected_bytes": "ed800381fe173b0000000000000000be",
+    "evidence": [
+      "E03",
+      "E15"
+    ],
+    "reachability": "DEAD/UNUSED"
+  },
+  {
+    "id": "V35",
+    "protocol": "P1",
+    "action": "DORMANT legacy checksum vector",
+    "inputs": {
+      "builder": "legacy",
+      "function": 13,
+      "subfunction": 4
+    },
+    "expected_bytes": "ed80030000000000000000000000008f",
+    "evidence": [
+      "E03",
+      "E15"
+    ],
+    "reachability": "DEAD/UNUSED"
+  },
+  {
+    "id": "V36",
+    "protocol": "P1",
+    "action": "DORMANT legacy checksum vector",
+    "inputs": {
+      "builder": "legacy",
+      "function": 13,
+      "subfunction": 5
+    },
+    "expected_bytes": "e180039b",
+    "evidence": [
+      "E03",
+      "E15"
+    ],
+    "reachability": "DEAD/UNUSED"
+  },
+  {
+    "id": "V37",
+    "protocol": "P1",
+    "action": "Clock calibration",
+    "inputs": {
+      "builder": "calendar",
+      "fields": [
+        2026,
+        11,
+        27,
+        5,
+        8,
+        9,
+        10
+      ]
+    },
+    "expected_bytes": "07061a0b1b0508090a",
+    "evidence": [
+      "E03",
+      "E05"
+    ]
+  },
+  {
+    "id": "V38",
+    "protocol": "P1",
+    "action": "Query sleep alarm",
+    "inputs": {
+      "builder": "query",
+      "bytes": [
+        0,
+        192
+      ]
+    },
+    "expected_bytes": "00c0",
+    "evidence": [
+      "E08"
+    ]
+  },
+  {
+    "id": "V39",
+    "protocol": "P1",
+    "action": "Query wake alarm",
+    "inputs": {
+      "builder": "query",
+      "bytes": [
+        0,
+        208
+      ]
+    },
+    "expected_bytes": "00d0",
+    "evidence": [
+      "E08"
+    ]
+  }
+]

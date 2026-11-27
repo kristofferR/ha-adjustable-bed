@@ -519,6 +519,8 @@ CONF_FSM_RELAX_MEMORY_NAMES: Final = "fsm_relax_memory_names"
 BED_TYPE_SERENITY: Final = "serenity"  # Explicit Jordan's Serenity app profile
 BED_TYPE_RIZE_REMEDY_II: Final = "rize_remedy_ii"  # Explicit Rize Remedy II app
 BED_TYPE_RESTFUL: Final = "restful"  # Explicit Jordan's Restful app profile
+BED_TYPE_JOBS: Final = "jobs"
+JOBS_VARIANTS: Final = {"mode1": "Mode 1 (remote and massage)", "mode2": "Mode 2 (remote)"}
 BED_TYPE_TRANQUIL: Final = "tranquil"  # Explicit Jordan's Tranquil app profile
 # Glideaway model is selected manually; no advertisement-derived model rule.
 BED_TYPE_GALAXY: Final = "galaxy"
@@ -596,7 +598,7 @@ CONF_AGINGPLACE_BED_SIDE: Final = "agingplace_bed_side"
 CONF_AGINGPLACE_SELECTED_SIDE: Final = "agingplace_selected_side"
 # Explicit OKIN Bedding app profiles sharing the Serenity controller core.
 OKIN_BEDDING_APP_BED_TYPES: Final = frozenset(
-    {BED_TYPE_SERENITY, BED_TYPE_TRANQUIL, BED_TYPE_RESTFUL, BED_TYPE_ZSERIES, BED_TYPE_RIZE_REMEDY_II}
+    {BED_TYPE_SERENITY, BED_TYPE_TRANQUIL, BED_TYPE_RESTFUL, BED_TYPE_ZSERIES, BED_TYPE_RIZE_REMEDY_II, BED_TYPE_JOBS}
 )
 # A Z-Series button press holds pulse_count x 100 ms, within the 60 s hold limit.
 ZSERIES_PULSE_COUNT_RANGE: Final = (1, 600)
@@ -899,6 +901,7 @@ SUPPORTED_BED_TYPES: Final = [
     BED_TYPE_FSM_RELAX,
     BED_TYPE_SERENITY,
     BED_TYPE_TRANQUIL,
+    BED_TYPE_JOBS,
     BED_TYPE_RESTFUL,
     BED_TYPE_RIZE_REMEDY_II,
     BED_TYPE_SIMMONS,
@@ -3052,6 +3055,7 @@ BED_MOTOR_PULSE_DEFAULTS: Final = {
     BED_TYPE_FSM_RELAX: (10, 60),
     BED_TYPE_SERENITY: (10, 100),  # APK refresh cadence; bounded HA movement duration
     BED_TYPE_RIZE_REMEDY_II: (10, 100),
+    BED_TYPE_JOBS: (10, 200),
     BED_TYPE_TRANQUIL: (10, 100),  # APK refresh cadence; bounded HA movement duration
     BED_TYPE_RESTFUL: (10, 100),
     # 100 ms is the app refresh; the count also bounds a Z-Series button press.

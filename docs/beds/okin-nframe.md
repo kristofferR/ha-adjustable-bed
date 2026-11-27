@@ -36,6 +36,7 @@ their setup choices, controls and alarms.
 | [Okin CST](#okin-cst) | Mattress Firm 900-O / Rize MF900, Rize Sanctuary, Resident, Aviada, Bob, Contempo, Rize II Carefree and Clarity, Support, Nectar Motion (Nectar Move) |
 | [Independence](#independence-customatic-demo) | Beds controlled with the Independence (Customatic Demo) app |
 | [Jordan's Serenity](#jordans-serenity) | Beds controlled with the Jordan's Serenity app |
+| [JobsAI](#jobsai) | Beds controlled with JobsAI智能助眠床 |
 | [Jordan's Tranquil](#jordans-tranquil) | Beds controlled with the Jordan's Tranquil app |
 | [Jordan's Restful](#jordans-restful) | Beds controlled with the Jordan's Restful app |
 | [Customatic Z-Series](#customatic-z-series) | Customatic Z-230 and Z-280 bases with the Z-Series app |
@@ -69,6 +70,7 @@ Customatic app profiles.
 | ✅ | [Comfort Enhancement 3 / Comfort Plus3](https://play.google.com/store/apps/details?id=com.okin.apex) 1.4.0 (5) | `com.okin.apex` | [Comfort Enhancement 3](#comfort-enhancement-3) |
 | ✅ | [Resident Adjustable Bed](https://play.google.com/store/apps/details?id=com.okin.bedding.rizeResident) 1.0.1 | `com.okin.bedding.rizeResident` | [Okin CST](#okin-cst) (Rize Resident) |
 | ✅ | [Customatic Technologies Z-Series](https://play.google.com/store/apps/details?id=com.okin.bedding.glory) 1.0.4 (5) | `com.okin.bedding.glory` | [Customatic Z-Series](#customatic-z-series) |
+| ✅ | JobsAI智能助眠床 1.0.6 (7) | `com.okin.bedding.jobs` | [JobsAI](#jobsai) |
 | ✅ | [Jordan's Tranquil](https://play.google.com/store/apps/details?id=com.okin.bedding.tranquil) 1.0.2 (3) | `com.okin.bedding.tranquil` | [Jordan's Tranquil](#jordans-tranquil) |
 | ⚠️ | Jobs 賈伯斯 | `com.okin.bedding.jobs` | [Okimat](#okimat), not fully checked |
 | ✅ | [OKIN Smart Remote / FurniMove](https://play.google.com/store/apps/details?id=com.okin.okinsmartcomfort) 2.2.0 (19) | `com.okin.okinsmartcomfort` | [Okimat](#okimat), [DewertOkin](#dewertokin), [RF ECO BT stair lift](#rf-eco-bt-stair-lift), [Okin DOT](#okin-dot) |
@@ -286,6 +288,8 @@ are unchanged.
 | Support | `cst_support` | `okin_cst` | 96-bit | plain frame | with response | head, feet, lumbar | 3 |
 | Nectar Move | `cst_nectar_move` | `okin_cst` | 96-bit | plain frame | with response | head, feet | 2 |
 | Independence (Customatic Demo) | `customatic_demo` | `customatic_demo` | 96-bit | plain frame | from the characteristic's properties | back, legs, seat, rotation | 0 |
+| JobsAI mode1 | `jobs_mode1` | `jobs` | 96-bit | plain frame | from the characteristic's properties | head, feet | 2 |
+| JobsAI mode2 | `jobs_mode2` | `jobs` | 96-bit | plain frame | from the characteristic's properties | head, feet | 2 |
 | Jordan's Serenity | `serenity` | `serenity` | 96-bit | plain frame | from the characteristic's properties | head, feet | 2 |
 | Jordan's Tranquil | `tranquil` | `tranquil` | 96-bit | plain frame | from the characteristic's properties | head, feet | 2 |
 | Customatic Z-230 | `zseries_z230` | `customatic_zseries` | 96-bit | plain frame | from the characteristic's properties | head, feet | 1 |
@@ -356,6 +360,8 @@ are unchanged.
 | Support | entry pulse delay | entry pulse count; until release with a renewable hold | 2 STOP at 100 ms, 100 ms after the last write |
 | Nectar Move | 100 ms | entry pulse count; until release with a renewable hold | 2 STOP at 100 ms, 100 ms after the last write |
 | Independence (Customatic Demo) | 100 ms | entry pulse count; until release with a renewable hold | 2 STOP at 100 ms, 100 ms after release |
+| JobsAI mode1 | 200 ms | entry pulse count; until release with a renewable hold | 2 STOP at 100 ms, 100 ms after the last write |
+| JobsAI mode2 | 200 ms | entry pulse count; until release with a renewable hold | 2 STOP at 100 ms, 100 ms after the last write |
 | Jordan's Serenity | 100 ms | entry pulse count; until release with a renewable hold | 2 STOP at 100 ms, 100 ms after the last write |
 | Jordan's Tranquil | 100 ms | entry pulse count; until release with a renewable hold | 2 STOP at 100 ms, 100 ms after the last write |
 | Customatic Z-230 | 100 ms | entry pulse count; until release with a renewable hold | 2 STOP at 100 ms, 100 ms after the last write |
@@ -428,6 +434,8 @@ Entry pulse settings are the configured motor pulse count and delay.
 | Support | 6 × 100 ms, 2 STOP | 6 × 100 ms, 2 STOP | n/a | n/a | 6 × 100 ms, 2 STOP | n/a |
 | Nectar Move | once, 2 STOP | once, 2 STOP | n/a | n/a | once, 2 STOP | n/a |
 | Independence (Customatic Demo) | once, 2 STOP | n/a | n/a | n/a | once, 2 STOP | n/a |
+| JobsAI mode1 | once, 2 STOP | once, 2 STOP | n/a | n/a | once, 2 STOP | n/a |
+| JobsAI mode2 | once, 2 STOP | once, 2 STOP | n/a | n/a | once, 2 STOP | n/a |
 | Jordan's Serenity | held to its deadline, 2 STOP | held to its deadline, 2 STOP | held to its deadline, 2 STOP | n/a | held to its deadline, 2 STOP | n/a |
 | Jordan's Tranquil | held to its deadline, 2 STOP | held to its deadline, 2 STOP | held to its deadline, 2 STOP | n/a | held to its deadline, 2 STOP | n/a |
 | Customatic Z-230 | held to its deadline, 2 STOP | held to its deadline, 2 STOP | held to its deadline, 2 STOP | n/a | held to its deadline, 2 STOP | n/a |
@@ -6811,3 +6819,117 @@ All original 29 literal and eight dynamic vectors are reproduced by the Okin
 N-frame codec, including its schedule encoder. External owners may
 validate firmware acceptance.
 
+
+
+### JobsAI
+
+**App:** JobsAI智能助眠床 1.0.6 (7), `com.okin.bedding.jobs`
+
+**Status:** ❓ Needs testing (static app behavior verified, hardware unverified)
+
+#### Setup
+
+Choose **JobsAI智能助眠床 / Jobs AI app**, then the mode selected in the app.
+Automatic uses mode 1. Both modes use the same command table; mode 2 hides
+its massage page but its live voice handler still sends those controls.
+
+The app accepts a nonempty Bluetooth name starting with `okin`, ignoring
+case. That shared name and the shared service do not identify Jobs, so select
+this app explicitly. HA uses its Bluetooth adapters and proxies, with exact
+writable command and notification roles from the codec transport table.
+There is no app PIN or model negotiation. The model-number read is diagnostic
+only and is logged as hex, as in the app log.
+
+For two physical addresses, combine entries through HA's paired-bed setup.
+Each side keeps its own mode, state and connection. A single address has no
+proven side selector.
+
+#### Controls
+
+Head and foot covers, Flat, Anti-Snore, Lounge, Zero Gravity, Incline,
+M1/M2 recalls and programming, plus Save Lounge/Zero Gravity/Incline buttons.
+Massage has explicit On/Off, intensity increase/decrease, four numbered
+modes and the app-labelled SMB On/Off. SMB's physical meaning and massage
+waveforms have not been verified. Lights, lumbar and other hidden helpers
+are not exposed. No motor position feedback is reported.
+
+The shared generated command table lists each profile's words. The table
+below generates the Jobs setting encoders and available alarm actions.
+
+<!-- generated:okin-nframe-jobs-settings -->
+<!-- Generated by scripts/generate_codec_docs.py from the codec and profile data. Edit those, not this block. -->
+
+| Setting | Action (recurring daily at 08:00) | Frame |
+|---|---|---|
+| Clock | local calendar | `07 06 1A 0B 1B 05 08 09 0A` |
+| Read sleep |  | `00 C0` |
+| Read wake |  | `00 D0` |
+| Clear sleep |  | `07 05 00 00 00 00 00 00 00` |
+| sleep | none | `07 05 FF 00 08 00 00 01 00` |
+| sleep | flat | `07 05 FF 09 08 00 00 01 00` |
+| sleep | custom | `07 05 FF 02 08 00 00 01 00` |
+| Clear wake |  | `07 07 00 00 00 00 00 00 00` |
+| wake | none | `07 07 FF 00 08 00 00 01 00` |
+| wake | memory_2 | `07 07 FF 08 08 00 00 01 00` |
+| wake | automatic mode1 | `07 07 FF 0C 08 00 00 01 00` |
+| wake | automatic mode2 | `07 07 FF 07 08 00 00 01 00` |
+<!-- /generated -->
+
+#### Timing
+
+See the generated profile timing table. The app waits after `sendCmd`, which
+itself blocks once per connected bed. HA targets one physical link at a time,
+using the source's single-bed minimum refresh interval. Movement and action
+holds are bounded and finish with the two zero releases. Native preset and
+massage presses use this app's bounded voice deadlines; programming uses its
+five-second help gesture. The executable has no save duration gate, so that
+default does not assert a device-side programming threshold.
+
+Connection subscribes to notifications, optionally reads the model after one
+second, then synchronizes the local clock after another 200 ms. These writes
+and every held refresh/release remain bound to that BLE session. Disconnect,
+STOP and replacement commands invalidate pending work; cancellation finishes
+cleanup before returning. HA neither broadcasts blindly to all connected
+beds nor preserves Android's uncancelled refresh and delayed callbacks.
+
+#### Notifications
+
+Packets of at least eleven bytes are accepted. Sleep and wake alarm types,
+repeat masks, hours and minutes use signed bytes, and enabled means byte 9
+is exactly one. Both alarm packets also pass through the shared status-byte
+change detector. A changed byte 10 during pending programming records a save
+response code; it does not prove storage succeeded. No checksum, position,
+light or massage state is inferred. Each physical side has separate typed
+state, and callbacks from an old link are ignored.
+
+#### Services
+
+`adjustable_bed.hold_control` exposes the named direct controls with a bounded
+duration. `adjustable_bed.sync_clock` uses Home Assistant local time.
+Read Sleep/Wake Alarm buttons request the corresponding state.
+
+`adjustable_bed.set_alarm` takes `device_id`, optional paired `side`,
+`slot` (1 for sleep, 2 for wake), `enabled`, minute-precision `time`,
+`wake_action` and optional `weekdays` (Monday through Sunday, as in the
+shared action). Selected weekdays recur. An empty selection sets today's
+one-shot bit; a past time stays on today's bit, without inventing a repair
+for the app's broken rollover logic.
+
+Sleep actions are `flat`, `memory_1` (the app's custom Anti/M1 label),
+and `none`. Wake actions are `wake_up` (automatic for the selected mode),
+`memory_2`, and `none`. Hidden `massage` and `wave_massage` actions, and
+wake `memory_1`, can only preserve that same type after receiving it from
+this bed on the current connection. They cannot select an unreceived hidden
+type. Disable clears only the chosen slot. A matching query follows the
+write after 500 ms. All selected physical sides are validated before any
+alarm is written.
+
+#### Evidence
+
+JobsAI智能助眠床 1.0.6 (7), `com.okin.bedding.jobs`.
+Static app behavior is verified. Peripheral properties, watchdog behavior,
+save thresholds/outcomes, alarm effects and massage/SMB effects remain
+unverified on hardware. The unsafe spoken Stop route is not used: HA sends
+the zero release instead of the app's head-up pulse. Android speech and
+companion UI, network/cloud/account services and firmware updating are
+outside the direct-bed controls.
