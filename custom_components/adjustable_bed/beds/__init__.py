@@ -55,6 +55,7 @@ if TYPE_CHECKING:
     from .gmmotor.desk import GmmotorDeskController as GmmotorDeskController
     from .gmmotor.sleep import GmmotorSleepController as GmmotorSleepController
     from .goodvibe.controller import GoodVibeController as GoodVibeController
+    from .hestia.controller import HestiaController as HestiaController
     from .hjbed.controller import HJBedController as HJBedController
     from .ifit.controller import IfitController as IfitController
     from .innova import InnovaController as InnovaController
@@ -212,6 +213,7 @@ _EXPORT_MODULES = {
     "GoodVibeController": "goodvibe.controller",
     "MajesticHomeController": "majestichome.controller",
     "MotoMotionController": "motomotion.controller",
+    "HestiaController": "hestia.controller",
     "HJBedController": "hjbed.controller",
     "RichmatAppController": "richmat_app.controller",
     "DoubleSleepController": "doublesleep.controller",

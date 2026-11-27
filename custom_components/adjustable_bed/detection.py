@@ -757,6 +757,7 @@ BED_TYPE_DISPLAY_NAMES: dict[str, str] = {
     "smartbed": "SmartBed app (Okin receivers, Amada beds)",
     BED_TYPE_OKIN_DOT: "Okin DOT remotes (RF1058, RF34 and RF6707)",
     BED_TYPE_OKIN_FFE: "Okin receiver (13 and 15 series)",
+    "hestia_motion": "Hestia Motion app",
     BED_TYPE_OKIN_ORE: "Okin receiver (older ORE remotes)",
     BED_TYPE_GALAXY: "Galaxy Bed Control app",
     BED_TYPE_GOODVIBE: "Good Vibe Sleep app",
