@@ -172,7 +172,8 @@ async def test_no_frame_keeps_exact_draft(hass, settings, preview):
     assert c._timed[1] == 300
 
 
-async def test_partial_preview_retains_draft_and_requires_fresh_color(hass, settings):
+async def test_partial_preview_retains_draft_and_requires_fresh_color(hass, settings, monkeypatch):
+    monkeypatch.setattr(bed, "DEVICE_INFO_READ_TIMEOUT", 0.01)
     target, c, client = settings
     await select(hass, target, "duration").async_select_option("60")
     results = []

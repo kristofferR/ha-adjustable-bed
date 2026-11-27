@@ -15,6 +15,7 @@ from homeassistant.exceptions import ServiceValidationError
 from ...card import CARD_LIGHTING, CARD_MASSAGE, CARD_PRESETS, CARD_UTILITY
 from ...codec import jiecang as codec
 from ...command_scheduler import Delivery, delivered, note_frame_skipped, note_frame_written
+from ...const import DEVICE_INFO_READ_TIMEOUT
 from ...controller_state import StateKey, StateUpdate
 from ...errors import BedNotConnectedError, invalid
 from ...profiles import dreamotion_smart as app
@@ -26,7 +27,7 @@ from ...state_keys import (
     UNDER_BED_LIGHTS_RGB,
 )
 from ..base import BedController, require_controller
-from ..cancellation import settled
+from ..cancellation import cancellable, settled
 from ..entity_specs import (
     ControllerButtonSpec,
     ControllerSelectSpec,
@@ -60,6 +61,7 @@ class _Link:
     write: BleakGATTCharacteristic
     notify: BleakGATTCharacteristic
     response: bool
+    readback_changed: asyncio.Event
 
 
 class DreamotionSmartController(JiecangProfileController):
@@ -153,7 +155,11 @@ class DreamotionSmartController(JiecangProfileController):
             or not {"notify", "indicate"}.intersection(notifies[0].properties)
         ):
             raise invalid("dreamotion_smart_gatt")
-        self._link = _Link(client, writes[0], notifies[0], "write" in writes[0].properties)
+        if self._link is not None:
+            self._link.readback_changed.set()
+        self._link = _Link(
+            client, writes[0], notifies[0], "write" in writes[0].properties, asyncio.Event()
+        )
         self._write_uuid = writes[0].uuid
 
     async def async_discover_capabilities(self) -> None:
@@ -190,6 +196,8 @@ class DreamotionSmartController(JiecangProfileController):
         await self.refresh_state()
 
     def on_disconnect(self) -> None:
+        if self._link is not None:
+            self._link.readback_changed.set()
         self._link = None
         self._notifying = False
         self._massage = app.Massage()
@@ -308,6 +316,36 @@ class DreamotionSmartController(JiecangProfileController):
         await self._write(link, app.query(0x45), self._coordinator.cancel_command)
         await self._write(link, app.query(0x44), self._coordinator.cancel_command)
 
+    async def _wait_light_settings(self, link: _Link, *, timed: bool) -> None:
+        """Await accepted readbacks, not query-write completion or a device ACK."""
+        self._live(link)
+
+        def ready() -> bool:
+            return self._timed is not None if timed else self._colors is not None
+
+        if ready():
+            return
+
+        async def wait() -> None:
+            while True:
+                self._live(link)
+                if ready():
+                    return
+                link.readback_changed.clear()
+                await link.readback_changed.wait()
+
+        try:
+            # Reuse HA's bounded BLE-read budget, without a new protocol timer,
+            # retransmission or query. Other controls need no light readback.
+            async with asyncio.timeout(DEVICE_INFO_READ_TIMEOUT):
+                await cancellable(wait(), self._coordinator.cancel_command)
+        except TimeoutError as error:
+            self._live(link)
+            raise invalid(
+                "dreamotion_smart_refresh", setting="timed light" if timed else "saved light"
+            ) from error
+        self._live(link)
+
     async def _move_axis(self, axis: codec.Axis, up: bool) -> None:
         if axis not in app.AXES:
             raise invalid("option_unavailable")
@@ -395,6 +433,8 @@ class DreamotionSmartController(JiecangProfileController):
                 app.Color(*payload[8:12]),
             )
             self._publish_color()
+        if op in (0x44, 0x45) and self._link is not None:
+            self._link.readback_changed.set()
 
     def _publish_massage(self) -> None:
         s = self._massage
@@ -412,6 +452,13 @@ class DreamotionSmartController(JiecangProfileController):
         if self._page == "presets" and self._colors is not None:
             return self._colors[self._slot - 1]
         raise invalid("dreamotion_smart_refresh", setting="light")
+
+    async def _known_color(self) -> app.Color:
+        link, owner = self._live(), (self._page, self._slot)
+        await self._wait_light_settings(link, timed=owner[0] == "timed")
+        if (self._page, self._slot) != owner:
+            raise invalid("option_unavailable")
+        return self._color()
 
     def _publish_color(self) -> None:
         try:
@@ -606,10 +653,12 @@ class DreamotionSmartController(JiecangProfileController):
     ) -> None:
         link, cancel = self._live(), self._coordinator.cancel_command
         page, slot = self._page, self._slot
-        timed = self._timed if timed is None else timed
-        colors = self._colors if colors is None else colors
         draft = self._coordinator.controller_state.get(_DURATION_DRAFT)
         edit = self._coordinator.controller_state.get(_DURATION_EDIT, 0)
+        if (page == "timed" and timed is None) or (page != "timed" and colors is None):
+            await self._wait_light_settings(link, timed=page == "timed")
+        timed = self._timed if timed is None else timed
+        colors = self._colors if colors is None else colors
         if timed is not None and draft is not None:
             timed = timed[0], draft
         if page == "timed":
@@ -702,7 +751,7 @@ class DreamotionSmartController(JiecangProfileController):
                     note_frame_skipped()
 
     async def set_light_color_with_level(self, rgb_color: tuple[int, int, int], level: int) -> None:
-        self._color()  # Never overwrite unread peer entries or duration.
+        await self._known_color()  # Never overwrite unread peer entries or duration.
         if not 0 <= level <= 100:
             raise invalid("value_out_of_range", min=0, max=100, step=1)
         if any(not 0 <= channel <= 255 for channel in rgb_color):
@@ -719,10 +768,10 @@ class DreamotionSmartController(JiecangProfileController):
             await self._save_light(preview=True, colors=(colors[0], colors[1], colors[2]))
 
     async def set_light_color(self, rgb_color: tuple[int, int, int]) -> None:
-        await self.set_light_color_with_level(rgb_color, self._color().brightness)
+        await self.set_light_color_with_level(rgb_color, (await self._known_color()).brightness)
 
     async def set_light_level(self, level: int) -> None:
-        c = self._color()
+        c = await self._known_color()
         await self.set_light_color_with_level((c.red, c.green, c.blue), level)
 
     def set_page(self, option: str) -> None:
@@ -735,8 +784,7 @@ class DreamotionSmartController(JiecangProfileController):
     async def select_slot(self, option: str) -> None:
         if option not in ("1", "2", "3"):
             raise invalid("option_unavailable")
-        if self._colors is None:
-            raise invalid("dreamotion_smart_refresh", setting="saved light")
+        await self._wait_light_settings(self._live(), timed=False)
         self._slot = int(option)
         self.set_page("presets")
         self.forward_controller_state_updates(SLOT(option))
@@ -745,8 +793,7 @@ class DreamotionSmartController(JiecangProfileController):
     async def set_duration(self, value: float) -> None:
         if value != int(value) or int(value) not in app.DURATIONS:
             raise invalid("dreamotion_smart_duration")
-        if self._timed is None:
-            raise invalid("dreamotion_smart_refresh", setting="timed light")
+        await self._wait_light_settings(self._live(), timed=True)
         self.forward_controller_state_updates(
             _DURATION_DRAFT(int(value)),
             _DURATION_EDIT(self._coordinator.controller_state.get(_DURATION_EDIT, 0) + 1),

@@ -261,7 +261,8 @@ async def test_shared_timer_select_toggles_proven_durations_without_an_off_optio
     )
 
 
-async def test_user_refusals_carry_translated_keys(settings):
+async def test_user_refusals_carry_translated_keys(settings, monkeypatch):
+    monkeypatch.setattr(bed, "DEVICE_INFO_READ_TIMEOUT", 0.01)
     target, c, client = settings
     c._massage_known = False
     with raises_key("dreamotion_smart_refresh"):
@@ -345,7 +346,8 @@ async def test_save_single_frame_survives_cancel_after_its_settled_write(setting
     assert len(client.write_gatt_char.await_args_list) == 1
 
 
-async def test_native_mode_and_light_entities_preserve_translation_keys(hass, settings):
+async def test_native_mode_and_light_entities_preserve_translation_keys(hass, settings, monkeypatch):
+    monkeypatch.setattr(bed, "DEVICE_INFO_READ_TIMEOUT", 0.01)
     from custom_components.adjustable_bed.light import _light_entities_for
 
     target, c, _client = settings
