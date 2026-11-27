@@ -1,0 +1,431 @@
+[
+  {
+    "id": "light_seconds_0",
+    "protocol": "P4",
+    "kind": "light_duration",
+    "inputs": {
+      "seconds": 0
+    },
+    "expected": "6e 0b ff ff 77",
+    "origin": "concrete example reconstructed from this artifact's builder; not app execution or hardware capture",
+    "evidence": [
+      "E-LIGHT"
+    ]
+  },
+  {
+    "id": "light_seconds_60",
+    "protocol": "P4",
+    "kind": "light_duration",
+    "inputs": {
+      "seconds": 60
+    },
+    "expected": "6e 0b 00 3c b5",
+    "origin": "concrete example reconstructed from this artifact's builder; not app execution or hardware capture",
+    "evidence": [
+      "E-LIGHT"
+    ]
+  },
+  {
+    "id": "light_seconds_300",
+    "protocol": "P4",
+    "kind": "light_duration",
+    "inputs": {
+      "seconds": 300
+    },
+    "expected": "6e 0b 01 2c a6",
+    "origin": "concrete example reconstructed from this artifact's builder; not app execution or hardware capture",
+    "evidence": [
+      "E-LIGHT"
+    ]
+  },
+  {
+    "id": "light_seconds_900",
+    "protocol": "P4",
+    "kind": "light_duration",
+    "inputs": {
+      "seconds": 900
+    },
+    "expected": "6e 0b 03 84 00",
+    "origin": "concrete example reconstructed from this artifact's builder; not app execution or hardware capture",
+    "evidence": [
+      "E-LIGHT"
+    ]
+  },
+  {
+    "id": "light_palette_0",
+    "protocol": "P4",
+    "kind": "light_rgb",
+    "inputs": {
+      "rgb": [
+        255,
+        255,
+        0
+      ]
+    },
+    "expected": "6e 0c ff ff 78 6e 0d ff 00 7a",
+    "origin": "concrete example reconstructed from this artifact's builder; not app execution or hardware capture",
+    "evidence": [
+      "E-LIGHT",
+      "E-COLOR-HELPER"
+    ]
+  },
+  {
+    "id": "light_palette_1",
+    "protocol": "P4",
+    "kind": "light_rgb",
+    "inputs": {
+      "rgb": [
+        0,
+        255,
+        0
+      ]
+    },
+    "expected": "6e 0c ff 00 79 6e 0d ff 00 7a",
+    "origin": "concrete example reconstructed from this artifact's builder; not app execution or hardware capture",
+    "evidence": [
+      "E-LIGHT",
+      "E-COLOR-HELPER"
+    ]
+  },
+  {
+    "id": "light_palette_2",
+    "protocol": "P4",
+    "kind": "light_rgb",
+    "inputs": {
+      "rgb": [
+        0,
+        127,
+        255
+      ]
+    },
+    "expected": "6e 0c ff 00 79 6e 0d 7f ff f9",
+    "origin": "concrete example reconstructed from this artifact's builder; not app execution or hardware capture",
+    "evidence": [
+      "E-LIGHT",
+      "E-COLOR-HELPER"
+    ]
+  },
+  {
+    "id": "light_palette_3",
+    "protocol": "P4",
+    "kind": "light_rgb",
+    "inputs": {
+      "rgb": [
+        0,
+        0,
+        255
+      ]
+    },
+    "expected": "6e 0c ff 00 79 6e 0d 00 ff 7a",
+    "origin": "concrete example reconstructed from this artifact's builder; not app execution or hardware capture",
+    "evidence": [
+      "E-LIGHT",
+      "E-COLOR-HELPER"
+    ]
+  },
+  {
+    "id": "light_palette_4",
+    "protocol": "P4",
+    "kind": "light_rgb",
+    "inputs": {
+      "rgb": [
+        139,
+        0,
+        255
+      ]
+    },
+    "expected": "6e 0c ff 8b 04 6e 0d 00 ff 7a",
+    "origin": "concrete example reconstructed from this artifact's builder; not app execution or hardware capture",
+    "evidence": [
+      "E-LIGHT",
+      "E-COLOR-HELPER"
+    ]
+  },
+  {
+    "id": "light_palette_5",
+    "protocol": "P4",
+    "kind": "light_rgb",
+    "inputs": {
+      "rgb": [
+        255,
+        255,
+        255
+      ]
+    },
+    "expected": "6e 0c ff ff 78 6e 0d ff ff 79",
+    "origin": "concrete example reconstructed from this artifact's builder; not app execution or hardware capture",
+    "evidence": [
+      "E-LIGHT",
+      "E-COLOR-HELPER"
+    ]
+  },
+  {
+    "id": "light_palette_6",
+    "protocol": "P4",
+    "kind": "light_rgb",
+    "inputs": {
+      "rgb": [
+        255,
+        0,
+        0
+      ]
+    },
+    "expected": "6e 0c ff ff 78 6e 0d 00 00 7b",
+    "origin": "concrete example reconstructed from this artifact's builder; not app execution or hardware capture",
+    "evidence": [
+      "E-LIGHT",
+      "E-COLOR-HELPER"
+    ]
+  },
+  {
+    "id": "light_palette_7",
+    "protocol": "P4",
+    "kind": "light_rgb",
+    "inputs": {
+      "rgb": [
+        255,
+        165,
+        0
+      ]
+    },
+    "expected": "6e 0c ff ff 78 6e 0d a5 00 20",
+    "origin": "concrete example reconstructed from this artifact's builder; not app execution or hardware capture",
+    "evidence": [
+      "E-LIGHT",
+      "E-COLOR-HELPER"
+    ]
+  },
+  {
+    "id": "simple_minutes_0",
+    "protocol": "P4",
+    "kind": "simple_alarm",
+    "inputs": {
+      "minutes": 0,
+      "mode": 0
+    },
+    "expected": [
+      "6e 05 00 00 73",
+      "6e 06 00 00 74"
+    ],
+    "origin": "concrete example reconstructed from this artifact's builder; not app execution or hardware capture",
+    "evidence": [
+      "E-ALARM-SIMPLE"
+    ]
+  },
+  {
+    "id": "simple_minutes_1",
+    "protocol": "P4",
+    "kind": "simple_alarm",
+    "inputs": {
+      "minutes": 1,
+      "mode": 69
+    },
+    "expected": [
+      "6e 05 01 00 74",
+      "6e 06 00 45 b9"
+    ],
+    "origin": "concrete example reconstructed from this artifact's builder; not app execution or hardware capture",
+    "evidence": [
+      "E-ALARM-SIMPLE"
+    ]
+  },
+  {
+    "id": "simple_minutes_255",
+    "protocol": "P4",
+    "kind": "simple_alarm",
+    "inputs": {
+      "minutes": 255,
+      "mode": 46
+    },
+    "expected": [
+      "6e 05 ff 00 72",
+      "6e 06 00 2e a2"
+    ],
+    "origin": "concrete example reconstructed from this artifact's builder; not app execution or hardware capture",
+    "evidence": [
+      "E-ALARM-SIMPLE"
+    ]
+  },
+  {
+    "id": "simple_minutes_256",
+    "protocol": "P4",
+    "kind": "simple_alarm",
+    "inputs": {
+      "minutes": 256,
+      "mode": 49
+    },
+    "expected": [
+      "6e 05 00 00 73",
+      "6e 06 01 31 a6"
+    ],
+    "origin": "concrete example reconstructed from this artifact's builder; not app execution or hardware capture",
+    "evidence": [
+      "E-ALARM-SIMPLE"
+    ]
+  },
+  {
+    "id": "simple_minutes_1440",
+    "protocol": "P4",
+    "kind": "simple_alarm",
+    "inputs": {
+      "minutes": 1440,
+      "mode": 88
+    },
+    "expected": [
+      "6e 05 a0 00 13",
+      "6e 06 05 58 d1"
+    ],
+    "origin": "concrete example reconstructed from this artifact's builder; not app execution or hardware capture",
+    "evidence": [
+      "E-ALARM-SIMPLE"
+    ]
+  },
+  {
+    "id": "repeat_once",
+    "protocol": "P3",
+    "kind": "repeat_add",
+    "inputs": {
+      "number": 1,
+      "reserved": 0,
+      "hour": 7,
+      "minute": 30,
+      "mode": 69,
+      "mask": 1
+    },
+    "expected": "6e 20 0d 05 01 01 01 00 07 1e 45 01 0e",
+    "origin": "concrete example reconstructed from this artifact's builder; not app execution or hardware capture",
+    "evidence": [
+      "E-ALARM-REPEAT",
+      "E-INSERT-ABI"
+    ]
+  },
+  {
+    "id": "repeat_weekdays",
+    "protocol": "P3",
+    "kind": "repeat_add",
+    "inputs": {
+      "number": 1,
+      "reserved": 0,
+      "hour": 7,
+      "minute": 30,
+      "mode": 69,
+      "mask": 249
+    },
+    "expected": "6e 20 0d 05 01 01 01 00 07 1e 45 f9 06",
+    "origin": "concrete example reconstructed from this artifact's builder; not app execution or hardware capture",
+    "evidence": [
+      "E-ALARM-REPEAT",
+      "E-INSERT-ABI"
+    ]
+  },
+  {
+    "id": "repeat_disabled_nonzero_reserved",
+    "protocol": "P3",
+    "kind": "repeat_add",
+    "inputs": {
+      "number": 7,
+      "reserved": 4,
+      "hour": 23,
+      "minute": 59,
+      "mode": 89,
+      "mask": 254
+    },
+    "expected": "6e 20 0d 05 01 01 07 04 17 3b 59 fe 56",
+    "origin": "concrete example reconstructed from this artifact's builder; not app execution or hardware capture",
+    "evidence": [
+      "E-ALARM-REPEAT",
+      "E-INSERT-ABI"
+    ]
+  },
+  {
+    "id": "repeat_delete7",
+    "protocol": "P3",
+    "kind": "repeat_delete",
+    "inputs": {
+      "number": 7
+    },
+    "expected": "6e 20 08 05 02 01 07 a5",
+    "origin": "concrete example reconstructed from this artifact's builder; not app execution or hardware capture",
+    "evidence": [
+      "E-ALARM-REPEAT"
+    ]
+  },
+  {
+    "id": "sync_plus1",
+    "protocol": "P3",
+    "kind": "sync",
+    "inputs": {
+      "epoch_seconds": 1795779296,
+      "timezone_minutes": 60,
+      "local": [
+        2026,
+        11,
+        27,
+        12,
+        34,
+        56
+      ]
+    },
+    "expected": [
+      "6e 20 0c 08 02 01 6b 09 6a e0 01 64",
+      "6e 20 0d 08 03 01 38 0b 1b 0c 22 38 6b"
+    ],
+    "origin": "concrete example reconstructed from this artifact's builder; not app execution or hardware capture",
+    "evidence": [
+      "E-CLOCK-SYNC",
+      "E-INSERT-ABI"
+    ]
+  },
+  {
+    "id": "sync_minus5half",
+    "protocol": "P3",
+    "kind": "sync",
+    "inputs": {
+      "epoch_seconds": 1795779296,
+      "timezone_minutes": -330,
+      "local": [
+        2026,
+        11,
+        27,
+        6,
+        4,
+        56
+      ]
+    },
+    "expected": [
+      "6e 20 0c 08 02 01 6b 09 6a e0 fb 5e",
+      "6e 20 0d 08 03 01 38 0b 1b 06 04 38 47"
+    ],
+    "origin": "concrete example reconstructed from this artifact's builder; not app execution or hardware capture",
+    "evidence": [
+      "E-CLOCK-SYNC",
+      "E-INSERT-ABI"
+    ]
+  },
+  {
+    "id": "sync_plus5half",
+    "protocol": "P3",
+    "kind": "sync",
+    "inputs": {
+      "epoch_seconds": 1795779296,
+      "timezone_minutes": 330,
+      "local": [
+        2026,
+        11,
+        27,
+        17,
+        4,
+        56
+      ]
+    },
+    "expected": [
+      "6e 20 0c 08 02 01 6b 09 6a e0 05 68",
+      "6e 20 0d 08 03 01 38 0b 1b 11 04 38 52"
+    ],
+    "origin": "concrete example reconstructed from this artifact's builder; not app execution or hardware capture",
+    "evidence": [
+      "E-CLOCK-SYNC",
+      "E-INSERT-ABI"
+    ]
+  }
+]

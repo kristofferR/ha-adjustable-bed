@@ -4783,6 +4783,33 @@ ergobq_unlink:
           step: 1
           mode: box
 
+muuegm_enable_alarm:
+  fields:
+    device_id:
+      required: true
+      selector:
+        device:
+          integration: adjustable_bed
+          multiple: true
+    alarm_number:
+      required: true
+      selector:
+        number:
+          min: 1
+          max: 7
+          mode: box
+    enabled:
+      required: true
+      selector:
+        boolean:
+    side:
+      selector:
+        select:
+          options:
+            - both
+            - left
+            - right
+
 # The app's existing-alarm callback sends DA; its firmware meaning is unverified.
 suta_king_koil_confirm_alarm:
   fields:

@@ -66,7 +66,7 @@ import subprocess
 import sys
 import time
 from collections.abc import Awaitable, Callable, Iterator
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from pathlib import Path
 from types import SimpleNamespace
 from typing import Any, cast
@@ -1587,6 +1587,10 @@ def default_scenario(bed_type: str) -> Scenario:
             layout_id="dreamsense:gatt:1",
             replies={"write:6e0a000179": "6e0e00037f"},
         )
+    if bed_type == "muuegm":
+        return Scenario(id=bed_type, bed_type=bed_type, protocol_variant="ABF03",
+                        entry_data={const.CONF_BED_TYPE: bed_type, const.CONF_PROTOCOL_VARIANT: "ABF03"},
+                        layout_id="dreamsense", replies={"write:6e08010178": "6e09010078", "write:6e0a000179": "6e0e00037f"})
     if bed_type == "dreamsense":
         return Scenario(id=bed_type, bed_type=bed_type, protocol_variant="blue",
                         entry_data={const.CONF_PROTOCOL_VARIANT: "blue", const.CONF_PRODUCT_TYPE: "blue"})
@@ -2694,6 +2698,12 @@ def build_scenarios() -> list[Scenario]:
             default_scenario("dreamsense"), id=f"dreamsense:gatt:{route}",
             layout_id=f"dreamsense:gatt:{route}",
         ))
+    for product in ("ABF03", "ABF07", "NUPG400"):
+        for route in range(6):
+            scenarios.append(replace(default_scenario("muuegm"), id=f"muuegm:{product}:gatt:{route}",
+                protocol_variant=product, entry_data={"bed_type": "muuegm", "protocol_variant": product},
+                layout_id="dreamsense" if route == 0 else f"dreamsense:gatt:{route}",
+                replies={"write:6e08010178": "6e09010078", "write:6e0a000179": "6e0e00037f", "write:01": "6e09010078 6e0e00037f"}))
     from custom_components.adjustable_bed.profiles.likimio import NO_PRODUCT as LIKIMIO_NO_PRODUCT
 
     scenarios.append(Scenario(

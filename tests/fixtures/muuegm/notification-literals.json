@@ -1,0 +1,90 @@
+[
+  {
+    "frame": "6e 09 01 00 78",
+    "event_object": "947ed1",
+    "log_text": "RMBlueToothUtil 有闹钟功能",
+    "address": "0x691288",
+    "evidence": [
+      "E-PARSER-COMMON"
+    ],
+    "event_name": "deviceCharacteristicsSubscriptionClockEvent",
+    "scope": "IN_SCOPE"
+  },
+  {
+    "frame": "6e 0e 00 03 7f",
+    "event_object": "947eb1",
+    "log_text": "RMBlueToothUtil 有灯光功能",
+    "address": "0x6912f0",
+    "evidence": [
+      "E-PARSER-COMMON"
+    ],
+    "event_name": "deviceCharacteristicsSubscriptionLightEvent",
+    "scope": "IN_SCOPE"
+  },
+  {
+    "frame": "6e 1a 00 01 89",
+    "event_object": "947e91",
+    "log_text": "RMBlueToothUtil 有香薰功能",
+    "address": "0x691358",
+    "evidence": [
+      "E-PARSER-COMMON"
+    ],
+    "event_name": "deviceCharacteristicsSubscriptionAromatherapyEvent",
+    "scope": "IN_SCOPE"
+  },
+  {
+    "frame": "6e 07 01 01 77",
+    "event_object": "947e71",
+    "log_text": "RMBlueToothUtil 添加闹钟成功",
+    "address": "0x6913c0",
+    "evidence": [
+      "E-PARSER-COMMON"
+    ],
+    "event_name": "deviceAddAlarmSuccessEvent",
+    "scope": "IN_SCOPE"
+  },
+  {
+    "frame": "6e 07 01 02 78",
+    "event_object": "947e51",
+    "log_text": "RMBlueToothUtil 取消闹钟成功",
+    "address": "0x691428",
+    "evidence": [
+      "E-PARSER-COMMON"
+    ],
+    "event_name": "deviceCancelAlarmSuccessEvent",
+    "scope": "IN_SCOPE"
+  },
+  {
+    "frame": "6e 16 01 01 86",
+    "event_object": "947e31",
+    "log_text": "RMBlueToothUtil 有音乐振子功能",
+    "address": "0x691490",
+    "evidence": [
+      "E-PARSER-COMMON"
+    ],
+    "event_name": "deviceCharacteristicsSubscriptionMusicEvent",
+    "scope": "EXCLUDED"
+  },
+  {
+    "frame": "6e 90 c1 01 c0",
+    "event_object": "947e11",
+    "log_text": "RMBlueToothUtil 有异常检测功能",
+    "address": "0x6914f8",
+    "evidence": [
+      "E-PARSER-COMMON"
+    ],
+    "event_name": "deviceCharacteristicsSubscriptionDetectionEvent",
+    "scope": "IN_SCOPE"
+  },
+  {
+    "frame": "6e 21 00 00 8f",
+    "event_object": "947df1",
+    "log_text": "RMBlueToothUtil 有打鼾干预功能",
+    "address": "0x691560",
+    "evidence": [
+      "E-PARSER-COMMON"
+    ],
+    "event_name": "deviceCharacteristicsSubscriptionSnoreEvent",
+    "scope": "IN_SCOPE"
+  }
+]
