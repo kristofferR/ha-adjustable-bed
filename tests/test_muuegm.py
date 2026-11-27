@@ -6,6 +6,7 @@ from dataclasses import replace
 from datetime import UTC, datetime
 from pathlib import Path
 from unittest.mock import AsyncMock, patch
+from zoneinfo import ZoneInfo
 
 import pytest
 from bleak.exc import BleakError
@@ -236,6 +237,40 @@ async def test_simple_alarm_uses_execution_time_and_no_release(hass):
     assert coord.controller_state.get(ACTIVE) is False
 
 
+@pytest.mark.parametrize(
+    ("date", "hour", "minute", "expected"),
+    (
+        ((2027, 3, 14, 0, 30), 7, 30, ("6e056800db", "6e060145ba")),
+        ((2027, 11, 7, 0, 30), 7, 30, ("6e05e00053", "6e060145ba")),
+        ((2027, 11, 7, 1, 45), 1, 30, ("6e052d00a0", "6e060045b9")),
+        ((2027, 3, 14, 0, 30), 2, 30, ("6e05dc004f", "6e060545be")),
+    ),
+    ids=("spring-forward", "fall-back", "repeated-hour", "skipped-hour"),
+)
+async def test_simple_alarm_counts_elapsed_minutes_at_execution(hass, date, hour, minute, expected):
+    coord, ctrl = await runtime(hass)
+    await ctrl.start_notify()
+    notify(coord, "6e09010078")
+    coord.client.write_gatt_char.reset_mock()
+    now = datetime(*date, tzinfo=ZoneInfo("America/New_York"))
+    alarm = AlarmRequest(
+        enabled=True,
+        hour=hour,
+        minute=minute,
+        wake_action="zero_g",
+        # A queued request must choose its occurrence at execution time.
+        reference_time=now.replace(day=now.day - 1),
+    )
+    with patch(
+        "custom_components.adjustable_bed.beds.dreamsense.muuegm.dt_util.now",
+        return_value=now,
+    ):
+        await coord.async_execute_controller_command(
+            lambda live: live.configure_alarm(alarm), cancel_running=False
+        )
+    assert written(coord) == list(expected)
+
+
 async def test_repeat_records_and_real_services_preserve_fields(hass):
     coord, ctrl = await runtime(hass, "ABF07")
     await ctrl.start_notify()
@@ -462,7 +497,14 @@ async def test_repeat_stamp_cannot_be_reused_after_reconnect(hass):
 
 
 def _record_notify(coord, record, kind=2):
-    fields = (record.id, record.reserved, record.hour, record.minute, record.mode, record.repeat_mask)
+    fields = (
+        record.id,
+        record.reserved,
+        record.hour,
+        record.minute,
+        record.mode,
+        record.repeat_mask,
+    )
     notify(coord, c.record_20_len(5, 1, kind, fields).hex())
 
 
@@ -495,12 +537,17 @@ async def test_shared_disable_rejects_record_changed_after_preflight(hass):
         return await execute(*args, **kwargs)
 
     with (
-        patch.object(services, "_resolve_sided_targets", return_value=([(coord, const.SIDE_BOTH)], [])),
+        patch.object(
+            services, "_resolve_sided_targets", return_value=([(coord, const.SIDE_BOTH)], [])
+        ),
         patch.object(services, "_execute_alarm_step", side_effect=changed_record),
         raises_key("dreamsense_alarm_record"),
     ):
         await hass.services.async_call(
-            const.DOMAIN, "set_alarm", {"device_id": "bed", "enabled": False, "slot": 2}, blocking=True
+            const.DOMAIN,
+            "set_alarm",
+            {"device_id": "bed", "enabled": False, "slot": 2},
+            blocking=True,
         )
     assert written(coord) == []
 

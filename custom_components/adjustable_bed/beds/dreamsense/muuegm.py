@@ -275,11 +275,9 @@ class MuuegmController(DreamSenseController):
                 self._simple_pending = pending
             submitted = True
 
-        now = dt_util.now().replace(second=0, microsecond=0)
-        target = now.replace(hour=alarm.hour, minute=alarm.minute)
-        minutes = int((target.replace(tzinfo=None) - now.replace(tzinfo=None)).total_seconds() // 60)
-        if minutes <= 0:
-            minutes += 1440
+        now = dt_util.now()
+        # The app chooses the next occurrence when this command executes.
+        minutes = replace(alarm, reference_time=now).minutes_until(now)
         frames = codec.countdown(
             minutes if alarm.enabled else 0, self._alarm_code(alarm) if alarm.enabled else 0
         )
