@@ -580,6 +580,10 @@ async def test_the_quiet_bed_types_are_those_whose_controller_reads_positions(ha
     found = set()
     for bed_type in const.SUPPORTED_BED_TYPES:
         controller = await _create_controller_for_bed_type(bed_type)
+        if bed_type == const.BED_TYPE_RESTONIC:
+            # The inherited Keeson reader is a no-op on every Restonic route.
+            assert not any(bed_type_has_position_feedback(bed_type, v) for v in _routes_of(bed_type))
+            continue
         if type(controller).read_positions is not BedController.read_positions and any(
             not bed_type_has_position_feedback(bed_type, v) for v in _routes_of(bed_type)
         ):

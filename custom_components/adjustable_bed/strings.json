@@ -1768,22 +1768,22 @@
   },
   "entity": {
     "button": {
-      "restonic_underbedLighting": {
+      "restonic_underbedlighting": {
         "name": "Underbed light action"
       },
-      "restonic_headStrengthAdd": {
+      "restonic_headstrengthadd": {
         "name": "Head massage intensity up"
       },
-      "restonic_footStrengthAdd": {
+      "restonic_footstrengthadd": {
         "name": "Foot massage intensity up"
       },
-      "restonic_massageTimer": {
+      "restonic_massagetimer": {
         "name": "Massage timer cycle"
       },
-      "restonic_waveAdd": {
+      "restonic_waveadd": {
         "name": "Massage mode next"
       },
-      "restonic_massageSwitch": {
+      "restonic_massageswitch": {
         "name": "Massage toggle"
       },
       "sleep_assist_pro_side_b_up": {
@@ -4559,32 +4559,6 @@
       }
     },
     "sensor": {
-      "restonic_branch": {"name": "Restonic BLE branch"},
-      "restonic_layout": {"name": "Restonic app layout"},
-      "restonic_raw_b": {
-        "name": "Restonic raw field b"
-      },
-      "restonic_raw_23": {
-        "name": "Restonic raw field 23"
-      },
-      "restonic_raw_13": {
-        "name": "Restonic raw field 13"
-      },
-      "restonic_raw_1b": {
-        "name": "Restonic raw field 1b"
-      },
-      "restonic_raw_2b": {
-        "name": "Restonic raw field 2b"
-      },
-      "restonic_raw_43": {
-        "name": "Restonic raw field 43"
-      },
-      "restonic_raw_33": {
-        "name": "Restonic raw field 33"
-      },
-      "restonic_raw_3b": {
-        "name": "Restonic raw field 3b"
-      },
       "sleep_assist_pro_massage_countdown": {
         "name": "Massage countdown"
       },

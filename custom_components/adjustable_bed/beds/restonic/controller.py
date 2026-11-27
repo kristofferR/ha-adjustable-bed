@@ -18,7 +18,6 @@ from ...command_scheduler import (
     note_frame_written,
 )
 from ...const import CONF_PRODUCT_TYPE
-from ...controller_state import StateKey
 from ...errors import BedNotConnectedError
 from ...profiles import restonic as app
 from ..base import BedController, require_controller
@@ -28,7 +27,6 @@ from ..entity_specs import (
     ControllerButtonSpec,
     ControllerHoldSpec,
     ControllerMotorHoldSpec,
-    ControllerStateSensorSpec,
     MotorControlSpec,
 )
 from ..keeson.controller import KeesonController
@@ -38,12 +36,6 @@ from .protocol import Parser
 if TYPE_CHECKING:
     from ...coordinator import AdjustableBedCoordinator
 
-RAW_KEYS: Final = {
-    name: StateKey[int | None](f"restonic_raw_{name}")
-    for name in ("b", "23", "13", "1b", "2b", "43", "33", "3b")
-}
-SELECTED_BRANCH: Final = StateKey[str]("restonic_branch")
-SELECTED_LAYOUT: Final = StateKey[str]("restonic_layout")
 WRITE_TIMEOUT_S: Final = 5.0
 _AXIS_ACTIONS: Final = {
     "head": ("headUp", "headDown"),
@@ -87,7 +79,7 @@ class RestonicController(KeesonController):
         self._cleanup: tuple[Link, CommandContext] | None = None
         self._subscribed = False
         self._parser = Parser(branch)
-        self.forward_controller_state_updates(SELECTED_BRANCH(branch), SELECTED_LAYOUT(layout))
+        self._received: dict[str, int] = {}
 
     @property
     def control_characteristic_uuid(self) -> str:
@@ -115,6 +107,7 @@ class RestonicController(KeesonController):
             "restonic_branch": self.branch,
             "restonic_layout": self.layout,
             "hardware": "UNVERIFIED",
+            "received": dict(self._received),
         }
 
     def _current(self, link: Link) -> bool:
@@ -169,9 +162,7 @@ class RestonicController(KeesonController):
                 return
             self.forward_raw_notification(link.notify.uuid, bytes(data))
             parsed = self._parser.feed(bytes(data))
-            self.forward_controller_state_updates(
-                *(RAW_KEYS[key](value) for key, value in parsed.items())
-            )
+            self._received.update(parsed)
 
         await link.client.start_notify(link.notify, receive)
         if not self._current(link):
@@ -191,7 +182,7 @@ class RestonicController(KeesonController):
         self.invalidate_diagnostics()
 
     def invalidate_diagnostics(self) -> None:
-        self.forward_controller_state_updates(*(key(None) for key in RAW_KEYS.values()))
+        self._received.clear()
 
     async def _send(self, press: Press, *, cleanup: bool = False) -> bool:
         # Waiting for the lane is cancellable. Only an actual GATT write needs
@@ -449,7 +440,7 @@ class RestonicController(KeesonController):
                 f"restonic_{name}",
                 name,
                 action(name),
-                translation_key=f"restonic_{name}",
+                translation_key=f"restonic_{name.lower()}",
                 scheduler_resource="*",
                 hold=ControllerHoldSpec(name),
                 card=CARD_LIGHTING if name == "underbedLighting" else CARD_MASSAGE,
@@ -458,27 +449,6 @@ class RestonicController(KeesonController):
             if name in app.ACTIONS[self.layout]
         )
 
-    @property
-    def controller_state_sensor_specs(self) -> tuple[ControllerStateSensorSpec, ...]:
-        raw = (
-            tuple(
-                ControllerStateSensorSpec(
-                    f"restonic_raw_{field}", f"restonic_raw_{field}", key, "mdi:code-braces"
-                )
-                for field, key in RAW_KEYS.items()
-            )
-            if self.branch != "box1220"
-            else ()
-        )
-        return (
-            ControllerStateSensorSpec(
-                "restonic_branch", "restonic_branch", SELECTED_BRANCH, "mdi:bluetooth-settings"
-            ),
-            ControllerStateSensorSpec(
-                "restonic_layout", "restonic_layout", SELECTED_LAYOUT, "mdi:bed"
-            ),
-            *raw,
-        )
 
 
 async def build_controller(ctx: BuildContext) -> RestonicController:

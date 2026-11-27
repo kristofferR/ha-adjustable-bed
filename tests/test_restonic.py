@@ -214,10 +214,10 @@ async def test_notifications_are_raw_current_link_only_and_reset(hass, mock_blea
     callback = mock_bleak_client.start_notify.call_args.args[1]
     notify = c._link.notify
     callback(notify, bytearray.fromhex("a50b0e002f00020306"))
-    assert co.controller_state[bed.RAW_KEYS["b"]] == 7
+    assert c.protocol_diagnostics["received"]["b"] == 7
     c.on_disconnect()
     callback(notify, bytearray.fromhex("a50b0e000200020306"))
-    assert co.controller_state.get(bed.RAW_KEYS["b"]) is None
+    assert c.protocol_diagnostics["received"] == {}
 
 
 async def test_task_cancelled_waiter_never_starts_gatt(hass, mock_bleak_client):

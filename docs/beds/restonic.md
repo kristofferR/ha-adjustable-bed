@@ -108,7 +108,7 @@ These are action buttons without assumed on/off, intensity, timer or light state
 
 ## Position Feedback / Notifications
 
-BOX15 supports its retained F4 FE 16 fragment, ED80 and length-selected replies. BOX24 supports A50C and A50B0E; BOX1220 subscribes but has no state dispatch. Raw offset fields are disabled-by-default diagnostic sensors with no unit. They clear when the connection ends. They do not create position sliders, alarm controls, inferred brightness or measured state.
+BOX15 supports its retained F4 FE 16 fragment, ED80 and length-selected replies. BOX24 supports A50C and A50B0E; BOX1220 subscribes but has no state dispatch. Raw offset fields are available only in protocol diagnostics, with no sensor entities or inferred units. They clear when the connection ends. They do not create position sliders, alarm controls, inferred brightness or measured state.
 
 The BOX24 A50B0E low nibble is divided by two using integer division, including odd values. Short packets are ignored rather than reproducing the app's indexing errors. Fragment retention is bounded and restricted to the current link. Replies are not command acknowledgements.
 
