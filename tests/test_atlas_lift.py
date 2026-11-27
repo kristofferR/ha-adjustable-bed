@@ -238,6 +238,7 @@ async def discover_cama_lift(hass):
     assert set(select_options(chooser, "bed_type_choice")) == {
         const.BED_TYPE_ATLAS_LIFT,
         const.BED_TYPE_LIKIMIO,
+        "muuegm",
         "show_all",
     }
     confirm = await manager.async_configure(

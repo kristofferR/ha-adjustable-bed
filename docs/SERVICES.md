@@ -60,6 +60,7 @@ For named raise/lower/stop voice commands and Apple Home controls, see
 | [`customatic_hold_memory`](#customatic_hold_memory) | Customatic: hold memory buttons | Holds one or more buttons of the memory page on a Clarity or Remedy remote, as if pressed together. Combinations with Program can change saved positions. |
 | [`customatic_move_simultaneously`](#customatic_move_simultaneously) | Customatic: move motors together | Moves up to three motors together, then stops them. |
 | [`dreamsense_delete_alarm`](#dreamsense_delete_alarm) | Dream Sense: delete alarm | Deletes a repeating alarm from the bed's alarm list. |
+| [`muuegm_enable_alarm`](#muuegm_enable_alarm) | MUUEGM: enable alarm | Preserve an ABF07 alarm's reported fields while enabling or disabling it. |
 | [`dreamsense_light`](#dreamsense_light) | Dream Sense and Likimio lighting | Set the bed light color or duration after a Dream Sense Bed or Likimio receiver reports lighting support. |
 | [`fsm_relax_calibrate`](#fsm_relax_calibrate) | FSM Relax: calibrate | Calibrate the bed with its configured motor directions. Calibration is sent once; if Home Assistant reports an error, check the bed before you try again. |
 | [`floyd_action`](#floyd_action) | Floyd: settings | Moves to a preset, saves over a built-in preset, or links a bed to a room in the app. |
@@ -541,6 +542,7 @@ data:
 | SUTA Smart Home (models whose app has an alarm) | None | `weekdays` or once. To turn an alarm off, send the same `time` and `weekdays` it was set with |
 | Symphony Sleep | `none`, `memory_1`, `memory_2` | Once |
 | Symphony Sleep Sense | By product | `weekdays` |
+| Hestia Motion | `none`, `memory_1`, `memory_2` | Optional `massage`, `massage_intensity` 1–3 and `massage_duration` 10/20/30; wave uses the native selector. No weekdays. Native controls also support intensity zero |
 | Ultramatic (ORE) | `none`, `massage`, `memory_1`, `memory_2` on the older bed route; `tv`, `massage`, `zero_g` on the newer | `weekdays` or once. Turning it on needs a `wake_action`; connect once first so the route is known |
 | Ultramatic Smart Bed | `massage`, `zero_g`, `memory_1` (required to turn on) | `weekdays` or once. Left, Right and Both set the A, B and AB alarms; a standalone bed uses its configured side. Turning off without a time keeps the reported alarm's other fields; refresh the alarm first |
 | Yamada | By app version | `slot` 1–2, `weekdays`. Refresh the bed's alarms first |
@@ -886,6 +888,29 @@ before a sequential pair releases that receiver's link.
 |-------|------|---------|
 | `actions` | Motor directions | Back, legs and optionally lumbar, each set to up or down. Lumbar needs the Remedy remote. |
 | `duration` | Duration | How long to move, 0.1 to 60 seconds, then the motors stop. |
+
+## MUUEGM
+
+Select MUUEGM and ABF03, ABF07 or NUPG400 in setup. ABF03 and ABF07 require
+clock and light acknowledgements from the current connection for dedicated
+controls. NUPG400 supports neither dedicated feature.
+
+`set_alarm` sets ABF03's single countdown alarm or saves an ABF07 repeat alarm
+in an explicit `slot` from 1 to 7. ABF07 accepts `weekdays`; no days means once.
+Both products use the selected product's preset as `wake_action`, and saved
+memory actions require `confirm_custom_position: true`. Alarms do not generate
+movement STOP packets. `sync_clock` synchronizes either clock-capable product.
+
+<a id="muuegm_enable_alarm"></a>
+**`muuegm_enable_alarm`** takes `device_id`, `alarm_number` (1–7) and `enabled`.
+Refresh the bed's alarm list first. This action preserves the reported reserved
+byte, time, wake mode and repeat days. `dreamsense_delete_alarm` also deletes
+reported ABF07 alarms. Enable, delete and save request a fresh list afterwards.
+
+`dreamsense_light` sets ABF03/ABF07 color or duration. Duration uses 60-second
+steps from 0 to 900, where 0 means always on. The native color selector and
+duration number expose the same settings. ABF03 also has an ordinary toggle.
+Dedicated light off is unavailable. See the [MUUEGM guide](beds/richmat.md#muuegm).
 
 ## Dream Sense Bed
 

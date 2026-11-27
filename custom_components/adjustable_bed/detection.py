@@ -757,12 +757,14 @@ BED_TYPE_DISPLAY_NAMES: dict[str, str] = {
     "smartbed": "SmartBed app (Okin receivers, Amada beds)",
     BED_TYPE_OKIN_DOT: "Okin DOT remotes (RF1058, RF34 and RF6707)",
     BED_TYPE_OKIN_FFE: "Okin receiver (13 and 15 series)",
+    "hestia_motion": "Hestia Motion app",
     BED_TYPE_OKIN_ORE: "Okin receiver (older ORE remotes)",
     BED_TYPE_GALAXY: "Galaxy Bed Control app",
     BED_TYPE_GOODVIBE: "Good Vibe Sleep app",
     BED_TYPE_MLILY: "MLILY Control app",
     BED_TYPE_OKIMIKI: "Okimiki app",
     "dreamsense": "Dream Sense Bed",
+    "muuegm": "MUUEGM (ABF03, ABF07, NUPG400)",
     BED_TYPE_LIKIMIO: "Likimio (ABM10)",
     "saatva": "Saatva app",
     "bobpowerbase": "Power Bob Base app",
@@ -1024,7 +1026,7 @@ HIDDEN_APP_CHOICES: Final = frozenset(bed_type_choice(*row) for row in _HIDDEN_A
 # Bed types whose one row asks for the product, although each product is an app entry.
 PRODUCT_QUESTION_BED_TYPES: Final = frozenset(
     {
-        BED_TYPE_ALYA, BED_TYPE_RONCO_MOTION, BED_TYPE_AMBIENT, BED_TYPE_RESTONIC, BED_TYPE_FLEXISPOT, "kingkoil", BED_TYPE_ENSO2, BED_TYPE_LIKIMIO, "dreamsense", "saatva", "majestichome", BED_TYPE_LEVA, BED_TYPE_LINX, BED_TYPE_SOMOS, "bobpowerbase", BED_TYPE_COMFORT_ENHANCEMENT3, BED_TYPE_SYMPHONY_SLEEP, BED_TYPE_YAMADA, BED_TYPE_RICHMAT_APP, BED_TYPE_RICHMAT_APP_SLEEP, BED_TYPE_GALAXY, BED_TYPE_MLILY, BED_TYPE_MLILY0, BED_TYPE_MLILY_REMOTE, BED_TYPE_OKIMIKI, "luuna", BED_TYPE_GOODVIBE, BED_TYPE_HJBED, BED_TYPE_CASPER_BASE, BED_TYPE_COMFORT_ENHANCEMENTS, BED_TYPE_COMFORTBASE, "sleep_evolution", "wsilver_legacy", "personal_comfort", "instant_comfort"}
+        BED_TYPE_ALYA, BED_TYPE_RONCO_MOTION, BED_TYPE_AMBIENT, BED_TYPE_RESTONIC, BED_TYPE_FLEXISPOT, "kingkoil", BED_TYPE_ENSO2, BED_TYPE_LIKIMIO, "dreamsense", "muuegm", "saatva", "majestichome", BED_TYPE_LEVA, BED_TYPE_LINX, BED_TYPE_SOMOS, "bobpowerbase", BED_TYPE_COMFORT_ENHANCEMENT3, BED_TYPE_SYMPHONY_SLEEP, BED_TYPE_YAMADA, BED_TYPE_RICHMAT_APP, BED_TYPE_RICHMAT_APP_SLEEP, BED_TYPE_GALAXY, BED_TYPE_MLILY, BED_TYPE_MLILY0, BED_TYPE_MLILY_REMOTE, BED_TYPE_OKIMIKI, "luuna", BED_TYPE_GOODVIBE, BED_TYPE_HJBED, BED_TYPE_CASPER_BASE, BED_TYPE_COMFORT_ENHANCEMENTS, BED_TYPE_COMFORTBASE, "sleep_evolution", "wsilver_legacy", "personal_comfort", "instant_comfort"}
 ).union({BED_TYPE_BETTERLIVING2, BED_TYPE_JEROME_ADJUSTABLE_BASE, BED_TYPE_SLEEPTIME, "sealy_posturematic"})
 # Routes named after their protocol, not an app or brand. They stay off the
 # bed-type list and are reached through detection, the brand list and Configure.
@@ -1938,6 +1940,12 @@ def _detect_with_first_pass(
             result.ambiguous_types = list(
                 dict.fromkeys([*(result.ambiguous_types or ()), BED_TYPE_LIKIMIO])
             )
+    if first.name("muuegm") and not any(signal.startswith("excluded:") for signal in result.signals):
+        if result.bed_type is None:
+            result = DetectionResult("muuegm", 0.3, [*result.signals, "name:muuegm_app_candidate"])
+        elif result.bed_type != "muuegm":
+            result.ambiguous_types = list(dict.fromkeys([*(result.ambiguous_types or ()), "muuegm"]))
+            result.signals.append("name:muuegm_app_candidate")
     # Bob's shared scan words are an opt-in app choice, after established
     # receiver and app-name priorities, with the same exclusion boundary.
     if service_info.name and any(word in service_info.name for word in BOB_SCAN_KEYWORDS) and not any(

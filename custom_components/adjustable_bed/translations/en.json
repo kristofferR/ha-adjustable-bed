@@ -1780,6 +1780,9 @@
   },
   "entity": {
     "button": {
+      "hestia_cancel_preset": {
+        "name": "Cancel preset"
+      },
       "suta_king_koil_alarms": {
         "name": "Read alarms"
       },
@@ -6166,6 +6169,15 @@
       }
     },
     "switch": {
+      "hestia_massage": {
+        "name": "Massage"
+      },
+      "hestia_alarm": {
+        "name": "Bed alarm"
+      },
+      "hestia_enhancement": {
+        "name": "Alarm massage enhancement (apply with alarm switch)"
+      },
       "okimattmotion_massage_power": { "name": "Massage" },
       "langjue_alarm_enabled": {
         "name": "Bed alarm"
@@ -7280,6 +7292,39 @@
       }
     },
     "select": {
+      "muuegm_color": {
+        "name": "Underbed light color",
+        "state": {
+          "yellow": "Yellow",
+          "green": "Green",
+          "azure": "Azure",
+          "blue": "Blue",
+          "violet": "Violet",
+          "white": "White",
+          "red": "Red",
+          "orange": "Orange"
+        }
+      },
+      "hestia_wave": {
+        "name": "Massage wave (apply with On)"
+      },
+      "hestia_intensity": {
+        "name": "Massage intensity (apply with On)"
+      },
+      "hestia_hour": {
+        "name": "Alarm hour (apply with alarm switch)"
+      },
+      "hestia_minute": {
+        "name": "Alarm minute (apply with alarm switch)"
+      },
+      "hestia_memory": {
+        "name": "Alarm wake position (apply with alarm switch)",
+        "state": {
+          "none": "No position",
+          "memory_1": "Memory A",
+          "memory_2": "Memory B"
+        }
+      },
       "suta_king_koil_massage_mode": {
         "name": "Massage mode"
       },
@@ -8288,6 +8333,24 @@
     }
   },
   "services": {
+    "muuegm_enable_alarm": {
+      "name": "Enable MUUEGM alarm",
+      "description": "Enable or disable a reported ABF07 alarm while preserving its time, mode and repeat days. Refresh alarms first.",
+      "fields": {
+        "device_id": {
+          "name": "Device"
+        },
+        "alarm_number": {
+          "name": "Alarm number"
+        },
+        "enabled": {
+          "name": "Enabled"
+        },
+        "side": {
+          "name": "Side"
+        }
+      }
+    },
     "suta_king_koil_confirm_alarm": {
       "name": "King Koil (SUTA): confirm existing alarm",
       "description": "Send the King Koil app’s existing-alarm Confirm command (DA). Its firmware edit or delete effect is unverified. Each targeted physical receiver has its own alarms.",
