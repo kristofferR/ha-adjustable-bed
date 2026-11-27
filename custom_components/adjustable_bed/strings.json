@@ -7265,6 +7265,19 @@
       }
     },
     "select": {
+      "muuegm_color": {
+        "name": "Underbed light color",
+        "state": {
+          "yellow": "Yellow",
+          "green": "Green",
+          "azure": "Azure",
+          "blue": "Blue",
+          "violet": "Violet",
+          "white": "White",
+          "red": "Red",
+          "orange": "Orange"
+        }
+      },
       "hestia_wave": {
         "name": "Massage wave (apply with On)"
       },
@@ -8255,6 +8268,24 @@
     }
   },
   "services": {
+    "muuegm_enable_alarm": {
+      "name": "Enable MUUEGM alarm",
+      "description": "Enable or disable a reported ABF07 alarm while preserving its time, mode and repeat days. Refresh alarms first.",
+      "fields": {
+        "device_id": {
+          "name": "Device"
+        },
+        "alarm_number": {
+          "name": "Alarm number"
+        },
+        "enabled": {
+          "name": "Enabled"
+        },
+        "side": {
+          "name": "Side"
+        }
+      }
+    },
     "suta_king_koil_confirm_alarm": {
       "name": "King Koil (SUTA): confirm existing alarm",
       "description": "Send the King Koil app’s existing-alarm Confirm command (DA). Its firmware edit or delete effect is unverified. Each targeted physical receiver has its own alarms.",

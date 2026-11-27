@@ -98,9 +98,11 @@ class Selection:
 class DreamSenseController(BedController):
     """No retained FIFO intent can cross a connection or product change."""
 
+    _selection_namespace: ClassVar[str] = "dreamsense_selection"
     _receive_type: ClassVar[type[Receive]] = Receive
     _requires_notify: ClassVar[bool] = True
     _routes: ClassVar[tuple[GattRoute, ...]] = ROUTES
+    _menu_queries: ClassVar[tuple[str, ...]] = ("CheckClock", "CheckLight", "CheckMusic")
 
     def __init__(
         self,
@@ -131,7 +133,7 @@ class DreamSenseController(BedController):
         self._expiry: asyncio.TimerHandle | None = None
         self._alarm_event = asyncio.Event()
         self._selection = app_session(
-            coordinator.hass, coordinator.address, ("dreamsense_selection", product), Selection
+            coordinator.hass, coordinator.address, (self._selection_namespace, product), Selection
         )
         self.forward_controller_state_updates(SELECTED_SIDE(self._selection.side))
         self._active_action = False
@@ -369,7 +371,7 @@ class DreamSenseController(BedController):
                 if self.profile.clock:
                     await self._clock(own=False)
                 # Product menu probes are unconditional and ordered. Their replies gate UI only.
-                for index, action in enumerate(("CheckClock", "CheckLight", "CheckMusic"), 1):
+                for index, action in enumerate(self._menu_queries, 1):
                     deadline = menu_started + index * PROBE_MS / 1000
                     await self._wait(max(0, round((deadline - monotonic()) * 1000)))
                     await self._send(

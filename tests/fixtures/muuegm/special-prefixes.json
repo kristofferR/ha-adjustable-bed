@@ -1,0 +1,290 @@
+[
+  {
+    "object": "94a5c1",
+    "name": "deviceFunctionItemExitLimit",
+    "prefix": [
+      110,
+      2,
+      1
+    ],
+    "short_code": 0,
+    "long_code": null,
+    "scope": "IN_SCOPE",
+    "caller_reachability": "UNRESOLVED",
+    "evidence": [
+      "E-BUILDER-SPECIAL"
+    ]
+  },
+  {
+    "object": "94a561",
+    "name": "deviceFunctionItemCheckClock",
+    "prefix": [
+      110,
+      8,
+      1
+    ],
+    "short_code": 1,
+    "long_code": null,
+    "scope": "IN_SCOPE",
+    "caller_reachability": "requestProductMenu",
+    "evidence": [
+      "E-BUILDER-SPECIAL"
+    ]
+  },
+  {
+    "object": "94a541",
+    "name": "deviceFunctionItemCheckLight",
+    "prefix": [
+      110,
+      10,
+      0
+    ],
+    "short_code": 1,
+    "long_code": null,
+    "scope": "IN_SCOPE",
+    "caller_reachability": "requestProductMenu",
+    "evidence": [
+      "E-BUILDER-SPECIAL"
+    ]
+  },
+  {
+    "object": "94a521",
+    "name": "deviceFunctionItemCheckMusic",
+    "prefix": [
+      110,
+      21,
+      1
+    ],
+    "short_code": 1,
+    "long_code": null,
+    "scope": "EXCLUDED",
+    "caller_reachability": "requestProductMenu",
+    "evidence": [
+      "E-BUILDER-SPECIAL"
+    ]
+  },
+  {
+    "object": "94a501",
+    "name": "deviceFunctionItemCheckAroma",
+    "prefix": [
+      110,
+      26,
+      0
+    ],
+    "short_code": 0,
+    "long_code": null,
+    "scope": "IN_SCOPE",
+    "caller_reachability": "UNRESOLVED",
+    "evidence": [
+      "E-BUILDER-SPECIAL"
+    ]
+  },
+  {
+    "object": "94a4e1",
+    "name": "deviceFunctionItemCheckMattress",
+    "prefix": [
+      94,
+      26,
+      0
+    ],
+    "short_code": 1,
+    "long_code": null,
+    "scope": "IN_SCOPE",
+    "caller_reachability": "UNRESOLVED",
+    "evidence": [
+      "E-BUILDER-SPECIAL"
+    ]
+  },
+  {
+    "object": "94a4a1",
+    "name": "deviceFunctionItemCheckSnore",
+    "prefix": [
+      110,
+      33,
+      0
+    ],
+    "short_code": 0,
+    "long_code": null,
+    "scope": "IN_SCOPE",
+    "caller_reachability": "UNRESOLVED",
+    "evidence": [
+      "E-BUILDER-SPECIAL"
+    ]
+  },
+  {
+    "object": "94a481",
+    "name": "deviceFunctionItemCheckSpeech",
+    "prefix": [
+      110,
+      34,
+      0
+    ],
+    "short_code": 0,
+    "long_code": null,
+    "scope": "IN_SCOPE",
+    "caller_reachability": "UNRESOLVED",
+    "evidence": [
+      "E-BUILDER-SPECIAL"
+    ]
+  },
+  {
+    "object": "94a461",
+    "name": "deviceFunctionItemCheckDetection",
+    "prefix": [
+      110,
+      154,
+      192
+    ],
+    "short_code": 0,
+    "long_code": null,
+    "scope": "IN_SCOPE",
+    "caller_reachability": "UNRESOLVED",
+    "evidence": [
+      "E-BUILDER-SPECIAL"
+    ]
+  },
+  {
+    "object": "94a721",
+    "name": "deviceFunctionItemSendStartDetection",
+    "prefix": [
+      110,
+      136,
+      194
+    ],
+    "short_code": 16,
+    "long_code": null,
+    "scope": "IN_SCOPE",
+    "caller_reachability": "UNRESOLVED",
+    "evidence": [
+      "E-BUILDER-SPECIAL"
+    ]
+  },
+  {
+    "object": "94a701",
+    "name": "deviceFunctionItemQueryVersion",
+    "prefix": [
+      110,
+      154,
+      0
+    ],
+    "short_code": 0,
+    "long_code": null,
+    "scope": "IN_SCOPE",
+    "caller_reachability": "UNRESOLVED",
+    "evidence": [
+      "E-BUILDER-SPECIAL"
+    ]
+  },
+  {
+    "object": "94a6e1",
+    "name": "deviceFunctionVersionOneBedCurrentMode",
+    "prefix": [
+      110,
+      154,
+      16
+    ],
+    "short_code": 0,
+    "long_code": null,
+    "scope": "IN_SCOPE",
+    "caller_reachability": "UNRESOLVED",
+    "evidence": [
+      "E-BUILDER-SPECIAL"
+    ]
+  },
+  {
+    "object": "94a6c1",
+    "name": "deviceFunctionVersionOneMotor1CurrentAngle",
+    "prefix": [
+      110,
+      154,
+      48
+    ],
+    "short_code": 1,
+    "long_code": null,
+    "scope": "IN_SCOPE",
+    "caller_reachability": "UNRESOLVED",
+    "evidence": [
+      "E-BUILDER-SPECIAL"
+    ]
+  },
+  {
+    "object": "94a6a1",
+    "name": "deviceFunctionVersionOneMotor2CurrentAngle",
+    "prefix": [
+      110,
+      154,
+      48
+    ],
+    "short_code": 2,
+    "long_code": null,
+    "scope": "IN_SCOPE",
+    "caller_reachability": "UNRESOLVED",
+    "evidence": [
+      "E-BUILDER-SPECIAL"
+    ]
+  },
+  {
+    "object": "94a681",
+    "name": "deviceFunctionVersionOneMotor3CurrentAngle",
+    "prefix": [
+      110,
+      154,
+      48
+    ],
+    "short_code": 3,
+    "long_code": null,
+    "scope": "IN_SCOPE",
+    "caller_reachability": "UNRESOLVED",
+    "evidence": [
+      "E-BUILDER-SPECIAL"
+    ]
+  },
+  {
+    "object": "94a661",
+    "name": "deviceFunctionVersionOneMotor4CurrentAngle",
+    "prefix": [
+      110,
+      154,
+      48
+    ],
+    "short_code": 4,
+    "long_code": null,
+    "scope": "IN_SCOPE",
+    "caller_reachability": "UNRESOLVED",
+    "evidence": [
+      "E-BUILDER-SPECIAL"
+    ]
+  },
+  {
+    "object": "94a641",
+    "name": "deviceFunctionVersionOneCurrentMassageMode",
+    "prefix": [
+      110,
+      154,
+      160
+    ],
+    "short_code": 0,
+    "long_code": null,
+    "scope": "IN_SCOPE",
+    "caller_reachability": "UNRESOLVED",
+    "evidence": [
+      "E-BUILDER-SPECIAL"
+    ]
+  },
+  {
+    "object": "94a621",
+    "name": "deviceFunctionVersionOneCurrentBedLightStatus",
+    "prefix": [
+      110,
+      154,
+      176
+    ],
+    "short_code": 0,
+    "long_code": null,
+    "scope": "IN_SCOPE",
+    "caller_reachability": "UNRESOLVED",
+    "evidence": [
+      "E-BUILDER-SPECIAL"
+    ]
+  }
+]
