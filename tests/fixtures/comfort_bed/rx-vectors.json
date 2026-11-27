@@ -1,0 +1,173 @@
+[
+  {
+    "id": "clock-whole",
+    "chunks": [
+      "6e09010078"
+    ],
+    "expected_frames": [
+      "6e09010078"
+    ],
+    "expected_remaining": "",
+    "expected_events": [
+      "clock_feature"
+    ],
+    "evidence": [
+      "E11",
+      "E20"
+    ]
+  },
+  {
+    "id": "light-whole",
+    "chunks": [
+      "6e0e00037f"
+    ],
+    "expected_frames": [
+      "6e0e00037f"
+    ],
+    "expected_remaining": "",
+    "expected_events": [
+      "light_feature"
+    ],
+    "evidence": [
+      "E11",
+      "E20"
+    ]
+  },
+  {
+    "id": "two-ordinary-concatenated",
+    "chunks": [
+      "6e090100786e0e00037f"
+    ],
+    "expected_frames": [
+      "6e09010078",
+      "6e0e00037f"
+    ],
+    "expected_remaining": "",
+    "expected_events": [
+      "clock_feature",
+      "light_feature"
+    ],
+    "evidence": [
+      "E20"
+    ]
+  },
+  {
+    "id": "leading-junk",
+    "chunks": [
+      "00ff6e09010078"
+    ],
+    "expected_frames": [
+      "6e09010078"
+    ],
+    "expected_remaining": "",
+    "expected_events": [
+      "clock_feature"
+    ],
+    "evidence": [
+      "E20"
+    ]
+  },
+  {
+    "id": "fragment-two-plus-three",
+    "chunks": [
+      "6e09",
+      "010078"
+    ],
+    "expected_frames": [
+      "6e09010078"
+    ],
+    "expected_remaining": "",
+    "expected_events": [
+      "clock_feature"
+    ],
+    "evidence": [
+      "E20"
+    ]
+  },
+  {
+    "id": "fragment-three-plus-two",
+    "chunks": [
+      "6e0901",
+      "0078"
+    ],
+    "expected_frames": [
+      "6e0901"
+    ],
+    "expected_remaining": "0078",
+    "expected_events": [],
+    "timeout_clears_remaining": true,
+    "evidence": [
+      "E20"
+    ]
+  },
+  {
+    "id": "bad-light-checksum-no-selected-event",
+    "chunks": [
+      "6e0e00037e"
+    ],
+    "expected_frames": [
+      "6e0e00037e"
+    ],
+    "expected_remaining": "",
+    "expected_events": [],
+    "evidence": [
+      "E11",
+      "E20"
+    ]
+  },
+  {
+    "id": "short-light-no-selected-event",
+    "chunks": [
+      "6e0e0003"
+    ],
+    "expected_frames": [
+      "6e0e0003"
+    ],
+    "expected_remaining": "",
+    "expected_events": [],
+    "evidence": [
+      "E11",
+      "E20"
+    ]
+  },
+  {
+    "id": "embedded-start-marker",
+    "chunks": [
+      "6e01006edd"
+    ],
+    "expected_frames": [
+      "6e0100"
+    ],
+    "expected_remaining": "6edd",
+    "expected_events": [],
+    "timeout_clears_remaining": true,
+    "evidence": [
+      "E20"
+    ]
+  },
+  {
+    "id": "no-start",
+    "chunks": [
+      "010203"
+    ],
+    "expected_frames": [],
+    "expected_remaining": "",
+    "expected_events": [],
+    "evidence": [
+      "E20"
+    ]
+  },
+  {
+    "id": "incomplete-prefix-timeout",
+    "chunks": [
+      "6e09"
+    ],
+    "expected_frames": [],
+    "expected_remaining": "6e09",
+    "expected_events": [],
+    "timeout_clears_remaining": true,
+    "evidence": [
+      "E20"
+    ]
+  }
+]

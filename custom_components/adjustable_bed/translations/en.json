@@ -190,6 +190,7 @@
           "check_connected": "Check: connected",
           "check_connected_via": "Check: connected through",
           "check_no_commands": "Check: no commands",
+          "check_comfort_bed_transport_missing": "❌ Comfort Bed needs exactly one supported Bluetooth service with its writable command characteristic and a notification channel.",
           "check_atlas_lift_transport_missing": "❌ Atlas Lift needs exactly one supported Bluetooth service with its writable command characteristic.",
           "check_sleeptime_uart_missing": "❌ The Bluetooth device lacks the write and status channels Sleeptime needs.",
           "check_truemotion_transport_missing": "⚠️ The receiver does not expose the trueMotion write and notification channels.",
@@ -7277,6 +7278,13 @@
       }
     },
     "select": {
+      "comfort_bed_side": {
+        "name": "Control side",
+        "state": {
+          "left": "Left",
+          "right": "Right"
+        }
+      },
       "muuegm_color": {
         "name": "Underbed light color",
         "state": {
@@ -13173,6 +13181,9 @@
     "super_colchones_session": {
       "message": "The Super Colchones connection or product changed. Reconnect and try again."
     },
+    "comfort_bed_gatt": {
+      "message": "Comfort Bed needs exactly one supported Bluetooth service with its writable command characteristic and a notification channel."
+    },
     "atlas_lift_gatt": {
       "message": "Atlas Lift needs exactly one supported Bluetooth service with its writable command characteristic."
     },
@@ -13970,6 +13981,7 @@
     },
     "richmat_family_choice": {
       "options": {
+        "comfort_bed": "Comfort Bed (ComfortCareBed)",
         "atlas_lift": "Atlas Lift (Cama Lift)",
         "enso2": "ENSO Sleep Control (Enso 2)",
         "rmcontrol": "RMControl app",
