@@ -26,6 +26,7 @@ from scripts.codec_docs._kingkoil import BLOCKS as _KINGKOIL_BLOCKS
 from scripts.codec_docs._okimattmotion import BLOCKS as _OKIMATTMOTION_BLOCKS
 from scripts.codec_docs._ore_ultramatic import BLOCKS as _ULTRAMATIC_BLOCKS
 from scripts.codec_docs._ormatek import BLOCKS as _ORMATEK_BLOCKS
+from scripts.codec_docs._powersbedding import BLOCKS as _POWERSBEDDING_BLOCKS
 from scripts.codec_docs._somos import BLOCKS as _SOMOS_BLOCKS
 from scripts.codec_docs._yamada import BLOCKS as _YAMADA_BLOCKS
 
@@ -1224,3 +1225,6 @@ BLOCKS.extend(_ENSO_BLOCKS)
 BLOCKS.extend(_KINGKOIL_BLOCKS)
 
 BLOCKS.extend(_JUNASLEEP_BLOCKS)
+
+
+BLOCKS.extend(_POWERSBEDDING_BLOCKS)
