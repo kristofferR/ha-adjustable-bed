@@ -16,7 +16,7 @@ from custom_components.adjustable_bed.beds.okin_uuid.controller import (
 )
 from custom_components.adjustable_bed.codec import keeson
 from custom_components.adjustable_bed.codec import okin_nframe as codec
-from custom_components.adjustable_bed.profiles import customatic_demo, simmons_blue
+from custom_components.adjustable_bed.profiles import customatic_demo, meisemobell, simmons_blue
 from custom_components.adjustable_bed.profiles import okin_nframe as profiles
 from custom_components.adjustable_bed.profiles.comfort_enhancement3 import PROFILES as APEX_PROFILES
 from custom_components.adjustable_bed.profiles.n32_motion_bed import N32
@@ -37,6 +37,7 @@ PROFILES: dict[str, profiles.OkinNFrameProfile] = {
         *APEX_PROFILES.values(),
         profiles.OKIMAT,
         customatic_demo.PROFILE,
+        *meisemobell.PROFILES.values(),
         profiles.RESIDENT,
         profiles.OKIN_MOTIONBED,
         N32,
@@ -344,6 +345,7 @@ def test_hold_declarations_follow_the_evidence_matrix():
     assert set(HOLD_PROFILES) == {
         profiles.OKIN_MOTIONBED.key,
         customatic_demo.PROFILE.key,
+        *(p.key for p in meisemobell.PROFILES.values()),
         *APEX_PROFILES,
         N32.key,
         SHUDA.key,

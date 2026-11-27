@@ -291,6 +291,7 @@ from .profiles import okimattmotion as okimattmotion_app
 from .profiles import sleep_assist_pro as sleep_assist_pro_app
 from .profiles import sleep_assistant as sleep_assistant_app
 from .profiles.ambient import LAYOUTS as AMBIENT_LAYOUTS
+from .profiles.awmotion import CHOICES as AWMOTION_CHOICES
 from .profiles.baseremote import SIDE_LAYOUTS as BASEREMOTE_SIDE_LAYOUTS
 from .profiles.bedgear import ergobed_eligible
 from .profiles.bobpowerbase import LAYOUTS as BOB_LAYOUTS
@@ -393,6 +394,7 @@ _OWNED_BY_BED_TYPE: Final[dict[str, frozenset[str]]] = {
     "majestichome": GENERIC_FIELDS - {CONF_PROTOCOL_VARIANT, CONF_MOTOR_PULSE_COUNT},
     BED_TYPE_OKIMIKI: _APP_DEFINED - {CONF_PROTOCOL_VARIANT},
     BED_TYPE_LIKIMIO: _APP_DEFINED - {CONF_PROTOCOL_VARIANT},
+    "awmotion": _APP_DEFINED - {CONF_PROTOCOL_VARIANT, CONF_MOTOR_PULSE_COUNT},
     "muuegm": _APP_DEFINED - {CONF_PROTOCOL_VARIANT, CONF_MOTOR_PULSE_COUNT},
     "dreamsense": _APP_DEFINED - {CONF_PROTOCOL_VARIANT, CONF_MOTOR_PULSE_COUNT},
     "saatva": _APP_DEFINED - {CONF_PROTOCOL_VARIANT, CONF_MOTOR_PULSE_COUNT},
@@ -3532,6 +3534,13 @@ SETUP_PROFILES: Final[dict[str, SetupProfile]] = {
         title=lambda _data: "MUUEGM",
     ),
     # The app's product sets every control, so its one row asks it.
+    "awmotion": SetupProfile(
+        owns={CONF_MOTOR_COUNT: SET_BY_PROFILE, CONF_HAS_MASSAGE: True,
+              CONF_DISABLE_ANGLE_SENSING: True, CONF_MOTOR_PULSE_DELAY_MS: 100},
+        questions=(Question(CONF_PROTOCOL_VARIANT, AWMOTION_CHOICES),),
+        derive=lambda data: {CONF_MOTOR_COUNT: {"SN300": 2, "SN500": 4, "HC800": 3}[str(data[CONF_PROTOCOL_VARIANT])]},
+        title=lambda _data: "AW MOTION",
+    ),
     "dreamsense": SetupProfile(
         owns={CONF_MOTOR_COUNT: 2, CONF_HAS_MASSAGE: SET_BY_PROFILE,
               CONF_DISABLE_ANGLE_SENSING: True, CONF_MOTOR_PULSE_DELAY_MS: 100},
@@ -3944,6 +3953,15 @@ SETUP_PROFILES: Final[dict[str, SetupProfile]] = {
             CONF_MOTOR_PULSE_DELAY_MS: ATLAS_LIFT.motor_repeat_ms,
             CONF_PROTOCOL_VARIANT: "auto",
         },
+    ),
+    "meisemobell": SetupProfile(
+        owns={CONF_MOTOR_COUNT: 2, CONF_HAS_MASSAGE: False,
+              CONF_DISABLE_ANGLE_SENSING: True, CONF_MOTOR_PULSE_DELAY_MS: 300},
+        questions=(Question(CONF_PROTOCOL_VARIANT, {
+            "15_22_15a": "15_22_15A (FFE5 / FFE9)",
+            "24_xx_xx": "24_XX_XX (Nordic UART)",
+        }, "15_22_15a"),),
+        title=lambda _data: "Meisemobell / 마이저모벨",
     ),
     BED_TYPE_SUPERIOR_SLEEP: SetupProfile(
         owns={CONF_MOTOR_COUNT: 2, CONF_HAS_MASSAGE: True,

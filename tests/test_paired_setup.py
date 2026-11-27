@@ -4596,6 +4596,8 @@ class TestOfflineSafeBedTypes:
                 child[CONF_PROTOCOL_VARIANT] = "ABF03"
             elif bed_type == "thrivesleep":
                 child[CONF_PROTOCOL_VARIANT] = "level5"
+            elif bed_type == "awmotion":
+                child[CONF_PROTOCOL_VARIANT] = "SN300"
             elif bed_type == BED_TYPE_VIBRADORM_APP:
                 child.update({
                     CONF_VIBRADORM_APP_PROFILE: "caresse",
