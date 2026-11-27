@@ -85,6 +85,16 @@ distinct single/triple alarm behavior. The frozen proof and actual-path tests
 are app-specific; separate sleep sensing, network and audio remain excluded.
 See the [Snore Monitor BED guide](../beds/onlysnore.md).
 
+## Flexispot
+
+Flexispot 1.1 (2) needs `codec/flexispot.py`: none of the existing carriers
+encodes its 20-byte `9B`/`9D` records, CRC16 body at offsets 2–16, unprotected
+alarm-slot byte, two-slot schedule or signed notification fields. All 77 frozen
+literals reproduce through its encoder. `profiles/flexispot.py` keeps the four
+explicit layouts and this app's timing; its controller keeps session-bound
+motor release and notification-backed read/modify/write behavior. No existing
+wire scenario changes. See the [Flexispot guide](../beds/flexispot.md).
+
 ## Smart Comfort seat codec
 
 The Smart Comfort SYNARGY and SYNERGY literals are reproduced by

@@ -1506,6 +1506,8 @@ def default_scenario(bed_type: str) -> Scenario:
                      "write:" + codec.frame(1, b"\x00").hex(): codec.frame(1, b"\x01\x01\x01A").hex(),
                      "*": status})
 
+    if bed_type == "flexispot":
+        return Scenario(id=bed_type, bed_type=bed_type, entry_data={"product_type": "eb632"})
     if bed_type == "ronco_motion":
         return Scenario(id=bed_type, bed_type=bed_type, protocol_variant="economy", layout_id="ronco_motion:0")
     if bed_type == const.BED_TYPE_AMBIENT:
@@ -1802,6 +1804,7 @@ VARIANT_ROUTES: dict[str, str] = {
     "adjustable_bed": "ADJUSTABLE_BED_VARIANTS",
     "bedsense": "BEDSENSE_VARIANTS",
     "comfort_enhancements": "COMFORT_ENHANCEMENTS_VARIANTS",
+    "jobs": "JOBS_VARIANTS",
     "zseries": "ZSERIES_VARIANTS",
     "solace": "SOLACE_VARIANTS",
     "svane": "SVANE_VARIANTS",
@@ -2552,6 +2555,9 @@ def build_scenarios() -> list[Scenario]:
     scenarios = [default_scenario(bed_type) for bed_type in SUPPORTED_BED_TYPES
                  if bed_type not in RICHMAT_MH_APP_CATALOGS]
     scenarios.extend(route_scenarios())
+    scenarios.extend(Scenario(id=f"flexispot:{model}", bed_type="flexispot",
+        entry_data={"product_type": model}, layout_id="flexispot")
+        for model in ("eb703", "eb704", "eb803"))
     scenarios.append(_ambient_scenario(split=True))
     scenarios.append(Scenario(
         id="jerome_adjustable_base:nordic", bed_type="jerome_adjustable_base",
@@ -2976,6 +2982,11 @@ async def _capture(
             # virtual clock reaches their movement deadlines at the same times.
             plan.sort(key=lambda command: command.name in {"lights_on", "lights_off"})
         for command in plan:
+            if scenario.bed_type == "flexispot":
+                # An unsolicited, source-derived complete settings report before
+                # each action admits read/modify/write without guessing state.
+                for target, callback in controller.client._subscribers:
+                    callback(target, bytearray.fromhex("9b002701651e02061eff01072d8002239500009d"))
             result = await _run_command(controller, recorder, clock, command)
             # A cover that emits exactly what the matching move call did points to it.
             twin = (
