@@ -57,6 +57,7 @@ from .const import (
     ADAPTER_AUTO,
     BED_TYPE_ADJUSTABLE_LUMBAR,
     BED_TYPE_ATLAS_LIFT,
+    BED_TYPE_COMFORT_BED,
     BED_TYPE_FURNIMOVE,
     BED_TYPE_GMMOTOR_SLEEP_MM,
     BED_TYPE_GMMOTOR_SLEEP_SXB,
@@ -1146,9 +1147,10 @@ class CoordinatorConnectionMixin:
                     # see live services to confirm the bond instead of looping.
                     # FurniMove startup subscribes immediately. On BlueZ a
                     # cached collection can precede the live GATT objects (#633).
-                    # Atlas needs the full service table to reject ambiguous framing.
+                    # Atlas and Comfort Bed reject ambiguous framing from the full table.
                     disable_cache = bed_requires_pairing or self._bed_type in (
                         BED_TYPE_ATLAS_LIFT,
+                        BED_TYPE_COMFORT_BED,
                         BED_TYPE_FURNIMOVE,
                     )
                     onboarding_deadline = (

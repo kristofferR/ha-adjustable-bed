@@ -2235,3 +2235,7 @@ BLOCKS += [(GUIDE, "silksnow-products", render_silksnow_products), (GUIDE, "silk
 
 
 BLOCKS.append((GUIDE, "innova-control", render_innova_control))
+
+from scripts.codec_docs import _comfort_bed  # noqa: E402
+
+BLOCKS.append((GUIDE, "comfort-bed", _comfort_bed.render))
