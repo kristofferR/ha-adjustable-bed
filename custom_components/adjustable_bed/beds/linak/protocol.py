@@ -15,6 +15,7 @@ class LinakProfile(StrEnum):
 
     BED_CONTROL = "bed_control"
     AA_CONTROL_MY_BED = "aa_control_my_bed"
+    CARPE_DIEM = "carpe_diem"
     PERFORMANCE = "performance_legacy"
 
 
@@ -143,9 +144,11 @@ class LinakReferenceState:
         return bool(self.status_flags & 0x08)
 
 
-def decode_reference(data: bytes | bytearray) -> LinakReferenceState:
+def decode_reference(data: bytes | bytearray, *, carpe_diem: bool = False) -> LinakReferenceState:
     """Decode an exact four-byte little-endian reference-output value."""
     if len(data) != 4:
+        if carpe_diem:
+            return LinakReferenceState(0, 0, 0, 0, 0)
         raise ValueError(f"Linak reference data must be exactly 4 bytes, got {len(data)}")
     word = int.from_bytes(data, "little")
     raw_extension = word & 0xFFFF
@@ -155,7 +158,7 @@ def decode_reference(data: bytes | bytearray) -> LinakReferenceState:
     if raw_speed & 0x0800:
         raw_speed -= 0x1000
     return LinakReferenceState(
-        extension=signed_extension / 100,
+        extension=(raw_extension if carpe_diem else signed_extension) / 100,
         raw_extension=raw_extension,
         status_flags=status_flags,
         raw_speed=raw_speed,

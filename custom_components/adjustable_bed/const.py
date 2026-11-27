@@ -1167,6 +1167,7 @@ LINAK_DEVICE_NAME_UUID: Final = "00002a00-0000-1000-8000-00805f9b34fb"
 
 LINAK_VARIANT_BED_CONTROL: Final = "bed_control"
 LINAK_VARIANT_AA_CONTROL_MY_BED: Final = "aa_control_my_bed"
+LINAK_VARIANT_CARPE_DIEM: Final = "carpe_diem"
 LINAK_VARIANT_PERFORMANCE: Final = "performance_legacy"
 
 # Linak position calibration
@@ -1935,6 +1936,7 @@ LINAK_VARIANTS: Final = {
     VARIANT_AUTO: AUTOMATIC_LABEL,
     LINAK_VARIANT_BED_CONTROL: "Bed Control or Bed Connect app",
     LINAK_VARIANT_AA_CONTROL_MY_BED: "AA Control My Bed app",
+    LINAK_VARIANT_CARPE_DIEM: "Carpe Diem Beds app",
     LINAK_VARIANT_PERFORMANCE: "Performance Series app (older bases)",
 }
 
@@ -3189,7 +3191,9 @@ def get_motor_pulse_defaults(
     detection_signals: list[str] | None = None,
 ) -> tuple[int, int]:
     """Return motor pulse defaults for a bed type and protocol variant."""
-    if bed_type == BED_TYPE_LINAK and protocol_variant == LINAK_VARIANT_PERFORMANCE:
+    if bed_type == BED_TYPE_LINAK and protocol_variant in (
+        LINAK_VARIANT_PERFORMANCE, LINAK_VARIANT_CARPE_DIEM
+    ):
         return (4, 300)
 
     if bed_type == BED_TYPE_OCTO and (

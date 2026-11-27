@@ -1811,6 +1811,7 @@ ROUTE_REPLIES: dict[str, dict[str, str]] = {
     # Floyd also pings for its node: this address answers with vaddr 0x01020304.
     "kaidi:floyd": {"write:03fffffffffe": KAIDI_PING_REPLY},
     "linak:aa_control_my_bed": {"read:99fa0029-338a-1024-8a49-009c0215f78a": "c0"},
+    "linak:carpe_diem": {"read:99fa0029-338a-1024-8a49-009c0215f78a": "c0"},
 }
 # Large variant sets are sampled: the first keys plus the last.
 SAMPLED_ROUTES: dict[str, int] = {"adjustamattress": 3}

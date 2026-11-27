@@ -10,6 +10,26 @@ def control_frame(opcode: int) -> bytes:
     return bytes((opcode & 0xFF, 0))
 
 
+def selected_sections_frame(sections: frozenset[str], up: bool) -> bytes:
+    """Carpe Diem's ordered same-direction selector, including three-section inputs."""
+    if not sections or sections.difference({"back", "legs", "head", "feet"}):
+        raise ValueError("Select back, legs, head or feet")
+    if len(sections) == 4:
+        return control_frame(int(up))
+    for first, second in (
+        ("back", "legs"),
+        ("back", "feet"),
+        ("back", "head"),
+        ("legs", "feet"),
+        ("legs", "head"),
+        ("head", "feet"),
+    ):
+        if {first, second} <= sections:
+            return build_simultaneous_command(first, up, second, up)
+    axis = next(iter(sections))
+    return control_frame({"back": 0x0A, "legs": 0x08, "head": 0x02, "feet": 0x04}[axis] + up)
+
+
 def parse_vindo_position(data: bytes | bytearray) -> int | None:
     """Decode the first two bytes as an unsigned count, ignoring trailing data."""
     if len(data) < 2:

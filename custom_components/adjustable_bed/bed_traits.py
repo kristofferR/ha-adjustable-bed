@@ -178,7 +178,8 @@ class BedTraits:
     no_angle_feedback: bool = False
     # The controller holds the BLE link for the entry's lifetime.
     persistent_connection: bool = False
-    # STOP only ends admitted refresh; no packet or replacement link is needed.
+    # STOP fences admitted refresh and runs controller cleanup on the current
+    # link, without connecting or preparing a replacement link.
     cancellation_only_stop: bool = False
     # Controls keep state in the connection-scoped controller, so a new entry
     # keeps the link between commands by default.
@@ -485,6 +486,8 @@ def bed_traits(bed_type: str | None, protocol_variant: str | None = None) -> Bed
         return _NONE
     resolved = resolve_explicit_bed_type(bed_type, protocol_variant)
     traits = _BED_TRAITS.get(resolved, _NONE)
+    if resolved == BED_TYPE_LINAK and protocol_variant == "carpe_diem":
+        return replace(_NO_ANGLES_SCOPED, owns_device_info_reads=True, cancellation_only_stop=True)
     if resolved == "richmat_classic_apps" and protocol_variant == "lp2":
         return replace(traits, owns_device_info_reads=True)
     if resolved == "richmat_classic_apps" and protocol_variant == "jerome2":
