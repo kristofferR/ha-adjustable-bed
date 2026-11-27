@@ -1837,9 +1837,9 @@ async def _async_timed_move(
 
 async def _preflight_each(
     targets: list[tuple[BedTarget, str]],
-    check: Callable[[BedChild, BedController], None],
+    check: Callable[[BedChild, BedController], Awaitable[None] | None],
 ) -> PreflightedSides:
-    """Check every physical target before any write.
+    """Check every physical target before executing the requested command.
 
     A ``ValueError`` from ``check`` becomes a ``ServiceValidationError``; any
     failure releases the sides connected only for validation.
@@ -1850,14 +1850,15 @@ async def _preflight_each(
             for target in _command_targets(coordinator, side):
                 controller = await _validation_controller(coordinator, target, preflighted)
                 with controller_side_scope(target):
-                    check(target, controller)
-    except asyncio.CancelledError:
-        await _release_preflighted(preflighted)
-        raise
+                    if (pending := check(target, controller)) is not None:
+                        await pending
     except (ServiceValidationError, ValueError) as err:
         await _release_preflighted(preflighted)
         if isinstance(err, ValueError):
             raise _validation_error(err) from err
+        raise
+    except BaseException:
+        await _release_preflighted(preflighted)
         raise
     return preflighted
 

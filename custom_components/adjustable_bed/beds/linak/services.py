@@ -44,7 +44,9 @@ async def handle_linak_move_simultaneously(call: ServiceCall) -> None:
         raise invalid("motors_must_differ")
     session_bound_receivers: set[str] = set()
 
-    def check(target: BedChild, controller: BedController) -> None:
+    async def check(target: BedChild, controller: BedController) -> None:
+        if isinstance(controller, LinakController):
+            await controller.prepare_simultaneous_movement()
         if not controller.supports_simultaneous_movement:
             raise invalid("feature_not_supported", device_name=target.name, feature="moving two motors together")
         unavailable = {first_motor, second_motor} - set(controller.simultaneous_movement_axes)

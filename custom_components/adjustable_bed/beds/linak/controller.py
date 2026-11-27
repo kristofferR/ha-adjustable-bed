@@ -628,6 +628,11 @@ class LinakController(BedController):
         if self._profile is LinakProfile.AA_CONTROL_MY_BED and first_up != second_up:
             raise invalid("linak_aa_same_direction")
 
+    async def prepare_simultaneous_movement(self) -> None:
+        """Finish authentication-deferred AA discovery before capability checks."""
+        if self.binds_grouped_abort_to_session and self._capability_discovery_deferred:
+            await self._await_control_ready(expected_client=self.client)
+
     @property
     def binds_grouped_abort_to_session(self) -> bool:
         """Whether paired grouped-motion cleanup requires the admitted session."""
@@ -895,6 +900,10 @@ class LinakController(BedController):
                     data = await client.read_gatt_char(LINAK_POSITION_MASK_UUID)
             if not data:
                 raise ValueError("Linak capability mask is empty")
+        except asyncio.CancelledError:
+            if self.client is client:
+                self._capability_discovery_deferred = True
+            raise
         except BleakError as err:
             if self._is_authentication_window_error(err):
                 self._capability_discovery_deferred = True
