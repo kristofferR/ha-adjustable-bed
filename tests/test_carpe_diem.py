@@ -253,6 +253,8 @@ async def test_native_sections_service_uses_real_target_registry(hass):
 @pytest.mark.parametrize("mask", [None, 0, 0xF8])
 async def test_live_queries_exact_mask_and_stale_notification_receiver(hass, mask):
     c = runtime(hass)
+    captured = []
+    c.controller.set_raw_notify_callback(lambda uuid, data: captured.append((uuid, data)))
     callbacks = {}
     c.client.services.get_service.side_effect = lambda uuid: (
         SimpleNamespace(uuid=uuid)
@@ -290,10 +292,23 @@ async def test_live_queries_exact_mask_and_stale_notification_receiver(hass, mas
 
         assert c.controller_state.get(_AxisKeys.of("back").extension) == 50
         assert c.controller_state.get(_AxisKeys.of("legs").extension) == 100
+    captured.clear()
+    for callback in callbacks.values():
+        callback(None, bytearray((1, 2)))
+    assert captured == [(uuid, bytes((1, 2))) for uuid in callbacks]
+    if mask:
+        from custom_components.adjustable_bed.beds.linak.controller import _AxisKeys
+
+        callbacks[const.LINAK_POSITION_BACK_UUID](None, bytearray.fromhex("88134006"))
+        callbacks[const.LINAK_POSITION_LEG_UUID](None, bytearray.fromhex("1027c8f9"))
+        assert c.controller_state.get(_AxisKeys.of("back").extension) == 50
+        assert c.controller_state.get(_AxisKeys.of("legs").extension) == 100
         old = callbacks[const.LINAK_POSITION_BACK_UUID]
+        captured.clear()
         c._client = MagicMock(is_connected=True, disconnect=AsyncMock(), stop_notify=AsyncMock())
         old(None, bytearray(4))
         assert c.controller_state.get(_AxisKeys.of("back").extension) == 50
+        assert captured == []
     await shutdown(c)
 
 

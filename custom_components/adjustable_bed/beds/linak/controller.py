@@ -522,6 +522,7 @@ class LinakController(BedController):
         def raw_handler(uuid: str) -> Callable[[Any, bytearray], None]:
             def handle(_: Any, data: bytearray) -> None:
                 if self.client is client:
+                    self.forward_raw_notification(uuid, bytes(data))
                     self._raw_protocol_data[uuid] = data.hex()
             return handle
 
@@ -546,9 +547,10 @@ class LinakController(BedController):
                 )
                 self._publish_capability_state()
         for spec in self._build_position_characteristics(self._coordinator.motor_count):
-            def handle(_: Any, data: bytearray, axis: str = spec.source_name) -> None:
+            def handle(_: Any, data: bytearray, axis: str = spec.source_name, uuid: str = spec.uuid) -> None:
                 if self.client is not client:
                     return
+                self.forward_raw_notification(uuid, bytes(data))
                 reference = decode_reference(data, carpe_diem=True)
                 keys = _AxisKeys.of(axis)
                 self.forward_controller_state_updates(
@@ -565,6 +567,7 @@ class LinakController(BedController):
         if self._capabilities.position_axes:
             def error(_: Any, data: bytearray) -> None:
                 if self.client is client:
+                    self.forward_raw_notification(LINAK_ERROR_CHAR_UUID, bytes(data))
                     self._handle_error_data(data)
             await self._subscribe_protocol_characteristic(
                 LINAK_ERROR_CHAR_UUID, error, expected_client=client,

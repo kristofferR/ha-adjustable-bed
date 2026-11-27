@@ -2787,7 +2787,7 @@ def _simmons_blue_layouts(_data: Mapping[str, Any]) -> Mapping[str, str]:
 
 SETUP_PROFILES: Final[dict[str, SetupProfile]] = {
     "linak:carpe_diem": SetupProfile(
-        owns={CONF_PROTOCOL_VARIANT: "carpe_diem", CONF_DISABLE_ANGLE_SENSING: True,
+        owns={CONF_PROTOCOL_VARIANT: "carpe_diem",
               CONF_MOTOR_PULSE_COUNT: 4, CONF_MOTOR_PULSE_DELAY_MS: 300},
         # Motor count and massage remain the generic user declarations.
         title=lambda _data: "Carpe Diem Beds",
