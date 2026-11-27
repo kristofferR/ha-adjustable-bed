@@ -105,6 +105,7 @@ from .const import (
     BED_TYPE_OKIN_UUID,
     BED_TYPE_RESIDENT,
     BED_TYPE_RESTFUL,
+    BED_TYPE_RESTONIC,
     BED_TYPE_REVERIE,
     BED_TYPE_REVERIE_NIGHTSTAND,
     BED_TYPE_RICHMAT,
@@ -295,6 +296,9 @@ from .profiles.majestichome import PROFILE_CHOICES as MAJESTICHOME_PROFILES
 from .profiles.mlily_choices import PROFILE_CHOICES as MLILY_PROFILES
 from .profiles.mlily_remote import VARIANTS as MLILY_REMOTE_PROFILES
 from .profiles.okimiki import PROFILE_CHOICES as OKIMIKI_PROFILES
+from .profiles.restonic import AXES as RESTONIC_AXES
+from .profiles.restonic import BRANCH_CHOICES as RESTONIC_BRANCHES
+from .profiles.restonic import LAYOUT_CHOICES as RESTONIC_LAYOUTS
 from .profiles.richmat import ATLAS_LIFT, BEDTECH_APP_PROFILES, BEDTECH_VARIANTS
 from .profiles.saatva import CHOICES as SAATVA_CHOICES
 from .profiles.saatva import LAYOUTS as SAATVA_LAYOUTS
@@ -358,6 +362,7 @@ _OWNED_BY_BED_TYPE: Final[dict[str, frozenset[str]]] = {
     "agingplace": GENERIC_FIELDS,
     "hush_sleep_mm": GENERIC_FIELDS,
     "hush_sleep_sxb": GENERIC_FIELDS,
+    BED_TYPE_RESTONIC: _APP_DEFINED - {CONF_PROTOCOL_VARIANT, CONF_MOTOR_PULSE_COUNT},
     BED_TYPE_SOMOS: _APP_DEFINED - {CONF_PROTOCOL_VARIANT, CONF_MOTOR_PULSE_COUNT},
     BED_TYPE_COMFORTBASE: _APP_DEFINED - {CONF_PROTOCOL_VARIANT, CONF_MOTOR_PULSE_COUNT},
     BED_TYPE_COMFORT_ENHANCEMENTS: _APP_DEFINED - {CONF_PROTOCOL_VARIANT, CONF_MOTOR_PULSE_COUNT},
@@ -2329,6 +2334,14 @@ def _asking(key: str, **declared: Any) -> SetupProfile:
     return replace(_BASE.get(key, SetupProfile()), **declared)
 
 
+def _restonic_settings(data: Mapping[str, Any]) -> Mapping[str, Any]:
+    axes = RESTONIC_AXES.get(data.get(CONF_PRODUCT_TYPE, ""))
+    if axes is None:
+        return {}
+    return {CONF_MOTOR_COUNT: len(axes), CONF_HAS_MASSAGE: False,
+            CONF_DISABLE_ANGLE_SENSING: True, CONF_MOTOR_PULSE_DELAY_MS: 200}
+
+
 def _somos_settings(data: Mapping[str, Any]) -> Mapping[str, Any]:
     from .profiles.somos import PRODUCTS
 
@@ -3314,6 +3327,11 @@ SETUP_PROFILES: Final[dict[str, SetupProfile]] = {
         validate=_limoss_remote_errors,
         derive=lambda _data: {CONF_MOTOR_PULSE_USER_SET: False},
         imports=("beds.limoss.remote",),
+    ),
+    BED_TYPE_RESTONIC: _asking(
+        BED_TYPE_RESTONIC,
+        questions=(Question(CONF_PRODUCT_TYPE, RESTONIC_LAYOUTS), Question(CONF_PROTOCOL_VARIANT, RESTONIC_BRANCHES)),
+        derive=_restonic_settings,
     ),
     BED_TYPE_SOMOS: _asking(
         BED_TYPE_SOMOS,

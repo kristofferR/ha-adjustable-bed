@@ -412,6 +412,7 @@ actions; its bounded `hold_control` behavior has separate timing in the
 | Okin receiver (older ORE remotes) | `okin_ore` | 1 | 300 ms |
 | Okin receiver (Sealy Posturematic and DewertOkin Star beds) | `okin_cb35` | 3 | 300 ms |
 | Resident Adjustable Base app | `resident` | 4 | 300 ms |
+| Restonic app (Prime / Lombar / Infinity) | `restonic` | 10 | 200 ms |
 | Richmat / RMControl app | `richmat` | 7 | 150 ms |
 | Rize Home app | `rize_home` | 3 | 200 ms |
 | Shuda app | `shuda` | 5 | 200 ms |
@@ -964,3 +965,10 @@ and massage setting when combined with another bed. No single-address side
 selection is inferred. The massage timer is a Home Assistant countdown, 1–40
 minutes, initially 10; it sends massage off on expiry while connected. It does
 not program a timer in the bed. See [SILVERmotion Android](beds/silvermotion.md).
+
+### Restonic app
+
+Choose the Prime, Lombar or Infinity layout and its BLE branch independently.
+Both choices belong to the physical bed and are configured per side of a
+two-address pair. The [Restonic guide](beds/restonic.md) lists the exact
+name-to-branch rules and available actions. No network setup is required.

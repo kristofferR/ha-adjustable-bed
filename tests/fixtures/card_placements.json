@@ -1899,6 +1899,24 @@
  "button:resident_check_massage": {
   "card_section": "massage"
  },
+ "button:restonic_footStrengthAdd": {
+  "card_section": "massage"
+ },
+ "button:restonic_headStrengthAdd": {
+  "card_section": "massage"
+ },
+ "button:restonic_massageSwitch": {
+  "card_section": "massage"
+ },
+ "button:restonic_massageTimer": {
+  "card_section": "massage"
+ },
+ "button:restonic_underbedLighting": {
+  "card_section": "lighting"
+ },
+ "button:restonic_waveAdd": {
+  "card_section": "massage"
+ },
  "button:restonic_zzz": {
   "card_section": "utility"
  },
@@ -5057,6 +5075,36 @@
  },
  "sensor:resident_massage_timer": {
   "card_section": "massage"
+ },
+ "sensor:restonic_branch": {
+  "card_section": "hidden"
+ },
+ "sensor:restonic_layout": {
+  "card_section": "hidden"
+ },
+ "sensor:restonic_raw_13": {
+  "card_section": "hidden"
+ },
+ "sensor:restonic_raw_1b": {
+  "card_section": "hidden"
+ },
+ "sensor:restonic_raw_23": {
+  "card_section": "hidden"
+ },
+ "sensor:restonic_raw_2b": {
+  "card_section": "hidden"
+ },
+ "sensor:restonic_raw_33": {
+  "card_section": "hidden"
+ },
+ "sensor:restonic_raw_3b": {
+  "card_section": "hidden"
+ },
+ "sensor:restonic_raw_43": {
+  "card_section": "hidden"
+ },
+ "sensor:restonic_raw_b": {
+  "card_section": "hidden"
  },
  "sensor:reverie_foot_massage_intensity": {
   "card_section": "massage"

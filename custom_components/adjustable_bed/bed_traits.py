@@ -97,6 +97,7 @@ from .const import (
     BED_TYPE_QPLUS_APP,
     BED_TYPE_RESIDENT,
     BED_TYPE_RESTFUL,
+    BED_TYPE_RESTONIC,
     BED_TYPE_REVERIE,
     BED_TYPE_REVERIE_NIGHTSTAND,
     BED_TYPE_REVERIE_PAIRLINK,
@@ -296,6 +297,7 @@ _BED_TRAITS: Final[dict[str, BedTraits]] = {
     BED_TYPE_RICHMAT_CLASSIC_APPS: _NO_ANGLES,
     # Preset repeat-tap and massage cycles depend on connection-local state.
     BED_TYPE_COMFORT_ENHANCEMENTS: _NO_ANGLES_SCOPED,
+    BED_TYPE_RESTONIC: replace(_NO_ANGLES_SCOPED, owns_device_info_reads=True, connection_timeout=5, single_address_native_both=False),
     BED_TYPE_SOMOS: replace(_NO_ANGLES_SCOPED, owns_device_info_reads=True, connection_timeout=5),
     BED_TYPE_COMFORTBASE: _NO_ANGLES_SCOPED,
     BED_TYPE_COMFORT_MOTION: _SCOPED,
