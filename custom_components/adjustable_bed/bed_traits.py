@@ -90,6 +90,7 @@ from .const import (
     BED_TYPE_MOODBASE,
     BED_TYPE_MOTION_BED,
     BED_TYPE_MOTOMOTION,
+    BED_TYPE_MYSIDE,
     BED_TYPE_N32_MOTION_BED,
     BED_TYPE_OCTO,
     BED_TYPE_OKIMATTMOTION,
@@ -279,6 +280,7 @@ _BED_TRAITS: Final[dict[str, BedTraits]] = {
     BED_TYPE_SHUDA: replace(_NO_ANGLES, owns_device_info_reads=True, connection_timeout=5),
     BED_TYPE_RESIDENT: replace(_NO_ANGLES_SCOPED, owns_device_info_reads=True),
     "sleeptime": replace(_NO_ANGLES_SCOPED, owns_device_info_reads=True, connection_timeout=5),
+    "powersbedding": replace(_NO_ANGLES_SCOPED, owns_device_info_reads=True),
     "hestia_motion": replace(_NO_ANGLES_SCOPED, owns_device_info_reads=True),
     "ultramatic_smart_bed": replace(_NO_ANGLES_SCOPED, owns_device_info_reads=True, connection_timeout=5),
     BED_TYPE_ADJUSTAMATTRESS: _NO_ANGLES,
@@ -297,6 +299,7 @@ _BED_TRAITS: Final[dict[str, BedTraits]] = {
     BED_TYPE_FLEXISPOT: replace(_NO_ANGLES_SCOPED, connection_timeout=10.0, owns_device_info_reads=True),
     BED_TYPE_JALON_BED: _NO_ANGLES_SCOPED,
     BED_TYPE_LANGJUE: _NO_ANGLES_SCOPED,
+    BED_TYPE_MYSIDE: replace(_NO_ANGLES_SCOPED, connection_timeout=5.0, owns_device_info_reads=True),
     BED_TYPE_LINX: replace(_NO_ANGLES_SCOPED, connection_timeout=10.0, owns_device_info_reads=True),
     BED_TYPE_SYMPHONY_SLEEP: replace(_NO_ANGLES_SCOPED, owns_device_info_reads=True),
     BED_TYPE_SYMPHONY: replace(_NO_ANGLES_SCOPED, owns_device_info_reads=True, single_address_native_both=False, connection_timeout=8.0),
@@ -620,7 +623,7 @@ MASSAGE_SETTING_UNUSED_BED_TYPES: Final = frozenset(
      "leggett_lp_legacy", "logicdata_air_pump", "luuna", "malouf_app", "mlily",
      "motion_bed", "motomotion", "motosleep", "octo", "okin_motionbed", "okin_rf_eco_bt",
      "sinca_comfort", "omazz_adjusto_iii", "personal_comfort", "instant_comfort", "paramount", "qplus_app", "remacro", "resident", "reverie",
-     "reverie_nightstand", "richmat_americanstar", "richmat_app", "richmat_app_sleep",
+     "reverie_nightstand", "richmat_americanstar", "myside", "richmat_app", "richmat_app_sleep",
      "richmat_best_mattress", "richmat_blvd_home", "richmat_classic_apps",
      "richmat_harmony", "richmat_idealbed", "richmat_revive", "richmat_sleep_receiver",
      "richmat_tx", "rize_home", "rize_remedy_ii", "row_control", "ruf_betten",
@@ -629,7 +632,7 @@ MASSAGE_SETTING_UNUSED_BED_TYPES: Final = frozenset(
      "awmotion", "dreamsense", "smart_comfort_synergy", "solace", "saatva", "sonicsleep", "star_elevate", "starcode_abm5_4",
      "starcode_m1x12", "starcode_m5x5", "svane", "symphony", "symphony_sleep",
      "tempur_au", "tempur_curve", "timotion_ahf", "tranquil", "vmatbasic",
-     "wsilver_products", "yamada", "ormatek",
+     "wsilver_products", "yamada", "ormatek", "powersbedding",
     }
 )
 

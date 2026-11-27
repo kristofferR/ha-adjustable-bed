@@ -105,6 +105,7 @@ from .const import (
     BED_TYPE_MOODBASE,
     BED_TYPE_MOTION_BED,
     BED_TYPE_MOTOMOTION,
+    BED_TYPE_MYSIDE,
     BED_TYPE_N32_MOTION_BED,
     BED_TYPE_OCTO,
     BED_TYPE_OKIMATTMOTION,
@@ -310,6 +311,8 @@ from .profiles.mlily0 import VARIANTS as MLILY0_PROFILES
 from .profiles.mlily_choices import PROFILE_CHOICES as MLILY_PROFILES
 from .profiles.mlily_remote import VARIANTS as MLILY_REMOTE_PROFILES
 from .profiles.muuegm import CHOICES as MUUEGM_CHOICES
+from .profiles.myside import CHOICES as MYSIDE_PRODUCTS
+from .profiles.myside import PROFILES as MYSIDE_PROFILES
 from .profiles.okimiki import PROFILE_CHOICES as OKIMIKI_PROFILES
 from .profiles.restonic import AXES as RESTONIC_AXES
 from .profiles.restonic import BRANCH_CHOICES as RESTONIC_BRANCHES
@@ -375,6 +378,7 @@ _OWNED_BY_BED_TYPE: Final[dict[str, frozenset[str]]] = {
     "ergobq": GENERIC_FIELDS,
     "sonicsleep": GENERIC_FIELDS - {CONF_MOTOR_PULSE_COUNT},
     "suta": GENERIC_FIELDS - {CONF_MOTOR_PULSE_COUNT},
+    "powersbedding": GENERIC_FIELDS - {CONF_MOTOR_PULSE_COUNT},
     "hestia_motion": GENERIC_FIELDS - {CONF_MOTOR_PULSE_COUNT},
     "truemotion": GENERIC_FIELDS,
     "suta_king_koil": GENERIC_FIELDS,
@@ -3651,6 +3655,13 @@ SETUP_PROFILES: Final[dict[str, SetupProfile]] = {
         BED_TYPE_JEROME_ADJUSTABLE_BASE,
         questions=(Question(CONF_PROTOCOL_VARIANT, JEROME_ADJUSTABLE_BASE_PRODUCTS, searchable=True),),
     ),
+    BED_TYPE_MYSIDE: SetupProfile(
+        owns={CONF_MOTOR_COUNT: 2, CONF_HAS_MASSAGE: SET_BY_PROFILE,
+              CONF_DISABLE_ANGLE_SENSING: True, CONF_MOTOR_PULSE_DELAY_MS: 100},
+        questions=(Question(CONF_PROTOCOL_VARIANT, MYSIDE_PRODUCTS),),
+        derive=lambda data: {CONF_HAS_MASSAGE: MYSIDE_PROFILES[str(data[CONF_PROTOCOL_VARIANT])].coaxing},
+        title=lambda _data: "My Side",
+    ),
     BED_TYPE_RICHMAT_APP: _asking(
         BED_TYPE_RICHMAT_APP,
         questions=(Question(CONF_PROTOCOL_VARIANT, RICHMAT_APP_PRODUCTS, searchable=True),),
@@ -4124,6 +4135,12 @@ SETUP_PROFILES: Final[dict[str, SetupProfile]] = {
         seed=_sleeptime_seed,
         title=lambda _data: "Sleeptime Australia",
         imports=("profiles.sleeptime",),
+    ),
+    "powersbedding": SetupProfile(
+        owns={CONF_MOTOR_COUNT: 2, CONF_HAS_MASSAGE: True,
+              CONF_DISABLE_ANGLE_SENSING: True, CONF_PROTOCOL_VARIANT: "auto",
+              CONF_MOTOR_PULSE_DELAY_MS: 100},
+        title=lambda _data: "PowersBedding",
     ),
     "hestia_motion": SetupProfile(
         owns={CONF_MOTOR_COUNT: 2, CONF_HAS_MASSAGE: True,

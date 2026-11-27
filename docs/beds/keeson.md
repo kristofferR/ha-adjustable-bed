@@ -61,6 +61,7 @@ Beautyrest bases that use one of the Keeson Bluetooth routes still work.
 
 | Analyzed | App | Package ID | Profile |
 |----------|-----|------------|---------|
+| ✅ | [PowersBedding](https://play.google.com/store/apps/details?id=com.ore.powersbedding) 1.1.0 (2) | `com.ore.powersbedding` | [PowersBedding](#powersbedding) |
 | ✅ | Hestia Motion 1.2 (3) | `com.ore.yorkfeng.hestiamotion` | [Hestia Motion](#hestia-motion) |
 | ✅ | BetterLiving 1.3.0 (16) | `com.ore.betterliving2` | [BetterLiving2](#betterliving2) |
 | ✅ | [OrmatekTechnoSmart](https://play.google.com/store/apps/details?id=com.okin.ormatek) | `com.okin.ormatek` | [Techno Smart New / Lite](#ormatek-technosmart) |
@@ -6893,3 +6894,179 @@ also allow intensity zero for enhancement, which encodes the app's FF sentinel.
 
 Based on Hestia Motion 1.2 (3). Frozen literals and finite alarm mappings are
 covered in `tests/fixtures/hestia_vectors.json` and `tests/test_hestia.py`.
+
+### PowersBedding
+
+**App:** [PowersBedding](https://play.google.com/store/apps/details?id=com.ore.powersbedding) 1.1.0 (2), `com.ore.powersbedding`
+
+**Status:** Not yet tested with hardware.
+
+#### Setup
+
+Select **PowersBedding app** manually. Its common `okin` and `smartbed` Bluetooth
+prefixes do not identify an app. The fixed layout has head, feet and combined
+head/feet controls. There is no third actuator or single-address side selector.
+Two separate receivers can use Home Assistant's ordinary paired-bed controls;
+each receiver retains its own name, capabilities and massage choices.
+
+The Bluetooth name chooses GATT roles before the manufacturer read: `okin`
+uses FFE5/FFE9 write and FFE0/FFE4 notifications; `smartbed` uses Nordic UART.
+The exact manufacturer value `BLE-4.0 Module` selects P2 packets on either
+transport. Another non-null value selects P1; an absent value leaves P1 for
+`okin` and P3 for `smartbed`. Packet route never changes the selected GATT
+roles. Home Assistant requires live writable and subscribable characteristics
+and never retains a characteristic from an old connection. The app does not
+set a write type; Home Assistant uses the live properties, preferring writes
+without response when supported.
+
+#### Controls
+
+Every route has head/feet movement, combined movement, flat, zero gravity,
+two memories, memory programming, lighting and two-zone massage. P1 has
+independent head/foot/wave levels, start/stop and a shared 10/20/30 minute
+massage timer select. P2/P3 have zone increments/decrements, massage toggle,
+wave cycle and timer cycle buttons; these are steps, with no assumed absolute
+level or wrap count. P1 lighting is on/off; P2/P3 lighting is a toggle.
+
+<!-- generated:keeson-powersbedding -->
+| Route | Control | Frame | Timing |
+|---|---|---|---|
+| p1 | head up | `E5 FE 16 00 00 00 01 05` | held, 100 ms |
+| p1 | head down | `E5 FE 16 00 00 00 02 04` | held, 100 ms |
+| p1 | feet up | `E5 FE 16 00 00 00 04 02` | held, 100 ms |
+| p1 | feet down | `E5 FE 16 00 00 00 08 FE` | held, 100 ms |
+| p1 | both up | `E5 FE 16 00 00 00 05 01` | held, 100 ms |
+| p1 | both down | `E5 FE 16 00 00 00 0A FC` | held, 100 ms |
+| p1 | driver STOP | `E5 FE 16 00 00 00 00 06` | twice, 100 ms apart |
+| p1 | zero_g | `E5 FE 16 01 00 00 01 04` | once |
+| p1 | flat | `E5 FE 16 01 00 00 02 03` | once |
+| p1 | memory 1 | `E5 FE 16 01 00 00 08 FD` | once |
+| p1 | save memory 1 | `E5 FE 16 20 00 00 08 DE` | 6 s hold, 5 s refresh |
+| p1 | memory 2 | `E5 FE 16 01 00 00 09 FC` | once |
+| p1 | save memory 2 | `E5 FE 16 20 00 00 09 DD` | 6 s hold, 5 s refresh |
+| p1 | save zero gravity | `E5 FE 16 20 00 00 01 E5` | 6 s, no release packet |
+| p1 | head massage 0 | `E5 FE 16 10 00 00 10 E6` | once |
+| p1 | head massage 1 | `E5 FE 16 10 00 00 11 E5` | once |
+| p1 | head massage 2 | `E5 FE 16 10 00 00 12 E4` | once |
+| p1 | head massage 3 | `E5 FE 16 10 00 00 13 E3` | once |
+| p1 | foot massage 0 | `E5 FE 16 11 00 00 10 E5` | once |
+| p1 | foot massage 1 | `E5 FE 16 11 00 00 11 E4` | once |
+| p1 | foot massage 2 | `E5 FE 16 11 00 00 12 E3` | once |
+| p1 | foot massage 3 | `E5 FE 16 11 00 00 13 E2` | once |
+| p1 | wave massage 0 | `E5 FE 16 10 00 00 20 D6` | once |
+| p1 | wave massage 1 | `E5 FE 16 10 00 00 21 D5` | once |
+| p1 | wave massage 2 | `E5 FE 16 10 00 00 22 D4` | once |
+| p1 | wave massage 3 | `E5 FE 16 10 00 00 23 D3` | once |
+| p1 | timer argument -1 | `E5 FE 16 10 00 00 2F C7` | once |
+| p1 | timer argument 0 | `E5 FE 16 10 00 00 30 C6` | once |
+| p1 | timer argument 1 | `E5 FE 16 10 00 00 31 C5` | once |
+| p1 | timer argument 2 | `E5 FE 16 10 00 00 32 C4` | once |
+| p1 | light off | `E5 FE 16 31 00 00 00 D5` | once |
+| p1 | light on | `E5 FE 16 31 00 00 01 D4` | once |
+| p1 | stop preset | `E5 FE 16 01 00 00 00 05` | same-preset second tap |
+| p1 | clock example | `E2 FE 16 1E 2D 06 05 B3` | local 2026-11-27 06:45:30 |
+| p1 | alarm example | `EB FE 16 1E 2D 06 1E 07 05 BE 11 11 F8 AD` | weekdays, memory A |
+| p1 | cancel alarm example | `EB FE 16 1E 2D 06 FF FF FF FF FF FF 18 9D` | twice, then clock at 100 ms |
+| p2 | head up | `E6 FE 16 01 00 00 00 00 04` | held, 100 ms |
+| p2 | head down | `E6 FE 16 02 00 00 00 00 03` | held, 100 ms |
+| p2 | feet up | `E6 FE 16 04 00 00 00 00 01` | held, 100 ms |
+| p2 | feet down | `E6 FE 16 08 00 00 00 00 FD` | held, 100 ms |
+| p2 | both up | `E6 FE 16 05 00 00 00 00 00` | held, 100 ms |
+| p2 | both down | `E6 FE 16 0A 00 00 00 00 FB` | held, 100 ms |
+| p2 | driver STOP | `E6 FE 16 00 00 00 00 00 05` | twice, 100 ms apart |
+| p2 | zero_g | `E6 FE 16 00 10 00 00 00 F5` | once |
+| p2 | flat | `E6 FE 16 00 00 00 08 00 FD` | once |
+| p2 | memory 1 | `E6 FE 16 00 00 01 00 00 04` | once |
+| p2 | save memory 1 | `E6 FE 16 00 00 01 00 00 04` | 6 s hold, 100 ms refresh |
+| p2 | memory 2 | `E6 FE 16 00 00 04 00 00 01` | once |
+| p2 | save memory 2 | `E6 FE 16 00 00 04 00 00 01` | 6 s hold, 100 ms refresh |
+| p2 | save zero gravity | `E6 FE 16 00 10 00 00 00 F5` | 6 s, no release packet |
+| p2 | massage toggle | `E6 FE 16 00 01 00 00 00 04` | once; P3 query after 150 ms |
+| p2 | massage head_up | `E6 FE 16 00 08 00 00 00 FD` | once; P3 query after 150 ms |
+| p2 | massage head_down | `E6 FE 16 00 00 80 00 00 85` | once; P3 query after 150 ms |
+| p2 | massage foot_up | `E6 FE 16 00 04 00 00 00 01` | once; P3 query after 150 ms |
+| p2 | massage foot_down | `E6 FE 16 00 00 00 01 00 04` | once; P3 query after 150 ms |
+| p2 | massage wave | `E6 FE 16 00 00 00 10 00 F5` | once; P3 query after 150 ms |
+| p2 | massage timer | `E6 FE 16 00 02 00 00 00 03` | once; P3 query after 150 ms |
+| p2 | light toggle | `E6 FE 16 00 00 02 00 00 03` | once |
+| p2 | read alarm | `E1 80 03 9B` | once |
+| p2 | clock example | `E7 80 01 7E 0A 1B 06 2D 1E A3` | local 2026-11-27 06:45:30 |
+| p2 | alarm example | `ED 80 03 07 1E BE 11 00 00 00 00 00 00 00 00 9B` | weekdays, memory A |
+| p2 | cancel alarm example | `ED 80 03 00 00 00 00 00 00 00 00 00 00 00 00 8F` | twice, then clock at 100 ms |
+| p3 | head up | `05 02 00 00 00 01 00` | held, 100 ms |
+| p3 | head down | `05 02 00 00 00 02 00` | held, 100 ms |
+| p3 | feet up | `05 02 00 00 00 04 00` | held, 100 ms |
+| p3 | feet down | `05 02 00 00 00 08 00` | held, 100 ms |
+| p3 | both up | `05 02 00 00 00 05 00` | held, 100 ms |
+| p3 | both down | `05 02 00 00 00 0A 00` | held, 100 ms |
+| p3 | driver STOP | `05 02 00 00 00 00 00` | twice, 100 ms apart |
+| p3 | zero_g | `05 02 00 00 10 00 00` | once |
+| p3 | flat | `05 02 08 00 00 00 00` | once |
+| p3 | memory 1 | `05 02 00 01 00 00 00` | once |
+| p3 | save memory 1 | `05 02 00 01 00 00 00` | 6 s hold, 100 ms refresh |
+| p3 | memory 2 | `05 02 00 04 00 00 00` | once |
+| p3 | save memory 2 | `05 02 00 04 00 00 00` | 6 s hold, 100 ms refresh |
+| p3 | save zero gravity | `05 02 00 00 10 00 00` | 6 s, no release packet |
+| p3 | massage toggle | `05 02 00 00 01 00 00` | once; P3 query after 150 ms |
+| p3 | massage head_up | `05 02 00 00 08 00 00` | once; P3 query after 150 ms |
+| p3 | massage head_down | `05 02 00 80 00 00 00` | once; P3 query after 150 ms |
+| p3 | massage foot_up | `05 02 00 00 04 00 00` | once; P3 query after 150 ms |
+| p3 | massage foot_down | `05 02 01 00 00 00 00` | once; P3 query after 150 ms |
+| p3 | massage wave | `05 02 10 00 00 00 00` | once; P3 query after 150 ms |
+| p3 | massage timer | `05 02 00 00 02 00 00` | once; P3 query after 150 ms |
+| p3 | light toggle | `05 02 00 02 00 00 00` | once |
+| p3 | read alarm | `00 C0` | once |
+| p3 | clock example | `07 04 1A 0B 1B 05 06 2D 1E` | local 2026-11-27 06:45:30 |
+| p3 | alarm example | `07 05 BE 05 07 1E 00 01 00` | weekdays, memory A |
+| p3 | cancel alarm example | `07 05 00 00 00 00 00 00 00` | twice, then clock at 100 ms |
+<!-- /generated -->
+
+#### Timing
+
+Movement refreshes at the cadence above and releases with two driver STOPs.
+Home Assistant completes release after cancellation on the original link.
+Preset taps send once. Repeating the same P1 preset tap sends its separate
+preset-stop word. Saving zero gravity or memory holds the save word for six
+seconds; release ends refresh without an additional STOP frame. No save ACK
+or hardware completion is implied.
+
+P1 massage start writes the timer when needed, waits 100 ms, then sends foot,
+head and wave levels twice each, with 100 ms between zone groups. Stop sends
+the same duplicate groups at zero, foot first. The first timer-cycle click
+retains the app's initial negative argument. The shared timer select directly
+sets a named duration without cycling. P3 queries massage state after a step.
+
+Alarm set/cancel writes twice, syncs the local clock after 100 ms and requests
+an alarm read after 400 ms when the route offers one. Clock sync also runs on
+connect. Home Assistant bounds read ownership to one second; only a reply to
+that active read may send the app's one driver STOP. An unsolicited delayed
+alarm reply cannot stop a later movement.
+
+#### Notifications
+
+P1 alarm replies have no header test, require ten bytes, and use signed time
+fields. Its `FF` weekday reply means disabled even though an all-days write
+uses that value. P2 recognizes `ED 80 03` alarms and retains previously selected
+wake modes; P3 recognizes `A5 0C` and clears old modes. Short replies are
+ignored safely. P2/P3 massage parsers retain the source's signed arithmetic and
+show level and timer indicators. Those indicators are not measured countdowns.
+No route reports measured motor position, battery or other bed sensors.
+
+Raw route and alarm fields stay in diagnostics. State set by P1 commands is
+assumed state, cleared on disconnect. No checksum validation, receive
+reassembly, command ACK, authentication or negotiated capability mask is added.
+
+#### Services
+
+Use the standard movement, memory, clock-sync and `set_alarm` actions. Alarms
+accept weekdays (Monday first in HA), next occurrence with no weekdays,
+Memory A, Memory B or massage. P1 can combine massage with a memory wake;
+P2/P3 accept a single wake action. Saving zero gravity also has a confirmation
+button. Refresh bed alarm is a diagnostic button on routes with a read command.
+
+#### Evidence
+
+Based on PowersBedding 1.1.0 (2), `com.ore.powersbedding`.
+Frozen literals and safe parser cases: `tests/fixtures/powersbedding/vectors.json`
+and `tests/test_powersbedding_vectors.py`. Physical command acceptance,
+programming duration, massage indicators and alarm behavior remain unverified.
