@@ -18,7 +18,7 @@ from pytest_homeassistant.common import MockConfigEntry
 
 from custom_components.adjustable_bed import const
 from custom_components.adjustable_bed.beds.cancellation import cancellable
-from custom_components.adjustable_bed.beds.richmat import atlas_lift
+from custom_components.adjustable_bed.beds.richmat import fixed as atlas_lift
 from custom_components.adjustable_bed.beds.richmat.atlas_lift import AtlasLiftController
 from custom_components.adjustable_bed.button import _button_entities_for
 from custom_components.adjustable_bed.config_flow import AdjustableBedConfigFlow
