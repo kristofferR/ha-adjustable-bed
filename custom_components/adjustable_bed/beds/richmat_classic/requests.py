@@ -6,7 +6,7 @@ from typing import Literal
 
 Operation = Literal[
     "query", "alarm", "cancel_alarm", "rgb", "lamp_slider", "lamp_save", "aroma",
-    "massage_timer", "massage_popup", "desk_target", "desk_unit", "desk_recall", "desk_reset",
+    "massage_timer", "massage_popup", "lamp_timeout", "desk_target", "desk_unit", "desk_recall", "desk_reset",
 ]
 
 
@@ -24,3 +24,4 @@ class Request:
     slot: int | None = None
     duration_ms: int = 1000
     popup: str | None = None
+    seconds: int | None = None

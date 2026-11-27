@@ -2195,7 +2195,8 @@ def route_scenarios() -> list[Scenario]:
                     protocol_variant=app,
                     entry_data={const.CONF_PRODUCT_TYPE: layout, **({const.CONF_PROTOCOL_VARIANT: app} if app == "sleepfunction" else {})},
                     factory_kwargs={"device_name": "6BRM-advertised"}
-                    if app in ("lady_americana", "acaa", "sta2", "zerogravity", "lp2", "bedsmart", "baseremote") else {},
+                    if app in ("lady_americana", "acaa", "sta2", "zerogravity", "lp2", "bedsmart", "baseremote", "dynasty") else {},
+                    replies={"*": "6e0e00037f"} if app == "dynasty" else {},
                     layout_id=layout_id,
                 )
             )
@@ -2282,6 +2283,8 @@ def route_scenarios() -> list[Scenario]:
 # YGRM has the Hold selector and alarm actions. The framed layout offers only the
 # fourth fixed service (W4), which the app frames like the first.
 CLASSIC_ROUTES: tuple[tuple[str, str, str], ...] = (
+    ("dynasty", "U3RM", "richmat_classic_apps"),
+    ("dynasty", "6BRM", "richmat_classic_apps_nordic"),
     ("avocadoecobase", "GORM", "richmat_classic_apps_nordic"),
     ("coastersleep", "FWRM", "richmat_classic_apps"),
     ("fortywinks", "CORN", "richmat_classic_apps"),
