@@ -1773,6 +1773,15 @@
   },
   "entity": {
     "button": {
+      "lights_toggle": {
+        "name": "Toggle under-bed light"
+      },
+      "ronco_motion_save_zero_g": {
+        "name": "Save zero gravity"
+      },
+      "ronco_motion_save_anti_snore": {
+        "name": "Save anti-snore"
+      },
       "sleep_assist_pro_side_b_up": {
         "name": "Side B head up"
       },
@@ -4654,6 +4663,13 @@
       }
     },
     "sensor": {
+      "ronco_motion_alarm": {
+        "name": "Last alarm result",
+        "state": {
+          "added": "Added",
+          "deleted": "Deleted"
+        }
+      },
       "sleep_assist_pro_massage_countdown": {
         "name": "Massage countdown"
       },
@@ -11766,6 +11782,9 @@
     }
   },
   "exceptions": {
+    "ronco_motion_request": {
+      "message": "This action is unavailable for the selected Ronco Motion layout."
+    },
     "customatic_demo_gatt_missing": {
       "message": "The selected device does not expose the command and status characteristics required by the Independence app."
     },

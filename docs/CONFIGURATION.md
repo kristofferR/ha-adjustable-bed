@@ -974,3 +974,10 @@ as hex; serial byte 4 selects the four-motor layout only when it equals 4.
 Blank uses the app's two-motor default. Enter an existing channel stamp if
 required; no account lookup is performed. The shared Nordic UART service alone
 does not choose an ErgoBQ product. See [ErgoBQ BED](beds/ergobq.md).
+
+### Ronco Motion layout
+
+The searchable **Ronco Motion app** choice asks for ECONOMY (Fk9rm) or PREMIUM
+(Fk8rm). Select the layout used in Ronco Motion 1.2; Bluetooth names cannot
+identify it. PREMIUM adds Pillow and a light toggle. Layout settings belong to
+one physical side of a two-address pair. See [Ronco Motion](beds/richmat.md#ronco-motion).
