@@ -2046,6 +2046,24 @@
  "button:resident_check_massage": {
   "card_section": "massage"
  },
+ "button:restonic_footstrengthadd": {
+  "card_section": "massage"
+ },
+ "button:restonic_headstrengthadd": {
+  "card_section": "massage"
+ },
+ "button:restonic_massageswitch": {
+  "card_section": "massage"
+ },
+ "button:restonic_massagetimer": {
+  "card_section": "massage"
+ },
+ "button:restonic_underbedlighting": {
+  "card_section": "lighting"
+ },
+ "button:restonic_waveadd": {
+  "card_section": "massage"
+ },
  "button:restonic_zzz": {
   "card_section": "utility"
  },

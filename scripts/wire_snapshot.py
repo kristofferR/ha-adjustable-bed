@@ -1501,6 +1501,9 @@ def default_scenario(bed_type: str) -> Scenario:
         return Scenario(id=bed_type, bed_type=bed_type, protocol_variant="economy", layout_id="ronco_motion:0")
     if bed_type == const.BED_TYPE_AMBIENT:
         return _ambient_scenario()
+    if bed_type == const.BED_TYPE_RESTONIC:
+        return Scenario(id=bed_type, bed_type=bed_type, protocol_variant="box15",
+                        entry_data={const.CONF_PRODUCT_TYPE: "prime"})
     if bed_type == const.BED_TYPE_LANGJUE:
         return Scenario(id=bed_type, bed_type=bed_type, replies={
             "write:558d000081": "55000000810102",
@@ -2548,6 +2551,14 @@ def build_scenarios() -> list[Scenario]:
         entry_data={"product_type": model}, layout_id="flexispot")
         for model in ("eb703", "eb704", "eb803"))
     scenarios.append(_ambient_scenario(split=True))
+    for branch in ("box15", "box1220", "box24"):
+        for layout in ("prime", "lombar", "infinity"):
+            if branch == "box15" and layout == "prime":
+                continue
+            scenarios.append(Scenario(id=f"restonic:{branch}:{layout}", bed_type="restonic",
+                protocol_variant=branch, entry_data={"product_type": layout},
+                layout_id="restonic" if branch == "box15" else f"restonic:{branch}"))
+
     scenarios.append(Scenario(
         id="jerome_adjustable_base:nordic", bed_type="jerome_adjustable_base",
         protocol_variant="HDRN", layout_id="dorsal:n1",

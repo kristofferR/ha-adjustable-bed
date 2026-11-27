@@ -1768,6 +1768,24 @@
   },
   "entity": {
     "button": {
+      "restonic_underbedlighting": {
+        "name": "Underbed light action"
+      },
+      "restonic_headstrengthadd": {
+        "name": "Head massage intensity up"
+      },
+      "restonic_footstrengthadd": {
+        "name": "Foot massage intensity up"
+      },
+      "restonic_massagetimer": {
+        "name": "Massage timer cycle"
+      },
+      "restonic_waveadd": {
+        "name": "Massage mode next"
+      },
+      "restonic_massageswitch": {
+        "name": "Massage toggle"
+      },
       "flexispot_left_back_up": {"name": "Left back up"},
       "flexispot_left_back_down": {"name": "Left back down"},
       "lights_toggle": {
