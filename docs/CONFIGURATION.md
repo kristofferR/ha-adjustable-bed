@@ -970,3 +970,10 @@ not program a timer in the bed. See [SILVERmotion Android](beds/silvermotion.md)
 
 JobsAI智能助眠床 / Jobs AI uses an explicit app choice and mode 1 or mode 2.
 See the [JobsAI guide](beds/okin-nframe.md#jobsai).
+
+### Ronco Motion layout
+
+The searchable **Ronco Motion app** choice asks for ECONOMY (Fk9rm) or PREMIUM
+(Fk8rm). Select the layout used in Ronco Motion 1.2; Bluetooth names cannot
+identify it. PREMIUM adds Pillow and a light toggle. Layout settings belong to
+one physical side of a two-address pair. See [Ronco Motion](beds/richmat.md#ronco-motion).
