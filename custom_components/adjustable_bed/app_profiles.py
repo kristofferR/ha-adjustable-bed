@@ -229,6 +229,7 @@ _BY_BED_TYPE: Final[dict[str, SideProfile]] = {
     "row_control": SideProfile("ROW Control"),
     "ergo_slim": SideProfile("Ergo Slim"),
     "tempur_au": SideProfile("TEMPUR AU"),
+    "scott_living": SideProfile("Scott Living", frozenset({CONF_MOTOR_COUNT, CONF_BLE_DEVICE_NAME})),
     "casper_base": SideProfile("Casper Base product", variant_owned=True),
     "ronco_motion": SideProfile("Ronco Motion layout", variant_owned=True),
     "hush_base": SideProfile("Hush Base product", variant_owned=True),
@@ -369,6 +370,7 @@ _BY_BED_TYPE: Final[dict[str, SideProfile]] = {
     BED_TYPE_SVANE: SideProfile("Svane Remote", variant_owned=True),
 }
 _BY_VARIANT: Final[dict[tuple[str, str], SideProfile]] = {
+    ("linak", "carpe_diem"): SideProfile("Carpe Diem Beds", frozenset({CONF_MOTOR_COUNT, CONF_HAS_MASSAGE}), variant_owned=True),
     (BED_TYPE_RICHMAT_CLASSIC_APPS, "maxprime"): SideProfile(
         "Maxprime layout", variant_owned=True
     ),

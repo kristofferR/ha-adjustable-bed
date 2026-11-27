@@ -1,0 +1,559 @@
+[
+  {
+    "id": "BINARY--2147483648",
+    "protocol": "P1",
+    "action": "builder-only value, no live action",
+    "inputs": {
+      "key": -2147483648
+    },
+    "expected_bytes": "e6 fe 16 00 00 00 80 01 84",
+    "evidence": [
+      "evidence/jadx/sources/com/keeson/scottlivingrelease/utils/ble/BuildBleData.java:17-212",
+      "evidence/targeted-smali-reviewed.txt"
+    ],
+    "provenance": "Calculated from literal byte assignments and checksum, not captured traffic.",
+    "reachability": "DEAD/UNUSED"
+  },
+  {
+    "id": "BINARY-0",
+    "protocol": "P1",
+    "action": "builder-only value, no live action",
+    "inputs": {
+      "key": 0
+    },
+    "expected_bytes": "e6 fe 16 00 00 00 00 01 04",
+    "evidence": [
+      "evidence/jadx/sources/com/keeson/scottlivingrelease/utils/ble/BuildBleData.java:17-212",
+      "evidence/targeted-smali-reviewed.txt"
+    ],
+    "provenance": "Calculated from literal byte assignments and checksum, not captured traffic.",
+    "reachability": "DEAD/UNUSED"
+  },
+  {
+    "id": "BINARY-1",
+    "protocol": "P1",
+    "action": "head/back up",
+    "inputs": {
+      "key": 1
+    },
+    "expected_bytes": "e6 fe 16 01 00 00 00 01 03",
+    "evidence": [
+      "evidence/jadx/sources/com/keeson/scottlivingrelease/utils/ble/BuildBleData.java:17-212",
+      "evidence/targeted-smali-reviewed.txt"
+    ],
+    "provenance": "Calculated from literal byte assignments and checksum, not captured traffic.",
+    "reachability": "REACHABLE"
+  },
+  {
+    "id": "BINARY-2",
+    "protocol": "P1",
+    "action": "head/back down",
+    "inputs": {
+      "key": 2
+    },
+    "expected_bytes": "e6 fe 16 02 00 00 00 01 02",
+    "evidence": [
+      "evidence/jadx/sources/com/keeson/scottlivingrelease/utils/ble/BuildBleData.java:17-212",
+      "evidence/targeted-smali-reviewed.txt"
+    ],
+    "provenance": "Calculated from literal byte assignments and checksum, not captured traffic.",
+    "reachability": "REACHABLE"
+  },
+  {
+    "id": "BINARY-4",
+    "protocol": "P1",
+    "action": "foot/legs up",
+    "inputs": {
+      "key": 4
+    },
+    "expected_bytes": "e6 fe 16 04 00 00 00 01 00",
+    "evidence": [
+      "evidence/jadx/sources/com/keeson/scottlivingrelease/utils/ble/BuildBleData.java:17-212",
+      "evidence/targeted-smali-reviewed.txt"
+    ],
+    "provenance": "Calculated from literal byte assignments and checksum, not captured traffic.",
+    "reachability": "REACHABLE"
+  },
+  {
+    "id": "BINARY-8",
+    "protocol": "P1",
+    "action": "foot/legs down",
+    "inputs": {
+      "key": 8
+    },
+    "expected_bytes": "e6 fe 16 08 00 00 00 01 fc",
+    "evidence": [
+      "evidence/jadx/sources/com/keeson/scottlivingrelease/utils/ble/BuildBleData.java:17-212",
+      "evidence/targeted-smali-reviewed.txt"
+    ],
+    "provenance": "Calculated from literal byte assignments and checksum, not captured traffic.",
+    "reachability": "REACHABLE"
+  },
+  {
+    "id": "BINARY-16",
+    "protocol": "P1",
+    "action": "head tilt up",
+    "inputs": {
+      "key": 16
+    },
+    "expected_bytes": "e6 fe 16 10 00 00 00 01 f4",
+    "evidence": [
+      "evidence/jadx/sources/com/keeson/scottlivingrelease/utils/ble/BuildBleData.java:17-212",
+      "evidence/targeted-smali-reviewed.txt"
+    ],
+    "provenance": "Calculated from literal byte assignments and checksum, not captured traffic.",
+    "reachability": "REACHABLE"
+  },
+  {
+    "id": "BINARY-32",
+    "protocol": "P1",
+    "action": "head tilt down",
+    "inputs": {
+      "key": 32
+    },
+    "expected_bytes": "e6 fe 16 20 00 00 00 01 e4",
+    "evidence": [
+      "evidence/jadx/sources/com/keeson/scottlivingrelease/utils/ble/BuildBleData.java:17-212",
+      "evidence/targeted-smali-reviewed.txt"
+    ],
+    "provenance": "Calculated from literal byte assignments and checksum, not captured traffic.",
+    "reachability": "REACHABLE"
+  },
+  {
+    "id": "BINARY-64",
+    "protocol": "P1",
+    "action": "builder-only value, no live action",
+    "inputs": {
+      "key": 64
+    },
+    "expected_bytes": "e6 fe 16 40 00 00 00 01 c4",
+    "evidence": [
+      "evidence/jadx/sources/com/keeson/scottlivingrelease/utils/ble/BuildBleData.java:17-212",
+      "evidence/targeted-smali-reviewed.txt"
+    ],
+    "provenance": "Calculated from literal byte assignments and checksum, not captured traffic.",
+    "reachability": "DEAD/UNUSED"
+  },
+  {
+    "id": "BINARY-128",
+    "protocol": "P1",
+    "action": "builder-only value, no live action",
+    "inputs": {
+      "key": 128
+    },
+    "expected_bytes": "e6 fe 16 80 00 00 00 01 84",
+    "evidence": [
+      "evidence/jadx/sources/com/keeson/scottlivingrelease/utils/ble/BuildBleData.java:17-212",
+      "evidence/targeted-smali-reviewed.txt"
+    ],
+    "provenance": "Calculated from literal byte assignments and checksum, not captured traffic.",
+    "reachability": "DEAD/UNUSED"
+  },
+  {
+    "id": "BINARY-256",
+    "protocol": "P1",
+    "action": "builder-only value, no live action",
+    "inputs": {
+      "key": 256
+    },
+    "expected_bytes": "e6 fe 16 00 01 00 00 01 03",
+    "evidence": [
+      "evidence/jadx/sources/com/keeson/scottlivingrelease/utils/ble/BuildBleData.java:17-212",
+      "evidence/targeted-smali-reviewed.txt"
+    ],
+    "provenance": "Calculated from literal byte assignments and checksum, not captured traffic.",
+    "reachability": "DEAD/UNUSED"
+  },
+  {
+    "id": "BINARY-512",
+    "protocol": "P1",
+    "action": "massage timer button",
+    "inputs": {
+      "key": 512
+    },
+    "expected_bytes": "e6 fe 16 00 02 00 00 01 02",
+    "evidence": [
+      "evidence/jadx/sources/com/keeson/scottlivingrelease/utils/ble/BuildBleData.java:17-212",
+      "evidence/targeted-smali-reviewed.txt"
+    ],
+    "provenance": "Calculated from literal byte assignments and checksum, not captured traffic.",
+    "reachability": "REACHABLE"
+  },
+  {
+    "id": "BINARY-1024",
+    "protocol": "P1",
+    "action": "foot massage button",
+    "inputs": {
+      "key": 1024
+    },
+    "expected_bytes": "e6 fe 16 00 04 00 00 01 00",
+    "evidence": [
+      "evidence/jadx/sources/com/keeson/scottlivingrelease/utils/ble/BuildBleData.java:17-212",
+      "evidence/targeted-smali-reviewed.txt"
+    ],
+    "provenance": "Calculated from literal byte assignments and checksum, not captured traffic.",
+    "reachability": "REACHABLE"
+  },
+  {
+    "id": "BINARY-2048",
+    "protocol": "P1",
+    "action": "head massage button",
+    "inputs": {
+      "key": 2048
+    },
+    "expected_bytes": "e6 fe 16 00 08 00 00 01 fc",
+    "evidence": [
+      "evidence/jadx/sources/com/keeson/scottlivingrelease/utils/ble/BuildBleData.java:17-212",
+      "evidence/targeted-smali-reviewed.txt"
+    ],
+    "provenance": "Calculated from literal byte assignments and checksum, not captured traffic.",
+    "reachability": "REACHABLE"
+  },
+  {
+    "id": "BINARY-4096",
+    "protocol": "P1",
+    "action": "Zero G preset button",
+    "inputs": {
+      "key": 4096
+    },
+    "expected_bytes": "e6 fe 16 00 10 00 00 01 f4",
+    "evidence": [
+      "evidence/jadx/sources/com/keeson/scottlivingrelease/utils/ble/BuildBleData.java:17-212",
+      "evidence/targeted-smali-reviewed.txt"
+    ],
+    "provenance": "Calculated from literal byte assignments and checksum, not captured traffic.",
+    "reachability": "REACHABLE"
+  },
+  {
+    "id": "BINARY-8192",
+    "protocol": "P1",
+    "action": "reading preset button",
+    "inputs": {
+      "key": 8192
+    },
+    "expected_bytes": "e6 fe 16 00 20 00 00 01 e4",
+    "evidence": [
+      "evidence/jadx/sources/com/keeson/scottlivingrelease/utils/ble/BuildBleData.java:17-212",
+      "evidence/targeted-smali-reviewed.txt"
+    ],
+    "provenance": "Calculated from literal byte assignments and checksum, not captured traffic.",
+    "reachability": "REACHABLE"
+  },
+  {
+    "id": "BINARY-16384",
+    "protocol": "P1",
+    "action": "TV preset button",
+    "inputs": {
+      "key": 16384
+    },
+    "expected_bytes": "e6 fe 16 00 40 00 00 01 c4",
+    "evidence": [
+      "evidence/jadx/sources/com/keeson/scottlivingrelease/utils/ble/BuildBleData.java:17-212",
+      "evidence/targeted-smali-reviewed.txt"
+    ],
+    "provenance": "Calculated from literal byte assignments and checksum, not captured traffic.",
+    "reachability": "REACHABLE"
+  },
+  {
+    "id": "BINARY-32768",
+    "protocol": "P1",
+    "action": "anti-snore button",
+    "inputs": {
+      "key": 32768
+    },
+    "expected_bytes": "e6 fe 16 00 80 00 00 01 84",
+    "evidence": [
+      "evidence/jadx/sources/com/keeson/scottlivingrelease/utils/ble/BuildBleData.java:17-212",
+      "evidence/targeted-smali-reviewed.txt"
+    ],
+    "provenance": "Calculated from literal byte assignments and checksum, not captured traffic.",
+    "reachability": "REACHABLE"
+  },
+  {
+    "id": "BINARY-65536",
+    "protocol": "P1",
+    "action": "star/favorite button",
+    "inputs": {
+      "key": 65536
+    },
+    "expected_bytes": "e6 fe 16 00 00 01 00 01 03",
+    "evidence": [
+      "evidence/jadx/sources/com/keeson/scottlivingrelease/utils/ble/BuildBleData.java:17-212",
+      "evidence/targeted-smali-reviewed.txt"
+    ],
+    "provenance": "Calculated from literal byte assignments and checksum, not captured traffic.",
+    "reachability": "REACHABLE"
+  },
+  {
+    "id": "BINARY-131072",
+    "protocol": "P1",
+    "action": "light button",
+    "inputs": {
+      "key": 131072
+    },
+    "expected_bytes": "e6 fe 16 00 00 02 00 01 02",
+    "evidence": [
+      "evidence/jadx/sources/com/keeson/scottlivingrelease/utils/ble/BuildBleData.java:17-212",
+      "evidence/targeted-smali-reviewed.txt"
+    ],
+    "provenance": "Calculated from literal byte assignments and checksum, not captured traffic.",
+    "reachability": "REACHABLE"
+  },
+  {
+    "id": "BINARY-8388608",
+    "protocol": "P1",
+    "action": "builder-only value, no live action",
+    "inputs": {
+      "key": 8388608
+    },
+    "expected_bytes": "e6 fe 16 00 00 80 00 01 84",
+    "evidence": [
+      "evidence/jadx/sources/com/keeson/scottlivingrelease/utils/ble/BuildBleData.java:17-212",
+      "evidence/targeted-smali-reviewed.txt"
+    ],
+    "provenance": "Calculated from literal byte assignments and checksum, not captured traffic.",
+    "reachability": "DEAD/UNUSED"
+  },
+  {
+    "id": "BINARY-16777216",
+    "protocol": "P1",
+    "action": "builder-only value, no live action",
+    "inputs": {
+      "key": 16777216
+    },
+    "expected_bytes": "e6 fe 16 00 00 00 01 01 03",
+    "evidence": [
+      "evidence/jadx/sources/com/keeson/scottlivingrelease/utils/ble/BuildBleData.java:17-212",
+      "evidence/targeted-smali-reviewed.txt"
+    ],
+    "provenance": "Calculated from literal byte assignments and checksum, not captured traffic.",
+    "reachability": "DEAD/UNUSED"
+  },
+  {
+    "id": "BINARY-33554432",
+    "protocol": "P1",
+    "action": "builder-only value, no live action",
+    "inputs": {
+      "key": 33554432
+    },
+    "expected_bytes": "e6 fe 16 00 00 00 02 01 02",
+    "evidence": [
+      "evidence/jadx/sources/com/keeson/scottlivingrelease/utils/ble/BuildBleData.java:17-212",
+      "evidence/targeted-smali-reviewed.txt"
+    ],
+    "provenance": "Calculated from literal byte assignments and checksum, not captured traffic.",
+    "reachability": "DEAD/UNUSED"
+  },
+  {
+    "id": "BINARY-134217728",
+    "protocol": "P1",
+    "action": "flat button",
+    "inputs": {
+      "key": 134217728
+    },
+    "expected_bytes": "e6 fe 16 00 00 00 08 01 fc",
+    "evidence": [
+      "evidence/jadx/sources/com/keeson/scottlivingrelease/utils/ble/BuildBleData.java:17-212",
+      "evidence/targeted-smali-reviewed.txt"
+    ],
+    "provenance": "Calculated from literal byte assignments and checksum, not captured traffic.",
+    "reachability": "REACHABLE"
+  },
+  {
+    "id": "BINARY-536870912",
+    "protocol": "P1",
+    "action": "builder-only value, no live action",
+    "inputs": {
+      "key": 536870912
+    },
+    "expected_bytes": "e6 fe 16 00 00 00 20 01 e4",
+    "evidence": [
+      "evidence/jadx/sources/com/keeson/scottlivingrelease/utils/ble/BuildBleData.java:17-212",
+      "evidence/targeted-smali-reviewed.txt"
+    ],
+    "provenance": "Calculated from literal byte assignments and checksum, not captured traffic.",
+    "reachability": "DEAD/UNUSED"
+  },
+  {
+    "id": "BINARY-1073741824",
+    "protocol": "P1",
+    "action": "M button",
+    "inputs": {
+      "key": 1073741824
+    },
+    "expected_bytes": "e6 fe 16 00 00 00 40 01 c4",
+    "evidence": [
+      "evidence/jadx/sources/com/keeson/scottlivingrelease/utils/ble/BuildBleData.java:17-212",
+      "evidence/targeted-smali-reviewed.txt"
+    ],
+    "provenance": "Calculated from literal byte assignments and checksum, not captured traffic.",
+    "reachability": "REACHABLE"
+  },
+  {
+    "id": "QUERY-1",
+    "protocol": "P1",
+    "action": "Connect-time ASCII query",
+    "inputs": {
+      "name": "base00000000"
+    },
+    "expected_bytes": "37 44 30 45 30 30 30 30 30 30 30 30 30 30 41 42 35 34 37 35",
+    "expected_text": "7D0E0000000000AB5475",
+    "evidence": [
+      "evidence/jadx/sources/com/keeson/scottlivingrelease/ui/service/FastBleService.java:251-327",
+      "evidence/jadx/sources/com/keeson/scottlivingrelease/utils/CommunicationUtilSec.java:113-141"
+    ],
+    "provenance": "Synthetic name exercising exact shipped formula, not an observed name."
+  },
+  {
+    "id": "QUERY-2",
+    "protocol": "P1",
+    "action": "Connect-time ASCII query",
+    "inputs": {
+      "name": "base12345678"
+    },
+    "expected_bytes": "37 44 30 45 30 30 31 32 33 34 35 36 37 38 41 42 35 34 66 66 66 66 66 66 36 31",
+    "expected_text": "7D0E0012345678AB54ffffff61",
+    "evidence": [
+      "evidence/jadx/sources/com/keeson/scottlivingrelease/ui/service/FastBleService.java:251-327",
+      "evidence/jadx/sources/com/keeson/scottlivingrelease/utils/CommunicationUtilSec.java:113-141"
+    ],
+    "provenance": "Synthetic name exercising exact shipped formula, not an observed name."
+  },
+  {
+    "id": "QUERY-3",
+    "protocol": "P1",
+    "action": "Connect-time ASCII query",
+    "inputs": {
+      "name": "base00000070"
+    },
+    "expected_bytes": "37 44 30 45 30 30 30 30 30 30 30 30 37 30 41 42 35 34 35",
+    "expected_text": "7D0E0000000070AB545",
+    "evidence": [
+      "evidence/jadx/sources/com/keeson/scottlivingrelease/ui/service/FastBleService.java:251-327",
+      "evidence/jadx/sources/com/keeson/scottlivingrelease/utils/CommunicationUtilSec.java:113-141"
+    ],
+    "provenance": "Synthetic name exercising exact shipped formula, not an observed name."
+  },
+  {
+    "id": "QUERY-4",
+    "protocol": "P1",
+    "action": "Connect-time ASCII query",
+    "inputs": {
+      "name": "baseFFFFFFFF"
+    },
+    "expected_bytes": "37 44 30 45 30 30 46 46 46 46 46 46 46 46 41 42 35 34 66 66 66 66 66 63 37 39",
+    "expected_text": "7D0E00FFFFFFFFAB54fffffc79",
+    "evidence": [
+      "evidence/jadx/sources/com/keeson/scottlivingrelease/ui/service/FastBleService.java:251-327",
+      "evidence/jadx/sources/com/keeson/scottlivingrelease/utils/CommunicationUtilSec.java:113-141"
+    ],
+    "provenance": "Synthetic name exercising exact shipped formula, not an observed name."
+  },
+  {
+    "id": "QUERY-5",
+    "protocol": "P1",
+    "action": "Connect-time ASCII query",
+    "inputs": {
+      "name": "base"
+    },
+    "expected_bytes": "37 44 30 45 30 30 41 42 35 34 37 35",
+    "expected_text": "7D0E00AB5475",
+    "evidence": [
+      "evidence/jadx/sources/com/keeson/scottlivingrelease/ui/service/FastBleService.java:251-327",
+      "evidence/jadx/sources/com/keeson/scottlivingrelease/utils/CommunicationUtilSec.java:113-141"
+    ],
+    "provenance": "Synthetic name exercising exact shipped formula, not an observed name."
+  },
+  {
+    "id": "PARSER-1",
+    "protocol": "P1",
+    "action": "Synthetic notification timer parse",
+    "inputs": {
+      "variant": "B"
+    },
+    "expected_bytes": "00 00 00 00 00 00 00 00 00 60 ea 00 00 00 01 b4",
+    "expected_parse": {
+      "accepted": true,
+      "timer_ms": 60000,
+      "timer_seconds": 60,
+      "indicator": "10",
+      "light_byte_read_but_unused": 1
+    },
+    "evidence": [
+      "evidence/jadx/sources/com/keeson/scottlivingrelease/utils/widget/BedThirdteenRemote.java:280-360",
+      "evidence/jadx/sources/com/keeson/scottlivingrelease/utils/widget/BedSeventeenRemote.java:375-455",
+      "evidence/jadx/sources/com/keeson/scottlivingrelease/utils/HexDump.java:184-189",
+      "evidence/jadx/sources/com/keeson/scottlivingrelease/utils/Crc32.java:26-42"
+    ],
+    "provenance": "Synthetic parser input with zero header; demonstrates absence of header validation, not a captured reply."
+  },
+  {
+    "id": "PARSER-2",
+    "protocol": "P1",
+    "action": "Synthetic notification timer parse",
+    "inputs": {
+      "variant": "C"
+    },
+    "expected_bytes": "00 00 00 00 00 00 00 00 00 c0 27 09 00 00 00 0f",
+    "expected_parse": {
+      "accepted": true,
+      "timer_ms": 600000,
+      "timer_seconds": 600,
+      "indicator": "unchanged",
+      "light_byte_read_but_unused": 0
+    },
+    "evidence": [
+      "evidence/jadx/sources/com/keeson/scottlivingrelease/utils/widget/BedThirdteenRemote.java:280-360",
+      "evidence/jadx/sources/com/keeson/scottlivingrelease/utils/widget/BedSeventeenRemote.java:375-455",
+      "evidence/jadx/sources/com/keeson/scottlivingrelease/utils/HexDump.java:184-189",
+      "evidence/jadx/sources/com/keeson/scottlivingrelease/utils/Crc32.java:26-42"
+    ],
+    "provenance": "Synthetic parser input with zero header; demonstrates absence of header validation, not a captured reply."
+  },
+  {
+    "id": "PARSER-3",
+    "protocol": "P1",
+    "action": "Synthetic notification timer parse",
+    "inputs": {
+      "variant": "B"
+    },
+    "expected_bytes": "00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 ff",
+    "expected_parse": {
+      "accepted": true,
+      "timer_ms": 0,
+      "timer_seconds": 0,
+      "indicator": "all normal",
+      "light_byte_read_but_unused": 0
+    },
+    "evidence": [
+      "evidence/jadx/sources/com/keeson/scottlivingrelease/utils/widget/BedThirdteenRemote.java:280-360",
+      "evidence/jadx/sources/com/keeson/scottlivingrelease/utils/widget/BedSeventeenRemote.java:375-455",
+      "evidence/jadx/sources/com/keeson/scottlivingrelease/utils/HexDump.java:184-189",
+      "evidence/jadx/sources/com/keeson/scottlivingrelease/utils/Crc32.java:26-42"
+    ],
+    "provenance": "Synthetic parser input with zero header; demonstrates absence of header validation, not a captured reply."
+  },
+  {
+    "id": "PARSER-4",
+    "protocol": "P1",
+    "action": "Synthetic notification timer parse",
+    "inputs": {
+      "variant": "C"
+    },
+    "expected_bytes": "00 00 00 00 00 00 00 00 00 18 fc ff ff 00 80 6d",
+    "expected_parse": {
+      "accepted": true,
+      "timer_ms": -1000,
+      "timer_seconds": -1,
+      "indicator": "unchanged",
+      "light_byte_read_but_unused": 128
+    },
+    "evidence": [
+      "evidence/jadx/sources/com/keeson/scottlivingrelease/utils/widget/BedThirdteenRemote.java:280-360",
+      "evidence/jadx/sources/com/keeson/scottlivingrelease/utils/widget/BedSeventeenRemote.java:375-455",
+      "evidence/jadx/sources/com/keeson/scottlivingrelease/utils/HexDump.java:184-189",
+      "evidence/jadx/sources/com/keeson/scottlivingrelease/utils/Crc32.java:26-42"
+    ],
+    "provenance": "Synthetic parser input with zero header; demonstrates absence of header validation, not a captured reply."
+  }
+]

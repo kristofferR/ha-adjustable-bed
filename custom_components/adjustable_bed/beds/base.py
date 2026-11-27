@@ -280,6 +280,11 @@ class BedController(GattWriter):
         return None
 
     @property
+    def paired_abort_requires_registered_stop(self) -> bool:
+        """Whether paired failure releases only through the admitted command's hook."""
+        return False
+
+    @property
     def execution(self) -> ExecutionCapabilities:
         """Return the held and concurrent execution this controller may use.
 

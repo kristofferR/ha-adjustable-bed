@@ -1,420 +1,336 @@
-"""Scott Living bed controller implementation.
+"""Scott Living's explicit layouts over the shared Keeson app controller.
 
-Reverse engineering from com.keeson.scottlivingrelease APK.
-
-Scott Living uses the nine-byte Keeson E6 frame with side byte 0x01
-(``profiles/keeson.py`` SCOTT_LIVING).
+Release ends the 100 ms refresh. The accepted artifact defines no STOP packet,
+physical memory slots, save action, position feedback or light state.
 """
 
 from __future__ import annotations
 
 import asyncio
-import logging
 from collections.abc import Callable
 from typing import TYPE_CHECKING
 
-from bleak.backends.characteristic import BleakGATTCharacteristic
-from bleak.exc import BleakError
-
-from ..const import (
-    KEESON_BASE_NOTIFY_CHAR_UUID,
-    KEESON_BASE_WRITE_CHAR_UUID,
+from ..card import CARD_MASSAGE_TIMER
+from ..codec import keeson as codec
+from ..command_scheduler import current_command_context, note_frame_skipped, note_frame_written
+from ..const import CONF_BLE_DEVICE_NAME, CONF_PRODUCT_TYPE
+from ..controller_state import StateKey
+from ..profiles import scott_living as profiles
+from .builder import BuildContext
+from .cancellation import settled
+from .entity_specs import (
+    ControllerButtonSpec,
+    ControllerMotorHoldSpec,
+    ControllerStateSensorSpec,
+    MotorControlSpec,
 )
-from ..profiles import keeson as keeson_profiles
-from .base import BedController, ProfileExecution
+from .keeson.layout_app import AppController
 
 if TYPE_CHECKING:
+    from bleak import BleakClient
+    from bleak.backends.characteristic import BleakGATTCharacteristic
+
     from ..coordinator import AdjustableBedCoordinator
 
-_LOGGER = logging.getLogger(__name__)
+TIMER_INDICATOR = StateKey[int | None]("scott_living_timer_indicator")
 
 
-class ScottLivingCommands:
-    """Scott Living command key values.
-
-    Commands are 32-bit values where a single bit indicates the action.
-    The buildInstruct function maps these to command bytes.
-    """
-
-    # Motor commands (cmd0 byte)
-    MOTOR_HEAD_UP = 1  # 0x01
-    MOTOR_HEAD_DOWN = 2  # 0x02
-    MOTOR_FEET_UP = 4  # 0x04
-    MOTOR_FEET_DOWN = 8  # 0x08
-    MOTOR_TILT_UP = 16  # 0x10
-    MOTOR_TILT_DOWN = 32  # 0x20
-    MOTOR_LUMBAR_UP = 64  # 0x40
-    MOTOR_LUMBAR_DOWN = 128  # 0x80
-
-    # cmd1 byte commands
-    MEMORY_1 = 256  # 0x100 -> cmd1=0x01
-    MASSAGE_TIMER = 512  # 0x200 -> cmd1=0x02
-    MASSAGE_FOOT_UP = 1024  # 0x400 -> cmd1=0x04
-    MASSAGE_HEAD_UP = 2048  # 0x800 -> cmd1=0x08
-    ZERO_G = 4096  # 0x1000 -> cmd1=0x10
-    MEMORY_2 = 8192  # 0x2000 -> cmd1=0x20
-    MEMORY_3 = 16384  # 0x4000 -> cmd1=0x40 (also TV)
-    ANTI_SNORE = 32768  # 0x8000 -> cmd1=0x80
-
-    # cmd2 byte commands
-    MEMORY_4 = 65536  # 0x10000 -> cmd2=0x01
-    LIGHT = 131072  # 0x20000 -> cmd2=0x02
-    MASSAGE_HEAD_DOWN = 8388608  # 0x800000 -> cmd2=0x80
-
-    # cmd3 byte commands
-    MASSAGE_FOOT_DOWN = 16777216  # 0x1000000 -> cmd3=0x01
-    PRESET_FLAT = 134217728  # 0x8000000 -> cmd3=0x08
+def select_roles(client: BleakClient) -> tuple[BleakGATTCharacteristic, BleakGATTCharacteristic]:
+    """Require the exact app service/characteristic pairs and their actual properties."""
+    roles = codec.TRANSPORTS["base"]
+    tx = rx = None
+    for service in client.services:
+        for char in service.characteristics:
+            if service.uuid.lower() == roles.service_uuid and char.uuid.lower() == roles.write_uuid:
+                tx = char
+            if (
+                service.uuid.lower() == "0000ffe0-0000-1000-8000-00805f9b34fb"
+                and char.uuid.lower() == roles.notify_uuid
+            ):
+                rx = char
+    if (
+        tx is None
+        or rx is None
+        or not {"write", "write-without-response"}.intersection(tx.properties)
+        or "notify" not in rx.properties
+    ):
+        raise ConnectionError("Scott Living requires writable FFE5/FFE9 and notify FFE0/FFE4")
+    return tx, rx
 
 
-class ScottLivingController(ProfileExecution[keeson_profiles.KeesonProfile], BedController):
-    """Controller for Scott Living beds (9-byte Keeson variant)."""
+class ScottLivingController(AppController):
+    """Exact GATT roles and original-link writes, serialized by HA's scheduler."""
 
-    def __init__(self, coordinator: AdjustableBedCoordinator) -> None:
-        """Initialize the Scott Living controller.
-
-        Args:
-            coordinator: The AdjustableBedCoordinator instance
-        """
-        super().__init__(coordinator)
-        self.profile = keeson_profiles.SCOTT_LIVING
-        self._notify_callback: Callable[[str, float], None] | None = None
-        self._motor_state: dict[str, bool | None] = {}
-
-        self._char_uuid = KEESON_BASE_WRITE_CHAR_UUID
-        self._notify_char_uuid = KEESON_BASE_NOTIFY_CHAR_UUID
-
-        _LOGGER.debug("ScottLivingController initialized")
-
-    @property
-    def control_characteristic_uuid(self) -> str:
-        """Return the UUID of the control characteristic."""
-        return self._char_uuid
-
-    # Capability properties
-    @property
-    def supports_preset_zero_g(self) -> bool:
-        return True
-
-    @property
-    def supports_preset_lounge(self) -> bool:
-        return False
-
-    @property
-    def supports_preset_tv(self) -> bool:
-        return True  # Memory 3 / TV
-
-    @property
-    def supports_preset_anti_snore(self) -> bool:
-        return True
-
-    @property
-    def supports_memory_presets(self) -> bool:
-        return True
-
-    @property
-    def memory_slot_count(self) -> int:
-        return 4  # Memory 1, 2, 3 (TV), 4
-
-    @property
-    def supports_memory_programming(self) -> bool:
-        return False
-
-    @property
-    def supports_lights(self) -> bool:
-        return True
-
-    @property
-    def supports_discrete_light_control(self) -> bool:
-        return False  # Toggle only
-
-    @property
-    def has_tilt_support(self) -> bool:
-        return True
-
-    @property
-    def has_lumbar_support(self) -> bool:
-        return True
-
-    @property
-    def supports_stop_all(self) -> bool:
-        return True
-
-    def _build_command(self, key: int) -> bytes:
-        """Build a nine-byte E6 frame through the Keeson codec (side byte ``01``)."""
-        return keeson_profiles.encode(self.profile, key & 0xFFFFFFFF)
-
-    async def start_notify(
-        self, callback: Callable[[str, float], None] | None = None
+    def __init__(
+        self,
+        coordinator: AdjustableBedCoordinator,
+        *,
+        layout: str = "A",
+        device_name: str | None = None,
     ) -> None:
-        """Start listening for notifications."""
-        self._notify_callback = callback
+        super().__init__(coordinator, profiles.profile(layout))
+        self._device_name = device_name
+        self._refresh_stop = asyncio.Event()
 
-        if self.client is None or not self.client.is_connected:
-            _LOGGER.warning("Cannot start notifications: not connected")
-            return
+    @property
+    def supports_single_address_pairing(self) -> bool:
+        return False
 
-        try:
-            async with self._ble_lock:
-                await self.client.start_notify(
-                    self._notify_char_uuid,
-                    self._on_notification,
-                )
-            _LOGGER.debug("Started notifications for Scott Living bed")
-        except BleakError:
-            _LOGGER.warning("Failed to start notifications")
+    @property
+    def commands_share_timer(self) -> bool:
+        return True
 
-    def _on_notification(self, _sender: BleakGATTCharacteristic, data: bytearray) -> None:
-        """Handle incoming BLE notifications."""
-        _LOGGER.debug("Received notification: %s", data.hex())
-        self.forward_raw_notification(self._notify_char_uuid, bytes(data))
-
-    async def stop_notify(self) -> None:
-        """Stop listening for notifications."""
-        if self.client is None or not self.client.is_connected:
-            return
-
-        try:
-            async with self._ble_lock:
-                await self.client.stop_notify(self._notify_char_uuid)
-            _LOGGER.debug("Stopped notifications")
-        except BleakError:
-            _LOGGER.debug("Failed to stop notifications")
-
-    async def read_positions(self, motor_count: int = 2) -> None:
-        """Read current position data (not supported)."""
-
-    async def _move_motor(self, motor: str, direction: bool | None) -> None:
-        """Move a motor in a direction or stop it, always sending STOP at the end."""
-        self._motor_state[motor] = direction
-        key = 0
-
-        # Build combined motor command
-        state = self._motor_state
-        if state.get("head") is True:
-            key += ScottLivingCommands.MOTOR_HEAD_UP
-        elif state.get("head") is False:
-            key += ScottLivingCommands.MOTOR_HEAD_DOWN
-        if state.get("feet") is True:
-            key += ScottLivingCommands.MOTOR_FEET_UP
-        elif state.get("feet") is False:
-            key += ScottLivingCommands.MOTOR_FEET_DOWN
-        if state.get("tilt") is True:
-            key += ScottLivingCommands.MOTOR_TILT_UP
-        elif state.get("tilt") is False:
-            key += ScottLivingCommands.MOTOR_TILT_DOWN
-        if state.get("lumbar") is True:
-            key += ScottLivingCommands.MOTOR_LUMBAR_UP
-        elif state.get("lumbar") is False:
-            key += ScottLivingCommands.MOTOR_LUMBAR_DOWN
-
-        async def release() -> None:
-            self._motor_state = {}
-            await self.write_command(
-                self._build_command(0),  # Zero = stop
-                cancel_event=asyncio.Event(),
-            )
-
-        async with self.releasing(release):
-            if key:
-                await self.write_command(
-                    self._build_command(key),
-                    repeat_count=self._coordinator.motor_pulse_count,
-                    repeat_delay_ms=self._coordinator.motor_pulse_delay_ms,
-                )
-
-    # Motor control methods
-    async def move_head_up(self) -> None:
-        """Move head up."""
-        await self._move_motor("head", True)
-
-    async def move_head_down(self) -> None:
-        """Move head down."""
-        await self._move_motor("head", False)
-
-    async def move_head_stop(self) -> None:
-        """Stop head motor."""
-        await self._move_motor("head", None)
-
-    async def move_back_up(self) -> None:
-        """Move back up (same as head)."""
-        await self.move_head_up()
-
-    async def move_back_down(self) -> None:
-        """Move back down (same as head)."""
-        await self.move_head_down()
-
-    async def move_back_stop(self) -> None:
-        """Stop back motor."""
-        await self.move_head_stop()
-
-    async def move_legs_up(self) -> None:
-        """Move legs up (same as feet)."""
-        await self._move_motor("feet", True)
-
-    async def move_legs_down(self) -> None:
-        """Move legs down (same as feet)."""
-        await self._move_motor("feet", False)
-
-    async def move_legs_stop(self) -> None:
-        """Stop legs motor."""
-        await self._move_motor("feet", None)
-
-    async def move_feet_up(self) -> None:
-        """Move feet up."""
-        await self._move_motor("feet", True)
-
-    async def move_feet_down(self) -> None:
-        """Move feet down."""
-        await self._move_motor("feet", False)
-
-    async def move_feet_stop(self) -> None:
-        """Stop feet motor."""
-        await self._move_motor("feet", None)
-
-    # Tilt motor control
-    async def move_tilt_up(self) -> None:
-        """Move tilt up."""
-        await self._move_motor("tilt", True)
-
-    async def move_tilt_down(self) -> None:
-        """Move tilt down."""
-        await self._move_motor("tilt", False)
-
-    async def move_tilt_stop(self) -> None:
-        """Stop tilt motor."""
-        await self._move_motor("tilt", None)
-
-    # Lumbar motor control
-    async def move_lumbar_up(self) -> None:
-        """Move lumbar up."""
-        await self._move_motor("lumbar", True)
-
-    async def move_lumbar_down(self) -> None:
-        """Move lumbar down."""
-        await self._move_motor("lumbar", False)
-
-    async def move_lumbar_stop(self) -> None:
-        """Stop lumbar motor."""
-        await self._move_motor("lumbar", None)
-
-    async def stop_all(self) -> None:
-        """Stop all motors."""
-        self._motor_state = {}
-        await self.write_command(
-            self._build_command(0),
-            cancel_event=asyncio.Event(),
+    @property
+    def motor_control_specs(self) -> tuple[MotorControlSpec, ...]:
+        basic = super().motor_control_specs
+        if self.profile.layout != "C":
+            return basic
+        return (
+            *basic,
+            MotorControlSpec(
+                "head",
+                "head",
+                lambda c: c.move_tilt_up(),
+                lambda c: c.move_tilt_down(),
+                lambda c: c.stop_all(),
+                hold=ControllerMotorHoldSpec("tilt_up", "tilt_down", 0, 0, stop_scope="side"),
+            ),
         )
 
-    # Preset methods
-    async def preset_flat(self) -> None:
-        """Go to flat position."""
-        await self.write_command(self._build_command(ScottLivingCommands.PRESET_FLAT))
+    @property
+    def controller_button_specs(self) -> tuple[ControllerButtonSpec, ...]:
+        return tuple(
+            s for s in super().controller_button_specs if s.key not in ("tilt_up", "tilt_down")
+        )
 
-    async def preset_memory(self, memory_num: int) -> None:
-        """Go to memory preset."""
-        commands = {
-            1: ScottLivingCommands.MEMORY_1,
-            2: ScottLivingCommands.MEMORY_2,
-            3: ScottLivingCommands.MEMORY_3,
-            4: ScottLivingCommands.MEMORY_4,
-        }
-        if command := commands.get(memory_num):
-            await self.write_command(self._build_command(command))
-        else:
-            raise self.not_supported(f"memory preset {memory_num}")
+    @property
+    def controller_state_sensor_specs(self) -> tuple[ControllerStateSensorSpec, ...]:
+        if self.profile.layout == "A":
+            return ()
+        # These are the app's graphic labels, not a measured countdown duration.
+        return (
+            ControllerStateSensorSpec(
+                "scott_living_timer_indicator",
+                "scott_living_timer_indicator",
+                TIMER_INDICATOR,
+                "mdi:timer-outline",
+                entity_registry_enabled_default=True,
+                entity_category=None,
+                card=CARD_MASSAGE_TIMER,
+            ),
+        )
 
-    async def program_memory(self, memory_num: int) -> None:
-        """Program current position to memory (not supported)."""
-        raise self.not_supported("saving memory presets")
+    def _ready(self) -> None:
+        super()._ready()
+        if self._coordinator.controller is not self:
+            raise ConnectionError("Scott Living controller has been replaced")
 
-    async def preset_zero_g(self) -> None:
-        """Go to zero gravity position."""
-        await self.write_command(self._build_command(ScottLivingCommands.ZERO_G))
+    def motor_pulse_settings(self) -> tuple[int, int]:
+        return self._coordinator.motor_pulse_count, profiles.REFRESH_MS
 
-    async def preset_lounge(self) -> None:
-        """Go to lounge position (not available)."""
-        raise self.not_supported("the Lounge preset")
+    def timed_move_repeat_count(self, duration_ms: int, pulse_delay_ms: int) -> int:
+        return max(1, -(-duration_ms // profiles.REFRESH_MS))
 
-    async def preset_tv(self) -> None:
-        """Go to TV position (same as Memory 3)."""
-        await self.write_command(self._build_command(ScottLivingCommands.MEMORY_3))
+    def _frame(self, mask: int) -> bytes:
+        return codec.frame(mask, header=0xE6, side=1)
 
-    async def preset_anti_snore(self) -> None:
-        """Go to anti-snore position."""
-        await self.write_command(self._build_command(ScottLivingCommands.ANTI_SNORE))
+    async def _release(self) -> None:
+        """No release frame exists in this artifact."""
 
-    # Light methods
-    async def lights_on(self) -> None:
-        """Turn on lights (toggle)."""
-        await self.lights_toggle()
+    async def stop_all(self) -> None:
+        """Fence queued refresh and settle the submitted frame on its original link."""
+        self._refresh_stop.set()
+        async with self.ble_lock:
+            pass
 
-    async def lights_off(self) -> None:
-        """Turn off lights (toggle)."""
-        await self.lights_toggle()
+    async def _wait(self, milliseconds: float, *, cleanup: bool = False) -> bool:
+        events = (self._coordinator.cancel_command, self._session_cancel, self._refresh_stop)
+        if any(event.is_set() for event in events):
+            return True
+        waits = [asyncio.create_task(event.wait()) for event in events]
+        try:
+            done, _ = await asyncio.wait(
+                waits, timeout=milliseconds / 1000, return_when=asyncio.FIRST_COMPLETED
+            )
+            return bool(done)
+        finally:
+            for task in waits:
+                task.cancel()
+            await asyncio.gather(*waits, return_exceptions=True)
 
-    async def lights_toggle(self) -> None:
-        """Toggle lights."""
-        await self.write_command(self._build_command(ScottLivingCommands.LIGHT))
+    async def hold_control(self, control: str, duration_ms: int) -> None:
+        self.validate_hold_control(control, duration_ms)
+        self._ready()
+        self._refresh_stop = stop = asyncio.Event()
+        session = self._session_cancel
+        action = self._action(control)
+        context = current_command_context()
+        # A renewable hold is ended by the scheduler, not its first lease window.
+        if context is not None and context.lease is not None:
+            duration_ms = self.execution.hold_ceiling_ms or duration_ms
+        loop = asyncio.get_running_loop()
+        deadline = loop.time() + duration_ms / 1000
+        try:
+            while loop.time() < deadline:
+                if session is not self._session_cancel:
+                    raise ConnectionError("Scott Living hold belongs to an expired session")
+                if stop.is_set() or session.is_set() or self._coordinator.cancel_command.is_set():
+                    note_frame_skipped()
+                    return
+                started = loop.time()
+                await self.write_command(self._frame(action.mask))
+                delay = max(0, min(deadline, started + profiles.REFRESH_MS / 1000) - loop.time())
+                if await self._wait(delay * 1000):
+                    return
+        finally:
+            stop.set()  # Ending refresh is the complete, packet-free release.
 
-    # Massage methods (available on 13-button and 17-button remotes)
-    async def massage_off(self) -> None:
-        """Step both massage zones down once."""
-        await self.massage_intensity_down()
+    async def _run_action(self, key: str) -> None:
+        self._action(key)  # Reject stale layout controls before touching the link.
+        self._refresh_stop = asyncio.Event()
+        await super()._run_action(key)
 
-    async def massage_toggle(self) -> None:
-        """Toggle massage (step head massage intensity up)."""
-        await self.massage_head_up()
+    async def move_tilt_up(self) -> None:
+        await self._run_action("tilt_up")
 
-    async def massage_intensity_up(self) -> None:
-        """Increase massage intensity on both zones."""
-        await self.massage_head_up()
-        await self.massage_foot_up()
+    async def move_tilt_down(self) -> None:
+        await self._run_action("tilt_down")
 
-    async def massage_intensity_down(self) -> None:
-        """Decrease massage intensity on both zones."""
-        await self.massage_head_down()
-        await self.massage_foot_down()
+    async def move_tilt_stop(self) -> None:
+        await self.stop_all()
 
-    async def massage_head_toggle(self) -> None:
-        """Toggle head massage (step intensity up)."""
-        await self.massage_head_up()
+    async def write_command(
+        self,
+        command: bytes,
+        repeat_count: int = 1,
+        repeat_delay_ms: int = 100,
+        cancel_event: asyncio.Event | None = None,
+    ) -> None:
+        self._ready()
+        client, tx, session = self._session_client, self._tx, self._session_cancel
+        refresh_stop = self._refresh_stop
+        event = cancel_event if cancel_event is not None else self._coordinator.cancel_command
+        assert client is not None and tx is not None
+        context, caller = current_command_context(), asyncio.current_task()
 
-    async def massage_head_up(self) -> None:
-        """Increase head massage intensity."""
-        await self.massage_head_step_up()
+        def cancelled() -> bool:
+            deadline = context.hold_deadline if context is not None else None
+            return (
+                event.is_set()
+                or refresh_stop.is_set()
+                or caller is not None
+                and bool(caller.cancelling())
+                or context is not None
+                and (
+                    not context.active
+                    or context.caller_is_cancelling is not None
+                    and context.caller_is_cancelling()
+                )
+                or deadline is not None
+                and asyncio.get_running_loop().time() >= deadline
+            )
 
-    async def massage_head_down(self) -> None:
-        """Decrease head massage intensity."""
-        await self.massage_head_step_down()
+        for index in range(repeat_count):
+            async with self.ble_lock:
+                if cancelled():
+                    note_frame_skipped()
+                    raise asyncio.CancelledError
+                self._ready()
+                if session is not self._session_cancel or client is not self.client:
+                    raise ConnectionError("Scott Living write belongs to an expired session")
+                # Android inherits the discovered characteristic type. A no-response
+                # property selects that mode, including when both modes are offered.
+                response = "write-without-response" not in tx.properties
+                payload = self._format_command_trace_payload(command)
+                if payload is not None:
+                    self._coordinator.record_command_trace(
+                        payload=payload,
+                        characteristic_uuid=tx.uuid,
+                        characteristic_handle=tx.handle,
+                        response=response,
+                        repeat_count=repeat_count,
+                        repeat_delay_ms=repeat_delay_ms,
+                        command_origin="app_profile",
+                        controller_class=type(self).__name__,
+                    )
 
-    async def massage_foot_toggle(self) -> None:
-        """Toggle foot massage (step intensity up)."""
-        await self.massage_foot_up()
+                async def write(response: bool = response) -> None:
+                    await client.write_gatt_char(tx, command, response=response)
+                    note_frame_written(event)
 
-    async def massage_foot_up(self) -> None:
-        """Increase foot massage intensity."""
-        await self.massage_foot_step_up()
+                await settled(write())
+            if index + 1 < repeat_count and await self._wait(repeat_delay_ms):
+                note_frame_skipped()
+                return
 
-    async def massage_foot_down(self) -> None:
-        """Decrease foot massage intensity."""
-        await self.massage_foot_step_down()
+    async def async_discover_capabilities(self) -> None:
+        client = self.client
+        if client is None or not client.is_connected:
+            raise ConnectionError("Scott Living session is disconnected")
+        select_roles(client)
 
-    async def massage_mode_step(self) -> None:
-        """Step massage mode (mapped to head intensity step-up)."""
-        await self.massage_toggle()
+    async def start_notify(self, callback: Callable[[str, float], None] | None = None) -> None:
+        if (
+            self.client is self._session_client
+            and self.client is not None
+            and self.client.is_connected
+            and self._rx is not None
+            and not self._session_cancel.is_set()
+        ):
+            self._notify_callback = callback
+            return
+        self.on_disconnect()
+        client = self.client
+        if client is None or not client.is_connected:
+            raise ConnectionError("Scott Living session is disconnected")
+        tx, rx = select_roles(client)
+        self._session_client, self._tx, self._rx = client, tx, rx
+        self._session_cancel = asyncio.Event()
+        self._refresh_stop = asyncio.Event()
+        self._notify_callback = callback
+        session = self._session_cancel
 
-    async def massage_head_step_up(self) -> None:
-        """Increase head massage intensity."""
-        await self.write_command(self._build_command(ScottLivingCommands.MASSAGE_HEAD_UP))
+        def notify(sender: BleakGATTCharacteristic, data: bytearray) -> None:
+            if (
+                client is self.client
+                and client is self._session_client
+                and self._coordinator.controller is self
+                and not session.is_set()
+            ):
+                self._on_notification(sender, data)
 
-    async def massage_head_step_down(self) -> None:
-        """Decrease head massage intensity."""
-        await self.write_command(self._build_command(ScottLivingCommands.MASSAGE_HEAD_DOWN))
+        try:
+            async with self.ble_lock:
+                self._ready()
+                await settled(client.start_notify(rx, notify))
+            if not await self._wait(profiles.REFRESH_MS):
+                if session is not self._session_cancel or client is not self.client:
+                    raise ConnectionError("Scott Living startup belongs to an expired session")
+                await self.write_command(codec.scott_living_query(self._device_name))
+        except BaseException:
+            if session is self._session_cancel:
+                self.on_disconnect()
+            raise
 
-    async def massage_foot_step_up(self) -> None:
-        """Increase foot massage intensity."""
-        await self.write_command(self._build_command(ScottLivingCommands.MASSAGE_FOOT_UP))
+    def on_disconnect(self) -> None:
+        self._refresh_stop.set()
+        self._timer_status = None
+        if self._coordinator.controller is self:
+            self.forward_controller_state_updates(TIMER_INDICATOR(None))
+        super().on_disconnect()
 
-    async def massage_foot_step_down(self) -> None:
-        """Decrease foot massage intensity."""
-        await self.write_command(self._build_command(ScottLivingCommands.MASSAGE_FOOT_DOWN))
+    def _parse_notification(self, data: bytes | None) -> None:
+        if self.profile.layout == "A" or data is None:
+            return
+        indicator = codec.scott_living_timer_indicator(data)
+        if indicator is not None:
+            self._timer_status = indicator
+            self.forward_controller_state_updates(TIMER_INDICATOR(indicator))
+
+
+async def build_controller(ctx: BuildContext) -> ScottLivingController:
+    return ScottLivingController(
+        ctx.coordinator,
+        layout=ctx.data.get(CONF_PRODUCT_TYPE, "A"),
+        device_name=ctx.live_device_name or ctx.data.get(CONF_BLE_DEVICE_NAME),
+    )

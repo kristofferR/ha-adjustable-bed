@@ -1510,6 +1510,10 @@ def default_scenario(bed_type: str) -> Scenario:
         return Scenario(id=bed_type, bed_type=bed_type, entry_data={"product_type": "eb632"})
     if bed_type == "ronco_motion":
         return Scenario(id=bed_type, bed_type=bed_type, protocol_variant="economy", layout_id="ronco_motion:0")
+    if bed_type == "scott_living":
+        return Scenario(id=bed_type, bed_type=bed_type,
+            entry_data={const.CONF_PRODUCT_TYPE: "A", const.CONF_BLE_DEVICE_NAME: "base00000000"},
+            factory_kwargs={"device_name": "base00000000"})
     if bed_type == const.BED_TYPE_AMBIENT:
         return _ambient_scenario()
     if bed_type == const.BED_TYPE_RESTONIC:
@@ -1837,6 +1841,7 @@ ROUTE_REPLIES: dict[str, dict[str, str]] = {
     # Floyd also pings for its node: this address answers with vaddr 0x01020304.
     "kaidi:floyd": {"write:03fffffffffe": KAIDI_PING_REPLY},
     "linak:aa_control_my_bed": {"read:99fa0029-338a-1024-8a49-009c0215f78a": "c0"},
+    "linak:carpe_diem": {"read:99fa0029-338a-1024-8a49-009c0215f78a": "c0"},
 }
 # Large variant sets are sampled: the first keys plus the last.
 SAMPLED_ROUTES: dict[str, int] = {"adjustamattress": 3}
@@ -2069,6 +2074,11 @@ def route_scenarios() -> list[Scenario]:
     # The Q-Plus layout with every key the sbi route sent; schema 5.9 moves those beds to it.
     scenarios.append(Scenario(id="qplus_app:H", bed_type="qplus_app", layout_id="qplus_app",
         entry_data={const.CONF_PRODUCT_TYPE: "H"}))
+    for layout in ("A", "B", "C"):
+        for suffix, properties in (("", None), (":write", WRITE_ONLY), (":no_response", NO_RESPONSE_ONLY)):
+            scenarios.append(dataclasses.replace(default_scenario("scott_living"),
+                id=f"scott_living:{layout}{suffix}", layout_id="scott_living", properties=properties,
+                entry_data={"product_type": layout, "ble_device_name": "base00000000"}))
     scenarios.append(dataclasses.replace(default_scenario("kingkoil"), id="kingkoil:KSBT03CL", protocol_variant="KSBT03CL", layout_id="kingkoil"))
     for variant in "bcde":
         scenarios.append(dataclasses.replace(default_scenario("somos"), id=f"somos:{variant}", protocol_variant=variant, layout_id="somos:uart" if variant in "bde" else "somos"))

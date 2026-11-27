@@ -1,0 +1,480 @@
+[
+  {
+    "action": "A: reading preset button",
+    "variant": "A",
+    "resource_id": "iv_read",
+    "key": 8192,
+    "bytes": "e6 fe 16 00 20 00 00 01 e4",
+    "timing": {
+      "count": 1,
+      "delay_ms": 0,
+      "throttle": "none in control handlers"
+    }
+  },
+  {
+    "action": "A: TV preset button",
+    "variant": "A",
+    "resource_id": "iv_tv",
+    "key": 16384,
+    "bytes": "e6 fe 16 00 40 00 00 01 c4",
+    "timing": {
+      "count": 1,
+      "delay_ms": 0,
+      "throttle": "none in control handlers"
+    }
+  },
+  {
+    "action": "A: flat button",
+    "variant": "A",
+    "resource_id": "v_4",
+    "key": 134217728,
+    "bytes": "e6 fe 16 00 00 00 08 01 fc",
+    "timing": {
+      "count": 1,
+      "delay_ms": 0,
+      "throttle": "none in control handlers"
+    }
+  },
+  {
+    "action": "A: Zero G preset button",
+    "variant": "A",
+    "resource_id": "iv_zg",
+    "key": 4096,
+    "bytes": "e6 fe 16 00 10 00 00 01 f4",
+    "timing": {
+      "count": 1,
+      "delay_ms": 0,
+      "throttle": "none in control handlers"
+    }
+  },
+  {
+    "action": "A: head/back up",
+    "variant": "A",
+    "resource_id": "v_1",
+    "key": 1,
+    "bytes": "e6 fe 16 01 00 00 00 01 03",
+    "timing": {
+      "initial_delay_ms": 0,
+      "fixed_delay_ms": 100,
+      "count": "unbounded until release/cancel",
+      "scheduler": "one shared single-thread ScheduledExecutorService"
+    }
+  },
+  {
+    "action": "A: head/back down",
+    "variant": "A",
+    "resource_id": "v_6",
+    "key": 2,
+    "bytes": "e6 fe 16 02 00 00 00 01 02",
+    "timing": {
+      "initial_delay_ms": 0,
+      "fixed_delay_ms": 100,
+      "count": "unbounded until release/cancel",
+      "scheduler": "one shared single-thread ScheduledExecutorService"
+    }
+  },
+  {
+    "action": "A: foot/legs up",
+    "variant": "A",
+    "resource_id": "v_2",
+    "key": 4,
+    "bytes": "e6 fe 16 04 00 00 00 01 00",
+    "timing": {
+      "initial_delay_ms": 0,
+      "fixed_delay_ms": 100,
+      "count": "unbounded until release/cancel",
+      "scheduler": "one shared single-thread ScheduledExecutorService"
+    }
+  },
+  {
+    "action": "A: foot/legs down",
+    "variant": "A",
+    "resource_id": "v_7",
+    "key": 8,
+    "bytes": "e6 fe 16 08 00 00 00 01 fc",
+    "timing": {
+      "initial_delay_ms": 0,
+      "fixed_delay_ms": 100,
+      "count": "unbounded until release/cancel",
+      "scheduler": "one shared single-thread ScheduledExecutorService"
+    }
+  },
+  {
+    "action": "B: reading preset button",
+    "variant": "B",
+    "resource_id": "iv_read",
+    "key": 8192,
+    "bytes": "e6 fe 16 00 20 00 00 01 e4",
+    "timing": {
+      "count": 1,
+      "delay_ms": 0,
+      "throttle": "none in control handlers"
+    }
+  },
+  {
+    "action": "B: TV preset button",
+    "variant": "B",
+    "resource_id": "iv_tv",
+    "key": 16384,
+    "bytes": "e6 fe 16 00 40 00 00 01 c4",
+    "timing": {
+      "count": 1,
+      "delay_ms": 0,
+      "throttle": "none in control handlers"
+    }
+  },
+  {
+    "action": "B: light button",
+    "variant": "B",
+    "resource_id": "iv_light",
+    "key": 131072,
+    "bytes": "e6 fe 16 00 00 02 00 01 02",
+    "timing": {
+      "count": 1,
+      "delay_ms": 0,
+      "throttle": "none in control handlers"
+    }
+  },
+  {
+    "action": "B: flat button",
+    "variant": "B",
+    "resource_id": "v_4",
+    "key": 134217728,
+    "bytes": "e6 fe 16 00 00 00 08 01 fc",
+    "timing": {
+      "count": 1,
+      "delay_ms": 0,
+      "throttle": "none in control handlers"
+    }
+  },
+  {
+    "action": "B: Zero G preset button",
+    "variant": "B",
+    "resource_id": "iv_zg",
+    "key": 4096,
+    "bytes": "e6 fe 16 00 10 00 00 01 f4",
+    "timing": {
+      "count": 1,
+      "delay_ms": 0,
+      "throttle": "none in control handlers"
+    }
+  },
+  {
+    "action": "B: head massage button",
+    "variant": "B",
+    "resource_id": "iv_head_massgae",
+    "key": 2048,
+    "bytes": "e6 fe 16 00 08 00 00 01 fc",
+    "timing": {
+      "count": 1,
+      "delay_ms": 0,
+      "throttle": "none in control handlers"
+    }
+  },
+  {
+    "action": "B: foot massage button",
+    "variant": "B",
+    "resource_id": "iv_foot_massage",
+    "key": 1024,
+    "bytes": "e6 fe 16 00 04 00 00 01 00",
+    "timing": {
+      "count": 1,
+      "delay_ms": 0,
+      "throttle": "none in control handlers"
+    }
+  },
+  {
+    "action": "B: massage timer button",
+    "variant": "B",
+    "resource_id": "iv_time_massgae",
+    "key": 512,
+    "bytes": "e6 fe 16 00 02 00 00 01 02",
+    "timing": {
+      "count": 1,
+      "delay_ms": 0,
+      "throttle": "none in control handlers"
+    }
+  },
+  {
+    "action": "B: anti-snore button",
+    "variant": "B",
+    "resource_id": "iv_snore",
+    "key": 32768,
+    "bytes": "e6 fe 16 00 80 00 00 01 84",
+    "timing": {
+      "count": 1,
+      "delay_ms": 0,
+      "throttle": "none in control handlers"
+    }
+  },
+  {
+    "action": "B: head/back up",
+    "variant": "B",
+    "resource_id": "v_1",
+    "key": 1,
+    "bytes": "e6 fe 16 01 00 00 00 01 03",
+    "timing": {
+      "initial_delay_ms": 0,
+      "fixed_delay_ms": 100,
+      "count": "unbounded until release/cancel",
+      "scheduler": "one shared single-thread ScheduledExecutorService"
+    }
+  },
+  {
+    "action": "B: head/back down",
+    "variant": "B",
+    "resource_id": "v_6",
+    "key": 2,
+    "bytes": "e6 fe 16 02 00 00 00 01 02",
+    "timing": {
+      "initial_delay_ms": 0,
+      "fixed_delay_ms": 100,
+      "count": "unbounded until release/cancel",
+      "scheduler": "one shared single-thread ScheduledExecutorService"
+    }
+  },
+  {
+    "action": "B: foot/legs up",
+    "variant": "B",
+    "resource_id": "v_2",
+    "key": 4,
+    "bytes": "e6 fe 16 04 00 00 00 01 00",
+    "timing": {
+      "initial_delay_ms": 0,
+      "fixed_delay_ms": 100,
+      "count": "unbounded until release/cancel",
+      "scheduler": "one shared single-thread ScheduledExecutorService"
+    }
+  },
+  {
+    "action": "B: foot/legs down",
+    "variant": "B",
+    "resource_id": "v_7",
+    "key": 8,
+    "bytes": "e6 fe 16 08 00 00 00 01 fc",
+    "timing": {
+      "initial_delay_ms": 0,
+      "fixed_delay_ms": 100,
+      "count": "unbounded until release/cancel",
+      "scheduler": "one shared single-thread ScheduledExecutorService"
+    }
+  },
+  {
+    "action": "C: reading preset button",
+    "variant": "C",
+    "resource_id": "iv_read",
+    "key": 8192,
+    "bytes": "e6 fe 16 00 20 00 00 01 e4",
+    "timing": {
+      "count": 1,
+      "delay_ms": 0,
+      "throttle": "none in control handlers"
+    }
+  },
+  {
+    "action": "C: TV preset button",
+    "variant": "C",
+    "resource_id": "iv_tv",
+    "key": 16384,
+    "bytes": "e6 fe 16 00 40 00 00 01 c4",
+    "timing": {
+      "count": 1,
+      "delay_ms": 0,
+      "throttle": "none in control handlers"
+    }
+  },
+  {
+    "action": "C: light button",
+    "variant": "C",
+    "resource_id": "v_light",
+    "key": 131072,
+    "bytes": "e6 fe 16 00 00 02 00 01 02",
+    "timing": {
+      "count": 1,
+      "delay_ms": 0,
+      "throttle": "none in control handlers"
+    }
+  },
+  {
+    "action": "C: flat button",
+    "variant": "C",
+    "resource_id": "v_4",
+    "key": 134217728,
+    "bytes": "e6 fe 16 00 00 00 08 01 fc",
+    "timing": {
+      "count": 1,
+      "delay_ms": 0,
+      "throttle": "none in control handlers"
+    }
+  },
+  {
+    "action": "C: Zero G preset button",
+    "variant": "C",
+    "resource_id": "v_zg",
+    "key": 4096,
+    "bytes": "e6 fe 16 00 10 00 00 01 f4",
+    "timing": {
+      "count": 1,
+      "delay_ms": 0,
+      "throttle": "none in control handlers"
+    }
+  },
+  {
+    "action": "C: head massage button",
+    "variant": "C",
+    "resource_id": "iv_head_massgae",
+    "key": 2048,
+    "bytes": "e6 fe 16 00 08 00 00 01 fc",
+    "timing": {
+      "count": 1,
+      "delay_ms": 0,
+      "throttle": "none in control handlers"
+    }
+  },
+  {
+    "action": "C: foot massage button",
+    "variant": "C",
+    "resource_id": "iv_foot_massage",
+    "key": 1024,
+    "bytes": "e6 fe 16 00 04 00 00 01 00",
+    "timing": {
+      "count": 1,
+      "delay_ms": 0,
+      "throttle": "none in control handlers"
+    }
+  },
+  {
+    "action": "C: massage timer button",
+    "variant": "C",
+    "resource_id": "iv_time_massgae",
+    "key": 512,
+    "bytes": "e6 fe 16 00 02 00 00 01 02",
+    "timing": {
+      "count": 1,
+      "delay_ms": 0,
+      "throttle": "none in control handlers"
+    }
+  },
+  {
+    "action": "C: anti-snore button",
+    "variant": "C",
+    "resource_id": "v_snore",
+    "key": 32768,
+    "bytes": "e6 fe 16 00 80 00 00 01 84",
+    "timing": {
+      "count": 1,
+      "delay_ms": 0,
+      "throttle": "none in control handlers"
+    }
+  },
+  {
+    "action": "C: M button",
+    "variant": "C",
+    "resource_id": "iv_m",
+    "key": 1073741824,
+    "bytes": "e6 fe 16 00 00 00 40 01 c4",
+    "timing": {
+      "count": 1,
+      "delay_ms": 0,
+      "throttle": "none in control handlers"
+    }
+  },
+  {
+    "action": "C: star/favorite button",
+    "variant": "C",
+    "resource_id": "v_star",
+    "key": 65536,
+    "bytes": "e6 fe 16 00 00 01 00 01 03",
+    "timing": {
+      "count": 1,
+      "delay_ms": 0,
+      "throttle": "none in control handlers"
+    }
+  },
+  {
+    "action": "C: head/back up",
+    "variant": "C",
+    "resource_id": "v_1",
+    "key": 1,
+    "bytes": "e6 fe 16 01 00 00 00 01 03",
+    "timing": {
+      "initial_delay_ms": 0,
+      "fixed_delay_ms": 100,
+      "count": "unbounded until release/cancel",
+      "scheduler": "one shared single-thread ScheduledExecutorService"
+    }
+  },
+  {
+    "action": "C: head/back down",
+    "variant": "C",
+    "resource_id": "v_6",
+    "key": 2,
+    "bytes": "e6 fe 16 02 00 00 00 01 02",
+    "timing": {
+      "initial_delay_ms": 0,
+      "fixed_delay_ms": 100,
+      "count": "unbounded until release/cancel",
+      "scheduler": "one shared single-thread ScheduledExecutorService"
+    }
+  },
+  {
+    "action": "C: foot/legs up",
+    "variant": "C",
+    "resource_id": "v_2",
+    "key": 4,
+    "bytes": "e6 fe 16 04 00 00 00 01 00",
+    "timing": {
+      "initial_delay_ms": 0,
+      "fixed_delay_ms": 100,
+      "count": "unbounded until release/cancel",
+      "scheduler": "one shared single-thread ScheduledExecutorService"
+    }
+  },
+  {
+    "action": "C: foot/legs down",
+    "variant": "C",
+    "resource_id": "v_7",
+    "key": 8,
+    "bytes": "e6 fe 16 08 00 00 00 01 fc",
+    "timing": {
+      "initial_delay_ms": 0,
+      "fixed_delay_ms": 100,
+      "count": "unbounded until release/cancel",
+      "scheduler": "one shared single-thread ScheduledExecutorService"
+    }
+  },
+  {
+    "action": "C: head tilt up",
+    "variant": "C",
+    "resource_id": "v_head_up",
+    "key": 16,
+    "bytes": "e6 fe 16 10 00 00 00 01 f4",
+    "timing": {
+      "initial_delay_ms": 0,
+      "fixed_delay_ms": 100,
+      "count": "unbounded until release/cancel",
+      "scheduler": "one shared single-thread ScheduledExecutorService"
+    }
+  },
+  {
+    "action": "C: head tilt down",
+    "variant": "C",
+    "resource_id": "v_head_down",
+    "key": 32,
+    "bytes": "e6 fe 16 20 00 00 00 01 e4",
+    "timing": {
+      "initial_delay_ms": 0,
+      "fixed_delay_ms": 100,
+      "count": "unbounded until release/cancel",
+      "scheduler": "one shared single-thread ScheduledExecutorService"
+    }
+  },
+  {
+    "action": "all variants: connect-time ASCII query",
+    "bytes": "UTF8(\"7D0E00\" + (last8_UTF16(name) if UTF16_length>=8 else \"\") + \"AB54\" + calcUniversalCRC(UTF8(prefix)))",
+    "timing": {
+      "count": 1,
+      "delay_after_notify_success_ms": 100
+    }
+  }
+]

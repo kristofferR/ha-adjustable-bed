@@ -328,7 +328,7 @@ async def test_a_discovered_bed_lists_its_own_rows_and_every_other_app(
     assert result["description_placeholders"]["family"] == "Linak"
     options = select_options(result, const.CONF_BED_TYPE)
     aa_control = f"{const.BED_TYPE_LINAK}:{const.LINAK_VARIANT_AA_CONTROL_MY_BED}"
-    assert list(options) == [aa_control, const.BED_TYPE_LINAK, "another"]
+    assert list(options) == [aa_control, "linak:carpe_diem", const.BED_TYPE_LINAK, "another"]
     assert suggested(result, const.CONF_BED_TYPE) == const.BED_TYPE_LINAK
     assert options["another"] == _STRINGS["config"]["step"]["bluetooth_confirm"]["data"]["another"]
     result = await hass.config_entries.flow.async_configure(

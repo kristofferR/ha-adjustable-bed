@@ -35,10 +35,11 @@ LINAK_DIRECTION_OPTIONS = ("up", "down")
 
 async def handle_linak_move_simultaneously(call: ServiceCall) -> None:
     """Drive two sections with one native combined-motion command."""
-    first_motor = call.data[ATTR_FIRST_MOTOR]
-    second_motor = call.data[ATTR_SECOND_MOTOR]
-    first_up = call.data[ATTR_FIRST_DIRECTION] == "up"
-    second_up = call.data[ATTR_SECOND_DIRECTION] == "up"
+    sections = frozenset(call.data.get("sections", ()))
+    first_motor = call.data.get(ATTR_FIRST_MOTOR, "back")
+    second_motor = call.data.get(ATTR_SECOND_MOTOR, "legs")
+    first_up = call.data.get(ATTR_FIRST_DIRECTION, call.data.get("direction")) == "up"
+    second_up = call.data.get(ATTR_SECOND_DIRECTION, call.data.get("direction")) == "up"
     duration_ms = call.data[ATTR_DURATION_MS]
     if first_motor == second_motor:
         raise invalid("motors_must_differ")
@@ -48,17 +49,37 @@ async def handle_linak_move_simultaneously(call: ServiceCall) -> None:
         if isinstance(controller, LinakController):
             await controller.prepare_simultaneous_movement()
         if not controller.supports_simultaneous_movement:
-            raise invalid("feature_not_supported", device_name=target.name, feature="moving two motors together")
-        unavailable = {first_motor, second_motor} - set(controller.simultaneous_movement_axes)
+            raise invalid(
+                "feature_not_supported",
+                device_name=target.name,
+                feature="moving two motors together",
+            )
+        if sections and (
+            not isinstance(controller, LinakController)
+            or controller._profile is not LinakProfile.CARPE_DIEM
+        ):
+            raise invalid(
+                "feature_not_supported",
+                device_name=target.name,
+                feature="selected-section movement",
+            )
+        unavailable = (sections or {first_motor, second_motor}) - set(
+            controller.simultaneous_movement_axes
+        )
         if unavailable:
             axes = ", ".join(sorted(unavailable))
-            raise invalid("feature_not_supported", device_name=target.name, feature=f"moving {axes} together")
+            raise invalid(
+                "feature_not_supported", device_name=target.name, feature=f"moving {axes} together"
+            )
         if isinstance(controller, LinakController):
             controller.validate_simultaneous_directions(first_up, second_up)
             if controller.binds_grouped_abort_to_session:
                 session_bound_receivers.add(target.address)
 
     async def move(controller: BedController) -> None:
+        if sections and isinstance(controller, LinakController):
+            await controller.move_selected_sections(sections, first_up, duration_ms)
+            return
         await controller.move_simultaneously(
             first_motor,
             first_up,
@@ -70,13 +91,14 @@ async def handle_linak_move_simultaneously(call: ServiceCall) -> None:
     targets = _call_targets(call)
     resources = tuple(
         f"motor:{'bed_height' if motor == 'base' else motor}"
-        for motor in (first_motor, second_motor)
+        for motor in (sorted(sections) if sections else (first_motor, second_motor))
     )
     admissions = [
         _capture_command_admission(coordinator, side, resources) for coordinator, side in targets
     ]
     await async_import_modules(call.hass, "beds.linak.controller")
     from .controller import LinakController
+    from .protocol import LinakProfile
 
     preflighted = await _preflight_each(targets, check)
     abort_scope = PAIRED_SESSION_BOUND_ABORTS.set(frozenset(session_bound_receivers))
@@ -114,6 +136,26 @@ def async_register_linak_services(hass: HomeAssistant) -> None:
                         min=MIN_TIMED_MOVE_DURATION_MS,
                         max=MAX_TIMED_MOVE_DURATION_MS,
                     ),
+                ),
+                **SIDE_FIELD,
+            }
+        ),
+    )
+
+    hass.services.async_register(
+        DOMAIN,
+        "linak_move_sections",
+        handle_linak_move_simultaneously,
+        schema=vol.Schema(
+            {
+                vol.Required(CONF_DEVICE_ID): DEVICE_IDS,
+                vol.Required("sections"): vol.All(
+                    [vol.In(("back", "legs", "head", "feet"))], vol.Length(min=1, max=4)
+                ),
+                vol.Required("direction"): vol.In(LINAK_DIRECTION_OPTIONS),
+                vol.Required(ATTR_DURATION_MS): vol.All(
+                    vol.Coerce(int),
+                    vol.Range(min=MIN_TIMED_MOVE_DURATION_MS, max=MAX_TIMED_MOVE_DURATION_MS),
                 ),
                 **SIDE_FIELD,
             }

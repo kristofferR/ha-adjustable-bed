@@ -9,6 +9,7 @@ from custom_components.adjustable_bed import const
 from custom_components.adjustable_bed.app_profiles import per_side_profile
 from custom_components.adjustable_bed.config_flow import AdjustableBedConfigFlow
 from custom_components.adjustable_bed.detection import detect_bed_type_detailed
+from custom_components.adjustable_bed.profile_recommendations import recommend_profile
 from custom_components.adjustable_bed.profiles.silksnow import CHOICES
 from tests.form_helpers import select_options
 from tests.test_mlily0_hosted_corrections import advertisement
@@ -43,6 +44,10 @@ def test_shared_scan_terms_offer_explicit_silksnow_without_replacing_receiver(ke
     baseline = detect_bed_type_detailed(advertisement("Test", [const.LINAK_CONTROL_SERVICE_UUID]))
     assert (result.bed_type, result.confidence) == (baseline.bed_type, baseline.confidence)
     assert "silksnow" in result.ambiguous_types
+    assert recommend_profile({"bed_type": const.BED_TYPE_LINAK}, info, {}) is None
+    assert recommend_profile(
+        {"bed_type": "silksnow", "protocol_variant": "slikenhanced"}, info, {}
+    ) is None
     assert "silksnow" not in {
         r.bed_type
         for r in (

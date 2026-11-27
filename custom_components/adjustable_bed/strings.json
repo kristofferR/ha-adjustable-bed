@@ -6076,6 +6076,9 @@
       "truemotion_firmware": {
         "name": "Firmware version"
       },
+      "scott_living_timer_indicator": {
+        "name": "Massage timer indicator"
+      },
       "kingkoil_timer_ui": {
         "name": "Massage timer indicator"
       },
@@ -9719,6 +9722,32 @@
         "name": {
           "name": "Name",
           "description": "The name to show. It can be empty."
+        }
+      }
+    },
+    "linak_move_sections": {
+      "name": "Move selected Carpe Diem sections",
+      "description": "Move the selected bed sections in one direction. Three sections follow the app priority: back/legs, back/feet, back/head, legs/feet, legs/head, head/feet.",
+      "fields": {
+        "device_id": {
+          "name": "Bed",
+          "description": "Bed devices to control."
+        },
+        "sections": {
+          "name": "Sections",
+          "description": "Select the sections to move."
+        },
+        "direction": {
+          "name": "Direction",
+          "description": "Move up or down."
+        },
+        "duration_ms": {
+          "name": "Duration",
+          "description": "Hold duration in milliseconds."
+        },
+        "side": {
+          "name": "Side",
+          "description": "Side of a combined bed."
         }
       }
     },

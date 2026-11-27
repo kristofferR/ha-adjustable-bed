@@ -15,7 +15,6 @@ from custom_components.adjustable_bed.beds import (
     innova,
     ore_comfort_bed,
     rondure,
-    scott_living,
 )
 from custom_components.adjustable_bed.beds.adjustamattress import protocol as adjustamattress
 from custom_components.adjustable_bed.beds.glideaway_motion import controller as glideaway_motion
@@ -251,7 +250,10 @@ def _e6_census(key: str) -> set[bytes]:
         words |= {b15.FLAT_BYTE4 << 8 | b15.FLAT_BYTE6 << 24}
         words |= {b15.ZERO_G_BYTE4 << 8 | b15.ZERO_G_BYTE6 << 24}
     elif key == "scott_living":
-        words |= _words_named(scott_living.ScottLivingController, scott_living.ScottLivingCommands)
+        from custom_components.adjustable_bed.profiles import scott_living as app
+
+        return {codec.frame(action.mask, header=0xE6, side=1)
+                for layout in app.LAYOUTS for action in app.profile(layout).actions}
     elif key == "rondure":
         words |= _words_named(rondure.RondureController, rondure.RondureCommands)
         sides = {
