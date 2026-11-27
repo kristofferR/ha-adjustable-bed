@@ -8314,6 +8314,38 @@
         }
       }
     },
+    "myside": {
+      "name": "My Side repeat alarms and sleep link",
+      "description": "Query or change repeat alarms on Coaxing products, or query a Sleep product’s linked sensor name. Query alarms and receive list replies before changing them. Add can only replace an alarm explicitly deleted in this connection. A changed alarm needs fresh readback before another edit or toggle.",
+      "fields": {
+        "device_id": {"name": "Bed"},
+        "side": {"name": "Side"},
+        "operation": {
+          "name": "Operation",
+          "description": "query, add, edit, delete, enable, or name."
+        },
+        "alarm_id": {
+          "name": "Alarm number",
+          "description": "Existing alarm number for edit, delete or enable. Add uses the lowest number explicitly deleted in this connection and not subsequently reported or reused."
+        },
+        "hour": {
+          "name": "Hour"
+        },
+        "minute": {
+          "name": "Minute"
+        },
+        "mode": {
+          "name": "Preset"
+        },
+        "weekdays": {
+          "name": "Weekdays",
+          "description": "Monday is 0 and Sunday is 6. Leave empty to run once."
+        },
+        "enabled": {
+          "name": "Enabled"
+        }
+      }
+    },
     "muuegm_enable_alarm": {
       "name": "Enable MUUEGM alarm",
       "description": "Enable or disable a reported ABF07 alarm while preserving its time, mode and repeat days. Refresh alarms first.",
@@ -12218,6 +12250,66 @@
     },
     "meisemobell_route": {
       "message": "Select the Meisemobell route explicitly: 15_22_15A or 24_XX_XX."
+    },
+    "myside_write_route_missing": {
+      "message": "No supported writable Bluetooth route"
+    },
+    "myside_invalid_product": {
+      "message": "Choose one of My Side's four Deep Relax Smart products"
+    },
+    "myside_session_ended": {
+      "message": "The My Side BLE session ended"
+    },
+    "myside_side_unsupported": {
+      "message": "My Side's current products have no single-address side selector"
+    },
+    "myside_disconnected": {
+      "message": "My Side is disconnected"
+    },
+    "myside_notify_required": {
+      "message": "My Side requires a notification channel"
+    },
+    "myside_control_unsupported": {
+      "message": "This My Side product does not offer that control"
+    },
+    "myside_save_unsupported": {
+      "message": "This control has no save action"
+    },
+    "myside_hold_invalid": {
+      "message": "Choose a My Side held control and a duration of up to 60 seconds"
+    },
+    "myside_renewable_hold_unsupported": {
+      "message": "Only directions support renewable holds"
+    },
+    "myside_massage_timer_invalid": {
+      "message": "Choose 10, 20 or 30 minutes"
+    },
+    "myside_operation_unknown": {
+      "message": "Unknown My Side operation"
+    },
+    "myside_sleep_unsupported": {
+      "message": "This product has no Sleep link"
+    },
+    "myside_alarms_unsupported": {
+      "message": "This product has no repeat alarms"
+    },
+    "myside_alarm_query_required": {
+      "message": "Query alarms and receive a list reply in this connection first"
+    },
+    "myside_alarm_missing": {
+      "message": "Query this session's alarms before changing an existing alarm"
+    },
+    "myside_alarm_invalid": {
+      "message": "Choose an available alarm mode, time and weekdays"
+    },
+    "myside_alarm_delete_required": {
+      "message": "Delete a reported alarm in this connection before adding a replacement"
+    },
+    "myside_alarm_changed": {
+      "message": "Alarm state changed while this action was waiting; try again"
+    },
+    "myside_alarm_connection_changed": {
+      "message": "The alarm connection changed; query alarms again"
     },
     "suta_king_koil_calibrate": {
       "message": "Set the bed clock, then wait for its clock reply before adding or refreshing alarms."

@@ -110,6 +110,7 @@ bed has been tested on real hardware.
 | [DewertOkin ELEVATE](docs/beds/okin-5a.md#dewertokin-elevate) | [DewertOkin ELEVATE two-actuator lift](docs/beds/okin-5a.md#dewertokin-elevate), [Adjustable Comfort M1X12 ELEVATE](docs/beds/starcode-m1x12.md) | DewertOkin |
 | [Dorsal / Roomi](docs/beds/richmat.md#dorsal--roomi) | Dorsal app (CPRN, CORN, saved projects and Roomi controls), [ROOMI bed (S655 Plus)](docs/beds/richmat.md#roomi-bed-s655-plus) | Dorsal, Roomi |
 | [MUUEGM](docs/beds/richmat.md#muuegm) | MUUEGM app, ABF03, ABF07, NUPG400 | MUUEGM |
+| [My Side](docs/beds/richmat.md#my-side) | Deep Relax Smart, with Sleep, Coaxing, or Coaxing and Sleep | My Side |
 | [Likimio](docs/beds/richmat.md#likimio) | Likimio app, ABM10 | Likimio |
 | [AW MOTION](docs/beds/richmat.md#aw-motion) | AW MOTION app, SilentNight SN300/SN500 and HighClare HC800 | SilentNight, HighClare |
 | [Dream Sense Bed](docs/beds/richmat.md#dream-sense-bed) | Dream Sense Bed app, four colors and saved products | Dream Sense |
