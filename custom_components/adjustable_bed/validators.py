@@ -104,6 +104,7 @@ from .const import (
     ZSERIES_VARIANTS,
 )
 from .profiles.ambient import LAYOUTS as AMBIENT_LAYOUTS
+from .profiles.berun import PROFILES as BERUN_PROFILES
 from .profiles.bobpowerbase import PROFILE_CHOICES as BOB_PROFILES
 from .profiles.casper import CASPER_BASE_VARIANTS
 from .profiles.comfort_enhancement3 import CHOICES as APEX_CHOICES
@@ -174,6 +175,7 @@ MLINE_PROTOCOL_LABELS: Final = {
 # Single source of truth for bed types with variants
 VARIANTS_BY_BED_TYPE: dict[str, dict[str, str]] = {
     BED_TYPE_AMBIENT: AMBIENT_LAYOUTS,
+    "berun": {key: f"Version {profile.version}" for key, profile in BERUN_PROFILES.items()},
     BED_TYPE_SLEEPTIME: dict(SLEEPTIME_SELECTORS),
     "ormatek": {"okin15": "Bluetooth name starts with Okin", "okin24": "Bluetooth name starts with SmartBed"},
     "leva": dict(LEVA_RECEIVERS),

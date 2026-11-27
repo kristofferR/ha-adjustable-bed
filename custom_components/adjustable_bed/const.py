@@ -458,6 +458,7 @@ DORSAL_ROUTES: Final = {
     "roomi": "Roomi controls",
     DORSAL_ROOMI_S655_PLUS: "ROOMI bed (S655 Plus)",
 }
+BED_TYPE_BERUN: Final = "berun"
 BED_TYPE_NERUM: Final = "nerum"
 BED_TYPE_RELAX_MOTION: Final = "relax_motion"
 BED_TYPE_SMARTBED: Final = "smartbed"  # The SmartBed app's receivers (Okin CB24 family and others)
@@ -810,6 +811,7 @@ KEESON_LAYOUT_APP_BED_TYPES: Final = frozenset({BED_TYPE_TEMPUR_CURVE, BED_TYPE_
 SUPPORTED_BED_TYPES: Final = [
     BED_TYPE_RESTONIC,
     BED_TYPE_DORSAL,
+    BED_TYPE_BERUN,
     BED_TYPE_NERUM,
     BED_TYPE_RELAX_MOTION,
     BED_TYPE_SMARTBED,

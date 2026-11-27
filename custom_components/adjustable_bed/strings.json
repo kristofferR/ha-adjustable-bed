@@ -4731,6 +4731,21 @@
       }
     },
     "sensor": {
+      "berun_head_massage": {
+        "name": "Head massage level"
+      },
+      "berun_foot_massage": {
+        "name": "Foot massage level"
+      },
+      "berun_massage_timer_index": {
+        "name": "Massage timer index"
+      },
+      "berun_massage_mode": {
+        "name": "Massage mode"
+      },
+      "berun_alarm": {
+        "name": "Alarm"
+      },
       "ronco_motion_alarm": {
         "name": "Last alarm result",
         "state": {
@@ -6371,6 +6386,12 @@
       }
     },
     "binary_sensor": {
+      "berun_massage_on": {
+        "name": "Massage"
+      },
+      "berun_alarm_on": {
+        "name": "Alarm enabled"
+      },
       "customatic_demo_mode": {
         "name": "Reported demo mode"
       },

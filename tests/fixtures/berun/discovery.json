@@ -1,0 +1,79 @@
+[
+  {
+    "id": "no-data",
+    "bytes": [],
+    "expected": 6,
+    "name": "SmartBedFixture",
+    "display_name": "DifferentLocalName"
+  },
+  {
+    "id": "OK",
+    "bytes": [
+      79,
+      75
+    ],
+    "expected": 7,
+    "name": "SmartBedFixture",
+    "display_name": "DifferentLocalName"
+  },
+  {
+    "id": "DOT1",
+    "bytes": [
+      0,
+      0,
+      68,
+      79,
+      84,
+      0,
+      1
+    ],
+    "expected": 8,
+    "name": "SmartBedFixture",
+    "display_name": "DifferentLocalName"
+  },
+  {
+    "id": "DOT0",
+    "bytes": [
+      0,
+      0,
+      68,
+      79,
+      84,
+      0,
+      0
+    ],
+    "expected": 9,
+    "name": "SmartBedFixture",
+    "display_name": "DifferentLocalName"
+  },
+  {
+    "id": "DOT2",
+    "bytes": [
+      0,
+      0,
+      68,
+      79,
+      84,
+      0,
+      2
+    ],
+    "expected": 9,
+    "name": "SmartBedFixture",
+    "display_name": "DifferentLocalName"
+  },
+  {
+    "id": "precedence",
+    "bytes": [
+      79,
+      75,
+      68,
+      79,
+      84,
+      0,
+      1
+    ],
+    "expected": 7,
+    "name": "SmartBedFixture",
+    "display_name": "DifferentLocalName"
+  }
+]

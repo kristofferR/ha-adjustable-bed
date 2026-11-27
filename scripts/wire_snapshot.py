@@ -1579,6 +1579,8 @@ def default_scenario(bed_type: str) -> Scenario:
         return Scenario(id=bed_type, bed_type=bed_type, protocol_variant="bt2000_standard",
                         entry_data={const.CONF_PROTOCOL_VARIANT: "bt2000_standard", const.CONF_PRODUCT_TYPE: "standard"},
                         layout_id="bedtech")
+    if bed_type == "berun":
+        return Scenario(id="berun", bed_type="berun", protocol_variant="v6", layout_id="berun:v6")
     data: dict[str, Any] = {"product_type": "nerum"} if bed_type == "nerum" else {"product_type": "2"} if bed_type == "enso" else {}
     if bed_type in ("sleep_evolution", "wsilver_legacy"):
         return Scenario(id=bed_type, bed_type=bed_type, protocol_variant="A1",
@@ -2561,6 +2563,8 @@ def build_scenarios() -> list[Scenario]:
     scenarios = [default_scenario(bed_type) for bed_type in SUPPORTED_BED_TYPES
                  if bed_type not in RICHMAT_MH_APP_CATALOGS]
     scenarios.extend(route_scenarios())
+    scenarios.extend(Scenario(id=f"berun:v{v}", bed_type="berun", protocol_variant=f"v{v}",
+                              layout_id=f"berun:v{v}") for v in (6, 7, 8, 9))
     scenarios.extend(Scenario(id=f"flexispot:{model}", bed_type="flexispot",
         entry_data={"product_type": model}, layout_id="flexispot")
         for model in ("eb703", "eb704", "eb803"))
@@ -2889,7 +2893,7 @@ async def _connect(controller: Any, recorder: Recorder, clock: FakeClock) -> dic
             await controller.async_on_connect(session)
             await controller.async_after_connect(session)
             return
-        if controller._coordinator.bed_type in {"mline", "nerum"}:
+        if controller._coordinator.bed_type in {"mline", "nerum", "berun"}:
             await controller.async_on_connect(None)
             await controller.async_after_connect(None)
             return

@@ -29,6 +29,12 @@
  "binary_sensor:bedsense_m5_saved": {
   "card_section": "hidden"
  },
+ "binary_sensor:berun_alarm_on": {
+  "card_section": "hidden"
+ },
+ "binary_sensor:berun_massage_on": {
+  "card_section": "hidden"
+ },
  "binary_sensor:ble_connection": {
   "card_section": "connection"
  },
@@ -4879,6 +4885,21 @@
  },
  "sensor:bedsense_wave_steps": {
   "card_section": "massage"
+ },
+ "sensor:berun_alarm": {
+  "card_section": "hidden"
+ },
+ "sensor:berun_foot_massage": {
+  "card_section": "hidden"
+ },
+ "sensor:berun_head_massage": {
+  "card_section": "hidden"
+ },
+ "sensor:berun_massage_mode": {
+  "card_section": "hidden"
+ },
+ "sensor:berun_massage_timer_index": {
+  "card_section": "hidden"
  },
  "sensor:betterliving2_massage_feet": {
   "card_section": "massage"

@@ -2619,6 +2619,16 @@ def _symphony_errors(data: Mapping[str, Any]) -> dict[str, str]:
     return {}
 
 
+def _berun_seed(_hass: HomeAssistant, data: Mapping[str, Any], discovered: BluetoothServiceInfoBleak | None) -> dict[str, Any]:
+    from .profiles.berun import PROFILES, advertisement
+    result = dict(data)
+    if discovered is not None and result.get(CONF_PROTOCOL_VARIANT) not in PROFILES:
+        variant = advertisement(discovered.name or "", discovered.manufacturer_data or {})
+        if variant is not None:
+            result[CONF_PROTOCOL_VARIANT] = variant
+    return result
+
+
 def _nerum_seed(_hass: HomeAssistant, data: Mapping[str, Any], discovered: BluetoothServiceInfoBleak | None) -> dict[str, Any]:
     from .profiles.nerum import advertisement
 
@@ -2827,6 +2837,16 @@ SETUP_PROFILES: Final[dict[str, SetupProfile]] = {
                            "value": ["restored", "roomi"]}),
         ),
         validate=_dorsal_errors, imports=("profiles.dorsal",),
+    ),
+    "berun": SetupProfile(
+        owns={CONF_MOTOR_COUNT: 2, CONF_HAS_MASSAGE: False,
+              CONF_DISABLE_ANGLE_SENSING: True, CONF_MOTOR_PULSE_DELAY_MS: 200},
+        questions=(Question(CONF_PROTOCOL_VARIANT, {
+            "v6": "Version 6: E6 / FFE5", "v7": "Version 7: ORE / 1000",
+            "v8": "Version 8: Nordic (light unavailable)",
+            "v9": "Version 9: Nordic",
+        }, REQUIRED),),
+        seed=_berun_seed, imports=("profiles.berun",),
     ),
     "nerum": SetupProfile(
         owns={CONF_MOTOR_COUNT: SET_BY_PROFILE, CONF_HAS_MASSAGE: False,
