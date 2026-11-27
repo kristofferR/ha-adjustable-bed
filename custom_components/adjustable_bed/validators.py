@@ -210,6 +210,7 @@ VARIANTS_BY_BED_TYPE: dict[str, dict[str, str]] = {
     BED_TYPE_ESHINE_OKIN: ESHINE_OKIN_PROFILES,
     "rize_home": {"remedy_iii": "Remedy III", "contempo_iv": "Contempo IV"},
     "superior_sleep": {"ss350": "SS350", "ss650": "SS650"},
+    "meisemobell": {"15_22_15a": "15_22_15A", "24_xx_xx": "24_XX_XX"},
     BED_TYPE_DOUBLESLEEP: DOUBLESLEEP_VARIANTS,
     "symphony": {"auto": AUTOMATIC_LABEL, **SYMPHONY_SELECTORS},
     BED_TYPE_GLIDEAWAY_MOTION: GLIDEAWAY_MOTION_MODELS,
