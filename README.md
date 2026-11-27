@@ -98,6 +98,7 @@ bed has been tested on real hardware.
 | Family | Apps, remotes and receivers | Brands |
 |--------|-----------------------------|--------|
 | [Aging in Place / Dawn House](docs/beds/keeson.md#aging-in-place--dawn-house) | [Aging in Place / Dawn House](docs/beds/keeson.md#aging-in-place--dawn-house) | Dawn House |
+| [M3 Ambient](docs/beds/ambient.md) | M3 Ambient app, one-piece and split | M3 Ambient |
 | [Bedgear](docs/beds/motomotion.md#bedgear) | [Bedgear](docs/beds/motomotion.md#bedgear) | Bedgear |
 | [BedJet PowerLayer](docs/beds/bedjet-powerlayer.md) | [BedJet PowerLayer adjustable frame](docs/beds/bedjet-powerlayer.md) | BedJet (the frame, not the BedJet climate unit) |
 | [BedTech, newer app](docs/beds/richmat.md#bedtech) | [BedTech app](docs/beds/richmat.md#bedtech), [Older BedTech controls](docs/beds/richmat.md#bedtech) | BedTech |

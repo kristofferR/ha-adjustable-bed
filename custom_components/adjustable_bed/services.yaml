@@ -4357,3 +4357,98 @@ customatic_demo_run:
       default: false
       selector:
         boolean:
+
+ambient_set_position:
+  fields:
+    device_id:
+      required: true
+      selector:
+        device:
+          integration: adjustable_bed
+    position_side:
+      selector:
+        select:
+          options:
+            - left
+            - right
+    head:
+      required: true
+      selector:
+        number:
+          min: 0
+          max: 60
+    feet:
+      required: true
+      selector:
+        number:
+          min: 0
+          max: 24
+    neck:
+      required: true
+      selector:
+        number:
+          min: 0
+          max: 7
+ambient_set_heat:
+  fields:
+    device_id:
+      required: true
+      selector:
+        device:
+          integration: adjustable_bed
+    heat_side:
+      required: true
+      selector:
+        select:
+          options:
+            - left
+            - right
+    shoulder:
+      required: true
+      selector:
+        number:
+          min: 0
+          max: 30
+    torso:
+      required: true
+      selector:
+        number:
+          min: 0
+          max: 30
+    legs:
+      required: true
+      selector:
+        number:
+          min: 0
+          max: 30
+    timer_hours:
+      selector:
+        select:
+          options:
+            - label: "2 hours"
+              value: "2"
+ambient_set_rgb:
+  fields:
+    device_id:
+      required: true
+      selector:
+        device:
+          integration: adjustable_bed
+    red:
+      required: true
+      selector:
+        number:
+          min: 0
+          max: 255
+    green:
+      required: true
+      selector:
+        number:
+          min: 0
+          max: 255
+    blue:
+      required: true
+      selector:
+        number:
+          min: 0
+          max: 255

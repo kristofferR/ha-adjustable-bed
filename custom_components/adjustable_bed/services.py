@@ -3156,6 +3156,7 @@ async def handle_generate_support_bundle(call: ServiceCall) -> None:
 
 def _import_service_registrars() -> tuple[Callable[[HomeAssistant], None], ...]:
     """Import the family action modules, which import this one, in the import executor."""
+    from .beds.ambient.services import async_register_ambient_services
     from .beds.baseremote.services import register_services as register_baseremote_services
     from .beds.bedgear.services import async_register_bedgear_services
     from .beds.bedtech.services import register_services as register_bedtech_services
@@ -3234,6 +3235,7 @@ def _import_service_registrars() -> tuple[Callable[[HomeAssistant], None], ...]:
     from .position_estimate_services import async_register_position_estimate_services
 
     return (
+        async_register_ambient_services,
         async_register_bedgear_services,
         register_mline_services,
         register_sinca_comfort_services,

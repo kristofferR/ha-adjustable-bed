@@ -1468,10 +1468,30 @@ def ultramatic_scenarios() -> list[Scenario]:
     ]
 
 
+def _ambient_scenario(*, split: bool = False) -> Scenario:
+    return Scenario(
+        id="ambient:split" if split else "ambient",
+        bed_type="ambient",
+        protocol_variant="split" if split else "one_piece",
+        layout_id="ambient",
+        replies={
+            "write:24239c420000de410d": (
+                "26259f79aa29100709151700536a0000410a,26259f79bb1718000000000000000000410a"
+                if split else "24239f7929100709151700536a0000410a"
+            ),
+            # The fixed report lets the snapshot record both confirmed writes
+            # (unchanged zero levels) and the bounded confirmation failure.
+            "write:519f030103f7": "519f0208030600000000000003",
+        },
+    )
+
+
 def default_scenario(bed_type: str) -> Scenario:
     """The bed type in its default route, with the entry data it needs to build."""
     from custom_components.adjustable_bed import const
 
+    if bed_type == const.BED_TYPE_AMBIENT:
+        return _ambient_scenario()
     if bed_type == const.BED_TYPE_LANGJUE:
         return Scenario(id=bed_type, bed_type=bed_type, replies={
             "write:558d000081": "55000000810102",
@@ -2497,6 +2517,7 @@ def build_scenarios() -> list[Scenario]:
     scenarios = [default_scenario(bed_type) for bed_type in SUPPORTED_BED_TYPES
                  if bed_type not in RICHMAT_MH_APP_CATALOGS]
     scenarios.extend(route_scenarios())
+    scenarios.append(_ambient_scenario(split=True))
     scenarios.append(Scenario(
         id="jerome_adjustable_base:nordic", bed_type="jerome_adjustable_base",
         protocol_variant="HDRN", layout_id="dorsal:n1",
@@ -2796,7 +2817,7 @@ async def _connect(controller: Any, recorder: Recorder, clock: FakeClock) -> dic
                 session.store_device_info = lambda *_: None
             await controller.async_on_connect(session)
             return
-        if controller._coordinator.bed_type in {"symphony", "linx", "agingplace", "sleep_assistant", "sinca_comfort", "leva", "sleep_assist_pro", "atlas_lift"}:
+        if controller._coordinator.bed_type in {"symphony", "linx", "agingplace", "sleep_assistant", "sinca_comfort", "leva", "sleep_assist_pro", "atlas_lift", "ambient"}:
             session = SimpleNamespace(
                 client=controller.client, is_current=lambda: True,
                 async_start_notify=lambda: controller.start_notify(lambda *_: None),

@@ -45,6 +45,7 @@ from .const import (
     BED_TYPE_ADJUSTABLE_BED,
     BED_TYPE_ADJUSTABLE_LUMBAR,
     BED_TYPE_ADJUSTAMATTRESS,
+    BED_TYPE_AMBIENT,
     BED_TYPE_ATLAS_LIFT,
     BED_TYPE_BEDSENSE,
     BED_TYPE_BETTERLIVING2,
@@ -278,6 +279,7 @@ from .profiles import malouf as malouf_profiles
 from .profiles import okimattmotion as okimattmotion_app
 from .profiles import sleep_assist_pro as sleep_assist_pro_app
 from .profiles import sleep_assistant as sleep_assistant_app
+from .profiles.ambient import LAYOUTS as AMBIENT_LAYOUTS
 from .profiles.baseremote import SIDE_LAYOUTS as BASEREMOTE_SIDE_LAYOUTS
 from .profiles.bedgear import ergobed_eligible
 from .profiles.bobpowerbase import LAYOUTS as BOB_LAYOUTS
@@ -416,6 +418,7 @@ _OWNED_BY_BED_TYPE: Final[dict[str, frozenset[str]]] = {
     BED_TYPE_MOTION_BED: _APP_DEFINED,
     "bedgear": _APP_DEFINED,
     "l2motion": _APP_DEFINED,
+    BED_TYPE_AMBIENT: _APP_DEFINED - {CONF_PROTOCOL_VARIANT},
     BED_TYPE_ERGOBED: _APP_DEFINED,
     BED_TYPE_MOODBASE: _APP_DEFINED,
     BED_TYPE_MOTOMOTION: _APP_DEFINED,
@@ -3779,6 +3782,17 @@ SETUP_PROFILES: Final[dict[str, SetupProfile]] = {
             CONF_PROTOCOL_VARIANT: "auto",
             CONF_MOTOR_PULSE_DELAY_MS: 200,
         },
+    ),
+    BED_TYPE_AMBIENT: _asking(
+        BED_TYPE_AMBIENT,
+        owns={
+            **_BASE[BED_TYPE_AMBIENT].owns,
+            CONF_MOTOR_COUNT: 3,
+            CONF_HAS_MASSAGE: False,
+            CONF_DISABLE_ANGLE_SENSING: True,
+        },
+        questions=(Question(CONF_PROTOCOL_VARIANT, AMBIENT_LAYOUTS),),
+        title=lambda _data: "M3 Ambient",
     ),
     BED_TYPE_VINDO: SetupProfile(
         owns={
