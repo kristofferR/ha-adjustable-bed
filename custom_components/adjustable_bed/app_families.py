@@ -62,6 +62,7 @@ from .const import (
     BED_TYPE_OKIN_RF_ECO_BT,
     BED_TYPE_OKIN_UUID,
     BED_TYPE_REMACRO,
+    BED_TYPE_RESTFUL,
     BED_TYPE_REVERIE,
     BED_TYPE_REVERIE_NIGHTSTAND,
     BED_TYPE_RICHMAT,
@@ -1243,14 +1244,18 @@ CUSTOMATIC_FAMILY: Final = AppFamily(
     check_imports=("beds.customatic.controller", "beds.serenity.controller"),
 )
 
-# Both Jordan's apps write the OKIN bedding apps' command characteristic.
+# Jordan's apps write the OKIN bedding apps' command characteristic.
 JORDANS_FAMILY: Final = AppFamily(
     step="jordans_family",
     row=BED_TYPE_SERENITY,
     name="Jordan's",
-    apps="Serenity and Tranquil apps",
-    answers={"serenity": Answer(BED_TYPE_SERENITY), "tranquil": Answer(BED_TYPE_TRANQUIL)},
-    routes=frozenset({BED_TYPE_TRANQUIL}),
+    apps="Serenity, Tranquil and Restful apps",
+    answers={
+        "serenity": Answer(BED_TYPE_SERENITY),
+        "tranquil": Answer(BED_TYPE_TRANQUIL),
+        "restful": Answer(BED_TYPE_RESTFUL),
+    },
+    routes=frozenset({BED_TYPE_TRANQUIL, BED_TYPE_RESTFUL}),
     offers_keep=keep_when_guiding,
     settled=_answered_elsewhere,
     clears_other_profiles=True,

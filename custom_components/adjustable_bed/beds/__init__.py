@@ -139,6 +139,7 @@ if TYPE_CHECKING:
     from .saatva import SaatvaController as SaatvaController
     from .scott_living import ScottLivingController as ScottLivingController
     from .sealy.controller import SealyController as SealyController
+    from .serenity.controller import RestfulController as RestfulController
     from .serenity.controller import SerenityController as SerenityController
     from .serenity.controller import TranquilController as TranquilController
     from .serenity.controller import ZSeriesController as ZSeriesController
@@ -244,6 +245,7 @@ _EXPORT_MODULES = {
     "StarcodeM5X5Controller": "starcode.m5x5",
     "FurniMoveController": "furnimove.controller",
     "FsmRelaxController": "fsm_relax.controller",
+    "RestfulController": "serenity.controller",
     "SerenityController": "serenity.controller",
     "TranquilController": "serenity.controller",
     "ZSeriesController": "serenity.controller",

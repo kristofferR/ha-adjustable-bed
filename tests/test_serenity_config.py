@@ -41,7 +41,7 @@ async def test_explicit_profile_builds_fixed_controls_without_live_advertisement
         next(option for option in get_bed_type_options() if option["value"] == BED_TYPE_SERENITY)[
             "label"
         ]
-        == "Serenity and Tranquil apps · Jordan's"
+        == "Serenity, Tranquil and Restful apps · Jordan's"
     )
     # A saved entry keeps its own app's label.
     assert bed_type_label(BED_TYPE_SERENITY) == "Jordan's Serenity app"

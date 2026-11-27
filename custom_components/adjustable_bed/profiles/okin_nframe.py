@@ -40,6 +40,7 @@ from ..const import (
     BED_TYPE_OKIN_RF_ECO_BT,
     BED_TYPE_OKIN_UUID,
     BED_TYPE_RESIDENT,
+    BED_TYPE_RESTFUL,
     BED_TYPE_RIZE_REMEDY_II,
     BED_TYPE_SERENITY,
     BED_TYPE_SIMMONS,
@@ -1244,6 +1245,40 @@ ZSERIES_Z280_ACTIONS: Final = {
     "massage_foot_cycle": (0x400, 0),
 }
 
+# Jordan's Restful 1.0.2 (3), active Z280 page and mounted voice aliases.
+# Tilt and lumbar share one wire pair; TV ("incline" in voice) and Leisure
+# are different recalls. Massage increases both zones with a single frame.
+RESTFUL_ACTIONS: Final = {
+    "head_up": (1, 0),
+    "head_down": (2, 0),
+    "foot_up": (4, 0),
+    "foot_down": (8, 0),
+    "lumbar_up": (0x10, 0),
+    "lumbar_down": (0x20, 0),
+    "flat": (0x08000000, 0),
+    "anti_snore": (0x8000, 0),
+    "leisure": (0x2000, 0),
+    "memory_1": (0x10000, 0),
+    "zero_g": (0x1000, 0),
+    "tv": (0x4000, 0),
+    "memory_2": (0x40000, 0),
+    "save_memory_1": (0x08010000, 0),
+    "save_zero_g": (0x08001000, 0),
+    "save_tv": (0x08004000, 0),
+    "save_memory_2": (0x08040000, 0),
+    "light_toggle": (0x20000, 0),
+    "light_on": (0, 0x40),
+    "light_off": (0, 0x80),
+    "massage_toggle": (0x100, 0),
+    "massage_mode_cycle": (0x10000000, 0),
+    "massage_intensity_up": (0x0C00, 0),
+    "massage_timer_cycle": (0x200, 0),
+    "wave_1": (0, 0x80000),
+    "wave_2": (0, 0x100000),
+    "wave_3": (0, 0x200000),
+    "massage_off": (0x02000000, 0),
+}
+
 
 def _two_axis_product(
     key: str,
@@ -1320,8 +1355,26 @@ RIZE_REMEDY_II: Final = _cst(
     {"stop": 0, **{action: cst_word(*fields) for action, fields in RIZE_REMEDY_II_ACTIONS.items()}},
     write="characteristic", hold=BEDDING_HOLD, recall=Tap(releases=2), tap=Tap(releases=2),
 )
+
+RESTFUL: Final = _cst(
+    CstProduct(
+        key="restful",
+        memory_slots=(_M1, _M2),
+        massage_style="zoned",
+        motors=("head", "feet", "lumbar"),
+        incline=False,
+        massage_toggle=CstFields(primary=0x100),
+    ),
+    "Jordan's Restful",
+    BED_TYPE_RESTFUL,
+    {action: cst_word(*fields) for action, fields in RESTFUL_ACTIONS.items()},
+    write="characteristic",
+    hold=BEDDING_HOLD,
+    recall=Tap(releases=2),
+    tap=Tap(releases=2),
+)
 BEDDING_PROFILES: Final[Mapping[str, OkinNFrameProfile]] = MappingProxyType(
-    {**_BEDDING_PROFILES, "rize_remedy_ii": RIZE_REMEDY_II}
+    {**_BEDDING_PROFILES, "rize_remedy_ii": RIZE_REMEDY_II, "restful": RESTFUL}
 )
 
 

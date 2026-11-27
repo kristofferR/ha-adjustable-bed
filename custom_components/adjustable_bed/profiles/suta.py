@@ -14,7 +14,7 @@ from typing import Final, Literal
 
 from ..execution import NO_EXECUTION_CAPABILITIES, ExecutionCapabilities
 
-Kind = Literal["tap", "motion", "save", "dt", "lv", "fan", "stop", "clock"]
+Kind = Literal["tap", "motion", "save", "dt", "lv", "fan", "stop", "clock", "light"]
 
 
 @dataclass(frozen=True, slots=True)

@@ -215,6 +215,7 @@ from .const import (
     BED_TYPE_OKIN_UUID,
     BED_TYPE_REMACRO,
     BED_TYPE_RESIDENT,
+    BED_TYPE_RESTFUL,
     BED_TYPE_REVERIE,
     BED_TYPE_REVERIE_PAIRLINK,
     BED_TYPE_RICHMAT,
@@ -1458,7 +1459,7 @@ def _motor_count_options(
         return [2, 3]
     if bed_type == BED_TYPE_SVANE and protocol_variant != SVANE_VARIANT_JENSEN_LINON:
         return [2]
-    if bed_type == BED_TYPE_RIZE_REMEDY_II:
+    if bed_type in {BED_TYPE_RESTFUL, BED_TYPE_RIZE_REMEDY_II}:
         return [3]
     if bed_type == BED_TYPE_STARCODE_M5X5:
         return [2]
@@ -1550,7 +1551,9 @@ def _default_motor_count(
         and device_name.strip().lower().startswith("rtv")
     ):
         return 1
-    if bed_type in {BED_TYPE_OKIN_CST, BED_TYPE_CUSTOMATIC_REMEDY, BED_TYPE_RIZE_REMEDY_II}:
+    if bed_type in {
+        BED_TYPE_OKIN_CST, BED_TYPE_CUSTOMATIC_REMEDY, BED_TYPE_RESTFUL, BED_TYPE_RIZE_REMEDY_II
+    }:
         return 3
     return DEFAULT_MOTOR_COUNT
 
@@ -7004,6 +7007,11 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                                 error.translation_key or "dorsal_receiver_unavailable"
                             )
                             raise
+                    if bed_type == BED_TYPE_RESTFUL and migration_check is None:
+                        await async_import_modules(self.hass, "beds.serenity.controller")
+                        from .beds.serenity.controller import require_app_roles
+
+                        require_app_roles(client, "restful")
                     if migration_check is not None:
                         migration_check(client)
                     service_table = client.services
@@ -7120,7 +7128,9 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                             if migration_check is not None and client.is_connected:
                                 self.async_retain_failed_setup_client(client, address)
         except Exception as err:
-            if migration_check is not None or bed_type in (BED_TYPE_DORSAL, BED_TYPE_LANGJUE, BED_TYPE_VINDO):
+            if migration_check is not None or bed_type in (
+                BED_TYPE_DORSAL, BED_TYPE_LANGJUE, BED_TYPE_RESTFUL, BED_TYPE_VINDO,
+            ):
                 report.connected = False
             report.error = str(err) or err.__class__.__name__
             report.connection_aborted = isinstance(err, BleakAbortedError)

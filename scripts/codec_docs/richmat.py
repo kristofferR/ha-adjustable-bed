@@ -36,6 +36,10 @@ from custom_components.adjustable_bed.beds.richmat_classic.profiles import load_
 from custom_components.adjustable_bed.beds.richmat_mh import protocol as mh_frames
 from custom_components.adjustable_bed.beds.rmcontrol import controller as rmcontrol_bed
 from custom_components.adjustable_bed.beds.rmcontrol import protocol as rmcontrol_frames
+from custom_components.adjustable_bed.beds.ruf_richmat.profiles import (
+    DISPLAY_NAMES as RUF_RICHMAT_APP_NAMES,
+)
+from custom_components.adjustable_bed.beds.ruf_richmat.profiles import LEGACY_COMMAND_MODES
 from custom_components.adjustable_bed.beds.sonicsleep import protocol as sonic_protocol
 from custom_components.adjustable_bed.codec import richmat as codec
 from custom_components.adjustable_bed.codec import richmat as richmat_codec
@@ -1484,6 +1488,37 @@ BLOCKS += SUPER_COLCHONES_BLOCKS
 BLOCKS += _galaxy.BLOCKS
 BLOCKS += _okimiki.BLOCKS
 BLOCKS += _richmat_mh_apps.BLOCKS
+
+
+def render_ruf_richmat_legacy_command_modes() -> str:
+    apps = {app: RUF_RICHMAT_APP_NAMES[bed_type] for bed_type, app in _const.RUF_RICHMAT_APPS.items()}
+    labels = {"left": "Left", "right": "Right", "mode1": "Mode 1", "mode2": "Mode 2", "mode3": "Mode 3"}
+    return _block(
+        _table(
+            ("App", "Model", "Command mode", "Mode byte", "Head Up", "END"),
+            (
+                (
+                    apps[app],
+                    f"`{model}`",
+                    labels[option],
+                    _hex(bytes([mode])),
+                    _hex(mh_frames.control_frame(0x24, mode)),
+                    _hex(mh_frames.stop_frame(mode)),
+                )
+                for (app, model, _route), choices in LEGACY_COMMAND_MODES.items()
+                for option, mode in choices.items()
+            ),
+        )
+    )
+
+
+BLOCKS.append(
+    (
+        "docs/beds/ruf-richmat-apps.md",
+        "ruf-richmat-legacy-command-modes",
+        render_ruf_richmat_legacy_command_modes,
+    )
+)
 
 
 def render_richmat_app_commands() -> str:
