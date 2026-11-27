@@ -1149,6 +1149,7 @@ class CoordinatorConnectionMixin:
                     # cached collection can precede the live GATT objects (#633).
                     # Atlas and Comfort Bed reject ambiguous framing from the full table.
                     disable_cache = bed_requires_pairing or self._bed_type in (
+                        "topcare",
                         BED_TYPE_ATLAS_LIFT,
                         BED_TYPE_COMFORT_BED,
                         BED_TYPE_FURNIMOVE,

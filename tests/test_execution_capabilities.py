@@ -101,6 +101,17 @@ async def test_scott_living_refresh_has_no_release_or_composed_keys():
         assert controller.execution.hold_for("head_up") == "stream"
 
 
+@pytest.mark.parametrize("route", ("15_22_15a", "24_xx_xx"))
+async def test_meisemobell_held_execution(route):
+    # com.okin.meisemobell 1.2.8 E4/E5: immediate plus 300ms refresh,
+    # release/cancel sends STOP immediately and at 100ms. One global timer.
+    controller = await _create_controller_for_bed_type("meisemobell", route)
+    assert controller.execution.declared == {"hold"}
+    assert controller.execution.hold_for("head_up") == "stream"
+    assert controller.profile.hold.release_ms == 100
+    assert controller.commands_share_timer
+
+
 async def test_hestia_one_held_key_stream_has_no_composed_motor_admission():
     # Hestia Motion 1.2 (3), accepted E07: one Handler key, post0/repost100ms,
     # ACTION_UP sends zero after100ms. Combined05/0A is an explicit control,
@@ -110,3 +121,12 @@ async def test_hestia_one_held_key_stream_has_no_composed_motor_admission():
     assert controller.execution.hold_for("both_up") == "stream"
     assert controller.profile.refresh_ms == 100
     assert controller.profile.release.steps == ((100, 0),)
+
+
+async def test_powersbedding_single_timer_movement_stream():
+    # PowersBedding 1.1.0 (2), E5: one movement timer, 100 ms refresh,
+    # two zero releases 100 ms apart; no independent concurrent axis holds.
+    controller = await _create_controller_for_bed_type("powersbedding")
+    assert controller.execution.declared == {"hold"}
+    assert controller.execution.hold_for("both_up") == "stream"
+    assert controller.profile.release.steps == ((0, 0), (100, 0))

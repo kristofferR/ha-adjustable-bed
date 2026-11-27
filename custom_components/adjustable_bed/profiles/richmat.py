@@ -28,6 +28,10 @@ Button = Literal[
     "feet_down",
     "head_feet_up",
     "head_feet_down",
+    "lumbar_pillow_up",
+    "lumbar_pillow_down",
+    "tilt_up",
+    "tilt_down",
     "pillow_up",
     "pillow_down",
     "lumbar_up",
@@ -129,6 +133,29 @@ ATLAS_LIFT: Final = RichmatProfile(
     memory=((0x2E, 0x2B),),
     stop=0x6E,
     motor_repeat_ms=100,
+)
+
+
+# TOP CARE 1.0.0: Nordic is framed, the five W services are code-only.
+TOPCARE_SCAN_KEYWORD: Final = "RMTC"
+TOPCARE_INITIALIZATION: Final = (("deviceFunctionItemExitLimit", 0x00),)
+TOPCARE: Final = RichmatProfile(
+    key="topcare",
+    execution=STREAM_HOLD,
+    transports=("n1", "w1", "w2", "w3", "w4", "w5"),
+    motor_repeat_ms=100,
+    codes={
+        "head_up": 0x24,
+        "head_down": 0x25,
+        "feet_up": 0x26,
+        "feet_down": 0x27,
+        "head_feet_up": 0x29,
+        "head_feet_down": 0x2A,
+        "lumbar_pillow_up": 0x43,
+        "lumbar_pillow_down": 0x44,
+        "tilt_up": 0x5B,
+        "tilt_down": 0x5C,
+    },
 )
 
 

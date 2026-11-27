@@ -153,6 +153,8 @@ class _FactoryCoordinator(SimpleNamespace):
 
 def _protocol_variant_for_bed_type(bed_type: str) -> str | None:
     """Return a deterministic protocol variant for factory-completeness tests."""
+    if bed_type == "meisemobell":
+        return "15_22_15a"
     if bed_type in {"personal_comfort", "instant_comfort"}:
         return "anm3"
     if bed_type == const.BED_TYPE_ADJUSTABLE_BED:
@@ -161,6 +163,8 @@ def _protocol_variant_for_bed_type(bed_type: str) -> str | None:
         return RICHMAT_VARIANT_NORDIC
     if bed_type == BED_TYPE_OCTO:
         return OCTO_VARIANT_STANDARD
+    if bed_type == "awmotion":
+        return "SN300"
     if bed_type == "muuegm":
         return "ABF03"
     if bed_type == "dreamsense":
@@ -375,6 +379,8 @@ async def _create_controller_for_bed_type(
         return await create_controller(coordinator, bed_type, variant or "wsilver2", client)
     if bed_type == const.BED_TYPE_RICHMAT_APP_SLEEP:
         return await create_controller(coordinator, bed_type, variant or "hj", client)
+    if bed_type == const.BED_TYPE_MYSIDE:
+        return await create_controller(coordinator, bed_type, variant or "76", client)
     if bed_type == const.BED_TYPE_RICHMAT_APP:
         return await create_controller(coordinator, bed_type, variant or "6BRM", client)
     if bed_type == const.BED_TYPE_HJBED:

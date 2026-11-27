@@ -7,6 +7,9 @@ which carry the same words. Routes without an accepted report on disk (Okimat,
 DewertOkin, RF ECO BT, CB24, DOT, Sleepy's legacy CB25, AdjustableM5X4, whose
 report is quarantined) list the frames the pre-v5 controller sent.
 """
+import json as _json
+from pathlib import Path as _Path
+
 from tests.customatic_demo_vectors import FRAMES as CUSTOMATIC_DEMO_FRAMES
 from tests.rize_remedy_ii_vectors import VECTORS as RIZE_REMEDY_II_VECTORS
 from tests.superior_sleep_vectors import FROZEN_FRAMES as SUPERIOR_FRAMES
@@ -1433,3 +1436,12 @@ _JOBS = frozenset({
     "0c02020000000000000000000000",
 })
 FROZEN_FRAMES.update({"jobs_mode1": _JOBS, "jobs_mode2": _JOBS})
+
+# Meisemobell 1.2.8: every ordinary literal plus the separate reset chord.
+
+_meisemobell = _json.loads((_Path(__file__).parent / "fixtures/meisemobell/vectors.json").read_text())
+for _route, _protocol, _reset in (("15_22_15a", "P1", "e6fe160010000800ed"), ("24_xx_xx", "P2", "05020800100000")):
+    FROZEN_FRAMES[f"meisemobell_{_route}"] = frozenset(
+        [row["expected_bytes"].replace(" ", "") for row in _meisemobell
+         if row["protocol"] == _protocol and "asset_key" in row["inputs"]] + [_reset]
+    )

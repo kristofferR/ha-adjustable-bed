@@ -429,7 +429,7 @@ def plan_commands(controller: Any) -> list[Command]:
     for spec in specs:
         # These STOP paths consume the interrupted command's release receipt.
         # Keep older synthetic STOP rows stable.
-        scheduled = controller._coordinator.bed_type in {"shuda", "atlas_lift", "comfort_bed"}
+        scheduled = controller._coordinator.bed_type in {"shuda", "atlas_lift", "topcare", "comfort_bed"}
         # Stop between OkimattMotion refresh ticks so equal deadlines cannot race.
         after_s = 0.35 if controller._coordinator.bed_type == "okimattmotion" else STOP_AFTER_S
         plan.append(Command(
@@ -488,6 +488,12 @@ def plan_commands(controller: Any) -> list[Command]:
                 if command.name.startswith("select:suta_king_koil_massage_mode=") else command for command in plan]
         for operation in ("SA", "CA", "DA"):
             plan.append(Command(f"alarm:{operation}", _method("alarm_operation", operation, [0, 6], 7, 30), True))
+    if controller._coordinator.bed_type == "powersbedding":
+        from custom_components.adjustable_bed.alarm import AlarmRequest
+        for enabled, wake in ((True, "memory_1"), (True, "massage"), (False, "none")):
+            alarm = AlarmRequest(enabled=enabled, hour=7, minute=30, weekdays=(0, 1, 2, 3, 4),
+                                 wake_action=wake, reference_time=datetime.datetime.fromisoformat(FROZEN_NOW))
+            plan.append(Command(f"set_alarm:{enabled}:{wake}", _method("configure_alarm", alarm), True))
     if controller._coordinator.bed_type == "ronco_motion":
         from custom_components.adjustable_bed.alarm import AlarmRequest
         for enabled, wake_action in ((True, "zero_g"), (True, "anti_snore"), (True, "memory_1"), (False, "none")):
@@ -1506,6 +1512,12 @@ def default_scenario(bed_type: str) -> Scenario:
     """The bed type in its default route, with the entry data it needs to build."""
     from custom_components.adjustable_bed import const
 
+    if bed_type == "powersbedding":
+        return Scenario(id=bed_type, bed_type=bed_type,
+                        entry_data={const.CONF_BLE_DEVICE_NAME: "okin-Powers"},
+                        layout_id="powersbedding")
+    if bed_type == "meisemobell":
+        return Scenario(id=bed_type, bed_type=bed_type, protocol_variant="15_22_15a", layout_id="meisemobell:15_22_15a", replies={"write:e180039b": "ed8003061e8211072d841300"})
     if bed_type == "ergobq":
         from custom_components.adjustable_bed.codec import ergobq as codec
         status = codec.publish((codec.boolean(18, False), codec.raw(12, codec.Massage().encode()),
@@ -1570,6 +1582,8 @@ def default_scenario(bed_type: str) -> Scenario:
     if bed_type == "super_colchones":
         return Scenario(id=bed_type, bed_type=bed_type, protocol_variant="afeg302",
                         entry_data={const.CONF_PROTOCOL_VARIANT: "afeg302"}, layout_id="super_colchones:n1")
+    if bed_type == "topcare":
+        return Scenario(id=bed_type, bed_type=bed_type, layout_id="topcare:n1")
     if bed_type == const.BED_TYPE_COMFORT_BED:
         return Scenario(id=bed_type, bed_type=bed_type, layout_id="comfort_bed:n1")
     if bed_type == const.BED_TYPE_ATLAS_LIFT:
@@ -1589,6 +1603,11 @@ def default_scenario(bed_type: str) -> Scenario:
             layout_id="dreamsense:gatt:1",
             replies={"write:6e0a000179": "6e0e00037f"},
         )
+    if bed_type == "awmotion":
+        return Scenario(id=bed_type, bed_type=bed_type, protocol_variant="SN300",
+                        entry_data={"bed_type": bed_type, "protocol_variant": "SN300"},
+                        layout_id="dreamsense:gatt:1",
+                        replies={"write:6e08010178": "6e09010078", "write:6e0a000179": "6e0e00037f"})
     if bed_type == "muuegm":
         return Scenario(id=bed_type, bed_type=bed_type, protocol_variant="ABF03",
                         entry_data={const.CONF_BED_TYPE: bed_type, const.CONF_PROTOCOL_VARIANT: "ABF03"},
@@ -1606,6 +1625,8 @@ def default_scenario(bed_type: str) -> Scenario:
     if bed_type in ("sleep_evolution", "wsilver_legacy"):
         return Scenario(id=bed_type, bed_type=bed_type, protocol_variant="A1",
             entry_data={const.CONF_PROTOCOL_VARIANT: "A1"}, layout_id="sonicsleep:Nordic")
+    if bed_type == "myside":
+        return Scenario(id=bed_type, bed_type=bed_type, protocol_variant="76", layout_id="myside:w1")
     variant: str | None = {
         const.BED_TYPE_OCTO: const.OCTO_VARIANT_STANDARD,
         const.BED_TYPE_CASPER_BASE: "casperpro",
@@ -1931,6 +1952,8 @@ def route_scenarios() -> list[Scenario]:
         for route in ("n1", "w1", "w2", "w3", "w4", "w5"):
             scenarios.append(Scenario(id=f"super_colchones:{product}:{route}", bed_type="super_colchones",
                 protocol_variant=product, entry_data={const.CONF_PROTOCOL_VARIANT: product}, layout_id=f"super_colchones:{route}"))
+    scenarios.extend(Scenario(id=f"topcare:{key}", bed_type="topcare", layout_id=f"topcare:{key}")
+                     for key in ("w1", "w2", "w3", "w4", "w5"))
     scenarios.append(Scenario(id="comfort_bed:w1", bed_type=const.BED_TYPE_COMFORT_BED,
                               layout_id="comfort_bed:w1"))
     scenarios.append(Scenario(id="atlas_lift:w1", bed_type=const.BED_TYPE_ATLAS_LIFT,
@@ -2001,6 +2024,18 @@ def route_scenarios() -> list[Scenario]:
         scenarios.append(dataclasses.replace(
             default_scenario("comfort_enhancement3"), id=f"comfort_enhancement3:{profile}",
             protocol_variant=profile, layout_id="comfort_enhancement3",
+        ))
+    # Each PowersBedding packet route is independent of its discovery-time GATT.
+    for suffix, name, manufacturer in (
+        ("p2_ffe", "okin-Powers", "424c452d342e30204d6f64756c65"),
+        ("p3_uart", "smartbed-Powers", None),
+        ("p1_uart", "smartbed-Powers", "4f74686572"),
+        ("p2_uart", "smartbed-Powers", "424c452d342e30204d6f64756c65"),
+    ):
+        scenarios.append(Scenario(id=f"powersbedding:{suffix}", bed_type="powersbedding",
+            entry_data={const.CONF_BLE_DEVICE_NAME: name},
+            layout_id="powersbedding:uart_no_manufacturer" if suffix == "p3_uart" else "powersbedding:uart" if name.startswith("smartbed") else "powersbedding",
+            replies={"read:00002a29-0000-1000-8000-00805f9b34fb": manufacturer} if manufacturer is not None else {},
         ))
     from custom_components.adjustable_bed.profiles.symphony_sleep import MODELS
     from custom_components.adjustable_bed.profiles.symphony_sleep import (
@@ -2341,6 +2376,7 @@ def route_scenarios() -> list[Scenario]:
                     layout_id="eshine_okin",
                 )
             )
+    scenarios.append(Scenario(id="meisemobell:24_xx_xx", bed_type="meisemobell", protocol_variant="24_xx_xx", layout_id="meisemobell:24_xx_xx"))
     if "superior_sleep" in const.SUPPORTED_BED_TYPES:
         for product in ("ss350", "ss650"):
             for route, name in (("nordic", "Smartbed123"), ("ble", "BLE123")):
@@ -2693,6 +2729,17 @@ def build_scenarios() -> list[Scenario]:
             replies={"write:6e08010178": "6e09010078", "write:6e0a000179": "6e0e00017d"},
         ))
 
+    # AW MOTION: each offered product and each accepted live GATT route.
+    for product in ("SN300", "SN500", "HC800"):
+        for route in range(6):
+            scenarios.append(dataclasses.replace(
+                default_scenario("awmotion"), id=f"awmotion:{product}:gatt:{route}",
+                protocol_variant=product,
+                entry_data={"bed_type": "awmotion", "protocol_variant": product},
+                layout_id="dreamsense" if route == 0 else f"dreamsense:gatt:{route}",
+                replies={"write:01": "6e090100786e0e00037f"} if route == 0 else
+                        {"write:6e08010178": "6e09010078", "write:6e0a000179": "6e0e00037f"},
+            ))
     # Dream Sense: each saved BED product plus all six accepted GATT routes.
     from custom_components.adjustable_bed.profiles.dreamsense import PROFILES as DREAMSENSE_PROFILES
     for product in DREAMSENSE_PROFILES:
@@ -2811,6 +2858,12 @@ def build_scenarios() -> list[Scenario]:
         )
     )
 
+    # My Side's own four picker products on each accepted GATT route. Reuse
+    # stored physical layouts without changing any previous peer scenario.
+    for product in ("76", "77", "78", "79"):
+        for route in ("n1", "w1", "w2", "w3", "w4", "w5"):
+            scenarios.append(Scenario(id=f"myside:{product}:{route}", bed_type="myside",
+                protocol_variant=product, layout_id=f"myside:{route}"))
     by_id = {scenario.id: scenario for scenario in scenarios}
     scenarios.extend(feature_scenarios(by_id))
     for sid in PROPERTY_ROUTES:
@@ -2894,6 +2947,8 @@ async def _build(scenario: Scenario, client: Any) -> Any:
         cast(Any, coordinator).entry = ChildEntryView(
             parent, effective_child_data(parent.data, "right"), lambda _data: None,
         )
+    if scenario.bed_type == "powersbedding":
+        coordinator.ble_device_name = coordinator.entry.data["ble_device_name"]
     controller = await create_controller(
         cast(Any, coordinator),
         scenario.bed_type,
@@ -2936,6 +2991,12 @@ async def _connect(controller: Any, recorder: Recorder, clock: FakeClock) -> dic
         discovery = controller.async_discover_capabilities()
         if inspect.isawaitable(discovery):
             await discovery
+        if controller._coordinator.bed_type == "powersbedding":
+            await controller.async_on_connect(SimpleNamespace(
+                async_start_notify=controller.start_notify,
+                persist_capability_snapshot=lambda: None,
+            ))
+            return
         if controller._coordinator.bed_type == "sealy_posturematic":
             controller._coordinator.connection_generation += 1
             session = SimpleNamespace(async_start_notify=controller.start_notify)
@@ -2956,13 +3017,13 @@ async def _connect(controller: Any, recorder: Recorder, clock: FakeClock) -> dic
         if controller._coordinator.bed_type in {"shuda", "sleeptime"}:
             await controller.async_on_connect(SimpleNamespace(async_start_notify=controller.start_notify))
             return
-        if controller._coordinator.bed_type in {"rize_home", "superior_sleep", "okin_64bit", "betterliving2", "ultramatic_smart_bed", "smart_comfort_synargy", "smart_comfort_synergy", "simmons_blue"}:
+        if controller._coordinator.bed_type in {"meisemobell", "rize_home", "superior_sleep", "okin_64bit", "betterliving2", "ultramatic_smart_bed", "smart_comfort_synargy", "smart_comfort_synergy", "simmons_blue"}:
             session = SimpleNamespace(async_start_notify=controller.start_notify, is_current=lambda: True)
             if controller._coordinator.bed_type == "betterliving2":
                 session.store_device_info = lambda *_: None
             await controller.async_on_connect(session)
             return
-        if controller._coordinator.bed_type in {"symphony", "linx", "agingplace", "sleep_assistant", "sinca_comfort", "leva", "sleep_assist_pro", "atlas_lift", "comfort_bed", "ambient", "ergobq", "ronco_motion"}:
+        if controller._coordinator.bed_type in {"symphony", "linx", "agingplace", "sleep_assistant", "sinca_comfort", "leva", "sleep_assist_pro", "atlas_lift", "topcare", "comfort_bed", "ambient", "ergobq", "ronco_motion"}:
             session = SimpleNamespace(
                 client=controller.client, is_current=lambda: True,
                 async_start_notify=lambda: controller.start_notify(lambda *_: None),
