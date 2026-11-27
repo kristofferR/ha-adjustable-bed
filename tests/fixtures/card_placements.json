@@ -5304,12 +5304,6 @@
  "sensor:konfurt_alarm_on": {
   "card_section": "hidden"
  },
- "sensor:konfurt_alarm_repeat": {
-  "card_section": "hidden"
- },
- "sensor:konfurt_alarm_type": {
-  "card_section": "hidden"
- },
  "sensor:konfurt_timer": {
   "card_section": "massage",
   "card_role": "timer"

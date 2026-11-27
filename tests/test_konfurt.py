@@ -7,10 +7,11 @@ from dataclasses import asdict
 from datetime import datetime
 from pathlib import Path
 from types import SimpleNamespace
-from unittest.mock import AsyncMock
+from unittest.mock import AsyncMock, MagicMock
 
 import pytest
-from homeassistant.const import CONF_ADDRESS, CONF_NAME
+from bleak.exc import BleakError
+from homeassistant.const import CONF_ADDRESS, CONF_NAME, EntityCategory
 from homeassistant.exceptions import HomeAssistantError, ServiceValidationError
 from homeassistant.helpers import entity_registry as er
 from pytest_homeassistant.common import MockConfigEntry
@@ -18,6 +19,7 @@ from pytest_homeassistant.common import MockConfigEntry
 from custom_components.adjustable_bed import const
 from custom_components.adjustable_bed.beds.keeson import konfurt as bed
 from custom_components.adjustable_bed.codec import keeson as codec
+from custom_components.adjustable_bed.cover import AdjustableBedCover, _build_cover_description
 from custom_components.adjustable_bed.profiles import konfurt as app
 from custom_components.adjustable_bed.state_keys import UNDER_BED_LIGHTS_ON
 from tests.hold_lease_wire import virtual_clock
@@ -29,8 +31,8 @@ PARSERS = json.loads((FIXTURE / "parser-vectors.json").read_text())
 ADDRESS = "AA:BB:CC:DD:0A:27"
 
 
-def gatt():
-    tx, rx = Char(app.WRITE, ["write"], 1), Char(app.NOTIFY, ["notify"], 2)
+def gatt(write_properties=("write",)):
+    tx, rx = Char(app.WRITE, list(write_properties), 1), Char(app.NOTIFY, ["notify"], 2)
     return [SimpleNamespace(uuid=uuid, characteristics=[char],
                             get_characteristic=lambda key, char=char: char if char.uuid == key else None)
             for uuid, char in ((app.WRITE_SERVICE, tx), (app.NOTIFY_SERVICE, rx))]
@@ -154,12 +156,23 @@ async def connected(hass, client, variant="2"):
 
 
 @pytest.mark.parametrize("variant", app.LAYOUTS)
+@pytest.mark.parametrize("write_properties,response", [
+    (("write",), True),
+    (("write-without-response",), False),
+    (("write", "write-without-response"), False),
+])
 async def test_real_entities_every_held_command_and_alarm_service(
-    hass, mock_coordinator_connected, mock_bleak_client, enable_custom_integrations, variant, monkeypatch
+    hass, mock_coordinator_connected, mock_bleak_client, enable_custom_integrations, variant, monkeypatch,
+    write_properties, response,
 ):
-    mock_bleak_client.services = gatt()
+    mock_bleak_client.services = gatt(write_properties)
     mock_bleak_client.start_notify = AsyncMock()
-    mock_bleak_client.write_gatt_char = AsyncMock()
+    responses = []
+
+    async def record_write(_char, _data, **kwargs):
+        responses.append(kwargs["response"])
+
+    mock_bleak_client.write_gatt_char = AsyncMock(side_effect=record_write)
     e = entry(hass, variant)
     assert await hass.config_entries.async_setup(e.entry_id)
     await hass.async_block_till_done()
@@ -168,6 +181,16 @@ async def test_real_entities_every_held_command_and_alarm_service(
     assert isinstance(controller, bed.KonfurtController)
     assert mock_bleak_client.write_gatt_char.await_count == 0  # No invented startup.
     registry = er.async_get(hass)
+    entities = [v for v in registry.entities.values() if v.config_entry_id == e.entry_id]
+    query = next(v for v in entities if v.unique_id.endswith("konfurt_query_alarm"))
+    assert query.entity_category is EntityCategory.DIAGNOSTIC
+    assert query.disabled_by is er.RegistryEntryDisabler.INTEGRATION
+    assert not any(v.unique_id.endswith(("konfurt_alarm_repeat", "konfurt_alarm_type")) for v in entities)
+    registry.async_update_entity(query.entity_id, disabled_by=None)
+    assert await hass.config_entries.async_reload(e.entry_id)
+    await hass.async_block_till_done()
+    c = hass.data[const.DOMAIN][e.entry_id]
+    controller = c.controller
     entities = [v for v in registry.entities.values() if v.config_entry_id == e.entry_id]
     device = next(v.device_id for v in entities if v.device_id)
     assert len([v for v in entities if v.domain == "cover"]) == int(variant)
@@ -191,6 +214,12 @@ async def test_real_entities_every_held_command_and_alarm_service(
             await hass.services.async_call("button", "press", {"entity_id": reading}, blocking=True)
         receive = mock_bleak_client.start_notify.call_args.args[1]
         sender = controller._link.notify
+        receive(sender, bytearray.fromhex("ed8003071e020900"))
+        assert c.controller_state[bed.ALARM_ON] is True
+        assert c.controller_state[bed.ALARM_HOUR] == 7
+        assert c.controller_state[bed.ALARM_MINUTE] == 30
+        assert controller.protocol_diagnostics["alarm_repeat_mask"] == 2
+        assert controller.protocol_diagnostics["alarm_type_code"] == 9
         receive(sender, bytearray.fromhex("edfe0000000000050400000000023200"))
         assert c.controller_state[bed.MASSAGE] is True
         assert c.controller_state[UNDER_BED_LIGHTS_ON] is True
@@ -212,6 +241,7 @@ async def test_real_entities_every_held_command_and_alarm_service(
         mock_bleak_client.write_gatt_char.reset_mock()
         await hass.services.async_call("button", "press", {"entity_id": query}, blocking=True)
         assert written(mock_bleak_client) == [app.ALARM_QUERY.hex()] * 2
+        assert responses and all(mode is response for mode in responses)
         with pytest.raises(ServiceValidationError):
             await hass.services.async_call(const.DOMAIN, "set_alarm", {"device_id": device,
                 "enabled": True, "time": "07:30", "weekdays": ["monday"]}, blocking=True)
@@ -268,6 +298,62 @@ async def test_new_report_beats_sent_state_and_no_delivery_is_unknown(hass, mock
     c.invalidate_diagnostics()
     with pytest.raises(ServiceValidationError):
         await c.set_massage(False)
+
+
+@pytest.mark.parametrize("control", ("light", "massage", "massage_head", "massage_foot", "massage_wave", "massage_timer"))
+@pytest.mark.parametrize("point", ("sent", "failure", "report"))
+async def test_raw_toggle_invalidates_only_delivered_state_without_a_newer_report(
+    hass, mock_bleak_client, monkeypatch, control, point
+):
+    coordinator, c = await connected(hass, mock_bleak_client)
+    monkeypatch.setattr(coordinator, "async_ensure_connected", AsyncMock(return_value=True))
+    monkeypatch.setattr(coordinator, "_async_refresh_controller_auth", AsyncMock())
+    receive = mock_bleak_client.start_notify.call_args.args[1]
+    receive(c._link.notify, bytearray.fromhex("edfe0000000000050400000000023200"))
+    key = UNDER_BED_LIGHTS_ON if control == "light" else bed.MASSAGE
+    assert coordinator.controller_state[key] is True
+
+    async def write(_char, frame, **_kwargs):
+        if bytes(frame) != app.frame("stop", c.layout):
+            if point == "failure":
+                raise BleakError("write failed")
+            if point == "report":
+                receive(c._link.notify, bytearray.fromhex("edfe0000000000000000000000000000"))
+
+    mock_bleak_client.write_gatt_char.side_effect = write
+    with virtual_clock():
+        command = coordinator.async_execute_controller_command(lambda _: c.hold_control(control, 1))
+        if point == "failure":
+            with pytest.raises(BleakError):
+                await command
+        else:
+            await command
+    assert coordinator.controller_state[key] is {"sent": None, "failure": True, "report": False}[point]
+    if point == "sent":
+        count = mock_bleak_client.write_gatt_char.await_count
+        with pytest.raises(ServiceValidationError):
+            await (c.lights_off() if control == "light" else c.set_massage(False))
+        assert mock_bleak_client.write_gatt_char.await_count == count
+    await coordinator.async_shutdown()
+
+
+async def test_native_cover_tap_uses_the_configured_single_repeat(hass, mock_bleak_client, monkeypatch):
+    coordinator, c = await connected(hass, mock_bleak_client)
+    hass.config_entries.async_update_entry(
+        coordinator.entry, data={**coordinator.entry.data, const.CONF_MOTOR_PULSE_COUNT: 1}
+    )
+    monkeypatch.setattr(coordinator, "async_ensure_connected", AsyncMock(return_value=True))
+    monkeypatch.setattr(coordinator, "_async_refresh_controller_auth", AsyncMock())
+    cover = AdjustableBedCover(coordinator, _build_cover_description(c.motor_control_specs[0]))
+    cover.hass, cover.async_write_ha_state = hass, MagicMock()
+    with virtual_clock():
+        await cover.async_open_cover()
+    assert written(mock_bleak_client) == [
+        app.frame("back_up", c.layout).hex(),
+        app.frame("stop", c.layout).hex(),
+        app.frame("stop", c.layout).hex(),
+    ]
+    await coordinator.async_shutdown()
 
 
 async def test_paired_hold_preflights_both_layouts_before_either_write(hass, monkeypatch):
@@ -376,3 +462,70 @@ async def test_alarm_sequence_cannot_resume_on_new_session(hass, mock_bleak_clie
         await c.configure_alarm(AlarmRequest(enabled=True, hour=7, minute=30, reference_time=datetime(2026, 11, 27, 16, 21, 22)))
     assert len(written(mock_bleak_client)) == 1
     assert bytes(mock_bleak_client.write_gatt_char.call_args.args[1]).startswith(b"\xe7\x80\x01")
+
+
+@pytest.mark.parametrize("variant", app.LAYOUTS)
+async def test_snapshot_property_routes_send_real_modes_without_changing_frames(variant, monkeypatch):
+    from copy import deepcopy
+
+    from tests.hold_lease_wire import _tool
+
+    tool = _tool()
+    original = tool.FakeClient.write_gatt_char
+    observed = []
+
+    async def record(client, char, data, response=None):
+        assert char.uuid == app.WRITE
+        assert client.services.get_characteristic(app.NOTIFY).properties == ["notify"]
+        observed.append((tuple(char.properties), response))
+        await original(client, char, data, response=response)
+
+    monkeypatch.setattr(tool.FakeClient, "write_gatt_char", record)
+    ids = [f"konfurt:{variant}:{mode}" for mode in ("write", "no_response")]
+    captures = (await tool.capture_all(ids))["scenarios"]
+    assert set(captures) == set(ids)
+    normalized = []
+    for sid, expected in zip(ids, (True, False), strict=True):
+        entry = deepcopy(captures[sid])
+        assert not entry.get("build_error") and not entry.get("gaps")
+        flags = []
+        for command in entry["commands"].values():
+            for event in command.get("writes", ()):
+                if isinstance(event[2], bool):
+                    flags.append(event[2])
+                    assert event[1] == app.WRITE
+                    event[2] = "write"
+        assert flags and all(flag is expected for flag in flags)
+        normalized.append(entry)
+    assert normalized[0] == normalized[1]  # Exact bytes, order and virtual timing.
+    assert set(observed) == {(("write",), True), (("write-without-response",), False)}
+
+
+async def test_alarm_readback_and_raw_diagnostics_take_priority_over_alarm_writes(hass, mock_bleak_client):
+    from custom_components.adjustable_bed.alarm import AlarmRequest
+
+    coordinator, controller = await connected(hass, mock_bleak_client)
+    receive = mock_bleak_client.start_notify.call_args.args[1]
+    sender = controller._link.notify
+    receive(sender, bytearray.fromhex("ed8003071e020900"))
+    assert controller.protocol_diagnostics["alarm_repeat_mask"] == 2
+    assert controller.protocol_diagnostics["alarm_type_code"] == 9
+
+    async def newer_alarm_report(_char, data, **_kwargs):
+        if bytes(data).startswith(b"\xe7\x80\x01"):
+            receive(sender, bytearray.fromhex("ed80ff80ff800100"))
+
+    mock_bleak_client.write_gatt_char.side_effect = newer_alarm_report
+    with virtual_clock():
+        await controller.configure_alarm(AlarmRequest(enabled=True, hour=7, minute=30,
+            wake_action="memory_1", reference_time=datetime(2026, 11, 27, 16, 21, 22)))
+    assert coordinator.controller_state[bed.ALARM_ON] is True
+    assert coordinator.controller_state[bed.ALARM_HOUR] == -128
+    assert coordinator.controller_state[bed.ALARM_MINUTE] == -1
+    assert coordinator.controller_state[bed.ALARM_REPEAT] == -128
+    assert coordinator.controller_state[bed.ALARM_TYPE] == 1
+    assert controller.protocol_diagnostics["alarm_repeat_mask"] == -128
+    assert controller.protocol_diagnostics["alarm_type_code"] == 1
+    controller.on_disconnect()
+    assert controller.protocol_diagnostics["alarm_repeat_mask"] is None
+    assert controller.protocol_diagnostics["alarm_type_code"] is None

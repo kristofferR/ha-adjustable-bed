@@ -7017,12 +7017,15 @@ Light and massage switches require a current-connection report before choosing
 whether to send their shared toggle frame. The cycle/toggle buttons work without
 that report. Newer reports take priority over sent-state estimates. The alarm
 fields remain readback state rather than an assumed acknowledgement.
+The raw alarm weekday mask and action code are kept in protocol diagnostics,
+alongside the readable alarm enabled state, hour and minute entities.
 
 #### Services
 
 Use `adjustable_bed.hold_control` for the controls above, `sync_clock` to set the
-bed's local clock, and the **Refresh bed alarm** button to request its stored
-alarm. `set_alarm` supports wake actions `none`, `massage` and `memory_1`.
+bed's local clock, and the **Refresh bed alarm** diagnostic button to request
+its stored alarm (enable the button in Home Assistant first). `set_alarm`
+supports wake actions `none`, `massage` and `memory_1`.
 Enabling always programs **today's weekday**, even if its selected time has
 passed, matching the app. Arbitrary weekday lists are rejected. Disabling clears
 the bed alarm. The enable sequence syncs current local time, including seconds,

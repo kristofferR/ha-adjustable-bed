@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import asyncio
 from collections.abc import Callable
+from contextlib import nullcontext
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Final, cast
 
@@ -93,7 +94,9 @@ class KonfurtController(KeesonController):
     @property
     def protocol_diagnostics(self) -> dict[str, object]:
         return {"app": "KONFURT 1.0", "layout": self._variant,
-                "hardware": "UNVERIFIED", "write_mode": "discovered characteristic properties"}
+                "hardware": "UNVERIFIED", "write_mode": "discovered characteristic properties",
+                "alarm_repeat_mask": self._coordinator.controller_state.get(ALARM_REPEAT),
+                "alarm_type_code": self._coordinator.controller_state.get(ALARM_TYPE)}
 
     @property
     def supports_single_address_pairing(self) -> bool:
@@ -266,13 +269,18 @@ class KonfurtController(KeesonController):
             return
         loop = asyncio.get_running_loop()
         deadline = loop.time() + duration_ms / 1000
-        try:
-            while not cancel.is_set() and loop.time() < deadline:
-                next_at = loop.time() + app.REFRESH_MS / 1000
-                await self._write(link, frame, cancel)
-                await cancellable(asyncio.sleep(max(0, min(next_at, deadline) - loop.time())), cancel)
-        finally:
-            await self._release(link)
+        key = UNDER_BED_LIGHTS_ON if control == "light" else MASSAGE if control.startswith("massage") else None
+        revision = self._revision
+        state = (self.sent_state(key(None), is_current=lambda: self._current_revision(link, revision))
+                 if key is not None else nullcontext())
+        with state:
+            try:
+                while not cancel.is_set() and loop.time() < deadline:
+                    next_at = loop.time() + app.REFRESH_MS / 1000
+                    await self._write(link, frame, cancel)
+                    await cancellable(asyncio.sleep(max(0, min(next_at, deadline) - loop.time())), cancel)
+            finally:
+                await self._release(link)
 
     def motor_pulse_settings(self) -> tuple[int, int]:
         return self._coordinator.motor_pulse_count, app.REFRESH_MS
@@ -373,7 +381,8 @@ class KonfurtController(KeesonController):
         async def query(controller: BedController) -> None:
             await cast(KonfurtController, controller).query_alarm()
         specs.append(ControllerButtonSpec("konfurt_query_alarm", "Refresh bed alarm", query,
-                                         translation_key="konfurt_query_alarm", card=CARD_UTILITY, combine_sides=True))
+                                         translation_key="konfurt_query_alarm", card=CARD_UTILITY,
+                                         diagnostic=True, combine_sides=True))
         return tuple(specs)
 
     @property
@@ -389,7 +398,7 @@ class KonfurtController(KeesonController):
             massage_timer_sensor_spec("konfurt_timer", "konfurt_timer", MASSAGE_TIMER_MINUTES,
                                       card=CARD_MASSAGE_TIMER),
             *(ControllerStateSensorSpec(str(key), str(key), key, "mdi:alarm") for key in
-              (WAVE, ALARM_ON, ALARM_HOUR, ALARM_MINUTE, ALARM_REPEAT, ALARM_TYPE)),
+              (WAVE, ALARM_ON, ALARM_HOUR, ALARM_MINUTE)),
         )
 
     @property
@@ -397,7 +406,8 @@ class KonfurtController(KeesonController):
         # The four-motor artwork says all, but the source writes lumbar only.
         return tuple(MotorControlSpec(
             axis, "legs" if axis == "feet" else axis, _press(f"{axis}_up"), _press(f"{axis}_down"),
-            _stop, hold=ControllerMotorHoldSpec(f"{axis}_up", f"{axis}_down", stop_scope="side"),
+            _stop, hold=ControllerMotorHoldSpec(f"{axis}_up", f"{axis}_down", stop_scope="side",
+                                              press_hold_ms=None),
         ) for axis in self.layout.axes)
 
 

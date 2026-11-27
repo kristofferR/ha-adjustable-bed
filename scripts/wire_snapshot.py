@@ -3143,7 +3143,17 @@ async def capture_all(only: list[str] | None = None) -> dict[str, Any]:
             try:
                 layout = layouts[scenario.layout_id or scenario.id]
                 if scenario.properties is not None:
-                    properties = {**layout.get("properties", {}), "*": list(scenario.properties)}
+                    if scenario.bed_type == "konfurt":
+                        from custom_components.adjustable_bed.profiles.konfurt import WRITE
+
+                        # This layout has explicit per-characteristic roles, which
+                        # take precedence over a default. Keep the notify role.
+                        properties = {**layout.get("properties", {}), WRITE: [
+                            prop for prop in scenario.properties
+                            if prop in ("write", "write-without-response")
+                        ]}
+                    else:
+                        properties = {**layout.get("properties", {}), "*": list(scenario.properties)}
                     layout = {**layout, "properties": properties}
                 result[scenario.id] = await capture_scenario(scenario, layout, frozen)
             except Exception as err:  # noqa: BLE001 - a scenario that cannot build is data too
