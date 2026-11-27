@@ -169,6 +169,8 @@ def _protocol_variant_for_bed_type(bed_type: str) -> str | None:
         return "casperpro"
     if bed_type == const.BED_TYPE_JEROME_ADJUSTABLE_BASE:
         return "JERN"
+    if bed_type == const.BED_TYPE_RESTONIC:
+        return "box15"
     if bed_type == "kingkoil":
         return "KSBT03CK"
     if bed_type == const.BED_TYPE_SOMOS:
@@ -235,6 +237,8 @@ async def _create_controller_for_bed_type(
         const.BED_TYPE_ERGOBED,
     ):
         coordinator.entry.data[const.CONF_BLE_DEVICE_NAME] = "HHC0000001D00X"
+    if bed_type == const.BED_TYPE_RESTONIC:
+        coordinator.entry.data[const.CONF_PRODUCT_TYPE] = "prime"
     if bed_type == "cheerssleep":
         coordinator.entry.data[const.CONF_PRODUCT_TYPE] = "45"
     if bed_type in ("sleep_evolution", "wsilver_legacy"):
@@ -252,6 +256,9 @@ async def _create_controller_for_bed_type(
         coordinator.entry.data[const.CONF_PRODUCT_TYPE] = "0"
     if bed_type == "onlysnore":
         coordinator.entry.data[const.CONF_PRODUCT_TYPE] = "unKnow"
+
+    if bed_type == "flexispot":
+        coordinator.entry.data[const.CONF_PRODUCT_TYPE] = "eb632"
 
     if bed_type == "mline":
         coordinator.entry.data[const.CONF_PRODUCT_TYPE] = "two"

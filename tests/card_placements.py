@@ -223,6 +223,7 @@ def runtime_variants(controllers: Iterable[BedController]) -> Iterator[BedContro
     )
     from custom_components.adjustable_bed.beds.paramount.controller import ParamountController
     from custom_components.adjustable_bed.beds.relax_motion.controller import RelaxMotionController
+    from custom_components.adjustable_bed.beds.restonic.controller import RestonicController
     from custom_components.adjustable_bed.beds.richmat_classic.bedsmart import BedSmartController
     from custom_components.adjustable_bed.beds.richmat_classic.dreamlab import DreamlabController
     from custom_components.adjustable_bed.beds.richmat_classic.jerome import JeromeController
@@ -277,6 +278,9 @@ def runtime_variants(controllers: Iterable[BedController]) -> Iterator[BedContro
     dorsal_catalog_covered = False
     for controller in controllers:
         yield controller
+        if isinstance(controller, RestonicController):
+            for layout in ("lombar", "infinity"):
+                yield RestonicController(controller._coordinator, branch="box24", layout=layout)
         if isinstance(controller, LangjueController):
             yield variant(controller, _head_foot=True, _has_light=True, _has_massage=True)
         if isinstance(controller, SimmonsBlueController):

@@ -47,6 +47,7 @@ app. Every guide follows the [bed guide format](BED_GUIDE_FORMAT.md).
 | [JMC400](beds/jmc.md) | Jensen JMC400 beds, from the Jensen and Svane Remote apps | Shared |
 | [Kaidi](beds/kaidi.md) | Rize Beds, Rize Seat, Floyd Home, ISleep, KomfyD and ComfyDS | Shared |
 | [Keeson](beds/keeson.md) | Keeson remotes, Ergomotion, Serta, Tempur, Purple, Sino, the ORE apps, Ergomotion 4.0, OrmatekTechnoSmart, Somos, Yamada and other Keeson-based apps | Shared |
+| [Flexispot](beds/flexispot.md) | Flexispot app and EB632, EB703, EB704 and EB803 models | |
 | [Langjue](beds/langjue.md) | The Comfort Smart Bed app | |
 | [Leggett & Platt](beds/leggett-platt.md) | LP Control, LP Comfort Connect and the L&P remotes | |
 | [Vindö](beds/vindo.md) | Carpe Diem Beds Vindö (Linak two-byte controls) |
@@ -68,6 +69,7 @@ app. Every guide follows the [bed guide format](BED_GUIDE_FORMAT.md).
 | [OKIN Smart Sleep](beds/smart-sleep.md) | The OKIN Smart Sleep app | |
 | [Paramount](beds/paramount.md) | The Paramount bed operation app | |
 | [Personal Comfort](beds/personal-comfort.md) | Personal Comfort air units with their base | |
+| [Restonic](beds/restonic.md) | The Restonic app, Prime, Lombar and Infinity layouts | |
 | [Remacro](beds/remacro.md) | The Slumberland, The Brick and Jerome's apps | |
 | [Reverie](beds/reverie.md) | The Reverie Nightstand app and Reverie receivers | |
 | [Reverie Pairlink](beds/reverie-pairlink-sdk.md) | Reverie Pairlink (R510L / Harmoniq) | |

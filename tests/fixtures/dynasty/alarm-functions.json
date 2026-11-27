@@ -1,0 +1,56 @@
+{
+  "tv": {
+    "none": "58",
+    "head_and_foot": "77",
+    "head": "7a",
+    "foot": "7d"
+  },
+  "snore": {
+    "none": "46",
+    "head_and_foot": "78",
+    "head": "7b",
+    "foot": "7e"
+  },
+  "zg": {
+    "none": "45",
+    "head_and_foot": "79",
+    "head": "7c",
+    "foot": "7f"
+  },
+  "lounge": {
+    "none": "59",
+    "head_and_foot": "ac",
+    "head": "ad",
+    "foot": "ae"
+  },
+  "m1": {
+    "none": "2e",
+    "head_and_foot": "81",
+    "head": "82",
+    "foot": "83"
+  },
+  "m2": {
+    "none": "2f",
+    "head_and_foot": "a6",
+    "head": "a7",
+    "foot": "a8"
+  },
+  "m3": {
+    "none": "30",
+    "head_and_foot": "a9",
+    "head": "aa",
+    "foot": "ab"
+  },
+  "massage_only": {
+    "head_and_foot": "5d",
+    "head": "4c",
+    "foot": "4e"
+  },
+  "buzzer": "80",
+  "single_only": {
+    "mode1": "B0",
+    "mode2": "B1",
+    "flat_sleep": "F6"
+  },
+  "unsupported_combination": "When both bed and massage selected, mode1/mode2/flat_sleep and any bed function outside explicit seven-preset/buzzer cases exit combineCommand without a BLE write."
+}
