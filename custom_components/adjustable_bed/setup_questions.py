@@ -350,6 +350,7 @@ _OWNED_BY_BED_TYPE: Final[dict[str, frozenset[str]]] = {
     # finder have no motors.
     "hush_remote": GENERIC_FIELDS,
     "hush_base": GENERIC_FIELDS - {CONF_PROTOCOL_VARIANT},
+    "silksnow": GENERIC_FIELDS - {CONF_PROTOCOL_VARIANT},
     "luuna": GENERIC_FIELDS - {CONF_PROTOCOL_VARIANT, CONF_MOTOR_PULSE_COUNT},
     "instant_comfort": frozenset({CONF_MOTOR_COUNT, CONF_HAS_MASSAGE, CONF_DISABLE_ANGLE_SENSING}),
     "personal_comfort": frozenset({CONF_MOTOR_COUNT, CONF_HAS_MASSAGE, CONF_DISABLE_ANGLE_SENSING}),
@@ -1898,6 +1899,11 @@ def _luuna_settings(data: Mapping[str, Any]) -> dict[str, Any]:
         CONF_DISABLE_ANGLE_SENSING: True,
         CONF_MOTOR_PULSE_DELAY_MS: 100,
     }
+
+
+def _silksnow_products(_data: Mapping[str, Any]) -> Mapping[Any, str]:
+    from .profiles.silksnow import CHOICES
+    return CHOICES
 
 
 def _hush_products(_data: Mapping[str, Any]) -> Mapping[Any, str]:
@@ -3530,6 +3536,7 @@ SETUP_PROFILES: Final[dict[str, SetupProfile]] = {
     },
     # The product the Hush Base app shows sets every control; nothing detects it.
     "hush_base": _asking("hush_base", questions=(Question(CONF_PROTOCOL_VARIANT, _hush_products),)),
+    "silksnow": _asking("silksnow", questions=(Question(CONF_PROTOCOL_VARIANT, _silksnow_products),)),
     "sinca_comfort": _asking(
         "sinca_comfort",
         questions=(Question(CONF_PROTOCOL_VARIANT, _routes("sinca_comfort"), VARIANT_AUTO),

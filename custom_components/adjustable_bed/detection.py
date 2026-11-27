@@ -669,6 +669,7 @@ BED_TYPE_DISPLAY_NAMES: dict[str, str] = {
     "casper_remote": "Casper Base remote finder",
     "casper_base": "Casper Base app",
     "hush_base": "Hush Base app",
+    "silksnow": "Silk & Snow (S&S Base app)",
     "majestichome": "Majestic Home app",
     "luuna": "Luuna + app (Rise, Rise Pro, Rise Pro Light)",
     "personal_comfort": "Personal Comfort app",

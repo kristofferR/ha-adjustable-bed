@@ -345,6 +345,7 @@ _BED_TRAITS: Final[dict[str, BedTraits]] = {
     BED_TYPE_RICHMAT_APP: _NO_ANGLES,
     BED_TYPE_RICHMAT_APP_SLEEP: _NO_ANGLES,
     BED_TYPE_HUSH_BASE: _NO_ANGLES,
+    "silksnow": BedTraits(no_angle_feedback=True, connection_scoped_state=True, connection_timeout=5.0),
     "luuna": _NO_ANGLES_SCOPED,
     "instant_comfort": replace(_NO_ANGLES_SCOPED, owns_device_info_reads=True, single_address_native_both=False),
     "personal_comfort": replace(_NO_ANGLES_SCOPED, owns_device_info_reads=True, single_address_native_both=False),

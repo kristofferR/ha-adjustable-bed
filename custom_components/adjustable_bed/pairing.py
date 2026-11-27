@@ -242,6 +242,7 @@ SINGLE_ADDRESS_SIDE_AWARE_BED_TYPES: Final = frozenset(
         BED_TYPE_RIZE,
         BED_TYPE_CASPER_BASE,
         "hush_base",
+        "silksnow",
         BED_TYPE_GMMOTOR,
         BED_TYPE_MOTOMOTION,
         BED_TYPE_SYMPHONY,
@@ -313,6 +314,10 @@ def supports_single_address_pairing(
             return product_type is not None and 1 in load_profile(product_type).sides
         except ValueError:
             return False
+    if bed_type == "silksnow":
+        from .profiles.silksnow import PROFILES
+        profile = PROFILES.get(protocol_variant or "")
+        return profile is not None and profile.row[11]
     if bed_type == "hush_base":
         from .profiles.hush import HUSH_BASE_SIDE_VARIANTS
 

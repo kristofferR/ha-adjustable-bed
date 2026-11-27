@@ -46,7 +46,7 @@ from custom_components.adjustable_bed.codec import richmat as codec
 from custom_components.adjustable_bed.codec import richmat as richmat_codec
 from custom_components.adjustable_bed.profiles import bobpowerbase as bob_profiles
 from custom_components.adjustable_bed.profiles import casper as casper_profiles
-from custom_components.adjustable_bed.profiles import dreamsense, saatva
+from custom_components.adjustable_bed.profiles import dreamsense, saatva, silksnow
 from custom_components.adjustable_bed.profiles import hush as hush_profiles
 from custom_components.adjustable_bed.profiles import luniosmart as lunio
 from custom_components.adjustable_bed.profiles import luuna as luuna_profiles
@@ -2170,3 +2170,27 @@ def render_dynasty_timing() -> str:
 
 
 BLOCKS += [(GUIDE, "dynasty-commands", render_dynasty_commands), (GUIDE, "dynasty-timing", render_dynasty_timing)]
+
+
+def render_silksnow_products() -> str:
+    return _block(_table(("Product key", "Label", "Manual", "Massage", "Presets", "Split / alarm list", "Fan / heat", "Light", "RGB", "Repeating clock", "Sides"), (
+        (f"`{key}`", row[0], *(", ".join(f"{silksnow.ACTIONS[i][0]} ({_hex(codec.function(silksnow.ACTIONS[i][1], single=True))})" for i in group if silksnow.ACTIONS[i][0] not in silksnow.EXCLUDED_ACTIONS) or "none" for group in row[1:6]), *("yes" if row[i] else "no" for i in (6, 7, 10, 11)))
+        for key in silksnow.CHOICES for row in (silksnow.PROFILES[key].row,)
+    )))
+
+
+def render_silksnow_commands() -> str:
+    return _block(_table(("Action", "Raw", "Framed, left", "Program"), (
+        (name, _hex(codec.function(short, single=True)), _hex(codec.function(short, action="deviceFunctionItem" + name)), "n/a" if long is None else _hex(codec.function(long)))
+        for name, short, long in silksnow.ACTIONS
+        if name not in silksnow.EXCLUDED_ACTIONS and name != "None"
+    )))
+
+
+def render_silksnow_settings() -> str:
+    rows = [(action, _hex(codec.function(code, action=action))) for action, code in (("deviceFunctionItemExitLimit", 0), ("deviceFunctionItemCheckClock", 1), ("deviceFunctionItemCheckLight", 1))]
+    rows += [("RGB power on", _hex(codec.record(4, 4, 1, (0, 1)))), ("RGB power off", _hex(codec.record(4, 4, 1, (0, 0)))), ("RGB color 18, 52, 86", _hex(codec.record(4, 1, 1, (0, 18, 52, 86)))), ("RGB timer 300 minutes", _hex(codec.record(4, 2, 1, (0, 1, 44)))), ("RGB scroll", _hex(codec.record(4, 5, 1, (0, 2, 4)))), ("RGB cycling", _hex(codec.record(4, 5, 1, (0, 1, 3)))), ("RGB breathe", _hex(codec.record(4, 6, 1, (0,)))), ("White color 18, 52, 86 (one write)", _hex(codec.rgb(18, 52, 86))), ("White timer 300 seconds", _hex(codec.light_timer(1, 44))), ("White always on", _hex(codec.light_timer(255, 255))), ("Cancel legacy clock, low then high", "; ".join(_hex(frame) for frame in codec.countdown(0, 0))), ("List repeating alarms", _hex(codec.record(5, 1, 0, (0,)))), ("Delete alarm 1", _hex(codec.record(5, 2, 1, (1,)))), ("Local calendar example", _hex(codec.calendar(datetime(2026, 11, 27, 8, 30, 15))))]
+    return _block(_table(("Setting", "Frame"), rows))
+
+
+BLOCKS += [(GUIDE, "silksnow-products", render_silksnow_products), (GUIDE, "silksnow-commands", render_silksnow_commands), (GUIDE, "silksnow-settings", render_silksnow_settings)]

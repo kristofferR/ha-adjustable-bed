@@ -1410,6 +1410,7 @@ _DECLARED_QUESTION_ROUTES: Final = frozenset(
         "suta",
         BED_TYPE_TRUEMOTION,
         "hush_base",
+        "silksnow",
         "luuna",
         "dorsal",
         "mline",
@@ -8254,7 +8255,7 @@ class AdjustableBedOptionsFlow(
             runtime.capability_controller if isinstance(runtime, AdjustableBedCoordinator) else None
         )
         needs_transport_proof = (
-            self.config_entry.data.get(CONF_BED_TYPE) in {"casper_base", "hush_base"}
+            self.config_entry.data.get(CONF_BED_TYPE) in {"casper_base", "hush_base", "silksnow"}
             or self.config_entry.data.get(CONF_BED_TYPE) == "richmat_classic_apps"
             and self.config_entry.data.get(CONF_PROTOCOL_VARIANT) in ("jerome2", "dreamlab2")
         )
