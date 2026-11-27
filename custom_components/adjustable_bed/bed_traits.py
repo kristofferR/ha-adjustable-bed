@@ -276,6 +276,7 @@ _BED_TRAITS: Final[dict[str, BedTraits]] = {
     BED_TYPE_SHUDA: replace(_NO_ANGLES, owns_device_info_reads=True, connection_timeout=5),
     BED_TYPE_RESIDENT: replace(_NO_ANGLES_SCOPED, owns_device_info_reads=True),
     "sleeptime": replace(_NO_ANGLES_SCOPED, owns_device_info_reads=True, connection_timeout=5),
+    "hestia_motion": replace(_NO_ANGLES_SCOPED, owns_device_info_reads=True),
     "ultramatic_smart_bed": replace(_NO_ANGLES_SCOPED, owns_device_info_reads=True, connection_timeout=5),
     BED_TYPE_ADJUSTAMATTRESS: _NO_ANGLES,
     # Measured against the BedJet LCD remote's own degree readout.
