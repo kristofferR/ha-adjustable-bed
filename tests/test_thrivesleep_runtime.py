@@ -82,8 +82,10 @@ async def test_setup_demands_explicit_product_and_owns_side_settings(
     with patch.object(flow, "_verification_possible", return_value=False):
         result = await flow.async_step_richmat_family({"choice": "thrivesleep"})
         assert result["step_id"] == "profile_questions"
+        schema = result.get("data_schema")
+        assert schema is not None
         result = await flow.async_step_profile_questions(
-            result["data_schema"]({const.CONF_PROTOCOL_VARIANT: product})
+            schema({const.CONF_PROTOCOL_VARIANT: product})
         )
     assert result["type"] is FlowResultType.CREATE_ENTRY
     data = result["data"]
