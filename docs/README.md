@@ -38,7 +38,7 @@ app. Every guide follows the [bed guide format](BED_GUIDE_FORMAT.md).
 | [SILVERmotion Android](beds/silvermotion.md) | SILVERmotion Android SimplicityFrame beds | |
 | [Casper Base](beds/casper-base.md) | The Casper Base app, sleep sensors and remote finder | |
 | [CheersSleep](beds/cheerssleep.md) | The CheersSleep app | |
-| [Solace and related apps](beds/ff_frame.md) | Solace remotes and apps, Sophie, Woosa Sleep, BedSense and Motion Bed | Shared |
+| [Solace and related apps](beds/ff_frame.md) | Solace remotes and apps, Sophie, Sealy FlexiRest, Woosa Sleep, BedSense and Motion Bed | Shared |
 | [FurniMove / OKIN Smart Remote](beds/furnimove.md) | The FurniMove app and OKIN handset codes | |
 | [GM Control](beds/gmmotor.md) | The GM Control app and sleep modules | |
 | [Hush Base](beds/hush-base.md) | The Hush Base app, sleep sensors and remote finder | |

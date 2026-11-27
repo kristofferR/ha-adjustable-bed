@@ -463,9 +463,7 @@ class SophieController(SolaceController):
         generation = self._generation
         self._startup_task = asyncio.create_task(self._startup(session, generation))
 
-    async def _startup(self, session: ControllerSession, generation: int) -> None:
-        loop = asyncio.get_running_loop()
-        start = loop.time()
+    def _startup_schedule(self) -> list[tuple[int, bytes | None]]:
         queries = C.QUERY_Q2 if self._query_family == "q2" else C.QUERY_Q1
         schedule: list[tuple[int, bytes | None]] = [
             (app.QUERY_DELAY_MS + i * app.QUERY_SPACING_MS, frame)
@@ -476,6 +474,12 @@ class SophieController(SolaceController):
             (app.CLOCK_DELAY_MS + app.SYNC_AFTER_CLOCK_MS, app.SYNC_QUERY),
             (app.LIGHT_QUERY_DELAY_MS, C.LIGHT_STATUS_QUERY),
         ]
+        return schedule
+
+    async def _startup(self, session: ControllerSession, generation: int) -> None:
+        loop = asyncio.get_running_loop()
+        start = loop.time()
+        schedule = self._startup_schedule()
         try:
             for offset, frame in sorted(schedule, key=lambda row: row[0]):
                 await asyncio.sleep(max(0, start + offset / 1000 - loop.time()))
@@ -537,7 +541,8 @@ class SophieController(SolaceController):
     async def async_read_device_info(self, session: ControllerSession) -> bool:
         return True
 
-    def _parse_notification(self, data: bytes) -> None:
+    def _parse_control_updates(self, data: bytes) -> list[StateUpdate]:
+        """Shared saved-preset and massage records, with app-selected query family."""
         updates: list[StateUpdate] = []
         for code, key in zip(app.PRESET_CODES, app.PRESET_KEYS, strict=True):
             if self._query_family == "q2" and codec.HEADER + bytes((3, 6, 0, code)) in data:
@@ -561,6 +566,10 @@ class SophieController(SolaceController):
                         else:
                             updates.append(WAVE(level + 1))
                 break
+        return updates
+
+    def _parse_notification(self, data: bytes) -> None:
+        updates = self._parse_control_updates(data)
         light = codec.HEADER + bytes((5, 0, 1))
         if data.startswith(light) and len(data) >= 8:
             value = data[7]

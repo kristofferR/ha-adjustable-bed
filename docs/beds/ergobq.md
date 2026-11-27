@@ -173,11 +173,6 @@ requested duration and the scheduler's safety ceiling.
 
 No physical STOP-latency or disconnect-failsafe guarantee is established.
 
-### Vectors
-
-`tests/fixtures/ergobq/vectors.json` contains the direct BED literals checked by
-`tests/test_ergobq_vectors.py`, including both valid force-sync serializations.
-
 ## Profiles
 
 ### ErgoBQ BED profile

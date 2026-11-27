@@ -76,3 +76,14 @@ def test_a_scoped_hold_admits_only_its_controls() -> None:
 def test_invalid_declarations_are_rejected(kwargs: dict[str, object]) -> None:
     with pytest.raises(ValueError):
         ExecutionCapabilities(**kwargs)  # type: ignore[arg-type]
+
+
+@pytest.mark.parametrize("selector", ("KSBT03CK", "KSBT03CL"))
+async def test_kingkoil_stream_is_one_control_without_invented_release(selector: str) -> None:
+    # King Koil Bed1.0 E-TIME: immediate Timer300ms; both UP/CANCEL paths
+    # cancel refresh only. No merged keys, speed or sustain interval is proven.
+    controller = await _create_controller_for_bed_type("kingkoil", selector)
+    assert controller.execution.declared == {"hold"}
+    assert controller.execution.hold_for("head_up") == "stream"
+    assert controller.profile.release.steps == ()
+    assert controller.profile.refresh_ms == 300
