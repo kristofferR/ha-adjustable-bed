@@ -964,3 +964,10 @@ and massage setting when combined with another bed. No single-address side
 selection is inferred. The massage timer is a Home Assistant countdown, 1–40
 minutes, initially 10; it sends massage off on expiry while connected. It does
 not program a timer in the bed. See [SILVERmotion Android](beds/silvermotion.md).
+
+### Ronco Motion layout
+
+The searchable **Ronco Motion app** choice asks for ECONOMY (Fk9rm) or PREMIUM
+(Fk8rm). Select the layout used in Ronco Motion 1.2; Bluetooth names cannot
+identify it. PREMIUM adds Pillow and a light toggle. Layout settings belong to
+one physical side of a two-address pair. See [Ronco Motion](beds/richmat.md#ronco-motion).

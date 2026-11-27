@@ -1198,6 +1198,10 @@
   "card_section": "lighting",
   "card_role": "cycle"
  },
+ "button:lights_toggle": {
+  "card_section": "lighting",
+  "card_role": "toggle"
+ },
  "button:linx_massage_foot": {
   "card_section": "massage"
  },
@@ -2023,6 +2027,14 @@
  },
  "button:rize_remedy_ii_wave_3": {
   "card_section": "massage"
+ },
+ "button:ronco_motion_save_anti_snore": {
+  "card_section": "presets",
+  "card_role": "save"
+ },
+ "button:ronco_motion_save_zero_g": {
+  "card_section": "presets",
+  "card_role": "save"
  },
  "button:ruf_richmat_lift_down": {
   "card_section": "motors",
@@ -5117,6 +5129,9 @@
  },
  "sensor:rize_remedy_ii_save_acknowledged": {
   "card_section": "utility"
+ },
+ "sensor:ronco_motion_alarm": {
+  "card_section": "hidden"
  },
  "sensor:ruf_richmat_calendar_alarms": {
   "card_section": "utility"
