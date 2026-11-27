@@ -21,10 +21,12 @@ from .const import (
     ADJUSTABLE_BED_VARIANTS,
     ADJUSTABLE_LUMBAR_VARIANTS,
     ADJUSTAMATTRESS_VARIANTS,
+    ALYA_LAYOUTS,
     AUTOMATIC_LABEL,
     BED_TYPE_ADJUSTABLE_BED,
     BED_TYPE_ADJUSTABLE_LUMBAR,
     BED_TYPE_ADJUSTAMATTRESS,
+    BED_TYPE_ALYA,
     BED_TYPE_AMBIENT,
     BED_TYPE_BEDSENSE,
     BED_TYPE_BETTERLIVING2,
@@ -104,6 +106,7 @@ from .const import (
     ZSERIES_VARIANTS,
 )
 from .profiles.ambient import LAYOUTS as AMBIENT_LAYOUTS
+from .profiles.berun import PROFILES as BERUN_PROFILES
 from .profiles.bobpowerbase import PROFILE_CHOICES as BOB_PROFILES
 from .profiles.casper import CASPER_BASE_VARIANTS
 from .profiles.comfort_enhancement3 import CHOICES as APEX_CHOICES
@@ -117,6 +120,7 @@ from .profiles.likimio import CHOICES as LIKIMIO_CHOICES
 from .profiles.linx import TRANSPORT_CHOICES as LINX_TRANSPORTS
 from .profiles.luuna import VARIANTS as LUUNA_VARIANTS
 from .profiles.majestichome import PROFILE_CHOICES as MAJESTICHOME_PROFILES
+from .profiles.mlily0 import VARIANTS as MLILY0_PROFILES
 from .profiles.mlily_choices import PROFILE_CHOICES as MLILY_PROFILES
 from .profiles.mlily_remote import VARIANTS as MLILY_REMOTE_PROFILES
 from .profiles.okimiki import PROFILE_CHOICES as OKIMIKI_PROFILES
@@ -174,6 +178,7 @@ MLINE_PROTOCOL_LABELS: Final = {
 # Single source of truth for bed types with variants
 VARIANTS_BY_BED_TYPE: dict[str, dict[str, str]] = {
     BED_TYPE_AMBIENT: AMBIENT_LAYOUTS,
+    "berun": {key: f"Version {profile.version}" for key, profile in BERUN_PROFILES.items()},
     BED_TYPE_SLEEPTIME: dict(SLEEPTIME_SELECTORS),
     "ormatek": {"okin15": "Bluetooth name starts with Okin", "okin24": "Bluetooth name starts with SmartBed"},
     "leva": dict(LEVA_RECEIVERS),
@@ -197,6 +202,7 @@ VARIANTS_BY_BED_TYPE: dict[str, dict[str, str]] = {
     BED_TYPE_ENSO2: ENSO2_LAYOUT_CHOICES,
     BED_TYPE_RICHMAT_APP: RICHMAT_APP_PRODUCTS,
     BED_TYPE_RICHMAT_APP_SLEEP: RICHMAT_SLEEP_CHOICES,
+    BED_TYPE_ALYA: ALYA_LAYOUTS,
     BED_TYPE_ESHINE_OKIN: ESHINE_OKIN_PROFILES,
     "rize_home": {"remedy_iii": "Remedy III", "contempo_iv": "Contempo IV"},
     "superior_sleep": {"ss350": "SS350", "ss650": "SS650"},
@@ -212,6 +218,7 @@ VARIANTS_BY_BED_TYPE: dict[str, dict[str, str]] = {
     "personal_comfort": PERSONAL_COMFORT_ROUTES,
     "instant_comfort": INSTANT_COMFORT_ROUTES,
     "mlily_remote": MLILY_REMOTE_PROFILES,
+    "mlily0": MLILY0_PROFILES,
     "mline": {"auto": AUTOMATIC_LABEL, **MLINE_PROTOCOL_LABELS},
     "sinca_comfort": {"auto": AUTOMATIC_LABEL, **SINCA_RECEIVERS},
     BED_TYPE_KAIDI: KAIDI_VARIANTS,

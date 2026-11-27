@@ -44,10 +44,12 @@ from .beds.richmat_app.sleep_profiles import CHOICES as RICHMAT_SLEEP_CHOICES
 from .beds.sleeptracker.protocol import MODELS as SLEEPTRACKER_MODELS
 from .beds.starcode.m1x12_protocol import profile_from_name as m1x12_profile_from_name
 from .const import (
+    ALYA_LAYOUTS,
     AUTOMATIC_LABEL,
     BED_TYPE_ADJUSTABLE_BED,
     BED_TYPE_ADJUSTABLE_LUMBAR,
     BED_TYPE_ADJUSTAMATTRESS,
+    BED_TYPE_ALYA,
     BED_TYPE_AMBIENT,
     BED_TYPE_ATLAS_LIFT,
     BED_TYPE_BEDSENSE,
@@ -96,6 +98,7 @@ from .const import (
     BED_TYPE_MALOUF_LEGACY_OKIN,
     BED_TYPE_MALOUF_NEW_OKIN,
     BED_TYPE_MLILY,
+    BED_TYPE_MLILY0,
     BED_TYPE_MLILY_REMOTE,
     BED_TYPE_MOODBASE,
     BED_TYPE_MOTION_BED,
@@ -299,6 +302,7 @@ from .profiles.jerome_adjustable_base import PRODUCT_CHOICES as JEROME_ADJUSTABL
 from .profiles.likimio import ABM10 as LIKIMIO_ABM10
 from .profiles.likimio import CHOICES as LIKIMIO_CHOICES
 from .profiles.majestichome import PROFILE_CHOICES as MAJESTICHOME_PROFILES
+from .profiles.mlily0 import VARIANTS as MLILY0_PROFILES
 from .profiles.mlily_choices import PROFILE_CHOICES as MLILY_PROFILES
 from .profiles.mlily_remote import VARIANTS as MLILY_REMOTE_PROFILES
 from .profiles.okimiki import PROFILE_CHOICES as OKIMIKI_PROFILES
@@ -374,6 +378,7 @@ _OWNED_BY_BED_TYPE: Final[dict[str, frozenset[str]]] = {
     BED_TYPE_SOMOS: _APP_DEFINED - {CONF_PROTOCOL_VARIANT, CONF_MOTOR_PULSE_COUNT},
     BED_TYPE_COMFORTBASE: _APP_DEFINED - {CONF_PROTOCOL_VARIANT, CONF_MOTOR_PULSE_COUNT},
     BED_TYPE_COMFORT_ENHANCEMENTS: _APP_DEFINED - {CONF_PROTOCOL_VARIANT, CONF_MOTOR_PULSE_COUNT},
+    BED_TYPE_ALYA: _APP_DEFINED - {CONF_PROTOCOL_VARIANT, CONF_MOTOR_PULSE_COUNT, CONF_HAS_MASSAGE},
     BED_TYPE_ESHINE_OKIN: _APP_DEFINED - {CONF_PROTOCOL_VARIANT, CONF_MOTOR_PULSE_COUNT},
     BED_TYPE_ESHINE: _APP_DEFINED - {CONF_MOTOR_PULSE_COUNT},
     BED_TYPE_GALAXY: GENERIC_FIELDS - {CONF_PROTOCOL_VARIANT},
@@ -385,6 +390,7 @@ _OWNED_BY_BED_TYPE: Final[dict[str, frozenset[str]]] = {
     "dreamsense": _APP_DEFINED - {CONF_PROTOCOL_VARIANT, CONF_MOTOR_PULSE_COUNT},
     "saatva": _APP_DEFINED - {CONF_PROTOCOL_VARIANT, CONF_MOTOR_PULSE_COUNT},
     "bobpowerbase": _APP_DEFINED - {CONF_PROTOCOL_VARIANT},
+    BED_TYPE_MLILY0: _APP_DEFINED - {CONF_PROTOCOL_VARIANT},
     BED_TYPE_MLILY_REMOTE: _APP_DEFINED - {CONF_PROTOCOL_VARIANT},
     BED_TYPE_RONCO_MOTION: _APP_DEFINED - {CONF_PROTOCOL_VARIANT, CONF_MOTOR_PULSE_COUNT},
     BED_TYPE_HJBED: _APP_DEFINED - {CONF_PROTOCOL_VARIANT, CONF_MOTOR_PULSE_COUNT},
@@ -1878,6 +1884,16 @@ def _personal_comfort_settings(data: Mapping[str, Any]) -> dict[str, Any]:
             CONF_DISABLE_ANGLE_SENSING: True}
 
 
+def _mlily0_settings(data: Mapping[str, Any]) -> dict[str, Any]:
+    from .profiles.mlily0 import ACTIONS, PROFILES
+
+    profile = PROFILES.get(str(data.get(CONF_PROTOCOL_VARIANT)))
+    axes = sum(ACTIONS[i][0].endswith("Up") for i in profile.row[1]) if profile else 2
+    return {CONF_MOTOR_COUNT: axes, CONF_HAS_MASSAGE: bool(profile and profile.row[2]),
+            CONF_DISABLE_ANGLE_SENSING: True, CONF_MOTOR_PULSE_COUNT: 10,
+            CONF_MOTOR_PULSE_DELAY_MS: 100}
+
+
 def _mlily_remote_settings(data: Mapping[str, Any]) -> dict[str, Any]:
     from .profiles.mlily_remote import PROFILES
 
@@ -2627,6 +2643,16 @@ def _symphony_errors(data: Mapping[str, Any]) -> dict[str, str]:
     return {}
 
 
+def _berun_seed(_hass: HomeAssistant, data: Mapping[str, Any], discovered: BluetoothServiceInfoBleak | None) -> dict[str, Any]:
+    from .profiles.berun import PROFILES, advertisement
+    result = dict(data)
+    if discovered is not None and result.get(CONF_PROTOCOL_VARIANT) not in PROFILES:
+        variant = advertisement(discovered.name or "", discovered.manufacturer_data or {})
+        if variant is not None:
+            result[CONF_PROTOCOL_VARIANT] = variant
+    return result
+
+
 def _nerum_seed(_hass: HomeAssistant, data: Mapping[str, Any], discovered: BluetoothServiceInfoBleak | None) -> dict[str, Any]:
     from .profiles.nerum import advertisement
 
@@ -2835,6 +2861,16 @@ SETUP_PROFILES: Final[dict[str, SetupProfile]] = {
                            "value": ["restored", "roomi"]}),
         ),
         validate=_dorsal_errors, imports=("profiles.dorsal",),
+    ),
+    "berun": SetupProfile(
+        owns={CONF_MOTOR_COUNT: 2, CONF_HAS_MASSAGE: False,
+              CONF_DISABLE_ANGLE_SENSING: True, CONF_MOTOR_PULSE_DELAY_MS: 200},
+        questions=(Question(CONF_PROTOCOL_VARIANT, {
+            "v6": "Version 6: E6 / FFE5", "v7": "Version 7: ORE / 1000",
+            "v8": "Version 8: Nordic (light unavailable)",
+            "v9": "Version 9: Nordic",
+        }, REQUIRED),),
+        seed=_berun_seed, imports=("profiles.berun",),
     ),
     "nerum": SetupProfile(
         owns={CONF_MOTOR_COUNT: SET_BY_PROFILE, CONF_HAS_MASSAGE: False,
@@ -3471,6 +3507,11 @@ SETUP_PROFILES: Final[dict[str, SetupProfile]] = {
         questions=(Question(CONF_PROTOCOL_VARIANT, BOB_PROFILES),
                    Question(CONF_PRODUCT_TYPE, BOB_LAYOUTS, "standard")),
     ),
+    BED_TYPE_MLILY0: _asking(
+        BED_TYPE_MLILY0,
+        questions=(Question(CONF_PROTOCOL_VARIANT, MLILY0_PROFILES, searchable=True),),
+        derive=_mlily0_settings,
+    ),
     BED_TYPE_MLILY_REMOTE: _asking(
         BED_TYPE_MLILY_REMOTE,
         questions=(
@@ -3506,6 +3547,31 @@ SETUP_PROFILES: Final[dict[str, SetupProfile]] = {
         questions=(Question(CONF_PROTOCOL_VARIANT, GALAXY_PROFILES, searchable=True),),
         validate=_galaxy_errors,
         seed=_galaxy_seed,
+    ),
+    BED_TYPE_ALYA: _asking(
+        BED_TYPE_ALYA,
+        questions=(
+            Question(CONF_PROTOCOL_VARIANT, ALYA_LAYOUTS, searchable=True),
+            Question(
+                CONF_HAS_MASSAGE, default=True,
+                when={"field": CONF_PROTOCOL_VARIANT, "operator": ConditionOperator.IN,
+                      "value": ["bluetooth_2", "bluetooth_3", "bluetooth_4"]},
+            ),
+            Question(
+                CONF_CB24_BED_SELECTION,
+                {CB24_BED_SELECTION_DEFAULT: "Both", CB24_BED_SELECTION_A: "A (left)",
+                 CB24_BED_SELECTION_B: "B (right)"},
+                CB24_BED_SELECTION_A,
+                when={"field": CONF_PROTOCOL_VARIANT, "value": "dacheng_5"},
+            ),
+        ),
+        derive=lambda data: {
+            CONF_MOTOR_COUNT: int(data.get(CONF_PROTOCOL_VARIANT, "bluetooth_2").rsplit("_", 1)[-1]),
+            CONF_HAS_MASSAGE: data.get(CONF_HAS_MASSAGE, True)
+            if data.get(CONF_PROTOCOL_VARIANT, "").startswith("bluetooth_") else True,
+            CONF_DISABLE_ANGLE_SENSING: True,
+            CONF_MOTOR_PULSE_DELAY_MS: 300,
+        },
     ),
     BED_TYPE_GOODVIBE: _asking(
         BED_TYPE_GOODVIBE,

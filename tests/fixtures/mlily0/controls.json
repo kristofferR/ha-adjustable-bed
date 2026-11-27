@@ -1,0 +1,752 @@
+[
+  {
+    "action": "deviceFunctionItemExitLimit / short",
+    "route": "P1",
+    "expected": "00"
+  },
+  {
+    "action": "deviceFunctionItemMemoryPosition2 / short",
+    "route": "P1",
+    "expected": "2f"
+  },
+  {
+    "action": "deviceFunctionItemMemoryPosition1 / short",
+    "route": "P1",
+    "expected": "2e"
+  },
+  {
+    "action": "deviceFunctionItemSleepPosition / short",
+    "route": "P1",
+    "expected": "c5"
+  },
+  {
+    "action": "deviceFunctionItemHelpGetUp / short",
+    "route": "P1",
+    "expected": "3d"
+  },
+  {
+    "action": "deviceFunctionItemAntiSnoring / short",
+    "route": "P1",
+    "expected": "46"
+  },
+  {
+    "action": "deviceFunctionItemMotorReset / short",
+    "route": "P1",
+    "expected": "31"
+  },
+  {
+    "action": "deviceFunctionItemReadingPosition / short",
+    "route": "P1",
+    "expected": "f2"
+  },
+  {
+    "action": "deviceFunctionItemTVPosition / short",
+    "route": "P1",
+    "expected": "58"
+  },
+  {
+    "action": "deviceFunctionItemYogaPosition / short",
+    "route": "P1",
+    "expected": "6b"
+  },
+  {
+    "action": "deviceFunctionItemZeroGravity / short",
+    "route": "P1",
+    "expected": "45"
+  },
+  {
+    "action": "deviceFunctionItemMemoryPosition2 / short",
+    "route": "P1",
+    "expected": "2f"
+  },
+  {
+    "action": "deviceFunctionItemMemoryPosition2 / long",
+    "route": "P1",
+    "expected": "2c"
+  },
+  {
+    "action": "deviceFunctionItemMemoryPosition1 / short",
+    "route": "P1",
+    "expected": "2e"
+  },
+  {
+    "action": "deviceFunctionItemMemoryPosition1 / long",
+    "route": "P1",
+    "expected": "2b"
+  },
+  {
+    "action": "deviceFunctionItemBedLight / short",
+    "route": "P1",
+    "expected": "3c"
+  },
+  {
+    "action": "deviceFunctionItemMassage30MinuteTimer / short",
+    "route": "P1",
+    "expected": "61"
+  },
+  {
+    "action": "deviceFunctionItemMassage20MinuteTimer / short",
+    "route": "P1",
+    "expected": "63"
+  },
+  {
+    "action": "deviceFunctionItemMassage10MinuteTimer / short",
+    "route": "P1",
+    "expected": "5f"
+  },
+  {
+    "action": "deviceFunctionItemMassageModeAllOff / short",
+    "route": "P1",
+    "expected": "5e"
+  },
+  {
+    "action": "deviceFunctionItemMassageModeChange / short",
+    "route": "P1",
+    "expected": "48"
+  },
+  {
+    "action": "deviceFunctionItemMassageFootInstensityStrengthen / short",
+    "route": "P1",
+    "expected": "4e"
+  },
+  {
+    "action": "deviceFunctionItemFootDown / short",
+    "route": "P1",
+    "expected": "27"
+  },
+  {
+    "action": "deviceFunctionItemFootUp / short",
+    "route": "P1",
+    "expected": "26"
+  },
+  {
+    "action": "deviceFunctionItemHeadDown / short",
+    "route": "P1",
+    "expected": "25"
+  },
+  {
+    "action": "deviceFunctionItemHeadUp / short",
+    "route": "P1",
+    "expected": "24"
+  },
+  {
+    "action": "deviceFunctionItemSleepPosition / short",
+    "route": "P1",
+    "expected": "c5"
+  },
+  {
+    "action": "deviceFunctionItemReadingPosition / short",
+    "route": "P1",
+    "expected": "f2"
+  },
+  {
+    "action": "deviceFunctionItemReadingPosition / long",
+    "route": "P1",
+    "expected": "f3"
+  },
+  {
+    "action": "deviceFunctionItemHelpGetUp / short",
+    "route": "P1",
+    "expected": "3d"
+  },
+  {
+    "action": "deviceFunctionItemAntiSnoring / short",
+    "route": "P1",
+    "expected": "46"
+  },
+  {
+    "action": "deviceFunctionItemAntiSnoring / long",
+    "route": "P1",
+    "expected": "69"
+  },
+  {
+    "action": "deviceFunctionItemMotorReset / short",
+    "route": "P1",
+    "expected": "31"
+  },
+  {
+    "action": "deviceFunctionItemTVPosition / short",
+    "route": "P1",
+    "expected": "58"
+  },
+  {
+    "action": "deviceFunctionItemTVPosition / long",
+    "route": "P1",
+    "expected": "64"
+  },
+  {
+    "action": "deviceFunctionItemYogaPosition / short",
+    "route": "P1",
+    "expected": "6b"
+  },
+  {
+    "action": "deviceFunctionItemYogaPosition / long",
+    "route": "P1",
+    "expected": "6a"
+  },
+  {
+    "action": "deviceFunctionItemZeroGravity / short",
+    "route": "P1",
+    "expected": "45"
+  },
+  {
+    "action": "deviceFunctionItemZeroGravity / long",
+    "route": "P1",
+    "expected": "66"
+  },
+  {
+    "action": "deviceFunctionItemMassage30MinuteTimer / short",
+    "route": "P1",
+    "expected": "61"
+  },
+  {
+    "action": "deviceFunctionItemMassage20MinuteTimer / short",
+    "route": "P1",
+    "expected": "63"
+  },
+  {
+    "action": "deviceFunctionItemMassage10MinuteTimer / short",
+    "route": "P1",
+    "expected": "5f"
+  },
+  {
+    "action": "deviceFunctionItemMassageFootInstensityStrengthen / short",
+    "route": "P1",
+    "expected": "4e"
+  },
+  {
+    "action": "deviceFunctionItemMassageHeadInstensityStrengthen / short",
+    "route": "P1",
+    "expected": "4c"
+  },
+  {
+    "action": "deviceFunctionItemStop / short",
+    "route": "P1",
+    "expected": "6e"
+  },
+  {
+    "action": "deviceFunctionItemMassageFootInstensityStrengthen / short",
+    "route": "P1",
+    "expected": "4e"
+  },
+  {
+    "action": "deviceFunctionItemMassageHeadInstensityStrengthen / short",
+    "route": "P1",
+    "expected": "4c"
+  },
+  {
+    "action": "deviceFunctionItemLumberDown / short",
+    "route": "P1",
+    "expected": "40"
+  },
+  {
+    "action": "deviceFunctionItemLumberUp / short",
+    "route": "P1",
+    "expected": "3f"
+  },
+  {
+    "action": "deviceFunctionItemLoungePosition / short",
+    "route": "P1",
+    "expected": "59"
+  },
+  {
+    "action": "deviceFunctionItemPillowDown / short",
+    "route": "P1",
+    "expected": "42"
+  },
+  {
+    "action": "deviceFunctionItemPillowUp / short",
+    "route": "P1",
+    "expected": "41"
+  },
+  {
+    "action": "deviceFunctionItemLoungePosition / short",
+    "route": "P1",
+    "expected": "59"
+  },
+  {
+    "action": "deviceFunctionItemLoungePosition / long",
+    "route": "P1",
+    "expected": "65"
+  },
+  {
+    "action": "deviceFunctionItemHelpGetUp / short",
+    "route": "P1",
+    "expected": "3d"
+  },
+  {
+    "action": "deviceFunctionItemHelpGetUp / long",
+    "route": "P1",
+    "expected": "f8"
+  },
+  {
+    "action": "deviceFunctionItemMemoryPosition2 / short",
+    "route": "P1",
+    "expected": "f0"
+  },
+  {
+    "action": "deviceFunctionItemHelpGetUp / short",
+    "route": "P1",
+    "expected": "59"
+  },
+  {
+    "action": "deviceFunctionItemReadingPosition / short",
+    "route": "P1",
+    "expected": "30"
+  },
+  {
+    "action": "deviceFunctionItemYogaPosition / short",
+    "route": "P1",
+    "expected": "2f"
+  },
+  {
+    "action": "deviceFunctionItemMemoryPosition2 / short",
+    "route": "P1",
+    "expected": "f0"
+  },
+  {
+    "action": "deviceFunctionItemMemoryPosition2 / long",
+    "route": "P1",
+    "expected": "f1"
+  },
+  {
+    "action": "deviceFunctionItemReadingPosition / short",
+    "route": "P1",
+    "expected": "30"
+  },
+  {
+    "action": "deviceFunctionItemReadingPosition / long",
+    "route": "P1",
+    "expected": "2d"
+  },
+  {
+    "action": "deviceFunctionItemHelpGetUp / short",
+    "route": "P1",
+    "expected": "59"
+  },
+  {
+    "action": "deviceFunctionItemYogaPosition / short",
+    "route": "P1",
+    "expected": "2f"
+  },
+  {
+    "action": "deviceFunctionItemYogaPosition / long",
+    "route": "P1",
+    "expected": "2c"
+  },
+  {
+    "action": "deviceFunctionItemPillowDown / short",
+    "route": "P1",
+    "expected": "40"
+  },
+  {
+    "action": "deviceFunctionItemPillowUp / short",
+    "route": "P1",
+    "expected": "3f"
+  },
+  {
+    "action": "deviceFunctionItemReadingPosition / short",
+    "route": "P1",
+    "expected": "59"
+  },
+  {
+    "action": "deviceFunctionItemReadingPosition / long",
+    "route": "P1",
+    "expected": "65"
+  },
+  {
+    "action": "deviceFunctionItemHelpGetUp / short",
+    "route": "P1",
+    "expected": "30"
+  },
+  {
+    "action": "deviceFunctionItemHelpGetUp / long",
+    "route": "P1",
+    "expected": "2d"
+  },
+  {
+    "action": "deviceFunctionItemLumberDown / short",
+    "route": "P1",
+    "expected": "42"
+  },
+  {
+    "action": "deviceFunctionItemLumberUp / short",
+    "route": "P1",
+    "expected": "41"
+  },
+  {
+    "action": "deviceFunctionItemExitLimit / short",
+    "route": "P2",
+    "expected": "6e02010071"
+  },
+  {
+    "action": "deviceFunctionItemMemoryPosition2 / short",
+    "route": "P2",
+    "expected": "6e01002f9e"
+  },
+  {
+    "action": "deviceFunctionItemMemoryPosition1 / short",
+    "route": "P2",
+    "expected": "6e01002e9d"
+  },
+  {
+    "action": "deviceFunctionItemSleepPosition / short",
+    "route": "P2",
+    "expected": "6e0100c534"
+  },
+  {
+    "action": "deviceFunctionItemHelpGetUp / short",
+    "route": "P2",
+    "expected": "6e01003dac"
+  },
+  {
+    "action": "deviceFunctionItemAntiSnoring / short",
+    "route": "P2",
+    "expected": "6e010046b5"
+  },
+  {
+    "action": "deviceFunctionItemMotorReset / short",
+    "route": "P2",
+    "expected": "6e010031a0"
+  },
+  {
+    "action": "deviceFunctionItemReadingPosition / short",
+    "route": "P2",
+    "expected": "6e0100f261"
+  },
+  {
+    "action": "deviceFunctionItemTVPosition / short",
+    "route": "P2",
+    "expected": "6e010058c7"
+  },
+  {
+    "action": "deviceFunctionItemYogaPosition / short",
+    "route": "P2",
+    "expected": "6e01006bda"
+  },
+  {
+    "action": "deviceFunctionItemZeroGravity / short",
+    "route": "P2",
+    "expected": "6e010045b4"
+  },
+  {
+    "action": "deviceFunctionItemMemoryPosition2 / short",
+    "route": "P2",
+    "expected": "6e01002f9e"
+  },
+  {
+    "action": "deviceFunctionItemMemoryPosition2 / long",
+    "route": "P2",
+    "expected": "6e01002c9b"
+  },
+  {
+    "action": "deviceFunctionItemMemoryPosition1 / short",
+    "route": "P2",
+    "expected": "6e01002e9d"
+  },
+  {
+    "action": "deviceFunctionItemMemoryPosition1 / long",
+    "route": "P2",
+    "expected": "6e01002b9a"
+  },
+  {
+    "action": "deviceFunctionItemBedLight / short",
+    "route": "P2",
+    "expected": "6e01003cab"
+  },
+  {
+    "action": "deviceFunctionItemMassage30MinuteTimer / short",
+    "route": "P2",
+    "expected": "6e010061d0"
+  },
+  {
+    "action": "deviceFunctionItemMassage20MinuteTimer / short",
+    "route": "P2",
+    "expected": "6e010063d2"
+  },
+  {
+    "action": "deviceFunctionItemMassage10MinuteTimer / short",
+    "route": "P2",
+    "expected": "6e01005fce"
+  },
+  {
+    "action": "deviceFunctionItemMassageModeAllOff / short",
+    "route": "P2",
+    "expected": "6e01005ecd"
+  },
+  {
+    "action": "deviceFunctionItemMassageModeChange / short",
+    "route": "P2",
+    "expected": "6e010048b7"
+  },
+  {
+    "action": "deviceFunctionItemMassageFootInstensityStrengthen / short",
+    "route": "P2",
+    "expected": "6e01004ebd"
+  },
+  {
+    "action": "deviceFunctionItemFootDown / short",
+    "route": "P2",
+    "expected": "6e01002796"
+  },
+  {
+    "action": "deviceFunctionItemFootUp / short",
+    "route": "P2",
+    "expected": "6e01002695"
+  },
+  {
+    "action": "deviceFunctionItemHeadDown / short",
+    "route": "P2",
+    "expected": "6e01002594"
+  },
+  {
+    "action": "deviceFunctionItemHeadUp / short",
+    "route": "P2",
+    "expected": "6e01002493"
+  },
+  {
+    "action": "deviceFunctionItemSleepPosition / short",
+    "route": "P2",
+    "expected": "6e0100c534"
+  },
+  {
+    "action": "deviceFunctionItemReadingPosition / short",
+    "route": "P2",
+    "expected": "6e0100f261"
+  },
+  {
+    "action": "deviceFunctionItemReadingPosition / long",
+    "route": "P2",
+    "expected": "6e0100f362"
+  },
+  {
+    "action": "deviceFunctionItemHelpGetUp / short",
+    "route": "P2",
+    "expected": "6e01003dac"
+  },
+  {
+    "action": "deviceFunctionItemAntiSnoring / short",
+    "route": "P2",
+    "expected": "6e010046b5"
+  },
+  {
+    "action": "deviceFunctionItemAntiSnoring / long",
+    "route": "P2",
+    "expected": "6e010069d8"
+  },
+  {
+    "action": "deviceFunctionItemMotorReset / short",
+    "route": "P2",
+    "expected": "6e010031a0"
+  },
+  {
+    "action": "deviceFunctionItemTVPosition / short",
+    "route": "P2",
+    "expected": "6e010058c7"
+  },
+  {
+    "action": "deviceFunctionItemTVPosition / long",
+    "route": "P2",
+    "expected": "6e010064d3"
+  },
+  {
+    "action": "deviceFunctionItemYogaPosition / short",
+    "route": "P2",
+    "expected": "6e01006bda"
+  },
+  {
+    "action": "deviceFunctionItemYogaPosition / long",
+    "route": "P2",
+    "expected": "6e01006ad9"
+  },
+  {
+    "action": "deviceFunctionItemZeroGravity / short",
+    "route": "P2",
+    "expected": "6e010045b4"
+  },
+  {
+    "action": "deviceFunctionItemZeroGravity / long",
+    "route": "P2",
+    "expected": "6e010066d5"
+  },
+  {
+    "action": "deviceFunctionItemMassage30MinuteTimer / short",
+    "route": "P2",
+    "expected": "6e010061d0"
+  },
+  {
+    "action": "deviceFunctionItemMassage20MinuteTimer / short",
+    "route": "P2",
+    "expected": "6e010063d2"
+  },
+  {
+    "action": "deviceFunctionItemMassage10MinuteTimer / short",
+    "route": "P2",
+    "expected": "6e01005fce"
+  },
+  {
+    "action": "deviceFunctionItemMassageFootInstensityStrengthen / short",
+    "route": "P2",
+    "expected": "6e01004ebd"
+  },
+  {
+    "action": "deviceFunctionItemMassageHeadInstensityStrengthen / short",
+    "route": "P2",
+    "expected": "6e01004cbb"
+  },
+  {
+    "action": "deviceFunctionItemStop / short",
+    "route": "P2",
+    "expected": "6e01006edd"
+  },
+  {
+    "action": "deviceFunctionItemMassageFootInstensityStrengthen / short",
+    "route": "P2",
+    "expected": "6e01004ebd"
+  },
+  {
+    "action": "deviceFunctionItemMassageHeadInstensityStrengthen / short",
+    "route": "P2",
+    "expected": "6e01004cbb"
+  },
+  {
+    "action": "deviceFunctionItemLumberDown / short",
+    "route": "P2",
+    "expected": "6e010040af"
+  },
+  {
+    "action": "deviceFunctionItemLumberUp / short",
+    "route": "P2",
+    "expected": "6e01003fae"
+  },
+  {
+    "action": "deviceFunctionItemLoungePosition / short",
+    "route": "P2",
+    "expected": "6e010059c8"
+  },
+  {
+    "action": "deviceFunctionItemPillowDown / short",
+    "route": "P2",
+    "expected": "6e010042b1"
+  },
+  {
+    "action": "deviceFunctionItemPillowUp / short",
+    "route": "P2",
+    "expected": "6e010041b0"
+  },
+  {
+    "action": "deviceFunctionItemLoungePosition / short",
+    "route": "P2",
+    "expected": "6e010059c8"
+  },
+  {
+    "action": "deviceFunctionItemLoungePosition / long",
+    "route": "P2",
+    "expected": "6e010065d4"
+  },
+  {
+    "action": "deviceFunctionItemHelpGetUp / short",
+    "route": "P2",
+    "expected": "6e01003dac"
+  },
+  {
+    "action": "deviceFunctionItemHelpGetUp / long",
+    "route": "P2",
+    "expected": "6e0100f867"
+  },
+  {
+    "action": "deviceFunctionItemMemoryPosition2 / short",
+    "route": "P2",
+    "expected": "6e0100f05f"
+  },
+  {
+    "action": "deviceFunctionItemHelpGetUp / short",
+    "route": "P2",
+    "expected": "6e010059c8"
+  },
+  {
+    "action": "deviceFunctionItemReadingPosition / short",
+    "route": "P2",
+    "expected": "6e0100309f"
+  },
+  {
+    "action": "deviceFunctionItemYogaPosition / short",
+    "route": "P2",
+    "expected": "6e01002f9e"
+  },
+  {
+    "action": "deviceFunctionItemMemoryPosition2 / short",
+    "route": "P2",
+    "expected": "6e0100f05f"
+  },
+  {
+    "action": "deviceFunctionItemMemoryPosition2 / long",
+    "route": "P2",
+    "expected": "6e0100f160"
+  },
+  {
+    "action": "deviceFunctionItemReadingPosition / short",
+    "route": "P2",
+    "expected": "6e0100309f"
+  },
+  {
+    "action": "deviceFunctionItemReadingPosition / long",
+    "route": "P2",
+    "expected": "6e01002d9c"
+  },
+  {
+    "action": "deviceFunctionItemHelpGetUp / short",
+    "route": "P2",
+    "expected": "6e010059c8"
+  },
+  {
+    "action": "deviceFunctionItemYogaPosition / short",
+    "route": "P2",
+    "expected": "6e01002f9e"
+  },
+  {
+    "action": "deviceFunctionItemYogaPosition / long",
+    "route": "P2",
+    "expected": "6e01002c9b"
+  },
+  {
+    "action": "deviceFunctionItemPillowDown / short",
+    "route": "P2",
+    "expected": "6e010040af"
+  },
+  {
+    "action": "deviceFunctionItemPillowUp / short",
+    "route": "P2",
+    "expected": "6e01003fae"
+  },
+  {
+    "action": "deviceFunctionItemReadingPosition / short",
+    "route": "P2",
+    "expected": "6e010059c8"
+  },
+  {
+    "action": "deviceFunctionItemReadingPosition / long",
+    "route": "P2",
+    "expected": "6e010065d4"
+  },
+  {
+    "action": "deviceFunctionItemHelpGetUp / short",
+    "route": "P2",
+    "expected": "6e0100309f"
+  },
+  {
+    "action": "deviceFunctionItemHelpGetUp / long",
+    "route": "P2",
+    "expected": "6e01002d9c"
+  },
+  {
+    "action": "deviceFunctionItemLumberDown / short",
+    "route": "P2",
+    "expected": "6e010042b1"
+  },
+  {
+    "action": "deviceFunctionItemLumberUp / short",
+    "route": "P2",
+    "expected": "6e010041b0"
+  }
+]

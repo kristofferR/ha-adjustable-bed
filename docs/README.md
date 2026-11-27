@@ -34,6 +34,7 @@ app. Every guide follows the [bed guide format](BED_GUIDE_FORMAT.md).
 | Guide | Covers | Shared |
 |-------|--------|--------|
 | [Personal Comfort / Instant Comfort](beds/personal-comfort.md) | ANM and RA air units, Malouf and Reverie bases |
+| [Alya Smart Furnishing](beds/alya.md) | Alya app BLE types and twelve explicit layouts | |
 | [BedJet PowerLayer](beds/bedjet-powerlayer.md) | The BedJet PowerLayer adjustable frame | |
 | [SILVERmotion Android](beds/silvermotion.md) | SILVERmotion Android SimplicityFrame beds | |
 | [Casper Base](beds/casper-base.md) | The Casper Base app, sleep sensors and remote finder | |
@@ -61,6 +62,7 @@ app. Every guide follows the [bed guide format](BED_GUIDE_FORMAT.md).
 | [Malouf / Lucid](beds/malouf.md) | The Malouf Base and Lucid Base apps and receivers | Shared |
 | [M3 Ambient](beds/ambient.md) | The M3 Ambient app, one-piece and split beds | |
 | [MotoMotion, MotoSleep and others](beds/motomotion.md) | MotoMotion, MotoSleep, Power Bob, Bedgear, L2 Motion, MoodBase and ErgoBed Control | Shared |
+| [BERUN](beds/berun.md) | BERUN versions 6–9 | Shared |
 | [Nerum](beds/nerum.md) | The Nerum app | |
 | [OCTO Smart Control](beds/octo.md) | OCTO receivers, the RTV TV lift and Octo Remote Star2 | |
 | [Nectar, Mattress Firm 900 and Sealy (Okin)](beds/okin-5a.md) | Nectar, Mattress Firm 900 / iFlex, Sealy Posturematic (the CB35 receiver and the Sealy Posturematic app) and DewertOkin ELEVATE | Shared |

@@ -496,6 +496,7 @@ data:
 | Customatic Z-Series | `massage`, `memory_1` (required to turn on) | Once. Needs a Z-Series bed with an alarm page |
 | Dream Sense Bed | The selected product's presets; required to turn on. Saved memories need `confirm_custom_position: true` | One-time alarms go off at the next occurrence of the time. Products with repeating alarms accept `weekdays` and need the `slot` of an alarm the bed reported (0 to 255); new alarms cannot be added |
 | ENSO Sleep Control (Enso 2) | Choices from the layout, including `tv`, `zero_g`, `anti_snore` and supported memories | One-time countdown. Optional `massage_zone` follows the layout and supported position combinations |
+| [Alya Smart Furnishing](beds/alya.md#clock-and-alarms) | From the selected BLE layout, including its supported presets, massage or light | `weekdays` or the app route's no-weekday repeat flag. P1 and DACHENG two-motor have no alarm. Use `sync_clock` separately |
 | eShine | `zero_g`, `flat`, `massage` (by model) | Once; the bed clock is set first |
 | Glideaway Motion | `none`, `memory_1`, `memory_2` | Once |
 | Jiecang apps | `flat`, `zero_g`, `anti_snore`, `memory_1`, `memory_2`, `yoga` where reported | `weekdays`, head and foot massage levels 0–3 |
@@ -2655,6 +2656,11 @@ for the selected layout’s slider; `massage_popup` takes `popup` (`15`, `30`,
 `45` or `toggle`) for layouts offering that popup. Its timer buttons display
 10, 20 and 30 minutes. Lighting and aroma require a reply on the current link.
 Use [`set_alarm`](#set_alarm) for the layout’s alarm.
+
+MLILY 3.1.1 (`com.richmat.mlily0`) uses **Set alarm** for its product-specific
+wake actions and once/daily repeat, and **Set bed clock** for local time. See
+[MLILY 3.1.1](beds/richmat.md#mlily-311).
+
 
 JobsAI sleep and wake alarms use `adjustable_bed.set_alarm`, with slot 1 for
 sleep and slot 2 for wake. See the [JobsAI guide](beds/okin-nframe.md#jobsai).

@@ -51,6 +51,7 @@ from custom_components.adjustable_bed.profiles import hush as hush_profiles
 from custom_components.adjustable_bed.profiles import luniosmart as lunio
 from custom_components.adjustable_bed.profiles import luuna as luuna_profiles
 from custom_components.adjustable_bed.profiles import majestichome as majestic
+from custom_components.adjustable_bed.profiles import mlily0 as mlily156
 from custom_components.adjustable_bed.profiles import mlily_remote as remote162
 from custom_components.adjustable_bed.profiles import richmat as richmat_profiles
 from custom_components.adjustable_bed.profiles import richmat_resource_apps as resource_profiles
@@ -84,6 +85,7 @@ _LIBRARY_APPS = {
     "Hush Base": (hush_profiles.PROFILES, _const.BED_TYPE_HUSH_BASE),
     "Luuna +": (luuna_profiles.PROFILES, _const.BED_TYPE_LUUNA),
     "MLILY Remote": (remote162.PROFILES, _const.BED_TYPE_MLILY_REMOTE),
+    "MLILY 3.1.1": (mlily156.PROFILES, _const.BED_TYPE_MLILY0),
 }
 
 _RICHMAT_NAMES = {
@@ -2137,6 +2139,35 @@ BLOCKS += [
     (GUIDE, "jerome-adjustable-timing", render_jerome_adjustable_timing),
     (GUIDE, "jerome-adjustable-settings", render_jerome_adjustable_settings),
 ]
+
+
+def render_mlily0() -> str:
+    return _block(
+        _table(("Product", "Actuators", "Alarm targets", "Repeat"), (
+            (p.row[0], ", ".join(mlily156.ACTIONS[i][0] for i in p.row[1]),
+             ", ".join(mlily156.ACTIONS[i][0] for i in p.row[4]) or "none",
+             "once / daily" if p.row[10] else "once")
+            for p in mlily156.PROFILES.values()
+        )),
+        _table(("Action", "Code", "Save", "Framed", "Products"), (
+            (name, f"`{short:02X}`", f"`{save:02X}`" if save is not None else "none",
+             _hex(codec.function(short, action="deviceFunctionItem" + name)),
+             ", ".join(p.row[0] for p in mlily156.PROFILES.values()
+                       if any(i in group for group in p.row[1:6])) or "global")
+            for i, (name, short, save) in enumerate(mlily156.ACTIONS)
+        )),
+        _table(("Setting", "Frames"), (
+            ("300 minutes, memory 1", " / ".join(_hex(b) for b in codec.countdown(300, 0x2E))),
+            ("Cancel", " / ".join(_hex(b) for b in codec.countdown(0, 0))),
+            ("Once", _hex(codec.frame(codec.BED, 0x14, 0, 0xFE))),
+            ("Daily", _hex(codec.frame(codec.BED, 0x14, 1, 0xFE))),
+            ("Clock, 12:34:56", " / ".join(_hex(b) for b in (
+                codec.frame(codec.BED, 0x13, 12, 34), codec.frame(codec.BED, 0x14, 56, 0xFF)))),
+        )),
+    )
+
+
+BLOCKS.append((GUIDE, "mlily0-commands", render_mlily0))
 
 
 def render_dynasty_commands() -> str:

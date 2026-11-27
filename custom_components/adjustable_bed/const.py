@@ -458,6 +458,7 @@ DORSAL_ROUTES: Final = {
     "roomi": "Roomi controls",
     DORSAL_ROOMI_S655_PLUS: "ROOMI bed (S655 Plus)",
 }
+BED_TYPE_BERUN: Final = "berun"
 BED_TYPE_NERUM: Final = "nerum"
 BED_TYPE_RELAX_MOTION: Final = "relax_motion"
 BED_TYPE_SMARTBED: Final = "smartbed"  # The SmartBed app's receivers (Okin CB24 family and others)
@@ -491,6 +492,22 @@ BED_TYPE_LEGGETT_WILINKE: Final = "leggett_wilinke"  # Leggett WiLinke 5-byte
 BED_TYPE_LINAK: Final = "linak"
 BED_TYPE_AMBIENT: Final = "ambient"
 BED_TYPE_VINDO: Final = "vindo"
+BED_TYPE_ALYA: Final = "alya"
+ALYA_LAYOUTS: Final = {
+    "bluetooth_2": "Alya BLUETOOTH, 2 motors",
+    "bluetooth_3": "Alya BLUETOOTH, 3 motors",
+    "bluetooth_4": "Alya BLUETOOTH, 4 motors",
+    "cb_2": "Alya CB, 2 motors",
+    "cb_3": "Alya CB, 3 motors",
+    "cb_4": "Alya CB, 4 motors",
+    "cb1221_2": "Alya CB1221, 2 motors",
+    "cb24_2": "Alya CB24, 2 motors",
+    "cb24_4": "Alya CB24, 4 motors",
+    "cb24_5": "Alya CB24, 5 motors",
+    "dacheng_2": "Alya DACHENG, 2 motors",
+    "dacheng_5": "Alya DACHENG, 5 motors",
+}
+
 BED_TYPE_ESHINE_OKIN: Final = "eshine_okin"  # com.okin.eshine explicit product selection
 ESHINE_OKIN_PROFILES: Final = {
     "eshine_e2000": "E2000",
@@ -534,6 +551,7 @@ BED_TYPE_LIKIMIO: Final = "likimio"
 BED_TYPE_SAATVA: Final = "saatva"
 BED_TYPE_BOBPOWERBASE: Final = "bobpowerbase"
 BED_TYPE_MLILY_REMOTE: Final = "mlily_remote"
+BED_TYPE_MLILY0: Final = "mlily0"
 BED_TYPE_RICHMAT_CLASSIC_APPS: Final = "richmat_classic_apps"
 # Opt-in to the classic apps' third-service fallback when no fixed service exists.
 CONF_RICHMAT_CLASSIC_THIRD_SERVICE: Final = "richmat_classic_third_service"
@@ -593,7 +611,7 @@ COMFORT_ENHANCEMENTS_VARIANTS: Final = {
 BED_TYPE_SLEEPTIME: Final = "sleeptime"
 VARIANT_REQUIRED_BED_TYPES: Final = frozenset(
     {
-        BED_TYPE_RONCO_MOTION, BED_TYPE_AMBIENT, BED_TYPE_RESTONIC, BED_TYPE_KINGKOIL, BED_TYPE_DREAMSENSE, BED_TYPE_LIKIMIO, BED_TYPE_SAATVA, BED_TYPE_MAJESTICHOME, BED_TYPE_LEVA, BED_TYPE_LINX, BED_TYPE_SOMOS, BED_TYPE_BOBPOWERBASE, "sleep_evolution", "wsilver_legacy", BED_TYPE_SYMPHONY_SLEEP, "comfort_enhancement3", BED_TYPE_YAMADA, BED_TYPE_RICHMAT_APP, BED_TYPE_RICHMAT_APP_SLEEP, BED_TYPE_ENSO2, "luuna", "personal_comfort", "instant_comfort", "richmat_sleep_receiver", BED_TYPE_MLILY, BED_TYPE_MLILY_REMOTE, BED_TYPE_GALAXY, BED_TYPE_OKIMIKI, BED_TYPE_GOODVIBE, BED_TYPE_HJBED, BED_TYPE_ESHINE_OKIN, BED_TYPE_ZSERIES, BED_TYPE_GLIDEAWAY_MOTION, BED_TYPE_COMFORT_ENHANCEMENTS, BED_TYPE_COMFORTBASE, "casper_base", BED_TYPE_RICHMAT_CLASSIC_APPS}
+        BED_TYPE_RONCO_MOTION, BED_TYPE_AMBIENT, BED_TYPE_RESTONIC, BED_TYPE_KINGKOIL, BED_TYPE_DREAMSENSE, BED_TYPE_LIKIMIO, BED_TYPE_SAATVA, BED_TYPE_MAJESTICHOME, BED_TYPE_LEVA, BED_TYPE_LINX, BED_TYPE_SOMOS, BED_TYPE_BOBPOWERBASE, "sleep_evolution", "wsilver_legacy", BED_TYPE_SYMPHONY_SLEEP, "comfort_enhancement3", BED_TYPE_YAMADA, BED_TYPE_RICHMAT_APP, BED_TYPE_RICHMAT_APP_SLEEP, BED_TYPE_ENSO2, "luuna", "personal_comfort", "instant_comfort", "richmat_sleep_receiver", BED_TYPE_MLILY, BED_TYPE_MLILY0, BED_TYPE_MLILY_REMOTE, BED_TYPE_GALAXY, BED_TYPE_OKIMIKI, BED_TYPE_GOODVIBE, BED_TYPE_HJBED, BED_TYPE_ALYA, BED_TYPE_ESHINE_OKIN, BED_TYPE_ZSERIES, BED_TYPE_GLIDEAWAY_MOTION, BED_TYPE_COMFORT_ENHANCEMENTS, BED_TYPE_COMFORTBASE, "casper_base", BED_TYPE_RICHMAT_CLASSIC_APPS}
 ).union({BED_TYPE_BETTERLIVING2, BED_TYPE_JEROME_ADJUSTABLE_BASE, BED_TYPE_SLEEPTIME})
 # Aging in Place / Dawn House has one fixed profile; these filter observations.
 BED_TYPE_AGINGPLACE: Final = "agingplace"
@@ -810,6 +828,7 @@ KEESON_LAYOUT_APP_BED_TYPES: Final = frozenset({BED_TYPE_TEMPUR_CURVE, BED_TYPE_
 SUPPORTED_BED_TYPES: Final = [
     BED_TYPE_RESTONIC,
     BED_TYPE_DORSAL,
+    BED_TYPE_BERUN,
     BED_TYPE_NERUM,
     BED_TYPE_RELAX_MOTION,
     BED_TYPE_SMARTBED,
@@ -843,6 +862,7 @@ SUPPORTED_BED_TYPES: Final = [
     BED_TYPE_SAATVA,
     BED_TYPE_BOBPOWERBASE,
     BED_TYPE_MLILY_REMOTE,
+    BED_TYPE_MLILY0,
     BED_TYPE_MOTOMOTION,
     BED_TYPE_HJBED,
     BED_TYPE_JALON,
@@ -932,6 +952,7 @@ SUPPORTED_BED_TYPES: Final = [
     BED_TYPE_SOMOS,
     BED_TYPE_COMFORTBASE,
     BED_TYPE_ESHINE,
+    BED_TYPE_ALYA,
     BED_TYPE_ESHINE_OKIN,
     # Explicit Richmat MH app profiles
     BED_TYPE_RICHMAT_REVIVE,
@@ -3080,6 +3101,7 @@ BED_MOTOR_PULSE_DEFAULTS: Final = {
     BED_TYPE_COMFORTBASE: (10, 100),
     BED_TYPE_AGINGPLACE: (5, 200),
     BED_TYPE_COMFORT_ENHANCEMENTS: (5, 200),  # app 200 ms refresh, bounded HA tap
+    BED_TYPE_ALYA: (10, 300),
     BED_TYPE_ESHINE_OKIN: (10, 300),  # App refresh cadence; count bounds HA movement
     BED_TYPE_ESHINE: (10, 100),  # Eshine 100 ms refresh; count bounds an HA movement
     BED_TYPE_ADJUSTAMATTRESS: (5, 200),  # APK 200 ms refresh, bounded HA movement

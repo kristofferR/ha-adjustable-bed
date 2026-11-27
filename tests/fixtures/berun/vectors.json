@@ -1,0 +1,2489 @@
+{
+  "source": "com.okin.bedding.berun 1.1.1 (7), source/synthetic vectors, hardware unverified",
+  "report_digest": "ceccfb6f112e776cba251ce6671601f5ac056c50521042f5533c735ba04634dd",
+  "vectors": [
+    {
+      "id": "H001",
+      "protocol": "P1",
+      "action": "HeadUp",
+      "inputs": {
+        "version": 6,
+        "arguments": [],
+        "ui_reachable": true
+      },
+      "expected_bytes": "e6fe16010000000004",
+      "evidence": [
+        "E05",
+        "E10",
+        "E06"
+      ],
+      "fixture_kind": "Static source/replay; not hardware capture"
+    },
+    {
+      "id": "H002",
+      "protocol": "P1",
+      "action": "HeadDown",
+      "inputs": {
+        "version": 6,
+        "arguments": [],
+        "ui_reachable": true
+      },
+      "expected_bytes": "e6fe16020000000003",
+      "evidence": [
+        "E05",
+        "E10",
+        "E06"
+      ],
+      "fixture_kind": "Static source/replay; not hardware capture"
+    },
+    {
+      "id": "H003",
+      "protocol": "P1",
+      "action": "Stop",
+      "inputs": {
+        "version": 6,
+        "arguments": [],
+        "ui_reachable": true
+      },
+      "expected_bytes": "e6fe16000000000005",
+      "evidence": [
+        "E05",
+        "E10",
+        "E06"
+      ],
+      "fixture_kind": "Static source/replay; not hardware capture"
+    },
+    {
+      "id": "H004",
+      "protocol": "P1",
+      "action": "FootUp",
+      "inputs": {
+        "version": 6,
+        "arguments": [],
+        "ui_reachable": true
+      },
+      "expected_bytes": "e6fe16040000000001",
+      "evidence": [
+        "E05",
+        "E10",
+        "E06"
+      ],
+      "fixture_kind": "Static source/replay; not hardware capture"
+    },
+    {
+      "id": "H005",
+      "protocol": "P1",
+      "action": "FootDown",
+      "inputs": {
+        "version": 6,
+        "arguments": [],
+        "ui_reachable": true
+      },
+      "expected_bytes": "e6fe160800000000fd",
+      "evidence": [
+        "E05",
+        "E10",
+        "E06"
+      ],
+      "fixture_kind": "Static source/replay; not hardware capture"
+    },
+    {
+      "id": "H006",
+      "protocol": "P1",
+      "action": "HeadFootUp",
+      "inputs": {
+        "version": 6,
+        "arguments": [],
+        "ui_reachable": false
+      },
+      "expected_bytes": "e6fe16050000000000",
+      "evidence": [
+        "E05",
+        "E10",
+        "E07"
+      ],
+      "fixture_kind": "Static source/replay; not hardware capture"
+    },
+    {
+      "id": "H007",
+      "protocol": "P1",
+      "action": "HeadFootDown",
+      "inputs": {
+        "version": 6,
+        "arguments": [],
+        "ui_reachable": false
+      },
+      "expected_bytes": "e6fe160a00000000fb",
+      "evidence": [
+        "E05",
+        "E10",
+        "E07"
+      ],
+      "fixture_kind": "Static source/replay; not hardware capture"
+    },
+    {
+      "id": "H008",
+      "protocol": "P1",
+      "action": "NeckUp",
+      "inputs": {
+        "version": 6,
+        "arguments": [],
+        "ui_reachable": false
+      },
+      "expected_bytes": "e6fe161000000000f5",
+      "evidence": [
+        "E05",
+        "E10",
+        "E07"
+      ],
+      "fixture_kind": "Static source/replay; not hardware capture"
+    },
+    {
+      "id": "H009",
+      "protocol": "P1",
+      "action": "NeckDown",
+      "inputs": {
+        "version": 6,
+        "arguments": [],
+        "ui_reachable": false
+      },
+      "expected_bytes": "e6fe162000000000e5",
+      "evidence": [
+        "E05",
+        "E10",
+        "E07"
+      ],
+      "fixture_kind": "Static source/replay; not hardware capture"
+    },
+    {
+      "id": "H010",
+      "protocol": "P1",
+      "action": "WaistUp",
+      "inputs": {
+        "version": 6,
+        "arguments": [],
+        "ui_reachable": false
+      },
+      "expected_bytes": "e6fe164000000000c5",
+      "evidence": [
+        "E05",
+        "E10",
+        "E07"
+      ],
+      "fixture_kind": "Static source/replay; not hardware capture"
+    },
+    {
+      "id": "H011",
+      "protocol": "P1",
+      "action": "WaistDown",
+      "inputs": {
+        "version": 6,
+        "arguments": [],
+        "ui_reachable": false
+      },
+      "expected_bytes": "e6fe16800000000085",
+      "evidence": [
+        "E05",
+        "E10",
+        "E07"
+      ],
+      "fixture_kind": "Static source/replay; not hardware capture"
+    },
+    {
+      "id": "H012",
+      "protocol": "P1",
+      "action": "Flat",
+      "inputs": {
+        "version": 6,
+        "arguments": [],
+        "ui_reachable": true
+      },
+      "expected_bytes": "e6fe160000000800fd",
+      "evidence": [
+        "E05",
+        "E10",
+        "E06"
+      ],
+      "fixture_kind": "Static source/replay; not hardware capture"
+    },
+    {
+      "id": "H013",
+      "protocol": "P1",
+      "action": "MemoryZero",
+      "inputs": {
+        "version": 6,
+        "arguments": [],
+        "ui_reachable": true
+      },
+      "expected_bytes": "e6fe160010000000f5",
+      "evidence": [
+        "E05",
+        "E10",
+        "E06"
+      ],
+      "fixture_kind": "Static source/replay; not hardware capture"
+    },
+    {
+      "id": "H014",
+      "protocol": "P1",
+      "action": "MemoryPosition",
+      "inputs": {
+        "version": 6,
+        "arguments": [],
+        "ui_reachable": true
+      },
+      "expected_bytes": "e6fe16000001000004",
+      "evidence": [
+        "E05",
+        "E10",
+        "E06"
+      ],
+      "fixture_kind": "Static source/replay; not hardware capture"
+    },
+    {
+      "id": "H015",
+      "protocol": "P1",
+      "action": "MemoryTv",
+      "inputs": {
+        "version": 6,
+        "arguments": [],
+        "ui_reachable": true
+      },
+      "expected_bytes": "e6fe160040000000c5",
+      "evidence": [
+        "E05",
+        "E10",
+        "E06"
+      ],
+      "fixture_kind": "Static source/replay; not hardware capture"
+    },
+    {
+      "id": "H016",
+      "protocol": "P1",
+      "action": "MemoryLounge",
+      "inputs": {
+        "version": 6,
+        "arguments": [],
+        "ui_reachable": true
+      },
+      "expected_bytes": "e6fe160020000000e5",
+      "evidence": [
+        "E05",
+        "E10",
+        "E06"
+      ],
+      "fixture_kind": "Static source/replay; not hardware capture"
+    },
+    {
+      "id": "H017",
+      "protocol": "P1",
+      "action": "MemoryAntiSnore",
+      "inputs": {
+        "version": 6,
+        "arguments": [],
+        "ui_reachable": true
+      },
+      "expected_bytes": "e6fe16008000000085",
+      "evidence": [
+        "E05",
+        "E10",
+        "E06"
+      ],
+      "fixture_kind": "Static source/replay; not hardware capture"
+    },
+    {
+      "id": "H018",
+      "protocol": "P1",
+      "action": "Light",
+      "inputs": {
+        "version": 6,
+        "arguments": [],
+        "ui_reachable": true
+      },
+      "expected_bytes": "e6fe16000002000003",
+      "evidence": [
+        "E05",
+        "E10",
+        "E07"
+      ],
+      "fixture_kind": "Static source/replay; not hardware capture"
+    },
+    {
+      "id": "H019",
+      "protocol": "P1",
+      "action": "MassageAll",
+      "inputs": {
+        "version": 6,
+        "arguments": [],
+        "ui_reachable": true
+      },
+      "expected_bytes": "e6fe16000100000004",
+      "evidence": [
+        "E05",
+        "E10",
+        "E07"
+      ],
+      "fixture_kind": "Static source/replay; not hardware capture"
+    },
+    {
+      "id": "H020",
+      "protocol": "P1",
+      "action": "MassageTime",
+      "inputs": {
+        "version": 6,
+        "arguments": [],
+        "ui_reachable": true
+      },
+      "expected_bytes": "e6fe16000200000003",
+      "evidence": [
+        "E05",
+        "E10",
+        "E07"
+      ],
+      "fixture_kind": "Static source/replay; not hardware capture"
+    },
+    {
+      "id": "H021",
+      "protocol": "P1",
+      "action": "MassageHeadPlus",
+      "inputs": {
+        "version": 6,
+        "arguments": [],
+        "ui_reachable": true
+      },
+      "expected_bytes": "e6fe160008000000fd",
+      "evidence": [
+        "E05",
+        "E10",
+        "E07"
+      ],
+      "fixture_kind": "Static source/replay; not hardware capture"
+    },
+    {
+      "id": "H022",
+      "protocol": "P1",
+      "action": "MassageHeadMinus",
+      "inputs": {
+        "version": 6,
+        "arguments": [],
+        "ui_reachable": false
+      },
+      "expected_bytes": "e6fe16000080000085",
+      "evidence": [
+        "E05",
+        "E10",
+        "E07"
+      ],
+      "fixture_kind": "Static source/replay; not hardware capture"
+    },
+    {
+      "id": "H023",
+      "protocol": "P1",
+      "action": "MassageFootPlus",
+      "inputs": {
+        "version": 6,
+        "arguments": [],
+        "ui_reachable": true
+      },
+      "expected_bytes": "e6fe16000400000001",
+      "evidence": [
+        "E05",
+        "E10",
+        "E07"
+      ],
+      "fixture_kind": "Static source/replay; not hardware capture"
+    },
+    {
+      "id": "H024",
+      "protocol": "P1",
+      "action": "MassageFootMinus",
+      "inputs": {
+        "version": 6,
+        "arguments": [],
+        "ui_reachable": false
+      },
+      "expected_bytes": "e6fe16000000010004",
+      "evidence": [
+        "E05",
+        "E10",
+        "E07"
+      ],
+      "fixture_kind": "Static source/replay; not hardware capture"
+    },
+    {
+      "id": "H025",
+      "protocol": "P1",
+      "action": "MassageWavePlus",
+      "inputs": {
+        "version": 6,
+        "arguments": [],
+        "ui_reachable": true
+      },
+      "expected_bytes": "e6fe160000001000f5",
+      "evidence": [
+        "E05",
+        "E10",
+        "E07"
+      ],
+      "fixture_kind": "Static source/replay; not hardware capture"
+    },
+    {
+      "id": "H026",
+      "protocol": "P1",
+      "action": "MassageWaveMinus",
+      "inputs": {
+        "version": 6,
+        "arguments": [],
+        "ui_reachable": false
+      },
+      "expected_bytes": "e6fe16000000040001",
+      "evidence": [
+        "E05",
+        "E10",
+        "E07"
+      ],
+      "fixture_kind": "Static source/replay; not hardware capture"
+    },
+    {
+      "id": "H027",
+      "protocol": "P1",
+      "action": "MassageCheck",
+      "inputs": {
+        "version": 6,
+        "arguments": [],
+        "ui_reachable": true
+      },
+      "expected_bytes": "e6fe16030000000002",
+      "evidence": [
+        "E05",
+        "E10",
+        "E07"
+      ],
+      "fixture_kind": "Static source/replay; not hardware capture"
+    },
+    {
+      "id": "H028",
+      "protocol": "P1",
+      "action": "AlarmCheck",
+      "inputs": {
+        "version": 6,
+        "arguments": [],
+        "ui_reachable": true
+      },
+      "expected_bytes": "e28003009a",
+      "evidence": [
+        "E05",
+        "E10",
+        "E07"
+      ],
+      "fixture_kind": "Static source/replay; not hardware capture"
+    },
+    {
+      "id": "H029",
+      "protocol": "P1",
+      "action": "AlarmClick",
+      "inputs": {
+        "version": 6,
+        "arguments": [
+          7,
+          30,
+          255,
+          9
+        ],
+        "ui_reachable": true
+      },
+      "expected_bytes": "ed8003071eff09000000000000000062",
+      "evidence": [
+        "E05",
+        "E10",
+        "E07"
+      ],
+      "fixture_kind": "Static source/replay; not hardware capture"
+    },
+    {
+      "id": "H030",
+      "protocol": "P1",
+      "action": "AlarmClick",
+      "inputs": {
+        "version": 6,
+        "arguments": [
+          7,
+          30,
+          255,
+          17
+        ],
+        "ui_reachable": true
+      },
+      "expected_bytes": "ed8003071eff1100000000000000005a",
+      "evidence": [
+        "E05",
+        "E10",
+        "E07"
+      ],
+      "fixture_kind": "Static source/replay; not hardware capture"
+    },
+    {
+      "id": "H031",
+      "protocol": "P1",
+      "action": "AlarmClick",
+      "inputs": {
+        "version": 6,
+        "arguments": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "ui_reachable": true
+      },
+      "expected_bytes": "ed80030000000000000000000000008f",
+      "evidence": [
+        "E05",
+        "E10",
+        "E07"
+      ],
+      "fixture_kind": "Static source/replay; not hardware capture"
+    },
+    {
+      "id": "H032",
+      "protocol": "P1",
+      "action": "AlarmCalibration",
+      "inputs": {
+        "version": 6,
+        "arguments": [],
+        "ui_reachable": true
+      },
+      "expected_bytes": "e780017e0a1b0c22388e",
+      "evidence": [
+        "E05",
+        "E10",
+        "E07"
+      ],
+      "fixture_kind": "Static source/replay; not hardware capture"
+    },
+    {
+      "id": "H033",
+      "protocol": "P2",
+      "action": "HeadUp",
+      "inputs": {
+        "version": 7,
+        "arguments": [],
+        "ui_reachable": true
+      },
+      "expected_bytes": "a55ade00002001",
+      "evidence": [
+        "E05",
+        "E10",
+        "E06"
+      ],
+      "fixture_kind": "Static source/replay; not hardware capture"
+    },
+    {
+      "id": "H034",
+      "protocol": "P2",
+      "action": "HeadDown",
+      "inputs": {
+        "version": 7,
+        "arguments": [],
+        "ui_reachable": true
+      },
+      "expected_bytes": "a55add00002002",
+      "evidence": [
+        "E05",
+        "E10",
+        "E06"
+      ],
+      "fixture_kind": "Static source/replay; not hardware capture"
+    },
+    {
+      "id": "H035",
+      "protocol": "P2",
+      "action": "Stop",
+      "inputs": {
+        "version": 7,
+        "arguments": [],
+        "ui_reachable": true
+      },
+      "expected_bytes": "a55adf00002000",
+      "evidence": [
+        "E05",
+        "E10",
+        "E06"
+      ],
+      "fixture_kind": "Static source/replay; not hardware capture"
+    },
+    {
+      "id": "H036",
+      "protocol": "P2",
+      "action": "FootUp",
+      "inputs": {
+        "version": 7,
+        "arguments": [],
+        "ui_reachable": true
+      },
+      "expected_bytes": "a55adc00002003",
+      "evidence": [
+        "E05",
+        "E10",
+        "E06"
+      ],
+      "fixture_kind": "Static source/replay; not hardware capture"
+    },
+    {
+      "id": "H037",
+      "protocol": "P2",
+      "action": "FootDown",
+      "inputs": {
+        "version": 7,
+        "arguments": [],
+        "ui_reachable": true
+      },
+      "expected_bytes": "a55adb00002004",
+      "evidence": [
+        "E05",
+        "E10",
+        "E06"
+      ],
+      "fixture_kind": "Static source/replay; not hardware capture"
+    },
+    {
+      "id": "H040",
+      "protocol": "P2",
+      "action": "NeckUp",
+      "inputs": {
+        "version": 7,
+        "arguments": [],
+        "ui_reachable": false
+      },
+      "expected_bytes": "a55ad800002007",
+      "evidence": [
+        "E05",
+        "E10",
+        "E07"
+      ],
+      "fixture_kind": "Static source/replay; not hardware capture"
+    },
+    {
+      "id": "H041",
+      "protocol": "P2",
+      "action": "NeckDown",
+      "inputs": {
+        "version": 7,
+        "arguments": [],
+        "ui_reachable": false
+      },
+      "expected_bytes": "a55ad700002008",
+      "evidence": [
+        "E05",
+        "E10",
+        "E07"
+      ],
+      "fixture_kind": "Static source/replay; not hardware capture"
+    },
+    {
+      "id": "H042",
+      "protocol": "P2",
+      "action": "WaistUp",
+      "inputs": {
+        "version": 7,
+        "arguments": [],
+        "ui_reachable": false
+      },
+      "expected_bytes": "a55ad800002007",
+      "evidence": [
+        "E05",
+        "E10",
+        "E07"
+      ],
+      "fixture_kind": "Static source/replay; not hardware capture"
+    },
+    {
+      "id": "H043",
+      "protocol": "P2",
+      "action": "WaistDown",
+      "inputs": {
+        "version": 7,
+        "arguments": [],
+        "ui_reachable": false
+      },
+      "expected_bytes": "a55ad700002008",
+      "evidence": [
+        "E05",
+        "E10",
+        "E07"
+      ],
+      "fixture_kind": "Static source/replay; not hardware capture"
+    },
+    {
+      "id": "H044",
+      "protocol": "P2",
+      "action": "Flat",
+      "inputs": {
+        "version": 7,
+        "arguments": [],
+        "ui_reachable": true
+      },
+      "expected_bytes": "a55a7900002066",
+      "evidence": [
+        "E05",
+        "E10",
+        "E06"
+      ],
+      "fixture_kind": "Static source/replay; not hardware capture"
+    },
+    {
+      "id": "H045",
+      "protocol": "P2",
+      "action": "MemoryZero",
+      "inputs": {
+        "version": 7,
+        "arguments": [],
+        "ui_reachable": true
+      },
+      "expected_bytes": "a55a7f00002060",
+      "evidence": [
+        "E05",
+        "E10",
+        "E06"
+      ],
+      "fixture_kind": "Static source/replay; not hardware capture"
+    },
+    {
+      "id": "H046",
+      "protocol": "P2",
+      "action": "MemoryPosition",
+      "inputs": {
+        "version": 7,
+        "arguments": [],
+        "ui_reachable": true
+      },
+      "expected_bytes": "a55a7b00002064",
+      "evidence": [
+        "E05",
+        "E10",
+        "E06"
+      ],
+      "fixture_kind": "Static source/replay; not hardware capture"
+    },
+    {
+      "id": "H047",
+      "protocol": "P2",
+      "action": "MemoryTv",
+      "inputs": {
+        "version": 7,
+        "arguments": [],
+        "ui_reachable": true
+      },
+      "expected_bytes": "a55a7d00002062",
+      "evidence": [
+        "E05",
+        "E10",
+        "E06"
+      ],
+      "fixture_kind": "Static source/replay; not hardware capture"
+    },
+    {
+      "id": "H048",
+      "protocol": "P2",
+      "action": "MemoryLounge",
+      "inputs": {
+        "version": 7,
+        "arguments": [],
+        "ui_reachable": true
+      },
+      "expected_bytes": "a55a7e00002061",
+      "evidence": [
+        "E05",
+        "E10",
+        "E06"
+      ],
+      "fixture_kind": "Static source/replay; not hardware capture"
+    },
+    {
+      "id": "H049",
+      "protocol": "P2",
+      "action": "MemoryAntiSnore",
+      "inputs": {
+        "version": 7,
+        "arguments": [],
+        "ui_reachable": true
+      },
+      "expected_bytes": "a55a7c00002063",
+      "evidence": [
+        "E05",
+        "E10",
+        "E06"
+      ],
+      "fixture_kind": "Static source/replay; not hardware capture"
+    },
+    {
+      "id": "H050",
+      "protocol": "P2",
+      "action": "Light",
+      "inputs": {
+        "version": 7,
+        "arguments": [],
+        "ui_reachable": true
+      },
+      "expected_bytes": "a55a5f00002080",
+      "evidence": [
+        "E05",
+        "E10",
+        "E07"
+      ],
+      "fixture_kind": "Static source/replay; not hardware capture"
+    },
+    {
+      "id": "H051",
+      "protocol": "P2",
+      "action": "MassageAll",
+      "inputs": {
+        "version": 7,
+        "arguments": [],
+        "ui_reachable": true
+      },
+      "expected_bytes": "a55a5e00002081",
+      "evidence": [
+        "E05",
+        "E10",
+        "E07"
+      ],
+      "fixture_kind": "Static source/replay; not hardware capture"
+    },
+    {
+      "id": "H053",
+      "protocol": "P2",
+      "action": "MassageHeadPlus",
+      "inputs": {
+        "version": 7,
+        "arguments": [],
+        "ui_reachable": true
+      },
+      "expected_bytes": "a55a5b00002084",
+      "evidence": [
+        "E05",
+        "E10",
+        "E07"
+      ],
+      "fixture_kind": "Static source/replay; not hardware capture"
+    },
+    {
+      "id": "H054",
+      "protocol": "P2",
+      "action": "MassageHeadMinus",
+      "inputs": {
+        "version": 7,
+        "arguments": [],
+        "ui_reachable": false
+      },
+      "expected_bytes": "a55abe00002021",
+      "evidence": [
+        "E05",
+        "E10",
+        "E07"
+      ],
+      "fixture_kind": "Static source/replay; not hardware capture"
+    },
+    {
+      "id": "H055",
+      "protocol": "P2",
+      "action": "MassageFootPlus",
+      "inputs": {
+        "version": 7,
+        "arguments": [],
+        "ui_reachable": true
+      },
+      "expected_bytes": "a55a5a00002085",
+      "evidence": [
+        "E05",
+        "E10",
+        "E07"
+      ],
+      "fixture_kind": "Static source/replay; not hardware capture"
+    },
+    {
+      "id": "H056",
+      "protocol": "P2",
+      "action": "MassageFootMinus",
+      "inputs": {
+        "version": 7,
+        "arguments": [],
+        "ui_reachable": false
+      },
+      "expected_bytes": "a55aae00002031",
+      "evidence": [
+        "E05",
+        "E10",
+        "E07"
+      ],
+      "fixture_kind": "Static source/replay; not hardware capture"
+    },
+    {
+      "id": "H057",
+      "protocol": "P2",
+      "action": "MassageWavePlus",
+      "inputs": {
+        "version": 7,
+        "arguments": [],
+        "ui_reachable": true
+      },
+      "expected_bytes": "a55a6f00002070",
+      "evidence": [
+        "E05",
+        "E10",
+        "E07"
+      ],
+      "fixture_kind": "Static source/replay; not hardware capture"
+    },
+    {
+      "id": "H059",
+      "protocol": "P2",
+      "action": "MassageCheck",
+      "inputs": {
+        "version": 7,
+        "arguments": [],
+        "ui_reachable": true
+      },
+      "expected_bytes": "e6fe16030000000002",
+      "evidence": [
+        "E05",
+        "E10",
+        "E07"
+      ],
+      "fixture_kind": "Static source/replay; not hardware capture"
+    },
+    {
+      "id": "H060",
+      "protocol": "P2",
+      "action": "AlarmCheck",
+      "inputs": {
+        "version": 7,
+        "arguments": [],
+        "ui_reachable": true
+      },
+      "expected_bytes": "e28003009a",
+      "evidence": [
+        "E05",
+        "E10",
+        "E07"
+      ],
+      "fixture_kind": "Static source/replay; not hardware capture"
+    },
+    {
+      "id": "H061",
+      "protocol": "P2",
+      "action": "AlarmClick",
+      "inputs": {
+        "version": 7,
+        "arguments": [
+          7,
+          30,
+          255,
+          9
+        ],
+        "ui_reachable": true
+      },
+      "expected_bytes": "ed8003071eff09000000000000000062",
+      "evidence": [
+        "E05",
+        "E10",
+        "E07"
+      ],
+      "fixture_kind": "Static source/replay; not hardware capture"
+    },
+    {
+      "id": "H062",
+      "protocol": "P2",
+      "action": "AlarmClick",
+      "inputs": {
+        "version": 7,
+        "arguments": [
+          7,
+          30,
+          255,
+          17
+        ],
+        "ui_reachable": true
+      },
+      "expected_bytes": "ed8003071eff1100000000000000005a",
+      "evidence": [
+        "E05",
+        "E10",
+        "E07"
+      ],
+      "fixture_kind": "Static source/replay; not hardware capture"
+    },
+    {
+      "id": "H063",
+      "protocol": "P2",
+      "action": "AlarmClick",
+      "inputs": {
+        "version": 7,
+        "arguments": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "ui_reachable": true
+      },
+      "expected_bytes": "ed80030000000000000000000000008f",
+      "evidence": [
+        "E05",
+        "E10",
+        "E07"
+      ],
+      "fixture_kind": "Static source/replay; not hardware capture"
+    },
+    {
+      "id": "H064",
+      "protocol": "P2",
+      "action": "AlarmCalibration",
+      "inputs": {
+        "version": 7,
+        "arguments": [],
+        "ui_reachable": true
+      },
+      "expected_bytes": "e780017e0a1b0c22388e",
+      "evidence": [
+        "E05",
+        "E10",
+        "E07"
+      ],
+      "fixture_kind": "Static source/replay; not hardware capture"
+    },
+    {
+      "id": "H065",
+      "protocol": "P3",
+      "action": "HeadUp",
+      "inputs": {
+        "version": 8,
+        "arguments": [],
+        "ui_reachable": true
+      },
+      "expected_bytes": "05020000000100",
+      "evidence": [
+        "E05",
+        "E10",
+        "E06"
+      ],
+      "fixture_kind": "Static source/replay; not hardware capture"
+    },
+    {
+      "id": "H066",
+      "protocol": "P3",
+      "action": "HeadDown",
+      "inputs": {
+        "version": 8,
+        "arguments": [],
+        "ui_reachable": true
+      },
+      "expected_bytes": "05020000000200",
+      "evidence": [
+        "E05",
+        "E10",
+        "E06"
+      ],
+      "fixture_kind": "Static source/replay; not hardware capture"
+    },
+    {
+      "id": "H067",
+      "protocol": "P3",
+      "action": "Stop",
+      "inputs": {
+        "version": 8,
+        "arguments": [],
+        "ui_reachable": true
+      },
+      "expected_bytes": "05020000000000",
+      "evidence": [
+        "E05",
+        "E10",
+        "E06"
+      ],
+      "fixture_kind": "Static source/replay; not hardware capture"
+    },
+    {
+      "id": "H068",
+      "protocol": "P3",
+      "action": "FootUp",
+      "inputs": {
+        "version": 8,
+        "arguments": [],
+        "ui_reachable": true
+      },
+      "expected_bytes": "05020000000400",
+      "evidence": [
+        "E05",
+        "E10",
+        "E06"
+      ],
+      "fixture_kind": "Static source/replay; not hardware capture"
+    },
+    {
+      "id": "H069",
+      "protocol": "P3",
+      "action": "FootDown",
+      "inputs": {
+        "version": 8,
+        "arguments": [],
+        "ui_reachable": true
+      },
+      "expected_bytes": "05020000000800",
+      "evidence": [
+        "E05",
+        "E10",
+        "E06"
+      ],
+      "fixture_kind": "Static source/replay; not hardware capture"
+    },
+    {
+      "id": "H070",
+      "protocol": "P3",
+      "action": "HeadFootUp",
+      "inputs": {
+        "version": 8,
+        "arguments": [],
+        "ui_reachable": false
+      },
+      "expected_bytes": "05020000000500",
+      "evidence": [
+        "E05",
+        "E10",
+        "E07"
+      ],
+      "fixture_kind": "Static source/replay; not hardware capture"
+    },
+    {
+      "id": "H071",
+      "protocol": "P3",
+      "action": "HeadFootDown",
+      "inputs": {
+        "version": 8,
+        "arguments": [],
+        "ui_reachable": false
+      },
+      "expected_bytes": "05020000000a00",
+      "evidence": [
+        "E05",
+        "E10",
+        "E07"
+      ],
+      "fixture_kind": "Static source/replay; not hardware capture"
+    },
+    {
+      "id": "H072",
+      "protocol": "P3",
+      "action": "NeckUp",
+      "inputs": {
+        "version": 8,
+        "arguments": [],
+        "ui_reachable": false
+      },
+      "expected_bytes": "05020000001000",
+      "evidence": [
+        "E05",
+        "E10",
+        "E07"
+      ],
+      "fixture_kind": "Static source/replay; not hardware capture"
+    },
+    {
+      "id": "H073",
+      "protocol": "P3",
+      "action": "NeckDown",
+      "inputs": {
+        "version": 8,
+        "arguments": [],
+        "ui_reachable": false
+      },
+      "expected_bytes": "05020000002000",
+      "evidence": [
+        "E05",
+        "E10",
+        "E07"
+      ],
+      "fixture_kind": "Static source/replay; not hardware capture"
+    },
+    {
+      "id": "H074",
+      "protocol": "P3",
+      "action": "WaistUp",
+      "inputs": {
+        "version": 8,
+        "arguments": [],
+        "ui_reachable": false
+      },
+      "expected_bytes": "05020000004000",
+      "evidence": [
+        "E05",
+        "E10",
+        "E07"
+      ],
+      "fixture_kind": "Static source/replay; not hardware capture"
+    },
+    {
+      "id": "H075",
+      "protocol": "P3",
+      "action": "WaistDown",
+      "inputs": {
+        "version": 8,
+        "arguments": [],
+        "ui_reachable": false
+      },
+      "expected_bytes": "05020000008000",
+      "evidence": [
+        "E05",
+        "E10",
+        "E07"
+      ],
+      "fixture_kind": "Static source/replay; not hardware capture"
+    },
+    {
+      "id": "H076",
+      "protocol": "P3",
+      "action": "Flat",
+      "inputs": {
+        "version": 8,
+        "arguments": [],
+        "ui_reachable": true
+      },
+      "expected_bytes": "05020800000000",
+      "evidence": [
+        "E05",
+        "E10",
+        "E06"
+      ],
+      "fixture_kind": "Static source/replay; not hardware capture"
+    },
+    {
+      "id": "H077",
+      "protocol": "P3",
+      "action": "MemoryZero",
+      "inputs": {
+        "version": 8,
+        "arguments": [],
+        "ui_reachable": true
+      },
+      "expected_bytes": "05020000100000",
+      "evidence": [
+        "E05",
+        "E10",
+        "E06"
+      ],
+      "fixture_kind": "Static source/replay; not hardware capture"
+    },
+    {
+      "id": "H078",
+      "protocol": "P3",
+      "action": "MemoryPosition",
+      "inputs": {
+        "version": 8,
+        "arguments": [],
+        "ui_reachable": true
+      },
+      "expected_bytes": "05020001000000",
+      "evidence": [
+        "E05",
+        "E10",
+        "E06"
+      ],
+      "fixture_kind": "Static source/replay; not hardware capture"
+    },
+    {
+      "id": "H079",
+      "protocol": "P3",
+      "action": "MemoryTv",
+      "inputs": {
+        "version": 8,
+        "arguments": [],
+        "ui_reachable": true
+      },
+      "expected_bytes": "05020000400000",
+      "evidence": [
+        "E05",
+        "E10",
+        "E06"
+      ],
+      "fixture_kind": "Static source/replay; not hardware capture"
+    },
+    {
+      "id": "H080",
+      "protocol": "P3",
+      "action": "MemoryLounge",
+      "inputs": {
+        "version": 8,
+        "arguments": [],
+        "ui_reachable": true
+      },
+      "expected_bytes": "05020000200000",
+      "evidence": [
+        "E05",
+        "E10",
+        "E06"
+      ],
+      "fixture_kind": "Static source/replay; not hardware capture"
+    },
+    {
+      "id": "H081",
+      "protocol": "P3",
+      "action": "MemoryAntiSnore",
+      "inputs": {
+        "version": 8,
+        "arguments": [],
+        "ui_reachable": true
+      },
+      "expected_bytes": "05020000800000",
+      "evidence": [
+        "E05",
+        "E10",
+        "E06"
+      ],
+      "fixture_kind": "Static source/replay; not hardware capture"
+    },
+    {
+      "id": "H083",
+      "protocol": "P3",
+      "action": "MassageAll",
+      "inputs": {
+        "version": 8,
+        "arguments": [],
+        "ui_reachable": true
+      },
+      "expected_bytes": "05020000010000",
+      "evidence": [
+        "E05",
+        "E10",
+        "E07"
+      ],
+      "fixture_kind": "Static source/replay; not hardware capture"
+    },
+    {
+      "id": "H084",
+      "protocol": "P3",
+      "action": "MassageTime",
+      "inputs": {
+        "version": 8,
+        "arguments": [],
+        "ui_reachable": true
+      },
+      "expected_bytes": "05020000020000",
+      "evidence": [
+        "E05",
+        "E10",
+        "E07"
+      ],
+      "fixture_kind": "Static source/replay; not hardware capture"
+    },
+    {
+      "id": "H085",
+      "protocol": "P3",
+      "action": "MassageHeadPlus",
+      "inputs": {
+        "version": 8,
+        "arguments": [],
+        "ui_reachable": true
+      },
+      "expected_bytes": "05020000080000",
+      "evidence": [
+        "E05",
+        "E10",
+        "E07"
+      ],
+      "fixture_kind": "Static source/replay; not hardware capture"
+    },
+    {
+      "id": "H086",
+      "protocol": "P3",
+      "action": "MassageHeadMinus",
+      "inputs": {
+        "version": 8,
+        "arguments": [],
+        "ui_reachable": false
+      },
+      "expected_bytes": "05020080000000",
+      "evidence": [
+        "E05",
+        "E10",
+        "E07"
+      ],
+      "fixture_kind": "Static source/replay; not hardware capture"
+    },
+    {
+      "id": "H087",
+      "protocol": "P3",
+      "action": "MassageFootPlus",
+      "inputs": {
+        "version": 8,
+        "arguments": [],
+        "ui_reachable": true
+      },
+      "expected_bytes": "05020000040000",
+      "evidence": [
+        "E05",
+        "E10",
+        "E07"
+      ],
+      "fixture_kind": "Static source/replay; not hardware capture"
+    },
+    {
+      "id": "H088",
+      "protocol": "P3",
+      "action": "MassageFootMinus",
+      "inputs": {
+        "version": 8,
+        "arguments": [],
+        "ui_reachable": false
+      },
+      "expected_bytes": "05020100000000",
+      "evidence": [
+        "E05",
+        "E10",
+        "E07"
+      ],
+      "fixture_kind": "Static source/replay; not hardware capture"
+    },
+    {
+      "id": "H089",
+      "protocol": "P3",
+      "action": "MassageWavePlus",
+      "inputs": {
+        "version": 8,
+        "arguments": [],
+        "ui_reachable": true
+      },
+      "expected_bytes": "05021000000000",
+      "evidence": [
+        "E05",
+        "E10",
+        "E07"
+      ],
+      "fixture_kind": "Static source/replay; not hardware capture"
+    },
+    {
+      "id": "H090",
+      "protocol": "P3",
+      "action": "MassageWaveMinus",
+      "inputs": {
+        "version": 8,
+        "arguments": [],
+        "ui_reachable": false
+      },
+      "expected_bytes": "05020400000000",
+      "evidence": [
+        "E05",
+        "E10",
+        "E07"
+      ],
+      "fixture_kind": "Static source/replay; not hardware capture"
+    },
+    {
+      "id": "H091",
+      "protocol": "P3",
+      "action": "MassageCheck",
+      "inputs": {
+        "version": 8,
+        "arguments": [],
+        "ui_reachable": true
+      },
+      "expected_bytes": "00b0",
+      "evidence": [
+        "E05",
+        "E10",
+        "E07"
+      ],
+      "fixture_kind": "Static source/replay; not hardware capture"
+    },
+    {
+      "id": "H092",
+      "protocol": "P3",
+      "action": "AlarmCheck",
+      "inputs": {
+        "version": 8,
+        "arguments": [],
+        "ui_reachable": true
+      },
+      "expected_bytes": "00c0",
+      "evidence": [
+        "E05",
+        "E10",
+        "E07"
+      ],
+      "fixture_kind": "Static source/replay; not hardware capture"
+    },
+    {
+      "id": "H093",
+      "protocol": "P3",
+      "action": "AlarmClick",
+      "inputs": {
+        "version": 8,
+        "arguments": [
+          7,
+          30,
+          255,
+          8
+        ],
+        "ui_reachable": true
+      },
+      "expected_bytes": "0705ff08071e000100",
+      "evidence": [
+        "E05",
+        "E10",
+        "E07"
+      ],
+      "fixture_kind": "Static source/replay; not hardware capture"
+    },
+    {
+      "id": "H094",
+      "protocol": "P3",
+      "action": "AlarmClick",
+      "inputs": {
+        "version": 8,
+        "arguments": [
+          7,
+          30,
+          255,
+          5
+        ],
+        "ui_reachable": true
+      },
+      "expected_bytes": "0705ff05071e000100",
+      "evidence": [
+        "E05",
+        "E10",
+        "E07"
+      ],
+      "fixture_kind": "Static source/replay; not hardware capture"
+    },
+    {
+      "id": "H095",
+      "protocol": "P3",
+      "action": "AlarmClick",
+      "inputs": {
+        "version": 8,
+        "arguments": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "ui_reachable": true
+      },
+      "expected_bytes": "070500000000000000",
+      "evidence": [
+        "E05",
+        "E10",
+        "E07"
+      ],
+      "fixture_kind": "Static source/replay; not hardware capture"
+    },
+    {
+      "id": "H096",
+      "protocol": "P3",
+      "action": "AlarmCalibration",
+      "inputs": {
+        "version": 8,
+        "arguments": [],
+        "ui_reachable": true
+      },
+      "expected_bytes": "07041a0b1b050c2238",
+      "evidence": [
+        "E05",
+        "E10",
+        "E07"
+      ],
+      "fixture_kind": "Static source/replay; not hardware capture"
+    },
+    {
+      "id": "H097",
+      "protocol": "P3",
+      "action": "HeadUp",
+      "inputs": {
+        "version": 9,
+        "arguments": [],
+        "ui_reachable": true
+      },
+      "expected_bytes": "05020000000100",
+      "evidence": [
+        "E05",
+        "E10",
+        "E06"
+      ],
+      "fixture_kind": "Static source/replay; not hardware capture"
+    },
+    {
+      "id": "H098",
+      "protocol": "P3",
+      "action": "HeadDown",
+      "inputs": {
+        "version": 9,
+        "arguments": [],
+        "ui_reachable": true
+      },
+      "expected_bytes": "05020000000200",
+      "evidence": [
+        "E05",
+        "E10",
+        "E06"
+      ],
+      "fixture_kind": "Static source/replay; not hardware capture"
+    },
+    {
+      "id": "H099",
+      "protocol": "P3",
+      "action": "Stop",
+      "inputs": {
+        "version": 9,
+        "arguments": [],
+        "ui_reachable": true
+      },
+      "expected_bytes": "05020000000000",
+      "evidence": [
+        "E05",
+        "E10",
+        "E06"
+      ],
+      "fixture_kind": "Static source/replay; not hardware capture"
+    },
+    {
+      "id": "H100",
+      "protocol": "P3",
+      "action": "FootUp",
+      "inputs": {
+        "version": 9,
+        "arguments": [],
+        "ui_reachable": true
+      },
+      "expected_bytes": "05020000000400",
+      "evidence": [
+        "E05",
+        "E10",
+        "E06"
+      ],
+      "fixture_kind": "Static source/replay; not hardware capture"
+    },
+    {
+      "id": "H101",
+      "protocol": "P3",
+      "action": "FootDown",
+      "inputs": {
+        "version": 9,
+        "arguments": [],
+        "ui_reachable": true
+      },
+      "expected_bytes": "05020000000800",
+      "evidence": [
+        "E05",
+        "E10",
+        "E06"
+      ],
+      "fixture_kind": "Static source/replay; not hardware capture"
+    },
+    {
+      "id": "H102",
+      "protocol": "P3",
+      "action": "HeadFootUp",
+      "inputs": {
+        "version": 9,
+        "arguments": [],
+        "ui_reachable": false
+      },
+      "expected_bytes": "05020000000500",
+      "evidence": [
+        "E05",
+        "E10",
+        "E07"
+      ],
+      "fixture_kind": "Static source/replay; not hardware capture"
+    },
+    {
+      "id": "H103",
+      "protocol": "P3",
+      "action": "HeadFootDown",
+      "inputs": {
+        "version": 9,
+        "arguments": [],
+        "ui_reachable": false
+      },
+      "expected_bytes": "05020000000a00",
+      "evidence": [
+        "E05",
+        "E10",
+        "E07"
+      ],
+      "fixture_kind": "Static source/replay; not hardware capture"
+    },
+    {
+      "id": "H104",
+      "protocol": "P3",
+      "action": "NeckUp",
+      "inputs": {
+        "version": 9,
+        "arguments": [],
+        "ui_reachable": false
+      },
+      "expected_bytes": "05020000001000",
+      "evidence": [
+        "E05",
+        "E10",
+        "E07"
+      ],
+      "fixture_kind": "Static source/replay; not hardware capture"
+    },
+    {
+      "id": "H105",
+      "protocol": "P3",
+      "action": "NeckDown",
+      "inputs": {
+        "version": 9,
+        "arguments": [],
+        "ui_reachable": false
+      },
+      "expected_bytes": "05020000002000",
+      "evidence": [
+        "E05",
+        "E10",
+        "E07"
+      ],
+      "fixture_kind": "Static source/replay; not hardware capture"
+    },
+    {
+      "id": "H106",
+      "protocol": "P3",
+      "action": "WaistUp",
+      "inputs": {
+        "version": 9,
+        "arguments": [],
+        "ui_reachable": false
+      },
+      "expected_bytes": "05020000004000",
+      "evidence": [
+        "E05",
+        "E10",
+        "E07"
+      ],
+      "fixture_kind": "Static source/replay; not hardware capture"
+    },
+    {
+      "id": "H107",
+      "protocol": "P3",
+      "action": "WaistDown",
+      "inputs": {
+        "version": 9,
+        "arguments": [],
+        "ui_reachable": false
+      },
+      "expected_bytes": "05020000008000",
+      "evidence": [
+        "E05",
+        "E10",
+        "E07"
+      ],
+      "fixture_kind": "Static source/replay; not hardware capture"
+    },
+    {
+      "id": "H108",
+      "protocol": "P3",
+      "action": "Flat",
+      "inputs": {
+        "version": 9,
+        "arguments": [],
+        "ui_reachable": true
+      },
+      "expected_bytes": "05020800000000",
+      "evidence": [
+        "E05",
+        "E10",
+        "E06"
+      ],
+      "fixture_kind": "Static source/replay; not hardware capture"
+    },
+    {
+      "id": "H109",
+      "protocol": "P3",
+      "action": "MemoryZero",
+      "inputs": {
+        "version": 9,
+        "arguments": [],
+        "ui_reachable": true
+      },
+      "expected_bytes": "05020000100000",
+      "evidence": [
+        "E05",
+        "E10",
+        "E06"
+      ],
+      "fixture_kind": "Static source/replay; not hardware capture"
+    },
+    {
+      "id": "H110",
+      "protocol": "P3",
+      "action": "MemoryPosition",
+      "inputs": {
+        "version": 9,
+        "arguments": [],
+        "ui_reachable": true
+      },
+      "expected_bytes": "05020001000000",
+      "evidence": [
+        "E05",
+        "E10",
+        "E06"
+      ],
+      "fixture_kind": "Static source/replay; not hardware capture"
+    },
+    {
+      "id": "H111",
+      "protocol": "P3",
+      "action": "MemoryTv",
+      "inputs": {
+        "version": 9,
+        "arguments": [],
+        "ui_reachable": true
+      },
+      "expected_bytes": "05020000400000",
+      "evidence": [
+        "E05",
+        "E10",
+        "E06"
+      ],
+      "fixture_kind": "Static source/replay; not hardware capture"
+    },
+    {
+      "id": "H112",
+      "protocol": "P3",
+      "action": "MemoryLounge",
+      "inputs": {
+        "version": 9,
+        "arguments": [],
+        "ui_reachable": true
+      },
+      "expected_bytes": "05020000200000",
+      "evidence": [
+        "E05",
+        "E10",
+        "E06"
+      ],
+      "fixture_kind": "Static source/replay; not hardware capture"
+    },
+    {
+      "id": "H113",
+      "protocol": "P3",
+      "action": "MemoryAntiSnore",
+      "inputs": {
+        "version": 9,
+        "arguments": [],
+        "ui_reachable": true
+      },
+      "expected_bytes": "05020000800000",
+      "evidence": [
+        "E05",
+        "E10",
+        "E06"
+      ],
+      "fixture_kind": "Static source/replay; not hardware capture"
+    },
+    {
+      "id": "H114",
+      "protocol": "P3",
+      "action": "Light",
+      "inputs": {
+        "version": 9,
+        "arguments": [],
+        "ui_reachable": true
+      },
+      "expected_bytes": "05020002000000",
+      "evidence": [
+        "E05",
+        "E10",
+        "E07"
+      ],
+      "fixture_kind": "Static source/replay; not hardware capture"
+    },
+    {
+      "id": "H115",
+      "protocol": "P3",
+      "action": "MassageAll",
+      "inputs": {
+        "version": 9,
+        "arguments": [],
+        "ui_reachable": true
+      },
+      "expected_bytes": "05020000010000",
+      "evidence": [
+        "E05",
+        "E10",
+        "E07"
+      ],
+      "fixture_kind": "Static source/replay; not hardware capture"
+    },
+    {
+      "id": "H116",
+      "protocol": "P3",
+      "action": "MassageTime",
+      "inputs": {
+        "version": 9,
+        "arguments": [],
+        "ui_reachable": true
+      },
+      "expected_bytes": "05020000020000",
+      "evidence": [
+        "E05",
+        "E10",
+        "E07"
+      ],
+      "fixture_kind": "Static source/replay; not hardware capture"
+    },
+    {
+      "id": "H117",
+      "protocol": "P3",
+      "action": "MassageHeadPlus",
+      "inputs": {
+        "version": 9,
+        "arguments": [],
+        "ui_reachable": true
+      },
+      "expected_bytes": "05020000080000",
+      "evidence": [
+        "E05",
+        "E10",
+        "E07"
+      ],
+      "fixture_kind": "Static source/replay; not hardware capture"
+    },
+    {
+      "id": "H118",
+      "protocol": "P3",
+      "action": "MassageHeadMinus",
+      "inputs": {
+        "version": 9,
+        "arguments": [],
+        "ui_reachable": false
+      },
+      "expected_bytes": "05020080000000",
+      "evidence": [
+        "E05",
+        "E10",
+        "E07"
+      ],
+      "fixture_kind": "Static source/replay; not hardware capture"
+    },
+    {
+      "id": "H119",
+      "protocol": "P3",
+      "action": "MassageFootPlus",
+      "inputs": {
+        "version": 9,
+        "arguments": [],
+        "ui_reachable": true
+      },
+      "expected_bytes": "05020000040000",
+      "evidence": [
+        "E05",
+        "E10",
+        "E07"
+      ],
+      "fixture_kind": "Static source/replay; not hardware capture"
+    },
+    {
+      "id": "H120",
+      "protocol": "P3",
+      "action": "MassageFootMinus",
+      "inputs": {
+        "version": 9,
+        "arguments": [],
+        "ui_reachable": false
+      },
+      "expected_bytes": "05020100000000",
+      "evidence": [
+        "E05",
+        "E10",
+        "E07"
+      ],
+      "fixture_kind": "Static source/replay; not hardware capture"
+    },
+    {
+      "id": "H121",
+      "protocol": "P3",
+      "action": "MassageWavePlus",
+      "inputs": {
+        "version": 9,
+        "arguments": [],
+        "ui_reachable": true
+      },
+      "expected_bytes": "05021000000000",
+      "evidence": [
+        "E05",
+        "E10",
+        "E07"
+      ],
+      "fixture_kind": "Static source/replay; not hardware capture"
+    },
+    {
+      "id": "H122",
+      "protocol": "P3",
+      "action": "MassageWaveMinus",
+      "inputs": {
+        "version": 9,
+        "arguments": [],
+        "ui_reachable": false
+      },
+      "expected_bytes": "05020400000000",
+      "evidence": [
+        "E05",
+        "E10",
+        "E07"
+      ],
+      "fixture_kind": "Static source/replay; not hardware capture"
+    },
+    {
+      "id": "H123",
+      "protocol": "P3",
+      "action": "MassageCheck",
+      "inputs": {
+        "version": 9,
+        "arguments": [],
+        "ui_reachable": true
+      },
+      "expected_bytes": "00b0",
+      "evidence": [
+        "E05",
+        "E10",
+        "E07"
+      ],
+      "fixture_kind": "Static source/replay; not hardware capture"
+    },
+    {
+      "id": "H124",
+      "protocol": "P3",
+      "action": "AlarmCheck",
+      "inputs": {
+        "version": 9,
+        "arguments": [],
+        "ui_reachable": true
+      },
+      "expected_bytes": "00c0",
+      "evidence": [
+        "E05",
+        "E10",
+        "E07"
+      ],
+      "fixture_kind": "Static source/replay; not hardware capture"
+    },
+    {
+      "id": "H125",
+      "protocol": "P3",
+      "action": "AlarmClick",
+      "inputs": {
+        "version": 9,
+        "arguments": [
+          7,
+          30,
+          255,
+          8
+        ],
+        "ui_reachable": true
+      },
+      "expected_bytes": "0705ff08071e000100",
+      "evidence": [
+        "E05",
+        "E10",
+        "E07"
+      ],
+      "fixture_kind": "Static source/replay; not hardware capture"
+    },
+    {
+      "id": "H126",
+      "protocol": "P3",
+      "action": "AlarmClick",
+      "inputs": {
+        "version": 9,
+        "arguments": [
+          7,
+          30,
+          255,
+          5
+        ],
+        "ui_reachable": true
+      },
+      "expected_bytes": "0705ff05071e000100",
+      "evidence": [
+        "E05",
+        "E10",
+        "E07"
+      ],
+      "fixture_kind": "Static source/replay; not hardware capture"
+    },
+    {
+      "id": "H127",
+      "protocol": "P3",
+      "action": "AlarmClick",
+      "inputs": {
+        "version": 9,
+        "arguments": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "ui_reachable": true
+      },
+      "expected_bytes": "070500000000000000",
+      "evidence": [
+        "E05",
+        "E10",
+        "E07"
+      ],
+      "fixture_kind": "Static source/replay; not hardware capture"
+    },
+    {
+      "id": "H128",
+      "protocol": "P3",
+      "action": "AlarmCalibration",
+      "inputs": {
+        "version": 9,
+        "arguments": [],
+        "ui_reachable": true
+      },
+      "expected_bytes": "07041a0b1b050c2238",
+      "evidence": [
+        "E05",
+        "E10",
+        "E07"
+      ],
+      "fixture_kind": "Static source/replay; not hardware capture"
+    },
+    {
+      "id": "edfe16",
+      "protocol": "P1",
+      "action": "Parse synthetic notification",
+      "inputs": {
+        "hex": "edfe16000000000306000000000012",
+        "version": 6
+      },
+      "expected_bytes": "edfe16000000000306000000000012",
+      "expected_state": {
+        "time": 1,
+        "head": 2,
+        "foot": 3,
+        "mode": 1,
+        "isOn": true
+      },
+      "evidence": [
+        "E03",
+        "E10"
+      ],
+      "fixture_kind": "Synthetic branch/reassembly fixture, no claim observed on hardware"
+    },
+    {
+      "id": "f4fe16",
+      "protocol": "P1",
+      "action": "Parse synthetic notification",
+      "inputs": {
+        "hex": "f4fe1600000000000000000609000000000000020001",
+        "version": 6
+      },
+      "expected_bytes": "f4fe1600000000000000000609000000000000020001",
+      "expected_state": {
+        "time": 1,
+        "head": 3,
+        "foot": 4,
+        "mode": 1,
+        "isOn": true
+      },
+      "evidence": [
+        "E03",
+        "E10"
+      ],
+      "fixture_kind": "Synthetic branch/reassembly fixture, no claim observed on hardware"
+    },
+    {
+      "id": "a50b0e",
+      "protocol": "P3",
+      "action": "Parse synthetic notification",
+      "inputs": {
+        "hex": "a50b0e0002580204060000000000",
+        "version": 8
+      },
+      "expected_bytes": "a50b0e0002580204060000000000",
+      "expected_state": {
+        "time": 0,
+        "head": 2,
+        "foot": 3,
+        "mode": 2,
+        "isOn": true
+      },
+      "evidence": [
+        "E03",
+        "E10"
+      ],
+      "fixture_kind": "Synthetic branch/reassembly fixture, no claim observed on hardware"
+    },
+    {
+      "id": "a50b0e-1200",
+      "protocol": "P3",
+      "action": "Parse synthetic notification",
+      "inputs": {
+        "hex": "a50b0e0004b00102040000000000",
+        "version": 9
+      },
+      "expected_bytes": "a50b0e0004b00102040000000000",
+      "expected_state": {
+        "time": 1,
+        "head": 1,
+        "foot": 2,
+        "mode": 1,
+        "isOn": true
+      },
+      "evidence": [
+        "E03",
+        "E10"
+      ],
+      "fixture_kind": "Synthetic branch/reassembly fixture, no claim observed on hardware"
+    },
+    {
+      "id": "ed8003",
+      "protocol": "P2",
+      "action": "Parse synthetic notification",
+      "inputs": {
+        "hex": "ed8003071e8109",
+        "version": 7
+      },
+      "expected_bytes": "ed8003071e8109",
+      "expected_state": {
+        "type": "shake",
+        "hour": 7,
+        "minute": 30,
+        "repeatDays": [
+          7
+        ],
+        "isOn": true
+      },
+      "evidence": [
+        "E03",
+        "E10"
+      ],
+      "fixture_kind": "Synthetic branch/reassembly fixture, no claim observed on hardware"
+    },
+    {
+      "id": "a50c0e",
+      "protocol": "P3",
+      "action": "Parse synthetic notification",
+      "inputs": {
+        "hex": "a50c0e008108071e0001",
+        "version": 8
+      },
+      "expected_bytes": "a50c0e008108071e0001",
+      "expected_state": {
+        "type": "shake",
+        "hour": 7,
+        "minute": 30,
+        "repeatDays": [
+          7
+        ],
+        "isOn": true
+      },
+      "evidence": [
+        "E03",
+        "E10"
+      ],
+      "fixture_kind": "Synthetic branch/reassembly fixture, no claim observed on hardware"
+    },
+    {
+      "id": "a55a-log-only",
+      "protocol": "P2",
+      "action": "Parse synthetic notification",
+      "inputs": {
+        "hex": "a55a000000000000000000000000",
+        "version": 7
+      },
+      "expected_bytes": "a55a000000000000000000000000",
+      "expected_state": {
+        "time": 0,
+        "head": 0,
+        "foot": 0,
+        "mode": 0,
+        "isOn": false
+      },
+      "evidence": [
+        "E03",
+        "E10"
+      ],
+      "fixture_kind": "Synthetic branch/reassembly fixture, no claim observed on hardware"
+    },
+    {
+      "id": "short-ignored",
+      "protocol": "P3",
+      "action": "Parse synthetic notification",
+      "inputs": {
+        "hex": "edfe",
+        "version": 8
+      },
+      "expected_bytes": "edfe",
+      "expected_state": {
+        "time": 0,
+        "head": 0,
+        "foot": 0,
+        "mode": 0,
+        "isOn": false
+      },
+      "evidence": [
+        "E03",
+        "E10"
+      ],
+      "fixture_kind": "Synthetic branch/reassembly fixture, no claim observed on hardware"
+    },
+    {
+      "id": "calendar-6-2024-01-01T00:01:02Z",
+      "protocol": "P1",
+      "action": "Dynamic calendar date boundary",
+      "inputs": {
+        "version": 6,
+        "clock": "2024-01-01T00:01:02Z"
+      },
+      "expected_bytes": "e780017c000100010217",
+      "evidence": [
+        "E05",
+        "E10"
+      ],
+      "fixture_kind": "Static source independent formula, not hardware"
+    },
+    {
+      "id": "calendar-6-2025-12-31T23:59:58Z",
+      "protocol": "P1",
+      "action": "Dynamic calendar date boundary",
+      "inputs": {
+        "version": 6,
+        "clock": "2025-12-31T23:59:58Z"
+      },
+      "expected_bytes": "e780017d0b1f173b3a64",
+      "evidence": [
+        "E05",
+        "E10"
+      ],
+      "fixture_kind": "Static source independent formula, not hardware"
+    },
+    {
+      "id": "calendar-7-2024-01-01T00:01:02Z",
+      "protocol": "P2",
+      "action": "Dynamic calendar date boundary",
+      "inputs": {
+        "version": 7,
+        "clock": "2024-01-01T00:01:02Z"
+      },
+      "expected_bytes": "e780017c000100010217",
+      "evidence": [
+        "E05",
+        "E10"
+      ],
+      "fixture_kind": "Static source independent formula, not hardware"
+    },
+    {
+      "id": "calendar-7-2025-12-31T23:59:58Z",
+      "protocol": "P2",
+      "action": "Dynamic calendar date boundary",
+      "inputs": {
+        "version": 7,
+        "clock": "2025-12-31T23:59:58Z"
+      },
+      "expected_bytes": "e780017d0b1f173b3a64",
+      "evidence": [
+        "E05",
+        "E10"
+      ],
+      "fixture_kind": "Static source independent formula, not hardware"
+    },
+    {
+      "id": "calendar-8-2024-01-01T00:01:02Z",
+      "protocol": "P3",
+      "action": "Dynamic calendar date boundary",
+      "inputs": {
+        "version": 8,
+        "clock": "2024-01-01T00:01:02Z"
+      },
+      "expected_bytes": "070418010101000102",
+      "evidence": [
+        "E05",
+        "E10"
+      ],
+      "fixture_kind": "Static source independent formula, not hardware"
+    },
+    {
+      "id": "calendar-8-2025-12-31T23:59:58Z",
+      "protocol": "P3",
+      "action": "Dynamic calendar date boundary",
+      "inputs": {
+        "version": 8,
+        "clock": "2025-12-31T23:59:58Z"
+      },
+      "expected_bytes": "0704190c1f03173b3a",
+      "evidence": [
+        "E05",
+        "E10"
+      ],
+      "fixture_kind": "Static source independent formula, not hardware"
+    },
+    {
+      "id": "calendar-9-2024-01-01T00:01:02Z",
+      "protocol": "P3",
+      "action": "Dynamic calendar date boundary",
+      "inputs": {
+        "version": 9,
+        "clock": "2024-01-01T00:01:02Z"
+      },
+      "expected_bytes": "070418010101000102",
+      "evidence": [
+        "E05",
+        "E10"
+      ],
+      "fixture_kind": "Static source independent formula, not hardware"
+    },
+    {
+      "id": "calendar-9-2025-12-31T23:59:58Z",
+      "protocol": "P3",
+      "action": "Dynamic calendar date boundary",
+      "inputs": {
+        "version": 9,
+        "clock": "2025-12-31T23:59:58Z"
+      },
+      "expected_bytes": "0704190c1f03173b3a",
+      "evidence": [
+        "E05",
+        "E10"
+      ],
+      "fixture_kind": "Static source independent formula, not hardware"
+    }
+  ],
+  "broken": [
+    {
+      "version": 7,
+      "action": "MassageTime",
+      "source_helper": "sendCmdMassageTime",
+      "ui_reachable": true,
+      "hex": null,
+      "error": "RangeError",
+      "write_count": 0,
+      "id": "H052",
+      "evidence": [
+        "E05",
+        "E10",
+        "E07"
+      ]
+    },
+    {
+      "version": 8,
+      "action": "Light",
+      "source_helper": "sendCmdLight",
+      "ui_reachable": true,
+      "hex": null,
+      "error": "RangeError",
+      "write_count": 0,
+      "id": "H082",
+      "evidence": [
+        "E05",
+        "E10",
+        "E07"
+      ]
+    }
+  ]
+}

@@ -111,6 +111,7 @@ bed has been tested on real hardware.
 | [Dorsal / Roomi](docs/beds/richmat.md#dorsal--roomi) | Dorsal app (CPRN, CORN, saved projects and Roomi controls), [ROOMI bed (S655 Plus)](docs/beds/richmat.md#roomi-bed-s655-plus) | Dorsal, Roomi |
 | [Likimio](docs/beds/richmat.md#likimio) | Likimio app, ABM10 | Likimio |
 | [Dream Sense Bed](docs/beds/richmat.md#dream-sense-bed) | Dream Sense Bed app, four colors and saved products | Dream Sense |
+| [Alya Smart Furnishing](docs/beds/alya.md) | BLUETOOTH / CB / CB1221 / CB24 / DACHENG app layouts | Alya |
 | [eShine E2000 to E5000](docs/beds/okin-nframe.md#eshine) | [eShine app, E2000, E3000 / E3100 and E5000](docs/beds/okin-nframe.md#eshine) | eShine |
 | [ENSO Sleep Control](docs/beds/richmat.md#enso-sleep-control) | Enso 2 app, including framed and raw-key receivers | ENSO Sleep |
 | [ErgoBed Control](docs/beds/motomotion.md#ergobed-control) | [ErgoBed Control app](docs/beds/motomotion.md#ergobed-control) | HHC receivers supported by ErgoBed Control |
@@ -140,6 +141,7 @@ bed has been tested on real hardware.
 | [Majestic Home](docs/beds/richmat.md#majestic-home) | Majestic Home | Majestic Home |
 | [Malouf / Lucid](docs/beds/malouf.md) | [Malouf Base](docs/beds/malouf.md#malouf-base), [Lucid Base](docs/beds/malouf.md#lucid-base), [Nordic UART receiver](docs/beds/malouf.md#new_okin), [FFE5 receiver](docs/beds/malouf.md#legacy-ffe5-route) | Malouf, Lucid, Structures |
 | [MLILY Control](docs/beds/richmat.md#mlily-control) | MLILY Control, MLILY Control sleep sensors (RM- or HJ-) | MLILY |
+| [MLILY 3.1.1](docs/beds/richmat.md#mlily-311) | 27 explicit bed products, C, HP, M-series, NL400, P, PowerCool, S, SA, SE, SL, Smart, ThreePro, X3 and Zero | MLILY |
 | [MLILY Remote](docs/beds/richmat.md#mlily-remote) | MS200, MS300, MS600, PowerCool and MS300-SH | MLILY |
 | [MLILY Supreme](docs/beds/richmat.md#mlily-supreme) | MLILY Supreme app and its separate HJ_Bed sleep receiver | MLILY |
 | [Sinca Comfort Bed](docs/beds/mline.md#sinca-comfort-bed) | The Comfort Bed App (Sinca) | OKIN |
@@ -147,6 +149,7 @@ bed has been tested on real hardware.
 | [MotoMotion](docs/beds/motomotion.md) | [MotoMotion](docs/beds/motomotion.md) | MotoMotion |
 | [MoodBase](docs/beds/motomotion.md#moodbase) | [MoodBase](docs/beds/motomotion.md#moodbase) | Bob Mills Furniture (HHC receivers) |
 | [MotoSleep / Power Bob](docs/beds/motomotion.md#motosleep-and-power-bob-family) | [MotoSleep / Power Bob app, HHC models](docs/beds/motomotion.md#hhc-profiles-names-longer-than-14-characters), [Power Bob and binary MOTO models](docs/beds/motomotion.md#power-bob-profiles-14-character-names) | HHC, Power Bob |
+| [BERUN](docs/beds/berun.md) | BERUN (versions 6–9) | OKIN / Smartbed |
 | [Nerum](docs/beds/nerum.md) | Nerum | Nerum |
 | [Nisco](docs/beds/richmat.md#nisco) | Nisco app and its separate HJ_Bed sleep receiver | Nisco |
 | [OCTO Smart Control](docs/beds/octo.md) | [OCTO Smart Control receivers](docs/beds/octo.md#standard-variant-most-common), [RTV TV lift](docs/beds/octo.md#one-motor-tv-lift), [Octo Remote Star2](docs/beds/octo.md#star2-variant-octo-remote-star2) | OCTO |

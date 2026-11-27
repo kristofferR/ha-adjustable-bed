@@ -228,6 +228,7 @@ def test_detection_imports_nothing_on_event_loop():
         "test_new_install_setup_of_every_listed_bed",
         "test_new_install_setup_of_discovered_beds",
         "test_entry_setup_and_configure_of_every_listed_bed",
+        "test_alya_side_pairing_first_use_imports_nothing_on_loop",
     ],
 )
 def test_config_flows_import_nothing_on_event_loop(flows: str):

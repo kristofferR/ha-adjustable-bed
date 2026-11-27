@@ -13,6 +13,7 @@ if TYPE_CHECKING:
     from .adjustable_lumbar import AdjustableBedAppController as AdjustableBedAppController
     from .adjustable_lumbar import AdjustableLumbarController as AdjustableLumbarController
     from .adjustamattress.controller import AdjustaMattressController as AdjustaMattressController
+    from .alya.controller import AlyaController as AlyaController
     from .ambient.controller import AmbientController as AmbientController
     from .baseremote.controller import BaseRemoteController as BaseRemoteController
     from .bedgear.controller import BedgearController as BedgearController
@@ -94,6 +95,7 @@ if TYPE_CHECKING:
     from .luniosmart.controller import LunioSmartController as LunioSmartController
     from .majestichome.controller import MajesticHomeController as MajesticHomeController
     from .malouf.app import MaloufAppController as MaloufAppController
+    from .mlily0.controller import MlilyController as MlilyController
     from .mlily_remote.controller import MlilyRemoteController as MlilyRemoteController
     from .motion_bed.controller import MotionBedController as MotionBedController
     from .motomotion.controller import MotoMotionController as MotoMotionController
@@ -194,6 +196,7 @@ _EXPORT_MODULES = {
     "LunioSmartController": "luniosmart.controller",
     "SaatvaController": "saatva",
     "SonicSleepController": "sonicsleep.controller",
+    "MlilyController": "mlily0.controller",
     "MlilyRemoteController": "mlily_remote.controller",
     "ResidentController": "resident.controller",
     "NerumController": "nerum.controller",
@@ -236,6 +239,7 @@ _EXPORT_MODULES = {
     "CasperSleepController": "casper_sleep.controller",
     "ComfortEnhancementsController": "comfort_enhancements.controller",
     "EshineController": "eshine.controller",
+    "AlyaController": "alya.controller",
     "EshineOkinController": "eshine_okin.controller",
     "JalonController": "keeson.jalon",
     "KingKoilController": ("keeson.kingkoil", "KingKoilController"),

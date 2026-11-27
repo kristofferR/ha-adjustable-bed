@@ -919,6 +919,7 @@
       "sleeptime_gatt": "The Bluetooth device lacks the write and status channels Sleeptime needs. Check the device and selected app.",
       "truemotion_gatt": "The receiver does not expose the trueMotion write and notification channels.",
       "truemotion_pair": "Choose a trueMotion receiver that supports split control as the left side.",
+      "alya_layout_invalid": "The selected Alya layout is missing its required Bluetooth write/notify roles. Choose the layout shown in your app.",
       "ergobq_identity": "Select an ErgoBQ BED product, a valid six-byte serial (or blank), and a channel stamp of at most 510 UTF-8 bytes."
     }
   },
@@ -4157,6 +4158,18 @@
       "ambient_refresh": {
         "name": "Refresh bed state"
       },
+      "alya_action": {
+        "name": "{action}"
+      },
+      "alya_release": {
+        "name": "Release"
+      },
+      "alya_light_action": {
+        "name": "{action}"
+      },
+      "alya_massage_action": {
+        "name": "{action}"
+      },
       "ergobq_motor_1_up": {
         "name": "Head up"
       },
@@ -4731,6 +4744,21 @@
       }
     },
     "sensor": {
+      "berun_head_massage": {
+        "name": "Head massage level"
+      },
+      "berun_foot_massage": {
+        "name": "Foot massage level"
+      },
+      "berun_massage_timer_index": {
+        "name": "Massage timer index"
+      },
+      "berun_massage_mode": {
+        "name": "Massage mode"
+      },
+      "berun_alarm": {
+        "name": "Alarm"
+      },
       "ronco_motion_alarm": {
         "name": "Last alarm result",
         "state": {
@@ -6371,6 +6399,12 @@
       }
     },
     "binary_sensor": {
+      "berun_massage_on": {
+        "name": "Massage"
+      },
+      "berun_alarm_on": {
+        "name": "Alarm enabled"
+      },
       "customatic_demo_mode": {
         "name": "Reported demo mode"
       },
@@ -12309,6 +12343,12 @@
     "alarm_once_or_daily": {
       "message": "The mattress alarm runs once or every day. Select no days or all seven."
     },
+    "mlily0_alarm_repeat": {
+      "message": "Select no days for a one-time alarm or all seven days for a daily alarm."
+    },
+    "mlily0_native_actions": {
+      "message": "Use Set alarm to change the alarm or Set bed clock to set the time."
+    },
     "linak_alarm_once_or_daily": {
       "message": "Select no days for a one-time alarm or all seven days for a daily alarm."
     },
@@ -13050,6 +13090,9 @@
     "ambient_heat_unconfirmed": {
       "message": "The bed did not confirm all six requested heat levels."
     },
+    "alya_control_invalid": {
+      "message": "Alya control unavailable: {reason}"
+    },
     "dynasty_request": {
       "message": "Choose an available Dynasty control and valid settings. Query settings to enable optional features."
     },
@@ -13773,6 +13816,7 @@
         "sta2": "STA Homecare app",
         "zerogravity": "Zero Gravity app",
         "mlily_remote": "MLILY Remote app",
+        "mlily0": "MLILY 3.1.1 app",
         "sleep_evolution": "SleepEvolution app",
         "wsilver_legacy": "W.Silver Products app (older version)",
         "nisco": "Nisco app",
