@@ -394,7 +394,9 @@
           "sleep_assist_pro_controls": "Controls shown in Sleep Assist Pro",
           "sleep_assistant_presets": "Presets",
           "sleep_assistant_controls": "Additional controls",
-          "sleep_assistant_lighting": "Lighting model"
+          "sleep_assistant_lighting": "Lighting model",
+          "ergobq_serial": "ErgoBQ six-byte serial (hex, optional)",
+          "ergobq_stamp": "ErgoBQ channel stamp (leave blank if unused)"
         },
         "data_description": {
           "jiecang_app_layout": "The layout set in the app.",
@@ -453,7 +455,9 @@
           "sleep_assist_pro_controls": "Select the controls the app shows for this bed.",
           "sleep_assistant_presets": "Select the presets shown for this bed, in their displayed order.",
           "sleep_assistant_controls": "Select only the controls shown for this bed.",
-          "sleep_assistant_lighting": "Choose the lighting model selected in Sleep Assist."
+          "sleep_assistant_lighting": "Choose the lighting model selected in Sleep Assist.",
+          "ergobq_serial": "The first six bytes of manufacturer 0xFFFF data. Byte 4 selects the four-motor layout; blank uses the app’s two-motor default.",
+          "ergobq_stamp": "An existing channel authentication input. This integration does not retrieve account credentials."
         },
         "sections": {
           "advanced": {
@@ -914,7 +918,8 @@
       "truemotion_name": "Enter the complete Bluetooth name, starting with SUTA-.",
       "sleeptime_gatt": "The Bluetooth device lacks the write and status channels Sleeptime needs. Check the device and selected app.",
       "truemotion_gatt": "The receiver does not expose the trueMotion write and notification channels.",
-      "truemotion_pair": "Choose a trueMotion receiver that supports split control as the left side."
+      "truemotion_pair": "Choose a trueMotion receiver that supports split control as the left side.",
+      "ergobq_identity": "Select an ErgoBQ BED product, a valid six-byte serial (or blank), and a channel stamp of at most 510 UTF-8 bytes."
     }
   },
   "options": {
@@ -939,6 +944,8 @@
         "title": "Adjustable Bed Options",
         "description": "Adjust the settings for your adjustable bed. To change the bed type or app, open **Reconfigure** from this entry's three-dot menu.",
         "data": {
+          "ergobq_serial": "ErgoBQ six-byte serial (hex, optional)",
+          "ergobq_stamp": "ErgoBQ channel stamp (leave blank if unused)",
           "motor_count": "Number of motors",
           "malouf_layout": "Malouf/Lucid motor layout",
           "malouf_memory_slots": "Malouf/Lucid memory positions",
@@ -1189,6 +1196,8 @@
         "title": "Left side settings",
         "description": "Change connection, movement and app settings for **{name}**. Only this side changes.",
         "data": {
+          "ergobq_serial": "ErgoBQ six-byte serial (hex, optional)",
+          "ergobq_stamp": "ErgoBQ channel stamp (leave blank if unused)",
           "preferred_adapter": "Bluetooth adapter",
           "motor_pulse_count": "Movement per tap",
           "idle_disconnect_seconds": "Seconds to stay connected",
@@ -1374,6 +1383,8 @@
         "title": "Right side settings",
         "description": "Change connection, movement and app settings for **{name}**. Only this side changes.",
         "data": {
+          "ergobq_serial": "ErgoBQ six-byte serial (hex, optional)",
+          "ergobq_stamp": "ErgoBQ channel stamp (leave blank if unused)",
           "preferred_adapter": "Bluetooth adapter",
           "motor_pulse_count": "Movement per tap",
           "idle_disconnect_seconds": "Seconds to stay connected",
@@ -4146,6 +4157,30 @@
       "ambient_refresh": {
         "name": "Refresh bed state"
       },
+      "ergobq_motor_1_up": {
+        "name": "Head up"
+      },
+      "ergobq_motor_1_down": {
+        "name": "Head down"
+      },
+      "ergobq_motor_2_up": {
+        "name": "Legs up"
+      },
+      "ergobq_motor_2_down": {
+        "name": "Legs down"
+      },
+      "ergobq_motor_3_up": {
+        "name": "Motor 3 up"
+      },
+      "ergobq_motor_3_down": {
+        "name": "Motor 3 down"
+      },
+      "ergobq_motor_4_up": {
+        "name": "Waist up"
+      },
+      "ergobq_motor_4_down": {
+        "name": "Waist down"
+      },
       "dynasty_query": {
         "name": "Query settings"
       },
@@ -4666,6 +4701,18 @@
       },
       "truemotion_tl": {
         "name": "T/L movement"
+      },
+      "ergobq_motor_1": {
+        "name": "Head"
+      },
+      "ergobq_motor_2": {
+        "name": "Legs"
+      },
+      "ergobq_motor_3": {
+        "name": "Motor 3"
+      },
+      "ergobq_motor_4": {
+        "name": "Waist"
       },
       "flexispot_left_back": {
         "name": "Left back"
@@ -6009,6 +6056,26 @@
       "ambient_firmware": {
         "name": "Control box firmware"
       },
+      "ergobq_identity": {
+        "name": "Bed identity",
+        "state": {
+          "unset": "Unset",
+          "a": "A",
+          "b": "B"
+        }
+      },
+      "ergobq_light_remaining": {
+        "name": "Light remaining"
+      },
+      "ergobq_diy_remaining": {
+        "name": "DIY program remaining"
+      },
+      "ergobq_head_remaining": {
+        "name": "Head massage remaining"
+      },
+      "ergobq_legs_remaining": {
+        "name": "Legs massage remaining"
+      },
       "jobs_status": {
         "name": "Jobs status code"
       },
@@ -6277,6 +6344,18 @@
       },
       "truemotion_lock": {
         "name": "Child lock"
+      },
+      "ergobq_child_lock": {
+        "name": "Child lock"
+      },
+      "ergobq_massage_sync": {
+        "name": "Synchronize massage"
+      },
+      "ergobq_head_on": {
+        "name": "Head massage"
+      },
+      "ergobq_legs_on": {
+        "name": "Legs massage"
       },
       "flexispot_left_snore": {
         "name": "Left snore intervention"
@@ -6555,6 +6634,36 @@
       },
       "sinca_anti_snore": {
         "name": "Automatic anti-snore"
+      },
+      "ergobq_fault_head_motor": {
+        "name": "Head motor fault"
+      },
+      "ergobq_fault_foot_motor": {
+        "name": "Foot motor fault"
+      },
+      "ergobq_fault_headrest_motor": {
+        "name": "Headrest motor fault"
+      },
+      "ergobq_fault_waist_motor": {
+        "name": "Waist motor fault"
+      },
+      "ergobq_fault_control_box_overheat": {
+        "name": "Control box overheat fault"
+      },
+      "ergobq_fault_massage": {
+        "name": "Massage fault"
+      },
+      "ergobq_fault_anti_pinch": {
+        "name": "Anti pinch fault"
+      },
+      "ergobq_fault_light": {
+        "name": "Light fault"
+      },
+      "ergobq_partner_connected": {
+        "name": "Sync partner configured"
+      },
+      "ergobq_partner_broadcast": {
+        "name": "Sync partner broadcast"
       },
       "jobs_sleep_enabled": {
         "name": "Sleep alarm enabled"
@@ -7052,6 +7161,33 @@
       },
       "ambient_right_legs_heat": {
         "name": "Right legs heat level"
+      },
+      "ergobq_target_1": {
+        "name": "Head target"
+      },
+      "ergobq_target_2": {
+        "name": "Legs target"
+      },
+      "ergobq_target_3": {
+        "name": "Motor 3 target"
+      },
+      "ergobq_target_4": {
+        "name": "Waist target"
+      },
+      "ergobq_light_minutes": {
+        "name": "Light auto-off minutes"
+      },
+      "ergobq_head_intensity": {
+        "name": "Head massage intensity"
+      },
+      "ergobq_head_minutes": {
+        "name": "Head massage minutes"
+      },
+      "ergobq_legs_intensity": {
+        "name": "Legs massage intensity"
+      },
+      "ergobq_legs_minutes": {
+        "name": "Legs massage minutes"
       },
       "dynasty_lamp_seconds": {
         "name": "Light requested timeout"
@@ -7925,6 +8061,38 @@
           "30": "30 minutes"
         }
       },
+      "ergobq_side": {
+        "name": "Bed control route",
+        "state": {
+          "a": "A",
+          "b": "B",
+          "ab": "A + B"
+        }
+      },
+      "ergobq_head_timer": {
+        "name": "Head massage timer"
+      },
+      "ergobq_head_mode": {
+        "name": "Head massage mode",
+        "state": {
+          "wave": "Wave",
+          "pulse": "Pulse",
+          "continuous": "Continuous",
+          "intermittent": "Intermittent"
+        }
+      },
+      "ergobq_legs_timer": {
+        "name": "Legs massage timer"
+      },
+      "ergobq_legs_mode": {
+        "name": "Legs massage mode",
+        "state": {
+          "wave": "Wave",
+          "pulse": "Pulse",
+          "continuous": "Continuous",
+          "intermittent": "Intermittent"
+        }
+      },
       "flexispot_left_sensitivity": {
         "name": "Left snore sensitivity",
         "state": {
@@ -7993,6 +8161,143 @@
     }
   },
   "services": {
+    "ergobq_scene": {
+      "name": "Scene (ErgoBQ BED)",
+      "description": "Recall, save or restore a named bed scene.",
+      "fields": {
+        "device_id": {
+          "name": "Device id"
+        },
+        "side": {
+          "name": "Side"
+        },
+        "operation": {
+          "name": "Operation"
+        },
+        "scene": {
+          "name": "Scene"
+        }
+      }
+    },
+    "ergobq_massage": {
+      "name": "Massage (ErgoBQ BED)",
+      "description": "Send complete massage parameters for one zone.",
+      "fields": {
+        "device_id": {
+          "name": "Device id"
+        },
+        "side": {
+          "name": "Side"
+        },
+        "zone": {
+          "name": "Zone"
+        },
+        "on": {
+          "name": "On"
+        },
+        "intensity": {
+          "name": "Intensity"
+        },
+        "mode": {
+          "name": "Mode"
+        },
+        "minutes": {
+          "name": "Minutes"
+        }
+      }
+    },
+    "ergobq_schedule": {
+      "name": "Schedule (ErgoBQ BED)",
+      "description": "Write a complete local schedule. Status: 0 delete, 1 disabled, 2 enabled.",
+      "fields": {
+        "device_id": {
+          "name": "Device id"
+        },
+        "side": {
+          "name": "Side"
+        },
+        "task": {
+          "name": "Task"
+        },
+        "status": {
+          "name": "Status"
+        },
+        "hour": {
+          "name": "Hour"
+        },
+        "minute": {
+          "name": "Minute"
+        },
+        "weekdays": {
+          "name": "Weekdays"
+        },
+        "kind": {
+          "name": "Kind"
+        },
+        "position": {
+          "name": "Position"
+        },
+        "scene": {
+          "name": "Scene"
+        },
+        "massage": {
+          "name": "Massage"
+        },
+        "sync_massage": {
+          "name": "Sync massage"
+        },
+        "head": {
+          "name": "Head"
+        },
+        "legs": {
+          "name": "Legs"
+        },
+        "light": {
+          "name": "Light"
+        },
+        "mode": {
+          "name": "Mode"
+        },
+        "program_hex": {
+          "name": "Program hex",
+          "description": "Existing app DIY program hex; do not invent a hardware program."
+        }
+      }
+    },
+    "ergobq_diy": {
+      "name": "Diy (ErgoBQ BED)",
+      "description": "Run a saved mode, optionally using an existing app program.",
+      "fields": {
+        "device_id": {
+          "name": "Device id"
+        },
+        "side": {
+          "name": "Side"
+        },
+        "mode": {
+          "name": "Mode"
+        },
+        "program_hex": {
+          "name": "Program hex",
+          "description": "Existing app DIY program hex; do not invent a hardware program."
+        }
+      }
+    },
+    "ergobq_unlink": {
+      "name": "Unlink (ErgoBQ BED)",
+      "description": "Send an explicit BLE association release and disconnect. Account data is unchanged.",
+      "fields": {
+        "device_id": {
+          "name": "Device id"
+        },
+        "side": {
+          "name": "Side"
+        },
+        "phase": {
+          "name": "Phase"
+        }
+      }
+    },
     "customatic_demo_run": {
       "name": "Run Independence demo",
       "description": "Run one sitting-up and flat demonstration on a single Independence bed, with two minutes between phases. Stay with the bed and use Stop to end the demo.",
@@ -11680,6 +11985,12 @@
     }
   },
   "exceptions": {
+    "ergobq_request_invalid": {
+      "message": "Check the bed schedule or DIY program. Without program data, choose a saved mode from 11 to 30. Synchronized massage needs matching head and leg settings."
+    },
+    "ergobq_massage_state_required": {
+      "message": "Wait for the bed to report its current massage settings before changing one setting."
+    },
     "ronco_motion_request": {
       "message": "This action is unavailable for the selected Ronco Motion layout."
     },

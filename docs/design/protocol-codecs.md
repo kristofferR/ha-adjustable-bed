@@ -488,3 +488,14 @@ Keeson E6, Okin ORE and Keeson P2-side. Its profile keeps the three BLE branches
 independent from the three UI layouts. The shared Keeson controller extension
 owns captured-session refresh/release and raw offset diagnostics without adding
 a wire codec or changing existing routes. See [Restonic](../beds/restonic.md).
+
+## ErgoBQ BED
+
+ErgoBQ 1.8.1 adds `codec/ergobq.py` for the versioned `55 AA` command,
+big-endian payload length, DP TLVs and big-endian reflected CRC16 envelope.
+The existing FF-frame, Richmat and Keeson carriers do not reproduce this
+format's complete literal set. The typed `profiles/ergobq.py` selects the two
+byte-identical BED products and serial-dependent axes. It has no mattress
+profile. `beds/ergobq/` uses the shared settled GATT writer with an expected
+client, while owning its authentication, notification stream and release.
+See [ErgoBQ BED](../beds/ergobq.md) and `tests/test_ergobq_vectors.py`.

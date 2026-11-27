@@ -980,6 +980,14 @@ from the shared Bluetooth service. See the [Home Zone guide](beds/richmat.md#hom
 JobsAI智能助眠床 / Jobs AI uses an explicit app choice and mode 1 or mode 2.
 See the [JobsAI guide](beds/okin-nframe.md#jobsai).
 
+### ErgoBQ BED
+
+Select the BED product ID explicitly. Optionally enter its six-byte serial
+as hex; serial byte 4 selects the four-motor layout only when it equals 4.
+Blank uses the app's two-motor default. Enter an existing channel stamp if
+required; no account lookup is performed. The shared Nordic UART service alone
+does not choose an ErgoBQ product. See [ErgoBQ BED](beds/ergobq.md).
+
 ### Restonic app
 
 Choose the Prime, Lombar or Infinity layout and its BLE branch independently.
