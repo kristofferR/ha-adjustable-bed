@@ -2762,3 +2762,11 @@ unverified. Use `set_alarm` for adding, enabling or disabling an alarm, and
 
 Set the bed clock and wait for a clock reply before confirming existing alarms.
 The action sends each selected weekday, then queries the receiver's alarm list.
+
+### PowersBedding
+
+The standard movement, memory programming, `sync_clock` and `set_alarm` actions
+apply. Alarms support weekdays, the next occurrence, memory A/B or massage.
+Only the P1 route accepts massage alongside a memory wake action. Use the
+shared massage timer select on P1; P2/P3 expose timer-cycle buttons.
+[Protocol and controls](beds/keeson.md#powersbedding).

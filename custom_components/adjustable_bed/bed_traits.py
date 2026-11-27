@@ -276,6 +276,7 @@ _BED_TRAITS: Final[dict[str, BedTraits]] = {
     BED_TYPE_SHUDA: replace(_NO_ANGLES, owns_device_info_reads=True, connection_timeout=5),
     BED_TYPE_RESIDENT: replace(_NO_ANGLES_SCOPED, owns_device_info_reads=True),
     "sleeptime": replace(_NO_ANGLES_SCOPED, owns_device_info_reads=True, connection_timeout=5),
+    "powersbedding": replace(_NO_ANGLES_SCOPED, owns_device_info_reads=True),
     "hestia_motion": replace(_NO_ANGLES_SCOPED, owns_device_info_reads=True),
     "ultramatic_smart_bed": replace(_NO_ANGLES_SCOPED, owns_device_info_reads=True, connection_timeout=5),
     BED_TYPE_ADJUSTAMATTRESS: _NO_ANGLES,
@@ -623,7 +624,7 @@ MASSAGE_SETTING_UNUSED_BED_TYPES: Final = frozenset(
      "dreamsense", "smart_comfort_synergy", "solace", "saatva", "sonicsleep", "star_elevate", "starcode_abm5_4",
      "starcode_m1x12", "starcode_m5x5", "svane", "symphony", "symphony_sleep",
      "tempur_au", "tempur_curve", "timotion_ahf", "tranquil", "vmatbasic",
-     "wsilver_products", "yamada", "ormatek",
+     "wsilver_products", "yamada", "ormatek", "powersbedding",
     }
 )
 

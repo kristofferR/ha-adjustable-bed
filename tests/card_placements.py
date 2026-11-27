@@ -280,6 +280,11 @@ def runtime_variants(controllers: Iterable[BedController]) -> Iterator[BedContro
 
     dorsal_catalog_covered = False
     for controller in controllers:
+        if type(controller).__name__ == "PowersBeddingController":
+            from custom_components.adjustable_bed.profiles.powersbedding import PROFILES
+            for profile in PROFILES.values():
+                yield variant(controller, profile=profile)
+
         yield controller
         if isinstance(controller, ErgoBQController):
             yield variant(controller, axes=(1, 2, 3, 4))

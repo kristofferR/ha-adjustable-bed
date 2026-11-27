@@ -1781,6 +1781,17 @@
   },
   "entity": {
     "button": {
+      "powersbedding_save_zero_g": {"name": "Save zero gravity"},
+      "powersbedding_start": {"name": "Start massage"},
+      "powersbedding_stop": {"name": "Stop massage"},
+      "powersbedding_toggle": {"name": "Toggle massage"},
+      "powersbedding_head_up": {"name": "Increase head massage"},
+      "powersbedding_head_down": {"name": "Decrease head massage"},
+      "powersbedding_foot_up": {"name": "Increase foot massage"},
+      "powersbedding_foot_down": {"name": "Decrease foot massage"},
+      "powersbedding_wave": {"name": "Next massage wave"},
+      "powersbedding_timer": {"name": "Next massage timer"},
+      "powersbedding_query_alarm": {"name": "Refresh bed alarm"},
       "hestia_cancel_preset": {
         "name": "Cancel preset"
       },
@@ -4754,6 +4765,11 @@
       }
     },
     "sensor": {
+      "powersbedding_head_report": {"name": "Head massage level"},
+      "powersbedding_foot_report": {"name": "Foot massage level"},
+      "powersbedding_wave_report": {"name": "Massage wave"},
+      "powersbedding_timer": {"name": "Massage timer indicator"},
+      "powersbedding_alarm": {"name": "Bed alarm"},
       "silksnow": {"name": "Model"},
       "berun_head_massage": {
         "name": "Head massage level"
@@ -6422,6 +6438,7 @@
       }
     },
     "binary_sensor": {
+      "powersbedding_alarm_enabled": {"name": "Bed alarm enabled"},
       "berun_massage_on": {
         "name": "Massage"
       },
@@ -12157,6 +12174,9 @@
     }
   },
   "exceptions": {
+    "powersbedding_name": {"message": "Choose the PowersBedding receiver whose Bluetooth name starts with okin or smartbed."},
+    "powersbedding_control": {"message": "Choose a control and value supported by this PowersBedding receiver."},
+    "powersbedding_alarm": {"message": "Choose a valid PowersBedding alarm time, weekday selection and wake action."},
     "suta_king_koil_calibrate": {
       "message": "Set the bed clock, then wait for its clock reply before adding or refreshing alarms."
     },
