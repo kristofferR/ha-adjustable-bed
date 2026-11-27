@@ -16,7 +16,7 @@ from ...controller_state import StateKey
 from ...errors import BedNotConnectedError, failed, invalid
 from ...profiles import smart_base as p
 from ...state_keys import UNDER_BED_LIGHTS_ON, UNDER_BED_LIGHTS_RGB
-from ..base import BedController, require_controller
+from ..base import LIGHT_REPORT_WAIT_SECONDS, BedController, require_controller
 from ..cancellation import cancellable
 from ..entity_specs import ControllerButtonSpec, ControllerNumberSpec, MotorControlSpec
 from .atlas_lift import AtlasLiftController, _Link
@@ -40,6 +40,7 @@ class SmartBaseController(AtlasLiftController):
         self._is_current: Callable[[], bool] = lambda: False
         self._flags: set[str] = set()
         self._seconds: int | None = None
+        self._led_revision = 0
 
     @property
     def persisted_app_state_key(self) -> str:
@@ -110,6 +111,7 @@ class SmartBaseController(AtlasLiftController):
             if flag := p.FLAGS.get(value):
                 self._flags.add(flag)
                 if flag.startswith("led_"):
+                    self._led_revision += 1
                     self.forward_controller_state_updates(
                         UNDER_BED_LIGHTS_ON(flag == "led_on"), LAMP_SECONDS(self._seconds)
                     )
@@ -229,6 +231,7 @@ class SmartBaseController(AtlasLiftController):
                 "Refresh bed settings",
                 lambda c: require_controller(c, SmartBaseController)._query(),
                 translation_key="smart_base_query",
+                diagnostic=True,
             ),
         ]
         if "alarm" in self._flags:
@@ -294,6 +297,47 @@ class SmartBaseController(AtlasLiftController):
     @property
     def supports_light_state_feedback(self) -> bool:
         return self.supports_light_color_control
+
+    @property
+    def supports_explicit_light_on_control(self) -> bool:
+        return self.supports_light_color_control
+
+    async def lights_on(self) -> None:
+        await self._power(True)
+
+    async def lights_off(self) -> None:
+        await self._power(False)
+
+    async def _power(self, on: bool) -> None:
+        link = self._current_link()
+        if not self.supports_light_state_feedback:
+            raise NotImplementedError("Light control not supported on this bed")
+        state = self._coordinator.controller_state
+        cancel = self._coordinator.cancel_command
+        if state.get(UNDER_BED_LIGHTS_ON) is None:
+            await self.async_refresh_diagnostics()
+            deadline = asyncio.get_running_loop().time() + LIGHT_REPORT_WAIT_SECONDS
+            while state.get(UNDER_BED_LIGHTS_ON) is None:
+                self._current_link(link)
+                if asyncio.get_running_loop().time() >= deadline:
+                    raise invalid("light_state_unknown")
+                await cancellable(asyncio.sleep(0.05), cancel)
+        self._current_link(link)
+        if state.get(UNDER_BED_LIGHTS_ON) is on:
+            return
+        revision = self._led_revision
+        with self.sent_state(
+            UNDER_BED_LIGHTS_ON(on),
+            is_current=lambda: (
+                self._link is link
+                and self._is_current()
+                and self.client is link.client
+                and link.client.is_connected
+                and self._notifying
+                and self._led_revision == revision
+            ),
+        ):
+            await self.lights_toggle()
 
     @property
     def supports_light_color_control(self) -> bool:

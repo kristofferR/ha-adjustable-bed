@@ -364,6 +364,7 @@ from .profiles.saatva import SCAN_UUIDS as SAATVA_SCAN_UUIDS
 from .profiles.sealy import matches_name as sealy_name
 from .profiles.simmons_blue import NAME_PREFIX as SIMMONS_BLUE_PREFIX
 from .profiles.sinca_comfort import scan_name as sinca_scan_name
+from .profiles.smart_base import NAME as SMART_BASE_NAME
 from .profiles.smart_sleep import advertisement as smart_sleep_advertisement
 from .profiles.sophie import accepts_name as accepts_sophie_name
 from .profiles.vmatbasic import manufacturer_payload_matches
@@ -1973,7 +1974,11 @@ def _detect_with_first_pass(
         elif result.bed_type != "bobpowerbase":
             result.ambiguous_types = list(dict.fromkeys([*(result.ambiguous_types or ()), "bobpowerbase"]))
     local_name = advertised_local_name(service_info)
-    if local_name == "200IV2" and not any(signal.startswith("excluded:") for signal in result.signals):
+    if (
+        first.name(BED_TYPE_SMART_BASE)
+        and local_name == SMART_BASE_NAME
+        and not any(signal.startswith("excluded:") for signal in result.signals)
+    ):
         # A shared name offers the explicit app choice; it does not identify a side.
         if result.bed_type is None:
             result.bed_type, result.confidence = BED_TYPE_SMART_BASE, 0.3

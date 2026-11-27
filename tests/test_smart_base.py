@@ -19,11 +19,12 @@ from custom_components.adjustable_bed.button import (
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
 from custom_components.adjustable_bed.cover import AdjustableBedCover, _build_cover_description
 from custom_components.adjustable_bed.detection import detect_bed_type_detailed
+from custom_components.adjustable_bed.errors import BedNotConnectedError
 from custom_components.adjustable_bed.light import _light_entities_for
 from custom_components.adjustable_bed.number import _number_entities_for
 from custom_components.adjustable_bed.profile_id import resolve_profile_id
 from custom_components.adjustable_bed.profiles import smart_base as p
-from custom_components.adjustable_bed.state_keys import UNDER_BED_LIGHTS_ON
+from custom_components.adjustable_bed.state_keys import UNDER_BED_LIGHTS_ON, UNDER_BED_LIGHTS_RGB
 from tests.error_helpers import raises_key
 from tests.form_helpers import finish_new_bed
 from tests.hold_lease_wire import virtual_clock
@@ -113,6 +114,61 @@ async def test_native_rgb_completion_preserves_newer_led_off_report(hass, runtim
         with virtual_clock():
             await light.async_turn_on(rgb_color=(1, 2, 3))
         assert coordinator.controller_state.get(UNDER_BED_LIGHTS_ON) is False
+        assert light.is_on is False
+    finally:
+        unregister()
+
+
+@pytest.mark.parametrize("initially_on", [False, True])
+async def test_native_light_turn_on_uses_reported_power_with_cached_rgb(hass, runtime, initially_on):
+    coordinator, client = runtime
+    controller = coordinator.controller
+    report(controller, client, "6e0e00037f" if initially_on else "6e0e00017d")
+    controller.forward_controller_state_update(UNDER_BED_LIGHTS_RGB, (1, 2, 3))
+    light = _light_entities_for(hass, coordinator)[0]
+    light.hass = hass
+    light.async_write_ha_state = MagicMock()
+    unregister = coordinator.register_controller_state_callback(light._handle_light_state)
+    client.write_gatt_char.reset_mock()
+    try:
+        with virtual_clock():
+            await light.async_turn_on()
+        expected = [] if initially_on else [bytes.fromhex("6e01003cab"), bytes.fromhex("6e01006edd")]
+        assert frames(client) == [*expected, bytes.fromhex("6e0cff017a6e0d020380")]
+        assert light.is_on is True
+        assert coordinator.controller_state.get(UNDER_BED_LIGHTS_ON) is True
+    finally:
+        unregister()
+
+
+@pytest.mark.parametrize("during", ["toggle", "release", "disconnect"])
+async def test_native_power_completion_cannot_replace_newer_report_or_session(hass, runtime, during):
+    coordinator, client = runtime
+    controller = coordinator.controller
+    report(controller, client, "6e0e00017d")
+    controller.forward_controller_state_update(UNDER_BED_LIGHTS_RGB, (1, 2, 3))
+    light = _light_entities_for(hass, coordinator)[0]
+    light.hass = hass
+    light.async_write_ha_state = MagicMock()
+    unregister = coordinator.register_controller_state_callback(light._handle_light_state)
+
+    async def write(_char, packet, **_kwargs):
+        if packet == bytes.fromhex("6e01003cab" if during == "toggle" else "6e01006edd"):
+            if during == "disconnect":
+                controller.on_disconnect()
+            else:
+                report(controller, client, "6e0e00017d")
+
+    client.write_gatt_char.side_effect = write
+    try:
+        with virtual_clock():
+            if during == "disconnect":
+                with pytest.raises(BedNotConnectedError):
+                    await light.async_turn_on()
+            else:
+                await light.async_turn_on()
+        expected = None if during == "disconnect" else False
+        assert coordinator.controller_state.get(UNDER_BED_LIGHTS_ON) is expected
         assert light.is_on is False
     finally:
         unregister()
@@ -323,6 +379,8 @@ def test_discovery_only_offers_the_exact_accepted_app_candidate():
         result = detect_bed_type_detailed(packet_info(name, name, (p.SERVICE,)))
         offered = {result.bed_type, *(result.ambiguous_types or ())}
         assert ("smart_base" in offered) == (name == "200IV2")
+    result = detect_bed_type_detailed(packet_info("200IV2", "Unrelated", (p.SERVICE,)))
+    assert "smart_base" not in {result.bed_type, *(result.ambiguous_types or ())}
 
 
 @pytest.fixture
