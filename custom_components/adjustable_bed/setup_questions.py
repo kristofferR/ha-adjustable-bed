@@ -1134,6 +1134,10 @@ def _classic_layouts(data: Mapping[str, Any]) -> Mapping[Any, str]:
 
         unavailable = EXCLUDED_LAYOUTS | NAVIGATION_LAYOUTS.keys()
         codes -= unavailable | {k for k, v in ALIASES.items() if v in unavailable}
+    if app == "homezone":
+        from .profiles.homezone import EXCLUDED_LAYOUTS as HOMEZONE_EXCLUDED_LAYOUTS
+
+        codes -= HOMEZONE_EXCLUDED_LAYOUTS
     if app == "lp2":
         codes -= {"209A05", "6HRM", "QRRM", "ZRS3"}
     if app in ("luunarise2", "powercool", "sleepfunction", "baseremote", "dynasty"):
@@ -1209,6 +1213,10 @@ def _classic_errors(data: Mapping[str, Any]) -> dict[str, str]:
         from .profiles.bedsmart import EXCLUDED_LAYOUTS, NAVIGATION_LAYOUTS
 
         excluded = excluded | EXCLUDED_LAYOUTS | NAVIGATION_LAYOUTS.keys()
+    if data.get(CONF_PROTOCOL_VARIANT) == "homezone":
+        from .profiles.homezone import EXCLUDED_LAYOUTS as HOMEZONE_EXCLUDED_LAYOUTS
+
+        excluded = excluded | HOMEZONE_EXCLUDED_LAYOUTS
     if data.get(CONF_PROTOCOL_VARIANT) == "lp2":
         excluded = excluded | {"209A05", "6HRM", "QRRM", "ZRS3"}
     if data.get(CONF_PROTOCOL_VARIANT) == "jerome2":
@@ -3253,7 +3261,7 @@ SETUP_PROFILES: Final[dict[str, SetupProfile]] = {
                 default=OPTIONAL,
                 text=True,
                 advanced=True,
-                when={"field": CONF_PROTOCOL_VARIANT, "value": "dreamlab2"},
+                when={"field": CONF_PROTOCOL_VARIANT, "operator": ConditionOperator.IN, "value": ["dreamlab2", "homezone"]},
             ),
         ),
         normalize=_classic_normalize,
