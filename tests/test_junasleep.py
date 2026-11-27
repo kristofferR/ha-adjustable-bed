@@ -135,6 +135,10 @@ async def test_native_entities_every_outgoing_vector(
     client = mock_bleak_client
     client.services = gatt()
     e = entry(hass, remote)
+    # Exercise the maintenance action after a user has enabled its diagnostic entity.
+    er.async_get(hass).async_get_or_create(
+        "button", const.DOMAIN, f"{ADDRESS}_junasleep_query", config_entry=e
+    )
     mock_async_ble_device_from_address.return_value.name = e.data[const.CONF_BLE_DEVICE_NAME]
     assert await hass.config_entries.async_setup(e.entry_id)
     await hass.async_block_till_done()
@@ -421,7 +425,7 @@ async def test_paired_hold_preflights_both_remotes_before_writing(hass, monkeypa
 
 @pytest.mark.parametrize("name", ["KSBT02C123", "prefixKSBT02C123", "base123", "BASE123"])
 def test_shared_name_discovery_offers_junasleep_without_choosing_a_remote(name):
-    from custom_components.adjustable_bed.detection import detect_bed_type_detailed
+    from custom_components.adjustable_bed.detection import detect_bed_type, detect_bed_type_detailed
 
     info = MagicMock()
     info.name = info.device.name = info.advertisement.local_name = name
@@ -430,6 +434,8 @@ def test_shared_name_discovery_offers_junasleep_without_choosing_a_remote(name):
     info.advertisement.service_uuids = []
     result = detect_bed_type_detailed(info)
     assert "junasleep" in {result.bed_type, *(result.ambiguous_types or ())}
+    if result.bed_type == "junasleep":
+        assert detect_bed_type(info) is None
 
 
 async def test_missing_notification_role_does_not_gate_control(

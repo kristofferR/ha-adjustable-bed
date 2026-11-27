@@ -241,6 +241,7 @@ class JunaSleepController(KeesonController):
                 translation_key="junasleep_query",
                 card=CARD_UTILITY,
                 scheduler_resource="*",
+                diagnostic=True,
             ),
             *tuple(
                 ControllerButtonSpec(
