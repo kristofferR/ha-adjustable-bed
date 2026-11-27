@@ -1844,20 +1844,6 @@
       "ai_bed_relax_recall": {"name": "Relax recall"},
       "ai_bed_sleep_aid_program": {"name": "Sleep Aid program"},
       "ai_bed_sleep_aid_recall": {"name": "Sleep Aid recall"},
-      "ai_bed_lamp_on": {"name": "Lamp on"},
-      "ai_bed_lamp_off": {"name": "Lamp off"},
-      "ai_bed_massage_head_on": {"name": "Massage head on"},
-      "ai_bed_massage_head_off": {"name": "Massage head off"},
-      "ai_bed_massage_foot_on": {"name": "Massage foot on"},
-      "ai_bed_massage_foot_off": {"name": "Massage foot off"},
-      "ai_bed_massage_both_on": {"name": "Massage both on"},
-      "ai_bed_massage_both_off": {"name": "Massage both off"},
-      "ai_bed_massage_mode_1": {"name": "Massage mode 1"},
-      "ai_bed_massage_mode_2": {"name": "Massage mode 2"},
-      "ai_bed_massage_mode_3": {"name": "Massage mode 3"},
-      "ai_bed_massage_timer_10": {"name": "Massage timer 10"},
-      "ai_bed_massage_timer_20": {"name": "Massage timer 20"},
-      "ai_bed_massage_timer_30": {"name": "Massage timer 30"},
       "ai_bed_status": {"name": "Status"},
       "ai_bed_capabilities": {"name": "Capabilities"},
       "ai_bed_firmware": {"name": "Firmware"},
@@ -4849,12 +4835,6 @@
         "name": "Reported massage timer"
       },
       "silksnow": {"name": "Model"},
-      "ai_bed_raw_state": {"name": "Raw bed state"},
-      "ai_bed_auth": {"name": "Local authentication result"},
-      "ai_bed_capabilities": {"name": "Device capability byte"},
-      "ai_bed_firmware": {"name": "Device firmware"},
-      "ai_bed_build_target": {"name": "Device build target"},
-      "ai_bed_clock_ack": {"name": "Last clock reply"},
       "berun_head_massage": {
         "name": "Head massage level"
       },
@@ -6240,6 +6220,9 @@
       }
     },
     "switch": {
+      "ai_bed_massage_head": {"name": "Head massage"},
+      "ai_bed_massage_foot": {"name": "Foot massage"},
+      "ai_bed_massage_both": {"name": "Head and foot massage"},
       "hestia_massage": {
         "name": "Massage"
       },
@@ -7364,6 +7347,7 @@
       }
     },
     "select": {
+      "ai_bed_massage_mode": {"name": "Massage mode", "state": {"1": "Mode 1", "2": "Mode 2", "3": "Mode 3"}},
       "comfort_bed_side": {
         "name": "Control side",
         "state": {
@@ -8376,6 +8360,7 @@
   "services": {
     "ai_bed": {
       "name": "AI Bed controls",
+      "description": "Configure the proved direct BLE primary-route controls. Use set_alarm for wake schedules.",
       "fields": {
         "device_id": {
           "name": "Bed"

@@ -34,7 +34,6 @@ async def handle_request(call: ServiceCall) -> None:
     fields["weekdays"] = tuple(fields.get("weekdays", ()))
     request = Request(**fields)
     preflighted = []
-    stamps = {}
     try:
         for parent, side in targets:
             for child in _command_targets(parent, side):
@@ -42,25 +41,12 @@ async def handle_request(call: ServiceCall) -> None:
                     await _validation_controller(parent, child, preflighted), AiBedController
                 )
                 bed.validate_request(request)
-        for index, (parent, side) in enumerate(targets):
-
-            async def prepare(controller):
-                bed = require_controller(controller, AiBedController)
-                stamps[id(bed)] = await bed.prepare_request(request)
-
-            await _execute_preflighted(
-                [(parent, side)],
-                preflighted,
-                _family_command(AiBedController, prepare),
-                admissions=[admissions[index]],
-                skip_disconnect=True,
-            )
 
         async def execute(controller):
             bed = require_controller(controller, AiBedController)
-            if id(bed) not in stamps:
-                raise ValueError("AI Bed controller changed after preflight")
-            await bed.execute_request(request, stamps[id(bed)])
+            # Sequential pairs release the link when this callback returns.
+            stamp = await bed.prepare_request(request)
+            await bed.execute_request(request, stamp)
 
         await _execute_preflighted(
             targets, preflighted, _family_command(AiBedController, execute), admissions=admissions

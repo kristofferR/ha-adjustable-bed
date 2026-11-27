@@ -461,3 +461,275 @@ async def test_periodic_hold_absorbs_gatt_write_latency(clock):
     await ctrl.hold_control("head_rise", 100)
     assert stamps == pytest.approx([0.03, 0.06, 0.09])
     await ctrl.stop_keepalive()
+
+
+@pytest.mark.parametrize("route", ("305", "limos", "hj001", "qrrm"))
+def test_primary_native_control_shapes_and_diagnostics(route):
+    from custom_components.adjustable_bed.light import AdjustableBedOnOffLight, _light_entities_for
+
+    c, ctrl, _ = make(route)
+    c.capability_controller = ctrl
+    c.entity_unique_id = lambda key: key
+    c.device_info = {}
+    c.entity_side = None
+    c.bed_type = "ai_bed"
+    assert ctrl.controller_state_sensor_specs == ()
+    c.controller_state[bed.RAW] = "diagnostic payload"
+    assert ctrl.protocol_diagnostics[str(bed.RAW)] == "diagnostic payload"
+    if route != "305":
+        assert ctrl.controller_switch_specs == ctrl.controller_select_specs == ()
+        assert not ctrl.supports_massage_timer
+        assert _light_entities_for(c.hass, c) == []
+        return
+    assert len(_light_entities_for(c.hass, c)) == 1
+    assert isinstance(_light_entities_for(c.hass, c)[0], AdjustableBedOnOffLight)
+    assert len(ctrl.controller_switch_specs) == 3
+    assert len(ctrl.controller_select_specs) == 1
+    assert ctrl.massage_timer_options == [10, 20, 30]
+    assert not ctrl.massage_timer_can_turn_off
+    assert all(
+        not spec.key.startswith(("ai_bed_lamp_", "ai_bed_massage_"))
+        for spec in ctrl.controller_button_specs
+    )
+
+
+async def test_native_massage_controls_publish_consistent_assumed_state():
+    c, ctrl, _ = make()
+    c.handle_controller_state_updates = lambda *updates: c.controller_state.update(
+        (update.key, update.value) for update in updates
+    )
+    await ctrl.start_notify()
+    switches = {spec.key: spec for spec in ctrl.controller_switch_specs}
+    await switches["ai_bed_massage_both"].set_fn(ctrl, True)
+    assert all(
+        c.controller_state[key] is True
+        for key in (bed.MASSAGE_HEAD, bed.MASSAGE_FOOT, bed.MASSAGE_BOTH)
+    )
+    await switches["ai_bed_massage_head"].set_fn(ctrl, False)
+    assert c.controller_state[bed.MASSAGE_HEAD] is False
+    assert c.controller_state[bed.MASSAGE_FOOT] is True
+    assert c.controller_state[bed.MASSAGE_BOTH] is False
+    mode = ctrl.controller_select_specs[0]
+    await mode.select_fn(ctrl, "3")
+    assert c.controller_state[bed.MASSAGE_MODE] == "3"
+    await ctrl.set_massage_timer(20)
+    assert c.controller_state[bed.MASSAGE_TIMER_MINUTES] == 20
+    await ctrl.lights_on()
+    await ctrl.lights_off()
+    assert written(c) == [
+        codec.frame(*bed.FIXED[key]).hex()
+        for key in (
+            "massage_both_on",
+            "massage_head_off",
+            "massage_mode_3",
+            "massage_timer_20",
+            "lamp_on",
+            "lamp_off",
+        )
+    ]
+    ctrl.on_disconnect()
+    assert all(
+        c.controller_state[key] is None
+        for key in (
+            bed.MASSAGE_HEAD,
+            bed.MASSAGE_FOOT,
+            bed.MASSAGE_BOTH,
+            bed.MASSAGE_MODE,
+            bed.MASSAGE_TIMER_MINUTES,
+        )
+    )
+
+
+@pytest.mark.parametrize(
+    "case", ("retired", "cancelled", "partial", "heartbeat", "cleanup", "retry")
+)
+async def test_held_back_command_frames_have_honest_delivery(case):
+    from custom_components.adjustable_bed.command_scheduler import (
+        CommandIntent,
+        DeviceCommandScheduler,
+    )
+
+    c, ctrl, _ = make()
+    await ctrl.start_notify()
+    link = ctrl._live()
+    observed = []
+    scheduler = DeviceCommandScheduler("ai-bed-delivery")
+
+    async def operation(context):
+        c.cancel_command = context.cancel_event
+        if case == "partial":
+            await ctrl._send(link, codec.frame(0x22), c.cancel_command)
+        if case in ("retired", "partial"):
+            ctrl.on_disconnect()
+        if case == "cancelled":
+            c.cancel_command.set()
+        if case == "retry":
+            c.client.write_gatt_char.side_effect = BleakError("not delivered")
+        event = (
+            None
+            if case == "heartbeat"
+            else asyncio.Event()
+            if case == "cleanup"
+            else c.cancel_command
+        )
+        await ctrl._send(
+            link, codec.frame(0x22), event, heartbeat=case == "heartbeat", reliable=case == "retry"
+        )
+        observed.append((context.frames_written, context.frames_skipped))
+
+    await scheduler.execute(CommandIntent(operation))
+    assert observed == [
+        (1, 1) if case == "partial" else (0, 0) if case in ("heartbeat", "cleanup") else (0, 1)
+    ]
+
+
+@pytest.mark.parametrize(
+    "action",
+    (
+        "inflation",
+        "inflation_off",
+        "vibration_apply",
+        "vibration_preview",
+        "settings_query",
+        "privacy_pin",
+    ),
+)
+async def test_registered_service_keeps_prepare_and_write_in_each_sequential_session(
+    hass, monkeypatch, action
+):
+    from functools import reduce
+    from operator import xor
+
+    from pytest_homeassistant.common import MockConfigEntry
+
+    from custom_components.adjustable_bed import const, services
+    from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
+    from custom_components.adjustable_bed.paired_coordinator import PairedBedCoordinator
+
+    children = {}
+    packets = {"left": [], "right": []}
+    controllers = []
+    for index, side in enumerate(("left", "right")):
+        entry = MockConfigEntry(
+            domain=const.DOMAIN,
+            data={
+                "address": f"AA:BB:CC:DD:EE:{index + 40:02X}",
+                "name": side,
+                "bed_type": "ai_bed",
+                "protocol_variant": "305",
+                "ble_device_name": "MpeV3B-5-M2",
+                "disable_angle_sensing": True,
+            },
+        )
+        entry.add_to_hass(hass)
+        child = AdjustableBedCoordinator(hass, entry)
+        _, ctrl, _ = make()
+        ctrl._coordinator = child
+        client = MagicMock(
+            is_connected=False,
+            start_notify=AsyncMock(),
+            stop_notify=AsyncMock(),
+            disconnect=AsyncMock(),
+        )
+        profile = ctrl.profile
+        char = SimpleNamespace(uuid=profile.write, properties=["write", "notify"], handle=index + 1)
+        client.services.get_service.return_value = SimpleNamespace(
+            get_characteristic=lambda _, _char=char: _char
+        )
+        child._client, child._controller = client, ctrl
+        child._async_refresh_controller_auth = AsyncMock()
+
+        async def connect(*_args, _ctrl=ctrl, _client=client, **_kwargs):
+            _client.is_connected = True
+            await _ctrl.start_notify()
+            return True
+
+        async def disconnect(*_args, _ctrl=ctrl, _client=client, **_kwargs):
+            await _ctrl.stop_notify()
+            _client.is_connected = False
+            return True
+
+        async def write(_char, packet, *, response, _ctrl=ctrl, _side=side):
+            packets[_side].append(packet)
+            if packet[2] == 0x22:
+                body = bytes.fromhex("bb0b2302061e7f000000")
+                _ctrl._receive(_ctrl._live(), body + bytes([reduce(xor, body, 0)]))
+            elif packet[2] == 0x41:
+                body = bytes.fromhex("bb0ea200000000030405060708")
+                _ctrl._receive(_ctrl._live(), body + bytes([reduce(xor, body, 0)]))
+
+        client.write_gatt_char = AsyncMock(side_effect=write)
+        child.async_connect = child.async_ensure_connected = connect
+        child.async_disconnect = disconnect
+        children[side] = child
+        controllers.append(ctrl)
+    pair_entry = MockConfigEntry(domain=const.DOMAIN, data={"pair_id": "ai-bed-sequential"})
+    pair_entry.add_to_hass(hass)
+    pair = PairedBedCoordinator(hass, pair_entry, children, connection_mode="sequential")
+    monkeypatch.setattr(services, "_resolve_sided_targets", lambda *_: ([(pair, "both")], []))
+    await services.async_register_services(hass)
+    request = {
+        "device_id": "bed",
+        "action": "inflation" if action == "inflation_off" else action,
+        "enabled": action != "inflation_off",
+        "weekdays": [0],
+        "pin": "123",
+    }
+    try:
+        await hass.services.async_call(const.DOMAIN, "ai_bed", request, blocking=True)
+        expected = {
+            "inflation": 0x1E,
+            "inflation_off": 0x1E,
+            "vibration_apply": 0xA1,
+            "vibration_preview": 0xA1,
+            "settings_query": 0x41,
+            "privacy_pin": 0x9D,
+        }[action]
+        assert all(any(frame[2] == expected for frame in frames) for frames in packets.values())
+        assert all(ctrl._link is None for ctrl in controllers)
+    finally:
+        for child in children.values():
+            await child.async_shutdown()
+
+
+@pytest.mark.parametrize(
+    "case", ("complete", "cancel", "cleanup_failure", "replacement", "cancel_before")
+)
+async def test_preview_does_not_leave_native_massage_state_stale(case):
+    c, ctrl, _ = make()
+    c.handle_controller_state_updates = lambda *updates: c.controller_state.update(
+        (update.key, update.value) for update in updates
+    )
+    await ctrl.start_notify()
+    await ctrl.set_massage("both", True)
+    await ctrl.controller_select_specs[0].select_fn(ctrl, "3")
+    keys = (bed.MASSAGE_HEAD, bed.MASSAGE_FOOT, bed.MASSAGE_BOTH, bed.MASSAGE_MODE)
+    previous = tuple(c.controller_state[key] for key in keys)
+    assert previous == (True, True, True, "3")
+    ctrl._live().strengths[1] = (3, 4)
+    request = Request("vibration_preview", mode=1, head=5, foot=6, seconds=3)
+    stamp = await ctrl.prepare_request(request)
+
+    async def write(_char, packet, **_kwargs):
+        if packet == codec.frame(0x16, (1, 1)):
+            if case == "cancel":
+                c.cancel_command.set()
+            elif case == "replacement":
+                ctrl.on_disconnect()
+                c.client = MagicMock(is_connected=True, write_gatt_char=AsyncMock())
+                # State belonging to a replacement session must survive old cleanup.
+                c.controller_state.update(zip(keys, previous, strict=True))
+        if packet == codec.frame(0x16, (2, 2)) and case == "cleanup_failure":
+            raise BleakError("cleanup outcome is unknown")
+
+    c.client.write_gatt_char.side_effect = write
+    if case == "cancel_before":
+        c.cancel_command.set()
+    if case == "cleanup_failure":
+        with pytest.raises(BleakError, match="unknown"):
+            await ctrl.execute_request(request, stamp)
+    else:
+        await ctrl.execute_request(request, stamp)
+    assert tuple(c.controller_state[key] for key in keys) == (
+        previous if case in ("replacement", "cancel_before") else (None, None, None, None)
+    )

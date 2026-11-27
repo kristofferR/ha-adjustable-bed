@@ -136,7 +136,9 @@ Select the primary 305 subset explicitly. Optional FFE4 authentication is unavai
 
 ### Controls
 
-Use the app-labelled entities for movement, presets, massage, light, constant heat and waist. Use `adjustable_bed.ai_bed` for inflation, vibration apply/preview, privacy PIN and settings queries. `set_alarm` writes wake schedules; `sync_clock` writes local MCU time.
+Use the app-labelled entities for movement and presets. The primary route has a native on/off light, head/foot/combined massage switches, a mode select, and a 10/20/30-minute timer select. Their displayed state is assumed from commands, not measured feedback. Constant heat and waist use number entities. Internal reports stay in protocol diagnostics.
+
+Use `adjustable_bed.ai_bed` for inflation, vibration apply/preview, privacy PIN and settings queries. Preparation and execution share one child connection, including sequential pairs. Preview queries missing rollback strengths on that connection and requires a fresh reply before changing them. `set_alarm` writes wake schedules; `sync_clock` writes local MCU time.
 
 ### Positions and state
 

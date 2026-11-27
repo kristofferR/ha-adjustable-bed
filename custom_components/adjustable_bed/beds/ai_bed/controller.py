@@ -13,13 +13,14 @@ from bleak.exc import BleakError
 from homeassistant.util import dt as dt_util
 
 from ...alarm import AlarmCapability, AlarmRequest
-from ...card import CARD_LIGHTING, CARD_MASSAGE, CARD_PRESET_SAVE, CARD_PRESETS, CARD_UTILITY
+from ...card import CARD_MASSAGE, CARD_PRESET_SAVE, CARD_PRESETS, CARD_UTILITY
 from ...codec import ai_bed as codec
-from ...command_scheduler import current_command_context, note_frame_written
+from ...command_scheduler import current_command_context, note_frame_skipped, note_frame_written
 from ...const import CONF_BLE_DEVICE_NAME
 from ...controller_state import StateKey
 from ...execution import ExecutionCapabilities
 from ...profiles.ai_bed import PROFILES, Profile, esp_name
+from ...state_keys import MASSAGE_TIMER_MINUTES
 from ..base import BedController, require_controller
 from ..builder import BuildContext
 from ..cancellation import settled
@@ -27,7 +28,8 @@ from ..entity_specs import (
     ControllerButtonSpec,
     ControllerHoldSpec,
     ControllerNumberSpec,
-    ControllerStateSensorSpec,
+    ControllerSelectSpec,
+    ControllerSwitchSpec,
 )
 from ..lifecycle import ControllerSession
 from .requests import Request
@@ -47,6 +49,10 @@ CAPS = StateKey[int | None]("ai_bed_capabilities")
 FIRMWARE = StateKey[str | None]("ai_bed_firmware")
 TARGET = StateKey[str | None]("ai_bed_build_target")
 CLOCK_ACK = StateKey[str | None]("ai_bed_clock_ack")
+MASSAGE_MODE = StateKey[str | None]("ai_bed_massage_mode")
+MASSAGE_HEAD = StateKey[bool | None]("ai_bed_massage_head")
+MASSAGE_FOOT = StateKey[bool | None]("ai_bed_massage_foot")
+MASSAGE_BOTH = StateKey[bool | None]("ai_bed_massage_both")
 
 
 @dataclass(eq=False, slots=True)
@@ -62,6 +68,7 @@ class Link:
     clock_pending: bool = False
     revision: int = 0
     strengths: dict[int, tuple[int, int]] = field(default_factory=dict)
+    strength_reply: asyncio.Event = field(default_factory=asyncio.Event)
     schedule_reply: asyncio.Event = field(default_factory=asyncio.Event)
     schedules: dict[str, int] | None = None
     clock_done: asyncio.Event = field(default_factory=asyncio.Event)
@@ -86,6 +93,19 @@ async def press(controller: BedController, action: str) -> None:
 
 async def set_level(controller: BedController, value: float, *, name: str) -> None:
     await require_controller(controller, AiBedController).set_level(name, int(value))
+
+
+async def set_massage(controller: BedController, on: bool, *, zone: str) -> None:
+    await require_controller(controller, AiBedController).set_massage(zone, on)
+
+
+async def select_massage_mode(controller: BedController, option: str) -> None:
+    bed = require_controller(controller, AiBedController)
+    link = bed._live()
+    if option not in ("1", "2", "3"):
+        raise ValueError("Select a supported massage mode")
+    with bed.sent_state(MASSAGE_MODE(option), is_current=lambda: bed._current(link)):
+        await bed.action(f"massage_mode_{option}")
 
 
 class AiBedController(BedController):
@@ -152,6 +172,8 @@ class AiBedController(BedController):
         ]
         if self.profile.key == "305":
             for key, label in FIXED_LABELS.items():
+                if key.startswith(("lamp_", "massage_")):
+                    continue
                 if key.startswith("qc_") and not (esp_name(self.name) and "M3" not in self.name):
                     continue
                 specs.append(
@@ -162,11 +184,7 @@ class AiBedController(BedController):
                         translation_key=f"ai_bed_{key}",
                         diagnostic=key.startswith("qc_") or key in DIAGNOSTICS,
                         requires_confirmation=key == "calibrate",
-                        card=CARD_LIGHTING
-                        if key.startswith("lamp_")
-                        else CARD_MASSAGE
-                        if key.startswith("massage_")
-                        else CARD_UTILITY,
+                        card=CARD_UTILITY,
                     )
                 )
         return tuple(specs)
@@ -194,22 +212,115 @@ class AiBedController(BedController):
         )
 
     @property
-    def controller_state_sensor_specs(self) -> tuple[ControllerStateSensorSpec, ...]:
-        if self.profile.key not in ("305", "hj001"):
+    def protocol_diagnostics(self) -> dict[str, Any]:
+        state = self._coordinator.controller_state
+        return {str(key): state.get(key) for key in (RAW, AUTH, CAPS, FIRMWARE, TARGET, CLOCK_ACK)}
+
+    @property
+    def supports_discrete_light_control(self) -> bool:
+        return self.profile.key == "305"
+
+    @property
+    def supports_lights(self) -> bool:
+        return self.profile.key == "305"
+
+    @property
+    def light_state_is_assumed(self) -> bool:
+        return True
+
+    async def lights_on(self) -> None:
+        await self.action("lamp_on")
+
+    async def lights_off(self) -> None:
+        await self.action("lamp_off")
+
+    @property
+    def controller_switch_specs(self) -> tuple[ControllerSwitchSpec, ...]:
+        if self.profile.key != "305":
             return ()
         return tuple(
-            ControllerStateSensorSpec(
-                f"ai_bed_{name}", f"ai_bed_{name}", state, "mdi:information-outline"
+            ControllerSwitchSpec(
+                f"ai_bed_massage_{zone}",
+                f"ai_bed_massage_{zone}",
+                partial(set_massage, zone=zone),
+                state_key=key,
+                assumed_state=True,
+                card=CARD_MASSAGE,
             )
-            for name, state in (
-                ("raw_state", RAW),
-                ("auth", AUTH),
-                ("capabilities", CAPS),
-                ("firmware", FIRMWARE),
-                ("build_target", TARGET),
-                ("clock_ack", CLOCK_ACK),
+            for zone, key in (
+                ("head", MASSAGE_HEAD),
+                ("foot", MASSAGE_FOOT),
+                ("both", MASSAGE_BOTH),
             )
         )
+
+    async def set_massage(self, zone: str, on: bool) -> None:
+        if zone not in ("head", "foot", "both"):
+            raise ValueError("Select a supported massage zone")
+        link = self._live()
+        state = self._coordinator.controller_state
+        head = on if zone in ("head", "both") else state.get(MASSAGE_HEAD)
+        foot = on if zone in ("foot", "both") else state.get(MASSAGE_FOOT)
+        both = False if head is False or foot is False else True if head and foot else None
+        with self.sent_state(
+            MASSAGE_HEAD(head),
+            MASSAGE_FOOT(foot),
+            MASSAGE_BOTH(both),
+            is_current=lambda: self._current(link),
+        ):
+            await self.action(f"massage_{zone}_{'on' if on else 'off'}")
+
+    @property
+    def controller_select_specs(self) -> tuple[ControllerSelectSpec, ...]:
+        if self.profile.key != "305":
+            return ()
+        return (
+            ControllerSelectSpec(
+                "ai_bed_massage_mode",
+                "ai_bed_massage_mode",
+                MASSAGE_MODE,
+                ("1", "2", "3"),
+                select_massage_mode,
+                card=CARD_MASSAGE,
+            ),
+        )
+
+    @property
+    def supports_massage(self) -> bool:
+        return self.profile.key == "305"
+
+    @property
+    def auto_enable_massage(self) -> bool:
+        return self.supports_massage
+
+    @property
+    def supports_massage_timer(self) -> bool:
+        return self.supports_massage
+
+    @property
+    def massage_timer_is_assumed(self) -> bool:
+        return True
+
+    @property
+    def massage_timer_options(self) -> list[int]:
+        return [10, 20, 30] if self.supports_massage else []
+
+    @property
+    def massage_timer_can_turn_off(self) -> bool:
+        return False
+
+    async def set_massage_timer(self, minutes: int) -> None:
+        if minutes not in self.massage_timer_options:
+            raise ValueError("Select a supported massage timer")
+        link = self._live()
+        with self.sent_state(
+            MASSAGE_TIMER_MINUTES(minutes), is_current=lambda: self._current(link)
+        ):
+            await self._send(
+                link,
+                codec.frame(*FIXED[f"massage_timer_{minutes}"]),
+                self._coordinator.cancel_command,
+            )
 
     def _live(self) -> Link:
         link = self._link
@@ -242,9 +353,15 @@ class AiBedController(BedController):
         expected_revision: int | None = None,
         on_attempt: Callable[[], None] | None = None,
     ) -> bool:
+        def skipped() -> bool:
+            context = current_command_context()
+            if context is not None and cancel is context.cancel_event and not heartbeat:
+                note_frame_skipped()
+            return False
+
         async with self._ble_lock:
             if not self._current(link) or cancel is not None and cancel.is_set():
-                return False
+                return skipped()
             if expected_revision is not None and link.revision != expected_revision:
                 raise ValueError("AI Bed state changed after preflight")
             properties = link.write.properties
@@ -261,7 +378,7 @@ class AiBedController(BedController):
                 link.schedule_reply.clear()
             for _attempt in range(3 if reliable else 1):
                 if not self._current(link) or cancel is not None and cancel.is_set():
-                    return False
+                    return skipped()
                 self._record_command_trace(
                     self.profile.write, packet, response=response, characteristic=link.write
                 )
@@ -277,12 +394,12 @@ class AiBedController(BedController):
                     await settled(write())
                     if reliable and not response:
                         await pause(0.04, link.dead)
-                    return self._current(link)
+                    return True if self._current(link) else skipped()
                 except BleakError, TimeoutError:
                     if not reliable:
                         raise
                     await pause(0.12, link.dead)
-            return False
+            return skipped()
 
     async def start_notify(self, callback: Callable[[str, float], None] | None = None) -> None:
         if self.profile.key == "unselected":
@@ -339,13 +456,15 @@ class AiBedController(BedController):
             except BleakError, TimeoutError:
                 return
 
-    async def _sync_clock(self, link: Link) -> None:
+    async def _sync_clock(self, link: Link, cancel: asyncio.Event | None = None) -> None:
         for _ in range(3):
             try:
-                if not await self._send(link, codec.frame(0x22)) or await pause(0.5, link.dead):
+                if not await self._send(link, codec.frame(0x22), cancel) or await pause(
+                    0.5, link.dead, *((cancel,) if cancel is not None else ())
+                ):
                     return
                 link.clock_pending = True
-                await self._send(link, codec.clock(dt_util.now()))
+                await self._send(link, codec.clock(dt_util.now()), cancel)
                 return
             except BleakError, TimeoutError:
                 if await pause(3, link.dead):
@@ -358,7 +477,7 @@ class AiBedController(BedController):
     async def sync_clock(self) -> None:
         if not self.supports_clock_sync:
             raise ValueError("Clock sync requires the AI Bed primary route")
-        await self._sync_clock(self._live())
+        await self._sync_clock(self._live(), self._coordinator.cancel_command)
 
     def _receive(self, link: Link, data: bytes) -> None:
         self.forward_raw_notification(self.profile.notify, data)
@@ -387,6 +506,7 @@ class AiBedController(BedController):
             link.schedule_reply.set()
         elif codec.valid(data, 0xA2, 14) and data[1] == 14:
             link.strengths = {i: (data[7 + i], data[10 + i]) for i in range(3)}
+            link.strength_reply.set()
         elif codec.valid(data, 0xA4, 6) and data[3] == 3 and len(data) >= data[4] + 6:
             self.forward_controller_state_updates(CAPS(data[5] if data[4] else 0))
         elif codec.valid(data, 0xA6, 8):
@@ -449,6 +569,11 @@ class AiBedController(BedController):
             FIRMWARE(None),
             TARGET(None),
             CLOCK_ACK(None),
+            MASSAGE_MODE(None),
+            MASSAGE_HEAD(None),
+            MASSAGE_FOOT(None),
+            MASSAGE_BOTH(None),
+            MASSAGE_TIMER_MINUTES(None),
         )
 
     async def stop_keepalive(self) -> None:
@@ -628,7 +753,7 @@ class AiBedController(BedController):
             # Cached diagnostics do not authorize preserving a schedule's time.
             link.schedules = None
             link.schedule_reply.clear()
-            if not await self._send(link, codec.frame(0x22)):
+            if not await self._send(link, codec.frame(0x22), self._coordinator.cancel_command):
                 raise ValueError("AI Bed schedule query was not delivered")
             if await pause(2, link.dead, self._coordinator.cancel_command, link.schedule_reply):
                 if not self._current(link) or not link.schedule_reply.is_set():
@@ -636,7 +761,17 @@ class AiBedController(BedController):
             if link.schedules is None:
                 raise ValueError("No fresh AI Bed schedule reply")
         if request.action == "vibration_preview" and request.mode not in link.strengths:
-            raise ValueError("Refresh the bed's vibration strengths before previewing")
+            # A sequential pair opens a fresh child session for each operation.
+            # Hydrate rollback state on this same link before preview can mutate it.
+            link.strength_reply.clear()
+            await self.execute_request(Request(action="settings_query"), (link, link.revision))
+            await pause(2, link.dead, self._coordinator.cancel_command, link.strength_reply)
+            if (
+                not self._current(link)
+                or self._coordinator.cancel_command.is_set()
+                or request.mode not in link.strengths
+            ):
+                raise ValueError("No fresh AI Bed vibration strengths for preview")
         return link, link.revision
 
     async def execute_request(self, request: Request, stamp: tuple[Link, int]) -> None:
@@ -692,6 +827,15 @@ class AiBedController(BedController):
             def mark_attempt() -> None:
                 nonlocal attempted
                 attempted = True
+                # Preview and its cleanup change the same controls as the
+                # native entities, without supplying measured state.
+                if self._current(link):
+                    self.forward_controller_state_updates(
+                        MASSAGE_HEAD(None),
+                        MASSAGE_FOOT(None),
+                        MASSAGE_BOTH(None),
+                        MASSAGE_MODE(None),
+                    )
 
             # Cancellation and dispose finish on the captured session only.
             try:
