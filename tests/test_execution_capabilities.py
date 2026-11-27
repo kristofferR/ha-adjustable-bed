@@ -110,3 +110,14 @@ async def test_meisemobell_held_execution(route):
     assert controller.execution.hold_for("head_up") == "stream"
     assert controller.profile.hold.release_ms == 100
     assert controller.commands_share_timer
+
+
+async def test_hestia_one_held_key_stream_has_no_composed_motor_admission():
+    # Hestia Motion 1.2 (3), accepted E07: one Handler key, post0/repost100ms,
+    # ACTION_UP sends zero after100ms. Combined05/0A is an explicit control,
+    # not proof of independent concurrent holds or a hardware sustain interval.
+    controller = await _create_controller_for_bed_type("hestia_motion")
+    assert controller.execution.declared == {"hold"}
+    assert controller.execution.hold_for("both_up") == "stream"
+    assert controller.profile.refresh_ms == 100
+    assert controller.profile.release.steps == ((100, 0),)

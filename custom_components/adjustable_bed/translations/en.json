@@ -1792,6 +1792,9 @@
       "meisemobell_reset_settings": {
         "name": "Reset settings"
       },
+      "hestia_cancel_preset": {
+        "name": "Cancel preset"
+      },
       "suta_king_koil_alarms": {
         "name": "Read alarms"
       },
@@ -6154,6 +6157,15 @@
       }
     },
     "switch": {
+      "hestia_massage": {
+        "name": "Massage"
+      },
+      "hestia_alarm": {
+        "name": "Bed alarm"
+      },
+      "hestia_enhancement": {
+        "name": "Alarm massage enhancement (apply with alarm switch)"
+      },
       "okimattmotion_massage_power": { "name": "Massage" },
       "langjue_alarm_enabled": {
         "name": "Bed alarm"
@@ -7265,6 +7277,26 @@
       }
     },
     "select": {
+      "hestia_wave": {
+        "name": "Massage wave (apply with On)"
+      },
+      "hestia_intensity": {
+        "name": "Massage intensity (apply with On)"
+      },
+      "hestia_hour": {
+        "name": "Alarm hour (apply with alarm switch)"
+      },
+      "hestia_minute": {
+        "name": "Alarm minute (apply with alarm switch)"
+      },
+      "hestia_memory": {
+        "name": "Alarm wake position (apply with alarm switch)",
+        "state": {
+          "none": "No position",
+          "memory_1": "Memory A",
+          "memory_2": "Memory B"
+        }
+      },
       "suta_king_koil_massage_mode": {
         "name": "Massage mode"
       },
