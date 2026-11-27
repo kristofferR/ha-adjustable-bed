@@ -103,6 +103,9 @@ async def test_native_entities_and_settings_menu(
     controller = entry_runtime(hass, entry.entry_id).controller
     assert isinstance(controller, AlyaController)
     rows = er.async_entries_for_config_entry(er.async_get(hass), entry.entry_id)
+    assert not any(
+        row.unique_id.endswith(("_alya_hpsup", "_alya_hpsdown", "_alya_report")) for row in rows
+    )
     timer = next(row for row in rows if row.unique_id.endswith("_massage_timer"))
     state = hass.states.get(timer.entity_id)
     assert state is not None and state.state == "unknown"

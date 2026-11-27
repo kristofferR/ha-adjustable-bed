@@ -51,7 +51,7 @@ def layouts() -> str:
                 (
                     f"`{p.key}`",
                     p.protocol,
-                    ", ".join(p.axes) + (", HPS buttons" if p.motors == 5 else ""),
+                    ", ".join(p.axes),
                     "2" if "m2" in p.commands else "1",
                     "A / B / both" if p.side_controls else "Both",
                     f"{p.refresh_ms} / {p.release_ms}",
@@ -77,7 +77,11 @@ def commands() -> str:
                         (
                             key,
                             _hex(cmd.encode(p.protocol)),
-                            "One public STOP" if key == "stop" else "Held / released",
+                            "Withheld: physical function unknown"
+                            if key in ("hpsup", "hpsdown")
+                            else "One public STOP"
+                            if key == "stop"
+                            else "Held / released",
                         )
                         for key, cmd in p.commands.items()
                     ),

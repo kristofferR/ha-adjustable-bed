@@ -196,11 +196,15 @@ async def test_reports_are_session_bound_and_no_optimistic_state(pauses):
     sender = c._session.notify
     notify(sender, bytearray.fromhex("a55a000007205000010203020101"))
     assert c._observed["head"] == 1
-    assert c._coordinator.controller_state["alya_report"] == "received"
+    assert c.protocol_diagnostics["received"] == c._observed
+    assert not c.controller_state_sensor_specs
+    assert not any(key.startswith("alya_report") for key in c._coordinator.controller_state)
+    c.protocol_diagnostics["received"].clear()
+    assert c._observed["head"] == 1
     c.on_disconnect()
     notify(sender, bytearray.fromhex("a55a000007205000010203020101"))
     assert c._observed == {}
-    assert c._coordinator.controller_state["alya_report_data"] is None
+    assert c.protocol_diagnostics["received"] == {}
 
 
 async def test_service_scoped_roles_reject_mixed_or_indicate_only():
@@ -301,18 +305,73 @@ async def test_later_public_stop_is_not_suppressed(pauses):
     scheduler = DeviceCommandScheduler("alya-cleanup")
 
     async def cleaned(context):
-        context.cleanup_stop_sent = True
+        await c.stop_all()
         await c.stop_all()
 
     await scheduler.execute(CommandIntent(cleaned))
-    assert frames(c) == []
+    assert frames(c) == ["05020000000000"]
 
     async def new_stop(context):
         await c.stop_all()
 
     await scheduler.execute(CommandIntent(new_stop))
-    assert frames(c) == ["05020000000000"]
+    assert frames(c) == ["05020000000000"] * 2
     await scheduler.async_shutdown()
+
+
+@pytest.mark.parametrize("profile", ["cb24_5", "dacheng_5"])
+@pytest.mark.parametrize("control", ["hpsup", "hpsdown"])
+async def test_unknown_hps_has_evidence_but_no_executable_control(profile, control):
+    c = make(profile)
+    assert control in c.profile.commands
+    assert control not in c.held_control_options
+    assert not any(spec.key == f"alya_{control}" for spec in c.controller_button_specs)
+    await c.async_discover_capabilities()
+    with pytest.raises(ServiceValidationError):
+        await c.execute(control)
+    assert frames(c) == []
+
+
+@pytest.mark.parametrize("preempted", [False, True])
+@pytest.mark.parametrize("released", ["both", "left", "right"])
+@pytest.mark.parametrize("requested", ["both", "left", "right"])
+async def test_stop_cleanup_must_cover_requested_side(pauses, preempted, released, requested):
+    from custom_components.adjustable_bed.command_scheduler import (
+        CommandIntent,
+        DeviceCommandScheduler,
+    )
+
+    c = make("dacheng_5")
+    await c.async_discover_capabilities()
+    scheduler = DeviceCommandScheduler("alya-stop-side")
+    previous = None
+    expected = []
+
+    async def release(context):
+        nonlocal previous
+        previous = context
+        with c.side_scope(released):
+            await c.move_back_up()
+        expected.extend(frames(c))
+        if not preempted:
+            await stop(context)
+
+    async def stop(context):
+        if preempted:
+            context.preempted_contexts = (previous,)
+        with c.side_scope(requested):
+            await c.stop_all()
+
+    try:
+        await scheduler.execute(CommandIntent(release))
+        if preempted:
+            await scheduler.execute(CommandIntent(stop))
+        if released != "both" and released != requested:
+            side = {"both": 0, "left": 1, "right": 2}[requested]
+            expected.append(c.profile.commands["stop"].encode(c.profile.protocol, side).hex())
+        assert frames(c) == expected
+    finally:
+        await scheduler.async_shutdown()
 
 
 async def test_alarm_preflights_all_targets_before_mutation(hass, monkeypatch):
@@ -501,9 +560,13 @@ def test_light_feedback_requires_a_proven_parser(hass, profile):
     c = make(profile)
     c._coordinator.capability_controller = c
     assert c.supports_light_state_feedback == (c.profile.protocol == "P1")
-    assert any(isinstance(entity, AdjustableBedOnOffLight) for entity in _light_entities_for(
-        hass, c._coordinator
-    )) == c.supports_light_state_feedback
+    assert (
+        any(
+            isinstance(entity, AdjustableBedOnOffLight)
+            for entity in _light_entities_for(hass, c._coordinator)
+        )
+        == c.supports_light_state_feedback
+    )
     assert any(spec.key == "alya_light" for spec in c.controller_button_specs) == c.supports_lights
 
 

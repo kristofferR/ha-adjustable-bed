@@ -6,7 +6,7 @@
 
 ## Known Models
 
-Choose the BLE type and motor layout shown in the Alya app. Physical bed model mappings are unknown. HPS retains its app label without an inferred physical axis.
+Choose the BLE type and motor layout shown in the Alya app. Physical bed model mappings are unknown. HPS command bytes are retained for protocol evidence, but HPS controls are unavailable until their physical function is established.
 
 ## Apps
 
@@ -61,9 +61,9 @@ The APK retains Android's characteristic default. HA selects the ATT mode from t
 | `cb1221_2` | P3 | back, legs | 2 | Both | 300 / 300 | none, zero_g, anti_snore, massage, memory_1, memory_2, flat |
 | `cb24_2` | P3 | back, legs | 2 | Both | 300 / 300 | none, zero_g, anti_snore, massage, memory_1, memory_2, light, flat |
 | `cb24_4` | P3 | back, legs, head, lumbar | 1 | Both | 300 / 300 | none, zero_g, anti_snore, massage, memory_1, lounge, tv, light, flat |
-| `cb24_5` | P4 | back, legs, head, lumbar, HPS buttons | 2 | Both | 300 / 300 | memory_1, zero_g, massage |
+| `cb24_5` | P4 | back, legs, head, lumbar | 2 | Both | 300 / 300 | memory_1, zero_g, massage |
 | `dacheng_2` | P3 | back, legs | 2 | Both | 300 / 300 | None |
-| `dacheng_5` | P4 | back, legs, head, lumbar, HPS buttons | 2 | A / B / both | 300 / 300 | memory_1, zero_g, massage |
+| `dacheng_5` | P4 | back, legs, head, lumbar | 2 | A / B / both | 300 / 300 | memory_1, zero_g, massage |
 <!-- /generated -->
 
 <!-- generated:alya-commands -->
@@ -425,8 +425,8 @@ The APK retains Android's characteristic default. HA selects the ATT mode from t
 | headtiltdown | `05 02 00 00 00 20 00` | Held / released |
 | headtiltup | `05 02 00 00 00 10 00` | Held / released |
 | headup | `05 02 00 00 00 01 00` | Held / released |
-| hpsdown | `05 02 80 00 00 00 00` | Held / released |
-| hpsup | `05 02 40 00 00 00 00` | Held / released |
+| hpsdown | `05 02 80 00 00 00 00` | Withheld: physical function unknown |
+| hpsup | `05 02 40 00 00 00 00` | Withheld: physical function unknown |
 | light | `05 02 00 02 00 00 00` | Held / released |
 | lumbardown | `05 02 00 00 00 80 00` | Held / released |
 | lumbarup | `05 02 00 00 00 40 00` | Held / released |
@@ -509,8 +509,8 @@ The APK retains Android's characteristic default. HA selects the ATT mode from t
 | headtiltdown | `05 02 00 00 00 20 00` | Held / released |
 | headtiltup | `05 02 00 00 00 10 00` | Held / released |
 | headup | `05 02 00 00 00 01 00` | Held / released |
-| hpsdown | `05 02 80 00 00 00 00` | Held / released |
-| hpsup | `05 02 40 00 00 00 00` | Held / released |
+| hpsdown | `05 02 80 00 00 00 00` | Withheld: physical function unknown |
+| hpsup | `05 02 40 00 00 00 00` | Withheld: physical function unknown |
 | light | `05 02 00 02 00 00 00` | Held / released |
 | lumbardown | `05 02 00 00 00 80 00` | Held / released |
 | lumbarup | `05 02 00 00 00 40 00` | Held / released |
@@ -596,11 +596,13 @@ P1 preserves Java's signed opcode arithmetic: canonical high low-bytes can miss 
 
 ## Command Timing
 
-A held action refreshes at the profile cadence. HA bounds normal taps by pulse count and supports timed and renewable holds through the scheduler. Release waits before each STOP submission: axis, union and HPS gestures release twice; presets, light and massage once. Special massage releases query state after the app's follow-up delay. Public STOP is one delayed submission; a cancelled active gesture owns its cleanup, so its release receives no duplicate generic STOP.
+A held action refreshes at the profile cadence. HA bounds normal taps by pulse count and supports timed and renewable holds through the scheduler. Release waits before each STOP submission: axis and union gestures release twice; presets, light and massage once. Special massage releases query state after the app's follow-up delay. Public STOP is one delayed submission; a cancelled active gesture owns its cleanup, so an existing release suppresses another STOP only for the same connection and covered side.
 
 An expired or cancelled queued command sends no first movement. An admitted write settles within a bounded write timeout before release. Cleanup captures the original client, characteristic, layout and side; it never writes to a replacement connection. Concurrent independent motor streams are unavailable.
 
 ## Notes
+
+Received packet fields are available in protocol diagnostics. They do not create a raw-report sensor.
 
 Hardware acceptance, actual GATT properties, side orientation, HPS semantics and physical stop behavior still require beta user validation. No physical model or feedback units are inferred.
 

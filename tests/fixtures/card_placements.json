@@ -4708,9 +4708,6 @@
  "sensor:agingplace_version": {
   "card_section": "hidden"
  },
- "sensor:alya_report": {
-  "card_section": "hidden"
- },
  "sensor:ambient_firmware": {
   "card_section": "hidden"
  },

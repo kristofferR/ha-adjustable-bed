@@ -6022,9 +6022,6 @@
       "ambient_firmware": {
         "name": "Control box firmware"
       },
-      "alya_report": {
-        "name": "Alya received report"
-      },
       "jobs_status": {
         "name": "Jobs status code"
       },

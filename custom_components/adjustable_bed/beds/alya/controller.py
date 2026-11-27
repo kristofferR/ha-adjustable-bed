@@ -14,7 +14,6 @@ from ...alarm import AlarmCapability
 from ...card import CARD_HIDDEN
 from ...command_scheduler import current_command_context, note_frame_skipped, note_frame_written
 from ...const import CONF_CB24_BED_SELECTION, CONF_HAS_MASSAGE, CONF_PROTOCOL_VARIANT
-from ...controller_state import StateKey
 from ...errors import invalid
 from ...profiles.alya import PROFILES, AlyaProfile
 from ...state_keys import UNDER_BED_LIGHTS_ON
@@ -26,7 +25,6 @@ from ..entity_specs import (
     ControllerButtonSpec,
     ControllerHoldSpec,
     ControllerMotorHoldSpec,
-    ControllerStateSensorSpec,
     MotorCommandCallable,
     MotorControlSpec,
 )
@@ -36,11 +34,11 @@ if TYPE_CHECKING:
     from bleak import BleakClient
     from bleak.backends.characteristic import BleakGATTCharacteristic
 
+    from ...command_scheduler import CommandContext
     from ...coordinator import AdjustableBedCoordinator
 
-REPORT: Final = StateKey[str | None]("alya_report")
-REPORT_DATA: Final = StateKey[dict[str, int | bool] | None]("alya_report_data")
 _AXIS: Final = {"back": "head", "legs": "foot", "head": "headtilt", "lumbar": "lumbar"}
+_WITHHELD_CONTROLS: Final = frozenset({"hpsup", "hpsdown"})
 
 
 @dataclass(frozen=True)
@@ -89,6 +87,7 @@ class AlyaController(ProfileExecution[AlyaProfile], BedController):
         self._observed: dict[str, int | bool] = {}
         self._fragment = b""
         self._fragment_deadline = 0.0
+        self._last_release: tuple[CommandContext, Session, int] | None = None
 
     def _unavailable(self, reason: str) -> ServiceValidationError:
         return invalid("alya_control_invalid", reason=reason)
@@ -112,6 +111,7 @@ class AlyaController(ProfileExecution[AlyaProfile], BedController):
             "layout": self.profile.key,
             "protocol": self.profile.protocol,
             "hardware_verified": False,
+            "received": dict(self._observed),
         }
 
     @property
@@ -263,6 +263,7 @@ class AlyaController(ProfileExecution[AlyaProfile], BedController):
             k
             for k in self.profile.commands
             if k != "stop"
+            and k not in _WITHHELD_CONTROLS
             and not k.startswith("query-")
             and (self._has_massage or not self._massage_control(k))
         )
@@ -281,8 +282,8 @@ class AlyaController(ProfileExecution[AlyaProfile], BedController):
 
     @property
     def controller_button_specs(self) -> tuple[ControllerButtonSpec, ...]:
-        # App tags, including HPS, are retained without guessing physical meaning.
         skip = {
+            *_WITHHELD_CONTROLS,
             "stop",
             "flat",
             "zg",
@@ -312,8 +313,6 @@ class AlyaController(ProfileExecution[AlyaProfile], BedController):
         }
         names = {key: value.strip().capitalize() for key, value in names.items()}
         for key, name in {
-            "hpsup": "HPS up",
-            "hpsdown": "HPS down",
             "unionup": "All motors up",
             "uniondown": "All motors down",
             "timer": "Massage timer cycle",
@@ -358,19 +357,6 @@ class AlyaController(ProfileExecution[AlyaProfile], BedController):
         )
         return unique_buttons(specs)
 
-    @property
-    def controller_state_sensor_specs(self) -> tuple[ControllerStateSensorSpec, ...]:
-        return (
-            ControllerStateSensorSpec(
-                "alya_report",
-                "alya_report",
-                REPORT,
-                "mdi:bluetooth",
-                attribute_keys=(REPORT_DATA,),
-                entity_registry_enabled_default=False,
-            ),
-        )
-
     def _side_now(self) -> int:
         side = self.command_side
         if side is not None and side not in ("both", "left", "right"):
@@ -411,9 +397,8 @@ class AlyaController(ProfileExecution[AlyaProfile], BedController):
         self._observed.clear()
         self._fragment = b""
         self._fragment_deadline = 0.0
-        self.forward_controller_state_updates(
-            REPORT(None), REPORT_DATA(None), UNDER_BED_LIGHTS_ON(None)
-        )
+        self._last_release = None
+        self.forward_controller_state_updates(UNDER_BED_LIGHTS_ON(None))
 
     @staticmethod
     async def _pause(seconds: float, cancel: asyncio.Event) -> bool:
@@ -481,6 +466,7 @@ class AlyaController(ProfileExecution[AlyaProfile], BedController):
                 )
             if (context := current_command_context()) is not None:
                 context.cleanup_stop_sent = True
+                self._last_release = (context, op.session, op.side)
 
         await settled(cleanup())
 
@@ -518,10 +504,8 @@ class AlyaController(ProfileExecution[AlyaProfile], BedController):
             if not result:
                 return
             self._observed.update(result)
-            updates = [REPORT("received"), REPORT_DATA(dict(self._observed))]
             if "light" in result:
-                updates.append(UNDER_BED_LIGHTS_ON(bool(result["light"])))
-            self.forward_controller_state_updates(*updates)
+                self.forward_controller_state_updates(UNDER_BED_LIGHTS_ON(bool(result["light"])))
 
         await session.client.start_notify(session.notify, receive)
         self._notifying = True
@@ -550,7 +534,7 @@ class AlyaController(ProfileExecution[AlyaProfile], BedController):
         count = (duration_ms + self.profile.refresh_ms - 1) // self.profile.refresh_ms
         loop = asyncio.get_running_loop()
         deadline = loop.time() + duration_ms / 1000
-        axis = control in {p + d for p in (*_AXIS.values(), "hps", "union") for d in ("up", "down")}
+        axis = control in {p + d for p in (*_AXIS.values(), "union") for d in ("up", "down")}
         try:
             for i in range(count):
                 if cancel.is_set() or loop.time() >= deadline:
@@ -581,7 +565,6 @@ class AlyaController(ProfileExecution[AlyaProfile], BedController):
                         elif self._massage_control(control):
                             for key in ("head", "foot", "massage", "minutes", "wave"):
                                 self._observed.pop(key, None)
-                        self.forward_controller_state_updates(REPORT_DATA(dict(self._observed)))
         if (
             "intensity" in control or control.startswith(("massage-", "time", "wave"))
         ) and self.profile.protocol in ("P3", "P4"):
@@ -615,13 +598,18 @@ class AlyaController(ProfileExecution[AlyaProfile], BedController):
             return
         op = Operation(self._live(), self._side_now())
         context = current_command_context()
-        if context is not None:
-            if context.cleanup_stop_sent:
+        if context is not None and self._last_release is not None:
+            released, session, side = self._last_release
+            # A side-only cleanup cannot acknowledge a wider or opposite STOP.
+            if (
+                released.cleanup_stop_sent
+                and session is op.session
+                and side in (0, op.side)
+                and (released is context or any(c is released for c in context.preempted_contexts))
+            ):
+                if released is not context:
+                    released.cleanup_stop_sent = False
                 return
-            for preempted in context.preempted_contexts:
-                if preempted.cleanup_stop_sent:
-                    preempted.cleanup_stop_sent = False
-                    return
         await self._release(op, 1)
 
     async def sync_clock(self) -> None:
@@ -678,7 +666,6 @@ class AlyaController(ProfileExecution[AlyaProfile], BedController):
                 for key in tuple(self._observed):
                     if key.startswith("alarm_"):
                         self._observed.pop(key)
-                self.forward_controller_state_updates(REPORT_DATA(dict(self._observed)))
         if enabled and not await self._pause(0.3, cancel):
             await self._send(op, query(self.profile.protocol, True), cancel)
 
