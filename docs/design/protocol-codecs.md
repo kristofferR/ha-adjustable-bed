@@ -513,3 +513,12 @@ the existing family motion/session controller. Its ordinary RX dispatcher
 differs from Casper's complete-length receiver, so it has a scoped dispatcher
 with only its two verified announcements. See the
 [Comfort Bed section](../beds/richmat.md#comfort-bed) and `tests/test_comfort_bed.py`.
+
+## Thrive Sleep
+
+Thrive Sleep 1.1.2 uses the existing Richmat function, calendar, RGB, light-timer,
+countdown and extended-record encoders. All 115 frozen literals reproduce through
+those encoders. Its three current profiles own the product menus and alarm modes;
+its session controller rejects mixed recognized services rather than applying
+the app's independent handle-selection and encoding order to unknown hardware.
+See [Thrive Sleep](../beds/richmat.md#thrive-sleep).

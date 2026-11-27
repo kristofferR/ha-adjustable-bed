@@ -78,6 +78,7 @@ from scripts.codec_docs._lp2 import BLOCKS as LP2_BLOCKS
 from scripts.codec_docs._maxprime import render_maxprime
 from scripts.codec_docs._ronco_motion import BLOCKS as RONCO_MOTION_BLOCKS
 from scripts.codec_docs._super_colchones import BLOCKS as SUPER_COLCHONES_BLOCKS
+from scripts.codec_docs._thrivesleep import BLOCKS as THRIVESLEEP_BLOCKS
 
 GUIDE = "docs/beds/richmat.md"
 # The Casper Base and Hush Base apps: their profile class and controller module.
@@ -1494,6 +1495,7 @@ BLOCKS: list[Block] = [
 ]
 
 BLOCKS += SUPER_COLCHONES_BLOCKS
+BLOCKS += THRIVESLEEP_BLOCKS
 BLOCKS += _galaxy.BLOCKS
 BLOCKS += _okimiki.BLOCKS
 BLOCKS += _richmat_mh_apps.BLOCKS

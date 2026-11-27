@@ -4843,3 +4843,30 @@ suta_king_koil_confirm_alarm:
           min: 0
           max: 59
           mode: box
+
+thrivesleep:
+  fields:
+    device_id:
+      required: true
+      selector:
+        device:
+          integration: adjustable_bed
+          multiple: true
+    operation:
+      required: true
+      selector:
+        select:
+          options: [light_rgb, query_alarms, delete_alarm, query_snore]
+    rgb_color:
+      selector:
+        color_rgb:
+    alarm_id:
+      selector:
+        number:
+          min: 1
+          max: 7
+          mode: box
+    side:
+      selector:
+        select:
+          options: [both, left, right]
