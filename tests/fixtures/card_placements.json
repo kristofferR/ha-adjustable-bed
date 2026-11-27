@@ -886,6 +886,9 @@
   "card_role": "up",
   "card_motor": "dorsal_zero_gravity"
  },
+ "button:dynasty_query": {
+  "card_section": "utility"
+ },
  "button:elevate_actuator_1_down": {
   "card_section": "motors",
   "card_role": "down",
@@ -3750,6 +3753,9 @@
  },
  "number:dreamsense_light_seconds": {
   "card_section": "lighting"
+ },
+ "number:dynasty_lamp_seconds": {
+  "card_section": "utility"
  },
  "number:enso2_light_timer": {
   "card_section": "lighting"

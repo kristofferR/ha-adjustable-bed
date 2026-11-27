@@ -1114,7 +1114,7 @@ def _classic_layouts(data: Mapping[str, Any]) -> Mapping[Any, str]:
         codes -= unavailable | {k for k, v in ALIASES.items() if v in unavailable}
     if app == "lp2":
         codes -= {"209A05", "6HRM", "QRRM", "ZRS3"}
-    if app in ("luunarise2", "powercool", "sleepfunction", "baseremote"):
+    if app in ("luunarise2", "powercool", "sleepfunction", "baseremote", "dynasty"):
         codes -= {"WFRM", "FWRM"}
     if app == "sleepfunction":
         from .profiles.sleepfunction import PICKER_LAYOUTS
@@ -1175,7 +1175,7 @@ def _classic_errors(data: Mapping[str, Any]) -> dict[str, str]:
     excluded = _CLASSIC_EXCLUDED
     if data.get(CONF_PROTOCOL_VARIANT) == dreamlab.APP:
         excluded = excluded | dreamlab.NON_CONTROL_LAYOUTS
-    if data.get(CONF_PROTOCOL_VARIANT) in ("luunarise2", "powercool", "sleepfunction", "baseremote"):
+    if data.get(CONF_PROTOCOL_VARIANT) in ("luunarise2", "powercool", "sleepfunction", "baseremote", "dynasty"):
         excluded = excluded | {"WFRM", "FWRM"}
     if data.get(CONF_PROTOCOL_VARIANT) == "sleepfunction":
         from .profiles.sleepfunction import PICKER_LAYOUTS
