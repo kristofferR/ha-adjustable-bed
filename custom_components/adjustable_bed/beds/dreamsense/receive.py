@@ -71,11 +71,14 @@ class Receive:
                 end = len(self.pending) if end < 0 else end
                 frame = bytes(self.pending[:end])
                 del self.pending[:end]
-                if signal := SIGNALS.get(frame):
-                    if signal in ("clock", "light", "music"):
-                        self.capabilities.add(signal)
-                    else:
-                        self.last_ack = signal
+                self._common(frame)
+
+    def _common(self, frame: bytes) -> None:
+        if signal := SIGNALS.get(frame):
+            if signal in ("clock", "light", "music"):
+                self.capabilities.add(signal)
+            else:
+                self.last_ack = signal
 
     def _record(self, frame: bytes) -> None:
         domain, operation, sub = frame[3:6]

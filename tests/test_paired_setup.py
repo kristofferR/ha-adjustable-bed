@@ -32,6 +32,7 @@ from custom_components.adjustable_bed import (
 )
 from custom_components.adjustable_bed.beds.lifecycle import CapabilitySnapshotPolicy
 from custom_components.adjustable_bed.const import (
+    BED_TYPE_AMADA,
     BED_TYPE_BEDTECH,
     BED_TYPE_ESHINE_OKIN,
     BED_TYPE_KAIDI,
@@ -4578,6 +4579,8 @@ class TestOfflineSafeBedTypes:
             child[CONF_BED_TYPE] = bed_type
             if bed_type == BED_TYPE_SOLACE:
                 child[CONF_BLE_DEVICE_NAME] = "SealyMF Base"
+            elif bed_type == BED_TYPE_AMADA:
+                child[CONF_PRODUCT_TYPE] = "a" if child[CONF_SIDE] == SIDE_LEFT else "b"
             elif bed_type in ("bedgear", "ergobed", "l2motion", "moodbase"):
                 child[CONF_BLE_DEVICE_NAME] = "HHC0000001D00X"
             elif bed_type == "motomotion":
@@ -4594,6 +4597,8 @@ class TestOfflineSafeBedTypes:
                 child[CONF_PROTOCOL_VARIANT] = "GV"
             elif bed_type == "muuegm":
                 child[CONF_PROTOCOL_VARIANT] = "ABF03"
+            elif bed_type == "awmotion":
+                child[CONF_PROTOCOL_VARIANT] = "SN300"
             elif bed_type == BED_TYPE_VIBRADORM_APP:
                 child.update({
                     CONF_VIBRADORM_APP_PROFILE: "caresse",
