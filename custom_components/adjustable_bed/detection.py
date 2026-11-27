@@ -1566,7 +1566,10 @@ def _detect_with_first_pass(
             result.ambiguous_types = list(dict.fromkeys([*(result.ambiguous_types or ()), BED_TYPE_AMBIENT]))
             result.signals.append(signal)
     # King Koil uses this scan prefix without a name-selected product layout.
-    if first.name(BED_TYPE_SUTA_KING_KOIL):
+    if first.name(BED_TYPE_SUTA_KING_KOIL) and not any(
+        signal.startswith("excluded:") or signal == "name:suta_accessory"
+        for signal in result.signals
+    ):
         if result.bed_type is None:
             result = DetectionResult(BED_TYPE_SUTA_KING_KOIL, 0.3, result.signals)
         elif result.bed_type != BED_TYPE_SUTA_KING_KOIL:

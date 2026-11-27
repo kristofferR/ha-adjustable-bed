@@ -10,6 +10,7 @@ from homeassistant.util import dt as dt_util
 
 from ...alarm import AlarmCapability, AlarmRequest
 from ...card import CARD_MASSAGE
+from ...command_scheduler import command_frames_counted
 from ...controller_state import StateKey
 from ...errors import invalid
 from ...profiles import suta_king_koil as app
@@ -164,7 +165,7 @@ class KingKoilController(TrueMotionController):
             *(key(0) for key in STEPS.values()),
             MODE(None),
             is_current=lambda: self._link_is_current(link),
-        ):
+        ), command_frames_counted():
             await settled(
                 self._sequence(
                     link,

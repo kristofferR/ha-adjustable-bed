@@ -26,6 +26,7 @@ from custom_components.adjustable_bed.codec.suta import text
 from custom_components.adjustable_bed.controller_factory import create_controller
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
 from custom_components.adjustable_bed.detection import detect_bed_type_detailed
+from custom_components.adjustable_bed.errors import BedCommandFailedError
 from custom_components.adjustable_bed.number import _number_entities_for
 from custom_components.adjustable_bed.paired_coordinator import PairedBedCoordinator
 from custom_components.adjustable_bed.pairing import build_pair_entry_data
@@ -285,6 +286,45 @@ async def test_actual_entities_clock_and_alarm_services(hass, runtime):
         assert frames(client)[3:] == [text("AT+GD")] * 3 + [text("AT+GA")] * 3
 
 
+@pytest.mark.parametrize("failure", (None, "FOOT", "ALL"))
+async def test_public_stop_publishes_only_delivered_massage_state(hass, runtime, failure):
+    target, client, _ = runtime
+    numbers = {entity.translation_key: entity for entity in _number_entities_for(hass, target)}
+    mode = next(
+        entity
+        for entity in _select_entities_for(hass, target)
+        if entity.translation_key == "suta_king_koil_massage_mode"
+    )
+    with virtual_time(FakeClock()):
+        await numbers["suta_king_koil_head_step"].async_set_native_value(2)
+        await numbers["suta_king_koil_foot_step"].async_set_native_value(3)
+        await mode.async_select_option("Mode 2")
+        client.write_gatt_char.reset_mock()
+
+        async def write(_char, packet, *, response):
+            if failure == "ALL" or failure == "FOOT" and packet == text("AT+MASS=BOTH FOOT DT00"):
+                raise BleakError("stop failed")
+
+        client.write_gatt_char.side_effect = write
+        if failure is None:
+            await target.async_stop_command()
+        else:
+            with pytest.raises(BedCommandFailedError):
+                await target.async_stop_command()
+        assert len(frames(client)) == 6
+        if failure == "ALL":
+            expected = (2, 3, "Mode 2")
+        elif failure == "FOOT":
+            expected = (None, None, None)
+        else:
+            expected = (0, 0, None)
+        assert (
+            target.controller_state[STEPS["HEAD"]],
+            target.controller_state[STEPS["FOOT"]],
+            target.controller_state[MODE],
+        ) == expected
+
+
 async def test_explicit_app_setup_discovery_and_profile_identity(hass):
     flow = setup_flow(hass, **{const.CONF_BED_TYPE: const.BED_TYPE_SUTA_KING_KOIL})
     flow._discovery_info = None
@@ -299,7 +339,7 @@ async def test_explicit_app_setup_discovery_and_profile_identity(hass):
         detected = detect_bed_type_detailed(info)
         assert const.BED_TYPE_SUTA_KING_KOIL in (detected.ambiguous_types or [detected.bed_type])
         assert recommend_profile(data(), info, {}) is None
-    for name in ("suta-M510", "LZ-OTA", "KK01S"):
+    for name in ("suta-M510", "LZ-OTA", "KK01S", "SUTA-DRAWER", "SUTA-DRAW"):
         detected = detect_bed_type_detailed(
             _make_service_info(name=name, service_uuids=[app.SERVICE_UUID])
         )
