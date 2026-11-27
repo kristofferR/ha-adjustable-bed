@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import asyncio
 from collections.abc import Callable
+from contextlib import ExitStack
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
@@ -13,7 +14,13 @@ from bleak.exc import BleakError
 from homeassistant.util import dt as dt_util
 
 from ...alarm import AlarmCapability, AlarmRequest
-from ...command_scheduler import current_command_context
+from ...command_scheduler import (
+    Delivery,
+    current_command_context,
+    delivered,
+    note_frame_skipped,
+)
+from ...controller_state import StateUpdate
 from ...errors import BedNotConnectedError, invalid
 from ...profiles import meisemobell as app
 from ...profiles.okin_nframe import OkinNFrameProfile
@@ -440,35 +447,84 @@ class MeisemobellController(ProfileExecution[OkinNFrameProfile], OkinNFrameContr
             frame = app.alarm_pair(records[1], records[2])
         else:
             frame = app.alarm_slot(alarm.slot, value)
-        previous = self._alarms.get(alarm.slot)
-        await self._write(link, frame, cancel)
+        await self._write_alarms(link, frame, cancel, {alarm.slot: value})
         self._assert_link(link)
         if cancel.is_set():
             return
-        # A write is assumed sent state. A newer notification takes precedence.
-        if self._alarms.get(alarm.slot) is previous:
-            self._publish(alarm.slot, value, "sent")
-            self._alarms.pop(alarm.slot, None)
-            link.last = b""
         await _pause(cancel, 0.35 if self.route == "15_22_15a" else 0.1)
         await self._query(link, cancel, after_set=True)
+
+    async def _write_alarms(
+        self,
+        link: _Link,
+        frame: bytes,
+        cancel: asyncio.Event,
+        values: dict[int, app.Alarm],
+        *,
+        previous: dict[int, app.Alarm | None] | None = None,
+    ) -> None:
+        if cancel.is_set():
+            note_frame_skipped()
+            return
+        prior = (
+            previous if previous is not None else {slot: self._alarms.get(slot) for slot in values}
+        )
+
+        def current(slot: int) -> bool:
+            return self._live(link) and link.ready and self._alarms.get(slot) is prior[slot]
+
+        def invalidate(result: Delivery) -> None:
+            if result is not Delivery.NONE:
+                for slot in values:
+                    if current(slot):
+                        self._alarms.pop(slot, None)
+                        # Allow an identical query reply to restore raw authority.
+                        link.last = b""
+
+        with ExitStack() as finalizers:
+            finalizers.enter_context(delivered(invalidate))
+            for slot, value in values.items():
+                finalizers.enter_context(
+                    self.sent_state(
+                        *self._alarm_updates(slot, value, "sent"),
+                        is_current=lambda slot=slot: current(slot),
+                    )
+                )
+            await self._write(link, frame, cancel)
 
     async def close_alarms(self) -> None:
         link = self._current()
         cancel = self._coordinator.cancel_command
         if self.route == "15_22_15a":
-            await self._write(link, app.alarm_pair(app.Alarm(), app.Alarm()), cancel)
+            await self._write_alarms(
+                link,
+                app.alarm_pair(app.Alarm(), app.Alarm()),
+                cancel,
+                {1: app.Alarm(), 2: app.Alarm()},
+            )
         else:
-            await self._write(link, app.alarm_slot(1, app.Alarm()), cancel)
-            await _pause(cancel, 0.1)
-            await self._write(link, app.alarm_slot(2, app.Alarm()), cancel)
+            # The two writes share one mutation's readback checkpoint. A new
+            # report for either slot takes precedence over its assumed result.
+            previous = {slot: self._alarms.get(slot) for slot in (1, 2)}
+            try:
+                await self._write_alarms(
+                    link,
+                    app.alarm_slot(1, app.Alarm()),
+                    cancel,
+                    {1: app.Alarm()},
+                    previous=previous,
+                )
+                await _pause(cancel, 0.1)
+            except asyncio.CancelledError:
+                # The second mandatory slot write has not been attempted.
+                note_frame_skipped()
+                raise
+            await self._write_alarms(
+                link, app.alarm_slot(2, app.Alarm()), cancel, {2: app.Alarm()}, previous=previous
+            )
         self._assert_link(link)
         if cancel.is_set():
             return
-        self._alarms.clear()
-        link.last = b""
-        for slot in (1, 2):
-            self._publish(slot, app.Alarm(), "sent")
         if self.route == "15_22_15a":
             await _pause(cancel, 0.35)
             await self._query(link, cancel, after_set=True)
@@ -499,19 +555,22 @@ class MeisemobellController(ProfileExecution[OkinNFrameProfile], OkinNFrameContr
         if not self._coordinator.cancel_command.is_set():
             await self.reset_memories()
 
-    def _publish(self, slot: int, alarm: app.Alarm, source: str) -> None:
+    def _alarm_updates(self, slot: int, alarm: app.Alarm, source: str) -> tuple[StateUpdate, ...]:
         time, enabled, week, kind, origin = (
             (s.ALARM_1, s.ENABLED_1, s.WEEK_1, s.TYPE_1, s.SOURCE_1)
             if slot == 1
             else (s.ALARM_2, s.ENABLED_2, s.WEEK_2, s.TYPE_2, s.SOURCE_2)
         )
-        self.forward_controller_state_updates(
+        return (
             time(f"{alarm.hour:02d}:{alarm.minute:02d}"),
             enabled(alarm.enabled),
             week(alarm.week),
             kind(alarm.kind),
             origin(source),
         )
+
+    def _publish(self, slot: int, alarm: app.Alarm, source: str) -> None:
+        self.forward_controller_state_updates(*self._alarm_updates(slot, alarm, source))
 
     def _receive(self, link: _Link, data: bytes) -> None:
         self.forward_raw_notification(link.notify.uuid, data)
