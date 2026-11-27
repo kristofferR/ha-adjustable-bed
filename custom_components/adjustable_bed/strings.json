@@ -914,7 +914,8 @@
       "truemotion_name": "Enter the complete Bluetooth name, starting with SUTA-.",
       "sleeptime_gatt": "The Bluetooth device lacks the write and status channels Sleeptime needs. Check the device and selected app.",
       "truemotion_gatt": "The receiver does not expose the trueMotion write and notification channels.",
-      "truemotion_pair": "Choose a trueMotion receiver that supports split control as the left side."
+      "truemotion_pair": "Choose a trueMotion receiver that supports split control as the left side.",
+      "alya_layout_invalid": "The selected Alya layout is missing its required Bluetooth write/notify roles. Choose the layout shown in your app."
     }
   },
   "options": {
@@ -4080,6 +4081,18 @@
       },
       "ambient_refresh": {
         "name": "Refresh bed state"
+      },
+      "alya_action": {
+        "name": "{action}"
+      },
+      "alya_release": {
+        "name": "Release"
+      },
+      "alya_light_action": {
+        "name": "{action}"
+      },
+      "alya_massage_action": {
+        "name": "{action}"
       }
     },
     "cover": {
@@ -5843,6 +5856,9 @@
       },
       "ambient_firmware": {
         "name": "Control box firmware"
+      },
+      "alya_report": {
+        "name": "Alya received report"
       }
     },
     "light": {
@@ -12360,6 +12376,9 @@
     },
     "ambient_heat_unconfirmed": {
       "message": "The bed did not confirm all six requested heat levels."
+    },
+    "alya_control_invalid": {
+      "message": "Alya control unavailable: {reason}"
     }
   },
   "issues": {

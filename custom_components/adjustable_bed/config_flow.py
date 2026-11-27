@@ -156,9 +156,11 @@ from .bond_verification import (
 )
 from .const import (
     ADAPTER_AUTO,
+    ALYA_LAYOUTS,
     AUTOMATIC_LABEL,
     BED_TYPE_ADJUSTABLE_BED,
     BED_TYPE_ADJUSTABLE_LUMBAR,
+    BED_TYPE_ALYA,
     BED_TYPE_AMBIENT,
     BED_TYPE_ATLAS_LIFT,
     BED_TYPE_BEDSENSE,
@@ -1454,6 +1456,8 @@ def _motor_count_options(
     protocol_variant: str = DEFAULT_PROTOCOL_VARIANT,
 ) -> list[int]:
     """Return motor counts supported by the selected protocol."""
+    if bed_type == BED_TYPE_ALYA:
+        return [int(protocol_variant.rsplit("_", 1)[-1])] if protocol_variant in ALYA_LAYOUTS else [2]
     if bed_type == "relax_motion":
         return [1, 2, 3]
     if bed_type == BED_TYPE_BETTERLIVING2:
@@ -2405,6 +2409,7 @@ class CapabilityReport:
     connection_aborted: bool = False
     octo_pin_status: OctoPinStatus | None = None
     leva_receiver_valid: bool | None = None
+    alya_transport_valid: bool | None = None
     starcode_transport_valid: bool | None = None
     truemotion_transport_valid: bool | None = None
     atlas_lift_transport_valid: bool | None = None
@@ -6709,6 +6714,7 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         elif (
             not report.connected
             or report.leva_receiver_valid is False
+            or report.alya_transport_valid is False
             or report.starcode_transport_valid is False
             or report.truemotion_transport_valid is False
             or report.atlas_lift_transport_valid is False
@@ -7059,6 +7065,20 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                             if not report.sleeptime_uart_valid:
                                 report.error = str(BedNotConnectedError("sleeptime_gatt"))
                         return report
+                    if bed_type == BED_TYPE_ALYA:
+                        await async_import_modules(self.hass, "beds.alya.protocol", "profiles.alya")
+                        from .beds.alya.protocol import require_roles
+                        from .profiles.alya import PROFILES as ALYA_PROFILES
+
+                        selected = ALYA_PROFILES.get(protocol_variant or "")
+                        try:
+                            if selected is None:
+                                raise ValueError("Choose an explicit Alya layout")
+                            require_roles(client, selected.protocol)
+                            report.alya_transport_valid = True
+                        except ValueError as err:
+                            report.alya_transport_valid = False
+                            report.error = str(err)
                     if bed_type == BED_TYPE_STARCODE_ABM5_4:
                         selected_transport = report.starcode_transport_selector
                         if selected_transport is not None:
@@ -7229,6 +7249,8 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
             lines.append(await line("check_truemotion_transport_missing"))
         if report.atlas_lift_transport_valid is False:
             lines.append(await line("check_atlas_lift_transport_missing"))
+        if report.alya_transport_valid is False:
+            lines.append(await line("check_transport_missing"))
         if report.starcode_transport_valid is False:
             lines.append(await line("check_transport_missing"))
         elif (
@@ -7283,6 +7305,14 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
             self._pending_entry.get(CONF_PROTOCOL_VARIANT) == DORSAL_ROOMI_S655_PLUS
             and not report.connected
         )
+
+        if report.alya_transport_valid is False:
+            self._verify_form_shown = False
+            self._manual_data = dict(self._pending_entry)
+            self._recheck_answers = True
+            profile = setup_profile_for(self._manual_data)
+            assert profile is not None
+            return self._show_profile_questions(profile, self._manual_data, {CONF_PROTOCOL_VARIANT: "alya_layout_invalid"})
 
         if report.ambient_transport_valid is False:
             return self.async_abort(reason="ambient_receiver_mismatch")

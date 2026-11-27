@@ -1573,6 +1573,7 @@ def default_scenario(bed_type: str) -> Scenario:
         const.BED_TYPE_GALAXY: "6BRM",
         const.BED_TYPE_MAJESTICHOME: "FARM",
         const.BED_TYPE_OKIMIKI: "HCRN",
+        const.BED_TYPE_ALYA: "bluetooth_2",
         const.BED_TYPE_HJBED: "hj_bedbjrn",
         const.BED_TYPE_COMFORTBASE: "accord",
         const.BED_TYPE_SOMOS: "a",
@@ -2220,6 +2221,9 @@ def route_scenarios() -> list[Scenario]:
                     layout_id=const.BED_TYPE_MOTOMOTION,
                 )
             )
+    for profile in const.ALYA_LAYOUTS:
+        scenarios.append(Scenario(id=f"alya:{profile}", bed_type="alya", protocol_variant=profile,
+            layout_id=f"alya_{'ore' if profile.startswith('bluetooth') else 'sino' if profile.startswith('cb_') else 'nus'}"))
     # eShine (com.okin.eshine): each explicit product over the UART layout.
     if "eshine_okin" in const.SUPPORTED_BED_TYPES:
         for profile in const.ESHINE_OKIN_PROFILES:

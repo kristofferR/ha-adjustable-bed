@@ -34,6 +34,7 @@ app. Every guide follows the [bed guide format](BED_GUIDE_FORMAT.md).
 | Guide | Covers | Shared |
 |-------|--------|--------|
 | [Personal Comfort / Instant Comfort](beds/personal-comfort.md) | ANM and RA air units, Malouf and Reverie bases |
+| [Alya Smart Furnishing](beds/alya.md) | Alya app BLE types and twelve explicit layouts | |
 | [BedJet PowerLayer](beds/bedjet-powerlayer.md) | The BedJet PowerLayer adjustable frame | |
 | [SILVERmotion Android](beds/silvermotion.md) | SILVERmotion Android SimplicityFrame beds | |
 | [Casper Base](beds/casper-base.md) | The Casper Base app, sleep sensors and remote finder | |

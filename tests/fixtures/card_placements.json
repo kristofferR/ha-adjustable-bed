@@ -305,6 +305,18 @@
   "card_role": "up",
   "card_motor": "all_motors"
  },
+ "button:alya_action": {
+  "card_section": "utility"
+ },
+ "button:alya_light_action": {
+  "card_section": "lighting"
+ },
+ "button:alya_massage_action": {
+  "card_section": "massage"
+ },
+ "button:alya_release": {
+  "card_section": "hidden"
+ },
  "button:ambient_anti_snore": {
   "card_section": "presets"
  },
@@ -4466,6 +4478,9 @@
   "card_section": "hidden"
  },
  "sensor:agingplace_version": {
+  "card_section": "hidden"
+ },
+ "sensor:alya_report": {
   "card_section": "hidden"
  },
  "sensor:ambient_firmware": {

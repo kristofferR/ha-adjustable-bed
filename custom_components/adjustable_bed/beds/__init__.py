@@ -13,6 +13,7 @@ if TYPE_CHECKING:
     from .adjustable_lumbar import AdjustableBedAppController as AdjustableBedAppController
     from .adjustable_lumbar import AdjustableLumbarController as AdjustableLumbarController
     from .adjustamattress.controller import AdjustaMattressController as AdjustaMattressController
+    from .alya.controller import AlyaController as AlyaController
     from .ambient.controller import AmbientController as AmbientController
     from .baseremote.controller import BaseRemoteController as BaseRemoteController
     from .bedgear.controller import BedgearController as BedgearController
@@ -231,6 +232,7 @@ _EXPORT_MODULES = {
     "CasperSleepController": "casper_sleep.controller",
     "ComfortEnhancementsController": "comfort_enhancements.controller",
     "EshineController": "eshine.controller",
+    "AlyaController": "alya.controller",
     "EshineOkinController": "eshine_okin.controller",
     "JalonController": "keeson.jalon",
     "SomosController": ("keeson.somos", "SomosController"),
