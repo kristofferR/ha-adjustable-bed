@@ -403,6 +403,7 @@ actions; its bounded `hold_control` behavior has separate timing in the
 | King Koil Bed app | `kingkoil` | 10 | 300 ms |
 | Leggett & Platt MlRM remote | `leggett_wilinke` | 10 | 110 ms |
 | Limoss and Stawett remotes | `limoss` | 12 | 80 ms |
+| Linak (Bed Control, Bed Connect and Performance Series apps): Carpe Diem Beds app | `linak` `carpe_diem` | 4 | 300 ms |
 | Linak (Bed Control, Bed Connect and Performance Series apps): Performance Series app (older bases) | `linak` `performance_legacy` | 4 | 300 ms |
 | Linx app | `linx` | 334 | 3 ms |
 | Logicdata SimplicityFrame (SILVERmotion) | `logicdata` | 10 | 30 ms |
@@ -609,6 +610,7 @@ beds, Reconfigure that bed, then combine them again.
 | BF / Cherish | [The exact app](beds/keeson.md#bf-and-cherish); it sets the layout. |
 | Casper Base | [PRO/MAX product](beds/casper-base.md#home-assistant-setup); sleep sensors and the RCRM handset are separate entries. |
 | Relax Motion | Numeric advertisement model, preserved across reconnects, and the exact app page / label language. See [setup](beds/relax-motion.md#detection--setup). |
+| Scott Living | [A (8 buttons), B (13 buttons), or C (17 buttons)](beds/keeson.md#scott-living). Existing entries default to A. The layout sets the motors and utility controls. |
 | SmartBed app | The receiver, the motor count and the bed's Bluetooth name. A CB24AB receiver also asks which side of a split bed the entry controls. See [choosing a profile](beds/smartbed.md#choosing-a-profile). |
 | trueMotion app | [Complete case-sensitive Bluetooth name](beds/suta.md#truemotion). Each receiver keeps its own name in a pair, and the left receiver selects the split editor. |
 | CheersSleep | See the [setup steps](beds/cheerssleep.md#cheerssleep-profile). |

@@ -9,7 +9,7 @@ import asyncio
 import contextlib
 import logging
 from collections.abc import Awaitable, Callable, Mapping, Sequence
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from time import monotonic
 from typing import TYPE_CHECKING, Any, Final
 
@@ -19,7 +19,7 @@ from homeassistant.util import dt as dt_util
 
 from ...alarm import AlarmCapability, AlarmError, AlarmRequest
 from ...bluetooth_transport import async_path_for_source, client_source, is_esphome_proxy_path
-from ...codec.linak import control_frame
+from ...codec.linak import control_frame, selected_sections_frame
 from ...command_scheduler import current_command_context
 from ...const import (
     LINAK_BACK_MAX_POSITION,
@@ -40,12 +40,14 @@ from ...const import (
     LINAK_TIMER_CHAR_UUID,
     LINAK_TIMER_SERVICE_UUID,
     LINAK_VARIANT_AA_CONTROL_MY_BED,
+    LINAK_VARIANT_CARPE_DIEM,
     LINAK_VARIANT_PERFORMANCE,
 )
 from ...controller_state import AnyStateKey, StateKey
 from ...errors import BedNotConnectedError, invalid
 from ...execution import ExecutionCapabilities
 from ...position_seek import PositionSeekPolicy, SeekSample
+from ...profiles.linak import CARPE_DIEM
 from ...runtime_data import DomainKey, domain_registry
 from ...state_keys import LINAK_AUTOMATIC_DRIVE, LINAK_MODEL_VARIANT
 from ..base import BedController
@@ -385,8 +387,9 @@ class LinakController(BedController):
         """Initialize the Linak controller."""
         super().__init__(coordinator)
         self._profile = profile
+        self._raw_protocol_data: dict[str, str] = {}
         self._capabilities = LinakCapabilitySnapshot.from_mapping(
-            capability_snapshot,
+            None if profile is LinakProfile.CARPE_DIEM else capability_snapshot,
             profile=profile,
         )
         if profile is LinakProfile.PERFORMANCE:
@@ -423,6 +426,157 @@ class LinakController(BedController):
         return ExecutionCapabilities(hold="stream")
 
     @property
+    def supports_single_address_pairing(self) -> bool:
+        return self._profile is not LinakProfile.CARPE_DIEM
+
+    async def _write_carpe(
+        self, command: bytes, client: BleakClient | None, repeat_count: int = 1,
+        repeat_delay_ms: int = 300, cancel_event: asyncio.Event | None = None,
+        before_write: Callable[[], None] | None = None,
+    ) -> None:
+        if client is None or self.client is not client or not client.is_connected:
+            raise BedNotConnectedError
+        # Preserve the discovered write mode. With both modes, HA uses acknowledgements.
+        characteristic = client.services.get_characteristic(self.control_characteristic_uuid)
+        properties = getattr(characteristic, "properties", ())
+        response = not (
+            isinstance(properties, (list, tuple, set))
+            and "write-without-response" in properties and "write" not in properties
+        )
+        await self._write_gatt_with_retry(
+            self.control_characteristic_uuid, command, repeat_count=repeat_count,
+            repeat_delay_ms=repeat_delay_ms, cancel_event=cancel_event,
+            expected_client=client, before_write=before_write, settle_write=True,
+            wall_clock_pacing=True, response=response,
+        )
+
+    async def _move_with_stop(self, command: bytes) -> None:
+        if self._profile is LinakProfile.CARPE_DIEM:
+            await self._carpe_move(command)
+            return
+        await super()._move_with_stop(command)
+
+    async def _carpe_move(
+        self, command: bytes, *, duration_ms: int | None = None, favorite: bool = False,
+    ) -> None:
+        """Release an admitted HA gesture once, on its original link, after delivery settles."""
+        client = self.client
+        attempted = False
+        released = False
+
+        def mark_attempted() -> None:
+            nonlocal attempted
+            attempted = True
+
+        def mark_released() -> None:
+            nonlocal released
+            released = True
+
+        async def release() -> None:
+            if attempted and not released and self.client is client and client is not None and client.is_connected:
+                await self._write_carpe(
+                    self._stop_command, client, cancel_event=asyncio.Event(),
+                    before_write=mark_released,
+                )
+
+        if (context := current_command_context()) is not None and context.group_id is not None:
+            async def paired_release(_operation: object) -> None:
+                await release()
+            context.paired_abort_stop = paired_release
+
+        count, interval = self.motor_pulse_settings()
+        if favorite:
+            interval = CARPE_DIEM.favorite_interval_ms
+            duration_ms = 30_000  # HA's bounded recall, not an app timer/watchdog claim.
+        if duration_ms is not None:
+            count = self.timed_move_repeat_count(duration_ms, interval)
+        timeout = asyncio.timeout(None if duration_ms is None else duration_ms / 1000)
+        async with self.releasing(release):
+            try:
+                async with timeout:
+                    if favorite:
+                        await self._write_carpe(command, client, before_write=mark_attempted)
+                        await asyncio.sleep(CARPE_DIEM.favorite_initial_delay_ms / 1000)
+                    await self._write_carpe(
+                        command, client, count, interval, before_write=mark_attempted,
+                    )
+            except TimeoutError:
+                if not timeout.expired():
+                    raise
+
+    async def move_selected_sections(
+        self, sections: frozenset[str], up: bool, duration_ms: int | None = None,
+    ) -> None:
+        if self._profile is not LinakProfile.CARPE_DIEM:
+            raise self.not_supported("selected-section movement")
+        if sections.difference(self.simultaneous_movement_axes):
+            raise self.not_supported("the selected motor sections")
+        await self._carpe_move(selected_sections_frame(sections, up), duration_ms=duration_ms)
+
+    async def _start_carpe_notifications(self) -> None:
+        """Read exact reference fields without deriving angles or mattress state."""
+        client = self.client
+        if client is None or not client.is_connected:
+            return
+
+        def raw_handler(uuid: str) -> Callable[[Any, bytearray], None]:
+            def handle(_: Any, data: bytearray) -> None:
+                if self.client is client:
+                    self.forward_raw_notification(uuid, bytes(data))
+                    self._raw_protocol_data[uuid] = data.hex()
+            return handle
+
+        await self._read_protocol_characteristic(
+            LINAK_DEVICE_NAME_UUID,
+            lambda data: raw_handler(LINAK_DEVICE_NAME_UUID)(None, bytearray(data)),
+            expected_client=client,
+        )
+        for uuid in (LINAK_CONFIG_CHAR_UUID, LINAK_TIMER_CHAR_UUID):
+            if uuid == LINAK_TIMER_CHAR_UUID and not (
+                self._timer_candidate and self._capabilities.actuator_mask
+            ):
+                continue
+            ready = await self._subscribe_protocol_characteristic(
+                uuid, raw_handler(uuid), expected_client=client,
+            )
+            if ready and uuid == LINAK_TIMER_CHAR_UUID:
+                self._capabilities = LinakCapabilitySnapshot(
+                    profile=self._profile, model_variant=LinakModelVariant.ADVANCED_WITH_ALARM,
+                    actuator_mask=self._capabilities.actuator_mask, timer_supported=True,
+                    discovery_complete=True,
+                )
+                self._publish_capability_state()
+        for spec in self._build_position_characteristics(self._coordinator.motor_count):
+            def handle(_: Any, data: bytearray, axis: str = spec.source_name, uuid: str = spec.uuid) -> None:
+                if self.client is not client:
+                    return
+                self.forward_raw_notification(uuid, bytes(data))
+                reference = decode_reference(data, carpe_diem=True)
+                keys = _AxisKeys.of(axis)
+                self.forward_controller_state_updates(
+                    keys.extension(reference.extension), keys.reported_speed(reference.speed),
+                    keys.raw_speed(reference.raw_speed), keys.status_flags(reference.status_flags),
+                    keys.sls(reference.sls), keys.end_position_up(reference.end_position_up),
+                    keys.end_position_down(reference.end_position_down),
+                    keys.position_lost(reference.position_lost),
+                )
+            await self._subscribe_protocol_characteristic(spec.uuid, handle, expected_client=client)
+            await self._read_protocol_characteristic(
+                spec.uuid, lambda data: handle(None, bytearray(data)), expected_client=client,
+            )
+        if self._capabilities.position_axes:
+            def error(_: Any, data: bytearray) -> None:
+                if self.client is client:
+                    self.forward_raw_notification(LINAK_ERROR_CHAR_UUID, bytes(data))
+                    self._handle_error_data(data)
+            await self._subscribe_protocol_characteristic(
+                LINAK_ERROR_CHAR_UUID, error, expected_client=client,
+            )
+            await self._read_protocol_characteristic(
+                LINAK_ERROR_CHAR_UUID, lambda data: error(None, bytearray(data)), expected_client=client,
+            )
+
+    @property
     def supports_preset_flat(self) -> bool:
         """Return True for the app's native held flat/init-down command."""
         return True
@@ -434,7 +588,7 @@ class LinakController(BedController):
 
     @property
     def light_state_starts_off(self) -> bool:
-        return True
+        return self._profile is not LinakProfile.CARPE_DIEM
 
     @property
     def supports_discrete_light_control(self) -> bool:
@@ -486,7 +640,11 @@ class LinakController(BedController):
     @property
     def supports_position_feedback(self) -> bool:
         """Return whether an advanced Bed Control mask selected reference outputs."""
-        return super().supports_position_feedback and bool(self._capabilities.position_axes)
+        return (
+            self._profile is not LinakProfile.CARPE_DIEM
+            and super().supports_position_feedback
+            and bool(self._capabilities.position_axes)
+        )
 
     @property
     def requires_notification_channel(self) -> bool:
@@ -573,17 +731,17 @@ class LinakController(BedController):
     @property
     def has_bed_height_support(self) -> bool:
         """Return whether the advanced mask exposes the BASE actuator."""
-        return "base" in self._capabilities.position_axes
+        return self._profile is not LinakProfile.CARPE_DIEM and "base" in self._capabilities.position_axes
 
     @property
     def supports_alarm(self) -> bool:
         """Return whether timer subscription promoted this advanced model."""
-        return self._capabilities.timer_supported
+        return self._profile is not LinakProfile.CARPE_DIEM and self._capabilities.timer_supported
 
     @property
     def supports_device_rename(self) -> bool:
         """Return whether the modern Bed Control profile exposes Generic Access rename."""
-        return self._profile is not LinakProfile.PERFORMANCE
+        return self._profile not in {LinakProfile.PERFORMANCE, LinakProfile.CARPE_DIEM}
 
     @property
     def disconnects_after_rename(self) -> bool:
@@ -601,6 +759,8 @@ class LinakController(BedController):
     @property
     def supports_simultaneous_movement(self) -> bool:
         """Return whether the profile exposes two-section movement."""
+        if self._profile is LinakProfile.CARPE_DIEM:
+            return len(self.simultaneous_movement_axes) >= 2
         if self._profile is LinakProfile.AA_CONTROL_MY_BED:
             return self._has_resolved_mask and len(self._capabilities.position_axes) >= 2
         return self._profile is LinakProfile.BED_CONTROL
@@ -615,6 +775,8 @@ class LinakController(BedController):
     @property
     def simultaneous_movement_axes(self) -> tuple[str, ...]:
         """Return only axes exposed by the resolved model or configured layout."""
+        if self._profile is LinakProfile.CARPE_DIEM:
+            return tuple(spec.key for spec in super().motor_control_specs)
         if not self.supports_simultaneous_movement:
             return ()
         if self._capabilities.position_axes:
@@ -625,6 +787,8 @@ class LinakController(BedController):
 
     def validate_simultaneous_directions(self, first_up: bool, second_up: bool) -> None:
         """Enforce the AA app's same-direction movement table."""
+        if self._profile is LinakProfile.CARPE_DIEM and first_up != second_up:
+            raise self.not_supported("opposite-direction grouped movement")
         if self._profile is LinakProfile.AA_CONTROL_MY_BED and first_up != second_up:
             raise invalid("linak_aa_same_direction")
 
@@ -644,7 +808,12 @@ class LinakController(BedController):
     @property
     def binds_grouped_abort_to_session(self) -> bool:
         """Whether paired grouped-motion cleanup requires the admitted session."""
-        return self._profile is LinakProfile.AA_CONTROL_MY_BED
+        return self._profile in {LinakProfile.AA_CONTROL_MY_BED, LinakProfile.CARPE_DIEM}
+
+    @property
+    def paired_abort_requires_registered_stop(self) -> bool:
+        """Carpe cleanup is a no-op until its own movement attempts a write."""
+        return self._profile is LinakProfile.CARPE_DIEM
 
     @property
     def _stop_command(self) -> bytes:
@@ -655,6 +824,9 @@ class LinakController(BedController):
 
     def motor_pulse_settings(self) -> tuple[int, int]:
         """Use the legacy app's 300 ms cadence without changing hold duration."""
+        if self._profile is LinakProfile.CARPE_DIEM:
+            refresh = CARPE_DIEM.hold_interval_ms
+            return self.leased_hold_refreshes(refresh) or super().motor_pulse_settings()[0], refresh
         refresh = (
             LINAK_PERFORMANCE_HOLD_INTERVAL_MS
             if self._profile is LinakProfile.PERFORMANCE
@@ -681,6 +853,7 @@ class LinakController(BedController):
             **self._capabilities.as_dict(),
             "position_axes": list(self._capabilities.position_axes),
             "timer_candidate": self._timer_candidate,
+            **({"raw_gatt": dict(self._raw_protocol_data)} if self._profile is LinakProfile.CARPE_DIEM else {}),
         }
 
     async def async_on_connect(self, session: ControllerSession) -> None:
@@ -699,6 +872,8 @@ class LinakController(BedController):
 
     def capability_snapshot(self) -> dict[str, Any] | None:
         """Return a serializable snapshot for offline entity gating, once resolved."""
+        if self._profile is LinakProfile.CARPE_DIEM:
+            return None
         snapshot = self._capabilities.as_dict()
         return snapshot if snapshot.get("discovery_complete") is True else None
 
@@ -779,6 +954,10 @@ class LinakController(BedController):
 
     def _handle_unreadable_mask(self, err: Exception) -> None:
         """Keep a mask-backed cache, otherwise fall back to the motor layout."""
+        if self._profile is LinakProfile.CARPE_DIEM:
+            self._capabilities = LinakCapabilitySnapshot(profile=self._profile)
+            self._capability_discovery_deferred = True
+            return
         cached = self._capabilities
         # Timer promotion can complete a snapshot without any mask read.
         if (
@@ -877,7 +1056,8 @@ class LinakController(BedController):
     async def async_discover_capabilities(self) -> None:
         """Resolve Standard, TD3, and Advanced from services and mask byte 0."""
         # The controller refuses the mask read below on an unencrypted link.
-        await self._async_encrypt_proxy_link()
+        if self._profile is not LinakProfile.CARPE_DIEM:
+            await self._async_encrypt_proxy_link()
         if self._profile is LinakProfile.PERFORMANCE:
             self._capability_discovery_deferred = False
             self._publish_capability_state()
@@ -965,7 +1145,10 @@ class LinakController(BedController):
                     translation_key=f"linak_{axis}_reported_speed",
                     state_key=_AxisKeys.of(axis).reported_speed,
                     icon="mdi:speedometer",
-                    attribute_keys=_AxisKeys.of(axis).attributes,
+                    attribute_keys=(
+                        tuple(key for key in _AxisKeys.of(axis).attributes if key != _AxisKeys.of(axis).speed_direction)
+                        if self._profile is LinakProfile.CARPE_DIEM else _AxisKeys.of(axis).attributes
+                    ),
                     entity_registry_enabled_default=False,
                     suggested_display_precision=3,
                 )
@@ -996,7 +1179,7 @@ class LinakController(BedController):
         self,
     ) -> tuple[ControllerStateBinarySensorSpec, ...]:
         """Expose one aggregate position-lost diagnostic."""
-        if not self._capabilities.position_axes:
+        if self._profile is LinakProfile.CARPE_DIEM or not self._capabilities.position_axes:
             return ()
         return (
             ControllerStateBinarySensorSpec(
@@ -1012,6 +1195,8 @@ class LinakController(BedController):
     @property
     def position_number_specs(self) -> tuple[PositionNumberSpec, ...]:
         """Return sliders only for reference-output axes with calibrated angles."""
+        if self._profile is LinakProfile.CARPE_DIEM:
+            return ()
         return tuple(
             build_position_number_spec(
                 axis,
@@ -1024,7 +1209,19 @@ class LinakController(BedController):
 
     @property
     def motor_control_specs(self) -> tuple[MotorControlSpec, ...]:
-        """Use the advanced mask for exact axes, with BASE mapped to bed height."""
+        """Use the app layout or live mask, preserving controller-owned timed release."""
+        if self._profile is LinakProfile.CARPE_DIEM:
+            specs: list[MotorControlSpec] = []
+            for spec in super().motor_control_specs:
+                async def timed_move(
+                    controller: BedController, up: bool, duration_ms: int, *, axis: str = spec.key,
+                ) -> None:
+                    if not isinstance(controller, LinakController):
+                        raise BedNotConnectedError
+                    await controller.move_selected_sections(frozenset({axis}), up, duration_ms)
+
+                specs.append(replace(spec, timed_move_fn=timed_move))
+            return tuple(specs)
         if not self._capabilities.position_axes:
             return super().motor_control_specs
         specs: list[MotorControlSpec] = []
@@ -1093,6 +1290,16 @@ class LinakController(BedController):
 
     def _handle_error_data(self, data: bytes | bytearray) -> None:
         """Parse and publish the control-error characteristic."""
+        if self._profile is LinakProfile.CARPE_DIEM:
+            self._raw_protocol_data[LINAK_ERROR_CHAR_UUID] = data.hex()
+            if len(data) >= 3 and int.from_bytes(data[:2], "little") == 1:
+                code = int.from_bytes(data[2:3], "little", signed=True)
+                self.forward_controller_state_updates(
+                    PROTOCOL_ERROR(str(code) if code else "none"),
+                    PROTOCOL_ERROR_CODE(code), PROTOCOL_ERROR_PAYLOAD(bytes(data[2:]).hex()),
+                )
+            return
+
         try:
             error = decode_error(data)
         except ValueError as err:
@@ -1531,6 +1738,12 @@ class LinakController(BedController):
         self, cancel_event: asyncio.Event | None = None, *, expected_client: BleakClient | None = None
     ) -> None:
         """Wait until Linak accepts control writes after a fresh BLE connect."""
+        if self._profile is LinakProfile.CARPE_DIEM:
+            if self.client is None or not self.client.is_connected:
+                raise BedNotConnectedError
+            if expected_client is not None and self.client is not expected_client:
+                raise BedNotConnectedError
+            return
         if self._session_ready:
             await self._finish_control_setup()
             return
@@ -1634,6 +1847,9 @@ class LinakController(BedController):
         cancel_event: asyncio.Event | None = None,
     ) -> None:
         """Write a command to the bed."""
+        if self._profile is LinakProfile.CARPE_DIEM:
+            await self._write_carpe(command, self.client, repeat_count, repeat_delay_ms, cancel_event)
+            return
         await self._await_control_ready(cancel_event)
         _LOGGER.debug(
             "Writing command to Linak bed: %s (repeat: %d, delay: %dms)",
@@ -1653,6 +1869,9 @@ class LinakController(BedController):
     async def start_notify(self, callback: Callable[[str, float], None] | None = None) -> None:
         """Start mandatory protocol notifications and optional position feedback."""
         self._notify_callback = callback
+        if self._profile is LinakProfile.CARPE_DIEM:
+            await self._start_carpe_notifications()
+            return
 
         if self.client is None or not self.client.is_connected:
             _LOGGER.warning(
@@ -1904,6 +2123,10 @@ class LinakController(BedController):
         This provides a way to get current positions without relying solely
         on notifications, which may not always be sent by the bed.
         """
+        if self._profile is LinakProfile.CARPE_DIEM:
+            await self._start_carpe_notifications()
+            return
+
         if self.client is None or not self.client.is_connected:
             _LOGGER.warning("Cannot read positions: not connected")
             return
@@ -1982,6 +2205,11 @@ class LinakController(BedController):
 
     async def _send_stop(self) -> None:
         """Send Linak's explicit STOP/release frame."""
+        if self._profile is LinakProfile.CARPE_DIEM:
+            client = self.client
+            if client is not None and client.is_connected:
+                await self._write_carpe(self._stop_command, client, cancel_event=asyncio.Event())
+            return
         await self.write_command(self._stop_command, cancel_event=asyncio.Event())
 
     async def move_head_up(self) -> None:
@@ -2071,6 +2299,9 @@ class LinakController(BedController):
 
     async def _held_preset(self, command: bytes | Callable[[], bytes]) -> None:
         """Hold a favorite-like command for at most 30 seconds after startup."""
+        if self._profile is LinakProfile.CARPE_DIEM:
+            await self._carpe_move(command() if callable(command) else command, duration_ms=30_000)
+            return
         interval_ms = (
             LINAK_PERFORMANCE_HOLD_INTERVAL_MS
             if self._profile is LinakProfile.PERFORMANCE
@@ -2107,6 +2338,9 @@ class LinakController(BedController):
         }
         if memory_num > self.memory_slot_count or (command := commands.get(memory_num)) is None:
             raise ValueError(f"Linak memory {memory_num} is not available")
+        if self._profile is LinakProfile.CARPE_DIEM:
+            await self._carpe_move(control_frame(CARPE_DIEM.memory_opcodes[memory_num - 1]), favorite=True)
+            return
         await self._held_preset(command)
 
     async def program_memory(self, memory_num: int) -> None:
@@ -2119,6 +2353,8 @@ class LinakController(BedController):
         }
         if memory_num > self.memory_slot_count or (command := commands.get(memory_num)) is None:
             raise ValueError(f"Linak memory {memory_num} is not available")
+        if self._profile is LinakProfile.CARPE_DIEM:
+            command = control_frame(CARPE_DIEM.save_opcodes[memory_num - 1])
         await self.write_command(command)
 
     # Light methods
@@ -2178,6 +2414,12 @@ class LinakController(BedController):
 
     async def _write_massage_zone_sequence(self, first: bytes, second: bytes) -> None:
         """Send the modern app's two-zone selection sequence."""
+        if self._profile is LinakProfile.CARPE_DIEM:
+            client = self.client
+            await self._write_carpe(first, client)
+            await asyncio.sleep(CARPE_DIEM.massage_zone_gap_s)
+            await self._write_carpe(second, client)
+            return
         await self.write_command(first)
         await asyncio.sleep(LINAK_MASSAGE_ZONE_GAP_S)
         await self.write_command(second)
@@ -2476,6 +2718,10 @@ class LinakController(BedController):
         duration_ms: int | None = None,
     ) -> None:
         """Move two different sections with one modern Bed Control opcode."""
+        if self._profile is LinakProfile.CARPE_DIEM:
+            self.validate_simultaneous_directions(first_up, second_up)
+            await self.move_selected_sections(frozenset((first_axis, second_axis)), first_up, duration_ms)
+            return
         if self.binds_grouped_abort_to_session:
             self.validate_simultaneous_directions(first_up, second_up)
             await self._move_aa_grouped(first_axis, second_axis, first_up, duration_ms)
@@ -2608,6 +2854,7 @@ async def build_controller(ctx: BuildContext) -> LinakController:
     """Build the controller for the selected profile and stored capabilities."""
     profile = {
         LINAK_VARIANT_AA_CONTROL_MY_BED: LinakProfile.AA_CONTROL_MY_BED,
+        LINAK_VARIANT_CARPE_DIEM: LinakProfile.CARPE_DIEM,
         LINAK_VARIANT_PERFORMANCE: LinakProfile.PERFORMANCE,
     }.get(ctx.variant or "", LinakProfile.BED_CONTROL)
     return LinakController(

@@ -604,3 +604,43 @@ def parse_kingkoil_status(data: bytes) -> KingKoilStatus | None:
         return None
     timer = int.from_bytes(data[3:5], "big")
     return KingKoilStatus(bool(data[12]), 30 if timer > 1200 else 20 if timer > 600 else 10 if timer > 0 else 0)
+
+
+def scott_living_query(name: str | None) -> bytes:
+    """Scott Living sends UTF-8 text, with its decimal round-trip checksum.
+
+    The suffix is eight Java UTF-16 units. The checksum's single 511 fallback
+    and unpadded 32-bit hex output are intentional, including negative results.
+    Invalid hex names fail before any write, as in the app.
+    """
+    units = (name or "").encode("utf-16-be", "surrogatepass")
+    suffix = units[-16:].decode("utf-16-be", "surrogatepass") if len(units) >= 16 else ""
+    wire = ("7D0E00" + suffix + "AB54").encode("utf-8", "replace")
+    decimal = "".join(str(b if b < 128 else b - 256) for b in wire)
+    hex_text = "".join(
+        format(int(decimal[i : i + 2]) & 0xFFFFFFFF, "x") for i in range(0, len(decimal) - 1, 2)
+    )
+    text = "".join(chr(int(hex_text[i : i + 2], 16)) for i in range(0, len(hex_text) - 1, 2))
+    total = sum(int(text[i : i + 2], 16) for i in range(0, len(text) - 1, 2))
+    result = 255 - total
+    if result < 0:
+        result = 511 - total
+    return wire + format(result & 0xFFFFFFFF, "x").encode("ascii")
+
+
+def scott_living_timer_indicator(data: bytes) -> int | None:
+    """B/C's timer graphic (0/10/20/30); None leaves the last graphic unchanged.
+
+    No header or exact-length check is proven. Refuse short/malformed packets
+    safely instead of reproducing Android's out-of-bounds exceptions. The light
+    byte at 14 is discarded and establishes no light state.
+    """
+    if len(data) < 15 or checksum(data[:-1]) != data[-1]:
+        return None
+    milliseconds = int.from_bytes(data[9:13], "little", signed=True)
+    seconds = (abs(milliseconds) // 1000) * (-1 if milliseconds < 0 else 1)
+    if seconds == 0:
+        return 0
+    return next(
+        (i * 10 for i, target in enumerate((60, 120, 180), 1) if abs(seconds - target) <= 10), None
+    )

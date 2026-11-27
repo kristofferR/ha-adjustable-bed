@@ -375,7 +375,6 @@ _SIMPLE_CONTROLLERS: Final[dict[str, _ControllerSpec]] = {
     BED_TYPE_SLEEPYS_BOX15: _ControllerSpec("sleepys.controller", "SleepysBox15Controller"),
     BED_TYPE_SLEEPYS_BOX24: _ControllerSpec("sleepys.controller", "SleepysBox24Controller"),
     BED_TYPE_VIBRADORM: _ControllerSpec("vibradorm.controller", "VibradormController"),
-    BED_TYPE_SCOTT_LIVING: _ControllerSpec("scott_living", "ScottLivingController"),
 }
 
 
@@ -520,6 +519,7 @@ _BUILDERS: Final[dict[str, _BuilderSpec]] = {
     "row_control": _BuilderSpec("row_control"),
     "serta_mp_remote": _BuilderSpec("serta_mp_remote"),
     "tempur_au": _BuilderSpec("tempur_au"),
+    BED_TYPE_SCOTT_LIVING: _BuilderSpec("scott_living"),
     "tempur_curve": _BuilderSpec("tempur_curve"),
 }
 

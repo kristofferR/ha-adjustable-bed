@@ -9,7 +9,6 @@ from typing import Any, cast
 from custom_components.adjustable_bed import controller_factory
 from custom_components.adjustable_bed.beds import innova as innova_module
 from custom_components.adjustable_bed.beds import ore_comfort_bed as ore_module
-from custom_components.adjustable_bed.beds import scott_living as scott_living_module
 from custom_components.adjustable_bed.beds import serta_mp_remote as serta_mp_module
 from custom_components.adjustable_bed.beds.glideaway_motion import controller as glideaway_module
 from custom_components.adjustable_bed.beds.keeson import layout_app as keeson_layout_app_module
@@ -17,6 +16,7 @@ from custom_components.adjustable_bed.beds.keeson import okin_apps as okin_apps_
 from custom_components.adjustable_bed.beds.ore_comfort_bed import ORE_COMFORT_BED_APPS
 from custom_components.adjustable_bed.codec import keeson as keeson_codec
 from custom_components.adjustable_bed.profiles import keeson as keeson_profiles
+from custom_components.adjustable_bed.profiles import scott_living as scott_profiles
 from scripts.codec_docs._agingplace import BLOCKS as _AGINGPLACE_BLOCKS
 from scripts.codec_docs._betterliving2 import BLOCKS as _BETTERLIVING2_BLOCKS
 from scripts.codec_docs._common import Block, _block, _hex, _table
@@ -778,7 +778,7 @@ def render_keeson_controllers() -> str:
                     else ""
                 ),
                 _kframe(profile, _K.MOTOR_HEAD_UP),
-                _kframe(profile, keeson_codec.RELEASE),
+                _kframe(profile, keeson_codec.RELEASE) if profile.release.steps else "none (ends refresh)",
                 _lease(profile),
                 guide,
             )
@@ -828,15 +828,22 @@ def render_keeson_glideaway() -> str:
 
 
 def render_keeson_scott_living() -> str:
-    table = scott_living_module.ScottLivingCommands
-    profile = keeson_profiles.SCOTT_LIVING
-    words = {name: word for name, word in vars(table).items() if name.isupper()}
     rows = [
-        (name.replace("_", " ").title(), _word(word), _kframe(profile, word))
-        for name, word in words.items()
+        (layout, action.name, _word(action.mask),
+         _hex(keeson_codec.frame(action.mask, header=0xE6, side=1)), action.mode)
+        for layout in scott_profiles.LAYOUTS
+        for action in scott_profiles.profile(layout).actions
     ]
-    rows.append(("Stop", _word(keeson_codec.RELEASE), _kframe(profile, keeson_codec.RELEASE)))
-    return _block(_table(("Command", "Word", "Frame"), rows))
+    queries = [(name, _hex(keeson_codec.scott_living_query(name)))
+               for name in ("base00000000", "base12345678", "base00000070", "baseFFFFFFFF", "base")]
+    return _block(
+        _table(("Layout", "Control", "Word", "Frame", "Execution"), rows),
+        _table(("Behavior", "Timing"), [
+            ("Held refresh / post-notify query wait", f"{scott_profiles.REFRESH_MS} ms"),
+            ("Clicks / release frames", "1 / none"),
+        ]),
+        _table(("Bluetooth name", "UTF-8 query bytes"), queries),
+    )
 
 
 # Keeson layout apps

@@ -498,7 +498,7 @@ async def test_the_final_settings_save_each_beds_angle_sensing(hass, row, disabl
     markers = {m.schema: m for m in _fields(form["data_schema"])}
     shown = const.CONF_READ_POSITIONS in markers
     bed_type, variant = resolve_bed_type_choice(row)
-    routes = (variant or const.VARIANT_AUTO, *(get_variants_for_bed_type(bed_type) or {}))
+    routes = (variant,) if variant else (const.VARIANT_AUTO, *(get_variants_for_bed_type(bed_type) or {}))
     # Shown exactly where a route of the row reports positions.
     assert shown == any(bed_type_has_position_feedback(bed_type, r) for r in routes)
     answers = _answers(form, 0)
@@ -523,6 +523,7 @@ async def test_the_final_settings_save_each_beds_angle_sensing(hass, row, disabl
 # read them for by default (``bed_type_has_position_feedback`` is False), so
 # angle sensing starts disabled.
 _QUIET_BED_TYPES = (
+    const.BED_TYPE_LINAK,
     "enso",
     const.BED_TYPE_NERUM,
     const.BED_TYPE_AGINGPLACE,
@@ -547,7 +548,6 @@ _QUIET_BED_TYPES = (
     const.BED_TYPE_OKIN_RF_ECO_BT,
     const.BED_TYPE_REVERIE,
     const.BED_TYPE_REVERIE_NIGHTSTAND,
-    const.BED_TYPE_SCOTT_LIVING,
     const.BED_TYPE_SLEEPTRACKER,
     const.BED_TYPE_SOMOS,
     const.BED_TYPE_STARCODE_ABM5_4,

@@ -1,0 +1,282 @@
+[
+  {
+    "id": "back-up",
+    "operation": "movement",
+    "inputs": {
+      "sections": [
+        "back"
+      ],
+      "up": true
+    },
+    "expected": "0b00"
+  },
+  {
+    "id": "back-down",
+    "operation": "movement",
+    "inputs": {
+      "sections": [
+        "back"
+      ],
+      "up": false
+    },
+    "expected": "0a00"
+  },
+  {
+    "id": "legs-up",
+    "operation": "movement",
+    "inputs": {
+      "sections": [
+        "legs"
+      ],
+      "up": true
+    },
+    "expected": "0900"
+  },
+  {
+    "id": "head-down",
+    "operation": "movement",
+    "inputs": {
+      "sections": [
+        "head"
+      ],
+      "up": false
+    },
+    "expected": "0200"
+  },
+  {
+    "id": "feet-up",
+    "operation": "movement",
+    "inputs": {
+      "sections": [
+        "feet"
+      ],
+      "up": true
+    },
+    "expected": "0500"
+  },
+  {
+    "id": "back-legs-up",
+    "operation": "movement",
+    "inputs": {
+      "sections": [
+        "back",
+        "legs"
+      ],
+      "up": true
+    },
+    "expected": "3700"
+  },
+  {
+    "id": "back-head-down",
+    "operation": "movement",
+    "inputs": {
+      "sections": [
+        "back",
+        "head"
+      ],
+      "up": false
+    },
+    "expected": "2d00"
+  },
+  {
+    "id": "back-feet-up",
+    "operation": "movement",
+    "inputs": {
+      "sections": [
+        "back",
+        "feet"
+      ],
+      "up": true
+    },
+    "expected": "2b00"
+  },
+  {
+    "id": "legs-head-up",
+    "operation": "movement",
+    "inputs": {
+      "sections": [
+        "legs",
+        "head"
+      ],
+      "up": true
+    },
+    "expected": "3200"
+  },
+  {
+    "id": "legs-feet-down",
+    "operation": "movement",
+    "inputs": {
+      "sections": [
+        "legs",
+        "feet"
+      ],
+      "up": false
+    },
+    "expected": "2100"
+  },
+  {
+    "id": "head-feet-up",
+    "operation": "movement",
+    "inputs": {
+      "sections": [
+        "head",
+        "feet"
+      ],
+      "up": true
+    },
+    "expected": "2900"
+  },
+  {
+    "id": "all-down",
+    "operation": "movement",
+    "inputs": {
+      "sections": [
+        "head",
+        "back",
+        "legs",
+        "feet"
+      ],
+      "up": false
+    },
+    "expected": "0000"
+  },
+  {
+    "id": "stop",
+    "operation": "control",
+    "inputs": {
+      "opcode": 255
+    },
+    "expected": "ff00"
+  },
+  {
+    "id": "favorite-1",
+    "operation": "control",
+    "inputs": {
+      "opcode": 14
+    },
+    "expected": "0e00"
+  },
+  {
+    "id": "favorite-4",
+    "operation": "control",
+    "inputs": {
+      "opcode": 68
+    },
+    "expected": "4400"
+  },
+  {
+    "id": "save-1",
+    "operation": "control",
+    "inputs": {
+      "opcode": 56
+    },
+    "expected": "3800"
+  },
+  {
+    "id": "save-4",
+    "operation": "control",
+    "inputs": {
+      "opcode": 69
+    },
+    "expected": "4500"
+  },
+  {
+    "id": "light-toggle",
+    "operation": "control",
+    "inputs": {
+      "opcode": 148
+    },
+    "expected": "9400"
+  },
+  {
+    "id": "massage-both",
+    "operation": "massage",
+    "inputs": {
+      "back": true,
+      "legs": true
+    },
+    "expected": "8900;8b00"
+  },
+  {
+    "id": "massage-back",
+    "operation": "massage",
+    "inputs": {
+      "back": true,
+      "legs": false
+    },
+    "expected": "8900;8c00"
+  },
+  {
+    "id": "massage-legs",
+    "operation": "massage",
+    "inputs": {
+      "back": false,
+      "legs": true
+    },
+    "expected": "8a00;8b00"
+  },
+  {
+    "id": "massage-off",
+    "operation": "massage",
+    "inputs": {
+      "back": false,
+      "legs": false
+    },
+    "expected": "8000"
+  },
+  {
+    "id": "position-positive",
+    "operation": "reference",
+    "inputs": {
+      "data": "88134006"
+    },
+    "expected": {
+      "extension": 50.0,
+      "speed": 9.765625,
+      "flags": 0
+    }
+  },
+  {
+    "id": "position-negative-speed",
+    "operation": "reference",
+    "inputs": {
+      "data": "1027c8f9"
+    },
+    "expected": {
+      "extension": 100.0,
+      "speed": 9.765625,
+      "flags": 8
+    }
+  },
+  {
+    "id": "position-short",
+    "operation": "reference",
+    "inputs": {
+      "data": "0000"
+    },
+    "expected": {
+      "extension": 0,
+      "speed": 0,
+      "flags": 0
+    }
+  },
+  {
+    "id": "error-overload",
+    "operation": "diagnostic",
+    "inputs": {
+      "data": "010002"
+    },
+    "expected": {
+      "code": 2,
+      "data": "02"
+    }
+  },
+  {
+    "id": "error-none",
+    "operation": "diagnostic",
+    "inputs": {
+      "data": "010000"
+    },
+    "expected": null
+  }
+]
