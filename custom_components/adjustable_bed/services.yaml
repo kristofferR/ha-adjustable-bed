@@ -4782,3 +4782,30 @@ ergobq_unlink:
           max: 3
           step: 1
           mode: box
+
+muuegm_enable_alarm:
+  fields:
+    device_id:
+      required: true
+      selector:
+        device:
+          integration: adjustable_bed
+          multiple: true
+    alarm_number:
+      required: true
+      selector:
+        number:
+          min: 1
+          max: 7
+          mode: box
+    enabled:
+      required: true
+      selector:
+        boolean:
+    side:
+      selector:
+        select:
+          options:
+            - both
+            - left
+            - right

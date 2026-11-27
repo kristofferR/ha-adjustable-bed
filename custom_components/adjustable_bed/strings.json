@@ -7231,6 +7231,19 @@
       }
     },
     "select": {
+      "muuegm_color": {
+        "name": "Underbed light color",
+        "state": {
+          "yellow": "Yellow",
+          "green": "Green",
+          "azure": "Azure",
+          "blue": "Blue",
+          "violet": "Violet",
+          "white": "White",
+          "red": "Red",
+          "orange": "Orange"
+        }
+      },
       "sleep_assist_pro_rgb_intensity": {
         "name": "RGB brightness",
         "state": {"20": "20%", "60": "60%", "100": "100%"}
@@ -8198,6 +8211,24 @@
     }
   },
   "services": {
+    "muuegm_enable_alarm": {
+      "name": "Enable MUUEGM alarm",
+      "description": "Enable or disable a reported ABF07 alarm while preserving its time, mode and repeat days. Refresh alarms first.",
+      "fields": {
+        "device_id": {
+          "name": "Device"
+        },
+        "alarm_number": {
+          "name": "Alarm number"
+        },
+        "enabled": {
+          "name": "Enabled"
+        },
+        "side": {
+          "name": "Side"
+        }
+      }
+    },
     "ergobq_scene": {
       "name": "Scene (ErgoBQ BED)",
       "description": "Recall, save or restore a named bed scene.",

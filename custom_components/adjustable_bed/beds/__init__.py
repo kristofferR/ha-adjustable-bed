@@ -289,6 +289,7 @@ _EXPORT_MODULES = {
     "KaidiController": "kaidi.controller",
     "LevaController": "leva",
     "LikimioController": "dreamsense.likimio",
+    "MuuegmController": "dreamsense.muuegm",
     "LinxController": "linx.controller",
     "SymphonySleepController": ("keeson.symphony_sleep", "SymphonySleepController"),
     "KeesonController": "keeson.controller",
