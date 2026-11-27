@@ -14,16 +14,17 @@ from ..const import (
     RICHMAT_WILINKE_W4_SERVICE_UUID,
 )
 from ..profiles.jerome_adjustable_base import SCAN_TERMS
-from ..profiles.richmat import ATLAS_LIFT_SCAN_KEYWORD
+from ..profiles.richmat import ATLAS_LIFT_SCAN_KEYWORD, TOPCARE_SCAN_KEYWORD
 from ._hints import Hint, names, services
 
 ATLAS_LIFT_NAME_HINT = names(
     ATLAS_LIFT_SCAN_KEYWORD, bed_types={BED_TYPE_ATLAS_LIFT}, anywhere=True
 )
+TOPCARE_NAME_HINT = names(TOPCARE_SCAN_KEYWORD, bed_types={"topcare"}, anywhere=True)
 
 HINTS: tuple[Hint, ...] = (
     ATLAS_LIFT_NAME_HINT,
-    names("RMTC", bed_types={"topcare"}, anywhere=True),
+    TOPCARE_NAME_HINT,
     # Luuna's case-sensitive contains filters. HA can gate their prefix subset;
     # common services cover interior matches. They never select its product.
     names(*SCAN_TERMS, bed_types={BED_TYPE_RICHMAT, BED_TYPE_JEROME_ADJUSTABLE_BASE}, anywhere=True),
