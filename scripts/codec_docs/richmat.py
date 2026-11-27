@@ -2233,3 +2233,7 @@ def render_silksnow_settings() -> str:
 
 
 BLOCKS += [(GUIDE, "silksnow-products", render_silksnow_products), (GUIDE, "silksnow-commands", render_silksnow_commands), (GUIDE, "silksnow-settings", render_silksnow_settings)]
+
+from scripts.codec_docs import _comfort_bed  # noqa: E402
+
+BLOCKS.append((GUIDE, "comfort-bed", _comfort_bed.render))

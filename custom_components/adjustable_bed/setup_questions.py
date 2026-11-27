@@ -57,6 +57,7 @@ from .const import (
     BED_TYPE_BF,
     BED_TYPE_CASPER_BASE,
     BED_TYPE_CHERISH,
+    BED_TYPE_COMFORT_BED,
     BED_TYPE_COMFORT_ENHANCEMENT3,
     BED_TYPE_COMFORT_ENHANCEMENTS,
     BED_TYPE_COMFORTBASE,
@@ -3925,6 +3926,12 @@ SETUP_PROFILES: Final[dict[str, SetupProfile]] = {
         validate=_motion_bed_errors,
         derive=lambda _data: _NO_PULSE_CHOICE,
         seed=_motion_bed_seed,
+    ),
+    BED_TYPE_COMFORT_BED: SetupProfile(
+        owns={CONF_MOTOR_COUNT: 2, CONF_HAS_MASSAGE: True,
+              CONF_DISABLE_ANGLE_SENSING: True, CONF_MOTOR_PULSE_DELAY_MS: 100,
+              CONF_PROTOCOL_VARIANT: "auto"},
+        derive=lambda _data: {CONF_PRODUCT_TYPE: "86"},
     ),
     BED_TYPE_ATLAS_LIFT: SetupProfile(
         owns={

@@ -4480,6 +4480,9 @@
  "select:bedsmart_side": {
   "card_section": "motors"
  },
+ "select:comfort_bed_side": {
+  "card_section": "utility"
+ },
  "select:comfy_timer_selection": {
   "card_section": "utility"
  },
