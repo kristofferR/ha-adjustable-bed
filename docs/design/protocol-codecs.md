@@ -503,3 +503,9 @@ byte-identical BED products and serial-dependent axes. It has no mattress
 profile. `beds/ergobq/` uses the shared settled GATT writer with an expected
 client, while owning its authentication, notification stream and release.
 See [ErgoBQ BED](../beds/ergobq.md) and `tests/test_ergobq_vectors.py`.
+
+Purely Sleep 2.0.1 uses typed normal-mode JLRN and VJRM profiles over the Richmat
+codec. All 90 frozen builder vectors reproduce byte for byte in
+`tests/test_purely_sleep_vectors.py`; no new codec or catalog-wide alias is needed.
+Its session extension keeps FIFO pacing, property-selected GATT roles and the
+normal/version-one boundary separate from the legacy remote routes.

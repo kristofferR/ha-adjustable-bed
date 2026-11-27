@@ -11,7 +11,7 @@ from ...card import CARD_MASSAGE, CARD_PRESET_SAVE
 from ...codec import richmat as codec
 from ...command_scheduler import CommandContext, current_command_context, note_frame_skipped
 from ...errors import BedNotConnectedError, failed
-from ...profiles.richmat import ATLAS_LIFT, ATLAS_LIFT_INITIALIZATION, Button
+from ...profiles.richmat import ATLAS_LIFT, ATLAS_LIFT_INITIALIZATION, Button, RichmatProfile
 from ..base import BedController
 from ..cancellation import cancellable, settled
 from ..entity_specs import ControllerButtonSpec, MotorControlSpec
@@ -37,11 +37,13 @@ class _MotionWindowEnded(Exception):
     """The scheduled motion window ended before this frame could dispatch."""
 
 
-def select_link(client: BleakClient) -> _Link:
+def select_link(
+    client: BleakClient, profile: RichmatProfile = ATLAS_LIFT, error_key: str = "atlas_lift_gatt"
+) -> _Link:
     """Identify the same supported service and TX in setup and at runtime."""
     routes = {
         transport.service_uuid: transport
-        for transport in (codec.TRANSPORTS[key] for key in ATLAS_LIFT.transports)
+        for transport in (codec.TRANSPORTS[key] for key in profile.transports)
     }
     matches = [
         (service, routes[uuid])
@@ -51,7 +53,7 @@ def select_link(client: BleakClient) -> _Link:
     # The app can select framing from a different service than its TX.
     # Require one supported service so the encoder always belongs to its TX.
     if len(matches) != 1:
-        raise failed("atlas_lift_gatt")
+        raise failed(error_key)
     service, route = matches[0]
     writes = [
         char
@@ -59,16 +61,24 @@ def select_link(client: BleakClient) -> _Link:
         if char.uuid.lower() == route.write_uuid and "write" in char.properties
     ]
     if len(writes) != 1:
-        raise failed("atlas_lift_gatt")
+        raise failed(error_key)
     notify = next((char for char in service.characteristics if "notify" in char.properties), None)
     return _Link(client, writes[0], notify, route.single)
 
 
-class AtlasLiftController(RichmatProfileController):
+class RichmatSessionController(RichmatProfileController):
     """Fixed product controls with an encoder and characteristic tied to the connection."""
 
-    def __init__(self, coordinator: AdjustableBedCoordinator) -> None:
-        super().__init__(coordinator, ATLAS_LIFT, char_uuid="")
+    def __init__(
+        self,
+        coordinator: AdjustableBedCoordinator,
+        profile: RichmatProfile,
+        initialization: tuple[tuple[str, int], ...],
+        gatt_error_key: str,
+    ) -> None:
+        super().__init__(coordinator, profile, char_uuid="")
+        self._initialization = initialization
+        self._gatt_error_key = gatt_error_key
         self._link: _Link | None = None
         self._notifying = False
         self._cleanup_context: CommandContext | None = None
@@ -106,10 +116,10 @@ class AtlasLiftController(RichmatProfileController):
         client = session.client
         if client is None or not session.is_current():
             raise BedNotConnectedError
-        self._link = link = select_link(client)
+        self._link = link = select_link(client, self.profile, self._gatt_error_key)
         await session.async_start_notify()
         cancel = asyncio.Event()
-        for action, code in ATLAS_LIFT_INITIALIZATION:
+        for action, code in self._initialization:
             await self._write_on(
                 link,
                 codec.function(code, action=action, single=link.single),
@@ -124,7 +134,7 @@ class AtlasLiftController(RichmatProfileController):
 
         def receive(sender: BleakGATTCharacteristic, data: bytearray) -> None:
             if self._link is link and self.client is link.client and self._notifying:
-                self.forward_raw_notification(sender.uuid, bytes(data))
+                self._receive_notification(sender.uuid, bytes(data))
 
         async with self.ble_lock:
             self._current_link(link)
@@ -132,6 +142,9 @@ class AtlasLiftController(RichmatProfileController):
                 await link.client.start_notify(link.notify, receive)
                 self._current_link(link)
                 self._notifying = True
+
+    def _receive_notification(self, sender: str, data: bytes) -> None:
+        self.forward_raw_notification(sender, data)
 
     async def stop_notify(self) -> None:
         link = self._link
@@ -297,13 +310,13 @@ class AtlasLiftController(RichmatProfileController):
         return (
             replace(
                 back,
-                timed_move_fn=lambda controller, up, ms: _atlas_lift(controller)._timed_motor(
+                timed_move_fn=lambda controller, up, ms: _session(controller)._timed_motor(
                     "head_up" if up else "head_down", ms
                 ),
             ),
             replace(
                 legs,
-                timed_move_fn=lambda controller, up, ms: _atlas_lift(controller)._timed_motor(
+                timed_move_fn=lambda controller, up, ms: _session(controller)._timed_motor(
                     "feet_up" if up else "feet_down", ms
                 ),
             ),
@@ -311,6 +324,13 @@ class AtlasLiftController(RichmatProfileController):
 
     async def _timed_motor(self, control: Button, duration_ms: int) -> None:
         await self._move_with_stop(self._code(control), duration_ms=duration_ms)
+
+
+class AtlasLiftController(RichmatSessionController):
+    """Cama Lift's fixed normal controls and app-specific buttons."""
+
+    def __init__(self, coordinator: AdjustableBedCoordinator) -> None:
+        super().__init__(coordinator, ATLAS_LIFT, ATLAS_LIFT_INITIALIZATION, "atlas_lift_gatt")
 
     @property
     def supports_massage(self) -> bool:
@@ -386,4 +406,9 @@ class AtlasLiftController(RichmatProfileController):
 
 def _atlas_lift(controller: BedController) -> AtlasLiftController:
     assert isinstance(controller, AtlasLiftController)
+    return controller
+
+
+def _session(controller: BedController) -> RichmatSessionController:
+    assert isinstance(controller, RichmatSessionController)
     return controller

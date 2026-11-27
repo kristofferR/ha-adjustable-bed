@@ -111,6 +111,7 @@ from .const import (
     BED_TYPE_OKIN_DOT,
     BED_TYPE_OKIN_MOTIONBED,
     BED_TYPE_OKIN_UUID,
+    BED_TYPE_PURELY_SLEEP,
     BED_TYPE_RESIDENT,
     BED_TYPE_RESTFUL,
     BED_TYPE_RESTONIC,
@@ -306,6 +307,7 @@ from .profiles.mlily0 import VARIANTS as MLILY0_PROFILES
 from .profiles.mlily_choices import PROFILE_CHOICES as MLILY_PROFILES
 from .profiles.mlily_remote import VARIANTS as MLILY_REMOTE_PROFILES
 from .profiles.okimiki import PROFILE_CHOICES as OKIMIKI_PROFILES
+from .profiles.purely_sleep import PRODUCT_CHOICES as PURELY_SLEEP_PRODUCTS
 from .profiles.restonic import AXES as RESTONIC_AXES
 from .profiles.restonic import BRANCH_CHOICES as RESTONIC_BRANCHES
 from .profiles.restonic import LAYOUT_CHOICES as RESTONIC_LAYOUTS
@@ -3907,6 +3909,11 @@ SETUP_PROFILES: Final[dict[str, SetupProfile]] = {
         validate=_motion_bed_errors,
         derive=lambda _data: _NO_PULSE_CHOICE,
         seed=_motion_bed_seed,
+    ),
+    BED_TYPE_PURELY_SLEEP: SetupProfile(
+        owns={CONF_MOTOR_COUNT: 2, CONF_HAS_MASSAGE: False,
+              CONF_DISABLE_ANGLE_SENSING: True, CONF_MOTOR_PULSE_DELAY_MS: 100},
+        questions=(Question(CONF_PROTOCOL_VARIANT, PURELY_SLEEP_PRODUCTS, searchable=True),),
     ),
     BED_TYPE_ATLAS_LIFT: SetupProfile(
         owns={

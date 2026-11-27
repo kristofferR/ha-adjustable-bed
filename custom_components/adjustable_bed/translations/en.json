@@ -4753,6 +4753,15 @@
       }
     },
     "sensor": {
+      "purely_sleep_protocol_version": {
+        "name": "Protocol version"
+      },
+      "purely_sleep_clock_available": {
+        "name": "Clock available"
+      },
+      "purely_sleep_light_available": {
+        "name": "Light available"
+      },
       "silksnow": {"name": "Model"},
       "berun_head_massage": {
         "name": "Head massage level"
@@ -12118,6 +12127,15 @@
     }
   },
   "exceptions": {
+    "purely_sleep_product_required": {
+      "message": "Choose NXPS200 (JLRN) or PS200 (VJRM) for Purely Sleep normal mode."
+    },
+    "purely_sleep_gatt": {
+      "message": "Purely Sleep needs one supported Bluetooth service with its exact writable characteristic and a notification channel."
+    },
+    "purely_sleep_version_one": {
+      "message": "This Purely Sleep bed reported protocol version 1. Version-one controls are not supported yet."
+    },
     "suta_king_koil_calibrate": {
       "message": "Set the bed clock, then wait for its clock reply before adding or refreshing alarms."
     },
@@ -13904,6 +13922,7 @@
     "richmat_family_choice": {
       "options": {
         "atlas_lift": "Atlas Lift (Cama Lift)",
+        "purely_sleep": "Purely Sleep (NXPS200 / PS200, normal mode)",
         "enso2": "ENSO Sleep Control (Enso 2)",
         "rmcontrol": "RMControl app",
         "revive": "Revive Control app",
