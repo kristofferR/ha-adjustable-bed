@@ -95,6 +95,8 @@ explicit layouts and this app's timing; its controller keeps session-bound
 motor release and notification-backed read/modify/write behavior. No existing
 wire scenario changes. See the [Flexispot guide](../beds/flexispot.md).
 
+GhostBed 1.3 (4) reproduces all 27 frozen frames through the same encoder, including its literal alarm-3/4 bank/key stores and the unprotected selector. `profiles/ghostbed.py` keeps its fixed current layout and independently recovered timing. `beds/flexispot/ghostbed.py` extends the shared controller for four banked alarms and current left-only anti-snore semantics. It does not inherit Flexispot product selection or infer a split layout.
+
 ## Smart Comfort seat codec
 
 The Smart Comfort SYNARGY and SYNERGY literals are reproduced by
