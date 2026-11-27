@@ -124,7 +124,7 @@ timed_move:
       required: true
       selector:
         select:
-          options: [axis_1, axis_2, axis_3, lumbar_tilt, tv_lift, back, right_back, legs, head, feet, both, neck, tilt, foot_tilt, lumbar, bed_height,
+          options: [axis_1, axis_2, axis_3, lumbar_tilt, lumbar_pillow, head_feet, tv_lift, back, right_back, legs, head, feet, both, neck, tilt, foot_tilt, lumbar, bed_height,
             elevate, stair, m1x12_part_1, m1x12_part_2, m1x12_part_4, m1x12_part_8, m1x12_part_16, elevate_actuator_1,
             elevate_actuator_2, elevate_both, motor_1, motor_2, motor_3, motor_4, motor_5, motor_6, motor_7,
             motors_1_2, motors_2_3, motors_3_4, motors_3_4_tilt, selected_motor]
