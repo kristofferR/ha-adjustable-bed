@@ -241,6 +241,7 @@ async def discover_cama_lift(hass):
         const.BED_TYPE_COMFORT_BED,
         const.BED_TYPE_LIKIMIO,
         "muuegm",
+        "thrivesleep",
         "show_all",
     }
     confirm = await manager.async_configure(
