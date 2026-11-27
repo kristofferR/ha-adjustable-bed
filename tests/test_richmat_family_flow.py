@@ -63,6 +63,7 @@ APPS = [
     "zerogravity",
     "baseremote",
     "maxprime",
+    "homezone",
     "dreamlab2",
     "enso2",
     "remote",

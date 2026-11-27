@@ -160,13 +160,13 @@ async def test_light_timeout_registry_survives_disconnect_and_offline_reload(has
     await async_setup_platforms_and_sweep(hass, coordinator.entry, coordinator, (Platform.NUMBER,))
     assert registry.async_get(row.entity_id) == row
     assert not timer.available
-    with pytest.raises(ValueError):
+    with pytest.raises(ServiceValidationError):
         await offline.execute_request(Request("lamp_timeout", seconds=120))
 
     # A fresh connection alone does not authorize a retained number's writes.
     offline._session = original_session
     assert not timer.available
-    with pytest.raises(ValueError):
+    with pytest.raises(ServiceValidationError):
         await offline.execute_request(Request("lamp_timeout", seconds=120))
     with pytest.raises(ServiceValidationError):
         await timer.async_set_native_value(120)

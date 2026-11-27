@@ -6,8 +6,10 @@ import json
 from dataclasses import replace
 from datetime import UTC
 from pathlib import Path
+from types import SimpleNamespace
 
 import pytest
+from homeassistant.exceptions import ServiceValidationError
 
 from custom_components.adjustable_bed.beds.richmat_classic import protocol as p
 from custom_components.adjustable_bed.beds.richmat_classic import rise
@@ -21,6 +23,7 @@ from custom_components.adjustable_bed.beds.richmat_classic.profiles import (
 )
 from custom_components.adjustable_bed.beds.richmat_classic.resource_protocol import Request
 from custom_components.adjustable_bed.profiles import homezone
+from tests.error_helpers import raises_key
 from tests.test_richmat_classic import controller as classic_controller
 from tests.test_richmat_classic import instant as instant
 from tests.test_richmat_classic import packets
@@ -133,8 +136,8 @@ def test_setup_scope_and_aliases_are_explicit():
     for code in homezone.EXCLUDED_LAYOUTS:
         assert code not in _classic_layouts(data)
         assert _classic_errors({**data, "product_type": code})
-        with pytest.raises(ValueError):
-            controller(code)
+        with raises_key("homezone_control"):
+            HomeZoneController(SimpleNamespace(entry=SimpleNamespace(data={"product_type": code})))
     assert _classic_normalize(data, {"product_type": "ZRS3:APRM"})["product_type"] == "APRM"
     assert resolve_layout("homezone", "200IV2ABCD", from_name=True) == "A8RM"
     assert resolve_layout("homezone", "OTRM", russian=True) == "O0RM"
@@ -174,9 +177,9 @@ async def test_utilities_remain_framed_on_raw_link(instant):
         "6e1d000c97",
         "6e01008bfa",
     ]
-    with pytest.raises(ValueError):
+    with pytest.raises(ServiceValidationError):
         await ctrl.execute_request(Request("aroma", aroma_times=(61, 1, 1)))
-    with pytest.raises(ValueError):
+    with pytest.raises(ServiceValidationError):
         await ctrl.execute_request(Request("bed_command", command="head_up"))
 
 

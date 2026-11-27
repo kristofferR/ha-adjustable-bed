@@ -11,7 +11,9 @@ from homeassistant.util import dt as dt_util
 
 from ...alarm import AlarmRequest
 from ...codec import richmat as codec
+from ...command_scheduler import Delivery, delivered
 from ...const import CONF_RICHMAT_CLASSIC_THIRD_SERVICE
+from ...errors import invalid
 from ...profiles import homezone as profile
 from ...state_keys import MASSAGE_TIMER_MINUTES
 from ..base import CONTROLLER_GESTURE_RELEASE
@@ -39,7 +41,6 @@ from .protocol import (
     alarm,
     aroma,
     massage_popup,
-    massage_timer,
     worker_interval,
 )
 from .receive import MalformedFrame, ReceiveState
@@ -91,7 +92,7 @@ class HomeZoneController(ResourceBedController):
             str(coordinator.entry.data.get("product_type", "")).strip().upper()
             in profile.EXCLUDED_LAYOUTS
         ):
-            raise ValueError("Choose a Home Zone bed control layout")
+            raise invalid("homezone_control")
         RichmatClassicController.__init__(
             self, coordinator, app=profile.APP, device_name=device_name
         )
@@ -116,12 +117,16 @@ class HomeZoneController(ResourceBedController):
 
     @property
     def persisted_app_state(self) -> Mapping[str, object]:
-        # Never retain an armed save, capability reply, setting or phone draft.
-        return {"wire": self._wire} if self._wire else {}
+        # The last delivered timeout is a preference, never permission or a replay.
+        return {**self._preferences, **({"wire": self._wire} if self._wire else {})}
 
     def restore_persisted_app_state(self, state: Mapping[str, object]) -> None:
         self._restore_wire(state)
         self._selection = Selection()
+        timeout = state.get("lamp_timeout")
+        self._preferences = (
+            {"lamp_timeout": timeout} if type(timeout) is int and 0 <= timeout <= 300 else {}
+        )
 
     def _publish(self) -> None:
         from .controller import _selection_key
@@ -227,7 +232,10 @@ class HomeZoneController(ResourceBedController):
         )
 
     def _alarm_request(self, alarm: AlarmRequest) -> p.Request:
-        return replace(super()._alarm_request(alarm), native_alarm=alarm)
+        try:
+            return replace(super()._alarm_request(alarm), native_alarm=alarm)
+        except ValueError as error:
+            raise invalid("homezone_alarm_combination") from error
 
     async def check_alarm(self, alarm: AlarmRequest) -> None:
         self.validate_alarm(alarm)
@@ -253,12 +261,12 @@ class HomeZoneController(ResourceBedController):
 
     async def set_massage_timer(self, minutes: int) -> None:
         if not self.supports_massage_timer or minutes not in SLIDER_MINUTES:
-            raise ValueError("Choose a massage timer offered by this layout")
+            raise invalid("homezone_massage_timer")
         if self.layout in ("D1RM", "D9RM"):
             await self.execute_request(p.Request("massage_timer", progress=SLIDER_MINUTES[minutes]))
         else:
             if not minutes:
-                raise ValueError("This timer popup has a toggle, not a discrete off command")
+                raise invalid("homezone_massage_off")
             await self.execute_request(
                 p.Request("massage_popup", popup={10: "15", 20: "30", 30: "45"}[minutes])
             )
@@ -266,18 +274,21 @@ class HomeZoneController(ResourceBedController):
     def validate_request(self, request: p.Request, *, live: bool = True) -> None:
         op = request.operation
         if op in ("bed_command",):
-            raise ValueError("Use this layout's labelled bed controls")
+            raise invalid("homezone_control")
         if op == "alarm":
             if request.native_alarm is None:
-                raise ValueError("Use the shared Set alarm action")
-            rise.alarm_action(self._alarm_actions(), request.actions)
+                raise invalid("homezone_alarm_action")
+            try:
+                rise.alarm_action(self._alarm_actions(), request.actions)
+            except ValueError as error:
+                raise invalid("homezone_alarm_combination") from error
             if request.when and (request.when.second or request.when.microsecond):
-                raise ValueError("Choose an alarm time with minute precision")
+                raise invalid("alarm_time_whole_minutes")
         elif op == "lamp_timeout":
             if type(request.seconds) is not int or not 0 <= request.seconds <= 300:
-                raise ValueError("Choose 0 to 300 seconds")
+                raise invalid("value_out_of_range", min=0, max=300, step=1)
             if live and (self.settings_transport is None or not self._receive.light_capable):
-                raise ValueError("The bed has not reported lighting support")
+                raise invalid("homezone_light_unavailable")
         elif op == "aroma":
             if (
                 request.aroma_times is None
@@ -287,11 +298,9 @@ class HomeZoneController(ResourceBedController):
                     for v, limit in zip(request.aroma_times, (60, 60, 12), strict=True)
                 )
             ):
-                raise ValueError(
-                    "Aroma times are 1 to 60 minutes, 1 to 60 minutes, and 1 to 12 hours"
-                )
+                raise invalid("homezone_aroma_range")
             if live and not self._receive.aroma_capable:
-                raise ValueError("The bed has not reported aroma support")
+                raise invalid("homezone_aroma_unavailable")
         elif op == "massage_popup":
             if not any(c.tag == "65" for c in self._controls) or request.popup not in (
                 "15",
@@ -299,17 +308,61 @@ class HomeZoneController(ResourceBedController):
                 "45",
                 "toggle",
             ):
-                raise ValueError("Choose a massage timer popup offered by this layout")
+                raise invalid("homezone_massage_popup")
         elif op == "massage_timer":
-            if self.layout not in ("D1RM", "D9RM") or request.progress is None:
-                raise ValueError("This layout has no massage slider")
-            massage_timer(self.layout, request.progress)
-        else:
-            super().validate_request(request, live=live)
+            if self.layout not in ("D1RM", "D9RM"):
+                raise invalid("homezone_massage_slider")
+            if type(request.progress) is not int or not 0 <= request.progress <= 5:
+                raise invalid("value_out_of_range", min=0, max=5, step=1)
+        elif op == "rgb":
+            if (
+                request.color is None
+                or len(request.color) != 3
+                or any(type(value) is not int or not 0 <= value <= 255 for value in request.color)
+            ):
+                raise invalid("homezone_color")
+            if live and (self.settings_transport is None or not self._receive.light_capable):
+                raise invalid("homezone_light_unavailable")
+        elif op not in ("query", "cancel_alarm"):
+            raise invalid("homezone_control")
+
+    async def _set_lamp_timeout(self, seconds: int) -> None:
+        with self._transaction() as session:
+
+            def current() -> bool:
+                return (
+                    self._session is session
+                    and self.client is session.client
+                    and session.client.is_connected
+                )
+
+            def remember(delivery: Delivery) -> None:
+                if current() and delivery is not Delivery.NONE:
+                    self._lamp_timeout = seconds if delivery is Delivery.SENT else None
+                    if delivery is Delivery.SENT:
+                        self._preferences["lamp_timeout"] = seconds
+                    else:
+                        self._preferences.pop("lamp_timeout", None)
+
+            # Remember before sent_state publishes, so its app-state save sees
+            # the same delivered value even when the settled write was cancelled.
+            with (
+                self.sent_state(
+                    LAMP_TIMEOUT(seconds),
+                    PREFERENCES({**self._preferences, "lamp_timeout": seconds}),
+                    is_current=current,
+                ),
+                delivered(remember),
+            ):
+                await self.write_command(codec.light_timer(seconds >> 8, seconds))
 
     async def execute_request(self, request: p.Request) -> None:
         self.validate_request(request)
-        if request.operation not in ("alarm", "aroma", "lamp_timeout", "massage_popup"):
+        if request.operation == "lamp_timeout":
+            assert request.seconds is not None
+            await self._set_lamp_timeout(request.seconds)
+            return
+        if request.operation not in ("alarm", "aroma", "massage_popup"):
             await super().execute_request(request)
             return
         with self._transaction() as session:
@@ -326,9 +379,6 @@ class HomeZoneController(ResourceBedController):
                     for op, v in zip((0x1B, 0x1C, 0x1D), request.aroma_times, strict=True)
                 )
                 spacing = SETTINGS_SPACING_MS
-            elif request.operation == "lamp_timeout":
-                assert request.seconds is not None
-                frames, spacing = (codec.light_timer(request.seconds >> 8, request.seconds),), 0
             else:
                 assert request.popup is not None
                 frames, spacing = (massage_popup(request.popup),), 0
@@ -340,8 +390,6 @@ class HomeZoneController(ResourceBedController):
                 if spacing and not await self._wait(spacing, cancel):
                     return
             if self._session is session and not cancel.is_set():
-                if request.operation == "lamp_timeout":
-                    self._lamp_timeout = request.seconds
                 if request.operation == "massage_popup":
                     self._massage_timer = {"15": 2, "30": 3, "45": 5}.get(request.popup or "")
                 self._publish()

@@ -18759,6 +18759,7 @@ No bed positions or measured motor states are reported. Unknown fields remain
 in protocol diagnostics. Reconnecting clears received capability state. The light
 timeout keeps its entity identity and user customizations while disconnected;
 its value is unknown and writes require a lighting reply on the current link.
+The last delivered timeout is saved as a preference and is never replayed.
 
 #### Services
 

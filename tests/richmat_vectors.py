@@ -2343,3 +2343,40 @@ FROZEN_FRAMES["richmat_classic_dreamlab2"] = frozenset({
     "6e", "6e01006edd", "6e01016ede", "6e01026edf",
     "6e02010071", "6e08010178", "6e0a000179", "6e1a000088",
 })
+
+
+def _homezone_frames() -> frozenset[str]:
+    """Home Zone1.0.3 literals from its frozen accepted fixture, not an encoder.
+
+    Parameterized control/setting formulas have their own exhaustive catalog
+    harness. The explicit literals below expand only this app's P2-C179 and
+    P2-C192/193 release/popup/slider formulas; no desk or factory route is added.
+    """
+    rows = json.loads(gzip.decompress(
+        (Path(__file__).parent / "fixtures/homezone/accepted.json.gz").read_bytes()
+    ))
+    frames = {
+        "6e01016ede",  # P2-C179: release, mode1.
+        "6e01005ecd", "6e01005fce", "6e010063d2", "6e010061d0",  # P2-C192.
+        "6e01008bfa", "6e01000170", "6e01000473",  # P2-C193: second off, raw stops1/4.
+    }
+    for row in rows["vectors"]:
+        if row["inputs"]["kind"] == "rmcs":
+            continue  # Excluded motor/radio administration.
+        value = row["expected_bytes"].lower()
+        if len(value) == 2:
+            frames.add(value)
+        else:
+            # RGB is one write containing two frames; alarm is two writes.
+            frames.update(value[i:i + 10] for i in range(0, len(value), 10))
+    for protocol in ("P1", "P2"):
+        for row in rows["commands"][protocol]:
+            if row.get("scope", "").startswith("EXCLUDED") or row["id"].endswith("-TEST"):
+                continue
+            value = row["bytes"].lower()
+            if len(value) in (2, 10) and all(c in "0123456789abcdef" for c in value):
+                frames.add(value)
+    return frozenset(frames)
+
+
+FROZEN_FRAMES["richmat_classic_homezone"] = _homezone_frames()
