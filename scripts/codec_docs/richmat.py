@@ -64,6 +64,7 @@ from scripts.codec_docs import (
     _dreamlab,
     _galaxy,
     _homezone,
+    _muuegm,
     _okimiki,
     _richmat_legacy,
     _richmat_mh_apps,
@@ -2205,7 +2206,6 @@ def render_dynasty_timing() -> str:
 
 BLOCKS += [(GUIDE, "dynasty-commands", render_dynasty_commands), (GUIDE, "dynasty-timing", render_dynasty_timing)]
 
-from scripts.codec_docs import _muuegm
 
 BLOCKS += _muuegm.BLOCKS
 
