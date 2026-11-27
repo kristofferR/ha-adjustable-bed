@@ -1517,6 +1517,9 @@ def default_scenario(bed_type: str) -> Scenario:
                      "write:" + codec.frame(1, b"\x00").hex(): codec.frame(1, b"\x01\x01\x01A").hex(),
                      "*": status})
 
+    if bed_type == "amada":
+        return Scenario(id=bed_type, bed_type=bed_type, entry_data={"product_type": "ab"},
+                        layout_id="amada")
     if bed_type == "flexispot":
         return Scenario(id=bed_type, bed_type=bed_type, entry_data={"product_type": "eb632"})
     if bed_type == "ronco_motion":
@@ -2112,6 +2115,10 @@ def route_scenarios() -> list[Scenario]:
             scenarios.append(Scenario(id=f"betterliving2:{wire}:{layout}", bed_type="betterliving2",
                 protocol_variant=wire, entry_data={"protocol_variant": wire, "product_type": layout},
                 layout_id=f"betterliving2:{wire}"))
+
+    for selector in ("a", "b"):
+        scenarios.append(Scenario(id=f"amada:{selector}", bed_type="amada",
+                                  entry_data={"product_type": selector}, layout_id="amada"))
 
     # Jiecang family: one app, four profiles, shared and distinct layouts.
     for profile in ("dreamask", "dreamotion", "dreamhd", "comfort_motion"):
@@ -2941,7 +2948,7 @@ async def _connect(controller: Any, recorder: Recorder, clock: FakeClock) -> dic
         if controller._coordinator.bed_type in {"shuda", "sleeptime"}:
             await controller.async_on_connect(SimpleNamespace(async_start_notify=controller.start_notify))
             return
-        if controller._coordinator.bed_type in {"rize_home", "superior_sleep", "okin_64bit", "betterliving2", "ultramatic_smart_bed", "smart_comfort_synargy", "smart_comfort_synergy", "simmons_blue"}:
+        if controller._coordinator.bed_type in {"amada", "rize_home", "superior_sleep", "okin_64bit", "betterliving2", "ultramatic_smart_bed", "smart_comfort_synargy", "smart_comfort_synergy", "simmons_blue"}:
             session = SimpleNamespace(async_start_notify=controller.start_notify, is_current=lambda: True)
             if controller._coordinator.bed_type == "betterliving2":
                 session.store_device_info = lambda *_: None

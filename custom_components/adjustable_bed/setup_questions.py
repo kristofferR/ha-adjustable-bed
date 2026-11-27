@@ -50,6 +50,7 @@ from .const import (
     BED_TYPE_ADJUSTABLE_LUMBAR,
     BED_TYPE_ADJUSTAMATTRESS,
     BED_TYPE_ALYA,
+    BED_TYPE_AMADA,
     BED_TYPE_AMBIENT,
     BED_TYPE_ATLAS_LIFT,
     BED_TYPE_BEDSENSE,
@@ -3985,6 +3986,12 @@ SETUP_PROFILES: Final[dict[str, SetupProfile]] = {
         },
         questions=(Question(CONF_PRODUCT_TYPE, _simmons_blue_layouts, "balance"),),
         imports=("profiles.simmons_blue",),
+    ),
+    BED_TYPE_AMADA: SetupProfile(
+        owns={CONF_MOTOR_COUNT: 3, CONF_HAS_MASSAGE: True,
+              CONF_DISABLE_ANGLE_SENSING: True, CONF_PROTOCOL_VARIANT: "auto",
+              CONF_MOTOR_PULSE_DELAY_MS: 100},
+        questions=(Question(CONF_PRODUCT_TYPE, {"a": "A", "ab": "AB (both app targets)", "b": "B"}),),
     ),
     BED_TYPE_N32_MOTION_BED: SetupProfile(
         owns={
