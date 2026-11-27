@@ -525,6 +525,7 @@ class AdjustableBedControllerNumber(AdjustableBedEntity, NumberEntity):
     def __init__(self, coordinator: EntityRuntime, spec: ControllerNumberSpec) -> None:
         super().__init__(coordinator, spec.card)
         self._spec = spec
+        self._attr_assumed_state = spec.assumed_state
         self.entity_description = NumberEntityDescription(
             key=f"controller_number_{spec.key}",
             translation_key=spec.translation_key,

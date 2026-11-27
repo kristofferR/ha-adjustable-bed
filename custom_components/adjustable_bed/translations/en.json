@@ -1782,6 +1782,17 @@
   },
   "entity": {
     "button": {
+      "powersbedding_save_zero_g": {"name": "Save zero gravity"},
+      "powersbedding_start": {"name": "Start massage"},
+      "powersbedding_stop": {"name": "Stop massage"},
+      "powersbedding_toggle": {"name": "Toggle massage"},
+      "powersbedding_head_up": {"name": "Increase head massage"},
+      "powersbedding_head_down": {"name": "Decrease head massage"},
+      "powersbedding_foot_up": {"name": "Increase foot massage"},
+      "powersbedding_foot_down": {"name": "Decrease foot massage"},
+      "powersbedding_wave": {"name": "Next massage wave"},
+      "powersbedding_timer": {"name": "Next massage timer"},
+      "powersbedding_query_alarm": {"name": "Refresh bed alarm"},
       "meisemobell_refresh_alarms": {
         "name": "Refresh alarms"
       },
@@ -4770,6 +4781,11 @@
       }
     },
     "sensor": {
+      "powersbedding_head_report": {"name": "Head massage level"},
+      "powersbedding_foot_report": {"name": "Foot massage level"},
+      "powersbedding_wave_report": {"name": "Massage wave"},
+      "powersbedding_timer": {"name": "Massage timer indicator"},
+      "powersbedding_alarm": {"name": "Bed alarm"},
       "meisemobell_alarm_1": {
         "name": "Alarm 1"
       },
@@ -6450,6 +6466,7 @@
       }
     },
     "binary_sensor": {
+      "powersbedding_alarm_enabled": {"name": "Bed alarm enabled"},
       "berun_massage_on": {
         "name": "Massage"
       },
@@ -12217,6 +12234,9 @@
     }
   },
   "exceptions": {
+    "powersbedding_name": {"message": "Choose the PowersBedding receiver whose Bluetooth name starts with okin or smartbed."},
+    "powersbedding_control": {"message": "Choose a control and value supported by this PowersBedding receiver."},
+    "powersbedding_alarm": {"message": "Choose a valid PowersBedding alarm time, weekday selection and wake action."},
     "meisemobell_gatt": {
       "message": "The selected Meisemobell route needs its matching write-without-response and notification characteristics."
     },
