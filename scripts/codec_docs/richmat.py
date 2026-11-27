@@ -2234,6 +2234,34 @@ def render_silksnow_settings() -> str:
 
 BLOCKS += [(GUIDE, "silksnow-products", render_silksnow_products), (GUIDE, "silksnow-commands", render_silksnow_commands), (GUIDE, "silksnow-settings", render_silksnow_settings)]
 
+
+def render_topcare() -> str:
+    profile = richmat_profiles.TOPCARE
+    assert profile.codes is not None and profile.motor_repeat_ms is not None
+    commands = (
+        *((key, code, "") for key, code in profile.codes.items()),
+        ("stop", codec.STOP, ""),
+        *((action, code, action) for action, code in richmat_profiles.TOPCARE_INITIALIZATION),
+    )
+    return _block(
+        _table(("Scan keyword (case-sensitive contains)", "Held refresh"), (
+            (richmat_profiles.TOPCARE_SCAN_KEYWORD, f"{profile.motor_repeat_ms} ms"),
+        )),
+        _table(("Service", "Write", "Declared notify", "Encoding"), (
+            (f"`{route.service_uuid}`", f"`{route.write_uuid}`", f"`{route.notify_uuid}`",
+             "Framed" if key == "n1" else "Single byte")
+            for key, route in ((key, codec.TRANSPORTS[key]) for key in profile.transports)
+        )),
+        _table(("Action", "Nordic (framed)", "W1–W5 (single byte)"), (
+            (name, _hex(codec.function(code, action=action)),
+             _hex(codec.function(code, action=action, single=True)))
+            for name, code, action in commands
+        )),
+    )
+
+
+BLOCKS.append((GUIDE, "topcare", render_topcare))
+
 from scripts.codec_docs import _comfort_bed  # noqa: E402
 
 BLOCKS.append((GUIDE, "comfort-bed", _comfort_bed.render))
