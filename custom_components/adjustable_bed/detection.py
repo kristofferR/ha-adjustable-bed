@@ -339,7 +339,7 @@ from .discovery_hints import (
 )
 from .discovery_hints._hints import ManufacturerHint, NameHint
 from .discovery_hints.linak import matches_vindo_advertisement
-from .discovery_hints.richmat import ATLAS_LIFT_NAME_HINT
+from .discovery_hints.richmat import ATLAS_LIFT_NAME_HINT, TOPCARE_NAME_HINT
 from .profiles.bedgear import eligible as bedgear_eligible
 from .profiles.bedgear import ergobed_eligible
 from .profiles.bobpowerbase import PROFILE_CHOICES as BOB_PROFILES
@@ -631,6 +631,7 @@ def _rests_on_shared_service(
 # Display names for bed types shown in the UI selector. The automatic
 # Leggett & Platt setup is not offered to a new bed, so it is not listed here.
 BED_TYPE_DISPLAY_NAMES: dict[str, str] = {
+    "topcare": "TOP CARE app",
     "dorsal": "Dorsal app / Roomi",
     "berun": "BERUN app",
     "nerum": "Nerum app",
@@ -2005,6 +2006,15 @@ def _detect_with_first_pass(
         else:
             result.ambiguous_types = [*(result.ambiguous_types or ()), BED_TYPE_ERGOBED]
         result.signals.append("app_hint:ergobed")
+    if (
+        isinstance(local_name, str) and TOPCARE_NAME_HINT.matches_name(local_name)
+        and not any(signal.startswith("excluded:") for signal in result.signals)
+    ):
+        if result.bed_type is None:
+            result.bed_type, result.confidence = "topcare", 0.3
+        elif result.bed_type != "topcare":
+            result.ambiguous_types = list(dict.fromkeys([*(result.ambiguous_types or ()), "topcare"]))
+        result.signals.append("name:topcare_app_candidate")
     return result
 
 
