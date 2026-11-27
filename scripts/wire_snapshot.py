@@ -1512,6 +1512,11 @@ def default_scenario(bed_type: str) -> Scenario:
     """The bed type in its default route, with the entry data it needs to build."""
     from custom_components.adjustable_bed import const
 
+    if bed_type == "ergosportive":
+        from custom_components.adjustable_bed.profiles.ergosportive import CONTROLS
+        return Scenario(id=bed_type, bed_type=bed_type, protocol_variant="remote",
+                        entry_data={"protocol_variant": "remote", "product_type": "old_dsp_normal", "ergosportive_controls": list(CONTROLS)},
+                        layout_id="ergosportive")
     if bed_type == "powersbedding":
         return Scenario(id=bed_type, bed_type=bed_type,
                         entry_data={const.CONF_BLE_DEVICE_NAME: "okin-Powers"},
@@ -2136,6 +2141,7 @@ def route_scenarios() -> list[Scenario]:
             scenarios.append(dataclasses.replace(default_scenario("scott_living"),
                 id=f"scott_living:{layout}{suffix}", layout_id="scott_living", properties=properties,
                 entry_data={"product_type": layout, "ble_device_name": "base00000000"}))
+    scenarios.append(dataclasses.replace(default_scenario("ergosportive"), id="ergosportive:hardware221", protocol_variant="hardware221", entry_data={**default_scenario("ergosportive").entry_data, "protocol_variant": "hardware221"}, layout_id="ergosportive"))
     scenarios.append(dataclasses.replace(default_scenario("kingkoil"), id="kingkoil:KSBT03CL", protocol_variant="KSBT03CL", layout_id="kingkoil"))
     for variant in "bcde":
         scenarios.append(dataclasses.replace(default_scenario("somos"), id=f"somos:{variant}", protocol_variant=variant, layout_id="somos:uart" if variant in "bde" else "somos"))

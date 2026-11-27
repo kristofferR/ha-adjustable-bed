@@ -331,6 +331,7 @@
         "title": "{profile} settings",
         "description": "Answer what Home Assistant can't learn from the bed for **{profile}**. Settings the app sets itself, such as its motor count and timing, aren't asked.",
         "data": {
+          "ergosportive_controls": "Controls available on your bed",
           "jiecang_app_layout": "Physical actuator layout",
           "has_light": "Enable light controls",
           "furnimove_remote": "FurniMove handset ID",
@@ -829,6 +830,7 @@
       "ambient_receiver_mismatch": "This device lacks the Bluetooth write or notification channel required by M3 Ambient. Check the selected device."
     },
     "error": {
+      "ergosportive_selection": "Choose a release mode, sensor stream and controls matching your ErgoSportive bed.",
       "scan_failed": "Bluetooth scanning is unavailable. Check your adapters and try again, or choose a device from the list.",
       "langjue_receiver_mismatch": "Choose the Bluetooth device used to control the bed in Comfort Smart Bed. The selected device is missing the required channels.",
       "invalid_mac_address": "Invalid Bluetooth address format. Use XX:XX:XX:XX:XX:XX.",
@@ -947,6 +949,7 @@
         "title": "Adjustable Bed Options",
         "description": "Adjust the settings for your adjustable bed. To change the bed type or app, open **Reconfigure** from this entry's three-dot menu.",
         "data": {
+          "ergosportive_controls": "Controls available on your bed",
           "ergobq_serial": "ErgoBQ six-byte serial (hex, optional)",
           "ergobq_stamp": "ErgoBQ channel stamp (leave blank if unused)",
           "motor_count": "Number of motors",
@@ -1782,6 +1785,15 @@
   },
   "entity": {
     "button": {
+      "ergosportive_massage_all": {"name": "Cycle all-zone massage"},
+      "ergosportive_massage_timer": {"name": "Cycle massage timer"},
+      "ergosportive_massage_feet_up": {"name": "Foot massage up"},
+      "ergosportive_massage_head_up": {"name": "Head massage up"},
+      "ergosportive_massage_head_down": {"name": "Head massage down"},
+      "ergosportive_massage_feet_down": {"name": "Foot massage down"},
+      "ergosportive_position_1": {"name": "Position 1 / lounge"},
+      "ergosportive_position_2": {"name": "Position 2 / TV"},
+      "ergosportive_lamp": {"name": "Toggle bedside lamp"},
       "powersbedding_save_zero_g": {"name": "Save zero gravity"},
       "powersbedding_start": {"name": "Start massage"},
       "powersbedding_stop": {"name": "Stop massage"},
@@ -4781,6 +4793,9 @@
       }
     },
     "sensor": {
+      "ergosportive_heart_rate": {"name": "Heart rate"},
+      "ergosportive_breathing_rate": {"name": "Breathing rate"},
+      "ergosportive_twitch": {"name": "Movement count"},
       "powersbedding_head_report": {"name": "Head massage level"},
       "powersbedding_foot_report": {"name": "Foot massage level"},
       "powersbedding_wave_report": {"name": "Massage wave"},
@@ -6466,6 +6481,7 @@
       }
     },
     "binary_sensor": {
+      "ergosportive_presence": {"name": "Bed presence"},
       "powersbedding_alarm_enabled": {"name": "Bed alarm enabled"},
       "berun_massage_on": {
         "name": "Massage"
@@ -6778,6 +6794,7 @@
       }
     },
     "number": {
+      "ergosportive_brightness": {"name": "Bedside lamp brightness"},
       "suta_king_koil_head_step": {
         "name": "Head massage step"
       },
@@ -12234,6 +12251,12 @@
     }
   },
   "exceptions": {
+    "ergosportive_session": {"message": "The ErgoSportive connection changed. Reconnect before sending another command."},
+    "ergosportive_gatt": {"message": "This receiver is missing the ErgoSportive UART write or notification channel."},
+    "ergosportive_subscription": {"message": "Subscribe to the current ErgoSportive notification channel before sending a command."},
+    "ergosportive_control": {"message": "Choose a control enabled for this ErgoSportive profile and a hold from 0.1 to 30 seconds."},
+    "ergosportive_memory_gesture_unresolved": {"message": "Memory save and held recall are not available for this ErgoSportive profile."},
+    "ergosportive_brightness": {"message": "Enable bedside lamp brightness and choose a whole level from 1 to 13."},
     "powersbedding_name": {"message": "Choose the PowersBedding receiver whose Bluetooth name starts with okin or smartbed."},
     "powersbedding_control": {"message": "Choose a control and value supported by this PowersBedding receiver."},
     "powersbedding_alarm": {"message": "Choose a valid PowersBedding alarm time, weekday selection and wake action."},

@@ -1,0 +1,359 @@
+[
+  {
+    "id": "I-0",
+    "protocol": "P1",
+    "action": "release/zero",
+    "builder": "instruct",
+    "inputs": {
+      "key": 0
+    },
+    "expected_bytes": "aa03000a00040100000000faf355",
+    "evidence": [
+      "E-builder",
+      "E-remote"
+    ],
+    "vector_origin": "Static reachable key plus builder arithmetic, not a captured frame"
+  },
+  {
+    "id": "I-1",
+    "protocol": "P1",
+    "action": "head up",
+    "builder": "instruct",
+    "inputs": {
+      "key": 1
+    },
+    "expected_bytes": "aa03000a00040101000000f9f355",
+    "evidence": [
+      "E-builder",
+      "E-remote"
+    ],
+    "vector_origin": "Static reachable key plus builder arithmetic, not a captured frame"
+  },
+  {
+    "id": "I-2",
+    "protocol": "P1",
+    "action": "head down",
+    "builder": "instruct",
+    "inputs": {
+      "key": 2
+    },
+    "expected_bytes": "aa03000a00040102000000f8f355",
+    "evidence": [
+      "E-builder",
+      "E-remote"
+    ],
+    "vector_origin": "Static reachable key plus builder arithmetic, not a captured frame"
+  },
+  {
+    "id": "I-4",
+    "protocol": "P1",
+    "action": "foot up",
+    "builder": "instruct",
+    "inputs": {
+      "key": 4
+    },
+    "expected_bytes": "aa03000a00040104000000f6f355",
+    "evidence": [
+      "E-builder",
+      "E-remote"
+    ],
+    "vector_origin": "Static reachable key plus builder arithmetic, not a captured frame"
+  },
+  {
+    "id": "I-8",
+    "protocol": "P1",
+    "action": "foot down",
+    "builder": "instruct",
+    "inputs": {
+      "key": 8
+    },
+    "expected_bytes": "aa03000a00040108000000f2f355",
+    "evidence": [
+      "E-builder",
+      "E-remote"
+    ],
+    "vector_origin": "Static reachable key plus builder arithmetic, not a captured frame"
+  },
+  {
+    "id": "I-16",
+    "protocol": "P1",
+    "action": "tilt up",
+    "builder": "instruct",
+    "inputs": {
+      "key": 16
+    },
+    "expected_bytes": "aa03000a00040110000000eaf355",
+    "evidence": [
+      "E-builder",
+      "E-remote"
+    ],
+    "vector_origin": "Static reachable key plus builder arithmetic, not a captured frame"
+  },
+  {
+    "id": "I-32",
+    "protocol": "P1",
+    "action": "tilt down",
+    "builder": "instruct",
+    "inputs": {
+      "key": 32
+    },
+    "expected_bytes": "aa03000a00040120000000daf355",
+    "evidence": [
+      "E-builder",
+      "E-remote"
+    ],
+    "vector_origin": "Static reachable key plus builder arithmetic, not a captured frame"
+  },
+  {
+    "id": "I-256",
+    "protocol": "P1",
+    "action": "massage all",
+    "builder": "instruct",
+    "inputs": {
+      "key": 256
+    },
+    "expected_bytes": "aa03000a00040100010000f9f355",
+    "evidence": [
+      "E-builder",
+      "E-remote"
+    ],
+    "vector_origin": "Static reachable key plus builder arithmetic, not a captured frame"
+  },
+  {
+    "id": "I-512",
+    "protocol": "P1",
+    "action": "massage timer",
+    "builder": "instruct",
+    "inputs": {
+      "key": 512
+    },
+    "expected_bytes": "aa03000a00040100020000f8f355",
+    "evidence": [
+      "E-builder",
+      "E-remote"
+    ],
+    "vector_origin": "Static reachable key plus builder arithmetic, not a captured frame"
+  },
+  {
+    "id": "I-1024",
+    "protocol": "P1",
+    "action": "foot massage up",
+    "builder": "instruct",
+    "inputs": {
+      "key": 1024
+    },
+    "expected_bytes": "aa03000a00040100040000f6f355",
+    "evidence": [
+      "E-builder",
+      "E-remote"
+    ],
+    "vector_origin": "Static reachable key plus builder arithmetic, not a captured frame"
+  },
+  {
+    "id": "I-2048",
+    "protocol": "P1",
+    "action": "head massage up",
+    "builder": "instruct",
+    "inputs": {
+      "key": 2048
+    },
+    "expected_bytes": "aa03000a00040100080000f2f355",
+    "evidence": [
+      "E-builder",
+      "E-remote"
+    ],
+    "vector_origin": "Static reachable key plus builder arithmetic, not a captured frame"
+  },
+  {
+    "id": "I-4096",
+    "protocol": "P1",
+    "action": "zero G",
+    "builder": "instruct",
+    "inputs": {
+      "key": 4096
+    },
+    "expected_bytes": "aa03000a00040100100000eaf355",
+    "evidence": [
+      "E-builder",
+      "E-remote"
+    ],
+    "vector_origin": "Static reachable key plus builder arithmetic, not a captured frame"
+  },
+  {
+    "id": "I-8192",
+    "protocol": "P1",
+    "action": "position 1/lounge",
+    "builder": "instruct",
+    "inputs": {
+      "key": 8192
+    },
+    "expected_bytes": "aa03000a00040100200000daf355",
+    "evidence": [
+      "E-builder",
+      "E-remote"
+    ],
+    "vector_origin": "Static reachable key plus builder arithmetic, not a captured frame"
+  },
+  {
+    "id": "I-16384",
+    "protocol": "P1",
+    "action": "position 2/TV",
+    "builder": "instruct",
+    "inputs": {
+      "key": 16384
+    },
+    "expected_bytes": "aa03000a00040100400000baf355",
+    "evidence": [
+      "E-builder",
+      "E-remote"
+    ],
+    "vector_origin": "Static reachable key plus builder arithmetic, not a captured frame"
+  },
+  {
+    "id": "I-131072",
+    "protocol": "P1",
+    "action": "bedside lamp",
+    "builder": "instruct",
+    "inputs": {
+      "key": 131072
+    },
+    "expected_bytes": "aa03000a00040100000200f8f355",
+    "evidence": [
+      "E-builder",
+      "E-remote"
+    ],
+    "vector_origin": "Static reachable key plus builder arithmetic, not a captured frame"
+  },
+  {
+    "id": "I-8388608",
+    "protocol": "P1",
+    "action": "head massage down",
+    "builder": "instruct",
+    "inputs": {
+      "key": 8388608
+    },
+    "expected_bytes": "aa03000a000401000080007af355",
+    "evidence": [
+      "E-builder",
+      "E-remote"
+    ],
+    "vector_origin": "Static reachable key plus builder arithmetic, not a captured frame"
+  },
+  {
+    "id": "I-16777216",
+    "protocol": "P1",
+    "action": "foot massage down",
+    "builder": "instruct",
+    "inputs": {
+      "key": 16777216
+    },
+    "expected_bytes": "aa03000a00040100000001f9f355",
+    "evidence": [
+      "E-builder",
+      "E-remote"
+    ],
+    "vector_origin": "Static reachable key plus builder arithmetic, not a captured frame"
+  },
+  {
+    "id": "I-134217728",
+    "protocol": "P1",
+    "action": "flat",
+    "builder": "instruct",
+    "inputs": {
+      "key": 134217728
+    },
+    "expected_bytes": "aa03000a00040100000008f2f355",
+    "evidence": [
+      "E-builder",
+      "E-remote"
+    ],
+    "vector_origin": "Static reachable key plus builder arithmetic, not a captured frame"
+  },
+  {
+    "id": "I-536870912",
+    "protocol": "P1",
+    "action": "aromatherapy",
+    "builder": "instruct",
+    "inputs": {
+      "key": 536870912
+    },
+    "expected_bytes": "aa03000a00040100000020daf355",
+    "evidence": [
+      "E-builder",
+      "E-remote"
+    ],
+    "vector_origin": "Presenter/builder-only static arithmetic; app UI reachability UNRESOLVED, not a captured frame"
+  },
+  {
+    "id": "LIGHT-1",
+    "protocol": "P1",
+    "action": "brightness",
+    "builder": "light",
+    "inputs": {
+      "value": 1
+    },
+    "expected_bytes": "aa01000900210000020001d155",
+    "evidence": [
+      "E-light"
+    ]
+  },
+  {
+    "id": "LIGHT-100",
+    "protocol": "P1",
+    "action": "brightness",
+    "builder": "light",
+    "inputs": {
+      "value": 100
+    },
+    "expected_bytes": "aa010009002100000200646e55",
+    "evidence": [
+      "E-light"
+    ]
+  },
+  {
+    "id": "YOGA-ZERO",
+    "protocol": "P1",
+    "action": "221-gated secondary release",
+    "builder": "yoga_zero",
+    "inputs": {},
+    "expected_bytes": "aa07000c000405010000000000f9e955",
+    "evidence": [
+      "E-yoga",
+      "E-release"
+    ]
+  },
+  {
+    "id": "RGB-0-0-0",
+    "protocol": "P1",
+    "action": "RGB setting",
+    "builder": "rgb",
+    "inputs": {
+      "r": 0,
+      "g": 0,
+      "b": 0
+    },
+    "expected_bytes": "363230443030303030303030464646464646303030303031303030303932",
+    "ascii": "620D00000000FFFFFF000001000092",
+    "evidence": [
+      "E-rgb"
+    ],
+    "vector_origin": "Presenter/builder-only static arithmetic; app UI reachability UNRESOLVED, not a captured frame"
+  },
+  {
+    "id": "RGB-255-128-1",
+    "protocol": "P1",
+    "action": "RGB setting",
+    "builder": "rgb",
+    "inputs": {
+      "r": 255,
+      "g": 128,
+      "b": 1
+    },
+    "expected_bytes": "363230443030303030303030303037464645303030303031303030303132",
+    "ascii": "620D00000000007FFE000001000012",
+    "evidence": [
+      "E-rgb"
+    ],
+    "vector_origin": "Presenter/builder-only static arithmetic; app UI reachability UNRESOLVED, not a captured frame"
+  }
+]

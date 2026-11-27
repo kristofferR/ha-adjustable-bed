@@ -320,6 +320,7 @@ _BED_TRAITS: Final[dict[str, BedTraits]] = {
         cancellation_only_stop=True,
     ),
     BED_TYPE_RESTONIC: replace(_NO_ANGLES_SCOPED, owns_device_info_reads=True, connection_timeout=5, single_address_native_both=False),
+    "ergosportive": _NO_ANGLES_SCOPED,
     "kingkoil": replace(
         _NO_ANGLES_SCOPED, owns_device_info_reads=True, connection_timeout=5,
         cancellation_only_stop=True,

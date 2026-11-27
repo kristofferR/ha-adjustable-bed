@@ -95,6 +95,9 @@
  "binary_sensor:ergomotion4_light": {
   "card_section": "hidden"
  },
+ "binary_sensor:ergosportive_presence": {
+  "card_section": "hidden"
+ },
  "binary_sensor:flexirest_alarm_enabled": {
   "card_section": "hidden"
  },
@@ -1048,6 +1051,33 @@
   "card_section": "motors",
   "card_role": "up",
   "card_motor": "ergobq_motor_4"
+ },
+ "button:ergosportive_lamp": {
+  "card_section": "lighting"
+ },
+ "button:ergosportive_massage_all": {
+  "card_section": "massage"
+ },
+ "button:ergosportive_massage_feet_down": {
+  "card_section": "massage"
+ },
+ "button:ergosportive_massage_feet_up": {
+  "card_section": "massage"
+ },
+ "button:ergosportive_massage_head_down": {
+  "card_section": "massage"
+ },
+ "button:ergosportive_massage_head_up": {
+  "card_section": "massage"
+ },
+ "button:ergosportive_massage_timer": {
+  "card_section": "massage"
+ },
+ "button:ergosportive_position_1": {
+  "card_section": "presets"
+ },
+ "button:ergosportive_position_2": {
+  "card_section": "presets"
  },
  "button:eshine_massage_foot_strength": {
   "card_section": "massage"
@@ -4122,6 +4152,9 @@
   "card_section": "motors",
   "card_motor": "ergobq_motor_4"
  },
+ "number:ergosportive_brightness": {
+  "card_section": "lighting"
+ },
  "number:fan_level": {
   "card_section": "climate"
  },
@@ -5163,6 +5196,15 @@
   "card_section": "hidden"
  },
  "sensor:ergobq_light_remaining": {
+  "card_section": "hidden"
+ },
+ "sensor:ergosportive_breathing_rate": {
+  "card_section": "hidden"
+ },
+ "sensor:ergosportive_heart_rate": {
+  "card_section": "hidden"
+ },
+ "sensor:ergosportive_twitch": {
   "card_section": "hidden"
  },
  "sensor:eshine_alarm": {
