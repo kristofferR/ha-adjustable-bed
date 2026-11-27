@@ -44,10 +44,12 @@ from .beds.richmat_app.sleep_profiles import CHOICES as RICHMAT_SLEEP_CHOICES
 from .beds.sleeptracker.protocol import MODELS as SLEEPTRACKER_MODELS
 from .beds.starcode.m1x12_protocol import profile_from_name as m1x12_profile_from_name
 from .const import (
+    ALYA_LAYOUTS,
     AUTOMATIC_LABEL,
     BED_TYPE_ADJUSTABLE_BED,
     BED_TYPE_ADJUSTABLE_LUMBAR,
     BED_TYPE_ADJUSTAMATTRESS,
+    BED_TYPE_ALYA,
     BED_TYPE_AMBIENT,
     BED_TYPE_ATLAS_LIFT,
     BED_TYPE_BEDSENSE,
@@ -376,6 +378,7 @@ _OWNED_BY_BED_TYPE: Final[dict[str, frozenset[str]]] = {
     BED_TYPE_SOMOS: _APP_DEFINED - {CONF_PROTOCOL_VARIANT, CONF_MOTOR_PULSE_COUNT},
     BED_TYPE_COMFORTBASE: _APP_DEFINED - {CONF_PROTOCOL_VARIANT, CONF_MOTOR_PULSE_COUNT},
     BED_TYPE_COMFORT_ENHANCEMENTS: _APP_DEFINED - {CONF_PROTOCOL_VARIANT, CONF_MOTOR_PULSE_COUNT},
+    BED_TYPE_ALYA: _APP_DEFINED - {CONF_PROTOCOL_VARIANT, CONF_MOTOR_PULSE_COUNT, CONF_HAS_MASSAGE},
     BED_TYPE_ESHINE_OKIN: _APP_DEFINED - {CONF_PROTOCOL_VARIANT, CONF_MOTOR_PULSE_COUNT},
     BED_TYPE_ESHINE: _APP_DEFINED - {CONF_MOTOR_PULSE_COUNT},
     BED_TYPE_GALAXY: GENERIC_FIELDS - {CONF_PROTOCOL_VARIANT},
@@ -3547,6 +3550,31 @@ SETUP_PROFILES: Final[dict[str, SetupProfile]] = {
         questions=(Question(CONF_PROTOCOL_VARIANT, GALAXY_PROFILES, searchable=True),),
         validate=_galaxy_errors,
         seed=_galaxy_seed,
+    ),
+    BED_TYPE_ALYA: _asking(
+        BED_TYPE_ALYA,
+        questions=(
+            Question(CONF_PROTOCOL_VARIANT, ALYA_LAYOUTS, searchable=True),
+            Question(
+                CONF_HAS_MASSAGE, default=True,
+                when={"field": CONF_PROTOCOL_VARIANT, "operator": ConditionOperator.IN,
+                      "value": ["bluetooth_2", "bluetooth_3", "bluetooth_4"]},
+            ),
+            Question(
+                CONF_CB24_BED_SELECTION,
+                {CB24_BED_SELECTION_DEFAULT: "Both", CB24_BED_SELECTION_A: "A (left)",
+                 CB24_BED_SELECTION_B: "B (right)"},
+                CB24_BED_SELECTION_A,
+                when={"field": CONF_PROTOCOL_VARIANT, "value": "dacheng_5"},
+            ),
+        ),
+        derive=lambda data: {
+            CONF_MOTOR_COUNT: int(data.get(CONF_PROTOCOL_VARIANT, "bluetooth_2").rsplit("_", 1)[-1]),
+            CONF_HAS_MASSAGE: data.get(CONF_HAS_MASSAGE, True)
+            if data.get(CONF_PROTOCOL_VARIANT, "").startswith("bluetooth_") else True,
+            CONF_DISABLE_ANGLE_SENSING: True,
+            CONF_MOTOR_PULSE_DELAY_MS: 300,
+        },
     ),
     BED_TYPE_GOODVIBE: _asking(
         BED_TYPE_GOODVIBE,

@@ -919,6 +919,7 @@
       "sleeptime_gatt": "The Bluetooth device lacks the write and status channels Sleeptime needs. Check the device and selected app.",
       "truemotion_gatt": "The receiver does not expose the trueMotion write and notification channels.",
       "truemotion_pair": "Choose a trueMotion receiver that supports split control as the left side.",
+      "alya_layout_invalid": "The selected Alya layout is missing its required Bluetooth write/notify roles. Choose the layout shown in your app.",
       "ergobq_identity": "Select an ErgoBQ BED product, a valid six-byte serial (or blank), and a channel stamp of at most 510 UTF-8 bytes."
     }
   },
@@ -4156,6 +4157,18 @@
       },
       "ambient_refresh": {
         "name": "Refresh bed state"
+      },
+      "alya_action": {
+        "name": "{action}"
+      },
+      "alya_release": {
+        "name": "Release"
+      },
+      "alya_light_action": {
+        "name": "{action}"
+      },
+      "alya_massage_action": {
+        "name": "{action}"
       },
       "ergobq_motor_1_up": {
         "name": "Head up"
@@ -13008,6 +13021,9 @@
     },
     "ambient_heat_unconfirmed": {
       "message": "The bed did not confirm all six requested heat levels."
+    },
+    "alya_control_invalid": {
+      "message": "Alya control unavailable: {reason}"
     },
     "dynasty_request": {
       "message": "Choose an available Dynasty control and valid settings. Query settings to enable optional features."

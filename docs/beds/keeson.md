@@ -6652,6 +6652,16 @@ clock and alarm actions are unavailable.
 
 Based on Enso Remote 2.3 (`com.ore.sfm2`). Hardware is not yet tested.
 
+### Alya Smart Furnishing (Sino P2)
+
+**App:** [Alya Smart Furnishing](https://play.google.com/store/apps/details?id=com.okin.bedding.alya) 1.0.2, `com.okin.bedding.alya`
+
+**Status:** ❓ Hardware unverified
+
+#### Setup
+
+Select the explicit Alya BLE type and motor layout. The [Alya app guide](alya.md) holds this app's generated layout, transport and command tables and its release/state rules. Shared frames do not select another app's capabilities or timings.
+
 ## King Koil Bed
 
 **Status:** Not yet tested on hardware.

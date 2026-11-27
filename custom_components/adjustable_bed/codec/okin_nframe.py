@@ -89,6 +89,11 @@ def request(code: int) -> bytes:
     return bytes((0x00, code))
 
 
+def massage_setting(selector: int, level: int, side: int = 0) -> bytes:
+    """Encode Alya's ``03 03 selector level side`` setting record."""
+    return bytes((0x03, 0x03, selector, level, side))
+
+
 def extended(parameter: int, value: int, value2: int = 0) -> bytes:
     """Encode a 6-byte ``04 E0`` setting frame: light, massage level or timer."""
     return bytes((0x04, 0xE0, parameter, value, value2, 0x00))

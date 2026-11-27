@@ -489,6 +489,10 @@ independent from the three UI layouts. The shared Keeson controller extension
 owns captured-session refresh/release and raw offset diagnostics without adding
 a wire codec or changing existing routes. See [Restonic](../beds/restonic.md).
 
+### Alya Smart Furnishing
+
+The accepted row090 app layouts in `profiles/alya.py` drive ORE (P1), Keeson E6 (P2) and Okin N-frame (P3/P4). All 260 frozen reachable command literals reproduce through these existing codecs. ORE already carries parameter payloads; the N-frame encoder adds the five-byte massage setting record. The app's own 300 ms hold/release cadence and twelve-layout capability gates remain its profile data. Commands and transports are generated in the [Alya app guide](../beds/alya.md).
+
 ## ErgoBQ BED
 
 ErgoBQ 1.8.1 adds `codec/ergobq.py` for the versioned `55 AA` command,
