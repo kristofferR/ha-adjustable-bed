@@ -395,8 +395,10 @@ actions; its bounded `hold_control` behavior has separate timing in the
 | Customatic Jerome's C app | `customatic_jeromes` | 8 | 120 ms |
 | Customatic Remedy app (Rize Remedy) | `customatic_remedy` | 8 | 120 ms |
 | eShine app (E2000 to E5000) | `eshine_okin` | 10 | 300 ms |
+| Flexispot app | `flexispot` | 5 | 200 ms |
 | FSM Relax app | `fsm_relax` | 10 | 60 ms |
 | Jensen Adjustable Sleep app, JMC400 bed | `jensen` | 4 | 300 ms |
+| JobsAI智能助眠床 / Jobs AI app | `jobs` | 10 | 200 ms |
 | King Koil Bed app | `kingkoil` | 10 | 300 ms |
 | Leggett & Platt MlRM remote | `leggett_wilinke` | 10 | 110 ms |
 | Limoss and Stawett remotes | `limoss` | 12 | 80 ms |
@@ -973,6 +975,9 @@ Home Zone Adjustable uses its own app choice and an explicit four-character bed
 layout. Layout picker destinations are listed in the same field. Its exact
 Bluetooth name controls the refresh interval; no physical layout is inferred
 from the shared Bluetooth service. See the [Home Zone guide](beds/richmat.md#home-zone-adjustable).
+
+JobsAI智能助眠床 / Jobs AI uses an explicit app choice and mode 1 or mode 2.
+See the [JobsAI guide](beds/okin-nframe.md#jobsai).
 
 ### Ronco Motion layout
 

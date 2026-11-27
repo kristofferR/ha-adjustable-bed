@@ -2656,6 +2656,9 @@ for the selected layout’s slider; `massage_popup` takes `popup` (`15`, `30`,
 10, 20 and 30 minutes. Lighting and aroma require a reply on the current link.
 Use [`set_alarm`](#set_alarm) for the layout’s alarm.
 
+JobsAI sleep and wake alarms use `adjustable_bed.set_alarm`, with slot 1 for
+sleep and slot 2 for wake. See the [JobsAI guide](beds/okin-nframe.md#jobsai).
+
 ## Ronco Motion once alarm
 
 Use `adjustable_bed.set_alarm` with a Ronco Motion `device_id` and optional paired
