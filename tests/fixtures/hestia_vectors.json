@@ -1,0 +1,452 @@
+[
+  {
+    "id": "K00000001",
+    "protocol": "P1",
+    "action": "head up",
+    "inputs": {
+      "keycode_hex": "00000001"
+    },
+    "expected_bytes": "e5fe160000000105",
+    "evidence": [
+      "E07",
+      "E05"
+    ]
+  },
+  {
+    "id": "K00000002",
+    "protocol": "P1",
+    "action": "head down",
+    "inputs": {
+      "keycode_hex": "00000002"
+    },
+    "expected_bytes": "e5fe160000000204",
+    "evidence": [
+      "E07",
+      "E05"
+    ]
+  },
+  {
+    "id": "K00000004",
+    "protocol": "P1",
+    "action": "foot up",
+    "inputs": {
+      "keycode_hex": "00000004"
+    },
+    "expected_bytes": "e5fe160000000402",
+    "evidence": [
+      "E07",
+      "E05"
+    ]
+  },
+  {
+    "id": "K00000008",
+    "protocol": "P1",
+    "action": "foot down",
+    "inputs": {
+      "keycode_hex": "00000008"
+    },
+    "expected_bytes": "e5fe1600000008fe",
+    "evidence": [
+      "E07",
+      "E05"
+    ]
+  },
+  {
+    "id": "K00000005",
+    "protocol": "P1",
+    "action": "head and foot up (Unio)",
+    "inputs": {
+      "keycode_hex": "00000005"
+    },
+    "expected_bytes": "e5fe160000000501",
+    "evidence": [
+      "E07",
+      "E05"
+    ]
+  },
+  {
+    "id": "K0000000a",
+    "protocol": "P1",
+    "action": "head and foot down (Unio)",
+    "inputs": {
+      "keycode_hex": "0000000a"
+    },
+    "expected_bytes": "e5fe160000000afc",
+    "evidence": [
+      "E07",
+      "E05"
+    ]
+  },
+  {
+    "id": "K00000000",
+    "protocol": "P1",
+    "action": "movement release / stop",
+    "inputs": {
+      "keycode_hex": "00000000"
+    },
+    "expected_bytes": "e5fe160000000006",
+    "evidence": [
+      "E07",
+      "E05"
+    ]
+  },
+  {
+    "id": "K21000001",
+    "protocol": "P1",
+    "action": "zero gravity",
+    "inputs": {
+      "keycode_hex": "21000001"
+    },
+    "expected_bytes": "e5fe1621000001e4",
+    "evidence": [
+      "E08",
+      "E05"
+    ]
+  },
+  {
+    "id": "K21000002",
+    "protocol": "P1",
+    "action": "flat",
+    "inputs": {
+      "keycode_hex": "21000002"
+    },
+    "expected_bytes": "e5fe1621000002e3",
+    "evidence": [
+      "E08",
+      "E05"
+    ]
+  },
+  {
+    "id": "K21000003",
+    "protocol": "P1",
+    "action": "Anti preset (anti-snore label)",
+    "inputs": {
+      "keycode_hex": "21000003"
+    },
+    "expected_bytes": "e5fe1621000003e2",
+    "evidence": [
+      "E08",
+      "E05"
+    ]
+  },
+  {
+    "id": "K21000004",
+    "protocol": "P1",
+    "action": "memory A recall",
+    "inputs": {
+      "keycode_hex": "21000004"
+    },
+    "expected_bytes": "e5fe1621000004e1",
+    "evidence": [
+      "E08",
+      "E05"
+    ]
+  },
+  {
+    "id": "K21000006",
+    "protocol": "P1",
+    "action": "memory B recall",
+    "inputs": {
+      "keycode_hex": "21000006"
+    },
+    "expected_bytes": "e5fe1621000006df",
+    "evidence": [
+      "E08",
+      "E05"
+    ]
+  },
+  {
+    "id": "K21000000",
+    "protocol": "P1",
+    "action": "repeat same preset / preset cancel",
+    "inputs": {
+      "keycode_hex": "21000000"
+    },
+    "expected_bytes": "e5fe1621000000e5",
+    "evidence": [
+      "E08",
+      "E05"
+    ]
+  },
+  {
+    "id": "K21000014",
+    "protocol": "P1",
+    "action": "memory A save",
+    "inputs": {
+      "keycode_hex": "21000014"
+    },
+    "expected_bytes": "e5fe1621000014d1",
+    "evidence": [
+      "E08",
+      "E15",
+      "E05"
+    ]
+  },
+  {
+    "id": "K21000016",
+    "protocol": "P1",
+    "action": "memory B save",
+    "inputs": {
+      "keycode_hex": "21000016"
+    },
+    "expected_bytes": "e5fe1621000016cf",
+    "evidence": [
+      "E08",
+      "E15",
+      "E05"
+    ]
+  },
+  {
+    "id": "K31000000",
+    "protocol": "P1",
+    "action": "light off",
+    "inputs": {
+      "keycode_hex": "31000000"
+    },
+    "expected_bytes": "e5fe1631000000d5",
+    "evidence": [
+      "E09",
+      "E05"
+    ]
+  },
+  {
+    "id": "K31000001",
+    "protocol": "P1",
+    "action": "light on",
+    "inputs": {
+      "keycode_hex": "31000001"
+    },
+    "expected_bytes": "e5fe1631000001d4",
+    "evidence": [
+      "E09",
+      "E05"
+    ]
+  },
+  {
+    "id": "K10000010",
+    "protocol": "P1",
+    "action": "massage intensity 0 / Off",
+    "inputs": {
+      "keycode_hex": "10000010"
+    },
+    "expected_bytes": "e5fe1610000010e6",
+    "evidence": [
+      "E10",
+      "E05"
+    ]
+  },
+  {
+    "id": "K10000011",
+    "protocol": "P1",
+    "action": "massage intensity 1",
+    "inputs": {
+      "keycode_hex": "10000011"
+    },
+    "expected_bytes": "e5fe1610000011e5",
+    "evidence": [
+      "E10",
+      "E05"
+    ]
+  },
+  {
+    "id": "K10000012",
+    "protocol": "P1",
+    "action": "massage intensity 2",
+    "inputs": {
+      "keycode_hex": "10000012"
+    },
+    "expected_bytes": "e5fe1610000012e4",
+    "evidence": [
+      "E10",
+      "E05"
+    ]
+  },
+  {
+    "id": "K10000013",
+    "protocol": "P1",
+    "action": "massage intensity 3",
+    "inputs": {
+      "keycode_hex": "10000013"
+    },
+    "expected_bytes": "e5fe1610000013e3",
+    "evidence": [
+      "E10",
+      "E05"
+    ]
+  },
+  {
+    "id": "K10000020",
+    "protocol": "P1",
+    "action": "massage wave 0",
+    "inputs": {
+      "keycode_hex": "10000020"
+    },
+    "expected_bytes": "e5fe1610000020d6",
+    "evidence": [
+      "E10",
+      "E05"
+    ]
+  },
+  {
+    "id": "K10000021",
+    "protocol": "P1",
+    "action": "massage wave 1",
+    "inputs": {
+      "keycode_hex": "10000021"
+    },
+    "expected_bytes": "e5fe1610000021d5",
+    "evidence": [
+      "E10",
+      "E05"
+    ]
+  },
+  {
+    "id": "K10000022",
+    "protocol": "P1",
+    "action": "massage wave 2",
+    "inputs": {
+      "keycode_hex": "10000022"
+    },
+    "expected_bytes": "e5fe1610000022d4",
+    "evidence": [
+      "E10",
+      "E05"
+    ]
+  },
+  {
+    "id": "K10000023",
+    "protocol": "P1",
+    "action": "massage wave 3",
+    "inputs": {
+      "keycode_hex": "10000023"
+    },
+    "expected_bytes": "e5fe1610000023d3",
+    "evidence": [
+      "E10",
+      "E05"
+    ]
+  },
+  {
+    "id": "K10000030",
+    "protocol": "P1",
+    "action": "massage timer 10 minutes",
+    "inputs": {
+      "keycode_hex": "10000030"
+    },
+    "expected_bytes": "e5fe1610000030c6",
+    "evidence": [
+      "E10",
+      "E05"
+    ]
+  },
+  {
+    "id": "K10000031",
+    "protocol": "P1",
+    "action": "massage timer 20 minutes",
+    "inputs": {
+      "keycode_hex": "10000031"
+    },
+    "expected_bytes": "e5fe1610000031c5",
+    "evidence": [
+      "E10",
+      "E05"
+    ]
+  },
+  {
+    "id": "K10000032",
+    "protocol": "P1",
+    "action": "massage timer 30 minutes",
+    "inputs": {
+      "keycode_hex": "10000032"
+    },
+    "expected_bytes": "e5fe1610000032c4",
+    "evidence": [
+      "E10",
+      "E05"
+    ]
+  },
+  {
+    "id": "RTC1",
+    "protocol": "P1",
+    "action": "RTC enable",
+    "inputs": {
+      "hc": 12,
+      "mc": 34,
+      "sc": 56,
+      "hs": 7,
+      "ms": 45,
+      "intensity": 17,
+      "wave": 34,
+      "timer": 48,
+      "memory": 4
+    },
+    "expected_bytes": "eafe1638220c2d071122300400",
+    "evidence": [
+      "E05",
+      "E11"
+    ]
+  },
+  {
+    "id": "RTC2",
+    "protocol": "P1",
+    "action": "RTC disable",
+    "inputs": {
+      "hc": 3,
+      "mc": 2,
+      "sc": 1,
+      "hs": 255,
+      "ms": 255,
+      "intensity": 255,
+      "wave": 255,
+      "timer": 255,
+      "memory": 255
+    },
+    "expected_bytes": "eafe16010203ffffffffffff01",
+    "evidence": [
+      "E05",
+      "E11"
+    ]
+  },
+  {
+    "id": "RTC3",
+    "protocol": "P1",
+    "action": "RTC enable",
+    "inputs": {
+      "hc": 23,
+      "mc": 59,
+      "sc": 59,
+      "hs": 0,
+      "ms": 0,
+      "intensity": 255,
+      "wave": 255,
+      "timer": 255,
+      "memory": 255
+    },
+    "expected_bytes": "eafe163b3b170000ffffffff78",
+    "evidence": [
+      "E05",
+      "E11"
+    ]
+  },
+  {
+    "id": "RTC4",
+    "protocol": "P1",
+    "action": "RTC enable",
+    "inputs": {
+      "hc": 0,
+      "mc": 0,
+      "sc": 0,
+      "hs": 0,
+      "ms": 0,
+      "intensity": 19,
+      "wave": 35,
+      "timer": 50,
+      "memory": 6
+    },
+    "expected_bytes": "eafe1600000000001323320693",
+    "evidence": [
+      "E05",
+      "E11"
+    ]
+  }
+]
