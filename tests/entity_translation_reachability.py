@@ -218,6 +218,12 @@ async def factory_controllers() -> list[BedController]:
     assert isinstance(controller, SleepNumberMcrController)
     controller._foundation_features = FoundationFeatures(2, True, True, True, True, "360", "FF3")
     controllers.append(controller)
+    from custom_components.adjustable_bed.beds.flexispot.controller import FlexispotController
+    from custom_components.adjustable_bed.profiles.flexispot import PROFILES as FLEXISPOT_PROFILES
+    for model in FLEXISPOT_PROFILES:
+        coordinator = _FactoryCoordinator()
+        coordinator.entry.data["product_type"] = model
+        controllers.append(FlexispotController(coordinator))
     return controllers
 
 

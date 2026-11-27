@@ -86,6 +86,12 @@
  "binary_sensor:furnimove_sync": {
   "card_section": "hidden"
  },
+ "binary_sensor:jobs_sleep_enabled": {
+  "card_section": "hidden"
+ },
+ "binary_sensor:jobs_wake_enabled": {
+  "card_section": "hidden"
+ },
  "binary_sensor:kingkoil_light_report": {
   "card_section": "lighting"
  },
@@ -1029,6 +1035,16 @@
  "button:flexirest_reapply_alarm": {
   "card_section": "utility"
  },
+ "button:flexispot_left_back_down": {
+  "card_section": "motors",
+  "card_role": "down",
+  "card_motor": "flexispot_left_back"
+ },
+ "button:flexispot_left_back_up": {
+  "card_section": "motors",
+  "card_role": "up",
+  "card_motor": "flexispot_left_back"
+ },
  "button:foot_tilt_down": {
   "card_section": "motors",
   "card_role": "down",
@@ -1173,6 +1189,33 @@
  },
  "button:jalon_query_massage": {
   "card_section": "utility"
+ },
+ "button:jobs_massage_on": {
+  "card_section": "massage"
+ },
+ "button:jobs_query_sleep": {
+  "card_section": "utility"
+ },
+ "button:jobs_query_wake": {
+  "card_section": "utility"
+ },
+ "button:jobs_smb_off": {
+  "card_section": "massage"
+ },
+ "button:jobs_smb_on": {
+  "card_section": "massage"
+ },
+ "button:jobs_wave_1": {
+  "card_section": "massage"
+ },
+ "button:jobs_wave_2": {
+  "card_section": "massage"
+ },
+ "button:jobs_wave_3": {
+  "card_section": "massage"
+ },
+ "button:jobs_wave_4": {
+  "card_section": "massage"
  },
  "button:keeson_back_down": {
   "card_section": "motors",
@@ -2106,6 +2149,16 @@
  },
  "button:richmat_mh_toggle_smart_set_lock": {
   "card_section": "utility"
+ },
+ "button:right_back_down": {
+  "card_section": "motors",
+  "card_role": "down",
+  "card_motor": "right_back"
+ },
+ "button:right_back_up": {
+  "card_section": "motors",
+  "card_role": "up",
+  "card_motor": "right_back"
  },
  "button:rize_enroll": {
   "card_section": "hidden"
@@ -3319,6 +3372,10 @@
   "card_section": "motors",
   "card_motor": "feet"
  },
+ "cover:flexispot_left_back": {
+  "card_section": "motors",
+  "card_motor": "flexispot_left_back"
+ },
  "cover:foot_end_tilt": {
   "card_section": "motors",
   "card_motor": "foot_end_tilt"
@@ -3562,6 +3619,10 @@
  "cover:richmat_mh_pillow_lumbar": {
   "card_section": "motors",
   "card_motor": "richmat_mh_pillow_lumbar"
+ },
+ "cover:right_back": {
+  "card_section": "motors",
+  "card_motor": "right_back"
  },
  "cover:ruf_richmat_lift": {
   "card_section": "motors",
@@ -3899,6 +3960,15 @@
   "card_section": "motors",
   "card_role": "estimate",
   "card_motor": "feet"
+ },
+ "number:flexispot_feet_massage": {
+  "card_section": "massage"
+ },
+ "number:flexispot_right_massage": {
+  "card_section": "massage"
+ },
+ "number:flexispot_upper_massage": {
+  "card_section": "massage"
  },
  "number:goodvibe_snore_count": {
   "card_section": "utility"
@@ -4284,6 +4354,21 @@
  "select:enso2_timer_options": {
   "card_section": "massage",
   "card_role": "timer"
+ },
+ "select:flexispot_left_angle": {
+  "card_section": "utility"
+ },
+ "select:flexispot_left_sensitivity": {
+  "card_section": "utility"
+ },
+ "select:flexispot_massage_mode": {
+  "card_section": "massage"
+ },
+ "select:flexispot_right_angle": {
+  "card_section": "utility"
+ },
+ "select:flexispot_right_sensitivity": {
+  "card_section": "utility"
  },
  "select:footwarming_timer": {
   "card_section": "climate"
@@ -5714,6 +5799,18 @@
   "card_section": "massage"
  },
  "switch:dreamsense_split": {
+  "card_section": "utility"
+ },
+ "switch:flexispot_left_snore": {
+  "card_section": "utility"
+ },
+ "switch:flexispot_massage": {
+  "card_section": "massage"
+ },
+ "switch:flexispot_right_snore": {
+  "card_section": "utility"
+ },
+ "switch:flexispot_snore": {
   "card_section": "utility"
  },
  "switch:jerome_massage": {

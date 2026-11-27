@@ -147,6 +147,7 @@ if TYPE_CHECKING:
     from .serenity.controller import SerenityController as SerenityController
     from .serenity.controller import TranquilController as TranquilController
     from .serenity.controller import ZSeriesController as ZSeriesController
+    from .serenity.jobs import JobsController as JobsController
     from .serta_mp_remote import SertaMPRemoteController as SertaMPRemoteController
     from .shuda.controller import ShudaController as ShudaController
     from .silvermotion.controller import SilvermotionController as SilvermotionController
@@ -251,6 +252,7 @@ _EXPORT_MODULES = {
     "StarcodeM5X5Controller": "starcode.m5x5",
     "FurniMoveController": "furnimove.controller",
     "FsmRelaxController": "fsm_relax.controller",
+    "JobsController": "serenity.jobs",
     "RestfulController": "serenity.controller",
     "SerenityController": "serenity.controller",
     "TranquilController": "serenity.controller",

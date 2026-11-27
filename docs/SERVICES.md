@@ -2645,6 +2645,9 @@ Use `enso2_aroma_schedule` with `device_id`, `mode_2_minutes` and
 the side of a two-address pair through the standard `side` field. The receiver
 must report the corresponding accessory over Bluetooth.
 
+JobsAI sleep and wake alarms use `adjustable_bed.set_alarm`, with slot 1 for
+sleep and slot 2 for wake. See the [JobsAI guide](beds/okin-nframe.md#jobsai).
+
 ## Ronco Motion once alarm
 
 Use `adjustable_bed.set_alarm` with a Ronco Motion `device_id` and optional paired

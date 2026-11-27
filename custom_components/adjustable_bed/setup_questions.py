@@ -64,6 +64,7 @@ from .const import (
     BED_TYPE_ERGOBED,
     BED_TYPE_ESHINE,
     BED_TYPE_ESHINE_OKIN,
+    BED_TYPE_FLEXISPOT,
     BED_TYPE_FSM_RELAX,
     BED_TYPE_FURNIMOVE,
     BED_TYPE_GALAXY,
@@ -77,6 +78,7 @@ from .const import (
     BED_TYPE_JENSEN,
     BED_TYPE_JEROME_ADJUSTABLE_BASE,
     BED_TYPE_JIECANG_APP,
+    BED_TYPE_JOBS,
     BED_TYPE_KAIDI,
     BED_TYPE_KEESON,
     BED_TYPE_KOMFYD,
@@ -394,6 +396,7 @@ _OWNED_BY_BED_TYPE: Final[dict[str, frozenset[str]]] = {
     BED_TYPE_RIZE: _APP_DEFINED - {CONF_MOTOR_PULSE_COUNT},
     BED_TYPE_BEDSENSE: frozenset({CONF_MOTOR_COUNT, CONF_HAS_MASSAGE, CONF_DISABLE_ANGLE_SENSING}),
     BED_TYPE_SERENITY: _FIXED_LAYOUT,
+    BED_TYPE_JOBS: _FIXED_LAYOUT | _ALWAYS_MASSAGE,
     BED_TYPE_TRANQUIL: _FIXED_LAYOUT,
     BED_TYPE_RESTFUL: _FIXED_LAYOUT,
     BED_TYPE_RIZE_REMEDY_II: _FIXED_LAYOUT
@@ -2447,6 +2450,18 @@ def _smart_sleep_normalize(previous: Mapping[str, Any], answers: Mapping[str, An
     return result
 
 
+def _flexispot_models(_data: Mapping[str, Any]) -> dict[str, str]:
+    from .profiles.flexispot import PROFILES
+    return {key: profile.label for key, profile in PROFILES.items()}
+
+
+def _flexispot_settings(data: Mapping[str, Any]) -> dict[str, Any]:
+    from .profiles.flexispot import PROFILES
+    profile = PROFILES.get(str(data.get(CONF_PRODUCT_TYPE)))
+    return {CONF_MOTOR_COUNT: len(profile.motors) if profile else 2,
+            CONF_HAS_MASSAGE: True, CONF_HAS_LIGHT: profile.light if profile else False}
+
+
 def _linx_models(_data: Mapping[str, Any]) -> dict[str, str]:
     from .profiles.linx import PROFILES
     return {key: profile.label for key, profile in PROFILES.items()}
@@ -3875,6 +3890,15 @@ SETUP_PROFILES: Final[dict[str, SetupProfile]] = {
             CONF_PROTOCOL_VARIANT: "auto",
             CONF_MOTOR_PULSE_DELAY_MS: 200,
         },
+    ),
+    BED_TYPE_FLEXISPOT: SetupProfile(
+        owns={CONF_MOTOR_COUNT: SET_BY_PROFILE, CONF_HAS_MASSAGE: True,
+              CONF_DISABLE_ANGLE_SENSING: True,
+              CONF_MOTOR_PULSE_DELAY_MS: 200},
+        questions=(Question(CONF_PRODUCT_TYPE, _flexispot_models, REQUIRED),),
+        validate=lambda data: {} if data.get(CONF_PRODUCT_TYPE) in _flexispot_models(data) else {CONF_PRODUCT_TYPE: "invalid_product_type"},
+        derive=_flexispot_settings, title=lambda _data: "Flexispot",
+        imports=("profiles.flexispot",),
     ),
     BED_TYPE_LINX: SetupProfile(
         owns={CONF_MOTOR_COUNT: 2, CONF_HAS_MASSAGE: SET_BY_PROFILE,
