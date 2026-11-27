@@ -369,6 +369,7 @@ _BED_TRAITS: Final[dict[str, BedTraits]] = {
     "wsilver_legacy": replace(_NO_ANGLES_SCOPED, owns_device_info_reads=True),
     BED_TYPE_LIKIMIO: replace(_NO_ANGLES_SCOPED, owns_device_info_reads=True, connection_timeout=5),
     "dreamsense": replace(_NO_ANGLES_SCOPED, owns_device_info_reads=True, connection_timeout=5),
+    "muuegm": replace(_NO_ANGLES_SCOPED, owns_device_info_reads=True, connection_timeout=5),
     "saatva": replace(_NO_ANGLES_SCOPED, owns_device_info_reads=True),
     "super_colchones": replace(_NO_ANGLES_SCOPED, owns_device_info_reads=True, connection_timeout=5),
     "ergobq": replace(_NO_ANGLES_SCOPED, owns_device_info_reads=True),
