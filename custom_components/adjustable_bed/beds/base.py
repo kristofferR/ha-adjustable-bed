@@ -808,6 +808,15 @@ class BedController(GattWriter):
         """
         return int(angle)
 
+    @property
+    def supports_combined_position_control(self) -> bool:
+        """Whether requested axes must be composed into one direct target frame."""
+        return False
+
+    async def set_motor_positions(self, positions: Mapping[str, int]) -> None:
+        """Set a validated group of native axis targets in one command."""
+        raise NotImplementedError("Combined position control is not supported")
+
     async def set_motor_position(self, motor: str, position: int) -> None:
         """Set a motor to a specific position (0-100).
 

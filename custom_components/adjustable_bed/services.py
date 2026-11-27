@@ -68,6 +68,7 @@ from .command_scheduler import (
 )
 from .command_target import capture_command_targets, command_target_scope
 from .const import (
+    BED_TYPE_ASKONA,
     BED_TYPE_ERGOMOTION,
     BED_TYPE_FURNIMOVE,
     BED_TYPE_KEESON,
@@ -1032,7 +1033,7 @@ def _position_config(
         and all(spec.native_unit_of_measurement == POSITION_UNIT_PERCENT for spec in specs)
     )
     # Q-Plus reports back/legs only, within its pulse tables.
-    if bed_type in (BED_TYPE_SLEEP_NUMBER_MCR, BED_TYPE_SERTA_MP_REMOTE, BED_TYPE_QPLUS_APP) or (
+    if bed_type in (BED_TYPE_ASKONA, BED_TYPE_SLEEP_NUMBER_MCR, BED_TYPE_SERTA_MP_REMOTE, BED_TYPE_QPLUS_APP) or (
         percentage_targets and (supports_direct_position_control or not specs)
     ):
         motor_configs = {
@@ -1128,7 +1129,7 @@ def _position_config(
         )
         raise invalid("invalid_position_range", position=str(position), motor=motor, max_value=str(max_value), unit=unit)
 
-    return config
+    return {**config, "combine_targets": controller.supports_combined_position_control is True}
 
 
 async def handle_set_position(call: ServiceCall) -> None:
@@ -1205,14 +1206,9 @@ async def _execute_position_requests(
             f"motor:{plans[(_plan_key(target), motor)]['position_key']}" for motor, _ in requests
         )
 
-    async def recheck(target: BedChild) -> dict[str, dict[str, Any]] | None:
-        """Plan every axis again on the controller that moves the bed.
-
-        Returns None when a STOP reached any selected bed meanwhile.
-        """
-        controller = await _get_controller_for_service(target)
-        # A link this opened gets its idle timer back if the call ends early.
-        preflighted.append((target, target))
+    def checked_configs(
+        target: BedChild, controller: BedController
+    ) -> dict[str, dict[str, Any]] | None:
         configs: dict[str, dict[str, Any]] = {}
         with controller_side_scope(target):
             for motor, position in requests:
@@ -1222,6 +1218,12 @@ async def _execute_position_requests(
             if any(configs[motor].get(key) != checked.get(key) for key in _CHECKED_SEEK_FIELDS):
                 raise _bed_changed()
         return None if selection.stopped() else configs
+
+    async def recheck(target: BedChild) -> dict[str, dict[str, Any]] | None:
+        """Check the complete plan on the live controller before moving."""
+        controller = await _get_controller_for_service(target)
+        preflighted.append((target, target))
+        return checked_configs(target, controller)
 
     async def seek(target: BedChild, motor: str, position: float) -> None:
         # Seek only what preflight checked, on the controller that moves the bed.
@@ -1246,15 +1248,33 @@ async def _execute_position_requests(
 
             # Every axis is checked before the first one moves.
             operations: list[Callable[[], Coroutine[Any, Any, None]]] = [check_all]
-            for motor, position in requests:
+            if len(requests) > 1 and plans[(_plan_key(target), requests[0][0])]["combine_targets"]:
+                async def combined(controller: BedController) -> None:
+                    configs = checked_configs(target, controller)
+                    if configs is None:
+                        return
+                    await controller.set_motor_positions({
+                        configs[motor]["position_key"]: controller.angle_to_native_position(
+                            configs[motor]["position_key"], position
+                        )
+                        for motor, position in requests
+                    })
 
-                async def operation(
-                    motor: str = motor,
-                    position: float = position,
-                ) -> None:
-                    await seek(target, motor, position)
+                operations.append(
+                    lambda: target.async_execute_controller_command(
+                        combined, resources=resources(target)
+                    )
+                )
+            else:
+                for motor, position in requests:
 
-                operations.append(operation)
+                    async def operation(
+                        motor: str = motor,
+                        position: float = position,
+                    ) -> None:
+                        await seek(target, motor, position)
+
+                    operations.append(operation)
 
             await target.async_execute_command_group(
                 operations,
@@ -1296,7 +1316,7 @@ async def _execute_position_requests(
 
 
 # A seek runs only when the live controller plans the same axis and range.
-_CHECKED_SEEK_FIELDS: Final = ("position_key", "max_value", "unit")
+_CHECKED_SEEK_FIELDS: Final = ("position_key", "max_value", "unit", "combine_targets")
 
 
 async def _timed_move_plan(

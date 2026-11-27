@@ -301,6 +301,7 @@ _BED_TRAITS: Final[dict[str, BedTraits]] = {
     BED_TYPE_LINX: replace(_NO_ANGLES_SCOPED, connection_timeout=10.0, owns_device_info_reads=True),
     BED_TYPE_SYMPHONY_SLEEP: replace(_NO_ANGLES_SCOPED, owns_device_info_reads=True),
     BED_TYPE_SYMPHONY: replace(_NO_ANGLES_SCOPED, owns_device_info_reads=True, single_address_native_both=False, connection_timeout=8.0),
+    "askona": BedTraits(position_feedback=True, angle_sensors=True, connection_scoped_state=True, owns_device_info_reads=True),
     "enso": _NO_ANGLES_SCOPED,
     BED_TYPE_ENSO2: replace(_NO_ANGLES_SCOPED, connection_timeout=10, owns_device_info_reads=True),
     "sealy_posturematic": BedTraits(no_angle_feedback=True, connection_scoped_state=True, connection_timeout=5.0),
@@ -540,6 +541,10 @@ def bed_traits(bed_type: str | None, protocol_variant: str | None = None) -> Bed
             angle_sensors=positions,
             percentage_positions=traits.percentage_positions and positions,
         )
+    if resolved == "askona":
+        maximums = {"633": (68, 44), "180x200": (64, 22), "element": (100, 36)}
+        head, foot = maximums.get(protocol_variant or "", (68, 44))
+        return replace(traits, max_angles={"back": head, "head": head, "legs": foot, "feet": foot})
     if resolved == BED_TYPE_KEESON:
         return replace(
             traits,

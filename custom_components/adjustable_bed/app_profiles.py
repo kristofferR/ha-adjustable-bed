@@ -195,6 +195,7 @@ _BY_BED_TYPE: Final[dict[str, SideProfile]] = {
     "relax_motion": SideProfile("Relax Motion", variant_owned=True),
     "smartbed": SideProfile("SmartBed", frozenset({CONF_HAS_MASSAGE}), variant_owned=True),
     "cheerssleep": SideProfile("CheersSleep"),
+    "askona": SideProfile("Askona model", variant_owned=True),
     "enso": SideProfile("Enso Remote", frozenset({CONF_MOTOR_COUNT})),
     BED_TYPE_ENSO2: SideProfile(
         "ENSO Sleep Control", frozenset({CONF_BLE_DEVICE_NAME}),

@@ -18,6 +18,7 @@ from custom_components.adjustable_bed.codec import keeson as keeson_codec
 from custom_components.adjustable_bed.profiles import keeson as keeson_profiles
 from custom_components.adjustable_bed.profiles import scott_living as scott_profiles
 from scripts.codec_docs._agingplace import BLOCKS as _AGINGPLACE_BLOCKS
+from scripts.codec_docs._askona import BLOCKS as _ASKONA_BLOCKS
 from scripts.codec_docs._betterliving2 import BLOCKS as _BETTERLIVING2_BLOCKS
 from scripts.codec_docs._common import Block, _block, _hex, _table
 from scripts.codec_docs._enso import BLOCKS as _ENSO_BLOCKS
@@ -1219,6 +1220,7 @@ BLOCKS.extend(_ORMATEK_BLOCKS)
 BLOCKS.extend(_SOMOS_BLOCKS)
 BLOCKS.extend(_ULTRAMATIC_BLOCKS)
 
+BLOCKS.extend(_ASKONA_BLOCKS)
 BLOCKS.extend(_ENSO_BLOCKS)
 
 BLOCKS.extend(_KINGKOIL_BLOCKS)

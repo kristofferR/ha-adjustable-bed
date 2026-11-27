@@ -598,6 +598,7 @@ async def test_every_axis_is_checked_live_before_the_first_one_moves(hass) -> No
                 "move_down_fn": AsyncMock(),
                 "move_stop_fn": AsyncMock(),
                 "max_value": 60.0,
+                "combine_targets": False,
             }
 
         with (

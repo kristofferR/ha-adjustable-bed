@@ -428,6 +428,7 @@ _BUILDERS: Final[dict[str, _BuilderSpec]] = {
     "kingkoil": _BuilderSpec("keeson.kingkoil"),
     BED_TYPE_SOMOS: _BuilderSpec("keeson.somos"),
     BED_TYPE_COMFORTBASE: _BuilderSpec("keeson.comfortbase"),
+    "askona": _BuilderSpec("keeson.askona"),
     "enso": _BuilderSpec("keeson.enso"),
     BED_TYPE_ENSO2: _BuilderSpec("enso2.controller"),
     "sealy_posturematic": _BuilderSpec("sealy.controller"),

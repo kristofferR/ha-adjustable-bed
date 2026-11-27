@@ -304,6 +304,7 @@ _EXPORT_MODULES = {
     "LinxController": "linx.controller",
     "SymphonySleepController": ("keeson.symphony_sleep", "SymphonySleepController"),
     "KeesonController": "keeson.controller",
+    "AskonaController": "keeson.askona",
     "OrmatekController": "keeson.ormatek",
     "AgingPlaceController": "keeson.agingplace",
     "LeggettGen2Controller": "leggett.gen2",

@@ -1619,6 +1619,9 @@ def default_scenario(bed_type: str) -> Scenario:
         return Scenario(id=bed_type, bed_type=bed_type, protocol_variant="bt2000_standard",
                         entry_data={const.CONF_PROTOCOL_VARIANT: "bt2000_standard", const.CONF_PRODUCT_TYPE: "standard"},
                         layout_id="bedtech")
+    if bed_type == "askona":
+        return Scenario(id="askona", bed_type="askona", protocol_variant="633", layout_id="askona",
+                        replies={"0000ffe4-0000-1000-8000-00805f9b34fb": "0000000044002c030634120000400000"})
     if bed_type == "berun":
         return Scenario(id="berun", bed_type="berun", protocol_variant="v6", layout_id="berun:v6")
     data: dict[str, Any] = {"product_type": "nerum"} if bed_type == "nerum" else {"product_type": "2"} if bed_type == "enso" else {}
@@ -1892,7 +1895,9 @@ def route_scenarios() -> list[Scenario]:
     """Protocol-variant and app-profile routes, one scenario each."""
     from custom_components.adjustable_bed import const
 
-    scenarios: list[Scenario] = [Scenario(id=f"enso:{n}", bed_type="enso", entry_data={"product_type": str(n), "motor_count": n}, layout_id="enso") for n in (3, 4)]
+    scenarios: list[Scenario] = [Scenario(id=f"askona:{model}", bed_type="askona", protocol_variant=model, layout_id="askona",
+        replies={"0000ffe4-0000-1000-8000-00805f9b34fb": "00000000000000000000000000000000" if model == "180x200" else "00000000640024010300010000004000000000"}) for model in ("180x200", "element")]
+    scenarios += [Scenario(id=f"enso:{n}", bed_type="enso", entry_data={"product_type": str(n), "motor_count": n}, layout_id="enso") for n in (3, 4)]
     scenarios.extend(Scenario(id=f"ronco_motion:{layout}:{transport}", bed_type="ronco_motion", protocol_variant=layout, layout_id=f"ronco_motion:{transport}") for layout in ("economy", "premium") for transport in range(5))
     scenarios.extend(Scenario(id=f"sealy_posturematic:{n}", bed_type="sealy_posturematic",
                               entry_data={"product_type": str(n), "bed_type": "sealy_posturematic"}, layout_id="sealy_posturematic")
@@ -2916,6 +2921,15 @@ async def _build(scenario: Scenario, client: Any) -> Any:
             coordinator.controller_state.update((update.key, update.value) for update in updates)
 
         coordinator.handle_controller_state_updates = receive
+    if scenario.bed_type == "askona":
+        # Askona's native light uses typed feedback; leave parent captures alone.
+        from custom_components.adjustable_bed.controller_state import ControllerState
+
+        state = ControllerState()
+        coordinator.controller_state = state
+        coordinator.handle_controller_state_updates = lambda *updates: state.update(
+            (update.key, update.value) for update in updates
+        )
     if scenario.pair_primary is not None:
         from custom_components.adjustable_bed.const import CONF_BED_TYPE, CONF_BLE_DEVICE_NAME
         from custom_components.adjustable_bed.coordinator import ChildEntryView
@@ -2992,9 +3006,10 @@ async def _connect(controller: Any, recorder: Recorder, clock: FakeClock) -> dic
             # These v5 profiles own startup in their hook, without session helpers.
             await controller.async_on_connect(None)
             return
-        if controller._coordinator.bed_type == "customatic_demo":
+        if controller._coordinator.bed_type in {"customatic_demo", "askona"}:
             session = SimpleNamespace(
                 async_start_notify=controller.start_notify, store_device_info=lambda *_: None,
+                is_current=lambda: True,
             )
             await controller.async_on_connect(session)
             await controller.async_read_device_info(session)
