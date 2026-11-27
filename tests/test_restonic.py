@@ -214,7 +214,9 @@ async def test_notifications_are_raw_current_link_only_and_reset(hass, mock_blea
     callback = mock_bleak_client.start_notify.call_args.args[1]
     notify = c._link.notify
     callback(notify, bytearray.fromhex("a50b0e002f00020306"))
-    assert c.protocol_diagnostics["received"]["b"] == 7
+    received = c.protocol_diagnostics["received"]
+    assert isinstance(received, dict)
+    assert received["b"] == 7
     c.on_disconnect()
     callback(notify, bytearray.fromhex("a50b0e000200020306"))
     assert c.protocol_diagnostics["received"] == {}
