@@ -4894,9 +4894,6 @@
   "card_section": "massage",
   "card_role": "timer"
  },
- "sensor:awmotion_status": {
-  "card_section": "hidden"
- },
  "sensor:back_angle": {
   "card_section": "motors",
   "card_motor": "back"

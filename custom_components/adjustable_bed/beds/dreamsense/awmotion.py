@@ -12,7 +12,6 @@ from ...errors import invalid
 from ...profiles.awmotion import PROFILES
 from ..base import BedController
 from ..builder import BuildContext
-from ..entity_specs import ControllerStateSensorSpec
 from .awmotion_receive import AwMotionReceive
 from .controller import DreamSenseController
 from .transport import LIKIMIO_ROUTES, Session
@@ -55,17 +54,15 @@ class AwMotionController(DreamSenseController):
         return False
 
     @property
-    def controller_state_sensor_specs(self) -> tuple[ControllerStateSensorSpec, ...]:
-        return (
-            *super().controller_state_sensor_specs,
-            ControllerStateSensorSpec(
-                "awmotion_status",
-                "awmotion_status",
-                STATUS,
-                "mdi:information-outline",
-                attribute_keys=(REPORTS,),
-            ),
-        )
+    def protocol_diagnostics(self) -> dict[str, object]:
+        received = self._receive
+        if not isinstance(received, AwMotionReceive):
+            return super().protocol_diagnostics
+        return {
+            **super().protocol_diagnostics,
+            "last_event": received.last_event,
+            "reports": dict(received.values),
+        }
 
     def _notification(
         self, session: Session, sender: BleakGATTCharacteristic, data: bytearray

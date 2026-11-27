@@ -209,7 +209,13 @@ async def test_capability_gates_light_alarm_reports_and_disconnect(hass):
         await ctrl.light_settings(color=(18, 52, 86))
     notify = c.client.start_notify.call_args.args[1]
     notify(None, bytearray.fromhex("6e090100786e0e00037f6e90351e00"))
-    assert c.controller_state.get(REPORTS)["motor_1"]["angle"] == 30
+    reports = c.controller_state.get(REPORTS)
+    assert isinstance(reports, dict)
+    motor = reports["motor_1"]
+    assert isinstance(motor, dict)
+    assert motor["angle"] == 30
+    assert ctrl.protocol_diagnostics["reports"] == reports
+    assert "awmotion_status" not in {spec.key for spec in ctrl.controller_state_sensor_specs}
     await c.async_execute_controller_command(
         lambda _ctrl: ctrl.light_settings(color=(18, 52, 86), seconds=0)
     )
@@ -237,7 +243,9 @@ def test_stream_extended_fragmentation_and_common_early_consumption():
     r.feed(bytes.fromhex("996e200c0102"))
     assert r.last_event is None
     r.feed(bytes.fromhex("0200012c052dfe6e0e00037f"))
-    assert r.values["motor_extended"]["height"] == 30
+    motor = r.values["motor_extended"]
+    assert isinstance(motor, dict)
+    assert motor["height"] == 30
     assert r.capabilities == {"light"}
     r.feed(bytes.fromhex("6e0901"))
     r.feed(bytes.fromhex("0078"))
