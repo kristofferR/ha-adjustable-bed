@@ -1793,6 +1793,7 @@ VARIANT_ROUTES: dict[str, str] = {
     "adjustable_bed": "ADJUSTABLE_BED_VARIANTS",
     "bedsense": "BEDSENSE_VARIANTS",
     "comfort_enhancements": "COMFORT_ENHANCEMENTS_VARIANTS",
+    "jobs": "JOBS_VARIANTS",
     "zseries": "ZSERIES_VARIANTS",
     "solace": "SOLACE_VARIANTS",
     "svane": "SVANE_VARIANTS",

@@ -73,6 +73,7 @@ from .const import (
     BED_TYPE_JEROME_ADJUSTABLE_BASE,
     BED_TYPE_JIECANG,
     BED_TYPE_JIECANG_APP,
+    BED_TYPE_JOBS,
     BED_TYPE_KAIDI,
     BED_TYPE_KEESON,
     BED_TYPE_KOMFYD,
@@ -501,6 +502,7 @@ _BUILDERS: Final[dict[str, _BuilderSpec]] = {
     BED_TYPE_SVANE: _BuilderSpec("svane.controller"),
     BED_TYPE_VIBRADORM_APP: _BuilderSpec("vibradorm.app"),
     BED_TYPE_VMATBASIC: _BuilderSpec("vmatbasic.controller"),
+    BED_TYPE_JOBS: _BuilderSpec("serenity.jobs", "build_jobs"),
     BED_TYPE_ZSERIES: _BuilderSpec("serenity.controller", "build_zseries"),
     # Keeson layout app profiles.
     "ergo_slim": _BuilderSpec("ergo_slim"),

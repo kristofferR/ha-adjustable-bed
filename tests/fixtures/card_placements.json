@@ -86,6 +86,12 @@
  "binary_sensor:furnimove_sync": {
   "card_section": "hidden"
  },
+ "binary_sensor:jobs_sleep_enabled": {
+  "card_section": "hidden"
+ },
+ "binary_sensor:jobs_wake_enabled": {
+  "card_section": "hidden"
+ },
  "binary_sensor:kingkoil_light_report": {
   "card_section": "lighting"
  },
@@ -1180,6 +1186,33 @@
  },
  "button:jalon_query_massage": {
   "card_section": "utility"
+ },
+ "button:jobs_massage_on": {
+  "card_section": "massage"
+ },
+ "button:jobs_query_sleep": {
+  "card_section": "utility"
+ },
+ "button:jobs_query_wake": {
+  "card_section": "utility"
+ },
+ "button:jobs_smb_off": {
+  "card_section": "massage"
+ },
+ "button:jobs_smb_on": {
+  "card_section": "massage"
+ },
+ "button:jobs_wave_1": {
+  "card_section": "massage"
+ },
+ "button:jobs_wave_2": {
+  "card_section": "massage"
+ },
+ "button:jobs_wave_3": {
+  "card_section": "massage"
+ },
+ "button:jobs_wave_4": {
+  "card_section": "massage"
  },
  "button:keeson_back_down": {
   "card_section": "motors",
