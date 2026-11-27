@@ -18,7 +18,7 @@ from pytest_homeassistant.common import MockConfigEntry
 
 from custom_components.adjustable_bed import const
 from custom_components.adjustable_bed.beds.cancellation import cancellable
-from custom_components.adjustable_bed.beds.richmat import atlas_lift
+from custom_components.adjustable_bed.beds.richmat import fixed as atlas_lift
 from custom_components.adjustable_bed.beds.richmat.atlas_lift import AtlasLiftController
 from custom_components.adjustable_bed.button import _button_entities_for
 from custom_components.adjustable_bed.config_flow import AdjustableBedConfigFlow
@@ -234,12 +234,14 @@ async def discover_cama_lift(hass):
     chooser = await manager.async_init(
         const.DOMAIN, context={"source": SOURCE_BLUETOOTH}, data=info
     )
-    assert detect_bed_type(info) is None
+    assert detect_bed_type(info) == const.BED_TYPE_MYSIDE
+    assert detect_bed_type_detailed(info).confidence == 0.3
     assert chooser["step_id"] == "bluetooth_disambiguate"
     assert set(select_options(chooser, "bed_type_choice")) == {
         const.BED_TYPE_ATLAS_LIFT,
         const.BED_TYPE_COMFORT_BED,
         const.BED_TYPE_LIKIMIO,
+        const.BED_TYPE_MYSIDE,
         "muuegm",
         "show_all",
     }

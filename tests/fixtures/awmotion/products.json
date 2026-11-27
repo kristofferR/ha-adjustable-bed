@@ -1,0 +1,160 @@
+[
+  {
+    "id": "935c41",
+    "selector": "productAWMotionHC800",
+    "source": "work/blutter/objs.txt:36457",
+    "sha256": "a85d8a4c193d77a27533e46fdd93a5c1d8a560f7af03889abaa3633e213a7e53",
+    "disposition": "REACHABLE",
+    "reason": "Chosen from two MotionBrandType lists reached by main_awmotion",
+    "fields": {
+      "14": "\"HC800\"",
+      "18": "\"LTRM\"",
+      "20": "\"res/pdf/HC800.pdf\"",
+      "34": "true",
+      "38": "true",
+      "3c": "false",
+      "40": "true",
+      "44": "false",
+      "48": "false",
+      "4c": "\"res/images/common/aw_motion_hc800.png\""
+    },
+    "menus": {
+      "motor": [
+        "91d481",
+        "91d401",
+        "91d381",
+        "91d301",
+        "91d281",
+        "91d201",
+        "91d181",
+        "91d101",
+        "91d081"
+      ],
+      "massage": [
+        "91d001",
+        "91cf81",
+        "91cf01",
+        "91ce81",
+        "91ce01",
+        "91cd81",
+        "91cd01"
+      ],
+      "presets": [
+        "91cc81",
+        "91cc01",
+        "91cb81"
+      ],
+      "alarm_modes": [
+        "91cc81",
+        "91cc01",
+        "91cb81"
+      ]
+    }
+  },
+  {
+    "id": "935c91",
+    "selector": "productAWMotionSN500",
+    "source": "work/blutter/objs.txt:37266",
+    "sha256": "1350ae54718169b34d1b44a59aee7539114b0814d2a65eb561434a4eaf756f2f",
+    "disposition": "REACHABLE",
+    "reason": "Chosen from two MotionBrandType lists reached by main_awmotion",
+    "fields": {
+      "14": "\"SN500\"",
+      "18": "\"LTRM\"",
+      "20": "\"res/pdf/SN500.pdf\"",
+      "34": "false",
+      "38": "true",
+      "3c": "false",
+      "40": "true",
+      "44": "false",
+      "48": "false",
+      "4c": "\"res/images/common/aw_motion_sn500.png\""
+    },
+    "menus": {
+      "motor": [
+        "91d481",
+        "91d401",
+        "91d381",
+        "91d301",
+        "91d281",
+        "91d201",
+        "91d581",
+        "91d501",
+        "91d181",
+        "91d101",
+        "91d081"
+      ],
+      "massage": [
+        "91d001",
+        "91cf81",
+        "91cf01",
+        "91ce81",
+        "91ce01",
+        "91cd81",
+        "91cd01"
+      ],
+      "presets": [
+        "91cc81",
+        "91cc01"
+      ],
+      "alarm_modes": [
+        "91cc81",
+        "91cc01"
+      ]
+    }
+  },
+  {
+    "id": "935ce1",
+    "selector": "productAWMotionSN300",
+    "source": "work/blutter/objs.txt:38073",
+    "sha256": "d32096d313690ddb5fbbda5701e6aa498db9ece0480ea9e63c2602ec9bbba587",
+    "disposition": "REACHABLE",
+    "reason": "Chosen from two MotionBrandType lists reached by main_awmotion",
+    "fields": {
+      "14": "\"SN300\"",
+      "18": "\"B3RN\"",
+      "20": "\"res/pdf/SN300.pdf\"",
+      "34": "false",
+      "38": "true",
+      "3c": "false",
+      "40": "true",
+      "44": "false",
+      "48": "false",
+      "4c": "\"res/images/common/aw_motion_sn300.png\""
+    },
+    "menus": {
+      "motor": [
+        "91d481",
+        "91d401",
+        "91d381",
+        "91d301",
+        "91d701",
+        "91d681",
+        "91d181",
+        "91d101",
+        "91d081"
+      ],
+      "massage": [
+        "91d001",
+        "91cf81",
+        "91cf01",
+        "91ce81",
+        "91ce01",
+        "91cd81",
+        "91cd01"
+      ],
+      "presets": [
+        "91cc01",
+        "91cc81",
+        "91d601",
+        "91cb81"
+      ],
+      "alarm_modes": [
+        "91cc01",
+        "91cc81",
+        "91d601",
+        "91cb81"
+      ]
+    }
+  }
+]

@@ -1013,3 +1013,19 @@ Choose **Innova Control app** for `com.richmat.innova2`, then select the remote
 layout or concrete model-picker choice. This is distinct from INNOVA
 (`com.ore.sfm`). Mode tabs remain logical modes, not paired bed sides. Optional
 light/aroma entities require capability replies on the current connection.
+
+### PowersBedding
+
+Choose **PowersBedding app** for its fixed two-motor screen. The Bluetooth name
+and manufacturer query select the receiver route automatically. Layout, massage
+and 100 ms movement cadence belong to the profile. Each receiver in a two-address
+pair keeps its own Bluetooth name and massage levels. See the
+[PowersBedding guide](beds/keeson.md#powersbedding).
+
+### My Side
+
+Choose **My Side app** and the Deep Relax Smart product from your app: standard,
+with Sleep, with Coaxing, or with Coaxing and Sleep. Shared BLE services and
+Bluetooth names do not determine this choice. Each receiver in a two-address
+pair keeps its own product choice. The separate sleep-sensor connection is
+currently unavailable; Sleep products expose the bed-side sensor name only.

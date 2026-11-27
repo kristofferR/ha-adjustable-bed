@@ -1,0 +1,28 @@
+{
+  "up": {
+    "entity_id": "button.myside_combined_up",
+    "attributes": {
+      "timed_move": false,
+      "held_control": "head_and_foot_up",
+      "hold_start_delay_ms": 0,
+      "hold_release_delay_ms": 0,
+      "hold_lease_mode": "stream",
+      "card_section": "motors",
+      "card_role": "up",
+      "card_motor": "head_feet"
+    }
+  },
+  "down": {
+    "entity_id": "button.myside_combined_down",
+    "attributes": {
+      "timed_move": false,
+      "held_control": "head_and_foot_down",
+      "hold_start_delay_ms": 0,
+      "hold_release_delay_ms": 0,
+      "hold_lease_mode": "stream",
+      "card_section": "motors",
+      "card_role": "down",
+      "card_motor": "head_feet"
+    }
+  }
+}

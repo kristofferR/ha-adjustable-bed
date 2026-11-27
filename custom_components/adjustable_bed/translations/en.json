@@ -190,6 +190,7 @@
           "check_connected": "Check: connected",
           "check_connected_via": "Check: connected through",
           "check_no_commands": "Check: no commands",
+          "check_topcare_transport_missing": "❌ TOP CARE needs exactly one supported Bluetooth service with its writable command characteristic.",
           "check_comfort_bed_transport_missing": "❌ Comfort Bed needs exactly one supported Bluetooth service with its writable command characteristic and a notification channel.",
           "check_atlas_lift_transport_missing": "❌ Atlas Lift needs exactly one supported Bluetooth service with its writable command characteristic.",
           "check_sleeptime_uart_missing": "❌ The Bluetooth device lacks the write and status channels Sleeptime needs.",
@@ -1781,6 +1782,29 @@
   },
   "entity": {
     "button": {
+      "powersbedding_save_zero_g": {"name": "Save zero gravity"},
+      "powersbedding_start": {"name": "Start massage"},
+      "powersbedding_stop": {"name": "Stop massage"},
+      "powersbedding_toggle": {"name": "Toggle massage"},
+      "powersbedding_head_up": {"name": "Increase head massage"},
+      "powersbedding_head_down": {"name": "Decrease head massage"},
+      "powersbedding_foot_up": {"name": "Increase foot massage"},
+      "powersbedding_foot_down": {"name": "Decrease foot massage"},
+      "powersbedding_wave": {"name": "Next massage wave"},
+      "powersbedding_timer": {"name": "Next massage timer"},
+      "powersbedding_query_alarm": {"name": "Refresh bed alarm"},
+      "meisemobell_refresh_alarms": {
+        "name": "Refresh alarms"
+      },
+      "meisemobell_close_alarms": {
+        "name": "Turn off both alarms"
+      },
+      "meisemobell_reset_memories": {
+        "name": "Reset memories"
+      },
+      "meisemobell_reset_settings": {
+        "name": "Reset settings"
+      },
       "hestia_cancel_preset": {
         "name": "Cancel preset"
       },
@@ -4269,6 +4293,9 @@
       }
     },
     "cover": {
+      "head_feet": {"name": "Head and foot"},
+      "lumbar_pillow": {"name": "Lumbar and pillow"},
+      "tilt": {"name": "Tilt"},
       "sleep_assist_pro_side_b": {
         "name": "Side B head"
       },
@@ -4754,6 +4781,20 @@
       }
     },
     "sensor": {
+      "powersbedding_head_report": {"name": "Head massage level"},
+      "powersbedding_foot_report": {"name": "Foot massage level"},
+      "powersbedding_wave_report": {"name": "Massage wave"},
+      "powersbedding_timer": {"name": "Massage timer indicator"},
+      "powersbedding_alarm": {"name": "Bed alarm"},
+      "meisemobell_alarm_1": {
+        "name": "Alarm 1"
+      },
+      "meisemobell_alarm_2": {
+        "name": "Alarm 2"
+      },
+      "meisemobell_massage_time": {
+        "name": "Reported massage timer"
+      },
       "silksnow": {"name": "Model"},
       "berun_head_massage": {
         "name": "Head massage level"
@@ -6035,6 +6076,9 @@
       "sleep_assistant_alarm_2": {
         "name": "Alarm 2"
       },
+      "awmotion_status": {
+        "name": "Bed report"
+      },
       "dreamsense_alarm_ack": {
         "name": "Alarm response",
         "state": {
@@ -6422,6 +6466,7 @@
       }
     },
     "binary_sensor": {
+      "powersbedding_alarm_enabled": {"name": "Bed alarm enabled"},
       "berun_massage_on": {
         "name": "Massage"
       },
@@ -8326,6 +8371,38 @@
         "group": {
           "name": "Bluetooth group",
           "description": "Four printable ASCII characters. Joining or leaving disconnects the selected receiver after the write."
+        }
+      }
+    },
+    "myside": {
+      "name": "My Side repeat alarms and sleep link",
+      "description": "Query or change repeat alarms on Coaxing products, or query a Sleep product’s linked sensor name. Query alarms and receive list replies before changing them. Add can only replace an alarm explicitly deleted in this connection. A changed alarm needs fresh readback before another edit or toggle.",
+      "fields": {
+        "device_id": {"name": "Bed"},
+        "side": {"name": "Side"},
+        "operation": {
+          "name": "Operation",
+          "description": "query, add, edit, delete, enable, or name."
+        },
+        "alarm_id": {
+          "name": "Alarm number",
+          "description": "Existing alarm number for edit, delete or enable. Add uses the lowest number explicitly deleted in this connection and not subsequently reported or reused."
+        },
+        "hour": {
+          "name": "Hour"
+        },
+        "minute": {
+          "name": "Minute"
+        },
+        "mode": {
+          "name": "Preset"
+        },
+        "weekdays": {
+          "name": "Weekdays",
+          "description": "Monday is 0 and Sunday is 6. Leave empty to run once."
+        },
+        "enabled": {
+          "name": "Enabled"
         }
       }
     },
@@ -12219,6 +12296,84 @@
     }
   },
   "exceptions": {
+    "powersbedding_name": {"message": "Choose the PowersBedding receiver whose Bluetooth name starts with okin or smartbed."},
+    "powersbedding_control": {"message": "Choose a control and value supported by this PowersBedding receiver."},
+    "powersbedding_alarm": {"message": "Choose a valid PowersBedding alarm time, weekday selection and wake action."},
+    "meisemobell_gatt": {
+      "message": "The selected Meisemobell route needs its matching write-without-response and notification characteristics."
+    },
+    "meisemobell_hold": {
+      "message": "Choose a supported control and a whole duration from 1 to 60000 milliseconds."
+    },
+    "meisemobell_alarm": {
+      "message": "Choose alarm slot 1 or 2 and one of this profile’s wake actions."
+    },
+    "meisemobell_alarm_not_reported": {
+      "message": "The bed did not report both alarm records on this connection. Refresh alarms before changing one slot."
+    },
+    "meisemobell_route": {
+      "message": "Select the Meisemobell route explicitly: 15_22_15A or 24_XX_XX."
+    },
+    "myside_write_route_missing": {
+      "message": "No supported writable Bluetooth route"
+    },
+    "myside_invalid_product": {
+      "message": "Choose one of My Side's four Deep Relax Smart products"
+    },
+    "myside_session_ended": {
+      "message": "The My Side BLE session ended"
+    },
+    "myside_side_unsupported": {
+      "message": "My Side's current products have no single-address side selector"
+    },
+    "myside_disconnected": {
+      "message": "My Side is disconnected"
+    },
+    "myside_notify_required": {
+      "message": "My Side requires a notification channel"
+    },
+    "myside_control_unsupported": {
+      "message": "This My Side product does not offer that control"
+    },
+    "myside_save_unsupported": {
+      "message": "This control has no save action"
+    },
+    "myside_hold_invalid": {
+      "message": "Choose a My Side held control and a duration of up to 60 seconds"
+    },
+    "myside_renewable_hold_unsupported": {
+      "message": "Only directions support renewable holds"
+    },
+    "myside_massage_timer_invalid": {
+      "message": "Choose 10, 20 or 30 minutes"
+    },
+    "myside_operation_unknown": {
+      "message": "Unknown My Side operation"
+    },
+    "myside_sleep_unsupported": {
+      "message": "This product has no Sleep link"
+    },
+    "myside_alarms_unsupported": {
+      "message": "This product has no repeat alarms"
+    },
+    "myside_alarm_query_required": {
+      "message": "Query alarms and receive a list reply in this connection first"
+    },
+    "myside_alarm_missing": {
+      "message": "Query this session's alarms before changing an existing alarm"
+    },
+    "myside_alarm_invalid": {
+      "message": "Choose an available alarm mode, time and weekdays"
+    },
+    "myside_alarm_delete_required": {
+      "message": "Delete a reported alarm in this connection before adding a replacement"
+    },
+    "myside_alarm_changed": {
+      "message": "Alarm state changed while this action was waiting; try again"
+    },
+    "myside_alarm_connection_changed": {
+      "message": "The alarm connection changed; query alarms again"
+    },
     "suta_king_koil_calibrate": {
       "message": "Set the bed clock, then wait for its clock reply before adding or refreshing alarms."
     },
@@ -13207,6 +13362,12 @@
     "super_colchones_session": {
       "message": "The Super Colchones connection or product changed. Reconnect and try again."
     },
+    "topcare_gatt": {
+      "message": "TOP CARE needs exactly one supported Bluetooth service with its writable command characteristic."
+    },
+    "topcare_control": {
+      "message": "Choose a TOP CARE motor control and a hold duration from 1 to 60000 milliseconds."
+    },
     "comfort_bed_gatt": {
       "message": "Comfort Bed needs exactly one supported Bluetooth service with its writable command characteristic and a notification channel."
     },
@@ -14007,6 +14168,7 @@
     },
     "richmat_family_choice": {
       "options": {
+        "topcare": "TOP CARE",
         "comfort_bed": "Comfort Bed (ComfortCareBed)",
         "atlas_lift": "Atlas Lift (Cama Lift)",
         "enso2": "ENSO Sleep Control (Enso 2)",
