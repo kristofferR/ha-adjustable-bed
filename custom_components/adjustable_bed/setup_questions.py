@@ -372,6 +372,7 @@ _OWNED_BY_BED_TYPE: Final[dict[str, frozenset[str]]] = {
     "sonicsleep": GENERIC_FIELDS - {CONF_MOTOR_PULSE_COUNT},
     "suta": GENERIC_FIELDS - {CONF_MOTOR_PULSE_COUNT},
     "truemotion": GENERIC_FIELDS,
+    "suta_king_koil": GENERIC_FIELDS,
     "agingplace": GENERIC_FIELDS,
     "hush_sleep_mm": GENERIC_FIELDS,
     "hush_sleep_sxb": GENERIC_FIELDS,
@@ -3030,6 +3031,10 @@ SETUP_PROFILES: Final[dict[str, SetupProfile]] = {
         title=lambda _data: "OkinComfortBed Ⅱ (Jalon)",
     ),
     **_BASE,
+    "suta_king_koil": SetupProfile(
+        owns={CONF_MOTOR_COUNT: 2, CONF_HAS_MASSAGE: False, CONF_DISABLE_ANGLE_SENSING: True,
+              CONF_MOTOR_PULSE_COUNT: 1, CONF_MOTOR_PULSE_DELAY_MS: 150},
+    ),
     "truemotion": SetupProfile(
         owns={CONF_MOTOR_COUNT: 2, CONF_HAS_MASSAGE: False, CONF_DISABLE_ANGLE_SENSING: True,
               CONF_MOTOR_PULSE_COUNT: 1, CONF_MOTOR_PULSE_DELAY_MS: 150},

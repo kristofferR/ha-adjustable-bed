@@ -89,7 +89,7 @@ app. Every guide follows the [bed guide format](BED_GUIDE_FORMAT.md).
 | [Snore Monitor](beds/onlysnore.md) | The Snore Monitor app | |
 | [StarCode Adjustable Comfort M1X12](beds/starcode-m1x12.md) | The Adjustable Comfort M1X12 app | |
 | [StarCode AdjustableM5X5](beds/starcode-m5x5.md) | The AdjustableM5X5 app | |
-| [SUTA](beds/suta.md) | SUTA Smart Home and trueMotion | Shared |
+| [SUTA](beds/suta.md) | SUTA Smart Home, trueMotion and King Koil (SUTA) | Shared |
 | [Svane Remote](beds/svane.md) | The Svane Remote app | |
 | [TiMOTION AHF](beds/timotion-ahf.md) | TiMOTION AHF | |
 | [Relax Motion](beds/relax-motion.md) | Relax Motion numeric models and app-page routes |

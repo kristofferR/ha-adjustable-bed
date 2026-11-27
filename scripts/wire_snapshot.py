@@ -477,6 +477,17 @@ def plan_commands(controller: Any) -> list[Command]:
             )
     if _value(_value(controller, "_coordinator", None), "bed_type", None) == "betterliving2":
         plan = _betterliving2_historical_actions(plan, _value(controller, "wire", ""))
+    if controller._coordinator.bed_type == "suta_king_koil":
+        async def active_massage_mode(ctrl: Any, option: str) -> None:
+            # SUTA's mode is admitted only after enabling a zone. Record that
+            # real setup write alongside each mode, rather than guessing state.
+            await ctrl.set_step("HEAD", 1)
+            await ctrl.set_mode(option)
+
+        plan = [dataclasses.replace(command, call=lambda ctrl, command=command: active_massage_mode(ctrl, command.name.split("=", 1)[1]))
+                if command.name.startswith("select:suta_king_koil_massage_mode=") else command for command in plan]
+        for operation in ("SA", "CA", "DA"):
+            plan.append(Command(f"alarm:{operation}", _method("alarm_operation", operation, [0, 6], 7, 30), True))
     if controller._coordinator.bed_type == "ronco_motion":
         from custom_components.adjustable_bed.alarm import AlarmRequest
         for enabled, wake_action in ((True, "zero_g"), (True, "anti_snore"), (True, "memory_1"), (False, "none")):
@@ -1645,6 +1656,9 @@ def default_scenario(bed_type: str) -> Scenario:
         variant = "a00a"
         data.update({const.CONF_PRODUCT_TYPE: "quest", const.CONF_PROTOCOL_VARIANT: variant,
                      const.CONF_BLE_DEVICE_NAME: "KSWF07D00000000"})
+    if bed_type == const.BED_TYPE_SUTA_KING_KOIL:
+        return Scenario(id=bed_type, bed_type=bed_type, layout_id="truemotion",
+                        replies={"write:41542b47440d0a": "2b4f4b3a47443d323631313237303930350d0a"})
     if bed_type == const.BED_TYPE_TRUEMOTION:
         return Scenario(id=bed_type, bed_type=bed_type,
                         entry_data={const.CONF_BLE_DEVICE_NAME: "SUTA-M510"},

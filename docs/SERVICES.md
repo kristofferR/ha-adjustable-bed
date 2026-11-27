@@ -136,6 +136,7 @@ For named raise/lower/stop voice commands and Apple Home controls, see
 | [`somos_action`](#somos_action) | Somos: press button | Press one of the selected Somos product's buttons. Every bed is checked before any is changed. |
 | [`sonicsleep`](#sonicsleep) | SonicSleep: settings | Read the alarms, create or edit an alarm, turn an alarm on or off without changing it, delete an alarm, or read the bed's link name. |
 | [`superior_sleep_speech`](#superior_sleep_speech) | Superior Sleep: press button | Sends one bed control: move a motor, move to a preset, stop, turn massage or under-bed motion activation on or off, or toggle the under-bed light. Motor controls run for the duration. |
+| [`suta_king_koil_confirm_alarm`](#suta-king-koil-confirm-alarm) | King Koil (SUTA): confirm existing alarm | Send the app’s DA operation for weekdays and a time, with firmware edit/delete effect unverified. |
 | [`suta`](#suta) | SUTA Smart Home: run control | Run one control from the bed's SUTA layout, which its Bluetooth name decides. Set alarms with Set alarm and the clock with Set bed clock. |
 | [`starcode_move_lifts`](#starcode_move_lifts) | StarCode: move lifts | Moves the lifts set up on one main bed. Flat lowers the main bed first and the lifts a moment later; Stop stops them all. |
 | [`svane_release_axis`](#svane_release_axis) | Svane: release motor | Stop one motor while the other keeps moving. |
@@ -2742,3 +2743,21 @@ received acknowledgement. See [Ronco Motion](beds/richmat.md#ronco-motion).
 It accepts `device_id` and optional `side` as the other movement actions do.
 Available sections follow the configured motor count. Three-section selection
 uses the app's ordered pair; see [Carpe Diem Beds](beds/linak.md#carpe-diem-beds).
+
+
+<a id="suta-king-koil-confirm-alarm"></a>
+**`suta_king_koil_confirm_alarm`** sends the [King Koil (SUTA)](beds/suta.md#king-koil-suta)
+app's existing-alarm Confirm operation. Its firmware edit/delete effect is
+unverified. Use `set_alarm` for adding, enabling or disabling an alarm, and
+`sync_clock` to set the bed's local clock.
+
+| Field | Required | Meaning |
+|---|---|---|
+| `device_id` | Yes | A configured King Koil (SUTA) bed or paired child |
+| `side` | No | `left`, `right` or `both` (default); each receiver has its own alarms |
+| `weekdays` | Yes | List of day numbers, Sunday 0 through Saturday 6 |
+| `hour` | Yes | 0–23 |
+| `minute` | Yes | 0–59 |
+
+Set the bed clock and wait for a clock reply before confirming existing alarms.
+The action sends each selected weekday, then queries the receiver's alarm list.
