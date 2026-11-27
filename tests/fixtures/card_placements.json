@@ -5504,15 +5504,6 @@
  "sensor:personal_comfort_adjustment": {
   "card_section": "firmness"
  },
- "sensor:purely_sleep_clock_available": {
-  "card_section": "hidden"
- },
- "sensor:purely_sleep_light_available": {
-  "card_section": "hidden"
- },
- "sensor:purely_sleep_protocol_version": {
-  "card_section": "hidden"
- },
  "sensor:resident_massage_timer": {
   "card_section": "massage"
  },

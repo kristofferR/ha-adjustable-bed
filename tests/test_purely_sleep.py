@@ -18,6 +18,7 @@ from custom_components.adjustable_bed.beds.richmat.purely_sleep import (
     PurelySleepController,
 )
 from custom_components.adjustable_bed.button import _button_entities_for
+from custom_components.adjustable_bed.command_scheduler import Delivery, delivered
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
 from custom_components.adjustable_bed.cover import AdjustableBedCover, _build_cover_description
 from custom_components.adjustable_bed.detection import bed_type_label
@@ -239,6 +240,10 @@ async def test_received_common_state_and_v1_gate_clear_only_on_new_version(runti
     assert coordinator.controller_state[LIGHT] is True
     receive(sender, bytearray.fromhex("6e900001ff"))  # Branch does not prove checksum enforcement.
     assert coordinator.controller_state[VERSION] == 1
+    assert ctrl.protocol_diagnostics["protocol_version"] == 1
+    assert ctrl.protocol_diagnostics["clock_reply_seen"] is True
+    assert ctrl.protocol_diagnostics["light_reply_seen"] is True
+    assert not ctrl.controller_state_sensor_specs
     client.write_gatt_char.reset_mock()
     with raises_key("purely_sleep_version_one"):
         await ctrl.preset_flat()
@@ -562,3 +567,38 @@ async def test_native_both_presets_preflight_each_version_before_any_peer_write(
                 "preset_lounge": 0x59,
             }[key]
             assert all(frames(bed.client) == [packet(opcode)] for bed in made.items)
+
+
+@pytest.mark.parametrize("waiting_for", ("lock", "pacing"))
+async def test_cancelled_second_write_records_partial_delivery(runtime, waiting_for):
+    coordinator, client, _, route = runtime
+    assert await coordinator.async_connect()
+    ctrl = coordinator.controller
+    client.write_gatt_char.reset_mock()
+    first, proceed = asyncio.Event(), asyncio.Event()
+    operations, outcomes = [], []
+
+    async def operation(live):
+        operations.append(asyncio.current_task())
+        with delivered(outcomes.append):
+            await live.preset_tv()
+            first.set()
+            await proceed.wait()
+            await live.preset_zero_g()
+
+    task = asyncio.create_task(coordinator.async_execute_controller_command(operation))
+    await first.wait()
+    if waiting_for == "lock":
+        async with ctrl.ble_lock:
+            proceed.set()
+            await asyncio.sleep(0)
+            operations[0].cancel()
+            await asyncio.sleep(0)
+    else:
+        ctrl._next_write = asyncio.get_running_loop().time() + 3600
+        proceed.set()
+        await asyncio.sleep(0)
+        operations[0].cancel()
+    await task
+    assert frames(client) == [packet(0x58, route)]
+    assert outcomes == [Delivery.PARTIAL]

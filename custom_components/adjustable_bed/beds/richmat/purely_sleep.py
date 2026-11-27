@@ -17,7 +17,6 @@ from ..cancellation import settled
 from ..catalog_buttons import save_button
 from ..entity_specs import (
     ControllerButtonSpec,
-    ControllerStateSensorSpec,
     MotorControlSpec,
     PositionNumberSpec,
 )
@@ -130,31 +129,37 @@ class PurelySleepController(RichmatSessionController):
     ) -> None:
         # The command lock owns the operation, this lock owns FIFO GATT order.
         # A single awaited write has no app retry or acknowledgement claim.
-        caller = asyncio.current_task()
-        async with self.ble_lock:
-            await asyncio.sleep(max(0, self._next_write - asyncio.get_running_loop().time()))
-            self._current_link(link)
-            if cancel.is_set() or caller is not None and caller.cancelling():
-                note_frame_skipped()
-                raise asyncio.CancelledError
-            if track_command_write:
-                self._require_normal()
-            if before_write is not None:
-                before_write()
-            response = "write-without-response" not in link.tx.properties
-            self._record_command_trace(
-                link.tx.uuid, command, characteristic=link.tx, response=response
-            )
-            self._next_write = asyncio.get_running_loop().time() + 0.1
-
-            async def write() -> None:
-                await link.client.write_gatt_char(link.tx, command, response=response)
+        submitted = False
+        try:
+            caller = asyncio.current_task()
+            async with self.ble_lock:
+                await asyncio.sleep(max(0, self._next_write - asyncio.get_running_loop().time()))
+                self._current_link(link)
+                if cancel.is_set() or caller is not None and caller.cancelling():
+                    raise asyncio.CancelledError
                 if track_command_write:
-                    note_frame_written(cancel)
-                else:
-                    note_write_not_counted()
+                    self._require_normal()
+                if before_write is not None:
+                    before_write()
+                response = "write-without-response" not in link.tx.properties
+                self._record_command_trace(
+                    link.tx.uuid, command, characteristic=link.tx, response=response
+                )
+                self._next_write = asyncio.get_running_loop().time() + 0.1
 
-            await settled(write(), eager_start=True)
+                async def write() -> None:
+                    await link.client.write_gatt_char(link.tx, command, response=response)
+                    if track_command_write:
+                        note_frame_written(cancel)
+                    else:
+                        note_write_not_counted()
+
+                submitted = True
+                await settled(write(), eager_start=True)
+        except asyncio.CancelledError:
+            if track_command_write and not submitted:
+                note_frame_skipped()
+            raise
 
     async def start_notify(self, callback: Callable[[str, float], None] | None = None) -> None:
         if self._current_link().notify is None:
@@ -180,14 +185,14 @@ class PurelySleepController(RichmatSessionController):
         self.forward_controller_state_updates(VERSION(None), CLOCK(None), LIGHT(None))
 
     @property
-    def controller_state_sensor_specs(self) -> tuple[ControllerStateSensorSpec, ...]:
-        return (
-            ControllerStateSensorSpec(
-                str(VERSION), str(VERSION), VERSION, "mdi:information-outline"
-            ),
-            ControllerStateSensorSpec(str(CLOCK), str(CLOCK), CLOCK, "mdi:clock-outline"),
-            ControllerStateSensorSpec(str(LIGHT), str(LIGHT), LIGHT, "mdi:lightbulb-outline"),
-        )
+    def protocol_diagnostics(self) -> dict[str, object]:
+        state = self._coordinator.controller_state
+        return {
+            **super().protocol_diagnostics,
+            "protocol_version": state.get(VERSION),
+            "clock_reply_seen": state.get(CLOCK),
+            "light_reply_seen": state.get(LIGHT),
+        }
 
     @property
     def motor_control_specs(self) -> tuple[MotorControlSpec, ...]:
