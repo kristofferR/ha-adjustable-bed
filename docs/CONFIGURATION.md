@@ -1015,3 +1015,11 @@ box. BOX2422 provides back, legs and combined movement; BOX2442 adds head tilt
 and lumbar. Massage and light controls are app-specific. Preset/save/reset
 controls and alarm programming are unavailable pending complete model and field
 mapping; alarm disable/query and clock synchronization are available.
+
+### My Side
+
+Choose **My Side app** and the Deep Relax Smart product from your app: standard,
+with Sleep, with Coaxing, or with Coaxing and Sleep. Shared BLE services and
+Bluetooth names do not determine this choice. Each receiver in a two-address
+pair keeps its own product choice. The separate sleep-sensor connection is
+currently unavailable; Sleep products expose the bed-side sensor name only.
