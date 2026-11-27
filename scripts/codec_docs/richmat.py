@@ -46,7 +46,7 @@ from custom_components.adjustable_bed.codec import richmat as codec
 from custom_components.adjustable_bed.codec import richmat as richmat_codec
 from custom_components.adjustable_bed.profiles import bobpowerbase as bob_profiles
 from custom_components.adjustable_bed.profiles import casper as casper_profiles
-from custom_components.adjustable_bed.profiles import dreamsense, saatva, silksnow
+from custom_components.adjustable_bed.profiles import dreamsense, muuegm, saatva, silksnow
 from custom_components.adjustable_bed.profiles import hush as hush_profiles
 from custom_components.adjustable_bed.profiles import luniosmart as lunio
 from custom_components.adjustable_bed.profiles import luuna as luuna_profiles
@@ -65,6 +65,7 @@ from scripts.codec_docs import (
     _galaxy,
     _homezone,
     _motionflex,
+    _muuegm,
     _okimiki,
     _richmat_legacy,
     _richmat_mh_apps,
@@ -201,6 +202,7 @@ def bed_types() -> dict[str, tuple[str, ...]]:
     mh_types = {app: bed_type for bed_type, app in _const.RICHMAT_MH_APPS.items()}
     return {
         **{p.key: ("dreamsense",) for p in dreamsense.PROFILES.values()},
+        **{p.key: ("muuegm",) for p in muuegm.PROFILES.values()},
         "one": (_const.BED_TYPE_SONICSLEEP,),
         "afeg302": ("super_colchones",),
         "afeg350": ("super_colchones",),
@@ -2205,6 +2207,8 @@ def render_dynasty_timing() -> str:
 
 BLOCKS += [(GUIDE, "dynasty-commands", render_dynasty_commands), (GUIDE, "dynasty-timing", render_dynasty_timing)]
 
+BLOCKS += _muuegm.BLOCKS
+
 
 def render_silksnow_products() -> str:
     return _block(_table(("Product key", "Label", "Manual", "Massage", "Presets", "Split / alarm list", "Fan / heat", "Light", "RGB", "Repeating clock", "Sides"), (
@@ -2230,3 +2234,7 @@ def render_silksnow_settings() -> str:
 BLOCKS += [(GUIDE, "silksnow-products", render_silksnow_products), (GUIDE, "silksnow-commands", render_silksnow_commands), (GUIDE, "silksnow-settings", render_silksnow_settings)]
 
 BLOCKS += _motionflex.BLOCKS
+
+from scripts.codec_docs import _comfort_bed  # noqa: E402
+
+BLOCKS.append((GUIDE, "comfort-bed", _comfort_bed.render))

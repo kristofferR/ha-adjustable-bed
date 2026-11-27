@@ -1,0 +1,366 @@
+[
+  {
+    "id": "literal_947ed1",
+    "kind": "decode",
+    "origin": "artifact literal; not captured hardware traffic",
+    "frame": "6e 09 01 00 78",
+    "expected": {
+      "event": "deviceCharacteristicsSubscriptionClockEvent",
+      "scope": "IN_SCOPE"
+    },
+    "evidence": [
+      "E-PARSER-COMMON"
+    ]
+  },
+  {
+    "id": "literal_947eb1",
+    "kind": "decode",
+    "origin": "artifact literal; not captured hardware traffic",
+    "frame": "6e 0e 00 03 7f",
+    "expected": {
+      "event": "deviceCharacteristicsSubscriptionLightEvent",
+      "scope": "IN_SCOPE"
+    },
+    "evidence": [
+      "E-PARSER-COMMON"
+    ]
+  },
+  {
+    "id": "literal_947e91",
+    "kind": "decode",
+    "origin": "artifact literal; not captured hardware traffic",
+    "frame": "6e 1a 00 01 89",
+    "expected": {
+      "event": "deviceCharacteristicsSubscriptionAromatherapyEvent",
+      "scope": "IN_SCOPE"
+    },
+    "evidence": [
+      "E-PARSER-COMMON"
+    ]
+  },
+  {
+    "id": "literal_947e71",
+    "kind": "decode",
+    "origin": "artifact literal; not captured hardware traffic",
+    "frame": "6e 07 01 01 77",
+    "expected": {
+      "event": "deviceAddAlarmSuccessEvent",
+      "scope": "IN_SCOPE"
+    },
+    "evidence": [
+      "E-PARSER-COMMON"
+    ]
+  },
+  {
+    "id": "literal_947e51",
+    "kind": "decode",
+    "origin": "artifact literal; not captured hardware traffic",
+    "frame": "6e 07 01 02 78",
+    "expected": {
+      "event": "deviceCancelAlarmSuccessEvent",
+      "scope": "IN_SCOPE"
+    },
+    "evidence": [
+      "E-PARSER-COMMON"
+    ]
+  },
+  {
+    "id": "literal_947e31",
+    "kind": "decode",
+    "origin": "artifact literal; not captured hardware traffic",
+    "frame": "6e 16 01 01 86",
+    "expected": {
+      "event": "deviceCharacteristicsSubscriptionMusicEvent",
+      "scope": "EXCLUDED"
+    },
+    "evidence": [
+      "E-PARSER-COMMON"
+    ]
+  },
+  {
+    "id": "literal_947e11",
+    "kind": "decode",
+    "origin": "artifact literal; not captured hardware traffic",
+    "frame": "6e 90 c1 01 c0",
+    "expected": {
+      "event": "deviceCharacteristicsSubscriptionDetectionEvent",
+      "scope": "IN_SCOPE"
+    },
+    "evidence": [
+      "E-PARSER-COMMON"
+    ]
+  },
+  {
+    "id": "literal_947df1",
+    "kind": "decode",
+    "origin": "artifact literal; not captured hardware traffic",
+    "frame": "6e 21 00 00 8f",
+    "expected": {
+      "event": "deviceCharacteristicsSubscriptionSnoreEvent",
+      "scope": "IN_SCOPE"
+    },
+    "evidence": [
+      "E-PARSER-COMMON"
+    ]
+  },
+  {
+    "id": "v1_version",
+    "kind": "decode",
+    "origin": "synthetic values to verify recovered static field formula; not an artifact literal or hardware capture",
+    "frame": "6e 90 00 02 00",
+    "expected": {
+      "event": "deviceControlBoxProtocolVersionEvent",
+      "value": 2
+    },
+    "evidence": [
+      "E-PARSER-COMMON"
+    ]
+  },
+  {
+    "id": "v1_mode",
+    "kind": "decode",
+    "origin": "synthetic values to verify recovered static field formula; not an artifact literal or hardware capture",
+    "frame": "6e 90 15 00 00",
+    "expected": {
+      "event": "deviceVersionOneBedModeEvent",
+      "value": 5
+    },
+    "evidence": [
+      "E-PARSER-COMMON"
+    ]
+  },
+  {
+    "id": "v1_motor",
+    "kind": "decode",
+    "origin": "synthetic values to verify recovered static field formula; not an artifact literal or hardware capture",
+    "frame": "6e 90 34 45 77",
+    "expected": {
+      "event": "deviceVersionOneMotorAngleEvent",
+      "value": {
+        "no": 1,
+        "status": 0,
+        "angle": 69
+      }
+    },
+    "evidence": [
+      "E-PARSER-COMMON"
+    ]
+  },
+  {
+    "id": "v1_massage",
+    "kind": "decode",
+    "origin": "synthetic values to verify recovered static field formula; not an artifact literal or hardware capture",
+    "frame": "6e 90 aa bc 00",
+    "expected": {
+      "event": "deviceVersionOneMassageModeEvent",
+      "value": {
+        "mode": 5,
+        "massage3": 2,
+        "massage2": 7,
+        "massage1": 4
+      }
+    },
+    "evidence": [
+      "E-PARSER-COMMON"
+    ]
+  },
+  {
+    "id": "extra_motor",
+    "kind": "decode",
+    "origin": "synthetic values to verify recovered static field formula; not an artifact literal or hardware capture",
+    "frame": "6e 20 0e 01 02 03 00 00 7b 02 45 01 c8 2d",
+    "expected": {
+      "event": "deviceMotorCurrentHeightStatusEvent",
+      "value": {
+        "height": 12.3,
+        "type": 2,
+        "angle": 69,
+        "monitorHeight": 45.6
+      }
+    },
+    "evidence": [
+      "E-PARSER-MOTOR"
+    ]
+  },
+  {
+    "id": "extra_white_led",
+    "kind": "decode",
+    "origin": "synthetic values to verify recovered static field formula; not an artifact literal or hardware capture",
+    "frame": "6e 20 09 03 01 03 00 01 9f",
+    "expected": {
+      "event": "deviceWhiteLedStatusEvent",
+      "value": true
+    },
+    "evidence": [
+      "E-PARSER-WHITE"
+    ]
+  },
+  {
+    "id": "split_extra",
+    "kind": "buffer",
+    "chunks": [
+      "6e 20 09",
+      "03 01 03 00 01 9f"
+    ],
+    "expected": {
+      "frames": [
+        {
+          "frame": "6e 20 09 03 01 03 00 01 9f",
+          "dispatch": "extra"
+        }
+      ],
+      "remaining": ""
+    },
+    "origin": "synthetic chunk boundaries for recovered buffer algorithm",
+    "evidence": [
+      "E-PARSER-BUFFER"
+    ]
+  },
+  {
+    "id": "garbage_then_common",
+    "kind": "buffer",
+    "chunks": [
+      "01 02 6e 09 01 00 78"
+    ],
+    "expected": {
+      "frames": [
+        {
+          "frame": "6e 09 01 00 78",
+          "dispatch": "common"
+        }
+      ],
+      "remaining": ""
+    },
+    "origin": "synthetic chunk boundaries for recovered buffer algorithm",
+    "evidence": [
+      "E-PARSER-BUFFER"
+    ]
+  },
+  {
+    "id": "two_common",
+    "kind": "buffer",
+    "chunks": [
+      "6e 09 01 00 78 6e 0e 00 03 7f"
+    ],
+    "expected": {
+      "frames": [
+        {
+          "frame": "6e 09 01 00 78",
+          "dispatch": "common"
+        },
+        {
+          "frame": "6e 0e 00 03 7f",
+          "dispatch": "common"
+        }
+      ],
+      "remaining": ""
+    },
+    "origin": "synthetic chunk boundaries for recovered buffer algorithm",
+    "evidence": [
+      "E-PARSER-BUFFER"
+    ]
+  },
+  {
+    "id": "common_no_checksum_gate",
+    "kind": "buffer",
+    "chunks": [
+      "6e 90 34 45 00"
+    ],
+    "expected": {
+      "frames": [
+        {
+          "frame": "6e 90 34 45 00",
+          "dispatch": "common"
+        }
+      ],
+      "remaining": ""
+    },
+    "origin": "synthetic chunk boundaries for recovered buffer algorithm",
+    "evidence": [
+      "E-PARSER-BUFFER"
+    ]
+  },
+  {
+    "id": "extra_bad_checksum",
+    "kind": "buffer",
+    "chunks": [
+      "6e 20 09 03 01 03 00 01 00"
+    ],
+    "expected": {
+      "frames": [
+        {
+          "frame": "6e 20 09 03 01 03 00 01 00",
+          "dispatch": "drop_checksum"
+        }
+      ],
+      "remaining": ""
+    },
+    "origin": "synthetic chunk boundaries for recovered buffer algorithm",
+    "evidence": [
+      "E-PARSER-BUFFER"
+    ]
+  },
+  {
+    "id": "early_common_dispatch",
+    "kind": "buffer",
+    "chunks": [
+      "6e 90 34",
+      "45 77"
+    ],
+    "expected": {
+      "frames": [
+        {
+          "frame": "6e 90 34",
+          "dispatch": "common"
+        }
+      ],
+      "remaining": "45 77"
+    },
+    "origin": "synthetic chunk boundaries for recovered buffer algorithm",
+    "evidence": [
+      "E-PARSER-BUFFER"
+    ]
+  },
+  {
+    "id": "alarm_list",
+    "kind": "decode",
+    "origin": "synthetic field example from artifact parser; not captured hardware traffic",
+    "frame": "6e 20 0d 05 01 02 01 00 07 1e 45 f9 07",
+    "expected": {
+      "event": "deviceRepeatAlarmListStatusEvent",
+      "value": {
+        "id": 1,
+        "reserved": 0,
+        "hour": 7,
+        "minute": 30,
+        "mode": 69,
+        "repeat_mask": 249
+      }
+    },
+    "evidence": [
+      "E-ALARM-REPEAT",
+      "E-PARSER-BUFFER"
+    ]
+  },
+  {
+    "id": "alarm_escalation",
+    "kind": "decode",
+    "origin": "synthetic field example from artifact parser; not captured hardware traffic",
+    "frame": "6e 20 0d 05 01 03 07 04 17 3b 59 fe 58",
+    "expected": {
+      "event": "deviceRepeatAlarmListEscalationStatusEvent",
+      "value": {
+        "id": 7,
+        "reserved": 4,
+        "hour": 23,
+        "minute": 59,
+        "mode": 89,
+        "repeat_mask": 254
+      }
+    },
+    "evidence": [
+      "E-ALARM-REPEAT",
+      "E-PARSER-BUFFER"
+    ]
+  }
+]

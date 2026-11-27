@@ -39,6 +39,7 @@ from .const import (
     BED_TYPE_BOBPOWERBASE,
     BED_TYPE_CASPER_BASE,
     BED_TYPE_CHERISH,
+    BED_TYPE_COMFORT_BED,
     BED_TYPE_COMFORT_ENHANCEMENT3,
     BED_TYPE_COMFORT_ENHANCEMENTS,
     BED_TYPE_COMFORT_MOTION,
@@ -290,6 +291,7 @@ class _BuilderSpec:
 # Bed types whose construction is "import this class and pass the coordinator
 # plus fixed kwargs".
 _SIMPLE_CONTROLLERS: Final[dict[str, _ControllerSpec]] = {
+    BED_TYPE_COMFORT_BED: _ControllerSpec("comfort_bed.controller", "ComfortBedController"),
     BED_TYPE_ATLAS_LIFT: _ControllerSpec("richmat.atlas_lift", "AtlasLiftController"),
     BED_TYPE_VINDO: _ControllerSpec("vindo", "VindoController"),
     BED_TYPE_OKIN_MOTIONBED: _ControllerSpec("okin_motionbed", "OkinMotionBedController"),
@@ -446,6 +448,7 @@ _BUILDERS: Final[dict[str, _BuilderSpec]] = {
     BED_TYPE_OKIMIKI: _BuilderSpec("okimiki.controller"),
     BED_TYPE_LIKIMIO: _BuilderSpec("dreamsense.likimio"),
     "dreamsense": _BuilderSpec("dreamsense.controller"),
+    "muuegm": _BuilderSpec("dreamsense.muuegm"),
     "saatva": _BuilderSpec("saatva"),
     BED_TYPE_BOBPOWERBASE: _BuilderSpec("bobpowerbase"),
     "motionflex": _BuilderSpec("motionflex.controller"),
