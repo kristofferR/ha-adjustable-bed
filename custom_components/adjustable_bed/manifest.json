@@ -790,6 +790,9 @@
       "local_name": "CNRN*"
     },
     {
+      "local_name": "CON[tT][rR][oO][lL]_[bB][oO][xX]*"
+    },
+    {
       "local_name": "COOL*"
     },
     {
@@ -797,6 +800,9 @@
     },
     {
       "local_name": "CORN*"
+    },
+    {
+      "local_name": "COn[tT][rR][oO][lL]_[bB][oO][xX]*"
     },
     {
       "local_name": "CPRM*"
@@ -860,6 +866,12 @@
     },
     {
       "local_name": "CZRN*"
+    },
+    {
+      "local_name": "CoN[tT][rR][oO][lL]_[bB][oO][xX]*"
+    },
+    {
+      "local_name": "Con[tT][rR][oO][lL]_[bB][oO][xX]*"
     },
     {
       "local_name": "Cool*"
@@ -3942,6 +3954,18 @@
     {
       "local_name": "base-i5*",
       "connectable": true
+    },
+    {
+      "local_name": "cON[tT][rR][oO][lL]_[bB][oO][xX]*"
+    },
+    {
+      "local_name": "cOn[tT][rR][oO][lL]_[bB][oO][xX]*"
+    },
+    {
+      "local_name": "coN[tT][rR][oO][lL]_[bB][oO][xX]*"
+    },
+    {
+      "local_name": "con[tT][rR][oO][lL]_[bB][oO][xX]*"
     },
     {
       "local_name": "elevate*"

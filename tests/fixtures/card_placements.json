@@ -308,6 +308,48 @@
   "card_role": "up",
   "card_motor": "all_motors"
  },
+ "button:ambient_anti_snore": {
+  "card_section": "presets"
+ },
+ "button:ambient_flat": {
+  "card_section": "presets"
+ },
+ "button:ambient_home_flat": {
+  "card_section": "presets"
+ },
+ "button:ambient_left_anti_snore": {
+  "card_section": "presets"
+ },
+ "button:ambient_left_flat": {
+  "card_section": "presets"
+ },
+ "button:ambient_left_tv": {
+  "card_section": "presets"
+ },
+ "button:ambient_left_zero_g": {
+  "card_section": "presets"
+ },
+ "button:ambient_refresh": {
+  "card_section": "utility"
+ },
+ "button:ambient_right_anti_snore": {
+  "card_section": "presets"
+ },
+ "button:ambient_right_flat": {
+  "card_section": "presets"
+ },
+ "button:ambient_right_tv": {
+  "card_section": "presets"
+ },
+ "button:ambient_right_zero_g": {
+  "card_section": "presets"
+ },
+ "button:ambient_tv": {
+  "card_section": "presets"
+ },
+ "button:ambient_zero_g": {
+  "card_section": "presets"
+ },
  "button:apex_massage_both": {
   "card_section": "massage"
  },
@@ -3650,6 +3692,63 @@
  "number:agingplace_motion_minutes": {
   "card_section": "lighting"
  },
+ "number:ambient_feet": {
+  "card_section": "utility"
+ },
+ "number:ambient_feet_massage": {
+  "card_section": "massage"
+ },
+ "number:ambient_head": {
+  "card_section": "utility"
+ },
+ "number:ambient_left_fan": {
+  "card_section": "utility"
+ },
+ "number:ambient_left_feet": {
+  "card_section": "utility"
+ },
+ "number:ambient_left_head": {
+  "card_section": "utility"
+ },
+ "number:ambient_left_legs_heat": {
+  "card_section": "utility"
+ },
+ "number:ambient_left_neck": {
+  "card_section": "utility"
+ },
+ "number:ambient_left_shoulder_heat": {
+  "card_section": "utility"
+ },
+ "number:ambient_left_torso_heat": {
+  "card_section": "utility"
+ },
+ "number:ambient_neck": {
+  "card_section": "utility"
+ },
+ "number:ambient_right_fan": {
+  "card_section": "utility"
+ },
+ "number:ambient_right_feet": {
+  "card_section": "utility"
+ },
+ "number:ambient_right_head": {
+  "card_section": "utility"
+ },
+ "number:ambient_right_legs_heat": {
+  "card_section": "utility"
+ },
+ "number:ambient_right_neck": {
+  "card_section": "utility"
+ },
+ "number:ambient_right_shoulder_heat": {
+  "card_section": "utility"
+ },
+ "number:ambient_right_torso_heat": {
+  "card_section": "utility"
+ },
+ "number:ambient_shoulder_massage": {
+  "card_section": "massage"
+ },
  "number:auxiliary_1_position": {
   "card_section": "motors",
   "card_motor": "auxiliary_1"
@@ -4444,6 +4543,12 @@
   "card_section": "hidden"
  },
  "sensor:agingplace_version": {
+  "card_section": "hidden"
+ },
+ "sensor:ambient_firmware": {
+  "card_section": "hidden"
+ },
+ "sensor:ambient_power_supply": {
   "card_section": "hidden"
  },
  "sensor:apex_firmware": {

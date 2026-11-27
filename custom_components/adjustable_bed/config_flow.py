@@ -159,6 +159,7 @@ from .const import (
     AUTOMATIC_LABEL,
     BED_TYPE_ADJUSTABLE_BED,
     BED_TYPE_ADJUSTABLE_LUMBAR,
+    BED_TYPE_AMBIENT,
     BED_TYPE_ATLAS_LIFT,
     BED_TYPE_BEDSENSE,
     BED_TYPE_BETTERLIVING2,
@@ -454,7 +455,7 @@ _NAME_ONLY_CONFIDENCE = 0.3
 _EXPLICIT_APP_HINTS = frozenset(
     {BED_TYPE_ATLAS_LIFT, BED_TYPE_DORSAL, BED_TYPE_ENSO2, BED_TYPE_ERGOBED, BED_TYPE_LIKIMIO, BED_TYPE_MOODBASE, "super_colchones", "dreamsense", "saatva", "bobpowerbase", BED_TYPE_COMFORT_ENHANCEMENT3, BED_TYPE_RICHMAT_APP_SLEEP, BED_TYPE_RICHMAT_APP, BED_TYPE_RICHMAT_CLASSIC_APPS, BED_TYPE_MOTOMOTION, BED_TYPE_MLILY, BED_TYPE_GALAXY, BED_TYPE_GOODVIBE, BED_TYPE_HJBED, BED_TYPE_ESHINE_OKIN, BED_TYPE_ISLEEP, BED_TYPE_KOMFYD, BED_TYPE_COMFYDS, BED_TYPE_RIZE, BED_TYPE_STARCODE_ABM5_4, BED_TYPE_MOTION_BED, BED_TYPE_VMATBASIC, BED_TYPE_FURNIMOVE,
      BED_TYPE_GMMOTOR, BED_TYPE_OKIMIKI, BED_TYPE_SIMMONS_BLUE, "gmmotor_sleep_mm", "gmmotor_sleep_sxb", "sealy_posturematic", "instant_comfort", BED_TYPE_TRUEMOTION,
-     BED_TYPE_JEROME_ADJUSTABLE_BASE, BED_TYPE_VINDO}
+     BED_TYPE_JEROME_ADJUSTABLE_BASE, BED_TYPE_VINDO, BED_TYPE_AMBIENT}
 )
 
 
@@ -2409,6 +2410,7 @@ class CapabilityReport:
     atlas_lift_transport_valid: bool | None = None
     langjue_receiver_valid: bool | None = None
     sleeptime_uart_valid: bool | None = None
+    ambient_transport_valid: bool | None = None
     vindo_transport_valid: bool | None = None
     kingkoil_transport_valid: bool | None = None
     starcode_transport_selector: str | None = None
@@ -2742,7 +2744,7 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
     @property
     def _migration_requires_check(self) -> bool:
         staged = self._pending_entry if self._pending_entry is not None else self._manual_data
-        if staged is not None and staged.get(CONF_BED_TYPE) in (BED_TYPE_DORSAL, BED_TYPE_LANGJUE, "kingkoil"):
+        if staged is not None and staged.get(CONF_BED_TYPE) in (BED_TYPE_AMBIENT, BED_TYPE_DORSAL, BED_TYPE_LANGJUE, "kingkoil"):
             return True
         if self._migration_family is None:
             return False
@@ -6611,7 +6613,9 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         needs_live_check = (
             entry_data.get(CONF_BED_TYPE) == BED_TYPE_OCTO
             and entry_data.get(CONF_PROTOCOL_VARIANT) != OCTO_VARIANT_STAR2
-        ) or entry_data.get(CONF_PROTOCOL_VARIANT) == DORSAL_ROOMI_S655_PLUS
+        ) or entry_data.get(CONF_PROTOCOL_VARIANT) == DORSAL_ROOMI_S655_PLUS or (
+            entry_data.get(CONF_BED_TYPE) == BED_TYPE_AMBIENT and self._verification_possible()
+        )
         if self._migration is not None and self._migration.is_unchanged_by(entry_data):
             return await self._async_abort_unchanged()
         if (
@@ -6723,6 +6727,10 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                 and report.langjue_receiver_valid is not True
             )
             or report.sleeptime_uart_valid is False
+            or (
+                self._pending_entry.get(CONF_BED_TYPE) == BED_TYPE_AMBIENT
+                and report.ambient_transport_valid is not True
+            )
             or report.vindo_transport_valid is False
             or (
                 # Reconfigure saves an AdjustableM5X4 only on a transport the
@@ -6974,7 +6982,7 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                             if bed_type == BED_TYPE_STARCODE_ABM5_4
                             else _PROBE_TIMEOUT_SECONDS
                         ),
-                        use_services_cache=bed_type not in (BED_TYPE_FURNIMOVE, BED_TYPE_ATLAS_LIFT, BED_TYPE_VINDO),
+                        use_services_cache=bed_type not in (BED_TYPE_AMBIENT, BED_TYPE_FURNIMOVE, BED_TYPE_ATLAS_LIFT, BED_TYPE_VINDO),
                     )
                     if client_tracker is not None:
                         # Registered before anything else can fail or be
@@ -7089,6 +7097,20 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                         from .profiles.truemotion import gatt_roles
 
                         report.truemotion_transport_valid = gatt_roles(client.services) is not None
+                    if bed_type == BED_TYPE_AMBIENT:
+                        await async_import_modules(self.hass, "beds.ambient.transport")
+                        from .beds.ambient.transport import resolve_gatt
+
+                        if not client.is_connected:
+                            return report
+                        try:
+                            resolve_gatt(client.services)
+                        except BleakError as err:
+                            report.ambient_transport_valid = False
+                            report.error = str(err)
+                        else:
+                            report.ambient_transport_valid = True
+                        return report
                     if bed_type == BED_TYPE_VINDO:
                         if client.is_connected and service_table is not None:
                             await async_import_modules(self.hass, "beds.vindo")
@@ -7145,7 +7167,7 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                                 self.async_retain_failed_setup_client(client, address)
         except Exception as err:
             if migration_check is not None or bed_type in (
-                BED_TYPE_DORSAL, BED_TYPE_LANGJUE, BED_TYPE_RESTFUL, BED_TYPE_VINDO, "kingkoil",
+                BED_TYPE_AMBIENT, BED_TYPE_DORSAL, BED_TYPE_LANGJUE, BED_TYPE_RESTFUL, BED_TYPE_VINDO, "kingkoil",
             ):
                 report.connected = False
             report.error = str(err) or err.__class__.__name__
@@ -7276,6 +7298,9 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
             self._pending_entry.get(CONF_PROTOCOL_VARIANT) == DORSAL_ROOMI_S655_PLUS
             and not report.connected
         )
+
+        if report.ambient_transport_valid is False:
+            return self.async_abort(reason="ambient_receiver_mismatch")
 
         if report.vindo_transport_valid is False:
             return self.async_abort(reason="vindo_receiver_mismatch")

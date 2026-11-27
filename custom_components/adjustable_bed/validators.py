@@ -25,6 +25,7 @@ from .const import (
     BED_TYPE_ADJUSTABLE_BED,
     BED_TYPE_ADJUSTABLE_LUMBAR,
     BED_TYPE_ADJUSTAMATTRESS,
+    BED_TYPE_AMBIENT,
     BED_TYPE_BEDSENSE,
     BED_TYPE_BETTERLIVING2,
     BED_TYPE_CASPER_BASE,
@@ -99,6 +100,7 @@ from .const import (
     VARIANT_REQUIRED_BED_TYPES,
     ZSERIES_VARIANTS,
 )
+from .profiles.ambient import LAYOUTS as AMBIENT_LAYOUTS
 from .profiles.bobpowerbase import PROFILE_CHOICES as BOB_PROFILES
 from .profiles.casper import CASPER_BASE_VARIANTS
 from .profiles.comfort_enhancement3 import CHOICES as APEX_CHOICES
@@ -166,6 +168,7 @@ MLINE_PROTOCOL_LABELS: Final = {
 
 # Single source of truth for bed types with variants
 VARIANTS_BY_BED_TYPE: dict[str, dict[str, str]] = {
+    BED_TYPE_AMBIENT: AMBIENT_LAYOUTS,
     BED_TYPE_SLEEPTIME: dict(SLEEPTIME_SELECTORS),
     "ormatek": {"okin15": "Bluetooth name starts with Okin", "okin24": "Bluetooth name starts with SmartBed"},
     "leva": dict(LEVA_RECEIVERS),

@@ -19,6 +19,7 @@ from ..command_scheduler import (
 )
 from ..diagnostic_payloads import format_payload
 from ..errors import BedNotConnectedError
+from .cancellation import settled
 
 if TYPE_CHECKING:
     from bleak.backends.characteristic import BleakGATTCharacteristic
@@ -109,6 +110,7 @@ class GattWriter(ABC):
         before_write: Callable[[], None] | None = None,
         command_factory: Callable[[], bytes] | None = None,
         track_command_write: bool = True,
+        settle_write: bool = False,
     ) -> None:
         """Write a command to a GATT characteristic with retry support.
 
@@ -146,6 +148,8 @@ class GattWriter(ABC):
                      dispatch boundary, after validation and before tracing/writing.
             track_command_write: Whether this write is the running command's
                      frame. Set False for writes that only prepare the link.
+            settle_write: Finish and record a submitted write before propagating
+                     cancellation. Lock acquisition stays cancellable.
 
         Raises:
             BedNotConnectedError: If not connected to the bed
@@ -186,6 +190,19 @@ class GattWriter(ABC):
                 characteristic=characteristic,
             )
 
+        async def send(client: BleakClient, outbound: bytes) -> None:
+            await client.write_gatt_char(
+                characteristic if characteristic is not None else char_uuid,
+                outbound,
+                response=response,
+            )
+            if track_command_write:
+                note_frame_written(effective_cancel)
+            else:
+                note_write_not_counted()
+            if on_write is not None:
+                on_write()
+
         for i in range(repeat_count):
             if effective_cancel is not None and effective_cancel.is_set():
                 _LOGGER.debug("Command cancelled after %d/%d writes", i, repeat_count)
@@ -224,22 +241,15 @@ class GattWriter(ABC):
                             characteristic=characteristic,
                         )
                     try:
-                        await client.write_gatt_char(
-                            characteristic if characteristic is not None else char_uuid,
-                            outbound,
-                            response=response,
-                        )
+                        if settle_write:
+                            await settled(send(client, outbound), eager_start=True)
+                        else:
+                            await send(client, outbound)
                     except asyncio.CancelledError:
                         # Cancelled mid-write: the repeats after it are unsent.
                         if i < repeat_count - 1:
                             note_frame_skipped()
                         raise
-                    if track_command_write:
-                        note_frame_written(effective_cancel)
-                    else:
-                        note_write_not_counted()
-                    if on_write is not None:
-                        on_write()
             except BleakError as err:
                 if log_errors:
                     # The error reaches the caller; its traceback is only for debugging.

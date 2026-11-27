@@ -175,6 +175,8 @@ def _protocol_variant_for_bed_type(bed_type: str) -> str | None:
         return "a"
     if bed_type == const.BED_TYPE_YAMADA:
         return "p1"
+    if bed_type == const.BED_TYPE_AMBIENT:
+        return "one_piece"
     if bed_type == const.BED_TYPE_BETTERLIVING2:
         return "p1"
     if bed_type == const.BED_TYPE_COMFORTBASE:

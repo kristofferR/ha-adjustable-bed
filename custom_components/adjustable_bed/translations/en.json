@@ -819,7 +819,8 @@
       "migration_unchanged": "Your answer matches the current setup, so nothing was changed.",
       "migration_pair_split_started": "Restoring standalone beds. When it completes, open Reconfigure on the bed you want to change.",
       "migration_verification_required": "The selected setup was not verified. Your current configuration was kept.",
-      "discovery_saved": "Saved. This applies to every bed in this integration."
+      "discovery_saved": "Saved. This applies to every bed in this integration.",
+      "ambient_receiver_mismatch": "This device lacks the Bluetooth write or notification channel required by M3 Ambient. Check the selected device."
     },
     "error": {
       "scan_failed": "Bluetooth scanning is unavailable. Check your adapters and try again, or choose a device from the list.",
@@ -4055,6 +4056,72 @@
       },
       "kingkoil_status_query": {
         "name": "Refresh reported status"
+      },
+      "ambient_flat": {
+        "name": "Flat position"
+      },
+      "ambient_tv": {
+        "name": "TV position"
+      },
+      "ambient_zero_g": {
+        "name": "Zero gravity"
+      },
+      "ambient_anti_snore": {
+        "name": "Anti-snore"
+      },
+      "ambient_left_flat": {
+        "name": "Left flat position"
+      },
+      "ambient_left_tv": {
+        "name": "Left TV position"
+      },
+      "ambient_left_zero_g": {
+        "name": "Left zero gravity"
+      },
+      "ambient_left_anti_snore": {
+        "name": "Left anti-snore"
+      },
+      "ambient_right_flat": {
+        "name": "Right flat position"
+      },
+      "ambient_right_tv": {
+        "name": "Right TV position"
+      },
+      "ambient_right_zero_g": {
+        "name": "Right zero gravity"
+      },
+      "ambient_right_anti_snore": {
+        "name": "Right anti-snore"
+      },
+      "ambient_home_flat": {
+        "name": "Home flat"
+      },
+      "ambient_refresh": {
+        "name": "Refresh bed state"
+      },
+      "kingkoil_head_up": {
+        "name": "Head up"
+      },
+      "kingkoil_head_down": {
+        "name": "Head down"
+      },
+      "kingkoil_head_a_up": {
+        "name": "Head A up"
+      },
+      "kingkoil_head_a_down": {
+        "name": "Head A down"
+      },
+      "kingkoil_head_b_up": {
+        "name": "Head B up"
+      },
+      "kingkoil_head_b_down": {
+        "name": "Head B down"
+      },
+      "kingkoil_feet_up": {
+        "name": "Foot up"
+      },
+      "kingkoil_feet_down": {
+        "name": "Foot down"
       }
     },
     "cover": {
@@ -4518,10 +4585,10 @@
         "name": "Head"
       },
       "kingkoil_head_a": {
-        "name": "Head A (app label)"
+        "name": "Head A"
       },
       "kingkoil_head_b": {
-        "name": "Head B (app label)"
+        "name": "Head B"
       },
       "kingkoil_feet": {
         "name": "Foot"
@@ -5827,6 +5894,12 @@
       },
       "kingkoil_timer_ui": {
         "name": "Massage timer indicator"
+      },
+      "ambient_power_supply": {
+        "name": "Power supply"
+      },
+      "ambient_firmware": {
+        "name": "Control box firmware"
       }
     },
     "light": {
@@ -6757,6 +6830,63 @@
       },
       "smartbed_right_massage": {
         "name": "Right massage intensity"
+      },
+      "ambient_head": {
+        "name": "Head position"
+      },
+      "ambient_feet": {
+        "name": "Feet position"
+      },
+      "ambient_neck": {
+        "name": "Neck position"
+      },
+      "ambient_left_head": {
+        "name": "Left head position"
+      },
+      "ambient_left_feet": {
+        "name": "Left feet position"
+      },
+      "ambient_left_neck": {
+        "name": "Left neck position"
+      },
+      "ambient_right_head": {
+        "name": "Right head position"
+      },
+      "ambient_right_feet": {
+        "name": "Right feet position"
+      },
+      "ambient_right_neck": {
+        "name": "Right neck position"
+      },
+      "ambient_shoulder_massage": {
+        "name": "Shoulder massage level"
+      },
+      "ambient_feet_massage": {
+        "name": "Feet massage level"
+      },
+      "ambient_left_fan": {
+        "name": "Left fan level"
+      },
+      "ambient_left_shoulder_heat": {
+        "name": "Left shoulder heat level"
+      },
+      "ambient_left_torso_heat": {
+        "name": "Left torso heat level"
+      },
+      "ambient_left_legs_heat": {
+        "name": "Left legs heat level"
+      },
+      "ambient_right_fan": {
+        "name": "Right fan level"
+      },
+      "ambient_right_shoulder_heat": {
+        "name": "Right shoulder heat level"
+      },
+      "ambient_right_torso_heat": {
+        "name": "Right torso heat level"
+      },
+      "ambient_right_legs_heat": {
+        "name": "Right legs heat level"
       }
     },
     "select": {
@@ -11214,6 +11344,84 @@
           "description": "Let the bed mark report-length history as received. Home Assistant does not save a sleep report."
         }
       }
+    },
+    "ambient_set_position": {
+      "name": "Set M3 Ambient position",
+      "description": "Send one complete position target to the selected layout and side.",
+      "fields": {
+        "device_id": {
+          "name": "Device",
+          "description": "The M3 Ambient bed to control."
+        },
+        "position_side": {
+          "name": "Position side",
+          "description": "Required for split beds. Leave empty for one-piece beds."
+        },
+        "head": {
+          "name": "Head",
+          "description": "Raw head target from 0 to 60."
+        },
+        "feet": {
+          "name": "Feet",
+          "description": "Raw feet target from 0 to 24."
+        },
+        "neck": {
+          "name": "Neck",
+          "description": "Raw neck target from 0 to 7."
+        }
+      }
+    },
+    "ambient_set_heat": {
+      "name": "Set M3 Ambient heat",
+      "description": "Set three heat zones on one side while retaining the other side’s reported levels.",
+      "fields": {
+        "device_id": {
+          "name": "Device",
+          "description": "The M3 Ambient bed to control."
+        },
+        "heat_side": {
+          "name": "Heat side",
+          "description": "The left or right heat zone group."
+        },
+        "shoulder": {
+          "name": "Shoulder",
+          "description": "Raw shoulder heat level from 0 to 30."
+        },
+        "torso": {
+          "name": "Torso",
+          "description": "Raw torso heat level from 0 to 30."
+        },
+        "legs": {
+          "name": "Legs",
+          "description": "Raw legs heat level from 0 to 30."
+        },
+        "timer_hours": {
+          "name": "Heat timer",
+          "description": "Send a two-hour timer request after the bed confirms all six levels. The timer request has no side selection."
+        }
+      }
+    },
+    "ambient_set_rgb": {
+      "name": "Set M3 Ambient raw RGB",
+      "description": "Send raw red, green and blue channel values without changing light power.",
+      "fields": {
+        "device_id": {
+          "name": "Device",
+          "description": "The M3 Ambient bed to control."
+        },
+        "red": {
+          "name": "Red",
+          "description": "Raw red channel byte from 0 to 255."
+        },
+        "green": {
+          "name": "Green",
+          "description": "Raw green channel byte from 0 to 255."
+        },
+        "blue": {
+          "name": "Blue",
+          "description": "Raw blue channel byte from 0 to 255."
+        }
+      }
     }
   },
   "exceptions": {
@@ -12197,6 +12405,27 @@
     },
     "kingkoil_gatt": {
       "message": "The King Koil receiver must offer its Nordic UART write and notification characteristics in the Nordic UART service. Select the correct receiver and try again."
+    },
+    "ambient_position_side": {
+      "message": "Choose left or right for a split M3 Ambient bed and omit the side for a one-piece bed."
+    },
+    "ambient_position_unknown": {
+      "message": "The bed did not report current positions for this side. Refresh the bed state or set all three positions together."
+    },
+    "ambient_stop_unavailable": {
+      "message": "M3 Ambient moves to one-shot targets and offers no receiver stop command. Pending Home Assistant movement requests were cancelled."
+    },
+    "ambient_heat_zones": {
+      "message": "Choose an M3 Ambient heat side and one or more valid heat zones."
+    },
+    "ambient_heat_timer": {
+      "message": "The available M3 Ambient heat timer duration is two hours."
+    },
+    "ambient_heat_unknown": {
+      "message": "The bed did not report all six heat zones. No heat setting was sent."
+    },
+    "ambient_heat_unconfirmed": {
+      "message": "The bed did not confirm all six requested heat levels."
     }
   },
   "issues": {
