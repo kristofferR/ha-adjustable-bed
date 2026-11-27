@@ -584,3 +584,23 @@ def comfortfurniture_cancels_hold(data: bytes) -> bool:
     if data[3] == 0xF0 and (data[7] & 3 == 3 or data[7] & 12 == 12):
         return False
     return data[7] in (7, 6, 10)
+
+
+@dataclass(frozen=True, slots=True)
+class KingKoilStatus:
+    """Reported light icon and source UI timer bucket, not a command ACK."""
+
+    light: bool
+    timer_ui: int
+
+
+def parse_kingkoil_status(data: bytes) -> KingKoilStatus | None:
+    """King Koil Bed 1.0's complete notification, without unsafe short indexing.
+
+    Both routes read byte12. CK also reads unsigned big-endian bytes3/4;
+    CL ignores the timer result. No header, checksum or physical unit is proven.
+    """
+    if len(data) < 13:
+        return None
+    timer = int.from_bytes(data[3:5], "big")
+    return KingKoilStatus(bool(data[12]), 30 if timer > 1200 else 20 if timer > 600 else 10 if timer > 0 else 0)

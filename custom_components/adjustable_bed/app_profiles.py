@@ -152,6 +152,7 @@ from .const import (
     LEGGETT_VARIANT_OKIN,
     OKIN_CST_VARIANT_NECTAR_MOVE,
     RICHMAT_MH_BED_TYPES,
+    SOLACE_VARIANT_FLEXIREST,
     SOLACE_VARIANT_SOPHIE,
     SOLACE_VARIANT_WOOSA,
     STAR_ELEVATE_VARIANT_M1X12,
@@ -265,6 +266,7 @@ _BY_BED_TYPE: Final[dict[str, SideProfile]] = {
     BED_TYPE_ATLAS_LIFT: SideProfile("Atlas Lift (Cama Lift)"),
     BED_TYPE_HJBED: SideProfile("HJBed", variant_owned=True),
     BED_TYPE_JALON: SideProfile("OkinComfortBed II", frozenset({CONF_BLE_DEVICE_NAME})),
+    "kingkoil": SideProfile("King Koil Bed", frozenset({CONF_MOTOR_COUNT, CONF_HAS_MASSAGE}), variant_owned=True),
     BED_TYPE_SOMOS: SideProfile("Somos", frozenset({CONF_MOTOR_COUNT, CONF_HAS_MASSAGE}), variant_owned=True),
     BED_TYPE_COMFORTBASE: SideProfile("ComfortBaseForBluetooth", frozenset({CONF_MOTOR_COUNT, CONF_HAS_MASSAGE}), variant_owned=True),
     BED_TYPE_JEROME_ADJUSTABLE_BASE: SideProfile("Jerome's Adjustable Base", variant_owned=True),
@@ -366,6 +368,7 @@ _BY_VARIANT: Final[dict[tuple[str, str], SideProfile]] = {
     ),
     (BED_TYPE_SOLACE, SOLACE_VARIANT_WOOSA): SideProfile("Woosa Sleep"),
     (BED_TYPE_SOLACE, SOLACE_VARIANT_SOPHIE): SideProfile("Sophie"),
+    (BED_TYPE_SOLACE, SOLACE_VARIANT_FLEXIREST): SideProfile("Sealy FlexiRest"),
     (BED_TYPE_RICHMAT_CLASSIC_APPS, "dreamlab2"): SideProfile(
         "Dreamlab Control", variant_owned=True
     ),

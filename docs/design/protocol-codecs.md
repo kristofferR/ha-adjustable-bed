@@ -119,6 +119,17 @@ and normalization; the family controller extension owns the session and gestures
 It uses one Nordic UART route and is independent of the legacy Ultramatic ORE
 controller. Hardware remains unverified.
 
+## Sealy FlexiRest
+
+Sealy FlexiRest 1.0.4 (4) matches all 73 accepted transmit vectors through
+the existing FFFF control, query, sum, clock and alarm encoders. Its explicit
+`flexirest` Solace profile owns name gates and startup timing; the shared
+Solace/Sophie controller supplies the equivalent preset and massage behavior.
+The extension adds session-settled writes, the distinct light-off command,
+fault readback and native onboard alarm semantics. Android panel events remain
+UI behavior and do not establish receiver capabilities or sync changes.
+See [Sealy FlexiRest](../beds/ff_frame.md#sealy-flexirest).
+
 ## M Line composite codec
 
 The M Line 1.2.2 codec delegates its 44 frozen control literals to the proven

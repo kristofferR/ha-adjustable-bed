@@ -161,6 +161,7 @@ from .const import (
     RICHMAT_REMOTES,
     SLEEP_NUMBER_MCR_SERVICE_UUID,
     SLEEP_NUMBER_SERVICE_UUID,
+    SOLACE_VARIANT_FLEXIREST,
     SOLACE_VARIANT_SOPHIE,
     SOLACE_VARIANT_WOOSA,
     SVANE_VARIANT_JENSEN_LINON,
@@ -992,7 +993,7 @@ KEESON_FAMILY: Final = AppFamily(
 def _explicit_solace_row(visit: Visit) -> str | None:
     """An explicit app row already answered the family question."""
     if visit.first and not visit.guided:
-        return {SOLACE_VARIANT_WOOSA: "woosa", SOLACE_VARIANT_SOPHIE: "sophie"}.get(visit.incoming[1])
+        return {SOLACE_VARIANT_WOOSA: "woosa", SOLACE_VARIANT_SOPHIE: "sophie", SOLACE_VARIANT_FLEXIREST: "flexirest"}.get(visit.incoming[1])
     return None
 
 
@@ -1008,6 +1009,7 @@ SOLACE_FAMILY: Final = AppFamily(
     answers={
         "name_route": Answer(BED_TYPE_SOLACE, VARIANT_AUTO),
         "sophie": Answer(BED_TYPE_SOLACE, SOLACE_VARIANT_SOPHIE),
+        "flexirest": Answer(BED_TYPE_SOLACE, SOLACE_VARIANT_FLEXIREST),
         # Say what Woosa Sleep controls differ before choosing it.
         "woosa": Answer(BED_TYPE_SOLACE, SOLACE_VARIANT_WOOSA, step="solace_woosa"),
         "motion_bed": Answer(BED_TYPE_MOTION_BED, member=False),
