@@ -51,6 +51,7 @@ from .bond_verification import (
 from .command_scheduler import (
     ALL_COMMAND_RESOURCES,
     PAIRED_CLEANUP_STOP,
+    PAIRED_SESSION_BOUND_ABORTS,
     CommandContext,
     CommandHandle,
     CommandIntent,
@@ -1979,6 +1980,9 @@ class AdjustableBedCoordinator(
         controller = self.capability_controller
         paired_cleanup = PAIRED_CLEANUP_STOP.get()
         original_stop = paired_cleanup.get(self.address) if paired_cleanup is not None else None
+        session_bound_abort = (
+            paired_cleanup is not None and self.address in PAIRED_SESSION_BOUND_ABORTS.get()
+        )
         cleanup = (
             controller.paired_cleanup_stop
             if paired_cleanup is not None and original_stop is None and controller is not None
@@ -2009,7 +2013,13 @@ class AdjustableBedCoordinator(
                 if cancellation_only:
                     await self._async_fence_refresh_stop(controller, lambda c: c.stop_all())
                     return
-                if self._bed_type == BED_TYPE_AMBIENT:
+                if session_bound_abort:
+                    # A pending member may have no release, even while it is connecting.
+                    async with self._command_lock:
+                        if original_stop is not None:
+                            with bluetooth_errors_translated():
+                                await original_stop()
+                elif self._bed_type == BED_TYPE_AMBIENT:
                     # Settle an admitted write without opening a link for STOP.
                     async with self._command_lock:
                         raise invalid("ambient_stop_unavailable")

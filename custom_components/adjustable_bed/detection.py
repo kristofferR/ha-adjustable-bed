@@ -249,6 +249,7 @@ from .const import (
     LINAK_CONTROL_SERVICE_UUID,
     LINAK_NAME_PATTERNS,
     LINAK_POSITION_SERVICE_UUID,
+    LINAK_VARIANT_AA_CONTROL_MY_BED,
     LOGICDATA_SERVICE_UUID,
     MALOUF_LEGACY_OKIN_SERVICE_UUID,
     MALOUF_LEGACY_OKIN_WRITE_CHAR_UUID,
@@ -856,6 +857,7 @@ def is_jensen_linon_name(name: str | None) -> bool:
 # users find them by app name. A bed type's own entry names the app its auto
 # variant selects; see AGENTS.md "Adding a New Bed Type".
 APP_VARIANT_CHOICES: dict[tuple[str, str], str] = {
+    (BED_TYPE_LINAK, LINAK_VARIANT_AA_CONTROL_MY_BED): "AA Control My Bed app",
     (BED_TYPE_DORSAL, DORSAL_ROOMI_S655_PLUS): DORSAL_ROUTES[DORSAL_ROOMI_S655_PLUS],
     **{("majestichome", profile): f"Majestic Home ({label})" for profile, label in MAJESTICHOME_PROFILES.items()},
     **{("richmat_sleep_receiver", app): f"{label} separate sleep receiver"

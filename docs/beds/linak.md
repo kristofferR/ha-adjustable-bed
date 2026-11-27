@@ -1,6 +1,6 @@
 # Linak
 
-**Status:** Tested
+**Status:** Partly tested (Bed Control tested on hardware, AA Control My Bed verified offline)
 
 **Credit:** Reverse engineering by [kristofferR](https://github.com/kristofferR/ha-adjustable-bed), jascdk and [Richard Hopton](https://github.com/richardhopton/smartbed-mqtt)
 
@@ -18,9 +18,8 @@ For a Carpe Diem Beds receiver that uses the Vindö app, choose the
 - Svane
 - Many OEM adjustable beds with Linak motors
 
-The apps have no list of products or remotes. The integration learns which
-motors and features your bed has when it connects, not from the brand or model
-name.
+The integration learns which motors and features your bed has when it
+connects. A retail brand or model name does not select the app profile.
 
 ## Apps
 
@@ -28,28 +27,29 @@ name.
 |----------|-----|------------|
 | ✅ | [Linak Bed Control](https://play.google.com/store/apps/details?id=com.linak.linakbed.ble.memory) 6.0.9 (`264`) | `com.linak.linakbed.ble.memory` |
 | ✅ | [Bed Connect](https://play.google.com/store/apps/details?id=com.linak.bedconnect.iot) 5.2.4 (`253`) | `com.linak.bedconnect.iot` |
+| ✅ | [AA Control My Bed](https://play.google.com/store/apps/details?id=com.americanAdjustables.AmericanAdjustablesRemote) 6.1.3 (`269`) | `com.americanAdjustables.AmericanAdjustablesRemote` |
 | ✅ | [Performance Series](https://play.google.com/store/apps/details?id=com.linak.leggettandplatt) 1.0 (`124`) | `com.linak.leggettandplatt` |
 
 ## Features
 
-| Feature | Bed Control | Performance Series |
-|---------|-------------|--------------------|
-| Motor control | ✅ (Back, Legs, Head, Feet, Base, as the bed reports them) | ✅ |
-| Moving two sections together | ✅ (any two sections your bed has) | ❌ |
-| Flat | ✅ | ✅ |
-| All up | ✅ | ❌ |
-| Four memory recalls and stores | TD3/Advanced only | ✅ |
-| Position, reported speed and four status flags | Advanced only | ❌ |
-| Error messages | ✅ (all 104 error codes) | ❌ |
-| Massage | Off, modes, zones and intensity | Toggle, wave/frequency, intensity and impulse |
-| AUX/under-bed light | On/off light entity | Toggle button |
-| Automatic drive configuration | ✅ | ❌ |
-| BLE device rename | ✅ | ❌ |
-| Alarms (time and repeat) | Alarm model only | ❌ |
-| Reset defaults (`4E 00`) | ✅, disabled by default | ✅ |
-| Configuration factory reset (`7F 3E 80`) | ✅, disabled by default | ❌ |
-| Wake command | ✅ | ❌ |
-| Hold until release | ✅ ([renewable](../SERVICES.md#renewable-holds): 100 ms refresh, then the release) | ✅ ([renewable](../SERVICES.md#renewable-holds): 300 ms refresh, then the release) |
+| Feature | Bed Control / Bed Connect | AA Control My Bed | Performance Series |
+|---------|---------------------------|-------------------|--------------------|
+| Motor control | Back, Legs, Head, Feet, Base, as the bed reports them | Same axes | ✅ |
+| Moving two sections together | Any two available sections | Two sections selected by the actuator mask | ❌ |
+| Flat | ✅ | ✅ | ✅ |
+| All up | ✅ | ✅ | ❌ |
+| Four memory recalls and stores | TD3/Advanced only | TD3/Advanced only | ✅ |
+| Position, reported speed and four status flags | Advanced only | Advanced only | ❌ |
+| Error messages | All 104 error codes | All 104 error codes | ❌ |
+| Massage | Off, modes, zones and intensity | Off, modes, zones and intensity | Toggle, wave/frequency, intensity and impulse |
+| AUX/under-bed light | On/off light entity | Toggle button | Toggle button |
+| Automatic drive configuration | ✅ | Alarm model only | ❌ |
+| BLE device rename | ✅ | ✅ | ❌ |
+| Alarms | Once, alarm model only | Once or 24-hour recurrence, alarm model only | ❌ |
+| Reset defaults (`4E 00`) | ✅, disabled by default | ✅, disabled by default | ✅ |
+| Configuration factory reset (`7F 3E 80`) | ✅, disabled by default | ❌ | ❌ |
+| Wake command | ✅ | ❌ | ❌ |
+| Hold until release | [Renewable](../SERVICES.md#renewable-holds), 100 ms refresh | Renewable, 100 ms refresh | Renewable, 300 ms refresh |
 
 ## Protocol Details
 
@@ -74,7 +74,7 @@ name.
 
 ### Bonding and authentication
 
-- All three analyzed BLE applications bond with the controller through
+- The analyzed BLE applications bond with the controller through
   Android/OS pairing before they use it. Bed Control's help text has the user
   unplug the bed for 60 seconds to make it ready to connect.
 - Physical testing with two Advanced controllers shows that every read, write
@@ -133,12 +133,12 @@ name.
 
 ## Profiles and model variants
 
-Leave **Automatic (recommended)**, or choose **Bed Control or Bed Connect app**, unless
-the bed was controlled by the old Linak Performance Series app; then choose
+Leave **Automatic (recommended)** or choose **Bed Control or Bed Connect app**
+for either of those apps. Choose **AA Control My Bed app** in the bed-type list
+if you use that app. For older beds controlled by Performance Series, choose
 **Performance Series app (older bases)** under **Advanced: bed model or remote**.
-Auto and explicit Bed Control use the modern profile and
-discover its model after connection. Performance Series must be selected
-explicitly because its advertisement does not identify it safely.
+The control service UUID identifies the Linak family. The explicit app choices
+select AA Control My Bed and Performance Series.
 
 | Profile or model | Selection | Positions | Memories | Alarm |
 |------------------|-----------|-----------|----------|-------|
@@ -154,6 +154,35 @@ explicitly because its advertisement does not identify it safely.
   movement controls and position entities.
 - The resolved variant is shown as the device's Model ID in Home Assistant rather
   than as a separate entity.
+
+### AA Control My Bed
+
+The TD3 profile uses `37 00` for All up and `34 00` for Flat. Both group Back
+and Legs. This requires a confirmed zero actuator mask. Advanced models use
+the ordinary all-section commands and allow grouped movement on two axes
+reported by the mask. Home Assistant releases movement with `FF 00`.
+
+Rename through `adjustable_bed.rename` with a name of up to 17 UTF-16 code units.
+Most characters use one unit and supplementary characters such as emoji use
+two. The integration writes UTF-8 to Device Name, attempts a readback from
+the same receiver, then disconnects so advertising can refresh.
+
+The alarm requires a nonzero confirmed actuator mask and a successful Timer
+subscription. `adjustable_bed.set_alarm` accepts a favorite, massage or both.
+Clear the weekdays for a one-time alarm, or select all seven to request the
+app's 24-hour recurrence.
+
+| Alarm operation | Bytes or sequence | Destination |
+|-----------------|-------------------|-------------|
+| Enable automatic drive | `89 3B 80 01` | Configuration |
+| Set event | Countdown header, then favorite and/or massage. Each action has lifetime `05` and pause `00` | Timer |
+| Set recurrence | `10 00 00` for once, `10 A0 FD` for a 24-hour interval | Timer |
+| Query channel 1 | `20` | Timer |
+| Turn off | `89 3B 80 00`, then `40` | Configuration, then Timer |
+
+The app sends favorite recalls, saves and its main-screen massage controls to
+its primary receiver. In Home Assistant, a combined bed uses the action's
+selected physical side or sides.
 
 ### Unreadable actuator mask
 
@@ -459,5 +488,6 @@ as the Performance app's child-lock preference.
 ### Analysis provenance
 
 Based on Bed Control 6.0.9 (`com.linak.linakbed.ble.memory`), Bed Connect
-5.2.4 (`com.linak.bedconnect.iot`) and Performance Series 1.0
-(`com.linak.leggettandplatt`).
+5.2.4 (`com.linak.bedconnect.iot`), AA Control My Bed 6.1.3
+(`com.americanAdjustables.AmericanAdjustablesRemote`) and Performance Series
+1.0 (`com.linak.leggettandplatt`).

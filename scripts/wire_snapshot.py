@@ -495,6 +495,19 @@ def plan_commands(controller: Any) -> list[Command]:
                 reference_time=datetime.datetime.fromisoformat(FROZEN_NOW),
             )
             plan.append(Command(f"set_alarm:{intensity}", _method("configure_alarm", alarm), True))
+    if (
+        controller._coordinator.bed_type == "linak"
+        and _value(controller, "protocol_diagnostics", {}).get("profile") == "aa_control_my_bed"
+        and controller.alarm_capability
+    ):
+        from custom_components.adjustable_bed.alarm import AlarmRequest
+
+        for enabled in (True, False):
+            alarm = AlarmRequest(
+                enabled=enabled, hour=6, minute=30, wake_action="memory_1", massage=True,
+                weekdays=tuple(range(7)), reference_time=FROZEN_BASE.replace(tzinfo=datetime.UTC),
+            )
+            plan.append(Command(f"set_alarm:{enabled}", _method("configure_alarm", alarm), True))
     for name in sorted(LATE_ACTIONS):
         if _overrides(controller, name):
             plan.append(Command(name, _method(name), _flag(controller, ACTION_FLAGS.get(name))))
@@ -1315,6 +1328,10 @@ class Coordinator:
     async def async_disconnect(self, *_: Any, **__: Any) -> None:
         return None
 
+    @contextlib.asynccontextmanager
+    async def async_connection_operation_guard(self):
+        yield self.async_disconnect
+
     async def async_start_notify(self) -> None:
         return None
 
@@ -1786,6 +1803,7 @@ ROUTE_KWARGS: dict[str, dict[str, Any]] = {
 ROUTE_REPLIES: dict[str, dict[str, str]] = {
     # Floyd also pings for its node: this address answers with vaddr 0x01020304.
     "kaidi:floyd": {"write:03fffffffffe": KAIDI_PING_REPLY},
+    "linak:aa_control_my_bed": {"read:99fa0029-338a-1024-8a49-009c0215f78a": "c0"},
 }
 # Large variant sets are sampled: the first keys plus the last.
 SAMPLED_ROUTES: dict[str, int] = {"adjustamattress": 3}

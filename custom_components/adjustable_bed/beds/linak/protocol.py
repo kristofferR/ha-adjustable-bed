@@ -14,6 +14,7 @@ class LinakProfile(StrEnum):
     """Selectable Linak application protocol profiles."""
 
     BED_CONTROL = "bed_control"
+    AA_CONTROL_MY_BED = "aa_control_my_bed"
     PERFORMANCE = "performance_legacy"
 
 
@@ -377,9 +378,10 @@ def decode_timer(data: bytes | bytearray) -> LinakTimerState:
     raise ValueError(f"Unknown Linak timer event 0x{event:02x}")
 
 
-def build_automatic_drive(enabled: bool) -> bytes:
-    """Build the five-byte automatic-drive configuration packet."""
-    return bytes((0x89, 0x3B, 0x80, 0x00, int(enabled)))
+def build_automatic_drive(enabled: bool, *, include_reserved_byte: bool = True) -> bytes:
+    """Build the automatic-drive write with the selected app's payload layout."""
+    reserved = b"\x00" if include_reserved_byte else b""
+    return bytes((0x89, 0x3B, 0x80)) + reserved + bytes((int(enabled),))
 
 
 def advertises_pairing_window(advertisement: bytes | None) -> bool:
