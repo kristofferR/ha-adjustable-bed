@@ -808,7 +808,14 @@ async def async_setup_entry(
                 with controller_side_scope(runtime):
                     entities.extend(_button_entities_for(hass, runtime))
             # A pair whose every side lacks a global STOP frame gets no combined Stop.
-            if not all(remacro_side_lacks_global_stop(child) for child in children):
+            if not all(
+                remacro_side_lacks_global_stop(child)
+                or (
+                    (controller := child.capability_controller) is not None
+                    and controller.supports_stop_all is False
+                )
+                for child in children
+            ):
                 entities.append(PairedBedStopButton(coordinator))
             # Combined buttons read both children's live capabilities, so pass the
             # raw children (the button itself dispatches via the parent, side=both).

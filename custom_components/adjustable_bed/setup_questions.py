@@ -807,6 +807,12 @@ def _logicdata_questions(
 
 
 _DECLARED: Final[dict[str, SetupProfile]] = {
+    "intellibed": SetupProfile(
+        owns={CONF_MOTOR_COUNT: 2, CONF_HAS_MASSAGE: False,
+              CONF_DISABLE_ANGLE_SENSING: True},
+        questions=(Question(CONF_PROTOCOL_VARIANT, {"old": "Old / white remote", "hhc": "HHC / silver remote"}),),
+        title=lambda data: "Intellibed Sleep Genius",
+    ),
     BED_TYPE_SILVERMOTION: SetupProfile(
         owns={
             CONF_MOTOR_COUNT: 2,

@@ -1512,6 +1512,8 @@ def default_scenario(bed_type: str) -> Scenario:
     """The bed type in its default route, with the entry data it needs to build."""
     from custom_components.adjustable_bed import const
 
+    if bed_type == "intellibed":
+        return Scenario(id=bed_type, bed_type=bed_type, protocol_variant="old")
     if bed_type == "powersbedding":
         return Scenario(id=bed_type, bed_type=bed_type,
                         entry_data={const.CONF_BLE_DEVICE_NAME: "okin-Powers"},
@@ -2655,6 +2657,7 @@ def build_scenarios() -> list[Scenario]:
     scenarios = [default_scenario(bed_type) for bed_type in SUPPORTED_BED_TYPES
                  if bed_type not in RICHMAT_MH_APP_CATALOGS]
     scenarios.extend(route_scenarios())
+    scenarios.append(Scenario(id="intellibed:hhc", bed_type="intellibed", protocol_variant="hhc"))
     scenarios.extend(Scenario(id=f"berun:v{v}", bed_type="berun", protocol_variant=f"v{v}",
                               layout_id=f"berun:v{v}") for v in (6, 7, 8, 9))
     scenarios.extend(Scenario(id=f"flexispot:{model}", bed_type="flexispot",

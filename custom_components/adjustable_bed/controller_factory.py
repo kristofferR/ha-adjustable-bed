@@ -423,6 +423,7 @@ _BUILDERS: Final[dict[str, _BuilderSpec]] = {
     BED_TYPE_CASPER_BASE: _BuilderSpec("casper_base.controller"),
     BED_TYPE_RICHMAT_CLASSIC_APPS: _BuilderSpec("richmat_classic.controller"),
     BED_TYPE_LEVA: _BuilderSpec("leva"),
+    "intellibed": _BuilderSpec("intellibed.controller"),
     BED_TYPE_LINX: _BuilderSpec("linx.controller"),
     BED_TYPE_RESTONIC: _BuilderSpec("restonic.controller"),
     "kingkoil": _BuilderSpec("keeson.kingkoil"),
