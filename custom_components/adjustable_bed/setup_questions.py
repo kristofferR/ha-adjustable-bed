@@ -1136,6 +1136,10 @@ def _classic_layouts(data: Mapping[str, Any]) -> Mapping[Any, str]:
 
         unavailable = EXCLUDED_LAYOUTS | NAVIGATION_LAYOUTS.keys()
         codes -= unavailable | {k for k, v in ALIASES.items() if v in unavailable}
+    if app == "innova2":
+        from .profiles.innova_control import EXCLUDED_LAYOUTS as INNOVA_CONTROL_EXCLUDED_LAYOUTS
+
+        codes -= INNOVA_CONTROL_EXCLUDED_LAYOUTS
     if app == "homezone":
         from .profiles.homezone import EXCLUDED_LAYOUTS as HOMEZONE_EXCLUDED_LAYOUTS
 
@@ -1215,6 +1219,10 @@ def _classic_errors(data: Mapping[str, Any]) -> dict[str, str]:
         from .profiles.bedsmart import EXCLUDED_LAYOUTS, NAVIGATION_LAYOUTS
 
         excluded = excluded | EXCLUDED_LAYOUTS | NAVIGATION_LAYOUTS.keys()
+    if data.get(CONF_PROTOCOL_VARIANT) == "innova2":
+        from .profiles.innova_control import EXCLUDED_LAYOUTS as INNOVA_CONTROL_EXCLUDED
+
+        excluded |= INNOVA_CONTROL_EXCLUDED
     if data.get(CONF_PROTOCOL_VARIANT) == "homezone":
         from .profiles.homezone import EXCLUDED_LAYOUTS as HOMEZONE_EXCLUDED_LAYOUTS
 
@@ -1249,6 +1257,23 @@ def _classic_seed(
         if name is not None and dreamlab.scan_matches(name):
             return {**data, CONF_BLE_DEVICE_NAME: name}
         return dict(data)
+    if variant == "innova2":
+        from .beds.richmat_classic.profiles import resolve_layout
+        from .profiles import innova_control
+
+        name = advertised_local_name(discovered)
+        if name is None or not innova_control.scan_matches(name):
+            return dict(data)
+        seeded = {**data, CONF_BLE_DEVICE_NAME: name}
+        if "209A05" not in name.upper():
+            try:
+                layout = resolve_layout("innova2", name, from_name=True,
+                                        russian=hass.config.language.partition("-")[0] == "ru")
+            except ValueError:
+                return seeded
+            if layout not in innova_control.EXCLUDED_LAYOUTS:
+                seeded.setdefault(CONF_PRODUCT_TYPE, layout)
+        return seeded
     if variant != maxprime.APP:
         return dict(data)
     seeded = _discovered_name_seed(hass, data, discovered)
@@ -3267,7 +3292,7 @@ SETUP_PROFILES: Final[dict[str, SetupProfile]] = {
                 default=OPTIONAL,
                 text=True,
                 advanced=True,
-                when={"field": CONF_PROTOCOL_VARIANT, "operator": ConditionOperator.IN, "value": ["dreamlab2", "homezone"]},
+                when={"field": CONF_PROTOCOL_VARIANT, "operator": ConditionOperator.IN, "value": ["dreamlab2", "homezone", "innova2"]},
             ),
         ),
         normalize=_classic_normalize,

@@ -2267,6 +2267,18 @@ def route_scenarios() -> list[Scenario]:
                 },
             ))
     if const.BED_TYPE_RICHMAT_CLASSIC_APPS in const.SUPPORTED_BED_TYPES:
+        for layout, suffix in (("6BRM", ""), ("6BRM", "_nordic"), ("BRRM", ""),
+                               ("E3RM", ""), ("U3RM", ""), ("BTRM", ""),
+                               ("D9RM", ""), ("Y6RM", "")):
+            scenarios.append(Scenario(
+                id=f"richmat_classic_apps:innova2:{layout}" + (":nordic" if suffix else ""),
+                bed_type=const.BED_TYPE_RICHMAT_CLASSIC_APPS, protocol_variant="innova2",
+                layout_id=const.BED_TYPE_RICHMAT_CLASSIC_APPS + suffix,
+                entry_data={const.CONF_PRODUCT_TYPE: layout, const.CONF_BLE_DEVICE_NAME: layout},
+                replies={"write:6e08010178": "6e09010078", "write:6e0a000179": "6e0e00037f",
+                         "write:6e1a000088": "6e1a000189"},
+            ))
+    if const.BED_TYPE_RICHMAT_CLASSIC_APPS in const.SUPPORTED_BED_TYPES:
         for layout, receiver, gatt in (
             ("6BRM", "6BRM", "richmat_classic_apps_nordic"),
             ("6BRM", "6BRM", "richmat_classic_apps"),

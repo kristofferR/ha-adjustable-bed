@@ -110,3 +110,15 @@ async def test_hestia_one_held_key_stream_has_no_composed_motor_admission():
     assert controller.execution.hold_for("both_up") == "stream"
     assert controller.profile.refresh_ms == 100
     assert controller.profile.release.steps == ((100, 0),)
+
+
+def test_innova_control_hold_scope_has_artifact_refresh_and_release():
+    # Innova Control 1.1.0 Utils sender mode1 + RemoteFragment UP: repeat,
+    # then mode0's 50ms existing STOP. Modes never establish physical sides.
+    from tests.test_innova_control import controller
+
+    ctrl, _ = controller()
+    assert ctrl.execution.hold_for("richmat_classic_1") == "stream"
+    assert ctrl.execution.concurrent == frozenset()
+    assert ctrl.app_profile.held_release_ms == 50
+    assert not ctrl.supports_single_address_pairing

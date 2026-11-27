@@ -66,6 +66,7 @@ APPS = [
     "baseremote",
     "maxprime",
     "homezone",
+    "innova2",
     "dreamlab2",
     "enso2",
     "remote",

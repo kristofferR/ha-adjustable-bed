@@ -2738,3 +2738,14 @@ unverified. Use `set_alarm` for adding, enabling or disabling an alarm, and
 
 Set the bed clock and wait for a clock reply before confirming existing alarms.
 The action sends each selected weekday, then queries the receiver's alarm list.
+
+### Innova Control settings
+
+`adjustable_bed.innova_control` accepts `device_id` and paired `side`, with
+`operation`: `query`, `rgb` (`rgb_color`), `lamp_timeout` (`seconds`, 0–300),
+`aroma` (`aroma_times`, startup 2/startup 3 minutes and pause 3 hours),
+`massage_timer` (`progress`, exact slider position 0–5), `massage_popup`
+(`popup`, widget ID `15`, `30`, `45` or `toggle`), `join_group` (`group`, four
+printable ASCII characters) or `leave_group`. Grouping disconnects each receiver
+after writing. Physical timer durations and group synchronization are unverified.
+Use Set alarm for the selected layout’s preset/massage alarm combinations.
