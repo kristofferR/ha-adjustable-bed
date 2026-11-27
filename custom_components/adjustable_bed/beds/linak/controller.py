@@ -631,7 +631,15 @@ class LinakController(BedController):
     async def prepare_simultaneous_movement(self) -> None:
         """Finish authentication-deferred AA discovery before capability checks."""
         if self.binds_grouped_abort_to_session and self._capability_discovery_deferred:
-            await self._await_control_ready(expected_client=self.client)
+            async def prepare(controller: BedController) -> None:
+                if controller is not self:
+                    raise BedNotConnectedError
+                await self._await_control_ready(expected_client=self.client)
+
+            # Readiness sends STOP probes, so it must share the movement lane.
+            await self._coordinator.async_execute_controller_query(
+                prepare, skip_disconnect=True,
+            )
 
     @property
     def binds_grouped_abort_to_session(self) -> bool:

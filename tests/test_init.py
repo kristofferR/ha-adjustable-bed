@@ -1886,6 +1886,65 @@ class TestServices:
         assert commands[-1] == b"\xff\x00"
         assert set(commands) == {b"\xff\x00", b"\x37\x00"}
 
+    async def test_aa_grouped_readiness_waits_for_the_active_command_lane(
+        self, hass, mock_config_entry, mock_coordinator_connected, mock_bleak_client,
+        enable_custom_integrations, monkeypatch,
+    ) -> None:
+        from custom_components.adjustable_bed.beds.linak.controller import LinakController
+
+        hass.config_entries.async_update_entry(
+            mock_config_entry,
+            data={**mock_config_entry.data, CONF_PROTOCOL_VARIANT: LINAK_VARIANT_AA_CONTROL_MY_BED},
+        )
+        _configure_linak_advanced(mock_bleak_client)
+        await hass.config_entries.async_setup(mock_config_entry.entry_id)
+        await hass.async_block_till_done()
+        device_id = dr.async_entries_for_config_entry(
+            dr.async_get(hass), mock_config_entry.entry_id
+        )[0].id
+        coordinator = hass.data[DOMAIN][mock_config_entry.entry_id]
+        controller = coordinator.controller
+        controller._capability_discovery_deferred = True
+        controller._session_ready = False
+        occupied, release, preparing = asyncio.Event(), asyncio.Event(), asyncio.Event()
+
+        async def active_command(_controller):
+            occupied.set()
+            await release.wait()
+
+        original_prepare = LinakController.prepare_simultaneous_movement
+
+        async def prepare(current):
+            preparing.set()
+            await original_prepare(current)
+
+        monkeypatch.setattr(LinakController, "prepare_simultaneous_movement", prepare)
+        mock_bleak_client.write_gatt_char.reset_mock()
+        active = asyncio.create_task(coordinator.async_execute_controller_command(
+            active_command, cancel_running=False,
+        ))
+        await occupied.wait()
+        move = asyncio.create_task(hass.services.async_call(
+            DOMAIN, SERVICE_LINAK_MOVE_SIMULTANEOUS,
+            {
+                "device_id": device_id, "duration_ms": 100,
+                "first_motor": "back", "first_direction": "up",
+                "second_motor": "legs", "second_direction": "up",
+            }, blocking=True,
+        ))
+        try:
+            await preparing.wait()
+            writes_while_occupied = mock_bleak_client.write_gatt_char.await_count
+        finally:
+            release.set()
+            await active
+            await move
+
+        assert writes_while_occupied == 0
+        commands = [write.args[1] for write in mock_bleak_client.write_gatt_char.await_args_list]
+        assert commands[0] == b"\xff\x00"
+        assert b"\x37\x00" in commands
+
     @pytest.mark.parametrize("change", ["stop", "mixed", "missing_axis"])
     async def test_aa_grouped_move_checks_admission_and_live_mask(
         self, hass, mock_config_entry, mock_coordinator_connected, mock_bleak_client,
