@@ -1,0 +1,455 @@
+[
+  {
+    "id": "head-up",
+    "protocol": "P1",
+    "action": "Head up",
+    "inputs": {
+      "op": 1,
+      "key": 1,
+      "fields": {},
+      "bank": 0
+    },
+    "expected_bytes": "9b00010100000000000000000000000000817e9d",
+    "evidence": [
+      "bluetooth/BluetoothDeviceController.java:414-850; utils/CRC16M.java:18-24,61-68"
+    ],
+    "kind": "statically reconstructed from artifact tables, not hardware capture"
+  },
+  {
+    "id": "head-down",
+    "protocol": "P1",
+    "action": "Head down",
+    "inputs": {
+      "op": 2,
+      "key": 1,
+      "fields": {},
+      "bank": 0
+    },
+    "expected_bytes": "9b00020100000000000000000000000000c27f9d",
+    "evidence": [
+      "bluetooth/BluetoothDeviceController.java:414-850; utils/CRC16M.java:18-24,61-68"
+    ],
+    "kind": "statically reconstructed from artifact tables, not hardware capture"
+  },
+  {
+    "id": "foot-up",
+    "protocol": "P1",
+    "action": "Foot up",
+    "inputs": {
+      "op": 1,
+      "key": 2,
+      "fields": {},
+      "bank": 0
+    },
+    "expected_bytes": "9b00010200000000000000000000000000827d9d",
+    "evidence": [
+      "bluetooth/BluetoothDeviceController.java:414-850; utils/CRC16M.java:18-24,61-68"
+    ],
+    "kind": "statically reconstructed from artifact tables, not hardware capture"
+  },
+  {
+    "id": "foot-down",
+    "protocol": "P1",
+    "action": "Foot down",
+    "inputs": {
+      "op": 2,
+      "key": 2,
+      "fields": {},
+      "bank": 0
+    },
+    "expected_bytes": "9b00020200000000000000000000000000c17c9d",
+    "evidence": [
+      "bluetooth/BluetoothDeviceController.java:414-850; utils/CRC16M.java:18-24,61-68"
+    ],
+    "kind": "statically reconstructed from artifact tables, not hardware capture"
+  },
+  {
+    "id": "head-release",
+    "protocol": "P1",
+    "action": "Head release",
+    "inputs": {
+      "op": 3,
+      "key": 1,
+      "fields": {},
+      "bank": 0
+    },
+    "expected_bytes": "9b00030100000000000000000000000000037f9d",
+    "evidence": [
+      "bluetooth/BluetoothDeviceController.java:414-850; utils/CRC16M.java:18-24,61-68"
+    ],
+    "kind": "statically reconstructed from artifact tables, not hardware capture"
+  },
+  {
+    "id": "foot-release",
+    "protocol": "P1",
+    "action": "Foot release",
+    "inputs": {
+      "op": 3,
+      "key": 2,
+      "fields": {},
+      "bank": 0
+    },
+    "expected_bytes": "9b00030200000000000000000000000000007c9d",
+    "evidence": [
+      "bluetooth/BluetoothDeviceController.java:414-850; utils/CRC16M.java:18-24,61-68"
+    ],
+    "kind": "statically reconstructed from artifact tables, not hardware capture"
+  },
+  {
+    "id": "flat",
+    "protocol": "P1",
+    "action": "Flat",
+    "inputs": {
+      "op": 5,
+      "key": 2,
+      "fields": {},
+      "bank": 0
+    },
+    "expected_bytes": "9b00050200000000000000000000000000867e9d",
+    "evidence": [
+      "bluetooth/BluetoothDeviceController.java:414-850; utils/CRC16M.java:18-24,61-68"
+    ],
+    "kind": "statically reconstructed from artifact tables, not hardware capture"
+  },
+  {
+    "id": "zg",
+    "protocol": "P1",
+    "action": "ZG",
+    "inputs": {
+      "op": 7,
+      "key": 5,
+      "fields": {},
+      "bank": 0
+    },
+    "expected_bytes": "9b0007050000000000000000000000000002b89d",
+    "evidence": [
+      "bluetooth/BluetoothDeviceController.java:414-850; utils/CRC16M.java:18-24,61-68"
+    ],
+    "kind": "statically reconstructed from artifact tables, not hardware capture"
+  },
+  {
+    "id": "m1",
+    "protocol": "P1",
+    "action": "M1 recall",
+    "inputs": {
+      "op": 7,
+      "key": 1,
+      "fields": {},
+      "bank": 0
+    },
+    "expected_bytes": "9b00070100000000000000000000000000077c9d",
+    "evidence": [
+      "bluetooth/BluetoothDeviceController.java:414-850; utils/CRC16M.java:18-24,61-68"
+    ],
+    "kind": "statically reconstructed from artifact tables, not hardware capture"
+  },
+  {
+    "id": "m2",
+    "protocol": "P1",
+    "action": "M2 recall",
+    "inputs": {
+      "op": 7,
+      "key": 3,
+      "fields": {},
+      "bank": 0
+    },
+    "expected_bytes": "9b0007030000000000000000000000000004be9d",
+    "evidence": [
+      "bluetooth/BluetoothDeviceController.java:414-850; utils/CRC16M.java:18-24,61-68"
+    ],
+    "kind": "statically reconstructed from artifact tables, not hardware capture"
+  },
+  {
+    "id": "m3",
+    "protocol": "P1",
+    "action": "M3 recall",
+    "inputs": {
+      "op": 7,
+      "key": 2,
+      "fields": {},
+      "bank": 0
+    },
+    "expected_bytes": "9b00070200000000000000000000000000047f9d",
+    "evidence": [
+      "bluetooth/BluetoothDeviceController.java:414-850; utils/CRC16M.java:18-24,61-68"
+    ],
+    "kind": "statically reconstructed from artifact tables, not hardware capture"
+  },
+  {
+    "id": "sleep",
+    "protocol": "P1",
+    "action": "Sleep recall",
+    "inputs": {
+      "op": 7,
+      "key": 4,
+      "fields": {},
+      "bank": 0
+    },
+    "expected_bytes": "9b0007040000000000000000000000000002799d",
+    "evidence": [
+      "bluetooth/BluetoothDeviceController.java:414-850; utils/CRC16M.java:18-24,61-68"
+    ],
+    "kind": "statically reconstructed from artifact tables, not hardware capture"
+  },
+  {
+    "id": "save-m2",
+    "protocol": "P1",
+    "action": "M2 save",
+    "inputs": {
+      "op": 6,
+      "key": 3,
+      "fields": {},
+      "bank": 0
+    },
+    "expected_bytes": "9b00060300000000000000000000000000c5be9d",
+    "evidence": [
+      "bluetooth/BluetoothDeviceController.java:414-850; utils/CRC16M.java:18-24,61-68"
+    ],
+    "kind": "statically reconstructed from artifact tables, not hardware capture"
+  },
+  {
+    "id": "save-sleep",
+    "protocol": "P1",
+    "action": "Sleep save",
+    "inputs": {
+      "op": 6,
+      "key": 4,
+      "fields": {},
+      "bank": 0
+    },
+    "expected_bytes": "9b00060400000000000000000000000000c3799d",
+    "evidence": [
+      "bluetooth/BluetoothDeviceController.java:414-850; utils/CRC16M.java:18-24,61-68"
+    ],
+    "kind": "statically reconstructed from artifact tables, not hardware capture"
+  },
+  {
+    "id": "light-on",
+    "protocol": "P1",
+    "action": "Under-bed light on",
+    "inputs": {
+      "op": 4,
+      "key": 1,
+      "fields": {},
+      "bank": 0
+    },
+    "expected_bytes": "9b00040100000000000000000000000000447d9d",
+    "evidence": [
+      "bluetooth/BluetoothDeviceController.java:414-850; utils/CRC16M.java:18-24,61-68"
+    ],
+    "kind": "statically reconstructed from artifact tables, not hardware capture"
+  },
+  {
+    "id": "light-off",
+    "protocol": "P1",
+    "action": "Under-bed light off",
+    "inputs": {
+      "op": 4,
+      "key": 2,
+      "fields": {},
+      "bank": 0
+    },
+    "expected_bytes": "9b00040200000000000000000000000000477e9d",
+    "evidence": [
+      "bluetooth/BluetoothDeviceController.java:414-850; utils/CRC16M.java:18-24,61-68"
+    ],
+    "kind": "statically reconstructed from artifact tables, not hardware capture"
+  },
+  {
+    "id": "massage-on",
+    "protocol": "P1",
+    "action": "Massage on",
+    "inputs": {
+      "op": 14,
+      "key": 1,
+      "fields": {},
+      "bank": 0
+    },
+    "expected_bytes": "9b000e0100000000000000000000000000ce7a9d",
+    "evidence": [
+      "bluetooth/BluetoothDeviceController.java:414-850; utils/CRC16M.java:18-24,61-68"
+    ],
+    "kind": "statically reconstructed from artifact tables, not hardware capture"
+  },
+  {
+    "id": "massage-off",
+    "protocol": "P1",
+    "action": "Massage off",
+    "inputs": {
+      "op": 14,
+      "key": 0,
+      "fields": {},
+      "bank": 0
+    },
+    "expected_bytes": "9b000e0000000000000000000000000000cebb9d",
+    "evidence": [
+      "bluetooth/BluetoothDeviceController.java:414-850; utils/CRC16M.java:18-24,61-68"
+    ],
+    "kind": "statically reconstructed from artifact tables, not hardware capture"
+  },
+  {
+    "id": "mode-wave",
+    "protocol": "P1",
+    "action": "Massage wave",
+    "inputs": {
+      "op": 16,
+      "key": 3,
+      "fields": {},
+      "bank": 0
+    },
+    "expected_bytes": "9b0010030000000000000000000000000053b09d",
+    "evidence": [
+      "bluetooth/BluetoothDeviceController.java:414-850; utils/CRC16M.java:18-24,61-68"
+    ],
+    "kind": "statically reconstructed from artifact tables, not hardware capture"
+  },
+  {
+    "id": "head-level-up",
+    "protocol": "P1",
+    "action": "Massage head step up",
+    "inputs": {
+      "op": 12,
+      "key": 0,
+      "fields": {},
+      "bank": 0
+    },
+    "expected_bytes": "9b000c00000000000000000000000000004cba9d",
+    "evidence": [
+      "bluetooth/BluetoothDeviceController.java:414-850; utils/CRC16M.java:18-24,61-68"
+    ],
+    "kind": "statically reconstructed from artifact tables, not hardware capture"
+  },
+  {
+    "id": "foot-level-down",
+    "protocol": "P1",
+    "action": "Massage foot step down",
+    "inputs": {
+      "op": 13,
+      "key": 0,
+      "fields": {},
+      "bank": 0
+    },
+    "expected_bytes": "9b000d00000000000000000000000000008dba9d",
+    "evidence": [
+      "bluetooth/BluetoothDeviceController.java:414-850; utils/CRC16M.java:18-24,61-68"
+    ],
+    "kind": "statically reconstructed from artifact tables, not hardware capture"
+  },
+  {
+    "id": "timer-30",
+    "protocol": "P1",
+    "action": "Massage timer 30",
+    "inputs": {
+      "op": 15,
+      "key": 30,
+      "fields": {},
+      "bank": 0
+    },
+    "expected_bytes": "9b000f1e0000000000000000000000000011a59d",
+    "evidence": [
+      "bluetooth/BluetoothDeviceController.java:414-850; utils/CRC16M.java:18-24,61-68"
+    ],
+    "kind": "statically reconstructed from artifact tables, not hardware capture"
+  },
+  {
+    "id": "restore",
+    "protocol": "P1",
+    "action": "Restore factory bed settings",
+    "inputs": {
+      "op": 5,
+      "key": 10,
+      "fields": {},
+      "bank": 0
+    },
+    "expected_bytes": "9b00050a000000000000000000000000008fb69d",
+    "evidence": [
+      "bluetooth/BluetoothDeviceController.java:414-850; utils/CRC16M.java:18-24,61-68"
+    ],
+    "kind": "statically reconstructed from artifact tables, not hardware capture"
+  },
+  {
+    "id": "snore-both",
+    "protocol": "P1",
+    "action": "Anti-snore switch builder, both flags input",
+    "inputs": {
+      "op": 53,
+      "key": 3,
+      "fields": {
+        "4": 149
+      },
+      "bank": 0
+    },
+    "expected_bytes": "9b003503950000000000000000000000007bff9d",
+    "evidence": [
+      "bluetooth/BluetoothDeviceController.java:528-540; activity/SnorFragment.java:102-136; smali/activity/SnorFragment.smali:5368-5478. Full both-side UI reachability not claimed."
+    ],
+    "kind": "statically reconstructed from artifact tables, not hardware capture"
+  },
+  {
+    "id": "time-sync",
+    "protocol": "P1",
+    "action": "Local time 23:59:58 Sunday",
+    "inputs": {
+      "op": 52,
+      "key": 3,
+      "fields": {
+        "4": 23,
+        "5": 59,
+        "6": 58,
+        "7": 7
+      },
+      "bank": 0
+    },
+    "expected_bytes": "9b003403173b3a0700000000000000000088e59d",
+    "evidence": [
+      "bluetooth/BluetoothDeviceController.java:414-850; utils/CRC16M.java:18-24,61-68"
+    ],
+    "kind": "statically reconstructed from artifact tables, not hardware capture"
+  },
+  {
+    "id": "alarm-12",
+    "protocol": "P1",
+    "action": "Set pair 1/2, 07:30 daily Basic and 08:00 disabled Pro",
+    "inputs": {
+      "op": 52,
+      "key": 1,
+      "fields": {
+        "4": 7,
+        "5": 30,
+        "6": 255,
+        "7": 1,
+        "8": 8,
+        "9": 0,
+        "10": 0,
+        "11": 2
+      },
+      "bank": 1
+    },
+    "expected_bytes": "9b013401071eff0108000002000000000053f69d",
+    "evidence": [
+      "smali/bluetooth/BluetoothDeviceController.smali:1745-1914; activity/SnorFragment.java:302-306,357-373"
+    ],
+    "kind": "statically reconstructed from artifact tables, not hardware capture"
+  },
+  {
+    "id": "alarm-34",
+    "protocol": "P1",
+    "action": "Set pair 3/4, 09:15 Sun-only Basic and empty second record",
+    "inputs": {
+      "op": 52,
+      "key": 52,
+      "fields": {
+        "4": 9,
+        "5": 15,
+        "6": 192,
+        "7": 1
+      },
+      "bank": 4
+    },
+    "expected_bytes": "9b043434090fc001000000000000000000e5479d",
+    "evidence": [
+      "smali/bluetooth/BluetoothDeviceController.smali:1916-2081; activity/SnorFragment.java:357-373"
+    ],
+    "kind": "statically reconstructed from artifact tables, not hardware capture"
+  }
+]
