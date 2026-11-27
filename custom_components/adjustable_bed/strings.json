@@ -4753,6 +4753,7 @@
       }
     },
     "sensor": {
+      "myside_status": {"name": "My Side capabilities"},
       "silksnow": {"name": "Model"},
       "berun_head_massage": {
         "name": "Head massage level"
@@ -8246,6 +8247,36 @@
     }
   },
   "services": {
+    "myside": {
+      "name": "My Side repeat alarms and sleep link",
+      "description": "Query or change repeat alarms on Coaxing products, synchronize the local calendar, or query a Sleep product’s linked sensor name. Query alarms and receive list replies before changing them. Add can only replace an alarm explicitly deleted in this connection. A changed alarm needs fresh readback before another edit or toggle.",
+      "fields": {
+        "operation": {
+          "name": "Operation",
+          "description": "query, add, edit, delete, enable, sync, or name."
+        },
+        "alarm_id": {
+          "name": "Alarm number",
+          "description": "Existing alarm number for edit, delete or enable. Add uses the lowest number explicitly deleted in this connection and not subsequently reported or reused."
+        },
+        "hour": {
+          "name": "Hour"
+        },
+        "minute": {
+          "name": "Minute"
+        },
+        "mode": {
+          "name": "Preset"
+        },
+        "weekdays": {
+          "name": "Weekdays",
+          "description": "Monday is 0 and Sunday is 6. Leave empty to run once."
+        },
+        "enabled": {
+          "name": "Enabled"
+        }
+      }
+    },
     "suta_king_koil_confirm_alarm": {
       "name": "King Koil (SUTA): confirm existing alarm",
       "description": "Send the King Koil app’s existing-alarm Confirm command (DA). Its firmware edit or delete effect is unverified. Each targeted physical receiver has its own alarms.",
