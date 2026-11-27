@@ -251,3 +251,21 @@ async def test_shared_names_only_offer_berun_as_explicit_app_candidate(hass):
 
     result = detect_bed_type_detailed(_make_service_info(name="smartbedBERUN"))
     assert result.bed_type != "berun" and "berun" in (result.ambiguous_types or [])
+
+
+@pytest.mark.parametrize("version", tuple(app.PROFILES))
+async def test_each_version_can_submit_final_settings(hass, version):
+    from unittest.mock import patch
+
+    from custom_components.adjustable_bed.config_flow import AdjustableBedConfigFlow
+
+    flow = AdjustableBedConfigFlow()
+    flow.hass, flow.context = hass, {}
+    flow._manual_data = {CONF_ADDRESS: "AA:BB:CC:DD:01:03", "bed_type": "berun"}
+    with patch.object(flow, "_async_finish_family_route", new=AsyncMock()):
+        await flow.async_step_profile_questions({"protocol_variant": version})
+    flow._final_settings_then = "verify"
+    with patch.object(flow, "_finish_with_verify", new=AsyncMock()) as finish:
+        await flow.async_step_finish_settings({"name": "BERUN"})
+    finish.assert_awaited_once()
+    assert finish.await_args.args[0]["protocol_variant"] == version

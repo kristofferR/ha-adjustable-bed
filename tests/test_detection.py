@@ -359,7 +359,7 @@ class TestDetectBedTypeByServiceUUID:
         assert result.confidence == 0.9
         assert "name:okin_ble" in result.signals
         assert "manufacturer_payload:btcb" in result.signals
-        assert result.ambiguous_types == [BED_TYPE_MALOUF_NEW_OKIN, "resident", "rize_remedy_ii", "mline"]
+        assert result.ambiguous_types == [BED_TYPE_MALOUF_NEW_OKIN, "resident", "rize_remedy_ii", "berun", "mline"]
 
     def test_lucid_l600_retail_model_does_not_collapse_protocols(self):
         """Two confirmed L600 signatures must continue to select different framing."""
@@ -1013,7 +1013,7 @@ class TestDetectBedTypeByManufacturerData:
         assert "name:smartbed428" in result.signals
         assert "manufacturer_payload:ab0102" in result.signals
         # Explicit app hints leave the proven Malouf route and confidence intact.
-        assert result.ambiguous_types == ["eshine_okin", "resident", "simmons_blue", "mline"]
+        assert result.ambiguous_types == ["eshine_okin", "resident", "simmons_blue", "berun", "mline"]
 
     def test_cb24_ab_payload_still_detects_cb24(self):
         """Known CB24AB advertisements must keep the CB24 detection path."""
