@@ -457,6 +457,7 @@ _BED_TRAITS: Final[dict[str, BedTraits]] = {
             "legs": SERTA_MP_REMOTE_LEGS_MAX_ANGLE,
         },
     ),
+    "meisemobell": replace(_NO_ANGLES_SCOPED, owns_device_info_reads=True, connection_timeout=5),
     BED_TYPE_SIMMONS: _NO_ANGLES,
     BED_TYPE_SIMMONS_BLUE: replace(_NO_ANGLES, connection_timeout=5.0),
     BED_TYPE_SLEEP_NUMBER: _PERCENT_FEEDBACK_SCOPED,

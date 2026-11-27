@@ -1,0 +1,485 @@
+[
+  {
+    "id": "P1-stop",
+    "protocol": "P1",
+    "action": "stop",
+    "inputs": {
+      "asset_key": "stop"
+    },
+    "expected_bytes": "e6 fe 16 00 00 00 00 00 05",
+    "evidence": [
+      "E3",
+      "E5",
+      "E6"
+    ]
+  },
+  {
+    "id": "P1-lighting",
+    "protocol": "P1",
+    "action": "lighting",
+    "inputs": {
+      "asset_key": "lighting"
+    },
+    "expected_bytes": "e6 fe 16 00 00 02 00 00 03",
+    "evidence": [
+      "E3",
+      "E5",
+      "E6"
+    ]
+  },
+  {
+    "id": "P1-headUp",
+    "protocol": "P1",
+    "action": "headUp",
+    "inputs": {
+      "asset_key": "headUp"
+    },
+    "expected_bytes": "e6 fe 16 01 00 00 00 00 04",
+    "evidence": [
+      "E3",
+      "E5",
+      "E6"
+    ]
+  },
+  {
+    "id": "P1-headDown",
+    "protocol": "P1",
+    "action": "headDown",
+    "inputs": {
+      "asset_key": "headDown"
+    },
+    "expected_bytes": "e6 fe 16 02 00 00 00 00 03",
+    "evidence": [
+      "E3",
+      "E5",
+      "E6"
+    ]
+  },
+  {
+    "id": "P1-footUp",
+    "protocol": "P1",
+    "action": "footUp",
+    "inputs": {
+      "asset_key": "footUp"
+    },
+    "expected_bytes": "e6 fe 16 04 00 00 00 00 01",
+    "evidence": [
+      "E3",
+      "E5",
+      "E6"
+    ]
+  },
+  {
+    "id": "P1-footDown",
+    "protocol": "P1",
+    "action": "footDown",
+    "inputs": {
+      "asset_key": "footDown"
+    },
+    "expected_bytes": "e6 fe 16 08 00 00 00 00 fd",
+    "evidence": [
+      "E3",
+      "E5",
+      "E6"
+    ]
+  },
+  {
+    "id": "P1-memoryAntiSnore",
+    "protocol": "P1",
+    "action": "memoryAntiSnore",
+    "inputs": {
+      "asset_key": "memoryAntiSnore"
+    },
+    "expected_bytes": "e6 fe 16 00 80 00 00 00 85",
+    "evidence": [
+      "E3",
+      "E5",
+      "E6"
+    ]
+  },
+  {
+    "id": "P1-memory1M5",
+    "protocol": "P1",
+    "action": "memory1M5",
+    "inputs": {
+      "asset_key": "memory1M5"
+    },
+    "expected_bytes": "e6 fe 16 00 00 01 00 00 04",
+    "evidence": [
+      "E3",
+      "E5",
+      "E6"
+    ]
+  },
+  {
+    "id": "P1-memory2M6",
+    "protocol": "P1",
+    "action": "memory2M6",
+    "inputs": {
+      "asset_key": "memory2M6"
+    },
+    "expected_bytes": "e6 fe 16 00 00 04 00 00 01",
+    "evidence": [
+      "E3",
+      "E5",
+      "E6"
+    ]
+  },
+  {
+    "id": "P1-memoryTvpc",
+    "protocol": "P1",
+    "action": "memoryTvpc",
+    "inputs": {
+      "asset_key": "memoryTvpc"
+    },
+    "expected_bytes": "e6 fe 16 00 40 00 00 00 c5",
+    "evidence": [
+      "E3",
+      "E5",
+      "E6"
+    ]
+  },
+  {
+    "id": "P1-memoryZero",
+    "protocol": "P1",
+    "action": "memoryZero",
+    "inputs": {
+      "asset_key": "memoryZero"
+    },
+    "expected_bytes": "e6 fe 16 00 10 00 00 00 f5",
+    "evidence": [
+      "E3",
+      "E5",
+      "E6"
+    ]
+  },
+  {
+    "id": "P1-memoryFlat",
+    "protocol": "P1",
+    "action": "memoryFlat",
+    "inputs": {
+      "asset_key": "memoryFlat"
+    },
+    "expected_bytes": "e6 fe 16 00 00 00 08 00 fd",
+    "evidence": [
+      "E3",
+      "E5",
+      "E6"
+    ]
+  },
+  {
+    "id": "P2-stop",
+    "protocol": "P2",
+    "action": "stop",
+    "inputs": {
+      "asset_key": "stop"
+    },
+    "expected_bytes": "05 02 00 00 00 00 00",
+    "evidence": [
+      "E3",
+      "E5",
+      "E6"
+    ]
+  },
+  {
+    "id": "P2-lighting",
+    "protocol": "P2",
+    "action": "lighting",
+    "inputs": {
+      "asset_key": "lighting"
+    },
+    "expected_bytes": "05 02 00 02 00 00 00",
+    "evidence": [
+      "E3",
+      "E5",
+      "E6"
+    ]
+  },
+  {
+    "id": "P2-headUp",
+    "protocol": "P2",
+    "action": "headUp",
+    "inputs": {
+      "asset_key": "headUp"
+    },
+    "expected_bytes": "05 02 00 00 00 01 00",
+    "evidence": [
+      "E3",
+      "E5",
+      "E6"
+    ]
+  },
+  {
+    "id": "P2-headDown",
+    "protocol": "P2",
+    "action": "headDown",
+    "inputs": {
+      "asset_key": "headDown"
+    },
+    "expected_bytes": "05 02 00 00 00 02 00",
+    "evidence": [
+      "E3",
+      "E5",
+      "E6"
+    ]
+  },
+  {
+    "id": "P2-footUp",
+    "protocol": "P2",
+    "action": "footUp",
+    "inputs": {
+      "asset_key": "footUp"
+    },
+    "expected_bytes": "05 02 00 00 00 04 00",
+    "evidence": [
+      "E3",
+      "E5",
+      "E6"
+    ]
+  },
+  {
+    "id": "P2-footDown",
+    "protocol": "P2",
+    "action": "footDown",
+    "inputs": {
+      "asset_key": "footDown"
+    },
+    "expected_bytes": "05 02 00 00 00 08 00",
+    "evidence": [
+      "E3",
+      "E5",
+      "E6"
+    ]
+  },
+  {
+    "id": "P2-memoryAntiSnore",
+    "protocol": "P2",
+    "action": "memoryAntiSnore",
+    "inputs": {
+      "asset_key": "memoryAntiSnore"
+    },
+    "expected_bytes": "05 02 00 00 80 00 00",
+    "evidence": [
+      "E3",
+      "E5",
+      "E6"
+    ]
+  },
+  {
+    "id": "P2-memory1M5",
+    "protocol": "P2",
+    "action": "memory1M5",
+    "inputs": {
+      "asset_key": "memory1M5"
+    },
+    "expected_bytes": "05 02 00 01 00 00 00",
+    "evidence": [
+      "E3",
+      "E5",
+      "E6"
+    ]
+  },
+  {
+    "id": "P2-memory2M6",
+    "protocol": "P2",
+    "action": "memory2M6",
+    "inputs": {
+      "asset_key": "memory2M6"
+    },
+    "expected_bytes": "05 02 00 04 00 00 00",
+    "evidence": [
+      "E3",
+      "E5",
+      "E6"
+    ]
+  },
+  {
+    "id": "P2-memoryTvpc",
+    "protocol": "P2",
+    "action": "memoryTvpc",
+    "inputs": {
+      "asset_key": "memoryTvpc"
+    },
+    "expected_bytes": "05 02 00 00 40 00 00",
+    "evidence": [
+      "E3",
+      "E5",
+      "E6"
+    ]
+  },
+  {
+    "id": "P2-memoryZero",
+    "protocol": "P2",
+    "action": "memoryZero",
+    "inputs": {
+      "asset_key": "memoryZero"
+    },
+    "expected_bytes": "05 02 00 00 10 00 00",
+    "evidence": [
+      "E3",
+      "E5",
+      "E6"
+    ]
+  },
+  {
+    "id": "P2-memoryFlat",
+    "protocol": "P2",
+    "action": "memoryFlat",
+    "inputs": {
+      "asset_key": "memoryFlat"
+    },
+    "expected_bytes": "05 02 08 00 00 00 00",
+    "evidence": [
+      "E3",
+      "E5",
+      "E6"
+    ]
+  },
+  {
+    "id": "P1-alarm-dynamic",
+    "protocol": "P1",
+    "action": "set both alarms",
+    "inputs": {
+      "first": [
+        6,
+        30,
+        130,
+        17
+      ],
+      "second": [
+        7,
+        45,
+        132,
+        19
+      ]
+    },
+    "expected_bytes": "ed 80 03 06 1e 82 11 07 2d 84 13 00 00 00 00 0d",
+    "evidence": [
+      "E8"
+    ]
+  },
+  {
+    "id": "P1-disable-alarms",
+    "protocol": "P1",
+    "action": "close all alarms",
+    "inputs": {
+      "first": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "second": [
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    "expected_bytes": "ed 80 03 00 00 00 00 00 00 00 00 00 00 00 00 8f",
+    "evidence": [
+      "E8"
+    ]
+  },
+  {
+    "id": "P2-alarm-dynamic",
+    "protocol": "P2",
+    "action": "enable slot1",
+    "inputs": {
+      "slot": 1,
+      "hour": 6,
+      "minute": 30,
+      "week": 130,
+      "kind": 5
+    },
+    "expected_bytes": "07 06 82 05 06 1e 00 01 00",
+    "evidence": [
+      "E8"
+    ]
+  },
+  {
+    "id": "P1-clock",
+    "protocol": "P1",
+    "action": "clock2026-11-27T06:30:00",
+    "inputs": {
+      "year": 2026,
+      "month": 11,
+      "day": 27,
+      "hour": 6,
+      "minute": 30,
+      "second": 0
+    },
+    "expected_bytes": "e7 80 01 7e 0a 1b 06 1e 00 d0",
+    "evidence": [
+      "E8"
+    ]
+  },
+  {
+    "id": "P2-clock",
+    "protocol": "P2",
+    "action": "clock2026-11-27T06:30:00",
+    "inputs": {
+      "year": 2026,
+      "month": 11,
+      "day": 27,
+      "weekday": 5,
+      "hour": 6,
+      "minute": 30,
+      "second": 0
+    },
+    "expected_bytes": "07 04 1a 0b 1b 05 06 1e 00",
+    "evidence": [
+      "E8"
+    ]
+  },
+  {
+    "id": "P2-parser",
+    "protocol": "P2",
+    "action": "raw alarm receive",
+    "inputs": {
+      "notification": "a5 0c 00 00 82 05 06 1e 00 01"
+    },
+    "expected_bytes": "a5 0c 00 00 82 05 06 1e 00 01",
+    "expected_state": {
+      "slot": 0,
+      "hour": 6,
+      "minute": 30,
+      "week": 130,
+      "type": 5,
+      "open": 1
+    },
+    "evidence": [
+      "E9"
+    ]
+  },
+  {
+    "id": "P1-parser",
+    "protocol": "P1",
+    "action": "raw alarm receive",
+    "inputs": {
+      "notification": "ed 80 03 06 1e 82 11 07 2d 00 13 00"
+    },
+    "expected_bytes": "ed 80 03 06 1e 82 11 07 2d 00 13 00",
+    "expected_state": {
+      "first": [
+        6,
+        30,
+        130,
+        17,
+        1,
+        0
+      ],
+      "second": [
+        7,
+        45,
+        0,
+        19,
+        0,
+        1
+      ]
+    },
+    "evidence": [
+      "E9"
+    ]
+  }
+]

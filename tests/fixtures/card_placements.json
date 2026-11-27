@@ -1587,6 +1587,18 @@
  "button:maxprime_massage_timer_toggle": {
   "card_section": "massage"
  },
+ "button:meisemobell_close_alarms": {
+  "card_section": "utility"
+ },
+ "button:meisemobell_refresh_alarms": {
+  "card_section": "utility"
+ },
+ "button:meisemobell_reset_memories": {
+  "card_section": "utility"
+ },
+ "button:meisemobell_reset_settings": {
+  "card_section": "utility"
+ },
  "button:mid_body_down": {
   "card_section": "motors",
   "card_role": "down",
@@ -5349,6 +5361,15 @@
   "card_role": "timer"
  },
  "sensor:massage_timer_mode": {
+  "card_section": "hidden"
+ },
+ "sensor:meisemobell_alarm_1": {
+  "card_section": "hidden"
+ },
+ "sensor:meisemobell_alarm_2": {
+  "card_section": "hidden"
+ },
+ "sensor:meisemobell_massage_time": {
   "card_section": "hidden"
  },
  "sensor:mlily_remote": {

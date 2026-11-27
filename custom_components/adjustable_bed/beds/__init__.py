@@ -97,6 +97,7 @@ if TYPE_CHECKING:
     from .luniosmart.controller import LunioSmartController as LunioSmartController
     from .majestichome.controller import MajesticHomeController as MajesticHomeController
     from .malouf.app import MaloufAppController as MaloufAppController
+    from .meisemobell.controller import MeisemobellController as MeisemobellController
     from .mlily0.controller import MlilyController as MlilyController
     from .mlily_remote.controller import MlilyRemoteController as MlilyRemoteController
     from .motion_bed.controller import MotionBedController as MotionBedController
@@ -291,6 +292,7 @@ _EXPORT_MODULES = {
     "RizeController": "kaidi.rize",
     "ComfyController": "kaidi.comfy",
     "KaidiController": "kaidi.controller",
+    "MeisemobellController": "meisemobell.controller",
     "LevaController": "leva",
     "LikimioController": "dreamsense.likimio",
     "MuuegmController": "dreamsense.muuegm",
@@ -420,6 +422,7 @@ __all__ = [
     "LinakController",
     "AmbientController",
     "VindoController",
+    "MeisemobellController",
     "LevaController",
     "LikimioController",
     "LinxController",
