@@ -1190,6 +1190,9 @@
   "card_role": "up",
   "card_motor": "headrest"
  },
+ "button:hestia_cancel_preset": {
+  "card_section": "presets"
+ },
  "button:hip_down": {
   "card_section": "motors",
   "card_role": "down",
@@ -4558,6 +4561,21 @@
  "select:heat_level": {
   "card_section": "climate"
  },
+ "select:hestia_hour": {
+  "card_section": "utility"
+ },
+ "select:hestia_intensity": {
+  "card_section": "massage"
+ },
+ "select:hestia_memory": {
+  "card_section": "utility"
+ },
+ "select:hestia_minute": {
+  "card_section": "utility"
+ },
+ "select:hestia_wave": {
+  "card_section": "massage"
+ },
  "select:hjbed_layout": {
   "card_section": "utility"
  },
@@ -6028,6 +6046,15 @@
  },
  "switch:flexispot_snore": {
   "card_section": "utility"
+ },
+ "switch:hestia_alarm": {
+  "card_section": "utility"
+ },
+ "switch:hestia_enhancement": {
+  "card_section": "utility"
+ },
+ "switch:hestia_massage": {
+  "card_section": "massage"
  },
  "switch:jerome_massage": {
   "card_section": "massage"
