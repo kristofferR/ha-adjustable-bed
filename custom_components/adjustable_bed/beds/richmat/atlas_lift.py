@@ -6,10 +6,10 @@ from dataclasses import replace
 from typing import TYPE_CHECKING
 
 from ...card import CARD_MASSAGE, CARD_PRESET_SAVE
-from ...profiles.richmat import ATLAS_LIFT, ATLAS_LIFT_INITIALIZATION, Button
+from ...profiles.richmat import ATLAS_LIFT, ATLAS_LIFT_INITIALIZATION, Button, RichmatProfile
 from ..base import BedController
 from ..entity_specs import ControllerButtonSpec, MotorControlSpec
-from .fixed import FixedRichmatAppController, select_fixed_link
+from .fixed import FixedRichmatAppController, _Link, select_fixed_link
 
 if TYPE_CHECKING:
     from bleak import BleakClient
@@ -17,16 +17,18 @@ if TYPE_CHECKING:
     from ...coordinator import AdjustableBedCoordinator
 
 
-def select_link(client: BleakClient):
+def select_link(client: BleakClient) -> _Link:
     return select_fixed_link(client, ATLAS_LIFT, error_key="atlas_lift_gatt")
 
 
 class AtlasLiftController(FixedRichmatAppController):
     """Cama Lift's fixed controls over the shared held app session."""
 
-    def __init__(self, coordinator: AdjustableBedCoordinator) -> None:
+    def __init__(
+        self, coordinator: AdjustableBedCoordinator, *, profile: RichmatProfile = ATLAS_LIFT
+    ) -> None:
         super().__init__(
-            coordinator, ATLAS_LIFT, ATLAS_LIFT_INITIALIZATION, gatt_error_key="atlas_lift_gatt"
+            coordinator, profile, ATLAS_LIFT_INITIALIZATION, gatt_error_key="atlas_lift_gatt"
         )
 
     @property

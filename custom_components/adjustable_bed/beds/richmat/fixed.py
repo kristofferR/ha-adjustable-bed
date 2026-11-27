@@ -166,7 +166,10 @@ class FixedRichmatAppController(RichmatProfileController):
         self._cleanup_context = None
 
     def _build_command(self, command_byte: int) -> bytes:
-        return codec.function(command_byte, single=self._current_link().single)
+        return self._encode(self._current_link(), command_byte)
+
+    def _encode(self, link: _Link, command_byte: int) -> bytes:
+        return codec.function(command_byte, single=link.single)
 
     async def _write_on(
         self,
@@ -225,7 +228,7 @@ class FixedRichmatAppController(RichmatProfileController):
         link = self._current_link()
         cancel = self._coordinator.cancel_command
         count, repeat_ms = self.motor_pulse_settings()
-        command = codec.function(command_byte, single=link.single)
+        command = self._encode(link, command_byte)
         attempted = False
         loop = asyncio.get_running_loop()
         repeat_s = repeat_ms / 1000
@@ -289,7 +292,7 @@ class FixedRichmatAppController(RichmatProfileController):
         assert self.profile.stop is not None
         await self._write_on(
             link,
-            codec.function(self.profile.stop, single=link.single),
+            self._encode(link, self.profile.stop),
             asyncio.Event(),
             track_command_write=False,
         )

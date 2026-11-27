@@ -2260,3 +2260,7 @@ def render_topcare() -> str:
 
 
 BLOCKS.append((GUIDE, "topcare", render_topcare))
+
+from scripts.codec_docs import _comfort_bed  # noqa: E402
+
+BLOCKS.append((GUIDE, "comfort-bed", _comfort_bed.render))
