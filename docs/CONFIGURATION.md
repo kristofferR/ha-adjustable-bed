@@ -465,7 +465,7 @@ and Reconfigure's bed-type list keeps them by name.
 | Bed type | Choices covered by its guide |
 |----------|-----------------------------|
 | [Sleepy's Elite app](beds/sleepys.md#explicit-sleepys-elite-app-profile) | The control box the app lists, asked after the [Sleepy's question](beds/sleepys.md#home-assistant-setup) |
-| [Linak](beds/linak.md#profiles-and-model-variants) | Bed Control and Performance Series |
+| [Linak](beds/linak.md#profiles-and-model-variants) | Bed Control, Bed Connect, AA Control My Bed and Performance Series |
 | [Vindö](beds/vindo.md#detection--setup) | Carpe Diem Beds Vindö |
 | [Kaidi](beds/kaidi.md#command-families) | Seat 1, Seat 2, Seat 3, Seat 1+2 |
 | [Okin CST](beds/okin-nframe.md#okin-cst) | The Rize and Support products, asked by app name in the Okin question |

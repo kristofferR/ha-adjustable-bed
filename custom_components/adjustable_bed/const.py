@@ -1163,6 +1163,7 @@ LINAK_TIMER_CHAR_UUID: Final = "99fa0051-338a-1024-8a49-009c0215f78a"
 LINAK_DEVICE_NAME_UUID: Final = "00002a00-0000-1000-8000-00805f9b34fb"
 
 LINAK_VARIANT_BED_CONTROL: Final = "bed_control"
+LINAK_VARIANT_AA_CONTROL_MY_BED: Final = "aa_control_my_bed"
 LINAK_VARIANT_PERFORMANCE: Final = "performance_legacy"
 
 # Linak position calibration
@@ -1928,6 +1929,7 @@ REMACRO_VARIANTS: Final = {
 LINAK_VARIANTS: Final = {
     VARIANT_AUTO: AUTOMATIC_LABEL,
     LINAK_VARIANT_BED_CONTROL: "Bed Control or Bed Connect app",
+    LINAK_VARIANT_AA_CONTROL_MY_BED: "AA Control My Bed app",
     LINAK_VARIANT_PERFORMANCE: "Performance Series app (older bases)",
 }
 
