@@ -403,6 +403,7 @@ actions; its bounded `hold_control` behavior has separate timing in the
 | King Koil Bed app | `kingkoil` | 10 | 300 ms |
 | Leggett & Platt MlRM remote | `leggett_wilinke` | 10 | 110 ms |
 | Limoss and Stawett remotes | `limoss` | 12 | 80 ms |
+| Linak (Bed Control, Bed Connect and Performance Series apps): Carpe Diem Beds app | `linak` `carpe_diem` | 4 | 300 ms |
 | Linak (Bed Control, Bed Connect and Performance Series apps): Performance Series app (older bases) | `linak` `performance_legacy` | 4 | 300 ms |
 | Linx app | `linx` | 334 | 3 ms |
 | Logicdata SimplicityFrame (SILVERmotion) | `logicdata` | 10 | 30 ms |

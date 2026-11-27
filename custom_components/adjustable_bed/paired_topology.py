@@ -823,7 +823,10 @@ class ConcurrentTwoLinkTopology(_SideLaneTopology):
             session_bound = PAIRED_SESSION_BOUND_ABORTS.get()
             original_stops: dict[str, Callable[[], Awaitable[None]]] = {}
             for child, handle in prepared.values():
-                if child.address in session_bound:
+                controller = child.capability_controller
+                if child.address in session_bound or (
+                    controller is not None and controller.paired_abort_requires_registered_stop
+                ):
                     original_stops[child.address] = partial(stop_registered_session, handle)
                 elif (stop := handle.context.paired_abort_stop) is not None:
                     original_stops[child.address] = partial(stop, handle.context)

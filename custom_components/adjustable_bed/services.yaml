@@ -4459,6 +4459,37 @@ ambient_set_rgb:
           min: 0
           max: 255
 
+linak_move_sections:
+  fields:
+    device_id:
+      required: true
+      selector:
+        device:
+          integration: adjustable_bed
+          multiple: true
+    sections:
+      required: true
+      selector:
+        select:
+          multiple: true
+          options: [back, legs, head, feet]
+    direction:
+      required: true
+      selector:
+        select:
+          options: [up, down]
+    duration_ms:
+      required: true
+      selector:
+        number:
+          min: 100
+          max: 30000
+          unit_of_measurement: ms
+    side:
+      selector:
+        select:
+          options: [both, left, right]
+
 ergobq_scene:
   fields:
     device_id:

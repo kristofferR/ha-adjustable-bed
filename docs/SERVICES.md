@@ -2697,3 +2697,12 @@ Use `adjustable_bed.set_alarm` with a Ronco Motion `device_id` and optional pair
 `anti_snore` or `memory_1`. Equal local times schedule tomorrow. Set
 `enabled: false` to delete the once alarm. The last alarm result records a
 received acknowledgement. See [Ronco Motion](beds/richmat.md#ronco-motion).
+
+
+### Carpe Diem selected sections
+
+`adjustable_bed.linak_move_sections` moves selected `sections` (`back`, `legs`,
+`head`, `feet`) in one `direction` (`up` or `down`) for `duration_ms` (100–30000).
+It accepts `device_id` and optional `side` as the other movement actions do.
+Available sections follow the configured motor count. Three-section selection
+uses the app's ordered pair; see [Carpe Diem Beds](beds/linak.md#carpe-diem-beds).
