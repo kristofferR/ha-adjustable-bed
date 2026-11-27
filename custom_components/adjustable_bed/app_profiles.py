@@ -69,6 +69,7 @@ from .const import (
     BED_TYPE_LOGICDATA_APP,
     BED_TYPE_MALOUF_APP,
     BED_TYPE_MLILY,
+    BED_TYPE_MLILY0,
     BED_TYPE_MLILY_REMOTE,
     BED_TYPE_MOODBASE,
     BED_TYPE_MOTION_BED,
@@ -185,6 +186,7 @@ class SideProfile:
 _BY_BED_TYPE: Final[dict[str, SideProfile]] = {
     "ormatek": SideProfile("OrmatekTechnoSmart", frozenset({CONF_MOTOR_COUNT, CONF_HAS_MASSAGE, CONF_BLE_DEVICE_NAME}), variant_owned=True),
     "dorsal": SideProfile("Dorsal project and Roomi route", variant_owned=True),
+    "berun": SideProfile("BERUN", variant_owned=True),
     "nerum": SideProfile("Nerum", variant_owned=True),
     "relax_motion": SideProfile("Relax Motion", variant_owned=True),
     "smartbed": SideProfile("SmartBed", frozenset({CONF_HAS_MASSAGE}), variant_owned=True),
@@ -261,6 +263,7 @@ _BY_BED_TYPE: Final[dict[str, SideProfile]] = {
     "dreamsense": SideProfile("Dream Sense Bed", frozenset({CONF_PRODUCT_TYPE}), variant_owned=True),
     "saatva": SideProfile("Saatva", frozenset({CONF_PRODUCT_TYPE}), variant_owned=True),
     "bobpowerbase": SideProfile("Power Bob Base", variant_owned=True),
+    BED_TYPE_MLILY0: SideProfile("MLILY 3.1.1", variant_owned=True),
     BED_TYPE_MLILY_REMOTE: SideProfile("MLILY Remote", variant_owned=True),
     BED_TYPE_RICHMAT_CLASSIC_APPS: SideProfile("Classic Richmat apps", variant_owned=True),
     "bedgear": SideProfile("Bedgear"),

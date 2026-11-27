@@ -104,6 +104,7 @@ from .const import (
     ZSERIES_VARIANTS,
 )
 from .profiles.ambient import LAYOUTS as AMBIENT_LAYOUTS
+from .profiles.berun import PROFILES as BERUN_PROFILES
 from .profiles.bobpowerbase import PROFILE_CHOICES as BOB_PROFILES
 from .profiles.casper import CASPER_BASE_VARIANTS
 from .profiles.comfort_enhancement3 import CHOICES as APEX_CHOICES
@@ -117,6 +118,7 @@ from .profiles.likimio import CHOICES as LIKIMIO_CHOICES
 from .profiles.linx import TRANSPORT_CHOICES as LINX_TRANSPORTS
 from .profiles.luuna import VARIANTS as LUUNA_VARIANTS
 from .profiles.majestichome import PROFILE_CHOICES as MAJESTICHOME_PROFILES
+from .profiles.mlily0 import VARIANTS as MLILY0_PROFILES
 from .profiles.mlily_choices import PROFILE_CHOICES as MLILY_PROFILES
 from .profiles.mlily_remote import VARIANTS as MLILY_REMOTE_PROFILES
 from .profiles.okimiki import PROFILE_CHOICES as OKIMIKI_PROFILES
@@ -174,6 +176,7 @@ MLINE_PROTOCOL_LABELS: Final = {
 # Single source of truth for bed types with variants
 VARIANTS_BY_BED_TYPE: dict[str, dict[str, str]] = {
     BED_TYPE_AMBIENT: AMBIENT_LAYOUTS,
+    "berun": {key: f"Version {profile.version}" for key, profile in BERUN_PROFILES.items()},
     BED_TYPE_SLEEPTIME: dict(SLEEPTIME_SELECTORS),
     "ormatek": {"okin15": "Bluetooth name starts with Okin", "okin24": "Bluetooth name starts with SmartBed"},
     "leva": dict(LEVA_RECEIVERS),
@@ -212,6 +215,7 @@ VARIANTS_BY_BED_TYPE: dict[str, dict[str, str]] = {
     "personal_comfort": PERSONAL_COMFORT_ROUTES,
     "instant_comfort": INSTANT_COMFORT_ROUTES,
     "mlily_remote": MLILY_REMOTE_PROFILES,
+    "mlily0": MLILY0_PROFILES,
     "mline": {"auto": AUTOMATIC_LABEL, **MLINE_PROTOCOL_LABELS},
     "sinca_comfort": {"auto": AUTOMATIC_LABEL, **SINCA_RECEIVERS},
     BED_TYPE_KAIDI: KAIDI_VARIANTS,

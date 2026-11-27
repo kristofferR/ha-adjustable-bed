@@ -2644,6 +2644,11 @@ Use `enso2_aroma_schedule` with `device_id`, `mode_2_minutes` and
 the side of a two-address pair through the standard `side` field. The receiver
 must report the corresponding accessory over Bluetooth.
 
+MLILY 3.1.1 (`com.richmat.mlily0`) uses **Set alarm** for its product-specific
+wake actions and once/daily repeat, and **Set bed clock** for local time. See
+[MLILY 3.1.1](beds/richmat.md#mlily-311).
+
+
 JobsAI sleep and wake alarms use `adjustable_bed.set_alarm`, with slot 1 for
 sleep and slot 2 for wake. See the [JobsAI guide](beds/okin-nframe.md#jobsai).
 

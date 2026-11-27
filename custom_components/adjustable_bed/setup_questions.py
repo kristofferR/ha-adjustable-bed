@@ -96,6 +96,7 @@ from .const import (
     BED_TYPE_MALOUF_LEGACY_OKIN,
     BED_TYPE_MALOUF_NEW_OKIN,
     BED_TYPE_MLILY,
+    BED_TYPE_MLILY0,
     BED_TYPE_MLILY_REMOTE,
     BED_TYPE_MOODBASE,
     BED_TYPE_MOTION_BED,
@@ -299,6 +300,7 @@ from .profiles.jerome_adjustable_base import PRODUCT_CHOICES as JEROME_ADJUSTABL
 from .profiles.likimio import ABM10 as LIKIMIO_ABM10
 from .profiles.likimio import CHOICES as LIKIMIO_CHOICES
 from .profiles.majestichome import PROFILE_CHOICES as MAJESTICHOME_PROFILES
+from .profiles.mlily0 import VARIANTS as MLILY0_PROFILES
 from .profiles.mlily_choices import PROFILE_CHOICES as MLILY_PROFILES
 from .profiles.mlily_remote import VARIANTS as MLILY_REMOTE_PROFILES
 from .profiles.okimiki import PROFILE_CHOICES as OKIMIKI_PROFILES
@@ -385,6 +387,7 @@ _OWNED_BY_BED_TYPE: Final[dict[str, frozenset[str]]] = {
     "dreamsense": _APP_DEFINED - {CONF_PROTOCOL_VARIANT, CONF_MOTOR_PULSE_COUNT},
     "saatva": _APP_DEFINED - {CONF_PROTOCOL_VARIANT, CONF_MOTOR_PULSE_COUNT},
     "bobpowerbase": _APP_DEFINED - {CONF_PROTOCOL_VARIANT},
+    BED_TYPE_MLILY0: _APP_DEFINED - {CONF_PROTOCOL_VARIANT},
     BED_TYPE_MLILY_REMOTE: _APP_DEFINED - {CONF_PROTOCOL_VARIANT},
     BED_TYPE_RONCO_MOTION: _APP_DEFINED - {CONF_PROTOCOL_VARIANT, CONF_MOTOR_PULSE_COUNT},
     BED_TYPE_HJBED: _APP_DEFINED - {CONF_PROTOCOL_VARIANT, CONF_MOTOR_PULSE_COUNT},
@@ -1870,6 +1873,16 @@ def _personal_comfort_settings(data: Mapping[str, Any]) -> dict[str, Any]:
             CONF_DISABLE_ANGLE_SENSING: True}
 
 
+def _mlily0_settings(data: Mapping[str, Any]) -> dict[str, Any]:
+    from .profiles.mlily0 import ACTIONS, PROFILES
+
+    profile = PROFILES.get(str(data.get(CONF_PROTOCOL_VARIANT)))
+    axes = sum(ACTIONS[i][0].endswith("Up") for i in profile.row[1]) if profile else 2
+    return {CONF_MOTOR_COUNT: axes, CONF_HAS_MASSAGE: bool(profile and profile.row[2]),
+            CONF_DISABLE_ANGLE_SENSING: True, CONF_MOTOR_PULSE_COUNT: 10,
+            CONF_MOTOR_PULSE_DELAY_MS: 100}
+
+
 def _mlily_remote_settings(data: Mapping[str, Any]) -> dict[str, Any]:
     from .profiles.mlily_remote import PROFILES
 
@@ -2619,6 +2632,16 @@ def _symphony_errors(data: Mapping[str, Any]) -> dict[str, str]:
     return {}
 
 
+def _berun_seed(_hass: HomeAssistant, data: Mapping[str, Any], discovered: BluetoothServiceInfoBleak | None) -> dict[str, Any]:
+    from .profiles.berun import PROFILES, advertisement
+    result = dict(data)
+    if discovered is not None and result.get(CONF_PROTOCOL_VARIANT) not in PROFILES:
+        variant = advertisement(discovered.name or "", discovered.manufacturer_data or {})
+        if variant is not None:
+            result[CONF_PROTOCOL_VARIANT] = variant
+    return result
+
+
 def _nerum_seed(_hass: HomeAssistant, data: Mapping[str, Any], discovered: BluetoothServiceInfoBleak | None) -> dict[str, Any]:
     from .profiles.nerum import advertisement
 
@@ -2833,6 +2856,16 @@ SETUP_PROFILES: Final[dict[str, SetupProfile]] = {
                            "value": ["restored", "roomi"]}),
         ),
         validate=_dorsal_errors, imports=("profiles.dorsal",),
+    ),
+    "berun": SetupProfile(
+        owns={CONF_MOTOR_COUNT: 2, CONF_HAS_MASSAGE: False,
+              CONF_DISABLE_ANGLE_SENSING: True, CONF_MOTOR_PULSE_DELAY_MS: 200},
+        questions=(Question(CONF_PROTOCOL_VARIANT, {
+            "v6": "Version 6: E6 / FFE5", "v7": "Version 7: ORE / 1000",
+            "v8": "Version 8: Nordic (light unavailable)",
+            "v9": "Version 9: Nordic",
+        }, REQUIRED),),
+        seed=_berun_seed, imports=("profiles.berun",),
     ),
     "nerum": SetupProfile(
         owns={CONF_MOTOR_COUNT: SET_BY_PROFILE, CONF_HAS_MASSAGE: False,
@@ -3468,6 +3501,11 @@ SETUP_PROFILES: Final[dict[str, SetupProfile]] = {
         "bobpowerbase",
         questions=(Question(CONF_PROTOCOL_VARIANT, BOB_PROFILES),
                    Question(CONF_PRODUCT_TYPE, BOB_LAYOUTS, "standard")),
+    ),
+    BED_TYPE_MLILY0: _asking(
+        BED_TYPE_MLILY0,
+        questions=(Question(CONF_PROTOCOL_VARIANT, MLILY0_PROFILES, searchable=True),),
+        derive=_mlily0_settings,
     ),
     BED_TYPE_MLILY_REMOTE: _asking(
         BED_TYPE_MLILY_REMOTE,
