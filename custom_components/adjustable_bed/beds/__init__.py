@@ -79,6 +79,7 @@ if TYPE_CHECKING:
     from .keeson.jalon import JalonController as JalonController
     from .keeson.kingkoil import KingKoilController as KingKoilController
     from .keeson.ormatek import OrmatekController as OrmatekController
+    from .keeson.powersbedding import PowersBeddingController as PowersBeddingController
     from .keeson.sleep_assist_pro import SleepAssistProController as SleepAssistProController
     from .keeson.somos import SomosController as SomosController
     from .keeson.symphony_sleep import SymphonySleepController as SymphonySleepController
@@ -218,6 +219,7 @@ _EXPORT_MODULES = {
     "GoodVibeController": "goodvibe.controller",
     "MajesticHomeController": "majestichome.controller",
     "MotoMotionController": "motomotion.controller",
+    "PowersBeddingController": "keeson.powersbedding",
     "HestiaController": "hestia.controller",
     "HJBedController": "hjbed.controller",
     "RichmatAppController": "richmat_app.controller",

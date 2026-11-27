@@ -436,6 +436,8 @@ class AdjustableBedMassageTimerSelect(AdjustableBedEntity, SelectEntity):
         self.entity_description = description
         self._attr_translation_key = description.translation_key or description.key
         self._attr_unique_id = coordinator.entity_unique_id(description.key)
+        controller = coordinator.capability_controller
+        self._attr_assumed_state = bool(controller and controller.massage_timer_is_assumed)
         self._timer_options = timer_options
         self._has_off = has_off
 
