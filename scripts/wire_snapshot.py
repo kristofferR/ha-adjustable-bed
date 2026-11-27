@@ -477,6 +477,11 @@ def plan_commands(controller: Any) -> list[Command]:
             )
     if _value(_value(controller, "_coordinator", None), "bed_type", None) == "betterliving2":
         plan = _betterliving2_historical_actions(plan, _value(controller, "wire", ""))
+    if controller._coordinator.bed_type == "ronco_motion":
+        from custom_components.adjustable_bed.alarm import AlarmRequest
+        for enabled, wake_action in ((True, "zero_g"), (True, "anti_snore"), (True, "memory_1"), (False, "none")):
+            alarm = AlarmRequest(enabled=enabled, hour=7, minute=15, wake_action=wake_action, reference_time=datetime.datetime.fromisoformat(FROZEN_NOW))
+            plan.append(Command(f"set_alarm:{enabled}:{wake_action}", _method("configure_alarm", alarm), True))
     if controller._coordinator.bed_type == "okimattmotion":
         from custom_components.adjustable_bed.alarm import AlarmRequest
 
@@ -1490,6 +1495,8 @@ def default_scenario(bed_type: str) -> Scenario:
     """The bed type in its default route, with the entry data it needs to build."""
     from custom_components.adjustable_bed import const
 
+    if bed_type == "ronco_motion":
+        return Scenario(id=bed_type, bed_type=bed_type, protocol_variant="economy", layout_id="ronco_motion:0")
     if bed_type == const.BED_TYPE_AMBIENT:
         return _ambient_scenario()
     if bed_type == const.BED_TYPE_LANGJUE:
@@ -1815,6 +1822,7 @@ def route_scenarios() -> list[Scenario]:
     from custom_components.adjustable_bed import const
 
     scenarios: list[Scenario] = [Scenario(id=f"enso:{n}", bed_type="enso", entry_data={"product_type": str(n), "motor_count": n}, layout_id="enso") for n in (3, 4)]
+    scenarios.extend(Scenario(id=f"ronco_motion:{layout}:{transport}", bed_type="ronco_motion", protocol_variant=layout, layout_id=f"ronco_motion:{transport}") for layout in ("economy", "premium") for transport in range(5))
     scenarios.extend(Scenario(id=f"sealy_posturematic:{n}", bed_type="sealy_posturematic",
                               entry_data={"product_type": str(n), "bed_type": "sealy_posturematic"}, layout_id="sealy_posturematic")
                      for n in (1, 2))
@@ -2846,7 +2854,7 @@ async def _connect(controller: Any, recorder: Recorder, clock: FakeClock) -> dic
                 session.store_device_info = lambda *_: None
             await controller.async_on_connect(session)
             return
-        if controller._coordinator.bed_type in {"symphony", "linx", "agingplace", "sleep_assistant", "sinca_comfort", "leva", "sleep_assist_pro", "atlas_lift", "ambient"}:
+        if controller._coordinator.bed_type in {"symphony", "linx", "agingplace", "sleep_assistant", "sinca_comfort", "leva", "sleep_assist_pro", "atlas_lift", "ambient", "ronco_motion"}:
             session = SimpleNamespace(
                 client=controller.client, is_current=lambda: True,
                 async_start_notify=lambda: controller.start_notify(lambda *_: None),
