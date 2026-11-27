@@ -87,3 +87,15 @@ async def test_kingkoil_stream_is_one_control_without_invented_release(selector:
     assert controller.execution.hold_for("head_up") == "stream"
     assert controller.profile.release.steps == ()
     assert controller.profile.refresh_ms == 300
+
+
+async def test_scott_living_refresh_has_no_release_or_composed_keys():
+    # Scott Living 1.0.2 ControlManager: fixed-delay100ms, UP/CANCEL ends
+    # the shared scheduler without a BLE release. No sustain/merged key proof.
+    from custom_components.adjustable_bed.profiles.scott_living import LAYOUTS, profile
+
+    for layout in LAYOUTS:
+        controller = await _create_controller_for_bed_type("scott_living")
+        controller.profile = profile(layout)
+        assert controller.execution.declared == {"hold"}
+        assert controller.execution.hold_for("head_up") == "stream"

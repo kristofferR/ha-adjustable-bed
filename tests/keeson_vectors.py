@@ -12,9 +12,9 @@ accepted report spells, from ``tests/fixtures/keeson_layout_app/vectors.json``, 
 codec encodes. Their alarm tables (``alarm_table.py``) are checked against the same
 fixture in ``tests/test_keeson_layout_app.py``. Where a report lists a key in its action
 table without spelling the frame, the frame the pre-v5 controller sent is added.
-The E6 controllers (Glideaway Motion, AdjustaMattress) do the same
-with their reports; Malouf legacy OKIN, Sleepy's BOX15 and Scott Living have no
-report and keep their pre-v5 frames. So do Cool Base, BF, Cherish and Comfort
+The E6 controllers (Glideaway Motion, AdjustaMattress, Scott Living) do the same
+with their reports; Malouf legacy OKIN and Sleepy's BOX15 have no report and keep
+their pre-v5 frames. So do Cool Base, BF, Cherish and Comfort
 Enhancements; their pre-v5 frames are those of the wire snapshot. Rondure has no
 report.
 """
@@ -1436,32 +1436,11 @@ FROZEN_FRAMES: dict[str, frozenset[str]] = {
             "e6fe162000000000e5",
         }
     ),
-    # pre-v5 ScottLivingController
+    # Scott Living 1.0.2 (25), all 26 builder cases, including uncalled values.
     "scott_living": frozenset(
-        {
-            "e6fe16000000000104",
-            "e6fe16000000010103",
-            "e6fe160000000801fc",
-            "e6fe16000001000103",
-            "e6fe16000002000102",
-            "e6fe16000080000184",
-            "e6fe16000100000103",
-            "e6fe16000200000102",
-            "e6fe16000400000100",
-            "e6fe160008000001fc",
-            "e6fe160010000001f4",
-            "e6fe160020000001e4",
-            "e6fe160040000001c4",
-            "e6fe16008000000184",
-            "e6fe16010000000103",
-            "e6fe16020000000102",
-            "e6fe16040000000100",
-            "e6fe160800000001fc",
-            "e6fe161000000001f4",
-            "e6fe162000000001e4",
-            "e6fe164000000001c4",
-            "e6fe16800000000184",
-        }
+        v["expected_bytes"].replace(" ", "") for v in json.loads(
+            (Path(__file__).parent / "fixtures/scott_living/vectors.json").read_text()
+        ) if "key" in v["inputs"]
     ),
     # com.okin.adjustamattress 1.6.0, model P1: tests/fixtures/adjustamattress vectors
     "adjustamattress": frozenset(

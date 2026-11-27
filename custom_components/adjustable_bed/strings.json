@@ -5938,6 +5938,9 @@
       "truemotion_firmware": {
         "name": "Firmware version"
       },
+      "scott_living_timer_indicator": {
+        "name": "Massage timer indicator"
+      },
       "kingkoil_timer_ui": {
         "name": "Massage timer indicator"
       },

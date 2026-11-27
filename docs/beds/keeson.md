@@ -143,7 +143,7 @@ their controls in their sections.
 Hold until release ([renewable holds](../SERVICES.md#renewable-holds)) is on
 every profile whose app streams a held key until release; the
 tables below mark each one. The Base, OKIN, Sino, JSON, KSBT CR, KSBT04C, Sleep
-Harmony, Purple, OKIN FFE, Rondure, Scott Living and Sleepy's BOX15 routes move
+Harmony, Purple, OKIN FFE, Rondure and Sleepy's BOX15 routes move
 in steps instead.
 
 ## Choosing a profile
@@ -232,7 +232,7 @@ only through **Reconfigure**, and the app review in Repairs opens it.
 | Glideaway Motion | bed type `glideaway_motion` | K1 `E6`, little-endian, side `00` | app controller | app controller | app controller | renewable lease |
 | Malouf legacy OKIN | bed type `malouf_legacy_okin` | K1 `E6`, little-endian, side `00` | app controller | app controller | app controller | renewable lease |
 | Sleepy's BOX15 | bed type `sleepys_box15` | K1 `E6`, little-endian, side `00` | app controller | app controller | app controller | no |
-| Scott Living | bed type `scott_living` | K1 `E6`, little-endian, side `01` | app controller | app controller | app controller | no |
+| Scott Living | bed type `scott_living` | K1 `E6`, little-endian, side `01` | app controller | app controller | app controller | renewable lease |
 | AdjustaMattress P1 | bed type `adjustamattress`, model P1 | K1 `E6`, little-endian, side `00` | app controller | app controller | app controller | renewable lease |
 | AdjustaMattress P2 | bed type `adjustamattress`, model P2 | K1 `E5`, big-endian | app controller | app controller | app controller | renewable lease |
 | Rondure | bed type `rondure` | K1 `E5`, little-endian | app controller | app controller | app controller | no |
@@ -2391,7 +2391,7 @@ frames of other families and keep it.
 | Glideaway Motion | `glideaway_motion` | K1 `E6`, little-endian, side `00` | `E6 FE 16 01 00 00 00 00 04` | `E6 FE 16 00 00 00 00 00 05` | renewable lease | [Glideaway Motion](#glideaway-motion) |
 | Malouf legacy OKIN | `malouf_legacy_okin` | K1 `E6`, little-endian, side `00` | `E6 FE 16 01 00 00 00 00 04` | `E6 FE 16 00 00 00 00 00 05` | renewable lease | [Malouf](malouf.md) |
 | Sleepy's BOX15 | `sleepys_box15` | K1 `E6`, little-endian, side `00` | `E6 FE 16 01 00 00 00 00 04` | `E6 FE 16 00 00 00 00 00 05` | no | [Sleepy's](sleepys.md) |
-| Scott Living | `scott_living` | K1 `E6`, little-endian, side `01` | `E6 FE 16 01 00 00 00 01 03` | `E6 FE 16 00 00 00 00 01 04` | no | [Scott Living](#scott-living) |
+| Scott Living | `scott_living` | K1 `E6`, little-endian, side `01` | `E6 FE 16 01 00 00 00 01 03` | none (ends refresh) | renewable lease | [Scott Living](#scott-living) |
 | AdjustaMattress P1 | `adjustamattress`, model P1 | K1 `E6`, little-endian, side `00` | `E6 FE 16 01 00 00 00 00 04` | `E6 FE 16 00 00 00 00 00 05` | renewable lease | [AdjustaMattress](#adjustamattress) |
 | AdjustaMattress P2 | `adjustamattress`, model P2 | K1 `E5`, big-endian | `E5 FE 16 00 00 00 01 05` | `E5 FE 16 00 00 00 00 06` | renewable lease | [AdjustaMattress](#adjustamattress) |
 | Rondure | `rondure` | K1 `E5`, little-endian (A/B: `E6`, side `01`/`02`) | `E5 FE 16 01 00 00 00 05` | `E5 FE 16 00 00 00 00 06` | no | [Rondure](#rondure) |
@@ -2551,49 +2551,124 @@ with the same zero frame.
 
 ### Scott Living
 
-**App:** Scott Living, `com.keeson.scottlivingrelease`
+**App:** [Scott Living](https://play.google.com/store/apps/details?id=com.keeson.scottlivingrelease) 1.0.2, `com.keeson.scottlivingrelease`
 
-**Status:** Not yet tested
+**Status:** Not yet tested on hardware
 
-Bed type `scott_living`, selected manually: it shares the FFE5 service with
-other Keeson beds and has no distinct name. It writes FFE9 and subscribes to
-FFE4. The side byte is always `01`. No app was analyzed; the frames are
-the pre-v5 controller's.
+#### Setup
+
+Choose **Scott Living**, then the layout that matches the app: A (8 buttons),
+B (13 buttons), or C (17 buttons). A is the default for existing entries.
+Bluetooth names beginning with case-sensitive `base` are shared with other
+apps, so they do not choose this app or a layout automatically.
+
+The receiver must expose writable FFE9 under FFE5 and notifying FFE4 under FFE0.
+The write mode follows the discovered characteristic properties: without response
+when offered, otherwise with response. The receiver's actual properties and
+firmware acceptance still need hardware confirmation. No pairing PIN is required
+by the app. Home Assistant manages the Bluetooth connection and MTU.
 
 #### Controls
+
+All layouts have back and legs controls plus Flat, Zero G, Reading and TV.
+B adds anti-snore, a light button, head/foot massage buttons and a massage timer
+button. C adds head tilt and the raw M and star buttons. M and star are utility
+buttons, disabled by default. Their meaning beyond a button press is unknown;
+they are not memory slots or save actions. Massage cycle levels and light state
+are not inferred from taps. There is no lumbar or position control.
 
 <!-- generated:keeson-scott-living -->
 <!-- Generated by scripts/generate_codec_docs.py from the codec and profile data. Edit those, not this block. -->
 
-| Command | Word | Frame |
-|---|---|---|
-| Motor Head Up | `0x00000001` | `E6 FE 16 01 00 00 00 01 03` |
-| Motor Head Down | `0x00000002` | `E6 FE 16 02 00 00 00 01 02` |
-| Motor Feet Up | `0x00000004` | `E6 FE 16 04 00 00 00 01 00` |
-| Motor Feet Down | `0x00000008` | `E6 FE 16 08 00 00 00 01 FC` |
-| Motor Tilt Up | `0x00000010` | `E6 FE 16 10 00 00 00 01 F4` |
-| Motor Tilt Down | `0x00000020` | `E6 FE 16 20 00 00 00 01 E4` |
-| Motor Lumbar Up | `0x00000040` | `E6 FE 16 40 00 00 00 01 C4` |
-| Motor Lumbar Down | `0x00000080` | `E6 FE 16 80 00 00 00 01 84` |
-| Memory 1 | `0x00000100` | `E6 FE 16 00 01 00 00 01 03` |
-| Massage Timer | `0x00000200` | `E6 FE 16 00 02 00 00 01 02` |
-| Massage Foot Up | `0x00000400` | `E6 FE 16 00 04 00 00 01 00` |
-| Massage Head Up | `0x00000800` | `E6 FE 16 00 08 00 00 01 FC` |
-| Zero G | `0x00001000` | `E6 FE 16 00 10 00 00 01 F4` |
-| Memory 2 | `0x00002000` | `E6 FE 16 00 20 00 00 01 E4` |
-| Memory 3 | `0x00004000` | `E6 FE 16 00 40 00 00 01 C4` |
-| Anti Snore | `0x00008000` | `E6 FE 16 00 80 00 00 01 84` |
-| Memory 4 | `0x00010000` | `E6 FE 16 00 00 01 00 01 03` |
-| Light | `0x00020000` | `E6 FE 16 00 00 02 00 01 02` |
-| Massage Head Down | `0x00800000` | `E6 FE 16 00 00 80 00 01 84` |
-| Massage Foot Down | `0x01000000` | `E6 FE 16 00 00 00 01 01 03` |
-| Preset Flat | `0x08000000` | `E6 FE 16 00 00 00 08 01 FC` |
-| Stop | `0x00000000` | `E6 FE 16 00 00 00 00 01 04` |
+| Layout | Control | Word | Frame | Execution |
+|---|---|---|---|---|
+| A | Back up | `0x00000001` | `E6 FE 16 01 00 00 00 01 03` | held |
+| A | Back down | `0x00000002` | `E6 FE 16 02 00 00 00 01 02` | held |
+| A | Legs up | `0x00000004` | `E6 FE 16 04 00 00 00 01 00` | held |
+| A | Legs down | `0x00000008` | `E6 FE 16 08 00 00 00 01 FC` | held |
+| A | Flat | `0x08000000` | `E6 FE 16 00 00 00 08 01 FC` | single |
+| A | Zero G | `0x00001000` | `E6 FE 16 00 10 00 00 01 F4` | single |
+| A | Reading | `0x00002000` | `E6 FE 16 00 20 00 00 01 E4` | single |
+| A | TV | `0x00004000` | `E6 FE 16 00 40 00 00 01 C4` | single |
+| B | Back up | `0x00000001` | `E6 FE 16 01 00 00 00 01 03` | held |
+| B | Back down | `0x00000002` | `E6 FE 16 02 00 00 00 01 02` | held |
+| B | Legs up | `0x00000004` | `E6 FE 16 04 00 00 00 01 00` | held |
+| B | Legs down | `0x00000008` | `E6 FE 16 08 00 00 00 01 FC` | held |
+| B | Flat | `0x08000000` | `E6 FE 16 00 00 00 08 01 FC` | single |
+| B | Zero G | `0x00001000` | `E6 FE 16 00 10 00 00 01 F4` | single |
+| B | Reading | `0x00002000` | `E6 FE 16 00 20 00 00 01 E4` | single |
+| B | TV | `0x00004000` | `E6 FE 16 00 40 00 00 01 C4` | single |
+| B | Anti-snore | `0x00008000` | `E6 FE 16 00 80 00 00 01 84` | single |
+| B | Light | `0x00020000` | `E6 FE 16 00 00 02 00 01 02` | single |
+| B | Head massage | `0x00000800` | `E6 FE 16 00 08 00 00 01 FC` | single |
+| B | Foot massage | `0x00000400` | `E6 FE 16 00 04 00 00 01 00` | single |
+| B | Massage timer | `0x00000200` | `E6 FE 16 00 02 00 00 01 02` | single |
+| C | Back up | `0x00000001` | `E6 FE 16 01 00 00 00 01 03` | held |
+| C | Back down | `0x00000002` | `E6 FE 16 02 00 00 00 01 02` | held |
+| C | Legs up | `0x00000004` | `E6 FE 16 04 00 00 00 01 00` | held |
+| C | Legs down | `0x00000008` | `E6 FE 16 08 00 00 00 01 FC` | held |
+| C | Flat | `0x08000000` | `E6 FE 16 00 00 00 08 01 FC` | single |
+| C | Zero G | `0x00001000` | `E6 FE 16 00 10 00 00 01 F4` | single |
+| C | Reading | `0x00002000` | `E6 FE 16 00 20 00 00 01 E4` | single |
+| C | TV | `0x00004000` | `E6 FE 16 00 40 00 00 01 C4` | single |
+| C | Anti-snore | `0x00008000` | `E6 FE 16 00 80 00 00 01 84` | single |
+| C | Light | `0x00020000` | `E6 FE 16 00 00 02 00 01 02` | single |
+| C | Head massage | `0x00000800` | `E6 FE 16 00 08 00 00 01 FC` | single |
+| C | Foot massage | `0x00000400` | `E6 FE 16 00 04 00 00 01 00` | single |
+| C | Massage timer | `0x00000200` | `E6 FE 16 00 02 00 00 01 02` | single |
+| C | Head tilt up | `0x00000010` | `E6 FE 16 10 00 00 00 01 F4` | held |
+| C | Head tilt down | `0x00000020` | `E6 FE 16 20 00 00 00 01 E4` | held |
+| C | M button | `0x40000000` | `E6 FE 16 00 00 00 40 01 C4` | single |
+| C | Star button | `0x00010000` | `E6 FE 16 00 00 01 00 01 03` | single |
+
+| Behavior | Timing |
+|---|---|
+| Held refresh / post-notify query wait | 100 ms |
+| Clicks / release frames | 1 / none |
+
+| Bluetooth name | UTF-8 query bytes |
+|---|---|
+| base00000000 | `37 44 30 45 30 30 30 30 30 30 30 30 30 30 41 42 35 34 37 35` |
+| base12345678 | `37 44 30 45 30 30 31 32 33 34 35 36 37 38 41 42 35 34 66 66 66 66 66 66 36 31` |
+| base00000070 | `37 44 30 45 30 30 30 30 30 30 30 30 37 30 41 42 35 34 35` |
+| baseFFFFFFFF | `37 44 30 45 30 30 46 46 46 46 46 46 46 46 41 42 35 34 66 66 66 66 66 63 37 39` |
+| base | `37 44 30 45 30 30 41 42 35 34 37 35` |
 <!-- /generated -->
 
-Movement repeats at the configured pulse count and delay (default 10 × 100 ms)
-and always ends with the zero frame. Presets, light and massage are single
-frames. Memory 3 and TV share one word.
+#### Timing
+
+Movement refreshes immediately and then at the fixed interval in the generated
+table. Releasing a hold, cancelling, or pressing Stop ends refresh and fences
+pending work on the original connection. No release or STOP bytes are sent,
+and Stop does not reconnect. The physical stopping delay and aborting an
+already-triggered preset remain unverified. Presets and utility buttons each
+send one frame.
+
+After notification subscription, startup waits once and sends the generated
+UTF-8 query. This is ASCII text, not hex-decoded bytes, including its unusual
+unpadded checksum. A non-hex name suffix can fail startup; it is never replaced
+with an invented device identifier. Query replies do not select a layout or
+unlock commands.
+
+#### Notifications
+
+B and C accept complete checksum-valid timer notifications and display the app's
+0/10/20/30 timer indicator. These labels are not countdown minutes: both layouts
+compare signed little-endian milliseconds at offsets 9–12 against the same
+60/120/180-second thresholds, within ten seconds. An unmatched value leaves the
+last indicator unchanged. The light byte is discarded. A publishes no timer.
+Malformed short packets are ignored, and old-link callbacks cannot update state.
+No position, capability or acknowledgement parser is available.
+
+#### Services
+
+Use the cover entities for movement, the button entities for presets and utility
+controls, and `adjustable_bed.hold_control` for a bounded held control. Memory,
+clock, alarm and rename actions are unavailable for this app.
+
+#### Evidence
+
+Based on Scott Living 1.0.2 (25). Hardware behavior remains unverified.
 
 ### Malouf legacy OKIN, Sleepy's BOX15, AdjustaMattress P1 and P2
 

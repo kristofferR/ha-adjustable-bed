@@ -1380,6 +1380,7 @@ _DECLARED_QUESTION_ROUTES: Final = frozenset(
         # The app is its variant, chosen from the bed-type list.
         BED_TYPE_RICHMAT_CLASSIC_APPS,
         *KEESON_LAYOUT_APP_BED_TYPES,
+        "scott_living",
         "ergomotion_4",
         "relax_motion",
         "smartbed",
@@ -2414,6 +2415,7 @@ class CapabilityReport:
     ambient_transport_valid: bool | None = None
     vindo_transport_valid: bool | None = None
     kingkoil_transport_valid: bool | None = None
+    scott_living_transport_valid: bool | None = None
     starcode_transport_selector: str | None = None
     starcode_ble_device_name: str | None = None
     dorsal_endpoint_error: str | None = None
@@ -2745,7 +2747,7 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
     @property
     def _migration_requires_check(self) -> bool:
         staged = self._pending_entry if self._pending_entry is not None else self._manual_data
-        if staged is not None and staged.get(CONF_BED_TYPE) in (BED_TYPE_AMBIENT, BED_TYPE_DORSAL, BED_TYPE_LANGJUE, "kingkoil"):
+        if staged is not None and staged.get(CONF_BED_TYPE) in (BED_TYPE_AMBIENT, BED_TYPE_DORSAL, BED_TYPE_LANGJUE, "kingkoil", "scott_living"):
             return True
         if self._migration_family is None:
             return False
@@ -2754,6 +2756,12 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
     def _migration_endpoint_check(self, client: BleakClient, data: dict[str, Any]) -> None:
         """Run the staged route's family check on the candidate link."""
         self._migration_preview = {}
+        if data.get(CONF_BED_TYPE) == "scott_living":
+            from .beds.scott_living import select_roles
+
+            select_roles(client)
+            return
+
         if data.get(CONF_BED_TYPE) == "kingkoil":
             from .beds.keeson.kingkoil import select_link
 
@@ -2768,6 +2776,8 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
 
     async def _async_import_endpoint_check(self, data: Mapping[str, Any]) -> None:
         """Import what the staged route's family check reads, off the event loop."""
+        if data.get(CONF_BED_TYPE) == "scott_living":
+            await async_import_modules(self.hass, "beds.scott_living")
         if data.get(CONF_BED_TYPE) == "kingkoil":
             await async_import_modules(self.hass, "beds.keeson.kingkoil")
         if self._migration_family is not None:
@@ -7043,6 +7053,14 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                             ):
                                 writable += 1
                     report.writable_count = writable
+                    if bed_type == "scott_living":
+                        await async_import_modules(self.hass, "beds.scott_living")
+                        from .beds.scott_living import select_roles
+
+                        report.scott_living_transport_valid = False
+                        select_roles(client)
+                        report.scott_living_transport_valid = True
+                        return report
                     if bed_type == "kingkoil":
                         await async_import_modules(self.hass, "beds.keeson.kingkoil")
                         from .beds.keeson.kingkoil import select_link
@@ -7383,7 +7401,7 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                 self._verify_form_shown = False
                 self._async_start_probe_operation()
                 return await self.async_step_setup_progress()
-            if (report.atlas_lift_transport_valid is False or report.kingkoil_transport_valid is False) and user_input.get("action") == "change_app":
+            if (report.atlas_lift_transport_valid is False or report.kingkoil_transport_valid is False or report.scott_living_transport_valid is False) and user_input.get("action") == "change_app":
                 self._verify_form_shown = False
                 self._operation = None
                 if self._discovery_info is None:
@@ -7394,6 +7412,7 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
             and self._verify_form_shown
             and report.atlas_lift_transport_valid is not False
             and report.kingkoil_transport_valid is not False
+            and report.scott_living_transport_valid is not False
         ):
             if report.sleeptime_uart_valid is False:
                 self._verify_form_shown = False
@@ -7439,7 +7458,7 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
             return self.async_show_form(step_id="retry_roomi_receiver")
 
         schema: dict[vol.Marker, Any] = {}
-        if report.atlas_lift_transport_valid is False or report.kingkoil_transport_valid is False:
+        if report.atlas_lift_transport_valid is False or report.kingkoil_transport_valid is False or report.scott_living_transport_valid is False:
             schema[vol.Required("action", default="retry")] = SelectSelector(
                 SelectSelectorConfig(
                     options=["retry", "change_app"],
