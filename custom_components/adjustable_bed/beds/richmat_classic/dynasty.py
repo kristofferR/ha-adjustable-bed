@@ -16,8 +16,9 @@ from bleak.backends.characteristic import BleakGATTCharacteristic
 from homeassistant.util import dt as dt_util
 
 from ...alarm import AlarmCapability, AlarmRequest
+from ...card import CARD_LIGHTING
 from ...codec import richmat as codec
-from ...command_scheduler import note_frame_skipped
+from ...command_scheduler import Delivery, delivered, note_frame_skipped
 from ...controller_state import StateKey
 from ...errors import invalid
 from ..base import BedController
@@ -240,10 +241,13 @@ class DynastyController(SessionController):
             if capability is None:
                 capability = AlarmCapability(wake_actions=("zero_g_2",), requires_wake_action=True)
             else:
-                capability = replace(capability, wake_actions=(*capability.wake_actions, "zero_g_2"))
+                capability = replace(
+                    capability, wake_actions=(*capability.wake_actions, "zero_g_2")
+                )
         return (
             replace(capability, live_check=not any(c.status == 7 for c in self._controls))
-            if capability else None
+            if capability
+            else None
         )
 
     def _native_alarm(self, request: AlarmRequest) -> Request:
@@ -349,14 +353,24 @@ class DynastyController(SessionController):
 
     async def async_execute_richmat_classic_request(self, request: Request) -> None:
         self.validate_richmat_classic_request(request)
-        with self._transaction():
+        with self._transaction() as session:
             if request.operation == "lamp_timeout":
                 assert request.seconds is not None
-                await self.write_command(lamp_timeout(request.seconds))
-                if not self._coordinator.cancel_command.is_set():
-                    self._lamp_seconds = request.seconds
-                    self._preferences["lamp_seconds"] = request.seconds
+
+                def show(delivery: Delivery) -> None:
+                    if self._session is not session or self.client is not session.client:
+                        return
+                    if delivery is Delivery.NONE:
+                        return
+                    self._lamp_seconds = request.seconds if delivery is Delivery.SENT else None
+                    if self._lamp_seconds is None:
+                        self._preferences.pop("lamp_seconds", None)
+                    else:
+                        self._preferences["lamp_seconds"] = self._lamp_seconds
                     self._publish()
+
+                with delivered(show):
+                    await self.write_command(lamp_timeout(request.seconds))
             else:
                 await super().async_execute_richmat_classic_request(request)
 
@@ -385,6 +399,7 @@ class DynastyController(SessionController):
                 "Query settings",
                 query,
                 translation_key="dynasty_query",
+                diagnostic=True,
                 cancel_movement=False,
                 scheduler_resource="configuration",
             ),
@@ -416,5 +431,6 @@ class DynastyController(SessionController):
                 1,
                 timeout,
                 "s",
+                card=CARD_LIGHTING,
             ),
         )

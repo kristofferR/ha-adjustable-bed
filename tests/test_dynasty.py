@@ -159,9 +159,11 @@ async def test_native_labels_selectors_card_and_timeout_are_not_inferred_readbac
         next(s for s in ctrl.controller_button_specs if s.key == "dynasty_query").card.section
         == "utility"
     )
+    assert next(s for s in ctrl.controller_button_specs if s.key == "dynasty_query").diagnostic
     assert ctrl.controller_number_specs == ()
     ctrl._receive.menu.add("light")
     (number,) = ctrl.controller_number_specs
+    assert number.card.section == "lighting"
     assert (number.native_max_value, number.native_unit_of_measurement) == (300, "s")
     ctrl._receive.menu.clear()
     with pytest.raises(ServiceValidationError):
@@ -177,6 +179,74 @@ async def test_native_labels_selectors_card_and_timeout_are_not_inferred_readbac
     assert ctrl._preferences["lamp_seconds"] == 300
     with pytest.raises(ServiceValidationError):
         ctrl.validate_richmat_classic_request(Request("lamp_slider", minutes=5))
+
+
+@pytest.mark.parametrize("outcome", ("cancel", "event", "replacement", "none"))
+async def test_timeout_state_tracks_delivered_write(instant, outcome):
+    from custom_components.adjustable_bed.beds.richmat_classic.controller import LAMP_SECONDS
+    from custom_components.adjustable_bed.command_scheduler import (
+        _CURRENT_COMMAND_CONTEXT,
+        CommandContext,
+        CommandKind,
+    )
+    from tests.state_helpers import state_writer
+
+    ctrl, coord = controller("dynasty", "U3RM")
+    ctrl._receive.menu.add("light")
+    ctrl._lamp_seconds = 5
+    ctrl._preferences["lamp_seconds"] = 5
+    state = {}
+    coord.handle_controller_state_updates.side_effect = state_writer(state)
+    original = ctrl._session
+    assert original is not None
+    replacement, _ = controller("dynasty", "U3RM")
+    entered, finish = asyncio.Event(), asyncio.Event()
+    context = CommandContext(
+        object(),
+        coord.cancel_command,
+        0,
+        "timeout",
+        CommandKind.COMMAND,
+        None,
+        frozenset({"configuration"}),
+    )
+
+    async def write(*_args, **_kwargs):
+        entered.set()
+        await finish.wait()
+
+    async def operation():
+        token = _CURRENT_COMMAND_CONTEXT.set(context)
+        try:
+            await ctrl.async_execute_richmat_classic_request(Request("lamp_timeout", seconds=300))
+        finally:
+            _CURRENT_COMMAND_CONTEXT.reset(token)
+
+    original.client.write_gatt_char.side_effect = write
+    if outcome == "none":
+        coord.cancel_command.set()
+        await operation()
+        original.client.write_gatt_char.assert_not_awaited()
+    else:
+        task = asyncio.create_task(operation())
+        await entered.wait()
+        if outcome == "cancel":
+            task.cancel()
+        elif outcome == "replacement":
+            ctrl._session = replacement._session
+        coord.cancel_command.set()
+        finish.set()
+        if outcome == "cancel":
+            with pytest.raises(asyncio.CancelledError):
+                await task
+        else:
+            await task
+    if outcome in ("cancel", "event"):
+        assert state[LAMP_SECONDS] == 300
+        assert ctrl._preferences["lamp_seconds"] == 300
+    else:
+        assert LAMP_SECONDS not in state
+        assert ctrl._preferences["lamp_seconds"] == 5
 
 
 @pytest.mark.parametrize("swap", (False, True))
