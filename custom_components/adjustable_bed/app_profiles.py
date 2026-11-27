@@ -246,6 +246,7 @@ _BY_BED_TYPE: Final[dict[str, SideProfile]] = {
     ),
     "suta": SideProfile("SUTA Smart Home name-selected layout"),
     "suta_king_koil": SideProfile("King Koil SUTA app"),
+    "powersbedding": SideProfile("PowersBedding", frozenset({CONF_BLE_DEVICE_NAME})),
     "hestia_motion": SideProfile("Hestia Motion"),
     "truemotion": SideProfile("trueMotion Bluetooth name"),
     "luniosmart": SideProfile("Lunio Smart+", frozenset()),

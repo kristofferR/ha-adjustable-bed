@@ -644,3 +644,17 @@ def scott_living_timer_indicator(data: bytes) -> int | None:
     return next(
         (i * 10 for i, target in enumerate((60, 120, 180), 1) if abs(seconds - target) <= 10), None
     )
+
+
+def weekday_clock(fields: Sequence[int]) -> bytes:
+    """E2 FE 16: second, minute, hour and Sunday-zero weekday."""
+    if len(fields) != 4:
+        raise ValueError("A weekday clock carries four fields")
+    return checked(bytes((0xE2, 0xFE, 0x16, *fields)))
+
+
+def bedding_alarm(fields: Sequence[int]) -> bytes:
+    """EB FE 16: ten app-defined clock, schedule and wake fields."""
+    if len(fields) != 10:
+        raise ValueError("A bedding alarm carries ten fields")
+    return checked(bytes((0xEB, 0xFE, 0x16, *fields)))

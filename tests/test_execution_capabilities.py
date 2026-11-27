@@ -131,3 +131,12 @@ async def test_thrivesleep_current_motor_refresh_and_release_are_serialized():
     assert controller.execution.hold_for("head_up") == "stream"
     assert controller.profile.execution.concurrent == frozenset()
     assert controller.motor_pulse_settings()[1] == 100
+
+
+async def test_powersbedding_single_timer_movement_stream():
+    # PowersBedding 1.1.0 (2), E5: one movement timer, 100 ms refresh,
+    # two zero releases 100 ms apart; no independent concurrent axis holds.
+    controller = await _create_controller_for_bed_type("powersbedding")
+    assert controller.execution.declared == {"hold"}
+    assert controller.execution.hold_for("both_up") == "stream"
+    assert controller.profile.release.steps == ((0, 0), (100, 0))
