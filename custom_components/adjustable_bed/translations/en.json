@@ -1768,6 +1768,8 @@
   },
   "entity": {
     "button": {
+      "flexispot_left_back_up": {"name": "Left back up"},
+      "flexispot_left_back_down": {"name": "Left back down"},
       "lights_toggle": {
         "name": "Toggle under-bed light"
       },
@@ -4608,6 +4610,9 @@
       "truemotion_tl": {
         "name": "T/L movement"
       },
+      "flexispot_left_back": {
+        "name": "Left back"
+      },
       "kingkoil_head": {
         "name": "Head"
       },
@@ -6203,6 +6208,18 @@
       },
       "truemotion_lock": {
         "name": "Child lock"
+      },
+      "flexispot_left_snore": {
+        "name": "Left snore intervention"
+      },
+      "flexispot_right_snore": {
+        "name": "Right snore intervention"
+      },
+      "flexispot_snore": {
+        "name": "Snore intervention"
+      },
+      "flexispot_massage": {
+        "name": "Massage"
       }
     },
     "binary_sensor": {
@@ -6894,6 +6911,15 @@
       },
       "smartbed_right_massage": {
         "name": "Right massage intensity"
+      },
+      "flexispot_upper_massage": {
+        "name": "Left waist massage intensity"
+      },
+      "flexispot_feet_massage": {
+        "name": "Leg massage intensity"
+      },
+      "flexispot_right_massage": {
+        "name": "Right waist massage intensity"
       },
       "ambient_head": {
         "name": "Head position"
@@ -7819,6 +7845,51 @@
           "10": "10 minutes",
           "20": "20 minutes",
           "30": "30 minutes"
+        }
+      },
+      "flexispot_left_sensitivity": {
+        "name": "Left snore sensitivity",
+        "state": {
+          "low": "Low",
+          "medium": "Medium",
+          "high": "High"
+        }
+      },
+      "flexispot_left_angle": {
+        "name": "Left snore angle",
+        "state": {
+          "8": "8°",
+          "12": "12°",
+          "15": "15°"
+        }
+      },
+      "flexispot_right_sensitivity": {
+        "name": "Right snore sensitivity",
+        "state": {
+          "low": "Low",
+          "medium": "Medium",
+          "high": "High"
+        }
+      },
+      "flexispot_right_angle": {
+        "name": "Right snore angle",
+        "state": {
+          "8": "8°",
+          "12": "12°",
+          "15": "15°"
+        }
+      },
+      "flexispot_massage_mode": {
+        "name": "Massage pattern",
+        "state": {
+          "general": "General",
+          "continuous": "Continuous",
+          "pulse": "Pulse",
+          "wave": "Wave",
+          "pattern_1": "Pattern 1",
+          "pattern_2": "Pattern 2",
+          "pattern_3": "Pattern 3",
+          "pattern_4": "Pattern 4"
         }
       }
     },
@@ -12466,6 +12537,21 @@
     },
     "truemotion_massage_off": {
       "message": "Start a massage timer before changing the massage level."
+    },
+    "flexispot_model_required": {
+      "message": "Choose the exact Flexispot bed model in Reconfigure before connecting."
+    },
+    "flexispot_gatt_roles": {
+      "message": "This Flexispot receiver needs writable FFF2 and notifying FFF1 under service FFF0. Check the selected device."
+    },
+    "flexispot_control_unavailable": {
+      "message": "Choose a control and value offered by the selected Flexispot model (holds must be 1 to 30,000 milliseconds)."
+    },
+    "flexispot_status_required": {
+      "message": "Wait for the bed to report its settings on this Bluetooth connection, then try again. Open the Flexispot app to check the receiver if no settings arrive, then disconnect the app."
+    },
+    "flexispot_alarm_overlap": {
+      "message": "Wake-up alarms on overlapping weekdays must be more than 20 minutes apart. Change the time or weekdays."
     },
     "kingkoil_layout": {
       "message": "Choose the King Koil remote layout in Reconfigure."

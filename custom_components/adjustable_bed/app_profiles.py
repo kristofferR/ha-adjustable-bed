@@ -42,6 +42,7 @@ from .const import (
     BED_TYPE_ERGOBED,
     BED_TYPE_ESHINE,
     BED_TYPE_ESHINE_OKIN,
+    BED_TYPE_FLEXISPOT,
     BED_TYPE_FSM_RELAX,
     BED_TYPE_FURNIMOVE,
     BED_TYPE_GALAXY,
@@ -113,6 +114,7 @@ from .const import (
     BED_TYPE_ZSERIES,
     CONF_BLE_DEVICE_NAME,
     CONF_DISABLE_ANGLE_SENSING,
+    CONF_HAS_LIGHT,
     CONF_HAS_MASSAGE,
     CONF_JIECANG_APP_PROFILE,
     CONF_KAIDI_PRODUCT_ID,
@@ -204,6 +206,7 @@ _BY_BED_TYPE: Final[dict[str, SideProfile]] = {
         "Leva Bed Remote", frozenset({CONF_MOTOR_COUNT, CONF_HAS_MASSAGE}), variant_owned=True
     ),
     BED_TYPE_LANGJUE: SideProfile("Comfort Smart Bed (Langjue)"),
+    BED_TYPE_FLEXISPOT: SideProfile("Flexispot", frozenset({CONF_HAS_LIGHT})),
     BED_TYPE_LINX: SideProfile("Linx", variant_owned=True),
     BED_TYPE_AMBIENT: SideProfile("M3 Ambient", variant_owned=True),
     BED_TYPE_VINDO: SideProfile("Vindö"),

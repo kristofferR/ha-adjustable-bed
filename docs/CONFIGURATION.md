@@ -395,6 +395,7 @@ actions; its bounded `hold_control` behavior has separate timing in the
 | Customatic Jerome's C app | `customatic_jeromes` | 8 | 120 ms |
 | Customatic Remedy app (Rize Remedy) | `customatic_remedy` | 8 | 120 ms |
 | eShine app (E2000 to E5000) | `eshine_okin` | 10 | 300 ms |
+| Flexispot app | `flexispot` | 5 | 200 ms |
 | FSM Relax app | `fsm_relax` | 10 | 60 ms |
 | Jensen Adjustable Sleep app, JMC400 bed | `jensen` | 4 | 300 ms |
 | King Koil Bed app | `kingkoil` | 10 | 300 ms |
