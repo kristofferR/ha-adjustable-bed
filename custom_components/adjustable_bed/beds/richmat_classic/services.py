@@ -46,13 +46,14 @@ _MAXPRIME_PROFILE_ID = ProfileRoute(BED_TYPE_RICHMAT_CLASSIC_APPS, MAXPRIME).pro
 
 OPERATIONS = (
     "query", "alarm", "cancel_alarm", "rgb", "lamp_slider", "lamp_save", "aroma",
-    "massage_timer", "massage_popup", "desk_target", "desk_unit", "desk_recall", "desk_reset",
+    "massage_timer", "massage_popup", "lamp_timeout", "desk_target", "desk_unit", "desk_recall", "desk_reset",
 )
 FIELDS: dict[vol.Marker, object] = {
     vol.Required(CONF_DEVICE_ID): DEVICE_IDS,
     vol.Required("operation"): vol.In(OPERATIONS),
     vol.Optional("action"): cv.string,
     vol.Optional("time"): cv.time,
+    vol.Optional("seconds"): vol.All(cv.positive_int, vol.Range(max=300)),
     vol.Optional("minutes"): vol.All(cv.positive_int, vol.Range(max=15)),
     vol.Optional("rgb_color"): vol.All(vol.ExactSequence((cv.byte, cv.byte, cv.byte)), vol.Coerce(tuple)),
     vol.Optional("aroma_times"): vol.All(vol.ExactSequence((cv.positive_int, cv.positive_int, cv.positive_int)), vol.Coerce(tuple)),
@@ -69,7 +70,7 @@ FIELDS.update(SIDE_FIELD.items())
 async def handle_richmat_classic(call: ServiceCall) -> None:
     request = Request(
         operation=cast(Operation, call.data["operation"]), action=call.data.get("action"),
-        when=call.data.get("time"), minutes=call.data.get("minutes"),
+        when=call.data.get("time"), minutes=call.data.get("minutes"), seconds=call.data.get("seconds"),
         color=call.data.get("rgb_color"), aroma_values=call.data.get("aroma_times"),
         progress=call.data.get("progress"), height=call.data.get("height"),
         unit=call.data.get("unit"), slot=call.data.get("slot"), duration_ms=call.data["duration_ms"], popup=call.data.get("popup"),

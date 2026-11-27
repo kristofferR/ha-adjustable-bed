@@ -943,6 +943,9 @@
   "card_role": "up",
   "card_motor": "dorsal_zero_gravity"
  },
+ "button:dynasty_query": {
+  "card_section": "utility"
+ },
  "button:elevate_actuator_1_down": {
   "card_section": "motors",
   "card_role": "down",
@@ -2114,6 +2117,24 @@
   "card_section": "utility"
  },
  "button:resident_check_massage": {
+  "card_section": "massage"
+ },
+ "button:restonic_footstrengthadd": {
+  "card_section": "massage"
+ },
+ "button:restonic_headstrengthadd": {
+  "card_section": "massage"
+ },
+ "button:restonic_massageswitch": {
+  "card_section": "massage"
+ },
+ "button:restonic_massagetimer": {
+  "card_section": "massage"
+ },
+ "button:restonic_underbedlighting": {
+  "card_section": "lighting"
+ },
+ "button:restonic_waveadd": {
   "card_section": "massage"
  },
  "button:restonic_zzz": {
@@ -4024,6 +4045,9 @@
   "card_section": "lighting"
  },
  "number:dreamsense_light_seconds": {
+  "card_section": "lighting"
+ },
+ "number:dynasty_lamp_seconds": {
   "card_section": "lighting"
  },
  "number:enso2_light_timer": {

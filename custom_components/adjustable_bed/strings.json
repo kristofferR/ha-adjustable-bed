@@ -1779,6 +1779,24 @@
   },
   "entity": {
     "button": {
+      "restonic_underbedlighting": {
+        "name": "Underbed light action"
+      },
+      "restonic_headstrengthadd": {
+        "name": "Head massage intensity up"
+      },
+      "restonic_footstrengthadd": {
+        "name": "Foot massage intensity up"
+      },
+      "restonic_massagetimer": {
+        "name": "Massage timer cycle"
+      },
+      "restonic_waveadd": {
+        "name": "Massage mode next"
+      },
+      "restonic_massageswitch": {
+        "name": "Massage toggle"
+      },
       "flexispot_left_back_up": {"name": "Left back up"},
       "flexispot_left_back_down": {"name": "Left back down"},
       "lights_toggle": {
@@ -4162,6 +4180,9 @@
       },
       "ergobq_motor_4_down": {
         "name": "Waist down"
+      },
+      "dynasty_query": {
+        "name": "Query settings"
       },
       "jobs_save_lounge": {
         "name": "Save Lounge"
@@ -7167,6 +7188,9 @@
       },
       "ergobq_legs_minutes": {
         "name": "Legs massage minutes"
+      },
+      "dynasty_lamp_seconds": {
+        "name": "Light requested timeout"
       }
     },
     "select": {
@@ -10438,6 +10462,10 @@
         "duration_ms": {
           "name": "Desk button duration",
           "description": "For Desk recall: how long to hold the desk button, 1 to 60000 milliseconds. Default 1000."
+        },
+        "seconds": {
+          "name": "Seconds",
+          "description": "Dynasty: 0–300 seconds; 0 keeps the light on."
         }
       }
     },
@@ -12951,6 +12979,9 @@
     "ambient_heat_unconfirmed": {
       "message": "The bed did not confirm all six requested heat levels."
     },
+    "dynasty_request": {
+      "message": "Choose an available Dynasty control and valid settings. Query settings to enable optional features."
+    },
     "jobs_alarm_not_received": {
       "message": "Read this alarm from the bed before keeping its received type."
     },
@@ -13687,7 +13718,8 @@
         "maxprime": "Maxprime app",
         "dreamlab2": "Dreamlab Control app",
         "sleepfunction": "SleepFunction Bed Control app",
-        "super_colchones": "Super Colchones app"
+        "super_colchones": "Super Colchones app",
+        "dynasty": "Dynasty DM9000 app"
       }
     },
     "setup_start": {
@@ -14288,6 +14320,7 @@
         "rgb": "Light color",
         "lamp_slider": "Lamp brightness",
         "lamp_save": "Save lamp setting",
+        "lamp_timeout": "Light timeout",
         "aroma": "Aroma",
         "massage_timer": "Massage timer",
         "massage_popup": "Massage menu",
