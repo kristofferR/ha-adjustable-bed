@@ -1,0 +1,2306 @@
+{
+  "products": {
+    "none": [
+      "none",
+      [],
+      [],
+      [],
+      [],
+      [],
+      false,
+      false,
+      false,
+      false,
+      false,
+      false
+    ],
+    "casperpro": [
+      "PRO",
+      [
+        "8d3bd1",
+        "8d3c51",
+        "8d49d1",
+        "8d4951",
+        "8d4b51",
+        "8d4ad1",
+        "8d4ed1",
+        "8d46d1"
+      ],
+      [
+        "8d4551",
+        "8d44d1",
+        "8d4451",
+        "8d4a51",
+        "8d4351",
+        "8d42d1",
+        "8d4251"
+      ],
+      [
+        "8d41d1",
+        "8d40d1",
+        "8d4051",
+        "8d4151",
+        "8d3fd1"
+      ],
+      [],
+      [],
+      false,
+      false,
+      false,
+      false,
+      false,
+      false
+    ],
+    "caspermax": [
+      "MAX",
+      [
+        "8d3bd1",
+        "8d3c51",
+        "8d49d1",
+        "8d4951",
+        "8d47d1",
+        "8d4751",
+        "8d48d1",
+        "8d4851",
+        "8d45d1",
+        "8d4651",
+        "8d46d1"
+      ],
+      [
+        "8d4551",
+        "8d44d1",
+        "8d4451",
+        "8d43d1",
+        "8d4351",
+        "8d42d1",
+        "8d4251"
+      ],
+      [
+        "8d41d1",
+        "8d40d1",
+        "8d4051",
+        "8d4151",
+        "8d3fd1"
+      ],
+      [],
+      [],
+      true,
+      false,
+      false,
+      false,
+      false,
+      false
+    ],
+    "nisconup210": [
+      "NUP210",
+      [
+        "8d3bd1",
+        "8d3c51",
+        "8d49d1",
+        "8d4951",
+        "8d4c51",
+        "8d4bd1",
+        "8d45d1",
+        "8d46d1"
+      ],
+      [],
+      [
+        "8d41d1",
+        "8d40d1",
+        "8d4051",
+        "8d4151",
+        "8d3fd1"
+      ],
+      [],
+      [],
+      false,
+      false,
+      false,
+      false,
+      false,
+      false
+    ],
+    "nisconup300": [
+      "NUP300",
+      [
+        "8d3bd1",
+        "8d3c51",
+        "8d49d1",
+        "8d4951",
+        "8d4c51",
+        "8d4bd1",
+        "8d4651",
+        "8d46d1"
+      ],
+      [
+        "8d4551",
+        "8d44d1",
+        "8d4451",
+        "8d43d1",
+        "8d4351",
+        "8d42d1",
+        "8d4251"
+      ],
+      [
+        "8d41d1",
+        "8d4051",
+        "8d4151",
+        "8d3fd1"
+      ],
+      [
+        "8d41d1",
+        "8d4051",
+        "8d4151",
+        "8d3fd1"
+      ],
+      [],
+      false,
+      false,
+      false,
+      false,
+      true,
+      false
+    ],
+    "nisconup355b": [
+      "NUP355B",
+      [
+        "8d3bd1",
+        "8d3c51",
+        "8d49d1",
+        "8d4951",
+        "8d4b51",
+        "8d4ad1",
+        "8d46d1"
+      ],
+      [
+        "8d4551",
+        "8d44d1",
+        "8d4451",
+        "8d43d1",
+        "8d4351",
+        "8d42d1",
+        "8d4251"
+      ],
+      [
+        "8d4051",
+        "8d4151",
+        "8d3fd1"
+      ],
+      [
+        "8d4051",
+        "8d4151",
+        "8d3fd1"
+      ],
+      [],
+      true,
+      true,
+      true,
+      false,
+      true,
+      false
+    ],
+    "nisconup503b": [
+      "NUP503B",
+      [
+        "8d3bd1",
+        "8d3c51",
+        "8d49d1",
+        "8d4951",
+        "8d4b51",
+        "8d4ad1",
+        "8d4e51",
+        "8d4dd1",
+        "8d46d1"
+      ],
+      [
+        "8d4551",
+        "8d44d1",
+        "8d4451",
+        "8d43d1",
+        "8d4351",
+        "8d42d1",
+        "8d4251"
+      ],
+      [
+        "8d4051",
+        "8d4151",
+        "8d3fd1"
+      ],
+      [
+        "8d4051",
+        "8d4151",
+        "8d3fd1"
+      ],
+      [],
+      true,
+      false,
+      true,
+      false,
+      true,
+      false
+    ],
+    "nisconxc210": [
+      "NXC210",
+      [
+        "8d3bd1",
+        "8d3c51",
+        "8d49d1",
+        "8d4951",
+        "8d45d1",
+        "8d46d1"
+      ],
+      [],
+      [
+        "8d3fd1"
+      ],
+      [],
+      [],
+      false,
+      false,
+      false,
+      false,
+      false,
+      false
+    ],
+    "nisconxc300": [
+      "NXC300",
+      [
+        "8d3bd1",
+        "8d3c51",
+        "8d49d1",
+        "8d4951",
+        "8d4c51",
+        "8d4bd1",
+        "8d4651",
+        "8d46d1"
+      ],
+      [
+        "8d4551",
+        "8d44d1",
+        "8d4451",
+        "8d43d1",
+        "8d4351",
+        "8d42d1",
+        "8d4251"
+      ],
+      [
+        "8d4051",
+        "8d4151",
+        "8d41d1",
+        "8d3fd1"
+      ],
+      [
+        "8d4051",
+        "8d4151",
+        "8d41d1",
+        "8d3fd1"
+      ],
+      [],
+      false,
+      false,
+      false,
+      false,
+      true,
+      false
+    ],
+    "nisconxc303": [
+      "NXC303",
+      [
+        "8d3bd1",
+        "8d3c51",
+        "8d49d1",
+        "8d4951",
+        "8d4c51",
+        "8d4bd1",
+        "8d53d1",
+        "8d46d1"
+      ],
+      [
+        "8d4551",
+        "8d44d1",
+        "8d4451",
+        "8d43d1",
+        "8d4351",
+        "8d42d1",
+        "8d4251"
+      ],
+      [
+        "8d4051",
+        "8d4151",
+        "8d3fd1"
+      ],
+      [
+        "8d4051",
+        "8d4151",
+        "8d3fd1"
+      ],
+      [],
+      true,
+      true,
+      false,
+      false,
+      true,
+      false
+    ],
+    "nisconxc310": [
+      "NXC310",
+      [
+        "8d3bd1",
+        "8d3c51",
+        "8d49d1",
+        "8d4951",
+        "8d4c51",
+        "8d4bd1",
+        "8d45d1",
+        "8d4651",
+        "8d46d1"
+      ],
+      [
+        "8d4551",
+        "8d44d1",
+        "8d4451",
+        "8d43d1",
+        "8d4351",
+        "8d42d1",
+        "8d4251"
+      ],
+      [
+        "8d4051",
+        "8d4151",
+        "8d3fd1",
+        "8d3f51"
+      ],
+      [
+        "8d4051",
+        "8d4151",
+        "8d3fd1",
+        "8d3f51"
+      ],
+      [],
+      false,
+      false,
+      false,
+      false,
+      true,
+      false
+    ],
+    "nisconxc450": [
+      "NXC450",
+      [
+        "8d3bd1",
+        "8d3c51",
+        "8d49d1",
+        "8d4951",
+        "8d4b51",
+        "8d4ad1",
+        "8d4e51",
+        "8d4dd1",
+        "8d4651",
+        "8d46d1"
+      ],
+      [
+        "8d4551",
+        "8d44d1",
+        "8d4451",
+        "8d43d1",
+        "8d4351",
+        "8d42d1",
+        "8d4251"
+      ],
+      [
+        "8d4051",
+        "8d4151"
+      ],
+      [
+        "8d4051",
+        "8d4151"
+      ],
+      [],
+      false,
+      false,
+      false,
+      true,
+      true,
+      false
+    ],
+    "nisconxc455b": [
+      "NXC455B",
+      [
+        "8d3bd1",
+        "8d3c51",
+        "8d49d1",
+        "8d4951",
+        "8d4b51",
+        "8d4ad1",
+        "8d4e51",
+        "8d4dd1",
+        "8d46d1"
+      ],
+      [
+        "8d4551",
+        "8d44d1",
+        "8d4451",
+        "8d43d1",
+        "8d4351",
+        "8d42d1",
+        "8d4251"
+      ],
+      [
+        "8d3fd1"
+      ],
+      [
+        "8d3fd1"
+      ],
+      [],
+      true,
+      true,
+      true,
+      false,
+      true,
+      false
+    ],
+    "nisconxc513m": [
+      "NXC513M",
+      [
+        "8d3bd1",
+        "8d3c51",
+        "8d49d1",
+        "8d4951",
+        "8d4b51",
+        "8d4ad1",
+        "8d4e51",
+        "8d4dd1",
+        "8d45d1",
+        "8d46d1"
+      ],
+      [
+        "8d4551",
+        "8d44d1",
+        "8d4451",
+        "8d43d1",
+        "8d4351",
+        "8d42d1",
+        "8d4251"
+      ],
+      [
+        "8d4051",
+        "8d4151",
+        "8d3fd1"
+      ],
+      [
+        "8d4051",
+        "8d4151",
+        "8d3fd1"
+      ],
+      [],
+      true,
+      false,
+      true,
+      true,
+      true,
+      false
+    ],
+    "niscottb01": [
+      "TTB01",
+      [
+        "8d3bd1",
+        "8d3c51",
+        "8d49d1",
+        "8d4951",
+        "8d4c51",
+        "8d4bd1",
+        "8d46d1"
+      ],
+      [],
+      [
+        "8d3fd1"
+      ],
+      [],
+      [],
+      false,
+      false,
+      false,
+      false,
+      false,
+      false
+    ],
+    "nisconsf550": [
+      "NSF550",
+      [
+        "8d3bd1",
+        "8d3c51",
+        "8d49d1",
+        "8d4951",
+        "8d4b51",
+        "8d4ad1",
+        "8d4d51",
+        "8d4cd1",
+        "8d4e51",
+        "8d4dd1",
+        "8d45d1",
+        "8d46d1"
+      ],
+      [
+        "8d4551",
+        "8d44d1",
+        "8d4451",
+        "8d43d1",
+        "8d4351",
+        "8d42d1",
+        "8d4251"
+      ],
+      [
+        "8d4051",
+        "8d4151",
+        "8d41d1",
+        "8d40d1",
+        "8d3fd1",
+        "8d3f51",
+        "8d3ed1"
+      ],
+      [
+        "8d4051",
+        "8d4151",
+        "8d41d1",
+        "8d40d1",
+        "8d3fd1",
+        "8d3f51",
+        "8d3ed1"
+      ],
+      [],
+      true,
+      false,
+      true,
+      true,
+      true,
+      false
+    ],
+    "niscobafd200": [
+      "BAFD200",
+      [
+        "8d3bd1",
+        "8d3c51",
+        "8d49d1",
+        "8d4951",
+        "8d4c51",
+        "8d4bd1",
+        "8d46d1"
+      ],
+      [],
+      [
+        "8d4051",
+        "8d4151",
+        "8d41d1",
+        "8d40d1",
+        "8d3fd1",
+        "8d3f51",
+        "8d3ed1"
+      ],
+      [
+        "8d4051",
+        "8d4151",
+        "8d41d1",
+        "8d40d1",
+        "8d3fd1",
+        "8d3f51",
+        "8d3ed1"
+      ],
+      [],
+      false,
+      false,
+      false,
+      false,
+      true,
+      false
+    ],
+    "niscobafd300": [
+      "BAFD300",
+      [
+        "8d3bd1",
+        "8d3c51",
+        "8d49d1",
+        "8d4951",
+        "8d4c51",
+        "8d4bd1",
+        "8d4651",
+        "8d46d1"
+      ],
+      [
+        "8d4551",
+        "8d44d1",
+        "8d4451",
+        "8d43d1",
+        "8d4351",
+        "8d42d1",
+        "8d4251"
+      ],
+      [
+        "8d4051",
+        "8d4151",
+        "8d41d1",
+        "8d3fd1",
+        "8d3f51",
+        "8d3ed1"
+      ],
+      [
+        "8d4051",
+        "8d4151",
+        "8d41d1",
+        "8d3fd1",
+        "8d3f51",
+        "8d3ed1"
+      ],
+      [],
+      false,
+      false,
+      false,
+      false,
+      true,
+      false
+    ],
+    "nisconlp200": [
+      "NLP200",
+      [
+        "8d3bd1",
+        "8d3c51",
+        "8d49d1",
+        "8d4951",
+        "8d46d1"
+      ],
+      [],
+      [
+        "8d4051",
+        "8d4151",
+        "8d3fd1"
+      ],
+      [],
+      [],
+      false,
+      false,
+      false,
+      false,
+      false,
+      false
+    ],
+    "nisconlp300": [
+      "NLP300",
+      [
+        "8d3bd1",
+        "8d3c51",
+        "8d49d1",
+        "8d4951",
+        "8d4c51",
+        "8d4bd1",
+        "8d4651",
+        "8d46d1"
+      ],
+      [
+        "8d4551",
+        "8d44d1",
+        "8d4451",
+        "8d43d1",
+        "8d4351",
+        "8d42d1",
+        "8d4251"
+      ],
+      [
+        "8d4051",
+        "8d4151",
+        "8d3fd1",
+        "8d3f51"
+      ],
+      [],
+      [],
+      false,
+      false,
+      false,
+      false,
+      false,
+      false
+    ],
+    "nisconeb300": [
+      "NEB300",
+      [
+        "8d3bd1",
+        "8d3c51",
+        "8d49d1",
+        "8d4951",
+        "8d4651",
+        "8d46d1"
+      ],
+      [
+        "8d4551",
+        "8d44d1",
+        "8d43d1",
+        "8d4351",
+        "8d42d1",
+        "8d4251"
+      ],
+      [
+        "8d4051",
+        "8d4151",
+        "8d3fd1",
+        "8d3f51"
+      ],
+      [],
+      [],
+      false,
+      false,
+      false,
+      false,
+      false,
+      false
+    ],
+    "nisconef450": [
+      "NEF450",
+      [
+        "8d3bd1",
+        "8d3c51",
+        "8d49d1",
+        "8d4951",
+        "8d47d1",
+        "8d4751",
+        "8d48d1",
+        "8d4851",
+        "8d4651",
+        "8d46d1"
+      ],
+      [
+        "8d4551",
+        "8d44d1",
+        "8d43d1",
+        "8d4451",
+        "8d4351",
+        "8d42d1",
+        "8d4251"
+      ],
+      [
+        "8d4151",
+        "8d4051",
+        "8d41d1",
+        "8d3fd1"
+      ],
+      [],
+      [],
+      false,
+      false,
+      false,
+      false,
+      false,
+      false
+    ],
+    "nisconxz200": [
+      "NXZ200",
+      [
+        "8d3bd1",
+        "8d3c51",
+        "8d49d1",
+        "8d4951",
+        "8d46d1"
+      ],
+      [],
+      [
+        "8d4051",
+        "8d4151",
+        "8d3fd1"
+      ],
+      [
+        "8d4051",
+        "8d4151",
+        "8d3fd1"
+      ],
+      [],
+      false,
+      false,
+      false,
+      false,
+      true,
+      false
+    ],
+    "nisconj200": [
+      "NJ200",
+      [
+        "8d3bd1",
+        "8d3c51",
+        "8d49d1",
+        "8d4951",
+        "8d4c51",
+        "8d4bd1",
+        "8d46d1"
+      ],
+      [],
+      [
+        "8d3fd1"
+      ],
+      [],
+      [],
+      false,
+      false,
+      false,
+      false,
+      false,
+      false
+    ],
+    "niscoafd200": [
+      "AFD200",
+      [
+        "8d3bd1",
+        "8d3c51",
+        "8d49d1",
+        "8d4951",
+        "8d4c51",
+        "8d4bd1",
+        "8d46d1"
+      ],
+      [],
+      [
+        "8d4151",
+        "8d4051",
+        "8d41d1",
+        "8d40d1",
+        "8d3fd1"
+      ],
+      [
+        "8d4151",
+        "8d4051",
+        "8d41d1",
+        "8d40d1",
+        "8d3fd1"
+      ],
+      [],
+      false,
+      false,
+      false,
+      true,
+      true,
+      false
+    ],
+    "niscoafd300": [
+      "AFD300",
+      [
+        "8d3bd1",
+        "8d3c51",
+        "8d49d1",
+        "8d4951",
+        "8d4c51",
+        "8d4bd1",
+        "8d4651",
+        "8d46d1"
+      ],
+      [
+        "8d4551",
+        "8d44d1",
+        "8d4451",
+        "8d43d1",
+        "8d4351",
+        "8d42d1",
+        "8d4251"
+      ],
+      [
+        "8d41d1",
+        "8d4051",
+        "8d4151",
+        "8d3fd1"
+      ],
+      [
+        "8d41d1",
+        "8d4051",
+        "8d4151",
+        "8d3fd1"
+      ],
+      [],
+      false,
+      false,
+      false,
+      true,
+      true,
+      false
+    ],
+    "nisconxc450g": [
+      "NXC450G",
+      [
+        "8d3bd1",
+        "8d3c51",
+        "8d49d1",
+        "8d4951",
+        "8d4b51",
+        "8d4ad1",
+        "8d4e51",
+        "8d4dd1",
+        "8d46d1",
+        "8d45d1"
+      ],
+      [
+        "8d4551",
+        "8d44d1",
+        "8d4451",
+        "8d43d1",
+        "8d4351",
+        "8d42d1",
+        "8d4251"
+      ],
+      [
+        "8d4051",
+        "8d4151",
+        "8d3fd1",
+        "8d5451"
+      ],
+      [
+        "8d4051",
+        "8d4151",
+        "8d3fd1"
+      ],
+      [],
+      true,
+      true,
+      true,
+      true,
+      true,
+      false
+    ],
+    "niscobaseplus": [
+      "Base Plus",
+      [
+        "8d3bd1",
+        "8d3c51",
+        "8d49d1",
+        "8d4951",
+        "8d4b51",
+        "8d4ad1",
+        "8d46d1"
+      ],
+      [
+        "8d4551",
+        "8d44d1",
+        "8d4451",
+        "8d43d1",
+        "8d4351",
+        "8d42d1",
+        "8d4251"
+      ],
+      [
+        "8d4051",
+        "8d4151",
+        "8d41d1",
+        "8d40d1",
+        "8d3fd1",
+        "8d3f51"
+      ],
+      [
+        "8d4051",
+        "8d4151",
+        "8d41d1",
+        "8d40d1",
+        "8d3fd1",
+        "8d3f51"
+      ],
+      [
+        "8d5351",
+        "8d52d1",
+        "8d5251",
+        "8d51d1",
+        "8d5151",
+        "8d50d1",
+        "8d5051",
+        "8d4fd1",
+        "8d4f51"
+      ],
+      true,
+      false,
+      true,
+      true,
+      false,
+      false
+    ],
+    "slikcore": [
+      "CORE",
+      [
+        "8d3bd1",
+        "8d3c51",
+        "8d49d1",
+        "8d4951",
+        "8d4c51",
+        "8d4bd1",
+        "8d46d1"
+      ],
+      [],
+      [
+        "8d41d1",
+        "8d4151",
+        "8d40d1",
+        "8d4051",
+        "8d3fd1",
+        "8d3f51",
+        "8d3ed1"
+      ],
+      [],
+      [],
+      false,
+      false,
+      false,
+      false,
+      false,
+      false
+    ],
+    "slikenhanced": [
+      "ENHANCED",
+      [
+        "8d3bd1",
+        "8d3c51",
+        "8d49d1",
+        "8d4951",
+        "8d4b51",
+        "8d4ad1",
+        "8d46d1"
+      ],
+      [
+        "8d4551",
+        "8d44d1",
+        "8d4451",
+        "8d43d1",
+        "8d4351",
+        "8d42d1",
+        "8d4251"
+      ],
+      [
+        "8d41d1",
+        "8d4151",
+        "8d40d1",
+        "8d4051",
+        "8d3fd1",
+        "8d3f51",
+        "8d3ed1"
+      ],
+      [],
+      [],
+      true,
+      false,
+      false,
+      false,
+      false,
+      false
+    ],
+    "slikpremier": [
+      "PREMIER",
+      [
+        "8d3bd1",
+        "8d3c51",
+        "8d49d1",
+        "8d4951",
+        "8d47d1",
+        "8d4751",
+        "8d48d1",
+        "8d4851",
+        "8d4651",
+        "8d46d1"
+      ],
+      [
+        "8d4551",
+        "8d44d1",
+        "8d4451",
+        "8d43d1",
+        "8d4351",
+        "8d42d1",
+        "8d4251"
+      ],
+      [
+        "8d41d1",
+        "8d4151",
+        "8d40d1",
+        "8d4051",
+        "8d3fd1",
+        "8d3f51",
+        "8d3ed1"
+      ],
+      [],
+      [],
+      true,
+      false,
+      false,
+      false,
+      false,
+      false
+    ],
+    "hushl400": [
+      "L400",
+      [
+        "8d3bd1",
+        "8d3c51",
+        "8d49d1",
+        "8d4951",
+        "8d4e51",
+        "8d4dd1",
+        "8d46d1"
+      ],
+      [
+        "8d4551",
+        "8d44d1",
+        "8d4451",
+        "8d43d1",
+        "8d4351",
+        "8d42d1",
+        "8d4251"
+      ],
+      [
+        "8d41d1",
+        "8d4151",
+        "8d40d1",
+        "8d4051",
+        "8d3fd1",
+        "8d3f51",
+        "8d3ed1"
+      ],
+      [
+        "8d41d1",
+        "8d4151",
+        "8d40d1",
+        "8d4051",
+        "8d3fd1",
+        "8d3f51",
+        "8d3ed1"
+      ],
+      [],
+      true,
+      false,
+      false,
+      false,
+      false,
+      false
+    ],
+    "hushl400sh": [
+      "L400SH",
+      [
+        "8d3bd1",
+        "8d3c51",
+        "8d49d1",
+        "8d4951",
+        "8d4e51",
+        "8d4dd1",
+        "8d46d1"
+      ],
+      [
+        "8d4551",
+        "8d44d1",
+        "8d4451",
+        "8d43d1",
+        "8d4351",
+        "8d42d1",
+        "8d4251"
+      ],
+      [
+        "8d41d1",
+        "8d4151",
+        "8d40d1",
+        "8d4051",
+        "8d3fd1",
+        "8d3f51",
+        "8d3ed1"
+      ],
+      [],
+      [],
+      true,
+      false,
+      false,
+      false,
+      false,
+      true
+    ],
+    "hushl500": [
+      "L500",
+      [
+        "8d3bd1",
+        "8d3c51",
+        "8d49d1",
+        "8d4951",
+        "8d4b51",
+        "8d4ad1",
+        "8d4e51",
+        "8d4dd1",
+        "8d4d51",
+        "8d4cd1",
+        "8d46d1"
+      ],
+      [
+        "8d4551",
+        "8d44d1",
+        "8d4451",
+        "8d43d1",
+        "8d4351",
+        "8d42d1",
+        "8d4251"
+      ],
+      [
+        "8d41d1",
+        "8d4151",
+        "8d40d1",
+        "8d4051",
+        "8d3fd1",
+        "8d3f51",
+        "8d3ed1"
+      ],
+      [
+        "8d41d1",
+        "8d4151",
+        "8d40d1",
+        "8d4051",
+        "8d3fd1",
+        "8d3f51",
+        "8d3ed1"
+      ],
+      [],
+      true,
+      false,
+      false,
+      false,
+      false,
+      false
+    ],
+    "hushl200": [
+      "L200",
+      [
+        "8d3bd1",
+        "8d3c51",
+        "8d49d1",
+        "8d4951",
+        "8d46d1"
+      ],
+      [],
+      [
+        "8d41d1",
+        "8d4151",
+        "8d40d1",
+        "8d4051",
+        "8d3fd1",
+        "8d3f51",
+        "8d3ed1"
+      ],
+      [],
+      [],
+      false,
+      false,
+      false,
+      false,
+      false,
+      false
+    ],
+    "hushl300": [
+      "L300",
+      [
+        "8d3bd1",
+        "8d3c51",
+        "8d49d1",
+        "8d4951",
+        "8d4c51",
+        "8d4bd1",
+        "8d4651",
+        "8d46d1"
+      ],
+      [
+        "8d4551",
+        "8d44d1",
+        "8d4451",
+        "8d43d1",
+        "8d4351",
+        "8d42d1",
+        "8d4251"
+      ],
+      [
+        "8d41d1",
+        "8d4151",
+        "8d40d1",
+        "8d4051",
+        "8d3fd1",
+        "8d3f51",
+        "8d3ed1"
+      ],
+      [],
+      [],
+      true,
+      false,
+      false,
+      false,
+      false,
+      false
+    ],
+    "hushl300sh": [
+      "L300SH",
+      [
+        "8d3bd1",
+        "8d3c51",
+        "8d49d1",
+        "8d4951",
+        "8d4c51",
+        "8d4bd1",
+        "8d4651",
+        "8d46d1"
+      ],
+      [
+        "8d4551",
+        "8d44d1",
+        "8d4451",
+        "8d43d1",
+        "8d4351",
+        "8d42d1",
+        "8d4251"
+      ],
+      [
+        "8d41d1",
+        "8d4151",
+        "8d40d1",
+        "8d4051",
+        "8d3fd1",
+        "8d3f51",
+        "8d3ed1"
+      ],
+      [],
+      [],
+      false,
+      false,
+      false,
+      false,
+      false,
+      true
+    ],
+    "hushs175": [
+      "S175",
+      [
+        "8d3bd1",
+        "8d3c51",
+        "8d49d1",
+        "8d4951",
+        "8d4c51",
+        "8d4bd1",
+        "8d46d1"
+      ],
+      [],
+      [
+        "8d41d1",
+        "8d4151",
+        "8d40d1",
+        "8d4051",
+        "8d3fd1",
+        "8d3f51",
+        "8d3ed1"
+      ],
+      [],
+      [],
+      false,
+      false,
+      false,
+      false,
+      false,
+      false
+    ],
+    "hushs375": [
+      "S375",
+      [
+        "8d3bd1",
+        "8d3c51",
+        "8d49d1",
+        "8d4951",
+        "8d4b51",
+        "8d4ad1",
+        "8d46d1"
+      ],
+      [
+        "8d4551",
+        "8d44d1",
+        "8d4451",
+        "8d4a51",
+        "8d4351",
+        "8d42d1",
+        "8d4251"
+      ],
+      [
+        "8d41d1",
+        "8d4151",
+        "8d40d1",
+        "8d4051",
+        "8d3fd1",
+        "8d3f51",
+        "8d3ed1"
+      ],
+      [],
+      [],
+      false,
+      false,
+      false,
+      false,
+      false,
+      false
+    ],
+    "hushs575": [
+      "S575",
+      [
+        "8d3bd1",
+        "8d3c51",
+        "8d49d1",
+        "8d4951",
+        "8d48d1",
+        "8d4851",
+        "8d47d1",
+        "8d4751",
+        "8d46d1",
+        "8d4651",
+        "8d45d1"
+      ],
+      [
+        "8d4551",
+        "8d44d1",
+        "8d4451",
+        "8d43d1",
+        "8d4351",
+        "8d42d1",
+        "8d4251"
+      ],
+      [
+        "8d41d1",
+        "8d4151",
+        "8d40d1",
+        "8d4051",
+        "8d3fd1",
+        "8d3f51",
+        "8d3ed1"
+      ],
+      [],
+      [],
+      true,
+      false,
+      false,
+      false,
+      false,
+      false
+    ]
+  },
+  "commands": [
+    {
+      "detail": "8d4051",
+      "action": "deviceFunctionItemAntiSnoring",
+      "opcode": 70,
+      "long_opcode": 105,
+      "scope": "BED",
+      "long_ui_enabled": true
+    },
+    {
+      "detail": "8d4651",
+      "action": "deviceFunctionItemBedLight",
+      "opcode": 60,
+      "long_opcode": null,
+      "scope": "BED",
+      "long_ui_enabled": true
+    },
+    {
+      "detail": "8d5551",
+      "action": "deviceFunctionItemBedLightClose",
+      "opcode": 117,
+      "long_opcode": null,
+      "scope": "BED",
+      "long_ui_enabled": true
+    },
+    {
+      "detail": "8d3e51",
+      "action": "deviceFunctionItemCheckClock",
+      "opcode": 1,
+      "long_opcode": null,
+      "scope": "BED",
+      "long_ui_enabled": true
+    },
+    {
+      "detail": "8d3dd1",
+      "action": "deviceFunctionItemCheckLight",
+      "opcode": 1,
+      "long_opcode": null,
+      "scope": "BED",
+      "long_ui_enabled": true
+    },
+    {
+      "detail": "8d3d51",
+      "action": "deviceFunctionItemCheckMusic",
+      "opcode": 1,
+      "long_opcode": null,
+      "scope": "EXCLUDED",
+      "long_ui_enabled": true
+    },
+    {
+      "detail": "8d5451",
+      "action": "deviceFunctionItemCoaxingSleepMode",
+      "opcode": 134,
+      "long_opcode": null,
+      "scope": "EXCLUDED",
+      "long_ui_enabled": false
+    },
+    {
+      "detail": "8d3cd1",
+      "action": "deviceFunctionItemExitLimit",
+      "opcode": 0,
+      "long_opcode": null,
+      "scope": "BED",
+      "long_ui_enabled": true
+    },
+    {
+      "detail": "8d5351",
+      "action": "deviceFunctionItemFan1InstensityStrengthen",
+      "opcode": 138,
+      "long_opcode": null,
+      "scope": "BED",
+      "long_ui_enabled": true
+    },
+    {
+      "detail": "8d52d1",
+      "action": "deviceFunctionItemFan2InstensityStrengthen",
+      "opcode": 139,
+      "long_opcode": null,
+      "scope": "BED",
+      "long_ui_enabled": true
+    },
+    {
+      "detail": "8d5251",
+      "action": "deviceFunctionItemFanAllOff",
+      "opcode": 161,
+      "long_opcode": null,
+      "scope": "BED",
+      "long_ui_enabled": true
+    },
+    {
+      "detail": "8d51d1",
+      "action": "deviceFunctionItemFanConstantMode",
+      "opcode": 163,
+      "long_opcode": null,
+      "scope": "BED",
+      "long_ui_enabled": true
+    },
+    {
+      "detail": "8d5151",
+      "action": "deviceFunctionItemFanPulseMode",
+      "opcode": 164,
+      "long_opcode": null,
+      "scope": "BED",
+      "long_ui_enabled": true
+    },
+    {
+      "detail": "8d50d1",
+      "action": "deviceFunctionItemFanWaveMode",
+      "opcode": 165,
+      "long_opcode": null,
+      "scope": "BED",
+      "long_ui_enabled": true
+    },
+    {
+      "detail": "8d4951",
+      "action": "deviceFunctionItemFootDown",
+      "opcode": 39,
+      "long_opcode": null,
+      "scope": "BED",
+      "long_ui_enabled": true
+    },
+    {
+      "detail": "8d49d1",
+      "action": "deviceFunctionItemFootUp",
+      "opcode": 38,
+      "long_opcode": null,
+      "scope": "BED",
+      "long_ui_enabled": true
+    },
+    {
+      "detail": "8d4bd1",
+      "action": "deviceFunctionItemHeadAndFootDown",
+      "opcode": 42,
+      "long_opcode": null,
+      "scope": "BED",
+      "long_ui_enabled": true
+    },
+    {
+      "detail": "8d4c51",
+      "action": "deviceFunctionItemHeadAndFootUp",
+      "opcode": 41,
+      "long_opcode": null,
+      "scope": "BED",
+      "long_ui_enabled": true
+    },
+    {
+      "detail": "8d3c51",
+      "action": "deviceFunctionItemHeadDown",
+      "opcode": 37,
+      "long_opcode": null,
+      "scope": "BED",
+      "long_ui_enabled": true
+    },
+    {
+      "detail": "8d3bd1",
+      "action": "deviceFunctionItemHeadUp",
+      "opcode": 36,
+      "long_opcode": null,
+      "scope": "BED",
+      "long_ui_enabled": true
+    },
+    {
+      "detail": "8d4fd1",
+      "action": "deviceFunctionItemHeatingHighGear",
+      "opcode": 121,
+      "long_opcode": null,
+      "scope": "BED",
+      "long_ui_enabled": true
+    },
+    {
+      "detail": "8d5051",
+      "action": "deviceFunctionItemHeatingLowGear",
+      "opcode": 120,
+      "long_opcode": null,
+      "scope": "BED",
+      "long_ui_enabled": true
+    },
+    {
+      "detail": "8d4f51",
+      "action": "deviceFunctionItemHeatingOff",
+      "opcode": 119,
+      "long_opcode": null,
+      "scope": "BED",
+      "long_ui_enabled": true
+    },
+    {
+      "detail": "8d45d1",
+      "action": "deviceFunctionItemLightBoard",
+      "opcode": 80,
+      "long_opcode": null,
+      "scope": "BED",
+      "long_ui_enabled": true
+    },
+    {
+      "detail": "8d4ed1",
+      "action": "deviceFunctionItemLightBoard",
+      "opcode": 60,
+      "long_opcode": null,
+      "scope": "BED",
+      "long_ui_enabled": true
+    },
+    {
+      "detail": "8d40d1",
+      "action": "deviceFunctionItemLoungePosition",
+      "opcode": 89,
+      "long_opcode": 101,
+      "scope": "BED",
+      "long_ui_enabled": true
+    },
+    {
+      "detail": "8d4851",
+      "action": "deviceFunctionItemLumberDown",
+      "opcode": 66,
+      "long_opcode": null,
+      "scope": "BED",
+      "long_ui_enabled": true
+    },
+    {
+      "detail": "8d4ad1",
+      "action": "deviceFunctionItemLumberDown",
+      "opcode": 64,
+      "long_opcode": null,
+      "scope": "BED",
+      "long_ui_enabled": true
+    },
+    {
+      "detail": "8d48d1",
+      "action": "deviceFunctionItemLumberUp",
+      "opcode": 65,
+      "long_opcode": null,
+      "scope": "BED",
+      "long_ui_enabled": true
+    },
+    {
+      "detail": "8d4b51",
+      "action": "deviceFunctionItemLumberUp",
+      "opcode": 63,
+      "long_opcode": null,
+      "scope": "BED",
+      "long_ui_enabled": true
+    },
+    {
+      "detail": "8d4351",
+      "action": "deviceFunctionItemMassage10MinuteTimer",
+      "opcode": 95,
+      "long_opcode": null,
+      "scope": "BED",
+      "long_ui_enabled": true
+    },
+    {
+      "detail": "8d42d1",
+      "action": "deviceFunctionItemMassage20MinuteTimer",
+      "opcode": 99,
+      "long_opcode": null,
+      "scope": "BED",
+      "long_ui_enabled": true
+    },
+    {
+      "detail": "8d4251",
+      "action": "deviceFunctionItemMassage30MinuteTimer",
+      "opcode": 97,
+      "long_opcode": null,
+      "scope": "BED",
+      "long_ui_enabled": true
+    },
+    {
+      "detail": "8d44d1",
+      "action": "deviceFunctionItemMassageFootInstensityStrengthen",
+      "opcode": 78,
+      "long_opcode": null,
+      "scope": "BED",
+      "long_ui_enabled": true
+    },
+    {
+      "detail": "8d4551",
+      "action": "deviceFunctionItemMassageHeadInstensityStrengthen",
+      "opcode": 76,
+      "long_opcode": null,
+      "scope": "BED",
+      "long_ui_enabled": true
+    },
+    {
+      "detail": "8d43d1",
+      "action": "deviceFunctionItemMassageModeAllOff",
+      "opcode": 94,
+      "long_opcode": null,
+      "scope": "BED",
+      "long_ui_enabled": true
+    },
+    {
+      "detail": "8d4a51",
+      "action": "deviceFunctionItemMassageModeAllOff",
+      "opcode": 71,
+      "long_opcode": null,
+      "scope": "BED",
+      "long_ui_enabled": true
+    },
+    {
+      "detail": "8d4451",
+      "action": "deviceFunctionItemMassageModeChange",
+      "opcode": 72,
+      "long_opcode": null,
+      "scope": "BED",
+      "long_ui_enabled": true
+    },
+    {
+      "detail": "8d3fd1",
+      "action": "deviceFunctionItemMemoryPosition1",
+      "opcode": 46,
+      "long_opcode": 43,
+      "scope": "BED",
+      "long_ui_enabled": true
+    },
+    {
+      "detail": "8d3f51",
+      "action": "deviceFunctionItemMemoryPosition2",
+      "opcode": 47,
+      "long_opcode": 44,
+      "scope": "BED",
+      "long_ui_enabled": true
+    },
+    {
+      "detail": "8d3ed1",
+      "action": "deviceFunctionItemMemoryPosition3",
+      "opcode": 48,
+      "long_opcode": 45,
+      "scope": "BED",
+      "long_ui_enabled": true
+    },
+    {
+      "detail": "8d4cd1",
+      "action": "deviceFunctionItemMotor3Down",
+      "opcode": 114,
+      "long_opcode": null,
+      "scope": "BED",
+      "long_ui_enabled": true
+    },
+    {
+      "detail": "8d4d51",
+      "action": "deviceFunctionItemMotor3Up",
+      "opcode": 113,
+      "long_opcode": null,
+      "scope": "BED",
+      "long_ui_enabled": true
+    },
+    {
+      "detail": "8d46d1",
+      "action": "deviceFunctionItemMotorReset",
+      "opcode": 49,
+      "long_opcode": null,
+      "scope": "BED",
+      "long_ui_enabled": true
+    },
+    {
+      "detail": "8d53d1",
+      "action": "deviceFunctionItemMusicBlueToothSwitch",
+      "opcode": 216,
+      "long_opcode": null,
+      "scope": "EXCLUDED",
+      "long_ui_enabled": true
+    },
+    {
+      "detail": "8d57d1",
+      "action": "deviceFunctionItemMusicNextSong",
+      "opcode": 211,
+      "long_opcode": null,
+      "scope": "EXCLUDED",
+      "long_ui_enabled": true
+    },
+    {
+      "detail": "8d5851",
+      "action": "deviceFunctionItemMusicPausePlay",
+      "opcode": 215,
+      "long_opcode": null,
+      "scope": "EXCLUDED",
+      "long_ui_enabled": true
+    },
+    {
+      "detail": "8d58d1",
+      "action": "deviceFunctionItemMusicPreviousSong",
+      "opcode": 210,
+      "long_opcode": null,
+      "scope": "EXCLUDED",
+      "long_ui_enabled": true
+    },
+    {
+      "detail": "8d5651",
+      "action": "deviceFunctionItemMusicShakeMode",
+      "opcode": 214,
+      "long_opcode": null,
+      "scope": "EXCLUDED",
+      "long_ui_enabled": true
+    },
+    {
+      "detail": "8d55d1",
+      "action": "deviceFunctionItemMusicSwitchSoundTrack",
+      "opcode": 196,
+      "long_opcode": null,
+      "scope": "EXCLUDED",
+      "long_ui_enabled": true
+    },
+    {
+      "detail": "8d56d1",
+      "action": "deviceFunctionItemMusicVolumuDown",
+      "opcode": 213,
+      "long_opcode": null,
+      "scope": "EXCLUDED",
+      "long_ui_enabled": true
+    },
+    {
+      "detail": "8d5751",
+      "action": "deviceFunctionItemMusicVolumuUp",
+      "opcode": 212,
+      "long_opcode": null,
+      "scope": "EXCLUDED",
+      "long_ui_enabled": true
+    },
+    {
+      "detail": "8d54d1",
+      "action": "deviceFunctionItemNone",
+      "opcode": 0,
+      "long_opcode": null,
+      "scope": "BED",
+      "long_ui_enabled": true
+    },
+    {
+      "detail": "8d4751",
+      "action": "deviceFunctionItemPillowDown",
+      "opcode": 64,
+      "long_opcode": null,
+      "scope": "BED",
+      "long_ui_enabled": true
+    },
+    {
+      "detail": "8d4dd1",
+      "action": "deviceFunctionItemPillowDown",
+      "opcode": 66,
+      "long_opcode": null,
+      "scope": "BED",
+      "long_ui_enabled": true
+    },
+    {
+      "detail": "8d47d1",
+      "action": "deviceFunctionItemPillowUp",
+      "opcode": 63,
+      "long_opcode": null,
+      "scope": "BED",
+      "long_ui_enabled": true
+    },
+    {
+      "detail": "8d4e51",
+      "action": "deviceFunctionItemPillowUp",
+      "opcode": 65,
+      "long_opcode": null,
+      "scope": "BED",
+      "long_ui_enabled": true
+    },
+    {
+      "detail": "8d3b51",
+      "action": "deviceFunctionItemStop",
+      "opcode": 110,
+      "long_opcode": null,
+      "scope": "BED",
+      "long_ui_enabled": true
+    },
+    {
+      "detail": "8d41d1",
+      "action": "deviceFunctionItemTVPosition",
+      "opcode": 88,
+      "long_opcode": 100,
+      "scope": "BED",
+      "long_ui_enabled": true
+    },
+    {
+      "detail": "8d4151",
+      "action": "deviceFunctionItemZeroGravity",
+      "opcode": 69,
+      "long_opcode": 102,
+      "scope": "BED",
+      "long_ui_enabled": true
+    }
+  ],
+  "vectors": [
+    {
+      "id": "head-left",
+      "action": "generic",
+      "inputs": {
+        "opcode": 36
+      },
+      "expected_bytes": "6e01002493"
+    },
+    {
+      "id": "head-right",
+      "action": "generic",
+      "inputs": {
+        "opcode": 36,
+        "side": 1
+      },
+      "expected_bytes": "6e01012494"
+    },
+    {
+      "id": "raw-head",
+      "action": "generic",
+      "inputs": {
+        "opcode": 36,
+        "raw": true
+      },
+      "expected_bytes": "24"
+    },
+    {
+      "id": "stop",
+      "action": "generic",
+      "inputs": {
+        "opcode": 110
+      },
+      "expected_bytes": "6e01006edd"
+    },
+    {
+      "id": "premier-pillow",
+      "action": "generic",
+      "inputs": {
+        "opcode": 63
+      },
+      "expected_bytes": "6e01003fae"
+    },
+    {
+      "id": "premier-lumbar",
+      "action": "generic",
+      "inputs": {
+        "opcode": 65
+      },
+      "expected_bytes": "6e010041b0"
+    },
+    {
+      "id": "save-memory1",
+      "action": "generic",
+      "inputs": {
+        "opcode": 43
+      },
+      "expected_bytes": "6e01002b9a"
+    },
+    {
+      "id": "query-alarm",
+      "action": "generic",
+      "inputs": {
+        "opcode": 1,
+        "action": "deviceFunctionItemCheckClock"
+      },
+      "expected_bytes": "6e08010178"
+    },
+    {
+      "id": "query-light",
+      "action": "generic",
+      "inputs": {
+        "opcode": 1,
+        "action": "deviceFunctionItemCheckLight"
+      },
+      "expected_bytes": "6e0a000179"
+    },
+    {
+      "id": "exit-limit",
+      "action": "generic",
+      "inputs": {
+        "opcode": 0,
+        "action": "deviceFunctionItemExitLimit"
+      },
+      "expected_bytes": "6e02010071"
+    },
+    {
+      "id": "rgb-power-on",
+      "action": "rgb_power",
+      "inputs": {
+        "on": true
+      },
+      "expected_bytes": "6e09200404010001a1"
+    },
+    {
+      "id": "rgb-power-off",
+      "action": "rgb_power",
+      "inputs": {
+        "on": false
+      },
+      "expected_bytes": "6e09200404010000a0"
+    },
+    {
+      "id": "rgb-color",
+      "action": "rgb_color",
+      "inputs": {
+        "red": 18,
+        "green": 52,
+        "blue": 86
+      },
+      "expected_bytes": "6e0b20040101001234563b"
+    },
+    {
+      "id": "rgb-timer300",
+      "action": "rgb_timer",
+      "inputs": {
+        "value": 300
+      },
+      "expected_bytes": "6e0a2004020100012ccc"
+    },
+    {
+      "id": "rgb-groove4",
+      "action": "rgb_groove",
+      "inputs": {
+        "mode": 4
+      },
+      "expected_bytes": "6e0a20040501000204a8"
+    },
+    {
+      "id": "rgb-mode3",
+      "action": "rgb_mode",
+      "inputs": {
+        "mode": 3
+      },
+      "expected_bytes": "6e0a20040501000103a6"
+    },
+    {
+      "id": "rgb-breathe",
+      "action": "rgb_breathe",
+      "inputs": {},
+      "expected_bytes": "6e082004060100a1"
+    },
+    {
+      "id": "white-seconds300",
+      "action": "white_timer",
+      "inputs": {
+        "seconds": 300
+      },
+      "expected_bytes": "6e0b012ca6"
+    },
+    {
+      "id": "white-seconds0",
+      "action": "white_timer",
+      "inputs": {
+        "seconds": 0
+      },
+      "expected_bytes": "6e0bffff77"
+    },
+    {
+      "id": "white-color",
+      "action": "white_color",
+      "inputs": {
+        "red": 18,
+        "green": 52,
+        "blue": 86
+      },
+      "expected_bytes": "6e0cff128b6e0d345605"
+    },
+    {
+      "id": "clock-low300",
+      "action": "clock_low",
+      "inputs": {
+        "minutes": 300
+      },
+      "expected_bytes": "6e052c009f"
+    },
+    {
+      "id": "clock-high300",
+      "action": "clock_high",
+      "inputs": {
+        "minutes": 300,
+        "mode": 69
+      },
+      "expected_bytes": "6e060145ba"
+    },
+    {
+      "id": "clock-cancel-low",
+      "action": "clock_low",
+      "inputs": {
+        "minutes": 0
+      },
+      "expected_bytes": "6e05000073"
+    },
+    {
+      "id": "clock-cancel-high",
+      "action": "clock_high",
+      "inputs": {
+        "minutes": 0,
+        "mode": 0
+      },
+      "expected_bytes": "6e06000074"
+    },
+    {
+      "id": "repeat-add",
+      "action": "repeat_add",
+      "inputs": {
+        "fields": [
+          1,
+          0,
+          7,
+          30,
+          69,
+          130
+        ]
+      },
+      "expected_bytes": "6e0d200501010100071e45828f"
+    },
+    {
+      "id": "repeat-delete",
+      "action": "repeat_delete",
+      "inputs": {
+        "index": 1
+      },
+      "expected_bytes": "6e0820050201019f"
+    },
+    {
+      "id": "repeat-list",
+      "action": "repeat_list",
+      "inputs": {},
+      "expected_bytes": "6e0820050100009c"
+    },
+    {
+      "id": "local-time",
+      "action": "time_sync",
+      "inputs": {
+        "parts": [
+          56,
+          11,
+          27,
+          8,
+          30,
+          15
+        ]
+      },
+      "expected_bytes": "6e0d20080301380b1b081e0f3a"
+    },
+    {
+      "id": "reply-rgb",
+      "action": "parse",
+      "inputs": null,
+      "expected_bytes": "6e200b040102001234563c"
+    },
+    {
+      "id": "reply-rgb-timer",
+      "action": "parse",
+      "inputs": null,
+      "expected_bytes": "6e200a04020200012ccd"
+    },
+    {
+      "id": "reply-white",
+      "action": "parse",
+      "inputs": null,
+      "expected_bytes": "6e200903010200019e"
+    },
+    {
+      "id": "reply-motor",
+      "action": "parse",
+      "inputs": null,
+      "expected_bytes": "6e200c01020200012c024513"
+    },
+    {
+      "id": "reply-repeat",
+      "action": "parse",
+      "inputs": null,
+      "expected_bytes": "6e200d0501020100071e458290"
+    },
+    {
+      "id": "reply-massage",
+      "action": "parse",
+      "inputs": null,
+      "expected_bytes": "6e200b02010201030204a8"
+    },
+    {
+      "id": "common-motor",
+      "action": "parse",
+      "inputs": null,
+      "expected_bytes": "6e90362d00"
+    },
+    {
+      "id": "common-massage",
+      "action": "parse",
+      "inputs": null,
+      "expected_bytes": "6e90a59c00"
+    },
+    {
+      "id": "common-version",
+      "action": "parse",
+      "inputs": null,
+      "expected_bytes": "6e90000700"
+    },
+    {
+      "id": "common-mode",
+      "action": "parse",
+      "inputs": null,
+      "expected_bytes": "6e90120000"
+    },
+    {
+      "id": "alarm-feature",
+      "action": "parse",
+      "inputs": null,
+      "expected_bytes": "6e09010078"
+    },
+    {
+      "id": "massage-long-raw00",
+      "action": "massage_text",
+      "inputs": {
+        "short_opcode": 71,
+        "enum_long_opcode": null,
+        "held_ms": 3001,
+        "side": 0,
+        "raw": true
+      },
+      "expected_bytes": "00"
+    },
+    {
+      "id": "massage-long-left00",
+      "action": "massage_text",
+      "inputs": {
+        "short_opcode": 71,
+        "enum_long_opcode": null,
+        "held_ms": 3001,
+        "side": 0,
+        "raw": false
+      },
+      "expected_bytes": "6e0100006f"
+    },
+    {
+      "id": "massage-long-right00",
+      "action": "massage_text",
+      "inputs": {
+        "short_opcode": 71,
+        "enum_long_opcode": null,
+        "held_ms": 3001,
+        "side": 1,
+        "raw": false
+      },
+      "expected_bytes": "6e01010070"
+    }
+  ]
+}

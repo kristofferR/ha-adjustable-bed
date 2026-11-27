@@ -653,6 +653,7 @@ BED_TYPE_SUPER_COLCHONES: Final = "super_colchones"
 BED_TYPE_SONICSLEEP: Final = "sonicsleep"
 BED_TYPE_ERGOBQ: Final = "ergobq"
 BED_TYPE_LUNIOSMART: Final = "luniosmart"
+BED_TYPE_SILKSNOW: Final = "silksnow"
 BED_TYPE_HUSH_BASE: Final = "hush_base"
 BED_TYPE_HUSH_SLEEP_MM: Final = "hush_sleep_mm"
 BED_TYPE_HUSH_SLEEP_SXB: Final = "hush_sleep_sxb"
@@ -896,7 +897,7 @@ SUPPORTED_BED_TYPES: Final = [
     BED_TYPE_SONICSLEEP,
     BED_TYPE_ERGOBQ,
     BED_TYPE_LUNIOSMART,
-    BED_TYPE_HUSH_BASE, BED_TYPE_HUSH_SLEEP_MM, BED_TYPE_HUSH_SLEEP_SXB,
+    BED_TYPE_SILKSNOW, BED_TYPE_HUSH_BASE, BED_TYPE_HUSH_SLEEP_MM, BED_TYPE_HUSH_SLEEP_SXB,
     # Protocol-based types (new naming)
     BED_TYPE_FURNIMOVE,
     BED_TYPE_OKIN_HANDLE,

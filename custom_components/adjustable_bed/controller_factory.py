@@ -453,6 +453,7 @@ _BUILDERS: Final[dict[str, _BuilderSpec]] = {
     BED_TYPE_RICHMAT_APP: _BuilderSpec("richmat_app.controller"),
     BED_TYPE_RICHMAT_APP_SLEEP: _BuilderSpec("richmat_app.sleep"),
     "hush_base": _BuilderSpec("hush_base.controller"),
+    "silksnow": _BuilderSpec("casper_base.silksnow"),
     "luuna": _BuilderSpec("luuna.controller"),
     "personal_comfort": _BuilderSpec("personal_comfort.controller"),
     "instant_comfort": _BuilderSpec("instant_comfort.controller"),
