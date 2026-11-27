@@ -4262,6 +4262,33 @@
       },
       "kingkoil_feet_down": {
         "name": "Foot down"
+      },
+      "dreamotion_smart_back": {
+        "name": "Cycle back massage"
+      },
+      "dreamotion_smart_foot": {
+        "name": "Cycle foot massage"
+      },
+      "dreamotion_smart_pattern": {
+        "name": "Cycle massage pattern"
+      },
+      "dreamotion_smart_timer10": {
+        "name": "Toggle 10-minute massage timer"
+      },
+      "dreamotion_smart_timer20": {
+        "name": "Toggle 20-minute massage timer"
+      },
+      "dreamotion_smart_timer30": {
+        "name": "Toggle 30-minute massage timer"
+      },
+      "dreamotion_smart_save_light": {
+        "name": "Save light settings"
+      },
+      "dreamotion_smart_preview_light": {
+        "name": "Preview light settings"
+      },
+      "dreamotion_smart_refresh": {
+        "name": "Refresh settings"
       }
     },
     "cover": {
@@ -6125,6 +6152,21 @@
       },
       "jobs_wake_alarm": {
         "name": "Wake alarm type"
+      },
+      "dreamotion_smart_back": {
+        "name": "Back massage intensity"
+      },
+      "dreamotion_smart_foot": {
+        "name": "Foot massage intensity"
+      },
+      "dreamotion_smart_pattern": {
+        "name": "Massage pattern"
+      },
+      "dreamotion_smart_timer": {
+        "name": "Massage timer"
+      },
+      "dreamotion_smart_seconds": {
+        "name": "Timed light duration"
       }
     },
     "light": {
@@ -6406,6 +6448,9 @@
       },
       "flexispot_massage": {
         "name": "Massage"
+      },
+      "dreamotion_smart_sensor": {
+        "name": "Human detection"
       }
     },
     "binary_sensor": {
@@ -8189,6 +8234,44 @@
           "pattern_2": "Pattern 2",
           "pattern_3": "Pattern 3",
           "pattern_4": "Pattern 4"
+        }
+      },
+      "dreamotion_smart_mode": {
+        "name": "Vibration mode",
+        "state": {
+          "inherent": "Inherent frequency",
+          "acoustic": "Acoustic"
+        }
+      },
+      "dreamotion_smart_page": {
+        "name": "Light settings",
+        "state": {
+          "timed": "Timed light",
+          "presets": "Saved light entries"
+        }
+      },
+      "dreamotion_smart_slot": {
+        "name": "Saved light entry",
+        "state": {
+          "1": "1",
+          "2": "2",
+          "3": "3"
+        }
+      },
+      "dreamotion_smart_duration": {
+        "name": "Timed light duration",
+        "state": {
+          "0": "0 seconds",
+          "60": "60 seconds",
+          "120": "120 seconds",
+          "180": "180 seconds",
+          "240": "240 seconds",
+          "300": "300 seconds",
+          "600": "600 seconds",
+          "900": "900 seconds",
+          "1200": "1200 seconds",
+          "1500": "1500 seconds",
+          "1800": "1800 seconds"
         }
       }
     },

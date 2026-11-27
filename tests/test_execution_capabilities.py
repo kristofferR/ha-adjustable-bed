@@ -99,3 +99,14 @@ async def test_scott_living_refresh_has_no_release_or_composed_keys():
         controller.profile = profile(layout)
         assert controller.execution.declared == {"hold"}
         assert controller.execution.hold_for("head_up") == "stream"
+
+
+async def test_dreamotion_smart_has_one_300ms_refresh_and_explicit_release():
+    # Dreamotion Smart 1.1.8 RemoteControll: immediate DOWN, repeat 300 ms,
+    # UP waits 300 ms then 4E. No merged axis word or speed is proven.
+    from custom_components.adjustable_bed.codec.jiecang import LONG_RELEASE
+
+    controller = await _create_controller_for_bed_type("dreamotion_smart")
+    assert controller.execution.declared == {"hold"}
+    assert controller.profile.hold.repeat_ms == 300
+    assert controller.profile.hold.releases == ((300, LONG_RELEASE),)

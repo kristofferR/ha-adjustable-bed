@@ -503,3 +503,14 @@ byte-identical BED products and serial-dependent axes. It has no mattress
 profile. `beds/ergobq/` uses the shared settled GATT writer with an expected
 client, while owning its authentication, notification stream and release.
 See [ErgoBQ BED](../beds/ergobq.md) and `tests/test_ergobq_vectors.py`.
+
+## Dreamotion Smart
+
+Dreamotion Smart 1.1.8 (`com.sendinfo.dreammotionpro`) reproduces all 35 frozen
+builder literals through Jiecang's existing frame encoder. Its profile owns
+fixed four-axis bilateral payloads, 300 ms hold/release and record settings.
+The codec adds a bounded fixed-offset record parser and optional declared length
+for reproducing the app's empty-light observation. Native writes require complete
+settings, and never send that malformed empty record. The shared Jiecang
+controller extension owns concrete GATT/session admission and the RGB/massage
+state. Existing app routes are unchanged. See [the app profile](../beds/jiecang.md#dreamotion-smart).

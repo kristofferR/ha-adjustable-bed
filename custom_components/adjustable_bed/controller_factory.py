@@ -51,6 +51,7 @@ from .const import (
     BED_TYPE_CUSTOMATIC_REMEDY,
     BED_TYPE_DIAGNOSTIC,
     BED_TYPE_DOUBLESLEEP,
+    BED_TYPE_DREAMOTION_SMART,
     BED_TYPE_ENSO2,
     BED_TYPE_ERGOBED,
     BED_TYPE_ERGOMOTION,
@@ -291,6 +292,7 @@ class _BuilderSpec:
 # plus fixed kwargs".
 _SIMPLE_CONTROLLERS: Final[dict[str, _ControllerSpec]] = {
     BED_TYPE_ATLAS_LIFT: _ControllerSpec("richmat.atlas_lift", "AtlasLiftController"),
+    BED_TYPE_DREAMOTION_SMART: _ControllerSpec("jiecang.dreamotion_smart", "DreamotionSmartController"),
     BED_TYPE_VINDO: _ControllerSpec("vindo", "VindoController"),
     BED_TYPE_OKIN_MOTIONBED: _ControllerSpec("okin_motionbed", "OkinMotionBedController"),
     BED_TYPE_OKIMATTMOTION: _ControllerSpec("okimattmotion", "OkimattMotionController"),

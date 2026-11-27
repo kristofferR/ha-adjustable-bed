@@ -492,6 +492,7 @@ BED_TYPE_LEGGETT_WILINKE: Final = "leggett_wilinke"  # Leggett WiLinke 5-byte
 BED_TYPE_LINAK: Final = "linak"
 BED_TYPE_AMBIENT: Final = "ambient"
 BED_TYPE_VINDO: Final = "vindo"
+BED_TYPE_DREAMOTION_SMART: Final = "dreamotion_smart"
 BED_TYPE_ALYA: Final = "alya"
 ALYA_LAYOUTS: Final = {
     "bluetooth_2": "Alya BLUETOOTH, 2 motors",
@@ -917,6 +918,7 @@ SUPPORTED_BED_TYPES: Final = [
     BED_TYPE_LINAK,
     BED_TYPE_AMBIENT,
     BED_TYPE_VINDO,
+    BED_TYPE_DREAMOTION_SMART,
     BED_TYPE_RICHMAT,
     BED_TYPE_SOLACE,
     BED_TYPE_MOTOSLEEP, BED_TYPE_RONCO_MOTION,
@@ -1072,6 +1074,7 @@ SUPPORTED_BED_TYPES: Final = [
 OFFLINE_CAPABILITY_SAFE_BED_TYPES: Final = frozenset(
     {
         BED_TYPE_DORSAL,
+        BED_TYPE_DREAMOTION_SMART,
         BED_TYPE_DREAMSENSE,
         BED_TYPE_PERSONAL_COMFORT,
         BED_TYPE_BEDGEAR,
@@ -3177,6 +3180,7 @@ BED_MOTOR_PULSE_DEFAULTS: Final = {
     # Source: com.linak.linakbed.ble.memory ANALYSIS.md
     BED_TYPE_LINAK: (10, 100),
     BED_TYPE_VINDO: (4, 300),
+    BED_TYPE_DREAMOTION_SMART: (4, 300),  # Bounded HA press; app refreshes every 300 ms.
     # Sleepy's BOX15: 100ms delay → 10 repeats = 1.0s total
     # Source: com.okin.bedding.sleepy ANALYSIS.md
     BED_TYPE_SLEEPYS_BOX15: (10, 100),
