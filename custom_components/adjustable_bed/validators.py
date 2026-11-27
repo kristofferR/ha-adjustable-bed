@@ -46,6 +46,7 @@ from .const import (
     BED_TYPE_LIKIMIO,
     BED_TYPE_LINAK,
     BED_TYPE_MLILY,
+    BED_TYPE_MYSIDE,
     BED_TYPE_OCTO,
     BED_TYPE_OKIMIKI,
     BED_TYPE_OKIN_64BIT,
@@ -124,6 +125,7 @@ from .profiles.majestichome import PROFILE_CHOICES as MAJESTICHOME_PROFILES
 from .profiles.mlily0 import VARIANTS as MLILY0_PROFILES
 from .profiles.mlily_choices import PROFILE_CHOICES as MLILY_PROFILES
 from .profiles.mlily_remote import VARIANTS as MLILY_REMOTE_PROFILES
+from .profiles.myside import CHOICES as MYSIDE_PRODUCTS
 from .profiles.okimiki import PROFILE_CHOICES as OKIMIKI_PROFILES
 from .profiles.personal_comfort import ROUTES as PERSONAL_COMFORT_ROUTES
 from .profiles.purely_sleep import PRODUCT_CHOICES as PURELY_SLEEP_PRODUCTS
@@ -204,6 +206,7 @@ VARIANTS_BY_BED_TYPE: dict[str, dict[str, str]] = {
     BED_TYPE_RICHMAT_CLASSIC_APPS: RICHMAT_CLASSIC_APPS,
     BED_TYPE_HJBED: HJBED_PROFILES,
     BED_TYPE_ENSO2: ENSO2_LAYOUT_CHOICES,
+    BED_TYPE_MYSIDE: MYSIDE_PRODUCTS,
     BED_TYPE_RICHMAT_APP: RICHMAT_APP_PRODUCTS,
     BED_TYPE_RICHMAT_APP_SLEEP: RICHMAT_SLEEP_CHOICES,
     BED_TYPE_ALYA: ALYA_LAYOUTS,

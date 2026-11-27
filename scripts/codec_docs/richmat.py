@@ -77,6 +77,7 @@ from scripts.codec_docs._dreamsense import BLOCKS as DREAMSENSE_BLOCKS
 from scripts.codec_docs._likimio import BLOCKS as LIKIMIO_BLOCKS
 from scripts.codec_docs._lp2 import BLOCKS as LP2_BLOCKS
 from scripts.codec_docs._maxprime import render_maxprime
+from scripts.codec_docs._myside import BLOCKS as MYSIDE_BLOCKS
 from scripts.codec_docs._ronco_motion import BLOCKS as RONCO_MOTION_BLOCKS
 from scripts.codec_docs._super_colchones import BLOCKS as SUPER_COLCHONES_BLOCKS
 
@@ -2237,6 +2238,9 @@ BLOCKS += [(GUIDE, "silksnow-products", render_silksnow_products), (GUIDE, "silk
 from scripts.codec_docs._purely_sleep import BLOCKS as PURELY_SLEEP_BLOCKS  # noqa: E402
 
 BLOCKS.extend(PURELY_SLEEP_BLOCKS)
+
+
+BLOCKS.extend(MYSIDE_BLOCKS)
 
 
 def render_topcare() -> str:

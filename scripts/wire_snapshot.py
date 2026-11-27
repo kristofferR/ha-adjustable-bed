@@ -1618,6 +1618,8 @@ def default_scenario(bed_type: str) -> Scenario:
     if bed_type in ("sleep_evolution", "wsilver_legacy"):
         return Scenario(id=bed_type, bed_type=bed_type, protocol_variant="A1",
             entry_data={const.CONF_PROTOCOL_VARIANT: "A1"}, layout_id="sonicsleep:Nordic")
+    if bed_type == "myside":
+        return Scenario(id=bed_type, bed_type=bed_type, protocol_variant="76", layout_id="myside:w1")
     variant: str | None = {
         const.BED_TYPE_OCTO: const.OCTO_VARIANT_STANDARD,
         const.BED_TYPE_CASPER_BASE: "casperpro",
@@ -2825,6 +2827,12 @@ def build_scenarios() -> list[Scenario]:
     for product, route in (("JLRN", "n1"), ("VJRM", "n1"), ("VJRM", "w1")):
         scenarios.append(Scenario(id=f"purely_sleep:{product}:{route}", bed_type="purely_sleep",
             protocol_variant=product, layout_id=f"atlas_lift:{route}"))
+    # My Side's own four picker products on each accepted GATT route. Reuse
+    # stored physical layouts without changing any previous peer scenario.
+    for product in ("76", "77", "78", "79"):
+        for route in ("n1", "w1", "w2", "w3", "w4", "w5"):
+            scenarios.append(Scenario(id=f"myside:{product}:{route}", bed_type="myside",
+                protocol_variant=product, layout_id=f"myside:{route}"))
     by_id = {scenario.id: scenario for scenario in scenarios}
     scenarios.extend(feature_scenarios(by_id))
     for sid in PROPERTY_ROUTES:
