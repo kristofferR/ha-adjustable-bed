@@ -15,8 +15,13 @@ from bleak.exc import BleakError
 
 from custom_components.adjustable_bed.alarm import AlarmRequest
 from custom_components.adjustable_bed.beds.hestia.controller import HestiaController
-from custom_components.adjustable_bed.beds.hestia.state import ALARM, MASSAGE
+from custom_components.adjustable_bed.beds.hestia.state import MASSAGE
 from custom_components.adjustable_bed.codec import keeson
+from custom_components.adjustable_bed.command_scheduler import (
+    _CURRENT_COMMAND_CONTEXT,
+    CommandContext,
+    CommandKind,
+)
 from custom_components.adjustable_bed.const import KEESON_BASE_NOTIFY_CHAR_UUID as NOTIFY
 from custom_components.adjustable_bed.const import KEESON_BASE_WRITE_CHAR_UUID as WRITE
 from custom_components.adjustable_bed.controller_factory import create_controller
@@ -287,8 +292,21 @@ async def test_partial_massage_cancel_never_claims_success():
         coordinator.cancel_command.set()
 
     client.write_gatt_char.side_effect = cancel
-    with virtual_time(FakeClock()), pytest.raises(asyncio.CancelledError):
-        await bed.massage_start()
+    context = CommandContext(
+        scheduler_token=object(),
+        cancel_event=coordinator.cancel_command,
+        admitted_stop_epoch=0,
+        intent_id="partial-massage",
+        kind=CommandKind.COMMAND,
+        group_id=None,
+        resources=frozenset({"*"}),
+    )
+    token = _CURRENT_COMMAND_CONTEXT.set(context)
+    try:
+        with virtual_time(FakeClock()), pytest.raises(asyncio.CancelledError):
+            await bed.massage_start()
+    finally:
+        _CURRENT_COMMAND_CONTEXT.reset(token)
     assert len(packets(client)) == 1
     assert updates == [MASSAGE(None)]
 
@@ -308,7 +326,7 @@ async def test_invalid_native_and_alarm_requests_fail_before_first_write():
     assert not packets(client)
 
 
-async def test_native_alarm_switch_uses_exact_rtc_and_clears_on_failure(freezer):
+async def test_native_alarm_switch_uses_exact_rtc_and_preserves_unsent_state(freezer):
     freezer.move_to("2026-01-01 12:34:56+00:00")
     _, client, bed = await connected()
     for key, value in {
@@ -337,7 +355,7 @@ async def test_native_alarm_switch_uses_exact_rtc_and_clears_on_failure(freezer)
     client.write_gatt_char.side_effect = BleakError("failed")
     with pytest.raises(BleakError):
         await switch.set_fn(bed, True)
-    assert updates == [ALARM(None)]
+    assert updates == []
 
 
 async def test_stale_controller_cannot_write_or_invalidate_new_native_state():

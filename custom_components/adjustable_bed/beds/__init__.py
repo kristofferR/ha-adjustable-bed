@@ -212,7 +212,7 @@ _EXPORT_MODULES = {
     "GoodVibeController": "goodvibe.controller",
     "MajesticHomeController": "majestichome.controller",
     "MotoMotionController": "motomotion.controller",
-    "HestiaController": ("hestia.controller", "HestiaController"),
+    "HestiaController": "hestia.controller",
     "HJBedController": "hjbed.controller",
     "RichmatAppController": "richmat_app.controller",
     "DoubleSleepController": "doublesleep.controller",

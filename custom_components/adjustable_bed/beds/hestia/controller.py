@@ -13,7 +13,7 @@ from homeassistant.util import dt as dt_util
 
 from ...alarm import AlarmCapability, AlarmRequest
 from ...card import CARD_MASSAGE, CARD_PRESETS, CARD_UTILITY
-from ...command_scheduler import current_command_context
+from ...command_scheduler import Delivery, current_command_context, delivered, note_frame_skipped
 from ...const import KEESON_BASE_NOTIFY_CHAR_UUID, KEESON_BASE_WRITE_CHAR_UUID
 from ...errors import BedNotConnectedError
 from ...profiles import hestia as app
@@ -180,6 +180,8 @@ class HestiaController(ProfileExecution[KeesonProfile], BedController):
         frame: bytes,
         cancel: asyncio.Event,
         on_start: Callable[[], None] | None = None,
+        *,
+        on_write: Callable[[], None] | None = None,
     ) -> None:
         def admit() -> None:
             self._live(link)
@@ -191,6 +193,8 @@ class HestiaController(ProfileExecution[KeesonProfile], BedController):
         def sent() -> None:
             nonlocal written
             written = True
+            if on_write is not None:
+                on_write()
 
         await self._write_gatt_with_retry(
             link.write.uuid,
@@ -222,11 +226,27 @@ class HestiaController(ProfileExecution[KeesonProfile], BedController):
             if index + 1 < repeat_count:
                 await cancellable(asyncio.sleep(repeat_delay_ms / 1000), cancel)
 
-    async def _keys(self, *words: int, on_start: Callable[[], None] | None = None) -> None:
-        link, cancel = self._live(), self._coordinator.cancel_command
-        for word in words:
-            await cancellable(asyncio.sleep(self.profile.tap_wait_ms / 1000), cancel)
-            await self._send(link, encode(self.profile, word), cancel, on_start)
+    async def _keys(
+        self, *words: int, on_start: Callable[[], None] | None = None, link: Link | None = None
+    ) -> None:
+        link, cancel = self._live(link), self._coordinator.cancel_command
+        remaining = len(words)
+
+        def written() -> None:
+            nonlocal remaining
+            remaining -= 1
+
+        try:
+            for word in words:
+                await cancellable(asyncio.sleep(self.profile.tap_wait_ms / 1000), cancel)
+                await self._send(
+                    link, encode(self.profile, word), cancel, on_start, on_write=written
+                )
+        except asyncio.CancelledError:
+            # A completed wave is not the whole massage On sequence.
+            if remaining:
+                note_frame_skipped()
+            raise
 
     async def _release(self, link: Link, *, preset: bool = False) -> None:
         async def cleanup() -> None:
@@ -392,12 +412,20 @@ class HestiaController(ProfileExecution[KeesonProfile], BedController):
         return True
 
     async def _light(self, on: bool) -> None:
-        self._live()
-        self._lamp = None
-        self.forward_controller_state_updates(UNDER_BED_LIGHTS_ON(None))
-        await self._keys(app.LIGHTS[on])
-        self._lamp = on
-        self.forward_controller_state_updates(UNDER_BED_LIGHTS_ON(on))
+        link = self._live()
+
+        def current() -> bool:
+            return self._current(link)
+
+        def remember(delivery: Delivery) -> None:
+            if current() and delivery is not Delivery.NONE:
+                self._lamp = on if delivery is Delivery.SENT else None
+
+        with (
+            self.sent_state(UNDER_BED_LIGHTS_ON(on), is_current=current),
+            delivered(remember),
+        ):
+            await self._keys(app.LIGHTS[on], link=link)
 
     async def lights_on(self) -> None:
         await self._light(True)
@@ -421,17 +449,15 @@ class HestiaController(ProfileExecution[KeesonProfile], BedController):
         return True
 
     async def massage_start(self) -> None:
-        self._live()
+        link = self._live()
         wave, intensity = (int(self._choices[key]) for key in ("wave", "intensity"))
-        self.forward_controller_state_updates(MASSAGE(None))
-        await self._keys(app.WAVE + wave, app.INTENSITY + intensity)
-        self.forward_controller_state_updates(MASSAGE(intensity > 0))
+        with self.sent_state(MASSAGE(intensity > 0), is_current=lambda: self._current(link)):
+            await self._keys(app.WAVE + wave, app.INTENSITY + intensity, link=link)
 
     async def massage_off(self) -> None:
-        self._live()
-        self.forward_controller_state_updates(MASSAGE(None))
-        await self._keys(app.INTENSITY)
-        self.forward_controller_state_updates(MASSAGE(False))
+        link = self._live()
+        with self.sent_state(MASSAGE(False), is_current=lambda: self._current(link)):
+            await self._keys(app.INTENSITY, link=link)
 
     @property
     def supports_massage_off_control(self) -> bool:
@@ -452,12 +478,21 @@ class HestiaController(ProfileExecution[KeesonProfile], BedController):
     async def set_massage_timer(self, minutes: int) -> None:
         if type(minutes) is not int or minutes not in app.TIMERS:
             raise ValueError("Choose 10, 20 or 30 minutes")
-        self._live()
-        self.forward_controller_state_updates(MASSAGE_TIMER_MINUTES(None))
-        await self._keys(app.TIMERS[minutes])
-        self._choices["timer"] = str(minutes)
-        self._publish_choices()
-        self.forward_controller_state_updates(MASSAGE_TIMER_MINUTES(minutes))
+        link = self._live()
+
+        def current() -> bool:
+            return self._current(link)
+
+        def remember(delivery: Delivery) -> None:
+            if current() and delivery is Delivery.SENT:
+                self._choices["timer"] = str(minutes)
+                self._publish_choices()
+
+        with (
+            self.sent_state(MASSAGE_TIMER_MINUTES(minutes), is_current=current),
+            delivered(remember),
+        ):
+            await self._keys(app.TIMERS[minutes], link=link)
 
     def choose(self, key: str, value: str) -> None:
         if self._retired:
@@ -534,9 +569,8 @@ class HestiaController(ProfileExecution[KeesonProfile], BedController):
             timer=alarm.massage_duration or int(self._choices["timer"]),
             memory=alarm.wake_action,
         )
-        self.forward_controller_state_updates(ALARM(None))
-        await self._send(link, frame, cancel)
-        self.forward_controller_state_updates(ALARM(alarm.enabled))
+        with self.sent_state(ALARM(alarm.enabled), is_current=lambda: self._current(link)):
+            await self._send(link, frame, cancel)
 
     async def _native_alarm(self, enabled: bool) -> None:
         await self.configure_alarm(
