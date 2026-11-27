@@ -1781,6 +1781,18 @@
   },
   "entity": {
     "button": {
+      "meisemobell_refresh_alarms": {
+        "name": "Refresh alarms"
+      },
+      "meisemobell_close_alarms": {
+        "name": "Turn off both alarms"
+      },
+      "meisemobell_reset_memories": {
+        "name": "Reset memories"
+      },
+      "meisemobell_reset_settings": {
+        "name": "Reset settings"
+      },
       "hestia_cancel_preset": {
         "name": "Cancel preset"
       },
@@ -4755,6 +4767,15 @@
       }
     },
     "sensor": {
+      "meisemobell_alarm_1": {
+        "name": "Alarm 1"
+      },
+      "meisemobell_alarm_2": {
+        "name": "Alarm 2"
+      },
+      "meisemobell_massage_time": {
+        "name": "Reported massage timer"
+      },
       "silksnow": {"name": "Model"},
       "berun_head_massage": {
         "name": "Head massage level"
@@ -6035,6 +6056,9 @@
       },
       "sleep_assistant_alarm_2": {
         "name": "Alarm 2"
+      },
+      "awmotion_status": {
+        "name": "Bed report"
       },
       "dreamsense_alarm_ack": {
         "name": "Alarm response",
@@ -12176,6 +12200,21 @@
     }
   },
   "exceptions": {
+    "meisemobell_gatt": {
+      "message": "The selected Meisemobell route needs its matching write-without-response and notification characteristics."
+    },
+    "meisemobell_hold": {
+      "message": "Choose a supported control and a whole duration from 1 to 60000 milliseconds."
+    },
+    "meisemobell_alarm": {
+      "message": "Choose alarm slot 1 or 2 and one of this profile’s wake actions."
+    },
+    "meisemobell_alarm_not_reported": {
+      "message": "The bed did not report both alarm records on this connection. Refresh alarms before changing one slot."
+    },
+    "meisemobell_route": {
+      "message": "Select the Meisemobell route explicitly: 15_22_15A or 24_XX_XX."
+    },
     "suta_king_koil_calibrate": {
       "message": "Set the bed clock, then wait for its clock reply before adding or refreshing alarms."
     },
