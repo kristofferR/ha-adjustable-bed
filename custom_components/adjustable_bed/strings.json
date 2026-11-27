@@ -1768,6 +1768,9 @@
   },
   "entity": {
     "button": {
+      "lights_toggle": {
+        "name": "Toggle under-bed light"
+      },
       "ronco_motion_save_zero_g": {
         "name": "Save zero gravity"
       },

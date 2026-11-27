@@ -128,9 +128,12 @@ async def test_startup_and_alarm_timing(hass):
 
     client.write_gatt_char.side_effect = record
     session = SimpleNamespace(async_start_notify=ctrl.start_notify)
-    with virtual_time(clock), patch(
-        "custom_components.adjustable_bed.beds.ronco_motion.controller.dt_util.now",
-        return_value=request(True).reference_time,
+    with (
+        virtual_time(clock),
+        patch(
+            "custom_components.adjustable_bed.beds.ronco_motion.controller.dt_util.now",
+            return_value=request(True).reference_time,
+        ),
     ):
         await ctrl.async_on_connect(session)
         assert writes == [(0, STARTUP[0].hex()), (300, STARTUP[1].hex()), (600, STARTUP[2].hex())]
@@ -147,12 +150,18 @@ async def test_startup_and_alarm_timing(hass):
 async def test_alarm_countdown_accounts_for_admission_delay(hass):
     ctrl, _, client, _ = make_controller(hass)
     alarm = AlarmRequest(
-        enabled=True, hour=7, minute=5, wake_action="zero_g",
+        enabled=True,
+        hour=7,
+        minute=5,
+        wake_action="zero_g",
         reference_time=datetime.fromisoformat("2026-11-27T07:00:30+01:00"),
     )
-    with virtual_time(FakeClock()), patch(
-        "custom_components.adjustable_bed.beds.ronco_motion.controller.dt_util.now",
-        return_value=datetime.fromisoformat("2026-11-27T07:01:10+01:00"),
+    with (
+        virtual_time(FakeClock()),
+        patch(
+            "custom_components.adjustable_bed.beds.ronco_motion.controller.dt_util.now",
+            return_value=datetime.fromisoformat("2026-11-27T07:01:10+01:00"),
+        ),
     ):
         await ctrl.configure_alarm(alarm)
     assert frames(client) == ["6e05040077", "6e060045b9"]
@@ -294,6 +303,157 @@ def test_setup_is_searchable_explicit_and_side_owned():
     assert per_side_profile("ronco_motion", "premium").variant_owned
     assert accepts_name("qRrM1") and accepts_name("K8RM-bed")
     assert not accepts_name("QRRM") and not accepts_name("RC-bed")
+
+
+@pytest.mark.parametrize(
+    "selected, expected", (("richmat", "bedtech"), ("bedtech", None), ("ronco_motion", None))
+)
+def test_shared_name_is_an_opt_in_hint_for_setup_and_recommendations(selected, expected):
+    from custom_components.adjustable_bed.config_flow import _confident_auto_detect
+    from custom_components.adjustable_bed.detection import detect_bed_type_detailed
+    from custom_components.adjustable_bed.profile_recommendations import recommend_profile
+    from tests.test_detection import _make_service_info
+
+    info = _make_service_info(
+        "QRRM157738",
+        service_uuids=["0000fee9-0000-1000-8000-00805f9b34fb"],
+        manufacturer_data={19543: bytes.fromhex("54307651")},
+    )
+    detected = detect_bed_type_detailed(info)
+    assert "ronco_motion" in detected.ambiguous_types
+    assert _confident_auto_detect(detected) == "bedtech"
+    result = recommend_profile(
+        {
+            "bed_type": selected,
+            "protocol_variant": "premium" if selected == "ronco_motion" else "auto",
+        },
+        info,
+        {},
+    )
+    if expected is None:
+        assert result is None
+    else:
+        assert result is not None and result.suggested == expected
+
+
+async def test_app_row_leads_to_explicit_searchable_layout(hass, mock_bluetooth_service_info):
+    from custom_components.adjustable_bed.config_flow import (
+        AdjustableBedConfigFlow,
+        _bed_type_selector,
+    )
+    from tests.form_helpers import start_new_bed
+
+    assert "ronco_motion" in _bed_type_selector(None).rows().values()
+    flow = AdjustableBedConfigFlow()
+    flow.hass, flow.context = hass, {}
+    flow._discovery_info = mock_bluetooth_service_info
+    result = await start_new_bed(flow, "picked", "ronco_motion")
+    assert result["step_id"] == "profile_questions"
+    marker = next(key for key in result["data_schema"].schema if key == "protocol_variant")
+    choices = result["data_schema"].schema[marker]
+    assert set(choices.rows().values()) == {"economy", "premium"}
+
+
+@pytest.mark.parametrize("interrupt", ("cancel", "replacement"))
+async def test_alarm_first_frame_interruption_reports_partial_delivery(hass, interrupt):
+    from custom_components.adjustable_bed.command_scheduler import (
+        _CURRENT_COMMAND_CONTEXT,
+        CommandContext,
+        CommandKind,
+        Delivery,
+        delivered,
+    )
+
+    ctrl, owner, client, _ = make_controller(hass)
+    context = CommandContext(
+        object(),
+        owner.cancel_command,
+        0,
+        "alarm",
+        CommandKind.COMMAND,
+        None,
+        frozenset({"configuration"}),
+    )
+    observed = []
+
+    async def interrupt_write(*_args, **_kwargs):
+        if interrupt == "cancel":
+            owner.cancel_command.set()
+        else:
+            owner.client = MagicMock()
+
+    client.write_gatt_char.side_effect = interrupt_write
+    token = _CURRENT_COMMAND_CONTEXT.set(context)
+    try:
+        with delivered(observed.append):
+            await ctrl.configure_alarm(request(False))
+    finally:
+        _CURRENT_COMMAND_CONTEXT.reset(token)
+    assert frames(client) == ["6e05000073"]
+    assert observed == [Delivery.PARTIAL]
+
+
+@pytest.mark.parametrize("interrupt_at", ("first_write", "first_pause", "second_write"))
+async def test_alarm_task_cancellation_reports_actual_delivery(hass, interrupt_at, monkeypatch):
+    from custom_components.adjustable_bed.command_scheduler import (
+        _CURRENT_COMMAND_CONTEXT,
+        CommandContext,
+        CommandKind,
+        Delivery,
+        delivered,
+    )
+
+    ctrl, owner, client, _ = make_controller(hass)
+    context = CommandContext(
+        object(),
+        owner.cancel_command,
+        0,
+        "alarm",
+        CommandKind.COMMAND,
+        None,
+        frozenset({"configuration"}),
+    )
+    entered, finish = asyncio.Event(), asyncio.Event()
+    observed = []
+    writes = 0
+    pauses = 0
+
+    async def write(*_args, **_kwargs):
+        nonlocal writes
+        writes += 1
+        if interrupt_at == ("first_write" if writes == 1 else "second_write"):
+            entered.set()
+            await finish.wait()
+
+    async def pause(*_args, **_kwargs):
+        nonlocal pauses
+        pauses += 1
+        if interrupt_at == "first_pause" and pauses == 1:
+            entered.set()
+            await finish.wait()
+        return not owner.cancel_command.is_set()
+
+    async def operation():
+        token = _CURRENT_COMMAND_CONTEXT.set(context)
+        try:
+            with delivered(observed.append):
+                await ctrl.configure_alarm(request(False))
+        finally:
+            _CURRENT_COMMAND_CONTEXT.reset(token)
+
+    client.write_gatt_char.side_effect = write
+    monkeypatch.setattr(ctrl, "_pause", pause)
+    task = asyncio.create_task(operation())
+    await entered.wait()
+    owner.cancel_command.set()
+    task.cancel()
+    await asyncio.sleep(0)
+    finish.set()
+    with pytest.raises(asyncio.CancelledError):
+        await task
+    all_frames = ["6e05000073", "6e06000074"]
+    assert frames(client) == (all_frames if interrupt_at == "second_write" else all_frames[:1])
+    assert observed == [Delivery.SENT if interrupt_at == "second_write" else Delivery.PARTIAL]
 
 
 @pytest.mark.parametrize("scenario", ("ronco_motion", "ronco_motion:premium:0"))

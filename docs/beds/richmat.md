@@ -6803,8 +6803,6 @@ operands are checked before control writes use the coordinator scheduler.
 
 #### Analysis provenance
 
-- Ronco Motion 1.2, row175: APK SHA-256 `87713781e94b13e59e82e770ded1429dcef3ab7515cb89e7bf3d33ca58053a64`.
-
 Based on Power Bob Base 1.0.9 (10900) (`com.richmat.bobpowerbase`).
 
 ### Majestic Home
@@ -17407,7 +17405,7 @@ service assignment and physical response await validation.
 
 **App:** [Ronco Motion](https://play.google.com/store/apps/details?id=com.richmat.ronco_motion) 1.2, `com.richmat.ronco_motion`
 
-**Status:** ❓ App-derived controls; hardware unverified.
+**Status:** Not yet tested on hardware.
 
 #### Setup
 
@@ -17516,10 +17514,9 @@ only received acknowledgements, not optimistic success.
 
 #### Evidence
 
-APK Protocol Audit row175, Ronco Motion 1.2 (version code 3). Thirty static
-byte/parser vectors cover the selected layouts and alarm/parser boundaries.
-Firmware acceptance, physical release behavior, Pillow identity and alarm
-execution await external hardware validation.
+Controls and timing are derived from Ronco Motion 1.2. Firmware acceptance,
+physical release behavior, Pillow identity and alarm execution have not been
+verified on hardware.
 
 ## Notes
 

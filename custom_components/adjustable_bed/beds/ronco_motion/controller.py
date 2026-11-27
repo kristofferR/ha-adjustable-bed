@@ -285,9 +285,6 @@ class RoncoMotionController(ProfileExecution[RoncoMotionProfile], BedController)
         if link is not None and link.client.is_connected:
             await link.client.stop_notify(link.notify)
 
-    async def read_positions(self, motor_count: int = 2) -> None:
-        return None
-
     async def async_on_connect(self, session: ControllerSession) -> None:
         link = self._resolve_link()
         await session.async_start_notify()
@@ -423,12 +420,19 @@ class RoncoMotionController(ProfileExecution[RoncoMotionProfile], BedController)
         link = self._resolve_link()
         event = self._coordinator.cancel_command
         for index, command in enumerate(frames):
-            if not await self._write(link, command, event):
-                return
-            if not await self._pause(self.profile.alarm_ms, event, link):
+            try:
+                if not await self._write(link, command, event):
+                    if index + 1 < len(frames):
+                        note_frame_skipped()
+                    return
+                if not await self._pause(self.profile.alarm_ms, event, link):
+                    if index + 1 < len(frames):
+                        note_frame_skipped()
+                    return
+            except asyncio.CancelledError:
                 if index + 1 < len(frames):
                     note_frame_skipped()
-                return
+                raise
 
 
 async def build_controller(ctx: BuildContext) -> RoncoMotionController:
