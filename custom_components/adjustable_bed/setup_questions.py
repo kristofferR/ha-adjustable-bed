@@ -2852,7 +2852,7 @@ SETUP_PROFILES: Final[dict[str, SetupProfile]] = {
     "active_sleep": SetupProfile(
         questions=(Question("active_sleep_auth_id", default="",
             validator=TextSelector(TextSelectorConfig(type=TextSelectorType.PASSWORD))),),
-        owns=dict.fromkeys(GENERIC_FIELDS, SET_BY_PROFILE),
+        owns=dict.fromkeys(GENERIC_FIELDS - {CONF_DISABLE_ANGLE_SENSING}, SET_BY_PROFILE),
     ),
     "linak:carpe_diem": SetupProfile(
         owns={CONF_PROTOCOL_VARIANT: "carpe_diem",

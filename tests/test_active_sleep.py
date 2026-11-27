@@ -10,6 +10,7 @@ from types import SimpleNamespace
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
+from homeassistant.exceptions import ServiceValidationError
 
 from custom_components.adjustable_bed.beds.active_sleep.controller import (
     HEART,
@@ -21,6 +22,7 @@ from custom_components.adjustable_bed.codec import active_sleep as codec
 from custom_components.adjustable_bed.controller_state import ControllerState
 from custom_components.adjustable_bed.detection import detect_bed_type, detect_bed_type_detailed
 from tests.active_sleep_vectors import VECTORS
+from tests.error_helpers import raises_key
 
 
 @pytest.mark.parametrize("row", VECTORS, ids=lambda r: r["id"])
@@ -179,7 +181,7 @@ def bed():
 
 async def test_startup_requires_existing_id_then_subscribes_and_authenticates(bed):
     bed.controller._token = ""
-    with pytest.raises(ValueError, match="existing"):
+    with raises_key("active_sleep_auth_id_required", ServiceValidationError):
         await bed.connect()
     assert not bed.writes
     bed.controller._token = "0123456789ABCDEF"
@@ -195,7 +197,7 @@ async def test_startup_requires_existing_id_then_subscribes_and_authenticates(be
 
 async def test_rejected_auth_never_queries_controls(bed):
     bed.auth = 1
-    with pytest.raises(ValueError, match="rejected"):
+    with raises_key("active_sleep_auth_rejected", ServiceValidationError):
         await bed.connect()
     assert not bed.controller._authenticated
     assert [raw[0] for raw in bed.writes] == [0x81, 0x82, 0x84]
@@ -220,7 +222,7 @@ async def test_no_reply_never_replays_and_cancel_cannot_suppress_release(bed):
     with pytest.raises(TimeoutError):
         await ctrl.hold_control("head_up", 100)
     assert bed.writes == [codec.arrow(2), codec.arrow(0)]
-    with pytest.raises(ValueError, match="fresh authenticated"):
+    with raises_key("active_sleep_reconnect_required", ServiceValidationError):
         await ctrl.hold_control("legs_up", 100)
 
 
@@ -259,7 +261,7 @@ async def test_gatt_replacement_or_changed_token_rejected_before_write(bed):
 async def test_height_threshold_counterexample_and_explicit_ack(bed):
     bed.position = replace(bed.position, posture=(10, 5, 28, 0))
     ctrl = await bed.connect()
-    with pytest.raises(ValueError, match="height warning"):
+    with raises_key("active_sleep_height_clearance", ServiceValidationError):
         await ctrl.hold_control("height_down", 1)
     assert not bed.writes and bed.coordinator.controller_state[WARNING] is True
     await ctrl.press("acknowledge")
@@ -273,7 +275,7 @@ async def test_later_warning_requires_two_seconds_without_position_change(bed):
     ctrl = await bed.connect()
     ctrl._position = replace(bed.position, posture=(10, 5, 28, 0))
     ctrl._last_change = 0
-    with pytest.raises(ValueError, match="height warning"):
+    with raises_key("active_sleep_height_clearance", ServiceValidationError):
         ctrl._height_gate("height_down", first=False, start_high=True)
     assert not bed.writes
 
@@ -319,7 +321,7 @@ async def test_live_model_presence_locks_and_ranges_gate_native_entities(bed):
     assert not ctrl.controller_number_specs  # No guessed user pressure range.
     bed.position = replace(bed.position, locks=1)
     await ctrl.read_positions()
-    with pytest.raises(ValueError, match="locked"):
+    with raises_key("active_sleep_motor_locked", ServiceValidationError):
         ctrl.validate_hold_control("head_up", 1)
     ctrl._spec = replace(ctrl._spec, model=0)
     assert not ctrl.motor_control_specs
@@ -358,13 +360,14 @@ async def test_local_template_save_and_reset_never_program_bed_memory(bed):
 
 async def test_setup_side_ownership_secret_redaction_and_real_factory():
     from custom_components.adjustable_bed.app_profiles import per_side_profile
+    from custom_components.adjustable_bed.const import CONF_DISABLE_ANGLE_SENSING
     from custom_components.adjustable_bed.controller_factory import create_controller
     from custom_components.adjustable_bed.redaction import redact_data
     from custom_components.adjustable_bed.setup_questions import GENERIC_FIELDS, setup_profile
     from tests.test_controller_contract import _FactoryCoordinator
 
     profile = setup_profile("active_sleep", None)
-    assert profile.hidden() == GENERIC_FIELDS
+    assert profile.hidden() == GENERIC_FIELDS - {CONF_DISABLE_ANGLE_SENSING}
     assert "active_sleep_auth_id" in per_side_profile("active_sleep", None).keys
     assert redact_data({"active_sleep_auth_id": "secret"})["active_sleep_auth_id"] != "secret"
     coordinator = _FactoryCoordinator()
@@ -479,11 +482,24 @@ async def test_direct_target_reuses_stream_and_validates_live_range(bed):
     ctrl = await bed.connect()
     ctrl._hold_movement = AsyncMock()
     await ctrl.set_motor_position("head", 25)
-    ctrl._hold_movement.assert_awaited_once_with("target", 30000, (25, 5, 40, 0))
-    for value in (71, -1, 2.5):
-        with pytest.raises(ValueError):
+    ctrl._hold_movement.assert_awaited_once_with("target", 30000, (25, 255, 255, 255))
+    for value, key in ((71, "active_sleep_target_unavailable"), (-1, "active_sleep_target_unavailable"), (2.5, "whole_number_required")):
+        with raises_key(key, ServiceValidationError):
             ctrl.validate_position_request("head", value)
     assert not bed.writes
+
+
+@pytest.mark.parametrize(("motor", "lock"), [("head", 4), ("legs", 1)])
+async def test_single_axis_target_ignores_other_motor_locks(bed, motor, lock):
+    ctrl = await bed.connect()
+    ctrl._position = replace(ctrl._position, locks=lock)
+    ctrl._hold_movement = AsyncMock()
+    await ctrl.set_motor_position(motor, 25)
+    target = (25, 255, 255, 255) if motor == "head" else (255, 25, 255, 255)
+    ctrl._hold_movement.assert_awaited_once_with("target", 30000, target)
+    ctrl._position = replace(ctrl._position, locks=codec.LOCKS[motor])
+    with raises_key("active_sleep_target_unavailable", ServiceValidationError):
+        ctrl.validate_position_request(motor, 25)
 
 
 async def test_position_service_plan_rejects_live_lock_before_any_dispatch(bed):
@@ -494,7 +510,7 @@ async def test_position_service_plan_rejects_live_lock_before_any_dispatch(bed):
     await ctrl.read_positions()
     bed.coordinator.entry.data["bed_type"] = "active_sleep"
     bed.coordinator.disable_angle_sensing = False
-    with pytest.raises(ValueError, match="lock"):
+    with raises_key("active_sleep_target_unavailable", ServiceValidationError):
         services._position_config(bed.coordinator, ctrl, "head", 20)
     assert bed.writes == [codec.frame(0xB2), codec.frame(0xC1), codec.frame(0xA2)]
 
@@ -522,7 +538,7 @@ async def test_later_height_gate_waits_for_no_change_window_then_sends_stop(bed)
             "custom_components.adjustable_bed.beds.active_sleep.controller.monotonic",
             lambda: clock.now,
         ),
-        pytest.raises(ValueError, match="height warning"),
+        raises_key("active_sleep_height_clearance", ServiceValidationError),
     ):
         await ctrl.hold_control("height_down", 4000)
     assert len([raw for _, raw in times if raw == codec.arrow(7)]) >= 10
@@ -565,6 +581,6 @@ async def test_combination_lock_changed_at_final_dispatch_sends_no_motion(bed):
         ctrl._position = replace(bed.position, locks=8)
     finally:
         ctrl.ble_lock.release()
-    with pytest.raises(ValueError, match="locked"):
+    with raises_key("active_sleep_motor_locked", ServiceValidationError):
         await moving
     assert not bed.writes

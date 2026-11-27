@@ -373,6 +373,14 @@ class BedController(GattWriter):
         return self.static_traits.persistent_connection
 
     @property
+    def requires_connection_reset(self) -> bool:
+        """Discard an unusable BLE session before the next ordinary operation.
+
+        STOP and in-flight cleanup still use their captured connection.
+        """
+        return False
+
+    @property
     def requires_disconnected_transport(self) -> bool:
         """Return True when the selected operation uses a non-central role.
 

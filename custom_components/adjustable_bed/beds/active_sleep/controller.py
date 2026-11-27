@@ -17,11 +17,13 @@ from homeassistant.const import EntityCategory
 from ...card import CARD_HIDDEN, CARD_UTILITY
 from ...codec import active_sleep as codec
 from ...controller_state import StateKey
+from ...errors import BedNotConnectedError, invalid, keyed
 from ...execution import HOLD_CEILING_MS
 from ...profiles.active_sleep import ACTIVE_SLEEP, AUTH_ID, BED_TEMPLATES, MATTRESS_TEMPLATES
 from ..base import BedController, ProfileExecution, require_controller
 from ..builder import BuildContext
 from ..cancellation import cancellable, settled
+from ..catalog_buttons import Kind, catalog_button, unique_buttons
 from ..entity_specs import (
     ControllerButtonSpec,
     ControllerHoldSpec,
@@ -32,6 +34,7 @@ from ..entity_specs import (
     MotorControlSpec,
     PositionNumberSpec,
     build_position_number_spec,
+    sleep_rate_sensor_spec,
 )
 from ..lifecycle import CapabilitySnapshotPolicy, ControllerSession
 
@@ -160,7 +163,7 @@ class ActiveSleepController(ProfileExecution, BedController):
     async def async_validate_linked_readiness(self) -> None:
         self._live(auth=True)
         if self._spec is None or self._spec.mode != 0:
-            raise ValueError("Active Sleep normal-mode capability reply is required")
+            raise invalid("active_sleep_normal_mode_required")
 
     @property
     def capability_snapshot_policy(self) -> CapabilitySnapshotPolicy:
@@ -217,14 +220,17 @@ class ActiveSleepController(ProfileExecution, BedController):
 
     def validate_hold_control(self, control: str, duration_ms: int) -> None:
         if control not in self.held_control_options:
-            raise ValueError(
-                "Active Sleep control is not supported by the reported model and ranges"
+            raise invalid(
+                "held_control_not_supported",
+                device_name=self._coordinator.name,
+                control=control,
+                valid_controls=", ".join(self.held_control_options),
             )
         self._live(auth=True)
         if not 1 <= duration_ms <= HOLD_CEILING_MS:
-            raise ValueError("Hold exceeds the shared bounded movement window")
+            raise invalid("hold_lease_duration", min=1, max=HOLD_CEILING_MS)
         if self._position is None or self._position.fail:
-            raise ValueError("Read a valid Active Sleep bed position before moving")
+            raise invalid("active_sleep_position_required")
         if control.startswith("template_"):
             self._target(
                 control
@@ -236,7 +242,7 @@ class ActiveSleepController(ProfileExecution, BedController):
                 else (control.rsplit("_", 1)[0],)
             )
             if any(self._position.locks & codec.LOCKS.get(axis, 0) for axis in axes):
-                raise ValueError("Active Sleep motor is locked")
+                raise invalid("active_sleep_motor_locked")
         if control == "height_down" or control.startswith("template_"):
             self._height_gate(control, first=True, start_high=False)
 
@@ -258,11 +264,12 @@ class ActiveSleepController(ProfileExecution, BedController):
 
     @property
     def controller_button_specs(self) -> tuple[ControllerButtonSpec, ...]:
-        specs = [
+        specs: list[ControllerButtonSpec | None] = [
             ControllerButtonSpec(
                 "active_sleep_refresh",
-                "Refresh Active Sleep state",
+                "Refresh state",
                 partial(action, name="refresh"),
+                translation_key="active_sleep_refresh",
                 diagnostic=True,
                 cancel_movement=False,
             )
@@ -273,25 +280,39 @@ class ActiveSleepController(ProfileExecution, BedController):
                     "active_sleep_height_ack",
                     "Acknowledge bed height warning",
                     partial(action, name="acknowledge"),
+                    translation_key="active_sleep_height_ack",
                     requires_confirmation=True,
                 )
             )
         for name in self.held_control_options:
-            if name.startswith(("template_", "combination")) or name == "multi_button":
+            if name.startswith("template_"):
                 specs.append(
-                    ControllerButtonSpec(
+                    catalog_button(
                         f"active_sleep_{name}",
-                        f"Active Sleep {name.replace('_', ' ')}",
+                        f"Bed position {name.split('_')[1]}",
                         partial(action, name=name),
+                        kind=Kind.PRESET,
+                        hold=ControllerHoldSpec(name),
+                    )
+                )
+            elif name.startswith("combination_"):
+                direction = name.rsplit("_", 1)[1]
+                specs.append(
+                    catalog_button(
+                        f"active_sleep_{name}",
+                        f"Head and feet {direction}",
+                        partial(action, name=name),
+                        kind=Kind.MOTOR,
                         hold=ControllerHoldSpec(name),
                     )
                 )
         if self._spec and self._spec.mattress:
             specs.extend(
-                ControllerButtonSpec(
+                catalog_button(
                     f"active_sleep_mattress_template_{i}",
-                    f"Mattress template {i}",
+                    f"Mattress firmness {i}",
                     partial(action, name=f"mattress_template_{i}"),
+                    kind=Kind.PRESET,
                 )
                 for i in range(1, 6)
             )
@@ -303,18 +324,20 @@ class ActiveSleepController(ProfileExecution, BedController):
                 for slot in range(1, count + 1):
                     if kind == "bed" and slot == 10 and self._spec and self._spec.model != 5:
                         continue
+                    label = f"Bed position {slot}" if kind == "bed" else f"Mattress firmness {slot}"
                     for operation in ("save", "reset"):
                         name = f"{operation}_{kind}_{slot}"
                         specs.append(
-                            ControllerButtonSpec(
+                            catalog_button(
                                 f"active_sleep_{name}",
-                                f"{operation.capitalize()} app {kind} template {slot}",
+                                f"{operation.capitalize()} {label.lower()}",
                                 partial(action, name=name),
+                                kind=Kind.SAVE if operation == "save" else Kind.EXTRA,
                                 requires_confirmation=True,
-                                entity_registry_enabled_default=False,
+                                enabled=False,
                             )
                         )
-        return tuple(specs)
+        return unique_buttons(specs)
 
     @property
     def position_number_specs(self) -> tuple[PositionNumberSpec, ...]:
@@ -408,7 +431,7 @@ class ActiveSleepController(ProfileExecution, BedController):
 
     @property
     def controller_state_sensor_specs(self) -> tuple[ControllerStateSensorSpec, ...]:
-        return tuple(
+        specs = tuple(
             ControllerStateSensorSpec(
                 str(key),
                 str(key),
@@ -424,24 +447,26 @@ class ActiveSleepController(ProfileExecution, BedController):
                 (SERIAL, "mdi:identifier", None, False),
                 (HEIGHT, "mdi:arrow-expand-vertical", "cm", True),
                 (TILT, "mdi:angle-acute", "°", True),
-                (HEART, "mdi:heart-pulse", "bpm", True),
-                (RESPIRATION, "mdi:lungs", "breaths/min", True),
-                (MODE, "mdi:code-array", None, False),
-                (RAW, "mdi:code-array", None, False),
-                (FAIL, "mdi:alert", None, False),
                 (WARNING, "mdi:alert", None, True),
                 (REMAINING, "mdi:timer", None, True),
-                (BUSY, "mdi:progress-clock", None, False),
             )
-            if (key not in (HEART, RESPIRATION, RAW) or bool(self._spec and self._spec.analyzer))
-            and (key not in (MODE, REMAINING, BUSY) or bool(self._spec and self._spec.mattress))
+            if (key != REMAINING or bool(self._spec and self._spec.mattress))
             and (key not in (HEIGHT, WARNING) or "height" in self._axes())
             and (key != TILT or "tilt" in self._axes())
-        ) + tuple(
-            ControllerStateSensorSpec(str(key), str(key), key, "mdi:gauge")
-            for key in ZONE_KEYS.values()
-            if self._spec and self._spec.mattress
         )
+        if self._spec and self._spec.analyzer:
+            specs += (
+                sleep_rate_sensor_spec("heart_rate", str(HEART), HEART),
+                sleep_rate_sensor_spec("breathing_rate", str(RESPIRATION), RESPIRATION),
+            )
+        return specs
+
+    @property
+    def protocol_diagnostics(self) -> dict[str, object]:
+        return {
+            str(key): self._coordinator.controller_state.get(key)
+            for key in (RAW, MODE, BUSY, FAIL, *ZONE_KEYS.values())
+        }
 
     def _live(self, link: Link | None = None, *, auth: bool = False) -> Link:
         current = self._link
@@ -462,9 +487,9 @@ class ActiveSleepController(ProfileExecution, BedController):
             or current.client.services.get_characteristic(current.characteristic.handle)
             is not current.characteristic
         ):
-            raise ConnectionError("Active Sleep link changed; reconnect before retrying")
+            raise BedNotConnectedError("active_sleep_link_changed")
         if auth and (not self._authenticated or self._poisoned):
-            raise ValueError("Active Sleep needs a fresh authenticated session before control")
+            raise invalid("active_sleep_reconnect_required")
         return current
 
     def _format_command_trace_payload(self, command: bytes) -> dict[str, object] | None:
@@ -491,7 +516,7 @@ class ActiveSleepController(ProfileExecution, BedController):
             or "write" not in char.properties
             or "notify" not in char.properties
         ):
-            raise ConnectionError("Active Sleep write/notify characteristic is missing")
+            raise BedNotConnectedError("bed_missing_service")
         link = self._link = Link(client, char, self._epoch, self._token)
 
         def receive(_char: BleakGATTCharacteristic, data: bytearray) -> None:
@@ -552,18 +577,16 @@ class ActiveSleepController(ProfileExecution, BedController):
 
     async def async_on_connect(self, session: ControllerSession) -> None:
         if len(self._token) != 16 or not self._token.isascii():
-            raise ValueError(
-                "Enter your existing 16-character Active Sleep authentication ID in Configure. This integration cannot obtain an ID or register an account."
-            )
+            raise invalid("active_sleep_auth_id_required")
         await session.async_start_notify()
         link = self._live()
         await self._exchange(link, codec.frame(0x81), event=asyncio.Event())
         await self._exchange(link, codec.frame(0x82), event=asyncio.Event())
         if self._spec is None or self._spec.mode != 0:
-            raise ValueError("Active Sleep is not in normal operating mode")
+            raise invalid("active_sleep_normal_mode_required")
         reply = await self._exchange(link, codec.authentication(self._token), event=asyncio.Event())
         if reply.payload[0] not in (0, 2):
-            raise ValueError("Active Sleep authentication rejected the existing ID")
+            raise invalid("active_sleep_auth_rejected")
         self._authenticated = True
         if self._spec.bed:
             await self._exchange(link, codec.frame(0xB1), event=asyncio.Event())
@@ -613,7 +636,7 @@ class ActiveSleepController(ProfileExecution, BedController):
         repeat_delay_ms: int = 100,
         cancel_event: asyncio.Event | None = None,
     ) -> None:
-        raise ValueError("Active Sleep writes require a captured session and matched reply")
+        raise invalid("active_sleep_request_unavailable")
 
     async def _exchange(
         self,
@@ -629,7 +652,7 @@ class ActiveSleepController(ProfileExecution, BedController):
         if event.is_set():
             raise asyncio.CancelledError
         if self._poisoned or self._pending is not None:
-            raise ValueError("Active Sleep has an unconfirmed request; reconnect before retrying")
+            raise invalid("active_sleep_reconnect_required")
         future: asyncio.Future[codec.Reply] = asyncio.get_running_loop().create_future()
         self._pending = (command[0] & 127, future)
         if command[0] == 0xB4:
@@ -761,6 +784,12 @@ class ActiveSleepController(ProfileExecution, BedController):
             return
         if target is None and control.startswith("template_"):
             target = self._target(control)
+        if target is not None:
+            head, legs, height, tilt = (
+                current if desired == 255 else desired
+                for desired, current in zip(target, self._position.posture, strict=True)
+            )
+            target = head, legs, height, tilt
         model = self._spec.model
         if model not in (1, 3, 4) and not self._bed_spec.locks & 4:
             return
@@ -789,9 +818,7 @@ class ActiveSleepController(ProfileExecution, BedController):
         if warn:
             self._warned = True
             self.forward_controller_state_updates(WARNING(True))
-            raise ValueError(
-                "Bed height warning: check clearance and the area beneath the bed. Acknowledge the bed height warning before lowering again."
-            )
+            raise invalid("active_sleep_height_clearance")
 
     def _target(self, control: str) -> codec.Posture:
         target = self._bed_templates[int(control.split("_")[1]) - 1]
@@ -800,7 +827,7 @@ class ActiveSleepController(ProfileExecution, BedController):
 
     def _validate_target(self, target: codec.Posture) -> None:
         if not self._bed_spec or not self._position:
-            raise ValueError("Active Sleep needs live bed limits and positions")
+            raise invalid("active_sleep_limits_required")
         for i, (axis, value) in enumerate(zip(codec.AXES, target, strict=True)):
             if value == 255:
                 continue
@@ -810,7 +837,7 @@ class ActiveSleepController(ProfileExecution, BedController):
                 or not low <= value <= high
                 or self._position.locks & codec.LOCKS[axis]
             ):
-                raise ValueError("Template exceeds the bed's reported capability, range or lock")
+                raise invalid("active_sleep_target_unavailable")
 
     async def hold_control(self, control: str, duration_ms: int) -> None:
         self.validate_hold_control(control, duration_ms)
@@ -833,7 +860,7 @@ class ActiveSleepController(ProfileExecution, BedController):
         def guard() -> None:
             self._live(link, auth=True)
             if self._position is None or self._position.fail:
-                raise ValueError("Read a valid Active Sleep bed position before moving")
+                raise invalid("active_sleep_position_required")
             if target is not None:
                 self._validate_target(target)
             elif control != "multi_button":
@@ -847,7 +874,7 @@ class ActiveSleepController(ProfileExecution, BedController):
                     or self._position.locks & codec.LOCKS[axis]
                     for axis in axes
                 ):
-                    raise ValueError("Active Sleep motor became unavailable or locked")
+                    raise invalid("active_sleep_motor_locked")
             if not written or monotonic() - self._last_change >= self.profile.no_change_ms / 1000:
                 if control == "height_down" or target is not None:
                     self._height_gate(
@@ -873,7 +900,7 @@ class ActiveSleepController(ProfileExecution, BedController):
                 guard()
                 await self._exchange(link, command, guard=guard, sent=sent)
                 if self._position and self._position.fail:
-                    raise ValueError("Active Sleep reported a movement failure")
+                    raise invalid("active_sleep_movement_failed")
                 if monotonic() - self._last_change >= self.profile.no_change_ms / 1000:
                     if (
                         target
@@ -911,23 +938,27 @@ class ActiveSleepController(ProfileExecution, BedController):
     def position_validation_requires_connection(self) -> bool:
         return True
 
+    @property
+    def requires_connection_reset(self) -> bool:
+        return self._poisoned or not self._authenticated
+
     def _single_target(self, motor: str, position: int) -> codec.Posture:
         axis = {"back": "head", "feet": "legs"}.get(motor, motor)
         if axis not in self._axes():
-            raise ValueError("Active Sleep axis is not available")
+            raise invalid("active_sleep_motor_unavailable")
         if self._position is None:
-            raise ValueError("Read a valid bed position before seeking")
-        values = list(self._position.posture)
+            raise invalid("active_sleep_position_required")
+        values = [255] * 4
         values[codec.AXES.index(axis)] = position
         return values[0], values[1], values[2], values[3]
 
     def validate_position_request(self, motor: str, position: float) -> None:
         if not math.isfinite(position) or position != int(position):
-            raise ValueError("Active Sleep positions must be whole numbers")
+            raise invalid("whole_number_required", value=position)
         target = self._single_target(motor, int(position))
         self._live(auth=True)
         if self._position is None or self._position.fail:
-            raise ValueError("Read a valid bed position before seeking")
+            raise invalid("active_sleep_position_required")
         self._validate_target(target)
         self._height_gate("target", first=True, start_high=False, target=target)
 
@@ -948,7 +979,7 @@ class ActiveSleepController(ProfileExecution, BedController):
     async def stop_all(self) -> None:
         link = self._live()
         if not self._authenticated:
-            raise ValueError("Active Sleep authentication is required before STOP")
+            raise invalid("active_sleep_reconnect_required")
         await self._release(link)
 
     async def press(self, name: str) -> None:
@@ -959,7 +990,7 @@ class ActiveSleepController(ProfileExecution, BedController):
         elif name == "acknowledge":
             self._live(auth=True)
             if not self._warned:
-                raise ValueError("No active bed height warning to acknowledge")
+                raise invalid("active_sleep_no_height_warning")
             self._acknowledged = True
             self.forward_controller_state_updates(WARNING(False))
         elif name.startswith(("save_", "reset_")):
@@ -968,21 +999,21 @@ class ActiveSleepController(ProfileExecution, BedController):
             link = self._live(auth=True)
             if kind == "bed":
                 if not self._spec or not self._spec.bed or not 0 <= slot < 10:
-                    raise ValueError("Bed template is unavailable")
+                    raise invalid("active_sleep_template_unavailable")
                 if operation == "save":
                     await self._exchange(link, codec.frame(0xB2))
                     if self._position is None or self._position.fail:
-                        raise ValueError("Read a valid bed position before saving")
+                        raise invalid("active_sleep_position_required")
                     self._bed_templates[slot] = self._position.posture
                 else:
                     self._bed_templates[slot] = BED_TEMPLATES[slot]
             else:
                 if not self._spec or not self._spec.mattress or not 0 <= slot < 5:
-                    raise ValueError("Mattress template is unavailable")
+                    raise invalid("active_sleep_template_unavailable")
                 if operation == "save":
                     await self._exchange(link, codec.frame(0xC1))
                     if self._mattress is None or self._mattress.fail:
-                        raise ValueError("Read a valid mattress position before saving")
+                        raise invalid("active_sleep_mattress_state_required")
                     self._mattress_templates[slot] = (
                         self._mattress.zones,
                         MATTRESS_TEMPLATES[slot][1],
@@ -1003,12 +1034,12 @@ class ActiveSleepController(ProfileExecution, BedController):
         await self._exchange(link, codec.frame(0xB2))
         current = self._position
         if not current or current.fail or not self._bed_spec:
-            raise ValueError("Read valid bed settings before changing them")
+            raise invalid("active_sleep_settings_required")
         mask = current.locks
         if axis is not None:
             bit = codec.LOCKS[axis]
             if not self._bed_spec.locks & bit:
-                raise ValueError("Bed does not support this motor lock")
+                raise invalid("active_sleep_motor_lock_unavailable")
             mask = mask | bit if enabled else mask & ~bit
         command = codec.settings(
             *(bool(mask & bit) for bit in (1, 2, 4, 8, 16)),
@@ -1021,7 +1052,7 @@ class ActiveSleepController(ProfileExecution, BedController):
             or self._position.locks != mask
             or (fast is not None and self._position.fast != fast)
         ):
-            raise ValueError("Active Sleep settings readback differs; write was not replayed")
+            raise invalid("active_sleep_settings_unconfirmed")
 
     async def change_mattress(
         self,
@@ -1035,15 +1066,15 @@ class ActiveSleepController(ProfileExecution, BedController):
     ) -> None:
         link = self._live(auth=True)
         if not self._spec or not self._spec.mattress:
-            raise ValueError("Active Sleep mattress is not present")
+            raise invalid("active_sleep_mattress_unavailable")
         await self._exchange(link, codec.frame(0xC1))
         current = self._mattress
         if current is None or current.fail or current.busy:
-            raise ValueError("Wait for valid idle mattress state before changing it")
+            raise invalid("active_sleep_mattress_busy")
         values = list(zones if zones is not None else current.zones)
         if zone is not None:
             if not 0 <= value <= 15:
-                raise ValueError("Mattress pressure must fit a four-bit zone")
+                raise invalid("value_out_of_range", min=0, max=15, step=1)
             values[codec.ZONES.index(zone)] = value
             mode = 15
             ventilation = False
@@ -1057,7 +1088,7 @@ class ActiveSleepController(ProfileExecution, BedController):
         await self._exchange(link, desired.encode())
         await self._exchange(link, codec.frame(0xC1))
         if self._mattress is None or self._mattress.encode() != desired.encode():
-            raise ValueError("Active Sleep mattress readback differs; write was not replayed")
+            raise invalid("active_sleep_mattress_unconfirmed")
 
     async def async_refresh_diagnostics(self) -> None:
         if not self._authenticated or self._poisoned:
@@ -1103,13 +1134,17 @@ class ActiveSleepController(ProfileExecution, BedController):
     move_feet_stop = stop_all
 
     async def preset_flat(self) -> None:
-        raise NotImplementedError("Use a model-admitted app template")
+        raise NotImplementedError(keyed("active_sleep_flat_unavailable")[0])
 
     async def preset_memory(self, memory_num: int) -> None:
-        raise NotImplementedError("Active Sleep has app templates, not bed memory slots")
+        raise NotImplementedError(
+            keyed("memory_presets_not_supported", device_name=self._coordinator.name)[0]
+        )
 
     async def program_memory(self, memory_num: int) -> None:
-        raise NotImplementedError("The app saves templates locally, not to bed memory")
+        raise NotImplementedError(
+            keyed("memory_programming_not_supported", device_name=self._coordinator.name)[0]
+        )
 
 
 async def build_controller(ctx: BuildContext) -> ActiveSleepController:

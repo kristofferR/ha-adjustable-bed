@@ -1787,6 +1787,12 @@
   },
   "entity": {
     "button": {
+      "active_sleep_refresh": {
+        "name": "Refresh state"
+      },
+      "active_sleep_height_ack": {
+        "name": "Acknowledge bed height warning"
+      },
       "powersbedding_save_zero_g": {"name": "Save zero gravity"},
       "powersbedding_start": {"name": "Start massage"},
       "powersbedding_stop": {"name": "Stop massage"},
@@ -4798,47 +4804,11 @@
         "active_sleep_tilt": {
           "name": "Bed tilt"
         },
-        "active_sleep_heart": {
-          "name": "Heart rate"
-        },
-        "active_sleep_respiration": {
-          "name": "Respiration rate"
-        },
-        "active_sleep_respiration_raw_feed": {
-          "name": "Raw realtime feed"
-        },
-        "active_sleep_failure": {
-          "name": "Bed failure code"
-        },
         "active_sleep_height_warning": {
           "name": "Bed height warning"
         },
         "active_sleep_ventilation_remaining": {
           "name": "Ventilation remaining"
-        },
-        "active_sleep_mattress_busy": {
-          "name": "Mattress busy flags"
-        },
-        "active_sleep_mattress_mode": {
-          "name": "Mattress mode code"
-        },
-        "active_sleep_pressure_head": {
-          "name": "Head pressure code"
-        },
-        "active_sleep_pressure_shoulder": {
-          "name": "Shoulder pressure code"
-        },
-        "active_sleep_pressure_hip": {
-          "name": "Hip pressure code"
-        },
-        "active_sleep_pressure_thigh": {
-          "name": "Thigh pressure code"
-        },
-        "active_sleep_pressure_calf": {
-          "name": "Calf pressure code"
-        },
-        "active_sleep_pressure_feet": {
-          "name": "Feet pressure code"
         },
       "powersbedding_head_report": {"name": "Head massage level"},
       "powersbedding_foot_report": {"name": "Foot massage level"},
@@ -12310,6 +12280,75 @@
     }
   },
   "exceptions": {
+    "active_sleep_normal_mode_required": {
+      "message": "The bed must report normal operating mode before it can be controlled."
+    },
+    "active_sleep_position_required": {
+      "message": "Read a valid bed position before trying again."
+    },
+    "active_sleep_motor_locked": {
+      "message": "This motor is unavailable or locked. Check the motor locks before trying again."
+    },
+    "active_sleep_link_changed": {
+      "message": "The bed connection changed. Reconnect before trying again."
+    },
+    "active_sleep_reconnect_required": {
+      "message": "Reconnect the bed to confirm authentication and its last request before trying again."
+    },
+    "active_sleep_auth_id_required": {
+      "message": "Enter your existing 16-character Active Sleep authentication ID in Configure. This integration cannot obtain an ID or register an account."
+    },
+    "active_sleep_auth_rejected": {
+      "message": "The bed rejected the existing authentication ID. Check it in Configure."
+    },
+    "active_sleep_request_unavailable": {
+      "message": "This action needs the current bed connection and a confirmed reply. Reconnect before trying again."
+    },
+    "active_sleep_height_clearance": {
+      "message": "Bed height warning: check clearance and the area beneath the bed. Acknowledge the bed height warning before lowering again."
+    },
+    "active_sleep_limits_required": {
+      "message": "Read the current bed limits and positions before trying again."
+    },
+    "active_sleep_target_unavailable": {
+      "message": "The requested position exceeds the bed's reported capability, range or lock."
+    },
+    "active_sleep_movement_failed": {
+      "message": "The bed reported a movement failure. Check the bed before trying again."
+    },
+    "active_sleep_motor_unavailable": {
+      "message": "This motor is not available on the bed."
+    },
+    "active_sleep_no_height_warning": {
+      "message": "There is no active bed height warning to acknowledge."
+    },
+    "active_sleep_template_unavailable": {
+      "message": "This saved position is unavailable."
+    },
+    "active_sleep_mattress_state_required": {
+      "message": "Wait for the mattress to report its current firmness, then try again."
+    },
+    "active_sleep_settings_required": {
+      "message": "Read valid bed settings before changing them."
+    },
+    "active_sleep_motor_lock_unavailable": {
+      "message": "The bed does not support this motor lock."
+    },
+    "active_sleep_settings_unconfirmed": {
+      "message": "Bed settings readback did not match. The write was not replayed."
+    },
+    "active_sleep_mattress_unavailable": {
+      "message": "The bed has not reported a mattress."
+    },
+    "active_sleep_mattress_busy": {
+      "message": "Wait for valid idle mattress state before changing it."
+    },
+    "active_sleep_mattress_unconfirmed": {
+      "message": "Mattress readback did not match. The write was not replayed."
+    },
+    "active_sleep_flat_unavailable": {
+      "message": "Use a supported saved position instead of a dedicated flat command."
+    },
     "powersbedding_name": {"message": "Choose the PowersBedding receiver whose Bluetooth name starts with okin or smartbed."},
     "powersbedding_control": {"message": "Choose a control and value supported by this PowersBedding receiver."},
     "powersbedding_alarm": {"message": "Choose a valid PowersBedding alarm time, weekday selection and wake action."},

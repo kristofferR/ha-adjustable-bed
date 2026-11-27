@@ -278,6 +278,12 @@
  "binary_sensor:symphony_privacy": {
   "card_section": "hidden"
  },
+ "button:active_sleep_height_ack": {
+  "card_section": "utility"
+ },
+ "button:active_sleep_refresh": {
+  "card_section": "utility"
+ },
  "button:adjustable_bed_speech": {
   "card_section": "utility"
  },
@@ -4877,49 +4883,13 @@
   "card_section": "lighting",
   "card_role": "mood"
  },
- "sensor:active_sleep_failure": {
-  "card_section": "hidden"
- },
- "sensor:active_sleep_heart": {
-  "card_section": "utility"
- },
  "sensor:active_sleep_height": {
   "card_section": "utility"
  },
  "sensor:active_sleep_height_warning": {
   "card_section": "utility"
  },
- "sensor:active_sleep_mattress_busy": {
-  "card_section": "hidden"
- },
- "sensor:active_sleep_mattress_mode": {
-  "card_section": "hidden"
- },
  "sensor:active_sleep_model": {
-  "card_section": "hidden"
- },
- "sensor:active_sleep_pressure_calf": {
-  "card_section": "hidden"
- },
- "sensor:active_sleep_pressure_feet": {
-  "card_section": "hidden"
- },
- "sensor:active_sleep_pressure_head": {
-  "card_section": "hidden"
- },
- "sensor:active_sleep_pressure_hip": {
-  "card_section": "hidden"
- },
- "sensor:active_sleep_pressure_shoulder": {
-  "card_section": "hidden"
- },
- "sensor:active_sleep_pressure_thigh": {
-  "card_section": "hidden"
- },
- "sensor:active_sleep_respiration": {
-  "card_section": "utility"
- },
- "sensor:active_sleep_respiration_raw_feed": {
   "card_section": "hidden"
  },
  "sensor:active_sleep_serial": {

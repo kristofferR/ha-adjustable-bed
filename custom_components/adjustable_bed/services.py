@@ -1871,6 +1871,20 @@ async def _preflight_each(
         for coordinator, side in targets:
             for target in _command_targets(coordinator, side):
                 controller = await _validation_controller(coordinator, target, preflighted)
+                if controller.requires_connection_reset is True:
+                    async def check_live(
+                        live: BedController, *, current_target: BedChild = target
+                    ) -> None:
+                        with controller_side_scope(current_target):
+                            if (pending := check(current_target, live)) is not None:
+                                await pending
+
+                    preflighted.append((coordinator, target))
+                    await _execute_sided(
+                        coordinator, _child_side(coordinator, SIDE_BOTH, target), check_live,
+                        cancel_running=False, skip_disconnect=True, resource="configuration",
+                    )
+                    continue
                 with controller_side_scope(target):
                     if (pending := check(target, controller)) is not None:
                         await pending
