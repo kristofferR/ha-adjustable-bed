@@ -513,3 +513,13 @@ Okin 5A controller extension in `beds/ifit/` owns exact-session startup,
 held refresh without a trailing release frame, and the combined Flat/preset
 save gesture. No existing app route, discovery matcher or wire scenario changes.
 See [iFit](../beds/okin-5a.md#ifit).
+
+## Comfort Bed
+
+Comfort Bed 1.0.2's current ComfortCareBed profile reproduces all 108 frozen
+TX literals through `codec/richmat.py:function`, including both sides, startup
+queries and the absent-long-code zero output. It adds profile data and extends
+the existing family motion/session controller. Its ordinary RX dispatcher
+differs from Casper's complete-length receiver, so it has a scoped dispatcher
+with only its two verified announcements. See the
+[Comfort Bed section](../beds/richmat.md#comfort-bed) and `tests/test_comfort_bed.py`.

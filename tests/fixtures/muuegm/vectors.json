@@ -1,0 +1,877 @@
+[
+  {
+    "id": "head_up_raw",
+    "protocol": "P1",
+    "action": "head_up_raw",
+    "kind": "ordinary",
+    "inputs": {
+      "code": 36,
+      "framed": false,
+      "side": 0
+    },
+    "expected_bytes": "24",
+    "evidence": [
+      "E-BUILDER",
+      "E-CODES",
+      "E-PRODUCTS",
+      "E-MOTOR"
+    ]
+  },
+  {
+    "id": "head_down_raw",
+    "protocol": "P1",
+    "action": "head_down_raw",
+    "kind": "ordinary",
+    "inputs": {
+      "code": 37,
+      "framed": false,
+      "side": 0
+    },
+    "expected_bytes": "25",
+    "evidence": [
+      "E-BUILDER",
+      "E-CODES",
+      "E-PRODUCTS",
+      "E-MOTOR"
+    ]
+  },
+  {
+    "id": "foot_up_raw",
+    "protocol": "P1",
+    "action": "foot_up_raw",
+    "kind": "ordinary",
+    "inputs": {
+      "code": 38,
+      "framed": false,
+      "side": 0
+    },
+    "expected_bytes": "26",
+    "evidence": [
+      "E-BUILDER",
+      "E-CODES",
+      "E-PRODUCTS",
+      "E-MOTOR"
+    ]
+  },
+  {
+    "id": "stop_raw",
+    "protocol": "P1",
+    "action": "stop_raw",
+    "kind": "ordinary",
+    "inputs": {
+      "code": 110,
+      "framed": false,
+      "side": 0
+    },
+    "expected_bytes": "6e",
+    "evidence": [
+      "E-BUILDER",
+      "E-CODES",
+      "E-PRODUCTS",
+      "E-STOP"
+    ]
+  },
+  {
+    "id": "head_up_left",
+    "protocol": "P2",
+    "action": "head_up_left",
+    "kind": "ordinary",
+    "inputs": {
+      "code": 36,
+      "framed": true,
+      "side": 0
+    },
+    "expected_bytes": "6e 01 00 24 93",
+    "evidence": [
+      "E-BUILDER",
+      "E-CODES",
+      "E-PRODUCTS",
+      "E-MOTOR"
+    ]
+  },
+  {
+    "id": "head_up_right",
+    "protocol": "P2",
+    "action": "head_up_right",
+    "kind": "ordinary",
+    "inputs": {
+      "code": 36,
+      "framed": true,
+      "side": 1
+    },
+    "expected_bytes": "6e 01 01 24 94",
+    "evidence": [
+      "E-BUILDER",
+      "E-CODES",
+      "E-PRODUCTS",
+      "E-MOTOR"
+    ]
+  },
+  {
+    "id": "head_down_left",
+    "protocol": "P2",
+    "action": "head_down_left",
+    "kind": "ordinary",
+    "inputs": {
+      "code": 37,
+      "framed": true,
+      "side": 0
+    },
+    "expected_bytes": "6e 01 00 25 94",
+    "evidence": [
+      "E-BUILDER",
+      "E-CODES",
+      "E-PRODUCTS",
+      "E-MOTOR"
+    ]
+  },
+  {
+    "id": "stop_left",
+    "protocol": "P2",
+    "action": "stop_left",
+    "kind": "ordinary",
+    "inputs": {
+      "code": 110,
+      "framed": true,
+      "side": 0
+    },
+    "expected_bytes": "6e 01 00 6e dd",
+    "evidence": [
+      "E-BUILDER",
+      "E-CODES",
+      "E-PRODUCTS",
+      "E-STOP"
+    ]
+  },
+  {
+    "id": "stop_right",
+    "protocol": "P2",
+    "action": "stop_right",
+    "kind": "ordinary",
+    "inputs": {
+      "code": 110,
+      "framed": true,
+      "side": 1
+    },
+    "expected_bytes": "6e 01 01 6e de",
+    "evidence": [
+      "E-BUILDER",
+      "E-CODES",
+      "E-PRODUCTS",
+      "E-STOP"
+    ]
+  },
+  {
+    "id": "NUPG400_pillow_up_override",
+    "protocol": "P2",
+    "action": "NUPG400_pillow_up_override",
+    "kind": "ordinary",
+    "inputs": {
+      "code": 63,
+      "framed": true,
+      "side": 0
+    },
+    "expected_bytes": "6e 01 00 3f ae",
+    "evidence": [
+      "E-BUILDER",
+      "E-CODES",
+      "E-PRODUCTS",
+      "E-MOTOR"
+    ]
+  },
+  {
+    "id": "NUPG400_pillow_down_override",
+    "protocol": "P2",
+    "action": "NUPG400_pillow_down_override",
+    "kind": "ordinary",
+    "inputs": {
+      "code": 64,
+      "framed": true,
+      "side": 0
+    },
+    "expected_bytes": "6e 01 00 40 af",
+    "evidence": [
+      "E-BUILDER",
+      "E-CODES",
+      "E-PRODUCTS",
+      "E-MOTOR"
+    ]
+  },
+  {
+    "id": "memory1_recall",
+    "protocol": "P2",
+    "action": "memory1_recall",
+    "kind": "ordinary",
+    "inputs": {
+      "code": 46,
+      "framed": true,
+      "side": 0
+    },
+    "expected_bytes": "6e 01 00 2e 9d",
+    "evidence": [
+      "E-BUILDER",
+      "E-CODES",
+      "E-PRODUCTS",
+      "E-PRESET"
+    ]
+  },
+  {
+    "id": "memory1_save",
+    "protocol": "P2",
+    "action": "memory1_save",
+    "kind": "ordinary",
+    "inputs": {
+      "code": 43,
+      "framed": true,
+      "side": 0
+    },
+    "expected_bytes": "6e 01 00 2b 9a",
+    "evidence": [
+      "E-BUILDER",
+      "E-CODES",
+      "E-PRODUCTS",
+      "E-PRESET"
+    ]
+  },
+  {
+    "id": "zero_gravity_recall",
+    "protocol": "P2",
+    "action": "zero_gravity_recall",
+    "kind": "ordinary",
+    "inputs": {
+      "code": 69,
+      "framed": true,
+      "side": 0
+    },
+    "expected_bytes": "6e 01 00 45 b4",
+    "evidence": [
+      "E-BUILDER",
+      "E-CODES",
+      "E-PRODUCTS",
+      "E-PRESET"
+    ]
+  },
+  {
+    "id": "zero_gravity_save",
+    "protocol": "P2",
+    "action": "zero_gravity_save",
+    "kind": "ordinary",
+    "inputs": {
+      "code": 102,
+      "framed": true,
+      "side": 0
+    },
+    "expected_bytes": "6e 01 00 66 d5",
+    "evidence": [
+      "E-BUILDER",
+      "E-CODES",
+      "E-PRODUCTS",
+      "E-PRESET"
+    ]
+  },
+  {
+    "id": "repeat_alarm_list",
+    "protocol": "P3",
+    "action": "dedicated repeat alarm list query builder, reachability retained as candidate",
+    "kind": "sum_prefix",
+    "inputs": {
+      "prefix": [
+        110,
+        32,
+        8,
+        5,
+        1,
+        0,
+        0
+      ]
+    },
+    "expected_bytes": "6e 20 08 05 01 00 00 9c",
+    "evidence": [
+      "E-EXTRA-BUILDERS",
+      "E-INSERT-ABI"
+    ]
+  },
+  {
+    "id": "box_mode_query",
+    "protocol": "P3",
+    "action": "dedicated box mode query builder, reachability retained as candidate",
+    "kind": "sum_prefix",
+    "inputs": {
+      "prefix": [
+        110,
+        32,
+        8,
+        11,
+        2,
+        0,
+        0
+      ]
+    },
+    "expected_bytes": "6e 20 08 0b 02 00 00 a3",
+    "evidence": [
+      "E-EXTRA-BUILDERS",
+      "E-INSERT-ABI"
+    ]
+  },
+  {
+    "id": "special_94a5c1",
+    "protocol": "P2",
+    "action": "deviceFunctionItemExitLimit special-prefix branch; caller reachability UNRESOLVED",
+    "kind": "special",
+    "inputs": {
+      "enum_object": "94a5c1",
+      "code": 0,
+      "framed": true,
+      "side": 0
+    },
+    "expected_bytes": "6e 02 01 00 71",
+    "evidence": [
+      "E-BUILDER-SPECIAL",
+      "E-CODES"
+    ]
+  },
+  {
+    "id": "special_94a561",
+    "protocol": "P2",
+    "action": "deviceFunctionItemCheckClock special-prefix branch; caller reachability requestProductMenu",
+    "kind": "special",
+    "inputs": {
+      "enum_object": "94a561",
+      "code": 1,
+      "framed": true,
+      "side": 0
+    },
+    "expected_bytes": "6e 08 01 01 78",
+    "evidence": [
+      "E-BUILDER-SPECIAL",
+      "E-CODES"
+    ]
+  },
+  {
+    "id": "special_94a541",
+    "protocol": "P2",
+    "action": "deviceFunctionItemCheckLight special-prefix branch; caller reachability requestProductMenu",
+    "kind": "special",
+    "inputs": {
+      "enum_object": "94a541",
+      "code": 1,
+      "framed": true,
+      "side": 0
+    },
+    "expected_bytes": "6e 0a 00 01 79",
+    "evidence": [
+      "E-BUILDER-SPECIAL",
+      "E-CODES"
+    ]
+  },
+  {
+    "id": "special_94a501",
+    "protocol": "P2",
+    "action": "deviceFunctionItemCheckAroma special-prefix branch; caller reachability UNRESOLVED",
+    "kind": "special",
+    "inputs": {
+      "enum_object": "94a501",
+      "code": 0,
+      "framed": true,
+      "side": 0
+    },
+    "expected_bytes": "6e 1a 00 00 88",
+    "evidence": [
+      "E-BUILDER-SPECIAL",
+      "E-CODES"
+    ]
+  },
+  {
+    "id": "special_94a4e1",
+    "protocol": "P2",
+    "action": "deviceFunctionItemCheckMattress special-prefix branch; caller reachability UNRESOLVED",
+    "kind": "special",
+    "inputs": {
+      "enum_object": "94a4e1",
+      "code": 1,
+      "framed": true,
+      "side": 0
+    },
+    "expected_bytes": "5e 1a 00 01 79",
+    "evidence": [
+      "E-BUILDER-SPECIAL",
+      "E-CODES"
+    ]
+  },
+  {
+    "id": "special_94a4a1",
+    "protocol": "P2",
+    "action": "deviceFunctionItemCheckSnore special-prefix branch; caller reachability UNRESOLVED",
+    "kind": "special",
+    "inputs": {
+      "enum_object": "94a4a1",
+      "code": 0,
+      "framed": true,
+      "side": 0
+    },
+    "expected_bytes": "6e 21 00 00 8f",
+    "evidence": [
+      "E-BUILDER-SPECIAL",
+      "E-CODES"
+    ]
+  },
+  {
+    "id": "special_94a481",
+    "protocol": "P2",
+    "action": "deviceFunctionItemCheckSpeech special-prefix branch; caller reachability UNRESOLVED",
+    "kind": "special",
+    "inputs": {
+      "enum_object": "94a481",
+      "code": 0,
+      "framed": true,
+      "side": 0
+    },
+    "expected_bytes": "6e 22 00 00 90",
+    "evidence": [
+      "E-BUILDER-SPECIAL",
+      "E-CODES"
+    ]
+  },
+  {
+    "id": "special_94a461",
+    "protocol": "P2",
+    "action": "deviceFunctionItemCheckDetection special-prefix branch; caller reachability UNRESOLVED",
+    "kind": "special",
+    "inputs": {
+      "enum_object": "94a461",
+      "code": 0,
+      "framed": true,
+      "side": 0
+    },
+    "expected_bytes": "6e 9a c0 00 c8",
+    "evidence": [
+      "E-BUILDER-SPECIAL",
+      "E-CODES"
+    ]
+  },
+  {
+    "id": "special_94a721",
+    "protocol": "P2",
+    "action": "deviceFunctionItemSendStartDetection special-prefix branch; caller reachability UNRESOLVED",
+    "kind": "special",
+    "inputs": {
+      "enum_object": "94a721",
+      "code": 16,
+      "framed": true,
+      "side": 0
+    },
+    "expected_bytes": "6e 88 c2 10 c8",
+    "evidence": [
+      "E-BUILDER-SPECIAL",
+      "E-CODES"
+    ]
+  },
+  {
+    "id": "special_94a701",
+    "protocol": "P2",
+    "action": "deviceFunctionItemQueryVersion special-prefix branch; caller reachability UNRESOLVED",
+    "kind": "special",
+    "inputs": {
+      "enum_object": "94a701",
+      "code": 0,
+      "framed": true,
+      "side": 0
+    },
+    "expected_bytes": "6e 9a 00 00 08",
+    "evidence": [
+      "E-BUILDER-SPECIAL",
+      "E-CODES"
+    ]
+  },
+  {
+    "id": "special_94a6e1",
+    "protocol": "P2",
+    "action": "deviceFunctionVersionOneBedCurrentMode special-prefix branch; caller reachability UNRESOLVED",
+    "kind": "special",
+    "inputs": {
+      "enum_object": "94a6e1",
+      "code": 0,
+      "framed": true,
+      "side": 0
+    },
+    "expected_bytes": "6e 9a 10 00 18",
+    "evidence": [
+      "E-BUILDER-SPECIAL",
+      "E-CODES"
+    ]
+  },
+  {
+    "id": "special_94a6c1",
+    "protocol": "P2",
+    "action": "deviceFunctionVersionOneMotor1CurrentAngle special-prefix branch; caller reachability UNRESOLVED",
+    "kind": "special",
+    "inputs": {
+      "enum_object": "94a6c1",
+      "code": 1,
+      "framed": true,
+      "side": 0
+    },
+    "expected_bytes": "6e 9a 30 01 39",
+    "evidence": [
+      "E-BUILDER-SPECIAL",
+      "E-CODES"
+    ]
+  },
+  {
+    "id": "special_94a6a1",
+    "protocol": "P2",
+    "action": "deviceFunctionVersionOneMotor2CurrentAngle special-prefix branch; caller reachability UNRESOLVED",
+    "kind": "special",
+    "inputs": {
+      "enum_object": "94a6a1",
+      "code": 2,
+      "framed": true,
+      "side": 0
+    },
+    "expected_bytes": "6e 9a 30 02 3a",
+    "evidence": [
+      "E-BUILDER-SPECIAL",
+      "E-CODES"
+    ]
+  },
+  {
+    "id": "special_94a681",
+    "protocol": "P2",
+    "action": "deviceFunctionVersionOneMotor3CurrentAngle special-prefix branch; caller reachability UNRESOLVED",
+    "kind": "special",
+    "inputs": {
+      "enum_object": "94a681",
+      "code": 3,
+      "framed": true,
+      "side": 0
+    },
+    "expected_bytes": "6e 9a 30 03 3b",
+    "evidence": [
+      "E-BUILDER-SPECIAL",
+      "E-CODES"
+    ]
+  },
+  {
+    "id": "special_94a661",
+    "protocol": "P2",
+    "action": "deviceFunctionVersionOneMotor4CurrentAngle special-prefix branch; caller reachability UNRESOLVED",
+    "kind": "special",
+    "inputs": {
+      "enum_object": "94a661",
+      "code": 4,
+      "framed": true,
+      "side": 0
+    },
+    "expected_bytes": "6e 9a 30 04 3c",
+    "evidence": [
+      "E-BUILDER-SPECIAL",
+      "E-CODES"
+    ]
+  },
+  {
+    "id": "special_94a641",
+    "protocol": "P2",
+    "action": "deviceFunctionVersionOneCurrentMassageMode special-prefix branch; caller reachability UNRESOLVED",
+    "kind": "special",
+    "inputs": {
+      "enum_object": "94a641",
+      "code": 0,
+      "framed": true,
+      "side": 0
+    },
+    "expected_bytes": "6e 9a a0 00 a8",
+    "evidence": [
+      "E-BUILDER-SPECIAL",
+      "E-CODES"
+    ]
+  },
+  {
+    "id": "special_94a621",
+    "protocol": "P2",
+    "action": "deviceFunctionVersionOneCurrentBedLightStatus special-prefix branch; caller reachability UNRESOLVED",
+    "kind": "special",
+    "inputs": {
+      "enum_object": "94a621",
+      "code": 0,
+      "framed": true,
+      "side": 0
+    },
+    "expected_bytes": "6e 9a b0 00 b8",
+    "evidence": [
+      "E-BUILDER-SPECIAL",
+      "E-CODES"
+    ]
+  },
+  {
+    "id": "primary_massage_head_raw",
+    "protocol": "P1",
+    "action": "massage_head",
+    "kind": "ordinary",
+    "inputs": {
+      "code": 76,
+      "framed": false,
+      "side": 0
+    },
+    "expected_bytes": "4c",
+    "origin": "reconstructed artifact formula; no hardware capture",
+    "evidence": [
+      "E-MASSAGE",
+      "E-BUILDER"
+    ]
+  },
+  {
+    "id": "primary_massage_head_framed",
+    "protocol": "P2",
+    "action": "massage_head",
+    "kind": "ordinary",
+    "inputs": {
+      "code": 76,
+      "framed": true,
+      "side": 0
+    },
+    "expected_bytes": "6e 01 00 4c bb",
+    "origin": "reconstructed artifact formula; no hardware capture",
+    "evidence": [
+      "E-MASSAGE",
+      "E-BUILDER"
+    ]
+  },
+  {
+    "id": "primary_massage_foot_raw",
+    "protocol": "P1",
+    "action": "massage_foot",
+    "kind": "ordinary",
+    "inputs": {
+      "code": 78,
+      "framed": false,
+      "side": 0
+    },
+    "expected_bytes": "4e",
+    "origin": "reconstructed artifact formula; no hardware capture",
+    "evidence": [
+      "E-MASSAGE",
+      "E-BUILDER"
+    ]
+  },
+  {
+    "id": "primary_massage_foot_framed",
+    "protocol": "P2",
+    "action": "massage_foot",
+    "kind": "ordinary",
+    "inputs": {
+      "code": 78,
+      "framed": true,
+      "side": 0
+    },
+    "expected_bytes": "6e 01 00 4e bd",
+    "origin": "reconstructed artifact formula; no hardware capture",
+    "evidence": [
+      "E-MASSAGE",
+      "E-BUILDER"
+    ]
+  },
+  {
+    "id": "primary_massage_mode_raw",
+    "protocol": "P1",
+    "action": "massage_mode",
+    "kind": "ordinary",
+    "inputs": {
+      "code": 72,
+      "framed": false,
+      "side": 0
+    },
+    "expected_bytes": "48",
+    "origin": "reconstructed artifact formula; no hardware capture",
+    "evidence": [
+      "E-MASSAGE",
+      "E-BUILDER"
+    ]
+  },
+  {
+    "id": "primary_massage_mode_framed",
+    "protocol": "P2",
+    "action": "massage_mode",
+    "kind": "ordinary",
+    "inputs": {
+      "code": 72,
+      "framed": true,
+      "side": 0
+    },
+    "expected_bytes": "6e 01 00 48 b7",
+    "origin": "reconstructed artifact formula; no hardware capture",
+    "evidence": [
+      "E-MASSAGE",
+      "E-BUILDER"
+    ]
+  },
+  {
+    "id": "primary_massage_all_off_raw",
+    "protocol": "P1",
+    "action": "massage_all_off",
+    "kind": "ordinary",
+    "inputs": {
+      "code": 94,
+      "framed": false,
+      "side": 0
+    },
+    "expected_bytes": "5e",
+    "origin": "reconstructed artifact formula; no hardware capture",
+    "evidence": [
+      "E-MASSAGE",
+      "E-BUILDER"
+    ]
+  },
+  {
+    "id": "primary_massage_all_off_framed",
+    "protocol": "P2",
+    "action": "massage_all_off",
+    "kind": "ordinary",
+    "inputs": {
+      "code": 94,
+      "framed": true,
+      "side": 0
+    },
+    "expected_bytes": "6e 01 00 5e cd",
+    "origin": "reconstructed artifact formula; no hardware capture",
+    "evidence": [
+      "E-MASSAGE",
+      "E-BUILDER"
+    ]
+  },
+  {
+    "id": "primary_massage_timer10_raw",
+    "protocol": "P1",
+    "action": "massage_timer10",
+    "kind": "ordinary",
+    "inputs": {
+      "code": 95,
+      "framed": false,
+      "side": 0
+    },
+    "expected_bytes": "5f",
+    "origin": "reconstructed artifact formula; no hardware capture",
+    "evidence": [
+      "E-MASSAGE",
+      "E-BUILDER"
+    ]
+  },
+  {
+    "id": "primary_massage_timer10_framed",
+    "protocol": "P2",
+    "action": "massage_timer10",
+    "kind": "ordinary",
+    "inputs": {
+      "code": 95,
+      "framed": true,
+      "side": 0
+    },
+    "expected_bytes": "6e 01 00 5f ce",
+    "origin": "reconstructed artifact formula; no hardware capture",
+    "evidence": [
+      "E-MASSAGE",
+      "E-BUILDER"
+    ]
+  },
+  {
+    "id": "primary_massage_timer20_raw",
+    "protocol": "P1",
+    "action": "massage_timer20",
+    "kind": "ordinary",
+    "inputs": {
+      "code": 99,
+      "framed": false,
+      "side": 0
+    },
+    "expected_bytes": "63",
+    "origin": "reconstructed artifact formula; no hardware capture",
+    "evidence": [
+      "E-MASSAGE",
+      "E-BUILDER"
+    ]
+  },
+  {
+    "id": "primary_massage_timer20_framed",
+    "protocol": "P2",
+    "action": "massage_timer20",
+    "kind": "ordinary",
+    "inputs": {
+      "code": 99,
+      "framed": true,
+      "side": 0
+    },
+    "expected_bytes": "6e 01 00 63 d2",
+    "origin": "reconstructed artifact formula; no hardware capture",
+    "evidence": [
+      "E-MASSAGE",
+      "E-BUILDER"
+    ]
+  },
+  {
+    "id": "primary_massage_timer30_raw",
+    "protocol": "P1",
+    "action": "massage_timer30",
+    "kind": "ordinary",
+    "inputs": {
+      "code": 97,
+      "framed": false,
+      "side": 0
+    },
+    "expected_bytes": "61",
+    "origin": "reconstructed artifact formula; no hardware capture",
+    "evidence": [
+      "E-MASSAGE",
+      "E-BUILDER"
+    ]
+  },
+  {
+    "id": "primary_massage_timer30_framed",
+    "protocol": "P2",
+    "action": "massage_timer30",
+    "kind": "ordinary",
+    "inputs": {
+      "code": 97,
+      "framed": true,
+      "side": 0
+    },
+    "expected_bytes": "6e 01 00 61 d0",
+    "origin": "reconstructed artifact formula; no hardware capture",
+    "evidence": [
+      "E-MASSAGE",
+      "E-BUILDER"
+    ]
+  },
+  {
+    "id": "primary_motor_page_light_raw",
+    "protocol": "P1",
+    "action": "motor_page_light",
+    "kind": "ordinary",
+    "inputs": {
+      "code": 60,
+      "framed": false,
+      "side": 0
+    },
+    "expected_bytes": "3c",
+    "origin": "reconstructed artifact formula; no hardware capture",
+    "evidence": [
+      "E-RESET-LIGHT",
+      "E-BUILDER"
+    ]
+  },
+  {
+    "id": "primary_motor_page_light_framed",
+    "protocol": "P2",
+    "action": "motor_page_light",
+    "kind": "ordinary",
+    "inputs": {
+      "code": 60,
+      "framed": true,
+      "side": 0
+    },
+    "expected_bytes": "6e 01 00 3c ab",
+    "origin": "reconstructed artifact formula; no hardware capture",
+    "evidence": [
+      "E-RESET-LIGHT",
+      "E-BUILDER"
+    ]
+  }
+]

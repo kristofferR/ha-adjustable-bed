@@ -29,6 +29,7 @@ from .const import (
     BED_TYPE_CASPER_SLEEP_MM,
     BED_TYPE_CASPER_SLEEP_SXB,
     BED_TYPE_CHERISH,
+    BED_TYPE_COMFORT_BED,
     BED_TYPE_COMFORT_ENHANCEMENT3,
     BED_TYPE_COMFORT_ENHANCEMENTS,
     BED_TYPE_COMFORT_MOTION,
@@ -345,6 +346,7 @@ _BED_TRAITS: Final[dict[str, BedTraits]] = {
     BED_TYPE_GMMOTOR_SLEEP_SXB: _NO_ANGLES_PERSISTENT,
     BED_TYPE_GALAXY: _NO_ANGLES,
     BED_TYPE_ATLAS_LIFT: _NO_ANGLES,
+    BED_TYPE_COMFORT_BED: replace(_NO_ANGLES_SCOPED, connection_timeout=5, owns_device_info_reads=True),
     BED_TYPE_GOODVIBE: _NO_ANGLES,
     BED_TYPE_MLILY: _NO_ANGLES,
     "majestichome": _NO_ANGLES,
@@ -370,6 +372,7 @@ _BED_TRAITS: Final[dict[str, BedTraits]] = {
     "wsilver_legacy": replace(_NO_ANGLES_SCOPED, owns_device_info_reads=True),
     BED_TYPE_LIKIMIO: replace(_NO_ANGLES_SCOPED, owns_device_info_reads=True, connection_timeout=5),
     "dreamsense": replace(_NO_ANGLES_SCOPED, owns_device_info_reads=True, connection_timeout=5),
+    "muuegm": replace(_NO_ANGLES_SCOPED, owns_device_info_reads=True, connection_timeout=5),
     "saatva": replace(_NO_ANGLES_SCOPED, owns_device_info_reads=True),
     "super_colchones": replace(_NO_ANGLES_SCOPED, owns_device_info_reads=True, connection_timeout=5),
     "ergobq": replace(_NO_ANGLES_SCOPED, owns_device_info_reads=True),
@@ -600,7 +603,7 @@ def store_read_positions(data: dict[str, object], read: bool | None = None) -> N
 # keeps this in step with the controllers.
 MASSAGE_SETTING_UNUSED_BED_TYPES: Final = frozenset(
     {
-     BED_TYPE_AMBIENT, BED_TYPE_ATLAS_LIFT,
+     BED_TYPE_AMBIENT, BED_TYPE_ATLAS_LIFT, BED_TYPE_COMFORT_BED,
      "adjustable_bed", "adjustable_lumbar", "adjustamattress", "bailey_bed_control",
      BED_TYPE_ERGOBED, BED_TYPE_MOODBASE, "l2motion", "bedgear", "bedjet_powerlayer", "bedsense", "bf", "casper_base", "casper_remote",
      "casper_sleep_mm", "casper_sleep_sxb", "cherish", "comfort_enhancement3",

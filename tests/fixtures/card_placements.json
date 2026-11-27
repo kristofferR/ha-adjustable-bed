@@ -4483,6 +4483,9 @@
  "select:bedsmart_side": {
   "card_section": "motors"
  },
+ "select:comfort_bed_side": {
+  "card_section": "utility"
+ },
  "select:comfy_timer_selection": {
   "card_section": "utility"
  },
@@ -4621,6 +4624,9 @@
  },
  "select:motomotion_side": {
   "card_section": "motors"
+ },
+ "select:muuegm_color": {
+  "card_section": "lighting"
  },
  "select:octo_light_sensitivity": {
   "card_section": "hidden"
