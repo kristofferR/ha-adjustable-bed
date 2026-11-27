@@ -6,6 +6,7 @@ import asyncio
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
+import voluptuous as vol
 from homeassistant.const import CONF_ADDRESS, CONF_NAME
 from homeassistant.exceptions import HomeAssistantError
 from pytest_homeassistant.common import MockConfigEntry
@@ -19,6 +20,7 @@ from custom_components.adjustable_bed.beds.richmat.purely_sleep import (
 )
 from custom_components.adjustable_bed.button import _button_entities_for
 from custom_components.adjustable_bed.command_scheduler import Delivery, delivered
+from custom_components.adjustable_bed.config_flow import AdjustableBedConfigFlow
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
 from custom_components.adjustable_bed.cover import AdjustableBedCover, _build_cover_description
 from custom_components.adjustable_bed.detection import bed_type_label
@@ -27,6 +29,7 @@ from custom_components.adjustable_bed.profile_id import resolve_profile_id
 from custom_components.adjustable_bed.profiles.purely_sleep import PRODUCT_CHOICES
 from custom_components.adjustable_bed.services import async_register_services
 from tests.error_helpers import raises_key
+from tests.form_helpers import form_answers, suggested
 from tests.hold_lease_wire import intervals, leased_hold, virtual_clock
 from tests.test_atlas_lift import client_on, frames, service, session_for
 from tests.test_richmat_family_flow import answer, setup_flow
@@ -97,21 +100,52 @@ def test_unaccepted_products_are_never_silently_replaced(product):
         PurelySleepController(MagicMock(), product=product)
 
 
-async def test_native_setup_requires_an_explicit_product(hass):
+@pytest.mark.parametrize("product", ("JLRN", "VJRM"))
+async def test_native_setup_requires_an_explicit_product(hass, product):
     flow = setup_flow(hass)
     result, _finish = await answer(flow, "purely_sleep")
     assert result["step_id"] == "profile_questions"
     assert result["data_schema"].schema[const.CONF_PROTOCOL_VARIANT].rows() == {
         label: code for code, label in PRODUCT_CHOICES.items()
     }
+    assert suggested(result, const.CONF_PROTOCOL_VARIANT) is None
+    with pytest.raises(vol.Invalid):
+        result["data_schema"]({})
     with patch.object(flow, "_finish_with_verify", new=AsyncMock()) as finish:
-        await flow.async_step_profile_questions({const.CONF_PROTOCOL_VARIANT: "VJRM"})
+        await flow.async_step_profile_questions({const.CONF_PROTOCOL_VARIANT: product})
     saved = finish.await_args.args[0]
     assert saved[const.CONF_BED_TYPE] == const.BED_TYPE_PURELY_SLEEP
     assert saved[const.CONF_MOTOR_COUNT] == 2
     assert saved[const.CONF_HAS_MASSAGE] is False
-    assert resolve_profile_id(saved) == "purely_sleep:VJRM"
+    assert resolve_profile_id(saved) == f"purely_sleep:{product}"
     assert "Purely Sleep" in bed_type_label(const.BED_TYPE_PURELY_SLEEP)
+
+
+@pytest.mark.parametrize("origin", ("typed", "picked", "discovered"))
+@pytest.mark.parametrize("product", ("JLRN", "VJRM"))
+async def test_public_app_row_saves_each_explicit_product(
+    hass, mock_bluetooth_service_info, origin, product
+):
+    flow = AdjustableBedConfigFlow()
+    flow.hass, flow.context = hass, {"source": "user"}
+    flow._async_transport_note = AsyncMock(return_value="")
+    flow._app_after_device = "manual_entry" if origin == "typed" else "device"
+    if origin != "typed":
+        flow._discovery_info = mock_bluetooth_service_info
+        flow._new_bed_origin = origin
+    form = await flow.async_step_select_app({const.CONF_BED_TYPE: "purely_sleep"})
+    if origin == "typed":
+        form = await flow.async_step_manual_entry({CONF_ADDRESS: ADDRESS})
+    assert form["step_id"] == "profile_questions"
+    assert suggested(form, const.CONF_PROTOCOL_VARIANT) is None
+    form = await flow.async_step_profile_questions({const.CONF_PROTOCOL_VARIANT: product})
+    assert form["step_id"] == "finish_settings"
+    with patch.object(flow, "_finish_with_verify", new=AsyncMock()) as finish:
+        await flow.async_step_finish_settings(form_answers(form))
+    finish.assert_awaited_once()
+    saved = finish.await_args.args[0]
+    assert saved[const.CONF_PROTOCOL_VARIANT] == product
+    assert resolve_profile_id(saved) == f"purely_sleep:{product}"
 
 
 @pytest.fixture

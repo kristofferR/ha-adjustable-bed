@@ -3923,7 +3923,8 @@ SETUP_PROFILES: Final[dict[str, SetupProfile]] = {
     BED_TYPE_PURELY_SLEEP: SetupProfile(
         owns={CONF_MOTOR_COUNT: 2, CONF_HAS_MASSAGE: False,
               CONF_DISABLE_ANGLE_SENSING: True, CONF_MOTOR_PULSE_DELAY_MS: 100},
-        questions=(Question(CONF_PROTOCOL_VARIANT, PURELY_SLEEP_PRODUCTS, searchable=True),),
+        questions=(Question(CONF_PROTOCOL_VARIANT, PURELY_SLEEP_PRODUCTS, lambda _data: REQUIRED,
+                            searchable=True),),
     ),
     BED_TYPE_COMFORT_BED: SetupProfile(
         owns={CONF_MOTOR_COUNT: 2, CONF_HAS_MASSAGE: True,
