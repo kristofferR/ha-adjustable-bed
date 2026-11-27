@@ -81,6 +81,7 @@ class ControllerNumberSpec:
     native_step: float
     set_fn: Callable[[BedController, float], Awaitable[None]]
     native_unit_of_measurement: str | None = None
+    assumed_state: bool = field(default=False, kw_only=True)
     card: CardPlacement = field(default=CARD_UTILITY, kw_only=True)
     entity_category: EntityCategory | None = field(default=None, kw_only=True)
     entity_registry_enabled_default: bool = field(default=True, kw_only=True)
