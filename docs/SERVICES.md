@@ -2737,3 +2737,7 @@ unverified. Use `set_alarm` for adding, enabling or disabling an alarm, and
 
 Set the bed clock and wait for a clock reply before confirming existing alarms.
 The action sends each selected weekday, then queries the receiver's alarm list.
+
+### GhostBed alarms and clock
+
+GhostBed app beds support `set_alarm` slots 1–4 with weekdays and `wake_mode_1` (Basic) or `wake_mode_2` (Pro). Both bank reports must be available before editing. `sync_clock` writes HA local time. Confirmed native Delete alarm buttons compact the four records; see [GhostBed](beds/flexispot.md#ghostbed).

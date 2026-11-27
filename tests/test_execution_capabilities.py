@@ -99,3 +99,11 @@ async def test_scott_living_refresh_has_no_release_or_composed_keys():
         controller.profile = profile(layout)
         assert controller.execution.declared == {"hold"}
         assert controller.execution.hold_for("head_up") == "stream"
+
+
+async def test_ghostbed_hold_uses_current_two_axis_route() -> None:
+    """GhostBed 1.3 (4): immediate movement, 200 ms refresh, axis release after 100 ms."""
+    controller = await _create_controller_for_bed_type("ghostbed")
+    assert controller.execution.declared == {"hold"}
+    assert controller.held_control_options == ("back_up", "back_down", "feet_up", "feet_down")
+    assert (controller.refresh_ms, controller.release_ms) == (200, 100)

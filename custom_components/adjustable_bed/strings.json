@@ -4750,6 +4750,8 @@
       }
     },
     "sensor": {
+      "ghostbed_raw_status": {"name": "Raw bed status"},
+      "ghostbed_alarms": {"name": "Bed alarms"},
       "silksnow": {"name": "Model"},
       "berun_head_massage": {
         "name": "Head massage level"
@@ -6133,6 +6135,8 @@
       }
     },
     "switch": {
+      "ghostbed_snore_home": {"name": "Anti-snore (home)"},
+      "ghostbed_snore_left": {"name": "Anti-snore (left settings)"},
       "okimattmotion_massage_power": { "name": "Massage" },
       "langjue_alarm_enabled": {
         "name": "Bed alarm"
@@ -6720,6 +6724,8 @@
       }
     },
     "number": {
+      "ghostbed_upper_massage": {"name": "Head massage intensity"},
+      "ghostbed_feet_massage": {"name": "Feet massage intensity"},
       "suta_king_koil_head_step": {
         "name": "Head massage step"
       },
@@ -7244,6 +7250,9 @@
       }
     },
     "select": {
+      "ghostbed_massage_mode": {"name": "Massage mode", "state": {"basic": "Basic", "cycle": "Cycle", "pulse": "Pulse", "wave": "Wave"}},
+      "ghostbed_sensitivity": {"name": "Anti-snore sensitivity", "state": {"low": "Low", "medium": "Medium", "high": "High"}},
+      "ghostbed_angle": {"name": "Anti-snore target", "state": {"8": "8°", "12": "12°", "15": "15°"}},
       "suta_king_koil_massage_mode": {
         "name": "Massage mode"
       },
@@ -12086,6 +12095,9 @@
     }
   },
   "exceptions": {
+    "ghostbed_control_unavailable": {"message": "This GhostBed control or value is unavailable."},
+    "ghostbed_status_required": {"message": "Wait for current bed status before editing this setting."},
+    "ghostbed_alarm_overlap": {"message": "Choose alarms more than 30 minutes apart on shared repeat days."},
     "suta_king_koil_calibrate": {
       "message": "Set the bed clock, then wait for its clock reply before adding or refreshing alarms."
     },

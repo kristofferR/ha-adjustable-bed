@@ -47,6 +47,7 @@ from .const import (
     BED_TYPE_FSM_RELAX,
     BED_TYPE_FURNIMOVE,
     BED_TYPE_GALAXY,
+    BED_TYPE_GHOSTBED,
     BED_TYPE_GLIDEAWAY_MOTION,
     BED_TYPE_GOODVIBE,
     BED_TYPE_HJBED,
@@ -211,6 +212,7 @@ _BY_BED_TYPE: Final[dict[str, SideProfile]] = {
         "Leva Bed Remote", frozenset({CONF_MOTOR_COUNT, CONF_HAS_MASSAGE}), variant_owned=True
     ),
     BED_TYPE_LANGJUE: SideProfile("Comfort Smart Bed (Langjue)"),
+    BED_TYPE_GHOSTBED: SideProfile("GhostBed", frozenset({CONF_HAS_LIGHT})),
     BED_TYPE_FLEXISPOT: SideProfile("Flexispot", frozenset({CONF_HAS_LIGHT})),
     BED_TYPE_LINX: SideProfile("Linx", variant_owned=True),
     BED_TYPE_AMBIENT: SideProfile("M3 Ambient", variant_owned=True),

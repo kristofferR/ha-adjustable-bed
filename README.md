@@ -131,6 +131,7 @@ bed has been tested on real hardware.
 | [Restonic app](docs/beds/restonic.md) | Prime, Lombar, Infinity | Restonic |
 | [L2 Motion](docs/beds/motomotion.md#l2-motion) | [Leon's L2Motion](docs/beds/motomotion.md#l2-motion) | Leon's |
 | [Flexispot](docs/beds/flexispot.md) | Flexispot app, four models | Flexispot |
+| [GhostBed app](docs/beds/flexispot.md#ghostbed) | GhostBed | Beds controlled by the GhostBed app |
 | [Langjue](docs/beds/langjue.md) | Comfort Smart Bed app, manual setup | Langjue (hardware unverified) |
 | [Leggett & Platt](docs/beds/leggett-platt.md) | [LP Control and LP Comfort Connect (Leggett & Platt Gen2)](docs/beds/leggett-platt.md#gen2-variant), [Prodigy CE (Okin receiver)](docs/beds/okin-nframe.md#prodigy-ce-prodigy-4), [Prodigy 2](docs/beds/okin-nframe.md#prodigy-2), [Prodigy 2L](docs/beds/okin-nframe.md#prodigy-2l), [U Series](docs/beds/okin-nframe.md#u-series), [L&P Adjustable Base](docs/beds/richmat.md#lp-adjustable-base), [L&P Adjustable Base (older version)](docs/beds/richmat.md#lp-legacy-app), [L&P app on a QRRM remote (Richmat)](docs/beds/leggett-platt.md#qrrm-richmat-variant), [MlRM (Leggett & Platt WiLinke)](docs/beds/richmat.md#lp-mlrm) | Leggett & Platt, Prodigy LBR, Prodigy Comfort Elite, Prodigy 4, Ultra Series |
 | [Limoss / Stawett](docs/beds/limoss.md) | [Limoss Remote](docs/beds/limoss.md#limoss-remote), [FSM Relax](docs/beds/limoss.md#fsm-relax), [Stawett and older Limoss controls](docs/beds/limoss.md#legacy-route) | Limoss, Stawett |

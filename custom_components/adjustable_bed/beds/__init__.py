@@ -48,6 +48,7 @@ if TYPE_CHECKING:
     from .ergomotion_app import ErgomotionAppController as ErgomotionAppController
     from .eshine.controller import EshineController as EshineController
     from .eshine_okin.controller import EshineOkinController as EshineOkinController
+    from .flexispot.ghostbed import GhostBedController as GhostBedController
     from .fsm_relax.controller import FsmRelaxController as FsmRelaxController
     from .furnimove.controller import FurniMoveController as FurniMoveController
     from .glideaway_motion.controller import GlideawayMotionController as GlideawayMotionController
@@ -187,6 +188,7 @@ if TYPE_CHECKING:
     from .woosa import WoosaController as WoosaController
 
 _EXPORT_MODULES = {
+    "GhostBedController": "flexispot.ghostbed",
     "InstantComfortBase": "instant_comfort.controller",
     "SuperiorSleepController": "superior_sleep.controller",
     "RizeHomeController": "rize_home.controller",
@@ -359,6 +361,7 @@ _EXPORT_MODULES = {
 }
 
 __all__ = [
+    "GhostBedController",
     "InstantComfortBase",
     "DoubleSleepController",
     'TempurCurveController',
