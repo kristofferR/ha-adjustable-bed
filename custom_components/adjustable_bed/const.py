@@ -573,6 +573,7 @@ BED_TYPE_SEALY_POSTUREMATIC: Final = "sealy_posturematic"
 BED_TYPE_YAMADA: Final = "yamada"
 BED_TYPE_BETTERLIVING2: Final = "betterliving2"
 BED_TYPE_RESTONIC: Final = "restonic"
+BED_TYPE_KINGKOIL: Final = "kingkoil"
 BED_TYPE_SOMOS: Final = "somos"
 BED_TYPE_COMFORTBASE: Final = "comfortbase"
 BED_TYPE_LEVA: Final = "leva"
@@ -588,7 +589,7 @@ COMFORT_ENHANCEMENTS_VARIANTS: Final = {
 BED_TYPE_SLEEPTIME: Final = "sleeptime"
 VARIANT_REQUIRED_BED_TYPES: Final = frozenset(
     {
-        BED_TYPE_AMBIENT, BED_TYPE_RESTONIC, BED_TYPE_DREAMSENSE, BED_TYPE_LIKIMIO, BED_TYPE_SAATVA, BED_TYPE_MAJESTICHOME, BED_TYPE_LEVA, BED_TYPE_LINX, BED_TYPE_SOMOS, BED_TYPE_BOBPOWERBASE, "sleep_evolution", "wsilver_legacy", BED_TYPE_SYMPHONY_SLEEP, "comfort_enhancement3", BED_TYPE_YAMADA, BED_TYPE_RICHMAT_APP, BED_TYPE_RICHMAT_APP_SLEEP, BED_TYPE_ENSO2, "luuna", "personal_comfort", "instant_comfort", "richmat_sleep_receiver", BED_TYPE_MLILY, BED_TYPE_MLILY_REMOTE, BED_TYPE_GALAXY, BED_TYPE_OKIMIKI, BED_TYPE_GOODVIBE, BED_TYPE_HJBED, BED_TYPE_ESHINE_OKIN, BED_TYPE_ZSERIES, BED_TYPE_GLIDEAWAY_MOTION, BED_TYPE_COMFORT_ENHANCEMENTS, BED_TYPE_COMFORTBASE, "casper_base", BED_TYPE_RICHMAT_CLASSIC_APPS}
+        BED_TYPE_AMBIENT, BED_TYPE_RESTONIC, BED_TYPE_KINGKOIL, BED_TYPE_DREAMSENSE, BED_TYPE_LIKIMIO, BED_TYPE_SAATVA, BED_TYPE_MAJESTICHOME, BED_TYPE_LEVA, BED_TYPE_LINX, BED_TYPE_SOMOS, BED_TYPE_BOBPOWERBASE, "sleep_evolution", "wsilver_legacy", BED_TYPE_SYMPHONY_SLEEP, "comfort_enhancement3", BED_TYPE_YAMADA, BED_TYPE_RICHMAT_APP, BED_TYPE_RICHMAT_APP_SLEEP, BED_TYPE_ENSO2, "luuna", "personal_comfort", "instant_comfort", "richmat_sleep_receiver", BED_TYPE_MLILY, BED_TYPE_MLILY_REMOTE, BED_TYPE_GALAXY, BED_TYPE_OKIMIKI, BED_TYPE_GOODVIBE, BED_TYPE_HJBED, BED_TYPE_ESHINE_OKIN, BED_TYPE_ZSERIES, BED_TYPE_GLIDEAWAY_MOTION, BED_TYPE_COMFORT_ENHANCEMENTS, BED_TYPE_COMFORTBASE, "casper_base", BED_TYPE_RICHMAT_CLASSIC_APPS}
 ).union({BED_TYPE_BETTERLIVING2, BED_TYPE_JEROME_ADJUSTABLE_BASE, BED_TYPE_SLEEPTIME})
 # Aging in Place / Dawn House has one fixed profile; these filter observations.
 BED_TYPE_AGINGPLACE: Final = "agingplace"
@@ -919,6 +920,7 @@ SUPPORTED_BED_TYPES: Final = [
     BED_TYPE_N32_MOTION_BED,
     BED_TYPE_SHUDA,
     BED_TYPE_COMFORT_ENHANCEMENTS,
+    BED_TYPE_KINGKOIL,
     BED_TYPE_SOMOS,
     BED_TYPE_COMFORTBASE,
     BED_TYPE_ESHINE,
@@ -1165,6 +1167,7 @@ LINAK_TIMER_CHAR_UUID: Final = "99fa0051-338a-1024-8a49-009c0215f78a"
 LINAK_DEVICE_NAME_UUID: Final = "00002a00-0000-1000-8000-00805f9b34fb"
 
 LINAK_VARIANT_BED_CONTROL: Final = "bed_control"
+LINAK_VARIANT_AA_CONTROL_MY_BED: Final = "aa_control_my_bed"
 LINAK_VARIANT_PERFORMANCE: Final = "performance_legacy"
 
 # Linak position calibration
@@ -1892,7 +1895,7 @@ ADJUSTABLE_BED_VARIANTS: Final = {
 }
 
 NAME_RULE_VARIANTS_BY_BED_TYPE: Final[dict[str, frozenset[str]]] = {
-    BED_TYPE_SOLACE: frozenset({"sophie"}),
+    BED_TYPE_SOLACE: frozenset({"sophie", "flexirest"}),
     BED_TYPE_BEDSENSE: frozenset({VARIANT_AUTO}),
     BED_TYPE_SIMMONS: SIMMONS_NAME_RULE_VARIANTS,
     BED_TYPE_ADJUSTAMATTRESS: frozenset({VARIANT_AUTO}),
@@ -1901,12 +1904,14 @@ NAME_RULE_VARIANTS_BY_BED_TYPE: Final[dict[str, frozenset[str]]] = {
     BED_TYPE_STARCODE_M1X12: frozenset({VARIANT_AUTO}),
     **{bed_type: frozenset({VARIANT_AUTO}) for bed_type in RICHMAT_MH_APPS},
 }
+SOLACE_VARIANT_FLEXIREST: Final = "flexirest"
 SOLACE_VARIANT_SOPHIE: Final = "sophie"
 SOLACE_VARIANT_WOOSA: Final = "woosa"
 SOLACE_VARIANTS: Final = {
     VARIANT_AUTO: AUTOMATIC_LABEL,
     SOLACE_VARIANT_WOOSA: "Woosa Sleep app",
     SOLACE_VARIANT_SOPHIE: "Sophie app",
+    SOLACE_VARIANT_FLEXIREST: "Sealy FlexiRest app",
 }
 # The multi-service profile is stored as ``auto``, as v4.0.2 entries hold it.
 # A new setup whose scanned name contains ``JMC`` stores the JMC profile.
@@ -1930,6 +1935,7 @@ REMACRO_VARIANTS: Final = {
 LINAK_VARIANTS: Final = {
     VARIANT_AUTO: AUTOMATIC_LABEL,
     LINAK_VARIANT_BED_CONTROL: "Bed Control or Bed Connect app",
+    LINAK_VARIANT_AA_CONTROL_MY_BED: "AA Control My Bed app",
     LINAK_VARIANT_PERFORMANCE: "Performance Series app (older bases)",
 }
 
@@ -3059,6 +3065,7 @@ BED_MOTOR_PULSE_DEFAULTS: Final = {
     BED_TYPE_SIMMONS_BLUE: (5, 200),  # Finite HA press at the app's hold cadence.
     BED_TYPE_SIMMONS: (4, 300),  # APK 300 ms hold refresh; ~1.2 s HA movement
     BED_TYPE_RESTONIC: (10, 200),
+    BED_TYPE_KINGKOIL: (10, 300),
     BED_TYPE_SOMOS: (10, 300),
     BED_TYPE_COMFORTBASE: (10, 100),
     BED_TYPE_AGINGPLACE: (5, 200),

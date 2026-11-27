@@ -3016,34 +3016,7 @@
       "local_name": "QHRN*"
     },
     {
-      "local_name": "QMS-I06*"
-    },
-    {
-      "local_name": "QMS-IQ*"
-    },
-    {
-      "local_name": "QMS-JQ-D*"
-    },
-    {
-      "local_name": "QMS-L04*"
-    },
-    {
-      "local_name": "QMS-LQ*"
-    },
-    {
-      "local_name": "QMS-MQ*"
-    },
-    {
-      "local_name": "QMS-NQ*"
-    },
-    {
-      "local_name": "QMS2*"
-    },
-    {
-      "local_name": "QMS3*"
-    },
-    {
-      "local_name": "QMS4*"
+      "local_name": "QMS*"
     },
     {
       "local_name": "QRRM*"
@@ -3097,6 +3070,9 @@
       "local_name": "RXRN*"
     },
     {
+      "local_name": "S4-6*"
+    },
+    {
       "local_name": "S4-Y-*"
     },
     {
@@ -3140,7 +3116,7 @@
       "local_name": "SUTA*"
     },
     {
-      "local_name": "SealyMF*"
+      "local_name": "Sealy*"
     },
     {
       "local_name": "Sleep Function*"

@@ -268,6 +268,7 @@ def test_the_automatic_leggett_setup_has_a_plain_label():
         "Power Bob",
         "LP Control",
         "Bed Control",
+        "AA Control My Bed",
         "Performance Series",
         "HomeKobo",
         "Sweet Night",

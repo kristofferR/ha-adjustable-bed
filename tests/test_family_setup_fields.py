@@ -588,7 +588,14 @@ async def test_the_quiet_bed_types_are_those_whose_controller_reads_positions(ha
             not bed_type_has_position_feedback(bed_type, v) for v in _routes_of(bed_type)
         ):
             found.add(bed_type)
-    assert found == set(_QUIET_BED_TYPES)
+    # King Koil inherits Keeson's no-op read_positions, but its source-fixed
+    # cadence and lack of feedback do not make it a position-reading setup route.
+    # Keep the quiet-route census while accounting for that inherited method.
+    assert found == set(_QUIET_BED_TYPES) | {const.BED_TYPE_KINGKOIL}
+    assert not any(
+        bed_type_has_position_feedback(const.BED_TYPE_KINGKOIL, variant)
+        for variant in _routes_of(const.BED_TYPE_KINGKOIL)
+    )
 
 
 @pytest.mark.parametrize(("bed_type", "variant"), _quiet_routes())

@@ -26,7 +26,15 @@ import asyncio
 import contextlib
 import logging
 from abc import ABC, abstractmethod
-from collections.abc import AsyncIterator, Callable, Collection, Coroutine, Iterator, Mapping
+from collections.abc import (
+    AsyncIterator,
+    Awaitable,
+    Callable,
+    Collection,
+    Coroutine,
+    Iterator,
+    Mapping,
+)
 from dataclasses import dataclass
 from functools import partial
 from typing import TYPE_CHECKING, Any
@@ -36,6 +44,7 @@ from homeassistant.exceptions import HomeAssistantError
 
 from .beds.cancellation import settled as settle_cancellation
 from .command_scheduler import (
+    PAIRED_SESSION_BOUND_ABORTS,
     CommandHandle,
     CommandKind,
     CommandOutcome,
@@ -805,11 +814,19 @@ class ConcurrentTwoLinkTopology(_SideLaneTopology):
             )
 
         async def stop_linked_children() -> dict[str, BaseException]:
-            original_stops = {
-                child.address: partial(stop, handle.context)
-                for child, handle in prepared.values()
-                if (stop := handle.context.paired_abort_stop) is not None
-            }
+            async def stop_registered_session(handle: CommandHandle) -> None:
+                # Read after taking the child command lane. Its operation may
+                # register release while the abort is being admitted.
+                if (stop := handle.context.paired_abort_stop) is not None:
+                    await stop(handle.context)
+
+            session_bound = PAIRED_SESSION_BOUND_ABORTS.get()
+            original_stops: dict[str, Callable[[], Awaitable[None]]] = {}
+            for child, handle in prepared.values():
+                if child.address in session_bound:
+                    original_stops[child.address] = partial(stop_registered_session, handle)
+                elif (stop := handle.context.paired_abort_stop) is not None:
+                    original_stops[child.address] = partial(stop, handle.context)
             if original_stops:
                 return await self._pair._stop_children(targets, original_stops=original_stops)
             return await self._pair._stop_children(targets)
