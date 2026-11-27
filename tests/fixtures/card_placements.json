@@ -95,9 +95,6 @@
  "binary_sensor:ergomotion4_light": {
   "card_section": "hidden"
  },
- "binary_sensor:ergosportive_presence": {
-  "card_section": "hidden"
- },
  "binary_sensor:flexirest_alarm_enabled": {
   "card_section": "hidden"
  },
@@ -5196,12 +5193,6 @@
   "card_section": "hidden"
  },
  "sensor:ergobq_light_remaining": {
-  "card_section": "hidden"
- },
- "sensor:ergosportive_breathing_rate": {
-  "card_section": "hidden"
- },
- "sensor:ergosportive_heart_rate": {
   "card_section": "hidden"
  },
  "sensor:ergosportive_twitch": {

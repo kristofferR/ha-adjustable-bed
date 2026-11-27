@@ -4793,8 +4793,6 @@
       }
     },
     "sensor": {
-      "ergosportive_heart_rate": {"name": "Heart rate"},
-      "ergosportive_breathing_rate": {"name": "Breathing rate"},
       "ergosportive_twitch": {"name": "Movement count"},
       "powersbedding_head_report": {"name": "Head massage level"},
       "powersbedding_foot_report": {"name": "Foot massage level"},
@@ -6481,7 +6479,6 @@
       }
     },
     "binary_sensor": {
-      "ergosportive_presence": {"name": "Bed presence"},
       "powersbedding_alarm_enabled": {"name": "Bed alarm enabled"},
       "berun_massage_on": {
         "name": "Massage"

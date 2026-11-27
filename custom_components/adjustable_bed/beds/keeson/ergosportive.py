@@ -27,6 +27,8 @@ from ..entity_specs import (
     ControllerStateSensorSpec,
     MotorCommandCallable,
     MotorControlSpec,
+    sleep_flag_binary_sensor_spec,
+    sleep_rate_sensor_spec,
 )
 
 if TYPE_CHECKING:
@@ -565,21 +567,17 @@ class ErgoSportiveController(ProfileExecution[app.Profile], BedController):
     @property
     def controller_state_sensor_specs(self) -> tuple[ControllerStateSensorSpec, ...]:
         return (
-            tuple(
+            (
+                sleep_rate_sensor_spec("heart_rate", "ergosportive_heart_rate", HEART),
+                sleep_rate_sensor_spec("breathing_rate", "ergosportive_breathing_rate", BREATHING),
                 ControllerStateSensorSpec(
-                    name,
-                    name,
-                    key,
-                    icon,
-                    unit,
+                    "ergosportive_twitch",
+                    "ergosportive_twitch",
+                    TWITCH,
+                    "mdi:motion-sensor",
                     entity_registry_enabled_default=True,
                     entity_category=None,
-                )
-                for name, key, icon, unit in (
-                    ("ergosportive_heart_rate", HEART, "mdi:heart-pulse", "bpm"),
-                    ("ergosportive_breathing_rate", BREATHING, "mdi:lungs", "breaths/min"),
-                    ("ergosportive_twitch", TWITCH, "mdi:motion-sensor", None),
-                )
+                ),
             )
             if self.profile.old_dsp_normal
             else ()
@@ -589,14 +587,7 @@ class ErgoSportiveController(ProfileExecution[app.Profile], BedController):
     def controller_state_binary_sensor_specs(self) -> tuple[ControllerStateBinarySensorSpec, ...]:
         return (
             (
-                ControllerStateBinarySensorSpec(
-                    "ergosportive_presence",
-                    "ergosportive_presence",
-                    PRESENCE,
-                    "mdi:bed",
-                    entity_registry_enabled_default=True,
-                    entity_category=None,
-                ),
+                sleep_flag_binary_sensor_spec("bed_presence", "ergosportive_presence", PRESENCE),
             )
             if self.profile.old_dsp_normal
             else ()

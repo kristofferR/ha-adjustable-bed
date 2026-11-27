@@ -95,6 +95,10 @@ async def test_all_selected_actions_and_sensor_entities(
     assert isinstance(controller, bed.ErgoSportiveController)
     registry = er.async_get(hass)
     entities = [e for e in registry.entities.values() if e.config_entry_id == entry.entry_id]
+    for key in ("heart_rate", "breathing_rate", "bed_presence"):
+        entity = next(entity for entity in entities if entity.translation_key == key)
+        state = hass.states.get(entity.entity_id)
+        assert state is not None and state.attributes["card_section"] == "utility"
     assert not controller.supports_memory_programming
     assert controller.execution.declared == {"hold"}
     assert not controller.supports_single_address_pairing
