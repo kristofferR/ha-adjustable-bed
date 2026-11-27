@@ -513,3 +513,14 @@ the existing family motion/session controller. Its ordinary RX dispatcher
 differs from Casper's complete-length receiver, so it has a scoped dispatcher
 with only its two verified announcements. See the
 [Comfort Bed section](../beds/richmat.md#comfort-bed) and `tests/test_comfort_bed.py`.
+
+
+## KONFURT
+
+KONFURT 1.0's 29 frozen normal, clock, alarm and query literals all reproduce
+byte for byte through `codec/keeson.py`. It is a typed profile in
+`profiles/konfurt.py`, with a shared Keeson controller extension for its captured
+GATT link, two delayed release writes, alarm sequencing and notification parser.
+Its manual layouts and command words are independent of other apps named Sino.
+No shared UUID or catalog name chooses this profile. Existing wire scenarios
+remain unchanged. See the [KONFURT profile](../beds/keeson.md#konfurt).

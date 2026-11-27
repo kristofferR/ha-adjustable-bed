@@ -110,3 +110,13 @@ async def test_hestia_one_held_key_stream_has_no_composed_motor_admission():
     assert controller.execution.hold_for("both_up") == "stream"
     assert controller.profile.refresh_ms == 100
     assert controller.profile.release.steps == ((100, 0),)
+
+
+@pytest.mark.parametrize("layout", ("2", "3", "4"))
+async def test_konfurt_one_300ms_held_key_with_delayed_release(layout):
+    # KONFURT1.0 E-TIMING: one runnable at0/300ms; UP/CANCEL schedules
+    # zero-word STOP at300/600ms. No sustain or composed-key evidence.
+    controller = await _create_controller_for_bed_type("konfurt", layout)
+    assert controller.execution.declared == {"hold"}
+    assert controller.profile.refresh_ms == 300
+    assert tuple(delay for delay, _ in controller.profile.release.steps) == (300, 300)

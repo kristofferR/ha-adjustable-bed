@@ -477,6 +477,13 @@ def plan_commands(controller: Any) -> list[Command]:
             )
     if _value(_value(controller, "_coordinator", None), "bed_type", None) == "betterliving2":
         plan = _betterliving2_historical_actions(plan, _value(controller, "wire", ""))
+    if controller._coordinator.bed_type == "konfurt":
+        from custom_components.adjustable_bed.alarm import AlarmRequest
+
+        for enabled, wake in ((False, "none"), (True, "none"), (True, "massage"), (True, "memory_1")):
+            alarm = AlarmRequest(enabled=enabled, hour=7, minute=30, wake_action=wake,
+                                 reference_time=datetime.datetime.fromisoformat(FROZEN_NOW))
+            plan.append(Command(f"set_alarm:{enabled}:{wake}", _method("configure_alarm", alarm), True))
     if controller._coordinator.bed_type == "suta_king_koil":
         async def active_massage_mode(ctrl: Any, option: str) -> None:
             # SUTA's mode is admitted only after enabling a zone. Record that
@@ -1600,6 +1607,8 @@ def default_scenario(bed_type: str) -> Scenario:
         return Scenario(id=bed_type, bed_type=bed_type, protocol_variant="bt2000_standard",
                         entry_data={const.CONF_PROTOCOL_VARIANT: "bt2000_standard", const.CONF_PRODUCT_TYPE: "standard"},
                         layout_id="bedtech")
+    if bed_type == "konfurt":
+        return Scenario(id="konfurt", bed_type="konfurt", protocol_variant="2", layout_id="konfurt")
     if bed_type == "berun":
         return Scenario(id="berun", bed_type="berun", protocol_variant="v6", layout_id="berun:v6")
     data: dict[str, Any] = {"product_type": "nerum"} if bed_type == "nerum" else {"product_type": "2"} if bed_type == "enso" else {}
@@ -2101,6 +2110,12 @@ def route_scenarios() -> list[Scenario]:
             scenarios.append(dataclasses.replace(default_scenario("scott_living"),
                 id=f"scott_living:{layout}{suffix}", layout_id="scott_living", properties=properties,
                 entry_data={"product_type": layout, "ble_device_name": "base00000000"}))
+    for layout in ("2", "3", "4"):
+        for suffix, properties in (("", None), (":write", WRITE_ONLY), (":no_response", NO_RESPONSE_ONLY)):
+            if layout == "2" and not suffix:
+                continue  # The default captures the app's initial two-motor layout.
+            scenarios.append(Scenario(id=f"konfurt:{layout}{suffix}", bed_type="konfurt",
+                protocol_variant=layout, layout_id="konfurt", properties=properties))
     scenarios.append(dataclasses.replace(default_scenario("kingkoil"), id="kingkoil:KSBT03CL", protocol_variant="KSBT03CL", layout_id="kingkoil"))
     for variant in "bcde":
         scenarios.append(dataclasses.replace(default_scenario("somos"), id=f"somos:{variant}", protocol_variant=variant, layout_id="somos:uart" if variant in "bde" else "somos"))
@@ -2854,7 +2869,7 @@ async def _build(scenario: Scenario, client: Any) -> Any:
         {**_base_entry_data(), **scenario.entry_data},
     )
     coordinator.client = client
-    if scenario.bed_type == "solace" and scenario.protocol_variant == "flexirest":
+    if scenario.bed_type == "konfurt" or (scenario.bed_type == "solace" and scenario.protocol_variant == "flexirest"):
         # New profile gates are driven by its scripted notifications, not by
         # invented initial state. Keep all pre-existing scenarios unchanged.
         from custom_components.adjustable_bed.controller_state import StateUpdate
@@ -3062,6 +3077,13 @@ async def _capture(
             # virtual clock reaches their movement deadlines at the same times.
             plan.sort(key=lambda command: command.name in {"lights_on", "lights_off"})
         for command in plan:
+            if scenario.bed_type == "konfurt":
+                # Source-derived status16 admits the app's report-backed toggles.
+                # A new report is supplied for each independent action.
+                status = ("edfe0000000000000000000000000000" if command.name.endswith("=on")
+                          or command.name == "lights_on" else "edfe0000000000050400000000023200")
+                for target, callback in controller.client._subscribers:
+                    callback(target, bytearray.fromhex(status))
             if scenario.bed_type == "flexispot":
                 # An unsolicited, source-derived complete settings report before
                 # each action admits read/modify/write without guessing state.

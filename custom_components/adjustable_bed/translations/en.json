@@ -1781,6 +1781,12 @@
   },
   "entity": {
     "button": {
+      "konfurt_massage": {"name": "Toggle massage"},
+      "konfurt_massage_head": {"name": "Cycle head massage"},
+      "konfurt_massage_foot": {"name": "Cycle feet massage"},
+      "konfurt_massage_wave": {"name": "Cycle massage wave"},
+      "konfurt_massage_timer": {"name": "Cycle massage timer"},
+      "konfurt_query_alarm": {"name": "Refresh bed alarm"},
       "hestia_cancel_preset": {
         "name": "Cancel preset"
       },
@@ -4754,6 +4760,13 @@
       }
     },
     "sensor": {
+      "konfurt_timer": {"name": "Massage timer"},
+      "konfurt_wave": {"name": "Massage wave"},
+      "konfurt_alarm_on": {"name": "Bed alarm enabled"},
+      "konfurt_alarm_hour": {"name": "Bed alarm hour"},
+      "konfurt_alarm_minute": {"name": "Bed alarm minute"},
+      "konfurt_alarm_repeat": {"name": "Bed alarm weekday mask"},
+      "konfurt_alarm_type": {"name": "Bed alarm action code"},
       "silksnow": {"name": "Model"},
       "berun_head_massage": {
         "name": "Head massage level"
@@ -6137,6 +6150,7 @@
       }
     },
     "switch": {
+      "konfurt_massage": {"name": "Massage"},
       "hestia_massage": {
         "name": "Massage"
       },
@@ -12157,6 +12171,11 @@
     }
   },
   "exceptions": {
+    "konfurt_gatt": {"message": "KONFURT needs writable FFE9 in FFE5 and notifying FFE4 in FFE0. Check the selected app and Bluetooth device."},
+    "konfurt_layout": {"message": "Choose the 2, 3 or 4 motor layout shown in the KONFURT app."},
+    "konfurt_control": {"message": "Choose a control offered by this KONFURT layout and a hold of 1 to 60000 milliseconds."},
+    "konfurt_alarm": {"message": "KONFURT sets an alarm for today's weekday only. Choose no wake action, massage or Memory 1."},
+    "konfurt_massage_unknown": {"message": "Wait for a massage status report from this connection before turning massage on or off. You can use Toggle massage without a report."},
     "suta_king_koil_calibrate": {
       "message": "Set the bed clock, then wait for its clock reply before adding or refreshing alarms."
     },

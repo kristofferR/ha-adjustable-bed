@@ -644,3 +644,66 @@ def scott_living_timer_indicator(data: bytes) -> int | None:
     return next(
         (i * 10 for i, target in enumerate((60, 120, 180), 1) if abs(seconds - target) <= 10), None
     )
+
+
+@dataclass(frozen=True, slots=True)
+class KonfurtAlarm:
+    hour: int
+    minute: int
+    repeat: int
+    type: int
+
+    @property
+    def on(self) -> bool:
+        return any((self.hour, self.minute, self.repeat, self.type))
+
+
+@dataclass(frozen=True, slots=True)
+class KonfurtStatus:
+    head: int
+    foot: int
+    time: int
+    wave: int
+    light: bool
+
+
+class KonfurtParser:
+    """KONFURT's two status forms and signed alarm, scoped by its owner to a link.
+
+    Alarm and any 16-byte frame bypass the pending join; a fresh F4FE replaces
+    it. Even a full initial F4FE is buffered until a tail. Short frames are
+    safely ignored instead of raising the app's array-bounds exception.
+    """
+
+    def __init__(self) -> None:
+        self.pending: bytes | None = None
+
+    def feed(self, data: bytes) -> KonfurtAlarm | KonfurtStatus | None:
+        if len(data) > 7 and data[:2] == b"\xed\x80":
+            return KonfurtAlarm(*(int.from_bytes(data[i:i+1], signed=True) for i in range(3, 7)))
+        if len(data) == 16:
+            if data[:2] != b"\xed\xfe":
+                return None
+            offsets = (7, 8, 14, 14, 13)
+            joined = False
+        else:
+            if len(data) < 2:
+                return None
+            if data[:2] == b"\xf4\xfe":
+                self.pending = data
+                return None
+            if self.pending is None:
+                return None
+            data, self.pending = self.pending + data, None
+            if len(data) < 22:
+                return None
+            offsets = (11, 12, 19, 21, 18)
+            joined = True
+        head, foot, timer, wave, light = (data[i] for i in offsets)
+        def level(value: int) -> int:
+            return (value + 1) // 2 if 1 <= value <= 6 else 0
+
+        def ordinal(value: int) -> int:
+            return value if value in (1, 2, 3) else 0
+        return KonfurtStatus(level(head & 15), level(foot & 15), ordinal(timer & 15),
+                             ordinal(wave & 15 if joined else wave >> 4), bool(light & 3))
