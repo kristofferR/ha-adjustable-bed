@@ -70,6 +70,7 @@ from scripts.codec_docs import (
     _richmat_mh_apps,
     _sleepfunction,
 )
+from scripts.codec_docs._awmotion import BLOCKS as AWMOTION_BLOCKS
 from scripts.codec_docs._bedsmart import BLOCKS as BEDSMART_BLOCKS
 from scripts.codec_docs._common import Block, _block, _hex, _table
 from scripts.codec_docs._dreamsense import BLOCKS as DREAMSENSE_BLOCKS
@@ -1927,7 +1928,7 @@ def render_jerome_controls() -> str:
 BLOCKS.append((GUIDE, "jerome-controls", render_jerome_controls))
 
 
-BLOCKS += DREAMSENSE_BLOCKS + LIKIMIO_BLOCKS
+BLOCKS += DREAMSENSE_BLOCKS + LIKIMIO_BLOCKS + AWMOTION_BLOCKS
 
 
 def render_baseremote() -> str:
