@@ -4622,6 +4622,9 @@
  "select:motomotion_side": {
   "card_section": "motors"
  },
+ "select:muuegm_color": {
+  "card_section": "lighting"
+ },
  "select:octo_light_sensitivity": {
   "card_section": "hidden"
  },
