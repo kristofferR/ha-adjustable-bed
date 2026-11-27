@@ -134,6 +134,7 @@ if TYPE_CHECKING:
     from .richmat_legacy.controller import RichmatLegacyController as RichmatLegacyController
     from .richmat_mh.controller import RichmatMhController as RichmatMhController
     from .rize_home.controller import RizeHomeController as RizeHomeController
+    from .ronco_motion.controller import RoncoMotionController as RoncoMotionController
     from .rondure import RondureController as RondureController
     from .row_control import RowControlController as RowControlController
     from .ruf_richmat.controller import RufRichmatController as RufRichmatController
@@ -304,6 +305,7 @@ _EXPORT_MODULES = {
     "BedgearController": "bedgear.controller",
     "ErgoBedController": "bedgear.ergobed",
     "MotoSleepController": "motosleep",
+    "RoncoMotionController": "ronco_motion.controller",
     "OctoController": "octo.controller",
     "OkimikiController": "okimiki.controller",
     "Okin7ByteController": "okin_7byte",
