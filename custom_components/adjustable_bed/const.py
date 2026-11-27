@@ -624,6 +624,7 @@ OKIN_BEDDING_APP_BED_TYPES: Final = frozenset(
 )
 # A Z-Series button press holds pulse_count x 100 ms, within the 60 s hold limit.
 ZSERIES_PULSE_COUNT_RANGE: Final = (1, 600)
+BED_TYPE_MEISEMOBELL: Final = "meisemobell"
 BED_TYPE_SIMMONS: Final = "simmons"  # Explicit SIMMONS app profile (com.okin.simmons)
 BED_TYPE_SIMMONS_BLUE: Final = "simmons_blue"
 # Explicit Adjustable bed (Lumbar) app profile (com.okin.bedding.adjustablelumbar)
@@ -934,6 +935,7 @@ SUPPORTED_BED_TYPES: Final = [
     BED_TYPE_JOBS,
     BED_TYPE_RESTFUL,
     BED_TYPE_RIZE_REMEDY_II,
+    BED_TYPE_MEISEMOBELL,
     BED_TYPE_SIMMONS,
     BED_TYPE_SIMMONS_BLUE,
     BED_TYPE_ADJUSTAMATTRESS,

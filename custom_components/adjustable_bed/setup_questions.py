@@ -3916,6 +3916,15 @@ SETUP_PROFILES: Final[dict[str, SetupProfile]] = {
             CONF_PROTOCOL_VARIANT: "auto",
         },
     ),
+    "meisemobell": SetupProfile(
+        owns={CONF_MOTOR_COUNT: 2, CONF_HAS_MASSAGE: False,
+              CONF_DISABLE_ANGLE_SENSING: True, CONF_MOTOR_PULSE_DELAY_MS: 300},
+        questions=(Question(CONF_PROTOCOL_VARIANT, {
+            "15_22_15a": "15_22_15A (FFE5 / FFE9)",
+            "24_xx_xx": "24_XX_XX (Nordic UART)",
+        }, "15_22_15a"),),
+        title=lambda _data: "Meisemobell / 마이저모벨",
+    ),
     BED_TYPE_SUPERIOR_SLEEP: SetupProfile(
         owns={CONF_MOTOR_COUNT: 2, CONF_HAS_MASSAGE: True,
               CONF_DISABLE_ANGLE_SENSING: True, CONF_MOTOR_PULSE_DELAY_MS: 100},

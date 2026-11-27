@@ -1405,6 +1405,7 @@ _DECLARED_QUESTION_ROUTES: Final = frozenset(
         BED_TYPE_RIZE,
         "rize_home",
         "superior_sleep",
+        "meisemobell",
         BED_TYPE_GMMOTOR,
         BED_TYPE_MOTOMOTION,
         "bedgear",

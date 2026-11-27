@@ -99,3 +99,14 @@ async def test_scott_living_refresh_has_no_release_or_composed_keys():
         controller.profile = profile(layout)
         assert controller.execution.declared == {"hold"}
         assert controller.execution.hold_for("head_up") == "stream"
+
+
+@pytest.mark.parametrize("route", ("15_22_15a", "24_xx_xx"))
+async def test_meisemobell_held_execution(route):
+    # com.okin.meisemobell 1.2.8 E4/E5: immediate plus 300ms refresh,
+    # release/cancel sends STOP immediately and at 100ms. One global timer.
+    controller = await _create_controller_for_bed_type("meisemobell", route)
+    assert controller.execution.declared == {"hold"}
+    assert controller.execution.hold_for("head_up") == "stream"
+    assert controller.profile.hold.release_ms == 100
+    assert controller.commands_share_timer

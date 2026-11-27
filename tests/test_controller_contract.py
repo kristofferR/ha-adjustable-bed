@@ -153,6 +153,8 @@ class _FactoryCoordinator(SimpleNamespace):
 
 def _protocol_variant_for_bed_type(bed_type: str) -> str | None:
     """Return a deterministic protocol variant for factory-completeness tests."""
+    if bed_type == "meisemobell":
+        return "15_22_15a"
     if bed_type in {"personal_comfort", "instant_comfort"}:
         return "anm3"
     if bed_type == const.BED_TYPE_ADJUSTABLE_BED:

@@ -707,6 +707,7 @@ BED_TYPE_DISPLAY_NAMES: dict[str, str] = {
     BED_TYPE_RESTFUL: "Jordan's Restful app",
     BED_TYPE_RIZE_REMEDY_II: "Rize Remedy II app",
     BED_TYPE_ZSERIES: "Customatic Z-Series app",
+    "meisemobell": "Meisemobell / 마이저모벨 app (manual route)",
     BED_TYPE_SIMMONS: "SIMMONS app",
     BED_TYPE_ADJUSTAMATTRESS: "AdjustaMattress app",
     BED_TYPE_ADJUSTABLE_BED: "Adjustable bed app",
