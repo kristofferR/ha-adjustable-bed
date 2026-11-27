@@ -1,4 +1,20 @@
 {
+  "ambient": {
+    "services": {
+      "6e40fffe-b5a3-f393-e0a9-e50e24dcca9e": [
+        "6e40aa02-b5a3-f393-e0a9-e50e24dcca9e",
+        "6e40aa03-b5a3-f393-e0a9-e50e24dcca9e"
+      ]
+    },
+    "properties": {
+      "6e40aa02-b5a3-f393-e0a9-e50e24dcca9e": [
+        "write"
+      ],
+      "6e40aa03-b5a3-f393-e0a9-e50e24dcca9e": [
+        "notify"
+      ]
+    }
+  },
   "dorsal": {
     "services": {
       "0000fee9-0000-1000-8000-00805f9b34fb": [
