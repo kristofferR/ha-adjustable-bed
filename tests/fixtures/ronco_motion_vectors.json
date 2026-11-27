@@ -1,0 +1,497 @@
+[
+  {
+    "id": "V-head_up",
+    "protocol": "P1",
+    "action": "head_up",
+    "inputs": {
+      "opcode": 36,
+      "selector": 0
+    },
+    "expected_bytes": "6e01002493",
+    "evidence": [
+      "E-COMMANDS",
+      "E-BUILDER"
+    ],
+    "origin": "Source constant/template plus independent modulo-256 calculation, not a BLE capture"
+  },
+  {
+    "id": "V-head_down",
+    "protocol": "P1",
+    "action": "head_down",
+    "inputs": {
+      "opcode": 37,
+      "selector": 0
+    },
+    "expected_bytes": "6e01002594",
+    "evidence": [
+      "E-COMMANDS",
+      "E-BUILDER"
+    ],
+    "origin": "Source constant/template plus independent modulo-256 calculation, not a BLE capture"
+  },
+  {
+    "id": "V-leg_up",
+    "protocol": "P1",
+    "action": "leg_up",
+    "inputs": {
+      "opcode": 38,
+      "selector": 0
+    },
+    "expected_bytes": "6e01002695",
+    "evidence": [
+      "E-COMMANDS",
+      "E-BUILDER"
+    ],
+    "origin": "Source constant/template plus independent modulo-256 calculation, not a BLE capture"
+  },
+  {
+    "id": "V-leg_down",
+    "protocol": "P1",
+    "action": "leg_down",
+    "inputs": {
+      "opcode": 39,
+      "selector": 0
+    },
+    "expected_bytes": "6e01002796",
+    "evidence": [
+      "E-COMMANDS",
+      "E-BUILDER"
+    ],
+    "origin": "Source constant/template plus independent modulo-256 calculation, not a BLE capture"
+  },
+  {
+    "id": "V-pillow_up_premium",
+    "protocol": "P1",
+    "action": "pillow_up_premium",
+    "inputs": {
+      "opcode": 63,
+      "selector": 0
+    },
+    "expected_bytes": "6e01003fae",
+    "evidence": [
+      "E-COMMANDS",
+      "E-BUILDER"
+    ],
+    "origin": "Source constant/template plus independent modulo-256 calculation, not a BLE capture"
+  },
+  {
+    "id": "V-pillow_down_premium",
+    "protocol": "P1",
+    "action": "pillow_down_premium",
+    "inputs": {
+      "opcode": 64,
+      "selector": 0
+    },
+    "expected_bytes": "6e010040af",
+    "evidence": [
+      "E-COMMANDS",
+      "E-BUILDER"
+    ],
+    "origin": "Source constant/template plus independent modulo-256 calculation, not a BLE capture"
+  },
+  {
+    "id": "V-flat",
+    "protocol": "P1",
+    "action": "flat",
+    "inputs": {
+      "opcode": 49,
+      "selector": 0
+    },
+    "expected_bytes": "6e010031a0",
+    "evidence": [
+      "E-COMMANDS",
+      "E-BUILDER"
+    ],
+    "origin": "Source constant/template plus independent modulo-256 calculation, not a BLE capture"
+  },
+  {
+    "id": "V-ubl_toggle_premium",
+    "protocol": "P1",
+    "action": "ubl_toggle_premium",
+    "inputs": {
+      "opcode": 60,
+      "selector": 0
+    },
+    "expected_bytes": "6e01003cab",
+    "evidence": [
+      "E-COMMANDS",
+      "E-BUILDER"
+    ],
+    "origin": "Source constant/template plus independent modulo-256 calculation, not a BLE capture"
+  },
+  {
+    "id": "V-zero_gravity_recall",
+    "protocol": "P1",
+    "action": "zero_gravity_recall",
+    "inputs": {
+      "opcode": 69,
+      "selector": 0
+    },
+    "expected_bytes": "6e010045b4",
+    "evidence": [
+      "E-COMMANDS",
+      "E-BUILDER"
+    ],
+    "origin": "Source constant/template plus independent modulo-256 calculation, not a BLE capture"
+  },
+  {
+    "id": "V-zero_gravity_save",
+    "protocol": "P1",
+    "action": "zero_gravity_save",
+    "inputs": {
+      "opcode": 102,
+      "selector": 0
+    },
+    "expected_bytes": "6e010066d5",
+    "evidence": [
+      "E-COMMANDS",
+      "E-BUILDER"
+    ],
+    "origin": "Source constant/template plus independent modulo-256 calculation, not a BLE capture"
+  },
+  {
+    "id": "V-anti_snore_recall",
+    "protocol": "P1",
+    "action": "anti_snore_recall",
+    "inputs": {
+      "opcode": 70,
+      "selector": 0
+    },
+    "expected_bytes": "6e010046b5",
+    "evidence": [
+      "E-COMMANDS",
+      "E-BUILDER"
+    ],
+    "origin": "Source constant/template plus independent modulo-256 calculation, not a BLE capture"
+  },
+  {
+    "id": "V-anti_snore_save",
+    "protocol": "P1",
+    "action": "anti_snore_save",
+    "inputs": {
+      "opcode": 105,
+      "selector": 0
+    },
+    "expected_bytes": "6e010069d8",
+    "evidence": [
+      "E-COMMANDS",
+      "E-BUILDER"
+    ],
+    "origin": "Source constant/template plus independent modulo-256 calculation, not a BLE capture"
+  },
+  {
+    "id": "V-memory_recall",
+    "protocol": "P1",
+    "action": "memory_recall",
+    "inputs": {
+      "opcode": 46,
+      "selector": 0
+    },
+    "expected_bytes": "6e01002e9d",
+    "evidence": [
+      "E-COMMANDS",
+      "E-BUILDER"
+    ],
+    "origin": "Source constant/template plus independent modulo-256 calculation, not a BLE capture"
+  },
+  {
+    "id": "V-memory_save",
+    "protocol": "P1",
+    "action": "memory_save",
+    "inputs": {
+      "opcode": 43,
+      "selector": 0
+    },
+    "expected_bytes": "6e01002b9a",
+    "evidence": [
+      "E-COMMANDS",
+      "E-BUILDER"
+    ],
+    "origin": "Source constant/template plus independent modulo-256 calculation, not a BLE capture"
+  },
+  {
+    "id": "V-end_short_command",
+    "protocol": "P1",
+    "action": "end_short_command",
+    "inputs": {
+      "opcode": 110,
+      "selector": 0
+    },
+    "expected_bytes": "6e01006edd",
+    "evidence": [
+      "E-TIMING",
+      "E-BUILDER"
+    ],
+    "origin": "Source constant/template plus independent modulo-256 calculation, not a BLE capture"
+  },
+  {
+    "id": "V-startup_alarm_query",
+    "protocol": "P1",
+    "action": "startup_alarm_query",
+    "inputs": {
+      "kind": 8,
+      "a": 1,
+      "b": 1
+    },
+    "expected_bytes": "6e08010178",
+    "evidence": [
+      "E-STARTUP",
+      "E-BUILDER"
+    ],
+    "origin": "Artifact literal string or array, independently checked at final write boundary"
+  },
+  {
+    "id": "V-startup_led_query",
+    "protocol": "P1",
+    "action": "startup_led_query",
+    "inputs": {
+      "kind": 10,
+      "a": 0,
+      "b": 1
+    },
+    "expected_bytes": "6e0a000179",
+    "evidence": [
+      "E-STARTUP",
+      "E-BUILDER"
+    ],
+    "origin": "Artifact literal string or array, independently checked at final write boundary"
+  },
+  {
+    "id": "V-startup_music_query",
+    "protocol": "P1",
+    "action": "startup_music_query",
+    "inputs": {
+      "kind": 21,
+      "a": 1,
+      "b": 1
+    },
+    "expected_bytes": "6e15010185",
+    "evidence": [
+      "E-STARTUP",
+      "E-BUILDER"
+    ],
+    "origin": "Artifact literal string or array, independently checked at final write boundary"
+  },
+  {
+    "id": "V-alarm_delete_first",
+    "protocol": "P1",
+    "action": "alarm_delete_first",
+    "inputs": {
+      "kind": 5,
+      "a": 0,
+      "b": 0
+    },
+    "expected_bytes": "6e05000073",
+    "evidence": [
+      "E-ALARM",
+      "E-BUILDER"
+    ],
+    "origin": "Artifact literal string or array, independently checked at final write boundary"
+  },
+  {
+    "id": "V-alarm_delete_second",
+    "protocol": "P1",
+    "action": "alarm_delete_second",
+    "inputs": {
+      "kind": 6,
+      "a": 0,
+      "b": 0
+    },
+    "expected_bytes": "6e06000074",
+    "evidence": [
+      "E-ALARM",
+      "E-BUILDER"
+    ],
+    "origin": "Artifact literal string or array, independently checked at final write boundary"
+  },
+  {
+    "id": "V-alarm_next_morning",
+    "protocol": "P1",
+    "action": "alarm_next_morning",
+    "inputs": {
+      "now": [
+        22,
+        30
+      ],
+      "chosen": [
+        7,
+        15
+      ],
+      "minutes": 525,
+      "mode": 69
+    },
+    "expected_bytes": "6e050d0080 ; 6e060245bb",
+    "evidence": [
+      "E-ALARM",
+      "E-BUILDER"
+    ],
+    "origin": "Concrete inputs through statically recovered reachable alarm builder"
+  },
+  {
+    "id": "V-alarm_same_time",
+    "protocol": "P1",
+    "action": "alarm_same_time",
+    "inputs": {
+      "now": [
+        7,
+        15
+      ],
+      "chosen": [
+        7,
+        15
+      ],
+      "minutes": 1440,
+      "mode": 46
+    },
+    "expected_bytes": "6e05a00013 ; 6e06052ea7",
+    "evidence": [
+      "E-ALARM",
+      "E-BUILDER"
+    ],
+    "origin": "Concrete inputs through statically recovered reachable alarm builder"
+  },
+  {
+    "id": "V-alarm_one_minute",
+    "protocol": "P1",
+    "action": "alarm_one_minute",
+    "inputs": {
+      "now": [
+        7,
+        15
+      ],
+      "chosen": [
+        7,
+        16
+      ],
+      "minutes": 1,
+      "mode": 70
+    },
+    "expected_bytes": "6e05010074 ; 6e060046ba",
+    "evidence": [
+      "E-ALARM",
+      "E-BUILDER"
+    ],
+    "origin": "Concrete inputs through statically recovered reachable alarm builder"
+  },
+  {
+    "id": "V-parse-alarm_added",
+    "protocol": "P1",
+    "action": "parse alarm_added",
+    "inputs": {
+      "notification": "6e07010177"
+    },
+    "expected_bytes": "6e07010177",
+    "expected_parsed": [
+      {
+        "alarm": "added"
+      }
+    ],
+    "evidence": [
+      "E-PARSER"
+    ],
+    "origin": "Literal parser selector, or synthetic parser boundary input; not hardware-observed"
+  },
+  {
+    "id": "V-parse-alarm_deleted",
+    "protocol": "P1",
+    "action": "parse alarm_deleted",
+    "inputs": {
+      "notification": "6e07010278"
+    },
+    "expected_bytes": "6e07010278",
+    "expected_parsed": [
+      {
+        "alarm": "deleted"
+      }
+    ],
+    "evidence": [
+      "E-PARSER"
+    ],
+    "origin": "Literal parser selector, or synthetic parser boundary input; not hardware-observed"
+  },
+  {
+    "id": "V-parse-coalesced_alarm_messages_ignored",
+    "protocol": "P1",
+    "action": "parse coalesced_alarm_messages_ignored",
+    "inputs": {
+      "notification": "6e070101776e07010278"
+    },
+    "expected_bytes": "6e070101776e07010278",
+    "expected_parsed": [],
+    "evidence": [
+      "E-PARSER"
+    ],
+    "origin": "Literal parser selector, or synthetic parser boundary input; not hardware-observed"
+  },
+  {
+    "id": "V-parse-partial_alarm_ignored",
+    "protocol": "P1",
+    "action": "parse partial_alarm_ignored",
+    "inputs": {
+      "notification": "6e0701"
+    },
+    "expected_bytes": "6e0701",
+    "expected_parsed": [],
+    "evidence": [
+      "E-PARSER"
+    ],
+    "origin": "Literal parser selector, or synthetic parser boundary input; not hardware-observed"
+  },
+  {
+    "id": "V-parse-music_flags",
+    "protocol": "P1",
+    "action": "parse music_flags",
+    "inputs": {
+      "notification": "6e90b1e000"
+    },
+    "expected_bytes": "6e90b1e000",
+    "expected_parsed": [
+      {
+        "music_switch": 1,
+        "music_play_pause": 1,
+        "music_mode_on_off": 1,
+        "music_on_off": 1
+      }
+    ],
+    "evidence": [
+      "E-PARSER"
+    ],
+    "origin": "Literal parser selector, or synthetic parser boundary input; not hardware-observed"
+  },
+  {
+    "id": "V-parse-music_volume_signed",
+    "protocol": "P1",
+    "action": "parse music_volume_signed",
+    "inputs": {
+      "notification": "6e90d18000"
+    },
+    "expected_bytes": "6e90d18000",
+    "expected_parsed": [
+      {
+        "music_volume": -128
+      }
+    ],
+    "evidence": [
+      "E-PARSER"
+    ],
+    "origin": "Literal parser selector, or synthetic parser boundary input; not hardware-observed"
+  },
+  {
+    "id": "V-parse-music_intensity_signed",
+    "protocol": "P1",
+    "action": "parse music_intensity_signed",
+    "inputs": {
+      "notification": "6e90d2ff00"
+    },
+    "expected_bytes": "6e90d2ff00",
+    "expected_parsed": [
+      {
+        "music_intensity": -1
+      }
+    ],
+    "evidence": [
+      "E-PARSER"
+    ],
+    "origin": "Literal parser selector, or synthetic parser boundary input; not hardware-observed"
+  }
+]
