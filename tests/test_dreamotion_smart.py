@@ -20,6 +20,7 @@ from custom_components.adjustable_bed.codec import jiecang as codec
 from custom_components.adjustable_bed.profiles import dreamotion_smart as app
 from custom_components.adjustable_bed.state_keys import UNDER_BED_LIGHTS_RGB
 from scripts.wire_snapshot import FakeClock, FakeServices, virtual_time
+from tests.error_helpers import raises_key
 from tests.test_controller_contract import _FactoryCoordinator
 
 FIXTURES = Path(__file__).parent / "fixtures" / "dreamotion_smart"
@@ -185,7 +186,7 @@ async def test_primary_caller_cases(bed, row, monkeypatch):
                     codec.frame(0x45, b"\xa1", declared_length=7).hex().upper()
                     == row["expected"][0][1]
                 )
-                with pytest.raises(ValueError, match="Refresh"):
+                with raises_key("dreamotion_smart_refresh"):
                     await c._save_light(preview=False)
                 assert not events
                 return
@@ -301,5 +302,5 @@ async def test_native_specs_and_gatt_admission(bed):
             "properties": {app.WRITE: ["read"], app.NOTIFY: ["notify"]},
         }
     )
-    with pytest.raises(ValueError, match="writable"):
+    with raises_key("dreamotion_smart_gatt"):
         await c.async_discover_capabilities()

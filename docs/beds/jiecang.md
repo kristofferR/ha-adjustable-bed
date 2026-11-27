@@ -1371,9 +1371,10 @@ for this profile.
 
 Four motors, flat, zero gravity, anti-snore, yoga and two programmable position
 memories are available. Massage exposes notification-backed back/foot intensity,
-pattern and timer, cycle buttons, 10/20/30-minute timer toggles, and inherent or
+pattern and timer, cycle buttons, a 10/20/30-minute timer select, and inherent or
 acoustic vibration mode. Zone/pattern adjustment requires inherent mode.
-Acoustic mode changes only vibration behavior; audio controls are absent.
+Reselecting the active timer duration toggles it off. There is no unconditional
+Off option. Acoustic mode changes only vibration behavior; audio controls are absent.
 
 One RGB light edits either timed settings or a selected saved entry. Choose the
 light settings page, then use the light's color/brightness controls. The three

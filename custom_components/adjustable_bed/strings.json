@@ -4272,15 +4272,6 @@
       "dreamotion_smart_pattern": {
         "name": "Cycle massage pattern"
       },
-      "dreamotion_smart_timer10": {
-        "name": "Toggle 10-minute massage timer"
-      },
-      "dreamotion_smart_timer20": {
-        "name": "Toggle 20-minute massage timer"
-      },
-      "dreamotion_smart_timer30": {
-        "name": "Toggle 30-minute massage timer"
-      },
       "dreamotion_smart_save_light": {
         "name": "Save light settings"
       },
@@ -12169,6 +12160,21 @@
     }
   },
   "exceptions": {
+    "dreamotion_smart_refresh": {
+      "message": "Refresh {setting} settings, then try again."
+    },
+    "dreamotion_smart_inherent": {
+      "message": "Select inherent vibration mode before adjusting massage."
+    },
+    "dreamotion_smart_session": {
+      "message": "The bed disconnected or its Bluetooth session changed. Reconnect and try again."
+    },
+    "dreamotion_smart_gatt": {
+      "message": "The bed's Bluetooth controls could not be identified. Reconnect and try again."
+    },
+    "dreamotion_smart_duration": {
+      "message": "Choose one of the supported light durations."
+    },
     "suta_king_koil_calibrate": {
       "message": "Set the bed clock, then wait for its clock reply before adding or refreshing alarms."
     },

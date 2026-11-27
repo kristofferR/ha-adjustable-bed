@@ -970,15 +970,6 @@
  "button:dreamotion_smart_save_light": {
   "card_section": "lighting"
  },
- "button:dreamotion_smart_timer10": {
-  "card_section": "massage"
- },
- "button:dreamotion_smart_timer20": {
-  "card_section": "massage"
- },
- "button:dreamotion_smart_timer30": {
-  "card_section": "massage"
- },
  "button:dynasty_query": {
   "card_section": "utility"
  },
