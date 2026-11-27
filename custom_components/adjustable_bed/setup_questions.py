@@ -358,6 +358,7 @@ _OWNED_BY_BED_TYPE: Final[dict[str, frozenset[str]]] = {
     "agingplace": GENERIC_FIELDS,
     "hush_sleep_mm": GENERIC_FIELDS,
     "hush_sleep_sxb": GENERIC_FIELDS,
+    "kingkoil": _APP_DEFINED - {CONF_PROTOCOL_VARIANT, CONF_MOTOR_PULSE_COUNT},
     BED_TYPE_SOMOS: _APP_DEFINED - {CONF_PROTOCOL_VARIANT, CONF_MOTOR_PULSE_COUNT},
     BED_TYPE_COMFORTBASE: _APP_DEFINED - {CONF_PROTOCOL_VARIANT, CONF_MOTOR_PULSE_COUNT},
     BED_TYPE_COMFORT_ENHANCEMENTS: _APP_DEFINED - {CONF_PROTOCOL_VARIANT, CONF_MOTOR_PULSE_COUNT},
@@ -2329,6 +2330,16 @@ def _asking(key: str, **declared: Any) -> SetupProfile:
     return replace(_BASE.get(key, SetupProfile()), **declared)
 
 
+def _kingkoil_settings(data: Mapping[str, Any]) -> Mapping[str, Any]:
+    from .profiles.kingkoil import LAYOUTS
+
+    layout = LAYOUTS.get(data.get(CONF_PROTOCOL_VARIANT, ""))
+    return {} if layout is None else {
+        CONF_MOTOR_COUNT: len(layout.axes), CONF_HAS_MASSAGE: layout.massage,
+        CONF_DISABLE_ANGLE_SENSING: True, CONF_MOTOR_PULSE_DELAY_MS: 300,
+    }
+
+
 def _somos_settings(data: Mapping[str, Any]) -> Mapping[str, Any]:
     from .profiles.somos import PRODUCTS
 
@@ -2741,6 +2752,12 @@ SETUP_PROFILES: Final[dict[str, SetupProfile]] = {
                    Question(CONF_PROTOCOL_VARIANT, {"okin15": "Bluetooth name starts with Okin", "okin24": "Bluetooth name starts with SmartBed"}, "okin15")),
         derive=lambda data: {CONF_HAS_MASSAGE: data.get(CONF_PRODUCT_TYPE, "new") == "new"},
         title=lambda _data: "OrmatekTechnoSmart",
+    ),
+    "solace:flexirest": SetupProfile(
+        owns={CONF_MOTOR_COUNT: 2, CONF_HAS_MASSAGE: True, CONF_DISABLE_ANGLE_SENSING: True,
+              CONF_PROTOCOL_VARIANT: "flexirest"},
+        questions=(Question(CONF_BLE_DEVICE_NAME, default="", text=True),),
+        title=lambda _data: "Sealy FlexiRest",
     ),
     "solace:sophie": SetupProfile(
         owns={CONF_MOTOR_COUNT: 2, CONF_HAS_MASSAGE: True, CONF_DISABLE_ANGLE_SENSING: True,
@@ -3314,6 +3331,11 @@ SETUP_PROFILES: Final[dict[str, SetupProfile]] = {
         validate=_limoss_remote_errors,
         derive=lambda _data: {CONF_MOTOR_PULSE_USER_SET: False},
         imports=("beds.limoss.remote",),
+    ),
+    "kingkoil": _asking(
+        "kingkoil",
+        questions=(Question(CONF_PROTOCOL_VARIANT, _routes("kingkoil")),),
+        derive=_kingkoil_settings,
     ),
     BED_TYPE_SOMOS: _asking(
         BED_TYPE_SOMOS,

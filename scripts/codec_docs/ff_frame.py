@@ -7,6 +7,7 @@ from collections.abc import Callable, Iterable
 from custom_components.adjustable_bed.codec import ff_frame as ff_codec
 from custom_components.adjustable_bed.profiles import ff_frame as ff_profiles
 from scripts.codec_docs._common import Block, _block, _hex, _table
+from scripts.codec_docs._flexirest import BLOCKS as FLEXIREST_BLOCKS
 from scripts.codec_docs._sophie import BLOCKS as SOPHIE_BLOCKS
 
 GUIDE = "docs/beds/ff_frame.md"
@@ -470,4 +471,4 @@ BLOCKS: list[Block] = [
 ]
 
 
-BLOCKS += SOPHIE_BLOCKS
+BLOCKS += SOPHIE_BLOCKS + FLEXIREST_BLOCKS
