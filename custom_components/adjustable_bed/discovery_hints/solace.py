@@ -4,6 +4,7 @@ from ..const import BED_TYPE_SOLACE, SOLACE_SERVICE_UUID
 from ._hints import Case, Hint, names, services
 
 HINTS: tuple[Hint, ...] = (
+    names("QMS", "Sealy", "S4-6", bed_types={BED_TYPE_SOLACE}, anywhere=True, case=Case.EXACT),
     names("1320", "1520", bed_types={BED_TYPE_SOLACE}, anywhere=True),
     # Two-letter MQ cannot be represented by HA's three-character prefix index.
     # The full substring predicate runs during active discovery/manual setup.

@@ -2742,6 +2742,12 @@ SETUP_PROFILES: Final[dict[str, SetupProfile]] = {
         derive=lambda data: {CONF_HAS_MASSAGE: data.get(CONF_PRODUCT_TYPE, "new") == "new"},
         title=lambda _data: "OrmatekTechnoSmart",
     ),
+    "solace:flexirest": SetupProfile(
+        owns={CONF_MOTOR_COUNT: 2, CONF_HAS_MASSAGE: True, CONF_DISABLE_ANGLE_SENSING: True,
+              CONF_PROTOCOL_VARIANT: "flexirest"},
+        questions=(Question(CONF_BLE_DEVICE_NAME, default="", text=True),),
+        title=lambda _data: "Sealy FlexiRest",
+    ),
     "solace:sophie": SetupProfile(
         owns={CONF_MOTOR_COUNT: 2, CONF_HAS_MASSAGE: True, CONF_DISABLE_ANGLE_SENSING: True,
               CONF_PROTOCOL_VARIANT: "sophie"},

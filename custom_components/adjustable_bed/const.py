@@ -1891,7 +1891,7 @@ ADJUSTABLE_BED_VARIANTS: Final = {
 }
 
 NAME_RULE_VARIANTS_BY_BED_TYPE: Final[dict[str, frozenset[str]]] = {
-    BED_TYPE_SOLACE: frozenset({"sophie"}),
+    BED_TYPE_SOLACE: frozenset({"sophie", "flexirest"}),
     BED_TYPE_BEDSENSE: frozenset({VARIANT_AUTO}),
     BED_TYPE_SIMMONS: SIMMONS_NAME_RULE_VARIANTS,
     BED_TYPE_ADJUSTAMATTRESS: frozenset({VARIANT_AUTO}),
@@ -1900,12 +1900,14 @@ NAME_RULE_VARIANTS_BY_BED_TYPE: Final[dict[str, frozenset[str]]] = {
     BED_TYPE_STARCODE_M1X12: frozenset({VARIANT_AUTO}),
     **{bed_type: frozenset({VARIANT_AUTO}) for bed_type in RICHMAT_MH_APPS},
 }
+SOLACE_VARIANT_FLEXIREST: Final = "flexirest"
 SOLACE_VARIANT_SOPHIE: Final = "sophie"
 SOLACE_VARIANT_WOOSA: Final = "woosa"
 SOLACE_VARIANTS: Final = {
     VARIANT_AUTO: AUTOMATIC_LABEL,
     SOLACE_VARIANT_WOOSA: "Woosa Sleep app",
     SOLACE_VARIANT_SOPHIE: "Sophie app",
+    SOLACE_VARIANT_FLEXIREST: "Sealy FlexiRest app",
 }
 # The multi-service profile is stored as ``auto``, as v4.0.2 entries hold it.
 # A new setup whose scanned name contains ``JMC`` stores the JMC profile.

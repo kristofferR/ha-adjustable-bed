@@ -59,6 +59,24 @@
  "binary_sensor:ergomotion4_light": {
   "card_section": "hidden"
  },
+ "binary_sensor:flexirest_alarm_enabled": {
+  "card_section": "hidden"
+ },
+ "binary_sensor:flexirest_anti_snore_saved": {
+  "card_section": "hidden"
+ },
+ "binary_sensor:flexirest_memory_1_saved": {
+  "card_section": "hidden"
+ },
+ "binary_sensor:flexirest_memory_2_saved": {
+  "card_section": "hidden"
+ },
+ "binary_sensor:flexirest_tv_saved": {
+  "card_section": "hidden"
+ },
+ "binary_sensor:flexirest_zero_g_saved": {
+  "card_section": "hidden"
+ },
  "binary_sensor:floyd_battery_mode": {
   "card_section": "hidden"
  },
@@ -983,6 +1001,27 @@
   "card_section": "motors",
   "card_role": "up",
   "card_motor": "feet"
+ },
+ "button:flexirest_leg_relaxation": {
+  "card_section": "presets"
+ },
+ "button:flexirest_program_anti_snore": {
+  "card_section": "presets",
+  "card_role": "save"
+ },
+ "button:flexirest_program_tv": {
+  "card_section": "presets",
+  "card_role": "save"
+ },
+ "button:flexirest_program_zero_g": {
+  "card_section": "presets",
+  "card_role": "save"
+ },
+ "button:flexirest_query_fault": {
+  "card_section": "utility"
+ },
+ "button:flexirest_reapply_alarm": {
+  "card_section": "utility"
  },
  "button:foot_tilt_down": {
   "card_section": "motors",
@@ -4741,6 +4780,18 @@
  "sensor:feet_angle": {
   "card_section": "motors",
   "card_motor": "feet"
+ },
+ "sensor:flexirest_fault": {
+  "card_section": "hidden"
+ },
+ "sensor:flexirest_foot_level": {
+  "card_section": "hidden"
+ },
+ "sensor:flexirest_head_level": {
+  "card_section": "hidden"
+ },
+ "sensor:flexirest_wave": {
+  "card_section": "hidden"
  },
  "sensor:fsm_relax_hardware_version": {
   "card_section": "hidden"
