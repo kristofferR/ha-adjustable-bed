@@ -4188,6 +4188,9 @@
  "select:rize_home_source": {
   "card_section": "utility"
  },
+ "select:ruf_richmat_legacy_command_mode": {
+  "card_section": "utility"
+ },
  "select:ruf_richmat_mattress_left_heat_area": {
   "card_section": "massage"
  },

@@ -163,7 +163,7 @@ def control_frame(code: int, mode: int = 0) -> bytes:
 
 
 def stop_frame(mode: int = 0) -> bytes:
-    """``TX_END`` with the mode sampled when it is sent."""
+    """``TX_END`` with the caller's mode."""
     return control_frame(STOP_CODE, mode)
 
 

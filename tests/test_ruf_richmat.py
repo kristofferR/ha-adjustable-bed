@@ -12,10 +12,13 @@ from typing import Any, cast
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
+from pytest_homeassistant.common import MockConfigEntry
 
+from custom_components.adjustable_bed.app_state_store import AppStateStore, app_state_slot
 from custom_components.adjustable_bed.beds.richmat_mh.controller import resolve_model
 from custom_components.adjustable_bed.beds.richmat_mh.protocol import GATT_MAPS, Event, finalize
 from custom_components.adjustable_bed.beds.ruf_richmat.controller import (
+    LEGACY_COMMAND_MODE,
     AppClassifier,
     RufRichmatController,
     load_app_model,
@@ -30,10 +33,14 @@ from custom_components.adjustable_bed.beds.ruf_richmat.protocol import (
     sleep_frame,
 )
 from custom_components.adjustable_bed.beds.ruf_richmat.sleep import RufRichmatSleepController
-from custom_components.adjustable_bed.const import RUF_RICHMAT_APPS, SUPPORTED_BED_TYPES
+from custom_components.adjustable_bed.const import DOMAIN, RUF_RICHMAT_APPS, SUPPORTED_BED_TYPES
 from custom_components.adjustable_bed.controller_factory import create_controller
+from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator, ChildEntryView
 from custom_components.adjustable_bed.detection import BED_TYPE_DISPLAY_NAMES
+from custom_components.adjustable_bed.errors import BedNotConnectedError
+from custom_components.adjustable_bed.select import AdjustableBedControllerSelect
 from custom_components.adjustable_bed.validators import is_valid_variant_for_bed_type
+from tests.error_helpers import raises_key
 from tests.state_helpers import state_writer
 
 
@@ -42,6 +49,7 @@ def coordinator():
     c.entry = SimpleNamespace(data={})
     c.cancel_command = asyncio.Event()
     c.motor_pulse_count = 2
+    c.connection_generation = 1
     c.controller_state = {}
     c.handle_controller_state_update.side_effect = lambda k, v: c.controller_state.update({k: v})
     c.handle_controller_state_updates.side_effect = state_writer(c.controller_state)
@@ -54,11 +62,18 @@ def make(app="bailey2", model="2i", version="0000"):
     c = RufRichmatController(coordinator(), app=app, protocol_variant=f"model_{model}")
     c._version, c._call_page = version, version != "0000"
     c._write_char = SimpleNamespace(uuid=GATT_MAPS[0][1], properties=["write"], handle=1)
+    if c.persisted_app_state is not None:
+        c.restore_persisted_app_state({})
     return c
 
 
 def frames(c):
     return [bytes(x.args[1]).hex() for x in c.client.write_gatt_char.call_args_list]
+
+
+def legacy_mode_select(c: RufRichmatController) -> AdjustableBedControllerSelect:
+    spec = next(s for s in c.controller_select_specs if s.key == LEGACY_COMMAND_MODE)
+    return AdjustableBedControllerSelect(c._coordinator, spec)
 
 
 @pytest.fixture
@@ -185,6 +200,330 @@ async def test_bailey_once_uses_100ms_and_exact_memory_save(delays):
     await c.tap(0x2E)
     assert frames(c) == ["6e01002e9d", "6e01006edd"]
     assert 0.1 in delays and 0.12 not in delays
+
+
+@pytest.mark.parametrize(
+    "app,model,choices,default,interval",
+    [
+        ("americanstar", "kurm", ("left", "right"), "left", 0.1),
+        ("bailey2", "bgrn", ("right", "left"), "right", 0.08),
+        ("wsilver2", "dirm", ("left", "right"), "left", 0.1),
+        ("tx", "7irm", ("mode1", "mode2", "mode3"), "mode1", 0.1),
+    ],
+)
+async def test_legacy_mode_select_and_head_up_end_vectors(
+    app, model, choices, default, interval, delays
+):
+    c = make(app, model)
+    c._coordinator.capability_controller = c
+    c.restore_persisted_app_state({})
+    entity = legacy_mode_select(c)
+    assert set(entity.options) == set(choices)
+    assert entity.current_option == default
+    assert not c.supports_single_address_pairing
+    move = next(m for m in c.motor_control_specs if m.key == "head").open_fn
+    pairs = (
+        ("6e01002493", "6e01006edd"),
+        ("6e01012494", "6e01016ede"),
+        ("6e01022495", "6e01026edf"),
+    )
+    await move(c)
+    assert frames(c) == [pairs[0][0], pairs[0][0], pairs[0][1]]
+    for option, (press, end) in zip(choices, pairs[:len(choices)], strict=True):
+        c.client.write_gatt_char.reset_mock()
+        delays.clear()
+        await entity.async_select_option(option)
+        assert entity.current_option == option and frames(c) == []
+        await move(c)
+        assert frames(c) == [press, press, end]
+        assert any(abs(d - interval) < 0.005 for d in delays)
+        assert 0.12 in delays
+    c._coordinator.async_execute_controller_command.assert_not_called()
+
+
+@pytest.mark.parametrize(
+    "app,model,option,method,args,press,end,delay",
+    [
+        ("americanstar", "kurm", "right", "preset_zero_g", (), "6e010145b5", "6e01016ede", 0.12),
+        ("americanstar", "kurm", "right", "lights_toggle", (), "6e01013cac", "6e01016ede", 0.12),
+        ("bailey2", "bgrn", "left", "program_memory", (1,), "6e01012b9b", "6e01016ede", 0.1),
+        ("bailey2", "bgrn", "left", "tap", (0xBC,), "6e0101bc2c", "6e01016ede", 0.1),
+        ("wsilver2", "dirm", "right", "set_massage_timer", (20,), "6e010163d3", "6e01016ede", 0.12),
+        ("tx", "7irm", "mode3", "set_massage_timer", (30,), "6e010261d2", "6e01026edf", 0.12),
+        ("tx", "7irm", "mode3", "preset_flat", (), "6e010231a2", "6e01026edf", 0.12),
+    ],
+)
+async def test_legacy_catalog_controls_use_selected_mode(
+    app, model, option, method, args, press, end, delay, delays
+):
+    c = make(app, model)
+    c._coordinator.capability_controller = c
+    await legacy_mode_select(c).async_select_option(option)
+    await getattr(c, method)(*args)
+    assert frames(c) == [press, end]
+    assert delay in delays
+
+
+@pytest.mark.parametrize(
+    "app,model",
+    [
+        ("ruf", "bqrm"),
+        ("americanstar", "ebrm"),
+        ("americanstar", "bprn"),
+        ("americanstar", "dirm"),
+        ("bailey2", "7irm"),
+        ("tx", "7irm_mattress"),
+    ],
+)
+async def test_other_app_models_cannot_restore_or_send_legacy_mode(app, model, delays):
+    c = make(app, model)
+    c.restore_persisted_app_state({"legacy_command_mode": "right"})
+    assert c.persisted_app_state is None
+    assert all(s.key != LEGACY_COMMAND_MODE for s in c.controller_select_specs)
+    await c.move_head_up()
+    assert frames(c) == ["6e01002493", "6e01002493", "6e01006edd"]
+
+
+def test_wsilver_saved_group_model_has_no_standalone_legacy_mode():
+    c = make("wsilver2", "5i")
+    assert c.persisted_app_state is None
+    assert all(s.key != LEGACY_COMMAND_MODE for s in c.controller_select_specs)
+
+
+async def test_paired_entry_child_does_not_expose_or_apply_standalone_mode(delays):
+    c = make("tx", "7irm")
+    c._coordinator.capability_controller = c
+    await legacy_mode_select(c).async_select_option("mode3")
+    c._coordinator.entry = ChildEntryView(MockConfigEntry(domain=DOMAIN), {}, MagicMock())
+    assert all(s.key != LEGACY_COMMAND_MODE for s in c.controller_select_specs)
+    assert c.persisted_app_state is None
+    await c.move_head_up()
+    assert frames(c) == ["6e01002493", "6e01002493", "6e01006edd"]
+
+
+async def test_legacy_mode_leaves_query_lighting_diagnostics_and_call_writes_intact(delays):
+    americanstar = make("americanstar", "kurm")
+    americanstar._coordinator.capability_controller = americanstar
+    await legacy_mode_select(americanstar).async_select_option("right")
+    americanstar._dev["led"] = True
+    await americanstar.write_light_timer(60, 1)
+    assert frames(americanstar) == ["6e0b003cb5"]
+
+    c = make("tx", "7irm")
+    c._coordinator.capability_controller = c
+    await legacy_mode_select(c).async_select_option("mode3")
+    c._detection = True
+    await c._write_query(bytes.fromhex("6e9a000008"))
+    await c.start_detection()
+    assert frames(c) == ["6e9a000008", "6e88c210c8"]
+
+    c.client.write_gatt_char.reset_mock()
+    c._version, c._call_page = "0001", True
+    c._dev["led"] = True
+    assert all(s.key != LEGACY_COMMAND_MODE for s in c.controller_select_specs)
+    call = next(s for s in c.controller_select_specs if s.key == "richmat_mh_motor_mode")
+    await call.select_fn(c, "mode2")
+    await c.set_angle(0, 10)
+    await c.set_light_color((1, 2, 3))
+    await c.move_head_up()
+    assert frames(c) == [
+        "6e8818000e", "6e88300a30", "6e0cff017a6e0d020380",
+        "6e01002493", "6e01002493", "6e01006edd",
+    ]
+
+
+async def test_legacy_mode_is_captured_before_waiting_for_gatt(delays):
+    c = make("bailey2", "bgrn")
+    c._coordinator.capability_controller = c
+    entity = legacy_mode_select(c)
+    await entity.async_select_option("left")
+    async with c.ble_lock:
+        movement = asyncio.create_task(c.move_head_up())
+        await asyncio.sleep(0)
+        await entity.async_select_option("right")
+        assert frames(c) == []
+    await movement
+    assert frames(c) == ["6e01012494", "6e01012494", "6e01016ede"]
+    await c.move_head_up()
+    assert frames(c)[-3:] == ["6e01002493", "6e01002493", "6e01006edd"]
+
+
+async def test_legacy_mode_cannot_change_during_cancelled_restore(
+    hass, monkeypatch, mock_coordinator_connected, mock_bleak_client, delays,
+):
+    entry = MockConfigEntry(domain=DOMAIN, data={
+        "address": "AA:BB:CC:DD:EE:66",
+        "bed_type": "bailey_bed_control",
+        "protocol_variant": "model_bgrn",
+        "disable_angle_sensing": True,
+        "idle_disconnect_seconds": 0,
+    })
+    entry.add_to_hass(hass)
+    target = AdjustableBedCoordinator(hass, entry)
+    offline = RufRichmatController(target, app="bailey2", protocol_variant="model_bgrn")
+    target._offline_controller = offline
+    await target._async_restore_app_state(offline)
+    entity = legacy_mode_select(offline)
+    await entity.async_select_option("right")
+    assert entity.current_option == "right"
+
+    service, tx, rx = GATT_MAPS[0]
+    mock_bleak_client.services = MagicMock()
+    mock_bleak_client.services.get_service.return_value = None
+    mock_bleak_client.services.__iter__.return_value = [SimpleNamespace(
+        uuid=service,
+        characteristics=[
+            MagicMock(uuid=tx, properties=["write"], handle=1, descriptors=[]),
+            MagicMock(uuid=rx, properties=["notify"], handle=2, descriptors=[]),
+        ],
+    )]
+    restoring = asyncio.Event()
+    store = target._app_state_store
+    read_slot = store.async_slot
+
+    async def read_pending_slot(slot):
+        restoring.set()
+        return await read_slot(slot)
+
+    try:
+        with monkeypatch.context() as patch_restore:
+            patch_restore.setattr(store, "async_slot", read_pending_slot)
+            async with store._lock:
+                startup = asyncio.create_task(target.async_connect())
+                try:
+                    await asyncio.wait_for(restoring.wait(), timeout=1)
+                    assert target.capability_controller is not offline
+                    with raises_key("ruf_richmat_legacy_mode_loading"):
+                        await entity.async_select_option("left")
+                    mock_bleak_client.write_gatt_char.assert_not_awaited()
+                finally:
+                    startup.cancel()
+                    with pytest.raises(asyncio.CancelledError):
+                        await startup
+
+        assert entity.current_option == "right"
+        assert await target.async_connect()
+        live = target.controller
+        assert isinstance(live, RufRichmatController)
+        mock_bleak_client.write_gatt_char.reset_mock()
+        await entity.async_select_option("left")
+        assert entity.current_option == "left"
+        mock_bleak_client.write_gatt_char.assert_not_awaited()
+        slot = app_state_slot(target.bed_type, "model_bgrn", live.persisted_app_state_key)
+        assert await store.async_slot(slot) == {"legacy_command_mode": "left"}
+        await target.async_execute_controller_command(
+            next(m for m in live.motor_control_specs if m.key == "head").open_fn,
+            read_positions_after_operation=False,
+        )
+        assert frames(live)[0] == "6e01012494"
+        assert frames(live)[-1] == "6e01016ede"
+    finally:
+        await target.async_shutdown()
+
+
+@pytest.mark.parametrize("replace_client", [True, False])
+async def test_legacy_repeat_and_end_do_not_cross_sessions(replace_client, delays):
+    c = make("tx", "7irm")
+    c._coordinator.capability_controller = c
+    await legacy_mode_select(c).async_select_option("mode3")
+    original = c.client
+    replacement = MagicMock(is_connected=True, write_gatt_char=AsyncMock())
+
+    async def change_session(*args, **kwargs):
+        if replace_client:
+            c._coordinator.client = replacement
+        c._coordinator.connection_generation += 1
+
+    original.write_gatt_char.side_effect = change_session
+    with pytest.raises(ConnectionError if replace_client else BedNotConnectedError):
+        await c.move_head_up()
+    assert [call.args[1].hex() for call in original.write_gatt_char.call_args_list] == ["6e01022495"]
+    replacement.write_gatt_char.assert_not_called()
+
+
+async def test_legacy_end_rechecks_session_after_waiting_for_gatt(monkeypatch):
+    c = make("bailey2", "bgrn")
+    c._coordinator.capability_controller = c
+    await legacy_mode_select(c).async_select_option("left")
+    release_delay_started, release_delay_done = asyncio.Event(), asyncio.Event()
+    sleep = asyncio.sleep
+
+    async def pause_release(delay, result=None):
+        if delay == 0.1:
+            release_delay_started.set()
+            await release_delay_done.wait()
+        else:
+            await sleep(delay)
+        return result
+
+    monkeypatch.setattr(asyncio, "sleep", pause_release)
+    tap = asyncio.create_task(c.program_memory(1))
+    await asyncio.wait_for(release_delay_started.wait(), timeout=1)
+    async with c.ble_lock:
+        release_delay_done.set()
+        await asyncio.sleep(0)
+        c._coordinator.connection_generation += 1
+    await tap
+    assert frames(c) == ["6e01012b9b"]
+
+
+async def test_legacy_command_mode_persists_and_scheduler_stop_keeps_its_end(hass, monkeypatch, delays):
+    entry = MockConfigEntry(domain=DOMAIN, data={
+        "address": "AA:BB:CC:DD:EE:66",
+        "bed_type": "bailey_bed_control",
+        "protocol_variant": "model_bgrn",
+        "disable_angle_sensing": True,
+        "idle_disconnect_seconds": 0,
+    })
+    entry.add_to_hass(hass)
+    coordinator = AdjustableBedCoordinator(hass, entry)
+    c = RufRichmatController(coordinator, app="bailey2", protocol_variant="model_bgrn")
+    coordinator._offline_controller = c
+    await coordinator._async_restore_app_state(c)
+    entity = legacy_mode_select(c)
+    assert entity.current_option == "right"
+    ensure = AsyncMock(return_value=True)
+    monkeypatch.setattr(coordinator, "async_ensure_connected", ensure)
+    monkeypatch.setattr(coordinator, "_async_refresh_controller_auth", AsyncMock())
+    await entity.async_select_option("left")
+    ensure.assert_not_called()
+    await coordinator._app_state_store.async_save()
+    slot = app_state_slot(coordinator.bed_type, "model_bgrn", c.persisted_app_state_key)
+    assert await AppStateStore(hass, coordinator.address).async_slot(slot) == {
+        "legacy_command_mode": "left"
+    }
+
+    first_write = asyncio.Event()
+
+    async def write(_characteristic, packet, **_kwargs):
+        if packet == bytes.fromhex("6e01012494"):
+            first_write.set()
+            await asyncio.Event().wait()
+
+    live = RufRichmatController(coordinator, app="bailey2", protocol_variant="model_bgrn")
+    live_client = MagicMock(
+        is_connected=True,
+        services=None,
+        write_gatt_char=AsyncMock(side_effect=write),
+        disconnect=AsyncMock(),
+    )
+    coordinator._controller, coordinator._client = live, live_client
+    live._write_char = MagicMock(uuid=GATT_MAPS[0][1], properties=["write"], handle=1)
+    await coordinator._async_restore_app_state(live)
+    assert coordinator.capability_controller is live and entity.current_option == "left"
+    movement = asyncio.create_task(coordinator.async_execute_controller_command(
+        next(m for m in live.motor_control_specs if m.key == "head").open_fn,
+        read_positions_after_operation=False,
+    ))
+    try:
+        await asyncio.wait_for(first_write.wait(), timeout=1)
+        await entity.async_select_option("right")
+        await coordinator.async_stop_command()
+        await movement
+        assert frames(live) == ["6e01012494", "6e01016ede", "6e01006edd"]
+    finally:
+        live_client.is_connected = False
+        await coordinator.async_shutdown()
 
 
 @pytest.mark.parametrize(

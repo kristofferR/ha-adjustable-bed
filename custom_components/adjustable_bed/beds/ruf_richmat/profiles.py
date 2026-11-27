@@ -24,6 +24,14 @@ DISPLAY_NAMES = {
     "richmat_tx": "TX (Richmat app)",
 }
 
+# The mode byte is scoped to the exact app, model and route on one receiver.
+LEGACY_COMMAND_MODES: Final[dict[tuple[str, str, str], dict[str, int]]] = {
+    ("americanstar", "kurm", "L"): {"left": 0, "right": 1},
+    ("bailey2", "bgrn", "L"): {"left": 1, "right": 0},
+    ("wsilver2", "dirm", "L"): {"left": 0, "right": 1},
+    ("tx", "7irm", "L"): {"mode1": 0, "mode2": 1, "mode3": 2},
+}
+
 # route, gesture, kind, app group, app label, opcode, repeat interval ms
 type ControlRow = tuple[str, str, str, str, str, int, int]
 type Field = JsonValue

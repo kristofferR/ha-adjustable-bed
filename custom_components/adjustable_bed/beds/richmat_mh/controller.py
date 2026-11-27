@@ -17,7 +17,7 @@ from __future__ import annotations
 import asyncio
 import logging
 import re
-from collections.abc import Callable, Mapping, Sequence
+from collections.abc import Awaitable, Callable, Mapping, Sequence
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any, Final, Literal, NamedTuple
 
@@ -1847,16 +1847,22 @@ class RichmatMhController(ProfileExecution[RichmatProfile], BedController, YogaP
 
     async def _release(self) -> None:
         """STOP 120 ms after the release, attempted even when cancelled."""
+        await self._release_after(
+            STOP_DELAY_S, lambda: self.write_command(stop_frame(), cancel_event=asyncio.Event())
+        )
 
-        delaying = True
+    @staticmethod
+    async def _release_after(delay: float, write_stop: Callable[[], Awaitable[None]]) -> None:
+        delaying = False
 
         async def release() -> None:
             nonlocal delaying
+            delaying = True
             try:
-                await asyncio.sleep(STOP_DELAY_S)
+                await asyncio.sleep(delay)
             finally:
                 delaying = False
-                await self.write_command(stop_frame(), cancel_event=asyncio.Event())
+                await write_stop()
 
         task = asyncio.create_task(release())
         cancelled = False
@@ -1892,9 +1898,14 @@ class RichmatMhController(ProfileExecution[RichmatProfile], BedController, YogaP
         count, _ = self.motor_pulse_settings()
         # A leased hold (#483) repeats KEEP until its lease ends.
         count = self.leased_hold_refreshes(control.keep_ms) or count
+        await self._run_control(control, repeat_count=count)
+
+    async def _run_control(self, control: Control, *, repeat_count: int) -> None:
         try:
             await self.write_command(
-                control_frame(control.code), repeat_count=count, repeat_delay_ms=control.keep_ms
+                control_frame(control.code),
+                repeat_count=repeat_count,
+                repeat_delay_ms=control.keep_ms or 100,
             )
         finally:
             await self._release()
