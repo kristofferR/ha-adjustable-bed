@@ -259,7 +259,7 @@ def render_okin_nframe_profiles() -> str:
         ),
         (
             (profile.name, *([_DEADLINE] * 3), "n/a", _DEADLINE, "n/a")
-            if profile.key in okin_profiles.BEDDING_PROFILES
+            if profile in (*okin_profiles.BEDDING_PROFILES.values(), *okin_profiles.JOBS_PROFILES.values())
             else (
                 profile.name,
                 "held recall",

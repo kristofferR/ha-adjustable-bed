@@ -4854,18 +4854,6 @@
  "sensor:jerome_adjustable_base_clock": {
   "card_section": "hidden"
  },
- "sensor:jobs_save_event": {
-  "card_section": "hidden"
- },
- "sensor:jobs_sleep_alarm": {
-  "card_section": "hidden"
- },
- "sensor:jobs_status": {
-  "card_section": "hidden"
- },
- "sensor:jobs_wake_alarm": {
-  "card_section": "hidden"
- },
  "sensor:leggett_led_mask": {
   "card_section": "hidden"
  },

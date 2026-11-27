@@ -263,7 +263,6 @@ async def test_task_cancellation_waits_for_both_releases():
 
 async def test_native_entities_card_placement_typed_state_and_side_ids(hass):
     from custom_components.adjustable_bed.button import _button_entities_for
-    from custom_components.adjustable_bed.sensor import _sensor_entities_for
     from tests.test_malouf_app_entities import configure_entity_runtime
 
     controller = jobs()
@@ -272,9 +271,8 @@ async def test_native_entities_card_placement_typed_state_and_side_ids(hass):
     assert specs["jobs_save_incline"].card == CARD_PRESET_SAVE
     runtime = configure_entity_runtime(hass, controller, BED_TYPE_JOBS)
     buttons = {entity.unique_id for entity in _button_entities_for(hass, runtime)}
-    sensors = {entity.unique_id for entity in _sensor_entities_for(hass, runtime)}
     assert "bed_jobs_wave_4_left" in buttons
-    assert "bed_jobs_sleep_alarm_left" in sensors
+    assert not controller.controller_state_sensor_specs
     assert ALARM_KEYS["sleep"].enabled in {
         spec.state_key for spec in controller.controller_state_binary_sensor_specs
     }

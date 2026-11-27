@@ -434,8 +434,8 @@ Entry pulse settings are the configured motor pulse count and delay.
 | Support | 6 × 100 ms, 2 STOP | 6 × 100 ms, 2 STOP | n/a | n/a | 6 × 100 ms, 2 STOP | n/a |
 | Nectar Move | once, 2 STOP | once, 2 STOP | n/a | n/a | once, 2 STOP | n/a |
 | Independence (Customatic Demo) | once, 2 STOP | n/a | n/a | n/a | once, 2 STOP | n/a |
-| JobsAI mode1 | once, 2 STOP | once, 2 STOP | n/a | n/a | once, 2 STOP | n/a |
-| JobsAI mode2 | once, 2 STOP | once, 2 STOP | n/a | n/a | once, 2 STOP | n/a |
+| JobsAI mode1 | held to its deadline, 2 STOP | held to its deadline, 2 STOP | held to its deadline, 2 STOP | n/a | held to its deadline, 2 STOP | n/a |
+| JobsAI mode2 | held to its deadline, 2 STOP | held to its deadline, 2 STOP | held to its deadline, 2 STOP | n/a | held to its deadline, 2 STOP | n/a |
 | Jordan's Serenity | held to its deadline, 2 STOP | held to its deadline, 2 STOP | held to its deadline, 2 STOP | n/a | held to its deadline, 2 STOP | n/a |
 | Jordan's Tranquil | held to its deadline, 2 STOP | held to its deadline, 2 STOP | held to its deadline, 2 STOP | n/a | held to its deadline, 2 STOP | n/a |
 | Customatic Z-230 | held to its deadline, 2 STOP | held to its deadline, 2 STOP | held to its deadline, 2 STOP | n/a | held to its deadline, 2 STOP | n/a |

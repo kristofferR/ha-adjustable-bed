@@ -222,27 +222,18 @@ class JobsController(SessionBeddingAppController):
         super().on_disconnect()
 
     @property
+    def protocol_diagnostics(self) -> dict[str, object]:
+        keys = (STATUS, SAVE_EVENT, *(key for alarm in ALARM_KEYS.values() for key in (
+            alarm.type, alarm.repeat, alarm.hour, alarm.minute, alarm.enabled,
+        )))
+        return {
+            **super().protocol_diagnostics,
+            "received": {str(key): self._coordinator.controller_state.get(key) for key in keys},
+        }
+
+    @property
     def controller_state_sensor_specs(self) -> tuple[ControllerStateSensorSpec, ...]:
-        return (
-            ControllerStateSensorSpec(
-                str(STATUS), "jobs_status", STATUS, "mdi:information-outline"
-            ),
-            ControllerStateSensorSpec(
-                str(SAVE_EVENT), "jobs_save_event", SAVE_EVENT, "mdi:content-save"
-            ),
-            *(
-                ControllerStateSensorSpec(
-                    f"jobs_{kind}_alarm",
-                    f"jobs_{kind}_alarm",
-                    keys.type,
-                    "mdi:alarm",
-                    attribute_keys=(keys.repeat, keys.hour, keys.minute, keys.enabled),
-                    entity_registry_enabled_default=True,
-                    entity_category=None,
-                )
-                for kind, keys in ALARM_KEYS.items()
-            ),
-        )
+        return ()
 
     @property
     def controller_state_binary_sensor_specs(self) -> tuple[ControllerStateBinarySensorSpec, ...]:
