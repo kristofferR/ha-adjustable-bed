@@ -1,7 +1,7 @@
 """The five apps' finite scan-name admission, offered only as an app hint."""
 
 from ...codec.richmat import TRANSPORTS
-from ...profiles import dreamlab, maxprime
+from ...profiles import dreamlab, homezone, maxprime
 from ...profiles.lp2 import scan_matches as lp2_matches
 from ...profiles.richmat import CLASSIC_TRANSPORTS
 from ...profiles.richmat_resource_apps import APPS, scan_matches
@@ -22,6 +22,7 @@ def matching_apps(name: str | None, service_uuids: tuple[str, ...] = ()) -> tupl
         app for app, layouts in MODEL_CHOICES.items()
         if app != dreamlab.APP and (
             maxprime.scan_matches(name) if app == maxprime.APP
+            else homezone.scan_matches(name) if app == homezone.APP
             else lp2_matches(name) if app == "lp2"
             else scan_matches(name) if app in APPS
             else upper.startswith(_PREFIXES) or upper[:4] in layouts

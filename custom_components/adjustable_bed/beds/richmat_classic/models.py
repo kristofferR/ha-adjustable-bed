@@ -4,7 +4,7 @@ Data extracted outside this repository from the apps' catalogs in
 ``beds/richmat_classic/data``; not edited by hand.
 """
 
-from ...profiles import baseremote, dreamlab, maxprime
+from ...profiles import baseremote, dreamlab, homezone, maxprime
 from ...profiles.bedsmart import ALIASES as BEDSMART_ALIASES
 from ...profiles.bedsmart import LAYOUTS as BEDSMART_LAYOUTS
 from ...profiles.bedsmart import NAVIGATION_LAYOUTS as BEDSMART_NAVIGATION
@@ -442,6 +442,13 @@ MANUAL_ALIASES[dreamlab.APP] = {
 }
 LAYOUT_PICKER_CHOICES[dreamlab.APP] = {
     key: value for choices in dreamlab.LAYOUT_PICKERS.values() for key, value in choices.items()
+}
+
+
+MODEL_CHOICES[homezone.APP] = homezone.LAYOUTS
+MANUAL_ALIASES[homezone.APP] = {k: v for k, v in homezone.ALIASES.items() if len(k) == 4}
+LAYOUT_PICKER_CHOICES[homezone.APP] = {
+    f"{menu}:{layout}": layout for menu, layouts in homezone.NAVIGATION.items() for layout in layouts
 }
 
 

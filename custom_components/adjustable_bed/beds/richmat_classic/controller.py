@@ -1029,6 +1029,11 @@ async def build_controller(ctx: BuildContext) -> RichmatClassicController:
     from .profiles import load_catalog
 
     await ctx.coordinator.hass.async_add_executor_job(load_catalog, ctx.variant)
+    if ctx.variant == "homezone":
+        await ctx.preload("richmat_classic.homezone")
+        from .homezone import HomeZoneController
+
+        return HomeZoneController(ctx.coordinator, device_name=ctx.device_name)
     if ctx.variant == "dynasty":
         await ctx.preload("richmat_classic.dynasty")
         from .dynasty import DynastyController

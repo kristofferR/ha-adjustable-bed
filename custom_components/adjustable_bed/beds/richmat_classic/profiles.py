@@ -27,6 +27,7 @@ LEGACY_APP_STATE_KEY_PREFIX: Final = "cluster018:"
 APP_NAMES = {
     "baseremote": "Base Remote",
     "maxprime": "Maxprime",
+    "homezone": "Home Zone Adjustable",
     "avocadoecobase": "Avocado Eco Base",
     "coastersleep": "CoasterSleep",
     "fortywinks": "Forty Winks",
@@ -161,7 +162,7 @@ def load_catalog(app: str) -> Catalog:
     if app not in APP_NAMES:
         raise ValueError("Choose a supported app")
     data = load(DATA_DIR, "resource_apps" if app in RESOURCE_APPS else app).record("models", "fields", "alarm_allowlist")
-    scoped = app in RISE_APPS or app in ("bedsmart", "baseremote", dreamlab.APP, "maxprime")
+    scoped = app in RISE_APPS or app in ("bedsmart", "baseremote", dreamlab.APP, "maxprime", "homezone")
     columns = _COLUMNS + (("excluded_short", "excluded_long") if scoped else ())
     if tuple(column.text() for column in data["fields"].items()) != columns:
         data["fields"].fail(f"the control columns {_COLUMNS}")

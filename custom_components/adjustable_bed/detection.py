@@ -894,6 +894,7 @@ APP_VARIANT_CHOICES: dict[tuple[str, str], str] = {
     **{(BED_TYPE_ESHINE_OKIN, profile): f"eShine app ({label})" for profile, label in ESHINE_OKIN_PROFILES.items()},
     **{(BED_TYPE_RICHMAT_CLASSIC_APPS, app): f"{label} app" for app, label in RICHMAT_CLASSIC_APPS.items()},
     # The current L&P Adjustable Base app, told apart from its older version's row.
+    (BED_TYPE_RICHMAT_CLASSIC_APPS, "homezone"): "Home Zone Adjustable app",
     (BED_TYPE_RICHMAT_CLASSIC_APPS, "lp2"): "L&P Adjustable Base app (newer version)",
     **{(BED_TYPE_RICHMAT_APP_SLEEP, profile): f"Richmat app sleep sensor ({label})" for profile, label in RICHMAT_SLEEP_CHOICES.items()},
     **{(BED_TYPE_RICHMAT_APP, profile): f"Richmat app ({label})" for profile, label in RICHMAT_APP_PRODUCTS.items()},

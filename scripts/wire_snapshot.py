@@ -2322,6 +2322,11 @@ def route_scenarios() -> list[Scenario]:
 # YGRM has the Hold selector and alarm actions. The framed layout offers only the
 # fourth fixed service (W4), which the app frames like the first.
 CLASSIC_ROUTES: tuple[tuple[str, str, str], ...] = (
+    ("homezone", "6BRM", "richmat_classic_apps_nordic"),
+    ("homezone", "6BRM", "richmat_classic_apps"),
+    ("homezone", "DHRM", "richmat_classic_apps"),
+    ("homezone", "D9RM", "richmat_classic_apps"),
+    ("homezone", "E3RM", "richmat_classic_apps"),
     ("dynasty", "U3RM", "richmat_classic_apps"),
     ("dynasty", "6BRM", "richmat_classic_apps_nordic"),
     ("avocadoecobase", "GORM", "richmat_classic_apps_nordic"),
