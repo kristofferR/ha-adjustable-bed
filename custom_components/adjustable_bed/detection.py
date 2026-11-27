@@ -176,6 +176,7 @@ from .const import (
     BED_TYPE_SLEEPYS_BOX24,
     BED_TYPE_SLEEPYS_BOX25,
     BED_TYPE_SLEEPYS_ELITE_APP,
+    BED_TYPE_SMART_BASE,
     BED_TYPE_SOLACE,
     BED_TYPE_SOMOS,
     BED_TYPE_STAR_ELEVATE,
@@ -837,6 +838,7 @@ BED_TYPE_DISPLAY_NAMES: dict[str, str] = {
     BED_TYPE_REVERIE: "Reverie app",
     BED_TYPE_REVERIE_NIGHTSTAND: "Reverie Nightstand app",
     BED_TYPE_REVERIE_PAIRLINK: "Reverie Pairlink (R510L / Harmoniq)",
+    BED_TYPE_SMART_BASE: "Smart Base app (200IV2 / A8RM)",
     BED_TYPE_COMFORT_BED: "Comfort Bed app (ComfortCareBed)",
     BED_TYPE_ATLAS_LIFT: "Atlas Lift app (Cama Lift)",
     BED_TYPE_RICHMAT: "Richmat / RMControl app",
@@ -1496,7 +1498,7 @@ def detect_bed_type(service_info: BluetoothServiceInfoBleak) -> str | None:
         For detailed detection with confidence scores, use detect_new_bed().
     """
     result = detect_new_bed(service_info)
-    if result.bed_type in (BED_TYPE_RONCO_MOTION, BED_TYPE_AMBIENT, BED_TYPE_COMFORT_BED, BED_TYPE_ATLAS_LIFT, BED_TYPE_LIKIMIO, "dorsal", BED_TYPE_SIMMONS_BLUE, "sleep_assistant", BED_TYPE_SLEEP_ASSIST_PRO, "super_colchones", "bobpowerbase", BED_TYPE_GALAXY, BED_TYPE_GOODVIBE, BED_TYPE_MLILY, BED_TYPE_MLILY0, BED_TYPE_MLILY_REMOTE, BED_TYPE_MOTOMOTION, BED_TYPE_N32_MOTION_BED, BED_TYPE_SYMPHONY, BED_TYPE_MLINE, BED_TYPE_OKIMIKI) and result.confidence < 0.7:
+    if result.bed_type in (BED_TYPE_RONCO_MOTION, BED_TYPE_AMBIENT, BED_TYPE_COMFORT_BED, BED_TYPE_SMART_BASE, BED_TYPE_ATLAS_LIFT, BED_TYPE_LIKIMIO, "dorsal", BED_TYPE_SIMMONS_BLUE, "sleep_assistant", BED_TYPE_SLEEP_ASSIST_PRO, "super_colchones", "bobpowerbase", BED_TYPE_GALAXY, BED_TYPE_GOODVIBE, BED_TYPE_MLILY, BED_TYPE_MLILY0, BED_TYPE_MLILY_REMOTE, BED_TYPE_MOTOMOTION, BED_TYPE_N32_MOTION_BED, BED_TYPE_SYMPHONY, BED_TYPE_MLINE, BED_TYPE_OKIMIKI) and result.confidence < 0.7:
         return None  # An app name hint requires an explicit product choice.
     return result.bed_type
 
@@ -1970,6 +1972,13 @@ def _detect_with_first_pass(
         elif result.bed_type != "bobpowerbase":
             result.ambiguous_types = list(dict.fromkeys([*(result.ambiguous_types or ()), "bobpowerbase"]))
     local_name = advertised_local_name(service_info)
+    if local_name == "200IV2" and not any(signal.startswith("excluded:") for signal in result.signals):
+        # A shared name offers the explicit app choice; it does not identify a side.
+        if result.bed_type is None:
+            result.bed_type, result.confidence = BED_TYPE_SMART_BASE, 0.3
+        else:
+            result.ambiguous_types = list(dict.fromkeys([*(result.ambiguous_types or ()), BED_TYPE_SMART_BASE]))
+        result.signals.append("name:smart_base_app_candidate")
     if (
         isinstance(local_name, str)
         and ATLAS_LIFT_NAME_HINT.matches_name(local_name)

@@ -1782,6 +1782,8 @@
   },
   "entity": {
     "button": {
+      "smart_base_query": {"name": "Refresh bed settings"},
+      "smart_base_cancel_alarm": {"name": "Cancel alarm"},
       "meisemobell_refresh_alarms": {
         "name": "Refresh alarms"
       },
@@ -6761,6 +6763,7 @@
       }
     },
     "number": {
+      "smart_base_lamp_seconds": {"name": "Light timeout (0 keeps on)"},
       "suta_king_koil_head_step": {
         "name": "Head massage step"
       },
@@ -12217,6 +12220,9 @@
     }
   },
   "exceptions": {
+    "smart_base_product": {"message": "Choose the Smart Base 200IV2 / A8RM product in Reconfigure."},
+    "smart_base_gatt": {"message": "The Smart Base 200IV2 route requires its FEE9 service and exact write and notification characteristics."},
+    "smart_base_settings": {"message": "Reconnect and refresh bed settings. The bed must report this feature on the current connection; choose a valid color or 0 to 300 seconds."},
     "meisemobell_gatt": {
       "message": "The selected Meisemobell route needs its matching write-without-response and notification characteristics."
     },
@@ -14087,6 +14093,7 @@
     "richmat_family_choice": {
       "options": {
         "topcare": "TOP CARE",
+        "smart_base": "Smart Base (200IV2 / A8RM)",
         "comfort_bed": "Comfort Bed (ComfortCareBed)",
         "atlas_lift": "Atlas Lift (Cama Lift)",
         "enso2": "ENSO Sleep Control (Enso 2)",

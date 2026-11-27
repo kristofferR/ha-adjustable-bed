@@ -23,6 +23,7 @@ APPS = [
     "atlas_lift",
     "topcare",
     "comfort_bed",
+    "smart_base",
     "jerome_adjustable_base",
     "rmcontrol",
     "luuna",

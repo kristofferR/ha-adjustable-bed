@@ -521,6 +521,7 @@ BED_TYPE_ESHINE: Final = "eshine"  # Explicit Eshine E6000 app profile
 BED_TYPE_ATLAS_LIFT: Final = "atlas_lift"
 BED_TYPE_TOPCARE: Final = "topcare"
 BED_TYPE_COMFORT_BED: Final = "comfort_bed"
+BED_TYPE_SMART_BASE: Final = "smart_base"
 BED_TYPE_RICHMAT: Final = "richmat"
 BED_TYPE_RONCO_MOTION: Final = "ronco_motion"
 BED_TYPE_SOLACE: Final = "solace"
@@ -909,6 +910,7 @@ SUPPORTED_BED_TYPES: Final = [
     BED_TYPE_ATLAS_LIFT,
     BED_TYPE_TOPCARE,
     BED_TYPE_COMFORT_BED,
+    BED_TYPE_SMART_BASE,
     BED_TYPE_SUPER_COLCHONES,
     BED_TYPE_SONICSLEEP,
     BED_TYPE_ERGOBQ,
@@ -1100,6 +1102,7 @@ OFFLINE_CAPABILITY_SAFE_BED_TYPES: Final = frozenset(
         BED_TYPE_ATLAS_LIFT,
         BED_TYPE_TOPCARE,
         BED_TYPE_COMFORT_BED,
+        BED_TYPE_SMART_BASE,
         BED_TYPE_SUPER_COLCHONES,
         BED_TYPE_SONICSLEEP,
         BED_TYPE_ERGOBQ,
