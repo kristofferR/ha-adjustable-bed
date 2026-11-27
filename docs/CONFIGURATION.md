@@ -395,8 +395,10 @@ actions; its bounded `hold_control` behavior has separate timing in the
 | Customatic Jerome's C app | `customatic_jeromes` | 8 | 120 ms |
 | Customatic Remedy app (Rize Remedy) | `customatic_remedy` | 8 | 120 ms |
 | eShine app (E2000 to E5000) | `eshine_okin` | 10 | 300 ms |
+| Flexispot app | `flexispot` | 5 | 200 ms |
 | FSM Relax app | `fsm_relax` | 10 | 60 ms |
 | Jensen Adjustable Sleep app, JMC400 bed | `jensen` | 4 | 300 ms |
+| JobsAI智能助眠床 / Jobs AI app | `jobs` | 10 | 200 ms |
 | King Koil Bed app | `kingkoil` | 10 | 300 ms |
 | Leggett & Platt MlRM remote | `leggett_wilinke` | 10 | 110 ms |
 | Limoss and Stawett remotes | `limoss` | 12 | 80 ms |
@@ -413,6 +415,7 @@ actions; its bounded `hold_control` behavior has separate timing in the
 | Okin receiver (older ORE remotes) | `okin_ore` | 1 | 300 ms |
 | Okin receiver (Sealy Posturematic and DewertOkin Star beds) | `okin_cb35` | 3 | 300 ms |
 | Resident Adjustable Base app | `resident` | 4 | 300 ms |
+| Restonic app (Prime / Lombar / Infinity) | `restonic` | 10 | 200 ms |
 | Richmat / RMControl app | `richmat` | 7 | 150 ms |
 | Rize Home app | `rize_home` | 3 | 200 ms |
 | Shuda app | `shuda` | 5 | 200 ms |
@@ -655,7 +658,7 @@ beds, Reconfigure that bed, then combine them again.
 | Remacro | [One question for Slumberland, The Brick or Jerome's](beds/remacro.md#home-assistant-setup), offering the apps that list the model the bed advertises, or all three when none does. Reconfigure changes the app, and checks that it lists the bed's model. |
 | Resident Adjustable Base | See the [setup steps](beds/okin-nframe.md#resident-adjustable-base). |
 | Reverie | [Setup confirms the receiver](beds/reverie.md#setup-and-model-selection) from its advertised service (Protocol 110 or 108), then asks the model the app shows. Reconfigure lists both receivers. |
-| Richmat | [One question](beds/richmat.md#home-assistant-setup) for the app: [RMControl](beds/richmat.md#rmcontrol) then asks its product code and side; [Revive Control / Best Mattress / Blvd Home / HARMONY / Idealbed](beds/richmat.md#richmat-mh-apps) the app's model, or **Automatic (recommended)** from the Bluetooth name; [Avocado Eco Base / CoasterSleep / Forty Winks / Milemont / Superior](beds/richmat.md#classic-richmat-apps), [Luuna Rise / Power Cool Sleep System](beds/richmat.md#luuna-rise--power-cool), [Lady Americana / ACAA / STA Homecare / Zero Gravity](beds/richmat.md#lady-americana--acaa--sta-homecare--zero-gravity-family), [Jerome's power base](beds/richmat.md#jeromes-power-base), [Maxprime](beds/richmat.md#maxprime) and [Dreamlab Control](beds/richmat.md#dreamlab-control) ask for the app's layout code. [Jerome's Adjustable Base](beds/richmat.md#jeromes-adjustable-base) asks for ELEVATE 2.0, ELEVATE 2.0 SH, WAVE or WAVE SH. [Base Remote](beds/richmat.md#base-remote) asks its layout code and, for a layout with Left and Right tabs, whether the bed is one base. Without one of these apps, the [Richmat remotes](beds/richmat.md#richmat-remotes) ask the remote code. Reconfigure changes the app and lists each one by name, so an entry can switch apps or opt in to RMControl and out of it; Configure changes the app's own settings. |
+| Richmat | [One question](beds/richmat.md#home-assistant-setup) for the app: [RMControl](beds/richmat.md#rmcontrol) then asks its product code and side; [Revive Control / Best Mattress / Blvd Home / HARMONY / Idealbed](beds/richmat.md#richmat-mh-apps) the app's model, or **Automatic (recommended)** from the Bluetooth name; [Avocado Eco Base / CoasterSleep / Forty Winks / Milemont / Superior / Dynasty DM9000](beds/richmat.md#classic-richmat-apps), [Luuna Rise / Power Cool Sleep System](beds/richmat.md#luuna-rise--power-cool), [Lady Americana / ACAA / STA Homecare / Zero Gravity](beds/richmat.md#lady-americana--acaa--sta-homecare--zero-gravity-family), [Jerome's power base](beds/richmat.md#jeromes-power-base), [Maxprime](beds/richmat.md#maxprime) and [Dreamlab Control](beds/richmat.md#dreamlab-control) ask for the app's layout code. [Jerome's Adjustable Base](beds/richmat.md#jeromes-adjustable-base) asks for ELEVATE 2.0, ELEVATE 2.0 SH, WAVE or WAVE SH. [Base Remote](beds/richmat.md#base-remote) asks its layout code and, for a layout with Left and Right tabs, whether the bed is one base. Without one of these apps, the [Richmat remotes](beds/richmat.md#richmat-remotes) ask the remote code. Reconfigure changes the app and lists each one by name, so an entry can switch apps or opt in to RMControl and out of it; Configure changes the app's own settings. |
 | Dorsal app / Roomi | Choose CPRN, CORN, a saved Dorsal project, or Roomi controls. Enter the exact case-sensitive code for a saved project. Roomi needs a receiver with QRRM in its Bluetooth name and accepts an optional saved code. See the [Dorsal guide](beds/richmat.md#dorsal--roomi). |
 | ROOMI bed (S655 Plus) | Choose the S655 Plus profile and a receiver with QRRM in its Bluetooth name. No project code is needed. See the [ROOMI bed guide](beds/richmat.md#roomi-bed-s655-plus). |
 | ENSO Sleep Control (Enso 2) | Choose the layout shown in the app. The Bluetooth name suggests a layout when it has a recognized prefix. For a generic name, Cool Touch or 209A05, choose the app’s manual layout code. Enable **Property-based Bluetooth receiver** only for receivers that use the third-service fallback. See the [Enso 2 profile](beds/richmat.md#enso-sleep-control). |
@@ -967,6 +970,16 @@ and massage setting when combined with another bed. No single-address side
 selection is inferred. The massage timer is a Home Assistant countdown, 1–40
 minutes, initially 10; it sends massage off on expiry while connected. It does
 not program a timer in the bed. See [SILVERmotion Android](beds/silvermotion.md).
+
+JobsAI智能助眠床 / Jobs AI uses an explicit app choice and mode 1 or mode 2.
+See the [JobsAI guide](beds/okin-nframe.md#jobsai).
+
+### Restonic app
+
+Choose the Prime, Lombar or Infinity layout and its BLE branch independently.
+Both choices belong to the physical bed and are configured per side of a
+two-address pair. The [Restonic guide](beds/restonic.md) lists the exact
+name-to-branch rules and available actions. No network setup is required.
 
 ### Ronco Motion layout
 
