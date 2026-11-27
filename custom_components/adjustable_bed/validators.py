@@ -123,6 +123,7 @@ from .profiles.majestichome import PROFILE_CHOICES as MAJESTICHOME_PROFILES
 from .profiles.mlily0 import VARIANTS as MLILY0_PROFILES
 from .profiles.mlily_choices import PROFILE_CHOICES as MLILY_PROFILES
 from .profiles.mlily_remote import VARIANTS as MLILY_REMOTE_PROFILES
+from .profiles.motionflex import CHOICES as MOTIONFLEX_CHOICES
 from .profiles.okimiki import PROFILE_CHOICES as OKIMIKI_PROFILES
 from .profiles.personal_comfort import ROUTES as PERSONAL_COMFORT_ROUTES
 from .profiles.relax_motion import ROUTES as RELAX_MOTION_ROUTES
@@ -221,6 +222,7 @@ VARIANTS_BY_BED_TYPE: dict[str, dict[str, str]] = {
     "instant_comfort": INSTANT_COMFORT_ROUTES,
     "mlily_remote": MLILY_REMOTE_PROFILES,
     "mlily0": MLILY0_PROFILES,
+    "motionflex": MOTIONFLEX_CHOICES,
     "mline": {"auto": AUTOMATIC_LABEL, **MLINE_PROTOCOL_LABELS},
     "sinca_comfort": {"auto": AUTOMATIC_LABEL, **SINCA_RECEIVERS},
     BED_TYPE_KAIDI: KAIDI_VARIANTS,

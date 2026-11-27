@@ -305,6 +305,7 @@ from .profiles.majestichome import PROFILE_CHOICES as MAJESTICHOME_PROFILES
 from .profiles.mlily0 import VARIANTS as MLILY0_PROFILES
 from .profiles.mlily_choices import PROFILE_CHOICES as MLILY_PROFILES
 from .profiles.mlily_remote import VARIANTS as MLILY_REMOTE_PROFILES
+from .profiles.motionflex import CHOICES as MOTIONFLEX_CHOICES
 from .profiles.okimiki import PROFILE_CHOICES as OKIMIKI_PROFILES
 from .profiles.restonic import AXES as RESTONIC_AXES
 from .profiles.restonic import BRANCH_CHOICES as RESTONIC_BRANCHES
@@ -382,6 +383,7 @@ _OWNED_BY_BED_TYPE: Final[dict[str, frozenset[str]]] = {
     BED_TYPE_COMFORT_ENHANCEMENTS: _APP_DEFINED - {CONF_PROTOCOL_VARIANT, CONF_MOTOR_PULSE_COUNT},
     BED_TYPE_ALYA: _APP_DEFINED - {CONF_PROTOCOL_VARIANT, CONF_MOTOR_PULSE_COUNT, CONF_HAS_MASSAGE},
     BED_TYPE_ESHINE_OKIN: _APP_DEFINED - {CONF_PROTOCOL_VARIANT, CONF_MOTOR_PULSE_COUNT},
+    "motionflex": _APP_DEFINED - {CONF_PROTOCOL_VARIANT, CONF_MOTOR_PULSE_COUNT},
     BED_TYPE_ESHINE: _APP_DEFINED - {CONF_MOTOR_PULSE_COUNT},
     BED_TYPE_GALAXY: GENERIC_FIELDS - {CONF_PROTOCOL_VARIANT},
     BED_TYPE_GOODVIBE: _APP_DEFINED - {CONF_PROTOCOL_VARIANT},
@@ -3534,6 +3536,13 @@ SETUP_PROFILES: Final[dict[str, SetupProfile]] = {
         "bobpowerbase",
         questions=(Question(CONF_PROTOCOL_VARIANT, BOB_PROFILES),
                    Question(CONF_PRODUCT_TYPE, BOB_LAYOUTS, "standard")),
+    ),
+    "motionflex": SetupProfile(
+        owns={CONF_MOTOR_COUNT: SET_BY_PROFILE, CONF_HAS_MASSAGE: True,
+              CONF_DISABLE_ANGLE_SENSING: True, CONF_MOTOR_PULSE_DELAY_MS: 100},
+        questions=(Question(CONF_PROTOCOL_VARIANT, MOTIONFLEX_CHOICES),),
+        derive=lambda data: {CONF_MOTOR_COUNT: {"sn300": 2, "sn500": 4, "hc800": 3}[str(data[CONF_PROTOCOL_VARIANT])]},
+        title=lambda _data: "MotionFlex",
     ),
     BED_TYPE_MLILY0: _asking(
         BED_TYPE_MLILY0,

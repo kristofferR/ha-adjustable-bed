@@ -323,6 +323,7 @@ _BY_BED_TYPE: Final[dict[str, SideProfile]] = {
     BED_TYPE_VMATBASIC: SideProfile("V-MAT Basic"),
     BED_TYPE_ALYA: SideProfile("Alya Smart Furnishing", variant_owned=True),
     BED_TYPE_ESHINE_OKIN: SideProfile("eShine E2000/E3000/E3100/E5000", variant_owned=True),
+    "motionflex": SideProfile("MotionFlex", variant_owned=True),
     BED_TYPE_ESHINE: SideProfile("Eshine E6000"),
     BED_TYPE_JOBS: SideProfile("JobsAI", variant_owned=True),
     BED_TYPE_TRANQUIL: SideProfile("Tranquil"),
