@@ -210,6 +210,7 @@ def runtime_variants(controllers: Iterable[BedController]) -> Iterator[BedContro
     Some controls exist only for a reported model, layout or page, which no
     offline configuration reaches.
     """
+    from custom_components.adjustable_bed.beds.active_sleep.controller import ActiveSleepController
     from custom_components.adjustable_bed.beds.baseremote.controller import BaseRemoteController
     from custom_components.adjustable_bed.beds.dorsal.controller import DorsalController
     from custom_components.adjustable_bed.beds.dreamsense.awmotion import AwMotionController
@@ -224,8 +225,6 @@ def runtime_variants(controllers: Iterable[BedController]) -> Iterator[BedContro
     from custom_components.adjustable_bed.beds.ore_ultramatic.controller import (
         OreDualRouteController,
     )
-    from custom_components.adjustable_bed.beds.active_sleep.controller import ActiveSleepController
-    from custom_components.adjustable_bed.codec import active_sleep as active_sleep_codec
     from custom_components.adjustable_bed.beds.paramount.controller import ParamountController
     from custom_components.adjustable_bed.beds.relax_motion.controller import RelaxMotionController
     from custom_components.adjustable_bed.beds.restonic.controller import RestonicController
@@ -264,6 +263,7 @@ def runtime_variants(controllers: Iterable[BedController]) -> Iterator[BedContro
     from custom_components.adjustable_bed.beds.truemotion.controller import TrueMotionController
     from custom_components.adjustable_bed.beds.vibradorm.app import VibradormAppController
     from custom_components.adjustable_bed.beds.vmatbasic.controller import VMatBasicController
+    from custom_components.adjustable_bed.codec import active_sleep as active_sleep_codec
     from custom_components.adjustable_bed.const import DORSAL_ROOMI_S655_PLUS
     from custom_components.adjustable_bed.profiles import dorsal, likimio, relax_motion, truemotion
     from custom_components.adjustable_bed.profiles import vmatbasic as vmat_profiles

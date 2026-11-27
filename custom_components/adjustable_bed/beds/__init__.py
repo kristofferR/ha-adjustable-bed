@@ -10,6 +10,7 @@ from typing import TYPE_CHECKING
 from .base import BedController
 
 if TYPE_CHECKING:
+    from .active_sleep.controller import ActiveSleepController as ActiveSleepController
     from .adjustable_lumbar import AdjustableBedAppController as AdjustableBedAppController
     from .adjustable_lumbar import AdjustableLumbarController as AdjustableLumbarController
     from .adjustamattress.controller import AdjustaMattressController as AdjustaMattressController
@@ -123,7 +124,6 @@ if TYPE_CHECKING:
     from .omazz_adjusto_iii import OmazzAdjustoIIIController as OmazzAdjustoIIIController
     from .onlysnore.controller import OnlySnoreController as OnlySnoreController
     from .ore_comfort_bed import OreComfortBedController as OreComfortBedController
-    from .active_sleep.controller import ActiveSleepController as ActiveSleepController
     from .paramount.controller import ParamountController as ParamountController
     from .personal_comfort.air import PersonalComfortAir as PersonalComfortAir
     from .personal_comfort.controller import PersonalComfortBase as PersonalComfortBase
