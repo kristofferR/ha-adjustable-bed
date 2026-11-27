@@ -429,7 +429,7 @@ def plan_commands(controller: Any) -> list[Command]:
     for spec in specs:
         # These STOP paths consume the interrupted command's release receipt.
         # Keep older synthetic STOP rows stable.
-        scheduled = controller._coordinator.bed_type in {"shuda", "atlas_lift", "purely_sleep", "comfort_bed"}
+        scheduled = controller._coordinator.bed_type in {"shuda", "atlas_lift", "purely_sleep", "topcare", "comfort_bed"}
         # Stop between OkimattMotion refresh ticks so equal deadlines cannot race.
         after_s = 0.35 if controller._coordinator.bed_type == "okimattmotion" else STOP_AFTER_S
         plan.append(Command(
@@ -1575,6 +1575,8 @@ def default_scenario(bed_type: str) -> Scenario:
     if bed_type == const.BED_TYPE_PURELY_SLEEP:
         return Scenario(id=bed_type, bed_type=bed_type, protocol_variant="JLRN",
                         layout_id="atlas_lift:w1")
+    if bed_type == "topcare":
+        return Scenario(id=bed_type, bed_type=bed_type, layout_id="topcare:n1")
     if bed_type == const.BED_TYPE_COMFORT_BED:
         return Scenario(id=bed_type, bed_type=bed_type, layout_id="comfort_bed:n1")
     if bed_type == const.BED_TYPE_ATLAS_LIFT:
@@ -1938,6 +1940,8 @@ def route_scenarios() -> list[Scenario]:
         for route in ("n1", "w1", "w2", "w3", "w4", "w5"):
             scenarios.append(Scenario(id=f"super_colchones:{product}:{route}", bed_type="super_colchones",
                 protocol_variant=product, entry_data={const.CONF_PROTOCOL_VARIANT: product}, layout_id=f"super_colchones:{route}"))
+    scenarios.extend(Scenario(id=f"topcare:{key}", bed_type="topcare", layout_id=f"topcare:{key}")
+                     for key in ("w1", "w2", "w3", "w4", "w5"))
     scenarios.append(Scenario(id="comfort_bed:w1", bed_type=const.BED_TYPE_COMFORT_BED,
                               layout_id="comfort_bed:w1"))
     scenarios.append(Scenario(id="atlas_lift:w1", bed_type=const.BED_TYPE_ATLAS_LIFT,
@@ -2972,7 +2976,7 @@ async def _connect(controller: Any, recorder: Recorder, clock: FakeClock) -> dic
                 session.store_device_info = lambda *_: None
             await controller.async_on_connect(session)
             return
-        if controller._coordinator.bed_type in {"symphony", "linx", "agingplace", "sleep_assistant", "sinca_comfort", "leva", "sleep_assist_pro", "atlas_lift", "purely_sleep", "comfort_bed", "ambient", "ergobq", "ronco_motion"}:
+        if controller._coordinator.bed_type in {"symphony", "linx", "agingplace", "sleep_assistant", "sinca_comfort", "leva", "sleep_assist_pro", "atlas_lift", "purely_sleep", "topcare", "comfort_bed", "ambient", "ergobq", "ronco_motion"}:
             session = SimpleNamespace(
                 client=controller.client, is_current=lambda: True,
                 async_start_notify=lambda: controller.start_notify(lambda *_: None),

@@ -22,6 +22,7 @@ APPS = [
     "richmat_420",
     "atlas_lift",
     "purely_sleep",
+    "topcare",
     "comfort_bed",
     "jerome_adjustable_base",
     "rmcontrol",

@@ -150,6 +150,7 @@ from .const import (
     BED_TYPE_SYMPHONY,
     BED_TYPE_SYMPHONY_SLEEP,
     BED_TYPE_TIMOTION_AHF,
+    BED_TYPE_TOPCARE,
     BED_TYPE_TRANQUIL,
     BED_TYPE_VIBRADORM,
     BED_TYPE_VIBRADORM_APP,
@@ -3934,6 +3935,11 @@ SETUP_PROFILES: Final[dict[str, SetupProfile]] = {
               CONF_DISABLE_ANGLE_SENSING: True, CONF_MOTOR_PULSE_DELAY_MS: 100},
         questions=(Question(CONF_PROTOCOL_VARIANT, PURELY_SLEEP_PRODUCTS, lambda _data: REQUIRED,
                             searchable=True),),
+    ),
+    BED_TYPE_TOPCARE: SetupProfile(
+        owns={CONF_MOTOR_COUNT: 2, CONF_HAS_MASSAGE: False,
+              CONF_DISABLE_ANGLE_SENSING: True, CONF_MOTOR_PULSE_DELAY_MS: 100,
+              CONF_PROTOCOL_VARIANT: "auto"},
     ),
     BED_TYPE_COMFORT_BED: SetupProfile(
         owns={CONF_MOTOR_COUNT: 2, CONF_HAS_MASSAGE: True,

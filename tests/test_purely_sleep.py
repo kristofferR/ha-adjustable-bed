@@ -264,6 +264,7 @@ async def test_real_buttons_axes_and_public_actions_respect_product_gates(hass, 
     assert not frames(client)
 
 
+@pytest.mark.parametrize("runtime", (("JLRN", "w1"), ("VJRM", "n1")), indirect=True)
 async def test_received_common_state_and_v1_gate_clear_only_on_new_version(runtime):
     coordinator, client, _, route = runtime
     assert await coordinator.async_connect()
@@ -502,6 +503,12 @@ async def test_real_reconnect_retains_version_exclusion_until_a_fresh_reply(runt
     assert await coordinator.async_disconnect()
     assert await coordinator.async_connect()
     assert coordinator.controller is not first
+    # A callback captured from the previous subscription cannot clear the guard.
+    receive(sender, bytearray.fromhex("6e90000000"))
+    receive(sender, bytearray.fromhex("6e09010078"))
+    receive(sender, bytearray.fromhex("6e0e00037f"))
+    assert coordinator.controller_state[CLOCK] is None
+    assert coordinator.controller_state[LIGHT] is None
     # Startup queries are still allowed; there has been no fresh version reply.
     assert len(frames(client)) == 10
     client.write_gatt_char.reset_mock()
@@ -520,6 +527,103 @@ async def test_real_reconnect_retains_version_exclusion_until_a_fresh_reply(runt
     client.write_gatt_char.reset_mock()
     await coordinator.controller.preset_flat()
     assert frames(client) == [packet(0x31, route)]
+
+
+TIMED_AXES = (
+    (("JLRN", "w1"), "back", 0x24),
+    (("JLRN", "w1"), "legs", 0x26),
+    (("JLRN", "w1"), "both", 0x29),
+    (("VJRM", "n1"), "back", 0x24),
+    (("VJRM", "n1"), "legs", 0x26),
+)
+
+
+@pytest.mark.parametrize(("runtime", "motor", "code"), TIMED_AXES, indirect=["runtime"])
+async def test_public_timed_axes_keep_the_immediate_pulse_and_release(hass, runtime, motor, code):
+    from custom_components.adjustable_bed.beds.richmat import atlas_lift, fixed, purely_sleep
+
+    coordinator, client, _, route = runtime
+    assert await coordinator.async_connect()
+    assert atlas_lift._Link is purely_sleep._Link is fixed._Link
+    assert type(coordinator.controller._current_link()) is fixed._Link
+    await asyncio.sleep(0.1)  # Let the last startup query's FIFO interval elapse.
+    client.write_gatt_char.reset_mock()
+    recorded = []
+    loop = asyncio.get_running_loop()
+    started = loop.time()
+
+    async def write(_characteristic, frame, **kwargs):
+        recorded.append((round((loop.time() - started) * 1000), frame))
+
+    client.write_gatt_char.side_effect = write
+    await hass.services.async_call(
+        const.DOMAIN,
+        "timed_move",
+        {"device_id": "bed", "motor": motor, "direction": "up", "duration_ms": 100},
+        blocking=True,
+    )
+    assert recorded == [(0, packet(code, route)), (100, packet(0x6E, route))]
+
+
+@pytest.mark.parametrize(("runtime", "motor", "code"), TIMED_AXES, indirect=["runtime"])
+async def test_native_timed_axis_cancel_settles_before_one_release(runtime, motor, code):
+    coordinator, client, _, route = runtime
+    assert await coordinator.async_connect()
+    await asyncio.sleep(0.1)
+    controller = coordinator.controller
+    timed_move = next(s for s in controller.motor_control_specs if s.key == motor).timed_move_fn
+    assert timed_move is not None
+    client.write_gatt_char.reset_mock()
+    entered, finish = asyncio.Event(), asyncio.Event()
+
+    async def write(_characteristic, frame, **kwargs):
+        if frame == packet(code, route):
+            entered.set()
+            await finish.wait()
+
+    client.write_gatt_char.side_effect = write
+    task = asyncio.create_task(
+        coordinator.async_execute_controller_command(lambda ctrl: timed_move(ctrl, True, 350))
+    )
+    await entered.wait()
+    task.cancel()
+    await asyncio.sleep(0)
+    assert not task.done() and frames(client) == [packet(code, route)]
+    finish.set()
+    with pytest.raises(asyncio.CancelledError):
+        await task
+    assert frames(client) == [packet(code, route), packet(0x6E, route)]
+
+
+@pytest.mark.parametrize(("selection", "motor", "code"), TIMED_AXES)
+async def test_queued_native_timed_axis_cannot_cross_a_replacement(selection, motor, code):
+    product, route = selection
+    old = client_on(service(route, "write"))
+    coordinator = MagicMock(
+        client=old,
+        cancel_command=asyncio.Event(),
+        motor_count=2,
+        motor_pulse_count=2,
+        motor_pulse_delay_ms=100,
+    )
+    controller = PurelySleepController(coordinator, product=product)
+    with virtual_clock():
+        await controller.async_on_connect(session_for(controller, old))
+        timed_move = next(s for s in controller.motor_control_specs if s.key == motor).timed_move_fn
+        assert timed_move is not None
+        old.write_gatt_char.reset_mock()
+        async with controller.ble_lock:
+            task = asyncio.create_task(timed_move(controller, True, 350))
+            await asyncio.sleep(0.15)
+            controller.on_disconnect()
+            new = client_on(service("n1" if route == "w1" else "w1", "write"))
+            coordinator.client = new
+        with pytest.raises(ConnectionError):
+            await task
+        await controller.async_on_connect(session_for(controller, new))
+        new.write_gatt_char.reset_mock()
+        old.write_gatt_char.assert_not_awaited()
+        new.write_gatt_char.assert_not_awaited()
 
 
 @pytest.mark.parametrize(
