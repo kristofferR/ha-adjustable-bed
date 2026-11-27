@@ -66,6 +66,7 @@ Beautyrest bases that use one of the Keeson Bluetooth routes still work.
 | ✅ | [Aging in Place / Dawn House](https://play.google.com/store/apps/details?id=com.keeson.agingplace) 1.1.0 (87) | `com.keeson.agingplace` | [Dawn House JSON](#aging-in-place--dawn-house) |
 | ✅ | [Enso Remote](https://play.google.com/store/apps/details?id=com.ore.sfm2) 2.3 | `com.ore.sfm2` | [Enso Remote](#enso-remote) |
 | ✅ | [アシステック](https://play.google.com/store/apps/details?id=com.okin.yamada) 1.0.1 (6) | `com.okin.yamada` | [P1/P2](#アシステック--yamada) |
+| ✅ | King Koil Bed 1.0 (code 1) | `com.sfd.kingkoilbed` | [Two remote layouts](#king-koil-bed) |
 | ✅ | Somos / SomosBeds 1.0.0 (code 1) | `cn.com.somos` | [Five products](#somos--somosbeds) |
 | ✅ | [ComfortBaseForBluetooth](https://play.google.com/store/apps/details?id=com.ore.yorkfeng.comfortbaseble2) 1.1.2 (6) | `com.ore.yorkfeng.comfortbaseble2` | [ComfortBaseForBluetooth](#comfortbaseforbluetooth) |
 | ✅ | [Ergomotion 4.0](https://play.google.com/store/apps/details?id=com.sfd.hump) | `com.sfd.hump` | [Ergomotion 4.0](#ergomotion-40); also [KSBT](#ksbt-family) |
@@ -6585,3 +6586,119 @@ Based on Enso Remote 2.3 (`com.ore.sfm2`). Hardware is not yet tested.
 #### Setup
 
 Select the explicit Alya BLE type and motor layout. The [Alya app guide](alya.md) holds this app's generated layout, transport and command tables and its release/state rules. Shared frames do not select another app's capabilities or timings.
+
+## King Koil Bed
+
+**Status:** Not yet tested on hardware.
+
+### Known Models
+
+King Koil Bed's two remote layouts. Bluetooth names containing the exact,
+case-sensitive `KSBT03CK` or `KSBT03CL` tokens are candidates, not proof of layout.
+
+### Apps
+
+| Analyzed | App | Package ID |
+|----------|-----|------------|
+| ✅ | King Koil Bed 1.0 (code 1) | `com.sfd.kingkoilbed` |
+
+### Features
+
+| Feature | Supported |
+|---------|-----------|
+| Movement | Head/foot, or app-labelled Head A/Head B/foot |
+| Presets | Flat, zero gravity and TV |
+| Massage | Four button actions on the head/foot layout; cycles and levels unspecified |
+| Light | Button action and reported light icon; transitions unspecified |
+| Reported state | Light icon; head/foot layout also reports a 0/10/20/30 timer indicator |
+| Position feedback / memory programming | None |
+
+### Protocol Details
+
+Nordic UART service `6e400001-b5a3-f393-e0a9-e50e24dcca9e`, write
+`6e400002-b5a3-f393-e0a9-e50e24dcca9e`, notify
+`6e400003-b5a3-f393-e0a9-e50e24dcca9e`. Both roles must belong to that
+service. No fallback service, pairing exchange or startup control is used.
+Control writes are six-byte P2 frames; `00 b0` is a separate status query.
+The inherited characteristic write type is retained: response when writable,
+otherwise without response when that is the only supported write mode.
+HA manages the connection, MTU and CCCD subscription through its Bluetooth stack.
+
+### Detection / Setup
+
+Select **King Koil Bed app**, then choose the remote by its visible controls.
+The saved app selectors and image filenames are inverted:
+
+- Head/foot with massage is saved `KSBT03CK`, but its guide image is `KSBT03CL`.
+- Head A/Head B/foot is saved `KSBT03CL`, but its guide image is `KSBT03CK`.
+
+No layout is inferred from shared Nordic UUIDs or a discovered Bluetooth name.
+A/B are app labels; their physical actuator anatomy and left/right relation are
+unverified. No combined-side control is inferred.
+
+### Commands
+
+<!-- generated:keeson-kingkoil -->
+| Saved app selector | Control | Frame | Timing |
+|---|---|---|---|
+| KSBT03CK | head up | `04 02 00 00 00 01` | held, 300 ms |
+| KSBT03CK | head down | `04 02 00 00 00 02` | held, 300 ms |
+| KSBT03CK | feet up | `04 02 00 00 00 04` | held, 300 ms |
+| KSBT03CK | feet down | `04 02 00 00 00 08` | held, 300 ms |
+| KSBT03CK | flat | `04 02 08 00 00 00` | once |
+| KSBT03CK | zero_g | `04 02 00 00 10 00` | once |
+| KSBT03CK | tv | `04 02 00 00 40 00` | once |
+| KSBT03CK | light | `04 02 00 02 00 00` | held, 300 ms |
+| KSBT03CK | massage_mode | `04 02 04 00 00 00` | once |
+| KSBT03CK | massage_head | `04 02 00 00 08 00` | once |
+| KSBT03CK | massage_foot | `04 02 00 00 04 00` | once |
+| KSBT03CK | massage_timer | `04 02 00 00 02 00` | once |
+| KSBT03CK | status query | `00 B0` | 500 ms live poll |
+| KSBT03CL | head_a up | `04 02 00 00 00 01` | held, 300 ms |
+| KSBT03CL | head_a down | `04 02 00 00 00 02` | held, 300 ms |
+| KSBT03CL | head_b up | `04 02 00 00 00 04` | held, 300 ms |
+| KSBT03CL | head_b down | `04 02 00 00 00 08` | held, 300 ms |
+| KSBT03CL | feet up | `04 02 00 00 00 10` | held, 300 ms |
+| KSBT03CL | feet down | `04 02 00 00 00 20` | held, 300 ms |
+| KSBT03CL | flat | `04 02 08 00 00 00` | once |
+| KSBT03CL | zero_g | `04 02 00 00 10 00` | once |
+| KSBT03CL | tv | `04 02 00 00 40 00` | once |
+| KSBT03CL | light | `04 02 00 02 00 00` | once |
+| KSBT03CL | status query | `00 B0` | 500 ms live poll |
+<!-- /generated -->
+
+### Position Feedback / Notifications
+
+Notifications of at least 13 bytes report the light icon from nonzero byte 12.
+On saved `KSBT03CK`, the unsigned big-endian value at bytes 3/4 selects the app's
+timer indicator: greater than 1200 means 30, greater than 600 means 20, positive
+means 10, otherwise 0. These are UI indicators, not established timer wire units.
+No header, checksum, motor position or command ACK is inferred. Short replies
+are ignored. Reported values start unknown and clear on disconnect; local button
+presses never predict them. The diagnostic status-refresh button is disabled by
+default.
+
+### Command Timing
+
+Movement starts immediately and refreshes every 300 ms while admitted. The
+`KSBT03CK` light is held with the same cadence; the `KSBT03CL` light writes once.
+Other actions write once. Status polling runs every 500 ms on an already-live idle
+connection, serialized and preemptible through HA. It never opens a connection.
+
+Both live app release paths only cancel refresh and send no STOP/release packet.
+HA STOP fences pending refreshes and waits for a submitted write to settle on
+its original connection. It does not abort a recalled preset. Firmware watchdog
+and physical stopping time remain unverified; keep the physical remote available
+for initial testing. No neutral frame is invented.
+
+### Notes
+
+No massage cycle order, light transition, memory slot, device position or
+physical multi-motor combination is inferred from sibling apps.
+
+#### Analysis provenance
+
+Based on the complete APK Protocol Audit of King Koil Bed 1.0 (`com.sfd.kingkoilbed`),
+with its base APK and all four delivery splits. All 24 outbound action instances
+reproduce through the existing Keeson P2 encoder and query literal. Seven parser
+vectors are synthetic boundary inputs, not captured hardware replies.

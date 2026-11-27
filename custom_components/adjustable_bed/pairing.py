@@ -114,6 +114,7 @@ from .const import (
 )
 from .errors import invalid
 from .profiles import truemotion
+from .profiles.alya import PROFILES as ALYA_PROFILES
 from .profiles.bobpowerbase import PROFILE_CHOICES as BOB_PROFILES
 from .profiles.comfortbase import PRODUCTS as COMFORTBASE_PRODUCTS
 from .profiles.majestichome import PROFILE_CHOICES as MAJESTICHOME_PROFILES
@@ -132,6 +133,7 @@ OFFLINE_CAPABILITY_SAFE_VARIANTS: Final[dict[str, frozenset[str]]] = {
     "instant_comfort": frozenset({"malouf", "reverie_v1", "reverie_v2"}),
     BED_TYPE_ADJUSTAMATTRESS: frozenset(v for v in ADJUSTAMATTRESS_VARIANTS if v != VARIANT_AUTO),
     BED_TYPE_COMFORT_ENHANCEMENTS: frozenset(COMFORT_ENHANCEMENTS_VARIANTS),
+    "kingkoil": frozenset({"KSBT03CK", "KSBT03CL"}),
     BED_TYPE_SOMOS: frozenset({"a", "b", "c", "d", "e"}),
     BED_TYPE_COMFORTBASE: frozenset(COMFORTBASE_PRODUCTS),
     BED_TYPE_YAMADA: frozenset({"p1", "p2"}),
@@ -278,9 +280,7 @@ def supports_single_address_pairing(
     if bed_type not in SINGLE_ADDRESS_SIDE_AWARE_BED_TYPES:
         return False
     if bed_type == BED_TYPE_ALYA:
-        from .profiles.alya import PROFILES
-
-        profile = PROFILES.get(protocol_variant or "")
+        profile = ALYA_PROFILES.get(protocol_variant or "")
         return profile is not None and profile.side_controls
     if bed_type == "cheerssleep":
         return str(product_type) in {"51", "52", "140", "141", "172"}

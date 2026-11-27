@@ -72,6 +72,7 @@ if TYPE_CHECKING:
     from .keeson.controller import KeesonController as KeesonController
     from .keeson.enso import EnsoController as EnsoController
     from .keeson.jalon import JalonController as JalonController
+    from .keeson.kingkoil import KingKoilController as KingKoilController
     from .keeson.ormatek import OrmatekController as OrmatekController
     from .keeson.sleep_assist_pro import SleepAssistProController as SleepAssistProController
     from .keeson.somos import SomosController as SomosController
@@ -235,6 +236,7 @@ _EXPORT_MODULES = {
     "AlyaController": "alya.controller",
     "EshineOkinController": "eshine_okin.controller",
     "JalonController": "keeson.jalon",
+    "KingKoilController": ("keeson.kingkoil", "KingKoilController"),
     "SomosController": ("keeson.somos", "SomosController"),
     "EnsoController": ("keeson.enso", "EnsoController"),
     "SealyController": ("sealy.controller", "SealyController"),

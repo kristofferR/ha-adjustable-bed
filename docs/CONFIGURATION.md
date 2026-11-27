@@ -398,6 +398,7 @@ actions; its bounded `hold_control` behavior has separate timing in the
 | eShine app (E2000 to E5000) | `eshine_okin` | 10 | 300 ms |
 | FSM Relax app | `fsm_relax` | 10 | 60 ms |
 | Jensen Adjustable Sleep app, JMC400 bed | `jensen` | 4 | 300 ms |
+| King Koil Bed app | `kingkoil` | 10 | 300 ms |
 | Leggett & Platt MlRM remote | `leggett_wilinke` | 10 | 110 ms |
 | Limoss and Stawett remotes | `limoss` | 12 | 80 ms |
 | Linak (Bed Control, Bed Connect and Performance Series apps): Performance Series app (older bases) | `linak` `performance_legacy` | 4 | 300 ms |
@@ -667,6 +668,7 @@ beds, Reconfigure that bed, then combine them again.
 | SleepEvolution / W.Silver Products 3.x | See the [setup steps](beds/richmat.md#sleepevolution--wsilver-products-3x). |
 | Sleepy's Elite | [One question](beds/sleepys.md#home-assistant-setup) for the MFRM Sleepy's Elite app or the BOX15, BOX24 or BOX25 receiver. The [app profile](beds/sleepys.md#explicit-sleepys-elite-app-profile) asks the control box the app lists, for each physical receiver. Change an existing bed's app, control box or BOX25 dialect with **Reconfigure**. |
 | Solace / Woosa | Answer the [Solace question](beds/ff_frame.md#home-assistant-setup) with your app: HomeKobo, Sealy MotionFlex or Sweet Night, which follow the bed's Bluetooth name, or [Woosa Sleep](beds/ff_frame.md#woosa-sleep). |
+| King Koil Bed | Choose the [remote layout](beds/keeson.md#king-koil-bed) by its visible controls. |
 | Somos / SomosBeds | See the [setup steps](beds/keeson.md#somos--somosbeds). |
 | SonicSleep | See the [setup steps](beds/richmat.md#sonicsleep). |
 | Sophie | See the [setup steps](beds/ff_frame.md#sophie). |
