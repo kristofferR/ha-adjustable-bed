@@ -155,6 +155,11 @@ def test_setup_aliases_and_side_profile_are_app_local():
     assert resolve_layout("innova2", "200IV2x", from_name=True) == "A8RM"
     assert resolve_layout("innova2", "OTRM", russian=True) == "O0RM"
     assert _classic_normalize(data, {"product_type": "ZRS3:APRM"})["product_type"] == "APRM"
+    choices = _classic_layouts(data)
+    assert "COOL" not in choices  # Alias for the excluded QRRM layout.
+    for choice in choices:
+        normalized = _classic_normalize(data, {"product_type": choice})
+        assert not _classic_errors({**data, **normalized}), choice
     for layout in innova_control.EXCLUDED_LAYOUTS:
         assert layout not in _classic_layouts(data)
         assert _classic_errors({**data, "product_type": layout})

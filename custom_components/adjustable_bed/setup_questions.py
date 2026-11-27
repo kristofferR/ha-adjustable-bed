@@ -1139,7 +1139,11 @@ def _classic_layouts(data: Mapping[str, Any]) -> Mapping[Any, str]:
     if app == "innova2":
         from .profiles.innova_control import EXCLUDED_LAYOUTS as INNOVA_CONTROL_EXCLUDED_LAYOUTS
 
-        codes -= INNOVA_CONTROL_EXCLUDED_LAYOUTS
+        codes -= INNOVA_CONTROL_EXCLUDED_LAYOUTS | {
+            alias
+            for alias, layout in MANUAL_ALIASES.get(app, {}).items()
+            if layout in INNOVA_CONTROL_EXCLUDED_LAYOUTS
+        }
     if app == "homezone":
         from .profiles.homezone import EXCLUDED_LAYOUTS as HOMEZONE_EXCLUDED_LAYOUTS
 
