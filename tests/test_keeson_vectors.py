@@ -456,3 +456,15 @@ async def test_every_keeson_variant_route_is_a_profile_over_the_codec(variant: s
     assert profile.key in FROZEN_FRAMES
     if variant != VARIANT_AUTO:
         assert profile.key == variant
+
+
+@pytest.mark.parametrize("row", [
+    row for row in json.loads((Path(__file__).parent / "fixtures/kingkoil/vectors.json").read_text())
+    if row["id"].startswith("V")
+], ids=lambda row: "kingkoil-" + row["id"])
+def test_kingkoil_frozen_literals_use_existing_p2_codec(row) -> None:
+    """All 24 accepted instances, before using the shared carrier for a new app."""
+    parameters = row["inputs"].get("parameters")
+    encoded = (codec.p2(int.from_bytes(bytes(value & 255 for value in parameters), "big"))
+               if parameters is not None else codec.STATUS_QUERY)
+    assert encoded == bytes.fromhex(row["expected_bytes"])
