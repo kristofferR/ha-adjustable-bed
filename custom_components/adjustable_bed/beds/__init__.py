@@ -56,7 +56,6 @@ if TYPE_CHECKING:
     from .gmmotor.desk import GmmotorDeskController as GmmotorDeskController
     from .gmmotor.sleep import GmmotorSleepController as GmmotorSleepController
     from .goodvibe.controller import GoodVibeController as GoodVibeController
-    from .keeson.powersbedding import PowersBeddingController as PowersBeddingController
     from .hestia.controller import HestiaController as HestiaController
     from .hjbed.controller import HJBedController as HJBedController
     from .innova import InnovaController as InnovaController
@@ -78,6 +77,7 @@ if TYPE_CHECKING:
     from .keeson.jalon import JalonController as JalonController
     from .keeson.kingkoil import KingKoilController as KingKoilController
     from .keeson.ormatek import OrmatekController as OrmatekController
+    from .keeson.powersbedding import PowersBeddingController as PowersBeddingController
     from .keeson.sleep_assist_pro import SleepAssistProController as SleepAssistProController
     from .keeson.somos import SomosController as SomosController
     from .keeson.symphony_sleep import SymphonySleepController as SymphonySleepController
