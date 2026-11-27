@@ -7037,6 +7037,16 @@
           "right": "Right"
         }
       },
+      "ruf_richmat_legacy_command_mode": {
+        "name": "Legacy command mode",
+        "state": {
+          "left": "Left",
+          "right": "Right",
+          "mode1": "Mode 1",
+          "mode2": "Mode 2",
+          "mode3": "Mode 3"
+        }
+      },
       "richmat_mh_motor_mode": {
         "name": "Motor mode",
         "state": {
@@ -11792,6 +11802,9 @@
     },
     "option_unavailable": {
       "message": "The bed no longer offers this option. Reload the bed, then try again."
+    },
+    "ruf_richmat_legacy_mode_loading": {
+      "message": "Home Assistant is restoring the bed's command mode. Try again in a moment."
     },
     "light_state_unknown": {
       "message": "The light's state is not known yet. Use the bed's remote or Toggle light once so the bed reports it, then try again."

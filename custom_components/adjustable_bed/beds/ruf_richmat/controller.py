@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import re
+from collections.abc import Mapping
 from typing import TYPE_CHECKING, Final
 
 from homeassistant.const import EntityCategory
@@ -13,6 +14,9 @@ from ...alarm import AlarmRequest as SharedAlarm
 from ...card import CARD_MASSAGE, CARD_UTILITY, CardPlacement, CardRole, CardSection
 from ...codec import richmat as codec
 from ...controller_state import StateKey, StateUpdate
+from ...errors import BedNotConnectedError, invalid
+from ...pairing import is_paired
+from ..base import BedController, require_controller
 from ..entity_specs import (
     ControllerNumberSpec,
     ControllerSelectSpec,
@@ -41,6 +45,7 @@ from ..richmat_mh.protocol import (
     MOTOR_MODE_BITS,
     RX_ALARM,
     RX_ALARM_MULTI,
+    STOP_DELAY_S,
     TX_ALARM,
     TX_DETECTION,
     TX_EXIT_ONE_MIN,
@@ -56,8 +61,9 @@ from ..richmat_mh.protocol import (
     massage_intensity_frame,
     mattress_frame,
     motor_mode_frame,
+    stop_frame,
 )
-from .profiles import Field, fields, profiles
+from .profiles import LEGACY_COMMAND_MODES, Field, fields, profiles
 from .protocol import AlarmRequest
 
 if TYPE_CHECKING:
@@ -138,6 +144,7 @@ MUSIC_STATUS: Final = StateKey[str]("ruf_richmat_music_status")
 MUSIC_VALUES: Final = StateKey[dict[str, object]]("ruf_richmat_music_values")
 CALENDAR_ALARMS: Final = StateKey[dict[int, dict[str, int]]]("ruf_richmat_calendar_alarms")
 CALENDAR_ALARM_COUNT: Final = StateKey[int]("ruf_richmat_calendar_alarm_count")
+LEGACY_COMMAND_MODE: Final = StateKey[str | None]("ruf_richmat_legacy_command_mode")
 
 
 def _mattress_alarm_key(side: str) -> StateKey[str]:
@@ -246,6 +253,8 @@ class RufRichmatController(RichmatMhController):
         self._normal_values: dict[tuple[int, int], int] = {}
         self._ranges: dict[int, tuple[int, int]] = {}
         self._calendar_alarms: dict[int, dict[str, int]] = {}
+        self._legacy_command_mode: str | None = None
+        self._legacy_command_mode_restored = False
 
     def capability_snapshot(self):
         snapshot = super().capability_snapshot()
@@ -268,6 +277,53 @@ class RufRichmatController(RichmatMhController):
 
     def _controls(self) -> tuple[Control, ...]:
         return tuple(c for c in self.model.controls if c.route == self.route) if self.model else ()
+
+    @property
+    def _legacy_command_modes(self) -> Mapping[str, int]:
+        # A paired child's data describes one side, so check the entry view too.
+        from ...coordinator import ChildEntryView
+
+        entry = self._coordinator.entry
+        if self.model is None or isinstance(entry, ChildEntryView) or is_paired(entry.data):
+            return {}
+        return LEGACY_COMMAND_MODES.get((self._app, self.model.model_id, "L"), {})
+
+    @property
+    def persisted_app_state_key(self) -> str | None:
+        return self.model.model_id if self.model is not None and self._legacy_command_modes else None
+
+    @property
+    def persisted_app_state(self) -> Mapping[str, object] | None:
+        if not self._legacy_command_modes:
+            return None
+        return {"legacy_command_mode": self._legacy_command_mode} if self._legacy_command_mode else {}
+
+    def restore_persisted_app_state(self, state: Mapping[str, object]) -> None:
+        modes = self._legacy_command_modes
+        option = state.get("legacy_command_mode")
+        self._legacy_command_mode = option if isinstance(option, str) and option in modes else None
+        self._legacy_command_mode_restored = bool(modes)
+        # Existing entries use mode zero, even on Bailey where the app starts on Left.
+        default = next((name for name, mode in modes.items() if mode == 0), None)
+        self.forward_controller_state_update(
+            LEGACY_COMMAND_MODE, self._legacy_command_mode or default
+        )
+
+    def on_app_state_replaced(self) -> None:
+        self._legacy_command_mode_restored = False
+
+    @property
+    def retain_live_controller_offline(self) -> bool:
+        return bool(self._legacy_command_modes)
+
+    def _select_legacy_command_mode(self, option: str) -> None:
+        if self.route != "L" or option not in self._legacy_command_modes:
+            raise invalid("option_unavailable")
+        if not self._legacy_command_mode_restored:
+            # A cancelled startup can discard this controller before its slot is registered.
+            raise invalid("ruf_richmat_legacy_mode_loading")
+        self._legacy_command_mode = option
+        self.forward_controller_state_update(LEGACY_COMMAND_MODE, option)
 
     def _axes(self) -> tuple[Axis, ...]:
         pairs: dict[str, dict[str, Control]] = {}
@@ -444,31 +500,92 @@ class RufRichmatController(RichmatMhController):
         control = next((c for c in self._controls() if c.code == code), None)
         if control is None:
             raise ValueError("This command is not on the selected app/model page")
+        count = self._coordinator.motor_pulse_count if control.keep_ms else 1
+        await self._run_control(control, repeat_count=count)
+
+    async def _run_control(self, control: Control, *, repeat_count: int) -> None:
+        bailey_once = self._app == "bailey2" and not control.keep_ms
+        modes = self._legacy_command_modes if control.route == "L" else {}
+        if modes and control.area in ("motor", "motor_btn", "memory", "massage"):
+            mode = modes[self._legacy_command_mode] if self._legacy_command_mode else 0
+            await self._run_legacy_control(
+                control, repeat_count, mode, 0.1 if bailey_once else STOP_DELAY_S
+            )
+            return
+        if not bailey_once:
+            await super()._run_control(control, repeat_count=repeat_count)
+            return
         try:
-            await self.write_command(
-                control_frame(code),
-                repeat_count=self._coordinator.motor_pulse_count if control.keep_ms else 1,
+            await self.write_command(control_frame(control.code), repeat_count=repeat_count)
+        finally:
+            await self._release_after(
+                0.1, lambda: self.write_command(stop_frame(), cancel_event=asyncio.Event())
+            )
+
+    async def _run_legacy_control(
+        self, control: Control, repeat_count: int, mode: int, release_delay: float
+    ) -> None:
+        client, characteristic = self.client, self._write_char
+        if client is None or characteristic is None or not client.is_connected:
+            raise BedNotConnectedError
+        generation = self._coordinator.connection_generation
+        response = self._write_with_response
+        submitted = False
+
+        def same_session() -> bool:
+            return (
+                self.client is client
+                and client.is_connected
+                and self._write_char is characteristic
+                and self._coordinator.connection_generation == generation
+            )
+
+        def require_session() -> None:
+            if not same_session():
+                raise BedNotConnectedError
+
+        def before_press() -> None:
+            nonlocal submitted
+            require_session()
+            # A cancelled or failed GATT write may already have reached the bed.
+            submitted = True
+
+        async def release() -> None:
+            if not same_session():
+                return
+            try:
+                await self._write_gatt_with_retry(
+                    characteristic.uuid,
+                    stop_frame(mode),
+                    cancel_event=asyncio.Event(),
+                    response=response,
+                    characteristic=characteristic,
+                    expected_client=client,
+                    before_write=require_session,
+                    track_command_write=False,
+                )
+            except ConnectionError:
+                if same_session():
+                    raise
+
+        try:
+            await self._write_gatt_with_retry(
+                characteristic.uuid,
+                control_frame(control.code, mode),
+                repeat_count=repeat_count,
                 repeat_delay_ms=control.keep_ms or 100,
+                response=response,
+                wall_clock_pacing=True,
+                characteristic=characteristic,
+                expected_client=client,
+                before_write=before_press,
             )
         finally:
-            if self._app == "bailey2" and not control.keep_ms:
-                await self._release_after_once()
-            else:
-                await self._release()
-
-    async def _release_after_once(self) -> None:
-        # Bailey's natural ONCE completion uses 100ms, distinct from KEEP's 120ms.
-        try:
-            await asyncio.sleep(0.1)
-        finally:
-            from ..richmat_mh.protocol import stop_frame
-
-            await self.write_command(stop_frame(), cancel_event=asyncio.Event())
+            if submitted:
+                await self._release_after(release_delay, release)
 
     async def _release(self) -> None:
         if self._app == "ruf":
-            from ..richmat_mh.protocol import stop_frame
-
             await self.write_command(stop_frame(), cancel_event=asyncio.Event())
         else:
             await super()._release()
@@ -750,6 +867,18 @@ class RufRichmatController(RichmatMhController):
     @property
     def controller_select_specs(self) -> tuple[ControllerSelectSpec, ...]:
         specs = list(super().controller_select_specs)
+        modes = self._legacy_command_modes if self.route == "L" else {}
+        if modes:
+            specs.append(
+                ControllerSelectSpec(
+                    LEGACY_COMMAND_MODE,
+                    LEGACY_COMMAND_MODE,
+                    LEGACY_COMMAND_MODE,
+                    tuple(modes),
+                    _select_legacy_command_mode,
+                    local_select_fn=self._select_legacy_command_mode,
+                )
+            )
         if self._normal_ready:
             for side in ("left", "right"):
                 for setting, (_code, options) in self.normal_settings.items():
@@ -1006,3 +1135,7 @@ class RufRichmatController(RichmatMhController):
         self._normal_ready = False
         self._normal_values.clear()
         self._ranges.clear()
+
+
+async def _select_legacy_command_mode(controller: BedController, option: str) -> None:
+    require_controller(controller, RufRichmatController)._select_legacy_command_mode(option)
