@@ -541,6 +541,7 @@ data:
 | SUTA Smart Home (models whose app has an alarm) | None | `weekdays` or once. To turn an alarm off, send the same `time` and `weekdays` it was set with |
 | Symphony Sleep | `none`, `memory_1`, `memory_2` | Once |
 | Symphony Sleep Sense | By product | `weekdays` |
+| Hestia Motion | `none`, `memory_1`, `memory_2` | Optional `massage`, `massage_intensity` 1–3 and `massage_duration` 10/20/30; wave uses the native selector. No weekdays. Native controls also support intensity zero |
 | Ultramatic (ORE) | `none`, `massage`, `memory_1`, `memory_2` on the older bed route; `tv`, `massage`, `zero_g` on the newer | `weekdays` or once. Turning it on needs a `wake_action`; connect once first so the route is known |
 | Ultramatic Smart Bed | `massage`, `zero_g`, `memory_1` (required to turn on) | `weekdays` or once. Left, Right and Both set the A, B and AB alarms; a standalone bed uses its configured side. Turning off without a time keeps the reported alarm's other fields; refresh the alarm first |
 | Yamada | By app version | `slot` 1–2, `weekdays`. Refresh the bed's alarms first |

@@ -349,6 +349,7 @@ _SIMPLE_CONTROLLERS: Final[dict[str, _ControllerSpec]] = {
     BED_TYPE_OKIN_7BYTE: _ControllerSpec("okin_7byte", "Okin7ByteController"),
     BED_TYPE_OKIN_NORDIC: _ControllerSpec("okin_nordic", "OkinNordicController"),
     BED_TYPE_OKIN_CB35: _ControllerSpec("okin_cb35", "OkinCB35Controller"),
+    "hestia_motion": _ControllerSpec("hestia.controller", "HestiaController"),
     BED_TYPE_OKIN_ORE: _ControllerSpec("okin_ore", "OkinOreController"),
     BED_TYPE_MALOUF_NEW_OKIN: _ControllerSpec("malouf.controller", "MaloufNewOkinController"),
     BED_TYPE_MALOUF_LEGACY_OKIN: _ControllerSpec("malouf.controller", "MaloufLegacyOkinController"),
