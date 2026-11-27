@@ -54,6 +54,7 @@ from .const import (
     BED_TYPE_OKIN_UUID,
     BED_TYPE_QPLUS_APP,
     BED_TYPE_REMACRO,
+    BED_TYPE_RESTONIC,
     BED_TYPE_REVERIE,
     BED_TYPE_REVERIE_NIGHTSTAND,
     BED_TYPE_REVERIE_PAIRLINK,
@@ -123,6 +124,7 @@ from .profiles.mlily_remote import VARIANTS as MLILY_REMOTE_PROFILES
 from .profiles.okimiki import PROFILE_CHOICES as OKIMIKI_PROFILES
 from .profiles.personal_comfort import ROUTES as PERSONAL_COMFORT_ROUTES
 from .profiles.relax_motion import ROUTES as RELAX_MOTION_ROUTES
+from .profiles.restonic import BRANCH_CHOICES as RESTONIC_BRANCHES
 from .profiles.richmat import BEDTECH_VARIANTS
 from .profiles.richmat_legacy import APP_NAMES as LEGACY_APPS
 from .profiles.richmat_legacy import choices as legacy_choices
@@ -231,6 +233,7 @@ VARIANTS_BY_BED_TYPE: dict[str, dict[str, str]] = {
     BED_TYPE_ADJUSTABLE_BED: ADJUSTABLE_BED_VARIANTS,
     BED_TYPE_ADJUSTABLE_LUMBAR: ADJUSTABLE_LUMBAR_VARIANTS,
     BED_TYPE_COMFORT_ENHANCEMENTS: COMFORT_ENHANCEMENTS_VARIANTS,
+    BED_TYPE_RESTONIC: RESTONIC_BRANCHES,
     "kingkoil": KINGKOIL_CHOICES,
     BED_TYPE_SOMOS: SOMOS_CHOICES,
     BED_TYPE_COMFORTBASE: {key: p.name for key, p in COMFORTBASE_PRODUCTS.items()},

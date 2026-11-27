@@ -1,0 +1,727 @@
+[
+  {
+    "id": "LITERAL-1",
+    "protocol": "P2",
+    "action": "test layout cycle phase 1",
+    "inputs": {
+      "kind": "command",
+      "opcode": 36
+    },
+    "expected_bytes": "6e01002493",
+    "evidence": [
+      "E7",
+      "E19",
+      "work/jadx/sources/com/richmat/rmcontrol/fragment/RemoteFragment.java:437"
+    ],
+    "origin": "literal final frame in shipped TestBean declaration; cycle takes byte 3 and routes it through sendData"
+  },
+  {
+    "id": "LITERAL-2",
+    "protocol": "P2",
+    "action": "test layout cycle phase 2",
+    "inputs": {
+      "kind": "command",
+      "opcode": 63
+    },
+    "expected_bytes": "6e01003fae",
+    "evidence": [
+      "E7",
+      "E19",
+      "work/jadx/sources/com/richmat/rmcontrol/fragment/RemoteFragment.java:438"
+    ],
+    "origin": "literal final frame in shipped TestBean declaration; cycle takes byte 3 and routes it through sendData"
+  },
+  {
+    "id": "LITERAL-3",
+    "protocol": "P2",
+    "action": "test layout cycle phase 3",
+    "inputs": {
+      "kind": "command",
+      "opcode": 64
+    },
+    "expected_bytes": "6e010040af",
+    "evidence": [
+      "E7",
+      "E19",
+      "work/jadx/sources/com/richmat/rmcontrol/fragment/RemoteFragment.java:439"
+    ],
+    "origin": "literal final frame in shipped TestBean declaration; cycle takes byte 3 and routes it through sendData"
+  },
+  {
+    "id": "LITERAL-4",
+    "protocol": "P2",
+    "action": "test layout cycle phase 4",
+    "inputs": {
+      "kind": "command",
+      "opcode": 37
+    },
+    "expected_bytes": "6e01002594",
+    "evidence": [
+      "E7",
+      "E19",
+      "work/jadx/sources/com/richmat/rmcontrol/fragment/RemoteFragment.java:440"
+    ],
+    "origin": "literal final frame in shipped TestBean declaration; cycle takes byte 3 and routes it through sendData"
+  },
+  {
+    "id": "LITERAL-5",
+    "protocol": "P2",
+    "action": "test layout cycle phase 5",
+    "inputs": {
+      "kind": "command",
+      "opcode": 38
+    },
+    "expected_bytes": "6e01002695",
+    "evidence": [
+      "E7",
+      "E19",
+      "work/jadx/sources/com/richmat/rmcontrol/fragment/RemoteFragment.java:441"
+    ],
+    "origin": "literal final frame in shipped TestBean declaration; cycle takes byte 3 and routes it through sendData"
+  },
+  {
+    "id": "LITERAL-6",
+    "protocol": "P2",
+    "action": "test layout cycle phase 6",
+    "inputs": {
+      "kind": "command",
+      "opcode": 65
+    },
+    "expected_bytes": "6e010041b0",
+    "evidence": [
+      "E7",
+      "E19",
+      "work/jadx/sources/com/richmat/rmcontrol/fragment/RemoteFragment.java:442"
+    ],
+    "origin": "literal final frame in shipped TestBean declaration; cycle takes byte 3 and routes it through sendData"
+  },
+  {
+    "id": "LITERAL-7",
+    "protocol": "P2",
+    "action": "test layout cycle phase 7",
+    "inputs": {
+      "kind": "command",
+      "opcode": 66
+    },
+    "expected_bytes": "6e010042b1",
+    "evidence": [
+      "E7",
+      "E19",
+      "work/jadx/sources/com/richmat/rmcontrol/fragment/RemoteFragment.java:443"
+    ],
+    "origin": "literal final frame in shipped TestBean declaration; cycle takes byte 3 and routes it through sendData"
+  },
+  {
+    "id": "LITERAL-8",
+    "protocol": "P2",
+    "action": "test layout cycle phase 8",
+    "inputs": {
+      "kind": "command",
+      "opcode": 39
+    },
+    "expected_bytes": "6e01002796",
+    "evidence": [
+      "E7",
+      "E19",
+      "work/jadx/sources/com/richmat/rmcontrol/fragment/RemoteFragment.java:444"
+    ],
+    "origin": "literal final frame in shipped TestBean declaration; cycle takes byte 3 and routes it through sendData"
+  },
+  {
+    "id": "LITERAL-9",
+    "protocol": "P2",
+    "action": "test layout cycle phase 9",
+    "inputs": {
+      "kind": "command",
+      "opcode": 41
+    },
+    "expected_bytes": "6e01002998",
+    "evidence": [
+      "E7",
+      "E19",
+      "work/jadx/sources/com/richmat/rmcontrol/fragment/RemoteFragment.java:445"
+    ],
+    "origin": "literal final frame in shipped TestBean declaration; cycle takes byte 3 and routes it through sendData"
+  },
+  {
+    "id": "LITERAL-10",
+    "protocol": "P2",
+    "action": "test layout cycle phase 10",
+    "inputs": {
+      "kind": "command",
+      "opcode": 63
+    },
+    "expected_bytes": "6e01003fae",
+    "evidence": [
+      "E7",
+      "E19",
+      "work/jadx/sources/com/richmat/rmcontrol/fragment/RemoteFragment.java:446"
+    ],
+    "origin": "literal final frame in shipped TestBean declaration; cycle takes byte 3 and routes it through sendData"
+  },
+  {
+    "id": "LITERAL-11",
+    "protocol": "P2",
+    "action": "test layout cycle phase 11",
+    "inputs": {
+      "kind": "command",
+      "opcode": 64
+    },
+    "expected_bytes": "6e010040af",
+    "evidence": [
+      "E7",
+      "E19",
+      "work/jadx/sources/com/richmat/rmcontrol/fragment/RemoteFragment.java:447"
+    ],
+    "origin": "literal final frame in shipped TestBean declaration; cycle takes byte 3 and routes it through sendData"
+  },
+  {
+    "id": "LITERAL-12",
+    "protocol": "P2",
+    "action": "test layout cycle phase 12",
+    "inputs": {
+      "kind": "command",
+      "opcode": 65
+    },
+    "expected_bytes": "6e010041b0",
+    "evidence": [
+      "E7",
+      "E19",
+      "work/jadx/sources/com/richmat/rmcontrol/fragment/RemoteFragment.java:448"
+    ],
+    "origin": "literal final frame in shipped TestBean declaration; cycle takes byte 3 and routes it through sendData"
+  },
+  {
+    "id": "LITERAL-13",
+    "protocol": "P2",
+    "action": "test layout cycle phase 13",
+    "inputs": {
+      "kind": "command",
+      "opcode": 66
+    },
+    "expected_bytes": "6e010042b1",
+    "evidence": [
+      "E7",
+      "E19",
+      "work/jadx/sources/com/richmat/rmcontrol/fragment/RemoteFragment.java:449"
+    ],
+    "origin": "literal final frame in shipped TestBean declaration; cycle takes byte 3 and routes it through sendData"
+  },
+  {
+    "id": "LITERAL-14",
+    "protocol": "P2",
+    "action": "test layout cycle phase 14",
+    "inputs": {
+      "kind": "command",
+      "opcode": 42
+    },
+    "expected_bytes": "6e01002a99",
+    "evidence": [
+      "E7",
+      "E19",
+      "work/jadx/sources/com/richmat/rmcontrol/fragment/RemoteFragment.java:450"
+    ],
+    "origin": "literal final frame in shipped TestBean declaration; cycle takes byte 3 and routes it through sendData"
+  },
+  {
+    "id": "RAW-HEAD_UP",
+    "protocol": "P1",
+    "action": "HEAD_UP",
+    "inputs": {
+      "kind": "command",
+      "opcode": 36,
+      "raw": true
+    },
+    "expected_bytes": "24",
+    "evidence": [
+      "E6",
+      "E19"
+    ],
+    "origin": "literal resource octet through raw branch"
+  },
+  {
+    "id": "RAW-HEAD_DOWN",
+    "protocol": "P1",
+    "action": "HEAD_DOWN",
+    "inputs": {
+      "kind": "command",
+      "opcode": 37,
+      "raw": true
+    },
+    "expected_bytes": "25",
+    "evidence": [
+      "E6",
+      "E19"
+    ],
+    "origin": "literal resource octet through raw branch"
+  },
+  {
+    "id": "RAW-FOOT_UP",
+    "protocol": "P1",
+    "action": "FOOT_UP",
+    "inputs": {
+      "kind": "command",
+      "opcode": 38,
+      "raw": true
+    },
+    "expected_bytes": "26",
+    "evidence": [
+      "E6",
+      "E19"
+    ],
+    "origin": "literal resource octet through raw branch"
+  },
+  {
+    "id": "RAW-FOOT_DOWN",
+    "protocol": "P1",
+    "action": "FOOT_DOWN",
+    "inputs": {
+      "kind": "command",
+      "opcode": 39,
+      "raw": true
+    },
+    "expected_bytes": "27",
+    "evidence": [
+      "E6",
+      "E19"
+    ],
+    "origin": "literal resource octet through raw branch"
+  },
+  {
+    "id": "RAW-STOP",
+    "protocol": "P1",
+    "action": "STOP",
+    "inputs": {
+      "kind": "command",
+      "opcode": 110,
+      "raw": true
+    },
+    "expected_bytes": "6e",
+    "evidence": [
+      "E6",
+      "E19"
+    ],
+    "origin": "literal resource octet through raw branch"
+  },
+  {
+    "id": "SIDE-MODE1",
+    "protocol": "P2",
+    "action": "mode selector 1 plus motor command",
+    "inputs": {
+      "kind": "command",
+      "opcode": 36,
+      "mode": 1
+    },
+    "expected_bytes": "6e01012494",
+    "evidence": [
+      "E6",
+      "E20"
+    ],
+    "origin": "frozen static evaluation of source formula"
+  },
+  {
+    "id": "SIDE-MODE2",
+    "protocol": "P2",
+    "action": "mode selector 2 plus motor command",
+    "inputs": {
+      "kind": "command",
+      "opcode": 36,
+      "mode": 2
+    },
+    "expected_bytes": "6e01022495",
+    "evidence": [
+      "E6",
+      "E20"
+    ],
+    "origin": "frozen static evaluation of source formula"
+  },
+  {
+    "id": "INIT",
+    "protocol": "P2",
+    "action": "INIT",
+    "inputs": {
+      "kind": "frame",
+      "prefix": [
+        110,
+        2,
+        1,
+        0
+      ]
+    },
+    "expected_bytes": "6e02010071",
+    "evidence": [
+      "E10"
+    ],
+    "origin": "literal final byte array in Utils"
+  },
+  {
+    "id": "ALARM_QUERY",
+    "protocol": "P2",
+    "action": "ALARM_QUERY",
+    "inputs": {
+      "kind": "frame",
+      "prefix": [
+        110,
+        8,
+        1,
+        1
+      ]
+    },
+    "expected_bytes": "6e08010178",
+    "evidence": [
+      "E10"
+    ],
+    "origin": "literal final byte array in Utils"
+  },
+  {
+    "id": "LIGHT_QUERY",
+    "protocol": "P2",
+    "action": "LIGHT_QUERY",
+    "inputs": {
+      "kind": "frame",
+      "prefix": [
+        110,
+        10,
+        0,
+        1
+      ]
+    },
+    "expected_bytes": "6e0a000179",
+    "evidence": [
+      "E10"
+    ],
+    "origin": "literal final byte array in Utils"
+  },
+  {
+    "id": "AROMA_QUERY",
+    "protocol": "P2",
+    "action": "AROMA_QUERY",
+    "inputs": {
+      "kind": "frame",
+      "prefix": [
+        110,
+        26,
+        0,
+        0
+      ]
+    },
+    "expected_bytes": "6e1a000088",
+    "evidence": [
+      "E10"
+    ],
+    "origin": "literal final byte array in Utils"
+  },
+  {
+    "id": "RGB-1",
+    "protocol": "P2",
+    "action": "RGB 01 02 03",
+    "inputs": {
+      "kind": "rgb",
+      "rgb": [
+        1,
+        2,
+        3
+      ]
+    },
+    "expected_bytes": "6e0cff017a6e0d020380",
+    "evidence": [
+      "E11"
+    ],
+    "origin": "frozen static evaluation of source formula"
+  },
+  {
+    "id": "RGB-2",
+    "protocol": "P2",
+    "action": "RGB ff 00 80",
+    "inputs": {
+      "kind": "rgb",
+      "rgb": [
+        255,
+        0,
+        128
+      ]
+    },
+    "expected_bytes": "6e0cffff786e0d0080fb",
+    "evidence": [
+      "E11"
+    ],
+    "origin": "frozen static evaluation of source formula"
+  },
+  {
+    "id": "TIMER-0",
+    "protocol": "P2",
+    "action": "light keep on",
+    "inputs": {
+      "kind": "timer",
+      "seconds": 0
+    },
+    "expected_bytes": "6e0b000079",
+    "evidence": [
+      "E11"
+    ],
+    "origin": "frozen static evaluation of source formula"
+  },
+  {
+    "id": "TIMER-300",
+    "protocol": "P2",
+    "action": "light timeout 300 seconds",
+    "inputs": {
+      "kind": "timer",
+      "seconds": 300
+    },
+    "expected_bytes": "6e0b012ca6",
+    "evidence": [
+      "E11"
+    ],
+    "origin": "frozen static evaluation of source formula"
+  },
+  {
+    "id": "ALARM-300",
+    "protocol": "P2",
+    "action": "alarm 300 minutes, flat",
+    "inputs": {
+      "kind": "alarm",
+      "minutes": 300,
+      "opcode": 49
+    },
+    "expected_bytes": "6e052c009f / 6e060131a6",
+    "evidence": [
+      "E12"
+    ],
+    "origin": "frozen static evaluation of source formula"
+  },
+  {
+    "id": "AROMA-60",
+    "protocol": "P2",
+    "action": "mode2 startup 60 minutes",
+    "inputs": {
+      "kind": "aroma",
+      "op": 27,
+      "n": 60
+    },
+    "expected_bytes": "6e1b003cc5",
+    "evidence": [
+      "E13"
+    ],
+    "origin": "frozen static evaluation of source formula"
+  },
+  {
+    "id": "AROMA-12",
+    "protocol": "P2",
+    "action": "mode3 pause 12 hours",
+    "inputs": {
+      "kind": "aroma",
+      "op": 29,
+      "n": 12
+    },
+    "expected_bytes": "6e1d000c97",
+    "evidence": [
+      "E13"
+    ],
+    "origin": "frozen static evaluation of source formula"
+  },
+  {
+    "id": "GROUP",
+    "protocol": "P3",
+    "action": "group four ASCII digits",
+    "inputs": {
+      "kind": "group",
+      "group": "1234"
+    },
+    "expected_bytes": "41542b47524f5550313233340d0a",
+    "evidence": [
+      "E15"
+    ],
+    "origin": "frozen static evaluation of source formula"
+  },
+  {
+    "id": "REBIND",
+    "protocol": "P3",
+    "action": "remove group",
+    "inputs": {
+      "kind": "rebind"
+    },
+    "expected_bytes": "41542b524542494e440d0a",
+    "evidence": [
+      "E15"
+    ],
+    "origin": "frozen static evaluation of source formula"
+  },
+  {
+    "id": "PARSE-ALARM",
+    "protocol": "P2",
+    "action": "alarm-capability checksum acceptance",
+    "inputs": {
+      "kind": "parser",
+      "data": "aa6e09010078",
+      "length": 10
+    },
+    "expected_bytes": "6e09010078",
+    "evidence": [
+      "E21"
+    ],
+    "origin": "frozen static evaluation of source formula"
+  },
+  {
+    "id": "PARSE-LIGHT",
+    "protocol": "P2",
+    "action": "light status valid frame",
+    "inputs": {
+      "kind": "parser",
+      "data": "6e0e00037f",
+      "length": 10
+    },
+    "expected_bytes": "6e0e00037f",
+    "evidence": [
+      "E21"
+    ],
+    "origin": "frozen static evaluation of source formula"
+  },
+  {
+    "id": "PARSE-BAD",
+    "protocol": "P2",
+    "action": "invalid checksum rejected",
+    "inputs": {
+      "kind": "parser",
+      "data": "6e0e000300",
+      "length": 10
+    },
+    "expected_bytes": "NO_MATCH",
+    "evidence": [
+      "E21"
+    ],
+    "origin": "frozen static evaluation of source formula"
+  },
+  {
+    "id": "PROGRAM-ZERO",
+    "protocol": "P4",
+    "action": "R M C S schedule permutation 1..12",
+    "inputs": {
+      "kind": "program",
+      "motors": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12
+      ],
+      "starts": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "pauses": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "total_pause": 0,
+      "count": 1,
+      "tx": 3,
+      "code": 1,
+      "address": "b2d6b2d6",
+      "mapping": [
+        1,
+        2,
+        3,
+        4
+      ]
+    },
+    "expected_bytes": "5aa5a00100000000a10200000000a20300000000 / a30400000000a40500000000a50600000000a607 / 00000000a70800000000a80900000000a90a0000 / 0000aa0b00000000ab0c00000000000000010301 / b2d6b2d60102030488",
+    "evidence": [
+      "E16"
+    ],
+    "origin": "frozen static evaluation of source formula"
+  },
+  {
+    "id": "PROGRAM-HEX-WINDOW",
+    "protocol": "P4",
+    "action": "schedule count65536 keeps first four formatted hex digits",
+    "inputs": {
+      "kind": "program",
+      "motors": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12
+      ],
+      "starts": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "pauses": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "total_pause": 0,
+      "count": 65536,
+      "tx": 3,
+      "code": 1,
+      "address": "b2d6b2d6",
+      "mapping": [
+        1,
+        2,
+        3,
+        4
+      ]
+    },
+    "expected_bytes": "5aa5a00100000000a10200000000a20300000000 / a30400000000a40500000000a50600000000a607 / 00000000a70800000000a80900000000a90a0000 / 0000aa0b00000000ab0c00000000000010000301 / b2d6b2d60102030488",
+    "evidence": [
+      "E16"
+    ],
+    "origin": "frozen static evaluation of source formula"
+  }
+]

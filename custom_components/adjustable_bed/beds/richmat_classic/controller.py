@@ -786,6 +786,8 @@ class RichmatClassicController(BedController):
         if self.app in RISE_APPS:
             raise ValueError("Use the Luuna Rise / Power Cool bed settings action")
         op = request.operation
+        if op == "lamp_timeout":
+            raise invalid("dynasty_request")
         if op == "query":
             return
         feature = "alarm" if op in ("alarm", "cancel_alarm") else "light" if op in ("rgb", "lamp_slider", "lamp_save") else "aroma" if op == "aroma" else None
@@ -1027,6 +1029,11 @@ async def build_controller(ctx: BuildContext) -> RichmatClassicController:
     from .profiles import load_catalog
 
     await ctx.coordinator.hass.async_add_executor_job(load_catalog, ctx.variant)
+    if ctx.variant == "dynasty":
+        await ctx.preload("richmat_classic.dynasty")
+        from .dynasty import DynastyController
+
+        return DynastyController(ctx.coordinator, app=ctx.variant, device_name=ctx.device_name)
     if ctx.variant == "dreamlab2":
         await ctx.preload("richmat_classic.dreamlab")
         from .dreamlab import DreamlabController

@@ -1501,6 +1501,9 @@ def default_scenario(bed_type: str) -> Scenario:
         return Scenario(id=bed_type, bed_type=bed_type, protocol_variant="economy", layout_id="ronco_motion:0")
     if bed_type == const.BED_TYPE_AMBIENT:
         return _ambient_scenario()
+    if bed_type == const.BED_TYPE_RESTONIC:
+        return Scenario(id=bed_type, bed_type=bed_type, protocol_variant="box15",
+                        entry_data={const.CONF_PRODUCT_TYPE: "prime"})
     if bed_type == const.BED_TYPE_LANGJUE:
         return Scenario(id=bed_type, bed_type=bed_type, replies={
             "write:558d000081": "55000000810102",
@@ -2193,7 +2196,8 @@ def route_scenarios() -> list[Scenario]:
                     protocol_variant=app,
                     entry_data={const.CONF_PRODUCT_TYPE: layout, **({const.CONF_PROTOCOL_VARIANT: app} if app == "sleepfunction" else {})},
                     factory_kwargs={"device_name": "6BRM-advertised"}
-                    if app in ("lady_americana", "acaa", "sta2", "zerogravity", "lp2", "bedsmart", "baseremote") else {},
+                    if app in ("lady_americana", "acaa", "sta2", "zerogravity", "lp2", "bedsmart", "baseremote", "dynasty") else {},
+                    replies={"*": "6e0e00037f"} if app == "dynasty" else {},
                     layout_id=layout_id,
                 )
             )
@@ -2283,6 +2287,8 @@ def route_scenarios() -> list[Scenario]:
 # YGRM has the Hold selector and alarm actions. The framed layout offers only the
 # fourth fixed service (W4), which the app frames like the first.
 CLASSIC_ROUTES: tuple[tuple[str, str, str], ...] = (
+    ("dynasty", "U3RM", "richmat_classic_apps"),
+    ("dynasty", "6BRM", "richmat_classic_apps_nordic"),
     ("avocadoecobase", "GORM", "richmat_classic_apps_nordic"),
     ("coastersleep", "FWRM", "richmat_classic_apps"),
     ("fortywinks", "CORN", "richmat_classic_apps"),
@@ -2552,6 +2558,14 @@ def build_scenarios() -> list[Scenario]:
         entry_data={"product_type": model}, layout_id="flexispot")
         for model in ("eb703", "eb704", "eb803"))
     scenarios.append(_ambient_scenario(split=True))
+    for branch in ("box15", "box1220", "box24"):
+        for layout in ("prime", "lombar", "infinity"):
+            if branch == "box15" and layout == "prime":
+                continue
+            scenarios.append(Scenario(id=f"restonic:{branch}:{layout}", bed_type="restonic",
+                protocol_variant=branch, entry_data={"product_type": layout},
+                layout_id="restonic" if branch == "box15" else f"restonic:{branch}"))
+
     scenarios.append(Scenario(
         id="jerome_adjustable_base:nordic", bed_type="jerome_adjustable_base",
         protocol_variant="HDRN", layout_id="dorsal:n1",

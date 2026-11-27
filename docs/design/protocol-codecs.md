@@ -483,6 +483,12 @@ with corrected fragment early returns in the Keeson parser. The full 91-vector
 harness and 12 parser observations remain fixtures, with
 explicit bounds-safe/session-lifetime differences for Home Assistant.
 
+Restonic 1.0.1 (okin.bedding.restonic) reproduces every frozen builder through
+Keeson E6, Okin ORE and Keeson P2-side. Its profile keeps the three BLE branches
+independent from the three UI layouts. The shared Keeson controller extension
+owns captured-session refresh/release and raw offset diagnostics without adding
+a wire codec or changing existing routes. See [Restonic](../beds/restonic.md).
+
 ### Alya Smart Furnishing
 
 The accepted row090 app layouts in `profiles/alya.py` drive ORE (P1), Keeson E6 (P2) and Okin N-frame (P3/P4). All 260 frozen reachable command literals reproduce through these existing codecs. ORE already carries parameter payloads; the N-frame encoder adds the five-byte massage setting record. The app's own 300 ms hold/release cadence and twelve-layout capability gates remain its profile data. Commands and transports are generated in the [Alya app guide](../beds/alya.md).

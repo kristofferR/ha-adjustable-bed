@@ -1,5 +1,6 @@
 """The resource apps' direct builders over the literal-verified Richmat codec."""
 
+from collections.abc import Mapping
 from dataclasses import dataclass
 from datetime import time
 from typing import Final, Literal
@@ -66,7 +67,7 @@ def lamp_timeout(seconds: int) -> bytes:
     return codec.light_timer(parts[0] + parts[1], parts[2] + parts[3])
 
 
-def alarm_action(available: dict[str, int], choices: tuple[str, ...]) -> int:
+def alarm_action(available: dict[str, int], choices: tuple[str, ...], *, combinations: Mapping[int, tuple[int, int, int]] = COMBINATIONS) -> int:
     """Layout-order first bed, last massage, exactly two massage entries => 5D.
 
     Keys identify controls, so different controls with the same tag stay
@@ -90,6 +91,6 @@ def alarm_action(available: dict[str, int], choices: tuple[str, ...]) -> int:
         return bed
     if bed is None:
         return zone
-    if bed not in COMBINATIONS:
+    if bed not in combinations:
         raise ValueError("This preset and massage combination has no alarm write")
-    return COMBINATIONS[bed][MASSAGE.index(zone)]
+    return combinations[bed][MASSAGE.index(zone)]
