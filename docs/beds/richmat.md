@@ -63,6 +63,7 @@ Bluetooth name does not tell which layout a bed has, so you pick it in setup (se
 
 | Analyzed | App | Package ID | Profile |
 |----------|-----|------------|---------|
+| Partial | MLILY 3.1.1 (31100) | `com.richmat.mlily0` | [MLILY 3.1.1](#mlily-311) |
 | Partial | [Atlas Lift](https://play.google.com/store/apps/details?id=com.richmat.atlaslift) 1.0.2 (10200) | `com.richmat.atlaslift` | [Atlas Lift](#atlas-lift) |
 | ✅ | [Dorsal](https://play.google.com/store/apps/details?id=com.germany.dorsal) 1.0.4 | `com.germany.dorsal` | [Dorsal / Roomi](#dorsal--roomi) |
 | Partial | [ROOMI bed](https://play.google.com/store/apps/details?id=com.richmat.roomi) 1.0.3 | `com.richmat.roomi` | [ROOMI bed (S655 Plus)](#roomi-bed-s655-plus) |
@@ -264,6 +265,7 @@ sends STOP.
 | Hush Base | `hush_base` | N1, W1, W2, W3, W4, W5 | per-product catalog | no |
 | Luuna + | `luuna` | N1, W1, W2, W3, W4, W5 | per-product catalog | renewable lease |
 | MLILY Remote | `mlily_remote` | N1, W1, W2, W3, W4, W5 | per-product catalog | renewable lease |
+| MLILY 3.1.1 | `mlily0` | N1, W1, W2, W3, W4, W5 | per-product catalog | renewable lease |
 <!-- /generated -->
 
 ### Catalog app timing
@@ -336,13 +338,13 @@ and timing.
 
 | Key | Service | Write | Notify | Commands | Profiles |
 |---|---|---|---|---|---|
-| N1 | `6e400001-b5a3-f393-e0a9-e50e24dcca9e` | `6e400002-b5a3-f393-e0a9-e50e24dcca9e` | `6e400003-b5a3-f393-e0a9-e50e24dcca9e` | bare code | Richmat WiLinke, Richmat Nordic, Richmat Prefix55, Richmat PrefixAA, HJBed, Richmat 4.2.0, Eshine, Richmat MH Revive Control, Richmat MH Best Mattress, Richmat MH Blvd Home, Richmat MH HARMONY, Richmat MH Idealbed, Richmat MH RUF Betten, Richmat MH W.Silver, Richmat MH AMERICANSTAR, Richmat MH Bailey, Richmat MH TX, Richmat MH Nisco, Richmat MH MLILY Supreme, Richmat MH Bed Tech, Classic Avocado Eco Base, Classic CoasterSleep, Classic Forty Winks, Classic Milemont, Classic Superior, Classic Dynasty DM9000, Classic Luuna Rise, Classic Power Cool Sleep System, Classic SleepFunction Bed Control, Classic L&P Adjustable Base, Classic BedSmart / X-Series, Classic Jerome's power base, Classic Base Remote, Classic Maxprime, Classic Dreamlab Control, Classic Lady Americana, Classic ACAA, Classic STA Homecare, Classic Zero Gravity, Galaxy Bed Control, Good Vibe Sleep, MLILY Control, Majestic Home, Okimiki, Power Bob Base, Casper Base, Hush Base, Luuna +, MLILY Remote, SonicSleep, Lunio Smart+ (framed controls on every route) |
+| N1 | `6e400001-b5a3-f393-e0a9-e50e24dcca9e` | `6e400002-b5a3-f393-e0a9-e50e24dcca9e` | `6e400003-b5a3-f393-e0a9-e50e24dcca9e` | bare code | Richmat WiLinke, Richmat Nordic, Richmat Prefix55, Richmat PrefixAA, HJBed, Richmat 4.2.0, Eshine, Richmat MH Revive Control, Richmat MH Best Mattress, Richmat MH Blvd Home, Richmat MH HARMONY, Richmat MH Idealbed, Richmat MH RUF Betten, Richmat MH W.Silver, Richmat MH AMERICANSTAR, Richmat MH Bailey, Richmat MH TX, Richmat MH Nisco, Richmat MH MLILY Supreme, Richmat MH Bed Tech, Classic Avocado Eco Base, Classic CoasterSleep, Classic Forty Winks, Classic Milemont, Classic Superior, Classic Dynasty DM9000, Classic Luuna Rise, Classic Power Cool Sleep System, Classic SleepFunction Bed Control, Classic L&P Adjustable Base, Classic BedSmart / X-Series, Classic Jerome's power base, Classic Base Remote, Classic Maxprime, Classic Dreamlab Control, Classic Lady Americana, Classic ACAA, Classic STA Homecare, Classic Zero Gravity, Galaxy Bed Control, Good Vibe Sleep, MLILY Control, Majestic Home, Okimiki, Power Bob Base, Casper Base, Hush Base, Luuna +, MLILY Remote, MLILY 3.1.1, SonicSleep, Lunio Smart+ (framed controls on every route) |
 | W0 | `8ebd4f76-da9d-4b5a-a96e-8ebfbeb622e7` | `d44bc439-abfd-45a2-b575-925416129600` | `d44bc439-abfd-45a2-b575-925416129601` | framed | Richmat WiLinke, Richmat Nordic, Richmat Prefix55, Richmat PrefixAA, Classic L&P Adjustable Base |
-| W1 | `0000fee9-0000-1000-8000-00805f9b34fb` | `d44bc439-abfd-45a2-b575-925416129600` | `d44bc439-abfd-45a2-b575-925416129601` | framed | Richmat WiLinke, Richmat Nordic, Richmat Prefix55, Richmat PrefixAA, BedTech legacy, Saatva Adjustable Base: standard, Saatva Adjustable Base: split (two receivers), Saatva Adjustable Base Plus: standard, Saatva Adjustable Base Plus: split (two receivers), Saatva Adjustable Base Plus: split top (one receiver), BedTech app BT2000, BedTech app BT2500, BedTech app BT3000, BedTech app BT3000FH, BedTech app BT6500, BedTech app BTX4, BedTech app BTX4FH, BedTech app BTX5, BedTech app BTX5FH, L&P MlRM, HJBed, Richmat 4.2.0, Eshine, Richmat MH Revive Control, Richmat MH Best Mattress, Richmat MH Blvd Home, Richmat MH HARMONY, Richmat MH Idealbed, Richmat MH RUF Betten, Richmat MH W.Silver, Richmat MH AMERICANSTAR, Richmat MH Bailey, Richmat MH TX, Richmat MH Nisco, Richmat MH MLILY Supreme, Richmat MH Bed Tech, Classic Avocado Eco Base, Classic CoasterSleep, Classic Forty Winks, Classic Milemont, Classic Superior, Classic Dynasty DM9000, Classic Luuna Rise, Classic Power Cool Sleep System, Classic SleepFunction Bed Control, Classic L&P Adjustable Base, Classic BedSmart / X-Series, Classic Jerome's power base, Classic Base Remote, Classic Maxprime, Classic Dreamlab Control, Classic Lady Americana, Classic ACAA, Classic STA Homecare, Classic Zero Gravity, Galaxy Bed Control, Good Vibe Sleep, MLILY Control, Majestic Home, Okimiki, Power Bob Base, Casper Base, Hush Base, Luuna +, MLILY Remote, SonicSleep, Lunio Smart+ (framed controls on every route) |
-| W2 | `0000fee9-0000-1000-8000-00805f9b34bb` | `d44bc439-abfd-45a2-b575-925416129622` | `d44bc439-abfd-45a2-b575-925416129611` | framed | Richmat WiLinke, Richmat Nordic, Richmat Prefix55, Richmat PrefixAA, HJBed, Richmat 4.2.0, Eshine, Richmat MH Revive Control, Richmat MH Best Mattress, Richmat MH Blvd Home, Richmat MH HARMONY, Richmat MH Idealbed, Richmat MH RUF Betten, Richmat MH W.Silver, Richmat MH AMERICANSTAR, Richmat MH Bailey, Richmat MH TX, Richmat MH Nisco, Richmat MH MLILY Supreme, Richmat MH Bed Tech, Classic Avocado Eco Base, Classic CoasterSleep, Classic Forty Winks, Classic Milemont, Classic Superior, Classic Dynasty DM9000, Classic Luuna Rise, Classic Power Cool Sleep System, Classic SleepFunction Bed Control, Classic L&P Adjustable Base, Classic BedSmart / X-Series, Classic Jerome's power base, Classic Base Remote, Classic Maxprime, Classic Dreamlab Control, Classic Lady Americana, Classic ACAA, Classic STA Homecare, Classic Zero Gravity, Galaxy Bed Control, Good Vibe Sleep, MLILY Control, Majestic Home, Okimiki, Power Bob Base, Casper Base, Hush Base, Luuna +, MLILY Remote, SonicSleep, Lunio Smart+ (framed controls on every route) |
-| W3 | `0000ffe0-0000-1000-8000-00805f9b34fb` | `0000ffe2-0000-1000-8000-00805f9b34fb` | `0000ffe1-0000-1000-8000-00805f9b34fb` | framed | Richmat WiLinke, Richmat Nordic, Richmat Prefix55, Richmat PrefixAA, HJBed, Richmat 4.2.0, Eshine, Richmat MH Revive Control, Richmat MH Best Mattress, Richmat MH Blvd Home, Richmat MH HARMONY, Richmat MH Idealbed, Richmat MH RUF Betten, Richmat MH W.Silver, Richmat MH AMERICANSTAR, Richmat MH Bailey, Richmat MH TX, Richmat MH Nisco, Richmat MH MLILY Supreme, Richmat MH Bed Tech, Galaxy Bed Control, Good Vibe Sleep, MLILY Control, Majestic Home, Okimiki, Power Bob Base, Casper Base, Hush Base, Luuna +, MLILY Remote, SonicSleep, Lunio Smart+ (framed controls on every route) |
-| W4 | `0000fff0-0000-1000-8000-00805f9b34fb` | `0000fff2-0000-1000-8000-00805f9b34fb` | `0000fff1-0000-1000-8000-00805f9b34fb` | framed | Richmat WiLinke, Richmat Nordic, Richmat Prefix55, Richmat PrefixAA, HJBed, Richmat 4.2.0, Eshine, Richmat MH Revive Control, Richmat MH Best Mattress, Richmat MH Blvd Home, Richmat MH HARMONY, Richmat MH Idealbed, Richmat MH RUF Betten, Richmat MH W.Silver, Richmat MH AMERICANSTAR, Richmat MH Bailey, Richmat MH TX, Richmat MH Nisco, Richmat MH MLILY Supreme, Richmat MH Bed Tech, Classic Avocado Eco Base, Classic CoasterSleep, Classic Forty Winks, Classic Milemont, Classic Superior, Classic Dynasty DM9000, Classic Luuna Rise, Classic Power Cool Sleep System, Classic SleepFunction Bed Control, Classic L&P Adjustable Base, Classic BedSmart / X-Series, Classic Jerome's power base, Classic Base Remote, Classic Maxprime, Classic Dreamlab Control, Classic Lady Americana, Classic ACAA, Classic STA Homecare, Classic Zero Gravity, Galaxy Bed Control, Good Vibe Sleep, MLILY Control, Majestic Home, Okimiki, Power Bob Base, Casper Base, Hush Base, Luuna +, MLILY Remote, SonicSleep, Lunio Smart+ (framed controls on every route) |
-| W5 | `0000e0ff-3c17-d293-8e48-14fe2e4da212` | `00000002-3c17-d293-8e48-14fe2e4da212` | `00000003-3c17-d293-8e48-14fe2e4da212` | framed | Richmat WiLinke, Richmat Nordic, Richmat Prefix55, Richmat PrefixAA, HJBed, Richmat 4.2.0, Eshine, Galaxy Bed Control, Good Vibe Sleep, MLILY Control, Majestic Home, Okimiki, Power Bob Base, Casper Base, Hush Base, Luuna +, MLILY Remote, SonicSleep, Lunio Smart+ (framed controls on every route) |
+| W1 | `0000fee9-0000-1000-8000-00805f9b34fb` | `d44bc439-abfd-45a2-b575-925416129600` | `d44bc439-abfd-45a2-b575-925416129601` | framed | Richmat WiLinke, Richmat Nordic, Richmat Prefix55, Richmat PrefixAA, BedTech legacy, Saatva Adjustable Base: standard, Saatva Adjustable Base: split (two receivers), Saatva Adjustable Base Plus: standard, Saatva Adjustable Base Plus: split (two receivers), Saatva Adjustable Base Plus: split top (one receiver), BedTech app BT2000, BedTech app BT2500, BedTech app BT3000, BedTech app BT3000FH, BedTech app BT6500, BedTech app BTX4, BedTech app BTX4FH, BedTech app BTX5, BedTech app BTX5FH, L&P MlRM, HJBed, Richmat 4.2.0, Eshine, Richmat MH Revive Control, Richmat MH Best Mattress, Richmat MH Blvd Home, Richmat MH HARMONY, Richmat MH Idealbed, Richmat MH RUF Betten, Richmat MH W.Silver, Richmat MH AMERICANSTAR, Richmat MH Bailey, Richmat MH TX, Richmat MH Nisco, Richmat MH MLILY Supreme, Richmat MH Bed Tech, Classic Avocado Eco Base, Classic CoasterSleep, Classic Forty Winks, Classic Milemont, Classic Superior, Classic Dynasty DM9000, Classic Luuna Rise, Classic Power Cool Sleep System, Classic SleepFunction Bed Control, Classic L&P Adjustable Base, Classic BedSmart / X-Series, Classic Jerome's power base, Classic Base Remote, Classic Maxprime, Classic Dreamlab Control, Classic Lady Americana, Classic ACAA, Classic STA Homecare, Classic Zero Gravity, Galaxy Bed Control, Good Vibe Sleep, MLILY Control, Majestic Home, Okimiki, Power Bob Base, Casper Base, Hush Base, Luuna +, MLILY Remote, MLILY 3.1.1, SonicSleep, Lunio Smart+ (framed controls on every route) |
+| W2 | `0000fee9-0000-1000-8000-00805f9b34bb` | `d44bc439-abfd-45a2-b575-925416129622` | `d44bc439-abfd-45a2-b575-925416129611` | framed | Richmat WiLinke, Richmat Nordic, Richmat Prefix55, Richmat PrefixAA, HJBed, Richmat 4.2.0, Eshine, Richmat MH Revive Control, Richmat MH Best Mattress, Richmat MH Blvd Home, Richmat MH HARMONY, Richmat MH Idealbed, Richmat MH RUF Betten, Richmat MH W.Silver, Richmat MH AMERICANSTAR, Richmat MH Bailey, Richmat MH TX, Richmat MH Nisco, Richmat MH MLILY Supreme, Richmat MH Bed Tech, Classic Avocado Eco Base, Classic CoasterSleep, Classic Forty Winks, Classic Milemont, Classic Superior, Classic Dynasty DM9000, Classic Luuna Rise, Classic Power Cool Sleep System, Classic SleepFunction Bed Control, Classic L&P Adjustable Base, Classic BedSmart / X-Series, Classic Jerome's power base, Classic Base Remote, Classic Maxprime, Classic Dreamlab Control, Classic Lady Americana, Classic ACAA, Classic STA Homecare, Classic Zero Gravity, Galaxy Bed Control, Good Vibe Sleep, MLILY Control, Majestic Home, Okimiki, Power Bob Base, Casper Base, Hush Base, Luuna +, MLILY Remote, MLILY 3.1.1, SonicSleep, Lunio Smart+ (framed controls on every route) |
+| W3 | `0000ffe0-0000-1000-8000-00805f9b34fb` | `0000ffe2-0000-1000-8000-00805f9b34fb` | `0000ffe1-0000-1000-8000-00805f9b34fb` | framed | Richmat WiLinke, Richmat Nordic, Richmat Prefix55, Richmat PrefixAA, HJBed, Richmat 4.2.0, Eshine, Richmat MH Revive Control, Richmat MH Best Mattress, Richmat MH Blvd Home, Richmat MH HARMONY, Richmat MH Idealbed, Richmat MH RUF Betten, Richmat MH W.Silver, Richmat MH AMERICANSTAR, Richmat MH Bailey, Richmat MH TX, Richmat MH Nisco, Richmat MH MLILY Supreme, Richmat MH Bed Tech, Galaxy Bed Control, Good Vibe Sleep, MLILY Control, Majestic Home, Okimiki, Power Bob Base, Casper Base, Hush Base, Luuna +, MLILY Remote, MLILY 3.1.1, SonicSleep, Lunio Smart+ (framed controls on every route) |
+| W4 | `0000fff0-0000-1000-8000-00805f9b34fb` | `0000fff2-0000-1000-8000-00805f9b34fb` | `0000fff1-0000-1000-8000-00805f9b34fb` | framed | Richmat WiLinke, Richmat Nordic, Richmat Prefix55, Richmat PrefixAA, HJBed, Richmat 4.2.0, Eshine, Richmat MH Revive Control, Richmat MH Best Mattress, Richmat MH Blvd Home, Richmat MH HARMONY, Richmat MH Idealbed, Richmat MH RUF Betten, Richmat MH W.Silver, Richmat MH AMERICANSTAR, Richmat MH Bailey, Richmat MH TX, Richmat MH Nisco, Richmat MH MLILY Supreme, Richmat MH Bed Tech, Classic Avocado Eco Base, Classic CoasterSleep, Classic Forty Winks, Classic Milemont, Classic Superior, Classic Dynasty DM9000, Classic Luuna Rise, Classic Power Cool Sleep System, Classic SleepFunction Bed Control, Classic L&P Adjustable Base, Classic BedSmart / X-Series, Classic Jerome's power base, Classic Base Remote, Classic Maxprime, Classic Dreamlab Control, Classic Lady Americana, Classic ACAA, Classic STA Homecare, Classic Zero Gravity, Galaxy Bed Control, Good Vibe Sleep, MLILY Control, Majestic Home, Okimiki, Power Bob Base, Casper Base, Hush Base, Luuna +, MLILY Remote, MLILY 3.1.1, SonicSleep, Lunio Smart+ (framed controls on every route) |
+| W5 | `0000e0ff-3c17-d293-8e48-14fe2e4da212` | `00000002-3c17-d293-8e48-14fe2e4da212` | `00000003-3c17-d293-8e48-14fe2e4da212` | framed | Richmat WiLinke, Richmat Nordic, Richmat Prefix55, Richmat PrefixAA, HJBed, Richmat 4.2.0, Eshine, Galaxy Bed Control, Good Vibe Sleep, MLILY Control, Majestic Home, Okimiki, Power Bob Base, Casper Base, Hush Base, Luuna +, MLILY Remote, MLILY 3.1.1, SonicSleep, Lunio Smart+ (framed controls on every route) |
 
 W0 is the legacy custom service, W4 and W5 are name-guarded (see the Richmat
 profile's Setup). The Richmat routes try W0 to W5, then N1, then fall back to W1.
@@ -3931,6 +3933,174 @@ in `tests/fixtures/luuna/` and exercised by `tests/test_luuna.py`. The existing
 Richmat codec reproduces the app's literal command frames without a new codec.
 Physical movement, stop latency, supported firmware, calibration and negotiated
 MTU remain for owners to validate.
+
+### MLILY 3.1.1
+
+**App:** MLILY 3.1.1 (31100), `com.richmat.mlily0`
+
+**Status:** Not yet tested. Bed controls and selected readbacks are supported;
+additional library commands and notification formats remain unsupported.
+
+#### Setup
+
+Choose **MLILY 3.1.1 app · Richmat**, then the exact product from the 27 choices.
+The product sets its actuator controls, presets, save buttons, massage, light
+and alarm targets. It is independent of MLILY Control and MLILY Remote.
+Bluetooth names containing `QRRM`, `COOL`, `MPE_`, `209A` or `BED-` can suggest
+setup, but neither a name nor a shared service selects a product.
+
+#### Controls
+
+Head and foot movement, optional lumbar and pillow movement, presets and
+memory use the selected product's exact codes. Only a product action with a
+save control gets a Save button. Massage timers offer the listed 10, 20 and
+30-minute actions; the light is a toggle. No side selector or position sliders
+are exposed. Integration diagnostics contain the selected motor, light, massage
+and RGB readbacks, along with protocol details. Unknown flags are not entities;
+motor type values do not select an axis or a product.
+
+Use **Set alarm** with one of the selected product's wake actions and a local
+time. Products with repeat support accept once or all seven weekdays; arbitrary
+weekday subsets are unavailable. Cancelling writes the zero countdown pair.
+Use **Set bed clock** to synchronize hours, minutes and seconds. Alarm and
+clock writes stay framed on Nordic too. **Exit Limit** is an explicit operation,
+not an unconditional connect-time unlock.
+
+#### Commands
+
+<!-- generated:mlily0-commands -->
+<!-- Generated by scripts/generate_codec_docs.py from the codec and profile data. Edit those, not this block. -->
+
+| Product | Actuators | Alarm targets | Repeat |
+|---|---|---|---|
+| C | HeadUp, HeadDown, FootUp, FootDown | ZeroGravity, YogaPosition, TVPosition, ReadingPosition, MotorReset, AntiSnoring, HelpGetUp, MemoryPosition1, MemoryPosition2 | once / daily |
+| HP | HeadUp, HeadDown, FootUp, FootDown, LumberUp, LumberDown, PillowUp, PillowDown | TVPosition, AntiSnoring, YogaPosition, ReadingPosition, MotorReset, HelpGetUp, ZeroGravity, LoungePosition, MemoryPosition1 | once / daily |
+| M10 | HeadUp, HeadDown, FootUp, FootDown | TVPosition, AntiSnoring, YogaPosition, ReadingPosition, HelpGetUp, ZeroGravity, MotorReset, MemoryPosition1, MemoryPosition2 | once / daily |
+| M11 | HeadUp, HeadDown, FootUp, FootDown | TVPosition, AntiSnoring, YogaPosition, ReadingPosition, MotorReset, HelpGetUp, ZeroGravity, MemoryPosition1, MemoryPosition2 | once / daily |
+| M11P | HeadUp, HeadDown, FootUp, FootDown, LumberUp, LumberDown | ZeroGravity, YogaPosition, TVPosition, ReadingPosition, MotorReset, AntiSnoring, HelpGetUp, MemoryPosition1, MemoryPosition2 | once / daily |
+| M11W | HeadUp, HeadDown, FootUp, FootDown, LumberUp, LumberDown | ZeroGravity, YogaPosition, TVPosition, ReadingPosition, MotorReset, AntiSnoring, HelpGetUp, MemoryPosition1, MemoryPosition2 | once / daily |
+| M12 | HeadUp, HeadDown, FootUp, FootDown | TVPosition, AntiSnoring, YogaPosition, ReadingPosition, MotorReset, HelpGetUp, ZeroGravity, MemoryPosition1, MemoryPosition2 | once / daily |
+| M12P | HeadUp, HeadDown, FootUp, FootDown, LumberUp, LumberDown | ZeroGravity, YogaPosition, TVPosition, ReadingPosition, MotorReset, AntiSnoring, HelpGetUp, MemoryPosition1, MemoryPosition2 | once / daily |
+| M12W | HeadUp, HeadDown, FootUp, FootDown, LumberUp, LumberDown | ZeroGravity, YogaPosition, TVPosition, ReadingPosition, MotorReset, AntiSnoring, HelpGetUp, MemoryPosition1, MemoryPosition2 | once / daily |
+| M2Pro | HeadUp, HeadDown, FootUp, FootDown | ZeroGravity, YogaPosition, TVPosition, ReadingPosition, MotorReset, AntiSnoring, HelpGetUp, SleepPosition, MemoryPosition1, MemoryPosition2 | once / daily |
+| M3 | HeadUp, HeadDown, FootUp, FootDown | none | once |
+| M3Pro | HeadUp, HeadDown, FootUp, FootDown | none | once |
+| M3ProMusic | HeadUp, HeadDown, FootUp, FootDown | TVPosition, AntiSnoring, YogaPosition, ReadingPosition, HelpGetUp, ZeroGravity, MotorReset, MemoryPosition1, MemoryPosition2 | once / daily |
+| M4 | HeadUp, HeadDown, FootUp, FootDown, LumberUp, LumberDown | none | once |
+| M5 | HeadUp, HeadDown, FootUp, FootDown | none | once |
+| M6 | HeadUp, HeadDown, FootUp, FootDown | TVPosition, AntiSnoring, YogaPosition, MotorReset, ReadingPosition, HelpGetUp, ZeroGravity, MemoryPosition1, MemoryPosition2 | once / daily |
+| NL400 | HeadUp, HeadDown, FootUp, FootDown, PillowUp, PillowDown | AntiSnoring, ZeroGravity, MotorReset, MemoryPosition1, MemoryPosition2 | once |
+| P | HeadUp, HeadDown, FootUp, FootDown, LumberUp, LumberDown | ZeroGravity, YogaPosition, TVPosition, ReadingPosition, MotorReset, AntiSnoring, HelpGetUp, MemoryPosition1, MemoryPosition2 | once / daily |
+| PowerCool | HeadUp, HeadDown, FootUp, FootDown | AntiSnoring, MotorReset | once |
+| S | HeadUp, HeadDown, FootUp, FootDown | none | once |
+| SA | HeadUp, HeadDown, FootUp, FootDown | TVPosition, AntiSnoring, YogaPosition, ReadingPosition, MotorReset, HelpGetUp, ZeroGravity, MemoryPosition1, MemoryPosition2 | once / daily |
+| SE | HeadUp, HeadDown, FootUp, FootDown | none | once |
+| SL | HeadUp, HeadDown, FootUp, FootDown, LumberUp, LumberDown | ZeroGravity, YogaPosition, TVPosition, ReadingPosition, MotorReset, AntiSnoring, HelpGetUp, MemoryPosition1, MemoryPosition2 | once / daily |
+| Smart | HeadUp, HeadDown, FootUp, FootDown | none | once |
+| ThreePro | HeadUp, HeadDown, FootUp, FootDown | none | once |
+| X3 | HeadUp, HeadDown, FootUp, FootDown, LumberUp, LumberDown | ZeroGravity, YogaPosition, TVPosition, ReadingPosition, MotorReset, AntiSnoring, HelpGetUp, MemoryPosition1, MemoryPosition2 | once / daily |
+| Zero | HeadUp, HeadDown, FootUp, FootDown | none | once |
+
+| Action | Code | Save | Framed | Products |
+|---|---|---|---|---|
+| ExitLimit | `00` | none | `6E 02 01 00 71` | global |
+| MemoryPosition2 | `2F` | none | `6E 01 00 2F 9E` | C, M10, M11, M11P, M11W, M12, M12P, M12W, M2Pro, M3ProMusic, NL400, P, SL, X3 |
+| MemoryPosition1 | `2E` | none | `6E 01 00 2E 9D` | C, HP, M10, M11, M11P, M11W, M12, M12P, M12W, M2Pro, M3ProMusic, M6, NL400, P, SA, SL, X3 |
+| SleepPosition | `C5` | none | `6E 01 00 C5 34` | M2Pro |
+| HelpGetUp | `3D` | none | `6E 01 00 3D AC` | C, HP, M10, M11, M11P, M11W, M12, M12P, M12W, M2Pro, M3ProMusic, P, SL, X3 |
+| AntiSnoring | `46` | none | `6E 01 00 46 B5` | C, HP, M10, M11, M11P, M11W, M12, M12P, M12W, M2Pro, M3ProMusic, M6, NL400, P, PowerCool, SA, SL, X3 |
+| MotorReset | `31` | none | `6E 01 00 31 A0` | C, HP, M10, M11, M11P, M11W, M12, M12P, M12W, M2Pro, M3ProMusic, M6, NL400, P, PowerCool, SA, SL, X3 |
+| ReadingPosition | `F2` | none | `6E 01 00 F2 61` | HP, M11, M11P, M11W, M12, M12P, M12W, M2Pro, SL |
+| TVPosition | `58` | none | `6E 01 00 58 C7` | C, HP, M10, M11, M11P, M11W, M12, M12P, M12W, M2Pro, M3ProMusic, M6, P, SA, SL, X3 |
+| YogaPosition | `6B` | none | `6E 01 00 6B DA` | C, HP, M10, M11, M11P, M11W, M12, M12P, M12W, M2Pro, M3ProMusic, P, SL, X3 |
+| ZeroGravity | `45` | none | `6E 01 00 45 B4` | C, HP, M10, M11, M11P, M11W, M12, M12P, M12W, M2Pro, M3ProMusic, M6, NL400, P, SA, SL, X3 |
+| MemoryPosition2 | `2F` | `2C` | `6E 01 00 2F 9E` | C, M10, M11, M11P, M11W, M12, M12P, M12W, M2Pro, M3Pro, M3ProMusic, M4, M5, NL400, P, PowerCool, SL, X3 |
+| MemoryPosition1 | `2E` | `2B` | `6E 01 00 2E 9D` | C, HP, M10, M11, M11P, M11W, M12, M12P, M12W, M2Pro, M3, M3Pro, M3ProMusic, M4, M5, M6, NL400, P, PowerCool, S, SA, SE, SL, Smart, ThreePro, X3, Zero |
+| BedLight | `3C` | none | `6E 01 00 3C AB` | HP, M2Pro, M5, NL400, PowerCool, ThreePro |
+| Massage30MinuteTimer | `61` | none | `6E 01 00 61 D0` | C, HP, M10, M11P, M12P, M2Pro, M3Pro, M3ProMusic, M4, M5, NL400, P, SL, X3 |
+| Massage20MinuteTimer | `63` | none | `6E 01 00 63 D2` | C, HP, M10, M11P, M12P, M2Pro, M3Pro, M3ProMusic, M4, M5, NL400, P, SL, X3 |
+| Massage10MinuteTimer | `5F` | none | `6E 01 00 5F CE` | C, HP, M10, M11P, M12P, M2Pro, M3Pro, M3ProMusic, M4, M5, NL400, P, SL, X3 |
+| MassageModeAllOff | `5E` | none | `6E 01 00 5E CD` | C, HP, M10, M11P, M12P, M2Pro, M3Pro, M3ProMusic, M4, M5, NL400, P, PowerCool, SL, X3 |
+| MassageModeChange | `48` | none | `6E 01 00 48 B7` | C, HP, M10, M11P, M12P, M2Pro, M3Pro, M3ProMusic, M4, M5, NL400, P, SL, X3 |
+| MassageFootInstensityStrengthen | `4E` | none | `6E 01 00 4E BD` | M2Pro |
+| FootDown | `27` | none | `6E 01 00 27 96` | C, HP, M10, M11, M11P, M11W, M12, M12P, M12W, M2Pro, M3, M3Pro, M3ProMusic, M4, M5, M6, NL400, P, PowerCool, S, SA, SE, SL, Smart, ThreePro, X3, Zero |
+| FootUp | `26` | none | `6E 01 00 26 95` | C, HP, M10, M11, M11P, M11W, M12, M12P, M12W, M2Pro, M3, M3Pro, M3ProMusic, M4, M5, M6, NL400, P, PowerCool, S, SA, SE, SL, Smart, ThreePro, X3, Zero |
+| HeadDown | `25` | none | `6E 01 00 25 94` | C, HP, M10, M11, M11P, M11W, M12, M12P, M12W, M2Pro, M3, M3Pro, M3ProMusic, M4, M5, M6, NL400, P, PowerCool, S, SA, SE, SL, Smart, ThreePro, X3, Zero |
+| HeadUp | `24` | none | `6E 01 00 24 93` | C, HP, M10, M11, M11P, M11W, M12, M12P, M12W, M2Pro, M3, M3Pro, M3ProMusic, M4, M5, M6, NL400, P, PowerCool, S, SA, SE, SL, Smart, ThreePro, X3, Zero |
+| SleepPosition | `C5` | none | `6E 01 00 C5 34` | M2Pro |
+| ReadingPosition | `F2` | `F3` | `6E 01 00 F2 61` | HP, M11, M11P, M11W, M12, M12P, M12W, M2Pro, SE, SL |
+| HelpGetUp | `3D` | none | `6E 01 00 3D AC` | C, M10, M11, M11P, M11W, M12, M12P, M12W, M2Pro, M3Pro, M3ProMusic, M4, M5, P, SE, SL, X3 |
+| AntiSnoring | `46` | `69` | `6E 01 00 46 B5` | C, HP, M10, M11, M11P, M11W, M12, M12P, M12W, M2Pro, M3, M3Pro, M3ProMusic, M4, M5, M6, NL400, P, PowerCool, S, SA, SE, SL, Smart, ThreePro, X3, Zero |
+| MotorReset | `31` | none | `6E 01 00 31 A0` | C, HP, M10, M11, M11P, M11W, M12, M12P, M12W, M2Pro, M3, M3Pro, M3ProMusic, M4, M5, M6, NL400, P, PowerCool, S, SA, SE, SL, Smart, ThreePro, X3, Zero |
+| TVPosition | `58` | `64` | `6E 01 00 58 C7` | C, HP, M10, M11, M11P, M11W, M12, M12P, M12W, M2Pro, M3, M3Pro, M3ProMusic, M6, P, S, SA, SE, SL, Smart, X3, Zero |
+| YogaPosition | `6B` | `6A` | `6E 01 00 6B DA` | C, HP, M10, M11, M11P, M11W, M12, M12P, M12W, M2Pro, M3Pro, M3ProMusic, M4, M5, P, SE, SL, X3 |
+| ZeroGravity | `45` | `66` | `6E 01 00 45 B4` | C, HP, M10, M11, M11P, M11W, M12, M12P, M12W, M2Pro, M3, M3Pro, M3ProMusic, M4, M5, M6, NL400, P, PowerCool, S, SA, SE, SL, Smart, ThreePro, X3, Zero |
+| Massage30MinuteTimer | `61` | none | `6E 01 00 61 D0` | PowerCool |
+| Massage20MinuteTimer | `63` | none | `6E 01 00 63 D2` | PowerCool |
+| Massage10MinuteTimer | `5F` | none | `6E 01 00 5F CE` | PowerCool |
+| MassageFootInstensityStrengthen | `4E` | none | `6E 01 00 4E BD` | PowerCool |
+| MassageHeadInstensityStrengthen | `4C` | none | `6E 01 00 4C BB` | PowerCool |
+| Stop | `6E` | none | `6E 01 00 6E DD` | global |
+| MassageFootInstensityStrengthen | `4E` | none | `6E 01 00 4E BD` | C, HP, M10, M11P, M12P, M3ProMusic, M5, NL400, P, SL, X3 |
+| MassageHeadInstensityStrengthen | `4C` | none | `6E 01 00 4C BB` | HP, M10, M11P, M12P, M3Pro, M3ProMusic, M4, M5, NL400, P, SL, X3 |
+| LumberDown | `40` | none | `6E 01 00 40 AF` | HP, M11P, M11W, M12P, M12W, M4, SL |
+| LumberUp | `3F` | none | `6E 01 00 3F AE` | HP, M11P, M11W, M12P, M12W, M4, SL |
+| LoungePosition | `59` | none | `6E 01 00 59 C8` | HP |
+| PillowDown | `42` | none | `6E 01 00 42 B1` | HP |
+| PillowUp | `41` | none | `6E 01 00 41 B0` | HP |
+| LoungePosition | `59` | `65` | `6E 01 00 59 C8` | HP |
+| HelpGetUp | `3D` | `F8` | `6E 01 00 3D AC` | HP |
+| MemoryPosition2 | `F0` | none | `6E 01 00 F0 5F` | M6, SA |
+| HelpGetUp | `59` | none | `6E 01 00 59 C8` | M6, SA |
+| ReadingPosition | `30` | none | `6E 01 00 30 9F` | C, M10, M3ProMusic, M6, P, SA, X3 |
+| YogaPosition | `2F` | none | `6E 01 00 2F 9E` | M6, SA |
+| MemoryPosition2 | `F0` | `F1` | `6E 01 00 F0 5F` | M6, SA |
+| ReadingPosition | `30` | `2D` | `6E 01 00 30 9F` | C, M10, M3Pro, M3ProMusic, M6, P, S, SA, Smart, X3 |
+| HelpGetUp | `59` | none | `6E 01 00 59 C8` | M6, SA |
+| YogaPosition | `2F` | `2C` | `6E 01 00 2F 9E` | M3, M6, S, SA, Smart, Zero |
+| PillowDown | `40` | none | `6E 01 00 40 AF` | NL400 |
+| PillowUp | `3F` | none | `6E 01 00 3F AE` | NL400 |
+| ReadingPosition | `59` | `65` | `6E 01 00 59 C8` | M3, Zero |
+| HelpGetUp | `30` | `2D` | `6E 01 00 30 9F` | M3, S, Zero |
+| LumberDown | `42` | none | `6E 01 00 42 B1` | P, X3 |
+| LumberUp | `41` | none | `6E 01 00 41 B0` | P, X3 |
+
+| Setting | Frames |
+|---|---|
+| 300 minutes, memory 1 | `6E 05 2C 00 9F` / `6E 06 01 2E A3` |
+| Cancel | `6E 05 00 00 73` / `6E 06 00 00 74` |
+| Once | `6E 14 00 FE 80` |
+| Daily | `6E 14 01 FE 81` |
+| Clock, 12:34:56 | `6E 13 0C 22 AF` / `6E 14 38 FF B9` |
+<!-- /generated -->
+
+#### Timing and release
+
+Movement first refreshes after 100 ms, then every 100 ms. Releasing before the
+first tick sends neither movement nor STOP; after a submitted tick the operation
+ends with global STOP on its original BLE link. Presets send once; Save waits
+three seconds and sends once. A submitted write settles before cancellation
+releases its lane. Reconnect cannot redirect the remaining frames to another
+session. All writes are paced by at least 100 ms.
+
+#### Notifications and limits
+
+The six Richmat routes use a coherent write/notify service. Nordic sends bare
+normal opcodes; W1–W5 send `6E 01 00 opcode sum8`. Live write properties select
+response mode. No app-owned pairing, authentication or characteristic read is
+required. Android's library conditionally requests MTU 512, which is not a
+negotiated size or a requirement for these short frames; HA owns MTU negotiation.
+
+Complete known ACKs and selected extended motor/white-light/massage/RGB frames
+are diagnostic readbacks. Unknown common records, alarm record fields and full
+fragmented/coalesced stream parity remain unsupported. Raw notifications stay
+in support diagnostics. Sleep-belt and mattress companions, audio, sleep
+services, networking, accounts and OTA are outside this profile.
+
+#### Notes
+
+Based on MLILY 3.1.1 (31100). Physical product/GATT compatibility, firmware
+support and behavior after transport loss remain unverified.
 
 ### MLILY Remote
 

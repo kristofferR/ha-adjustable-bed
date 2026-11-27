@@ -1,0 +1,207 @@
+[
+  {
+    "id": "head-up-raw",
+    "kind": "control",
+    "inputs": {
+      "code": 36,
+      "nordic": true
+    },
+    "expected": "24",
+    "evidence": [
+      "work/blutter/asm/richmat_library_utils/product/device_instruct_util.dart:10-156",
+      "work/blutter/objs.txt:913-949"
+    ]
+  },
+  {
+    "id": "head-up-framed",
+    "kind": "control",
+    "inputs": {
+      "code": 36,
+      "nordic": false
+    },
+    "expected": "6e01002493",
+    "evidence": [
+      "work/blutter/asm/richmat_library_utils/product/device_instruct_util.dart:140-878",
+      "work/blutter/objs.txt:913-949"
+    ]
+  },
+  {
+    "id": "stop-raw",
+    "kind": "control",
+    "inputs": {
+      "code": 110,
+      "nordic": true
+    },
+    "expected": "6e",
+    "evidence": [
+      "work/blutter/asm/richmat_library_utils/product/device_instruct_util.dart:10-156",
+      "work/blutter/asm/mlily_flutter/widgets/device_details_remote_widget.dart:1356-1385"
+    ]
+  },
+  {
+    "id": "stop-framed",
+    "kind": "control",
+    "inputs": {
+      "code": 110,
+      "nordic": false
+    },
+    "expected": "6e01006edd",
+    "evidence": [
+      "work/blutter/asm/richmat_library_utils/product/device_instruct_util.dart:140-878",
+      "work/blutter/asm/mlily_flutter/widgets/device_details_remote_widget.dart:1356-1385"
+    ]
+  },
+  {
+    "id": "initial-exit-limit",
+    "kind": "control",
+    "inputs": {
+      "code": 0,
+      "nordic": false,
+      "exit_limit": true
+    },
+    "expected": "6e02010071",
+    "evidence": [
+      "work/blutter/asm/richmat_library_utils/product/device_instruct_util.dart:165-209",
+      "work/blutter/asm/richmat_library_utils/utils/bluetooth_util.dart:1355-1360"
+    ]
+  },
+  {
+    "id": "memory-one-recall",
+    "kind": "control",
+    "inputs": {
+      "code": 46,
+      "nordic": false
+    },
+    "expected": "6e01002e9d",
+    "evidence": [
+      "work/blutter/asm/richmat_library_utils/product/device_instruct_util.dart:10-878",
+      "work/blutter/objs.txt:497-535"
+    ]
+  },
+  {
+    "id": "memory-one-save",
+    "kind": "control",
+    "inputs": {
+      "code": 43,
+      "nordic": false
+    },
+    "expected": "6e01002b9a",
+    "evidence": [
+      "work/blutter/asm/richmat_library_utils/product/device_instruct_util.dart:10-878",
+      "work/blutter/objs.txt:497-535"
+    ]
+  },
+  {
+    "id": "alarm-300-low",
+    "kind": "alarm_low",
+    "inputs": {
+      "minutes": 300
+    },
+    "expected": "6e052c009f",
+    "evidence": [
+      "work/blutter/asm/richmat_library_utils/product/device_instruct_util.dart:1575-1686"
+    ]
+  },
+  {
+    "id": "alarm-300-high",
+    "kind": "alarm_high",
+    "inputs": {
+      "minutes": 300,
+      "mode": 46
+    },
+    "expected": "6e06012ea3",
+    "evidence": [
+      "work/blutter/asm/richmat_library_utils/product/device_instruct_util.dart:1452-1574"
+    ]
+  },
+  {
+    "id": "repeat-once",
+    "kind": "alarm_repeat",
+    "inputs": {
+      "daily": false
+    },
+    "expected": "6e1400fe80",
+    "evidence": [
+      "work/blutter/asm/richmat_library_utils/product/device_instruct_util.dart:1687-1799"
+    ]
+  },
+  {
+    "id": "repeat-daily",
+    "kind": "alarm_repeat",
+    "inputs": {
+      "daily": true
+    },
+    "expected": "6e1401fe81",
+    "evidence": [
+      "work/blutter/asm/richmat_library_utils/product/device_instruct_util.dart:1687-1799"
+    ]
+  },
+  {
+    "id": "sync-time",
+    "kind": "sync_time",
+    "inputs": {
+      "hour": 8,
+      "minute": 9,
+      "second": 10
+    },
+    "expected": [
+      "6e13080992",
+      "6e140aff8b"
+    ],
+    "evidence": [
+      "work/blutter/asm/richmat_library_utils/product/device_instruct_util.dart:1088-1451",
+      "work/blutter/asm/mlily_flutter/data/model/alarm_page_model.dart:553-616"
+    ]
+  },
+  {
+    "id": "alarm-added",
+    "kind": "notification",
+    "inputs": {
+      "bytes": "6e07010177"
+    },
+    "expected": "alarm_added",
+    "evidence": [
+      "work/blutter/asm/richmat_library_utils/utils/bluetooth_util.dart:3937-3966"
+    ]
+  },
+  {
+    "id": "alarm-cancelled",
+    "kind": "notification",
+    "inputs": {
+      "bytes": "6e07010278"
+    },
+    "expected": "alarm_cancelled",
+    "evidence": [
+      "work/blutter/asm/richmat_library_utils/utils/bluetooth_util.dart:3973-4002"
+    ]
+  },
+  {
+    "id": "motor-status-derived",
+    "kind": "notification",
+    "inputs": {
+      "bytes": "6e200e010202000064011e2c0151"
+    },
+    "expected": {
+      "height": 10.0,
+      "type": 1,
+      "angle": 30,
+      "monitorHeight": 30.0
+    },
+    "evidence": [
+      "work/blutter/asm/richmat_library_utils/utils/bluetooth_util.dart:13075-13466"
+    ]
+  },
+  {
+    "id": "white-led-derived",
+    "kind": "notification",
+    "inputs": {
+      "bytes": "6e200903010200019e"
+    },
+    "expected": {
+      "white_led": true
+    },
+    "evidence": [
+      "work/blutter/asm/richmat_library_utils/utils/bluetooth_util.dart:12354-12495"
+    ]
+  }
+]

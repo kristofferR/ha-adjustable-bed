@@ -12292,6 +12292,12 @@
     "alarm_once_or_daily": {
       "message": "The mattress alarm runs once or every day. Select no days or all seven."
     },
+    "mlily0_alarm_repeat": {
+      "message": "Select no days for a one-time alarm or all seven days for a daily alarm."
+    },
+    "mlily0_native_actions": {
+      "message": "Use Set alarm to change the alarm or Set bed clock to set the time."
+    },
     "linak_alarm_once_or_daily": {
       "message": "Select no days for a one-time alarm or all seven days for a daily alarm."
     },
@@ -13723,6 +13729,7 @@
         "sta2": "STA Homecare app",
         "zerogravity": "Zero Gravity app",
         "mlily_remote": "MLILY Remote app",
+        "mlily0": "MLILY 3.1.1 app",
         "sleep_evolution": "SleepEvolution app",
         "wsilver_legacy": "W.Silver Products app (older version)",
         "nisco": "Nisco app",
