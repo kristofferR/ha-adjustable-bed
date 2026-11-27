@@ -1,12 +1,4 @@
-"""Explicit OKIN Bedding app profiles that share one OREBleDeviceManager core.
-
-Jordan's Serenity 1.0.1, Jordan's Tranquil 1.0.2 and the Customatic
-Z-Series 1.0.4 Z-230/Z-280 pages were each frozen
-independently. They reuse the same CST frame, refresh/release
-lifecycle and notification parser, but every action table, save code, button
-and alarm capability below comes from its own app. Nothing is inherited from
-another app's capabilities.
-"""
+"""Explicit OKIN Bedding app profiles over the CST transport."""
 
 from __future__ import annotations
 
@@ -15,8 +7,9 @@ import logging
 from collections.abc import Mapping
 from dataclasses import dataclass, replace
 from datetime import datetime
+from functools import partial
 from types import SimpleNamespace
-from typing import TYPE_CHECKING, Final, cast
+from typing import TYPE_CHECKING, Final, Protocol, cast
 
 from bleak.exc import BleakError
 from homeassistant.util import dt as dt_util
@@ -30,11 +23,13 @@ from ...const import (
     ZSERIES_VARIANTS,
 )
 from ...controller_state import StateKey
+from ...errors import BedCommandTimedOutError
 from ...profiles.okin_nframe import (
     BEDDING_HOLD,
     BEDDING_PROFILES,
     BEDDING_SAVE_HOLD_MS,
     CST_REFRESH_MS,
+    RESTFUL_ACTIONS,
     RIZE_REMEDY_II_ACTIONS,
     SERENITY_ACTIONS,
     SERENITY_SAVE_CODES,
@@ -45,7 +40,7 @@ from ...profiles.okin_nframe import (
 )
 from ..base import BedController
 from ..builder import BuildContext
-from ..catalog_buttons import Kind, catalog_button
+from ..catalog_buttons import Kind, catalog_button, save_button
 from ..entity_specs import (
     ControllerButtonSpec,
     ControllerStateSensorSpec,
@@ -58,7 +53,23 @@ from ..okin_cst import OkinCstController, _product
 if TYPE_CHECKING:
     from collections.abc import Callable, Sequence
 
+    from bleak import BleakClient
+    from bleak.backends.characteristic import BleakGATTCharacteristic
+
     from ...coordinator import AdjustableBedCoordinator
+
+
+class _BeddingWriter(Protocol):
+    async def __call__(
+        self,
+        command: bytes,
+        repeat_count: int = 1,
+        repeat_delay_ms: int = 100,
+        cancel_event: asyncio.Event | None = None,
+        *,
+        on_write: Callable[[], None] | None = None,
+    ) -> None: ...
+
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -144,6 +155,24 @@ _ZSERIES_BUTTONS_TAIL = (
 )
 
 APPS: Final[dict[str, OkinBeddingApp]] = {
+    "restful": OkinBeddingApp(
+        prefix="restful",
+        label="Restful",
+        actions=RESTFUL_ACTIONS,
+        save_codes={},  # No status byte identifies a save or proves persistence.
+        buttons=(
+            ("save_zero_g", "Save zero gravity"),
+            ("save_tv", "Save TV"),
+            ("light_toggle", "Toggle light"),
+            ("massage_timer_cycle", "Cycle massage timer"),
+            ("wave_1", "Wave 1"),
+            ("wave_2", "Wave 2"),
+            ("wave_3", "Wave 3"),
+        ),
+        profile=BEDDING_PROFILES["restful"],
+        exact_duration=True,
+        information_log_only=True,
+    ),
     "rize_remedy_ii": OkinBeddingApp(
         prefix="rize_remedy_ii",
         label="Rize Remedy II",
@@ -305,7 +334,10 @@ class OkinBeddingAppController(OkinCstController):
 
     @property
     def protocol_diagnostics(self) -> dict[str, object]:
-        return {**super().protocol_diagnostics, **self._state, "save_pending_code": self._save_code}
+        diagnostics = {**super().protocol_diagnostics, **self._state}
+        if self._app.save_codes:
+            diagnostics["save_pending_code"] = self._save_code
+        return diagnostics
 
     def _publish(self, updates: dict[str, object]) -> None:
         """Publish fields named without the app prefix."""
@@ -313,7 +345,7 @@ class OkinBeddingAppController(OkinCstController):
         self._state.update((update.key, update.value) for update in values)
         self.forward_controller_state_updates(*values)
 
-    def _write_response(self) -> bool:
+    def _write_role(self) -> tuple[BleakGATTCharacteristic, bool]:
         client = self.client
         label = self._app.label
         if client is None or not client.is_connected:
@@ -329,17 +361,15 @@ class OkinBeddingAppController(OkinCstController):
             raise ValueError(f"{label} requires its exact writable GATT role")
         # Artifact write type is inherited/unknown; this is HA's property policy.
         if "write" in matches[0].properties:
-            return True
+            return matches[0], True
         if "write-without-response" in matches[0].properties:
-            return False
+            return matches[0], False
         raise ValueError(f"{label} command characteristic is not writable")
 
-    def require_roles(self) -> None:
-        """Raise unless the link has the app's exact command and notification roles."""
-        self._write_response()
-        client = self.client
-        if client is None:
-            raise ConnectionError(f"{self._app.label} is not connected")
+    def _write_response(self) -> bool:
+        return self._write_role()[1]
+
+    def _notification_role(self, client: BleakClient) -> BleakGATTCharacteristic:
         matches = [
             char
             for service in client.services or ()
@@ -349,6 +379,15 @@ class OkinBeddingAppController(OkinCstController):
         ]
         if len(matches) != 1:
             raise ValueError(f"{self._app.label} requires its notification characteristic")
+        return matches[0]
+
+    def require_roles(self) -> None:
+        """Raise unless the link has the app's exact command and notification roles."""
+        self._write_role()
+        client = self.client
+        if client is None:
+            raise ConnectionError(f"{self._app.label} is not connected")
+        self._notification_role(client)
 
     async def async_discover_capabilities(self) -> None:
         self.require_roles()
@@ -359,6 +398,8 @@ class OkinBeddingAppController(OkinCstController):
         repeat_count: int = 1,
         repeat_delay_ms: int = 100,
         cancel_event: asyncio.Event | None = None,
+        *,
+        on_write: Callable[[], None] | None = None,
     ) -> None:
         await self._write_gatt_with_retry(
             self.control_characteristic_uuid,
@@ -368,6 +409,7 @@ class OkinBeddingAppController(OkinCstController):
             cancel_event=cancel_event,
             response=self._write_response(),
             wall_clock_pacing=True,
+            on_write=on_write,
         )
 
     async def start_notify(self, callback: Callable[[str, float], None] | None = None) -> None:
@@ -381,7 +423,7 @@ class OkinBeddingAppController(OkinCstController):
         await asyncio.sleep(1)
         await self.refresh_manufacturer()
 
-    async def refresh_manufacturer(self) -> None:
+    async def refresh_manufacturer(self, *, exact_role: bool = False) -> None:
         """Repeat the reachable on-resume read without selecting capabilities."""
         client = self.client
         if client is None or not client.is_connected:
@@ -398,7 +440,11 @@ class OkinBeddingAppController(OkinCstController):
         try:
             async with asyncio.timeout(2):
                 async with self._ble_lock:
-                    value = await client.read_gatt_char(self._app.information_uuid)
+                    if exact_role and (client is not self.client or not client.is_connected):
+                        return
+                    value = await client.read_gatt_char(
+                        matches[0] if exact_role else self._app.information_uuid
+                    )
             manufacturer = bytes(value).decode("utf-8", errors="replace")
         except BleakError, OSError, TimeoutError:
             return  # Missing diagnostic information does not block control.
@@ -433,7 +479,10 @@ class OkinBeddingAppController(OkinCstController):
                 }
             )
             return
-        code = signed(data[10])
+        self._handle_status(data[10])
+
+    def _handle_status(self, value: int) -> None:
+        code = value if value < 128 else value - 256
         if code == self._status_code:
             return
         self._status_code = code
@@ -456,7 +505,6 @@ class OkinBeddingAppController(OkinCstController):
     @property
     def controller_state_sensor_specs(self) -> tuple[ControllerStateSensorSpec, ...]:
         # Raw status, timer and save codes stay in published state for diagnostics.
-        timer = "massage_timer_minutes"
         return (
             ControllerStateSensorSpec(
                 key=self._key("manufacturer"),
@@ -465,9 +513,7 @@ class OkinBeddingAppController(OkinCstController):
                 state_key=self._state_key("manufacturer"),
                 icon="mdi:information-outline",
             ),
-            massage_timer_sensor_spec(
-                self._key(timer), f"okin_bedding_app_{timer}", self._state_key(timer)
-            ),
+            self._timer_sensor_spec(),
             ControllerStateSensorSpec(
                 key=self._key("alarm_type"),
                 translation_key="okin_bedding_app_alarm_type",
@@ -481,13 +527,25 @@ class OkinBeddingAppController(OkinCstController):
             ),
         )
 
+    def _timer_sensor_spec(self) -> ControllerStateSensorSpec:
+        timer = "massage_timer_minutes"
+        return massage_timer_sensor_spec(
+            self._key(timer), f"okin_bedding_app_{timer}", self._state_key(timer)
+        )
+
     @property
     def held_control_options(self) -> tuple[str, ...]:
         return tuple(self._app.actions)
 
     async def hold_control(self, control: str, duration_ms: int) -> None:
-        if control not in self._app.actions:
+        if control not in self.held_control_options:
             raise ValueError(f"Unknown {self._app.label} action")
+        await self._hold_control(control, duration_ms)
+
+    def _press_writer(self) -> _BeddingWriter:
+        return self.write_command
+
+    async def _hold_control(self, control: str, duration_ms: int) -> None:
         if (
             isinstance(duration_ms, bool)
             or not isinstance(duration_ms, int)
@@ -495,6 +553,7 @@ class OkinBeddingAppController(OkinCstController):
         ):
             raise ValueError("Duration must be a positive integer, at most 60000 ms")
         primary, secondary = self._app.actions[control]
+        write = self._press_writer()
         # The app records local save intent before writing, not a storage ACK.
         if control in self._app.save_codes:
             self._save_code = self._app.save_codes[control]
@@ -502,11 +561,20 @@ class OkinBeddingAppController(OkinCstController):
             self._save_code = 0
         deadline = asyncio.timeout(duration_ms / 1000)
         controller_timeout = False
+        press_written = False
+        press_timed_out = False
+
+        def mark_pressed() -> None:
+            nonlocal press_written
+            press_written = True
+
+        requires_press = self._app.prefix == "restful"
+        press = partial(write, on_write=mark_pressed) if requires_press else write
         try:
             try:
                 async with deadline:
                     try:
-                        await self.write_command(
+                        await press(
                             codec.frame96(primary, secondary),
                             repeat_count=(duration_ms + CST_REFRESH_MS - 1) // CST_REFRESH_MS
                             if self._app.exact_duration
@@ -523,10 +591,24 @@ class OkinBeddingAppController(OkinCstController):
             except TimeoutError:
                 if controller_timeout or not deadline.expired():
                     raise
+                press_timed_out = requires_press and not press_written
         finally:
-            await self._send_stop_sequence()
+            try:
+                await self._release_after_press(write)
+            except Exception as err:
+                if press_timed_out:
+                    raise BedCommandTimedOutError from err
+                raise
+        if press_timed_out:
+            raise BedCommandTimedOutError
 
-    async def _send_stop_sequence(self) -> None:
+    async def _release_after_press(self, write: _BeddingWriter) -> None:
+        await self._send_stop_sequence(write)
+
+    async def _send_stop_sequence(self, write: _BeddingWriter | None = None) -> None:
+        if write is None:
+            write = self._press_writer()
+
         async def release() -> None:
             event = asyncio.Event()
             failure: Exception | None = None
@@ -535,7 +617,7 @@ class OkinBeddingAppController(OkinCstController):
             for offset in _RELEASE_OFFSETS_S:
                 await asyncio.sleep(max(0, started + offset - loop.time()))
                 try:
-                    await self.write_command(codec.frame96(0), cancel_event=event)
+                    await write(codec.frame96(0), cancel_event=event)
                 except Exception as error:
                     # The source schedules both releases independently.
                     failure = failure or error
@@ -649,6 +731,213 @@ class TranquilController(OkinBeddingAppController):
 
     def __init__(self, coordinator: AdjustableBedCoordinator) -> None:
         super().__init__(coordinator, app="tranquil")
+
+
+class RestfulController(OkinBeddingAppController):
+    """Jordan's Restful 1.0.2, with one shared tilt/lumbar control."""
+
+    def __init__(self, coordinator: AdjustableBedCoordinator) -> None:
+        super().__init__(coordinator, app="restful")
+        self._connection_generation = 0
+        self._subscription: tuple[BleakClient, BleakGATTCharacteristic] | None = None
+        self._saving = False
+
+    @property
+    def supports_massage_intensity_up_control(self) -> bool:
+        return True
+
+    async def massage_intensity_down(self) -> None:
+        raise NotImplementedError("Restful only supports increasing massage intensity")
+
+    @property
+    def held_control_options(self) -> tuple[str, ...]:
+        # Use the explicit save buttons or program_memory to change a preset.
+        return tuple(action for action in self._app.actions if not action.startswith("save_"))
+
+    @property
+    def motor_control_specs(self) -> tuple[MotorControlSpec, ...]:
+        return tuple(
+            replace(
+                spec,
+                timed_move_fn=lambda ctrl, up, ms, axis="foot" if spec.key == "feet" else spec.key:
+                    ctrl.hold_control(f"{axis}_{'up' if up else 'down'}", ms),
+            )
+            for spec in super().motor_control_specs
+        )
+
+    @property
+    def replaced_standard_button_keys(self) -> frozenset[str]:
+        return frozenset({"program_memory_1", "program_memory_2"})
+
+    @property
+    def controller_button_specs(self) -> tuple[ControllerButtonSpec, ...]:
+        return (
+            *super().controller_button_specs,
+            save_button(
+                "program_memory_1", "Save M1", lambda ctrl: ctrl.program_memory(1),
+                requires_confirmation=True,
+            ),
+            save_button(
+                "program_memory_2", "Save M2", lambda ctrl: ctrl.program_memory(2),
+                requires_confirmation=True,
+            ),
+        )
+
+    async def _save_preset(self, action: str) -> None:
+        self._saving = True
+        try:
+            await self._hold_control(action, BEDDING_SAVE_HOLD_MS)
+        finally:
+            self._saving = False
+
+    async def program_memory(self, memory_num: int) -> None:
+        await self._save_preset(self._memory_action(memory_num, "save_"))
+
+    async def execute_app_control(self, action: str) -> None:
+        if action in ("save_zero_g", "save_tv"):
+            await self._save_preset(action)
+            return
+        await super().execute_app_control(action)
+
+    async def _move_motor(self, motor: str, command_value: int | None) -> None:
+        if command_value is None:
+            await self._send_explicit_stop_sequence()
+            return
+        action = next(key for key, fields in self._app.actions.items() if fields == (command_value, 0))
+        pulses, interval = self.motor_pulse_settings()
+        await self.hold_control(action, self.leased_hold_ms(min(max(pulses * interval, interval), 60_000)))
+
+    async def stop_all(self) -> None:
+        await self._send_explicit_stop_sequence()
+
+    async def _release_after_press(self, write: _BeddingWriter) -> None:
+        await super()._release_after_press(write)
+        if self._coordinator.cancel_command.is_set():
+            self._cleanup_stop_cancel_counter = self._coordinator.cancel_counter
+
+    def _press_writer(self) -> _BeddingWriter:
+        client = self.client
+        if client is None or not client.is_connected:
+            raise ConnectionError("Restful is not connected")
+        characteristic, response = self._write_role()
+        return partial(
+            self._write_on_connection, client, self._connection_generation, characteristic, response
+        )
+
+    async def _write_on_connection(
+        self,
+        client: BleakClient,
+        generation: int,
+        characteristic: BleakGATTCharacteristic,
+        response: bool,
+        /,
+        command: bytes,
+        repeat_count: int = 1,
+        repeat_delay_ms: int = 100,
+        cancel_event: asyncio.Event | None = None,
+        *,
+        on_write: Callable[[], None] | None = None,
+    ) -> None:
+        def check_generation() -> None:
+            if generation != self._connection_generation:
+                raise ConnectionError("Restful command belongs to a previous BLE connection")
+
+        # The press already has a deadline. Each of the two neutral attempts
+        # also has a limit, including time spent waiting for the BLE lock.
+        async with asyncio.timeout(1 if cancel_event is not None else None):
+            await self._write_gatt_with_retry(
+                self.control_characteristic_uuid,
+                command,
+                repeat_count=repeat_count,
+                repeat_delay_ms=repeat_delay_ms,
+                cancel_event=cancel_event,
+                response=response,
+                wall_clock_pacing=True,
+                characteristic=characteristic,
+                expected_client=client,
+                before_write=check_generation,
+                on_write=on_write,
+            )
+
+    async def start_notify(self, callback: Callable[[str, float], None] | None = None) -> None:
+        self._write_role()
+        client = self.client
+        if client is None:
+            return
+        characteristic = self._notification_role(client)
+        subscription = (client, characteristic)
+        generation = self._connection_generation
+
+        def receive(sender: BleakGATTCharacteristic, data: bytearray) -> None:
+            if (
+                self._subscription is subscription
+                and client is self.client
+                and client.is_connected
+                and sender.handle == characteristic.handle
+            ):
+                self._handle_notification(sender, data)
+
+        try:
+            async with self._ble_lock:
+                if (
+                    generation != self._connection_generation
+                    or client is not self.client
+                    or not client.is_connected
+                ):
+                    return
+                if self._subscription is not None and self._subscription[0] is client:
+                    return
+                self._subscription = subscription
+                await client.start_notify(characteristic, receive)
+        except BaseException:
+            if self._subscription is subscription:
+                self._subscription = None
+            raise
+        await asyncio.sleep(1)
+        if (
+            self._subscription is subscription
+            and generation == self._connection_generation
+            and client is self.client
+        ):
+            await self.refresh_manufacturer(exact_role=True)
+
+    async def stop_notify(self) -> None:
+        subscription = self._subscription
+        if subscription is None:
+            return
+        client, characteristic = subscription
+        try:
+            async with self._ble_lock:
+                if self._subscription is not subscription:
+                    return
+                self._subscription = None
+                if client is self.client and client.is_connected:
+                    await client.stop_notify(characteristic)
+        except BleakError as error:
+            _LOGGER.debug("Could not stop Restful notifications: %s", error)
+
+    def on_disconnect(self) -> None:
+        self._connection_generation += 1
+        self._subscription = None
+        if self._state:
+            self._publish({
+                "status_code": None,
+                "massage_timer_code": None,
+                "massage_timer_minutes": None,
+            })
+        self._state.clear()
+        self._status_code = self._timer_code = 0
+        super().on_disconnect()
+
+    def _handle_notification(self, _: object, data: bytearray) -> None:
+        self.forward_raw_notification(_NOTIFY, bytes(data))
+        # The status byte is ambiguous during a save. Keep the raw packet.
+        if len(data) > 10 and data[1] != 0x0C and not self._saving:
+            self._handle_status(data[10])
+
+    @property
+    def controller_state_sensor_specs(self) -> tuple[ControllerStateSensorSpec, ...]:
+        return (self._timer_sensor_spec(),)
 
 
 class ZSeriesController(OkinBeddingAppController):

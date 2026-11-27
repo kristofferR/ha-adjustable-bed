@@ -7,13 +7,47 @@ which carry the same words. Routes without an accepted report on disk (Okimat,
 DewertOkin, RF ECO BT, CB24, DOT, Sleepy's legacy CB25, AdjustableM5X4, whose
 report is quarantined) list the frames the pre-v5 controller sent.
 """
-
-
-
 from tests.customatic_demo_vectors import FRAMES as CUSTOMATIC_DEMO_FRAMES
 from tests.rize_remedy_ii_vectors import VECTORS as RIZE_REMEDY_II_VECTORS
 from tests.superior_sleep_vectors import FROZEN_FRAMES as SUPERIOR_FRAMES
 from tests.superior_sleep_vectors import RECORD_FRAMES as SUPERIOR_RECORDS
+
+# Jordan's Restful 1.0.2 (3), A20. Preserve each literal, including aliases.
+# The unsafe voice-stop row's first frame matches head_up, not HA STOP.
+RESTFUL_FRAMES = (
+    ("head-up", "head_up", "0c 02 00 00 00 01 00 00 00 00 00 00 00 00"),
+    ("head-down", "head_down", "0c 02 00 00 00 02 00 00 00 00 00 00 00 00"),
+    ("foot-up", "foot_up", "0c 02 00 00 00 04 00 00 00 00 00 00 00 00"),
+    ("foot-down", "foot_down", "0c 02 00 00 00 08 00 00 00 00 00 00 00 00"),
+    ("tilt-up", "lumbar_up", "0c 02 00 00 00 10 00 00 00 00 00 00 00 00"),
+    ("tilt-down", "lumbar_down", "0c 02 00 00 00 20 00 00 00 00 00 00 00 00"),
+    ("lumbar-up", "lumbar_up", "0c 02 00 00 00 10 00 00 00 00 00 00 00 00"),
+    ("lumbar-down", "lumbar_down", "0c 02 00 00 00 20 00 00 00 00 00 00 00 00"),
+    ("release", "stop", "0c 02 00 00 00 00 00 00 00 00 00 00 00 00"),
+    ("voice-stop", "head_up", "0c 02 00 00 00 01 00 00 00 00 00 00 00 00"),
+    ("flat", "flat", "0c 02 08 00 00 00 00 00 00 00 00 00 00 00"),
+    ("anti-snore", "anti_snore", "0c 02 00 00 80 00 00 00 00 00 00 00 00 00"),
+    ("leisure", "leisure", "0c 02 00 00 20 00 00 00 00 00 00 00 00 00"),
+    ("memory-1", "memory_1", "0c 02 00 01 00 00 00 00 00 00 00 00 00 00"),
+    ("zero-gravity", "zero_g", "0c 02 00 00 10 00 00 00 00 00 00 00 00 00"),
+    ("tv", "tv", "0c 02 00 00 40 00 00 00 00 00 00 00 00 00"),
+    ("memory-2", "memory_2", "0c 02 00 04 00 00 00 00 00 00 00 00 00 00"),
+    ("save-m1", "save_memory_1", "0c 02 08 01 00 00 00 00 00 00 00 00 00 00"),
+    ("save-zero-gravity", "save_zero_g", "0c 02 08 00 10 00 00 00 00 00 00 00 00 00"),
+    ("save-tv", "save_tv", "0c 02 08 00 40 00 00 00 00 00 00 00 00 00"),
+    ("save-m2", "save_memory_2", "0c 02 08 04 00 00 00 00 00 00 00 00 00 00"),
+    ("light-toggle", "light_toggle", "0c 02 00 02 00 00 00 00 00 00 00 00 00 00"),
+    ("light-on", "light_on", "0c 02 00 00 00 00 00 00 00 40 00 00 00 00"),
+    ("light-off", "light_off", "0c 02 00 00 00 00 00 00 00 80 00 00 00 00"),
+    ("massage-toggle", "massage_toggle", "0c 02 00 00 01 00 00 00 00 00 00 00 00 00"),
+    ("massage-cycle-mode", "massage_mode_cycle", "0c 02 10 00 00 00 00 00 00 00 00 00 00 00"),
+    ("massage-increase", "massage_intensity_up", "0c 02 00 00 0c 00 00 00 00 00 00 00 00 00"),
+    ("massage-cycle-timer", "massage_timer_cycle", "0c 02 00 00 02 00 00 00 00 00 00 00 00 00"),
+    ("massage-wave-1", "wave_1", "0c 02 00 00 00 00 00 08 00 00 00 00 00 00"),
+    ("massage-wave-2", "wave_2", "0c 02 00 00 00 00 00 10 00 00 00 00 00 00"),
+    ("massage-wave-3", "wave_3", "0c 02 00 00 00 00 00 20 00 00 00 00 00 00"),
+    ("massage-off", "massage_off", "0c 02 02 00 00 00 00 00 00 00 00 00 00 00"),
+)
 
 ESHINE = ("eshine_e2000", "eshine_e30003100", "eshine_e5000")
 
@@ -1027,6 +1061,7 @@ FROZEN_FRAMES: dict[str, frozenset[str]] = {
             "0c02100000000000000000000000",
         }
     ),
+    "restful": frozenset(literal.replace(" ", "") for _, _, literal in RESTFUL_FRAMES),
     # com.okin.bedding.tranquil 1.0.2 (3) report: its 96-bit literals
     "tranquil": frozenset(
         {

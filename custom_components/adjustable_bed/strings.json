@@ -678,7 +678,7 @@
       },
       "jordans_family": {
         "title": "Which Jordan's app controls this bed?",
-        "description": "Serenity and Tranquil share the bed's Bluetooth name and service, so the name doesn't choose one. Choose the app you use on your phone.",
+        "description": "Serenity, Tranquil and Restful share the bed's Bluetooth name and service, so the name doesn't choose one. Choose the app you use on your phone.",
         "data": {
           "choice": "App"
         }
@@ -12961,6 +12961,7 @@
       "options": {
         "serenity": "Jordan's Serenity app",
         "tranquil": "Jordan's Tranquil app",
+        "restful": "Jordan's Restful app",
         "another": "Another app or remote: search every app",
         "keep": "Keep the detected or saved controls"
       }

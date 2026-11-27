@@ -10,7 +10,7 @@ the Customatic apps and the Leggett & Platt Okin apps. The 40-bit profiles are
 Okin DOT, SIMMONS, OKIN SleepEase, the Sleepy's Elite legacy
 CB25 dialect, the AdjustableM5X4 key selectors and the eShine app's products. The 96-bit profiles are the
 Okin CST (CSTProtocol) products and the OKIN Bedding apps: Jordan's Serenity,
-Jordan's Tranquil, Customatic Z-Series and Independence (Customatic Demo). The 64-bit profiles are Okin 64-Bit
+Jordan's Tranquil, Jordan's Restful, Customatic Z-Series and Independence (Customatic Demo). The 64-bit profiles are Okin 64-Bit
 the Adjustable bed (Lumbar) app, Rize Home and Resident Adjustable Base.
 
 ## Known Models
@@ -37,6 +37,7 @@ their setup choices, controls and alarms.
 | [Independence](#independence-customatic-demo) | Beds controlled with the Independence (Customatic Demo) app |
 | [Jordan's Serenity](#jordans-serenity) | Beds controlled with the Jordan's Serenity app |
 | [Jordan's Tranquil](#jordans-tranquil) | Beds controlled with the Jordan's Tranquil app |
+| [Jordan's Restful](#jordans-restful) | Beds controlled with the Jordan's Restful app |
 | [Customatic Z-Series](#customatic-z-series) | Customatic Z-230 and Z-280 bases with the Z-Series app |
 | [Okin 64-Bit](#okin-64-bit) | Okin controllers with the Adjustable bed app, including `NORA_CON` / `NORACON` |
 | [Adjustable bed app](#adjustable-bed-app) | Beds controlled with Adjustable bed 1.2.1 |
@@ -93,6 +94,7 @@ Customatic app profiles.
 | ✅ | [Support 挺你 科技調整床](https://play.google.com/store/apps/details?id=com.okin.bedding.support) 1.0.4 (5) | `com.okin.bedding.support` | [Okin CST](#okin-cst) (Support) |
 | ✅ | [Nectar Move](https://play.google.com/store/apps/details?id=com.okin.bedding.nectarmotion) 1.0.1 (2) | `com.okin.bedding.nectarmotion` | [Okin CST](#okin-cst) (Nectar Move) |
 | ✅ | [Jordan's Serenity](https://play.google.com/store/apps/details?id=com.okin.bedding.serenity) 1.0.1 (code 2) | `com.okin.bedding.serenity` | [Jordan's Serenity](#jordans-serenity) |
+| ✅ | [Jordan's Restful](https://play.google.com/store/apps/details?id=com.okin.bedding.restful) 1.0.2 (3) | `com.okin.bedding.restful` | [Jordan's Restful](#jordans-restful) |
 | ✅ | [Superior sleep](https://play.google.com/store/apps/details?id=com.okin.bedding.superior.superior) 1.0.0 (2) | `com.okin.bedding.superior.superior` | [SS350 / SS650](#superior-sleep-ss350--ss650) |
 | ✅ | [Rize Home](https://play.google.com/store/apps/details?id=com.okin.rize) 1.1.2 (12) | `com.okin.rize` | [Remedy III / Contempo IV](#rize-home-remedy-iii--contempo-iv) |
 | ✅ | Shuda 1.0.6 (19) | `com.okin.shuda` | [Shuda](#shuda) |
@@ -213,7 +215,7 @@ RF remote to answer.
 
 A bed set up as [Okin CST](#okin-cst), from its row or the discovery question,
 is asked the same question with its own apps first: each CST product app, then
-Jordan's Serenity, Jordan's Tranquil and Customatic Z-Series, then the answers
+Jordan's Serenity, Jordan's Tranquil, Jordan's Restful and Customatic Z-Series, then the answers
 above. Keep saves Okin CST with its MF900 profile. An existing CST entry keeps
 Configure for its product, and **Reconfigure** asks the same question, so it
 can also move to another Okin route.
@@ -289,6 +291,7 @@ are unchanged.
 | Customatic Z-230 | `zseries_z230` | `customatic_zseries` | 96-bit | plain frame | from the characteristic's properties | head, feet | 1 |
 | Customatic Z-280 | `zseries_z280` | `customatic_zseries` | 96-bit | plain frame | from the characteristic's properties | head, feet | 2 |
 | Rize Remedy II | `rize_remedy_ii` | `rize_remedy_ii` | 96-bit | plain frame | from the characteristic's properties | head, feet, lumbar | 3 |
+| Jordan's Restful | `restful` | `restful` | 96-bit | plain frame | from the characteristic's properties | head, feet, lumbar | 2 |
 | OKIN Motion Bed | `okin_motionbed` | `okin_motionbed` | 32-bit | fixed E5 gateway envelope | with response | back, middle, legs | 2 |
 | N32 Motion Bed | `n32_motion_bed` | `n32_motion_bed` | 40-bit | plain frame | with response | back, legs, head | 3 |
 | Shuda | `shuda` | `shuda` | 40-bit | plain frame | with response | back, legs | 1 |
@@ -358,6 +361,7 @@ are unchanged.
 | Customatic Z-230 | 100 ms | entry pulse count; until release with a renewable hold | 2 STOP at 100 ms, 100 ms after the last write |
 | Customatic Z-280 | 100 ms | entry pulse count; until release with a renewable hold | 2 STOP at 100 ms, 100 ms after the last write |
 | Rize Remedy II | 100 ms | entry pulse count; until release with a renewable hold | 2 STOP at 100 ms, 100 ms after the last write |
+| Jordan's Restful | 100 ms | entry pulse count; until release with a renewable hold | 2 STOP at 100 ms, 100 ms after the last write |
 | OKIN Motion Bed | 200 ms | entry pulse count; until release with a renewable hold | 1 STOP |
 | N32 Motion Bed | 200 ms | entry pulse count; until release with a renewable hold | 1 STOP |
 | Shuda | 200 ms | entry pulse count; until release with a renewable hold | 1 STOP |
@@ -429,6 +433,7 @@ Entry pulse settings are the configured motor pulse count and delay.
 | Customatic Z-230 | held to its deadline, 2 STOP | held to its deadline, 2 STOP | held to its deadline, 2 STOP | n/a | held to its deadline, 2 STOP | n/a |
 | Customatic Z-280 | held to its deadline, 2 STOP | held to its deadline, 2 STOP | held to its deadline, 2 STOP | n/a | held to its deadline, 2 STOP | n/a |
 | Rize Remedy II | held to its deadline, 2 STOP | held to its deadline, 2 STOP | held to its deadline, 2 STOP | n/a | held to its deadline, 2 STOP | n/a |
+| Jordan's Restful | held to its deadline, 2 STOP | held to its deadline, 2 STOP | held to its deadline, 2 STOP | n/a | held to its deadline, 2 STOP | n/a |
 | OKIN Motion Bed | once, no STOP | once, no STOP | once, no STOP | n/a | once, no STOP | n/a |
 | N32 Motion Bed | once, 1 STOP | once, 1 STOP | n/a | n/a | n/a | n/a |
 | Shuda | once, 1 STOP | once, 1 STOP | 28 × 200 ms, 1 STOP | n/a | once, 1 STOP | n/a |
@@ -855,35 +860,35 @@ controls it supports; held motors send the OR of their primary words.
 | `selector_5_down` | `00000080 00000000` | Jordan's Serenity, Jordan's Tranquil | `0C 02 00 00 00 80 00 00 00 00 00 00 00 00` |
 | Flat | `08000000 00000000` | all | `0C 02 08 00 00 00 00 00 00 00 00 00 00 00` |
 | Zero-G | `00001000 00000000` | all | `0C 02 00 00 10 00 00 00 00 00 00 00 00 00` |
-| Memory 1 | `00010000 00000000` | Jordan's Serenity, Jordan's Tranquil, Customatic Z-230, Customatic Z-280 | `0C 02 00 01 00 00 00 00 00 00 00 00 00 00` |
-| TV | `00004000 00000000` | Jordan's Serenity, Customatic Z-230, Customatic Z-280 | `0C 02 00 00 40 00 00 00 00 00 00 00 00 00` |
-| Memory 2 | `00040000 00000000` | Jordan's Serenity, Jordan's Tranquil, Customatic Z-280 | `0C 02 00 04 00 00 00 00 00 00 00 00 00 00` |
+| Memory 1 | `00010000 00000000` | Jordan's Serenity, Jordan's Tranquil, Customatic Z-230, Customatic Z-280, Jordan's Restful | `0C 02 00 01 00 00 00 00 00 00 00 00 00 00` |
+| TV | `00004000 00000000` | Jordan's Serenity, Customatic Z-230, Customatic Z-280, Jordan's Restful | `0C 02 00 00 40 00 00 00 00 00 00 00 00 00` |
+| Memory 2 | `00040000 00000000` | Jordan's Serenity, Jordan's Tranquil, Customatic Z-280, Jordan's Restful | `0C 02 00 04 00 00 00 00 00 00 00 00 00 00` |
 | `save_zero_g` | `08001000 00000000` | all | `0C 02 08 00 10 00 00 00 00 00 00 00 00 00` |
-| Save memory 1 | `08010000 00000000` | Jordan's Serenity, Jordan's Tranquil, Customatic Z-230, Customatic Z-280 | `0C 02 08 01 00 00 00 00 00 00 00 00 00 00` |
-| `save_tv` | `08004000 00000000` | Jordan's Serenity, Customatic Z-230, Customatic Z-280 | `0C 02 08 00 40 00 00 00 00 00 00 00 00 00` |
-| Save memory 2 | `08040000 00000000` | Jordan's Serenity, Jordan's Tranquil, Customatic Z-280 | `0C 02 08 04 00 00 00 00 00 00 00 00 00 00` |
+| Save memory 1 | `08010000 00000000` | Jordan's Serenity, Jordan's Tranquil, Customatic Z-230, Customatic Z-280, Jordan's Restful | `0C 02 08 01 00 00 00 00 00 00 00 00 00 00` |
+| `save_tv` | `08004000 00000000` | Jordan's Serenity, Customatic Z-230, Customatic Z-280, Jordan's Restful | `0C 02 08 00 40 00 00 00 00 00 00 00 00 00` |
+| Save memory 2 | `08040000 00000000` | Jordan's Serenity, Jordan's Tranquil, Customatic Z-280, Jordan's Restful | `0C 02 08 04 00 00 00 00 00 00 00 00 00 00` |
 | `massage_head_cycle` | `00000800 00000000` | Jordan's Serenity, Jordan's Tranquil, Customatic Z-280 | `0C 02 00 00 08 00 00 00 00 00 00 00 00 00` |
 | `massage_foot_cycle` | `00000400 00000000` | Jordan's Serenity, Jordan's Tranquil, Customatic Z-280 | `0C 02 00 00 04 00 00 00 00 00 00 00 00 00` |
-| `massage_mode_cycle` | `10000000 00000000` | Jordan's Serenity, Jordan's Tranquil, Customatic Z-230, Customatic Z-280 | `0C 02 10 00 00 00 00 00 00 00 00 00 00 00` |
-| `massage_timer_cycle` | `00000200 00000000` | Jordan's Serenity, Jordan's Tranquil, Customatic Z-230, Customatic Z-280 | `0C 02 00 00 02 00 00 00 00 00 00 00 00 00` |
-| Massage toggle | `00000100 00000000` | Jordan's Serenity, Jordan's Tranquil, Customatic Z-230, Customatic Z-280 | `0C 02 00 00 01 00 00 00 00 00 00 00 00 00` |
+| `massage_mode_cycle` | `10000000 00000000` | Jordan's Serenity, Jordan's Tranquil, Customatic Z-230, Customatic Z-280, Jordan's Restful | `0C 02 10 00 00 00 00 00 00 00 00 00 00 00` |
+| `massage_timer_cycle` | `00000200 00000000` | Jordan's Serenity, Jordan's Tranquil, Customatic Z-230, Customatic Z-280, Jordan's Restful | `0C 02 00 00 02 00 00 00 00 00 00 00 00 00` |
+| Massage toggle | `00000100 00000000` | Jordan's Serenity, Jordan's Tranquil, Customatic Z-230, Customatic Z-280, Jordan's Restful | `0C 02 00 00 01 00 00 00 00 00 00 00 00 00` |
 | Under-bed light toggle | `00020000 00000000` | all | `0C 02 00 02 00 00 00 00 00 00 00 00 00 00` |
-| `leisure` | `00002000 00000000` | Jordan's Serenity | `0C 02 00 00 20 00 00 00 00 00 00 00 00 00` |
+| `leisure` | `00002000 00000000` | Jordan's Serenity, Jordan's Restful | `0C 02 00 00 20 00 00 00 00 00 00 00 00 00` |
 | Anti-snore / Snore | `00008000 00000000` | all | `0C 02 00 00 80 00 00 00 00 00 00 00 00 00` |
-| Massage wave 1 | `00000000 00080000` | Jordan's Serenity, Jordan's Tranquil, Rize Remedy II | `0C 02 00 00 00 00 00 08 00 00 00 00 00 00` |
-| Massage wave 2 | `00000000 00100000` | Jordan's Serenity, Jordan's Tranquil, Rize Remedy II | `0C 02 00 00 00 00 00 10 00 00 00 00 00 00` |
-| Massage wave 3 | `00000000 00200000` | Jordan's Serenity, Jordan's Tranquil, Rize Remedy II | `0C 02 00 00 00 00 00 20 00 00 00 00 00 00` |
-| Massage off | `02000000 00000000` | Jordan's Serenity, Jordan's Tranquil, Rize Remedy II | `0C 02 02 00 00 00 00 00 00 00 00 00 00 00` |
-| Light on | `00000000 00000040` | Jordan's Serenity, Jordan's Tranquil, Rize Remedy II | `0C 02 00 00 00 00 00 00 00 40 00 00 00 00` |
-| Light off | `00000000 00000080` | Jordan's Serenity, Jordan's Tranquil, Rize Remedy II | `0C 02 00 00 00 00 00 00 00 80 00 00 00 00` |
+| Massage wave 1 | `00000000 00080000` | Jordan's Serenity, Jordan's Tranquil, Rize Remedy II, Jordan's Restful | `0C 02 00 00 00 00 00 08 00 00 00 00 00 00` |
+| Massage wave 2 | `00000000 00100000` | Jordan's Serenity, Jordan's Tranquil, Rize Remedy II, Jordan's Restful | `0C 02 00 00 00 00 00 10 00 00 00 00 00 00` |
+| Massage wave 3 | `00000000 00200000` | Jordan's Serenity, Jordan's Tranquil, Rize Remedy II, Jordan's Restful | `0C 02 00 00 00 00 00 20 00 00 00 00 00 00` |
+| Massage off | `02000000 00000000` | Jordan's Serenity, Jordan's Tranquil, Rize Remedy II, Jordan's Restful | `0C 02 02 00 00 00 00 00 00 00 00 00 00 00` |
+| Light on | `00000000 00000040` | Jordan's Serenity, Jordan's Tranquil, Rize Remedy II, Jordan's Restful | `0C 02 00 00 00 00 00 00 00 40 00 00 00 00` |
+| Light off | `00000000 00000080` | Jordan's Serenity, Jordan's Tranquil, Rize Remedy II, Jordan's Restful | `0C 02 00 00 00 00 00 00 00 80 00 00 00 00` |
 | Lounge / Reading | `00002000 00000000` | Jordan's Tranquil, Rize Remedy II | `0C 02 00 00 20 00 00 00 00 00 00 00 00 00` |
 | `save_lounge` | `08002000 00000000` | Jordan's Tranquil, Rize Remedy II | `0C 02 08 00 20 00 00 00 00 00 00 00 00 00` |
+| Lumbar up | `00000010 00000000` | Rize Remedy II, Jordan's Restful | `0C 02 00 00 00 10 00 00 00 00 00 00 00 00` |
+| Lumbar down | `00000020 00000000` | Rize Remedy II, Jordan's Restful | `0C 02 00 00 00 20 00 00 00 00 00 00 00 00` |
+| Massage intensity up | `00000C00 00000000` | Rize Remedy II, Jordan's Restful | `0C 02 00 00 0C 00 00 00 00 00 00 00 00 00` |
 | STOP / release | `00000000 00000000` | Rize Remedy II | `0C 02 00 00 00 00 00 00 00 00 00 00 00 00` |
-| Lumbar up | `00000010 00000000` | Rize Remedy II | `0C 02 00 00 00 10 00 00 00 00 00 00 00 00` |
-| Lumbar down | `00000020 00000000` | Rize Remedy II | `0C 02 00 00 00 20 00 00 00 00 00 00 00 00` |
 | Incline | `00004000 00000000` | Rize Remedy II | `0C 02 00 00 40 00 00 00 00 00 00 00 00 00` |
 | `save_incline` | `08004000 00000000` | Rize Remedy II | `0C 02 08 00 40 00 00 00 00 00 00 00 00 00` |
-| Massage intensity up | `00000C00 00000000` | Rize Remedy II | `0C 02 00 00 0C 00 00 00 00 00 00 00 00 00` |
 | Massage intensity down | `01800000 00000000` | Rize Remedy II | `0C 02 01 80 00 00 00 00 00 00 00 00 00 00` |
 | `head_foot_up` | `00000005 00000000` | Customatic Z-230 | `0C 02 00 00 00 05 00 00 00 00 00 00 00 00` |
 | `head_foot_down` | `0000000A 00000000` | Customatic Z-230 | `0C 02 00 00 00 0A 00 00 00 00 00 00 00 00` |
@@ -1453,10 +1458,10 @@ command characteristic, and **Configure** no longer changes the app.
 | Z-Series app with the Z-230 model | [Z-Series](#customatic-z-series), that model's page |
 | Z-Series app with the Z-280 model | [Z-Series](#customatic-z-series), that model's page |
 
-The Jordan's row asks the same way between [Serenity](#jordans-serenity) and
-[Tranquil](#jordans-tranquil). An app's own row in the app question, such as
+The Jordan's row asks which app you use: [Serenity](#jordans-serenity),
+[Tranquil](#jordans-tranquil) or [Restful](#jordans-restful). An app's own row in the app question, such as
 Tranquil, is not asked again. For an existing bed, open the entry's three-dot menu and **Reconfigure** (see [Changing the app or layout](../CONFIGURATION.md#changing-the-bed-type-app-or-layout-of-an-existing-bed)); **Keep the detected or saved controls** leaves the entry as it is. A change first checks the link for the new app's exact GATT roles, then a review lists the added and removed controls before **Apply this change** saves it. **Configure** keeps routine settings; the app and model change only through **Reconfigure**. The Customatic apps check their one command
-characteristic; Z-Series, Serenity and Tranquil check their command and
+characteristic; Z-Series, Serenity, Tranquil and Restful check their command and
 notification characteristics.
 
 #### Controls
@@ -3989,7 +3994,7 @@ secondary field (both big-endian), then four zero bytes
 
 ##### Detection / Setup
 
-- Select **Serenity and Tranquil apps · Jordan's** manually and answer **Jordan's
+- Select **Serenity, Tranquil and Restful apps · Jordan's** manually and answer **Jordan's
   Serenity app**. Shared OKIN advertisements or GATT UUIDs
   do not identify this app.
 - Initial app discovery scans without a service filter and accepts names whose
@@ -4002,7 +4007,7 @@ secondary field (both big-endian), then four zero bytes
 
 ##### Home Assistant setup
 
-Choose the **Serenity and Tranquil apps · Jordan's** row, then **Jordan's Serenity app**, for the profile based on `com.okin.bedding.serenity` 1.0.1 (2). Shared OKIN discovery and GATT UUIDs do not identify this app profile. The two named main axes use Head and Feet; additional actuator controls retain literal selector 4/5 names because app touch and voice labels disagree. Setup hides motor-count and pulse-delay fields: the app has two named axes, the additional selectors and a fixed 100 ms refresh interval. The internal named-axis count does not claim a physical actuator count. Status notifications remain active when angle sensing is disabled; this profile reports no motor position.
+Choose the **Serenity, Tranquil and Restful apps · Jordan's** row, then **Jordan's Serenity app**, for the profile based on `com.okin.bedding.serenity` 1.0.1 (2). Shared OKIN discovery and GATT UUIDs do not identify this app profile. The two named main axes use Head and Feet; additional actuator controls retain literal selector 4/5 names because app touch and voice labels disagree. Setup hides motor-count and pulse-delay fields: the app has two named axes, the additional selectors and a fixed 100 ms refresh interval. The internal named-axis count does not claim a physical actuator count. Status notifications remain active when angle sensing is disabled; this profile reports no motor position.
 
 #### Controls
 
@@ -4262,7 +4267,7 @@ policy.
 
 ##### Detection / Setup
 
-- Select **Serenity and Tranquil apps · Jordan's** manually and answer **Jordan's
+- Select **Serenity, Tranquil and Restful apps · Jordan's** manually and answer **Jordan's
   Tranquil app**. Shared OKIN names and GATT UUIDs do
   not identify this app.
 - The app always shows its Z280 remote and massage pages; the stored model
@@ -4272,7 +4277,7 @@ policy.
 
 ##### Home Assistant setup
 
-Choose the **Serenity and Tranquil apps · Jordan's** row, then **Jordan's Tranquil app**, for `com.okin.bedding.tranquil` 1.0.2 (3). The app shares OKIN discovery names and GATT UUIDs with other products, so it is not detected automatically. As with Serenity, setup hides motor-count and pulse-delay fields; the pulse count stays editable. A two-address pair must be split before either side changes to, from or between this profile and another. Notifications stay active when angle sensing is disabled; this profile reports no motor position.
+Choose the **Serenity, Tranquil and Restful apps · Jordan's** row, then **Jordan's Tranquil app**, for `com.okin.bedding.tranquil` 1.0.2 (3). The app shares OKIN discovery names and GATT UUIDs with other products, so it is not detected automatically. As with Serenity, setup hides motor-count and pulse-delay fields; the pulse count stays editable. A two-address pair must be split before either side changes to, from or between this profile and another. Notifications stay active when angle sensing is disabled; this profile reports no motor position.
 
 #### Controls
 
@@ -4415,6 +4420,69 @@ and light semantics, and notification contents.
 ###### Tranquil analysis provenance
 
 Based on Jordan's Tranquil 1.0.2 (`com.okin.bedding.tranquil`).
+
+### Jordan's Restful
+
+**App:** [Jordan's Restful](https://play.google.com/store/apps/details?id=com.okin.bedding.restful) 1.0.2 (3), `com.okin.bedding.restful`
+
+**Status:** Not yet tested on hardware
+
+#### Setup
+
+Select **Serenity, Tranquil and Restful apps · Jordan's**, then **Jordan's Restful app**.
+The app always uses its Z280 page. The shared OKIN name prefix and GATT service
+cannot identify this profile. Home Assistant checks the CST command and notification
+characteristics and selects the ATT write mode from the command characteristic's
+properties. It uses write with response when both modes are available. Restful
+requires no app-specific pairing or authentication.
+
+#### Controls
+
+- Head and feet have separate commands. Tilt and lumbar labels in the phone app
+  send identical frames in each direction. Home Assistant exposes one Lumbar
+  control for that shared input. The physical actuator is hardware-unverified.
+- Flat, Zero Gravity, Anti-Snore, TV, Lounge (the app's Leisure action), M1 and
+  M2 are separate recalls. The phone app also calls TV “incline” in voice commands.
+  M1 and M2 keep their own slot numbers.
+- Save M1, Save M2, Save Zero Gravity and Save TV each send a separate frame.
+  The dashboard card asks for confirmation. Recall and hold actions leave
+  stored presets alone.
+- The under-bed light has toggle, on and off. The app reports no light
+  state. Massage has toggle, off, combined intensity increase, mode cycle,
+  timer cycle and three direct wave choices. The app reports no intensity
+  or position feedback.
+
+See the [OKIN Bedding app keys](#okin-bedding-app-keys) for the wire commands.
+
+#### Timing
+
+See [command timing](#command-timing) for refresh and release. Movement taps use
+the configured pulse count and held controls stop at their deadline or release.
+Flat uses the app's 1.5-second timed press. Other preset and accessory taps use
+500 ms. The four save buttons use the app's five-second hold instruction.
+Release attempts stay on the connection that sent the press. STOP sends only
+neutral frames.
+
+#### Notifications
+
+The massage timer sensor uses codes 1, 2 and 3 from the current connection for
+10, 20 and 30 minutes. Other values leave the displayed duration unknown.
+Alarm-shaped notifications are recorded in raw diagnostics. The profile exposes
+no alarm or clock actions. The optional Manufacturer Name read is diagnostic
+and has no effect on capabilities. During a save, ordinary status stays in raw
+diagnostics because the byte does not identify a save or confirm persistence.
+
+#### Services
+
+Use the standard memory recall and save actions for M1 and M2. The
+`hold_control` action accepts `lumbar_up` and `lumbar_down` for the shared
+tilt/lumbar input. Use the separate save buttons for Zero Gravity and TV.
+
+#### Evidence
+
+Based on the partial static audit of Jordan's Restful 1.0.2 (3).
+Actual ATT mode, movement, massage and light behavior, and preset persistence
+still need hardware verification.
 
 ### Customatic Z-Series
 

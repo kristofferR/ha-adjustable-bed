@@ -7,6 +7,7 @@ from types import SimpleNamespace
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
+from bleak.exc import BleakError
 from homeassistant.const import CONF_ADDRESS, CONF_NAME
 from homeassistant.data_entry_flow import FlowResultType
 from homeassistant.exceptions import ServiceValidationError
@@ -22,6 +23,8 @@ from custom_components.adjustable_bed.config_flow import AdjustableBedOptionsFlo
 from custom_components.adjustable_bed.controller_factory import create_controller
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
 from custom_components.adjustable_bed.cover import AdjustableBedCover, _build_cover_description
+from custom_components.adjustable_bed.errors import BedCommandFailedError
+from custom_components.adjustable_bed.light import AdjustableBedOnOffLight, _light_entities_for
 from custom_components.adjustable_bed.number import _number_entities_for
 from custom_components.adjustable_bed.profiles.suta import service_for_name
 from tests.error_helpers import raises_key
@@ -66,6 +69,177 @@ def written(client):
 
 async def action(hass, key, **fields):
     await hass.services.async_call(const.DOMAIN, "suta", {"device_id": "bed", "action": key, **fields}, blocking=True)
+
+
+def under_bed_light(hass, target):
+    (light,) = _light_entities_for(hass, target)
+    assert isinstance(light, AdjustableBedOnOffLight)
+    light.async_write_ha_state = MagicMock()
+    return light
+
+
+@pytest.mark.parametrize("runtime", ["SUTA-B212D", "SUTA-B903", "SUTA-B205"], indirect=True)
+@pytest.mark.parametrize(("enabled", "frame"), [(True, b"AT+ENABLE=LIGHT\r\n"), (False, b"AT+DISABLE=LIGHT\r\n")])
+async def test_light_entity_and_suta_action_send_the_accepted_burst(hass, runtime, clock, enabled, frame):
+    target, client, _ = runtime
+    light = under_bed_light(hass, target)
+    assert light.is_on is None and light.assumed_state
+    assert await target.async_connect()
+    writes = []
+
+    async def record(_char, packet, *, response):
+        assert response is True
+        writes.append((round(clock[0] * 1000), packet))
+
+    client.write_gatt_char.side_effect = record
+    for command in (
+        light.async_turn_on if enabled else light.async_turn_off,
+        lambda: action(hass, "light_enable" if enabled else "light_disable"),
+    ):
+        start = round(clock[0] * 1000)
+        await command()
+        assert writes == [(start + 100, frame), (start + 200, frame)]
+        assert round(clock[0] * 1000) == start + 200
+        writes.clear()
+    assert light.is_on is enabled
+
+
+@pytest.mark.parametrize("runtime", ["SUTA-B903"], indirect=True)
+async def test_light_replacement_waits_for_the_in_flight_write_and_cancels_the_repeat(hass, runtime, clock):
+    target, client, _ = runtime
+    light = under_bed_light(hass, target)
+    assert await target.async_connect()
+    first_write, finish = asyncio.Event(), asyncio.Event()
+    writes = []
+    start = clock[0]
+
+    async def write(_char, frame, *, response):
+        writes.append((round((clock[0] - start) * 1000), frame))
+        if not first_write.is_set():
+            first_write.set()
+            await finish.wait()
+
+    client.write_gatt_char.side_effect = write
+    turn_on = asyncio.create_task(light.async_turn_on())
+    await asyncio.wait_for(first_write.wait(), 1)
+    turn_off = asyncio.create_task(light.async_turn_off())
+    await asyncio.sleep(0)
+    assert writes == [(100, b"AT+ENABLE=LIGHT\r\n")]
+    clock[0] += 0.15
+    finish.set()
+    await asyncio.gather(turn_on, turn_off)
+    assert writes == [
+        (100, b"AT+ENABLE=LIGHT\r\n"),
+        (350, b"AT+DISABLE=LIGHT\r\n"),
+        (450, b"AT+DISABLE=LIGHT\r\n"),
+    ]
+    assert light.is_on is False
+
+
+@pytest.mark.parametrize("runtime", ["SUTA-B903"], indirect=True)
+async def test_light_repeat_uses_the_submission_clock_when_the_first_write_is_slow(hass, runtime, clock):
+    target, client, _ = runtime
+    light = under_bed_light(hass, target)
+    assert await target.async_connect()
+    stamps = []
+    start = clock[0]
+
+    async def write(_char, _frame, *, response):
+        stamps.append(round((clock[0] - start) * 1000))
+        if len(stamps) == 1:
+            clock[0] += 0.15
+
+    client.write_gatt_char.side_effect = write
+    await light.async_turn_on()
+    assert stamps == [100, 250]
+    assert light.is_on is True
+
+
+@pytest.mark.parametrize("runtime", ["SUTA-B903"], indirect=True)
+@pytest.mark.parametrize("fail_at", [1, 2])
+async def test_light_attempts_both_writes_and_does_not_show_a_partial_result(hass, runtime, fail_at):
+    target, client, _ = runtime
+    light = under_bed_light(hass, target)
+    assert await target.async_connect()
+    attempts = 0
+
+    async def write(_char, _frame, *, response):
+        nonlocal attempts
+        attempts += 1
+        if attempts == fail_at:
+            raise BleakError("light write failed")
+
+    client.write_gatt_char.side_effect = write
+    with pytest.raises(BedCommandFailedError, match="light write failed"):
+        await light.async_turn_on()
+    assert written(client) == [b"AT+ENABLE=LIGHT\r\n"] * 2
+    assert light.is_on is None
+
+
+@pytest.mark.parametrize("runtime", ["SUTA-B903"], indirect=True)
+@pytest.mark.parametrize(("completed", "expected"), [(0, True), (1, None), (2, False)])
+async def test_family_light_action_updates_the_entity_from_delivery(hass, runtime, completed, expected):
+    target, client, _ = runtime
+    light = under_bed_light(hass, target)
+    target.register_controller_state_callback(light._handle_controller_state_update)
+    await light.async_turn_on()
+    assert light.is_on is True
+    client.write_gatt_char.reset_mock()
+    client.write_gatt_char.side_effect = [None] * completed + [BleakError("light write failed")] * (2 - completed)
+
+    if completed == 2:
+        await action(hass, "light_disable")
+    else:
+        with pytest.raises(BedCommandFailedError, match="light write failed"):
+            await action(hass, "light_disable")
+
+    assert written(client) == [b"AT+DISABLE=LIGHT\r\n"] * 2
+    assert light.is_on is expected
+
+
+@pytest.mark.parametrize("runtime", ["SUTA-B903"], indirect=True)
+@pytest.mark.parametrize("write_count", [0, 1])
+async def test_stop_cancels_pending_light_writes(hass, runtime, monkeypatch, write_count):
+    target, client, _ = runtime
+    light = under_bed_light(hass, target)
+    await light.async_turn_on()
+    client.write_gatt_char.reset_mock()
+    waiting = asyncio.Event()
+    original_pause = bed.pause
+
+    async def pause(seconds, cancel):
+        if not waiting.is_set() and len(written(client)) == write_count:
+            waiting.set()
+            await cancel.wait()
+            return True
+        return await original_pause(seconds, cancel)
+
+    monkeypatch.setattr(bed, "pause", pause)
+    turn_off = asyncio.create_task(light.async_turn_off())
+    await asyncio.wait_for(waiting.wait(), 1)
+    await target.async_stop_command()
+    await turn_off
+    assert written(client) == [b"AT+DISABLE=LIGHT\r\n"] * write_count + [b"AT+CTRL=BOTH STOP\r\n"] * 2
+    assert light.is_on is (None if write_count else True)
+
+
+@pytest.mark.parametrize("runtime", ["SUTA-B903"], indirect=True)
+async def test_light_never_sends_the_second_write_on_a_replacement_session(hass, runtime):
+    target, client, _ = runtime
+    light = under_bed_light(hass, target)
+    assert await target.async_connect()
+    controller = target.controller
+    assert isinstance(controller, bed.SutaController)
+
+    async def replace_session(_char, _frame, *, response):
+        controller.on_disconnect()
+        await controller.start_notify()
+
+    client.write_gatt_char.side_effect = replace_session
+    with pytest.raises(ConnectionError, match="SUTA physical session changed"):
+        await light.async_turn_on()
+    assert written(client) == [b"AT+ENABLE=LIGHT\r\n"]
+    assert light.is_on is None
 
 
 async def test_actual_factory_cover_timed_hold_and_saved_entity(hass, runtime):

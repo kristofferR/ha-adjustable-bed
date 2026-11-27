@@ -19,6 +19,7 @@ from custom_components.adjustable_bed.beds.richmat_classic import dreamlab as be
 from custom_components.adjustable_bed.beds.richmat_classic.discovery import matching_apps
 from custom_components.adjustable_bed.beds.richmat_classic.requests import Request
 from custom_components.adjustable_bed.beds.richmat_classic.transport import ROUTES, Transport
+from custom_components.adjustable_bed.button import ControllerActionButton
 from custom_components.adjustable_bed.const import CONF_RICHMAT_CLASSIC_THIRD_SERVICE, SIDE_RIGHT
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
 from custom_components.adjustable_bed.profiles.dreamlab import layout_from_name, scan_matches
@@ -90,9 +91,20 @@ def test_discovery_requires_receiver_but_keeps_existing_candidates():
     assert not scan_matches("B6RU") and not scan_matches("ZR90")
 
 
-@pytest.mark.parametrize("index", range(4))
-async def test_named_route_and_startup(index):
-    ctrl, coord = controller("FDRM")
+@pytest.mark.parametrize(
+    ("index", "layout", "alarm_probe"),
+    [(index, "FDRM", True) for index in range(len(ROUTES))]
+    + [
+        (index, layout, alarm_probe)
+        for layout, alarm_probe in (("YFRM", False), ("YGRM", True), ("BRRM", True))
+        for index in (0, 2)  # WiLinke and Nordic UART
+    ],
+)
+async def test_named_route_and_startup(index, layout, alarm_probe):
+    ctrl, coord = controller(layout)
+    ctrl._session = ctrl._wire = None
+    state = {}
+    coord.handle_controller_state_updates.side_effect = state_writer(state)
     uuid, tx, rx, wire = ROUTES[index]
     send = SimpleNamespace(uuid=tx, properties=["write-without-response"], handle=1)
     notify = SimpleNamespace(uuid=rx, properties=["indicate"], handle=2)
@@ -101,11 +113,11 @@ async def test_named_route_and_startup(index):
     await ctrl.start_notify()
     assert ctrl._session.wire == wire
     assert coord.client.start_notify.await_args.args[0] is notify
-    assert packets(coord) == (["6e02010071"] if wire == "FRAMED" else []) + [
-        "6e08010178",
-        "6e0a000179",
-        "6e1a000088",
-    ]
+    startup = ["6e02010071"] if wire == "FRAMED" else []
+    probes = ["6e08010178"] if alarm_probe else []
+    assert packets(coord) == startup + probes + ["6e0a000179", "6e1a000088"]
+    assert state[bed.PRESS_MODE] is None
+    assert ctrl.persisted_app_state["hold"] is None
     assert all(
         call.kwargs["response"] is False for call in coord.client.write_gatt_char.await_args_list
     )
@@ -189,22 +201,129 @@ async def test_held_write_failure_still_attempts_end():
     assert packets(coord) == ["6e01002493", "6e01006edd"]
 
 
-async def test_selector_writes_and_gating():
-    ctrl, coord = controller("YFRM")
+@pytest.mark.parametrize(
+    ("wire", "common", "additional", "end"),
+    [
+        (
+            "FRAMED",
+            ("6e01002e9d", "6e01002f9e", "6e010031a0"),
+            ("6e010058c7", "6e010045b4", "6e010046b5"),
+            "6e01006edd",
+        ),
+        ("RAW", ("2e", "2f", "31"), ("58", "45", "46"), "6e"),
+    ],
+)
+@pytest.mark.parametrize(
+    ("layout", "nodes"),
+    [("YFRM", (8, 9, 13)), ("YGRM", (15, 17, 6, 16, 8, 12)), ("BRRM", (15, 17, 6, 16, 8, 12))],
+)
+async def test_default_preset_and_flat_button_presses(layout, nodes, wire, common, additional, end):
+    ctrl, coord = controller(layout, wire)
+    session = ctrl._session
+    ctrl._session = ctrl._wire = None
+    assert all(ctrl.controller_button_available(f"dreamlab_{node}") for node in nodes)
+    ctrl._session, ctrl._wire = session, wire
+    coord.capability_controller = ctrl
+    coord.controller_side = coord.entity_side = None
+
+    async def execute(press_fn, **kwargs):
+        await press_fn(ctrl)
+
+    coord.async_execute_controller_command = AsyncMock(side_effect=execute)
+    specs = {spec.key: spec for spec in ctrl.controller_button_specs}
+    expected = common if layout == "YFRM" else common + additional
+    for node, frame in zip(nodes, expected, strict=True):
+        key = f"dreamlab_{node}"
+        action = ControllerActionButton(coord, specs[key])
+        assert action.available
+        assert "held_control" not in action.extra_state_attributes
+        assert ctrl.execution.hold_for(key) is None
+        await action.async_press()
+        with pytest.raises(ServiceValidationError):
+            await ctrl.hold_control(key, 200)
+        assert packets(coord) == [frame, end]
+        coord.client.write_gatt_char.reset_mock()
+    assert ctrl.persisted_app_state["hold"] is None
+
+
+@pytest.mark.parametrize(
+    ("wire", "release", "hold", "recall", "save", "end"),
+    [
+        ("FRAMED", "6e01002190", "6e01002291", "6e01002e9d", "6e01002b9a", "6e01006edd"),
+        ("RAW", "21", "22", "2e", "2b", "6e"),
+    ],
+)
+async def test_selector_writes_and_gating(wire, release, hold, recall, save, end, clock):
+    ctrl, coord = controller("YFRM", wire)
+    coord.capability_controller = ctrl
+    coord.controller_side = coord.entity_side = None
+    specs = {spec.key: spec for spec in ctrl.controller_button_specs}
+    memory = ControllerActionButton(coord, specs["dreamlab_8"])
+    flat = ControllerActionButton(coord, specs["dreamlab_13"])
+    save_long = ControllerActionButton(coord, specs["dreamlab_8_long"])
+    save_separate = ControllerActionButton(coord, specs["dreamlab_10"])
     select = next(
         spec for spec in ctrl.controller_select_specs if spec.key == "dreamlab_press_mode"
     )
-    assert not ctrl.controller_button_available("dreamlab_8")
-    await select.select_fn(ctrl, "release")
-    assert packets(coord) == ["6e01002190", "6e01006edd"]
-    assert ctrl.controller_button_available("dreamlab_8_long")
-    assert not ctrl.controller_button_available("dreamlab_10")
+
+    assert memory.available and save_long.available and not save_separate.available
+    assert "held_control" not in memory.extra_state_attributes
+    assert "held_control" not in flat.extra_state_attributes
+    assert save_long.extra_state_attributes["requires_confirmation"] is True
+    with pytest.raises(ServiceValidationError):
+        await specs["dreamlab_10"].press_fn(ctrl)
+    await specs["dreamlab_8_long"].press_fn(ctrl)
+    assert packets(coord) == [save, end]
+    assert clock[0] == pytest.approx(3.15)
+
     await select.select_fn(ctrl, "hold")
-    assert packets(coord)[-2:] == ["6e01002291", "6e01006edd"]
-    assert not ctrl.controller_button_available("dreamlab_8_long")
-    assert ctrl.controller_button_available("dreamlab_10")
-    assert "dreamlab_8" in ctrl.held_control_options
-    assert "dreamlab_10" not in ctrl.held_control_options
+    assert packets(coord)[-2:] == [hold, end]
+    assert memory.available and not save_long.available and save_separate.available
+    assert memory.extra_state_attributes["held_control"] == "dreamlab_8"
+    assert memory.extra_state_attributes["hold_lease_mode"] == "stream"
+    assert flat.extra_state_attributes["held_control"] == "dreamlab_13"
+    assert "held_control" not in save_separate.extra_state_attributes
+    assert save_separate.extra_state_attributes["requires_confirmation"] is True
+    with pytest.raises(ServiceValidationError):
+        await specs["dreamlab_8_long"].press_fn(ctrl)
+    await specs["dreamlab_10"].press_fn(ctrl)
+    assert packets(coord)[-2:] == [save, end]
+
+    restored, restored_coord = controller("YFRM", wire)
+    restored.restore_persisted_app_state(ctrl.persisted_app_state)
+    assert restored.controller_button_available("dreamlab_10")
+    await restored.hold_control("dreamlab_8", 200)
+    assert packets(restored_coord) == [recall, recall, end]
+
+    await select.select_fn(ctrl, "release")
+    assert packets(coord) == [save, end, hold, end, save, end, release, end]
+    assert memory.available and save_long.available and not save_separate.available
+    assert "held_control" not in memory.extra_state_attributes
+    restored.restore_persisted_app_state(ctrl.persisted_app_state)
+    assert restored.persisted_app_state["hold"] is False
+    assert restored.controller_button_available("dreamlab_8_long")
+    assert not restored.controller_button_available("dreamlab_10")
+
+
+@pytest.mark.parametrize(
+    ("layout", "memory", "save", "flat", "flat_held"),
+    [
+        ("APRM", "dreamlab_15", "dreamlab_18", "dreamlab_6", False),
+        ("AQRM", "dreamlab_8", "dreamlab_10", "dreamlab_13", True),
+    ],
+)
+async def test_selector_does_not_reassign_fixed_gestures(layout, memory, save, flat, flat_held):
+    ctrl, coord = controller(layout, "RAW")
+    assert ctrl.controller_button_available(save)
+    assert memory in ctrl.held_control_options
+    assert (flat in ctrl.held_control_options) is flat_held
+
+    await ctrl.execute_action(3)  # Hold
+
+    assert packets(coord) == ["22", "6e"]
+    assert ctrl.controller_button_available(save)
+    assert memory in ctrl.held_control_options
+    assert (flat in ctrl.held_control_options) is flat_held
 
 
 async def test_raw_layout_selectors_and_programming():

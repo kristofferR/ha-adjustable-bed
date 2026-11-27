@@ -2343,6 +2343,7 @@ PROPERTY_ROUTES: tuple[str, ...] = (
     "richmat",
     "richmat_classic_apps",
     "richmat_idealbed:model_3i",
+    "restful",
     "serenity",
     "svane",
     "timotion_ahf",
@@ -2908,6 +2909,10 @@ async def _capture(
         controller = await _build(scenario, FakeClient(recorder, layout, scenario.replies))
         commands = {"connect": await _connect(controller, recorder, clock)}
         plan = plan_commands(controller)
+        if scenario.bed_type == "suta" and controller.light_state_is_assumed:
+            # Capture the new light bursts after the existing commands so the
+            # virtual clock reaches their movement deadlines at the same times.
+            plan.sort(key=lambda command: command.name in {"lights_on", "lights_off"})
         for command in plan:
             result = await _run_command(controller, recorder, clock, command)
             # A cover that emits exactly what the matching move call did points to it.

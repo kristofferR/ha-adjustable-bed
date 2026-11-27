@@ -29,7 +29,7 @@ are not yet tested on hardware.
 | Presets | By model, including named conversion actions | By model |
 | Massage | P1 zones by model (head, foot and overall level numbers, 0-3) or MOON side controls (left and right intensity numbers, 1-3, and left and right massage timer selects, 10, 20 or 30 minutes) | Head/Foot timers and shared level |
 | Fans | F260 app steps | Unavailable |
-| Lights | Some layouts only | B202 and B903 |
+| Lights | On/off on B212D, B801, B903, M205 and M666 panels | B202 and B903 |
 | Local clock / alarm | P1 date, list, set and disable | Unavailable |
 | Heating | TEMP power, light, side setpoint and timer | Unavailable |
 | Split sides | MOON and TEMP: each control names its side, and actions that need one take `logical_side`; two paired beds each keep their own name | Two addresses on supported primary models |
@@ -167,6 +167,8 @@ and a 54 43 suffix. MOON and TEMP share framing but have separate parsers.
 | MattressControllerB212DFragment | ctrl_foot_up | `41 54 2B 43 54 52 4C 3D 42 4F 54 48 20 46 4F 4F 54 20 55 50 0D 0A` |
 | MattressControllerB212DFragment | ctrl_two_down | `41 54 2B 43 54 52 4C 3D 42 4F 54 48 20 54 57 4F 20 44 4F 57 4E 0D 0A` |
 | MattressControllerB212DFragment | ctrl_two_up | `41 54 2B 43 54 52 4C 3D 42 4F 54 48 20 54 57 4F 20 55 50 0D 0A` |
+| MattressControllerB212DFragment | light_disable | `41 54 2B 44 49 53 41 42 4C 45 3D 4C 49 47 48 54 0D 0A` |
+| MattressControllerB212DFragment | light_enable | `41 54 2B 45 4E 41 42 4C 45 3D 4C 49 47 48 54 0D 0A` |
 | MattressControllerB212DFragment | mass_foot_dt 00 | `41 54 2B 4D 41 53 53 3D 42 4F 54 48 20 46 4F 4F 54 20 44 54 30 30 0D 0A` |
 | MattressControllerB212DFragment | mass_foot_dt 20 | `41 54 2B 4D 41 53 53 3D 42 4F 54 48 20 46 4F 4F 54 20 44 54 32 30 0D 0A` |
 | MattressControllerB212DFragment | mass_foot_dt 33 | `41 54 2B 4D 41 53 53 3D 42 4F 54 48 20 46 4F 4F 54 20 44 54 33 33 0D 0A` |
@@ -478,6 +480,8 @@ and a 54 43 suffix. MOON and TEMP share framing but have separate parsers.
 | MattressControllerB903Fragment | ctrl_head_up | `41 54 2B 43 54 52 4C 3D 42 4F 54 48 20 48 45 41 44 20 55 50 0D 0A` |
 | MattressControllerB903Fragment | ctrl_tl_down | `41 54 2B 43 54 52 4C 3D 42 4F 54 48 20 54 2F 4C 20 44 4F 57 4E 0D 0A` |
 | MattressControllerB903Fragment | ctrl_tl_up | `41 54 2B 43 54 52 4C 3D 42 4F 54 48 20 54 2F 4C 20 55 50 0D 0A` |
+| MattressControllerB903Fragment | light_disable | `41 54 2B 44 49 53 41 42 4C 45 3D 4C 49 47 48 54 0D 0A` |
+| MattressControllerB903Fragment | light_enable | `41 54 2B 45 4E 41 42 4C 45 3D 4C 49 47 48 54 0D 0A` |
 | MattressControllerB903Fragment | mass_foot_dt 00 | `41 54 2B 4D 41 53 53 3D 42 4F 54 48 20 46 4F 4F 54 20 44 54 30 30 0D 0A` |
 | MattressControllerB903Fragment | mass_foot_dt 20 | `41 54 2B 4D 41 53 53 3D 42 4F 54 48 20 46 4F 4F 54 20 44 54 32 30 0D 0A` |
 | MattressControllerB903Fragment | mass_foot_dt 33 | `41 54 2B 4D 41 53 53 3D 42 4F 54 48 20 46 4F 4F 54 20 44 54 33 33 0D 0A` |
@@ -582,6 +586,8 @@ and a 54 43 suffix. MOON and TEMP share framing but have separate parsers.
 | MattressControllerM205Fragment | ctrl_foot_up | `41 54 2B 43 54 52 4C 3D 42 4F 54 48 20 46 4F 4F 54 20 55 50 0D 0A` |
 | MattressControllerM205Fragment | ctrl_two_down | `41 54 2B 43 54 52 4C 3D 42 4F 54 48 20 54 57 4F 20 44 4F 57 4E 0D 0A` |
 | MattressControllerM205Fragment | ctrl_two_up | `41 54 2B 43 54 52 4C 3D 42 4F 54 48 20 54 57 4F 20 55 50 0D 0A` |
+| MattressControllerM205Fragment | light_disable | `41 54 2B 44 49 53 41 42 4C 45 3D 4C 49 47 48 54 0D 0A` |
+| MattressControllerM205Fragment | light_enable | `41 54 2B 45 4E 41 42 4C 45 3D 4C 49 47 48 54 0D 0A` |
 | MattressControllerM205Fragment | mode_both_m1 | `41 54 2B 4D 4F 44 45 3D 42 4F 54 48 20 4D 31 0D 0A` |
 | MattressControllerM205Fragment | mode_both_m2 | `41 54 2B 4D 4F 44 45 3D 42 4F 54 48 20 4D 32 0D 0A` |
 | MattressControllerM205Fragment | mode_flat | `41 54 2B 4D 4F 44 45 3D 42 4F 54 48 20 46 4C 41 54 0D 0A` |
@@ -1014,6 +1020,8 @@ No default mode is invented from a shared UUID or parser.
 | MattressControllerB212DFragment | 150 | 3 | ctrl_foot_up | 1 / 0 / 0 | GlobalScope |
 | MattressControllerB212DFragment | 150 | 3 | ctrl_two_down | 1 / 0 / 0 | GlobalScope |
 | MattressControllerB212DFragment | 150 | 3 | ctrl_two_up | 1 / 0 / 0 | GlobalScope |
+| MattressControllerB212DFragment | 150 | 3 | light_disable | 2 / 100 / 100 | VM (DeviceControlVM.O) |
+| MattressControllerB212DFragment | 150 | 3 | light_enable | 2 / 100 / 100 | VM (DeviceControlVM.O) |
 | MattressControllerB212DFragment | 150 | 3 | mass_foot_dt | 2 / 100 / 100 | GlobalScope |
 | MattressControllerB212DFragment | 150 | 3 | mass_foot_lv | 1 / 100 / 100 | GlobalScope |
 | MattressControllerB212DFragment | 150 | 3 | mass_head_dt | 2 / 100 / 100 | GlobalScope |
@@ -1235,6 +1243,8 @@ No default mode is invented from a shared UUID or parser.
 | MattressControllerB903Fragment | 150 | 3 | ctrl_head_up | 1 / 0 / 0 | GlobalScope |
 | MattressControllerB903Fragment | 150 | 3 | ctrl_tl_down | 1 / 0 / 0 | GlobalScope |
 | MattressControllerB903Fragment | 150 | 3 | ctrl_tl_up | 1 / 0 / 0 | GlobalScope |
+| MattressControllerB903Fragment | 150 | 3 | light_disable | 2 / 100 / 100 | VM (DeviceControlVM.O) |
+| MattressControllerB903Fragment | 150 | 3 | light_enable | 2 / 100 / 100 | VM (DeviceControlVM.O) |
 | MattressControllerB903Fragment | 150 | 3 | mass_foot_dt | 2 / 100 / 100 | GlobalScope |
 | MattressControllerB903Fragment | 150 | 3 | mass_foot_lv | 1 / 100 / 100 | GlobalScope |
 | MattressControllerB903Fragment | 150 | 3 | mass_head_dt | 2 / 100 / 100 | GlobalScope |
@@ -1303,6 +1313,8 @@ No default mode is invented from a shared UUID or parser.
 | MattressControllerM205Fragment | 150 | 3 | ctrl_foot_up | 1 / 0 / 0 | GlobalScope |
 | MattressControllerM205Fragment | 150 | 3 | ctrl_two_down | 1 / 0 / 0 | GlobalScope |
 | MattressControllerM205Fragment | 150 | 3 | ctrl_two_up | 1 / 0 / 0 | GlobalScope |
+| MattressControllerM205Fragment | 150 | 3 | light_disable | 2 / 100 / 100 | VM (DeviceControlVM.O) |
+| MattressControllerM205Fragment | 150 | 3 | light_enable | 2 / 100 / 100 | VM (DeviceControlVM.O) |
 | MattressControllerM205Fragment | 150 | 3 | mode_both_m1 | 1 / 0 / 0 | VM |
 | MattressControllerM205Fragment | 150 | 3 | mode_both_m2 | 1 / 0 / 0 | VM |
 | MattressControllerM205Fragment | 150 | 3 | mode_flat | 1 / 0 / 0 | VM |
@@ -1514,8 +1526,14 @@ it performs no phone sensing or background reconnection.
 
 #### Light schedules
 
-The app does not fully specify the B212D, B903 and M205 light on/off
-schedules, so those six controls are withheld.
+On B212D (`SUTA-B212*`), B903 (`SUTA-B903*`) and M205 (`SUTA-B205*`), the
+under-bed light and the `light_enable` and `light_disable` SUTA actions each
+send two identical CRLF-terminated frames. The app schedules each write 100 ms
+apart, starting 100 ms after the action begins, with no trailing delay or
+release frame. Home Assistant sends both on the same connection. A slow GATT
+write can delay the second. The light starts unknown and shows its last
+commanded state as assumed after both writes complete. Physical light behavior
+on these panels still needs hardware testing.
 
 ### trueMotion
 
