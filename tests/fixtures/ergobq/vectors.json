@@ -1,0 +1,188 @@
+[
+  {
+    "id": "p1-stop",
+    "protocol": "P1",
+    "action": "motor gesture release / STOP",
+    "inputs": {
+      "command": 4,
+      "payload_hex": "0501000101"
+    },
+    "expected_bytes": "55aa000400050501000101813c"
+  },
+  {
+    "id": "p1-light-on",
+    "protocol": "P1",
+    "action": "underbed light on",
+    "inputs": {
+      "command": 4,
+      "payload_hex": "3201000101"
+    },
+    "expected_bytes": "55aa00040005320100010145c9"
+  },
+  {
+    "id": "p1-lock-on",
+    "protocol": "P1",
+    "action": "child lock on",
+    "inputs": {
+      "command": 4,
+      "payload_hex": "1e01000101"
+    },
+    "expected_bytes": "55aa000400051e010001018358"
+  },
+  {
+    "id": "p1-head15",
+    "protocol": "P1",
+    "action": "head DP1 target 15",
+    "inputs": {
+      "command": 4,
+      "payload_hex": "010200040000000f"
+    },
+    "expected_bytes": "55aa00040008010200040000000fc747"
+  },
+  {
+    "id": "p1-flat",
+    "protocol": "P1",
+    "action": "recall flat ordinal0",
+    "inputs": {
+      "command": 4,
+      "payload_hex": "0604000100"
+    },
+    "expected_bytes": "55aa0004000506040001008db9"
+  },
+  {
+    "id": "p1-side-ab",
+    "protocol": "P1",
+    "action": "route A+B ordinal2",
+    "inputs": {
+      "command": 4,
+      "payload_hex": "0904000102"
+    },
+    "expected_bytes": "55aa0004000509040001024d6c"
+  },
+  {
+    "id": "p1-massage",
+    "protocol": "P1",
+    "action": "head massage enabled intensity3 wave0 countdown15",
+    "inputs": {
+      "command": 4,
+      "payload_hex": "0c0000040103000f"
+    },
+    "expected_bytes": "55aa000400080c0000040103000f6254"
+  },
+  {
+    "id": "p1-rgb",
+    "protocol": "P1",
+    "action": "set underbed RGB255,0,16",
+    "inputs": {
+      "command": 4,
+      "payload_hex": "34000003ff0010"
+    },
+    "expected_bytes": "55aa0004000734000003ff00102f10"
+  },
+  {
+    "id": "p1-fullstate",
+    "protocol": "P1",
+    "action": "request full state",
+    "inputs": {
+      "command": 2,
+      "payload_hex": ""
+    },
+    "expected_bytes": "55aa00020000c6b5"
+  },
+  {
+    "id": "p1-features",
+    "protocol": "P1",
+    "action": "request feature array",
+    "inputs": {
+      "command": 0,
+      "payload_hex": ""
+    },
+    "expected_bytes": "55aa000000000614"
+  },
+  {
+    "id": "p1-auth-example",
+    "protocol": "P1",
+    "action": "channel link, synthetic stamp12",
+    "inputs": {
+      "command": 3,
+      "payload_hex": "01013132"
+    },
+    "expected_bytes": "55aa000300040101313248e3"
+  },
+  {
+    "id": "P1-schedule-custom",
+    "protocol": "P1",
+    "action": "Store custom schedule task 1 at 07:30",
+    "inputs": {
+      "command": 4,
+      "payload_hex": "29000018010200071e000000000000000000000000000032ff001005"
+    },
+    "expected_bytes": "55aa0004001c29000018010200071e000000000000000000000000000032ff001005b20c"
+  },
+  {
+    "id": "P1-schedule-diy-mode",
+    "protocol": "P1",
+    "action": "Store disabled DIY mode 11 task 2 at 06:45",
+    "inputs": {
+      "command": 4,
+      "payload_hex": "29000007020102062d010b"
+    },
+    "expected_bytes": "55aa0004000b29000007020102062d010b4d0e"
+  },
+  {
+    "id": "P1-diy-run11",
+    "protocol": "P1",
+    "action": "Run saved DIY mode 11",
+    "inputs": {
+      "command": 4,
+      "payload_hex": "3d0000040b000000"
+    },
+    "expected_bytes": "55aa000400083d0000040b0000006625"
+  },
+  {
+    "id": "P1-diy-terminate",
+    "protocol": "P1",
+    "action": "Terminate DIY",
+    "inputs": {
+      "command": 4,
+      "payload_hex": "3d00000403000000"
+    },
+    "expected_bytes": "55aa000400083d000004030000000627"
+  },
+  {
+    "id": "P1-packed-light",
+    "protocol": "P1",
+    "action": "Packed light fixture: on,50%,RGB(255,0,16),5 minutes",
+    "inputs": {
+      "command": 4,
+      "payload_hex": "360000060132ff001005"
+    },
+    "expected_bytes": "55aa0004000a360000060132ff0010059e07"
+  },
+  {
+    "id": "P1-force-sync",
+    "protocol": "P1",
+    "action": "Force B to A synchronization with AB control route (one chosen serialization)",
+    "inputs": {
+      "command": 4,
+      "payload_hex": "09040001020a04000101",
+      "dp_entries": [
+        {
+          "id": 9,
+          "type": 4,
+          "value": 2
+        },
+        {
+          "id": 10,
+          "type": 4,
+          "value": 1
+        }
+      ]
+    },
+    "expected_bytes": "55aa0004000a09040001020a0400010110ee",
+    "alternate_serialization": {
+      "payload_hex": "0a040001010904000102",
+      "expected_bytes": "55aa0004000a0a0400010109040001022d1a"
+    }
+  }
+]

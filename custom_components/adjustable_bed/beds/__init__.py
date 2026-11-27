@@ -42,6 +42,7 @@ if TYPE_CHECKING:
     from .doublesleep.controller import DoubleSleepController as DoubleSleepController
     from .dreamsense.likimio import LikimioController as LikimioController
     from .ergo_slim import ErgoSlimController as ErgoSlimController
+    from .ergobq.controller import ErgoBQController as ErgoBQController
     from .ergomotion4.controller import Ergomotion4Controller as Ergomotion4Controller
     from .ergomotion_app import ErgomotionAppController as ErgomotionAppController
     from .eshine.controller import EshineController as EshineController
@@ -146,6 +147,7 @@ if TYPE_CHECKING:
     from .serenity.controller import SerenityController as SerenityController
     from .serenity.controller import TranquilController as TranquilController
     from .serenity.controller import ZSeriesController as ZSeriesController
+    from .serenity.jobs import JobsController as JobsController
     from .serta_mp_remote import SertaMPRemoteController as SertaMPRemoteController
     from .shuda.controller import ShudaController as ShudaController
     from .silvermotion.controller import SilvermotionController as SilvermotionController
@@ -221,6 +223,7 @@ _EXPORT_MODULES = {
     'RichmatClassicController': 'richmat_classic.controller',
     'Ergomotion4Controller': 'ergomotion4.controller',
     'RowControlController': 'row_control',
+    'ErgoBQController': 'ergobq.controller',
     'ErgoSlimController': 'ergo_slim',
     'TempurAUController': 'tempur_au',
     "CasperBaseController": "casper_base.controller",
@@ -249,6 +252,7 @@ _EXPORT_MODULES = {
     "StarcodeM5X5Controller": "starcode.m5x5",
     "FurniMoveController": "furnimove.controller",
     "FsmRelaxController": "fsm_relax.controller",
+    "JobsController": "serenity.jobs",
     "RestfulController": "serenity.controller",
     "SerenityController": "serenity.controller",
     "TranquilController": "serenity.controller",
@@ -361,6 +365,7 @@ __all__ = [
     'RichmatClassicController',
     'Ergomotion4Controller',
     'RowControlController',
+    'ErgoBQController',
     'ErgoSlimController',
     'TempurAUController',
 

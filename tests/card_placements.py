@@ -214,6 +214,7 @@ def runtime_variants(controllers: Iterable[BedController]) -> Iterator[BedContro
     from custom_components.adjustable_bed.beds.dorsal.controller import DorsalController
     from custom_components.adjustable_bed.beds.dreamsense.controller import DreamSenseController
     from custom_components.adjustable_bed.beds.dreamsense.likimio import LikimioController
+    from custom_components.adjustable_bed.beds.ergobq.controller import ErgoBQController
     from custom_components.adjustable_bed.beds.keeson.enso import EnsoController
     from custom_components.adjustable_bed.beds.langjue import LangjueController
     from custom_components.adjustable_bed.beds.okimiki.controller import OkimikiController
@@ -223,6 +224,7 @@ def runtime_variants(controllers: Iterable[BedController]) -> Iterator[BedContro
     )
     from custom_components.adjustable_bed.beds.paramount.controller import ParamountController
     from custom_components.adjustable_bed.beds.relax_motion.controller import RelaxMotionController
+    from custom_components.adjustable_bed.beds.restonic.controller import RestonicController
     from custom_components.adjustable_bed.beds.richmat_classic.bedsmart import BedSmartController
     from custom_components.adjustable_bed.beds.richmat_classic.dreamlab import DreamlabController
     from custom_components.adjustable_bed.beds.richmat_classic.jerome import JeromeController
@@ -277,6 +279,11 @@ def runtime_variants(controllers: Iterable[BedController]) -> Iterator[BedContro
     dorsal_catalog_covered = False
     for controller in controllers:
         yield controller
+        if isinstance(controller, ErgoBQController):
+            yield variant(controller, axes=(1, 2, 3, 4))
+        if isinstance(controller, RestonicController):
+            for layout in ("lombar", "infinity"):
+                yield RestonicController(controller._coordinator, branch="box24", layout=layout)
         if isinstance(controller, LangjueController):
             yield variant(controller, _head_foot=True, _has_light=True, _has_massage=True)
         if isinstance(controller, SimmonsBlueController):

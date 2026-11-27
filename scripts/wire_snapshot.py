@@ -1495,10 +1495,26 @@ def default_scenario(bed_type: str) -> Scenario:
     """The bed type in its default route, with the entry data it needs to build."""
     from custom_components.adjustable_bed import const
 
+    if bed_type == "ergobq":
+        from custom_components.adjustable_bed.codec import ergobq as codec
+        status = codec.publish((codec.boolean(18, False), codec.raw(12, codec.Massage().encode()),
+                                codec.raw(14, codec.Massage().encode()), codec.boolean(50, False)))
+        status = codec.frame(5, status[6:-2]).hex()
+        return Scenario(id=bed_type, bed_type=bed_type,
+            entry_data={"product_type": "txbazdssmqcnndfc", "ergobq_stamp": "12"},
+            replies={"write:" + codec.auth("12").hex(): codec.frame(3, b"\x01").hex(),
+                     "write:" + codec.frame(1, b"\x00").hex(): codec.frame(1, b"\x01\x01\x01A").hex(),
+                     "*": status})
+
+    if bed_type == "flexispot":
+        return Scenario(id=bed_type, bed_type=bed_type, entry_data={"product_type": "eb632"})
     if bed_type == "ronco_motion":
         return Scenario(id=bed_type, bed_type=bed_type, protocol_variant="economy", layout_id="ronco_motion:0")
     if bed_type == const.BED_TYPE_AMBIENT:
         return _ambient_scenario()
+    if bed_type == const.BED_TYPE_RESTONIC:
+        return Scenario(id=bed_type, bed_type=bed_type, protocol_variant="box15",
+                        entry_data={const.CONF_PRODUCT_TYPE: "prime"})
     if bed_type == const.BED_TYPE_LANGJUE:
         return Scenario(id=bed_type, bed_type=bed_type, replies={
             "write:558d000081": "55000000810102",
@@ -1791,6 +1807,7 @@ VARIANT_ROUTES: dict[str, str] = {
     "adjustable_bed": "ADJUSTABLE_BED_VARIANTS",
     "bedsense": "BEDSENSE_VARIANTS",
     "comfort_enhancements": "COMFORT_ENHANCEMENTS_VARIANTS",
+    "jobs": "JOBS_VARIANTS",
     "zseries": "ZSERIES_VARIANTS",
     "solace": "SOLACE_VARIANTS",
     "svane": "SVANE_VARIANTS",
@@ -2190,7 +2207,8 @@ def route_scenarios() -> list[Scenario]:
                     protocol_variant=app,
                     entry_data={const.CONF_PRODUCT_TYPE: layout, **({const.CONF_PROTOCOL_VARIANT: app} if app == "sleepfunction" else {})},
                     factory_kwargs={"device_name": "6BRM-advertised"}
-                    if app in ("lady_americana", "acaa", "sta2", "zerogravity", "lp2", "bedsmart", "baseremote") else {},
+                    if app in ("lady_americana", "acaa", "sta2", "zerogravity", "lp2", "bedsmart", "baseremote", "dynasty") else {},
+                    replies={"*": "6e0e00037f"} if app == "dynasty" else {},
                     layout_id=layout_id,
                 )
             )
@@ -2277,6 +2295,8 @@ def route_scenarios() -> list[Scenario]:
 # YGRM has the Hold selector and alarm actions. The framed layout offers only the
 # fourth fixed service (W4), which the app frames like the first.
 CLASSIC_ROUTES: tuple[tuple[str, str, str], ...] = (
+    ("dynasty", "U3RM", "richmat_classic_apps"),
+    ("dynasty", "6BRM", "richmat_classic_apps_nordic"),
     ("avocadoecobase", "GORM", "richmat_classic_apps_nordic"),
     ("coastersleep", "FWRM", "richmat_classic_apps"),
     ("fortywinks", "CORN", "richmat_classic_apps"),
@@ -2542,7 +2562,18 @@ def build_scenarios() -> list[Scenario]:
     scenarios = [default_scenario(bed_type) for bed_type in SUPPORTED_BED_TYPES
                  if bed_type not in RICHMAT_MH_APP_CATALOGS]
     scenarios.extend(route_scenarios())
+    scenarios.extend(Scenario(id=f"flexispot:{model}", bed_type="flexispot",
+        entry_data={"product_type": model}, layout_id="flexispot")
+        for model in ("eb703", "eb704", "eb803"))
     scenarios.append(_ambient_scenario(split=True))
+    for branch in ("box15", "box1220", "box24"):
+        for layout in ("prime", "lombar", "infinity"):
+            if branch == "box15" and layout == "prime":
+                continue
+            scenarios.append(Scenario(id=f"restonic:{branch}:{layout}", bed_type="restonic",
+                protocol_variant=branch, entry_data={"product_type": layout},
+                layout_id="restonic" if branch == "box15" else f"restonic:{branch}"))
+
     scenarios.append(Scenario(
         id="jerome_adjustable_base:nordic", bed_type="jerome_adjustable_base",
         protocol_variant="HDRN", layout_id="dorsal:n1",
@@ -2851,7 +2882,7 @@ async def _connect(controller: Any, recorder: Recorder, clock: FakeClock) -> dic
                 session.store_device_info = lambda *_: None
             await controller.async_on_connect(session)
             return
-        if controller._coordinator.bed_type in {"symphony", "linx", "agingplace", "sleep_assistant", "sinca_comfort", "leva", "sleep_assist_pro", "atlas_lift", "ambient", "ronco_motion"}:
+        if controller._coordinator.bed_type in {"symphony", "linx", "agingplace", "sleep_assistant", "sinca_comfort", "leva", "sleep_assist_pro", "atlas_lift", "ambient", "ergobq", "ronco_motion"}:
             session = SimpleNamespace(
                 client=controller.client, is_current=lambda: True,
                 async_start_notify=lambda: controller.start_notify(lambda *_: None),
@@ -2966,6 +2997,11 @@ async def _capture(
             # virtual clock reaches their movement deadlines at the same times.
             plan.sort(key=lambda command: command.name in {"lights_on", "lights_off"})
         for command in plan:
+            if scenario.bed_type == "flexispot":
+                # An unsolicited, source-derived complete settings report before
+                # each action admits read/modify/write without guessing state.
+                for target, callback in controller.client._subscribers:
+                    callback(target, bytearray.fromhex("9b002701651e02061eff01072d8002239500009d"))
             result = await _run_command(controller, recorder, clock, command)
             # A cover that emits exactly what the matching move call did points to it.
             twin = (

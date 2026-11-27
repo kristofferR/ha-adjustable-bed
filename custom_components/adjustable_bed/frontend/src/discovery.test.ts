@@ -38,6 +38,29 @@ function hassWith(entries: EntityRegistryDisplayEntry[]): HomeAssistant {
   });
 }
 
+test("ErgoBQ groups each target with its motor and keeps independent native timers", () => {
+  const hass = hassWith([
+    ...[1, 2, 3, 4].flatMap((motor) => [
+      entry(`cover.motor_${motor}`, `ergobq_motor_${motor}`),
+      entry(`number.target_${motor}`, `ergobq_target_${motor}`),
+    ]),
+    entry("select.light_timer", "light_timer"),
+    entry("select.head_timer", "ergobq_head_timer"),
+    entry("select.legs_timer", "ergobq_legs_timer"),
+  ]);
+  const bed = bedEntitiesForDevice(hass, "dev1");
+  expect(bed.motors).toHaveLength(4);
+  for (const motor of [1, 2, 3, 4]) {
+    expect(bed.motors.find((row) => row.key === `ergobq_motor_${motor}`)).toMatchObject({
+      cover: `cover.motor_${motor}`, position: `number.target_${motor}`,
+    });
+  }
+  expect(bed.lights.timer).toBe("select.light_timer");
+  expect(bed.massage.timer).toBe("select.head_timer");
+  expect(bed.massage.selects).toEqual(["select.legs_timer"]);
+  expect(bed.massage.numbers).toEqual([]);
+});
+
 test("Majestic Home groups literal actions and retains the native child's motor lease", () => {
   const hass = hassWith([
     entry("cover.majestic_head", "head", "left"),

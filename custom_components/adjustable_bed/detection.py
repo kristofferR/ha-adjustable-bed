@@ -31,6 +31,7 @@ from .beds.silvermotion.discovery import scan_matches as silvermotion_scan_match
 from .beds.starcode.abm5_4_profiles import TRANSPORTS as STARCODE_ABM5_4_TRANSPORTS
 from .beds.svane.state import is_svane_discovery_name
 from .bluetooth_transport import advertised_local_name
+from .codec.ergobq import IDENTITY_SERVICE as ERGOBQ_IDENTITY_SERVICE
 from .const import (
     BED_TYPE_ADJUSTABLE_BED,
     BED_TYPE_ADJUSTABLE_LUMBAR,
@@ -70,6 +71,7 @@ from .const import (
     BED_TYPE_ERGOMOTION_4,
     BED_TYPE_ESHINE,
     BED_TYPE_ESHINE_OKIN,
+    BED_TYPE_FLEXISPOT,
     BED_TYPE_FSM_RELAX,
     BED_TYPE_FURNIMOVE,
     BED_TYPE_GALAXY,
@@ -85,6 +87,7 @@ from .const import (
     BED_TYPE_JEROME_ADJUSTABLE_BASE,
     BED_TYPE_JIECANG,
     BED_TYPE_JIECANG_APP,
+    BED_TYPE_JOBS,
     BED_TYPE_KAIDI,
     BED_TYPE_KEESON,
     BED_TYPE_KOMFYD,
@@ -134,6 +137,7 @@ from .const import (
     BED_TYPE_REMACRO,
     BED_TYPE_RESIDENT,
     BED_TYPE_RESTFUL,
+    BED_TYPE_RESTONIC,
     BED_TYPE_REVERIE,
     BED_TYPE_REVERIE_NIGHTSTAND,
     BED_TYPE_REVERIE_PAIRLINK,
@@ -336,6 +340,7 @@ from .profiles.bedgear import ergobed_eligible
 from .profiles.bobpowerbase import PROFILE_CHOICES as BOB_PROFILES
 from .profiles.bobpowerbase import SCAN_KEYWORDS as BOB_SCAN_KEYWORDS
 from .profiles.customatic_demo import NAME_PREFIX as CUSTOMATIC_DEMO_NAME_PREFIX
+from .profiles.ergobq import product as ergobq_product
 from .profiles.flexirest import accepts_name as accepts_flexirest_name
 from .profiles.majestichome import PROFILE_CHOICES as MAJESTICHOME_PROFILES
 from .profiles.mlily_choices import PROFILE_CHOICES as MLILY_PROFILES
@@ -678,6 +683,7 @@ BED_TYPE_DISPLAY_NAMES: dict[str, str] = {
     "wsilver_legacy": "W.Silver Products app (older version)",
     "super_colchones": "Super Colchones app (AFEG302, AFEG350)",
     "sonicsleep": "SonicSleep / 소닉슬립 app",
+    "ergobq": "ErgoBQ BED app",
     "hush_remote": "Hush Base remote finder",
     "hush_sleep_mm": "Hush Base sleep sensor (name starts with RM-)",
     "hush_sleep_sxb": "Hush Base sleep sensor (name starts with HJ-)",
@@ -691,6 +697,7 @@ BED_TYPE_DISPLAY_NAMES: dict[str, str] = {
     BED_TYPE_FURNIMOVE: "FurniMove / OKIN Smart Remote app",
     BED_TYPE_SERENITY: "Jordan's Serenity app",
     BED_TYPE_TRANQUIL: "Jordan's Tranquil app",
+    BED_TYPE_JOBS: "JobsAI智能助眠床 / Jobs AI app",
     BED_TYPE_RESTFUL: "Jordan's Restful app",
     BED_TYPE_RIZE_REMEDY_II: "Rize Remedy II app",
     BED_TYPE_ZSERIES: "Customatic Z-Series app",
@@ -716,6 +723,8 @@ BED_TYPE_DISPLAY_NAMES: dict[str, str] = {
     BED_TYPE_LEVA: "Leva Bed Remote (Leva Smart App)",
     BED_TYPE_LANGJUE: "Comfort Smart Bed app (Langjue)",
     BED_TYPE_LINX: "Linx app",
+    BED_TYPE_RESTONIC: "Restonic app (Prime / Lombar / Infinity)",
+    BED_TYPE_FLEXISPOT: "Flexispot app",
     "kingkoil": "King Koil Bed app",
     BED_TYPE_SOMOS: "Somos / SomosBeds app",
     BED_TYPE_COMFORTBASE: "ComfortBaseForBluetooth app",
@@ -1001,7 +1010,7 @@ HIDDEN_APP_CHOICES: Final = frozenset(bed_type_choice(*row) for row in _HIDDEN_A
 # Bed types whose one row asks for the product, although each product is an app entry.
 PRODUCT_QUESTION_BED_TYPES: Final = frozenset(
     {
-        BED_TYPE_RONCO_MOTION, BED_TYPE_AMBIENT, "kingkoil", BED_TYPE_ENSO2, BED_TYPE_LIKIMIO, "dreamsense", "saatva", "majestichome", BED_TYPE_LEVA, BED_TYPE_LINX, BED_TYPE_SOMOS, "bobpowerbase", BED_TYPE_COMFORT_ENHANCEMENT3, BED_TYPE_SYMPHONY_SLEEP, BED_TYPE_YAMADA, BED_TYPE_RICHMAT_APP, BED_TYPE_RICHMAT_APP_SLEEP, BED_TYPE_GALAXY, BED_TYPE_MLILY, BED_TYPE_MLILY_REMOTE, BED_TYPE_OKIMIKI, "luuna", BED_TYPE_GOODVIBE, BED_TYPE_HJBED, BED_TYPE_CASPER_BASE, BED_TYPE_COMFORT_ENHANCEMENTS, BED_TYPE_COMFORTBASE, "sleep_evolution", "wsilver_legacy", "personal_comfort", "instant_comfort"}
+        BED_TYPE_RONCO_MOTION, BED_TYPE_AMBIENT, BED_TYPE_RESTONIC, BED_TYPE_FLEXISPOT, "kingkoil", BED_TYPE_ENSO2, BED_TYPE_LIKIMIO, "dreamsense", "saatva", "majestichome", BED_TYPE_LEVA, BED_TYPE_LINX, BED_TYPE_SOMOS, "bobpowerbase", BED_TYPE_COMFORT_ENHANCEMENT3, BED_TYPE_SYMPHONY_SLEEP, BED_TYPE_YAMADA, BED_TYPE_RICHMAT_APP, BED_TYPE_RICHMAT_APP_SLEEP, BED_TYPE_GALAXY, BED_TYPE_MLILY, BED_TYPE_MLILY_REMOTE, BED_TYPE_OKIMIKI, "luuna", BED_TYPE_GOODVIBE, BED_TYPE_HJBED, BED_TYPE_CASPER_BASE, BED_TYPE_COMFORT_ENHANCEMENTS, BED_TYPE_COMFORTBASE, "sleep_evolution", "wsilver_legacy", "personal_comfort", "instant_comfort"}
 ).union({BED_TYPE_BETTERLIVING2, BED_TYPE_JEROME_ADJUSTABLE_BASE, BED_TYPE_SLEEPTIME, "sealy_posturematic"})
 # Routes named after their protocol, not an app or brand. They stay off the
 # bed-type list and are reached through detection, the brand list and Configure.
@@ -1522,6 +1531,11 @@ def _detect_with_first_pass(
     service_info: BluetoothServiceInfoBleak, first: FirstPass
 ) -> DetectionResult:
     """Offer Good Vibe Sleep without changing an existing receiver/app choice."""
+    identity = (getattr(service_info, "service_data", None) or {}).get(
+        ERGOBQ_IDENTITY_SERVICE, b""
+    )
+    if ergobq_product(identity, service_info.name) is not None:
+        return DetectionResult("ergobq", 0.99, ["service_data:ergobq_bed"])
     result = _detect_bed_type_with_app_candidates(service_info, first)
     from .profiles.ronco_motion import accepts_name as ronco_name
 
@@ -1573,6 +1587,12 @@ def _detect_with_first_pass(
                 *(result.ambiguous_types or ()), BED_TYPE_SLEEP_ASSIST_PRO
             ]
             result.signals.append(signal)
+    if first.name(BED_TYPE_FLEXISPOT):
+        if result.bed_type is None:
+            result = DetectionResult(BED_TYPE_FLEXISPOT, 0.3, ["name:flexispot_app_candidate"])
+        elif result.bed_type != BED_TYPE_FLEXISPOT:
+            result.ambiguous_types = list(dict.fromkeys([*(result.ambiguous_types or ()), BED_TYPE_FLEXISPOT]))
+            result.signals.append("name:flexispot_app_candidate")
     # The current Linx scan filter is a case-sensitive substring, not a model
     # or service selector. Preserve existing receiver detection as an alternative.
     if isinstance(service_info.name, str) and "KSWF07D" in service_info.name:
@@ -1668,6 +1688,13 @@ def _detect_with_first_pass(
         elif result.bed_type != BED_TYPE_RESIDENT:
             result.ambiguous_types = list(dict.fromkeys([*(result.ambiguous_types or ()), BED_TYPE_RESIDENT]))
             result.signals.append("name:resident_app_candidate")
+    if (
+        isinstance(platform_name, str) and platform_name.lower().startswith("okin")
+        and not any(signal.startswith("excluded:") for signal in result.signals)
+    ):
+        # Jobs' shared platform-name rule offers an app, never identifies it.
+        result.ambiguous_types = list(dict.fromkeys([*(result.ambiguous_types or ()), BED_TYPE_JOBS]))
+        result.signals.append("name:jobs_app_candidate")
     if (
         isinstance(service_info.name, str)
         and service_info.name.lower().startswith("smartbed")

@@ -477,7 +477,7 @@ class AdjustableBedMassageTimerSelect(AdjustableBedEntity, SelectEntity):
             return None
         minutes = state[key]
         formatted = f"{minutes} min"
-        if minutes and formatted in self._attr_options:
+        if formatted in self._attr_options:
             return formatted
         return "Off" if self._has_off and minutes in (None, 0) else None
 

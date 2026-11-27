@@ -111,6 +111,36 @@ async def test_octo_keeps_its_switch(hass: HomeAssistant) -> None:
     assert registry.async_get("light.bed_under_bed_lights") is None
 
 
+async def test_ergobq_timer_selects_keep_number_users_settings(hass: HomeAssistant) -> None:
+    registry = er.async_get(hass)
+    entry = _entry(hass)
+    for zone in ("light", "head", "legs"):
+        old = _row(
+            registry, entry, "number", f"controller_number_ergobq_{zone}_minutes",
+            f"bed_{zone}_timer",
+        )
+        registry.async_update_entity(
+            old.entity_id, name=f"My {zone} timer", disabled_by=er.RegistryEntryDisabler.USER,
+        )
+    # These replacements belong to ErgoBQ, even when another bed has an old row.
+    async_carry_over_retyped_entities(hass, entry, _runtime("keeson"))
+    assert all(
+        registry.async_get(f"number.bed_{zone}_timer") is not None
+        for zone in ("light", "head", "legs")
+    )
+    async_carry_over_retyped_entities(hass, entry, _runtime("ergobq"))
+    for zone, new_key in (
+        ("light", "light_timer"),
+        ("head", "controller_select_ergobq_head_timer"),
+        ("legs", "controller_select_ergobq_legs_timer"),
+    ):
+        assert registry.async_get(f"number.bed_{zone}_timer") is None
+        new = registry.async_get(f"select.bed_{zone}_timer")
+        assert new is not None and new.unique_id == f"{ADDRESS}_{new_key}"
+        assert new.name == f"My {zone} timer"
+        assert new.disabled_by is er.RegistryEntryDisabler.USER
+
+
 async def test_text_sleep_sensor_becomes_a_binary_sensor(hass: HomeAssistant) -> None:
     registry = er.async_get(hass)
     entry = _entry(hass)

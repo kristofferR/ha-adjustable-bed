@@ -85,6 +85,16 @@ distinct single/triple alarm behavior. The frozen proof and actual-path tests
 are app-specific; separate sleep sensing, network and audio remain excluded.
 See the [Snore Monitor BED guide](../beds/onlysnore.md).
 
+## Flexispot
+
+Flexispot 1.1 (2) needs `codec/flexispot.py`: none of the existing carriers
+encodes its 20-byte `9B`/`9D` records, CRC16 body at offsets 2–16, unprotected
+alarm-slot byte, two-slot schedule or signed notification fields. All 77 frozen
+literals reproduce through its encoder. `profiles/flexispot.py` keeps the four
+explicit layouts and this app's timing; its controller keeps session-bound
+motor release and notification-backed read/modify/write behavior. No existing
+wire scenario changes. See the [Flexispot guide](../beds/flexispot.md).
+
 ## Smart Comfort seat codec
 
 The Smart Comfort SYNARGY and SYNERGY literals are reproduced by
@@ -472,3 +482,20 @@ ORE controller extension owns route capabilities and session-fenced callbacks,
 with corrected fragment early returns in the Keeson parser. The full 91-vector
 harness and 12 parser observations remain fixtures, with
 explicit bounds-safe/session-lifetime differences for Home Assistant.
+
+Restonic 1.0.1 (okin.bedding.restonic) reproduces every frozen builder through
+Keeson E6, Okin ORE and Keeson P2-side. Its profile keeps the three BLE branches
+independent from the three UI layouts. The shared Keeson controller extension
+owns captured-session refresh/release and raw offset diagnostics without adding
+a wire codec or changing existing routes. See [Restonic](../beds/restonic.md).
+
+## ErgoBQ BED
+
+ErgoBQ 1.8.1 adds `codec/ergobq.py` for the versioned `55 AA` command,
+big-endian payload length, DP TLVs and big-endian reflected CRC16 envelope.
+The existing FF-frame, Richmat and Keeson carriers do not reproduce this
+format's complete literal set. The typed `profiles/ergobq.py` selects the two
+byte-identical BED products and serial-dependent axes. It has no mattress
+profile. `beds/ergobq/` uses the shared settled GATT writer with an expected
+client, while owning its authentication, notification stream and release.
+See [ErgoBQ BED](../beds/ergobq.md) and `tests/test_ergobq_vectors.py`.

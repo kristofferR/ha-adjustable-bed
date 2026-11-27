@@ -2644,6 +2644,46 @@ Use `enso2_aroma_schedule` with `device_id`, `mode_2_minutes` and
 the side of a two-address pair through the standard `side` field. The receiver
 must report the corresponding accessory over Bluetooth.
 
+JobsAI sleep and wake alarms use `adjustable_bed.set_alarm`, with slot 1 for
+sleep and slot 2 for wake. See the [JobsAI guide](beds/okin-nframe.md#jobsai).
+
+## ErgoBQ BED actions
+
+These actions target `device_id` and accept the common paired `side` field.
+ErgoBQ's own A/B/AB route is selected on the receiver; it does not create HA
+paired children. See the [bed guide](beds/ergobq.md).
+
+| Action | Parameters |
+|--------|------------|
+| `ergobq_scene` | `operation`: recall, save or restore; `scene`: flat, tv, zero_g, sleep_aid, memory_1, memory_2, yoga or reading |
+| `ergobq_massage` | `zone`: head or legs; complete `on`, `intensity` 0–5, `mode`: wave, pulse, continuous or intermittent, and `minutes` 0–60 |
+| `ergobq_schedule` | `task` 1–5; `status` 0 delete, 1 disabled, 2 enabled; `hour`, `minute`, optional `weekdays` (empty is once); `kind`: custom or diy |
+| `ergobq_diy` | Saved `mode` 11–30; optional existing app `program_hex` enables the app's direct mode-ID path. No catalog is downloaded |
+| `ergobq_unlink` | Explicit association `phase` 2 or 3; requires fresh authentication afterward |
+
+A custom schedule includes `position` and `scene`, `massage` and
+`sync_massage`, complete `head` and `legs` massage objects (same fields as the
+massage action), plus a `light` object with `on`, `brightness` 0–100, `red`,
+`green`, `blue` 0–255 and auto-off `minutes` 0–120. Omitted action objects are
+explicitly off/zero. Synchronized head/legs parameters must match. A DIY
+schedule takes `mode` and optional existing app `program_hex` instead.
+Every schedule request, including disable/delete, sends a complete explicit
+record. Reading, editing or merging an existing schedule collection is not
+supported. `sync_clock` sends local HA time; device acceptance is unverified.
+
+```yaml
+action: adjustable_bed.ergobq_schedule
+data:
+  device_id: YOUR_DEVICE_ID
+  task: 1
+  status: 2
+  hour: 7
+  minute: 30
+  weekdays: [monday, tuesday, wednesday, thursday, friday]
+  position: true
+  scene: tv
+```
+
 ## Ronco Motion once alarm
 
 Use `adjustable_bed.set_alarm` with a Ronco Motion `device_id` and optional paired
