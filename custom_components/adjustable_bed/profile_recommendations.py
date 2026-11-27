@@ -116,7 +116,7 @@ _GMMOTOR_APP_HINTS: Final = frozenset({"gmmotor", "gmmotor_sleep_mm", "gmmotor_s
 _APP_HINTS: Final = _GMMOTOR_APP_HINTS | {
     "instant_comfort", "berun", BED_TYPE_SIMMONS_BLUE, "dorsal", BED_TYPE_ENSO2, BED_TYPE_MOODBASE,
     BED_TYPE_ERGOBED, BED_TYPE_TRUEMOTION, BED_TYPE_SUTA_KING_KOIL, BED_TYPE_SLEEP_ASSIST_PRO, BED_TYPE_RONCO_MOTION,
-    BED_TYPE_MLILY0, "silksnow",
+    BED_TYPE_MLILY0, "silksnow", "motionflex",
 }
 
 if TYPE_CHECKING:

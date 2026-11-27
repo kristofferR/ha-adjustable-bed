@@ -19695,9 +19695,9 @@ bed-light action.
 
 #### State and feedback
 
-The disabled-by-default MotionFlex status sensor exposes selected capability,
-alarm acknowledgment, massage, light and numbered motor observations as
-attributes. Motor observations do not become position sensors or sliders.
+Protocol diagnostics retain selected capability, alarm acknowledgment,
+massage, light and numbered motor observations. Motor observations do not
+become position sensors or sliders.
 Malformed extra frames are rejected. Common-frame fragmentation retains the
 app's limited delimiter-based behavior. Raw notifications remain available in
 support diagnostics.

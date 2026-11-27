@@ -16,6 +16,7 @@ from ...card import CARD_LIGHT_TOGGLE, CARD_LIGHTING
 from ...codec import richmat as codec
 from ...command_scheduler import note_frame_written
 from ...controller_state import StateKey
+from ...errors import invalid
 from ...profiles.motionflex import LIGHT_DELAY_S, MENU_DELAY_S, PRODUCTS, REFRESH_MS
 from ...profiles.richmat import Button
 from ...state_keys import LIGHT_TIMER_OPTION, MASSAGE_TIMER_MINUTES, UNDER_BED_LIGHTS_RGB
@@ -25,7 +26,6 @@ from ..cancellation import settled
 from ..catalog_buttons import as_save, catalog_button
 from ..entity_specs import (
     ControllerButtonSpec,
-    ControllerStateSensorSpec,
     MotorControlSpec,
     PositionNumberSpec,
 )
@@ -39,8 +39,6 @@ if TYPE_CHECKING:
 
     from ...coordinator import AdjustableBedCoordinator
 
-STATUS = StateKey[str | None]("motionflex_status")
-REPORT = StateKey[dict[str, object]]("motionflex_report")
 ALARM = StateKey[dict[str, object] | None]("motionflex_alarm")
 
 
@@ -133,6 +131,8 @@ class MotionFlexController(RichmatProfileController):
             "encoding": "nordic" if link and link.compact else "wilinke",
             "write_handle": link.tx.handle if link else None,
             "notify_handle": link.rx.handle if link else None,
+            "last_event": self._last_event,
+            "alarm": deepcopy(self._alarm),
             "observed": deepcopy(self._events),
         }
 
@@ -143,9 +143,7 @@ class MotionFlexController(RichmatProfileController):
     def _publish(self) -> None:
         if not self._owns_state():
             return
-        self.forward_controller_state_updates(
-            STATUS(self._last_event), REPORT(deepcopy(self._events)), ALARM(deepcopy(self._alarm))
-        )
+        self.forward_controller_state_updates(ALARM(deepcopy(self._alarm)))
 
     def _clear(self) -> None:
         self._events.clear()
@@ -230,8 +228,8 @@ class MotionFlexController(RichmatProfileController):
             )
 
             async def write_and_record() -> None:
-                await link.client.write_gatt_char(link.tx, packet, response=response)
                 self._next_write = asyncio.get_running_loop().time() + REFRESH_MS / 1000
+                await link.client.write_gatt_char(link.tx, packet, response=response)
                 note_frame_written(asyncio.Event() if cleanup else cancel)
 
             # Never hand the command lane to STOP while this write is in flight.
@@ -522,19 +520,6 @@ class MotionFlexController(RichmatProfileController):
         return tuple(specs)
 
     @property
-    def controller_state_sensor_specs(self) -> tuple[ControllerStateSensorSpec, ...]:
-        return (
-            ControllerStateSensorSpec(
-                "motionflex_status",
-                "motionflex_status",
-                STATUS,
-                "mdi:bluetooth",
-                attribute_keys=(REPORT, ALARM),
-                entity_registry_enabled_default=False,
-            ),
-        )
-
-    @property
     def supports_massage(self) -> bool:
         return True
 
@@ -575,9 +560,7 @@ class MotionFlexController(RichmatProfileController):
 
     def _light_ready(self) -> None:
         if not self._events.get("light_capability"):
-            raise ValueError(
-                "The connected MotionFlex bed has not reported its advanced-light capability"
-            )
+            raise invalid("motionflex_light_not_reported")
 
     @property
     def supports_discrete_light_control(self) -> bool:
@@ -612,13 +595,22 @@ class MotionFlexController(RichmatProfileController):
     async def set_light_color(self, rgb_color: tuple[int, int, int]) -> None:
         self._light_ready()
         if len(rgb_color) != 3 or any(type(v) is not int or not 0 <= v <= 255 for v in rgb_color):
-            raise ValueError("Choose three integer RGB channels from 0 to 255")
-        await self.write_command(codec.rgb(*rgb_color))
+            raise invalid("motionflex_light_color")
+        link = self._current()
+        with self.sent_state(
+            UNDER_BED_LIGHTS_RGB(rgb_color),
+            is_current=lambda: self._link is link
+            and self.client is link.client
+            and link.client.is_connected
+            and self._coordinator.connection_generation == link.generation
+            and self._owns_state(),
+        ):
+            await self._write(link, codec.rgb(*rgb_color))
 
     async def set_light_timer(self, timer_option: str) -> None:
         self._light_ready()
         if timer_option not in self.light_timer_options:
-            raise ValueError("Choose Always On or 1..15 minutes")
+            raise invalid("motionflex_light_timer")
         seconds = 0 if timer_option == "Always On" else int(timer_option.split()[0]) * 60
         link = self._current()
         await asyncio.sleep(LIGHT_DELAY_S)

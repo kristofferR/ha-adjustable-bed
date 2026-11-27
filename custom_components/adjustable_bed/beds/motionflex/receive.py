@@ -15,24 +15,32 @@ LITERALS = {
 def parse(packet: bytes) -> dict[str, Value] | None:
     if packet in LITERALS:
         return {"event": LITERALS[packet]}
-    p = packet
-    if len(p) < 6 or p[:2] != b"\x6e\x20" or p[2] != len(p) or not codec.is_valid(p):
+    if (
+        len(packet) < 7
+        or packet[:2] != b"\x6e\x20"
+        or packet[2] != len(packet)
+        or not codec.is_valid(packet)
+    ):
         return None
+    # The checksum cannot supply a missing payload field.
+    p = packet[:-1]
     category, sub, operation = p[3:6]
     if operation not in (2, 3):
         return None
     if category == 1 and sub == 2 and len(p) > 9:
+        if len(p) == 12:
+            return None  # A monitoring height requires both bytes.
         return {
             "height": (p[7] * 256 + p[8]) / 10,
             "type": p[9],
-            "angle": p[10] if len(p) > 11 else -1,
-            "monitorHeight": (p[11] * 256 + p[12]) / 10 if len(p) > 13 else 0,
+            "angle": p[10] if len(p) > 10 else -1,
+            "monitorHeight": (p[11] * 256 + p[12]) / 10 if len(p) > 12 else 0,
         }
     if category == 2:
-        if sub == 1 and (len(p) - 7) % 2 == 0:
+        if sub == 1 and len(p) > 6 and (len(p) - 6) % 2 == 0:
             return {
                 "head" if p[i] == 1 else "foot": p[i + 1]
-                for i in range(6, len(p) - 1, 2)
+                for i in range(6, len(p), 2)
                 if p[i] in (1, 2)
             }
         if sub in (2, 4, 5, 6) and len(p) > 7:

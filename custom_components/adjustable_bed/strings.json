@@ -4750,7 +4750,6 @@
       }
     },
     "sensor": {
-      "motionflex_status": {"name": "MotionFlex status"},
       "silksnow": {"name": "Model"},
       "berun_head_massage": {
         "name": "Head massage level"
@@ -12790,6 +12789,15 @@
     "jerome_light_not_reported": {
       "message": "The bed has not reported the Wave light capability."
     },
+    "motionflex_light_not_reported": {
+      "message": "The connected bed has not reported support for advanced lighting."
+    },
+    "motionflex_light_color": {
+      "message": "Choose three integer RGB channels from 0 to 255."
+    },
+    "motionflex_light_timer": {
+      "message": "Choose Always On or a duration from 1 to 15 minutes."
+    },
     "jerome_gatt_route": {
       "message": "The bed must provide one supported writable Jerome Bluetooth service."
     },
@@ -13872,6 +13880,7 @@
     },
     "richmat_family_choice": {
       "options": {
+        "motionflex": "MotionFlex app",
         "atlas_lift": "Atlas Lift (Cama Lift)",
         "enso2": "ENSO Sleep Control (Enso 2)",
         "rmcontrol": "RMControl app",

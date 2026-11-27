@@ -3,6 +3,7 @@
 import asyncio
 from dataclasses import replace
 from datetime import UTC, datetime
+from itertools import pairwise
 from types import SimpleNamespace
 from unittest.mock import AsyncMock, MagicMock, patch
 
@@ -165,8 +166,9 @@ async def test_actual_model_native_controls_and_separate_saves(model, axes, slot
 
 async def test_light_capability_native_color_duration_and_close():
     controller, c = await ready(route="n1")
-    with pytest.raises(ValueError):
+    with pytest.raises(ServiceValidationError) as error:
         await controller.set_light_color((18, 52, 86))
+    assert error.value.translation_key == "motionflex_light_not_reported"
     notify(c, "6e0e00037f")
     await controller.set_light_color((18, 52, 86))
     await controller.set_light_timer("Always On")
@@ -176,10 +178,12 @@ async def test_light_capability_native_color_duration_and_close():
     await close.press_fn(controller)
     assert frames(c) == ["6e0cff128b6e0d345605", "6e0bffff77", "6e0b038400", "75"]
     for invalid in ((True, 2, 3), (1.5, 2, 3), (-1, 2, 3), (256, 2, 3)):
-        with pytest.raises(ValueError):
+        with pytest.raises(ServiceValidationError) as error:
             await controller.set_light_color(invalid)
-    with pytest.raises(ValueError):
+        assert error.value.translation_key == "motionflex_light_color"
+    with pytest.raises(ServiceValidationError) as error:
         await controller.set_light_timer("16 min")
+    assert error.value.translation_key == "motionflex_light_timer"
     await controller.stop_notify()
     assert not controller.supports_light_color_control
 
@@ -601,14 +605,21 @@ async def test_native_rgb_color_on_and_idempotent_close_with_basic_toggle_retain
     (entity,) = _light_entities_for(hass, coordinator)
     assert isinstance(entity, AdjustableBedLight)
     entity.async_write_ha_state = MagicMock()
+    unsubscribe = coordinator.register_controller_state_callback(entity._handle_light_state)
     await entity.async_turn_on(rgb_color=(18, 52, 86))
     await entity.async_turn_on(rgb_color=(5, 6, 7))
+    await coordinator.async_execute_controller_command(lambda c: c.set_massage_timer(10))
+    from custom_components.adjustable_bed.state_keys import UNDER_BED_LIGHTS_RGB
+
+    assert coordinator.controller_state[UNDER_BED_LIGHTS_RGB] == (5, 6, 7)
+    assert entity.rgb_color == (5, 6, 7)
+    client.write_gatt_char.reset_mock()
     await entity.async_turn_on()
     entity._attr_is_on = assumed_on
     await entity.async_turn_off()
     await entity.async_turn_off()
     assert [bytes(call.args[1]) for call in client.write_gatt_char.call_args_list] == [
-        codec.rgb(18, 52, 86), codec.rgb(5, 6, 7), codec.rgb(5, 6, 7), codec.command(0x75), codec.command(0x75),
+        codec.rgb(5, 6, 7), codec.command(0x75), codec.command(0x75),
     ]
     toggle, = [b for b in _button_entities_for(hass, coordinator) if b.unique_id.endswith("_toggle_light")]
     await toggle.async_press()
@@ -619,6 +630,123 @@ async def test_native_rgb_color_on_and_idempotent_close_with_basic_toggle_retain
     assert not controller.supports_explicit_light_on_control
     with pytest.raises(NotImplementedError):
         await entity.async_turn_off()
-    with pytest.raises(ValueError):
+    with pytest.raises(ServiceValidationError):
         await entity.async_turn_on(rgb_color=(1, 2, 3))
     assert not client.write_gatt_char.called
+    unsubscribe()
+
+
+@pytest.mark.parametrize(
+    ("category", "sub", "data"),
+    [
+        (1, 2, ()), (1, 2, (0,)), (1, 2, (0, 1)), (1, 2, (0, 1, 44)),
+        (1, 2, (0, 1, 44, 2, 45, 0)),  # Incomplete optional monitoring height.
+        (2, 1, ()), (2, 1, (1,)),
+        *((2, sub, data) for sub in (2, 4, 5, 6) for data in ((), (0,))),
+        (3, 1, ()), (3, 1, (0,)),
+        *((4, 1, data) for data in ((), (0,), (0, 18), (0, 18, 52))),
+        *((4, 2, data) for data in ((), (0,), (0, 1))),
+        *((4, sub, data) for sub in (3, 4) for data in ((), (0,))),
+    ],
+)
+def test_short_selected_replies_cannot_consume_the_checksum(category, sub, data):
+    packet = codec.record_20_len(category, sub, 2, data)
+    assert codec.is_valid(packet) and packet[2] == len(packet)
+    assert parse(packet) is None
+
+
+def test_selected_reply_boundaries_and_diagnostics_without_protocol_sensor():
+    assert parse(bytes.fromhex("6e200a040102001234e5")) is None
+    motor = codec.record_20_len(1, 2, 2, (0, 1, 44, 2))
+    assert parse(motor) == {"height": 30, "type": 2, "angle": -1, "monitorHeight": 0}
+    motor = codec.record_20_len(1, 2, 2, (0, 1, 44, 2, 45))
+    assert parse(motor)["angle"] == 45
+    controller, _ = make()
+    controller._received({"event": "light_capability"})
+    assert not controller.controller_state_sensor_specs
+    assert controller.protocol_diagnostics["last_event"] == "light_capability"
+    assert controller.protocol_diagnostics["observed"] == {"light_capability": True}
+
+
+@pytest.mark.parametrize("write_seconds", (0.007, 0.08, 0.17))
+async def test_native_motion_paces_from_each_actual_write_start(native_session, write_seconds):
+    coordinator, client = native_session
+    starts = []
+
+    async def slow_write(*args, **kwargs):
+        starts.append(asyncio.get_running_loop().time())
+        await asyncio.sleep(write_seconds)
+
+    client.write_gatt_char.side_effect = slow_write
+    await coordinator.async_execute_controller_command(lambda c: c.move_head_up())
+    assert len(starts) == 3  # Two refreshes and the required STOP.
+    assert [b - a for a, b in pairwise(starts)] == pytest.approx(
+        [max(0.1, write_seconds)] * 2, abs=0.002
+    )
+
+
+@pytest.mark.parametrize("outcome", ("cancelled", "failed", "link", "client", "generation", "controller", "disconnected"))
+async def test_rgb_sent_state_is_delivery_and_exact_session_bound(native_session, outcome):
+    from bleak.exc import BleakError
+    from homeassistant.exceptions import HomeAssistantError
+
+    from custom_components.adjustable_bed.state_keys import UNDER_BED_LIGHTS_RGB
+
+    coordinator, client = native_session
+    controller = coordinator.controller
+    notify(coordinator, "6e0e00037f")
+    await coordinator.async_execute_controller_command(lambda c: c.set_light_color((1, 2, 3)))
+    entered, finish = asyncio.Event(), asyncio.Event()
+
+    async def blocked_write(*args, **kwargs):
+        entered.set()
+        await finish.wait()
+        if outcome == "failed":
+            raise BleakError("write rejected")
+        if outcome == "link":
+            controller._link = replace(controller._link)
+        elif outcome == "client":
+            coordinator._client = MagicMock(is_connected=True)
+        elif outcome == "generation":
+            coordinator._position_connection_generation += 1
+        elif outcome == "controller":
+            coordinator._controller = MotionFlexController(coordinator, product="hc800")
+        elif outcome == "disconnected":
+            client.is_connected = False
+
+    client.write_gatt_char.side_effect = blocked_write
+    task = asyncio.create_task(coordinator.async_execute_controller_command(
+        lambda c: c.set_light_color((18, 52, 86))
+    ))
+    await entered.wait()
+    if outcome == "cancelled":
+        task.cancel()
+        await asyncio.sleep(0)
+        assert not task.done()
+    finish.set()
+    try:
+        with pytest.raises((asyncio.CancelledError, ConnectionError, HomeAssistantError)):
+            await task
+        assert coordinator.controller_state[UNDER_BED_LIGHTS_RGB] == (
+            (18, 52, 86) if outcome == "cancelled" else (1, 2, 3)
+        )
+    finally:
+        coordinator._client = client
+        coordinator._controller = controller
+
+
+@pytest.mark.parametrize("name", ("QRRM", "MPE_", "COOL", "209A", "BED-"))
+def test_shared_motionflex_hint_preserves_receiver_and_explicit_app(name):
+    from custom_components.adjustable_bed.config_flow import _confident_auto_detect
+    from custom_components.adjustable_bed.detection import detect_bed_type_detailed
+    from custom_components.adjustable_bed.profile_recommendations import recommend_profile
+    from tests.test_mlily0_hosted_corrections import advertisement
+
+    info = advertisement("prefix-" + name + "-suffix", [const.LINAK_CONTROL_SERVICE_UUID])
+    detected = detect_bed_type_detailed(info)
+    assert "motionflex" in detected.ambiguous_types
+    assert _confident_auto_detect(detected) == const.BED_TYPE_LINAK
+    assert recommend_profile({"bed_type": const.BED_TYPE_LINAK}, info, {}) is None
+    assert recommend_profile(
+        {"bed_type": "motionflex", "protocol_variant": "sn300"}, info, {}
+    ) is None

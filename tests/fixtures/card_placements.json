@@ -5387,9 +5387,6 @@
  "sensor:motion_bed_upper_massage": {
   "card_section": "hidden"
  },
- "sensor:motionflex_status": {
-  "card_section": "hidden"
- },
  "sensor:motomotion_heat_left": {
   "card_section": "utility"
  },
