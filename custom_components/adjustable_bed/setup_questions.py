@@ -290,13 +290,13 @@ from .profiles import okimattmotion as okimattmotion_app
 from .profiles import sleep_assist_pro as sleep_assist_pro_app
 from .profiles import sleep_assistant as sleep_assistant_app
 from .profiles.ambient import LAYOUTS as AMBIENT_LAYOUTS
+from .profiles.awmotion import CHOICES as AWMOTION_CHOICES
 from .profiles.baseremote import SIDE_LAYOUTS as BASEREMOTE_SIDE_LAYOUTS
 from .profiles.bedgear import ergobed_eligible
 from .profiles.bobpowerbase import LAYOUTS as BOB_LAYOUTS
 from .profiles.bobpowerbase import PROFILE_CHOICES as BOB_PROFILES
 from .profiles.comfort_enhancement3 import CHOICES_WITH_CODE, REMOTE_CODE, REMOTES
 from .profiles.comfort_enhancement3 import resolve as resolve_apex
-from .profiles.awmotion import CHOICES as AWMOTION_CHOICES
 from .profiles.dreamsense import CHOICES as DREAMSENSE_CHOICES
 from .profiles.dreamsense import PROFILES as DREAMSENSE_PROFILES
 from .profiles.jerome_adjustable_base import PRODUCT_CHOICES as JEROME_ADJUSTABLE_BASE_PRODUCTS
