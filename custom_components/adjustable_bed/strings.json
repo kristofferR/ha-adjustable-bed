@@ -4750,7 +4750,6 @@
       }
     },
     "sensor": {
-      "ghostbed_raw_status": {"name": "Raw bed status"},
       "ghostbed_alarms": {"name": "Bed alarms"},
       "silksnow": {"name": "Model"},
       "berun_head_massage": {

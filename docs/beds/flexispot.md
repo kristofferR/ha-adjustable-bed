@@ -16,7 +16,6 @@
 | Analyzed | App | Package ID | Profiles |
 |---|---|---|---|
 | ✅ | [Flexispot](https://play.google.com/store/apps/details?id=com.loctek.flexispotpro) 1.1 (2) | `com.loctek.flexispotpro` | Four explicit products |
-
 | ✅ | [GhostBed](https://play.google.com/store/apps/details?id=com.loctek.ghostbed) 1.3 (4) | `com.loctek.ghostbed` | [GhostBed](#ghostbed) |
 
 ## Features
@@ -362,9 +361,9 @@ records. Signed Java division/remainder at offsets 4 and 15 is retained. These
 fields describe massage and snore state, not motor position.
 
 State is applied as soon as it arrives. The phone app's two-second settings-widget
-refresh delay does not delay HA parsing or home state. Raw notifications and a
-raw status diagnostic sensor remain available, including the light-only opcode
-that the current app screen does not consume. Disconnect clears link-scoped
+refresh delay does not delay HA parsing or home state. Raw notifications and
+protocol diagnostics retain packet bytes, including the light-only opcode that
+the current app screen does not consume. Disconnect clears link-scoped
 state; callbacks from a replaced controller cannot update its successor.
 
 #### Services
@@ -374,8 +373,9 @@ Use `adjustable_bed.set_alarm` with explicit slot 1–4, repeat weekdays and
 Supplying a time, repeat days and wake mode with `enabled: false` edits a disabled
 record without temporarily enabling it. Both alarm-bank reports are required before editing;
 unknown records are never silently replaced with empty slots. The alarm sensor
-shows the four records. Confirmed Delete alarm buttons compact surviving records
-and pad empty slots, writing both pairs with the listed gap. A cancelled or
+shows each stored alarm's time, on/off state, repeat weekdays and Basic or Pro
+wake mode. Empty or unavailable records are labelled accordingly. Confirmed
+Delete alarm buttons compact surviving records and pad empty slots, writing both pairs with the listed gap. A cancelled or
 partially failed write leaves those records unknown until reports arrive.
 
 An alarm cannot share a repeat day with another nonempty record within 30 minutes,

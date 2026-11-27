@@ -154,7 +154,7 @@ async def test_setup_route_and_discovery(hass, enable_custom_integrations):
     ):
         result = await complete(hass, await _typed(hass, "ghostbed"), {})
     assert result["data"]["has_massage"] is True
-    assert result["data"]["has_light"] is True
+    assert "has_light" not in result["data"]  # Fixed controller capability, not a setup field.
     assert result["data"]["motor_count"] == 2
     from custom_components.adjustable_bed.bed_traits import reads_positions
 
@@ -324,11 +324,20 @@ async def test_motion_settles_origin_write_before_release(hass, failure):
     await entered.wait()
     if failure == "replacement":
         await bed.async_discover_capabilities()
-    task.cancel()
-    await asyncio.sleep(0)
+    if failure != "error":
+        task.cancel()
+        await asyncio.sleep(0)
     finish.set()
-    with pytest.raises((asyncio.CancelledError, RuntimeError, ConnectionError)):
-        await task
+    if failure == "error":
+        with pytest.raises(RuntimeError, match="backend failed after submission"):
+            await task
+        from custom_components.adjustable_bed.command_scheduler import CommandOutcome
+
+        assert not task.cancelled()
+        assert coord.command_scheduler.recent_records[-1].outcome is CommandOutcome.FAILED
+    else:
+        with pytest.raises((asyncio.CancelledError, ConnectionError)):
+            await task
     assert frames(client) == [codec.frame(1, 1)] + (
         [] if failure == "replacement" else [codec.frame(3, 1)]
     )
@@ -658,3 +667,37 @@ async def test_post_second_submission_notifications_survive_backend_completion(h
         blocking=True,
     )
     assert frames(client)[-1] == codec.alarm((d, codec.Alarm(14, 0, 129, 1)), 4, 0x34)
+
+
+async def test_packet_bytes_stay_in_protocol_diagnostics_and_raw_capture(hass):
+    coord, bed, client = await target(hass)
+    captured = Mock()
+    bed.set_raw_notify_callback(captured)
+    raw = notify(bed)
+    assert bed.protocol_diagnostics["raw_status"] == bytes(raw).hex()
+    captured.assert_called_once_with(codec.NOTIFY, bytes(raw))
+    assert "ghostbed_raw_status" not in coord.controller_state
+    assert [spec.key for spec in bed.controller_state_sensor_specs] == ["ghostbed_alarms"]
+    await bed.stop_notify()
+    assert bed.protocol_diagnostics["raw_status"] is None
+
+
+async def test_alarm_sensor_decodes_only_proven_record_labels(hass):
+    from custom_components.adjustable_bed.sensor import AdjustableBedControllerStateSensor
+
+    coord, bed, client = await target(hass)
+    notify(bed, slots=(codec.Alarm(6, 30, 193, 1), codec.Alarm(8, 45, 2, 2)))
+    notify(bed, bank=0x80, slots=(ctrl.EMPTY, codec.Alarm(9, 15, 132, 17)))
+    entity = AdjustableBedControllerStateSensor(coord, bed.controller_state_sensor_specs[0])
+    assert entity.native_value == (
+        "1: 06:30 · On · Mon, Sun · Basic; 2: 08:45 · Off · Tue · Pro; "
+        "3: Not set; 4: 09:15 · On · Wed · Unknown"
+    )
+    # Values with unknown meaning retain their original bytes only in diagnostics.
+    assert bed.protocol_diagnostics["alarms"][3]["pattern"] == 17
+    longest = codec.Alarm(23, 59, 255, 1)
+    notify(bed, slots=(longest, longest))
+    notify(bed, bank=0x80, slots=(longest, longest))
+    assert len(entity.native_value) <= 255
+    bed.on_disconnect()
+    assert entity.native_value is None

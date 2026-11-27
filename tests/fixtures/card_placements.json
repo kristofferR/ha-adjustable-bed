@@ -5215,9 +5215,6 @@
  "sensor:ghostbed_alarms": {
   "card_section": "utility"
  },
- "sensor:ghostbed_raw_status": {
-  "card_section": "hidden"
- },
  "sensor:glideaway_motion_alarm": {
   "card_section": "hidden"
  },

@@ -4017,7 +4017,7 @@ SETUP_PROFILES: Final[dict[str, SetupProfile]] = {
         },
     ),
     BED_TYPE_GHOSTBED: SetupProfile(
-        owns={CONF_MOTOR_COUNT: 2, CONF_HAS_MASSAGE: True, CONF_HAS_LIGHT: True,
+        owns={CONF_MOTOR_COUNT: 2, CONF_HAS_MASSAGE: True,
               CONF_DISABLE_ANGLE_SENSING: True, CONF_MOTOR_PULSE_DELAY_MS: 200,
               CONF_PROTOCOL_VARIANT: "auto"},
         title=lambda _data: "GhostBed",

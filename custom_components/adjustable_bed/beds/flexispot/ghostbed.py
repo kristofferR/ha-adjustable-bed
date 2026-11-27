@@ -35,7 +35,6 @@ HOME: Final = StateKey[bool | None]("ghostbed_snore_home")
 LEFT: Final = StateKey[bool | None]("ghostbed_snore_left")
 SENSITIVITY: Final = StateKey[str | None]("ghostbed_sensitivity")
 ANGLE: Final = StateKey[str | None]("ghostbed_angle")
-RAW: Final = StateKey[str | None]("ghostbed_raw_status")
 ALARMS: Final = StateKey[str | None]("ghostbed_alarms")
 EMPTY: Final = codec.Alarm(0, 0, 0, 0)
 
@@ -45,6 +44,7 @@ class GhostBedController(FlexispotController):
 
     def __init__(self, coordinator: AdjustableBedCoordinator) -> None:
         super().__init__(coordinator, profile=app.PROFILE)
+        self._raw_status: str | None = None
         self._suspended_link: _Link | None = None
         self._alarms: list[codec.Alarm | None] = [None] * 4
         self._left_open: bool | None = False
@@ -60,12 +60,12 @@ class GhostBedController(FlexispotController):
         self._clear_published_state()
 
     def _clear_published_state(self) -> None:
+        self._raw_status = None
         self.forward_controller_state_updates(
             HOME(None),
             LEFT(None),
             SENSITIVITY(None),
             ANGLE(None),
-            RAW(None),
             ALARMS(None),
             POWER(None),
             MODE(None),
@@ -190,6 +190,7 @@ class GhostBedController(FlexispotController):
         if owns_suspended:
             self._owner.publisher = None
         self._alarms = [None] * 4
+        self._raw_status = None
         self._left_open, self._left_sensitivity, self._left_angle = False, 0, 0
         if owns_state:
             self.forward_controller_state_updates(
@@ -197,7 +198,6 @@ class GhostBedController(FlexispotController):
                 LEFT(None),
                 SENSITIVITY(None),
                 ANGLE(None),
-                RAW(None),
                 ALARMS(None),
             )
 
@@ -209,7 +209,7 @@ class GhostBedController(FlexispotController):
         if status is None:
             return
         # The opcode04 listener has no current-screen consumer. Keep it raw.
-        self.forward_controller_state_updates(RAW(bytes(data).hex()))
+        self._raw_status = bytes(data).hex()
         if status.alarms is None:
             return
         self._status = status
@@ -248,22 +248,35 @@ class GhostBedController(FlexispotController):
             ANGLE(app.ANGLES[self._left_angle] if self._left_angle is not None else None),
         )
 
+    @staticmethod
+    def _alarm_label(slot: int, alarm: codec.Alarm | None) -> str:
+        if alarm is None:
+            return f"{slot}: Unknown"
+        if alarm.pattern == 0:
+            return f"{slot}: Not set"
+        if not 0 <= alarm.hour <= 23 or not 0 <= alarm.minute <= 59:
+            return f"{slot}: Unknown"
+        days = (
+            ", ".join(
+                day
+                for bit, day in enumerate(("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"))
+                if alarm.flags & (1 << bit)
+            )
+            or "No repeat days"
+        )
+        mode = {1: "Basic", 2: "Pro"}.get(alarm.pattern, "Unknown")
+        return f"{slot}: {alarm.hour:02}:{alarm.minute:02} · {'On' if alarm.enabled else 'Off'} · {days} · {mode}"
+
     def _publish_alarms(self) -> None:
         self.forward_controller_state_updates(
-            ALARMS(
-                "; ".join(
-                    f"{i}: {a.hour:02}:{a.minute:02} flags={a.flags:02x} mode={a.pattern}"
-                    if a
-                    else f"{i}: unknown"
-                    for i, a in enumerate(self._alarms, 1)
-                )
-            )
+            ALARMS("; ".join(self._alarm_label(i, a) for i, a in enumerate(self._alarms, 1)))
         )
 
     @property
     def protocol_diagnostics(self) -> dict[str, object]:
         return {
             "profile": "ghostbed",
+            "raw_status": self._raw_status,
             "status": asdict(self._status) if self._status else None,
             "alarms": [asdict(a) if a else None for a in self._alarms],
             "selected_side": "left",
@@ -273,9 +286,6 @@ class GhostBedController(FlexispotController):
     @property
     def controller_state_sensor_specs(self) -> tuple[ControllerStateSensorSpec, ...]:
         return (
-            ControllerStateSensorSpec(
-                "ghostbed_raw_status", "ghostbed_raw_status", RAW, "mdi:code-braces"
-            ),
             ControllerStateSensorSpec(
                 "ghostbed_alarms",
                 "ghostbed_alarms",
@@ -548,6 +558,7 @@ class GhostBedController(FlexispotController):
 
         def forget() -> None:
             self._forget_status()
+            self._raw_status = None
             self._invalidate_alarms()
             self._left_open = self._left_sensitivity = self._left_angle = None
             self.forward_controller_state_updates(
@@ -555,7 +566,6 @@ class GhostBedController(FlexispotController):
                 LEFT(None),
                 SENSITIVITY(None),
                 ANGLE(None),
-                RAW(None),
                 POWER(None),
                 MODE(None),
                 MASSAGE_TIMER_MINUTES(None),
