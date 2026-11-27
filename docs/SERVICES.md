@@ -46,6 +46,9 @@ For named raise/lower/stop voice commands and Apple Home controls, see
 | [`agingplace_action`](#agingplace_action) | Aging in Place: run control | Run one of the bed's actions. Flat ends a cycle or self check; Release held control stops a held key. In and Out are held with Hold control. |
 | [`agingplace_set_setting`](#agingplace_set_setting) | Aging in Place: settings | Set light brightness, massage duration or motion light duration. |
 | [`bedtech_app_command`](#bedtech_app_command) | BedTech: press button | Press one of the selected BedTech model's buttons, on the sleeper side the app uses for it. Movement repeats for the configured number of pulses. |
+| [`ambient_set_position`](#ambient_set_position) | M3 Ambient position | Send a complete target to one position selector. |
+| [`ambient_set_heat`](#ambient_set_heat) | M3 Ambient heat | Set three zones on one side while keeping the other side's reported levels. |
+| [`ambient_set_rgb`](#ambient_set_rgb) | M3 Ambient raw RGB | Set the three raw color channels without a light power write. |
 | [`bedgear`](#bedgear) | Bedgear: settings | Change Bedgear settings. Values show as unknown until the bed reports them. |
 | [`bedsmart`](#bedsmart) | BedSmart / X-Series: settings | Sets the lighting and aroma of a BedSmart or X-Series bed, or presses a bed button. Use Set alarm for wake-up alarms. |
 | [`betterliving2_diagnostic_action`](#betterliving2_diagnostic_action) | BetterLiving2: refresh status | Asks the bed for its current alarm or massage status, so its sensors update. |
@@ -703,6 +706,31 @@ data:
 This example raises both foot sections and picks the first head for head
 buttons. On these models `stop` ends movement, and massage off is its own
 button. Not yet confirmed on real beds.
+
+## M3 Ambient
+
+The [M3 Ambient profile](beds/ambient.md) uses one device for either layout.
+Select the bed with `device_id` for each action.
+
+### ambient_set_position
+
+Provide `head` (0–60), `feet` (0–24) and `neck` (0–7) as whole raw target
+values. Set `position_side` to `left` or `right` on a split bed, and omit it
+on a one-piece bed. Each call sends one position target per selected device.
+
+### ambient_set_heat
+
+Provide `heat_side` (`left` or `right`) and raw `shoulder`, `torso` and `legs`
+levels (0–30). The bed must report a fresh six-zone snapshot before the action
+writes the new levels. Set `timer_hours: 2` to send a timer request after the bed
+confirms all six levels. `heat_side` selects the three levels to update. The timer
+request carries no side selector.
+
+### ambient_set_rgb
+
+Provide `red`, `green` and `blue` (0–255) as raw whole channel bytes. This
+action sends three acknowledged writes. For the app's 0–120 color range, use
+the Home Assistant light color picker.
 
 ## Bedgear
 

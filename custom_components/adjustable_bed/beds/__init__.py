@@ -13,6 +13,7 @@ if TYPE_CHECKING:
     from .adjustable_lumbar import AdjustableBedAppController as AdjustableBedAppController
     from .adjustable_lumbar import AdjustableLumbarController as AdjustableLumbarController
     from .adjustamattress.controller import AdjustaMattressController as AdjustaMattressController
+    from .ambient.controller import AmbientController as AmbientController
     from .baseremote.controller import BaseRemoteController as BaseRemoteController
     from .bedgear.controller import BedgearController as BedgearController
     from .bedgear.ergobed import ErgoBedController as ErgoBedController
@@ -289,6 +290,7 @@ _EXPORT_MODULES = {
     "LimossController": "limoss.controller",
     "LimossRemoteController": "limoss.remote",
     "LinakController": "linak.controller",
+    "AmbientController": "ambient.controller",
     "VindoController": "vindo",
     "SilvermotionController": "silvermotion.controller",
     "SmartBedController": "smartbed.controller",
@@ -397,6 +399,7 @@ __all__ = [
     "SymphonyController",
     "LimossController",
     "LinakController",
+    "AmbientController",
     "VindoController",
     "LevaController",
     "LikimioController",

@@ -70,6 +70,7 @@ from .command_target import capture_command_targets, command_target_scope
 from .const import (
     ADAPTER_AUTO,
     BED_MOTOR_PULSE_DEFAULTS,
+    BED_TYPE_AMBIENT,
     BED_TYPE_BEDTECH,
     BED_TYPE_COMFORT_MOTION,
     BED_TYPE_DIAGNOSTIC,
@@ -186,6 +187,7 @@ from .errors import (
     BedCommandTimedOutError,
     BedNotConnectedError,
     bluetooth_errors_translated,
+    invalid,
 )
 from .execution import HOLD_CEILING_MS
 from .import_executor import async_import_modules
@@ -2003,7 +2005,11 @@ class AdjustableBedCoordinator(
 
         async def stop_operation(context: CommandContext) -> None:
             with command_target_scope(targets):
-                if original_stop is not None:
+                if self._bed_type == BED_TYPE_AMBIENT:
+                    # Settle an admitted write without opening a link for STOP.
+                    async with self._command_lock:
+                        raise invalid("ambient_stop_unavailable")
+                elif original_stop is not None:
                     await self._async_send_stop_command(original_stop)
                 elif current_link_only or cleanup is not None:
                     await self._async_send_stop_command(

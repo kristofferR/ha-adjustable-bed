@@ -17,6 +17,7 @@ from .const import (
     BED_TYPE_ADJUSTABLE_BED,
     BED_TYPE_ADJUSTABLE_LUMBAR,
     BED_TYPE_ADJUSTAMATTRESS,
+    BED_TYPE_AMBIENT,
     BED_TYPE_ATLAS_LIFT,
     BED_TYPE_BEDJET_POWERLAYER,
     BED_TYPE_BEDSENSE,
@@ -368,6 +369,7 @@ _BED_TRAITS: Final[dict[str, BedTraits]] = {
     BED_TYPE_LEGGETT_WILINKE: _SCOPED,
     BED_TYPE_LIMOSS: BedTraits(position_feedback=True, connection_scoped_state=True),
     BED_TYPE_LIMOSS_REMOTE: _NO_ANGLES,
+    BED_TYPE_AMBIENT: replace(_NO_ANGLES_SCOPED, owns_device_info_reads=True),
     BED_TYPE_VINDO: replace(_NO_ANGLES, owns_device_info_reads=True),
     BED_TYPE_LINAK: BedTraits(
         position_feedback=True,
@@ -566,7 +568,7 @@ def store_read_positions(data: dict[str, object], read: bool | None = None) -> N
 # keeps this in step with the controllers.
 MASSAGE_SETTING_UNUSED_BED_TYPES: Final = frozenset(
     {
-     BED_TYPE_ATLAS_LIFT,
+     BED_TYPE_AMBIENT, BED_TYPE_ATLAS_LIFT,
      "adjustable_bed", "adjustable_lumbar", "adjustamattress", "bailey_bed_control",
      BED_TYPE_ERGOBED, BED_TYPE_MOODBASE, "l2motion", "bedgear", "bedjet_powerlayer", "bedsense", "bf", "casper_base", "casper_remote",
      "casper_sleep_mm", "casper_sleep_sxb", "cherish", "comfort_enhancement3",

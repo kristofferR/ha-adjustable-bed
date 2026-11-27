@@ -1,0 +1,311 @@
+[
+  {
+    "id": "fixed-lyingFlat",
+    "inputs": {
+      "builder": "fixed",
+      "body": "55 55 00 00 00"
+    },
+    "expected_bytes": "24 23 55 55 00 00 00 41 0D"
+  },
+  {
+    "id": "fixed-ledOn",
+    "inputs": {
+      "builder": "fixed",
+      "body": "80 F1 00 00 71"
+    },
+    "expected_bytes": "24 23 80 F1 00 00 71 41 0D"
+  },
+  {
+    "id": "fixed-ledOff",
+    "inputs": {
+      "builder": "fixed",
+      "body": "80 F2 00 00 72"
+    },
+    "expected_bytes": "24 23 80 F2 00 00 72 41 0D"
+  },
+  {
+    "id": "fixed-offHeadMassage",
+    "inputs": {
+      "builder": "fixed",
+      "body": "82 79 00 00 FB"
+    },
+    "expected_bytes": "24 23 82 79 00 00 FB 41 0D"
+  },
+  {
+    "id": "fixed-headMassageGear1",
+    "inputs": {
+      "builder": "fixed",
+      "body": "82 79 00 15 EE"
+    },
+    "expected_bytes": "24 23 82 79 00 15 EE 41 0D"
+  },
+  {
+    "id": "fixed-headMassageGear2",
+    "inputs": {
+      "builder": "fixed",
+      "body": "82 79 00 3D C6"
+    },
+    "expected_bytes": "24 23 82 79 00 3D C6 41 0D"
+  },
+  {
+    "id": "fixed-headMassageGear3",
+    "inputs": {
+      "builder": "fixed",
+      "body": "82 79 00 78 83"
+    },
+    "expected_bytes": "24 23 82 79 00 78 83 41 0D"
+  },
+  {
+    "id": "fixed-offFootMassage",
+    "inputs": {
+      "builder": "fixed",
+      "body": "82 7A 00 00 F8"
+    },
+    "expected_bytes": "24 23 82 7A 00 00 F8 41 0D"
+  },
+  {
+    "id": "fixed-footMassageGear1",
+    "inputs": {
+      "builder": "fixed",
+      "body": "82 7A 00 17 EF"
+    },
+    "expected_bytes": "24 23 82 7A 00 17 EF 41 0D"
+  },
+  {
+    "id": "fixed-footMassageGear2",
+    "inputs": {
+      "builder": "fixed",
+      "body": "82 7A 00 3C C4"
+    },
+    "expected_bytes": "24 23 82 7A 00 3C C4 41 0D"
+  },
+  {
+    "id": "fixed-footMassageGear3",
+    "inputs": {
+      "builder": "fixed",
+      "body": "82 7A 00 78 80"
+    },
+    "expected_bytes": "24 23 82 7A 00 78 80 41 0D"
+  },
+  {
+    "id": "fixed-checkStatusOfPowerBase",
+    "inputs": {
+      "builder": "fixed",
+      "body": "9C 42 00 00 DE"
+    },
+    "expected_bytes": "24 23 9C 42 00 00 DE 41 0D"
+  },
+  {
+    "id": "one-piece-tv",
+    "inputs": {
+      "builder": "position",
+      "head": 41,
+      "feet": 16,
+      "neck": 0
+    },
+    "expected_bytes": "24 23 80 09 00 29 00 10 00 00 00 00 00 00 41 0A 13"
+  },
+  {
+    "id": "one-piece-zero-gravity",
+    "inputs": {
+      "builder": "position",
+      "head": 23,
+      "feet": 24,
+      "neck": 0
+    },
+    "expected_bytes": "24 23 80 09 00 17 00 18 00 00 00 00 00 00 41 0A 13"
+  },
+  {
+    "id": "one-piece-neutral",
+    "inputs": {
+      "builder": "position",
+      "head": 0,
+      "feet": 0,
+      "neck": 0
+    },
+    "expected_bytes": "24 23 80 09 00 00 00 00 00 00 00 00 00 00 41 0A 13"
+  },
+  {
+    "id": "one-piece-cached",
+    "inputs": {
+      "builder": "position",
+      "head": 41,
+      "feet": 16,
+      "neck": 0,
+      "template": "24 23 80 09 00 11 00 0B 00 07 00 08 00 00 41 0A 13"
+    },
+    "expected_bytes": "24 23 80 09 00 29 00 10 00 00 00 08 00 00 41 0A 13"
+  },
+  {
+    "id": "split-left-tv",
+    "inputs": {
+      "builder": "position",
+      "head": 41,
+      "feet": 16,
+      "neck": 0,
+      "side": 170
+    },
+    "expected_bytes": "26 25 80 09 AA 00 29 00 10 00 00 00 00 00 00 41 0A 13"
+  },
+  {
+    "id": "split-right-zero-gravity",
+    "inputs": {
+      "builder": "position",
+      "head": 23,
+      "feet": 24,
+      "neck": 0,
+      "side": 187
+    },
+    "expected_bytes": "26 25 80 09 BB 00 17 00 18 00 00 00 00 00 00 41 0A 13"
+  },
+  {
+    "id": "split-right-snore",
+    "inputs": {
+      "builder": "position",
+      "head": 9,
+      "feet": 0,
+      "neck": 0,
+      "side": 187
+    },
+    "expected_bytes": "26 25 80 09 BB 00 09 00 00 00 00 00 00 00 00 41 0A 13"
+  },
+  {
+    "id": "rgb-red",
+    "inputs": {
+      "builder": "rgb",
+      "channel": "red",
+      "value": 0
+    },
+    "expected_bytes": "24 23 80 E8 00 00 68 41 0D"
+  },
+  {
+    "id": "rgb-green",
+    "inputs": {
+      "builder": "rgb",
+      "channel": "green",
+      "value": 83
+    },
+    "expected_bytes": "24 23 80 E9 00 53 3A 41 0D"
+  },
+  {
+    "id": "rgb-blue",
+    "inputs": {
+      "builder": "rgb",
+      "channel": "blue",
+      "value": 106
+    },
+    "expected_bytes": "24 23 80 EA 00 6A 00 41 0D"
+  },
+  {
+    "id": "query-1",
+    "inputs": {
+      "builder": "query",
+      "code": 1
+    },
+    "expected_bytes": "51 9F 03 01 01 F5"
+  },
+  {
+    "id": "query-2",
+    "inputs": {
+      "builder": "query",
+      "code": 2
+    },
+    "expected_bytes": "51 9F 03 01 02 F6"
+  },
+  {
+    "id": "query-3",
+    "inputs": {
+      "builder": "query",
+      "code": 3
+    },
+    "expected_bytes": "51 9F 03 01 03 F7"
+  },
+  {
+    "id": "query-4",
+    "inputs": {
+      "builder": "query",
+      "code": 4
+    },
+    "expected_bytes": "51 9F 03 01 04 F8"
+  },
+  {
+    "id": "query-8",
+    "inputs": {
+      "builder": "query",
+      "code": 8
+    },
+    "expected_bytes": "51 9F 03 01 08 FC"
+  },
+  {
+    "id": "query-9",
+    "inputs": {
+      "builder": "query",
+      "code": 9
+    },
+    "expected_bytes": "51 9F 03 01 09 FD"
+  },
+  {
+    "id": "query-34",
+    "inputs": {
+      "builder": "query",
+      "code": 34
+    },
+    "expected_bytes": "51 9F 03 01 22 16"
+  },
+  {
+    "id": "heat-zones-off",
+    "inputs": {
+      "builder": "heat",
+      "zones": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    "expected_bytes": "51 9F 01 08 03 06 00 00 00 00 00 00 02"
+  },
+  {
+    "id": "heat-zones-level-ten",
+    "inputs": {
+      "builder": "heat",
+      "zones": [
+        10,
+        10,
+        10,
+        10,
+        10,
+        10
+      ]
+    },
+    "expected_bytes": "51 9F 01 08 03 06 0A 0A 0A 0A 0A 0A 3E"
+  },
+  {
+    "id": "fan-left-off",
+    "inputs": {
+      "builder": "fan",
+      "code": 8,
+      "level": 0
+    },
+    "expected_bytes": "51 9F 01 03 08 01 00 FD"
+  },
+  {
+    "id": "fan-right-max",
+    "inputs": {
+      "builder": "fan",
+      "code": 9,
+      "level": 10
+    },
+    "expected_bytes": "51 9F 01 03 09 01 32 30"
+  },
+  {
+    "id": "heat-timer-two",
+    "inputs": {
+      "builder": "heat_timer",
+      "hours": 2
+    },
+    "expected_bytes": "51 9F 55 03 AA 01 02 F5"
+  }
+]
