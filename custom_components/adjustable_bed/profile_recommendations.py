@@ -58,6 +58,7 @@ from .const import (
     BED_TYPE_SLEEPYS_BOX25,
     BED_TYPE_SOMOS,
     BED_TYPE_STARCODE_ABM5_4,
+    BED_TYPE_SUTA_KING_KOIL,
     BED_TYPE_TRUEMOTION,
     BED_TYPE_YAMADA,
     CONF_BED_TYPE,
@@ -114,7 +115,7 @@ from .validators import get_variants_for_bed_type
 _GMMOTOR_APP_HINTS: Final = frozenset({"gmmotor", "gmmotor_sleep_mm", "gmmotor_sleep_sxb"})
 _APP_HINTS: Final = _GMMOTOR_APP_HINTS | {
     "instant_comfort", "berun", BED_TYPE_SIMMONS_BLUE, "dorsal", BED_TYPE_ENSO2, BED_TYPE_MOODBASE,
-    BED_TYPE_ERGOBED, BED_TYPE_TRUEMOTION, BED_TYPE_SLEEP_ASSIST_PRO, BED_TYPE_RONCO_MOTION,
+    BED_TYPE_ERGOBED, BED_TYPE_TRUEMOTION, BED_TYPE_SUTA_KING_KOIL, BED_TYPE_SLEEP_ASSIST_PRO, BED_TYPE_RONCO_MOTION,
     BED_TYPE_MLILY0, "silksnow",
 }
 

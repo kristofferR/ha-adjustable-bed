@@ -1,0 +1,961 @@
+[
+  {
+    "id": "P1-01",
+    "protocol": "P1",
+    "action": "back up",
+    "inputs": {
+      "command": "AT+CTRL=BOTH BACK UP"
+    },
+    "expected_bytes": "41542b4354524c3d424f5448204241434b2055500d0a",
+    "evidence": [
+      "E03",
+      "E05",
+      "E06",
+      "E09",
+      "blutter/asm/king_koil/controller/double_widget/M510Widget.dart@0x50d6d4 (line 217)"
+    ]
+  },
+  {
+    "id": "P1-02",
+    "protocol": "P1",
+    "action": "back down",
+    "inputs": {
+      "command": "AT+CTRL=BOTH BACK DOWN"
+    },
+    "expected_bytes": "41542b4354524c3d424f5448204241434b20444f574e0d0a",
+    "evidence": [
+      "E03",
+      "E05",
+      "E06",
+      "E09",
+      "blutter/asm/king_koil/controller/double_widget/M510Widget.dart@0x50d6cc (line 214)"
+    ]
+  },
+  {
+    "id": "P1-03",
+    "protocol": "P1",
+    "action": "two up",
+    "inputs": {
+      "command": "AT+CTRL=BOTH TWO UP"
+    },
+    "expected_bytes": "41542b4354524c3d424f54482054574f2055500d0a",
+    "evidence": [
+      "E03",
+      "E05",
+      "E06",
+      "E09",
+      "blutter/asm/king_koil/controller/double_widget/M510Widget.dart@0x50d738 (line 253)"
+    ]
+  },
+  {
+    "id": "P1-04",
+    "protocol": "P1",
+    "action": "two down",
+    "inputs": {
+      "command": "AT+CTRL=BOTH TWO DOWN"
+    },
+    "expected_bytes": "41542b4354524c3d424f54482054574f20444f574e0d0a",
+    "evidence": [
+      "E03",
+      "E05",
+      "E06",
+      "E09",
+      "blutter/asm/king_koil/controller/double_widget/M510Widget.dart@0x50d730 (line 250)"
+    ]
+  },
+  {
+    "id": "P1-05",
+    "protocol": "P1",
+    "action": "foot up",
+    "inputs": {
+      "command": "AT+CTRL=BOTH FOOT UP"
+    },
+    "expected_bytes": "41542b4354524c3d424f544820464f4f542055500d0a",
+    "evidence": [
+      "E03",
+      "E05",
+      "E06",
+      "E09",
+      "blutter/asm/king_koil/controller/double_widget/M510Widget.dart@0x50d794 (line 286)"
+    ]
+  },
+  {
+    "id": "P1-06",
+    "protocol": "P1",
+    "action": "foot down",
+    "inputs": {
+      "command": "AT+CTRL=BOTH FOOT DOWN"
+    },
+    "expected_bytes": "41542b4354524c3d424f544820464f4f5420444f574e0d0a",
+    "evidence": [
+      "E03",
+      "E05",
+      "E06",
+      "E09",
+      "blutter/asm/king_koil/controller/double_widget/M510Widget.dart@0x50d78c (line 283)"
+    ]
+  },
+  {
+    "id": "P1-07",
+    "protocol": "P1",
+    "action": "recall M1",
+    "inputs": {
+      "command": "AT+MODE=BOTH M1"
+    },
+    "expected_bytes": "41542b4d4f44453d424f5448204d310d0a",
+    "evidence": [
+      "E03",
+      "E05",
+      "E07",
+      "E09",
+      "blutter/asm/king_koil/controller/double_widget/M510Widget.dart@0x50d8f0 (line 417)"
+    ]
+  },
+  {
+    "id": "P1-08",
+    "protocol": "P1",
+    "action": "program M1",
+    "inputs": {
+      "command": "AT+SETMODE=BOTH M1"
+    },
+    "expected_bytes": "41542b5345544d4f44453d424f5448204d310d0a",
+    "evidence": [
+      "E03",
+      "E05",
+      "E07",
+      "E09",
+      "blutter/asm/king_koil/controller/double_widget/M510Widget.dart@0x50d8e4 (line 412)"
+    ]
+  },
+  {
+    "id": "P1-09",
+    "protocol": "P1",
+    "action": "recall SNORE",
+    "inputs": {
+      "command": "AT+MODE=BOTH SNORE"
+    },
+    "expected_bytes": "41542b4d4f44453d424f544820534e4f52450d0a",
+    "evidence": [
+      "E03",
+      "E05",
+      "E07",
+      "E09",
+      "blutter/asm/king_koil/controller/double_widget/M510Widget.dart@0x50d9b8 (line 488)"
+    ]
+  },
+  {
+    "id": "P1-10",
+    "protocol": "P1",
+    "action": "program SNORE",
+    "inputs": {
+      "command": "AT+SETMODE=BOTH SNORE"
+    },
+    "expected_bytes": "41542b5345544d4f44453d424f544820534e4f52450d0a",
+    "evidence": [
+      "E03",
+      "E05",
+      "E07",
+      "E09",
+      "blutter/asm/king_koil/controller/double_widget/M510Widget.dart@0x50d9ac (line 483)"
+    ]
+  },
+  {
+    "id": "P1-11",
+    "protocol": "P1",
+    "action": "recall TV",
+    "inputs": {
+      "command": "AT+MODE=BOTH TV"
+    },
+    "expected_bytes": "41542b4d4f44453d424f54482054560d0a",
+    "evidence": [
+      "E03",
+      "E05",
+      "E07",
+      "E09",
+      "blutter/asm/king_koil/controller/double_widget/M510Widget.dart@0x50da80 (line 559)"
+    ]
+  },
+  {
+    "id": "P1-12",
+    "protocol": "P1",
+    "action": "program TV",
+    "inputs": {
+      "command": "AT+SETMODE=BOTH TV"
+    },
+    "expected_bytes": "41542b5345544d4f44453d424f54482054560d0a",
+    "evidence": [
+      "E03",
+      "E05",
+      "E07",
+      "E09",
+      "blutter/asm/king_koil/controller/double_widget/M510Widget.dart@0x50da74 (line 554)"
+    ]
+  },
+  {
+    "id": "P1-13",
+    "protocol": "P1",
+    "action": "recall ZEROG",
+    "inputs": {
+      "command": "AT+MODE=BOTH ZEROG"
+    },
+    "expected_bytes": "41542b4d4f44453d424f5448205a45524f470d0a",
+    "evidence": [
+      "E03",
+      "E05",
+      "E07",
+      "E09",
+      "blutter/asm/king_koil/controller/double_widget/M510Widget.dart@0x50dbcc (line 687)"
+    ]
+  },
+  {
+    "id": "P1-14",
+    "protocol": "P1",
+    "action": "program ZEROG",
+    "inputs": {
+      "command": "AT+SETMODE=BOTH ZEROG"
+    },
+    "expected_bytes": "41542b5345544d4f44453d424f5448205a45524f470d0a",
+    "evidence": [
+      "E03",
+      "E05",
+      "E07",
+      "E09",
+      "blutter/asm/king_koil/controller/double_widget/M510Widget.dart@0x50dbc0 (line 682)"
+    ]
+  },
+  {
+    "id": "P1-15",
+    "protocol": "P1",
+    "action": "recall FLAT",
+    "inputs": {
+      "command": "AT+MODE=BOTH FLAT"
+    },
+    "expected_bytes": "41542b4d4f44453d424f544820464c41540d0a",
+    "evidence": [
+      "E03",
+      "E05",
+      "E08",
+      "E09",
+      "blutter/asm/king_koil/controller/double_widget/M510Widget.dart@0x50dccc (line 776)"
+    ]
+  },
+  {
+    "id": "P1-16",
+    "protocol": "P1",
+    "action": "recall M8",
+    "inputs": {
+      "command": "AT+MODE=BOTH M8"
+    },
+    "expected_bytes": "41542b4d4f44453d424f5448204d380d0a",
+    "evidence": [
+      "E03",
+      "E05",
+      "E08",
+      "E09",
+      "blutter/asm/king_koil/controller/double_widget/M510Widget.dart@0x50de04 (line 893)"
+    ]
+  },
+  {
+    "id": "P1-17",
+    "protocol": "P1",
+    "action": "recall SWING",
+    "inputs": {
+      "command": "AT+MODE=BOTH SWING"
+    },
+    "expected_bytes": "41542b4d4f44453d424f5448205357494e470d0a",
+    "evidence": [
+      "E03",
+      "E05",
+      "E08",
+      "E09",
+      "blutter/asm/king_koil/controller/double_widget/M510Widget.dart@0x50dea4 (line 949)"
+    ]
+  },
+  {
+    "id": "P1-18",
+    "protocol": "P1",
+    "action": "motor stop",
+    "inputs": {
+      "command": "AT+CTRL=BOTH STOP"
+    },
+    "expected_bytes": "41542b4354524c3d424f54482053544f500d0a",
+    "evidence": [
+      "E03",
+      "E05",
+      "E06",
+      "E09",
+      "blutter/asm/king_koil/controller/controllerWidget/HeadFootController.dart@0x66eb70 (line 1757)",
+      "blutter/asm/king_koil/controller/controllerWidget/HeadFootController.dart@0x66ec00 (line 1807)",
+      "blutter/asm/king_koil/controller/controllerWidget/HeadFootController.dart@0x66ecd8 (line 1900)",
+      "blutter/asm/king_koil/controller/controllerWidget/HeadFootController.dart@0x66ed68 (line 1950)",
+      "blutter/asm/king_koil/controller/controllerWidget/HeadFootController.dart@0x66ee18 (line 2021)",
+      "blutter/asm/king_koil/controller/controllerWidget/HeadFootController.dart@0x66eea8 (line 2071)",
+      "blutter/asm/king_koil/controller/controllerWidget/HeadFootController.dart@0x66f6e0 (line 2562)",
+      "blutter/asm/king_koil/controller/controllerWidget/HeadFootController.dart@0x66f770 (line 2612)",
+      "blutter/asm/king_koil/controller/controllerWidget/HeadFootController.dart@0x66f848 (line 2705)",
+      "blutter/asm/king_koil/controller/controllerWidget/HeadFootController.dart@0x66f8d8 (line 2755)",
+      "blutter/asm/king_koil/controller/controllerWidget/HeadFootController.dart@0x66f988 (line 2826)",
+      "blutter/asm/king_koil/controller/controllerWidget/HeadFootController.dart@0x66fa18 (line 2876)",
+      "blutter/asm/king_koil/controller/double_widget/M510Widget.dart@0x51003c (line 2529)",
+      "blutter/asm/king_koil/controller/double_widget/M510Widget.dart@0x5101b4 (line 2664)"
+    ]
+  },
+  {
+    "id": "P1-19",
+    "protocol": "P1",
+    "action": "head massage stop",
+    "inputs": {
+      "command": "AT+MASS=BOTH HEAD DT00"
+    },
+    "expected_bytes": "41542b4d4153533d424f5448204845414420445430300d0a",
+    "evidence": [
+      "E03",
+      "E05",
+      "E09",
+      "E11",
+      "blutter/asm/king_koil/controller/double_widget/M510Widget.dart@0x5100b0 (line 2572)",
+      "blutter/asm/king_koil/controller/double_widget/M510Widget.dart@0x510230 (line 2713)"
+    ]
+  },
+  {
+    "id": "P1-22",
+    "protocol": "P1",
+    "action": "foot massage stop",
+    "inputs": {
+      "command": "AT+MASS=BOTH FOOT DT00"
+    },
+    "expected_bytes": "41542b4d4153533d424f544820464f4f5420445430300d0a",
+    "evidence": [
+      "E03",
+      "E05",
+      "E09",
+      "E11",
+      "blutter/asm/king_koil/controller/double_widget/M510Widget.dart@0x510124 (line 2615)",
+      "blutter/asm/king_koil/controller/double_widget/M510Widget.dart@0x5102ac (line 2762)"
+    ]
+  },
+  {
+    "id": "P1-25",
+    "protocol": "P1",
+    "action": "enable beep",
+    "inputs": {
+      "command": "AT+ENABLE=BEEP"
+    },
+    "expected_bytes": "41542b454e41424c453d424545500d0a",
+    "evidence": [
+      "E03",
+      "E06",
+      "E09",
+      "blutter/asm/king_koil/controller/controllerWidget/HeadFootController.dart@0x66f3ec (line 2288)",
+      "blutter/asm/king_koil/controller/controllerWidget/HeadFootController.dart@0x66f464 (line 2330)"
+    ]
+  },
+  {
+    "id": "P1-26",
+    "protocol": "P1",
+    "action": "query firmware version",
+    "inputs": {
+      "command": "AT+GETSYSTEM=VERSION"
+    },
+    "expected_bytes": "41542b47455453595354454d3d56455253494f4e0d0a",
+    "evidence": [
+      "E03",
+      "E12",
+      "blutter/asm/king_koil/controller/BaseControllerState.dart@0x610ef0 (line 1866)"
+    ]
+  },
+  {
+    "id": "MASS-HEAD-DT-00",
+    "protocol": "P1",
+    "action": "HEAD massage DT00",
+    "inputs": {
+      "command": "AT+MASS=BOTH HEAD DT00"
+    },
+    "expected_bytes": "41542b4d4153533d424f5448204845414420445430300d0a",
+    "evidence": [
+      "E03",
+      "E11",
+      "E18"
+    ]
+  },
+  {
+    "id": "MASS-HEAD-DT-20",
+    "protocol": "P1",
+    "action": "HEAD massage DT20",
+    "inputs": {
+      "command": "AT+MASS=BOTH HEAD DT20"
+    },
+    "expected_bytes": "41542b4d4153533d424f5448204845414420445432300d0a",
+    "evidence": [
+      "E03",
+      "E11",
+      "E18"
+    ]
+  },
+  {
+    "id": "MASS-HEAD-DT-33",
+    "protocol": "P1",
+    "action": "HEAD massage DT33",
+    "inputs": {
+      "command": "AT+MASS=BOTH HEAD DT33"
+    },
+    "expected_bytes": "41542b4d4153533d424f5448204845414420445433330d0a",
+    "evidence": [
+      "E03",
+      "E11",
+      "E18"
+    ]
+  },
+  {
+    "id": "MASS-HEAD-DT-50",
+    "protocol": "P1",
+    "action": "HEAD massage DT50",
+    "inputs": {
+      "command": "AT+MASS=BOTH HEAD DT50"
+    },
+    "expected_bytes": "41542b4d4153533d424f5448204845414420445435300d0a",
+    "evidence": [
+      "E03",
+      "E11",
+      "E18"
+    ]
+  },
+  {
+    "id": "MASS-HEAD-LV-00",
+    "protocol": "P1",
+    "action": "HEAD massage LV00",
+    "inputs": {
+      "command": "AT+MASS=BOTH HEAD LV00"
+    },
+    "expected_bytes": "41542b4d4153533d424f54482048454144204c5630300d0a",
+    "evidence": [
+      "E03",
+      "E11",
+      "E18"
+    ]
+  },
+  {
+    "id": "MASS-HEAD-LV-10",
+    "protocol": "P1",
+    "action": "HEAD massage LV10",
+    "inputs": {
+      "command": "AT+MASS=BOTH HEAD LV10"
+    },
+    "expected_bytes": "41542b4d4153533d424f54482048454144204c5631300d0a",
+    "evidence": [
+      "E03",
+      "E11",
+      "E18"
+    ]
+  },
+  {
+    "id": "MASS-HEAD-LV-20",
+    "protocol": "P1",
+    "action": "HEAD massage LV20",
+    "inputs": {
+      "command": "AT+MASS=BOTH HEAD LV20"
+    },
+    "expected_bytes": "41542b4d4153533d424f54482048454144204c5632300d0a",
+    "evidence": [
+      "E03",
+      "E11",
+      "E18"
+    ]
+  },
+  {
+    "id": "MASS-HEAD-LV-30",
+    "protocol": "P1",
+    "action": "HEAD massage LV30",
+    "inputs": {
+      "command": "AT+MASS=BOTH HEAD LV30"
+    },
+    "expected_bytes": "41542b4d4153533d424f54482048454144204c5633300d0a",
+    "evidence": [
+      "E03",
+      "E11",
+      "E18"
+    ]
+  },
+  {
+    "id": "MASS-FOOT-DT-00",
+    "protocol": "P1",
+    "action": "FOOT massage DT00",
+    "inputs": {
+      "command": "AT+MASS=BOTH FOOT DT00"
+    },
+    "expected_bytes": "41542b4d4153533d424f544820464f4f5420445430300d0a",
+    "evidence": [
+      "E03",
+      "E11",
+      "E18"
+    ]
+  },
+  {
+    "id": "MASS-FOOT-DT-20",
+    "protocol": "P1",
+    "action": "FOOT massage DT20",
+    "inputs": {
+      "command": "AT+MASS=BOTH FOOT DT20"
+    },
+    "expected_bytes": "41542b4d4153533d424f544820464f4f5420445432300d0a",
+    "evidence": [
+      "E03",
+      "E11",
+      "E18"
+    ]
+  },
+  {
+    "id": "MASS-FOOT-DT-33",
+    "protocol": "P1",
+    "action": "FOOT massage DT33",
+    "inputs": {
+      "command": "AT+MASS=BOTH FOOT DT33"
+    },
+    "expected_bytes": "41542b4d4153533d424f544820464f4f5420445433330d0a",
+    "evidence": [
+      "E03",
+      "E11",
+      "E18"
+    ]
+  },
+  {
+    "id": "MASS-FOOT-DT-50",
+    "protocol": "P1",
+    "action": "FOOT massage DT50",
+    "inputs": {
+      "command": "AT+MASS=BOTH FOOT DT50"
+    },
+    "expected_bytes": "41542b4d4153533d424f544820464f4f5420445435300d0a",
+    "evidence": [
+      "E03",
+      "E11",
+      "E18"
+    ]
+  },
+  {
+    "id": "MASS-FOOT-LV-00",
+    "protocol": "P1",
+    "action": "FOOT massage LV00",
+    "inputs": {
+      "command": "AT+MASS=BOTH FOOT LV00"
+    },
+    "expected_bytes": "41542b4d4153533d424f544820464f4f54204c5630300d0a",
+    "evidence": [
+      "E03",
+      "E11",
+      "E18"
+    ]
+  },
+  {
+    "id": "MASS-FOOT-LV-10",
+    "protocol": "P1",
+    "action": "FOOT massage LV10",
+    "inputs": {
+      "command": "AT+MASS=BOTH FOOT LV10"
+    },
+    "expected_bytes": "41542b4d4153533d424f544820464f4f54204c5631300d0a",
+    "evidence": [
+      "E03",
+      "E11",
+      "E18"
+    ]
+  },
+  {
+    "id": "MASS-FOOT-LV-20",
+    "protocol": "P1",
+    "action": "FOOT massage LV20",
+    "inputs": {
+      "command": "AT+MASS=BOTH FOOT LV20"
+    },
+    "expected_bytes": "41542b4d4153533d424f544820464f4f54204c5632300d0a",
+    "evidence": [
+      "E03",
+      "E11",
+      "E18"
+    ]
+  },
+  {
+    "id": "MASS-FOOT-LV-30",
+    "protocol": "P1",
+    "action": "FOOT massage LV30",
+    "inputs": {
+      "command": "AT+MASS=BOTH FOOT LV30"
+    },
+    "expected_bytes": "41542b4d4153533d424f544820464f4f54204c5633300d0a",
+    "evidence": [
+      "E03",
+      "E11",
+      "E18"
+    ]
+  },
+  {
+    "id": "ALARM-SA-0",
+    "protocol": "P1",
+    "action": "alarm SA example",
+    "kind": "alarm",
+    "inputs": {
+      "op": "SA",
+      "day": 0,
+      "hour": 7,
+      "minute": 30,
+      "loop": "00"
+    },
+    "expected_bytes": "41542b53413d30303037333030300d0a",
+    "evidence": [
+      "E13",
+      "E18"
+    ]
+  },
+  {
+    "id": "ALARM-SA-6",
+    "protocol": "P1",
+    "action": "alarm SA example",
+    "kind": "alarm",
+    "inputs": {
+      "op": "SA",
+      "day": 6,
+      "hour": 23,
+      "minute": 59,
+      "loop": "01"
+    },
+    "expected_bytes": "41542b53413d30363233353930310d0a",
+    "evidence": [
+      "E13",
+      "E18"
+    ]
+  },
+  {
+    "id": "ALARM-CA-0",
+    "protocol": "P1",
+    "action": "alarm CA example",
+    "kind": "alarm",
+    "inputs": {
+      "op": "CA",
+      "day": 0,
+      "hour": 7,
+      "minute": 30,
+      "loop": "00"
+    },
+    "expected_bytes": "41542b43413d30303037333030310d0a",
+    "evidence": [
+      "E13",
+      "E18"
+    ]
+  },
+  {
+    "id": "ALARM-CA-6",
+    "protocol": "P1",
+    "action": "alarm CA example",
+    "kind": "alarm",
+    "inputs": {
+      "op": "CA",
+      "day": 6,
+      "hour": 23,
+      "minute": 59,
+      "loop": "01"
+    },
+    "expected_bytes": "41542b43413d30363233353930310d0a",
+    "evidence": [
+      "E13",
+      "E18"
+    ]
+  },
+  {
+    "id": "ALARM-DA-0",
+    "protocol": "P1",
+    "action": "alarm DA example",
+    "kind": "alarm",
+    "inputs": {
+      "op": "DA",
+      "day": 0,
+      "hour": 7,
+      "minute": 30,
+      "loop": "00"
+    },
+    "expected_bytes": "41542b44413d30303037333030310d0a",
+    "evidence": [
+      "E13",
+      "E18"
+    ]
+  },
+  {
+    "id": "ALARM-DA-6",
+    "protocol": "P1",
+    "action": "alarm DA example",
+    "kind": "alarm",
+    "inputs": {
+      "op": "DA",
+      "day": 6,
+      "hour": 23,
+      "minute": 59,
+      "loop": "01"
+    },
+    "expected_bytes": "41542b44413d30363233353930310d0a",
+    "evidence": [
+      "E13",
+      "E18"
+    ]
+  },
+  {
+    "id": "GA",
+    "protocol": "P1",
+    "action": "alarm/clock query",
+    "inputs": {
+      "command": "AT+GA"
+    },
+    "expected_bytes": "41542b47410d0a",
+    "evidence": [
+      "E13",
+      "E18"
+    ]
+  },
+  {
+    "id": "GD",
+    "protocol": "P1",
+    "action": "alarm/clock query",
+    "inputs": {
+      "command": "AT+GD"
+    },
+    "expected_bytes": "41542b47440d0a",
+    "evidence": [
+      "E13",
+      "E18"
+    ]
+  },
+  {
+    "id": "CLOCK-LOCAL",
+    "protocol": "P1",
+    "action": "clock calibration example",
+    "kind": "clock",
+    "inputs": {
+      "year": 2026,
+      "month": 11,
+      "day": 27,
+      "hour": 9,
+      "minute": 5
+    },
+    "expected_bytes": "41542b53443d323631313237303930350d0a",
+    "evidence": [
+      "E13",
+      "E18"
+    ]
+  },
+  {
+    "id": "VERSION-FRAGMENT",
+    "protocol": "P1",
+    "action": "receive parser synthetic edge case",
+    "kind": "parser",
+    "inputs": {
+      "chunks_hex": [
+        "2b4f4b3a566572",
+        "73696f6e3d312e32",
+        "0d",
+        "0a"
+      ]
+    },
+    "expected_bytes": "2b4f4b3a56657273696f6e3d312e320d0a",
+    "expected_state": {
+      "buffer": "",
+      "version": "1.2\r\n",
+      "raw": null,
+      "date": null,
+      "pending": {}
+    },
+    "evidence": [
+      "E12",
+      "E18"
+    ]
+  },
+  {
+    "id": "GD-ONE",
+    "protocol": "P1",
+    "action": "receive parser synthetic edge case",
+    "kind": "parser",
+    "inputs": {
+      "chunks_hex": [
+        "2b4f4b3a47443d323631313237303930350d0a"
+      ]
+    },
+    "expected_bytes": "2b4f4b3a47443d323631313237303930350d0a",
+    "expected_state": {
+      "buffer": "",
+      "version": null,
+      "raw": "+OK:GD=2611270905\r\n",
+      "date": "2611270905",
+      "pending": {}
+    },
+    "evidence": [
+      "E12",
+      "E18"
+    ]
+  },
+  {
+    "id": "GD-FRAGMENT",
+    "protocol": "P1",
+    "action": "receive parser synthetic edge case",
+    "kind": "parser",
+    "inputs": {
+      "chunks_hex": [
+        "2b4f4b3a47443d32363131",
+        "3237303930350d0a"
+      ]
+    },
+    "expected_bytes": "2b4f4b3a47443d323631313237303930350d0a",
+    "expected_state": {
+      "buffer": "",
+      "version": null,
+      "raw": "+OK:GD=2611270905\r\n",
+      "date": "26",
+      "pending": {}
+    },
+    "evidence": [
+      "E12",
+      "E18"
+    ]
+  },
+  {
+    "id": "GA-ONE",
+    "protocol": "P1",
+    "action": "receive parser synthetic edge case",
+    "kind": "parser",
+    "inputs": {
+      "chunks_hex": [
+        "2b4f4b3a47413d303030373330303130310d0a"
+      ]
+    },
+    "expected_bytes": "2b4f4b3a47413d303030373330303130310d0a",
+    "expected_state": {
+      "buffer": "",
+      "version": null,
+      "raw": "+OK:GA=0007300101\r\n",
+      "date": null,
+      "pending": {
+        "07300101": "0,"
+      }
+    },
+    "evidence": [
+      "E12",
+      "E18"
+    ]
+  },
+  {
+    "id": "GA-GROUP-DEDUP",
+    "protocol": "P1",
+    "action": "receive parser synthetic edge case",
+    "kind": "parser",
+    "inputs": {
+      "chunks_hex": [
+        "2b4f4b3a47413d303030373330303130310d0a",
+        "2b4f4b3a47413d303630373330303130310d0a",
+        "2b4f4b3a47413d303030373330303130310d0a"
+      ]
+    },
+    "expected_bytes": "2b4f4b3a47413d303030373330303130310d0a2b4f4b3a47413d303630373330303130310d0a2b4f4b3a47413d303030373330303130310d0a",
+    "expected_state": {
+      "buffer": "",
+      "version": null,
+      "raw": "+OK:GA=0007300101\r\n",
+      "date": null,
+      "pending": {
+        "07300101": "0,6,"
+      }
+    },
+    "evidence": [
+      "E12",
+      "E18"
+    ]
+  },
+  {
+    "id": "GA-IGNORE-02",
+    "protocol": "P1",
+    "action": "receive parser synthetic edge case",
+    "kind": "parser",
+    "inputs": {
+      "chunks_hex": [
+        "2b4f4b3a47413d303030373330303130320d0a"
+      ]
+    },
+    "expected_bytes": "2b4f4b3a47413d303030373330303130320d0a",
+    "expected_state": {
+      "buffer": "",
+      "version": null,
+      "raw": "+OK:GA=0007300102\r\n",
+      "date": null,
+      "pending": {}
+    },
+    "evidence": [
+      "E12",
+      "E18"
+    ]
+  },
+  {
+    "id": "GA-FRAGMENT",
+    "protocol": "P1",
+    "action": "receive parser synthetic edge case",
+    "kind": "parser",
+    "inputs": {
+      "chunks_hex": [
+        "2b4f4b3a47413d30303037",
+        "3330303130310d0a"
+      ]
+    },
+    "expected_bytes": "2b4f4b3a47413d303030373330303130310d0a",
+    "expected_state": {
+      "buffer": "",
+      "version": null,
+      "raw": "+OK:GA=0007300101\r\n",
+      "date": null,
+      "pending": {}
+    },
+    "evidence": [
+      "E12",
+      "E18"
+    ]
+  },
+  {
+    "id": "GA-COALESCED",
+    "protocol": "P1",
+    "action": "receive parser synthetic edge case",
+    "kind": "parser",
+    "inputs": {
+      "chunks_hex": [
+        "2b4f4b3a47413d303030373330303130310d0a2b4f4b3a47413d303630373330303130310d0a"
+      ]
+    },
+    "expected_bytes": "2b4f4b3a47413d303030373330303130310d0a2b4f4b3a47413d303630373330303130310d0a",
+    "expected_state": {
+      "buffer": "",
+      "version": null,
+      "raw": "+OK:GA=0007300101\r\n+OK:GA=0607300101\r\n",
+      "date": null,
+      "pending": {}
+    },
+    "evidence": [
+      "E12",
+      "E18"
+    ]
+  },
+  {
+    "id": "UNKNOWN-RAW",
+    "protocol": "P1",
+    "action": "receive parser synthetic edge case",
+    "kind": "parser",
+    "inputs": {
+      "chunks_hex": [
+        "2b4f4b3a4f544845523d310d0a"
+      ]
+    },
+    "expected_bytes": "2b4f4b3a4f544845523d310d0a",
+    "expected_state": {
+      "buffer": "",
+      "version": null,
+      "raw": "+OK:OTHER=1\r\n",
+      "date": null,
+      "pending": {}
+    },
+    "evidence": [
+      "E12",
+      "E18"
+    ]
+  }
+]

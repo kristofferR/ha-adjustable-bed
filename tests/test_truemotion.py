@@ -81,7 +81,7 @@ def test_discovery_shared_with_suta_and_never_recommends_switching_apps():
     assert "app_hint:truemotion" in detected.signals
     flow = AdjustableBedConfigFlow()
     assert flow._prepare_disambiguation(detected)
-    assert flow._disambiguation_types == [const.BED_TYPE_SUTA, const.BED_TYPE_TRUEMOTION]
+    assert flow._disambiguation_types == [const.BED_TYPE_SUTA, const.BED_TYPE_SUTA_KING_KOIL, const.BED_TYPE_TRUEMOTION]
     for bed_type in (const.BED_TYPE_SUTA, const.BED_TYPE_TRUEMOTION):
         assert recommend_profile({const.CONF_BED_TYPE: bed_type}, info, {}) is None
 

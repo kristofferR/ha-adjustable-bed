@@ -4782,3 +4782,37 @@ ergobq_unlink:
           max: 3
           step: 1
           mode: box
+
+# The app's existing-alarm callback sends DA; its firmware meaning is unverified.
+suta_king_koil_confirm_alarm:
+  fields:
+    device_id:
+      required: true
+      selector:
+        device:
+          filter:
+            integration: adjustable_bed
+          multiple: true
+    side:
+      selector:
+        select:
+          options: [left, right, both]
+    weekdays:
+      required: true
+      example: [0, 6]
+      selector:
+        object:
+    hour:
+      required: true
+      selector:
+        number:
+          min: 0
+          max: 23
+          mode: box
+    minute:
+      required: true
+      selector:
+        number:
+          min: 0
+          max: 59
+          mode: box
