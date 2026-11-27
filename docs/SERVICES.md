@@ -2786,6 +2786,14 @@ combined gesture. No programming latch carries into another action. Hardware
 save persistence is unverified. The native Save buttons ask for confirmation;
 automations calling this service should account for the movement.
 
+### PowersBedding
+
+The standard movement, memory programming, `sync_clock` and `set_alarm` actions
+apply. Alarms support weekdays, the next occurrence, memory A/B or massage.
+Only the P1 route accepts massage alongside a memory wake action. Use the
+shared massage timer select on P1; P2/P3 expose timer-cycle buttons.
+[Protocol and controls](beds/keeson.md#powersbedding).
+
 ### My Side
 
 `adjustable_bed.myside` supports Coaxing repeat alarms (`query`, `add`, `edit`,

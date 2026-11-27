@@ -179,6 +179,9 @@
  "binary_sensor:ormatek_massage": {
   "card_section": "massage"
  },
+ "binary_sensor:powersbedding_alarm_enabled": {
+  "card_section": "utility"
+ },
  "binary_sensor:relax_motion_sleep": {
   "card_section": "hidden"
  },
@@ -2017,6 +2020,13 @@
   "card_section": "motors",
   "card_role": "up",
   "card_motor": "pillow"
+ },
+ "button:powersbedding_query_alarm": {
+  "card_section": "utility"
+ },
+ "button:powersbedding_save_zero_g": {
+  "card_section": "presets",
+  "card_role": "save"
  },
  "button:preset_anti_snore": {
   "card_section": "presets"
@@ -5537,6 +5547,21 @@
  },
  "sensor:personal_comfort_adjustment": {
   "card_section": "firmness"
+ },
+ "sensor:powersbedding_alarm": {
+  "card_section": "utility"
+ },
+ "sensor:powersbedding_foot_report": {
+  "card_section": "massage"
+ },
+ "sensor:powersbedding_head_report": {
+  "card_section": "massage"
+ },
+ "sensor:powersbedding_timer": {
+  "card_section": "massage"
+ },
+ "sensor:powersbedding_wave_report": {
+  "card_section": "massage"
  },
  "sensor:resident_massage_timer": {
   "card_section": "massage"
