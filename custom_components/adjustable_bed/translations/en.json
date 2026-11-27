@@ -10657,6 +10657,44 @@
         }
       }
     },
+    "homezone": {
+      "name": "Home Zone Adjustable settings",
+      "description": "Change direct Bluetooth settings offered by the selected bed layout. Use Set alarm for alarms. Query refreshes accessory availability.",
+      "fields": {
+        "device_id": {
+          "name": "Device",
+          "description": "Bed to control."
+        },
+        "side": {
+          "name": "Side",
+          "description": "Which side of a combined bed to control."
+        },
+        "operation": {
+          "name": "Setting",
+          "description": "Setting to change."
+        },
+        "rgb_color": {
+          "name": "Color",
+          "description": "Red, green and blue values, each from 0 to 255."
+        },
+        "seconds": {
+          "name": "Light duration",
+          "description": "0 keeps the light on. Otherwise choose 1 to 300 seconds."
+        },
+        "aroma_times": {
+          "name": "Aromatherapy times",
+          "description": "Mode 2 minutes (1 to 60), mode 3 minutes (1 to 60), and pause hours (1 to 12)."
+        },
+        "progress": {
+          "name": "Massage slider",
+          "description": "The selected layout’s slider progress, from 0 to 5."
+        },
+        "popup": {
+          "name": "Massage timer button",
+          "description": "Choose the timer button shown by this layout."
+        }
+      }
+    },
     "richmat_resource_bed": {
       "name": "Lady Americana and partner beds: settings",
       "description": "Sets the light and massage timer of a Lady Americana or partner bed, or presses a bed button. Set its alarm with Set alarm. Read the current settings before changing the light.",
@@ -12926,6 +12964,39 @@
     "baseremote_group_disconnect": {
       "message": "The receiver link did not close after changing its Bluetooth group. Stop and disconnect it before continuing."
     },
+    "homezone_control": {
+      "message": "Choose a control offered by the selected bed layout."
+    },
+    "homezone_light_unavailable": {
+      "message": "The bed has not reported lighting support on this connection. Read its settings, then try again."
+    },
+    "homezone_aroma_unavailable": {
+      "message": "The bed has not reported aroma support on this connection. Read its settings, then try again."
+    },
+    "homezone_aroma_range": {
+      "message": "Choose 1 to 60 minutes for each startup time and 1 to 12 hours for the pause."
+    },
+    "homezone_massage_timer": {
+      "message": "Choose a massage timer duration offered by this bed layout."
+    },
+    "homezone_massage_off": {
+      "message": "Use the massage timer toggle button to turn it off."
+    },
+    "homezone_massage_popup": {
+      "message": "Choose a massage timer button offered by this bed layout."
+    },
+    "homezone_massage_slider": {
+      "message": "This bed layout does not offer a massage slider."
+    },
+    "homezone_alarm_action": {
+      "message": "Use Set alarm to change the bed’s alarm."
+    },
+    "homezone_alarm_combination": {
+      "message": "Choose a wake preset and massage combination supported by this bed layout."
+    },
+    "homezone_color": {
+      "message": "Enter red, green and blue values from 0 to 255."
+    },
     "sleepfunction_control": {
       "message": "Choose a control available for the current bed layout and connection."
     },
@@ -13823,6 +13894,7 @@
         "luniosmart": "Lunio Smart+ app",
         "majestichome": "Majestic Home app",
         "lp2": "L&P Adjustable Base app",
+        "homezone": "Home Zone Adjustable app",
         "bedsmart": "BedSmart / X-Series app",
         "bedtech_classic": "Bed Tech app",
         "jerome2": "Jerome's power base app",

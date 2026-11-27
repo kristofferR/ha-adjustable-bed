@@ -5,6 +5,7 @@ from dataclasses import dataclass
 from datetime import time
 from typing import Final, Literal
 
+from ...alarm import AlarmRequest
 from ...codec import richmat as codec
 
 # Generic BED callbacks use these resources, independently of XML buttons.
@@ -43,7 +44,7 @@ COMBINATIONS: Final = {
     0x2E: (0x81, 0x82, 0x83),
 }
 Operation = Literal[
-    "query", "alarm", "cancel_alarm", "rgb", "lamp_timeout", "massage_timer", "bed_command"
+    "query", "alarm", "cancel_alarm", "rgb", "lamp_timeout", "massage_timer", "bed_command", "aroma", "massage_popup"
 ]
 
 
@@ -52,11 +53,14 @@ class Request:
     operation: Operation
     actions: tuple[str, ...] = ()
     when: time | None = None
+    native_alarm: AlarmRequest | None = None
     color: tuple[int, int, int] | None = None
     seconds: int | None = None
     progress: int | None = None
     command: str | None = None
     duration_ms: int = 1000
+    aroma_times: tuple[int, int, int] | None = None
+    popup: str | None = None
 
 
 def lamp_timeout(seconds: int) -> bytes:

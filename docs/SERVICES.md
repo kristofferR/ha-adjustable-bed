@@ -2646,6 +2646,18 @@ Use `enso2_aroma_schedule` with `device_id`, `mode_2_minutes` and
 the side of a two-address pair through the standard `side` field. The receiver
 must report the corresponding accessory over Bluetooth.
 
+### `homezone`
+
+Home Zone Adjustable settings use the configured bed and optional `side`.
+`operation: query` refreshes accessory availability; `rgb` takes `rgb_color`,
+`lamp_timeout` takes `seconds` (0 to 300, zero keeps the light on), and `aroma`
+takes `aroma_times` (mode 2 minutes, mode 3 minutes, pause hours). The ranges
+are 1 to 60, 1 to 60 and 1 to 12. `massage_timer` takes `progress` (0 to 5)
+for the selected layout’s slider; `massage_popup` takes `popup` (`15`, `30`,
+`45` or `toggle`) for layouts offering that popup. Its timer buttons display
+10, 20 and 30 minutes. Lighting and aroma require a reply on the current link.
+Use [`set_alarm`](#set_alarm) for the layout’s alarm.
+
 MLILY 3.1.1 (`com.richmat.mlily0`) uses **Set alarm** for its product-specific
 wake actions and once/daily repeat, and **Set bed clock** for local time. See
 [MLILY 3.1.1](beds/richmat.md#mlily-311).

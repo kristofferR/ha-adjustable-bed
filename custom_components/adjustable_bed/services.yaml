@@ -4459,6 +4459,61 @@ ambient_set_rgb:
           min: 0
           max: 255
 
+homezone:
+  fields:
+    device_id:
+      required: true
+      selector:
+        device:
+          integration: adjustable_bed
+          multiple: true
+    side:
+      selector:
+        select:
+          options:
+            - both
+            - left
+            - right
+    operation:
+      required: true
+      selector:
+        select:
+          options:
+            - query
+            - rgb
+            - lamp_timeout
+            - aroma
+            - massage_timer
+            - massage_popup
+    rgb_color:
+      selector:
+        color_rgb:
+    seconds:
+      selector:
+        number:
+          min: 0
+          max: 300
+          mode: box
+          unit_of_measurement: s
+    aroma_times:
+      selector:
+        object:
+    progress:
+      selector:
+        number:
+          min: 0
+          max: 5
+          step: 1
+          mode: box
+    popup:
+      selector:
+        select:
+          options:
+            - "15"
+            - "30"
+            - "45"
+            - toggle
+
 linak_move_sections:
   fields:
     device_id:
