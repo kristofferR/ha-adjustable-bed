@@ -5,6 +5,7 @@ from __future__ import annotations
 import asyncio
 from collections.abc import Callable
 from dataclasses import dataclass
+from math import ceil
 from typing import TYPE_CHECKING, cast
 
 from bleak import BleakClient
@@ -13,7 +14,7 @@ from bleak.backends.characteristic import BleakGATTCharacteristic
 from ...card import CARD_HIDDEN, CARD_LIGHTING
 from ...codec.okin_5a import TRANSPORTS
 from ...controller_state import StateUpdate
-from ...errors import BedNotConnectedError
+from ...errors import BedCommandTimedOutError, BedNotConnectedError
 from ...profiles.ifit import IFIT, MOTORS
 from ...profiles.okin_5a import Action
 from ...state_keys import UNDER_BED_LIGHTS_ON
@@ -168,7 +169,8 @@ class IfitController(Okin7ByteController):
         self.on_disconnect()
 
     async def stop_notify(self) -> None:
-        self.on_disconnect()
+        # Diagnostic capture only installs callbacks; it does not end this link.
+        await super().stop_notify()
 
     async def _frame(
         self,
@@ -362,14 +364,34 @@ class IfitController(Okin7ByteController):
         tick = 0
         try:
             while loop.time() < end and not cancel.is_set():
-                elapsed = tick * interval
+                elapsed = loop.time() - start
                 if action == "flat" and elapsed >= IFIT.flat_threshold_ms / 1000:
                     break
                 frame_action = (
                     "light_off" if action == "light_toggle" and elapsed >= threshold else action
                 )
-                await self._frame(link, IFIT.frame(frame_action), cancel, epoch, deadline=end)
-                tick += 1
+                frame_end = end
+                if action == "flat":
+                    frame_end = min(end, start + IFIT.flat_threshold_ms / 1000)
+                elif frame_action == "light_toggle":
+                    frame_end = min(end, start + threshold)
+                try:
+                    await self._frame(
+                        link, IFIT.frame(frame_action), cancel, epoch, deadline=frame_end
+                    )
+                except _Elapsed:
+                    if (
+                        frame_action == "light_toggle"
+                        and self._epoch == epoch
+                        and loop.time() < end
+                    ):
+                        # A queued toggle crossed the page's off threshold.
+                        continue
+                    return
+                if frame_action == "light_toggle" and loop.time() >= start + threshold:
+                    # The off event became due while the prior toggle settled.
+                    continue
+                tick = max(tick + 1, ceil((loop.time() - start) / interval))
                 if await self._pause(cancel, min(end, start + tick * interval) - loop.time()):
                     break
         except _Elapsed:
@@ -387,24 +409,43 @@ class IfitController(Okin7ByteController):
         link, epoch, cancel = self._live(), self._epoch, self._coordinator.cancel_command
         loop = asyncio.get_running_loop()
         start = loop.time()
-        end = start + IFIT.save_threshold_ms / 1000 + 0.1
+        save_at = start + IFIT.save_threshold_ms / 1000
         # This scope is the app's flat-held latch. Never retain it for a later call.
+        tick = 0
         try:
-            for tick in range(IFIT.save_threshold_ms // 50 + 1):
-                elapsed_ms = tick * 50
-                if await self._pause(cancel, start + elapsed_ms / 1000 - loop.time()):
+            while loop.time() < save_at and not cancel.is_set():
+                if await self._pause(cancel, min(save_at, start + tick * 0.05) - loop.time()):
                     return
-                if elapsed_ms < IFIT.flat_threshold_ms and elapsed_ms % 250 == 0:
-                    await self._frame(link, IFIT.frame("flat"), cancel, epoch, deadline=end)
+                if loop.time() >= save_at:
+                    break
+                elapsed_ms = tick * 50
+                if elapsed_ms % 250 == 0:
+                    await self._frame(link, IFIT.frame("flat"), cancel, epoch, deadline=save_at)
                 if elapsed_ms % IFIT.refresh_ms[action] == 0:
-                    key = (
-                        IFIT.save_actions[action]
-                        if elapsed_ms >= IFIT.save_threshold_ms
-                        else action
-                    )
-                    await self._frame(link, IFIT.frame(key), cancel, epoch, deadline=end)
+                    await self._frame(link, IFIT.frame(action), cancel, epoch, deadline=save_at)
+                # Do not replay timer slots that elapsed while a write settled.
+                tick = max(tick + 1, ceil((loop.time() - start) / 0.05))
         except _Elapsed:
+            if self._epoch != epoch:
+                raise BedNotConnectedError from None
+            # The last refresh waited past the threshold; SAVE is still due.
+        if await self._pause(cancel, save_at - loop.time()):
             return
+
+        saved = False
+
+        def record_save() -> None:
+            nonlocal saved
+            saved = True
+
+        try:
+            await self._frame(
+                link, IFIT.frame(IFIT.save_actions[action]), cancel, epoch, on_write=record_save
+            )
+        except _Elapsed:
+            raise BedNotConnectedError from None
+        if not saved and not cancel.is_set():
+            raise BedCommandTimedOutError
         # Both virtual pointers release here, including cancellation or write failure.
 
     @property

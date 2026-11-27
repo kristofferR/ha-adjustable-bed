@@ -731,3 +731,179 @@ async def test_light_intent_waits_for_successful_current_session_write(hass):
         with pytest.raises(asyncio.CancelledError):
             await task
         assert coord.controller_state.get(UNDER_BED_LIGHTS_ON) is True
+
+
+@pytest.mark.parametrize("write_latency", [0.08, 0.1])
+async def test_native_save_skips_overdue_refreshes_and_attempts_save(hass, write_latency):
+    from custom_components.adjustable_bed.services import async_register_services
+
+    coord, ctrl, c, device = await target(hass)
+    await async_register_services(hass)
+    times = []
+    with virtual_clock() as clock:
+
+        async def write(char, frame, **kwargs):
+            times.append((clock.now, bytes(frame)))
+            await asyncio.sleep(write_latency)
+
+        c.write_gatt_char.side_effect = write
+        await hass.services.async_call(
+            const.DOMAIN,
+            "ifit_save_preset",
+            {
+                "device_id": device.id,
+                "preset": "zero_g",
+            },
+            blocking=True,
+        )
+    assert times[0] == (0, IFIT.frame("flat"))
+    saves = [t for t, f in times if f == IFIT.frame("save_zero_g")]
+    assert len(saves) == 1
+    assert 3 <= saves[0] <= 3 + write_latency + 0.000001
+    assert times[-1][1] == IFIT.frame("save_zero_g")
+    assert all(t < 3 for t, f in times if f != IFIT.frame("save_zero_g"))
+    assert len(times) < 32  # At most one current batch, never all42 old refreshes.
+    # The first recall may follow Flat in the same event. Other writes do not
+    # replay expired50ms slots immediately after the prior acknowledgement.
+    assert any(b[0] - a[0] > write_latency + 0.001 for a, b in zip(times, times[1:], strict=False))
+
+
+async def test_native_save_reports_failed_save_instead_of_success(hass):
+    from bleak.exc import BleakError
+    from homeassistant.exceptions import HomeAssistantError
+
+    from custom_components.adjustable_bed.services import async_register_services
+
+    coord, ctrl, c, device = await target(hass)
+    await async_register_services(hass)
+    with virtual_clock() as clock:
+
+        async def write(char, frame, **kwargs):
+            if frame == IFIT.frame("save_zero_g"):
+                raise BleakError("save write failed")
+            await asyncio.sleep(0.1)
+
+        c.write_gatt_char.side_effect = write
+        with pytest.raises(HomeAssistantError):
+            await hass.services.async_call(
+                const.DOMAIN,
+                "ifit_save_preset",
+                {
+                    "device_id": device.id,
+                    "preset": "zero_g",
+                },
+                blocking=True,
+            )
+        assert clock.now >= 3
+    assert written(c)[-1] == IFIT.frame("save_zero_g")
+
+
+@pytest.mark.parametrize(
+    ("control", "threshold", "duration"),
+    [
+        ("light_massage", 1, 1500),
+        ("light_position", 3, 3500),
+        ("flat", 3, 4000),
+    ],
+)
+async def test_hold_thresholds_follow_elapsed_time_with_slow_writes(
+    hass, control, threshold, duration
+):
+    coord, ctrl, c, _ = await target(hass)
+    times = []
+    with virtual_clock() as clock:
+
+        async def write(char, frame, **kwargs):
+            times.append((clock.now, bytes(frame)))
+            await asyncio.sleep(0.6)
+
+        c.write_gatt_char.side_effect = write
+        await coord.async_execute_controller_command(lambda c: c.hold_control(control, duration))
+    assert times
+    if control == "flat":
+        assert all(t < threshold for t, f in times)
+    else:
+        assert IFIT.frame("light_off") in [f for t, f in times]
+        assert all(
+            f == IFIT.frame("light_toggle") if t < threshold else f == IFIT.frame("light_off")
+            for t, f in times
+        )
+    assert all(
+        b[0] - a[0] >= 0.749999 for a, b in zip(times, times[1:], strict=False) if a[1] == b[1]
+    )
+
+
+async def test_queued_toggle_crossing_off_threshold_uses_off(hass):
+    coord, ctrl, c, _ = await target(hass)
+    with virtual_clock():
+        await ctrl._ble_lock.acquire()
+        task = asyncio.create_task(
+            coord.async_execute_controller_command(lambda c: c.hold_control("light_massage", 1500))
+        )
+        await asyncio.sleep(1.1)
+        ctrl._ble_lock.release()
+        await task
+    assert written(c) and set(written(c)) == {IFIT.frame("light_off")}
+
+
+async def test_diagnostic_notification_cleanup_preserves_control_and_stop(hass):
+    from custom_components.adjustable_bed.ble_diagnostics import BLEDiagnosticRunner
+    from custom_components.adjustable_bed.button import ControllerActionButton
+
+    coord, ctrl, c, _ = await target(hass)
+    runner = BLEDiagnosticRunner(hass, coord.address, capture_duration=0, coordinator=coord)
+    runner._client = c
+    runner._using_coordinator_connection = True
+    with virtual_clock():
+        await runner._subscribe_to_notifications([])
+        assert runner._diagnostic_notifications_started
+        await runner._unsubscribe_from_notifications([])
+        assert not runner._diagnostic_notifications_started
+        assert c.is_connected
+        button = ControllerActionButton(
+            coord, next(s for s in ctrl.controller_button_specs if s.key == "head_up_max")
+        )
+        button.hass = hass
+        await button.async_press()
+        await coord.async_stop_command()
+    assert written(c) == [IFIT.frame("head_up_max")] * 3 + [IFIT.frame("stop")] * 3
+    assert not c.start_notify.called and not c.stop_notify.called
+    # Physical disconnect still retires the session, independently of cleanup.
+    ctrl.on_disconnect()
+    with pytest.raises(ConnectionError):
+        await ctrl.perform_action("head_up_max")
+
+
+async def test_save_attempts_after_refresh_write_crosses_threshold(hass):
+    coord, ctrl, c, _ = await target(hass)
+    times = []
+    with virtual_clock() as clock:
+
+        async def write(char, frame, **kwargs):
+            times.append((clock.now, bytes(frame)))
+            # The2.9s recall has already been admitted. Its acknowledgement
+            # arrives after the former3.1s deadline, but SAVE must still run.
+            await asyncio.sleep(0.25 if clock.now >= 2.899 else 0.007)
+
+        c.write_gatt_char.side_effect = write
+        await coord.async_execute_controller_command(lambda c: c.save_named_preset("zero_g"))
+    assert times[-1][1] == IFIT.frame("save_zero_g")
+    assert 3.14 < times[-1][0] < 3.16
+
+
+async def test_skipped_mandatory_save_without_cancellation_is_an_error(hass, monkeypatch):
+    from custom_components.adjustable_bed.command_scheduler import note_frame_skipped
+    from custom_components.adjustable_bed.errors import BedCommandTimedOutError
+
+    coord, ctrl, c, _ = await target(hass)
+    original = ctrl._write_gatt_with_retry
+
+    async def write(uuid, frame, **kwargs):
+        if frame == IFIT.frame("save_zero_g"):
+            note_frame_skipped()
+            return
+        await original(uuid, frame, **kwargs)
+
+    monkeypatch.setattr(ctrl, "_write_gatt_with_retry", write)
+    with virtual_clock(), pytest.raises(BedCommandTimedOutError):
+        await coord.async_execute_controller_command(lambda c: c.save_named_preset("zero_g"))
