@@ -40,6 +40,7 @@ from ...profiles.okin_nframe import (
 )
 from ..base import BedController
 from ..builder import BuildContext
+from ..cancellation import settled
 from ..catalog_buttons import Kind, catalog_button, save_button
 from ..entity_specs import (
     ControllerButtonSpec,
@@ -84,7 +85,7 @@ _RELEASE_OFFSETS_S: Final = tuple(
 
 # saveMemory(n) records these local codes; callMemory(n) clears them.
 _RECALLS: Final = frozenset(
-    {"flat", "anti_snore", "leisure", "lounge", "memory_1", "zero_g", "tv", "memory_2"}
+    {"flat", "anti_snore", "leisure", "lounge", "incline", "memory_1", "zero_g", "tv", "memory_2"}
 )
 
 # Alarm frames, Customatic Z-Series only (exact CST13/CST14 manufacturer).
@@ -145,6 +146,7 @@ class OkinBeddingApp:
     information_uuid: str = _MANUFACTURER
     exact_duration: bool = False
     information_log_only: bool = False
+    settle_writes: bool = False
 
 
 _ZSERIES_BUTTONS_TAIL = (
@@ -274,9 +276,9 @@ def _callback(action: str) -> MotorCommandCallable:
 class OkinBeddingAppController(OkinCstController):
     """Reuse the proven CST frame without inheriting another app's capabilities."""
 
-    def __init__(self, coordinator: AdjustableBedCoordinator, *, app: str) -> None:
+    def __init__(self, coordinator: AdjustableBedCoordinator, *, app: str | OkinBeddingApp) -> None:
         super().__init__(coordinator)
-        self._app = APPS[app]
+        self._app = APPS[app] if isinstance(app, str) else app
         self._nframe_profile = self._app.profile
         self._profile = _product(self._nframe_profile)
         self._has_explicit_profile = True
@@ -553,6 +555,7 @@ class OkinBeddingAppController(OkinCstController):
         ):
             raise ValueError("Duration must be a positive integer, at most 60000 ms")
         primary, secondary = self._app.actions[control]
+        refresh_ms = self.profile.hold.repeat_ms or CST_REFRESH_MS
         write = self._press_writer()
         # The app records local save intent before writing, not a storage ACK.
         if control in self._app.save_codes:
@@ -576,10 +579,10 @@ class OkinBeddingAppController(OkinCstController):
                     try:
                         await press(
                             codec.frame96(primary, secondary),
-                            repeat_count=(duration_ms + CST_REFRESH_MS - 1) // CST_REFRESH_MS
+                            repeat_count=(duration_ms + refresh_ms - 1) // refresh_ms
                             if self._app.exact_duration
-                            else self.timed_move_repeat_count(duration_ms, CST_REFRESH_MS),
-                            repeat_delay_ms=CST_REFRESH_MS,
+                            else self.timed_move_repeat_count(duration_ms, refresh_ms),
+                            repeat_delay_ms=refresh_ms,
                         )
                     except TimeoutError:
                         controller_timeout = True
@@ -624,16 +627,7 @@ class OkinBeddingAppController(OkinCstController):
             if failure is not None:
                 raise failure
 
-        task = asyncio.create_task(release())
-        cancelled = False
-        while not task.done():
-            try:
-                await asyncio.shield(task)
-            except asyncio.CancelledError:
-                cancelled = True
-        task.result()
-        if cancelled:
-            raise asyncio.CancelledError
+        await settled(release())
 
     async def _send_repeated_command(
         self,
@@ -733,26 +727,13 @@ class TranquilController(OkinBeddingAppController):
         super().__init__(coordinator, app="tranquil")
 
 
-class RestfulController(OkinBeddingAppController):
-    """Jordan's Restful 1.0.2, with one shared tilt/lumbar control."""
+class SessionBeddingAppController(OkinBeddingAppController):
+    """Bedding holds, cleanup and notification callbacks on one BLE session."""
 
-    def __init__(self, coordinator: AdjustableBedCoordinator) -> None:
-        super().__init__(coordinator, app="restful")
+    def __init__(self, coordinator: AdjustableBedCoordinator, *, app: str | OkinBeddingApp) -> None:
+        super().__init__(coordinator, app=app)
         self._connection_generation = 0
         self._subscription: tuple[BleakClient, BleakGATTCharacteristic] | None = None
-        self._saving = False
-
-    @property
-    def supports_massage_intensity_up_control(self) -> bool:
-        return True
-
-    async def massage_intensity_down(self) -> None:
-        raise NotImplementedError("Restful only supports increasing massage intensity")
-
-    @property
-    def held_control_options(self) -> tuple[str, ...]:
-        # Use the explicit save buttons or program_memory to change a preset.
-        return tuple(action for action in self._app.actions if not action.startswith("save_"))
 
     @property
     def motor_control_specs(self) -> tuple[MotorControlSpec, ...]:
@@ -764,40 +745,6 @@ class RestfulController(OkinBeddingAppController):
             )
             for spec in super().motor_control_specs
         )
-
-    @property
-    def replaced_standard_button_keys(self) -> frozenset[str]:
-        return frozenset({"program_memory_1", "program_memory_2"})
-
-    @property
-    def controller_button_specs(self) -> tuple[ControllerButtonSpec, ...]:
-        return (
-            *super().controller_button_specs,
-            save_button(
-                "program_memory_1", "Save M1", lambda ctrl: ctrl.program_memory(1),
-                requires_confirmation=True,
-            ),
-            save_button(
-                "program_memory_2", "Save M2", lambda ctrl: ctrl.program_memory(2),
-                requires_confirmation=True,
-            ),
-        )
-
-    async def _save_preset(self, action: str) -> None:
-        self._saving = True
-        try:
-            await self._hold_control(action, BEDDING_SAVE_HOLD_MS)
-        finally:
-            self._saving = False
-
-    async def program_memory(self, memory_num: int) -> None:
-        await self._save_preset(self._memory_action(memory_num, "save_"))
-
-    async def execute_app_control(self, action: str) -> None:
-        if action in ("save_zero_g", "save_tv"):
-            await self._save_preset(action)
-            return
-        await super().execute_app_control(action)
 
     async def _move_motor(self, motor: str, command_value: int | None) -> None:
         if command_value is None:
@@ -818,16 +765,17 @@ class RestfulController(OkinBeddingAppController):
     def _press_writer(self) -> _BeddingWriter:
         client = self.client
         if client is None or not client.is_connected:
-            raise ConnectionError("Restful is not connected")
+            raise ConnectionError(f"{self._app.label} is not connected")
         characteristic, response = self._write_role()
         return partial(
-            self._write_on_connection, client, self._connection_generation, characteristic, response
+            self._write_on_connection, client, self._connection_generation, self._coordinator.cancel_counter, characteristic, response
         )
 
     async def _write_on_connection(
         self,
         client: BleakClient,
         generation: int,
+        cancel_counter: int,
         characteristic: BleakGATTCharacteristic,
         response: bool,
         /,
@@ -839,8 +787,10 @@ class RestfulController(OkinBeddingAppController):
         on_write: Callable[[], None] | None = None,
     ) -> None:
         def check_generation() -> None:
+            if self._app.settle_writes and cancel_event is None and cancel_counter != self._coordinator.cancel_counter:
+                raise asyncio.CancelledError
             if generation != self._connection_generation:
-                raise ConnectionError("Restful command belongs to a previous BLE connection")
+                raise ConnectionError(f"{self._app.label} command belongs to a previous BLE connection")
 
         # The press already has a deadline. Each of the two neutral attempts
         # also has a limit, including time spent waiting for the BLE lock.
@@ -856,7 +806,7 @@ class RestfulController(OkinBeddingAppController):
                 characteristic=characteristic,
                 expected_client=client,
                 before_write=check_generation,
-                on_write=on_write,
+                on_write=on_write, settle_write=self._app.settle_writes,
             )
 
     async def start_notify(self, callback: Callable[[str, float], None] | None = None) -> None:
@@ -900,6 +850,7 @@ class RestfulController(OkinBeddingAppController):
             and client is self.client
         ):
             await self.refresh_manufacturer(exact_role=True)
+            await self._after_information_read(generation, client)
 
     async def stop_notify(self) -> None:
         subscription = self._subscription
@@ -916,9 +867,69 @@ class RestfulController(OkinBeddingAppController):
         except BleakError as error:
             _LOGGER.debug("Could not stop Restful notifications: %s", error)
 
+    async def _after_information_read(self, generation: int, client: BleakClient) -> None:
+        """App startup after its optional diagnostic read."""
+
     def on_disconnect(self) -> None:
         self._connection_generation += 1
         self._subscription = None
+        super().on_disconnect()
+
+
+class RestfulController(SessionBeddingAppController):
+    """Jordan's Restful 1.0.2, with one shared tilt/lumbar control."""
+
+    def __init__(self, coordinator: AdjustableBedCoordinator) -> None:
+        super().__init__(coordinator, app="restful")
+        self._saving = False
+
+    @property
+    def supports_massage_intensity_up_control(self) -> bool:
+        return True
+
+    async def massage_intensity_down(self) -> None:
+        raise NotImplementedError("Restful only supports increasing massage intensity")
+
+    @property
+    def held_control_options(self) -> tuple[str, ...]:
+        # Use the explicit save buttons or program_memory to change a preset.
+        return tuple(action for action in self._app.actions if not action.startswith("save_"))
+
+    @property
+    def replaced_standard_button_keys(self) -> frozenset[str]:
+        return frozenset({"program_memory_1", "program_memory_2"})
+
+    @property
+    def controller_button_specs(self) -> tuple[ControllerButtonSpec, ...]:
+        return (
+            *super().controller_button_specs,
+            save_button(
+                "program_memory_1", "Save M1", lambda ctrl: ctrl.program_memory(1),
+                requires_confirmation=True,
+            ),
+            save_button(
+                "program_memory_2", "Save M2", lambda ctrl: ctrl.program_memory(2),
+                requires_confirmation=True,
+            ),
+        )
+
+    async def _save_preset(self, action: str) -> None:
+        self._saving = True
+        try:
+            await self._hold_control(action, BEDDING_SAVE_HOLD_MS)
+        finally:
+            self._saving = False
+
+    async def program_memory(self, memory_num: int) -> None:
+        await self._save_preset(self._memory_action(memory_num, "save_"))
+
+    async def execute_app_control(self, action: str) -> None:
+        if action in ("save_zero_g", "save_tv"):
+            await self._save_preset(action)
+            return
+        await super().execute_app_control(action)
+
+    def on_disconnect(self) -> None:
         if self._state:
             self._publish({
                 "status_code": None,

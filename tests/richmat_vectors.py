@@ -2145,6 +2145,12 @@ FROZEN_FRAMES: dict[str, frozenset[str]] = {
     "richmat_classic_jerome2": JEROME_FROZEN_FRAMES,
     "galaxy": _galaxy(),
     **RISE_FROZEN_FRAMES,
+    "richmat_classic_dynasty": frozenset(
+        row[6] for row in json.loads(gzip.decompress(
+            (Path(__file__).parent / "fixtures/dynasty/wire.json.gz").read_bytes()
+        ))
+    ) | frozenset({"6e02010071", "6e08010178", "6e0a000179", "6e1a000088",
+                   "6e05000073", "6e06000074", "6e0b000079", "6e0b012ca6", "6e", "6e01006edd"}),
     "goodvibe": _goodvibe(),
     "mlily": _mlily(),
     "leggett_lp_legacy": _LP_LEGACY,

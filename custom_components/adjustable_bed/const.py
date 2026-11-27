@@ -520,6 +520,8 @@ CONF_FSM_RELAX_MEMORY_NAMES: Final = "fsm_relax_memory_names"
 BED_TYPE_SERENITY: Final = "serenity"  # Explicit Jordan's Serenity app profile
 BED_TYPE_RIZE_REMEDY_II: Final = "rize_remedy_ii"  # Explicit Rize Remedy II app
 BED_TYPE_RESTFUL: Final = "restful"  # Explicit Jordan's Restful app profile
+BED_TYPE_JOBS: Final = "jobs"
+JOBS_VARIANTS: Final = {"mode1": "Mode 1 (remote and massage)", "mode2": "Mode 2 (remote)"}
 BED_TYPE_TRANQUIL: Final = "tranquil"  # Explicit Jordan's Tranquil app profile
 # Glideaway model is selected manually; no advertisement-derived model rule.
 BED_TYPE_GALAXY: Final = "galaxy"
@@ -574,12 +576,14 @@ CONF_ENSO2_PROPERTY_FALLBACK: Final = "enso2_property_fallback"
 BED_TYPE_SEALY_POSTUREMATIC: Final = "sealy_posturematic"
 BED_TYPE_YAMADA: Final = "yamada"
 BED_TYPE_BETTERLIVING2: Final = "betterliving2"
+BED_TYPE_RESTONIC: Final = "restonic"
 BED_TYPE_KINGKOIL: Final = "kingkoil"
 BED_TYPE_SOMOS: Final = "somos"
 BED_TYPE_COMFORTBASE: Final = "comfortbase"
 BED_TYPE_LEVA: Final = "leva"
 BED_TYPE_LANGJUE: Final = "langjue"
 BED_TYPE_LINX: Final = "linx"
+BED_TYPE_FLEXISPOT: Final = "flexispot"
 BED_TYPE_COMFORT_ENHANCEMENTS: Final = "comfort_enhancements"
 COMFORT_ENHANCEMENTS_VARIANTS: Final = {
     "mc2": "MC2: AC-1/BC3, Massage Plus / Comfort Position",
@@ -590,7 +594,7 @@ COMFORT_ENHANCEMENTS_VARIANTS: Final = {
 BED_TYPE_SLEEPTIME: Final = "sleeptime"
 VARIANT_REQUIRED_BED_TYPES: Final = frozenset(
     {
-        BED_TYPE_RONCO_MOTION, BED_TYPE_AMBIENT, BED_TYPE_KINGKOIL, BED_TYPE_DREAMSENSE, BED_TYPE_LIKIMIO, BED_TYPE_SAATVA, BED_TYPE_MAJESTICHOME, BED_TYPE_LEVA, BED_TYPE_LINX, BED_TYPE_SOMOS, BED_TYPE_BOBPOWERBASE, "sleep_evolution", "wsilver_legacy", BED_TYPE_SYMPHONY_SLEEP, "comfort_enhancement3", BED_TYPE_YAMADA, BED_TYPE_RICHMAT_APP, BED_TYPE_RICHMAT_APP_SLEEP, BED_TYPE_ENSO2, "luuna", "personal_comfort", "instant_comfort", "richmat_sleep_receiver", BED_TYPE_MLILY, BED_TYPE_MLILY0, BED_TYPE_MLILY_REMOTE, BED_TYPE_GALAXY, BED_TYPE_OKIMIKI, BED_TYPE_GOODVIBE, BED_TYPE_HJBED, BED_TYPE_ESHINE_OKIN, BED_TYPE_ZSERIES, BED_TYPE_GLIDEAWAY_MOTION, BED_TYPE_COMFORT_ENHANCEMENTS, BED_TYPE_COMFORTBASE, "casper_base", BED_TYPE_RICHMAT_CLASSIC_APPS}
+        BED_TYPE_RONCO_MOTION, BED_TYPE_AMBIENT, BED_TYPE_RESTONIC, BED_TYPE_KINGKOIL, BED_TYPE_DREAMSENSE, BED_TYPE_LIKIMIO, BED_TYPE_SAATVA, BED_TYPE_MAJESTICHOME, BED_TYPE_LEVA, BED_TYPE_LINX, BED_TYPE_SOMOS, BED_TYPE_BOBPOWERBASE, "sleep_evolution", "wsilver_legacy", BED_TYPE_SYMPHONY_SLEEP, "comfort_enhancement3", BED_TYPE_YAMADA, BED_TYPE_RICHMAT_APP, BED_TYPE_RICHMAT_APP_SLEEP, BED_TYPE_ENSO2, "luuna", "personal_comfort", "instant_comfort", "richmat_sleep_receiver", BED_TYPE_MLILY, BED_TYPE_MLILY0, BED_TYPE_MLILY_REMOTE, BED_TYPE_GALAXY, BED_TYPE_OKIMIKI, BED_TYPE_GOODVIBE, BED_TYPE_HJBED, BED_TYPE_ESHINE_OKIN, BED_TYPE_ZSERIES, BED_TYPE_GLIDEAWAY_MOTION, BED_TYPE_COMFORT_ENHANCEMENTS, BED_TYPE_COMFORTBASE, "casper_base", BED_TYPE_RICHMAT_CLASSIC_APPS}
 ).union({BED_TYPE_BETTERLIVING2, BED_TYPE_JEROME_ADJUSTABLE_BASE, BED_TYPE_SLEEPTIME})
 # Aging in Place / Dawn House has one fixed profile; these filter observations.
 BED_TYPE_AGINGPLACE: Final = "agingplace"
@@ -599,7 +603,7 @@ CONF_AGINGPLACE_BED_SIDE: Final = "agingplace_bed_side"
 CONF_AGINGPLACE_SELECTED_SIDE: Final = "agingplace_selected_side"
 # Explicit OKIN Bedding app profiles sharing the Serenity controller core.
 OKIN_BEDDING_APP_BED_TYPES: Final = frozenset(
-    {BED_TYPE_SERENITY, BED_TYPE_TRANQUIL, BED_TYPE_RESTFUL, BED_TYPE_ZSERIES, BED_TYPE_RIZE_REMEDY_II}
+    {BED_TYPE_SERENITY, BED_TYPE_TRANQUIL, BED_TYPE_RESTFUL, BED_TYPE_ZSERIES, BED_TYPE_RIZE_REMEDY_II, BED_TYPE_JOBS}
 )
 # A Z-Series button press holds pulse_count x 100 ms, within the 60 s hold limit.
 ZSERIES_PULSE_COUNT_RANGE: Final = (1, 600)
@@ -804,6 +808,7 @@ BED_TYPE_TEMPUR_AU: Final = 'tempur_au'
 KEESON_LAYOUT_APP_BED_TYPES: Final = frozenset({BED_TYPE_TEMPUR_CURVE, BED_TYPE_QPLUS_APP, BED_TYPE_SERTA_MP_REMOTE, BED_TYPE_OMAZZ_ADJUSTO_III, BED_TYPE_ERGOMOTION_APP, BED_TYPE_ROW_CONTROL, BED_TYPE_ERGO_SLIM, BED_TYPE_TEMPUR_AU})
 
 SUPPORTED_BED_TYPES: Final = [
+    BED_TYPE_RESTONIC,
     BED_TYPE_DORSAL,
     BED_TYPE_NERUM,
     BED_TYPE_RELAX_MOTION,
@@ -852,6 +857,7 @@ SUPPORTED_BED_TYPES: Final = [
     BED_TYPE_LEVA,
     BED_TYPE_LANGJUE,
     BED_TYPE_LINX,
+    BED_TYPE_FLEXISPOT,
     BED_TYPE_SYMPHONY_SLEEP,
     BED_TYPE_SYMPHONY,
     BED_TYPE_ORMATEK,
@@ -903,6 +909,7 @@ SUPPORTED_BED_TYPES: Final = [
     BED_TYPE_FSM_RELAX,
     BED_TYPE_SERENITY,
     BED_TYPE_TRANQUIL,
+    BED_TYPE_JOBS,
     BED_TYPE_RESTFUL,
     BED_TYPE_RIZE_REMEDY_II,
     BED_TYPE_SIMMONS,
@@ -3059,12 +3066,14 @@ BED_MOTOR_PULSE_DEFAULTS: Final = {
     BED_TYPE_FSM_RELAX: (10, 60),
     BED_TYPE_SERENITY: (10, 100),  # APK refresh cadence; bounded HA movement duration
     BED_TYPE_RIZE_REMEDY_II: (10, 100),
+    BED_TYPE_JOBS: (10, 200),
     BED_TYPE_TRANQUIL: (10, 100),  # APK refresh cadence; bounded HA movement duration
     BED_TYPE_RESTFUL: (10, 100),
     # 100 ms is the app refresh; the count also bounds a Z-Series button press.
     BED_TYPE_ZSERIES: (10, 100),
     BED_TYPE_SIMMONS_BLUE: (5, 200),  # Finite HA press at the app's hold cadence.
     BED_TYPE_SIMMONS: (4, 300),  # APK 300 ms hold refresh; ~1.2 s HA movement
+    BED_TYPE_RESTONIC: (10, 200),
     BED_TYPE_KINGKOIL: (10, 300),
     BED_TYPE_SOMOS: (10, 300),
     BED_TYPE_COMFORTBASE: (10, 100),
@@ -3081,6 +3090,7 @@ BED_MOTOR_PULSE_DEFAULTS: Final = {
     BED_TYPE_N32_MOTION_BED: (5, 200),  # Finite caller pulse; app refresh is 200 ms.
     BED_TYPE_SHUDA: (5, 200),
     BED_TYPE_LANGJUE: (2, langjue_profile.MOTOR_REFRESH_MS),  # HA tap at the app's refresh rate.
+    BED_TYPE_FLEXISPOT: (5, 200),
     BED_TYPE_LINX: (334, 3),  # HA finite tap bound; Linx attempts held refresh every 3 ms.
     BED_TYPE_SYMPHONY_SLEEP: (4, 300),
     BED_TYPE_YAMADA: (4, 300),  # HA finite tap default at the app refresh cadence.

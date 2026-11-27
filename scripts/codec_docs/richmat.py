@@ -26,6 +26,7 @@ from custom_components.adjustable_bed.beds.leggett.lp_legacy_profiles import (
 )
 from custom_components.adjustable_bed.beds.luniosmart.discovery import ALIASES as LUNIO_ALIASES
 from custom_components.adjustable_bed.beds.luuna import controller as luuna_bed
+from custom_components.adjustable_bed.beds.richmat_classic import dynasty as dynasty_frames
 from custom_components.adjustable_bed.beds.richmat_classic import protocol as classic_frames
 from custom_components.adjustable_bed.beds.richmat_classic import (
     resource_protocol as resource_frames,
@@ -2165,3 +2166,38 @@ def render_mlily0() -> str:
 
 
 BLOCKS.append((GUIDE, "mlily0-commands", render_mlily0))
+
+
+def render_dynasty_commands() -> str:
+    catalog = load_catalog("dynasty")
+    rows = sorted({
+        (control.label, control.short_old or control.short or "", control.short or "", control.long or "")
+        for layout, model in catalog.models.items() if layout not in ("TEST", "RMCS", "WFRM", "FWRM")
+        for control in model.controls if control.status in (1, 2, 3)
+        and (control.short or control.short_old or control.long)
+    })
+    return _block(_table(
+        ("Bound resource", "RAW short operand", "Current short operand", "Long operand"),
+        ((f"`{label}`", *(f"`{cell}`" if cell else "None" for cell in values)) for label, *values in rows),
+    ))
+
+
+def render_dynasty_timing() -> str:
+
+    return _block(_table(
+        ("Path", "Schedule"),
+        (
+            ("Ordinary refresh", f"{classic_frames.TICK_MS} ms"),
+            ("TWRM / MLRM actual name", f"{classic_frames.FAST_TICK_MS} ms"),
+            ("RAW 6BRM actual name", f"{classic_frames.worker_interval("6BRM", "RAW", rise=True)} ms"),
+            ("FRAMED initialization", f"write after subscribing, then wait {classic_frames.STARTUP_MS} ms"),
+            ("Held release", f"{classic_frames.HELD_RELEASE_MS} ms"),
+            ("Short/long release", f"{classic_frames.TAP_RELEASE_MS} ms"),
+            ("Timeout zero", _hex(dynasty_frames.lamp_timeout(0))),
+            ("Timeout maximum", _hex(dynasty_frames.lamp_timeout(300))),
+        ),
+    ))
+
+
+
+BLOCKS += [(GUIDE, "dynasty-commands", render_dynasty_commands), (GUIDE, "dynasty-timing", render_dynasty_timing)]

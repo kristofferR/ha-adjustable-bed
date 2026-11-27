@@ -96,6 +96,7 @@ Bluetooth name does not tell which layout a bed has, so you pick it in setup (se
 | ✅ | [TX](https://play.google.com/store/apps/details?id=com.richmat.tx) 1.0.0 | `com.richmat.tx` | Own guide, [RUF and Richmat app profiles](ruf-richmat-apps.md): Richmat MH frames, bed type `richmat_tx` |
 | ✅ | [HJBed](https://play.google.com/store/apps/details?id=com.richmat.hjbed) 2.1.2 (code 21200) | `com.richmat.hjbed` | [HJBed](#hjbed) |
 | ✅ | [Eshine](https://play.google.com/store/apps/details?id=com.richmat.eshinesleep) 1.0.1 (code 10100) | `com.richmat.eshinesleep` | [Eshine](#eshine) |
+| ✅ | [Dynasty DM9000](https://play.google.com/store/apps/details?id=com.richmat.dynasty) 1.0.4 (5) | `com.richmat.dynasty` | [Dynasty](#dynasty-dm9000) |
 | ✅ | [Avocado Eco Base](https://play.google.com/store/apps/details?id=com.richmat.avocadoecobase) 1.0.4 (5) | `com.richmat.avocadoecobase` | [Classic apps](#classic-richmat-apps) |
 | ✅ | [CoasterSleep](https://play.google.com/store/apps/details?id=com.richmat.coastersleep) 1.0.10 (10) | `com.richmat.coastersleep` | [Classic apps](#classic-richmat-apps) |
 | ✅ | [Forty Winks](https://play.google.com/store/apps/details?id=com.richmat.fortywinks) 1.0.1 | `com.richmat.fortywinks` | [Classic apps](#classic-richmat-apps) |
@@ -239,6 +240,7 @@ sends STOP.
 | Classic Forty Winks | `richmat_classic_apps` | W1, W2, N1, W4 | per-layout catalog | renewable lease on keep buttons |
 | Classic Milemont | `richmat_classic_apps` | W1, W2, N1, W4 | per-layout catalog | renewable lease on keep buttons |
 | Classic Superior | `richmat_classic_apps` | W1, W2, N1, W4 | per-layout catalog | renewable lease on keep buttons |
+| Classic Dynasty DM9000 | `richmat_classic_apps` | W1, W2, N1, W4 | per-layout catalog | renewable lease on keep buttons |
 | Classic Luuna Rise | `richmat_classic_apps` | W1, W2, N1, W4 | per-layout catalog | renewable lease on keep buttons |
 | Classic Power Cool Sleep System | `richmat_classic_apps` | W1, W2, N1, W4 | per-layout catalog | renewable lease on keep buttons |
 | Classic SleepFunction Bed Control | `richmat_classic_apps` | W1, W2, N1, W4 | per-layout catalog | renewable lease on keep buttons |
@@ -336,12 +338,12 @@ and timing.
 
 | Key | Service | Write | Notify | Commands | Profiles |
 |---|---|---|---|---|---|
-| N1 | `6e400001-b5a3-f393-e0a9-e50e24dcca9e` | `6e400002-b5a3-f393-e0a9-e50e24dcca9e` | `6e400003-b5a3-f393-e0a9-e50e24dcca9e` | bare code | Richmat WiLinke, Richmat Nordic, Richmat Prefix55, Richmat PrefixAA, HJBed, Richmat 4.2.0, Eshine, Richmat MH Revive Control, Richmat MH Best Mattress, Richmat MH Blvd Home, Richmat MH HARMONY, Richmat MH Idealbed, Richmat MH RUF Betten, Richmat MH W.Silver, Richmat MH AMERICANSTAR, Richmat MH Bailey, Richmat MH TX, Richmat MH Nisco, Richmat MH MLILY Supreme, Richmat MH Bed Tech, Classic Avocado Eco Base, Classic CoasterSleep, Classic Forty Winks, Classic Milemont, Classic Superior, Classic Luuna Rise, Classic Power Cool Sleep System, Classic SleepFunction Bed Control, Classic L&P Adjustable Base, Classic BedSmart / X-Series, Classic Jerome's power base, Classic Base Remote, Classic Maxprime, Classic Dreamlab Control, Classic Lady Americana, Classic ACAA, Classic STA Homecare, Classic Zero Gravity, Galaxy Bed Control, Good Vibe Sleep, MLILY Control, Majestic Home, Okimiki, Power Bob Base, Casper Base, Hush Base, Luuna +, MLILY Remote, MLILY 3.1.1, SonicSleep, Lunio Smart+ (framed controls on every route) |
+| N1 | `6e400001-b5a3-f393-e0a9-e50e24dcca9e` | `6e400002-b5a3-f393-e0a9-e50e24dcca9e` | `6e400003-b5a3-f393-e0a9-e50e24dcca9e` | bare code | Richmat WiLinke, Richmat Nordic, Richmat Prefix55, Richmat PrefixAA, HJBed, Richmat 4.2.0, Eshine, Richmat MH Revive Control, Richmat MH Best Mattress, Richmat MH Blvd Home, Richmat MH HARMONY, Richmat MH Idealbed, Richmat MH RUF Betten, Richmat MH W.Silver, Richmat MH AMERICANSTAR, Richmat MH Bailey, Richmat MH TX, Richmat MH Nisco, Richmat MH MLILY Supreme, Richmat MH Bed Tech, Classic Avocado Eco Base, Classic CoasterSleep, Classic Forty Winks, Classic Milemont, Classic Superior, Classic Dynasty DM9000, Classic Luuna Rise, Classic Power Cool Sleep System, Classic SleepFunction Bed Control, Classic L&P Adjustable Base, Classic BedSmart / X-Series, Classic Jerome's power base, Classic Base Remote, Classic Maxprime, Classic Dreamlab Control, Classic Lady Americana, Classic ACAA, Classic STA Homecare, Classic Zero Gravity, Galaxy Bed Control, Good Vibe Sleep, MLILY Control, Majestic Home, Okimiki, Power Bob Base, Casper Base, Hush Base, Luuna +, MLILY Remote, MLILY 3.1.1, SonicSleep, Lunio Smart+ (framed controls on every route) |
 | W0 | `8ebd4f76-da9d-4b5a-a96e-8ebfbeb622e7` | `d44bc439-abfd-45a2-b575-925416129600` | `d44bc439-abfd-45a2-b575-925416129601` | framed | Richmat WiLinke, Richmat Nordic, Richmat Prefix55, Richmat PrefixAA, Classic L&P Adjustable Base |
-| W1 | `0000fee9-0000-1000-8000-00805f9b34fb` | `d44bc439-abfd-45a2-b575-925416129600` | `d44bc439-abfd-45a2-b575-925416129601` | framed | Richmat WiLinke, Richmat Nordic, Richmat Prefix55, Richmat PrefixAA, BedTech legacy, Saatva Adjustable Base: standard, Saatva Adjustable Base: split (two receivers), Saatva Adjustable Base Plus: standard, Saatva Adjustable Base Plus: split (two receivers), Saatva Adjustable Base Plus: split top (one receiver), BedTech app BT2000, BedTech app BT2500, BedTech app BT3000, BedTech app BT3000FH, BedTech app BT6500, BedTech app BTX4, BedTech app BTX4FH, BedTech app BTX5, BedTech app BTX5FH, L&P MlRM, HJBed, Richmat 4.2.0, Eshine, Richmat MH Revive Control, Richmat MH Best Mattress, Richmat MH Blvd Home, Richmat MH HARMONY, Richmat MH Idealbed, Richmat MH RUF Betten, Richmat MH W.Silver, Richmat MH AMERICANSTAR, Richmat MH Bailey, Richmat MH TX, Richmat MH Nisco, Richmat MH MLILY Supreme, Richmat MH Bed Tech, Classic Avocado Eco Base, Classic CoasterSleep, Classic Forty Winks, Classic Milemont, Classic Superior, Classic Luuna Rise, Classic Power Cool Sleep System, Classic SleepFunction Bed Control, Classic L&P Adjustable Base, Classic BedSmart / X-Series, Classic Jerome's power base, Classic Base Remote, Classic Maxprime, Classic Dreamlab Control, Classic Lady Americana, Classic ACAA, Classic STA Homecare, Classic Zero Gravity, Galaxy Bed Control, Good Vibe Sleep, MLILY Control, Majestic Home, Okimiki, Power Bob Base, Casper Base, Hush Base, Luuna +, MLILY Remote, MLILY 3.1.1, SonicSleep, Lunio Smart+ (framed controls on every route) |
-| W2 | `0000fee9-0000-1000-8000-00805f9b34bb` | `d44bc439-abfd-45a2-b575-925416129622` | `d44bc439-abfd-45a2-b575-925416129611` | framed | Richmat WiLinke, Richmat Nordic, Richmat Prefix55, Richmat PrefixAA, HJBed, Richmat 4.2.0, Eshine, Richmat MH Revive Control, Richmat MH Best Mattress, Richmat MH Blvd Home, Richmat MH HARMONY, Richmat MH Idealbed, Richmat MH RUF Betten, Richmat MH W.Silver, Richmat MH AMERICANSTAR, Richmat MH Bailey, Richmat MH TX, Richmat MH Nisco, Richmat MH MLILY Supreme, Richmat MH Bed Tech, Classic Avocado Eco Base, Classic CoasterSleep, Classic Forty Winks, Classic Milemont, Classic Superior, Classic Luuna Rise, Classic Power Cool Sleep System, Classic SleepFunction Bed Control, Classic L&P Adjustable Base, Classic BedSmart / X-Series, Classic Jerome's power base, Classic Base Remote, Classic Maxprime, Classic Dreamlab Control, Classic Lady Americana, Classic ACAA, Classic STA Homecare, Classic Zero Gravity, Galaxy Bed Control, Good Vibe Sleep, MLILY Control, Majestic Home, Okimiki, Power Bob Base, Casper Base, Hush Base, Luuna +, MLILY Remote, MLILY 3.1.1, SonicSleep, Lunio Smart+ (framed controls on every route) |
+| W1 | `0000fee9-0000-1000-8000-00805f9b34fb` | `d44bc439-abfd-45a2-b575-925416129600` | `d44bc439-abfd-45a2-b575-925416129601` | framed | Richmat WiLinke, Richmat Nordic, Richmat Prefix55, Richmat PrefixAA, BedTech legacy, Saatva Adjustable Base: standard, Saatva Adjustable Base: split (two receivers), Saatva Adjustable Base Plus: standard, Saatva Adjustable Base Plus: split (two receivers), Saatva Adjustable Base Plus: split top (one receiver), BedTech app BT2000, BedTech app BT2500, BedTech app BT3000, BedTech app BT3000FH, BedTech app BT6500, BedTech app BTX4, BedTech app BTX4FH, BedTech app BTX5, BedTech app BTX5FH, L&P MlRM, HJBed, Richmat 4.2.0, Eshine, Richmat MH Revive Control, Richmat MH Best Mattress, Richmat MH Blvd Home, Richmat MH HARMONY, Richmat MH Idealbed, Richmat MH RUF Betten, Richmat MH W.Silver, Richmat MH AMERICANSTAR, Richmat MH Bailey, Richmat MH TX, Richmat MH Nisco, Richmat MH MLILY Supreme, Richmat MH Bed Tech, Classic Avocado Eco Base, Classic CoasterSleep, Classic Forty Winks, Classic Milemont, Classic Superior, Classic Dynasty DM9000, Classic Luuna Rise, Classic Power Cool Sleep System, Classic SleepFunction Bed Control, Classic L&P Adjustable Base, Classic BedSmart / X-Series, Classic Jerome's power base, Classic Base Remote, Classic Maxprime, Classic Dreamlab Control, Classic Lady Americana, Classic ACAA, Classic STA Homecare, Classic Zero Gravity, Galaxy Bed Control, Good Vibe Sleep, MLILY Control, Majestic Home, Okimiki, Power Bob Base, Casper Base, Hush Base, Luuna +, MLILY Remote, MLILY 3.1.1, SonicSleep, Lunio Smart+ (framed controls on every route) |
+| W2 | `0000fee9-0000-1000-8000-00805f9b34bb` | `d44bc439-abfd-45a2-b575-925416129622` | `d44bc439-abfd-45a2-b575-925416129611` | framed | Richmat WiLinke, Richmat Nordic, Richmat Prefix55, Richmat PrefixAA, HJBed, Richmat 4.2.0, Eshine, Richmat MH Revive Control, Richmat MH Best Mattress, Richmat MH Blvd Home, Richmat MH HARMONY, Richmat MH Idealbed, Richmat MH RUF Betten, Richmat MH W.Silver, Richmat MH AMERICANSTAR, Richmat MH Bailey, Richmat MH TX, Richmat MH Nisco, Richmat MH MLILY Supreme, Richmat MH Bed Tech, Classic Avocado Eco Base, Classic CoasterSleep, Classic Forty Winks, Classic Milemont, Classic Superior, Classic Dynasty DM9000, Classic Luuna Rise, Classic Power Cool Sleep System, Classic SleepFunction Bed Control, Classic L&P Adjustable Base, Classic BedSmart / X-Series, Classic Jerome's power base, Classic Base Remote, Classic Maxprime, Classic Dreamlab Control, Classic Lady Americana, Classic ACAA, Classic STA Homecare, Classic Zero Gravity, Galaxy Bed Control, Good Vibe Sleep, MLILY Control, Majestic Home, Okimiki, Power Bob Base, Casper Base, Hush Base, Luuna +, MLILY Remote, MLILY 3.1.1, SonicSleep, Lunio Smart+ (framed controls on every route) |
 | W3 | `0000ffe0-0000-1000-8000-00805f9b34fb` | `0000ffe2-0000-1000-8000-00805f9b34fb` | `0000ffe1-0000-1000-8000-00805f9b34fb` | framed | Richmat WiLinke, Richmat Nordic, Richmat Prefix55, Richmat PrefixAA, HJBed, Richmat 4.2.0, Eshine, Richmat MH Revive Control, Richmat MH Best Mattress, Richmat MH Blvd Home, Richmat MH HARMONY, Richmat MH Idealbed, Richmat MH RUF Betten, Richmat MH W.Silver, Richmat MH AMERICANSTAR, Richmat MH Bailey, Richmat MH TX, Richmat MH Nisco, Richmat MH MLILY Supreme, Richmat MH Bed Tech, Galaxy Bed Control, Good Vibe Sleep, MLILY Control, Majestic Home, Okimiki, Power Bob Base, Casper Base, Hush Base, Luuna +, MLILY Remote, MLILY 3.1.1, SonicSleep, Lunio Smart+ (framed controls on every route) |
-| W4 | `0000fff0-0000-1000-8000-00805f9b34fb` | `0000fff2-0000-1000-8000-00805f9b34fb` | `0000fff1-0000-1000-8000-00805f9b34fb` | framed | Richmat WiLinke, Richmat Nordic, Richmat Prefix55, Richmat PrefixAA, HJBed, Richmat 4.2.0, Eshine, Richmat MH Revive Control, Richmat MH Best Mattress, Richmat MH Blvd Home, Richmat MH HARMONY, Richmat MH Idealbed, Richmat MH RUF Betten, Richmat MH W.Silver, Richmat MH AMERICANSTAR, Richmat MH Bailey, Richmat MH TX, Richmat MH Nisco, Richmat MH MLILY Supreme, Richmat MH Bed Tech, Classic Avocado Eco Base, Classic CoasterSleep, Classic Forty Winks, Classic Milemont, Classic Superior, Classic Luuna Rise, Classic Power Cool Sleep System, Classic SleepFunction Bed Control, Classic L&P Adjustable Base, Classic BedSmart / X-Series, Classic Jerome's power base, Classic Base Remote, Classic Maxprime, Classic Dreamlab Control, Classic Lady Americana, Classic ACAA, Classic STA Homecare, Classic Zero Gravity, Galaxy Bed Control, Good Vibe Sleep, MLILY Control, Majestic Home, Okimiki, Power Bob Base, Casper Base, Hush Base, Luuna +, MLILY Remote, MLILY 3.1.1, SonicSleep, Lunio Smart+ (framed controls on every route) |
+| W4 | `0000fff0-0000-1000-8000-00805f9b34fb` | `0000fff2-0000-1000-8000-00805f9b34fb` | `0000fff1-0000-1000-8000-00805f9b34fb` | framed | Richmat WiLinke, Richmat Nordic, Richmat Prefix55, Richmat PrefixAA, HJBed, Richmat 4.2.0, Eshine, Richmat MH Revive Control, Richmat MH Best Mattress, Richmat MH Blvd Home, Richmat MH HARMONY, Richmat MH Idealbed, Richmat MH RUF Betten, Richmat MH W.Silver, Richmat MH AMERICANSTAR, Richmat MH Bailey, Richmat MH TX, Richmat MH Nisco, Richmat MH MLILY Supreme, Richmat MH Bed Tech, Classic Avocado Eco Base, Classic CoasterSleep, Classic Forty Winks, Classic Milemont, Classic Superior, Classic Dynasty DM9000, Classic Luuna Rise, Classic Power Cool Sleep System, Classic SleepFunction Bed Control, Classic L&P Adjustable Base, Classic BedSmart / X-Series, Classic Jerome's power base, Classic Base Remote, Classic Maxprime, Classic Dreamlab Control, Classic Lady Americana, Classic ACAA, Classic STA Homecare, Classic Zero Gravity, Galaxy Bed Control, Good Vibe Sleep, MLILY Control, Majestic Home, Okimiki, Power Bob Base, Casper Base, Hush Base, Luuna +, MLILY Remote, MLILY 3.1.1, SonicSleep, Lunio Smart+ (framed controls on every route) |
 | W5 | `0000e0ff-3c17-d293-8e48-14fe2e4da212` | `00000002-3c17-d293-8e48-14fe2e4da212` | `00000003-3c17-d293-8e48-14fe2e4da212` | framed | Richmat WiLinke, Richmat Nordic, Richmat Prefix55, Richmat PrefixAA, HJBed, Richmat 4.2.0, Eshine, Galaxy Bed Control, Good Vibe Sleep, MLILY Control, Majestic Home, Okimiki, Power Bob Base, Casper Base, Hush Base, Luuna +, MLILY Remote, MLILY 3.1.1, SonicSleep, Lunio Smart+ (framed controls on every route) |
 
 W0 is the legacy custom service, W4 and W5 are name-guarded (see the Richmat
@@ -2380,6 +2382,286 @@ control's number and name, and `alarm_actions` lists the names an alarm accepts.
 #### Evidence
 
 Based on the five classic apps. Not yet tested on hardware.
+
+### Dynasty DM9000
+
+**App:** [Dynasty DM9000](https://play.google.com/store/apps/details?id=com.richmat.dynasty) 1.0.4 (5), `com.richmat.dynasty`
+
+**Status:** ❓ Needs testing (static app evidence; hardware unverified)
+
+Uses the [classic resource-driven controls](#classic-richmat-apps), with its own
+catalog, timeout units and timing. These controls describe this app version,
+not every Dynasty-branded bed.
+
+#### Setup
+
+Choose **Dynasty DM9000** in the Richmat app question, then the exact
+four-character layout shown by the app. The app owns its catalog; do not choose
+a layout from a different app. Name matches offer an app hint only. The fixed
+transport order and explicit third-service fallback follow the classic family.
+Desk and diagnostic screens are unavailable. Mode labels remain app selections;
+single-address Left/Right pairing is unavailable. Two-address pairs retain each
+side's app, layout and settings.
+
+#### Controls
+
+Buttons retain their resource labels, including numbered motors whose physical
+locations are unverified. Selectors appear only when the selected layout binds
+them. Memory-arm and Hold/Release use the selected screen's own controls.
+The **Query settings** button asks for optional alarm, light and aroma support.
+The **Light requested timeout** number is a requested setting, not a readback;
+zero keeps the light on. Optional writes require the corresponding query reply.
+
+<!-- generated:dynasty-commands -->
+<!-- Generated by scripts/generate_codec_docs.py from the codec and profile data. Edit those, not this block. -->
+
+| Bound resource | RAW short operand | Current short operand | Long operand |
+|---|---|---|---|
+| `Control 10` | `45` | None | None |
+| `Control 13` | `46` | None | None |
+| `Control 16` | `47` | None | None |
+| `Control 2` | `37` | None | None |
+| `Control 3` | `42` | None | None |
+| `Control 4` | `31` | None | None |
+| `Control 5` | `35` | None | None |
+| `Control 6` | `43` | None | None |
+| `Control 7` | `44` | None | None |
+| `Control 8` | `32` | None | None |
+| `Control 9` | `38` | None | None |
+| `adjust volume` | `B7` | `B7` | None |
+| `com first second once up` | `23` | `23` | None |
+| `com first up once` | `3D` | `3D` | None |
+| `com first up second down` | `21` | `21` | None |
+| `com lumbar back pos` | `91` | `91` | `92` |
+| `com motor keep 30` | `90` | `90` | None |
+| `com motor1 2 down` | `2A` | `2A` | None |
+| `com motor1 2 down` | `39` | `2A` | None |
+| `com motor1 2 up` | `29` | `29` | None |
+| `com motor1 2 up` | `36` | `29` | None |
+| `com motor1 2 up` | `38` | `29` | None |
+| `com motor2 down` | `27` | `27` | None |
+| `com motor2 down` | `41` | `27` | None |
+| `com msg 10min` | `39` | `5F` | None |
+| `com msg 10min` | `47` | `5F` | None |
+| `com msg 10min` | `49` | `5F` | None |
+| `com msg 10min` | `4C` | `5F` | None |
+| `com msg 10min` | `50` | `5F` | None |
+| `com msg 10min` | `5F` | `5F` | None |
+| `com msg 10min new` | `A1` | `A1` | None |
+| `com msg 20min` | `63` | `63` | None |
+| `com msg 20min new` | `A2` | `A2` | None |
+| `com msg 30min` | `61` | `61` | None |
+| `com msg 30min new` | `A3` | `A3` | None |
+| `com msg aroma` | `3B` | `3B` | None |
+| `com msg constant` | `3A` | `3A` | None |
+| `com msg constant` | `47` | `3A` | None |
+| `com msg foot intensity2` | `A5` | `A5` | None |
+| `com msg head intensity2` | `A4` | `A4` | None |
+| `com msg intensity dec` | `35` | `35` | None |
+| `com msg intensity dec` | `4B` | `35` | None |
+| `com msg mode` | `48` | `48` | None |
+| `com msg mode` | `48` | `48` | `47` |
+| `com msg mode` | `48` | `48` | `5E` |
+| `com msg mode` | `4A` | `48` | None |
+| `com msg off` | `47` | `47` | None |
+| `com msg off2` | `5A` | `5A` | None |
+| `com msg off3` | `5E` | `5E` | None |
+| `com msg on` | `5D` | `5D` | None |
+| `com msg on` | `5D` | `5D` | `47` |
+| `com msg speed dec` | `37` | `37` | None |
+| `com msg speed dec` | `49` | `37` | None |
+| `com msg speed inc` | `36` | `36` | None |
+| `com msg speed inc` | `48` | `36` | None |
+| `com msg wave third` | `4B` | `4B` | None |
+| `com msg1 intensity dec` | `49` | `4D` | None |
+| `com msg1 intensity dec` | `4A` | `4D` | None |
+| `com msg1 intensity dec` | `4D` | `4D` | None |
+| `com msg1 intensity inc` | `42` | `4C` | None |
+| `com msg1 intensity inc` | `46` | `4C` | None |
+| `com msg1 intensity inc` | `49` | `4C` | None |
+| `com msg1 intensity inc` | `4C` | `4C` | None |
+| `com msg2 intensity dec` | `4B` | `4F` | None |
+| `com msg2 intensity dec` | `4F` | `4F` | None |
+| `com msg2 intensity inc` | `44` | `4E` | None |
+| `com msg2 intensity inc` | `48` | `4E` | None |
+| `com msg2 intensity inc` | `4E` | `4E` | None |
+| `com reset` | `62` | `62` | None |
+| `com second up first down` | `22` | `22` | None |
+| `com second up once` | `3E` | `3E` | None |
+| `com sleep back` | `8E` | `8E` | `8F` |
+| `com unwind back` | `8C` | `8C` | `8D` |
+| `com wakeup back` | `93` | `93` | `94` |
+| `k flat` | `31` | `31` | None |
+| `k flat` | `32` | `31` | None |
+| `k flat` | `38` | `31` | None |
+| `k flat sleep back` | `F6` | `F6` | `F7` |
+| `k flat sleep save` | `F7` | `F7` | `F6` |
+| `k flat2` | `6C` | `6C` | None |
+| `k lock` | None | None | `84` |
+| `k lock` | `84` | `84` | None |
+| `k lounge return` | `32` | `59` | None |
+| `k lounge return` | `59` | `59` | None |
+| `k lounge return` | `59` | `59` | `65` |
+| `k m1 return` | `2E` | `2E` | None |
+| `k m1 return` | `2E` | `2E` | `2B` |
+| `k m1 return` | `42` | `2E` | None |
+| `k m1 return` | `42` | `2E` | `2B` |
+| `k m1 set` | `2B` | `2B` | None |
+| `k m1 set` | `43` | `2B` | None |
+| `k m2 back old2` | `44` | `44` | None |
+| `k m2 return` | `2F` | `2F` | None |
+| `k m2 return` | `2F` | `2F` | `2C` |
+| `k m2 return` | `44` | `2F` | None |
+| `k m2 return` | `44` | `2F` | `2C` |
+| `k m2 set` | `2C` | `2C` | None |
+| `k m2 set` | `45` | `2C` | None |
+| `k m3 return` | `30` | `30` | None |
+| `k m3 return` | `30` | `30` | `2D` |
+| `k m3 set` | `2D` | `2D` | None |
+| `k m5 back` | `F4` | `F4` | `F5` |
+| `k motor keep 15` | `76` | `76` | None |
+| `k motor1 down` | `25` | `25` | None |
+| `k motor1 down` | `37` | `25` | None |
+| `k motor1 down` | `38` | `25` | None |
+| `k motor1 up` | `24` | `24` | None |
+| `k motor1 up` | `34` | `24` | None |
+| `k motor1 up` | `35` | `24` | None |
+| `k motor2 3 down` | `97` | `97` | None |
+| `k motor2 3 up` | `96` | `96` | None |
+| `k motor2 up` | `26` | `26` | None |
+| `k motor2 up` | `36` | `26` | None |
+| `k motor2 up` | `37` | `26` | None |
+| `k motor3 4 down` | `44` | `44` | None |
+| `k motor3 4 tilt down` | `5C` | `5C` | None |
+| `k motor3 4 tilt up` | `5B` | `5B` | None |
+| `k motor3 4 up` | `43` | `43` | None |
+| `k motor3 down` | `40` | `40` | None |
+| `k motor3 down` | `43` | `40` | None |
+| `k motor3 up` | `3F` | `3F` | None |
+| `k motor3 up` | `42` | `3F` | None |
+| `k motor4 down` | `42` | `42` | None |
+| `k motor4 down` | `45` | `42` | None |
+| `k motor4 up` | `41` | `41` | None |
+| `k motor5 down` | `72` | `72` | None |
+| `k motor5 up` | `71` | `71` | None |
+| `k motor6 down` | `74` | `74` | None |
+| `k motor6 up` | `73` | `73` | None |
+| `k motor7 down` | `D1` | `D1` | None |
+| `k motor7 up` | `D0` | `D0` | None |
+| `k msg first on off` | `32` | `32` | None |
+| `k msg intensity first` | `4C` | `67` | None |
+| `k msg intensity first` | `67` | `67` | None |
+| `k msg intensity inc` | `34` | `34` | None |
+| `k msg intensity inc` | `48` | `34` | None |
+| `k msg intensity inc` | `4A` | `34` | None |
+| `k msg intensity third` | `4E` | `68` | None |
+| `k msg intensity third` | `68` | `68` | None |
+| `k msg intensity2 old` | `4D` | `4D` | None |
+| `k msg on off` | `6F` | `6F` | None |
+| `k msg pulse` | `38` | `38` | None |
+| `k msg pulse` | `46` | `38` | None |
+| `k msg second on off` | `33` | `33` | None |
+| `k msg wave` | `39` | `39` | None |
+| `k msg wave` | `39` | `39` | `47` |
+| `k msg wave` | `45` | `39` | None |
+| `k msg1 off old2` | `47` | `47` | None |
+| `k music lock` | `D9` | `D9` | `84` |
+| `k next` | `D3` | `D3` | None |
+| `k on off` | `D8` | `D8` | None |
+| `k previous` | `D2` | `D2` | None |
+| `k read back` | `F2` | `F2` | `F3` |
+| `k read set` | `F3` | `F3` | `F2` |
+| `k relax back` | `70` | `70` | None |
+| `k relax back` | `70` | `70` | `95` |
+| `k side sleeper back` | `BA` | `BA` | `BB` |
+| `k snore return` | `46` | `46` | None |
+| `k snore return` | `46` | `46` | `69` |
+| `k snore set` | `69` | `69` | None |
+| `k start pause` | `D7` | `D7` | None |
+| `k sync off` | None | None | `BD` |
+| `k sync off` | `BD` | `BD` | None |
+| `k sync on` | None | None | `BC` |
+| `k sync on` | `BC` | `BC` | None |
+| `k tv return` | `33` | `58` | None |
+| `k tv return` | `58` | `58` | None |
+| `k tv return` | `58` | `58` | `64` |
+| `k tv set` | `64` | `64` | None |
+| `k ubl off` | `75` | `75` | None |
+| `k ubl on off` | `36` | `3C` | None |
+| `k ubl on off` | `3C` | `3C` | None |
+| `k ubl on off` | `3C` | `3C` | `75` |
+| `k ubl on off` | `43` | `3C` | None |
+| `k ubl on off` | `46` | `3C` | None |
+| `k vibration` | `D6` | `D6` | None |
+| `k volume down` | `D5` | `D5` | None |
+| `k volume up` | None | None | `D4` |
+| `k volume up` | `D4` | `D4` | None |
+| `k yoga back` | `F0` | `F0` | `F1` |
+| `k zg return` | `34` | `45` | None |
+| `k zg return` | `34` | `45` | `66` |
+| `k zg return` | `35` | `45` | None |
+| `k zg return` | `45` | `45` | None |
+| `k zg return` | `45` | `45` | `66` |
+| `k zg set` | `66` | `66` | None |
+| `k zg2 return` | `6B` | `6B` | `6A` |
+| `m4 back pos` | `B2` | `B2` | `B3` |
+| `swtch music` | `B8` | `B8` | None |
+| `turn off music` | `B9` | `B9` | None |
+<!-- /generated -->
+
+#### Timing
+
+Ordinary held, short and long gestures follow the classic family. The table
+below lists the app-specific differences. Home Assistant serializes settings
+with controls, settles in-flight writes, and keeps movement cleanup bound to its admitted physical link and app mode.
+A detached session is abandoned; a replacement connection never inherits a
+pending action or release.
+
+<!-- generated:dynasty-timing -->
+<!-- Generated by scripts/generate_codec_docs.py from the codec and profile data. Edit those, not this block. -->
+
+| Path | Schedule |
+|---|---|
+| Ordinary refresh | 150 ms |
+| TWRM / MLRM actual name | 110 ms |
+| RAW 6BRM actual name | 170 ms |
+| FRAMED initialization | write after subscribing, then wait 300 ms |
+| Held release | 50 ms |
+| Short/long release | 150 ms |
+| Timeout zero | `6E 0B 00 00 79` |
+| Timeout maximum | `6E 0B 01 2C A6` |
+<!-- /generated -->
+
+#### Notifications
+
+Uses the classic checksum/prefix parser for alarm acknowledgements and optional
+feature replies. LED replies report on/off. Aroma responses remain raw protocol
+state; the app's broken observer is not converted into an invented readback.
+No bed angle, actuator position, battery or firmware readback is provided.
+
+#### Services
+
+The shared `adjustable_bed.set_alarm` action configures the layout-declared alarm,
+including supported massage combinations. It queries alarm availability after
+reconnecting when the layout needs a receiver reply, and checks every target
+before setting any alarm. A delayed connection keeps the requested occurrence.
+`adjustable_bed.richmat_classic` accepts the family's typed `query`, `alarm`,
+`cancel_alarm`, `rgb`, `aroma`, `massage_popup` and `massage_timer` operations.
+Dynasty uses `lamp_timeout` with `seconds`, matching the native number.
+The number keeps its entity identity after disconnecting and stays unavailable
+until the receiver reports lighting support again.
+The older apps' `lamp_slider` and `lamp_save` minute operations are unavailable.
+Alarm action keys are listed in the status sensor's `dynasty_alarm_actions` attribute:
+`node_<id>` selects declared metadata; a `_head`, `_foot` or `_head_and_foot`
+suffix adds massage only when those functions are declared on that screen.
+The alarm dialog's buzzer is `action: buzzer`. Unsupported mode/preset-plus-massage combinations are rejected before any write.
+The action supports native paired-side routing.
+
+#### Evidence
+
+Dynasty DM9000 1.0.4 (5), `com.richmat.dynasty`. Supported raw/framed bed
+commands reproduce this app's static literals through the Richmat codec.
+Physical effects and characteristic write behavior remain unverified.
 
 ### Good Vibe Sleep
 

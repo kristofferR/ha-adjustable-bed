@@ -2649,6 +2649,9 @@ wake actions and once/daily repeat, and **Set bed clock** for local time. See
 [MLILY 3.1.1](beds/richmat.md#mlily-311).
 
 
+JobsAI sleep and wake alarms use `adjustable_bed.set_alarm`, with slot 1 for
+sleep and slot 2 for wake. See the [JobsAI guide](beds/okin-nframe.md#jobsai).
+
 ## Ronco Motion once alarm
 
 Use `adjustable_bed.set_alarm` with a Ronco Motion `device_id` and optional paired
