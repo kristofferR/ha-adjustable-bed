@@ -4039,6 +4039,24 @@
       "truemotion_timer_foot": {
         "name": "Foot massage timer"
       },
+      "kingkoil_light": {
+        "name": "Light button"
+      },
+      "kingkoil_massage_mode": {
+        "name": "Massage mode button"
+      },
+      "kingkoil_massage_head": {
+        "name": "Head massage button"
+      },
+      "kingkoil_massage_foot": {
+        "name": "Foot massage button"
+      },
+      "kingkoil_massage_timer": {
+        "name": "Massage timer button"
+      },
+      "kingkoil_status_query": {
+        "name": "Refresh reported status"
+      },
       "ambient_flat": {
         "name": "Flat position"
       },
@@ -4080,6 +4098,30 @@
       },
       "ambient_refresh": {
         "name": "Refresh bed state"
+      },
+      "kingkoil_head_up": {
+        "name": "Head up"
+      },
+      "kingkoil_head_down": {
+        "name": "Head down"
+      },
+      "kingkoil_head_a_up": {
+        "name": "Head A up"
+      },
+      "kingkoil_head_a_down": {
+        "name": "Head A down"
+      },
+      "kingkoil_head_b_up": {
+        "name": "Head B up"
+      },
+      "kingkoil_head_b_down": {
+        "name": "Head B down"
+      },
+      "kingkoil_feet_up": {
+        "name": "Foot up"
+      },
+      "kingkoil_feet_down": {
+        "name": "Foot down"
       }
     },
     "cover": {
@@ -4538,6 +4580,18 @@
       },
       "truemotion_tl": {
         "name": "T/L movement"
+      },
+      "kingkoil_head": {
+        "name": "Head"
+      },
+      "kingkoil_head_a": {
+        "name": "Head A"
+      },
+      "kingkoil_head_b": {
+        "name": "Head B"
+      },
+      "kingkoil_feet": {
+        "name": "Foot"
       }
     },
     "sensor": {
@@ -5838,6 +5892,9 @@
       "truemotion_firmware": {
         "name": "Firmware version"
       },
+      "kingkoil_timer_ui": {
+        "name": "Massage timer indicator"
+      },
       "ambient_power_supply": {
         "name": "Power supply"
       },
@@ -6348,6 +6405,9 @@
       },
       "sinca_anti_snore": {
         "name": "Automatic anti-snore"
+      },
+      "kingkoil_light_report": {
+        "name": "Reported light"
       }
     },
     "number": {
@@ -12339,6 +12399,18 @@
     },
     "truemotion_massage_off": {
       "message": "Start a massage timer before changing the massage level."
+    },
+    "kingkoil_layout": {
+      "message": "Choose the King Koil remote layout in Reconfigure."
+    },
+    "kingkoil_control": {
+      "message": "Choose a control offered by this King Koil layout and a hold duration from 0.1 to 60 seconds."
+    },
+    "kingkoil_session": {
+      "message": "The King Koil Bluetooth session changed. Try the control again."
+    },
+    "kingkoil_gatt": {
+      "message": "The King Koil receiver must offer its Nordic UART write and notification characteristics in the Nordic UART service. Select the correct receiver and try again."
     },
     "ambient_position_side": {
       "message": "Choose left or right for a split M3 Ambient bed and omit the side for a one-piece bed."
