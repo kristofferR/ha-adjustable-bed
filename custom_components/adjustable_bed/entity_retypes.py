@@ -70,7 +70,11 @@ RETYPES: Final[tuple[Retype, ...]] = (
             "button", f"preset_{key}", "button", key,
             only_on=frozenset({BED_TYPE_SCOTT_LIVING}), identity_only=True,
         )
-        for key in ("zero_g", "tv")
+        for key in ("zero_g", "tv", "anti_snore")
+    ),
+    Retype(
+        "button", "toggle_light", "button", "light",
+        only_on=frozenset({BED_TYPE_SCOTT_LIVING}), identity_only=True,
     ),
     Retype(
         "number",

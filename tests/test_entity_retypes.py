@@ -111,11 +111,15 @@ async def test_octo_keeps_its_switch(hass: HomeAssistant) -> None:
     assert registry.async_get("light.bed_under_bed_lights") is None
 
 
-async def test_scott_presets_keep_existing_targets_and_settings(hass: HomeAssistant) -> None:
+async def test_scott_buttons_keep_existing_targets_and_settings(hass: HomeAssistant) -> None:
     registry = er.async_get(hass)
     entry = _entry(hass)
-    for key in ("zero_g", "tv"):
-        row = _row(registry, entry, "button", f"preset_{key}", f"bed_{key}")
+    mappings = {
+        "zero_g": "preset_zero_g", "tv": "preset_tv",
+        "anti_snore": "preset_anti_snore", "light": "toggle_light",
+    }
+    for key, old_key in mappings.items():
+        row = _row(registry, entry, "button", old_key, f"bed_{key}")
         registry.async_update_entity(
             row.entity_id, name=f"My {key}", disabled_by=er.RegistryEntryDisabler.USER
         )
@@ -123,9 +127,12 @@ async def test_scott_presets_keep_existing_targets_and_settings(hass: HomeAssist
         hass,
         "automation",
         {"automation": {
-            "alias": "Watch TV",
+            "alias": "Bed controls",
             "trigger": {"platform": "event", "event_type": "test"},
-            "action": {"action": "button.press", "target": {"entity_id": "button.bed_tv"}},
+            "action": {
+                "action": "button.press",
+                "target": {"entity_id": [f"button.bed_{key}" for key in mappings]},
+            },
         }},
     )
     async_carry_over_retyped_entities(hass, entry, _runtime("keeson"))
@@ -133,7 +140,7 @@ async def test_scott_presets_keep_existing_targets_and_settings(hass: HomeAssist
 
     for _ in range(2):
         async_carry_over_retyped_entities(hass, entry, _runtime("scott_living"))
-        for key in ("zero_g", "tv"):
+        for key in mappings:
             row = registry.async_get(f"button.bed_{key}")
             assert row is not None and row.unique_id == f"{ADDRESS}_{key}"
             assert row.name == f"My {key}"
