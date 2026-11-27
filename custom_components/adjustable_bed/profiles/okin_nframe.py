@@ -31,6 +31,7 @@ from ..const import (
     BED_TYPE_CUSTOMATIC_REMEDY,
     BED_TYPE_DOUBLESLEEP,
     BED_TYPE_ESHINE_OKIN,
+    BED_TYPE_JOBS,
     BED_TYPE_LEGGETT_OKIN,
     BED_TYPE_OKIN_64BIT,
     BED_TYPE_OKIN_CST,
@@ -1375,6 +1376,61 @@ RESTFUL: Final = _cst(
 )
 BEDDING_PROFILES: Final[Mapping[str, OkinNFrameProfile]] = MappingProxyType(
     {**_BEDDING_PROFILES, "rize_remedy_ii": RIZE_REMEDY_II, "restful": RESTFUL}
+)
+
+
+# JobsAI智能助眠床 1.0.6 (7), both selectable pages use the same live table.
+JOBS_ACTIONS: Final = {
+    "head_up": (1, 0),
+    "head_down": (2, 0),
+    "foot_up": (4, 0),
+    "foot_down": (8, 0),
+    "anti_snore": (0x8000, 0),
+    "lounge": (0x2000, 0),
+    "memory_1": (0x10000, 0),
+    "zero_g": (0x1000, 0),
+    "incline": (0x4000, 0),
+    "memory_2": (0x40000, 0),
+    "flat": (0x08000000, 0),
+    "save_lounge": (0x08002000, 0),
+    "save_memory_1": (0x08010000, 0),
+    "save_zero_g": (0x08001000, 0),
+    "save_incline": (0x08004000, 0),
+    "save_memory_2": (0x08040000, 0),
+    "massage_on": (0, 0x100),
+    "massage_off": (0x02000000, 0x02000000),
+    "massage_intensity_up": (0x800, 0),
+    "massage_intensity_down": (0x800000, 0),
+    "wave_1": (0x80000, 0x80000),
+    "wave_2": (0x100000, 0x100000),
+    "wave_3": (0x200000, 0x200000),
+    "wave_4": (0, 0x200),
+    "smb_on": (0x400000, 0),
+    "smb_off": (0x02000000, 0),
+}
+JOBS_SAVE_CODES: Final = {
+    "save_lounge": 3,
+    "save_memory_1": 4,
+    "save_zero_g": 5,
+    "save_incline": 6,
+    "save_memory_2": 8,
+}
+JOBS_PROFILES: Final[Mapping[str, OkinNFrameProfile]] = MappingProxyType(
+    {
+        mode: _cst(
+            CstProduct(
+                key=f"jobs_{mode}", memory_slots=(_M1, _M2), massage_style="global", lights=False
+            ),
+            f"JobsAI {mode}",
+            BED_TYPE_JOBS,
+            {action: cst_word(*fields) for action, fields in JOBS_ACTIONS.items()},
+            write="characteristic",
+            hold=Hold(repeat_ms=200, releases=2, release_after_ms=100, release_ms=100),
+            recall=Tap(releases=2),
+            tap=Tap(releases=2),
+        )
+        for mode in ("mode1", "mode2")
+    }
 )
 
 
