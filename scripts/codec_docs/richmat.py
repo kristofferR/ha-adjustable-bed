@@ -64,6 +64,7 @@ from scripts.codec_docs import (
     _dreamlab,
     _galaxy,
     _homezone,
+    _muuegm,
     _okimiki,
     _richmat_legacy,
     _richmat_mh_apps,
@@ -2205,8 +2206,6 @@ def render_dynasty_timing() -> str:
 
 BLOCKS += [(GUIDE, "dynasty-commands", render_dynasty_commands), (GUIDE, "dynasty-timing", render_dynasty_timing)]
 
-from scripts.codec_docs import _muuegm
-
 BLOCKS += _muuegm.BLOCKS
 
 
@@ -2232,3 +2231,7 @@ def render_silksnow_settings() -> str:
 
 
 BLOCKS += [(GUIDE, "silksnow-products", render_silksnow_products), (GUIDE, "silksnow-commands", render_silksnow_commands), (GUIDE, "silksnow-settings", render_silksnow_settings)]
+
+from scripts.codec_docs import _comfort_bed  # noqa: E402
+
+BLOCKS.append((GUIDE, "comfort-bed", _comfort_bed.render))
