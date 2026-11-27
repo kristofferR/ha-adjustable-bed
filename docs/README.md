@@ -61,6 +61,7 @@ app. Every guide follows the [bed guide format](BED_GUIDE_FORMAT.md).
 | [Malouf / Lucid](beds/malouf.md) | The Malouf Base and Lucid Base apps and receivers | Shared |
 | [M3 Ambient](beds/ambient.md) | The M3 Ambient app, one-piece and split beds | |
 | [MotoMotion, MotoSleep and others](beds/motomotion.md) | MotoMotion, MotoSleep, Power Bob, Bedgear, L2 Motion, MoodBase and ErgoBed Control | Shared |
+| [BERUN](beds/berun.md) | BERUN versions 6–9 | Shared |
 | [Nerum](beds/nerum.md) | The Nerum app | |
 | [OCTO Smart Control](beds/octo.md) | OCTO receivers, the RTV TV lift and Octo Remote Star2 | |
 | [Nectar, Mattress Firm 900 and Sealy (Okin)](beds/okin-5a.md) | Nectar, Mattress Firm 900 / iFlex, Sealy Posturematic (the CB35 receiver and the Sealy Posturematic app) and DewertOkin ELEVATE | Shared |
