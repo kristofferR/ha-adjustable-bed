@@ -1748,6 +1748,15 @@ def _detect_with_first_pass(
         elif result.bed_type != BED_TYPE_N32_MOTION_BED:
             result.ambiguous_types = list(dict.fromkeys([*(result.ambiguous_types or ()), BED_TYPE_N32_MOTION_BED]))
             result.signals.append("name:n32_app_candidate")
+    # This app's scan substrings offer a choice, never a receiver or product identity.
+    if first.name(BED_TYPE_MLILY0) and not any(
+        signal.startswith("excluded:") for signal in result.signals
+    ):
+        if result.bed_type is None:
+            result = DetectionResult(BED_TYPE_MLILY0, 0.3, [*result.signals, "name:mlily0_app_candidate"])
+        elif result.bed_type != BED_TYPE_MLILY0:
+            result.ambiguous_types = list(dict.fromkeys([*(result.ambiguous_types or ()), BED_TYPE_MLILY0]))
+            result.signals.append("name:mlily0_app_candidate")
     if mlily_scan_matches(service_info.name) and mlily_suggested_profile(service_info.name) and not any(signal.startswith("excluded:") for signal in result.signals):
         if result.bed_type is None:
             result = DetectionResult(BED_TYPE_MLILY, 0.3, ["name:mlily_app_candidate", *result.signals])

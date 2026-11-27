@@ -186,6 +186,7 @@ class MlilyRemoteController(CasperBaseController):
                 note_frame_skipped()
                 return False
             if deadline is not None and loop.time() > deadline + 1e-9:
+                note_frame_skipped()
                 return False
             self._next_write = loop.time() + TICK_S
             response = "write-without-response" not in link.tx.properties
@@ -202,16 +203,22 @@ class MlilyRemoteController(CasperBaseController):
             if submitted is not None:
                 submitted()
             # A non-idempotent command is never replayed after a write failure.
-            await self._write_packet(link, packet, response=response)
-            if cleanup:
-                # A cleanup STOP bypasses the cancel gate; it is not the command.
-                note_write_not_counted()
-            else:
-                note_frame_written(cancel)
+            await self._write_packet(
+                link, packet, response=response, cleanup=cleanup, cancel_event=cancel
+            )
         return True
 
-    async def _write_packet(self, link: Link, packet: bytes, *, response: bool) -> None:
+    async def _write_packet(
+        self, link: Link, packet: bytes, *, response: bool,
+        cleanup: bool, cancel_event: asyncio.Event,
+    ) -> None:
         await link.client.write_gatt_char(link.tx, packet, response=response)
+        # Count completion here, inside any settling task, before it propagates
+        # caller cancellation. The parent must not count the same frame again.
+        if cleanup:
+            note_write_not_counted()
+        else:
+            note_frame_written(cancel_event)
 
     async def _send(self, packet: bytes, *, cleanup: bool = False) -> None:
         await self._write(packet, self._current(), cleanup=cleanup)

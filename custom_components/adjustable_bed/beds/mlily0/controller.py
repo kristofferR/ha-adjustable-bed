@@ -2,14 +2,16 @@
 
 from __future__ import annotations
 
+import asyncio
 from collections.abc import Mapping
+from copy import deepcopy
 from typing import TYPE_CHECKING
 
 from homeassistant.util import dt as dt_util
 
 from ...alarm import AlarmCapability, AlarmRequest
 from ...codec import richmat as codec
-from ...controller_state import StateKey
+from ...errors import invalid
 from ...profiles.mlily0 import ACTIONS, PROFILES
 from ..base import BedController, require_controller
 from ..builder import BuildContext
@@ -23,9 +25,6 @@ from .receive import Receiver
 
 if TYPE_CHECKING:
     from ...coordinator import AdjustableBedCoordinator
-
-MODEL = StateKey[str]("mlily0_model")
-EVENTS = StateKey[dict[str, object]]("mlily0_events")
 
 WAKE_ACTIONS = {
     "flat": "MotorReset", "zero_g": "ZeroGravity", "anti_snore": "AntiSnoring",
@@ -74,7 +73,7 @@ class MlilyController(MlilyRemoteController):
 
     def _side(self, link: Link) -> int:
         if self.command_side is not None:
-            raise ValueError("This MLILY app has no side selector. Target one bed")
+            raise invalid("side_not_supported")
         return 0
 
     @property
@@ -88,9 +87,14 @@ class MlilyController(MlilyRemoteController):
     def restore_persisted_app_state(self, state: Mapping[str, object]) -> None:
         return
 
-    async def _write_packet(self, link: Link, packet: bytes, *, response: bool) -> None:
+    async def _write_packet(
+        self, link: Link, packet: bytes, *, response: bool,
+        cleanup: bool, cancel_event: asyncio.Event,
+    ) -> None:
         # A submitted write settles before cancellation releases the command lane.
-        await settled(super()._write_packet(link, packet, response=response), eager_start=True)
+        await settled(super()._write_packet(
+            link, packet, response=response, cleanup=cleanup, cancel_event=cancel_event,
+        ), eager_start=True)
 
     def _can_release_link(self, link: Link) -> bool:
         # The original client still owns any movement that reached it. Never
@@ -131,11 +135,13 @@ class MlilyController(MlilyRemoteController):
 
     def validate_alarm(self, alarm: AlarmRequest) -> None:
         if not self.alarm_modes:
-            raise ValueError("This product has no local alarm")
+            raise invalid("alarm_not_supported", device_name=self._coordinator.name)
         if alarm.enabled and WAKE_ACTIONS.get(alarm.wake_action) not in self.alarm_modes:
-            raise ValueError("Choose a wake action this product offers")
+            raise invalid("alarm_wake_action_not_supported", device_name=self._coordinator.name,
+                          wake_action=alarm.wake_action,
+                          wake_actions=", ".join(key for key, name in WAKE_ACTIONS.items() if name in self.alarm_modes))
         if alarm.weekdays and (not self.product[10] or alarm.weekdays != tuple(range(7))):
-            raise ValueError("This product supports only once or every day")
+            raise invalid("mlily0_alarm_repeat")
 
     async def configure_alarm(self, alarm: AlarmRequest) -> None:
         self.validate_alarm(alarm)
@@ -173,23 +179,27 @@ class MlilyController(MlilyRemoteController):
 
     @property
     def controller_state_sensor_specs(self) -> tuple[ControllerStateSensorSpec, ...]:
-        return (ControllerStateSensorSpec(
-            "mlily0", "mlily0", MODEL, "mdi:bed", attribute_keys=(EVENTS,),
-            entity_registry_enabled_default=False,
-        ),)
+        return ()
+
+    @property
+    def protocol_diagnostics(self) -> dict[str, object]:
+        return {
+            "product": self.model,
+            "events": deepcopy(self.events),
+            "product_flags_3c_40_44": list(PROFILES[self.model].raw_flags),
+            "notification_rejection": self._error,
+        }
 
     def _publish(self) -> None:
-        self.events["product_flags_3c_40_44"] = list(PROFILES[self.model].raw_flags)
-        self.events["notification_rejection"] = self._error
-        self.forward_controller_state_updates(MODEL(self.product[0]), EVENTS(dict(self.events)))
+        # The shared lifecycle calls this hook; protocol fields are diagnostics only.
+        return
 
     def validate_casper_base_request(self, request: Request) -> None:
-        raise ValueError("Use Set alarm or Set bed clock for MLILY 3.1.1")
+        raise invalid("mlily0_native_actions")
 
     def _event(self, name: str, value: object) -> None:
         # Parsed values never select a product, infer a motor axis or enable a command.
         self.events[name] = value
-        self._publish()
 
 
 async def build_controller(ctx: BuildContext) -> MlilyController:

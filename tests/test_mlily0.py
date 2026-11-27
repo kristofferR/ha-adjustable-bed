@@ -7,13 +7,13 @@ from pathlib import Path
 from unittest.mock import AsyncMock, patch
 
 import pytest
-from homeassistant.exceptions import ServiceValidationError
 
 from custom_components.adjustable_bed.alarm import AlarmRequest
 from custom_components.adjustable_bed.beds.mlily0.controller import MlilyController
 from custom_components.adjustable_bed.beds.mlily0.receive import Receiver
 from custom_components.adjustable_bed.codec import richmat as codec
 from custom_components.adjustable_bed.profiles.mlily0 import ACTIONS, PROFILES
+from tests.error_helpers import raises_key
 from tests.hold_lease_wire import virtual_clock
 from tests.test_casper_base import frames
 from tests.test_casper_base import make as casper_make
@@ -92,7 +92,7 @@ async def test_native_controls_use_product_overrides():
     await controller.program_memory(2)
     assert frames(c) == ["6e0100f05f", "6e0100f160"]
     assert controller.alarm_capability
-    with controller.side_scope("right"), pytest.raises(ValueError, match="no side selector"):
+    with controller.side_scope("right"), raises_key("side_not_supported"):
         await controller.preset_memory(1)
     await controller.stop_notify()
 
@@ -113,7 +113,7 @@ async def test_native_alarm_and_clock_are_framed_on_nordic():
     c.client.write_gatt_char.reset_mock()
     await controller.configure_alarm(AlarmRequest(enabled=False, reference_time=now))
     assert frames(c) == ["6e05000073", "6e06000074"]
-    with pytest.raises(ValueError, match="only once or every day"):
+    with raises_key("mlily0_alarm_repeat"):
         controller.validate_alarm(AlarmRequest(enabled=True, wake_action="memory_1", weekdays=(1,), reference_time=now))
     await controller.stop_notify()
 
@@ -244,7 +244,7 @@ async def test_native_alarm_action_exposes_product_modes(hass):
     # The high countdown frame carries this product's F0 override on Nordic too.
     assert bytes(c.client.write_gatt_char.call_args_list[1].args[1])[3] == 0xF0
     c.client.write_gatt_char.reset_mock()
-    with pytest.raises(ServiceValidationError, match="only once or every day"):
+    with raises_key("mlily0_alarm_repeat"):
         await call_set_alarm(hass, controller, {
             "enabled": True, "time": "12:00:00", "wake_action": "memory_2",
             "weekdays": ["monday"],

@@ -3673,9 +3673,9 @@ Head and foot movement, optional lumbar and pillow movement, presets and
 memory use the selected product's exact codes. Only a product action with a
 save control gets a Save button. Massage timers offer the listed 10, 20 and
 30-minute actions; the light is a toggle. No side selector or position sliders
-are exposed. The disabled diagnostic **MLILY product state** sensor contains
-selected motor, light, massage and RGB readbacks; motor type values do not
-select an axis or a product.
+are exposed. Integration diagnostics contain the selected motor, light, massage
+and RGB readbacks, along with protocol details. Unknown flags are not entities;
+motor type values do not select an axis or a product.
 
 Use **Set alarm** with one of the selected product's wake actions and a local
 time. Products with repeat support accept once or all seven weekdays; arbitrary
