@@ -15,6 +15,7 @@ from pytest_homeassistant.common import MockConfigEntry
 
 from custom_components.adjustable_bed.alarm import AlarmRequest
 from custom_components.adjustable_bed.app_profiles import per_side_profile
+from custom_components.adjustable_bed.beds.base import BedController
 from custom_components.adjustable_bed.beds.flexispot import controller as ctrl
 from custom_components.adjustable_bed.codec import flexispot as codec
 from custom_components.adjustable_bed.const import CONF_BED_TYPE, CONF_PRODUCT_TYPE, DOMAIN
@@ -23,6 +24,7 @@ from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinato
 from custom_components.adjustable_bed.profiles import flexispot as app
 from custom_components.adjustable_bed.state_keys import UNDER_BED_LIGHTS_ON
 from tests.form_helpers import complete, form_fields
+from tests.hold_lease_wire import virtual_clock
 from tests.test_linx import _Characteristic, _Services
 from tests.test_setup_routes import _typed
 
@@ -127,6 +129,9 @@ async def test_entity_actions_are_exact_model_commands(hass, model):
     from custom_components.adjustable_bed.bed_traits import reads_positions
 
     assert not reads_positions(coord.entry.data)
+    assert type(bed).read_positions is BedController.read_positions
+    await coord.async_execute_controller_command(lambda c: c.read_positions())
+    assert frames(client) == []
     assert bed.supports_lights is profile.light
     assert bed.supports_single_address_pairing is False
     assert bed.execution.declared == {"hold"}
@@ -151,7 +156,10 @@ async def test_entity_actions_are_exact_model_commands(hass, model):
     )
 
     timer = AdjustableBedMassageTimerSelect(
-        coord, MASSAGE_TIMER_DESCRIPTION, bed.massage_timer_options, has_off=False,
+        coord,
+        MASSAGE_TIMER_DESCRIPTION,
+        bed.massage_timer_options,
+        has_off=False,
     )
     assert timer.current_option is None
     await timer.async_select_option("0 min")
@@ -162,12 +170,14 @@ async def test_entity_actions_are_exact_model_commands(hass, model):
 
 async def test_right_motion_has_key_03_and_exact_cleanup(hass):
     coord, bed, client = await target(hass, "eb803")
-    await coord.async_execute_controller_command(lambda c: c.hold_control("right_back_up", 1))
+    with virtual_clock():
+        await coord.async_execute_controller_command(lambda c: c.hold_control("right_back_up", 1))
     assert frames(client) == [codec.frame(1, 3), codec.frame(3, 3)]
 
 
 async def test_cancel_before_first_frame_and_expiry_waiting_for_ble_lane(hass):
     coord, bed, client = await target(hass)
+    original = bed._link
     async with bed._ble_lock:
         task = asyncio.create_task(
             coord.async_execute_controller_command(lambda c: c.hold_control("back_up", 5))
@@ -175,6 +185,9 @@ async def test_cancel_before_first_frame_and_expiry_waiting_for_ble_lane(hass):
         await asyncio.sleep(0.02)
     await task
     assert frames(client) == []
+    assert bed._link is original
+    bed._notification(original, bytearray(codec.frame(4, 1)))
+    assert coord.controller_state[UNDER_BED_LIGHTS_ON] is True
     coord.cancel_command.set()
     await bed.hold_control("back_up", 1)
     assert frames(client) == []
@@ -214,12 +227,22 @@ async def test_reconnect_never_moves_cleanup_or_old_notifications_to_new_link(ha
     replacement = SimpleNamespace(**vars(client))
     replacement.write_gatt_char = AsyncMock()
 
+    async def disconnect():
+        replacement.is_connected = False
+
+    replacement.disconnect = AsyncMock(side_effect=disconnect)
+
     async def write(_char, _frame, **_kwargs):
         coord._client = replacement
         await bed.async_discover_capabilities()
+        coord.request_command_cancel()
 
     client.write_gatt_char.side_effect = write
-    await coord.async_execute_controller_command(lambda c: c.hold_control("back_up", 1))
+    with virtual_clock():
+        await coord.async_execute_controller_command(lambda c: c.hold_control("back_up", 1000))
+    assert frames(client) == [codec.frame(1, 1)]
+    assert bed._link is not original and bed._link.client is replacement
+    assert coord.controller_state[UNDER_BED_LIGHTS_ON] is None
     assert frames(replacement) == []
     bed._notification(original, bytearray(codec.frame(4, 1)))
     assert coord.controller_state[UNDER_BED_LIGHTS_ON] is None

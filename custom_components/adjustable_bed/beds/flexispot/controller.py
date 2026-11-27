@@ -378,9 +378,6 @@ class FlexispotController(ProfileExecution[app.FlexispotProfile], BedController)
             "status": asdict(self._status) if self._status else None,
         }
 
-    async def read_positions(self, motor_count: int = 2) -> None:
-        return
-
     async def _release(self, link: _Link, motor: int) -> None:
         async def release() -> None:
             await asyncio.sleep(app.RELEASE_MS / 1000)
