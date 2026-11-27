@@ -231,6 +231,7 @@ _EXPORT_MODULES = {
     'TempurAUController': 'tempur_au',
     "CasperBaseController": "casper_base.controller",
     "HushBaseController": "hush_base.controller",
+    "SilkSnowController": "casper_base.silksnow",
     "RichmatLegacyController": "richmat_legacy.controller",
     "LuunaController": "luuna.controller",
     "MLineController": "mline.controller",
