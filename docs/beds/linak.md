@@ -6,6 +6,9 @@
 
 ## Known Models
 
+For a Carpe Diem Beds receiver that uses the Vindö app, choose the
+[Vindö profile](vindo.md).
+
 - Linak DPG1M (OEM controller used in many beds)
 - Bedre Nætter
 - Jensen

@@ -145,6 +145,16 @@ handlers of one connection, the capability pages and the release and query
 timing. It is a bed type of its own beside the Okin receiver route, whose
 frames are unchanged. See [SmartBed](../beds/smartbed.md).
 
+## Linak two-byte control words
+
+Vindö 1.0.18 shares the Linak opcode-plus-zero framing and the four
+back/legs combination encodings. `codec/linak.py` holds those shared builders
+and adds the Vindö unsigned, variable-length position parser. The existing
+Linak Bed Control parser expects exact four-byte status and speed reports.
+The existing controllers also differ in notification setup, movement timing,
+release or massage sequencing, so Vindö has its own app profile and session.
+See [Vindö](../beds/vindo.md) and `tests/test_vindo_vectors.py`.
+
 ## Registering a family
 
 A family keeps its files to itself, so parallel family PRs do not touch a

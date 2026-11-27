@@ -19,6 +19,7 @@ from homeassistant.util import dt as dt_util
 
 from ...alarm import AlarmCapability, AlarmError, AlarmRequest
 from ...bluetooth_transport import async_path_for_source, client_source, is_esphome_proxy_path
+from ...codec.linak import control_frame
 from ...const import (
     LINAK_BACK_MAX_POSITION,
     LINAK_CONFIG_CHAR_UUID,
@@ -297,72 +298,72 @@ class LinakCommands:
     """Linak command constants."""
 
     # Presets
-    PRESET_MEMORY_1 = bytes([0x0E, 0x00])
-    PRESET_MEMORY_2 = bytes([0x0F, 0x00])
-    PRESET_MEMORY_3 = bytes([0x0C, 0x00])
-    PRESET_MEMORY_4 = bytes([0x44, 0x00])
+    PRESET_MEMORY_1 = control_frame(0x0E)
+    PRESET_MEMORY_2 = control_frame(0x0F)
+    PRESET_MEMORY_3 = control_frame(0x0C)
+    PRESET_MEMORY_4 = control_frame(0x44)
 
     # Program presets
-    PROGRAM_MEMORY_1 = bytes([0x38, 0x00])
-    PROGRAM_MEMORY_2 = bytes([0x39, 0x00])
-    PROGRAM_MEMORY_3 = bytes([0x3A, 0x00])
-    PROGRAM_MEMORY_4 = bytes([0x45, 0x00])
+    PROGRAM_MEMORY_1 = control_frame(0x38)
+    PROGRAM_MEMORY_2 = control_frame(0x39)
+    PROGRAM_MEMORY_3 = control_frame(0x3A)
+    PROGRAM_MEMORY_4 = control_frame(0x45)
 
     # Under-bed lights
-    LIGHTS_ON = bytes([0x92, 0x00])
-    LIGHTS_OFF = bytes([0x93, 0x00])
-    LIGHTS_TOGGLE = bytes([0x94, 0x00])
+    LIGHTS_ON = control_frame(0x92)
+    LIGHTS_OFF = control_frame(0x93)
+    LIGHTS_TOGGLE = control_frame(0x94)
 
     # Massage - all
-    MASSAGE_ALL_OFF = bytes([0x80, 0x00])
-    MASSAGE_ALL_UP = bytes([0xA8, 0x00])
-    MASSAGE_ALL_DOWN = bytes([0xA9, 0x00])
+    MASSAGE_ALL_OFF = control_frame(0x80)
+    MASSAGE_ALL_UP = control_frame(0xA8)
+    MASSAGE_ALL_DOWN = control_frame(0xA9)
 
     # Massage - head
-    MASSAGE_HEAD_UP = bytes([0x8D, 0x00])
-    MASSAGE_HEAD_DOWN = bytes([0x8E, 0x00])
+    MASSAGE_HEAD_UP = control_frame(0x8D)
+    MASSAGE_HEAD_DOWN = control_frame(0x8E)
 
     # Massage - foot
-    MASSAGE_FOOT_UP = bytes([0x8F, 0x00])
-    MASSAGE_FOOT_DOWN = bytes([0x90, 0x00])
+    MASSAGE_FOOT_UP = control_frame(0x8F)
+    MASSAGE_FOOT_DOWN = control_frame(0x90)
 
     # Massage mode
-    MASSAGE_MODE_STEP = bytes([0x81, 0x00])
-    MASSAGE_WAVE_FREQUENCY_UP = bytes([0x87, 0x00])
-    MASSAGE_WAVE_FREQUENCY_DOWN = bytes([0x88, 0x00])
-    MASSAGE_ZONE_1_ON = bytes([0x89, 0x00])
-    MASSAGE_ZONE_1_OFF = bytes([0x8A, 0x00])
-    MASSAGE_ZONE_2_ON = bytes([0x8B, 0x00])
-    MASSAGE_ZONE_2_OFF = bytes([0x8C, 0x00])
+    MASSAGE_MODE_STEP = control_frame(0x81)
+    MASSAGE_WAVE_FREQUENCY_UP = control_frame(0x87)
+    MASSAGE_WAVE_FREQUENCY_DOWN = control_frame(0x88)
+    MASSAGE_ZONE_1_ON = control_frame(0x89)
+    MASSAGE_ZONE_1_OFF = control_frame(0x8A)
+    MASSAGE_ZONE_2_ON = control_frame(0x8B)
+    MASSAGE_ZONE_2_OFF = control_frame(0x8C)
     # Legacy Performance profile massage start/toggle frame.
-    MASSAGE_PERFORMANCE_START = bytes([0x91, 0x00])
-    IMPULSE_TOGGLE = bytes([0x4D, 0x00])
-    RESET_DEFAULTS = bytes([0x4E, 0x00])
+    MASSAGE_PERFORMANCE_START = control_frame(0x91)
+    IMPULSE_TOGGLE = control_frame(0x4D)
+    RESET_DEFAULTS = control_frame(0x4E)
     FACTORY_RESET = bytes([0x7F, 0x3E, 0x80])
-    WAKE = bytes([0xFE, 0x00])
+    WAKE = control_frame(0xFE)
     # Bed Control alarm transaction terminator.
     TIMER_COMMIT = bytes([0x20])
 
     # Motor movement commands
     # Note: 0x00 is INITIALIZE_DOWN, not stop. 0xFF is the correct stop command.
     # Using 0x00 can cause a brief reverse movement.
-    MOVE_STOP = bytes([0xFF, 0x00])
+    MOVE_STOP = control_frame(0xFF)
     # Legacy Performance uses the same release opcode as a one-byte frame.
     PERFORMANCE_RELEASE = bytes([0xFF])
-    MOVE_ALL_DOWN = bytes([0x00, 0x00])
-    MOVE_ALL_UP = bytes([0x01, 0x00])
-    MOVE_BASE_DOWN = bytes([0x06, 0x00])
-    MOVE_BASE_UP = bytes([0x07, 0x00])
+    MOVE_ALL_DOWN = control_frame(0x00)
+    MOVE_ALL_UP = control_frame(0x01)
+    MOVE_BASE_DOWN = control_frame(0x06)
+    MOVE_BASE_UP = control_frame(0x07)
 
     # Individual motor control
-    MOVE_HEAD_UP = bytes([0x03, 0x00])
-    MOVE_HEAD_DOWN = bytes([0x02, 0x00])
-    MOVE_FEET_UP = bytes([0x05, 0x00])
-    MOVE_FEET_DOWN = bytes([0x04, 0x00])
-    MOVE_LEGS_UP = bytes([0x09, 0x00])
-    MOVE_LEGS_DOWN = bytes([0x08, 0x00])
-    MOVE_BACK_UP = bytes([0x0B, 0x00])
-    MOVE_BACK_DOWN = bytes([0x0A, 0x00])
+    MOVE_HEAD_UP = control_frame(0x03)
+    MOVE_HEAD_DOWN = control_frame(0x02)
+    MOVE_FEET_UP = control_frame(0x05)
+    MOVE_FEET_DOWN = control_frame(0x04)
+    MOVE_LEGS_UP = control_frame(0x09)
+    MOVE_LEGS_DOWN = control_frame(0x08)
+    MOVE_BACK_UP = control_frame(0x0B)
+    MOVE_BACK_DOWN = control_frame(0x0A)
 
 
 class LinakController(BedController):

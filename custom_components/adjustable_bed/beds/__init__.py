@@ -173,6 +173,7 @@ if TYPE_CHECKING:
     from .ultramatic.controller import UltramaticController as UltramaticController
     from .vibradorm.app import VibradormAppController as VibradormAppController
     from .vibradorm.controller import VibradormController as VibradormController
+    from .vindo import VindoController as VindoController
     from .vmatbasic.controller import VMatBasicController as VMatBasicController
     from .woosa import WoosaController as WoosaController
 
@@ -284,6 +285,7 @@ _EXPORT_MODULES = {
     "LimossController": "limoss.controller",
     "LimossRemoteController": "limoss.remote",
     "LinakController": "linak.controller",
+    "VindoController": "vindo",
     "SilvermotionController": "silvermotion.controller",
     "SmartBedController": "smartbed.controller",
     "LogicdataController": "logicdata.controller",
@@ -391,6 +393,7 @@ __all__ = [
     "SymphonyController",
     "LimossController",
     "LinakController",
+    "VindoController",
     "LevaController",
     "LinxController",
     "LogicdataController",

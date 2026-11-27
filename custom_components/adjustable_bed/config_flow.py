@@ -191,6 +191,7 @@ from .const import (
     BED_TYPE_LEGGETT_PLATT,
     BED_TYPE_LEVA,
     BED_TYPE_LIMOSS_REMOTE,
+    BED_TYPE_LINAK,
     BED_TYPE_LOGICDATA_AIR_PUMP,
     BED_TYPE_MLILY,
     BED_TYPE_MLILY_REMOTE,
@@ -234,6 +235,7 @@ from .const import (
     BED_TYPE_TRUEMOTION,
     BED_TYPE_VIBRADORM,
     BED_TYPE_VIBRADORM_APP,
+    BED_TYPE_VINDO,
     BED_TYPE_VMATBASIC,
     BED_TYPE_ZSERIES,
     CONF_BACK_MAX_ANGLE,
@@ -450,7 +452,7 @@ _NAME_ONLY_CONFIDENCE = 0.3
 _EXPLICIT_APP_HINTS = frozenset(
     {BED_TYPE_ATLAS_LIFT, BED_TYPE_DORSAL, BED_TYPE_ENSO2, BED_TYPE_ERGOBED, BED_TYPE_MOODBASE, "super_colchones", "dreamsense", "saatva", "bobpowerbase", BED_TYPE_COMFORT_ENHANCEMENT3, BED_TYPE_RICHMAT_APP_SLEEP, BED_TYPE_RICHMAT_APP, BED_TYPE_RICHMAT_CLASSIC_APPS, BED_TYPE_MOTOMOTION, BED_TYPE_MLILY, BED_TYPE_GALAXY, BED_TYPE_GOODVIBE, BED_TYPE_HJBED, BED_TYPE_ESHINE_OKIN, BED_TYPE_ISLEEP, BED_TYPE_KOMFYD, BED_TYPE_COMFYDS, BED_TYPE_RIZE, BED_TYPE_STARCODE_ABM5_4, BED_TYPE_MOTION_BED, BED_TYPE_VMATBASIC, BED_TYPE_FURNIMOVE,
      BED_TYPE_GMMOTOR, BED_TYPE_OKIMIKI, BED_TYPE_SIMMONS_BLUE, "gmmotor_sleep_mm", "gmmotor_sleep_sxb", "sealy_posturematic", "instant_comfort", BED_TYPE_TRUEMOTION,
-     BED_TYPE_JEROME_ADJUSTABLE_BASE}
+     BED_TYPE_JEROME_ADJUSTABLE_BASE, BED_TYPE_VINDO}
 )
 
 
@@ -1477,6 +1479,7 @@ def _motor_count_options(
     if bed_type in {
         *OKIN_BEDDING_APP_BED_TYPES,
         BED_TYPE_SIMMONS,
+        BED_TYPE_VINDO,
         BED_TYPE_CUSTOMATIC_CLARITY,
         BED_TYPE_CUSTOMATIC_JEROMES,
         # The pump has no motors; keep the stored count fixed and unused.
@@ -2402,6 +2405,7 @@ class CapabilityReport:
     atlas_lift_transport_valid: bool | None = None
     langjue_receiver_valid: bool | None = None
     sleeptime_uart_valid: bool | None = None
+    vindo_transport_valid: bool | None = None
     starcode_transport_selector: str | None = None
     starcode_ble_device_name: str | None = None
     dorsal_endpoint_error: str | None = None
@@ -2878,6 +2882,14 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
             return self.async_abort(reason="migration_verification_required")
         if not self._migration_unchanged():
             return self.async_abort(reason="migration_entry_changed")
+        if (
+            self._pending_entry.get(CONF_BED_TYPE) == BED_TYPE_VINDO
+            and async_get_connect_lock(
+                self.hass, self._pending_entry[CONF_ADDRESS]
+            ).retained_setup_client is not None
+        ):
+            self._migration_verified = False
+            return await self.async_step_verify_connection()
         if user_input is None or user_input.get("action") != "apply":
             return await self._async_show_migration_confirm()
         assert self._migration is not None
@@ -3496,10 +3508,12 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
 
         bed_type = detection_result.bed_type
         # The receiver can be known while its app remains ambiguous.
-        suta_app_choice = bed_type == BED_TYPE_SUTA and BED_TYPE_TRUEMOTION in (
-            detection_result.ambiguous_types or ()
+        alternatives = detection_result.ambiguous_types or ()
+        shared_receiver_choice = (
+            bed_type == BED_TYPE_SUTA and BED_TYPE_TRUEMOTION in alternatives
+            or bed_type == BED_TYPE_LINAK and BED_TYPE_VINDO in alternatives
         )
-        if bed_type is None or (detection_result.confidence >= 0.7 and not suta_app_choice):
+        if bed_type is None or (detection_result.confidence >= 0.7 and not shared_receiver_choice):
             return False
 
         candidates: list[str] = []
@@ -6594,6 +6608,9 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
             and not needs_live_check
             # These profiles check the selected transport on the live link.
             and entry_data.get(CONF_BED_TYPE) not in (BED_TYPE_LEVA, BED_TYPE_STARCODE_ABM5_4)
+            and not (
+                entry_data.get(CONF_BED_TYPE) == BED_TYPE_VINDO and self._verification_possible()
+            )
         ):
             return await self._async_create_selected_app_entry(title=title, data=entry_data)
         if (
@@ -6694,6 +6711,7 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                 and report.langjue_receiver_valid is not True
             )
             or report.sleeptime_uart_valid is False
+            or report.vindo_transport_valid is False
             or (
                 # Reconfigure saves an AdjustableM5X4 only on a transport the
                 # live link proved; an unresolved one fails the check.
@@ -6866,6 +6884,7 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         interrupted, and a link left open holds the bed's only connection.
         """
         from bleak import BleakClient
+        from bleak.exc import BleakError
         from bleak_retry_connector import BleakAbortedError, establish_connection
 
         def _report(action: SetupAction) -> None:
@@ -6943,7 +6962,7 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                             if bed_type == BED_TYPE_STARCODE_ABM5_4
                             else _PROBE_TIMEOUT_SECONDS
                         ),
-                        use_services_cache=bed_type not in (BED_TYPE_FURNIMOVE, BED_TYPE_ATLAS_LIFT),
+                        use_services_cache=bed_type not in (BED_TYPE_FURNIMOVE, BED_TYPE_ATLAS_LIFT, BED_TYPE_VINDO),
                     )
                     if client_tracker is not None:
                         # Registered before anything else can fail or be
@@ -7045,6 +7064,19 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                         from .profiles.truemotion import gatt_roles
 
                         report.truemotion_transport_valid = gatt_roles(client.services) is not None
+                    if bed_type == BED_TYPE_VINDO:
+                        if client.is_connected and service_table is not None:
+                            await async_import_modules(self.hass, "beds.vindo")
+                            from .beds.vindo import validate_gatt
+
+                            try:
+                                validate_gatt(service_table)
+                            except BleakError as err:
+                                report.vindo_transport_valid = False
+                                report.error = str(err)
+                            else:
+                                report.vindo_transport_valid = True
+                        return report
                     if leva_profile is not None:
                         from .beds.leva import resolve_gatt
                         from .errors import BedNotConnectedError
@@ -7087,7 +7119,7 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                             if migration_check is not None and client.is_connected:
                                 self.async_retain_failed_setup_client(client, address)
         except Exception as err:
-            if migration_check is not None or bed_type in (BED_TYPE_DORSAL, BED_TYPE_LANGJUE):
+            if migration_check is not None or bed_type in (BED_TYPE_DORSAL, BED_TYPE_LANGJUE, BED_TYPE_VINDO):
                 report.connected = False
             report.error = str(err) or err.__class__.__name__
             report.connection_aborted = isinstance(err, BleakAbortedError)
@@ -7218,6 +7250,9 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
             and not report.connected
         )
 
+        if report.vindo_transport_valid is False:
+            return self.async_abort(reason="vindo_receiver_mismatch")
+
         if report.leva_receiver_valid is False:
             self._verify_form_shown = False
             self._manual_data = dict(self._pending_entry)
@@ -7229,8 +7264,18 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
             )
 
         if self._migration is not None:
-            if self._migration_verified:
-                # A passed check goes straight to the review: nothing is saved yet.
+            selecting_vindo = self._pending_entry.get(CONF_BED_TYPE) == BED_TYPE_VINDO
+            retained_vindo_link = selecting_vindo and async_get_connect_lock(
+                self.hass, self._pending_entry[CONF_ADDRESS]
+            ).retained_setup_client is not None
+            # Optional Vindö verification can proceed after an unreachable probe.
+            # A failed transport reservation returns no capability report.
+            allow_unreachable_vindo = (
+                selecting_vindo
+                and not self._migration_requires_check
+                and isinstance(probe, CapabilityReport)
+            )
+            if not retained_vindo_link and (self._migration_verified or allow_unreachable_vindo):
                 return await self._async_create_selected_app_entry(
                     title=self._pending_title
                     or self._pending_entry.get(CONF_NAME, "Adjustable Bed"),

@@ -80,7 +80,7 @@ For named raise/lower/stop voice commands and Apple Home controls, see
 | [`limoss_remote_calibrate`](#limoss_remote_calibrate) | Limoss Remote: calibrate | Runs the remote's calibration after you confirm, then releases the motors. |
 | [`limoss_remote_features`](#limoss_remote_features) | Limoss Remote: configure controls | Chooses whether the lamp and massage controls are shown. Turning a control off first turns that feature off on the bed. |
 | [`limoss_remote_rename_memory`](#limoss_remote_rename_memory) | Limoss Remote: rename memory | Renames a memory in Home Assistant. An empty name is allowed. |
-| [`linak_move_simultaneously`](#linak_move_simultaneously) | Linak: move two motors together | Moves two motors together for a set time on a Linak Bed Control or Jensen JMC400, then stops them. |
+| [`linak_move_simultaneously`](#linak_move_simultaneously) | Linak: move two motors together | Moves two motors together for a set time on Linak Bed Control, Jensen JMC400 or Vindö, then stops them. |
 | [`linx_snore_intervention`](#linx_snore_intervention) | Linx: snore intervention | Run the bed's anti-snore movement once, then ask the bed for its status. It does not listen for snoring. |
 | [`logicdata_hold_preset`](#logicdata_hold_preset) | LOGICDATA: hold preset | Holds a flat, preset or memory button for a set time, then releases it. |
 | [`luuna`](#luuna) | Luuna: settings | Sets the light of a Luuna bed, or reads the name of its sleep sensor. Set its alarm with Set alarm and its clock with Set bed clock. Only the options your bed reports can run. |
@@ -1427,7 +1427,7 @@ A memory name can be empty. Each side of a combined bed keeps its own settings.
 ## Linak
 
 <a id="linak_move_simultaneously"></a>
-**`linak_move_simultaneously`**: Moves two motors together for a set time on a Linak Bed Control or Jensen JMC400, then stops them.
+**`linak_move_simultaneously`**: Moves two motors together for a set time on Linak Bed Control, Jensen JMC400 or Vindö, then stops them.
 
 | Field | Name | Meaning |
 |-------|------|---------|
@@ -1436,6 +1436,9 @@ A memory name can be empty. Each side of a combined bed keeps its own settings.
 | `second_motor` | Second motor | The second motor, different from the first. One of `base`, `feet`, `head`, `legs` or `back`. |
 | `second_direction` | Second direction | Direction of the second motor. One of `up` or `down`. |
 | `duration_ms` | Duration | How long to move before stopping, 100 to 30000 milliseconds. |
+
+Vindö accepts the back and legs axes and limits movement to 20,000 milliseconds.
+At the elapsed limit, it finishes any write already in progress and sends STOP.
 
 ## Linx
 

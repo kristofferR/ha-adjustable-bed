@@ -138,6 +138,7 @@ from .const import (
     BED_TYPE_TRANQUIL,
     BED_TYPE_VIBRADORM,
     BED_TYPE_VIBRADORM_APP,
+    BED_TYPE_VINDO,
     BED_TYPE_VMATBASIC,
     BED_TYPE_YAMADA,
     BED_TYPE_ZSERIES,
@@ -3760,6 +3761,14 @@ SETUP_PROFILES: Final[dict[str, SetupProfile]] = {
             CONF_DISABLE_ANGLE_SENSING: True,
             CONF_PROTOCOL_VARIANT: "auto",
             CONF_MOTOR_PULSE_DELAY_MS: 200,
+        },
+    ),
+    BED_TYPE_VINDO: SetupProfile(
+        owns={
+            CONF_MOTOR_COUNT: 2,
+            CONF_HAS_MASSAGE: True,
+            CONF_DISABLE_ANGLE_SENSING: True,
+            CONF_MOTOR_PULSE_DELAY_MS: 300,
         },
     ),
     BED_TYPE_LEVA: SetupProfile(

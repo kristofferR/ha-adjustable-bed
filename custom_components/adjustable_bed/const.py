@@ -489,6 +489,7 @@ BED_TYPE_LEGGETT_WILINKE: Final = "leggett_wilinke"  # Leggett WiLinke 5-byte
 # Bed types - Legacy naming (backwards compatibility)
 # These map to the protocol-based types above
 BED_TYPE_LINAK: Final = "linak"
+BED_TYPE_VINDO: Final = "vindo"
 BED_TYPE_ESHINE_OKIN: Final = "eshine_okin"  # com.okin.eshine explicit product selection
 ESHINE_OKIN_PROFILES: Final = {
     "eshine_e2000": "E2000",
@@ -877,6 +878,7 @@ SUPPORTED_BED_TYPES: Final = [
     BED_TYPE_LEGGETT_WILINKE,
     # Brand-specific types
     BED_TYPE_LINAK,
+    BED_TYPE_VINDO,
     BED_TYPE_RICHMAT,
     BED_TYPE_SOLACE,
     BED_TYPE_MOTOSLEEP,
@@ -3117,6 +3119,7 @@ BED_MOTOR_PULSE_DEFAULTS: Final = {
     # Linak: 100ms delay → 10 repeats = 1.0s total
     # Source: com.linak.linakbed.ble.memory ANALYSIS.md
     BED_TYPE_LINAK: (10, 100),
+    BED_TYPE_VINDO: (4, 300),
     # Sleepy's BOX15: 100ms delay → 10 repeats = 1.0s total
     # Source: com.okin.bedding.sleepy ANALYSIS.md
     BED_TYPE_SLEEPYS_BOX15: (10, 100),
