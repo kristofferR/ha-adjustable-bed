@@ -15,7 +15,7 @@ from custom_components.adjustable_bed.alarm import AlarmRequest
 from custom_components.adjustable_bed.beds.richmat_classic.homezone import HomeZoneReceive
 from custom_components.adjustable_bed.beds.richmat_classic.innova_control import AROMA_START_2
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
-from custom_components.adjustable_bed.state_keys import UNDER_BED_LIGHTS_RGB
+from custom_components.adjustable_bed.state_keys import UNDER_BED_LIGHTS_ON, UNDER_BED_LIGHTS_RGB
 from tests.hold_lease_wire import virtual_clock
 from tests.test_entity_sweep import async_setup_platforms_and_sweep
 from tests.test_innova_control import controller, packets
@@ -23,21 +23,22 @@ from tests.test_richmat_classic_transport import Services, channel, route
 
 
 @pytest.fixture
-async def runtime(hass, monkeypatch):
+async def runtime(hass, monkeypatch, request):
+    layout = getattr(request, "param", "BTRM")
     entry = MockConfigEntry(
         domain=const.DOMAIN,
         data={
             "address": "AA:BB:CC:DD:EE:66",
             "bed_type": const.BED_TYPE_RICHMAT_CLASSIC_APPS,
             "protocol_variant": "innova2",
-            "product_type": "BTRM",
+            "product_type": layout,
             "ble_device_name": "BTRM-bed",
             "motor_pulse_count": 1,
         },
     )
     entry.add_to_hass(hass)
     coordinator = AdjustableBedCoordinator(hass, entry)
-    ctrl, double = controller("BTRM")
+    ctrl, double = controller(layout)
     ctrl._coordinator = coordinator
     coordinator._controller = ctrl
     coordinator._client = double.client
@@ -462,3 +463,23 @@ async def test_offline_preflight_does_not_connect_or_use_retained_capability_fla
     connect.assert_not_awaited()
     group_check.assert_not_called()
     assert packets(double) == []
+
+
+@pytest.mark.parametrize("runtime", ["YGRM"], indirect=True)
+async def test_old_light_report_is_not_replayed_after_sent_off(runtime):
+    coordinator, ctrl, double = runtime
+    ctrl._notification(ctrl._session, None, bytearray.fromhex("6e0e00037f"))
+    assert coordinator.controller_state[UNDER_BED_LIGHTS_ON] is True
+    assert ctrl.supports_lights
+    with virtual_clock():
+        await coordinator.async_execute_controller_command(lambda c: c.lights_off())
+    assert coordinator.controller_state[UNDER_BED_LIGHTS_ON] is False
+    first = packets(double)
+    assert first
+    ctrl._select("hold", "hold")
+    assert coordinator.controller_state[UNDER_BED_LIGHTS_ON] is False
+    with virtual_clock():
+        await coordinator.async_execute_controller_command(lambda c: c.lights_off())
+    assert packets(double) == first
+    ctrl._notification(ctrl._session, None, bytearray.fromhex("6e0e00037f"))
+    assert coordinator.controller_state[UNDER_BED_LIGHTS_ON] is True

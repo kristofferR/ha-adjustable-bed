@@ -132,6 +132,7 @@ class InnovaControlController(HomeZoneController):
         )
         event = self._receive.value_event
         if event in ("6e0e00017d", "6e0e00037f"):
+            self._receive.value_event = None
             self.forward_controller_state_updates(UNDER_BED_LIGHTS_ON(event == "6e0e00037f"))
 
     def on_disconnect(self) -> None:
