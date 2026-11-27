@@ -33,6 +33,7 @@ APPS = [
     "majestichome",
     "okimiki",
     "mlily_remote",
+    "mlily0",
     "revive",
     "best_mattress",
     "blvd_home",

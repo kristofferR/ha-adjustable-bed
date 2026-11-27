@@ -72,6 +72,23 @@ RETYPES: Final[tuple[Retype, ...]] = (
         )
         for key in ("zero_g", "tv")
     ),
+    Retype(
+        "number",
+        "controller_number_ergobq_light_minutes",
+        "select",
+        "light_timer",
+        only_on=frozenset({"ergobq"}),
+    ),
+    *(
+        Retype(
+            "number",
+            f"controller_number_ergobq_{zone}_minutes",
+            "select",
+            f"controller_select_ergobq_{zone}_timer",
+            only_on=frozenset({"ergobq"}),
+        )
+        for zone in ("head", "legs")
+    ),
     # Octo's on/off light stays a switch.
     Retype("switch", "under_bed_lights", "light", "under_bed_lights", frozenset({BED_TYPE_OCTO})),
     # Sleep readings that were text sensors.

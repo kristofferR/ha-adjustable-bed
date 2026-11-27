@@ -4458,3 +4458,241 @@ ambient_set_rgb:
         number:
           min: 0
           max: 255
+
+ergobq_scene:
+  fields:
+    device_id:
+      required: true
+      selector:
+        device:
+          integration: adjustable_bed
+          multiple: true
+    side:
+      selector:
+        select:
+          options:
+          - both
+          - left
+          - right
+    operation:
+      required: true
+      selector:
+        select:
+          options:
+          - recall
+          - save
+          - restore
+    scene:
+      required: true
+      selector:
+        select:
+          options:
+          - flat
+          - tv
+          - zero_g
+          - sleep_aid
+          - memory_1
+          - memory_2
+          - yoga
+          - reading
+ergobq_massage:
+  fields:
+    device_id:
+      required: true
+      selector:
+        device:
+          integration: adjustable_bed
+          multiple: true
+    side:
+      selector:
+        select:
+          options:
+          - both
+          - left
+          - right
+    zone:
+      required: true
+      selector:
+        select:
+          options:
+          - head
+          - legs
+    'on':
+      selector:
+        boolean: {}
+    intensity:
+      selector:
+        number:
+          min: 0
+          max: 5
+          step: 1
+          mode: box
+    mode:
+      selector:
+        select:
+          options:
+          - wave
+          - pulse
+          - continuous
+          - intermittent
+    minutes:
+      selector:
+        number:
+          min: 0
+          max: 60
+          step: 1
+          mode: box
+ergobq_schedule:
+  fields:
+    device_id:
+      required: true
+      selector:
+        device:
+          integration: adjustable_bed
+          multiple: true
+    side:
+      selector:
+        select:
+          options:
+          - both
+          - left
+          - right
+    task:
+      required: true
+      selector:
+        number:
+          min: 1
+          max: 5
+          step: 1
+          mode: box
+    status:
+      required: true
+      selector:
+        number:
+          min: 0
+          max: 2
+          step: 1
+          mode: box
+    hour:
+      required: true
+      selector:
+        number:
+          min: 0
+          max: 23
+          step: 1
+          mode: box
+    minute:
+      required: true
+      selector:
+        number:
+          min: 0
+          max: 59
+          step: 1
+          mode: box
+    weekdays:
+      selector:
+        select:
+          multiple: true
+          options:
+          - monday
+          - tuesday
+          - wednesday
+          - thursday
+          - friday
+          - saturday
+          - sunday
+    kind:
+      selector:
+        select:
+          options:
+          - custom
+          - diy
+    position:
+      selector:
+        boolean: {}
+    scene:
+      selector:
+        select:
+          options:
+          - flat
+          - tv
+          - zero_g
+          - sleep_aid
+          - memory_1
+          - memory_2
+          - yoga
+          - reading
+    massage:
+      selector:
+        boolean: {}
+    sync_massage:
+      selector:
+        boolean: {}
+    head:
+      selector:
+        object: {}
+    legs:
+      selector:
+        object: {}
+    light:
+      selector:
+        object: {}
+    mode:
+      selector:
+        number:
+          min: 11
+          max: 30
+          step: 1
+          mode: box
+    program_hex:
+      selector:
+        text: {}
+ergobq_diy:
+  fields:
+    device_id:
+      required: true
+      selector:
+        device:
+          integration: adjustable_bed
+          multiple: true
+    side:
+      selector:
+        select:
+          options:
+          - both
+          - left
+          - right
+    mode:
+      required: true
+      selector:
+        number:
+          min: 0
+          max: 255
+          step: 1
+          mode: box
+    program_hex:
+      selector:
+        text: {}
+ergobq_unlink:
+  fields:
+    device_id:
+      required: true
+      selector:
+        device:
+          integration: adjustable_bed
+          multiple: true
+    side:
+      selector:
+        select:
+          options:
+          - both
+          - left
+          - right
+    phase:
+      required: true
+      selector:
+        number:
+          min: 2
+          max: 3
+          step: 1
+          mode: box

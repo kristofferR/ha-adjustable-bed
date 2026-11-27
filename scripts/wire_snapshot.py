@@ -1495,6 +1495,17 @@ def default_scenario(bed_type: str) -> Scenario:
     """The bed type in its default route, with the entry data it needs to build."""
     from custom_components.adjustable_bed import const
 
+    if bed_type == "ergobq":
+        from custom_components.adjustable_bed.codec import ergobq as codec
+        status = codec.publish((codec.boolean(18, False), codec.raw(12, codec.Massage().encode()),
+                                codec.raw(14, codec.Massage().encode()), codec.boolean(50, False)))
+        status = codec.frame(5, status[6:-2]).hex()
+        return Scenario(id=bed_type, bed_type=bed_type,
+            entry_data={"product_type": "txbazdssmqcnndfc", "ergobq_stamp": "12"},
+            replies={"write:" + codec.auth("12").hex(): codec.frame(3, b"\x01").hex(),
+                     "write:" + codec.frame(1, b"\x00").hex(): codec.frame(1, b"\x01\x01\x01A").hex(),
+                     "*": status})
+
     if bed_type == "flexispot":
         return Scenario(id=bed_type, bed_type=bed_type, entry_data={"product_type": "eb632"})
     if bed_type == "ronco_motion":
@@ -1572,6 +1583,8 @@ def default_scenario(bed_type: str) -> Scenario:
         return Scenario(id=bed_type, bed_type=bed_type, protocol_variant="bt2000_standard",
                         entry_data={const.CONF_PROTOCOL_VARIANT: "bt2000_standard", const.CONF_PRODUCT_TYPE: "standard"},
                         layout_id="bedtech")
+    if bed_type == "berun":
+        return Scenario(id="berun", bed_type="berun", protocol_variant="v6", layout_id="berun:v6")
     data: dict[str, Any] = {"product_type": "nerum"} if bed_type == "nerum" else {"product_type": "2"} if bed_type == "enso" else {}
     if bed_type in ("sleep_evolution", "wsilver_legacy"):
         return Scenario(id=bed_type, bed_type=bed_type, protocol_variant="A1",
@@ -1582,6 +1595,7 @@ def default_scenario(bed_type: str) -> Scenario:
         const.BED_TYPE_HUSH_BASE: "hushl400",
         const.BED_TYPE_LUUNA: "rise",
         const.BED_TYPE_MLILY_REMOTE: "ms200",
+        const.BED_TYPE_MLILY0: "bedc",
         const.BED_TYPE_COMFORT_ENHANCEMENTS: "mc2",
         const.BED_TYPE_GLIDEAWAY_MOTION: "motion_400",
         const.BED_TYPE_ZSERIES: const.ZSERIES_VARIANT_Z230,
@@ -1634,6 +1648,8 @@ def default_scenario(bed_type: str) -> Scenario:
         replies = {"write:00b0": ULTRAMATIC_MASSAGE, "write:00c0": "ed8003" + ULTRAMATIC_ALARM_BODY}
     if bed_type == "agingplace":
         data.update({const.CONF_BLE_DEVICE_NAME: "KSWF07S123456789", "agingplace_bed_mode": "auto", "agingplace_bed_side": 0})
+    if bed_type == const.BED_TYPE_MLILY0:
+        return Scenario(id=bed_type, bed_type=bed_type, protocol_variant="bedc", layout_id="mlily_remote:w1")
     if bed_type == const.BED_TYPE_MLILY_REMOTE:
         data[const.CONF_PRODUCT_TYPE] = "single"
     if bed_type == const.BED_TYPE_SONICSLEEP:
@@ -2150,6 +2166,15 @@ def route_scenarios() -> list[Scenario]:
                 ))
         scenarios.append(dataclasses.replace(default_scenario(const.BED_TYPE_BOBPOWERBASE),
             id="bobpowerbase:props_write", layout_id="bobpowerbase", properties=WRITE_ONLY))
+    if const.BED_TYPE_MLILY0 in const.SUPPORTED_BED_TYPES:
+        from custom_components.adjustable_bed.profiles.mlily0 import PROFILES as MLILY0_PROFILES
+
+        for product in MLILY0_PROFILES:
+            for route in ("n1", "w1", "w2", "w3", "w4", "w5"):
+                scenarios.append(Scenario(
+                    id=f"mlily0:{product}:{route}", bed_type=const.BED_TYPE_MLILY0,
+                    protocol_variant=product, layout_id=f"mlily_remote:{route}",
+                ))
     if const.BED_TYPE_MLILY_REMOTE in const.SUPPORTED_BED_TYPES:
         from custom_components.adjustable_bed.profiles.mlily_remote import PROFILES
 
@@ -2559,6 +2584,8 @@ def build_scenarios() -> list[Scenario]:
     scenarios = [default_scenario(bed_type) for bed_type in SUPPORTED_BED_TYPES
                  if bed_type not in RICHMAT_MH_APP_CATALOGS]
     scenarios.extend(route_scenarios())
+    scenarios.extend(Scenario(id=f"berun:v{v}", bed_type="berun", protocol_variant=f"v{v}",
+                              layout_id=f"berun:v{v}") for v in (6, 7, 8, 9))
     scenarios.extend(Scenario(id=f"flexispot:{model}", bed_type="flexispot",
         entry_data={"product_type": model}, layout_id="flexispot")
         for model in ("eb703", "eb704", "eb803"))
@@ -2879,7 +2906,7 @@ async def _connect(controller: Any, recorder: Recorder, clock: FakeClock) -> dic
                 session.store_device_info = lambda *_: None
             await controller.async_on_connect(session)
             return
-        if controller._coordinator.bed_type in {"symphony", "linx", "agingplace", "sleep_assistant", "sinca_comfort", "leva", "sleep_assist_pro", "atlas_lift", "ambient", "ronco_motion"}:
+        if controller._coordinator.bed_type in {"symphony", "linx", "agingplace", "sleep_assistant", "sinca_comfort", "leva", "sleep_assist_pro", "atlas_lift", "ambient", "ergobq", "ronco_motion"}:
             session = SimpleNamespace(
                 client=controller.client, is_current=lambda: True,
                 async_start_notify=lambda: controller.start_notify(lambda *_: None),
@@ -2887,7 +2914,7 @@ async def _connect(controller: Any, recorder: Recorder, clock: FakeClock) -> dic
             await controller.async_on_connect(session)
             await controller.async_after_connect(session)
             return
-        if controller._coordinator.bed_type in {"mline", "nerum"}:
+        if controller._coordinator.bed_type in {"mline", "nerum", "berun"}:
             await controller.async_on_connect(None)
             await controller.async_after_connect(None)
             return

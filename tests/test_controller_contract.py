@@ -165,6 +165,8 @@ def _protocol_variant_for_bed_type(bed_type: str) -> str | None:
         return "blue"
     if bed_type == "saatva":
         return "bt2000_standard"
+    if bed_type == const.BED_TYPE_MLILY0:
+        return "bedc"
     if bed_type == const.BED_TYPE_CASPER_BASE:
         return "casperpro"
     if bed_type == const.BED_TYPE_JEROME_ADJUSTABLE_BASE:
@@ -264,6 +266,9 @@ async def _create_controller_for_bed_type(
 
     if bed_type == "mline":
         coordinator.entry.data[const.CONF_PRODUCT_TYPE] = "two"
+    if bed_type == "berun":
+        variant = "v6"
+        coordinator.entry.data[const.CONF_PROTOCOL_VARIANT] = variant
     if bed_type == "nerum":
         coordinator.entry.data[const.CONF_PRODUCT_TYPE] = "nerum"
 
