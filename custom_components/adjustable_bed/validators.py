@@ -106,6 +106,7 @@ from .const import (
     VARIANT_REQUIRED_BED_TYPES,
     ZSERIES_VARIANTS,
 )
+from .profiles.ai_bed import ROUTE_CHOICES as AI_BED_VARIANTS
 from .profiles.ambient import LAYOUTS as AMBIENT_LAYOUTS
 from .profiles.berun import PROFILES as BERUN_PROFILES
 from .profiles.bobpowerbase import PROFILE_CHOICES as BOB_PROFILES
@@ -218,6 +219,7 @@ VARIANTS_BY_BED_TYPE: dict[str, dict[str, str]] = {
     BED_TYPE_CASPER_BASE: CASPER_BASE_VARIANTS,
     "hush_base": HUSH_BASE_VARIANTS,
     "silksnow": SILKSNOW_CHOICES,
+    "ai_bed": AI_BED_VARIANTS,
     "ronco_motion": RONCO_MOTION_VARIANTS,
     "luuna": LUUNA_VARIANTS,
     "super_colchones": SUPER_COLCHONES_VARIANTS,

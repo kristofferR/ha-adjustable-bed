@@ -485,6 +485,7 @@ _BED_TRAITS: Final[dict[str, BedTraits]] = {
     # Head, foot and lumbar percentages, read only: the app has no way to set one.
     BED_TYPE_STARCODE_M1X12: BedTraits(position_feedback=True, percentage_positions=True),
     BED_TYPE_STARCODE_M5X5: BedTraits(position_feedback=True, percentage_positions=True),
+    "ai_bed": replace(_SCOPED, cancellation_only_stop=True),
     BED_TYPE_SUTA: _SCOPED,
     BED_TYPE_TRUEMOTION: replace(_NO_ANGLES_SCOPED, connection_timeout=8),
     BED_TYPE_SUTA_KING_KOIL: replace(_NO_ANGLES_SCOPED, connection_timeout=8),
