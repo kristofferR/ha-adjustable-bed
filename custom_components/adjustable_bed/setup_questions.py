@@ -378,6 +378,7 @@ _OWNED_BY_BED_TYPE: Final[dict[str, frozenset[str]]] = {
     "sonicsleep": GENERIC_FIELDS - {CONF_MOTOR_PULSE_COUNT},
     "ai_bed": GENERIC_FIELDS,
     "suta": GENERIC_FIELDS - {CONF_MOTOR_PULSE_COUNT},
+    "powersbedding": GENERIC_FIELDS - {CONF_MOTOR_PULSE_COUNT},
     "hestia_motion": GENERIC_FIELDS - {CONF_MOTOR_PULSE_COUNT},
     "truemotion": GENERIC_FIELDS,
     "suta_king_koil": GENERIC_FIELDS,
@@ -4134,6 +4135,12 @@ SETUP_PROFILES: Final[dict[str, SetupProfile]] = {
         seed=_sleeptime_seed,
         title=lambda _data: "Sleeptime Australia",
         imports=("profiles.sleeptime",),
+    ),
+    "powersbedding": SetupProfile(
+        owns={CONF_MOTOR_COUNT: 2, CONF_HAS_MASSAGE: True,
+              CONF_DISABLE_ANGLE_SENSING: True, CONF_PROTOCOL_VARIANT: "auto",
+              CONF_MOTOR_PULSE_DELAY_MS: 100},
+        title=lambda _data: "PowersBedding",
     ),
     "hestia_motion": SetupProfile(
         owns={CONF_MOTOR_COUNT: 2, CONF_HAS_MASSAGE: True,

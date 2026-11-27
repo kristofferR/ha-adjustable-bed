@@ -121,3 +121,12 @@ async def test_hestia_one_held_key_stream_has_no_composed_motor_admission():
     assert controller.execution.hold_for("both_up") == "stream"
     assert controller.profile.refresh_ms == 100
     assert controller.profile.release.steps == ((100, 0),)
+
+
+async def test_powersbedding_single_timer_movement_stream():
+    # PowersBedding 1.1.0 (2), E5: one movement timer, 100 ms refresh,
+    # two zero releases 100 ms apart; no independent concurrent axis holds.
+    controller = await _create_controller_for_bed_type("powersbedding")
+    assert controller.execution.declared == {"hold"}
+    assert controller.execution.hold_for("both_up") == "stream"
+    assert controller.profile.release.steps == ((0, 0), (100, 0))

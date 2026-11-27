@@ -2768,6 +2768,14 @@ AW MOTION (SilentNight SN300/SN500 and HighClare HC800) also uses
 and the generic single countdown alarm action. These settings require a physical
 bed target and do not accept logical-side routing.
 
+### PowersBedding
+
+The standard movement, memory programming, `sync_clock` and `set_alarm` actions
+apply. Alarms support weekdays, the next occurrence, memory A/B or massage.
+Only the P1 route accepts massage alongside a memory wake action. Use the
+shared massage timer select on P1; P2/P3 expose timer-cycle buttons.
+[Protocol and controls](beds/keeson.md#powersbedding).
+
 ### My Side
 
 `adjustable_bed.myside` supports Coaxing repeat alarms (`query`, `add`, `edit`,
