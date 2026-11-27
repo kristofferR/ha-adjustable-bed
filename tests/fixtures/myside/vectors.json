@@ -1,0 +1,1793 @@
+[
+  {
+    "id": "head_up_framed_left",
+    "protocol": "P2",
+    "action": "head_up",
+    "inputs": {
+      "builder": "ordinary",
+      "opcode": 36,
+      "side": 0,
+      "nordic": false
+    },
+    "expected_bytes": "6e01002493",
+    "evidence": [
+      "source-anchors.md: richmat_library_utils/product/device_instruct_util.dart getFunctionHexadecimalInstruct @0x6e54e8; returnInstructCheckSum @0x6e5de0",
+      "source-anchors.md: literal DeviceFunctionItemType objects"
+    ],
+    "origin": "STATIC DERIVATION, not a captured write"
+  },
+  {
+    "id": "head_up_nordic",
+    "protocol": "P1",
+    "action": "head_up",
+    "inputs": {
+      "builder": "ordinary",
+      "opcode": 36,
+      "side": 0,
+      "nordic": true
+    },
+    "expected_bytes": "24",
+    "evidence": [
+      "source-anchors.md: richmat_library_utils/product/device_instruct_util.dart getFunctionHexadecimalInstruct @0x6e54e8; returnInstructCheckSum @0x6e5de0",
+      "source-anchors.md: literal DeviceFunctionItemType objects"
+    ],
+    "origin": "STATIC DERIVATION, not a captured write"
+  },
+  {
+    "id": "head_down_framed_left",
+    "protocol": "P2",
+    "action": "head_down",
+    "inputs": {
+      "builder": "ordinary",
+      "opcode": 37,
+      "side": 0,
+      "nordic": false
+    },
+    "expected_bytes": "6e01002594",
+    "evidence": [
+      "source-anchors.md: richmat_library_utils/product/device_instruct_util.dart getFunctionHexadecimalInstruct @0x6e54e8; returnInstructCheckSum @0x6e5de0",
+      "source-anchors.md: literal DeviceFunctionItemType objects"
+    ],
+    "origin": "STATIC DERIVATION, not a captured write"
+  },
+  {
+    "id": "head_down_nordic",
+    "protocol": "P1",
+    "action": "head_down",
+    "inputs": {
+      "builder": "ordinary",
+      "opcode": 37,
+      "side": 0,
+      "nordic": true
+    },
+    "expected_bytes": "25",
+    "evidence": [
+      "source-anchors.md: richmat_library_utils/product/device_instruct_util.dart getFunctionHexadecimalInstruct @0x6e54e8; returnInstructCheckSum @0x6e5de0",
+      "source-anchors.md: literal DeviceFunctionItemType objects"
+    ],
+    "origin": "STATIC DERIVATION, not a captured write"
+  },
+  {
+    "id": "foot_up_framed_left",
+    "protocol": "P2",
+    "action": "foot_up",
+    "inputs": {
+      "builder": "ordinary",
+      "opcode": 38,
+      "side": 0,
+      "nordic": false
+    },
+    "expected_bytes": "6e01002695",
+    "evidence": [
+      "source-anchors.md: richmat_library_utils/product/device_instruct_util.dart getFunctionHexadecimalInstruct @0x6e54e8; returnInstructCheckSum @0x6e5de0",
+      "source-anchors.md: literal DeviceFunctionItemType objects"
+    ],
+    "origin": "STATIC DERIVATION, not a captured write"
+  },
+  {
+    "id": "foot_up_nordic",
+    "protocol": "P1",
+    "action": "foot_up",
+    "inputs": {
+      "builder": "ordinary",
+      "opcode": 38,
+      "side": 0,
+      "nordic": true
+    },
+    "expected_bytes": "26",
+    "evidence": [
+      "source-anchors.md: richmat_library_utils/product/device_instruct_util.dart getFunctionHexadecimalInstruct @0x6e54e8; returnInstructCheckSum @0x6e5de0",
+      "source-anchors.md: literal DeviceFunctionItemType objects"
+    ],
+    "origin": "STATIC DERIVATION, not a captured write"
+  },
+  {
+    "id": "foot_down_framed_left",
+    "protocol": "P2",
+    "action": "foot_down",
+    "inputs": {
+      "builder": "ordinary",
+      "opcode": 39,
+      "side": 0,
+      "nordic": false
+    },
+    "expected_bytes": "6e01002796",
+    "evidence": [
+      "source-anchors.md: richmat_library_utils/product/device_instruct_util.dart getFunctionHexadecimalInstruct @0x6e54e8; returnInstructCheckSum @0x6e5de0",
+      "source-anchors.md: literal DeviceFunctionItemType objects"
+    ],
+    "origin": "STATIC DERIVATION, not a captured write"
+  },
+  {
+    "id": "foot_down_nordic",
+    "protocol": "P1",
+    "action": "foot_down",
+    "inputs": {
+      "builder": "ordinary",
+      "opcode": 39,
+      "side": 0,
+      "nordic": true
+    },
+    "expected_bytes": "27",
+    "evidence": [
+      "source-anchors.md: richmat_library_utils/product/device_instruct_util.dart getFunctionHexadecimalInstruct @0x6e54e8; returnInstructCheckSum @0x6e5de0",
+      "source-anchors.md: literal DeviceFunctionItemType objects"
+    ],
+    "origin": "STATIC DERIVATION, not a captured write"
+  },
+  {
+    "id": "head_and_foot_up_framed_left",
+    "protocol": "P2",
+    "action": "head_and_foot_up",
+    "inputs": {
+      "builder": "ordinary",
+      "opcode": 41,
+      "side": 0,
+      "nordic": false
+    },
+    "expected_bytes": "6e01002998",
+    "evidence": [
+      "source-anchors.md: richmat_library_utils/product/device_instruct_util.dart getFunctionHexadecimalInstruct @0x6e54e8; returnInstructCheckSum @0x6e5de0",
+      "source-anchors.md: literal DeviceFunctionItemType objects"
+    ],
+    "origin": "STATIC DERIVATION, not a captured write"
+  },
+  {
+    "id": "head_and_foot_up_nordic",
+    "protocol": "P1",
+    "action": "head_and_foot_up",
+    "inputs": {
+      "builder": "ordinary",
+      "opcode": 41,
+      "side": 0,
+      "nordic": true
+    },
+    "expected_bytes": "29",
+    "evidence": [
+      "source-anchors.md: richmat_library_utils/product/device_instruct_util.dart getFunctionHexadecimalInstruct @0x6e54e8; returnInstructCheckSum @0x6e5de0",
+      "source-anchors.md: literal DeviceFunctionItemType objects"
+    ],
+    "origin": "STATIC DERIVATION, not a captured write"
+  },
+  {
+    "id": "head_and_foot_down_framed_left",
+    "protocol": "P2",
+    "action": "head_and_foot_down",
+    "inputs": {
+      "builder": "ordinary",
+      "opcode": 42,
+      "side": 0,
+      "nordic": false
+    },
+    "expected_bytes": "6e01002a99",
+    "evidence": [
+      "source-anchors.md: richmat_library_utils/product/device_instruct_util.dart getFunctionHexadecimalInstruct @0x6e54e8; returnInstructCheckSum @0x6e5de0",
+      "source-anchors.md: literal DeviceFunctionItemType objects"
+    ],
+    "origin": "STATIC DERIVATION, not a captured write"
+  },
+  {
+    "id": "head_and_foot_down_nordic",
+    "protocol": "P1",
+    "action": "head_and_foot_down",
+    "inputs": {
+      "builder": "ordinary",
+      "opcode": 42,
+      "side": 0,
+      "nordic": true
+    },
+    "expected_bytes": "2a",
+    "evidence": [
+      "source-anchors.md: richmat_library_utils/product/device_instruct_util.dart getFunctionHexadecimalInstruct @0x6e54e8; returnInstructCheckSum @0x6e5de0",
+      "source-anchors.md: literal DeviceFunctionItemType objects"
+    ],
+    "origin": "STATIC DERIVATION, not a captured write"
+  },
+  {
+    "id": "motor_reset_framed_left",
+    "protocol": "P2",
+    "action": "motor_reset",
+    "inputs": {
+      "builder": "ordinary",
+      "opcode": 49,
+      "side": 0,
+      "nordic": false
+    },
+    "expected_bytes": "6e010031a0",
+    "evidence": [
+      "source-anchors.md: richmat_library_utils/product/device_instruct_util.dart getFunctionHexadecimalInstruct @0x6e54e8; returnInstructCheckSum @0x6e5de0",
+      "source-anchors.md: literal DeviceFunctionItemType objects"
+    ],
+    "origin": "STATIC DERIVATION, not a captured write"
+  },
+  {
+    "id": "motor_reset_nordic",
+    "protocol": "P1",
+    "action": "motor_reset",
+    "inputs": {
+      "builder": "ordinary",
+      "opcode": 49,
+      "side": 0,
+      "nordic": true
+    },
+    "expected_bytes": "31",
+    "evidence": [
+      "source-anchors.md: richmat_library_utils/product/device_instruct_util.dart getFunctionHexadecimalInstruct @0x6e54e8; returnInstructCheckSum @0x6e5de0",
+      "source-anchors.md: literal DeviceFunctionItemType objects"
+    ],
+    "origin": "STATIC DERIVATION, not a captured write"
+  },
+  {
+    "id": "anti_snoring_framed_left",
+    "protocol": "P2",
+    "action": "anti_snoring",
+    "inputs": {
+      "builder": "ordinary",
+      "opcode": 70,
+      "side": 0,
+      "nordic": false
+    },
+    "expected_bytes": "6e010046b5",
+    "evidence": [
+      "source-anchors.md: richmat_library_utils/product/device_instruct_util.dart getFunctionHexadecimalInstruct @0x6e54e8; returnInstructCheckSum @0x6e5de0",
+      "source-anchors.md: literal DeviceFunctionItemType objects"
+    ],
+    "origin": "STATIC DERIVATION, not a captured write"
+  },
+  {
+    "id": "anti_snoring_nordic",
+    "protocol": "P1",
+    "action": "anti_snoring",
+    "inputs": {
+      "builder": "ordinary",
+      "opcode": 70,
+      "side": 0,
+      "nordic": true
+    },
+    "expected_bytes": "46",
+    "evidence": [
+      "source-anchors.md: richmat_library_utils/product/device_instruct_util.dart getFunctionHexadecimalInstruct @0x6e54e8; returnInstructCheckSum @0x6e5de0",
+      "source-anchors.md: literal DeviceFunctionItemType objects"
+    ],
+    "origin": "STATIC DERIVATION, not a captured write"
+  },
+  {
+    "id": "zero_gravity_framed_left",
+    "protocol": "P2",
+    "action": "zero_gravity",
+    "inputs": {
+      "builder": "ordinary",
+      "opcode": 69,
+      "side": 0,
+      "nordic": false
+    },
+    "expected_bytes": "6e010045b4",
+    "evidence": [
+      "source-anchors.md: richmat_library_utils/product/device_instruct_util.dart getFunctionHexadecimalInstruct @0x6e54e8; returnInstructCheckSum @0x6e5de0",
+      "source-anchors.md: literal DeviceFunctionItemType objects"
+    ],
+    "origin": "STATIC DERIVATION, not a captured write"
+  },
+  {
+    "id": "zero_gravity_nordic",
+    "protocol": "P1",
+    "action": "zero_gravity",
+    "inputs": {
+      "builder": "ordinary",
+      "opcode": 69,
+      "side": 0,
+      "nordic": true
+    },
+    "expected_bytes": "45",
+    "evidence": [
+      "source-anchors.md: richmat_library_utils/product/device_instruct_util.dart getFunctionHexadecimalInstruct @0x6e54e8; returnInstructCheckSum @0x6e5de0",
+      "source-anchors.md: literal DeviceFunctionItemType objects"
+    ],
+    "origin": "STATIC DERIVATION, not a captured write"
+  },
+  {
+    "id": "tv_position_framed_left",
+    "protocol": "P2",
+    "action": "tv_position",
+    "inputs": {
+      "builder": "ordinary",
+      "opcode": 88,
+      "side": 0,
+      "nordic": false
+    },
+    "expected_bytes": "6e010058c7",
+    "evidence": [
+      "source-anchors.md: richmat_library_utils/product/device_instruct_util.dart getFunctionHexadecimalInstruct @0x6e54e8; returnInstructCheckSum @0x6e5de0",
+      "source-anchors.md: literal DeviceFunctionItemType objects"
+    ],
+    "origin": "STATIC DERIVATION, not a captured write"
+  },
+  {
+    "id": "tv_position_nordic",
+    "protocol": "P1",
+    "action": "tv_position",
+    "inputs": {
+      "builder": "ordinary",
+      "opcode": 88,
+      "side": 0,
+      "nordic": true
+    },
+    "expected_bytes": "58",
+    "evidence": [
+      "source-anchors.md: richmat_library_utils/product/device_instruct_util.dart getFunctionHexadecimalInstruct @0x6e54e8; returnInstructCheckSum @0x6e5de0",
+      "source-anchors.md: literal DeviceFunctionItemType objects"
+    ],
+    "origin": "STATIC DERIVATION, not a captured write"
+  },
+  {
+    "id": "memory1_recall_framed_left",
+    "protocol": "P2",
+    "action": "memory1_recall",
+    "inputs": {
+      "builder": "ordinary",
+      "opcode": 46,
+      "side": 0,
+      "nordic": false
+    },
+    "expected_bytes": "6e01002e9d",
+    "evidence": [
+      "source-anchors.md: richmat_library_utils/product/device_instruct_util.dart getFunctionHexadecimalInstruct @0x6e54e8; returnInstructCheckSum @0x6e5de0",
+      "source-anchors.md: literal DeviceFunctionItemType objects"
+    ],
+    "origin": "STATIC DERIVATION, not a captured write"
+  },
+  {
+    "id": "memory1_recall_nordic",
+    "protocol": "P1",
+    "action": "memory1_recall",
+    "inputs": {
+      "builder": "ordinary",
+      "opcode": 46,
+      "side": 0,
+      "nordic": true
+    },
+    "expected_bytes": "2e",
+    "evidence": [
+      "source-anchors.md: richmat_library_utils/product/device_instruct_util.dart getFunctionHexadecimalInstruct @0x6e54e8; returnInstructCheckSum @0x6e5de0",
+      "source-anchors.md: literal DeviceFunctionItemType objects"
+    ],
+    "origin": "STATIC DERIVATION, not a captured write"
+  },
+  {
+    "id": "memory1_save_framed_left",
+    "protocol": "P2",
+    "action": "memory1_save",
+    "inputs": {
+      "builder": "ordinary",
+      "opcode": 43,
+      "side": 0,
+      "nordic": false
+    },
+    "expected_bytes": "6e01002b9a",
+    "evidence": [
+      "source-anchors.md: richmat_library_utils/product/device_instruct_util.dart getFunctionHexadecimalInstruct @0x6e54e8; returnInstructCheckSum @0x6e5de0",
+      "source-anchors.md: literal DeviceFunctionItemType objects"
+    ],
+    "origin": "STATIC DERIVATION, not a captured write"
+  },
+  {
+    "id": "memory1_save_nordic",
+    "protocol": "P1",
+    "action": "memory1_save",
+    "inputs": {
+      "builder": "ordinary",
+      "opcode": 43,
+      "side": 0,
+      "nordic": true
+    },
+    "expected_bytes": "2b",
+    "evidence": [
+      "source-anchors.md: richmat_library_utils/product/device_instruct_util.dart getFunctionHexadecimalInstruct @0x6e54e8; returnInstructCheckSum @0x6e5de0",
+      "source-anchors.md: literal DeviceFunctionItemType objects"
+    ],
+    "origin": "STATIC DERIVATION, not a captured write"
+  },
+  {
+    "id": "memory2_recall_framed_left",
+    "protocol": "P2",
+    "action": "memory2_recall",
+    "inputs": {
+      "builder": "ordinary",
+      "opcode": 47,
+      "side": 0,
+      "nordic": false
+    },
+    "expected_bytes": "6e01002f9e",
+    "evidence": [
+      "source-anchors.md: richmat_library_utils/product/device_instruct_util.dart getFunctionHexadecimalInstruct @0x6e54e8; returnInstructCheckSum @0x6e5de0",
+      "source-anchors.md: literal DeviceFunctionItemType objects"
+    ],
+    "origin": "STATIC DERIVATION, not a captured write"
+  },
+  {
+    "id": "memory2_recall_nordic",
+    "protocol": "P1",
+    "action": "memory2_recall",
+    "inputs": {
+      "builder": "ordinary",
+      "opcode": 47,
+      "side": 0,
+      "nordic": true
+    },
+    "expected_bytes": "2f",
+    "evidence": [
+      "source-anchors.md: richmat_library_utils/product/device_instruct_util.dart getFunctionHexadecimalInstruct @0x6e54e8; returnInstructCheckSum @0x6e5de0",
+      "source-anchors.md: literal DeviceFunctionItemType objects"
+    ],
+    "origin": "STATIC DERIVATION, not a captured write"
+  },
+  {
+    "id": "memory2_save_framed_left",
+    "protocol": "P2",
+    "action": "memory2_save",
+    "inputs": {
+      "builder": "ordinary",
+      "opcode": 44,
+      "side": 0,
+      "nordic": false
+    },
+    "expected_bytes": "6e01002c9b",
+    "evidence": [
+      "source-anchors.md: richmat_library_utils/product/device_instruct_util.dart getFunctionHexadecimalInstruct @0x6e54e8; returnInstructCheckSum @0x6e5de0",
+      "source-anchors.md: literal DeviceFunctionItemType objects"
+    ],
+    "origin": "STATIC DERIVATION, not a captured write"
+  },
+  {
+    "id": "memory2_save_nordic",
+    "protocol": "P1",
+    "action": "memory2_save",
+    "inputs": {
+      "builder": "ordinary",
+      "opcode": 44,
+      "side": 0,
+      "nordic": true
+    },
+    "expected_bytes": "2c",
+    "evidence": [
+      "source-anchors.md: richmat_library_utils/product/device_instruct_util.dart getFunctionHexadecimalInstruct @0x6e54e8; returnInstructCheckSum @0x6e5de0",
+      "source-anchors.md: literal DeviceFunctionItemType objects"
+    ],
+    "origin": "STATIC DERIVATION, not a captured write"
+  },
+  {
+    "id": "memory3_recall_framed_left",
+    "protocol": "P2",
+    "action": "memory3_recall",
+    "inputs": {
+      "builder": "ordinary",
+      "opcode": 48,
+      "side": 0,
+      "nordic": false
+    },
+    "expected_bytes": "6e0100309f",
+    "evidence": [
+      "source-anchors.md: richmat_library_utils/product/device_instruct_util.dart getFunctionHexadecimalInstruct @0x6e54e8; returnInstructCheckSum @0x6e5de0",
+      "source-anchors.md: literal DeviceFunctionItemType objects"
+    ],
+    "origin": "STATIC DERIVATION, not a captured write"
+  },
+  {
+    "id": "memory3_recall_nordic",
+    "protocol": "P1",
+    "action": "memory3_recall",
+    "inputs": {
+      "builder": "ordinary",
+      "opcode": 48,
+      "side": 0,
+      "nordic": true
+    },
+    "expected_bytes": "30",
+    "evidence": [
+      "source-anchors.md: richmat_library_utils/product/device_instruct_util.dart getFunctionHexadecimalInstruct @0x6e54e8; returnInstructCheckSum @0x6e5de0",
+      "source-anchors.md: literal DeviceFunctionItemType objects"
+    ],
+    "origin": "STATIC DERIVATION, not a captured write"
+  },
+  {
+    "id": "memory3_save_framed_left",
+    "protocol": "P2",
+    "action": "memory3_save",
+    "inputs": {
+      "builder": "ordinary",
+      "opcode": 45,
+      "side": 0,
+      "nordic": false
+    },
+    "expected_bytes": "6e01002d9c",
+    "evidence": [
+      "source-anchors.md: richmat_library_utils/product/device_instruct_util.dart getFunctionHexadecimalInstruct @0x6e54e8; returnInstructCheckSum @0x6e5de0",
+      "source-anchors.md: literal DeviceFunctionItemType objects"
+    ],
+    "origin": "STATIC DERIVATION, not a captured write"
+  },
+  {
+    "id": "memory3_save_nordic",
+    "protocol": "P1",
+    "action": "memory3_save",
+    "inputs": {
+      "builder": "ordinary",
+      "opcode": 45,
+      "side": 0,
+      "nordic": true
+    },
+    "expected_bytes": "2d",
+    "evidence": [
+      "source-anchors.md: richmat_library_utils/product/device_instruct_util.dart getFunctionHexadecimalInstruct @0x6e54e8; returnInstructCheckSum @0x6e5de0",
+      "source-anchors.md: literal DeviceFunctionItemType objects"
+    ],
+    "origin": "STATIC DERIVATION, not a captured write"
+  },
+  {
+    "id": "massage_head_strengthen_framed_left",
+    "protocol": "P2",
+    "action": "massage_head_strengthen",
+    "inputs": {
+      "builder": "ordinary",
+      "opcode": 76,
+      "side": 0,
+      "nordic": false
+    },
+    "expected_bytes": "6e01004cbb",
+    "evidence": [
+      "source-anchors.md: richmat_library_utils/product/device_instruct_util.dart getFunctionHexadecimalInstruct @0x6e54e8; returnInstructCheckSum @0x6e5de0",
+      "source-anchors.md: literal DeviceFunctionItemType objects"
+    ],
+    "origin": "STATIC DERIVATION, not a captured write"
+  },
+  {
+    "id": "massage_head_strengthen_nordic",
+    "protocol": "P1",
+    "action": "massage_head_strengthen",
+    "inputs": {
+      "builder": "ordinary",
+      "opcode": 76,
+      "side": 0,
+      "nordic": true
+    },
+    "expected_bytes": "4c",
+    "evidence": [
+      "source-anchors.md: richmat_library_utils/product/device_instruct_util.dart getFunctionHexadecimalInstruct @0x6e54e8; returnInstructCheckSum @0x6e5de0",
+      "source-anchors.md: literal DeviceFunctionItemType objects"
+    ],
+    "origin": "STATIC DERIVATION, not a captured write"
+  },
+  {
+    "id": "massage_foot_strengthen_framed_left",
+    "protocol": "P2",
+    "action": "massage_foot_strengthen",
+    "inputs": {
+      "builder": "ordinary",
+      "opcode": 78,
+      "side": 0,
+      "nordic": false
+    },
+    "expected_bytes": "6e01004ebd",
+    "evidence": [
+      "source-anchors.md: richmat_library_utils/product/device_instruct_util.dart getFunctionHexadecimalInstruct @0x6e54e8; returnInstructCheckSum @0x6e5de0",
+      "source-anchors.md: literal DeviceFunctionItemType objects"
+    ],
+    "origin": "STATIC DERIVATION, not a captured write"
+  },
+  {
+    "id": "massage_foot_strengthen_nordic",
+    "protocol": "P1",
+    "action": "massage_foot_strengthen",
+    "inputs": {
+      "builder": "ordinary",
+      "opcode": 78,
+      "side": 0,
+      "nordic": true
+    },
+    "expected_bytes": "4e",
+    "evidence": [
+      "source-anchors.md: richmat_library_utils/product/device_instruct_util.dart getFunctionHexadecimalInstruct @0x6e54e8; returnInstructCheckSum @0x6e5de0",
+      "source-anchors.md: literal DeviceFunctionItemType objects"
+    ],
+    "origin": "STATIC DERIVATION, not a captured write"
+  },
+  {
+    "id": "massage_mode_change_framed_left",
+    "protocol": "P2",
+    "action": "massage_mode_change",
+    "inputs": {
+      "builder": "ordinary",
+      "opcode": 72,
+      "side": 0,
+      "nordic": false
+    },
+    "expected_bytes": "6e010048b7",
+    "evidence": [
+      "source-anchors.md: richmat_library_utils/product/device_instruct_util.dart getFunctionHexadecimalInstruct @0x6e54e8; returnInstructCheckSum @0x6e5de0",
+      "source-anchors.md: literal DeviceFunctionItemType objects"
+    ],
+    "origin": "STATIC DERIVATION, not a captured write"
+  },
+  {
+    "id": "massage_mode_change_nordic",
+    "protocol": "P1",
+    "action": "massage_mode_change",
+    "inputs": {
+      "builder": "ordinary",
+      "opcode": 72,
+      "side": 0,
+      "nordic": true
+    },
+    "expected_bytes": "48",
+    "evidence": [
+      "source-anchors.md: richmat_library_utils/product/device_instruct_util.dart getFunctionHexadecimalInstruct @0x6e54e8; returnInstructCheckSum @0x6e5de0",
+      "source-anchors.md: literal DeviceFunctionItemType objects"
+    ],
+    "origin": "STATIC DERIVATION, not a captured write"
+  },
+  {
+    "id": "massage_all_off_framed_left",
+    "protocol": "P2",
+    "action": "massage_all_off",
+    "inputs": {
+      "builder": "ordinary",
+      "opcode": 94,
+      "side": 0,
+      "nordic": false
+    },
+    "expected_bytes": "6e01005ecd",
+    "evidence": [
+      "source-anchors.md: richmat_library_utils/product/device_instruct_util.dart getFunctionHexadecimalInstruct @0x6e54e8; returnInstructCheckSum @0x6e5de0",
+      "source-anchors.md: literal DeviceFunctionItemType objects"
+    ],
+    "origin": "STATIC DERIVATION, not a captured write"
+  },
+  {
+    "id": "massage_all_off_nordic",
+    "protocol": "P1",
+    "action": "massage_all_off",
+    "inputs": {
+      "builder": "ordinary",
+      "opcode": 94,
+      "side": 0,
+      "nordic": true
+    },
+    "expected_bytes": "5e",
+    "evidence": [
+      "source-anchors.md: richmat_library_utils/product/device_instruct_util.dart getFunctionHexadecimalInstruct @0x6e54e8; returnInstructCheckSum @0x6e5de0",
+      "source-anchors.md: literal DeviceFunctionItemType objects"
+    ],
+    "origin": "STATIC DERIVATION, not a captured write"
+  },
+  {
+    "id": "massage_timer10_framed_left",
+    "protocol": "P2",
+    "action": "massage_timer10",
+    "inputs": {
+      "builder": "ordinary",
+      "opcode": 95,
+      "side": 0,
+      "nordic": false
+    },
+    "expected_bytes": "6e01005fce",
+    "evidence": [
+      "source-anchors.md: richmat_library_utils/product/device_instruct_util.dart getFunctionHexadecimalInstruct @0x6e54e8; returnInstructCheckSum @0x6e5de0",
+      "source-anchors.md: literal DeviceFunctionItemType objects"
+    ],
+    "origin": "STATIC DERIVATION, not a captured write"
+  },
+  {
+    "id": "massage_timer10_nordic",
+    "protocol": "P1",
+    "action": "massage_timer10",
+    "inputs": {
+      "builder": "ordinary",
+      "opcode": 95,
+      "side": 0,
+      "nordic": true
+    },
+    "expected_bytes": "5f",
+    "evidence": [
+      "source-anchors.md: richmat_library_utils/product/device_instruct_util.dart getFunctionHexadecimalInstruct @0x6e54e8; returnInstructCheckSum @0x6e5de0",
+      "source-anchors.md: literal DeviceFunctionItemType objects"
+    ],
+    "origin": "STATIC DERIVATION, not a captured write"
+  },
+  {
+    "id": "massage_timer20_framed_left",
+    "protocol": "P2",
+    "action": "massage_timer20",
+    "inputs": {
+      "builder": "ordinary",
+      "opcode": 99,
+      "side": 0,
+      "nordic": false
+    },
+    "expected_bytes": "6e010063d2",
+    "evidence": [
+      "source-anchors.md: richmat_library_utils/product/device_instruct_util.dart getFunctionHexadecimalInstruct @0x6e54e8; returnInstructCheckSum @0x6e5de0",
+      "source-anchors.md: literal DeviceFunctionItemType objects"
+    ],
+    "origin": "STATIC DERIVATION, not a captured write"
+  },
+  {
+    "id": "massage_timer20_nordic",
+    "protocol": "P1",
+    "action": "massage_timer20",
+    "inputs": {
+      "builder": "ordinary",
+      "opcode": 99,
+      "side": 0,
+      "nordic": true
+    },
+    "expected_bytes": "63",
+    "evidence": [
+      "source-anchors.md: richmat_library_utils/product/device_instruct_util.dart getFunctionHexadecimalInstruct @0x6e54e8; returnInstructCheckSum @0x6e5de0",
+      "source-anchors.md: literal DeviceFunctionItemType objects"
+    ],
+    "origin": "STATIC DERIVATION, not a captured write"
+  },
+  {
+    "id": "massage_timer30_framed_left",
+    "protocol": "P2",
+    "action": "massage_timer30",
+    "inputs": {
+      "builder": "ordinary",
+      "opcode": 97,
+      "side": 0,
+      "nordic": false
+    },
+    "expected_bytes": "6e010061d0",
+    "evidence": [
+      "source-anchors.md: richmat_library_utils/product/device_instruct_util.dart getFunctionHexadecimalInstruct @0x6e54e8; returnInstructCheckSum @0x6e5de0",
+      "source-anchors.md: literal DeviceFunctionItemType objects"
+    ],
+    "origin": "STATIC DERIVATION, not a captured write"
+  },
+  {
+    "id": "massage_timer30_nordic",
+    "protocol": "P1",
+    "action": "massage_timer30",
+    "inputs": {
+      "builder": "ordinary",
+      "opcode": 97,
+      "side": 0,
+      "nordic": true
+    },
+    "expected_bytes": "61",
+    "evidence": [
+      "source-anchors.md: richmat_library_utils/product/device_instruct_util.dart getFunctionHexadecimalInstruct @0x6e54e8; returnInstructCheckSum @0x6e5de0",
+      "source-anchors.md: literal DeviceFunctionItemType objects"
+    ],
+    "origin": "STATIC DERIVATION, not a captured write"
+  },
+  {
+    "id": "coaxing_mode_framed_left",
+    "protocol": "P2",
+    "action": "coaxing_mode",
+    "inputs": {
+      "builder": "ordinary",
+      "opcode": 134,
+      "side": 0,
+      "nordic": false
+    },
+    "expected_bytes": "6e010086f5",
+    "evidence": [
+      "source-anchors.md: richmat_library_utils/product/device_instruct_util.dart getFunctionHexadecimalInstruct @0x6e54e8; returnInstructCheckSum @0x6e5de0",
+      "source-anchors.md: literal DeviceFunctionItemType objects"
+    ],
+    "origin": "STATIC DERIVATION, not a captured write"
+  },
+  {
+    "id": "coaxing_mode_nordic",
+    "protocol": "P1",
+    "action": "coaxing_mode",
+    "inputs": {
+      "builder": "ordinary",
+      "opcode": 134,
+      "side": 0,
+      "nordic": true
+    },
+    "expected_bytes": "86",
+    "evidence": [
+      "source-anchors.md: richmat_library_utils/product/device_instruct_util.dart getFunctionHexadecimalInstruct @0x6e54e8; returnInstructCheckSum @0x6e5de0",
+      "source-anchors.md: literal DeviceFunctionItemType objects"
+    ],
+    "origin": "STATIC DERIVATION, not a captured write"
+  },
+  {
+    "id": "stop_framed_left",
+    "protocol": "P2",
+    "action": "stop",
+    "inputs": {
+      "builder": "ordinary",
+      "opcode": 110,
+      "side": 0,
+      "nordic": false
+    },
+    "expected_bytes": "6e01006edd",
+    "evidence": [
+      "source-anchors.md: richmat_library_utils/product/device_instruct_util.dart getFunctionHexadecimalInstruct @0x6e54e8; returnInstructCheckSum @0x6e5de0",
+      "source-anchors.md: literal DeviceFunctionItemType objects"
+    ],
+    "origin": "STATIC DERIVATION, not a captured write"
+  },
+  {
+    "id": "stop_nordic",
+    "protocol": "P1",
+    "action": "stop",
+    "inputs": {
+      "builder": "ordinary",
+      "opcode": 110,
+      "side": 0,
+      "nordic": true
+    },
+    "expected_bytes": "6e",
+    "evidence": [
+      "source-anchors.md: richmat_library_utils/product/device_instruct_util.dart getFunctionHexadecimalInstruct @0x6e54e8; returnInstructCheckSum @0x6e5de0",
+      "source-anchors.md: literal DeviceFunctionItemType objects"
+    ],
+    "origin": "STATIC DERIVATION, not a captured write"
+  },
+  {
+    "id": "right_head_up",
+    "protocol": "P2",
+    "action": "head_up",
+    "inputs": {
+      "builder": "ordinary",
+      "opcode": 36,
+      "side": 1,
+      "nordic": false
+    },
+    "expected_bytes": "6e01012494",
+    "evidence": [
+      "source-anchors.md: richmat_library_utils/product/device_instruct_util.dart getFunctionHexadecimalInstruct @0x6e54e8; returnInstructCheckSum @0x6e5de0",
+      "source-anchors.md: literal DeviceFunctionItemType objects"
+    ],
+    "disposition": "Ordinary builder side branch only; side selector is hidden for all four primary products"
+  },
+  {
+    "id": "rgb_power_on",
+    "protocol": "P3",
+    "action": "RGB strip power on",
+    "inputs": {
+      "builder": "extended",
+      "payload": [
+        32,
+        4,
+        4,
+        1,
+        0,
+        1
+      ]
+    },
+    "expected_bytes": "6e09200404010001a1",
+    "evidence": [
+      "source-anchors.md: getRGBStripPowerControlFunctionInstruct @0x6e8004"
+    ],
+    "disposition": "Builder-only candidate, not exposed by normal four-product route"
+  },
+  {
+    "id": "rgb_power_off",
+    "protocol": "P3",
+    "action": "RGB strip power off",
+    "inputs": {
+      "builder": "extended",
+      "payload": [
+        32,
+        4,
+        4,
+        1,
+        0,
+        0
+      ]
+    },
+    "expected_bytes": "6e09200404010000a0",
+    "evidence": [
+      "source-anchors.md: getRGBStripPowerControlFunctionInstruct @0x6e8004"
+    ],
+    "disposition": "Builder-only candidate, not exposed by normal four-product route"
+  },
+  {
+    "id": "anti_snore_enable",
+    "protocol": "P3",
+    "action": "Set anti-snore switch true",
+    "inputs": {
+      "builder": "extended",
+      "payload": [
+        32,
+        6,
+        1,
+        1,
+        0,
+        1
+      ]
+    },
+    "expected_bytes": "6e09200601010001a0",
+    "evidence": [
+      "source-anchors.md: getSettingAntiSnoreSwitchControlFunctionInstruct @0x8ed97c"
+    ],
+    "disposition": "Builder-only candidate, not exposed by normal four-product route"
+  },
+  {
+    "id": "anti_snore_query",
+    "protocol": "P3",
+    "action": "Query anti-snore switch",
+    "inputs": {
+      "builder": "extended",
+      "payload": [
+        32,
+        6,
+        1,
+        0,
+        0
+      ]
+    },
+    "expected_bytes": "6e0820060100009d",
+    "evidence": [
+      "source-anchors.md: getAntiSnoreSwitchStatusControlFunctionInstruct @0x8fc330"
+    ],
+    "disposition": "Builder-only candidate, not exposed by normal four-product route"
+  },
+  {
+    "id": "rgb_components",
+    "protocol": "P3",
+    "action": "Color builder positional components 0x12,0x34,0x56",
+    "inputs": {
+      "builder": "extended",
+      "payload": [
+        32,
+        4,
+        1,
+        1,
+        0,
+        18,
+        52,
+        86
+      ]
+    },
+    "expected_bytes": "6e0b20040101001234563b",
+    "evidence": [
+      "source-anchors.md: getRGBStripColorControlFunctionInstruct @0x6e6f6c"
+    ],
+    "limitation": "Positional builder inputs only; UI channel/scaling mapping not frozen",
+    "disposition": "Builder-only candidate, not exposed by normal four-product route"
+  },
+  {
+    "id": "clock_low300",
+    "protocol": "P3",
+    "action": "Countdown low part, 300 minutes",
+    "inputs": {
+      "builder": "clock_low",
+      "minutes": 300
+    },
+    "expected_bytes": "6e052c009f",
+    "evidence": [
+      "source-anchors.md: getClockFunctionLowLevelInstruct @0x8c3acc"
+    ],
+    "disposition": "Builder-only candidate, not exposed by normal four-product route"
+  },
+  {
+    "id": "clock_high300",
+    "protocol": "P3",
+    "action": "Countdown high part, 300 minutes parameter2",
+    "inputs": {
+      "builder": "clock_high",
+      "minutes": 300,
+      "parameter": 2
+    },
+    "expected_bytes": "6e06010277",
+    "evidence": [
+      "source-anchors.md: getClockFunctionHighLevelInstruct @0x8c3978"
+    ],
+    "limitation": "Parameter semantics/UI conversion not frozen",
+    "disposition": "Builder-only candidate, not exposed by normal four-product route"
+  },
+  {
+    "id": "notify_alarm",
+    "protocol": "P2",
+    "action": "literal capability classification alarm",
+    "inputs": {
+      "builder": "literal_capability",
+      "event": "alarm"
+    },
+    "expected_bytes": "6e09010078",
+    "evidence": [
+      "work/blutter/pp.txt pp+0x18558, pp+0x18570, pp+0x18588; _handleCommonProtocolNotify @0x6eca2c"
+    ],
+    "limitation": "Only direct common-handler literal equality, not buffering/parser acceptance"
+  },
+  {
+    "id": "notify_light",
+    "protocol": "P2",
+    "action": "literal capability classification light",
+    "inputs": {
+      "builder": "literal_capability",
+      "event": "light"
+    },
+    "expected_bytes": "6e0e00037f",
+    "evidence": [
+      "work/blutter/pp.txt pp+0x18558, pp+0x18570, pp+0x18588; _handleCommonProtocolNotify @0x6eca2c"
+    ],
+    "limitation": "Only direct common-handler literal equality, not buffering/parser acceptance"
+  },
+  {
+    "id": "notify_aroma",
+    "protocol": "P2",
+    "action": "literal capability classification aroma",
+    "inputs": {
+      "builder": "literal_capability",
+      "event": "aroma"
+    },
+    "expected_bytes": "6e1a000189",
+    "evidence": [
+      "work/blutter/pp.txt pp+0x18558, pp+0x18570, pp+0x18588; _handleCommonProtocolNotify @0x6eca2c"
+    ],
+    "limitation": "Only direct common-handler literal equality, not buffering/parser acceptance"
+  },
+  {
+    "id": "anti_snoring_save_framed_left",
+    "protocol": "P2",
+    "action": "anti_snoring_save",
+    "inputs": {
+      "builder": "ordinary",
+      "opcode": 105,
+      "side": 0,
+      "nordic": false
+    },
+    "expected_bytes": "6e010069d8",
+    "evidence": [
+      "E-BUILDER",
+      "E-PRESET"
+    ]
+  },
+  {
+    "id": "anti_snoring_save_nordic",
+    "protocol": "P1",
+    "action": "anti_snoring_save",
+    "inputs": {
+      "builder": "ordinary",
+      "opcode": 105,
+      "side": 0,
+      "nordic": true
+    },
+    "expected_bytes": "69",
+    "evidence": [
+      "E-BUILDER",
+      "E-PRESET"
+    ]
+  },
+  {
+    "id": "zero_gravity_save_framed_left",
+    "protocol": "P2",
+    "action": "zero_gravity_save",
+    "inputs": {
+      "builder": "ordinary",
+      "opcode": 102,
+      "side": 0,
+      "nordic": false
+    },
+    "expected_bytes": "6e010066d5",
+    "evidence": [
+      "E-BUILDER",
+      "E-PRESET"
+    ]
+  },
+  {
+    "id": "zero_gravity_save_nordic",
+    "protocol": "P1",
+    "action": "zero_gravity_save",
+    "inputs": {
+      "builder": "ordinary",
+      "opcode": 102,
+      "side": 0,
+      "nordic": true
+    },
+    "expected_bytes": "66",
+    "evidence": [
+      "E-BUILDER",
+      "E-PRESET"
+    ]
+  },
+  {
+    "id": "tv_position_save_framed_left",
+    "protocol": "P2",
+    "action": "tv_position_save",
+    "inputs": {
+      "builder": "ordinary",
+      "opcode": 100,
+      "side": 0,
+      "nordic": false
+    },
+    "expected_bytes": "6e010064d3",
+    "evidence": [
+      "E-BUILDER",
+      "E-PRESET"
+    ]
+  },
+  {
+    "id": "tv_position_save_nordic",
+    "protocol": "P1",
+    "action": "tv_position_save",
+    "inputs": {
+      "builder": "ordinary",
+      "opcode": 100,
+      "side": 0,
+      "nordic": true
+    },
+    "expected_bytes": "64",
+    "evidence": [
+      "E-BUILDER",
+      "E-PRESET"
+    ]
+  },
+  {
+    "id": "repeat_alarm_list",
+    "protocol": "P3",
+    "action": "repeat_alarm_list",
+    "inputs": {
+      "builder": "extended",
+      "payload": [
+        32,
+        5,
+        1,
+        0,
+        0
+      ]
+    },
+    "expected_bytes": "6e0820050100009c",
+    "evidence": [
+      "E-ALARM"
+    ],
+    "origin": "STATIC DERIVATION from shipped builder/parser; not captured hardware traffic"
+  },
+  {
+    "id": "repeat_alarm_delete3",
+    "protocol": "P3",
+    "action": "repeat_alarm_delete3",
+    "inputs": {
+      "builder": "extended",
+      "payload": [
+        32,
+        5,
+        2,
+        1,
+        3
+      ]
+    },
+    "expected_bytes": "6e082005020103a1",
+    "evidence": [
+      "E-ALARM"
+    ],
+    "origin": "STATIC DERIVATION from shipped builder/parser; not captured hardware traffic"
+  },
+  {
+    "id": "sleep_name_query",
+    "protocol": "P3",
+    "action": "sleep_name_query",
+    "inputs": {
+      "builder": "extended",
+      "payload": [
+        32,
+        6,
+        3,
+        0,
+        0
+      ]
+    },
+    "expected_bytes": "6e0820060300009f",
+    "evidence": [
+      "E-SLEEP"
+    ],
+    "origin": "STATIC DERIVATION from shipped builder/parser; not captured hardware traffic"
+  },
+  {
+    "id": "repeat_add_mwf",
+    "protocol": "P3",
+    "action": "Add/edit repeat alarm",
+    "inputs": {
+      "builder": "alarm",
+      "number": 1,
+      "unknown": 0,
+      "hour": 6,
+      "minute": 30,
+      "opcode": 69,
+      "days": [
+        "Monday",
+        "Wednesday",
+        "Friday"
+      ],
+      "enabled": true
+    },
+    "expected_bytes": "6e0d200501010100061e45a9b5",
+    "evidence": [
+      "E-ALARM"
+    ],
+    "origin": "STATIC DERIVATION from shipped builder/parser; not captured hardware traffic"
+  },
+  {
+    "id": "repeat_add_once_disabled",
+    "protocol": "P3",
+    "action": "Add/edit repeat alarm",
+    "inputs": {
+      "builder": "alarm",
+      "number": 7,
+      "unknown": 0,
+      "hour": 23,
+      "minute": 59,
+      "opcode": 70,
+      "days": [
+        "once"
+      ],
+      "enabled": false
+    },
+    "expected_bytes": "6e0d200501010700173b460041",
+    "evidence": [
+      "E-ALARM"
+    ],
+    "origin": "STATIC DERIVATION from shipped builder/parser; not captured hardware traffic"
+  },
+  {
+    "id": "clock_sync_2026",
+    "protocol": "P3",
+    "action": "Startup local calendar sync",
+    "inputs": {
+      "builder": "calendar",
+      "parts": [
+        2026,
+        11,
+        27,
+        13,
+        45,
+        12
+      ]
+    },
+    "expected_bytes": "6e0d20080301380b1b0d2d0c4b",
+    "evidence": [
+      "E-STARTUP"
+    ],
+    "origin": "STATIC DERIVATION from shipped builder/parser; not captured hardware traffic"
+  },
+  {
+    "id": "clock_sync_2000",
+    "protocol": "P3",
+    "action": "Startup local calendar sync",
+    "inputs": {
+      "builder": "calendar",
+      "parts": [
+        2000,
+        1,
+        2,
+        0,
+        0,
+        0
+      ]
+    },
+    "expected_bytes": "6e0d200803011e0102000000c8",
+    "evidence": [
+      "E-STARTUP"
+    ],
+    "origin": "STATIC DERIVATION from shipped builder/parser; not captured hardware traffic"
+  },
+  {
+    "id": "check_alarm",
+    "protocol": "P2",
+    "action": "check_alarm",
+    "inputs": {
+      "builder": "prefix",
+      "prefix": [
+        110,
+        8,
+        1,
+        1
+      ]
+    },
+    "expected_bytes": "6e08010178",
+    "evidence": [
+      "E-STARTUP",
+      "E-BUILDER"
+    ],
+    "origin": "STATIC DERIVATION from shipped builder/parser; not captured hardware traffic"
+  },
+  {
+    "id": "check_alarm_nordic",
+    "protocol": "P1",
+    "action": "check_alarm",
+    "inputs": {
+      "builder": "ordinary",
+      "opcode": 1,
+      "side": 0,
+      "nordic": true
+    },
+    "expected_bytes": "01",
+    "evidence": [
+      "E-STARTUP",
+      "E-BUILDER"
+    ],
+    "origin": "STATIC DERIVATION from shipped builder/parser; not captured hardware traffic"
+  },
+  {
+    "id": "check_light",
+    "protocol": "P2",
+    "action": "check_light",
+    "inputs": {
+      "builder": "prefix",
+      "prefix": [
+        110,
+        10,
+        0,
+        1
+      ]
+    },
+    "expected_bytes": "6e0a000179",
+    "evidence": [
+      "E-STARTUP",
+      "E-BUILDER"
+    ],
+    "origin": "STATIC DERIVATION from shipped builder/parser; not captured hardware traffic"
+  },
+  {
+    "id": "check_light_nordic",
+    "protocol": "P1",
+    "action": "check_light",
+    "inputs": {
+      "builder": "ordinary",
+      "opcode": 1,
+      "side": 0,
+      "nordic": true
+    },
+    "expected_bytes": "01",
+    "evidence": [
+      "E-STARTUP",
+      "E-BUILDER"
+    ],
+    "origin": "STATIC DERIVATION from shipped builder/parser; not captured hardware traffic"
+  },
+  {
+    "id": "check_music",
+    "protocol": "P2",
+    "action": "check_music",
+    "inputs": {
+      "builder": "prefix",
+      "prefix": [
+        110,
+        21,
+        1,
+        1
+      ]
+    },
+    "expected_bytes": "6e15010185",
+    "evidence": [
+      "E-STARTUP",
+      "E-BUILDER"
+    ],
+    "origin": "STATIC DERIVATION from shipped builder/parser; not captured hardware traffic"
+  },
+  {
+    "id": "check_music_nordic",
+    "protocol": "P1",
+    "action": "check_music",
+    "inputs": {
+      "builder": "ordinary",
+      "opcode": 1,
+      "side": 0,
+      "nordic": true
+    },
+    "expected_bytes": "01",
+    "evidence": [
+      "E-STARTUP",
+      "E-BUILDER"
+    ],
+    "origin": "STATIC DERIVATION from shipped builder/parser; not captured hardware traffic"
+  },
+  {
+    "id": "alarm_list_reply",
+    "protocol": "P3",
+    "action": "Parse alarm_list_reply",
+    "inputs": {
+      "builder": "parse_extended"
+    },
+    "expected_bytes": "6e200d0501020100061e45a9b6",
+    "evidence": [
+      "E-PARSER",
+      "E-ALARM"
+    ],
+    "origin": "STATIC DERIVATION from shipped builder/parser; not captured hardware traffic",
+    "expected_parsed": {
+      "event": "alarm_list",
+      "number": 1,
+      "unknown": 0,
+      "hour": 6,
+      "minute": 30,
+      "opcode": 69,
+      "repeat": 169
+    }
+  },
+  {
+    "id": "alarm_spontaneous_reply",
+    "protocol": "P3",
+    "action": "Parse alarm_spontaneous_reply",
+    "inputs": {
+      "builder": "parse_extended"
+    },
+    "expected_bytes": "6e200d0501030700173b460043",
+    "evidence": [
+      "E-PARSER",
+      "E-ALARM"
+    ],
+    "origin": "STATIC DERIVATION from shipped builder/parser; not captured hardware traffic",
+    "expected_parsed": {
+      "event": "alarm_update",
+      "number": 7,
+      "unknown": 0,
+      "hour": 23,
+      "minute": 59,
+      "opcode": 70,
+      "repeat": 0
+    }
+  },
+  {
+    "id": "sleep_name_rm",
+    "protocol": "P3",
+    "action": "Parse sleep_name_rm",
+    "inputs": {
+      "builder": "parse_extended"
+    },
+    "expected_bytes": "6e200e06010300524d2d30303103",
+    "evidence": [
+      "E-PARSER",
+      "E-SLEEP"
+    ],
+    "origin": "STATIC DERIVATION from shipped builder/parser; not captured hardware traffic",
+    "expected_parsed": {
+      "event": "sleep_name",
+      "name": "RM-001"
+    }
+  },
+  {
+    "id": "sleep_name_hj",
+    "protocol": "P3",
+    "action": "Parse sleep_name_hj",
+    "inputs": {
+      "builder": "parse_extended"
+    },
+    "expected_bytes": "6e200c06010300484a2d41a4",
+    "evidence": [
+      "E-PARSER",
+      "E-SLEEP"
+    ],
+    "origin": "STATIC DERIVATION from shipped builder/parser; not captured hardware traffic",
+    "expected_parsed": {
+      "event": "sleep_name",
+      "name": "HJ-A"
+    }
+  },
+  {
+    "id": "massage_timer10_long_hold_nordic",
+    "protocol": "P1",
+    "action": "massage_timer10_long_hold",
+    "inputs": {
+      "builder": "ordinary",
+      "opcode": 0,
+      "side": 0,
+      "nordic": true
+    },
+    "expected_bytes": "00",
+    "evidence": [
+      "E-TEXT-HOLD",
+      "E-BUILDER"
+    ],
+    "origin": "STATIC DERIVATION; zero opcode has no assigned hardware meaning"
+  },
+  {
+    "id": "massage_timer10_long_hold_framed_left",
+    "protocol": "P2",
+    "action": "massage_timer10_long_hold",
+    "inputs": {
+      "builder": "ordinary",
+      "opcode": 0,
+      "side": 0,
+      "nordic": false
+    },
+    "expected_bytes": "6e0100006f",
+    "evidence": [
+      "E-TEXT-HOLD",
+      "E-BUILDER"
+    ],
+    "origin": "STATIC DERIVATION; zero opcode has no assigned hardware meaning"
+  },
+  {
+    "id": "massage_timer20_long_hold_nordic",
+    "protocol": "P1",
+    "action": "massage_timer20_long_hold",
+    "inputs": {
+      "builder": "ordinary",
+      "opcode": 0,
+      "side": 0,
+      "nordic": true
+    },
+    "expected_bytes": "00",
+    "evidence": [
+      "E-TEXT-HOLD",
+      "E-BUILDER"
+    ],
+    "origin": "STATIC DERIVATION; zero opcode has no assigned hardware meaning"
+  },
+  {
+    "id": "massage_timer20_long_hold_framed_left",
+    "protocol": "P2",
+    "action": "massage_timer20_long_hold",
+    "inputs": {
+      "builder": "ordinary",
+      "opcode": 0,
+      "side": 0,
+      "nordic": false
+    },
+    "expected_bytes": "6e0100006f",
+    "evidence": [
+      "E-TEXT-HOLD",
+      "E-BUILDER"
+    ],
+    "origin": "STATIC DERIVATION; zero opcode has no assigned hardware meaning"
+  },
+  {
+    "id": "massage_timer30_long_hold_nordic",
+    "protocol": "P1",
+    "action": "massage_timer30_long_hold",
+    "inputs": {
+      "builder": "ordinary",
+      "opcode": 0,
+      "side": 0,
+      "nordic": true
+    },
+    "expected_bytes": "00",
+    "evidence": [
+      "E-TEXT-HOLD",
+      "E-BUILDER"
+    ],
+    "origin": "STATIC DERIVATION; zero opcode has no assigned hardware meaning"
+  },
+  {
+    "id": "massage_timer30_long_hold_framed_left",
+    "protocol": "P2",
+    "action": "massage_timer30_long_hold",
+    "inputs": {
+      "builder": "ordinary",
+      "opcode": 0,
+      "side": 0,
+      "nordic": false
+    },
+    "expected_bytes": "6e0100006f",
+    "evidence": [
+      "E-TEXT-HOLD",
+      "E-BUILDER"
+    ],
+    "origin": "STATIC DERIVATION; zero opcode has no assigned hardware meaning"
+  },
+  {
+    "id": "motor_reset_long_hold_nordic",
+    "protocol": "P1",
+    "action": "motor_reset_long_hold",
+    "inputs": {
+      "builder": "ordinary",
+      "opcode": 0,
+      "side": 0,
+      "nordic": true
+    },
+    "expected_bytes": "00",
+    "evidence": [
+      "E-TEXT-HOLD",
+      "E-BUILDER",
+      "E-WRITE"
+    ],
+    "origin": "STATIC DERIVATION from current FLAT detail/caller; opcode00 is not assigned hardware meaning"
+  },
+  {
+    "id": "motor_reset_long_hold_framed_left",
+    "protocol": "P2",
+    "action": "motor_reset_long_hold",
+    "inputs": {
+      "builder": "ordinary",
+      "opcode": 0,
+      "side": 0,
+      "nordic": false
+    },
+    "expected_bytes": "6e0100006f",
+    "evidence": [
+      "E-TEXT-HOLD",
+      "E-BUILDER",
+      "E-WRITE"
+    ],
+    "origin": "STATIC DERIVATION from current FLAT detail/caller; opcode00 is not assigned hardware meaning"
+  },
+  {
+    "id": "repeat_alarm_edit_nonzero_u",
+    "protocol": "P3",
+    "action": "Edit existing nonzero-U alarm resets U",
+    "inputs": {
+      "builder": "alarm_edit_projection",
+      "existing": {
+        "number": 1,
+        "unknown": 55,
+        "hour": 6,
+        "minute": 30,
+        "opcode": 69,
+        "repeat": 169
+      },
+      "hour": 6,
+      "minute": 30,
+      "opcode": 69,
+      "days": [
+        "Monday",
+        "Wednesday",
+        "Friday"
+      ],
+      "enabled": true
+    },
+    "expected_projection": {
+      "number": 1,
+      "unknown": 0,
+      "hour": 6,
+      "minute": 30,
+      "opcode": 69,
+      "repeat": 169
+    },
+    "expected_bytes": "6e0d200501010100061e45a9b5",
+    "evidence": [
+      "E-ALARM-PROJECTION",
+      "E-ALARM"
+    ],
+    "origin": "STATIC caller projection; existing U=55, unchanged selected time/mode/day values isolate reset to0"
+  },
+  {
+    "id": "repeat_alarm_enable_nonzero_u",
+    "protocol": "P3",
+    "action": "Disable existing nonzero-U alarm preserves U",
+    "inputs": {
+      "builder": "alarm_enable_projection",
+      "existing": {
+        "number": 1,
+        "unknown": 55,
+        "hour": 6,
+        "minute": 30,
+        "opcode": 69,
+        "repeat": 169
+      },
+      "enabled": false
+    },
+    "expected_projection": {
+      "number": 1,
+      "unknown": 55,
+      "hour": 6,
+      "minute": 30,
+      "opcode": 69,
+      "repeat": 168
+    },
+    "expected_bytes": "6e0d200501010137061e45a8eb",
+    "evidence": [
+      "E-ALARM-PROJECTION",
+      "E-ALARM"
+    ],
+    "origin": "STATIC caller projection; enable toggle copies existing U=55 and changes enabled bit only"
+  },
+  {
+    "id": "gatt_order_w1_then_n",
+    "protocol": "P1",
+    "action": "Conditional service-order/retained-handle projection",
+    "inputs": {
+      "builder": "gatt_order_projection",
+      "services": [
+        {
+          "accepted_enum": "W1",
+          "write": {
+            "uuid": "d44bc439-abfd-45a2-b575-925416129600",
+            "eligible": true,
+            "without_response": false
+          },
+          "notify": {
+            "uuid": "d44bc439-abfd-45a2-b575-925416129601",
+            "eligible": true
+          }
+        },
+        {
+          "accepted_enum": "N",
+          "write": {
+            "uuid": "6e400002-b5a3-f393-e0a9-e50e24dcca9e",
+            "eligible": true,
+            "without_response": true
+          },
+          "notify": {
+            "uuid": "6e400003-b5a3-f393-e0a9-e50e24dcca9e",
+            "eligible": true
+          }
+        }
+      ],
+      "opcode": 36,
+      "side": 0
+    },
+    "expected_selection": {
+      "encoding_enum": "N",
+      "write_uuid": "d44bc439-abfd-45a2-b575-925416129600",
+      "notify_uuid": "d44bc439-abfd-45a2-b575-925416129601",
+      "without_response": false,
+      "android_write_type": 2
+    },
+    "expected_bytes": "24",
+    "evidence": [
+      "E-GATT-ORDER",
+      "E-BUILDER",
+      "E-WRITE"
+    ],
+    "origin": "STATIC conditional case: both services/handles explicitly qualifying; properties are fixture inputs, not hardware observations"
+  },
+  {
+    "id": "gatt_order_n_then_w1",
+    "protocol": "P2",
+    "action": "Conditional service-order/retained-handle projection",
+    "inputs": {
+      "builder": "gatt_order_projection",
+      "services": [
+        {
+          "accepted_enum": "N",
+          "write": {
+            "uuid": "6e400002-b5a3-f393-e0a9-e50e24dcca9e",
+            "eligible": true,
+            "without_response": true
+          },
+          "notify": {
+            "uuid": "6e400003-b5a3-f393-e0a9-e50e24dcca9e",
+            "eligible": true
+          }
+        },
+        {
+          "accepted_enum": "W1",
+          "write": {
+            "uuid": "d44bc439-abfd-45a2-b575-925416129600",
+            "eligible": true,
+            "without_response": false
+          },
+          "notify": {
+            "uuid": "d44bc439-abfd-45a2-b575-925416129601",
+            "eligible": true
+          }
+        }
+      ],
+      "opcode": 36,
+      "side": 0
+    },
+    "expected_selection": {
+      "encoding_enum": "W1",
+      "write_uuid": "6e400002-b5a3-f393-e0a9-e50e24dcca9e",
+      "notify_uuid": "6e400003-b5a3-f393-e0a9-e50e24dcca9e",
+      "without_response": true,
+      "android_write_type": 1
+    },
+    "expected_bytes": "6e01002493",
+    "evidence": [
+      "E-GATT-ORDER",
+      "E-BUILDER",
+      "E-WRITE"
+    ],
+    "origin": "STATIC conditional case: both services/handles explicitly qualifying; properties are fixture inputs, not hardware observations"
+  }
+]
