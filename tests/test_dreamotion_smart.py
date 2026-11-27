@@ -210,8 +210,8 @@ async def test_primary_caller_cases(bed, row, monkeypatch):
     elif kind == "duration":
         c._timed = app.Color(50, 1, 2, 3), 0
         await c._duration_option(str(app.DURATIONS[i["slider"]]))
-        assert c._timed[1].to_bytes(2, "big").hex() == row["expected"]
-        assert bed.coordinator.controller_state[DURATION] == str(c._timed[1])
+        assert c._timed[1] == 0  # The readback is distinct from the local edit.
+        assert int(bed.coordinator.controller_state[DURATION]).to_bytes(2, "big").hex() == row["expected"]
         assert not bed.frames()  # Duration choice is local until Save/Preview.
     elif kind == "color":
         rgb = tuple(bytes.fromhex(i["argb"])[1:])

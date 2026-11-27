@@ -49,6 +49,9 @@ TIMER: Final = StateKey[int | None]("dreamotion_smart_timer")
 SECONDS: Final = StateKey[int | None]("dreamotion_smart_seconds")
 PAGE: Final = StateKey[str | None]("dreamotion_smart_page")
 SLOT: Final = StateKey[str | None]("dreamotion_smart_slot")
+# Explicit edits survive replacement of the connection-scoped controller.
+_DURATION_DRAFT: Final = StateKey[int | None]("dreamotion_smart_duration_draft")
+_DURATION_EDIT: Final = StateKey[int]("dreamotion_smart_duration_edit")
 
 
 @dataclass(frozen=True)
@@ -77,6 +80,7 @@ class DreamotionSmartController(JiecangProfileController):
         self._page = page if isinstance(page, str) and page in ("timed", "presets") else "timed"
         self._slot = int(slot) if isinstance(slot, str) and slot in ("1", "2", "3") else 1
         self.forward_controller_state_updates(PAGE(self._page), SLOT(str(self._slot)))
+        self._publish_duration()
 
     @property
     def protocol_diagnostics(self) -> dict[str, object]:
@@ -84,6 +88,7 @@ class DreamotionSmartController(JiecangProfileController):
             "app": "com.sendinfo.dreammotionpro 1.1.8",
             "hardware": "UNVERIFIED",
             "write_response": self._link.response if self._link else None,
+            "duration_draft_seconds": self._coordinator.controller_state.get(_DURATION_DRAFT),
         }
 
     @property
@@ -198,12 +203,11 @@ class DreamotionSmartController(JiecangProfileController):
             PATTERN(None),
             TIMER(None),
             MASSAGE_TIMER_MINUTES(None),
-            SECONDS(None),
-            DURATION(None),
             UNDER_BED_LIGHTS_ON(None),
             UNDER_BED_LIGHTS_RGB(None),
             LIGHT_LEVEL(None),
         )
+        self._publish_duration()
 
     async def stop_notify(self) -> None:
         link, notifying = self._link, self._notifying
@@ -382,10 +386,7 @@ class DreamotionSmartController(JiecangProfileController):
             self._publish_massage()
         elif op == 0x45:
             self._timed = app.Color(*payload[:4]), int.from_bytes(payload[4:], "big")
-            self.forward_controller_state_updates(
-                SECONDS(self._timed[1]),
-                DURATION(str(self._timed[1]) if self._timed[1] in app.DURATIONS else None),
-            )
+            self._publish_duration()
             self._publish_color()
         elif op == 0x44:
             self._colors = (
@@ -421,6 +422,14 @@ class DreamotionSmartController(JiecangProfileController):
         self.forward_controller_state_updates(
             UNDER_BED_LIGHTS_RGB((color.red, color.green, color.blue)),
             LIGHT_LEVEL(color.brightness),
+        )
+
+    def _publish_duration(self) -> None:
+        seconds = self._coordinator.controller_state.get(_DURATION_DRAFT)
+        if seconds is None and self._timed is not None:
+            seconds = self._timed[1]
+        self.forward_controller_state_updates(
+            SECONDS(seconds), DURATION(str(seconds) if seconds in app.DURATIONS else None)
         )
 
     async def cycle_massage(self, action: str) -> None:
@@ -599,6 +608,10 @@ class DreamotionSmartController(JiecangProfileController):
         page, slot = self._page, self._slot
         timed = self._timed if timed is None else timed
         colors = self._colors if colors is None else colors
+        draft = self._coordinator.controller_state.get(_DURATION_DRAFT)
+        edit = self._coordinator.controller_state.get(_DURATION_EDIT, 0)
+        if timed is not None and draft is not None:
+            timed = timed[0], draft
         if page == "timed":
             if timed is None:
                 raise invalid("dreamotion_smart_refresh", setting="timed light")
@@ -638,8 +651,29 @@ class DreamotionSmartController(JiecangProfileController):
                 and (self._page, self._slot) == (page, slot)
             )
 
+        def current_duration() -> bool:
+            return (
+                self._current(link)
+                and self._revisions.get(opcode, 0) == revision
+                and self._coordinator.controller_state.get(_DURATION_EDIT, 0) == edit
+            )
+
+        def settle_draft(delivery: Delivery) -> None:
+            if page != "timed" or not self._current(link) or delivery is Delivery.NONE:
+                return
+            if (
+                delivery is Delivery.SENT
+                and draft is not None
+                and self._coordinator.controller_state.get(_DURATION_EDIT, 0) == edit
+            ):
+                self.forward_controller_state_updates(_DURATION_DRAFT(None))
+            # Duration is independent of the selected RGB page.
+            self._publish_duration()
+
         with (
-            self._setting_state(link, opcode, updates, remember),
+            delivered(settle_draft),
+            self._setting_state(link, opcode, (), remember),
+            self.sent_state(*updates, is_current=current_duration),
             self.sent_state(*color_updates, is_current=current_color),
         ):
             try:
@@ -713,8 +747,11 @@ class DreamotionSmartController(JiecangProfileController):
             raise invalid("dreamotion_smart_duration")
         if self._timed is None:
             raise invalid("dreamotion_smart_refresh", setting="timed light")
-        self._timed = self._timed[0], int(value)
-        self.forward_controller_state_updates(SECONDS(int(value)))
+        self.forward_controller_state_updates(
+            _DURATION_DRAFT(int(value)),
+            _DURATION_EDIT(self._coordinator.controller_state.get(_DURATION_EDIT, 0) + 1),
+        )
+        self._publish_duration()
         # The app duration slider edits locally until Save/Preview.
 
     @property
@@ -815,7 +852,6 @@ class DreamotionSmartController(JiecangProfileController):
 
     async def _duration_option(self, option: str) -> None:
         await self.set_duration(float(option))
-        self.forward_controller_state_updates(DURATION(option))
 
     @property
     def controller_switch_specs(self) -> tuple[ControllerSwitchSpec, ...]:

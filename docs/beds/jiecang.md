@@ -1380,7 +1380,9 @@ One RGB light edits either timed settings or a selected saved entry. Choose the
 light settings page, then use the light's color/brightness controls. The three
 entries are saved presets, not physical zones. Choose a saved entry to save the
 three entries together and preview that selection. The timed-light duration is
-local until **Save light settings** or **Preview light settings** is pressed.
+local until **Save light settings** or **Preview light settings** is pressed on
+the timed page. Unsaved duration edits survive Bluetooth disconnects; a fresh
+receiver report supplies the color without replacing that local duration.
 Save leaves power unchanged; Preview enables the timed light or previews the
 selected saved entry. **Human detection** controls the bed's sensor switch.
 Refresh settings if a receiver has not reported the fields needed for an edit.

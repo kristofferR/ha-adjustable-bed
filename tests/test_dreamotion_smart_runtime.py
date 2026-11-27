@@ -88,7 +88,8 @@ async def test_rgb_entity_and_controller_select_use_current_runtime(hass, runtim
     select = AdjustableBedControllerSelect(target, spec)
     select.async_write_ha_state = MagicMock()
     await select.async_select_option("60")
-    assert c._timed[1] == 60
+    assert c._timed[1] == 300
+    assert select.current_option == "60"
     assert target.client.write_gatt_char.await_count == len(frames)
 
 
