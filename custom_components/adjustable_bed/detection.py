@@ -710,6 +710,7 @@ BED_TYPE_DISPLAY_NAMES: dict[str, str] = {
     BED_TYPE_LEVA: "Leva Bed Remote (Leva Smart App)",
     BED_TYPE_LANGJUE: "Comfort Smart Bed app (Langjue)",
     BED_TYPE_LINX: "Linx app",
+    "kingkoil": "King Koil Bed app",
     BED_TYPE_SOMOS: "Somos / SomosBeds app",
     BED_TYPE_COMFORTBASE: "ComfortBaseForBluetooth app",
     BED_TYPE_COMFORT_ENHANCEMENTS: "Comfort Enhancements app",
@@ -988,7 +989,7 @@ _HIDDEN_APP_ROWS: Final = frozenset(
 HIDDEN_APP_CHOICES: Final = frozenset(bed_type_choice(*row) for row in _HIDDEN_APP_ROWS)
 # Bed types whose one row asks for the product, although each product is an app entry.
 PRODUCT_QUESTION_BED_TYPES: Final = frozenset(
-    {BED_TYPE_ENSO2, BED_TYPE_LIKIMIO, "dreamsense", "saatva", "majestichome", BED_TYPE_LEVA, BED_TYPE_LINX, BED_TYPE_SOMOS, "bobpowerbase", BED_TYPE_COMFORT_ENHANCEMENT3, BED_TYPE_SYMPHONY_SLEEP, BED_TYPE_YAMADA, BED_TYPE_RICHMAT_APP, BED_TYPE_RICHMAT_APP_SLEEP, BED_TYPE_GALAXY, BED_TYPE_MLILY, BED_TYPE_MLILY_REMOTE, BED_TYPE_OKIMIKI, "luuna", BED_TYPE_GOODVIBE, BED_TYPE_HJBED, BED_TYPE_CASPER_BASE, BED_TYPE_COMFORT_ENHANCEMENTS, BED_TYPE_COMFORTBASE, "sleep_evolution", "wsilver_legacy", "personal_comfort", "instant_comfort"}
+    {"kingkoil", BED_TYPE_ENSO2, BED_TYPE_LIKIMIO, "dreamsense", "saatva", "majestichome", BED_TYPE_LEVA, BED_TYPE_LINX, BED_TYPE_SOMOS, "bobpowerbase", BED_TYPE_COMFORT_ENHANCEMENT3, BED_TYPE_SYMPHONY_SLEEP, BED_TYPE_YAMADA, BED_TYPE_RICHMAT_APP, BED_TYPE_RICHMAT_APP_SLEEP, BED_TYPE_GALAXY, BED_TYPE_MLILY, BED_TYPE_MLILY_REMOTE, BED_TYPE_OKIMIKI, "luuna", BED_TYPE_GOODVIBE, BED_TYPE_HJBED, BED_TYPE_CASPER_BASE, BED_TYPE_COMFORT_ENHANCEMENTS, BED_TYPE_COMFORTBASE, "sleep_evolution", "wsilver_legacy", "personal_comfort", "instant_comfort"}
 ).union({BED_TYPE_BETTERLIVING2, BED_TYPE_JEROME_ADJUSTABLE_BASE, BED_TYPE_SLEEPTIME, "sealy_posturematic"})
 # Routes named after their protocol, not an app or brand. They stay off the
 # bed-type list and are reached through detection, the brand list and Configure.
@@ -1779,6 +1780,11 @@ def _detect_with_first_pass(
             result = DetectionResult("nerum", 0.3, ["name:nerum_app_candidate"])
         elif result.bed_type != "nerum":
             result.ambiguous_types = list(dict.fromkeys([*(result.ambiguous_types or ()), "nerum"]))
+    if first.name("kingkoil") and not any(signal.startswith("excluded:") for signal in result.signals):
+        if result.bed_type is None:
+            result = DetectionResult("kingkoil", 0.3, [*result.signals, "name:kingkoil_app_candidate"])
+        elif result.bed_type != "kingkoil":
+            result.ambiguous_types = list(dict.fromkeys([*(result.ambiguous_types or ()), "kingkoil"]))
     if first.name(BED_TYPE_SOMOS) and not any(signal.startswith("excluded:") for signal in result.signals):
         if result.bed_type is None:
             result = DetectionResult(BED_TYPE_SOMOS, 0.3, [*result.signals, "name:somos_app_candidate"])

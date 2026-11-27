@@ -68,6 +68,9 @@
  "binary_sensor:furnimove_sync": {
   "card_section": "hidden"
  },
+ "binary_sensor:kingkoil_light_report": {
+  "card_section": "lighting"
+ },
  "binary_sensor:leggett_alarm_indicator": {
   "card_section": "hidden"
  },
@@ -1116,6 +1119,64 @@
   "card_section": "motors",
   "card_role": "up",
   "card_motor": "keeson_legs"
+ },
+ "button:kingkoil_feet_down": {
+  "card_section": "motors",
+  "card_role": "down",
+  "card_motor": "kingkoil_feet"
+ },
+ "button:kingkoil_feet_up": {
+  "card_section": "motors",
+  "card_role": "up",
+  "card_motor": "kingkoil_feet"
+ },
+ "button:kingkoil_head_a_down": {
+  "card_section": "motors",
+  "card_role": "down",
+  "card_motor": "kingkoil_head_a"
+ },
+ "button:kingkoil_head_a_up": {
+  "card_section": "motors",
+  "card_role": "up",
+  "card_motor": "kingkoil_head_a"
+ },
+ "button:kingkoil_head_b_down": {
+  "card_section": "motors",
+  "card_role": "down",
+  "card_motor": "kingkoil_head_b"
+ },
+ "button:kingkoil_head_b_up": {
+  "card_section": "motors",
+  "card_role": "up",
+  "card_motor": "kingkoil_head_b"
+ },
+ "button:kingkoil_head_down": {
+  "card_section": "motors",
+  "card_role": "down",
+  "card_motor": "kingkoil_head"
+ },
+ "button:kingkoil_head_up": {
+  "card_section": "motors",
+  "card_role": "up",
+  "card_motor": "kingkoil_head"
+ },
+ "button:kingkoil_light": {
+  "card_section": "lighting"
+ },
+ "button:kingkoil_massage_foot": {
+  "card_section": "massage"
+ },
+ "button:kingkoil_massage_head": {
+  "card_section": "massage"
+ },
+ "button:kingkoil_massage_mode": {
+  "card_section": "massage"
+ },
+ "button:kingkoil_massage_timer": {
+  "card_section": "massage"
+ },
+ "button:kingkoil_status_query": {
+  "card_section": "utility"
  },
  "button:legs_down": {
   "card_section": "motors",
@@ -3210,6 +3271,22 @@
   "card_section": "motors",
   "card_motor": "keeson_legs"
  },
+ "cover:kingkoil_feet": {
+  "card_section": "motors",
+  "card_motor": "kingkoil_feet"
+ },
+ "cover:kingkoil_head": {
+  "card_section": "motors",
+  "card_motor": "kingkoil_head"
+ },
+ "cover:kingkoil_head_a": {
+  "card_section": "motors",
+  "card_motor": "kingkoil_head_a"
+ },
+ "cover:kingkoil_head_b": {
+  "card_section": "motors",
+  "card_motor": "kingkoil_head_b"
+ },
  "cover:legs": {
   "card_section": "motors",
   "card_motor": "legs"
@@ -4715,6 +4792,9 @@
  },
  "sensor:jerome_adjustable_base_clock": {
   "card_section": "hidden"
+ },
+ "sensor:kingkoil_timer_ui": {
+  "card_section": "massage"
  },
  "sensor:leggett_led_mask": {
   "card_section": "hidden"

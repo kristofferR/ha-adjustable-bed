@@ -1538,6 +1538,7 @@ def default_scenario(bed_type: str) -> Scenario:
         const.BED_TYPE_OKIMIKI: "HCRN",
         const.BED_TYPE_HJBED: "hj_bedbjrn",
         const.BED_TYPE_COMFORTBASE: "accord",
+        "kingkoil": "KSBT03CK",
         const.BED_TYPE_SOMOS: "a",
         const.BED_TYPE_YAMADA: "p1",
         const.BED_TYPE_BETTERLIVING2: "p1",
@@ -1982,6 +1983,7 @@ def route_scenarios() -> list[Scenario]:
     # The Q-Plus layout with every key the sbi route sent; schema 5.9 moves those beds to it.
     scenarios.append(Scenario(id="qplus_app:H", bed_type="qplus_app", layout_id="qplus_app",
         entry_data={const.CONF_PRODUCT_TYPE: "H"}))
+    scenarios.append(dataclasses.replace(default_scenario("kingkoil"), id="kingkoil:KSBT03CL", protocol_variant="KSBT03CL", layout_id="kingkoil"))
     for variant in "bcde":
         scenarios.append(dataclasses.replace(default_scenario("somos"), id=f"somos:{variant}", protocol_variant=variant, layout_id="somos:uart" if variant in "bde" else "somos"))
     scenarios.append(Scenario(id="yamada:p2", bed_type="yamada", protocol_variant="p2", layout_id="yamada"))

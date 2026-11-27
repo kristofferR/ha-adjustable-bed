@@ -1983,6 +1983,7 @@ class AdjustableBedCoordinator(
             else None
         )
         generation = self.connection_generation
+        cancellation_only = bed_traits(self._bed_type, self._protocol_variant).cancellation_only_stop
 
         async def stop_current_session(context: CommandContext) -> None:
             # An active sequential operation may release the receiver before
@@ -2003,6 +2004,9 @@ class AdjustableBedCoordinator(
 
         async def stop_operation(context: CommandContext) -> None:
             with command_target_scope(targets):
+                if cancellation_only:
+                    await self._async_fence_refresh_stop(controller, lambda c: c.stop_all())
+                    return
                 if original_stop is not None:
                     await self._async_send_stop_command(original_stop)
                 elif current_link_only or cleanup is not None:
@@ -2028,6 +2032,19 @@ class AdjustableBedCoordinator(
             except Exception:
                 _LOGGER.exception("STOP failed after its caller was cancelled")
             raise
+
+    async def _async_fence_refresh_stop(
+        self, controller: BedController | None, stop: Callable[[BedController], Awaitable[None]]
+    ) -> None:
+        """Settle admitted work and fence its controller without preparing any link.
+
+        The scheduler has already cancelled the active operation. Its submitted
+        original-link frame must also leave the legacy writer before STOP ends.
+        A missing/disconnected controller has no packet cleanup to perform.
+        """
+        async with self._command_lock:
+            if controller is not None:
+                await stop(controller)
 
     def _not_connected_error(self) -> BedNotConnectedError:
         """Return why the bed could not be reached, naming a closed pairing window."""
@@ -2610,6 +2627,7 @@ class AdjustableBedCoordinator(
         client = self._client
         controller = self._controller
         generation = self.connection_generation
+        cancellation_only = bed_traits(self._bed_type, self._protocol_variant).cancellation_only_stop
 
         async def stop_current_link() -> None:
             if (
@@ -2625,6 +2643,9 @@ class AdjustableBedCoordinator(
 
         async def stop_operation(_context: CommandContext) -> None:
             with command_target_scope(targets):
+                if cancellation_only:
+                    await self._async_fence_refresh_stop(controller, stop_fn)
+                    return
                 if require_current_link:
                     await self._async_send_stop_command(stop_current_link)
                     return
