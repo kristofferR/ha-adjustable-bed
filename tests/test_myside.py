@@ -7,6 +7,7 @@ from types import SimpleNamespace
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
+from homeassistant.exceptions import ServiceValidationError
 
 from custom_components.adjustable_bed.beds.myside import controller as bed
 from custom_components.adjustable_bed.beds.myside.protocol import Alarm, parse
@@ -84,9 +85,9 @@ async def test_products_startup_native_controls_and_gates(hass, clock, product):
             "massage_head_strengthen",
             "head_and_foot_up",
         ):
-            with pytest.raises(ValueError):
+            with pytest.raises(ServiceValidationError):
                 await ctrl.press(key)
-        with pytest.raises(ValueError):
+        with pytest.raises(ServiceValidationError):
             ctrl.validate_operation("query")
     await ctrl.stop_notify()
     assert c.controller_state[str(bed.ALARMS)] == []
@@ -174,7 +175,7 @@ async def test_strength_single_press_and_release_save_icons(hass, clock):
     await c.controller.press("zero_gravity", save=True)
     await c.controller.program_memory(3)
     assert writes(c) == ["6e01004cbb", "6e01006edd", "6e010066d5", "6e01002d9c"]
-    with pytest.raises(ValueError):
+    with pytest.raises(ServiceValidationError):
         await c.controller.press("flat", save=True)
 
 
@@ -204,7 +205,7 @@ async def test_alarm_projection_parser_state_and_product_gates(hass, clock):
     await ctrl.operation("delete", alarm_id=1)
     assert ctrl.alarms == []
     for operation in ("edit", "enable", "delete"):
-        with pytest.raises(ValueError):
+        with pytest.raises(ServiceValidationError):
             ctrl.validate_operation(operation, alarm_id=1)
     for value in (reply[:-1], reply[:-1] + b"\x00", bytes([reply[0], reply[1], 12]) + reply[3:]):
         assert parse(value) is None
@@ -233,7 +234,7 @@ async def test_alarm_add_requires_delivered_delete_within_app_slots(hass, clock)
             link, link.rx, bytearray(codec.record_20_len(5, 1, 2, (n, 55, 6, 30, 69, 169)))
         )
     c.client.write_gatt_char.reset_mock()
-    with pytest.raises(ValueError):
+    with pytest.raises(ServiceValidationError):
         await c.controller.operation("add", hour=7, mode="memory1")
     assert writes(c) == []
     c.controller._notification(
@@ -243,7 +244,7 @@ async def test_alarm_add_requires_delivered_delete_within_app_slots(hass, clock)
     c.client.write_gatt_char.reset_mock()
     await c.controller.operation("add", hour=7, mode="memory1")
     assert writes(c) == [Alarm(2, 0, 7, 0, 46, 1).frame().hex()]
-    with pytest.raises(ValueError):
+    with pytest.raises(ServiceValidationError):
         c.controller.validate_operation("add", mode="memory1")
 
 
@@ -266,7 +267,7 @@ async def test_replacement_rejects_old_callbacks_and_pending_commands(hass, cloc
 
 def test_explicit_product_selection_and_scan_semantics(hass):
     for value in ("", "auto", "80", "Deep Relax Smart"):
-        with pytest.raises(ValueError):
+        with pytest.raises(ServiceValidationError):
             make(hass, value)
     assert app.scan_matches("prefix-QRRM-suffix")
     assert app.scan_matches("vendor-BED-123")

@@ -19654,8 +19654,8 @@ replies cannot enable controls absent from the selected product.
 
 #### Notifications
 
-The diagnostic capabilities sensor includes this connection's alarm list and
-linked sleep-sensor name as attributes. Valid alarm list replies append distinct
+Protocol diagnostics include this connection's capability replies, alarm list and
+linked sleep-sensor name. Valid alarm list replies append distinct
 records by alarm number, replacing older fields for that number. Updates also
 reconcile pending writes. Alarm records retain their unknown U byte. Editing
 resets U to zero; enable/disable copies only the latest reported U and schedule,
@@ -19680,14 +19680,14 @@ sensor settings and automatic anti-snore behavior are unavailable.
 #### Services
 
 Use `adjustable_bed.myside` for repeat-alarm `query`, `add`, `edit`, `delete`,
-`enable`, calendar `sync`, and Sleep name query (`name`). Coaxing alarm modes are
+`enable`, and Sleep name query (`name`). Coaxing alarm modes are
 anti-snore, zero gravity, TV and memory 1 to 3, with up to seven numbered alarms.
 Weekdays are Monday=0 through Sunday=6; an empty list means once. Query this
 connection's alarms and receive list replies before adding or changing alarms.
 After a mutation, receive a fresh report before changing that alarm again.
 Add uses the lowest number explicitly deleted in this connection and not
 subsequently reported or reused. Targets, including paired children, are validated before writing.
-The shared `sync_clock` action also synchronizes Coaxing calendars.
+The shared `sync_clock` action synchronizes Coaxing calendars.
 
 #### Evidence
 

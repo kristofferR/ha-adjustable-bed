@@ -5420,9 +5420,6 @@
  "sensor:motomotion_status": {
   "card_section": "hidden"
  },
- "sensor:myside_status": {
-  "card_section": "hidden"
- },
  "sensor:n32_alarm_1": {
   "card_section": "utility"
  },

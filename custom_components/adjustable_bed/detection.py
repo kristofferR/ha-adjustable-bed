@@ -353,7 +353,6 @@ from .profiles.mlily_remote import VARIANTS as MLILY_REMOTE_PROFILES
 from .profiles.moodbase import receiver_hint as moodbase_receiver_hint
 from .profiles.motomotion import eligible as motomotion_eligible
 from .profiles.myside import CHOICES as MYSIDE_PRODUCTS
-from .profiles.myside import scan_matches as myside_scan_matches
 from .profiles.okimiki import PROFILE_CHOICES as OKIMIKI_PROFILES
 from .profiles.okimiki import scan_matches as okimiki_scan_matches
 from .profiles.onlysnore import advertisement as onlysnore_advertisement
@@ -2185,7 +2184,7 @@ def _detect_bed_type_with_app_candidates(
         elif result.bed_type != BED_TYPE_RICHMAT_APP_SLEEP:
             result.ambiguous_types = list(dict.fromkeys([*(result.ambiguous_types or ()), BED_TYPE_RICHMAT_APP_SLEEP]))
 
-    if myside_scan_matches(service_info.name) and not any(
+    if first.name(BED_TYPE_MYSIDE) and not any(
         signal.startswith("excluded:") for signal in result.signals
     ):
         if result.bed_type is None:

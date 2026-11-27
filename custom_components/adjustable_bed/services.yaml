@@ -4833,7 +4833,7 @@ myside:
       required: true
       selector:
         select:
-          options: [query, add, edit, delete, enable, sync, name]
+          options: [query, add, edit, delete, enable, name]
     alarm_id:
       default: 1
       selector:

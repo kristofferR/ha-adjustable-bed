@@ -9,12 +9,14 @@ from functools import partial
 from time import monotonic
 from typing import TYPE_CHECKING, Final
 
+from homeassistant.exceptions import ServiceValidationError
 from homeassistant.util import dt as dt_util
 
 from ...app_session import app_session
 from ...codec import richmat as codec
 from ...command_scheduler import current_command_context, note_frame_skipped, note_frame_written
 from ...controller_state import StateKey
+from ...errors import BedNotConnectedError, invalid
 from ...profiles import myside as app
 from ...state_keys import MASSAGE_TIMER_MINUTES
 from ..base import CONTROLLER_GESTURE_RELEASE, BedController, ProfileExecution, require_controller
@@ -24,7 +26,6 @@ from ..entity_specs import (
     ControllerButtonSpec,
     ControllerHoldSpec,
     ControllerMotorHoldSpec,
-    ControllerStateSensorSpec,
     MotorControlSpec,
 )
 from ..richmat.transport import AppLink, select_app_link
@@ -62,7 +63,7 @@ class MySideController(ProfileExecution[app.MySideProfile], BedController):
     def __init__(self, coordinator: AdjustableBedCoordinator, *, product: str) -> None:
         super().__init__(coordinator)
         if product not in app.PROFILES:
-            raise ValueError("Choose one of My Side's four Deep Relax Smart products")
+            raise invalid("myside_invalid_product")
         self.profile = app.PROFILES[product]
         self._owner = app_session(coordinator.hass, coordinator.address, "myside", Owner)
         self._token: object | None = None
@@ -161,9 +162,9 @@ class MySideController(ProfileExecution[app.MySideProfile], BedController):
             or self.client is not current.client
             or not current.client.is_connected
         ):
-            raise ConnectionError("The My Side BLE session ended")
+            raise BedNotConnectedError("myside_session_ended")
         if self.command_side is not None:
-            raise ValueError("My Side's current products have no single-address side selector")
+            raise invalid("myside_side_unsupported")
         return current
 
     def _ordinary(self, code: int, link: AppLink) -> bytes:
@@ -235,10 +236,13 @@ class MySideController(ProfileExecution[app.MySideProfile], BedController):
         self.on_disconnect()
         client = self.client
         if client is None or not client.is_connected:
-            raise ConnectionError("My Side is disconnected")
-        link = select_app_link(client, app.TRANSPORTS)
+            raise BedNotConnectedError("myside_disconnected")
+        try:
+            link = select_app_link(client, app.TRANSPORTS)
+        except ValueError as err:
+            raise invalid("myside_write_route_missing") from err
         if link.rx is None:
-            raise ValueError("My Side requires a notification channel")
+            raise invalid("myside_notify_required")
         self._link = link
         self._token = self._owner.token = object()
         try:
@@ -300,7 +304,7 @@ class MySideController(ProfileExecution[app.MySideProfile], BedController):
     ) -> None:
         try:
             self._live(link)
-        except ConnectionError, ValueError:
+        except ConnectionError, ServiceValidationError:
             return
         assert link.rx is not None
         self.forward_raw_notification(link.rx.uuid, bytes(data))
@@ -346,9 +350,9 @@ class MySideController(ProfileExecution[app.MySideProfile], BedController):
             *app.presets(self.profile),
             *(app.MASSAGE if self.profile.coaxing else ()),
         ):
-            raise ValueError("This My Side product does not offer that control")
+            raise invalid("myside_control_unsupported")
         if save and (control not in app.presets(self.profile) or app.PRESETS[control][1] is None):
-            raise ValueError("This control has no save action")
+            raise invalid("myside_save_unsupported")
 
     @staticmethod
     async def _wait(event: asyncio.Event, seconds: float) -> bool:
@@ -412,13 +416,13 @@ class MySideController(ProfileExecution[app.MySideProfile], BedController):
             or type(duration_ms) is not int
             or not 1 <= duration_ms <= 60000
         ):
-            raise ValueError("Choose a My Side held control and a duration of up to 60 seconds")
+            raise invalid("myside_hold_invalid")
         if (
             (context := current_command_context()) is not None
             and context.lease is not None
             and control not in self._motors()
         ):
-            raise ValueError("Only directions support renewable holds")
+            raise invalid("myside_renewable_hold_unsupported")
 
     async def hold_control(self, control: str, duration_ms: int) -> None:
         self.validate_hold_control(control, duration_ms)
@@ -435,7 +439,7 @@ class MySideController(ProfileExecution[app.MySideProfile], BedController):
             await self._send(self._ordinary(0, link), link, event)
         else:
             code = app.PRESETS[control][0] if control == "flat" else app.MASSAGE[control]
-            await self._send(self._ordinary(code, link), link, asyncio.Event())
+            await self._send(self._ordinary(code, link), link, event)
 
     async def stop_all(self) -> None:
         if not CONTROLLER_GESTURE_RELEASE.get():
@@ -485,7 +489,7 @@ class MySideController(ProfileExecution[app.MySideProfile], BedController):
 
     async def set_massage_timer(self, minutes: int) -> None:
         if minutes not in self.massage_timer_options:
-            raise ValueError("Choose 10, 20 or 30 minutes")
+            raise invalid("myside_massage_timer_invalid")
         with self.sent_state(MASSAGE_TIMER_MINUTES(minutes)):
             await self.press(f"massage_timer{minutes}")
 
@@ -561,17 +565,12 @@ class MySideController(ProfileExecution[app.MySideProfile], BedController):
         return unique_buttons(buttons)
 
     @property
-    def controller_state_sensor_specs(self) -> tuple[ControllerStateSensorSpec, ...]:
-        return (
-            ControllerStateSensorSpec(
-                "myside_status",
-                "myside_status",
-                CAPABILITIES,
-                "mdi:information-outline",
-                attribute_keys=(ALARMS, SLEEP_NAME),
-                entity_registry_enabled_default=False,
-            ),
-        )
+    def protocol_diagnostics(self) -> dict[str, object]:
+        return {
+            str(CAPABILITIES): sorted(self.features),
+            str(ALARMS): [alarm.attributes() for alarm in self.alarms],
+            str(SLEEP_NAME): self.sleep_name,
+        }
 
     def validate_operation(
         self,
@@ -583,20 +582,20 @@ class MySideController(ProfileExecution[app.MySideProfile], BedController):
         mode: str = "",
         weekdays: tuple[int, ...] = (),
     ) -> None:
-        if operation not in ("query", "add", "edit", "delete", "enable", "sync", "name"):
-            raise ValueError("Unknown My Side operation")
+        if operation not in ("query", "add", "edit", "delete", "enable", "name"):
+            raise invalid("myside_operation_unknown")
         if operation == "name":
             if not self.profile.sleep:
-                raise ValueError("This product has no Sleep link")
+                raise invalid("myside_sleep_unsupported")
             return
         if not self.profile.coaxing:
-            raise ValueError("This product has no repeat alarms")
+            raise invalid("myside_alarms_unsupported")
         if operation in ("edit", "delete", "enable") and not self._alarm_queried:
-            raise ValueError("Query alarms and receive a list reply in this connection first")
+            raise invalid("myside_alarm_query_required")
         if operation in ("edit", "delete", "enable") and not any(
             a.number == alarm_id for a in self.alarms
         ):
-            raise ValueError("Query this session's alarms before changing an existing alarm")
+            raise invalid("myside_alarm_missing")
         if operation in ("add", "edit"):
             if (
                 mode not in app.ALARM_MODES
@@ -604,11 +603,9 @@ class MySideController(ProfileExecution[app.MySideProfile], BedController):
                 or not 0 <= minute <= 59
                 or any(type(d) is not int or not 0 <= d <= 6 for d in weekdays)
             ):
-                raise ValueError("Choose an available alarm mode, time and weekdays")
+                raise invalid("myside_alarm_invalid")
             if operation == "add" and not self._free_alarm_ids:
-                raise ValueError(
-                    "Delete a reported alarm in this connection before adding a replacement"
-                )
+                raise invalid("myside_alarm_delete_required")
 
     def alarm_admission(self) -> AlarmAdmission:
         return AlarmAdmission(self._live(), self._alarm_generation)
@@ -616,7 +613,7 @@ class MySideController(ProfileExecution[app.MySideProfile], BedController):
     def _check_alarm_admission(self, admission: AlarmAdmission) -> None:
         self._live(admission.link)
         if self._alarm_generation != admission.generation:
-            raise ValueError("Alarm state changed while this action was waiting; try again")
+            raise invalid("myside_alarm_changed")
 
     async def operation(
         self,
@@ -642,8 +639,6 @@ class MySideController(ProfileExecution[app.MySideProfile], BedController):
             data = ALARM_QUERY
         elif operation == "name":
             data = NAME_QUERY
-        elif operation == "sync":
-            data = codec.calendar(dt_util.now())
         elif operation == "delete":
             data = codec.record(5, 2, 1, (alarm_id,))
         elif operation == "enable":
@@ -691,10 +686,12 @@ class MySideController(ProfileExecution[app.MySideProfile], BedController):
             self._alarm_generation += 1
 
     def validate_clock_sync(self) -> None:
-        self.validate_operation("sync")
+        if not self.supports_clock_sync:
+            raise invalid("myside_alarms_unsupported")
 
     async def sync_clock(self) -> None:
-        await self.operation("sync")
+        self.validate_clock_sync()
+        await self._send(codec.calendar(dt_util.now()), self._live(), self._coordinator.cancel_command)
 
 
 async def build_controller(ctx: BuildContext) -> MySideController:

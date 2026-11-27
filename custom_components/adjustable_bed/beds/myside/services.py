@@ -5,6 +5,7 @@ from homeassistant.core import HomeAssistant, ServiceCall
 from homeassistant.helpers import config_validation as cv
 
 from ...const import DOMAIN
+from ...errors import invalid
 from ...import_executor import async_import_modules
 from ...profiles.myside import ALARM_MODES
 
@@ -45,7 +46,7 @@ def register_services(hass: HomeAssistant) -> None:
         async def execute(controller: MySideController) -> None:
             admission = prepared.get(controller)
             if mutation and admission is None:
-                raise ValueError("The alarm connection changed; query alarms again")
+                raise invalid("myside_alarm_connection_changed")
             await controller.operation(
                 data["operation"], **options, enabled=data["enabled"], admission=admission
             )
@@ -66,7 +67,7 @@ def register_services(hass: HomeAssistant) -> None:
             {
                 vol.Required("device_id"): DEVICE_IDS,
                 vol.Required("operation"): vol.In(
-                    ("query", "add", "edit", "delete", "enable", "sync", "name")
+                    ("query", "add", "edit", "delete", "enable", "name")
                 ),
                 vol.Optional("alarm_id", default=1): vol.All(
                     vol.Coerce(int), vol.Range(min=1, max=7)

@@ -132,7 +132,7 @@ async def test_queued_admission_is_invalidated_by_another_query(hass, runtime):
     admission = ctrl.alarm_admission()
     await query(hass, ctrl, device, (NEW,))
     client.write_gatt_char.reset_mock()
-    with pytest.raises(ValueError, match="changed"):
+    with pytest.raises(ServiceValidationError, match="changed"):
         await ctrl.operation("enable", alarm_id=1, enabled=False, admission=admission)
     assert frames(client) == [] and ctrl.alarms == [NEW]
 
