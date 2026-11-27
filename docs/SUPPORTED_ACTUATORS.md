@@ -96,7 +96,7 @@ Devices & services > Adjustable Bed** and choose **Reconfigure**.
 | Reverie | [Reverie](beds/reverie.md) |
 | Rize | [Customatic](beds/okin-nframe.md#customatic-family) (Clarity, Remedy), [Kaidi](beds/kaidi.md) (Remedy III and newer Mouselet-based beds), [Okin](beds/okin-nframe.md), [Okin CST](beds/okin-nframe.md#okin-cst) (Sanctuary, Aviada, Bob, Contempo, II Carefree, II Clarity) |
 | Saatva | [Saatva](beds/richmat.md#saatva) |
-| Sealy | [Solace](beds/ff_frame.md) (Sealy MotionFlex), [Sealy Posturematic](beds/okin-5a.md#sealy-posturematic-cb35) |
+| Sealy | [Solace](beds/ff_frame.md) (Sealy MotionFlex and [Sealy FlexiRest](beds/ff_frame.md#sealy-flexirest)), [Sealy Posturematic](beds/okin-5a.md#sealy-posturematic-cb35) |
 | Sealy Posturematic | [Sealy Posturematic (CB35)](beds/okin-5a.md#sealy-posturematic-cb35), tested; the [Sealy Posturematic app](beds/okin-5a.md#sealy-posturematic-app) route is not yet tested |
 | SealyMF | [Solace](beds/ff_frame.md) |
 | Serta | [Keeson](beds/keeson.md) |

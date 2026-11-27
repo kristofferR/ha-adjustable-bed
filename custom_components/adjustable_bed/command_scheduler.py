@@ -762,6 +762,10 @@ _CURRENT_COMMAND_CONTEXT: ContextVar[CommandContext | None] = ContextVar(
 PAIRED_CLEANUP_STOP: ContextVar[Mapping[str, Callable[[], Awaitable[None]]] | None] = ContextVar(
     "paired_cleanup_stop", default=None
 )
+# These receivers may only send an abort release registered by the operation.
+PAIRED_SESSION_BOUND_ABORTS: ContextVar[frozenset[str]] = ContextVar(
+    "paired_session_bound_aborts", default=frozenset()
+)
 
 
 def capture_caller_cancellation() -> Callable[[], bool]:

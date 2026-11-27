@@ -51,6 +51,7 @@ from .bond_verification import (
 from .command_scheduler import (
     ALL_COMMAND_RESOURCES,
     PAIRED_CLEANUP_STOP,
+    PAIRED_SESSION_BOUND_ABORTS,
     CommandContext,
     CommandHandle,
     CommandIntent,
@@ -1979,12 +1980,16 @@ class AdjustableBedCoordinator(
         controller = self.capability_controller
         paired_cleanup = PAIRED_CLEANUP_STOP.get()
         original_stop = paired_cleanup.get(self.address) if paired_cleanup is not None else None
+        session_bound_abort = (
+            paired_cleanup is not None and self.address in PAIRED_SESSION_BOUND_ABORTS.get()
+        )
         cleanup = (
             controller.paired_cleanup_stop
             if paired_cleanup is not None and original_stop is None and controller is not None
             else None
         )
         generation = self.connection_generation
+        cancellation_only = bed_traits(self._bed_type, self._protocol_variant).cancellation_only_stop
 
         async def stop_current_session(context: CommandContext) -> None:
             # An active sequential operation may release the receiver before
@@ -2005,7 +2010,16 @@ class AdjustableBedCoordinator(
 
         async def stop_operation(context: CommandContext) -> None:
             with command_target_scope(targets):
-                if self._bed_type == BED_TYPE_AMBIENT:
+                if cancellation_only:
+                    await self._async_fence_refresh_stop(controller, lambda c: c.stop_all())
+                    return
+                if session_bound_abort:
+                    # A pending member may have no release, even while it is connecting.
+                    async with self._command_lock:
+                        if original_stop is not None:
+                            with bluetooth_errors_translated():
+                                await original_stop()
+                elif self._bed_type == BED_TYPE_AMBIENT:
                     # Settle an admitted write without opening a link for STOP.
                     async with self._command_lock:
                         raise invalid("ambient_stop_unavailable")
@@ -2034,6 +2048,19 @@ class AdjustableBedCoordinator(
             except Exception:
                 _LOGGER.exception("STOP failed after its caller was cancelled")
             raise
+
+    async def _async_fence_refresh_stop(
+        self, controller: BedController | None, stop: Callable[[BedController], Awaitable[None]]
+    ) -> None:
+        """Settle admitted work and fence its controller without preparing any link.
+
+        The scheduler has already cancelled the active operation. Its submitted
+        original-link frame must also leave the legacy writer before STOP ends.
+        A missing/disconnected controller has no packet cleanup to perform.
+        """
+        async with self._command_lock:
+            if controller is not None:
+                await stop(controller)
 
     def _not_connected_error(self) -> BedNotConnectedError:
         """Return why the bed could not be reached, naming a closed pairing window."""
@@ -2616,6 +2643,7 @@ class AdjustableBedCoordinator(
         client = self._client
         controller = self._controller
         generation = self.connection_generation
+        cancellation_only = bed_traits(self._bed_type, self._protocol_variant).cancellation_only_stop
 
         async def stop_current_link() -> None:
             if (
@@ -2631,6 +2659,9 @@ class AdjustableBedCoordinator(
 
         async def stop_operation(_context: CommandContext) -> None:
             with command_target_scope(targets):
+                if cancellation_only:
+                    await self._async_fence_refresh_stop(controller, stop_fn)
+                    return
                 if require_current_link:
                     await self._async_send_stop_command(stop_current_link)
                     return

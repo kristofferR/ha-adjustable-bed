@@ -1,0 +1,669 @@
+[
+  {
+    "id": "V1",
+    "protocol": "P1",
+    "variant": "KSBT03CK",
+    "action": "head up",
+    "inputs": {
+      "parameters": [
+        0,
+        0,
+        0,
+        1
+      ]
+    },
+    "expected_bytes": "04 02 00 00 00 01",
+    "evidence": [
+      "E-GATT",
+      "E-BUILDER",
+      "E-TIME",
+      "E-CK",
+      "work/jadx/sources/com/sfd/kingkoilbed/fragment/Remote03CKFragment.java:281-300"
+    ],
+    "kind": "source-derived outbound literal"
+  },
+  {
+    "id": "V2",
+    "protocol": "P1",
+    "variant": "KSBT03CK",
+    "action": "head down",
+    "inputs": {
+      "parameters": [
+        0,
+        0,
+        0,
+        2
+      ]
+    },
+    "expected_bytes": "04 02 00 00 00 02",
+    "evidence": [
+      "E-GATT",
+      "E-BUILDER",
+      "E-TIME",
+      "E-CK",
+      "work/jadx/sources/com/sfd/kingkoilbed/fragment/Remote03CKFragment.java:281-300"
+    ],
+    "kind": "source-derived outbound literal"
+  },
+  {
+    "id": "V3",
+    "protocol": "P1",
+    "variant": "KSBT03CK",
+    "action": "foot up",
+    "inputs": {
+      "parameters": [
+        0,
+        0,
+        0,
+        4
+      ]
+    },
+    "expected_bytes": "04 02 00 00 00 04",
+    "evidence": [
+      "E-GATT",
+      "E-BUILDER",
+      "E-TIME",
+      "E-CK",
+      "work/jadx/sources/com/sfd/kingkoilbed/fragment/Remote03CKFragment.java:281-300"
+    ],
+    "kind": "source-derived outbound literal"
+  },
+  {
+    "id": "V4",
+    "protocol": "P1",
+    "variant": "KSBT03CK",
+    "action": "foot down",
+    "inputs": {
+      "parameters": [
+        0,
+        0,
+        0,
+        8
+      ]
+    },
+    "expected_bytes": "04 02 00 00 00 08",
+    "evidence": [
+      "E-GATT",
+      "E-BUILDER",
+      "E-TIME",
+      "E-CK",
+      "work/jadx/sources/com/sfd/kingkoilbed/fragment/Remote03CKFragment.java:281-300"
+    ],
+    "kind": "source-derived outbound literal"
+  },
+  {
+    "id": "V5",
+    "protocol": "P1",
+    "variant": "KSBT03CK",
+    "action": "light button (transition unspecified)",
+    "inputs": {
+      "parameters": [
+        0,
+        2,
+        0,
+        0
+      ]
+    },
+    "expected_bytes": "04 02 00 02 00 00",
+    "evidence": [
+      "E-GATT",
+      "E-BUILDER",
+      "E-TIME",
+      "E-CK",
+      "work/jadx/sources/com/sfd/kingkoilbed/fragment/Remote03CKFragment.java:292-293"
+    ],
+    "kind": "source-derived outbound literal"
+  },
+  {
+    "id": "V6",
+    "protocol": "P1",
+    "variant": "KSBT03CK",
+    "action": "zero gravity",
+    "inputs": {
+      "parameters": [
+        0,
+        0,
+        16,
+        0
+      ]
+    },
+    "expected_bytes": "04 02 00 00 10 00",
+    "evidence": [
+      "E-GATT",
+      "E-BUILDER",
+      "E-TIME",
+      "E-CK",
+      "work/jadx/sources/com/sfd/kingkoilbed/fragment/Remote03CKFragment.java:250-278"
+    ],
+    "kind": "source-derived outbound literal"
+  },
+  {
+    "id": "V7",
+    "protocol": "P1",
+    "variant": "KSBT03CK",
+    "action": "TV preset",
+    "inputs": {
+      "parameters": [
+        0,
+        0,
+        64,
+        0
+      ]
+    },
+    "expected_bytes": "04 02 00 00 40 00",
+    "evidence": [
+      "E-GATT",
+      "E-BUILDER",
+      "E-TIME",
+      "E-CK",
+      "work/jadx/sources/com/sfd/kingkoilbed/fragment/Remote03CKFragment.java:250-278"
+    ],
+    "kind": "source-derived outbound literal"
+  },
+  {
+    "id": "V8",
+    "protocol": "P1",
+    "variant": "KSBT03CK",
+    "action": "flat preset",
+    "inputs": {
+      "parameters": [
+        8,
+        0,
+        0,
+        0
+      ]
+    },
+    "expected_bytes": "04 02 08 00 00 00",
+    "evidence": [
+      "E-GATT",
+      "E-BUILDER",
+      "E-TIME",
+      "E-CK",
+      "work/jadx/sources/com/sfd/kingkoilbed/fragment/Remote03CKFragment.java:250-278"
+    ],
+    "kind": "source-derived outbound literal"
+  },
+  {
+    "id": "V9",
+    "protocol": "P1",
+    "variant": "KSBT03CK",
+    "action": "massage mode (cycle unspecified)",
+    "inputs": {
+      "parameters": [
+        4,
+        0,
+        0,
+        0
+      ]
+    },
+    "expected_bytes": "04 02 04 00 00 00",
+    "evidence": [
+      "E-GATT",
+      "E-BUILDER",
+      "E-TIME",
+      "E-CK",
+      "work/jadx/sources/com/sfd/kingkoilbed/fragment/Remote03CKFragment.java:268-278"
+    ],
+    "kind": "source-derived outbound literal"
+  },
+  {
+    "id": "V10",
+    "protocol": "P1",
+    "variant": "KSBT03CK",
+    "action": "head massage (level/on-off unspecified)",
+    "inputs": {
+      "parameters": [
+        0,
+        0,
+        8,
+        0
+      ]
+    },
+    "expected_bytes": "04 02 00 00 08 00",
+    "evidence": [
+      "E-GATT",
+      "E-BUILDER",
+      "E-TIME",
+      "E-CK",
+      "work/jadx/sources/com/sfd/kingkoilbed/fragment/Remote03CKFragment.java:268-278"
+    ],
+    "kind": "source-derived outbound literal"
+  },
+  {
+    "id": "V11",
+    "protocol": "P1",
+    "variant": "KSBT03CK",
+    "action": "massage timer (cycle unspecified)",
+    "inputs": {
+      "parameters": [
+        0,
+        0,
+        2,
+        0
+      ]
+    },
+    "expected_bytes": "04 02 00 00 02 00",
+    "evidence": [
+      "E-GATT",
+      "E-BUILDER",
+      "E-TIME",
+      "E-CK",
+      "work/jadx/sources/com/sfd/kingkoilbed/fragment/Remote03CKFragment.java:268-278"
+    ],
+    "kind": "source-derived outbound literal"
+  },
+  {
+    "id": "V12",
+    "protocol": "P1",
+    "variant": "KSBT03CK",
+    "action": "foot massage (level/on-off unspecified)",
+    "inputs": {
+      "parameters": [
+        0,
+        0,
+        4,
+        0
+      ]
+    },
+    "expected_bytes": "04 02 00 00 04 00",
+    "evidence": [
+      "E-GATT",
+      "E-BUILDER",
+      "E-TIME",
+      "E-CK",
+      "work/jadx/sources/com/sfd/kingkoilbed/fragment/Remote03CKFragment.java:268-278"
+    ],
+    "kind": "source-derived outbound literal"
+  },
+  {
+    "id": "V13",
+    "protocol": "P1",
+    "variant": "KSBT03CK",
+    "action": "poll status",
+    "inputs": {
+      "literal_signed": [
+        0,
+        -80
+      ]
+    },
+    "expected_bytes": "00 b0",
+    "evidence": [
+      "E-GATT",
+      "E-BUILDER",
+      "E-TIME",
+      "E-CK",
+      "work/jadx/sources/com/sfd/kingkoilbed/fragment/Remote03CKFragment.java:114-116,185-208"
+    ],
+    "kind": "source-derived outbound literal"
+  },
+  {
+    "id": "V14",
+    "protocol": "P1",
+    "variant": "KSBT03CL",
+    "action": "head A up (source label)",
+    "inputs": {
+      "parameters": [
+        0,
+        0,
+        0,
+        1
+      ]
+    },
+    "expected_bytes": "04 02 00 00 00 01",
+    "evidence": [
+      "E-GATT",
+      "E-BUILDER",
+      "E-TIME",
+      "E-CL",
+      "work/jadx/sources/com/sfd/kingkoilbed/fragment/Remote03CLFragment.java:238-259"
+    ],
+    "kind": "source-derived outbound literal"
+  },
+  {
+    "id": "V15",
+    "protocol": "P1",
+    "variant": "KSBT03CL",
+    "action": "head A down (source label)",
+    "inputs": {
+      "parameters": [
+        0,
+        0,
+        0,
+        2
+      ]
+    },
+    "expected_bytes": "04 02 00 00 00 02",
+    "evidence": [
+      "E-GATT",
+      "E-BUILDER",
+      "E-TIME",
+      "E-CL",
+      "work/jadx/sources/com/sfd/kingkoilbed/fragment/Remote03CLFragment.java:238-259"
+    ],
+    "kind": "source-derived outbound literal"
+  },
+  {
+    "id": "V16",
+    "protocol": "P1",
+    "variant": "KSBT03CL",
+    "action": "head B up (source label)",
+    "inputs": {
+      "parameters": [
+        0,
+        0,
+        0,
+        4
+      ]
+    },
+    "expected_bytes": "04 02 00 00 00 04",
+    "evidence": [
+      "E-GATT",
+      "E-BUILDER",
+      "E-TIME",
+      "E-CL",
+      "work/jadx/sources/com/sfd/kingkoilbed/fragment/Remote03CLFragment.java:238-259"
+    ],
+    "kind": "source-derived outbound literal"
+  },
+  {
+    "id": "V17",
+    "protocol": "P1",
+    "variant": "KSBT03CL",
+    "action": "head B down (source label)",
+    "inputs": {
+      "parameters": [
+        0,
+        0,
+        0,
+        8
+      ]
+    },
+    "expected_bytes": "04 02 00 00 00 08",
+    "evidence": [
+      "E-GATT",
+      "E-BUILDER",
+      "E-TIME",
+      "E-CL",
+      "work/jadx/sources/com/sfd/kingkoilbed/fragment/Remote03CLFragment.java:238-259"
+    ],
+    "kind": "source-derived outbound literal"
+  },
+  {
+    "id": "V18",
+    "protocol": "P1",
+    "variant": "KSBT03CL",
+    "action": "foot up",
+    "inputs": {
+      "parameters": [
+        0,
+        0,
+        0,
+        16
+      ]
+    },
+    "expected_bytes": "04 02 00 00 00 10",
+    "evidence": [
+      "E-GATT",
+      "E-BUILDER",
+      "E-TIME",
+      "E-CL",
+      "work/jadx/sources/com/sfd/kingkoilbed/fragment/Remote03CLFragment.java:238-259"
+    ],
+    "kind": "source-derived outbound literal"
+  },
+  {
+    "id": "V19",
+    "protocol": "P1",
+    "variant": "KSBT03CL",
+    "action": "foot down",
+    "inputs": {
+      "parameters": [
+        0,
+        0,
+        0,
+        32
+      ]
+    },
+    "expected_bytes": "04 02 00 00 00 20",
+    "evidence": [
+      "E-GATT",
+      "E-BUILDER",
+      "E-TIME",
+      "E-CL",
+      "work/jadx/sources/com/sfd/kingkoilbed/fragment/Remote03CLFragment.java:238-259"
+    ],
+    "kind": "source-derived outbound literal"
+  },
+  {
+    "id": "V20",
+    "protocol": "P1",
+    "variant": "KSBT03CL",
+    "action": "light button (transition unspecified)",
+    "inputs": {
+      "parameters": [
+        0,
+        2,
+        0,
+        0
+      ]
+    },
+    "expected_bytes": "04 02 00 02 00 00",
+    "evidence": [
+      "E-GATT",
+      "E-BUILDER",
+      "E-TIME",
+      "E-CL",
+      "work/jadx/sources/com/sfd/kingkoilbed/fragment/Remote03CLFragment.java:219-227"
+    ],
+    "kind": "source-derived outbound literal"
+  },
+  {
+    "id": "V21",
+    "protocol": "P1",
+    "variant": "KSBT03CL",
+    "action": "zero gravity",
+    "inputs": {
+      "parameters": [
+        0,
+        0,
+        16,
+        0
+      ]
+    },
+    "expected_bytes": "04 02 00 00 10 00",
+    "evidence": [
+      "E-GATT",
+      "E-BUILDER",
+      "E-TIME",
+      "E-CL",
+      "work/jadx/sources/com/sfd/kingkoilbed/fragment/Remote03CLFragment.java:219-235"
+    ],
+    "kind": "source-derived outbound literal"
+  },
+  {
+    "id": "V22",
+    "protocol": "P1",
+    "variant": "KSBT03CL",
+    "action": "TV preset",
+    "inputs": {
+      "parameters": [
+        0,
+        0,
+        64,
+        0
+      ]
+    },
+    "expected_bytes": "04 02 00 00 40 00",
+    "evidence": [
+      "E-GATT",
+      "E-BUILDER",
+      "E-TIME",
+      "E-CL",
+      "work/jadx/sources/com/sfd/kingkoilbed/fragment/Remote03CLFragment.java:219-235"
+    ],
+    "kind": "source-derived outbound literal"
+  },
+  {
+    "id": "V23",
+    "protocol": "P1",
+    "variant": "KSBT03CL",
+    "action": "flat preset",
+    "inputs": {
+      "parameters": [
+        8,
+        0,
+        0,
+        0
+      ]
+    },
+    "expected_bytes": "04 02 08 00 00 00",
+    "evidence": [
+      "E-GATT",
+      "E-BUILDER",
+      "E-TIME",
+      "E-CL",
+      "work/jadx/sources/com/sfd/kingkoilbed/fragment/Remote03CLFragment.java:219-235"
+    ],
+    "kind": "source-derived outbound literal"
+  },
+  {
+    "id": "V24",
+    "protocol": "P1",
+    "variant": "KSBT03CL",
+    "action": "poll status",
+    "inputs": {
+      "literal_signed": [
+        0,
+        -80
+      ]
+    },
+    "expected_bytes": "00 b0",
+    "evidence": [
+      "E-GATT",
+      "E-BUILDER",
+      "E-TIME",
+      "E-CL",
+      "work/jadx/sources/com/sfd/kingkoilbed/fragment/Remote03CLFragment.java:102-104,173-196"
+    ],
+    "kind": "source-derived outbound literal"
+  },
+  {
+    "id": "N1",
+    "protocol": "P1",
+    "action": "CK notification UI parse",
+    "inputs": {
+      "notification_hex": "00 00 00 00 00 00 00 00 00 00 00 00 00"
+    },
+    "expected_bytes": "00 00 00 00 00 00 00 00 00 00 00 00 00",
+    "expected_parse": {
+      "timer_ui": 0,
+      "light": false
+    },
+    "evidence": [
+      "E-NOTIFY"
+    ],
+    "kind": "synthetic parser boundary input, never a captured reply"
+  },
+  {
+    "id": "N2",
+    "protocol": "P1",
+    "action": "CK notification UI parse",
+    "inputs": {
+      "notification_hex": "00 00 00 00 01 00 00 00 00 00 00 00 01"
+    },
+    "expected_bytes": "00 00 00 00 01 00 00 00 00 00 00 00 01",
+    "expected_parse": {
+      "timer_ui": 10,
+      "light": true
+    },
+    "evidence": [
+      "E-NOTIFY"
+    ],
+    "kind": "synthetic parser boundary input, never a captured reply"
+  },
+  {
+    "id": "N3",
+    "protocol": "P1",
+    "action": "CK notification UI parse",
+    "inputs": {
+      "notification_hex": "00 00 00 02 58 00 00 00 00 00 00 00 ff"
+    },
+    "expected_bytes": "00 00 00 02 58 00 00 00 00 00 00 00 ff",
+    "expected_parse": {
+      "timer_ui": 10,
+      "light": true
+    },
+    "evidence": [
+      "E-NOTIFY"
+    ],
+    "kind": "synthetic parser boundary input, never a captured reply"
+  },
+  {
+    "id": "N4",
+    "protocol": "P1",
+    "action": "CK notification UI parse",
+    "inputs": {
+      "notification_hex": "00 00 00 02 59 00 00 00 00 00 00 00 00"
+    },
+    "expected_bytes": "00 00 00 02 59 00 00 00 00 00 00 00 00",
+    "expected_parse": {
+      "timer_ui": 20,
+      "light": false
+    },
+    "evidence": [
+      "E-NOTIFY"
+    ],
+    "kind": "synthetic parser boundary input, never a captured reply"
+  },
+  {
+    "id": "N5",
+    "protocol": "P1",
+    "action": "CK notification UI parse",
+    "inputs": {
+      "notification_hex": "00 00 00 04 b0 00 00 00 00 00 00 00 00"
+    },
+    "expected_bytes": "00 00 00 04 b0 00 00 00 00 00 00 00 00",
+    "expected_parse": {
+      "timer_ui": 20,
+      "light": false
+    },
+    "evidence": [
+      "E-NOTIFY"
+    ],
+    "kind": "synthetic parser boundary input, never a captured reply"
+  },
+  {
+    "id": "N6",
+    "protocol": "P1",
+    "action": "CK notification UI parse",
+    "inputs": {
+      "notification_hex": "00 00 00 04 b1 00 00 00 00 00 00 00 01"
+    },
+    "expected_bytes": "00 00 00 04 b1 00 00 00 00 00 00 00 01",
+    "expected_parse": {
+      "timer_ui": 30,
+      "light": true
+    },
+    "evidence": [
+      "E-NOTIFY"
+    ],
+    "kind": "synthetic parser boundary input, never a captured reply"
+  },
+  {
+    "id": "N7",
+    "protocol": "P1",
+    "action": "CK notification UI parse",
+    "inputs": {
+      "notification_hex": "00 00 00 ff ff 00 00 00 00 00 00 00 80"
+    },
+    "expected_bytes": "00 00 00 ff ff 00 00 00 00 00 00 00 80",
+    "expected_parse": {
+      "timer_ui": 30,
+      "light": true
+    },
+    "evidence": [
+      "E-NOTIFY"
+    ],
+    "kind": "synthetic parser boundary input, never a captured reply"
+  }
+]
