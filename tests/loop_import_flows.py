@@ -19,6 +19,7 @@ from homeassistant.const import CONF_ADDRESS
 from custom_components.adjustable_bed import const
 from custom_components.adjustable_bed.config_flow import AdjustableBedConfigFlow
 from custom_components.adjustable_bed.detection import get_bed_type_options
+from custom_components.adjustable_bed.pairing import supports_single_address_pairing
 from tests.form_helpers import answer_app, complete, form_answers
 
 _PACKAGE = "custom_components.adjustable_bed."
@@ -61,6 +62,13 @@ def _loop_import_guard() -> Iterator[None]:
     assert not recorder.imports, "\n".join(
         f"{module} <- {importer}" for module, importer in sorted(recorder.imports.items())
     )
+
+
+async def test_alya_side_pairing_first_use_imports_nothing_on_loop():
+    """The settings gate must work before any Alya controller has been loaded."""
+    with _loop_import_guard():
+        for variant in (*const.ALYA_LAYOUTS, None, "auto", "unknown"):
+            assert supports_single_address_pairing("alya", variant) is (variant == "dacheng_5")
 
 
 async def _finish(hass, result) -> None:

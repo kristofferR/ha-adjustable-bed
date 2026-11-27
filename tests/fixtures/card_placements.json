@@ -368,6 +368,9 @@
   "card_role": "up",
   "card_motor": "all_motors"
  },
+ "button:alya_release": {
+  "card_section": "hidden"
+ },
  "button:ambient_anti_snore": {
   "card_section": "presets"
  },
