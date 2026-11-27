@@ -29,6 +29,7 @@ from .const import (
     BED_TYPE_OCTO,
     BED_TYPE_REVERIE,
     BED_TYPE_REVERIE_NIGHTSTAND,
+    BED_TYPE_SCOTT_LIVING,
     DOMAIN,
 )
 from .paired_coordinator import entity_runtimes
@@ -54,6 +55,8 @@ class Retype:
     # When set, the change applies only to a bed whose controller says so
     # (a product of the bed type, known before the first connection).
     applies: Callable[[BedController], bool] | None = None
+    # A same-domain key rename whose action and arguments stay the same.
+    identity_only: bool = False
 
 
 def _same_key(old_domain: str, new_domain: str, keys: Iterable[str]) -> tuple[Retype, ...]:
@@ -61,6 +64,14 @@ def _same_key(old_domain: str, new_domain: str, keys: Iterable[str]) -> tuple[Re
 
 
 RETYPES: Final[tuple[Retype, ...]] = (
+    # Scott Living's catalog presets replace its standard preset buttons.
+    *(
+        Retype(
+            "button", f"preset_{key}", "button", key,
+            only_on=frozenset({BED_TYPE_SCOTT_LIVING}), identity_only=True,
+        )
+        for key in ("zero_g", "tv")
+    ),
     # Octo's on/off light stays a switch.
     Retype("switch", "under_bed_lights", "light", "under_bed_lights", frozenset({BED_TYPE_OCTO})),
     # Sleep readings that were text sensors.
@@ -334,7 +345,8 @@ def _carry_over(
     if retype.old_domain == retype.new_domain:
         # The row itself carries over, with its entity ID and every setting.
         registry.async_update_entity(old_id, new_unique_id=new_unique_id)
-        _remember(registry, old_id, old_id, old.id, options_changed=True)
+        if not retype.identity_only:
+            _remember(registry, old_id, old_id, old.id, options_changed=True)
         return
     object_id = split_entity_id(old_id)[1]
     taken = registry.async_is_registered(f"{retype.new_domain}.{object_id}")

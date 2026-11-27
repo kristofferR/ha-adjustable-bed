@@ -111,6 +111,37 @@ async def test_octo_keeps_its_switch(hass: HomeAssistant) -> None:
     assert registry.async_get("light.bed_under_bed_lights") is None
 
 
+async def test_scott_presets_keep_existing_targets_and_settings(hass: HomeAssistant) -> None:
+    registry = er.async_get(hass)
+    entry = _entry(hass)
+    for key in ("zero_g", "tv"):
+        row = _row(registry, entry, "button", f"preset_{key}", f"bed_{key}")
+        registry.async_update_entity(
+            row.entity_id, name=f"My {key}", disabled_by=er.RegistryEntryDisabler.USER
+        )
+    assert await async_setup_component(
+        hass,
+        "automation",
+        {"automation": {
+            "alias": "Watch TV",
+            "trigger": {"platform": "event", "event_type": "test"},
+            "action": {"action": "button.press", "target": {"entity_id": "button.bed_tv"}},
+        }},
+    )
+    async_carry_over_retyped_entities(hass, entry, _runtime("keeson"))
+    assert registry.async_get("button.bed_tv").unique_id == f"{ADDRESS}_preset_tv"
+
+    for _ in range(2):
+        async_carry_over_retyped_entities(hass, entry, _runtime("scott_living"))
+        for key in ("zero_g", "tv"):
+            row = registry.async_get(f"button.bed_{key}")
+            assert row is not None and row.unique_id == f"{ADDRESS}_{key}"
+            assert row.name == f"My {key}"
+            assert row.disabled_by is er.RegistryEntryDisabler.USER
+    await hass.async_block_till_done()
+    assert ir.async_get(hass).async_get_issue(DOMAIN, ISSUE_PREFIX + entry.entry_id) is None
+
+
 async def test_text_sleep_sensor_becomes_a_binary_sensor(hass: HomeAssistant) -> None:
     registry = er.async_get(hass)
     entry = _entry(hass)

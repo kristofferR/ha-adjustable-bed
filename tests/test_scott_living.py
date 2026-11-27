@@ -14,6 +14,7 @@ from pytest_homeassistant.common import MockConfigEntry
 
 from custom_components.adjustable_bed import const
 from custom_components.adjustable_bed.beds import scott_living as bed
+from custom_components.adjustable_bed.beds.base import BedController
 from custom_components.adjustable_bed.codec import keeson as codec
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
 from custom_components.adjustable_bed.profiles import scott_living as profiles
@@ -130,6 +131,7 @@ async def test_every_control_through_real_ha_entities(
     coordinator = hass.data[const.DOMAIN][e.entry_id]
     controller = coordinator.controller
     assert isinstance(controller, bed.ScottLivingController)
+    assert type(controller).read_positions is BedController.read_positions
     assert len(controller.profile.actions) == {"A": 8, "B": 13, "C": 17}[layout]
     assert not controller.supports_single_address_pairing
     assert controller.memory_slot_count == 0
