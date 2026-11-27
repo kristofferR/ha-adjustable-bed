@@ -43,6 +43,7 @@ if TYPE_CHECKING:
     from .doublesleep.controller import DoubleSleepController as DoubleSleepController
     from .dreamsense.likimio import LikimioController as LikimioController
     from .ergo_slim import ErgoSlimController as ErgoSlimController
+    from .ergobq.controller import ErgoBQController as ErgoBQController
     from .ergomotion4.controller import Ergomotion4Controller as Ergomotion4Controller
     from .ergomotion_app import ErgomotionAppController as ErgomotionAppController
     from .eshine.controller import EshineController as EshineController
@@ -94,6 +95,7 @@ if TYPE_CHECKING:
     from .luniosmart.controller import LunioSmartController as LunioSmartController
     from .majestichome.controller import MajesticHomeController as MajesticHomeController
     from .malouf.app import MaloufAppController as MaloufAppController
+    from .mlily0.controller import MlilyController as MlilyController
     from .mlily_remote.controller import MlilyRemoteController as MlilyRemoteController
     from .motion_bed.controller import MotionBedController as MotionBedController
     from .motomotion.controller import MotoMotionController as MotoMotionController
@@ -194,6 +196,7 @@ _EXPORT_MODULES = {
     "LunioSmartController": "luniosmart.controller",
     "SaatvaController": "saatva",
     "SonicSleepController": "sonicsleep.controller",
+    "MlilyController": "mlily0.controller",
     "MlilyRemoteController": "mlily_remote.controller",
     "ResidentController": "resident.controller",
     "NerumController": "nerum.controller",
@@ -223,6 +226,7 @@ _EXPORT_MODULES = {
     'RichmatClassicController': 'richmat_classic.controller',
     'Ergomotion4Controller': 'ergomotion4.controller',
     'RowControlController': 'row_control',
+    'ErgoBQController': 'ergobq.controller',
     'ErgoSlimController': 'ergo_slim',
     'TempurAUController': 'tempur_au',
     "CasperBaseController": "casper_base.controller",
@@ -365,6 +369,7 @@ __all__ = [
     'RichmatClassicController',
     'Ergomotion4Controller',
     'RowControlController',
+    'ErgoBQController',
     'ErgoSlimController',
     'TempurAUController',
 

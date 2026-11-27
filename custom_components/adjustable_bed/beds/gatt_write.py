@@ -111,6 +111,7 @@ class GattWriter(ABC):
         command_factory: Callable[[], bytes] | None = None,
         track_command_write: bool = True,
         settle_write: bool = False,
+        write_timeout: float | None = None,
     ) -> None:
         """Write a command to a GATT characteristic with retry support.
 
@@ -150,6 +151,8 @@ class GattWriter(ABC):
                      frame. Set False for writes that only prepare the link.
             settle_write: Finish and record a submitted write before propagating
                      cancellation. Lock acquisition stays cancellable.
+            write_timeout: Deadline for the backend write itself, including when
+                     caller cancellation waits for that submitted write to settle.
 
         Raises:
             BedNotConnectedError: If not connected to the bed
@@ -191,11 +194,19 @@ class GattWriter(ABC):
             )
 
         async def send(client: BleakClient, outbound: bytes) -> None:
-            await client.write_gatt_char(
-                characteristic if characteristic is not None else char_uuid,
-                outbound,
-                response=response,
-            )
+            if write_timeout is None:
+                await client.write_gatt_char(
+                    characteristic if characteristic is not None else char_uuid,
+                    outbound,
+                    response=response,
+                )
+            else:
+                async with asyncio.timeout(write_timeout):
+                    await client.write_gatt_char(
+                        characteristic if characteristic is not None else char_uuid,
+                        outbound,
+                        response=response,
+                    )
             if track_command_write:
                 note_frame_written(effective_cancel)
             else:
