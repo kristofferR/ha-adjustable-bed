@@ -974,3 +974,10 @@ Choose the Prime, Lombar or Infinity layout and its BLE branch independently.
 Both choices belong to the physical bed and are configured per side of a
 two-address pair. The [Restonic guide](beds/restonic.md) lists the exact
 name-to-branch rules and available actions. No network setup is required.
+
+### Ronco Motion layout
+
+The searchable **Ronco Motion app** choice asks for ECONOMY (Fk9rm) or PREMIUM
+(Fk8rm). Select the layout used in Ronco Motion 1.2; Bluetooth names cannot
+identify it. PREMIUM adds Pillow and a light toggle. Layout settings belong to
+one physical side of a two-address pair. See [Ronco Motion](beds/richmat.md#ronco-motion).
