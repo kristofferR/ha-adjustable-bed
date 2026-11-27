@@ -2643,3 +2643,11 @@ Use `enso2_aroma_schedule` with `device_id`, `mode_2_minutes` and
 `mode_3_minutes` (1 to 60), and `pause_hours` (1 to 12). Each action can target
 the side of a two-address pair through the standard `side` field. The receiver
 must report the corresponding accessory over Bluetooth.
+
+## Ronco Motion once alarm
+
+Use `adjustable_bed.set_alarm` with a Ronco Motion `device_id` and optional paired
+`side`. Set `enabled: true`, `time: "07:15:00"`, and `wake_action: zero_g`,
+`anti_snore` or `memory_1`. Equal local times schedule tomorrow. Set
+`enabled: false` to delete the once alarm. The last alarm result records a
+received acknowledgement. See [Ronco Motion](beds/richmat.md#ronco-motion).

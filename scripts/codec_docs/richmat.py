@@ -73,6 +73,7 @@ from scripts.codec_docs._dreamsense import BLOCKS as DREAMSENSE_BLOCKS
 from scripts.codec_docs._likimio import BLOCKS as LIKIMIO_BLOCKS
 from scripts.codec_docs._lp2 import BLOCKS as LP2_BLOCKS
 from scripts.codec_docs._maxprime import render_maxprime
+from scripts.codec_docs._ronco_motion import BLOCKS as RONCO_MOTION_BLOCKS
 from scripts.codec_docs._super_colchones import BLOCKS as SUPER_COLCHONES_BLOCKS
 
 GUIDE = "docs/beds/richmat.md"
@@ -1445,6 +1446,7 @@ def render_rise_commands() -> str:
 
 
 BLOCKS: list[Block] = [
+    *RONCO_MOTION_BLOCKS,
     (GUIDE, "dorsal-controls", _dorsal.render),
     (GUIDE, "roomi-s655-plus-controls", _dorsal.render_roomi),
     (GUIDE, "maxprime", render_maxprime),
