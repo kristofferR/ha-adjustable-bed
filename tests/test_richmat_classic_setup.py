@@ -54,7 +54,7 @@ def test_all_app_choices_are_findable_and_model_inventories_are_distinct():
         suffix = ' (newer version)' if app == 'lp2' else ''
         assert rows['richmat_classic_apps:' + app] == f'{name} app{suffix}'
     assert {app: len(models) for app, models in MODEL_CHOICES.items()} == {
-        'avocadoecobase': 704, 'coastersleep': 715, 'fortywinks': 725, 'milemont': 700, 'superior': 725,
+        'avocadoecobase': 704, 'coastersleep': 715, 'fortywinks': 725, 'milemont': 700, 'superior': 725, 'dynasty': 558,
         'luunarise2': 604, 'powercool': 586, 'sleepfunction': 558, 'lp2': 559,
         'bedsmart': 558,
         'jerome2': 532,

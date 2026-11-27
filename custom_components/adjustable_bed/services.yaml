@@ -2584,7 +2584,7 @@ richmat_classic:
       required: true
       selector:
         select:
-          options: [query, alarm, cancel_alarm, rgb, lamp_slider, lamp_save, aroma, massage_timer, massage_popup,
+          options: [query, alarm, cancel_alarm, rgb, lamp_slider, lamp_save, lamp_timeout, aroma, massage_timer, massage_popup,
             desk_target, desk_unit, desk_recall, desk_reset]
           translation_key: richmat_classic_operation
     action:
@@ -2598,6 +2598,12 @@ richmat_classic:
         number:
           min: 0
           max: 15
+          mode: box
+    seconds:
+      selector:
+        number:
+          min: 0
+          max: 300
           mode: box
     rgb_color:
       selector:

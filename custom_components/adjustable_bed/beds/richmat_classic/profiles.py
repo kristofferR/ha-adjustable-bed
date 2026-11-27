@@ -33,6 +33,7 @@ APP_NAMES = {
     "fortywinks": "Forty Winks",
     "milemont": "Milemont",
     "superior": "Superior",
+    "dynasty": "Dynasty DM9000",
     "sleepfunction": "SleepFunction Bed Control",
     "luunarise2": "Luuna Rise",
     "powercool": "Power Cool Sleep System",

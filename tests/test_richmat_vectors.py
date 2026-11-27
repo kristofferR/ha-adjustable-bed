@@ -449,6 +449,14 @@ def _census(key: str) -> set[str]:
         )}
     if key in ("richmat_classic_lp2", "richmat_classic_bedsmart"):
         return {classic.release("RAW").hex(), classic.release("FRAMED").hex(), classic.INITIALIZE.hex(), classic.ALARM_QUERY.hex(), classic.LAMP_QUERY.hex(), classic.AROMA_QUERY.hex()}
+    if key == "richmat_classic_dynasty":
+        # Only the supported bed subset, with Dynasty's literal-zero timeout.
+        return {frame.hex() for frame in (
+            classic.INITIALIZE, classic.ALARM_QUERY, classic.LAMP_QUERY, classic.AROMA_QUERY,
+            *classic.alarm(0, 0), codec.light_timer(0, 0),
+            classic.release("RAW"), classic.release("FRAMED"),
+            *(classic.massage_popup(choice) for choice in classic.MASSAGE_POPUP),
+        )}
     if key.startswith("richmat_classic_"):
         return _classic_census()
     if key.startswith("richmat_mh_"):

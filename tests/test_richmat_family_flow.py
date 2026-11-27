@@ -51,6 +51,7 @@ APPS = [
     "fortywinks",
     "milemont",
     "superior",
+    "dynasty",
     "luunarise2",
     "powercool",
     "sleepfunction",
