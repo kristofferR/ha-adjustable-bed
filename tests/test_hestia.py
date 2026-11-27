@@ -258,6 +258,8 @@ async def test_presets_memory_save_and_repeat_cancel_survive_unrelated_actions()
 async def test_native_massage_choices_on_off_and_immediate_timer():
     coordinator, client, bed = await connected()
     choices = {spec.key: spec for spec in bed.controller_select_specs}
+    assert choices["hestia_wave"].local_select_fn is not None
+    assert choices["hestia_intensity"].local_select_fn is not None
     choices["hestia_wave"].local_select_fn("2")
     choices["hestia_intensity"].local_select_fn("3")
     assert not packets(client)
@@ -349,6 +351,7 @@ async def test_stale_controller_cannot_write_or_invalidate_new_native_state():
     assert not updates and not packets(client)
     spec = bed.controller_select_specs[0]
     bed.on_app_state_replaced()
+    assert spec.local_select_fn is not None
     with pytest.raises(BedNotConnectedError):
         spec.local_select_fn("1")
     assert not updates

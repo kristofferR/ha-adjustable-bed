@@ -13,6 +13,7 @@ from pytest_homeassistant.common import MockConfigEntry
 from custom_components.adjustable_bed import const
 from custom_components.adjustable_bed.app_profiles import per_side_profile
 from custom_components.adjustable_bed.beds.hestia.controller import HestiaController
+from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
 from custom_components.adjustable_bed.profile_id import resolve_profile_id
 from custom_components.adjustable_bed.runtime_data import entry_runtime
 from tests.form_helpers import finish_new_bed
@@ -64,6 +65,7 @@ async def test_real_native_controls_alarm_and_admission(
     assert await hass.config_entries.async_setup(entry.entry_id)
     await hass.async_block_till_done()
     runtime = entry_runtime(hass, entry.entry_id)
+    assert isinstance(runtime, AdjustableBedCoordinator)
     assert isinstance(runtime.controller, HestiaController)
     registry = er.async_get(hass)
     entries = [
