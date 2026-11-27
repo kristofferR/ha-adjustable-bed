@@ -505,3 +505,13 @@ byte-identical BED products and serial-dependent axes. It has no mattress
 profile. `beds/ergobq/` uses the shared settled GATT writer with an expected
 client, while owning its authentication, notification stream and release.
 See [ErgoBQ BED](../beds/ergobq.md) and `tests/test_ergobq_vectors.py`.
+
+## Comfort Bed
+
+Comfort Bed 1.0.2's current ComfortCareBed profile reproduces all 108 frozen
+TX literals through `codec/richmat.py:function`, including both sides, startup
+queries and the absent-long-code zero output. It adds profile data and extends
+the existing family motion/session controller. Its ordinary RX dispatcher
+differs from Casper's complete-length receiver, so it has a scoped dispatcher
+with only its two verified announcements. See the
+[Comfort Bed section](../beds/richmat.md#comfort-bed) and `tests/test_comfort_bed.py`.

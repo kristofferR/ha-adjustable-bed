@@ -66,7 +66,7 @@ import subprocess
 import sys
 import time
 from collections.abc import Awaitable, Callable, Iterator
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from pathlib import Path
 from types import SimpleNamespace
 from typing import Any, cast
@@ -429,7 +429,7 @@ def plan_commands(controller: Any) -> list[Command]:
     for spec in specs:
         # These STOP paths consume the interrupted command's release receipt.
         # Keep older synthetic STOP rows stable.
-        scheduled = controller._coordinator.bed_type in {"shuda", "atlas_lift"}
+        scheduled = controller._coordinator.bed_type in {"shuda", "atlas_lift", "comfort_bed"}
         # Stop between OkimattMotion refresh ticks so equal deadlines cannot race.
         after_s = 0.35 if controller._coordinator.bed_type == "okimattmotion" else STOP_AFTER_S
         plan.append(Command(
@@ -1572,6 +1572,8 @@ def default_scenario(bed_type: str) -> Scenario:
     if bed_type == "super_colchones":
         return Scenario(id=bed_type, bed_type=bed_type, protocol_variant="afeg302",
                         entry_data={const.CONF_PROTOCOL_VARIANT: "afeg302"}, layout_id="super_colchones:n1")
+    if bed_type == const.BED_TYPE_COMFORT_BED:
+        return Scenario(id=bed_type, bed_type=bed_type, layout_id="comfort_bed:n1")
     if bed_type == const.BED_TYPE_ATLAS_LIFT:
         return Scenario(id=bed_type, bed_type=bed_type, layout_id="atlas_lift:n1")
     if bed_type == "superior_sleep":
@@ -1589,6 +1591,10 @@ def default_scenario(bed_type: str) -> Scenario:
             layout_id="dreamsense:gatt:1",
             replies={"write:6e0a000179": "6e0e00037f"},
         )
+    if bed_type == "muuegm":
+        return Scenario(id=bed_type, bed_type=bed_type, protocol_variant="ABF03",
+                        entry_data={const.CONF_BED_TYPE: bed_type, const.CONF_PROTOCOL_VARIANT: "ABF03"},
+                        layout_id="dreamsense", replies={"write:6e08010178": "6e09010078", "write:6e0a000179": "6e0e00037f"})
     if bed_type == "dreamsense":
         return Scenario(id=bed_type, bed_type=bed_type, protocol_variant="blue",
                         entry_data={const.CONF_PROTOCOL_VARIANT: "blue", const.CONF_PRODUCT_TYPE: "blue"})
@@ -1924,6 +1930,8 @@ def route_scenarios() -> list[Scenario]:
         for route in ("n1", "w1", "w2", "w3", "w4", "w5"):
             scenarios.append(Scenario(id=f"super_colchones:{product}:{route}", bed_type="super_colchones",
                 protocol_variant=product, entry_data={const.CONF_PROTOCOL_VARIANT: product}, layout_id=f"super_colchones:{route}"))
+    scenarios.append(Scenario(id="comfort_bed:w1", bed_type=const.BED_TYPE_COMFORT_BED,
+                              layout_id="comfort_bed:w1"))
     scenarios.append(Scenario(id="atlas_lift:w1", bed_type=const.BED_TYPE_ATLAS_LIFT,
                               layout_id="atlas_lift:w1"))
     for route in ("S1", "S3", "S4", "S5", "S6"):
@@ -2684,6 +2692,12 @@ def build_scenarios() -> list[Scenario]:
             default_scenario("dreamsense"), id=f"dreamsense:gatt:{route}",
             layout_id=f"dreamsense:gatt:{route}",
         ))
+    for product in ("ABF03", "ABF07", "NUPG400"):
+        for route in range(6):
+            scenarios.append(replace(default_scenario("muuegm"), id=f"muuegm:{product}:gatt:{route}",
+                protocol_variant=product, entry_data={"bed_type": "muuegm", "protocol_variant": product},
+                layout_id="dreamsense" if route == 0 else f"dreamsense:gatt:{route}",
+                replies={"write:6e08010178": "6e09010078", "write:6e0a000179": "6e0e00037f", "write:01": "6e09010078 6e0e00037f"}))
     from custom_components.adjustable_bed.profiles.likimio import NO_PRODUCT as LIKIMIO_NO_PRODUCT
 
     scenarios.append(Scenario(
@@ -2935,7 +2949,7 @@ async def _connect(controller: Any, recorder: Recorder, clock: FakeClock) -> dic
                 session.store_device_info = lambda *_: None
             await controller.async_on_connect(session)
             return
-        if controller._coordinator.bed_type in {"symphony", "linx", "agingplace", "sleep_assistant", "sinca_comfort", "leva", "sleep_assist_pro", "atlas_lift", "ambient", "ergobq", "ronco_motion"}:
+        if controller._coordinator.bed_type in {"symphony", "linx", "agingplace", "sleep_assistant", "sinca_comfort", "leva", "sleep_assist_pro", "atlas_lift", "comfort_bed", "ambient", "ergobq", "ronco_motion"}:
             session = SimpleNamespace(
                 client=controller.client, is_current=lambda: True,
                 async_start_notify=lambda: controller.start_notify(lambda *_: None),

@@ -190,6 +190,7 @@
           "check_connected": "Check: connected",
           "check_connected_via": "Check: connected through",
           "check_no_commands": "Check: no commands",
+          "check_comfort_bed_transport_missing": "❌ Comfort Bed needs exactly one supported Bluetooth service with its writable command characteristic and a notification channel.",
           "check_atlas_lift_transport_missing": "❌ Atlas Lift needs exactly one supported Bluetooth service with its writable command characteristic.",
           "check_sleeptime_uart_missing": "❌ The Bluetooth device lacks the write and status channels Sleeptime needs.",
           "check_truemotion_transport_missing": "⚠️ The receiver does not expose the trueMotion write and notification channels.",
@@ -7264,6 +7265,26 @@
       "ghostbed_massage_mode": {"name": "Massage mode", "state": {"basic": "Basic", "cycle": "Cycle", "pulse": "Pulse", "wave": "Wave"}},
       "ghostbed_sensitivity": {"name": "Anti-snore sensitivity", "state": {"low": "Low", "medium": "Medium", "high": "High"}},
       "ghostbed_angle": {"name": "Anti-snore target", "state": {"8": "8°", "12": "12°", "15": "15°"}},
+      "comfort_bed_side": {
+        "name": "Control side",
+        "state": {
+          "left": "Left",
+          "right": "Right"
+        }
+      },
+      "muuegm_color": {
+        "name": "Underbed light color",
+        "state": {
+          "yellow": "Yellow",
+          "green": "Green",
+          "azure": "Azure",
+          "blue": "Blue",
+          "violet": "Violet",
+          "white": "White",
+          "red": "Red",
+          "orange": "Orange"
+        }
+      },
       "hestia_wave": {
         "name": "Massage wave (apply with On)"
       },
@@ -8254,6 +8275,24 @@
     }
   },
   "services": {
+    "muuegm_enable_alarm": {
+      "name": "Enable MUUEGM alarm",
+      "description": "Enable or disable a reported ABF07 alarm while preserving its time, mode and repeat days. Refresh alarms first.",
+      "fields": {
+        "device_id": {
+          "name": "Device"
+        },
+        "alarm_number": {
+          "name": "Alarm number"
+        },
+        "enabled": {
+          "name": "Enabled"
+        },
+        "side": {
+          "name": "Side"
+        }
+      }
+    },
     "suta_king_koil_confirm_alarm": {
       "name": "King Koil (SUTA): confirm existing alarm",
       "description": "Send the King Koil app’s existing-alarm Confirm command (DA). Its firmware edit or delete effect is unverified. Each targeted physical receiver has its own alarms.",
@@ -13117,6 +13156,9 @@
     "super_colchones_session": {
       "message": "The Super Colchones connection or product changed. Reconnect and try again."
     },
+    "comfort_bed_gatt": {
+      "message": "Comfort Bed needs exactly one supported Bluetooth service with its writable command characteristic and a notification channel."
+    },
     "atlas_lift_gatt": {
       "message": "Atlas Lift needs exactly one supported Bluetooth service with its writable command characteristic."
     },
@@ -13914,6 +13956,7 @@
     },
     "richmat_family_choice": {
       "options": {
+        "comfort_bed": "Comfort Bed (ComfortCareBed)",
         "atlas_lift": "Atlas Lift (Cama Lift)",
         "enso2": "ENSO Sleep Control (Enso 2)",
         "rmcontrol": "RMControl app",

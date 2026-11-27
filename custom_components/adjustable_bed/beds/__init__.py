@@ -24,6 +24,7 @@ if TYPE_CHECKING:
     from .casper_base.controller import CasperBaseController as CasperBaseController
     from .casper_sleep.controller import CasperSleepController as CasperSleepController
     from .cheerssleep.controller import CheersSleepController as CheersSleepController
+    from .comfort_bed.controller import ComfortBedController as ComfortBedController
     from .comfort_enhancement3.controller import (
         ComfortEnhancement3Controller as ComfortEnhancement3Controller,
     )
@@ -294,6 +295,7 @@ _EXPORT_MODULES = {
     "KaidiController": "kaidi.controller",
     "LevaController": "leva",
     "LikimioController": "dreamsense.likimio",
+    "MuuegmController": "dreamsense.muuegm",
     "LinxController": "linx.controller",
     "SymphonySleepController": ("keeson.symphony_sleep", "SymphonySleepController"),
     "KeesonController": "keeson.controller",
@@ -338,6 +340,7 @@ _EXPORT_MODULES = {
     "RemacroController": "remacro.controller",
     "ReverieController": "reverie.controller",
     "ReverieNightstandController": "reverie.nightstand",
+    "ComfortBedController": "comfort_bed.controller",
     "AtlasLiftController": "richmat.atlas_lift",
     "JeromeAdjustableBaseController": "richmat.jerome_adjustable_base",
     "RichmatController": "richmat.controller",

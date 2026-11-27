@@ -57,6 +57,7 @@ from .const import (
     BED_TYPE_BF,
     BED_TYPE_CASPER_BASE,
     BED_TYPE_CHERISH,
+    BED_TYPE_COMFORT_BED,
     BED_TYPE_COMFORT_ENHANCEMENT3,
     BED_TYPE_COMFORT_ENHANCEMENTS,
     BED_TYPE_COMFORTBASE,
@@ -306,6 +307,7 @@ from .profiles.majestichome import PROFILE_CHOICES as MAJESTICHOME_PROFILES
 from .profiles.mlily0 import VARIANTS as MLILY0_PROFILES
 from .profiles.mlily_choices import PROFILE_CHOICES as MLILY_PROFILES
 from .profiles.mlily_remote import VARIANTS as MLILY_REMOTE_PROFILES
+from .profiles.muuegm import CHOICES as MUUEGM_CHOICES
 from .profiles.okimiki import PROFILE_CHOICES as OKIMIKI_PROFILES
 from .profiles.restonic import AXES as RESTONIC_AXES
 from .profiles.restonic import BRANCH_CHOICES as RESTONIC_BRANCHES
@@ -391,6 +393,7 @@ _OWNED_BY_BED_TYPE: Final[dict[str, frozenset[str]]] = {
     "majestichome": GENERIC_FIELDS - {CONF_PROTOCOL_VARIANT, CONF_MOTOR_PULSE_COUNT},
     BED_TYPE_OKIMIKI: _APP_DEFINED - {CONF_PROTOCOL_VARIANT},
     BED_TYPE_LIKIMIO: _APP_DEFINED - {CONF_PROTOCOL_VARIANT},
+    "muuegm": _APP_DEFINED - {CONF_PROTOCOL_VARIANT, CONF_MOTOR_PULSE_COUNT},
     "dreamsense": _APP_DEFINED - {CONF_PROTOCOL_VARIANT, CONF_MOTOR_PULSE_COUNT},
     "saatva": _APP_DEFINED - {CONF_PROTOCOL_VARIANT, CONF_MOTOR_PULSE_COUNT},
     "bobpowerbase": _APP_DEFINED - {CONF_PROTOCOL_VARIANT},
@@ -3511,6 +3514,13 @@ SETUP_PROFILES: Final[dict[str, SetupProfile]] = {
         derive=lambda data: {CONF_HAS_MASSAGE: data[CONF_PROTOCOL_VARIANT] == LIKIMIO_ABM10},
         title=lambda _data: "Likimio",
     ),
+    "muuegm": SetupProfile(
+        owns={CONF_MOTOR_COUNT: 2, CONF_HAS_MASSAGE: True,
+              CONF_DISABLE_ANGLE_SENSING: True, CONF_MOTOR_PULSE_DELAY_MS: 100},
+        questions=(Question(CONF_PROTOCOL_VARIANT, MUUEGM_CHOICES, lambda _data: REQUIRED),),
+        derive=lambda data: {CONF_MOTOR_COUNT: 3 if data.get(CONF_PROTOCOL_VARIANT) == "NUPG400" else 2},
+        title=lambda _data: "MUUEGM",
+    ),
     # The app's product sets every control, so its one row asks it.
     "dreamsense": SetupProfile(
         owns={CONF_MOTOR_COUNT: 2, CONF_HAS_MASSAGE: SET_BY_PROFILE,
@@ -3908,6 +3918,12 @@ SETUP_PROFILES: Final[dict[str, SetupProfile]] = {
         validate=_motion_bed_errors,
         derive=lambda _data: _NO_PULSE_CHOICE,
         seed=_motion_bed_seed,
+    ),
+    BED_TYPE_COMFORT_BED: SetupProfile(
+        owns={CONF_MOTOR_COUNT: 2, CONF_HAS_MASSAGE: True,
+              CONF_DISABLE_ANGLE_SENSING: True, CONF_MOTOR_PULSE_DELAY_MS: 100,
+              CONF_PROTOCOL_VARIANT: "auto"},
+        derive=lambda _data: {CONF_PRODUCT_TYPE: "86"},
     ),
     BED_TYPE_ATLAS_LIFT: SetupProfile(
         owns={

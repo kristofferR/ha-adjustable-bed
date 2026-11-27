@@ -2690,7 +2690,8 @@ async def _write_checked_alarms(
             request = _check_alarm(child.name, controller, alarm, given)
             if plan.live_check:
                 await controller.check_alarm(request)
-            identity = controller.alarm_record_identity(request) if plan.live_slots else None
+            # Fixed-capacity slots can still need a reported-record stamp.
+            identity = controller.alarm_record_identity(request)
             if plan.live_slots and request.mattress_side is None and identity is None:
                 raise _bed_changed()
             sessions[id(child)] = _CheckedSession(
