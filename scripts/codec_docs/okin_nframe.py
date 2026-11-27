@@ -1035,3 +1035,38 @@ BLOCKS: list[Block] = [
     (GUIDE, "okin-nframe-keys", render_okin_nframe_keys),
     (GUIDE, "okin-nframe-okimat", render_okin_nframe_okimat),
 ]
+
+
+def render_meisemobell() -> str:
+    from datetime import datetime
+
+    from custom_components.adjustable_bed.profiles import meisemobell as p
+    rows = []
+    for route in p.PROFILES:
+        t = p.TRANSPORTS[route]
+        rows.append((route, t.service, t.write, t.notify_service, t.notify, "without response"))
+    transport = _table(("Route", "Write service", "Write", "Notify service", "Notify", "Mode"), rows)
+    controls = _table(("Control", *p.PROFILES), [
+        (action, *(_hex(p.control(route, action)) for route in p.PROFILES))
+        for action in next(iter(p.PROFILES.values())).keys
+    ])
+    settings = _table(("Operation", *p.PROFILES), [
+        ("Query alarms", *(" then ".join(_hex(f) for f in p.queries(route)) for route in p.PROFILES)),
+        ("Clock (2026-11-27 06:30:00 local)", *(_hex(p.clock(route, datetime(2026,11,27,6,30))) for route in p.PROFILES)),
+        ("Disable both alarms", _hex(p.alarm_pair(p.Alarm(),p.Alarm())), " then ".join(_hex(p.alarm_slot(slot,p.Alarm())) for slot in (1,2))),
+        ("Alarm 1 (Mon 06:30, memory 1)", _hex(p.alarm_pair(p.Alarm(6,30,130,17,True),p.Alarm())), _hex(p.alarm_slot(1,p.Alarm(6,30,130,5,True)))),
+    ])
+    modes = _table(("Wake action", *p.PROFILES), [
+        (action, *(str(p.ALARM_TYPES[route][index]) for route in p.PROFILES))
+        for index, action in enumerate(p.WAKE_ACTIONS)
+    ])
+    timing = _table(("Behavior", "Timing"), [
+        ("Held control", f"Immediate, refresh every {p.REFRESH_MS} ms"),
+        ("Release / cancel", f"STOP immediately and {p.STOP_MS} ms later"),
+        ("Save memory", f"Same memory frame held for {p.SAVE_MS} ms, then release"),
+        ("Reset memories", f"{p.RESET_COPIES} copies every {p.RESET_MS} ms; ends refresh without terminal STOP"),
+    ])
+    return _block(transport, controls, settings, modes, timing)
+
+
+BLOCKS.append((GUIDE, "meisemobell", render_meisemobell))

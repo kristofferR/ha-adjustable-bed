@@ -212,6 +212,7 @@ def runtime_variants(controllers: Iterable[BedController]) -> Iterator[BedContro
     """
     from custom_components.adjustable_bed.beds.baseremote.controller import BaseRemoteController
     from custom_components.adjustable_bed.beds.dorsal.controller import DorsalController
+    from custom_components.adjustable_bed.beds.dreamsense.awmotion import AwMotionController
     from custom_components.adjustable_bed.beds.dreamsense.controller import DreamSenseController
     from custom_components.adjustable_bed.beds.dreamsense.likimio import LikimioController
     from custom_components.adjustable_bed.beds.dreamsense.muuegm import MuuegmController
@@ -264,6 +265,7 @@ def runtime_variants(controllers: Iterable[BedController]) -> Iterator[BedContro
     from custom_components.adjustable_bed.const import DORSAL_ROOMI_S655_PLUS
     from custom_components.adjustable_bed.profiles import dorsal, likimio, relax_motion, truemotion
     from custom_components.adjustable_bed.profiles import vmatbasic as vmat_profiles
+    from custom_components.adjustable_bed.profiles.awmotion import PROFILES as AWMOTION_PROFILES
     from custom_components.adjustable_bed.profiles.dreamsense import PROFILES as DREAMSENSE_PROFILES
     from custom_components.adjustable_bed.profiles.enso import PROFILES as ENSO_PROFILES
     from custom_components.adjustable_bed.profiles.muuegm import PROFILES as MUUEGM_PROFILES
@@ -310,7 +312,10 @@ def runtime_variants(controllers: Iterable[BedController]) -> Iterator[BedContro
             for code, product in dorsal.products().items():
                 if product.controls or product.alarm_modes:
                     yield DorsalController(controller._coordinator, "restored", code)
-        if isinstance(controller, MuuegmController):
+        if isinstance(controller, AwMotionController):
+            for profile in AWMOTION_PROFILES.values():
+                yield variant(controller, profile=profile, _known={"clock", "light"})
+        elif isinstance(controller, MuuegmController):
             for profile in MUUEGM_PROFILES.values():
                 yield variant(controller, profile=profile, _known={"clock", "light"})
         elif isinstance(controller, LikimioController):

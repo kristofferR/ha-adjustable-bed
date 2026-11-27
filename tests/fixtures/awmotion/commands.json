@@ -1,0 +1,490 @@
+[
+  {
+    "id": "9369e1",
+    "detail_id": "91d481",
+    "action": "HeadUp",
+    "opcode": 36,
+    "program_opcode": null,
+    "products": [
+      "HC800",
+      "SN500",
+      "SN300"
+    ],
+    "sections": [
+      "motor"
+    ],
+    "evidence": [
+      "work/blutter/objs.txt:56465 (DeviceFunctionItemType@9369e1)",
+      "work/blutter/objs.txt:686 (RMDeviceFunctionItemDetialsType@91d481)"
+    ]
+  },
+  {
+    "id": "9369c1",
+    "detail_id": "91d401",
+    "action": "HeadDown",
+    "opcode": 37,
+    "program_opcode": null,
+    "products": [
+      "HC800",
+      "SN500",
+      "SN300"
+    ],
+    "sections": [
+      "motor"
+    ],
+    "evidence": [
+      "work/blutter/objs.txt:56457 (DeviceFunctionItemType@9369c1)",
+      "work/blutter/objs.txt:649 (RMDeviceFunctionItemDetialsType@91d401)"
+    ]
+  },
+  {
+    "id": "9369a1",
+    "detail_id": "91d381",
+    "action": "FootUp",
+    "opcode": 38,
+    "program_opcode": null,
+    "products": [
+      "HC800",
+      "SN500",
+      "SN300"
+    ],
+    "sections": [
+      "motor"
+    ],
+    "evidence": [
+      "work/blutter/objs.txt:56449 (DeviceFunctionItemType@9369a1)",
+      "work/blutter/objs.txt:612 (RMDeviceFunctionItemDetialsType@91d381)"
+    ]
+  },
+  {
+    "id": "936981",
+    "detail_id": "91d301",
+    "action": "FootDown",
+    "opcode": 39,
+    "program_opcode": null,
+    "products": [
+      "HC800",
+      "SN500",
+      "SN300"
+    ],
+    "sections": [
+      "motor"
+    ],
+    "evidence": [
+      "work/blutter/objs.txt:56441 (DeviceFunctionItemType@936981)",
+      "work/blutter/objs.txt:575 (RMDeviceFunctionItemDetialsType@91d301)"
+    ]
+  },
+  {
+    "id": "936961",
+    "detail_id": "91d281",
+    "action": "LumberUp",
+    "opcode": 63,
+    "program_opcode": null,
+    "products": [
+      "HC800",
+      "SN500"
+    ],
+    "sections": [
+      "motor"
+    ],
+    "evidence": [
+      "work/blutter/objs.txt:56433 (DeviceFunctionItemType@936961)",
+      "work/blutter/objs.txt:538 (RMDeviceFunctionItemDetialsType@91d281)"
+    ]
+  },
+  {
+    "id": "936941",
+    "detail_id": "91d201",
+    "action": "LumberDown",
+    "opcode": 64,
+    "program_opcode": null,
+    "products": [
+      "HC800",
+      "SN500"
+    ],
+    "sections": [
+      "motor"
+    ],
+    "evidence": [
+      "work/blutter/objs.txt:56425 (DeviceFunctionItemType@936941)",
+      "work/blutter/objs.txt:501 (RMDeviceFunctionItemDetialsType@91d201)"
+    ]
+  },
+  {
+    "id": "936921",
+    "detail_id": "91d181",
+    "action": "LightBoard",
+    "opcode": 80,
+    "program_opcode": null,
+    "products": [
+      "HC800",
+      "SN500",
+      "SN300"
+    ],
+    "sections": [
+      "motor"
+    ],
+    "evidence": [
+      "work/blutter/objs.txt:56417 (DeviceFunctionItemType@936921)",
+      "work/blutter/objs.txt:464 (RMDeviceFunctionItemDetialsType@91d181)"
+    ]
+  },
+  {
+    "id": "936901",
+    "detail_id": "91d101",
+    "action": "BedLight",
+    "opcode": 60,
+    "program_opcode": null,
+    "products": [
+      "HC800",
+      "SN500",
+      "SN300"
+    ],
+    "sections": [
+      "motor"
+    ],
+    "evidence": [
+      "work/blutter/objs.txt:56409 (DeviceFunctionItemType@936901)",
+      "work/blutter/objs.txt:427 (RMDeviceFunctionItemDetialsType@91d101)"
+    ]
+  },
+  {
+    "id": "9368e1",
+    "detail_id": "91d081",
+    "action": "MotorReset",
+    "opcode": 49,
+    "program_opcode": null,
+    "products": [
+      "HC800",
+      "SN500",
+      "SN300"
+    ],
+    "sections": [
+      "motor"
+    ],
+    "evidence": [
+      "work/blutter/objs.txt:56401 (DeviceFunctionItemType@9368e1)",
+      "work/blutter/objs.txt:390 (RMDeviceFunctionItemDetialsType@91d081)"
+    ],
+    "timing": "Once on down through100ms queue ticks for currentSN300/SN500/HC800; no sustain refresh.",
+    "repeat_count": "1 on down for each current product",
+    "release_behavior": "Up/cancel queues generic Stop (6e raw or common frame opcode6e); no sustain timer is installed."
+  },
+  {
+    "id": "9368c1",
+    "detail_id": "91d001",
+    "action": "MassageHeadInstensityStrengthen",
+    "opcode": 76,
+    "program_opcode": null,
+    "products": [
+      "HC800",
+      "SN500",
+      "SN300"
+    ],
+    "sections": [
+      "massage"
+    ],
+    "evidence": [
+      "work/blutter/objs.txt:56393 (DeviceFunctionItemType@9368c1)",
+      "work/blutter/objs.txt:353 (RMDeviceFunctionItemDetialsType@91d001)"
+    ]
+  },
+  {
+    "id": "9368a1",
+    "detail_id": "91cf81",
+    "action": "MassageFootInstensityStrengthen",
+    "opcode": 78,
+    "program_opcode": null,
+    "products": [
+      "HC800",
+      "SN500",
+      "SN300"
+    ],
+    "sections": [
+      "massage"
+    ],
+    "evidence": [
+      "work/blutter/objs.txt:56385 (DeviceFunctionItemType@9368a1)",
+      "work/blutter/objs.txt:316 (RMDeviceFunctionItemDetialsType@91cf81)"
+    ]
+  },
+  {
+    "id": "936881",
+    "detail_id": "91cf01",
+    "action": "MassageModeChange",
+    "opcode": 72,
+    "program_opcode": null,
+    "products": [
+      "HC800",
+      "SN500",
+      "SN300"
+    ],
+    "sections": [
+      "massage"
+    ],
+    "evidence": [
+      "work/blutter/objs.txt:56377 (DeviceFunctionItemType@936881)",
+      "work/blutter/objs.txt:279 (RMDeviceFunctionItemDetialsType@91cf01)"
+    ]
+  },
+  {
+    "id": "936861",
+    "detail_id": "91ce81",
+    "action": "MassageModeAllOff",
+    "opcode": 94,
+    "program_opcode": null,
+    "products": [
+      "HC800",
+      "SN500",
+      "SN300"
+    ],
+    "sections": [
+      "massage"
+    ],
+    "evidence": [
+      "work/blutter/objs.txt:56369 (DeviceFunctionItemType@936861)",
+      "work/blutter/objs.txt:242 (RMDeviceFunctionItemDetialsType@91ce81)"
+    ]
+  },
+  {
+    "id": "936841",
+    "detail_id": "91ce01",
+    "action": "Massage10MinuteTimer",
+    "opcode": 95,
+    "program_opcode": null,
+    "products": [
+      "HC800",
+      "SN500",
+      "SN300"
+    ],
+    "sections": [
+      "massage"
+    ],
+    "evidence": [
+      "work/blutter/objs.txt:56361 (DeviceFunctionItemType@936841)",
+      "work/blutter/objs.txt:205 (RMDeviceFunctionItemDetialsType@91ce01)"
+    ]
+  },
+  {
+    "id": "936821",
+    "detail_id": "91cd81",
+    "action": "Massage20MinuteTimer",
+    "opcode": 99,
+    "program_opcode": null,
+    "products": [
+      "HC800",
+      "SN500",
+      "SN300"
+    ],
+    "sections": [
+      "massage"
+    ],
+    "evidence": [
+      "work/blutter/objs.txt:56353 (DeviceFunctionItemType@936821)",
+      "work/blutter/objs.txt:168 (RMDeviceFunctionItemDetialsType@91cd81)"
+    ]
+  },
+  {
+    "id": "936801",
+    "detail_id": "91cd01",
+    "action": "Massage30MinuteTimer",
+    "opcode": 97,
+    "program_opcode": null,
+    "products": [
+      "HC800",
+      "SN500",
+      "SN300"
+    ],
+    "sections": [
+      "massage"
+    ],
+    "evidence": [
+      "work/blutter/objs.txt:56345 (DeviceFunctionItemType@936801)",
+      "work/blutter/objs.txt:131 (RMDeviceFunctionItemDetialsType@91cd01)"
+    ]
+  },
+  {
+    "id": "9367e1",
+    "detail_id": "91cc81",
+    "action": "AntiSnoring",
+    "opcode": 70,
+    "program_opcode": 105,
+    "products": [
+      "HC800",
+      "SN500",
+      "SN300"
+    ],
+    "sections": [
+      "presets",
+      "alarm_modes"
+    ],
+    "evidence": [
+      "work/blutter/objs.txt:56336 (DeviceFunctionItemType@9367e1)",
+      "work/blutter/objs.txt:93 (RMDeviceFunctionItemDetialsType@91cc81)"
+    ]
+  },
+  {
+    "id": "9367c1",
+    "detail_id": "91cc01",
+    "action": "ZeroGravity",
+    "opcode": 69,
+    "program_opcode": 102,
+    "products": [
+      "HC800",
+      "SN500",
+      "SN300"
+    ],
+    "sections": [
+      "presets",
+      "alarm_modes"
+    ],
+    "evidence": [
+      "work/blutter/objs.txt:56327 (DeviceFunctionItemType@9367c1)",
+      "work/blutter/objs.txt:55 (RMDeviceFunctionItemDetialsType@91cc01)"
+    ]
+  },
+  {
+    "id": "9367a1",
+    "detail_id": "91cb81",
+    "action": "MemoryPosition1",
+    "opcode": 46,
+    "program_opcode": 43,
+    "products": [
+      "HC800",
+      "SN300"
+    ],
+    "sections": [
+      "presets",
+      "alarm_modes"
+    ],
+    "evidence": [
+      "work/blutter/objs.txt:56318 (DeviceFunctionItemType@9367a1)",
+      "work/blutter/objs.txt:17 (RMDeviceFunctionItemDetialsType@91cb81)"
+    ]
+  },
+  {
+    "id": "936a21",
+    "detail_id": "91d581",
+    "action": "PillowUp",
+    "opcode": 65,
+    "program_opcode": null,
+    "products": [
+      "SN500"
+    ],
+    "sections": [
+      "motor"
+    ],
+    "evidence": [
+      "work/blutter/objs.txt:56481 (DeviceFunctionItemType@936a21)",
+      "work/blutter/objs.txt:760 (RMDeviceFunctionItemDetialsType@91d581)"
+    ]
+  },
+  {
+    "id": "936a01",
+    "detail_id": "91d501",
+    "action": "PillowDown",
+    "opcode": 66,
+    "program_opcode": null,
+    "products": [
+      "SN500"
+    ],
+    "sections": [
+      "motor"
+    ],
+    "evidence": [
+      "work/blutter/objs.txt:56473 (DeviceFunctionItemType@936a01)",
+      "work/blutter/objs.txt:723 (RMDeviceFunctionItemDetialsType@91d501)"
+    ]
+  },
+  {
+    "id": "936a81",
+    "detail_id": "91d701",
+    "action": "HeadAndFootUp",
+    "opcode": 41,
+    "program_opcode": null,
+    "products": [
+      "SN300"
+    ],
+    "sections": [
+      "motor"
+    ],
+    "evidence": [
+      "work/blutter/objs.txt:56506 (DeviceFunctionItemType@936a81)",
+      "work/blutter/objs.txt:872 (RMDeviceFunctionItemDetialsType@91d701)"
+    ]
+  },
+  {
+    "id": "936a61",
+    "detail_id": "91d681",
+    "action": "HeadAndFootDown",
+    "opcode": 42,
+    "program_opcode": null,
+    "products": [
+      "SN300"
+    ],
+    "sections": [
+      "motor"
+    ],
+    "evidence": [
+      "work/blutter/objs.txt:56498 (DeviceFunctionItemType@936a61)",
+      "work/blutter/objs.txt:835 (RMDeviceFunctionItemDetialsType@91d681)"
+    ]
+  },
+  {
+    "id": "936a41",
+    "detail_id": "91d601",
+    "action": "TVPosition",
+    "opcode": 88,
+    "program_opcode": 100,
+    "products": [
+      "SN300"
+    ],
+    "sections": [
+      "presets",
+      "alarm_modes"
+    ],
+    "evidence": [
+      "work/blutter/objs.txt:56489 (DeviceFunctionItemType@936a41)",
+      "work/blutter/objs.txt:797 (RMDeviceFunctionItemDetialsType@91d601)"
+    ]
+  },
+  {
+    "id": "936ce1-stop",
+    "detail_id": "91e681",
+    "action": "Stop",
+    "opcode": 110,
+    "program_opcode": null,
+    "products": [
+      "SN300",
+      "SN500",
+      "HC800"
+    ],
+    "sections": [
+      "release"
+    ],
+    "evidence": [
+      "work/blutter/objs.txt:2031",
+      "work/blutter/asm/dreamsense/pages/motor_page.dart:969 (0x67f878)"
+    ]
+  },
+  {
+    "id": "936f21",
+    "detail_id": "91e601",
+    "action": "BedLightClose",
+    "opcode": 117,
+    "program_opcode": null,
+    "products": [
+      "HC800",
+      "SN500",
+      "SN300"
+    ],
+    "sections": [
+      "lighting page"
+    ],
+    "evidence": [
+      "work/blutter/objs.txt:1994 (RMDeviceFunctionItemDetialsType@91e601)",
+      "work/blutter/asm/dreamsense/pages/light_page.dart:498,2521 (build0x67a31c -> closure0x67c350)"
+    ]
+  }
+]
