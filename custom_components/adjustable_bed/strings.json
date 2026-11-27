@@ -190,6 +190,7 @@
           "check_connected": "Check: connected",
           "check_connected_via": "Check: connected through",
           "check_no_commands": "Check: no commands",
+          "check_topcare_transport_missing": "❌ TOP CARE needs exactly one supported Bluetooth service with its writable command characteristic.",
           "check_atlas_lift_transport_missing": "❌ Atlas Lift needs exactly one supported Bluetooth service with its writable command characteristic.",
           "check_sleeptime_uart_missing": "❌ The Bluetooth device lacks the write and status channels Sleeptime needs.",
           "check_truemotion_transport_missing": "⚠️ The receiver does not expose the trueMotion write and notification channels.",
@@ -4268,6 +4269,9 @@
       }
     },
     "cover": {
+      "head_feet": {"name": "Head and foot"},
+      "lumbar_pillow": {"name": "Lumbar and pillow"},
+      "tilt": {"name": "Tilt"},
       "sleep_assist_pro_side_b": {
         "name": "Side B head"
       },
@@ -13137,6 +13141,12 @@
     "super_colchones_session": {
       "message": "The Super Colchones connection or product changed. Reconnect and try again."
     },
+    "topcare_gatt": {
+      "message": "TOP CARE needs exactly one supported Bluetooth service with its writable command characteristic."
+    },
+    "topcare_control": {
+      "message": "Choose a TOP CARE motor control and a hold duration from 1 to 60000 milliseconds."
+    },
     "atlas_lift_gatt": {
       "message": "Atlas Lift needs exactly one supported Bluetooth service with its writable command characteristic."
     },
@@ -13934,6 +13944,7 @@
     },
     "richmat_family_choice": {
       "options": {
+        "topcare": "TOP CARE",
         "atlas_lift": "Atlas Lift (Cama Lift)",
         "enso2": "ENSO Sleep Control (Enso 2)",
         "rmcontrol": "RMControl app",

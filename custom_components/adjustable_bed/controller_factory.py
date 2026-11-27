@@ -165,6 +165,7 @@ from .const import (
     BED_TYPE_SYMPHONY,
     BED_TYPE_SYMPHONY_SLEEP,
     BED_TYPE_TIMOTION_AHF,
+    BED_TYPE_TOPCARE,
     BED_TYPE_TRANQUIL,
     BED_TYPE_TRUEMOTION,
     BED_TYPE_ULTRAMATIC_SMART_BED,
@@ -290,6 +291,7 @@ class _BuilderSpec:
 # Bed types whose construction is "import this class and pass the coordinator
 # plus fixed kwargs".
 _SIMPLE_CONTROLLERS: Final[dict[str, _ControllerSpec]] = {
+    BED_TYPE_TOPCARE: _ControllerSpec("richmat.topcare", "TopcareController"),
     BED_TYPE_ATLAS_LIFT: _ControllerSpec("richmat.atlas_lift", "AtlasLiftController"),
     BED_TYPE_VINDO: _ControllerSpec("vindo", "VindoController"),
     BED_TYPE_OKIN_MOTIONBED: _ControllerSpec("okin_motionbed", "OkinMotionBedController"),

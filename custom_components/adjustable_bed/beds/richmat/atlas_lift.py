@@ -2,293 +2,32 @@
 
 from __future__ import annotations
 
-import asyncio
-from collections.abc import Callable
-from dataclasses import dataclass, replace
+from dataclasses import replace
 from typing import TYPE_CHECKING
 
 from ...card import CARD_MASSAGE, CARD_PRESET_SAVE
-from ...codec import richmat as codec
-from ...command_scheduler import CommandContext, current_command_context, note_frame_skipped
-from ...errors import BedNotConnectedError, failed
 from ...profiles.richmat import ATLAS_LIFT, ATLAS_LIFT_INITIALIZATION, Button
 from ..base import BedController
-from ..cancellation import cancellable, settled
 from ..entity_specs import ControllerButtonSpec, MotorControlSpec
-from .controller import RichmatProfileController
+from .fixed import FixedRichmatAppController, select_fixed_link
 
 if TYPE_CHECKING:
     from bleak import BleakClient
-    from bleak.backends.characteristic import BleakGATTCharacteristic
 
     from ...coordinator import AdjustableBedCoordinator
-    from ..lifecycle import ControllerSession
 
 
-@dataclass(frozen=True, slots=True)
-class _Link:
-    client: BleakClient
-    tx: BleakGATTCharacteristic
-    notify: BleakGATTCharacteristic | None
-    single: bool
+def select_link(client: BleakClient):
+    return select_fixed_link(client, ATLAS_LIFT, error_key="atlas_lift_gatt")
 
 
-class _MotionWindowEnded(Exception):
-    """The scheduled motion window ended before this frame could dispatch."""
-
-
-def select_link(client: BleakClient) -> _Link:
-    """Identify the same supported service and TX in setup and at runtime."""
-    routes = {
-        transport.service_uuid: transport
-        for transport in (codec.TRANSPORTS[key] for key in ATLAS_LIFT.transports)
-    }
-    matches = [
-        (service, routes[uuid])
-        for service in client.services
-        if (uuid := service.uuid.lower()) in routes
-    ]
-    # The app can select framing from a different service than its TX.
-    # Require one supported service so the encoder always belongs to its TX.
-    if len(matches) != 1:
-        raise failed("atlas_lift_gatt")
-    service, route = matches[0]
-    writes = [
-        char
-        for char in service.characteristics
-        if char.uuid.lower() == route.write_uuid and "write" in char.properties
-    ]
-    if len(writes) != 1:
-        raise failed("atlas_lift_gatt")
-    notify = next((char for char in service.characteristics if "notify" in char.properties), None)
-    return _Link(client, writes[0], notify, route.single)
-
-
-class AtlasLiftController(RichmatProfileController):
-    """Fixed product controls with an encoder and characteristic tied to the connection."""
+class AtlasLiftController(FixedRichmatAppController):
+    """Cama Lift's fixed controls over the shared held app session."""
 
     def __init__(self, coordinator: AdjustableBedCoordinator) -> None:
-        super().__init__(coordinator, ATLAS_LIFT, char_uuid="")
-        self._link: _Link | None = None
-        self._notifying = False
-        self._cleanup_context: CommandContext | None = None
-
-    @property
-    def control_characteristic_uuid(self) -> str:
-        return self._link.tx.uuid if self._link is not None else ""
-
-    @property
-    def supports_single_address_pairing(self) -> bool:
-        return False
-
-    @property
-    def reconnect_for_explicit_stop(self) -> bool:
-        # A one-shot preset has no release frame when the pair drops its link.
-        return True
-
-    @property
-    def requires_notification_channel(self) -> bool:
-        return self._link is not None and self._link.notify is not None
-
-    def _current_link(self, expected: _Link | None = None) -> _Link:
-        link = self._link
-        if (
-            link is None
-            or expected is not None
-            and link is not expected
-            or self.client is not link.client
-            or not link.client.is_connected
-        ):
-            raise BedNotConnectedError
-        return link
-
-    async def async_on_connect(self, session: ControllerSession) -> None:
-        client = session.client
-        if client is None or not session.is_current():
-            raise BedNotConnectedError
-        self._link = link = select_link(client)
-        await session.async_start_notify()
-        cancel = asyncio.Event()
-        for action, code in ATLAS_LIFT_INITIALIZATION:
-            await self._write_on(
-                link,
-                codec.function(code, action=action, single=link.single),
-                cancel,
-                track_command_write=False,
-            )
-
-    async def start_notify(self, callback: Callable[[str, float], None] | None = None) -> None:
-        link = self._current_link()
-        if link.notify is None:
-            return
-
-        def receive(sender: BleakGATTCharacteristic, data: bytearray) -> None:
-            if self._link is link and self.client is link.client and self._notifying:
-                self.forward_raw_notification(sender.uuid, bytes(data))
-
-        async with self.ble_lock:
-            self._current_link(link)
-            if not self._notifying:
-                await link.client.start_notify(link.notify, receive)
-                self._current_link(link)
-                self._notifying = True
-
-    async def stop_notify(self) -> None:
-        link = self._link
-        if link is None or link.notify is None:
-            return
-        async with self.ble_lock:
-            if self._link is link and self.client is link.client and self._notifying:
-                self._notifying = False
-                if link.client.is_connected:
-                    await link.client.stop_notify(link.notify)
-
-    def on_disconnect(self) -> None:
-        self._link = None
-        self._notifying = False
-        self._cleanup_context = None
-
-    def _build_command(self, command_byte: int) -> bytes:
-        return codec.function(command_byte, single=self._current_link().single)
-
-    async def _write_on(
-        self,
-        link: _Link,
-        command: bytes,
-        cancel: asyncio.Event,
-        *,
-        before_write: Callable[[], None] | None = None,
-        track_command_write: bool = True,
-    ) -> None:
-        caller = asyncio.current_task()
-
-        def verify() -> None:
-            self._current_link(link)
-            if caller is not None and caller.cancelling():
-                note_frame_skipped()
-                raise asyncio.CancelledError
-            if before_write is not None:
-                before_write()
-
-        # Let an in-flight GATT write settle before the caller sends STOP.
-        await settled(
-            self._write_gatt_with_retry(
-                link.tx.uuid,
-                command,
-                cancel_event=cancel,
-                response="write-without-response" not in link.tx.properties,
-                characteristic=link.tx,
-                expected_client=link.client,
-                before_write=verify,
-                track_command_write=track_command_write,
-            ),
-            eager_start=True,
+        super().__init__(
+            coordinator, ATLAS_LIFT, ATLAS_LIFT_INITIALIZATION, gatt_error_key="atlas_lift_gatt"
         )
-
-    async def write_command(
-        self,
-        command: bytes,
-        repeat_count: int = 1,
-        repeat_delay_ms: int = 100,
-        cancel_event: asyncio.Event | None = None,
-    ) -> None:
-        link = self._current_link()
-        cancel = cancel_event or self._coordinator.cancel_command
-        for index in range(repeat_count):
-            if index:
-                await cancellable(asyncio.sleep(repeat_delay_ms / 1000), cancel)
-            await self._write_on(link, command, cancel)
-
-    def motor_pulse_settings(self) -> tuple[int, int]:
-        repeat_ms = self.profile.motor_repeat_ms
-        assert repeat_ms is not None
-        return self._coordinator.motor_pulse_count, repeat_ms
-
-    async def _move_with_stop(self, command_byte: int, *, duration_ms: int | None = None) -> None:
-        link = self._current_link()
-        cancel = self._coordinator.cancel_command
-        count, repeat_ms = self.motor_pulse_settings()
-        command = codec.function(command_byte, single=link.single)
-        attempted = False
-        loop = asyncio.get_running_loop()
-        repeat_s = repeat_ms / 1000
-        started = loop.time()
-        leased_count = self.leased_hold_refreshes(repeat_ms)
-        if leased_count is not None:
-            duration_ms = None  # The scheduler owns the renewable hold deadline.
-        deadline = started + duration_ms / 1000 if duration_ms is not None else None
-        # A finite timed move starts with an immediate pulse. Ordinary cover
-        # presses and renewable holds keep the app's first timer tick.
-        next_pulse = started if deadline is not None else started + repeat_s
-        context = current_command_context()
-        if duration_ms is not None:
-            count = (duration_ms + repeat_ms - 1) // repeat_ms
-
-        def mark_attempt() -> None:
-            nonlocal attempted, next_pulse
-            expires = context.hold_deadline if leased_count is not None and context else deadline
-            if expires is not None and loop.time() >= expires:
-                note_frame_skipped()
-                raise _MotionWindowEnded
-            attempted = True
-            next_pulse = loop.time() + repeat_s
-
-        async def release() -> None:
-            if attempted:
-                await self._release_on(link)
-                if context is not None:
-                    context.cleanup_stop_sent = True
-                    self._cleanup_context = context
-
-        budget = asyncio.timeout_at(deadline)
-        write_timed_out = False
-        async with self.releasing(release):
-            try:
-                async with budget:
-                    for _ in range(leased_count or count):
-                        if deadline is not None and next_pulse >= deadline:
-                            break
-                        delay = next_pulse - loop.time()
-                        if delay > 0:
-                            await cancellable(asyncio.sleep(delay), cancel)
-                        try:
-                            await self._write_on(link, command, cancel, before_write=mark_attempt)
-                        except TimeoutError:
-                            write_timed_out = True
-                            raise
-                    if deadline is not None:
-                        await cancellable(asyncio.sleep(max(0, deadline - loop.time())), cancel)
-            except _MotionWindowEnded:
-                return
-            except TimeoutError:
-                if write_timed_out or not budget.expired():
-                    raise
-                if not attempted:
-                    note_frame_skipped()
-
-    async def _release_on(self, link: _Link) -> None:
-        assert self.profile.stop is not None
-        await self._write_on(
-            link,
-            codec.function(self.profile.stop, single=link.single),
-            asyncio.Event(),
-            track_command_write=False,
-        )
-
-    async def _send_stop(self) -> None:
-        link = self._current_link()
-        context = current_command_context()
-        released = self._cleanup_context
-        if (
-            context is not None
-            and released is not None
-            and released.cleanup_stop_sent
-            and any(owner is released for owner in context.preempted_contexts)
-        ):
-            released.cleanup_stop_sent = False
-            self._cleanup_context = None
-            return
-        await self._release_on(link)
 
     @property
     def motor_control_specs(self) -> tuple[MotorControlSpec, ...]:

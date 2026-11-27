@@ -23,6 +23,7 @@ ATLAS_LIFT_NAME_HINT = names(
 
 HINTS: tuple[Hint, ...] = (
     ATLAS_LIFT_NAME_HINT,
+    names("RMTC", bed_types={"topcare"}, anywhere=True),
     # Luuna's case-sensitive contains filters. HA can gate their prefix subset;
     # common services cover interior matches. They never select its product.
     names(*SCAN_TERMS, bed_types={BED_TYPE_RICHMAT, BED_TYPE_JEROME_ADJUSTABLE_BASE}, anywhere=True),
