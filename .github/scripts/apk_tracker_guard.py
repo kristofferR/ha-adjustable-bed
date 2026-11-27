@@ -23,9 +23,9 @@ from dataclasses import dataclass
 
 @dataclass(frozen=True)
 class Tracker:
-    # Exact ordered "## " sections, each with its byte budget.
-    sections: tuple[tuple[str, int], ...]
-    max_bytes: int
+    # Exact ordered "## " sections, with optional byte budgets.
+    sections: tuple[tuple[str, int | None], ...]
+    max_bytes: int | None
     intro_max_bytes: int = 1200
     has_queue: bool = False
     allow_hashes: bool = True
@@ -37,11 +37,11 @@ TRACKERS: dict[int, Tracker] = {
             ("Status", 2500),
             ("Goal", 2000),
             ("Hardware validation policy", 3000),
-            ("Canonical ordered phase 4 queue", 40000),
+            ("Canonical ordered phase 4 queue", None),
             ("Definition of done", 1500),
             ("History", 800),
         ),
-        max_bytes=49000,
+        max_bytes=None,
         has_queue=True,
         allow_hashes=False,
     ),
@@ -187,7 +187,7 @@ def lint(number: int, body: str) -> list[str]:
 
     if lines[0].strip() != marker(number):
         problems.append(f"the first line must be {marker(number)}; nothing goes above it")
-    if len(body.encode()) > tracker.max_bytes:
+    if tracker.max_bytes is not None and len(body.encode()) > tracker.max_bytes:
         problems.append(f"body is {len(body.encode())} bytes, over its {tracker.max_bytes} budget")
     if "<!-- run-" in body:
         problems.append("run journal blocks (<!-- run-...) do not belong in tracker bodies")
@@ -203,8 +203,9 @@ def lint(number: int, body: str) -> list[str]:
         problems.append(f"sections must be exactly {expected}, found {titles}")
     budgets = dict(tracker.sections)
     for title, section in sections:
-        if title in budgets and _size(section) > budgets[title]:
-            problems.append(f"section {title!r} is over its {budgets[title]} byte budget")
+        budget = budgets.get(title)
+        if budget is not None and _size(section) > budget:
+            problems.append(f"section {title!r} is over its {budget} byte budget")
         if tracker.has_queue and title == "Canonical ordered phase 4 queue":
             problems.extend(_lint_queue(section))
 

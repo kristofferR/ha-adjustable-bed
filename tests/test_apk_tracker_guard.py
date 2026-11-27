@@ -38,6 +38,15 @@ def test_clean_body_passes(number: int) -> None:
     assert guard.lint(number, clean_body(number)) == []
 
 
+def test_queue_can_grow_beyond_its_old_size_limits() -> None:
+    rows = "\n".join(
+        f"| A{index} | QUEUED | `com.example.bed{index}` | Post-cutoff standalone FULL "
+        "| NOT STARTED |"
+        for index in range(650)
+    )
+    assert guard.lint(436, clean_body(436, rows)) == []
+
+
 COMPACTED = "Reverie041 PR720 MERGED00:26:37Z;041+1completion.UserPR720-only closure:39bdnormal squash;R15Sol1APPROVE10cases"
 
 
