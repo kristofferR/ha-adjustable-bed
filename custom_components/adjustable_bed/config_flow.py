@@ -1414,6 +1414,7 @@ _DECLARED_QUESTION_ROUTES: Final = frozenset(
         "dorsal",
         "mline",
         "sinca_comfort",
+        "berun",
         "nerum",
         "cheerssleep",
         BED_TYPE_LEGGETT_LP_LEGACY,

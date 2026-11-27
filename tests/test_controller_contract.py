@@ -255,6 +255,9 @@ async def _create_controller_for_bed_type(
 
     if bed_type == "mline":
         coordinator.entry.data[const.CONF_PRODUCT_TYPE] = "two"
+    if bed_type == "berun":
+        variant = "v6"
+        coordinator.entry.data[const.CONF_PROTOCOL_VARIANT] = variant
     if bed_type == "nerum":
         coordinator.entry.data[const.CONF_PRODUCT_TYPE] = "nerum"
 

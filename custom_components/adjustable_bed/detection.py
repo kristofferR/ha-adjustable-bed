@@ -618,6 +618,7 @@ def _rests_on_shared_service(
 # Leggett & Platt setup is not offered to a new bed, so it is not listed here.
 BED_TYPE_DISPLAY_NAMES: dict[str, str] = {
     "dorsal": "Dorsal app / Roomi",
+    "berun": "BERUN app",
     "nerum": "Nerum app",
     "relax_motion": "Relax Motion app",
     "cheerssleep": "CheersSleep app",
@@ -1800,6 +1801,12 @@ def _detect_with_first_pass(
         and not any(signal.startswith("excluded:") for signal in result.signals)):
         result.ambiguous_types = list(dict.fromkeys([*(result.ambiguous_types or ()), BED_TYPE_BETTERLIVING2]))
         result.signals.append("name:betterliving2_app_candidate")
+    # BERUN shares receiver names with other apps, so offer an app candidate.
+    if (isinstance(platform_name, str) and platform_name.lower().startswith(("okin", "smartbed"))
+        and not any(signal.startswith("excluded:") for signal in result.signals)
+        and result.bed_type != "berun"):
+        result.ambiguous_types = list(dict.fromkeys([*(result.ambiguous_types or ()), "berun"]))
+        result.signals.append("name:berun_app_candidate")
     # Nerum's names overlap existing receivers. Offer explicit app selection.
     if (result.confidence < 0.85 and isinstance(platform_name, str)
         and platform_name.lower().startswith(("okin", "smartbed"))

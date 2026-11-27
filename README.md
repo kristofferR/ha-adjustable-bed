@@ -144,6 +144,7 @@ bed has been tested on real hardware.
 | [MotoMotion](docs/beds/motomotion.md) | [MotoMotion](docs/beds/motomotion.md) | MotoMotion |
 | [MoodBase](docs/beds/motomotion.md#moodbase) | [MoodBase](docs/beds/motomotion.md#moodbase) | Bob Mills Furniture (HHC receivers) |
 | [MotoSleep / Power Bob](docs/beds/motomotion.md#motosleep-and-power-bob-family) | [MotoSleep / Power Bob app, HHC models](docs/beds/motomotion.md#hhc-profiles-names-longer-than-14-characters), [Power Bob and binary MOTO models](docs/beds/motomotion.md#power-bob-profiles-14-character-names) | HHC, Power Bob |
+| [BERUN](docs/beds/berun.md) | BERUN (versions 6–9) | OKIN / Smartbed |
 | [Nerum](docs/beds/nerum.md) | Nerum | Nerum |
 | [Nisco](docs/beds/richmat.md#nisco) | Nisco app and its separate HJ_Bed sleep receiver | Nisco |
 | [OCTO Smart Control](docs/beds/octo.md) | [OCTO Smart Control receivers](docs/beds/octo.md#standard-variant-most-common), [RTV TV lift](docs/beds/octo.md#one-motor-tv-lift), [Octo Remote Star2](docs/beds/octo.md#star2-variant-octo-remote-star2) | OCTO |
