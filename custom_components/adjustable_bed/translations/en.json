@@ -398,6 +398,7 @@
           "sleep_assistant_controls": "Additional controls",
           "sleep_assistant_lighting": "Lighting model",
           "ergobq_serial": "ErgoBQ six-byte serial (hex, optional)",
+          "active_sleep_auth_id": "Existing Active Sleep authentication ID (optional)",
           "ergobq_stamp": "ErgoBQ channel stamp (leave blank if unused)"
         },
         "data_description": {
@@ -459,6 +460,7 @@
           "sleep_assistant_controls": "Select only the controls shown for this bed.",
           "sleep_assistant_lighting": "Choose the lighting model selected in Sleep Assist.",
           "ergobq_serial": "The first six bytes of manufacturer 0xFFFF data. Byte 4 selects the four-motor layout; blank uses the app’s two-motor default.",
+          "active_sleep_auth_id": "Use an existing 16-character ASCII authentication ID from your own registered Active Sleep setup. This integration cannot obtain an ID or register an account. Leave blank to configure it later.",
           "ergobq_stamp": "An existing channel authentication input. This integration does not retrieve account credentials."
         },
         "sections": {
@@ -948,6 +950,7 @@
         "description": "Adjust the settings for your adjustable bed. To change the bed type or app, open **Reconfigure** from this entry's three-dot menu.",
         "data": {
           "ergobq_serial": "ErgoBQ six-byte serial (hex, optional)",
+          "active_sleep_auth_id": "Existing Active Sleep authentication ID (optional)",
           "ergobq_stamp": "ErgoBQ channel stamp (leave blank if unused)",
           "motor_count": "Number of motors",
           "malouf_layout": "Malouf/Lucid motor layout",
@@ -1200,6 +1203,7 @@
         "description": "Change connection, movement and app settings for **{name}**. Only this side changes.",
         "data": {
           "ergobq_serial": "ErgoBQ six-byte serial (hex, optional)",
+          "active_sleep_auth_id": "Existing Active Sleep authentication ID (optional)",
           "ergobq_stamp": "ErgoBQ channel stamp (leave blank if unused)",
           "preferred_adapter": "Bluetooth adapter",
           "motor_pulse_count": "Movement per tap",
@@ -1387,6 +1391,7 @@
         "description": "Change connection, movement and app settings for **{name}**. Only this side changes.",
         "data": {
           "ergobq_serial": "ErgoBQ six-byte serial (hex, optional)",
+          "active_sleep_auth_id": "Existing Active Sleep authentication ID (optional)",
           "ergobq_stamp": "ErgoBQ channel stamp (leave blank if unused)",
           "preferred_adapter": "Bluetooth adapter",
           "motor_pulse_count": "Movement per tap",
@@ -4781,6 +4786,60 @@
       }
     },
     "sensor": {
+        "active_sleep_model": {
+          "name": "Bed model"
+        },
+        "active_sleep_serial": {
+          "name": "Bed serial"
+        },
+        "active_sleep_height": {
+          "name": "Bed height"
+        },
+        "active_sleep_tilt": {
+          "name": "Bed tilt"
+        },
+        "active_sleep_heart": {
+          "name": "Heart rate"
+        },
+        "active_sleep_respiration": {
+          "name": "Respiration rate"
+        },
+        "active_sleep_respiration_raw_feed": {
+          "name": "Raw realtime feed"
+        },
+        "active_sleep_failure": {
+          "name": "Bed failure code"
+        },
+        "active_sleep_height_warning": {
+          "name": "Bed height warning"
+        },
+        "active_sleep_ventilation_remaining": {
+          "name": "Ventilation remaining"
+        },
+        "active_sleep_mattress_busy": {
+          "name": "Mattress busy flags"
+        },
+        "active_sleep_mattress_mode": {
+          "name": "Mattress mode code"
+        },
+        "active_sleep_pressure_head": {
+          "name": "Head pressure code"
+        },
+        "active_sleep_pressure_shoulder": {
+          "name": "Shoulder pressure code"
+        },
+        "active_sleep_pressure_hip": {
+          "name": "Hip pressure code"
+        },
+        "active_sleep_pressure_thigh": {
+          "name": "Thigh pressure code"
+        },
+        "active_sleep_pressure_calf": {
+          "name": "Calf pressure code"
+        },
+        "active_sleep_pressure_feet": {
+          "name": "Feet pressure code"
+        },
       "powersbedding_head_report": {"name": "Head massage level"},
       "powersbedding_foot_report": {"name": "Foot massage level"},
       "powersbedding_wave_report": {"name": "Massage wave"},
@@ -6181,6 +6240,16 @@
       }
     },
     "switch": {
+        "active_sleep_motor_lock": {
+          "name": "{motor} motor lock"
+        },
+        "active_sleep_monitor": {"name": "Realtime sensor monitor"},
+      "active_sleep_ventilation": {
+          "name": "Mattress ventilation"
+        },
+        "active_sleep_fukatto": {
+          "name": "Fukatto"
+        },
       "hestia_massage": {
         "name": "Massage"
       },
@@ -7302,6 +7371,13 @@
       }
     },
     "select": {
+        "active_sleep_speed": {
+          "name": "Movement speed",
+          "state": {
+            "normal": "Normal",
+            "fast": "Fast"
+          }
+        },
       "comfort_bed_side": {
         "name": "Control side",
         "state": {

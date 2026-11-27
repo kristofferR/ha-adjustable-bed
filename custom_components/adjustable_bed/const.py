@@ -782,6 +782,7 @@ BED_TYPE_SCOTT_LIVING: Final = "scott_living"  # Scott Living 9-byte protocol
 BED_TYPE_SUTA_KING_KOIL: Final = "suta_king_koil"
 BED_TYPE_TRUEMOTION: Final = "truemotion"
 BED_TYPE_SUTA: Final = "suta"  # SUTA Smart Home AT protocol (ASCII + CRLF)
+BED_TYPE_ACTIVE_SLEEP: Final = "active_sleep"
 BED_TYPE_PARAMOUNT: Final = "paramount"
 BED_TYPE_TIMOTION_AHF: Final = "timotion_ahf"  # TiMOTION AHF 11-byte bitmask protocol
 BED_TYPE_RIZE: Final = "rize"
@@ -862,6 +863,7 @@ SUPPORTED_BED_TYPES: Final = [
     BED_TYPE_L2MOTION,
     BED_TYPE_ERGOBED,
     BED_TYPE_MOODBASE,
+    BED_TYPE_ACTIVE_SLEEP,
     BED_TYPE_PARAMOUNT,
     BED_TYPE_RICHMAT_CLASSIC_APPS,
     BED_TYPE_ERGOMOTION_4,

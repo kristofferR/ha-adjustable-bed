@@ -864,6 +864,7 @@ BED_TYPE_DISPLAY_NAMES: dict[str, str] = {
     BED_TYPE_SUTA: "SUTA Smart Home app",
     BED_TYPE_TRUEMOTION: "trueMotion app",
     BED_TYPE_SUTA_KING_KOIL: "King Koil (SUTA) app",
+    "active_sleep": "Active Sleep (Paramount)",
     "paramount": "Paramount Bed Operation (ベッド操作)",
     BED_TYPE_BEDJET_POWERLAYER: "BedJet PowerLayer adjustable frame",
     BED_TYPE_SVANE: "Svane Remote app",
@@ -1497,7 +1498,7 @@ def detect_bed_type(service_info: BluetoothServiceInfoBleak) -> str | None:
         For detailed detection with confidence scores, use detect_new_bed().
     """
     result = detect_new_bed(service_info)
-    if result.bed_type in (BED_TYPE_RONCO_MOTION, BED_TYPE_AMBIENT, BED_TYPE_COMFORT_BED, BED_TYPE_ATLAS_LIFT, BED_TYPE_LIKIMIO, "dorsal", BED_TYPE_SIMMONS_BLUE, "sleep_assistant", BED_TYPE_SLEEP_ASSIST_PRO, "super_colchones", "bobpowerbase", BED_TYPE_GALAXY, BED_TYPE_GOODVIBE, BED_TYPE_MLILY, BED_TYPE_MLILY0, BED_TYPE_MLILY_REMOTE, BED_TYPE_MOTOMOTION, BED_TYPE_N32_MOTION_BED, BED_TYPE_SYMPHONY, BED_TYPE_MLINE, BED_TYPE_OKIMIKI) and result.confidence < 0.7:
+    if result.bed_type in ("active_sleep", BED_TYPE_RONCO_MOTION, BED_TYPE_AMBIENT, BED_TYPE_COMFORT_BED, BED_TYPE_ATLAS_LIFT, BED_TYPE_LIKIMIO, "dorsal", BED_TYPE_SIMMONS_BLUE, "sleep_assistant", BED_TYPE_SLEEP_ASSIST_PRO, "super_colchones", "bobpowerbase", BED_TYPE_GALAXY, BED_TYPE_GOODVIBE, BED_TYPE_MLILY, BED_TYPE_MLILY0, BED_TYPE_MLILY_REMOTE, BED_TYPE_MOTOMOTION, BED_TYPE_N32_MOTION_BED, BED_TYPE_SYMPHONY, BED_TYPE_MLINE, BED_TYPE_OKIMIKI) and result.confidence < 0.7:
         return None  # An app name hint requires an explicit product choice.
     return result.bed_type
 
@@ -2294,6 +2295,8 @@ def _detect_bed_type_detailed(
     service_uuids = [str(uuid).lower() for uuid in raw_uuids] if raw_uuids else []
     if first is None:
         first = first_pass(service_info)
+    if first.name("active_sleep"):
+        return DetectionResult("active_sleep", 0.3, ["app_hint:active_sleep"])
     if first.service("paramount"):
         return DetectionResult("paramount", 1.0, ["service:paramount_session"])
     device_name = (service_info.name or "").lower()

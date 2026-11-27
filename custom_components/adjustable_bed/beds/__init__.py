@@ -123,6 +123,7 @@ if TYPE_CHECKING:
     from .omazz_adjusto_iii import OmazzAdjustoIIIController as OmazzAdjustoIIIController
     from .onlysnore.controller import OnlySnoreController as OnlySnoreController
     from .ore_comfort_bed import OreComfortBedController as OreComfortBedController
+    from .active_sleep.controller import ActiveSleepController as ActiveSleepController
     from .paramount.controller import ParamountController as ParamountController
     from .personal_comfort.air import PersonalComfortAir as PersonalComfortAir
     from .personal_comfort.controller import PersonalComfortBase as PersonalComfortBase
@@ -275,6 +276,7 @@ _EXPORT_MODULES = {
     "AdjustableLumbarController": "adjustable_lumbar",
     "PersonalComfortBase": "personal_comfort.controller",
     "PersonalComfortAir": "personal_comfort.air",
+    "ActiveSleepController": "active_sleep.controller",
     "ParamountController": "paramount.controller",
     "AdjustableBedAppController": "adjustable_lumbar",
     "BedJetPowerLayerController": "bedjet_powerlayer",

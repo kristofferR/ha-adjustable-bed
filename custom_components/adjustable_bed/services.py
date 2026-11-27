@@ -983,6 +983,27 @@ async def _set_position_plan(
 ) -> dict[str, Any]:
     """Validate one physical side and return its seek configuration."""
     async with _side_validation(parent, coordinator, preflighted) as controller:
+        if controller.position_validation_requires_connection is True:
+            # Capability snapshots describe axes, but cannot validate live
+            # locks or clearance. A sequential pair owns one child link here.
+            plan: dict[str, Any] | None = None
+
+            async def check(live: BedController) -> None:
+                nonlocal plan
+                await live.async_validate_linked_readiness()
+                try:
+                    plan = _position_config(coordinator, live, motor, position)
+                except ValueError as error:
+                    raise _validation_error(error) from error
+
+            preflighted.append((parent, coordinator))
+            await _execute_sided(
+                parent, _child_side(parent, SIDE_BOTH, coordinator), check,
+                cancel_running=False, skip_disconnect=True, resource="configuration",
+            )
+            if plan is None:
+                raise _bed_changed()
+            return plan
         return _position_config(coordinator, controller, motor, position)
 
 
@@ -1032,7 +1053,7 @@ def _position_config(
         and all(spec.native_unit_of_measurement == POSITION_UNIT_PERCENT for spec in specs)
     )
     # Q-Plus reports back/legs only, within its pulse tables.
-    if bed_type in (BED_TYPE_SLEEP_NUMBER_MCR, BED_TYPE_SERTA_MP_REMOTE, BED_TYPE_QPLUS_APP) or (
+    if bed_type in (BED_TYPE_SLEEP_NUMBER_MCR, BED_TYPE_SERTA_MP_REMOTE, BED_TYPE_QPLUS_APP, "active_sleep") or (
         percentage_targets and (supports_direct_position_control or not specs)
     ):
         motor_configs = {
@@ -1128,6 +1149,7 @@ def _position_config(
         )
         raise invalid("invalid_position_range", position=str(position), motor=motor, max_value=str(max_value), unit=unit)
 
+    controller.validate_position_request(str(config["position_key"]), position)
     return config
 
 

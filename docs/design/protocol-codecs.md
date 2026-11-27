@@ -513,3 +513,11 @@ the existing family motion/session controller. Its ordinary RX dispatcher
 differs from Casper's complete-length receiver, so it has a scoped dispatcher
 with only its two verified announcements. See the
 [Comfort Bed section](../beds/richmat.md#comfort-bed) and `tests/test_comfort_bed.py`.
+
+### Active Sleep
+
+`codec/active_sleep.py` and its typed profile are separate from Bed Operation's
+`codec/paramount.py`: the latter adds a `40` header and uses different GATT
+UUIDs, so it does not reproduce the Active Sleep literals. All 32 frozen
+Active Sleep frames have an independent literal vector test, including excluded
+commands tested only through the codec, never exposed as runtime actions.

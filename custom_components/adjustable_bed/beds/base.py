@@ -793,6 +793,15 @@ class BedController(GattWriter):
         """
         return False
 
+    @property
+    def position_validation_requires_connection(self) -> bool:
+        """Whether service preflight needs live state rather than a capability snapshot."""
+        return False
+
+    def validate_position_request(self, motor: str, position: float) -> None:
+        """Reject live protocol constraints before any service target starts moving."""
+        return None
+
     def angle_to_native_position(self, motor: str, angle: float) -> int:
         """Convert an angle value to the bed's native position format.
 

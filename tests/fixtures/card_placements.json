@@ -4497,6 +4497,9 @@
   "card_section": "lighting",
   "card_role": "mood"
  },
+ "select:active_sleep_speed": {
+  "card_section": "utility"
+ },
  "select:adjustamattress_alarm_draft_type": {
   "card_section": "utility"
  },
@@ -4873,6 +4876,60 @@
  "select:vmatbasic_mood_palette": {
   "card_section": "lighting",
   "card_role": "mood"
+ },
+ "sensor:active_sleep_failure": {
+  "card_section": "hidden"
+ },
+ "sensor:active_sleep_heart": {
+  "card_section": "utility"
+ },
+ "sensor:active_sleep_height": {
+  "card_section": "utility"
+ },
+ "sensor:active_sleep_height_warning": {
+  "card_section": "utility"
+ },
+ "sensor:active_sleep_mattress_busy": {
+  "card_section": "hidden"
+ },
+ "sensor:active_sleep_mattress_mode": {
+  "card_section": "hidden"
+ },
+ "sensor:active_sleep_model": {
+  "card_section": "hidden"
+ },
+ "sensor:active_sleep_pressure_calf": {
+  "card_section": "hidden"
+ },
+ "sensor:active_sleep_pressure_feet": {
+  "card_section": "hidden"
+ },
+ "sensor:active_sleep_pressure_head": {
+  "card_section": "hidden"
+ },
+ "sensor:active_sleep_pressure_hip": {
+  "card_section": "hidden"
+ },
+ "sensor:active_sleep_pressure_shoulder": {
+  "card_section": "hidden"
+ },
+ "sensor:active_sleep_pressure_thigh": {
+  "card_section": "hidden"
+ },
+ "sensor:active_sleep_respiration": {
+  "card_section": "utility"
+ },
+ "sensor:active_sleep_respiration_raw_feed": {
+  "card_section": "hidden"
+ },
+ "sensor:active_sleep_serial": {
+  "card_section": "hidden"
+ },
+ "sensor:active_sleep_tilt": {
+  "card_section": "utility"
+ },
+ "sensor:active_sleep_ventilation_remaining": {
+  "card_section": "utility"
  },
  "sensor:adjustamattress_foot_intensity": {
   "card_section": "massage"
@@ -6035,6 +6092,18 @@
   "card_section": "utility"
  },
  "sensor:yamada_alarm_2": {
+  "card_section": "utility"
+ },
+ "switch:active_sleep_fukatto": {
+  "card_section": "utility"
+ },
+ "switch:active_sleep_monitor": {
+  "card_section": "utility"
+ },
+ "switch:active_sleep_motor_lock": {
+  "card_section": "utility"
+ },
+ "switch:active_sleep_ventilation": {
   "card_section": "utility"
  },
  "switch:adjustamattress_alarm": {
