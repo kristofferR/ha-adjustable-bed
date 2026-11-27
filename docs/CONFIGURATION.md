@@ -964,3 +964,10 @@ and massage setting when combined with another bed. No single-address side
 selection is inferred. The massage timer is a Home Assistant countdown, 1–40
 minutes, initially 10; it sends massage off on expiry while connected. It does
 not program a timer in the bed. See [SILVERmotion Android](beds/silvermotion.md).
+
+### Home Zone Adjustable
+
+Home Zone Adjustable uses its own app choice and an explicit four-character bed
+layout. Layout picker destinations are listed in the same field. Its exact
+Bluetooth name controls the refresh interval; no physical layout is inferred
+from the shared Bluetooth service. See the [Home Zone guide](beds/richmat.md#home-zone-adjustable).

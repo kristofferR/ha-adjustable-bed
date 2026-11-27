@@ -352,6 +352,9 @@ _BY_BED_TYPE: Final[dict[str, SideProfile]] = {
     BED_TYPE_SVANE: SideProfile("Svane Remote", variant_owned=True),
 }
 _BY_VARIANT: Final[dict[tuple[str, str], SideProfile]] = {
+    (BED_TYPE_RICHMAT_CLASSIC_APPS, "homezone"): SideProfile(
+        "Home Zone Adjustable", variant_owned=True
+    ),
     (BED_TYPE_RICHMAT_CLASSIC_APPS, "maxprime"): SideProfile(
         "Maxprime layout", variant_owned=True
     ),

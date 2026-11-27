@@ -61,6 +61,7 @@ from scripts.codec_docs import (
     _dorsal,
     _dreamlab,
     _galaxy,
+    _homezone,
     _okimiki,
     _richmat_legacy,
     _richmat_mh_apps,
@@ -1444,6 +1445,7 @@ def render_rise_commands() -> str:
 
 
 BLOCKS: list[Block] = [
+    (GUIDE, "homezone-controls", _homezone.render),
     (GUIDE, "dorsal-controls", _dorsal.render),
     (GUIDE, "roomi-s655-plus-controls", _dorsal.render_roomi),
     (GUIDE, "maxprime", render_maxprime),

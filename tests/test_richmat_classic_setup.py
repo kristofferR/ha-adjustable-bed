@@ -61,6 +61,7 @@ def test_all_app_choices_are_findable_and_model_inventories_are_distinct():
         'baseremote': 558,
         'maxprime': 554,
         'dreamlab2': 554,
+        'homezone': 559,
         **dict.fromkeys(RESOURCE_APPS, 243),
     }
     for app, models in MODEL_CHOICES.items():
