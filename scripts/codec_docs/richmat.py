@@ -46,7 +46,7 @@ from custom_components.adjustable_bed.codec import richmat as codec
 from custom_components.adjustable_bed.codec import richmat as richmat_codec
 from custom_components.adjustable_bed.profiles import bobpowerbase as bob_profiles
 from custom_components.adjustable_bed.profiles import casper as casper_profiles
-from custom_components.adjustable_bed.profiles import dreamsense, saatva, silksnow
+from custom_components.adjustable_bed.profiles import dreamsense, muuegm, saatva, silksnow
 from custom_components.adjustable_bed.profiles import hush as hush_profiles
 from custom_components.adjustable_bed.profiles import luniosmart as lunio
 from custom_components.adjustable_bed.profiles import luuna as luuna_profiles
@@ -200,6 +200,7 @@ def bed_types() -> dict[str, tuple[str, ...]]:
     mh_types = {app: bed_type for bed_type, app in _const.RICHMAT_MH_APPS.items()}
     return {
         **{p.key: ("dreamsense",) for p in dreamsense.PROFILES.values()},
+        **{p.key: ("muuegm",) for p in muuegm.PROFILES.values()},
         "one": (_const.BED_TYPE_SONICSLEEP,),
         "afeg302": ("super_colchones",),
         "afeg350": ("super_colchones",),
@@ -2203,6 +2204,10 @@ def render_dynasty_timing() -> str:
 
 
 BLOCKS += [(GUIDE, "dynasty-commands", render_dynasty_commands), (GUIDE, "dynasty-timing", render_dynasty_timing)]
+
+from scripts.codec_docs import _muuegm
+
+BLOCKS += _muuegm.BLOCKS
 
 
 def render_silksnow_products() -> str:
