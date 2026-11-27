@@ -1008,6 +1008,26 @@
   "card_role": "up",
   "card_motor": "ergobq_motor_2"
  },
+ "button:ergobq_motor_3_down": {
+  "card_section": "motors",
+  "card_role": "down",
+  "card_motor": "ergobq_motor_3"
+ },
+ "button:ergobq_motor_3_up": {
+  "card_section": "motors",
+  "card_role": "up",
+  "card_motor": "ergobq_motor_3"
+ },
+ "button:ergobq_motor_4_down": {
+  "card_section": "motors",
+  "card_role": "down",
+  "card_motor": "ergobq_motor_4"
+ },
+ "button:ergobq_motor_4_up": {
+  "card_section": "motors",
+  "card_role": "up",
+  "card_motor": "ergobq_motor_4"
+ },
  "button:eshine_massage_foot_strength": {
   "card_section": "massage"
  },
@@ -3370,6 +3390,14 @@
   "card_section": "motors",
   "card_motor": "ergobq_motor_2"
  },
+ "cover:ergobq_motor_3": {
+  "card_section": "motors",
+  "card_motor": "ergobq_motor_3"
+ },
+ "cover:ergobq_motor_4": {
+  "card_section": "motors",
+  "card_motor": "ergobq_motor_4"
+ },
  "cover:feet": {
   "card_section": "motors",
   "card_motor": "feet"
@@ -3946,25 +3974,24 @@
  "number:ergobq_head_intensity": {
   "card_section": "massage"
  },
- "number:ergobq_head_minutes": {
-  "card_section": "massage"
- },
  "number:ergobq_legs_intensity": {
   "card_section": "massage"
  },
- "number:ergobq_legs_minutes": {
-  "card_section": "massage"
- },
- "number:ergobq_light_minutes": {
-  "card_section": "lighting"
- },
  "number:ergobq_target_1": {
   "card_section": "motors",
-  "card_motor": "head"
+  "card_motor": "ergobq_motor_1"
  },
  "number:ergobq_target_2": {
   "card_section": "motors",
-  "card_motor": "legs"
+  "card_motor": "ergobq_motor_2"
+ },
+ "number:ergobq_target_3": {
+  "card_section": "motors",
+  "card_motor": "ergobq_motor_3"
+ },
+ "number:ergobq_target_4": {
+  "card_section": "motors",
+  "card_motor": "ergobq_motor_4"
  },
  "number:fan_level": {
   "card_section": "climate"
@@ -4366,8 +4393,16 @@
  "select:ergobq_head_mode": {
   "card_section": "massage"
  },
+ "select:ergobq_head_timer": {
+  "card_section": "massage",
+  "card_role": "timer"
+ },
  "select:ergobq_legs_mode": {
   "card_section": "massage"
+ },
+ "select:ergobq_legs_timer": {
+  "card_section": "massage",
+  "card_role": "timer"
  },
  "select:ergobq_side": {
   "card_section": "utility"

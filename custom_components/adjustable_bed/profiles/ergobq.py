@@ -25,6 +25,10 @@ SCENES: Final = {
 }
 MODES: Final = ("wave", "pulse", "continuous", "intermittent")
 AXES: Final = {1: ("head", 65), 2: ("legs", 45), 3: ("motor_3", 35), 4: ("waist", 145)}
+# Frozen P1 action bounds: DP12/14 countdown 0..60, DP53 auto-off 0..120.
+# Zero is a duration value, not evidence of a massage/light power-off command.
+MASSAGE_TIMER_OPTIONS: Final = tuple(f"{minutes} min" for minutes in range(61))
+LIGHT_TIMER_OPTIONS: Final = tuple(f"{minutes} min" for minutes in range(121))
 
 
 @dataclass(frozen=True, slots=True)

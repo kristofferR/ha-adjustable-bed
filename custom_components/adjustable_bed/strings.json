@@ -944,6 +944,8 @@
         "title": "Adjustable Bed Options",
         "description": "Adjust the settings for your adjustable bed. To change the bed type or app, open **Reconfigure** from this entry's three-dot menu.",
         "data": {
+          "ergobq_serial": "ErgoBQ six-byte serial (hex, optional)",
+          "ergobq_stamp": "ErgoBQ channel stamp (leave blank if unused)",
           "motor_count": "Number of motors",
           "malouf_layout": "Malouf/Lucid motor layout",
           "malouf_memory_slots": "Malouf/Lucid memory positions",
@@ -1194,6 +1196,8 @@
         "title": "Left side settings",
         "description": "Change connection, movement and app settings for **{name}**. Only this side changes.",
         "data": {
+          "ergobq_serial": "ErgoBQ six-byte serial (hex, optional)",
+          "ergobq_stamp": "ErgoBQ channel stamp (leave blank if unused)",
           "preferred_adapter": "Bluetooth adapter",
           "motor_pulse_count": "Movement per tap",
           "idle_disconnect_seconds": "Seconds to stay connected",
@@ -1379,6 +1383,8 @@
         "title": "Right side settings",
         "description": "Change connection, movement and app settings for **{name}**. Only this side changes.",
         "data": {
+          "ergobq_serial": "ErgoBQ six-byte serial (hex, optional)",
+          "ergobq_stamp": "ErgoBQ channel stamp (leave blank if unused)",
           "preferred_adapter": "Bluetooth adapter",
           "motor_pulse_count": "Movement per tap",
           "idle_disconnect_seconds": "Seconds to stay connected",
@@ -7959,6 +7965,9 @@
           "ab": "A + B"
         }
       },
+      "ergobq_head_timer": {
+        "name": "Head massage timer"
+      },
       "ergobq_head_mode": {
         "name": "Head massage mode",
         "state": {
@@ -7967,6 +7976,9 @@
           "continuous": "Continuous",
           "intermittent": "Intermittent"
         }
+      },
+      "ergobq_legs_timer": {
+        "name": "Legs massage timer"
       },
       "ergobq_legs_mode": {
         "name": "Legs massage mode",
@@ -11782,6 +11794,12 @@
     }
   },
   "exceptions": {
+    "ergobq_request_invalid": {
+      "message": "Check the bed schedule or DIY program. Without program data, choose a saved mode from 11 to 30. Synchronized massage needs matching head and leg settings."
+    },
+    "ergobq_massage_state_required": {
+      "message": "Wait for the bed to report its current massage settings before changing one setting."
+    },
     "ronco_motion_request": {
       "message": "This action is unavailable for the selected Ronco Motion layout."
     },

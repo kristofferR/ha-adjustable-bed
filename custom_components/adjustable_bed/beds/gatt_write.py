@@ -194,12 +194,19 @@ class GattWriter(ABC):
             )
 
         async def send(client: BleakClient, outbound: bytes) -> None:
-            async with asyncio.timeout(write_timeout):
+            if write_timeout is None:
                 await client.write_gatt_char(
                     characteristic if characteristic is not None else char_uuid,
                     outbound,
                     response=response,
                 )
+            else:
+                async with asyncio.timeout(write_timeout):
+                    await client.write_gatt_char(
+                        characteristic if characteristic is not None else char_uuid,
+                        outbound,
+                        response=response,
+                    )
             if track_command_write:
                 note_frame_written(effective_cancel)
             else:

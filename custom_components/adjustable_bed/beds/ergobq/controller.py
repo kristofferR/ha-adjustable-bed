@@ -14,8 +14,9 @@ from homeassistant.util import dt as dt_util
 from ...codec import ergobq as codec
 from ...command_scheduler import current_command_context
 from ...controller_state import StateKey
+from ...errors import invalid
 from ...profiles import ergobq as app
-from ...state_keys import LIGHT_LEVEL, UNDER_BED_LIGHTS_ON, UNDER_BED_LIGHTS_RGB
+from ...state_keys import LIGHT_LEVEL, LIGHT_TIMER_OPTION, UNDER_BED_LIGHTS_ON, UNDER_BED_LIGHTS_RGB
 from ..base import BedController, ProfileExecution
 from ..cancellation import cancellable, settled
 from ..entity_specs import MotorControlSpec
@@ -56,6 +57,9 @@ MASSAGE_FIELDS: Final = {
 }
 MASSAGE_MODE: Final = {
     zone: StateKey[str | None](f"ergobq_{zone}_mode") for zone in ("head", "legs")
+}
+MASSAGE_TIMER_OPTION: Final = {
+    zone: StateKey[str | None](f"ergobq_{zone}_timer_option") for zone in ("head", "legs")
 }
 MASSAGE_ON: Final = {zone: StateKey[bool | None](f"ergobq_{zone}_on") for zone in ("head", "legs")}
 
@@ -162,6 +166,24 @@ class ErgoBQController(ProfileExecution[app.ErgoBQProfile], BedController):
     @property
     def light_level_max(self) -> int:
         return 100
+
+    @property
+    def supports_light_timer(self) -> bool:
+        return True
+
+    @property
+    def light_timer_options(self) -> list[str]:
+        return list(app.LIGHT_TIMER_OPTIONS)
+
+    async def set_light_timer(self, timer_option: str) -> None:
+        if timer_option not in app.LIGHT_TIMER_OPTIONS:
+            raise invalid("option_unavailable")
+        await self.publish((codec.number(53, int(timer_option.split()[0])),))
+
+    async def set_zone_massage_timer(self, zone: str, option: str) -> None:
+        if zone not in MASSAGE_TIMER_OPTION or option not in app.MASSAGE_TIMER_OPTIONS:
+            raise invalid("option_unavailable")
+        await self.change_massage(zone, "minutes", int(option.split()[0]))
 
     @property
     def motor_control_specs(self) -> tuple[MotorControlSpec, ...]:
@@ -454,11 +476,13 @@ class ErgoBQController(ProfileExecution[app.ErgoBQProfile], BedController):
             *MASSAGE_FIELDS.values(),
             *MASSAGE_ON.values(),
             *MASSAGE_MODE.values(),
+            *MASSAGE_TIMER_OPTION.values(),
             *FAULT_FLAGS.values(),
             PARTNER_CONNECTED,
             PARTNER_BROADCAST,
             UNDER_BED_LIGHTS_ON,
             LIGHT_LEVEL,
+            LIGHT_TIMER_OPTION,
             UNDER_BED_LIGHTS_RGB,
         )
         if getattr(self._coordinator, "controller", self) in (self, None):
@@ -493,6 +517,11 @@ class ErgoBQController(ProfileExecution[app.ErgoBQProfile], BedController):
             value = values.get(dp)
             if type(value) is int:
                 self.forward_controller_state_update(key, value)
+                if dp == 53:
+                    option = f"{value} min"
+                    self.forward_controller_state_update(
+                        LIGHT_TIMER_OPTION, option if option in app.LIGHT_TIMER_OPTIONS else None
+                    )
         for dp, key, options in ((9, SIDE, ("a", "b", "ab")), (32, IDENTITY, ("unset", "a", "b"))):
             value = values.get(dp)
             if type(value) is int:
@@ -510,6 +539,9 @@ class ErgoBQController(ProfileExecution[app.ErgoBQProfile], BedController):
                 self._massages[zone] = massage
                 self.forward_controller_state_update(MASSAGE_ON[zone], massage.on)
                 self.forward_controller_state_update(MASSAGE_MODE[zone], app.MODES[massage.mode])
+                self.forward_controller_state_update(
+                    MASSAGE_TIMER_OPTION[zone], f"{massage.minutes} min"
+                )
                 for field in ("intensity", "minutes"):
                     self.forward_controller_state_update(
                         MASSAGE_FIELDS[zone, field], getattr(massage, field)
@@ -524,6 +556,9 @@ class ErgoBQController(ProfileExecution[app.ErgoBQProfile], BedController):
                 LIGHT_LEVEL(packed[1]),
                 UNDER_BED_LIGHTS_RGB((packed[2], packed[3], packed[4])),
                 LIGHT_MINUTES(packed[5]),
+                LIGHT_TIMER_OPTION(
+                    f"{packed[5]} min" if f"{packed[5]} min" in app.LIGHT_TIMER_OPTIONS else None
+                ),
             )
         faults = values.get(31)
         if isinstance(faults, bytes):
@@ -669,7 +704,7 @@ class ErgoBQController(ProfileExecution[app.ErgoBQProfile], BedController):
     async def change_massage(self, zone: str, field: str, value: bool | int) -> None:
         current = self._massages.get(zone)
         if current is None:
-            raise ValueError("Wait for current massage parameters before editing one field")
+            raise invalid("ergobq_massage_state_required")
         await self.set_massage(zone, replace(current, **{field: value}))
 
     async def lights_on(self) -> None:

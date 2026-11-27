@@ -4,10 +4,10 @@ from __future__ import annotations
 
 import voluptuous as vol
 from homeassistant.core import HomeAssistant, ServiceCall
-from homeassistant.exceptions import ServiceValidationError
 
 from ...codec import ergobq as codec
 from ...const import DOMAIN
+from ...errors import invalid
 from ...import_executor import async_import_modules
 from ...profiles.ergobq import MODES, SCENES
 
@@ -52,9 +52,10 @@ def register_services(hass: HomeAssistant) -> None:
                     )
                 entries = (codec.raw(41, record),)
             elif call.service == "ergobq_diy":
-                entries = codec.run_diy(data["mode"], _program(data.get("program_hex")))
-                if data.get("program_hex") is None:
+                program = _program(data.get("program_hex"))
+                if program is None:
                     codec.integer(data["mode"], 11, 30)
+                entries = codec.run_diy(data["mode"], program)
             elif call.service == "ergobq_scene":
                 entries = (
                     codec.enumeration(
@@ -67,7 +68,7 @@ def register_services(hass: HomeAssistant) -> None:
             if call.service == "ergobq_massage":
                 _massage(data).encode()
         except ValueError as err:
-            raise ServiceValidationError(str(err)) from err
+            raise invalid("ergobq_request_invalid") from err
         await async_import_modules(hass, "beds.ergobq.controller")
         from .controller import ErgoBQController
 

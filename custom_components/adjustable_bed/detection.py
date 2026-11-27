@@ -31,6 +31,7 @@ from .beds.silvermotion.discovery import scan_matches as silvermotion_scan_match
 from .beds.starcode.abm5_4_profiles import TRANSPORTS as STARCODE_ABM5_4_TRANSPORTS
 from .beds.svane.state import is_svane_discovery_name
 from .bluetooth_transport import advertised_local_name
+from .codec.ergobq import IDENTITY_SERVICE as ERGOBQ_IDENTITY_SERVICE
 from .const import (
     BED_TYPE_ADJUSTABLE_BED,
     BED_TYPE_ADJUSTABLE_LUMBAR,
@@ -335,6 +336,7 @@ from .profiles.bedgear import ergobed_eligible
 from .profiles.bobpowerbase import PROFILE_CHOICES as BOB_PROFILES
 from .profiles.bobpowerbase import SCAN_KEYWORDS as BOB_SCAN_KEYWORDS
 from .profiles.customatic_demo import NAME_PREFIX as CUSTOMATIC_DEMO_NAME_PREFIX
+from .profiles.ergobq import product as ergobq_product
 from .profiles.flexirest import accepts_name as accepts_flexirest_name
 from .profiles.majestichome import PROFILE_CHOICES as MAJESTICHOME_PROFILES
 from .profiles.mlily_choices import PROFILE_CHOICES as MLILY_PROFILES
@@ -1521,9 +1523,9 @@ def _detect_with_first_pass(
     service_info: BluetoothServiceInfoBleak, first: FirstPass
 ) -> DetectionResult:
     """Offer Good Vibe Sleep without changing an existing receiver/app choice."""
-    from .codec.ergobq import IDENTITY_SERVICE
-    from .profiles.ergobq import product as ergobq_product
-    identity = getattr(service_info, "service_data", {}).get(IDENTITY_SERVICE, b"")
+    identity = (getattr(service_info, "service_data", None) or {}).get(
+        ERGOBQ_IDENTITY_SERVICE, b""
+    )
     if ergobq_product(identity, service_info.name) is not None:
         return DetectionResult("ergobq", 0.99, ["service_data:ergobq_bed"])
     result = _detect_bed_type_with_app_candidates(service_info, first)

@@ -203,8 +203,13 @@ MTU-request API is added.
 
 Use native covers for held motion, unitless numbers for absolute targets,
 buttons for scenes and directional sync, switches for massage sync and child
-lock, and the RGB light for lighting. Scene saves/restores require confirmation
-in the card. Side selection and maintenance controls are opt-in.
+lock, and the RGB light for lighting. Native selects set the light timer from
+0 to 120 minutes and each massage zone's timer from 0 to 60 minutes. Zero is a
+duration, not a power-off command. Timer selections show reported bed state;
+changing a massage timer requires the current zone settings first.
+
+Scene saves/restores require confirmation in the card. Side selection and
+maintenance controls are opt-in.
 
 #### Timing
 

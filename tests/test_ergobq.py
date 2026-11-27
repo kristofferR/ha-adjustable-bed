@@ -16,6 +16,7 @@ from custom_components.adjustable_bed.codec import ergobq as codec
 from custom_components.adjustable_bed.controller_state import ControllerState
 from custom_components.adjustable_bed.profiles import ergobq as app
 from custom_components.adjustable_bed.redaction import REDACTED, redact_bundle
+from tests.error_helpers import raises_key
 
 
 async def bed(*, serial="", authorized=True):
@@ -230,7 +231,7 @@ async def test_current_reports_drive_targets_light_and_massage_alignment():
     assert frames(client)[-1] == "55aa00040008010200040000000fc747"
     c.on_disconnect()
     assert state[POSITIONS[1]] is None
-    with pytest.raises(ValueError):
+    with raises_key("ergobq_massage_state_required"):
         await c.change_massage("head", "intensity", 1)
 
 

@@ -5,6 +5,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 import voluptuous as vol
+from homeassistant.components.bluetooth import BluetoothServiceInfoBleak
 from homeassistant.exceptions import ServiceValidationError
 
 from custom_components.adjustable_bed.beds.ergobq.services import register_services
@@ -12,8 +13,32 @@ from custom_components.adjustable_bed.codec import ergobq as codec
 from custom_components.adjustable_bed.config_flow import AdjustableBedConfigFlow
 from custom_components.adjustable_bed.const import DOMAIN, SIDE_BOTH
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
+from custom_components.adjustable_bed.detection import detect_bed_type_detailed
 from custom_components.adjustable_bed.profiles import ergobq as app
+from tests.error_helpers import raises_key
 from tests.test_ergobq import bed, frames
+
+
+@pytest.mark.parametrize(
+    ("name", "service_data", "expected"),
+    [
+        ("Bed", None, False),
+        ("Bed", {}, False),
+        ("Bed", {codec.IDENTITY_SERVICE: b"txbazdssmqcnndfc"}, True),
+        ("Bed", {codec.IDENTITY_SERVICE: b"txbazdssmqcnndfd"}, True),
+        ("MindLax", {codec.IDENTITY_SERVICE: b"txbazdssmqcnndfc"}, False),
+    ],
+)
+def test_detection_keeps_exact_identity_gate_with_partial_advertisements(name, service_data, expected):
+    info = MagicMock(
+        spec=BluetoothServiceInfoBleak, address="AA:BB:CC:DD:EE:FF", rssi=-60,
+        manufacturer_data=None, service_data=service_data,
+        service_uuids=[codec.SERVICE], source="local", device=None,
+        advertisement=None, connectable=True, time=0, tx_power=None,
+    )
+    info.name = name
+    result = detect_bed_type_detailed(info)
+    assert (result.bed_type == "ergobq") is expected
 
 
 async def target():
@@ -69,7 +94,7 @@ async def test_service_rejects_invalid_sync_and_program_before_any_target_writes
         "custom_components.adjustable_bed.services._resolve_sided_targets",
         return_value=([(child, SIDE_BOTH)], []),
     ):
-        with pytest.raises(ServiceValidationError):
+        with raises_key("ergobq_request_invalid", ServiceValidationError) as error:
             await hass.services.async_call(
                 DOMAIN,
                 "ergobq_schedule",
@@ -85,7 +110,9 @@ async def test_service_rejects_invalid_sync_and_program_before_any_target_writes
                 },
                 blocking=True,
             )
-        with pytest.raises(ServiceValidationError):
+        assert error.value.translation_domain == DOMAIN
+        assert isinstance(error.value.__cause__, ValueError)
+        with raises_key("ergobq_request_invalid", ServiceValidationError):
             await hass.services.async_call(
                 DOMAIN,
                 "ergobq_diy",
@@ -110,6 +137,59 @@ async def test_service_rejects_invalid_sync_and_program_before_any_target_writes
             blocking=True,
         )
     assert frames(client) == ["55aa000400080c0000040103000f6254"]
+
+
+@pytest.mark.parametrize("program", [None, "", " \t\n"])
+@pytest.mark.parametrize("mode", [10, 31, 255])
+async def test_blank_program_requires_saved_mode_before_public_service_execution(hass, program, mode):
+    child, _, client = await target()
+    register_services(hass)
+    data = {"device_id": ["bed"], "mode": mode}
+    if program is not None:
+        data["program_hex"] = program
+    with patch(
+        "custom_components.adjustable_bed.services._resolve_sided_targets",
+        return_value=([(child, SIDE_BOTH)], []),
+    ), raises_key("ergobq_request_invalid", ServiceValidationError):
+        await hass.services.async_call(DOMAIN, "ergobq_diy", data, blocking=True)
+    client.write_gatt_char.assert_not_awaited()
+    child.async_execute_controller_command.assert_not_awaited()
+
+
+@pytest.mark.parametrize("mode", [0, 11, 255])
+async def test_public_diy_accepts_complete_program_and_preserves_supplied_mode_bounds(hass, mode):
+    child, _, client = await target()
+    register_services(hass)
+    program = "0b01000a070001020304050600000132112233445500000a"
+    with patch(
+        "custom_components.adjustable_bed.services._resolve_sided_targets",
+        return_value=([(child, SIDE_BOTH)], []),
+    ):
+        await hass.services.async_call(
+            DOMAIN, "ergobq_diy",
+            {"device_id": ["bed"], "mode": mode, "program_hex": f"  {program}  "},
+            blocking=True,
+        )
+    assert len(frames(client)) == 1
+    values = codec.parse_dps(codec.parse_frame(bytes.fromhex(frames(client)[0])).payload)
+    assert list(values) == [61, 60]
+    assert values == {60: bytes.fromhex(program), 61: bytes([mode, 0, 0, 0])}
+
+
+@pytest.mark.parametrize("mode", [11, 30])
+async def test_public_diy_accepts_blank_program_at_saved_mode_boundaries(hass, mode):
+    child, _, client = await target()
+    register_services(hass)
+    with patch(
+        "custom_components.adjustable_bed.services._resolve_sided_targets",
+        return_value=([(child, SIDE_BOTH)], []),
+    ):
+        await hass.services.async_call(
+            DOMAIN, "ergobq_diy",
+            {"device_id": ["bed"], "mode": mode, "program_hex": " \t\n"},
+            blocking=True,
+        )
+    assert frames(client) == [codec.publish(codec.run_diy(mode)).hex()]
 
 
 async def test_profile_form_requires_bed_identity_and_saves_the_serial_layout(hass):

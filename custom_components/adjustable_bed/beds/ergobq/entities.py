@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from ...card import CARD_LIGHTING, CARD_MASSAGE, motor_card
+from ...card import CARD_MASSAGE, CARD_MASSAGE_TIMER, motor_card
 from ...codec import ergobq as codec
 from ...profiles import ergobq as app
 from ..base import require_controller
@@ -22,12 +22,12 @@ from .controller import (
     DIY_REMAINING,
     FAULT_FLAGS,
     IDENTITY,
-    LIGHT_MINUTES,
     LIGHT_REMAINING,
     MASSAGE_FIELDS,
     MASSAGE_MODE,
     MASSAGE_ON,
     MASSAGE_SYNC,
+    MASSAGE_TIMER_OPTION,
     PARTNER_BROADCAST,
     PARTNER_CONNECTED,
     POSITIONS,
@@ -130,42 +130,25 @@ def numbers(controller: ErgoBQController) -> tuple[ControllerNumberSpec, ...]:
             lambda c, value, dp=dp: require_controller(c, ErgoBQController).target(
                 dp, _integer(value)
             ),
-            card=motor_card(app.AXES[dp][0]),
+            card=motor_card(f"ergobq_motor_{dp}"),
         )
         for dp in controller.axes
     ]
-    result.append(
-        ControllerNumberSpec(
-            "ergobq_light_minutes",
-            "ergobq_light_minutes",
-            LIGHT_MINUTES,
-            0,
-            120,
-            1,
-            lambda c, v: require_controller(c, ErgoBQController).publish(
-                (codec.number(53, _integer(v)),)
-            ),
-            native_unit_of_measurement="min",
-            card=CARD_LIGHTING,
-        )
-    )
     for zone in MASSAGE_ON:
-        for field, maximum in (("intensity", 5), ("minutes", 60)):
-            result.append(
-                ControllerNumberSpec(
-                    f"ergobq_{zone}_{field}",
-                    f"ergobq_{zone}_{field}",
-                    MASSAGE_FIELDS[zone, field],
-                    0,
-                    maximum,
-                    1,
-                    lambda c, value, zone=zone, field=field: require_controller(
-                        c, ErgoBQController
-                    ).change_massage(zone, field, _integer(value)),
-                    native_unit_of_measurement="min" if field == "minutes" else None,
-                    card=CARD_MASSAGE,
-                )
+        result.append(
+            ControllerNumberSpec(
+                f"ergobq_{zone}_intensity",
+                f"ergobq_{zone}_intensity",
+                MASSAGE_FIELDS[zone, "intensity"],
+                0,
+                5,
+                1,
+                lambda c, value, zone=zone: require_controller(c, ErgoBQController).change_massage(
+                    zone, "intensity", _integer(value)
+                ),
+                card=CARD_MASSAGE,
             )
+        )
     return tuple(result)
 
 
@@ -219,6 +202,21 @@ def selects(_controller: ErgoBQController) -> tuple[ControllerSelectSpec, ...]:
         )
     ]
     for zone in MASSAGE_ON:
+        result.append(
+            ControllerSelectSpec(
+                f"ergobq_{zone}_timer",
+                f"ergobq_{zone}_timer",
+                MASSAGE_TIMER_OPTION[zone],
+                app.MASSAGE_TIMER_OPTIONS,
+                lambda c, v, zone=zone: require_controller(
+                    c, ErgoBQController
+                ).set_zone_massage_timer(zone, v),
+                available_fn=lambda c, zone=zone: (
+                    zone in require_controller(c, ErgoBQController)._massages
+                ),
+                card=CARD_MASSAGE_TIMER,
+            )
+        )
         result.append(
             ControllerSelectSpec(
                 f"ergobq_{zone}_mode",
