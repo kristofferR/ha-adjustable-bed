@@ -21,6 +21,7 @@ ADDRESS = "11:22:33:44:55:66"
 APPS = [
     "richmat_420",
     "atlas_lift",
+    "comfort_bed",
     "jerome_adjustable_base",
     "rmcontrol",
     "luuna",
