@@ -400,6 +400,7 @@ actions; its bounded `hold_control` behavior has separate timing in the
 | FSM Relax app | `fsm_relax` | 10 | 60 ms |
 | Jensen Adjustable Sleep app, JMC400 bed | `jensen` | 4 | 300 ms |
 | JobsAI智能助眠床 / Jobs AI app | `jobs` | 10 | 200 ms |
+| King Koil (SUTA) app | `suta_king_koil` | 1 | 150 ms |
 | King Koil Bed app | `kingkoil` | 10 | 300 ms |
 | Leggett & Platt MlRM remote | `leggett_wilinke` | 10 | 110 ms |
 | Limoss and Stawett remotes | `limoss` | 12 | 80 ms |
@@ -612,6 +613,7 @@ beds, Reconfigure that bed, then combine them again.
 | Relax Motion | Numeric advertisement model, preserved across reconnects, and the exact app page / label language. See [setup](beds/relax-motion.md#detection--setup). |
 | Scott Living | [A (8 buttons), B (13 buttons), or C (17 buttons)](beds/keeson.md#scott-living). Existing entries default to A. The layout sets the motors and utility controls. |
 | SmartBed app | The receiver, the motor count and the bed's Bluetooth name. A CB24AB receiver also asks which side of a split bed the entry controls. See [choosing a profile](beds/smartbed.md#choosing-a-profile). |
+| King Koil (SUTA) app | [One M510 control layout](beds/suta.md#king-koil-suta), explicitly selected by app; Back/Foot control, no position feedback. Combine two physical receivers for side controls. |
 | trueMotion app | [Complete case-sensitive Bluetooth name](beds/suta.md#truemotion). Each receiver keeps its own name in a pair, and the left receiver selects the split editor. |
 | CheersSleep | See the [setup steps](beds/cheerssleep.md#cheerssleep-profile). |
 | Comfort Enhancement 3 / Comfort Plus3 | See the [setup steps](beds/okin-nframe.md#comfort-enhancement-3). |

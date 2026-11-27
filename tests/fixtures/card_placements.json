@@ -2946,6 +2946,12 @@
   "card_role": "up",
   "card_motor": "storage_lift"
  },
+ "button:suta_king_koil_alarms": {
+  "card_section": "utility"
+ },
+ "button:suta_king_koil_clock": {
+  "card_section": "utility"
+ },
  "button:suta_release": {
   "card_section": "hidden"
  },
@@ -4421,6 +4427,12 @@
  "number:suta_2_setpoint": {
   "card_section": "utility"
  },
+ "number:suta_king_koil_foot_step": {
+  "card_section": "massage"
+ },
+ "number:suta_king_koil_head_step": {
+  "card_section": "massage"
+ },
  "number:symphony_light_brightness": {
   "card_section": "lighting"
  },
@@ -4777,6 +4789,9 @@
  "select:starcode_color": {
   "card_section": "lighting",
   "card_role": "mood"
+ },
+ "select:suta_king_koil_massage_mode": {
+  "card_section": "massage"
  },
  "select:symphony_light_color": {
   "card_section": "lighting"

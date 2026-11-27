@@ -770,6 +770,7 @@ BED_TYPE_REMACRO: Final = (
 )
 BED_TYPE_COOLBASE: Final = "coolbase"  # Cool Base (Keeson BaseI5 with fan control)
 BED_TYPE_SCOTT_LIVING: Final = "scott_living"  # Scott Living 9-byte protocol
+BED_TYPE_SUTA_KING_KOIL: Final = "suta_king_koil"
 BED_TYPE_TRUEMOTION: Final = "truemotion"
 BED_TYPE_SUTA: Final = "suta"  # SUTA Smart Home AT protocol (ASCII + CRLF)
 BED_TYPE_PARAMOUNT: Final = "paramount"
@@ -1027,6 +1028,7 @@ SUPPORTED_BED_TYPES: Final = [
     # SUTA Smart Home AT protocol
     BED_TYPE_SUTA,
     BED_TYPE_TRUEMOTION,
+    BED_TYPE_SUTA_KING_KOIL,
     # TiMOTION AHF protocol
     BED_TYPE_TIMOTION_AHF,
     # Kaidi (Rize/Floyd/ISleep)
@@ -1111,6 +1113,7 @@ OFFLINE_CAPABILITY_SAFE_BED_TYPES: Final = frozenset(
         BED_TYPE_SCOTT_LIVING,
         BED_TYPE_SUTA,
         BED_TYPE_TRUEMOTION,
+        BED_TYPE_SUTA_KING_KOIL,
         BED_TYPE_TIMOTION_AHF,
         # One fixed frame layout; the GATT name is cosmetic and grants no controls.
         BED_TYPE_BEDJET_POWERLAYER,
@@ -3206,6 +3209,7 @@ BED_MOTOR_PULSE_DEFAULTS: Final = {
     # SUTA: 150ms delay → 7 repeats = 1.05s total
     # Source: com.shuta.smart_home ANALYSIS.md
     BED_TYPE_SUTA: (7, 150),
+    BED_TYPE_SUTA_KING_KOIL: (1, 150),
     # HA button.press defaults: ten finite writes, starting immediately, with a
     # 100 ms delay between repeats. Held AHF controls use a separate cadence.
     BED_TYPE_TIMOTION_AHF: (10, 100),

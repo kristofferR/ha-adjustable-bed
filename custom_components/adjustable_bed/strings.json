@@ -1780,6 +1780,12 @@
   },
   "entity": {
     "button": {
+      "suta_king_koil_alarms": {
+        "name": "Read alarms"
+      },
+      "suta_king_koil_clock": {
+        "name": "Read bed clock"
+      },
       "restonic_underbedlighting": {
         "name": "Underbed light action"
       },
@@ -6713,6 +6719,12 @@
       }
     },
     "number": {
+      "suta_king_koil_head_step": {
+        "name": "Head massage step"
+      },
+      "suta_king_koil_foot_step": {
+        "name": "Foot massage step"
+      },
       "enso2_light_timer": {
         "name": "Light auto-off time"
       },
@@ -7231,6 +7243,9 @@
       }
     },
     "select": {
+      "suta_king_koil_massage_mode": {
+        "name": "Massage mode"
+      },
       "sleep_assist_pro_rgb_intensity": {
         "name": "RGB brightness",
         "state": {"20": "20%", "60": "60%", "100": "100%"}
@@ -8198,6 +8213,28 @@
     }
   },
   "services": {
+    "suta_king_koil_confirm_alarm": {
+      "name": "King Koil (SUTA): confirm existing alarm",
+      "description": "Send the King Koil app’s existing-alarm Confirm command (DA). Its firmware edit or delete effect is unverified. Each targeted physical receiver has its own alarms.",
+      "fields": {
+        "device_id": {
+          "name": "Bed"
+        },
+        "side": {
+          "name": "Side"
+        },
+        "weekdays": {
+          "name": "Weekdays",
+          "description": "Sunday is 0, Saturday is 6."
+        },
+        "hour": {
+          "name": "Hour"
+        },
+        "minute": {
+          "name": "Minute"
+        }
+      }
+    },
     "ergobq_scene": {
       "name": "Scene (ErgoBQ BED)",
       "description": "Recall, save or restore a named bed scene.",
@@ -12010,6 +12047,9 @@
     }
   },
   "exceptions": {
+    "suta_king_koil_calibrate": {
+      "message": "Set the bed clock, then wait for its clock reply before adding or refreshing alarms."
+    },
     "ergobq_request_invalid": {
       "message": "Check the bed schedule or DIY program. Without program data, choose a saved mode from 11 to 30. Synchronized massage needs matching head and leg settings."
     },

@@ -182,6 +182,7 @@ from .const import (
     BED_TYPE_STARCODE_M5X5,
     BED_TYPE_SUPERIOR_SLEEP,
     BED_TYPE_SUTA,
+    BED_TYPE_SUTA_KING_KOIL,
     BED_TYPE_SVANE,
     BED_TYPE_SYMPHONY,
     BED_TYPE_SYMPHONY_SLEEP,
@@ -849,6 +850,7 @@ BED_TYPE_DISPLAY_NAMES: dict[str, str] = {
     BED_TYPE_SOLACE: "Solace (HomeKobo, Sealy MotionFlex and Sweet Night apps)",
     BED_TYPE_SUTA: "SUTA Smart Home app",
     BED_TYPE_TRUEMOTION: "trueMotion app",
+    BED_TYPE_SUTA_KING_KOIL: "King Koil (SUTA) app",
     "paramount": "Paramount Bed Operation (ベッド操作)",
     BED_TYPE_BEDJET_POWERLAYER: "BedJet PowerLayer adjustable frame",
     BED_TYPE_SVANE: "Svane Remote app",
@@ -1563,6 +1565,13 @@ def _detect_with_first_pass(
         else:
             result.ambiguous_types = list(dict.fromkeys([*(result.ambiguous_types or ()), BED_TYPE_AMBIENT]))
             result.signals.append(signal)
+    # King Koil uses this scan prefix without a name-selected product layout.
+    if first.name(BED_TYPE_SUTA_KING_KOIL):
+        if result.bed_type is None:
+            result = DetectionResult(BED_TYPE_SUTA_KING_KOIL, 0.3, result.signals)
+        elif result.bed_type != BED_TYPE_SUTA_KING_KOIL:
+            result.ambiguous_types = list(dict.fromkeys([*(result.ambiguous_types or ()), BED_TYPE_SUTA_KING_KOIL]))
+        result.signals.append("app_hint:suta_king_koil")
     # The scan name chooses a trueMotion layout after explicit app selection.
     # It is shared with the SUTA receiver route and supplies no receiver evidence.
     if first.name(BED_TYPE_TRUEMOTION) and not any(

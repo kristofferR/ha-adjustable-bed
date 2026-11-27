@@ -76,6 +76,9 @@ class Burst:
 
 
 class TrueMotionController(ProfileExecution[app.Profile], BedController):
+    session_namespace = "truemotion"
+    receiver_type = Receiver
+
     def __init__(self, coordinator: AdjustableBedCoordinator, profile: app.Profile) -> None:
         super().__init__(coordinator)
         self.profile = profile
@@ -85,7 +88,7 @@ class TrueMotionController(ProfileExecution[app.Profile], BedController):
         self._state = app_session(
             coordinator.hass,
             coordinator.address,
-            ("truemotion", profile.model, profile.split),
+            (self.session_namespace, profile.model, profile.split),
             AppState,
         )
 
@@ -140,7 +143,7 @@ class TrueMotionController(ProfileExecution[app.Profile], BedController):
             raise invalid("truemotion_gatt")
         tx, rx = roles
 
-        link = self._link = Link(client, tx, rx, Receiver(self._state.observations))
+        link = self._link = Link(client, tx, rx, self.receiver_type(self._state.observations))
 
         def receive(sender: BleakGATTCharacteristic, value: bytearray) -> None:
             if self._link_is_current(link):
