@@ -20106,10 +20106,12 @@ repeat alarms; none opens the separate sleep-sensor tab. Level 5's anti-snore
 setting requires a nonempty returned sleep-device name. Refresh its setting
 with the `query_snore` operation; the switch changes state only on a bed reply.
 
-Alarm list replies append new IDs; update replies replace only existing IDs.
-The diagnostic product sensor includes returned alarm records and observed
-protocol, motor and massage fields. Those fields do not establish position
-feedback or physical angle-to-axis mapping. Incomplete receive buffers expire;
+Alarm list replies refresh reported IDs; update replies replace only existing IDs.
+The product sensor shows the selected product. Returned alarm records and observed
+protocol, motor and massage fields are available in integration diagnostics.
+Those fields do not establish position feedback or physical angle-to-axis mapping.
+Refreshing alarms retains prior records until the query reaches the bed; newer
+replies take priority over that refresh. Incomplete receive buffers expire;
 invalid lengths and checksums are rejected at the notification boundary.
 
 #### Services

@@ -60,7 +60,6 @@ if TYPE_CHECKING:
     from ...coordinator import AdjustableBedCoordinator
 
 PRODUCT: Final = StateKey[str]("thrivesleep_product")
-OBSERVATIONS: Final = StateKey[dict[str, object]]("thrivesleep_observations")
 ALARMS: Final = StateKey[list[dict[str, int]]]("thrivesleep_alarms")
 LIGHT_SECONDS: Final = StateKey[int | None]("thrivesleep_light_seconds")
 ANTI_SNORE: Final = StateKey[bool | None]("thrivesleep_anti_snore")
@@ -335,9 +334,15 @@ class ThriveSleepController(ProfileExecution[ThriveSleepProfile], BedController)
                 "thrivesleep",
                 PRODUCT,
                 "mdi:bed",
-                attribute_keys=(OBSERVATIONS, ALARMS),
             ),
         )
+
+    @property
+    def protocol_diagnostics(self) -> dict[str, object]:
+        return {
+            "observations": dict(self.observations),
+            "alarms": [dict(row) for row in self.alarms],
+        }
 
     def _current(self, link: Link) -> bool:
         return (
@@ -459,7 +464,6 @@ class ThriveSleepController(ProfileExecution[ThriveSleepProfile], BedController)
     def _publish(self) -> None:
         self.forward_controller_state_updates(
             PRODUCT(self.profile.label),
-            OBSERVATIONS(dict(self.observations)),
             ALARMS([dict(row) for row in self.alarms]),
         )
 
@@ -472,7 +476,7 @@ class ThriveSleepController(ProfileExecution[ThriveSleepProfile], BedController)
             index = next((i for i, old in enumerate(self.alarms) if old["id"] == row["id"]), None)
             if frame[5] == 2 and index is None:
                 self.alarms.append(row)
-            elif frame[5] == 3 and index is not None:
+            elif index is not None:
                 self.alarms[index] = row
         if "sleepAdvName" in values:
             self.sleep_name = str(values["sleepAdvName"])
@@ -502,7 +506,6 @@ class ThriveSleepController(ProfileExecution[ThriveSleepProfile], BedController)
         self._snore_requested = False
         if self._coordinator.controller is self:
             self.forward_controller_state_updates(
-                OBSERVATIONS({}),
                 ALARMS([]),
                 LIGHT_SECONDS(None),
                 ANTI_SNORE(None),
@@ -751,26 +754,29 @@ class ThriveSleepController(ProfileExecution[ThriveSleepProfile], BedController)
         if "clock" not in self.features:
             raise ValueError("The bed has not confirmed its alarm capability")
         link = self._live()
-        self.alarms.clear()
-        self._publish()
-        await self._send(link, codec.record_20_len(5, 1, 0, (0,)), self._coordinator.cancel_command)
+        records = tuple(self.alarms)
+        with delivered(partial(self._retire_alarms, link, records)):
+            await self._send(
+                link, codec.record_20_len(5, 1, 0, (0,)), self._coordinator.cancel_command
+            )
 
     async def delete_alarm(self, number: int) -> None:
         if type(number) is not int or not 1 <= number <= 7 or "clock" not in self.features:
             raise ValueError("Choose an app alarm ID 1 to 7 on an alarm-capable bed")
         link = self._live()
         record = next((row for row in self.alarms if row["id"] == number), None)
-        with delivered(partial(self._retire_alarm, link, record)):
+        records = () if record is None else (record,)
+        with delivered(partial(self._retire_alarms, link, records)):
             await self._send(
                 link, codec.record_20_len(5, 2, 1, (number,)), self._coordinator.cancel_command
             )
 
-    def _retire_alarm(
-        self, link: Link, record: dict[str, int] | None, delivery: Delivery
+    def _retire_alarms(
+        self, link: Link, records: tuple[dict[str, int], ...], delivery: Delivery
     ) -> None:
         if self._current(link) and delivery is not Delivery.NONE:
-            # A newer notification replaces the record and outranks this sent deletion.
-            self.alarms = [row for row in self.alarms if row is not record]
+            # Newer notifications replace records and outrank this sent refresh/deletion.
+            self.alarms = [row for row in self.alarms if all(row is not old for old in records)]
             self._publish()
 
     @property
