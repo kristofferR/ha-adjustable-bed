@@ -503,3 +503,13 @@ byte-identical BED products and serial-dependent axes. It has no mattress
 profile. `beds/ergobq/` uses the shared settled GATT writer with an expected
 client, while owning its authentication, notification stream and release.
 See [ErgoBQ BED](../beds/ergobq.md) and `tests/test_ergobq_vectors.py`.
+
+## iFit
+
+iFit 1.1 (3) reuses `codec/okin_5a.py` only after all 35 reachable command
+literals and its separate startup literal reproduce byte for byte. Its
+`profiles/ifit.py` declares independent timing and command data. The shared
+Okin 5A controller extension in `beds/ifit/` owns exact-session startup,
+held refresh without a trailing release frame, and the combined Flat/preset
+save gesture. No existing app route, discovery matcher or wire scenario changes.
+See [iFit](../beds/okin-5a.md#ifit).

@@ -99,3 +99,14 @@ async def test_scott_living_refresh_has_no_release_or_composed_keys():
         controller.profile = profile(layout)
         assert controller.execution.declared == {"hold"}
         assert controller.execution.hold_for("head_up") == "stream"
+
+
+async def test_ifit_screen_hold_is_scoped_to_refresh_controls():
+    # iFit 1.1 (3) LongOnce/LongPress/LongMemory/LongSwitch stop their timer
+    # on UP/CANCEL. Direct voice MAX/STOP bursts are not renewable holds.
+    controller = await _create_controller_for_bed_type('ifit')
+    assert controller.execution.declared == {'hold', 'hold_controls'}
+    assert controller.execution.hold_for('head_up') == 'stream'
+    assert controller.execution.hold_for('light_massage') == 'stream'
+    assert controller.execution.hold_for('head_up_max') is None
+    assert controller.execution.concurrent == frozenset()

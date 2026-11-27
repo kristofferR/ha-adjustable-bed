@@ -67,6 +67,7 @@ from .const import (
     BED_TYPE_GMMOTOR_SLEEP_SXB,
     BED_TYPE_GOODVIBE,
     BED_TYPE_HJBED,
+    BED_TYPE_IFIT,
     BED_TYPE_ISLEEP,
     BED_TYPE_JALON,
     BED_TYPE_JALON_BED,
@@ -321,6 +322,7 @@ _SIMPLE_CONTROLLERS: Final[dict[str, _ControllerSpec]] = {
     BED_TYPE_RIZE: _ControllerSpec("kaidi.rize", "RizeController"),
     BED_TYPE_KOMFYD: _ControllerSpec("kaidi.comfy", "ComfyController"),
     BED_TYPE_COMFYDS: _ControllerSpec("kaidi.comfy", "ComfyController"),
+    BED_TYPE_IFIT: _ControllerSpec("ifit.controller", "IfitController"),
     BED_TYPE_ISLEEP: _ControllerSpec("isleep", "IsleepController"),
     "casper_remote": _ControllerSpec("casper_sleep.controller", "CasperRemoteController"),
     "casper_sleep_mm": _ControllerSpec(

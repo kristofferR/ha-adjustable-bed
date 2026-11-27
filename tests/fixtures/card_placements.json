@@ -1223,6 +1223,9 @@
   "card_role": "up",
   "card_motor": "hjbed_sofa_travel"
  },
+ "button:ifit_release": {
+  "card_section": "hidden"
+ },
  "button:innova_massage_level": {
   "card_section": "massage"
  },

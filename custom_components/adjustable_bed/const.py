@@ -720,6 +720,7 @@ BED_TYPE_BEDTECH: Final = "bedtech"  # BedTech 5-byte ASCII protocol
 BED_TYPE_JENSEN: Final = "jensen"  # Jensen JMC400/LinON Entry (6-byte commands)
 BED_TYPE_SLEEP_NUMBER: Final = "sleep_number"  # Sleep Number Climate 360 / Fuzion bamkey BLE
 BED_TYPE_SLEEP_NUMBER_MCR: Final = "sleep_number_mcr"  # Sleep Number BAM/MCR BLE
+BED_TYPE_IFIT: Final = "ifit"
 BED_TYPE_OKIN_CB35: Final = "okin_cb35"  # DewertOkin CB35 Star (Sealy Posturematic, NUS 7-byte)
 BED_TYPE_OKIN_64BIT: Final = "okin_64bit"  # OKIN 64-bit protocol (10-byte commands)
 BED_TYPE_SLEEPYS_BOX15: Final = (
@@ -828,6 +829,7 @@ BED_TYPE_TEMPUR_AU: Final = 'tempur_au'
 KEESON_LAYOUT_APP_BED_TYPES: Final = frozenset({BED_TYPE_TEMPUR_CURVE, BED_TYPE_QPLUS_APP, BED_TYPE_SERTA_MP_REMOTE, BED_TYPE_OMAZZ_ADJUSTO_III, BED_TYPE_ERGOMOTION_APP, BED_TYPE_ROW_CONTROL, BED_TYPE_ERGO_SLIM, BED_TYPE_TEMPUR_AU})
 
 SUPPORTED_BED_TYPES: Final = [
+    BED_TYPE_IFIT,
     BED_TYPE_RESTONIC,
     BED_TYPE_DORSAL,
     BED_TYPE_BERUN,
@@ -3143,6 +3145,7 @@ BED_MOTOR_PULSE_DEFAULTS: Final = {
     # OKIN DOT: FurniMove resends the held keycode ~every 100ms
     # (BluetoothLeService.onCharacteristicWrite Thread.sleep(100) loop)
     BED_TYPE_OKIN_DOT: (10, 100),
+    BED_TYPE_IFIT: (10, 220),
     # OKIN CB35: 300ms delay → 3 repeats = 0.9s total
     # Source: com.okin.sealy ANALYSIS.md (Timer.periodic 300ms, exTimes: 2 → 3 sends)
     BED_TYPE_OKIN_CB35: (3, 300),

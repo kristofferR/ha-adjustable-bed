@@ -84,6 +84,7 @@ For named raise/lower/stop voice commands and Apple Home controls, see
 | [`limoss_remote_features`](#limoss_remote_features) | Limoss Remote: configure controls | Chooses whether the lamp and massage controls are shown. Turning a control off first turns that feature off on the bed. |
 | [`limoss_remote_rename_memory`](#limoss_remote_rename_memory) | Limoss Remote: rename memory | Renames a memory in Home Assistant. An empty name is allowed. |
 | [`linak_move_simultaneously`](#linak_move_simultaneously) | Linak: move two motors together | Moves two motors together for a set time on Linak Bed Control, Jensen JMC400 or Vindö, then stops them. |
+| [`ifit_save_preset`](#ifit-save-preset) | iFit: save named preset | Hold Flat and the selected preset together for three seconds, moving the bed before saving. |
 | [`linx_snore_intervention`](#linx_snore_intervention) | Linx: snore intervention | Run the bed's anti-snore movement once, then ask the bed for its status. It does not listen for snoring. |
 | [`logicdata_hold_preset`](#logicdata_hold_preset) | LOGICDATA: hold preset | Holds a flat, preset or memory button for a set time, then releases it. |
 | [`luuna`](#luuna) | Luuna: settings | Sets the light of a Luuna bed, or reads the name of its sleep sensor. Set its alarm with Set alarm and its clock with Set bed clock. Only the options your bed reports can run. |
@@ -2737,3 +2738,20 @@ unverified. Use `set_alarm` for adding, enabling or disabling an alarm, and
 
 Set the bed clock and wait for a clock reply before confirming existing alarms.
 The action sends each selected weekday, then queries the receiver's alarm list.
+
+### iFit save preset
+
+**`ifit_save_preset`** reproduces the [iFit](beds/okin-5a.md#ifit) Flat-plus-preset
+save gesture. It moves the bed: Flat and the selected preset refresh together
+for three seconds before the save command. A preset hold alone only recalls.
+
+| Field | Required | Values |
+|-------|----------|--------|
+| `device_id` | Yes | One or more iFit device IDs |
+| `preset` | Yes | `zero_g`, `anti_snore`, `lounge`, `incline` |
+| `side` | No | `left`, `right`, `both` for a paired bed |
+
+Every target is validated before any moves. STOP and cancellation clear the
+combined gesture. No programming latch carries into another action. Hardware
+save persistence is unverified. The native Save buttons ask for confirmation;
+automations calling this service should account for the movement.
