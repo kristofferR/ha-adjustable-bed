@@ -1,0 +1,472 @@
+{
+  "vectors": [
+    {
+      "id": "P1-head_up",
+      "protocol": "P1",
+      "action": "head_up",
+      "inputs": {
+        "nordic": true,
+        "enum_code": 36
+      },
+      "expected_bytes": "6e01002493",
+      "evidence": [
+        "E03",
+        "E04",
+        "E05",
+        "E06",
+        "E08"
+      ]
+    },
+    {
+      "id": "P1-head_down",
+      "protocol": "P1",
+      "action": "head_down",
+      "inputs": {
+        "nordic": true,
+        "enum_code": 37
+      },
+      "expected_bytes": "6e01002594",
+      "evidence": [
+        "E03",
+        "E04",
+        "E05",
+        "E06",
+        "E08"
+      ]
+    },
+    {
+      "id": "P1-foot_up",
+      "protocol": "P1",
+      "action": "foot_up",
+      "inputs": {
+        "nordic": true,
+        "enum_code": 38
+      },
+      "expected_bytes": "6e01002695",
+      "evidence": [
+        "E03",
+        "E04",
+        "E05",
+        "E06",
+        "E08"
+      ]
+    },
+    {
+      "id": "P1-foot_down",
+      "protocol": "P1",
+      "action": "foot_down",
+      "inputs": {
+        "nordic": true,
+        "enum_code": 39
+      },
+      "expected_bytes": "6e01002796",
+      "evidence": [
+        "E03",
+        "E04",
+        "E05",
+        "E06",
+        "E08"
+      ]
+    },
+    {
+      "id": "P1-head_and_foot_up",
+      "protocol": "P1",
+      "action": "head_and_foot_up",
+      "inputs": {
+        "nordic": true,
+        "enum_code": 41
+      },
+      "expected_bytes": "6e01002998",
+      "evidence": [
+        "E03",
+        "E04",
+        "E05",
+        "E06",
+        "E08"
+      ]
+    },
+    {
+      "id": "P1-head_and_foot_down",
+      "protocol": "P1",
+      "action": "head_and_foot_down",
+      "inputs": {
+        "nordic": true,
+        "enum_code": 42
+      },
+      "expected_bytes": "6e01002a99",
+      "evidence": [
+        "E03",
+        "E04",
+        "E05",
+        "E06",
+        "E08"
+      ]
+    },
+    {
+      "id": "P1-lumber_and_pillow_up",
+      "protocol": "P1",
+      "action": "lumber_and_pillow_up",
+      "inputs": {
+        "nordic": true,
+        "enum_code": 67
+      },
+      "expected_bytes": "6e010043b2",
+      "evidence": [
+        "E03",
+        "E04",
+        "E05",
+        "E06",
+        "E08"
+      ]
+    },
+    {
+      "id": "P1-lumber_and_pillow_down",
+      "protocol": "P1",
+      "action": "lumber_and_pillow_down",
+      "inputs": {
+        "nordic": true,
+        "enum_code": 68
+      },
+      "expected_bytes": "6e010044b3",
+      "evidence": [
+        "E03",
+        "E04",
+        "E05",
+        "E06",
+        "E08"
+      ]
+    },
+    {
+      "id": "P1-tile_up",
+      "protocol": "P1",
+      "action": "tile_up",
+      "inputs": {
+        "nordic": true,
+        "enum_code": 91
+      },
+      "expected_bytes": "6e01005bca",
+      "evidence": [
+        "E03",
+        "E04",
+        "E05",
+        "E06",
+        "E08"
+      ]
+    },
+    {
+      "id": "P1-tile_down",
+      "protocol": "P1",
+      "action": "tile_down",
+      "inputs": {
+        "nordic": true,
+        "enum_code": 92
+      },
+      "expected_bytes": "6e01005ccb",
+      "evidence": [
+        "E03",
+        "E04",
+        "E05",
+        "E06",
+        "E08"
+      ]
+    },
+    {
+      "id": "P1-stop",
+      "protocol": "P1",
+      "action": "stop",
+      "inputs": {
+        "nordic": true,
+        "enum_code": 110
+      },
+      "expected_bytes": "6e01006edd",
+      "evidence": [
+        "E03",
+        "E04",
+        "E05",
+        "E06",
+        "E08"
+      ]
+    },
+    {
+      "id": "P1-exit_limit",
+      "protocol": "P1",
+      "action": "exit_limit",
+      "inputs": {
+        "nordic": true,
+        "enum_code": 0
+      },
+      "expected_bytes": "6e02010071",
+      "evidence": [
+        "E04",
+        "E05",
+        "E06",
+        "E07"
+      ]
+    },
+    {
+      "id": "P2-head_up",
+      "protocol": "P2",
+      "action": "head_up",
+      "inputs": {
+        "nordic": false,
+        "enum_code": 36
+      },
+      "expected_bytes": "24",
+      "evidence": [
+        "E03",
+        "E04",
+        "E05",
+        "E06",
+        "E08"
+      ]
+    },
+    {
+      "id": "P2-head_down",
+      "protocol": "P2",
+      "action": "head_down",
+      "inputs": {
+        "nordic": false,
+        "enum_code": 37
+      },
+      "expected_bytes": "25",
+      "evidence": [
+        "E03",
+        "E04",
+        "E05",
+        "E06",
+        "E08"
+      ]
+    },
+    {
+      "id": "P2-foot_up",
+      "protocol": "P2",
+      "action": "foot_up",
+      "inputs": {
+        "nordic": false,
+        "enum_code": 38
+      },
+      "expected_bytes": "26",
+      "evidence": [
+        "E03",
+        "E04",
+        "E05",
+        "E06",
+        "E08"
+      ]
+    },
+    {
+      "id": "P2-foot_down",
+      "protocol": "P2",
+      "action": "foot_down",
+      "inputs": {
+        "nordic": false,
+        "enum_code": 39
+      },
+      "expected_bytes": "27",
+      "evidence": [
+        "E03",
+        "E04",
+        "E05",
+        "E06",
+        "E08"
+      ]
+    },
+    {
+      "id": "P2-head_and_foot_up",
+      "protocol": "P2",
+      "action": "head_and_foot_up",
+      "inputs": {
+        "nordic": false,
+        "enum_code": 41
+      },
+      "expected_bytes": "29",
+      "evidence": [
+        "E03",
+        "E04",
+        "E05",
+        "E06",
+        "E08"
+      ]
+    },
+    {
+      "id": "P2-head_and_foot_down",
+      "protocol": "P2",
+      "action": "head_and_foot_down",
+      "inputs": {
+        "nordic": false,
+        "enum_code": 42
+      },
+      "expected_bytes": "2a",
+      "evidence": [
+        "E03",
+        "E04",
+        "E05",
+        "E06",
+        "E08"
+      ]
+    },
+    {
+      "id": "P2-lumber_and_pillow_up",
+      "protocol": "P2",
+      "action": "lumber_and_pillow_up",
+      "inputs": {
+        "nordic": false,
+        "enum_code": 67
+      },
+      "expected_bytes": "43",
+      "evidence": [
+        "E03",
+        "E04",
+        "E05",
+        "E06",
+        "E08"
+      ]
+    },
+    {
+      "id": "P2-lumber_and_pillow_down",
+      "protocol": "P2",
+      "action": "lumber_and_pillow_down",
+      "inputs": {
+        "nordic": false,
+        "enum_code": 68
+      },
+      "expected_bytes": "44",
+      "evidence": [
+        "E03",
+        "E04",
+        "E05",
+        "E06",
+        "E08"
+      ]
+    },
+    {
+      "id": "P2-tile_up",
+      "protocol": "P2",
+      "action": "tile_up",
+      "inputs": {
+        "nordic": false,
+        "enum_code": 91
+      },
+      "expected_bytes": "5b",
+      "evidence": [
+        "E03",
+        "E04",
+        "E05",
+        "E06",
+        "E08"
+      ]
+    },
+    {
+      "id": "P2-tile_down",
+      "protocol": "P2",
+      "action": "tile_down",
+      "inputs": {
+        "nordic": false,
+        "enum_code": 92
+      },
+      "expected_bytes": "5c",
+      "evidence": [
+        "E03",
+        "E04",
+        "E05",
+        "E06",
+        "E08"
+      ]
+    },
+    {
+      "id": "P2-stop",
+      "protocol": "P2",
+      "action": "stop",
+      "inputs": {
+        "nordic": false,
+        "enum_code": 110
+      },
+      "expected_bytes": "6e",
+      "evidence": [
+        "E03",
+        "E04",
+        "E05",
+        "E06",
+        "E08"
+      ]
+    },
+    {
+      "id": "P2-exit_limit",
+      "protocol": "P2",
+      "action": "exit_limit",
+      "inputs": {
+        "nordic": false,
+        "enum_code": 0
+      },
+      "expected_bytes": "00",
+      "evidence": [
+        "E04",
+        "E05",
+        "E06",
+        "E07"
+      ]
+    }
+  ],
+  "routes": [
+    {
+      "id": "bleServiceUUIDNordic",
+      "object": "774341",
+      "short": "0001",
+      "service": "6e400001-b5a3-f393-e0a9-e50e24dcca9e",
+      "write": "6e400002-b5a3-f393-e0a9-e50e24dcca9e",
+      "notify_declared": "6e400003-b5a3-f393-e0a9-e50e24dcca9e",
+      "sha256": "c71e56bb045a7f488f2383209268e0025f14fb818fc4403392f85a189b388ff8",
+      "source": "work/blutter/objs.txt:Obj!BleServiceUUID@774341"
+    },
+    {
+      "id": "bleServiceUUIDW1",
+      "object": "774431",
+      "short": "FEE9",
+      "service": "0000FEE9-0000-1000-8000-00805F9B34FB",
+      "write": "D44BC439-ABFD-45A2-B575-925416129600",
+      "notify_declared": "D44BC439-ABFD-45A2-B575-925416129601",
+      "sha256": "e4eea3cd2de5903774ccdd856bbe94c930bcfeb54a8f05aa1aa5af693ccf9228",
+      "source": "work/blutter/objs.txt:Obj!BleServiceUUID@774431"
+    },
+    {
+      "id": "bleServiceUUIDW2",
+      "object": "774401",
+      "short": "FEE9",
+      "service": "0000FEE9-0000-1000-8000-00805F9B34BB",
+      "write": "D44BC439-ABFD-45A2-B575-925416129622",
+      "notify_declared": "D44BC439-ABFD-45A2-B575-925416129611",
+      "sha256": "6891ab505b613eef14523c379800c8c78ef29137ac8851d0eff97b9559aecff4",
+      "source": "work/blutter/objs.txt:Obj!BleServiceUUID@774401"
+    },
+    {
+      "id": "bleServiceUUIDW3",
+      "object": "7743d1",
+      "short": "FFE0",
+      "service": "0000FFE0-0000-1000-8000-00805F9B34FB",
+      "write": "0000FFE2-0000-1000-8000-00805F9B34FB",
+      "notify_declared": "0000FFE1-0000-1000-8000-00805F9B34FB",
+      "sha256": "78c7a79736029a8097990202a0b7d85f54f2e90902a0000cf40feb3a38fc300a",
+      "source": "work/blutter/objs.txt:Obj!BleServiceUUID@7743d1"
+    },
+    {
+      "id": "bleServiceUUIDW4",
+      "object": "7743a1",
+      "short": "FFF0",
+      "service": "0000FFF0-0000-1000-8000-00805F9B34FB",
+      "write": "0000FFF2-0000-1000-8000-00805F9B34FB",
+      "notify_declared": "0000FFF1-0000-1000-8000-00805F9B34FB",
+      "sha256": "bcbf055231ef4343f1ddd0dd8e9dd11e98245ecbfd1922decc1df6c4b577645d",
+      "source": "work/blutter/objs.txt:Obj!BleServiceUUID@7743a1"
+    },
+    {
+      "id": "bleServiceUUIDW5",
+      "object": "774371",
+      "short": "e0ff",
+      "service": "0000e0ff-3c17-d293-8e48-14fe2e4da212",
+      "write": "00000002-3c17-d293-8e48-14fe2e4da212",
+      "notify_declared": "00000003-3c17-d293-8e48-14fe2e4da212",
+      "sha256": "dda66baa8ecde691e71938bbc445845eece4235d70a00b853ba421d948c6cde3",
+      "source": "work/blutter/objs.txt:Obj!BleServiceUUID@774371"
+    }
+  ]
+}

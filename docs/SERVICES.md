@@ -2762,3 +2762,24 @@ unverified. Use `set_alarm` for adding, enabling or disabling an alarm, and
 
 Set the bed clock and wait for a clock reply before confirming existing alarms.
 The action sends each selected weekday, then queries the receiver's alarm list.
+
+AW MOTION (SilentNight SN300/SN500 and HighClare HC800) also uses
+`adjustable_bed.dreamsense_light` for capability-gated RGB and light duration,
+and the generic single countdown alarm action. These settings require a physical
+bed target and do not accept logical-side routing.
+
+### My Side
+
+`adjustable_bed.myside` supports Coaxing repeat alarms (`query`, `add`, `edit`,
+`delete`, `enable`) and Sleep linkage
+name queries (`name`). Select one or more devices and optionally a paired side.
+Query alarms and receive list replies during the current BLE connection before
+adding or changing alarms. After a mutation, receive fresh readback before
+changing that alarm again. Editing uses the existing `alarm_id`. Adding is
+limited to replacing a reported alarm explicitly deleted in this connection,
+using the lowest reusable number within the app's 1 to 7 range. A query or
+reconnect cannot prove an unseen slot is free or the bed empty. A same-number
+report revokes reuse; unrelated replies do not. A failed or cancelled replacement
+write keeps its slot uncertain until a fresh report permits another deletion. Set `hour`, `minute`, `mode`, `weekdays` (Monday=0 through
+Sunday=6, empty for once), and `enabled`. Use the shared `sync_clock` action for
+Coaxing local-calendar synchronization. See [My Side](beds/richmat.md#my-side).

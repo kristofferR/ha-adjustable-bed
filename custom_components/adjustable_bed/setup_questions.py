@@ -105,6 +105,7 @@ from .const import (
     BED_TYPE_MOODBASE,
     BED_TYPE_MOTION_BED,
     BED_TYPE_MOTOMOTION,
+    BED_TYPE_MYSIDE,
     BED_TYPE_N32_MOTION_BED,
     BED_TYPE_OCTO,
     BED_TYPE_OKIMATTMOTION,
@@ -150,6 +151,7 @@ from .const import (
     BED_TYPE_SYMPHONY,
     BED_TYPE_SYMPHONY_SLEEP,
     BED_TYPE_TIMOTION_AHF,
+    BED_TYPE_TOPCARE,
     BED_TYPE_TRANQUIL,
     BED_TYPE_VIBRADORM,
     BED_TYPE_VIBRADORM_APP,
@@ -292,6 +294,7 @@ from .profiles import okimattmotion as okimattmotion_app
 from .profiles import sleep_assist_pro as sleep_assist_pro_app
 from .profiles import sleep_assistant as sleep_assistant_app
 from .profiles.ambient import LAYOUTS as AMBIENT_LAYOUTS
+from .profiles.awmotion import CHOICES as AWMOTION_CHOICES
 from .profiles.baseremote import SIDE_LAYOUTS as BASEREMOTE_SIDE_LAYOUTS
 from .profiles.bedgear import ergobed_eligible
 from .profiles.bobpowerbase import LAYOUTS as BOB_LAYOUTS
@@ -308,6 +311,8 @@ from .profiles.mlily0 import VARIANTS as MLILY0_PROFILES
 from .profiles.mlily_choices import PROFILE_CHOICES as MLILY_PROFILES
 from .profiles.mlily_remote import VARIANTS as MLILY_REMOTE_PROFILES
 from .profiles.muuegm import CHOICES as MUUEGM_CHOICES
+from .profiles.myside import CHOICES as MYSIDE_PRODUCTS
+from .profiles.myside import PROFILES as MYSIDE_PROFILES
 from .profiles.okimiki import PROFILE_CHOICES as OKIMIKI_PROFILES
 from .profiles.restonic import AXES as RESTONIC_AXES
 from .profiles.restonic import BRANCH_CHOICES as RESTONIC_BRANCHES
@@ -394,6 +399,7 @@ _OWNED_BY_BED_TYPE: Final[dict[str, frozenset[str]]] = {
     BED_TYPE_OKIMIKI: _APP_DEFINED - {CONF_PROTOCOL_VARIANT},
     BED_TYPE_LIKIMIO: _APP_DEFINED - {CONF_PROTOCOL_VARIANT},
     "dreamotion_smart": GENERIC_FIELDS - {CONF_MOTOR_PULSE_COUNT},
+    "awmotion": _APP_DEFINED - {CONF_PROTOCOL_VARIANT, CONF_MOTOR_PULSE_COUNT},
     "muuegm": _APP_DEFINED - {CONF_PROTOCOL_VARIANT, CONF_MOTOR_PULSE_COUNT},
     "dreamsense": _APP_DEFINED - {CONF_PROTOCOL_VARIANT, CONF_MOTOR_PULSE_COUNT},
     "saatva": _APP_DEFINED - {CONF_PROTOCOL_VARIANT, CONF_MOTOR_PULSE_COUNT},
@@ -3523,6 +3529,13 @@ SETUP_PROFILES: Final[dict[str, SetupProfile]] = {
         title=lambda _data: "MUUEGM",
     ),
     # The app's product sets every control, so its one row asks it.
+    "awmotion": SetupProfile(
+        owns={CONF_MOTOR_COUNT: SET_BY_PROFILE, CONF_HAS_MASSAGE: True,
+              CONF_DISABLE_ANGLE_SENSING: True, CONF_MOTOR_PULSE_DELAY_MS: 100},
+        questions=(Question(CONF_PROTOCOL_VARIANT, AWMOTION_CHOICES),),
+        derive=lambda data: {CONF_MOTOR_COUNT: {"SN300": 2, "SN500": 4, "HC800": 3}[str(data[CONF_PROTOCOL_VARIANT])]},
+        title=lambda _data: "AW MOTION",
+    ),
     "dreamsense": SetupProfile(
         owns={CONF_MOTOR_COUNT: 2, CONF_HAS_MASSAGE: SET_BY_PROFILE,
               CONF_DISABLE_ANGLE_SENSING: True, CONF_MOTOR_PULSE_DELAY_MS: 100},
@@ -3641,6 +3654,13 @@ SETUP_PROFILES: Final[dict[str, SetupProfile]] = {
     BED_TYPE_JEROME_ADJUSTABLE_BASE: _asking(
         BED_TYPE_JEROME_ADJUSTABLE_BASE,
         questions=(Question(CONF_PROTOCOL_VARIANT, JEROME_ADJUSTABLE_BASE_PRODUCTS, searchable=True),),
+    ),
+    BED_TYPE_MYSIDE: SetupProfile(
+        owns={CONF_MOTOR_COUNT: 2, CONF_HAS_MASSAGE: SET_BY_PROFILE,
+              CONF_DISABLE_ANGLE_SENSING: True, CONF_MOTOR_PULSE_DELAY_MS: 100},
+        questions=(Question(CONF_PROTOCOL_VARIANT, MYSIDE_PRODUCTS),),
+        derive=lambda data: {CONF_HAS_MASSAGE: MYSIDE_PROFILES[str(data[CONF_PROTOCOL_VARIANT])].coaxing},
+        title=lambda _data: "My Side",
     ),
     BED_TYPE_RICHMAT_APP: _asking(
         BED_TYPE_RICHMAT_APP,
@@ -3920,6 +3940,11 @@ SETUP_PROFILES: Final[dict[str, SetupProfile]] = {
         derive=lambda _data: _NO_PULSE_CHOICE,
         seed=_motion_bed_seed,
     ),
+    BED_TYPE_TOPCARE: SetupProfile(
+        owns={CONF_MOTOR_COUNT: 2, CONF_HAS_MASSAGE: False,
+              CONF_DISABLE_ANGLE_SENSING: True, CONF_MOTOR_PULSE_DELAY_MS: 100,
+              CONF_PROTOCOL_VARIANT: "auto"},
+    ),
     BED_TYPE_COMFORT_BED: SetupProfile(
         owns={CONF_MOTOR_COUNT: 2, CONF_HAS_MASSAGE: True,
               CONF_DISABLE_ANGLE_SENSING: True, CONF_MOTOR_PULSE_DELAY_MS: 100,
@@ -3934,6 +3959,15 @@ SETUP_PROFILES: Final[dict[str, SetupProfile]] = {
             CONF_MOTOR_PULSE_DELAY_MS: ATLAS_LIFT.motor_repeat_ms,
             CONF_PROTOCOL_VARIANT: "auto",
         },
+    ),
+    "meisemobell": SetupProfile(
+        owns={CONF_MOTOR_COUNT: 2, CONF_HAS_MASSAGE: False,
+              CONF_DISABLE_ANGLE_SENSING: True, CONF_MOTOR_PULSE_DELAY_MS: 300},
+        questions=(Question(CONF_PROTOCOL_VARIANT, {
+            "15_22_15a": "15_22_15A (FFE5 / FFE9)",
+            "24_xx_xx": "24_XX_XX (Nordic UART)",
+        }, "15_22_15a"),),
+        title=lambda _data: "Meisemobell / 마이저모벨",
     ),
     BED_TYPE_SUPERIOR_SLEEP: SetupProfile(
         owns={CONF_MOTOR_COUNT: 2, CONF_HAS_MASSAGE: True,
