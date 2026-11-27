@@ -11078,7 +11078,7 @@
       }
     },
     "dreamsense_light": {
-      "name": "Dream Sense: lighting",
+      "name": "Dream Sense and Likimio lighting",
       "description": "Set the bed light color or duration after the bed reports lighting support.",
       "fields": {
         "device_id": {

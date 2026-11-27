@@ -8,10 +8,13 @@ from typing import Final
 from bleak import BleakClient
 from bleak.backends.characteristic import BleakGATTCharacteristic
 
+from ...const import NORDIC_UART_SERVICE_UUID
 from ...errors import invalid
 
+type GattRoute = tuple[str, str, bool]
+
 # This app's W1..W5 are not the classic app's transport order or RAW mapping.
-ROUTES: Final = (
+ROUTES: Final[tuple[GattRoute, ...]] = (
     ("6e400001-b5a3-f393-e0a9-e50e24dcca9e", "6e400002-b5a3-f393-e0a9-e50e24dcca9e", False),
     ("0000fee9-0000-1000-8000-00805f9b34fb", "d44bc439-abfd-45a2-b575-925416129600", True),
     ("0000fee9-0000-1000-8000-00805f9b34bb", "d44bc439-abfd-45a2-b575-925416129622", True),
@@ -20,12 +23,17 @@ ROUTES: Final = (
     ("0000e0ff-3c17-d293-8e48-14fe2e4da212", "00000002-3c17-d293-8e48-14fe2e4da212", True),
 )
 
+# Likimio recognizes the same endpoints, but sends bare opcodes only on Nordic.
+LIKIMIO_ROUTES: Final = tuple(
+    (service, write, service == NORDIC_UART_SERVICE_UUID) for service, write, _ in ROUTES
+)
+
 
 @dataclass(frozen=True, slots=True)
 class Session:
     client: BleakClient
     write: BleakGATTCharacteristic
-    notify: BleakGATTCharacteristic
+    notify: BleakGATTCharacteristic | None
     single: bool
     generation: int
     product: str
@@ -35,11 +43,18 @@ class Session:
         return "write-without-response" not in self.write.properties
 
 
-def select(client: BleakClient, generation: int, product: str) -> Session:
+def select(
+    client: BleakClient,
+    generation: int,
+    product: str,
+    *,
+    routes: tuple[GattRoute, ...] = ROUTES,
+    requires_notify: bool = True,
+) -> Session:
     write = notify = None
     single = False
     for service in client.services:
-        route = next((r for r in ROUTES if r[0] == service.uuid.lower()), None)
+        route = next((r for r in routes if r[0] == service.uuid.lower()), None)
         if route is None:
             continue
         single = route[2]
@@ -48,6 +63,6 @@ def select(client: BleakClient, generation: int, product: str) -> Session:
                 write = char
             if notify is None and "notify" in char.properties:
                 notify = char
-    if write is None or notify is None:
+    if write is None or (requires_notify and notify is None):
         raise invalid("dreamsense_transport")
     return Session(client, write, notify, single, generation, product)

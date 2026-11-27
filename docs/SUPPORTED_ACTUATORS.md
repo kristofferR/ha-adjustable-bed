@@ -34,6 +34,7 @@ Devices & services > Adjustable Bed** and choose **Reconfigure**.
 | Dawn House | [Aging in Place / Dawn House](beds/keeson.md#aging-in-place--dawn-house) |
 | DewertOkin | [DewertOkin ELEVATE](beds/okin-5a.md#dewertokin-elevate), [Okin](beds/okin-nframe.md) |
 | Dream Motion | [Jiecang](beds/jiecang.md) |
+| Likimio ABM10 | [Likimio](beds/richmat.md#likimio) |
 | Dream Sense | [Dream Sense Bed](beds/richmat.md#dream-sense-bed) |
 | Elda BTH / MEGAMAT | [Okin](beds/okin-nframe.md) |
 | Ergomotion | [Keeson](beds/keeson.md) |

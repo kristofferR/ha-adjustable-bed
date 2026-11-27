@@ -39,6 +39,7 @@ if TYPE_CHECKING:
         DewertOkinUuidRfGatewayController as DewertOkinUuidRfGatewayController,
     )
     from .doublesleep.controller import DoubleSleepController as DoubleSleepController
+    from .dreamsense.likimio import LikimioController as LikimioController
     from .ergo_slim import ErgoSlimController as ErgoSlimController
     from .ergomotion4.controller import Ergomotion4Controller as Ergomotion4Controller
     from .ergomotion_app import ErgomotionAppController as ErgomotionAppController
@@ -273,6 +274,7 @@ _EXPORT_MODULES = {
     "ComfyController": "kaidi.comfy",
     "KaidiController": "kaidi.controller",
     "LevaController": "leva",
+    "LikimioController": "dreamsense.likimio",
     "LinxController": "linx.controller",
     "SymphonySleepController": ("keeson.symphony_sleep", "SymphonySleepController"),
     "KeesonController": "keeson.controller",
@@ -395,6 +397,7 @@ __all__ = [
     "LinakController",
     "VindoController",
     "LevaController",
+    "LikimioController",
     "LinxController",
     "LogicdataController",
     "LogicdataAppController",

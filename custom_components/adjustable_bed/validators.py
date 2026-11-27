@@ -39,6 +39,7 @@ from .const import (
     BED_TYPE_HJBED,
     BED_TYPE_KAIDI,
     BED_TYPE_KEESON,
+    BED_TYPE_LIKIMIO,
     BED_TYPE_LINAK,
     BED_TYPE_MLILY,
     BED_TYPE_OCTO,
@@ -106,6 +107,7 @@ from .profiles.enso2 import LAYOUT_CHOICES as ENSO2_LAYOUT_CHOICES
 from .profiles.hush import HUSH_BASE_VARIANTS
 from .profiles.instant_comfort import ROUTES as INSTANT_COMFORT_ROUTES
 from .profiles.leva import RECEIVERS as LEVA_RECEIVERS
+from .profiles.likimio import CHOICES as LIKIMIO_CHOICES
 from .profiles.linx import TRANSPORT_CHOICES as LINX_TRANSPORTS
 from .profiles.luuna import VARIANTS as LUUNA_VARIANTS
 from .profiles.majestichome import PROFILE_CHOICES as MAJESTICHOME_PROFILES
@@ -166,6 +168,7 @@ VARIANTS_BY_BED_TYPE: dict[str, dict[str, str]] = {
     BED_TYPE_SLEEPTIME: dict(SLEEPTIME_SELECTORS),
     "ormatek": {"okin15": "Bluetooth name starts with Okin", "okin24": "Bluetooth name starts with SmartBed"},
     "leva": dict(LEVA_RECEIVERS),
+    BED_TYPE_LIKIMIO: LIKIMIO_CHOICES,
     "linx": LINX_TRANSPORTS,
     "nerum": {"p1": "Receiver type P1 (one memory)", "p2": "Receiver type P2 (two memories, alarms)", "p3": "Receiver type P3 (two memories, alarms)"},
     **{app: legacy_choices(app) for app in LEGACY_APPS},
