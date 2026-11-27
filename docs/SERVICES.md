@@ -496,6 +496,7 @@ data:
 | Customatic Z-Series | `massage`, `memory_1` (required to turn on) | Once. Needs a Z-Series bed with an alarm page |
 | Dream Sense Bed | The selected product's presets; required to turn on. Saved memories need `confirm_custom_position: true` | One-time alarms go off at the next occurrence of the time. Products with repeating alarms accept `weekdays` and need the `slot` of an alarm the bed reported (0 to 255); new alarms cannot be added |
 | ENSO Sleep Control (Enso 2) | Choices from the layout, including `tv`, `zero_g`, `anti_snore` and supported memories | One-time countdown. Optional `massage_zone` follows the layout and supported position combinations |
+| [Alya Smart Furnishing](beds/alya.md#clock-and-alarms) | From the selected BLE layout, including its supported presets, massage or light | `weekdays` or the app route's no-weekday repeat flag. P1 and DACHENG two-motor have no alarm. Use `sync_clock` separately |
 | eShine | `zero_g`, `flat`, `massage` (by model) | Once; the bed clock is set first |
 | Glideaway Motion | `none`, `memory_1`, `memory_2` | Once |
 | Jiecang apps | `flat`, `zero_g`, `anti_snore`, `memory_1`, `memory_2`, `yoga` where reported | `weekdays`, head and foot massage levels 0–3 |

@@ -6820,6 +6820,16 @@ N-frame codec, including its schedule encoder. External owners may
 validate firmware acceptance.
 
 
+### Alya Smart Furnishing (N-frame P3/P4)
+
+**App:** [Alya Smart Furnishing](https://play.google.com/store/apps/details?id=com.okin.bedding.alya) 1.0.2, `com.okin.bedding.alya`
+
+**Status:** ❓ Hardware unverified
+
+#### Setup
+
+Select the explicit Alya BLE type and motor layout. The [Alya app guide](alya.md) holds this app's generated layout, transport and command tables and its release/state rules. Shared frames do not select another app's capabilities or timings.
+
 
 ### JobsAI
 
