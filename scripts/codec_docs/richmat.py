@@ -2236,3 +2236,7 @@ BLOCKS += [(GUIDE, "silksnow-products", render_silksnow_products), (GUIDE, "silk
 from scripts.codec_docs._purely_sleep import BLOCKS as PURELY_SLEEP_BLOCKS  # noqa: E402
 
 BLOCKS.extend(PURELY_SLEEP_BLOCKS)
+
+from scripts.codec_docs import _comfort_bed  # noqa: E402
+
+BLOCKS.append((GUIDE, "comfort-bed", _comfort_bed.render))

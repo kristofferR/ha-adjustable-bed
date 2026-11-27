@@ -40,10 +40,11 @@ def packet(code, route="w1"):
 
 @pytest.mark.parametrize("route", ("n1", "w1", "w2", "w3", "w4", "w5"))
 @pytest.mark.parametrize("no_response", (False, True))
-async def test_exact_service_roles_first_notify_write_mode_and_paced_startup(route, no_response):
+@pytest.mark.parametrize("product", ("JLRN", "VJRM"))
+async def test_exact_service_roles_first_notify_write_mode_and_paced_startup(route, no_response, product):
     gatt = service(route, *("write", "write-without-response") if no_response else ("write",))
     client = client_on(gatt)
-    ctrl = PurelySleepController(MagicMock(client=client), product="JLRN")
+    ctrl = PurelySleepController(MagicMock(client=client), product=product)
     timed = []
     with virtual_clock() as clock:
         client.write_gatt_char.side_effect = lambda *args, **kwargs: timed.append(clock.now)
