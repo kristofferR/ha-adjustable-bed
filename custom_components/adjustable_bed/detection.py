@@ -1792,6 +1792,12 @@ def _detect_with_first_pass(
             result.ambiguous_types = list(dict.fromkeys([*(result.ambiguous_types or ()), BED_TYPE_N32_MOTION_BED]))
             result.signals.append("name:n32_app_candidate")
     # This app's scan substrings offer a choice, never a receiver or product identity.
+    if first.name("silksnow") and not any(signal.startswith("excluded:") for signal in result.signals):
+        if result.bed_type is None:
+            result = DetectionResult("silksnow", 0.3, [*result.signals, "name:silksnow_app_candidate"])
+        elif result.bed_type != "silksnow":
+            result.ambiguous_types = list(dict.fromkeys([*(result.ambiguous_types or ()), "silksnow"]))
+            result.signals.append("name:silksnow_app_candidate")
     if first.name(BED_TYPE_MLILY0) and not any(
         signal.startswith("excluded:") for signal in result.signals
     ):

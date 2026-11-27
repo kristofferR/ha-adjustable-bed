@@ -4731,7 +4731,7 @@
       }
     },
     "sensor": {
-      "silksnow": {"name": "S&S Base"},
+      "silksnow": {"name": "Model"},
       "berun_head_massage": {
         "name": "Head massage level"
       },

@@ -57,6 +57,42 @@ def native_runtime(ctrl, c):
     c.async_execute_controller_command = AsyncMock(side_effect=dispatch)
 
 
+@pytest.mark.parametrize("model", ["slikenhanced", "slikpremier"])
+async def test_native_first_white_turn_on_chooses_white_without_assumed_power(model):
+    from custom_components.adjustable_bed.light import LIGHT_DESCRIPTION, AdjustableBedLight
+    from custom_components.adjustable_bed.state_keys import UNDER_BED_LIGHTS_ON
+
+    ctrl, c = bed(model)
+    native_runtime(ctrl, c)
+    await ctrl.start_notify()
+    ctrl.events["light_available"] = {}
+    c.client.write_gatt_char.reset_mock()
+    light = AdjustableBedLight(c, LIGHT_DESCRIPTION)
+    light.async_write_ha_state = MagicMock()
+    await light.async_turn_on()
+    assert frames(c) == [codec.rgb(255, 255, 255).hex()]
+    assert ctrl.current_light_rgb_color == (255, 255, 255)
+    assert c.controller_state.get(UNDER_BED_LIGHTS_ON) is None
+
+
+async def test_alarm_refresh_and_model_use_their_native_meaningful_surfaces():
+    from homeassistant.const import EntityCategory
+
+    from custom_components.adjustable_bed.button import ControllerActionButton
+
+    ctrl, c = bed("nisconup300")
+    native_runtime(ctrl, c)
+    refresh = next(
+        spec for spec in ctrl.controller_button_specs if spec.key == "silksnow_alarm_refresh"
+    )
+    button = ControllerActionButton(c, refresh)
+    assert button.entity_category is EntityCategory.DIAGNOSTIC
+    assert not button.entity_registry_enabled_default
+    assert not ctrl.controller_state_sensor_specs[0].attribute_keys
+    ctrl.events["rgb_timer"] = {"minutes": 104}
+    assert ctrl.protocol_diagnostics["events"] == ctrl.events
+
+
 async def test_native_white_color_is_reused_without_inventing_power():
     from custom_components.adjustable_bed.light import LIGHT_DESCRIPTION, AdjustableBedLight
     from custom_components.adjustable_bed.state_keys import UNDER_BED_LIGHTS_ON
@@ -97,6 +133,25 @@ async def test_native_timer_publishes_sent_and_received_options(model, option):
         ctrl._consume(Event("rgb_timer", {"minutes": 301}))
         assert timer.current_option is None
     ctrl.on_disconnect()
+    assert timer.current_option is None
+
+
+async def test_literal_timer_reply_retains_artifact_directional_encoding():
+    from custom_components.adjustable_bed.select import (
+        LIGHT_TIMER_DESCRIPTION,
+        AdjustableBedControllerStateSelect,
+    )
+
+    ctrl, c = bed("nisconup355b")
+    native_runtime(ctrl, c)
+    await ctrl.start_notify()
+    ctrl.events["light_available"] = {}
+    timer = AdjustableBedControllerStateSelect(c, LIGHT_TIMER_DESCRIPTION, ctrl.light_timer_options)
+    await timer.async_select_option("300 min")
+    assert timer.current_option == "300 min"
+    data = bytes.fromhex("6e200a04020200012ccd")
+    assert decode(data).values["minutes"] == 104
+    c.client.start_notify.call_args.args[1](ctrl._link.notify, bytearray(data))
     assert timer.current_option is None
 
 

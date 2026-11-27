@@ -22,7 +22,6 @@ from ..catalog_buttons import Kind, catalog_button
 from ..entity_specs import ControllerButtonSpec, ControllerHoldSpec
 from .controller import (
     CASPER_BASE_ALARMS,
-    CASPER_BASE_ERROR,
     CASPER_BASE_EVENTS,
     CASPER_BASE_MODEL,
     GATT,
@@ -307,10 +306,18 @@ class SilkSnowController(CasperBaseController):
                 spec,
                 key="silksnow",
                 translation_key="silksnow",
-                attribute_keys=(CASPER_BASE_EVENTS, CASPER_BASE_ALARMS, CASPER_BASE_ERROR),
+                attribute_keys=(),
             )
             for spec in super().controller_state_sensor_specs
         )
+
+    @property
+    def protocol_diagnostics(self):
+        return {
+            "product": self.product[0],
+            "events": dict(self.events),
+            "alarms": list(self.alarms),
+        }
 
     def _publish(self) -> None:
         self.forward_controller_state_updates(
@@ -421,7 +428,9 @@ class SilkSnowController(CasperBaseController):
             for action in effects
         ]
         if self.product[10]:
-            extra.append(catalog_button("silksnow_alarm_refresh", "Refresh alarms", refresh))
+            extra.append(
+                catalog_button("silksnow_alarm_refresh", "Refresh alarms", refresh, diagnostic=True)
+            )
         return (*specs, *(spec for spec in extra if spec is not None))
 
     async def stop_all(self) -> None:
@@ -456,6 +465,11 @@ class SilkSnowController(CasperBaseController):
     @property
     def supports_explicit_light_on_control(self) -> bool:
         return self.product[7]
+
+    @property
+    def default_light_rgb_color(self) -> tuple[int, int, int] | None:
+        # A first white-light turn-on chooses white; it does not claim received color or power.
+        return (255, 255, 255) if self.supports_lights and not self.product[7] else None
 
     @property
     def supports_light_state_feedback(self) -> bool:
