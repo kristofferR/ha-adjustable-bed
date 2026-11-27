@@ -3200,6 +3200,7 @@ def _import_service_registrars() -> tuple[Callable[[HomeAssistant], None], ...]:
     from .beds.mline.services import register_services as register_mline_services
     from .beds.motion_bed.services import async_register_motion_bed_services
     from .beds.motomotion.services import async_register_motomotion_services
+    from .beds.myside.services import register_services as register_myside_services
     from .beds.octo.services import async_register_octo_services
     from .beds.okimiki.services import register_services as register_okimiki_services
     from .beds.onlysnore.services import register_services as register_onlysnore_services
@@ -3272,6 +3273,7 @@ def _import_service_registrars() -> tuple[Callable[[HomeAssistant], None], ...]:
         async_register_richmat_rise_services,
         async_register_motomotion_services,
         async_register_hjbed_services,
+        register_myside_services,
         async_register_richmat_app_services,
         async_register_goodvibe_services,
         register_okimiki_services,

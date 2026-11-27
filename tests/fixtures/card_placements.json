@@ -3600,6 +3600,10 @@
   "card_section": "motors",
   "card_motor": "lumbar"
  },
+ "cover:lumbar_pillow": {
+  "card_section": "motors",
+  "card_motor": "lumbar_pillow"
+ },
  "cover:malouf_full_tilt": {
   "card_section": "motors",
   "card_motor": "malouf_full_tilt"

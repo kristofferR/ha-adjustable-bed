@@ -2775,3 +2775,19 @@ apply. Alarms support weekdays, the next occurrence, memory A/B or massage.
 Only the P1 route accepts massage alongside a memory wake action. Use the
 shared massage timer select on P1; P2/P3 expose timer-cycle buttons.
 [Protocol and controls](beds/keeson.md#powersbedding).
+
+### My Side
+
+`adjustable_bed.myside` supports Coaxing repeat alarms (`query`, `add`, `edit`,
+`delete`, `enable`) and Sleep linkage
+name queries (`name`). Select one or more devices and optionally a paired side.
+Query alarms and receive list replies during the current BLE connection before
+adding or changing alarms. After a mutation, receive fresh readback before
+changing that alarm again. Editing uses the existing `alarm_id`. Adding is
+limited to replacing a reported alarm explicitly deleted in this connection,
+using the lowest reusable number within the app's 1 to 7 range. A query or
+reconnect cannot prove an unseen slot is free or the bed empty. A same-number
+report revokes reuse; unrelated replies do not. A failed or cancelled replacement
+write keeps its slot uncertain until a fresh report permits another deletion. Set `hour`, `minute`, `mode`, `weekdays` (Monday=0 through
+Sunday=6, empty for once), and `enabled`. Use the shared `sync_clock` action for
+Coaxing local-calendar synchronization. See [My Side](beds/richmat.md#my-side).
