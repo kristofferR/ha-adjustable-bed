@@ -3540,6 +3540,10 @@
       "local_name": "WZRM*"
     },
     {
+      "local_name": "W_LeGe*",
+      "connectable": true
+    },
+    {
       "local_name": "X0RM*"
     },
     {
