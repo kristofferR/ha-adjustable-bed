@@ -166,6 +166,7 @@ from .const import (
     BED_TYPE_SYMPHONY,
     BED_TYPE_SYMPHONY_SLEEP,
     BED_TYPE_TIMOTION_AHF,
+    BED_TYPE_TOPCARE,
     BED_TYPE_TRANQUIL,
     BED_TYPE_TRUEMOTION,
     BED_TYPE_ULTRAMATIC_SMART_BED,
@@ -291,6 +292,7 @@ class _BuilderSpec:
 # Bed types whose construction is "import this class and pass the coordinator
 # plus fixed kwargs".
 _SIMPLE_CONTROLLERS: Final[dict[str, _ControllerSpec]] = {
+    BED_TYPE_TOPCARE: _ControllerSpec("richmat.topcare", "TopcareController"),
     BED_TYPE_COMFORT_BED: _ControllerSpec("comfort_bed.controller", "ComfortBedController"),
     BED_TYPE_ATLAS_LIFT: _ControllerSpec("richmat.atlas_lift", "AtlasLiftController"),
     BED_TYPE_VINDO: _ControllerSpec("vindo", "VindoController"),
@@ -448,6 +450,7 @@ _BUILDERS: Final[dict[str, _BuilderSpec]] = {
     "majestichome": _BuilderSpec("majestichome.controller"),
     BED_TYPE_OKIMIKI: _BuilderSpec("okimiki.controller"),
     BED_TYPE_LIKIMIO: _BuilderSpec("dreamsense.likimio"),
+    "awmotion": _BuilderSpec("dreamsense.awmotion"),
     "dreamsense": _BuilderSpec("dreamsense.controller"),
     "muuegm": _BuilderSpec("dreamsense.muuegm"),
     "saatva": _BuilderSpec("saatva"),
@@ -501,6 +504,7 @@ _BUILDERS: Final[dict[str, _BuilderSpec]] = {
     BED_TYPE_RICHMAT: _BuilderSpec("richmat.controller"),
     "richmat_sleep_receiver": _BuilderSpec("ruf_richmat.sleep"),
     BED_TYPE_RONDURE: _BuilderSpec("rondure"),
+    "meisemobell": _BuilderSpec("meisemobell.controller"),
     BED_TYPE_SIMMONS: _BuilderSpec("simmons.controller"),
     BED_TYPE_SIMMONS_BLUE: _BuilderSpec("simmons_blue"),
     BED_TYPE_SLEEP_NUMBER: _BuilderSpec("sleep_number.controller"),

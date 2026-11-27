@@ -1,0 +1,1154 @@
+[
+  {
+    "id": "P1-head_up",
+    "protocol": "P1",
+    "action": "head_up",
+    "builder": "action",
+    "inputs": {
+      "opcode": 36,
+      "nordic": true,
+      "side": 0
+    },
+    "expected_bytes": "24",
+    "evidence": [
+      "BUILDERS 0x66c790-0x66d088",
+      "command-catalog.json"
+    ]
+  },
+  {
+    "id": "P2-head_up",
+    "protocol": "P2",
+    "action": "head_up",
+    "builder": "action",
+    "inputs": {
+      "opcode": 36,
+      "nordic": false,
+      "side": 0
+    },
+    "expected_bytes": "6e01002493",
+    "evidence": [
+      "BUILDERS 0x66c790-0x66d088",
+      "command-catalog.json"
+    ]
+  },
+  {
+    "id": "P1-head_down",
+    "protocol": "P1",
+    "action": "head_down",
+    "builder": "action",
+    "inputs": {
+      "opcode": 37,
+      "nordic": true,
+      "side": 0
+    },
+    "expected_bytes": "25",
+    "evidence": [
+      "BUILDERS 0x66c790-0x66d088",
+      "command-catalog.json"
+    ]
+  },
+  {
+    "id": "P2-head_down",
+    "protocol": "P2",
+    "action": "head_down",
+    "builder": "action",
+    "inputs": {
+      "opcode": 37,
+      "nordic": false,
+      "side": 0
+    },
+    "expected_bytes": "6e01002594",
+    "evidence": [
+      "BUILDERS 0x66c790-0x66d088",
+      "command-catalog.json"
+    ]
+  },
+  {
+    "id": "P1-foot_up",
+    "protocol": "P1",
+    "action": "foot_up",
+    "builder": "action",
+    "inputs": {
+      "opcode": 38,
+      "nordic": true,
+      "side": 0
+    },
+    "expected_bytes": "26",
+    "evidence": [
+      "BUILDERS 0x66c790-0x66d088",
+      "command-catalog.json"
+    ]
+  },
+  {
+    "id": "P2-foot_up",
+    "protocol": "P2",
+    "action": "foot_up",
+    "builder": "action",
+    "inputs": {
+      "opcode": 38,
+      "nordic": false,
+      "side": 0
+    },
+    "expected_bytes": "6e01002695",
+    "evidence": [
+      "BUILDERS 0x66c790-0x66d088",
+      "command-catalog.json"
+    ]
+  },
+  {
+    "id": "P1-foot_down",
+    "protocol": "P1",
+    "action": "foot_down",
+    "builder": "action",
+    "inputs": {
+      "opcode": 39,
+      "nordic": true,
+      "side": 0
+    },
+    "expected_bytes": "27",
+    "evidence": [
+      "BUILDERS 0x66c790-0x66d088",
+      "command-catalog.json"
+    ]
+  },
+  {
+    "id": "P2-foot_down",
+    "protocol": "P2",
+    "action": "foot_down",
+    "builder": "action",
+    "inputs": {
+      "opcode": 39,
+      "nordic": false,
+      "side": 0
+    },
+    "expected_bytes": "6e01002796",
+    "evidence": [
+      "BUILDERS 0x66c790-0x66d088",
+      "command-catalog.json"
+    ]
+  },
+  {
+    "id": "P1-combined_up",
+    "protocol": "P1",
+    "action": "combined_up",
+    "builder": "action",
+    "inputs": {
+      "opcode": 41,
+      "nordic": true,
+      "side": 0
+    },
+    "expected_bytes": "29",
+    "evidence": [
+      "BUILDERS 0x66c790-0x66d088",
+      "command-catalog.json"
+    ]
+  },
+  {
+    "id": "P2-combined_up",
+    "protocol": "P2",
+    "action": "combined_up",
+    "builder": "action",
+    "inputs": {
+      "opcode": 41,
+      "nordic": false,
+      "side": 0
+    },
+    "expected_bytes": "6e01002998",
+    "evidence": [
+      "BUILDERS 0x66c790-0x66d088",
+      "command-catalog.json"
+    ]
+  },
+  {
+    "id": "P1-combined_down",
+    "protocol": "P1",
+    "action": "combined_down",
+    "builder": "action",
+    "inputs": {
+      "opcode": 42,
+      "nordic": true,
+      "side": 0
+    },
+    "expected_bytes": "2a",
+    "evidence": [
+      "BUILDERS 0x66c790-0x66d088",
+      "command-catalog.json"
+    ]
+  },
+  {
+    "id": "P2-combined_down",
+    "protocol": "P2",
+    "action": "combined_down",
+    "builder": "action",
+    "inputs": {
+      "opcode": 42,
+      "nordic": false,
+      "side": 0
+    },
+    "expected_bytes": "6e01002a99",
+    "evidence": [
+      "BUILDERS 0x66c790-0x66d088",
+      "command-catalog.json"
+    ]
+  },
+  {
+    "id": "P1-lumbar_up",
+    "protocol": "P1",
+    "action": "lumbar_up",
+    "builder": "action",
+    "inputs": {
+      "opcode": 63,
+      "nordic": true,
+      "side": 0
+    },
+    "expected_bytes": "3f",
+    "evidence": [
+      "BUILDERS 0x66c790-0x66d088",
+      "command-catalog.json"
+    ]
+  },
+  {
+    "id": "P2-lumbar_up",
+    "protocol": "P2",
+    "action": "lumbar_up",
+    "builder": "action",
+    "inputs": {
+      "opcode": 63,
+      "nordic": false,
+      "side": 0
+    },
+    "expected_bytes": "6e01003fae",
+    "evidence": [
+      "BUILDERS 0x66c790-0x66d088",
+      "command-catalog.json"
+    ]
+  },
+  {
+    "id": "P1-lumbar_down",
+    "protocol": "P1",
+    "action": "lumbar_down",
+    "builder": "action",
+    "inputs": {
+      "opcode": 64,
+      "nordic": true,
+      "side": 0
+    },
+    "expected_bytes": "40",
+    "evidence": [
+      "BUILDERS 0x66c790-0x66d088",
+      "command-catalog.json"
+    ]
+  },
+  {
+    "id": "P2-lumbar_down",
+    "protocol": "P2",
+    "action": "lumbar_down",
+    "builder": "action",
+    "inputs": {
+      "opcode": 64,
+      "nordic": false,
+      "side": 0
+    },
+    "expected_bytes": "6e010040af",
+    "evidence": [
+      "BUILDERS 0x66c790-0x66d088",
+      "command-catalog.json"
+    ]
+  },
+  {
+    "id": "P1-pillow_up",
+    "protocol": "P1",
+    "action": "pillow_up",
+    "builder": "action",
+    "inputs": {
+      "opcode": 65,
+      "nordic": true,
+      "side": 0
+    },
+    "expected_bytes": "41",
+    "evidence": [
+      "BUILDERS 0x66c790-0x66d088",
+      "command-catalog.json"
+    ]
+  },
+  {
+    "id": "P2-pillow_up",
+    "protocol": "P2",
+    "action": "pillow_up",
+    "builder": "action",
+    "inputs": {
+      "opcode": 65,
+      "nordic": false,
+      "side": 0
+    },
+    "expected_bytes": "6e010041b0",
+    "evidence": [
+      "BUILDERS 0x66c790-0x66d088",
+      "command-catalog.json"
+    ]
+  },
+  {
+    "id": "P1-pillow_down",
+    "protocol": "P1",
+    "action": "pillow_down",
+    "builder": "action",
+    "inputs": {
+      "opcode": 66,
+      "nordic": true,
+      "side": 0
+    },
+    "expected_bytes": "42",
+    "evidence": [
+      "BUILDERS 0x66c790-0x66d088",
+      "command-catalog.json"
+    ]
+  },
+  {
+    "id": "P2-pillow_down",
+    "protocol": "P2",
+    "action": "pillow_down",
+    "builder": "action",
+    "inputs": {
+      "opcode": 66,
+      "nordic": false,
+      "side": 0
+    },
+    "expected_bytes": "6e010042b1",
+    "evidence": [
+      "BUILDERS 0x66c790-0x66d088",
+      "command-catalog.json"
+    ]
+  },
+  {
+    "id": "P1-flat",
+    "protocol": "P1",
+    "action": "flat",
+    "builder": "action",
+    "inputs": {
+      "opcode": 49,
+      "nordic": true,
+      "side": 0
+    },
+    "expected_bytes": "31",
+    "evidence": [
+      "BUILDERS 0x66c790-0x66d088",
+      "command-catalog.json"
+    ]
+  },
+  {
+    "id": "P2-flat",
+    "protocol": "P2",
+    "action": "flat",
+    "builder": "action",
+    "inputs": {
+      "opcode": 49,
+      "nordic": false,
+      "side": 0
+    },
+    "expected_bytes": "6e010031a0",
+    "evidence": [
+      "BUILDERS 0x66c790-0x66d088",
+      "command-catalog.json"
+    ]
+  },
+  {
+    "id": "P1-bed_light",
+    "protocol": "P1",
+    "action": "bed_light",
+    "builder": "action",
+    "inputs": {
+      "opcode": 60,
+      "nordic": true,
+      "side": 0
+    },
+    "expected_bytes": "3c",
+    "evidence": [
+      "BUILDERS 0x66c790-0x66d088",
+      "command-catalog.json"
+    ]
+  },
+  {
+    "id": "P2-bed_light",
+    "protocol": "P2",
+    "action": "bed_light",
+    "builder": "action",
+    "inputs": {
+      "opcode": 60,
+      "nordic": false,
+      "side": 0
+    },
+    "expected_bytes": "6e01003cab",
+    "evidence": [
+      "BUILDERS 0x66c790-0x66d088",
+      "command-catalog.json"
+    ]
+  },
+  {
+    "id": "P1-light_board",
+    "protocol": "P1",
+    "action": "light_board",
+    "builder": "action",
+    "inputs": {
+      "opcode": 80,
+      "nordic": true,
+      "side": 0
+    },
+    "expected_bytes": "50",
+    "evidence": [
+      "BUILDERS 0x66c790-0x66d088",
+      "command-catalog.json"
+    ]
+  },
+  {
+    "id": "P2-light_board",
+    "protocol": "P2",
+    "action": "light_board",
+    "builder": "action",
+    "inputs": {
+      "opcode": 80,
+      "nordic": false,
+      "side": 0
+    },
+    "expected_bytes": "6e010050bf",
+    "evidence": [
+      "BUILDERS 0x66c790-0x66d088",
+      "command-catalog.json"
+    ]
+  },
+  {
+    "id": "P1-massage_head_cycle",
+    "protocol": "P1",
+    "action": "massage_head_cycle",
+    "builder": "action",
+    "inputs": {
+      "opcode": 76,
+      "nordic": true,
+      "side": 0
+    },
+    "expected_bytes": "4c",
+    "evidence": [
+      "BUILDERS 0x66c790-0x66d088",
+      "command-catalog.json"
+    ]
+  },
+  {
+    "id": "P2-massage_head_cycle",
+    "protocol": "P2",
+    "action": "massage_head_cycle",
+    "builder": "action",
+    "inputs": {
+      "opcode": 76,
+      "nordic": false,
+      "side": 0
+    },
+    "expected_bytes": "6e01004cbb",
+    "evidence": [
+      "BUILDERS 0x66c790-0x66d088",
+      "command-catalog.json"
+    ]
+  },
+  {
+    "id": "P1-massage_foot_cycle",
+    "protocol": "P1",
+    "action": "massage_foot_cycle",
+    "builder": "action",
+    "inputs": {
+      "opcode": 78,
+      "nordic": true,
+      "side": 0
+    },
+    "expected_bytes": "4e",
+    "evidence": [
+      "BUILDERS 0x66c790-0x66d088",
+      "command-catalog.json"
+    ]
+  },
+  {
+    "id": "P2-massage_foot_cycle",
+    "protocol": "P2",
+    "action": "massage_foot_cycle",
+    "builder": "action",
+    "inputs": {
+      "opcode": 78,
+      "nordic": false,
+      "side": 0
+    },
+    "expected_bytes": "6e01004ebd",
+    "evidence": [
+      "BUILDERS 0x66c790-0x66d088",
+      "command-catalog.json"
+    ]
+  },
+  {
+    "id": "P1-massage_mode_cycle",
+    "protocol": "P1",
+    "action": "massage_mode_cycle",
+    "builder": "action",
+    "inputs": {
+      "opcode": 72,
+      "nordic": true,
+      "side": 0
+    },
+    "expected_bytes": "48",
+    "evidence": [
+      "BUILDERS 0x66c790-0x66d088",
+      "command-catalog.json"
+    ]
+  },
+  {
+    "id": "P2-massage_mode_cycle",
+    "protocol": "P2",
+    "action": "massage_mode_cycle",
+    "builder": "action",
+    "inputs": {
+      "opcode": 72,
+      "nordic": false,
+      "side": 0
+    },
+    "expected_bytes": "6e010048b7",
+    "evidence": [
+      "BUILDERS 0x66c790-0x66d088",
+      "command-catalog.json"
+    ]
+  },
+  {
+    "id": "P1-massage_off",
+    "protocol": "P1",
+    "action": "massage_off",
+    "builder": "action",
+    "inputs": {
+      "opcode": 94,
+      "nordic": true,
+      "side": 0
+    },
+    "expected_bytes": "5e",
+    "evidence": [
+      "BUILDERS 0x66c790-0x66d088",
+      "command-catalog.json"
+    ]
+  },
+  {
+    "id": "P2-massage_off",
+    "protocol": "P2",
+    "action": "massage_off",
+    "builder": "action",
+    "inputs": {
+      "opcode": 94,
+      "nordic": false,
+      "side": 0
+    },
+    "expected_bytes": "6e01005ecd",
+    "evidence": [
+      "BUILDERS 0x66c790-0x66d088",
+      "command-catalog.json"
+    ]
+  },
+  {
+    "id": "P1-massage_10min",
+    "protocol": "P1",
+    "action": "massage_10min",
+    "builder": "action",
+    "inputs": {
+      "opcode": 95,
+      "nordic": true,
+      "side": 0
+    },
+    "expected_bytes": "5f",
+    "evidence": [
+      "BUILDERS 0x66c790-0x66d088",
+      "command-catalog.json"
+    ]
+  },
+  {
+    "id": "P2-massage_10min",
+    "protocol": "P2",
+    "action": "massage_10min",
+    "builder": "action",
+    "inputs": {
+      "opcode": 95,
+      "nordic": false,
+      "side": 0
+    },
+    "expected_bytes": "6e01005fce",
+    "evidence": [
+      "BUILDERS 0x66c790-0x66d088",
+      "command-catalog.json"
+    ]
+  },
+  {
+    "id": "P1-massage_20min",
+    "protocol": "P1",
+    "action": "massage_20min",
+    "builder": "action",
+    "inputs": {
+      "opcode": 99,
+      "nordic": true,
+      "side": 0
+    },
+    "expected_bytes": "63",
+    "evidence": [
+      "BUILDERS 0x66c790-0x66d088",
+      "command-catalog.json"
+    ]
+  },
+  {
+    "id": "P2-massage_20min",
+    "protocol": "P2",
+    "action": "massage_20min",
+    "builder": "action",
+    "inputs": {
+      "opcode": 99,
+      "nordic": false,
+      "side": 0
+    },
+    "expected_bytes": "6e010063d2",
+    "evidence": [
+      "BUILDERS 0x66c790-0x66d088",
+      "command-catalog.json"
+    ]
+  },
+  {
+    "id": "P1-massage_30min",
+    "protocol": "P1",
+    "action": "massage_30min",
+    "builder": "action",
+    "inputs": {
+      "opcode": 97,
+      "nordic": true,
+      "side": 0
+    },
+    "expected_bytes": "61",
+    "evidence": [
+      "BUILDERS 0x66c790-0x66d088",
+      "command-catalog.json"
+    ]
+  },
+  {
+    "id": "P2-massage_30min",
+    "protocol": "P2",
+    "action": "massage_30min",
+    "builder": "action",
+    "inputs": {
+      "opcode": 97,
+      "nordic": false,
+      "side": 0
+    },
+    "expected_bytes": "6e010061d0",
+    "evidence": [
+      "BUILDERS 0x66c790-0x66d088",
+      "command-catalog.json"
+    ]
+  },
+  {
+    "id": "P1-zero_gravity",
+    "protocol": "P1",
+    "action": "zero_gravity",
+    "builder": "action",
+    "inputs": {
+      "opcode": 69,
+      "nordic": true,
+      "side": 0
+    },
+    "expected_bytes": "45",
+    "evidence": [
+      "BUILDERS 0x66c790-0x66d088",
+      "command-catalog.json"
+    ]
+  },
+  {
+    "id": "P2-zero_gravity",
+    "protocol": "P2",
+    "action": "zero_gravity",
+    "builder": "action",
+    "inputs": {
+      "opcode": 69,
+      "nordic": false,
+      "side": 0
+    },
+    "expected_bytes": "6e010045b4",
+    "evidence": [
+      "BUILDERS 0x66c790-0x66d088",
+      "command-catalog.json"
+    ]
+  },
+  {
+    "id": "P1-anti_snore",
+    "protocol": "P1",
+    "action": "anti_snore",
+    "builder": "action",
+    "inputs": {
+      "opcode": 70,
+      "nordic": true,
+      "side": 0
+    },
+    "expected_bytes": "46",
+    "evidence": [
+      "BUILDERS 0x66c790-0x66d088",
+      "command-catalog.json"
+    ]
+  },
+  {
+    "id": "P2-anti_snore",
+    "protocol": "P2",
+    "action": "anti_snore",
+    "builder": "action",
+    "inputs": {
+      "opcode": 70,
+      "nordic": false,
+      "side": 0
+    },
+    "expected_bytes": "6e010046b5",
+    "evidence": [
+      "BUILDERS 0x66c790-0x66d088",
+      "command-catalog.json"
+    ]
+  },
+  {
+    "id": "P1-tv",
+    "protocol": "P1",
+    "action": "tv",
+    "builder": "action",
+    "inputs": {
+      "opcode": 88,
+      "nordic": true,
+      "side": 0
+    },
+    "expected_bytes": "58",
+    "evidence": [
+      "BUILDERS 0x66c790-0x66d088",
+      "command-catalog.json"
+    ]
+  },
+  {
+    "id": "P2-tv",
+    "protocol": "P2",
+    "action": "tv",
+    "builder": "action",
+    "inputs": {
+      "opcode": 88,
+      "nordic": false,
+      "side": 0
+    },
+    "expected_bytes": "6e010058c7",
+    "evidence": [
+      "BUILDERS 0x66c790-0x66d088",
+      "command-catalog.json"
+    ]
+  },
+  {
+    "id": "P1-memory1",
+    "protocol": "P1",
+    "action": "memory1",
+    "builder": "action",
+    "inputs": {
+      "opcode": 46,
+      "nordic": true,
+      "side": 0
+    },
+    "expected_bytes": "2e",
+    "evidence": [
+      "BUILDERS 0x66c790-0x66d088",
+      "command-catalog.json"
+    ]
+  },
+  {
+    "id": "P2-memory1",
+    "protocol": "P2",
+    "action": "memory1",
+    "builder": "action",
+    "inputs": {
+      "opcode": 46,
+      "nordic": false,
+      "side": 0
+    },
+    "expected_bytes": "6e01002e9d",
+    "evidence": [
+      "BUILDERS 0x66c790-0x66d088",
+      "command-catalog.json"
+    ]
+  },
+  {
+    "id": "P1-stop",
+    "protocol": "P1",
+    "action": "stop",
+    "builder": "action",
+    "inputs": {
+      "opcode": 110,
+      "nordic": true,
+      "side": 0
+    },
+    "expected_bytes": "6e",
+    "evidence": [
+      "BUILDERS 0x66c790-0x66d088",
+      "command-catalog.json"
+    ]
+  },
+  {
+    "id": "P2-stop",
+    "protocol": "P2",
+    "action": "stop",
+    "builder": "action",
+    "inputs": {
+      "opcode": 110,
+      "nordic": false,
+      "side": 0
+    },
+    "expected_bytes": "6e01006edd",
+    "evidence": [
+      "BUILDERS 0x66c790-0x66d088",
+      "command-catalog.json"
+    ]
+  },
+  {
+    "id": "P1-program_zero_gravity",
+    "protocol": "P1",
+    "action": "program_zero_gravity",
+    "builder": "action",
+    "inputs": {
+      "opcode": 102,
+      "nordic": true,
+      "side": 0
+    },
+    "expected_bytes": "66",
+    "evidence": [
+      "BUILDERS 0x66c790-0x66d088",
+      "command-catalog.json"
+    ]
+  },
+  {
+    "id": "P2-program_zero_gravity",
+    "protocol": "P2",
+    "action": "program_zero_gravity",
+    "builder": "action",
+    "inputs": {
+      "opcode": 102,
+      "nordic": false,
+      "side": 0
+    },
+    "expected_bytes": "6e010066d5",
+    "evidence": [
+      "BUILDERS 0x66c790-0x66d088",
+      "command-catalog.json"
+    ]
+  },
+  {
+    "id": "P1-program_anti_snore",
+    "protocol": "P1",
+    "action": "program_anti_snore",
+    "builder": "action",
+    "inputs": {
+      "opcode": 105,
+      "nordic": true,
+      "side": 0
+    },
+    "expected_bytes": "69",
+    "evidence": [
+      "BUILDERS 0x66c790-0x66d088",
+      "command-catalog.json"
+    ]
+  },
+  {
+    "id": "P2-program_anti_snore",
+    "protocol": "P2",
+    "action": "program_anti_snore",
+    "builder": "action",
+    "inputs": {
+      "opcode": 105,
+      "nordic": false,
+      "side": 0
+    },
+    "expected_bytes": "6e010069d8",
+    "evidence": [
+      "BUILDERS 0x66c790-0x66d088",
+      "command-catalog.json"
+    ]
+  },
+  {
+    "id": "P1-program_tv",
+    "protocol": "P1",
+    "action": "program_tv",
+    "builder": "action",
+    "inputs": {
+      "opcode": 100,
+      "nordic": true,
+      "side": 0
+    },
+    "expected_bytes": "64",
+    "evidence": [
+      "BUILDERS 0x66c790-0x66d088",
+      "command-catalog.json"
+    ]
+  },
+  {
+    "id": "P2-program_tv",
+    "protocol": "P2",
+    "action": "program_tv",
+    "builder": "action",
+    "inputs": {
+      "opcode": 100,
+      "nordic": false,
+      "side": 0
+    },
+    "expected_bytes": "6e010064d3",
+    "evidence": [
+      "BUILDERS 0x66c790-0x66d088",
+      "command-catalog.json"
+    ]
+  },
+  {
+    "id": "P1-program_memory1",
+    "protocol": "P1",
+    "action": "program_memory1",
+    "builder": "action",
+    "inputs": {
+      "opcode": 43,
+      "nordic": true,
+      "side": 0
+    },
+    "expected_bytes": "2b",
+    "evidence": [
+      "BUILDERS 0x66c790-0x66d088",
+      "command-catalog.json"
+    ]
+  },
+  {
+    "id": "P2-program_memory1",
+    "protocol": "P2",
+    "action": "program_memory1",
+    "builder": "action",
+    "inputs": {
+      "opcode": 43,
+      "nordic": false,
+      "side": 0
+    },
+    "expected_bytes": "6e01002b9a",
+    "evidence": [
+      "BUILDERS 0x66c790-0x66d088",
+      "command-catalog.json"
+    ]
+  },
+  {
+    "id": "exit_limit",
+    "protocol": "P2",
+    "action": "exit_limit",
+    "builder": "frame",
+    "inputs": {
+      "data": [
+        110,
+        2,
+        1,
+        0
+      ]
+    },
+    "expected_bytes": "6e02010071",
+    "evidence": [
+      "BUILDERS 0x66c930-0x66ca48"
+    ]
+  },
+  {
+    "id": "query_clock",
+    "protocol": "P2",
+    "action": "query_clock",
+    "builder": "frame",
+    "inputs": {
+      "data": [
+        110,
+        8,
+        1,
+        1
+      ]
+    },
+    "expected_bytes": "6e08010178",
+    "evidence": [
+      "BUILDERS 0x66c930-0x66ca48"
+    ]
+  },
+  {
+    "id": "query_light",
+    "protocol": "P2",
+    "action": "query_light",
+    "builder": "frame",
+    "inputs": {
+      "data": [
+        110,
+        10,
+        0,
+        1
+      ]
+    },
+    "expected_bytes": "6e0a000179",
+    "evidence": [
+      "BUILDERS 0x66c930-0x66ca48"
+    ]
+  },
+  {
+    "id": "alarm60",
+    "protocol": "P2",
+    "action": "alarm60",
+    "builder": "countdown",
+    "inputs": {
+      "minutes": 60,
+      "mode": 69
+    },
+    "expected_bytes": "6e053c00af / 6e060045b9",
+    "evidence": [
+      "BUILDERS 0x659834,0x65a928",
+      "PRIMARY-ALARM 0x6584bc-0x6597c0"
+    ]
+  },
+  {
+    "id": "alarm300",
+    "protocol": "P2",
+    "action": "alarm300",
+    "builder": "countdown",
+    "inputs": {
+      "minutes": 300,
+      "mode": 88
+    },
+    "expected_bytes": "6e052c009f / 6e060158cd",
+    "evidence": [
+      "BUILDERS 0x659834,0x65a928",
+      "PRIMARY-ALARM 0x6584bc-0x6597c0"
+    ]
+  },
+  {
+    "id": "cancel_alarm",
+    "protocol": "P2",
+    "action": "cancel_alarm",
+    "builder": "countdown",
+    "inputs": {
+      "minutes": 0,
+      "mode": 0
+    },
+    "expected_bytes": "6e05000073 / 6e06000074",
+    "evidence": [
+      "BUILDERS 0x659834,0x65a928",
+      "PRIMARY-ALARM 0x6584bc-0x6597c0"
+    ]
+  },
+  {
+    "id": "light_timer0",
+    "protocol": "P2",
+    "action": "light_timer",
+    "builder": "light_timer",
+    "inputs": {
+      "seconds": 0
+    },
+    "expected_bytes": "6e0bffff77",
+    "evidence": [
+      "BUILDERS 0x67bab4-0x67bda4"
+    ]
+  },
+  {
+    "id": "light_timer60",
+    "protocol": "P2",
+    "action": "light_timer",
+    "builder": "light_timer",
+    "inputs": {
+      "seconds": 60
+    },
+    "expected_bytes": "6e0b003cb5",
+    "evidence": [
+      "BUILDERS 0x67bab4-0x67bda4"
+    ]
+  },
+  {
+    "id": "light_timer1800",
+    "protocol": "P2",
+    "action": "light_timer",
+    "builder": "light_timer",
+    "inputs": {
+      "seconds": 1800
+    },
+    "expected_bytes": "6e0b070888",
+    "evidence": [
+      "BUILDERS 0x67bab4-0x67bda4"
+    ]
+  },
+  {
+    "id": "color_red",
+    "protocol": "P2",
+    "action": "set_color",
+    "builder": "color",
+    "inputs": {
+      "red": 255,
+      "green": 0,
+      "blue": 0
+    },
+    "expected_bytes": "6e0cffff786e0d00007b",
+    "evidence": [
+      "BUILDERS 0x67c604-0x67c8d0",
+      "COLOR-GETTERS 0x93caa4-0x93cb94"
+    ]
+  },
+  {
+    "id": "color_mixed",
+    "protocol": "P2",
+    "action": "set_color",
+    "builder": "color",
+    "inputs": {
+      "red": 18,
+      "green": 52,
+      "blue": 86
+    },
+    "expected_bytes": "6e0cff128b6e0d345605",
+    "evidence": [
+      "BUILDERS 0x67c604-0x67c8d0",
+      "COLOR-GETTERS 0x93caa4-0x93cb94"
+    ]
+  },
+  {
+    "id": "motor_response",
+    "protocol": "P2",
+    "action": "extended_motor_reply",
+    "builder": "extended",
+    "inputs": {
+      "domain": 1,
+      "subtype": 2,
+      "kind": 2,
+      "payload": [
+        0,
+        1,
+        44,
+        5,
+        45
+      ]
+    },
+    "expected_bytes": "6e200c01020200012c052dfe",
+    "evidence": [
+      "BL-TRANSPORT 0x678264-0x678598"
+    ]
+  },
+  {
+    "id": "P1-close_bed_light",
+    "protocol": "P1",
+    "action": "close_bed_light",
+    "builder": "action",
+    "inputs": {
+      "opcode": 117,
+      "nordic": true,
+      "side": 0
+    },
+    "expected_bytes": "75",
+    "evidence": [
+      "PRIMARY-LIGHT 0x67a31c,0x67c350",
+      "BUILDERS 0x66c790"
+    ]
+  },
+  {
+    "id": "P2-close_bed_light",
+    "protocol": "P2",
+    "action": "close_bed_light",
+    "builder": "action",
+    "inputs": {
+      "opcode": 117,
+      "nordic": false,
+      "side": 0
+    },
+    "expected_bytes": "6e010075e4",
+    "evidence": [
+      "PRIMARY-LIGHT 0x67a31c,0x67c350",
+      "BUILDERS 0x66c790"
+    ]
+  }
+]
