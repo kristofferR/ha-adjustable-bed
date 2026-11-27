@@ -145,9 +145,19 @@ async def test_entity_actions_are_exact_model_commands(hass, model):
         await coord.async_execute_controller_command(lambda c: c.lights_on())
         assert frames(client)[-1] == codec.frame(4, 1)
         assert coord.controller_state[UNDER_BED_LIGHTS_ON] is True
-    await coord.async_execute_controller_command(lambda c: c.set_massage_timer(0))
+    from custom_components.adjustable_bed.select import (
+        MASSAGE_TIMER_DESCRIPTION,
+        AdjustableBedMassageTimerSelect,
+    )
+
+    timer = AdjustableBedMassageTimerSelect(
+        coord, MASSAGE_TIMER_DESCRIPTION, bed.massage_timer_options, has_off=False,
+    )
+    assert timer.current_option is None
+    await timer.async_select_option("0 min")
     assert frames(client)[-1] == codec.frame(15, 0)
     assert bed.massage_timer_can_turn_off is False
+    assert timer.current_option == "0 min"
 
 
 async def test_right_motion_has_key_03_and_exact_cleanup(hass):
