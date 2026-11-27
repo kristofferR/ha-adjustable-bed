@@ -25,9 +25,9 @@ def gesture(
 ) -> Gesture | None:
     """An immutable write plan for one admitted action."""
     if button.hold_affected:
-        # Only use gestures after an explicit selector write. The app's full
-        # implicit/default gating is unresolved.
-        if selection.hold is None or (button.view_id.endswith("Long") and not selection.hold):
+        # The layout's initial statuses already describe Release. Only an
+        # explicit Hold choice exposes its separate save buttons.
+        if button.view_id.endswith("Long") and selection.hold is not True:
             return None
     elif any(value in ("gone", "invisible", "8", "4") for value in button.ancestor_visibility):
         return None
