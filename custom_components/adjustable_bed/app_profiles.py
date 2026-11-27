@@ -265,6 +265,7 @@ _BY_BED_TYPE: Final[dict[str, SideProfile]] = {
     "majestichome": SideProfile("Majestic Home", variant_owned=True),
     BED_TYPE_OKIMIKI: SideProfile("Okimiki product", variant_owned=True),
     BED_TYPE_LIKIMIO: SideProfile("Likimio", variant_owned=True),
+    "awmotion": SideProfile("AW MOTION", frozenset(), variant_owned=True),
     "dreamsense": SideProfile("Dream Sense Bed", frozenset({CONF_PRODUCT_TYPE}), variant_owned=True),
     "saatva": SideProfile("Saatva", frozenset({CONF_PRODUCT_TYPE}), variant_owned=True),
     "bobpowerbase": SideProfile("Power Bob Base", variant_owned=True),

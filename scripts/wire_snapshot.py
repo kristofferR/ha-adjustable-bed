@@ -1587,6 +1587,11 @@ def default_scenario(bed_type: str) -> Scenario:
             layout_id="dreamsense:gatt:1",
             replies={"write:6e0a000179": "6e0e00037f"},
         )
+    if bed_type == "awmotion":
+        return Scenario(id=bed_type, bed_type=bed_type, protocol_variant="SN300",
+                        entry_data={"bed_type": bed_type, "protocol_variant": "SN300"},
+                        layout_id="dreamsense:gatt:1",
+                        replies={"write:6e08010178": "6e09010078", "write:6e0a000179": "6e0e00037f"})
     if bed_type == "dreamsense":
         return Scenario(id=bed_type, bed_type=bed_type, protocol_variant="blue",
                         entry_data={const.CONF_PROTOCOL_VARIANT: "blue", const.CONF_PRODUCT_TYPE: "blue"})
@@ -2670,6 +2675,17 @@ def build_scenarios() -> list[Scenario]:
             replies={"write:6e08010178": "6e09010078", "write:6e0a000179": "6e0e00017d"},
         ))
 
+    # AW MOTION: each offered product and each accepted live GATT route.
+    for product in ("SN300", "SN500", "HC800"):
+        for route in range(6):
+            scenarios.append(dataclasses.replace(
+                default_scenario("awmotion"), id=f"awmotion:{product}:gatt:{route}",
+                protocol_variant=product,
+                entry_data={"bed_type": "awmotion", "protocol_variant": product},
+                layout_id="dreamsense" if route == 0 else f"dreamsense:gatt:{route}",
+                replies={"write:01": "6e090100786e0e00037f"} if route == 0 else
+                        {"write:6e08010178": "6e09010078", "write:6e0a000179": "6e0e00037f"},
+            ))
     # Dream Sense: each saved BED product plus all six accepted GATT routes.
     from custom_components.adjustable_bed.profiles.dreamsense import PROFILES as DREAMSENSE_PROFILES
     for product in DREAMSENSE_PROFILES:

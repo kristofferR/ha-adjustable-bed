@@ -296,6 +296,7 @@ from .profiles.bobpowerbase import LAYOUTS as BOB_LAYOUTS
 from .profiles.bobpowerbase import PROFILE_CHOICES as BOB_PROFILES
 from .profiles.comfort_enhancement3 import CHOICES_WITH_CODE, REMOTE_CODE, REMOTES
 from .profiles.comfort_enhancement3 import resolve as resolve_apex
+from .profiles.awmotion import CHOICES as AWMOTION_CHOICES
 from .profiles.dreamsense import CHOICES as DREAMSENSE_CHOICES
 from .profiles.dreamsense import PROFILES as DREAMSENSE_PROFILES
 from .profiles.jerome_adjustable_base import PRODUCT_CHOICES as JEROME_ADJUSTABLE_BASE_PRODUCTS
@@ -390,6 +391,7 @@ _OWNED_BY_BED_TYPE: Final[dict[str, frozenset[str]]] = {
     "majestichome": GENERIC_FIELDS - {CONF_PROTOCOL_VARIANT, CONF_MOTOR_PULSE_COUNT},
     BED_TYPE_OKIMIKI: _APP_DEFINED - {CONF_PROTOCOL_VARIANT},
     BED_TYPE_LIKIMIO: _APP_DEFINED - {CONF_PROTOCOL_VARIANT},
+    "awmotion": _APP_DEFINED - {CONF_PROTOCOL_VARIANT, CONF_MOTOR_PULSE_COUNT},
     "dreamsense": _APP_DEFINED - {CONF_PROTOCOL_VARIANT, CONF_MOTOR_PULSE_COUNT},
     "saatva": _APP_DEFINED - {CONF_PROTOCOL_VARIANT, CONF_MOTOR_PULSE_COUNT},
     "bobpowerbase": _APP_DEFINED - {CONF_PROTOCOL_VARIANT},
@@ -3511,6 +3513,13 @@ SETUP_PROFILES: Final[dict[str, SetupProfile]] = {
         title=lambda _data: "Likimio",
     ),
     # The app's product sets every control, so its one row asks it.
+    "awmotion": SetupProfile(
+        owns={CONF_MOTOR_COUNT: SET_BY_PROFILE, CONF_HAS_MASSAGE: True,
+              CONF_DISABLE_ANGLE_SENSING: True, CONF_MOTOR_PULSE_DELAY_MS: 100},
+        questions=(Question(CONF_PROTOCOL_VARIANT, AWMOTION_CHOICES),),
+        derive=lambda data: {CONF_MOTOR_COUNT: {"SN300": 2, "SN500": 4, "HC800": 3}[str(data[CONF_PROTOCOL_VARIANT])]},
+        title=lambda _data: "AW MOTION",
+    ),
     "dreamsense": SetupProfile(
         owns={CONF_MOTOR_COUNT: 2, CONF_HAS_MASSAGE: SET_BY_PROFILE,
               CONF_DISABLE_ANGLE_SENSING: True, CONF_MOTOR_PULSE_DELAY_MS: 100},

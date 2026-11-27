@@ -100,6 +100,7 @@ class DreamSenseController(BedController):
 
     _receive_type: ClassVar[type[Receive]] = Receive
     _requires_notify: ClassVar[bool] = True
+    _probe_actions: ClassVar[tuple[str, ...]] = ("CheckClock", "CheckLight", "CheckMusic")
     _routes: ClassVar[tuple[GattRoute, ...]] = ROUTES
 
     def __init__(
@@ -124,6 +125,7 @@ class DreamSenseController(BedController):
         # product keeps the older 300.
         self._light_seconds_max = 900 if product_known and product != "blue" else 300
         self._session: Session | None = None
+        self._notify_session: Session | None = None
         # Commands outside the startup transaction wait for the selected link to be ready.
         self._ready: Session | None = None
         self._last_write: float | None = None
@@ -331,16 +333,20 @@ class DreamSenseController(BedController):
         client = self.client
         if client is None or not client.is_connected:
             raise invalid("dreamsense_session")
+        generation = self._coordinator.connection_generation
         if self._session is not None:
-            if (
-                self._session.client is client
-                and self._session.generation == self._coordinator.connection_generation
-            ):
+            if self._ready is self._session and self._current(self._session):
                 return
-            self.on_disconnect()
+            previous = self._session
+            await self.stop_notify()
+            if self._session is previous and self._owns(previous):
+                self.on_disconnect()
+        if (self.client is not client or self._coordinator.controller is not self
+                or self._coordinator.connection_generation != generation):
+            raise invalid("dreamsense_session")
         selected = select(
             client,
-            self._coordinator.connection_generation,
+            generation,
             self.profile.product,
             routes=self._routes,
             requires_notify=self._requires_notify,
@@ -353,9 +359,10 @@ class DreamSenseController(BedController):
         try:
             with self._transaction(startup=selected):
                 if selected.notify is not None:
-                    subscribed = await client.start_notify(
+                    self._notify_session = selected
+                    subscribed = await settled(client.start_notify(
                         selected.notify, partial(self._notification, selected)
-                    )
+                    ))
                     if subscribed is False:
                         raise invalid("dreamsense_transport")
                 await self._send(
@@ -366,10 +373,10 @@ class DreamSenseController(BedController):
                 )
                 menu_started = monotonic()
                 # Clock sync is independent of capability replies and the menu timer.
-                if self.profile.clock:
+                if self.supports_clock_sync:
                     await self._clock(own=False)
                 # Product menu probes are unconditional and ordered. Their replies gate UI only.
-                for index, action in enumerate(("CheckClock", "CheckLight", "CheckMusic"), 1):
+                for index, action in enumerate(self._probe_actions, 1):
                     deadline = menu_started + index * PROBE_MS / 1000
                     await self._wait(max(0, round((deadline - monotonic()) * 1000)))
                     await self._send(
@@ -382,8 +389,12 @@ class DreamSenseController(BedController):
                     await self._send(p.split_query(), own=False)
                 self._ready = self._live()
         except BaseException:
-            if self._session is selected:
-                self.on_disconnect()
+            try:
+                await self._stop_notifications(selected)
+            finally:
+                # An obsolete startup must not clear a successor's state.
+                if self._session is selected and self._owns(selected):
+                    self.on_disconnect()
             raise
 
     def _notification(
@@ -412,6 +423,7 @@ class DreamSenseController(BedController):
         )
 
     def on_disconnect(self) -> None:
+        self._notify_session = None
         self._session = None
         self._ready = None
         self._local_stop.set()
@@ -431,11 +443,22 @@ class DreamSenseController(BedController):
             ACK(None),
         )
 
+    async def _stop_notifications(self, session: Session) -> None:
+        async def unsubscribe() -> None:
+            if self._notify_session is session and self._owns(session):
+                self._notify_session = None
+                if session.notify is not None:
+                    await session.client.stop_notify(session.notify)
+
+        await settled(unsubscribe())
+
     async def stop_notify(self) -> None:
+        # Suspending notifications does not retire a physical link that the OS
+        # may retain. A restored subscription gets a fresh callback identity.
         session = self._session
-        self.on_disconnect()
-        if session is not None and session.notify is not None and session.client.is_connected:
-            await session.client.stop_notify(session.notify)
+        self._ready = None
+        if session is not None:
+            await self._stop_notifications(session)
 
     @property
     def capability_snapshot_policy(self) -> CapabilitySnapshotPolicy:

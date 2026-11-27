@@ -161,6 +161,8 @@ def _protocol_variant_for_bed_type(bed_type: str) -> str | None:
         return RICHMAT_VARIANT_NORDIC
     if bed_type == BED_TYPE_OCTO:
         return OCTO_VARIANT_STANDARD
+    if bed_type == "awmotion":
+        return "SN300"
     if bed_type == "dreamsense":
         return "blue"
     if bed_type == "saatva":

@@ -2738,3 +2738,8 @@ unverified. Use `set_alarm` for adding, enabling or disabling an alarm, and
 
 Set the bed clock and wait for a clock reply before confirming existing alarms.
 The action sends each selected weekday, then queries the receiver's alarm list.
+
+AW MOTION (SilentNight SN300/SN500 and HighClare HC800) also uses
+`adjustable_bed.dreamsense_light` for capability-gated RGB and light duration,
+and the generic single countdown alarm action. These settings require a physical
+bed target and do not accept logical-side routing.
