@@ -6174,6 +6174,7 @@
       }
     },
     "switch": {
+      "mattresspoint_massage": { "name": "Massage" },
       "hestia_massage": {
         "name": "Massage"
       },

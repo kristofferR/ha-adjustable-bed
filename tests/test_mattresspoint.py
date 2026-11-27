@@ -34,6 +34,7 @@ from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinato
 from custom_components.adjustable_bed.cover import AdjustableBedCover, _build_cover_description
 from custom_components.adjustable_bed.detection import detect_bed_type_detailed
 from custom_components.adjustable_bed.profiles import mattresspoint as app
+from custom_components.adjustable_bed.switch import AdjustableBedControllerSwitch
 from tests.form_helpers import NEW_BED_ROUTES, form_fields, marker_default, start_new_bed
 from tests.hold_lease_wire import Write, leased_hold, virtual_clock
 from tests.test_config_flow import _patch_gate
@@ -210,7 +211,9 @@ async def test_real_setup_probe_checks_properties_and_cleans_up(hass, monkeypatc
     monkeypatch.setattr(config_flow, "read_ble_device_info", read)
     with _patch_gate("hci0", -55):
         progress = await flow._finish_with_verify(dict(DATA), "MattressPoint")
-        await progress["progress_task"]
+        task = progress["progress_task"]
+        assert task is not None
+        await task
         await flow.async_step_setup_progress()
     await flow.async_step_verify_connection()
     result = await flow.async_step_verify_connection({})
@@ -341,6 +344,49 @@ async def test_sent_alarm_state_obeys_delivery_and_report_priority(point):
         assert coord.controller_state[ALARM_ENABLED] is None
     else:
         assert coord.controller_state.get(ALARM_ENABLED) is None
+
+
+@pytest.mark.parametrize("point", ["on", "off", "failure", "report", "disconnect"])
+async def test_native_massage_switch_preserves_delivery_and_report_priority(hass, monkeypatch, point):
+    entry = MockConfigEntry(domain=DOMAIN, data=DATA)
+    entry.add_to_hass(hass)
+    coord = AdjustableBedCoordinator(hass, entry)
+    client = _client()
+    coord._client = client
+    ctrl = MattressPointController(coord, "BOX2422")
+    coord._controller = ctrl
+    await ctrl.async_discover_capabilities()
+    await ctrl.start_notify()
+    monkeypatch.setattr(coord, "async_ensure_connected", AsyncMock(return_value=True))
+    monkeypatch.setattr(coord, "_async_refresh_controller_auth", AsyncMock())
+    coord.handle_controller_state_updates(MASSAGE_ACTIVE(point == "off"))
+    switch = AdjustableBedControllerSwitch(coord, ctrl.controller_switch_specs[0])
+    switch.hass, switch.async_write_ha_state = hass, MagicMock()
+    char, receive = client.start_notify.await_args.args
+
+    async def write(_char, _frame, **_kwargs):
+        if point == "failure":
+            raise BleakError("write failed")
+        if point == "report":
+            receive(char, bytearray.fromhex("a50b0e000000000000"))
+        if point == "disconnect":
+            ctrl.on_disconnect()
+
+    client.write_gatt_char.side_effect = write
+    with virtual_clock():
+        if point == "failure":
+            with pytest.raises(BleakError):
+                await switch.async_turn_on()
+        elif point == "off":
+            await switch.async_turn_off()
+        else:
+            await switch.async_turn_on()
+    assert switch.is_on is {"on": True, "off": False, "failure": False,
+                            "report": False, "disconnect": None}[point]
+    assert not ctrl.supports_massage_off_control
+    assert "mattresspoint_on" not in {spec.key for spec in ctrl.controller_button_specs}
+    assert _writes(client)[0] == codec.frame40(app.MASSAGE["off" if point == "off" else "on"])
+    await coord.async_shutdown()
 
 
 @pytest.mark.parametrize("stop_route", ["cover", "global"])

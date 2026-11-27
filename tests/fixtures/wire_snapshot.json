@@ -32707,7 +32707,6 @@
 "stop:legs_close": {"status":"ok","writes":[[0,"6e400002",false,"05020000000800",1,0],[400,"6e400002",false,"05020000000000",2,107]]},
 "stop:both_open": {"status":"ok","writes":[[0,"6e400002",false,"05020000000500",1,0],[400,"6e400002",false,"05020000000000",2,107]]},
 "stop:both_close": {"status":"ok","writes":[[0,"6e400002",false,"05020000000a00",1,0],[400,"6e400002",false,"05020000000000",2,107]]},
-"button:mattresspoint_on": {"status":"ok","writes":[[0,"6e400002",false,"05020000010000",1,0]]},
 "button:mattresspoint_timer": {"status":"ok","writes":[[0,"6e400002",false,"05020000020000",1,0]]},
 "button:mattresspoint_head_up": {"status":"ok","writes":[[0,"6e400002",false,"05020000080000",1,0]]},
 "button:mattresspoint_head_down": {"status":"ok","writes":[[0,"6e400002",false,"05020080000000",1,0]]},
@@ -32718,7 +32717,9 @@
 "button:mattresspoint_disable_alarm": {"status":"ok","writes":[[0,"6e400002",false,"070500000000000000",3,300]]},
 "button:mattresspoint_query_alarm": {"status":"ok","writes":[[0,"6e400002",false,"00c0",2,200]]},
 "button:mattresspoint_query_massage": {"status":"ok","writes":[[0,"6e400002",false,"00b0",1,0]]},
-"button:mattresspoint_release": {"status":"ok","writes":[[100,"6e400002",false,"05020000000000",1,0]]}
+"button:mattresspoint_release": {"status":"ok","writes":[[100,"6e400002",false,"05020000000000",1,0]]},
+"switch:mattresspoint_massage=on": {"status":"ok","writes":[[0,"6e400002",false,"05020000010000",1,0]]},
+"switch:mattresspoint_massage=off": {"status":"ok","writes":[[0,"6e400002",false,"05020200000000",1,0]]}
 }},
 "mattresspoint:BOX2422": {
 "info": {"bed_type": "mattresspoint", "controller": "MattressPointController", "module": "mattresspoint.controller", "pulse": [10, 100]},
@@ -32764,7 +32765,6 @@
 "stop:legs_close": {"status":"ok","writes":[[0,"6e400002",false,"05020000000800",1,0],[400,"6e400002",false,"05020000000000",2,107]]},
 "stop:both_open": {"status":"ok","writes":[[0,"6e400002",false,"05020000000500",1,0],[400,"6e400002",false,"05020000000000",2,107]]},
 "stop:both_close": {"status":"ok","writes":[[0,"6e400002",false,"05020000000a00",1,0],[400,"6e400002",false,"05020000000000",2,107]]},
-"button:mattresspoint_on": {"status":"ok","writes":[[0,"6e400002",false,"05020000010000",1,0]]},
 "button:mattresspoint_timer": {"status":"ok","writes":[[0,"6e400002",false,"05020000020000",1,0]]},
 "button:mattresspoint_head_up": {"status":"ok","writes":[[0,"6e400002",false,"05020000080000",1,0]]},
 "button:mattresspoint_head_down": {"status":"ok","writes":[[0,"6e400002",false,"05020080000000",1,0]]},
@@ -32775,7 +32775,9 @@
 "button:mattresspoint_disable_alarm": {"status":"ok","writes":[[0,"6e400002",false,"070500000000000000",3,300]]},
 "button:mattresspoint_query_alarm": {"status":"ok","writes":[[0,"6e400002",false,"00c0",2,200]]},
 "button:mattresspoint_query_massage": {"status":"ok","writes":[[0,"6e400002",false,"00b0",1,0]]},
-"button:mattresspoint_release": {"status":"ok","writes":[[100,"6e400002",false,"05020000000000",1,0]]}
+"button:mattresspoint_release": {"status":"ok","writes":[[100,"6e400002",false,"05020000000000",1,0]]},
+"switch:mattresspoint_massage=on": {"status":"ok","writes":[[0,"6e400002",false,"05020000010000",1,0]]},
+"switch:mattresspoint_massage=off": {"status":"ok","writes":[[0,"6e400002",false,"05020200000000",1,0]]}
 }},
 "mattresspoint:BOX2442": {
 "info": {"bed_type": "mattresspoint", "controller": "MattressPointController", "module": "mattresspoint.controller", "pulse": [10, 100]},
@@ -32835,7 +32837,6 @@
 "stop:tilt_close": {"status":"ok","writes":[[0,"6e400002",false,"05020000002000",1,0],[400,"6e400002",false,"05020000000000",2,107]]},
 "stop:lumbar_open": {"status":"ok","writes":[[0,"6e400002",false,"05020000004000",1,0],[400,"6e400002",false,"05020000000000",2,107]]},
 "stop:lumbar_close": {"status":"ok","writes":[[0,"6e400002",false,"05020000008000",1,0],[400,"6e400002",false,"05020000000000",2,107]]},
-"button:mattresspoint_on": {"status":"ok","writes":[[0,"6e400002",false,"05020000010000",1,0]]},
 "button:mattresspoint_timer": {"status":"ok","writes":[[0,"6e400002",false,"05020000020000",1,0]]},
 "button:mattresspoint_head_up": {"status":"ok","writes":[[0,"6e400002",false,"05020000080000",1,0]]},
 "button:mattresspoint_head_down": {"status":"ok","writes":[[0,"6e400002",false,"05020080000000",1,0]]},
@@ -32846,7 +32847,9 @@
 "button:mattresspoint_disable_alarm": {"status":"ok","writes":[[0,"6e400002",false,"070500000000000000",3,300]]},
 "button:mattresspoint_query_alarm": {"status":"ok","writes":[[0,"6e400002",false,"00c0",2,200]]},
 "button:mattresspoint_query_massage": {"status":"ok","writes":[[0,"6e400002",false,"00b0",1,0]]},
-"button:mattresspoint_release": {"status":"ok","writes":[[100,"6e400002",false,"05020000000000",1,0]]}
+"button:mattresspoint_release": {"status":"ok","writes":[[100,"6e400002",false,"05020000000000",1,0]]},
+"switch:mattresspoint_massage=on": {"status":"ok","writes":[[0,"6e400002",false,"05020000010000",1,0]]},
+"switch:mattresspoint_massage=off": {"status":"ok","writes":[[0,"6e400002",false,"05020200000000",1,0]]}
 }},
 "mlily": {
 "info": {"bed_type": "mlily", "controller": "GoodVibeController", "gaps": ["light_timer_Always On", "light_timer_1 min", "light_timer_2 min", "light_timer_3 min", "light_timer_4 min", "light_timer_5 min", "light_timer_6 min", "light_timer_7 min", "light_timer_8 min", "light_timer_9 min", "light_timer_10 min", "light_timer_11 min", "light_timer_12 min", "light_timer_13 min", "light_timer_14 min", "light_timer_15 min", "button:goodvibe_light_off"], "module": "goodvibe.controller", "pulse": [10, 100]},

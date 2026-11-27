@@ -16,10 +16,12 @@ from ...profiles import mattresspoint as app
 from ...profiles.okin_nframe import OkinNFrameProfile
 from ..base import BedController, ProfileExecution, require_controller
 from ..builder import BuildContext
+from ..catalog_buttons import massage_button
 from ..entity_specs import (
     ControllerButtonSpec,
     ControllerMotorHoldSpec,
     ControllerStateBinarySensorSpec,
+    ControllerSwitchSpec,
     MotorCommandCallable,
     MotorControlSpec,
 )
@@ -227,6 +229,25 @@ class MattressPointController(ProfileExecution[OkinNFrameProfile], OkinUartContr
     def supports_massage_toggle_control(self) -> bool:
         return False
 
+    @property
+    def supports_massage_off_control(self) -> bool:
+        return False
+
+    @property
+    def controller_switch_specs(self) -> tuple[ControllerSwitchSpec, ...]:
+        return (
+            ControllerSwitchSpec(
+                "mattresspoint_massage",
+                "mattresspoint_massage",
+                lambda c, on: require_controller(c, MattressPointController).massage(
+                    "on" if on else "off"
+                ),
+                state_key=MASSAGE_ACTIVE,
+                icon="mdi:vibrate",
+                card=CARD_MASSAGE,
+            ),
+        )
+
     async def massage(self, action: str) -> None:
         link = self._live()
         version = self._massage_version
@@ -276,16 +297,13 @@ class MattressPointController(ProfileExecution[OkinNFrameProfile], OkinUartContr
     def controller_button_specs(self) -> tuple[ControllerButtonSpec, ...]:
         return (
             *(
-                ControllerButtonSpec(
+                massage_button(
                     f"mattresspoint_{action}",
                     label,
                     lambda c, a=action: require_controller(c, MattressPointController).massage(a),
-                    translation_key=f"mattresspoint_{action}",
                     scheduler_resource="*",
-                    card=CARD_MASSAGE,
                 )
                 for action, label in (
-                    ("on", "Start massage"),
                     ("timer", "Cycle massage timer"),
                     ("head_up", "Increase head massage"),
                     ("head_down", "Decrease head massage"),
@@ -331,15 +349,6 @@ class MattressPointController(ProfileExecution[OkinNFrameProfile], OkinUartContr
     @property
     def controller_state_binary_sensor_specs(self) -> tuple[ControllerStateBinarySensorSpec, ...]:
         return (
-            ControllerStateBinarySensorSpec(
-                "mattresspoint_massage",
-                "mattresspoint_massage",
-                MASSAGE_ACTIVE,
-                "mdi:vibrate",
-                entity_category=None,
-                entity_registry_enabled_default=True,
-                card=CARD_MASSAGE,
-            ),
             ControllerStateBinarySensorSpec(
                 "mattresspoint_alarm",
                 "mattresspoint_alarm",
