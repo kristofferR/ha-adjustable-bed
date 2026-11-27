@@ -1,7 +1,8 @@
 """Native HA setup, generic service/entity routes and selector admission."""
 from __future__ import annotations
 
-from unittest.mock import AsyncMock
+import asyncio
+from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 from homeassistant.const import CONF_ADDRESS, CONF_NAME
@@ -17,9 +18,74 @@ from custom_components.adjustable_bed.pairing import supports_single_address_pai
 from custom_components.adjustable_bed.profiles import amada as p
 from custom_components.adjustable_bed.runtime_data import entry_runtime
 from tests.hold_lease_wire import virtual_clock
-from tests.test_amada import gatt, writes
+from tests.test_amada import gatt, notify, writes
 
 ADDRESS = 'AA:BB:CC:DD:AA:69'
+
+
+@pytest.mark.parametrize("failure", ("cancel", "error", "noop", "notify_retry"))
+async def test_retained_link_restores_fresh_subscription(hass, failure):
+    from bleak.exc import BleakError
+
+    from custom_components.adjustable_bed.bed_traits import bed_traits
+    from custom_components.adjustable_bed.beds.amada.state import LIGHT
+    from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
+
+    entry = MockConfigEntry(domain=const.DOMAIN, version=5, title="Amada", data={
+        CONF_ADDRESS: ADDRESS, const.CONF_BED_TYPE: "amada", const.CONF_PRODUCT_TYPE: "a"
+    })
+    entry.add_to_hass(hass)
+    co = AdjustableBedCoordinator(hass, entry)
+    client = MagicMock(is_connected=True, services=gatt())
+    client.write_gatt_char, client.start_notify, client.stop_notify = AsyncMock(), AsyncMock(), AsyncMock()
+    co._client = client
+    co._position_connection_generation = 1
+    controller = AmadaController(co, "a")
+    controller.static_traits = bed_traits("amada")
+    co._controller = controller
+    await controller.async_discover_capabilities()
+    await controller.start_notify()
+    co._link_ready = True
+    link = controller._live()
+    raw = bytes.fromhex("a50b0eaa025802030601")
+    notify(client, raw)
+    old = client.start_notify.call_args.args[1]
+
+    async def disconnect():
+        if failure == "cancel":
+            raise asyncio.CancelledError
+        if failure == "error":
+            raise BleakError("disconnect failed")
+
+    client.disconnect = AsyncMock(side_effect=disconnect)
+    if failure == "notify_retry":
+        client.start_notify.side_effect = [BleakError("restore failed"), BleakError("restore failed"), None]
+    try:
+        with virtual_clock():
+            async with co._lock:
+                if failure == "cancel":
+                    with pytest.raises(asyncio.CancelledError):
+                        await co._async_disconnect_locked()
+                else:
+                    assert await co._async_disconnect_locked() is False
+            if failure == "notify_retry":
+                assert not co._link_ready
+                assert await co.async_ensure_connected(reset_timer=False)
+        assert co._controller is controller and controller._live() is link
+        assert co._link_ready
+        assert co.controller_state.get(LIGHT) is None
+        old(client.services[0].characteristics[1], bytearray(raw))
+        assert co.controller_state.get(LIGHT) is None
+        notify(client, raw)
+        assert co.controller_state.get(LIGHT) is not None
+        await co.async_execute_controller_command(lambda c: c.preset_flat())
+        assert writes(client)
+    finally:
+        async def close():
+            client.is_connected = False
+
+        client.disconnect.side_effect = close
+        await co.async_shutdown()
 
 
 @pytest.mark.parametrize('selector', p.SELECTORS)

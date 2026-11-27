@@ -71,6 +71,7 @@ class AmadaController(Okin64BitController):
         self._link: _Link | None = None
         self._is_current: Callable[[], bool] = lambda: True
         self._notifying = False
+        self._subscription_token: object | None = None
         self._alarm: Alarm | None = None
         self._alarm_has_marker = False
         self._alarm_revision = 0
@@ -121,7 +122,8 @@ class AmadaController(Okin64BitController):
     @property
     def protocol_diagnostics(self) -> dict[str, object]:
         return {"amada_selector": self._selector, "source_status": "PARTIAL (B1/B2)",
-                "hardware_status": "UNVERIFIED"}
+                "hardware_status": "UNVERIFIED",
+                "submitted_alarm_frame": self._coordinator.controller_state.get(s.ALARM_SENT)}
 
     def _build_command(self, word: int) -> bytes:
         return codec.frame40(word, self._selector)
@@ -152,9 +154,10 @@ class AmadaController(Okin64BitController):
     async def start_notify(self, callback: Callable[[str, float], None] | None = None) -> None:
         self._notify_callback = callback
         link = self._live()
+        token = self._subscription_token = object()
 
         def receive(sender: BleakGATTCharacteristic, data: bytearray) -> None:
-            if not self._current(link):
+            if self._subscription_token is not token or not self._current(link):
                 return
             raw = bytes(data)
             self.forward_raw_notification(sender.uuid, raw)
@@ -183,22 +186,32 @@ class AmadaController(Okin64BitController):
                 )
                 self._reply.set()
 
-        for attempt in range(2):
-            try:
-                async with self._ble_lock:
+        try:
+            for attempt in range(2):
+                try:
+                    async with self._ble_lock:
+                        self._live(link)
+                        await link.client.start_notify(link.notify, receive)
                     self._live(link)
-                    await link.client.start_notify(link.notify, receive)
-                self._live(link)
-                self._notifying = True
-                return
-            except BleakError:
-                if attempt:
-                    raise
-                await asyncio.sleep(1)
+                    self._notifying = True
+                    return
+                except BleakError:
+                    if attempt:
+                        raise
+                    await asyncio.sleep(1)
+        except BaseException:
+            if self._subscription_token is token:
+                self._retire_subscription()
+            raise
 
     def on_disconnect(self) -> None:
         self._link = None
+        self._retire_subscription()
+
+    def _retire_subscription(self) -> None:
         self._notifying = False
+        self._subscription_token = None
+        self._notify_callback = None
         self._alarm = None
         self._alarm_has_marker = False
         self._disable_checked = None
@@ -213,7 +226,7 @@ class AmadaController(Okin64BitController):
 
     async def stop_notify(self) -> None:
         link, notifying = self._link, self._notifying
-        self.on_disconnect()
+        self._retire_subscription()
         if link and notifying and self.client is link.client and link.client.is_connected:
             async with self._ble_lock:
                 await link.client.stop_notify(link.notify)
@@ -476,6 +489,7 @@ class AmadaController(Okin64BitController):
             *(ControllerButtonSpec("amada_query_" + str(code), label,
                 lambda c, code=code: require_controller(c, AmadaController).query(code),
                 translation_key=translation, card=CARD_UTILITY,
+                diagnostic=True,
             ) for code, label, translation in ((0xB0, "Refresh massage and light", "amada_refresh"),
                                                (0xC0, "Refresh alarm", "amada_refresh_alarm"))),
         )
@@ -485,7 +499,7 @@ class AmadaController(Okin64BitController):
         return tuple(ControllerStateSensorSpec(str(key), str(key), key, "mdi:bed") for key in (
             s.MASSAGE_TIME, s.MASSAGE_HEAD, s.MASSAGE_FOOT, s.MASSAGE_MODE,
             s.MASSAGE_ON, s.LIGHT, s.ALARM_TIME, s.ALARM_ENABLED,
-            s.ALARM_REPEAT, s.ALARM_KIND, s.ALARM_SENT,
+            s.ALARM_REPEAT, s.ALARM_KIND,
         ))
 
 

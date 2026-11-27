@@ -4921,9 +4921,6 @@
  "sensor:amada_alarm_repeat": {
   "card_section": "hidden"
  },
- "sensor:amada_alarm_submitted": {
-  "card_section": "hidden"
- },
  "sensor:amada_alarm_time": {
   "card_section": "hidden"
  },

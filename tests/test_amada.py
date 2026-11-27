@@ -186,6 +186,9 @@ async def test_alarm_submitted_is_distinct_from_report_and_session_state_clears(
     await c.configure_alarm(AlarmRequest(reference_time=datetime(2026,11,27,12), enabled=True, hour=7, minute=30, weekdays=(0, 6), wake_action='light'))
     assert writes(client) == [bytes.fromhex('07058307071e0001aa')]
     assert coord.controller_state[ALARM_SENT] == writes(client)[0].hex()
+    assert c.protocol_diagnostics["submitted_alarm_frame"] == writes(client)[0].hex()
+    assert ALARM_SENT not in {spec.state_key for spec in c.controller_state_sensor_specs}
+    assert all(spec.diagnostic for spec in c.controller_button_specs if spec.key.startswith("amada_query_"))
     assert coord.controller_state[ALARM_ENABLED] is None
     raw = bytes.fromhex('a50c0eaa8307071e0001')
     notify(client, raw)
