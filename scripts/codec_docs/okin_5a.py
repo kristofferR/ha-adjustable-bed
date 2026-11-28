@@ -11,6 +11,7 @@ from custom_components.adjustable_bed.const import (
 )
 from custom_components.adjustable_bed.profiles import okin_5a as okin_5a_profiles
 from custom_components.adjustable_bed.profiles import sealy
+from custom_components.adjustable_bed.profiles.ifit import IFIT
 from scripts.codec_docs._common import Block, _block, _hex, _table
 
 GUIDE = "docs/beds/okin-5a.md"
@@ -210,7 +211,7 @@ def _okin_5a_commands(group: str) -> str:
     profiles = okin_5a_profiles.PROFILES
     missing = set(get_args(okin_5a_profiles.Action)) - {
         action for actions in _OKIN_5A_GROUPS.values() for action in actions
-    }
+    } - set(IFIT.frames)
     if missing:
         raise ValueError(f"Okin 5A actions without a command table: {sorted(missing)}")
     return _block(
@@ -337,3 +338,14 @@ BLOCKS += [
     (GUIDE, "sealy-commands", render_sealy_commands),
     (GUIDE, "sealy-timing", render_sealy_timing),
 ]
+
+
+def render_ifit_commands() -> str:
+    return _block(_table(
+        ("Control", "Bytes", "Screen refresh"),
+        ((action, _hex(frame), f"{IFIT.refresh_ms[action]} ms" if action in IFIT.refresh_ms else "none")
+         for action, frame in IFIT.frames.items()),
+    ))
+
+
+BLOCKS += [(GUIDE, "ifit-commands", render_ifit_commands)]

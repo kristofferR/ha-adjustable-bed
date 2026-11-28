@@ -398,6 +398,7 @@
           "sleep_assistant_controls": "Additional controls",
           "sleep_assistant_lighting": "Lighting model",
           "ergobq_serial": "ErgoBQ six-byte serial (hex, optional)",
+          "active_sleep_auth_id": "Existing Active Sleep authentication ID (optional)",
           "ergobq_stamp": "ErgoBQ channel stamp (leave blank if unused)"
         },
         "data_description": {
@@ -459,6 +460,7 @@
           "sleep_assistant_controls": "Select only the controls shown for this bed.",
           "sleep_assistant_lighting": "Choose the lighting model selected in Sleep Assist.",
           "ergobq_serial": "The first six bytes of manufacturer 0xFFFF data. Byte 4 selects the four-motor layout; blank uses the app’s two-motor default.",
+          "active_sleep_auth_id": "Use an existing 16-character ASCII authentication ID from your own registered Active Sleep setup. This integration cannot obtain an ID or register an account. Leave blank to configure it later.",
           "ergobq_stamp": "An existing channel authentication input. This integration does not retrieve account credentials."
         },
         "sections": {
@@ -948,6 +950,7 @@
         "description": "Adjust the settings for your adjustable bed. To change the bed type or app, open **Reconfigure** from this entry's three-dot menu.",
         "data": {
           "ergobq_serial": "ErgoBQ six-byte serial (hex, optional)",
+          "active_sleep_auth_id": "Existing Active Sleep authentication ID (optional)",
           "ergobq_stamp": "ErgoBQ channel stamp (leave blank if unused)",
           "motor_count": "Number of motors",
           "malouf_layout": "Malouf/Lucid motor layout",
@@ -1200,6 +1203,7 @@
         "description": "Change connection, movement and app settings for **{name}**. Only this side changes.",
         "data": {
           "ergobq_serial": "ErgoBQ six-byte serial (hex, optional)",
+          "active_sleep_auth_id": "Existing Active Sleep authentication ID (optional)",
           "ergobq_stamp": "ErgoBQ channel stamp (leave blank if unused)",
           "preferred_adapter": "Bluetooth adapter",
           "motor_pulse_count": "Movement per tap",
@@ -1387,6 +1391,7 @@
         "description": "Change connection, movement and app settings for **{name}**. Only this side changes.",
         "data": {
           "ergobq_serial": "ErgoBQ six-byte serial (hex, optional)",
+          "active_sleep_auth_id": "Existing Active Sleep authentication ID (optional)",
           "ergobq_stamp": "ErgoBQ channel stamp (leave blank if unused)",
           "preferred_adapter": "Bluetooth adapter",
           "motor_pulse_count": "Movement per tap",
@@ -1788,6 +1793,12 @@
       "konfurt_massage_wave": {"name": "Cycle massage wave"},
       "konfurt_massage_timer": {"name": "Cycle massage timer"},
       "konfurt_query_alarm": {"name": "Refresh bed alarm"},
+      "active_sleep_refresh": {
+        "name": "Refresh state"
+      },
+      "active_sleep_height_ack": {
+        "name": "Acknowledge bed height warning"
+      },
       "powersbedding_save_zero_g": {"name": "Save zero gravity"},
       "powersbedding_start": {"name": "Start massage"},
       "powersbedding_stop": {"name": "Stop massage"},
@@ -1942,6 +1953,7 @@
       "dorsal_zero_gravity_down": {
         "name": "Zero gravity motor down"
       },
+      "ifit_release": { "name": "Release held control" },
       "leva_release": { "name": "Release motion control" },
       "leva_massage_head": { "name": "Cycle head massage" },
       "leva_massage_foot": { "name": "Cycle feet massage" },
@@ -4794,6 +4806,24 @@
       "konfurt_alarm_minute": {"name": "Bed alarm minute"},
       "konfurt_alarm_repeat": {"name": "Bed alarm weekday mask"},
       "konfurt_alarm_type": {"name": "Bed alarm action code"},
+        "active_sleep_model": {
+          "name": "Bed model"
+        },
+        "active_sleep_serial": {
+          "name": "Bed serial"
+        },
+        "active_sleep_height": {
+          "name": "Bed height"
+        },
+        "active_sleep_tilt": {
+          "name": "Bed tilt"
+        },
+        "active_sleep_height_warning": {
+          "name": "Bed height warning"
+        },
+        "active_sleep_ventilation_remaining": {
+          "name": "Ventilation remaining"
+        },
       "ghostbed_alarms": {"name": "Bed alarms"},
       "powersbedding_head_report": {"name": "Head massage level"},
       "powersbedding_foot_report": {"name": "Foot massage level"},
@@ -6199,6 +6229,16 @@
     },
     "switch": {
       "konfurt_massage": {"name": "Massage"},
+        "active_sleep_motor_lock": {
+          "name": "{motor} motor lock"
+        },
+        "active_sleep_monitor": {"name": "Realtime sensor monitor"},
+      "active_sleep_ventilation": {
+          "name": "Mattress ventilation"
+        },
+        "active_sleep_fukatto": {
+          "name": "Fukatto"
+        },
       "ghostbed_snore_home": {"name": "Anti-snore (home)"},
       "ghostbed_snore_left": {"name": "Anti-snore (left settings)"},
       "hestia_massage": {
@@ -7330,6 +7370,13 @@
       }
     },
     "select": {
+        "active_sleep_speed": {
+          "name": "Movement speed",
+          "state": {
+            "normal": "Normal",
+            "fast": "Fast"
+          }
+        },
       "ghostbed_massage_mode": {"name": "Massage mode", "state": {"basic": "Basic", "cycle": "Cycle", "pulse": "Pulse", "wave": "Wave"}},
       "ghostbed_sensitivity": {"name": "Anti-snore sensitivity", "state": {"low": "Low", "medium": "Medium", "high": "High"}},
       "ghostbed_angle": {"name": "Anti-snore target", "state": {"8": "8°", "12": "12°", "15": "15°"}},
@@ -8343,6 +8390,24 @@
     }
   },
   "services": {
+    "ifit_save_preset": {
+      "name": "Save iFit preset",
+      "description": "Hold Flat and the selected preset together for three seconds, then send its save command. This moves the bed before saving. Hardware save persistence is unverified.",
+      "fields": {
+        "device_id": {
+          "name": "Bed",
+          "description": "The iFit bed to control."
+        },
+        "preset": {
+          "name": "Preset",
+          "description": "The named preset to overwrite."
+        },
+        "side": {
+          "name": "Side",
+          "description": "Which side of a paired bed to control."
+        }
+      }
+    },
     "myside": {
       "name": "My Side repeat alarms and sleep link",
       "description": "Query or change repeat alarms on Coaxing products, or query a Sleep product’s linked sensor name. Query alarms and receive list replies before changing them. Add can only replace an alarm explicitly deleted in this connection. A changed alarm needs fresh readback before another edit or toggle.",
@@ -12281,6 +12346,75 @@
     "konfurt_control": {"message": "Choose a control offered by this KONFURT layout and a hold of 1 to 60000 milliseconds."},
     "konfurt_alarm": {"message": "KONFURT sets an alarm for today's weekday only. Choose no wake action, massage or Memory 1."},
     "konfurt_massage_unknown": {"message": "Wait for a massage status report from this connection before turning massage on or off. You can use Toggle massage without a report."},
+    "active_sleep_normal_mode_required": {
+      "message": "The bed must report normal operating mode before it can be controlled."
+    },
+    "active_sleep_position_required": {
+      "message": "Read a valid bed position before trying again."
+    },
+    "active_sleep_motor_locked": {
+      "message": "This motor is unavailable or locked. Check the motor locks before trying again."
+    },
+    "active_sleep_link_changed": {
+      "message": "The bed connection changed. Reconnect before trying again."
+    },
+    "active_sleep_reconnect_required": {
+      "message": "Reconnect the bed to confirm authentication and its last request before trying again."
+    },
+    "active_sleep_auth_id_required": {
+      "message": "Enter your existing 16-character Active Sleep authentication ID in Configure. This integration cannot obtain an ID or register an account."
+    },
+    "active_sleep_auth_rejected": {
+      "message": "The bed rejected the existing authentication ID. Check it in Configure."
+    },
+    "active_sleep_request_unavailable": {
+      "message": "This action needs the current bed connection and a confirmed reply. Reconnect before trying again."
+    },
+    "active_sleep_height_clearance": {
+      "message": "Bed height warning: check clearance and the area beneath the bed. Acknowledge the bed height warning before lowering again."
+    },
+    "active_sleep_limits_required": {
+      "message": "Read the current bed limits and positions before trying again."
+    },
+    "active_sleep_target_unavailable": {
+      "message": "The requested position exceeds the bed's reported capability, range or lock."
+    },
+    "active_sleep_movement_failed": {
+      "message": "The bed reported a movement failure. Check the bed before trying again."
+    },
+    "active_sleep_motor_unavailable": {
+      "message": "This motor is not available on the bed."
+    },
+    "active_sleep_no_height_warning": {
+      "message": "There is no active bed height warning to acknowledge."
+    },
+    "active_sleep_template_unavailable": {
+      "message": "This saved position is unavailable."
+    },
+    "active_sleep_mattress_state_required": {
+      "message": "Wait for the mattress to report its current firmness, then try again."
+    },
+    "active_sleep_settings_required": {
+      "message": "Read valid bed settings before changing them."
+    },
+    "active_sleep_motor_lock_unavailable": {
+      "message": "The bed does not support this motor lock."
+    },
+    "active_sleep_settings_unconfirmed": {
+      "message": "Bed settings readback did not match. The write was not replayed."
+    },
+    "active_sleep_mattress_unavailable": {
+      "message": "The bed has not reported a mattress."
+    },
+    "active_sleep_mattress_busy": {
+      "message": "Wait for valid idle mattress state before changing it."
+    },
+    "active_sleep_mattress_unconfirmed": {
+      "message": "Mattress readback did not match. The write was not replayed."
+    },
+    "active_sleep_flat_unavailable": {
+      "message": "Use a supported saved position instead of a dedicated flat command."
+    },
     "ghostbed_control_unavailable": {"message": "This GhostBed control or value is unavailable."},
     "ghostbed_status_required": {"message": "Wait for current bed status before editing this setting."},
     "ghostbed_alarm_overlap": {"message": "Choose alarms more than 30 minutes apart on shared repeat days."},

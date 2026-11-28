@@ -62,6 +62,7 @@ def target(
         "preset_memory": AsyncMock(),
         "recall_memory": AsyncMock(),
         "requires_disconnected_transport": False,
+        "requires_connection_reset": False,
         **capabilities,
     }
     controller = SimpleNamespace(**members) if family is None else MagicMock(spec=family)
