@@ -507,6 +507,15 @@ class BedController(GattWriter):
                 )
 
     @property
+    def diagnostic_read_exclusions(self) -> frozenset[str]:
+        """Lowercase UUIDs whose live reads belong exclusively to this controller.
+
+        Support captures retain their GATT metadata and controller-received
+        data without issuing a competing read on the shared connection.
+        """
+        return frozenset()
+
+    @property
     @abstractmethod
     def control_characteristic_uuid(self) -> str:
         """Return the UUID of the control characteristic.

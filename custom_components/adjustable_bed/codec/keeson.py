@@ -43,7 +43,7 @@ from ..const import (
     NORDIC_UART_READ_CHAR_UUID,
 )
 
-TransportKey = Literal["base", "ksbt", "json"]
+TransportKey = Literal["base", "ksbt", "json", "dynasty_p2"]
 ByteOrder = Literal["little", "big"]
 Carrier = Literal["k1", "p2", "p2_side", "p2_padded", "p2_checked", "json"]
 Side = Literal["left", "right"]
@@ -71,6 +71,11 @@ TRANSPORTS: Final[dict[TransportKey, Transport]] = {
         KEESON_KSBT_CHAR_UUID,
         NORDIC_UART_READ_CHAR_UUID,
         tuple(KEESON_KSBT_FALLBACK_GATT_PAIRS),
+    ),
+    "dynasty_p2": Transport(
+        "62741523-52f9-8864-b1ab-3b3a8d65950b",
+        "62741525-52f9-8864-b1ab-3b3a8d65950b",
+        "62741625-52f9-8864-b1ab-3b3a8d65950b",
     ),
     "json": Transport(
         KEESON_JSON_SERVICE_UUID, KEESON_JSON_WRITE_CHAR_UUID, KEESON_JSON_NOTIFY_CHAR_UUID
