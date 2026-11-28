@@ -1,0 +1,2256 @@
+[
+  {
+    "id": "P1-stop",
+    "protocol": "P1",
+    "action": "stop",
+    "inputs": {
+      "kind": "command",
+      "route": 0,
+      "word": 0
+    },
+    "expected_bytes": "e5fe160000000006",
+    "evidence": [
+      "E3",
+      "E4",
+      "E5"
+    ]
+  },
+  {
+    "id": "P1-head_up",
+    "protocol": "P1",
+    "action": "head_up",
+    "inputs": {
+      "kind": "command",
+      "route": 0,
+      "word": 1
+    },
+    "expected_bytes": "e5fe160000000105",
+    "evidence": [
+      "E3",
+      "E4",
+      "E5"
+    ]
+  },
+  {
+    "id": "P1-head_down",
+    "protocol": "P1",
+    "action": "head_down",
+    "inputs": {
+      "kind": "command",
+      "route": 0,
+      "word": 2
+    },
+    "expected_bytes": "e5fe160000000204",
+    "evidence": [
+      "E3",
+      "E4",
+      "E5"
+    ]
+  },
+  {
+    "id": "P1-foot_up",
+    "protocol": "P1",
+    "action": "foot_up",
+    "inputs": {
+      "kind": "command",
+      "route": 0,
+      "word": 4
+    },
+    "expected_bytes": "e5fe160000000402",
+    "evidence": [
+      "E3",
+      "E4",
+      "E5"
+    ]
+  },
+  {
+    "id": "P1-foot_down",
+    "protocol": "P1",
+    "action": "foot_down",
+    "inputs": {
+      "kind": "command",
+      "route": 0,
+      "word": 8
+    },
+    "expected_bytes": "e5fe1600000008fe",
+    "evidence": [
+      "E3",
+      "E4",
+      "E5"
+    ]
+  },
+  {
+    "id": "P1-head_foot_up",
+    "protocol": "P1",
+    "action": "head_foot_up",
+    "inputs": {
+      "kind": "command",
+      "route": 0,
+      "word": 5
+    },
+    "expected_bytes": "e5fe160000000501",
+    "evidence": [
+      "E3",
+      "E4",
+      "E5"
+    ]
+  },
+  {
+    "id": "P1-head_foot_down",
+    "protocol": "P1",
+    "action": "head_foot_down",
+    "inputs": {
+      "kind": "command",
+      "route": 0,
+      "word": 10
+    },
+    "expected_bytes": "e5fe160000000afc",
+    "evidence": [
+      "E3",
+      "E4",
+      "E5"
+    ]
+  },
+  {
+    "id": "P1-zero_g",
+    "protocol": "P1",
+    "action": "zero_g",
+    "inputs": {
+      "kind": "command",
+      "route": 0,
+      "word": 16777217
+    },
+    "expected_bytes": "e5fe160100000104",
+    "evidence": [
+      "E3",
+      "E4",
+      "E5"
+    ]
+  },
+  {
+    "id": "P1-flat",
+    "protocol": "P1",
+    "action": "flat",
+    "inputs": {
+      "kind": "command",
+      "route": 0,
+      "word": 16777218
+    },
+    "expected_bytes": "e5fe160100000203",
+    "evidence": [
+      "E3",
+      "E4",
+      "E5"
+    ]
+  },
+  {
+    "id": "P1-memory_a",
+    "protocol": "P1",
+    "action": "memory_a",
+    "inputs": {
+      "kind": "command",
+      "route": 0,
+      "word": 16777224
+    },
+    "expected_bytes": "e5fe1601000008fd",
+    "evidence": [
+      "E3",
+      "E4",
+      "E5"
+    ]
+  },
+  {
+    "id": "P1-memory_b",
+    "protocol": "P1",
+    "action": "memory_b",
+    "inputs": {
+      "kind": "command",
+      "route": 0,
+      "word": 16777225
+    },
+    "expected_bytes": "e5fe1601000009fc",
+    "evidence": [
+      "E3",
+      "E4",
+      "E5"
+    ]
+  },
+  {
+    "id": "P1-store_zero_g",
+    "protocol": "P1",
+    "action": "store_zero_g",
+    "inputs": {
+      "kind": "command",
+      "route": 0,
+      "word": 536870913
+    },
+    "expected_bytes": "e5fe1620000001e5",
+    "evidence": [
+      "E3",
+      "E4",
+      "E5"
+    ]
+  },
+  {
+    "id": "P1-store_memory_a",
+    "protocol": "P1",
+    "action": "store_memory_a",
+    "inputs": {
+      "kind": "command",
+      "route": 0,
+      "word": 536870920
+    },
+    "expected_bytes": "e5fe1620000008de",
+    "evidence": [
+      "E3",
+      "E4",
+      "E5"
+    ]
+  },
+  {
+    "id": "P1-store_memory_b",
+    "protocol": "P1",
+    "action": "store_memory_b",
+    "inputs": {
+      "kind": "command",
+      "route": 0,
+      "word": 536870921
+    },
+    "expected_bytes": "e5fe1620000009dd",
+    "evidence": [
+      "E3",
+      "E4",
+      "E5"
+    ]
+  },
+  {
+    "id": "P1-stop-preset",
+    "protocol": "P1",
+    "action": "stop preset",
+    "inputs": {
+      "kind": "command",
+      "route": 0,
+      "word": 16777216
+    },
+    "expected_bytes": "e5fe160100000005",
+    "evidence": [
+      "E3",
+      "E5"
+    ]
+  },
+  {
+    "id": "P1-massage_head-0",
+    "protocol": "P1",
+    "action": "massage_head",
+    "inputs": {
+      "kind": "command",
+      "route": 0,
+      "word": 268435472,
+      "level": 0
+    },
+    "expected_bytes": "e5fe1610000010e6",
+    "evidence": [
+      "E3",
+      "E6"
+    ]
+  },
+  {
+    "id": "P1-massage_head-1",
+    "protocol": "P1",
+    "action": "massage_head",
+    "inputs": {
+      "kind": "command",
+      "route": 0,
+      "word": 268435473,
+      "level": 1
+    },
+    "expected_bytes": "e5fe1610000011e5",
+    "evidence": [
+      "E3",
+      "E6"
+    ]
+  },
+  {
+    "id": "P1-massage_head-2",
+    "protocol": "P1",
+    "action": "massage_head",
+    "inputs": {
+      "kind": "command",
+      "route": 0,
+      "word": 268435474,
+      "level": 2
+    },
+    "expected_bytes": "e5fe1610000012e4",
+    "evidence": [
+      "E3",
+      "E6"
+    ]
+  },
+  {
+    "id": "P1-massage_head-3",
+    "protocol": "P1",
+    "action": "massage_head",
+    "inputs": {
+      "kind": "command",
+      "route": 0,
+      "word": 268435475,
+      "level": 3
+    },
+    "expected_bytes": "e5fe1610000013e3",
+    "evidence": [
+      "E3",
+      "E6"
+    ]
+  },
+  {
+    "id": "P1-massage_foot-0",
+    "protocol": "P1",
+    "action": "massage_foot",
+    "inputs": {
+      "kind": "command",
+      "route": 0,
+      "word": 285212688,
+      "level": 0
+    },
+    "expected_bytes": "e5fe1611000010e5",
+    "evidence": [
+      "E3",
+      "E6"
+    ]
+  },
+  {
+    "id": "P1-massage_foot-1",
+    "protocol": "P1",
+    "action": "massage_foot",
+    "inputs": {
+      "kind": "command",
+      "route": 0,
+      "word": 285212689,
+      "level": 1
+    },
+    "expected_bytes": "e5fe1611000011e4",
+    "evidence": [
+      "E3",
+      "E6"
+    ]
+  },
+  {
+    "id": "P1-massage_foot-2",
+    "protocol": "P1",
+    "action": "massage_foot",
+    "inputs": {
+      "kind": "command",
+      "route": 0,
+      "word": 285212690,
+      "level": 2
+    },
+    "expected_bytes": "e5fe1611000012e3",
+    "evidence": [
+      "E3",
+      "E6"
+    ]
+  },
+  {
+    "id": "P1-massage_foot-3",
+    "protocol": "P1",
+    "action": "massage_foot",
+    "inputs": {
+      "kind": "command",
+      "route": 0,
+      "word": 285212691,
+      "level": 3
+    },
+    "expected_bytes": "e5fe1611000013e2",
+    "evidence": [
+      "E3",
+      "E6"
+    ]
+  },
+  {
+    "id": "P1-massage_wave-0",
+    "protocol": "P1",
+    "action": "massage_wave",
+    "inputs": {
+      "kind": "command",
+      "route": 0,
+      "word": 268435488,
+      "level": 0
+    },
+    "expected_bytes": "e5fe1610000020d6",
+    "evidence": [
+      "E3",
+      "E6"
+    ]
+  },
+  {
+    "id": "P1-massage_wave-1",
+    "protocol": "P1",
+    "action": "massage_wave",
+    "inputs": {
+      "kind": "command",
+      "route": 0,
+      "word": 268435489,
+      "level": 1
+    },
+    "expected_bytes": "e5fe1610000021d5",
+    "evidence": [
+      "E3",
+      "E6"
+    ]
+  },
+  {
+    "id": "P1-massage_wave-2",
+    "protocol": "P1",
+    "action": "massage_wave",
+    "inputs": {
+      "kind": "command",
+      "route": 0,
+      "word": 268435490,
+      "level": 2
+    },
+    "expected_bytes": "e5fe1610000022d4",
+    "evidence": [
+      "E3",
+      "E6"
+    ]
+  },
+  {
+    "id": "P1-massage_wave-3",
+    "protocol": "P1",
+    "action": "massage_wave",
+    "inputs": {
+      "kind": "command",
+      "route": 0,
+      "word": 268435491,
+      "level": 3
+    },
+    "expected_bytes": "e5fe1610000023d3",
+    "evidence": [
+      "E3",
+      "E6"
+    ]
+  },
+  {
+    "id": "P1-time--1",
+    "protocol": "P1",
+    "action": "massage timer",
+    "inputs": {
+      "kind": "command",
+      "route": 0,
+      "word": 268435503,
+      "parameter": -1
+    },
+    "expected_bytes": "e5fe161000002fc7",
+    "evidence": [
+      "E3",
+      "E6"
+    ]
+  },
+  {
+    "id": "P1-time-0",
+    "protocol": "P1",
+    "action": "massage timer",
+    "inputs": {
+      "kind": "command",
+      "route": 0,
+      "word": 268435504,
+      "parameter": 0
+    },
+    "expected_bytes": "e5fe1610000030c6",
+    "evidence": [
+      "E3",
+      "E6"
+    ]
+  },
+  {
+    "id": "P1-time-1",
+    "protocol": "P1",
+    "action": "massage timer",
+    "inputs": {
+      "kind": "command",
+      "route": 0,
+      "word": 268435505,
+      "parameter": 1
+    },
+    "expected_bytes": "e5fe1610000031c5",
+    "evidence": [
+      "E3",
+      "E6"
+    ]
+  },
+  {
+    "id": "P1-time-2",
+    "protocol": "P1",
+    "action": "massage timer",
+    "inputs": {
+      "kind": "command",
+      "route": 0,
+      "word": 268435506,
+      "parameter": 2
+    },
+    "expected_bytes": "e5fe1610000032c4",
+    "evidence": [
+      "E3",
+      "E6"
+    ]
+  },
+  {
+    "id": "P1-light-0",
+    "protocol": "P1",
+    "action": "light",
+    "inputs": {
+      "kind": "command",
+      "route": 0,
+      "word": 822083584,
+      "on": 0
+    },
+    "expected_bytes": "e5fe1631000000d5",
+    "evidence": [
+      "E3",
+      "E5"
+    ]
+  },
+  {
+    "id": "P1-light-1",
+    "protocol": "P1",
+    "action": "light",
+    "inputs": {
+      "kind": "command",
+      "route": 0,
+      "word": 822083585,
+      "on": 1
+    },
+    "expected_bytes": "e5fe1631000001d4",
+    "evidence": [
+      "E3",
+      "E5"
+    ]
+  },
+  {
+    "id": "P2-stop",
+    "protocol": "P2",
+    "action": "stop",
+    "inputs": {
+      "kind": "command",
+      "route": 1,
+      "word": 0
+    },
+    "expected_bytes": "e6fe16000000000005",
+    "evidence": [
+      "E3",
+      "E4",
+      "E5"
+    ]
+  },
+  {
+    "id": "P2-head_up",
+    "protocol": "P2",
+    "action": "head_up",
+    "inputs": {
+      "kind": "command",
+      "route": 1,
+      "word": 1
+    },
+    "expected_bytes": "e6fe16010000000004",
+    "evidence": [
+      "E3",
+      "E4",
+      "E5"
+    ]
+  },
+  {
+    "id": "P2-head_down",
+    "protocol": "P2",
+    "action": "head_down",
+    "inputs": {
+      "kind": "command",
+      "route": 1,
+      "word": 2
+    },
+    "expected_bytes": "e6fe16020000000003",
+    "evidence": [
+      "E3",
+      "E4",
+      "E5"
+    ]
+  },
+  {
+    "id": "P2-foot_up",
+    "protocol": "P2",
+    "action": "foot_up",
+    "inputs": {
+      "kind": "command",
+      "route": 1,
+      "word": 4
+    },
+    "expected_bytes": "e6fe16040000000001",
+    "evidence": [
+      "E3",
+      "E4",
+      "E5"
+    ]
+  },
+  {
+    "id": "P2-foot_down",
+    "protocol": "P2",
+    "action": "foot_down",
+    "inputs": {
+      "kind": "command",
+      "route": 1,
+      "word": 8
+    },
+    "expected_bytes": "e6fe160800000000fd",
+    "evidence": [
+      "E3",
+      "E4",
+      "E5"
+    ]
+  },
+  {
+    "id": "P2-head_foot_up",
+    "protocol": "P2",
+    "action": "head_foot_up",
+    "inputs": {
+      "kind": "command",
+      "route": 1,
+      "word": 5
+    },
+    "expected_bytes": "e6fe16050000000000",
+    "evidence": [
+      "E3",
+      "E4",
+      "E5"
+    ]
+  },
+  {
+    "id": "P2-head_foot_down",
+    "protocol": "P2",
+    "action": "head_foot_down",
+    "inputs": {
+      "kind": "command",
+      "route": 1,
+      "word": 10
+    },
+    "expected_bytes": "e6fe160a00000000fb",
+    "evidence": [
+      "E3",
+      "E4",
+      "E5"
+    ]
+  },
+  {
+    "id": "P2-zero_g",
+    "protocol": "P2",
+    "action": "zero_g",
+    "inputs": {
+      "kind": "command",
+      "route": 1,
+      "word": 4096
+    },
+    "expected_bytes": "e6fe160010000000f5",
+    "evidence": [
+      "E3",
+      "E4",
+      "E5"
+    ]
+  },
+  {
+    "id": "P2-flat",
+    "protocol": "P2",
+    "action": "flat",
+    "inputs": {
+      "kind": "command",
+      "route": 1,
+      "word": 134217728
+    },
+    "expected_bytes": "e6fe160000000800fd",
+    "evidence": [
+      "E3",
+      "E4",
+      "E5"
+    ]
+  },
+  {
+    "id": "P2-memory_a",
+    "protocol": "P2",
+    "action": "memory_a",
+    "inputs": {
+      "kind": "command",
+      "route": 1,
+      "word": 65536
+    },
+    "expected_bytes": "e6fe16000001000004",
+    "evidence": [
+      "E3",
+      "E4",
+      "E5"
+    ]
+  },
+  {
+    "id": "P2-memory_b",
+    "protocol": "P2",
+    "action": "memory_b",
+    "inputs": {
+      "kind": "command",
+      "route": 1,
+      "word": 262144
+    },
+    "expected_bytes": "e6fe16000004000001",
+    "evidence": [
+      "E3",
+      "E4",
+      "E5"
+    ]
+  },
+  {
+    "id": "P2-store_zero_g",
+    "protocol": "P2",
+    "action": "store_zero_g",
+    "inputs": {
+      "kind": "command",
+      "route": 1,
+      "word": 4096
+    },
+    "expected_bytes": "e6fe160010000000f5",
+    "evidence": [
+      "E3",
+      "E4",
+      "E5"
+    ]
+  },
+  {
+    "id": "P2-store_memory_a",
+    "protocol": "P2",
+    "action": "store_memory_a",
+    "inputs": {
+      "kind": "command",
+      "route": 1,
+      "word": 65536
+    },
+    "expected_bytes": "e6fe16000001000004",
+    "evidence": [
+      "E3",
+      "E4",
+      "E5"
+    ]
+  },
+  {
+    "id": "P2-store_memory_b",
+    "protocol": "P2",
+    "action": "store_memory_b",
+    "inputs": {
+      "kind": "command",
+      "route": 1,
+      "word": 262144
+    },
+    "expected_bytes": "e6fe16000004000001",
+    "evidence": [
+      "E3",
+      "E4",
+      "E5"
+    ]
+  },
+  {
+    "id": "P2-massage_all",
+    "protocol": "P2",
+    "action": "massage_all",
+    "inputs": {
+      "kind": "command",
+      "route": 1,
+      "word": 256
+    },
+    "expected_bytes": "e6fe16000100000004",
+    "evidence": [
+      "E3",
+      "E6"
+    ]
+  },
+  {
+    "id": "P2-head_plus",
+    "protocol": "P2",
+    "action": "head_plus",
+    "inputs": {
+      "kind": "command",
+      "route": 1,
+      "word": 2048
+    },
+    "expected_bytes": "e6fe160008000000fd",
+    "evidence": [
+      "E3",
+      "E6"
+    ]
+  },
+  {
+    "id": "P2-head_minus",
+    "protocol": "P2",
+    "action": "head_minus",
+    "inputs": {
+      "kind": "command",
+      "route": 1,
+      "word": 8388608
+    },
+    "expected_bytes": "e6fe16000080000085",
+    "evidence": [
+      "E3",
+      "E6"
+    ]
+  },
+  {
+    "id": "P2-foot_plus",
+    "protocol": "P2",
+    "action": "foot_plus",
+    "inputs": {
+      "kind": "command",
+      "route": 1,
+      "word": 1024
+    },
+    "expected_bytes": "e6fe16000400000001",
+    "evidence": [
+      "E3",
+      "E6"
+    ]
+  },
+  {
+    "id": "P2-foot_minus",
+    "protocol": "P2",
+    "action": "foot_minus",
+    "inputs": {
+      "kind": "command",
+      "route": 1,
+      "word": 16777216
+    },
+    "expected_bytes": "e6fe16000000010004",
+    "evidence": [
+      "E3",
+      "E6"
+    ]
+  },
+  {
+    "id": "P2-wave_cycle",
+    "protocol": "P2",
+    "action": "wave_cycle",
+    "inputs": {
+      "kind": "command",
+      "route": 1,
+      "word": 268435456
+    },
+    "expected_bytes": "e6fe160000001000f5",
+    "evidence": [
+      "E3",
+      "E6"
+    ]
+  },
+  {
+    "id": "P2-timer_cycle",
+    "protocol": "P2",
+    "action": "timer_cycle",
+    "inputs": {
+      "kind": "command",
+      "route": 1,
+      "word": 512
+    },
+    "expected_bytes": "e6fe16000200000003",
+    "evidence": [
+      "E3",
+      "E6"
+    ]
+  },
+  {
+    "id": "P2-light_toggle",
+    "protocol": "P2",
+    "action": "light_toggle",
+    "inputs": {
+      "kind": "command",
+      "route": 1,
+      "word": 131072
+    },
+    "expected_bytes": "e6fe16000002000003",
+    "evidence": [
+      "E3",
+      "E6"
+    ]
+  },
+  {
+    "id": "P3-stop",
+    "protocol": "P3",
+    "action": "stop",
+    "inputs": {
+      "kind": "command",
+      "route": 2,
+      "word": 0
+    },
+    "expected_bytes": "05020000000000",
+    "evidence": [
+      "E3",
+      "E4",
+      "E5"
+    ]
+  },
+  {
+    "id": "P3-head_up",
+    "protocol": "P3",
+    "action": "head_up",
+    "inputs": {
+      "kind": "command",
+      "route": 2,
+      "word": 1
+    },
+    "expected_bytes": "05020000000100",
+    "evidence": [
+      "E3",
+      "E4",
+      "E5"
+    ]
+  },
+  {
+    "id": "P3-head_down",
+    "protocol": "P3",
+    "action": "head_down",
+    "inputs": {
+      "kind": "command",
+      "route": 2,
+      "word": 2
+    },
+    "expected_bytes": "05020000000200",
+    "evidence": [
+      "E3",
+      "E4",
+      "E5"
+    ]
+  },
+  {
+    "id": "P3-foot_up",
+    "protocol": "P3",
+    "action": "foot_up",
+    "inputs": {
+      "kind": "command",
+      "route": 2,
+      "word": 4
+    },
+    "expected_bytes": "05020000000400",
+    "evidence": [
+      "E3",
+      "E4",
+      "E5"
+    ]
+  },
+  {
+    "id": "P3-foot_down",
+    "protocol": "P3",
+    "action": "foot_down",
+    "inputs": {
+      "kind": "command",
+      "route": 2,
+      "word": 8
+    },
+    "expected_bytes": "05020000000800",
+    "evidence": [
+      "E3",
+      "E4",
+      "E5"
+    ]
+  },
+  {
+    "id": "P3-head_foot_up",
+    "protocol": "P3",
+    "action": "head_foot_up",
+    "inputs": {
+      "kind": "command",
+      "route": 2,
+      "word": 5
+    },
+    "expected_bytes": "05020000000500",
+    "evidence": [
+      "E3",
+      "E4",
+      "E5"
+    ]
+  },
+  {
+    "id": "P3-head_foot_down",
+    "protocol": "P3",
+    "action": "head_foot_down",
+    "inputs": {
+      "kind": "command",
+      "route": 2,
+      "word": 10
+    },
+    "expected_bytes": "05020000000a00",
+    "evidence": [
+      "E3",
+      "E4",
+      "E5"
+    ]
+  },
+  {
+    "id": "P3-zero_g",
+    "protocol": "P3",
+    "action": "zero_g",
+    "inputs": {
+      "kind": "command",
+      "route": 2,
+      "word": 4096
+    },
+    "expected_bytes": "05020000100000",
+    "evidence": [
+      "E3",
+      "E4",
+      "E5"
+    ]
+  },
+  {
+    "id": "P3-flat",
+    "protocol": "P3",
+    "action": "flat",
+    "inputs": {
+      "kind": "command",
+      "route": 2,
+      "word": 134217728
+    },
+    "expected_bytes": "05020800000000",
+    "evidence": [
+      "E3",
+      "E4",
+      "E5"
+    ]
+  },
+  {
+    "id": "P3-memory_a",
+    "protocol": "P3",
+    "action": "memory_a",
+    "inputs": {
+      "kind": "command",
+      "route": 2,
+      "word": 65536
+    },
+    "expected_bytes": "05020001000000",
+    "evidence": [
+      "E3",
+      "E4",
+      "E5"
+    ]
+  },
+  {
+    "id": "P3-memory_b",
+    "protocol": "P3",
+    "action": "memory_b",
+    "inputs": {
+      "kind": "command",
+      "route": 2,
+      "word": 262144
+    },
+    "expected_bytes": "05020004000000",
+    "evidence": [
+      "E3",
+      "E4",
+      "E5"
+    ]
+  },
+  {
+    "id": "P3-store_zero_g",
+    "protocol": "P3",
+    "action": "store_zero_g",
+    "inputs": {
+      "kind": "command",
+      "route": 2,
+      "word": 4096
+    },
+    "expected_bytes": "05020000100000",
+    "evidence": [
+      "E3",
+      "E4",
+      "E5"
+    ]
+  },
+  {
+    "id": "P3-store_memory_a",
+    "protocol": "P3",
+    "action": "store_memory_a",
+    "inputs": {
+      "kind": "command",
+      "route": 2,
+      "word": 65536
+    },
+    "expected_bytes": "05020001000000",
+    "evidence": [
+      "E3",
+      "E4",
+      "E5"
+    ]
+  },
+  {
+    "id": "P3-store_memory_b",
+    "protocol": "P3",
+    "action": "store_memory_b",
+    "inputs": {
+      "kind": "command",
+      "route": 2,
+      "word": 262144
+    },
+    "expected_bytes": "05020004000000",
+    "evidence": [
+      "E3",
+      "E4",
+      "E5"
+    ]
+  },
+  {
+    "id": "P3-massage_all",
+    "protocol": "P3",
+    "action": "massage_all",
+    "inputs": {
+      "kind": "command",
+      "route": 2,
+      "word": 256
+    },
+    "expected_bytes": "05020000010000",
+    "evidence": [
+      "E3",
+      "E6"
+    ]
+  },
+  {
+    "id": "P3-head_plus",
+    "protocol": "P3",
+    "action": "head_plus",
+    "inputs": {
+      "kind": "command",
+      "route": 2,
+      "word": 2048
+    },
+    "expected_bytes": "05020000080000",
+    "evidence": [
+      "E3",
+      "E6"
+    ]
+  },
+  {
+    "id": "P3-head_minus",
+    "protocol": "P3",
+    "action": "head_minus",
+    "inputs": {
+      "kind": "command",
+      "route": 2,
+      "word": 8388608
+    },
+    "expected_bytes": "05020080000000",
+    "evidence": [
+      "E3",
+      "E6"
+    ]
+  },
+  {
+    "id": "P3-foot_plus",
+    "protocol": "P3",
+    "action": "foot_plus",
+    "inputs": {
+      "kind": "command",
+      "route": 2,
+      "word": 1024
+    },
+    "expected_bytes": "05020000040000",
+    "evidence": [
+      "E3",
+      "E6"
+    ]
+  },
+  {
+    "id": "P3-foot_minus",
+    "protocol": "P3",
+    "action": "foot_minus",
+    "inputs": {
+      "kind": "command",
+      "route": 2,
+      "word": 16777216
+    },
+    "expected_bytes": "05020100000000",
+    "evidence": [
+      "E3",
+      "E6"
+    ]
+  },
+  {
+    "id": "P3-wave_cycle",
+    "protocol": "P3",
+    "action": "wave_cycle",
+    "inputs": {
+      "kind": "command",
+      "route": 2,
+      "word": 268435456
+    },
+    "expected_bytes": "05021000000000",
+    "evidence": [
+      "E3",
+      "E6"
+    ]
+  },
+  {
+    "id": "P3-timer_cycle",
+    "protocol": "P3",
+    "action": "timer_cycle",
+    "inputs": {
+      "kind": "command",
+      "route": 2,
+      "word": 512
+    },
+    "expected_bytes": "05020000020000",
+    "evidence": [
+      "E3",
+      "E6"
+    ]
+  },
+  {
+    "id": "P3-light_toggle",
+    "protocol": "P3",
+    "action": "light_toggle",
+    "inputs": {
+      "kind": "command",
+      "route": 2,
+      "word": 131072
+    },
+    "expected_bytes": "05020002000000",
+    "evidence": [
+      "E3",
+      "E6"
+    ]
+  },
+  {
+    "id": "P1-current-0",
+    "protocol": "P1",
+    "action": "set current time",
+    "inputs": {
+      "kind": "current",
+      "route": 0,
+      "now": {
+        "year": 2026,
+        "month": 11,
+        "day": 27,
+        "weekday": 5,
+        "hour": 6,
+        "minute": 45,
+        "second": 30
+      }
+    },
+    "expected_bytes": "e2fe161e2d0605b3",
+    "evidence": [
+      "E4",
+      "E7"
+    ]
+  },
+  {
+    "id": "P1-current-1",
+    "protocol": "P1",
+    "action": "set current time",
+    "inputs": {
+      "kind": "current",
+      "route": 0,
+      "now": {
+        "year": 2025,
+        "month": 1,
+        "day": 1,
+        "weekday": 3,
+        "hour": 0,
+        "minute": 0,
+        "second": 0
+      }
+    },
+    "expected_bytes": "e2fe160000000306",
+    "evidence": [
+      "E4",
+      "E7"
+    ]
+  },
+  {
+    "id": "P1-alarm-0",
+    "protocol": "P1",
+    "action": "set alarm",
+    "inputs": {
+      "kind": "alarm",
+      "route": 0,
+      "hour": 7,
+      "minute": 30,
+      "week": -66,
+      "massage": 17,
+      "mode": 8,
+      "now": {
+        "year": 2026,
+        "month": 11,
+        "day": 27,
+        "weekday": 5,
+        "hour": 6,
+        "minute": 45,
+        "second": 30
+      }
+    },
+    "expected_bytes": "ebfe161e2d061e0705be1111f8ad",
+    "evidence": [
+      "E4",
+      "E7"
+    ]
+  },
+  {
+    "id": "P1-alarm-1",
+    "protocol": "P1",
+    "action": "set alarm",
+    "inputs": {
+      "kind": "alarm",
+      "route": 0,
+      "hour": 0,
+      "minute": 0,
+      "week": 0,
+      "massage": 0,
+      "mode": 0,
+      "now": {
+        "year": 2026,
+        "month": 11,
+        "day": 27,
+        "weekday": 5,
+        "hour": 6,
+        "minute": 45,
+        "second": 30
+      }
+    },
+    "expected_bytes": "ebfe161e2d06000005001100f0a9",
+    "evidence": [
+      "E4",
+      "E7"
+    ]
+  },
+  {
+    "id": "P1-alarm-2",
+    "protocol": "P1",
+    "action": "set alarm",
+    "inputs": {
+      "kind": "alarm",
+      "route": 0,
+      "hour": 9,
+      "minute": 5,
+      "week": -128,
+      "massage": 0,
+      "mode": 0,
+      "now": {
+        "year": 2026,
+        "month": 11,
+        "day": 27,
+        "weekday": 5,
+        "hour": 6,
+        "minute": 45,
+        "second": 30
+      }
+    },
+    "expected_bytes": "ebfe161e2d06050905801100f01b",
+    "evidence": [
+      "E4",
+      "E7"
+    ]
+  },
+  {
+    "id": "P1-cancel",
+    "protocol": "P1",
+    "action": "cancel alarm",
+    "inputs": {
+      "kind": "cancel",
+      "route": 0,
+      "now": {
+        "year": 2026,
+        "month": 11,
+        "day": 27,
+        "weekday": 5,
+        "hour": 6,
+        "minute": 45,
+        "second": 30
+      }
+    },
+    "expected_bytes": "ebfe161e2d06ffffffffffff189d",
+    "evidence": [
+      "E4",
+      "E7"
+    ]
+  },
+  {
+    "id": "P2-current-0",
+    "protocol": "P2",
+    "action": "set current time",
+    "inputs": {
+      "kind": "current",
+      "route": 1,
+      "now": {
+        "year": 2026,
+        "month": 11,
+        "day": 27,
+        "weekday": 5,
+        "hour": 6,
+        "minute": 45,
+        "second": 30
+      }
+    },
+    "expected_bytes": "e780017e0a1b062d1ea3",
+    "evidence": [
+      "E4",
+      "E7"
+    ]
+  },
+  {
+    "id": "P2-current-1",
+    "protocol": "P2",
+    "action": "set current time",
+    "inputs": {
+      "kind": "current",
+      "route": 1,
+      "now": {
+        "year": 2025,
+        "month": 1,
+        "day": 1,
+        "weekday": 3,
+        "hour": 0,
+        "minute": 0,
+        "second": 0
+      }
+    },
+    "expected_bytes": "e780017d000100000019",
+    "evidence": [
+      "E4",
+      "E7"
+    ]
+  },
+  {
+    "id": "P2-alarm-0",
+    "protocol": "P2",
+    "action": "set alarm",
+    "inputs": {
+      "kind": "alarm",
+      "route": 1,
+      "hour": 7,
+      "minute": 30,
+      "week": -66,
+      "massage": 17,
+      "mode": 17,
+      "now": {
+        "year": 2026,
+        "month": 11,
+        "day": 27,
+        "weekday": 5,
+        "hour": 6,
+        "minute": 45,
+        "second": 30
+      }
+    },
+    "expected_bytes": "ed8003071ebe1100000000000000009b",
+    "evidence": [
+      "E4",
+      "E7"
+    ]
+  },
+  {
+    "id": "P2-alarm-1",
+    "protocol": "P2",
+    "action": "set alarm",
+    "inputs": {
+      "kind": "alarm",
+      "route": 1,
+      "hour": 0,
+      "minute": 0,
+      "week": 0,
+      "massage": 0,
+      "mode": 0,
+      "now": {
+        "year": 2026,
+        "month": 11,
+        "day": 27,
+        "weekday": 5,
+        "hour": 6,
+        "minute": 45,
+        "second": 30
+      }
+    },
+    "expected_bytes": "ed80030000000000000000000000008f",
+    "evidence": [
+      "E4",
+      "E7"
+    ]
+  },
+  {
+    "id": "P2-alarm-2",
+    "protocol": "P2",
+    "action": "set alarm",
+    "inputs": {
+      "kind": "alarm",
+      "route": 1,
+      "hour": 9,
+      "minute": 5,
+      "week": -128,
+      "massage": 0,
+      "mode": 0,
+      "now": {
+        "year": 2026,
+        "month": 11,
+        "day": 27,
+        "weekday": 5,
+        "hour": 6,
+        "minute": 45,
+        "second": 30
+      }
+    },
+    "expected_bytes": "ed800309058000000000000000000001",
+    "evidence": [
+      "E4",
+      "E7"
+    ]
+  },
+  {
+    "id": "P2-cancel",
+    "protocol": "P2",
+    "action": "cancel alarm",
+    "inputs": {
+      "kind": "cancel",
+      "route": 1,
+      "now": {
+        "year": 2026,
+        "month": 11,
+        "day": 27,
+        "weekday": 5,
+        "hour": 6,
+        "minute": 45,
+        "second": 30
+      }
+    },
+    "expected_bytes": "ed80030000000000000000000000008f",
+    "evidence": [
+      "E4",
+      "E7"
+    ]
+  },
+  {
+    "id": "P3-current-0",
+    "protocol": "P3",
+    "action": "set current time",
+    "inputs": {
+      "kind": "current",
+      "route": 2,
+      "now": {
+        "year": 2026,
+        "month": 11,
+        "day": 27,
+        "weekday": 5,
+        "hour": 6,
+        "minute": 45,
+        "second": 30
+      }
+    },
+    "expected_bytes": "07041a0b1b05062d1e",
+    "evidence": [
+      "E4",
+      "E7"
+    ]
+  },
+  {
+    "id": "P3-current-1",
+    "protocol": "P3",
+    "action": "set current time",
+    "inputs": {
+      "kind": "current",
+      "route": 2,
+      "now": {
+        "year": 2025,
+        "month": 1,
+        "day": 1,
+        "weekday": 3,
+        "hour": 0,
+        "minute": 0,
+        "second": 0
+      }
+    },
+    "expected_bytes": "070419010103000000",
+    "evidence": [
+      "E4",
+      "E7"
+    ]
+  },
+  {
+    "id": "P3-alarm-0",
+    "protocol": "P3",
+    "action": "set alarm",
+    "inputs": {
+      "kind": "alarm",
+      "route": 2,
+      "hour": 7,
+      "minute": 30,
+      "week": -66,
+      "massage": 17,
+      "mode": 5,
+      "now": {
+        "year": 2026,
+        "month": 11,
+        "day": 27,
+        "weekday": 5,
+        "hour": 6,
+        "minute": 45,
+        "second": 30
+      }
+    },
+    "expected_bytes": "0705be05071e000100",
+    "evidence": [
+      "E4",
+      "E7"
+    ]
+  },
+  {
+    "id": "P3-alarm-1",
+    "protocol": "P3",
+    "action": "set alarm",
+    "inputs": {
+      "kind": "alarm",
+      "route": 2,
+      "hour": 0,
+      "minute": 0,
+      "week": 0,
+      "massage": 0,
+      "mode": 0,
+      "now": {
+        "year": 2026,
+        "month": 11,
+        "day": 27,
+        "weekday": 5,
+        "hour": 6,
+        "minute": 45,
+        "second": 30
+      }
+    },
+    "expected_bytes": "070500000000000000",
+    "evidence": [
+      "E4",
+      "E7"
+    ]
+  },
+  {
+    "id": "P3-alarm-2",
+    "protocol": "P3",
+    "action": "set alarm",
+    "inputs": {
+      "kind": "alarm",
+      "route": 2,
+      "hour": 9,
+      "minute": 5,
+      "week": -128,
+      "massage": 0,
+      "mode": 0,
+      "now": {
+        "year": 2026,
+        "month": 11,
+        "day": 27,
+        "weekday": 5,
+        "hour": 6,
+        "minute": 45,
+        "second": 30
+      }
+    },
+    "expected_bytes": "070500000905000100",
+    "evidence": [
+      "E4",
+      "E7"
+    ]
+  },
+  {
+    "id": "P3-cancel",
+    "protocol": "P3",
+    "action": "cancel alarm",
+    "inputs": {
+      "kind": "cancel",
+      "route": 2,
+      "now": {
+        "year": 2026,
+        "month": 11,
+        "day": 27,
+        "weekday": 5,
+        "hour": 6,
+        "minute": 45,
+        "second": 30
+      }
+    },
+    "expected_bytes": "070500000000000000",
+    "evidence": [
+      "E4",
+      "E7"
+    ]
+  },
+  {
+    "id": "P2-read-alarm",
+    "protocol": "P2",
+    "action": "read alarm",
+    "inputs": {
+      "kind": "literal",
+      "hex": "e180039b"
+    },
+    "expected_bytes": "e180039b",
+    "evidence": [
+      "E2",
+      "E4",
+      "E7"
+    ]
+  },
+  {
+    "id": "P3-read-alarm",
+    "protocol": "P3",
+    "action": "read alarm",
+    "inputs": {
+      "kind": "literal",
+      "hex": "00c0"
+    },
+    "expected_bytes": "00c0",
+    "evidence": [
+      "E2",
+      "E4",
+      "E7"
+    ]
+  },
+  {
+    "id": "P3-query-massage",
+    "protocol": "P3",
+    "action": "query massage",
+    "inputs": {
+      "kind": "literal",
+      "hex": "00b0"
+    },
+    "expected_bytes": "00b0",
+    "evidence": [
+      "E2",
+      "E4",
+      "E7"
+    ]
+  },
+  {
+    "id": "P1-alarm-reply",
+    "protocol": "P1",
+    "action": "alarm parser",
+    "inputs": {
+      "kind": "parser",
+      "route": 0,
+      "domain": "alarm"
+    },
+    "expected_bytes": "0000001e07003e1111f8",
+    "evidence": [
+      "E8"
+    ],
+    "expected_state": {
+      "hour": 7,
+      "minute": 30,
+      "week": 62,
+      "enabled": true,
+      "massage": true,
+      "memory_a": true,
+      "memory_b": false,
+      "stop": false
+    },
+    "origin": "Constructed branch vector from shipped parser; not a hardware capture"
+  },
+  {
+    "id": "P1-alarm-sentinels",
+    "protocol": "P1",
+    "action": "alarm parser",
+    "inputs": {
+      "kind": "parser",
+      "route": 0,
+      "domain": "alarm"
+    },
+    "expected_bytes": "000000ffff00ff0000ff",
+    "evidence": [
+      "E8"
+    ],
+    "expected_state": {
+      "hour": 0,
+      "minute": 0,
+      "week": 0,
+      "enabled": false,
+      "massage": false,
+      "memory_a": false,
+      "memory_b": false,
+      "stop": false
+    },
+    "origin": "Constructed branch vector from shipped parser; not a hardware capture"
+  },
+  {
+    "id": "P1-alarm-invalid",
+    "protocol": "P1",
+    "action": "alarm parser",
+    "inputs": {
+      "kind": "parser",
+      "route": 0,
+      "domain": "alarm"
+    },
+    "expected_bytes": "0000003d190000000000",
+    "evidence": [
+      "E8"
+    ],
+    "expected_state": null,
+    "origin": "Constructed branch vector from shipped parser; not a hardware capture"
+  },
+  {
+    "id": "P1-alarm-short",
+    "protocol": "P1",
+    "action": "alarm parser",
+    "inputs": {
+      "kind": "parser",
+      "route": 0,
+      "domain": "alarm"
+    },
+    "expected_bytes": "00",
+    "evidence": [
+      "E8"
+    ],
+    "expected_state": null,
+    "origin": "Constructed branch vector from shipped parser; not a hardware capture"
+  },
+  {
+    "id": "P2-massage-reply",
+    "protocol": "P2",
+    "action": "massage parser",
+    "inputs": {
+      "kind": "parser",
+      "route": 1,
+      "domain": "massage"
+    },
+    "expected_bytes": "00000000000000030500000000004200",
+    "evidence": [
+      "E8"
+    ],
+    "expected_state": {
+      "arc": 2,
+      "wave": 4,
+      "head": 2,
+      "foot": 3
+    },
+    "origin": "Constructed branch vector from shipped parser; not a hardware capture"
+  },
+  {
+    "id": "P2-massage-signed",
+    "protocol": "P2",
+    "action": "massage parser",
+    "inputs": {
+      "kind": "parser",
+      "route": 1,
+      "domain": "massage"
+    },
+    "expected_bytes": "0000000000000000010000000000f000",
+    "evidence": [
+      "E8"
+    ],
+    "expected_state": {
+      "arc": 0,
+      "wave": -1,
+      "head": 0,
+      "foot": 1
+    },
+    "origin": "Constructed branch vector from shipped parser; not a hardware capture"
+  },
+  {
+    "id": "P2-massage-short",
+    "protocol": "P2",
+    "action": "massage parser",
+    "inputs": {
+      "kind": "parser",
+      "route": 1,
+      "domain": "massage"
+    },
+    "expected_bytes": "00",
+    "evidence": [
+      "E8"
+    ],
+    "expected_state": null,
+    "origin": "Constructed branch vector from shipped parser; not a hardware capture"
+  },
+  {
+    "id": "P3-massage-reply",
+    "protocol": "P3",
+    "action": "massage parser",
+    "inputs": {
+      "kind": "parser",
+      "route": 2,
+      "domain": "massage"
+    },
+    "expected_bytes": "000000000500040305",
+    "evidence": [
+      "E8"
+    ],
+    "expected_state": {
+      "arc": 3,
+      "wave": 4,
+      "head": 2,
+      "foot": 3
+    },
+    "origin": "Constructed branch vector from shipped parser; not a hardware capture"
+  },
+  {
+    "id": "P3-massage-signed",
+    "protocol": "P3",
+    "action": "massage parser",
+    "inputs": {
+      "kind": "parser",
+      "route": 2,
+      "domain": "massage"
+    },
+    "expected_bytes": "00000000ff00ffffff",
+    "evidence": [
+      "E8"
+    ],
+    "expected_state": {
+      "arc": 0,
+      "wave": -1,
+      "head": 0,
+      "foot": 0
+    },
+    "origin": "Constructed branch vector from shipped parser; not a hardware capture"
+  },
+  {
+    "id": "P3-massage-short",
+    "protocol": "P3",
+    "action": "massage parser",
+    "inputs": {
+      "kind": "parser",
+      "route": 2,
+      "domain": "massage"
+    },
+    "expected_bytes": "00",
+    "evidence": [
+      "E8"
+    ],
+    "expected_state": "IndexError (app array access lacks length guard)",
+    "origin": "Constructed branch vector from shipped parser; not a hardware capture"
+  },
+  {
+    "id": "P2-alarm-reply",
+    "protocol": "P2",
+    "action": "alarm parser",
+    "inputs": {
+      "kind": "parser",
+      "route": 1,
+      "domain": "alarm"
+    },
+    "expected_bytes": "ed8003071ebe11",
+    "evidence": [
+      "E8"
+    ],
+    "expected_state": {
+      "hour": 7,
+      "minute": 30,
+      "week": 190,
+      "enabled": true,
+      "selected_mode": "memory_a",
+      "preserves_other_mode_selections": true,
+      "stop": true
+    },
+    "origin": "Constructed branch vector from shipped parser; not a hardware capture"
+  },
+  {
+    "id": "P2-alarm-off",
+    "protocol": "P2",
+    "action": "alarm parser",
+    "inputs": {
+      "kind": "parser",
+      "route": 1,
+      "domain": "alarm"
+    },
+    "expected_bytes": "ed800300000000",
+    "evidence": [
+      "E8"
+    ],
+    "expected_state": {
+      "hour": 0,
+      "minute": 0,
+      "week": 0,
+      "enabled": false,
+      "selected_mode": null,
+      "preserves_other_mode_selections": true,
+      "stop": true
+    },
+    "origin": "Constructed branch vector from shipped parser; not a hardware capture"
+  },
+  {
+    "id": "P3-alarm-reply",
+    "protocol": "P3",
+    "action": "alarm parser",
+    "inputs": {
+      "kind": "parser",
+      "route": 2,
+      "domain": "alarm"
+    },
+    "expected_bytes": "a50c0000be06071e0001",
+    "evidence": [
+      "E8"
+    ],
+    "expected_state": {
+      "hour": 7,
+      "minute": 30,
+      "week": 190,
+      "enabled": true,
+      "selected_mode": "memory_b",
+      "stop": true
+    },
+    "origin": "Constructed branch vector from shipped parser; not a hardware capture"
+  },
+  {
+    "id": "P3-alarm-short",
+    "protocol": "P3",
+    "action": "alarm parser",
+    "inputs": {
+      "kind": "parser",
+      "route": 2,
+      "domain": "alarm"
+    },
+    "expected_bytes": "a50c",
+    "evidence": [
+      "E8"
+    ],
+    "expected_state": "IndexError (app array access lacks length guard)",
+    "origin": "Constructed branch vector from shipped parser; not a hardware capture"
+  },
+  {
+    "id": "week-0",
+    "protocol": "P1",
+    "action": "weekday selection",
+    "inputs": {
+      "kind": "weeks",
+      "selected": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6
+      ],
+      "hour": 7,
+      "minute": 30,
+      "now": {
+        "year": 2026,
+        "month": 11,
+        "day": 27,
+        "weekday": 5,
+        "hour": 6,
+        "minute": 45,
+        "second": 30
+      }
+    },
+    "expected_bytes": "no frame; weekday selector input",
+    "evidence": [
+      "E7"
+    ],
+    "expected_week": -1
+  },
+  {
+    "id": "week-1",
+    "protocol": "P1",
+    "action": "weekday selection",
+    "inputs": {
+      "kind": "weeks",
+      "selected": [
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "hour": 7,
+      "minute": 30,
+      "now": {
+        "year": 2026,
+        "month": 11,
+        "day": 27,
+        "weekday": 5,
+        "hour": 6,
+        "minute": 45,
+        "second": 30
+      }
+    },
+    "expected_bytes": "no frame; weekday selector input",
+    "evidence": [
+      "E7"
+    ],
+    "expected_week": -66
+  },
+  {
+    "id": "week-2",
+    "protocol": "P1",
+    "action": "weekday selection",
+    "inputs": {
+      "kind": "weeks",
+      "selected": [
+        0,
+        6
+      ],
+      "hour": 7,
+      "minute": 30,
+      "now": {
+        "year": 2026,
+        "month": 11,
+        "day": 27,
+        "weekday": 5,
+        "hour": 6,
+        "minute": 45,
+        "second": 30
+      }
+    },
+    "expected_bytes": "no frame; weekday selector input",
+    "evidence": [
+      "E7"
+    ],
+    "expected_week": -63
+  },
+  {
+    "id": "week-3",
+    "protocol": "P1",
+    "action": "weekday selection",
+    "inputs": {
+      "kind": "weeks",
+      "selected": [],
+      "hour": 6,
+      "minute": 45,
+      "now": {
+        "year": 2026,
+        "month": 11,
+        "day": 27,
+        "weekday": 5,
+        "hour": 6,
+        "minute": 45,
+        "second": 30
+      }
+    },
+    "expected_bytes": "no frame; weekday selector input",
+    "evidence": [
+      "E7"
+    ],
+    "expected_week": 64
+  },
+  {
+    "id": "week-4",
+    "protocol": "P1",
+    "action": "weekday selection",
+    "inputs": {
+      "kind": "weeks",
+      "selected": [],
+      "hour": 7,
+      "minute": 30,
+      "now": {
+        "year": 2026,
+        "month": 11,
+        "day": 27,
+        "weekday": 5,
+        "hour": 6,
+        "minute": 45,
+        "second": 30
+      }
+    },
+    "expected_bytes": "no frame; weekday selector input",
+    "evidence": [
+      "E7"
+    ],
+    "expected_week": 32
+  },
+  {
+    "id": "P1-dormant3m_hf_up",
+    "protocol": "P1",
+    "action": "dormant3m_hf_up",
+    "inputs": {
+      "kind": "command",
+      "route": 0,
+      "word": 16
+    },
+    "expected_bytes": "e5fe1600000010f6",
+    "evidence": [
+      "E3",
+      "E4",
+      "E5",
+      "E11"
+    ],
+    "reachability": "DEAD/UNUSED"
+  },
+  {
+    "id": "P1-dormant3m_hf_down",
+    "protocol": "P1",
+    "action": "dormant3m_hf_down",
+    "inputs": {
+      "kind": "command",
+      "route": 0,
+      "word": 32
+    },
+    "expected_bytes": "e5fe1600000020e6",
+    "evidence": [
+      "E3",
+      "E4",
+      "E5",
+      "E11"
+    ],
+    "reachability": "DEAD/UNUSED"
+  },
+  {
+    "id": "P2-dormant3m_hf_up",
+    "protocol": "P2",
+    "action": "dormant3m_hf_up",
+    "inputs": {
+      "kind": "command",
+      "route": 1,
+      "word": 16
+    },
+    "expected_bytes": "e6fe161000000000f5",
+    "evidence": [
+      "E3",
+      "E4",
+      "E5",
+      "E11"
+    ],
+    "reachability": "DEAD/UNUSED"
+  },
+  {
+    "id": "P2-dormant3m_hf_down",
+    "protocol": "P2",
+    "action": "dormant3m_hf_down",
+    "inputs": {
+      "kind": "command",
+      "route": 1,
+      "word": 32
+    },
+    "expected_bytes": "e6fe162000000000e5",
+    "evidence": [
+      "E3",
+      "E4",
+      "E5",
+      "E11"
+    ],
+    "reachability": "DEAD/UNUSED"
+  },
+  {
+    "id": "P3-dormant3m_hf_up",
+    "protocol": "P3",
+    "action": "dormant3m_hf_up",
+    "inputs": {
+      "kind": "command",
+      "route": 2,
+      "word": 16
+    },
+    "expected_bytes": "05020000001000",
+    "evidence": [
+      "E3",
+      "E4",
+      "E5",
+      "E11"
+    ],
+    "reachability": "DEAD/UNUSED"
+  },
+  {
+    "id": "P3-dormant3m_hf_down",
+    "protocol": "P3",
+    "action": "dormant3m_hf_down",
+    "inputs": {
+      "kind": "command",
+      "route": 2,
+      "word": 32
+    },
+    "expected_bytes": "05020000002000",
+    "evidence": [
+      "E3",
+      "E4",
+      "E5",
+      "E11"
+    ],
+    "reachability": "DEAD/UNUSED"
+  }
+]
