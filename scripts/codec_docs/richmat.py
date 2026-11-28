@@ -64,6 +64,7 @@ from scripts.codec_docs import (
     _dreamlab,
     _galaxy,
     _homezone,
+    _motionflex,
     _muuegm,
     _okimiki,
     _richmat_legacy,
@@ -2240,6 +2241,8 @@ BLOCKS += [(GUIDE, "silksnow-products", render_silksnow_products), (GUIDE, "silk
 from scripts.codec_docs._purely_sleep import BLOCKS as PURELY_SLEEP_BLOCKS  # noqa: E402
 
 BLOCKS.extend(PURELY_SLEEP_BLOCKS)
+
+BLOCKS += _motionflex.BLOCKS
 
 
 BLOCKS.extend(MYSIDE_BLOCKS)
