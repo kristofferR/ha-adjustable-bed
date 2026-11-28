@@ -58,6 +58,7 @@ import contextvars
 import dataclasses
 import datetime
 import difflib
+import faulthandler
 import inspect
 import json
 import logging
@@ -65,10 +66,10 @@ import os
 import subprocess
 import sys
 import time
-from collections.abc import Awaitable, Callable, Iterator
+from collections.abc import Awaitable, Callable, Generator, Iterator
 from dataclasses import dataclass, field, replace
 from pathlib import Path
-from types import SimpleNamespace
+from types import SimpleNamespace, coroutine
 from typing import Any, cast
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
@@ -904,6 +905,12 @@ class _LoopProxy:
         return getattr(self._loop, name)
 
 
+@coroutine
+def _yield_loop() -> Generator[None]:
+    """Yield one event-loop turn without allocating an asyncio.sleep coroutine."""
+    yield
+
+
 @contextlib.contextmanager
 def virtual_time(clock: FakeClock) -> Iterator[None]:
     """Run ``asyncio`` timing on the fake clock for the duration of the block."""
@@ -911,21 +918,7 @@ def virtual_time(clock: FakeClock) -> Iterator[None]:
         name: getattr(asyncio, name)
         for name in ("sleep", "wait", "wait_for", "timeout", "timeout_at", "get_running_loop")
     }
-    real_sleep, real_wait = real["sleep"], real["wait"]
-
-    async def settle(quiet: int, stop: Callable[[], bool] = lambda: False) -> None:
-        """Yield until ``quiet`` consecutive yields saw no new activity, or ``stop()``."""
-        seen, still = -1, 0
-        for _ in range(MAX_SETTLE_YIELDS):
-            await real_sleep(0)
-            if stop():
-                return
-            if clock.activity == seen:
-                still += 1
-                if still >= quiet:
-                    return
-            else:
-                seen, still = clock.activity, 0
+    real_wait = real["wait"]
 
     async def wait_until(deadline: float, quiet: int, stop: Callable[[], bool]) -> bool:
         """Wait until ``deadline`` is the earliest pending one; False if ``stop()`` first."""
@@ -933,7 +926,17 @@ def virtual_time(clock: FakeClock) -> Iterator[None]:
         clock.activity += 1
         try:
             while not stop():
-                await settle(quiet, stop)
+                seen, still = -1, 0
+                for _ in range(MAX_SETTLE_YIELDS):
+                    await _yield_loop()
+                    if stop():
+                        break
+                    if clock.activity == seen:
+                        still += 1
+                        if still >= quiet:
+                            break
+                    else:
+                        seen, still = clock.activity, 0
                 if not stop() and deadline <= min(clock.sleepers):
                     clock.advance_to(deadline)
                     return True
@@ -1519,6 +1522,8 @@ def default_scenario(bed_type: str) -> Scenario:
     """The bed type in its default route, with the entry data it needs to build."""
     from custom_components.adjustable_bed import const
 
+    if bed_type == "intellibed":
+        return Scenario(id=bed_type, bed_type=bed_type, protocol_variant="old")
     if bed_type == "active_sleep":
         from custom_components.adjustable_bed.codec import active_sleep as active
         return Scenario(id=bed_type, bed_type=bed_type, layout_id=bed_type,
@@ -2737,6 +2742,7 @@ def build_scenarios() -> list[Scenario]:
     scenarios = [default_scenario(bed_type) for bed_type in SUPPORTED_BED_TYPES
                  if bed_type not in RICHMAT_MH_APP_CATALOGS]
     scenarios.extend(route_scenarios())
+    scenarios.append(Scenario(id="intellibed:hhc", bed_type="intellibed", protocol_variant="hhc"))
     scenarios.extend(Scenario(id=f"berun:v{v}", bed_type="berun", protocol_variant=f"v{v}",
                               layout_id=f"berun:v{v}") for v in (6, 7, 8, 9))
     scenarios.extend(Scenario(id=f"flexispot:{model}", bed_type="flexispot",
@@ -3274,6 +3280,11 @@ async def capture_all(only: list[str] | None = None) -> dict[str, Any]:
     with freeze_time(FROZEN_NOW, real_asyncio=True) as frozen:
         for scenario in scenarios:
             started = _REAL_CLOCK[0]()
+            if os.environ.get("WIRE_SNAPSHOT_VERBOSE"):
+                print(
+                    f"seed={os.environ.get('PYTHONHASHSEED', 'unset')} starting {scenario.id}",
+                    file=sys.stderr, flush=True,
+                )
             try:
                 layout = layouts[scenario.layout_id or scenario.id]
                 if scenario.properties is not None:
@@ -3287,7 +3298,10 @@ async def capture_all(only: list[str] | None = None) -> dict[str, Any]:
                 }
             if os.environ.get("WIRE_SNAPSHOT_VERBOSE"):
                 elapsed = _REAL_CLOCK[0]() - started
-                print(f"{scenario.id} {elapsed:.1f}s", file=sys.stderr, flush=True)
+                print(
+                    f"seed={os.environ.get('PYTHONHASHSEED', 'unset')} {scenario.id} {elapsed:.1f}s",
+                    file=sys.stderr, flush=True,
+                )
     return {"schema": SCHEMA_VERSION, "scenarios": result}
 
 
@@ -3376,41 +3390,48 @@ def main() -> int:
             print(scenario.id)
         return 0
 
-    probe = None
-    if args.check:
-        # A second hash seed, captured in parallel: new set-order dependence fails.
-        probe = subprocess.Popen(
-            [sys.executable, __file__, "--probe"],
-            env={**os.environ, "PYTHONHASHSEED": "1"},
-            stdout=subprocess.PIPE,
-            text=True,
-        )
-    text = render(asyncio.run(capture_all(args.only)))
-    if args.only or args.probe:
-        print(text, end="")
-        return 0
-    if args.check:
-        assert probe is not None
-        probed, _ = probe.communicate()
-        committed = SNAPSHOT_PATH.read_text()
-        if committed != text:
-            diff = difflib.unified_diff(
-                committed.splitlines(), text.splitlines(), "committed", "fresh", n=0, lineterm=""
+    verbose = bool(os.environ.get("WIRE_SNAPSHOT_VERBOSE"))
+    if verbose:
+        faulthandler.dump_traceback_later(120, repeat=True)
+    try:
+        probe = None
+        if args.check:
+            # A second hash seed, captured in parallel: new set-order dependence fails.
+            probe = subprocess.Popen(
+                [sys.executable, __file__, "--probe"],
+                env={**os.environ, "PYTHONHASHSEED": "1"},
+                stdout=subprocess.PIPE,
+                text=True,
             )
-            print(f"{SNAPSHOT_PATH.relative_to(REPO_ROOT)} is stale:")
-            print("\n".join(line[:240] for _, line in zip(range(20), diff, strict=False)))
-            return 1
-        if probe.returncode:
-            print("the second-seed capture failed")
-            return 1
-        if differing := seed_differences(text, probed):
-            print("output depends on the hash seed (set iteration order):")
-            print("\n".join(differing[:20]))
-            return 1
+        text = render(asyncio.run(capture_all(args.only)))
+        if args.only or args.probe:
+            print(text, end="")
+            return 0
+        if args.check:
+            assert probe is not None
+            probed, _ = probe.communicate()
+            committed = SNAPSHOT_PATH.read_text()
+            if committed != text:
+                diff = difflib.unified_diff(
+                    committed.splitlines(), text.splitlines(), "committed", "fresh", n=0, lineterm=""
+                )
+                print(f"{SNAPSHOT_PATH.relative_to(REPO_ROOT)} is stale:")
+                print("\n".join(line[:240] for _, line in zip(range(20), diff, strict=False)))
+                return 1
+            if probe.returncode:
+                print("the second-seed capture failed")
+                return 1
+            if differing := seed_differences(text, probed):
+                print("output depends on the hash seed (set iteration order):")
+                print("\n".join(differing[:20]))
+                return 1
+            return 0
+        SNAPSHOT_PATH.write_text(text)
+        print(f"wrote {SNAPSHOT_PATH.relative_to(REPO_ROOT)}")
         return 0
-    SNAPSHOT_PATH.write_text(text)
-    print(f"wrote {SNAPSHOT_PATH.relative_to(REPO_ROOT)}")
-    return 0
+    finally:
+        if verbose:
+            faulthandler.cancel_dump_traceback_later()
 
 
 if __name__ == "__main__":

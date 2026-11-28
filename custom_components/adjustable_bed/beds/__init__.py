@@ -64,6 +64,7 @@ if TYPE_CHECKING:
     from .ifit.controller import IfitController as IfitController
     from .innova import InnovaController as InnovaController
     from .instant_comfort.controller import InstantComfortBase as InstantComfortBase
+    from .intellibed.controller import IntellibedController as IntellibedController
     from .isleep import IsleepController as IsleepController
     from .jalon_bed.controller import JalonBedController as JalonBedController
     from .jensen.controller import JensenController as JensenController
@@ -198,6 +199,7 @@ if TYPE_CHECKING:
     from .woosa import WoosaController as WoosaController
 
 _EXPORT_MODULES = {
+    "IntellibedController": "intellibed.controller",
     "GhostBedController": "flexispot.ghostbed",
     "InstantComfortBase": "instant_comfort.controller",
     "SuperiorSleepController": "superior_sleep.controller",
