@@ -70,7 +70,7 @@ app. Every guide follows the [bed guide format](BED_GUIDE_FORMAT.md).
 | [Nerum](beds/nerum.md) | The Nerum app | |
 | [OCTO Smart Control](beds/octo.md) | OCTO receivers, the RTV TV lift and Octo Remote Star2 | |
 | [Nectar, Mattress Firm 900 and Sealy (Okin)](beds/okin-5a.md) | Nectar, Mattress Firm 900 / iFlex, Sealy Posturematic (the CB35 receiver and the Sealy Posturematic app) and DewertOkin ELEVATE | Shared |
-| [Okin and DewertOkin](beds/okin-nframe.md) | Okimat, DewertOkin, Okin CST and DOT, Leggett & Platt Okin, Customatic, Jordan's, SIMMONS, Simmons Blue, SleepEase, StarCode AdjustableM5X4, Shuda, Okin 64-Bit, eShine E2000 to E5000, Superior sleep, Leva Bed Remote and other Okin apps | Shared |
+| [Okin and DewertOkin](beds/okin-nframe.md) | RÖWA Fernbedienung, Okimat, DewertOkin, Okin CST and DOT, Leggett & Platt Okin, Customatic, Jordan's, SIMMONS, Simmons Blue, SleepEase, StarCode AdjustableM5X4, Shuda, Okin 64-Bit, eShine E2000 to E5000, Superior sleep, Leva Bed Remote and other Okin apps | Shared |
 | [Okin SoundWave and Symphony](beds/okin-soundwave.md) | Symphony Sleep Sense and the SoundWave pages | Shared |
 | [OKIN Smart Sleep](beds/smart-sleep.md) | The OKIN Smart Sleep app | |
 | [Paramount](beds/paramount.md) | The Paramount bed operation app | |
@@ -83,7 +83,7 @@ app. Every guide follows the [bed guide format](BED_GUIDE_FORMAT.md).
 | [Dorsal / Roomi](beds/richmat.md#dorsal--roomi) | The Dorsal app, saved Dorsal projects and Roomi controls | Shared |
 | [Richmat](beds/richmat.md) | Richmat remotes, RMControl, Smart Base (200IV2 / A8RM), Maxprime, BedTech and Bed Tech, BedSmart / X-Series, L&P MlRM and both L&P Adjustable Base apps, the Richmat MH apps, ENSO Sleep Control, HJBed, eShine E6000, Good Vibe Sleep, Lunio, Luuna, Majestic Home, MLILY, Saatva, Dream Sense Bed, Dreamlab Control, TSS Remote, Super Colchones, SleepEvolution, S&S Base (Silk & Snow) and other Richmat-based apps | Shared |
 | [RUF and related apps](beds/ruf-richmat-apps.md) | RUF Betten, W.Silver Products, AMERICANSTAR, Bailey's Bed Control and TX | |
-| [Sleep Assist](beds/sleep-assistant.md) | The original Sleep Assist app | |
+| [Sleep Assist](beds/sleep-assistant.md) | The original Sleep Assist app, ErgoSportive and Softide | |
 | [Sleep Assist Pro](beds/sleep-assist-pro.md) | The Sleep Assist Pro app and its five Bluetooth routes | |
 | [Sleep Number](beds/sleep_number.md) | Sleep Number Fuzion and BAM/MCR bases ([commands](beds/sleep-number-services.md)) | |
 | [SleepSpa S9000AI](beds/sleepstar.md) | The SleepSpa S9000AI | |

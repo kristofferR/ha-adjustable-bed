@@ -7,6 +7,7 @@ binary and complete per callback, without an invented checksum or assembler.
 
 from __future__ import annotations
 
+import json
 import struct
 from dataclasses import dataclass
 from datetime import datetime
@@ -49,9 +50,12 @@ INSTRUCTIONS: Final = frozenset(
 
 def instruction(value: int) -> bytes:
     value = ((value + 2**31) % 2**32) - 2**31
-    body = b"\xaa\x03\x00\x0a\x00\x04\x01" + (
-        value & 0xFFFFFFFF if value in INSTRUCTIONS else 0
-    ).to_bytes(4, "little")
+    return aa_key(value if value in INSTRUCTIONS else 0)
+
+
+def aa_key(value: int) -> bytes:
+    """The shared fourteen-byte AA carrier, before an app's sparse-key gate."""
+    body = b"\xaa\x03\x00\x0a\x00\x04\x01" + (value & 0xFFFFFFFF).to_bytes(4, "little")
     return body + bytes((~sum(body[5:11]) & 255, 0xF3, 0x55))
 
 
@@ -394,3 +398,86 @@ class ErgoSportiveNormalSensor:
             self.presence, self.twitch = False, 0
             return True
         return False
+
+
+# Softide 1.2.4's auxiliary records are frozen literals, not an inferred
+# parameter/checksum family. The AA carrier above reproduces all its key frames.
+SOFTIDE_LITERALS: Final = {
+    "query": bytes.fromhex("AA100009000303020708E8E755"),
+    "relaxation": bytes.fromhex("AA0B001000100A040404040000EE0A0000DDE555"),
+    "lumbar_relaxation": bytes.fromhex("AA0B001000100A030303030000EE0E0000DDE555"),
+    "sleep_relaxation": bytes.fromhex("AA0B001000100A020202020000EE090000E6E555"),
+    "prepare_program": bytes.fromhex("AA07000C00040501B00400000045E955"),
+    "disable_uploads": bytes.fromhex("AA100009000303000000F9E755"),
+    "prepare_frequency": bytes.fromhex("AA0B001000100A000000000000EE040000F3E555"),
+}
+
+
+@dataclass(frozen=True, slots=True)
+class SoftideData:
+    bm: int = 0
+    br: int = 0
+    hr: int = 0
+    lb: int = 0
+    si: int = 0
+    sn: int = 0
+
+    @property
+    def rates(self) -> tuple[int, int]:
+        return (self.hr, self.br) if self.lb == 0 else (0, 0)
+
+
+@dataclass(frozen=True, slots=True)
+class SoftideFunction:
+    Ftype: int = 0
+    FuncF: int = 0
+    Tim: int = 0
+    Tmasg: int = 0
+    fmasg: int = 0
+    hmasg: int = 0
+
+    @property
+    def timer_minutes(self) -> int | None:
+        if self.Ftype != 0:
+            return None
+        # Java integer division truncates toward zero, including negative input.
+        return (abs(self.Tim) // 6000 * (-1 if self.Tim < 0 else 1) + 1
+                if self.FuncF == 1 else 0)
+
+
+@dataclass(frozen=True, slots=True)
+class SoftideNotification:
+    device: str | None
+    timestamp: str | None
+    data: SoftideData | SoftideFunction
+
+
+def softide_notification(packet: bytes) -> SoftideNotification | None:
+    """Whole-callback Gson records, exact field case and signed-byte-to-char.
+
+    Null/truncated/malformed records are ignored safely. There is no stream
+    assembler, checksum, response opcode or command acknowledgement.
+    """
+    try:
+        obj = json.loads("".join(chr(b if b < 128 else b + 0xFF00) for b in packet))
+        if not isinstance(obj, dict) or not isinstance(obj.get("data"), dict):
+            return None
+        code = obj.get("code", 0)
+        cls = SoftideData if code == 1 else SoftideFunction if code == 3 else None
+        if cls is None:
+            return None
+        fields = {}
+        for key in cls.__dataclass_fields__:
+            value = obj["data"].get(key, 0)
+            if value is None:
+                value = 0
+            if type(value) is not int or not -(2**31) <= value < 2**31:
+                return None
+            fields[key] = value
+        return SoftideNotification(
+            obj.get("dvid") if isinstance(obj.get("dvid"), str) else None,
+            obj.get("ts") if isinstance(obj.get("ts"), str) else None,
+            cls(**fields),
+        )
+    except (ValueError, UnicodeError):
+        return None

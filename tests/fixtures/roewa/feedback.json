@@ -1,0 +1,40 @@
+{
+  "origin": "Algorithm-derived cases from accepted reproduce_protocol.py, never captured traffic",
+  "cases": [
+    {
+      "label": "short",
+      "bytes": "00 0b 00 00 00 00 00 00 00",
+      "mask": null
+    },
+    {
+      "label": "wrong marker",
+      "bytes": "00 0a 00 03 00 00 00 03 00 00",
+      "mask": null
+    },
+    {
+      "label": "both valid on",
+      "bytes": "00 0b 00 03 00 00 00 03 00 00",
+      "mask": 196608
+    },
+    {
+      "label": "state without validity",
+      "bytes": "00 0b 00 03 00 00 00 00 00 00",
+      "mask": 0
+    },
+    {
+      "label": "ubl only",
+      "bytes": "00 0b 00 02 00 00 00 03 00 00",
+      "mask": 131072
+    },
+    {
+      "label": "store only",
+      "bytes": "00 0b 00 01 00 00 00 03 00 00",
+      "mask": 65536
+    },
+    {
+      "label": "unvalidated byte0/trailer",
+      "bytes": "ff 0b 00 03 00 00 00 03 00 00 ff",
+      "mask": 196608
+    }
+  ]
+}

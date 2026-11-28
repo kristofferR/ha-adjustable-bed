@@ -332,6 +332,8 @@
         "title": "{profile} settings",
         "description": "Answer what Home Assistant can't learn from the bed for **{profile}**. Settings the app sets itself, such as its motor count and timing, aren't asked.",
         "data": {
+          "softide_sensors": "Sleep sensor selection",
+          "softide_prepare_massage": "Initialize massage frequency before first use",
           "ergosportive_controls": "Controls available on your bed",
           "jiecang_app_layout": "Physical actuator layout",
           "has_light": "Enable light controls",
@@ -469,6 +471,7 @@
           "advanced": {
             "name": "Advanced",
             "data": {
+              "softide_prepare_massage": "Initialize massage frequency before first use",
               "jiecang_app_transport": "Bluetooth connection",
               "richmat_classic_third_service": "Bed without the app's usual connection",
               "ble_device_name": "Exact Bluetooth name",
@@ -953,6 +956,8 @@
         "title": "Adjustable Bed Options",
         "description": "Adjust the settings for your adjustable bed. To change the bed type or app, open **Reconfigure** from this entry's three-dot menu.",
         "data": {
+          "softide_sensors": "Sleep sensor selection",
+          "softide_prepare_massage": "Initialize massage frequency before first use",
           "ergosportive_controls": "Controls available on your bed",
           "ergobq_serial": "ErgoBQ six-byte serial (hex, optional)",
           "active_sleep_auth_id": "Existing Active Sleep authentication ID (optional)",
@@ -1207,6 +1212,8 @@
         "title": "Left side settings",
         "description": "Change connection, movement and app settings for **{name}**. Only this side changes.",
         "data": {
+          "softide_sensors": "Sleep sensor selection",
+          "softide_prepare_massage": "Initialize massage frequency before first use",
           "ergosportive_controls": "Controls available on your bed",
           "ergobq_serial": "ErgoBQ six-byte serial (hex, optional)",
           "active_sleep_auth_id": "Existing Active Sleep authentication ID (optional)",
@@ -1396,6 +1403,8 @@
         "title": "Right side settings",
         "description": "Change connection, movement and app settings for **{name}**. Only this side changes.",
         "data": {
+          "softide_sensors": "Sleep sensor selection",
+          "softide_prepare_massage": "Initialize massage frequency before first use",
           "ergosportive_controls": "Controls available on your bed",
           "ergobq_serial": "ErgoBQ six-byte serial (hex, optional)",
           "active_sleep_auth_id": "Existing Active Sleep authentication ID (optional)",
@@ -1795,6 +1804,10 @@
   "entity": {
     "button": {
       "tss_refresh": {"name": "Refresh bed features"},
+      "softide_section_a_up": {"name": "A section up"},
+      "softide_section_a_down": {"name": "A section down"},
+      "softide_section_b_up": {"name": "B section up"},
+      "softide_section_b_down": {"name": "B section down"},
       "konfurt_massage": {"name": "Toggle massage"},
       "konfurt_massage_head": {"name": "Cycle head massage"},
       "konfurt_massage_foot": {"name": "Cycle feet massage"},
@@ -2021,6 +2034,8 @@
         "name": "Zero gravity motor down"
       },
       "aminach_release": { "name": "Release held control" },
+      "roewa_memory_store": {"name": "Enable memory storage"},
+      "roewa_release": {"name": "Release held control"},
       "avek_release": {
         "name": "Release held control"
       },
@@ -4487,6 +4502,8 @@
       }
     },
     "cover": {
+      "softide_section_a": {"name": "A section"},
+      "softide_section_b": {"name": "B section"},
       "head_feet": {"name": "Head and foot"},
       "lumbar_pillow": {"name": "Lumbar and pillow"},
       "tilt": {"name": "Tilt"},
@@ -4981,6 +4998,9 @@
       }
     },
     "sensor": {
+      "softide_movement": {"name": "Body movements"},
+      "softide_program": {"name": "Program"},
+      "softide_timer": {"name": "Massage time remaining"},
       "konfurt_timer": {"name": "Massage timer"},
       "konfurt_wave": {"name": "Massage wave"},
       "konfurt_alarm_on": {"name": "Bed alarm enabled"},
@@ -6785,6 +6805,7 @@
       }
     },
     "binary_sensor": {
+      "roewa_memory_store": {"name": "Memory storage active"},
       "powersbedding_alarm_enabled": {"name": "Bed alarm enabled"},
       "berun_massage_on": {
         "name": "Massage"
@@ -12751,6 +12772,15 @@
     }
   },
   "exceptions": {
+    "softide_gatt": {"message": "The bed must expose the Softide control and notification characteristics."},
+    "softide_session": {"message": "The Softide connection or selected profile changed. Reconnect and try again."},
+    "softide_control": {"message": "This control is unavailable for the selected Softide model or route."},
+    "softide_memory": {"message": "Softide has no verified memory recall or save command. Use Reading mode for its named preset."},
+    "roewa_setup_required": {"message": "The bed must provide model, firmware, movement and feedback characteristics before RÖWA setup can finish."},
+    "roewa_rename_unavailable": {"message": "This bed does not expose the RÖWA Bluetooth name control."},
+    "roewa_hold_duration": {"message": "Choose a hold duration from 1 to 60000 milliseconds."},
+    "roewa_layout": {"message": "Choose a RÖWA remote with two, three or four motors."},
+    "roewa_name": {"message": "Use a nonempty Bluetooth name of at most {limit} UTF-8 bytes for this Bluetooth connection."},
     "konfurt_gatt": {"message": "KONFURT needs writable FFE9 in FFE5 and notifying FFE4 in FFE0. Check the selected app and Bluetooth device."},
     "konfurt_layout": {"message": "Choose the 2, 3 or 4 motor layout shown in the KONFURT app."},
     "konfurt_control": {"message": "Choose a control offered by this KONFURT layout and a hold of 1 to 60000 milliseconds."},

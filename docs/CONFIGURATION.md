@@ -428,11 +428,13 @@ actions; its bounded `hold_control` behavior has separate timing in the
 | Restonic app (Prime / Lombar / Infinity) | `restonic` | 10 | 200 ms |
 | Richmat / RMControl app | `richmat` | 7 | 150 ms |
 | Rize Home app | `rize_home` | 3 | 200 ms |
+| RÖWA Fernbedienung | `roewa` | 10 | 80 ms |
 | Shuda app | `shuda` | 5 | 200 ms |
 | SIMMONS app | `simmons` | 4 | 300 ms |
 | Simmons Blue app | `simmons_blue` | 5 | 200 ms |
 | Sleep Assist Pro | `sleep_assist_pro` | 10 | 200 ms |
 | Sleeptime Australia app (SmartBed205, 402, 404, 405) | `sleeptime` | 4 | 300 ms |
+| Softide app | `softide` | 3 | 300 ms |
 | Somos / SomosBeds app | `somos` | 10 | 300 ms |
 | SUTA Smart Home app | `suta` | 7 | 150 ms |
 | Symphony Sleep app | `symphony_sleep` | 4 | 300 ms |
@@ -685,6 +687,7 @@ beds, Reconfigure that bed, then combine them again.
 | Sleepy's Elite | [One question](beds/sleepys.md#home-assistant-setup) for the MFRM Sleepy's Elite app or the BOX15, BOX24 or BOX25 receiver. The [app profile](beds/sleepys.md#explicit-sleepys-elite-app-profile) asks the control box the app lists, for each physical receiver. Change an existing bed's app, control box or BOX25 dialect with **Reconfigure**. |
 | Solace / Woosa | Answer the [Solace question](beds/ff_frame.md#home-assistant-setup) with your app: HomeKobo, Sealy MotionFlex or Sweet Night, which follow the bed's Bluetooth name, or [Woosa Sleep](beds/ff_frame.md#woosa-sleep). |
 | KONFURT | Choose the [2-, 3- or 4-motor app layout](beds/keeson.md#konfurt). All layouts include light and massage; no position sensing or app inference from advertisements. |
+| Softide | Choose the [local model and ordinary or care remote](beds/sleep-assistant.md#softide), exact Bluetooth name and sleep sensor selection. First-use massage initialization is optional and stored after completion. A/B labels never select physical Left/Right sides; Reading mode is a named preset, with no memory programming. |
 | ErgoSportive | Choose the [remote subset](beds/sleep-assistant.md#ergosportive-subset), explicit standard or Hardware221 release, and only controls your remote offers. Sensor readings require the confirmed OldDSP normal stream; automatic firmware/model selection is unavailable. |
 | King Koil Bed | Choose the [remote layout](beds/keeson.md#king-koil-bed) by its visible controls. |
 | Somos / SomosBeds | See the [setup steps](beds/keeson.md#somos--somosbeds). |
@@ -1049,3 +1052,11 @@ with Sleep, with Coaxing, or with Coaxing and Sleep. Shared BLE services and
 Bluetooth names do not determine this choice. Each receiver in a two-address
 pair keeps its own product choice. The separate sleep-sensor connection is
 currently unavailable; Sleep products expose the bed-side sensor name only.
+
+### RÖWA Fernbedienung
+
+Select the remote with two, three or four motors during setup or Reconfigure.
+The layout controls which motor rows appear, independently of the generic motor
+count. Memory-store and light feedback contain no physical positions. See the
+[RÖWA profile](beds/okin-nframe.md#röwa-fernbedienung) for memory save, hold,
+Bluetooth rename and connection requirements.
