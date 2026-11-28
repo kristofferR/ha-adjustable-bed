@@ -178,6 +178,17 @@ The existing controllers also differ in notification setup, movement timing,
 release or massage sequencing, so Vindö has its own app profile and session.
 See [Vindö](../beds/vindo.md) and `tests/test_vindo_vectors.py`.
 
+AR Connect 3.2.2's native subset reproduces all 19 frozen transmit literals
+through the Linak control encoder and its new configuration builder. The codec
+adds the optional slow flag and JVM binary32 custom-speed conversion. Its typed
+`profiles/ar_connect.py` keeps the four-key precedence, six native memory indices,
+GATT roles and configuration schedule separate from other Linak apps. The native
+reference parser preserves signed speed and binary32 export arithmetic without
+changing legacy Bed Control parsing. `tests/test_ar_connect.py` also checks every
+one of the 81 frozen movement input maps. This is an encoder/parser profile only:
+unresolved write mode, session admission and lifecycle prevent registering a
+controller, setup route or entities. See [AR Connect](../beds/linak.md#ar-connect).
+
 ## Registering a family
 
 A family keeps its files to itself, so parallel family PRs do not touch a
