@@ -1,0 +1,402 @@
+[
+  {
+    "id": "V01",
+    "protocol": "P1",
+    "action": "stop",
+    "inputs": {
+      "key": 0
+    },
+    "expected_bytes": "AA03000A00040100000000FAF355",
+    "evidence": [
+      "E-BUILDER",
+      "E-EVENTS"
+    ],
+    "expected_origin": "Manually frozen evaluation of shipped sparse-switch assignments and checksum instructions; no runtime capture.",
+    "fixture_disposition": "Reachable static producer or sparse builder vector; hardware unverified"
+  },
+  {
+    "id": "V02",
+    "protocol": "P1",
+    "action": "head_up",
+    "inputs": {
+      "key": 1
+    },
+    "expected_bytes": "AA03000A00040101000000F9F355",
+    "evidence": [
+      "E-BUILDER",
+      "E-EVENTS"
+    ],
+    "expected_origin": "Manually frozen evaluation of shipped sparse-switch assignments and checksum instructions; no runtime capture.",
+    "fixture_disposition": "Reachable static producer or sparse builder vector; hardware unverified"
+  },
+  {
+    "id": "V03",
+    "protocol": "P1",
+    "action": "head_down",
+    "inputs": {
+      "key": 2
+    },
+    "expected_bytes": "AA03000A00040102000000F8F355",
+    "evidence": [
+      "E-BUILDER",
+      "E-EVENTS"
+    ],
+    "expected_origin": "Manually frozen evaluation of shipped sparse-switch assignments and checksum instructions; no runtime capture.",
+    "fixture_disposition": "Reachable static producer or sparse builder vector; hardware unverified"
+  },
+  {
+    "id": "V04",
+    "protocol": "P1",
+    "action": "leg_up",
+    "inputs": {
+      "key": 4
+    },
+    "expected_bytes": "AA03000A00040104000000F6F355",
+    "evidence": [
+      "E-BUILDER",
+      "E-EVENTS"
+    ],
+    "expected_origin": "Manually frozen evaluation of shipped sparse-switch assignments and checksum instructions; no runtime capture.",
+    "fixture_disposition": "Reachable static producer or sparse builder vector; hardware unverified"
+  },
+  {
+    "id": "V05",
+    "protocol": "P1",
+    "action": "leg_down",
+    "inputs": {
+      "key": 8
+    },
+    "expected_bytes": "AA03000A00040108000000F2F355",
+    "evidence": [
+      "E-BUILDER",
+      "E-EVENTS"
+    ],
+    "expected_origin": "Manually frozen evaluation of shipped sparse-switch assignments and checksum instructions; no runtime capture.",
+    "fixture_disposition": "Reachable static producer or sparse builder vector; hardware unverified"
+  },
+  {
+    "id": "V06",
+    "protocol": "P1",
+    "action": "combined_out_ui",
+    "inputs": {
+      "key": 5
+    },
+    "expected_bytes": "AA03000A00040105000000F5F355",
+    "evidence": [
+      "E-BUILDER",
+      "E-EVENTS"
+    ],
+    "expected_origin": "Manually frozen evaluation of shipped sparse-switch assignments and checksum instructions; no runtime capture.",
+    "fixture_disposition": "Reachable static producer or sparse builder vector; hardware unverified"
+  },
+  {
+    "id": "V07",
+    "protocol": "P1",
+    "action": "combined_in_ui",
+    "inputs": {
+      "key": 10
+    },
+    "expected_bytes": "AA03000A0004010A000000F0F355",
+    "evidence": [
+      "E-BUILDER",
+      "E-EVENTS"
+    ],
+    "expected_origin": "Manually frozen evaluation of shipped sparse-switch assignments and checksum instructions; no runtime capture.",
+    "fixture_disposition": "Reachable static producer or sparse builder vector; hardware unverified"
+  },
+  {
+    "id": "V08",
+    "protocol": "P1",
+    "action": "secondary_up_ui",
+    "inputs": {
+      "key": 16
+    },
+    "expected_bytes": "AA03000A00040110000000EAF355",
+    "evidence": [
+      "E-BUILDER",
+      "E-EVENTS"
+    ],
+    "expected_origin": "Manually frozen evaluation of shipped sparse-switch assignments and checksum instructions; no runtime capture.",
+    "fixture_disposition": "Reachable static producer or sparse builder vector; hardware unverified"
+  },
+  {
+    "id": "V09",
+    "protocol": "P1",
+    "action": "secondary_down_ui",
+    "inputs": {
+      "key": 32
+    },
+    "expected_bytes": "AA03000A00040120000000DAF355",
+    "evidence": [
+      "E-BUILDER",
+      "E-EVENTS"
+    ],
+    "expected_origin": "Manually frozen evaluation of shipped sparse-switch assignments and checksum instructions; no runtime capture.",
+    "fixture_disposition": "Reachable static producer or sparse builder vector; hardware unverified"
+  },
+  {
+    "id": "V10",
+    "protocol": "P1",
+    "action": "zero_g",
+    "inputs": {
+      "key": 4096
+    },
+    "expected_bytes": "AA03000A00040100100000EAF355",
+    "evidence": [
+      "E-BUILDER",
+      "E-EVENTS"
+    ],
+    "expected_origin": "Manually frozen evaluation of shipped sparse-switch assignments and checksum instructions; no runtime capture.",
+    "fixture_disposition": "Reachable static producer or sparse builder vector; hardware unverified"
+  },
+  {
+    "id": "V11",
+    "protocol": "P1",
+    "action": "Reading Mode preset",
+    "inputs": {
+      "key": 8192
+    },
+    "expected_bytes": "AA03000A00040100200000DAF355",
+    "evidence": [
+      "E-BUILDER",
+      "E-EVENTS"
+    ],
+    "expected_origin": "Manually frozen evaluation of shipped sparse-switch assignments and checksum instructions; no runtime capture.",
+    "fixture_disposition": "Reachable static producer or sparse builder vector; hardware unverified"
+  },
+  {
+    "id": "V12",
+    "protocol": "P1",
+    "action": "tv",
+    "inputs": {
+      "key": 16384
+    },
+    "expected_bytes": "AA03000A00040100400000BAF355",
+    "evidence": [
+      "E-BUILDER",
+      "E-EVENTS"
+    ],
+    "expected_origin": "Manually frozen evaluation of shipped sparse-switch assignments and checksum instructions; no runtime capture.",
+    "fixture_disposition": "Reachable static producer or sparse builder vector; hardware unverified"
+  },
+  {
+    "id": "V13",
+    "protocol": "P1",
+    "action": "massage_stop",
+    "inputs": {
+      "key": 33554432
+    },
+    "expected_bytes": "AA03000A00040100000002F8F355",
+    "evidence": [
+      "E-BUILDER",
+      "E-LITERALS"
+    ],
+    "expected_origin": "Frozen shipped literal corroborates builder result; semantic labels must be traced separately.",
+    "fixture_disposition": "Reachable static producer or sparse builder vector; hardware unverified"
+  },
+  {
+    "id": "V14",
+    "protocol": "P1",
+    "action": "flat",
+    "inputs": {
+      "key": 134217728
+    },
+    "expected_bytes": "AA03000A00040100000008F2F355",
+    "evidence": [
+      "E-BUILDER",
+      "E-LITERALS"
+    ],
+    "expected_origin": "Frozen shipped literal corroborates builder result; semantic labels must be traced separately.",
+    "fixture_disposition": "Reachable static producer or sparse builder vector; hardware unverified"
+  },
+  {
+    "id": "V15",
+    "protocol": "P1",
+    "action": "literal_one_key_sleep",
+    "inputs": {
+      "key": 1073741824
+    },
+    "expected_bytes": "AA03000A00040100000040BAF355",
+    "evidence": [
+      "E-BUILDER",
+      "E-LITERALS"
+    ],
+    "expected_origin": "Frozen shipped literal corroborates builder result; semantic labels must be traced separately.",
+    "fixture_disposition": "Reachable static producer or sparse builder vector; hardware unverified"
+  },
+  {
+    "id": "S1",
+    "protocol": "P1",
+    "action": "low-level snore builder, reachability unresolved",
+    "inputs": {
+      "i": 0,
+      "i2": 10,
+      "i3": 20
+    },
+    "expected_bytes": "AA0401080084030A00144D55",
+    "evidence": [
+      "E-BUILDER"
+    ],
+    "expected_origin": "Manually evaluated smali snore(III)[B; not a proven reachable command.",
+    "fixture_disposition": "DEAD/UNUSED builder; arithmetic reproduction only,not supported BLE action"
+  },
+  {
+    "id": "S2",
+    "protocol": "P1",
+    "action": "low-level snore builder, reachability unresolved",
+    "inputs": {
+      "i": 1,
+      "i2": 0,
+      "i3": 255
+    },
+    "expected_bytes": "AA0401080084030000FF6C55",
+    "evidence": [
+      "E-BUILDER"
+    ],
+    "expected_origin": "Manually evaluated smali snore(III)[B; not a proven reachable command.",
+    "fixture_disposition": "DEAD/UNUSED builder; arithmetic reproduction only,not supported BLE action"
+  },
+  {
+    "id": "L03",
+    "protocol": "P1",
+    "action": "Fixed literal lookup; semantic source in FRAME-LITERALS.json",
+    "inputs": {
+      "literal": "AA100009000303020708E8E755"
+    },
+    "expected_bytes": "AA100009000303020708E8E755",
+    "evidence": [
+      "/analysis/work/smali/base/smali_classes4/com/sfd/i18n/smartbed/activitys/services/MusicService$getMessageEvent$1.smali:236"
+    ],
+    "fixture_disposition": "Reachable static producer or sparse builder vector; hardware unverified"
+  },
+  {
+    "id": "L06",
+    "protocol": "P1",
+    "action": "Fixed literal lookup; semantic source in FRAME-LITERALS.json",
+    "inputs": {
+      "literal": "AA0B001000100A040404040000EE0A0000DDE555"
+    },
+    "expected_bytes": "AA0B001000100A040404040000EE0A0000DDE555",
+    "evidence": [
+      "/analysis/work/smali/base/smali_classes4/com/sfd/i18n/smartbed/activitys/services/MusicService$getMessageEvent$4.smali:198"
+    ],
+    "fixture_disposition": "Reachable static producer or sparse builder vector; hardware unverified"
+  },
+  {
+    "id": "L08",
+    "protocol": "P1",
+    "action": "Fixed literal lookup; semantic source in FRAME-LITERALS.json",
+    "inputs": {
+      "literal": "AA0B001000100A030303030000EE0E0000DDE555"
+    },
+    "expected_bytes": "AA0B001000100A030303030000EE0E0000DDE555",
+    "evidence": [
+      "/analysis/work/smali/base/smali_classes4/com/sfd/i18n/smartbed/activitys/services/MusicService$getMessageEvent$5.smali:198"
+    ],
+    "fixture_disposition": "Reachable static producer or sparse builder vector; hardware unverified"
+  },
+  {
+    "id": "L10",
+    "protocol": "P1",
+    "action": "Fixed literal lookup; semantic source in FRAME-LITERALS.json",
+    "inputs": {
+      "literal": "AA0B001000100A020202020000EE090000E6E555"
+    },
+    "expected_bytes": "AA0B001000100A020202020000EE090000E6E555",
+    "evidence": [
+      "/analysis/work/smali/base/smali_classes4/com/sfd/i18n/smartbed/activitys/services/MusicService$getMessageEvent$6.smali:198"
+    ],
+    "fixture_disposition": "Reachable static producer or sparse builder vector; hardware unverified"
+  },
+  {
+    "id": "L13",
+    "protocol": "P1",
+    "action": "Fixed literal lookup; semantic source in FRAME-LITERALS.json",
+    "inputs": {
+      "literal": "AA07000C00040501B00400000045E955"
+    },
+    "expected_bytes": "AA07000C00040501B00400000045E955",
+    "evidence": [
+      "/analysis/work/smali/base/smali_classes4/com/sfd/i18n/smartbed/activitys/services/MusicService$sendControl$1.smali:231"
+    ],
+    "fixture_disposition": "Reachable static producer or sparse builder vector; hardware unverified"
+  },
+  {
+    "id": "L16",
+    "protocol": "P1",
+    "action": "Fixed literal lookup; semantic source in FRAME-LITERALS.json",
+    "inputs": {
+      "literal": "AA03000A000401002000409AF355"
+    },
+    "expected_bytes": "AA03000A000401002000409AF355",
+    "evidence": [
+      "/analysis/work/smali/base/smali_classes4/com/sfd/i18n/smartbed/activitys/services/MusicService.smali:3185"
+    ],
+    "fixture_disposition": "Reachable static producer or sparse builder vector; hardware unverified"
+  },
+  {
+    "id": "L17",
+    "protocol": "P1",
+    "action": "Fixed literal lookup; semantic source in FRAME-LITERALS.json",
+    "inputs": {
+      "literal": "AA03000A000401008000007AF355"
+    },
+    "expected_bytes": "AA03000A000401008000007AF355",
+    "evidence": [
+      "/analysis/work/smali/base/smali_classes4/com/sfd/i18n/smartbed/activitys/services/MusicService.smali:3193"
+    ],
+    "fixture_disposition": "Reachable static producer or sparse builder vector; hardware unverified"
+  },
+  {
+    "id": "L18",
+    "protocol": "P1",
+    "action": "Fixed literal lookup; semantic source in FRAME-LITERALS.json",
+    "inputs": {
+      "literal": "AA03000A000401000000807AF355"
+    },
+    "expected_bytes": "AA03000A000401000000807AF355",
+    "evidence": [
+      "/analysis/work/smali/base/smali_classes4/com/sfd/i18n/smartbed/activitys/services/MusicService.smali:3201"
+    ],
+    "fixture_disposition": "Reachable static producer or sparse builder vector; hardware unverified"
+  },
+  {
+    "id": "L20",
+    "protocol": "P1",
+    "action": "Fixed literal lookup; semantic source in FRAME-LITERALS.json",
+    "inputs": {
+      "literal": "AA1000090003030203C034E755"
+    },
+    "expected_bytes": "AA1000090003030203C034E755",
+    "evidence": [
+      "/analysis/work/smali/base/smali_classes4/com/sfd/i18n/smartbed/activitys/services/MusicService.smali:3228"
+    ],
+    "fixture_disposition": "DEAD/UNUSED BLE handler1077;TCP producerEXCLUDED"
+  },
+  {
+    "id": "L21",
+    "protocol": "P1",
+    "action": "Fixed literal lookup; semantic source in FRAME-LITERALS.json",
+    "inputs": {
+      "literal": "AA100009000303000000F9E755"
+    },
+    "expected_bytes": "AA100009000303000000F9E755",
+    "evidence": [
+      "/analysis/work/smali/base/smali_classes4/com/sfd/i18n/smartbed/activitys/services/MusicService.smali:3241"
+    ],
+    "fixture_disposition": "Reachable static producer or sparse builder vector; hardware unverified"
+  },
+  {
+    "id": "L23",
+    "protocol": "P1",
+    "action": "Fixed literal lookup; semantic source in FRAME-LITERALS.json",
+    "inputs": {
+      "literal": "AA0B001000100A000000000000EE040000F3E555"
+    },
+    "expected_bytes": "AA0B001000100A000000000000EE040000F3E555",
+    "evidence": [
+      "/analysis/work/smali/base/smali_classes5/com/sfd/i18n/smartbed/fragments/remote/RemotePartOneFragment$onTouch$1$1.smali:229"
+    ],
+    "fixture_disposition": "Reachable static producer or sparse builder vector; hardware unverified"
+  }
+]
