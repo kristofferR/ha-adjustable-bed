@@ -2,6 +2,8 @@
 
 The forms come from MotoMotion 3.1.9; MotoSleep
 5.1.5 and Power Bob 2.0.3 send the ASCII, binary and letter forms.
+VivaSleep 1.0.4 reuses only the verified ASCII writer/decimal subset and
+accumulated digit/space tokenization; its field offsets stay in its profile.
 
 - ASCII command: ``$#``, then the command, the parameter and the XOR of their
   decimal digits, each as five decimal digits, then ``R\\r``.
@@ -49,7 +51,7 @@ def decimal_fields(left: str, right: str, *, record_type: Literal["R", "A"] = "R
 
 
 def short_transport(command: str, *, wrapped: bool) -> bytes | None:
-    """Bedgear's shared writer, including M query suppression and literal dollars."""
+    """HHC ASCII writer, including M query suppression and literal dollars."""
     if command in ("", "null") or (wrapped and command == "$z"):
         return None
     if wrapped:
@@ -58,6 +60,16 @@ def short_transport(command: str, *, wrapped: bool) -> bytes | None:
         if not command.endswith("R\r"):
             command += "R\r"
     return command.encode("ascii")
+
+
+def decimal_tokens(data: bytes) -> tuple[str, ...]:
+    """Filter an accumulated HHC buffer to ASCII digits/spaces and split literally.
+
+    Interior empty tokens matter. This does not frame notifications, validate
+    checksums or assign fields; those are app-specific responsibilities.
+    """
+    text = "".join(chr(value) for value in data if value == 32 or 48 <= value <= 57)
+    return tuple(text.strip().split(" "))
 
 
 def binary_command(command: int, parameter: int = 0) -> bytes:

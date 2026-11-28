@@ -288,6 +288,15 @@ guide's **Aliases**. The default pulse timing table in
 [Configuration](../CONFIGURATION.md#default-values-by-bed-type) is generated the
 same way, from `scripts/codec_docs/_configuration.py`.
 
+VivaSleep's static subset in `profiles/vivasleep.py` reuses MotoMotion's
+`decimal_fields` and `short_transport`: every frozen numeric/writer vector
+reproduces byte for byte in `tests/test_vivasleep_vectors.py`. Its parser reuses
+only digit/space tokenization; the neutral field offsets stay app-local. No new
+wire codec is needed. The profile remains unregistered until panel actions,
+admission, startup and cleanup contracts are complete; sharing a writer does
+not grant another app's capabilities or execution settings. Its reference
+tables are generated in the [shared HHC guide](../beds/motomotion.md#vivasleep).
+
 ## Controller glue
 
 `JiecangProfileController` (`beds/jiecang/controller.py`) implements, from profile data

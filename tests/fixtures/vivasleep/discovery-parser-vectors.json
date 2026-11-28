@@ -1,0 +1,230 @@
+[
+  {
+    "id": "NAME-PREFIX",
+    "kind": "discovery",
+    "name": "HHCxxxxxxxxxxx",
+    "expected": true,
+    "provenance": "Synthetic boundary input, not a shipped device name",
+    "evidence": [
+      "work/blutter/asm/motosleep/page/devices.dart:1169-1294 0x449d94",
+      "gdt-resolution.json"
+    ]
+  },
+  {
+    "id": "NAME-MIDDLE",
+    "kind": "discovery",
+    "name": "xxxxxHHCxxxxxx",
+    "expected": true,
+    "provenance": "Synthetic boundary input, not a shipped device name",
+    "evidence": [
+      "work/blutter/asm/motosleep/page/devices.dart:1169-1294 0x449d94",
+      "gdt-resolution.json"
+    ]
+  },
+  {
+    "id": "NAME-CASE",
+    "kind": "discovery",
+    "name": "hhcxxxxxxxxxxx",
+    "expected": false,
+    "provenance": "Synthetic boundary input, not a shipped device name",
+    "evidence": [
+      "work/blutter/asm/motosleep/page/devices.dart:1169-1294 0x449d94",
+      "gdt-resolution.json"
+    ]
+  },
+  {
+    "id": "NAME-SHORT",
+    "kind": "discovery",
+    "name": "HHCxxxxxxxxxx",
+    "expected": false,
+    "provenance": "Synthetic boundary input, not a shipped device name",
+    "evidence": [
+      "work/blutter/asm/motosleep/page/devices.dart:1169-1294 0x449d94",
+      "gdt-resolution.json"
+    ]
+  },
+  {
+    "id": "NAME-NULL",
+    "kind": "discovery",
+    "name": null,
+    "expected": false,
+    "provenance": "Synthetic boundary input, not a shipped device name",
+    "evidence": [
+      "work/blutter/asm/motosleep/page/devices.dart:1169-1294 0x449d94",
+      "gdt-resolution.json"
+    ]
+  },
+  {
+    "id": "NAME-UTF16",
+    "kind": "discovery",
+    "name": "HHCxxxxxxxxx\ud83d\ude00",
+    "expected": true,
+    "provenance": "Synthetic boundary input, not a shipped device name",
+    "evidence": [
+      "work/blutter/asm/motosleep/page/devices.dart:1169-1294 0x449d94",
+      "gdt-resolution.json"
+    ]
+  },
+  {
+    "id": "PARSER-75",
+    "kind": "parser",
+    "input_hex": "30 30 30 30 30 20 30 30 30 30 31 20 30 30 30 30 32 20 30 30 30 30 33 20 30 30 30 30 34 20 30 30 30 30 35 20 30 30 30 30 36 20 30 30 30 30 37 20 30 30 30 30 38 20 30 30 30 30 39 20 30 30 30 31 30 20 30 30 30 31 31 20 30 30 30 31 32 20 30 30 30 31 33 20 30 30 30 31 34 20 30 30 30 31 35 20 30 30 30 31 36 20 30 30 30 31 37 20 30 30 30 31 38 20 30 30 30 31 39 20 30 30 30 32 30 20 30 30 30 32 31 20 30 30 30 32 32 20 30 30 30 32 33 20 30 30 30 32 34 20 30 30 30 32 35 20 30 30 30 32 36 20 30 30 30 32 37 20 30 30 30 32 38 20 30 30 30 32 39 20 30 30 30 33 30 20 30 30 30 33 31 20 30 30 30 33 32 20 30 30 30 33 33 20 30 30 30 33 34 20 30 30 30 33 35 20 30 30 30 33 36 20 30 30 30 33 37 20 30 30 30 33 38 20 30 30 30 33 39 20 30 30 30 34 30 20 30 30 30 34 31 20 30 30 30 34 32 20 30 30 30 34 33 20 30 30 30 34 34 20 30 30 30 34 35 20 30 30 30 34 36 20 30 30 30 34 37 20 30 30 30 34 38 20 30 30 30 34 39 20 30 30 30 35 30 20 30 30 30 35 31 20 30 30 30 35 32 20 30 30 30 35 33 20 30 30 30 35 34 20 30 30 30 35 35 20 30 30 30 35 36 20 30 30 30 35 37 20 30 30 30 35 38 20 30 30 30 35 39 20 30 30 30 36 30 20 30 30 30 36 31 20 30 30 30 36 32 20 30 30 30 36 33 20 30 30 30 36 34 20 30 30 30 36 35 20 30 30 30 36 36 20 30 30 30 36 37 20 30 30 30 36 38 20 30 30 30 36 39 20 30 30 30 37 30 20 30 30 30 37 31 20 30 30 30 37 32 20 30 30 30 37 33 20 30 30 30 37 34",
+    "expected": {
+      "field_count": 75,
+      "rgb_fields_7_b_f_13": [
+        "00028",
+        "00029",
+        "00030",
+        "00054"
+      ],
+      "alarm_fields_7_b_f": [
+        "00008",
+        "00009",
+        "00011"
+      ]
+    },
+    "provenance": "Synthetic unique-token offset probe, not a captured response",
+    "evidence": [
+      "work/blutter/asm/motosleep/base/ble/ble_manager.dart:1141-1641 getDataString0x4444f0",
+      "gdt-resolution.json"
+    ]
+  },
+  {
+    "id": "PARSER-71",
+    "kind": "parser",
+    "input_hex": "30 30 30 30 30 20 30 30 30 30 31 20 30 30 30 30 32 20 30 30 30 30 33 20 30 30 30 30 34 20 30 30 30 30 35 20 30 30 30 30 36 20 30 30 30 30 37 20 30 30 30 30 38 20 30 30 30 30 39 20 30 30 30 31 30 20 30 30 30 31 31 20 30 30 30 31 32 20 30 30 30 31 33 20 30 30 30 31 34 20 30 30 30 31 35 20 30 30 30 31 36 20 30 30 30 31 37 20 30 30 30 31 38 20 30 30 30 31 39 20 30 30 30 32 30 20 30 30 30 32 31 20 30 30 30 32 32 20 30 30 30 32 33 20 30 30 30 32 34 20 30 30 30 32 35 20 30 30 30 32 36 20 30 30 30 32 37 20 30 30 30 32 38 20 30 30 30 32 39 20 30 30 30 33 30 20 30 30 30 33 31 20 30 30 30 33 32 20 30 30 30 33 33 20 30 30 30 33 34 20 30 30 30 33 35 20 30 30 30 33 36 20 30 30 30 33 37 20 30 30 30 33 38 20 30 30 30 33 39 20 30 30 30 34 30 20 30 30 30 34 31 20 30 30 30 34 32 20 30 30 30 34 33 20 30 30 30 34 34 20 30 30 30 34 35 20 30 30 30 34 36 20 30 30 30 34 37 20 30 30 30 34 38 20 30 30 30 34 39 20 30 30 30 35 30 20 30 30 30 35 31 20 30 30 30 35 32 20 30 30 30 35 33 20 30 30 30 35 34 20 30 30 30 35 35 20 30 30 30 35 36 20 30 30 30 35 37 20 30 30 30 35 38 20 30 30 30 35 39 20 30 30 30 36 30 20 30 30 30 36 31 20 30 30 30 36 32 20 30 30 30 36 33 20 30 30 30 36 34 20 30 30 30 36 35 20 30 30 30 36 36 20 30 30 30 36 37 20 30 30 30 36 38 20 30 30 30 36 39 20 30 30 30 37 30",
+    "expected": {
+      "field_count": 71,
+      "rgb_fields_7_b_f_13": [
+        "00018",
+        "00019",
+        "00020",
+        "00030"
+      ]
+    },
+    "provenance": "Synthetic unique-token offset probe, not a captured response",
+    "evidence": [
+      "work/blutter/asm/motosleep/base/ble/ble_manager.dart:1141-1641 getDataString0x4444f0",
+      "gdt-resolution.json"
+    ]
+  },
+  {
+    "id": "PARSER-44",
+    "kind": "parser",
+    "input_hex": "30 30 30 30 30 20 30 30 30 30 31 20 30 30 30 30 32 20 30 30 30 30 33 20 30 30 30 30 34 20 30 30 30 30 35 20 30 30 30 30 36 20 30 30 30 30 37 20 30 30 30 30 38 20 30 30 30 30 39 20 30 30 30 31 30 20 30 30 30 31 31 20 30 30 30 31 32 20 30 30 30 31 33 20 30 30 30 31 34 20 30 30 30 31 35 20 30 30 30 31 36 20 30 30 30 31 37 20 30 30 30 31 38 20 30 30 30 31 39 20 30 30 30 32 30 20 30 30 30 32 31 20 30 30 30 32 32 20 30 30 30 32 33 20 30 30 30 32 34 20 30 30 30 32 35 20 30 30 30 32 36 20 30 30 30 32 37 20 30 30 30 32 38 20 30 30 30 32 39 20 30 30 30 33 30 20 30 30 30 33 31 20 30 30 30 33 32 20 30 30 30 33 33 20 30 30 30 33 34 20 30 30 30 33 35 20 30 30 30 33 36 20 30 30 30 33 37 20 30 30 30 33 38 20 30 30 30 33 39 20 30 30 30 34 30 20 30 30 30 34 31 20 30 30 30 34 32 20 30 30 30 34 33",
+    "expected": {
+      "field_count": 44,
+      "rgb_fields_7_b_f_13": [
+        "00018",
+        "00019",
+        "00020",
+        "00030"
+      ]
+    },
+    "provenance": "Synthetic unique-token offset probe, not a captured response",
+    "evidence": [
+      "work/blutter/asm/motosleep/base/ble/ble_manager.dart:1141-1641 getDataString0x4444f0",
+      "gdt-resolution.json"
+    ]
+  },
+  {
+    "id": "PARSER-38",
+    "kind": "parser",
+    "input_hex": "30 30 30 30 30 20 30 30 30 30 31 20 30 30 30 30 32 20 30 30 30 30 33 20 30 30 30 30 34 20 30 30 30 30 35 20 30 30 30 30 36 20 30 30 30 30 37 20 30 30 30 30 38 20 30 30 30 30 39 20 30 30 30 31 30 20 30 30 30 31 31 20 30 30 30 31 32 20 30 30 30 31 33 20 30 30 30 31 34 20 30 30 30 31 35 20 30 30 30 31 36 20 30 30 30 31 37 20 30 30 30 31 38 20 30 30 30 31 39 20 30 30 30 32 30 20 30 30 30 32 31 20 30 30 30 32 32 20 30 30 30 32 33 20 30 30 30 32 34 20 30 30 30 32 35 20 30 30 30 32 36 20 30 30 30 32 37 20 30 30 30 32 38 20 30 30 30 32 39 20 30 30 30 33 30 20 30 30 30 33 31 20 30 30 30 33 32 20 30 30 30 33 33 20 30 30 30 33 34 20 30 30 30 33 35 20 30 30 30 33 36 20 30 30 30 33 37",
+    "expected": {
+      "field_count": 38
+    },
+    "provenance": "Synthetic unique-token offset probe, not a captured response",
+    "evidence": [
+      "work/blutter/asm/motosleep/base/ble/ble_manager.dart:1141-1641 getDataString0x4444f0",
+      "gdt-resolution.json"
+    ]
+  },
+  {
+    "id": "PARSER-39-00065",
+    "kind": "parser",
+    "input_hex": "30 30 30 30 30 20 30 30 30 30 31 20 30 30 30 30 32 20 30 30 30 30 33 20 30 30 30 30 34 20 30 30 30 30 35 20 30 30 30 30 36 20 30 30 30 30 37 20 30 30 30 30 38 20 30 30 30 30 39 20 30 30 30 31 30 20 30 30 30 31 31 20 30 30 30 31 32 20 30 30 30 31 33 20 30 30 30 31 34 20 30 30 30 31 35 20 30 30 30 31 36 20 30 30 30 31 37 20 30 30 30 31 38 20 30 30 30 31 39 20 30 30 30 32 30 20 30 30 30 32 31 20 30 30 30 32 32 20 30 30 30 32 33 20 30 30 30 32 34 20 30 30 30 32 35 20 30 30 30 32 36 20 30 30 30 36 35 20 30 30 30 32 38 20 30 30 30 32 39 20 30 30 30 33 30 20 30 30 30 33 31 20 30 30 30 33 32 20 30 30 30 33 33 20 30 30 30 33 34 20 30 30 30 33 35 20 30 30 30 33 36 20 30 30 30 33 37 20 30 30 30 33 38",
+    "expected": {
+      "field_count": 39,
+      "rgb_fields_7_b_f_13": [
+        "00018",
+        "00019",
+        "00020",
+        "00030"
+      ],
+      "bind_fields_7_b": [
+        true,
+        true
+      ],
+      "sync_type": 24,
+      "stream_event": "OK"
+    },
+    "provenance": "Synthetic branch probe; comparison literals 00065/00066 and offsets are shipped",
+    "evidence": [
+      "work/blutter/asm/motosleep/base/ble/ble_manager.dart:1141-1641 getDataString0x4444f0",
+      "gdt-resolution.json"
+    ]
+  },
+  {
+    "id": "PARSER-39-00066",
+    "kind": "parser",
+    "input_hex": "30 30 30 30 30 20 30 30 30 30 31 20 30 30 30 30 32 20 30 30 30 30 33 20 30 30 30 30 34 20 30 30 30 30 35 20 30 30 30 30 36 20 30 30 30 30 37 20 30 30 30 30 38 20 30 30 30 30 39 20 30 30 30 31 30 20 30 30 30 31 31 20 30 30 30 31 32 20 30 30 30 31 33 20 30 30 30 31 34 20 30 30 30 31 35 20 30 30 30 31 36 20 30 30 30 31 37 20 30 30 30 31 38 20 30 30 30 31 39 20 30 30 30 32 30 20 30 30 30 32 31 20 30 30 30 32 32 20 30 30 30 32 33 20 30 30 30 32 34 20 30 30 30 32 35 20 30 30 30 32 36 20 30 30 30 36 36 20 30 30 30 32 38 20 30 30 30 32 39 20 30 30 30 33 30 20 30 30 30 33 31 20 30 30 30 33 32 20 30 30 30 33 33 20 30 30 30 33 34 20 30 30 30 33 35 20 30 30 30 33 36 20 30 30 30 33 37 20 30 30 30 33 38",
+    "expected": {
+      "field_count": 39,
+      "rgb_fields_7_b_f_13": [
+        "00018",
+        "00019",
+        "00020",
+        "00030"
+      ],
+      "bind_fields_7_b": [
+        true,
+        false
+      ],
+      "sync_type": 24,
+      "stream_event": "OK"
+    },
+    "provenance": "Synthetic branch probe; comparison literals 00065/00066 and offsets are shipped",
+    "evidence": [
+      "work/blutter/asm/motosleep/base/ble/ble_manager.dart:1141-1641 getDataString0x4444f0",
+      "gdt-resolution.json"
+    ]
+  },
+  {
+    "id": "PARSER-39-00000",
+    "kind": "parser",
+    "input_hex": "30 30 30 30 30 20 30 30 30 30 31 20 30 30 30 30 32 20 30 30 30 30 33 20 30 30 30 30 34 20 30 30 30 30 35 20 30 30 30 30 36 20 30 30 30 30 37 20 30 30 30 30 38 20 30 30 30 30 39 20 30 30 30 31 30 20 30 30 30 31 31 20 30 30 30 31 32 20 30 30 30 31 33 20 30 30 30 31 34 20 30 30 30 31 35 20 30 30 30 31 36 20 30 30 30 31 37 20 30 30 30 31 38 20 30 30 30 31 39 20 30 30 30 32 30 20 30 30 30 32 31 20 30 30 30 32 32 20 30 30 30 32 33 20 30 30 30 32 34 20 30 30 30 32 35 20 30 30 30 32 36 20 30 30 30 30 30 20 30 30 30 32 38 20 30 30 30 32 39 20 30 30 30 33 30 20 30 30 30 33 31 20 30 30 30 33 32 20 30 30 30 33 33 20 30 30 30 33 34 20 30 30 30 33 35 20 30 30 30 33 36 20 30 30 30 33 37 20 30 30 30 33 38",
+    "expected": {
+      "field_count": 39,
+      "rgb_fields_7_b_f_13": [
+        "00018",
+        "00019",
+        "00020",
+        "00030"
+      ],
+      "bind_fields_7_b": [
+        false,
+        false
+      ],
+      "sync_type": 24,
+      "stream_event": "OK"
+    },
+    "provenance": "Synthetic branch probe; comparison literals 00065/00066 and offsets are shipped",
+    "evidence": [
+      "work/blutter/asm/motosleep/base/ble/ble_manager.dart:1141-1641 getDataString0x4444f0",
+      "gdt-resolution.json"
+    ]
+  },
+  {
+    "id": "PARSER-FILTER",
+    "kind": "parser",
+    "input_hex": "61 62 63 5f 31 78 32 20 20 33 0d",
+    "expected": {
+      "field_count": 3
+    },
+    "provenance": "Synthetic filtering and repeated-space probe",
+    "evidence": [
+      "work/blutter/asm/motosleep/base/ble/ble_manager.dart:1141-1641 getDataString0x4444f0"
+    ]
+  }
+]
