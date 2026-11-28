@@ -757,18 +757,32 @@ async def test_identification_timing_and_cancelled_probe_release(hass):
     assert [row[1] for row in writes(client)] == [b"\x03\0", b"\xfe\0"]
 
 
-async def test_silent_changes_slow_byte_without_speed_configuration_or_readback_claim(hass):
+@pytest.mark.parametrize('silent', [False, True])
+async def test_silent_selection_survives_controller_rebuild_and_sets_motion_flag(hass, silent):
     ctrl, c, client, _, _ = await runtime(hass, mask=None)
     await publish_runtime(hass, c)
     client.write_gatt_char.reset_mock()
     spec = ctrl.controller_switch_specs[0]
-    await c.async_execute_controller_command(lambda current: spec.set_fn(current, True))
-    assert not writes(client) and ctrl.silent
+    await c.async_execute_controller_command(lambda current: spec.set_fn(current, silent))
+    assert not writes(client) and ctrl.silent is silent
+    ctrl.on_disconnect()
+    c._position_connection_generation += 1
+    ctrl = type(ctrl)(c, ctrl.layout)
+    c._controller = ctrl
+    await ctrl.async_discover_capabilities()
+    session = SimpleNamespace(
+        async_require_native_bond=AsyncMock(), async_start_notify=ctrl.start_notify,
+        persist_capability_snapshot=MagicMock(),
+    )
+    with virtual_clock():
+        await ctrl.async_on_connect(session)
+    assert ctrl.silent is silent
+    client.write_gatt_char.reset_mock()
     with virtual_clock():
         await c.async_execute_controller_command(
             lambda current: current.hold_control("back_up", 600)
         )
-    assert [row[1] for row in writes(client)] == [b"\x0b\x40", b"\xfe\0"]
+    assert [row[1] for row in writes(client)] == [bytes((0x0B, 0x40 if silent else 0)), b"\xfe\0"]
     client.is_connected = False
     await c.async_shutdown()
 

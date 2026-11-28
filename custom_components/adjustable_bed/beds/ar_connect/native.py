@@ -58,7 +58,8 @@ class NativeController(ArSessionController):
         self._gesture_ended = asyncio.Event()
         self._initialized = False
         self._admit_after = 0.0
-        self.forward_controller_state_updates(SILENT(False))
+        if SILENT not in coordinator.controller_state:
+            self.forward_controller_state_updates(SILENT(False))
 
     @property
     def control_characteristic_uuid(self) -> str:
