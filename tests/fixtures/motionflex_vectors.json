@@ -1,0 +1,2544 @@
+[
+  {
+    "id": "P1-head_up-0",
+    "protocol": "P1",
+    "action": "head_up",
+    "inputs": {
+      "opcode": 36,
+      "side": 0,
+      "framed": true
+    },
+    "expected_bytes": "6e01002493",
+    "reproducer": "control",
+    "evidence": [
+      "E09",
+      "E10",
+      "E11",
+      "E12",
+      "E13",
+      "E20"
+    ],
+    "scope": "static reconstructed builder bytes; current product caller proven as listed; right operand is builder-only for current hidden split picker; hardware UNVERIFIED"
+  },
+  {
+    "id": "P1-head_up-1",
+    "protocol": "P1",
+    "action": "head_up",
+    "inputs": {
+      "opcode": 36,
+      "side": 1,
+      "framed": true
+    },
+    "expected_bytes": "6e01012494",
+    "reproducer": "control",
+    "evidence": [
+      "E09",
+      "E10",
+      "E11",
+      "E12",
+      "E13",
+      "E20"
+    ],
+    "scope": "static reconstructed builder bytes; current product caller proven as listed; right operand is builder-only for current hidden split picker; hardware UNVERIFIED"
+  },
+  {
+    "id": "P1-head_down-0",
+    "protocol": "P1",
+    "action": "head_down",
+    "inputs": {
+      "opcode": 37,
+      "side": 0,
+      "framed": true
+    },
+    "expected_bytes": "6e01002594",
+    "reproducer": "control",
+    "evidence": [
+      "E09",
+      "E10",
+      "E11",
+      "E12",
+      "E13",
+      "E20"
+    ],
+    "scope": "static reconstructed builder bytes; current product caller proven as listed; right operand is builder-only for current hidden split picker; hardware UNVERIFIED"
+  },
+  {
+    "id": "P1-head_down-1",
+    "protocol": "P1",
+    "action": "head_down",
+    "inputs": {
+      "opcode": 37,
+      "side": 1,
+      "framed": true
+    },
+    "expected_bytes": "6e01012595",
+    "reproducer": "control",
+    "evidence": [
+      "E09",
+      "E10",
+      "E11",
+      "E12",
+      "E13",
+      "E20"
+    ],
+    "scope": "static reconstructed builder bytes; current product caller proven as listed; right operand is builder-only for current hidden split picker; hardware UNVERIFIED"
+  },
+  {
+    "id": "P1-foot_up-0",
+    "protocol": "P1",
+    "action": "foot_up",
+    "inputs": {
+      "opcode": 38,
+      "side": 0,
+      "framed": true
+    },
+    "expected_bytes": "6e01002695",
+    "reproducer": "control",
+    "evidence": [
+      "E09",
+      "E10",
+      "E11",
+      "E12",
+      "E13",
+      "E20"
+    ],
+    "scope": "static reconstructed builder bytes; current product caller proven as listed; right operand is builder-only for current hidden split picker; hardware UNVERIFIED"
+  },
+  {
+    "id": "P1-foot_up-1",
+    "protocol": "P1",
+    "action": "foot_up",
+    "inputs": {
+      "opcode": 38,
+      "side": 1,
+      "framed": true
+    },
+    "expected_bytes": "6e01012696",
+    "reproducer": "control",
+    "evidence": [
+      "E09",
+      "E10",
+      "E11",
+      "E12",
+      "E13",
+      "E20"
+    ],
+    "scope": "static reconstructed builder bytes; current product caller proven as listed; right operand is builder-only for current hidden split picker; hardware UNVERIFIED"
+  },
+  {
+    "id": "P1-foot_down-0",
+    "protocol": "P1",
+    "action": "foot_down",
+    "inputs": {
+      "opcode": 39,
+      "side": 0,
+      "framed": true
+    },
+    "expected_bytes": "6e01002796",
+    "reproducer": "control",
+    "evidence": [
+      "E09",
+      "E10",
+      "E11",
+      "E12",
+      "E13",
+      "E20"
+    ],
+    "scope": "static reconstructed builder bytes; current product caller proven as listed; right operand is builder-only for current hidden split picker; hardware UNVERIFIED"
+  },
+  {
+    "id": "P1-foot_down-1",
+    "protocol": "P1",
+    "action": "foot_down",
+    "inputs": {
+      "opcode": 39,
+      "side": 1,
+      "framed": true
+    },
+    "expected_bytes": "6e01012797",
+    "reproducer": "control",
+    "evidence": [
+      "E09",
+      "E10",
+      "E11",
+      "E12",
+      "E13",
+      "E20"
+    ],
+    "scope": "static reconstructed builder bytes; current product caller proven as listed; right operand is builder-only for current hidden split picker; hardware UNVERIFIED"
+  },
+  {
+    "id": "P1-head_and_foot_up-0",
+    "protocol": "P1",
+    "action": "head_and_foot_up",
+    "inputs": {
+      "opcode": 41,
+      "side": 0,
+      "framed": true
+    },
+    "expected_bytes": "6e01002998",
+    "reproducer": "control",
+    "evidence": [
+      "E09",
+      "E10",
+      "E11",
+      "E12",
+      "E13",
+      "E20"
+    ],
+    "scope": "static reconstructed builder bytes; current product caller proven as listed; right operand is builder-only for current hidden split picker; hardware UNVERIFIED"
+  },
+  {
+    "id": "P1-head_and_foot_up-1",
+    "protocol": "P1",
+    "action": "head_and_foot_up",
+    "inputs": {
+      "opcode": 41,
+      "side": 1,
+      "framed": true
+    },
+    "expected_bytes": "6e01012999",
+    "reproducer": "control",
+    "evidence": [
+      "E09",
+      "E10",
+      "E11",
+      "E12",
+      "E13",
+      "E20"
+    ],
+    "scope": "static reconstructed builder bytes; current product caller proven as listed; right operand is builder-only for current hidden split picker; hardware UNVERIFIED"
+  },
+  {
+    "id": "P1-head_and_foot_down-0",
+    "protocol": "P1",
+    "action": "head_and_foot_down",
+    "inputs": {
+      "opcode": 42,
+      "side": 0,
+      "framed": true
+    },
+    "expected_bytes": "6e01002a99",
+    "reproducer": "control",
+    "evidence": [
+      "E09",
+      "E10",
+      "E11",
+      "E12",
+      "E13",
+      "E20"
+    ],
+    "scope": "static reconstructed builder bytes; current product caller proven as listed; right operand is builder-only for current hidden split picker; hardware UNVERIFIED"
+  },
+  {
+    "id": "P1-head_and_foot_down-1",
+    "protocol": "P1",
+    "action": "head_and_foot_down",
+    "inputs": {
+      "opcode": 42,
+      "side": 1,
+      "framed": true
+    },
+    "expected_bytes": "6e01012a9a",
+    "reproducer": "control",
+    "evidence": [
+      "E09",
+      "E10",
+      "E11",
+      "E12",
+      "E13",
+      "E20"
+    ],
+    "scope": "static reconstructed builder bytes; current product caller proven as listed; right operand is builder-only for current hidden split picker; hardware UNVERIFIED"
+  },
+  {
+    "id": "P1-lumbar_up-0",
+    "protocol": "P1",
+    "action": "lumbar_up",
+    "inputs": {
+      "opcode": 63,
+      "side": 0,
+      "framed": true
+    },
+    "expected_bytes": "6e01003fae",
+    "reproducer": "control",
+    "evidence": [
+      "E09",
+      "E10",
+      "E11",
+      "E12",
+      "E13",
+      "E20"
+    ],
+    "scope": "static reconstructed builder bytes; current product caller proven as listed; right operand is builder-only for current hidden split picker; hardware UNVERIFIED"
+  },
+  {
+    "id": "P1-lumbar_up-1",
+    "protocol": "P1",
+    "action": "lumbar_up",
+    "inputs": {
+      "opcode": 63,
+      "side": 1,
+      "framed": true
+    },
+    "expected_bytes": "6e01013faf",
+    "reproducer": "control",
+    "evidence": [
+      "E09",
+      "E10",
+      "E11",
+      "E12",
+      "E13",
+      "E20"
+    ],
+    "scope": "static reconstructed builder bytes; current product caller proven as listed; right operand is builder-only for current hidden split picker; hardware UNVERIFIED"
+  },
+  {
+    "id": "P1-lumbar_down-0",
+    "protocol": "P1",
+    "action": "lumbar_down",
+    "inputs": {
+      "opcode": 64,
+      "side": 0,
+      "framed": true
+    },
+    "expected_bytes": "6e010040af",
+    "reproducer": "control",
+    "evidence": [
+      "E09",
+      "E10",
+      "E11",
+      "E12",
+      "E13",
+      "E20"
+    ],
+    "scope": "static reconstructed builder bytes; current product caller proven as listed; right operand is builder-only for current hidden split picker; hardware UNVERIFIED"
+  },
+  {
+    "id": "P1-lumbar_down-1",
+    "protocol": "P1",
+    "action": "lumbar_down",
+    "inputs": {
+      "opcode": 64,
+      "side": 1,
+      "framed": true
+    },
+    "expected_bytes": "6e010140b0",
+    "reproducer": "control",
+    "evidence": [
+      "E09",
+      "E10",
+      "E11",
+      "E12",
+      "E13",
+      "E20"
+    ],
+    "scope": "static reconstructed builder bytes; current product caller proven as listed; right operand is builder-only for current hidden split picker; hardware UNVERIFIED"
+  },
+  {
+    "id": "P1-pillow_up-0",
+    "protocol": "P1",
+    "action": "pillow_up",
+    "inputs": {
+      "opcode": 65,
+      "side": 0,
+      "framed": true
+    },
+    "expected_bytes": "6e010041b0",
+    "reproducer": "control",
+    "evidence": [
+      "E09",
+      "E10",
+      "E11",
+      "E12",
+      "E13",
+      "E20"
+    ],
+    "scope": "static reconstructed builder bytes; current product caller proven as listed; right operand is builder-only for current hidden split picker; hardware UNVERIFIED"
+  },
+  {
+    "id": "P1-pillow_up-1",
+    "protocol": "P1",
+    "action": "pillow_up",
+    "inputs": {
+      "opcode": 65,
+      "side": 1,
+      "framed": true
+    },
+    "expected_bytes": "6e010141b1",
+    "reproducer": "control",
+    "evidence": [
+      "E09",
+      "E10",
+      "E11",
+      "E12",
+      "E13",
+      "E20"
+    ],
+    "scope": "static reconstructed builder bytes; current product caller proven as listed; right operand is builder-only for current hidden split picker; hardware UNVERIFIED"
+  },
+  {
+    "id": "P1-pillow_down-0",
+    "protocol": "P1",
+    "action": "pillow_down",
+    "inputs": {
+      "opcode": 66,
+      "side": 0,
+      "framed": true
+    },
+    "expected_bytes": "6e010042b1",
+    "reproducer": "control",
+    "evidence": [
+      "E09",
+      "E10",
+      "E11",
+      "E12",
+      "E13",
+      "E20"
+    ],
+    "scope": "static reconstructed builder bytes; current product caller proven as listed; right operand is builder-only for current hidden split picker; hardware UNVERIFIED"
+  },
+  {
+    "id": "P1-pillow_down-1",
+    "protocol": "P1",
+    "action": "pillow_down",
+    "inputs": {
+      "opcode": 66,
+      "side": 1,
+      "framed": true
+    },
+    "expected_bytes": "6e010142b2",
+    "reproducer": "control",
+    "evidence": [
+      "E09",
+      "E10",
+      "E11",
+      "E12",
+      "E13",
+      "E20"
+    ],
+    "scope": "static reconstructed builder bytes; current product caller proven as listed; right operand is builder-only for current hidden split picker; hardware UNVERIFIED"
+  },
+  {
+    "id": "P1-flat_reset-0",
+    "protocol": "P1",
+    "action": "flat_reset",
+    "inputs": {
+      "opcode": 49,
+      "side": 0,
+      "framed": true
+    },
+    "expected_bytes": "6e010031a0",
+    "reproducer": "control",
+    "evidence": [
+      "E09",
+      "E10",
+      "E11",
+      "E12",
+      "E13",
+      "E20"
+    ],
+    "scope": "static reconstructed builder bytes; current product caller proven as listed; right operand is builder-only for current hidden split picker; hardware UNVERIFIED"
+  },
+  {
+    "id": "P1-flat_reset-1",
+    "protocol": "P1",
+    "action": "flat_reset",
+    "inputs": {
+      "opcode": 49,
+      "side": 1,
+      "framed": true
+    },
+    "expected_bytes": "6e010131a1",
+    "reproducer": "control",
+    "evidence": [
+      "E09",
+      "E10",
+      "E11",
+      "E12",
+      "E13",
+      "E20"
+    ],
+    "scope": "static reconstructed builder bytes; current product caller proven as listed; right operand is builder-only for current hidden split picker; hardware UNVERIFIED"
+  },
+  {
+    "id": "P1-bed_light_from_motor_page-0",
+    "protocol": "P1",
+    "action": "bed_light_from_motor_page",
+    "inputs": {
+      "opcode": 60,
+      "side": 0,
+      "framed": true
+    },
+    "expected_bytes": "6e01003cab",
+    "reproducer": "control",
+    "evidence": [
+      "E09",
+      "E10",
+      "E11",
+      "E12",
+      "E23"
+    ],
+    "scope": "static reconstructed builder bytes; current product caller proven as listed; right operand is builder-only for current hidden split picker; hardware UNVERIFIED"
+  },
+  {
+    "id": "P1-bed_light_from_motor_page-1",
+    "protocol": "P1",
+    "action": "bed_light_from_motor_page",
+    "inputs": {
+      "opcode": 60,
+      "side": 1,
+      "framed": true
+    },
+    "expected_bytes": "6e01013cac",
+    "reproducer": "control",
+    "evidence": [
+      "E09",
+      "E10",
+      "E11",
+      "E12",
+      "E23"
+    ],
+    "scope": "static reconstructed builder bytes; current product caller proven as listed; right operand is builder-only for current hidden split picker; hardware UNVERIFIED"
+  },
+  {
+    "id": "P1-massage_head_strengthen-0",
+    "protocol": "P1",
+    "action": "massage_head_strengthen",
+    "inputs": {
+      "opcode": 76,
+      "side": 0,
+      "framed": true
+    },
+    "expected_bytes": "6e01004cbb",
+    "reproducer": "control",
+    "evidence": [
+      "E09",
+      "E10",
+      "E11",
+      "E12",
+      "E22"
+    ],
+    "scope": "static reconstructed builder bytes; current product caller proven as listed; right operand is builder-only for current hidden split picker; hardware UNVERIFIED"
+  },
+  {
+    "id": "P1-massage_head_strengthen-1",
+    "protocol": "P1",
+    "action": "massage_head_strengthen",
+    "inputs": {
+      "opcode": 76,
+      "side": 1,
+      "framed": true
+    },
+    "expected_bytes": "6e01014cbc",
+    "reproducer": "control",
+    "evidence": [
+      "E09",
+      "E10",
+      "E11",
+      "E12",
+      "E22"
+    ],
+    "scope": "static reconstructed builder bytes; current product caller proven as listed; right operand is builder-only for current hidden split picker; hardware UNVERIFIED"
+  },
+  {
+    "id": "P1-massage_foot_strengthen-0",
+    "protocol": "P1",
+    "action": "massage_foot_strengthen",
+    "inputs": {
+      "opcode": 78,
+      "side": 0,
+      "framed": true
+    },
+    "expected_bytes": "6e01004ebd",
+    "reproducer": "control",
+    "evidence": [
+      "E09",
+      "E10",
+      "E11",
+      "E12",
+      "E22"
+    ],
+    "scope": "static reconstructed builder bytes; current product caller proven as listed; right operand is builder-only for current hidden split picker; hardware UNVERIFIED"
+  },
+  {
+    "id": "P1-massage_foot_strengthen-1",
+    "protocol": "P1",
+    "action": "massage_foot_strengthen",
+    "inputs": {
+      "opcode": 78,
+      "side": 1,
+      "framed": true
+    },
+    "expected_bytes": "6e01014ebe",
+    "reproducer": "control",
+    "evidence": [
+      "E09",
+      "E10",
+      "E11",
+      "E12",
+      "E22"
+    ],
+    "scope": "static reconstructed builder bytes; current product caller proven as listed; right operand is builder-only for current hidden split picker; hardware UNVERIFIED"
+  },
+  {
+    "id": "P1-massage_mode_change-0",
+    "protocol": "P1",
+    "action": "massage_mode_change",
+    "inputs": {
+      "opcode": 72,
+      "side": 0,
+      "framed": true
+    },
+    "expected_bytes": "6e010048b7",
+    "reproducer": "control",
+    "evidence": [
+      "E09",
+      "E10",
+      "E11",
+      "E12",
+      "E22"
+    ],
+    "scope": "static reconstructed builder bytes; current product caller proven as listed; right operand is builder-only for current hidden split picker; hardware UNVERIFIED"
+  },
+  {
+    "id": "P1-massage_mode_change-1",
+    "protocol": "P1",
+    "action": "massage_mode_change",
+    "inputs": {
+      "opcode": 72,
+      "side": 1,
+      "framed": true
+    },
+    "expected_bytes": "6e010148b8",
+    "reproducer": "control",
+    "evidence": [
+      "E09",
+      "E10",
+      "E11",
+      "E12",
+      "E22"
+    ],
+    "scope": "static reconstructed builder bytes; current product caller proven as listed; right operand is builder-only for current hidden split picker; hardware UNVERIFIED"
+  },
+  {
+    "id": "P1-massage_all_off-0",
+    "protocol": "P1",
+    "action": "massage_all_off",
+    "inputs": {
+      "opcode": 94,
+      "side": 0,
+      "framed": true
+    },
+    "expected_bytes": "6e01005ecd",
+    "reproducer": "control",
+    "evidence": [
+      "E09",
+      "E10",
+      "E11",
+      "E12",
+      "E22"
+    ],
+    "scope": "static reconstructed builder bytes; current product caller proven as listed; right operand is builder-only for current hidden split picker; hardware UNVERIFIED"
+  },
+  {
+    "id": "P1-massage_all_off-1",
+    "protocol": "P1",
+    "action": "massage_all_off",
+    "inputs": {
+      "opcode": 94,
+      "side": 1,
+      "framed": true
+    },
+    "expected_bytes": "6e01015ece",
+    "reproducer": "control",
+    "evidence": [
+      "E09",
+      "E10",
+      "E11",
+      "E12",
+      "E22"
+    ],
+    "scope": "static reconstructed builder bytes; current product caller proven as listed; right operand is builder-only for current hidden split picker; hardware UNVERIFIED"
+  },
+  {
+    "id": "P1-massage_timer_10_min-0",
+    "protocol": "P1",
+    "action": "massage_timer_10_min",
+    "inputs": {
+      "opcode": 95,
+      "side": 0,
+      "framed": true
+    },
+    "expected_bytes": "6e01005fce",
+    "reproducer": "control",
+    "evidence": [
+      "E09",
+      "E10",
+      "E11",
+      "E12",
+      "E22"
+    ],
+    "scope": "static reconstructed builder bytes; current product caller proven as listed; right operand is builder-only for current hidden split picker; hardware UNVERIFIED"
+  },
+  {
+    "id": "P1-massage_timer_10_min-1",
+    "protocol": "P1",
+    "action": "massage_timer_10_min",
+    "inputs": {
+      "opcode": 95,
+      "side": 1,
+      "framed": true
+    },
+    "expected_bytes": "6e01015fcf",
+    "reproducer": "control",
+    "evidence": [
+      "E09",
+      "E10",
+      "E11",
+      "E12",
+      "E22"
+    ],
+    "scope": "static reconstructed builder bytes; current product caller proven as listed; right operand is builder-only for current hidden split picker; hardware UNVERIFIED"
+  },
+  {
+    "id": "P1-massage_timer_20_min-0",
+    "protocol": "P1",
+    "action": "massage_timer_20_min",
+    "inputs": {
+      "opcode": 99,
+      "side": 0,
+      "framed": true
+    },
+    "expected_bytes": "6e010063d2",
+    "reproducer": "control",
+    "evidence": [
+      "E09",
+      "E10",
+      "E11",
+      "E12",
+      "E22"
+    ],
+    "scope": "static reconstructed builder bytes; current product caller proven as listed; right operand is builder-only for current hidden split picker; hardware UNVERIFIED"
+  },
+  {
+    "id": "P1-massage_timer_20_min-1",
+    "protocol": "P1",
+    "action": "massage_timer_20_min",
+    "inputs": {
+      "opcode": 99,
+      "side": 1,
+      "framed": true
+    },
+    "expected_bytes": "6e010163d3",
+    "reproducer": "control",
+    "evidence": [
+      "E09",
+      "E10",
+      "E11",
+      "E12",
+      "E22"
+    ],
+    "scope": "static reconstructed builder bytes; current product caller proven as listed; right operand is builder-only for current hidden split picker; hardware UNVERIFIED"
+  },
+  {
+    "id": "P1-massage_timer_30_min-0",
+    "protocol": "P1",
+    "action": "massage_timer_30_min",
+    "inputs": {
+      "opcode": 97,
+      "side": 0,
+      "framed": true
+    },
+    "expected_bytes": "6e010061d0",
+    "reproducer": "control",
+    "evidence": [
+      "E09",
+      "E10",
+      "E11",
+      "E12",
+      "E22"
+    ],
+    "scope": "static reconstructed builder bytes; current product caller proven as listed; right operand is builder-only for current hidden split picker; hardware UNVERIFIED"
+  },
+  {
+    "id": "P1-massage_timer_30_min-1",
+    "protocol": "P1",
+    "action": "massage_timer_30_min",
+    "inputs": {
+      "opcode": 97,
+      "side": 1,
+      "framed": true
+    },
+    "expected_bytes": "6e010161d1",
+    "reproducer": "control",
+    "evidence": [
+      "E09",
+      "E10",
+      "E11",
+      "E12",
+      "E22"
+    ],
+    "scope": "static reconstructed builder bytes; current product caller proven as listed; right operand is builder-only for current hidden split picker; hardware UNVERIFIED"
+  },
+  {
+    "id": "P1-recall_zero_gravity-0",
+    "protocol": "P1",
+    "action": "recall_zero_gravity",
+    "inputs": {
+      "opcode": 69,
+      "side": 0,
+      "framed": true
+    },
+    "expected_bytes": "6e010045b4",
+    "reproducer": "control",
+    "evidence": [
+      "E09",
+      "E10",
+      "E11",
+      "E12",
+      "E21"
+    ],
+    "scope": "static reconstructed builder bytes; current product caller proven as listed; right operand is builder-only for current hidden split picker; hardware UNVERIFIED"
+  },
+  {
+    "id": "P1-recall_zero_gravity-1",
+    "protocol": "P1",
+    "action": "recall_zero_gravity",
+    "inputs": {
+      "opcode": 69,
+      "side": 1,
+      "framed": true
+    },
+    "expected_bytes": "6e010145b5",
+    "reproducer": "control",
+    "evidence": [
+      "E09",
+      "E10",
+      "E11",
+      "E12",
+      "E21"
+    ],
+    "scope": "static reconstructed builder bytes; current product caller proven as listed; right operand is builder-only for current hidden split picker; hardware UNVERIFIED"
+  },
+  {
+    "id": "P1-save_zero_gravity-0",
+    "protocol": "P1",
+    "action": "save_zero_gravity",
+    "inputs": {
+      "opcode": 69,
+      "side": 0,
+      "framed": true,
+      "long_opcode": 102,
+      "long_press": true
+    },
+    "expected_bytes": "6e010066d5",
+    "reproducer": "control",
+    "evidence": [
+      "E09",
+      "E10",
+      "E11",
+      "E12",
+      "E21",
+      "E32"
+    ],
+    "scope": "static reconstructed builder bytes; current product caller proven as listed; right operand is builder-only for current hidden split picker; hardware UNVERIFIED"
+  },
+  {
+    "id": "P1-save_zero_gravity-1",
+    "protocol": "P1",
+    "action": "save_zero_gravity",
+    "inputs": {
+      "opcode": 69,
+      "side": 1,
+      "framed": true,
+      "long_opcode": 102,
+      "long_press": true
+    },
+    "expected_bytes": "6e010166d6",
+    "reproducer": "control",
+    "evidence": [
+      "E09",
+      "E10",
+      "E11",
+      "E12",
+      "E21",
+      "E32"
+    ],
+    "scope": "static reconstructed builder bytes; current product caller proven as listed; right operand is builder-only for current hidden split picker; hardware UNVERIFIED"
+  },
+  {
+    "id": "P1-recall_anti_snore-0",
+    "protocol": "P1",
+    "action": "recall_anti_snore",
+    "inputs": {
+      "opcode": 70,
+      "side": 0,
+      "framed": true
+    },
+    "expected_bytes": "6e010046b5",
+    "reproducer": "control",
+    "evidence": [
+      "E09",
+      "E10",
+      "E11",
+      "E12",
+      "E21"
+    ],
+    "scope": "static reconstructed builder bytes; current product caller proven as listed; right operand is builder-only for current hidden split picker; hardware UNVERIFIED"
+  },
+  {
+    "id": "P1-recall_anti_snore-1",
+    "protocol": "P1",
+    "action": "recall_anti_snore",
+    "inputs": {
+      "opcode": 70,
+      "side": 1,
+      "framed": true
+    },
+    "expected_bytes": "6e010146b6",
+    "reproducer": "control",
+    "evidence": [
+      "E09",
+      "E10",
+      "E11",
+      "E12",
+      "E21"
+    ],
+    "scope": "static reconstructed builder bytes; current product caller proven as listed; right operand is builder-only for current hidden split picker; hardware UNVERIFIED"
+  },
+  {
+    "id": "P1-save_anti_snore-0",
+    "protocol": "P1",
+    "action": "save_anti_snore",
+    "inputs": {
+      "opcode": 70,
+      "side": 0,
+      "framed": true,
+      "long_opcode": 105,
+      "long_press": true
+    },
+    "expected_bytes": "6e010069d8",
+    "reproducer": "control",
+    "evidence": [
+      "E09",
+      "E10",
+      "E11",
+      "E12",
+      "E21",
+      "E32"
+    ],
+    "scope": "static reconstructed builder bytes; current product caller proven as listed; right operand is builder-only for current hidden split picker; hardware UNVERIFIED"
+  },
+  {
+    "id": "P1-save_anti_snore-1",
+    "protocol": "P1",
+    "action": "save_anti_snore",
+    "inputs": {
+      "opcode": 70,
+      "side": 1,
+      "framed": true,
+      "long_opcode": 105,
+      "long_press": true
+    },
+    "expected_bytes": "6e010169d9",
+    "reproducer": "control",
+    "evidence": [
+      "E09",
+      "E10",
+      "E11",
+      "E12",
+      "E21",
+      "E32"
+    ],
+    "scope": "static reconstructed builder bytes; current product caller proven as listed; right operand is builder-only for current hidden split picker; hardware UNVERIFIED"
+  },
+  {
+    "id": "P1-recall_tv-0",
+    "protocol": "P1",
+    "action": "recall_tv",
+    "inputs": {
+      "opcode": 88,
+      "side": 0,
+      "framed": true
+    },
+    "expected_bytes": "6e010058c7",
+    "reproducer": "control",
+    "evidence": [
+      "E09",
+      "E10",
+      "E11",
+      "E12",
+      "E21"
+    ],
+    "scope": "static reconstructed builder bytes; current product caller proven as listed; right operand is builder-only for current hidden split picker; hardware UNVERIFIED"
+  },
+  {
+    "id": "P1-recall_tv-1",
+    "protocol": "P1",
+    "action": "recall_tv",
+    "inputs": {
+      "opcode": 88,
+      "side": 1,
+      "framed": true
+    },
+    "expected_bytes": "6e010158c8",
+    "reproducer": "control",
+    "evidence": [
+      "E09",
+      "E10",
+      "E11",
+      "E12",
+      "E21"
+    ],
+    "scope": "static reconstructed builder bytes; current product caller proven as listed; right operand is builder-only for current hidden split picker; hardware UNVERIFIED"
+  },
+  {
+    "id": "P1-save_tv-0",
+    "protocol": "P1",
+    "action": "save_tv",
+    "inputs": {
+      "opcode": 88,
+      "side": 0,
+      "framed": true,
+      "long_opcode": 100,
+      "long_press": true
+    },
+    "expected_bytes": "6e010064d3",
+    "reproducer": "control",
+    "evidence": [
+      "E09",
+      "E10",
+      "E11",
+      "E12",
+      "E21",
+      "E32"
+    ],
+    "scope": "static reconstructed builder bytes; current product caller proven as listed; right operand is builder-only for current hidden split picker; hardware UNVERIFIED"
+  },
+  {
+    "id": "P1-save_tv-1",
+    "protocol": "P1",
+    "action": "save_tv",
+    "inputs": {
+      "opcode": 88,
+      "side": 1,
+      "framed": true,
+      "long_opcode": 100,
+      "long_press": true
+    },
+    "expected_bytes": "6e010164d4",
+    "reproducer": "control",
+    "evidence": [
+      "E09",
+      "E10",
+      "E11",
+      "E12",
+      "E21",
+      "E32"
+    ],
+    "scope": "static reconstructed builder bytes; current product caller proven as listed; right operand is builder-only for current hidden split picker; hardware UNVERIFIED"
+  },
+  {
+    "id": "P1-recall_memory1-0",
+    "protocol": "P1",
+    "action": "recall_memory1",
+    "inputs": {
+      "opcode": 46,
+      "side": 0,
+      "framed": true
+    },
+    "expected_bytes": "6e01002e9d",
+    "reproducer": "control",
+    "evidence": [
+      "E09",
+      "E10",
+      "E11",
+      "E12",
+      "E21"
+    ],
+    "scope": "static reconstructed builder bytes; current product caller proven as listed; right operand is builder-only for current hidden split picker; hardware UNVERIFIED"
+  },
+  {
+    "id": "P1-recall_memory1-1",
+    "protocol": "P1",
+    "action": "recall_memory1",
+    "inputs": {
+      "opcode": 46,
+      "side": 1,
+      "framed": true
+    },
+    "expected_bytes": "6e01012e9e",
+    "reproducer": "control",
+    "evidence": [
+      "E09",
+      "E10",
+      "E11",
+      "E12",
+      "E21"
+    ],
+    "scope": "static reconstructed builder bytes; current product caller proven as listed; right operand is builder-only for current hidden split picker; hardware UNVERIFIED"
+  },
+  {
+    "id": "P1-save_memory1-0",
+    "protocol": "P1",
+    "action": "save_memory1",
+    "inputs": {
+      "opcode": 46,
+      "side": 0,
+      "framed": true,
+      "long_opcode": 43,
+      "long_press": true
+    },
+    "expected_bytes": "6e01002b9a",
+    "reproducer": "control",
+    "evidence": [
+      "E09",
+      "E10",
+      "E11",
+      "E12",
+      "E21",
+      "E32"
+    ],
+    "scope": "static reconstructed builder bytes; current product caller proven as listed; right operand is builder-only for current hidden split picker; hardware UNVERIFIED"
+  },
+  {
+    "id": "P1-save_memory1-1",
+    "protocol": "P1",
+    "action": "save_memory1",
+    "inputs": {
+      "opcode": 46,
+      "side": 1,
+      "framed": true,
+      "long_opcode": 43,
+      "long_press": true
+    },
+    "expected_bytes": "6e01012b9b",
+    "reproducer": "control",
+    "evidence": [
+      "E09",
+      "E10",
+      "E11",
+      "E12",
+      "E21",
+      "E32"
+    ],
+    "scope": "static reconstructed builder bytes; current product caller proven as listed; right operand is builder-only for current hidden split picker; hardware UNVERIFIED"
+  },
+  {
+    "id": "P1-stop_release-0",
+    "protocol": "P1",
+    "action": "stop_release",
+    "inputs": {
+      "opcode": 110,
+      "side": 0,
+      "framed": true
+    },
+    "expected_bytes": "6e01006edd",
+    "reproducer": "control",
+    "evidence": [
+      "E09",
+      "E10",
+      "E11",
+      "E12",
+      "E13",
+      "E14",
+      "E22"
+    ],
+    "scope": "static reconstructed builder bytes; current product caller proven as listed; right operand is builder-only for current hidden split picker; hardware UNVERIFIED"
+  },
+  {
+    "id": "P1-stop_release-1",
+    "protocol": "P1",
+    "action": "stop_release",
+    "inputs": {
+      "opcode": 110,
+      "side": 1,
+      "framed": true
+    },
+    "expected_bytes": "6e01016ede",
+    "reproducer": "control",
+    "evidence": [
+      "E09",
+      "E10",
+      "E11",
+      "E12",
+      "E13",
+      "E14",
+      "E22"
+    ],
+    "scope": "static reconstructed builder bytes; current product caller proven as listed; right operand is builder-only for current hidden split picker; hardware UNVERIFIED"
+  },
+  {
+    "id": "P1-advanced_bed_light_close-0",
+    "protocol": "P1",
+    "action": "advanced_bed_light_close",
+    "inputs": {
+      "opcode": 117,
+      "side": 0,
+      "framed": true
+    },
+    "expected_bytes": "6e010075e4",
+    "reproducer": "control",
+    "evidence": [
+      "E09",
+      "E10",
+      "E11",
+      "E12",
+      "E23"
+    ],
+    "scope": "static reconstructed builder bytes; current product caller proven as listed; right operand is builder-only for current hidden split picker; hardware UNVERIFIED"
+  },
+  {
+    "id": "P1-advanced_bed_light_close-1",
+    "protocol": "P1",
+    "action": "advanced_bed_light_close",
+    "inputs": {
+      "opcode": 117,
+      "side": 1,
+      "framed": true
+    },
+    "expected_bytes": "6e010175e5",
+    "reproducer": "control",
+    "evidence": [
+      "E09",
+      "E10",
+      "E11",
+      "E12",
+      "E23"
+    ],
+    "scope": "static reconstructed builder bytes; current product caller proven as listed; right operand is builder-only for current hidden split picker; hardware UNVERIFIED"
+  },
+  {
+    "id": "P2-head_up-0",
+    "protocol": "P2",
+    "action": "head_up",
+    "inputs": {
+      "opcode": 36,
+      "side": 0,
+      "framed": false
+    },
+    "expected_bytes": "24",
+    "reproducer": "control",
+    "evidence": [
+      "E09",
+      "E10",
+      "E11",
+      "E12",
+      "E13",
+      "E20"
+    ],
+    "scope": "static reconstructed builder bytes; current product caller proven as listed; right operand is builder-only for current hidden split picker; hardware UNVERIFIED"
+  },
+  {
+    "id": "P2-head_down-0",
+    "protocol": "P2",
+    "action": "head_down",
+    "inputs": {
+      "opcode": 37,
+      "side": 0,
+      "framed": false
+    },
+    "expected_bytes": "25",
+    "reproducer": "control",
+    "evidence": [
+      "E09",
+      "E10",
+      "E11",
+      "E12",
+      "E13",
+      "E20"
+    ],
+    "scope": "static reconstructed builder bytes; current product caller proven as listed; right operand is builder-only for current hidden split picker; hardware UNVERIFIED"
+  },
+  {
+    "id": "P2-foot_up-0",
+    "protocol": "P2",
+    "action": "foot_up",
+    "inputs": {
+      "opcode": 38,
+      "side": 0,
+      "framed": false
+    },
+    "expected_bytes": "26",
+    "reproducer": "control",
+    "evidence": [
+      "E09",
+      "E10",
+      "E11",
+      "E12",
+      "E13",
+      "E20"
+    ],
+    "scope": "static reconstructed builder bytes; current product caller proven as listed; right operand is builder-only for current hidden split picker; hardware UNVERIFIED"
+  },
+  {
+    "id": "P2-foot_down-0",
+    "protocol": "P2",
+    "action": "foot_down",
+    "inputs": {
+      "opcode": 39,
+      "side": 0,
+      "framed": false
+    },
+    "expected_bytes": "27",
+    "reproducer": "control",
+    "evidence": [
+      "E09",
+      "E10",
+      "E11",
+      "E12",
+      "E13",
+      "E20"
+    ],
+    "scope": "static reconstructed builder bytes; current product caller proven as listed; right operand is builder-only for current hidden split picker; hardware UNVERIFIED"
+  },
+  {
+    "id": "P2-head_and_foot_up-0",
+    "protocol": "P2",
+    "action": "head_and_foot_up",
+    "inputs": {
+      "opcode": 41,
+      "side": 0,
+      "framed": false
+    },
+    "expected_bytes": "29",
+    "reproducer": "control",
+    "evidence": [
+      "E09",
+      "E10",
+      "E11",
+      "E12",
+      "E13",
+      "E20"
+    ],
+    "scope": "static reconstructed builder bytes; current product caller proven as listed; right operand is builder-only for current hidden split picker; hardware UNVERIFIED"
+  },
+  {
+    "id": "P2-head_and_foot_down-0",
+    "protocol": "P2",
+    "action": "head_and_foot_down",
+    "inputs": {
+      "opcode": 42,
+      "side": 0,
+      "framed": false
+    },
+    "expected_bytes": "2a",
+    "reproducer": "control",
+    "evidence": [
+      "E09",
+      "E10",
+      "E11",
+      "E12",
+      "E13",
+      "E20"
+    ],
+    "scope": "static reconstructed builder bytes; current product caller proven as listed; right operand is builder-only for current hidden split picker; hardware UNVERIFIED"
+  },
+  {
+    "id": "P2-lumbar_up-0",
+    "protocol": "P2",
+    "action": "lumbar_up",
+    "inputs": {
+      "opcode": 63,
+      "side": 0,
+      "framed": false
+    },
+    "expected_bytes": "3f",
+    "reproducer": "control",
+    "evidence": [
+      "E09",
+      "E10",
+      "E11",
+      "E12",
+      "E13",
+      "E20"
+    ],
+    "scope": "static reconstructed builder bytes; current product caller proven as listed; right operand is builder-only for current hidden split picker; hardware UNVERIFIED"
+  },
+  {
+    "id": "P2-lumbar_down-0",
+    "protocol": "P2",
+    "action": "lumbar_down",
+    "inputs": {
+      "opcode": 64,
+      "side": 0,
+      "framed": false
+    },
+    "expected_bytes": "40",
+    "reproducer": "control",
+    "evidence": [
+      "E09",
+      "E10",
+      "E11",
+      "E12",
+      "E13",
+      "E20"
+    ],
+    "scope": "static reconstructed builder bytes; current product caller proven as listed; right operand is builder-only for current hidden split picker; hardware UNVERIFIED"
+  },
+  {
+    "id": "P2-pillow_up-0",
+    "protocol": "P2",
+    "action": "pillow_up",
+    "inputs": {
+      "opcode": 65,
+      "side": 0,
+      "framed": false
+    },
+    "expected_bytes": "41",
+    "reproducer": "control",
+    "evidence": [
+      "E09",
+      "E10",
+      "E11",
+      "E12",
+      "E13",
+      "E20"
+    ],
+    "scope": "static reconstructed builder bytes; current product caller proven as listed; right operand is builder-only for current hidden split picker; hardware UNVERIFIED"
+  },
+  {
+    "id": "P2-pillow_down-0",
+    "protocol": "P2",
+    "action": "pillow_down",
+    "inputs": {
+      "opcode": 66,
+      "side": 0,
+      "framed": false
+    },
+    "expected_bytes": "42",
+    "reproducer": "control",
+    "evidence": [
+      "E09",
+      "E10",
+      "E11",
+      "E12",
+      "E13",
+      "E20"
+    ],
+    "scope": "static reconstructed builder bytes; current product caller proven as listed; right operand is builder-only for current hidden split picker; hardware UNVERIFIED"
+  },
+  {
+    "id": "P2-flat_reset-0",
+    "protocol": "P2",
+    "action": "flat_reset",
+    "inputs": {
+      "opcode": 49,
+      "side": 0,
+      "framed": false
+    },
+    "expected_bytes": "31",
+    "reproducer": "control",
+    "evidence": [
+      "E09",
+      "E10",
+      "E11",
+      "E12",
+      "E13",
+      "E20"
+    ],
+    "scope": "static reconstructed builder bytes; current product caller proven as listed; right operand is builder-only for current hidden split picker; hardware UNVERIFIED"
+  },
+  {
+    "id": "P2-bed_light_from_motor_page-0",
+    "protocol": "P2",
+    "action": "bed_light_from_motor_page",
+    "inputs": {
+      "opcode": 60,
+      "side": 0,
+      "framed": false
+    },
+    "expected_bytes": "3c",
+    "reproducer": "control",
+    "evidence": [
+      "E09",
+      "E10",
+      "E11",
+      "E12",
+      "E23"
+    ],
+    "scope": "static reconstructed builder bytes; current product caller proven as listed; right operand is builder-only for current hidden split picker; hardware UNVERIFIED"
+  },
+  {
+    "id": "P2-massage_head_strengthen-0",
+    "protocol": "P2",
+    "action": "massage_head_strengthen",
+    "inputs": {
+      "opcode": 76,
+      "side": 0,
+      "framed": false
+    },
+    "expected_bytes": "4c",
+    "reproducer": "control",
+    "evidence": [
+      "E09",
+      "E10",
+      "E11",
+      "E12",
+      "E22"
+    ],
+    "scope": "static reconstructed builder bytes; current product caller proven as listed; right operand is builder-only for current hidden split picker; hardware UNVERIFIED"
+  },
+  {
+    "id": "P2-massage_foot_strengthen-0",
+    "protocol": "P2",
+    "action": "massage_foot_strengthen",
+    "inputs": {
+      "opcode": 78,
+      "side": 0,
+      "framed": false
+    },
+    "expected_bytes": "4e",
+    "reproducer": "control",
+    "evidence": [
+      "E09",
+      "E10",
+      "E11",
+      "E12",
+      "E22"
+    ],
+    "scope": "static reconstructed builder bytes; current product caller proven as listed; right operand is builder-only for current hidden split picker; hardware UNVERIFIED"
+  },
+  {
+    "id": "P2-massage_mode_change-0",
+    "protocol": "P2",
+    "action": "massage_mode_change",
+    "inputs": {
+      "opcode": 72,
+      "side": 0,
+      "framed": false
+    },
+    "expected_bytes": "48",
+    "reproducer": "control",
+    "evidence": [
+      "E09",
+      "E10",
+      "E11",
+      "E12",
+      "E22"
+    ],
+    "scope": "static reconstructed builder bytes; current product caller proven as listed; right operand is builder-only for current hidden split picker; hardware UNVERIFIED"
+  },
+  {
+    "id": "P2-massage_all_off-0",
+    "protocol": "P2",
+    "action": "massage_all_off",
+    "inputs": {
+      "opcode": 94,
+      "side": 0,
+      "framed": false
+    },
+    "expected_bytes": "5e",
+    "reproducer": "control",
+    "evidence": [
+      "E09",
+      "E10",
+      "E11",
+      "E12",
+      "E22"
+    ],
+    "scope": "static reconstructed builder bytes; current product caller proven as listed; right operand is builder-only for current hidden split picker; hardware UNVERIFIED"
+  },
+  {
+    "id": "P2-massage_timer_10_min-0",
+    "protocol": "P2",
+    "action": "massage_timer_10_min",
+    "inputs": {
+      "opcode": 95,
+      "side": 0,
+      "framed": false
+    },
+    "expected_bytes": "5f",
+    "reproducer": "control",
+    "evidence": [
+      "E09",
+      "E10",
+      "E11",
+      "E12",
+      "E22"
+    ],
+    "scope": "static reconstructed builder bytes; current product caller proven as listed; right operand is builder-only for current hidden split picker; hardware UNVERIFIED"
+  },
+  {
+    "id": "P2-massage_timer_20_min-0",
+    "protocol": "P2",
+    "action": "massage_timer_20_min",
+    "inputs": {
+      "opcode": 99,
+      "side": 0,
+      "framed": false
+    },
+    "expected_bytes": "63",
+    "reproducer": "control",
+    "evidence": [
+      "E09",
+      "E10",
+      "E11",
+      "E12",
+      "E22"
+    ],
+    "scope": "static reconstructed builder bytes; current product caller proven as listed; right operand is builder-only for current hidden split picker; hardware UNVERIFIED"
+  },
+  {
+    "id": "P2-massage_timer_30_min-0",
+    "protocol": "P2",
+    "action": "massage_timer_30_min",
+    "inputs": {
+      "opcode": 97,
+      "side": 0,
+      "framed": false
+    },
+    "expected_bytes": "61",
+    "reproducer": "control",
+    "evidence": [
+      "E09",
+      "E10",
+      "E11",
+      "E12",
+      "E22"
+    ],
+    "scope": "static reconstructed builder bytes; current product caller proven as listed; right operand is builder-only for current hidden split picker; hardware UNVERIFIED"
+  },
+  {
+    "id": "P2-recall_zero_gravity-0",
+    "protocol": "P2",
+    "action": "recall_zero_gravity",
+    "inputs": {
+      "opcode": 69,
+      "side": 0,
+      "framed": false
+    },
+    "expected_bytes": "45",
+    "reproducer": "control",
+    "evidence": [
+      "E09",
+      "E10",
+      "E11",
+      "E12",
+      "E21"
+    ],
+    "scope": "static reconstructed builder bytes; current product caller proven as listed; right operand is builder-only for current hidden split picker; hardware UNVERIFIED"
+  },
+  {
+    "id": "P2-save_zero_gravity-0",
+    "protocol": "P2",
+    "action": "save_zero_gravity",
+    "inputs": {
+      "opcode": 69,
+      "side": 0,
+      "framed": false,
+      "long_opcode": 102,
+      "long_press": true
+    },
+    "expected_bytes": "66",
+    "reproducer": "control",
+    "evidence": [
+      "E09",
+      "E10",
+      "E11",
+      "E12",
+      "E21",
+      "E32"
+    ],
+    "scope": "static reconstructed builder bytes; current product caller proven as listed; right operand is builder-only for current hidden split picker; hardware UNVERIFIED"
+  },
+  {
+    "id": "P2-recall_anti_snore-0",
+    "protocol": "P2",
+    "action": "recall_anti_snore",
+    "inputs": {
+      "opcode": 70,
+      "side": 0,
+      "framed": false
+    },
+    "expected_bytes": "46",
+    "reproducer": "control",
+    "evidence": [
+      "E09",
+      "E10",
+      "E11",
+      "E12",
+      "E21"
+    ],
+    "scope": "static reconstructed builder bytes; current product caller proven as listed; right operand is builder-only for current hidden split picker; hardware UNVERIFIED"
+  },
+  {
+    "id": "P2-save_anti_snore-0",
+    "protocol": "P2",
+    "action": "save_anti_snore",
+    "inputs": {
+      "opcode": 70,
+      "side": 0,
+      "framed": false,
+      "long_opcode": 105,
+      "long_press": true
+    },
+    "expected_bytes": "69",
+    "reproducer": "control",
+    "evidence": [
+      "E09",
+      "E10",
+      "E11",
+      "E12",
+      "E21",
+      "E32"
+    ],
+    "scope": "static reconstructed builder bytes; current product caller proven as listed; right operand is builder-only for current hidden split picker; hardware UNVERIFIED"
+  },
+  {
+    "id": "P2-recall_tv-0",
+    "protocol": "P2",
+    "action": "recall_tv",
+    "inputs": {
+      "opcode": 88,
+      "side": 0,
+      "framed": false
+    },
+    "expected_bytes": "58",
+    "reproducer": "control",
+    "evidence": [
+      "E09",
+      "E10",
+      "E11",
+      "E12",
+      "E21"
+    ],
+    "scope": "static reconstructed builder bytes; current product caller proven as listed; right operand is builder-only for current hidden split picker; hardware UNVERIFIED"
+  },
+  {
+    "id": "P2-save_tv-0",
+    "protocol": "P2",
+    "action": "save_tv",
+    "inputs": {
+      "opcode": 88,
+      "side": 0,
+      "framed": false,
+      "long_opcode": 100,
+      "long_press": true
+    },
+    "expected_bytes": "64",
+    "reproducer": "control",
+    "evidence": [
+      "E09",
+      "E10",
+      "E11",
+      "E12",
+      "E21",
+      "E32"
+    ],
+    "scope": "static reconstructed builder bytes; current product caller proven as listed; right operand is builder-only for current hidden split picker; hardware UNVERIFIED"
+  },
+  {
+    "id": "P2-recall_memory1-0",
+    "protocol": "P2",
+    "action": "recall_memory1",
+    "inputs": {
+      "opcode": 46,
+      "side": 0,
+      "framed": false
+    },
+    "expected_bytes": "2e",
+    "reproducer": "control",
+    "evidence": [
+      "E09",
+      "E10",
+      "E11",
+      "E12",
+      "E21"
+    ],
+    "scope": "static reconstructed builder bytes; current product caller proven as listed; right operand is builder-only for current hidden split picker; hardware UNVERIFIED"
+  },
+  {
+    "id": "P2-save_memory1-0",
+    "protocol": "P2",
+    "action": "save_memory1",
+    "inputs": {
+      "opcode": 46,
+      "side": 0,
+      "framed": false,
+      "long_opcode": 43,
+      "long_press": true
+    },
+    "expected_bytes": "2b",
+    "reproducer": "control",
+    "evidence": [
+      "E09",
+      "E10",
+      "E11",
+      "E12",
+      "E21",
+      "E32"
+    ],
+    "scope": "static reconstructed builder bytes; current product caller proven as listed; right operand is builder-only for current hidden split picker; hardware UNVERIFIED"
+  },
+  {
+    "id": "P2-stop_release-0",
+    "protocol": "P2",
+    "action": "stop_release",
+    "inputs": {
+      "opcode": 110,
+      "side": 0,
+      "framed": false
+    },
+    "expected_bytes": "6e",
+    "reproducer": "control",
+    "evidence": [
+      "E09",
+      "E10",
+      "E11",
+      "E12",
+      "E13",
+      "E14",
+      "E22"
+    ],
+    "scope": "static reconstructed builder bytes; current product caller proven as listed; right operand is builder-only for current hidden split picker; hardware UNVERIFIED"
+  },
+  {
+    "id": "P2-advanced_bed_light_close-0",
+    "protocol": "P2",
+    "action": "advanced_bed_light_close",
+    "inputs": {
+      "opcode": 117,
+      "side": 0,
+      "framed": false
+    },
+    "expected_bytes": "75",
+    "reproducer": "control",
+    "evidence": [
+      "E09",
+      "E10",
+      "E11",
+      "E12",
+      "E23"
+    ],
+    "scope": "static reconstructed builder bytes; current product caller proven as listed; right operand is builder-only for current hidden split picker; hardware UNVERIFIED"
+  },
+  {
+    "id": "query-exit_limit-W",
+    "protocol": "P1",
+    "action": "exit_limit",
+    "inputs": {
+      "name": "exit_limit",
+      "route_is_nordic": false
+    },
+    "expected_bytes": "6e02010071",
+    "reproducer": "query",
+    "evidence": [
+      "E09",
+      "E10",
+      "E27"
+    ],
+    "scope": "current startup caller; selected service route still determines encoding; hardware UNVERIFIED"
+  },
+  {
+    "id": "query-exit_limit-Nordic",
+    "protocol": "P2",
+    "action": "exit_limit",
+    "inputs": {
+      "name": "exit_limit",
+      "route_is_nordic": true
+    },
+    "expected_bytes": "00",
+    "reproducer": "query",
+    "evidence": [
+      "E09",
+      "E10",
+      "E27"
+    ],
+    "scope": "current startup caller; selected service route still determines encoding; hardware UNVERIFIED"
+  },
+  {
+    "id": "query-check_clock-W",
+    "protocol": "P1",
+    "action": "check_clock",
+    "inputs": {
+      "name": "check_clock",
+      "route_is_nordic": false
+    },
+    "expected_bytes": "6e08010178",
+    "reproducer": "query",
+    "evidence": [
+      "E09",
+      "E10",
+      "E27"
+    ],
+    "scope": "current startup caller; selected service route still determines encoding; hardware UNVERIFIED"
+  },
+  {
+    "id": "query-check_clock-Nordic",
+    "protocol": "P2",
+    "action": "check_clock",
+    "inputs": {
+      "name": "check_clock",
+      "route_is_nordic": true
+    },
+    "expected_bytes": "01",
+    "reproducer": "query",
+    "evidence": [
+      "E09",
+      "E10",
+      "E27"
+    ],
+    "scope": "current startup caller; selected service route still determines encoding; hardware UNVERIFIED"
+  },
+  {
+    "id": "query-check_light-W",
+    "protocol": "P1",
+    "action": "check_light",
+    "inputs": {
+      "name": "check_light",
+      "route_is_nordic": false
+    },
+    "expected_bytes": "6e0a000179",
+    "reproducer": "query",
+    "evidence": [
+      "E09",
+      "E10",
+      "E27"
+    ],
+    "scope": "current startup caller; selected service route still determines encoding; hardware UNVERIFIED"
+  },
+  {
+    "id": "query-check_light-Nordic",
+    "protocol": "P2",
+    "action": "check_light",
+    "inputs": {
+      "name": "check_light",
+      "route_is_nordic": true
+    },
+    "expected_bytes": "01",
+    "reproducer": "query",
+    "evidence": [
+      "E09",
+      "E10",
+      "E27"
+    ],
+    "scope": "current startup caller; selected service route still determines encoding; hardware UNVERIFIED"
+  },
+  {
+    "id": "P1-head-override",
+    "protocol": "P1",
+    "action": "head_up with explicit spec override operand",
+    "inputs": {
+      "opcode": 36,
+      "override": 63,
+      "side": 1
+    },
+    "expected_bytes": "6e01013faf",
+    "evidence": [
+      "E10"
+    ],
+    "scope": "builder-only synthetic override operand, not a frozen product mapping",
+    "reproducer": "control"
+  },
+  {
+    "id": "route-Nordic-head",
+    "protocol": "P2",
+    "action": "head_up through Nordic selector",
+    "inputs": {
+      "opcode": 36,
+      "route_is_nordic": true
+    },
+    "expected_bytes": "24",
+    "evidence": [
+      "E09",
+      "E10"
+    ],
+    "scope": "selector plus simple builder",
+    "reproducer": "control"
+  },
+  {
+    "id": "route-W1-head",
+    "protocol": "P1",
+    "action": "head_up through non-Nordic selector",
+    "inputs": {
+      "opcode": 36,
+      "route_is_nordic": false
+    },
+    "expected_bytes": "6e01002493",
+    "evidence": [
+      "E09",
+      "E10"
+    ],
+    "scope": "selector plus simple builder",
+    "reproducer": "control"
+  },
+  {
+    "id": "light-0",
+    "protocol": "P3",
+    "action": "light_seconds",
+    "inputs": {
+      "seconds": 0
+    },
+    "expected_bytes": "6e0bffff77",
+    "reproducer": "primary",
+    "kind": "light_seconds",
+    "expected": "6e0bffff77",
+    "evidence": [
+      "E24"
+    ],
+    "scope": "static builder/selected parser behavior only; hardware UNVERIFIED"
+  },
+  {
+    "id": "light-900",
+    "protocol": "P3",
+    "action": "light_seconds",
+    "inputs": {
+      "seconds": 900
+    },
+    "expected_bytes": "6e0b038400",
+    "reproducer": "primary",
+    "kind": "light_seconds",
+    "expected": "6e0b038400",
+    "evidence": [
+      "E24"
+    ],
+    "scope": "static builder/selected parser behavior only; hardware UNVERIFIED"
+  },
+  {
+    "id": "clock-300-zg",
+    "protocol": "P3",
+    "action": "clock",
+    "inputs": {
+      "minutes": 300,
+      "opcode": 69
+    },
+    "expected_bytes": "6e052c009f | 6e060145ba",
+    "reproducer": "primary",
+    "kind": "clock",
+    "expected": [
+      "6e052c009f",
+      "6e060145ba"
+    ],
+    "evidence": [
+      "E26"
+    ],
+    "scope": "static builder/selected parser behavior only; hardware UNVERIFIED"
+  },
+  {
+    "id": "clock-cancel",
+    "protocol": "P3",
+    "action": "clock",
+    "inputs": {
+      "minutes": 0,
+      "opcode": 0
+    },
+    "expected_bytes": "6e05000073 | 6e06000074",
+    "reproducer": "primary",
+    "kind": "clock",
+    "expected": [
+      "6e05000073",
+      "6e06000074"
+    ],
+    "evidence": [
+      "E26"
+    ],
+    "scope": "static builder/selected parser behavior only; hardware UNVERIFIED"
+  },
+  {
+    "id": "rgb-12-34-56",
+    "protocol": "P3",
+    "action": "rgb_wire",
+    "inputs": {
+      "red": 18,
+      "green": 52,
+      "blue": 86
+    },
+    "expected_bytes": "6e0cff128b6e0d345605",
+    "reproducer": "primary",
+    "kind": "rgb_wire",
+    "expected": "6e0cff128b6e0d345605",
+    "evidence": [
+      "E25"
+    ],
+    "scope": "static builder/selected parser behavior only; hardware UNVERIFIED"
+  },
+  {
+    "id": "sync-fixed-clock",
+    "protocol": "P3",
+    "action": "sync_time",
+    "inputs": {
+      "epoch_seconds": 305419896,
+      "zone_hours": -5,
+      "local_parts": [
+        2026,
+        11,
+        27,
+        10,
+        20,
+        30
+      ]
+    },
+    "expected_bytes": "6e200c08020112345678fbb4 | 6e200d080301380b1b0a141e41",
+    "reproducer": "primary",
+    "kind": "sync_time",
+    "expected": [
+      "6e200c08020112345678fbb4",
+      "6e200d080301380b1b0a141e41"
+    ],
+    "evidence": [
+      "E27"
+    ],
+    "scope": "static builder/selected parser behavior only; hardware UNVERIFIED"
+  },
+  {
+    "id": "rx-alarm-capability",
+    "protocol": "P3",
+    "action": "receive",
+    "inputs": {
+      "frame": "6e09010078"
+    },
+    "expected_bytes": "6e09010078",
+    "reproducer": "primary",
+    "kind": "receive",
+    "expected": {
+      "event": "alarm_capability"
+    },
+    "evidence": [
+      "E29"
+    ],
+    "scope": "static builder/selected parser behavior only; hardware UNVERIFIED",
+    "expected_decoded": {
+      "event": "alarm_capability"
+    }
+  },
+  {
+    "id": "rx-light-capability",
+    "protocol": "P3",
+    "action": "receive",
+    "inputs": {
+      "frame": "6e0e00037f"
+    },
+    "expected_bytes": "6e0e00037f",
+    "reproducer": "primary",
+    "kind": "receive",
+    "expected": {
+      "event": "light_capability"
+    },
+    "evidence": [
+      "E29"
+    ],
+    "scope": "static builder/selected parser behavior only; hardware UNVERIFIED",
+    "expected_decoded": {
+      "event": "light_capability"
+    }
+  },
+  {
+    "id": "rx-alarm-add",
+    "protocol": "P3",
+    "action": "receive",
+    "inputs": {
+      "frame": "6e07010177"
+    },
+    "expected_bytes": "6e07010177",
+    "reproducer": "primary",
+    "kind": "receive",
+    "expected": {
+      "event": "alarm_add_success"
+    },
+    "evidence": [
+      "E29"
+    ],
+    "scope": "static builder/selected parser behavior only; hardware UNVERIFIED",
+    "expected_decoded": {
+      "event": "alarm_add_success"
+    }
+  },
+  {
+    "id": "rx-alarm-cancel",
+    "protocol": "P3",
+    "action": "receive",
+    "inputs": {
+      "frame": "6e07010278"
+    },
+    "expected_bytes": "6e07010278",
+    "reproducer": "primary",
+    "kind": "receive",
+    "expected": {
+      "event": "alarm_cancel_success"
+    },
+    "evidence": [
+      "E29"
+    ],
+    "scope": "static builder/selected parser behavior only; hardware UNVERIFIED",
+    "expected_decoded": {
+      "event": "alarm_cancel_success"
+    }
+  },
+  {
+    "id": "rx-motor",
+    "protocol": "P3",
+    "action": "receive",
+    "inputs": {
+      "frame": "6e200e01020200012c022d006461"
+    },
+    "expected_bytes": "6e200e01020200012c022d006461",
+    "reproducer": "primary",
+    "kind": "receive",
+    "expected": {
+      "height": 30.0,
+      "angle": 45,
+      "type": 2,
+      "monitorHeight": 10.0
+    },
+    "evidence": [
+      "E29"
+    ],
+    "scope": "synthetic field vector derived from shipped parser offsets, not a captured or shipped literal frame; hardware UNVERIFIED",
+    "expected_decoded": {
+      "height": 30.0,
+      "angle": 45,
+      "type": 2,
+      "monitorHeight": 10.0
+    }
+  },
+  {
+    "id": "rx-white",
+    "protocol": "P3",
+    "action": "receive",
+    "inputs": {
+      "frame": "6e200903010200019e"
+    },
+    "expected_bytes": "6e200903010200019e",
+    "reproducer": "primary",
+    "kind": "receive",
+    "expected": {
+      "whiteLed": true
+    },
+    "evidence": [
+      "E29"
+    ],
+    "scope": "synthetic field vector derived from shipped parser offsets, not a captured or shipped literal frame; hardware UNVERIFIED",
+    "expected_decoded": {
+      "whiteLed": true
+    }
+  },
+  {
+    "id": "rx-massage-pairs",
+    "protocol": "P3",
+    "action": "receive",
+    "inputs": {
+      "frame": "6e200b02010201030202a6"
+    },
+    "expected_bytes": "6e200b02010201030202a6",
+    "reproducer": "primary",
+    "kind": "receive",
+    "expected": {
+      "head": 3,
+      "foot": 2
+    },
+    "evidence": [
+      "E29"
+    ],
+    "scope": "synthetic field vector derived from shipped parser offsets, not a captured or shipped literal frame; hardware UNVERIFIED",
+    "expected_decoded": {
+      "head": 3,
+      "foot": 2
+    }
+  },
+  {
+    "id": "rx-rgb",
+    "protocol": "P3",
+    "action": "receive",
+    "inputs": {
+      "frame": "6e200b040102001234563c"
+    },
+    "expected_bytes": "6e200b040102001234563c",
+    "reproducer": "primary",
+    "kind": "receive",
+    "expected": {
+      "rgb": [
+        18,
+        52,
+        86
+      ]
+    },
+    "evidence": [
+      "E29"
+    ],
+    "scope": "synthetic field vector derived from shipped parser offsets, not a captured or shipped literal frame; hardware UNVERIFIED",
+    "expected_decoded": {
+      "rgb": [
+        18,
+        52,
+        86
+      ]
+    }
+  },
+  {
+    "id": "rx-rgb-time",
+    "protocol": "P3",
+    "action": "receive",
+    "inputs": {
+      "frame": "6e200a040202000105a6"
+    },
+    "expected_bytes": "6e200a040202000105a6",
+    "reproducer": "primary",
+    "kind": "receive",
+    "expected": {
+      "seconds": 65
+    },
+    "evidence": [
+      "E29"
+    ],
+    "scope": "synthetic field vector derived from shipped parser offsets, not a captured or shipped literal frame; hardware UNVERIFIED",
+    "expected_decoded": {
+      "seconds": 65
+    }
+  },
+  {
+    "id": "rx-bad-extra-checksum",
+    "protocol": "P3",
+    "action": "selected_receive_boundary",
+    "inputs": {
+      "frame": "6e200903020100019f"
+    },
+    "expected_bytes": "6e200903020100019f",
+    "reproducer": "primary",
+    "kind": "receive",
+    "expected": null,
+    "expected_decoded": null,
+    "evidence": [
+      "E28",
+      "E29"
+    ],
+    "scope": "synthetic selected-parser boundary fixture; not hardware capture"
+  },
+  {
+    "id": "rx-bad-extra-length",
+    "protocol": "P3",
+    "action": "selected_receive_boundary",
+    "inputs": {
+      "frame": "6e200a03010200019e"
+    },
+    "expected_bytes": "6e200a03010200019e",
+    "reproducer": "primary",
+    "kind": "receive",
+    "expected": null,
+    "expected_decoded": null,
+    "evidence": [
+      "E28",
+      "E29"
+    ],
+    "scope": "synthetic selected-parser boundary fixture; not hardware capture"
+  },
+  {
+    "id": "rx-massage-mode",
+    "protocol": "P3",
+    "action": "selected_receive_boundary",
+    "inputs": {
+      "frame": "6e20090202020003a0"
+    },
+    "expected_bytes": "6e20090202020003a0",
+    "reproducer": "primary",
+    "kind": "receive",
+    "expected": {
+      "mode": 3
+    },
+    "expected_decoded": {
+      "mode": 3
+    },
+    "evidence": [
+      "E28",
+      "E29"
+    ],
+    "scope": "synthetic selected-parser boundary fixture; not hardware capture"
+  },
+  {
+    "id": "extract-common-concatenated",
+    "protocol": "P3",
+    "action": "receive_extraction",
+    "inputs": {
+      "chunks": [
+        "6e090100786e0e00037f"
+      ]
+    },
+    "expected_bytes": "6e09010078 | 6e0e00037f",
+    "reproducer": "extract",
+    "expected": {
+      "frames": [
+        "6e09010078",
+        "6e0e00037f"
+      ],
+      "remaining": ""
+    },
+    "evidence": [
+      "E28"
+    ],
+    "scope": "synthetic notification chunk fixture showing shipped extraction behavior; valid positive lengths only, no async concurrency claim"
+  },
+  {
+    "id": "extract-extra-fragmented",
+    "protocol": "P3",
+    "action": "receive_extraction",
+    "inputs": {
+      "chunks": [
+        "6e2009",
+        "03010200019e"
+      ]
+    },
+    "expected_bytes": "6e200903010200019e",
+    "reproducer": "extract",
+    "expected": {
+      "frames": [
+        "6e200903010200019e"
+      ],
+      "remaining": ""
+    },
+    "evidence": [
+      "E28"
+    ],
+    "scope": "synthetic notification chunk fixture showing shipped extraction behavior; valid positive lengths only, no async concurrency claim"
+  },
+  {
+    "id": "extract-common-early-consume",
+    "protocol": "P3",
+    "action": "receive_extraction",
+    "inputs": {
+      "chunks": [
+        "6e0901",
+        "0078"
+      ]
+    },
+    "expected_bytes": "6e0901",
+    "reproducer": "extract",
+    "expected": {
+      "frames": [
+        "6e0901"
+      ],
+      "remaining": "0078"
+    },
+    "evidence": [
+      "E28"
+    ],
+    "scope": "synthetic notification chunk fixture showing shipped extraction behavior; valid positive lengths only, no async concurrency claim"
+  },
+  {
+    "id": "extract-leading-garbage",
+    "protocol": "P3",
+    "action": "receive_extraction",
+    "inputs": {
+      "chunks": [
+        "ff006e07010177"
+      ]
+    },
+    "expected_bytes": "6e07010177",
+    "reproducer": "extract",
+    "expected": {
+      "frames": [
+        "6e07010177"
+      ],
+      "remaining": ""
+    },
+    "evidence": [
+      "E28"
+    ],
+    "scope": "synthetic notification chunk fixture showing shipped extraction behavior; valid positive lengths only, no async concurrency claim"
+  },
+  {
+    "id": "rx-white-old-permutation-rejected",
+    "protocol": "P3",
+    "action": "selected_receive_boundary",
+    "inputs": {
+      "frame": "6e200903020100019e"
+    },
+    "expected_bytes": "6e200903020100019e",
+    "reproducer": "primary",
+    "kind": "receive",
+    "expected": null,
+    "expected_decoded": null,
+    "evidence": [
+      "E29"
+    ],
+    "scope": "Synthetic source-counterexample: operation byte5=1 is ignored, not a captured frame"
+  },
+  {
+    "id": "rx-massage-pairs-old-permutation-rejected",
+    "protocol": "P3",
+    "action": "selected_receive_boundary",
+    "inputs": {
+      "frame": "6e200b02020101030202a6"
+    },
+    "expected_bytes": "6e200b02020101030202a6",
+    "reproducer": "primary",
+    "kind": "receive",
+    "expected": null,
+    "expected_decoded": null,
+    "evidence": [
+      "E29"
+    ],
+    "scope": "Synthetic source-counterexample: operation byte5=1 is ignored, not a captured frame"
+  },
+  {
+    "id": "rx-rgb-old-permutation-rejected",
+    "protocol": "P3",
+    "action": "selected_receive_boundary",
+    "inputs": {
+      "frame": "6e200b040201001234563c"
+    },
+    "expected_bytes": "6e200b040201001234563c",
+    "reproducer": "primary",
+    "kind": "receive",
+    "expected": null,
+    "expected_decoded": null,
+    "evidence": [
+      "E29"
+    ],
+    "scope": "Synthetic source-counterexample: operation byte5=1 is ignored, not a captured frame"
+  },
+  {
+    "id": "rx-motor-distinct-old-fields",
+    "protocol": "P3",
+    "action": "selected_receive_boundary",
+    "inputs": {
+      "frame": "6e200e01020200012c2d02006461"
+    },
+    "expected_bytes": "6e200e01020200012c2d02006461",
+    "reproducer": "primary",
+    "kind": "receive",
+    "expected": {
+      "height": 30.0,
+      "type": 45,
+      "angle": 2,
+      "monitorHeight": 10.0
+    },
+    "expected_decoded": {
+      "height": 30.0,
+      "type": 45,
+      "angle": 2,
+      "monitorHeight": 10.0
+    },
+    "evidence": [
+      "E29"
+    ],
+    "scope": "synthetic field vector derived from shipped parser offsets, not a captured or shipped literal frame; hardware UNVERIFIED"
+  },
+  {
+    "id": "rx-motor-no-optional-angle",
+    "protocol": "P3",
+    "action": "selected_receive_boundary",
+    "inputs": {
+      "frame": "6e200b01020200012c02cd"
+    },
+    "expected_bytes": "6e200b01020200012c02cd",
+    "reproducer": "primary",
+    "kind": "receive",
+    "expected": {
+      "height": 30.0,
+      "type": 2,
+      "angle": -1,
+      "monitorHeight": 0
+    },
+    "expected_decoded": {
+      "height": 30.0,
+      "type": 2,
+      "angle": -1,
+      "monitorHeight": 0
+    },
+    "evidence": [
+      "E29"
+    ],
+    "scope": "Synthetic optional-angle boundary; no current-product sensor/hardware claim"
+  }
+]
