@@ -186,6 +186,7 @@ MLINE_PROTOCOL_LABELS: Final = {
 # Single source of truth for bed types with variants
 VARIANTS_BY_BED_TYPE: dict[str, dict[str, str]] = {
     "askona": ASKONA_MODELS,
+    "intellibed": {"old": "Old / white remote", "hhc": "HHC / silver remote"},
     BED_TYPE_AMBIENT: AMBIENT_LAYOUTS,
     "berun": {key: f"Version {profile.version}" for key, profile in BERUN_PROFILES.items()},
     BED_TYPE_SLEEPTIME: dict(SLEEPTIME_SELECTORS),

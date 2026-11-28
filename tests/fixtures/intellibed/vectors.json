@@ -1,0 +1,898 @@
+[
+  {
+    "id": "P1-j",
+    "protocol": "P1",
+    "action": "head up",
+    "inputs": {
+      "payload": "01 00 00 00",
+      "builder": "old"
+    },
+    "expected_bytes": "e5 fe 16 01 00 00 00 05",
+    "evidence": [
+      "anchors/java/m6/d.java",
+      "anchors/java/j6/i.java:816-834;1441-1463",
+      "anchors/java/o6/c.java:87-114",
+      "anchors/java/com/mobile/intellibed/services/BTLEGATTService.java:163-168"
+    ]
+  },
+  {
+    "id": "P2-j",
+    "protocol": "P2",
+    "action": "head up",
+    "inputs": {
+      "payload": "24 23 00 02 00 00 02 41 0d",
+      "builder": "passthrough"
+    },
+    "expected_bytes": "24 23 00 02 00 00 02 41 0d",
+    "evidence": [
+      "anchors/java/m6/d.java",
+      "anchors/java/j6/i.java:816-834;1441-1463",
+      "anchors/java/o6/d.java:81-108",
+      "anchors/java/com/mobile/intellibed/services/BTLEGATTService.java:163-168"
+    ]
+  },
+  {
+    "id": "P1-i",
+    "protocol": "P1",
+    "action": "head down",
+    "inputs": {
+      "payload": "02 00 00 00",
+      "builder": "old"
+    },
+    "expected_bytes": "e5 fe 16 02 00 00 00 04",
+    "evidence": [
+      "anchors/java/m6/d.java",
+      "anchors/java/j6/i.java:816-834;1441-1463",
+      "anchors/java/o6/c.java:87-114",
+      "anchors/java/com/mobile/intellibed/services/BTLEGATTService.java:163-168"
+    ]
+  },
+  {
+    "id": "P2-i",
+    "protocol": "P2",
+    "action": "head down",
+    "inputs": {
+      "payload": "24 23 00 01 00 00 01 41 0d",
+      "builder": "passthrough"
+    },
+    "expected_bytes": "24 23 00 01 00 00 01 41 0d",
+    "evidence": [
+      "anchors/java/m6/d.java",
+      "anchors/java/j6/i.java:816-834;1441-1463",
+      "anchors/java/o6/d.java:81-108",
+      "anchors/java/com/mobile/intellibed/services/BTLEGATTService.java:163-168"
+    ]
+  },
+  {
+    "id": "P1-h",
+    "protocol": "P1",
+    "action": "feet up",
+    "inputs": {
+      "payload": "04 00 00 00",
+      "builder": "old"
+    },
+    "expected_bytes": "e5 fe 16 04 00 00 00 02",
+    "evidence": [
+      "anchors/java/m6/d.java",
+      "anchors/java/j6/i.java:816-834;1441-1463",
+      "anchors/java/o6/c.java:87-114",
+      "anchors/java/com/mobile/intellibed/services/BTLEGATTService.java:163-168"
+    ]
+  },
+  {
+    "id": "P2-h",
+    "protocol": "P2",
+    "action": "feet up",
+    "inputs": {
+      "payload": "24 23 00 08 00 00 08 41 0d",
+      "builder": "passthrough"
+    },
+    "expected_bytes": "24 23 00 08 00 00 08 41 0d",
+    "evidence": [
+      "anchors/java/m6/d.java",
+      "anchors/java/j6/i.java:816-834;1441-1463",
+      "anchors/java/o6/d.java:81-108",
+      "anchors/java/com/mobile/intellibed/services/BTLEGATTService.java:163-168"
+    ]
+  },
+  {
+    "id": "P1-g",
+    "protocol": "P1",
+    "action": "feet down",
+    "inputs": {
+      "payload": "08 00 00 00",
+      "builder": "old"
+    },
+    "expected_bytes": "e5 fe 16 08 00 00 00 fe",
+    "evidence": [
+      "anchors/java/m6/d.java",
+      "anchors/java/j6/i.java:816-834;1441-1463",
+      "anchors/java/o6/c.java:87-114",
+      "anchors/java/com/mobile/intellibed/services/BTLEGATTService.java:163-168"
+    ]
+  },
+  {
+    "id": "P2-g",
+    "protocol": "P2",
+    "action": "feet down",
+    "inputs": {
+      "payload": "24 23 00 04 00 00 04 41 0d",
+      "builder": "passthrough"
+    },
+    "expected_bytes": "24 23 00 04 00 00 04 41 0d",
+    "evidence": [
+      "anchors/java/m6/d.java",
+      "anchors/java/j6/i.java:816-834;1441-1463",
+      "anchors/java/o6/d.java:81-108",
+      "anchors/java/com/mobile/intellibed/services/BTLEGATTService.java:163-168"
+    ]
+  },
+  {
+    "id": "P1-f",
+    "protocol": "P1",
+    "action": "flat",
+    "inputs": {
+      "payload": "00 00 00 08",
+      "builder": "old"
+    },
+    "expected_bytes": "e5 fe 16 00 00 00 08 fe",
+    "evidence": [
+      "anchors/java/m6/d.java",
+      "anchors/java/j6/s.java:191-219; j6/i.java:1164-1167",
+      "anchors/java/o6/c.java:87-114",
+      "anchors/java/com/mobile/intellibed/services/BTLEGATTService.java:163-168"
+    ]
+  },
+  {
+    "id": "P2-f",
+    "protocol": "P2",
+    "action": "flat",
+    "inputs": {
+      "payload": "24 23 55 55 00 00 00 41 0d",
+      "builder": "passthrough"
+    },
+    "expected_bytes": "24 23 55 55 00 00 00 41 0d",
+    "evidence": [
+      "anchors/java/m6/d.java",
+      "anchors/java/j6/s.java:191-219; j6/i.java:1164-1167",
+      "anchors/java/o6/d.java:81-108",
+      "anchors/java/com/mobile/intellibed/services/BTLEGATTService.java:163-168"
+    ]
+  },
+  {
+    "id": "P1-b",
+    "protocol": "P1",
+    "action": "anti-snore",
+    "inputs": {
+      "payload": "00 80 00 00",
+      "builder": "old"
+    },
+    "expected_bytes": "e5 fe 16 00 80 00 00 86",
+    "evidence": [
+      "anchors/java/m6/d.java",
+      "anchors/java/j6/s.java:194-196",
+      "anchors/java/o6/c.java:87-114",
+      "anchors/java/com/mobile/intellibed/services/BTLEGATTService.java:163-168"
+    ]
+  },
+  {
+    "id": "P2-b",
+    "protocol": "P2",
+    "action": "anti-snore",
+    "inputs": {
+      "payload": "24 23 80 09 00 00 89 41 0d",
+      "builder": "passthrough"
+    },
+    "expected_bytes": "24 23 80 09 00 00 89 41 0d",
+    "evidence": [
+      "anchors/java/m6/d.java",
+      "anchors/java/j6/s.java:194-196",
+      "anchors/java/o6/d.java:81-108",
+      "anchors/java/com/mobile/intellibed/services/BTLEGATTService.java:163-168"
+    ]
+  },
+  {
+    "id": "P1-Q",
+    "protocol": "P1",
+    "action": "TV / reading",
+    "inputs": {
+      "payload": "00 10 00 00",
+      "builder": "old"
+    },
+    "expected_bytes": "e5 fe 16 00 10 00 00 f6",
+    "evidence": [
+      "anchors/java/m6/d.java",
+      "anchors/java/j6/s.java:211-214",
+      "anchors/java/o6/c.java:87-114",
+      "anchors/java/com/mobile/intellibed/services/BTLEGATTService.java:163-168"
+    ]
+  },
+  {
+    "id": "P2-Q",
+    "protocol": "P2",
+    "action": "TV / reading",
+    "inputs": {
+      "payload": "24 23 80 0a 00 00 8a 41 0d",
+      "builder": "passthrough"
+    },
+    "expected_bytes": "24 23 80 0a 00 00 8a 41 0d",
+    "evidence": [
+      "anchors/java/m6/d.java",
+      "anchors/java/j6/s.java:211-214",
+      "anchors/java/o6/d.java:81-108",
+      "anchors/java/com/mobile/intellibed/services/BTLEGATTService.java:163-168"
+    ]
+  },
+  {
+    "id": "P1-R",
+    "protocol": "P1",
+    "action": "zero gravity",
+    "inputs": {
+      "payload": "00 40 00 00",
+      "builder": "old"
+    },
+    "expected_bytes": "e5 fe 16 00 40 00 00 c6",
+    "evidence": [
+      "anchors/java/m6/d.java",
+      "anchors/java/j6/s.java:215-218",
+      "anchors/java/o6/c.java:87-114",
+      "anchors/java/com/mobile/intellibed/services/BTLEGATTService.java:163-168"
+    ]
+  },
+  {
+    "id": "P2-R",
+    "protocol": "P2",
+    "action": "zero gravity",
+    "inputs": {
+      "payload": "24 23 80 0b 00 00 8b 41 0d",
+      "builder": "passthrough"
+    },
+    "expected_bytes": "24 23 80 0b 00 00 8b 41 0d",
+    "evidence": [
+      "anchors/java/m6/d.java",
+      "anchors/java/j6/s.java:215-218",
+      "anchors/java/o6/d.java:81-108",
+      "anchors/java/com/mobile/intellibed/services/BTLEGATTService.java:163-168"
+    ]
+  },
+  {
+    "id": "P1-P",
+    "protocol": "P1",
+    "action": "lounge",
+    "inputs": {
+      "payload": "00 20 00 00",
+      "builder": "old"
+    },
+    "expected_bytes": "e5 fe 16 00 20 00 00 e6",
+    "evidence": [
+      "anchors/java/m6/d.java",
+      "anchors/java/j6/s.java:204-207;243-252; MainActivity.java:419-420",
+      "anchors/java/o6/c.java:87-114",
+      "anchors/java/com/mobile/intellibed/services/BTLEGATTService.java:163-168"
+    ]
+  },
+  {
+    "id": "P2-P",
+    "protocol": "P2",
+    "action": "lounge",
+    "inputs": {
+      "payload": "24 23 80 0c 00 00 8c 41 0d",
+      "builder": "passthrough"
+    },
+    "expected_bytes": "24 23 80 0c 00 00 8c 41 0d",
+    "evidence": [
+      "anchors/java/m6/d.java",
+      "anchors/java/j6/s.java:204-207;243-252; MainActivity.java:419-420",
+      "anchors/java/o6/d.java:81-108",
+      "anchors/java/com/mobile/intellibed/services/BTLEGATTService.java:163-168"
+    ]
+  },
+  {
+    "id": "P1-C",
+    "protocol": "P1",
+    "action": "increase head massage",
+    "inputs": {
+      "payload": "00 08 00 00",
+      "builder": "old"
+    },
+    "expected_bytes": "e5 fe 16 00 08 00 00 fe",
+    "evidence": [
+      "anchors/java/m6/d.java",
+      "anchors/java/j6/i.java:1416-1418; MainActivity.java:422-423",
+      "anchors/java/o6/c.java:87-114",
+      "anchors/java/com/mobile/intellibed/services/BTLEGATTService.java:163-168"
+    ]
+  },
+  {
+    "id": "P2-C",
+    "protocol": "P2",
+    "action": "increase head massage",
+    "inputs": {
+      "payload": "24 23 81 02 00 00 83 41 0d",
+      "builder": "passthrough"
+    },
+    "expected_bytes": "24 23 81 02 00 00 83 41 0d",
+    "evidence": [
+      "anchors/java/m6/d.java",
+      "anchors/java/j6/i.java:1416-1418; MainActivity.java:422-423",
+      "anchors/java/o6/d.java:81-108",
+      "anchors/java/com/mobile/intellibed/services/BTLEGATTService.java:163-168"
+    ]
+  },
+  {
+    "id": "P1-B",
+    "protocol": "P1",
+    "action": "decrease head massage",
+    "inputs": {
+      "payload": "00 00 80 00",
+      "builder": "old"
+    },
+    "expected_bytes": "e5 fe 16 00 00 80 00 86",
+    "evidence": [
+      "anchors/java/m6/d.java",
+      "anchors/java/j6/i.java:1412-1414; MainActivity.java:448-449",
+      "anchors/java/o6/c.java:87-114",
+      "anchors/java/com/mobile/intellibed/services/BTLEGATTService.java:163-168"
+    ]
+  },
+  {
+    "id": "P2-B",
+    "protocol": "P2",
+    "action": "decrease head massage",
+    "inputs": {
+      "payload": "24 23 81 04 00 00 85 41 0d",
+      "builder": "passthrough"
+    },
+    "expected_bytes": "24 23 81 04 00 00 85 41 0d",
+    "evidence": [
+      "anchors/java/m6/d.java",
+      "anchors/java/j6/i.java:1412-1414; MainActivity.java:448-449",
+      "anchors/java/o6/d.java:81-108",
+      "anchors/java/com/mobile/intellibed/services/BTLEGATTService.java:163-168"
+    ]
+  },
+  {
+    "id": "P1-A",
+    "protocol": "P1",
+    "action": "increase feet massage",
+    "inputs": {
+      "payload": "00 04 00 00",
+      "builder": "old"
+    },
+    "expected_bytes": "e5 fe 16 00 04 00 00 02",
+    "evidence": [
+      "anchors/java/m6/d.java",
+      "anchors/java/j6/i.java:1408-1410; MainActivity.java:428-429",
+      "anchors/java/o6/c.java:87-114",
+      "anchors/java/com/mobile/intellibed/services/BTLEGATTService.java:163-168"
+    ]
+  },
+  {
+    "id": "P2-A",
+    "protocol": "P2",
+    "action": "increase feet massage",
+    "inputs": {
+      "payload": "24 23 81 03 00 00 82 41 0d",
+      "builder": "passthrough"
+    },
+    "expected_bytes": "24 23 81 03 00 00 82 41 0d",
+    "evidence": [
+      "anchors/java/m6/d.java",
+      "anchors/java/j6/i.java:1408-1410; MainActivity.java:428-429",
+      "anchors/java/o6/d.java:81-108",
+      "anchors/java/com/mobile/intellibed/services/BTLEGATTService.java:163-168"
+    ]
+  },
+  {
+    "id": "P1-z",
+    "protocol": "P1",
+    "action": "decrease feet massage",
+    "inputs": {
+      "payload": "00 00 00 01",
+      "builder": "old"
+    },
+    "expected_bytes": "e5 fe 16 00 00 00 01 05",
+    "evidence": [
+      "anchors/java/m6/d.java",
+      "anchors/java/j6/i.java:1404-1406; MainActivity.java:416-417",
+      "anchors/java/o6/c.java:87-114",
+      "anchors/java/com/mobile/intellibed/services/BTLEGATTService.java:163-168"
+    ]
+  },
+  {
+    "id": "P2-z",
+    "protocol": "P2",
+    "action": "decrease feet massage",
+    "inputs": {
+      "payload": "24 23 81 05 00 00 84 41 0d",
+      "builder": "passthrough"
+    },
+    "expected_bytes": "24 23 81 05 00 00 84 41 0d",
+    "evidence": [
+      "anchors/java/m6/d.java",
+      "anchors/java/j6/i.java:1404-1406; MainActivity.java:416-417",
+      "anchors/java/o6/d.java:81-108",
+      "anchors/java/com/mobile/intellibed/services/BTLEGATTService.java:163-168"
+    ]
+  },
+  {
+    "id": "P1-y",
+    "protocol": "P1",
+    "action": "stop all massage",
+    "inputs": {
+      "payload": "00 00 00 02",
+      "builder": "old"
+    },
+    "expected_bytes": "e5 fe 16 00 00 00 02 04",
+    "evidence": [
+      "anchors/java/m6/d.java",
+      "anchors/java/j6/i.java:1184-1188; MainActivity.java:425-426",
+      "anchors/java/o6/c.java:87-114",
+      "anchors/java/com/mobile/intellibed/services/BTLEGATTService.java:163-168"
+    ]
+  },
+  {
+    "id": "P2-y",
+    "protocol": "P2",
+    "action": "stop all massage",
+    "inputs": {
+      "payload": "24 23 81 00 00 00 81 41 0d",
+      "builder": "passthrough"
+    },
+    "expected_bytes": "24 23 81 00 00 00 81 41 0d",
+    "evidence": [
+      "anchors/java/m6/d.java",
+      "anchors/java/j6/i.java:1184-1188; MainActivity.java:425-426",
+      "anchors/java/o6/d.java:81-108",
+      "anchors/java/com/mobile/intellibed/services/BTLEGATTService.java:163-168"
+    ]
+  },
+  {
+    "id": "P1-D",
+    "protocol": "P1",
+    "action": "increase massage timer",
+    "inputs": {
+      "payload": "00 02 00 00",
+      "builder": "old"
+    },
+    "expected_bytes": "e5 fe 16 00 02 00 00 04",
+    "evidence": [
+      "anchors/java/m6/d.java",
+      "anchors/java/j6/i.java:1425-1427; MainActivity.java:445-446; smali/m6/d.smali:6436-6508",
+      "anchors/java/o6/c.java:87-114",
+      "anchors/java/com/mobile/intellibed/services/BTLEGATTService.java:163-168"
+    ]
+  },
+  {
+    "id": "P2-D",
+    "protocol": "P2",
+    "action": "increase massage timer",
+    "inputs": {
+      "payload": "00 02 00 00",
+      "builder": "passthrough"
+    },
+    "expected_bytes": "00 02 00 00",
+    "evidence": [
+      "anchors/java/m6/d.java",
+      "anchors/java/j6/i.java:1425-1427; MainActivity.java:445-446; smali/m6/d.smali:6436-6508",
+      "anchors/java/o6/d.java:81-108",
+      "anchors/java/com/mobile/intellibed/services/BTLEGATTService.java:163-168"
+    ]
+  },
+  {
+    "id": "P1-q()",
+    "protocol": "P1",
+    "action": "light toggle",
+    "inputs": {
+      "payload": "00 00 02 00",
+      "builder": "old"
+    },
+    "expected_bytes": "e5 fe 16 00 00 02 00 04",
+    "evidence": [
+      "anchors/java/m6/d.java",
+      "anchors/java/j6/i.java:1363-1371;241-250",
+      "anchors/java/o6/c.java",
+      "anchors/java/com/mobile/intellibed/services/BTLEGATTService.java:163-168"
+    ]
+  },
+  {
+    "id": "P2-L()",
+    "protocol": "P2",
+    "action": "head massage off",
+    "inputs": {
+      "payload": "82 79 00 00",
+      "builder": "xor"
+    },
+    "expected_bytes": "24 23 82 79 00 00 fb 41 0d",
+    "evidence": [
+      "anchors/java/m6/d.java",
+      "anchors/java/j6/i.java:539-549;842-845",
+      "anchors/java/o6/d.java",
+      "anchors/java/com/mobile/intellibed/services/BTLEGATTService.java:163-168"
+    ]
+  },
+  {
+    "id": "P2-J()",
+    "protocol": "P2",
+    "action": "head massage low / power on",
+    "inputs": {
+      "payload": "82 79 00 28",
+      "builder": "xor"
+    },
+    "expected_bytes": "24 23 82 79 00 28 d3 41 0d",
+    "evidence": [
+      "anchors/java/m6/d.java",
+      "anchors/java/j6/i.java:464-470;529-535;1259-1269;1285-1299",
+      "anchors/java/o6/d.java",
+      "anchors/java/com/mobile/intellibed/services/BTLEGATTService.java:163-168"
+    ]
+  },
+  {
+    "id": "P2-K()",
+    "protocol": "P2",
+    "action": "head massage medium",
+    "inputs": {
+      "payload": "82 79 00 50",
+      "builder": "xor"
+    },
+    "expected_bytes": "24 23 82 79 00 50 ab 41 0d",
+    "evidence": [
+      "anchors/java/m6/d.java",
+      "anchors/java/j6/i.java:150-158;1272-1283",
+      "anchors/java/o6/d.java",
+      "anchors/java/com/mobile/intellibed/services/BTLEGATTService.java:163-168"
+    ]
+  },
+  {
+    "id": "P2-I()",
+    "protocol": "P2",
+    "action": "head massage high",
+    "inputs": {
+      "payload": "82 79 00 78",
+      "builder": "xor"
+    },
+    "expected_bytes": "24 23 82 79 00 78 83 41 0d",
+    "evidence": [
+      "anchors/java/m6/d.java",
+      "anchors/java/j6/i.java:176-184;1246-1257",
+      "anchors/java/o6/d.java",
+      "anchors/java/com/mobile/intellibed/services/BTLEGATTService.java:163-168"
+    ]
+  },
+  {
+    "id": "P2-H()",
+    "protocol": "P2",
+    "action": "feet massage off",
+    "inputs": {
+      "payload": "82 7a 00 00",
+      "builder": "xor"
+    },
+    "expected_bytes": "24 23 82 7a 00 00 f8 41 0d",
+    "evidence": [
+      "anchors/java/m6/d.java",
+      "anchors/java/j6/i.java:553-561;837-840",
+      "anchors/java/o6/d.java",
+      "anchors/java/com/mobile/intellibed/services/BTLEGATTService.java:163-168"
+    ]
+  },
+  {
+    "id": "P2-F()",
+    "protocol": "P2",
+    "action": "feet massage low / power on",
+    "inputs": {
+      "payload": "82 7a 00 28",
+      "builder": "xor"
+    },
+    "expected_bytes": "24 23 82 7a 00 28 d0 41 0d",
+    "evidence": [
+      "anchors/java/m6/d.java",
+      "anchors/java/j6/i.java:202-210;228-236;1205-1216;1231-1244",
+      "anchors/java/o6/d.java",
+      "anchors/java/com/mobile/intellibed/services/BTLEGATTService.java:163-168"
+    ]
+  },
+  {
+    "id": "P2-G()",
+    "protocol": "P2",
+    "action": "feet massage medium",
+    "inputs": {
+      "payload": "82 7a 00 50",
+      "builder": "xor"
+    },
+    "expected_bytes": "24 23 82 7a 00 50 a8 41 0d",
+    "evidence": [
+      "anchors/java/m6/d.java",
+      "anchors/java/j6/i.java:254-262;1218-1229",
+      "anchors/java/o6/d.java",
+      "anchors/java/com/mobile/intellibed/services/BTLEGATTService.java:163-168"
+    ]
+  },
+  {
+    "id": "P2-E()",
+    "protocol": "P2",
+    "action": "feet massage high",
+    "inputs": {
+      "payload": "82 7a 00 78",
+      "builder": "xor"
+    },
+    "expected_bytes": "24 23 82 7a 00 78 80 41 0d",
+    "evidence": [
+      "anchors/java/m6/d.java",
+      "anchors/java/j6/i.java:278-286;1192-1204",
+      "anchors/java/o6/d.java",
+      "anchors/java/com/mobile/intellibed/services/BTLEGATTService.java:163-168"
+    ]
+  },
+  {
+    "id": "P2-m()",
+    "protocol": "P2",
+    "action": "massage timer low / nominal 10 minutes",
+    "inputs": {
+      "payload": "82 7b 00 00",
+      "builder": "xor"
+    },
+    "expected_bytes": "24 23 82 7b 00 00 f9 41 0d",
+    "evidence": [
+      "anchors/java/m6/d.java",
+      "anchors/java/j6/i.java:372-380;1314-1324",
+      "anchors/java/o6/d.java",
+      "anchors/java/com/mobile/intellibed/services/BTLEGATTService.java:163-168"
+    ]
+  },
+  {
+    "id": "P2-o()",
+    "protocol": "P2",
+    "action": "massage timer medium / nominal 20 minutes",
+    "inputs": {
+      "payload": "82 7c 00 00",
+      "builder": "xor"
+    },
+    "expected_bytes": "24 23 82 7c 00 00 fe 41 0d",
+    "evidence": [
+      "anchors/java/m6/d.java",
+      "anchors/java/j6/i.java:398-406;1325-1337",
+      "anchors/java/o6/d.java",
+      "anchors/java/com/mobile/intellibed/services/BTLEGATTService.java:163-168"
+    ]
+  },
+  {
+    "id": "P2-n()",
+    "protocol": "P2",
+    "action": "massage timer high / nominal 30 minutes",
+    "inputs": {
+      "payload": "82 7d 00 00",
+      "builder": "xor"
+    },
+    "expected_bytes": "24 23 82 7d 00 00 ff 41 0d",
+    "evidence": [
+      "anchors/java/m6/d.java",
+      "anchors/java/j6/i.java:425-433;1301-1313",
+      "anchors/java/o6/d.java",
+      "anchors/java/com/mobile/intellibed/services/BTLEGATTService.java:163-168"
+    ]
+  },
+  {
+    "id": "P2-l()",
+    "protocol": "P2",
+    "action": "white / light power on",
+    "inputs": {
+      "payload": "24 23 80 f1 00 00 71 41 0d",
+      "builder": "passthrough"
+    },
+    "expected_bytes": "24 23 80 f1 00 00 71 41 0d",
+    "evidence": [
+      "anchors/java/m6/d.java",
+      "anchors/java/j6/i.java:385-459;1372-1400",
+      "anchors/java/o6/d.java",
+      "anchors/java/com/mobile/intellibed/services/BTLEGATTService.java:163-168"
+    ]
+  },
+  {
+    "id": "P2-k()",
+    "protocol": "P2",
+    "action": "white / light power off",
+    "inputs": {
+      "payload": "24 23 80 f2 00 00 72 41 0d",
+      "builder": "passthrough"
+    },
+    "expected_bytes": "24 23 80 f2 00 00 72 41 0d",
+    "evidence": [
+      "anchors/java/m6/d.java",
+      "anchors/java/j6/i.java:385-459;1372-1400",
+      "anchors/java/o6/d.java",
+      "anchors/java/com/mobile/intellibed/services/BTLEGATTService.java:163-168"
+    ]
+  },
+  {
+    "id": "P2-e()",
+    "protocol": "P2",
+    "action": "blue component 1",
+    "inputs": {
+      "payload": "80 e8 00 02",
+      "builder": "xor"
+    },
+    "expected_bytes": "24 23 80 e8 00 02 6a 41 0d",
+    "evidence": [
+      "anchors/java/m6/d.java",
+      "anchors/java/j6/i.java:1132-1146;847-851;670-705",
+      "anchors/java/o6/d.java",
+      "anchors/java/com/mobile/intellibed/services/BTLEGATTService.java:163-168"
+    ]
+  },
+  {
+    "id": "P2-d()",
+    "protocol": "P2",
+    "action": "blue component 2",
+    "inputs": {
+      "payload": "80 e9 00 52",
+      "builder": "xor"
+    },
+    "expected_bytes": "24 23 80 e9 00 52 3b 41 0d",
+    "evidence": [
+      "anchors/java/m6/d.java",
+      "anchors/java/j6/i.java:1132-1146;847-851;670-705",
+      "anchors/java/o6/d.java",
+      "anchors/java/com/mobile/intellibed/services/BTLEGATTService.java:163-168"
+    ]
+  },
+  {
+    "id": "P2-c()",
+    "protocol": "P2",
+    "action": "blue component 3",
+    "inputs": {
+      "payload": "80 ea 00 77",
+      "builder": "xor"
+    },
+    "expected_bytes": "24 23 80 ea 00 77 1d 41 0d",
+    "evidence": [
+      "anchors/java/m6/d.java",
+      "anchors/java/j6/i.java:1132-1146;847-851;670-705",
+      "anchors/java/o6/d.java",
+      "anchors/java/com/mobile/intellibed/services/BTLEGATTService.java:163-168"
+    ]
+  },
+  {
+    "id": "P2-x()",
+    "protocol": "P2",
+    "action": "green component 1",
+    "inputs": {
+      "payload": "80 e8 00 00",
+      "builder": "xor"
+    },
+    "expected_bytes": "24 23 80 e8 00 00 68 41 0d",
+    "evidence": [
+      "anchors/java/m6/d.java",
+      "anchors/java/j6/i.java:1148-1162;853-857;591-628",
+      "anchors/java/o6/d.java",
+      "anchors/java/com/mobile/intellibed/services/BTLEGATTService.java:163-168"
+    ]
+  },
+  {
+    "id": "P2-w()",
+    "protocol": "P2",
+    "action": "green component 2",
+    "inputs": {
+      "payload": "80 e9 00 40",
+      "builder": "xor"
+    },
+    "expected_bytes": "24 23 80 e9 00 40 29 41 0d",
+    "evidence": [
+      "anchors/java/m6/d.java",
+      "anchors/java/j6/i.java:1148-1162;853-857;591-628",
+      "anchors/java/o6/d.java",
+      "anchors/java/com/mobile/intellibed/services/BTLEGATTService.java:163-168"
+    ]
+  },
+  {
+    "id": "P2-v()",
+    "protocol": "P2",
+    "action": "green component 3",
+    "inputs": {
+      "payload": "80 ea 00 00",
+      "builder": "xor"
+    },
+    "expected_bytes": "24 23 80 ea 00 00 6a 41 0d",
+    "evidence": [
+      "anchors/java/m6/d.java",
+      "anchors/java/j6/i.java:1148-1162;853-857;591-628",
+      "anchors/java/o6/d.java",
+      "anchors/java/com/mobile/intellibed/services/BTLEGATTService.java:163-168"
+    ]
+  },
+  {
+    "id": "P2-u()",
+    "protocol": "P2",
+    "action": "light blue component 1",
+    "inputs": {
+      "payload": "80 e8 00 02",
+      "builder": "xor"
+    },
+    "expected_bytes": "24 23 80 e8 00 02 6a 41 0d",
+    "evidence": [
+      "anchors/java/m6/d.java",
+      "anchors/java/j6/i.java:1347-1361;859-863;630-667",
+      "anchors/java/o6/d.java",
+      "anchors/java/com/mobile/intellibed/services/BTLEGATTService.java:163-168"
+    ]
+  },
+  {
+    "id": "P2-t()",
+    "protocol": "P2",
+    "action": "light blue component 2",
+    "inputs": {
+      "payload": "80 e9 00 78",
+      "builder": "xor"
+    },
+    "expected_bytes": "24 23 80 e9 00 78 11 41 0d",
+    "evidence": [
+      "anchors/java/m6/d.java",
+      "anchors/java/j6/i.java:1347-1361;859-863;630-667",
+      "anchors/java/o6/d.java",
+      "anchors/java/com/mobile/intellibed/services/BTLEGATTService.java:163-168"
+    ]
+  },
+  {
+    "id": "P2-s()",
+    "protocol": "P2",
+    "action": "light blue component 3",
+    "inputs": {
+      "payload": "80 ea 00 32",
+      "builder": "xor"
+    },
+    "expected_bytes": "24 23 80 ea 00 32 58 41 0d",
+    "evidence": [
+      "anchors/java/m6/d.java",
+      "anchors/java/j6/i.java:1347-1361;859-863;630-667",
+      "anchors/java/o6/d.java",
+      "anchors/java/com/mobile/intellibed/services/BTLEGATTService.java:163-168"
+    ]
+  },
+  {
+    "id": "P2-O()",
+    "protocol": "P2",
+    "action": "purple component 1",
+    "inputs": {
+      "payload": "80 e8 00 50",
+      "builder": "xor"
+    },
+    "expected_bytes": "24 23 80 e8 00 50 38 41 0d",
+    "evidence": [
+      "anchors/java/m6/d.java",
+      "anchors/java/j6/i.java:1168-1182;865-869;708-718;163-198",
+      "anchors/java/o6/d.java",
+      "anchors/java/com/mobile/intellibed/services/BTLEGATTService.java:163-168"
+    ]
+  },
+  {
+    "id": "P2-N()",
+    "protocol": "P2",
+    "action": "purple component 2",
+    "inputs": {
+      "payload": "80 e9 00 02",
+      "builder": "xor"
+    },
+    "expected_bytes": "24 23 80 e9 00 02 6b 41 0d",
+    "evidence": [
+      "anchors/java/m6/d.java",
+      "anchors/java/j6/i.java:1168-1182;865-869;708-718;163-198",
+      "anchors/java/o6/d.java",
+      "anchors/java/com/mobile/intellibed/services/BTLEGATTService.java:163-168"
+    ]
+  },
+  {
+    "id": "P2-M()",
+    "protocol": "P2",
+    "action": "purple component 3",
+    "inputs": {
+      "payload": "80 ea 00 77",
+      "builder": "xor"
+    },
+    "expected_bytes": "24 23 80 ea 00 77 1d 41 0d",
+    "evidence": [
+      "anchors/java/m6/d.java",
+      "anchors/java/j6/i.java:1168-1182;865-869;708-718;163-198",
+      "anchors/java/o6/d.java",
+      "anchors/java/com/mobile/intellibed/services/BTLEGATTService.java:163-168"
+    ]
+  }
+]

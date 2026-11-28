@@ -65,6 +65,7 @@ from .const import (
     BED_TYPE_COMFYDS,
     BED_TYPE_CUSTOMATIC_DEMO,
     BED_TYPE_DOUBLESLEEP,
+    BED_TYPE_DREAMOTION_SMART,
     BED_TYPE_ENSO2,
     BED_TYPE_ERGOBED,
     BED_TYPE_ESHINE,
@@ -407,6 +408,7 @@ _OWNED_BY_BED_TYPE: Final[dict[str, frozenset[str]]] = {
     "majestichome": GENERIC_FIELDS - {CONF_PROTOCOL_VARIANT, CONF_MOTOR_PULSE_COUNT},
     BED_TYPE_OKIMIKI: _APP_DEFINED - {CONF_PROTOCOL_VARIANT},
     BED_TYPE_LIKIMIO: _APP_DEFINED - {CONF_PROTOCOL_VARIANT},
+    "dreamotion_smart": GENERIC_FIELDS - {CONF_MOTOR_PULSE_COUNT},
     "awmotion": _APP_DEFINED - {CONF_PROTOCOL_VARIANT, CONF_MOTOR_PULSE_COUNT},
     "muuegm": _APP_DEFINED - {CONF_PROTOCOL_VARIANT, CONF_MOTOR_PULSE_COUNT},
     "dreamsense": _APP_DEFINED - {CONF_PROTOCOL_VARIANT, CONF_MOTOR_PULSE_COUNT},
@@ -816,6 +818,12 @@ def _logicdata_questions(
 
 
 _DECLARED: Final[dict[str, SetupProfile]] = {
+    "intellibed": SetupProfile(
+        owns={CONF_MOTOR_COUNT: 2, CONF_HAS_MASSAGE: False,
+              CONF_DISABLE_ANGLE_SENSING: True},
+        questions=(Question(CONF_PROTOCOL_VARIANT, {"old": "Old / white remote", "hhc": "HHC / silver remote"}),),
+        title=lambda data: "Intellibed Sleep Genius",
+    ),
     BED_TYPE_SILVERMOTION: SetupProfile(
         owns={
             CONF_MOTOR_COUNT: 2,
@@ -1155,6 +1163,14 @@ def _classic_layouts(data: Mapping[str, Any]) -> Mapping[Any, str]:
 
         unavailable = EXCLUDED_LAYOUTS | NAVIGATION_LAYOUTS.keys()
         codes -= unavailable | {k for k, v in ALIASES.items() if v in unavailable}
+    if app == "innova2":
+        from .profiles.innova_control import EXCLUDED_LAYOUTS as INNOVA_CONTROL_EXCLUDED_LAYOUTS
+
+        codes -= INNOVA_CONTROL_EXCLUDED_LAYOUTS | {
+            alias
+            for alias, layout in MANUAL_ALIASES.get(app, {}).items()
+            if layout in INNOVA_CONTROL_EXCLUDED_LAYOUTS
+        }
     if app == "homezone":
         from .profiles.homezone import EXCLUDED_LAYOUTS as HOMEZONE_EXCLUDED_LAYOUTS
 
@@ -1234,6 +1250,10 @@ def _classic_errors(data: Mapping[str, Any]) -> dict[str, str]:
         from .profiles.bedsmart import EXCLUDED_LAYOUTS, NAVIGATION_LAYOUTS
 
         excluded = excluded | EXCLUDED_LAYOUTS | NAVIGATION_LAYOUTS.keys()
+    if data.get(CONF_PROTOCOL_VARIANT) == "innova2":
+        from .profiles.innova_control import EXCLUDED_LAYOUTS as INNOVA_CONTROL_EXCLUDED
+
+        excluded |= INNOVA_CONTROL_EXCLUDED
     if data.get(CONF_PROTOCOL_VARIANT) == "homezone":
         from .profiles.homezone import EXCLUDED_LAYOUTS as HOMEZONE_EXCLUDED_LAYOUTS
 
@@ -1268,6 +1288,23 @@ def _classic_seed(
         if name is not None and dreamlab.scan_matches(name):
             return {**data, CONF_BLE_DEVICE_NAME: name}
         return dict(data)
+    if variant == "innova2":
+        from .beds.richmat_classic.profiles import resolve_layout
+        from .profiles import innova_control
+
+        name = advertised_local_name(discovered)
+        if name is None or not innova_control.scan_matches(name):
+            return dict(data)
+        seeded = {**data, CONF_BLE_DEVICE_NAME: name}
+        if "209A05" not in name.upper():
+            try:
+                layout = resolve_layout("innova2", name, from_name=True,
+                                        russian=hass.config.language.partition("-")[0] == "ru")
+            except ValueError:
+                return seeded
+            if layout not in innova_control.EXCLUDED_LAYOUTS:
+                seeded.setdefault(CONF_PRODUCT_TYPE, layout)
+        return seeded
     if variant != maxprime.APP:
         return dict(data)
     seeded = _discovered_name_seed(hass, data, discovered)
@@ -3306,7 +3343,7 @@ SETUP_PROFILES: Final[dict[str, SetupProfile]] = {
                 default=OPTIONAL,
                 text=True,
                 advanced=True,
-                when={"field": CONF_PROTOCOL_VARIANT, "operator": ConditionOperator.IN, "value": ["dreamlab2", "homezone"]},
+                when={"field": CONF_PROTOCOL_VARIANT, "operator": ConditionOperator.IN, "value": ["dreamlab2", "homezone", "innova2"]},
             ),
         ),
         normalize=_classic_normalize,
@@ -4104,6 +4141,11 @@ SETUP_PROFILES: Final[dict[str, SetupProfile]] = {
         },
         questions=(Question(CONF_PROTOCOL_VARIANT, AMBIENT_LAYOUTS),),
         title=lambda _data: "M3 Ambient",
+    ),
+    BED_TYPE_DREAMOTION_SMART: SetupProfile(
+        owns={CONF_MOTOR_COUNT: 4, CONF_HAS_MASSAGE: False,
+              CONF_DISABLE_ANGLE_SENSING: True, CONF_PROTOCOL_VARIANT: "auto",
+              CONF_MOTOR_PULSE_DELAY_MS: 300},
     ),
     BED_TYPE_VINDO: SetupProfile(
         owns={

@@ -395,6 +395,7 @@ actions; its bounded `hold_control` behavior has separate timing in the
 | Customatic Clarity app (Rize Clarity) | `customatic_clarity` | 8 | 120 ms |
 | Customatic Jerome's C app | `customatic_jeromes` | 8 | 120 ms |
 | Customatic Remedy app (Rize Remedy) | `customatic_remedy` | 8 | 120 ms |
+| Dreamotion Smart (DreamMotion Pro app) | `dreamotion_smart` | 4 | 300 ms |
 | eShine app (E2000 to E5000) | `eshine_okin` | 10 | 300 ms |
 | Flexispot app | `flexispot` | 5 | 200 ms |
 | FSM Relax app | `fsm_relax` | 10 | 60 ms |
@@ -1010,6 +1011,13 @@ The searchable **Ronco Motion app** choice asks for ECONOMY (Fk9rm) or PREMIUM
 (Fk8rm). Select the layout used in Ronco Motion 1.2; Bluetooth names cannot
 identify it. PREMIUM adds Pillow and a light toggle. Layout settings belong to
 one physical side of a two-address pair. See [Ronco Motion](beds/richmat.md#ronco-motion).
+
+### Innova Control
+
+Choose **Innova Control app** for `com.richmat.innova2`, then select the remote
+layout or concrete model-picker choice. This is distinct from INNOVA
+(`com.ore.sfm`). Mode tabs remain logical modes, not paired bed sides. Optional
+light/aroma entities require capability replies on the current connection.
 
 ### PowersBedding
 
