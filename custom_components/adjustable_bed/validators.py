@@ -141,6 +141,7 @@ from .profiles.sleeptime import SELECTORS as SLEEPTIME_SELECTORS
 from .profiles.somos import CHOICES as SOMOS_CHOICES
 from .profiles.super_colchones import VARIANTS as SUPER_COLCHONES_VARIANTS
 from .profiles.symphony import SELECTORS as SYMPHONY_SELECTORS
+from .profiles.thrivesleep import VARIANTS as THRIVESLEEP_VARIANTS
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -221,6 +222,7 @@ VARIANTS_BY_BED_TYPE: dict[str, dict[str, str]] = {
     "silksnow": SILKSNOW_CHOICES,
     "ronco_motion": RONCO_MOTION_VARIANTS,
     "luuna": LUUNA_VARIANTS,
+    "thrivesleep": THRIVESLEEP_VARIANTS,
     "super_colchones": SUPER_COLCHONES_VARIANTS,
     "personal_comfort": PERSONAL_COMFORT_ROUTES,
     "instant_comfort": INSTANT_COMFORT_ROUTES,

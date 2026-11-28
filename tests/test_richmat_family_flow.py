@@ -72,6 +72,7 @@ APPS = [
     "enso2",
     "motionflex",
     "remote",
+    "thrivesleep",
 ]
 
 
