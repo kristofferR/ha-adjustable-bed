@@ -1801,6 +1801,24 @@
       "konfurt_massage_wave": {"name": "Cycle massage wave"},
       "konfurt_massage_timer": {"name": "Cycle massage timer"},
       "konfurt_query_alarm": {"name": "Refresh bed alarm"},
+      "dynasty_base_a_head_massage": {
+        "name": "Head massage"
+      },
+      "dynasty_base_a_foot_massage": {
+        "name": "Foot massage"
+      },
+      "dynasty_base_a_massage_power": {
+        "name": "Toggle massage"
+      },
+      "dynasty_base_a_massage_timer": {
+        "name": "Cycle massage timer"
+      },
+      "dynasty_base_a_massage_type": {
+        "name": "Cycle massage type"
+      },
+      "dynasty_base_a_flat_zero_g": {
+        "name": "Flat and zero gravity"
+      },
       "smart_base_query": {"name": "Refresh bed settings"},
       "smart_base_cancel_alarm": {"name": "Cancel alarm"},
       "active_sleep_refresh": {
@@ -5164,6 +5182,9 @@
       "konfurt_alarm_type": {"name": "Bed alarm action code"},
       "ergosportive_twitch": {"name": "Movement count"},
       "dunlopillo_massage_timer": {"name": "Current massage timer"},
+      "dynasty_base_a_timer": {
+        "name": "Massage timer"
+      },
       "purely_sleep_protocol_version": {
         "name": "Protocol version"
       },
@@ -13093,6 +13114,8 @@
       "message": "Use a supported saved position instead of a dedicated flat command."
     },
     "ghostbed_control_unavailable": {"message": "This GhostBed control or value is unavailable."},
+    "dynasty_base_a_reconnect_required": {"message": "Reconnect the bed before toggling massage power because the previous status request could not be verified."},
+    "dynasty_base_a_status_required": {"message": "Wait for current massage status before toggling massage power."},
     "ghostbed_status_required": {"message": "Wait for current bed status before editing this setting."},
     "ghostbed_alarm_overlap": {"message": "Choose alarms more than 30 minutes apart on shared repeat days."},
     "powersbedding_name": {"message": "Choose the PowersBedding receiver whose Bluetooth name starts with okin or smartbed."},
