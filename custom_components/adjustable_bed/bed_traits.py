@@ -266,6 +266,7 @@ _BED_TRAITS: Final[dict[str, BedTraits]] = {
     "berun": replace(_NO_ANGLES_SCOPED, owns_device_info_reads=True, connection_timeout=5),
     "nerum": replace(_NO_ANGLES_SCOPED, owns_device_info_reads=True),
     "relax_motion": _NO_ANGLES_SCOPED,
+    "easyctrl": replace(_NO_ANGLES_SCOPED, owns_device_info_reads=True, single_address_native_both=False),
     "cheerssleep": replace(_NO_ANGLES_SCOPED, owns_device_info_reads=True, single_address_native_both=False),
     "smart_sleep": replace(_NO_ANGLES_SCOPED, owns_device_info_reads=True, connection_timeout=5),
     "sleep_assistant": _NO_ANGLES_SCOPED,

@@ -41,7 +41,7 @@ app. Every guide follows the [bed guide format](BED_GUIDE_FORMAT.md).
 | [BedJet PowerLayer](beds/bedjet-powerlayer.md) | The BedJet PowerLayer adjustable frame | |
 | [SILVERmotion Android](beds/silvermotion.md) | SILVERmotion Android SimplicityFrame beds | |
 | [Casper Base](beds/casper-base.md) | The Casper Base app, sleep sensors and remote finder | |
-| [CheersSleep](beds/cheerssleep.md) | The CheersSleep app | |
+| [CheersSleep / EasyCtrl](beds/cheerssleep.md) | CheersSleep and EasyCtrl apps on the P1 carrier | |
 | [Solace and related apps](beds/ff_frame.md) | Solace remotes and apps, Sophie, Sealy FlexiRest, Woosa Sleep, BedSense and Motion Bed | Shared |
 | [FurniMove / OKIN Smart Remote](beds/furnimove.md) | The FurniMove app and OKIN handset codes | |
 | [GM Control](beds/gmmotor.md) | The GM Control app and sleep modules | |

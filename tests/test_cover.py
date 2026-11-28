@@ -200,9 +200,18 @@ def test_cover_without_controller_hold_does_not_publish_hold_metadata() -> None:
 
 
 def test_cover_requires_both_directions_to_support_a_control_scoped_lease() -> None:
+    motor = MotorControlSpec(
+        key="back",
+        translation_key="back",
+        open_fn=_noop,
+        close_fn=_noop,
+        stop_fn=_noop,
+        hold=ControllerMotorHoldSpec("back_up", "back_down"),
+    )
     coordinator = SimpleNamespace(
         capability_controller=SimpleNamespace(
-            execution=ExecutionCapabilities(hold="stream", hold_controls=frozenset({"back_up"}))
+            execution=ExecutionCapabilities(hold="stream", hold_controls=frozenset({"back_up"})),
+            motor_control_specs=(motor,),
         ),
         entity_side=None,
         device_info={},
@@ -210,16 +219,7 @@ def test_cover_requires_both_directions_to_support_a_control_scoped_lease() -> N
     )
     cover = AdjustableBedCover(
         coordinator,
-        _build_cover_description(
-            MotorControlSpec(
-                key="back",
-                translation_key="back",
-                open_fn=_noop,
-                close_fn=_noop,
-                stop_fn=_noop,
-                hold=ControllerMotorHoldSpec("back_up", "back_down"),
-            )
-        ),
+        _build_cover_description(motor),
     )
     assert "hold_lease_mode" not in cover.extra_state_attributes
 

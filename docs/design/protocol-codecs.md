@@ -640,6 +640,14 @@ is the only proven release. Initial's app waiter requests conditional
 cancellation; Home Assistant independently bounds its refresh instead of
 reproducing the app's unbounded-sender failure. See [AVEK](../beds/avek.md).
 
+EasyCtrl V1.3 (19) reproduces every accepted eight-byte literal through
+CheersSleep's existing `p1` carrier. Its separate counter policy preserves
+zero-serial settings/query packets, pre-increment control serials and cached
+held frames. `profiles/easyctrl.py` owns its manufacturer-selected bed catalog
+and timing; the shared SynData physical-session base fences both app controllers.
+The EasyCtrl extension owns its parser, alarm calendar and release gestures,
+including model 300's unconditional incrementing STOP triplet.
+
 ## Cosyworld Smart Control
 
 Cosyworld Smart Control 1.0.09 reproduces all 105 frozen literals through the
