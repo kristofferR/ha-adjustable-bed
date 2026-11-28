@@ -14,6 +14,7 @@ from ...alarm import AlarmCapability
 from ...card import CARD_MASSAGE, CARD_UTILITY
 from ...codec.richmat import is_valid
 from ...command_scheduler import Delivery, delivered, note_frame_skipped
+from ...const import SIDE_LEFT, SIDE_RIGHT
 from ...errors import invalid
 from ...profiles import tss_remote as app
 from ...state_keys import MASSAGE_TIMER_MINUTES, UNDER_BED_LIGHTS_ON
@@ -204,22 +205,22 @@ class TssRemoteController(DreamlabController):
         self.validate_richmat_classic_request(request)
         link = self.settings_transport
         if link is None or request.operation == "rgb" and not self._receive.light_capable:
-            raise self._invalid("accessory")
+            raise self._invalid("tss_remote_accessory")
         return link
 
     async def _prepare_lamp(self) -> Transport:
         self._require_receiver()
         link = self.settings_transport
         if link is None:
-            raise self._invalid("accessory")
+            raise self._invalid("tss_remote_accessory")
         if not self._receive.light_capable:
             try:
                 async with asyncio.timeout(LAMP_ADMISSION_TIMEOUT_S):
                     await cancellable(self._lamp_evidence.wait(), self._coordinator.cancel_command)
             except TimeoutError as err:
-                raise self._invalid("accessory") from err
+                raise self._invalid("tss_remote_accessory") from err
         if self.settings_transport is not link or not self._receive.light_capable:
-            raise self._invalid("accessory")
+            raise self._invalid("tss_remote_accessory")
         return link
 
     async def async_prepare_settings(self, request: Request) -> Transport:
@@ -241,7 +242,7 @@ class TssRemoteController(DreamlabController):
                 return False
             if self.settings_transport is not link or not self._receive.light_capable:
                 note_frame_skipped()
-                raise self._invalid("accessory")
+                raise self._invalid("tss_remote_accessory")
             return True
 
         token = BEFORE_SETTINGS_WRITE.set(before_write)
@@ -267,7 +268,7 @@ class TssRemoteController(DreamlabController):
         await self._prepare_lamp()
         button = self._toggle_light()
         if button is None or self._light_on is None:
-            raise self._invalid("accessory")
+            raise self._invalid("tss_remote_accessory")
         if enabled == self._light_on:
             return
         with self._transaction() as session:
@@ -316,17 +317,64 @@ class TssRemoteController(DreamlabController):
         return capability
 
     @property
+    def fixed_massage_timers(self) -> dict[int, GestureAction]:
+        wire = self._resolved_wire or "FRAMED"
+        timers: dict[int, GestureAction] = {}
+        for button in self._controls:
+            for long in (False, True):
+                minutes = app.FIXED_MASSAGE_DURATIONS.get(
+                    self._action_name(button, long=long, raw=wire == "RAW")
+                )
+                gesture = self._plan(button, wire, long=long)
+                if minutes is not None and gesture is not None and not gesture.held:
+                    timers.setdefault(minutes, GestureAction(button.node, long, gesture))
+        return timers
+
+    @property
+    def fixed_massage_timer_button_keys(self) -> frozenset[str]:
+        wire = self._resolved_wire or "FRAMED"
+        return frozenset(
+            f"tss_{button.node}" + suffix
+            for button in self._controls
+            for long in (False, True)
+            if self._action_name(button, long=long, raw=wire == "RAW") in app.FIXED_MASSAGE_DURATIONS
+            and (gesture := self._plan(button, wire, long=long)) is not None and not gesture.held
+            for suffix in (("_long",) if long else ("", "_raw"))
+        )
+
+    @property
+    def supports_massage_timer(self) -> bool:
+        return self.command_side not in (SIDE_LEFT, SIDE_RIGHT) and (
+            bool(self.fixed_massage_timers) or super().supports_massage_timer
+        )
+
+    @property
+    def massage_timer_is_assumed(self) -> bool:
+        return bool(self.fixed_massage_timers) or super().massage_timer_is_assumed
+
+    @property
     def massage_timer_options(self) -> list[int]:
+        if not self.supports_massage_timer:
+            return []
+        if timers := self.fixed_massage_timers:
+            return sorted(timers)
         if self._slider:
             return [minutes for minutes in app.SLIDER_MINUTES if minutes]
         return super().massage_timer_options
 
     async def set_massage_timer(self, minutes: int) -> None:
+        if timers := self.fixed_massage_timers:
+            self._require_receiver()
+            if (action := timers.get(minutes)) is None:
+                raise self._invalid("tss_remote_control")
+            with self.sent_state(MASSAGE_TIMER_MINUTES(minutes)):
+                await self.execute_action(action.node, long=action.long)
+            return
         if not self._slider:
             await super().set_massage_timer(minutes)
             return
         if minutes not in app.SLIDER_MINUTES:
-            raise self._invalid("control")
+            raise self._invalid("tss_remote_control")
         self._require_receiver()
         with self._transaction(), self.sent_state(MASSAGE_TIMER_MINUTES(minutes)):
             await self._send(
@@ -376,7 +424,11 @@ class TssRemoteController(DreamlabController):
             for action in pair
             for suffix in (("_long",) if action.long else ("", "_raw"))
         }
-        specs = list(super().controller_button_specs)
+        timer_keys = self.fixed_massage_timer_button_keys
+        specs = [
+            spec for spec in super().controller_button_specs
+            if spec.key not in timer_keys
+        ]
         light = self._toggle_light() if self.supports_light_state_feedback else None
         if (
             light is not None
@@ -420,7 +472,7 @@ async def _switch_press(controller: BedController, *, feature: str, enabled: boo
     ctrl = require_controller(controller, TssRemoteController)
     pair = ctrl._inverse_actions().get(feature)
     if pair is None:
-        raise ctrl._invalid("control")
+        raise ctrl._invalid("tss_remote_control")
     action = pair[0 if enabled else 1]
     await ctrl.execute_action(action.node, long=action.long)
 

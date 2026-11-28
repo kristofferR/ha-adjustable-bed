@@ -94,7 +94,23 @@ def controls() -> str:
 
 
 def settings() -> str:
+    timers: dict[tuple[str, tuple[int, ...]], list[str]] = {}
+    for layout in app.LAYOUTS:
+        for wire in ("RAW", "FRAMED"):
+            minutes = {
+                value for button in load_catalog(app.APP).models[layout].controls
+                for long in (False, True)
+                if (value := app.FIXED_MASSAGE_DURATIONS.get(name(button, layout, long=long, raw=wire == "RAW"))) is not None
+                and plan(button, layout, wire, Selection(), long=long) is not None
+            }
+            if minutes:
+                timers.setdefault((wire, tuple(sorted(minutes))), []).append(layout)
     return _block(
+        _table(
+            ("Fixed massage timer select (minutes)", "Route", "Layouts"),
+            ((", ".join(map(str, minutes)), wire, ", ".join(layouts))
+             for (wire, minutes), layouts in sorted(timers.items())),
+        ),
         _table(
             ("Operation", "Frame or example", "Availability"),
             (

@@ -606,21 +606,39 @@ async def test_proven_appearance_reaches_public_entity(
 
 @pytest.mark.parametrize(
     ("layout", "node", "label", "operand"), fixture("public-appearances")["timers"]
+    + [("BGRM", 22, "Massage timer 10 minutes", "a1"),
+       ("BGRM", 23, "Massage timer 20 minutes", "a2"),
+       ("BGRM", 24, "Massage timer 30 minutes", "a3")]
 )
-async def test_visible_duration_names_the_public_timer_action(hass, layout, node, label, operand):
-    from custom_components.adjustable_bed.button import ControllerActionButton
+@pytest.mark.parametrize("wire", ["RAW", "FRAMED"])
+async def test_visible_duration_names_the_public_timer_action(hass, layout, node, label, operand, wire):
+    from custom_components.adjustable_bed.select import (
+        MASSAGE_TIMER_DESCRIPTION,
+        AdjustableBedMassageTimerSelect,
+    )
+    from tests.test_richmat_classic_transport import Services, route
 
     ctrl, coord = connected_tss(hass, layout)
+    coord.client.services = Services([route(2 if wire == "RAW" else 0)])
     try:
         await ctrl.start_notify()
         coord.client.write_gatt_char.reset_mock()
-        spec = next(s for s in ctrl.controller_button_specs if s.key == f"tss_{node}")
-        assert spec.name == label
-        await ControllerActionButton(coord, spec).async_press()
-        assert packets(coord) == [
-            "6e0100" + operand + f"{(0x6F + int(operand, 16)) & 255:02x}",
-            "6e01006edd",
-        ]
+        assert ctrl._action_name(ctrl._button(node), long=False, raw=wire == "RAW") == label
+        assert not any(s.key == f"tss_{node}" for s in ctrl.controller_button_specs)
+        assert ctrl.supports_massage_timer and not ctrl.massage_timer_can_turn_off
+        entity = AdjustableBedMassageTimerSelect(coord, MASSAGE_TIMER_DESCRIPTION, ctrl.massage_timer_options, has_off=False)
+        entity.hass = hass
+        entity.async_write_ha_state = MagicMock()
+        assert entity.assumed_state is True
+        minutes = app.FIXED_MASSAGE_DURATIONS[label]
+        option = f"{minutes} min"
+        assert option in entity.options and "Off" not in entity.options
+        await entity.async_select_option(option)
+        assert entity.current_option == option
+        expected = operand if wire == "RAW" else "6e0100" + operand + f"{(0x6F + int(operand, 16)) & 255:02x}"
+        assert packets(coord) == [expected, "6e" if wire == "RAW" else "6e01006edd"]
+        if layout == "APRM":
+            assert any(s.key == "tss_23" for s in ctrl.controller_button_specs)
     finally:
         await coord.async_shutdown()
 
@@ -1318,3 +1336,72 @@ async def test_delivered_light_off_invalidates_power_even_when_cancelled_after_w
             assert packets(co) == [off, "6e" if wire == "RAW" else "6e01006edd"]
         finally:
             await co.async_shutdown()
+
+
+@pytest.mark.parametrize(("layout", "node"), [("ZWRM", 15), ("OTRM", 20), ("APRM", 26), ("AURM", 20)])
+async def test_fixed_timer_retype_keeps_user_settings_and_independent_actions(hass, layout, node):
+    from homeassistant.helpers import entity_registry as er
+
+    from custom_components.adjustable_bed.const import DOMAIN
+    from custom_components.adjustable_bed.entity_retypes import async_carry_over_retyped_entities
+    from custom_components.adjustable_bed.entity_sweep import EntityLedger
+    from custom_components.adjustable_bed.removed_entities import async_setup_removed_entities
+
+    ctrl, co = connected_tss(hass, layout)
+    registry = er.async_get(hass)
+    await async_setup_removed_entities(hass)
+    old = registry.async_get_or_create(
+        "button", DOMAIN, co.entity_unique_id(f"tss_{node}"),
+        config_entry=co.entry, suggested_object_id="bed_duration",
+    )
+    registry.async_update_entity(old.entity_id, name="My timer", disabled_by=er.RegistryEntryDisabler.USER)
+    other = None
+    if layout != 'AURM':
+        other_node = next(a.node for a in ctrl.fixed_massage_timers.values() if a.node != node)
+        other = registry.async_get_or_create(
+            "button", DOMAIN, co.entity_unique_id(f"tss_{other_node}"),
+            config_entry=co.entry, suggested_object_id="other_duration",
+        )
+    else:
+        assert 'tss_20' not in {spec.key for spec in ctrl.controller_button_specs}
+    independent = None
+    if layout == "APRM":
+        independent = registry.async_get_or_create(
+            "button", DOMAIN, co.entity_unique_id("tss_23"),
+            config_entry=co.entry, suggested_object_id="massage_mode",
+        )
+    try:
+        async_carry_over_retyped_entities(hass, co.entry, co)
+        new_id = registry.async_get_entity_id("select", DOMAIN, co.entity_unique_id("massage_timer"))
+        assert new_id == "select.bed_duration"
+        new = registry.async_get(new_id)
+        assert new.name == "My timer" and new.disabled_by is er.RegistryEntryDisabler.USER
+        assert registry.async_get(old.entity_id) is None
+        ledger = EntityLedger(hass, co.entry, co)
+        ledger.platforms_forwarded(["button", "select"])
+        for domain in ("button", "select"):
+            ledger.platform_finished(domain)
+        ledger.record("timer", [("select", co.entity_unique_id("massage_timer"))])
+        ledger.record("buttons", [("button", co.entity_unique_id(s.key)) for s in ctrl.controller_button_specs])
+        ledger.async_sweep()
+        if other is not None:
+            assert registry.async_get(other.entity_id) is None
+        if layout == "APRM":
+            assert independent is not None
+            assert registry.async_get(independent.entity_id) is independent
+            assert any(spec.key == "tss_23" for spec in ctrl.controller_button_specs)
+    finally:
+        await co.async_shutdown()
+
+
+async def test_fixed_timer_select_rejects_unproven_duration_without_writes(hass):
+    ctrl, co = connected_tss(hass, "ZWRM")
+    try:
+        await ctrl.start_notify()
+        co.client.write_gatt_char.reset_mock()
+        for minutes in (0, 10, 20, 30, 121):
+            with pytest.raises(ServiceValidationError):
+                await co.async_execute_controller_command(lambda current, selected=minutes: current.set_massage_timer(selected))
+        assert not packets(co)
+    finally:
+        await co.async_shutdown()

@@ -757,3 +757,12 @@ CONTROL_LABELS: Final = {
 SLIDER_MINUTES: Final = {0: 0, 120: 2, 180: 3, 300: 5}
 LIGHT_TOGGLE: Final = "3C"
 LIGHT_OFF: Final = "75"
+FIXED_MASSAGE_DURATIONS: Final = {
+    "Massage timer 10 minutes": 10,
+    "Massage timer 15 minutes": 15,
+    "Massage timer 20 minutes": 20,
+    "Massage timer 30 minutes": 30,
+    "Massage timer 2 hours": 120,
+    "Massage timer 3 hours": 180,
+    "Massage timer 5 hours": 300,
+}
