@@ -1534,6 +1534,9 @@ def default_scenario(bed_type: str) -> Scenario:
         return Scenario(id=bed_type, bed_type=bed_type, protocol_variant="remote",
                         entry_data={"protocol_variant": "remote", "product_type": "old_dsp_normal", "ergosportive_controls": list(CONTROLS)},
                         layout_id="ergosportive")
+    if bed_type == "avek":
+        return Scenario(id=bed_type, bed_type=bed_type,
+            replies={"6e400003-b5a3-f393-e0a9-e50e24dcca9e": "b0020101b4"})
     if bed_type == "intellibed":
         return Scenario(id=bed_type, bed_type=bed_type, protocol_variant="old")
     if bed_type == "active_sleep":
@@ -3097,6 +3100,8 @@ async def _build(scenario: Scenario, client: Any) -> Any:
         **scenario.factory_kwargs,
     )
     coordinator.controller = controller
+    if scenario.bed_type == "avek":
+        controller.restore_persisted_app_state({"app_id": "001122334455"})
     return controller
 
 

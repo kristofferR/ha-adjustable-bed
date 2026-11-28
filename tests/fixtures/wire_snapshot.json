@@ -3231,6 +3231,36 @@
 "button:atlas_lift_save_anti_snore": {"status":"ok","writes":[[0,"d44bc439",false,"6e010069d8",1,0]]},
 "button:massage_head_up": {"status":"ok","writes":[[0,"d44bc439",false,"6e01004cbb",1,0]]}
 }},
+"avek": {
+"info": {"bed_type": "avek", "controller": "AvekController", "module": "avek", "pulse": [10, 90]},
+"commands": {
+"connect": {"status":"ok","writes":[[0,"6e400003","notify","",1,0]]},
+"head_stop": {"status":"no_writes"},
+"back_stop": {"status":"no_writes"},
+"legs_stop": {"status":"no_writes"},
+"feet_stop": {"status":"no_writes"},
+"stop_all": {"status":"no_writes"},
+"hold_shoulder_hard": {"status":"ok","writes":[[7,"6e400002",true,"b0051000c02000a5",12,90]]},
+"hold_shoulder_soft": {"status":"ok","writes":[[0,"6e400002",true,"b0051000c0100095",12,90]]},
+"hold_hip_hard": {"status":"ok","writes":[[0,"6e400002",true,"b0051000c008008d",12,90]]},
+"hold_hip_soft": {"status":"ok","writes":[[0,"6e400002",true,"b0051000c0040089",12,90]]},
+"hold_a": {"status":"ok","writes":[[0,"6e400002",true,"b0051000c0000287",12,90]]},
+"hold_b": {"status":"ok","writes":[[0,"6e400002",true,"b0051000c0000186",12,90]]},
+"hold_c": {"status":"ok","writes":[[0,"6e400002",true,"b0051000c0020087",12,90]]},
+"hold_d": {"status":"ok","writes":[[0,"6e400002",true,"b0051000c0010086",12,90]]},
+"button:shoulder_hard": {"status":"ok","writes":[[0,"6e400002",true,"b0051000c02000a5",11,90]]},
+"button:shoulder_soft": {"status":"ok","writes":[[0,"6e400002",true,"b0051000c0100095",11,90]]},
+"button:hip_hard": {"status":"ok","writes":[[0,"6e400002",true,"b0051000c008008d",11,90]]},
+"button:hip_soft": {"status":"ok","writes":[[0,"6e400002",true,"b0051000c0040089",11,90]]},
+"button:a": {"status":"ok","writes":[[0,"6e400002",true,"b0051000c0000287",11,90]]},
+"button:b": {"status":"ok","writes":[[0,"6e400002",true,"b0051000c0000186",11,90]]},
+"button:c": {"status":"ok","writes":[[0,"6e400002",true,"b0051000c0020087",11,90]]},
+"button:d": {"status":"ok","writes":[[0,"6e400002",true,"b0051000c0010086",11,90]]},
+"button:save": {"status":"ok","writes":[[0,"6e400002",true,"b0051000c0000489",10,90]]},
+"button:initial": {"status":"ok","writes":[[0,"6e400002",true,"b0051000c000088d",112,90]]},
+"button:avek_release": {"status":"no_writes"},
+"background": {"status":"background","writes":[[0,"6e400002",true,"b10700001122334455b7",1,0]]}
+}},
 "awmotion": {
 "info": {"bed_type": "awmotion", "controller": "AwMotionController", "module": "dreamsense.awmotion", "pulse": [10, 100]},
 "commands": {
