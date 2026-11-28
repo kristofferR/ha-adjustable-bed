@@ -75,6 +75,7 @@ from scripts.codec_docs._awmotion import BLOCKS as AWMOTION_BLOCKS
 from scripts.codec_docs._bedsmart import BLOCKS as BEDSMART_BLOCKS
 from scripts.codec_docs._common import Block, _block, _hex, _table
 from scripts.codec_docs._dreamsense import BLOCKS as DREAMSENSE_BLOCKS
+from scripts.codec_docs._innova_control import render as render_innova_control
 from scripts.codec_docs._likimio import BLOCKS as LIKIMIO_BLOCKS
 from scripts.codec_docs._lp2 import BLOCKS as LP2_BLOCKS
 from scripts.codec_docs._maxprime import render_maxprime
@@ -2243,6 +2244,9 @@ from scripts.codec_docs._purely_sleep import BLOCKS as PURELY_SLEEP_BLOCKS  # no
 BLOCKS.extend(PURELY_SLEEP_BLOCKS)
 
 BLOCKS += _motionflex.BLOCKS
+
+
+BLOCKS.append((GUIDE, "innova-control", render_innova_control))
 
 
 BLOCKS.extend(MYSIDE_BLOCKS)

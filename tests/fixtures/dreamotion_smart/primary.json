@@ -1,0 +1,827 @@
+[
+  {
+    "id": "PC-back-0",
+    "kind": "massage",
+    "inputs": {
+      "state": {
+        "back": "00",
+        "foot": "00",
+        "pattern": "00",
+        "duration": "00",
+        "hz": "00"
+      },
+      "action": "back"
+    },
+    "expected": [
+      [
+        0,
+        "F1F18105A101000000287E"
+      ]
+    ],
+    "evidence": [
+      "E-MASSAGE",
+      "E-PRIMARY-MASSAGE"
+    ],
+    "expected_state": {
+      "back": "00",
+      "foot": "00",
+      "pattern": "00",
+      "duration": "00",
+      "hz": "00"
+    }
+  },
+  {
+    "id": "PC-back-1",
+    "kind": "massage",
+    "inputs": {
+      "state": {
+        "back": "00",
+        "foot": "00",
+        "pattern": "00",
+        "duration": "00",
+        "hz": "32"
+      },
+      "action": "back"
+    },
+    "expected": [
+      [
+        0,
+        "F1F18105A1010000032B7E"
+      ]
+    ],
+    "evidence": [
+      "E-MASSAGE",
+      "E-PRIMARY-MASSAGE"
+    ],
+    "expected_state": {
+      "back": "00",
+      "foot": "00",
+      "pattern": "00",
+      "duration": "03",
+      "hz": "32"
+    }
+  },
+  {
+    "id": "PC-foot-2",
+    "kind": "massage",
+    "inputs": {
+      "state": {
+        "back": "02",
+        "foot": "03",
+        "pattern": "01",
+        "duration": "02",
+        "hz": "00"
+      },
+      "action": "foot"
+    },
+    "expected": [
+      [
+        0,
+        "F1F18105A1020001022C7E"
+      ]
+    ],
+    "evidence": [
+      "E-MASSAGE",
+      "E-PRIMARY-MASSAGE"
+    ],
+    "expected_state": {
+      "back": "02",
+      "foot": "03",
+      "pattern": "01",
+      "duration": "02",
+      "hz": "00"
+    }
+  },
+  {
+    "id": "PC-pattern-3",
+    "kind": "massage",
+    "inputs": {
+      "state": {
+        "back": "00",
+        "foot": "00",
+        "pattern": "00",
+        "duration": "00",
+        "hz": "32"
+      },
+      "action": "pattern"
+    },
+    "expected": [
+      [
+        0,
+        "F1F18105A1010101032D7E"
+      ]
+    ],
+    "evidence": [
+      "E-MASSAGE",
+      "E-PRIMARY-MASSAGE"
+    ],
+    "expected_state": {
+      "back": "01",
+      "foot": "01",
+      "pattern": "00",
+      "duration": "03",
+      "hz": "32"
+    }
+  },
+  {
+    "id": "PC-pattern-4",
+    "kind": "massage",
+    "inputs": {
+      "state": {
+        "back": "02",
+        "foot": "03",
+        "pattern": "01",
+        "duration": "02",
+        "hz": "00"
+      },
+      "action": "pattern"
+    },
+    "expected": [
+      [
+        0,
+        "F1F18105A102030202307E"
+      ]
+    ],
+    "evidence": [
+      "E-MASSAGE",
+      "E-PRIMARY-MASSAGE"
+    ],
+    "expected_state": {
+      "back": "02",
+      "foot": "03",
+      "pattern": "01",
+      "duration": "02",
+      "hz": "00"
+    }
+  },
+  {
+    "id": "PC-pattern-5",
+    "kind": "massage",
+    "inputs": {
+      "state": {
+        "back": "01",
+        "foot": "00",
+        "pattern": "03",
+        "duration": "00",
+        "hz": "00"
+      },
+      "action": "pattern"
+    },
+    "expected": [
+      [
+        0,
+        "F1F18105A101000100297E"
+      ]
+    ],
+    "evidence": [
+      "E-MASSAGE",
+      "E-PRIMARY-MASSAGE"
+    ],
+    "expected_state": {
+      "back": "01",
+      "foot": "00",
+      "pattern": "03",
+      "duration": "00",
+      "hz": "00"
+    }
+  },
+  {
+    "id": "PC-timer10-6",
+    "kind": "massage",
+    "inputs": {
+      "state": {
+        "back": "00",
+        "foot": "00",
+        "pattern": "00",
+        "duration": "00",
+        "hz": "00"
+      },
+      "action": "timer10"
+    },
+    "expected": [
+      [
+        0,
+        "F1F18105A100000001287E"
+      ]
+    ],
+    "evidence": [
+      "E-MASSAGE",
+      "E-PRIMARY-MASSAGE"
+    ],
+    "expected_state": {
+      "back": "00",
+      "foot": "00",
+      "pattern": "00",
+      "duration": "01",
+      "hz": "00"
+    }
+  },
+  {
+    "id": "PC-timer10-7",
+    "kind": "massage",
+    "inputs": {
+      "state": {
+        "back": "00",
+        "foot": "00",
+        "pattern": "00",
+        "duration": "01",
+        "hz": "00"
+      },
+      "action": "timer10"
+    },
+    "expected": [
+      [
+        0,
+        "F1F18105A100000000277E"
+      ]
+    ],
+    "evidence": [
+      "E-MASSAGE",
+      "E-PRIMARY-MASSAGE"
+    ],
+    "expected_state": {
+      "back": "00",
+      "foot": "00",
+      "pattern": "00",
+      "duration": "00",
+      "hz": "00"
+    }
+  },
+  {
+    "id": "PC-timer20-8",
+    "kind": "massage",
+    "inputs": {
+      "state": {
+        "back": "00",
+        "foot": "00",
+        "pattern": "00",
+        "duration": "00",
+        "hz": "00"
+      },
+      "action": "timer20"
+    },
+    "expected": [
+      [
+        0,
+        "F1F18105A100000002297E"
+      ]
+    ],
+    "evidence": [
+      "E-MASSAGE",
+      "E-PRIMARY-MASSAGE"
+    ],
+    "expected_state": {
+      "back": "00",
+      "foot": "00",
+      "pattern": "00",
+      "duration": "02",
+      "hz": "00"
+    }
+  },
+  {
+    "id": "PC-timer30-9",
+    "kind": "massage",
+    "inputs": {
+      "state": {
+        "back": "00",
+        "foot": "00",
+        "pattern": "00",
+        "duration": "00",
+        "hz": "00"
+      },
+      "action": "timer30"
+    },
+    "expected": [
+      [
+        0,
+        "F1F18105A1000000032A7E"
+      ]
+    ],
+    "evidence": [
+      "E-MASSAGE",
+      "E-PRIMARY-MASSAGE"
+    ],
+    "expected_state": {
+      "back": "00",
+      "foot": "00",
+      "pattern": "00",
+      "duration": "03",
+      "hz": "00"
+    }
+  },
+  {
+    "id": "PC-INHERENT",
+    "kind": "mode",
+    "inputs": {
+      "state": {
+        "back": "02",
+        "foot": "01",
+        "pattern": "03",
+        "duration": "02",
+        "hz": "00"
+      },
+      "inherent": true
+    },
+    "expected": [
+      [
+        0,
+        "F1F18002A132557E"
+      ],
+      [
+        300,
+        "F1F18105A1000003022C7E"
+      ]
+    ],
+    "evidence": [
+      "E-PRIMARY-MASSAGE"
+    ],
+    "expected_state": {
+      "back": "02",
+      "foot": "01",
+      "pattern": "03",
+      "duration": "02",
+      "hz": "32"
+    }
+  },
+  {
+    "id": "PC-INHERENT-LATE",
+    "kind": "mode",
+    "inputs": {
+      "state": {
+        "back": "02",
+        "foot": "01",
+        "pattern": "03",
+        "duration": "02",
+        "hz": "00"
+      },
+      "inherent": true,
+      "state_at_resume": {
+        "back": "02",
+        "foot": "01",
+        "pattern": "01",
+        "duration": "01",
+        "hz": "00"
+      }
+    },
+    "expected": [
+      [
+        0,
+        "F1F18002A132557E"
+      ],
+      [
+        300,
+        "F1F18105A100000101297E"
+      ]
+    ],
+    "evidence": [
+      "E-PRIMARY-MASSAGE"
+    ],
+    "expected_state": {
+      "back": "02",
+      "foot": "01",
+      "pattern": "03",
+      "duration": "02",
+      "hz": "32"
+    }
+  },
+  {
+    "id": "PC-ACOUSTIC",
+    "kind": "mode",
+    "inputs": {
+      "state": {
+        "back": "02",
+        "foot": "01",
+        "pattern": "03",
+        "duration": "02",
+        "hz": "32"
+      },
+      "inherent": false
+    },
+    "expected": [
+      [
+        0,
+        "F1F18002A100237E"
+      ]
+    ],
+    "evidence": [
+      "E-PRIMARY-MASSAGE"
+    ],
+    "expected_state": {
+      "back": "02",
+      "foot": "01",
+      "pattern": "03",
+      "duration": "02",
+      "hz": "00"
+    }
+  },
+  {
+    "id": "PC-MAIN-INIT",
+    "kind": "schedule",
+    "inputs": {
+      "screen": "main"
+    },
+    "expected": [
+      [
+        300,
+        "F1F14302A200E77E"
+      ],
+      [
+        600,
+        "F1F14002A200E47E"
+      ],
+      [
+        900,
+        "F1F18002A200247E"
+      ],
+      [
+        1200,
+        "F1F18105A200000000287E"
+      ],
+      [
+        1500,
+        "F1F18202A200267E"
+      ]
+    ],
+    "evidence": [
+      "E-PRIMARY-INIT"
+    ]
+  },
+  {
+    "id": "PC-MASSAGE-INIT",
+    "kind": "schedule",
+    "inputs": {
+      "screen": "massage"
+    },
+    "expected": [
+      [
+        0,
+        "F1F18002A200247E"
+      ],
+      [
+        250,
+        "F1F18105A200000000287E"
+      ],
+      [
+        500,
+        "F1F18202A200267E"
+      ]
+    ],
+    "evidence": [
+      "E-PRIMARY-INIT"
+    ]
+  },
+  {
+    "id": "PC-SLOT-1",
+    "kind": "slots",
+    "inputs": {
+      "groups": [
+        "64FF0000",
+        "3200FF00",
+        "190000FF"
+      ],
+      "selection": 1,
+      "preview": true
+    },
+    "expected": [
+      [
+        0,
+        "F1F1440DA164FF00003200FF00190000FF9E7E"
+      ],
+      [
+        300,
+        "F1F14C05A164FF0000557E"
+      ]
+    ],
+    "evidence": [
+      "E-PRIMARY-LIGHTS"
+    ]
+  },
+  {
+    "id": "PC-SLOT-2",
+    "kind": "slots",
+    "inputs": {
+      "groups": [
+        "64FF0000",
+        "3200FF00",
+        "190000FF"
+      ],
+      "selection": 2,
+      "preview": true
+    },
+    "expected": [
+      [
+        0,
+        "F1F1440DA164FF00003200FF00190000FF9E7E"
+      ],
+      [
+        300,
+        "F1F14C05A13200FF00237E"
+      ]
+    ],
+    "evidence": [
+      "E-PRIMARY-LIGHTS"
+    ]
+  },
+  {
+    "id": "PC-SLOT-3",
+    "kind": "slots",
+    "inputs": {
+      "groups": [
+        "64FF0000",
+        "3200FF00",
+        "190000FF"
+      ],
+      "selection": 3,
+      "preview": true
+    },
+    "expected": [
+      [
+        0,
+        "F1F1440DA164FF00003200FF00190000FF9E7E"
+      ],
+      [
+        300,
+        "F1F14C05A1190000FF0A7E"
+      ]
+    ],
+    "evidence": [
+      "E-PRIMARY-LIGHTS"
+    ]
+  },
+  {
+    "id": "PC-SLOT-LATE-SELECT",
+    "kind": "slots",
+    "inputs": {
+      "groups": [
+        "64FF0000",
+        "3200FF00",
+        "190000FF"
+      ],
+      "selection": 1,
+      "selection_at_resume": 3,
+      "preview": true,
+      "delay": 200
+    },
+    "expected": [
+      [
+        0,
+        "F1F1440DA164FF00003200FF00190000FF9E7E"
+      ],
+      [
+        200,
+        "F1F14C05A1190000FF0A7E"
+      ]
+    ],
+    "evidence": [
+      "E-PRIMARY-LIGHTS"
+    ]
+  },
+  {
+    "id": "PC-SLOTS-SAVE",
+    "kind": "slots",
+    "inputs": {
+      "groups": [
+        "64FF0000",
+        "3200FF00",
+        "190000FF"
+      ],
+      "selection": 1,
+      "preview": false
+    },
+    "expected": [
+      [
+        0,
+        "F1F1440DA164FF00003200FF00190000FF9E7E"
+      ]
+    ],
+    "evidence": [
+      "E-PRIMARY-LIGHTS"
+    ]
+  },
+  {
+    "id": "PC-TIMED-200",
+    "kind": "timed",
+    "inputs": {
+      "brightness": "64",
+      "rgb": "FF0080",
+      "duration": "012C",
+      "preview": true,
+      "delay": 200
+    },
+    "expected": [
+      [
+        0,
+        "F1F14507A164FF0080012CFD7E"
+      ],
+      [
+        200,
+        "F1F14302A101E77E"
+      ]
+    ],
+    "evidence": [
+      "E-PRIMARY-LIGHTS"
+    ]
+  },
+  {
+    "id": "PC-TIMED-300",
+    "kind": "timed",
+    "inputs": {
+      "brightness": "64",
+      "rgb": "FF0080",
+      "duration": "012C",
+      "preview": true,
+      "delay": 300
+    },
+    "expected": [
+      [
+        0,
+        "F1F14507A164FF0080012CFD7E"
+      ],
+      [
+        300,
+        "F1F14302A101E77E"
+      ]
+    ],
+    "evidence": [
+      "E-PRIMARY-LIGHTS"
+    ]
+  },
+  {
+    "id": "PC-TIMED-SAVE",
+    "kind": "timed",
+    "inputs": {
+      "brightness": "64",
+      "rgb": "FF0080",
+      "duration": "003C",
+      "preview": false
+    },
+    "expected": [
+      [
+        0,
+        "F1F14507A164FF0080003C0C7E"
+      ]
+    ],
+    "evidence": [
+      "E-PRIMARY-LIGHTS"
+    ]
+  },
+  {
+    "id": "PC-TIMED-EMPTY-DTO",
+    "kind": "timed",
+    "inputs": {
+      "brightness": "",
+      "rgb": "",
+      "duration": "",
+      "preview": false
+    },
+    "expected": [
+      [
+        0,
+        "F1F14507A1ED7E"
+      ]
+    ],
+    "evidence": [
+      "E-PRIMARY-LIGHTS"
+    ]
+  },
+  {
+    "id": "PC-PAIR-main",
+    "kind": "route",
+    "inputs": {
+      "address": "AA:BB:CC:DD:EE:01#AA:BB:CC:DD:EE:02",
+      "origin": "main"
+    },
+    "expected": [
+      "AA:BB:CC:DD:EE:01"
+    ],
+    "evidence": [
+      "E-PRIMARY-SELECTOR"
+    ]
+  },
+  {
+    "id": "PC-PAIR-movement",
+    "kind": "route",
+    "inputs": {
+      "address": "AA:BB:CC:DD:EE:01#AA:BB:CC:DD:EE:02",
+      "origin": "movement"
+    },
+    "expected": [
+      "AA:BB:CC:DD:EE:01",
+      "AA:BB:CC:DD:EE:02"
+    ],
+    "evidence": [
+      "E-PRIMARY-SELECTOR"
+    ]
+  },
+  {
+    "id": "PC-DURATION-0",
+    "kind": "duration",
+    "inputs": {
+      "slider": 0
+    },
+    "expected": "0000",
+    "evidence": [
+      "E-PRIMARY-LIGHTS"
+    ]
+  },
+  {
+    "id": "PC-DURATION-1",
+    "kind": "duration",
+    "inputs": {
+      "slider": 1
+    },
+    "expected": "003c",
+    "evidence": [
+      "E-PRIMARY-LIGHTS"
+    ]
+  },
+  {
+    "id": "PC-DURATION-5",
+    "kind": "duration",
+    "inputs": {
+      "slider": 5
+    },
+    "expected": "012c",
+    "evidence": [
+      "E-PRIMARY-LIGHTS"
+    ]
+  },
+  {
+    "id": "PC-DURATION-7",
+    "kind": "duration",
+    "inputs": {
+      "slider": 7
+    },
+    "expected": "0384",
+    "evidence": [
+      "E-PRIMARY-LIGHTS"
+    ]
+  },
+  {
+    "id": "PC-DURATION-10",
+    "kind": "duration",
+    "inputs": {
+      "slider": 10
+    },
+    "expected": "0708",
+    "evidence": [
+      "E-PRIMARY-LIGHTS"
+    ]
+  },
+  {
+    "id": "PC-COLOR-ALPHA",
+    "kind": "color",
+    "inputs": {
+      "argb": "7F1234AB"
+    },
+    "expected": "1234AB",
+    "evidence": [
+      "E-PRIMARY-LIGHTS"
+    ]
+  },
+  {
+    "id": "PC-COUNTDOWN",
+    "kind": "countdown",
+    "inputs": {},
+    "expected": [
+      [
+        1000,
+        5,
+        false
+      ],
+      [
+        2000,
+        4,
+        false
+      ],
+      [
+        3000,
+        3,
+        false
+      ],
+      [
+        4000,
+        2,
+        false
+      ],
+      [
+        5000,
+        1,
+        false
+      ],
+      [
+        6000,
+        0,
+        false
+      ],
+      [
+        6000,
+        0,
+        true
+      ]
+    ],
+    "evidence": [
+      "E-PRIMARY-SELECTOR"
+    ]
+  }
+]

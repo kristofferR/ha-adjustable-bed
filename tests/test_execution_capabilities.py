@@ -101,6 +101,17 @@ async def test_scott_living_refresh_has_no_release_or_composed_keys():
         assert controller.execution.hold_for("head_up") == "stream"
 
 
+async def test_dreamotion_smart_has_one_300ms_refresh_and_explicit_release():
+    # Dreamotion Smart 1.1.8 RemoteControll: immediate DOWN, repeat 300 ms,
+    # UP waits 300 ms then 4E. No merged axis word or speed is proven.
+    from custom_components.adjustable_bed.codec.jiecang import LONG_RELEASE
+
+    controller = await _create_controller_for_bed_type("dreamotion_smart")
+    assert controller.execution.declared == {"hold"}
+    assert controller.profile.hold.repeat_ms == 300
+    assert controller.profile.hold.releases == ((300, LONG_RELEASE),)
+
+
 async def test_ifit_screen_hold_is_scoped_to_refresh_controls():
     # iFit 1.1 (3) LongOnce/LongPress/LongMemory/LongSwitch stop their timer
     # on UP/CANCEL. Direct voice MAX/STOP bursts are not renewable holds.
@@ -140,6 +151,18 @@ async def test_hestia_one_held_key_stream_has_no_composed_motor_admission():
     assert controller.execution.hold_for("both_up") == "stream"
     assert controller.profile.refresh_ms == 100
     assert controller.profile.release.steps == ((100, 0),)
+
+
+def test_innova_control_hold_scope_has_artifact_refresh_and_release():
+    # Innova Control 1.1.0 Utils sender mode1 + RemoteFragment UP: repeat,
+    # then mode0's 50ms existing STOP. Modes never establish physical sides.
+    from tests.test_innova_control import controller
+
+    ctrl, _ = controller()
+    assert ctrl.execution.hold_for("richmat_classic_1") == "stream"
+    assert ctrl.execution.concurrent == frozenset()
+    assert ctrl.app_profile.held_release_ms == 50
+    assert not ctrl.supports_single_address_pairing
 
 
 @pytest.mark.parametrize("product", ("JLRN", "VJRM"))
