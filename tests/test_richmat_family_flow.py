@@ -72,6 +72,7 @@ APPS = [
     "dreamlab2",
     "enso2",
     "remote",
+    "thrivesleep",
 ]
 
 

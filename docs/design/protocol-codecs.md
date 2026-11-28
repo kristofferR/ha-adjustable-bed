@@ -521,3 +521,12 @@ Richmat codec, including conditional raw builders and unreachable helper
 vectors. Its fixed 200IV2 / A8RM P1 profile reuses the shared Richmat
 motion/session runtime; Settings gates belong to the current connection.
 The profile does not admit the other catalog layouts or raw transport.
+
+## Thrive Sleep
+
+Thrive Sleep 1.1.2 uses the existing Richmat function, calendar, RGB, light-timer,
+countdown and extended-record encoders. All 115 frozen literals reproduce through
+those encoders. Its three current profiles own the product menus and alarm modes;
+its session controller rejects mixed recognized services rather than applying
+the app's independent handle-selection and encoding order to unknown hardware.
+See [Thrive Sleep](../beds/richmat.md#thrive-sleep).
