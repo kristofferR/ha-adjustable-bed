@@ -50,6 +50,7 @@ from .const import (
     BED_TYPE_FSM_RELAX,
     BED_TYPE_FURNIMOVE,
     BED_TYPE_GALAXY,
+    BED_TYPE_GHOSTBED,
     BED_TYPE_GLIDEAWAY_MOTION,
     BED_TYPE_GMMOTOR,
     BED_TYPE_GMMOTOR_SLEEP_MM,
@@ -278,6 +279,7 @@ _BED_TRAITS: Final[dict[str, BedTraits]] = {
     BED_TYPE_SHUDA: replace(_NO_ANGLES, owns_device_info_reads=True, connection_timeout=5),
     BED_TYPE_RESIDENT: replace(_NO_ANGLES_SCOPED, owns_device_info_reads=True),
     "sleeptime": replace(_NO_ANGLES_SCOPED, owns_device_info_reads=True, connection_timeout=5),
+    "powersbedding": replace(_NO_ANGLES_SCOPED, owns_device_info_reads=True),
     "hestia_motion": replace(_NO_ANGLES_SCOPED, owns_device_info_reads=True),
     "ultramatic_smart_bed": replace(_NO_ANGLES_SCOPED, owns_device_info_reads=True, connection_timeout=5),
     BED_TYPE_ADJUSTAMATTRESS: _NO_ANGLES,
@@ -293,6 +295,7 @@ _BED_TRAITS: Final[dict[str, BedTraits]] = {
     ),
     BED_TYPE_BEDSENSE: _NO_ANGLES,
     BED_TYPE_BF: _NO_ANGLES,
+    BED_TYPE_GHOSTBED: replace(_NO_ANGLES_SCOPED, connection_timeout=10.0, owns_device_info_reads=True),
     BED_TYPE_FLEXISPOT: replace(_NO_ANGLES_SCOPED, connection_timeout=10.0, owns_device_info_reads=True),
     BED_TYPE_JALON_BED: _NO_ANGLES_SCOPED,
     BED_TYPE_LANGJUE: _NO_ANGLES_SCOPED,
@@ -630,7 +633,7 @@ MASSAGE_SETTING_UNUSED_BED_TYPES: Final = frozenset(
      "awmotion", "dreamsense", "smart_comfort_synergy", "solace", "saatva", "sonicsleep", "star_elevate", "starcode_abm5_4",
      "starcode_m1x12", "starcode_m5x5", "svane", "symphony", "symphony_sleep",
      "tempur_au", "tempur_curve", "timotion_ahf", "tranquil", "vmatbasic",
-     "wsilver_products", "yamada", "ormatek", "konfurt",
+     "wsilver_products", "yamada", "ormatek", "konfurt", "powersbedding",
     }
 )
 

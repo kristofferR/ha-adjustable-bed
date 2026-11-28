@@ -101,6 +101,14 @@ async def test_scott_living_refresh_has_no_release_or_composed_keys():
         assert controller.execution.hold_for("head_up") == "stream"
 
 
+async def test_ghostbed_hold_uses_current_two_axis_route() -> None:
+    """GhostBed 1.3 (4): immediate movement, 200 ms refresh, axis release after 100 ms."""
+    controller = await _create_controller_for_bed_type("ghostbed")
+    assert controller.execution.declared == {"hold"}
+    assert controller.held_control_options == ("back_up", "back_down", "feet_up", "feet_down")
+    assert (controller.refresh_ms, controller.release_ms) == (200, 100)
+
+
 @pytest.mark.parametrize("route", ("15_22_15a", "24_xx_xx"))
 async def test_meisemobell_held_execution(route):
     # com.okin.meisemobell 1.2.8 E4/E5: immediate plus 300ms refresh,
@@ -131,3 +139,12 @@ async def test_konfurt_one_300ms_held_key_with_delayed_release(layout):
     assert controller.execution.declared == {"hold"}
     assert controller.profile.refresh_ms == 300
     assert tuple(delay for delay, _ in controller.profile.release.steps) == (300, 300)
+
+
+async def test_powersbedding_single_timer_movement_stream():
+    # PowersBedding 1.1.0 (2), E5: one movement timer, 100 ms refresh,
+    # two zero releases 100 ms apart; no independent concurrent axis holds.
+    controller = await _create_controller_for_bed_type("powersbedding")
+    assert controller.execution.declared == {"hold"}
+    assert controller.execution.hold_for("both_up") == "stream"
+    assert controller.profile.release.steps == ((0, 0), (100, 0))
