@@ -64,6 +64,7 @@ from scripts.codec_docs import (
     _dreamlab,
     _galaxy,
     _homezone,
+    _motionflex,
     _muuegm,
     _okimiki,
     _richmat_legacy,
@@ -2236,6 +2237,8 @@ def render_silksnow_settings() -> str:
 
 
 BLOCKS += [(GUIDE, "silksnow-products", render_silksnow_products), (GUIDE, "silksnow-commands", render_silksnow_commands), (GUIDE, "silksnow-settings", render_silksnow_settings)]
+
+BLOCKS += _motionflex.BLOCKS
 
 
 BLOCKS.extend(MYSIDE_BLOCKS)

@@ -355,6 +355,7 @@ from .profiles.mlily0 import VARIANTS as MLILY0_PROFILES
 from .profiles.mlily_choices import PROFILE_CHOICES as MLILY_PROFILES
 from .profiles.mlily_remote import VARIANTS as MLILY_REMOTE_PROFILES
 from .profiles.moodbase import receiver_hint as moodbase_receiver_hint
+from .profiles.motionflex import CHOICES as MOTIONFLEX_CHOICES
 from .profiles.motomotion import eligible as motomotion_eligible
 from .profiles.myside import CHOICES as MYSIDE_PRODUCTS
 from .profiles.okimiki import PROFILE_CHOICES as OKIMIKI_PROFILES
@@ -749,6 +750,7 @@ BED_TYPE_DISPLAY_NAMES: dict[str, str] = {
     BED_TYPE_ALYA: "Alya Smart Furnishing app (choose BLE type and motor layout)",
     BED_TYPE_ESHINE_OKIN: "eShine app (E2000 to E5000)",
     BED_TYPE_ESHINE: "eShine app (E6000)",
+    "motionflex": "MotionFlex app (SN300, SN500, HC800)",
     BED_TYPE_RICHMAT_REVIVE: "Revive Control app",
     BED_TYPE_RICHMAT_BEST_MATTRESS: "Best Mattress app",
     BED_TYPE_RICHMAT_BLVD_HOME: "Blvd Home app",
@@ -897,6 +899,7 @@ def is_jensen_linon_name(name: str | None) -> bool:
 # users find them by app name. A bed type's own entry names the app its auto
 # variant selects; see AGENTS.md "Adding a New Bed Type".
 APP_VARIANT_CHOICES: dict[tuple[str, str], str] = {
+    **{("motionflex", profile): f"MotionFlex ({label})" for profile, label in MOTIONFLEX_CHOICES.items()},
     (BED_TYPE_LINAK, LINAK_VARIANT_AA_CONTROL_MY_BED): "AA Control My Bed app",
     (BED_TYPE_LINAK, LINAK_VARIANT_CARPE_DIEM): "Carpe Diem Beds app",
     (BED_TYPE_DORSAL, DORSAL_ROOMI_S655_PLUS): DORSAL_ROUTES[DORSAL_ROOMI_S655_PLUS],
@@ -1028,6 +1031,7 @@ _HIDDEN_APP_ROWS: Final = frozenset(
         *(("majestichome", product) for product in MAJESTICHOME_PROFILES),
         *((BED_TYPE_OKIMIKI, product) for product in OKIMIKI_PROFILES),
         *(("bobpowerbase", product) for product in BOB_PROFILES),
+        *(("motionflex", product) for product in MOTIONFLEX_CHOICES),
         *((BED_TYPE_MLILY0, product) for product in MLILY0_PROFILES),
         *((BED_TYPE_MLILY_REMOTE, product) for product in MLILY_REMOTE_PROFILES),
         *((BED_TYPE_HJBED, product) for product in HJBED_PROFILES),
@@ -1042,7 +1046,7 @@ HIDDEN_APP_CHOICES: Final = frozenset(bed_type_choice(*row) for row in _HIDDEN_A
 PRODUCT_QUESTION_BED_TYPES: Final = frozenset(
     {
         BED_TYPE_ALYA, BED_TYPE_RONCO_MOTION, BED_TYPE_AMBIENT, BED_TYPE_RESTONIC, BED_TYPE_FLEXISPOT, "kingkoil", BED_TYPE_ENSO2, BED_TYPE_LIKIMIO, "awmotion", "dreamsense", "muuegm", "saatva", "majestichome", BED_TYPE_LEVA, BED_TYPE_LINX, BED_TYPE_SOMOS, "bobpowerbase", BED_TYPE_COMFORT_ENHANCEMENT3, BED_TYPE_SYMPHONY_SLEEP, BED_TYPE_YAMADA, BED_TYPE_MYSIDE, BED_TYPE_RICHMAT_APP, BED_TYPE_RICHMAT_APP_SLEEP, BED_TYPE_GALAXY, BED_TYPE_MLILY, BED_TYPE_MLILY0, BED_TYPE_MLILY_REMOTE, BED_TYPE_OKIMIKI, "luuna", BED_TYPE_GOODVIBE, BED_TYPE_HJBED, BED_TYPE_CASPER_BASE, BED_TYPE_COMFORT_ENHANCEMENTS, BED_TYPE_COMFORTBASE, "sleep_evolution", "wsilver_legacy", "personal_comfort", "instant_comfort"}
-).union({BED_TYPE_BETTERLIVING2, BED_TYPE_JEROME_ADJUSTABLE_BASE, BED_TYPE_SLEEPTIME, "sealy_posturematic"})
+).union({"motionflex", BED_TYPE_BETTERLIVING2, BED_TYPE_JEROME_ADJUSTABLE_BASE, BED_TYPE_SLEEPTIME, "sealy_posturematic"})
 # Routes named after their protocol, not an app or brand. They stay off the
 # bed-type list and are reached through detection, the brand list and Configure.
 PROTOCOL_ROUTES: Final = frozenset(
@@ -1847,6 +1851,12 @@ def _detect_with_first_pass(
         elif result.bed_type != "silksnow":
             result.ambiguous_types = list(dict.fromkeys([*(result.ambiguous_types or ()), "silksnow"]))
             result.signals.append("name:silksnow_app_candidate")
+    if first.name("motionflex") and not any(signal.startswith("excluded:") for signal in result.signals):
+        if result.bed_type is None:
+            result = DetectionResult("motionflex", 0.3, [*result.signals, "name:motionflex_app_candidate"])
+        elif result.bed_type != "motionflex":
+            result.ambiguous_types = list(dict.fromkeys([*(result.ambiguous_types or ()), "motionflex"]))
+            result.signals.append("name:motionflex_app_candidate")
     if first.name(BED_TYPE_MLILY0) and not any(
         signal.startswith("excluded:") for signal in result.signals
     ):

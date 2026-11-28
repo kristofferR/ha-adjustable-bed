@@ -116,6 +116,7 @@ bed has been tested on real hardware.
 | [Dream Sense Bed](docs/beds/richmat.md#dream-sense-bed) | Dream Sense Bed app, four colors and saved products | Dream Sense |
 | [Alya Smart Furnishing](docs/beds/alya.md) | BLUETOOTH / CB / CB1221 / CB24 / DACHENG app layouts | Alya |
 | [eShine E2000 to E5000](docs/beds/okin-nframe.md#eshine) | [eShine app, E2000, E3000 / E3100 and E5000](docs/beds/okin-nframe.md#eshine) | eShine |
+| [MotionFlex](docs/beds/richmat.md#motionflex) | SN300, SN500, HC800 (not yet tested) | MotionFlex app |
 | [ENSO Sleep Control](docs/beds/richmat.md#enso-sleep-control) | Enso 2 app, including framed and raw-key receivers | ENSO Sleep |
 | [ErgoBed Control](docs/beds/motomotion.md#ergobed-control) | [ErgoBed Control app](docs/beds/motomotion.md#ergobed-control) | HHC receivers supported by ErgoBed Control |
 | [eShine E6000](docs/beds/richmat.md#eshine) | [eShine app, E6000](docs/beds/richmat.md#eshine) | eShine |
