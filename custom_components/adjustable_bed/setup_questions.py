@@ -2956,6 +2956,27 @@ def _relax_motion_routes(_data: Mapping[str, Any]) -> Mapping[str, str]:
     return ROUTES
 
 
+def _easyctrl_models(_data: Mapping[str, Any]) -> Mapping[str, str]:
+    from .profiles.easyctrl import CHOICES
+    return CHOICES
+
+
+def _easyctrl_seed(hass: HomeAssistant, data: Mapping[str, Any], discovered: BluetoothServiceInfoBleak | None) -> dict[str, Any]:
+    from .profiles.easyctrl import advertised_model
+    result = dict(data)
+    if discovered and CONF_PRODUCT_TYPE not in result:
+        model = advertised_model(discovered.manufacturer_data or {})
+        if model is not None:
+            result[CONF_PRODUCT_TYPE] = str(model)
+    return result
+
+
+def _easyctrl_settings(data: Mapping[str, Any]) -> dict[str, Any]:
+    from .profiles.easyctrl import MODELS
+    model = MODELS.get(int(data[CONF_PRODUCT_TYPE])) if str(data.get(CONF_PRODUCT_TYPE, "")).isdigit() else None
+    return {CONF_MOTOR_COUNT: model.motor_count if model else 2, CONF_HAS_MASSAGE: bool(model and model.massage)}
+
+
 def _cheerssleep_models(data: Mapping[str, Any]) -> Mapping[str, str]:
     from .beds.cheerssleep.catalog import MODELS
 
@@ -3097,6 +3118,13 @@ SETUP_PROFILES: Final[dict[str, SetupProfile]] = {
         questions=(Question(CONF_PRODUCT_TYPE, default="", text=True), Question(CONF_PROTOCOL_VARIANT, _relax_motion_routes, "relax")),
         seed=_relax_motion_seed, normalize=_relax_motion_normalize, validate=_relax_motion_errors, derive=_relax_motion_settings, imports=("profiles.relax_motion",),
         title=lambda _data: "Relax Motion",
+    ),
+    "easyctrl": SetupProfile(
+        owns={CONF_MOTOR_COUNT: SET_BY_PROFILE, CONF_HAS_MASSAGE: SET_BY_PROFILE, CONF_DISABLE_ANGLE_SENSING: True, CONF_PROTOCOL_VARIANT: "auto", CONF_MOTOR_PULSE_DELAY_MS: 100},
+        questions=(Question(CONF_PRODUCT_TYPE, _easyctrl_models, "", searchable=True),),
+        seed=_easyctrl_seed,
+        validate=lambda data: {} if str(data.get(CONF_PRODUCT_TYPE, "")) in _easyctrl_models(data) else {CONF_PRODUCT_TYPE: "easyctrl_model"},
+        derive=_easyctrl_settings, imports=("profiles.easyctrl",),
     ),
     "cheerssleep": SetupProfile(
         owns={CONF_MOTOR_COUNT: SET_BY_PROFILE, CONF_HAS_MASSAGE: SET_BY_PROFILE, CONF_DISABLE_ANGLE_SENSING: True, CONF_PROTOCOL_VARIANT: "auto", CONF_MOTOR_PULSE_DELAY_MS: 100},
