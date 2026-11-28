@@ -2892,6 +2892,11 @@ def _simmons_blue_layouts(_data: Mapping[str, Any]) -> Mapping[str, str]:
 
 
 SETUP_PROFILES: Final[dict[str, SetupProfile]] = {
+    "active_sleep": SetupProfile(
+        questions=(Question("active_sleep_auth_id", default="",
+            validator=TextSelector(TextSelectorConfig(type=TextSelectorType.PASSWORD))),),
+        owns=dict.fromkeys(GENERIC_FIELDS - {CONF_DISABLE_ANGLE_SENSING}, SET_BY_PROFILE),
+    ),
     "linak:carpe_diem": SetupProfile(
         owns={CONF_PROTOCOL_VARIANT: "carpe_diem",
               CONF_MOTOR_PULSE_COUNT: 4, CONF_MOTOR_PULSE_DELAY_MS: 300},
@@ -4051,6 +4056,15 @@ SETUP_PROFILES: Final[dict[str, SetupProfile]] = {
         questions=(Question(
             CONF_PRODUCT_TYPE, okimattmotion_app.LAYOUTS, okimattmotion_app.DEFAULT_LAYOUT,
         ),),
+    ),
+    "ifit": SetupProfile(
+        owns={
+            CONF_MOTOR_COUNT: 3,
+            CONF_HAS_MASSAGE: True,
+            CONF_DISABLE_ANGLE_SENSING: True,
+            CONF_PROTOCOL_VARIANT: "auto",
+            CONF_MOTOR_PULSE_DELAY_MS: 220,
+        },
     ),
     BED_TYPE_OKIN_MOTIONBED: SetupProfile(
         owns={

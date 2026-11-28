@@ -1519,6 +1519,24 @@ def default_scenario(bed_type: str) -> Scenario:
     """The bed type in its default route, with the entry data it needs to build."""
     from custom_components.adjustable_bed import const
 
+    if bed_type == "active_sleep":
+        from custom_components.adjustable_bed.codec import active_sleep as active
+        return Scenario(id=bed_type, bed_type=bed_type, layout_id=bed_type,
+            entry_data={"active_sleep_auth_id": "0123456789ABCDEF"},
+            replies={
+                "write:810081": "01083132333435363738",
+                "write:820082": "0209310000130000210000",
+                "write:8410": "040100",
+                "write:b100b1": "31090046001e1432000a1f",
+                "write:b200b2": "32080a05280000000000",
+                "write:c100c1": "411021436503000000000000000000000000",
+                "write:c204": "4200",
+                "write:b303": "3300",
+                "write:a200a2": "220c010001020304050607004b4b",
+                **{f"write:{active.arrow(code).hex()}": (bytes((0x34, 6, code, 10, 5, 40, 0, 0))).hex()
+                   for code in active.OPERATIONS.values()},
+                "write:b40516": "3406160a05280000",
+            })
     if bed_type == "powersbedding":
         return Scenario(id=bed_type, bed_type=bed_type,
                         entry_data={const.CONF_BLE_DEVICE_NAME: "okin-Powers"},
@@ -3022,7 +3040,7 @@ async def _connect(controller: Any, recorder: Recorder, clock: FakeClock) -> dic
         discovery = controller.async_discover_capabilities()
         if inspect.isawaitable(discovery):
             await discovery
-        if controller._coordinator.bed_type == "powersbedding":
+        if controller._coordinator.bed_type in {"powersbedding", "active_sleep"}:
             await controller.async_on_connect(SimpleNamespace(
                 async_start_notify=controller.start_notify,
                 persist_capability_snapshot=lambda: None,
@@ -3048,7 +3066,7 @@ async def _connect(controller: Any, recorder: Recorder, clock: FakeClock) -> dic
         if controller._coordinator.bed_type in {"shuda", "sleeptime"}:
             await controller.async_on_connect(SimpleNamespace(async_start_notify=controller.start_notify))
             return
-        if controller._coordinator.bed_type in {"meisemobell", "rize_home", "superior_sleep", "okin_64bit", "betterliving2", "ultramatic_smart_bed", "smart_comfort_synargy", "smart_comfort_synergy", "simmons_blue"}:
+        if controller._coordinator.bed_type in {"meisemobell", "rize_home", "superior_sleep", "okin_64bit", "betterliving2", "ultramatic_smart_bed", "smart_comfort_synargy", "smart_comfort_synergy", "simmons_blue", "ifit"}:
             session = SimpleNamespace(async_start_notify=controller.start_notify, is_current=lambda: True)
             if controller._coordinator.bed_type == "betterliving2":
                 session.store_device_info = lambda *_: None
@@ -3079,7 +3097,9 @@ async def _connect(controller: Any, recorder: Recorder, clock: FakeClock) -> dic
         if controller._coordinator.bed_type == "solace" and controller.profile.key in ("sophie", "flexirest"):
             session = SimpleNamespace(is_current=lambda: True)
             await controller.async_after_connect(session)
-            await controller._startup_task
+            solace_startup = controller._startup_task
+            assert solace_startup is not None, "Solace startup task was not scheduled"
+            await solace_startup
         if controller._coordinator.bed_type == "n32_motion_bed":
             # The helper already subscribed; run the app-owned startup on this
             # captured controller without changing older snapshot scenarios.
