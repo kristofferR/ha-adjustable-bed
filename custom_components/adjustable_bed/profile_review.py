@@ -320,7 +320,7 @@ _DETECTION_DRIFT: Final[dict[str, frozenset[str]]] = {
 
 # App profiles detection lists as alternatives for an advertisement. They are
 # offered only when detection still picks the stored route for this bed.
-_ADVERTISED_APPS: Final = frozenset(
+_ADVERTISED_APPS: Final = frozenset({"ai_bed"}) | frozenset(
     {
         BED_TYPE_FSM_RELAX,
         BED_TYPE_MOTION_BED,

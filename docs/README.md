@@ -45,6 +45,7 @@ app. Every guide follows the [bed guide format](BED_GUIDE_FORMAT.md).
 | [GM Control](beds/gmmotor.md) | The GM Control app and sleep modules | |
 | [Hush Base](beds/hush-base.md) | The Hush Base app, sleep sensors and remote finder | |
 | [Jensen](beds/jensen.md) | The Jensen Adjustable Sleep app | |
+| [AI Bed](beds/ai_bed.md) | AI Bed primary 305 subset (Limos and HJ/QRRM profiles use the Limoss and Richmat codecs) |
 | [Jiecang](beds/jiecang.md) | Jiecang remotes, Comfort Motion, the Dream apps and the LOGICDATA apps | Shared |
 | [JMC400](beds/jmc.md) | Jensen JMC400 beds, from the Jensen and Svane Remote apps | Shared |
 | [Kaidi](beds/kaidi.md) | Rize Beds, Rize Seat, Floyd Home, ISleep, KomfyD and ComfyDS | Shared |

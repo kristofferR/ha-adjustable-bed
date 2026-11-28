@@ -367,6 +367,123 @@
  "button:agingplace_sleep": {
   "card_section": "utility"
  },
+ "button:ai_bed_both_down": {
+  "card_section": "utility"
+ },
+ "button:ai_bed_both_rise": {
+  "card_section": "utility"
+ },
+ "button:ai_bed_both_up": {
+  "card_section": "utility"
+ },
+ "button:ai_bed_build_target": {
+  "card_section": "utility"
+ },
+ "button:ai_bed_calibrate": {
+  "card_section": "utility"
+ },
+ "button:ai_bed_capabilities": {
+  "card_section": "utility"
+ },
+ "button:ai_bed_deep_program": {
+  "card_section": "presets",
+  "card_role": "save"
+ },
+ "button:ai_bed_deep_recall": {
+  "card_section": "presets"
+ },
+ "button:ai_bed_firmware": {
+  "card_section": "utility"
+ },
+ "button:ai_bed_foot_down": {
+  "card_section": "utility"
+ },
+ "button:ai_bed_foot_rise": {
+  "card_section": "utility"
+ },
+ "button:ai_bed_foot_up": {
+  "card_section": "utility"
+ },
+ "button:ai_bed_head_down": {
+  "card_section": "utility"
+ },
+ "button:ai_bed_head_rise": {
+  "card_section": "utility"
+ },
+ "button:ai_bed_head_up": {
+  "card_section": "utility"
+ },
+ "button:ai_bed_leisure_program": {
+  "card_section": "presets",
+  "card_role": "save"
+ },
+ "button:ai_bed_leisure_recall": {
+  "card_section": "presets"
+ },
+ "button:ai_bed_program_decomp": {
+  "card_section": "presets",
+  "card_role": "save"
+ },
+ "button:ai_bed_program_deep": {
+  "card_section": "presets",
+  "card_role": "save"
+ },
+ "button:ai_bed_program_leisure": {
+  "card_section": "presets",
+  "card_role": "save"
+ },
+ "button:ai_bed_program_relax": {
+  "card_section": "presets",
+  "card_role": "save"
+ },
+ "button:ai_bed_program_sleep_aid": {
+  "card_section": "presets",
+  "card_role": "save"
+ },
+ "button:ai_bed_recall_decomp": {
+  "card_section": "presets"
+ },
+ "button:ai_bed_recall_deep": {
+  "card_section": "presets"
+ },
+ "button:ai_bed_recall_leisure": {
+  "card_section": "presets"
+ },
+ "button:ai_bed_recall_relax": {
+  "card_section": "presets"
+ },
+ "button:ai_bed_recall_sleep": {
+  "card_section": "presets"
+ },
+ "button:ai_bed_recall_sleep_aid": {
+  "card_section": "presets"
+ },
+ "button:ai_bed_relax_program": {
+  "card_section": "presets",
+  "card_role": "save"
+ },
+ "button:ai_bed_relax_recall": {
+  "card_section": "presets"
+ },
+ "button:ai_bed_sleep_aid_program": {
+  "card_section": "presets",
+  "card_role": "save"
+ },
+ "button:ai_bed_sleep_aid_recall": {
+  "card_section": "presets"
+ },
+ "button:ai_bed_sleep_aid_reset": {
+  "card_section": "utility"
+ },
+ "button:ai_bed_sleep_recall": {
+  "card_section": "presets"
+ },
+ "button:ai_bed_status": {
+  "card_section": "utility"
+ },
+ "button:ai_bed_wake_up_recall": {
+  "card_section": "presets"
+ },
  "button:all_motors_down": {
   "card_section": "motors",
   "card_role": "down",
@@ -4025,6 +4142,15 @@
  "number:agingplace_motion_minutes": {
   "card_section": "lighting"
  },
+ "number:ai_bed_heat": {
+  "card_section": "utility"
+ },
+ "number:ai_bed_waist_left": {
+  "card_section": "utility"
+ },
+ "number:ai_bed_waist_right": {
+  "card_section": "utility"
+ },
  "number:ambient_feet": {
   "card_section": "utility"
  },
@@ -4596,6 +4722,9 @@
  },
  "select:adjustamattress_strength_setting": {
   "card_section": "utility"
+ },
+ "select:ai_bed_massage_mode": {
+  "card_section": "massage"
  },
  "select:bedsmart_side": {
   "card_section": "motors"
@@ -6269,6 +6398,15 @@
  },
  "switch:adjustamattress_snore_control": {
   "card_section": "utility"
+ },
+ "switch:ai_bed_massage_both": {
+  "card_section": "massage"
+ },
+ "switch:ai_bed_massage_foot": {
+  "card_section": "massage"
+ },
+ "switch:ai_bed_massage_head": {
+  "card_section": "massage"
  },
  "switch:automatic_light": {
   "card_section": "utility"

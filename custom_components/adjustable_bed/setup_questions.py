@@ -384,6 +384,7 @@ _OWNED_BY_BED_TYPE: Final[dict[str, frozenset[str]]] = {
     "super_colchones": GENERIC_FIELDS - {CONF_PROTOCOL_VARIANT, CONF_MOTOR_PULSE_COUNT},
     "ergobq": GENERIC_FIELDS,
     "sonicsleep": GENERIC_FIELDS - {CONF_MOTOR_PULSE_COUNT},
+    "ai_bed": GENERIC_FIELDS,
     "suta": GENERIC_FIELDS - {CONF_MOTOR_PULSE_COUNT},
     "powersbedding": GENERIC_FIELDS - {CONF_MOTOR_PULSE_COUNT},
     "hestia_motion": GENERIC_FIELDS - {CONF_MOTOR_PULSE_COUNT},
@@ -3121,6 +3122,12 @@ SETUP_PROFILES: Final[dict[str, SetupProfile]] = {
         questions=(Question(CONF_BLE_DEVICE_NAME, default="", text=True),),
         validate=_truemotion_errors, seed=_motion_bed_seed,
         imports=("profiles.truemotion",),
+    ),
+    "ai_bed": SetupProfile(
+        owns={CONF_MOTOR_COUNT: 2, CONF_HAS_MASSAGE: False, CONF_DISABLE_ANGLE_SENSING: True,
+              CONF_MOTOR_PULSE_COUNT: 1, CONF_MOTOR_PULSE_DELAY_MS: 500},
+        questions=(Question(CONF_PROTOCOL_VARIANT, {"limos": "Limos", "qrrm": "QRRM (Sleep only)", "hj001": "HJ001/HJ010/HJ011", "305": "Primary 305 (bounded subset)"}, "305"),
+                   Question(CONF_BLE_DEVICE_NAME, default=lambda data: data.get(CONF_NAME, ""), text=True)),
     ),
     "suta": SetupProfile(
         owns={CONF_MOTOR_COUNT: 2, CONF_HAS_MASSAGE: False,

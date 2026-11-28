@@ -1,0 +1,1822 @@
+{
+  "primary-305-vectors": [
+    {
+      "action": "Both down",
+      "kind": "shipped literal",
+      "bytes": "aa080802000200aa",
+      "literal_address": "0x80bc64",
+      "source": "/analysis/work/blutter/asm/bedding/widgets/smart_bed/smart_bed_control_widget.dart"
+    },
+    {
+      "action": "Foot down",
+      "kind": "shipped literal",
+      "bytes": "aa080800000200a8",
+      "literal_address": "0x80bccc",
+      "source": "/analysis/work/blutter/asm/bedding/widgets/smart_bed/smart_bed_control_widget.dart"
+    },
+    {
+      "action": "Head down",
+      "kind": "shipped literal",
+      "bytes": "aa080802000000a8",
+      "literal_address": "0x80bd34",
+      "source": "/analysis/work/blutter/asm/bedding/widgets/smart_bed/smart_bed_control_widget.dart"
+    },
+    {
+      "action": "Both up",
+      "kind": "shipped literal",
+      "bytes": "aa080801000100aa",
+      "literal_address": "0x80bd9c",
+      "source": "/analysis/work/blutter/asm/bedding/widgets/smart_bed/smart_bed_control_widget.dart"
+    },
+    {
+      "action": "Foot up",
+      "kind": "shipped literal",
+      "bytes": "aa080800000100ab",
+      "literal_address": "0x80be04",
+      "source": "/analysis/work/blutter/asm/bedding/widgets/smart_bed/smart_bed_control_widget.dart"
+    },
+    {
+      "action": "Head up",
+      "kind": "shipped literal",
+      "bytes": "aa080801000000ab",
+      "literal_address": "0x80be6c",
+      "source": "/analysis/work/blutter/asm/bedding/widgets/smart_bed/smart_bed_control_widget.dart"
+    },
+    {
+      "action": "Wake-up recall",
+      "kind": "shipped literal",
+      "bytes": "aa06140c00b4",
+      "literal_address": "0x80bf68",
+      "source": "/analysis/work/blutter/asm/bedding/widgets/smart_bed/smart_bed_control_widget.dart"
+    },
+    {
+      "action": "Leisure program",
+      "kind": "shipped literal",
+      "bytes": "aa06140300bb",
+      "literal_address": "0x80bfbc",
+      "source": "/analysis/work/blutter/asm/bedding/widgets/smart_bed/smart_bed_control_widget.dart"
+    },
+    {
+      "action": "Leisure recall",
+      "kind": "shipped literal",
+      "bytes": "aa06140400bc",
+      "literal_address": "0x80c030",
+      "source": "/analysis/work/blutter/asm/bedding/widgets/smart_bed/smart_bed_control_widget.dart"
+    },
+    {
+      "action": "Relax program",
+      "kind": "shipped literal",
+      "bytes": "aa06140700bf",
+      "literal_address": "0x80c084",
+      "source": "/analysis/work/blutter/asm/bedding/widgets/smart_bed/smart_bed_control_widget.dart"
+    },
+    {
+      "action": "Relax recall",
+      "kind": "shipped literal",
+      "bytes": "aa06140800b0",
+      "literal_address": "0x80c0f8",
+      "source": "/analysis/work/blutter/asm/bedding/widgets/smart_bed/smart_bed_control_widget.dart"
+    },
+    {
+      "action": "Sleep Aid program",
+      "kind": "shipped literal",
+      "bytes": "aa06140e00b6",
+      "literal_address": "0x80c14c",
+      "source": "/analysis/work/blutter/asm/bedding/widgets/smart_bed/smart_bed_control_widget.dart"
+    },
+    {
+      "action": "Sleep Aid recall",
+      "kind": "shipped literal",
+      "bytes": "aa06140f00b7",
+      "literal_address": "0x80c1a0",
+      "source": "/analysis/work/blutter/asm/bedding/widgets/smart_bed/smart_bed_control_widget.dart"
+    },
+    {
+      "action": "Deep program",
+      "kind": "shipped literal",
+      "bytes": "aa06140500bd",
+      "literal_address": "0x80c1f4",
+      "source": "/analysis/work/blutter/asm/bedding/widgets/smart_bed/smart_bed_control_widget.dart"
+    },
+    {
+      "action": "Deep recall",
+      "kind": "shipped literal",
+      "bytes": "aa06140600be",
+      "literal_address": "0x80c288",
+      "source": "/analysis/work/blutter/asm/bedding/widgets/smart_bed/smart_bed_control_widget.dart"
+    },
+    {
+      "action": "Sleep recall",
+      "kind": "shipped literal",
+      "bytes": "aa06140200ba",
+      "literal_address": "0x80c300",
+      "source": "/analysis/work/blutter/asm/bedding/widgets/smart_bed/smart_bed_control_widget.dart"
+    },
+    {
+      "action": "Motor release",
+      "kind": "source-reconstructed fixed builder",
+      "bytes": "aa080800000000aa",
+      "method_address": "0x7e73e0"
+    },
+    {
+      "action": "Heartbeat",
+      "kind": "shipped literal",
+      "bytes": "aa07c900000064",
+      "method_address": "0xa16e14"
+    },
+    {
+      "action": "Lamp off",
+      "kind": "source-reconstructed fixed builder",
+      "bytes": "aa051c00b3",
+      "method_address": "0x7c7334"
+    },
+    {
+      "action": "Lamp on",
+      "kind": "source-reconstructed fixed builder",
+      "bytes": "aa051c01b2",
+      "method_address": "0x7c7884"
+    },
+    {
+      "action": "Foot massage off",
+      "kind": "source-reconstructed fixed builder",
+      "bytes": "aa06160002b8",
+      "method_address": "0x7c9860"
+    },
+    {
+      "action": "Foot massage on",
+      "kind": "source-reconstructed fixed builder",
+      "bytes": "aa06160001bb",
+      "method_address": "0x7c9990"
+    },
+    {
+      "action": "Head massage off",
+      "kind": "source-reconstructed fixed builder",
+      "bytes": "aa06160200b8",
+      "method_address": "0x7c9bb8"
+    },
+    {
+      "action": "Head massage on",
+      "kind": "source-reconstructed fixed builder",
+      "bytes": "aa06160100bb",
+      "method_address": "0x7c9ce8"
+    },
+    {
+      "action": "Both massage on",
+      "kind": "source-reconstructed fixed builder",
+      "bytes": "aa06160101ba",
+      "method_address": "0x78deac"
+    },
+    {
+      "action": "Both massage off",
+      "kind": "source-reconstructed fixed builder",
+      "bytes": "aa06160202ba",
+      "method_address": "0x78e554"
+    },
+    {
+      "action": "Massage mode1",
+      "kind": "source-reconstructed fixed builder",
+      "bytes": "aa051800b7",
+      "method_address": "0x78e348"
+    },
+    {
+      "action": "Massage mode2",
+      "kind": "source-reconstructed fixed builder",
+      "bytes": "aa051801b6",
+      "method_address": "0x78e21c"
+    },
+    {
+      "action": "Massage mode3",
+      "kind": "source-reconstructed fixed builder",
+      "bytes": "aa051802b5",
+      "method_address": "0x78e0f0"
+    },
+    {
+      "action": "Massage timer10min",
+      "kind": "source-reconstructed fixed builder",
+      "bytes": "aa051a01b4",
+      "method_address": "0x7ca500"
+    },
+    {
+      "action": "Massage timer20min",
+      "kind": "source-reconstructed fixed builder",
+      "bytes": "aa051a02b7",
+      "method_address": "0x7ca3d4"
+    },
+    {
+      "action": "Massage timer30min",
+      "kind": "source-reconstructed fixed builder",
+      "bytes": "aa051a03b6",
+      "method_address": "0x7ca2a8"
+    },
+    {
+      "action": "Capability query",
+      "kind": "source-reconstructed fixed builder",
+      "bytes": "aa04a30d",
+      "method_address": "0x8ada94"
+    },
+    {
+      "action": "Firmware version query",
+      "kind": "source-reconstructed fixed builder",
+      "bytes": "aa04a50b",
+      "method_address": "0x8b4080"
+    },
+    {
+      "action": "Build-target query",
+      "kind": "source-reconstructed fixed builder",
+      "bytes": "aa04a709",
+      "method_address": "0x8b419c"
+    },
+    {
+      "action": "Status query",
+      "kind": "shipped literal",
+      "bytes": "aa04228c",
+      "method_address": "0x8b8750"
+    },
+    {
+      "action": "Waist pump",
+      "kind": "source-derived dynamic sample",
+      "bytes": "aa06101e2d8f",
+      "method_address": "0x72bd54",
+      "inputs": {
+        "left": 30,
+        "right": 45
+      }
+    },
+    {
+      "action": "Heat level4",
+      "kind": "source-derived dynamic sample",
+      "bytes": "aa051204b9",
+      "method_address": "0x72bf68",
+      "inputs": {
+        "level": 4
+      }
+    },
+    {
+      "action": "Waist heat1",
+      "kind": "source-derived dynamic sample",
+      "bytes": "aa052c0182",
+      "method_address": "0xa06948",
+      "inputs": {
+        "level": 1
+      }
+    },
+    {
+      "action": "Foot heat3",
+      "kind": "source-derived dynamic sample",
+      "bytes": "aa052b0387",
+      "method_address": "0xa06b18",
+      "inputs": {
+        "level": 3
+      }
+    },
+    {
+      "action": "Heating timer reset only",
+      "kind": "source-derived dynamic sample",
+      "bytes": "aa069000003c",
+      "method_address": "0xa06d50",
+      "inputs": {}
+    },
+    {
+      "action": "Vibration single",
+      "kind": "source-derived dynamic sample",
+      "bytes": "aa08a101020f010e",
+      "method_address": "0x913514",
+      "inputs": {
+        "part": 1,
+        "mode": 2,
+        "level": 15
+      }
+    },
+    {
+      "action": "Vibration both",
+      "kind": "source-derived dynamic sample",
+      "bytes": "aa09a10201050f010a",
+      "method_address": "0x78d00c",
+      "inputs": {
+        "mode": 1,
+        "headLevel": 5,
+        "footLevel": 15,
+        "flag": true
+      }
+    },
+    {
+      "action": "Inflation schedule",
+      "kind": "source-derived dynamic sample",
+      "bytes": "aa071e061e7fd4",
+      "method_address": "0x6e20c4",
+      "inputs": {
+        "hour_hex": "06",
+        "minute_hex": "1e",
+        "week_hex": "7f"
+      }
+    },
+    {
+      "action": "Wake schedule",
+      "kind": "source-derived dynamic sample",
+      "bytes": "aa0820061e7f14f1",
+      "method_address": "0x6e9974",
+      "inputs": {
+        "hour_hex": "06",
+        "minute_hex": "1e",
+        "week_hex": "7f"
+      }
+    },
+    {
+      "action": "Query packages2and4and7",
+      "kind": "source-derived dynamic sample",
+      "bytes": "aa0741020407ed",
+      "method_address": "0x68eb24",
+      "inputs": {
+        "packages": [
+          2,
+          4,
+          7
+        ]
+      }
+    },
+    {
+      "action": "Hardware calibration",
+      "kind": "shipped literal",
+      "bytes": "aa042688",
+      "method_address": "0x73b92c",
+      "inputs": {}
+    },
+    {
+      "action": "MCU clock 2026-11-27 11:22:33 local Friday",
+      "kind": "source-derived dynamic sample",
+      "bytes": "aa1104051a0b1b0b1621f1044f701aa0fc",
+      "method_address": "0x73981c",
+      "inputs": {
+        "weekday": 5,
+        "year": 2026,
+        "month": 11,
+        "day": 27,
+        "hour": 11,
+        "minute": 22,
+        "second": 33
+      }
+    },
+    {
+      "action": "Privacy PIN 123",
+      "kind": "source-derived dynamic sample",
+      "bytes": "aa079d01020330",
+      "method_address": "0x73be18",
+      "inputs": {
+        "pin": "123"
+      }
+    },
+    {
+      "action": "Sleep aid reset",
+      "kind": "source-derived dynamic sample",
+      "bytes": "aa0a390f010100000096",
+      "method_address": "0x7814a8",
+      "inputs": {
+        "a_hex": "00",
+        "b_hex": "00",
+        "c_hex": "00"
+      }
+    },
+    {
+      "action": "Sleep timer Monday06:30",
+      "kind": "source-derived dynamic sample",
+      "bytes": "aa082f061e010296",
+      "method_address": "0x784f5c",
+      "inputs": {
+        "hour": 6,
+        "minute": 30,
+        "week": 1
+      }
+    },
+    {
+      "action": "Inflation disabled",
+      "kind": "source-derived dynamic sample",
+      "bytes": "aa071e000000b3",
+      "method_address": "0x6e20c4",
+      "inputs": {
+        "hour_hex": "0",
+        "minute_hex": "0",
+        "week_hex": "0000000"
+      }
+    },
+    {
+      "action": "Wake disabled",
+      "kind": "source-derived dynamic sample",
+      "bytes": "aa08200000001496",
+      "method_address": "0x6e9974",
+      "inputs": {
+        "hour_hex": "0",
+        "minute_hex": "0",
+        "week_hex": "0000000"
+      }
+    },
+    {
+      "action": "Vibration both apply",
+      "inputs": {
+        "mode": 1,
+        "headLevel": 5,
+        "footLevel": 15,
+        "flag": false
+      },
+      "bytes": "aa09a10201050f000b",
+      "source": "bedding/views/feature/vibrate_massage_settings_screen.dart",
+      "address": "0x78c59c",
+      "kind": "source-derived dynamic sample"
+    },
+    {
+      "action": "Query packages2and4and5and7",
+      "inputs": {
+        "packages": [
+          2,
+          4,
+          5,
+          7
+        ]
+      },
+      "bytes": "aa084102040507e7",
+      "source": "bedding/views/B305/setting_screen.dart",
+      "address": "0x966bbc",
+      "kind": "source-derived dynamic sample"
+    }
+  ],
+  "limos-vectors": [
+    {
+      "action": "Sleep recall",
+      "plaintext": "aa8100000000012c",
+      "bytes": "dddba60a8fb9dd02b140",
+      "literal_address": "0x79d5c8",
+      "source": "/analysis/work/blutter/asm/bedding/views/limos/limos_bed_ctrl_screen.dart",
+      "algorithm": "TEA16/key repeated0x55551494,0x74385555;big endian;dd envelope,sum8"
+    },
+    {
+      "action": "Deep recall",
+      "plaintext": "aa8300000000012e",
+      "bytes": "dd49f740ef79427f971d",
+      "literal_address": "0x79d640",
+      "source": "/analysis/work/blutter/asm/bedding/views/limos/limos_bed_ctrl_screen.dart",
+      "algorithm": "TEA16/key repeated0x55551494,0x74385555;big endian;dd envelope,sum8"
+    },
+    {
+      "action": "Leisure recall",
+      "plaintext": "aa8400000000012f",
+      "bytes": "dd4ac24a6b81229feccc",
+      "literal_address": "0x79d6d4",
+      "source": "/analysis/work/blutter/asm/bedding/views/limos/limos_bed_ctrl_screen.dart",
+      "algorithm": "TEA16/key repeated0x55551494,0x74385555;big endian;dd envelope,sum8"
+    },
+    {
+      "action": "Deep program",
+      "plaintext": "aa8200000000012d",
+      "bytes": "dd568df00f9cf1430897",
+      "literal_address": "0x79dfc8",
+      "source": "/analysis/work/blutter/asm/bedding/views/limos/limos_bed_ctrl_screen.dart",
+      "algorithm": "TEA16/key repeated0x55551494,0x74385555;big endian;dd envelope,sum8"
+    },
+    {
+      "action": "Head up",
+      "plaintext": "aa120000000001bd",
+      "bytes": "dd86655c88f60bb73498",
+      "literal_address": "0x79e064",
+      "source": "/analysis/work/blutter/asm/bedding/views/limos/limos_bed_ctrl_screen.dart",
+      "algorithm": "TEA16/key repeated0x55551494,0x74385555;big endian;dd envelope,sum8"
+    },
+    {
+      "action": "Foot up",
+      "plaintext": "aa220000000001cd",
+      "bytes": "dd78a1aa601f82581811",
+      "literal_address": "0x79e0dc",
+      "source": "/analysis/work/blutter/asm/bedding/views/limos/limos_bed_ctrl_screen.dart",
+      "algorithm": "TEA16/key repeated0x55551494,0x74385555;big endian;dd envelope,sum8"
+    },
+    {
+      "action": "Head down",
+      "plaintext": "aa130000000001be",
+      "bytes": "dda4c8643981475fabb8",
+      "literal_address": "0x79e1e8",
+      "source": "/analysis/work/blutter/asm/bedding/views/limos/limos_bed_ctrl_screen.dart",
+      "algorithm": "TEA16/key repeated0x55551494,0x74385555;big endian;dd envelope,sum8"
+    },
+    {
+      "action": "Foot down",
+      "plaintext": "aa230000000001ce",
+      "bytes": "dde7738f1bacf3b3a0d3",
+      "literal_address": "0x79e260",
+      "source": "/analysis/work/blutter/asm/bedding/views/limos/limos_bed_ctrl_screen.dart",
+      "algorithm": "TEA16/key repeated0x55551494,0x74385555;big endian;dd envelope,sum8"
+    },
+    {
+      "action": "Both up",
+      "plaintext": "aa500000000001fb",
+      "bytes": "dd1f05263a25cab1eced",
+      "literal_address": "0x79e4e8",
+      "source": "/analysis/work/blutter/asm/bedding/views/limos/limos_bed_ctrl_screen.dart",
+      "algorithm": "TEA16/key repeated0x55551494,0x74385555;big endian;dd envelope,sum8"
+    },
+    {
+      "action": "Both down",
+      "plaintext": "aa510000000001fc",
+      "bytes": "dd286dd2e942a64daa0c",
+      "literal_address": "0x79e590",
+      "source": "/analysis/work/blutter/asm/bedding/views/limos/limos_bed_ctrl_screen.dart",
+      "algorithm": "TEA16/key repeated0x55551494,0x74385555;big endian;dd envelope,sum8"
+    }
+  ],
+  "hj-vectors": [
+    {
+      "id": "hj001-01",
+      "protocol": "hj001-literal-route",
+      "action": "Recall Sleep",
+      "inputs": {
+        "literal_address": "0x764494"
+      },
+      "expected_bytes": "6e 01 00 31 a0",
+      "evidence": [
+        "work/blutter/asm/bedding/views/hj001/hj001_bed_ctrl_screen.dart literal@0x764494",
+        "E_HJ_ACTION"
+      ],
+      "scope": "Frozen app write-boundary literal, not full route/hardware validation."
+    },
+    {
+      "id": "hj001-02",
+      "protocol": "hj001-literal-route",
+      "action": "Recall Leisure",
+      "inputs": {
+        "literal_address": "0x7644c0"
+      },
+      "expected_bytes": "6e 01 00 2e 9d",
+      "evidence": [
+        "work/blutter/asm/bedding/views/hj001/hj001_bed_ctrl_screen.dart literal@0x7644c0",
+        "E_HJ_ACTION"
+      ],
+      "scope": "Frozen app write-boundary literal, not full route/hardware validation."
+    },
+    {
+      "id": "hj001-03",
+      "protocol": "hj001-literal-route",
+      "action": "Recall Relax",
+      "inputs": {
+        "literal_address": "0x7644ec"
+      },
+      "expected_bytes": "6e 01 00 45 b4",
+      "evidence": [
+        "work/blutter/asm/bedding/views/hj001/hj001_bed_ctrl_screen.dart literal@0x7644ec",
+        "E_HJ_ACTION"
+      ],
+      "scope": "Frozen app write-boundary literal, not full route/hardware validation."
+    },
+    {
+      "id": "hj001-04",
+      "protocol": "hj001-literal-route",
+      "action": "Recall Deep",
+      "inputs": {
+        "literal_address": "0x764518"
+      },
+      "expected_bytes": "6e 01 00 46 b5",
+      "evidence": [
+        "work/blutter/asm/bedding/views/hj001/hj001_bed_ctrl_screen.dart literal@0x764518",
+        "E_HJ_ACTION"
+      ],
+      "scope": "Frozen app write-boundary literal, not full route/hardware validation."
+    },
+    {
+      "id": "hj001-05",
+      "protocol": "hj001-literal-route",
+      "action": "Recall Sleep Aid",
+      "inputs": {
+        "literal_address": "0x764544"
+      },
+      "expected_bytes": "6e 01 00 2f 9e",
+      "evidence": [
+        "work/blutter/asm/bedding/views/hj001/hj001_bed_ctrl_screen.dart literal@0x764544",
+        "E_HJ_ACTION"
+      ],
+      "scope": "Frozen app write-boundary literal, not full route/hardware validation."
+    },
+    {
+      "id": "hj001-06",
+      "protocol": "hj001-literal-route",
+      "action": "Recall Decomp",
+      "inputs": {
+        "literal_address": "0x764570"
+      },
+      "expected_bytes": "6e 01 00 30 9f",
+      "evidence": [
+        "work/blutter/asm/bedding/views/hj001/hj001_bed_ctrl_screen.dart literal@0x764570",
+        "E_HJ_ACTION"
+      ],
+      "scope": "Frozen app write-boundary literal, not full route/hardware validation."
+    },
+    {
+      "id": "hj001-07",
+      "protocol": "hj001-literal-route",
+      "action": "Program Leisure (id2)",
+      "inputs": {
+        "literal_address": "0x7648e0"
+      },
+      "expected_bytes": "6e 01 00 2b 9a",
+      "evidence": [
+        "work/blutter/asm/bedding/views/hj001/hj001_bed_ctrl_screen.dart literal@0x7648e0",
+        "E_HJ_ACTION"
+      ],
+      "scope": "Frozen app write-boundary literal, not full route/hardware validation."
+    },
+    {
+      "id": "hj001-08",
+      "protocol": "hj001-literal-route",
+      "action": "Program Relax (id3)",
+      "inputs": {
+        "literal_address": "0x764948"
+      },
+      "expected_bytes": "6e 01 00 66 d5",
+      "evidence": [
+        "work/blutter/asm/bedding/views/hj001/hj001_bed_ctrl_screen.dart literal@0x764948",
+        "E_HJ_ACTION"
+      ],
+      "scope": "Frozen app write-boundary literal, not full route/hardware validation."
+    },
+    {
+      "id": "hj001-09",
+      "protocol": "hj001-literal-route",
+      "action": "Program Deep (id4)",
+      "inputs": {
+        "literal_address": "0x7649b0"
+      },
+      "expected_bytes": "6e 01 00 69 d8",
+      "evidence": [
+        "work/blutter/asm/bedding/views/hj001/hj001_bed_ctrl_screen.dart literal@0x7649b0",
+        "E_HJ_ACTION"
+      ],
+      "scope": "Frozen app write-boundary literal, not full route/hardware validation."
+    },
+    {
+      "id": "hj001-10",
+      "protocol": "hj001-literal-route",
+      "action": "Program Sleep Aid (id5)",
+      "inputs": {
+        "literal_address": "0x764a18"
+      },
+      "expected_bytes": "6e 01 00 2c 9b",
+      "evidence": [
+        "work/blutter/asm/bedding/views/hj001/hj001_bed_ctrl_screen.dart literal@0x764a18",
+        "E_HJ_ACTION"
+      ],
+      "scope": "Frozen app write-boundary literal, not full route/hardware validation."
+    },
+    {
+      "id": "hj001-11",
+      "protocol": "hj001-literal-route",
+      "action": "Program Decomp (id6)",
+      "inputs": {
+        "literal_address": "0x764a60"
+      },
+      "expected_bytes": "6e 01 00 2d 9c",
+      "evidence": [
+        "work/blutter/asm/bedding/views/hj001/hj001_bed_ctrl_screen.dart literal@0x764a60",
+        "E_HJ_ACTION"
+      ],
+      "scope": "Frozen app write-boundary literal, not full route/hardware validation."
+    },
+    {
+      "id": "hj001-12",
+      "protocol": "hj001-literal-route",
+      "action": "Both Rise (id301)",
+      "inputs": {
+        "literal_address": "0x7663d8"
+      },
+      "expected_bytes": "6e 01 00 29 98",
+      "evidence": [
+        "work/blutter/asm/bedding/views/hj001/hj001_bed_ctrl_screen.dart literal@0x7663d8",
+        "E_HJ_ACTION"
+      ],
+      "scope": "Frozen app write-boundary literal, not full route/hardware validation."
+    },
+    {
+      "id": "hj001-13",
+      "protocol": "hj001-literal-route",
+      "action": "Both Down (id302)",
+      "inputs": {
+        "literal_address": "0x766410"
+      },
+      "expected_bytes": "6e 01 00 2a 99",
+      "evidence": [
+        "work/blutter/asm/bedding/views/hj001/hj001_bed_ctrl_screen.dart literal@0x766410",
+        "E_HJ_ACTION"
+      ],
+      "scope": "Frozen app write-boundary literal, not full route/hardware validation."
+    },
+    {
+      "id": "hj001-14",
+      "protocol": "hj001-literal-route",
+      "action": "Foot Rise (id201)",
+      "inputs": {
+        "literal_address": "0x7677c8"
+      },
+      "expected_bytes": "6e 01 00 26 95",
+      "evidence": [
+        "work/blutter/asm/bedding/views/hj001/hj001_bed_ctrl_screen.dart literal@0x7677c8",
+        "E_HJ_ACTION"
+      ],
+      "scope": "Frozen app write-boundary literal, not full route/hardware validation."
+    },
+    {
+      "id": "hj001-15",
+      "protocol": "hj001-literal-route",
+      "action": "Foot Down (id202)",
+      "inputs": {
+        "literal_address": "0x767800"
+      },
+      "expected_bytes": "6e 01 00 27 96",
+      "evidence": [
+        "work/blutter/asm/bedding/views/hj001/hj001_bed_ctrl_screen.dart literal@0x767800",
+        "E_HJ_ACTION"
+      ],
+      "scope": "Frozen app write-boundary literal, not full route/hardware validation."
+    },
+    {
+      "id": "hj001-16",
+      "protocol": "hj001-literal-route",
+      "action": "Head Rise (id101)",
+      "inputs": {
+        "literal_address": "0x767944"
+      },
+      "expected_bytes": "6e 01 00 24 93",
+      "evidence": [
+        "work/blutter/asm/bedding/views/hj001/hj001_bed_ctrl_screen.dart literal@0x767944",
+        "E_HJ_ACTION"
+      ],
+      "scope": "Frozen app write-boundary literal, not full route/hardware validation."
+    },
+    {
+      "id": "hj001-17",
+      "protocol": "hj001-literal-route",
+      "action": "Head Down (id102)",
+      "inputs": {
+        "literal_address": "0x76797c"
+      },
+      "expected_bytes": "6e 01 00 25 94",
+      "evidence": [
+        "work/blutter/asm/bedding/views/hj001/hj001_bed_ctrl_screen.dart literal@0x76797c",
+        "E_HJ_ACTION"
+      ],
+      "scope": "Frozen app write-boundary literal, not full route/hardware validation."
+    },
+    {
+      "id": "hj008-sum-1",
+      "protocol": "hj008-builder-candidate",
+      "action": "widget callback0x81857c",
+      "inputs": {
+        "data": [
+          110,
+          1,
+          0,
+          60
+        ]
+      },
+      "expected_bytes": "6e 01 00 3c ab",
+      "evidence": [
+        "E_SUM",
+        "smart_sofa_control_widget.dart 0x8185b4"
+      ],
+      "scope": "Builder vector only; semantic UI association and final GATT route unresolved."
+    },
+    {
+      "id": "hj008-sum-2",
+      "protocol": "hj008-builder-candidate",
+      "action": "widget callback0x8185e4",
+      "inputs": {
+        "data": [
+          110,
+          1,
+          0,
+          39
+        ]
+      },
+      "expected_bytes": "6e 01 00 27 96",
+      "evidence": [
+        "E_SUM",
+        "smart_sofa_control_widget.dart 0x81861c"
+      ],
+      "scope": "Builder vector only; semantic UI association and final GATT route unresolved."
+    }
+  ],
+  "adaptive-heart-vector": {
+    "method": "heartData0xa16d3c",
+    "plaintext": "031b00",
+    "aes": "AES-128-ECB/PKCS7",
+    "key_ascii": "mmzn_blue_202309",
+    "ciphertext": "d3e3e3194c0a0e31b57244aafb875ce9",
+    "crc": "0xeb87",
+    "frame": "aa1015d3e3e3194c0a0e31b57244aafb875ce987eb",
+    "openssl_argv": [
+      "openssl",
+      "enc",
+      "-aes-128-ecb",
+      "-nosalt",
+      "-K",
+      "6d6d7a6e5f626c75655f323032333039",
+      "-in",
+      "/analysis/work/adaptive-heart-plaintext.bin",
+      "-out",
+      "/analysis/work/adaptive-heart-cipher.bin"
+    ],
+    "exit": 0,
+    "crc_caveat": "Exact recovered low table index6=0x7f, standard reflected0xa001 expects0x80. No standard-Modbus substitution; serialized source-array raw pattern not found, so reader output corroboration level retained."
+  },
+  "primary-state-vectors": [
+    {
+      "action": "Waist both changed",
+      "inputs": {
+        "last_left": null,
+        "last_right": null,
+        "left": 30,
+        "right": 45
+      },
+      "bytes": "aa06101e2d8f",
+      "next_cache": [
+        30,
+        45
+      ],
+      "reset_provider": [
+        false,
+        false
+      ]
+    },
+    {
+      "action": "Waist left unchanged right changed",
+      "inputs": {
+        "last_left": 30,
+        "last_right": 45,
+        "left": 30,
+        "right": 50
+      },
+      "bytes": "aa061000328e",
+      "next_cache": [
+        30,
+        50
+      ],
+      "reset_provider": [
+        false,
+        false
+      ]
+    },
+    {
+      "action": "Waist both unchanged still writes",
+      "inputs": {
+        "last_left": 30,
+        "last_right": 50,
+        "left": 30,
+        "right": 50
+      },
+      "bytes": "aa06100000bc",
+      "next_cache": [
+        30,
+        50
+      ],
+      "reset_provider": [
+        false,
+        false
+      ]
+    },
+    {
+      "action": "Waist minimum5 captured before provider reset",
+      "inputs": {
+        "last_left": 30,
+        "last_right": 50,
+        "left": 5,
+        "right": 50
+      },
+      "bytes": "aa06100500b9",
+      "next_cache": [
+        5,
+        50
+      ],
+      "reset_provider": [
+        true,
+        false
+      ]
+    },
+    {
+      "action": "Waist follow-up zero",
+      "inputs": {
+        "last_left": 5,
+        "last_right": 50,
+        "left": 0,
+        "right": 50
+      },
+      "bytes": "aa06100000bc",
+      "next_cache": [
+        0,
+        50
+      ],
+      "reset_provider": [
+        false,
+        false
+      ]
+    }
+  ],
+  "qc-extra-vectors": [
+    {
+      "action": "QC basic poll",
+      "bytes": "aa0446e8",
+      "source": "evidence/asm/bedding/services/qc/qc_runner_service.dart",
+      "source_address": "0x7300c8",
+      "call_chain": "_pollOnce ->_doPollOnce ->_send",
+      "inputs": {
+        "opcode": 70,
+        "params": []
+      },
+      "timing": "250ms target polling cadence in phase; waits sample<=400ms; no fixed on-air count.",
+      "origin": "source-derived, not captured traffic",
+      "literal_addresses": [
+        "0x7300c8"
+      ]
+    },
+    {
+      "action": "QC duty poll",
+      "bytes": "aa054602eb",
+      "source": "evidence/asm/bedding/views/B305/qc/qc_screen.dart",
+      "source_address": "0x734d7c",
+      "call_chain": "Raw monitor read or one-second autoPoll ->writeReliable",
+      "inputs": {
+        "opcode": 70,
+        "params": [
+          2
+        ]
+      },
+      "timing": "read once sends duty query then STM query; autoPoll1s, skipped while run/init busy.",
+      "origin": "source-derived, not captured traffic",
+      "literal_addresses": [
+        "0x734c68",
+        "0x734d7c"
+      ]
+    },
+    {
+      "action": "QC STM32 read",
+      "bytes": "aa0447e9",
+      "source": "evidence/asm/bedding/views/B305/qc/qc_screen.dart",
+      "source_address": "0x734d9c",
+      "call_chain": "Raw monitor read/autoPoll ->writeReliable",
+      "inputs": {
+        "opcode": 71,
+        "params": []
+      },
+      "timing": "One write after duty poll; reply opcode48.",
+      "origin": "source-derived, not captured traffic",
+      "literal_addresses": [
+        "0x734cb4",
+        "0x734d9c"
+      ]
+    },
+    {
+      "action": "QC waveform capture",
+      "bytes": "aa0449e7",
+      "source": "evidence/asm/bedding/views/B305/qc/qc_screen.dart",
+      "source_address": "0x734a74",
+      "call_chain": "Raw monitor capture ->_captureWave ->writeReliable",
+      "inputs": {
+        "opcode": 73,
+        "params": []
+      },
+      "timing": "One user capture write; reply opcode49.",
+      "origin": "source-derived, not captured traffic",
+      "literal_addresses": [
+        "0x734a74"
+      ]
+    },
+    {
+      "action": "QC light drive low",
+      "bytes": "aa054601e8",
+      "source": "evidence/asm/bedding/bluetooth/mpe_smart_bed/qc/qc_items.dart",
+      "source_address": "0x7364c4",
+      "call_chain": "QC underbedLight phase ->_runItem ->_send",
+      "inputs": {
+        "opcode": 70,
+        "params": [
+          1
+        ]
+      },
+      "timing": "Phase bound2.5s; sets lightVtDrivenLow true.",
+      "origin": "source-derived, not captured traffic",
+      "literal_addresses": [
+        "0x7364c4"
+      ]
+    },
+    {
+      "action": "QC light drive high",
+      "bytes": "aa054600e9",
+      "source": "evidence/asm/bedding/bluetooth/mpe_smart_bed/qc/qc_items.dart",
+      "source_address": "0x736524",
+      "call_chain": "QC phase/cleanup ->_send",
+      "inputs": {
+        "opcode": 70,
+        "params": [
+          0
+        ]
+      },
+      "timing": "Phase bound500ms; also cleanup/allOff, sets lightVtDrivenLow false.",
+      "origin": "source-derived, not captured traffic",
+      "literal_addresses": [
+        "0x72bee8",
+        "0x7364ec",
+        "0x736524"
+      ]
+    },
+    {
+      "action": "QC head target down",
+      "bytes": "aa080c00ffffff51",
+      "source": "evidence/asm/bedding/bluetooth/mpe_smart_bed/qc/qc_items.dart",
+      "source_address": "0x7357e0",
+      "call_chain": "QC headLift phase/cleanup ->_runItem ->_send",
+      "inputs": {
+        "opcode": 12,
+        "params": [
+          0,
+          255,
+          255,
+          255
+        ]
+      },
+      "timing": "Initial phase25s; final phase55s; phase may end early from feedback.",
+      "origin": "source-derived, not captured traffic",
+      "literal_addresses": [
+        "0x7357e0",
+        "0x735898",
+        "0x735914"
+      ]
+    },
+    {
+      "action": "QC head target up",
+      "bytes": "aa080c14ffffff45",
+      "source": "evidence/asm/bedding/bluetooth/mpe_smart_bed/qc/qc_items.dart",
+      "source_address": "0x735874",
+      "call_chain": "QC headLift phase ->_runItem ->_send",
+      "inputs": {
+        "opcode": 12,
+        "params": [
+          20,
+          255,
+          255,
+          255
+        ]
+      },
+      "timing": "Phase bound55s; conditional one re-drive after7s without motion/drive feedback.",
+      "origin": "source-derived, not captured traffic",
+      "literal_addresses": [
+        "0x735874"
+      ]
+    },
+    {
+      "action": "QC foot target down",
+      "bytes": "aa080cffff00ff51",
+      "source": "evidence/asm/bedding/bluetooth/mpe_smart_bed/qc/qc_items.dart",
+      "source_address": "0x735a2c",
+      "call_chain": "QC footLift phase/cleanup ->_runItem ->_send",
+      "inputs": {
+        "opcode": 12,
+        "params": [
+          255,
+          255,
+          0,
+          255
+        ]
+      },
+      "timing": "Initial phase25s; final phase55s; feedback can shorten.",
+      "origin": "source-derived, not captured traffic",
+      "literal_addresses": [
+        "0x735a2c",
+        "0x735ae8",
+        "0x735b64"
+      ]
+    },
+    {
+      "action": "QC foot target up",
+      "bytes": "aa080cffff14ff45",
+      "source": "evidence/asm/bedding/bluetooth/mpe_smart_bed/qc/qc_items.dart",
+      "source_address": "0x735ac4",
+      "call_chain": "QC footLift phase ->_runItem ->_send",
+      "inputs": {
+        "opcode": 12,
+        "params": [
+          255,
+          255,
+          20,
+          255
+        ]
+      },
+      "timing": "Phase bound55s; conditional one re-drive after7s.",
+      "origin": "source-derived, not captured traffic",
+      "literal_addresses": [
+        "0x735ac4"
+      ]
+    },
+    {
+      "action": "QC waist left inflate",
+      "bytes": "aa06105000ec",
+      "source": "evidence/asm/bedding/bluetooth/mpe_smart_bed/qc/qc_items.dart",
+      "source_address": "0x737348",
+      "call_chain": "QC waistLeft phase ->buildWaistPump(80,0) ->_send",
+      "inputs": {
+        "opcode": 16,
+        "params": [
+          80,
+          0
+        ]
+      },
+      "timing": "Phase bound25s; expected port0bit4; cleanup left5.",
+      "origin": "source-derived, not captured traffic"
+    },
+    {
+      "action": "QC waist left deflate",
+      "bytes": "aa06100500b9",
+      "source": "evidence/asm/bedding/bluetooth/mpe_smart_bed/qc/qc_items.dart",
+      "source_address": "0x737314",
+      "call_chain": "QC waistLeft phase/cleanup ->buildWaistPump(5,0) ->_send",
+      "inputs": {
+        "opcode": 16,
+        "params": [
+          5,
+          0
+        ]
+      },
+      "timing": "Phase bound15s; expected port0bit5; no guessed pressure units.",
+      "origin": "source-derived, not captured traffic"
+    },
+    {
+      "action": "QC waist right inflate",
+      "bytes": "aa06100050ec",
+      "source": "evidence/asm/bedding/bluetooth/mpe_smart_bed/qc/qc_items.dart",
+      "source_address": "0x7371ac",
+      "call_chain": "QC waistRight phase ->buildWaistPump(0,80) ->_send",
+      "inputs": {
+        "opcode": 16,
+        "params": [
+          0,
+          80
+        ]
+      },
+      "timing": "Phase bound25s; expected port0bit6; cleanup right5.",
+      "origin": "source-derived, not captured traffic"
+    },
+    {
+      "action": "QC waist right deflate",
+      "bytes": "aa06100005b9",
+      "source": "evidence/asm/bedding/bluetooth/mpe_smart_bed/qc/qc_items.dart",
+      "source_address": "0x737178",
+      "call_chain": "QC waistRight phase/cleanup ->buildWaistPump(0,5) ->_send",
+      "inputs": {
+        "opcode": 16,
+        "params": [
+          0,
+          5
+        ]
+      },
+      "timing": "Phase bound15s; expected port0bit7.",
+      "origin": "source-derived, not captured traffic"
+    },
+    {
+      "action": "QC waist pumps off",
+      "bytes": "aa06100505bc",
+      "source": "evidence/asm/bedding/bluetooth/mpe_smart_bed/qc/qc_items.dart",
+      "source_address": "0x72bd34",
+      "call_chain": "allOff/abortStopPackets if waistDriven ->buildWaistPump(5,5) ->_send",
+      "inputs": {
+        "opcode": 16,
+        "params": [
+          5,
+          5
+        ]
+      },
+      "timing": "Cleanup one write only if waist-driven flag; sendSequence150ms gaps.",
+      "origin": "source-derived, not captured traffic"
+    },
+    {
+      "action": "QC constant heat off",
+      "bytes": "aa051200bd",
+      "source": "evidence/asm/bedding/bluetooth/mpe_smart_bed/qc/qc_items.dart",
+      "source_address": "0x72bf4c",
+      "call_chain": "QC phase cleanup/allOff ->buildConstantHeat(0) ->_send",
+      "inputs": {
+        "opcode": 18,
+        "params": [
+          0
+        ]
+      },
+      "timing": "ConstantHeat on4 phase12s; cleanup off0.",
+      "origin": "source-derived, not captured traffic"
+    },
+    {
+      "action": "Enter pairing mode",
+      "bytes": "aa04349a",
+      "source": "evidence/asm/bedding/bluetooth/bluetooth_core_handler.dart",
+      "source_address": "0x777ae8",
+      "call_chain": "059c auth-success ->sendEnterPairingModeOnce(fromAuth:true) ->_doSendEnterPairingMode ->writeReliable",
+      "inputs": {
+        "opcode": 52,
+        "params": []
+      },
+      "timing": "500ms delay; one shared pending future, conditional state flags; not evidence of Android bond.",
+      "origin": "source-derived, not captured traffic",
+      "literal_addresses": [
+        "0x777ae8"
+      ]
+    }
+  ],
+  "qc-parser-vectors": [
+    {
+      "name": "QC basic sample",
+      "bytes": "bb08460012345685",
+      "decoder": "qc_sample",
+      "expected": {
+        "status": 0,
+        "port0": 18,
+        "port1": 52,
+        "espDet": 86,
+        "headDuty": null,
+        "footDuty": null
+      },
+      "origin": "source-derived parser vector, not captured traffic"
+    },
+    {
+      "name": "QC extended duty",
+      "bytes": "bb0a4601123456789a64",
+      "decoder": "qc_sample",
+      "expected": {
+        "status": 1,
+        "port0": 18,
+        "port1": 52,
+        "espDet": 86,
+        "headDuty": 120,
+        "footDuty": 154
+      },
+      "origin": "source-derived parser vector, not captured traffic"
+    },
+    {
+      "name": "QC STM fields",
+      "bytes": "bb16483412efbe7856bc9af0de1122334457136824f8",
+      "decoder": "qc_stm32",
+      "expected": {
+        "headHeight": 4660,
+        "footHeight": 22136,
+        "leftPressureAdc": 39612,
+        "rightPressureAdc": 57072,
+        "leftPressureStd": 17,
+        "rightPressureStd": 34,
+        "flags": 51,
+        "caps": 68,
+        "headMax": 4951,
+        "footMax": 9320
+      },
+      "origin": "source-derived parser vector, not captured traffic"
+    },
+    {
+      "name": "QC waveform fields",
+      "bytes": "bb114901010905030207020a06040308e8",
+      "decoder": "qc_wave",
+      "expected": {
+        "status": 1,
+        "head": {
+          "min": 1,
+          "max": 9,
+          "mean": 5,
+          "jump": 3,
+          "rev": 2,
+          "periodMs": 7
+        },
+        "foot": {
+          "min": 2,
+          "max": 10,
+          "mean": 6,
+          "jump": 4,
+          "rev": 3,
+          "periodMs": 8
+        }
+      },
+      "origin": "source-derived parser vector, not captured traffic"
+    }
+  ],
+  "crypto-tables": {
+    "low": [
+      0,
+      193,
+      129,
+      64,
+      1,
+      192,
+      127,
+      65,
+      1,
+      192,
+      128,
+      65,
+      0,
+      193,
+      129,
+      64,
+      1,
+      192,
+      128,
+      65,
+      0,
+      193,
+      129,
+      64,
+      0,
+      193,
+      129,
+      64,
+      1,
+      192,
+      128,
+      65,
+      1,
+      192,
+      128,
+      65,
+      0,
+      193,
+      129,
+      64,
+      0,
+      193,
+      129,
+      64,
+      1,
+      192,
+      128,
+      65,
+      0,
+      193,
+      129,
+      64,
+      1,
+      192,
+      128,
+      65,
+      1,
+      192,
+      128,
+      65,
+      0,
+      193,
+      129,
+      64,
+      1,
+      192,
+      128,
+      65,
+      0,
+      193,
+      129,
+      64,
+      0,
+      193,
+      129,
+      64,
+      1,
+      192,
+      128,
+      65,
+      0,
+      193,
+      129,
+      64,
+      1,
+      192,
+      128,
+      65,
+      1,
+      192,
+      128,
+      65,
+      0,
+      193,
+      129,
+      64,
+      0,
+      193,
+      129,
+      64,
+      1,
+      192,
+      128,
+      65,
+      1,
+      192,
+      128,
+      65,
+      0,
+      193,
+      129,
+      64,
+      1,
+      192,
+      128,
+      65,
+      0,
+      193,
+      129,
+      64,
+      0,
+      193,
+      129,
+      64,
+      1,
+      192,
+      128,
+      65,
+      1,
+      192,
+      128,
+      65,
+      0,
+      193,
+      129,
+      64,
+      0,
+      193,
+      129,
+      64,
+      1,
+      192,
+      128,
+      65,
+      0,
+      193,
+      129,
+      64,
+      1,
+      192,
+      128,
+      65,
+      1,
+      192,
+      128,
+      65,
+      0,
+      193,
+      129,
+      64,
+      0,
+      193,
+      129,
+      64,
+      1,
+      192,
+      128,
+      65,
+      1,
+      192,
+      128,
+      65,
+      0,
+      193,
+      129,
+      64,
+      1,
+      192,
+      128,
+      65,
+      0,
+      193,
+      129,
+      64,
+      0,
+      193,
+      129,
+      64,
+      1,
+      192,
+      128,
+      65,
+      0,
+      193,
+      129,
+      64,
+      1,
+      192,
+      128,
+      65,
+      1,
+      192,
+      128,
+      65,
+      0,
+      193,
+      129,
+      64,
+      1,
+      192,
+      128,
+      65,
+      0,
+      193,
+      129,
+      64,
+      0,
+      193,
+      129,
+      64,
+      1,
+      192,
+      128,
+      65,
+      1,
+      192,
+      128,
+      65,
+      0,
+      193,
+      129,
+      64,
+      0,
+      193,
+      129,
+      64,
+      1,
+      192,
+      128,
+      65,
+      0,
+      193,
+      129,
+      64,
+      1,
+      192,
+      128,
+      65,
+      1,
+      192,
+      128,
+      65,
+      0,
+      193,
+      129,
+      64
+    ],
+    "high": [
+      0,
+      192,
+      193,
+      1,
+      195,
+      3,
+      2,
+      194,
+      198,
+      6,
+      7,
+      199,
+      5,
+      197,
+      196,
+      4,
+      204,
+      12,
+      13,
+      205,
+      15,
+      207,
+      206,
+      14,
+      10,
+      202,
+      203,
+      11,
+      201,
+      9,
+      8,
+      200,
+      216,
+      24,
+      25,
+      217,
+      27,
+      219,
+      218,
+      26,
+      30,
+      222,
+      223,
+      31,
+      221,
+      29,
+      28,
+      220,
+      20,
+      212,
+      213,
+      21,
+      215,
+      23,
+      22,
+      214,
+      210,
+      18,
+      19,
+      211,
+      17,
+      209,
+      208,
+      16,
+      240,
+      48,
+      49,
+      241,
+      51,
+      243,
+      242,
+      50,
+      54,
+      246,
+      247,
+      55,
+      245,
+      53,
+      52,
+      244,
+      60,
+      252,
+      253,
+      61,
+      255,
+      63,
+      62,
+      254,
+      250,
+      58,
+      59,
+      251,
+      57,
+      249,
+      248,
+      56,
+      40,
+      232,
+      233,
+      41,
+      235,
+      43,
+      42,
+      234,
+      238,
+      46,
+      47,
+      239,
+      45,
+      237,
+      236,
+      44,
+      228,
+      36,
+      37,
+      229,
+      39,
+      231,
+      230,
+      38,
+      34,
+      226,
+      227,
+      35,
+      225,
+      33,
+      32,
+      224,
+      160,
+      96,
+      97,
+      161,
+      99,
+      163,
+      162,
+      98,
+      102,
+      166,
+      167,
+      103,
+      165,
+      101,
+      100,
+      164,
+      108,
+      172,
+      173,
+      109,
+      175,
+      111,
+      110,
+      174,
+      170,
+      106,
+      107,
+      171,
+      105,
+      169,
+      168,
+      104,
+      120,
+      184,
+      185,
+      121,
+      187,
+      123,
+      122,
+      186,
+      190,
+      126,
+      127,
+      191,
+      125,
+      189,
+      188,
+      124,
+      180,
+      116,
+      117,
+      181,
+      119,
+      183,
+      182,
+      118,
+      114,
+      178,
+      179,
+      115,
+      177,
+      113,
+      112,
+      176,
+      80,
+      144,
+      145,
+      81,
+      147,
+      83,
+      82,
+      146,
+      150,
+      86,
+      87,
+      151,
+      85,
+      149,
+      148,
+      84,
+      156,
+      92,
+      93,
+      157,
+      95,
+      159,
+      158,
+      94,
+      90,
+      154,
+      155,
+      91,
+      153,
+      89,
+      88,
+      152,
+      136,
+      72,
+      73,
+      137,
+      75,
+      139,
+      138,
+      74,
+      78,
+      142,
+      143,
+      79,
+      141,
+      77,
+      76,
+      140,
+      68,
+      132,
+      133,
+      69,
+      135,
+      71,
+      70,
+      134,
+      130,
+      66,
+      67,
+      131,
+      65,
+      129,
+      128,
+      64
+    ]
+  },
+  "provenance": {
+    "package": "com.bedding.flutter_ai_bed",
+    "version": "5.7.9(128)",
+    "inputset": "36275176008b12af7256f436ebf7c8dfb168693aefe5e60cba51803803797407",
+    "status": "PARTIAL",
+    "hardware": "UNVERIFIED",
+    "report_manifest_sha256": "19f153c2fa140347df8031c1e1ed731e8d1d7f50f2fe61b161374c12d15da91b"
+  }
+}
