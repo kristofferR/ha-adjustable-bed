@@ -255,6 +255,13 @@ class MuuegmController(DreamSenseController):
                 self._record_token += 1
                 self.forward_controller_state_updates(ALARMS(None))
 
+    def _simple_alarm_started(self) -> None:
+        self._simple_pending = None
+        self.forward_controller_state_updates(ALARMS(None), ACTIVE(None))
+
+    def _simple_alarm_submitted(self, pending: dict[str, object]) -> None:
+        self._simple_pending = pending
+
     async def _configure_simple_alarm(self, alarm: AlarmRequest, cancel: asyncio.Event) -> None:
         session = self._live()
         pending = (
@@ -269,10 +276,9 @@ class MuuegmController(DreamSenseController):
             nonlocal submitted
             self._require("clock")
             if not submitted:
-                self._simple_pending = None
-                self.forward_controller_state_updates(ALARMS(None), ACTIVE(None))
+                self._simple_alarm_started()
             if final:
-                self._simple_pending = pending
+                self._simple_alarm_submitted(pending)
             submitted = True
 
         now = dt_util.now()

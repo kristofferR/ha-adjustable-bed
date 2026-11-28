@@ -1,0 +1,251 @@
+[
+  {
+    "entity_id": "button.flexx_motion",
+    "translation_key": "stop",
+    "device_id": "bed",
+    "attributes": {
+      "card_section": "motors",
+      "card_role": "stop"
+    }
+  },
+  {
+    "entity_id": "button.flexx_motion_10",
+    "translation_key": "massage_head_up",
+    "device_id": "bed",
+    "attributes": {
+      "card_section": "massage"
+    }
+  },
+  {
+    "entity_id": "button.flexx_motion_11",
+    "translation_key": "massage_foot_up",
+    "device_id": "bed",
+    "attributes": {
+      "card_section": "massage"
+    }
+  },
+  {
+    "entity_id": "button.flexx_motion_12",
+    "translation_key": "catalog_massage",
+    "device_id": "bed",
+    "attributes": {
+      "card_section": "massage"
+    }
+  },
+  {
+    "entity_id": "button.flexx_motion_13",
+    "translation_key": "massage_all_off",
+    "device_id": "bed",
+    "attributes": {
+      "card_section": "massage"
+    }
+  },
+  {
+    "entity_id": "button.flexx_motion_14",
+    "translation_key": "preset_tv",
+    "device_id": "bed",
+    "attributes": {
+      "card_section": "presets",
+      "held_control": "TVPosition",
+      "hold_start_delay_ms": 0,
+      "hold_release_delay_ms": 0,
+      "hold_lease_mode": "stream",
+      "hold_release_button_key": "richmat_classic_release"
+    }
+  },
+  {
+    "entity_id": "button.flexx_motion_15",
+    "translation_key": "preset_zero_g",
+    "device_id": "bed",
+    "attributes": {
+      "card_section": "presets",
+      "held_control": "ZeroGravity",
+      "hold_start_delay_ms": 0,
+      "hold_release_delay_ms": 0,
+      "hold_lease_mode": "stream",
+      "hold_release_button_key": "richmat_classic_release"
+    }
+  },
+  {
+    "entity_id": "button.flexx_motion_16",
+    "translation_key": "preset_memory_1",
+    "device_id": "bed",
+    "attributes": {
+      "card_section": "memory",
+      "card_role": "recall",
+      "card_slot": 1,
+      "held_control": "MemoryPosition1",
+      "hold_start_delay_ms": 0,
+      "hold_release_delay_ms": 0,
+      "hold_lease_mode": "stream",
+      "hold_release_button_key": "richmat_classic_release"
+    }
+  },
+  {
+    "entity_id": "button.flexx_motion_17",
+    "translation_key": "program_memory_1",
+    "device_id": "bed",
+    "attributes": {
+      "card_section": "memory",
+      "card_role": "save",
+      "card_slot": 1
+    }
+  },
+  {
+    "entity_id": "button.flexx_motion_18",
+    "translation_key": "preset_memory_2",
+    "device_id": "bed",
+    "attributes": {
+      "card_section": "memory",
+      "card_role": "recall",
+      "card_slot": 2,
+      "held_control": "MemoryPosition2",
+      "hold_start_delay_ms": 0,
+      "hold_release_delay_ms": 0,
+      "hold_lease_mode": "stream",
+      "hold_release_button_key": "richmat_classic_release"
+    }
+  },
+  {
+    "entity_id": "button.flexx_motion_19",
+    "translation_key": "program_memory_2",
+    "device_id": "bed",
+    "attributes": {
+      "card_section": "memory",
+      "card_role": "save",
+      "card_slot": 2
+    }
+  },
+  {
+    "entity_id": "button.flexx_motion_2",
+    "translation_key": "disconnect",
+    "device_id": "bed",
+    "attributes": {
+      "card_section": "connection",
+      "card_role": "disconnect"
+    }
+  },
+  {
+    "entity_id": "button.flexx_motion_20",
+    "translation_key": "preset_memory_3",
+    "device_id": "bed",
+    "attributes": {
+      "card_section": "memory",
+      "card_role": "recall",
+      "card_slot": 3,
+      "held_control": "MemoryPosition3",
+      "hold_start_delay_ms": 0,
+      "hold_release_delay_ms": 0,
+      "hold_lease_mode": "stream",
+      "hold_release_button_key": "richmat_classic_release"
+    }
+  },
+  {
+    "entity_id": "button.flexx_motion_21",
+    "translation_key": "program_memory_3",
+    "device_id": "bed",
+    "attributes": {
+      "card_section": "memory",
+      "card_role": "save",
+      "card_slot": 3
+    }
+  },
+  {
+    "entity_id": "button.flexx_motion_22",
+    "translation_key": "richmat_classic_release",
+    "device_id": "bed",
+    "attributes": {
+      "card_section": "hidden"
+    }
+  },
+  {
+    "entity_id": "button.flexx_motion_3",
+    "translation_key": "connect",
+    "device_id": "bed",
+    "attributes": {
+      "card_section": "connection",
+      "card_role": "connect"
+    }
+  },
+  {
+    "entity_id": "button.flexx_motion_4",
+    "translation_key": "head_up",
+    "device_id": "bed",
+    "attributes": {
+      "card_section": "motors",
+      "card_role": "up",
+      "card_motor": "head",
+      "held_control": "HeadUp",
+      "hold_start_delay_ms": 0,
+      "hold_release_delay_ms": 0,
+      "hold_lease_mode": "stream",
+      "hold_release_button_key": "richmat_classic_release"
+    }
+  },
+  {
+    "entity_id": "button.flexx_motion_5",
+    "translation_key": "head_down",
+    "device_id": "bed",
+    "attributes": {
+      "card_section": "motors",
+      "card_role": "down",
+      "card_motor": "head",
+      "held_control": "HeadDown",
+      "hold_start_delay_ms": 0,
+      "hold_release_delay_ms": 0,
+      "hold_lease_mode": "stream",
+      "hold_release_button_key": "richmat_classic_release"
+    }
+  },
+  {
+    "entity_id": "button.flexx_motion_6",
+    "translation_key": "feet_up",
+    "device_id": "bed",
+    "attributes": {
+      "card_section": "motors",
+      "card_role": "up",
+      "card_motor": "feet",
+      "held_control": "FootUp",
+      "hold_start_delay_ms": 0,
+      "hold_release_delay_ms": 0,
+      "hold_lease_mode": "stream",
+      "hold_release_button_key": "richmat_classic_release"
+    }
+  },
+  {
+    "entity_id": "button.flexx_motion_7",
+    "translation_key": "feet_down",
+    "device_id": "bed",
+    "attributes": {
+      "card_section": "motors",
+      "card_role": "down",
+      "card_motor": "feet",
+      "held_control": "FootDown",
+      "hold_start_delay_ms": 0,
+      "hold_release_delay_ms": 0,
+      "hold_lease_mode": "stream",
+      "hold_release_button_key": "richmat_classic_release"
+    }
+  },
+  {
+    "entity_id": "button.flexx_motion_8",
+    "translation_key": "catalog_light",
+    "device_id": "bed",
+    "attributes": {
+      "card_section": "lighting"
+    }
+  },
+  {
+    "entity_id": "button.flexx_motion_9",
+    "translation_key": "preset_flat",
+    "device_id": "bed",
+    "attributes": {
+      "card_section": "presets",
+      "held_control": "MotorReset",
+      "hold_start_delay_ms": 0,
+      "hold_release_delay_ms": 0,
+      "hold_lease_mode": "stream",
+      "hold_release_button_key": "richmat_classic_release"
+    }
+  }
+]

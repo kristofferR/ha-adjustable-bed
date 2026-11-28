@@ -1769,6 +1769,11 @@ def default_scenario(bed_type: str) -> Scenario:
             "write:f1f14507a200": "f2f24507a164ff0080012cfd7e",
             "write:f1f1440da200": "f2f2440da164ff00003200ff00190000ff9e7e",
         })
+    if bed_type == "flexx_motion":
+        return Scenario(id=bed_type, bed_type=bed_type, protocol_variant="PB450",
+                        entry_data={"bed_type": bed_type, "protocol_variant": "PB450"},
+                        layout_id="dreamsense:gatt:1",
+                        replies={"write:6e08010178": "6e09010078", "write:6e0a000179": "6e0e00037f"})
     if bed_type == "awmotion":
         return Scenario(id=bed_type, bed_type=bed_type, protocol_variant="SN300",
                         entry_data={"bed_type": bed_type, "protocol_variant": "SN300"},
@@ -3016,6 +3021,15 @@ def build_scenarios() -> list[Scenario]:
             replies={"write:6e08010178": "6e09010078", "write:6e0a000179": "6e0e00017d"},
         ))
 
+    from custom_components.adjustable_bed.profiles.flexx_motion import PROFILES as FLEXX_PROFILES
+    for product in FLEXX_PROFILES:
+        for route in (0, 1):
+            scenarios.append(replace(default_scenario("flexx_motion"),
+                id=f"flexx_motion:{product}:gatt:{route}", protocol_variant=product,
+                entry_data={"bed_type": "flexx_motion", "protocol_variant": product},
+                layout_id="dreamsense" if route == 0 else "dreamsense:gatt:1",
+                replies={"write:01": "6e09010078 6e0e00037f"} if route == 0 else
+                        {"write:6e08010178": "6e09010078", "write:6e0a000179": "6e0e00037f"}))
     # AW MOTION: each offered product and each accepted live GATT route.
     for product in ("SN300", "SN500", "HC800"):
         for route in range(6):

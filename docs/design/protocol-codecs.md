@@ -571,6 +571,14 @@ vectors. Its fixed 200IV2 / A8RM P1 profile reuses the shared Richmat
 motion/session runtime; Settings gates belong to the current connection.
 The profile does not admit the other catalog layouts or raw transport.
 
+Flexx Motion 2.0.1 (20100) reproduces its complete frozen command corpus through
+`codec/richmat.py`. Typed app profiles own the current picker and restored bed
+models, descriptor overrides, gestures, side and feature gates. Its shared
+Dream Sense/Richmat session extension supplies bounded cancellation, checked
+receive framing and record-backed alarms. The original `NextHeaderBuffer`
+remains a passive reference helper; the live Flexx receiver avoids the app's
+malformed-length and fragmentation defects. See [Flexx Motion](../beds/richmat.md#flexx-motion).
+
 
 ## KONFURT
 
