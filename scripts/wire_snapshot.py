@@ -1531,6 +1531,8 @@ def default_scenario(bed_type: str) -> Scenario:
                      "write:" + codec.frame(1, b"\x00").hex(): codec.frame(1, b"\x01\x01\x01A").hex(),
                      "*": status})
 
+    if bed_type == "ghostbed":
+        return Scenario(id=bed_type, bed_type=bed_type, layout_id="flexispot")
     if bed_type == "flexispot":
         return Scenario(id=bed_type, bed_type=bed_type, entry_data={"product_type": "eb632"})
     if bed_type == "ronco_motion":
@@ -3131,6 +3133,14 @@ async def _capture(
                 # each action admits read/modify/write without guessing state.
                 for target, callback in controller.client._subscribers:
                     callback(target, bytearray.fromhex("9b002701651e02061eff01072d8002239500009d"))
+            if scenario.bed_type == "ghostbed":
+                from custom_components.adjustable_bed.codec import flexispot as ghost_codec
+                # Two banked unsolicited records admit exact read/modify/write.
+                # Empty alarms avoid imposing a schedule on every captured action.
+                for bank in (0, 0x80):
+                    status = ghost_codec.frame(0x27, bank | 1, {4: 0x65, 5: 30, 6: 2, 15: 3, 16: 0x95})
+                    for target, callback in controller.client._subscribers:
+                        callback(target, bytearray(status))
             result = await _run_command(controller, recorder, clock, command)
             # A cover that emits exactly what the matching move call did points to it.
             twin = (
