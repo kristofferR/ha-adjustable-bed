@@ -53,6 +53,34 @@ async def test_native_directions_and_release_use_comfort_encoder_on_every_route(
     controller.on_disconnect()
 
 
+@pytest.mark.parametrize("kind", ("atlas", "topcare"))
+async def test_default_notification_hook_forwards_raw_and_rejects_retired_links(kind):
+    from custom_components.adjustable_bed.beds.richmat.topcare import TopcareController
+
+    old = client_on(service("w1", "write"))
+    coordinator = MagicMock(client=old, cancel_command=asyncio.Event())
+    cls = atlas_lift.AtlasLiftController if kind == "atlas" else TopcareController
+    controller = cls(coordinator)
+    raw = MagicMock()
+    controller.set_raw_notify_callback(raw)
+    with virtual_clock():
+        await controller.async_on_connect(session_for(controller, old))
+        assert type(controller._current_link()) is fixed._Link
+        sender, receive = old.start_notify.await_args.args
+        receive(sender, bytearray(b"opaque"))
+        raw.assert_called_once_with(sender.uuid, b"opaque")
+        coordinator.handle_controller_state_updates.assert_not_called()
+        await controller.stop_notify()
+        receive(sender, bytearray(b"after cleanup"))
+        controller.on_disconnect()
+        new = client_on(service("n1", "write"))
+        coordinator.client = new
+        await controller.async_on_connect(session_for(controller, new))
+        receive(sender, bytearray(b"old session"))
+        raw.assert_called_once()
+    controller.on_disconnect()
+
+
 @pytest.mark.parametrize("route", PROFILE.transports)
 async def test_actual_inflight_cancel_releases_original_side_on_every_route(route):
     client = client_on(service(route, "write"))

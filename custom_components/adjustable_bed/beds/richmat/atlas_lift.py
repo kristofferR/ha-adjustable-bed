@@ -21,6 +21,41 @@ def select_link(client: BleakClient) -> _Link:
     return select_fixed_link(client, ATLAS_LIFT, error_key="atlas_lift_gatt")
 
 
+class RichmatSessionController(FixedRichmatAppController):
+    """Keep the accepted profile-specific startup and timed motor controls."""
+
+    def __init__(
+        self,
+        coordinator: AdjustableBedCoordinator,
+        profile: RichmatProfile,
+        initialization: tuple[tuple[str, int], ...],
+        gatt_error_key: str,
+    ) -> None:
+        super().__init__(coordinator, profile, initialization, gatt_error_key=gatt_error_key)
+
+    @property
+    def motor_control_specs(self) -> tuple[MotorControlSpec, ...]:
+        # A generic motor count restored from a different app cannot add axes.
+        back, legs = super().motor_control_specs[:2]
+        return (
+            replace(
+                back,
+                timed_move_fn=lambda controller, up, ms: _session(controller)._timed_motor(
+                    "head_up" if up else "head_down", ms
+                ),
+            ),
+            replace(
+                legs,
+                timed_move_fn=lambda controller, up, ms: _session(controller)._timed_motor(
+                    "feet_up" if up else "feet_down", ms
+                ),
+            ),
+        )
+
+    async def _timed_motor(self, control: Button, duration_ms: int) -> None:
+        await self._move_with_stop(self._code(control), duration_ms=duration_ms)
+
+
 class AtlasLiftController(FixedRichmatAppController):
     """Cama Lift's fixed controls over the shared held app session."""
 
@@ -127,4 +162,9 @@ class AtlasLiftController(FixedRichmatAppController):
 
 def _atlas_lift(controller: BedController) -> AtlasLiftController:
     assert isinstance(controller, AtlasLiftController)
+    return controller
+
+
+def _session(controller: BedController) -> RichmatSessionController:
+    assert isinstance(controller, RichmatSessionController)
     return controller
