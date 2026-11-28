@@ -6,23 +6,39 @@ import asyncio
 from collections.abc import Callable
 from dataclasses import dataclass
 from functools import partial
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Final
 
 from bleak import BleakClient
 from bleak.backends.characteristic import BleakGATTCharacteristic
 
+from ...card import CARD_MASSAGE
 from ...errors import BedNotConnectedError, invalid
 from ...profiles.intellibed import PROFILES, Profile
-from ...state_keys import UNDER_BED_LIGHTS_ON
+from ...state_keys import UNDER_BED_LIGHTS_ON, massage_intensity
 from ..base import BedController, ProfileExecution
 from ..builder import BuildContext
 from ..cancellation import cancellable
 from ..catalog_buttons import Kind, catalog_button, unique_buttons
 from ..diagnostic import DiagnosticBedController
-from ..entity_specs import ControllerButtonSpec, MotorControlSpec, PositionNumberSpec
+from ..entity_specs import (
+    ControllerButtonSpec,
+    ControllerNumberSpec,
+    MotorControlSpec,
+    PositionNumberSpec,
+)
 
 if TYPE_CHECKING:
     from ...coordinator import AdjustableBedCoordinator
+
+
+_LEVEL_ACTIONS: Final = {
+    "head": ("head_off", "head_low", "head_medium", "head_high"),
+    "foot": ("feet_off", "feet_low", "feet_medium", "feet_high"),
+}
+_RELATIVE_ACTIONS: Final = {
+    "head": ("head_up", "head_down"),
+    "foot": ("feet_up", "feet_down"),
+}
 
 
 @dataclass(frozen=True, slots=True)
@@ -39,8 +55,20 @@ async def press(controller: BedController, variant: str, action: str) -> None:
     await controller.press(action)
 
 
+async def set_level(controller: BedController, value: float, *, zone: str) -> None:
+    if (
+        not isinstance(controller, IntellibedController)
+        or controller.profile.key != "hhc"
+        or zone not in _LEVEL_ACTIONS
+        or isinstance(value, bool)
+        or value not in range(4)
+    ):
+        raise invalid("option_unavailable")
+    await controller.press(_LEVEL_ACTIONS[zone][int(value)])
+
+
 class IntellibedController(ProfileExecution[Profile], DiagnosticBedController):
-    """Explicit single-receiver profile with single-shot non-motion buttons."""
+    """Explicit single-receiver profile with single-shot non-motion controls."""
 
     def __init__(self, coordinator: AdjustableBedCoordinator, variant: str) -> None:
         super().__init__(coordinator)
@@ -140,7 +168,7 @@ class IntellibedController(ProfileExecution[Profile], DiagnosticBedController):
         token = object()
         self._subscription = token
         self._report = None
-        self.forward_controller_state_updates(UNDER_BED_LIGHTS_ON(None))
+        self._clear_assumed_state()
 
         def receive(sender: BleakGATTCharacteristic, data: bytearray) -> None:
             if self._subscription is not token or sender is not link.notify:
@@ -169,7 +197,7 @@ class IntellibedController(ProfileExecution[Profile], DiagnosticBedController):
     async def stop_notify(self) -> None:
         link, self._subscription = self._link, None
         self._report = None
-        self.forward_controller_state_updates(UNDER_BED_LIGHTS_ON(None))
+        self._clear_assumed_state()
         if (
             link is not None
             and self.client is link.client
@@ -183,7 +211,13 @@ class IntellibedController(ProfileExecution[Profile], DiagnosticBedController):
         self._subscription = None
         self._report = None
         self._report_revision = 0
-        self.forward_controller_state_updates(UNDER_BED_LIGHTS_ON(None))
+        self._clear_assumed_state()
+
+    def _clear_assumed_state(self) -> None:
+        updates = [UNDER_BED_LIGHTS_ON(None)]
+        if self.profile.key == "hhc":
+            updates.extend(massage_intensity(zone)(None) for zone in _LEVEL_ACTIONS)
+        self.forward_controller_state_updates(*updates)
 
     @property
     def protocol_diagnostics(self) -> dict[str, object]:
@@ -206,6 +240,25 @@ class IntellibedController(ProfileExecution[Profile], DiagnosticBedController):
         }
 
     @property
+    def controller_number_specs(self) -> tuple[ControllerNumberSpec, ...]:
+        if self.profile.key != "hhc":
+            return ()
+        return tuple(
+            ControllerNumberSpec(
+                f"intellibed_hhc_massage_{zone}_intensity",
+                f"massage_{zone}_intensity",
+                massage_intensity(zone),
+                0,
+                3,
+                1,
+                partial(set_level, zone=zone),
+                assumed_state=True,
+                card=CARD_MASSAGE,
+            )
+            for zone in _LEVEL_ACTIONS
+        )
+
+    @property
     def controller_button_specs(self) -> tuple[ControllerButtonSpec, ...]:
         return unique_buttons(
             catalog_button(
@@ -216,7 +269,11 @@ class IntellibedController(ProfileExecution[Profile], DiagnosticBedController):
                 combine_sides=False,
             )
             for key, action in self.profile.actions.items()
-            if not (self.profile.key == "hhc" and key in ("light_on", "light_off"))
+            if not (
+                self.profile.key == "hhc"
+                and (key in ("light_on", "light_off")
+                     or any(key in actions for actions in _LEVEL_ACTIONS.values()))
+            )
         )
 
     async def press(self, action: str) -> None:
@@ -233,7 +290,25 @@ class IntellibedController(ProfileExecution[Profile], DiagnosticBedController):
         self._live(link)
         if self._subscription is not token:
             raise BedNotConnectedError
-        await self.write_command(self.profile.encode(value), cancel_event=event)
+
+        def current() -> bool:
+            try:
+                self._live(link)
+            except BedNotConnectedError, ValueError:
+                return False
+            return self._subscription is token
+
+        updates = []
+        if self.profile.key == "hhc":
+            for zone, actions in _LEVEL_ACTIONS.items():
+                if action in actions:
+                    updates.append(massage_intensity(zone)(actions.index(action)))
+                elif action in _RELATIVE_ACTIONS[zone]:
+                    updates.append(massage_intensity(zone)(None))
+                elif action == "massage_off":
+                    updates.append(massage_intensity(zone)(0))
+        with self.sent_state(*updates, is_current=current):
+            await self.write_command(self.profile.encode(value), cancel_event=event)
 
     async def write_command(
         self,

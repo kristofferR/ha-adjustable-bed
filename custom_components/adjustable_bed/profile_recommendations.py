@@ -30,6 +30,7 @@ from .app_state_store import app_state_store
 from .const import (
     ADJUSTABLE_LUMBAR_VARIANT_STAR,
     BED_TYPE_ADJUSTABLE_LUMBAR,
+    BED_TYPE_AMADA,
     BED_TYPE_BETTERLIVING2,
     BED_TYPE_COMFORT_ENHANCEMENT3,
     BED_TYPE_ENSO2,
@@ -118,7 +119,7 @@ _APP_HINTS: Final = _GMMOTOR_APP_HINTS | {
     "intellibed",
     "instant_comfort", "berun", BED_TYPE_SIMMONS_BLUE, "dorsal", BED_TYPE_ENSO2, BED_TYPE_MOODBASE,
     BED_TYPE_ERGOBED, BED_TYPE_TRUEMOTION, BED_TYPE_SUTA_KING_KOIL, BED_TYPE_SLEEP_ASSIST_PRO, BED_TYPE_RONCO_MOTION,
-    BED_TYPE_MLILY0, BED_TYPE_MYSIDE, "muuegm", "silksnow", "motionflex", "awmotion",
+    BED_TYPE_MLILY0, BED_TYPE_AMADA, BED_TYPE_MYSIDE, "muuegm", "silksnow", "motionflex", "awmotion",
 }
 
 if TYPE_CHECKING:

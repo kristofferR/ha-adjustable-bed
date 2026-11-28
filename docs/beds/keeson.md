@@ -7131,11 +7131,13 @@ checksum or position unit is inferred.
 
 #### Services
 
-Use `button.press` for massage and the OLD light toggle. HHC uses native
-`light.turn_on` and `light.turn_off`; its displayed light state starts unknown
-and is assumed from delivered commands, not measured reports. Retiring the
-subscription clears that assumed state. No app-specific action or combined
-control is registered, and commands never rewrite the diagnostic raw report.
+Use `button.press` for OLD's relative massage controls, all-massage off,
+timer cycle and light toggle. The [HHC profile](motomotion.md#intellibed-sleep-genius-hhc)
+uses `number.set_value` for absolute head and foot massage levels, plus native
+`light.turn_on` and `light.turn_off`. Those HHC values start unknown and show
+delivered commands, not reported hardware feedback; retiring its subscription
+clears them. No app-specific action or combined control is registered, and
+commands never rewrite the diagnostic raw report.
 
 #### Evidence
 
