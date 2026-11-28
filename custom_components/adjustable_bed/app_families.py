@@ -1430,6 +1430,7 @@ RICHMAT_FAMILY: Final = AppFamily(
         "richmat_420": Answer("richmat_app"),
         "jerome_adjustable_base": Answer(BED_TYPE_JEROME_ADJUSTABLE_BASE, data=_NO_RMCONTROL),
         "enso2": Answer("enso2", data=_NO_RMCONTROL),
+        "purely_sleep": Answer("purely_sleep", data=_NO_RMCONTROL),
         "topcare": Answer(BED_TYPE_TOPCARE, data=_NO_RMCONTROL),
         "smart_base": Answer(BED_TYPE_SMART_BASE, data=_NO_RMCONTROL),
         "comfort_bed": Answer(BED_TYPE_COMFORT_BED, data=_NO_RMCONTROL),

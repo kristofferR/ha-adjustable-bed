@@ -95,12 +95,15 @@ async def test_startup_probes_use_exact_gatt_mode_order_and_early_notifications(
         callback(char, bytearray.fromhex("6e090100786e0e00037f"))
 
     client.start_notify.side_effect = subscribe
-    with virtual_clock():
+    timed = []
+    with virtual_clock() as clock:
+        client.write_gatt_char.side_effect = lambda *args, **kwargs: timed.append(clock.now)
         await c.async_on_connect(session_for(c, client))
     assert frames(client) == [
         literal(name, route == "n1")
         for name in ("Startup ExitLimit", "Query clock capability", "Query light capability")
     ]
+    assert [round(t, 2) for t in timed] == [0.1, 1.1, 1.2]
     assert all(
         call.args[0] is gatt.characteristics[0] and call.kwargs["response"] is not no_response
         for call in client.write_gatt_char.await_args_list
@@ -169,7 +172,7 @@ async def runtime(hass, request, mock_coordinator_connected, mock_bleak_client, 
         await coordinator.async_shutdown()
 
 
-@pytest.mark.parametrize("runtime", ("n1", "w1"), indirect=True)
+@pytest.mark.parametrize("runtime", PROFILE.transports, indirect=True)
 async def test_native_controls_presets_saves_timers_sides_and_real_services(hass, runtime):
     coordinator, client, raw = runtime
     assert resolve_profile_id(coordinator.entry.data) == "comfort_bed"
@@ -256,8 +259,9 @@ async def test_native_controls_presets_saves_timers_sides_and_real_services(hass
         c.restore_persisted_app_state({"side": "both"})
 
 
+@pytest.mark.parametrize("runtime", PROFILE.transports, indirect=True)
 async def test_native_motor_release_and_stop_drain_inflight_write_on_original_side(runtime):
-    coordinator, client, _ = runtime
+    coordinator, client, raw = runtime
     assert await coordinator.async_connect()
     c = coordinator.controller
     assert isinstance(c, bed.ComfortBedController)
@@ -277,13 +281,13 @@ async def test_native_motor_release_and_stop_drain_inflight_write_on_original_si
             await cover.async_open_cover()
             await cover.async_close_cover()
         assert frames(client) == [
-            literal(n) for name in names for n in (name, name, "Movement STOP")
+            literal(n, raw) for name in names for n in (name, name, "Movement STOP")
         ]
     client.write_gatt_char.reset_mock()
     began, finish = asyncio.Event(), asyncio.Event()
 
     async def write(_char, frame, **kwargs):
-        if frame == literal("Head up"):
+        if frame == literal("Head up", raw):
             began.set()
             await finish.wait()
 
@@ -298,7 +302,7 @@ async def test_native_motor_release_and_stop_drain_inflight_write_on_original_si
     assert not stop.done()
     finish.set()
     await asyncio.gather(movement, stop)
-    assert frames(client) == [literal("Head up"), literal("Movement STOP")]
+    assert frames(client) == [literal("Head up", raw), literal("Movement STOP", raw)]
 
 
 async def test_replacement_session_never_receives_old_hold_or_queued_command():

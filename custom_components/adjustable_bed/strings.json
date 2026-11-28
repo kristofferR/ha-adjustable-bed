@@ -4813,6 +4813,15 @@
       }
     },
     "sensor": {
+      "purely_sleep_protocol_version": {
+        "name": "Protocol version"
+      },
+      "purely_sleep_clock_available": {
+        "name": "Clock available"
+      },
+      "purely_sleep_light_available": {
+        "name": "Light available"
+      },
         "active_sleep_model": {
           "name": "Bed model"
         },
@@ -12384,6 +12393,15 @@
     "smart_base_product": {"message": "Choose the Smart Base 200IV2 / A8RM product in Reconfigure."},
     "smart_base_gatt": {"message": "The Smart Base 200IV2 route requires its FEE9 service and exact write and notification characteristics."},
     "smart_base_settings": {"message": "Reconnect and refresh bed settings. The bed must report this feature on the current connection; choose a valid color or 0 to 300 seconds."},
+    "purely_sleep_product_required": {
+      "message": "Choose NXPS200 (JLRN) or PS200 (VJRM) for Purely Sleep normal mode."
+    },
+    "purely_sleep_gatt": {
+      "message": "Purely Sleep needs one supported Bluetooth service with its exact writable characteristic and a notification channel."
+    },
+    "purely_sleep_version_one": {
+      "message": "This Purely Sleep bed reported protocol version 1. Version-one controls are not supported yet."
+    },
     "active_sleep_normal_mode_required": {
       "message": "The bed must report normal operating mode before it can be controlled."
     },
@@ -14343,6 +14361,7 @@
         "comfort_bed": "Comfort Bed (ComfortCareBed)",
         "thrivesleep": "Thrive Sleep app",
         "atlas_lift": "Atlas Lift (Cama Lift)",
+        "purely_sleep": "Purely Sleep (NXPS200 / PS200, normal mode)",
         "enso2": "ENSO Sleep Control (Enso 2)",
         "rmcontrol": "RMControl app",
         "revive": "Revive Control app",

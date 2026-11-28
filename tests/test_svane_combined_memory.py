@@ -25,6 +25,7 @@ from custom_components.adjustable_bed.const import (
     SVANE_VARIANT_MULTI,
 )
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
+from custom_components.adjustable_bed.errors import BedNotConnectedError
 from custom_components.adjustable_bed.paired_coordinator import (
     PairedBedCoordinator,
 )
@@ -126,7 +127,7 @@ async def test_existing_button_fails_closed_when_one_side_has_no_capability_sour
     children[SIDE_RIGHT]._offline_controller = None
     with (
         patch.object(pair, "async_execute_controller_command", wraps=pair.async_execute_controller_command) as dispatch,
-        pytest.raises(ValueError, match="unavailable device"),
+        pytest.raises(BedNotConnectedError),
     ):
         await button.async_press()
     dispatch.assert_not_awaited()
