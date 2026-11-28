@@ -122,6 +122,7 @@ from .profiles.dunlopillo import CHOICES as DUNLOPILLO_CHOICES
 from .profiles.dynasty_base_a import CHOICES as DYNASTY_BASE_A_CHOICES
 from .profiles.enso2 import LAYOUT_CHOICES as ENSO2_LAYOUT_CHOICES
 from .profiles.ergosportive import VARIANTS as ERGOSPORTIVE_CHOICES
+from .profiles.flexx_motion import CHOICES as FLEXX_CHOICES
 from .profiles.hush import HUSH_BASE_VARIANTS
 from .profiles.instant_comfort import ROUTES as INSTANT_COMFORT_ROUTES
 from .profiles.junasleep import CHOICES as JUNASLEEP_CHOICES
@@ -196,6 +197,7 @@ MLINE_PROTOCOL_LABELS: Final = {
 
 # Single source of truth for bed types with variants
 VARIANTS_BY_BED_TYPE: dict[str, dict[str, str]] = {
+    "flexx_motion": FLEXX_CHOICES,
     "askona": ASKONA_MODELS,
     "intellibed": {"old": "Old / white remote", "hhc": "HHC / silver remote"},
     BED_TYPE_AMBIENT: AMBIENT_LAYOUTS,

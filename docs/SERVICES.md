@@ -2912,3 +2912,12 @@ are 3, 5, 10, 15 or 30 seconds. Preview requires current original strengths,
 ends with both channels off and restores strengths on the original connection.
 Privacy accepts a three-digit `pin` and disconnects after delivery.
 See [AI Bed](beds/ai_bed.md) for controls, limits and untested hardware status.
+
+### Flexx Motion repeating alarms
+
+Use shared `set_alarm` to create or replace a repeating alarm in slots 1–7,
+with a wake action from the selected model. Refresh the bed's alarm list before
+`flexx_motion_enable_alarm` (`alarm_number`, `enabled`) or
+`flexx_motion_delete_alarm` (`alarm_number`). Both actions take `device_id`,
+require a fresh current record and preserve its other fields. They target one
+physical bed without an explicit side. See [Flexx Motion](beds/richmat.md#flexx-motion).

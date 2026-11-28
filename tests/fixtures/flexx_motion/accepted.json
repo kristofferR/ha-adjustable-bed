@@ -1,0 +1,700 @@
+{
+  "app": "com.richmat.flexx_motion 2.0.1 (20100)",
+  "scope": "Static preset construction and bounded receive envelope only; no executable route or hardware validation.",
+  "tx_vectors": [
+    {
+      "id": "V01",
+      "protocol": "P1",
+      "action": "recall M1",
+      "inputs": {
+        "opcode": 46,
+        "side": 0,
+        "nordic": true
+      },
+      "expected_bytes": "2e",
+      "evidence": [
+        "E-BUILDER",
+        "E-SUM",
+        "E-WRITE",
+        "reproduce.py EXPECTED literal list"
+      ],
+      "scope": "Static construction, not executed original app or hardware capture."
+    },
+    {
+      "id": "V02",
+      "protocol": "P1",
+      "action": "save M1",
+      "inputs": {
+        "opcode": 43,
+        "side": 0,
+        "nordic": true
+      },
+      "expected_bytes": "2b",
+      "evidence": [
+        "E-BUILDER",
+        "E-SUM",
+        "E-WRITE",
+        "reproduce.py EXPECTED literal list"
+      ],
+      "scope": "Static construction, not executed original app or hardware capture."
+    },
+    {
+      "id": "V03",
+      "protocol": "P2",
+      "action": "recall M1",
+      "inputs": {
+        "opcode": 46,
+        "side": 0,
+        "nordic": false
+      },
+      "expected_bytes": "6e01002e9d",
+      "evidence": [
+        "E-BUILDER",
+        "E-SUM",
+        "E-WRITE",
+        "reproduce.py EXPECTED literal list"
+      ],
+      "scope": "Static construction, not executed original app or hardware capture."
+    },
+    {
+      "id": "V04",
+      "protocol": "P2",
+      "action": "recall M1",
+      "inputs": {
+        "opcode": 46,
+        "side": 1,
+        "nordic": false
+      },
+      "expected_bytes": "6e01012e9e",
+      "evidence": [
+        "E-BUILDER",
+        "E-SUM",
+        "E-WRITE",
+        "reproduce.py EXPECTED literal list"
+      ],
+      "scope": "Static construction, not executed original app or hardware capture."
+    },
+    {
+      "id": "V05",
+      "protocol": "P2",
+      "action": "save M1",
+      "inputs": {
+        "opcode": 43,
+        "side": 0,
+        "nordic": false
+      },
+      "expected_bytes": "6e01002b9a",
+      "evidence": [
+        "E-BUILDER",
+        "E-SUM",
+        "E-WRITE",
+        "reproduce.py EXPECTED literal list"
+      ],
+      "scope": "Static construction, not executed original app or hardware capture."
+    },
+    {
+      "id": "V06",
+      "protocol": "P2",
+      "action": "save M1",
+      "inputs": {
+        "opcode": 43,
+        "side": 1,
+        "nordic": false
+      },
+      "expected_bytes": "6e01012b9b",
+      "evidence": [
+        "E-BUILDER",
+        "E-SUM",
+        "E-WRITE",
+        "reproduce.py EXPECTED literal list"
+      ],
+      "scope": "Static construction, not executed original app or hardware capture."
+    },
+    {
+      "id": "V07",
+      "protocol": "P2",
+      "action": "recall M2",
+      "inputs": {
+        "opcode": 47,
+        "side": 0,
+        "nordic": false
+      },
+      "expected_bytes": "6e01002f9e",
+      "evidence": [
+        "E-BUILDER",
+        "E-SUM",
+        "E-WRITE",
+        "reproduce.py EXPECTED literal list"
+      ],
+      "scope": "Static construction, not executed original app or hardware capture."
+    },
+    {
+      "id": "V08",
+      "protocol": "P2",
+      "action": "save M2",
+      "inputs": {
+        "opcode": 44,
+        "side": 0,
+        "nordic": false
+      },
+      "expected_bytes": "6e01002c9b",
+      "evidence": [
+        "E-BUILDER",
+        "E-SUM",
+        "E-WRITE",
+        "reproduce.py EXPECTED literal list"
+      ],
+      "scope": "Static construction, not executed original app or hardware capture."
+    },
+    {
+      "id": "V09",
+      "protocol": "P2",
+      "action": "recall Zero Gravity",
+      "inputs": {
+        "opcode": 69,
+        "side": 0,
+        "nordic": false
+      },
+      "expected_bytes": "6e010045b4",
+      "evidence": [
+        "E-BUILDER",
+        "E-SUM",
+        "E-WRITE",
+        "reproduce.py EXPECTED literal list"
+      ],
+      "scope": "Static construction, not executed original app or hardware capture."
+    },
+    {
+      "id": "V10",
+      "protocol": "P2",
+      "action": "save Zero Gravity",
+      "inputs": {
+        "opcode": 102,
+        "side": 0,
+        "nordic": false
+      },
+      "expected_bytes": "6e010066d5",
+      "evidence": [
+        "E-BUILDER",
+        "E-SUM",
+        "E-WRITE",
+        "reproduce.py EXPECTED literal list"
+      ],
+      "scope": "Static construction, not executed original app or hardware capture."
+    },
+    {
+      "id": "V11",
+      "protocol": "P2",
+      "action": "recall Anti-snoring",
+      "inputs": {
+        "opcode": 70,
+        "side": 0,
+        "nordic": false
+      },
+      "expected_bytes": "6e010046b5",
+      "evidence": [
+        "E-BUILDER",
+        "E-SUM",
+        "E-WRITE",
+        "reproduce.py EXPECTED literal list"
+      ],
+      "scope": "Static construction, not executed original app or hardware capture."
+    },
+    {
+      "id": "V12",
+      "protocol": "P2",
+      "action": "save Anti-snoring",
+      "inputs": {
+        "opcode": 105,
+        "side": 0,
+        "nordic": false
+      },
+      "expected_bytes": "6e010069d8",
+      "evidence": [
+        "E-BUILDER",
+        "E-SUM",
+        "E-WRITE",
+        "reproduce.py EXPECTED literal list"
+      ],
+      "scope": "Static construction, not executed original app or hardware capture."
+    },
+    {
+      "id": "V13",
+      "protocol": "P2",
+      "action": "recall TV",
+      "inputs": {
+        "opcode": 88,
+        "side": 0,
+        "nordic": false
+      },
+      "expected_bytes": "6e010058c7",
+      "evidence": [
+        "E-BUILDER",
+        "E-SUM",
+        "E-WRITE",
+        "reproduce.py EXPECTED literal list"
+      ],
+      "scope": "Static construction, not executed original app or hardware capture."
+    },
+    {
+      "id": "V14",
+      "protocol": "P2",
+      "action": "save TV",
+      "inputs": {
+        "opcode": 100,
+        "side": 0,
+        "nordic": false
+      },
+      "expected_bytes": "6e010064d3",
+      "evidence": [
+        "E-BUILDER",
+        "E-SUM",
+        "E-WRITE",
+        "reproduce.py EXPECTED literal list"
+      ],
+      "scope": "Static construction, not executed original app or hardware capture."
+    },
+    {
+      "id": "V15",
+      "protocol": "P2",
+      "action": "recall Lounge",
+      "inputs": {
+        "opcode": 89,
+        "side": 0,
+        "nordic": false
+      },
+      "expected_bytes": "6e010059c8",
+      "evidence": [
+        "E-BUILDER",
+        "E-SUM",
+        "E-WRITE",
+        "reproduce.py EXPECTED literal list"
+      ],
+      "scope": "Static construction, not executed original app or hardware capture."
+    },
+    {
+      "id": "V16",
+      "protocol": "P2",
+      "action": "save Lounge",
+      "inputs": {
+        "opcode": 101,
+        "side": 0,
+        "nordic": false
+      },
+      "expected_bytes": "6e010065d4",
+      "evidence": [
+        "E-BUILDER",
+        "E-SUM",
+        "E-WRITE",
+        "reproduce.py EXPECTED literal list"
+      ],
+      "scope": "Static construction, not executed original app or hardware capture."
+    },
+    {
+      "id": "V17",
+      "protocol": "P2",
+      "action": "recall Soothing Sleep",
+      "inputs": {
+        "opcode": 134,
+        "side": 0,
+        "nordic": false
+      },
+      "expected_bytes": "6e010086f5",
+      "evidence": [
+        "E-BUILDER",
+        "E-SUM",
+        "E-WRITE",
+        "reproduce.py EXPECTED literal list"
+      ],
+      "scope": "Static construction, not executed original app or hardware capture."
+    },
+    {
+      "id": "V18",
+      "protocol": "P2",
+      "action": "builder-only SyncOn carry example",
+      "inputs": {
+        "opcode": 188,
+        "side": 1,
+        "nordic": false
+      },
+      "expected_bytes": "6e0101bc2c",
+      "evidence": [
+        "E-BUILDER",
+        "E-SUM",
+        "E-WRITE",
+        "reproduce.py EXPECTED literal list"
+      ],
+      "scope": "Static construction, not executed original app or hardware capture."
+    }
+  ],
+  "rx_literals": [
+    {
+      "id": "R01",
+      "protocol": "SHARED-RECEIVE",
+      "action": "Source-literal alarm capability notification",
+      "inputs": {
+        "received_hex": "6e09010078"
+      },
+      "expected_bytes": "6e09010078",
+      "expected_result": "common handler emits EventNames@988bf1; consumer/model applicability unresolved",
+      "evidence": [
+        "E-REPAIR-PARSER"
+      ],
+      "scope": "Static literal and parser reconstruction, not capture"
+    },
+    {
+      "id": "R02",
+      "protocol": "SHARED-RECEIVE",
+      "action": "Source-literal light capability notification",
+      "inputs": {
+        "received_hex": "6e0e00037f"
+      },
+      "expected_bytes": "6e0e00037f",
+      "expected_result": "common handler emits EventNames@988c11; consumer/model applicability unresolved",
+      "evidence": [
+        "E-REPAIR-PARSER"
+      ],
+      "scope": "Static literal and parser reconstruction, not capture"
+    }
+  ],
+  "preset_rows": [
+    {
+      "path": "P1",
+      "action": "recall M1",
+      "opcode": 46,
+      "products": [
+        "productFlexxPB450SH",
+        "productFlexxAFEG300SH",
+        "productFlexxAFEG300",
+        "productFlexxPB450",
+        "productFlexxPB325",
+        "productFlexxPB300",
+        "productFlexxPB250"
+      ]
+    },
+    {
+      "path": "P1",
+      "action": "save M1",
+      "opcode": 43,
+      "products": [
+        "productFlexxPB450SH",
+        "productFlexxAFEG300SH",
+        "productFlexxAFEG300",
+        "productFlexxPB450",
+        "productFlexxPB325",
+        "productFlexxPB300",
+        "productFlexxPB250"
+      ]
+    },
+    {
+      "path": "P1",
+      "action": "recall M2",
+      "opcode": 47,
+      "products": [
+        "productFlexxPB300"
+      ]
+    },
+    {
+      "path": "P1",
+      "action": "save M2",
+      "opcode": 44,
+      "products": [
+        "productFlexxPB300"
+      ]
+    },
+    {
+      "path": "P1",
+      "action": "recall Zero Gravity",
+      "opcode": 69,
+      "products": [
+        "productFlexxPB450SH",
+        "productFlexxAFEG300SH",
+        "productFlexxAFEG300",
+        "productFlexxPB450",
+        "productFlexxPB325",
+        "productFlexxPB300"
+      ]
+    },
+    {
+      "path": "P1",
+      "action": "save Zero Gravity",
+      "opcode": 102,
+      "products": [
+        "productFlexxPB450SH",
+        "productFlexxAFEG300SH",
+        "productFlexxAFEG300",
+        "productFlexxPB450",
+        "productFlexxPB325",
+        "productFlexxPB300"
+      ]
+    },
+    {
+      "path": "P1",
+      "action": "recall Anti-snoring",
+      "opcode": 70,
+      "products": [
+        "productFlexxPB450SH",
+        "productFlexxPB450",
+        "productFlexxPB325"
+      ]
+    },
+    {
+      "path": "P1",
+      "action": "save Anti-snoring",
+      "opcode": 105,
+      "products": [
+        "productFlexxPB450SH",
+        "productFlexxPB450",
+        "productFlexxPB325"
+      ]
+    },
+    {
+      "path": "P1",
+      "action": "recall TV",
+      "opcode": 88,
+      "products": [
+        "productFlexxAFEG300SH",
+        "productFlexxAFEG300",
+        "productFlexxPB325",
+        "productFlexxPB300"
+      ]
+    },
+    {
+      "path": "P1",
+      "action": "save TV",
+      "opcode": 100,
+      "products": [
+        "productFlexxAFEG300SH",
+        "productFlexxAFEG300",
+        "productFlexxPB325",
+        "productFlexxPB300"
+      ]
+    },
+    {
+      "path": "P1",
+      "action": "recall Lounge",
+      "opcode": 89,
+      "products": [
+        "productFlexxAFEG300SH",
+        "productFlexxAFEG300",
+        "productFlexxPB300"
+      ]
+    },
+    {
+      "path": "P1",
+      "action": "save Lounge",
+      "opcode": 101,
+      "products": [
+        "productFlexxAFEG300SH",
+        "productFlexxAFEG300",
+        "productFlexxPB300"
+      ]
+    },
+    {
+      "path": "P1",
+      "action": "recall Soothing Sleep",
+      "opcode": 134,
+      "products": [
+        "productFlexxAFEG300SH",
+        "productFlexxAFEG300"
+      ]
+    },
+    {
+      "path": "P2",
+      "action": "recall M1",
+      "opcode": 46,
+      "products": [
+        "productFlexxPB450SH",
+        "productFlexxAFEG300SH",
+        "productFlexxAFEG300",
+        "productFlexxPB450",
+        "productFlexxPB325",
+        "productFlexxPB300",
+        "productFlexxPB250"
+      ]
+    },
+    {
+      "path": "P2",
+      "action": "save M1",
+      "opcode": 43,
+      "products": [
+        "productFlexxPB450SH",
+        "productFlexxAFEG300SH",
+        "productFlexxAFEG300",
+        "productFlexxPB450",
+        "productFlexxPB325",
+        "productFlexxPB300",
+        "productFlexxPB250"
+      ]
+    },
+    {
+      "path": "P2",
+      "action": "recall M2",
+      "opcode": 47,
+      "products": [
+        "productFlexxPB300"
+      ]
+    },
+    {
+      "path": "P2",
+      "action": "save M2",
+      "opcode": 44,
+      "products": [
+        "productFlexxPB300"
+      ]
+    },
+    {
+      "path": "P2",
+      "action": "recall Zero Gravity",
+      "opcode": 69,
+      "products": [
+        "productFlexxPB450SH",
+        "productFlexxAFEG300SH",
+        "productFlexxAFEG300",
+        "productFlexxPB450",
+        "productFlexxPB325",
+        "productFlexxPB300"
+      ]
+    },
+    {
+      "path": "P2",
+      "action": "save Zero Gravity",
+      "opcode": 102,
+      "products": [
+        "productFlexxPB450SH",
+        "productFlexxAFEG300SH",
+        "productFlexxAFEG300",
+        "productFlexxPB450",
+        "productFlexxPB325",
+        "productFlexxPB300"
+      ]
+    },
+    {
+      "path": "P2",
+      "action": "recall Anti-snoring",
+      "opcode": 70,
+      "products": [
+        "productFlexxPB450SH",
+        "productFlexxPB450",
+        "productFlexxPB325"
+      ]
+    },
+    {
+      "path": "P2",
+      "action": "save Anti-snoring",
+      "opcode": 105,
+      "products": [
+        "productFlexxPB450SH",
+        "productFlexxPB450",
+        "productFlexxPB325"
+      ]
+    },
+    {
+      "path": "P2",
+      "action": "recall TV",
+      "opcode": 88,
+      "products": [
+        "productFlexxAFEG300SH",
+        "productFlexxAFEG300",
+        "productFlexxPB325",
+        "productFlexxPB300"
+      ]
+    },
+    {
+      "path": "P2",
+      "action": "save TV",
+      "opcode": 100,
+      "products": [
+        "productFlexxAFEG300SH",
+        "productFlexxAFEG300",
+        "productFlexxPB325",
+        "productFlexxPB300"
+      ]
+    },
+    {
+      "path": "P2",
+      "action": "recall Lounge",
+      "opcode": 89,
+      "products": [
+        "productFlexxAFEG300SH",
+        "productFlexxAFEG300",
+        "productFlexxPB300"
+      ]
+    },
+    {
+      "path": "P2",
+      "action": "save Lounge",
+      "opcode": 101,
+      "products": [
+        "productFlexxAFEG300SH",
+        "productFlexxAFEG300",
+        "productFlexxPB300"
+      ]
+    },
+    {
+      "path": "P2",
+      "action": "recall Soothing Sleep",
+      "opcode": 134,
+      "products": [
+        "productFlexxAFEG300SH",
+        "productFlexxAFEG300"
+      ]
+    }
+  ],
+  "gatt_catalog": [
+    {
+      "object": "988f21",
+      "name": "bleServiceUUIDNordic",
+      "ordinal": 0,
+      "service": "6e400001-b5a3-f393-e0a9-e50e24dcca9e",
+      "write_hint": "6e400002-b5a3-f393-e0a9-e50e24dcca9e",
+      "notify_hint": "6e400003-b5a3-f393-e0a9-e50e24dcca9e",
+      "source": "evidence/blutter/objs.txt:37344"
+    },
+    {
+      "object": "988ef1",
+      "name": "bleServiceUUIDW1",
+      "ordinal": 1,
+      "service": "0000FEE9-0000-1000-8000-00805F9B34FB",
+      "write_hint": "D44BC439-ABFD-45A2-B575-925416129600",
+      "notify_hint": "D44BC439-ABFD-45A2-B575-925416129601",
+      "source": "evidence/blutter/objs.txt:37333"
+    },
+    {
+      "object": "988fe1",
+      "name": "bleServiceUUIDW2",
+      "ordinal": 2,
+      "service": "0000FEE9-0000-1000-8000-00805F9B34BB",
+      "write_hint": "D44BC439-ABFD-45A2-B575-925416129622",
+      "notify_hint": "D44BC439-ABFD-45A2-B575-925416129611",
+      "source": "evidence/blutter/objs.txt:37388"
+    },
+    {
+      "object": "988fb1",
+      "name": "bleServiceUUIDW3",
+      "ordinal": 3,
+      "service": "0000FFE0-0000-1000-8000-00805F9B34FB",
+      "write_hint": "0000FFE2-0000-1000-8000-00805F9B34FB",
+      "notify_hint": "0000FFE1-0000-1000-8000-00805F9B34FB",
+      "source": "evidence/blutter/objs.txt:37377"
+    },
+    {
+      "object": "988f81",
+      "name": "bleServiceUUIDW4",
+      "ordinal": 4,
+      "service": "0000FFF0-0000-1000-8000-00805F9B34FB",
+      "write_hint": "0000FFF2-0000-1000-8000-00805F9B34FB",
+      "notify_hint": "0000FFF1-0000-1000-8000-00805F9B34FB",
+      "source": "evidence/blutter/objs.txt:37366"
+    },
+    {
+      "object": "988f51",
+      "name": "bleServiceUUIDW5",
+      "ordinal": 5,
+      "service": "0000e0ff-3c17-d293-8e48-14fe2e4da212",
+      "write_hint": "00000002-3c17-d293-8e48-14fe2e4da212",
+      "notify_hint": "00000003-3c17-d293-8e48-14fe2e4da212",
+      "source": "evidence/blutter/objs.txt:37355"
+    }
+  ]
+}

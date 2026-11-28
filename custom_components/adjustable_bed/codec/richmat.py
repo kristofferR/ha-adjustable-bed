@@ -80,6 +80,67 @@ def is_valid_crc(data: bytes) -> bool:
     return len(data) > 2 and binascii.crc_hqx(data[:-2], 0) == int.from_bytes(data[-2:], "big")
 
 
+class NextHeaderBuffer:
+    """Passive receive envelope used by Flexx Motion's ordinary dispatcher.
+
+    Common records end at the next header or the current notification's end;
+    they have no general checksum check and are NOT fixed-length reassembled.
+    ``20`` records use byte 2 as total length and require sum8. Desk (``21``)
+    and firmware (``40``) records are consumed without exposing their payloads.
+
+    Unlike the app's unclosed malformed-length branches, impossible lengths
+    discard pending input. A truncated ``40`` header waits safely for byte 3.
+    The caller owns the profile's residual-data expiry timer and calls expire.
+    No existing Richmat route uses this parser implicitly.
+    """
+
+    def __init__(self) -> None:
+        self.pending = bytearray()
+
+    def feed(self, data: bytes) -> list[bytes]:
+        """Return only common and checksum-valid bed records, without state decoding."""
+        self.pending.extend(data)
+        records: list[bytes] = []
+        while len(self.pending) >= 3:
+            try:
+                start = self.pending.index(BED)
+            except ValueError:
+                self.pending.clear()
+                break
+            del self.pending[:start]
+            if len(self.pending) < 3:
+                break
+            kind = self.pending[1]
+            if kind == 0x40:
+                if len(self.pending) < 4:
+                    break
+                size = int.from_bytes(self.pending[2:4], "big")
+                minimum = 6  # Header, type, two length bytes, two CRC bytes.
+            elif kind in (0x20, 0x21):
+                size = self.pending[2]
+                minimum = 4  # Header, type, length, checksum.
+            else:
+                try:
+                    size = self.pending.index(BED, 1)
+                except ValueError:
+                    size = len(self.pending)
+                minimum = 1
+            if size < minimum:
+                self.pending.clear()
+                break
+            if len(self.pending) < size:
+                break
+            record = bytes(self.pending[:size])
+            del self.pending[:size]
+            if kind not in (0x21, 0x40) and (kind != 0x20 or is_valid(record)):
+                records.append(record)
+        return records
+
+    def expire(self) -> None:
+        """Discard residual input on expiry, disconnect or subscription replacement."""
+        self.pending.clear()
+
+
 def command(code: int, side: int = 0, *, header: int = BED) -> bytes:
     """``6E 01 side code sum8``: every motor, preset, light and massage button."""
     return frame(header, 0x01, side, code)

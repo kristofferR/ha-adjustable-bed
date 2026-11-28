@@ -5123,6 +5123,48 @@ ai_bed:
         text:
           type: password
 
+flexx_motion_enable_alarm:
+  name: Flexx Motion, turn an alarm on or off
+  description: Enable or disable a repeating alarm read from the current bed connection.
+  fields:
+    device_id:
+      name: Device
+      required: true
+      selector:
+        device:
+          integration: adjustable_bed
+    alarm_number:
+      name: Alarm number
+      required: true
+      selector:
+        number:
+          min: 1
+          max: 7
+          mode: box
+    enabled:
+      name: Enabled
+      required: true
+      selector:
+        boolean:
+flexx_motion_delete_alarm:
+  name: Flexx Motion, delete an alarm
+  description: Delete a repeating alarm read from the current bed connection.
+  fields:
+    device_id:
+      name: Device
+      required: true
+      selector:
+        device:
+          integration: adjustable_bed
+    alarm_number:
+      name: Alarm number
+      required: true
+      selector:
+        number:
+          min: 1
+          max: 7
+          mode: box
+
 ar_connect_move_sections:
   name: Move bed sections (AR Connect)
   description: Hold the selected available sections of one physical bed. Release cancels refresh and sends the native stop command.
