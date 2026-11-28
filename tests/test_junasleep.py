@@ -299,6 +299,115 @@ async def test_session_notification_quirks_stale_cancel_and_replacement(
     await target.async_shutdown()
 
 
+@pytest.mark.parametrize("service", ("hold_control", "timed_move"))
+@pytest.mark.parametrize(
+    ("remote", "duration_ms", "write_s", "starts_ms"),
+    [
+        ("a", 350, 0, [0, 300]),
+        ("b", 100, 0, [0, 80]),
+        ("a", 350, 0.4, [0]),
+        ("b", 100, 0.2, [0]),
+    ],
+)
+async def test_finite_native_hold_bounds_refreshes_by_elapsed_time(
+    hass, mock_coordinator_connected, mock_bleak_client, enable_custom_integrations,
+    service, remote, duration_ms, write_s, starts_ms,
+):
+    client = mock_bleak_client
+    client.services = gatt()
+    e = entry(hass, remote)
+    assert await hass.config_entries.async_setup(e.entry_id)
+    target = hass.data[const.DOMAIN][e.entry_id]
+    target._cancel_diagnostic_polling()
+    registry = er.async_get(hass)
+    device = next(
+        v.device_id for v in registry.entities.values() if v.config_entry_id == e.entry_id
+    )
+    request = {"device_id": device}
+    if service == "hold_control":
+        request.update(control="head_up", duration=duration_ms / 1000)
+    else:
+        request.update(motor="head", direction="up", duration_ms=duration_ms)
+    starts = []
+    client.write_gatt_char.reset_mock()
+    try:
+        with virtual_clock() as clock:
+            started = clock.now
+
+            async def acknowledge(_char, _payload, **_kwargs):
+                starts.append(round((clock.now - started) * 1000))
+                await asyncio.sleep(write_s)
+
+            client.write_gatt_char.side_effect = acknowledge
+            await hass.services.async_call(const.DOMAIN, service, request, blocking=True)
+            # An in-flight write may finish late, but no new refresh may start late.
+            assert starts == starts_ms
+            assert clock.now - started == pytest.approx(max(duration_ms / 1000, write_s))
+            assert target.controller._next_query == pytest.approx(clock.now + app.QUERY_PERIOD_S)
+        frame = "040200000001" if remote == "a" else "e5fe160100000005"
+        assert written(client) == [frame] * len(starts_ms)
+    finally:
+        await hass.config_entries.async_unload(e.entry_id)
+
+
+@pytest.mark.parametrize("remote", "ab")
+async def test_finite_hold_expires_while_waiting_for_the_ble_lane(
+    hass, mock_coordinator_connected, mock_bleak_client, remote,
+):
+    client = mock_bleak_client
+    client.services = gatt()
+    target = AdjustableBedCoordinator(hass, entry(hass, remote))
+    assert await target.async_connect()
+    ctrl = target.controller
+    client.write_gatt_char.reset_mock()
+    try:
+        with virtual_clock() as clock:
+            async with ctrl._ble_lock:
+                active = asyncio.create_task(ctrl.hold_control("head_up", 100))
+                await asyncio.sleep(0.2)
+                assert not active.done()
+            await active
+            client.write_gatt_char.assert_not_called()
+            assert ctrl._next_query == pytest.approx(clock.now + app.QUERY_PERIOD_S)
+    finally:
+        await target.async_shutdown()
+
+
+@pytest.mark.parametrize("outcome", ("cancel", "failure"))
+async def test_finite_slow_hold_interruption_releases_without_another_frame(
+    hass, mock_coordinator_connected, mock_bleak_client, outcome,
+):
+    client = mock_bleak_client
+    client.services = gatt()
+    target = AdjustableBedCoordinator(hass, entry(hass, "b"))
+    assert await target.async_connect()
+    ctrl = target.controller
+    link = ctrl._link
+    client.write_gatt_char.reset_mock()
+
+    async def fail(_char, _payload, **_kwargs):
+        await asyncio.sleep(0.2)
+        raise bed.BleakError("write failed")
+
+    client.write_gatt_char.side_effect = fail
+    try:
+        with virtual_clock() as clock:
+            active = asyncio.create_task(ctrl.hold_control("head_up", 100))
+            if outcome == "cancel":
+                await asyncio.sleep(0.05)
+                active.cancel()
+                with pytest.raises(asyncio.CancelledError):
+                    await active
+            else:
+                with pytest.raises(bed.BleakError, match="write failed"):
+                    await active
+            assert ctrl._link is link
+            assert ctrl._next_query == pytest.approx(clock.now + app.QUERY_PERIOD_S)
+        assert written(client) == ["e5fe160100000005"]
+    finally:
+        await target.async_shutdown()
+
+
 @pytest.mark.parametrize("remote", "ab")
 async def test_renewable_card_hold_outlives_pulse_batch_and_stops_without_frame(
     hass, mock_coordinator_connected, mock_bleak_client, enable_custom_integrations, remote

@@ -13,6 +13,7 @@ from bleak.exc import BleakError
 
 from ...card import CARD_MASSAGE, CARD_MASSAGE_TIMER, CARD_UTILITY
 from ...codec import keeson as codec
+from ...command_scheduler import note_frame_skipped
 from ...const import KEESON_BASE_NOTIFY_SERVICE_UUID
 from ...controller_state import StateKey
 from ...profiles import junasleep as app
@@ -32,6 +33,10 @@ if TYPE_CHECKING:
 
 SECONDS: Final = StateKey[int | None]("junasleep_timer_seconds")
 INDICATOR: Final = StateKey[int | None]("junasleep_timer_indicator")
+
+
+class _FiniteHoldExpired(Exception):
+    """The host hold budget ended before dispatch."""
 
 
 @dataclass(frozen=True, slots=True)
@@ -133,11 +138,16 @@ class JunaSleepController(KeesonController):
         repeat_count: int = 1,
         repeat_delay_ms: int = 100,
         cancel_event: asyncio.Event | None = None,
+        *,
+        _deadline: float | None = None,
     ) -> None:
         link = self._live()
 
         def validate() -> None:
             self._live(link)
+            if _deadline is not None and asyncio.get_running_loop().time() >= _deadline:
+                note_frame_skipped()
+                raise _FiniteHoldExpired
 
         await self._write_gatt_with_retry(
             link.write.uuid,
@@ -191,8 +201,35 @@ class JunaSleepController(KeesonController):
         if self.leased_hold_refreshes(cast(int, self.profile.refresh_ms)) is not None:
             axis, direction = control.rsplit("_", 1)
             await self._move_motor(axis, direction == "up")
-        else:
-            await super().hold_control(control, duration_ms)
+            return
+        try:
+            value, repeats = self.profile.held_controls[control]
+        except KeyError as err:
+            raise ValueError(f"Unsupported JunaSleep control: {control}") from err
+        if isinstance(duration_ms, bool) or not 100 <= duration_ms <= 60000:
+            raise ValueError("Choose a duration from 0.1 to 60 seconds")
+        cancel_event = self._coordinator.cancel_command
+        if cancel_event.is_set():
+            return
+        interval_ms = cast(int, self.profile.refresh_ms)
+        writes = -(-duration_ms // interval_ms) if repeats else 1
+        loop = asyncio.get_running_loop()
+        deadline = loop.time() + duration_ms / 1000
+        completed = False
+        try:
+            await self.write_command(
+                self._build_command(value),
+                repeat_count=writes,
+                repeat_delay_ms=interval_ms,
+                cancel_event=cancel_event,
+                _deadline=deadline,
+            )
+            await _wait_unless_cancelled(cancel_event, max(0, deadline - loop.time()))
+            completed = True
+        except _FiniteHoldExpired:
+            pass
+        finally:
+            await self._release_motion(delay=completed)
 
     @property
     def motor_control_specs(self) -> tuple[MotorControlSpec, ...]:
