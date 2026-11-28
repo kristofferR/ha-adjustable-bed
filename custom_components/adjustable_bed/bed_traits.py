@@ -257,6 +257,7 @@ _BED_TRAITS: Final[dict[str, BedTraits]] = {
     "l2motion": BedTraits(no_angle_feedback=True, connection_scoped_state=True),
     BED_TYPE_ERGOBED: BedTraits(no_angle_feedback=True, connection_scoped_state=True, single_address_native_both=False, connection_timeout=5),
     BED_TYPE_MOODBASE: BedTraits(no_angle_feedback=True, connection_scoped_state=True, single_address_native_both=False, connection_timeout=5),
+    "roewa": replace(_NO_ANGLES_SCOPED, owns_device_info_reads=True, single_address_native_both=False, cancellation_only_stop=True, connection_timeout=10),
     "avek": replace(_NO_ANGLES_SCOPED, owns_device_info_reads=True, single_address_native_both=False, cancellation_only_stop=True),
     "active_sleep": BedTraits(position_feedback=True, connection_scoped_state=True, persistent_connection=True, owns_device_info_reads=True),
     "paramount": BedTraits(position_feedback=True, connection_scoped_state=True, max_angles={"head": 75, "back": 75, "legs": 30, "feet": 30}),
@@ -338,6 +339,7 @@ _BED_TRAITS: Final[dict[str, BedTraits]] = {
     BED_TYPE_RESTONIC: replace(_NO_ANGLES_SCOPED, owns_device_info_reads=True, connection_timeout=5, single_address_native_both=False),
     "konfurt": replace(_NO_ANGLES_SCOPED, owns_device_info_reads=True, single_address_native_both=False),
     "ergosportive": _NO_ANGLES_SCOPED,
+    "softide": replace(_NO_ANGLES_SCOPED, owns_device_info_reads=True, single_address_native_both=False, connection_timeout=10, cancellation_only_stop=True),
     "kingkoil": replace(
         _NO_ANGLES_SCOPED, owns_device_info_reads=True, connection_timeout=5,
         cancellation_only_stop=True,
@@ -654,7 +656,7 @@ MASSAGE_SETTING_UNUSED_BED_TYPES: Final = frozenset(
      "hjbed", "hush_base", "hush_remote", "hush_sleep_mm", "hush_sleep_sxb", "jalon",
      "leggett_lp_legacy", "logicdata_air_pump", "luuna", "malouf_app", "mlily",
      BED_TYPE_COSYWORLD, "motion_bed", "motomotion", "motosleep", "octo", "okin_motionbed", "okin_rf_eco_bt",
-     "sinca_comfort", "omazz_adjusto_iii", "personal_comfort", "instant_comfort", "avek", "active_sleep", "paramount", "qplus_app", "remacro", "resident", "reverie",
+     "sinca_comfort", "omazz_adjusto_iii", "personal_comfort", "instant_comfort", "roewa", "avek", "active_sleep", "paramount", "qplus_app", "remacro", "resident", "reverie",
      "reverie_nightstand", "richmat_americanstar", "myside", "richmat_app", "richmat_app_sleep",
      "richmat_best_mattress", "richmat_blvd_home", "richmat_classic_apps",
      "richmat_harmony", "richmat_idealbed", "richmat_revive", "richmat_sleep_receiver",
@@ -664,7 +666,7 @@ MASSAGE_SETTING_UNUSED_BED_TYPES: Final = frozenset(
      "awmotion", "dreamsense", "dreamotion_smart", "smart_comfort_synergy", "solace", "saatva", "sonicsleep", "star_elevate", "starcode_abm5_4",
      "starcode_m1x12", "starcode_m5x5", "svane", "symphony", "symphony_sleep",
      "tempur_au", "tempur_curve", "timotion_ahf", "tranquil", "vmatbasic",
-     "wsilver_products", "yamada", "ormatek", "konfurt", "powersbedding", "intellibed",
+     "wsilver_products", "yamada", "ormatek", "konfurt", "softide", "powersbedding", "intellibed",
     }
 )
 

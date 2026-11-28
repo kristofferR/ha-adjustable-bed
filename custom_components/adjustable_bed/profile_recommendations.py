@@ -117,6 +117,7 @@ from .validators import get_variants_for_bed_type
 # competing receiver signatures for an already configured physical device.
 _GMMOTOR_APP_HINTS: Final = frozenset({"gmmotor", "gmmotor_sleep_mm", "gmmotor_sleep_sxb"})
 _APP_HINTS: Final = _GMMOTOR_APP_HINTS | {
+    "softide",
     "ergosportive",
     "dynasty_base_a",
     "askona",
@@ -240,6 +241,8 @@ def recommend_profile(
     """
     if info is None:
         return None
+    if data.get("bed_type") == "roewa":
+        return None
     if (data.get("bed_type") == BED_TYPE_BETTERLIVING2
         and data.get("protocol_variant") in ("p1", "p2", "p3")
         and data.get("product_type") in ("2", "3")):
@@ -325,7 +328,7 @@ def recommend_profile(
         BED_TYPE_ESHINE_OKIN, BED_TYPE_RICHMAT_CLASSIC_APPS,
         BED_TYPE_RESIDENT, BED_TYPE_MLINE, BED_TYPE_YAMADA, BED_TYPE_COMFORT_ENHANCEMENT3,
         BED_TYPE_N32_MOTION_BED, BED_TYPE_BETTERLIVING2, BED_TYPE_OKIMIKI,
-        "kingkoil", "konfurt", BED_TYPE_SOMOS, BED_TYPE_LIKIMIO, "sleeptime", "saatva", "dreamsense", "muuegm", "thrivesleep", "super_colchones",
+        "roewa", "kingkoil", "konfurt", BED_TYPE_SOMOS, BED_TYPE_LIKIMIO, "sleeptime", "saatva", "dreamsense", "muuegm", "thrivesleep", "super_colchones",
         BED_TYPE_RICHMAT_APP, BED_TYPE_RICHMAT_APP_SLEEP,
     }
     if detected.bed_type != BED_TYPE_OCTO:
