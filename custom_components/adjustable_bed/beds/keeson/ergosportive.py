@@ -10,7 +10,7 @@ from typing import TYPE_CHECKING, Final
 from bleak import BleakClient
 from bleak.backends.characteristic import BleakGATTCharacteristic
 
-from ...card import CARD_LIGHTING, CARD_MASSAGE, CARD_PRESETS
+from ...card import CARD_LIGHTING
 from ...codec import sleep_assistant as codec
 from ...command_scheduler import current_command_context
 from ...controller_state import StateKey
@@ -19,6 +19,7 @@ from ...profiles import ergosportive as app
 from ..base import BedController, ProfileExecution, require_controller
 from ..builder import BuildContext
 from ..cancellation import cancellable, settled
+from ..catalog_buttons import Kind, catalog_button, massage_button
 from ..entity_specs import (
     ControllerButtonSpec,
     ControllerMotorHoldSpec,
@@ -497,22 +498,24 @@ class ErgoSportiveController(ProfileExecution[app.Profile], BedController):
 
     @property
     def controller_button_specs(self) -> tuple[ControllerButtonSpec, ...]:
-        return tuple(
-            ControllerButtonSpec(
-                f"ergosportive_{name}",
-                label,
-                _action(name),
-                translation_key=f"ergosportive_{name}",
-                scheduler_resource="*",
-                card=CARD_LIGHTING
-                if name == "lamp"
-                else CARD_PRESETS
-                if name.startswith("position_")
-                else CARD_MASSAGE,
-            )
-            for name, label in app.ACTIONS.items()
-            if name in self.profile.controls
-        )
+        buttons: list[ControllerButtonSpec] = []
+        for name, label in app.ACTIONS.items():
+            if name not in self.profile.controls:
+                continue
+            key = f"ergosportive_{name}"
+            if name.startswith("massage_"):
+                spec = massage_button(key, label, _action(name), scheduler_resource="*")
+            else:
+                spec = catalog_button(
+                    key,
+                    label,
+                    _action(name),
+                    scheduler_resource="*",
+                    kind=Kind.LIGHT if name == "lamp" else Kind.PRESET,
+                )
+                assert spec is not None
+            buttons.append(spec)
+        return tuple(buttons)
 
     async def set_brightness(self, value: float) -> None:
         if (

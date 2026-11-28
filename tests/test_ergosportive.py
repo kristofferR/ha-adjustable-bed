@@ -124,7 +124,7 @@ async def test_all_selected_actions_and_sensor_entities(
                 )
                 expected = [codec.instruction(word)]
             else:
-                entity = next(e for e in entities if e.translation_key == f"ergosportive_{name}")
+                entity = next(e for e in entities if e.unique_id.endswith(f"_ergosportive_{name}"))
                 await hass.services.async_call(
                     "button", "press", {"entity_id": entity.entity_id}, blocking=True
                 )
