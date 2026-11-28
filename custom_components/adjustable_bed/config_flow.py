@@ -1397,6 +1397,7 @@ _DECLARED_QUESTION_ROUTES: Final = frozenset(
         # The app is its variant, chosen from the bed-type list.
         BED_TYPE_RICHMAT_CLASSIC_APPS,
         *KEESON_LAYOUT_APP_BED_TYPES,
+        "askona",
         "amada",
         "scott_living",
         "ergomotion_4",

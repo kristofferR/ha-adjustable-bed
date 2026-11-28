@@ -110,6 +110,7 @@ from .const import (
 )
 from .profiles.ai_bed import ROUTE_CHOICES as AI_BED_VARIANTS
 from .profiles.ambient import LAYOUTS as AMBIENT_LAYOUTS
+from .profiles.askona import MODEL_CHOICES as ASKONA_MODELS
 from .profiles.berun import PROFILES as BERUN_PROFILES
 from .profiles.bobpowerbase import PROFILE_CHOICES as BOB_PROFILES
 from .profiles.casper import CASPER_BASE_VARIANTS
@@ -187,6 +188,7 @@ MLINE_PROTOCOL_LABELS: Final = {
 
 # Single source of truth for bed types with variants
 VARIANTS_BY_BED_TYPE: dict[str, dict[str, str]] = {
+    "askona": ASKONA_MODELS,
     "intellibed": {"old": "Old / white remote", "hhc": "HHC / silver remote"},
     BED_TYPE_AMBIENT: AMBIENT_LAYOUTS,
     "berun": {key: f"Version {profile.version}" for key, profile in BERUN_PROFILES.items()},

@@ -739,6 +739,7 @@ BED_TYPE_DISPLAY_NAMES: dict[str, str] = {
     BED_TYPE_SIMMONS_BLUE: "Simmons Blue app",
     BED_TYPE_RESIDENT: "Resident Adjustable Base app",
     BED_TYPE_SLEEPTIME: "Sleeptime Australia app (SmartBed205, 402, 404, 405)",
+    "askona": "Askona app (Ergomotion beds)",
     "enso": "Enso Remote",
     BED_TYPE_ENSO2: "ENSO Sleep Control (Enso 2)",
     "sealy_posturematic": "Sealy Posturematic",
@@ -1064,7 +1065,7 @@ HIDDEN_APP_CHOICES: Final = frozenset(bed_type_choice(*row) for row in _HIDDEN_A
 PRODUCT_QUESTION_BED_TYPES: Final = frozenset(
     {
         BED_TYPE_ALYA, BED_TYPE_RONCO_MOTION, BED_TYPE_AMBIENT, BED_TYPE_RESTONIC, BED_TYPE_FLEXISPOT, "kingkoil", BED_TYPE_ENSO2, BED_TYPE_LIKIMIO, "awmotion", "dreamsense", "muuegm", "saatva", "majestichome", BED_TYPE_LEVA, BED_TYPE_LINX, BED_TYPE_JUNASLEEP, BED_TYPE_SOMOS, "bobpowerbase", BED_TYPE_COMFORT_ENHANCEMENT3, BED_TYPE_SYMPHONY_SLEEP, BED_TYPE_YAMADA, BED_TYPE_MYSIDE, BED_TYPE_RICHMAT_APP, BED_TYPE_RICHMAT_APP_SLEEP, BED_TYPE_GALAXY, BED_TYPE_MLILY, BED_TYPE_MLILY0, BED_TYPE_MLILY_REMOTE, BED_TYPE_OKIMIKI, "luuna", BED_TYPE_GOODVIBE, BED_TYPE_HJBED, BED_TYPE_CASPER_BASE, BED_TYPE_COMFORT_ENHANCEMENTS, BED_TYPE_COMFORTBASE, "sleep_evolution", "wsilver_legacy", "personal_comfort", "instant_comfort"}
-).union({"intellibed", "motionflex", BED_TYPE_BETTERLIVING2, BED_TYPE_JEROME_ADJUSTABLE_BASE, BED_TYPE_SLEEPTIME, BED_TYPE_PURELY_SLEEP, "mattresspoint", "sealy_posturematic"})
+).union({"intellibed", BED_TYPE_PURELY_SLEEP, "motionflex", BED_TYPE_BETTERLIVING2, BED_TYPE_JEROME_ADJUSTABLE_BASE, BED_TYPE_SLEEPTIME, "sealy_posturematic", "askona", "mattresspoint"})
 # Routes named after their protocol, not an app or brand. They stay off the
 # bed-type list and are reached through detection, the brand list and Configure.
 PROTOCOL_ROUTES: Final = frozenset(
@@ -2353,6 +2354,17 @@ def _detect_bed_type_with_app_candidates(
             result.ambiguous_types = list(dict.fromkeys(
                 [*(result.ambiguous_types or ()), BED_TYPE_ENSO2]
             ))
+            result.signals.append(signal)
+    from .profiles.askona import admitted_name as askona_name
+
+    if askona_name(service_info.name) and service_info.service_uuids and not any(
+        signal.startswith("excluded:") for signal in result.signals
+    ):
+        signal = "name:askona_app_candidate"
+        if result.bed_type is None:
+            result = DetectionResult("askona", 0.3, [*result.signals, signal])
+        elif result.bed_type != "askona":
+            result.ambiguous_types = list(dict.fromkeys([*(result.ambiguous_types or ()), "askona"]))
             result.signals.append(signal)
     if first.name(BED_TYPE_HJBED):
         if result.bed_type is None:
