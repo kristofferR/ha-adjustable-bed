@@ -538,6 +538,7 @@ BED_TYPE_ERGOMOTION: Final = "ergomotion"
 BED_TYPE_JIECANG: Final = "jiecang"
 BED_TYPE_JIECANG_APP: Final = "jiecang_app"
 BED_TYPE_OCTO: Final = "octo"
+BED_TYPE_COSYWORLD: Final = "cosyworld"
 BED_TYPE_MALOUF_NEW_OKIN: Final = "malouf_new_okin"
 BED_TYPE_MALOUF_LEGACY_OKIN: Final = "malouf_legacy_okin"
 BED_TYPE_MALOUF_APP: Final = "malouf_app"
@@ -988,6 +989,7 @@ SUPPORTED_BED_TYPES: Final = [
     BED_TYPE_JIECANG,
     BED_TYPE_JIECANG_APP,
     BED_TYPE_OCTO,
+    BED_TYPE_COSYWORLD,
     # Saved by 4.x; the connected bed picks the Gen2 or MlRM route.
     BED_TYPE_LEGGETT_PLATT,
     BED_TYPE_FSM_RELAX,
@@ -3258,6 +3260,8 @@ BED_MOTOR_PULSE_DEFAULTS: Final = {
     # OCTO: 350ms delay → 3 repeats = 1.05s total
     # Source: de.octoactuators.octosmartcontrolapp ANALYSIS.md
     BED_TYPE_OCTO: (3, 350),
+    # Cosyworld has an unbounded 350-ms hold; 3 is the HA tap safety bound.
+    BED_TYPE_COSYWORLD: (3, 350),
     # Jiecang: 100ms delay → 10 repeats = 1.0s total
     # Source: com.jiecang.app.android.jiecangbed ANALYSIS.md
     BED_TYPE_JIECANG: (10, 100),

@@ -177,7 +177,7 @@ def _switch_entities_for(hass: HomeAssistant, coordinator: EntityRuntime) -> lis
 
     entities = []
     for description in SWITCH_DESCRIPTIONS:
-        if octo is not None and description.key == "under_bed_lights":
+        if octo is not None and octo.uses_legacy_light_switch and description.key == "under_bed_lights":
             existing = registry.async_get_entity_id(
                 "switch",
                 DOMAIN,

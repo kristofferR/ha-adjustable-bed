@@ -74,6 +74,7 @@ from .const import (
     BED_TYPE_AMBIENT,
     BED_TYPE_BEDTECH,
     BED_TYPE_COMFORT_MOTION,
+    BED_TYPE_COSYWORLD,
     BED_TYPE_DIAGNOSTIC,
     BED_TYPE_ERGOMOTION,
     BED_TYPE_FSM_RELAX,
@@ -1190,7 +1191,7 @@ class AdjustableBedCoordinator(
         # connect), but a paired side that captured a capability snapshot AT
         # PAIRING can be minted offline from that snapshot.
         octo_snapshot = (
-            octo_snapshot_from_descriptor(self.entry.data) if bed_type == BED_TYPE_OCTO else None
+            octo_snapshot_from_descriptor(self.entry.data) if bed_type in {BED_TYPE_OCTO, BED_TYPE_COSYWORLD} else None
         )
         capabilities = self.entry.data.get("capabilities")
         linak_snapshot = (
@@ -1252,7 +1253,7 @@ class AdjustableBedCoordinator(
             # FSM Relax mints from its exact stored capability body (entry data).
             # With no snapshot its action/memory descriptors remain empty.
             or bed_type == BED_TYPE_FSM_RELAX
-            or (bed_type == BED_TYPE_OCTO and (octo_snapshot is not None or is_octo_star2))
+            or (bed_type in {BED_TYPE_OCTO, BED_TYPE_COSYWORLD} and (octo_snapshot is not None or is_octo_star2))
             or (bed_type == BED_TYPE_LINAK and (linak_snapshot is not None or is_linak_performance))
             or (bed_type == BED_TYPE_JENSEN and jensen_snapshot is not None)
             or (bed_type in RICHMAT_MH_BED_TYPES and isinstance(richmat_mh_snapshot, dict))

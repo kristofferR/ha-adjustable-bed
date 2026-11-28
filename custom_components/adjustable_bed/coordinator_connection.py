@@ -2317,6 +2317,7 @@ class CoordinatorConnectionMixin:
         reason: str = "intentional",
         *,
         serialize_with_commands: bool = False,
+        expected_session: Callable[[], bool] | None = None,
     ) -> bool:
         """Disconnect from the bed.
 
@@ -2328,7 +2329,22 @@ class CoordinatorConnectionMixin:
                     externally triggered disconnects (the Disconnect button, the
                     idle timer); must stay False for callers that already hold
                     the command lock, such as disconnect-after-command.
+            expected_session: Optional ownership guard, checked under the
+                    connection lock before changing or disconnecting the link.
         """
+        if expected_session is not None:
+            # A deferred, session-owned release waits without pre-empting a
+            # replacement session's commands. Recheck ownership under the same
+            # connection lock that protects teardown and connection replacement.
+            if serialize_with_commands:
+                async with self._command_lock, self._lock:
+                    if not expected_session():
+                        return False
+                    return await self._async_disconnect_locked(reason)
+            async with self._lock:
+                if not expected_session():
+                    return False
+                return await self._async_disconnect_locked(reason)
         _LOGGER.debug("async_disconnect called for %s", self._address)
         if reason == "intentional":
             # A user releasing the link (e.g. for the bed's phone app) wants the

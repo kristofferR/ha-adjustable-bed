@@ -36,6 +36,7 @@ from .const import (
     BED_TYPE_COMFORT_ENHANCEMENTS,
     BED_TYPE_COMFORTBASE,
     BED_TYPE_COMFYDS,
+    BED_TYPE_COSYWORLD,
     BED_TYPE_ERGOMOTION,
     BED_TYPE_ERGOMOTION_4,
     BED_TYPE_ESHINE_OKIN,
@@ -53,6 +54,7 @@ from .const import (
     BED_TYPE_MLILY,
     BED_TYPE_MLILY_REMOTE,
     BED_TYPE_MOTOMOTION,
+    BED_TYPE_OCTO,
     BED_TYPE_OKIMIKI,
     BED_TYPE_QPLUS_APP,
     BED_TYPE_RESTONIC,
@@ -574,7 +576,8 @@ def octo_snapshot_from_descriptor(
     if not descriptor:
         return None
     caps = descriptor.get("capabilities") or {}
-    octo = caps.get("octo")
+    namespace = BED_TYPE_COSYWORLD if descriptor.get(CONF_BED_TYPE) == BED_TYPE_COSYWORLD else BED_TYPE_OCTO
+    octo = caps.get(namespace)
     return dict(octo) if isinstance(octo, Mapping) else None
 
 
@@ -623,7 +626,7 @@ def single_data_from_child(descriptor: Mapping[str, Any]) -> dict[str, Any]:
         remaining = {
             key: value
             for key, value in capabilities.items()
-            if key not in {PAIR_LAYOUT_CAPABILITY_KEY, "octo"}
+            if key not in {PAIR_LAYOUT_CAPABILITY_KEY, BED_TYPE_OCTO, BED_TYPE_COSYWORLD}
         }
         if remaining:
             data["capabilities"] = remaining
@@ -712,7 +715,8 @@ def _descriptor_from_single(
     if octo_snapshot or layout_snapshot:
         capabilities = dict(descriptor.get("capabilities") or {})
         if octo_snapshot:
-            capabilities["octo"] = dict(octo_snapshot)
+            namespace = BED_TYPE_COSYWORLD if data.get(CONF_BED_TYPE) == BED_TYPE_COSYWORLD else BED_TYPE_OCTO
+            capabilities[namespace] = dict(octo_snapshot)
         if layout_snapshot:
             capabilities[PAIR_LAYOUT_CAPABILITY_KEY] = dict(layout_snapshot)
         descriptor["capabilities"] = capabilities

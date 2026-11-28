@@ -1035,6 +1035,16 @@
  "button:coolbase_star": {
   "card_section": "utility"
  },
+ "button:cosyworld_lift_down": {
+  "card_section": "motors",
+  "card_role": "down",
+  "card_motor": "cosyworld_lift"
+ },
+ "button:cosyworld_lift_up": {
+  "card_section": "motors",
+  "card_role": "up",
+  "card_motor": "cosyworld_lift"
+ },
  "button:customatic_demo_auto_sit": {
   "card_section": "presets"
  },
@@ -3972,6 +3982,10 @@
  "cover:comfy_waist": {
   "card_section": "motors",
   "card_motor": "comfy_waist"
+ },
+ "cover:cosyworld_lift": {
+  "card_section": "motors",
+  "card_motor": "cosyworld_lift"
  },
  "cover:customatic_demo_rotation": {
   "card_section": "motors",

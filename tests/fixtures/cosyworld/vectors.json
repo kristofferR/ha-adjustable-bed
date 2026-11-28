@@ -1,0 +1,2857 @@
+[
+  {
+    "id": "V-M1-up",
+    "protocol": "P1",
+    "action": "M1 up",
+    "inputs": {
+      "type": 2,
+      "command": 112,
+      "data": [
+        2
+      ],
+      "direction": 0
+    },
+    "expected_bytes": "40 02 70 00 01 0b 02 40",
+    "kind": "reachable-app-formula",
+    "evidence": [
+      "packet/octopacket.js:242-267,307-340",
+      "views/ControlView.js:442-638"
+    ]
+  },
+  {
+    "id": "V-M1-down",
+    "protocol": "P1",
+    "action": "M1 down",
+    "inputs": {
+      "type": 2,
+      "command": 113,
+      "data": [
+        2
+      ],
+      "direction": 0
+    },
+    "expected_bytes": "40 02 71 00 01 0a 02 40",
+    "kind": "reachable-app-formula",
+    "evidence": [
+      "packet/octopacket.js:242-267,307-340",
+      "views/ControlView.js:442-638"
+    ]
+  },
+  {
+    "id": "V-M2-up",
+    "protocol": "P1",
+    "action": "M2 up",
+    "inputs": {
+      "type": 2,
+      "command": 112,
+      "data": [
+        4
+      ],
+      "direction": 0
+    },
+    "expected_bytes": "40 02 70 00 01 09 04 40",
+    "kind": "reachable-app-formula",
+    "evidence": [
+      "packet/octopacket.js:242-267,307-340",
+      "views/ControlView.js:442-638"
+    ]
+  },
+  {
+    "id": "V-M2-down",
+    "protocol": "P1",
+    "action": "M2 down",
+    "inputs": {
+      "type": 2,
+      "command": 113,
+      "data": [
+        4
+      ],
+      "direction": 0
+    },
+    "expected_bytes": "40 02 71 00 01 08 04 40",
+    "kind": "reachable-app-formula",
+    "evidence": [
+      "packet/octopacket.js:242-267,307-340",
+      "views/ControlView.js:442-638"
+    ]
+  },
+  {
+    "id": "V-M3-up",
+    "protocol": "P1",
+    "action": "M3 up",
+    "inputs": {
+      "type": 2,
+      "command": 112,
+      "data": [
+        8
+      ],
+      "direction": 0
+    },
+    "expected_bytes": "40 02 70 00 01 05 08 40",
+    "kind": "reachable-app-formula",
+    "evidence": [
+      "packet/octopacket.js:242-267,307-340",
+      "views/ControlView.js:442-638"
+    ]
+  },
+  {
+    "id": "V-M3-down",
+    "protocol": "P1",
+    "action": "M3 down",
+    "inputs": {
+      "type": 2,
+      "command": 113,
+      "data": [
+        8
+      ],
+      "direction": 0
+    },
+    "expected_bytes": "40 02 71 00 01 04 08 40",
+    "kind": "reachable-app-formula",
+    "evidence": [
+      "packet/octopacket.js:242-267,307-340",
+      "views/ControlView.js:442-638"
+    ]
+  },
+  {
+    "id": "V-M4-up",
+    "protocol": "P1",
+    "action": "M4 up",
+    "inputs": {
+      "type": 2,
+      "command": 112,
+      "data": [
+        16
+      ],
+      "direction": 0
+    },
+    "expected_bytes": "40 02 70 00 01 fd 10 40",
+    "kind": "reachable-app-formula",
+    "evidence": [
+      "packet/octopacket.js:242-267,307-340",
+      "views/ControlView.js:442-638"
+    ]
+  },
+  {
+    "id": "V-M4-down",
+    "protocol": "P1",
+    "action": "M4 down",
+    "inputs": {
+      "type": 2,
+      "command": 113,
+      "data": [
+        16
+      ],
+      "direction": 0
+    },
+    "expected_bytes": "40 02 71 00 01 fc 10 40",
+    "kind": "reachable-app-formula",
+    "evidence": [
+      "packet/octopacket.js:242-267,307-340",
+      "views/ControlView.js:442-638"
+    ]
+  },
+  {
+    "id": "V-M12-up",
+    "protocol": "P1",
+    "action": "M12 up",
+    "inputs": {
+      "type": 2,
+      "command": 112,
+      "data": [
+        6
+      ],
+      "direction": 0
+    },
+    "expected_bytes": "40 02 70 00 01 07 06 40",
+    "kind": "reachable-app-formula",
+    "evidence": [
+      "packet/octopacket.js:242-267,307-340",
+      "views/ControlView.js:442-638"
+    ]
+  },
+  {
+    "id": "V-M12-down",
+    "protocol": "P1",
+    "action": "M12 down",
+    "inputs": {
+      "type": 2,
+      "command": 113,
+      "data": [
+        6
+      ],
+      "direction": 0
+    },
+    "expected_bytes": "40 02 71 00 01 06 06 40",
+    "kind": "reachable-app-formula",
+    "evidence": [
+      "packet/octopacket.js:242-267,307-340",
+      "views/ControlView.js:442-638"
+    ]
+  },
+  {
+    "id": "V-M34-up",
+    "protocol": "P1",
+    "action": "M34 up",
+    "inputs": {
+      "type": 2,
+      "command": 112,
+      "data": [
+        24
+      ],
+      "direction": 0
+    },
+    "expected_bytes": "40 02 70 00 01 f5 18 40",
+    "kind": "reachable-app-formula",
+    "evidence": [
+      "packet/octopacket.js:242-267,307-340",
+      "views/ControlView.js:442-638"
+    ]
+  },
+  {
+    "id": "V-M34-down",
+    "protocol": "P1",
+    "action": "M34 down",
+    "inputs": {
+      "type": 2,
+      "command": 113,
+      "data": [
+        24
+      ],
+      "direction": 0
+    },
+    "expected_bytes": "40 02 71 00 01 f4 18 40",
+    "kind": "reachable-app-formula",
+    "evidence": [
+      "packet/octopacket.js:242-267,307-340",
+      "views/ControlView.js:442-638"
+    ]
+  },
+  {
+    "id": "V-all-down",
+    "protocol": "P1",
+    "action": "M1234 down",
+    "inputs": {
+      "type": 2,
+      "command": 113,
+      "data": [
+        30
+      ],
+      "direction": 0
+    },
+    "expected_bytes": "40 02 71 00 01 ee 1e 40",
+    "kind": "reachable-app-formula",
+    "evidence": [
+      "packet/octopacket.js:242-267,307-340",
+      "views/ControlView.js:442-638"
+    ]
+  },
+  {
+    "id": "V-stop",
+    "protocol": "P1",
+    "action": "global motor stop",
+    "inputs": {
+      "type": 2,
+      "command": 115,
+      "data": [],
+      "direction": 0
+    },
+    "expected_bytes": "40 02 73 00 00 0b 40",
+    "kind": "reachable-app-formula",
+    "evidence": [
+      "packet/octopacket.js:242-267,307-340",
+      "views/ControlView.js:442-638"
+    ]
+  },
+  {
+    "id": "V-recall-0",
+    "protocol": "P1",
+    "action": "recall memory zero-based slot 0",
+    "inputs": {
+      "type": 2,
+      "command": 114,
+      "data": [
+        0
+      ],
+      "direction": 0
+    },
+    "expected_bytes": "40 02 72 00 01 0b 00 40",
+    "kind": "reachable-app-formula",
+    "evidence": [
+      "packet/octopacket.js:242-267,307-340",
+      "views/ControlView.js:442-638"
+    ]
+  },
+  {
+    "id": "V-save-0",
+    "protocol": "P1",
+    "action": "save memory zero-based slot 0",
+    "inputs": {
+      "type": 16,
+      "command": 112,
+      "data": [
+        0
+      ],
+      "direction": 0
+    },
+    "expected_bytes": "40 10 70 00 01 ff 00 40",
+    "kind": "reachable-app-formula",
+    "evidence": [
+      "packet/octopacket.js:242-267,307-340",
+      "views/ControlView.js:442-638"
+    ]
+  },
+  {
+    "id": "V-recall-1",
+    "protocol": "P1",
+    "action": "recall memory zero-based slot 1",
+    "inputs": {
+      "type": 2,
+      "command": 114,
+      "data": [
+        1
+      ],
+      "direction": 0
+    },
+    "expected_bytes": "40 02 72 00 01 0a 01 40",
+    "kind": "reachable-app-formula",
+    "evidence": [
+      "packet/octopacket.js:242-267,307-340",
+      "views/ControlView.js:442-638"
+    ]
+  },
+  {
+    "id": "V-save-1",
+    "protocol": "P1",
+    "action": "save memory zero-based slot 1",
+    "inputs": {
+      "type": 16,
+      "command": 112,
+      "data": [
+        1
+      ],
+      "direction": 0
+    },
+    "expected_bytes": "40 10 70 00 01 fe 01 40",
+    "kind": "reachable-app-formula",
+    "evidence": [
+      "packet/octopacket.js:242-267,307-340",
+      "views/ControlView.js:442-638"
+    ]
+  },
+  {
+    "id": "V-recall-2",
+    "protocol": "P1",
+    "action": "recall memory zero-based slot 2",
+    "inputs": {
+      "type": 2,
+      "command": 114,
+      "data": [
+        2
+      ],
+      "direction": 0
+    },
+    "expected_bytes": "40 02 72 00 01 09 02 40",
+    "kind": "reachable-app-formula",
+    "evidence": [
+      "packet/octopacket.js:242-267,307-340",
+      "views/ControlView.js:442-638"
+    ]
+  },
+  {
+    "id": "V-save-2",
+    "protocol": "P1",
+    "action": "save memory zero-based slot 2",
+    "inputs": {
+      "type": 16,
+      "command": 112,
+      "data": [
+        2
+      ],
+      "direction": 0
+    },
+    "expected_bytes": "40 10 70 00 01 fd 02 40",
+    "kind": "reachable-app-formula",
+    "evidence": [
+      "packet/octopacket.js:242-267,307-340",
+      "views/ControlView.js:442-638"
+    ]
+  },
+  {
+    "id": "V-test",
+    "protocol": "P1",
+    "action": "test",
+    "inputs": {
+      "type": 32,
+      "command": 127,
+      "data": [],
+      "direction": 0
+    },
+    "expected_bytes": "40 20 7f 00 00 e1 40",
+    "kind": "reachable-app-formula",
+    "evidence": [
+      "services/OctoControl.js:477,751-793",
+      "App.js:121-131"
+    ]
+  },
+  {
+    "id": "V-info",
+    "protocol": "P1",
+    "action": "info",
+    "inputs": {
+      "type": 32,
+      "command": 112,
+      "data": [],
+      "direction": 0
+    },
+    "expected_bytes": "40 20 70 00 00 f0 40",
+    "kind": "reachable-app-formula",
+    "evidence": [
+      "services/OctoControl.js:477,751-793",
+      "App.js:121-131"
+    ]
+  },
+  {
+    "id": "V-caps",
+    "protocol": "P1",
+    "action": "caps",
+    "inputs": {
+      "type": 32,
+      "command": 113,
+      "data": [],
+      "direction": 0
+    },
+    "expected_bytes": "40 20 71 00 00 ef 40",
+    "kind": "reachable-app-formula",
+    "evidence": [
+      "services/OctoControl.js:477,751-793",
+      "App.js:121-131"
+    ]
+  },
+  {
+    "id": "V-pin-set",
+    "protocol": "P1",
+    "action": "set PIN 0123 (numeric digits)",
+    "inputs": {
+      "type": 32,
+      "command": 65,
+      "data": [
+        0,
+        1,
+        2,
+        3
+      ],
+      "direction": 0
+    },
+    "expected_bytes": "40 20 3c 04 00 04 15 00 01 02 03 40",
+    "kind": "reachable-app-formula",
+    "evidence": [
+      "views/ControlView.js:932-978",
+      "modules/PINInput.js:99-119"
+    ]
+  },
+  {
+    "id": "V-pin-send",
+    "protocol": "P1",
+    "action": "transmit PIN 9876 (numeric digits)",
+    "inputs": {
+      "type": 32,
+      "command": 67,
+      "data": [
+        9,
+        8,
+        7,
+        6
+      ],
+      "direction": 0
+    },
+    "expected_bytes": "40 20 43 00 04 fb 09 08 07 06 40",
+    "kind": "reachable-app-formula",
+    "evidence": [
+      "views/ControlView.js:994-1028",
+      "modules/PINInput.js:99-119"
+    ]
+  },
+  {
+    "id": "V-light-on",
+    "protocol": "P1",
+    "action": "light-on",
+    "inputs": {
+      "type": 32,
+      "command": 114,
+      "data": [
+        0,
+        1,
+        2,
+        0,
+        1,
+        1,
+        1,
+        1
+      ],
+      "direction": 0
+    },
+    "expected_bytes": "40 20 72 00 08 df 00 01 02 00 01 01 01 01 40",
+    "kind": "synthetic peer metadata, reachable app value formula",
+    "evidence": [
+      "stores/AppStateStore.js:287-326,463-477",
+      "services/OctoControl.js:354-369",
+      "views/SettingsView.js:112-130"
+    ]
+  },
+  {
+    "id": "V-light-off",
+    "protocol": "P1",
+    "action": "light-off",
+    "inputs": {
+      "type": 32,
+      "command": 114,
+      "data": [
+        0,
+        1,
+        2,
+        0,
+        1,
+        1,
+        1,
+        0
+      ],
+      "direction": 0
+    },
+    "expected_bytes": "40 20 72 00 08 e0 00 01 02 00 01 01 01 00 40",
+    "kind": "synthetic peer metadata, reachable app value formula",
+    "evidence": [
+      "stores/AppStateStore.js:287-326,463-477",
+      "services/OctoControl.js:354-369",
+      "views/SettingsView.js:112-130"
+    ]
+  },
+  {
+    "id": "V-sync-on",
+    "protocol": "P1",
+    "action": "sync-on",
+    "inputs": {
+      "type": 32,
+      "command": 114,
+      "data": [
+        0,
+        1,
+        1,
+        0,
+        1,
+        1,
+        1,
+        1
+      ],
+      "direction": 0
+    },
+    "expected_bytes": "40 20 72 00 08 e0 00 01 01 00 01 01 01 01 40",
+    "kind": "synthetic peer metadata, reachable app value formula",
+    "evidence": [
+      "stores/AppStateStore.js:287-326,463-477",
+      "services/OctoControl.js:354-369",
+      "views/SettingsView.js:112-130"
+    ]
+  },
+  {
+    "id": "V-sync-off",
+    "protocol": "P1",
+    "action": "sync-off",
+    "inputs": {
+      "type": 32,
+      "command": 114,
+      "data": [
+        0,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        0
+      ],
+      "direction": 0
+    },
+    "expected_bytes": "40 20 72 00 08 e0 00 01 01 01 01 01 01 00 40",
+    "kind": "synthetic peer metadata, reachable app value formula",
+    "evidence": [
+      "stores/AppStateStore.js:287-326,463-477",
+      "services/OctoControl.js:354-369",
+      "views/SettingsView.js:112-130"
+    ]
+  },
+  {
+    "id": "V-rflock-on",
+    "protocol": "P1",
+    "action": "rflock-on",
+    "inputs": {
+      "type": 32,
+      "command": 114,
+      "data": [
+        0,
+        0,
+        17,
+        0,
+        1,
+        1,
+        1,
+        1
+      ],
+      "direction": 0
+    },
+    "expected_bytes": "40 20 72 00 08 d1 00 00 11 00 01 01 01 01 40",
+    "kind": "synthetic peer metadata, reachable app value formula",
+    "evidence": [
+      "stores/AppStateStore.js:287-326,463-477",
+      "services/OctoControl.js:354-369",
+      "views/SettingsView.js:112-130"
+    ]
+  },
+  {
+    "id": "V-duration-zero",
+    "protocol": "P1",
+    "action": "duration-zero",
+    "inputs": {
+      "type": 32,
+      "command": 114,
+      "data": [
+        0,
+        1,
+        3,
+        0,
+        1,
+        1,
+        1,
+        0
+      ],
+      "direction": 0
+    },
+    "expected_bytes": "40 20 72 00 08 df 00 01 03 00 01 01 01 00 40",
+    "kind": "synthetic peer metadata, reachable app value formula",
+    "evidence": [
+      "stores/AppStateStore.js:287-326,463-477",
+      "services/OctoControl.js:354-369",
+      "views/SettingsView.js:112-130"
+    ]
+  },
+  {
+    "id": "V-duration-sixty",
+    "protocol": "P1",
+    "action": "duration-sixty",
+    "inputs": {
+      "type": 32,
+      "command": 114,
+      "data": [
+        0,
+        1,
+        3,
+        0,
+        1,
+        1,
+        1,
+        60
+      ],
+      "direction": 0
+    },
+    "expected_bytes": "40 20 72 00 08 a3 00 01 03 00 01 01 01 3c 02 40",
+    "kind": "synthetic peer metadata, reachable app value formula",
+    "evidence": [
+      "stores/AppStateStore.js:287-326,463-477",
+      "services/OctoControl.js:354-369",
+      "views/SettingsView.js:112-130"
+    ]
+  },
+  {
+    "id": "V-teach",
+    "protocol": "P1",
+    "action": "teach",
+    "inputs": {
+      "type": 32,
+      "command": 114,
+      "data": [
+        0,
+        0,
+        16,
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "direction": 0
+    },
+    "expected_bytes": "40 20 72 00 08 d1 00 00 10 01 01 01 01 01 40",
+    "kind": "fixed app teach payload",
+    "evidence": [
+      "stores/AppStateStore.js:287-326,463-477",
+      "services/OctoControl.js:354-369",
+      "views/SettingsView.js:112-130"
+    ]
+  },
+  {
+    "id": "V-test-response",
+    "protocol": "P1",
+    "action": "expected handshake response",
+    "inputs": {
+      "type": 32,
+      "command": 127,
+      "data": [],
+      "direction": 1
+    },
+    "expected_bytes": "40 21 7f 00 00 e0 40",
+    "kind": "reachable-app-formula",
+    "evidence": [
+      "services/OctoControl.js:784"
+    ]
+  },
+  {
+    "id": "V-info-response",
+    "protocol": "P1",
+    "action": "synthetic ten-byte deviceinfo parser input",
+    "inputs": {
+      "type": 32,
+      "command": 112,
+      "data": [
+        0,
+        0,
+        192,
+        84,
+        84,
+        50,
+        240,
+        0,
+        1,
+        35
+      ],
+      "direction": 1
+    },
+    "expected_bytes": "40 21 70 00 0a 37 00 00 c0 54 54 32 f0 00 01 23 40",
+    "kind": "synthetic fields from demo callback, not hardware evidence",
+    "evidence": [
+      "App.js:148-159",
+      "services/OctoControl.js:462-480"
+    ]
+  },
+  {
+    "id": "V-cap-response",
+    "protocol": "P1",
+    "action": "synthetic motor count capability response",
+    "inputs": {
+      "type": 32,
+      "command": 113,
+      "data": [
+        0,
+        0,
+        1,
+        1,
+        1,
+        2,
+        0
+      ],
+      "direction": 1
+    },
+    "expected_bytes": "40 21 71 00 07 e2 00 00 01 01 01 02 00 40",
+    "kind": "synthetic peer response",
+    "evidence": [
+      "packet/capabilitypacket.js:packetToByteArray",
+      "services/OctoControl.js:482-558"
+    ]
+  },
+  {
+    "id": "V-escapes",
+    "protocol": "P1",
+    "action": "all four escaped payload bytes",
+    "inputs": {
+      "type": 32,
+      "command": 114,
+      "data": [
+        64,
+        60,
+        79,
+        65
+      ],
+      "direction": 0
+    },
+    "expected_bytes": "40 20 72 00 04 de 3c 01 3c 02 3c 03 3c 04 40",
+    "kind": "synthetic codec boundary",
+    "evidence": [
+      "packet/octopacket.js:84-91,307-340"
+    ]
+  },
+  {
+    "id": "V-length-high",
+    "protocol": "P1",
+    "action": "high length byte",
+    "inputs": {
+      "type": 32,
+      "command": 114,
+      "data": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "direction": 0
+    },
+    "expected_bytes": "40 20 72 01 00 ed 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 40",
+    "kind": "synthetic codec boundary, not reachable normal UI command",
+    "evidence": [
+      "packet/octopacket.js:260-263,326-327"
+    ]
+  },
+  {
+    "id": "V-reset-defaults",
+    "protocol": "P1",
+    "action": "Support confirmed local reset",
+    "inputs": {
+      "type": 32,
+      "command": 174,
+      "data": [],
+      "direction": 0
+    },
+    "expected_bytes": "40 20 ae 00 00 b2 40",
+    "kind": "reachable-app-formula; hardware effects unverified",
+    "evidence": [
+      "E16",
+      "views/SupportView.js:90-107"
+    ]
+  },
+  {
+    "id": "V-sync-tail-off",
+    "protocol": "P1",
+    "action": "sync off retaining existing value tail",
+    "inputs": {
+      "type": 32,
+      "command": 114,
+      "data": [
+        0,
+        1,
+        1,
+        0,
+        1,
+        1,
+        2,
+        0,
+        64
+      ],
+      "direction": 0
+    },
+    "expected_bytes": "40 20 72 00 09 9f 00 01 01 00 01 01 02 00 3c 01 40",
+    "kind": "synthetic peer metadata R=0,C=[1],T=2,V=[0,0x40]; actual setter formula, not hardware capability evidence",
+    "evidence": [
+      "E06",
+      "E10",
+      "stores/AppStateStore.js:287-324",
+      "services/OctoControl.js:354-369"
+    ]
+  },
+  {
+    "id": "V-sync-tail-on",
+    "protocol": "P1",
+    "action": "sync on retaining existing value tail",
+    "inputs": {
+      "type": 32,
+      "command": 114,
+      "data": [
+        0,
+        1,
+        1,
+        0,
+        1,
+        1,
+        2,
+        1,
+        64
+      ],
+      "direction": 0
+    },
+    "expected_bytes": "40 20 72 00 09 9e 00 01 01 00 01 01 02 01 3c 01 40",
+    "kind": "synthetic peer metadata R=0,C=[1],T=2,V=[0,0x40]; actual setter formula, not hardware capability evidence",
+    "evidence": [
+      "E06",
+      "E10",
+      "stores/AppStateStore.js:287-324",
+      "services/OctoControl.js:354-369"
+    ]
+  },
+  {
+    "id": "V-light-tail-off",
+    "protocol": "P1",
+    "action": "light off retaining existing value tail",
+    "inputs": {
+      "type": 32,
+      "command": 114,
+      "data": [
+        0,
+        1,
+        2,
+        0,
+        1,
+        1,
+        2,
+        0,
+        64
+      ],
+      "direction": 0
+    },
+    "expected_bytes": "40 20 72 00 09 9e 00 01 02 00 01 01 02 00 3c 01 40",
+    "kind": "synthetic peer metadata R=0,C=[1],T=2,V=[0,0x40]; actual setter formula, not hardware capability evidence",
+    "evidence": [
+      "E06",
+      "E10",
+      "stores/AppStateStore.js:287-324",
+      "services/OctoControl.js:354-369"
+    ]
+  },
+  {
+    "id": "V-light-tail-on",
+    "protocol": "P1",
+    "action": "light on retaining existing value tail",
+    "inputs": {
+      "type": 32,
+      "command": 114,
+      "data": [
+        0,
+        1,
+        2,
+        0,
+        1,
+        1,
+        2,
+        1,
+        64
+      ],
+      "direction": 0
+    },
+    "expected_bytes": "40 20 72 00 09 9d 00 01 02 00 01 01 02 01 3c 01 40",
+    "kind": "synthetic peer metadata R=0,C=[1],T=2,V=[0,0x40]; actual setter formula, not hardware capability evidence",
+    "evidence": [
+      "E06",
+      "E10",
+      "stores/AppStateStore.js:287-324",
+      "services/OctoControl.js:354-369"
+    ]
+  },
+  {
+    "id": "V-rflock-tail-off",
+    "protocol": "P1",
+    "action": "rflock off retaining existing value tail",
+    "inputs": {
+      "type": 32,
+      "command": 114,
+      "data": [
+        0,
+        0,
+        17,
+        0,
+        1,
+        1,
+        2,
+        0,
+        64
+      ],
+      "direction": 0
+    },
+    "expected_bytes": "40 20 72 00 09 90 00 00 11 00 01 01 02 00 3c 01 40",
+    "kind": "synthetic peer metadata R=0,C=[1],T=2,V=[0,0x40]; actual setter formula, not hardware capability evidence",
+    "evidence": [
+      "E06",
+      "E10",
+      "stores/AppStateStore.js:287-324",
+      "services/OctoControl.js:354-369"
+    ]
+  },
+  {
+    "id": "V-rflock-tail-on",
+    "protocol": "P1",
+    "action": "rflock on retaining existing value tail",
+    "inputs": {
+      "type": 32,
+      "command": 114,
+      "data": [
+        0,
+        0,
+        17,
+        0,
+        1,
+        1,
+        2,
+        1,
+        64
+      ],
+      "direction": 0
+    },
+    "expected_bytes": "40 20 72 00 09 8f 00 00 11 00 01 01 02 01 3c 01 40",
+    "kind": "synthetic peer metadata R=0,C=[1],T=2,V=[0,0x40]; actual setter formula, not hardware capability evidence",
+    "evidence": [
+      "E06",
+      "E10",
+      "stores/AppStateStore.js:287-324",
+      "services/OctoControl.js:354-369"
+    ]
+  },
+  {
+    "id": "V-duration-01",
+    "action": "light duration 1 minute(s)",
+    "inputs": {
+      "type": 32,
+      "command": 114,
+      "data": [
+        0,
+        1,
+        3,
+        0,
+        1,
+        1,
+        1,
+        1
+      ]
+    },
+    "expected_bytes": "40 20 72 00 08 de 00 01 03 00 01 01 01 01 40",
+    "kind": "synthetic peer metadata R=0,C=[1],T=1; actual duration selection and intentional full V replacement",
+    "evidence": [
+      "E06",
+      "E10",
+      "E20"
+    ],
+    "source": "views/SettingsView.js:112-117,176-178; stores/AppStateStore.js:463-484; exact generated handleChangeLightDuration and setCapValue",
+    "protocol": "P1"
+  },
+  {
+    "id": "V-duration-02",
+    "action": "light duration 2 minute(s)",
+    "inputs": {
+      "type": 32,
+      "command": 114,
+      "data": [
+        0,
+        1,
+        3,
+        0,
+        1,
+        1,
+        1,
+        2
+      ]
+    },
+    "expected_bytes": "40 20 72 00 08 dd 00 01 03 00 01 01 01 02 40",
+    "kind": "synthetic peer metadata R=0,C=[1],T=1; actual duration selection and intentional full V replacement",
+    "evidence": [
+      "E06",
+      "E10",
+      "E20"
+    ],
+    "source": "views/SettingsView.js:112-117,176-178; stores/AppStateStore.js:463-484; exact generated handleChangeLightDuration and setCapValue",
+    "protocol": "P1"
+  },
+  {
+    "id": "V-duration-03",
+    "action": "light duration 3 minute(s)",
+    "inputs": {
+      "type": 32,
+      "command": 114,
+      "data": [
+        0,
+        1,
+        3,
+        0,
+        1,
+        1,
+        1,
+        3
+      ]
+    },
+    "expected_bytes": "40 20 72 00 08 dc 00 01 03 00 01 01 01 03 40",
+    "kind": "synthetic peer metadata R=0,C=[1],T=1; actual duration selection and intentional full V replacement",
+    "evidence": [
+      "E06",
+      "E10",
+      "E20"
+    ],
+    "source": "views/SettingsView.js:112-117,176-178; stores/AppStateStore.js:463-484; exact generated handleChangeLightDuration and setCapValue",
+    "protocol": "P1"
+  },
+  {
+    "id": "V-duration-04",
+    "action": "light duration 4 minute(s)",
+    "inputs": {
+      "type": 32,
+      "command": 114,
+      "data": [
+        0,
+        1,
+        3,
+        0,
+        1,
+        1,
+        1,
+        4
+      ]
+    },
+    "expected_bytes": "40 20 72 00 08 db 00 01 03 00 01 01 01 04 40",
+    "kind": "synthetic peer metadata R=0,C=[1],T=1; actual duration selection and intentional full V replacement",
+    "evidence": [
+      "E06",
+      "E10",
+      "E20"
+    ],
+    "source": "views/SettingsView.js:112-117,176-178; stores/AppStateStore.js:463-484; exact generated handleChangeLightDuration and setCapValue",
+    "protocol": "P1"
+  },
+  {
+    "id": "V-duration-05",
+    "action": "light duration 5 minute(s)",
+    "inputs": {
+      "type": 32,
+      "command": 114,
+      "data": [
+        0,
+        1,
+        3,
+        0,
+        1,
+        1,
+        1,
+        5
+      ]
+    },
+    "expected_bytes": "40 20 72 00 08 da 00 01 03 00 01 01 01 05 40",
+    "kind": "synthetic peer metadata R=0,C=[1],T=1; actual duration selection and intentional full V replacement",
+    "evidence": [
+      "E06",
+      "E10",
+      "E20"
+    ],
+    "source": "views/SettingsView.js:112-117,176-178; stores/AppStateStore.js:463-484; exact generated handleChangeLightDuration and setCapValue",
+    "protocol": "P1"
+  },
+  {
+    "id": "V-duration-06",
+    "action": "light duration 6 minute(s)",
+    "inputs": {
+      "type": 32,
+      "command": 114,
+      "data": [
+        0,
+        1,
+        3,
+        0,
+        1,
+        1,
+        1,
+        6
+      ]
+    },
+    "expected_bytes": "40 20 72 00 08 d9 00 01 03 00 01 01 01 06 40",
+    "kind": "synthetic peer metadata R=0,C=[1],T=1; actual duration selection and intentional full V replacement",
+    "evidence": [
+      "E06",
+      "E10",
+      "E20"
+    ],
+    "source": "views/SettingsView.js:112-117,176-178; stores/AppStateStore.js:463-484; exact generated handleChangeLightDuration and setCapValue",
+    "protocol": "P1"
+  },
+  {
+    "id": "V-duration-07",
+    "action": "light duration 7 minute(s)",
+    "inputs": {
+      "type": 32,
+      "command": 114,
+      "data": [
+        0,
+        1,
+        3,
+        0,
+        1,
+        1,
+        1,
+        7
+      ]
+    },
+    "expected_bytes": "40 20 72 00 08 d8 00 01 03 00 01 01 01 07 40",
+    "kind": "synthetic peer metadata R=0,C=[1],T=1; actual duration selection and intentional full V replacement",
+    "evidence": [
+      "E06",
+      "E10",
+      "E20"
+    ],
+    "source": "views/SettingsView.js:112-117,176-178; stores/AppStateStore.js:463-484; exact generated handleChangeLightDuration and setCapValue",
+    "protocol": "P1"
+  },
+  {
+    "id": "V-duration-08",
+    "action": "light duration 8 minute(s)",
+    "inputs": {
+      "type": 32,
+      "command": 114,
+      "data": [
+        0,
+        1,
+        3,
+        0,
+        1,
+        1,
+        1,
+        8
+      ]
+    },
+    "expected_bytes": "40 20 72 00 08 d7 00 01 03 00 01 01 01 08 40",
+    "kind": "synthetic peer metadata R=0,C=[1],T=1; actual duration selection and intentional full V replacement",
+    "evidence": [
+      "E06",
+      "E10",
+      "E20"
+    ],
+    "source": "views/SettingsView.js:112-117,176-178; stores/AppStateStore.js:463-484; exact generated handleChangeLightDuration and setCapValue",
+    "protocol": "P1"
+  },
+  {
+    "id": "V-duration-09",
+    "action": "light duration 9 minute(s)",
+    "inputs": {
+      "type": 32,
+      "command": 114,
+      "data": [
+        0,
+        1,
+        3,
+        0,
+        1,
+        1,
+        1,
+        9
+      ]
+    },
+    "expected_bytes": "40 20 72 00 08 d6 00 01 03 00 01 01 01 09 40",
+    "kind": "synthetic peer metadata R=0,C=[1],T=1; actual duration selection and intentional full V replacement",
+    "evidence": [
+      "E06",
+      "E10",
+      "E20"
+    ],
+    "source": "views/SettingsView.js:112-117,176-178; stores/AppStateStore.js:463-484; exact generated handleChangeLightDuration and setCapValue",
+    "protocol": "P1"
+  },
+  {
+    "id": "V-duration-10",
+    "action": "light duration 10 minute(s)",
+    "inputs": {
+      "type": 32,
+      "command": 114,
+      "data": [
+        0,
+        1,
+        3,
+        0,
+        1,
+        1,
+        1,
+        10
+      ]
+    },
+    "expected_bytes": "40 20 72 00 08 d5 00 01 03 00 01 01 01 0a 40",
+    "kind": "synthetic peer metadata R=0,C=[1],T=1; actual duration selection and intentional full V replacement",
+    "evidence": [
+      "E06",
+      "E10",
+      "E20"
+    ],
+    "source": "views/SettingsView.js:112-117,176-178; stores/AppStateStore.js:463-484; exact generated handleChangeLightDuration and setCapValue",
+    "protocol": "P1"
+  },
+  {
+    "id": "V-duration-11",
+    "action": "light duration 11 minute(s)",
+    "inputs": {
+      "type": 32,
+      "command": 114,
+      "data": [
+        0,
+        1,
+        3,
+        0,
+        1,
+        1,
+        1,
+        11
+      ]
+    },
+    "expected_bytes": "40 20 72 00 08 d4 00 01 03 00 01 01 01 0b 40",
+    "kind": "synthetic peer metadata R=0,C=[1],T=1; actual duration selection and intentional full V replacement",
+    "evidence": [
+      "E06",
+      "E10",
+      "E20"
+    ],
+    "source": "views/SettingsView.js:112-117,176-178; stores/AppStateStore.js:463-484; exact generated handleChangeLightDuration and setCapValue",
+    "protocol": "P1"
+  },
+  {
+    "id": "V-duration-12",
+    "action": "light duration 12 minute(s)",
+    "inputs": {
+      "type": 32,
+      "command": 114,
+      "data": [
+        0,
+        1,
+        3,
+        0,
+        1,
+        1,
+        1,
+        12
+      ]
+    },
+    "expected_bytes": "40 20 72 00 08 d3 00 01 03 00 01 01 01 0c 40",
+    "kind": "synthetic peer metadata R=0,C=[1],T=1; actual duration selection and intentional full V replacement",
+    "evidence": [
+      "E06",
+      "E10",
+      "E20"
+    ],
+    "source": "views/SettingsView.js:112-117,176-178; stores/AppStateStore.js:463-484; exact generated handleChangeLightDuration and setCapValue",
+    "protocol": "P1"
+  },
+  {
+    "id": "V-duration-13",
+    "action": "light duration 13 minute(s)",
+    "inputs": {
+      "type": 32,
+      "command": 114,
+      "data": [
+        0,
+        1,
+        3,
+        0,
+        1,
+        1,
+        1,
+        13
+      ]
+    },
+    "expected_bytes": "40 20 72 00 08 d2 00 01 03 00 01 01 01 0d 40",
+    "kind": "synthetic peer metadata R=0,C=[1],T=1; actual duration selection and intentional full V replacement",
+    "evidence": [
+      "E06",
+      "E10",
+      "E20"
+    ],
+    "source": "views/SettingsView.js:112-117,176-178; stores/AppStateStore.js:463-484; exact generated handleChangeLightDuration and setCapValue",
+    "protocol": "P1"
+  },
+  {
+    "id": "V-duration-14",
+    "action": "light duration 14 minute(s)",
+    "inputs": {
+      "type": 32,
+      "command": 114,
+      "data": [
+        0,
+        1,
+        3,
+        0,
+        1,
+        1,
+        1,
+        14
+      ]
+    },
+    "expected_bytes": "40 20 72 00 08 d1 00 01 03 00 01 01 01 0e 40",
+    "kind": "synthetic peer metadata R=0,C=[1],T=1; actual duration selection and intentional full V replacement",
+    "evidence": [
+      "E06",
+      "E10",
+      "E20"
+    ],
+    "source": "views/SettingsView.js:112-117,176-178; stores/AppStateStore.js:463-484; exact generated handleChangeLightDuration and setCapValue",
+    "protocol": "P1"
+  },
+  {
+    "id": "V-duration-15",
+    "action": "light duration 15 minute(s)",
+    "inputs": {
+      "type": 32,
+      "command": 114,
+      "data": [
+        0,
+        1,
+        3,
+        0,
+        1,
+        1,
+        1,
+        15
+      ]
+    },
+    "expected_bytes": "40 20 72 00 08 d0 00 01 03 00 01 01 01 0f 40",
+    "kind": "synthetic peer metadata R=0,C=[1],T=1; actual duration selection and intentional full V replacement",
+    "evidence": [
+      "E06",
+      "E10",
+      "E20"
+    ],
+    "source": "views/SettingsView.js:112-117,176-178; stores/AppStateStore.js:463-484; exact generated handleChangeLightDuration and setCapValue",
+    "protocol": "P1"
+  },
+  {
+    "id": "V-duration-16",
+    "action": "light duration 16 minute(s)",
+    "inputs": {
+      "type": 32,
+      "command": 114,
+      "data": [
+        0,
+        1,
+        3,
+        0,
+        1,
+        1,
+        1,
+        16
+      ]
+    },
+    "expected_bytes": "40 20 72 00 08 cf 00 01 03 00 01 01 01 10 40",
+    "kind": "synthetic peer metadata R=0,C=[1],T=1; actual duration selection and intentional full V replacement",
+    "evidence": [
+      "E06",
+      "E10",
+      "E20"
+    ],
+    "source": "views/SettingsView.js:112-117,176-178; stores/AppStateStore.js:463-484; exact generated handleChangeLightDuration and setCapValue",
+    "protocol": "P1"
+  },
+  {
+    "id": "V-duration-17",
+    "action": "light duration 17 minute(s)",
+    "inputs": {
+      "type": 32,
+      "command": 114,
+      "data": [
+        0,
+        1,
+        3,
+        0,
+        1,
+        1,
+        1,
+        17
+      ]
+    },
+    "expected_bytes": "40 20 72 00 08 ce 00 01 03 00 01 01 01 11 40",
+    "kind": "synthetic peer metadata R=0,C=[1],T=1; actual duration selection and intentional full V replacement",
+    "evidence": [
+      "E06",
+      "E10",
+      "E20"
+    ],
+    "source": "views/SettingsView.js:112-117,176-178; stores/AppStateStore.js:463-484; exact generated handleChangeLightDuration and setCapValue",
+    "protocol": "P1"
+  },
+  {
+    "id": "V-duration-18",
+    "action": "light duration 18 minute(s)",
+    "inputs": {
+      "type": 32,
+      "command": 114,
+      "data": [
+        0,
+        1,
+        3,
+        0,
+        1,
+        1,
+        1,
+        18
+      ]
+    },
+    "expected_bytes": "40 20 72 00 08 cd 00 01 03 00 01 01 01 12 40",
+    "kind": "synthetic peer metadata R=0,C=[1],T=1; actual duration selection and intentional full V replacement",
+    "evidence": [
+      "E06",
+      "E10",
+      "E20"
+    ],
+    "source": "views/SettingsView.js:112-117,176-178; stores/AppStateStore.js:463-484; exact generated handleChangeLightDuration and setCapValue",
+    "protocol": "P1"
+  },
+  {
+    "id": "V-duration-19",
+    "action": "light duration 19 minute(s)",
+    "inputs": {
+      "type": 32,
+      "command": 114,
+      "data": [
+        0,
+        1,
+        3,
+        0,
+        1,
+        1,
+        1,
+        19
+      ]
+    },
+    "expected_bytes": "40 20 72 00 08 cc 00 01 03 00 01 01 01 13 40",
+    "kind": "synthetic peer metadata R=0,C=[1],T=1; actual duration selection and intentional full V replacement",
+    "evidence": [
+      "E06",
+      "E10",
+      "E20"
+    ],
+    "source": "views/SettingsView.js:112-117,176-178; stores/AppStateStore.js:463-484; exact generated handleChangeLightDuration and setCapValue",
+    "protocol": "P1"
+  },
+  {
+    "id": "V-duration-20",
+    "action": "light duration 20 minute(s)",
+    "inputs": {
+      "type": 32,
+      "command": 114,
+      "data": [
+        0,
+        1,
+        3,
+        0,
+        1,
+        1,
+        1,
+        20
+      ]
+    },
+    "expected_bytes": "40 20 72 00 08 cb 00 01 03 00 01 01 01 14 40",
+    "kind": "synthetic peer metadata R=0,C=[1],T=1; actual duration selection and intentional full V replacement",
+    "evidence": [
+      "E06",
+      "E10",
+      "E20"
+    ],
+    "source": "views/SettingsView.js:112-117,176-178; stores/AppStateStore.js:463-484; exact generated handleChangeLightDuration and setCapValue",
+    "protocol": "P1"
+  },
+  {
+    "id": "V-duration-21",
+    "action": "light duration 21 minute(s)",
+    "inputs": {
+      "type": 32,
+      "command": 114,
+      "data": [
+        0,
+        1,
+        3,
+        0,
+        1,
+        1,
+        1,
+        21
+      ]
+    },
+    "expected_bytes": "40 20 72 00 08 ca 00 01 03 00 01 01 01 15 40",
+    "kind": "synthetic peer metadata R=0,C=[1],T=1; actual duration selection and intentional full V replacement",
+    "evidence": [
+      "E06",
+      "E10",
+      "E20"
+    ],
+    "source": "views/SettingsView.js:112-117,176-178; stores/AppStateStore.js:463-484; exact generated handleChangeLightDuration and setCapValue",
+    "protocol": "P1"
+  },
+  {
+    "id": "V-duration-22",
+    "action": "light duration 22 minute(s)",
+    "inputs": {
+      "type": 32,
+      "command": 114,
+      "data": [
+        0,
+        1,
+        3,
+        0,
+        1,
+        1,
+        1,
+        22
+      ]
+    },
+    "expected_bytes": "40 20 72 00 08 c9 00 01 03 00 01 01 01 16 40",
+    "kind": "synthetic peer metadata R=0,C=[1],T=1; actual duration selection and intentional full V replacement",
+    "evidence": [
+      "E06",
+      "E10",
+      "E20"
+    ],
+    "source": "views/SettingsView.js:112-117,176-178; stores/AppStateStore.js:463-484; exact generated handleChangeLightDuration and setCapValue",
+    "protocol": "P1"
+  },
+  {
+    "id": "V-duration-23",
+    "action": "light duration 23 minute(s)",
+    "inputs": {
+      "type": 32,
+      "command": 114,
+      "data": [
+        0,
+        1,
+        3,
+        0,
+        1,
+        1,
+        1,
+        23
+      ]
+    },
+    "expected_bytes": "40 20 72 00 08 c8 00 01 03 00 01 01 01 17 40",
+    "kind": "synthetic peer metadata R=0,C=[1],T=1; actual duration selection and intentional full V replacement",
+    "evidence": [
+      "E06",
+      "E10",
+      "E20"
+    ],
+    "source": "views/SettingsView.js:112-117,176-178; stores/AppStateStore.js:463-484; exact generated handleChangeLightDuration and setCapValue",
+    "protocol": "P1"
+  },
+  {
+    "id": "V-duration-24",
+    "action": "light duration 24 minute(s)",
+    "inputs": {
+      "type": 32,
+      "command": 114,
+      "data": [
+        0,
+        1,
+        3,
+        0,
+        1,
+        1,
+        1,
+        24
+      ]
+    },
+    "expected_bytes": "40 20 72 00 08 c7 00 01 03 00 01 01 01 18 40",
+    "kind": "synthetic peer metadata R=0,C=[1],T=1; actual duration selection and intentional full V replacement",
+    "evidence": [
+      "E06",
+      "E10",
+      "E20"
+    ],
+    "source": "views/SettingsView.js:112-117,176-178; stores/AppStateStore.js:463-484; exact generated handleChangeLightDuration and setCapValue",
+    "protocol": "P1"
+  },
+  {
+    "id": "V-duration-25",
+    "action": "light duration 25 minute(s)",
+    "inputs": {
+      "type": 32,
+      "command": 114,
+      "data": [
+        0,
+        1,
+        3,
+        0,
+        1,
+        1,
+        1,
+        25
+      ]
+    },
+    "expected_bytes": "40 20 72 00 08 c6 00 01 03 00 01 01 01 19 40",
+    "kind": "synthetic peer metadata R=0,C=[1],T=1; actual duration selection and intentional full V replacement",
+    "evidence": [
+      "E06",
+      "E10",
+      "E20"
+    ],
+    "source": "views/SettingsView.js:112-117,176-178; stores/AppStateStore.js:463-484; exact generated handleChangeLightDuration and setCapValue",
+    "protocol": "P1"
+  },
+  {
+    "id": "V-duration-26",
+    "action": "light duration 26 minute(s)",
+    "inputs": {
+      "type": 32,
+      "command": 114,
+      "data": [
+        0,
+        1,
+        3,
+        0,
+        1,
+        1,
+        1,
+        26
+      ]
+    },
+    "expected_bytes": "40 20 72 00 08 c5 00 01 03 00 01 01 01 1a 40",
+    "kind": "synthetic peer metadata R=0,C=[1],T=1; actual duration selection and intentional full V replacement",
+    "evidence": [
+      "E06",
+      "E10",
+      "E20"
+    ],
+    "source": "views/SettingsView.js:112-117,176-178; stores/AppStateStore.js:463-484; exact generated handleChangeLightDuration and setCapValue",
+    "protocol": "P1"
+  },
+  {
+    "id": "V-duration-27",
+    "action": "light duration 27 minute(s)",
+    "inputs": {
+      "type": 32,
+      "command": 114,
+      "data": [
+        0,
+        1,
+        3,
+        0,
+        1,
+        1,
+        1,
+        27
+      ]
+    },
+    "expected_bytes": "40 20 72 00 08 c4 00 01 03 00 01 01 01 1b 40",
+    "kind": "synthetic peer metadata R=0,C=[1],T=1; actual duration selection and intentional full V replacement",
+    "evidence": [
+      "E06",
+      "E10",
+      "E20"
+    ],
+    "source": "views/SettingsView.js:112-117,176-178; stores/AppStateStore.js:463-484; exact generated handleChangeLightDuration and setCapValue",
+    "protocol": "P1"
+  },
+  {
+    "id": "V-duration-28",
+    "action": "light duration 28 minute(s)",
+    "inputs": {
+      "type": 32,
+      "command": 114,
+      "data": [
+        0,
+        1,
+        3,
+        0,
+        1,
+        1,
+        1,
+        28
+      ]
+    },
+    "expected_bytes": "40 20 72 00 08 c3 00 01 03 00 01 01 01 1c 40",
+    "kind": "synthetic peer metadata R=0,C=[1],T=1; actual duration selection and intentional full V replacement",
+    "evidence": [
+      "E06",
+      "E10",
+      "E20"
+    ],
+    "source": "views/SettingsView.js:112-117,176-178; stores/AppStateStore.js:463-484; exact generated handleChangeLightDuration and setCapValue",
+    "protocol": "P1"
+  },
+  {
+    "id": "V-duration-29",
+    "action": "light duration 29 minute(s)",
+    "inputs": {
+      "type": 32,
+      "command": 114,
+      "data": [
+        0,
+        1,
+        3,
+        0,
+        1,
+        1,
+        1,
+        29
+      ]
+    },
+    "expected_bytes": "40 20 72 00 08 c2 00 01 03 00 01 01 01 1d 40",
+    "kind": "synthetic peer metadata R=0,C=[1],T=1; actual duration selection and intentional full V replacement",
+    "evidence": [
+      "E06",
+      "E10",
+      "E20"
+    ],
+    "source": "views/SettingsView.js:112-117,176-178; stores/AppStateStore.js:463-484; exact generated handleChangeLightDuration and setCapValue",
+    "protocol": "P1"
+  },
+  {
+    "id": "V-duration-30",
+    "action": "light duration 30 minute(s)",
+    "inputs": {
+      "type": 32,
+      "command": 114,
+      "data": [
+        0,
+        1,
+        3,
+        0,
+        1,
+        1,
+        1,
+        30
+      ]
+    },
+    "expected_bytes": "40 20 72 00 08 c1 00 01 03 00 01 01 01 1e 40",
+    "kind": "synthetic peer metadata R=0,C=[1],T=1; actual duration selection and intentional full V replacement",
+    "evidence": [
+      "E06",
+      "E10",
+      "E20"
+    ],
+    "source": "views/SettingsView.js:112-117,176-178; stores/AppStateStore.js:463-484; exact generated handleChangeLightDuration and setCapValue",
+    "protocol": "P1"
+  },
+  {
+    "id": "V-duration-31",
+    "action": "light duration 31 minute(s)",
+    "inputs": {
+      "type": 32,
+      "command": 114,
+      "data": [
+        0,
+        1,
+        3,
+        0,
+        1,
+        1,
+        1,
+        31
+      ]
+    },
+    "expected_bytes": "40 20 72 00 08 c0 00 01 03 00 01 01 01 1f 40",
+    "kind": "synthetic peer metadata R=0,C=[1],T=1; actual duration selection and intentional full V replacement",
+    "evidence": [
+      "E06",
+      "E10",
+      "E20"
+    ],
+    "source": "views/SettingsView.js:112-117,176-178; stores/AppStateStore.js:463-484; exact generated handleChangeLightDuration and setCapValue",
+    "protocol": "P1"
+  },
+  {
+    "id": "V-duration-32",
+    "action": "light duration 32 minute(s)",
+    "inputs": {
+      "type": 32,
+      "command": 114,
+      "data": [
+        0,
+        1,
+        3,
+        0,
+        1,
+        1,
+        1,
+        32
+      ]
+    },
+    "expected_bytes": "40 20 72 00 08 bf 00 01 03 00 01 01 01 20 40",
+    "kind": "synthetic peer metadata R=0,C=[1],T=1; actual duration selection and intentional full V replacement",
+    "evidence": [
+      "E06",
+      "E10",
+      "E20"
+    ],
+    "source": "views/SettingsView.js:112-117,176-178; stores/AppStateStore.js:463-484; exact generated handleChangeLightDuration and setCapValue",
+    "protocol": "P1"
+  },
+  {
+    "id": "V-duration-33",
+    "action": "light duration 33 minute(s)",
+    "inputs": {
+      "type": 32,
+      "command": 114,
+      "data": [
+        0,
+        1,
+        3,
+        0,
+        1,
+        1,
+        1,
+        33
+      ]
+    },
+    "expected_bytes": "40 20 72 00 08 be 00 01 03 00 01 01 01 21 40",
+    "kind": "synthetic peer metadata R=0,C=[1],T=1; actual duration selection and intentional full V replacement",
+    "evidence": [
+      "E06",
+      "E10",
+      "E20"
+    ],
+    "source": "views/SettingsView.js:112-117,176-178; stores/AppStateStore.js:463-484; exact generated handleChangeLightDuration and setCapValue",
+    "protocol": "P1"
+  },
+  {
+    "id": "V-duration-34",
+    "action": "light duration 34 minute(s)",
+    "inputs": {
+      "type": 32,
+      "command": 114,
+      "data": [
+        0,
+        1,
+        3,
+        0,
+        1,
+        1,
+        1,
+        34
+      ]
+    },
+    "expected_bytes": "40 20 72 00 08 bd 00 01 03 00 01 01 01 22 40",
+    "kind": "synthetic peer metadata R=0,C=[1],T=1; actual duration selection and intentional full V replacement",
+    "evidence": [
+      "E06",
+      "E10",
+      "E20"
+    ],
+    "source": "views/SettingsView.js:112-117,176-178; stores/AppStateStore.js:463-484; exact generated handleChangeLightDuration and setCapValue",
+    "protocol": "P1"
+  },
+  {
+    "id": "V-duration-35",
+    "action": "light duration 35 minute(s)",
+    "inputs": {
+      "type": 32,
+      "command": 114,
+      "data": [
+        0,
+        1,
+        3,
+        0,
+        1,
+        1,
+        1,
+        35
+      ]
+    },
+    "expected_bytes": "40 20 72 00 08 bc 00 01 03 00 01 01 01 23 40",
+    "kind": "synthetic peer metadata R=0,C=[1],T=1; actual duration selection and intentional full V replacement",
+    "evidence": [
+      "E06",
+      "E10",
+      "E20"
+    ],
+    "source": "views/SettingsView.js:112-117,176-178; stores/AppStateStore.js:463-484; exact generated handleChangeLightDuration and setCapValue",
+    "protocol": "P1"
+  },
+  {
+    "id": "V-duration-36",
+    "action": "light duration 36 minute(s)",
+    "inputs": {
+      "type": 32,
+      "command": 114,
+      "data": [
+        0,
+        1,
+        3,
+        0,
+        1,
+        1,
+        1,
+        36
+      ]
+    },
+    "expected_bytes": "40 20 72 00 08 bb 00 01 03 00 01 01 01 24 40",
+    "kind": "synthetic peer metadata R=0,C=[1],T=1; actual duration selection and intentional full V replacement",
+    "evidence": [
+      "E06",
+      "E10",
+      "E20"
+    ],
+    "source": "views/SettingsView.js:112-117,176-178; stores/AppStateStore.js:463-484; exact generated handleChangeLightDuration and setCapValue",
+    "protocol": "P1"
+  },
+  {
+    "id": "V-duration-37",
+    "action": "light duration 37 minute(s)",
+    "inputs": {
+      "type": 32,
+      "command": 114,
+      "data": [
+        0,
+        1,
+        3,
+        0,
+        1,
+        1,
+        1,
+        37
+      ]
+    },
+    "expected_bytes": "40 20 72 00 08 ba 00 01 03 00 01 01 01 25 40",
+    "kind": "synthetic peer metadata R=0,C=[1],T=1; actual duration selection and intentional full V replacement",
+    "evidence": [
+      "E06",
+      "E10",
+      "E20"
+    ],
+    "source": "views/SettingsView.js:112-117,176-178; stores/AppStateStore.js:463-484; exact generated handleChangeLightDuration and setCapValue",
+    "protocol": "P1"
+  },
+  {
+    "id": "V-duration-38",
+    "action": "light duration 38 minute(s)",
+    "inputs": {
+      "type": 32,
+      "command": 114,
+      "data": [
+        0,
+        1,
+        3,
+        0,
+        1,
+        1,
+        1,
+        38
+      ]
+    },
+    "expected_bytes": "40 20 72 00 08 b9 00 01 03 00 01 01 01 26 40",
+    "kind": "synthetic peer metadata R=0,C=[1],T=1; actual duration selection and intentional full V replacement",
+    "evidence": [
+      "E06",
+      "E10",
+      "E20"
+    ],
+    "source": "views/SettingsView.js:112-117,176-178; stores/AppStateStore.js:463-484; exact generated handleChangeLightDuration and setCapValue",
+    "protocol": "P1"
+  },
+  {
+    "id": "V-duration-39",
+    "action": "light duration 39 minute(s)",
+    "inputs": {
+      "type": 32,
+      "command": 114,
+      "data": [
+        0,
+        1,
+        3,
+        0,
+        1,
+        1,
+        1,
+        39
+      ]
+    },
+    "expected_bytes": "40 20 72 00 08 b8 00 01 03 00 01 01 01 27 40",
+    "kind": "synthetic peer metadata R=0,C=[1],T=1; actual duration selection and intentional full V replacement",
+    "evidence": [
+      "E06",
+      "E10",
+      "E20"
+    ],
+    "source": "views/SettingsView.js:112-117,176-178; stores/AppStateStore.js:463-484; exact generated handleChangeLightDuration and setCapValue",
+    "protocol": "P1"
+  },
+  {
+    "id": "V-duration-40",
+    "action": "light duration 40 minute(s)",
+    "inputs": {
+      "type": 32,
+      "command": 114,
+      "data": [
+        0,
+        1,
+        3,
+        0,
+        1,
+        1,
+        1,
+        40
+      ]
+    },
+    "expected_bytes": "40 20 72 00 08 b7 00 01 03 00 01 01 01 28 40",
+    "kind": "synthetic peer metadata R=0,C=[1],T=1; actual duration selection and intentional full V replacement",
+    "evidence": [
+      "E06",
+      "E10",
+      "E20"
+    ],
+    "source": "views/SettingsView.js:112-117,176-178; stores/AppStateStore.js:463-484; exact generated handleChangeLightDuration and setCapValue",
+    "protocol": "P1"
+  },
+  {
+    "id": "V-duration-41",
+    "action": "light duration 41 minute(s)",
+    "inputs": {
+      "type": 32,
+      "command": 114,
+      "data": [
+        0,
+        1,
+        3,
+        0,
+        1,
+        1,
+        1,
+        41
+      ]
+    },
+    "expected_bytes": "40 20 72 00 08 b6 00 01 03 00 01 01 01 29 40",
+    "kind": "synthetic peer metadata R=0,C=[1],T=1; actual duration selection and intentional full V replacement",
+    "evidence": [
+      "E06",
+      "E10",
+      "E20"
+    ],
+    "source": "views/SettingsView.js:112-117,176-178; stores/AppStateStore.js:463-484; exact generated handleChangeLightDuration and setCapValue",
+    "protocol": "P1"
+  },
+  {
+    "id": "V-duration-42",
+    "action": "light duration 42 minute(s)",
+    "inputs": {
+      "type": 32,
+      "command": 114,
+      "data": [
+        0,
+        1,
+        3,
+        0,
+        1,
+        1,
+        1,
+        42
+      ]
+    },
+    "expected_bytes": "40 20 72 00 08 b5 00 01 03 00 01 01 01 2a 40",
+    "kind": "synthetic peer metadata R=0,C=[1],T=1; actual duration selection and intentional full V replacement",
+    "evidence": [
+      "E06",
+      "E10",
+      "E20"
+    ],
+    "source": "views/SettingsView.js:112-117,176-178; stores/AppStateStore.js:463-484; exact generated handleChangeLightDuration and setCapValue",
+    "protocol": "P1"
+  },
+  {
+    "id": "V-duration-43",
+    "action": "light duration 43 minute(s)",
+    "inputs": {
+      "type": 32,
+      "command": 114,
+      "data": [
+        0,
+        1,
+        3,
+        0,
+        1,
+        1,
+        1,
+        43
+      ]
+    },
+    "expected_bytes": "40 20 72 00 08 b4 00 01 03 00 01 01 01 2b 40",
+    "kind": "synthetic peer metadata R=0,C=[1],T=1; actual duration selection and intentional full V replacement",
+    "evidence": [
+      "E06",
+      "E10",
+      "E20"
+    ],
+    "source": "views/SettingsView.js:112-117,176-178; stores/AppStateStore.js:463-484; exact generated handleChangeLightDuration and setCapValue",
+    "protocol": "P1"
+  },
+  {
+    "id": "V-duration-44",
+    "action": "light duration 44 minute(s)",
+    "inputs": {
+      "type": 32,
+      "command": 114,
+      "data": [
+        0,
+        1,
+        3,
+        0,
+        1,
+        1,
+        1,
+        44
+      ]
+    },
+    "expected_bytes": "40 20 72 00 08 b3 00 01 03 00 01 01 01 2c 40",
+    "kind": "synthetic peer metadata R=0,C=[1],T=1; actual duration selection and intentional full V replacement",
+    "evidence": [
+      "E06",
+      "E10",
+      "E20"
+    ],
+    "source": "views/SettingsView.js:112-117,176-178; stores/AppStateStore.js:463-484; exact generated handleChangeLightDuration and setCapValue",
+    "protocol": "P1"
+  },
+  {
+    "id": "V-duration-45",
+    "action": "light duration 45 minute(s)",
+    "inputs": {
+      "type": 32,
+      "command": 114,
+      "data": [
+        0,
+        1,
+        3,
+        0,
+        1,
+        1,
+        1,
+        45
+      ]
+    },
+    "expected_bytes": "40 20 72 00 08 b2 00 01 03 00 01 01 01 2d 40",
+    "kind": "synthetic peer metadata R=0,C=[1],T=1; actual duration selection and intentional full V replacement",
+    "evidence": [
+      "E06",
+      "E10",
+      "E20"
+    ],
+    "source": "views/SettingsView.js:112-117,176-178; stores/AppStateStore.js:463-484; exact generated handleChangeLightDuration and setCapValue",
+    "protocol": "P1"
+  },
+  {
+    "id": "V-duration-46",
+    "action": "light duration 46 minute(s)",
+    "inputs": {
+      "type": 32,
+      "command": 114,
+      "data": [
+        0,
+        1,
+        3,
+        0,
+        1,
+        1,
+        1,
+        46
+      ]
+    },
+    "expected_bytes": "40 20 72 00 08 b1 00 01 03 00 01 01 01 2e 40",
+    "kind": "synthetic peer metadata R=0,C=[1],T=1; actual duration selection and intentional full V replacement",
+    "evidence": [
+      "E06",
+      "E10",
+      "E20"
+    ],
+    "source": "views/SettingsView.js:112-117,176-178; stores/AppStateStore.js:463-484; exact generated handleChangeLightDuration and setCapValue",
+    "protocol": "P1"
+  },
+  {
+    "id": "V-duration-47",
+    "action": "light duration 47 minute(s)",
+    "inputs": {
+      "type": 32,
+      "command": 114,
+      "data": [
+        0,
+        1,
+        3,
+        0,
+        1,
+        1,
+        1,
+        47
+      ]
+    },
+    "expected_bytes": "40 20 72 00 08 b0 00 01 03 00 01 01 01 2f 40",
+    "kind": "synthetic peer metadata R=0,C=[1],T=1; actual duration selection and intentional full V replacement",
+    "evidence": [
+      "E06",
+      "E10",
+      "E20"
+    ],
+    "source": "views/SettingsView.js:112-117,176-178; stores/AppStateStore.js:463-484; exact generated handleChangeLightDuration and setCapValue",
+    "protocol": "P1"
+  },
+  {
+    "id": "V-duration-48",
+    "action": "light duration 48 minute(s)",
+    "inputs": {
+      "type": 32,
+      "command": 114,
+      "data": [
+        0,
+        1,
+        3,
+        0,
+        1,
+        1,
+        1,
+        48
+      ]
+    },
+    "expected_bytes": "40 20 72 00 08 af 00 01 03 00 01 01 01 30 40",
+    "kind": "synthetic peer metadata R=0,C=[1],T=1; actual duration selection and intentional full V replacement",
+    "evidence": [
+      "E06",
+      "E10",
+      "E20"
+    ],
+    "source": "views/SettingsView.js:112-117,176-178; stores/AppStateStore.js:463-484; exact generated handleChangeLightDuration and setCapValue",
+    "protocol": "P1"
+  },
+  {
+    "id": "V-duration-49",
+    "action": "light duration 49 minute(s)",
+    "inputs": {
+      "type": 32,
+      "command": 114,
+      "data": [
+        0,
+        1,
+        3,
+        0,
+        1,
+        1,
+        1,
+        49
+      ]
+    },
+    "expected_bytes": "40 20 72 00 08 ae 00 01 03 00 01 01 01 31 40",
+    "kind": "synthetic peer metadata R=0,C=[1],T=1; actual duration selection and intentional full V replacement",
+    "evidence": [
+      "E06",
+      "E10",
+      "E20"
+    ],
+    "source": "views/SettingsView.js:112-117,176-178; stores/AppStateStore.js:463-484; exact generated handleChangeLightDuration and setCapValue",
+    "protocol": "P1"
+  },
+  {
+    "id": "V-duration-50",
+    "action": "light duration 50 minute(s)",
+    "inputs": {
+      "type": 32,
+      "command": 114,
+      "data": [
+        0,
+        1,
+        3,
+        0,
+        1,
+        1,
+        1,
+        50
+      ]
+    },
+    "expected_bytes": "40 20 72 00 08 ad 00 01 03 00 01 01 01 32 40",
+    "kind": "synthetic peer metadata R=0,C=[1],T=1; actual duration selection and intentional full V replacement",
+    "evidence": [
+      "E06",
+      "E10",
+      "E20"
+    ],
+    "source": "views/SettingsView.js:112-117,176-178; stores/AppStateStore.js:463-484; exact generated handleChangeLightDuration and setCapValue",
+    "protocol": "P1"
+  },
+  {
+    "id": "V-duration-51",
+    "action": "light duration 51 minute(s)",
+    "inputs": {
+      "type": 32,
+      "command": 114,
+      "data": [
+        0,
+        1,
+        3,
+        0,
+        1,
+        1,
+        1,
+        51
+      ]
+    },
+    "expected_bytes": "40 20 72 00 08 ac 00 01 03 00 01 01 01 33 40",
+    "kind": "synthetic peer metadata R=0,C=[1],T=1; actual duration selection and intentional full V replacement",
+    "evidence": [
+      "E06",
+      "E10",
+      "E20"
+    ],
+    "source": "views/SettingsView.js:112-117,176-178; stores/AppStateStore.js:463-484; exact generated handleChangeLightDuration and setCapValue",
+    "protocol": "P1"
+  },
+  {
+    "id": "V-duration-52",
+    "action": "light duration 52 minute(s)",
+    "inputs": {
+      "type": 32,
+      "command": 114,
+      "data": [
+        0,
+        1,
+        3,
+        0,
+        1,
+        1,
+        1,
+        52
+      ]
+    },
+    "expected_bytes": "40 20 72 00 08 ab 00 01 03 00 01 01 01 34 40",
+    "kind": "synthetic peer metadata R=0,C=[1],T=1; actual duration selection and intentional full V replacement",
+    "evidence": [
+      "E06",
+      "E10",
+      "E20"
+    ],
+    "source": "views/SettingsView.js:112-117,176-178; stores/AppStateStore.js:463-484; exact generated handleChangeLightDuration and setCapValue",
+    "protocol": "P1"
+  },
+  {
+    "id": "V-duration-53",
+    "action": "light duration 53 minute(s)",
+    "inputs": {
+      "type": 32,
+      "command": 114,
+      "data": [
+        0,
+        1,
+        3,
+        0,
+        1,
+        1,
+        1,
+        53
+      ]
+    },
+    "expected_bytes": "40 20 72 00 08 aa 00 01 03 00 01 01 01 35 40",
+    "kind": "synthetic peer metadata R=0,C=[1],T=1; actual duration selection and intentional full V replacement",
+    "evidence": [
+      "E06",
+      "E10",
+      "E20"
+    ],
+    "source": "views/SettingsView.js:112-117,176-178; stores/AppStateStore.js:463-484; exact generated handleChangeLightDuration and setCapValue",
+    "protocol": "P1"
+  },
+  {
+    "id": "V-duration-54",
+    "action": "light duration 54 minute(s)",
+    "inputs": {
+      "type": 32,
+      "command": 114,
+      "data": [
+        0,
+        1,
+        3,
+        0,
+        1,
+        1,
+        1,
+        54
+      ]
+    },
+    "expected_bytes": "40 20 72 00 08 a9 00 01 03 00 01 01 01 36 40",
+    "kind": "synthetic peer metadata R=0,C=[1],T=1; actual duration selection and intentional full V replacement",
+    "evidence": [
+      "E06",
+      "E10",
+      "E20"
+    ],
+    "source": "views/SettingsView.js:112-117,176-178; stores/AppStateStore.js:463-484; exact generated handleChangeLightDuration and setCapValue",
+    "protocol": "P1"
+  },
+  {
+    "id": "V-duration-55",
+    "action": "light duration 55 minute(s)",
+    "inputs": {
+      "type": 32,
+      "command": 114,
+      "data": [
+        0,
+        1,
+        3,
+        0,
+        1,
+        1,
+        1,
+        55
+      ]
+    },
+    "expected_bytes": "40 20 72 00 08 a8 00 01 03 00 01 01 01 37 40",
+    "kind": "synthetic peer metadata R=0,C=[1],T=1; actual duration selection and intentional full V replacement",
+    "evidence": [
+      "E06",
+      "E10",
+      "E20"
+    ],
+    "source": "views/SettingsView.js:112-117,176-178; stores/AppStateStore.js:463-484; exact generated handleChangeLightDuration and setCapValue",
+    "protocol": "P1"
+  },
+  {
+    "id": "V-duration-56",
+    "action": "light duration 56 minute(s)",
+    "inputs": {
+      "type": 32,
+      "command": 114,
+      "data": [
+        0,
+        1,
+        3,
+        0,
+        1,
+        1,
+        1,
+        56
+      ]
+    },
+    "expected_bytes": "40 20 72 00 08 a7 00 01 03 00 01 01 01 38 40",
+    "kind": "synthetic peer metadata R=0,C=[1],T=1; actual duration selection and intentional full V replacement",
+    "evidence": [
+      "E06",
+      "E10",
+      "E20"
+    ],
+    "source": "views/SettingsView.js:112-117,176-178; stores/AppStateStore.js:463-484; exact generated handleChangeLightDuration and setCapValue",
+    "protocol": "P1"
+  },
+  {
+    "id": "V-duration-57",
+    "action": "light duration 57 minute(s)",
+    "inputs": {
+      "type": 32,
+      "command": 114,
+      "data": [
+        0,
+        1,
+        3,
+        0,
+        1,
+        1,
+        1,
+        57
+      ]
+    },
+    "expected_bytes": "40 20 72 00 08 a6 00 01 03 00 01 01 01 39 40",
+    "kind": "synthetic peer metadata R=0,C=[1],T=1; actual duration selection and intentional full V replacement",
+    "evidence": [
+      "E06",
+      "E10",
+      "E20"
+    ],
+    "source": "views/SettingsView.js:112-117,176-178; stores/AppStateStore.js:463-484; exact generated handleChangeLightDuration and setCapValue",
+    "protocol": "P1"
+  },
+  {
+    "id": "V-duration-58",
+    "action": "light duration 58 minute(s)",
+    "inputs": {
+      "type": 32,
+      "command": 114,
+      "data": [
+        0,
+        1,
+        3,
+        0,
+        1,
+        1,
+        1,
+        58
+      ]
+    },
+    "expected_bytes": "40 20 72 00 08 a5 00 01 03 00 01 01 01 3a 40",
+    "kind": "synthetic peer metadata R=0,C=[1],T=1; actual duration selection and intentional full V replacement",
+    "evidence": [
+      "E06",
+      "E10",
+      "E20"
+    ],
+    "source": "views/SettingsView.js:112-117,176-178; stores/AppStateStore.js:463-484; exact generated handleChangeLightDuration and setCapValue",
+    "protocol": "P1"
+  },
+  {
+    "id": "V-duration-59",
+    "action": "light duration 59 minute(s)",
+    "inputs": {
+      "type": 32,
+      "command": 114,
+      "data": [
+        0,
+        1,
+        3,
+        0,
+        1,
+        1,
+        1,
+        59
+      ]
+    },
+    "expected_bytes": "40 20 72 00 08 a4 00 01 03 00 01 01 01 3b 40",
+    "kind": "synthetic peer metadata R=0,C=[1],T=1; actual duration selection and intentional full V replacement",
+    "evidence": [
+      "E06",
+      "E10",
+      "E20"
+    ],
+    "source": "views/SettingsView.js:112-117,176-178; stores/AppStateStore.js:463-484; exact generated handleChangeLightDuration and setCapValue",
+    "protocol": "P1"
+  },
+  {
+    "id": "V-invalid-quad-default",
+    "protocol": "P1",
+    "action": "invalid persisted quad-selector default packet, physical meaning unknown",
+    "inputs": {
+      "type": 2,
+      "command": 0,
+      "data": [],
+      "direction": 0
+    },
+    "expected_bytes": "40 02 00 00 00 7e 40",
+    "kind": "conditionally reachable malformed persisted selector; app defect, not a physical feature",
+    "evidence": [
+      "E21",
+      "modules/Controls.js:241-275",
+      "views/ControlView.js:442-510",
+      "packet/octopacket.js:143-148"
+    ]
+  }
+]

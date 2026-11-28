@@ -101,6 +101,15 @@ async def factory_controllers() -> list[BedController]:
         for selector in (4, 9):
             coordinator = _FactoryCoordinator()
             controllers.append(SymphonyController(coordinator, SymphonyProfile(product, selector)))
+    from custom_components.adjustable_bed.beds.octo.cosyworld import CosyworldController
+    from custom_components.adjustable_bed.codec.octo import OctoCapabilityRecord
+
+    for count in (1, 2, 4):
+        controller = CosyworldController(_FactoryCoordinator())
+        controller._capability_records = {1: OctoCapabilityRecord(1, 1, bytes((count,)), 0, b"")}
+        controller._apply_capability_records(controller._capability_records)
+        controller._features_complete.set()
+        controllers.append(controller)
     for bed_type in SUPPORTED_BED_TYPES:
         default = await _create_controller_for_bed_type(bed_type)
         controllers.append(default)

@@ -581,8 +581,8 @@ async def test_the_quiet_bed_types_are_those_whose_controller_reads_positions(ha
     found = set()
     for bed_type in const.SUPPORTED_BED_TYPES:
         controller = await _create_controller_for_bed_type(bed_type)
-        if bed_type in (const.BED_TYPE_RESTONIC, const.BED_TYPE_JUNASLEEP):
-            # Both inherit Keeson's no-op reader without reporting positions.
+        if bed_type in (const.BED_TYPE_RESTONIC, const.BED_TYPE_JUNASLEEP, const.BED_TYPE_COSYWORLD):
+            # These inherit a no-op reader without reporting positions.
             assert not any(bed_type_has_position_feedback(bed_type, v) for v in _routes_of(bed_type))
             continue
         if bed_type == "ar_connect":

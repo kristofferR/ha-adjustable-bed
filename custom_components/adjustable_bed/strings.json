@@ -38,7 +38,7 @@
           "name": "Name",
           "motor_count": "Number of motors",
           "has_massage": "Massage controls",
-          "octo_pin": "Octo PIN",
+          "octo_pin": "Receiver PIN",
           "octo_motor_count_override": "Octo motor count",
           "cb24_bed_selection": "Bed side",
           "preferred_adapter": "Bluetooth adapter",
@@ -380,7 +380,7 @@
           "reverse_motor_2": "Reverse motor 2",
           "reverse_motor_3": "Reverse motor 3",
           "reverse_motor_4": "Reverse motor 4",
-          "octo_pin": "Octo PIN",
+          "octo_pin": "Receiver PIN",
           "octo_motor_count_override": "Octo motor count",
           "cb24_bed_selection": "Bed side",
           "ergomotion4_model_keys": "Product features",
@@ -533,7 +533,7 @@
         "title": "Check the Octo PIN",
         "description": "Checked PIN access for **{name}** without moving the bed.\n\n{result}",
         "data": {
-          "octo_pin": "Octo PIN",
+          "octo_pin": "Receiver PIN",
           "action": "What next",
           "outcome_accepted": "PIN check: accepted",
           "outcome_not_required": "PIN check: not required",
@@ -978,7 +978,7 @@
           "baseremote_single_base": "One base, not separate left and right sides",
           "motor_pulse_count": "Movement per tap",
           "idle_disconnect_seconds": "Seconds to stay connected",
-          "octo_pin": "Octo PIN",
+          "octo_pin": "Receiver PIN",
           "jensen_pin": "Jensen PIN",
           "pairlink_role": "Pairlink connection role",
           "pairlink_host_source": "Bluetooth adapter for Pairlink",
@@ -1278,7 +1278,7 @@
           "reverse_motor_2": "Reverse motor 2",
           "reverse_motor_3": "Reverse motor 3",
           "reverse_motor_4": "Reverse motor 4",
-          "octo_pin": "Octo PIN",
+          "octo_pin": "Receiver PIN",
           "octo_motor_count_override": "Octo motor count",
           "cb24_bed_selection": "Bed side",
           "starcode_abm5_4_command_selector": "Control box type",
@@ -1469,7 +1469,7 @@
           "reverse_motor_2": "Reverse motor 2",
           "reverse_motor_3": "Reverse motor 3",
           "reverse_motor_4": "Reverse motor 4",
-          "octo_pin": "Octo PIN",
+          "octo_pin": "Receiver PIN",
           "octo_motor_count_override": "Octo motor count",
           "cb24_bed_selection": "Bed side",
           "starcode_abm5_4_command_selector": "Control box type",
@@ -3236,6 +3236,8 @@
       "hjbed_foot_box_down": {
         "name": "Foot box down"
       },
+      "cosyworld_lift_up": {"name": "Lift up"},
+      "cosyworld_lift_down": {"name": "Lift down"},
       "tv_lift_up": {
         "name": "TV lift up"
       },
@@ -4758,6 +4760,7 @@
       "bed_height": {
         "name": "Bed height"
       },
+      "cosyworld_lift": {"name": "Lift"},
       "stair": {
         "name": "Stair"
       },
@@ -11372,12 +11375,12 @@
       }
     },
     "octo_enroll_pin": {
-      "name": "Octo: set PIN",
-      "description": "Set a new four-digit PIN on one unlocked OCTO Smart Control receiver. Enter the same PIN twice. Home Assistant saves it for reconnects after sending the command.",
+      "name": "Receiver: set PIN",
+      "description": "Set a new four-digit PIN on one unlocked OCTO or Cosyworld Smart Control receiver. Enter the same PIN twice. Home Assistant saves it for reconnects after sending the command.",
       "fields": {
         "device_id": {
           "name": "Bed",
-          "description": "Choose one OCTO receiver or one side of a combined bed."
+          "description": "Choose one OCTO or Cosyworld receiver, or one side of a combined bed."
         },
         "octo_pin": {
           "name": "New PIN",
@@ -11394,12 +11397,12 @@
       }
     },
     "octo_reset_defaults": {
-      "name": "Octo: reset receiver",
+      "name": "Receiver: reset settings",
       "description": "Restore receiver defaults after explicit confirmation. The receiver disconnects five seconds after the reset command.",
       "fields": {
         "device_id": {
           "name": "Bed",
-          "description": "Choose one OCTO receiver or one side of a combined bed."
+          "description": "Choose one OCTO or Cosyworld receiver, or one side of a combined bed."
         },
         "confirmed": {
           "name": "Confirm reset",
@@ -13243,6 +13246,11 @@
     "konfurt_control": {"message": "Choose a control offered by this KONFURT layout and a hold of 1 to 60000 milliseconds."},
     "konfurt_alarm": {"message": "KONFURT sets an alarm for today's weekday only. Choose no wake action, massage or Memory 1."},
     "konfurt_massage_unknown": {"message": "Wait for a massage status report from this connection before turning massage on or off. You can use Toggle massage without a report."},
+    "cosyworld_pin_unset": {"message": "Set the receiver PIN with the Set PIN action before using bed controls."},
+    "cosyworld_transport": {"message": "The receiver needs the Cosyworld Bluetooth service with one writable notification characteristic."},
+    "cosyworld_session": {"message": "The bed connection changed or setup is incomplete. Reconnect and try again."},
+    "cosyworld_locked": {"message": "The bed controls are locked. Unlock the receiver with its PIN before trying again."},
+    "cosyworld_capability": {"message": "The bed must report this feature and its current value on this connection first."},
     "ergosportive_session": {"message": "The ErgoSportive connection changed. Reconnect before sending another command."},
     "ergosportive_gatt": {"message": "This receiver is missing the ErgoSportive UART write or notification channel."},
     "ergosportive_subscription": {"message": "Subscribe to the current ErgoSportive notification channel before sending a command."},
@@ -14747,7 +14755,7 @@
             "title": "Enter the PIN for {name}",
             "description": "**{name}** is locked with a PIN, and Home Assistant has none saved for it. Its controls stay unavailable until the PIN is saved.\n\nEnter the four-digit PIN set on the Octo receiver. Home Assistant saves it and reconnects to the bed. If you do not know it, follow the receiver manufacturer's instructions.",
             "data": {
-              "octo_pin": "Octo PIN"
+              "octo_pin": "Receiver PIN"
             }
           }
         },

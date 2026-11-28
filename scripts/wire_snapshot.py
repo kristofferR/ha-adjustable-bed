@@ -1566,6 +1566,42 @@ def _ambient_scenario(*, split: bool = False) -> Scenario:
     )
 
 
+def cosyworld_scenario(motors: int = 2, subscription: str = "notify") -> Scenario:
+    """Current-session native discovery with synthetic peer-owned metadata."""
+    from custom_components.adjustable_bed.codec.octo import (
+        OctoCapabilityRecord,
+        OctoPacketCodec,
+        _encode_capability_value,
+    )
+
+    codec = OctoPacketCodec()
+    records = (
+        OctoCapabilityRecord(1, 0, bytes((motors,)), 1, b""),
+        OctoCapabilityRecord(2, 0, b"\x03", 1, b""),
+        OctoCapabilityRecord(3, 0, b"\x00", 1, b"\x00\x01"),
+        OctoCapabilityRecord(4, 0, b"\x03\x01\x01", 1, b"\x01\x02\x03"),
+        *(OctoCapabilityRecord(feature, 0, b"\x01", 1, b"\x00\x40")
+          for feature in (0x11, 0x101, 0x102)),
+        OctoCapabilityRecord(0x103, 0, b"\x01", 1, b"\x05\x40\x3c"),
+        OctoCapabilityRecord(0xFFFFFF, 0, b"", 0, b""),
+    )
+    return Scenario(
+        id="cosyworld" if motors == 2 and subscription == "notify" else f"cosyworld:{motors}:{subscription}",
+        bed_type="cosyworld", layout_id="cosyworld",
+        properties=("write-without-response", subscription),
+        replies={
+            "write:" + codec._build_packet([0x20, 0x7F]).hex(): codec._build_packet([0x21, 0x7F]).hex(),
+            "write:" + codec._build_packet([0x20, 0x70]).hex(): codec._build_packet(
+                [0x21, 0x70], [1, 2, 3, 4, 0, 1, 0, 2, 0, 3]
+            ).hex(),
+            "write:" + codec._build_packet([0x20, 0x71]).hex(): ",".join(
+                codec._build_packet([0x21, 0x71], _encode_capability_value(r, r.value)).hex()
+                for r in records
+            ),
+        },
+    )
+
+
 
 def _ar_connect_scenario(sid: str = "ar_connect", *, mask: int | None = 0xc0,
                          alarm: bool = False, headboard: int | None = None) -> Scenario:
@@ -1598,10 +1634,11 @@ def default_scenario(bed_type: str) -> Scenario:
     """The bed type in its default route, with the entry data it needs to build."""
     from custom_components.adjustable_bed import const
 
+    if bed_type == "cosyworld":
+        return cosyworld_scenario()
     if bed_type == "vivasleep":
         return Scenario(id=bed_type, bed_type=bed_type, layout_id="bedgear",
                         entry_data={"ble_device_name": "HHC0000000DE0X"})
-
     if bed_type == "ar_connect":
         return _ar_connect_scenario()
     if bed_type == "softide":
@@ -2935,6 +2972,8 @@ def build_scenarios() -> list[Scenario]:
 
     scenarios = [default_scenario(bed_type) for bed_type in SUPPORTED_BED_TYPES
                  if bed_type not in RICHMAT_MH_APP_CATALOGS]
+    scenarios.extend(cosyworld_scenario(motors, subscription)
+                     for motors, subscription in ((1, "notify"), (4, "indicate"), (3, "notify")))
     scenarios.extend(route_scenarios())
     scenarios.extend((
         _ar_connect_scenario("ar_connect:standard", mask=None),
@@ -3422,6 +3461,7 @@ STARTUP_HOOKS: dict[str, tuple[str, ...]] = {
     "yamada": ("sync_clock",),
     "ormatek": ("sync_clock", "query_alarm"),
     "octo": ("discover_features", "send_pin", "start_keepalive"),
+    "cosyworld": ("discover_features", "send_pin"),
     "jensen": ("query_config",),
     "sleep_number": ("query_config",),
     "sleep_number_mcr": ("query_config",),
