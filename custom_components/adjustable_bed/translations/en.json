@@ -8839,6 +8839,33 @@
         }
       }
     },
+    "flexx_motion_enable_alarm": {
+      "name": "Flexx Motion, turn an alarm on or off",
+      "description": "Enable or disable a repeating alarm read from the current bed connection.",
+      "fields": {
+        "device_id": {
+          "name": "Device"
+        },
+        "alarm_number": {
+          "name": "Alarm number"
+        },
+        "enabled": {
+          "name": "Enabled"
+        }
+      }
+    },
+    "flexx_motion_delete_alarm": {
+      "name": "Flexx Motion, delete an alarm",
+      "description": "Delete a repeating alarm read from the current bed connection.",
+      "fields": {
+        "device_id": {
+          "name": "Device"
+        },
+        "alarm_number": {
+          "name": "Alarm number"
+        }
+      }
+    },
     "muuegm_enable_alarm": {
       "name": "Enable MUUEGM alarm",
       "description": "Enable or disable a reported ABF07 alarm while preserving its time, mode and repeat days. Refresh alarms first.",

@@ -6,6 +6,7 @@ from homeassistant.core import HomeAssistant, ServiceCall
 from homeassistant.helpers import config_validation as cv
 
 from ...const import DOMAIN
+from ...import_executor import async_import_modules
 from ...services import (
     DEVICE_IDS,
     SIDE_FIELD,
@@ -16,12 +17,14 @@ from ...services import (
     _preflight_capability,
     _whole_number,
 )
-from .flexx_motion import FlexxMotionController
 
 
 async def _record(call: ServiceCall, *, delete: bool) -> None:
     targets = _call_targets(call)
     admissions = [_capture_command_admission(parent, side) for parent, side in targets]
+    await async_import_modules(call.hass, "beds.dreamsense.flexx_motion")
+    from .flexx_motion import FlexxMotionController
+
     number = call.data["alarm_number"]
     identities: dict[FlexxMotionController, tuple[int, int]] = {}
 

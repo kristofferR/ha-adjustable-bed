@@ -215,6 +215,7 @@ def runtime_variants(controllers: Iterable[BedController]) -> Iterator[BedContro
     from custom_components.adjustable_bed.beds.dorsal.controller import DorsalController
     from custom_components.adjustable_bed.beds.dreamsense.awmotion import AwMotionController
     from custom_components.adjustable_bed.beds.dreamsense.controller import DreamSenseController
+    from custom_components.adjustable_bed.beds.dreamsense.flexx_motion import FlexxMotionController
     from custom_components.adjustable_bed.beds.dreamsense.likimio import LikimioController
     from custom_components.adjustable_bed.beds.dreamsense.muuegm import MuuegmController
     from custom_components.adjustable_bed.beds.ergobq.controller import ErgoBQController
@@ -327,7 +328,11 @@ def runtime_variants(controllers: Iterable[BedController]) -> Iterator[BedContro
             for code, product in dorsal.products().items():
                 if product.controls or product.alarm_modes:
                     yield DorsalController(controller._coordinator, "restored", code)
-        if isinstance(controller, AwMotionController):
+        if isinstance(controller, FlexxMotionController):
+            # The factory census already visits every Flexx model. Keep its own
+            # profile while covering entities learned from capability replies.
+            yield variant(controller, _known={"clock", "light"})
+        elif isinstance(controller, AwMotionController):
             for profile in AWMOTION_PROFILES.values():
                 yield variant(controller, profile=profile, _known={"clock", "light"})
         elif isinstance(controller, MuuegmController):

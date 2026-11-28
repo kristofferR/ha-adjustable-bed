@@ -4597,6 +4597,8 @@ class TestOfflineSafeBedTypes:
                 child[CONF_PROTOCOL_VARIANT] = "GV"
             elif bed_type == "muuegm":
                 child[CONF_PROTOCOL_VARIANT] = "ABF03"
+            elif bed_type == "flexx_motion":
+                child[CONF_PROTOCOL_VARIANT] = "PB450"
             elif bed_type == "thrivesleep":
                 child[CONF_PROTOCOL_VARIANT] = "level5"
             elif bed_type == "awmotion":
@@ -4651,6 +4653,13 @@ class TestOfflineSafeBedTypes:
 
         await left.async_prime_offline_controller()
         assert left.capability_controller is not None, bed_type
+        if bed_type == "flexx_motion":
+            from custom_components.adjustable_bed.beds.dreamsense.flexx_motion import (
+                FlexxMotionController,
+            )
+
+            assert isinstance(left.capability_controller, FlexxMotionController)
+            assert left.capability_controller.profile.product == "PB450"
         if bed_type == "thrivesleep":
             from custom_components.adjustable_bed.beds.thrivesleep.controller import (
                 ThriveSleepController,
