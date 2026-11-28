@@ -299,7 +299,7 @@ _BY_BED_TYPE: Final[dict[str, SideProfile]] = {
     "l2motion": SideProfile("L2 Motion"),
     BED_TYPE_ERGOBED: SideProfile("ErgoBed Control"),
     BED_TYPE_MOODBASE: SideProfile("MoodBase"),
-    BED_TYPE_VIVASLEEP: SideProfile("VivaSleep", frozenset({CONF_BLE_DEVICE_NAME})),
+    BED_TYPE_VIVASLEEP: SideProfile("VivaSleep"),
     BED_TYPE_MOTOMOTION: SideProfile("MotoMotion"),
     BED_TYPE_SMART_BASE: SideProfile("Smart Base (200IV2 / A8RM)"),
     BED_TYPE_PURELY_SLEEP: SideProfile("Purely Sleep", variant_owned=True),
