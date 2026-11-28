@@ -1,0 +1,497 @@
+[
+  {
+    "id": "V001",
+    "protocol": "P1",
+    "kind": "packet",
+    "action": "FlatPreset",
+    "inputs": {
+      "payload": [
+        0,
+        0,
+        0,
+        8
+      ],
+      "custom": false
+    },
+    "expected_bytes": "e5fe1600000008fe",
+    "evidence": [
+      "work/smali/base/smali_classes2/com/a65apps/ergomotionsdk/data/mapper/CommandMapper.smali:113-172",
+      "work/smali/base/smali_classes2/com/a65apps/ergomotionsdk/data/mapper/CommandMapper.smali:815-870"
+    ],
+    "origin": "Expected literals independently transcribed from shipped smali constants and checksum; no hardware capture. SDK-only rows are builder vectors, not proof of an app UI action."
+  },
+  {
+    "id": "V002",
+    "protocol": "P1",
+    "kind": "packet",
+    "action": "LiftHead",
+    "inputs": {
+      "payload": [
+        1,
+        0,
+        0,
+        0
+      ],
+      "custom": false
+    },
+    "expected_bytes": "e5fe160100000005",
+    "evidence": [
+      "work/smali/base/smali_classes2/com/a65apps/ergomotionsdk/data/mapper/CommandMapper.smali:175-199",
+      "work/smali/base/smali_classes2/com/a65apps/ergomotionsdk/data/mapper/CommandMapper.smali:815-870"
+    ],
+    "origin": "Expected literals independently transcribed from shipped smali constants and checksum; no hardware capture. SDK-only rows are builder vectors, not proof of an app UI action."
+  },
+  {
+    "id": "V003",
+    "protocol": "P1",
+    "kind": "packet",
+    "action": "LowerHead",
+    "inputs": {
+      "payload": [
+        2,
+        0,
+        0,
+        0
+      ],
+      "custom": false
+    },
+    "expected_bytes": "e5fe160200000004",
+    "evidence": [
+      "work/smali/base/smali_classes2/com/a65apps/ergomotionsdk/data/mapper/CommandMapper.smali:202-226",
+      "work/smali/base/smali_classes2/com/a65apps/ergomotionsdk/data/mapper/CommandMapper.smali:815-870"
+    ],
+    "origin": "Expected literals independently transcribed from shipped smali constants and checksum; no hardware capture. SDK-only rows are builder vectors, not proof of an app UI action."
+  },
+  {
+    "id": "V004",
+    "protocol": "P1",
+    "kind": "packet",
+    "action": "HeadUpPreset",
+    "inputs": {
+      "payload": [
+        0,
+        128,
+        0,
+        0
+      ],
+      "custom": false
+    },
+    "expected_bytes": "e5fe160080000086",
+    "evidence": [
+      "work/smali/base/smali_classes2/com/a65apps/ergomotionsdk/data/mapper/CommandMapper.smali:229-259",
+      "work/smali/base/smali_classes2/com/a65apps/ergomotionsdk/data/mapper/CommandMapper.smali:815-870"
+    ],
+    "origin": "Expected literals independently transcribed from shipped smali constants and checksum; no hardware capture. SDK-only rows are builder vectors, not proof of an app UI action."
+  },
+  {
+    "id": "V005",
+    "protocol": "P1",
+    "kind": "packet",
+    "action": "LoungePreset",
+    "inputs": {
+      "payload": [
+        0,
+        32,
+        0,
+        0
+      ],
+      "custom": false
+    },
+    "expected_bytes": "e5fe1600200000e6",
+    "evidence": [
+      "work/smali/base/smali_classes2/com/a65apps/ergomotionsdk/data/mapper/CommandMapper.smali:262-292",
+      "work/smali/base/smali_classes2/com/a65apps/ergomotionsdk/data/mapper/CommandMapper.smali:815-870"
+    ],
+    "origin": "Expected literals independently transcribed from shipped smali constants and checksum; no hardware capture. SDK-only rows are builder vectors, not proof of an app UI action."
+  },
+  {
+    "id": "V006",
+    "protocol": "P1",
+    "kind": "packet",
+    "action": "TVPCPreset",
+    "inputs": {
+      "payload": [
+        0,
+        64,
+        0,
+        0
+      ],
+      "custom": false
+    },
+    "expected_bytes": "e5fe1600400000c6",
+    "evidence": [
+      "work/smali/base/smali_classes2/com/a65apps/ergomotionsdk/data/mapper/CommandMapper.smali:295-325",
+      "work/smali/base/smali_classes2/com/a65apps/ergomotionsdk/data/mapper/CommandMapper.smali:815-870"
+    ],
+    "origin": "Expected literals independently transcribed from shipped smali constants and checksum; no hardware capture. SDK-only rows are builder vectors, not proof of an app UI action."
+  },
+  {
+    "id": "V007",
+    "protocol": "P1",
+    "kind": "packet",
+    "action": "ZeroGPreset",
+    "inputs": {
+      "payload": [
+        0,
+        16,
+        0,
+        0
+      ],
+      "custom": false
+    },
+    "expected_bytes": "e5fe1600100000f6",
+    "evidence": [
+      "work/smali/base/smali_classes2/com/a65apps/ergomotionsdk/data/mapper/CommandMapper.smali:328-358",
+      "work/smali/base/smali_classes2/com/a65apps/ergomotionsdk/data/mapper/CommandMapper.smali:815-870"
+    ],
+    "origin": "Expected literals independently transcribed from shipped smali constants and checksum; no hardware capture. SDK-only rows are builder vectors, not proof of an app UI action."
+  },
+  {
+    "id": "V008",
+    "protocol": "P1",
+    "kind": "packet",
+    "action": "LiftFoot",
+    "inputs": {
+      "payload": [
+        4,
+        0,
+        0,
+        0
+      ],
+      "custom": false
+    },
+    "expected_bytes": "e5fe160400000002",
+    "evidence": [
+      "work/smali/base/smali_classes2/com/a65apps/ergomotionsdk/data/mapper/CommandMapper.smali:361-385",
+      "work/smali/base/smali_classes2/com/a65apps/ergomotionsdk/data/mapper/CommandMapper.smali:815-870"
+    ],
+    "origin": "Expected literals independently transcribed from shipped smali constants and checksum; no hardware capture. SDK-only rows are builder vectors, not proof of an app UI action."
+  },
+  {
+    "id": "V009",
+    "protocol": "P1",
+    "kind": "packet",
+    "action": "LowerFoot",
+    "inputs": {
+      "payload": [
+        8,
+        0,
+        0,
+        0
+      ],
+      "custom": false
+    },
+    "expected_bytes": "e5fe1608000000fe",
+    "evidence": [
+      "work/smali/base/smali_classes2/com/a65apps/ergomotionsdk/data/mapper/CommandMapper.smali:388-412",
+      "work/smali/base/smali_classes2/com/a65apps/ergomotionsdk/data/mapper/CommandMapper.smali:815-870"
+    ],
+    "origin": "Expected literals independently transcribed from shipped smali constants and checksum; no hardware capture. SDK-only rows are builder vectors, not proof of an app UI action."
+  },
+  {
+    "id": "V010",
+    "protocol": "P1",
+    "kind": "packet",
+    "action": "MassageHeadAdd",
+    "inputs": {
+      "payload": [
+        0,
+        8,
+        0,
+        0
+      ],
+      "custom": false
+    },
+    "expected_bytes": "e5fe1600080000fe",
+    "evidence": [
+      "work/smali/base/smali_classes2/com/a65apps/ergomotionsdk/data/mapper/CommandMapper.smali:415-439",
+      "work/smali/base/smali_classes2/com/a65apps/ergomotionsdk/data/mapper/CommandMapper.smali:815-870"
+    ],
+    "origin": "Expected literals independently transcribed from shipped smali constants and checksum; no hardware capture. SDK-only rows are builder vectors, not proof of an app UI action."
+  },
+  {
+    "id": "V011",
+    "protocol": "P1",
+    "kind": "packet",
+    "action": "MassageHeadMin",
+    "inputs": {
+      "payload": [
+        0,
+        0,
+        128,
+        0
+      ],
+      "custom": false
+    },
+    "expected_bytes": "e5fe160000800086",
+    "evidence": [
+      "work/smali/base/smali_classes2/com/a65apps/ergomotionsdk/data/mapper/CommandMapper.smali:442-470",
+      "work/smali/base/smali_classes2/com/a65apps/ergomotionsdk/data/mapper/CommandMapper.smali:815-870"
+    ],
+    "origin": "Expected literals independently transcribed from shipped smali constants and checksum; no hardware capture. SDK-only rows are builder vectors, not proof of an app UI action."
+  },
+  {
+    "id": "V012",
+    "protocol": "P1",
+    "kind": "packet",
+    "action": "MassageFootAdd",
+    "inputs": {
+      "payload": [
+        0,
+        4,
+        0,
+        0
+      ],
+      "custom": false
+    },
+    "expected_bytes": "e5fe160004000002",
+    "evidence": [
+      "work/smali/base/smali_classes2/com/a65apps/ergomotionsdk/data/mapper/CommandMapper.smali:473-497",
+      "work/smali/base/smali_classes2/com/a65apps/ergomotionsdk/data/mapper/CommandMapper.smali:815-870"
+    ],
+    "origin": "Expected literals independently transcribed from shipped smali constants and checksum; no hardware capture. SDK-only rows are builder vectors, not proof of an app UI action."
+  },
+  {
+    "id": "V013",
+    "protocol": "P1",
+    "kind": "packet",
+    "action": "MassageFootMin",
+    "inputs": {
+      "payload": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "custom": false
+    },
+    "expected_bytes": "e5fe160000000105",
+    "evidence": [
+      "work/smali/base/smali_classes2/com/a65apps/ergomotionsdk/data/mapper/CommandMapper.smali:500-524",
+      "work/smali/base/smali_classes2/com/a65apps/ergomotionsdk/data/mapper/CommandMapper.smali:815-870"
+    ],
+    "origin": "Expected literals independently transcribed from shipped smali constants and checksum; no hardware capture. SDK-only rows are builder vectors, not proof of an app UI action."
+  },
+  {
+    "id": "V014",
+    "protocol": "P1",
+    "kind": "packet",
+    "action": "MassageHeadAndFootOn",
+    "inputs": {
+      "payload": [
+        0,
+        1,
+        0,
+        0
+      ],
+      "custom": false
+    },
+    "expected_bytes": "e5fe160001000005",
+    "evidence": [
+      "work/smali/base/smali_classes2/com/a65apps/ergomotionsdk/data/mapper/CommandMapper.smali:527-551",
+      "work/smali/base/smali_classes2/com/a65apps/ergomotionsdk/data/mapper/CommandMapper.smali:815-870"
+    ],
+    "origin": "Expected literals independently transcribed from shipped smali constants and checksum; no hardware capture. SDK-only rows are builder vectors, not proof of an app UI action."
+  },
+  {
+    "id": "V015",
+    "protocol": "P1",
+    "kind": "packet",
+    "action": "MassageTimer",
+    "inputs": {
+      "payload": [
+        0,
+        2,
+        0,
+        0
+      ],
+      "custom": false
+    },
+    "expected_bytes": "e5fe160002000004",
+    "evidence": [
+      "work/smali/base/smali_classes2/com/a65apps/ergomotionsdk/data/mapper/CommandMapper.smali:554-578",
+      "work/smali/base/smali_classes2/com/a65apps/ergomotionsdk/data/mapper/CommandMapper.smali:815-870"
+    ],
+    "origin": "Expected literals independently transcribed from shipped smali constants and checksum; no hardware capture. SDK-only rows are builder vectors, not proof of an app UI action."
+  },
+  {
+    "id": "V016",
+    "protocol": "P1",
+    "kind": "packet",
+    "action": "LightToggle",
+    "inputs": {
+      "payload": [
+        0,
+        0,
+        2,
+        0
+      ],
+      "custom": false
+    },
+    "expected_bytes": "e5fe160000020004",
+    "evidence": [
+      "work/smali/base/smali_classes2/com/a65apps/ergomotionsdk/data/mapper/CommandMapper.smali:581-605",
+      "work/smali/base/smali_classes2/com/a65apps/ergomotionsdk/data/mapper/CommandMapper.smali:815-870"
+    ],
+    "origin": "Expected literals independently transcribed from shipped smali constants and checksum; no hardware capture. SDK-only rows are builder vectors, not proof of an app UI action."
+  },
+  {
+    "id": "V017",
+    "protocol": "P1",
+    "kind": "packet",
+    "action": "CustomPreset flat UI",
+    "inputs": {
+      "payload": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "custom": true
+    },
+    "expected_bytes": "e5fe170000000005",
+    "evidence": [
+      "work/smali/base/smali_classes2/com/a65apps/ergomotionsdk/data/mapper/CommandMapper.smali:701-750",
+      "work/smali/base/smali_classes2/com/a65apps/ergomotionsdk/data/mapper/CommandMapper.smali:815-870"
+    ],
+    "origin": "Expected literals independently transcribed from shipped smali constants and checksum; no hardware capture. SDK-only rows are builder vectors, not proof of an app UI action."
+  },
+  {
+    "id": "V018",
+    "protocol": "P1",
+    "kind": "packet",
+    "action": "CustomPreset (21,37)",
+    "inputs": {
+      "payload": [
+        0,
+        21,
+        0,
+        37
+      ],
+      "custom": true
+    },
+    "expected_bytes": "e5fe1700150025cb",
+    "evidence": [
+      "work/smali/base/smali_classes2/com/a65apps/ergomotionsdk/data/mapper/CommandMapper.smali:701-750",
+      "work/smali/base/smali_classes2/com/a65apps/ergomotionsdk/data/mapper/CommandMapper.smali:815-870"
+    ],
+    "origin": "Expected literals independently transcribed from shipped smali constants and checksum; no hardware capture. SDK-only rows are builder vectors, not proof of an app UI action."
+  },
+  {
+    "id": "V019",
+    "protocol": "P1",
+    "kind": "packet",
+    "action": "CustomPreset (68,44)",
+    "inputs": {
+      "payload": [
+        0,
+        68,
+        0,
+        44
+      ],
+      "custom": true
+    },
+    "expected_bytes": "e5fe170044002c95",
+    "evidence": [
+      "work/smali/base/smali_classes2/com/a65apps/ergomotionsdk/data/mapper/CommandMapper.smali:701-750",
+      "work/smali/base/smali_classes2/com/a65apps/ergomotionsdk/data/mapper/CommandMapper.smali:815-870"
+    ],
+    "origin": "Expected literals independently transcribed from shipped smali constants and checksum; no hardware capture. SDK-only rows are builder vectors, not proof of an app UI action."
+  },
+  {
+    "id": "V020",
+    "protocol": "P1",
+    "kind": "packet",
+    "action": "CustomPreset (100,36)",
+    "inputs": {
+      "payload": [
+        0,
+        100,
+        0,
+        36
+      ],
+      "custom": true
+    },
+    "expected_bytes": "e5fe17006400247d",
+    "evidence": [
+      "work/smali/base/smali_classes2/com/a65apps/ergomotionsdk/data/mapper/CommandMapper.smali:701-750",
+      "work/smali/base/smali_classes2/com/a65apps/ergomotionsdk/data/mapper/CommandMapper.smali:815-870"
+    ],
+    "origin": "Expected literals independently transcribed from shipped smali constants and checksum; no hardware capture. SDK-only rows are builder vectors, not proof of an app UI action."
+  },
+  {
+    "id": "V021",
+    "protocol": "P1",
+    "kind": "parser",
+    "action": "standard-state",
+    "inputs": {
+      "selected": null
+    },
+    "expected_bytes": "0000000044002c030634120000400000",
+    "expected_state": {
+      "variant": "ERGOMOTION_633",
+      "head": 68,
+      "foot": 44,
+      "head_massage": 3,
+      "foot_massage": 6,
+      "real_head_massage": 3,
+      "real_foot_massage": 6,
+      "light": true,
+      "timer_ms": 46600
+    },
+    "evidence": [
+      "work/smali/base/smali_classes2/com/a65apps/ergomotionsdk/data/mapper/StateMapper.smali:78-410"
+    ],
+    "origin": "Synthetic deterministic notification input exercising recovered field offsets; not an observed valid device frame and no framing/checksum validity claimed."
+  },
+  {
+    "id": "V022",
+    "protocol": "P1",
+    "kind": "parser",
+    "action": "signed-and-clamped",
+    "inputs": {
+      "selected": "ERGOMOTION_180_x_200"
+    },
+    "expected_bytes": "00000000ff0064070201000000c00000",
+    "expected_state": {
+      "variant": "ERGOMOTION_180_x_200",
+      "head": 0,
+      "foot": 22,
+      "head_massage": 0,
+      "foot_massage": 0,
+      "real_head_massage": 7,
+      "real_foot_massage": 2,
+      "light": false,
+      "timer_ms": 10
+    },
+    "evidence": [
+      "work/smali/base/smali_classes2/com/a65apps/ergomotionsdk/data/mapper/StateMapper.smali:78-410"
+    ],
+    "origin": "Synthetic deterministic notification input exercising recovered field offsets; not an observed valid device frame and no framing/checksum validity claimed."
+  },
+  {
+    "id": "V023",
+    "protocol": "P1",
+    "kind": "parser",
+    "action": "element-auto",
+    "inputs": {
+      "selected": null
+    },
+    "expected_bytes": "00000000640024010300010000004000000000",
+    "expected_state": {
+      "variant": "ERGOMOTION_ELEMENT",
+      "head": 100,
+      "foot": 36,
+      "head_massage": 1,
+      "foot_massage": 2,
+      "real_head_massage": 1,
+      "real_foot_massage": 3,
+      "light": true,
+      "timer_ms": 10
+    },
+    "evidence": [
+      "work/smali/base/smali_classes2/com/a65apps/ergomotionsdk/data/mapper/StateMapper.smali:78-410"
+    ],
+    "origin": "Synthetic deterministic notification input exercising recovered field offsets; not an observed valid device frame and no framing/checksum validity claimed."
+  }
+]

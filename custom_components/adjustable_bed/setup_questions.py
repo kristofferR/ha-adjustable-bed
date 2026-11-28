@@ -290,6 +290,7 @@ from .const import (
     VMATBASIC_PROFILES,
 )
 from .import_executor import async_import_modules
+from .profiles import askona as askona_profiles
 from .profiles import enso2 as enso2_profiles
 from .profiles import jiecang as jiecang_profiles
 from .profiles import langjue as langjue_app
@@ -3078,6 +3079,11 @@ SETUP_PROFILES: Final[dict[str, SetupProfile]] = {
             "0": "Element", "1": "Ascent", "2": "Apex",
         }, "0"),),
         title=lambda _data: "Sealy Posturematic",
+    ),
+    "askona": SetupProfile(
+        owns={CONF_MOTOR_COUNT: 2, CONF_HAS_MASSAGE: True, CONF_DISABLE_ANGLE_SENSING: False},
+        questions=(Question(CONF_PROTOCOL_VARIANT, askona_profiles.MODEL_CHOICES, REQUIRED),),
+        title=lambda _data: "Askona",
     ),
     "enso": SetupProfile(
         owns={CONF_MOTOR_COUNT: SET_BY_PROFILE, CONF_HAS_MASSAGE: True,

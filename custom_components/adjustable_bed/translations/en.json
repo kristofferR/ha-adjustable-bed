@@ -12675,6 +12675,12 @@
     "konfurt_control": {"message": "Choose a control offered by this KONFURT layout and a hold of 1 to 60000 milliseconds."},
     "konfurt_alarm": {"message": "KONFURT sets an alarm for today's weekday only. Choose no wake action, massage or Memory 1."},
     "konfurt_massage_unknown": {"message": "Wait for a massage status report from this connection before turning massage on or off. You can use Toggle massage without a report."},
+    "askona_model_required": {"message": "Choose the Askona bed model before connecting"},
+    "askona_session_changed": {"message": "The bed connection changed. Reconnect and try again"},
+    "askona_gatt_missing": {"message": "The Askona write or notification characteristic is missing"},
+    "askona_movement_unavailable": {"message": "This Askona movement has no verified safe stopping behavior"},
+    "askona_feedback_required": {"message": "Wait for a new bed status report before changing this setting"},
+    "askona_target_invalid": {"message": "Choose a whole number within the selected model’s range"},
     "dreamotion_smart_refresh": {
       "message": "Refresh {setting} settings, then try again."
     },
