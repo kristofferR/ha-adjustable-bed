@@ -140,6 +140,9 @@
  "binary_sensor:linak_position_feedback_fault": {
   "card_section": "hidden"
  },
+ "binary_sensor:mattresspoint_alarm": {
+  "card_section": "utility"
+ },
  "binary_sensor:memory_save_response_observed": {
   "card_section": "utility"
  },
@@ -1789,6 +1792,18 @@
  },
  "button:massage_wave_previous": {
   "card_section": "massage"
+ },
+ "button:mattresspoint_disable_alarm": {
+  "card_section": "utility"
+ },
+ "button:mattresspoint_query_alarm": {
+  "card_section": "utility"
+ },
+ "button:mattresspoint_query_massage": {
+  "card_section": "utility"
+ },
+ "button:mattresspoint_release": {
+  "card_section": "hidden"
  },
  "button:maxprime_massage_timer_toggle": {
   "card_section": "massage"
@@ -6526,6 +6541,9 @@
   "card_section": "utility"
  },
  "switch:massage": {
+  "card_section": "massage"
+ },
+ "switch:mattresspoint_massage": {
   "card_section": "massage"
  },
  "switch:moodbase_light_timer_enabled": {

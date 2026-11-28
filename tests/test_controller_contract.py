@@ -169,6 +169,8 @@ def _protocol_variant_for_bed_type(bed_type: str) -> str | None:
         return "SN300"
     if bed_type == "muuegm":
         return "ABF03"
+    if bed_type == "mattresspoint":
+        return "BOX2422"
     if bed_type == "dreamsense":
         return "blue"
     if bed_type == "saatva":

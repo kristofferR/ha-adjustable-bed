@@ -285,6 +285,7 @@ _BED_TRAITS: Final[dict[str, BedTraits]] = {
     BED_TYPE_N32_MOTION_BED: replace(_NO_ANGLES_SCOPED, owns_device_info_reads=True),
     BED_TYPE_SHUDA: replace(_NO_ANGLES, owns_device_info_reads=True, connection_timeout=5),
     BED_TYPE_RESIDENT: replace(_NO_ANGLES_SCOPED, owns_device_info_reads=True),
+    "mattresspoint": replace(_NO_ANGLES_SCOPED, owns_device_info_reads=True, connection_timeout=5),
     "sleeptime": replace(_NO_ANGLES_SCOPED, owns_device_info_reads=True, connection_timeout=5),
     "intellibed": replace(_NO_ANGLES_SCOPED, owns_device_info_reads=True),
     "powersbedding": replace(_NO_ANGLES_SCOPED, owns_device_info_reads=True),
