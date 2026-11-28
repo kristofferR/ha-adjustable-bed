@@ -61,6 +61,7 @@ if TYPE_CHECKING:
     from .goodvibe.controller import GoodVibeController as GoodVibeController
     from .hestia.controller import HestiaController as HestiaController
     from .hjbed.controller import HJBedController as HJBedController
+    from .ifit.controller import IfitController as IfitController
     from .innova import InnovaController as InnovaController
     from .instant_comfort.controller import InstantComfortBase as InstantComfortBase
     from .isleep import IsleepController as IsleepController

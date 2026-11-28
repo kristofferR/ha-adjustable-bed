@@ -633,6 +633,7 @@ def _rests_on_shared_service(
 # Display names for bed types shown in the UI selector. The automatic
 # Leggett & Platt setup is not offered to a new bed, so it is not listed here.
 BED_TYPE_DISPLAY_NAMES: dict[str, str] = {
+    "ifit": "iFit app (manual selection)",
     "topcare": "TOP CARE app",
     "dorsal": "Dorsal app / Roomi",
     "berun": "BERUN app",
