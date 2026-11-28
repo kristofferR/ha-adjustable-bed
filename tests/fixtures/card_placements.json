@@ -1464,6 +1464,47 @@
  "button:jobs_wave_4": {
   "card_section": "massage"
  },
+ "button:junasleep_foot_massage_down": {
+  "card_section": "massage"
+ },
+ "button:junasleep_foot_massage_up": {
+  "card_section": "massage"
+ },
+ "button:junasleep_head_massage_down": {
+  "card_section": "massage"
+ },
+ "button:junasleep_head_massage_up": {
+  "card_section": "massage"
+ },
+ "button:junasleep_lumbar_down": {
+  "card_section": "motors",
+  "card_role": "down",
+  "card_motor": "junasleep_lumbar"
+ },
+ "button:junasleep_lumbar_up": {
+  "card_section": "motors",
+  "card_role": "up",
+  "card_motor": "junasleep_lumbar"
+ },
+ "button:junasleep_massage_timer_button": {
+  "card_section": "massage"
+ },
+ "button:junasleep_query": {
+  "card_section": "utility"
+ },
+ "button:junasleep_tilt_down": {
+  "card_section": "motors",
+  "card_role": "down",
+  "card_motor": "junasleep_tilt"
+ },
+ "button:junasleep_tilt_up": {
+  "card_section": "motors",
+  "card_role": "up",
+  "card_motor": "junasleep_tilt"
+ },
+ "button:junasleep_total_massage_button": {
+  "card_section": "massage"
+ },
  "button:keeson_back_down": {
   "card_section": "motors",
   "card_role": "down",
@@ -3724,6 +3765,14 @@
   "card_section": "motors",
   "card_motor": "hjbed_sofa_travel"
  },
+ "cover:junasleep_lumbar": {
+  "card_section": "motors",
+  "card_motor": "junasleep_lumbar"
+ },
+ "cover:junasleep_tilt": {
+  "card_section": "motors",
+  "card_motor": "junasleep_tilt"
+ },
  "cover:keeson_back": {
   "card_section": "motors",
   "card_motor": "keeson_back"
@@ -5607,6 +5656,10 @@
  },
  "sensor:jerome_adjustable_base_clock": {
   "card_section": "hidden"
+ },
+ "sensor:junasleep_timer": {
+  "card_section": "massage",
+  "card_role": "timer"
  },
  "sensor:kingkoil_timer_ui": {
   "card_section": "massage"

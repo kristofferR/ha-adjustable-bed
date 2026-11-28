@@ -1,0 +1,893 @@
+{
+  "commands": [
+    {
+      "id": "P1-flat",
+      "protocol": "P1",
+      "action": "flat",
+      "ui": "linear_flat",
+      "inputs": [
+        8,
+        0,
+        0,
+        0
+      ],
+      "expected_bytes": "04 02 08 00 00 00",
+      "kind": "tap",
+      "evidence": [
+        "work/jadx/sources/com/keeson/junasleep/fragment/RemoteAFragment.java:294",
+        "work/jadx/sources/com/keeson/junasleep/fragment/RemoteAFragment.java:173-227",
+        "work/jadx/sources/com/keeson/junasleep/utils/HexDump.java:132-170"
+      ]
+    },
+    {
+      "id": "P1-light_button",
+      "protocol": "P1",
+      "action": "light_button",
+      "ui": "linear_light",
+      "inputs": [
+        0,
+        2,
+        0,
+        0
+      ],
+      "expected_bytes": "04 02 00 02 00 00",
+      "kind": "tap",
+      "evidence": [
+        "work/jadx/sources/com/keeson/junasleep/fragment/RemoteAFragment.java:297",
+        "work/jadx/sources/com/keeson/junasleep/fragment/RemoteAFragment.java:173-227",
+        "work/jadx/sources/com/keeson/junasleep/utils/HexDump.java:132-170"
+      ]
+    },
+    {
+      "id": "P1-zero_g",
+      "protocol": "P1",
+      "action": "zero_g",
+      "ui": "linear_zero_g",
+      "inputs": [
+        0,
+        0,
+        16,
+        0
+      ],
+      "expected_bytes": "04 02 00 00 10 00",
+      "kind": "tap",
+      "evidence": [
+        "work/jadx/sources/com/keeson/junasleep/fragment/RemoteAFragment.java:300",
+        "work/jadx/sources/com/keeson/junasleep/fragment/RemoteAFragment.java:173-227",
+        "work/jadx/sources/com/keeson/junasleep/utils/HexDump.java:132-170"
+      ]
+    },
+    {
+      "id": "P1-foot_massage_down",
+      "protocol": "P1",
+      "action": "foot_massage_down",
+      "ui": "v_foot_massage_down",
+      "inputs": [
+        1,
+        0,
+        0,
+        0
+      ],
+      "expected_bytes": "04 02 01 00 00 00",
+      "kind": "tap",
+      "evidence": [
+        "work/jadx/sources/com/keeson/junasleep/fragment/RemoteAFragment.java:303",
+        "work/jadx/sources/com/keeson/junasleep/fragment/RemoteAFragment.java:173-227",
+        "work/jadx/sources/com/keeson/junasleep/utils/HexDump.java:132-170"
+      ]
+    },
+    {
+      "id": "P1-foot_massage_up",
+      "protocol": "P1",
+      "action": "foot_massage_up",
+      "ui": "v_foot_massage_up",
+      "inputs": [
+        0,
+        0,
+        4,
+        0
+      ],
+      "expected_bytes": "04 02 00 00 04 00",
+      "kind": "tap",
+      "evidence": [
+        "work/jadx/sources/com/keeson/junasleep/fragment/RemoteAFragment.java:306",
+        "work/jadx/sources/com/keeson/junasleep/fragment/RemoteAFragment.java:173-227",
+        "work/jadx/sources/com/keeson/junasleep/utils/HexDump.java:132-170"
+      ]
+    },
+    {
+      "id": "P1-head_massage_down",
+      "protocol": "P1",
+      "action": "head_massage_down",
+      "ui": "v_head_massage_down",
+      "inputs": [
+        0,
+        128,
+        0,
+        0
+      ],
+      "expected_bytes": "04 02 00 80 00 00",
+      "kind": "tap",
+      "evidence": [
+        "work/jadx/sources/com/keeson/junasleep/fragment/RemoteAFragment.java:309",
+        "work/jadx/sources/com/keeson/junasleep/fragment/RemoteAFragment.java:173-227",
+        "work/jadx/sources/com/keeson/junasleep/utils/HexDump.java:132-170"
+      ]
+    },
+    {
+      "id": "P1-head_massage_up",
+      "protocol": "P1",
+      "action": "head_massage_up",
+      "ui": "v_head_massage_up",
+      "inputs": [
+        0,
+        0,
+        8,
+        0
+      ],
+      "expected_bytes": "04 02 00 00 08 00",
+      "kind": "tap",
+      "evidence": [
+        "work/jadx/sources/com/keeson/junasleep/fragment/RemoteAFragment.java:312",
+        "work/jadx/sources/com/keeson/junasleep/fragment/RemoteAFragment.java:173-227",
+        "work/jadx/sources/com/keeson/junasleep/utils/HexDump.java:132-170"
+      ]
+    },
+    {
+      "id": "P1-massage_timer_button",
+      "protocol": "P1",
+      "action": "massage_timer_button",
+      "ui": "v_massage_time",
+      "inputs": [
+        0,
+        0,
+        2,
+        0
+      ],
+      "expected_bytes": "04 02 00 00 02 00",
+      "kind": "tap",
+      "evidence": [
+        "work/jadx/sources/com/keeson/junasleep/fragment/RemoteAFragment.java:315",
+        "work/jadx/sources/com/keeson/junasleep/fragment/RemoteAFragment.java:173-227",
+        "work/jadx/sources/com/keeson/junasleep/utils/HexDump.java:132-170"
+      ]
+    },
+    {
+      "id": "P1-total_massage_button",
+      "protocol": "P1",
+      "action": "total_massage_button",
+      "ui": "v_total_massage",
+      "inputs": [
+        0,
+        0,
+        1,
+        0
+      ],
+      "expected_bytes": "04 02 00 00 01 00",
+      "kind": "tap",
+      "evidence": [
+        "work/jadx/sources/com/keeson/junasleep/fragment/RemoteAFragment.java:318",
+        "work/jadx/sources/com/keeson/junasleep/fragment/RemoteAFragment.java:173-227",
+        "work/jadx/sources/com/keeson/junasleep/utils/HexDump.java:132-170"
+      ]
+    },
+    {
+      "id": "P1-position_I",
+      "protocol": "P1",
+      "action": "position_I",
+      "ui": "view_position_one",
+      "inputs": [
+        0,
+        0,
+        32,
+        0
+      ],
+      "expected_bytes": "04 02 00 00 20 00",
+      "kind": "tap",
+      "evidence": [
+        "work/jadx/sources/com/keeson/junasleep/fragment/RemoteAFragment.java:321",
+        "work/jadx/sources/com/keeson/junasleep/fragment/RemoteAFragment.java:173-227",
+        "work/jadx/sources/com/keeson/junasleep/utils/HexDump.java:132-170"
+      ]
+    },
+    {
+      "id": "P1-position_II",
+      "protocol": "P1",
+      "action": "position_II",
+      "ui": "view_position_two",
+      "inputs": [
+        0,
+        0,
+        64,
+        0
+      ],
+      "expected_bytes": "04 02 00 00 40 00",
+      "kind": "tap",
+      "evidence": [
+        "work/jadx/sources/com/keeson/junasleep/fragment/RemoteAFragment.java:324",
+        "work/jadx/sources/com/keeson/junasleep/fragment/RemoteAFragment.java:173-227",
+        "work/jadx/sources/com/keeson/junasleep/utils/HexDump.java:132-170"
+      ]
+    },
+    {
+      "id": "P1-foot_down",
+      "protocol": "P1",
+      "action": "foot_down",
+      "ui": "view_foot_down",
+      "inputs": [
+        0,
+        0,
+        0,
+        8
+      ],
+      "expected_bytes": "04 02 00 00 00 08",
+      "kind": "held",
+      "evidence": [
+        "work/jadx/sources/com/keeson/junasleep/fragment/RemoteAFragment.java:336",
+        "work/jadx/sources/com/keeson/junasleep/fragment/RemoteAFragment.java:173-227",
+        "work/jadx/sources/com/keeson/junasleep/utils/HexDump.java:132-170"
+      ]
+    },
+    {
+      "id": "P1-foot_up",
+      "protocol": "P1",
+      "action": "foot_up",
+      "ui": "view_foot_up",
+      "inputs": [
+        0,
+        0,
+        0,
+        4
+      ],
+      "expected_bytes": "04 02 00 00 00 04",
+      "kind": "held",
+      "evidence": [
+        "work/jadx/sources/com/keeson/junasleep/fragment/RemoteAFragment.java:340",
+        "work/jadx/sources/com/keeson/junasleep/fragment/RemoteAFragment.java:173-227",
+        "work/jadx/sources/com/keeson/junasleep/utils/HexDump.java:132-170"
+      ]
+    },
+    {
+      "id": "P1-head_down",
+      "protocol": "P1",
+      "action": "head_down",
+      "ui": "view_head_down",
+      "inputs": [
+        0,
+        0,
+        0,
+        2
+      ],
+      "expected_bytes": "04 02 00 00 00 02",
+      "kind": "held",
+      "evidence": [
+        "work/jadx/sources/com/keeson/junasleep/fragment/RemoteAFragment.java:344",
+        "work/jadx/sources/com/keeson/junasleep/fragment/RemoteAFragment.java:173-227",
+        "work/jadx/sources/com/keeson/junasleep/utils/HexDump.java:132-170"
+      ]
+    },
+    {
+      "id": "P1-head_up",
+      "protocol": "P1",
+      "action": "head_up",
+      "ui": "view_head_up",
+      "inputs": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "expected_bytes": "04 02 00 00 00 01",
+      "kind": "held",
+      "evidence": [
+        "work/jadx/sources/com/keeson/junasleep/fragment/RemoteAFragment.java:348",
+        "work/jadx/sources/com/keeson/junasleep/fragment/RemoteAFragment.java:173-227",
+        "work/jadx/sources/com/keeson/junasleep/utils/HexDump.java:132-170"
+      ]
+    },
+    {
+      "id": "P1-status_query",
+      "protocol": "P1",
+      "action": "status_query",
+      "ui": "initData/circleQuery/queryStatus",
+      "inputs": {},
+      "expected_bytes": "00 b0",
+      "kind": "query",
+      "evidence": [
+        "work/jadx/sources/com/keeson/junasleep/fragment/RemoteAFragment.java:121-170"
+      ]
+    },
+    {
+      "id": "P2-flat",
+      "protocol": "P2",
+      "action": "flat",
+      "ui": "view_flat",
+      "inputs": [
+        0,
+        0,
+        0,
+        8,
+        254
+      ],
+      "expected_bytes": "e5 fe 16 00 00 00 08 fe",
+      "kind": "tap",
+      "evidence": [
+        "work/jadx/sources/com/keeson/junasleep/fragment/RemoteBFragment.java:301",
+        "work/jadx/sources/com/keeson/junasleep/fragment/RemoteBFragment.java:145-198",
+        "work/jadx/sources/com/keeson/junasleep/utils/HexDump.java:132-170"
+      ]
+    },
+    {
+      "id": "P2-zero_g",
+      "protocol": "P2",
+      "action": "zero_g",
+      "ui": "view_zerog",
+      "inputs": [
+        0,
+        16,
+        0,
+        0,
+        246
+      ],
+      "expected_bytes": "e5 fe 16 00 10 00 00 f6",
+      "kind": "tap",
+      "evidence": [
+        "work/jadx/sources/com/keeson/junasleep/fragment/RemoteBFragment.java:304",
+        "work/jadx/sources/com/keeson/junasleep/fragment/RemoteBFragment.java:145-198",
+        "work/jadx/sources/com/keeson/junasleep/utils/HexDump.java:132-170"
+      ]
+    },
+    {
+      "id": "P2-position_I",
+      "protocol": "P2",
+      "action": "position_I",
+      "ui": "linear_position_one",
+      "inputs": [
+        0,
+        32,
+        0,
+        0,
+        230
+      ],
+      "expected_bytes": "e5 fe 16 00 20 00 00 e6",
+      "kind": "tap",
+      "evidence": [
+        "work/jadx/sources/com/keeson/junasleep/fragment/RemoteBFragment.java:309",
+        "work/jadx/sources/com/keeson/junasleep/fragment/RemoteBFragment.java:145-198",
+        "work/jadx/sources/com/keeson/junasleep/utils/HexDump.java:132-170"
+      ]
+    },
+    {
+      "id": "P2-position_II",
+      "protocol": "P2",
+      "action": "position_II",
+      "ui": "linear_position_two",
+      "inputs": [
+        0,
+        64,
+        0,
+        0,
+        198
+      ],
+      "expected_bytes": "e5 fe 16 00 40 00 00 c6",
+      "kind": "tap",
+      "evidence": [
+        "work/jadx/sources/com/keeson/junasleep/fragment/RemoteBFragment.java:312",
+        "work/jadx/sources/com/keeson/junasleep/fragment/RemoteBFragment.java:145-198",
+        "work/jadx/sources/com/keeson/junasleep/utils/HexDump.java:132-170"
+      ]
+    },
+    {
+      "id": "P2-foot_massage_down",
+      "protocol": "P2",
+      "action": "foot_massage_down",
+      "ui": "v_foot_massage_down",
+      "inputs": [
+        0,
+        0,
+        0,
+        1,
+        5
+      ],
+      "expected_bytes": "e5 fe 16 00 00 00 01 05",
+      "kind": "tap",
+      "evidence": [
+        "work/jadx/sources/com/keeson/junasleep/fragment/RemoteBFragment.java:317",
+        "work/jadx/sources/com/keeson/junasleep/fragment/RemoteBFragment.java:145-198",
+        "work/jadx/sources/com/keeson/junasleep/utils/HexDump.java:132-170"
+      ]
+    },
+    {
+      "id": "P2-foot_massage_up",
+      "protocol": "P2",
+      "action": "foot_massage_up",
+      "ui": "v_foot_massage_up",
+      "inputs": [
+        0,
+        4,
+        0,
+        0,
+        2
+      ],
+      "expected_bytes": "e5 fe 16 00 04 00 00 02",
+      "kind": "tap",
+      "evidence": [
+        "work/jadx/sources/com/keeson/junasleep/fragment/RemoteBFragment.java:320",
+        "work/jadx/sources/com/keeson/junasleep/fragment/RemoteBFragment.java:145-198",
+        "work/jadx/sources/com/keeson/junasleep/utils/HexDump.java:132-170"
+      ]
+    },
+    {
+      "id": "P2-head_massage_down",
+      "protocol": "P2",
+      "action": "head_massage_down",
+      "ui": "v_head_massage_down",
+      "inputs": [
+        0,
+        0,
+        128,
+        0,
+        134
+      ],
+      "expected_bytes": "e5 fe 16 00 00 80 00 86",
+      "kind": "tap",
+      "evidence": [
+        "work/jadx/sources/com/keeson/junasleep/fragment/RemoteBFragment.java:323",
+        "work/jadx/sources/com/keeson/junasleep/fragment/RemoteBFragment.java:145-198",
+        "work/jadx/sources/com/keeson/junasleep/utils/HexDump.java:132-170"
+      ]
+    },
+    {
+      "id": "P2-head_massage_up",
+      "protocol": "P2",
+      "action": "head_massage_up",
+      "ui": "v_head_massage_up",
+      "inputs": [
+        0,
+        8,
+        0,
+        0,
+        254
+      ],
+      "expected_bytes": "e5 fe 16 00 08 00 00 fe",
+      "kind": "tap",
+      "evidence": [
+        "work/jadx/sources/com/keeson/junasleep/fragment/RemoteBFragment.java:326",
+        "work/jadx/sources/com/keeson/junasleep/fragment/RemoteBFragment.java:145-198",
+        "work/jadx/sources/com/keeson/junasleep/utils/HexDump.java:132-170"
+      ]
+    },
+    {
+      "id": "P2-light_button",
+      "protocol": "P2",
+      "action": "light_button",
+      "ui": "v_light",
+      "inputs": [
+        0,
+        0,
+        2,
+        0,
+        4
+      ],
+      "expected_bytes": "e5 fe 16 00 00 02 00 04",
+      "kind": "tap",
+      "evidence": [
+        "work/jadx/sources/com/keeson/junasleep/fragment/RemoteBFragment.java:329",
+        "work/jadx/sources/com/keeson/junasleep/fragment/RemoteBFragment.java:145-198",
+        "work/jadx/sources/com/keeson/junasleep/utils/HexDump.java:132-170"
+      ]
+    },
+    {
+      "id": "P2-massage_timer_button",
+      "protocol": "P2",
+      "action": "massage_timer_button",
+      "ui": "v_massage_time",
+      "inputs": [
+        0,
+        2,
+        0,
+        0,
+        4
+      ],
+      "expected_bytes": "e5 fe 16 00 02 00 00 04",
+      "kind": "tap",
+      "evidence": [
+        "work/jadx/sources/com/keeson/junasleep/fragment/RemoteBFragment.java:332",
+        "work/jadx/sources/com/keeson/junasleep/fragment/RemoteBFragment.java:145-198",
+        "work/jadx/sources/com/keeson/junasleep/utils/HexDump.java:132-170"
+      ]
+    },
+    {
+      "id": "P2-neck_in",
+      "protocol": "P2",
+      "action": "neck_in",
+      "ui": "linear_head_in",
+      "inputs": [
+        32,
+        0,
+        0,
+        0,
+        230
+      ],
+      "expected_bytes": "e5 fe 16 20 00 00 00 e6",
+      "kind": "held",
+      "evidence": [
+        "work/jadx/sources/com/keeson/junasleep/fragment/RemoteBFragment.java:346",
+        "work/jadx/sources/com/keeson/junasleep/fragment/RemoteBFragment.java:145-198",
+        "work/jadx/sources/com/keeson/junasleep/utils/HexDump.java:132-170"
+      ]
+    },
+    {
+      "id": "P2-neck_out",
+      "protocol": "P2",
+      "action": "neck_out",
+      "ui": "linear_head_out",
+      "inputs": [
+        16,
+        0,
+        0,
+        0,
+        246
+      ],
+      "expected_bytes": "e5 fe 16 10 00 00 00 f6",
+      "kind": "held",
+      "evidence": [
+        "work/jadx/sources/com/keeson/junasleep/fragment/RemoteBFragment.java:349",
+        "work/jadx/sources/com/keeson/junasleep/fragment/RemoteBFragment.java:145-198",
+        "work/jadx/sources/com/keeson/junasleep/utils/HexDump.java:132-170"
+      ]
+    },
+    {
+      "id": "P2-lumbar_in",
+      "protocol": "P2",
+      "action": "lumbar_in",
+      "ui": "linear_waist_in",
+      "inputs": [
+        128,
+        0,
+        0,
+        0,
+        134
+      ],
+      "expected_bytes": "e5 fe 16 80 00 00 00 86",
+      "kind": "held",
+      "evidence": [
+        "work/jadx/sources/com/keeson/junasleep/fragment/RemoteBFragment.java:352",
+        "work/jadx/sources/com/keeson/junasleep/fragment/RemoteBFragment.java:145-198",
+        "work/jadx/sources/com/keeson/junasleep/utils/HexDump.java:132-170"
+      ]
+    },
+    {
+      "id": "P2-lumbar_out",
+      "protocol": "P2",
+      "action": "lumbar_out",
+      "ui": "linear_waist_out",
+      "inputs": [
+        64,
+        0,
+        0,
+        0,
+        198
+      ],
+      "expected_bytes": "e5 fe 16 40 00 00 00 c6",
+      "kind": "held",
+      "evidence": [
+        "work/jadx/sources/com/keeson/junasleep/fragment/RemoteBFragment.java:355",
+        "work/jadx/sources/com/keeson/junasleep/fragment/RemoteBFragment.java:145-198",
+        "work/jadx/sources/com/keeson/junasleep/utils/HexDump.java:132-170"
+      ]
+    },
+    {
+      "id": "P2-foot_down",
+      "protocol": "P2",
+      "action": "foot_down",
+      "ui": "view_foot_down",
+      "inputs": [
+        8,
+        0,
+        0,
+        0,
+        254
+      ],
+      "expected_bytes": "e5 fe 16 08 00 00 00 fe",
+      "kind": "held",
+      "evidence": [
+        "work/jadx/sources/com/keeson/junasleep/fragment/RemoteBFragment.java:358",
+        "work/jadx/sources/com/keeson/junasleep/fragment/RemoteBFragment.java:145-198",
+        "work/jadx/sources/com/keeson/junasleep/utils/HexDump.java:132-170"
+      ]
+    },
+    {
+      "id": "P2-foot_up",
+      "protocol": "P2",
+      "action": "foot_up",
+      "ui": "view_foot_up",
+      "inputs": [
+        4,
+        0,
+        0,
+        0,
+        2
+      ],
+      "expected_bytes": "e5 fe 16 04 00 00 00 02",
+      "kind": "held",
+      "evidence": [
+        "work/jadx/sources/com/keeson/junasleep/fragment/RemoteBFragment.java:361",
+        "work/jadx/sources/com/keeson/junasleep/fragment/RemoteBFragment.java:145-198",
+        "work/jadx/sources/com/keeson/junasleep/utils/HexDump.java:132-170"
+      ]
+    },
+    {
+      "id": "P2-head_down",
+      "protocol": "P2",
+      "action": "head_down",
+      "ui": "view_head_down",
+      "inputs": [
+        2,
+        0,
+        0,
+        0,
+        4
+      ],
+      "expected_bytes": "e5 fe 16 02 00 00 00 04",
+      "kind": "held",
+      "evidence": [
+        "work/jadx/sources/com/keeson/junasleep/fragment/RemoteBFragment.java:364",
+        "work/jadx/sources/com/keeson/junasleep/fragment/RemoteBFragment.java:145-198",
+        "work/jadx/sources/com/keeson/junasleep/utils/HexDump.java:132-170"
+      ]
+    },
+    {
+      "id": "P2-head_up",
+      "protocol": "P2",
+      "action": "head_up",
+      "ui": "view_head_up",
+      "inputs": [
+        1,
+        0,
+        0,
+        0,
+        5
+      ],
+      "expected_bytes": "e5 fe 16 01 00 00 00 05",
+      "kind": "held",
+      "evidence": [
+        "work/jadx/sources/com/keeson/junasleep/fragment/RemoteBFragment.java:367",
+        "work/jadx/sources/com/keeson/junasleep/fragment/RemoteBFragment.java:145-198",
+        "work/jadx/sources/com/keeson/junasleep/utils/HexDump.java:132-170"
+      ]
+    },
+    {
+      "id": "P2-status_query",
+      "protocol": "P2",
+      "action": "status_query",
+      "ui": "initData/circleQuery",
+      "inputs": {},
+      "expected_bytes": "e5 fe 16 00 00 00 00 06",
+      "kind": "query",
+      "evidence": [
+        "work/jadx/sources/com/keeson/junasleep/fragment/RemoteBFragment.java:135-138,200-218"
+      ]
+    }
+  ],
+  "parsers": [
+    {
+      "id": "A-zero",
+      "protocol": "P1",
+      "input_bytes": "00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00",
+      "expected": {
+        "accepted": true,
+        "light": false,
+        "timer_value": 0,
+        "timer_bucket_min": 0
+      },
+      "origin": "Synthetic input derived from source operations, not a device capture",
+      "evidence": [
+        "work/jadx/sources/com/keeson/junasleep/fragment/RemoteAFragment.java:252-287"
+      ]
+    },
+    {
+      "id": "A-600",
+      "protocol": "P1",
+      "input_bytes": "00 00 00 02 58 00 00 00 00 00 00 00 01 00 00 00",
+      "expected": {
+        "accepted": true,
+        "light": true,
+        "timer_value": 600,
+        "timer_bucket_min": 10
+      },
+      "origin": "Synthetic input derived from source operations, not a device capture",
+      "evidence": [
+        "work/jadx/sources/com/keeson/junasleep/fragment/RemoteAFragment.java:252-287"
+      ]
+    },
+    {
+      "id": "A-1200",
+      "protocol": "P1",
+      "input_bytes": "00 00 00 04 b0 00 00 00 00 00 00 00 02 00 00 00",
+      "expected": {
+        "accepted": true,
+        "light": "unchanged",
+        "timer_value": 1200,
+        "timer_bucket_min": 20
+      },
+      "origin": "Synthetic input derived from source operations, not a device capture",
+      "evidence": [
+        "work/jadx/sources/com/keeson/junasleep/fragment/RemoteAFragment.java:252-287"
+      ]
+    },
+    {
+      "id": "A-unpadded",
+      "protocol": "P1",
+      "input_bytes": "00 00 00 01 05 00 00 00 00 00 00 00 01 00 00 00",
+      "expected": {
+        "accepted": true,
+        "light": true,
+        "timer_value": 21,
+        "timer_bucket_min": 10
+      },
+      "origin": "Synthetic input derived from source operations, not a device capture",
+      "evidence": [
+        "work/jadx/sources/com/keeson/junasleep/fragment/RemoteAFragment.java:252-287"
+      ]
+    },
+    {
+      "id": "A-two-digit-concatenation",
+      "protocol": "P1",
+      "input_bytes": "00 00 00 08 00 00 00 00 00 00 00 00 03 00 00 00",
+      "expected": {
+        "accepted": true,
+        "light": "unchanged",
+        "timer_value": 128,
+        "timer_bucket_min": 10
+      },
+      "origin": "Synthetic input derived from source operations, not a device capture",
+      "evidence": [
+        "work/jadx/sources/com/keeson/junasleep/fragment/RemoteAFragment.java:252-287"
+      ]
+    },
+    {
+      "id": "A-2000",
+      "protocol": "P1",
+      "input_bytes": "00 00 00 07 d0 00 00 00 00 00 00 00 01 00 00 00",
+      "expected": {
+        "accepted": true,
+        "light": true,
+        "timer_value": 2000,
+        "timer_bucket_min": "unchanged"
+      },
+      "origin": "Synthetic input derived from source operations, not a device capture",
+      "evidence": [
+        "work/jadx/sources/com/keeson/junasleep/fragment/RemoteAFragment.java:252-287"
+      ]
+    },
+    {
+      "id": "A-raw1800-unpadded",
+      "protocol": "P1",
+      "input_bytes": "00 00 00 07 08 00 00 00 00 00 00 00 01 00 00 00",
+      "expected": {
+        "accepted": true,
+        "light": true,
+        "timer_value": 120,
+        "timer_bucket_min": 10
+      },
+      "origin": "Synthetic input derived from source operations, not a device capture",
+      "evidence": [
+        "work/jadx/sources/com/keeson/junasleep/fragment/RemoteAFragment.java:252-287"
+      ]
+    },
+    {
+      "id": "A-1600",
+      "protocol": "P1",
+      "input_bytes": "00 00 00 06 40 00 00 00 00 00 00 00 01 00 00 00",
+      "expected": {
+        "accepted": true,
+        "light": true,
+        "timer_value": 1600,
+        "timer_bucket_min": 30
+      },
+      "origin": "Synthetic input derived from source operations, not a device capture",
+      "evidence": [
+        "work/jadx/sources/com/keeson/junasleep/fragment/RemoteAFragment.java:252-287"
+      ]
+    },
+    {
+      "id": "A-length-reject",
+      "protocol": "P1",
+      "input_bytes": "00 00 00 00 00 00 00 00 00 00 00 00 00 00 00",
+      "expected": {
+        "accepted": false
+      },
+      "origin": "Synthetic input derived from source operations, not a device capture",
+      "evidence": [
+        "work/jadx/sources/com/keeson/junasleep/fragment/RemoteAFragment.java:252-287"
+      ]
+    },
+    {
+      "id": "B-zero",
+      "protocol": "P2",
+      "input_bytes": "00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00",
+      "expected": {
+        "accepted": true,
+        "light": false,
+        "timer_value": 0,
+        "timer_bucket_min": 0
+      },
+      "origin": "Synthetic input derived from source operations, not a device capture",
+      "evidence": [
+        "work/jadx/sources/com/keeson/junasleep/fragment/RemoteBFragment.java:243-294"
+      ]
+    },
+    {
+      "id": "B-600",
+      "protocol": "P2",
+      "input_bytes": "00 00 00 00 00 00 00 00 00 0c 72 90 00 00 40 00 00 00 00 00",
+      "expected": {
+        "accepted": true,
+        "light": true,
+        "timer_value": 600,
+        "timer_bucket_min": 10
+      },
+      "origin": "Synthetic input derived from source operations, not a device capture",
+      "evidence": [
+        "work/jadx/sources/com/keeson/junasleep/fragment/RemoteBFragment.java:243-294"
+      ]
+    },
+    {
+      "id": "B-1200",
+      "protocol": "P2",
+      "input_bytes": "00 00 00 00 00 00 00 00 00 08 f4 21 00 00 80 00 00 00 00 00",
+      "expected": {
+        "accepted": true,
+        "light": "unchanged",
+        "timer_value": 1200,
+        "timer_bucket_min": 20
+      },
+      "origin": "Synthetic input derived from source operations, not a device capture",
+      "evidence": [
+        "work/jadx/sources/com/keeson/junasleep/fragment/RemoteBFragment.java:243-294"
+      ]
+    },
+    {
+      "id": "B-nibbles",
+      "protocol": "P2",
+      "input_bytes": "00 00 00 00 00 00 00 00 00 01 02 03 04 00 ff 00 00 00 00 00",
+      "expected": {
+        "accepted": true,
+        "light": "unchanged",
+        "timer_value": 1076895,
+        "timer_bucket_min": 30
+      },
+      "origin": "Synthetic input derived from source operations, not a device capture",
+      "evidence": [
+        "work/jadx/sources/com/keeson/junasleep/fragment/RemoteBFragment.java:243-294"
+      ]
+    },
+    {
+      "id": "B-int-overflow",
+      "protocol": "P2",
+      "input_bytes": "00 00 00 00 00 00 00 00 00 00 00 00 ff 00 40 00 00 00 00 00",
+      "expected": {
+        "accepted": true,
+        "light": true,
+        "timer_error": "NumberFormatException"
+      },
+      "origin": "Synthetic input derived from source operations, not a device capture",
+      "evidence": [
+        "work/jadx/sources/com/keeson/junasleep/fragment/RemoteBFragment.java:243-294"
+      ]
+    },
+    {
+      "id": "B-length-reject",
+      "protocol": "P2",
+      "input_bytes": "00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00",
+      "expected": {
+        "accepted": false
+      },
+      "origin": "Synthetic input derived from source operations, not a device capture",
+      "evidence": [
+        "work/jadx/sources/com/keeson/junasleep/fragment/RemoteBFragment.java:243-294"
+      ]
+    }
+  ]
+}

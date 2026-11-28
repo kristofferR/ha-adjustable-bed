@@ -565,6 +565,16 @@ UUIDs, so it does not reproduce the Active Sleep literals. All 32 frozen
 Active Sleep frames have an independent literal vector test, including excluded
 commands tested only through the codec, never exposed as runtime actions.
 
+## JunaSleep
+
+JunaSleep 1.0.3 (20) reproduces every frozen outgoing literal through Keeson's
+`p2`, `frame` and status-query encoders. Remote A uses big-endian `04 02`;
+remote B uses little-endian E5 words. The literal tail bytes all match the
+existing checked encoder, but this profile permits only the proven single
+commands. Its typed tables, notification quirks and connection ownership live
+in `profiles/junasleep.py` and the shared Keeson controller extension. Release
+ends refresh without a frame. See [JunaSleep](../beds/keeson.md#junasleep).
+
 ## Thrive Sleep
 
 Thrive Sleep 1.1.2 uses the existing Richmat function, calendar, RGB, light-timer,

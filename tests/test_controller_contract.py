@@ -191,7 +191,7 @@ def _protocol_variant_for_bed_type(bed_type: str) -> str | None:
         return "remote"
     if bed_type == "kingkoil":
         return "KSBT03CK"
-    if bed_type == const.BED_TYPE_SOMOS:
+    if bed_type in (const.BED_TYPE_SOMOS, const.BED_TYPE_JUNASLEEP):
         return "a"
     if bed_type == const.BED_TYPE_YAMADA:
         return "p1"

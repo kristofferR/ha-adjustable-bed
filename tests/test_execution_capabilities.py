@@ -153,6 +153,17 @@ async def test_hestia_one_held_key_stream_has_no_composed_motor_admission():
     assert controller.profile.release.steps == ((100, 0),)
 
 
+@pytest.mark.parametrize(("remote", "refresh"), [("a", 300), ("b", 80)])
+async def test_junasleep_refresh_ends_without_a_stop_packet(remote, refresh):
+    # JunaSleep 1.0.3: A/B ACTION_UP and ACTION_CANCEL cancel TimerTask only.
+    # Each fragment owns one held refresh, with no merged-key/sustain proof.
+    controller = await _create_controller_for_bed_type("junasleep", remote)
+    assert controller.execution.declared == {"hold"}
+    assert controller.execution.hold_for("head_up") == "stream"
+    assert controller.profile.refresh_ms == refresh
+    assert controller.profile.release.steps == ()
+
+
 def test_innova_control_hold_scope_has_artifact_refresh_and_release():
     # Innova Control 1.1.0 Utils sender mode1 + RemoteFragment UP: repeat,
     # then mode0's 50ms existing STOP. Modes never establish physical sides.
