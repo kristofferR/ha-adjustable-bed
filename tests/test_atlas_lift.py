@@ -234,8 +234,13 @@ async def discover_cama_lift(hass):
     chooser = await manager.async_init(
         const.DOMAIN, context={"source": SOURCE_BLUETOOTH}, data=info
     )
-    assert detect_bed_type(info) == const.BED_TYPE_MYSIDE
-    assert detect_bed_type_detailed(info).confidence == 0.3
+    assert detect_bed_type(info) is None
+    detected = detect_bed_type_detailed(info)
+    assert detected.confidence == 0.3
+    assert {detected.bed_type, *(detected.ambiguous_types or ())} >= {
+        const.BED_TYPE_MYSIDE,
+        const.BED_TYPE_THRIVESLEEP,
+    }
     assert chooser["step_id"] == "bluetooth_disambiguate"
     assert set(select_options(chooser, "bed_type_choice")) == {
         const.BED_TYPE_ATLAS_LIFT,
@@ -243,6 +248,7 @@ async def discover_cama_lift(hass):
         const.BED_TYPE_LIKIMIO,
         const.BED_TYPE_MYSIDE,
         "muuegm",
+        "thrivesleep",
         "show_all",
     }
     confirm = await manager.async_configure(
