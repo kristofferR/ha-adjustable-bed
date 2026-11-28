@@ -197,6 +197,46 @@ class _ConnectSession:
     async def async_start_notify(self) -> None:
         await self._coordinator.async_start_notify()
 
+    async def async_require_native_bond(self) -> None:
+        if not self.is_current():
+            raise ConnectionError("The pairing connection changed")
+        if await self._coordinator._async_observe_native_bond({}):
+            return
+        if not self.is_current():
+            raise ConnectionError("The pairing connection changed")
+        from .bluetooth_transport import TransportClass
+        from .errors import invalid
+        path = self._coordinator._connection_path
+        if path is None or path.transport not in (TransportClass.LOCAL, TransportClass.PROXY):
+            raise invalid("ar_connect_native_bond_required")
+        # Proxies keep their own bonds. Await their explicit pairing operation,
+        # but never turn its return into host-native or authenticated-read proof.
+        client = self._client
+        assert client is not None
+        if (
+            path.transport is TransportClass.PROXY
+            and self._coordinator._ble_bond_established
+            and path.source != "unknown"
+            and path.source == self._coordinator.entry.data.get("ble_bond_attempted_source")
+            and self._coordinator._unverified_marker_applies(path.source)
+        ):
+            return
+        self._coordinator._attempt_used_pairing = True
+        self._coordinator._persist_bond_flags(established=False)
+        async with asyncio.timeout(30):
+            paired = await client.pair()
+        if paired is False:
+            raise invalid("ar_connect_native_bond_required")
+        if not self.is_current() or self._coordinator._connection_path != path:
+            raise invalid("bed_changed")
+        if path.transport is TransportClass.LOCAL:
+            if not await self._coordinator._async_observe_native_bond({}):
+                raise invalid("ar_connect_native_bond_required")
+            if not self.is_current():
+                raise invalid("bed_changed")
+        else:
+            self._coordinator._record_native_bond_attempt(path.source)
+
     async def async_record_verified_bond(self) -> None:
         await self._coordinator._async_record_verified_bond(self._attempt_details)
 
@@ -1472,6 +1512,7 @@ class CoordinatorConnectionMixin:
                         BED_TYPE_JENSEN,
                         BED_TYPE_VIBRADORM_APP,
                     )
+                    and self._bed_type != "ar_connect"
                     and not await self._async_verify_bonded(
                         attempt_details, defer_pairing_issue=True
                     )

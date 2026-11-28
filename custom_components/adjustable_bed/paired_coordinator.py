@@ -42,7 +42,12 @@ from .command_scheduler import (
     HoldWindows,
     command_resources,
 )
-from .command_target import capture_command_targets, command_target_scope
+from .command_target import (
+    capture_command_targets,
+    command_target_scope,
+    command_targets_allowed,
+    require_single_command_target,
+)
 from .const import (
     BED_TYPE_ERGOMOTION,
     BED_TYPE_GMMOTOR,
@@ -261,6 +266,8 @@ class PairedBedCoordinator:
     def supports_simultaneous_side_holds(self) -> bool:
         """Whether Both can execute one shared lease without serial side waits."""
         executing = list({id(child): child for _, child in self.targets_for(SIDE_BOTH)}.values())
+        if not command_targets_allowed(executing):
+            return False
         return len(executing) <= 1 or (
             self.connection_mode == PAIR_CONNECTION_MODE_CONCURRENT
             and len({child.operation_identity for child in executing}) == len(executing)
@@ -468,6 +475,13 @@ class PairedBedCoordinator:
         topology = self._topology
         command_scope = topology.command_scope(command_scope)
         targets = topology.targets_for(side)
+        require_single_command_target(child for _, child in targets)
+        if cancel_running and any(
+            isinstance(controller := child.capability_controller, BedController)
+            and not controller.command_start_allowed(command_scope)
+            for _, child in targets
+        ):
+            return
         target_sides = [target_side for target_side, _ in targets]
         topology.check_admission(targets)
 

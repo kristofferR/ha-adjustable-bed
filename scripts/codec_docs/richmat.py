@@ -70,6 +70,7 @@ from scripts.codec_docs import (
     _richmat_legacy,
     _richmat_mh_apps,
     _sleepfunction,
+    _tss_remote,
 )
 from scripts.codec_docs._awmotion import BLOCKS as AWMOTION_BLOCKS
 from scripts.codec_docs._bedsmart import BLOCKS as BEDSMART_BLOCKS
@@ -1833,6 +1834,7 @@ BLOCKS += _sleepfunction.BLOCKS
 
 BLOCKS += _bedtech_classic.BLOCKS
 BLOCKS += _dreamlab.BLOCKS
+BLOCKS += _tss_remote.BLOCKS
 
 
 BLOCKS += LP2_BLOCKS

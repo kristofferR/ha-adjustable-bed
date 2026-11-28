@@ -1,0 +1,102 @@
+[
+  {
+    "id": "P1.error.empty",
+    "input_hex": "",
+    "expected": null,
+    "source": [
+      "Y1/m.smali:a",
+      "Y1/n.smali:<clinit>"
+    ],
+    "provenance": "static literal parser vector; native diagnostic omitted by Flutter export"
+  },
+  {
+    "id": "P1.error.short",
+    "input_hex": "0100",
+    "expected": null,
+    "source": [
+      "Y1/m.smali:a",
+      "Y1/n.smali:<clinit>"
+    ],
+    "provenance": "static literal parser vector; native diagnostic omitted by Flutter export"
+  },
+  {
+    "id": "P1.error.zero",
+    "input_hex": "010000",
+    "expected": null,
+    "source": [
+      "Y1/m.smali:a",
+      "Y1/n.smali:<clinit>"
+    ],
+    "provenance": "static literal parser vector; native diagnostic omitted by Flutter export"
+  },
+  {
+    "id": "P1.error.known_first",
+    "input_hex": "010001",
+    "expected": "empty Y1.o",
+    "source": [
+      "Y1/m.smali:a",
+      "Y1/n.smali:<clinit>"
+    ],
+    "provenance": "static literal parser vector; native diagnostic omitted by Flutter export"
+  },
+  {
+    "id": "P1.error.known_last",
+    "input_hex": "01006e",
+    "expected": "empty Y1.o",
+    "source": [
+      "Y1/m.smali:a",
+      "Y1/n.smali:<clinit>"
+    ],
+    "provenance": "static literal parser vector; native diagnostic omitted by Flutter export"
+  },
+  {
+    "id": "P1.error.unknown_hole",
+    "input_hex": "010014",
+    "expected": "throws: diagnostic code",
+    "source": [
+      "Y1/m.smali:a",
+      "Y1/n.smali:<clinit>"
+    ],
+    "provenance": "static literal parser vector; native diagnostic omitted by Flutter export"
+  },
+  {
+    "id": "P1.error.negative_code",
+    "input_hex": "0100ff",
+    "expected": "throws: diagnostic code",
+    "source": [
+      "Y1/m.smali:a",
+      "Y1/n.smali:<clinit>"
+    ],
+    "provenance": "static literal parser vector; native diagnostic omitted by Flutter export"
+  },
+  {
+    "id": "P1.error.wrong_type",
+    "input_hex": "020001",
+    "expected": "throws: diagnostic type",
+    "source": [
+      "Y1/m.smali:a",
+      "Y1/n.smali:<clinit>"
+    ],
+    "provenance": "static literal parser vector; native diagnostic omitted by Flutter export"
+  },
+  {
+    "id": "P1.error.negative_type",
+    "input_hex": "ffff01",
+    "expected": "throws: diagnostic type",
+    "source": [
+      "Y1/m.smali:a",
+      "Y1/n.smali:<clinit>"
+    ],
+    "provenance": "static literal parser vector; native diagnostic omitted by Flutter export"
+  },
+  {
+    "id": "P1.error.extra_discarded",
+    "input_hex": "0100019988",
+    "expected": "empty Y1.o",
+    "source": [
+      "Y1/m.smali:a",
+      "Y1/n.smali:<clinit>"
+    ],
+    "provenance": "static literal parser vector; native diagnostic omitted by Flutter export"
+  }
+]

@@ -255,6 +255,7 @@ VARIANTS_BY_BED_TYPE: dict[str, dict[str, str]] = {
     "smartbed": SMARTBED_VARIANTS,
     BED_TYPE_OKIN_CST: OKIN_CST_VARIANTS,
     BED_TYPE_KEESON: KEESON_VARIANTS,
+    "ar_connect": {"auto": "Adjustable bed", "native": "Adjustable bed", "headboard": "Headboard"},
     BED_TYPE_LINAK: LINAK_VARIANTS,
     BED_TYPE_REMACRO: REMACRO_VARIANTS,
     BED_TYPE_RICHMAT: RICHMAT_VARIANTS,

@@ -2,6 +2,8 @@
 
 from typing import Final
 
+from .resource_runtime import ResourceRuntime
+
 APP: Final = "dreamlab2"
 NAME: Final = "Dreamlab Control"
 LAYOUTS: Final = (
@@ -677,3 +679,11 @@ def poll_interval(name: str | None, *, raw: bool) -> int:
     if raw and prefix == "6BRM":
         return RAW_6BRM_POLL_MS
     return FAST_POLL_MS if prefix in FAST_NAMES else POLL_MS
+
+# The session runtime is shared; these rules belong only to this app.
+
+RUNTIME: Final = ResourceRuntime(
+    LAYOUTS, SIDE_LAYOUTS, DIRECT_ALARM_LAYOUTS, ALARM_COMBINATIONS, MASSAGE_POPUP, poll_interval,
+    startup_ms=300, query_spacing_ms=500, alarm_spacing_ms=300,
+    rgb_spacing_ms=150, held_release_ms=50, tap_release_ms=150,
+)

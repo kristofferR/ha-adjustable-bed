@@ -178,6 +178,18 @@ The existing controllers also differ in notification setup, movement timing,
 release or massage sequencing, so Vindö has its own app profile and session.
 See [Vindö](../beds/vindo.md) and `tests/test_vindo_vectors.py`.
 
+AR Connect 3.2.2 reuses the native Linak kernel only after all frozen transmit
+literals and 81 movement maps reproduce. Its explicit native profile owns
+admission, mask-dependent subscriptions, first-tick timing, conditional release,
+actual preset/save gates and raw-count behavior. The headboard is a separate
+profile over unwrapped compact JSON: the Linx carrier is extracted into
+`codec/json_record.py` with unchanged Linx bytes, and `codec/ar_connect.py`
+provides the headboard's typed records and CSV/framed parsers. No existing codec
+reproduces the complete headboard model and parser contract; it is not a Linak
+binary protocol. The two controllers share concrete-session fencing and GATT
+plumbing, while keeping transports/security/state machines separate. See
+[AR Connect](../beds/linak.md#ar-connect).
+
 ## Registering a family
 
 A family keeps its files to itself, so parallel family PRs do not touch a
@@ -654,6 +666,17 @@ held frames. `profiles/easyctrl.py` owns its manufacturer-selected bed catalog
 and timing; the shared SynData physical-session base fences both app controllers.
 The EasyCtrl extension owns its parser, alarm calendar and release gestures,
 including model 300's unconditional incrementing STOP triplet.
+
+
+## TSS Remote
+
+TSS Remote 1.0.4 uses the unchanged Richmat raw-command, additive function,
+RGB and countdown encoders. All frozen route literals reproduce byte for byte.
+Its package-local catalog owns layout membership, excluded gestures, modes,
+actual-name timing and alarm choices. The shared resource-catalog session
+runtime takes typed per-app rules; TSS keeps its own notification search and
+15/30/45 minute popup versus 2/3/5 hour slider labels. Generic numbered motors
+remain diagnostic-only, and numbered modes do not add physical side routing.
 
 
 ## Softide

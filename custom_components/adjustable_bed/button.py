@@ -33,6 +33,7 @@ from .card import (
     memory_card,
     motor_card,
 )
+from .command_target import command_targets_allowed
 from .const import (
     BED_TYPE_LIMOSS_REMOTE,
     BED_TYPE_MOTION_BED,
@@ -952,6 +953,8 @@ def _combined_button_entities_for(
     are coordinator actions handled separately by the combined Stop button).
     """
     if not children:
+        return []
+    if not command_targets_allowed(coordinator.children.values()):
         return []
     # Build the combined surface from each side's capability controller (live when
     # connected, else a client-free controller minted from config). For client-free
