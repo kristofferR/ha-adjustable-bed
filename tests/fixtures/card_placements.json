@@ -278,6 +278,12 @@
  "binary_sensor:symphony_privacy": {
   "card_section": "hidden"
  },
+ "button:active_sleep_height_ack": {
+  "card_section": "utility"
+ },
+ "button:active_sleep_refresh": {
+  "card_section": "utility"
+ },
  "button:adjustable_bed_speech": {
   "card_section": "utility"
  },
@@ -1228,6 +1234,9 @@
   "card_section": "motors",
   "card_role": "up",
   "card_motor": "hjbed_sofa_travel"
+ },
+ "button:ifit_release": {
+  "card_section": "hidden"
  },
  "button:innova_massage_level": {
   "card_section": "massage"
@@ -4506,6 +4515,9 @@
   "card_section": "lighting",
   "card_role": "mood"
  },
+ "select:active_sleep_speed": {
+  "card_section": "utility"
+ },
  "select:adjustamattress_alarm_draft_type": {
   "card_section": "utility"
  },
@@ -4891,6 +4903,24 @@
  "select:vmatbasic_mood_palette": {
   "card_section": "lighting",
   "card_role": "mood"
+ },
+ "sensor:active_sleep_height": {
+  "card_section": "utility"
+ },
+ "sensor:active_sleep_height_warning": {
+  "card_section": "utility"
+ },
+ "sensor:active_sleep_model": {
+  "card_section": "hidden"
+ },
+ "sensor:active_sleep_serial": {
+  "card_section": "hidden"
+ },
+ "sensor:active_sleep_tilt": {
+  "card_section": "utility"
+ },
+ "sensor:active_sleep_ventilation_remaining": {
+  "card_section": "utility"
  },
  "sensor:adjustamattress_foot_intensity": {
   "card_section": "massage"
@@ -6059,6 +6089,18 @@
   "card_section": "utility"
  },
  "sensor:yamada_alarm_2": {
+  "card_section": "utility"
+ },
+ "switch:active_sleep_fukatto": {
+  "card_section": "utility"
+ },
+ "switch:active_sleep_monitor": {
+  "card_section": "utility"
+ },
+ "switch:active_sleep_motor_lock": {
+  "card_section": "utility"
+ },
+ "switch:active_sleep_ventilation": {
   "card_section": "utility"
  },
  "switch:adjustamattress_alarm": {
