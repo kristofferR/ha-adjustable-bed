@@ -1651,6 +1651,7 @@ def default_scenario(bed_type: str) -> Scenario:
         const.BED_TYPE_LUUNA: "rise",
         const.BED_TYPE_MLILY_REMOTE: "ms200",
         const.BED_TYPE_MLILY0: "bedc",
+        "motionflex": "sn300",
         const.BED_TYPE_COMFORT_ENHANCEMENTS: "mc2",
         const.BED_TYPE_GLIDEAWAY_MOTION: "motion_400",
         const.BED_TYPE_ZSERIES: const.ZSERIES_VARIANT_Z230,
@@ -1709,6 +1710,8 @@ def default_scenario(bed_type: str) -> Scenario:
         replies = {"write:00b0": ULTRAMATIC_MASSAGE, "write:00c0": "ed8003" + ULTRAMATIC_ALARM_BODY}
     if bed_type == "agingplace":
         data.update({const.CONF_BLE_DEVICE_NAME: "KSWF07S123456789", "agingplace_bed_mode": "auto", "agingplace_bed_side": 0})
+    if bed_type == "motionflex":
+        return Scenario(id=bed_type, bed_type=bed_type, protocol_variant="sn300", layout_id="motionflex:w1", replies={"write:6e0a000179": "6e0e00037f", "write:6e08010178": "6e09010078"})
     if bed_type == const.BED_TYPE_MLILY0:
         return Scenario(id=bed_type, bed_type=bed_type, protocol_variant="bedc", layout_id="mlily_remote:w1")
     if bed_type == const.BED_TYPE_MLILY_REMOTE:
@@ -2250,6 +2253,18 @@ def route_scenarios() -> list[Scenario]:
                 ))
         scenarios.append(dataclasses.replace(default_scenario(const.BED_TYPE_BOBPOWERBASE),
             id="bobpowerbase:props_write", layout_id="bobpowerbase", properties=WRITE_ONLY))
+    if "motionflex" in const.SUPPORTED_BED_TYPES:
+        from custom_components.adjustable_bed.profiles.motionflex import (
+            PRODUCTS as MOTIONFLEX_PRODUCTS,
+        )
+
+        for product in MOTIONFLEX_PRODUCTS:
+            for route in ("n1", "w1", "w2", "w3", "w4", "w5"):
+                scenarios.append(Scenario(
+                    id=f"motionflex:{product}:{route}", bed_type="motionflex",
+                    protocol_variant=product, layout_id=f"motionflex:{route}",
+                    replies={"write:6e0a000179": "6e0e00037f", "write:6e08010178": "6e09010078", "write:01": "6e0e00037f"},
+                ))
     if const.BED_TYPE_MLILY0 in const.SUPPORTED_BED_TYPES:
         from custom_components.adjustable_bed.profiles.mlily0 import PROFILES as MLILY0_PROFILES
 
