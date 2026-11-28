@@ -24,6 +24,7 @@ APPS = [
     "purely_sleep",
     "topcare",
     "comfort_bed",
+    "smart_base",
     "jerome_adjustable_base",
     "rmcontrol",
     "luuna",

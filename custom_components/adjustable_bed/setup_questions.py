@@ -143,6 +143,7 @@ from .const import (
     BED_TYPE_SLEEPYS_BOX24,
     BED_TYPE_SLEEPYS_BOX25,
     BED_TYPE_SLEEPYS_ELITE_APP,
+    BED_TYPE_SMART_BASE,
     BED_TYPE_SOMOS,
     BED_TYPE_STAR_ELEVATE,
     BED_TYPE_STARCODE_ABM5_4,
@@ -3979,6 +3980,12 @@ SETUP_PROFILES: Final[dict[str, SetupProfile]] = {
         owns={CONF_MOTOR_COUNT: 2, CONF_HAS_MASSAGE: False,
               CONF_DISABLE_ANGLE_SENSING: True, CONF_MOTOR_PULSE_DELAY_MS: 100,
               CONF_PROTOCOL_VARIANT: "auto"},
+    ),
+    BED_TYPE_SMART_BASE: SetupProfile(
+        owns={CONF_MOTOR_COUNT: 2, CONF_HAS_MASSAGE: False,
+              CONF_DISABLE_ANGLE_SENSING: True, CONF_MOTOR_PULSE_DELAY_MS: 150,
+              CONF_PROTOCOL_VARIANT: "auto"},
+        questions=(Question(CONF_PRODUCT_TYPE, {"200iv2_a8rm": "200IV2 / A8RM (FEE9)"}, "200iv2_a8rm"),),
     ),
     BED_TYPE_COMFORT_BED: SetupProfile(
         owns={CONF_MOTOR_COUNT: 2, CONF_HAS_MASSAGE: True,
