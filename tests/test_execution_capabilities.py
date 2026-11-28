@@ -164,6 +164,16 @@ async def test_junasleep_refresh_ends_without_a_stop_packet(remote, refresh):
     assert controller.profile.release.steps == ()
 
 
+@pytest.mark.parametrize("layout", ("2", "3", "4"))
+async def test_konfurt_one_300ms_held_key_with_delayed_release(layout):
+    # KONFURT1.0 E-TIMING: one runnable at0/300ms; UP/CANCEL schedules
+    # zero-word STOP at300/600ms. No sustain or composed-key evidence.
+    controller = await _create_controller_for_bed_type("konfurt", layout)
+    assert controller.execution.declared == {"hold"}
+    assert controller.profile.refresh_ms == 300
+    assert tuple(delay for delay, _ in controller.profile.release.steps) == (300, 300)
+
+
 def test_innova_control_hold_scope_has_artifact_refresh_and_release():
     # Innova Control 1.1.0 Utils sender mode1 + RemoteFragment UP: repeat,
     # then mode0's 50ms existing STOP. Modes never establish physical sides.
@@ -204,3 +214,13 @@ async def test_powersbedding_single_timer_movement_stream():
     assert controller.execution.declared == {"hold"}
     assert controller.execution.hold_for("both_up") == "stream"
     assert controller.profile.release.steps == ((0, 0), (100, 0))
+
+
+@pytest.mark.parametrize("variant", ("remote", "hardware221"))
+async def test_ergosportive_has_only_a_serial_stream_hold(variant):
+    # A100 E-release: Timer initial0/100ms, UP/CANCEL cancels it and sends
+    # neutral500ms plus Hardware221 secondary800ms. No merged-mask/sustain proof.
+    controller = await _create_controller_for_bed_type("ergosportive", variant)
+    assert controller.execution.declared == {"hold"}
+    assert controller.execution.hold == "stream"
+    assert controller.execution.concurrent == frozenset()

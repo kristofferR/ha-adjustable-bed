@@ -42,6 +42,7 @@ from .const import (
     BED_TYPE_CUSTOMATIC_REMEDY,
     BED_TYPE_DOUBLESLEEP,
     BED_TYPE_DREAMOTION_SMART,
+    BED_TYPE_DUNLOPILLO,
     BED_TYPE_ENSO2,
     BED_TYPE_ERGOBED,
     BED_TYPE_ERGOMOTION,
@@ -210,6 +211,8 @@ class BedTraits:
     owns_device_info_reads: bool = False
     # A single-address pair may need separate Left and Right operations.
     single_address_native_both: bool = True
+    # App execution selects one physical receiver, including a paired parent.
+    single_command_target: bool = False
     passive_position_reconciliation: bool = False
     # Overrides the connection profile's connect timeout, in seconds.
     connection_timeout: float | None = None
@@ -254,6 +257,7 @@ _BED_TRAITS: Final[dict[str, BedTraits]] = {
     "l2motion": BedTraits(no_angle_feedback=True, connection_scoped_state=True),
     BED_TYPE_ERGOBED: BedTraits(no_angle_feedback=True, connection_scoped_state=True, single_address_native_both=False, connection_timeout=5),
     BED_TYPE_MOODBASE: BedTraits(no_angle_feedback=True, connection_scoped_state=True, single_address_native_both=False, connection_timeout=5),
+    "avek": replace(_NO_ANGLES_SCOPED, owns_device_info_reads=True, single_address_native_both=False, cancellation_only_stop=True),
     "active_sleep": BedTraits(position_feedback=True, connection_scoped_state=True, persistent_connection=True, owns_device_info_reads=True),
     "paramount": BedTraits(position_feedback=True, connection_scoped_state=True, max_angles={"head": 75, "back": 75, "legs": 30, "feet": 30}),
     "ormatek": replace(_NO_ANGLES_SCOPED, owns_device_info_reads=True, connection_timeout=5),
@@ -285,6 +289,7 @@ _BED_TRAITS: Final[dict[str, BedTraits]] = {
     BED_TYPE_N32_MOTION_BED: replace(_NO_ANGLES_SCOPED, owns_device_info_reads=True),
     BED_TYPE_SHUDA: replace(_NO_ANGLES, owns_device_info_reads=True, connection_timeout=5),
     BED_TYPE_RESIDENT: replace(_NO_ANGLES_SCOPED, owns_device_info_reads=True),
+    "mattresspoint": replace(_NO_ANGLES_SCOPED, owns_device_info_reads=True, connection_timeout=5),
     "sleeptime": replace(_NO_ANGLES_SCOPED, owns_device_info_reads=True, connection_timeout=5),
     "intellibed": replace(_NO_ANGLES_SCOPED, owns_device_info_reads=True),
     "powersbedding": replace(_NO_ANGLES_SCOPED, owns_device_info_reads=True),
@@ -331,10 +336,13 @@ _BED_TRAITS: Final[dict[str, BedTraits]] = {
         cancellation_only_stop=True,
     ),
     BED_TYPE_RESTONIC: replace(_NO_ANGLES_SCOPED, owns_device_info_reads=True, connection_timeout=5, single_address_native_both=False),
+    "konfurt": replace(_NO_ANGLES_SCOPED, owns_device_info_reads=True, single_address_native_both=False),
+    "ergosportive": _NO_ANGLES_SCOPED,
     "kingkoil": replace(
         _NO_ANGLES_SCOPED, owns_device_info_reads=True, connection_timeout=5,
         cancellation_only_stop=True,
     ),
+    BED_TYPE_DUNLOPILLO: replace(_NO_ANGLES_SCOPED, owns_device_info_reads=True, single_address_native_both=False, cancellation_only_stop=True),
     BED_TYPE_JUNASLEEP: replace(_NO_ANGLES_SCOPED, owns_device_info_reads=True, connection_timeout=5, cancellation_only_stop=True),
     BED_TYPE_SOMOS: replace(_NO_ANGLES_SCOPED, owns_device_info_reads=True, connection_timeout=5),
     BED_TYPE_COMFORTBASE: _NO_ANGLES_SCOPED,
@@ -425,6 +433,7 @@ _BED_TRAITS: Final[dict[str, BedTraits]] = {
     BED_TYPE_AMBIENT: replace(_NO_ANGLES_SCOPED, owns_device_info_reads=True),
     BED_TYPE_DREAMOTION_SMART: replace(_NO_ANGLES_SCOPED, owns_device_info_reads=True, single_address_native_both=False, cancellation_only_stop=True),
     BED_TYPE_VINDO: replace(_NO_ANGLES, owns_device_info_reads=True),
+    "ar_connect": replace(_NO_ANGLES_SCOPED, persistent_connection=True, owns_device_info_reads=True, cancellation_only_stop=True, single_address_native_both=False, single_command_target=True),
     BED_TYPE_LINAK: BedTraits(
         position_feedback=True,
         angle_sensors=True,
@@ -535,6 +544,8 @@ def bed_traits(bed_type: str | None, protocol_variant: str | None = None) -> Bed
         return _NONE
     resolved = resolve_explicit_bed_type(bed_type, protocol_variant)
     traits = _BED_TRAITS.get(resolved, _NONE)
+    if resolved == "ar_connect" and protocol_variant == "headboard":
+        return replace(traits, single_command_target=False)
     if resolved == BED_TYPE_LINAK and protocol_variant == "carpe_diem":
         return replace(_NO_ANGLES_SCOPED, owns_device_info_reads=True, cancellation_only_stop=True)
     if resolved == "richmat_classic_apps" and protocol_variant == "lp2":
@@ -643,7 +654,7 @@ MASSAGE_SETTING_UNUSED_BED_TYPES: Final = frozenset(
      "hjbed", "hush_base", "hush_remote", "hush_sleep_mm", "hush_sleep_sxb", "jalon",
      "leggett_lp_legacy", "logicdata_air_pump", "luuna", "malouf_app", "mlily",
      "motion_bed", "motomotion", "motosleep", "octo", "okin_motionbed", "okin_rf_eco_bt",
-     "sinca_comfort", "omazz_adjusto_iii", "personal_comfort", "instant_comfort", "active_sleep", "paramount", "qplus_app", "remacro", "resident", "reverie",
+     "sinca_comfort", "omazz_adjusto_iii", "personal_comfort", "instant_comfort", "avek", "active_sleep", "paramount", "qplus_app", "remacro", "resident", "reverie",
      "reverie_nightstand", "richmat_americanstar", "myside", "richmat_app", "richmat_app_sleep",
      "richmat_best_mattress", "richmat_blvd_home", "richmat_classic_apps",
      "richmat_harmony", "richmat_idealbed", "richmat_revive", "richmat_sleep_receiver",
@@ -653,7 +664,7 @@ MASSAGE_SETTING_UNUSED_BED_TYPES: Final = frozenset(
      "awmotion", "dreamsense", "dreamotion_smart", "smart_comfort_synergy", "solace", "saatva", "sonicsleep", "star_elevate", "starcode_abm5_4",
      "starcode_m1x12", "starcode_m5x5", "svane", "symphony", "symphony_sleep",
      "tempur_au", "tempur_curve", "timotion_ahf", "tranquil", "vmatbasic",
-     "wsilver_products", "yamada", "ormatek", "powersbedding", "intellibed",
+     "wsilver_products", "yamada", "ormatek", "konfurt", "powersbedding", "intellibed",
     }
 )
 

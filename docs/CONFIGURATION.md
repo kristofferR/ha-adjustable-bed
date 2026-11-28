@@ -390,6 +390,7 @@ actions; its bounded `hold_control` behavior has separate timing in the
 | AdjustaMattress app | `adjustamattress` | 5 | 200 ms |
 | Aging in Place / Dawn House app | `agingplace` | 5 | 200 ms |
 | Alya Smart Furnishing app (choose BLE type and motor layout) | `alya` | 10 | 300 ms |
+| AVEK Ergo System | `avek` | 10 | 90 ms |
 | Comfort Enhancements app | `comfort_enhancements` | 5 | 200 ms |
 | Comfort Smart Bed app (Langjue) | `langjue` | 2 | 500 ms |
 | Customatic Clarity app (Rize Clarity) | `customatic_clarity` | 8 | 120 ms |
@@ -406,6 +407,7 @@ actions; its bounded `hold_control` behavior has separate timing in the
 | JunaSleep app | `junasleep` | 10 | 300 ms |
 | King Koil (SUTA) app | `suta_king_koil` | 1 | 150 ms |
 | King Koil Bed app | `kingkoil` | 10 | 300 ms |
+| KONFURT app | `konfurt` | 4 | 300 ms |
 | Leggett & Platt MlRM remote | `leggett_wilinke` | 10 | 110 ms |
 | Limoss and Stawett remotes | `limoss` | 12 | 80 ms |
 | Linak (Bed Control, Bed Connect and Performance Series apps): Carpe Diem Beds app | `linak` `carpe_diem` | 4 | 300 ms |
@@ -650,6 +652,7 @@ beds, Reconfigure that bed, then combine them again.
 | Smart Base | Choose Smart Base, then 200IV2 / A8RM (FEE9). Refresh bed settings to discover RGB, timeout and alarm cancellation on the current connection. See the [Smart Base guide](beds/richmat.md#smart-base). |
 | Sinca Comfort Bed | Choose the receiver and motor layout from the [Sinca Comfort Bed setup steps](beds/mline.md#sinca-comfort-bed). Shared Bluetooth names and services leave the app choice to you. |
 | M Line | See the [setup steps](beds/mline.md#m-line-family). |
+| AR Connect | Choose Adjustable bed or Headboard, then the bed's actual sections. Native beds require a bond on the active Bluetooth route; headboards have their own light/routine capability read. See [AR Connect setup](beds/linak.md#ar-connect). |
 | Malouf / Lucid | Answer the [Malouf question](beds/malouf.md#choosing-a-profile) with your app or receiver: the [Malouf Base and Lucid Base apps](beds/malouf.md#malouf-base--lucid-base-family) ask the exact model, primary/secondary role and transport; the Nordic UART and FFE5 receivers ask the [layout and memory positions](#malouflucid-layout-and-memory). Change an existing bed's app with **Reconfigure**. |
 | MLILY Control | The product the app shows, or the remote. Sleep sensors (RM- or HJ-) are added as their own beds. See the [product table](beds/richmat.md#mlily-control). |
 | MLILY Remote | See the [setup steps](beds/richmat.md#mlily-remote). |
@@ -681,6 +684,8 @@ beds, Reconfigure that bed, then combine them again.
 | SleepEvolution / W.Silver Products 3.x | See the [setup steps](beds/richmat.md#sleepevolution--wsilver-products-3x). |
 | Sleepy's Elite | [One question](beds/sleepys.md#home-assistant-setup) for the MFRM Sleepy's Elite app or the BOX15, BOX24 or BOX25 receiver. The [app profile](beds/sleepys.md#explicit-sleepys-elite-app-profile) asks the control box the app lists, for each physical receiver. Change an existing bed's app, control box or BOX25 dialect with **Reconfigure**. |
 | Solace / Woosa | Answer the [Solace question](beds/ff_frame.md#home-assistant-setup) with your app: HomeKobo, Sealy MotionFlex or Sweet Night, which follow the bed's Bluetooth name, or [Woosa Sleep](beds/ff_frame.md#woosa-sleep). |
+| KONFURT | Choose the [2-, 3- or 4-motor app layout](beds/keeson.md#konfurt). All layouts include light and massage; no position sensing or app inference from advertisements. |
+| ErgoSportive | Choose the [remote subset](beds/sleep-assistant.md#ergosportive-subset), explicit standard or Hardware221 release, and only controls your remote offers. Sensor readings require the confirmed OldDSP normal stream; automatic firmware/model selection is unavailable. |
 | King Koil Bed | Choose the [remote layout](beds/keeson.md#king-koil-bed) by its visible controls. |
 | Somos / SomosBeds | See the [setup steps](beds/keeson.md#somos--somosbeds). |
 | SonicSleep | See the [setup steps](beds/richmat.md#sonicsleep). |
@@ -1012,6 +1017,15 @@ The searchable **Ronco Motion app** choice asks for ECONOMY (Fk9rm) or PREMIUM
 (Fk8rm). Select the layout used in Ronco Motion 1.2; Bluetooth names cannot
 identify it. PREMIUM adds Pillow and a light toggle. Layout settings belong to
 one physical side of a two-address pair. See [Ronco Motion](beds/richmat.md#ronco-motion).
+
+### MattressPoint app
+
+Select MattressPoint and explicitly choose BOX2422 or BOX2442. The shared
+SmartBed name and Nordic UART service do not identify the app or a safe default
+box. BOX2422 provides back, legs and combined movement; BOX2442 adds head tilt
+and lumbar. Massage and light controls are app-specific. Preset/save/reset
+controls and alarm programming are unavailable pending complete model and field
+mapping; alarm disable/query and clock synchronization are available.
 
 ### Innova Control
 

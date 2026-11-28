@@ -1,0 +1,334 @@
+[
+  {
+    "id": "CV01",
+    "protocol": "P1",
+    "action": "Shoulder HARD",
+    "inputs": {
+      "word": 32
+    },
+    "expected_bytes": "b0 05 10 00 c0 20 00 a5",
+    "evidence": [
+      "E05",
+      "E06",
+      "E07",
+      "E04"
+    ],
+    "provenance": "Derived literal vector from shipped builder constants and bytecode callsite, not a hardware capture."
+  },
+  {
+    "id": "CV02",
+    "protocol": "P1",
+    "action": "Shoulder SOFT",
+    "inputs": {
+      "word": 16
+    },
+    "expected_bytes": "b0 05 10 00 c0 10 00 95",
+    "evidence": [
+      "E05",
+      "E06",
+      "E07",
+      "E04"
+    ],
+    "provenance": "Derived literal vector from shipped builder constants and bytecode callsite, not a hardware capture."
+  },
+  {
+    "id": "CV03",
+    "protocol": "P1",
+    "action": "Hip HARD",
+    "inputs": {
+      "word": 8
+    },
+    "expected_bytes": "b0 05 10 00 c0 08 00 8d",
+    "evidence": [
+      "E05",
+      "E06",
+      "E07",
+      "E04"
+    ],
+    "provenance": "Derived literal vector from shipped builder constants and bytecode callsite, not a hardware capture."
+  },
+  {
+    "id": "CV04",
+    "protocol": "P1",
+    "action": "Hip SOFT",
+    "inputs": {
+      "word": 4
+    },
+    "expected_bytes": "b0 05 10 00 c0 04 00 89",
+    "evidence": [
+      "E05",
+      "E06",
+      "E07",
+      "E04"
+    ],
+    "provenance": "Derived literal vector from shipped builder constants and bytecode callsite, not a hardware capture."
+  },
+  {
+    "id": "CV05",
+    "protocol": "P1",
+    "action": "A",
+    "inputs": {
+      "word": 512
+    },
+    "expected_bytes": "b0 05 10 00 c0 00 02 87",
+    "evidence": [
+      "E05",
+      "E06",
+      "E07",
+      "E04"
+    ],
+    "provenance": "Derived literal vector from shipped builder constants and bytecode callsite, not a hardware capture."
+  },
+  {
+    "id": "CV06",
+    "protocol": "P1",
+    "action": "B",
+    "inputs": {
+      "word": 256
+    },
+    "expected_bytes": "b0 05 10 00 c0 00 01 86",
+    "evidence": [
+      "E05",
+      "E06",
+      "E07",
+      "E04"
+    ],
+    "provenance": "Derived literal vector from shipped builder constants and bytecode callsite, not a hardware capture."
+  },
+  {
+    "id": "CV07",
+    "protocol": "P1",
+    "action": "C",
+    "inputs": {
+      "word": 2
+    },
+    "expected_bytes": "b0 05 10 00 c0 02 00 87",
+    "evidence": [
+      "E05",
+      "E06",
+      "E07",
+      "E04"
+    ],
+    "provenance": "Derived literal vector from shipped builder constants and bytecode callsite, not a hardware capture."
+  },
+  {
+    "id": "CV08",
+    "protocol": "P1",
+    "action": "D",
+    "inputs": {
+      "word": 1
+    },
+    "expected_bytes": "b0 05 10 00 c0 01 00 86",
+    "evidence": [
+      "E05",
+      "E06",
+      "E07",
+      "E04"
+    ],
+    "provenance": "Derived literal vector from shipped builder constants and bytecode callsite, not a hardware capture."
+  },
+  {
+    "id": "CV09",
+    "protocol": "P1",
+    "action": "SAVE",
+    "inputs": {
+      "word": 1024
+    },
+    "expected_bytes": "b0 05 10 00 c0 00 04 89",
+    "evidence": [
+      "E05",
+      "E06",
+      "E07",
+      "E04"
+    ],
+    "provenance": "Derived literal vector from shipped builder constants and bytecode callsite, not a hardware capture."
+  },
+  {
+    "id": "CV10",
+    "protocol": "P1",
+    "action": "Initial / all down",
+    "inputs": {
+      "word": 2048
+    },
+    "expected_bytes": "b0 05 10 00 c0 00 08 8d",
+    "evidence": [
+      "E05",
+      "E11",
+      "E07",
+      "E04"
+    ],
+    "provenance": "Derived literal vector from shipped builder constants and bytecode callsite, not a hardware capture."
+  },
+  {
+    "id": "IV01",
+    "protocol": "P1",
+    "action": "Reply identity",
+    "inputs": {
+      "app_id": "001122334455"
+    },
+    "expected_bytes": "b1 07 00 00 11 22 33 44 55 b7",
+    "evidence": [
+      "E08"
+    ],
+    "provenance": "Synthetic app ID through statically recovered builder."
+  },
+  {
+    "id": "IV02",
+    "protocol": "P1",
+    "action": "Reply identity",
+    "inputs": {
+      "app_id": "ffffffffffff"
+    },
+    "expected_bytes": "b1 07 00 ff ff ff ff ff ff b2",
+    "evidence": [
+      "E08"
+    ],
+    "provenance": "Synthetic app ID through statically recovered builder."
+  },
+  {
+    "id": "PV01",
+    "protocol": "P1",
+    "action": "Parse notification",
+    "inputs": {
+      "notification": "b0 02 01 01 b4"
+    },
+    "expected_bytes": "b0 02 01 01 b4",
+    "expected_parse": {
+      "kind": "identity_request"
+    },
+    "evidence": [
+      "E08"
+    ],
+    "direction": "received",
+    "provenance": "Synthetic byte sequence satisfying or violating recovered parser, not device capture."
+  },
+  {
+    "id": "PV02",
+    "protocol": "P1",
+    "action": "Parse notification",
+    "inputs": {
+      "notification": "b0 06 10 00 c3 00 10 27 c0"
+    },
+    "expected_bytes": "b0 06 10 00 c3 00 10 27 c0",
+    "expected_parse": {
+      "kind": "position",
+      "motor": 0,
+      "value": 10000
+    },
+    "evidence": [
+      "E09"
+    ],
+    "direction": "received",
+    "provenance": "Synthetic byte sequence satisfying or violating recovered parser, not device capture."
+  },
+  {
+    "id": "PV03",
+    "protocol": "P1",
+    "action": "Parse notification",
+    "inputs": {
+      "notification": "b0 06 10 00 c3 01 de 28 90"
+    },
+    "expected_bytes": "b0 06 10 00 c3 01 de 28 90",
+    "expected_parse": {
+      "kind": "position",
+      "motor": 1,
+      "value": 10462
+    },
+    "evidence": [
+      "E09"
+    ],
+    "direction": "received",
+    "provenance": "Synthetic byte sequence satisfying or violating recovered parser, not device capture."
+  },
+  {
+    "id": "PV04",
+    "protocol": "P1",
+    "action": "Parse notification",
+    "inputs": {
+      "notification": "b0 06 10 00 c7 01 de 28 94"
+    },
+    "expected_bytes": "b0 06 10 00 c7 01 de 28 94",
+    "expected_parse": {
+      "kind": "position",
+      "motor": 1,
+      "value": 10462
+    },
+    "evidence": [
+      "E09"
+    ],
+    "direction": "received",
+    "provenance": "Synthetic byte sequence satisfying or violating recovered parser, not device capture."
+  },
+  {
+    "id": "PV05",
+    "protocol": "P1",
+    "action": "Parse notification",
+    "inputs": {
+      "notification": "b0 06 10 00 c3 02 ff ff 89"
+    },
+    "expected_bytes": "b0 06 10 00 c3 02 ff ff 89",
+    "expected_parse": {
+      "kind": "position",
+      "motor": 2,
+      "value": -1
+    },
+    "evidence": [
+      "E09"
+    ],
+    "direction": "received",
+    "provenance": "Synthetic byte sequence satisfying or violating recovered parser, not device capture."
+  },
+  {
+    "id": "PV06",
+    "protocol": "P1",
+    "action": "Parse notification",
+    "inputs": {
+      "notification": "b0 06 10 00 c3 01 de 28 91"
+    },
+    "expected_bytes": "b0 06 10 00 c3 01 de 28 91",
+    "expected_parse": {
+      "kind": "rejected_checksum"
+    },
+    "evidence": [
+      "E09"
+    ],
+    "direction": "received",
+    "provenance": "Synthetic byte sequence satisfying or violating recovered parser, not device capture."
+  },
+  {
+    "id": "PV07",
+    "protocol": "P1",
+    "action": "Parse notification",
+    "inputs": {
+      "notification": "b0 06 10 00 c3 01 de 28 90 ff ff"
+    },
+    "expected_bytes": "b0 06 10 00 c3 01 de 28 90 ff ff",
+    "expected_parse": {
+      "kind": "position",
+      "motor": 1,
+      "value": 10462
+    },
+    "evidence": [
+      "E09"
+    ],
+    "direction": "received",
+    "provenance": "Synthetic byte sequence satisfying or violating recovered parser, not device capture."
+  },
+  {
+    "id": "PV08",
+    "protocol": "P1",
+    "action": "Parse notification",
+    "inputs": {
+      "notification": "b0 06 10 00 c3 03 10 27 c3"
+    },
+    "expected_bytes": "b0 06 10 00 c3 03 10 27 c3",
+    "expected_parse": {
+      "kind": "ignored_motor"
+    },
+    "evidence": [
+      "E09"
+    ],
+    "direction": "received",
+    "provenance": "Synthetic byte sequence satisfying or violating recovered parser, not device capture."
+  }
+]

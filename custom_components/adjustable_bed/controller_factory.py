@@ -54,6 +54,7 @@ from .const import (
     BED_TYPE_DIAGNOSTIC,
     BED_TYPE_DOUBLESLEEP,
     BED_TYPE_DREAMOTION_SMART,
+    BED_TYPE_DUNLOPILLO,
     BED_TYPE_ENSO2,
     BED_TYPE_ERGOBED,
     BED_TYPE_ERGOMOTION,
@@ -336,6 +337,7 @@ _SIMPLE_CONTROLLERS: Final[dict[str, _ControllerSpec]] = {
     BED_TYPE_RIZE: _ControllerSpec("kaidi.rize", "RizeController"),
     BED_TYPE_KOMFYD: _ControllerSpec("kaidi.comfy", "ComfyController"),
     BED_TYPE_COMFYDS: _ControllerSpec("kaidi.comfy", "ComfyController"),
+    "avek": _ControllerSpec("avek", "AvekController"),
     BED_TYPE_IFIT: _ControllerSpec("ifit.controller", "IfitController"),
     BED_TYPE_ISLEEP: _ControllerSpec("isleep", "IsleepController"),
     "casper_remote": _ControllerSpec("casper_sleep.controller", "CasperRemoteController"),
@@ -400,6 +402,7 @@ _SIMPLE_CONTROLLERS: Final[dict[str, _ControllerSpec]] = {
 # Bed types whose controller needs the variant, entry data, the advertisement
 # or the live GATT table. Each builder lives in its bed module.
 _BUILDERS: Final[dict[str, _BuilderSpec]] = {
+    "ar_connect": _BuilderSpec("ar_connect.controller"),
     "thrivesleep": _BuilderSpec("thrivesleep.controller"),
     "super_colchones": _BuilderSpec("super_colchones.controller"),
     "agingplace": _BuilderSpec("keeson.agingplace"),
@@ -424,6 +427,7 @@ _BUILDERS: Final[dict[str, _BuilderSpec]] = {
     BED_TYPE_COMFORT_ENHANCEMENT3: _BuilderSpec("comfort_enhancement3.controller"),
     BED_TYPE_AMADA: _BuilderSpec("amada.controller"),
     BED_TYPE_N32_MOTION_BED: _BuilderSpec("n32_motion_bed.controller"),
+    "mattresspoint": _BuilderSpec("mattresspoint.controller"),
     BED_TYPE_SLEEPTIME: _BuilderSpec("sleeptime.controller"),
     BED_TYPE_ULTRAMATIC_SMART_BED: _BuilderSpec("ultramatic.controller"),
     "active_sleep": _BuilderSpec("active_sleep.controller"),
@@ -441,7 +445,10 @@ _BUILDERS: Final[dict[str, _BuilderSpec]] = {
     "intellibed": _BuilderSpec("intellibed.controller"),
     BED_TYPE_LINX: _BuilderSpec("linx.controller"),
     BED_TYPE_RESTONIC: _BuilderSpec("restonic.controller"),
+    "konfurt": _BuilderSpec("keeson.konfurt"),
+    "ergosportive": _BuilderSpec("keeson.ergosportive"),
     "kingkoil": _BuilderSpec("keeson.kingkoil"),
+    BED_TYPE_DUNLOPILLO: _BuilderSpec("keeson.dunlopillo"),
     BED_TYPE_JUNASLEEP: _BuilderSpec("keeson.junasleep"),
     BED_TYPE_SOMOS: _BuilderSpec("keeson.somos"),
     BED_TYPE_COMFORTBASE: _BuilderSpec("keeson.comfortbase"),

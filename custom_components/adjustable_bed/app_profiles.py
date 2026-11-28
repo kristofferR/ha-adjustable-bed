@@ -41,6 +41,7 @@ from .const import (
     BED_TYPE_COMFYDS,
     BED_TYPE_CUSTOMATIC_DEMO,
     BED_TYPE_DOUBLESLEEP,
+    BED_TYPE_DUNLOPILLO,
     BED_TYPE_ENSO2,
     BED_TYPE_ERGOBED,
     BED_TYPE_ESHINE,
@@ -193,6 +194,7 @@ class SideProfile:
 
 
 _BY_BED_TYPE: Final[dict[str, SideProfile]] = {
+    "ar_connect": SideProfile("AR Connect physical route", frozenset({CONF_MOTOR_COUNT, CONF_HAS_MASSAGE}), variant_owned=True),
     "ormatek": SideProfile("OrmatekTechnoSmart", frozenset({CONF_MOTOR_COUNT, CONF_HAS_MASSAGE, CONF_BLE_DEVICE_NAME}), variant_owned=True),
     "dorsal": SideProfile("Dorsal project and Roomi route", variant_owned=True),
     "berun": SideProfile("BERUN", variant_owned=True),
@@ -220,6 +222,7 @@ _BY_BED_TYPE: Final[dict[str, SideProfile]] = {
     BED_TYPE_LEVA: SideProfile(
         "Leva Bed Remote", frozenset({CONF_MOTOR_COUNT, CONF_HAS_MASSAGE}), variant_owned=True
     ),
+    "avek": SideProfile("AVEK Ergo System"),
     "active_sleep": SideProfile("Active Sleep"),
     BED_TYPE_LANGJUE: SideProfile("Comfort Smart Bed (Langjue)"),
     BED_TYPE_GHOSTBED: SideProfile("GhostBed", frozenset({CONF_HAS_LIGHT})),
@@ -303,7 +306,10 @@ _BY_BED_TYPE: Final[dict[str, SideProfile]] = {
     BED_TYPE_HJBED: SideProfile("HJBed", variant_owned=True),
     BED_TYPE_JALON: SideProfile("OkinComfortBed II", frozenset({CONF_BLE_DEVICE_NAME})),
     BED_TYPE_RESTONIC: SideProfile("Restonic", variant_owned=True),
+    "konfurt": SideProfile("KONFURT", frozenset({CONF_MOTOR_COUNT, CONF_HAS_MASSAGE}), variant_owned=True),
+    "ergosportive": SideProfile("ErgoSportive", frozenset({CONF_MOTOR_COUNT}), variant_owned=True),
     "kingkoil": SideProfile("King Koil Bed", frozenset({CONF_MOTOR_COUNT, CONF_HAS_MASSAGE}), variant_owned=True),
+    BED_TYPE_DUNLOPILLO: SideProfile("Dunlopillo Remote", frozenset({CONF_MOTOR_COUNT, CONF_HAS_MASSAGE}), variant_owned=True),
     BED_TYPE_JUNASLEEP: SideProfile("JunaSleep", frozenset({CONF_MOTOR_COUNT, CONF_HAS_MASSAGE, CONF_BLE_DEVICE_NAME}), variant_owned=True),
     BED_TYPE_SOMOS: SideProfile("Somos", frozenset({CONF_MOTOR_COUNT, CONF_HAS_MASSAGE}), variant_owned=True),
     BED_TYPE_COMFORTBASE: SideProfile("ComfortBaseForBluetooth", frozenset({CONF_MOTOR_COUNT, CONF_HAS_MASSAGE}), variant_owned=True),
@@ -369,6 +375,7 @@ _BY_BED_TYPE: Final[dict[str, SideProfile]] = {
     BED_TYPE_N32_MOTION_BED: SideProfile("N32 Motion Bed"),
     BED_TYPE_SHUDA: SideProfile("Shuda"),
     BED_TYPE_RESIDENT: SideProfile("Resident Adjustable Base"),
+    "mattresspoint": SideProfile("MattressPoint", variant_owned=True),
     "sleeptime": SideProfile("Sleeptime", variant_owned=True),
     "ultramatic_smart_bed": SideProfile("Ultramatic Smart Bed"),
     BED_TYPE_YAMADA: SideProfile("アシステック / Yamada", variant_owned=True),

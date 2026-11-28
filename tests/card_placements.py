@@ -286,8 +286,22 @@ def runtime_variants(controllers: Iterable[BedController]) -> Iterator[BedContro
             setattr(clone, name, value)
         return clone
 
+    from custom_components.adjustable_bed.beds.ar_connect.headboard import HeadboardController
+    from custom_components.adjustable_bed.beds.ar_connect.native import NativeController
+
     dorsal_catalog_covered = False
     for controller in controllers:
+        if isinstance(controller, NativeController):
+            yield variant(controller, mask=0xf0, axes=("back", "legs", "head", "feet"))
+            headboard = HeadboardController(controller._coordinator)
+            yield variant(headboard, config=1)
+        if type(controller).__name__ == "DunlopilloController":
+            from custom_components.adjustable_bed.profiles.dunlopillo import (
+                PROFILES as DUNLOPILLO_PROFILES,
+            )
+            for layout, profile in DUNLOPILLO_PROFILES.items():
+                yield variant(controller, layout=layout, profile=profile)
+
         if type(controller).__name__ == "PowersBeddingController":
             from custom_components.adjustable_bed.profiles.powersbedding import PROFILES
             for profile in PROFILES.values():

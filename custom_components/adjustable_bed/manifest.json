@@ -1034,6 +1034,12 @@
       "local_name": "DORN*"
     },
     {
+      "local_name": "DOS[sS][eE][rR][eE][tT]*"
+    },
+    {
+      "local_name": "DOs[sS][eE][rR][eE][tT]*"
+    },
+    {
       "local_name": "DPRM*"
     },
     {
@@ -1098,6 +1104,12 @@
     },
     {
       "local_name": "DZRN*"
+    },
+    {
+      "local_name": "DoS[sS][eE][rR][eE][tT]*"
+    },
+    {
+      "local_name": "Dos[sS][eE][rR][eE][tT]*"
     },
     {
       "local_name": "E0RM*"
@@ -3233,6 +3245,15 @@
       "local_name": "TARM*"
     },
     {
+      "local_name": "TBA-AK*"
+    },
+    {
+      "local_name": "TBA3*"
+    },
+    {
+      "local_name": "TBA4*"
+    },
+    {
       "local_name": "TBRM*"
     },
     {
@@ -4018,6 +4039,18 @@
     },
     {
       "local_name": "con[tT][rR][oO][lL]_[bB][oO][xX]*"
+    },
+    {
+      "local_name": "dOS[sS][eE][rR][eE][tT]*"
+    },
+    {
+      "local_name": "dOs[sS][eE][rR][eE][tT]*"
+    },
+    {
+      "local_name": "doS[sS][eE][rR][eE][tT]*"
+    },
+    {
+      "local_name": "dos[sS][eE][rR][eE][tT]*"
     },
     {
       "local_name": "elevate*"

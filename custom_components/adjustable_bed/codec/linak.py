@@ -153,3 +153,20 @@ def build_simultaneous_command(
     else:
         direction_offset = (0x02 if first_up else 0) + (0x01 if second_up else 0)
     return control_frame(base + direction_offset)
+
+
+_NATIVE_DIAGNOSTIC_CODES: Final = frozenset((*range(1, 20), *range(23, 97), *range(100, 111)))
+
+
+def parse_ar_diagnostic(data: bytes) -> bool | None:
+    """Native diagnostic validation; recognized records export an empty object."""
+    if len(data) < 3:
+        return None
+    if int.from_bytes(data[:2], "little", signed=True) != 1:
+        raise ValueError("Unknown native diagnostic type")
+    code = int.from_bytes(data[2:3], "little", signed=True)
+    if code == 0:
+        return None
+    if code not in _NATIVE_DIAGNOSTIC_CODES:
+        raise ValueError("Unknown native diagnostic code")
+    return True

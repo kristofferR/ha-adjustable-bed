@@ -169,6 +169,8 @@ def _protocol_variant_for_bed_type(bed_type: str) -> str | None:
         return "SN300"
     if bed_type == "muuegm":
         return "ABF03"
+    if bed_type == "mattresspoint":
+        return "BOX2422"
     if bed_type == "dreamsense":
         return "blue"
     if bed_type == "saatva":
@@ -187,6 +189,8 @@ def _protocol_variant_for_bed_type(bed_type: str) -> str | None:
         return "JERN"
     if bed_type == const.BED_TYPE_RESTONIC:
         return "box15"
+    if bed_type == "ergosportive":
+        return "remote"
     if bed_type == "kingkoil":
         return "KSBT03CK"
     if bed_type in (const.BED_TYPE_SOMOS, const.BED_TYPE_JUNASLEEP):
@@ -223,6 +227,10 @@ async def _create_controller_for_bed_type(
     """Create a controller through the factory for a bed type and optional variant."""
     coordinator = _FactoryCoordinator()
     client = _make_connected_client()
+    if bed_type == "ergosportive":
+        from custom_components.adjustable_bed.profiles import ergosportive as ergosportive_app
+        coordinator.entry.data.update({const.CONF_PROTOCOL_VARIANT: variant or "remote", const.CONF_PRODUCT_TYPE: "old_dsp_normal", "ergosportive_controls": list(ergosportive_app.CONTROLS)})
+
     if bed_type == const.BED_TYPE_SMART_BASE:
         coordinator.entry.data[const.CONF_PRODUCT_TYPE] = "200iv2_a8rm"
     if bed_type == "amada":
@@ -403,6 +411,8 @@ async def _create_controller_for_bed_type(
         return await create_controller(coordinator, bed_type, variant or "p1", client)
     if bed_type == const.BED_TYPE_LUUNA:
         return await create_controller(coordinator, bed_type, variant or "rise", client)
+    if bed_type == "ar_connect":
+        coordinator.entry.data = {**coordinator.entry.data, const.CONF_PRODUCT_TYPE: "back_legs"}
     if bed_type == const.BED_TYPE_HUSH_BASE:
         return await create_controller(coordinator, bed_type, variant or "hushl400", client)
     if bed_type == const.BED_TYPE_SLEEPTIME:

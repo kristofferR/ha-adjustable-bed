@@ -17,6 +17,7 @@ if TYPE_CHECKING:
     from .ai_bed.controller import AiBedController as AiBedController
     from .alya.controller import AlyaController as AlyaController
     from .ambient.controller import AmbientController as AmbientController
+    from .ar_connect.native import ArConnectController as ArConnectController
     from .baseremote.controller import BaseRemoteController as BaseRemoteController
     from .bedgear.controller import BedgearController as BedgearController
     from .bedgear.ergobed import ErgoBedController as ErgoBedController
@@ -81,9 +82,11 @@ if TYPE_CHECKING:
     from .keeson.comfortfurniture import ComfortFurnitureController as ComfortFurnitureController
     from .keeson.controller import KeesonController as KeesonController
     from .keeson.enso import EnsoController as EnsoController
+    from .keeson.ergosportive import ErgoSportiveController as ErgoSportiveController
     from .keeson.jalon import JalonController as JalonController
     from .keeson.junasleep import JunaSleepController as JunaSleepController
     from .keeson.kingkoil import KingKoilController as KingKoilController
+    from .keeson.konfurt import KonfurtController as KonfurtController
     from .keeson.ormatek import OrmatekController as OrmatekController
     from .keeson.powersbedding import PowersBeddingController as PowersBeddingController
     from .keeson.sleep_assist_pro import SleepAssistProController as SleepAssistProController
@@ -202,6 +205,7 @@ if TYPE_CHECKING:
     from .woosa import WoosaController as WoosaController
 
 _EXPORT_MODULES = {
+    "ArConnectController": "ar_connect.native",
     "IntellibedController": "intellibed.controller",
     "GhostBedController": "flexispot.ghostbed",
     "InstantComfortBase": "instant_comfort.controller",
@@ -219,6 +223,7 @@ _EXPORT_MODULES = {
     "NerumController": "nerum.controller",
     "RelaxMotionController": "relax_motion.controller",
     "CheersSleepController": "cheerssleep.controller",
+    "MattressPointController": "mattresspoint.controller",
     "SleeptimeController": "sleeptime.controller",
     "UltramaticController": "ultramatic.controller",
     "SmartSleepController": "smart_sleep.controller",
@@ -262,6 +267,8 @@ _EXPORT_MODULES = {
     "AlyaController": "alya.controller",
     "EshineOkinController": "eshine_okin.controller",
     "JalonController": "keeson.jalon",
+    "KonfurtController": ("keeson.konfurt", "KonfurtController"),
+    "ErgoSportiveController": ("keeson.ergosportive", "ErgoSportiveController"),
     "KingKoilController": ("keeson.kingkoil", "KingKoilController"),
     "SomosController": ("keeson.somos", "SomosController"),
     "EnsoController": ("keeson.enso", "EnsoController"),
@@ -390,6 +397,7 @@ _EXPORT_MODULES = {
 }
 
 __all__ = [
+    "ArConnectController",
     "GhostBedController",
     "InstantComfortBase",
     "DoubleSleepController",

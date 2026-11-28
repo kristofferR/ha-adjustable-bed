@@ -66,6 +66,7 @@ from .const import (
     BED_TYPE_CUSTOMATIC_DEMO,
     BED_TYPE_DOUBLESLEEP,
     BED_TYPE_DREAMOTION_SMART,
+    BED_TYPE_DUNLOPILLO,
     BED_TYPE_ENSO2,
     BED_TYPE_ERGOBED,
     BED_TYPE_ESHINE,
@@ -290,8 +291,10 @@ from .const import (
     VMATBASIC_PROFILES,
 )
 from .import_executor import async_import_modules
+from .profiles import ar_connect as ar_connect_profiles
 from .profiles import askona as askona_profiles
 from .profiles import enso2 as enso2_profiles
+from .profiles import ergosportive as ergosportive_app
 from .profiles import jiecang as jiecang_profiles
 from .profiles import langjue as langjue_app
 from .profiles import logicdata as logicdata_profiles
@@ -354,6 +357,7 @@ _ALWAYS_MASSAGE: Final = frozenset({CONF_HAS_MASSAGE})
 _NECTAR_MOVE: Final = _FIXED_LAYOUT | _ALWAYS_MASSAGE | {CONF_DISABLE_ANGLE_SENSING}
 
 _OWNED_BY_BED_TYPE: Final[dict[str, frozenset[str]]] = {
+    BED_TYPE_DUNLOPILLO: _APP_DEFINED - {CONF_PROTOCOL_VARIANT, CONF_MOTOR_PULSE_COUNT},
     BED_TYPE_SYMPHONY: frozenset({CONF_MOTOR_COUNT, CONF_HAS_MASSAGE, CONF_DISABLE_ANGLE_SENSING}),
     "ergomotion_4": _APP_DEFINED - {CONF_MOTOR_PULSE_COUNT},
     "gmmotor": GENERIC_FIELDS,
@@ -388,6 +392,7 @@ _OWNED_BY_BED_TYPE: Final[dict[str, frozenset[str]]] = {
     "sonicsleep": GENERIC_FIELDS - {CONF_MOTOR_PULSE_COUNT},
     "ai_bed": GENERIC_FIELDS,
     "suta": GENERIC_FIELDS - {CONF_MOTOR_PULSE_COUNT},
+    "mattresspoint": GENERIC_FIELDS - {CONF_MOTOR_PULSE_COUNT},
     "powersbedding": GENERIC_FIELDS - {CONF_MOTOR_PULSE_COUNT},
     "hestia_motion": GENERIC_FIELDS - {CONF_MOTOR_PULSE_COUNT},
     "truemotion": GENERIC_FIELDS,
@@ -396,6 +401,8 @@ _OWNED_BY_BED_TYPE: Final[dict[str, frozenset[str]]] = {
     "hush_sleep_mm": GENERIC_FIELDS,
     "hush_sleep_sxb": GENERIC_FIELDS,
     BED_TYPE_RESTONIC: _APP_DEFINED - {CONF_PROTOCOL_VARIANT, CONF_MOTOR_PULSE_COUNT},
+    "konfurt": _APP_DEFINED - {CONF_PROTOCOL_VARIANT, CONF_MOTOR_PULSE_COUNT},
+    "ergosportive": _APP_DEFINED - {CONF_PROTOCOL_VARIANT},
     "kingkoil": _APP_DEFINED - {CONF_PROTOCOL_VARIANT, CONF_MOTOR_PULSE_COUNT},
     BED_TYPE_JUNASLEEP: _APP_DEFINED - {CONF_PROTOCOL_VARIANT, CONF_MOTOR_PULSE_COUNT},
     BED_TYPE_SOMOS: _APP_DEFINED - {CONF_PROTOCOL_VARIANT, CONF_MOTOR_PULSE_COUNT},
@@ -2464,6 +2471,31 @@ def _restonic_settings(data: Mapping[str, Any]) -> Mapping[str, Any]:
             CONF_DISABLE_ANGLE_SENSING: True, CONF_MOTOR_PULSE_DELAY_MS: 200}
 
 
+def _konfurt_settings(data: Mapping[str, Any]) -> Mapping[str, Any]:
+    from .profiles.konfurt import LAYOUTS
+
+    layout = LAYOUTS.get(data.get(CONF_PROTOCOL_VARIANT, ""))
+    return {} if layout is None else {
+        CONF_MOTOR_COUNT: len(layout.axes), CONF_HAS_MASSAGE: True,
+        CONF_DISABLE_ANGLE_SENSING: True, CONF_MOTOR_PULSE_DELAY_MS: 300,
+    }
+
+
+def _ergosportive_validate(data: Mapping[str, Any]) -> dict[str, str]:
+    try:
+        ergosportive_app.selected(data)
+    except ValueError as err:
+        return {str(err): "ergosportive_selection"}
+    return {}
+
+
+def _ergosportive_settings(data: Mapping[str, Any]) -> Mapping[str, Any]:
+    profile = ergosportive_app.selected(data)
+    return {CONF_MOTOR_COUNT: max(2, sum(axis in profile.controls for axis in ("head", "feet", "tilt"))),
+            CONF_HAS_MASSAGE: False, CONF_DISABLE_ANGLE_SENSING: True,
+            CONF_MOTOR_PULSE_DELAY_MS: ergosportive_app.REFRESH_MS}
+
+
 def _kingkoil_settings(data: Mapping[str, Any]) -> Mapping[str, Any]:
     from .profiles.kingkoil import LAYOUTS
 
@@ -2472,6 +2504,24 @@ def _kingkoil_settings(data: Mapping[str, Any]) -> Mapping[str, Any]:
         CONF_MOTOR_COUNT: len(layout.axes), CONF_HAS_MASSAGE: layout.massage,
         CONF_DISABLE_ANGLE_SENSING: True, CONF_MOTOR_PULSE_DELAY_MS: 300,
     }
+
+
+def _dunlopillo_choices(_data: Mapping[str, Any]) -> Mapping[str, str]:
+    from .profiles.dunlopillo import CHOICES
+
+    return CHOICES
+
+
+def _dunlopillo_settings(data: Mapping[str, Any]) -> Mapping[str, Any]:
+    from .profiles.dunlopillo import AXES, REFRESH_MS
+
+    layout = data.get(CONF_PROTOCOL_VARIANT, "b2")
+    if layout == "auto":
+        layout = "b2"
+    if layout not in AXES:
+        return {}
+    return {CONF_MOTOR_COUNT: len(AXES[layout]), CONF_HAS_MASSAGE: True,
+            CONF_DISABLE_ANGLE_SENSING: True, CONF_MOTOR_PULSE_DELAY_MS: REFRESH_MS}
 
 
 def _junasleep_choices(_data: Mapping[str, Any]) -> Mapping[str, str]:
@@ -3069,6 +3119,15 @@ SETUP_PROFILES: Final[dict[str, SetupProfile]] = {
         }, "0"),),
         title=lambda _data: "Sealy Posturematic",
     ),
+    "ar_connect": SetupProfile(
+        seed=lambda _hass, data, info: {**data, **({CONF_PROTOCOL_VARIANT: "headboard"} if not data.get(CONF_PROTOCOL_VARIANT) and info is not None and "dosseret" in (info.name or "").lower() else {})},
+        owns={CONF_MOTOR_COUNT: SET_BY_PROFILE, CONF_HAS_MASSAGE: False,
+              CONF_DISABLE_ANGLE_SENSING: True, CONF_MOTOR_PULSE_DELAY_MS: 400},
+        questions=(Question(CONF_PROTOCOL_VARIANT, ar_connect_profiles.ROUTE_CHOICES, "native"),
+                   Question(CONF_PRODUCT_TYPE, ar_connect_profiles.LAYOUT_CHOICES, "back_legs",
+                            when={"field": CONF_PROTOCOL_VARIANT, "operator": ConditionOperator.IN, "value": ["native", "auto"]})),
+        derive=lambda data: {CONF_MOTOR_COUNT: len(ar_connect_profiles.LAYOUTS.get(data.get(CONF_PRODUCT_TYPE, "back_legs"), ("back", "legs")))},
+    ),
     "askona": SetupProfile(
         owns={CONF_MOTOR_COUNT: 2, CONF_HAS_MASSAGE: True, CONF_DISABLE_ANGLE_SENSING: False},
         questions=(Question(CONF_PROTOCOL_VARIANT, askona_profiles.MODEL_CHOICES, REQUIRED),),
@@ -3563,11 +3622,22 @@ SETUP_PROFILES: Final[dict[str, SetupProfile]] = {
         questions=(Question(CONF_PRODUCT_TYPE, RESTONIC_LAYOUTS), Question(CONF_PROTOCOL_VARIANT, RESTONIC_BRANCHES)),
         derive=_restonic_settings,
     ),
+    "konfurt": _asking("konfurt", questions=(Question(CONF_PROTOCOL_VARIANT, _routes("konfurt")),),
+                        derive=_konfurt_settings),
+    "ergosportive": _asking(
+        "ergosportive",
+        questions=(Question(CONF_PROTOCOL_VARIANT, ergosportive_app.VARIANTS),
+                   Question(CONF_PRODUCT_TYPE, ergosportive_app.SENSORS, "remote_only"),
+                   Question(ergosportive_app.CONF_CONTROLS, ergosportive_app.CONTROLS,
+                            list(ergosportive_app.DEFAULT_CONTROLS), multiple=True)),
+        derive=_ergosportive_settings, validate=_ergosportive_validate,
+    ),
     "kingkoil": _asking(
         "kingkoil",
         questions=(Question(CONF_PROTOCOL_VARIANT, _routes("kingkoil")),),
         derive=_kingkoil_settings,
     ),
+    BED_TYPE_DUNLOPILLO: _asking(BED_TYPE_DUNLOPILLO, questions=(Question(CONF_PROTOCOL_VARIANT, _dunlopillo_choices, "b2"),), derive=_dunlopillo_settings),
     BED_TYPE_JUNASLEEP: _asking(BED_TYPE_JUNASLEEP, questions=(Question(CONF_PROTOCOL_VARIANT, _junasleep_choices),), derive=_junasleep_settings),
     BED_TYPE_SOMOS: _asking(
         BED_TYPE_SOMOS,
@@ -4113,6 +4183,15 @@ SETUP_PROFILES: Final[dict[str, SetupProfile]] = {
             CONF_PRODUCT_TYPE, okimattmotion_app.LAYOUTS, okimattmotion_app.DEFAULT_LAYOUT,
         ),),
     ),
+    "avek": SetupProfile(
+        owns={
+            CONF_MOTOR_COUNT: 2,  # Compatibility field; firmness buttons declare the controls.
+            CONF_HAS_MASSAGE: False,
+            CONF_DISABLE_ANGLE_SENSING: True,
+            CONF_PROTOCOL_VARIANT: "auto",
+            CONF_MOTOR_PULSE_DELAY_MS: 90,
+        },
+    ),
     "ifit": SetupProfile(
         owns={
             CONF_MOTOR_COUNT: 3,
@@ -4266,6 +4345,14 @@ SETUP_PROFILES: Final[dict[str, SetupProfile]] = {
         seed=_sleeptime_seed,
         title=lambda _data: "Sleeptime Australia",
         imports=("profiles.sleeptime",),
+    ),
+    "mattresspoint": SetupProfile(
+        owns={CONF_MOTOR_COUNT: 2, CONF_HAS_MASSAGE: True,
+              CONF_DISABLE_ANGLE_SENSING: True, CONF_MOTOR_PULSE_DELAY_MS: 300},
+        questions=(Question(CONF_PROTOCOL_VARIANT,
+                            lambda _data: {"BOX2422": "BOX2422", "BOX2442": "BOX2442"},
+                            lambda _data: vol.UNDEFINED),),
+        title=lambda _data: "MattressPoint control box",
     ),
     "powersbedding": SetupProfile(
         owns={CONF_MOTOR_COUNT: 2, CONF_HAS_MASSAGE: True,

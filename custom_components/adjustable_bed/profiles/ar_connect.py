@@ -1,8 +1,8 @@
-"""AR Connect 3.2.2 native subset. No admitted HA runtime or inherited lifecycle."""
+"""AR Connect 3.2.2 source-proven native bed profile."""
 
 from collections.abc import Mapping
 from dataclasses import dataclass
-from typing import Final, Literal
+from typing import Final, Literal, cast
 
 from ..codec.linak import build_simultaneous_command, control_frame, custom_speed_frame
 
@@ -80,3 +80,53 @@ class ArConnectProfile:
 
 
 AR_CONNECT: Final = ArConnectProfile()
+
+# Runtime data from the independently accepted full contract. The native SDK's
+# six indices remain above as kernel data; only these four recalls/three saves
+# are reachable from the app's controls.
+PRESETS: Final = {"television": 0, "zero_g": 1, "reading": 2, "favorite": 3}
+SAVE_PRESETS: Final = frozenset({"television", "reading", "favorite"})
+REFRESH_MS: Final = 400
+DEBOUNCE_MS: Final = 200
+IDLE_INITIAL_MS: Final = 1500
+IDLE_AFTER_REFERENCE_MS: Final = 750
+STARTUP_DELAY_S: Final = 0.7
+STARTUP_SPEED_UP: Final = 1.0
+STARTUP_ACCELERATION_UP: Final = 0.0
+PROBE_DIRECTION_S: Final = 2.0
+SIDE_DIRECTION_S: Final = 5.0
+SIDE_GAP_S: Final = 0.5  # PP ja@4707a1 stores 500000 microseconds.
+LAYOUTS: Final = {
+    "back_legs": ("back", "legs"),
+    "back_legs_head": ("back", "legs", "head"),
+    "back_legs_feet": ("back", "legs", "feet"),
+    "back_legs_head_feet": ("back", "legs", "head", "feet"),
+}
+LAYOUT_CHOICES: Final = {
+    key: ", ".join(axis.capitalize() for axis in axes) for key, axes in LAYOUTS.items()
+}
+ROUTE_CHOICES: Final = {"native": "Adjustable bed", "headboard": "Headboard"}
+NATIVE_REFERENCES: Final = (
+    *AR_CONNECT.references,
+    ("base", "99fa0024-338a-1024-8a49-009c0215f78a"),
+)
+NATIVE_SUBSCRIBE_ORDER: Final = ("back", "legs", "head", "feet", "base")
+TIMER_SERVICE: Final = "99fa0050-338a-1024-8a49-009c0215f78a"
+TIMER_EVENT: Final = "99fa0051-338a-1024-8a49-009c0215f78a"
+NAME_CHARACTERISTIC: Final = "00002a00-0000-1000-8000-00805f9b34fb"
+
+
+def peaceful_directions(positions: Mapping[str, float]) -> dict[Axis, bool]:
+    result: dict[Axis, bool] = {}
+    if positions.get("head", 0) > 0:
+        result["head"] = False
+    for axis, low, high in (("back", 297, 303), ("legs", 97, 103)):
+        value = positions.get(axis)
+        if value is not None:
+            if value < low:
+                result[cast(Axis, axis)] = True
+            elif value > high:
+                result[cast(Axis, axis)] = False
+    if positions.get("feet", 0) < 0:
+        result["feet"] = True
+    return result

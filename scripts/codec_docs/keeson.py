@@ -21,9 +21,11 @@ from scripts.codec_docs._agingplace import BLOCKS as _AGINGPLACE_BLOCKS
 from scripts.codec_docs._askona import BLOCKS as _ASKONA_BLOCKS
 from scripts.codec_docs._betterliving2 import BLOCKS as _BETTERLIVING2_BLOCKS
 from scripts.codec_docs._common import Block, _block, _hex, _table
+from scripts.codec_docs._dunlopillo import BLOCKS as _DUNLOPILLO_BLOCKS
 from scripts.codec_docs._enso import BLOCKS as _ENSO_BLOCKS
 from scripts.codec_docs._junasleep import BLOCKS as _JUNASLEEP_BLOCKS
 from scripts.codec_docs._kingkoil import BLOCKS as _KINGKOIL_BLOCKS
+from scripts.codec_docs._konfurt import BLOCKS as _KONFURT_BLOCKS
 from scripts.codec_docs._okimattmotion import BLOCKS as _OKIMATTMOTION_BLOCKS
 from scripts.codec_docs._ore_ultramatic import BLOCKS as _ULTRAMATIC_BLOCKS
 from scripts.codec_docs._ormatek import BLOCKS as _ORMATEK_BLOCKS
@@ -1225,8 +1227,11 @@ BLOCKS.extend(_ASKONA_BLOCKS)
 BLOCKS.extend(_ENSO_BLOCKS)
 
 BLOCKS.extend(_KINGKOIL_BLOCKS)
+BLOCKS.extend(_KONFURT_BLOCKS)
 
 BLOCKS.extend(_JUNASLEEP_BLOCKS)
 
 
 BLOCKS.extend(_POWERSBEDDING_BLOCKS)
+
+BLOCKS.extend(_DUNLOPILLO_BLOCKS)

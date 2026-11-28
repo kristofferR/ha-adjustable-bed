@@ -199,7 +199,8 @@
           "check_transport_ok": "Check: connection type available",
           "check_device_info": "Check: device information",
           "check_positions": "Check: positions",
-          "check_connected_via_proxy": "Check: connected through a proxy"
+          "check_connected_via_proxy": "Check: connected through a proxy",
+          "check_mattresspoint_uart_missing": "❌ The Bluetooth device lacks the write-without-response and status channels MattressPoint needs. Check the device and selected app."
         },
         "data_description": {
           "action": "**Check again** checks the bed again without losing the settings you just entered.",
@@ -331,6 +332,7 @@
         "title": "{profile} settings",
         "description": "Answer what Home Assistant can't learn from the bed for **{profile}**. Settings the app sets itself, such as its motor count and timing, aren't asked.",
         "data": {
+          "ergosportive_controls": "Controls available on your bed",
           "jiecang_app_layout": "Physical actuator layout",
           "has_light": "Enable light controls",
           "furnimove_remote": "FurniMove handset ID",
@@ -831,6 +833,7 @@
       "ambient_receiver_mismatch": "This device lacks the Bluetooth write or notification channel required by M3 Ambient. Check the selected device."
     },
     "error": {
+      "ergosportive_selection": "Choose a release mode, sensor stream and controls matching your ErgoSportive bed.",
       "scan_failed": "Bluetooth scanning is unavailable. Check your adapters and try again, or choose a device from the list.",
       "langjue_receiver_mismatch": "Choose the Bluetooth device used to control the bed in Comfort Smart Bed. The selected device is missing the required channels.",
       "invalid_mac_address": "Invalid Bluetooth address format. Use XX:XX:XX:XX:XX:XX.",
@@ -924,7 +927,8 @@
       "truemotion_gatt": "The receiver does not expose the trueMotion write and notification channels.",
       "truemotion_pair": "Choose a trueMotion receiver that supports split control as the left side.",
       "alya_layout_invalid": "The selected Alya layout is missing its required Bluetooth write/notify roles. Choose the layout shown in your app.",
-      "ergobq_identity": "Select an ErgoBQ BED product, a valid six-byte serial (or blank), and a channel stamp of at most 510 UTF-8 bytes."
+      "ergobq_identity": "Select an ErgoBQ BED product, a valid six-byte serial (or blank), and a channel stamp of at most 510 UTF-8 bytes.",
+      "mattresspoint_gatt": "The Bluetooth device lacks the write-without-response and status channels MattressPoint needs. Check the device and selected app."
     }
   },
   "options": {
@@ -949,6 +953,7 @@
         "title": "Adjustable Bed Options",
         "description": "Adjust the settings for your adjustable bed. To change the bed type or app, open **Reconfigure** from this entry's three-dot menu.",
         "data": {
+          "ergosportive_controls": "Controls available on your bed",
           "ergobq_serial": "ErgoBQ six-byte serial (hex, optional)",
           "active_sleep_auth_id": "Existing Active Sleep authentication ID (optional)",
           "ergobq_stamp": "ErgoBQ channel stamp (leave blank if unused)",
@@ -1202,6 +1207,7 @@
         "title": "Left side settings",
         "description": "Change connection, movement and app settings for **{name}**. Only this side changes.",
         "data": {
+          "ergosportive_controls": "Controls available on your bed",
           "ergobq_serial": "ErgoBQ six-byte serial (hex, optional)",
           "active_sleep_auth_id": "Existing Active Sleep authentication ID (optional)",
           "ergobq_stamp": "ErgoBQ channel stamp (leave blank if unused)",
@@ -1390,6 +1396,7 @@
         "title": "Right side settings",
         "description": "Change connection, movement and app settings for **{name}**. Only this side changes.",
         "data": {
+          "ergosportive_controls": "Controls available on your bed",
           "ergobq_serial": "ErgoBQ six-byte serial (hex, optional)",
           "active_sleep_auth_id": "Existing Active Sleep authentication ID (optional)",
           "ergobq_stamp": "ErgoBQ channel stamp (leave blank if unused)",
@@ -1787,6 +1794,12 @@
   },
   "entity": {
     "button": {
+      "konfurt_massage": {"name": "Toggle massage"},
+      "konfurt_massage_head": {"name": "Cycle head massage"},
+      "konfurt_massage_foot": {"name": "Cycle feet massage"},
+      "konfurt_massage_wave": {"name": "Cycle massage wave"},
+      "konfurt_massage_timer": {"name": "Cycle massage timer"},
+      "konfurt_query_alarm": {"name": "Refresh bed alarm"},
       "smart_base_query": {"name": "Refresh bed settings"},
       "smart_base_cancel_alarm": {"name": "Cancel alarm"},
       "active_sleep_refresh": {
@@ -1987,6 +2000,9 @@
       },
       "dorsal_zero_gravity_down": {
         "name": "Zero gravity motor down"
+      },
+      "avek_release": {
+        "name": "Release held control"
       },
       "ifit_release": { "name": "Release held control" },
       "leva_release": { "name": "Release motion control" },
@@ -4377,6 +4393,42 @@
       "junasleep_lumbar_down": {
         "name": "Waist out"
       },
+      "mattresspoint_on": {
+        "name": "Start massage"
+      },
+      "mattresspoint_timer": {
+        "name": "Cycle massage timer"
+      },
+      "mattresspoint_head_up": {
+        "name": "Increase head massage"
+      },
+      "mattresspoint_head_down": {
+        "name": "Decrease head massage"
+      },
+      "mattresspoint_foot_up": {
+        "name": "Increase foot massage"
+      },
+      "mattresspoint_foot_down": {
+        "name": "Decrease foot massage"
+      },
+      "mattresspoint_wave_up": {
+        "name": "Next massage wave"
+      },
+      "mattresspoint_wave_down": {
+        "name": "Previous massage wave"
+      },
+      "mattresspoint_disable_alarm": {
+        "name": "Disable alarm"
+      },
+      "mattresspoint_query_alarm": {
+        "name": "Refresh alarm"
+      },
+      "mattresspoint_query_massage": {
+        "name": "Refresh massage"
+      },
+      "mattresspoint_release": {
+        "name": "Release held control"
+      },
       "dreamotion_smart_back": {
         "name": "Cycle back massage"
       },
@@ -4909,6 +4961,15 @@
       }
     },
     "sensor": {
+      "konfurt_timer": {"name": "Massage timer"},
+      "konfurt_wave": {"name": "Massage wave"},
+      "konfurt_alarm_on": {"name": "Bed alarm enabled"},
+      "konfurt_alarm_hour": {"name": "Bed alarm hour"},
+      "konfurt_alarm_minute": {"name": "Bed alarm minute"},
+      "konfurt_alarm_repeat": {"name": "Bed alarm weekday mask"},
+      "konfurt_alarm_type": {"name": "Bed alarm action code"},
+      "ergosportive_twitch": {"name": "Movement count"},
+      "dunlopillo_massage_timer": {"name": "Current massage timer"},
       "purely_sleep_protocol_version": {
         "name": "Protocol version"
       },
@@ -6383,6 +6444,31 @@
       },
       "amada_alarm_submitted": {
         "name": "Last submitted bed alarm frame"
+      },
+      "ar_headboard_status": {
+        "name": "Headboard activity",
+        "state": {
+          "live": "Live lighting",
+          "scen": "Mood lighting",
+          "wake": "Wake routine",
+          "sleep": "Sleep routine",
+          "idle": "Idle"
+        }
+      },
+      "ar_headboard_routines": {
+        "name": "Stored routines"
+      },
+      "ar_connect_back_position": {
+        "name": "Back position"
+      },
+      "ar_connect_legs_position": {
+        "name": "Legs position"
+      },
+      "ar_connect_head_position": {
+        "name": "Head position"
+      },
+      "ar_connect_feet_position": {
+        "name": "Feet position"
       }
     },
     "light": {
@@ -6391,6 +6477,8 @@
       }
     },
     "switch": {
+      "konfurt_massage": {"name": "Massage"},
+      "mattresspoint_massage": { "name": "Massage" },
         "active_sleep_motor_lock": {
           "name": "{motor} motor lock"
         },
@@ -6694,6 +6782,15 @@
       },
       "dreamotion_smart_sensor": {
         "name": "Human detection"
+      },
+      "ar_connect_silent": {
+        "name": "Silent"
+      },
+      "ar_headboard_mood": {
+        "name": "Mood light"
+      },
+      "ar_headboard_repeat": {
+        "name": "Repeat mood sequence"
       }
     },
     "binary_sensor": {
@@ -7006,9 +7103,16 @@
       },
       "kingkoil_light_report": {
         "name": "Reported light"
+      },
+      "mattresspoint_massage": {
+        "name": "Massage active (last command or report)"
+      },
+      "mattresspoint_alarm": {
+        "name": "Alarm enabled (last command or report)"
       }
     },
     "number": {
+      "ergosportive_brightness": {"name": "Bedside lamp brightness"},
       "innova_control_aroma_start_2": {
         "name": "Aroma startup 2"
       },
@@ -8597,6 +8701,19 @@
           "1500": "1500 seconds",
           "1800": "1800 seconds"
         }
+      },
+      "ar_headboard_mood_delay": {
+        "name": "Time per mood color",
+        "state": {
+          "1": "1 min",
+          "2": "2 min",
+          "5": "5 min",
+          "10": "10 min",
+          "20": "20 min",
+          "30": "30 min",
+          "60": "60 min",
+          "120": "120 min"
+        }
       }
     },
     "climate": {
@@ -9209,6 +9326,10 @@
         "side": {
           "name": "Side",
           "description": "Which side of a combined bed to set. Leave empty to use the selected device's side, or both sides."
+        },
+        "duration": {
+          "name": "Routine duration",
+          "description": "Complete wake routine in minutes, when the bed supports it."
         }
       }
     },
@@ -12653,15 +12774,100 @@
           "description": "Raw blue channel byte from 0 to 255."
         }
       }
+    },
+    "ar_connect_move_sections": {
+      "name": "Move bed sections (AR Connect)",
+      "description": "Hold the selected available sections of one physical bed. Release cancels refresh and sends the native stop command.",
+      "fields": {
+        "device_id": {
+          "name": "Device id"
+        },
+        "directions": {
+          "name": "Directions",
+          "description": "A mapping of back, legs, head or feet to up or down."
+        },
+        "duration_ms": {
+          "name": "Duration ms"
+        }
+      }
+    },
+    "ar_connect_mood": {
+      "name": "Set mood colors (AR Connect)",
+      "description": "Set the five color steps, repeat choice and time per step on an AR Connect headboard.",
+      "fields": {
+        "device_id": {
+          "name": "Device id"
+        },
+        "repeat": {
+          "name": "Repeat"
+        },
+        "delay": {
+          "name": "Delay",
+          "description": "Minutes per color, choose 1, 2, 5, 10, 20, 30, 60 or 120."
+        },
+        "colors": {
+          "name": "Colors",
+          "description": "Five objects with hue (0 to 1), tint (0.5 to 1) and brightness (0 to 1), using the app's color scale."
+        }
+      }
+    },
+    "ar_connect_routine": {
+      "name": "Manage local routine (AR Connect)",
+      "description": "Create a wake or sleep routine, update or delete a returned routine id, or refresh the current list. Updates remove the old routine before creating its replacement.",
+      "fields": {
+        "device_id": {
+          "name": "Device id"
+        },
+        "action": {
+          "name": "Action"
+        },
+        "id": {
+          "name": "Id",
+          "description": "A routine id returned by the headboard, required for update or delete."
+        },
+        "enabled": {
+          "name": "Enabled"
+        },
+        "mode": {
+          "name": "Mode"
+        },
+        "hour": {
+          "name": "Hour"
+        },
+        "minute": {
+          "name": "Minute"
+        },
+        "duration": {
+          "name": "Duration",
+          "description": "Routine duration in minutes, choose 1, 2, 5, 10, 20, 30, 60 or 120."
+        },
+        "weekdays": {
+          "name": "Weekdays"
+        }
+      }
     }
   },
   "exceptions": {
+    "konfurt_gatt": {"message": "KONFURT needs writable FFE9 in FFE5 and notifying FFE4 in FFE0. Check the selected app and Bluetooth device."},
+    "konfurt_layout": {"message": "Choose the 2, 3 or 4 motor layout shown in the KONFURT app."},
+    "konfurt_control": {"message": "Choose a control offered by this KONFURT layout and a hold of 1 to 60000 milliseconds."},
+    "konfurt_alarm": {"message": "KONFURT sets an alarm for today's weekday only. Choose no wake action, massage or Memory 1."},
+    "konfurt_massage_unknown": {"message": "Wait for a massage status report from this connection before turning massage on or off. You can use Toggle massage without a report."},
+    "ergosportive_session": {"message": "The ErgoSportive connection changed. Reconnect before sending another command."},
+    "ergosportive_gatt": {"message": "This receiver is missing the ErgoSportive UART write or notification channel."},
+    "ergosportive_subscription": {"message": "Subscribe to the current ErgoSportive notification channel before sending a command."},
+    "ergosportive_control": {"message": "Choose a control enabled for this ErgoSportive profile and a hold from 0.1 to 30 seconds."},
+    "ergosportive_memory_gesture_unresolved": {"message": "Memory save and held recall are not available for this ErgoSportive profile."},
+    "ergosportive_brightness": {"message": "Enable bedside lamp brightness and choose a whole level from 1 to 13."},
     "askona_model_required": {"message": "Choose the Askona bed model before connecting"},
     "askona_session_changed": {"message": "The bed connection changed. Reconnect and try again"},
     "askona_gatt_missing": {"message": "The Askona write or notification characteristic is missing"},
     "askona_movement_unavailable": {"message": "This Askona movement has no verified safe stopping behavior"},
     "askona_feedback_required": {"message": "Wait for a new bed status report before changing this setting"},
     "askona_target_invalid": {"message": "Choose a whole number within the selected model’s range"},
+    "dunlopillo_layout_invalid": {"message": "Choose a Dunlopillo remote layout: B1, B2, C1 or D1."},
+    "dunlopillo_hold_duration": {"message": "Choose a hold duration from 0.1 to 60 seconds."},
+    "dunlopillo_name_invalid": {"message": "Use a device name from 1 to 14 characters."},
     "dreamotion_smart_refresh": {
       "message": "Refresh {setting} settings, then try again."
     },
@@ -13362,6 +13568,12 @@
     "bed_not_loaded": {
       "message": "The bed is not loaded. Reload it, then try again."
     },
+    "avek_hold_duration": {
+      "message": "Hold duration must be an integer from 1 to 60000 milliseconds."
+    },
+    "avek_identity_required": {
+      "message": "The bed has not completed its identity exchange. Reconnect before using Initial."
+    },
     "bed_not_connected": {
       "message": "The bed is not connected. Check that it is powered on and in range, then try again."
     },
@@ -13958,6 +14170,54 @@
     },
     "jobs_alarm_action_invalid": {
       "message": "Choose an action supported by this alarm kind."
+    },
+    "mattresspoint_gatt": {
+      "message": "The Bluetooth device lacks the write-without-response and status channels MattressPoint needs. Check the device and selected app."
+    },
+    "mattresspoint_variant": {
+      "message": "Choose BOX2422 or BOX2442 in MattressPoint setup."
+    },
+    "mattresspoint_hold": {
+      "message": "Choose a hold duration between 1 and 60000 milliseconds."
+    },
+    "ar_connect_layout": {
+      "message": "Choose the bed sections in AR Connect setup."
+    },
+    "ar_connect_route": {
+      "message": "Choose Adjustable bed or Headboard in AR Connect setup."
+    },
+    "ar_connect_empty_mask": {
+      "message": "The bed returned an empty motor mask. Reconnect and try again."
+    },
+    "ar_connect_motion_busy": {
+      "message": "Release the current bed control before starting another movement."
+    },
+    "ar_connect_hold": {
+      "message": "Choose available sections and a duration from 1 to 60000 milliseconds."
+    },
+    "ar_connect_invalid_state": {
+      "message": "The headboard returned an invalid startup value. Reconnect and try again."
+    },
+    "ar_connect_color": {
+      "message": "Choose valid headboard color values."
+    },
+    "ar_connect_mood_unknown": {
+      "message": "Read or set all five mood colors before changing the sequence."
+    },
+    "ar_connect_routine_unknown": {
+      "message": "Refresh the headboard routines and choose a returned routine id."
+    },
+    "ar_connect_native_bond_required": {
+      "message": "A stored Bluetooth bond could not be confirmed on this adapter. Pair the bed on the selected adapter and try again."
+    },
+    "alarm_duration_not_supported": {
+      "message": "Choose a supported routine duration in minutes: {durations}."
+    },
+    "ar_connect_alarm_record_required": {
+      "message": "Use the AR Connect routine action with its returned id to turn off an existing routine."
+    },
+    "single_command_target_required": {
+      "message": "Choose one physical receiver. Select Left or Right on this combined bed, or target one bed device."
     }
   },
   "issues": {

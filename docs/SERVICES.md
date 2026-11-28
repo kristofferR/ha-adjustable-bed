@@ -31,6 +31,9 @@ For named raise/lower/stop voice commands and Apple Home controls, see
 | [`set_alarm`](#set_alarm) | Set alarm | Sets or turns off the alarm stored in the bed. Each bed accepts only the options its own app offers; Home Assistant checks every selected bed before changing any. |
 | [`baseremote_settings`](#baseremote_settings) | Base Remote: color and receiver group | Sets the light color of a Base Remote bed, or changes the Bluetooth group stored in its receiver. |
 | [`sync_clock`](#sync_clock) | Set bed clock | Sets the clock of each selected bed to Home Assistant's local time. Every bed is checked before any clock changes. |
+| [`ar_connect_move_sections`](#ar-connect) | Move bed sections | Holds selected available sections of one AR Connect bed for a bounded duration. |
+| [`ar_connect_mood`](#ar-connect) | Set mood colors | Sets five headboard colors, repeat and time per color. |
+| [`ar_connect_routine`](#ar-connect) | Manage local routine | Creates, edits, removes or refreshes headboard wake/sleep routines. |
 | [`rename`](#rename) | Rename Bluetooth name | Gives each selected bed a new Bluetooth name, on beds that support it. Every bed checks the name against its own rules before any name changes. This does not rename the device in Home Assistant. |
 | [`lower_to_flat`](#estimated-positions) | Lower to flat | Lowers the selected motors for their full travel time plus a margin. It does not mark the bed as flat: use Mark estimated position flat afterwards. |
 | [`estimate_save_position`](#estimated-positions) | Save estimated position | Saves the current estimated position under a name. Every included motor needs a known estimate. |
@@ -380,6 +383,7 @@ entities, including the light colors, are separate.
 | [Restonic BT (Keeson)](beds/keeson.md#restonic-bt-profiles) | Remote A: `head_up`, `head_down`, `feet_up`, `feet_down`, `flat`, `zero_g`. Remote B adds `back_legs_up`, `back_legs_down`, `light`, `zzz` | Directions, remote B's back and legs and remote A's `zero_g` keep going while held; the others run once |
 | [Bed Tech](beds/richmat.md#bed-tech) | The selected model's held `mh_XX` controls, such as `mh_24` (head up) and `mh_25` (head down) on 5I | At most 30 seconds. Save buttons cannot be held. The separate intervention receiver has no held controls |
 | [ENSO Sleep Control](beds/richmat.md#enso-sleep-control) | The current layout’s held directions and recalls, such as `motor_1_up` and E3RM `memory_1` | Save and alternate actions have separate buttons |
+| [Dunlopillo Remote](beds/keeson.md#dunlopillo-remote) | `head_up`, `head_down`, `feet_up`, `feet_down`; D1 also `tilt_up`, `tilt_down`, `lumbar_up`, `lumbar_down`; B1 also `massage_screen`, `massage_contour`; C1/D1 also `reclined`, `raised` | Reset is a confirmed, bounded button and has no held action. |
 | [Enso Remote](beds/keeson.md#enso-remote) | `head_up`, `head_down` (back), `feet_up`, `feet_down`, plus `both_up`/`both_down` (2 motors), `lumbar_up`/`lumbar_down` (3 and 4 motors) and `tilt_up`/`tilt_down` (waist, 4 motors); `memory_A`, `memory_B`, `timer_memory_page`, and `massage_mode` on 3 motors | |
 | [Jerome's Adjustable Base](beds/richmat.md#jeromes-adjustable-base) | `jerome_adjustable_base_head_up`, `jerome_adjustable_base_feet_up`, `jerome_adjustable_base_head_feet_up` and their down directions | Sends STOP on the admitted side |
 | [Jerome's power base](beds/richmat.md#jeromes-power-base) | `jerome_` controls of the selected layout that can be held, such as `jerome_head_up` | Saves cannot be held |
@@ -416,6 +420,7 @@ the name against its own rules before any name changes:
 | [ERGOBALANCE](beds/jiecang.md#ergobalance-dreamask) and [Dream Motion](beds/jiecang.md#dream-motion-dreamotion) | 1 to 20 plain letters or digits |
 | [Dream Motion HD](beds/jiecang.md#dream-motion-hd) | 1 to 20 plain letters, digits, spaces and punctuation |
 | [Comfort Motion app](beds/jiecang.md#comfort-motion-app) | 1 to 18 plain letters, digits, dots or underscores, on beds that report a renameable name |
+| [Dunlopillo Remote](beds/keeson.md#dunlopillo-remote) | 1 to 14 characters after outer spaces are removed; ASCII recommended because multibyte names can be cut short |
 | [Enso Remote](beds/keeson.md#enso-remote) | 1 to 14 characters after leading and trailing spaces are removed; names with accented letters are cut short (see the guide) |
 | [INNOVA](beds/keeson.md#innova-profile) | At most 14 characters as typed, not empty after leading and trailing spaces are removed |
 | [FurniMove](beds/furnimove.md#controls-and-actions) | One bed at a time; a name of at most 18 characters, after leading and trailing spaces are removed, that no other bed uses |
@@ -428,6 +433,51 @@ data:
   name: Bedroom
 ```
 
+
+### AR Connect
+
+Choose the native-bed or independent headboard route in setup. These actions
+accept the selected device, with the shared `side` field when needed. The
+[AR Connect guide](beds/linak.md#ar-connect) describes the controls and limits.
+
+`ar_connect_move_sections` takes `directions`, a map of available sections to
+`up` or `down`, and `duration_ms` (1–60000). It preserves the app's pair
+precedence; selecting more sections does not create an arbitrary motor bitmask.
+Select one physical receiver: a combined parent requires `side: left` or `right`,
+or target its child device. Shared timed, held and preset actions apply the
+same recipient limit. Whole-bed STOP remains available.
+
+```yaml
+action: adjustable_bed.ar_connect_move_sections
+data:
+  device_id: YOUR_DEVICE_ID
+  directions:
+    back: up
+    legs: down
+  duration_ms: 2000
+```
+
+`ar_connect_mood` takes `repeat`, `delay` in minutes (1, 2, 5, 10, 20, 30, 60
+or 120), and exactly five `colors` objects. Each object has `hue` (0–1), `tint`
+(0.5–1) and `brightness` (0–1). Hue follows the app's blue-to-green palette.
+Use the normal RGBW light for live color and power.
+
+`ar_connect_routine` takes `action: create`, `update`, `delete` or `refresh`. Update/delete
+require an `id` returned in the headboard's routine list, available as attributes
+of its disabled-by-default routine sensor. `refresh` reads a complete list on
+the current connection. The sensor's `ar_headboard_last_created_routine_id`
+attribute retains a device-returned creation id independently of the list;
+readback must establish the stored record before editing or deleting it.
+Creation/update accept `enabled`,
+`mode` (`wake` or `sleep`), `hour`, `minute`, `duration` and `weekdays`. The same
+minute durations apply as mood delay. Update removes the old record before
+creating its replacement, so a failed creation can leave it removed. Its new id
+comes from the headboard, never from a local counter. Existing audio payload
+context is preserved without exposing audio controls.
+
+Use shared `set_alarm` to create a wake routine with `enabled: true`, time,
+duration and optional weekdays. To turn an existing routine off, update its real
+id with `enabled: false`; `set_alarm` cannot guess the record to cancel.
 
 ### `sync_clock`
 
@@ -470,6 +520,7 @@ and `light: false` ask nothing of the bed and are not refused as options it lack
 | `slot` | Alarm number on beds that store more than one |
 | `massage`, `massage_zone`, `massage_intensity`, `massage_duration`, `head_massage_level`, `foot_massage_level` | Wake-up massage, where the bed has one |
 | `sleep_timer` | Sleep-timer choice in minutes, on OkimattMotion. Leave it empty for off |
+| `duration` | Complete wake-routine duration in minutes. Required for AR Connect headboards: 1, 2, 5, 10, 20, 30, 60 or 120 |
 | `light`, `sound` | Turn on the light or play a sound at the alarm, where available |
 | `mattress_side` | Set the alarm of a vibrating mattress topper on that side instead of the bed's |
 | `confirm_custom_position` | Required for SIMMONS saved custom positions and saved-memory wake actions on Shuda, Jerome's power base and Dream Sense Bed |
@@ -500,6 +551,7 @@ data:
 | Dream Sense Bed | The selected product's presets; required to turn on. Saved memories need `confirm_custom_position: true` | One-time alarms go off at the next occurrence of the time. Products with repeating alarms accept `weekdays` and need the `slot` of an alarm the bed reported (0 to 255); new alarms cannot be added |
 | ENSO Sleep Control (Enso 2) | Choices from the layout, including `tv`, `zero_g`, `anti_snore` and supported memories | One-time countdown. Optional `massage_zone` follows the layout and supported position combinations |
 | [Alya Smart Furnishing](beds/alya.md#clock-and-alarms) | From the selected BLE layout, including its supported presets, massage or light | `weekdays` or the app route's no-weekday repeat flag. P1 and DACHENG two-motor have no alarm. Use `sync_clock` separately |
+| [AR Connect headboard](beds/linak.md#ar-connect) | Creates a wake light routine | `duration`, time and `weekdays`. Use the routine action and its returned id to disable, edit or remove an existing record; `set_alarm` rejects `enabled: false` |
 | eShine | `zero_g`, `flat`, `massage` (by model) | Once; the bed clock is set first |
 | Glideaway Motion | `none`, `memory_1`, `memory_2` | Once |
 | Jiecang apps | `flat`, `zero_g`, `anti_snore`, `memory_1`, `memory_2`, `yoga` where reported | `weekdays`, head and foot massage levels 0–3 |

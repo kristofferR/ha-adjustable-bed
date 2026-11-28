@@ -178,16 +178,17 @@ The existing controllers also differ in notification setup, movement timing,
 release or massage sequencing, so Vindö has its own app profile and session.
 See [Vindö](../beds/vindo.md) and `tests/test_vindo_vectors.py`.
 
-AR Connect 3.2.2's native subset reproduces all 19 frozen transmit literals
-through the Linak control encoder and its new configuration builder. The codec
-adds the optional slow flag and JVM binary32 custom-speed conversion. Its typed
-`profiles/ar_connect.py` keeps the four-key precedence, six native memory indices,
-GATT roles and configuration schedule separate from other Linak apps. The native
-reference parser preserves signed speed and binary32 export arithmetic without
-changing legacy Bed Control parsing. `tests/test_ar_connect.py` also checks every
-one of the 81 frozen movement input maps. This is an encoder/parser profile only:
-unresolved write mode, session admission and lifecycle prevent registering a
-controller, setup route or entities. See [AR Connect](../beds/linak.md#ar-connect).
+AR Connect 3.2.2 reuses the native Linak kernel only after all frozen transmit
+literals and 81 movement maps reproduce. Its explicit native profile owns
+admission, mask-dependent subscriptions, first-tick timing, conditional release,
+actual preset/save gates and raw-count behavior. The headboard is a separate
+profile over unwrapped compact JSON: the Linx carrier is extracted into
+`codec/json_record.py` with unchanged Linx bytes, and `codec/ar_connect.py`
+provides the headboard's typed records and CSV/framed parsers. No existing codec
+reproduces the complete headboard model and parser contract; it is not a Linak
+binary protocol. The two controllers share concrete-session fencing and GATT
+plumbing, while keeping transports/security/state machines separate. See
+[AR Connect](../beds/linak.md#ar-connect).
 
 ## Registering a family
 
@@ -560,6 +561,17 @@ vectors. Its fixed 200IV2 / A8RM P1 profile reuses the shared Richmat
 motion/session runtime; Settings gates belong to the current connection.
 The profile does not admit the other catalog layouts or raw transport.
 
+
+## KONFURT
+
+KONFURT 1.0's 29 frozen normal, clock, alarm and query literals all reproduce
+byte for byte through `codec/keeson.py`. It is a typed profile in
+`profiles/konfurt.py`, with a shared Keeson controller extension for its captured
+GATT link, two delayed release writes, alarm sequencing and notification parser.
+Its manual layouts and command words are independent of other apps named Sino.
+No shared UUID or catalog name chooses this profile. Existing wire scenarios
+remain unchanged. See the [KONFURT profile](../beds/keeson.md#konfurt).
+
 Amada Smart 1.0.0 (1) selects the unchanged Okin N-frame codec after all 78
 frozen transmit literals match `frame40`, `request`, `clock` and `alarm`.
 `profiles/amada.py` owns the explicit A/AB/B selector and its own schedules.
@@ -594,3 +606,26 @@ those encoders. Its three current profiles own the product menus and alarm modes
 its session controller rejects mixed recognized services rather than applying
 the app's independent handle-selection and encoding order to unknown hardware.
 See [Thrive Sleep](../beds/richmat.md#thrive-sleep).
+
+## Dunlopillo Remote
+
+Dunlopillo Remote 1.7 (11) reproduces all 24 control and two rename literals
+through the existing Keeson `frame` and `rename` encoders. Its own typed profile
+retains four independently selected layouts, held versus single versus pulsed
+release policies and timer notification offsets. The shared Keeson controller
+extension owns concrete characteristic selection and connection-bound cleanup;
+no new wire codec or name-based discovery rule is needed.
+
+## AVEK Ergo System
+
+AVEK Ergo System 2.0.2 requires `codec/avek.py`: no existing carrier
+reproduces its B0 length/fixed-prefix/little-endian word/additive-checksum
+controls together with its B1 six-byte identity reply and raw-count format.
+The Nordic UART UUIDs establish no codec equivalence. `profiles/avek.py`
+owns the single fixed Shoulder/Hip panel and its timing. All twelve outgoing
+literals and eight received observations are preserved in
+`tests/fixtures/avek/vectors.json` and checked by `tests/test_avek.py`.
+The controller binds callbacks and writes to their BLE session. Ending refresh
+is the only proven release. Initial's app waiter requests conditional
+cancellation; Home Assistant independently bounds its refresh instead of
+reproducing the app's unbounded-sender failure. See [AVEK](../beds/avek.md).

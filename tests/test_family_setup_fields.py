@@ -575,6 +575,7 @@ def _quiet_routes() -> list[tuple[str, str]]:
 
 async def test_the_quiet_bed_types_are_those_whose_controller_reads_positions(hass):
     from custom_components.adjustable_bed.beds.base import BedController
+    from custom_components.adjustable_bed.beds.keeson.controller import KeesonController
     from tests.test_controller_contract import _create_controller_for_bed_type
 
     found = set()
@@ -584,19 +585,30 @@ async def test_the_quiet_bed_types_are_those_whose_controller_reads_positions(ha
             # Both inherit Keeson's no-op reader without reporting positions.
             assert not any(bed_type_has_position_feedback(bed_type, v) for v in _routes_of(bed_type))
             continue
+        if bed_type == "ar_connect":
+            # Native raw extension reads are mandatory session data, never optional
+            # angle sensing or the quiet-route Read bed position toggle.
+            assert not controller.supports_position_feedback
+            continue
+        if bed_type == const.BED_TYPE_KONFURT:
+            # KONFURT inherits Keeson's no-op; none of its layouts reports positions.
+            assert type(controller).read_positions is KeesonController.read_positions
+            assert not any(bed_type_has_position_feedback(bed_type, v) for v in _routes_of(bed_type))
+            continue
         if type(controller).read_positions is not BedController.read_positions and any(
             not bed_type_has_position_feedback(bed_type, v) for v in _routes_of(bed_type)
         ):
             found.add(bed_type)
     # King Koil and PowersBedding have no-op readers. Their method overrides
     # do not make them position-reading setup routes.
-    # King Koil inherits Keeson's no-op read_positions, but its source-fixed
-    # cadence and lack of feedback do not make it a position-reading setup route.
+    # King Koil and Dunlopillo inherit Keeson's no-op read_positions; their
+    # source-fixed cadence and lack of feedback do not make them position-reading routes.
     # Keep the quiet-route census while accounting for that inherited method.
     assert found == set(_QUIET_BED_TYPES) | {
         const.BED_TYPE_KINGKOIL,
         const.BED_TYPE_THRIVESLEEP,
         const.BED_TYPE_POWERSBEDDING,
+        const.BED_TYPE_DUNLOPILLO,
     }
     assert not any(
         bed_type_has_position_feedback(const.BED_TYPE_KINGKOIL, variant)

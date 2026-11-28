@@ -446,6 +446,9 @@ class AdjustableBedCover(AdjustableBedEntity, CoverEntity):
 
     async def _async_start_movement(self, direction: str) -> None:
         """Start moving the cover."""
+        controller = self._coordinator.capability_controller
+        if controller is not None and not controller.command_start_allowed((self._motor_resource,)):
+            return
         _LOGGER.info(
             "Cover movement: %s %s (device: %s)",
             self.entity_description.key,
