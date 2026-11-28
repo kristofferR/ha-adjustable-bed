@@ -115,8 +115,7 @@ jobs:
           GROUP: ${{ matrix.group }}
           STORE_DURATIONS: ${{ github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' }}
         run: |
-          args=(-q --splits 3 --group "$GROUP"
-            --deselect tests/test_wire_snapshot.py::test_wire_bytes_match_committed_snapshot)
+          args=(-q --splits 3 --group "$GROUP")
           if [ "$STORE_DURATIONS" = true ]; then
             cp .test_durations "durations-$GROUP.json"
             args+=(--store-durations --clean-durations --durations-path "durations-$GROUP.json")
@@ -129,32 +128,6 @@ jobs:
           name: durations-${{ matrix.group }}
           path: durations-${{ matrix.group }}.json
           retention-days: 7
-
-  # The wire guard launches two hash-seed captures. Give them their own runner
-  # instead of competing with the shard's other pytest workers.
-  wire-snapshot:
-    runs-on: ubuntu-latest
-    timeout-minutes: 20
-    steps:
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
-        with:
-          persist-credentials: false
-      - name: Install uv
-        uses: astral-sh/setup-uv@37802adc94f370d6bfd71619e3f0bf239e1f3b78 # v7.6.0
-        with:
-          python-version: "3.14"
-          enable-cache: true
-      - name: Install dependencies and HA-managed Bluetooth stack
-        run: |
-          uv sync --extra dev
-          uv run --no-sync python scripts/ha_bluetooth_test_requirements.py > /tmp/ha-bluetooth-requirements.txt
-          uv pip install -r /tmp/ha-bluetooth-requirements.txt
-      - name: Verify wire bytes and both hash seeds
-        env:
-          WIRE_SNAPSHOT_VERBOSE: "1"
-        run: >-
-          uv run --no-sync pytest -s -n 0
-          tests/test_wire_snapshot.py::test_wire_bytes_match_committed_snapshot
 
   # pytest-split balances the shards on .test_durations. Refresh it only from
   # this job: download the test-durations artifact of a scheduled or manually
