@@ -593,6 +593,13 @@ def plan_commands(controller: Any) -> list[Command]:
         plan.append(
             Command("sync_clock", _method("sync_clock"), _flag(controller, "supports_clock_sync"))
         )
+    if controller._coordinator.bed_type == "thrivesleep":
+        from custom_components.adjustable_bed.alarm import AlarmRequest
+        alarm = AlarmRequest(enabled=True, hour=7, minute=30, slot=1, wake_action="zero_g",
+            weekdays=(0, 1, 2, 3, 4), reference_time=datetime.datetime.fromisoformat(FROZEN_NOW))
+        plan.extend((Command("light_rgb", _method("light_rgb", (1, 2, 3)), True),
+                     Command("repeat_alarm", _method("configure_alarm", alarm), True),
+                     Command("delete_alarm", _method("delete_alarm", 1), True)))
     return plan
 
 
@@ -1581,6 +1588,10 @@ def default_scenario(bed_type: str) -> Scenario:
             id=bed_type, bed_type=bed_type, protocol_variant="E3RM",
             replies={"write:6e0a000179": "6e0e00037f", "write:6e1a000088": "6e1a000189"},
         )
+    if bed_type == "thrivesleep":
+        return Scenario(id=bed_type, bed_type=bed_type, protocol_variant="cool_flow",
+                        entry_data={const.CONF_PROTOCOL_VARIANT: "cool_flow"}, layout_id="thrivesleep:w1",
+                        replies={"write:6e08010178": "6e09010078", "write:6e0a000179": "6e0e00037f"})
     if bed_type == "super_colchones":
         return Scenario(id=bed_type, bed_type=bed_type, protocol_variant="afeg302",
                         entry_data={const.CONF_PROTOCOL_VARIANT: "afeg302"}, layout_id="super_colchones:n1")
@@ -1956,6 +1967,12 @@ def route_scenarios() -> list[Scenario]:
         scenarios.append(dataclasses.replace(default_scenario("symphony"),
             id=f"symphony:{product}:{selector}", protocol_variant=selector,
             entry_data={const.CONF_PRODUCT_TYPE: product}, layout_id="symphony"))
+    for product in ("cool_flow", "level5", "eco_comfort"):
+        for route in ("n1", "w1", "w2", "w3", "w4", "w5"):
+            scenarios.append(Scenario(id=f"thrivesleep:{product}:{route}", bed_type="thrivesleep",
+                protocol_variant=product, entry_data={const.CONF_PROTOCOL_VARIANT: product}, layout_id=f"thrivesleep:{route}",
+                replies={"write:6e08010178": "6e09010078", "write:6e0a000179": "6e0e00037f",
+                         "write:01": "6e090100786e0e00037f", "write:6e2008060300009f": "6e200d060302004245442d31cf"}))
     for product in ("afeg302", "afeg350"):
         for route in ("n1", "w1", "w2", "w3", "w4", "w5"):
             scenarios.append(Scenario(id=f"super_colchones:{product}:{route}", bed_type="super_colchones",

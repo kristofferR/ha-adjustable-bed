@@ -6123,6 +6123,9 @@
       "superior_sleep_alarm_hour": {
         "name": "Alarm hour"
       },
+      "thrivesleep": {
+        "name": "Product"
+      },
       "super_colchones": {
         "name": "Product"
       },
@@ -6225,6 +6228,9 @@
       },
       "hestia_enhancement": {
         "name": "Alarm massage enhancement (apply with alarm switch)"
+      },
+      "thrivesleep_anti_snore": {
+        "name": "Anti-snore setting"
       },
       "okimattmotion_massage_power": { "name": "Massage" },
       "langjue_alarm_enabled": {
@@ -6817,6 +6823,9 @@
       }
     },
     "number": {
+      "thrivesleep_light_seconds": {
+        "name": "Light timer (0 keeps on)"
+      },
       "ghostbed_upper_massage": {"name": "Head massage intensity"},
       "ghostbed_feet_massage": {"name": "Feet massage intensity"},
       "suta_king_koil_head_step": {
@@ -8442,6 +8451,17 @@
         "side": {
           "name": "Side"
         }
+      }
+    },
+    "thrivesleep": {
+      "name": "Thrive Sleep controls",
+      "description": "Set a light color, refresh or delete a bed alarm, or refresh Level 5 anti-snore state.",
+      "fields": {
+        "device_id": {"name": "Bed"},
+        "operation": {"name": "Action"},
+        "rgb_color": {"name": "RGB color"},
+        "alarm_id": {"name": "App alarm ID"},
+        "side": {"name": "Side"}
       }
     },
     "suta_king_koil_confirm_alarm": {
@@ -14208,6 +14228,7 @@
       "options": {
         "topcare": "TOP CARE",
         "comfort_bed": "Comfort Bed (ComfortCareBed)",
+        "thrivesleep": "Thrive Sleep app",
         "atlas_lift": "Atlas Lift (Cama Lift)",
         "enso2": "ENSO Sleep Control (Enso 2)",
         "rmcontrol": "RMControl app",

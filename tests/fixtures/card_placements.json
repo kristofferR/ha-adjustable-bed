@@ -4489,6 +4489,9 @@
  "number:symphony_light_brightness": {
   "card_section": "lighting"
  },
+ "number:thrivesleep_light_seconds": {
+  "card_section": "lighting"
+ },
  "number:tv_lift_position_estimated": {
   "card_section": "motors",
   "card_role": "estimate",
@@ -6013,6 +6016,9 @@
  "sensor:symphony_protocol": {
   "card_section": "hidden"
  },
+ "sensor:thrivesleep": {
+  "card_section": "hidden"
+ },
  "sensor:timotion_ahf_lamp_display_code": {
   "card_section": "hidden"
  },
@@ -6375,6 +6381,9 @@
   "card_section": "motors"
  },
  "switch:synchronization": {
+  "card_section": "utility"
+ },
+ "switch:thrivesleep_anti_snore": {
   "card_section": "utility"
  },
  "switch:truemotion_lock": {
