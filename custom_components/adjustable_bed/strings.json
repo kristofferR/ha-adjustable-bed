@@ -2001,6 +2001,7 @@
       "dorsal_zero_gravity_down": {
         "name": "Zero gravity motor down"
       },
+      "aminach_release": { "name": "Release held control" },
       "avek_release": {
         "name": "Release held control"
       },
@@ -12970,6 +12971,9 @@
     },
     "leva_receiver_mismatch": {
       "message": "The connected bed did not provide an unambiguous {receiver} receiver for the selected Leva model. Check the Bluetooth device and receiver selection."
+    },
+    "aminach_hold_duration": {
+      "message": "Choose a hold duration from 100 to 60000 milliseconds."
     },
     "leva_hold_duration": {
       "message": "Choose a Leva hold duration between 1 and 60000 milliseconds."
