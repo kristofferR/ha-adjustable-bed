@@ -1013,6 +1013,13 @@ The searchable **Ronco Motion app** choice asks for ECONOMY (Fk9rm) or PREMIUM
 identify it. PREMIUM adds Pillow and a light toggle. Layout settings belong to
 one physical side of a two-address pair. See [Ronco Motion](beds/richmat.md#ronco-motion).
 
+### Innova Control
+
+Choose **Innova Control app** for `com.richmat.innova2`, then select the remote
+layout or concrete model-picker choice. This is distinct from INNOVA
+(`com.ore.sfm`). Mode tabs remain logical modes, not paired bed sides. Optional
+light/aroma entities require capability replies on the current connection.
+
 ### PowersBedding
 
 Choose **PowersBedding app** for its fixed two-motor screen. The Bluetooth name
