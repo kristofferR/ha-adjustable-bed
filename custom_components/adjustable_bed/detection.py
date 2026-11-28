@@ -623,13 +623,18 @@ def _rests_on_shared_service(
 ) -> bool:
     """Return whether only shared services led to a bed type.
 
-    A declared name or maker hint confirms the match, as does a name a
+    A declared receiver name or maker hint confirms the match, as does a name a
     detection rule recorded (``name:...``, other than an app candidate's).
     """
     return (
         any(not _is_standard_service(uuid) for uuid in service_uuids)
         and _has_only_generic_uuids(service_uuids)
-        and not any(isinstance(hint, NameHint | ManufacturerHint) for hint in first.hints)
+        # AVEK scan prefixes suggest an app, not an unrelated shared-UUID receiver.
+        and not any(
+            isinstance(hint, ManufacturerHint)
+            or isinstance(hint, NameHint) and hint.bed_types != frozenset({"avek"})
+            for hint in first.hints
+        )
         and not any(
             signal.startswith("name:") and not signal.endswith("candidate")
             for signal in result.signals
@@ -889,6 +894,7 @@ BED_TYPE_DISPLAY_NAMES: dict[str, str] = {
     BED_TYPE_SUTA: "SUTA Smart Home app",
     BED_TYPE_TRUEMOTION: "trueMotion app",
     BED_TYPE_SUTA_KING_KOIL: "King Koil (SUTA) app",
+    "avek": "AVEK Ergo System",
     "active_sleep": "Active Sleep (Paramount)",
     "paramount": "Paramount Bed Operation (ベッド操作)",
     BED_TYPE_BEDJET_POWERLAYER: "BedJet PowerLayer adjustable frame",
@@ -1529,7 +1535,7 @@ def detect_bed_type(service_info: BluetoothServiceInfoBleak) -> str | None:
         For detailed detection with confidence scores, use detect_new_bed().
     """
     result = detect_new_bed(service_info)
-    if result.bed_type in (BED_TYPE_JUNASLEEP, "intellibed", "active_sleep", BED_TYPE_RONCO_MOTION, BED_TYPE_AMBIENT, BED_TYPE_COMFORT_BED, BED_TYPE_SMART_BASE, BED_TYPE_ATLAS_LIFT, BED_TYPE_LIKIMIO, "dorsal", BED_TYPE_SIMMONS_BLUE, "sleep_assistant", BED_TYPE_SLEEP_ASSIST_PRO, "thrivesleep", "super_colchones", "bobpowerbase", BED_TYPE_GALAXY, BED_TYPE_GOODVIBE, BED_TYPE_MLILY, BED_TYPE_MLILY0, BED_TYPE_MLILY_REMOTE, BED_TYPE_MOTOMOTION, BED_TYPE_AMADA, BED_TYPE_N32_MOTION_BED, BED_TYPE_SYMPHONY, BED_TYPE_MLINE, BED_TYPE_OKIMIKI) and result.confidence < 0.7:
+    if result.bed_type in (BED_TYPE_JUNASLEEP, "intellibed", "active_sleep", "avek", BED_TYPE_RONCO_MOTION, BED_TYPE_AMBIENT, BED_TYPE_COMFORT_BED, BED_TYPE_SMART_BASE, BED_TYPE_ATLAS_LIFT, BED_TYPE_LIKIMIO, "dorsal", BED_TYPE_SIMMONS_BLUE, "sleep_assistant", BED_TYPE_SLEEP_ASSIST_PRO, "thrivesleep", "super_colchones", "bobpowerbase", BED_TYPE_GALAXY, BED_TYPE_GOODVIBE, BED_TYPE_MLILY, BED_TYPE_MLILY0, BED_TYPE_MLILY_REMOTE, BED_TYPE_MOTOMOTION, BED_TYPE_AMADA, BED_TYPE_N32_MOTION_BED, BED_TYPE_SYMPHONY, BED_TYPE_MLINE, BED_TYPE_OKIMIKI) and result.confidence < 0.7:
         return None  # An app name hint requires an explicit product choice.
     return result.bed_type
 
@@ -2363,6 +2369,15 @@ def _detect_bed_type_with_app_candidates(
             result.ambiguous_types = list(dict.fromkeys(
                 [*(result.ambiguous_types or ()), BED_TYPE_ENSO2]
             ))
+            result.signals.append(signal)
+    if first.name("avek") and not any(
+        signal.startswith("excluded:") for signal in result.signals
+    ):
+        signal = "app_hint:avek"
+        if result.bed_type is None:
+            result = DetectionResult("avek", 0.3, [*result.signals, signal])
+        elif result.bed_type != "avek":
+            result.ambiguous_types = list(dict.fromkeys([*(result.ambiguous_types or ()), "avek"]))
             result.signals.append(signal)
     from .profiles.askona import admitted_name as askona_name
 

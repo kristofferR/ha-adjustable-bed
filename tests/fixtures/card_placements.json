@@ -598,6 +598,9 @@
  "button:auxiliary_action": {
   "card_section": "utility"
  },
+ "button:avek_release": {
+  "card_section": "hidden"
+ },
  "button:back_down": {
   "card_section": "motors",
   "card_role": "down",

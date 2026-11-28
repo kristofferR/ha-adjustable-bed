@@ -595,7 +595,6 @@ its session controller rejects mixed recognized services rather than applying
 the app's independent handle-selection and encoding order to unknown hardware.
 See [Thrive Sleep](../beds/richmat.md#thrive-sleep).
 
-
 ## Dynasty Base A
 
 Dynasty Base A 1.0 reproduces all 55 frozen transmit literals through the
@@ -606,3 +605,17 @@ The shared Keeson controller extension owns connection-bound read-after-write,
 fragment dispatch and the distinct movement, preset and accessory gestures.
 Preset holds expose the original recall stream without claiming memory saving.
 See [the app profile](../beds/keeson.md#dynasty-base-a).
+
+## AVEK Ergo System
+
+AVEK Ergo System 2.0.2 requires `codec/avek.py`: no existing carrier
+reproduces its B0 length/fixed-prefix/little-endian word/additive-checksum
+controls together with its B1 six-byte identity reply and raw-count format.
+The Nordic UART UUIDs establish no codec equivalence. `profiles/avek.py`
+owns the single fixed Shoulder/Hip panel and its timing. All twelve outgoing
+literals and eight received observations are preserved in
+`tests/fixtures/avek/vectors.json` and checked by `tests/test_avek.py`.
+The controller binds callbacks and writes to their BLE session. Ending refresh
+is the only proven release. Initial's app waiter requests conditional
+cancellation; Home Assistant independently bounds its refresh instead of
+reproducing the app's unbounded-sender failure. See [AVEK](../beds/avek.md).
