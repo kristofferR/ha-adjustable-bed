@@ -4161,6 +4161,12 @@
  "number:flexispot_upper_massage": {
   "card_section": "massage"
  },
+ "number:ghostbed_feet_massage": {
+  "card_section": "massage"
+ },
+ "number:ghostbed_upper_massage": {
+  "card_section": "massage"
+ },
  "number:goodvibe_snore_count": {
   "card_section": "utility"
  },
@@ -4601,6 +4607,15 @@
  },
  "select:foundation_preset_right": {
   "card_section": "climate"
+ },
+ "select:ghostbed_angle": {
+  "card_section": "utility"
+ },
+ "select:ghostbed_massage_mode": {
+  "card_section": "massage"
+ },
+ "select:ghostbed_sensitivity": {
+  "card_section": "utility"
  },
  "select:goodvibe_side": {
   "card_section": "motors"
@@ -5294,6 +5309,9 @@
  },
  "sensor:galaxy_status": {
   "card_section": "hidden"
+ },
+ "sensor:ghostbed_alarms": {
+  "card_section": "utility"
  },
  "sensor:glideaway_motion_alarm": {
   "card_section": "hidden"
@@ -6149,6 +6167,12 @@
   "card_section": "utility"
  },
  "switch:flexispot_snore": {
+  "card_section": "utility"
+ },
+ "switch:ghostbed_snore_home": {
+  "card_section": "utility"
+ },
+ "switch:ghostbed_snore_left": {
   "card_section": "utility"
  },
  "switch:hestia_alarm": {

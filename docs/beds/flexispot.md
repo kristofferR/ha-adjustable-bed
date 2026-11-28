@@ -1,4 +1,4 @@
-# Flexispot
+# Flexispot / GhostBed
 
 **Status:** Not yet tested
 
@@ -9,29 +9,34 @@
 - EB632MF-8060-02, EB703M-8060-02, EB704M-8060-02 and EB803M-8060.
 - Bluetooth names containing `W_LeGe`, case-sensitive. The name does not identify the model.
 
+- GhostBed app beds; Bluetooth names containing `GhostBed` or `W_LeGe`.
+
 ## Apps
 
 | Analyzed | App | Package ID | Profiles |
 |---|---|---|---|
 | ✅ | [Flexispot](https://play.google.com/store/apps/details?id=com.loctek.flexispotpro) 1.1 (2) | `com.loctek.flexispotpro` | Four explicit products |
+| ✅ | [GhostBed](https://play.google.com/store/apps/details?id=com.loctek.ghostbed) 1.3 (4) | `com.loctek.ghostbed` | [GhostBed](#ghostbed) |
 
 ## Features
 
-| Feature | EB632 | EB703 | EB704 | EB803 |
-|---|---|---|---|---|
-| Motor control | Back, feet | Back, feet, lumbar | Back, feet, neck, lumbar | Left back, right back, shared feet |
-| Position feedback | None | None | None | None |
-| Presets | Flat, zero gravity, Sleep, M1–M3 | Flat, zero gravity, Sleep, TV | Same as EB703 | Flat, zero gravity, Memory and TV per side |
-| Memory programming | Sleep, M1–M3 | Sleep, TV | Sleep, TV | Memory and TV per side |
-| Light | On/off | None | On/off | On/off |
-| Massage | Power, upper/feet steps, four patterns, timer | Same | Same | Power, left/right waist and leg intensity, four named patterns, timer |
-| Snore intervention | None | None | None | Global or per-side enable, sensitivity, angle setting |
-| Onboard wake-up alarms | None | None | None | Two weekday schedules, Basic or Pro pattern |
+| Feature | EB632 | EB703 | EB704 | EB803 | GhostBed |
+|---|---|---|---|---| --- |
+| Motor control | Back, feet | Back, feet, lumbar | Back, feet, neck, lumbar | Left back, right back, shared feet | Back/head, feet |
+| Position feedback | None | None | None | None | None |
+| Presets | Flat, zero gravity, Sleep, M1–M3 | Flat, zero gravity, Sleep, TV | Same as EB703 | Flat, zero gravity, Memory and TV per side | Flat, zero gravity, Sleep, M1–M3 |
+| Memory programming | Sleep, M1–M3 | Sleep, TV | Sleep, TV | Memory and TV per side | Sleep, M1–M3 |
+| Light | On/off | None | On/off | On/off | On/off |
+| Massage | Power, upper/feet steps, four patterns, timer | Same | Same | Power, left/right waist and leg intensity, four named patterns, timer | Power, head/feet levels, four modes, timer |
+| Snore intervention | None | None | None | Global or per-side enable, sensitivity, angle setting | Home enable and left settings |
+| Onboard wake-up alarms | None | None | None | Two weekday schedules, Basic or Pro pattern | Four weekday schedules, Basic or Pro |
+
+GhostBed provides two motors, Flat, zero gravity, three memories and Sleep (all four programmable), under-bed light, head/feet massage levels, Basic/Cycle/Pulse/Wave massage, a timer, anti-snore home and left settings, four bed alarms, clock sync and a confirmed reset. It has no physical position feedback or right-side motor controls.
 
 ## Choosing a profile
 
 Select **Flexispot app**, then the exact model shown in your app. All models use
-one Bluetooth address. EB803 exposes its left/right controls together; it does
+one Bluetooth address. Choose **GhostBed app** for the current GhostBed app controls; shared Bluetooth names may offer both apps, so choose the one you use. EB803 exposes its left/right controls together; it does
 not require combining two entries. No Bluetooth bond or PIN is required by this app.
 
 <!-- generated:flexispot-profiles -->
@@ -43,10 +48,12 @@ not require combining two entries. No Bluetooth bond or PIN is required by this 
 | eb703 | EB703M-8060-02 | back: `01`, feet: `02`, lumbar: `04` | tv: `02`, sleep: `04` | No |
 | eb704 | EB704M-8060-02 | back: `01`, feet: `02`, head: `03`, lumbar: `04` | tv: `02`, sleep: `04` | Yes |
 | eb803 | EB803M-8060 | left_back: `01`, feet: `02`, right_back: `03` | memory: `03`, tv: `02` | Yes |
+| ghostbed | GhostBed | back: `01`, feet: `02` | memory_1: `01`, memory_2: `03`, memory_3: `02`, sleep: `04` | Yes |
 
 Movement refresh: 200 ms; release delay: 100 ms; relative massage step: 200 ms.
 The app saves after a 5000 ms press; Home Assistant uses confirmed save actions.
-Startup subscribes to notifications and sends no query or authentication frame.
+Flexispot startup subscribes to notifications and sends no query or authentication
+frame. GhostBed timing and clock startup are listed in its profile section.
 <!-- /generated -->
 
 ## Wire codec
@@ -63,7 +70,7 @@ Startup subscribes to notifications and sends no query or authentication frame.
 
 Writes use the discovered characteristic's write-with-response property when
 available, otherwise write-without-response. Both roles must belong to the listed
-service. Notifications are required; there is no startup query.
+service. Notifications are required; there is no startup query. GhostBed synchronizes the bed clock after subscription succeeds.
 
 ### Framing and checksum
 
@@ -261,6 +268,127 @@ The integration does not reproduce phone preferences or its process lifetime.
 #### Evidence
 
 Based on Flexispot 1.1 (2). Hardware behavior remains unverified.
+
+
+### GhostBed
+
+**App:** [GhostBed](https://play.google.com/store/apps/details?id=com.loctek.ghostbed) 1.3 (4), `com.loctek.ghostbed`
+
+**Status:** Not yet tested
+
+#### Setup
+
+Select **GhostBed app**. Case-sensitive name substrings `W_LeGe` and `GhostBed`
+suggest this route; a shared name does not identify the product. Saved addresses
+and manual entry do not require a name match. There are no model, PIN or split
+controls. Head/back and feet are the two actuator rows. No physical angle or
+percentage sensor is created.
+
+#### Controls
+
+Use the native movement, preset, memory, light, massage and anti-snore controls.
+Save Sleep uses a confirmed button; memory saves use the standard confirmed
+save actions. Anti-snore offers the app's home on/off control and its left-side
+settings switch, sensitivity and target selector. Target labels are settings,
+not measured motor angles. The two controls intentionally differ when the bed
+reports only the other side enabled. Home changes preserve both raw packed codes;
+left settings edits use the app's default peer level rather than adding a right
+control. Invalid reported pair codes retain the last valid left setting and
+remain visible in raw diagnostics.
+
+<!-- generated:ghostbed-commands -->
+<!-- Generated by scripts/generate_codec_docs.py from the codec and profile data. Edit those, not this block. -->
+
+| Action | Frame |
+|---|---|
+| back up | `9B 00 01 01 00 00 00 00 00 00 00 00 00 00 00 00 00 81 7E 9D` |
+| back down | `9B 00 02 01 00 00 00 00 00 00 00 00 00 00 00 00 00 C2 7F 9D` |
+| back release | `9B 00 03 01 00 00 00 00 00 00 00 00 00 00 00 00 00 03 7F 9D` |
+| feet up | `9B 00 01 02 00 00 00 00 00 00 00 00 00 00 00 00 00 82 7D 9D` |
+| feet down | `9B 00 02 02 00 00 00 00 00 00 00 00 00 00 00 00 00 C1 7C 9D` |
+| feet release | `9B 00 03 02 00 00 00 00 00 00 00 00 00 00 00 00 00 00 7C 9D` |
+| Recall memory_1 | `9B 00 07 01 00 00 00 00 00 00 00 00 00 00 00 00 00 07 7C 9D` |
+| Save memory_1 | `9B 00 06 01 00 00 00 00 00 00 00 00 00 00 00 00 00 C6 7C 9D` |
+| Recall memory_2 | `9B 00 07 03 00 00 00 00 00 00 00 00 00 00 00 00 00 04 BE 9D` |
+| Save memory_2 | `9B 00 06 03 00 00 00 00 00 00 00 00 00 00 00 00 00 C5 BE 9D` |
+| Recall memory_3 | `9B 00 07 02 00 00 00 00 00 00 00 00 00 00 00 00 00 04 7F 9D` |
+| Save memory_3 | `9B 00 06 02 00 00 00 00 00 00 00 00 00 00 00 00 00 C5 7F 9D` |
+| Recall sleep | `9B 00 07 04 00 00 00 00 00 00 00 00 00 00 00 00 00 02 79 9D` |
+| Save sleep | `9B 00 06 04 00 00 00 00 00 00 00 00 00 00 00 00 00 C3 79 9D` |
+| Flat | `9B 00 05 02 00 00 00 00 00 00 00 00 00 00 00 00 00 86 7E 9D` |
+| Zero gravity | `9B 00 07 05 00 00 00 00 00 00 00 00 00 00 00 00 00 02 B8 9D` |
+| Light on | `9B 00 04 01 00 00 00 00 00 00 00 00 00 00 00 00 00 44 7D 9D` |
+| Light off | `9B 00 04 02 00 00 00 00 00 00 00 00 00 00 00 00 00 47 7E 9D` |
+| Massage on | `9B 00 0E 01 00 00 00 00 00 00 00 00 00 00 00 00 00 CE 7A 9D` |
+| Massage off | `9B 00 0E 00 00 00 00 00 00 00 00 00 00 00 00 00 00 CE BB 9D` |
+| Head massage increase | `9B 00 0C 00 00 00 00 00 00 00 00 00 00 00 00 00 00 4C BA 9D` |
+| Head massage decrease | `9B 00 12 00 00 00 00 00 00 00 00 00 00 00 00 00 00 D2 B2 9D` |
+| Feet massage increase | `9B 00 11 00 00 00 00 00 00 00 00 00 00 00 00 00 00 91 B3 9D` |
+| Feet massage decrease | `9B 00 0D 00 00 00 00 00 00 00 00 00 00 00 00 00 00 8D BA 9D` |
+| Restore original settings | `9B 00 05 0A 00 00 00 00 00 00 00 00 00 00 00 00 00 8F B6 9D` |
+| Massage basic | `9B 00 10 00 00 00 00 00 00 00 00 00 00 00 00 00 00 50 B3 9D` |
+| Massage cycle | `9B 00 10 01 00 00 00 00 00 00 00 00 00 00 00 00 00 50 72 9D` |
+| Massage pulse | `9B 00 10 02 00 00 00 00 00 00 00 00 00 00 00 00 00 53 71 9D` |
+| Massage wave | `9B 00 10 03 00 00 00 00 00 00 00 00 00 00 00 00 00 53 B0 9D` |
+
+Movement refresh: 200 ms; release delay: 100 ms; relative massage step: 200 ms.
+App save hold: 3000 ms. Alarm delete pair gap: 200 ms.
+
+Timer minutes: 0–60, encoded as `frame(0F, minutes)`. Clock:
+`frame(34, 03, {4: hour24, 5: minute, 6: second, 7: weekdayMonday1})`. Snore:
+`snore(enabled, angle_code, sensitivity_code)`. Settings edits use
+`pair(left_level, 0)`; home preserves both raw codes. Alarms 1/2:
+`alarm((record1, record2), edited_slot, 01)`. Alarms 3/4:
+`alarm((record3, record4), 04, 34)`. Each record is hour, minute, weekday/enabled
+flags, mode (0 empty, 1 Basic, 2 Pro).
+<!-- /generated -->
+
+#### Timing
+
+See the generated table above. A movement release always cleans up the original
+connection after a started write settles, including cancellation or failure.
+A replacement connection never receives an old command or STOP. Massage sliders
+send the relative difference from a current reported level; a new report is
+required before another edit. UI-only drag/cancel gestures and save press timers
+are represented by explicit HA value and confirmed save actions.
+
+#### Notifications
+
+The shared parser accepts the current state opcodes with header/footer and length
+guards, without adding a response CRC check. The low light nibble drives light
+state. Alarm banks 0 and 8 update separate pairs; other banks retain prior alarm
+records. Signed Java division/remainder at offsets 4 and 15 is retained. These
+fields describe massage and snore state, not motor position.
+
+State is applied as soon as it arrives. The phone app's two-second settings-widget
+refresh delay does not delay HA parsing or home state. Raw notifications and
+protocol diagnostics retain packet bytes, including the light-only opcode that
+the current app screen does not consume. Disconnect clears link-scoped
+state; callbacks from a replaced controller cannot update its successor.
+
+#### Services
+
+Use `adjustable_bed.set_alarm` with explicit slot 1–4, repeat weekdays and
+`wake_mode_1` (Basic) or `wake_mode_2` (Pro). Turning off without a time clears the enabled bit while retaining the record.
+Supplying a time, repeat days and wake mode with `enabled: false` edits a disabled
+record without temporarily enabling it. Both alarm-bank reports are required before editing;
+unknown records are never silently replaced with empty slots. The alarm sensor
+shows each stored alarm's time, on/off state, repeat weekdays and Basic or Pro
+wake mode. Empty or unavailable records are labelled accordingly. Confirmed
+Delete alarm buttons compact surviving records and pad empty slots, writing both pairs with the listed gap. A cancelled or
+partially failed write leaves those records unknown until reports arrive.
+
+An alarm cannot share a repeat day with another nonempty record within 30 minutes,
+including an inactive record and the exact 30-minute boundary. The comparison
+does not wrap midnight. `adjustable_bed.sync_clock` sends HA local time using
+Monday 1 through Sunday 7. Restore original settings is a confirmed action.
+
+#### Evidence
+
+Based on GhostBed 1.3 (4), `com.loctek.ghostbed`. Frozen byte vectors and formula
+checks are in `tests/test_ghostbed.py`; the shared encoder is
+`codec/flexispot.py`. No hardware capture has confirmed this route yet.
+
 
 ## Notes
 
