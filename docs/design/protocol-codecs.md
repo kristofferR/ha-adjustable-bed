@@ -506,6 +506,16 @@ profile. `beds/ergobq/` uses the shared settled GATT writer with an expected
 client, while owning its authentication, notification stream and release.
 See [ErgoBQ BED](../beds/ergobq.md) and `tests/test_ergobq_vectors.py`.
 
+## iFit
+
+iFit 1.1 (3) reuses `codec/okin_5a.py` only after all 35 reachable command
+literals and its separate startup literal reproduce byte for byte. Its
+`profiles/ifit.py` declares independent timing and command data. The shared
+Okin 5A controller extension in `beds/ifit/` owns exact-session startup,
+held refresh without a trailing release frame, and the combined Flat/preset
+save gesture. No existing app route, discovery matcher or wire scenario changes.
+See [iFit](../beds/okin-5a.md#ifit).
+
 ## Comfort Bed
 
 Comfort Bed 1.0.2's current ComfortCareBed profile reproduces all 108 frozen
@@ -521,6 +531,14 @@ Richmat codec, including conditional raw builders and unreachable helper
 vectors. Its fixed 200IV2 / A8RM P1 profile reuses the shared Richmat
 motion/session runtime; Settings gates belong to the current connection.
 The profile does not admit the other catalog layouts or raw transport.
+
+Amada Smart 1.0.0 (1) selects the unchanged Okin N-frame codec after all 78
+frozen transmit literals match `frame40`, `request`, `clock` and `alarm`.
+`profiles/amada.py` owns the explicit A/AB/B selector and its own schedules.
+The shared Okin controller extension owns AMADA's captured BLE session, selected
+record parsing, six-second save/reset and generic HA alarm routing. A/B are not
+physical Left/Right evidence. The accepted source remains bounded PARTIAL
+(B1 SDK warnings and B2 exception/cancellation ordering), hardware unverified.
 
 ### Active Sleep
 

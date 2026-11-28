@@ -1949,6 +1949,7 @@
       "dorsal_zero_gravity_down": {
         "name": "Zero gravity motor down"
       },
+      "ifit_release": { "name": "Release held control" },
       "leva_release": { "name": "Release motion control" },
       "leva_massage_head": { "name": "Cycle head massage" },
       "leva_massage_foot": { "name": "Cycle feet massage" },
@@ -4303,6 +4304,24 @@
       },
       "kingkoil_feet_down": {
         "name": "Foot down"
+      },
+      "amada_reset": {
+        "name": "Reset saved positions"
+      },
+      "amada_foot_strength_up": {
+        "name": "Foot massage intensity up"
+      },
+      "amada_foot_strength_down": {
+        "name": "Foot massage intensity down"
+      },
+      "amada_timer_step": {
+        "name": "Cycle massage timer"
+      },
+      "amada_refresh": {
+        "name": "Refresh massage and light"
+      },
+      "amada_refresh_alarm": {
+        "name": "Refresh alarm"
       }
     },
     "cover": {
@@ -6208,6 +6227,39 @@
       },
       "jobs_wake_alarm": {
         "name": "Wake alarm type"
+      },
+      "amada_massage_time_bucket": {
+        "name": "Massage timer bucket"
+      },
+      "amada_massage_head": {
+        "name": "Head massage intensity"
+      },
+      "amada_massage_foot": {
+        "name": "Foot massage intensity"
+      },
+      "amada_massage_mode": {
+        "name": "Massage mode"
+      },
+      "amada_massage_on": {
+        "name": "Massage active"
+      },
+      "amada_light": {
+        "name": "Bed light reported"
+      },
+      "amada_alarm_time": {
+        "name": "Bed alarm time"
+      },
+      "amada_alarm_enabled": {
+        "name": "Bed alarm enabled"
+      },
+      "amada_alarm_repeat": {
+        "name": "Bed alarm day mask"
+      },
+      "amada_alarm_kind": {
+        "name": "Bed alarm wake type"
+      },
+      "amada_alarm_submitted": {
+        "name": "Last submitted bed alarm frame"
       }
     },
     "light": {
@@ -8378,6 +8430,24 @@
     }
   },
   "services": {
+    "ifit_save_preset": {
+      "name": "Save iFit preset",
+      "description": "Hold Flat and the selected preset together for three seconds, then send its save command. This moves the bed before saving. Hardware save persistence is unverified.",
+      "fields": {
+        "device_id": {
+          "name": "Bed",
+          "description": "The iFit bed to control."
+        },
+        "preset": {
+          "name": "Preset",
+          "description": "The named preset to overwrite."
+        },
+        "side": {
+          "name": "Side",
+          "description": "Which side of a paired bed to control."
+        }
+      }
+    },
     "myside": {
       "name": "My Side repeat alarms and sleep link",
       "description": "Query or change repeat alarms on Coaxing products, or query a Sleep product’s linked sensor name. Query alarms and receive list replies before changing them. Add can only replace an alarm explicitly deleted in this connection. A changed alarm needs fresh readback before another edit or toggle.",

@@ -27,6 +27,7 @@ from .const import (
     BED_TYPE_ADJUSTABLE_LUMBAR,
     BED_TYPE_ADJUSTAMATTRESS,
     BED_TYPE_ALYA,
+    BED_TYPE_AMADA,
     BED_TYPE_AMBIENT,
     BED_TYPE_ATLAS_LIFT,
     BED_TYPE_BEDSENSE,
@@ -196,6 +197,7 @@ _BY_BED_TYPE: Final[dict[str, SideProfile]] = {
     "nerum": SideProfile("Nerum", variant_owned=True),
     "relax_motion": SideProfile("Relax Motion", variant_owned=True),
     "smartbed": SideProfile("SmartBed", frozenset({CONF_HAS_MASSAGE}), variant_owned=True),
+    "ifit": SideProfile("iFit"),
     "cheerssleep": SideProfile("CheersSleep"),
     "enso": SideProfile("Enso Remote", frozenset({CONF_MOTOR_COUNT})),
     BED_TYPE_ENSO2: SideProfile(
@@ -355,6 +357,7 @@ _BY_BED_TYPE: Final[dict[str, SideProfile]] = {
     BED_TYPE_OKIN_MOTIONBED: SideProfile("OKIN Motion Bed"),
     BED_TYPE_OKIMATTMOTION: SideProfile("OkimattMotion"),
     BED_TYPE_COMFORT_ENHANCEMENT3: SideProfile("Comfort Enhancement 3", variant_owned=True),
+    BED_TYPE_AMADA: SideProfile("Amada Smart"),
     BED_TYPE_N32_MOTION_BED: SideProfile("N32 Motion Bed"),
     BED_TYPE_SHUDA: SideProfile("Shuda"),
     BED_TYPE_RESIDENT: SideProfile("Resident Adjustable Base"),

@@ -221,6 +221,8 @@ async def _create_controller_for_bed_type(
     client = _make_connected_client()
     if bed_type == const.BED_TYPE_SMART_BASE:
         coordinator.entry.data[const.CONF_PRODUCT_TYPE] = "200iv2_a8rm"
+    if bed_type == "amada":
+        coordinator.entry.data[const.CONF_PRODUCT_TYPE] = "ab"
     if bed_type == const.BED_TYPE_BETTERLIVING2:
         coordinator.entry.data.update({const.CONF_PRODUCT_TYPE: "2", const.CONF_PROTOCOL_VARIANT: variant or "p1"})
         return await create_controller(coordinator, bed_type, variant or "p1", client)

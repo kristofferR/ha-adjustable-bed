@@ -649,6 +649,7 @@ BED_TYPE_RIZE_HOME: Final = "rize_home"
 BED_TYPE_OKIN_MOTIONBED: Final = "okin_motionbed"
 BED_TYPE_OKIMATTMOTION: Final = "okimattmotion"
 BED_TYPE_COMFORT_ENHANCEMENT3: Final = "comfort_enhancement3"
+BED_TYPE_AMADA: Final = "amada"
 BED_TYPE_N32_MOTION_BED: Final = "n32_motion_bed"
 BED_TYPE_SHUDA: Final = "shuda"
 # Explicit Richmat MH app profiles: one shared library, five catalogs.
@@ -732,6 +733,7 @@ BED_TYPE_BEDTECH: Final = "bedtech"  # BedTech 5-byte ASCII protocol
 BED_TYPE_JENSEN: Final = "jensen"  # Jensen JMC400/LinON Entry (6-byte commands)
 BED_TYPE_SLEEP_NUMBER: Final = "sleep_number"  # Sleep Number Climate 360 / Fuzion bamkey BLE
 BED_TYPE_SLEEP_NUMBER_MCR: Final = "sleep_number_mcr"  # Sleep Number BAM/MCR BLE
+BED_TYPE_IFIT: Final = "ifit"
 BED_TYPE_OKIN_CB35: Final = "okin_cb35"  # DewertOkin CB35 Star (Sealy Posturematic, NUS 7-byte)
 BED_TYPE_OKIN_64BIT: Final = "okin_64bit"  # OKIN 64-bit protocol (10-byte commands)
 BED_TYPE_SLEEPYS_BOX15: Final = (
@@ -844,6 +846,7 @@ BED_TYPE_POWERSBEDDING: Final = "powersbedding"
 BED_TYPE_HESTIA_MOTION: Final = "hestia_motion"
 
 SUPPORTED_BED_TYPES: Final = [
+    BED_TYPE_IFIT,
     BED_TYPE_POWERSBEDDING,
     BED_TYPE_HESTIA_MOTION,
     BED_TYPE_RESTONIC,
@@ -974,6 +977,7 @@ SUPPORTED_BED_TYPES: Final = [
     BED_TYPE_OKIN_MOTIONBED,
     BED_TYPE_OKIMATTMOTION,
     BED_TYPE_COMFORT_ENHANCEMENT3,
+    BED_TYPE_AMADA,
     BED_TYPE_N32_MOTION_BED,
     BED_TYPE_SHUDA,
     BED_TYPE_COMFORT_ENHANCEMENTS,
@@ -1168,6 +1172,7 @@ OFFLINE_CAPABILITY_SAFE_BED_TYPES: Final = frozenset(
         BED_TYPE_OKIN_MOTIONBED,
         BED_TYPE_OKIMATTMOTION,
         BED_TYPE_COMFORT_ENHANCEMENT3,
+        BED_TYPE_AMADA,
         BED_TYPE_N32_MOTION_BED,
         BED_TYPE_SHUDA,
         BED_TYPE_ESHINE,
@@ -3149,6 +3154,7 @@ BED_MOTOR_PULSE_DEFAULTS: Final = {
     BED_TYPE_RIZE_HOME: (3, 200),  # Rize Home fixed 200 ms refresh; bounded HA tap.
     BED_TYPE_OKIN_MOTIONBED: (5, 200),  # Fixed 200 ms app refresh, ~1 s HA tap.
     BED_TYPE_COMFORT_ENHANCEMENT3: (10, 100),
+    BED_TYPE_AMADA: (10, 100),
     BED_TYPE_N32_MOTION_BED: (5, 200),  # Finite caller pulse; app refresh is 200 ms.
     BED_TYPE_SHUDA: (5, 200),
     BED_TYPE_LANGJUE: (2, langjue_profile.MOTOR_REFRESH_MS),  # HA tap at the app's refresh rate.
@@ -3178,6 +3184,7 @@ BED_MOTOR_PULSE_DEFAULTS: Final = {
     # OKIN DOT: FurniMove resends the held keycode ~every 100ms
     # (BluetoothLeService.onCharacteristicWrite Thread.sleep(100) loop)
     BED_TYPE_OKIN_DOT: (10, 100),
+    BED_TYPE_IFIT: (10, 220),
     # OKIN CB35: 300ms delay → 3 repeats = 0.9s total
     # Source: com.okin.sealy ANALYSIS.md (Timer.periodic 300ms, exTimes: 2 → 3 sends)
     BED_TYPE_OKIN_CB35: (3, 300),
