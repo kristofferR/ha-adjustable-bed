@@ -4810,6 +4810,7 @@
         "active_sleep_ventilation_remaining": {
           "name": "Ventilation remaining"
         },
+      "ghostbed_alarms": {"name": "Bed alarms"},
       "powersbedding_head_report": {"name": "Head massage level"},
       "powersbedding_foot_report": {"name": "Foot massage level"},
       "powersbedding_wave_report": {"name": "Massage wave"},
@@ -6220,6 +6221,8 @@
         "active_sleep_fukatto": {
           "name": "Fukatto"
         },
+      "ghostbed_snore_home": {"name": "Anti-snore (home)"},
+      "ghostbed_snore_left": {"name": "Anti-snore (left settings)"},
       "hestia_massage": {
         "name": "Massage"
       },
@@ -6817,6 +6820,8 @@
       }
     },
     "number": {
+      "ghostbed_upper_massage": {"name": "Head massage intensity"},
+      "ghostbed_feet_massage": {"name": "Feet massage intensity"},
       "suta_king_koil_head_step": {
         "name": "Head massage step"
       },
@@ -7348,6 +7353,9 @@
             "fast": "Fast"
           }
         },
+      "ghostbed_massage_mode": {"name": "Massage mode", "state": {"basic": "Basic", "cycle": "Cycle", "pulse": "Pulse", "wave": "Wave"}},
+      "ghostbed_sensitivity": {"name": "Anti-snore sensitivity", "state": {"low": "Low", "medium": "Medium", "high": "High"}},
+      "ghostbed_angle": {"name": "Anti-snore target", "state": {"8": "8°", "12": "12°", "15": "15°"}},
       "comfort_bed_side": {
         "name": "Control side",
         "state": {
@@ -12349,6 +12357,9 @@
     "active_sleep_flat_unavailable": {
       "message": "Use a supported saved position instead of a dedicated flat command."
     },
+    "ghostbed_control_unavailable": {"message": "This GhostBed control or value is unavailable."},
+    "ghostbed_status_required": {"message": "Wait for current bed status before editing this setting."},
+    "ghostbed_alarm_overlap": {"message": "Choose alarms more than 30 minutes apart on shared repeat days."},
     "powersbedding_name": {"message": "Choose the PowersBedding receiver whose Bluetooth name starts with okin or smartbed."},
     "powersbedding_control": {"message": "Choose a control and value supported by this PowersBedding receiver."},
     "powersbedding_alarm": {"message": "Choose a valid PowersBedding alarm time, weekday selection and wake action."},

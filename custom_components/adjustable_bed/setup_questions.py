@@ -72,6 +72,7 @@ from .const import (
     BED_TYPE_FSM_RELAX,
     BED_TYPE_FURNIMOVE,
     BED_TYPE_GALAXY,
+    BED_TYPE_GHOSTBED,
     BED_TYPE_GLIDEAWAY_MOTION,
     BED_TYPE_GMMOTOR,
     BED_TYPE_GOODVIBE,
@@ -4071,6 +4072,12 @@ SETUP_PROFILES: Final[dict[str, SetupProfile]] = {
             CONF_PROTOCOL_VARIANT: "auto",
             CONF_MOTOR_PULSE_DELAY_MS: 200,
         },
+    ),
+    BED_TYPE_GHOSTBED: SetupProfile(
+        owns={CONF_MOTOR_COUNT: 2, CONF_HAS_MASSAGE: True,
+              CONF_DISABLE_ANGLE_SENSING: True, CONF_MOTOR_PULSE_DELAY_MS: 200,
+              CONF_PROTOCOL_VARIANT: "auto"},
+        title=lambda _data: "GhostBed",
     ),
     BED_TYPE_FLEXISPOT: SetupProfile(
         owns={CONF_MOTOR_COUNT: SET_BY_PROFILE, CONF_HAS_MASSAGE: True,

@@ -1660,6 +1660,10 @@
       "local_name": "GZRN*"
     },
     {
+      "local_name": "GhostBed*",
+      "connectable": true
+    },
+    {
       "local_name": "H2RM*"
     },
     {
