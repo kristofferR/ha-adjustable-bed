@@ -1,0 +1,1440 @@
+[
+  {
+    "id": "primary-1001-1",
+    "route": "primary",
+    "action": "Head up (IQ1/IQ3); A up (IQ3Y)",
+    "event_id": 1001,
+    "bytes": "AA03000A00040101000000F9F355",
+    "characteristic": "0000b002-0000-1000-8000-00805f9b34fb",
+    "write_type": "WriteOptions.writeType=-1: preserve current BluetoothGattCharacteristic writeType; waitWriteResult=true is an SDK completion flag, not proof of ATT Write Request.",
+    "timing": {
+      "initial_delay_ms": 0,
+      "repeat_interval_ms": 300,
+      "termination": "Release or cancellation; primary timeout50000ms cancels refresh without additional STOP"
+    },
+    "release_behavior": "IQ remote UP or CANCEL sends1007/key0 STOP; preset included.",
+    "evidence": [
+      "E-EVENTS",
+      "E-UI",
+      "E-GATT"
+    ],
+    "confidence": "VERIFIED",
+    "scope": "DIRECT_BLE",
+    "kind": "motion",
+    "preconditions": "hasBedConnect(primary saved BedInfo) and BT route; selected connection/device connected; UUID selected. Care uses intent target; server-defined availability not asserted.",
+    "dynamic_fields": "None: fixed literal or sparse key. bed_side never inserted into command.",
+    "response": "Shared notifications are not a command-correlated acknowledgement.",
+    "key": 1
+  },
+  {
+    "id": "primary-1002-2",
+    "route": "primary",
+    "action": "Head down (IQ1/IQ3); A down (IQ3Y)",
+    "event_id": 1002,
+    "bytes": "AA03000A00040102000000F8F355",
+    "characteristic": "0000b002-0000-1000-8000-00805f9b34fb",
+    "write_type": "WriteOptions.writeType=-1: preserve current BluetoothGattCharacteristic writeType; waitWriteResult=true is an SDK completion flag, not proof of ATT Write Request.",
+    "timing": {
+      "initial_delay_ms": 0,
+      "repeat_interval_ms": 300,
+      "termination": "Release or cancellation; primary timeout50000ms cancels refresh without additional STOP"
+    },
+    "release_behavior": "IQ remote UP or CANCEL sends1007/key0 STOP; preset included.",
+    "evidence": [
+      "E-EVENTS",
+      "E-UI",
+      "E-GATT"
+    ],
+    "confidence": "VERIFIED",
+    "scope": "DIRECT_BLE",
+    "kind": "motion",
+    "preconditions": "hasBedConnect(primary saved BedInfo) and BT route; selected connection/device connected; UUID selected. Care uses intent target; server-defined availability not asserted.",
+    "dynamic_fields": "None: fixed literal or sparse key. bed_side never inserted into command.",
+    "response": "Shared notifications are not a command-correlated acknowledgement.",
+    "key": 2
+  },
+  {
+    "id": "primary-1003-3",
+    "route": "primary",
+    "action": "Foot up (IQ1/IQ3); B up (IQ3Y)",
+    "event_id": 1003,
+    "bytes": "AA03000A00040104000000F6F355",
+    "characteristic": "0000b002-0000-1000-8000-00805f9b34fb",
+    "write_type": "WriteOptions.writeType=-1: preserve current BluetoothGattCharacteristic writeType; waitWriteResult=true is an SDK completion flag, not proof of ATT Write Request.",
+    "timing": {
+      "initial_delay_ms": 0,
+      "repeat_interval_ms": 300,
+      "termination": "Release or cancellation; primary timeout50000ms cancels refresh without additional STOP"
+    },
+    "release_behavior": "IQ remote UP or CANCEL sends1007/key0 STOP; preset included.",
+    "evidence": [
+      "E-EVENTS",
+      "E-UI",
+      "E-GATT"
+    ],
+    "confidence": "VERIFIED",
+    "scope": "DIRECT_BLE",
+    "kind": "motion",
+    "preconditions": "hasBedConnect(primary saved BedInfo) and BT route; selected connection/device connected; UUID selected. Care uses intent target; server-defined availability not asserted.",
+    "dynamic_fields": "None: fixed literal or sparse key. bed_side never inserted into command.",
+    "response": "Shared notifications are not a command-correlated acknowledgement.",
+    "key": 4
+  },
+  {
+    "id": "primary-1004-4",
+    "route": "primary",
+    "action": "Foot down (IQ1/IQ3); B down (IQ3Y)",
+    "event_id": 1004,
+    "bytes": "AA03000A00040108000000F2F355",
+    "characteristic": "0000b002-0000-1000-8000-00805f9b34fb",
+    "write_type": "WriteOptions.writeType=-1: preserve current BluetoothGattCharacteristic writeType; waitWriteResult=true is an SDK completion flag, not proof of ATT Write Request.",
+    "timing": {
+      "initial_delay_ms": 0,
+      "repeat_interval_ms": 300,
+      "termination": "Release or cancellation; primary timeout50000ms cancels refresh without additional STOP"
+    },
+    "release_behavior": "IQ remote UP or CANCEL sends1007/key0 STOP; preset included.",
+    "evidence": [
+      "E-EVENTS",
+      "E-UI",
+      "E-GATT"
+    ],
+    "confidence": "VERIFIED",
+    "scope": "DIRECT_BLE",
+    "kind": "motion",
+    "preconditions": "hasBedConnect(primary saved BedInfo) and BT route; selected connection/device connected; UUID selected. Care uses intent target; server-defined availability not asserted.",
+    "dynamic_fields": "None: fixed literal or sparse key. bed_side never inserted into command.",
+    "response": "Shared notifications are not a command-correlated acknowledgement.",
+    "key": 8
+  },
+  {
+    "id": "primary-1052-5",
+    "route": "primary",
+    "action": "Head up (IQ3Y combined)",
+    "event_id": 1052,
+    "bytes": "AA03000A00040105000000F5F355",
+    "characteristic": "0000b002-0000-1000-8000-00805f9b34fb",
+    "write_type": "WriteOptions.writeType=-1: preserve current BluetoothGattCharacteristic writeType; waitWriteResult=true is an SDK completion flag, not proof of ATT Write Request.",
+    "timing": {
+      "initial_delay_ms": 0,
+      "repeat_interval_ms": 300,
+      "termination": "Release or cancellation; primary timeout50000ms cancels refresh without additional STOP"
+    },
+    "release_behavior": "IQ remote UP or CANCEL sends1007/key0 STOP; preset included.",
+    "evidence": [
+      "E-EVENTS",
+      "E-UI",
+      "E-GATT"
+    ],
+    "confidence": "VERIFIED",
+    "scope": "DIRECT_BLE",
+    "kind": "motion",
+    "preconditions": "hasBedConnect(primary saved BedInfo) and BT route; selected connection/device connected; UUID selected. Care uses intent target; server-defined availability not asserted.",
+    "dynamic_fields": "None: fixed literal or sparse key. bed_side never inserted into command.",
+    "response": "Shared notifications are not a command-correlated acknowledgement.",
+    "key": 5
+  },
+  {
+    "id": "primary-1053-6",
+    "route": "primary",
+    "action": "Head down (IQ3Y combined)",
+    "event_id": 1053,
+    "bytes": "AA03000A0004010A000000F0F355",
+    "characteristic": "0000b002-0000-1000-8000-00805f9b34fb",
+    "write_type": "WriteOptions.writeType=-1: preserve current BluetoothGattCharacteristic writeType; waitWriteResult=true is an SDK completion flag, not proof of ATT Write Request.",
+    "timing": {
+      "initial_delay_ms": 0,
+      "repeat_interval_ms": 300,
+      "termination": "Release or cancellation; primary timeout50000ms cancels refresh without additional STOP"
+    },
+    "release_behavior": "IQ remote UP or CANCEL sends1007/key0 STOP; preset included.",
+    "evidence": [
+      "E-EVENTS",
+      "E-UI",
+      "E-GATT"
+    ],
+    "confidence": "VERIFIED",
+    "scope": "DIRECT_BLE",
+    "kind": "motion",
+    "preconditions": "hasBedConnect(primary saved BedInfo) and BT route; selected connection/device connected; UUID selected. Care uses intent target; server-defined availability not asserted.",
+    "dynamic_fields": "None: fixed literal or sparse key. bed_side never inserted into command.",
+    "response": "Shared notifications are not a command-correlated acknowledgement.",
+    "key": 10
+  },
+  {
+    "id": "primary-1035-7",
+    "route": "primary",
+    "action": "Foot up (IQ3Y)",
+    "event_id": 1035,
+    "bytes": "AA03000A00040110000000EAF355",
+    "characteristic": "0000b002-0000-1000-8000-00805f9b34fb",
+    "write_type": "WriteOptions.writeType=-1: preserve current BluetoothGattCharacteristic writeType; waitWriteResult=true is an SDK completion flag, not proof of ATT Write Request.",
+    "timing": {
+      "initial_delay_ms": 0,
+      "repeat_interval_ms": 300,
+      "termination": "Release or cancellation; primary timeout50000ms cancels refresh without additional STOP"
+    },
+    "release_behavior": "IQ remote UP or CANCEL sends1007/key0 STOP; preset included.",
+    "evidence": [
+      "E-EVENTS",
+      "E-UI",
+      "E-GATT"
+    ],
+    "confidence": "VERIFIED",
+    "scope": "DIRECT_BLE",
+    "kind": "motion",
+    "preconditions": "hasBedConnect(primary saved BedInfo) and BT route; selected connection/device connected; UUID selected. Care uses intent target; server-defined availability not asserted.",
+    "dynamic_fields": "None: fixed literal or sparse key. bed_side never inserted into command.",
+    "response": "Shared notifications are not a command-correlated acknowledgement.",
+    "key": 16
+  },
+  {
+    "id": "primary-1037-8",
+    "route": "primary",
+    "action": "Foot down (IQ3Y)",
+    "event_id": 1037,
+    "bytes": "AA03000A00040120000000DAF355",
+    "characteristic": "0000b002-0000-1000-8000-00805f9b34fb",
+    "write_type": "WriteOptions.writeType=-1: preserve current BluetoothGattCharacteristic writeType; waitWriteResult=true is an SDK completion flag, not proof of ATT Write Request.",
+    "timing": {
+      "initial_delay_ms": 0,
+      "repeat_interval_ms": 300,
+      "termination": "Release or cancellation; primary timeout50000ms cancels refresh without additional STOP"
+    },
+    "release_behavior": "IQ remote UP or CANCEL sends1007/key0 STOP; preset included.",
+    "evidence": [
+      "E-EVENTS",
+      "E-UI",
+      "E-GATT"
+    ],
+    "confidence": "VERIFIED",
+    "scope": "DIRECT_BLE",
+    "kind": "motion",
+    "preconditions": "hasBedConnect(primary saved BedInfo) and BT route; selected connection/device connected; UUID selected. Care uses intent target; server-defined availability not asserted.",
+    "dynamic_fields": "None: fixed literal or sparse key. bed_side never inserted into command.",
+    "response": "Shared notifications are not a command-correlated acknowledgement.",
+    "key": 32
+  },
+  {
+    "id": "primary-1005-9",
+    "route": "primary",
+    "action": "Flat",
+    "event_id": 1005,
+    "bytes": "AA03000A00040100000008F2F355",
+    "characteristic": "0000b002-0000-1000-8000-00805f9b34fb",
+    "write_type": "WriteOptions.writeType=-1: preserve current BluetoothGattCharacteristic writeType; waitWriteResult=true is an SDK completion flag, not proof of ATT Write Request.",
+    "timing": {
+      "initial_delay_ms": 0,
+      "repeat_count": 1
+    },
+    "release_behavior": "IQ remote UP or CANCEL sends1007/key0 STOP; preset included.",
+    "evidence": [
+      "E-EVENTS",
+      "E-UI",
+      "E-GATT"
+    ],
+    "confidence": "VERIFIED",
+    "scope": "DIRECT_BLE",
+    "kind": "preset",
+    "preconditions": "hasBedConnect(primary saved BedInfo) and BT route; selected connection/device connected; UUID selected. Care uses intent target; server-defined availability not asserted.",
+    "dynamic_fields": "None: fixed literal or sparse key. bed_side never inserted into command.",
+    "response": "Shared notifications are not a command-correlated acknowledgement.",
+    "key": 134217728
+  },
+  {
+    "id": "primary-1006-10",
+    "route": "primary",
+    "action": "Zero gravity",
+    "event_id": 1006,
+    "bytes": "AA03000A00040100100000EAF355",
+    "characteristic": "0000b002-0000-1000-8000-00805f9b34fb",
+    "write_type": "WriteOptions.writeType=-1: preserve current BluetoothGattCharacteristic writeType; waitWriteResult=true is an SDK completion flag, not proof of ATT Write Request.",
+    "timing": {
+      "initial_delay_ms": 0,
+      "repeat_count": 1
+    },
+    "release_behavior": "IQ remote UP or CANCEL sends1007/key0 STOP; preset included.",
+    "evidence": [
+      "E-EVENTS",
+      "E-UI",
+      "E-GATT"
+    ],
+    "confidence": "VERIFIED",
+    "scope": "DIRECT_BLE",
+    "kind": "preset",
+    "preconditions": "hasBedConnect(primary saved BedInfo) and BT route; selected connection/device connected; UUID selected. Care uses intent target; server-defined availability not asserted.",
+    "dynamic_fields": "None: fixed literal or sparse key. bed_side never inserted into command.",
+    "response": "Shared notifications are not a command-correlated acknowledgement.",
+    "key": 4096
+  },
+  {
+    "id": "primary-1014-11",
+    "route": "primary",
+    "action": "Movie Mode",
+    "event_id": 1014,
+    "bytes": "AA03000A00040100400000BAF355",
+    "characteristic": "0000b002-0000-1000-8000-00805f9b34fb",
+    "write_type": "WriteOptions.writeType=-1: preserve current BluetoothGattCharacteristic writeType; waitWriteResult=true is an SDK completion flag, not proof of ATT Write Request.",
+    "timing": {
+      "initial_delay_ms": 0,
+      "repeat_count": 1
+    },
+    "release_behavior": "IQ remote UP or CANCEL sends1007/key0 STOP; preset included.",
+    "evidence": [
+      "E-EVENTS",
+      "E-UI",
+      "E-GATT"
+    ],
+    "confidence": "VERIFIED",
+    "scope": "DIRECT_BLE",
+    "kind": "preset",
+    "preconditions": "hasBedConnect(primary saved BedInfo) and BT route; selected connection/device connected; UUID selected. Care uses intent target; server-defined availability not asserted.",
+    "dynamic_fields": "None: fixed literal or sparse key. bed_side never inserted into command.",
+    "response": "Shared notifications are not a command-correlated acknowledgement.",
+    "key": 16384
+  },
+  {
+    "id": "primary-1015-12",
+    "route": "primary",
+    "action": "Reading Mode",
+    "event_id": 1015,
+    "bytes": "AA03000A00040100200000DAF355",
+    "characteristic": "0000b002-0000-1000-8000-00805f9b34fb",
+    "write_type": "WriteOptions.writeType=-1: preserve current BluetoothGattCharacteristic writeType; waitWriteResult=true is an SDK completion flag, not proof of ATT Write Request.",
+    "timing": {
+      "initial_delay_ms": 0,
+      "repeat_count": 1
+    },
+    "release_behavior": "IQ remote UP or CANCEL sends1007/key0 STOP; preset included.",
+    "evidence": [
+      "E-EVENTS",
+      "E-UI",
+      "E-GATT"
+    ],
+    "confidence": "VERIFIED",
+    "scope": "DIRECT_BLE",
+    "kind": "preset",
+    "preconditions": "hasBedConnect(primary saved BedInfo) and BT route; selected connection/device connected; UUID selected. Care uses intent target; server-defined availability not asserted.",
+    "dynamic_fields": "None: fixed literal or sparse key. bed_side never inserted into command.",
+    "response": "Shared notifications are not a command-correlated acknowledgement.",
+    "key": 8192
+  },
+  {
+    "id": "primary-1007-13",
+    "route": "primary",
+    "action": "STOP / release",
+    "event_id": 1007,
+    "bytes": "AA03000A00040100000000FAF355",
+    "characteristic": "0000b002-0000-1000-8000-00805f9b34fb",
+    "write_type": "WriteOptions.writeType=-1: preserve current BluetoothGattCharacteristic writeType; waitWriteResult=true is an SDK completion flag, not proof of ATT Write Request.",
+    "timing": {
+      "initial_delay_ms": 0,
+      "repeat_count": 1
+    },
+    "release_behavior": "This is the release handler itself; no alternate frame invented.",
+    "evidence": [
+      "E-EVENTS",
+      "E-UI",
+      "E-GATT"
+    ],
+    "confidence": "VERIFIED",
+    "scope": "DIRECT_BLE",
+    "kind": "release",
+    "preconditions": "hasBedConnect(primary saved BedInfo) and BT route; selected connection/device connected; UUID selected. Care uses intent target; server-defined availability not asserted.",
+    "dynamic_fields": "None: fixed literal or sparse key. bed_side never inserted into command.",
+    "response": "Shared notifications are not a command-correlated acknowledgement."
+  },
+  {
+    "id": "primary-1023-14",
+    "route": "primary",
+    "action": "Head massage cycle",
+    "event_id": 1023,
+    "bytes": "AA03000A00040100080000F2F355",
+    "characteristic": "0000b002-0000-1000-8000-00805f9b34fb",
+    "write_type": "WriteOptions.writeType=-1: preserve current BluetoothGattCharacteristic writeType; waitWriteResult=true is an SDK completion flag, not proof of ATT Write Request.",
+    "timing": {
+      "initial_delay_ms": 0,
+      "repeat_count": 1,
+      "query_after_ms": 700,
+      "query_frame": "AA100009000303020708E8E755"
+    },
+    "release_behavior": "PartOne/Two UP sends1007/key0 STOP; CANCEL unhandled; delayed jobs survive release.",
+    "evidence": [
+      "E-EVENTS",
+      "E-UI",
+      "E-GATT"
+    ],
+    "confidence": "VERIFIED",
+    "scope": "DIRECT_BLE",
+    "kind": "massage",
+    "preconditions": "hasBedConnect(primary saved BedInfo) and BT route; selected connection/device connected; UUID selected. Care uses intent target; server-defined availability not asserted.",
+    "dynamic_fields": "None: fixed literal or sparse key. bed_side never inserted into command.",
+    "response": "Shared notifications are not a command-correlated acknowledgement.",
+    "key": 2048,
+    "preparation": {
+      "condition": "Has_Send_Change_Frequency_Flag false (defaulttrue; no app false writer)",
+      "event": 128,
+      "frame": "AA0B001000100A000000000000EE040000F3E555",
+      "delay_before_action_ms": 300,
+      "persist": "Flag savedtrue immediately; delayed action untracked"
+    }
+  },
+  {
+    "id": "primary-1021-15",
+    "route": "primary",
+    "action": "Foot massage cycle",
+    "event_id": 1021,
+    "bytes": "AA03000A00040100040000F6F355",
+    "characteristic": "0000b002-0000-1000-8000-00805f9b34fb",
+    "write_type": "WriteOptions.writeType=-1: preserve current BluetoothGattCharacteristic writeType; waitWriteResult=true is an SDK completion flag, not proof of ATT Write Request.",
+    "timing": {
+      "initial_delay_ms": 0,
+      "repeat_count": 1,
+      "query_after_ms": 700,
+      "query_frame": "AA100009000303020708E8E755"
+    },
+    "release_behavior": "PartOne/Two UP sends1007/key0 STOP; CANCEL unhandled; delayed jobs survive release.",
+    "evidence": [
+      "E-EVENTS",
+      "E-UI",
+      "E-GATT"
+    ],
+    "confidence": "VERIFIED",
+    "scope": "DIRECT_BLE",
+    "kind": "massage",
+    "preconditions": "hasBedConnect(primary saved BedInfo) and BT route; selected connection/device connected; UUID selected. Care uses intent target; server-defined availability not asserted.",
+    "dynamic_fields": "None: fixed literal or sparse key. bed_side never inserted into command.",
+    "response": "Shared notifications are not a command-correlated acknowledgement.",
+    "key": 1024,
+    "preparation": {
+      "condition": "Has_Send_Change_Frequency_Flag false (defaulttrue; no app false writer)",
+      "event": 128,
+      "frame": "AA0B001000100A000000000000EE040000F3E555",
+      "delay_before_action_ms": 300,
+      "persist": "Flag savedtrue immediately; delayed action untracked"
+    }
+  },
+  {
+    "id": "primary-1026-16",
+    "route": "primary",
+    "action": "Massage duration cycle",
+    "event_id": 1026,
+    "bytes": "AA03000A00040100020000F8F355",
+    "characteristic": "0000b002-0000-1000-8000-00805f9b34fb",
+    "write_type": "WriteOptions.writeType=-1: preserve current BluetoothGattCharacteristic writeType; waitWriteResult=true is an SDK completion flag, not proof of ATT Write Request.",
+    "timing": {
+      "initial_delay_ms": 0,
+      "repeat_count": 1,
+      "query_after_ms": 700,
+      "query_frame": "AA100009000303020708E8E755"
+    },
+    "release_behavior": "PartOne/Two UP sends1007/key0 STOP; CANCEL unhandled; delayed jobs survive release.",
+    "evidence": [
+      "E-EVENTS",
+      "E-UI",
+      "E-GATT"
+    ],
+    "confidence": "VERIFIED",
+    "scope": "DIRECT_BLE",
+    "kind": "massage",
+    "preconditions": "hasBedConnect(primary saved BedInfo) and BT route; selected connection/device connected; UUID selected. Care uses intent target; server-defined availability not asserted.",
+    "dynamic_fields": "None: fixed literal or sparse key. bed_side never inserted into command.",
+    "response": "Shared notifications are not a command-correlated acknowledgement.",
+    "key": 512
+  },
+  {
+    "id": "primary-1025-17",
+    "route": "primary",
+    "action": "Massage off",
+    "event_id": 1025,
+    "bytes": "AA03000A00040100000002F8F355",
+    "characteristic": "0000b002-0000-1000-8000-00805f9b34fb",
+    "write_type": "WriteOptions.writeType=-1: preserve current BluetoothGattCharacteristic writeType; waitWriteResult=true is an SDK completion flag, not proof of ATT Write Request.",
+    "timing": {
+      "initial_delay_ms": 0,
+      "repeat_count": 1,
+      "query_after_ms": "none",
+      "query_frame": "none"
+    },
+    "release_behavior": "PartOne/Two UP sends1007/key0 STOP; CANCEL unhandled; delayed jobs survive release.",
+    "evidence": [
+      "E-EVENTS",
+      "E-UI",
+      "E-GATT"
+    ],
+    "confidence": "VERIFIED",
+    "scope": "DIRECT_BLE",
+    "kind": "massage",
+    "preconditions": "hasBedConnect(primary saved BedInfo) and BT route; selected connection/device connected; UUID selected. Care uses intent target; server-defined availability not asserted.",
+    "dynamic_fields": "None: fixed literal or sparse key. bed_side never inserted into command.",
+    "response": "Shared notifications are not a command-correlated acknowledgement.",
+    "key": 33554432,
+    "preparation": {
+      "condition": "Has_Send_Change_Frequency_Flag false (defaulttrue; no app false writer)",
+      "event": 128,
+      "frame": "AA0B001000100A000000000000EE040000F3E555",
+      "delay_before_action_ms": 300,
+      "persist": "Flag savedtrue immediately; delayed action untracked"
+    }
+  },
+  {
+    "id": "primary-1046-18",
+    "route": "primary",
+    "action": "Relaxation",
+    "event_id": 1046,
+    "bytes": "AA0B001000100A040404040000EE0A0000DDE555",
+    "characteristic": "0000b002-0000-1000-8000-00805f9b34fb",
+    "write_type": "WriteOptions.writeType=-1: preserve current BluetoothGattCharacteristic writeType; waitWriteResult=true is an SDK completion flag, not proof of ATT Write Request.",
+    "timing": {
+      "initial_delay_ms": 0,
+      "repeat_count": 1,
+      "query_after_ms": 700,
+      "query_frame": "AA100009000303020708E8E755"
+    },
+    "release_behavior": "PartOne/Two UP sends1007/key0 STOP; CANCEL unhandled; delayed jobs survive release.",
+    "evidence": [
+      "E-EVENTS",
+      "E-UI",
+      "E-GATT"
+    ],
+    "confidence": "VERIFIED",
+    "scope": "DIRECT_BLE",
+    "kind": "mode",
+    "preconditions": "hasBedConnect(primary saved BedInfo) and BT route; selected connection/device connected; UUID selected. Care uses intent target; server-defined availability not asserted.",
+    "dynamic_fields": "None: fixed literal or sparse key. bed_side never inserted into command.",
+    "response": "Shared notifications are not a command-correlated acknowledgement."
+  },
+  {
+    "id": "primary-1049-19",
+    "route": "primary",
+    "action": "Lumbar relaxation",
+    "event_id": 1049,
+    "bytes": "AA0B001000100A030303030000EE0E0000DDE555",
+    "characteristic": "0000b002-0000-1000-8000-00805f9b34fb",
+    "write_type": "WriteOptions.writeType=-1: preserve current BluetoothGattCharacteristic writeType; waitWriteResult=true is an SDK completion flag, not proof of ATT Write Request.",
+    "timing": {
+      "initial_delay_ms": 0,
+      "repeat_count": 1,
+      "query_after_ms": 700,
+      "query_frame": "AA100009000303020708E8E755"
+    },
+    "release_behavior": "PartOne/Two UP sends1007/key0 STOP; CANCEL unhandled; delayed jobs survive release.",
+    "evidence": [
+      "E-EVENTS",
+      "E-UI",
+      "E-GATT"
+    ],
+    "confidence": "VERIFIED",
+    "scope": "DIRECT_BLE",
+    "kind": "mode",
+    "preconditions": "hasBedConnect(primary saved BedInfo) and BT route; selected connection/device connected; UUID selected. Care uses intent target; server-defined availability not asserted.",
+    "dynamic_fields": "None: fixed literal or sparse key. bed_side never inserted into command.",
+    "response": "Shared notifications are not a command-correlated acknowledgement."
+  },
+  {
+    "id": "primary-1047-20",
+    "route": "primary",
+    "action": "Relaxation for better sleep",
+    "event_id": 1047,
+    "bytes": "AA0B001000100A020202020000EE090000E6E555",
+    "characteristic": "0000b002-0000-1000-8000-00805f9b34fb",
+    "write_type": "WriteOptions.writeType=-1: preserve current BluetoothGattCharacteristic writeType; waitWriteResult=true is an SDK completion flag, not proof of ATT Write Request.",
+    "timing": {
+      "initial_delay_ms": 0,
+      "repeat_count": 1,
+      "query_after_ms": 700,
+      "query_frame": "AA100009000303020708E8E755"
+    },
+    "release_behavior": "PartOne/Two UP sends1007/key0 STOP; CANCEL unhandled; delayed jobs survive release.",
+    "evidence": [
+      "E-EVENTS",
+      "E-UI",
+      "E-GATT"
+    ],
+    "confidence": "VERIFIED",
+    "scope": "DIRECT_BLE",
+    "kind": "mode",
+    "preconditions": "hasBedConnect(primary saved BedInfo) and BT route; selected connection/device connected; UUID selected. Care uses intent target; server-defined availability not asserted.",
+    "dynamic_fields": "None: fixed literal or sparse key. bed_side never inserted into command.",
+    "response": "Shared notifications are not a command-correlated acknowledgement."
+  },
+  {
+    "id": "care-1055-21",
+    "route": "care",
+    "action": "Head up (IQ1/IQ3); A up (IQ3Y)",
+    "event_id": 1055,
+    "bytes": "AA03000A00040101000000F9F355",
+    "characteristic": "0000b002-0000-1000-8000-00805f9b34fb",
+    "write_type": "WriteOptions.writeType=-1: preserve current BluetoothGattCharacteristic writeType; waitWriteResult=true is an SDK completion flag, not proof of ATT Write Request.",
+    "timing": {
+      "initial_delay_ms": 0,
+      "repeat_interval_ms": 300,
+      "termination": "No50s timeout; repeated DOWN can orphan earlier active timer"
+    },
+    "release_behavior": "IQ remote UP or CANCEL sends1061: cancel referenced timer only, no frame.",
+    "evidence": [
+      "E-LOVE",
+      "E-UI",
+      "E-GATT"
+    ],
+    "confidence": "VERIFIED",
+    "scope": "DIRECT_BLE",
+    "kind": "motion",
+    "preconditions": "hasBedConnect(primary saved BedInfo) and BT route; selected connection/device connected; UUID selected. Care uses intent target; server-defined availability not asserted.",
+    "dynamic_fields": "None: fixed literal or sparse key. bed_side never inserted into command.",
+    "response": "Shared notifications are not a command-correlated acknowledgement.",
+    "key": 1
+  },
+  {
+    "id": "care-1056-22",
+    "route": "care",
+    "action": "Head down (IQ1/IQ3); A down (IQ3Y)",
+    "event_id": 1056,
+    "bytes": "AA03000A00040102000000F8F355",
+    "characteristic": "0000b002-0000-1000-8000-00805f9b34fb",
+    "write_type": "WriteOptions.writeType=-1: preserve current BluetoothGattCharacteristic writeType; waitWriteResult=true is an SDK completion flag, not proof of ATT Write Request.",
+    "timing": {
+      "initial_delay_ms": 0,
+      "repeat_interval_ms": 300,
+      "termination": "No50s timeout; repeated DOWN can orphan earlier active timer"
+    },
+    "release_behavior": "IQ remote UP or CANCEL sends1061: cancel referenced timer only, no frame.",
+    "evidence": [
+      "E-LOVE",
+      "E-UI",
+      "E-GATT"
+    ],
+    "confidence": "VERIFIED",
+    "scope": "DIRECT_BLE",
+    "kind": "motion",
+    "preconditions": "hasBedConnect(primary saved BedInfo) and BT route; selected connection/device connected; UUID selected. Care uses intent target; server-defined availability not asserted.",
+    "dynamic_fields": "None: fixed literal or sparse key. bed_side never inserted into command.",
+    "response": "Shared notifications are not a command-correlated acknowledgement.",
+    "key": 2
+  },
+  {
+    "id": "care-1057-23",
+    "route": "care",
+    "action": "Foot up (IQ1/IQ3); B up (IQ3Y)",
+    "event_id": 1057,
+    "bytes": "AA03000A00040104000000F6F355",
+    "characteristic": "0000b002-0000-1000-8000-00805f9b34fb",
+    "write_type": "WriteOptions.writeType=-1: preserve current BluetoothGattCharacteristic writeType; waitWriteResult=true is an SDK completion flag, not proof of ATT Write Request.",
+    "timing": {
+      "initial_delay_ms": 0,
+      "repeat_interval_ms": 300,
+      "termination": "No50s timeout; repeated DOWN can orphan earlier active timer"
+    },
+    "release_behavior": "IQ remote UP or CANCEL sends1061: cancel referenced timer only, no frame.",
+    "evidence": [
+      "E-LOVE",
+      "E-UI",
+      "E-GATT"
+    ],
+    "confidence": "VERIFIED",
+    "scope": "DIRECT_BLE",
+    "kind": "motion",
+    "preconditions": "hasBedConnect(primary saved BedInfo) and BT route; selected connection/device connected; UUID selected. Care uses intent target; server-defined availability not asserted.",
+    "dynamic_fields": "None: fixed literal or sparse key. bed_side never inserted into command.",
+    "response": "Shared notifications are not a command-correlated acknowledgement.",
+    "key": 4
+  },
+  {
+    "id": "care-1058-24",
+    "route": "care",
+    "action": "Foot down (IQ1/IQ3); B down (IQ3Y)",
+    "event_id": 1058,
+    "bytes": "AA03000A00040108000000F2F355",
+    "characteristic": "0000b002-0000-1000-8000-00805f9b34fb",
+    "write_type": "WriteOptions.writeType=-1: preserve current BluetoothGattCharacteristic writeType; waitWriteResult=true is an SDK completion flag, not proof of ATT Write Request.",
+    "timing": {
+      "initial_delay_ms": 0,
+      "repeat_interval_ms": 300,
+      "termination": "No50s timeout; repeated DOWN can orphan earlier active timer"
+    },
+    "release_behavior": "IQ remote UP or CANCEL sends1061: cancel referenced timer only, no frame.",
+    "evidence": [
+      "E-LOVE",
+      "E-UI",
+      "E-GATT"
+    ],
+    "confidence": "VERIFIED",
+    "scope": "DIRECT_BLE",
+    "kind": "motion",
+    "preconditions": "hasBedConnect(primary saved BedInfo) and BT route; selected connection/device connected; UUID selected. Care uses intent target; server-defined availability not asserted.",
+    "dynamic_fields": "None: fixed literal or sparse key. bed_side never inserted into command.",
+    "response": "Shared notifications are not a command-correlated acknowledgement.",
+    "key": 8
+  },
+  {
+    "id": "care-1073-25",
+    "route": "care",
+    "action": "Head up (IQ3Y combined)",
+    "event_id": 1073,
+    "bytes": "AA03000A00040105000000F5F355",
+    "characteristic": "0000b002-0000-1000-8000-00805f9b34fb",
+    "write_type": "WriteOptions.writeType=-1: preserve current BluetoothGattCharacteristic writeType; waitWriteResult=true is an SDK completion flag, not proof of ATT Write Request.",
+    "timing": {
+      "initial_delay_ms": 0,
+      "repeat_interval_ms": 300,
+      "termination": "No50s timeout; repeated DOWN can orphan earlier active timer"
+    },
+    "release_behavior": "IQ remote UP or CANCEL sends1061: cancel referenced timer only, no frame.",
+    "evidence": [
+      "E-LOVE",
+      "E-UI",
+      "E-GATT"
+    ],
+    "confidence": "VERIFIED",
+    "scope": "DIRECT_BLE",
+    "kind": "motion",
+    "preconditions": "hasBedConnect(primary saved BedInfo) and BT route; selected connection/device connected; UUID selected. Care uses intent target; server-defined availability not asserted.",
+    "dynamic_fields": "None: fixed literal or sparse key. bed_side never inserted into command.",
+    "response": "Shared notifications are not a command-correlated acknowledgement.",
+    "key": 5
+  },
+  {
+    "id": "care-1074-26",
+    "route": "care",
+    "action": "Head down (IQ3Y combined)",
+    "event_id": 1074,
+    "bytes": "AA03000A0004010A000000F0F355",
+    "characteristic": "0000b002-0000-1000-8000-00805f9b34fb",
+    "write_type": "WriteOptions.writeType=-1: preserve current BluetoothGattCharacteristic writeType; waitWriteResult=true is an SDK completion flag, not proof of ATT Write Request.",
+    "timing": {
+      "initial_delay_ms": 0,
+      "repeat_interval_ms": 300,
+      "termination": "No50s timeout; repeated DOWN can orphan earlier active timer"
+    },
+    "release_behavior": "IQ remote UP or CANCEL sends1061: cancel referenced timer only, no frame.",
+    "evidence": [
+      "E-LOVE",
+      "E-UI",
+      "E-GATT"
+    ],
+    "confidence": "VERIFIED",
+    "scope": "DIRECT_BLE",
+    "kind": "motion",
+    "preconditions": "hasBedConnect(primary saved BedInfo) and BT route; selected connection/device connected; UUID selected. Care uses intent target; server-defined availability not asserted.",
+    "dynamic_fields": "None: fixed literal or sparse key. bed_side never inserted into command.",
+    "response": "Shared notifications are not a command-correlated acknowledgement.",
+    "key": 10
+  },
+  {
+    "id": "care-1068-27",
+    "route": "care",
+    "action": "Foot up (IQ3Y)",
+    "event_id": 1068,
+    "bytes": "AA03000A00040110000000EAF355",
+    "characteristic": "0000b002-0000-1000-8000-00805f9b34fb",
+    "write_type": "WriteOptions.writeType=-1: preserve current BluetoothGattCharacteristic writeType; waitWriteResult=true is an SDK completion flag, not proof of ATT Write Request.",
+    "timing": {
+      "initial_delay_ms": 0,
+      "repeat_interval_ms": 300,
+      "termination": "No50s timeout; repeated DOWN can orphan earlier active timer"
+    },
+    "release_behavior": "IQ remote UP or CANCEL sends1061: cancel referenced timer only, no frame.",
+    "evidence": [
+      "E-LOVE",
+      "E-UI",
+      "E-GATT"
+    ],
+    "confidence": "VERIFIED",
+    "scope": "DIRECT_BLE",
+    "kind": "motion",
+    "preconditions": "hasBedConnect(primary saved BedInfo) and BT route; selected connection/device connected; UUID selected. Care uses intent target; server-defined availability not asserted.",
+    "dynamic_fields": "None: fixed literal or sparse key. bed_side never inserted into command.",
+    "response": "Shared notifications are not a command-correlated acknowledgement.",
+    "key": 16
+  },
+  {
+    "id": "care-1069-28",
+    "route": "care",
+    "action": "Foot down (IQ3Y)",
+    "event_id": 1069,
+    "bytes": "AA03000A00040120000000DAF355",
+    "characteristic": "0000b002-0000-1000-8000-00805f9b34fb",
+    "write_type": "WriteOptions.writeType=-1: preserve current BluetoothGattCharacteristic writeType; waitWriteResult=true is an SDK completion flag, not proof of ATT Write Request.",
+    "timing": {
+      "initial_delay_ms": 0,
+      "repeat_interval_ms": 300,
+      "termination": "No50s timeout; repeated DOWN can orphan earlier active timer"
+    },
+    "release_behavior": "IQ remote UP or CANCEL sends1061: cancel referenced timer only, no frame.",
+    "evidence": [
+      "E-LOVE",
+      "E-UI",
+      "E-GATT"
+    ],
+    "confidence": "VERIFIED",
+    "scope": "DIRECT_BLE",
+    "kind": "motion",
+    "preconditions": "hasBedConnect(primary saved BedInfo) and BT route; selected connection/device connected; UUID selected. Care uses intent target; server-defined availability not asserted.",
+    "dynamic_fields": "None: fixed literal or sparse key. bed_side never inserted into command.",
+    "response": "Shared notifications are not a command-correlated acknowledgement.",
+    "key": 32
+  },
+  {
+    "id": "care-1059-29",
+    "route": "care",
+    "action": "Flat",
+    "event_id": 1059,
+    "bytes": "AA03000A00040100000008F2F355",
+    "characteristic": "0000b002-0000-1000-8000-00805f9b34fb",
+    "write_type": "WriteOptions.writeType=-1: preserve current BluetoothGattCharacteristic writeType; waitWriteResult=true is an SDK completion flag, not proof of ATT Write Request.",
+    "timing": {
+      "initial_delay_ms": 0,
+      "repeat_count": 1
+    },
+    "release_behavior": "IQ remote UP or CANCEL sends1061: cancel referenced timer only, no frame.",
+    "evidence": [
+      "E-LOVE",
+      "E-UI",
+      "E-GATT"
+    ],
+    "confidence": "VERIFIED",
+    "scope": "DIRECT_BLE",
+    "kind": "preset",
+    "preconditions": "hasBedConnect(primary saved BedInfo) and BT route; selected connection/device connected; UUID selected. Care uses intent target; server-defined availability not asserted.",
+    "dynamic_fields": "None: fixed literal or sparse key. bed_side never inserted into command.",
+    "response": "Shared notifications are not a command-correlated acknowledgement.",
+    "key": 134217728
+  },
+  {
+    "id": "care-1060-30",
+    "route": "care",
+    "action": "Zero gravity",
+    "event_id": 1060,
+    "bytes": "AA03000A00040100100000EAF355",
+    "characteristic": "0000b002-0000-1000-8000-00805f9b34fb",
+    "write_type": "WriteOptions.writeType=-1: preserve current BluetoothGattCharacteristic writeType; waitWriteResult=true is an SDK completion flag, not proof of ATT Write Request.",
+    "timing": {
+      "initial_delay_ms": 0,
+      "repeat_count": 1
+    },
+    "release_behavior": "IQ remote UP or CANCEL sends1061: cancel referenced timer only, no frame.",
+    "evidence": [
+      "E-LOVE",
+      "E-UI",
+      "E-GATT"
+    ],
+    "confidence": "VERIFIED",
+    "scope": "DIRECT_BLE",
+    "kind": "preset",
+    "preconditions": "hasBedConnect(primary saved BedInfo) and BT route; selected connection/device connected; UUID selected. Care uses intent target; server-defined availability not asserted.",
+    "dynamic_fields": "None: fixed literal or sparse key. bed_side never inserted into command.",
+    "response": "Shared notifications are not a command-correlated acknowledgement.",
+    "key": 4096
+  },
+  {
+    "id": "care-1062-31",
+    "route": "care",
+    "action": "Movie Mode",
+    "event_id": 1062,
+    "bytes": "AA03000A00040100400000BAF355",
+    "characteristic": "0000b002-0000-1000-8000-00805f9b34fb",
+    "write_type": "WriteOptions.writeType=-1: preserve current BluetoothGattCharacteristic writeType; waitWriteResult=true is an SDK completion flag, not proof of ATT Write Request.",
+    "timing": {
+      "initial_delay_ms": 0,
+      "repeat_count": 1
+    },
+    "release_behavior": "IQ remote UP or CANCEL sends1061: cancel referenced timer only, no frame.",
+    "evidence": [
+      "E-LOVE",
+      "E-UI",
+      "E-GATT"
+    ],
+    "confidence": "VERIFIED",
+    "scope": "DIRECT_BLE",
+    "kind": "preset",
+    "preconditions": "hasBedConnect(primary saved BedInfo) and BT route; selected connection/device connected; UUID selected. Care uses intent target; server-defined availability not asserted.",
+    "dynamic_fields": "None: fixed literal or sparse key. bed_side never inserted into command.",
+    "response": "Shared notifications are not a command-correlated acknowledgement.",
+    "key": 16384
+  },
+  {
+    "id": "care-1063-32",
+    "route": "care",
+    "action": "Reading Mode",
+    "event_id": 1063,
+    "bytes": "AA03000A00040100200000DAF355",
+    "characteristic": "0000b002-0000-1000-8000-00805f9b34fb",
+    "write_type": "WriteOptions.writeType=-1: preserve current BluetoothGattCharacteristic writeType; waitWriteResult=true is an SDK completion flag, not proof of ATT Write Request.",
+    "timing": {
+      "initial_delay_ms": 0,
+      "repeat_count": 1
+    },
+    "release_behavior": "IQ remote UP or CANCEL sends1061: cancel referenced timer only, no frame.",
+    "evidence": [
+      "E-LOVE",
+      "E-UI",
+      "E-GATT"
+    ],
+    "confidence": "VERIFIED",
+    "scope": "DIRECT_BLE",
+    "kind": "preset",
+    "preconditions": "hasBedConnect(primary saved BedInfo) and BT route; selected connection/device connected; UUID selected. Care uses intent target; server-defined availability not asserted.",
+    "dynamic_fields": "None: fixed literal or sparse key. bed_side never inserted into command.",
+    "response": "Shared notifications are not a command-correlated acknowledgement.",
+    "key": 8192
+  },
+  {
+    "id": "care-1061-33",
+    "route": "care",
+    "action": "Release held refresh",
+    "event_id": 1061,
+    "bytes": "NO FRAME: cancel and purge referenced timer only",
+    "characteristic": "0000b002-0000-1000-8000-00805f9b34fb",
+    "write_type": "WriteOptions.writeType=-1: preserve current BluetoothGattCharacteristic writeType; waitWriteResult=true is an SDK completion flag, not proof of ATT Write Request.",
+    "timing": {
+      "initial_delay_ms": 0,
+      "repeat_count": 1
+    },
+    "release_behavior": "This is the release handler itself; no alternate frame invented.",
+    "evidence": [
+      "E-LOVE",
+      "E-UI",
+      "E-GATT"
+    ],
+    "confidence": "VERIFIED",
+    "scope": "DIRECT_BLE",
+    "kind": "release",
+    "preconditions": "hasBedConnect(primary saved BedInfo) and BT route; selected connection/device connected; UUID selected. Care uses intent target; server-defined availability not asserted.",
+    "dynamic_fields": "None: fixed literal or sparse key. bed_side never inserted into command.",
+    "response": "Shared notifications are not a command-correlated acknowledgement."
+  },
+  {
+    "id": "care-1065-34",
+    "route": "care",
+    "action": "Head massage cycle",
+    "event_id": 1065,
+    "bytes": "AA03000A00040100080000F2F355",
+    "characteristic": "0000b002-0000-1000-8000-00805f9b34fb",
+    "write_type": "WriteOptions.writeType=-1: preserve current BluetoothGattCharacteristic writeType; waitWriteResult=true is an SDK completion flag, not proof of ATT Write Request.",
+    "timing": {
+      "initial_delay_ms": 0,
+      "repeat_count": 1,
+      "query_after_ms": 700,
+      "query_frame": "AA100009000303020708E8E755"
+    },
+    "release_behavior": "PartOne/Two UP sends1061: cancel referenced timer only, no frame; CANCEL unhandled.",
+    "evidence": [
+      "E-LOVE",
+      "E-UI",
+      "E-GATT"
+    ],
+    "confidence": "VERIFIED",
+    "scope": "DIRECT_BLE",
+    "kind": "massage",
+    "preconditions": "hasBedConnect(primary saved BedInfo) and BT route; selected connection/device connected; UUID selected. Care uses intent target; server-defined availability not asserted.",
+    "dynamic_fields": "None: fixed literal or sparse key. bed_side never inserted into command.",
+    "response": "Shared notifications are not a command-correlated acknowledgement.",
+    "key": 2048,
+    "preparation": {
+      "condition": "Has_Send_Change_Frequency_Flag false (defaulttrue; no app false writer)",
+      "event": 1075,
+      "frame": "AA0B001000100A000000000000EE040000F3E555",
+      "delay_before_action_ms": 300,
+      "persist": "Flag savedtrue immediately; delayed action untracked"
+    }
+  },
+  {
+    "id": "care-1064-35",
+    "route": "care",
+    "action": "Foot massage cycle",
+    "event_id": 1064,
+    "bytes": "AA03000A00040100040000F6F355",
+    "characteristic": "0000b002-0000-1000-8000-00805f9b34fb",
+    "write_type": "WriteOptions.writeType=-1: preserve current BluetoothGattCharacteristic writeType; waitWriteResult=true is an SDK completion flag, not proof of ATT Write Request.",
+    "timing": {
+      "initial_delay_ms": 0,
+      "repeat_count": 1,
+      "query_after_ms": 700,
+      "query_frame": "AA100009000303020708E8E755"
+    },
+    "release_behavior": "PartOne/Two UP sends1061: cancel referenced timer only, no frame; CANCEL unhandled.",
+    "evidence": [
+      "E-LOVE",
+      "E-UI",
+      "E-GATT"
+    ],
+    "confidence": "VERIFIED",
+    "scope": "DIRECT_BLE",
+    "kind": "massage",
+    "preconditions": "hasBedConnect(primary saved BedInfo) and BT route; selected connection/device connected; UUID selected. Care uses intent target; server-defined availability not asserted.",
+    "dynamic_fields": "None: fixed literal or sparse key. bed_side never inserted into command.",
+    "response": "Shared notifications are not a command-correlated acknowledgement.",
+    "key": 1024,
+    "preparation": {
+      "condition": "Has_Send_Change_Frequency_Flag false (defaulttrue; no app false writer)",
+      "event": 1075,
+      "frame": "AA0B001000100A000000000000EE040000F3E555",
+      "delay_before_action_ms": 300,
+      "persist": "Flag savedtrue immediately; delayed action untracked"
+    }
+  },
+  {
+    "id": "care-1067-36",
+    "route": "care",
+    "action": "Massage duration cycle",
+    "event_id": 1067,
+    "bytes": "AA03000A00040100020000F8F355",
+    "characteristic": "0000b002-0000-1000-8000-00805f9b34fb",
+    "write_type": "WriteOptions.writeType=-1: preserve current BluetoothGattCharacteristic writeType; waitWriteResult=true is an SDK completion flag, not proof of ATT Write Request.",
+    "timing": {
+      "initial_delay_ms": 0,
+      "repeat_count": 1,
+      "query_after_ms": 700,
+      "query_frame": "AA100009000303020708E8E755"
+    },
+    "release_behavior": "PartOne/Two UP sends1061: cancel referenced timer only, no frame; CANCEL unhandled.",
+    "evidence": [
+      "E-LOVE",
+      "E-UI",
+      "E-GATT"
+    ],
+    "confidence": "VERIFIED",
+    "scope": "DIRECT_BLE",
+    "kind": "massage",
+    "preconditions": "hasBedConnect(primary saved BedInfo) and BT route; selected connection/device connected; UUID selected. Care uses intent target; server-defined availability not asserted.",
+    "dynamic_fields": "None: fixed literal or sparse key. bed_side never inserted into command.",
+    "response": "Shared notifications are not a command-correlated acknowledgement.",
+    "key": 512
+  },
+  {
+    "id": "care-1066-37",
+    "route": "care",
+    "action": "Massage off",
+    "event_id": 1066,
+    "bytes": "AA03000A00040100000002F8F355",
+    "characteristic": "0000b002-0000-1000-8000-00805f9b34fb",
+    "write_type": "WriteOptions.writeType=-1: preserve current BluetoothGattCharacteristic writeType; waitWriteResult=true is an SDK completion flag, not proof of ATT Write Request.",
+    "timing": {
+      "initial_delay_ms": 0,
+      "repeat_count": 1,
+      "query_after_ms": "none",
+      "query_frame": "none"
+    },
+    "release_behavior": "PartOne/Two UP sends1061: cancel referenced timer only, no frame; CANCEL unhandled.",
+    "evidence": [
+      "E-LOVE",
+      "E-UI",
+      "E-GATT"
+    ],
+    "confidence": "VERIFIED",
+    "scope": "DIRECT_BLE",
+    "kind": "massage",
+    "preconditions": "hasBedConnect(primary saved BedInfo) and BT route; selected connection/device connected; UUID selected. Care uses intent target; server-defined availability not asserted.",
+    "dynamic_fields": "None: fixed literal or sparse key. bed_side never inserted into command.",
+    "response": "Shared notifications are not a command-correlated acknowledgement.",
+    "key": 33554432,
+    "preparation": {
+      "condition": "Has_Send_Change_Frequency_Flag false (defaulttrue; no app false writer)",
+      "event": 1075,
+      "frame": "AA0B001000100A000000000000EE040000F3E555",
+      "delay_before_action_ms": 300,
+      "persist": "Flag savedtrue immediately; delayed action untracked"
+    }
+  },
+  {
+    "id": "care-1070-38",
+    "route": "care",
+    "action": "Relaxation",
+    "event_id": 1070,
+    "bytes": "AA0B001000100A040404040000EE0A0000DDE555",
+    "characteristic": "0000b002-0000-1000-8000-00805f9b34fb",
+    "write_type": "WriteOptions.writeType=-1: preserve current BluetoothGattCharacteristic writeType; waitWriteResult=true is an SDK completion flag, not proof of ATT Write Request.",
+    "timing": {
+      "initial_delay_ms": 0,
+      "repeat_count": 1,
+      "query_after_ms": "none",
+      "query_frame": "none"
+    },
+    "release_behavior": "PartOne/Two UP sends1061: cancel referenced timer only, no frame; CANCEL unhandled.",
+    "evidence": [
+      "E-LOVE",
+      "E-UI",
+      "E-GATT"
+    ],
+    "confidence": "VERIFIED",
+    "scope": "DIRECT_BLE",
+    "kind": "mode",
+    "preconditions": "hasBedConnect(primary saved BedInfo) and BT route; selected connection/device connected; UUID selected. Care uses intent target; server-defined availability not asserted.",
+    "dynamic_fields": "None: fixed literal or sparse key. bed_side never inserted into command.",
+    "response": "Shared notifications are not a command-correlated acknowledgement."
+  },
+  {
+    "id": "care-1072-39",
+    "route": "care",
+    "action": "Lumbar relaxation",
+    "event_id": 1072,
+    "bytes": "AA0B001000100A030303030000EE0E0000DDE555",
+    "characteristic": "0000b002-0000-1000-8000-00805f9b34fb",
+    "write_type": "WriteOptions.writeType=-1: preserve current BluetoothGattCharacteristic writeType; waitWriteResult=true is an SDK completion flag, not proof of ATT Write Request.",
+    "timing": {
+      "initial_delay_ms": 0,
+      "repeat_count": 1,
+      "query_after_ms": "none",
+      "query_frame": "none"
+    },
+    "release_behavior": "PartOne/Two UP sends1061: cancel referenced timer only, no frame; CANCEL unhandled.",
+    "evidence": [
+      "E-LOVE",
+      "E-UI",
+      "E-GATT"
+    ],
+    "confidence": "VERIFIED",
+    "scope": "DIRECT_BLE",
+    "kind": "mode",
+    "preconditions": "hasBedConnect(primary saved BedInfo) and BT route; selected connection/device connected; UUID selected. Care uses intent target; server-defined availability not asserted.",
+    "dynamic_fields": "None: fixed literal or sparse key. bed_side never inserted into command.",
+    "response": "Shared notifications are not a command-correlated acknowledgement."
+  },
+  {
+    "id": "care-1071-40",
+    "route": "care",
+    "action": "Relaxation for better sleep",
+    "event_id": 1071,
+    "bytes": "AA0B001000100A020202020000EE090000E6E555",
+    "characteristic": "0000b002-0000-1000-8000-00805f9b34fb",
+    "write_type": "WriteOptions.writeType=-1: preserve current BluetoothGattCharacteristic writeType; waitWriteResult=true is an SDK completion flag, not proof of ATT Write Request.",
+    "timing": {
+      "initial_delay_ms": 0,
+      "repeat_count": 1,
+      "query_after_ms": "none",
+      "query_frame": "none"
+    },
+    "release_behavior": "PartOne/Two UP sends1061: cancel referenced timer only, no frame; CANCEL unhandled.",
+    "evidence": [
+      "E-LOVE",
+      "E-UI",
+      "E-GATT"
+    ],
+    "confidence": "VERIFIED",
+    "scope": "DIRECT_BLE",
+    "kind": "mode",
+    "preconditions": "hasBedConnect(primary saved BedInfo) and BT route; selected connection/device connected; UUID selected. Care uses intent target; server-defined availability not asserted.",
+    "dynamic_fields": "None: fixed literal or sparse key. bed_side never inserted into command.",
+    "response": "Shared notifications are not a command-correlated acknowledgement."
+  },
+  {
+    "id": "primary-1079-41",
+    "route": "primary",
+    "action": "One button sleep",
+    "event_id": 1079,
+    "bytes": "SEQUENCE: AA07000C00040501B00400000045E955 @0ms; AA03000A00040100000002F8F355 + AA03000A00040100000000FAF355 @200ms; AA03000A00040100000002F8F355 + AA03000A00040100000000FAF355 @800ms; AA03000A00040100000040BAF355 + AA03000A00040100000000FAF355 @1400ms",
+    "characteristic": "0000b002-0000-1000-8000-00805f9b34fb",
+    "write_type": "WriteOptions.writeType=-1: preserve current BluetoothGattCharacteristic writeType; waitWriteResult=true is an SDK completion flag, not proof of ATT Write Request.",
+    "timing": {
+      "nominal_offsets_ms": [
+        0,
+        200,
+        800,
+        1400
+      ],
+      "coroutine_delays_ms": [
+        200,
+        600,
+        600
+      ],
+      "transport": "Each frame queues normally with10ms request delay; wall-clock air timing not proven."
+    },
+    "release_behavior": "Click/program action; no held touch release. Sequence job untracked and survives ordinary STOP/new command; source explicit advanced stop actions launch1085 through the same sequence.",
+    "evidence": [
+      "E-SEQUENCE",
+      "E-EVENTS",
+      "E-GATT"
+    ],
+    "confidence": "VERIFIED",
+    "scope": "DIRECT_BLE",
+    "kind": "program",
+    "preconditions": "hasBedConnect(primary saved BedInfo) and BT route; selected connection/device connected; UUID selected. Care uses intent target; server-defined availability not asserted.",
+    "dynamic_fields": "None: fixed literal or sparse key. bed_side never inserted into command.",
+    "response": "Shared notifications are not a command-correlated acknowledgement.",
+    "selector": "Moon.startMoon argument equals 'one_key_sleep_plus'; other arguments use1085.",
+    "target_frame": "AA03000A00040100000040BAF355"
+  },
+  {
+    "id": "primary-1080-42",
+    "route": "primary",
+    "action": "Smart relaxation program",
+    "event_id": 1080,
+    "bytes": "SEQUENCE: AA07000C00040501B00400000045E955 @0ms; AA03000A00040100000002F8F355 + AA03000A00040100000000FAF355 @200ms; AA03000A00040100000002F8F355 + AA03000A00040100000000FAF355 @800ms; AA03000A000401000000807AF355 + AA03000A00040100000000FAF355 @1400ms",
+    "characteristic": "0000b002-0000-1000-8000-00805f9b34fb",
+    "write_type": "WriteOptions.writeType=-1: preserve current BluetoothGattCharacteristic writeType; waitWriteResult=true is an SDK completion flag, not proof of ATT Write Request.",
+    "timing": {
+      "nominal_offsets_ms": [
+        0,
+        200,
+        800,
+        1400
+      ],
+      "coroutine_delays_ms": [
+        200,
+        600,
+        600
+      ],
+      "transport": "Each frame queues normally with10ms request delay; wall-clock air timing not proven."
+    },
+    "release_behavior": "Click/program action; no held touch release. Sequence job untracked and survives ordinary STOP/new command; source explicit advanced stop actions launch1085 through the same sequence.",
+    "evidence": [
+      "E-SEQUENCE",
+      "E-EVENTS",
+      "E-GATT"
+    ],
+    "confidence": "VERIFIED",
+    "scope": "DIRECT_BLE",
+    "kind": "program",
+    "preconditions": "hasBedConnect(primary saved BedInfo) and BT route; selected connection/device connected; UUID selected. Care uses intent target; server-defined availability not asserted.",
+    "dynamic_fields": "None: fixed literal or sparse key. bed_side never inserted into command.",
+    "response": "Shared notifications are not a command-correlated acknowledgement.",
+    "selector": "SmartRelaxActivity live control",
+    "target_frame": "AA03000A000401000000807AF355"
+  },
+  {
+    "id": "primary-1081-43",
+    "route": "primary",
+    "action": "After-drinking program",
+    "event_id": 1081,
+    "bytes": "SEQUENCE: AA07000C00040501B00400000045E955 @0ms; AA03000A00040100000002F8F355 + AA03000A00040100000000FAF355 @200ms; AA03000A00040100000002F8F355 + AA03000A00040100000000FAF355 @800ms; AA03000A000401008000007AF355 + AA03000A00040100000000FAF355 @1400ms",
+    "characteristic": "0000b002-0000-1000-8000-00805f9b34fb",
+    "write_type": "WriteOptions.writeType=-1: preserve current BluetoothGattCharacteristic writeType; waitWriteResult=true is an SDK completion flag, not proof of ATT Write Request.",
+    "timing": {
+      "nominal_offsets_ms": [
+        0,
+        200,
+        800,
+        1400
+      ],
+      "coroutine_delays_ms": [
+        200,
+        600,
+        600
+      ],
+      "transport": "Each frame queues normally with10ms request delay; wall-clock air timing not proven."
+    },
+    "release_behavior": "Click/program action; no held touch release. Sequence job untracked and survives ordinary STOP/new command; source explicit advanced stop actions launch1085 through the same sequence.",
+    "evidence": [
+      "E-SEQUENCE",
+      "E-EVENTS",
+      "E-GATT"
+    ],
+    "confidence": "VERIFIED",
+    "scope": "DIRECT_BLE",
+    "kind": "program",
+    "preconditions": "hasBedConnect(primary saved BedInfo) and BT route; selected connection/device connected; UUID selected. Care uses intent target; server-defined availability not asserted.",
+    "dynamic_fields": "None: fixed literal or sparse key. bed_side never inserted into command.",
+    "response": "Shared notifications are not a command-correlated acknowledgement.",
+    "selector": "JHMSFragment live control",
+    "target_frame": "AA03000A000401008000007AF355"
+  },
+  {
+    "id": "primary-1082-44",
+    "route": "primary",
+    "action": "Reverse Arrow Pose",
+    "event_id": 1082,
+    "bytes": "SEQUENCE: AA07000C00040501B00400000045E955 @0ms; AA03000A00040100000002F8F355 + AA03000A00040100000000FAF355 @200ms; AA03000A00040100000002F8F355 + AA03000A00040100000000FAF355 @800ms; AA03000A000401002000409AF355 + AA03000A00040100000000FAF355 @1400ms",
+    "characteristic": "0000b002-0000-1000-8000-00805f9b34fb",
+    "write_type": "WriteOptions.writeType=-1: preserve current BluetoothGattCharacteristic writeType; waitWriteResult=true is an SDK completion flag, not proof of ATT Write Request.",
+    "timing": {
+      "nominal_offsets_ms": [
+        0,
+        200,
+        800,
+        1400
+      ],
+      "coroutine_delays_ms": [
+        200,
+        600,
+        600
+      ],
+      "transport": "Each frame queues normally with10ms request delay; wall-clock air timing not proven."
+    },
+    "release_behavior": "Click/program action; no held touch release. Sequence job untracked and survives ordinary STOP/new command; source explicit advanced stop actions launch1085 through the same sequence.",
+    "evidence": [
+      "E-SEQUENCE",
+      "E-EVENTS",
+      "E-GATT"
+    ],
+    "confidence": "VERIFIED",
+    "scope": "DIRECT_BLE",
+    "kind": "program",
+    "preconditions": "hasBedConnect(primary saved BedInfo) and BT route; selected connection/device connected; UUID selected. Care uses intent target; server-defined availability not asserted.",
+    "dynamic_fields": "None: fixed literal or sparse key. bed_side never inserted into command.",
+    "response": "Shared notifications are not a command-correlated acknowledgement.",
+    "selector": "YJM currPosition0",
+    "target_frame": "AA03000A000401002000409AF355"
+  },
+  {
+    "id": "primary-1082-45",
+    "route": "primary",
+    "action": "Supine Bound Angle Pose",
+    "event_id": 1082,
+    "bytes": "SEQUENCE: AA07000C00040501B00400000045E955 @0ms; AA03000A00040100000002F8F355 + AA03000A00040100000000FAF355 @200ms; AA03000A00040100000002F8F355 + AA03000A00040100000000FAF355 @800ms; AA03000A000401002000409AF355 + AA03000A00040100000000FAF355 @1400ms",
+    "characteristic": "0000b002-0000-1000-8000-00805f9b34fb",
+    "write_type": "WriteOptions.writeType=-1: preserve current BluetoothGattCharacteristic writeType; waitWriteResult=true is an SDK completion flag, not proof of ATT Write Request.",
+    "timing": {
+      "nominal_offsets_ms": [
+        0,
+        200,
+        800,
+        1400
+      ],
+      "coroutine_delays_ms": [
+        200,
+        600,
+        600
+      ],
+      "transport": "Each frame queues normally with10ms request delay; wall-clock air timing not proven."
+    },
+    "release_behavior": "Click/program action; no held touch release. Sequence job untracked and survives ordinary STOP/new command; source explicit advanced stop actions launch1085 through the same sequence.",
+    "evidence": [
+      "E-SEQUENCE",
+      "E-EVENTS",
+      "E-GATT"
+    ],
+    "confidence": "VERIFIED",
+    "scope": "DIRECT_BLE",
+    "kind": "program",
+    "preconditions": "hasBedConnect(primary saved BedInfo) and BT route; selected connection/device connected; UUID selected. Care uses intent target; server-defined availability not asserted.",
+    "dynamic_fields": "None: fixed literal or sparse key. bed_side never inserted into command.",
+    "response": "Shared notifications are not a command-correlated acknowledgement.",
+    "selector": "YJM currPosition1; duplicate wireframe is verified",
+    "target_frame": "AA03000A000401002000409AF355"
+  },
+  {
+    "id": "primary-1083-46",
+    "route": "primary",
+    "action": "Locust Pose",
+    "event_id": 1083,
+    "bytes": "SEQUENCE: AA07000C00040501B00400000045E955 @0ms; AA03000A00040100000002F8F355 + AA03000A00040100000000FAF355 @200ms; AA03000A00040100000002F8F355 + AA03000A00040100000000FAF355 @800ms; AA03000A00040100100000EAF355 + AA03000A00040100000000FAF355 @1400ms",
+    "characteristic": "0000b002-0000-1000-8000-00805f9b34fb",
+    "write_type": "WriteOptions.writeType=-1: preserve current BluetoothGattCharacteristic writeType; waitWriteResult=true is an SDK completion flag, not proof of ATT Write Request.",
+    "timing": {
+      "nominal_offsets_ms": [
+        0,
+        200,
+        800,
+        1400
+      ],
+      "coroutine_delays_ms": [
+        200,
+        600,
+        600
+      ],
+      "transport": "Each frame queues normally with10ms request delay; wall-clock air timing not proven."
+    },
+    "release_behavior": "Click/program action; no held touch release. Sequence job untracked and survives ordinary STOP/new command; source explicit advanced stop actions launch1085 through the same sequence.",
+    "evidence": [
+      "E-SEQUENCE",
+      "E-EVENTS",
+      "E-GATT"
+    ],
+    "confidence": "VERIFIED",
+    "scope": "DIRECT_BLE",
+    "kind": "program",
+    "preconditions": "hasBedConnect(primary saved BedInfo) and BT route; selected connection/device connected; UUID selected. Care uses intent target; server-defined availability not asserted.",
+    "dynamic_fields": "None: fixed literal or sparse key. bed_side never inserted into command.",
+    "response": "Shared notifications are not a command-correlated acknowledgement.",
+    "selector": "YJM currPosition2",
+    "target_frame": "AA03000A00040100100000EAF355"
+  },
+  {
+    "id": "primary-1084-47",
+    "route": "primary",
+    "action": "Bow Pose",
+    "event_id": 1084,
+    "bytes": "SEQUENCE: AA07000C00040501B00400000045E955 @0ms; AA03000A00040100000002F8F355 + AA03000A00040100000000FAF355 @200ms; AA03000A00040100000002F8F355 + AA03000A00040100000000FAF355 @800ms; AA03000A00040100100000EAF355 + AA03000A00040100000000FAF355 @1400ms",
+    "characteristic": "0000b002-0000-1000-8000-00805f9b34fb",
+    "write_type": "WriteOptions.writeType=-1: preserve current BluetoothGattCharacteristic writeType; waitWriteResult=true is an SDK completion flag, not proof of ATT Write Request.",
+    "timing": {
+      "nominal_offsets_ms": [
+        0,
+        200,
+        800,
+        1400
+      ],
+      "coroutine_delays_ms": [
+        200,
+        600,
+        600
+      ],
+      "transport": "Each frame queues normally with10ms request delay; wall-clock air timing not proven."
+    },
+    "release_behavior": "Click/program action; no held touch release. Sequence job untracked and survives ordinary STOP/new command; source explicit advanced stop actions launch1085 through the same sequence.",
+    "evidence": [
+      "E-SEQUENCE",
+      "E-EVENTS",
+      "E-GATT"
+    ],
+    "confidence": "VERIFIED",
+    "scope": "DIRECT_BLE",
+    "kind": "program",
+    "preconditions": "hasBedConnect(primary saved BedInfo) and BT route; selected connection/device connected; UUID selected. Care uses intent target; server-defined availability not asserted.",
+    "dynamic_fields": "None: fixed literal or sparse key. bed_side never inserted into command.",
+    "response": "Shared notifications are not a command-correlated acknowledgement.",
+    "selector": "YJM currPosition3; duplicate wireframe is verified",
+    "target_frame": "AA03000A00040100100000EAF355"
+  },
+  {
+    "id": "primary-1085-48",
+    "route": "primary",
+    "action": "Rest Pose / advanced flat",
+    "event_id": 1085,
+    "bytes": "SEQUENCE: AA07000C00040501B00400000045E955 @0ms; AA03000A00040100000002F8F355 + AA03000A00040100000000FAF355 @200ms; AA03000A00040100000002F8F355 + AA03000A00040100000000FAF355 @800ms; AA03000A00040100000008F2F355 + AA03000A00040100000000FAF355 @1400ms",
+    "characteristic": "0000b002-0000-1000-8000-00805f9b34fb",
+    "write_type": "WriteOptions.writeType=-1: preserve current BluetoothGattCharacteristic writeType; waitWriteResult=true is an SDK completion flag, not proof of ATT Write Request.",
+    "timing": {
+      "nominal_offsets_ms": [
+        0,
+        200,
+        800,
+        1400
+      ],
+      "coroutine_delays_ms": [
+        200,
+        600,
+        600
+      ],
+      "transport": "Each frame queues normally with10ms request delay; wall-clock air timing not proven."
+    },
+    "release_behavior": "Click/program action; no held touch release. Sequence job untracked and survives ordinary STOP/new command; source explicit advanced stop actions launch1085 through the same sequence.",
+    "evidence": [
+      "E-SEQUENCE",
+      "E-EVENTS",
+      "E-GATT"
+    ],
+    "confidence": "VERIFIED",
+    "scope": "DIRECT_BLE",
+    "kind": "program",
+    "preconditions": "hasBedConnect(primary saved BedInfo) and BT route; selected connection/device connected; UUID selected. Care uses intent target; server-defined availability not asserted.",
+    "dynamic_fields": "None: fixed literal or sparse key. bed_side never inserted into command.",
+    "response": "Shared notifications are not a command-correlated acknowledgement.",
+    "selector": "YJM currPosition4;Moon stop/fallback andSmartRelax/JHMS stop",
+    "target_frame": "AA03000A00040100000008F2F355"
+  },
+  {
+    "id": "primary-1054-49",
+    "route": "primary",
+    "action": "Disable sensor uploads",
+    "event_id": 1054,
+    "bytes": "AA100009000303000000F9E755",
+    "characteristic": "0000b002-0000-1000-8000-00805f9b34fb",
+    "write_type": "WriteOptions.writeType=-1: preserve current BluetoothGattCharacteristic writeType; waitWriteResult=true is an SDK completion flag, not proof of ATT Write Request.",
+    "timing": {
+      "initial_delay_ms": 0,
+      "repeat_count": 1
+    },
+    "release_behavior": "One-shot Moon start/stop/no-data action, not a held gesture.",
+    "evidence": [
+      "E-SEQUENCE",
+      "E-EVENTS"
+    ],
+    "confidence": "VERIFIED",
+    "scope": "DIRECT_BLE",
+    "kind": "internal",
+    "preconditions": "hasBedConnect(primary saved BedInfo) and BT route; selected connection/device connected; UUID selected. Care uses intent target; server-defined availability not asserted.",
+    "dynamic_fields": "None: fixed literal or sparse key. bed_side never inserted into command.",
+    "response": "Shared notifications are not a command-correlated acknowledgement."
+  }
+]

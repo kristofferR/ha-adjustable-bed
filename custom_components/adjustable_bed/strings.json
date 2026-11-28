@@ -332,6 +332,8 @@
         "title": "{profile} settings",
         "description": "Answer what Home Assistant can't learn from the bed for **{profile}**. Settings the app sets itself, such as its motor count and timing, aren't asked.",
         "data": {
+          "softide_sensors": "Sleep sensor selection",
+          "softide_prepare_massage": "Initialize massage frequency before first use",
           "ergosportive_controls": "Controls available on your bed",
           "jiecang_app_layout": "Physical actuator layout",
           "has_light": "Enable light controls",
@@ -4468,6 +4470,8 @@
       }
     },
     "cover": {
+      "softide_section_a": {"name": "A section"},
+      "softide_section_b": {"name": "B section"},
       "head_feet": {"name": "Head and foot"},
       "lumbar_pillow": {"name": "Lumbar and pillow"},
       "tilt": {"name": "Tilt"},
@@ -4962,6 +4966,9 @@
       }
     },
     "sensor": {
+      "softide_movement": {"name": "Body movements"},
+      "softide_program": {"name": "Program"},
+      "softide_timer": {"name": "Massage time remaining"},
       "konfurt_timer": {"name": "Massage timer"},
       "konfurt_wave": {"name": "Massage wave"},
       "konfurt_alarm_on": {"name": "Bed alarm enabled"},
@@ -12727,6 +12734,10 @@
     }
   },
   "exceptions": {
+    "softide_gatt": {"message": "The bed must expose the Softide control and notification characteristics."},
+    "softide_session": {"message": "The Softide connection or selected profile changed. Reconnect and try again."},
+    "softide_control": {"message": "This control is unavailable for the selected Softide model or route."},
+    "softide_memory": {"message": "Softide has no verified memory recall or save command. Use Reading mode for its named preset."},
     "konfurt_gatt": {"message": "KONFURT needs writable FFE9 in FFE5 and notifying FFE4 in FFE0. Check the selected app and Bluetooth device."},
     "konfurt_layout": {"message": "Choose the 2, 3 or 4 motor layout shown in the KONFURT app."},
     "konfurt_control": {"message": "Choose a control offered by this KONFURT layout and a hold of 1 to 60000 milliseconds."},

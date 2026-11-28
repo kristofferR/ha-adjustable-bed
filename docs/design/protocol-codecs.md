@@ -628,3 +628,16 @@ The controller binds callbacks and writes to their BLE session. Ending refresh
 is the only proven release. Initial's app waiter requests conditional
 cancellation; Home Assistant independently bounds its refresh instead of
 reproducing the app's unbounded-sender failure. See [AVEK](../beds/avek.md).
+
+
+## Softide
+
+Softide 1.2.4's frozen AA literals reproduce through the Sleep Assistant
+fourteen-byte carrier. Its own sparse switch also admits combined keys; the
+carrier is shared before each app's independent key gate. Fixed auxiliary
+records stay a literal lookup in the codec rather than an inferred checksum
+family. The independent `profiles/softide.py` owns all model, route and timing
+data. `beds/sleep_assistant/softide.py` supplies captured-session, primary/care
+release, program and JSON-consumer behavior through the shared GATT writer,
+command lane, hold leases and native entity shapes. No sibling capability or
+schedule selects Softide. See [Softide](../beds/sleep-assistant.md#softide).
