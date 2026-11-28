@@ -65,10 +65,10 @@ import os
 import subprocess
 import sys
 import time
-from collections.abc import Awaitable, Callable, Iterator
+from collections.abc import Awaitable, Callable, Generator, Iterator
 from dataclasses import dataclass, field, replace
 from pathlib import Path
-from types import SimpleNamespace
+from types import SimpleNamespace, coroutine
 from typing import Any, cast
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
@@ -904,6 +904,12 @@ class _LoopProxy:
         return getattr(self._loop, name)
 
 
+@coroutine
+def _yield_loop() -> Generator[None]:
+    """Yield one event-loop turn without allocating an asyncio.sleep coroutine."""
+    yield
+
+
 @contextlib.contextmanager
 def virtual_time(clock: FakeClock) -> Iterator[None]:
     """Run ``asyncio`` timing on the fake clock for the duration of the block."""
@@ -911,21 +917,7 @@ def virtual_time(clock: FakeClock) -> Iterator[None]:
         name: getattr(asyncio, name)
         for name in ("sleep", "wait", "wait_for", "timeout", "timeout_at", "get_running_loop")
     }
-    real_sleep, real_wait = real["sleep"], real["wait"]
-
-    async def settle(quiet: int, stop: Callable[[], bool] = lambda: False) -> None:
-        """Yield until ``quiet`` consecutive yields saw no new activity, or ``stop()``."""
-        seen, still = -1, 0
-        for _ in range(MAX_SETTLE_YIELDS):
-            await real_sleep(0)
-            if stop():
-                return
-            if clock.activity == seen:
-                still += 1
-                if still >= quiet:
-                    return
-            else:
-                seen, still = clock.activity, 0
+    real_wait = real["wait"]
 
     async def wait_until(deadline: float, quiet: int, stop: Callable[[], bool]) -> bool:
         """Wait until ``deadline`` is the earliest pending one; False if ``stop()`` first."""
@@ -933,7 +925,17 @@ def virtual_time(clock: FakeClock) -> Iterator[None]:
         clock.activity += 1
         try:
             while not stop():
-                await settle(quiet, stop)
+                seen, still = -1, 0
+                for _ in range(MAX_SETTLE_YIELDS):
+                    await _yield_loop()
+                    if stop():
+                        break
+                    if clock.activity == seen:
+                        still += 1
+                        if still >= quiet:
+                            break
+                    else:
+                        seen, still = clock.activity, 0
                 if not stop() and deadline <= min(clock.sleepers):
                     clock.advance_to(deadline)
                     return True
