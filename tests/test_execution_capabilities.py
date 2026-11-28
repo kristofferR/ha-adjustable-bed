@@ -142,6 +142,18 @@ async def test_hestia_one_held_key_stream_has_no_composed_motor_admission():
     assert controller.profile.release.steps == ((100, 0),)
 
 
+def test_innova_control_hold_scope_has_artifact_refresh_and_release():
+    # Innova Control 1.1.0 Utils sender mode1 + RemoteFragment UP: repeat,
+    # then mode0's 50ms existing STOP. Modes never establish physical sides.
+    from tests.test_innova_control import controller
+
+    ctrl, _ = controller()
+    assert ctrl.execution.hold_for("richmat_classic_1") == "stream"
+    assert ctrl.execution.concurrent == frozenset()
+    assert ctrl.app_profile.held_release_ms == 50
+    assert not ctrl.supports_single_address_pairing
+
+
 @pytest.mark.parametrize("product", ("JLRN", "VJRM"))
 async def test_purely_sleep_normal_axes_declare_only_the_verified_stream_hold(product):
     # Purely Sleep 2.0.1 E49/E53/E55/E56: actual normal motorList ->

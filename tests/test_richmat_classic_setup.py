@@ -62,10 +62,13 @@ def test_all_app_choices_are_findable_and_model_inventories_are_distinct():
         'maxprime': 554,
         'dreamlab2': 554,
         'homezone': 559,
+        'innova2': 558,
         **dict.fromkeys(RESOURCE_APPS, 243),
     }
     for app, models in MODEL_CHOICES.items():
-        assert set(models) == set(load_catalog(app).models)
+        # Innova retains this dead resource in evidence, outside its 558 picker entries.
+        dormant = {"209A05"} if app == "innova2" else set()
+        assert set(models) == set(load_catalog(app).models) - dormant
 
 
 def test_runtime_catalog_matches_every_frozen_member_layout_contract():

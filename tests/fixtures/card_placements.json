@@ -4197,6 +4197,15 @@
   "card_role": "estimate",
   "card_motor": "head"
  },
+ "number:innova_control_aroma_pause_3": {
+  "card_section": "utility"
+ },
+ "number:innova_control_aroma_start_2": {
+  "card_section": "utility"
+ },
+ "number:innova_control_aroma_start_3": {
+  "card_section": "utility"
+ },
  "number:instant_comfort_left_lumbar_firmness": {
   "card_section": "firmness"
  },
@@ -4665,6 +4674,9 @@
  "select:hjbed_layout": {
   "card_section": "utility"
  },
+ "select:innova_control_timer_progress": {
+  "card_section": "utility"
+ },
  "select:jerome_adjustable_base_side": {
   "card_section": "motors"
  },
@@ -4735,7 +4747,16 @@
  "select:richmat_app_side": {
   "card_section": "motors"
  },
+ "select:richmat_classic_head_foot": {
+  "card_section": "utility"
+ },
  "select:richmat_classic_hold": {
+  "card_section": "utility"
+ },
+ "select:richmat_classic_mode": {
+  "card_section": "utility"
+ },
+ "select:richmat_classic_program": {
   "card_section": "utility"
  },
  "select:richmat_mh_motor_mode": {
