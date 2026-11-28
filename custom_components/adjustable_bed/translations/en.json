@@ -331,6 +331,7 @@
         "title": "{profile} settings",
         "description": "Answer what Home Assistant can't learn from the bed for **{profile}**. Settings the app sets itself, such as its motor count and timing, aren't asked.",
         "data": {
+          "ergosportive_controls": "Controls available on your bed",
           "jiecang_app_layout": "Physical actuator layout",
           "has_light": "Enable light controls",
           "furnimove_remote": "FurniMove handset ID",
@@ -831,6 +832,7 @@
       "ambient_receiver_mismatch": "This device lacks the Bluetooth write or notification channel required by M3 Ambient. Check the selected device."
     },
     "error": {
+      "ergosportive_selection": "Choose a release mode, sensor stream and controls matching your ErgoSportive bed.",
       "scan_failed": "Bluetooth scanning is unavailable. Check your adapters and try again, or choose a device from the list.",
       "langjue_receiver_mismatch": "Choose the Bluetooth device used to control the bed in Comfort Smart Bed. The selected device is missing the required channels.",
       "invalid_mac_address": "Invalid Bluetooth address format. Use XX:XX:XX:XX:XX:XX.",
@@ -949,6 +951,7 @@
         "title": "Adjustable Bed Options",
         "description": "Adjust the settings for your adjustable bed. To change the bed type or app, open **Reconfigure** from this entry's three-dot menu.",
         "data": {
+          "ergosportive_controls": "Controls available on your bed",
           "ergobq_serial": "ErgoBQ six-byte serial (hex, optional)",
           "active_sleep_auth_id": "Existing Active Sleep authentication ID (optional)",
           "ergobq_stamp": "ErgoBQ channel stamp (leave blank if unused)",
@@ -1202,6 +1205,7 @@
         "title": "Left side settings",
         "description": "Change connection, movement and app settings for **{name}**. Only this side changes.",
         "data": {
+          "ergosportive_controls": "Controls available on your bed",
           "ergobq_serial": "ErgoBQ six-byte serial (hex, optional)",
           "active_sleep_auth_id": "Existing Active Sleep authentication ID (optional)",
           "ergobq_stamp": "ErgoBQ channel stamp (leave blank if unused)",
@@ -1390,6 +1394,7 @@
         "title": "Right side settings",
         "description": "Change connection, movement and app settings for **{name}**. Only this side changes.",
         "data": {
+          "ergosportive_controls": "Controls available on your bed",
           "ergobq_serial": "ErgoBQ six-byte serial (hex, optional)",
           "active_sleep_auth_id": "Existing Active Sleep authentication ID (optional)",
           "ergobq_stamp": "ErgoBQ channel stamp (leave blank if unused)",
@@ -4922,6 +4927,7 @@
       "konfurt_alarm_minute": {"name": "Bed alarm minute"},
       "konfurt_alarm_repeat": {"name": "Bed alarm weekday mask"},
       "konfurt_alarm_type": {"name": "Bed alarm action code"},
+      "ergosportive_twitch": {"name": "Movement count"},
       "purely_sleep_protocol_version": {
         "name": "Protocol version"
       },
@@ -7023,6 +7029,7 @@
       }
     },
     "number": {
+      "ergosportive_brightness": {"name": "Bedside lamp brightness"},
       "innova_control_aroma_start_2": {
         "name": "Aroma startup 2"
       },
@@ -12675,6 +12682,12 @@
     "konfurt_control": {"message": "Choose a control offered by this KONFURT layout and a hold of 1 to 60000 milliseconds."},
     "konfurt_alarm": {"message": "KONFURT sets an alarm for today's weekday only. Choose no wake action, massage or Memory 1."},
     "konfurt_massage_unknown": {"message": "Wait for a massage status report from this connection before turning massage on or off. You can use Toggle massage without a report."},
+    "ergosportive_session": {"message": "The ErgoSportive connection changed. Reconnect before sending another command."},
+    "ergosportive_gatt": {"message": "This receiver is missing the ErgoSportive UART write or notification channel."},
+    "ergosportive_subscription": {"message": "Subscribe to the current ErgoSportive notification channel before sending a command."},
+    "ergosportive_control": {"message": "Choose a control enabled for this ErgoSportive profile and a hold from 0.1 to 30 seconds."},
+    "ergosportive_memory_gesture_unresolved": {"message": "Memory save and held recall are not available for this ErgoSportive profile."},
+    "ergosportive_brightness": {"message": "Enable bedside lamp brightness and choose a whole level from 1 to 13."},
     "askona_model_required": {"message": "Choose the Askona bed model before connecting"},
     "askona_session_changed": {"message": "The bed connection changed. Reconnect and try again"},
     "askona_gatt_missing": {"message": "The Askona write or notification characteristic is missing"},

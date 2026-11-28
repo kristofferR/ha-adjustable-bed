@@ -442,6 +442,7 @@ _BUILDERS: Final[dict[str, _BuilderSpec]] = {
     BED_TYPE_LINX: _BuilderSpec("linx.controller"),
     BED_TYPE_RESTONIC: _BuilderSpec("restonic.controller"),
     "konfurt": _BuilderSpec("keeson.konfurt"),
+    "ergosportive": _BuilderSpec("keeson.ergosportive"),
     "kingkoil": _BuilderSpec("keeson.kingkoil"),
     BED_TYPE_JUNASLEEP: _BuilderSpec("keeson.junasleep"),
     BED_TYPE_SOMOS: _BuilderSpec("keeson.somos"),
