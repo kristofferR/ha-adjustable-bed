@@ -303,6 +303,7 @@ _BY_BED_TYPE: Final[dict[str, SideProfile]] = {
     BED_TYPE_HJBED: SideProfile("HJBed", variant_owned=True),
     BED_TYPE_JALON: SideProfile("OkinComfortBed II", frozenset({CONF_BLE_DEVICE_NAME})),
     BED_TYPE_RESTONIC: SideProfile("Restonic", variant_owned=True),
+    "konfurt": SideProfile("KONFURT", frozenset({CONF_MOTOR_COUNT, CONF_HAS_MASSAGE}), variant_owned=True),
     "ergosportive": SideProfile("ErgoSportive", frozenset({CONF_MOTOR_COUNT}), variant_owned=True),
     "kingkoil": SideProfile("King Koil Bed", frozenset({CONF_MOTOR_COUNT, CONF_HAS_MASSAGE}), variant_owned=True),
     BED_TYPE_JUNASLEEP: SideProfile("JunaSleep", frozenset({CONF_MOTOR_COUNT, CONF_HAS_MASSAGE, CONF_BLE_DEVICE_NAME}), variant_owned=True),

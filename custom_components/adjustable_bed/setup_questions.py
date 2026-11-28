@@ -398,6 +398,7 @@ _OWNED_BY_BED_TYPE: Final[dict[str, frozenset[str]]] = {
     "hush_sleep_mm": GENERIC_FIELDS,
     "hush_sleep_sxb": GENERIC_FIELDS,
     BED_TYPE_RESTONIC: _APP_DEFINED - {CONF_PROTOCOL_VARIANT, CONF_MOTOR_PULSE_COUNT},
+    "konfurt": _APP_DEFINED - {CONF_PROTOCOL_VARIANT, CONF_MOTOR_PULSE_COUNT},
     "ergosportive": _APP_DEFINED - {CONF_PROTOCOL_VARIANT},
     "kingkoil": _APP_DEFINED - {CONF_PROTOCOL_VARIANT, CONF_MOTOR_PULSE_COUNT},
     BED_TYPE_JUNASLEEP: _APP_DEFINED - {CONF_PROTOCOL_VARIANT, CONF_MOTOR_PULSE_COUNT},
@@ -2467,6 +2468,16 @@ def _restonic_settings(data: Mapping[str, Any]) -> Mapping[str, Any]:
             CONF_DISABLE_ANGLE_SENSING: True, CONF_MOTOR_PULSE_DELAY_MS: 200}
 
 
+def _konfurt_settings(data: Mapping[str, Any]) -> Mapping[str, Any]:
+    from .profiles.konfurt import LAYOUTS
+
+    layout = LAYOUTS.get(data.get(CONF_PROTOCOL_VARIANT, ""))
+    return {} if layout is None else {
+        CONF_MOTOR_COUNT: len(layout.axes), CONF_HAS_MASSAGE: True,
+        CONF_DISABLE_ANGLE_SENSING: True, CONF_MOTOR_PULSE_DELAY_MS: 300,
+    }
+
+
 def _ergosportive_validate(data: Mapping[str, Any]) -> dict[str, str]:
     try:
         ergosportive_app.selected(data)
@@ -3581,6 +3592,8 @@ SETUP_PROFILES: Final[dict[str, SetupProfile]] = {
         questions=(Question(CONF_PRODUCT_TYPE, RESTONIC_LAYOUTS), Question(CONF_PROTOCOL_VARIANT, RESTONIC_BRANCHES)),
         derive=_restonic_settings,
     ),
+    "konfurt": _asking("konfurt", questions=(Question(CONF_PROTOCOL_VARIANT, _routes("konfurt")),),
+                        derive=_konfurt_settings),
     "ergosportive": _asking(
         "ergosportive",
         questions=(Question(CONF_PROTOCOL_VARIANT, ergosportive_app.VARIANTS),

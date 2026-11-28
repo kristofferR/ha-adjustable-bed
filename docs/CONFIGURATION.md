@@ -406,6 +406,7 @@ actions; its bounded `hold_control` behavior has separate timing in the
 | JunaSleep app | `junasleep` | 10 | 300 ms |
 | King Koil (SUTA) app | `suta_king_koil` | 1 | 150 ms |
 | King Koil Bed app | `kingkoil` | 10 | 300 ms |
+| KONFURT app | `konfurt` | 4 | 300 ms |
 | Leggett & Platt MlRM remote | `leggett_wilinke` | 10 | 110 ms |
 | Limoss and Stawett remotes | `limoss` | 12 | 80 ms |
 | Linak (Bed Control, Bed Connect and Performance Series apps): Carpe Diem Beds app | `linak` `carpe_diem` | 4 | 300 ms |
@@ -681,6 +682,7 @@ beds, Reconfigure that bed, then combine them again.
 | SleepEvolution / W.Silver Products 3.x | See the [setup steps](beds/richmat.md#sleepevolution--wsilver-products-3x). |
 | Sleepy's Elite | [One question](beds/sleepys.md#home-assistant-setup) for the MFRM Sleepy's Elite app or the BOX15, BOX24 or BOX25 receiver. The [app profile](beds/sleepys.md#explicit-sleepys-elite-app-profile) asks the control box the app lists, for each physical receiver. Change an existing bed's app, control box or BOX25 dialect with **Reconfigure**. |
 | Solace / Woosa | Answer the [Solace question](beds/ff_frame.md#home-assistant-setup) with your app: HomeKobo, Sealy MotionFlex or Sweet Night, which follow the bed's Bluetooth name, or [Woosa Sleep](beds/ff_frame.md#woosa-sleep). |
+| KONFURT | Choose the [2-, 3- or 4-motor app layout](beds/keeson.md#konfurt). All layouts include light and massage; no position sensing or app inference from advertisements. |
 | ErgoSportive | Choose the [remote subset](beds/sleep-assistant.md#ergosportive-subset), explicit standard or Hardware221 release, and only controls your remote offers. Sensor readings require the confirmed OldDSP normal stream; automatic firmware/model selection is unavailable. |
 | King Koil Bed | Choose the [remote layout](beds/keeson.md#king-koil-bed) by its visible controls. |
 | Somos / SomosBeds | See the [setup steps](beds/keeson.md#somos--somosbeds). |

@@ -49,7 +49,7 @@ app. Every guide follows the [bed guide format](BED_GUIDE_FORMAT.md).
 | [Jiecang](beds/jiecang.md) | Jiecang remotes, Comfort Motion, the Dream apps and the LOGICDATA apps | Shared |
 | [JMC400](beds/jmc.md) | Jensen JMC400 beds, from the Jensen and Svane Remote apps | Shared |
 | [Kaidi](beds/kaidi.md) | Rize Beds, Rize Seat, Floyd Home, ISleep, KomfyD and ComfyDS | Shared |
-| [Keeson](beds/keeson.md) | Keeson remotes, Ergomotion, Serta, Tempur, Purple, Sino, the ORE apps, Ergomotion 4.0, OrmatekTechnoSmart, Somos, Yamada and other Keeson-based apps | Shared |
+| [Keeson](beds/keeson.md) | KONFURT, Keeson remotes, Ergomotion, Serta, Tempur, Purple, Sino, the ORE apps, Ergomotion 4.0, OrmatekTechnoSmart, Somos, Yamada and other Keeson-based apps | Shared |
 | [Flexispot](beds/flexispot.md) | Flexispot app and EB632, EB703, EB704 and EB803 models | |
 | [Langjue](beds/langjue.md) | The Comfort Smart Bed app | |
 | [Leggett & Platt](beds/leggett-platt.md) | LP Control, LP Comfort Connect and the L&P remotes | |

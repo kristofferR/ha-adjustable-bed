@@ -1,0 +1,117 @@
+[
+  {
+    "id": "N-alarm",
+    "evidence": [
+      "E-PARSER"
+    ],
+    "steps": [
+      {
+        "bytes": "ed 80 03 07 1e 02 09 00",
+        "expected": {
+          "kind": "alarm",
+          "hour": 7,
+          "minute": 30,
+          "repeat": 2,
+          "type": 9,
+          "on": true
+        }
+      }
+    ]
+  },
+  {
+    "id": "N-off",
+    "evidence": [
+      "E-PARSER"
+    ],
+    "steps": [
+      {
+        "bytes": "ed 80 03 00 00 00 00 00",
+        "expected": {
+          "kind": "alarm",
+          "hour": 0,
+          "minute": 0,
+          "repeat": 0,
+          "type": 0,
+          "on": false
+        }
+      }
+    ]
+  },
+  {
+    "id": "N-status16",
+    "evidence": [
+      "E-PARSER"
+    ],
+    "steps": [
+      {
+        "bytes": "ed fe 00 00 00 00 00 05 04 00 00 00 00 02 32 00",
+        "expected": {
+          "kind": "status16",
+          "head": 3,
+          "foot": 2,
+          "time": 2,
+          "wave": 3,
+          "light": true
+        }
+      }
+    ]
+  },
+  {
+    "id": "N-status_joined",
+    "evidence": [
+      "E-PARSER"
+    ],
+    "steps": [
+      {
+        "bytes": "f4 fe 00 00 00 00 00 00 00 00 00 06 01 00 00 00 00 00 03 03",
+        "expected": null
+      },
+      {
+        "bytes": "00 02",
+        "expected": {
+          "kind": "status_joined",
+          "head": 3,
+          "foot": 1,
+          "time": 3,
+          "wave": 2,
+          "light": true
+        }
+      }
+    ]
+  },
+  {
+    "id": "N-16byte_start_ignored",
+    "evidence": [
+      "E-PARSER"
+    ],
+    "steps": [
+      {
+        "bytes": "f4 fe 00 00 00 00 00 00 00 00 00 00 00 00 00 00",
+        "expected": null
+      },
+      {
+        "bytes": "00 00 00 00 00 00",
+        "expected": null
+      }
+    ]
+  },
+  {
+    "id": "N-no_checksum_or_opcode_check",
+    "evidence": [
+      "E-PARSER"
+    ],
+    "steps": [
+      {
+        "bytes": "ed 80 ff 07 1e 02 09 ee",
+        "expected": {
+          "kind": "alarm",
+          "hour": 7,
+          "minute": 30,
+          "repeat": 2,
+          "type": 9,
+          "on": true
+        }
+      }
+    ]
+  }
+]

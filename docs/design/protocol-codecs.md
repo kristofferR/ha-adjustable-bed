@@ -549,6 +549,17 @@ vectors. Its fixed 200IV2 / A8RM P1 profile reuses the shared Richmat
 motion/session runtime; Settings gates belong to the current connection.
 The profile does not admit the other catalog layouts or raw transport.
 
+
+## KONFURT
+
+KONFURT 1.0's 29 frozen normal, clock, alarm and query literals all reproduce
+byte for byte through `codec/keeson.py`. It is a typed profile in
+`profiles/konfurt.py`, with a shared Keeson controller extension for its captured
+GATT link, two delayed release writes, alarm sequencing and notification parser.
+Its manual layouts and command words are independent of other apps named Sino.
+No shared UUID or catalog name chooses this profile. Existing wire scenarios
+remain unchanged. See the [KONFURT profile](../beds/keeson.md#konfurt).
+
 Amada Smart 1.0.0 (1) selects the unchanged Okin N-frame codec after all 78
 frozen transmit literals match `frame40`, `request`, `clock` and `alarm`.
 `profiles/amada.py` owns the explicit A/AB/B selector and its own schedules.
