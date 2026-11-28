@@ -20814,6 +20814,108 @@ A single-address Left/Right split is unavailable.
 Based on TOP CARE 1.0.0's current motor screen. Its sensor and receive surfaces
 remain incomplete; physical behavior has not been verified.
 
+## Smart Base
+
+**Status:** Not yet tested on hardware. The 200IV2 / A8RM panel is supported.
+
+### Known Models
+
+Select **Smart Base**, then **200IV2 / A8RM (FEE9)**. Other Smart Base panels
+and transports are unavailable. A shared Bluetooth name does not choose the app.
+
+### Apps
+
+| Analyzed | App | Package ID |
+|---|---|---|
+| ✅ | Smart Base 1.3.1 (5) | `com.richmat.smartbase` |
+
+### Features
+
+| Feature | Supported |
+|---|---|
+| Motor Control | Motor 1 and Motor 2, up, down and STOP |
+| Presets | Flat, zero gravity, save zero gravity (confirmation required) |
+| Lights | Bed-light toggle; RGB and timeout after a current LED reply |
+| Alarm | Cancel only, after a current alarm capability reply |
+| Position Feedback / Massage | Unavailable for this panel |
+| Paired beds | Separate addresses; no single-address side selector |
+
+### Setup
+
+Choose the app and product explicitly. Use **Refresh bed settings** to send the
+LED and aroma capability probes. No response is needed for the basic panel.
+RGB and the 0–300 second light timeout appear after a valid LED reply on the
+current connection; zero keeps the light on. The timeout is a saved local
+preference, not a measured bed value. Restoring it sends nothing. Reconnect and
+refresh after a disconnect to admit optional settings again.
+
+### Protocol Details
+
+All values use the existing Richmat checksum encoder. Motor numbers retain the
+panel's labels without assigning physical head or foot geometry. Mode is fixed
+at zero and does not identify a physical side. Writes use the exact discovered
+P1 characteristic with the shared GATT policy: no response when that property
+is offered, otherwise a write response. The Android platform's on-air write
+mode remains unverified.
+
+<!-- generated:smart-base -->
+| Action | P1 value |
+|---|---|
+| Motor 1 up | `6E 01 00 24 93` |
+| Motor 1 down | `6E 01 00 25 94` |
+| Motor 2 up | `6E 01 00 26 95` |
+| Motor 2 down | `6E 01 00 27 96` |
+| flat | `6E 01 00 31 A0` |
+| zero g | `6E 01 00 45 B4` |
+| save zero g | `6E 01 00 66 D5` |
+| light toggle | `6E 01 00 3C AB` |
+| Release / STOP | `6E 01 00 6E DD` |
+
+| Setting | Value |
+|---|---|
+| Service | `0000fee9-0000-1000-8000-00805f9b34fb` |
+| Write | `d44bc439-abfd-45a2-b575-925416129600` |
+| Notify | `d44bc439-abfd-45a2-b575-925416129601` |
+| Initialization | `6E 02 01 00 71` |
+| LED query | `6E 0A 00 01 79` |
+| Aroma capability probe | `6E 1A 00 00 88` |
+| RGB white (one write) | `6E 0C FF FF 78 6E 0D FF FF 79` |
+| Timeout: keep on | `6E 0B FF FF 77` |
+| Timeout: 300 seconds | `6E 0B 01 2C A6` |
+| Cancel alarm (separate writes) | `6E 05 00 00 73` / `6E 06 00 00 74` |
+| Held refresh / release delay | 150 / 50 ms |
+| Tap release delay / save threshold | 150 / 3000 ms |
+| Initialization delay / query spacing / alarm spacing | 300 / 500 / 300 ms |
+<!-- /generated -->
+
+### Commands
+
+Held movement refreshes until release. Home Assistant serializes commands,
+drains an in-flight write before STOP and sends release with a fresh cancel
+event. Flat, zero gravity and the light toggle send once, followed by release.
+Saving zero gravity waits three seconds and cancels safely before the threshold.
+Home Assistant ends the save action with release instead of requiring another
+phone touch event.
+
+### Notifications and State
+
+Only exact complete five-byte notifications are interpreted: `6E 0E 00 03 7F`
+or `6E 0E 00 01 7D` admits LED settings and reports on/off; `6E 09 01 00 78`
+admits alarm cancellation. `6E 1A 00 01 89` records an aroma capability flag in
+diagnostics, without exposing unresolved accessory settings. Unknown, malformed,
+fragmented or concatenated input is retained only in raw diagnostics and cannot
+grant a capability. Callbacks and pending writes belong to their original link.
+
+### Limitations
+
+The wider Smart Base layout catalog, alternate transports, alarm scheduling,
+aroma, fans, massage and sensor extensions are unavailable. RGB records are one
+GATT value; changing color does not invent an on/off or movement command. The
+panel's torch controls the phone camera and is not a bed light. Home Assistant
+does not reproduce the phone app's inside-CANCEL, pause/resume or cancelled
+long-save hazards. Hardware timing, physical behavior and RF write mode remain
+unverified.
+
 ## AI Bed HJ001 and QRRM
 
 **Status:** Not yet tested on hardware.
