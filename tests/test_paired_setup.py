@@ -4601,6 +4601,10 @@ class TestOfflineSafeBedTypes:
                 child[CONF_PROTOCOL_VARIANT] = "level5"
             elif bed_type == "awmotion":
                 child[CONF_PROTOCOL_VARIANT] = "SN300"
+            elif bed_type == "smart_base":
+                from custom_components.adjustable_bed.profiles.smart_base import PRODUCT
+
+                child["product_type"] = PRODUCT
             elif bed_type == BED_TYPE_VIBRADORM_APP:
                 child.update({
                     CONF_VIBRADORM_APP_PROFILE: "caresse",
