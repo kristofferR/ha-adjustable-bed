@@ -783,6 +783,7 @@ class AdjustableBedOnOffLight(AdjustableBedEntity, RestoreEntity, LightEntity):
         if self._level_intent:
             self._attr_is_on = self._level_is_on(coordinator.controller_state.get(LIGHT_LEVEL))
         self._auto_off_timer: asyncio.TimerHandle | None = None
+        self._auto_off_seconds: int | None = None
         # Counts published light state, so a command's assumed result never
         # overwrites state the bed published while the command ran.
         self._state_generation = 0
@@ -882,25 +883,35 @@ class AdjustableBedOnOffLight(AdjustableBedEntity, RestoreEntity, LightEntity):
         if self._auto_off_timer is not None:
             self._auto_off_timer.cancel()
             self._auto_off_timer = None
+        self._auto_off_seconds = None
 
-    def _schedule_auto_off(self) -> None:
+    def _schedule_auto_off(self, *, restart: bool = False) -> None:
         """Follow a bed whose light switches itself off after a set time."""
         controller = self._coordinator.controller
         if controller is None and self._attr_is_on:
             return  # Offline: the bed's own timer keeps running, so keep ours.
+        seconds = controller.light_auto_off_seconds if controller is not None else None
+        if (not restart and self._auto_off_timer is not None
+                and controller is not None and not controller.controller_entity_discovery_complete
+                and seconds is None and self._attr_is_on is not False):
+            return  # Startup has not learned whether the running timer changed.
+        if (not restart and self._attr_is_on and self._auto_off_timer is not None
+                and self._auto_off_seconds == seconds):
+            return
         self._cancel_auto_off()
         if controller is None or not self._attr_is_on:
             return
-        seconds = controller.light_auto_off_seconds
         if seconds is None:
             return
+        self._auto_off_seconds = seconds
 
         def expire() -> None:
             # The bed's own timer runs on after an idle disconnect.
             self._auto_off_timer = None
             if not self._attr_is_on:
                 return
-            controller.on_light_auto_off()
+            current = self._coordinator.capability_controller or controller
+            current.on_light_auto_off()
             self._attr_is_on = False
             self.async_write_ha_state()
 
@@ -928,9 +939,9 @@ class AdjustableBedOnOffLight(AdjustableBedEntity, RestoreEntity, LightEntity):
                 and generation == self._state_generation
             ):
                 self._attr_is_on = True if delivery is Delivery.SENT else None
-                if delivery is Delivery.SENT:
-                    self._schedule_auto_off()
                 self.async_write_ha_state()
+            if owner is self._coordinator.controller and delivery is Delivery.SENT and self._attr_is_on:
+                self._schedule_auto_off(restart=True)
 
         await self._async_send(_turn_on, on_delivery=show, cancel_running=False)
 

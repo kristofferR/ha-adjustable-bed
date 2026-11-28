@@ -220,11 +220,13 @@ class CosyworldController(OctoController):
         self._features_loaded.set()
 
     def on_light_auto_off(self) -> None:
-        r = self._capability_records.get(OCTO_FEATURE_LIGHT)
-        if r is not None and self.supports_discrete_light_control:
-            updated = r.with_value(b"\x00" + r.value[1:])
-            self._capability_records[OCTO_FEATURE_LIGHT] = updated
-            self._pending_capability_records[OCTO_FEATURE_LIGHT] = updated
+        updated = False
+        for records in (self._capability_records, self._pending_capability_records):
+            r = records.get(OCTO_FEATURE_LIGHT)
+            if r and r.characteristic[:1] == b"\x01" and r.value:
+                records[OCTO_FEATURE_LIGHT] = r.with_value(b"\x00" + r.value[1:])
+                updated = True
+        if updated:
             self.forward_controller_state_updates(UNDER_BED_LIGHTS_ON(False))
 
     async def start_notify(self, callback: Callable[[str, float], None] | None = None) -> None:

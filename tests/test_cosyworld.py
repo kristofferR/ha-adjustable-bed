@@ -7,7 +7,7 @@ import json
 from dataclasses import replace
 from pathlib import Path
 from types import SimpleNamespace
-from unittest.mock import AsyncMock, MagicMock
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from homeassistant.const import CONF_ADDRESS, CONF_NAME
@@ -619,6 +619,123 @@ async def test_inflight_peer_update_wins_over_command_cache_and_expiry_keeps_tai
     assert c._capability_records[0x102].value == b"\x00\x3c\x41"
     c.on_light_auto_off()
     assert c._capability_records[0x102].value == b"\x00\x3c\x41"
+
+
+@pytest.mark.parametrize('update', ['remote_lock', 'duration', 'on', 'reconnect'])
+async def test_subscribed_light_preserves_deadline_for_unrelated_updates(hass, runtime, update):
+    from custom_components.adjustable_bed.light import _light_entities_for
+
+    co, c, client = runtime
+    complete(c, record(0x102, b'\x00\x3c'), record(0x103, b'\x01'), record(0x11, b'\x00'))
+    co.async_ensure_connected = AsyncMock(return_value=True)
+    co._async_refresh_controller_auth = AsyncMock()
+    co._idle_disconnect_seconds = const.IDLE_DISCONNECT_KEEP_CONNECTED
+    light = _light_entities_for(hass, co)[0]
+    light.hass = hass
+    light.async_write_ha_state = MagicMock()
+    unsubscribe = co.register_controller_state_callback(light._handle_controller_state_update)
+    try:
+        with virtual_clock(), patch.object(hass.loop, 'call_later', asyncio.get_running_loop().call_later):
+            await light.async_turn_on()
+            timer = light._auto_off_timer
+            assert timer is not None and light.is_on is True
+            await asyncio.sleep(50)
+            if update == 'remote_lock':
+                await co.async_execute_controller_command(lambda ctrl: ctrl.set_remote_control_lock(True))
+                assert light._auto_off_timer is timer
+                remaining = 10
+            elif update == 'duration':
+                await co.async_execute_controller_command(lambda ctrl: ctrl.set_light_timer(app.LIGHT_TIMER_OPTIONS[2]))
+                assert light._auto_off_timer is not timer
+                remaining = 120
+            elif update == 'on':
+                await light.async_turn_on()
+                assert light._auto_off_timer is not timer
+                remaining = 60
+            else:
+                snapshot = c.capability_snapshot()
+                co._controller = None
+                await asyncio.sleep(5)
+                c = CosyworldController(co, capability_snapshot=snapshot)
+                c._session_ready = True
+                co._controller = c
+                c._publish_capability_state()
+                assert light._auto_off_timer is timer
+                remaining = 5
+            writes_before_expiry = len(writes(client))
+            await asyncio.sleep(remaining - 0.01)
+            assert light.is_on is True
+            await asyncio.sleep(0.02)
+            assert light.is_on is False
+            assert len(writes(client)) == writes_before_expiry
+            c._publish_capability_state()
+            assert light.is_on is False
+    finally:
+        unsubscribe()
+        light._cancel_auto_off()
+        client.is_connected = False
+        await co.async_shutdown()
+
+
+@pytest.mark.parametrize('reconnect_at,discovery_delay', [(55, 0.01), (59, 2)])
+async def test_light_deadline_survives_coordinator_reconnect_startup(
+    hass, runtime, mock_coordinator_connected, reconnect_at, discovery_delay
+):
+    from custom_components.adjustable_bed.light import _light_entities_for
+
+    co, old, client = runtime
+    client.services[0].characteristics[0] = MagicMock(
+        uuid=app.CHARACTERISTIC, properties=["write-without-response", "notify"],
+        handle=99, descriptors=[],
+    )
+    complete(old, record(0x102, b"\x00\x3c"), record(0x103, b"\x01"))
+    co._ready = co._link_ready = True
+    co._idle_disconnect_seconds = const.IDLE_DISCONNECT_KEEP_CONNECTED
+    light = _light_entities_for(hass, co)[0]
+    light.hass = hass
+    light.async_write_ha_state = MagicMock()
+    unsubscribe = co.register_controller_state_callback(light._handle_controller_state_update)
+    client.disconnect.side_effect = lambda: setattr(client, "is_connected", False)
+
+    async def answer(_char, payload, **_kwargs):
+        current = co.controller
+        if payload == app.STARTUP[0]:
+            current._ping_event.set()
+        elif payload == app.STARTUP[1]:
+            current._device_info = {"cid": 1, "pid": 2, "firmware": 3, "hardware": 4}
+            current._device_info_event.set()
+        elif payload == app.STARTUP[2]:
+            pin = record(3, b"\x00\x01", characteristic=b"\x00")
+            current._handle_feature_response(_encode_capability_value(pin, pin.value))
+            for r in (record(1, characteristic=b"\x02"),
+                      record(0x102, b"\x01\x3c"), record(0x103, b"\x01")):
+                current._handle_feature_response(_encode_capability_value(r, r.value))
+            await asyncio.sleep(discovery_delay)
+            complete(current)
+
+    try:
+        with virtual_clock(), patch.object(hass.loop, "call_later", asyncio.get_running_loop().call_later):
+            await light.async_turn_on()
+            deadline = light._auto_off_timer.when()
+            await asyncio.sleep(40)
+            assert await co.async_disconnect(reason="idle_timeout")
+            await asyncio.sleep(reconnect_at - 40)
+            client.write_gatt_char.side_effect = answer
+            assert await co.async_connect()
+            assert co.controller is not old
+            if reconnect_at + discovery_delay < 60:
+                assert light._auto_off_timer.when() == deadline
+            count = len(writes(client))
+            await asyncio.sleep(max(0, deadline - asyncio.get_running_loop().time()) + 0.01)
+            assert light.is_on is False
+            assert len(writes(client)) == count
+            co.controller._publish_capability_state()
+            assert light.is_on is False
+    finally:
+        unsubscribe()
+        light._cancel_auto_off()
+        client.is_connected = False
+        await co.async_shutdown()
 
 
 async def test_transport_admission_and_no_periodic_pin_sender(runtime):
