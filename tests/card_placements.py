@@ -295,6 +295,10 @@ def runtime_variants(controllers: Iterable[BedController]) -> Iterator[BedContro
             yield variant(controller, mask=0xf0, axes=("back", "legs", "head", "feet"))
             headboard = HeadboardController(controller._coordinator)
             yield variant(headboard, config=1)
+        if type(controller).__name__ == "EasyCtrlController":
+            from custom_components.adjustable_bed.profiles.easyctrl import MODELS
+            for profile in MODELS.values():
+                yield variant(controller, profile=profile)
         if type(controller).__name__ == "DunlopilloController":
             from custom_components.adjustable_bed.profiles.dunlopillo import (
                 PROFILES as DUNLOPILLO_PROFILES,

@@ -11,7 +11,6 @@ from homeassistant.helpers.entity import Entity
 
 from .card import CARD_ATTRIBUTES, CardPlacement
 from .command_scheduler import Delivery, delivered
-from .const import TIMED_MOVE_MOTOR_OPTIONS
 from .entity_runtime import controller_side_scope
 from .execution import ExecutionCapabilities
 
@@ -37,6 +36,7 @@ def hold_lease_attributes(
     motor route. The hold service refuses a lease otherwise, so a combined
     control offers a hold only when both sides agree.
     """
+    controllers = tuple(controllers)
     # A controller without execution facts (an offline stub) declares no hold.
     modes = {
         execution.hold_for(control) if isinstance(execution, ExecutionCapabilities) else None
@@ -45,7 +45,10 @@ def hold_lease_attributes(
     if len(modes) != 1 or (mode := modes.pop()) is None:
         return {}
     attributes = {ATTR_HOLD_LEASE_MODE: mode}
-    if motor in TIMED_MOVE_MOTOR_OPTIONS:
+    if motor is not None and all(
+        controller is not None and any(spec.key == motor for spec in controller.motor_control_specs)
+        for controller in controllers
+    ):
         attributes[ATTR_HOLD_LEASE_MOTOR] = motor
     return attributes
 

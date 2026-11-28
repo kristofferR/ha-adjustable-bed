@@ -1,0 +1,162 @@
+{
+  "id": "A95-F1",
+  "model": "300",
+  "command_pointer": "/protocols/0/commands/313",
+  "initial_sequence": 1,
+  "interleaved_commands": false,
+  "physical_validation": "unverified",
+  "schedule_note": "Offsets are static Timer.schedule delay/period expectations, not hardware delivery or Android wall-clock guarantees.",
+  "evidence": [
+    "E-A95-F1",
+    "E-BUILD"
+  ],
+  "cases": [
+    {
+      "id": "up-0",
+      "hold_ms": 0,
+      "release_action": 1,
+      "expected": [
+        {
+          "relative_to": "press",
+          "offset_ms": 0,
+          "bytes": "0201110100000000"
+        },
+        {
+          "relative_to": "release",
+          "offset_ms": 0,
+          "bytes": "0301010000000000"
+        },
+        {
+          "relative_to": "release",
+          "offset_ms": 20,
+          "bytes": "0401010000000000"
+        },
+        {
+          "relative_to": "release",
+          "offset_ms": 40,
+          "bytes": "0501010000000000"
+        }
+      ]
+    },
+    {
+      "id": "up-100",
+      "hold_ms": 100,
+      "release_action": 1,
+      "expected": [
+        {
+          "relative_to": "press",
+          "offset_ms": 0,
+          "bytes": "0201110100000000"
+        },
+        {
+          "relative_to": "release",
+          "offset_ms": 0,
+          "bytes": "0301010000000000"
+        },
+        {
+          "relative_to": "release",
+          "offset_ms": 20,
+          "bytes": "0401010000000000"
+        },
+        {
+          "relative_to": "release",
+          "offset_ms": 40,
+          "bytes": "0501010000000000"
+        }
+      ]
+    },
+    {
+      "id": "up-400",
+      "hold_ms": 400,
+      "release_action": 1,
+      "expected": [
+        {
+          "relative_to": "press",
+          "offset_ms": 0,
+          "bytes": "0201110100000000"
+        },
+        {
+          "relative_to": "release",
+          "offset_ms": 0,
+          "bytes": "0301010000000000"
+        },
+        {
+          "relative_to": "release",
+          "offset_ms": 20,
+          "bytes": "0401010000000000"
+        },
+        {
+          "relative_to": "release",
+          "offset_ms": 40,
+          "bytes": "0501010000000000"
+        }
+      ]
+    },
+    {
+      "id": "up-401",
+      "hold_ms": 401,
+      "release_action": 1,
+      "expected": [
+        {
+          "relative_to": "press",
+          "offset_ms": 0,
+          "bytes": "0201110100000000"
+        },
+        {
+          "relative_to": "release",
+          "offset_ms": 0,
+          "bytes": "0301010000000000"
+        },
+        {
+          "relative_to": "release",
+          "offset_ms": 20,
+          "bytes": "0401010000000000"
+        },
+        {
+          "relative_to": "release",
+          "offset_ms": 40,
+          "bytes": "0501010000000000"
+        }
+      ]
+    },
+    {
+      "id": "up-1000",
+      "hold_ms": 1000,
+      "release_action": 1,
+      "expected": [
+        {
+          "relative_to": "press",
+          "offset_ms": 0,
+          "bytes": "0201110100000000"
+        },
+        {
+          "relative_to": "release",
+          "offset_ms": 0,
+          "bytes": "0301010000000000"
+        },
+        {
+          "relative_to": "release",
+          "offset_ms": 20,
+          "bytes": "0401010000000000"
+        },
+        {
+          "relative_to": "release",
+          "offset_ms": 40,
+          "bytes": "0501010000000000"
+        }
+      ]
+    },
+    {
+      "id": "cancel-100",
+      "hold_ms": 100,
+      "release_action": 3,
+      "expected": [
+        {
+          "relative_to": "press",
+          "offset_ms": 0,
+          "bytes": "0201110100000000"
+        }
+      ]
+    }
+  ]
+}
