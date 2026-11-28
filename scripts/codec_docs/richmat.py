@@ -82,6 +82,7 @@ from scripts.codec_docs._maxprime import render_maxprime
 from scripts.codec_docs._myside import BLOCKS as MYSIDE_BLOCKS
 from scripts.codec_docs._ronco_motion import BLOCKS as RONCO_MOTION_BLOCKS
 from scripts.codec_docs._super_colchones import BLOCKS as SUPER_COLCHONES_BLOCKS
+from scripts.codec_docs._sven import BLOCKS as SVEN_BLOCKS
 from scripts.codec_docs._thrivesleep import BLOCKS as THRIVESLEEP_BLOCKS
 
 GUIDE = "docs/beds/richmat.md"
@@ -1456,6 +1457,7 @@ def render_rise_commands() -> str:
 
 
 BLOCKS: list[Block] = [
+    *SVEN_BLOCKS,
     *RONCO_MOTION_BLOCKS,
     (GUIDE, "homezone-controls", _homezone.render),
     (GUIDE, "dorsal-controls", _dorsal.render),

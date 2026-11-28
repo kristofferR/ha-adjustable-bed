@@ -152,6 +152,7 @@ from .profiles.sinca_comfort import PROTOCOL_LABELS as SINCA_RECEIVERS
 from .profiles.sleeptime import SELECTORS as SLEEPTIME_SELECTORS
 from .profiles.somos import CHOICES as SOMOS_CHOICES
 from .profiles.super_colchones import VARIANTS as SUPER_COLCHONES_VARIANTS
+from .profiles.sven import CHOICES as SVEN_CHOICES
 from .profiles.symphony import SELECTORS as SYMPHONY_SELECTORS
 from .profiles.thrivesleep import VARIANTS as THRIVESLEEP_VARIANTS
 
@@ -265,6 +266,7 @@ VARIANTS_BY_BED_TYPE: dict[str, dict[str, str]] = {
     BED_TYPE_ADJUSTABLE_LUMBAR: ADJUSTABLE_LUMBAR_VARIANTS,
     BED_TYPE_COMFORT_ENHANCEMENTS: COMFORT_ENHANCEMENTS_VARIANTS,
     BED_TYPE_RESTONIC: RESTONIC_BRANCHES,
+    "sven": SVEN_CHOICES,
     "konfurt": KONFURT_CHOICES,
     "ergosportive": ERGOSPORTIVE_CHOICES,
     "kingkoil": KINGKOIL_CHOICES,

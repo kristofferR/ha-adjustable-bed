@@ -2349,7 +2349,7 @@ class AdjustableBedCoordinator(
                 scheduler_managed
                 and command_context is not None
                 and "*" in command_context.resources
-                and command_context.kind is not CommandKind.STOP
+                and command_context.kind not in (CommandKind.STOP, CommandKind.SAFETY)
             )
             cancel_event = self.cancel_command
             controller_before_prepare = self._controller
@@ -2369,7 +2369,7 @@ class AdjustableBedCoordinator(
                 if scheduler_managed
                 else self._cancel_counter > entry_cancel_count
             )
-            if preemptible and cancelled_while_waiting:
+            if (scheduler_managed or preemptible) and cancelled_while_waiting:
                 _LOGGER.debug("Controller %s cancelled while waiting for lock", operation_name)
                 if (
                     not preserve_idle_deadline
@@ -2382,7 +2382,8 @@ class AdjustableBedCoordinator(
                 return None
 
             try:
-                cancel_event.clear()
+                if not scheduler_managed:
+                    cancel_event.clear()
                 if run_if is not None and not run_if():
                     _LOGGER.debug(
                         "Skipping controller %s: operation is no longer needed",
@@ -2395,28 +2396,22 @@ class AdjustableBedCoordinator(
                     controller = self._controller
                     if controller is None:
                         raise ConnectionError("Diagnostic query requires a live receiver")
-                    disconnected_transport = (
-                        controller.requires_disconnected_transport is True
-                    )
+                    disconnected_transport = controller.requires_disconnected_transport is True
                     if disconnected_transport:
                         if controller.disconnected_transport_ready is not True:
-                            raise ConnectionError(
-                                "Selected disconnected transport is not ready"
-                            )
+                            raise ConnectionError("Selected disconnected transport is not ready")
                     elif not self.is_connected:
                         raise ConnectionError("Diagnostic query requires a live receiver")
                 else:
                     controller = await self._async_prepare_controller_operation(operation_name)
                     # Capture the role chosen during preparation. It remains the
                     # owner of operation cleanup even if readiness changes later.
-                    disconnected_transport = (
-                        controller.requires_disconnected_transport is True
-                    )
+                    disconnected_transport = controller.requires_disconnected_transport is True
                 cancelled_during_preparation = cancel_event.is_set() or (
                     (not scheduler_managed or legacy_exclusive)
                     and self._cancel_counter > entry_cancel_count
                 )
-                if preemptible and cancelled_during_preparation:
+                if (scheduler_managed or preemptible) and cancelled_during_preparation:
                     _LOGGER.debug("Controller %s cancelled during preparation", operation_name)
                     if raise_on_lock_cancel:
                         raise asyncio.CancelledError
@@ -2493,7 +2488,7 @@ class AdjustableBedCoordinator(
                         self._start_background_position_read()
 
                 return result
-            except (BedCommandFailedError, BedCommandTimedOutError):
+            except BedCommandFailedError, BedCommandTimedOutError:
                 raise
             # The one place a Bluetooth error or timeout from an admitted
             # command or motor STOP gets the integration's wording.
@@ -2559,6 +2554,7 @@ class AdjustableBedCoordinator(
         read_positions_after_operation: bool = True,
         expected_stop_epoch: int | None = None,
         lease: HoldLease | None = None,
+        admit_if: Callable[[], bool] | None = None,
     ) -> None:
         """Execute an opaque controller command through the device scheduler.
 
@@ -2576,7 +2572,7 @@ class AdjustableBedCoordinator(
                     cancel_running=False,
                     skip_disconnect=skip_disconnect,
                     raise_on_lock_cancel=False,
-                    preemptible=True,
+                    preemptible=kind is not CommandKind.SAFETY,
                     enable_position_polling=True,
                     read_positions_after_operation=read_positions_after_operation,
                     operation_name="command",
@@ -2594,6 +2590,7 @@ class AdjustableBedCoordinator(
             controller_command=command_fn,
             expected_stop_epoch=expected_stop_epoch,
             lease=lease,
+            admit_if=admit_if,
         )
 
     def stream_resources(self) -> frozenset[str] | None:
@@ -2604,6 +2601,14 @@ class AdjustableBedCoordinator(
         return self._protocol_command_resources(
             command_resources(*controller.execution.concurrent)
         )
+
+    def require_persistent_command_connection(self, error_key: str) -> None:
+        """Admit stateful controls only on a topology that keeps this link open."""
+        from .paired_coordinator import PairedBedCoordinator
+
+        runtime = loaded_runtime(self.hass, self.entry.entry_id)
+        if isinstance(runtime, PairedBedCoordinator):
+            runtime.require_persistent_command_connection(self, error_key)
 
     def stop_stream_member(self, resource: str) -> bool:
         """End a motor's merged-stream member for a motor-scoped STOP (#516).
@@ -2788,6 +2793,25 @@ class AdjustableBedCoordinator(
             lease, self._hold_resources(resource, resources)
         )
 
+    async def async_release_hold(
+        self,
+        owner: str,
+        generation: int,
+        *,
+        resources: Collection[str] | None = None,
+        cancelled: bool = False,
+    ) -> None:
+        """End the admitted gesture without issuing STOP on a replacement link."""
+        controller = self.controller
+        await self._command_scheduler.async_release_hold(
+            owner,
+            generation,
+            resources=resources,
+            on_release=controller.on_gesture_release
+            if controller is not None and not cancelled
+            else None,
+        )
+
     def _hold_resources(
         self, resource: str | None, resources: Collection[str] | None
     ) -> frozenset[str]:
@@ -2813,6 +2837,7 @@ class AdjustableBedCoordinator(
         controller_command: Callable[[BedController], Awaitable[None]] | None = None,
         expected_stop_epoch: int | None = None,
         lease: HoldLease | None = None,
+        admit_if: Callable[[], bool] | None = None,
     ) -> None:
         """Schedule an operation, or run inline inside this scheduler's reservation."""
         if (
@@ -2854,6 +2879,8 @@ class AdjustableBedCoordinator(
         ):
             return
 
+        if admit_if is not None and not admit_if():
+            return
         intent = self._build_command_intent(
             operation,
             resource=resource,
@@ -2865,6 +2892,7 @@ class AdjustableBedCoordinator(
             group_id=group_id,
             expected_stop_epoch=expected_stop_epoch,
             lease=lease,
+            admit_if=admit_if,
         )
         await self._command_scheduler.execute(
             intent, expected_stop_epoch=expected_stop_epoch
@@ -2883,6 +2911,7 @@ class AdjustableBedCoordinator(
         group_id: str | None = None,
         expected_stop_epoch: int | None = None,
         lease: HoldLease | None = None,
+        admit_if: Callable[[], bool] | None = None,
     ) -> CommandIntent:
         """Build one device intent while preserving legacy cancellation signals."""
         if resource is not None and resources is not None:
@@ -2896,9 +2925,13 @@ class AdjustableBedCoordinator(
         shared_timer = controller is not None and controller.commands_share_timer is True
         inspection = kind is CommandKind.INSPECTION
         cancel_running = False if inspection else cancel_running or shared_timer
-        if cancel_running and (
-            expected_stop_epoch is None
-            or self._command_scheduler.stop_epoch == expected_stop_epoch
+        if (
+            kind is not CommandKind.SAFETY
+            and cancel_running
+            and (
+                expected_stop_epoch is None
+                or self._command_scheduler.stop_epoch == expected_stop_epoch
+            )
         ):
             # Keep preemptible non-scheduler work (queries and legacy direct
             # writes) responsive. Scheduler-owned operations use their private
@@ -2914,13 +2947,20 @@ class AdjustableBedCoordinator(
             resources=self._protocol_command_resources(command_scope),
             kind=CommandKind.HOLD if lease is not None else kind,
             replacement_key=(
-                None if inspection else "*" if shared_timer else (resource or "*") if resources is None else None
+                None
+                if inspection
+                else "*"
+                if shared_timer
+                else (resource or "*")
+                if resources is None
+                else None
             ),
             cancel_running=cancel_running,
             group_id=group_id,
             pulse_count=pulse_count,
             pulse_delay_ms=pulse_delay_ms,
             lease=lease,
+            admit_if=admit_if,
         )
 
     async def async_prepare_command_operation(
@@ -3590,5 +3630,3 @@ class AdjustableBedCoordinator(
                 callback_fn(self._controller_state)
             except Exception as err:
                 _LOGGER.warning("Controller state callback error: %s", err)
-
-

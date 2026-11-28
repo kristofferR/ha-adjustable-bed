@@ -58,6 +58,8 @@ class CommandKind(StrEnum):
     STOP = "stop"
     HOLD = "hold"
     STREAM = "stream"
+    SAFETY = "safety"
+    """A bounded safety sequence survives ordinary replacement, but never STOP."""
 
 
 class CommandState(StrEnum):
@@ -306,9 +308,7 @@ class _MergedStream:
         if member.left_at is None:
             # An expired member stopped moving at its deadline, however late
             # the streamer noticed; an interrupted write stamped it already.
-            member.left_at = (
-                min(now, member.deadline) if outcome is CommandOutcome.EXPIRED else now
-            )
+            member.left_at = min(now, member.deadline) if outcome is CommandOutcome.EXPIRED else now
         self.ending.append(member)
         self.scheduler._end_member_lease(member)
         self.membership_changed = True
@@ -687,6 +687,7 @@ class CommandIntent:
     pulse_count: int | None = None
     pulse_delay_ms: int | None = None
     lease: HoldLease | None = None
+    admit_if: Callable[[], bool] | None = None
     intent_id: str = field(default_factory=lambda: uuid4().hex)
 
     def __post_init__(self) -> None:
@@ -1029,12 +1030,8 @@ class DeviceCommandScheduler:
         self._lock = asyncio.Lock()
         self._queue: deque[CommandHandle] = deque()
         self._active: CommandHandle | None = None
-        self._active_stops: dict[
-            str, tuple[CommandHandle, asyncio.Task[None]]
-        ] = {}
-        self._recent_records: deque[CommandRecord] = deque(
-            maxlen=MAX_RECENT_COMMAND_RECORDS
-        )
+        self._active_stops: dict[str, tuple[CommandHandle, asyncio.Task[None]]] = {}
+        self._recent_records: deque[CommandRecord] = deque(maxlen=MAX_RECENT_COMMAND_RECORDS)
         self._worker: asyncio.Task[None] | None = None
         self._stop_epoch = 0
         self._stop_barrier = asyncio.Event()
@@ -1093,9 +1090,7 @@ class DeviceCommandScheduler:
                 if active is not None and active.started_monotonic is not None
                 else None
             ),
-            "active_intents": [
-                self._active_diagnostics(handle) for handle in active_handles
-            ],
+            "active_intents": [self._active_diagnostics(handle) for handle in active_handles],
             "recent_records": [record.as_dict() for record in self._recent_records],
         }
 
@@ -1178,6 +1173,9 @@ class DeviceCommandScheduler:
                     CommandOutcome.STOPPED,
                     invalidated_stop_epoch=self._stop_epoch,
                 )
+                return handle
+            if intent.admit_if is not None and not intent.admit_if():
+                self._finish_locked(handle, CommandOutcome.REPLACED)
                 return handle
             if intent.lease is not None:
                 live = self._bind_lease_locked(handle, intent.lease)
@@ -1290,8 +1288,10 @@ class DeviceCommandScheduler:
             raise StaleHoldLease(
                 f"Hold generation {member.lease.generation} of {member.lease.owner!r} has ended"
             )
-        if claim is HoldClaim.RENEW and record is not None and (
-            record.member is not None or record.handle is not None
+        if (
+            claim is HoldClaim.RENEW
+            and record is not None
+            and (record.member is not None or record.handle is not None)
         ):
             self._set_lease_deadline(record, member.lease)
             return "renewed"
@@ -1382,9 +1382,9 @@ class DeviceCommandScheduler:
             and not overlaps
             and _holds_motion_within(active.intent.resources, normalized_resources)
         )
-        preempted_contexts = (active.context,) if active is not None and (
-            overlaps or holds_motion
-        ) else ()
+        preempted_contexts = (
+            (active.context,) if active is not None and (overlaps or holds_motion) else ()
+        )
         stop_epoch = self.request_stop(normalized_resources)
         if active is not None and holds_motion and not active.future.done():
             active.context.request_cancel(CommandOutcome.STOPPED)
@@ -1415,11 +1415,7 @@ class DeviceCommandScheduler:
         try:
             await handle.intent.operation(handle.context)
         except asyncio.CancelledError:
-            outcome = (
-                CommandOutcome.SHUTDOWN
-                if self._closed
-                else CommandOutcome.CALLER_CANCELLED
-            )
+            outcome = CommandOutcome.SHUTDOWN if self._closed else CommandOutcome.CALLER_CANCELLED
             self._finish(handle, outcome)
             raise
         except TimeoutError as err:
@@ -1449,9 +1445,7 @@ class DeviceCommandScheduler:
             scheduler_token=self._token,
             cancel_event=asyncio.Event(),
             admitted_stop_epoch=(
-                self._stop_epoch
-                if admitted_stop_epoch is None
-                else admitted_stop_epoch
+                self._stop_epoch if admitted_stop_epoch is None else admitted_stop_epoch
             ),
             intent_id=intent.intent_id,
             kind=intent.kind,
@@ -1622,11 +1616,7 @@ class DeviceCommandScheduler:
     def release_hold_claim(self, lease: HoldLease, resources: Collection[str]) -> None:
         """End a reservation that was never admitted, for example after preflight failed."""
         record = self._leases.get((lease.owner, command_resources(*resources)))
-        if (
-            record is not None
-            and record.generation == lease.generation
-            and record.handle is None
-        ):
+        if record is not None and record.generation == lease.generation and record.handle is None:
             self._end_lease(record)
 
     def end_holds(self, outcome: CommandOutcome) -> None:
@@ -1638,6 +1628,7 @@ class DeviceCommandScheduler:
         for handle in (self._active, *self._queue):
             if handle is not None and handle.lease_record is not None:
                 self._expire_record(handle.lease_record, outcome)
+
         for stream in tuple(self._streams.values()):
             handle = stream.handle
             if handle is not None and not handle.future.done():
@@ -1645,6 +1636,42 @@ class DeviceCommandScheduler:
                 if handle in self._queue:
                     self._queue.remove(handle)
                     self._finish_locked(handle, outcome)
+
+    async def async_release_hold(
+        self,
+        owner: str,
+        generation: int,
+        *,
+        resources: Collection[str] | None = None,
+        on_release: Callable[[], None] | None = None,
+    ) -> None:
+        """Release only this admitted lease; ended/replaced sessions are no-ops."""
+        handles: list[CommandHandle] = []
+        members: list[StreamMember] = []
+        for (record_owner, _resources), record in tuple(self._leases.items()):
+            if record_owner != owner or record.generation != generation or record.ended:
+                continue
+            if resources is not None and not _resources_overlap(record.resources, resources):
+                continue
+            if record.deadline <= asyncio.get_running_loop().time():
+                self._expire_record(record, CommandOutcome.EXPIRED)
+                continue
+            if (
+                on_release is not None
+                and record.handle is self._active
+                and self._active is not None
+                and not self._active.context.cancel_event.is_set()
+            ):
+                on_release()
+            self._expire_record(record, CommandOutcome.STOPPED)
+            if record.member is not None:
+                members.append(record.member)
+            elif record.handle is not None:
+                handles.append(record.handle)
+        for handle in handles:
+            await asyncio.shield(handle.future)
+        for member in members:
+            await member.done.wait()
 
     def _classify_lease(self, record: _LeaseRecord | None, lease: HoldLease) -> HoldClaim:
         if (
@@ -1667,9 +1694,7 @@ class DeviceCommandScheduler:
             return HoldClaim.STALE
         return HoldClaim.RENEW
 
-    def _new_lease_record(
-        self, key: tuple[str, frozenset[str]], lease: HoldLease
-    ) -> _LeaseRecord:
+    def _new_lease_record(self, key: tuple[str, frozenset[str]], lease: HoldLease) -> _LeaseRecord:
         previous = self._leases.pop(key, None)
         if previous is not None and previous.handle is None:
             # A newer generation supersedes an unadmitted reservation. A live
@@ -1704,7 +1729,12 @@ class DeviceCommandScheduler:
         if handle is None or handle.context is not context:
             return
         record = handle.lease_record
-        if record is None or record.ended or record.member is not None or record.ceiling is not None:
+        if (
+            record is None
+            or record.ended
+            or record.member is not None
+            or record.ceiling is not None
+        ):
             return
         record.ceiling = asyncio.get_running_loop().time() + ceiling_s
         if record.deadline > record.ceiling:
@@ -1725,8 +1755,11 @@ class DeviceCommandScheduler:
             # Wake the streamer to recompute its wait; no frame is written.
             record.member.deadline = _clamp(record.deadline, record.member.ceiling)
             stream = next(
-                (s for s in self._streams.values() if s.members.get(record.member.resource)
-                 is record.member),
+                (
+                    s
+                    for s in self._streams.values()
+                    if s.members.get(record.member.resource) is record.member
+                ),
                 None,
             )
             if stream is not None:
@@ -1772,17 +1805,13 @@ class DeviceCommandScheduler:
             if record.handle is None and _resources_overlap(record.resources, resources):
                 self._end_lease(record)
 
-    def _bind_lease_locked(
-        self, handle: CommandHandle, lease: HoldLease
-    ) -> CommandHandle | None:
+    def _bind_lease_locked(self, handle: CommandHandle, lease: HoldLease) -> CommandHandle | None:
         """Attach an admitted hold to its lease, or renew the live one."""
         key = (lease.owner, handle.intent.resources)
         record = self._leases.get(key)
         claim = self._classify_lease(record, lease)
         if claim is HoldClaim.STALE:
-            raise StaleHoldLease(
-                f"Hold generation {lease.generation} of {lease.owner!r} has ended"
-            )
+            raise StaleHoldLease(f"Hold generation {lease.generation} of {lease.owner!r} has ended")
         if claim is HoldClaim.RENEW and record is not None and record.handle is not None:
             self._set_lease_deadline(record, lease)
             return record.handle
@@ -1814,9 +1843,7 @@ class DeviceCommandScheduler:
         record = self._leases.get(key)
         claim = self._classify_lease(record, lease)
         if claim is HoldClaim.STALE:
-            raise StaleHoldLease(
-                f"Hold generation {lease.generation} of {lease.owner!r} has ended"
-            )
+            raise StaleHoldLease(f"Hold generation {lease.generation} of {lease.owner!r} has ended")
         if claim is HoldClaim.RENEW and record is not None and record.handle is not None:
             self._set_lease_deadline(record, lease)
             return False
@@ -1835,13 +1862,25 @@ class DeviceCommandScheduler:
         """Cancel conflicts and report whether the active handle was replaced."""
         active = self._active
         replaces_active = False
-        if active is not None and self._handles_conflict(active, incoming):
+        if (
+            active is not None
+            and self._handles_conflict(active, incoming)
+            and (
+                active.intent.kind is not CommandKind.SAFETY
+                or incoming.intent.kind is CommandKind.STOP
+            )
+        ):
             replaces_active = True
             # A streamer already ending at a STOP keeps that reason for its members.
             if active.stream is None or not active.context.cancel_event.is_set():
                 active.context.request_cancel(CommandOutcome.REPLACED)
 
         for queued in tuple(self._queue):
+            if (
+                queued.intent.kind is CommandKind.SAFETY
+                and incoming.intent.kind is not CommandKind.STOP
+            ):
+                continue
             if not self._handles_conflict(queued, incoming):
                 continue
             self._queue.remove(queued)
@@ -1872,12 +1911,17 @@ class DeviceCommandScheduler:
             active is not None
             and _resources_overlap(active.intent.resources, resources)
             and not (spare_streams and active.stream is not None)
+            and not (
+                outcome is CommandOutcome.REPLACED and active.intent.kind is CommandKind.SAFETY
+            )
         ):
             active.context.request_cancel(outcome)
             active.invalidated_stop_epoch = invalidated_stop_epoch
         for queued in tuple(self._queue):
-            if not _resources_overlap(queued.intent.resources, resources) or (
-                spare_streams and queued.stream is not None
+            if (
+                not _resources_overlap(queued.intent.resources, resources)
+                or (spare_streams and queued.stream is not None)
+                or (outcome is CommandOutcome.REPLACED and queued.intent.kind is CommandKind.SAFETY)
             ):
                 continue
             self._queue.remove(queued)
@@ -1949,9 +1993,7 @@ class DeviceCommandScheduler:
                     await handle.intent.operation(handle.context)
                 except asyncio.CancelledError:
                     worker_task = asyncio.current_task()
-                    worker_cancelled = bool(
-                        worker_task is not None and worker_task.cancelling()
-                    )
+                    worker_cancelled = bool(worker_task is not None and worker_task.cancelling())
                     if not handle.context.cancel_event.is_set():
                         handle.context.request_cancel(
                             CommandOutcome.SHUTDOWN
@@ -2076,9 +2118,7 @@ class DeviceCommandScheduler:
                 started_at=handle.started_at,
                 finished_at=finished_at,
                 outcome=outcome,
-                queue_wait_seconds=round(
-                    queue_finished_monotonic - handle.admitted_monotonic, 3
-                ),
+                queue_wait_seconds=round(queue_finished_monotonic - handle.admitted_monotonic, 3),
                 active_duration_seconds=(
                     round(finished_monotonic - started_monotonic, 3)
                     if started_monotonic is not None

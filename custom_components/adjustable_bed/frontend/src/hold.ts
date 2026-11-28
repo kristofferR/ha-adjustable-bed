@@ -94,6 +94,24 @@ export function movementLease(
   });
 }
 
+// A pointer release ends exactly its admitted lease, even after expiry/reconnect.
+export function movementRelease(
+  hass: HomeAssistant | undefined, motor: MotorEntity, direction: Direction, lease: HoldLeaseCall,
+  cancelled = false,
+): Promise<unknown> | undefined {
+  const held = motor.heldControls?.[direction] ?? motor.heldControl;
+  const route = motor.timedMove ?? motor.holdLease;
+  const deviceId = held ? motor.deviceId : route?.deviceId;
+  const side = held ? motor.holdLease?.side : route?.side;
+  if (!deviceId) return undefined;
+  return hass?.callService("adjustable_bed", "stop_all", {
+    device_id: deviceId,
+    ...(side === "left" || side === "right" || side === "both" ? { side } : {}),
+    hold_owner: lease.owner, hold_generation: lease.generation,
+    ...(cancelled ? { hold_cancelled: true } : {}),
+  });
+}
+
 // Resolve controller-owned gesture release on the same device and side.
 export function heldReleaseButton(hass: HomeAssistant | undefined, entityId: string): string | undefined {
   const owner = hass?.entities[entityId];
@@ -173,7 +191,7 @@ export function movementHold(
 ): Promise<unknown> | undefined {
   const spec = motor.heldControls?.[direction] ?? motor.heldControl;
   if (!spec || !motor.deviceId) return undefined;
-  const side = hass?.states[motor.holdEntityId ?? motor.cover ?? ""]?.attributes.bed_side;
+  const side = motor.holdLease?.side ?? hass?.states[motor.holdEntityId ?? motor.cover ?? ""]?.attributes.bed_side;
   const serviceData: Record<string, unknown> = {
     device_id: [motor.deviceId],
     control: spec.control,
@@ -229,7 +247,11 @@ export interface HoldActions {
   pulse: (motor: MotorEntity, dir: Direction) => Promise<unknown> | undefined;
   // Starts or renews the hold of a motor with renewsHold(). Without it a held
   // control sends nothing and every other motor keeps its finite pulses.
-  lease?: (motor: MotorEntity, dir: Direction, lease: HoldLeaseCall) => Promise<unknown> | undefined;
+  // Only the initial dispatch passes first=true; a delayed press may never dispatch.
+  lease?: (motor: MotorEntity, dir: Direction, lease: HoldLeaseCall, first?: boolean) => Promise<unknown> | undefined;
+  releaseLease?: (motor: MotorEntity, direction: Direction, lease: HoldLeaseCall, cancelled: boolean) => void;
+  // Native cancellation must not execute a normal gesture's release tail.
+  cancelHold?: (releaseEntityId: string) => void;
   // Stops a cover-backed motor, which is the only kind with its own stop. The
   // bed stop identifies the compact target retained when the hold began.
   stopCover: (coverEntityId: string, stopEntityId?: string) => void;
@@ -259,6 +281,7 @@ export interface HoldLifecycleTarget {
 }
 
 interface PendingRelease {
+  lease?: { motor: MotorEntity; direction: Direction; call: HoldLeaseCall };
   releaseButton?: string;
   id: number;
   motorKey: string;
@@ -350,7 +373,7 @@ export function holdTargetForEntity(
   };
 }
 
-function holdTargetsOverlap(first: HoldTarget, second: HoldTarget): boolean {
+export function holdTargetsOverlap(first: HoldTarget, second: HoldTarget): boolean {
   if ((first.parentDeviceId ?? first.deviceId) !== (second.parentDeviceId ?? second.deviceId)) {
     return false;
   }
@@ -449,6 +472,7 @@ export class MotorHold {
   private readonly _leaseOwner = `card-${Math.random().toString(36).slice(2, 12)}`;
   private _started = false;
   private _releaseButton?: string;
+  private _leasedRelease?: PendingRelease["lease"];
   private _heldControl?: MotorEntity["heldControl"];
   private _releaseId = 0;
   private readonly _pendingReleases = new Map<number, PendingRelease>();
@@ -607,11 +631,12 @@ export class MotorHold {
     const lease = { owner: this._leaseOwner, generation };
     // The starting call settles when the hold ends: the lease expired, a STOP
     // or replacement ended it, or the bed refused it. A refused renewal means
-    // the same. Stop renewing, but keep the press so its release still sends
-    // STOP, as a refused pulse does. A held control without a declared hold
+    // the same. Stop renewing, but keep the captured lease for its eventual release.
+    // A held control without a declared hold
     // runs the bed's own hold, which has released itself by then: forget the
     // press, so its release cannot stop a later move.
     const declared = hasHoldLease(motor, dir);
+    this._leasedRelease = declared ? { motor, direction: dir, call: lease } : undefined;
     let live = true;
     const ended = (): void => {
       live = false;
@@ -627,7 +652,7 @@ export class MotorHold {
       ended();
       if (!declared && generation === this._generation) this._reset();
     };
-    const starting = this.actions.lease?.(motor, dir, lease);
+    const starting = this.actions.lease?.(motor, dir, lease, true);
     if (!starting) return;
     void starting.then(settled, settled);
     const renew = (): void => {
@@ -680,9 +705,18 @@ export class MotorHold {
 
   // Returns the entity whose stop was requested, if any.
   private _release(
-    target: Pick<PendingRelease, "cover" | "stopEntityId" | "releaseButton">,
+    target: Pick<PendingRelease, "cover" | "stopEntityId" | "releaseButton" | "lease">,
+    cancelled = false,
   ): string | undefined {
+    if (target.lease && this.actions.releaseLease) {
+      this.actions.releaseLease(target.lease.motor, target.lease.direction, target.lease.call, cancelled);
+      return target.cover ?? target.stopEntityId ?? target.releaseButton;
+    }
     if (target.releaseButton) {
+      if (cancelled) {
+        this.actions.cancelHold?.(target.releaseButton);
+        return target.releaseButton;
+      }
       this.actions.stopBed(target.releaseButton);
       return target.releaseButton;
     }
@@ -697,6 +731,7 @@ export class MotorHold {
   private _scheduleRelease(): void {
     const release: PendingRelease = {
       id: ++this._releaseId,
+      lease: this._leasedRelease,
       releaseButton: this._releaseButton,
       motorKey: this._key ?? "",
       targetKey: this._targetKey(),
@@ -714,12 +749,12 @@ export class MotorHold {
     release.timer = this.timers.setTimeout(() => this._runRelease(release), delay);
   }
 
-  private _runRelease(release: PendingRelease): string | undefined {
+  private _runRelease(release: PendingRelease, cancelled = false): string | undefined {
     if (!this._pendingReleases.delete(release.id)) return undefined;
     if (release.timer !== undefined) this.timers.clearTimeout(release.timer);
     if ([...release.scopeGenerations].every(([key, generation]) =>
       this._stopTargetGenerations.get(key) === generation
-    )) return this._release(release);
+    )) return this._release(release, cancelled);
   }
 
   private _flushPendingForTarget(targetKey: string): Set<string> {
@@ -794,22 +829,24 @@ export class MotorHold {
     pointerId: number,
     isPrimaryButtonRelease: boolean,
     stopEntityId?: string,
+    cancelled = false,
   ): void {
     if (this._pointerId === null || pointerId !== this._pointerId) return;
     if (!isPrimaryButtonRelease) return;
     if (stopEntityId !== undefined && this._stop !== stopEntityId) return;
-    this.end(motor, stopEntityId);
+    this.end(motor, stopEntityId, cancelled);
   }
 
-  endActiveFromPointer(pointerId: number, isPrimaryButtonRelease: boolean): void {
+  endActiveFromPointer(pointerId: number, isPrimaryButtonRelease: boolean, cancelled = false): void {
     if (!this._motor || this._pointerId === null) return;
-    this.endFromPointer(this._motor, pointerId, isPrimaryButtonRelease);
+    this.endFromPointer(this._motor, pointerId, isPrimaryButtonRelease, undefined, cancelled);
   }
 
   endKeyboard(
     motor?: MotorEntity,
     stopEntityId?: string,
     keyboardKey?: string,
+    cancelled = false,
   ): void {
     // A key release cannot end a tap move: Enter and Space are what start it.
     if (this._pointerId !== null || this._tapDirection !== null || !this._motor) return;
@@ -817,25 +854,29 @@ export class MotorHold {
     if (stopEntityId !== undefined && this._stop !== stopEntityId) return;
     if (keyboardKey !== undefined && this._keyboardKey !== null &&
         this._keyboardKey !== keyboardKey) return;
-    this.end(this._motor);
+    this.end(this._motor, stopEntityId, cancelled);
   }
 
   // End a hold and stop the motor. Releasing one control must not end a hold
   // another control owns: a blur on some other motor's button would otherwise
   // stop the motor that is running.
-  end(motor: MotorEntity, stopEntityId?: string): void {
+  end(motor: MotorEntity, stopEntityId?: string, cancelled = false): void {
     if (!this._ownsRelease(motor, stopEntityId)) return;
     const started = this._started;
     const hasMetadata = this._heldControl !== undefined;
     const releaseTarget = {
+      lease: this._leasedRelease,
       releaseButton: this._releaseButton,
       cover: this._cover ?? undefined,
       stopEntityId: this._stop ?? undefined,
     };
-    if (started && hasMetadata) this._scheduleRelease();
+    if (started && hasMetadata) {
+      if (cancelled && releaseTarget.releaseButton) this._release(releaseTarget, true);
+      else this._scheduleRelease();
+    }
     this._reset();
     if (!started || hasMetadata) return;
-    this._release(releaseTarget);
+    this._release(releaseTarget, cancelled);
   }
 
   private _ownsRelease(motor: MotorEntity, stopEntityId?: string): boolean {
@@ -1023,6 +1064,7 @@ export class MotorHold {
   // entities it stopped so the card does not stop them a second time.
   abandon(): string[] {
     const active = this._key === null ? null : {
+      lease: this._leasedRelease,
       releaseButton: this._releaseButton,
       cover: this._cover ?? undefined,
       stopEntityId: this._stop ?? undefined,
@@ -1033,9 +1075,9 @@ export class MotorHold {
     const record = (id: string | undefined): void => {
       if (id !== undefined) stopped.add(id);
     };
-    if (active && activeStarted) record(this._release(active));
+    if (active && activeStarted) record(this._release(active, true));
     for (const release of [...this._pendingReleases.values()]) {
-      record(this._runRelease(release));
+      record(this._runRelease(release, true));
     }
     return [...stopped];
   }
@@ -1081,6 +1123,7 @@ export class MotorHold {
     this._started = false;
     this._heldControl = undefined;
     this._releaseButton = undefined;
+    this._leasedRelease = undefined;
     this._generation++;
     if (tapped) this.actions.changed?.();
   }

@@ -1402,6 +1402,7 @@ class Coordinator:
     remember_vibradorm_app_floor_default = remember_remacro_led_level = _ignore
     remember_sleep_number_mcr_client_id = remember_richmat_mh_snapshot = _ignore
     _ble_bond_established = False
+    require_persistent_command_connection = _ignore
     save_app_state = _ignore
     remember_vmatbasic_settings = _begin_internal_entry_update = _ignore
     _async_persist_config = _schedule_pending_capability_reload = _ignore
@@ -1655,6 +1656,8 @@ def default_scenario(bed_type: str) -> Scenario:
                         layout_id="atlas_lift:w1")
     if bed_type == "topcare":
         return Scenario(id=bed_type, bed_type=bed_type, layout_id="topcare:n1")
+    if bed_type == "sven":
+        return Scenario(id=bed_type, bed_type=bed_type, protocol_variant="classic", entry_data={"protocol_variant": "classic", "motor_count": 2})
     if bed_type == const.BED_TYPE_SMART_BASE:
         return Scenario(id=bed_type, bed_type=bed_type, entry_data={"product_type": "200iv2_a8rm"})
     if bed_type == const.BED_TYPE_COMFORT_BED:
@@ -1984,6 +1987,7 @@ def route_scenarios() -> list[Scenario]:
 
     scenarios: list[Scenario] = [Scenario(id=f"askona:{model}", bed_type="askona", protocol_variant=model, layout_id="askona",
         replies={"0000ffe4-0000-1000-8000-00805f9b34fb": "00000000000000000000000000000000" if model == "180x200" else "00000000640024010300010000004000000000"}) for model in ("180x200", "element")]
+    scenarios += [Scenario(id=f"sven:{model}", bed_type="sven", protocol_variant=model, entry_data={"protocol_variant": model, "motor_count": count}, layout_id="sven") for model, count in (("classic", 2), ("harmony", 3), ("bliss", 4), ("platinum", 4), ("unknown", 2))]
     scenarios += [Scenario(id=f"enso:{n}", bed_type="enso", entry_data={"product_type": str(n), "motor_count": n}, layout_id="enso") for n in (3, 4)]
     scenarios.extend(Scenario(id=f"ronco_motion:{layout}:{transport}", bed_type="ronco_motion", protocol_variant=layout, layout_id=f"ronco_motion:{transport}") for layout in ("economy", "premium") for transport in range(5))
     scenarios.extend(Scenario(id=f"sealy_posturematic:{n}", bed_type="sealy_posturematic",
@@ -3197,7 +3201,7 @@ async def _connect(controller: Any, recorder: Recorder, clock: FakeClock) -> dic
                 session.store_device_info = lambda *_: None
             await controller.async_on_connect(session)
             return
-        if controller._coordinator.bed_type in {"symphony", "linx", "agingplace", "sleep_assistant", "sinca_comfort", "leva", "sleep_assist_pro", "atlas_lift", "purely_sleep", "topcare", "comfort_bed", "smart_base", "ambient", "ergobq", "ronco_motion"}:
+        if controller._coordinator.bed_type in {"sven", "symphony", "linx", "agingplace", "sleep_assistant", "sinca_comfort", "leva", "sleep_assist_pro", "atlas_lift", "purely_sleep", "topcare", "comfort_bed", "smart_base", "ambient", "ergobq", "ronco_motion"}:
             session = SimpleNamespace(
                 client=controller.client, is_current=lambda: True,
                 async_start_notify=lambda: controller.start_notify(lambda *_: None),
@@ -3314,6 +3318,12 @@ async def _capture(
             # virtual clock reaches their movement deadlines at the same times.
             plan.sort(key=lambda command: command.name in {"lights_on", "lights_off"})
         for command in plan:
+            if scenario.bed_type == "sven":
+                # Independent cases start after an explicit user reconciliation.
+                # Off/pattern cases represent prior locally commanded active zones.
+                controller.confirm_massage_off(True)
+                if command.name in {"massage_off", "massage_mode_step"} or command.name.startswith("massage_timer_"):
+                    controller._levels = [1, 1]
             if scenario.bed_type == "konfurt":
                 # Source-derived status16 admits the app's report-backed toggles.
                 # A new report is supplied for each independent action.

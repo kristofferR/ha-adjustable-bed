@@ -1500,6 +1500,16 @@ class ControllerActionButton(AdjustableBedEntity, ButtonEntity):
             press_fn, cancel_running=self._spec.cancel_movement
         )
 
+    async def async_cancel_hold(self) -> None:
+        """Cancel a gesture without turning it into a normal release."""
+        if not self._spec.release_only:
+            raise invalid("held_cancel_unavailable")
+        token = CONTROLLER_GESTURE_RELEASE.set(True)
+        try:
+            await self._coordinator.async_stop_command()
+        finally:
+            CONTROLLER_GESTURE_RELEASE.reset(token)
+
     def _current_spec(self) -> ControllerButtonSpec:
         """Follow local gesture selectors and replacement controllers in place."""
         controller = self._coordinator.capability_controller

@@ -435,6 +435,7 @@ actions; its bounded `hold_control` behavior has separate timing in the
 | Sleeptime Australia app (SmartBed205, 402, 404, 405) | `sleeptime` | 4 | 300 ms |
 | Somos / SomosBeds app | `somos` | 10 | 300 ms |
 | SUTA Smart Home app | `suta` | 7 | 150 ms |
+| Sven & Son (Classic, Harmony, Bliss, Platinum) | `sven` | 1 | 50 ms |
 | Symphony Sleep app | `symphony_sleep` | 4 | 300 ms |
 | Ultramatic Smart Bed app | `ultramatic_smart_bed` | 4 | 300 ms |
 | V-MAT Basic app | `vmatbasic` | 34 | 30 ms |
@@ -1049,3 +1050,7 @@ with Sleep, with Coaxing, or with Coaxing and Sleep. Shared BLE services and
 Bluetooth names do not determine this choice. Each receiver in a two-address
 pair keeps its own product choice. The separate sleep-sensor connection is
 currently unavailable; Sleep products expose the bed-side sensor name only.
+
+Sven & Son asks for Classic (200S), Harmony (300S), Bliss (400S), Platinum (500S),
+or Not sure. This model selects the actuators and light control; Bluetooth names
+do not select it. See [Sven & Son](beds/richmat.md#sven--son).

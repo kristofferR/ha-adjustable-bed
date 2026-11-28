@@ -33,6 +33,7 @@ from custom_components.adjustable_bed.state_keys import (
     UNDER_BED_LIGHTS_RGB,
 )
 from tests import test_bedgear as bedgear
+from tests.entry_entities import async_add_entry_entities
 from tests.form_helpers import answer_app
 from tests.test_bedgear import name, notification, writes
 
@@ -225,6 +226,82 @@ async def test_hold_release_and_single_press(runtime, clock):
     await co.async_execute_controller_command(lambda ctrl: bed.press("massage_head_up"))
     assert writes(co) == [b"$#$QR\r"] * 3 + [b"$#$GR\r"]
     assert all(not call.kwargs["response"] for call in co.client.write_gatt_char.await_args_list)
+
+
+@pytest.mark.parametrize("ending", ("release", "cancel", "stale", "expired"))
+async def test_card_scoped_lease_keeps_native_tilt_release_semantics(runtime, clock, ending):
+    hass, co = runtime
+    await install(co, name())
+    task = asyncio.create_task(
+        hass.services.async_call(
+            const.DOMAIN,
+            "hold_control",
+            {
+                "device_id": ["bed"],
+                "control": "moodbase_tilt_down",
+                "duration": 0.75,
+                "hold_owner": "card-native",
+                "hold_generation": 2,
+            },
+            blocking=True,
+        )
+    )
+    # Release before the native first refresh: normal up still has a three-frame tail.
+    await asyncio.sleep(0.02 if ending != "expired" else 0.8)
+    await hass.services.async_call(
+        const.DOMAIN,
+        "stop_all",
+        {
+            "device_id": ["bed"],
+            "hold_owner": "card-native",
+            "hold_generation": 1 if ending == "stale" else 2,
+            "hold_cancelled": ending == "cancel",
+        },
+        blocking=True,
+    )
+    if ending == "stale":
+        assert not task.done()
+        assert writes(co) == []
+        await hass.services.async_call(
+            const.DOMAIN,
+            "stop_all",
+            {
+                "device_id": ["bed"],
+                "hold_owner": "card-native",
+                "hold_generation": 2,
+                "hold_cancelled": True,
+            },
+            blocking=True,
+        )
+    await task
+    assert writes(co) == (
+        [b"$Q"] * 3 if ending == "release" else [b"$Q"] * 7 if ending == "expired" else []
+    )
+
+
+async def test_native_card_cancel_action_uses_real_ha_entity_routing(runtime, clock):
+    hass, co = runtime
+    bed = await install(co, name())
+    release_spec = next(spec for spec in bed.controller_button_specs if spec.release_only)
+    release = ControllerActionButton(co, release_spec)
+    await async_add_entry_entities(hass, co.entry, "button", [release])
+    task = asyncio.create_task(
+        hass.services.async_call(
+            const.DOMAIN,
+            "hold_control",
+            {"device_id": ["bed"], "control": "moodbase_tilt_down", "duration": 1},
+            blocking=True,
+        )
+    )
+    await asyncio.sleep(0.02)
+    await hass.services.async_call(
+        const.DOMAIN,
+        "cancel_hold",
+        {"entity_id": release.entity_id},
+        blocking=True,
+    )
+    await task
+    assert writes(co) == []
 
 
 async def test_save_and_recall_are_separate(runtime, clock):

@@ -165,6 +165,7 @@ function heldActions(events: string[]): HoldActions {
     },
     stopCover: (cover, stop) => events.push(`cover-stop:${cover}:${stop ?? ""}`),
     stopBed: (stop) => events.push(`stop:${stop ?? ""}`),
+    cancelHold: (stop) => events.push(`cancel:${stop}`),
   };
 }
 
@@ -1784,7 +1785,7 @@ test("abandoning an HJBed held action retains its protocol release route", () =>
     heldControl: { control: "hjbed_sit_position", startDelayMs: 0, releaseDelayMs: 0 } };
   hold.start(motor, "up", null, "button.stop");
   expect(hold.abandon()).toEqual(["button.hjbed_release"]);
-  expect(events).toEqual(["start:sofa_reset:up", "stop:button.hjbed_release"]);
+  expect(events).toEqual(["start:sofa_reset:up", "cancel:button.hjbed_release"]);
 });
 
 test("AdjustaMattress backend owns start and release delays for card holds", () => {

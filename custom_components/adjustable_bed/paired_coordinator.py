@@ -415,6 +415,15 @@ class PairedBedCoordinator:
             expected_stop_epochs=expected_stop_epochs,
         )
 
+    def require_persistent_command_connection(self, child: BedChild, error_key: str) -> None:
+        """Use the current strategy, including automatic fallback, for admission."""
+        from .errors import BedNotConnectedError
+
+        targets = [(side, target) for side, target in self.children.items() if target is child]
+        if not targets:
+            raise BedNotConnectedError
+        self._topology.check_admission(targets, persistent_link_error=error_key)
+
     async def async_inspect_child_operation(
         self,
         operation: Callable[[BedChild], Coroutine[Any, Any, None]],
@@ -1104,6 +1113,22 @@ class SingleAddressSideCoordinator(EntityRuntimeView):
         self._single_inner.release_hold_claim(
             lease, resources=self._scoped_command_resources(resource, resources)
         )
+
+    async def async_release_hold(
+        self, owner: str, generation: int, *, cancelled: bool = False
+    ) -> None:
+        controller = self.controller
+        with (
+            controller.side_scope(self._single_side)
+            if controller is not None
+            else contextlib.nullcontext()
+        ):
+            await self._single_inner.async_release_hold(
+                owner,
+                generation,
+                resources=self._scoped_command_resources(None, None),
+                cancelled=cancelled,
+            )
 
     async def async_execute_command_group(
         self,

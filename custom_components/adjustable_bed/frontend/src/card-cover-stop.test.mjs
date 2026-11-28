@@ -224,6 +224,283 @@ function makeFixture(mode, { coverHoldMetadata = true } = {}) {
 
 const modes = ["native-two-address", "native-single-address", "legacy-one-device"];
 
+function compactPairedFixture(singleAddress = false, { leased = true, stopButtons = true, sideAttributes = true, startDelayMs = 0 } = {}) {
+  const root = "compact-pair";
+  const devices = { [root]: { id: root } };
+  const entities = {};
+  const states = {};
+  const calls = [];
+  const movementFinishes = [];
+  const stopFinishes = [];
+  const owner = (side) => singleAddress || side === "both" ? root : `compact-${side}`;
+  for (const side of ["left", "right"]) {
+    if (!singleAddress) devices[owner(side)] = { id: owner(side), parent_device_id: root };
+  }
+  const add = (id, side, key, attributes = {}) => {
+    entities[id] = { entity_id: id, device_id: owner(side), platform: "adjustable_bed", translation_key: key };
+    states[id] = { entity_id: id, state: "unknown", attributes: {
+      ...(sideAttributes || side === "both" ? { bed_side: side } : {}), ...attributes,
+    } };
+  };
+  for (const side of ["both", "left", "right"]) {
+    if (stopButtons) add(`button.${side}_stop`, side, side === "both" ? "stop_both" : "stop");
+    add(`button.${side}_flat`, side, "preset_flat");
+    add(`cover.${side}_pillow`, side, "pillow", leased
+      ? { hold_lease_mode: "stream", hold_lease_motor: "pillow", ...(startDelayMs ? {
+          held_control_up: "pillow_up", held_control_down: "pillow_down",
+          held_stop_scope: "side",
+          hold_start_delay_ms: startDelayMs, hold_release_delay_ms: 0,
+        } : {}) } : {});
+  }
+  const hass = placed({
+    entities, states, devices, language: "en", locale: { language: "en" },
+    formatEntityName: (state) => state.entity_id,
+    callService(domain, service, data) {
+      calls.push({ domain, service, data });
+      if (service === "timed_move" || service === "hold_control" || service === "open_cover") {
+        return new Promise((resolve) => movementFinishes.push(resolve));
+      }
+      if (service === "stop_cover" || (service === "press" && data.entity_id.endsWith("_stop"))) {
+        return new Promise((resolve) => stopFinishes.push(resolve));
+      }
+      return Promise.resolve();
+    },
+  });
+  const card = new AdjustableBedCard();
+  card.hass = hass;
+  const clock = new FakeClock();
+  card._hold.timers = clock;
+  const config = { type: "custom:adjustable-bed-card", device_id: root, layout: "compact",
+    show_motors: true, show_graphic: false, show_header: false, compact_labels: "none" };
+  card.setConfig(config);
+  const panes = ["both", "left", "right"].map((key) => ({
+    key, label: key,
+    bed: bedEntitiesForDevice(hass, owner(key), singleAddress ? key : undefined),
+  }));
+  function* templates(value) {
+    if (Array.isArray(value)) {
+      for (const child of value) yield* templates(child);
+    } else if (value && typeof value === "object" && "strings" in value) {
+      yield value;
+      for (const child of value.values) yield* templates(child);
+    }
+  }
+  const render = () => [...templates(card._renderCompact(root, panes, true))];
+  const event = (template, name) => {
+    assert.ok(template, `Missing compact template for ${name}`);
+    const index = template.strings.findIndex((part) => part.endsWith(`@${name}=`));
+    assert.equal(typeof template.values[index], "function", `Missing compact ${name} handler`);
+    return template.values[index];
+  };
+  const switchSide = (side) => event(render().find((t) =>
+    t.strings.join("").includes('<button class="pane-tab') && t.values.includes(side)), "click")();
+  const recall = (side) => {
+    switchSide(side);
+    event(render().find((t) => t.strings.join("").includes('<button class="tile"') &&
+      t.values.includes(`button.${side}_flat`)), "click")();
+  };
+  const start = (side, init = {}) => {
+    switchSide(side);
+    const directions = render().filter((t) => t.strings.join("").includes('<button class="cg-btn"'));
+    assert.equal(directions.length, 2);
+    const up = directions[1];
+    event(up, "keydown")(new KeyboardEvent("keydown", init));
+    return () => event(up, "keyup")(new KeyboardEvent("keyup"));
+  };
+  const stop = (side) => {
+    switchSide(side);
+    event(render().find((t) => t.strings.join("").includes('<button class="tile compact-stop"')), "click")();
+  };
+  return { card, calls, config, recall, start, stop, clock, movementFinishes, stopFinishes };
+}
+
+for (const singleAddress of [false, true]) {
+  for (const ending of ["keyup-before-start", "abandon-before-start", "ignored-repeat", "ignored-second-press"]) {
+    test(`compact ${singleAddress ? "logical" : "physical"} pair ${ending} preserves Both preset cleanup until a lease dispatches`, async () => {
+      const f = compactPairedFixture(singleAddress, { startDelayMs: 100 });
+      f.recall("both");
+      if (ending === "ignored-second-press") f.start("right");
+      const releaseKey = f.start("left", { repeat: ending === "ignored-repeat" });
+      f.clock.advance(99);
+      assert.equal(f.calls.filter((call) => call.service === "hold_control" || call.service === "timed_move").length, 0);
+      if (ending === "keyup-before-start") releaseKey();
+      f.card.setConfig({ ...f.config, device_id: "replacement" });
+      f.clock.advance(100);
+      assert.deepEqual(f.calls.map((call) => call.data.entity_id), ["button.both_flat", "button.both_stop"]);
+      f.stopFinishes.forEach((finish) => finish());
+      await flushMicrotasks();
+    });
+  }
+
+  test(`compact ${singleAddress ? "logical" : "physical"} pair retires Both only at the delayed first lease dispatch`, async () => {
+    const f = compactPairedFixture(singleAddress, { startDelayMs: 100 });
+    f.recall("both");
+    const releaseKey = f.start("left");
+    f.clock.advance(99);
+    assert.deepEqual([...f.card._compactStopTargets.keys()], ["button.both_stop"]);
+    f.clock.advance(1);
+    assert.equal(f.calls.filter((call) => call.service === "hold_control").length, 1);
+    assert.deepEqual([...f.card._compactStopTargets.keys()], ["button.right_stop"]);
+    releaseKey();
+    f.card.setConfig({ ...f.config, device_id: "replacement" });
+    f.movementFinishes.forEach((finish) => finish());
+    f.stopFinishes.forEach((finish) => finish());
+    await flushMicrotasks();
+  });
+
+  for (const lease of ["left", "right"]) {
+    test(`compact ${singleAddress ? "logical" : "physical"} Both preset without Stop buttons retains the peer cover after expired ${lease} lease`, async () => {
+      const f = compactPairedFixture(singleAddress, { stopButtons: false });
+      f.recall("both");
+      const releaseKey = f.start(lease);
+      f.movementFinishes.shift()();
+      await flushMicrotasks();
+      releaseKey();
+      f.card.setConfig({ ...f.config, device_id: "replacement" });
+      f.card.setConfig({ ...f.config, device_id: "another-replacement" });
+      assert.deepEqual(f.calls.filter((call) => call.service === "stop_cover"), [{
+        domain: "cover", service: "stop_cover", data: {
+          entity_id: `cover.${lease === "left" ? "right" : "left"}_pillow`,
+        },
+      }]);
+      assert.equal(f.calls.filter((call) => call.service === "stop_all").length, 1);
+      f.stopFinishes.forEach((finish) => finish());
+      await flushMicrotasks();
+    });
+  }
+}
+
+test("compact explicit bed Stop still dispatches while automatic finite cover cleanup is pending", async () => {
+  const f = compactPairedFixture(false, { leased: false });
+  f.start("left")();
+  assert.equal(f.stopFinishes.length, 1);
+  f.stop("left");
+  assert.deepEqual(f.calls.filter((call) => call.service !== "open_cover"), [
+    { domain: "cover", service: "stop_cover", data: { entity_id: "cover.left_pillow" } },
+    { domain: "button", service: "press", data: { entity_id: "button.left_stop" } },
+  ]);
+  f.card.setConfig({ ...f.config, device_id: "replacement" });
+  assert.equal(f.stopFinishes.length, 2);
+  f.stopFinishes.forEach((finish) => finish());
+  f.movementFinishes.forEach((finish) => finish());
+  await flushMicrotasks();
+});
+
+for (const [mode, singleAddress, sideAttributes] of [
+  ["two-address", false, true], ["two-address registry only", false, false], ["one-address", true, true],
+]) {
+  for (const [preset, lease, remaining] of [
+    ["both", "left", "right"], ["both", "right", "left"], ["both", "both", undefined],
+    ["left", "left", undefined], ["left", "right", "left"], ["left", "both", undefined],
+    ["right", "right", undefined], ["right", "left", "right"], ["right", "both", undefined],
+  ]) {
+    test(`compact ${mode} ${preset} preset then ${lease} expired pillow lease retains only ${remaining ?? "no"} finite cleanup`, async () => {
+      const f = compactPairedFixture(singleAddress, { sideAttributes });
+      f.recall(preset);
+      const releaseKey = f.start(lease);
+      const request = f.calls.find((call) => call.service === "timed_move");
+      assert.ok(request);
+      f.movementFinishes.shift()(); // The backend expires the lease before the key is released.
+      await flushMicrotasks();
+      releaseKey();
+      f.card.setConfig({ ...f.config, device_id: "replacement" });
+      f.card.setConfig({ ...f.config, device_id: "another-replacement" });
+      await flushMicrotasks();
+      const bareStops = f.calls.filter((call) => call.service === "press" && call.data.entity_id.endsWith("_stop"));
+      assert.deepEqual(bareStops.map((call) => call.data.entity_id), remaining ? [`button.${remaining}_stop`] : []);
+      assert.deepEqual(f.calls.filter((call) => call.service === "stop_all"), [{
+        domain: "adjustable_bed", service: "stop_all", data: {
+          device_id: request.data.device_id,
+          ...(request.data.side ? { side: request.data.side } : {}),
+          hold_owner: request.data.hold_owner, hold_generation: request.data.hold_generation,
+        },
+      }]);
+      f.stopFinishes.forEach((finish) => finish());
+      await flushMicrotasks();
+    });
+  }
+}
+
+for (const stopButtons of [false, true]) {
+  for (const release of ["keyup", "setConfig"]) {
+    test(`compact finite cover ${release}, stop buttons ${stopButtons}: repeated reconfiguration sends each in-flight cleanup once`, async () => {
+      const f = compactPairedFixture(false, { leased: false, stopButtons });
+      const releaseKey = f.start("left");
+      if (release === "keyup") releaseKey();
+      f.card.setConfig({ ...f.config, device_id: "replacement" });
+      f.card.setConfig({ ...f.config, device_id: "another-replacement" });
+      assert.deepEqual(f.calls.filter((call) => call.service !== "open_cover"), [{
+        domain: "cover", service: "stop_cover", data: { entity_id: "cover.left_pillow" },
+      }]);
+      f.stopFinishes.shift()();
+      f.movementFinishes.shift()();
+      await flushMicrotasks();
+      assert.equal(f.card._compactStopTargets.size, 0);
+    });
+  }
+}
+
+test("compact old finite Stop completion preserves a new movement's cleanup ownership", async () => {
+  const f = compactPairedFixture(false, { leased: false });
+  f.start("left")();
+  f.start("left");
+  f.stopFinishes.shift()();
+  await flushMicrotasks();
+  assert.equal(f.card._compactStopTargets.size, 1);
+  f.card.setConfig({ ...f.config, device_id: "replacement" });
+  assert.equal(f.calls.filter((call) => call.service === "stop_cover").length, 2);
+  assert.equal(f.calls.filter((call) => call.service === "press").length, 0);
+  f.stopFinishes.forEach((finish) => finish());
+  f.movementFinishes.forEach((finish) => finish());
+  await flushMicrotasks();
+  assert.equal(f.card._compactStopTargets.size, 0);
+});
+
+for (const ending of ["active-config", "expired-config", "keyup-config", "expired-keyup-config"]) {
+  test(`compact leased pillow ${ending} never retains an unscoped automatic Stop`, async () => {
+    const calls = [];
+    let finish;
+    const cover = "cover.pillow";
+    const hass = placed({
+      entities: { [cover]: { entity_id: cover, device_id: "bed", platform: "adjustable_bed", translation_key: "pillow" } },
+      states: { [cover]: { entity_id: cover, state: "unknown", attributes: {
+        hold_lease_mode: "stream", hold_lease_motor: "pillow",
+      } } },
+      devices: { bed: { id: "bed" } }, language: "en", locale: { language: "en" },
+      callService(domain, service, data) {
+        calls.push({ domain, service, data });
+        return service === "timed_move" ? new Promise((resolve) => { finish = resolve; }) : Promise.resolve();
+      },
+    });
+    const card = new AdjustableBedCard();
+    card.hass = hass;
+    card._hold.timers = new FakeClock();
+    card.setConfig({ type: "custom:adjustable-bed-card", device_id: "bed", layout: "compact" });
+    const motor = bedEntitiesForDevice(hass, "bed").motors.find((m) => m.cover === cover);
+    assert.ok(motor?.holdLease);
+    card._startHold(new KeyboardEvent("keydown"), motor, "up");
+    assert.equal(calls[0]?.service, "timed_move");
+    if (ending.includes("expired")) {
+      finish();
+      await flushMicrotasks();
+    }
+    if (ending.includes("keyup")) card._endKeyHold(new KeyboardEvent("keyup"), motor);
+    card.setConfig({ type: "custom:adjustable-bed-card", device_id: "replacement", layout: "compact" });
+    await flushMicrotasks();
+    assert.equal(card._compactStopTargets.size, 0);
+    assert.equal(calls.length, 2);
+    assert.deepEqual(calls[1], { domain: "adjustable_bed", service: "stop_all", data: {
+      device_id: "bed", hold_owner: calls[0].data.hold_owner, hold_generation: calls[0].data.hold_generation,
+      ...(!ending.includes("keyup") ? { hold_cancelled: true } : {}),
+    } });
+    // Explicit Stop still goes to the receiver through the public cover action.
+    card._motorStop(motor);
+    assert.deepEqual(calls.at(-1), { domain: "cover", service: "stop_cover", data: { entity_id: cover } });
+    finish();
+    await flushMicrotasks();
+  });
+}
+
 for (const mode of modes) {
   test(`${mode}: Left cover Stop preserves Right head release ownership`, async () => {
     const fixture = makeFixture(mode);
@@ -400,7 +677,11 @@ for (const key of Object.keys(smartSleepRoutes.p1)) {
     assert.equal(typeof fixture.calls[0].data.hold_owner, "string");
     fixture.handler("@keyup")(new KeyboardEvent("keyup"));
     await flushMicrotasks();
-    assert.deepEqual(fixture.calls[1], { domain: "button", service: "press", data: { entity_id: fixture.stopId } });
+    assert.deepEqual(fixture.calls[1], { domain: "adjustable_bed", service: "stop_all", data: {
+      device_id: fixture.calls[0].data.device_id[0],
+      ...(fixture.calls[0].data.side ? { side: fixture.calls[0].data.side } : {}),
+      hold_owner: fixture.calls[0].data.hold_owner, hold_generation: fixture.calls[0].data.hold_generation,
+    } });
     fixture.finish();
     await flushMicrotasks();
   });
