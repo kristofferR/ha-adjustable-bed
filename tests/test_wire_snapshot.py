@@ -13,8 +13,10 @@ codecs and profiles must keep this test green without touching it. A deliberate 
 from __future__ import annotations
 
 import asyncio
+import difflib
 import importlib.util
 import json
+import os
 import subprocess
 import sys
 from pathlib import Path
@@ -34,20 +36,29 @@ def _load_tool():
     return module
 
 
-def test_wire_bytes_match_committed_snapshot() -> None:
-    # A separate process: the capture must not see this test session's state.
+@pytest.mark.parametrize("hash_seed", ("0", "1"))
+def test_wire_bytes_match_committed_snapshot(hash_seed: str) -> None:
+    # Let pytest schedule each full capture instead of nesting parallel captures
+    # inside one worker alongside the rest of the suite.
     result = subprocess.run(
-        [sys.executable, str(SCRIPT), "--check"],
+        [sys.executable, str(SCRIPT), "--probe"],
+        env={**os.environ, "PYTHONHASHSEED": hash_seed},
         capture_output=True,
         text=True,
         cwd=REPO_ROOT,
         check=False,
     )
     assert result.returncode == 0, (
+        f"Wire capture failed for hash seed {hash_seed}:\n" + result.stderr[-6000:]
+    )
+    committed = (REPO_ROOT / "tests" / "fixtures" / "wire_snapshot.json").read_text()
+    diff = difflib.unified_diff(
+        committed.splitlines(), result.stdout.splitlines(), "committed", "fresh", n=0, lineterm=""
+    )
+    assert result.stdout == committed, (
         "Bytes on the wire changed. Review the diff, and if the change is deliberate "
         "regenerate with `uv run --no-sync python scripts/wire_snapshot.py`:\n"
-        + result.stdout[-6000:]
-        + result.stderr[-2000:]
+        + "\n".join(line[:240] for _, line in zip(range(20), diff, strict=False))
     )
 
 
