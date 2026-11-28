@@ -193,7 +193,9 @@ recall.
 M1X12 beds use the `m1x12_part_1` (head), `m1x12_part_2` (foot),
 `m1x12_part_4` (lumbar), `m1x12_part_8` and `m1x12_part_16` motors. ELEVATE
 uses `elevate_actuator_1`, `elevate_actuator_2` and `elevate_both`. Only the
-motors your bed has are accepted.
+motors your bed declares are accepted. The motor selector also accepts a custom
+controller group key, such as EasyCtrl’s `all`, `back_head`, `both_legs` or
+`seat_1`. Every selected target must declare that key before any bed moves.
 
 [Simmons Blue](beds/okin-nframe.md#simmons-blue) uses slots 1–2 for memory recall and save. The bed receives a longer press to save.
 
