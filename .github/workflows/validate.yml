@@ -114,6 +114,7 @@ jobs:
         env:
           GROUP: ${{ matrix.group }}
           STORE_DURATIONS: ${{ github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' }}
+          WIRE_SNAPSHOT_VERBOSE: "1"
         run: |
           args=(-q --splits 3 --group "$GROUP")
           if [ "$STORE_DURATIONS" = true ]; then
