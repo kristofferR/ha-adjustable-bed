@@ -1,0 +1,892 @@
+[
+  {
+    "id": "P1-V01",
+    "protocol": "P1",
+    "action": "back up",
+    "inputs": {
+      "mask": 1,
+      "field": 0
+    },
+    "expected_bytes": "e6fe16010000000004",
+    "evidence": [
+      "movement",
+      "orders",
+      "builders",
+      "verification"
+    ]
+  },
+  {
+    "id": "P1-V02",
+    "protocol": "P1",
+    "action": "back down",
+    "inputs": {
+      "mask": 2,
+      "field": 0
+    },
+    "expected_bytes": "e6fe16020000000003",
+    "evidence": [
+      "movement",
+      "orders",
+      "builders",
+      "verification"
+    ]
+  },
+  {
+    "id": "P1-V03",
+    "protocol": "P1",
+    "action": "feet up",
+    "inputs": {
+      "mask": 4,
+      "field": 0
+    },
+    "expected_bytes": "e6fe16040000000001",
+    "evidence": [
+      "movement",
+      "orders",
+      "builders",
+      "verification"
+    ]
+  },
+  {
+    "id": "P1-V04",
+    "protocol": "P1",
+    "action": "feet down",
+    "inputs": {
+      "mask": 8,
+      "field": 0
+    },
+    "expected_bytes": "e6fe160800000000fd",
+    "evidence": [
+      "movement",
+      "orders",
+      "builders",
+      "verification"
+    ]
+  },
+  {
+    "id": "P1-V05",
+    "protocol": "P1",
+    "action": "headrest up",
+    "inputs": {
+      "mask": 16,
+      "field": 0
+    },
+    "expected_bytes": "e6fe161000000000f5",
+    "evidence": [
+      "movement",
+      "orders",
+      "builders",
+      "verification"
+    ]
+  },
+  {
+    "id": "P1-V06",
+    "protocol": "P1",
+    "action": "headrest down",
+    "inputs": {
+      "mask": 32,
+      "field": 0
+    },
+    "expected_bytes": "e6fe162000000000e5",
+    "evidence": [
+      "movement",
+      "orders",
+      "builders",
+      "verification"
+    ]
+  },
+  {
+    "id": "P1-V07",
+    "protocol": "P1",
+    "action": "waist up",
+    "inputs": {
+      "mask": 64,
+      "field": 0
+    },
+    "expected_bytes": "e6fe164000000000c5",
+    "evidence": [
+      "movement",
+      "orders",
+      "builders",
+      "verification"
+    ]
+  },
+  {
+    "id": "P1-V08",
+    "protocol": "P1",
+    "action": "waist down",
+    "inputs": {
+      "mask": 128,
+      "field": 0
+    },
+    "expected_bytes": "e6fe16800000000085",
+    "evidence": [
+      "movement",
+      "orders",
+      "builders",
+      "verification"
+    ]
+  },
+  {
+    "id": "P1-V09",
+    "protocol": "P1",
+    "action": "zero/release",
+    "inputs": {
+      "mask": 0,
+      "field": 0
+    },
+    "expected_bytes": "e6fe16000000000005",
+    "evidence": [
+      "movement",
+      "orders",
+      "builders",
+      "verification"
+    ]
+  },
+  {
+    "id": "P1-V10",
+    "protocol": "P1",
+    "action": "flat",
+    "inputs": {
+      "mask": 134217728,
+      "field": 0
+    },
+    "expected_bytes": "e6fe160000000800fd",
+    "evidence": [
+      "presets",
+      "orders",
+      "builders",
+      "verification"
+    ]
+  },
+  {
+    "id": "P1-V11",
+    "protocol": "P1",
+    "action": "zero gravity",
+    "inputs": {
+      "mask": 4096,
+      "field": 0
+    },
+    "expected_bytes": "e6fe160010000000f5",
+    "evidence": [
+      "presets",
+      "orders",
+      "builders",
+      "verification"
+    ]
+  },
+  {
+    "id": "P1-V12",
+    "protocol": "P1",
+    "action": "lounge",
+    "inputs": {
+      "mask": 8192,
+      "field": 0
+    },
+    "expected_bytes": "e6fe160020000000e5",
+    "evidence": [
+      "presets",
+      "orders",
+      "builders",
+      "verification"
+    ]
+  },
+  {
+    "id": "P1-V13",
+    "protocol": "P1",
+    "action": "TV",
+    "inputs": {
+      "mask": 16384,
+      "field": 0
+    },
+    "expected_bytes": "e6fe160040000000c5",
+    "evidence": [
+      "presets",
+      "orders",
+      "builders",
+      "verification"
+    ]
+  },
+  {
+    "id": "P1-V14",
+    "protocol": "P1",
+    "action": "anti-snore",
+    "inputs": {
+      "mask": 32768,
+      "field": 0
+    },
+    "expected_bytes": "e6fe16008000000085",
+    "evidence": [
+      "presets",
+      "orders",
+      "builders",
+      "verification"
+    ]
+  },
+  {
+    "id": "P1-V15",
+    "protocol": "P1",
+    "action": "M1",
+    "inputs": {
+      "mask": 65536,
+      "field": 0
+    },
+    "expected_bytes": "e6fe16000001000004",
+    "evidence": [
+      "presets",
+      "orders",
+      "builders",
+      "verification"
+    ]
+  },
+  {
+    "id": "P1-V16",
+    "protocol": "P1",
+    "action": "M2",
+    "inputs": {
+      "mask": 262144,
+      "field": 0
+    },
+    "expected_bytes": "e6fe16000004000001",
+    "evidence": [
+      "presets",
+      "orders",
+      "builders",
+      "verification"
+    ]
+  },
+  {
+    "id": "P1-V17",
+    "protocol": "P1",
+    "action": "Flat+ZG held combined path",
+    "inputs": {
+      "mask": 134221824,
+      "field": 0
+    },
+    "expected_bytes": "e6fe160010000800ed",
+    "evidence": [
+      "presets",
+      "orders",
+      "builders",
+      "verification"
+    ]
+  },
+  {
+    "id": "P1-V18",
+    "protocol": "P1",
+    "action": "head massage button",
+    "inputs": {
+      "mask": 2048,
+      "field": 0
+    },
+    "expected_bytes": "e6fe160008000000fd",
+    "evidence": [
+      "massage",
+      "orders",
+      "builders",
+      "verification"
+    ]
+  },
+  {
+    "id": "P1-V19",
+    "protocol": "P1",
+    "action": "foot massage button",
+    "inputs": {
+      "mask": 1024,
+      "field": 0
+    },
+    "expected_bytes": "e6fe16000400000001",
+    "evidence": [
+      "massage",
+      "orders",
+      "builders",
+      "verification"
+    ]
+  },
+  {
+    "id": "P1-V20",
+    "protocol": "P1",
+    "action": "massage power (P1 toggle/P2 off-state path)",
+    "inputs": {
+      "mask": 256,
+      "field": 0
+    },
+    "expected_bytes": "e6fe16000100000004",
+    "evidence": [
+      "massage",
+      "orders",
+      "builders",
+      "verification"
+    ]
+  },
+  {
+    "id": "P1-V21",
+    "protocol": "P1",
+    "action": "massage timer button",
+    "inputs": {
+      "mask": 512,
+      "field": 0
+    },
+    "expected_bytes": "e6fe16000200000003",
+    "evidence": [
+      "massage",
+      "orders",
+      "builders",
+      "verification"
+    ]
+  },
+  {
+    "id": "P1-V22",
+    "protocol": "P1",
+    "action": "under-bed light button",
+    "inputs": {
+      "mask": 131072,
+      "field": 0
+    },
+    "expected_bytes": "e6fe16000002000003",
+    "evidence": [
+      "massage",
+      "orders",
+      "builders",
+      "verification"
+    ]
+  },
+  {
+    "id": "P1-V23",
+    "protocol": "P1",
+    "action": "massage type button",
+    "inputs": {
+      "mask": 268435456,
+      "field": 0
+    },
+    "expected_bytes": "e6fe160000001000f5",
+    "evidence": [
+      "massage",
+      "orders",
+      "builders",
+      "verification"
+    ]
+  },
+  {
+    "id": "P1-ALARM1",
+    "protocol": "P1",
+    "action": "alarm helper fixture",
+    "inputs": {
+      "hour": 0,
+      "minute": 0,
+      "days": 0,
+      "mode": 0
+    },
+    "expected_bytes": "ed80030000000000000000000000008f",
+    "evidence": [
+      "alarm",
+      "builders",
+      "verification"
+    ]
+  },
+  {
+    "id": "P1-ALARM2",
+    "protocol": "P1",
+    "action": "alarm helper fixture",
+    "inputs": {
+      "hour": 6,
+      "minute": 30,
+      "days": 190,
+      "mode": 17
+    },
+    "expected_bytes": "ed8003061ebe1100000000000000009c",
+    "evidence": [
+      "alarm",
+      "builders",
+      "verification"
+    ]
+  },
+  {
+    "id": "P1-ALARM3",
+    "protocol": "P1",
+    "action": "alarm helper fixture",
+    "inputs": {
+      "hour": 23,
+      "minute": 59,
+      "days": 255,
+      "mode": 19
+    },
+    "expected_bytes": "ed8003173bff1300000000000000002b",
+    "evidence": [
+      "alarm",
+      "builders",
+      "verification"
+    ]
+  },
+  {
+    "id": "P1-CLOCK",
+    "protocol": "P1",
+    "action": "clock helper fixture",
+    "inputs": {
+      "year": 2026,
+      "month_zero": 10,
+      "day": 27,
+      "hour": 6,
+      "minute": 30,
+      "second": 0
+    },
+    "expected_bytes": "e780017e0a1b061e00d0",
+    "evidence": [
+      "alarm",
+      "builders"
+    ]
+  },
+  {
+    "id": "P2-V01",
+    "protocol": "P2",
+    "action": "back up",
+    "inputs": {
+      "mask": 1,
+      "field": 0
+    },
+    "expected_bytes": "040200000001",
+    "evidence": [
+      "movement",
+      "orders",
+      "builders",
+      "verification"
+    ]
+  },
+  {
+    "id": "P2-V02",
+    "protocol": "P2",
+    "action": "back down",
+    "inputs": {
+      "mask": 2,
+      "field": 0
+    },
+    "expected_bytes": "040200000002",
+    "evidence": [
+      "movement",
+      "orders",
+      "builders",
+      "verification"
+    ]
+  },
+  {
+    "id": "P2-V03",
+    "protocol": "P2",
+    "action": "feet up",
+    "inputs": {
+      "mask": 4,
+      "field": 0
+    },
+    "expected_bytes": "040200000004",
+    "evidence": [
+      "movement",
+      "orders",
+      "builders",
+      "verification"
+    ]
+  },
+  {
+    "id": "P2-V04",
+    "protocol": "P2",
+    "action": "feet down",
+    "inputs": {
+      "mask": 8,
+      "field": 0
+    },
+    "expected_bytes": "040200000008",
+    "evidence": [
+      "movement",
+      "orders",
+      "builders",
+      "verification"
+    ]
+  },
+  {
+    "id": "P2-V05",
+    "protocol": "P2",
+    "action": "headrest up",
+    "inputs": {
+      "mask": 16,
+      "field": 0
+    },
+    "expected_bytes": "040200000010",
+    "evidence": [
+      "movement",
+      "orders",
+      "builders",
+      "verification"
+    ]
+  },
+  {
+    "id": "P2-V06",
+    "protocol": "P2",
+    "action": "headrest down",
+    "inputs": {
+      "mask": 32,
+      "field": 0
+    },
+    "expected_bytes": "040200000020",
+    "evidence": [
+      "movement",
+      "orders",
+      "builders",
+      "verification"
+    ]
+  },
+  {
+    "id": "P2-V07",
+    "protocol": "P2",
+    "action": "waist up",
+    "inputs": {
+      "mask": 64,
+      "field": 0
+    },
+    "expected_bytes": "040200000040",
+    "evidence": [
+      "movement",
+      "orders",
+      "builders",
+      "verification"
+    ]
+  },
+  {
+    "id": "P2-V08",
+    "protocol": "P2",
+    "action": "waist down",
+    "inputs": {
+      "mask": 128,
+      "field": 0
+    },
+    "expected_bytes": "040200000080",
+    "evidence": [
+      "movement",
+      "orders",
+      "builders",
+      "verification"
+    ]
+  },
+  {
+    "id": "P2-V09",
+    "protocol": "P2",
+    "action": "zero/release",
+    "inputs": {
+      "mask": 0,
+      "field": 0
+    },
+    "expected_bytes": "040200000000",
+    "evidence": [
+      "movement",
+      "orders",
+      "builders",
+      "verification"
+    ]
+  },
+  {
+    "id": "P2-V10",
+    "protocol": "P2",
+    "action": "flat",
+    "inputs": {
+      "mask": 134217728,
+      "field": 0
+    },
+    "expected_bytes": "040208000000",
+    "evidence": [
+      "presets",
+      "orders",
+      "builders",
+      "verification"
+    ]
+  },
+  {
+    "id": "P2-V11",
+    "protocol": "P2",
+    "action": "zero gravity",
+    "inputs": {
+      "mask": 4096,
+      "field": 0
+    },
+    "expected_bytes": "040200001000",
+    "evidence": [
+      "presets",
+      "orders",
+      "builders",
+      "verification"
+    ]
+  },
+  {
+    "id": "P2-V12",
+    "protocol": "P2",
+    "action": "lounge",
+    "inputs": {
+      "mask": 32768,
+      "field": 0
+    },
+    "expected_bytes": "040200008000",
+    "evidence": [
+      "presets",
+      "orders",
+      "builders",
+      "verification"
+    ]
+  },
+  {
+    "id": "P2-V13",
+    "protocol": "P2",
+    "action": "TV",
+    "inputs": {
+      "mask": 16384,
+      "field": 0
+    },
+    "expected_bytes": "040200004000",
+    "evidence": [
+      "presets",
+      "orders",
+      "builders",
+      "verification"
+    ]
+  },
+  {
+    "id": "P2-V14",
+    "protocol": "P2",
+    "action": "anti-snore",
+    "inputs": {
+      "mask": 8192,
+      "field": 0
+    },
+    "expected_bytes": "040200002000",
+    "evidence": [
+      "presets",
+      "orders",
+      "builders",
+      "verification"
+    ]
+  },
+  {
+    "id": "P2-V15",
+    "protocol": "P2",
+    "action": "M1",
+    "inputs": {
+      "mask": 65536,
+      "field": 0
+    },
+    "expected_bytes": "040200010000",
+    "evidence": [
+      "presets",
+      "orders",
+      "builders",
+      "verification"
+    ]
+  },
+  {
+    "id": "P2-V16",
+    "protocol": "P2",
+    "action": "M2",
+    "inputs": {
+      "mask": 262144,
+      "field": 0
+    },
+    "expected_bytes": "040200040000",
+    "evidence": [
+      "presets",
+      "orders",
+      "builders",
+      "verification"
+    ]
+  },
+  {
+    "id": "P2-V17",
+    "protocol": "P2",
+    "action": "Flat+ZG held combined path",
+    "inputs": {
+      "mask": 134221824,
+      "field": 0
+    },
+    "expected_bytes": "040208001000",
+    "evidence": [
+      "presets",
+      "orders",
+      "builders",
+      "verification"
+    ]
+  },
+  {
+    "id": "P2-V18",
+    "protocol": "P2",
+    "action": "head massage button",
+    "inputs": {
+      "mask": 2048,
+      "field": 0
+    },
+    "expected_bytes": "040200000800",
+    "evidence": [
+      "massage",
+      "orders",
+      "builders",
+      "verification"
+    ]
+  },
+  {
+    "id": "P2-V19",
+    "protocol": "P2",
+    "action": "foot massage button",
+    "inputs": {
+      "mask": 16777216,
+      "field": 0
+    },
+    "expected_bytes": "040201000000",
+    "evidence": [
+      "massage",
+      "orders",
+      "builders",
+      "verification"
+    ]
+  },
+  {
+    "id": "P2-V20",
+    "protocol": "P2",
+    "action": "massage power (P1 toggle/P2 off-state path)",
+    "inputs": {
+      "mask": 2097152,
+      "field": 0
+    },
+    "expected_bytes": "040200200000",
+    "evidence": [
+      "massage",
+      "orders",
+      "builders",
+      "verification"
+    ]
+  },
+  {
+    "id": "P2-V21",
+    "protocol": "P2",
+    "action": "massage timer button",
+    "inputs": {
+      "mask": 512,
+      "field": 0
+    },
+    "expected_bytes": "040200000200",
+    "evidence": [
+      "massage",
+      "orders",
+      "builders",
+      "verification"
+    ]
+  },
+  {
+    "id": "P2-V22",
+    "protocol": "P2",
+    "action": "under-bed light button",
+    "inputs": {
+      "mask": 131072,
+      "field": 0
+    },
+    "expected_bytes": "040200020000",
+    "evidence": [
+      "massage",
+      "orders",
+      "builders",
+      "verification"
+    ]
+  },
+  {
+    "id": "P2-V23",
+    "protocol": "P2",
+    "action": "massage type button",
+    "inputs": {
+      "mask": 67108864,
+      "field": 0
+    },
+    "expected_bytes": "040204000000",
+    "evidence": [
+      "massage",
+      "orders",
+      "builders",
+      "verification"
+    ]
+  },
+  {
+    "id": "P2-V24",
+    "protocol": "P2",
+    "action": "massage power (P2 on-state path)",
+    "inputs": {
+      "mask": 33554432,
+      "field": 0
+    },
+    "expected_bytes": "040202000000",
+    "evidence": [
+      "massage",
+      "orders",
+      "builders",
+      "verification"
+    ]
+  },
+  {
+    "id": "P2-ALARM1",
+    "protocol": "P2",
+    "action": "alarm helper fixture",
+    "inputs": {
+      "hour": 0,
+      "minute": 0,
+      "days": 0,
+      "mode": 0
+    },
+    "expected_bytes": "ed80030000000000000000000000008f",
+    "evidence": [
+      "alarm",
+      "builders",
+      "verification"
+    ]
+  },
+  {
+    "id": "P2-ALARM2",
+    "protocol": "P2",
+    "action": "alarm helper fixture",
+    "inputs": {
+      "hour": 6,
+      "minute": 30,
+      "days": 190,
+      "mode": 17
+    },
+    "expected_bytes": "ed8003061ebe1100000000000000009c",
+    "evidence": [
+      "alarm",
+      "builders",
+      "verification"
+    ]
+  },
+  {
+    "id": "P2-ALARM3",
+    "protocol": "P2",
+    "action": "alarm helper fixture",
+    "inputs": {
+      "hour": 23,
+      "minute": 59,
+      "days": 255,
+      "mode": 19
+    },
+    "expected_bytes": "ed8003173bff1300000000000000002b",
+    "evidence": [
+      "alarm",
+      "builders",
+      "verification"
+    ]
+  },
+  {
+    "id": "P2-CLOCK",
+    "protocol": "P2",
+    "action": "clock helper fixture",
+    "inputs": {
+      "year": 2026,
+      "month_zero": 10,
+      "day": 27,
+      "hour": 6,
+      "minute": 30,
+      "second": 0
+    },
+    "expected_bytes": "e780017e0a1b061e00d0",
+    "evidence": [
+      "alarm",
+      "builders"
+    ]
+  }
+]
