@@ -15,6 +15,7 @@ from __future__ import annotations
 import json
 from collections.abc import Callable, Collection, Iterable
 from dataclasses import dataclass
+from functools import partial
 from typing import TYPE_CHECKING, Final
 
 from homeassistant.config_entries import ConfigEntry
@@ -29,6 +30,7 @@ from .const import (
     BED_TYPE_OCTO,
     BED_TYPE_REVERIE,
     BED_TYPE_REVERIE_NIGHTSTAND,
+    BED_TYPE_RICHMAT_CLASSIC_APPS,
     BED_TYPE_SCOTT_LIVING,
     DOMAIN,
 )
@@ -63,7 +65,27 @@ def _same_key(old_domain: str, new_domain: str, keys: Iterable[str]) -> tuple[Re
     return tuple(Retype(old_domain, key, new_domain, key) for key in keys)
 
 
+def _tss_fixed_timer(controller: BedController, *, key: str) -> bool:
+    from .beds.richmat_classic.tss_remote import TssRemoteController
+
+    return (
+        isinstance(controller, TssRemoteController)
+        and key in controller.fixed_massage_timer_button_keys
+    )
+
+
 RETYPES: Final[tuple[Retype, ...]] = (
+    # Catalog node IDs with a fixed-duration appearance in the accepted TSS app.
+    # The live layout predicate prevents retyping another action at the same node.
+    *(
+        Retype(
+            "button", key, "select", "massage_timer",
+            only_on=frozenset({BED_TYPE_RICHMAT_CLASSIC_APPS}),
+            applies=partial(_tss_fixed_timer, key=key),
+        )
+        for node in (1, 2, 3, 6, 11, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 32, 34)
+        for key in (f"tss_{node}", f"tss_{node}_raw")
+    ),
     # Scott Living's catalog presets replace its standard preset buttons.
     *(
         Retype(

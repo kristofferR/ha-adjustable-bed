@@ -2519,9 +2519,9 @@ class AdjustableBedCoordinator(
                         self._can_encrypt_proxy_link_in_place()
                         and await self._async_encrypt_proxy_link_in_place()
                     ):
-                        # The unpaired proxy link is encrypted now and its bond
-                        # verified; only this command failed. Nothing is
-                        # dropped or cleared, so the next command works.
+                        # The proxy security operation completed. Only this
+                        # command failed; do not replay it. Recovery owns the
+                        # protocol's distinction between pairing and bond proof.
                         raise BedCommandFailedError(err) from err
                     # After a failed proxy attempt the link counts as paired,
                     # so this only selects the one-connection beds' path.
@@ -2847,6 +2847,12 @@ class AdjustableBedCoordinator(
                 context.pulse_delay_ms = previous_pulse_delay_ms
             return
 
+        if (
+            cancel_running and kind is not CommandKind.INSPECTION
+            and not self.command_start_allowed(resource, resources)
+        ):
+            return
+
         if self._bed_type in STARCODE_GROUP_BED_TYPES:
             from .beds.starcode.accessory_group import prepare_individual_command
 
@@ -2877,6 +2883,17 @@ class AdjustableBedCoordinator(
         await self._command_scheduler.execute(
             intent, expected_stop_epoch=expected_stop_epoch
         )
+
+    def command_start_allowed(
+        self, resource: str | None, resources: Collection[str] | None = None
+    ) -> bool:
+        """Check the live app gate before changing cancellation or scheduler state."""
+        controller = self.capability_controller
+        scope = (
+            command_resources(*resources) if resources is not None
+            else command_resources(resource or "*")
+        )
+        return controller is None or controller.command_start_allowed(scope)
 
     def _build_command_intent(
         self,
@@ -3030,6 +3047,8 @@ class AdjustableBedCoordinator(
             # A STOP overtook the request: preempt nothing.
             return
 
+        if cancel_running and not self.command_start_allowed(None, resources):
+            return
         controller = self.capability_controller
         cancel_running = cancel_running or (
             controller is not None and controller.commands_share_timer is True

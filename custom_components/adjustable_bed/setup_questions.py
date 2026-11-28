@@ -293,6 +293,7 @@ from .const import (
 )
 from .import_executor import async_import_modules
 from .profiles import aminach as aminach_app
+from .profiles import ar_connect as ar_connect_profiles
 from .profiles import askona as askona_profiles
 from .profiles import enso2 as enso2_profiles
 from .profiles import ergosportive as ergosportive_app
@@ -1161,7 +1162,7 @@ _CLASSIC_EXCLUDED: Final = frozenset({"TEST", "RMCS", "ZRS6"})
 def _classic_layouts(data: Mapping[str, Any]) -> Mapping[Any, str]:
     """The chosen app's own layout codes, aliases and ZRS6 layout picks."""
     from .beds.richmat_classic.models import LAYOUT_PICKER_CHOICES, MANUAL_ALIASES, MODEL_CHOICES
-    from .profiles import dreamlab
+    from .profiles import dreamlab, tss_remote
     from .profiles.richmat_resource_apps import APPS
 
     app = str(data.get(CONF_PROTOCOL_VARIANT, ""))
@@ -1172,6 +1173,9 @@ def _classic_layouts(data: Mapping[str, Any]) -> Mapping[Any, str]:
     } - _CLASSIC_EXCLUDED
     if app == dreamlab.APP:
         codes -= dreamlab.NON_CONTROL_LAYOUTS
+    if app == tss_remote.APP:
+        codes -= tss_remote.NON_CONTROL_LAYOUTS | tss_remote.NAVIGATION.keys()
+        codes -= {k for k, v in tss_remote.ALIASES.items() if v not in tss_remote.LAYOUTS or v in tss_remote.NAVIGATION}
     if app == "bedsmart":
         from .profiles.bedsmart import ALIASES, EXCLUDED_LAYOUTS, NAVIGATION_LAYOUTS
 
@@ -1233,18 +1237,20 @@ def _classic_normalize(previous: Mapping[str, Any], answers: Mapping[str, Any]) 
 
 
 def _classic_layout_default(data: Mapping[str, Any]) -> Any:
-    from .profiles import dreamlab
+    from .profiles import dreamlab, tss_remote
 
     name = data.get(CONF_BLE_DEVICE_NAME)
     if data.get(CONF_PROTOCOL_VARIANT) == dreamlab.APP and isinstance(name, str):
         return dreamlab.layout_from_name(name) or REQUIRED
+    if data.get(CONF_PROTOCOL_VARIANT) == tss_remote.APP and isinstance(name, str):
+        return tss_remote.layout_from_name(name) or REQUIRED
     return REQUIRED
 
 
 def _classic_errors(data: Mapping[str, Any]) -> dict[str, str]:
     """Require a layout the chosen app ships; a shared service never selects one."""
     from .beds.richmat_classic.models import MODEL_CHOICES
-    from .profiles import dreamlab
+    from .profiles import dreamlab, tss_remote
     from .profiles.richmat_resource_apps import APPS
 
     layout = data.get(CONF_PRODUCT_TYPE)
@@ -1252,6 +1258,8 @@ def _classic_errors(data: Mapping[str, Any]) -> dict[str, str]:
     excluded = _CLASSIC_EXCLUDED
     if data.get(CONF_PROTOCOL_VARIANT) == dreamlab.APP:
         excluded = excluded | dreamlab.NON_CONTROL_LAYOUTS
+    if data.get(CONF_PROTOCOL_VARIANT) == tss_remote.APP:
+        excluded = excluded | tss_remote.NON_CONTROL_LAYOUTS | tss_remote.NAVIGATION.keys()
     if data.get(CONF_PROTOCOL_VARIANT) in ("luunarise2", "powercool", "sleepfunction", "baseremote", "dynasty"):
         excluded = excluded | {"WFRM", "FWRM"}
     if data.get(CONF_PROTOCOL_VARIANT) == "sleepfunction":
@@ -1292,14 +1300,14 @@ def _classic_seed(
 ) -> dict[str, Any]:
     """Suggest a layout using the selected app's discovery rules."""
     from .bluetooth_transport import advertised_local_name
-    from .profiles import dreamlab, maxprime
+    from .profiles import dreamlab, maxprime, tss_remote
 
     if discovered is None:
         return dict(data)
     variant = data.get(CONF_PROTOCOL_VARIANT)
-    if variant == dreamlab.APP:
+    if variant in (dreamlab.APP, tss_remote.APP):
         name = advertised_local_name(discovered)
-        if name is not None and dreamlab.scan_matches(name):
+        if name is not None and (dreamlab.scan_matches(name) if variant == dreamlab.APP else tss_remote.scan_matches(name)):
             return {**data, CONF_BLE_DEVICE_NAME: name}
         return dict(data)
     if variant == "innova2":
@@ -3187,6 +3195,15 @@ SETUP_PROFILES: Final[dict[str, SetupProfile]] = {
         }, "0"),),
         title=lambda _data: "Sealy Posturematic",
     ),
+    "ar_connect": SetupProfile(
+        seed=lambda _hass, data, info: {**data, **({CONF_PROTOCOL_VARIANT: "headboard"} if not data.get(CONF_PROTOCOL_VARIANT) and info is not None and "dosseret" in (info.name or "").lower() else {})},
+        owns={CONF_MOTOR_COUNT: SET_BY_PROFILE, CONF_HAS_MASSAGE: False,
+              CONF_DISABLE_ANGLE_SENSING: True, CONF_MOTOR_PULSE_DELAY_MS: 400},
+        questions=(Question(CONF_PROTOCOL_VARIANT, ar_connect_profiles.ROUTE_CHOICES, "native"),
+                   Question(CONF_PRODUCT_TYPE, ar_connect_profiles.LAYOUT_CHOICES, "back_legs",
+                            when={"field": CONF_PROTOCOL_VARIANT, "operator": ConditionOperator.IN, "value": ["native", "auto"]})),
+        derive=lambda data: {CONF_MOTOR_COUNT: len(ar_connect_profiles.LAYOUTS.get(data.get(CONF_PRODUCT_TYPE, "back_legs"), ("back", "legs")))},
+    ),
     "askona": SetupProfile(
         owns={CONF_MOTOR_COUNT: 2, CONF_HAS_MASSAGE: True, CONF_DISABLE_ANGLE_SENSING: False},
         questions=(Question(CONF_PROTOCOL_VARIANT, askona_profiles.MODEL_CHOICES, REQUIRED),),
@@ -3486,7 +3503,7 @@ SETUP_PROFILES: Final[dict[str, SetupProfile]] = {
                 default=OPTIONAL,
                 text=True,
                 advanced=True,
-                when={"field": CONF_PROTOCOL_VARIANT, "operator": ConditionOperator.IN, "value": ["dreamlab2", "homezone", "innova2"]},
+                when={"field": CONF_PROTOCOL_VARIANT, "operator": ConditionOperator.IN, "value": ["dreamlab2", "tss_remote", "homezone", "innova2"]},
             ),
         ),
         normalize=_classic_normalize,

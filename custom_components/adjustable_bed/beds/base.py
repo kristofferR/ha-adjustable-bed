@@ -14,6 +14,7 @@ from collections.abc import (
     AsyncIterator,
     Awaitable,
     Callable,
+    Collection,
     Coroutine,
     Iterator,
     Mapping,
@@ -145,6 +146,18 @@ class BedController(GattWriter):
     def selected_command_target(self) -> str | None:
         """An app-local wire target that queued commands must capture at admission."""
         return None
+
+    @property
+    def requires_single_command_target(self) -> bool:
+        """Reject commands selecting multiple physical receivers before admission."""
+        return self.static_traits.single_command_target
+
+    def command_start_allowed(self, resources: Collection[str]) -> bool:
+        """Check app start gates before a request can preempt another command.
+
+        STOP uses its separate admission path and never calls this hook.
+        """
+        return True
 
     @property
     def command_side(self) -> str | None:

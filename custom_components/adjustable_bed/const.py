@@ -492,6 +492,7 @@ BED_TYPE_LEGGETT_WILINKE: Final = "leggett_wilinke"  # Leggett WiLinke 5-byte
 
 # Bed types - Legacy naming (backwards compatibility)
 # These map to the protocol-based types above
+BED_TYPE_AR_CONNECT: Final = "ar_connect"
 BED_TYPE_LINAK: Final = "linak"
 BED_TYPE_AMBIENT: Final = "ambient"
 BED_TYPE_VINDO: Final = "vindo"
@@ -864,6 +865,7 @@ BED_TYPE_POWERSBEDDING: Final = "powersbedding"
 BED_TYPE_HESTIA_MOTION: Final = "hestia_motion"
 
 SUPPORTED_BED_TYPES: Final = [
+    BED_TYPE_AR_CONNECT,
     BED_TYPE_EASYCTRL,
     BED_TYPE_KONFURT,
     BED_TYPE_MATTRESSPOINT,
@@ -3013,6 +3015,9 @@ def requires_pairing(bed_type: str, protocol_variant: str | None = None) -> bool
     # The app has no bond request; a real GATT auth failure still uses HA recovery.
     if bed_type == BED_TYPE_OKIN_CST and protocol_variant == OKIN_CST_VARIANT_NECTAR_MOVE:
         return False
+
+    if bed_type == BED_TYPE_AR_CONNECT:
+        return protocol_variant != "headboard"
 
     # Direct bed type match
     if bed_type in BEDS_REQUIRING_PAIRING:

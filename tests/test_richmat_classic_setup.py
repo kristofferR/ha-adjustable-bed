@@ -61,6 +61,7 @@ def test_all_app_choices_are_findable_and_model_inventories_are_distinct():
         'baseremote': 558,
         'maxprime': 554,
         'dreamlab2': 554,
+        'tss_remote': 550,
         'homezone': 559,
         'innova2': 558,
         **dict.fromkeys(RESOURCE_APPS, 243),
@@ -68,6 +69,9 @@ def test_all_app_choices_are_findable_and_model_inventories_are_distinct():
     for app, models in MODEL_CHOICES.items():
         # Innova retains this dead resource in evidence, outside its 558 picker entries.
         dormant = {"209A05"} if app == "innova2" else set()
+        if app == "tss_remote":
+            from custom_components.adjustable_bed.profiles.tss_remote import NON_CONTROL_LAYOUTS
+            dormant = set(NON_CONTROL_LAYOUTS)
         assert set(models) == set(load_catalog(app).models) - dormant
 
 
@@ -168,7 +172,7 @@ def test_factory_test_layouts_are_never_offered(app):
 def test_name_admission_is_only_an_app_hint_and_excludes_diagnostic_names():
     from custom_components.adjustable_bed.beds.richmat_classic.discovery import matching_apps
     from custom_components.adjustable_bed.detection import detect_bed_type_detailed
-    assert set(matching_apps('6BRM-123')) == set(APP_NAMES) - {'dreamlab2'}
+    assert set(matching_apps('6BRM-123')) == set(APP_NAMES) - {'dreamlab2', 'tss_remote'}
     assert matching_apps(' B6RU') == ()
     assert matching_apps(None) == ()
     raw = SimpleNamespace(name='6BRM-123',service_uuids=[],manufacturer_data={},address='AA:BB:CC:DD:EE:FF')

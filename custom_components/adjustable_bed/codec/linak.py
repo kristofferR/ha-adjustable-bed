@@ -1,14 +1,17 @@
-"""Linak control/configuration encoders and Vindö position samples."""
+"""Linak control/configuration encoders and app-specific position parsers."""
 
 from __future__ import annotations
 
+import math
+import struct
 from collections.abc import Mapping
+from dataclasses import dataclass
 from typing import Final
 
 
-def control_frame(opcode: int, *, side: int = 0, modifier: bool = False) -> bytes:
+def control_frame(opcode: int, *, side: int = 0, modifier: bool = False, slow: bool = False) -> bytes:
     """Encode a control opcode, including STOP's signed JS literal (-1)."""
-    return bytes((opcode & 0xFF, (side | (0x40 if modifier else 0)) & 0xFF))
+    return bytes((opcode & 0xFF, (side | (0x40 if modifier or slow else 0)) & 0xFF))
 
 
 def configuration_frame(code: int, data: bytes = b"", *, write: bool = False, prefix: int = 0x7F) -> bytes:
@@ -46,6 +49,67 @@ def selected_directions_frame(directions: Mapping[str, bool], *, modifier: bool 
             opcode = {"back": 0x0A, "legs": 0x08, "head": 0x02, "feet": 0x04, "base": 0x06}[axis]
             return control_frame(opcode + directions[axis], modifier=modifier)
     return control_frame(0xFF, modifier=modifier)
+
+
+def _float32(value: float) -> float:
+    """Round an arithmetic step as an Android float, including overflow."""
+    try:
+        return struct.unpack("<f", struct.pack("<f", value))[0]
+    except OverflowError:
+        return math.copysign(math.inf, value)
+
+
+def _speed_word(value: float) -> int:
+    value = _float32(_float32(_float32(value) * 32768) / 200)
+    # JVM float-to-int saturates (NaN becomes zero); int-to-short retains low16.
+    if math.isnan(value):
+        integer = 0
+    elif value >= 2147483647:
+        integer = 2147483647
+    elif value <= -2147483648:
+        integer = -2147483648
+    else:
+        integer = int(value)
+    return integer & 0xFFFF
+
+
+def custom_speed_frame(opcode: int, speed_up: float, acceleration_up: float) -> bytes:
+    """AR Connect native configuration builder, without a hardware input-range claim."""
+    speed, acceleration = _speed_word(speed_up), _speed_word(acceleration_up)
+    return bytes((0, opcode, 0x80)) + struct.pack(
+        "<5H", speed, speed, acceleration, acceleration, 0
+    )
+
+
+@dataclass(frozen=True, slots=True)
+class NativeReference:
+    """AR Connect's unitless native sample, separate from legacy Bed Control state."""
+
+    extension: float = 0
+    position_export: float = 0
+    flags: int = 0
+    speed: float = 0
+
+    @property
+    def moving(self) -> bool:
+        return self.speed != 0
+
+
+def parse_native_reference(data: bytes | bytearray) -> NativeReference:
+    """Decode four bytes, retaining signed speed and binary32 event arithmetic."""
+    if len(data) != 4:
+        return NativeReference()
+    word = int.from_bytes(data, "little")
+    extension = _float32((word & 0xFFFF) / 100)
+    speed = word >> 20
+    if speed & 0x800:
+        speed -= 0x1000
+    return NativeReference(
+        extension=extension,
+        position_export=_float32(extension * 100),
+        flags=(word >> 16) & 0xF,
+        speed=speed * 0.09765625,
+    )
 
 
 def selected_sections_frame(sections: frozenset[str], up: bool) -> bytes:
@@ -234,3 +298,20 @@ def manufacturer_product(data: bytes | None) -> dict[str, object]:
             raise ArtifactParseError("IllegalStateException")
         index += length + 1
     return {"accepted": product not in {"WIFI2LIN", "DPI", "RECLINER"}, "sdk_product": product}
+
+
+_NATIVE_DIAGNOSTIC_CODES: Final = frozenset((*range(1, 20), *range(23, 97), *range(100, 111)))
+
+
+def parse_ar_diagnostic(data: bytes) -> bool | None:
+    """Native diagnostic validation; recognized records export an empty object."""
+    if len(data) < 3:
+        return None
+    if int.from_bytes(data[:2], "little", signed=True) != 1:
+        raise ValueError("Unknown native diagnostic type")
+    code = int.from_bytes(data[2:3], "little", signed=True)
+    if code == 0:
+        return None
+    if code not in _NATIVE_DIAGNOSTIC_CODES:
+        raise ValueError("Unknown native diagnostic code")
+    return True
