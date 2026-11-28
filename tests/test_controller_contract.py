@@ -189,6 +189,8 @@ def _protocol_variant_for_bed_type(bed_type: str) -> str | None:
         return "JERN"
     if bed_type == const.BED_TYPE_RESTONIC:
         return "box15"
+    if bed_type == "softide":
+        return "3"
     if bed_type == "ergosportive":
         return "remote"
     if bed_type == "kingkoil":
@@ -227,6 +229,9 @@ async def _create_controller_for_bed_type(
     """Create a controller through the factory for a bed type and optional variant."""
     coordinator = _FactoryCoordinator()
     client = _make_connected_client()
+    if bed_type == "softide":
+        coordinator.entry.data.update({const.CONF_PROTOCOL_VARIANT: variant or "3",
+            const.CONF_PRODUCT_TYPE: "primary", const.CONF_BLE_DEVICE_NAME: "KSWF16S182"})
     if bed_type == "ergosportive":
         from custom_components.adjustable_bed.profiles import ergosportive as ergosportive_app
         coordinator.entry.data.update({const.CONF_PROTOCOL_VARIANT: variant or "remote", const.CONF_PRODUCT_TYPE: "old_dsp_normal", "ergosportive_controls": list(ergosportive_app.CONTROLS)})
