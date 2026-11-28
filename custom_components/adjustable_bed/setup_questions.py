@@ -65,6 +65,7 @@ from .const import (
     BED_TYPE_COMFYDS,
     BED_TYPE_CUSTOMATIC_DEMO,
     BED_TYPE_DOUBLESLEEP,
+    BED_TYPE_DREAMOTION_SMART,
     BED_TYPE_ENSO2,
     BED_TYPE_ERGOBED,
     BED_TYPE_ESHINE,
@@ -406,6 +407,7 @@ _OWNED_BY_BED_TYPE: Final[dict[str, frozenset[str]]] = {
     "majestichome": GENERIC_FIELDS - {CONF_PROTOCOL_VARIANT, CONF_MOTOR_PULSE_COUNT},
     BED_TYPE_OKIMIKI: _APP_DEFINED - {CONF_PROTOCOL_VARIANT},
     BED_TYPE_LIKIMIO: _APP_DEFINED - {CONF_PROTOCOL_VARIANT},
+    "dreamotion_smart": GENERIC_FIELDS - {CONF_MOTOR_PULSE_COUNT},
     "awmotion": _APP_DEFINED - {CONF_PROTOCOL_VARIANT, CONF_MOTOR_PULSE_COUNT},
     "muuegm": _APP_DEFINED - {CONF_PROTOCOL_VARIANT, CONF_MOTOR_PULSE_COUNT},
     "dreamsense": _APP_DEFINED - {CONF_PROTOCOL_VARIANT, CONF_MOTOR_PULSE_COUNT},
@@ -4133,6 +4135,11 @@ SETUP_PROFILES: Final[dict[str, SetupProfile]] = {
         },
         questions=(Question(CONF_PROTOCOL_VARIANT, AMBIENT_LAYOUTS),),
         title=lambda _data: "M3 Ambient",
+    ),
+    BED_TYPE_DREAMOTION_SMART: SetupProfile(
+        owns={CONF_MOTOR_COUNT: 4, CONF_HAS_MASSAGE: False,
+              CONF_DISABLE_ANGLE_SENSING: True, CONF_PROTOCOL_VARIANT: "auto",
+              CONF_MOTOR_PULSE_DELAY_MS: 300},
     ),
     BED_TYPE_VINDO: SetupProfile(
         owns={

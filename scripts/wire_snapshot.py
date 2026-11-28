@@ -1647,6 +1647,15 @@ def default_scenario(bed_type: str) -> Scenario:
             layout_id="dreamsense:gatt:1",
             replies={"write:6e0a000179": "6e0e00037f"},
         )
+    if bed_type == "dreamotion_smart":
+        return Scenario(id=bed_type, bed_type=bed_type, replies={
+            "write:f1f14302a200": "f2f24302a101e77e",
+            "write:f1f14002a200": "f2f24002a101e47e",
+            "write:f1f18002a200": "f2f28002a132557e",
+            "write:f1f18105a200": "f2f28105a1010201032e7e",
+            "write:f1f14507a200": "f2f24507a164ff0080012cfd7e",
+            "write:f1f1440da200": "f2f2440da164ff00003200ff00190000ff9e7e",
+        })
     if bed_type == "awmotion":
         return Scenario(id=bed_type, bed_type=bed_type, protocol_variant="SN300",
                         entry_data={"bed_type": bed_type, "protocol_variant": "SN300"},
@@ -3090,7 +3099,7 @@ async def _connect(controller: Any, recorder: Recorder, clock: FakeClock) -> dic
             await controller.async_on_connect(session)
             await controller.async_read_device_info(session)
             return
-        if controller._coordinator.bed_type in {"shuda", "sleeptime"}:
+        if controller._coordinator.bed_type in {"shuda", "sleeptime", "dreamotion_smart"}:
             await controller.async_on_connect(SimpleNamespace(async_start_notify=controller.start_notify))
             return
         if controller._coordinator.bed_type in {"amada", "meisemobell", "rize_home", "superior_sleep", "okin_64bit", "betterliving2", "ultramatic_smart_bed", "smart_comfort_synargy", "smart_comfort_synergy", "simmons_blue", "ifit"}:

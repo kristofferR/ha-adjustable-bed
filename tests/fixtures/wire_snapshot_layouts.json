@@ -1,4 +1,5 @@
 {
+"dreamotion_smart": {"services": {"6e40fe60-b5a3-f393-e0a9-e50e24dcca9e": ["6e40fe61-b5a3-f393-e0a9-e50e24dcca9e", "6e40fe62-b5a3-f393-e0a9-e50e24dcca9e"]}, "properties": {"6e40fe61-b5a3-f393-e0a9-e50e24dcca9e": ["write"], "6e40fe62-b5a3-f393-e0a9-e50e24dcca9e": ["notify"]}},
   "active_sleep": {"services": {"bc2f4cc6-aaef-4351-9034-d66268e328f0": ["06d1e5e7-79ad-4a71-8faa-373789f7d93c"]}, "properties": {"06d1e5e7-79ad-4a71-8faa-373789f7d93c": ["write", "notify"]}},
   "powersbedding:uart_no_manufacturer": {
     "services": {
