@@ -1,0 +1,152 @@
+[
+  {
+    "action": "headUp",
+    "object": "4cc311",
+    "literal_tuple": [
+      0,
+      0,
+      0,
+      1
+    ]
+  },
+  {
+    "action": "headDown",
+    "object": "4cc2f1",
+    "literal_tuple": [
+      0,
+      0,
+      0,
+      2
+    ]
+  },
+  {
+    "action": "footUp",
+    "object": "4cc2d1",
+    "literal_tuple": [
+      0,
+      0,
+      0,
+      4
+    ]
+  },
+  {
+    "action": "footDown",
+    "object": "4cc2b1",
+    "literal_tuple": [
+      0,
+      0,
+      0,
+      8
+    ]
+  },
+  {
+    "action": "hfUp",
+    "object": "4cc291",
+    "literal_tuple": [
+      0,
+      0,
+      0,
+      5
+    ]
+  },
+  {
+    "action": "hfDown",
+    "object": "4cc271",
+    "literal_tuple": [
+      0,
+      0,
+      0,
+      10
+    ]
+  },
+  {
+    "action": "headTiltUp",
+    "object": "4cc251",
+    "literal_tuple": [
+      0,
+      0,
+      0,
+      16
+    ]
+  },
+  {
+    "action": "headTiltDown",
+    "object": "4cc231",
+    "literal_tuple": [
+      0,
+      0,
+      0,
+      32
+    ]
+  },
+  {
+    "action": "tv",
+    "object": "4cc391",
+    "literal_tuple": [
+      0,
+      0,
+      64,
+      0
+    ]
+  },
+  {
+    "action": "zg",
+    "object": "4cc3d1",
+    "literal_tuple": [
+      0,
+      0,
+      16,
+      0
+    ]
+  },
+  {
+    "action": "lounge",
+    "object": "4cc371",
+    "literal_tuple": [
+      0,
+      0,
+      32,
+      0
+    ]
+  },
+  {
+    "action": "anti",
+    "object": "4cc3b1",
+    "literal_tuple": [
+      0,
+      0,
+      128,
+      0
+    ]
+  },
+  {
+    "action": "flat",
+    "object": "4cc351",
+    "literal_tuple": [
+      8,
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "action": "m1",
+    "object": "4cc331",
+    "literal_tuple": [
+      0,
+      1,
+      0,
+      0
+    ]
+  },
+  {
+    "action": "resetMemoryPosition",
+    "object": "4cc211",
+    "literal_tuple": [
+      8,
+      0,
+      16,
+      0
+    ]
+  }
+]
