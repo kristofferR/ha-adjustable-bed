@@ -532,6 +532,12 @@ differs from Casper's complete-length receiver, so it has a scoped dispatcher
 with only its two verified announcements. See the
 [Comfort Bed section](../beds/richmat.md#comfort-bed) and `tests/test_comfort_bed.py`.
 
+Smart Base 1.3.1 (5) reproduces all 38 frozen literals through the existing
+Richmat codec, including conditional raw builders and unreachable helper
+vectors. Its fixed 200IV2 / A8RM P1 profile reuses the shared Richmat
+motion/session runtime; Settings gates belong to the current connection.
+The profile does not admit the other catalog layouts or raw transport.
+
 
 ## KONFURT
 
