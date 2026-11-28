@@ -471,6 +471,7 @@
           "advanced": {
             "name": "Advanced",
             "data": {
+              "softide_prepare_massage": "Initialize massage frequency before first use",
               "jiecang_app_transport": "Bluetooth connection",
               "richmat_classic_third_service": "Bed without the app's usual connection",
               "ble_device_name": "Exact Bluetooth name",
@@ -955,6 +956,8 @@
         "title": "Adjustable Bed Options",
         "description": "Adjust the settings for your adjustable bed. To change the bed type or app, open **Reconfigure** from this entry's three-dot menu.",
         "data": {
+          "softide_sensors": "Sleep sensor selection",
+          "softide_prepare_massage": "Initialize massage frequency before first use",
           "ergosportive_controls": "Controls available on your bed",
           "ergobq_serial": "ErgoBQ six-byte serial (hex, optional)",
           "active_sleep_auth_id": "Existing Active Sleep authentication ID (optional)",
