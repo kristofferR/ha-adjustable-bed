@@ -11,7 +11,7 @@ from custom_components.adjustable_bed.beds.richmat_classic.controller import (
     RichmatClassicController,
 )
 from custom_components.adjustable_bed.command_scheduler import CommandIntent, DeviceCommandScheduler
-from custom_components.adjustable_bed.const import DOMAIN
+from custom_components.adjustable_bed.const import BED_TYPE_RICHMAT_CLASSIC_APPS, DOMAIN
 from custom_components.adjustable_bed.services import async_register_services
 
 from .test_generic_services import target
@@ -25,10 +25,10 @@ async def resolve(hass):
 
 
 async def test_second_target_rejection_prevents_first_write(hass, resolve):
-    one, a = target(family=RichmatClassicController, validate_richmat_classic_request=lambda r: None, async_execute_richmat_classic_request=AsyncMock())
+    one, a = target(bed_type=BED_TYPE_RICHMAT_CLASSIC_APPS, family=RichmatClassicController, validate_richmat_classic_request=lambda r: None, async_execute_richmat_classic_request=AsyncMock())
     def reject(request):
         raise ValueError('wrong layout')
-    two, b = target(family=RichmatClassicController, validate_richmat_classic_request=reject, async_execute_richmat_classic_request=AsyncMock())
+    two, b = target(bed_type=BED_TYPE_RICHMAT_CLASSIC_APPS, family=RichmatClassicController, validate_richmat_classic_request=reject, async_execute_richmat_classic_request=AsyncMock())
     resolve.return_value = ([(one, 'both'), (two, 'both')], [])
     with pytest.raises(ServiceValidationError, match='wrong layout'):
         await hass.services.async_call(DOMAIN, 'richmat_classic', {'device_id':['one','two'],'operation':'lamp_save','minutes':0}, blocking=True)
@@ -38,7 +38,7 @@ async def test_second_target_rejection_prevents_first_write(hass, resolve):
 
 @pytest.mark.parametrize('operation,resource,cancel', [('query','configuration',False),('desk_recall','movement',True)])
 async def test_desk_hold_uses_movement_admission_and_query_does_not(hass, resolve, operation, resource, cancel):
-    coordinator, ctrl = target(family=RichmatClassicController, validate_richmat_classic_request=lambda r: None, async_execute_richmat_classic_request=AsyncMock())
+    coordinator, ctrl = target(bed_type=BED_TYPE_RICHMAT_CLASSIC_APPS, family=RichmatClassicController, validate_richmat_classic_request=lambda r: None, async_execute_richmat_classic_request=AsyncMock())
     resolve.return_value = ([(coordinator, 'both')], [])
     await hass.services.async_call(DOMAIN, 'richmat_classic', {'device_id':'one','operation':operation,'slot':1,'duration_ms':300}, blocking=True)
     request = ctrl.async_execute_richmat_classic_request.await_args.args[0]
@@ -63,7 +63,7 @@ async def test_stop_on_second_target_invalidates_its_pending_desk_hold(hass, res
     def scheduled_target(name, action):
         scheduler = DeviceCommandScheduler(name)
         ctrl = MagicMock(spec=RichmatClassicController, validate_richmat_classic_request=lambda _request: None, async_execute_richmat_classic_request=action, requires_disconnected_transport=False)
-        coord = SimpleNamespace(name=name, controller_side=None, capability_controller=ctrl, entry=SimpleNamespace(data={}), _command_scheduler=scheduler, stop_epoch=scheduler.stop_epoch)
+        coord = SimpleNamespace(name=name, bed_type=BED_TYPE_RICHMAT_CLASSIC_APPS, controller_side=None, capability_controller=ctrl, entry=SimpleNamespace(data={"bed_type": BED_TYPE_RICHMAT_CLASSIC_APPS}), _command_scheduler=scheduler, stop_epoch=scheduler.stop_epoch)
 
         async def execute(command, *, expected_stop_epoch=None, **_kwargs):
             async def operation(_context):

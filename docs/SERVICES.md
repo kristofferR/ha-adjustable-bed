@@ -31,6 +31,8 @@ For named raise/lower/stop voice commands and Apple Home controls, see
 | [`instant_comfort_firmness`](#instant_comfort_firmness) | Instant Comfort: set firmness | Sets the main or lumbar firmness for one sleeper of an Instant Comfort air unit. |
 | [`personal_comfort_sequence`](#personal_comfort_sequence) | Personal Comfort / Instant Comfort: run sequence | Runs a full body massage, or moves one base of a pair to a preset while the other base lowers its feet for 30 seconds. |
 | [`sleepfunction_settings`](#sleepfunction_settings) | SleepFunction: set fan and aroma | Sets the head fan, foot fan or aroma of a SleepFunction bed. |
+| [`name_memory`](#name_memory) | Name a favorite | Saves the favorite label locally for apps that support editable favorites. |
+| [`forget_memory`](#forget_memory) | Forget a favorite | Removes the local favorite and clears an alarm using it; does not erase the bed position. |
 | [`set_alarm`](#set_alarm) | Set alarm | Sets or turns off the alarm stored in the bed. Each bed accepts only the options its own app offers; Home Assistant checks every selected bed before changing any. |
 | [`baseremote_settings`](#baseremote_settings) | Base Remote: color and receiver group | Sets the light color of a Base Remote bed, or changes the Bluetooth group stored in its receiver. |
 | [`sync_clock`](#sync_clock) | Set bed clock | Sets the clock of each selected bed to Home Assistant's local time. Every bed is checked before any clock changes. |
@@ -2824,12 +2826,14 @@ Use `adjustable_bed.set_alarm` with a Ronco Motion `device_id` and optional pair
 received acknowledgement. See [Ronco Motion](beds/richmat.md#ronco-motion).
 
 
-### Carpe Diem selected sections
+<a id="carpe-diem-selected-sections"></a>
+### Linak selected sections
 
 `adjustable_bed.linak_move_sections` moves selected `sections` (`back`, `legs`,
-`head`, `feet`) in one `direction` (`up` or `down`) for `duration_ms` (100–30000).
+`head`, `feet`, and `base` for Tempur Relax Control) in one `direction` (`up` or `down`) for `duration_ms` (100–30000).
 It accepts `device_id` and optional `side` as the other movement actions do.
-Available sections follow the configured motor count. Three-section selection
+Available sections follow the configured motor count for Carpe Diem, or the live
+reference mask for [Tempur Relax Control](beds/linak.md#tempur-relax-control). Three-section selection
 uses the app's ordered pair; see [Carpe Diem Beds](beds/linak.md#carpe-diem-beds).
 
 
@@ -2931,6 +2935,18 @@ The dashboard card's automatic hold release calls `stop_all` with the original
 ends only that admitted hold and runs its own release cleanup; an expired hold or
 a replaced Bluetooth connection receives no new STOP frame. An ordinary
 `stop_all` call without those fields remains an explicit bed-wide Stop.
+
+### name_memory
+
+Use `device_id`, `preset` (1–255, restricted by the selected bed) and `name`.
+Tempur Relax Control saves the label locally before a later programming write.
+For a Tempur pair, the parent targets the primary (Left) receiver.
+
+### forget_memory
+
+Use `device_id` and `preset` to remove an app-local favorite. The bed's stored
+position is not erased. Tempur clears an enabled alarm that uses the removed
+favorite after saving the local change.
 
 ### Flexx Motion repeating alarms
 

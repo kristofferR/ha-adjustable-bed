@@ -271,9 +271,10 @@ async def test_registered_all_target_stop_epoch_captured_before_first_await(hass
         )
         coord = SimpleNamespace(
             name=name,
+            bed_type=const.BED_TYPE_RICHMAT_CLASSIC_APPS,
             controller_side=None,
             capability_controller=ctrl,
-            entry=SimpleNamespace(data={}),
+            entry=SimpleNamespace(data={const.CONF_BED_TYPE: const.BED_TYPE_RICHMAT_CLASSIC_APPS}),
             _command_scheduler=scheduler,
             stop_epoch=scheduler.stop_epoch,
         )

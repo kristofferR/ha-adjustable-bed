@@ -11,7 +11,7 @@ import {
   pairedChildDeviceIds,
   resolvePairedParentId,
 } from "./discovery";
-import { activateWithoutPointer, heldButtonMotor } from "./hold";
+import { activateWithoutPointer, heldButtonMotor, MotorHold } from "./hold";
 import { placed, publish } from "./test-placements";
 import type { EntityRegistryDisplayEntry, HomeAssistant } from "./types";
 
@@ -83,6 +83,28 @@ test("Majestic Home groups literal actions and retains the native child's motor 
   expect(bed.massage.buttons).toEqual(["button.majestic_massage"]);
   expect(bed.memory).toEqual([{ slot: 1, goto: "button.majestic_memory", save: "button.majestic_save" }]);
   expect(bed.utilityStates).toEqual([]);
+});
+
+test("a combined leased motor releases through its hidden gesture action", () => {
+  const hass = hassWith([
+    entry("button.back", "back_up"),
+    entry("button.stop", "stop_both"),
+    { ...entry("button.release", "release_held_control"), hidden: true },
+  ]);
+  publish(hass, "button.back", {
+    hold_lease_mode: "stream", hold_lease_motor: "back",
+    hold_release_button_key: "release_held_control",
+  });
+  const bed = bedEntitiesForDevice(hass, "dev1");
+  const motor = bed.motors.find((motor) => motor.key === "back")!;
+  const stops: (string | undefined)[] = [];
+  const hold = new MotorHold({
+    pulse: () => undefined, lease: () => new Promise(() => {}),
+    stopCover: () => {}, stopBed: (entity) => { stops.push(entity); },
+  });
+  hold.start(motor, "up", 1, bed.stop);
+  hold.end(motor);
+  expect(stops).toEqual(["button.release"]);
 });
 
 test("Ultramatic SmartBed publishes five neutral motors and its app controls", () => {

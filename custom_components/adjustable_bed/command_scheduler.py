@@ -635,11 +635,14 @@ class CommandContext:
     cleanup_stop_sent: bool = False
     # A submitted linked frame can bind abort cleanup to its actual wire session.
     paired_abort_stop: CommandOperation | None = field(default=None, repr=False)
+    paired_frame: Callable[[Callable[[], Awaitable[None]]], Awaitable[None]] | None = field(default=None, repr=False)
     active: bool = True
     defer_disconnect: bool = False
     lease: HoldLease | None = None
     hold_deadline: float | None = None
     """Event-loop time at which a held command's lease expires, if any."""
+    bounded_after_lease: bool = False
+    """A controller-owned finite operation may outlast an ordinary hold lease."""
     # Wire admission can see a pending task cancellation before the scheduler
     # caller resumes and signals cancel_event.
     caller_is_cancelling: Callable[[], bool] | None = field(default=None, repr=False)
@@ -1643,7 +1646,7 @@ class DeviceCommandScheduler:
         generation: int,
         *,
         resources: Collection[str] | None = None,
-        on_release: Callable[[], None] | None = None,
+        on_release: Callable[[], bool | None] | None = None,
     ) -> None:
         """Release only this admitted lease; ended/replaced sessions are no-ops."""
         handles: list[CommandHandle] = []
@@ -1662,7 +1665,9 @@ class DeviceCommandScheduler:
                 and self._active is not None
                 and not self._active.context.cancel_event.is_set()
             ):
-                on_release()
+                if on_release() is False:
+                    self._end_lease(record)
+                    continue
             self._expire_record(record, CommandOutcome.STOPPED)
             if record.member is not None:
                 members.append(record.member)
@@ -1783,6 +1788,8 @@ class DeviceCommandScheduler:
                 stream.retire(record.member, outcome)
             return
         if handle is None or handle.future.done():
+            return
+        if outcome is CommandOutcome.EXPIRED and handle.context.bounded_after_lease:
             return
         # Expiry is a normal end only until an explicit cancellation wins.
         # Its timer can run after STOP while controller cleanup still owns the lane.

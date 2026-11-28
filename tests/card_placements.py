@@ -41,6 +41,7 @@ from custom_components.adjustable_bed.button import (
     ControllerActionButton,
     PairedBedCombinedButton,
     PairedBedCombinedMotorButton,
+    PairedBedGestureReleaseButton,
     PairedBedStopButton,
 )
 from custom_components.adjustable_bed.card import CardPlacement, CardRole, motor_card
@@ -504,6 +505,7 @@ def description_entities() -> list[Entity]:
         *(AdjustableBedButton(runtime, description) for description in BUTTON_DESCRIPTIONS),
         *(PairedBedCombinedButton(runtime, description) for description in BUTTON_DESCRIPTIONS),
         PairedBedStopButton(runtime),
+        PairedBedGestureReleaseButton(runtime),
         # Product actions come from the selected product's catalog.
         AdjustableBedProductButton(runtime, ProductButtonSpec("action", "Action", MagicMock())),
         *(

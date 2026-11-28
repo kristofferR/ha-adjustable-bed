@@ -36,6 +36,7 @@ from .bed_traits import (
     reads_positions,
     store_read_positions,
 )
+from .beds.base import CONTROLLER_GESTURE_RELEASE
 from .beds.vibradorm.app_state import (
     ControlType,
     VibradormAppSessionIntent,
@@ -1146,6 +1147,13 @@ class AdjustableBedCoordinator(
         return self._motor_pulse_delay_ms
 
     @property
+    def reconnect_for_explicit_stop(self) -> bool:
+        """Resolve STOP delivery before a cold configured controller exists."""
+        if (controller := self.capability_controller) is not None:
+            return controller.reconnect_for_explicit_stop is True
+        return self._profile_id == "linak:tempur_relax" and not CONTROLLER_GESTURE_RELEASE.get()
+
+    @property
     def controller(self) -> BedController | None:
         """Return the bed controller."""
         return self._controller
@@ -2023,7 +2031,7 @@ class AdjustableBedCoordinator(
                         if original_stop is not None:
                             with bluetooth_errors_translated():
                                 await original_stop()
-                elif cancellation_only:
+                elif cancellation_only and not self.reconnect_for_explicit_stop:
                     await self._async_fence_refresh_stop(lambda: stop_current_session(context))
                 elif self._bed_type == BED_TYPE_AMBIENT:
                     # Settle an admitted write without opening a link for STOP.
@@ -2676,7 +2684,7 @@ class AdjustableBedCoordinator(
 
         async def stop_operation(_context: CommandContext) -> None:
             with command_target_scope(targets):
-                if cancellation_only:
+                if cancellation_only and (require_current_link or not self.reconnect_for_explicit_stop):
                     await self._async_fence_refresh_stop(stop_current_link)
                     return
                 if require_current_link:
@@ -3636,6 +3644,16 @@ class AdjustableBedCoordinator(
             self._bed_type, self._protocol_variant, controller.persisted_app_state_key
         )
         await self._app_state_store.async_write(slot, state)
+
+    async def async_update_app_state(
+        self, controller: BedController,
+        update: Callable[[dict[str, Any]], Mapping[str, Any]],
+    ) -> dict[str, Any]:
+        """Merge a controller's field changes under the address store's lock."""
+        slot = self._app_state_slots.get(controller) or app_state_slot(
+            self._bed_type, self._protocol_variant, controller.persisted_app_state_key
+        )
+        return await self._app_state_store.async_update(slot, update)
 
     @callback
     def handle_controller_state_updates(self, *updates: StateUpdate) -> None:

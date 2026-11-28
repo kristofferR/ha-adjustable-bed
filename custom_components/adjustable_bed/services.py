@@ -54,6 +54,7 @@ from .alarm import (
 )
 from .alarm import OPTIONAL_FIELDS as ALARM_OPTIONAL_FIELDS
 from .alarm import WEEKDAYS as ALARM_WEEKDAYS
+from .app_profiles import pair_profile
 from .bed_traits import bed_type_has_position_feedback
 from .beds.base import BedController, controller_as
 from .beds.entity_specs import POSITION_UNIT_DEGREES, POSITION_UNIT_PERCENT
@@ -96,6 +97,7 @@ from .const import (
     CONF_PROTOCOL_VARIANT,
     DEFAULT_MOTOR_COUNT,
     DOMAIN,
+    LINAK_VARIANT_TEMPUR_RELAX,
     PAIR_CONNECTION_MODE_CONCURRENT,
     PAIR_CONNECTION_MODE_SEQUENTIAL,
     SIDE_BOTH,
@@ -129,6 +131,7 @@ from .position_estimate import (
     track_motor_command,
     track_stream_member,
 )
+from .profile_id import entry_profile_id, profile_route
 from .runtime_data import loaded_runtime
 from .support_logs import async_setup_support_logs
 
@@ -541,18 +544,80 @@ async def _validation_controller(
     without connecting. That matters for single-connection (Octo) pairs: the
     preflight validates EVERY targeted side before commanding any, and
     connecting each side to validate would momentarily hold two BLE links,
-    which the sequential profile must never do. Only connect (and track the
-    side in ``preflighted`` for release on failure) when no capability
-    controller exists - a non-offline-mintable bed that is currently
-    disconnected.
+    which the sequential profile must never do. An unresolved Tempur mask needs
+    live authentication recovery through the parent's inspection path, which
+    owns the connection topology. Otherwise connect only when no capability
+    controller exists, tracking that side for release on failure.
     """
     controller = target.capability_controller
     if controller is not None:
         _require_disconnected_transport_ready(target, controller)
+    if target.bed_type == BED_TYPE_LINAK:
+        if controller is None:
+            deferred_tempur = (
+                profile_route(entry_profile_id(target.entry.data)).variant == LINAK_VARIANT_TEMPUR_RELAX
+            )
+        else:
+            # The existing controller has already loaded its family module.
+            from .beds.linak.controller import LinakController
+            from .beds.linak.protocol import LinakProfile
+
+            deferred_tempur = (
+                isinstance(controller, LinakController)
+                and controller._profile is LinakProfile.TEMPUR_RELAX
+                and not controller.controller_entity_discovery_complete
+            )
+        if deferred_tempur:
+            recovered: BedController | None = None
+
+            async def prepare(live: BedController) -> BedController:
+                await live.prepare_for_movement()
+                return live
+
+            async def inspect(child: BedChild) -> None:
+                nonlocal recovered
+                recovered = await child.async_execute_controller_query(
+                    prepare, skip_disconnect=True,
+                )
+
+            preflighted.append((coordinator, target))
+            if isinstance(coordinator, PairedBedCoordinator):
+                # The topology releases a sequential side before the next
+                # receiver connects, including links opened for discovery.
+                await coordinator.async_inspect_child_operation(
+                    inspect, side=_child_side(coordinator, SIDE_BOTH, target),
+                    resource="configuration",
+                )
+            else:
+                await inspect(target)
+            if recovered is None:
+                raise invalid("action_stopped")
+            return recovered
+    if controller is not None:
         return controller
     controller = await _get_controller_for_service(target)
     preflighted.append((coordinator, target))
     return controller
+
+
+def _primary_app_targets(
+    targets: list[tuple[BedTarget, str]], feature: str = "favorites",
+) -> list[tuple[BedTarget, str]]:
+    """Honor the app profile's primary-owned actions without mirroring them."""
+    def owns_primary(child: BedChild) -> bool:
+        if child.bed_type != BED_TYPE_LINAK:
+            return False
+        if getattr(child, "entry", None) is None:
+            return False
+        route = profile_route(entry_profile_id(child.entry.data))
+        policy = pair_profile(route.bed_type, route.variant)
+        return policy is not None and feature in policy.primary_features
+
+    return [
+        (parent, SIDE_LEFT if side == SIDE_BOTH and isinstance(parent, PairedBedCoordinator)
+         and all(owns_primary(child) for child in parent.children.values()) else side)
+        for parent, side in targets
+    ]
 
 
 def _command_targets(coordinator: BedTarget, side: str) -> list[BedChild]:
@@ -734,15 +799,19 @@ class _Selection:
     children: tuple[tuple[BedChild, ...], ...]
     modes: tuple[str | None, ...]
     stops: tuple[int, ...]
+    primary_feature: str | None = None
 
     @classmethod
-    def capture(cls, targets: Sequence[tuple[BedTarget, str]]) -> _Selection:
+    def capture(
+        cls, targets: Sequence[tuple[BedTarget, str]], *, primary_feature: str | None = None,
+    ) -> _Selection:
         children = tuple(tuple(_command_targets(parent, side)) for parent, side in targets)
         return cls(
             tuple(targets),
             children,
             tuple(_pair_mode(parent) for parent, _ in targets),
             _stop_marks(targets, children),
+            primary_feature,
         )
 
     def stopped(self) -> bool:
@@ -753,6 +822,8 @@ class _Selection:
         """Refuse a selection whose beds were replaced, removed or re-paired."""
         try:
             current = _call_targets(call)
+            if self.primary_feature is not None:
+                current = _primary_app_targets(current, self.primary_feature)
             children = [tuple(_command_targets(parent, side)) for parent, side in current]
         except ServiceValidationError as err:
             raise _bed_changed() from err
@@ -862,6 +933,8 @@ async def handle_goto_preset(call: ServiceCall) -> None:
     if missing:
         raise _missing_device_error(missing[0])
 
+    targets = _primary_app_targets(targets)
+
     def check(target: BedChild, controller: BedController) -> None:
         if not controller.supports_memory_presets:
             raise invalid("memory_presets_not_supported", device_name=target.name)
@@ -918,6 +991,7 @@ async def handle_save_preset(call: ServiceCall) -> None:
     if missing:
         raise _missing_device_error(missing[0])
 
+    targets = _primary_app_targets(targets)
     admissions = [_capture_command_admission(coordinator, side) for coordinator, side in targets]
 
     def check(target: BedChild, controller: BedController) -> None:
@@ -953,9 +1027,9 @@ async def handle_save_preset(call: ServiceCall) -> None:
 
 
 async def _cancel_held_button(entity: Entity, _call: ServiceCall) -> None:
-    from .button import ControllerActionButton
+    from .button import ControllerActionButton, PairedBedGestureReleaseButton
 
-    if not isinstance(entity, ControllerActionButton):
+    if not isinstance(entity, (ControllerActionButton, PairedBedGestureReleaseButton)):
         raise invalid("held_cancel_unavailable")
     await entity.async_cancel_hold()
 
@@ -1837,6 +1911,9 @@ async def _async_timed_move(
     completed_shared_motors: set[int] = set()
 
     async def move(target: BedChild) -> None:
+        if lease is not None:
+            # Slot fallback can happen after preflight, before topology dispatch.
+            _require_hold_topology(targets)
         target_key = _plan_key(target)
         if target_key in completed_shared_motors:
             return
@@ -2135,6 +2212,24 @@ def _profile_route(
     return next(iter(selected), None)
 
 
+async def handle_name_memory(call: ServiceCall) -> None:
+    """Edit a receiver's app-local favorite label through the shared API."""
+    targets = _primary_app_targets(_call_targets(call))
+    slot = call.data[ATTR_PRESET]
+    name = call.data.get(ATTR_NAME)
+
+    def check(controller: BedController) -> None:
+        if not 1 <= slot <= controller.memory_slot_count:
+            raise ValueError("Choose an available favorite")
+
+    await _preflight_and_execute(
+        targets, BedController, lambda controller: (controller.name_memory(slot, name)
+            if name is not None else controller.forget_memory(slot)),
+        supported=lambda controller: controller.supports_memory_naming,
+        validate=check, cancel_running=False, resource="configuration",
+    )
+
+
 async def handle_rename(call: ServiceCall) -> None:
     """Write a new Bluetooth name to every targeted controller that supports it."""
     # The other family action modules load with the services, this one does not.
@@ -2175,13 +2270,17 @@ async def handle_rename(call: ServiceCall) -> None:
     preflighted = await _preflight_each(
         targets, preflight, require_live=lambda c: c.device_rename_needs_live_validation,
     )
-
     async def write_name(controller: BedController) -> None:
         await controller.rename_device(name)
 
     rename = live.command(targets, write_name)
 
     try:
+        for parent, side in targets:
+            for target in _command_targets(parent, side):
+                controller = target.capability_controller
+                if isinstance(controller, BedController):
+                    await controller.prepare_device_rename(name)
         for coordinator, side in targets:
             await _execute_sided_translated(
                 coordinator, side, rename, cancel_running=False, resource="configuration"
@@ -2218,6 +2317,8 @@ def _hold_seconds(value: object) -> Decimal:
 async def handle_hold_control(call: ServiceCall) -> None:
     """Hold one controller-declared control, then run its protocol release."""
     targets = _call_targets(call)
+    if str(call.data[ATTR_CONTROL]).startswith("memory_"):
+        targets = _primary_app_targets(targets)
     admissions = [_capture_command_admission(coordinator, side) for coordinator, side in targets]
     # The other family action modules load with the services, this one does not.
     await async_import_modules(call.hass, "beds.vmatbasic.services")
@@ -2235,6 +2336,7 @@ async def handle_hold_control(call: ServiceCall) -> None:
     )
     lease = _hold_lease(call, control, duration_ms)
     if lease is not None:
+        _require_hold_topology(targets)
         if route == "svane" or control == "floor_hold":
             raise invalid(
                 "control_hold_renewal_not_supported",
@@ -2280,14 +2382,18 @@ async def handle_hold_control(call: ServiceCall) -> None:
 
 def _declares_hold(targets: list[tuple[BedTarget, str]], control: str) -> bool:
     """Whether every executing target declares a renewable hold on ``control``."""
-    controllers = [
-        target.capability_controller
+    executing = [
+        target
         for coordinator, side in targets
         for target in _command_targets(coordinator, side)
     ]
-    return bool(controllers) and all(
-        controller is not None and controller.execution.hold_for(control) is not None
-        for controller in controllers
+    return bool(executing) and all(
+        target.capability_controller.execution.hold_for(control) is not None
+        if target.capability_controller is not None else (
+            target.bed_type == BED_TYPE_LINAK
+            and profile_route(entry_profile_id(target.entry.data)).variant == LINAK_VARIANT_TEMPUR_RELAX
+        )
+        for target in executing
     )
 
 
@@ -2415,7 +2521,10 @@ async def _hold_targets(
 ) -> None:
     """Preflight the whole selection before starting any held write sequence."""
     bounded_catalog = lease is None and all(
-        child.bed_type == "bobpowerbase"
+        child.bed_type == "bobpowerbase" or (
+            child.bed_type == BED_TYPE_LINAK
+            and profile_route(entry_profile_id(child.entry.data)).variant == LINAK_VARIANT_TEMPUR_RELAX
+        )
         for parent, side in targets for child in _command_targets(parent, side)
     )
     if not bounded_catalog:
@@ -2630,7 +2739,7 @@ async def handle_set_alarm(call: ServiceCall) -> None:
         if name in call.data
         and (name not in _ALARM_NOTHING or call.data[name] != _ALARM_NOTHING[name])
     ]
-    targets = _call_targets(call)
+    targets = _primary_app_targets(_call_targets(call), "alarm")
 
     route = _profile_route(
         targets,
@@ -2677,7 +2786,7 @@ async def handle_set_alarm(call: ServiceCall) -> None:
         await _execute_zseries_alarm(call, write_zseries, validate=check_zseries)
         return
 
-    selection = _Selection.capture(targets)
+    selection = _Selection.capture(targets, primary_feature="alarm")
     # Each physical side's scheduling, from the capability preflight checked.
     plans: dict[int, AlarmCapability] = {}
 
@@ -3551,6 +3660,23 @@ async def async_register_services(hass: HomeAssistant) -> None:
                 **SIDE_FIELD,
             }
         ),
+    )
+    hass.services.async_register(
+        DOMAIN, "name_memory", handle_name_memory,
+        schema=vol.Schema({
+            vol.Required(CONF_DEVICE_ID): DEVICE_IDS,
+            vol.Required(ATTR_PRESET): vol.All(vol.Coerce(int), vol.Range(min=1, max=255)),
+            vol.Required(ATTR_NAME): cv.string,
+            **SIDE_FIELD,
+        }),
+    )
+    hass.services.async_register(
+        DOMAIN, "forget_memory", handle_name_memory,
+        schema=vol.Schema({
+            vol.Required(CONF_DEVICE_ID): DEVICE_IDS,
+            vol.Required(ATTR_PRESET): vol.All(vol.Coerce(int), vol.Range(min=1, max=255)),
+            **SIDE_FIELD,
+        }),
     )
     hold_fields = {
         vol.Required(CONF_DEVICE_ID): DEVICE_IDS,

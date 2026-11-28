@@ -510,6 +510,7 @@ async def test_paired_hold_preflights_both_remotes_before_writing(hass, monkeypa
     pair, left, right = _pair([])
     controls = []
     for child, remote in ((left, "a"), (right, "b")):
+        child.bed_type = const.BED_TYPE_JUNASLEEP
         c = bed.JunaSleepController(_FactoryCoordinator(), remote=remote)
         controls.append(c)
         c.hold_control = AsyncMock()

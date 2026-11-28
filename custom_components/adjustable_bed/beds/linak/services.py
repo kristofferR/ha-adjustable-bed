@@ -48,7 +48,7 @@ async def handle_linak_move_simultaneously(call: ServiceCall) -> None:
     async def check(target: BedChild, controller: BedController) -> None:
         if isinstance(controller, LinakController):
             await controller.prepare_simultaneous_movement()
-        if not controller.supports_simultaneous_movement:
+        if not sections and not controller.supports_simultaneous_movement:
             raise invalid(
                 "feature_not_supported",
                 device_name=target.name,
@@ -56,7 +56,7 @@ async def handle_linak_move_simultaneously(call: ServiceCall) -> None:
             )
         if sections and (
             not isinstance(controller, LinakController)
-            or controller._profile is not LinakProfile.CARPE_DIEM
+            or controller._profile not in {LinakProfile.CARPE_DIEM, LinakProfile.TEMPUR_RELAX}
         ):
             raise invalid(
                 "feature_not_supported",
@@ -150,7 +150,7 @@ def async_register_linak_services(hass: HomeAssistant) -> None:
             {
                 vol.Required(CONF_DEVICE_ID): DEVICE_IDS,
                 vol.Required("sections"): vol.All(
-                    [vol.In(("back", "legs", "head", "feet"))], vol.Length(min=1, max=4)
+                    [vol.In(LINAK_MOTOR_OPTIONS)], vol.Length(min=1, max=5)
                 ),
                 vol.Required("direction"): vol.In(LINAK_DIRECTION_OPTIONS),
                 vol.Required(ATTR_DURATION_MS): vol.All(

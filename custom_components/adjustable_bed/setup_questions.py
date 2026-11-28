@@ -3069,6 +3069,11 @@ SETUP_PROFILES: Final[dict[str, SetupProfile]] = {
             validator=TextSelector(TextSelectorConfig(type=TextSelectorType.PASSWORD))),),
         owns=dict.fromkeys(GENERIC_FIELDS - {CONF_DISABLE_ANGLE_SENSING}, SET_BY_PROFILE),
     ),
+    "linak:tempur_relax": SetupProfile(
+        owns={CONF_PROTOCOL_VARIANT: "tempur_relax",
+              CONF_MOTOR_PULSE_COUNT: 10, CONF_MOTOR_PULSE_DELAY_MS: 100},
+        title=lambda _data: "Tempur Relax Control",
+    ),
     "linak:carpe_diem": SetupProfile(
         owns={CONF_PROTOCOL_VARIANT: "carpe_diem",
               CONF_MOTOR_PULSE_COUNT: 4, CONF_MOTOR_PULSE_DELAY_MS: 300},

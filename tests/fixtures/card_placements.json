@@ -2628,6 +2628,9 @@
   "card_role": "save",
   "card_slot": 8
  },
+ "button:release_held_control": {
+  "card_section": "hidden"
+ },
  "button:remacro_led_brightness_save": {
   "card_section": "lighting"
  },

@@ -16,6 +16,7 @@ class LinakProfile(StrEnum):
     BED_CONTROL = "bed_control"
     AA_CONTROL_MY_BED = "aa_control_my_bed"
     CARPE_DIEM = "carpe_diem"
+    TEMPUR_RELAX = "tempur_relax"
     PERFORMANCE = "performance_legacy"
 
 

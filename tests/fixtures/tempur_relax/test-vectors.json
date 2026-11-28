@@ -1,0 +1,683 @@
+[
+  {
+    "id": "back.down",
+    "protocol": "P1",
+    "action": "back.down",
+    "builder": "lin",
+    "inputs": {
+      "code": "REF_8_DOWN"
+    },
+    "expected_bytes": "0a 00",
+    "evidence": [
+      "E-LIN",
+      "E-CONTROL"
+    ],
+    "vector_origin": "Static app literals and builder, not captured hardware traffic"
+  },
+  {
+    "id": "back.up",
+    "protocol": "P1",
+    "action": "back.up",
+    "builder": "lin",
+    "inputs": {
+      "code": "REF_8_UP"
+    },
+    "expected_bytes": "0b 00",
+    "evidence": [
+      "E-LIN",
+      "E-CONTROL"
+    ],
+    "vector_origin": "Static app literals and builder, not captured hardware traffic"
+  },
+  {
+    "id": "legs.down",
+    "protocol": "P1",
+    "action": "legs.down",
+    "builder": "lin",
+    "inputs": {
+      "code": "REF_7_DOWN"
+    },
+    "expected_bytes": "08 00",
+    "evidence": [
+      "E-LIN",
+      "E-CONTROL"
+    ],
+    "vector_origin": "Static app literals and builder, not captured hardware traffic"
+  },
+  {
+    "id": "legs.up",
+    "protocol": "P1",
+    "action": "legs.up",
+    "builder": "lin",
+    "inputs": {
+      "code": "REF_7_UP"
+    },
+    "expected_bytes": "09 00",
+    "evidence": [
+      "E-LIN",
+      "E-CONTROL"
+    ],
+    "vector_origin": "Static app literals and builder, not captured hardware traffic"
+  },
+  {
+    "id": "head.down",
+    "protocol": "P1",
+    "action": "head.down",
+    "builder": "lin",
+    "inputs": {
+      "code": "REF_6_DOWN"
+    },
+    "expected_bytes": "02 00",
+    "evidence": [
+      "E-LIN",
+      "E-CONTROL"
+    ],
+    "vector_origin": "Static app literals and builder, not captured hardware traffic"
+  },
+  {
+    "id": "head.up",
+    "protocol": "P1",
+    "action": "head.up",
+    "builder": "lin",
+    "inputs": {
+      "code": "REF_6_UP"
+    },
+    "expected_bytes": "03 00",
+    "evidence": [
+      "E-LIN",
+      "E-CONTROL"
+    ],
+    "vector_origin": "Static app literals and builder, not captured hardware traffic"
+  },
+  {
+    "id": "feet.down",
+    "protocol": "P1",
+    "action": "feet.down",
+    "builder": "lin",
+    "inputs": {
+      "code": "REF_5_DOWN"
+    },
+    "expected_bytes": "04 00",
+    "evidence": [
+      "E-LIN",
+      "E-CONTROL"
+    ],
+    "vector_origin": "Static app literals and builder, not captured hardware traffic"
+  },
+  {
+    "id": "feet.up",
+    "protocol": "P1",
+    "action": "feet.up",
+    "builder": "lin",
+    "inputs": {
+      "code": "REF_5_UP"
+    },
+    "expected_bytes": "05 00",
+    "evidence": [
+      "E-LIN",
+      "E-CONTROL"
+    ],
+    "vector_origin": "Static app literals and builder, not captured hardware traffic"
+  },
+  {
+    "id": "base.down",
+    "protocol": "P1",
+    "action": "base.down",
+    "builder": "lin",
+    "inputs": {
+      "code": "REF_4_DOWN"
+    },
+    "expected_bytes": "06 00",
+    "evidence": [
+      "E-LIN",
+      "E-CONTROL"
+    ],
+    "vector_origin": "Static app literals and builder, not captured hardware traffic"
+  },
+  {
+    "id": "base.up",
+    "protocol": "P1",
+    "action": "base.up",
+    "builder": "lin",
+    "inputs": {
+      "code": "REF_4_UP"
+    },
+    "expected_bytes": "07 00",
+    "evidence": [
+      "E-LIN",
+      "E-CONTROL"
+    ],
+    "vector_origin": "Static app literals and builder, not captured hardware traffic"
+  },
+  {
+    "id": "all.down",
+    "protocol": "P1",
+    "action": "all.down",
+    "builder": "lin",
+    "inputs": {
+      "code": "INITIALIZE_DOWN"
+    },
+    "expected_bytes": "00 00",
+    "evidence": [
+      "E-LIN",
+      "E-CONTROL"
+    ],
+    "vector_origin": "Static app literals and builder, not captured hardware traffic"
+  },
+  {
+    "id": "all.up",
+    "protocol": "P1",
+    "action": "all.up",
+    "builder": "lin",
+    "inputs": {
+      "code": "INITIALIZE_UP"
+    },
+    "expected_bytes": "01 00",
+    "evidence": [
+      "E-LIN",
+      "E-CONTROL"
+    ],
+    "vector_origin": "Static app literals and builder, not captured hardware traffic"
+  },
+  {
+    "id": "stop",
+    "protocol": "P1",
+    "action": "stop",
+    "builder": "lin",
+    "inputs": {
+      "code": "STOP_MOVEMENT"
+    },
+    "expected_bytes": "ff 00",
+    "evidence": [
+      "E-LIN",
+      "E-CONTROL"
+    ],
+    "vector_origin": "Static app literals and builder, not captured hardware traffic"
+  },
+  {
+    "id": "wake",
+    "protocol": "P1",
+    "action": "wake",
+    "builder": "lin",
+    "inputs": {
+      "code": "WAKE_UP"
+    },
+    "expected_bytes": "fe 00",
+    "evidence": [
+      "E-LIN",
+      "E-CONTROL"
+    ],
+    "vector_origin": "Static app literals and builder, not captured hardware traffic"
+  },
+  {
+    "id": "light.toggle",
+    "protocol": "P1",
+    "action": "light.toggle",
+    "builder": "lin",
+    "inputs": {
+      "code": "AUX_1_TOGGLE"
+    },
+    "expected_bytes": "94 00",
+    "evidence": [
+      "E-LIN",
+      "E-CONTROL"
+    ],
+    "vector_origin": "Static app literals and builder, not captured hardware traffic"
+  },
+  {
+    "id": "memory.1.recall",
+    "protocol": "P1",
+    "action": "memory.1.recall",
+    "builder": "lin",
+    "inputs": {
+      "code": "MEMORY_1"
+    },
+    "expected_bytes": "0e 00",
+    "evidence": [
+      "E-LIN",
+      "E-CONTROL"
+    ],
+    "vector_origin": "Static app literals and builder, not captured hardware traffic"
+  },
+  {
+    "id": "memory.2.recall",
+    "protocol": "P1",
+    "action": "memory.2.recall",
+    "builder": "lin",
+    "inputs": {
+      "code": "MEMORY_2"
+    },
+    "expected_bytes": "0f 00",
+    "evidence": [
+      "E-LIN",
+      "E-CONTROL"
+    ],
+    "vector_origin": "Static app literals and builder, not captured hardware traffic"
+  },
+  {
+    "id": "memory.3.recall",
+    "protocol": "P1",
+    "action": "memory.3.recall",
+    "builder": "lin",
+    "inputs": {
+      "code": "MEMORY_3"
+    },
+    "expected_bytes": "0c 00",
+    "evidence": [
+      "E-LIN",
+      "E-CONTROL"
+    ],
+    "vector_origin": "Static app literals and builder, not captured hardware traffic"
+  },
+  {
+    "id": "memory.4.recall",
+    "protocol": "P1",
+    "action": "memory.4.recall",
+    "builder": "lin",
+    "inputs": {
+      "code": "MEMORY_4"
+    },
+    "expected_bytes": "44 00",
+    "evidence": [
+      "E-LIN",
+      "E-CONTROL"
+    ],
+    "vector_origin": "Static app literals and builder, not captured hardware traffic"
+  },
+  {
+    "id": "memory.1.save",
+    "protocol": "P1",
+    "action": "memory.1.save",
+    "builder": "lin",
+    "inputs": {
+      "code": "STORE_MEM_1"
+    },
+    "expected_bytes": "38 00",
+    "evidence": [
+      "E-LIN",
+      "E-CONTROL"
+    ],
+    "vector_origin": "Static app literals and builder, not captured hardware traffic"
+  },
+  {
+    "id": "memory.2.save",
+    "protocol": "P1",
+    "action": "memory.2.save",
+    "builder": "lin",
+    "inputs": {
+      "code": "STORE_MEM_2"
+    },
+    "expected_bytes": "39 00",
+    "evidence": [
+      "E-LIN",
+      "E-CONTROL"
+    ],
+    "vector_origin": "Static app literals and builder, not captured hardware traffic"
+  },
+  {
+    "id": "memory.3.save",
+    "protocol": "P1",
+    "action": "memory.3.save",
+    "builder": "lin",
+    "inputs": {
+      "code": "STORE_MEM_3"
+    },
+    "expected_bytes": "3a 00",
+    "evidence": [
+      "E-LIN",
+      "E-CONTROL"
+    ],
+    "vector_origin": "Static app literals and builder, not captured hardware traffic"
+  },
+  {
+    "id": "memory.4.save",
+    "protocol": "P1",
+    "action": "memory.4.save",
+    "builder": "lin",
+    "inputs": {
+      "code": "STORE_MEM_4"
+    },
+    "expected_bytes": "45 00",
+    "evidence": [
+      "E-LIN",
+      "E-CONTROL"
+    ],
+    "vector_origin": "Static app literals and builder, not captured hardware traffic"
+  },
+  {
+    "id": "massage.off",
+    "protocol": "P1",
+    "action": "massage.off",
+    "builder": "lin",
+    "inputs": {
+      "code": "MASSAGE_OFF"
+    },
+    "expected_bytes": "80 00",
+    "evidence": [
+      "E-LIN",
+      "E-CONTROL"
+    ],
+    "vector_origin": "Static app literals and builder, not captured hardware traffic"
+  },
+  {
+    "id": "massage.mode.next",
+    "protocol": "P1",
+    "action": "massage.mode.next",
+    "builder": "lin",
+    "inputs": {
+      "code": "NEXT_MASSAGE_MODE"
+    },
+    "expected_bytes": "81 00",
+    "evidence": [
+      "E-LIN",
+      "E-CONTROL"
+    ],
+    "vector_origin": "Static app literals and builder, not captured hardware traffic"
+  },
+  {
+    "id": "massage.back.on.frame",
+    "protocol": "P1",
+    "action": "massage.back.on.frame",
+    "builder": "lin",
+    "inputs": {
+      "code": "MASSAGE_MOTOR_1_ON"
+    },
+    "expected_bytes": "89 00",
+    "evidence": [
+      "E-LIN",
+      "E-CONTROL"
+    ],
+    "vector_origin": "Static single LinCommand stage; full UI sequence is in repair-test-vectors.json, E-MASSAGE-SEQUENCE."
+  },
+  {
+    "id": "massage.back.off.frame",
+    "protocol": "P1",
+    "action": "massage.back.off.frame",
+    "builder": "lin",
+    "inputs": {
+      "code": "MASSAGE_MOTOR_1_OFF"
+    },
+    "expected_bytes": "8a 00",
+    "evidence": [
+      "E-LIN",
+      "E-CONTROL"
+    ],
+    "vector_origin": "Static single LinCommand stage; full UI sequence is in repair-test-vectors.json, E-MASSAGE-SEQUENCE."
+  },
+  {
+    "id": "massage.legs.on.frame",
+    "protocol": "P1",
+    "action": "massage.legs.on.frame",
+    "builder": "lin",
+    "inputs": {
+      "code": "MASSAGE_MOTOR_2_ON"
+    },
+    "expected_bytes": "8b 00",
+    "evidence": [
+      "E-LIN",
+      "E-CONTROL"
+    ],
+    "vector_origin": "Static single LinCommand stage; full UI sequence is in repair-test-vectors.json, E-MASSAGE-SEQUENCE."
+  },
+  {
+    "id": "massage.legs.off.frame",
+    "protocol": "P1",
+    "action": "massage.legs.off.frame",
+    "builder": "lin",
+    "inputs": {
+      "code": "MASSAGE_MOTOR_2_OFF"
+    },
+    "expected_bytes": "8c 00",
+    "evidence": [
+      "E-LIN",
+      "E-CONTROL"
+    ],
+    "vector_origin": "Static single LinCommand stage; full UI sequence is in repair-test-vectors.json, E-MASSAGE-SEQUENCE."
+  },
+  {
+    "id": "massage.back.intensity.up",
+    "protocol": "P1",
+    "action": "massage.back.intensity.up",
+    "builder": "lin",
+    "inputs": {
+      "code": "MASSAGE_INTENS_1_UP"
+    },
+    "expected_bytes": "8d 00",
+    "evidence": [
+      "E-LIN",
+      "E-CONTROL"
+    ],
+    "vector_origin": "Static app literals and builder, not captured hardware traffic"
+  },
+  {
+    "id": "massage.back.intensity.down",
+    "protocol": "P1",
+    "action": "massage.back.intensity.down",
+    "builder": "lin",
+    "inputs": {
+      "code": "MASSAGE_INTENS_1_DOWN"
+    },
+    "expected_bytes": "8e 00",
+    "evidence": [
+      "E-LIN",
+      "E-CONTROL"
+    ],
+    "vector_origin": "Static app literals and builder, not captured hardware traffic"
+  },
+  {
+    "id": "massage.legs.intensity.up",
+    "protocol": "P1",
+    "action": "massage.legs.intensity.up",
+    "builder": "lin",
+    "inputs": {
+      "code": "MASSAGE_INTENS_2_UP"
+    },
+    "expected_bytes": "8f 00",
+    "evidence": [
+      "E-LIN",
+      "E-CONTROL"
+    ],
+    "vector_origin": "Static app literals and builder, not captured hardware traffic"
+  },
+  {
+    "id": "massage.legs.intensity.down",
+    "protocol": "P1",
+    "action": "massage.legs.intensity.down",
+    "builder": "lin",
+    "inputs": {
+      "code": "MASSAGE_INTENS_2_DOWN"
+    },
+    "expected_bytes": "90 00",
+    "evidence": [
+      "E-LIN",
+      "E-CONTROL"
+    ],
+    "vector_origin": "Static app literals and builder, not captured hardware traffic"
+  },
+  {
+    "id": "massage.both.intensity.up",
+    "protocol": "P1",
+    "action": "massage.both.intensity.up",
+    "builder": "lin",
+    "inputs": {
+      "code": "MASSAGE_INTENS_BOTH_UP"
+    },
+    "expected_bytes": "a8 00",
+    "evidence": [
+      "E-LIN",
+      "E-CONTROL"
+    ],
+    "vector_origin": "Static app literals and builder, not captured hardware traffic"
+  },
+  {
+    "id": "massage.both.intensity.down",
+    "protocol": "P1",
+    "action": "massage.both.intensity.down",
+    "builder": "lin",
+    "inputs": {
+      "code": "MASSAGE_INTENS_BOTH_DOWN"
+    },
+    "expected_bytes": "a9 00",
+    "evidence": [
+      "E-LIN",
+      "E-CONTROL"
+    ],
+    "vector_origin": "Static app literals and builder, not captured hardware traffic"
+  },
+  {
+    "id": "reset.defaults",
+    "protocol": "P1",
+    "action": "reset.defaults",
+    "builder": "lin",
+    "inputs": {
+      "code": "RESET_TO_DEFAULTS"
+    },
+    "expected_bytes": "4e 00",
+    "evidence": [
+      "E-LIN",
+      "E-CONTROL"
+    ],
+    "vector_origin": "Static app literals and builder, not captured hardware traffic"
+  },
+  {
+    "id": "sdk.modifier-only-not-ui",
+    "protocol": "P1",
+    "action": "sdk.modifier-only-not-ui",
+    "builder": "lin",
+    "inputs": {
+      "code": "REF_8_UP",
+      "side": 2,
+      "modifier": true
+    },
+    "expected_bytes": "0b 42",
+    "evidence": [
+      "E-LIN"
+    ],
+    "vector_origin": "Static app literals and builder, not captured hardware traffic"
+  },
+  {
+    "id": "impulse.enable",
+    "protocol": "P1",
+    "action": "impulse.enable",
+    "builder": "config",
+    "inputs": {
+      "code": 59,
+      "prefix": 137,
+      "data": "01",
+      "write": true
+    },
+    "expected_bytes": "89 3b 80 01",
+    "evidence": [
+      "E-CONFIG"
+    ],
+    "vector_origin": "Static app literals and builder, not captured hardware traffic"
+  },
+  {
+    "id": "impulse.disable",
+    "protocol": "P1",
+    "action": "impulse.disable",
+    "builder": "config",
+    "inputs": {
+      "code": 59,
+      "prefix": 137,
+      "data": "00",
+      "write": true
+    },
+    "expected_bytes": "89 3b 80 00",
+    "evidence": [
+      "E-CONFIG"
+    ],
+    "vector_origin": "Static app literals and builder, not captured hardware traffic"
+  },
+  {
+    "id": "sdk.impulse.query",
+    "protocol": "P1",
+    "action": "sdk.impulse.query",
+    "builder": "config",
+    "inputs": {
+      "code": 59
+    },
+    "expected_bytes": "7f 3b 00",
+    "evidence": [
+      "E-CONFIG"
+    ],
+    "vector_origin": "Static app literals and builder, not captured hardware traffic"
+  },
+  {
+    "id": "alarm.in60s.memory1",
+    "protocol": "P1",
+    "action": "alarm.in60s.memory1",
+    "builder": "timer",
+    "inputs": {
+      "seconds": 60,
+      "actions": [
+        [
+          14,
+          5,
+          0
+        ]
+      ]
+    },
+    "expected_bytes": "00 3c 00 01 0e 00 05 00",
+    "evidence": [
+      "E-TIMER"
+    ],
+    "vector_origin": "Static app literals and builder, not captured hardware traffic"
+  },
+  {
+    "id": "alarm.in70000s.memory4.massage",
+    "protocol": "P1",
+    "action": "alarm.in70000s.memory4.massage",
+    "builder": "timer",
+    "inputs": {
+      "seconds": 70000,
+      "actions": [
+        [
+          68,
+          5,
+          0
+        ],
+        [
+          145,
+          5,
+          0
+        ]
+      ]
+    },
+    "expected_bytes": "01 70 11 01 44 00 05 00 91 00 05 00",
+    "evidence": [
+      "E-TIMER"
+    ],
+    "vector_origin": "Static app literals and builder, not captured hardware traffic"
+  },
+  {
+    "id": "alarm.recurrence.daily31",
+    "protocol": "P1",
+    "action": "alarm.recurrence.daily31",
+    "builder": "recurrence",
+    "inputs": {
+      "minutes": 1440,
+      "count": 31
+    },
+    "expected_bytes": "10 a0 fd",
+    "evidence": [
+      "E-TIMER"
+    ],
+    "vector_origin": "Static app literals and builder, not captured hardware traffic"
+  },
+  {
+    "id": "alarm.recurrence.none",
+    "protocol": "P1",
+    "action": "alarm.recurrence.none",
+    "builder": "recurrence",
+    "inputs": {
+      "minutes": 0,
+      "count": 0
+    },
+    "expected_bytes": "10 00 00",
+    "evidence": [
+      "E-TIMER"
+    ],
+    "vector_origin": "Static app literals and builder, not captured hardware traffic"
+  }
+]
