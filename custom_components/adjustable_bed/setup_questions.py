@@ -374,6 +374,7 @@ _OWNED_BY_BED_TYPE: Final[dict[str, frozenset[str]]] = {
     "luniosmart": GENERIC_FIELDS - {CONF_MOTOR_PULSE_COUNT},
     "sleep_evolution": GENERIC_FIELDS,
     "wsilver_legacy": GENERIC_FIELDS,
+    "thrivesleep": GENERIC_FIELDS - {CONF_PROTOCOL_VARIANT, CONF_MOTOR_PULSE_COUNT},
     "super_colchones": GENERIC_FIELDS - {CONF_PROTOCOL_VARIANT, CONF_MOTOR_PULSE_COUNT},
     "ergobq": GENERIC_FIELDS,
     "sonicsleep": GENERIC_FIELDS - {CONF_MOTOR_PULSE_COUNT},
@@ -1946,6 +1947,16 @@ def _mlily_remote_settings(data: Mapping[str, Any]) -> dict[str, Any]:
         CONF_HAS_MASSAGE: profile is not None and bool(profile.row[2]) and not profile.cooling,
         CONF_DISABLE_ANGLE_SENSING: True,
         CONF_MOTOR_PULSE_COUNT: 10,
+        CONF_MOTOR_PULSE_DELAY_MS: 100,
+    }
+
+
+def _thrivesleep_settings(data: Mapping[str, Any]) -> dict[str, Any]:
+    product = data.get(CONF_PROTOCOL_VARIANT)
+    return {
+        CONF_MOTOR_COUNT: 4 if product in ("cool_flow", "level5") else 3,
+        CONF_HAS_MASSAGE: product in ("level5", "eco_comfort"),
+        CONF_DISABLE_ANGLE_SENSING: True,
         CONF_MOTOR_PULSE_DELAY_MS: 100,
     }
 
@@ -3758,6 +3769,7 @@ SETUP_PROFILES: Final[dict[str, SetupProfile]] = {
                                   "value": ["malouf", "reverie_v1", "reverie_v2"]})),
         derive=_personal_comfort_settings,
     ),
+    "thrivesleep": _asking("thrivesleep", questions=(Question(CONF_PROTOCOL_VARIANT, _routes("thrivesleep")),), derive=_thrivesleep_settings),
     "super_colchones": _asking(
         "super_colchones",
         questions=(Question(CONF_PROTOCOL_VARIANT, _routes("super_colchones")),),
