@@ -1053,6 +1053,19 @@ def test_legacy_alias_does_not_offer_the_same_controller_as_an_improvement():
     )
 
 
+@pytest.mark.parametrize("name", ("RC2", "CLI"))
+@pytest.mark.parametrize("current", ("richmat", "keeson"))
+def test_shared_octo_receiver_preserves_both_app_choices_for_other_profiles(name, current):
+    from custom_components.adjustable_bed.profiles.cosyworld import SERVICE
+
+    recommendation = recommend_profile(
+        {CONF_BED_TYPE: current}, advertisement(name, [SERVICE]), {}
+    )
+    assert recommendation is not None
+    assert recommendation.suggested is None
+    assert {"cosyworld", "octo"}.issubset(recommendation.choices)
+
+
 @pytest.mark.parametrize("route", ["p1", "p2"])
 def test_dynasty_shared_transport_remains_an_app_choice_not_an_improvement(route):
     from custom_components.adjustable_bed.detection import detect_bed_type_detailed

@@ -394,6 +394,7 @@ actions; its bounded `hold_control` behavior has separate timing in the
 | AVEK Ergo System | `avek` | 10 | 90 ms |
 | Comfort Enhancements app | `comfort_enhancements` | 5 | 200 ms |
 | Comfort Smart Bed app (Langjue) | `langjue` | 2 | 500 ms |
+| Cosyworld Smart Control | `cosyworld` | 3 | 350 ms |
 | Customatic Clarity app (Rize Clarity) | `customatic_clarity` | 8 | 120 ms |
 | Customatic Jerome's C app | `customatic_jeromes` | 8 | 120 ms |
 | Customatic Remedy app (Rize Remedy) | `customatic_remedy` | 8 | 120 ms |
@@ -1059,6 +1060,10 @@ currently unavailable; Sleep products expose the bed-side sensor name only.
 Sven & Son asks for Classic (200S), Harmony (300S), Bliss (400S), Platinum (500S),
 or Not sure. This model selects the actuators and light control; Bluetooth names
 do not select it. See [Sven & Son](beds/richmat.md#sven--son).
+
+Cosyworld Smart Control asks for the receiver PIN only. Motor layout and accessory
+controls come from each receiver’s current Bluetooth capability list; see the
+[Cosyworld profile](beds/octo.md#cosyworld-smart-control).
 
 ### RÖWA Fernbedienung
 

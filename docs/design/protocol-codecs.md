@@ -685,6 +685,17 @@ and timing; the shared SynData physical-session base fences both app controllers
 The EasyCtrl extension owns its parser, alarm calendar and release gestures,
 including model 300's unconditional incrementing STOP triplet.
 
+## Cosyworld Smart Control
+
+Cosyworld Smart Control 1.0.09 reproduces all 105 frozen literals through the
+unchanged OCTO encoder extracted into `codec/octo.py`. Its own typed profile
+owns FFE0/FFE1, the 350 ms refresh, release timing and supported controls. The
+shared family controller extension owns exact handshake admission, complete
+capability discovery, PIN state and current-session cleanup. Capability toggles
+retain every value tail byte; the light timer deliberately replaces the whole
+value. A malformed saved quad selector has codec proof only and no user control.
+See [Cosyworld Smart Control](../beds/octo.md#cosyworld-smart-control).
+
 
 ## TSS Remote
 

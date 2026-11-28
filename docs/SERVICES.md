@@ -111,8 +111,8 @@ For named raise/lower/stop voice commands and Apple Home controls, see
 | [`motion_bed_thermal_schedule`](#motion_bed_thermal_schedule) | Motion Bed: heating schedule | Saves a heating or cooling timer with its strength. |
 | [`motomotion`](#motomotion) | MotoMotion: postures and users | Save body measurements and your own posture positions on MotoMotion beds whose app has a users tab. Measurements are height, buttocks height and knee height in centimetres. This does not read where the motors are. |
 | [`doublesleep_configure`](#doublesleep_configure) | OKIN SleepEase: settings | Sets the alarm, anti-snore and sleep sensor sensitivity of an OKIN SleepEase bed, reads its sleep report, or saves a named position. Reports appear on the bed's report sensors. Send only the fields of the selected setting. |
-| [`octo_enroll_pin`](#octo_enroll_pin) | Octo: set PIN | Set a new four-digit PIN on one unlocked OCTO Smart Control receiver. Enter the same PIN twice. Home Assistant saves it for reconnects after sending the command. |
-| [`octo_reset_defaults`](#octo_reset_defaults) | Octo: reset receiver | Restore receiver defaults after explicit confirmation. The receiver disconnects five seconds after the reset command. |
+| [`octo_enroll_pin`](#octo_enroll_pin) | Receiver: set PIN | Set a new four-digit PIN on one unlocked OCTO or Cosyworld Smart Control receiver. Enter the same PIN twice. Home Assistant saves it for reconnects after sending the command. |
+| [`octo_reset_defaults`](#octo_reset_defaults) | Receiver: reset settings | Restore receiver defaults after explicit confirmation. The receiver disconnects five seconds after the reset command. |
 | [`okimiki`](#okimiki) | Okimiki: settings | Press or save a control, set the light, or read and set the alarms of the selected Okimiki product. Set the clock with Set bed clock. |
 | [`bobpowerbase`](#bobpowerbase) | Power Bob Base: settings | Sets the repeating alarms and the light of a Power Bob Base, when the bed reports them. Set the clock with Set bed clock. |
 | [`rmcontrol_anti_snore`](#rmcontrol_anti_snore) | RMControl: anti-snore | Turns anti-snore on or off, or sets how it responds to snoring. |
@@ -2042,7 +2042,7 @@ data:
 ## Octo
 
 <a id="octo_enroll_pin"></a>
-**`octo_enroll_pin`**: Set a new four-digit PIN on one unlocked OCTO Smart Control receiver. Enter the same PIN twice. Home Assistant saves it for reconnects after sending the command.
+**`octo_enroll_pin`**: Set a new four-digit PIN on one unlocked OCTO or Cosyworld Smart Control receiver. Enter the same PIN twice. Home Assistant saves it for reconnects after sending the command.
 
 | Field | Name | Meaning |
 |-------|------|---------|

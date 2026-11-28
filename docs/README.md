@@ -68,7 +68,7 @@ app. Every guide follows the [bed guide format](BED_GUIDE_FORMAT.md).
 | [MotoMotion, MotoSleep and others](beds/motomotion.md) | MotoMotion, MotoSleep, Power Bob, Bedgear, L2 Motion, MoodBase, ErgoBed Control and VivaSleep | Shared |
 | [BERUN](beds/berun.md) | BERUN versions 6–9 | Shared |
 | [Nerum](beds/nerum.md) | The Nerum app | |
-| [OCTO Smart Control](beds/octo.md) | OCTO receivers, the RTV TV lift and Octo Remote Star2 | |
+| [OCTO Smart Control](beds/octo.md) | OCTO receivers, the RTV TV lift, Octo Remote Star2 and Cosyworld Smart Control | |
 | [Nectar, Mattress Firm 900 and Sealy (Okin)](beds/okin-5a.md) | Nectar, Mattress Firm 900 / iFlex, Sealy Posturematic (the CB35 receiver and the Sealy Posturematic app) and DewertOkin ELEVATE | Shared |
 | [Okin and DewertOkin](beds/okin-nframe.md) | RÖWA Fernbedienung, Okimat, DewertOkin, Okin CST and DOT, Leggett & Platt Okin, Customatic, Jordan's, SIMMONS, Simmons Blue, SleepEase, StarCode AdjustableM5X4, Shuda, Okin 64-Bit, eShine E2000 to E5000, Superior sleep, Leva Bed Remote and other Okin apps | Shared |
 | [Okin SoundWave and Symphony](beds/okin-soundwave.md) | Symphony Sleep Sense and the SoundWave pages | Shared |

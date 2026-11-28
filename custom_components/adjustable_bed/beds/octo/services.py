@@ -10,7 +10,7 @@ from homeassistant.const import CONF_DEVICE_ID
 from homeassistant.core import HomeAssistant, ServiceCall
 from homeassistant.helpers import config_validation as cv
 
-from ...const import BED_TYPE_OCTO, CONF_OCTO_PIN, DOMAIN
+from ...const import BED_TYPE_COSYWORLD, BED_TYPE_OCTO, CONF_OCTO_PIN, DOMAIN
 from ...errors import invalid, rejected
 from ...paired_coordinator import BedChild
 from ...services import (
@@ -46,8 +46,8 @@ async def _single_octo_service_target(
     if len(physical_targets) != 1:
         raise invalid("one_bed_only")
     target = physical_targets[0]
-    if target.bed_type != BED_TYPE_OCTO:
-        raise invalid("action_for_other_beds", beds="Octo Smart Control receivers")
+    if target.bed_type not in {BED_TYPE_OCTO, BED_TYPE_COSYWORLD}:
+        raise invalid("action_for_other_beds", beds="OCTO or Cosyworld Smart Control receivers")
 
     candidate = target.capability_controller
     if candidate is not None and octo_controller(candidate) is None:

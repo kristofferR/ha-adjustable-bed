@@ -9,6 +9,7 @@ from homeassistant.const import CONF_ADDRESS, CONF_NAME
 from homeassistant.core import HomeAssistant
 
 from ...const import (
+    BED_TYPE_COSYWORLD,
     BED_TYPE_OCTO,
     CONF_BED_TYPE,
     CONF_OCTO_PIN,
@@ -60,7 +61,7 @@ async def async_refresh_octo_pin_issue(hass: HomeAssistant, entry: ConfigEntry) 
     # pin_locked_without_pin, so the connect path could never clear a stale
     # issue left behind by a variant switch.
     is_standard_octo = (
-        entry.data.get(CONF_BED_TYPE) == BED_TYPE_OCTO
+        entry.data.get(CONF_BED_TYPE) in {BED_TYPE_OCTO, BED_TYPE_COSYWORLD}
         and entry.data.get(CONF_PROTOCOL_VARIANT) != OCTO_VARIANT_STAR2
     )
     if not is_standard_octo or entry.data.get(CONF_OCTO_PIN):
