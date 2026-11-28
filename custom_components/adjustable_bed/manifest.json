@@ -2775,6 +2775,24 @@
       "local_name": "Mouselet*"
     },
     {
+      "local_name": "MpeV3B-5*"
+    },
+    {
+      "local_name": "MpeV3B-7*"
+    },
+    {
+      "local_name": "MpeV3B-9*"
+    },
+    {
+      "local_name": "MpeV3L-5*"
+    },
+    {
+      "local_name": "MpeV3L-7*"
+    },
+    {
+      "local_name": "MpeV3L-9*"
+    },
+    {
       "local_name": "My QMS2*"
     },
     {
@@ -4079,6 +4097,9 @@
     {
       "local_name": "ksw[fF]*",
       "connectable": true
+    },
+    {
+      "local_name": "limos*"
     },
     {
       "local_name": "motob*"

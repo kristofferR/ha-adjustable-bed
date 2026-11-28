@@ -1827,6 +1827,45 @@
       "suta_king_koil_clock": {
         "name": "Read bed clock"
       },
+      "ai_bed_sleep_recall": {"name": "Sleep recall"},
+      "ai_bed_deep_recall": {"name": "Deep recall"},
+      "ai_bed_leisure_recall": {"name": "Leisure recall"},
+      "ai_bed_deep_program": {"name": "Deep program"},
+      "ai_bed_head_up": {"name": "Head up"},
+      "ai_bed_foot_up": {"name": "Foot up"},
+      "ai_bed_head_down": {"name": "Head down"},
+      "ai_bed_foot_down": {"name": "Foot down"},
+      "ai_bed_both_up": {"name": "Both up"},
+      "ai_bed_both_down": {"name": "Both down"},
+      "ai_bed_recall_sleep": {"name": "Recall Sleep"},
+      "ai_bed_recall_leisure": {"name": "Recall Leisure"},
+      "ai_bed_recall_relax": {"name": "Recall Relax"},
+      "ai_bed_recall_deep": {"name": "Recall Deep"},
+      "ai_bed_recall_sleep_aid": {"name": "Recall Sleep Aid"},
+      "ai_bed_recall_decomp": {"name": "Recall Decomp"},
+      "ai_bed_program_leisure": {"name": "Program Leisure (id2)"},
+      "ai_bed_program_relax": {"name": "Program Relax (id3)"},
+      "ai_bed_program_deep": {"name": "Program Deep (id4)"},
+      "ai_bed_program_sleep_aid": {"name": "Program Sleep Aid (id5)"},
+      "ai_bed_program_decomp": {"name": "Program Decomp (id6)"},
+      "ai_bed_both_rise": {"name": "Both Rise (id301)"},
+      "ai_bed_foot_rise": {"name": "Foot Rise (id201)"},
+      "ai_bed_head_rise": {"name": "Head Rise (id101)"},
+      "ai_bed_wake_up_recall": {"name": "Wake-up recall"},
+      "ai_bed_leisure_program": {"name": "Leisure program"},
+      "ai_bed_relax_program": {"name": "Relax program"},
+      "ai_bed_relax_recall": {"name": "Relax recall"},
+      "ai_bed_sleep_aid_program": {"name": "Sleep Aid program"},
+      "ai_bed_sleep_aid_recall": {"name": "Sleep Aid recall"},
+      "ai_bed_status": {"name": "Status"},
+      "ai_bed_capabilities": {"name": "Capabilities"},
+      "ai_bed_firmware": {"name": "Firmware"},
+      "ai_bed_build_target": {"name": "Build target"},
+      "ai_bed_calibrate": {"name": "Calibrate"},
+      "ai_bed_sleep_aid_reset": {"name": "Sleep aid reset"},
+      "ai_bed_qc_sample": {"name": "Qc sample"},
+      "ai_bed_qc_stm32": {"name": "Qc stm32"},
+      "ai_bed_qc_wave": {"name": "Qc wave"},
       "restonic_underbedlighting": {
         "name": "Underbed light action"
       },
@@ -6364,6 +6403,9 @@
         },
       "ghostbed_snore_home": {"name": "Anti-snore (home)"},
       "ghostbed_snore_left": {"name": "Anti-snore (left settings)"},
+      "ai_bed_massage_head": {"name": "Head massage"},
+      "ai_bed_massage_foot": {"name": "Foot massage"},
+      "ai_bed_massage_both": {"name": "Head and foot massage"},
       "hestia_massage": {
         "name": "Massage"
       },
@@ -6988,6 +7030,9 @@
       "suta_king_koil_foot_step": {
         "name": "Foot massage step"
       },
+      "ai_bed_heat": {"name": "Constant heat gear"},
+      "ai_bed_waist_left": {"name": "Left waist pump level"},
+      "ai_bed_waist_right": {"name": "Right waist pump level"},
       "enso2_light_timer": {
         "name": "Light auto-off time"
       },
@@ -7516,6 +7561,7 @@
       "ghostbed_massage_mode": {"name": "Massage mode", "state": {"basic": "Basic", "cycle": "Cycle", "pulse": "Pulse", "wave": "Wave"}},
       "ghostbed_sensitivity": {"name": "Anti-snore sensitivity", "state": {"low": "Low", "medium": "Medium", "high": "High"}},
       "ghostbed_angle": {"name": "Anti-snore target", "state": {"8": "8°", "12": "12°", "15": "15°"}},
+      "ai_bed_massage_mode": {"name": "Massage mode", "state": {"1": "Mode 1", "2": "Mode 2", "3": "Mode 3"}},
       "comfort_bed_side": {
         "name": "Control side",
         "state": {
@@ -8632,6 +8678,48 @@
         "side": {
           "name": "Side",
           "description": "Which side of a paired bed to control."
+        }
+      }
+    },
+    "ai_bed": {
+      "name": "AI Bed controls",
+      "description": "Configure the proved direct BLE primary-route controls. Use set_alarm for wake schedules.",
+      "fields": {
+        "device_id": {
+          "name": "Bed"
+        },
+        "action": {
+          "name": "Action"
+        },
+        "side": {
+          "name": "Side"
+        },
+        "enabled": {
+          "name": "Enabled"
+        },
+        "hour": {
+          "name": "Hour"
+        },
+        "minute": {
+          "name": "Minute"
+        },
+        "weekdays": {
+          "name": "Weekdays"
+        },
+        "mode": {
+          "name": "Vibration mode"
+        },
+        "head": {
+          "name": "Head strength"
+        },
+        "foot": {
+          "name": "Foot strength"
+        },
+        "seconds": {
+          "name": "Preview seconds"
+        },
+        "pin": {
+          "name": "New privacy PIN"
         }
       }
     },
