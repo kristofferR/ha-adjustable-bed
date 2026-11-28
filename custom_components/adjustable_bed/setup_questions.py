@@ -4173,6 +4173,15 @@ SETUP_PROFILES: Final[dict[str, SetupProfile]] = {
             CONF_PRODUCT_TYPE, okimattmotion_app.LAYOUTS, okimattmotion_app.DEFAULT_LAYOUT,
         ),),
     ),
+    "avek": SetupProfile(
+        owns={
+            CONF_MOTOR_COUNT: 2,  # Compatibility field; firmness buttons declare the controls.
+            CONF_HAS_MASSAGE: False,
+            CONF_DISABLE_ANGLE_SENSING: True,
+            CONF_PROTOCOL_VARIANT: "auto",
+            CONF_MOTOR_PULSE_DELAY_MS: 90,
+        },
+    ),
     "ifit": SetupProfile(
         owns={
             CONF_MOTOR_COUNT: 3,

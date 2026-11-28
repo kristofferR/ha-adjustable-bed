@@ -797,6 +797,7 @@ BED_TYPE_SUTA_KING_KOIL: Final = "suta_king_koil"
 BED_TYPE_TRUEMOTION: Final = "truemotion"
 BED_TYPE_AI_BED: Final = "ai_bed"
 BED_TYPE_SUTA: Final = "suta"  # SUTA Smart Home AT protocol (ASCII + CRLF)
+BED_TYPE_AVEK: Final = "avek"
 BED_TYPE_ACTIVE_SLEEP: Final = "active_sleep"
 BED_TYPE_PARAMOUNT: Final = "paramount"
 BED_TYPE_TIMOTION_AHF: Final = "timotion_ahf"  # TiMOTION AHF 11-byte bitmask protocol
@@ -887,6 +888,7 @@ SUPPORTED_BED_TYPES: Final = [
     BED_TYPE_L2MOTION,
     BED_TYPE_ERGOBED,
     BED_TYPE_MOODBASE,
+    BED_TYPE_AVEK,
     BED_TYPE_ACTIVE_SLEEP,
     BED_TYPE_PARAMOUNT,
     BED_TYPE_RICHMAT_CLASSIC_APPS,
@@ -3211,6 +3213,7 @@ BED_MOTOR_PULSE_DEFAULTS: Final = {
     # (BluetoothLeService.onCharacteristicWrite Thread.sleep(100) loop)
     BED_TYPE_OKIN_DOT: (10, 100),
     BED_TYPE_IFIT: (10, 220),
+    BED_TYPE_AVEK: (10, 90),
     # OKIN CB35: 300ms delay → 3 repeats = 0.9s total
     # Source: com.okin.sealy ANALYSIS.md (Timer.periodic 300ms, exTimes: 2 → 3 sends)
     BED_TYPE_OKIN_CB35: (3, 300),

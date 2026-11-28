@@ -1534,6 +1534,9 @@ def default_scenario(bed_type: str) -> Scenario:
         return Scenario(id=bed_type, bed_type=bed_type, protocol_variant="remote",
                         entry_data={"protocol_variant": "remote", "product_type": "old_dsp_normal", "ergosportive_controls": list(CONTROLS)},
                         layout_id="ergosportive")
+    if bed_type == "avek":
+        return Scenario(id=bed_type, bed_type=bed_type,
+            replies={"6e400003-b5a3-f393-e0a9-e50e24dcca9e": "b0020101b4"})
     if bed_type == "intellibed":
         return Scenario(id=bed_type, bed_type=bed_type, protocol_variant="old")
     if bed_type == "active_sleep":
@@ -2789,6 +2792,11 @@ def build_scenarios() -> list[Scenario]:
     scenarios = [default_scenario(bed_type) for bed_type in SUPPORTED_BED_TYPES
                  if bed_type not in RICHMAT_MH_APP_CATALOGS]
     scenarios.extend(route_scenarios())
+    scenarios.extend(
+        Scenario(id=f"dunlopillo:{layout}", bed_type="dunlopillo", protocol_variant=layout,
+                 layout_id="dunlopillo")
+        for layout in ("b1", "b2", "c1", "d1")
+    )
     scenarios.extend(Scenario(id=f"ai_bed:{route}", bed_type="ai_bed", protocol_variant=route, layout_id=f"ai_bed:{route}") for route in ("limos", "hj001", "qrrm"))
     scenarios.append(Scenario(id="intellibed:hhc", bed_type="intellibed", protocol_variant="hhc"))
     scenarios.extend(Scenario(id=f"berun:v{v}", bed_type="berun", protocol_variant=f"v{v}",
@@ -3097,6 +3105,8 @@ async def _build(scenario: Scenario, client: Any) -> Any:
         **scenario.factory_kwargs,
     )
     coordinator.controller = controller
+    if scenario.bed_type == "avek":
+        controller.restore_persisted_app_state({"app_id": "001122334455"})
     return controller
 
 

@@ -2001,6 +2001,9 @@
       "dorsal_zero_gravity_down": {
         "name": "Zero gravity motor down"
       },
+      "avek_release": {
+        "name": "Release held control"
+      },
       "ifit_release": { "name": "Release held control" },
       "leva_release": { "name": "Release motion control" },
       "leva_massage_head": { "name": "Cycle head massage" },
@@ -13442,6 +13445,12 @@
     },
     "bed_not_loaded": {
       "message": "The bed is not loaded. Reload it, then try again."
+    },
+    "avek_hold_duration": {
+      "message": "Hold duration must be an integer from 1 to 60000 milliseconds."
+    },
+    "avek_identity_required": {
+      "message": "The bed has not completed its identity exchange. Reconnect before using Initial."
     },
     "bed_not_connected": {
       "message": "The bed is not connected. Check that it is powered on and in range, then try again."
