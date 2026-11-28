@@ -302,6 +302,7 @@ from .profiles import langjue as langjue_app
 from .profiles import logicdata as logicdata_profiles
 from .profiles import malouf as malouf_profiles
 from .profiles import okimattmotion as okimattmotion_app
+from .profiles import roewa as roewa_app
 from .profiles import sleep_assist_pro as sleep_assist_pro_app
 from .profiles import sleep_assistant as sleep_assistant_app
 from .profiles.ambient import LAYOUTS as AMBIENT_LAYOUTS
@@ -4216,6 +4217,11 @@ SETUP_PROFILES: Final[dict[str, SetupProfile]] = {
             CONF_MOTOR_PULSE_DELAY_MS: aminach_app.PLATINUM.refresh_ms,
         },
         questions=(Question(CONF_MOTOR_COUNT, aminach_app.LAYOUT_CHOICES, aminach_app.PLATINUM.default_motor_count),),
+    ),
+    "roewa": SetupProfile(
+        owns={CONF_MOTOR_COUNT: 2, CONF_HAS_MASSAGE: False,
+              CONF_DISABLE_ANGLE_SENSING: True, CONF_MOTOR_PULSE_DELAY_MS: 80},
+        questions=(Question(CONF_PROTOCOL_VARIANT, roewa_app.LAYOUTS, roewa_app.DEFAULT_LAYOUT),),
     ),
     "avek": SetupProfile(
         owns={

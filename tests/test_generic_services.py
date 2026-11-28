@@ -49,6 +49,7 @@ def target(
         "validate_hold_control": MagicMock(),
         "hold_control": AsyncMock(),
         "supports_device_rename": False,
+        "device_rename_needs_live_validation": False,
         "disconnects_after_rename": False,
         "validate_device_rename": MagicMock(),
         "rename_device": AsyncMock(),

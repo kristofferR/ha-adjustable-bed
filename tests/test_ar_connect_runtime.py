@@ -759,7 +759,10 @@ async def test_identification_timing_and_cancelled_probe_release(hass):
 
 @pytest.mark.parametrize('silent', [False, True])
 async def test_silent_selection_survives_controller_rebuild_and_sets_motion_flag(hass, silent):
+    from custom_components.adjustable_bed.beds.ar_connect.native import NativeController
+
     ctrl, c, client, _, _ = await runtime(hass, mask=None)
+    assert isinstance(ctrl, NativeController)
     await publish_runtime(hass, c)
     client.write_gatt_char.reset_mock()
     spec = ctrl.controller_switch_specs[0]

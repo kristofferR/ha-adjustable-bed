@@ -1460,6 +1460,11 @@ class BedController(GattWriter):
         return False
 
     @property
+    def device_rename_needs_live_validation(self) -> bool:
+        """Whether rename preflight needs current GATT roles or negotiated limits."""
+        return False
+
+    @property
     def disconnects_after_rename(self) -> bool:
         """Return True if a rename ends with an intentional disconnect."""
         return False

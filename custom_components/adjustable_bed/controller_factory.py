@@ -406,6 +406,7 @@ _SIMPLE_CONTROLLERS: Final[dict[str, _ControllerSpec]] = {
 # or the live GATT table. Each builder lives in its bed module.
 _BUILDERS: Final[dict[str, _BuilderSpec]] = {
     "ar_connect": _BuilderSpec("ar_connect.controller"),
+    "roewa": _BuilderSpec("roewa.controller"),
     "thrivesleep": _BuilderSpec("thrivesleep.controller"),
     "super_colchones": _BuilderSpec("super_colchones.controller"),
     "agingplace": _BuilderSpec("keeson.agingplace"),

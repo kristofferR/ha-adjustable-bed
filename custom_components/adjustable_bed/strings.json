@@ -2020,6 +2020,8 @@
         "name": "Zero gravity motor down"
       },
       "aminach_release": { "name": "Release held control" },
+      "roewa_memory_store": {"name": "Enable memory storage"},
+      "roewa_release": {"name": "Release held control"},
       "avek_release": {
         "name": "Release held control"
       },
@@ -6816,6 +6818,7 @@
       }
     },
     "binary_sensor": {
+      "roewa_memory_store": {"name": "Memory storage active"},
       "powersbedding_alarm_enabled": {"name": "Bed alarm enabled"},
       "berun_massage_on": {
         "name": "Massage"
@@ -12870,6 +12873,11 @@
     }
   },
   "exceptions": {
+    "roewa_setup_required": {"message": "The bed must provide model, firmware, movement and feedback characteristics before RÖWA setup can finish."},
+    "roewa_rename_unavailable": {"message": "This bed does not expose the RÖWA Bluetooth name control."},
+    "roewa_hold_duration": {"message": "Choose a hold duration from 1 to 60000 milliseconds."},
+    "roewa_layout": {"message": "Choose a RÖWA remote with two, three or four motors."},
+    "roewa_name": {"message": "Use a nonempty Bluetooth name of at most {limit} UTF-8 bytes for this Bluetooth connection."},
     "konfurt_gatt": {"message": "KONFURT needs writable FFE9 in FFE5 and notifying FFE4 in FFE0. Check the selected app and Bluetooth device."},
     "konfurt_layout": {"message": "Choose the 2, 3 or 4 motor layout shown in the KONFURT app."},
     "konfurt_control": {"message": "Choose a control offered by this KONFURT layout and a hold of 1 to 60000 milliseconds."},

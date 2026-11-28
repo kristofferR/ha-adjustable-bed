@@ -651,3 +651,13 @@ The controller binds callbacks and writes to their BLE session. Ending refresh
 is the only proven release. Initial's app waiter requests conditional
 cancellation; Home Assistant independently bounds its refresh instead of
 reproducing the app's unbounded-sender failure. See [AVEK](../beds/avek.md).
+
+
+RÖWA Fernbedienung 1.1.0 reproduces all 17 frozen write vectors through
+`codec/okin_nframe.py`: the 15 independent 32-bit action literals, reconnect
+parameter record and UTF-16-counted UTF-8 name. Its separate typed profiles in
+`profiles/roewa.py` own the three remote layouts and awaited-write-plus-delay
+cadence. The shared Okin controller extension binds reads, subscription,
+initialization and refresh to one connection. Release ends refresh without
+inventing a STOP; memory-store feedback never becomes motor-position state.
+See [RÖWA](../beds/okin-nframe.md#röwa-fernbedienung).

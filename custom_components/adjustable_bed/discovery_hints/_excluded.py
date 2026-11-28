@@ -17,6 +17,7 @@ from ..const import (
     MALOUF_NEW_OKIN_ADVERTISED_SERVICE_UUID,
     OCTO_STAR2_SERVICE_UUID,
     OKIMAT_SERVICE_UUID,
+    OKIN_SMART_REMOTE_CSS_SERVICE_UUID,
     RICHMAT_NORDIC_SERVICE_UUID,
     RICHMAT_WILINKE_SERVICE_UUIDS,
     SOLACE_SERVICE_UUID,
@@ -33,6 +34,7 @@ GENERIC_SHARED_SERVICE_UUIDS: frozenset[str] = frozenset(
         SOLACE_SERVICE_UUID,  # FFE0 - Solace, Octo, MotoSleep, scales, scooters
         KEESON_BASE_SERVICE_UUID,  # FFE5 - Keeson, Malouf, Serta, fitness trackers
         RICHMAT_NORDIC_SERVICE_UUID,  # Nordic UART - Richmat, many IoT devices
+        OKIN_SMART_REMOTE_CSS_SERVICE_UUID,  # Shared Okin/RÖWA name service
         OKIMAT_SERVICE_UUID,  # 62741523 - Okimat, Leggett Okin, Nectar
         *RICHMAT_WILINKE_SERVICE_UUIDS,  # FEE9 variants - Richmat WiLinke, BedTech
         # Short UUIDs outside the assigned Bluetooth range that any module can
