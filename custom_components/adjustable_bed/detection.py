@@ -878,6 +878,7 @@ BED_TYPE_DISPLAY_NAMES: dict[str, str] = {
     BED_TYPE_SLEEPYS_ELITE_APP: "MFRM Sleepy's Elite app",
     BED_TYPE_STAR_ELEVATE: "DewertOkin Elevate lift (two motors)",
     BED_TYPE_SOLACE: "Solace (HomeKobo, Sealy MotionFlex and Sweet Night apps)",
+    "ai_bed": "AI Bed app (Limos, QRRM, HJ001, primary 305 subset)",
     BED_TYPE_SUTA: "SUTA Smart Home app",
     BED_TYPE_TRUEMOTION: "trueMotion app",
     BED_TYPE_SUTA_KING_KOIL: "King Koil (SUTA) app",
@@ -911,6 +912,10 @@ def is_jensen_linon_name(name: str | None) -> bool:
 # variant selects; see AGENTS.md "Adding a New Bed Type".
 APP_VARIANT_CHOICES: dict[tuple[str, str], str] = {
     **{("motionflex", profile): f"MotionFlex ({label})" for profile, label in MOTIONFLEX_CHOICES.items()},
+    ("ai_bed", "limos"): "AI Bed: Limos",
+    ("ai_bed", "qrrm"): "AI Bed: QRRM",
+    ("ai_bed", "hj001"): "AI Bed: HJ001/HJ010/HJ011",
+    ("ai_bed", "305"): "AI Bed: primary 305 subset",
     (BED_TYPE_LINAK, LINAK_VARIANT_AA_CONTROL_MY_BED): "AA Control My Bed app",
     (BED_TYPE_LINAK, LINAK_VARIANT_CARPE_DIEM): "Carpe Diem Beds app",
     (BED_TYPE_DORSAL, DORSAL_ROOMI_S655_PLUS): DORSAL_ROUTES[DORSAL_ROOMI_S655_PLUS],
@@ -1583,6 +1588,15 @@ def _detect_with_first_pass(
     if ergobq_product(identity, service_info.name) is not None:
         return DetectionResult("ergobq", 0.99, ["service_data:ergobq_bed"])
     result = _detect_bed_type_with_app_candidates(service_info, first)
+    from .profiles.ai_bed import candidate as ai_bed_candidate
+    if ai_bed_candidate(service_info.name or "") and not any(
+        signal.startswith("excluded:") or signal == "name:suta_accessory" for signal in result.signals
+    ):
+        if result.bed_type is None:
+            result = DetectionResult("ai_bed", 0.3, [*result.signals, "app_hint:ai_bed"])
+        elif result.bed_type != "ai_bed":
+            result.ambiguous_types = list(dict.fromkeys([*(result.ambiguous_types or ()), "ai_bed"]))
+            result.signals.append("app_hint:ai_bed")
     from .profiles.ronco_motion import accepts_name as ronco_name
 
     if ronco_name(service_info.name or "") and not any(signal.startswith("excluded:") for signal in result.signals):

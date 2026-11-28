@@ -99,6 +99,7 @@ bed has been tested on real hardware.
 |--------|-----------------------------|--------|
 | Intellibed Sleep Genius | [OLD](docs/beds/keeson.md#intellibed-sleep-genius-old), [HHC](docs/beds/motomotion.md#intellibed-sleep-genius-hhc), massage and lights only | Intellibed |
 | [Aging in Place / Dawn House](docs/beds/keeson.md#aging-in-place--dawn-house) | [Aging in Place / Dawn House](docs/beds/keeson.md#aging-in-place--dawn-house) | Dawn House |
+| [AI Bed](docs/beds/ai_bed.md) | Limos, QRRM, HJ001 and primary 305 subset | AI Bed app |
 | [M3 Ambient](docs/beds/ambient.md) | M3 Ambient app, one-piece and split | M3 Ambient |
 | [Bedgear](docs/beds/motomotion.md#bedgear) | [Bedgear](docs/beds/motomotion.md#bedgear) | Bedgear |
 | [BedJet PowerLayer](docs/beds/bedjet-powerlayer.md) | [BedJet PowerLayer adjustable frame](docs/beds/bedjet-powerlayer.md) | BedJet (the frame, not the BedJet climate unit) |
