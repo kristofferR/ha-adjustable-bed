@@ -1953,6 +1953,16 @@ def _detect_with_first_pass(
             # Keep established receiver/name evidence in its existing priority.
             result.signals.insert(0, "name:okimiki_app_candidate")
 
+    return _detect_shared_app_candidates(service_info, first, result, platform_name)
+
+
+def _detect_shared_app_candidates(
+    service_info: BluetoothServiceInfoBleak,
+    first: FirstPass,
+    result: DetectionResult,
+    platform_name: str | None,
+) -> DetectionResult:
+    """Append shared app hints while retaining earlier receiver priorities."""
     from .profiles.symphony import scan_matches as symphony_scan_matches
 
     # Shared app keywords must not question an established receiver signature.
