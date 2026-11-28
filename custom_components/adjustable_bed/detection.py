@@ -77,6 +77,7 @@ from .const import (
     BED_TYPE_FSM_RELAX,
     BED_TYPE_FURNIMOVE,
     BED_TYPE_GALAXY,
+    BED_TYPE_GHOSTBED,
     BED_TYPE_GLIDEAWAY_MOTION,
     BED_TYPE_GMMOTOR,
     BED_TYPE_GMMOTOR_SLEEP_MM,
@@ -737,6 +738,7 @@ BED_TYPE_DISPLAY_NAMES: dict[str, str] = {
     BED_TYPE_LINX: "Linx app",
     BED_TYPE_RESTONIC: "Restonic app (Prime / Lombar / Infinity)",
     BED_TYPE_FLEXISPOT: "Flexispot app",
+    BED_TYPE_GHOSTBED: "GhostBed app",
     "kingkoil": "King Koil Bed app",
     BED_TYPE_SOMOS: "Somos / SomosBeds app",
     BED_TYPE_COMFORTBASE: "ComfortBaseForBluetooth app",
@@ -1637,6 +1639,12 @@ def _detect_with_first_pass(
                 *(result.ambiguous_types or ()), BED_TYPE_SLEEP_ASSIST_PRO
             ]
             result.signals.append(signal)
+    if first.name(BED_TYPE_GHOSTBED):
+        if result.bed_type is None:
+            result = DetectionResult(BED_TYPE_GHOSTBED, 0.3, ["name:ghostbed_app_candidate"])
+        elif result.bed_type != BED_TYPE_GHOSTBED:
+            result.ambiguous_types = list(dict.fromkeys([*(result.ambiguous_types or ()), BED_TYPE_GHOSTBED]))
+            result.signals.append("name:ghostbed_app_candidate")
     if first.name(BED_TYPE_FLEXISPOT):
         if result.bed_type is None:
             result = DetectionResult(BED_TYPE_FLEXISPOT, 0.3, ["name:flexispot_app_candidate"])

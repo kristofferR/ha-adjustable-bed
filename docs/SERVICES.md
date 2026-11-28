@@ -2792,6 +2792,10 @@ write keeps its slot uncertain until a fresh report permits another deletion. Se
 Sunday=6, empty for once), and `enabled`. Use the shared `sync_clock` action for
 Coaxing local-calendar synchronization. See [My Side](beds/richmat.md#my-side).
 
+### GhostBed alarms and clock
+
+GhostBed app beds support `set_alarm` slots 1–4 with weekdays and `wake_mode_1` (Basic) or `wake_mode_2` (Pro). Both bank reports must be available before editing. `sync_clock` writes HA local time. Confirmed native Delete alarm buttons compact the four records; see [GhostBed](beds/flexispot.md#ghostbed).
+
 ## AI Bed primary-route controls
 
 `adjustable_bed.ai_bed` supports `inflation`, `vibration_apply`,
