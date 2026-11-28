@@ -2802,3 +2802,7 @@ Coaxing local-calendar synchronization. See [My Side](beds/richmat.md#my-side).
 printable ASCII characters) or `leave_group`. Grouping disconnects each receiver
 after writing. Physical timer durations and group synchronization are unverified.
 Use Set alarm for the selected layout’s preset/massage alarm combinations.
+
+### GhostBed alarms and clock
+
+GhostBed app beds support `set_alarm` slots 1–4 with weekdays and `wake_mode_1` (Basic) or `wake_mode_2` (Pro). Both bank reports must be available before editing. `sync_clock` writes HA local time. Confirmed native Delete alarm buttons compact the four records; see [GhostBed](beds/flexispot.md#ghostbed).
