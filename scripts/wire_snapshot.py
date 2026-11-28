@@ -2797,6 +2797,16 @@ def build_scenarios() -> list[Scenario]:
     scenarios = [default_scenario(bed_type) for bed_type in SUPPORTED_BED_TYPES
                  if bed_type not in RICHMAT_MH_APP_CATALOGS]
     scenarios.extend(route_scenarios())
+    scenarios.extend(
+        Scenario(id=f"aminach:motors:{count}", bed_type="aminach",
+                 entry_data={"motor_count": count}, layout_id="aminach")
+        for count in (1, 2, 3)
+    )
+    scenarios.extend(
+        Scenario(id=f"dunlopillo:{layout}", bed_type="dunlopillo", protocol_variant=layout,
+                 layout_id="dunlopillo")
+        for layout in ("b1", "b2", "c1", "d1")
+    )
     scenarios.extend(Scenario(id=f"ai_bed:{route}", bed_type="ai_bed", protocol_variant=route, layout_id=f"ai_bed:{route}") for route in ("limos", "hj001", "qrrm"))
     scenarios.append(Scenario(id="intellibed:hhc", bed_type="intellibed", protocol_variant="hhc"))
     scenarios.extend(Scenario(id=f"berun:v{v}", bed_type="berun", protocol_variant=f"v{v}",
@@ -3068,6 +3078,8 @@ async def _build(scenario: Scenario, client: Any) -> Any:
         {**_base_entry_data(), **scenario.entry_data},
     )
     coordinator.client = client
+    if scenario.bed_type == "aminach":
+        coordinator.motor_count = scenario.entry_data.get("motor_count", 2)
     if scenario.bed_type == "junasleep":
         coordinator.ble_device_name = scenario.entry_data["ble_device_name"]
     if scenario.bed_type == "konfurt" or (scenario.bed_type == "solace" and scenario.protocol_variant == "flexirest"):

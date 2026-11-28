@@ -380,6 +380,7 @@ entities, including the light colors, are separate.
 | [Restonic BT (Keeson)](beds/keeson.md#restonic-bt-profiles) | Remote A: `head_up`, `head_down`, `feet_up`, `feet_down`, `flat`, `zero_g`. Remote B adds `back_legs_up`, `back_legs_down`, `light`, `zzz` | Directions, remote B's back and legs and remote A's `zero_g` keep going while held; the others run once |
 | [Bed Tech](beds/richmat.md#bed-tech) | The selected model's held `mh_XX` controls, such as `mh_24` (head up) and `mh_25` (head down) on 5I | At most 30 seconds. Save buttons cannot be held. The separate intervention receiver has no held controls |
 | [ENSO Sleep Control](beds/richmat.md#enso-sleep-control) | The current layout’s held directions and recalls, such as `motor_1_up` and E3RM `memory_1` | Save and alternate actions have separate buttons |
+| [Dunlopillo Remote](beds/keeson.md#dunlopillo-remote) | `head_up`, `head_down`, `feet_up`, `feet_down`; D1 also `tilt_up`, `tilt_down`, `lumbar_up`, `lumbar_down`; B1 also `massage_screen`, `massage_contour`; C1/D1 also `reclined`, `raised` | Reset is a confirmed, bounded button and has no held action. |
 | [Enso Remote](beds/keeson.md#enso-remote) | `head_up`, `head_down` (back), `feet_up`, `feet_down`, plus `both_up`/`both_down` (2 motors), `lumbar_up`/`lumbar_down` (3 and 4 motors) and `tilt_up`/`tilt_down` (waist, 4 motors); `memory_A`, `memory_B`, `timer_memory_page`, and `massage_mode` on 3 motors | |
 | [Jerome's Adjustable Base](beds/richmat.md#jeromes-adjustable-base) | `jerome_adjustable_base_head_up`, `jerome_adjustable_base_feet_up`, `jerome_adjustable_base_head_feet_up` and their down directions | Sends STOP on the admitted side |
 | [Jerome's power base](beds/richmat.md#jeromes-power-base) | `jerome_` controls of the selected layout that can be held, such as `jerome_head_up` | Saves cannot be held |
@@ -416,6 +417,7 @@ the name against its own rules before any name changes:
 | [ERGOBALANCE](beds/jiecang.md#ergobalance-dreamask) and [Dream Motion](beds/jiecang.md#dream-motion-dreamotion) | 1 to 20 plain letters or digits |
 | [Dream Motion HD](beds/jiecang.md#dream-motion-hd) | 1 to 20 plain letters, digits, spaces and punctuation |
 | [Comfort Motion app](beds/jiecang.md#comfort-motion-app) | 1 to 18 plain letters, digits, dots or underscores, on beds that report a renameable name |
+| [Dunlopillo Remote](beds/keeson.md#dunlopillo-remote) | 1 to 14 characters after outer spaces are removed; ASCII recommended because multibyte names can be cut short |
 | [Enso Remote](beds/keeson.md#enso-remote) | 1 to 14 characters after leading and trailing spaces are removed; names with accented letters are cut short (see the guide) |
 | [INNOVA](beds/keeson.md#innova-profile) | At most 14 characters as typed, not empty after leading and trailing spaces are removed |
 | [FurniMove](beds/furnimove.md#controls-and-actions) | One bed at a time; a name of at most 18 characters, after leading and trailing spaces are removed, that no other bed uses |
