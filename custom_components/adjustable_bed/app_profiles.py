@@ -194,6 +194,9 @@ class SideProfile:
     keys: frozenset[str] = frozenset()
     # True when every protocol variant of the bed type is a side's own choice.
     variant_owned: bool = False
+    # App routing contracts, independent of how its setup questions are loaded.
+    ordered_pair: bool = False
+    primary_features: frozenset[str] = frozenset()
 
 
 _BY_BED_TYPE: Final[dict[str, SideProfile]] = {
@@ -423,6 +426,11 @@ _BY_VARIANT: Final[dict[tuple[str, str], SideProfile]] = {
         "Home Zone Adjustable", variant_owned=True
     ),
     ("linak", "carpe_diem"): SideProfile("Carpe Diem Beds", frozenset({CONF_MOTOR_COUNT, CONF_HAS_MASSAGE}), variant_owned=True),
+    ("linak", "tempur_relax"): SideProfile(
+        "Tempur Relax Control", frozenset({CONF_MOTOR_COUNT, CONF_HAS_MASSAGE}),
+        variant_owned=True, ordered_pair=True,
+        primary_features=frozenset({"favorites", "massage", "alarm", "automatic_drive", "reset"}),
+    ),
     (BED_TYPE_RICHMAT_CLASSIC_APPS, "maxprime"): SideProfile(
         "Maxprime layout", variant_owned=True
     ),
@@ -464,6 +472,12 @@ _BY_VARIANT: Final[dict[tuple[str, str], SideProfile]] = {
     (BED_TYPE_KEESON, KEESON_VARIANT_MAXCOIL_UNA): SideProfile("MaxCoil Una"),
     (BED_TYPE_KEESON, KEESON_VARIANT_DYNASTY_BASES): SideProfile("Dynasty Bases"),
 }
+
+
+def pair_profile(bed_type: str, variant: str | None) -> SideProfile | None:
+    """Read routing policy without loading questions or a protocol module."""
+    selected = _BY_VARIANT.get((bed_type, variant)) if variant is not None else None
+    return selected or _BY_BED_TYPE.get(bed_type)
 
 
 @cache

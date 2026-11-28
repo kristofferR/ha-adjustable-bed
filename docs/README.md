@@ -57,7 +57,7 @@ app. Every guide follows the [bed guide format](BED_GUIDE_FORMAT.md).
 | [Leggett & Platt](beds/leggett-platt.md) | LP Control, LP Comfort Connect and the L&P remotes | |
 | [Vindö](beds/vindo.md) | Carpe Diem Beds Vindö (Linak two-byte controls) |
 | [Limoss](beds/limoss.md) | Limoss Remote, FSM Relax, Stawett and older Limoss controls | Shared |
-| [Linak](beds/linak.md) | Linak Bed Control, Bed Connect, Performance Series and AR Connect native beds and headboards | |
+| [Linak](beds/linak.md) | Linak Bed Control, Bed Connect, Tempur Relax Control, Performance Series and AR Connect native beds and headboards | |
 | [ErgoBQ BED](beds/ergobq.md) | The ErgoBQ direct electric-bed route | |
 | [Linx](beds/linx.md) | The Linx app | |
 | [LOGICDATA SimplicityFrame](beds/logicdata.md) | SILVERmotion / SimplicityFrame | |

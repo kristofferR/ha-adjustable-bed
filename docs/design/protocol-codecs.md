@@ -724,3 +724,15 @@ cadence. The shared Okin controller extension binds reads, subscription,
 initialization and refresh to one connection. Release ends refresh without
 inventing a STOP; memory-store feedback never becomes motor-position state.
 See [RÖWA](../beds/okin-nframe.md#röwa-fernbedienung).
+
+
+## Tempur Relax Control
+
+Tempur Relax Control 6.1.3 (`269`) retains the original 538 literals and all
+44 full-closure cases through Linak control/configuration/timer builders and
+artifact-specific parsers. Its profile owns independent 100 ms post-completion
+timing, primary-selected STOP/wake cleanup and favorite release exceptions.
+The shared-runtime extension keeps signed parser quirks, local favorite/name
+persistence, primary ownership, ordered HA pairing and the complete alarm write
+sequence without an application ACK wait. Source-complete does not mean hardware
+verified. See the [Tempur profile](../beds/linak.md#tempur-relax-control).

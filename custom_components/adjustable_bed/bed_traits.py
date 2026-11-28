@@ -557,7 +557,7 @@ def bed_traits(bed_type: str | None, protocol_variant: str | None = None) -> Bed
     traits = _BED_TRAITS.get(resolved, _NONE)
     if resolved == "ar_connect" and protocol_variant == "headboard":
         return replace(traits, single_command_target=False)
-    if resolved == BED_TYPE_LINAK and protocol_variant == "carpe_diem":
+    if resolved == BED_TYPE_LINAK and protocol_variant in {"carpe_diem", "tempur_relax"}:
         return replace(_NO_ANGLES_SCOPED, owns_device_info_reads=True, cancellation_only_stop=True)
     if resolved == "richmat_classic_apps" and protocol_variant == "lp2":
         return replace(traits, owns_device_info_reads=True)

@@ -1,0 +1,897 @@
+[
+  {
+    "id": "A79-FULL-001",
+    "protocol": "P1",
+    "action": "Static alarm reconstruction case",
+    "inputs": {
+      "seconds": 3600,
+      "actions": [
+        [
+          14,
+          5,
+          0
+        ]
+      ]
+    },
+    "expected_bytes": "00 10 0e 01 0e 00 05 00 ; 10 a0 fd ; 20",
+    "expected": [
+      "00 10 0e 01 0e 00 05 00",
+      "10 a0 fd",
+      "20"
+    ],
+    "builder": "alarm",
+    "evidence": [
+      "ki4.smali:4403-5044; s5.smali:744-979",
+      "reproduce-full.py",
+      "full-test-vectors.json"
+    ]
+  },
+  {
+    "id": "A79-FULL-002",
+    "protocol": "P1",
+    "action": "Static alarm reconstruction case",
+    "inputs": {
+      "seconds": -3600,
+      "actions": [
+        [
+          145,
+          5,
+          0
+        ]
+      ]
+    },
+    "expected_bytes": "00 f0 f1 01 91 00 05 00 ; 10 a0 fd ; 20",
+    "expected": [
+      "00 f0 f1 01 91 00 05 00",
+      "10 a0 fd",
+      "20"
+    ],
+    "builder": "alarm",
+    "evidence": [
+      "ki4.smali:4654-4722; TimerEvent.smali:186-701",
+      "reproduce-full.py",
+      "full-test-vectors.json"
+    ]
+  },
+  {
+    "id": "A79-FULL-003",
+    "protocol": "P1",
+    "action": "Static alarm reconstruction case",
+    "inputs": {
+      "seconds": 60,
+      "actions": [
+        [
+          68,
+          5,
+          0
+        ],
+        [
+          145,
+          5,
+          0
+        ]
+      ]
+    },
+    "expected_bytes": "00 3c 00 01 44 00 05 00 91 00 05 00 ; 10 a0 fd ; 20",
+    "expected": [
+      "00 3c 00 01 44 00 05 00 91 00 05 00",
+      "10 a0 fd",
+      "20"
+    ],
+    "builder": "alarm",
+    "evidence": [
+      "s5.smali:744-979; TimerEvent.smali:186-701",
+      "reproduce-full.py",
+      "full-test-vectors.json"
+    ]
+  },
+  {
+    "id": "A79-FULL-004",
+    "protocol": "P1",
+    "action": "Static configuration reconstruction case",
+    "inputs": {
+      "data": "00 00"
+    },
+    "expected_bytes": "00 00",
+    "expected": "",
+    "builder": "configuration",
+    "evidence": [
+      "ConfigurationResponse.smali:<init>; ak.java:m0",
+      "reproduce-full.py",
+      "full-test-vectors.json"
+    ]
+  },
+  {
+    "id": "A79-FULL-005",
+    "protocol": "P1",
+    "action": "Static configuration reconstruction case",
+    "inputs": {
+      "data": "99 02 aa bb cc"
+    },
+    "expected_bytes": "99 02 aa bb cc",
+    "expected": "aa bb",
+    "builder": "configuration",
+    "evidence": [
+      "ConfigurationResponse.smali:<init>",
+      "reproduce-full.py",
+      "full-test-vectors.json"
+    ]
+  },
+  {
+    "id": "A79-FULL-006",
+    "protocol": "P1",
+    "action": "Static configuration reconstruction case",
+    "inputs": {
+      "data": "00 ff"
+    },
+    "expected_bytes": "00 ff",
+    "expected": {
+      "throws": "IllegalArgumentException"
+    },
+    "builder": "configuration",
+    "evidence": [
+      "ConfigurationResponse.smali:<init>; ak.java:m0",
+      "reproduce-full.py",
+      "full-test-vectors.json"
+    ]
+  },
+  {
+    "id": "A79-FULL-007",
+    "protocol": "P1",
+    "action": "Static configuration reconstruction case",
+    "inputs": {
+      "data": "00 02 aa"
+    },
+    "expected_bytes": "00 02 aa",
+    "expected": {
+      "throws": "IndexOutOfBoundsException"
+    },
+    "builder": "configuration",
+    "evidence": [
+      "ConfigurationResponse.smali:<init>; mj1.java:u",
+      "reproduce-full.py",
+      "full-test-vectors.json"
+    ]
+  },
+  {
+    "id": "A79-FULL-008",
+    "protocol": "P1",
+    "action": "Static configuration reconstruction case",
+    "inputs": {
+      "data": "00"
+    },
+    "expected_bytes": "00",
+    "expected": {
+      "throws": "ArrayIndexOutOfBoundsException"
+    },
+    "builder": "configuration",
+    "evidence": [
+      "ConfigurationResponse.smali:<init>",
+      "reproduce-full.py",
+      "full-test-vectors.json"
+    ]
+  },
+  {
+    "id": "A79-FULL-009",
+    "protocol": "P1",
+    "action": "Static timer_info reconstruction case",
+    "inputs": {
+      "data": "20 3c 00 01 0e 00 05 00"
+    },
+    "expected_bytes": "20 3c 00 01 0e 00 05 00",
+    "expected": {
+      "enabled": true,
+      "timer": 60,
+      "actions": [
+        [
+          "FAVORITE_1",
+          5,
+          0
+        ]
+      ]
+    },
+    "builder": "timer_info",
+    "evidence": [
+      "TimerEventInfo$Companion.smali:169-520; ky.java:m",
+      "reproduce-full.py",
+      "full-test-vectors.json"
+    ]
+  },
+  {
+    "id": "A79-FULL-010",
+    "protocol": "P1",
+    "action": "Static timer_info reconstruction case",
+    "inputs": {
+      "data": "20 00 80 01 0e 00 05 00"
+    },
+    "expected_bytes": "20 00 80 01 0e 00 05 00",
+    "expected": {
+      "enabled": false,
+      "timer": -32768,
+      "actions": []
+    },
+    "builder": "timer_info",
+    "evidence": [
+      "TimerEventInfo$Companion.smali:169-253; ky.java:m",
+      "reproduce-full.py",
+      "full-test-vectors.json"
+    ]
+  },
+  {
+    "id": "A79-FULL-011",
+    "protocol": "P1",
+    "action": "Static timer_info reconstruction case",
+    "inputs": {
+      "data": "21 00 80 01 0e 00 05 00"
+    },
+    "expected_bytes": "21 00 80 01 0e 00 05 00",
+    "expected": {
+      "enabled": true,
+      "timer": 32768,
+      "actions": [
+        [
+          "FAVORITE_1",
+          5,
+          0
+        ]
+      ]
+    },
+    "builder": "timer_info",
+    "evidence": [
+      "TimerEventInfo$Companion.smali:169-520; ky.java:m",
+      "reproduce-full.py",
+      "full-test-vectors.json"
+    ]
+  },
+  {
+    "id": "A79-FULL-012",
+    "protocol": "P1",
+    "action": "Static timer_info reconstruction case",
+    "inputs": {
+      "data": "20 ff 7f 02 44 00 ff 80 91 00 05 00"
+    },
+    "expected_bytes": "20 ff 7f 02 44 00 ff 80 91 00 05 00",
+    "expected": {
+      "enabled": true,
+      "timer": 32767,
+      "actions": [
+        [
+          "FAVORITE_4",
+          -1,
+          -128
+        ]
+      ]
+    },
+    "builder": "timer_info",
+    "evidence": [
+      "TimerEventInfo$Companion.smali:253-520",
+      "reproduce-full.py",
+      "full-test-vectors.json"
+    ]
+  },
+  {
+    "id": "A79-FULL-013",
+    "protocol": "P1",
+    "action": "Static timer_info reconstruction case",
+    "inputs": {
+      "data": "20 00 00 01"
+    },
+    "expected_bytes": "20 00 00 01",
+    "expected": {
+      "enabled": false,
+      "timer": 0,
+      "actions": []
+    },
+    "builder": "timer_info",
+    "evidence": [
+      "TimerEventInfo$Companion.smali:169-253",
+      "reproduce-full.py",
+      "full-test-vectors.json"
+    ]
+  },
+  {
+    "id": "A79-FULL-014",
+    "protocol": "P1",
+    "action": "Static timer_info reconstruction case",
+    "inputs": {
+      "data": "20 01 00 01"
+    },
+    "expected_bytes": "20 01 00 01",
+    "expected": {
+      "throws": "EOFException"
+    },
+    "builder": "timer_info",
+    "evidence": [
+      "TimerEventInfo$Companion.smali:253-283; ky.java:f",
+      "reproduce-full.py",
+      "full-test-vectors.json"
+    ]
+  },
+  {
+    "id": "A79-FULL-015",
+    "protocol": "P1",
+    "action": "Static timer_info reconstruction case",
+    "inputs": {
+      "data": "20 01 00 01 00 00 05 00"
+    },
+    "expected_bytes": "20 01 00 01 00 00 05 00",
+    "expected": {
+      "throws": "IllegalStateException"
+    },
+    "builder": "timer_info",
+    "evidence": [
+      "TimerEventInfo$Companion.smali:489-502",
+      "reproduce-full.py",
+      "full-test-vectors.json"
+    ]
+  },
+  {
+    "id": "A79-FULL-016",
+    "protocol": "P1",
+    "action": "Static timer_notification reconstruction case",
+    "inputs": {
+      "data": ""
+    },
+    "expected_bytes": "EMPTY_INPUT",
+    "expected": {
+      "kind": "ERROR",
+      "error": null
+    },
+    "builder": "timer_notification",
+    "evidence": [
+      "TimerEventNotification$Companion.smali:361-447",
+      "reproduce-full.py",
+      "full-test-vectors.json"
+    ]
+  },
+  {
+    "id": "A79-FULL-017",
+    "protocol": "P1",
+    "action": "Static timer_notification reconstruction case",
+    "inputs": {
+      "data": "ff 04"
+    },
+    "expected_bytes": "ff 04",
+    "expected": {
+      "kind": "ERROR",
+      "error": "ILLEGAL_RECURRENCE_SETTING"
+    },
+    "builder": "timer_notification",
+    "evidence": [
+      "TimerEventNotification$Companion.smali:30-119,361-447",
+      "reproduce-full.py",
+      "full-test-vectors.json"
+    ]
+  },
+  {
+    "id": "A79-FULL-018",
+    "protocol": "P1",
+    "action": "Static timer_notification reconstruction case",
+    "inputs": {
+      "data": "ff"
+    },
+    "expected_bytes": "ff",
+    "expected": {
+      "throws": "ArrayIndexOutOfBoundsException"
+    },
+    "builder": "timer_notification",
+    "evidence": [
+      "TimerEventNotification$Companion.smali:434",
+      "reproduce-full.py",
+      "full-test-vectors.json"
+    ]
+  },
+  {
+    "id": "A79-FULL-019",
+    "protocol": "P1",
+    "action": "Static timer_notification reconstruction case",
+    "inputs": {
+      "data": "ff 00"
+    },
+    "expected_bytes": "ff 00",
+    "expected": {
+      "throws": "IllegalStateException"
+    },
+    "builder": "timer_notification",
+    "evidence": [
+      "TimerEventNotification$Companion.smali:30-119; ua.java:g",
+      "reproduce-full.py",
+      "full-test-vectors.json"
+    ]
+  },
+  {
+    "id": "A79-FULL-020",
+    "protocol": "P1",
+    "action": "Static timer_notification reconstruction case",
+    "inputs": {
+      "data": "83"
+    },
+    "expected_bytes": "83",
+    "expected": {
+      "kind": "ELAPSED",
+      "channel": 4,
+      "error": null
+    },
+    "builder": "timer_notification",
+    "evidence": [
+      "TimerEventNotification$Companion.smali:121-359",
+      "reproduce-full.py",
+      "full-test-vectors.json"
+    ]
+  },
+  {
+    "id": "A79-FULL-021",
+    "protocol": "P1",
+    "action": "Static timer_notification reconstruction case",
+    "inputs": {
+      "data": "91"
+    },
+    "expected_bytes": "91",
+    "expected": {
+      "kind": "INTERRUPTED",
+      "channel": 2,
+      "error": null
+    },
+    "builder": "timer_notification",
+    "evidence": [
+      "TimerEventNotification$Companion.smali:121-359",
+      "reproduce-full.py",
+      "full-test-vectors.json"
+    ]
+  },
+  {
+    "id": "A79-FULL-022",
+    "protocol": "P1",
+    "action": "Static timer_notification reconstruction case",
+    "inputs": {
+      "data": "a2"
+    },
+    "expected_bytes": "a2",
+    "expected": {
+      "kind": "ACT_DONE",
+      "channel": 3,
+      "error": null
+    },
+    "builder": "timer_notification",
+    "evidence": [
+      "TimerEventNotification$Companion.smali:121-359",
+      "reproduce-full.py",
+      "full-test-vectors.json"
+    ]
+  },
+  {
+    "id": "A79-FULL-023",
+    "protocol": "P1",
+    "action": "Static timer_notification reconstruction case",
+    "inputs": {
+      "data": "22"
+    },
+    "expected_bytes": "22",
+    "expected": {
+      "throws": "IllegalStateException"
+    },
+    "builder": "timer_notification",
+    "evidence": [
+      "TimerEventNotification$Companion.smali:121-359",
+      "reproduce-full.py",
+      "full-test-vectors.json"
+    ]
+  },
+  {
+    "id": "A79-FULL-024",
+    "protocol": "P1",
+    "action": "Static route reconstruction case",
+    "inputs": {
+      "action": "back.up",
+      "target": "BOTH"
+    },
+    "expected_bytes": "PRIMARY:0b 00 ; SECONDARY:0b 00",
+    "expected": [
+      [
+        "PRIMARY",
+        "0b 00"
+      ],
+      [
+        "SECONDARY",
+        "0b 00"
+      ]
+    ],
+    "builder": "route",
+    "evidence": [
+      "us.smali:215-548",
+      "reproduce-full.py",
+      "full-test-vectors.json"
+    ]
+  },
+  {
+    "id": "A79-FULL-025",
+    "protocol": "P1",
+    "action": "Static route reconstruction case",
+    "inputs": {
+      "action": "back.up",
+      "target": "BOTH",
+      "secondary": false
+    },
+    "expected_bytes": "PRIMARY:0b 00",
+    "expected": [
+      [
+        "PRIMARY",
+        "0b 00"
+      ]
+    ],
+    "builder": "route",
+    "evidence": [
+      "us.smali:399-430",
+      "reproduce-full.py",
+      "full-test-vectors.json"
+    ]
+  },
+  {
+    "id": "A79-FULL-026",
+    "protocol": "P1",
+    "action": "Static route reconstruction case",
+    "inputs": {
+      "action": "back.down",
+      "target": "SECONDARY",
+      "secondary": false
+    },
+    "expected_bytes": "NO_WRITE",
+    "expected": [],
+    "builder": "route",
+    "evidence": [
+      "us.smali:551-829",
+      "reproduce-full.py",
+      "full-test-vectors.json"
+    ]
+  },
+  {
+    "id": "A79-FULL-027",
+    "protocol": "P1",
+    "action": "Static route reconstruction case",
+    "inputs": {
+      "action": "all.down",
+      "target": "BOTH"
+    },
+    "expected_bytes": "PRIMARY:00 00 ; SECONDARY:00 00",
+    "expected": [
+      [
+        "PRIMARY",
+        "00 00"
+      ],
+      [
+        "SECONDARY",
+        "00 00"
+      ]
+    ],
+    "builder": "route",
+    "evidence": [
+      "ws.smali:430-692; LinCommand$Companion.smali:four-axis override",
+      "reproduce-full.py",
+      "full-test-vectors.json"
+    ]
+  },
+  {
+    "id": "A79-FULL-028",
+    "protocol": "P1",
+    "action": "Static route reconstruction case",
+    "inputs": {
+      "action": "all.up",
+      "target": "BOTH",
+      "fail_primary": true
+    },
+    "expected_bytes": "PRIMARY:01 00",
+    "expected": [
+      [
+        "PRIMARY",
+        "01 00"
+      ]
+    ],
+    "builder": "route",
+    "evidence": [
+      "ws.smali:327-356",
+      "reproduce-full.py",
+      "full-test-vectors.json"
+    ]
+  },
+  {
+    "id": "A79-FULL-029",
+    "protocol": "P1",
+    "action": "Static discovery reconstruction case",
+    "inputs": {
+      "data": null
+    },
+    "expected_bytes": "EMPTY_INPUT",
+    "expected": {
+      "accepted": true,
+      "sdk_product": null
+    },
+    "builder": "discovery",
+    "evidence": [
+      "ManufacturerData$Companion.smali:32-end; ProductInformation$Companion.smali:32-end; DeviceInformation$Companion.smali:32-end; a6.smali:scan filters",
+      "reproduce-full.py",
+      "full-test-vectors.json"
+    ]
+  },
+  {
+    "id": "A79-FULL-030",
+    "protocol": "P1",
+    "action": "Static discovery reconstruction case",
+    "inputs": {
+      "data": "ff ff"
+    },
+    "expected_bytes": "ff ff",
+    "expected": {
+      "accepted": true,
+      "sdk_product": null
+    },
+    "builder": "discovery",
+    "evidence": [
+      "ManufacturerData$Companion.smali:32-end; ProductInformation$Companion.smali:32-end; DeviceInformation$Companion.smali:32-end; a6.smali:scan filters",
+      "reproduce-full.py",
+      "full-test-vectors.json"
+    ]
+  },
+  {
+    "id": "A79-FULL-031",
+    "protocol": "P1",
+    "action": "Static discovery reconstruction case",
+    "inputs": {
+      "data": "05 00 90 20 01 00"
+    },
+    "expected_bytes": "05 00 90 20 01 00",
+    "expected": {
+      "accepted": false,
+      "sdk_product": "WIFI2LIN"
+    },
+    "builder": "discovery",
+    "evidence": [
+      "ManufacturerData$Companion.smali:32-end; ProductInformation$Companion.smali:32-end; DeviceInformation$Companion.smali:32-end; a6.smali:scan filters",
+      "reproduce-full.py",
+      "full-test-vectors.json"
+    ]
+  },
+  {
+    "id": "A79-FULL-032",
+    "protocol": "P1",
+    "action": "Static discovery reconstruction case",
+    "inputs": {
+      "data": "05 00 90 20 01 01"
+    },
+    "expected_bytes": "05 00 90 20 01 01",
+    "expected": {
+      "accepted": false,
+      "sdk_product": "WIFI2LIN"
+    },
+    "builder": "discovery",
+    "evidence": [
+      "ManufacturerData$Companion.smali:32-end; ProductInformation$Companion.smali:32-end; DeviceInformation$Companion.smali:32-end; a6.smali:scan filters",
+      "reproduce-full.py",
+      "full-test-vectors.json"
+    ]
+  },
+  {
+    "id": "A79-FULL-033",
+    "protocol": "P1",
+    "action": "Static discovery reconstruction case",
+    "inputs": {
+      "data": "05 00 90 20 01 02"
+    },
+    "expected_bytes": "05 00 90 20 01 02",
+    "expected": {
+      "accepted": false,
+      "sdk_product": "WIFI2LIN"
+    },
+    "builder": "discovery",
+    "evidence": [
+      "ManufacturerData$Companion.smali:32-end; ProductInformation$Companion.smali:32-end; DeviceInformation$Companion.smali:32-end; a6.smali:scan filters",
+      "reproduce-full.py",
+      "full-test-vectors.json"
+    ]
+  },
+  {
+    "id": "A79-FULL-034",
+    "protocol": "P1",
+    "action": "Static discovery reconstruction case",
+    "inputs": {
+      "data": "05 00 90 20 04 00"
+    },
+    "expected_bytes": "05 00 90 20 04 00",
+    "expected": {
+      "accepted": false,
+      "sdk_product": "RECLINER"
+    },
+    "builder": "discovery",
+    "evidence": [
+      "ManufacturerData$Companion.smali:32-end; ProductInformation$Companion.smali:32-end; DeviceInformation$Companion.smali:32-end; a6.smali:scan filters",
+      "reproduce-full.py",
+      "full-test-vectors.json"
+    ]
+  },
+  {
+    "id": "A79-FULL-035",
+    "protocol": "P1",
+    "action": "Static discovery reconstruction case",
+    "inputs": {
+      "data": "05 00 90 20 04 01"
+    },
+    "expected_bytes": "05 00 90 20 04 01",
+    "expected": {
+      "accepted": false,
+      "sdk_product": "RECLINER"
+    },
+    "builder": "discovery",
+    "evidence": [
+      "ManufacturerData$Companion.smali:32-end; ProductInformation$Companion.smali:32-end; DeviceInformation$Companion.smali:32-end; a6.smali:scan filters",
+      "reproduce-full.py",
+      "full-test-vectors.json"
+    ]
+  },
+  {
+    "id": "A79-FULL-036",
+    "protocol": "P1",
+    "action": "Static discovery reconstruction case",
+    "inputs": {
+      "data": "05 00 90 20 04 02"
+    },
+    "expected_bytes": "05 00 90 20 04 02",
+    "expected": {
+      "accepted": false,
+      "sdk_product": "RECLINER"
+    },
+    "builder": "discovery",
+    "evidence": [
+      "ManufacturerData$Companion.smali:32-end; ProductInformation$Companion.smali:32-end; DeviceInformation$Companion.smali:32-end; a6.smali:scan filters",
+      "reproduce-full.py",
+      "full-test-vectors.json"
+    ]
+  },
+  {
+    "id": "A79-FULL-037",
+    "protocol": "P1",
+    "action": "Static discovery reconstruction case",
+    "inputs": {
+      "data": "05 00 90 20 02 06"
+    },
+    "expected_bytes": "05 00 90 20 02 06",
+    "expected": {
+      "accepted": false,
+      "sdk_product": "DPI"
+    },
+    "builder": "discovery",
+    "evidence": [
+      "ManufacturerData$Companion.smali:32-end; ProductInformation$Companion.smali:32-end; DeviceInformation$Companion.smali:32-end; a6.smali:scan filters",
+      "reproduce-full.py",
+      "full-test-vectors.json"
+    ]
+  },
+  {
+    "id": "A79-FULL-038",
+    "protocol": "P1",
+    "action": "Static discovery reconstruction case",
+    "inputs": {
+      "data": "05 00 90 20 02 00"
+    },
+    "expected_bytes": "05 00 90 20 02 00",
+    "expected": {
+      "accepted": true,
+      "sdk_product": "DESK"
+    },
+    "builder": "discovery",
+    "evidence": [
+      "ManufacturerData$Companion.smali:32-end; ProductInformation$Companion.smali:32-end; DeviceInformation$Companion.smali:32-end; a6.smali:scan filters",
+      "reproduce-full.py",
+      "full-test-vectors.json"
+    ]
+  },
+  {
+    "id": "A79-FULL-039",
+    "protocol": "P1",
+    "action": "Static discovery reconstruction case",
+    "inputs": {
+      "data": "05 00 90 20 99 00"
+    },
+    "expected_bytes": "05 00 90 20 99 00",
+    "expected": {
+      "accepted": true,
+      "sdk_product": null
+    },
+    "builder": "discovery",
+    "evidence": [
+      "ManufacturerData$Companion.smali:32-end; ProductInformation$Companion.smali:32-end; DeviceInformation$Companion.smali:32-end; a6.smali:scan filters",
+      "reproduce-full.py",
+      "full-test-vectors.json"
+    ]
+  },
+  {
+    "id": "A79-FULL-040",
+    "protocol": "P1",
+    "action": "Static discovery reconstruction case",
+    "inputs": {
+      "data": "05 00 90 10 01 00"
+    },
+    "expected_bytes": "05 00 90 10 01 00",
+    "expected": {
+      "accepted": true,
+      "sdk_product": null
+    },
+    "builder": "discovery",
+    "evidence": [
+      "ManufacturerData$Companion.smali:32-end; ProductInformation$Companion.smali:32-end; DeviceInformation$Companion.smali:32-end; a6.smali:scan filters",
+      "reproduce-full.py",
+      "full-test-vectors.json"
+    ]
+  },
+  {
+    "id": "A79-FULL-041",
+    "protocol": "P1",
+    "action": "Static discovery reconstruction case",
+    "inputs": {
+      "data": "04 00 90 20 01"
+    },
+    "expected_bytes": "04 00 90 20 01",
+    "expected": {
+      "throws": "IllegalArgumentException"
+    },
+    "builder": "discovery",
+    "evidence": [
+      "ManufacturerData$Companion.smali:32-end; ProductInformation$Companion.smali:32-end; DeviceInformation$Companion.smali:32-end; a6.smali:scan filters",
+      "reproduce-full.py",
+      "full-test-vectors.json"
+    ]
+  },
+  {
+    "id": "A79-FULL-042",
+    "protocol": "P1",
+    "action": "Static discovery reconstruction case",
+    "inputs": {
+      "data": "05 00 90 20"
+    },
+    "expected_bytes": "05 00 90 20",
+    "expected": {
+      "throws": "EOFException"
+    },
+    "builder": "discovery",
+    "evidence": [
+      "ManufacturerData$Companion.smali:32-end; ProductInformation$Companion.smali:32-end; DeviceInformation$Companion.smali:32-end; a6.smali:scan filters",
+      "reproduce-full.py",
+      "full-test-vectors.json"
+    ]
+  },
+  {
+    "id": "A79-FULL-043",
+    "protocol": "P1",
+    "action": "Static discovery reconstruction case",
+    "inputs": {
+      "data": "00"
+    },
+    "expected_bytes": "00",
+    "expected": {
+      "throws": "EOFException"
+    },
+    "builder": "discovery",
+    "evidence": [
+      "ManufacturerData$Companion.smali:32-end; ProductInformation$Companion.smali:32-end; DeviceInformation$Companion.smali:32-end; a6.smali:scan filters",
+      "reproduce-full.py",
+      "full-test-vectors.json"
+    ]
+  },
+  {
+    "id": "A79-FULL-044",
+    "protocol": "P1",
+    "action": "Static discovery reconstruction case",
+    "inputs": {
+      "data": "03 10 90 01"
+    },
+    "expected_bytes": "03 10 90 01",
+    "expected": {
+      "accepted": true,
+      "sdk_product": null
+    },
+    "builder": "discovery",
+    "evidence": [
+      "ManufacturerData$Companion.smali:32-end; ProductInformation$Companion.smali:32-end; DeviceInformation$Companion.smali:32-end; a6.smali:scan filters",
+      "reproduce-full.py",
+      "full-test-vectors.json"
+    ]
+  }
+]
