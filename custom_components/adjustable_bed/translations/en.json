@@ -3199,6 +3199,8 @@
       "hjbed_foot_box_down": {
         "name": "Foot box down"
       },
+      "cosyworld_lift_up": {"name": "Lift up"},
+      "cosyworld_lift_down": {"name": "Lift down"},
       "tv_lift_up": {
         "name": "TV lift up"
       },

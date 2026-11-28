@@ -10,6 +10,7 @@ from bleak import BleakClient
 from bleak.backends.characteristic import BleakGATTCharacteristic
 
 from ...codec.octo import OctoCapabilityRecord, _encode_capability_value
+from ...command_scheduler import note_frame_skipped
 from ...const import CONF_OCTO_PIN
 from ...controller_state import StateKey
 from ...errors import BedNotConnectedError, invalid
@@ -35,6 +36,10 @@ from .controller import (
     OCTO_FEATURE_SYNCHRO,
     OctoController,
 )
+
+
+class _HoldExpired(Exception):
+    """The gesture ended while its next frame waited for the BLE lane."""
 
 
 class CosyworldController(OctoController):
@@ -337,6 +342,8 @@ class CosyworldController(OctoController):
         repeat_count: int = 1,
         repeat_delay_ms: int = 100,
         cancel_event: asyncio.Event | None = None,
+        *,
+        before_write: Callable[[], None] | None = None,
     ) -> None:
         client, generation = self.client, self._session_generation
         key = tuple(command)
@@ -352,6 +359,11 @@ class CosyworldController(OctoController):
             if not stop and key not in setup | pin:
                 self._require_normal_controls()
 
+        def admit() -> None:
+            check()
+            if before_write is not None:
+                before_write()
+
         check()
         await self._write_gatt_with_retry(
             app.CHARACTERISTIC,
@@ -362,7 +374,7 @@ class CosyworldController(OctoController):
             response=False,
             expected_client=client,
             characteristic=self._write_characteristic,
-            before_write=check,
+            before_write=admit,
             settle_write=True,
             write_timeout=self.profile.write_timeout_s,
             wall_clock_pacing=True,
@@ -572,16 +584,31 @@ class CosyworldController(OctoController):
             mask, direction = self._held_motor_command(control)
             command, data = [2, 0x70 if direction == "up" else 0x71], [mask]
         cancel = self._coordinator.cancel_command
-        count = -(-duration_ms // self.profile.refresh_ms)
+        loop = asyncio.get_running_loop()
+        deadline = loop.time() + duration_ms / 1000
+        sent_at = loop.time()
+
+        def admit() -> None:
+            nonlocal sent_at
+            self._check_current(client, generation)
+            sent_at = loop.time()
+            if sent_at >= deadline:
+                note_frame_skipped()
+                raise _HoldExpired
+
         try:
-            await self._write_octo_command(command, data, count, self.profile.refresh_ms, cancel)
-            if not cancel.is_set():
-                try:
-                    await asyncio.wait_for(
-                        cancel.wait(), (duration_ms - (count - 1) * self.profile.refresh_ms) / 1000
-                    )
-                except TimeoutError:
-                    pass
+            while loop.time() < deadline and not cancel.is_set():
+                await self._write_octo_command(
+                    command, data, cancel_event=cancel, before_write=admit
+                )
+                remaining = min(deadline, sent_at + self.profile.refresh_ms / 1000) - loop.time()
+                if remaining > 0 and not cancel.is_set():
+                    try:
+                        await asyncio.wait_for(cancel.wait(), remaining)
+                    except TimeoutError:
+                        pass
+        except _HoldExpired:
+            pass
         finally:
             if self._current(client, generation):
                 await self._stop_motors()

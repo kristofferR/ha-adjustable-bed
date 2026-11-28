@@ -462,7 +462,7 @@ _NAME_ONLY_CONFIDENCE = 0.3
 # Explicit app candidates offered beside a confident match are hints, not ambiguity.
 _EXPLICIT_APP_HINTS = frozenset(
     {
-        "ergosportive", "avek", "active_sleep","topcare", "ai_bed", "intellibed", BED_TYPE_RONCO_MOTION, BED_TYPE_COMFORT_BED, BED_TYPE_ATLAS_LIFT, BED_TYPE_DORSAL, BED_TYPE_ENSO2, BED_TYPE_ERGOBED, BED_TYPE_LIKIMIO, BED_TYPE_MOODBASE, "thrivesleep", "super_colchones", "dreamsense", "muuegm", "awmotion", "saatva", "bobpowerbase", BED_TYPE_COMFORT_ENHANCEMENT3, BED_TYPE_MYSIDE, BED_TYPE_RICHMAT_APP_SLEEP, BED_TYPE_RICHMAT_APP, BED_TYPE_RICHMAT_CLASSIC_APPS, BED_TYPE_MOTOMOTION, BED_TYPE_MLILY, BED_TYPE_MLILY0, BED_TYPE_GALAXY, BED_TYPE_GOODVIBE, BED_TYPE_HJBED, BED_TYPE_ESHINE_OKIN, BED_TYPE_ISLEEP, BED_TYPE_KOMFYD, BED_TYPE_COMFYDS, BED_TYPE_RIZE, BED_TYPE_STARCODE_ABM5_4, BED_TYPE_MOTION_BED, BED_TYPE_VMATBASIC, BED_TYPE_FURNIMOVE,
+        BED_TYPE_COSYWORLD, "ergosportive", "avek", "active_sleep","topcare", "ai_bed", "intellibed", BED_TYPE_RONCO_MOTION, BED_TYPE_COMFORT_BED, BED_TYPE_ATLAS_LIFT, BED_TYPE_DORSAL, BED_TYPE_ENSO2, BED_TYPE_ERGOBED, BED_TYPE_LIKIMIO, BED_TYPE_MOODBASE, "thrivesleep", "super_colchones", "dreamsense", "muuegm", "awmotion", "saatva", "bobpowerbase", BED_TYPE_COMFORT_ENHANCEMENT3, BED_TYPE_MYSIDE, BED_TYPE_RICHMAT_APP_SLEEP, BED_TYPE_RICHMAT_APP, BED_TYPE_RICHMAT_CLASSIC_APPS, BED_TYPE_MOTOMOTION, BED_TYPE_MLILY, BED_TYPE_MLILY0, BED_TYPE_GALAXY, BED_TYPE_GOODVIBE, BED_TYPE_HJBED, BED_TYPE_ESHINE_OKIN, BED_TYPE_ISLEEP, BED_TYPE_KOMFYD, BED_TYPE_COMFYDS, BED_TYPE_RIZE, BED_TYPE_STARCODE_ABM5_4, BED_TYPE_MOTION_BED, BED_TYPE_VMATBASIC, BED_TYPE_FURNIMOVE,
      BED_TYPE_GMMOTOR, BED_TYPE_OKIMIKI, BED_TYPE_SIMMONS_BLUE, "gmmotor_sleep_mm", "gmmotor_sleep_sxb", "sealy_posturematic", "instant_comfort", BED_TYPE_TRUEMOTION,
      BED_TYPE_JEROME_ADJUSTABLE_BASE, BED_TYPE_VINDO, BED_TYPE_AMBIENT, "silksnow", BED_TYPE_MOTIONFLEX}
 )
@@ -1604,7 +1604,10 @@ def _confident_auto_detect(result: DetectionResult) -> str | None:
     if (
         result.bed_type is not None
         and result.confidence >= _AUTO_DETECT_MIN_CONFIDENCE
-        and not _shared_receiver_choice(result)
+        and not (
+            result.bed_type == BED_TYPE_OCTO
+            and BED_TYPE_COSYWORLD in (result.ambiguous_types or ())
+        )
         and not any(
             candidate not in _EXPLICIT_APP_HINTS for candidate in (result.ambiguous_types or ())
         )

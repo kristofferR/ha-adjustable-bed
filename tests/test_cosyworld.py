@@ -11,6 +11,7 @@ from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 from homeassistant.const import CONF_ADDRESS, CONF_NAME
+from homeassistant.exceptions import HomeAssistantError
 from pytest_homeassistant.common import MockConfigEntry
 
 from custom_components.adjustable_bed import const
@@ -721,3 +722,203 @@ async def test_duration_retains_alternate_peer_metadata_while_replacing_whole_va
         c._build_packet([0x20, 0x72], _encode_capability_value(r, bytes((minutes,))))
     ]
     assert c._capability_records[0x103] == r.with_value(bytes((minutes,)))
+
+
+@pytest.fixture
+async def public_hold_runtime(runtime, hass):
+    from custom_components.adjustable_bed.services import async_register_services
+    from tests.test_octo_services import _register_service_device
+
+    co, c, client = runtime
+    complete(c, record(2, characteristic=b"\x01"))
+    co._ready = True
+    co.async_ensure_connected = AsyncMock(return_value=True)
+    device = _register_service_device(hass, co.entry, co)
+    await async_register_services(hass)
+    yield co, c, client, device
+    co._cancel_disconnect_timer()
+
+
+@pytest.mark.parametrize(
+    "service,control,vector",
+    (
+        ("hold_control", "back_up", "V-M1-up"),
+        ("hold_control", "memory_1", "V-recall-0"),
+        ("goto_preset", None, "V-recall-0"),
+    ),
+)
+@pytest.mark.parametrize(
+    "latency,starts,release",
+    (
+        (0, [0.0, 0.35, 0.7], 1.0),
+        (0.1, [0.0, 0.35, 0.7], 1.0),
+        (0.4, [0.0, 0.4, 0.8], 1.2),
+        (1.0, [0.0], 1.0),
+        (1.2, [0.0], 1.2),
+    ),
+)
+async def test_public_timed_hold_obeys_elapsed_deadline(
+    public_hold_runtime, hass, service, control, vector, latency, starts, release
+):
+    _, _, client, device = public_hold_runtime
+    events = []
+    with virtual_clock() as clock:
+
+        async def write(_char, payload, **_kwargs):
+            events.append((round(clock.now, 6), bytes(payload)))
+            await asyncio.sleep(latency)
+
+        client.write_gatt_char.side_effect = write
+        fields = {"control": control} if control is not None else {"preset": 1}
+        await hass.services.async_call(
+            const.DOMAIN,
+            service,
+            {"device_id": device.id, "duration": 1, **fields},
+            blocking=True,
+        )
+        expected = bytes.fromhex(next(r["expected_bytes"] for r in VECTORS if r["id"] == vector))
+        assert [at for at, data in events if data == expected] == starts
+        assert events[-1] == (release, bytes.fromhex("40 02 73 00 00 0b 40"))
+        # An already submitted frame and the cleanup write settle normally.
+        assert clock.now == pytest.approx(release + latency)
+
+
+@pytest.mark.parametrize("lane_released", (0.2, 1.1))
+async def test_public_timed_hold_accounts_for_queued_ble_lane(
+    public_hold_runtime, hass, lane_released
+):
+    _, c, client, device = public_hold_runtime
+    await c._ble_lock.acquire()
+    events = []
+    with virtual_clock() as clock:
+
+        async def unlock():
+            await asyncio.sleep(lane_released)
+            c._ble_lock.release()
+
+        async def write(_char, payload, **_kwargs):
+            events.append((round(clock.now, 6), bytes(payload)))
+
+        client.write_gatt_char.side_effect = write
+        unlocker = asyncio.create_task(unlock())
+        await hass.services.async_call(
+            const.DOMAIN,
+            "hold_control",
+            {"device_id": device.id, "control": "back_up", "duration": 1},
+            blocking=True,
+        )
+        await unlocker
+        if lane_released > 1:
+            assert events == [(1.1, bytes.fromhex("40 02 73 00 00 0b 40"))]
+        else:
+            assert [at for at, _ in events] == [0.2, 0.55, 0.9, 1.0]
+        assert clock.now == pytest.approx(max(1, lane_released))
+
+
+@pytest.mark.parametrize("control", ("back_up", "memory_1"))
+async def test_public_slow_timed_hold_cancellation_still_sends_fresh_stop(
+    public_hold_runtime, hass, control
+):
+    co, _, client, device = public_hold_runtime
+    events = []
+    with virtual_clock() as clock:
+
+        async def write(_char, payload, **_kwargs):
+            if not events:
+                asyncio.get_running_loop().call_later(0.2, co.cancel_command.set)
+            events.append((round(clock.now, 6), bytes(payload)))
+            await asyncio.sleep(0.6)
+
+        client.write_gatt_char.side_effect = write
+        await hass.services.async_call(
+            const.DOMAIN,
+            "hold_control",
+            {"device_id": device.id, "control": control, "duration": 1},
+            blocking=True,
+        )
+        assert len(events) == 2
+        assert events[-1] == (0.6, bytes.fromhex("40 02 73 00 00 0b 40"))
+        assert clock.now == pytest.approx(1.2)
+
+
+@pytest.mark.parametrize(
+    "service,operand,motion",
+    (
+        ("hold_control", {"control": "back_up"}, "40 02 70 00 01 0b 02 40"),
+        ("goto_preset", {"preset": 1}, "40 02 72 00 01 0b 00 40"),
+    ),
+)
+async def test_timed_hold_cannot_refresh_after_retained_link_subscription_recovery(
+    public_hold_runtime, hass, service, operand, motion
+):
+    from bleak.exc import BleakError
+
+    co, controller, client, device = public_hold_runtime
+    generation = controller._session_generation
+    co._link_ready = True
+    client.start_notify.side_effect = None
+    client.disconnect.side_effect = BleakError("receiver retained the live link")
+    motion = bytes.fromhex(motion)
+    moves = []
+    with virtual_clock() as clock:
+
+        async def write(_char, payload, **_kwargs):
+            payload = bytes(payload)
+            if payload in (motion, bytes.fromhex("40 02 73 00 00 0b 40")):
+                moves.append((round(clock.now, 6), payload))
+            if payload == app.STARTUP[0]:
+                controller._ping_event.set()
+            elif payload == app.STARTUP[1]:
+                controller._device_info = {"cid": 1, "pid": 2, "firmware": 3, "hardware": 4}
+                controller._device_info_event.set()
+            elif payload == app.STARTUP[2]:
+                complete(
+                    controller, record(1, characteristic=b"\x02"),
+                    record(2, characteristic=b"\x01"),
+                    record(3, b"\x00\x01", characteristic=b"\x00"),
+                )
+
+        async def recover():
+            await asyncio.sleep(0.1)
+            assert not await co.async_disconnect(reason="sequential_switch")
+            assert co.is_connected and controller._session_ready
+            assert controller._session_generation != generation
+
+        client.write_gatt_char.side_effect = write
+        recovery = asyncio.create_task(recover())
+        try:
+            await hass.services.async_call(
+                const.DOMAIN, service,
+                {"device_id": device.id, "duration": 1, **operand}, blocking=True,
+            )
+        except HomeAssistantError:
+            # The public service may translate the stale-session rejection.
+            pass
+        await recovery
+        assert moves == [(0.0, motion)]
+
+
+@pytest.mark.parametrize("name", ("BED-Linak", "RC2", "CLI"))
+def test_cosyworld_hint_preserves_dedicated_confidence_and_shared_app_choice(name):
+    from custom_components.adjustable_bed.config_flow import _confident_auto_detect
+    from custom_components.adjustable_bed.detection import detect_bed_type_detailed
+    from tests.test_detection import _make_service_info
+
+    services = (
+        [const.LINAK_CONTROL_SERVICE_UUID, app.SERVICE] if name == "BED-Linak" else [app.SERVICE]
+    )
+    result = detect_bed_type_detailed(_make_service_info(name, service_uuids=services))
+    assert "cosyworld" in result.ambiguous_types
+    assert _confident_auto_detect(result) == (const.BED_TYPE_LINAK if name == "BED-Linak" else None)
+
+
+def test_cosyworld_hint_does_not_mask_dedicated_star2_recommendation():
+    from custom_components.adjustable_bed.profile_recommendations import recommend_profile
+    from tests.test_profile_recommendations import advertisement
+
+    result = recommend_profile(
+        {const.CONF_BED_TYPE: "octo", const.CONF_PROTOCOL_VARIANT: "standard"},
+        advertisement("DA1458x", [const.OCTO_STAR2_SERVICE_UUID, app.SERVICE]),
+        {},
+    )
+    assert result is not None and "octo:star2" in result.choices

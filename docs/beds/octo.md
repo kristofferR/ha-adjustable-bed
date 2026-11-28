@@ -969,8 +969,13 @@ PIN refresh is not enabled for this app.
 
 #### Services
 
-The shared `hold_control`, `recall_memory` and `save_preset` actions use the same
-controls and memory gates as the entities. `octo_enroll_pin` accepts one
+The shared `hold_control`, `goto_preset` and `save_preset` actions use the same
+controls and memory gates as the entities. Timed motor and memory holds use an
+elapsed-time deadline; a queued refresh cannot begin after it. An in-flight
+write settles before the original connection's STOP, so a slow write can delay
+cleanup beyond the requested duration.
+
+`octo_enroll_pin` accepts one
 Cosyworld receiver and matching four-digit entries. It requires an unlocked
 receiver without an existing PIN. If the receiver requires a first PIN,
 normal movement stays unavailable until that PIN has been set.

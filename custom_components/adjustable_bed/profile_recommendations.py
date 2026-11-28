@@ -327,6 +327,9 @@ def recommend_profile(
         "kingkoil", "konfurt", BED_TYPE_SOMOS, BED_TYPE_LIKIMIO, "sleeptime", "saatva", "dreamsense", "muuegm", "thrivesleep", "super_colchones",
         BED_TYPE_RICHMAT_APP, BED_TYPE_RICHMAT_APP_SLEEP,
     }
+    if detected.bed_type != BED_TYPE_OCTO:
+        # FFE0 offers an app choice, not competing evidence for another receiver.
+        receiver_ambiguities.discard(BED_TYPE_COSYWORLD)
     if (detected.confidence < 0.9 or receiver_ambiguities) and not any(
         signal.startswith(("name:", "manufacturer", "mac:"))
         and signal not in (
