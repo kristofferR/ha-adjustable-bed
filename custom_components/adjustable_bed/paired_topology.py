@@ -64,7 +64,7 @@ from .const import (
     SIDE_LEFT,
     SIDE_RIGHT,
 )
-from .errors import failed, keyed
+from .errors import failed, invalid, keyed
 from .profile_id import entry_profile_id, profile_route
 
 if TYPE_CHECKING:
@@ -478,9 +478,9 @@ class PairTopology(ABC):
             return [(s, self._children[s]) for s in PAIR_SIDES if s in self._children]
         return [(side, self._children[side])]
 
-    def check_admission(self, targets: Collection[PairTarget]) -> None:
+    def check_admission(self, targets: Collection[PairTarget], *, persistent_link_error: str | None = None) -> None:
         """Reject a request this topology can never execute."""
-        del targets
+        del targets, persistent_link_error
 
     @abstractmethod
     def preempts_active(self, command_scope: frozenset[str]) -> bool:
@@ -1306,7 +1306,9 @@ class SequentialTwoLinkTopology(PairTopology):
         """Return the command cycle that owns the link lane, if one runs."""
         return self._cycle
 
-    def check_admission(self, targets: Collection[PairTarget]) -> None:
+    def check_admission(self, targets: Collection[PairTarget], *, persistent_link_error: str | None = None) -> None:
+        if persistent_link_error is not None:
+            raise invalid(persistent_link_error)
         if len(targets) > 1 and linked_readiness_required(targets):
             raise ValueError("This linked profile requires concurrent ready physical receivers")
 

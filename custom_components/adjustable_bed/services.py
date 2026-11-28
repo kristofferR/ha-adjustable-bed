@@ -39,6 +39,7 @@ from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers.service import (
     async_get_device_and_config_entry,
     async_register_admin_service,
+    async_register_platform_entity_service,
 )
 from homeassistant.util import dt as dt_util
 
@@ -135,6 +136,8 @@ from .runtime_data import loaded_runtime
 from .support_logs import async_setup_support_logs
 
 if TYPE_CHECKING:
+    from homeassistant.helpers.entity import Entity
+
     from .beds.entity_specs import ControllerMotorHoldSpec
     from .beds.limoss.remote import LimossRemoteController
     from .beds.svane.controller import SvaneHoldAdmission
@@ -211,6 +214,7 @@ ATTR_DIRECTION = "direction"
 ATTR_DURATION_MS = "duration_ms"
 ATTR_HOLD_OWNER = "hold_owner"
 ATTR_HOLD_GENERATION = "hold_generation"
+ATTR_HOLD_CANCELLED = "hold_cancelled"
 ATTR_DURATION = "duration"
 ATTR_SIDE = "side"
 ATTR_FIRST_MOTOR = "first_motor"
@@ -231,7 +235,6 @@ ATTR_MINUTES = "minutes"
 ATTR_CONTROL = "control"
 ATTR_HEAD_LEVEL = "head_level"
 ATTR_FOOT_LEVEL = "foot_level"
-
 
 
 POSITION_MOTOR_OPTIONS = (
@@ -1023,6 +1026,14 @@ async def handle_save_preset(call: ServiceCall) -> None:
             raise
 
 
+async def _cancel_held_button(entity: Entity, _call: ServiceCall) -> None:
+    from .button import ControllerActionButton, PairedBedGestureReleaseButton
+
+    if not isinstance(entity, (ControllerActionButton, PairedBedGestureReleaseButton)):
+        raise invalid("held_cancel_unavailable")
+    await entity.async_cancel_hold()
+
+
 async def handle_stop_all(call: ServiceCall) -> None:
     """Handle stop_all service call."""
     hass = call.hass
@@ -1043,7 +1054,19 @@ async def handle_stop_all(call: ServiceCall) -> None:
             # A side this bed does not have stops the whole bed.
             problems.append(err)
             side = SIDE_BOTH
-        if isinstance(coordinator, PairedBedCoordinator):
+        if (owner := call.data.get(ATTR_HOLD_OWNER)) is not None:
+            # Gesture release belongs to its lease, not whichever link/move is live now.
+            await asyncio.gather(
+                *(
+                    child.async_release_hold(
+                        owner,
+                        call.data[ATTR_HOLD_GENERATION],
+                        cancelled=call.data.get(ATTR_HOLD_CANCELLED, False),
+                    )
+                    for child in _command_targets(coordinator, side)
+                )
+            )
+        elif isinstance(coordinator, PairedBedCoordinator):
             await coordinator.async_stop_command(side=side)
         else:
             await coordinator.async_stop_command()
@@ -3525,6 +3548,14 @@ async def async_register_services(hass: HomeAssistant) -> None:
 
     for register in registrars:
         register(hass)
+    async_register_platform_entity_service(
+        hass,
+        DOMAIN,
+        "cancel_hold",
+        entity_domain="button",
+        func=_cancel_held_button,
+        schema={},
+    )
     hass.services.async_register(
         DOMAIN,
         SERVICE_GOTO_PRESET,
@@ -3558,6 +3589,8 @@ async def async_register_services(hass: HomeAssistant) -> None:
             {
                 vol.Required(CONF_DEVICE_ID): DEVICE_IDS,
                 **SIDE_FIELD,
+                **HOLD_LEASE_FIELDS,
+                vol.Optional(ATTR_HOLD_CANCELLED): cv.boolean,
             }
         ),
     )
@@ -3716,6 +3749,5 @@ async def async_register_services(hass: HomeAssistant) -> None:
             }
         ),
     )
-
 
     _LOGGER.debug("Registered Adjustable Bed services")

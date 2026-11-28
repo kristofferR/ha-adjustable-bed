@@ -1,0 +1,547 @@
+[
+  {
+    "id": "OP-headUp",
+    "protocol": "P1",
+    "action": "headUp",
+    "inputs": {
+      "opcode": 36
+    },
+    "expected_bytes": "6e01002493",
+    "evidence": [
+      "work/hermes/bundle.js:196648 (BLE_COMMANDS)",
+      "work/hermes/functions/5204.hasm:0x0010d68b offsets 0x0b-0x40"
+    ],
+    "hardware": "UNVERIFIED",
+    "kind": "literal expected bytes independently frozen from shipped opcode and builder literals; some constants are DEAD/UNUSED, see command ledger"
+  },
+  {
+    "id": "OP-headDown",
+    "protocol": "P1",
+    "action": "headDown",
+    "inputs": {
+      "opcode": 37
+    },
+    "expected_bytes": "6e01002594",
+    "evidence": [
+      "work/hermes/bundle.js:196648 (BLE_COMMANDS)",
+      "work/hermes/functions/5204.hasm:0x0010d68b offsets 0x0b-0x40"
+    ],
+    "hardware": "UNVERIFIED",
+    "kind": "literal expected bytes independently frozen from shipped opcode and builder literals; some constants are DEAD/UNUSED, see command ledger"
+  },
+  {
+    "id": "OP-footUp",
+    "protocol": "P1",
+    "action": "footUp",
+    "inputs": {
+      "opcode": 38
+    },
+    "expected_bytes": "6e01002695",
+    "evidence": [
+      "work/hermes/bundle.js:196648 (BLE_COMMANDS)",
+      "work/hermes/functions/5204.hasm:0x0010d68b offsets 0x0b-0x40"
+    ],
+    "hardware": "UNVERIFIED",
+    "kind": "literal expected bytes independently frozen from shipped opcode and builder literals; some constants are DEAD/UNUSED, see command ledger"
+  },
+  {
+    "id": "OP-footDown",
+    "protocol": "P1",
+    "action": "footDown",
+    "inputs": {
+      "opcode": 39
+    },
+    "expected_bytes": "6e01002796",
+    "evidence": [
+      "work/hermes/bundle.js:196648 (BLE_COMMANDS)",
+      "work/hermes/functions/5204.hasm:0x0010d68b offsets 0x0b-0x40"
+    ],
+    "hardware": "UNVERIFIED",
+    "kind": "literal expected bytes independently frozen from shipped opcode and builder literals; some constants are DEAD/UNUSED, see command ledger"
+  },
+  {
+    "id": "OP-pillowUp",
+    "protocol": "P1",
+    "action": "pillowUp",
+    "inputs": {
+      "opcode": 63
+    },
+    "expected_bytes": "6e01003fae",
+    "evidence": [
+      "work/hermes/bundle.js:196648 (BLE_COMMANDS)",
+      "work/hermes/functions/5204.hasm:0x0010d68b offsets 0x0b-0x40"
+    ],
+    "hardware": "UNVERIFIED",
+    "kind": "literal expected bytes independently frozen from shipped opcode and builder literals; some constants are DEAD/UNUSED, see command ledger"
+  },
+  {
+    "id": "OP-pillowDown",
+    "protocol": "P1",
+    "action": "pillowDown",
+    "inputs": {
+      "opcode": 64
+    },
+    "expected_bytes": "6e010040af",
+    "evidence": [
+      "work/hermes/bundle.js:196648 (BLE_COMMANDS)",
+      "work/hermes/functions/5204.hasm:0x0010d68b offsets 0x0b-0x40"
+    ],
+    "hardware": "UNVERIFIED",
+    "kind": "literal expected bytes independently frozen from shipped opcode and builder literals; some constants are DEAD/UNUSED, see command ledger"
+  },
+  {
+    "id": "OP-lumbarUp",
+    "protocol": "P1",
+    "action": "lumbarUp",
+    "inputs": {
+      "opcode": 65
+    },
+    "expected_bytes": "6e010041b0",
+    "evidence": [
+      "work/hermes/bundle.js:196648 (BLE_COMMANDS)",
+      "work/hermes/functions/5204.hasm:0x0010d68b offsets 0x0b-0x40"
+    ],
+    "hardware": "UNVERIFIED",
+    "kind": "literal expected bytes independently frozen from shipped opcode and builder literals; some constants are DEAD/UNUSED, see command ledger"
+  },
+  {
+    "id": "OP-lumbarDown",
+    "protocol": "P1",
+    "action": "lumbarDown",
+    "inputs": {
+      "opcode": 66
+    },
+    "expected_bytes": "6e010042b1",
+    "evidence": [
+      "work/hermes/bundle.js:196648 (BLE_COMMANDS)",
+      "work/hermes/functions/5204.hasm:0x0010d68b offsets 0x0b-0x40"
+    ],
+    "hardware": "UNVERIFIED",
+    "kind": "literal expected bytes independently frozen from shipped opcode and builder literals; some constants are DEAD/UNUSED, see command ledger"
+  },
+  {
+    "id": "OP-memSave1",
+    "protocol": "P1",
+    "action": "memSave1",
+    "inputs": {
+      "opcode": 43
+    },
+    "expected_bytes": "6e01002b9a",
+    "evidence": [
+      "work/hermes/bundle.js:196648 (BLE_COMMANDS)",
+      "work/hermes/functions/5204.hasm:0x0010d68b offsets 0x0b-0x40"
+    ],
+    "hardware": "UNVERIFIED",
+    "kind": "literal expected bytes independently frozen from shipped opcode and builder literals; some constants are DEAD/UNUSED, see command ledger"
+  },
+  {
+    "id": "OP-memSave2",
+    "protocol": "P1",
+    "action": "memSave2",
+    "inputs": {
+      "opcode": 44
+    },
+    "expected_bytes": "6e01002c9b",
+    "evidence": [
+      "work/hermes/bundle.js:196648 (BLE_COMMANDS)",
+      "work/hermes/functions/5204.hasm:0x0010d68b offsets 0x0b-0x40"
+    ],
+    "hardware": "UNVERIFIED",
+    "kind": "literal expected bytes independently frozen from shipped opcode and builder literals; some constants are DEAD/UNUSED, see command ledger"
+  },
+  {
+    "id": "OP-memRecall1",
+    "protocol": "P1",
+    "action": "memRecall1",
+    "inputs": {
+      "opcode": 46
+    },
+    "expected_bytes": "6e01002e9d",
+    "evidence": [
+      "work/hermes/bundle.js:196648 (BLE_COMMANDS)",
+      "work/hermes/functions/5204.hasm:0x0010d68b offsets 0x0b-0x40"
+    ],
+    "hardware": "UNVERIFIED",
+    "kind": "literal expected bytes independently frozen from shipped opcode and builder literals; some constants are DEAD/UNUSED, see command ledger"
+  },
+  {
+    "id": "OP-memRecall2",
+    "protocol": "P1",
+    "action": "memRecall2",
+    "inputs": {
+      "opcode": 47
+    },
+    "expected_bytes": "6e01002f9e",
+    "evidence": [
+      "work/hermes/bundle.js:196648 (BLE_COMMANDS)",
+      "work/hermes/functions/5204.hasm:0x0010d68b offsets 0x0b-0x40"
+    ],
+    "hardware": "UNVERIFIED",
+    "kind": "literal expected bytes independently frozen from shipped opcode and builder literals; some constants are DEAD/UNUSED, see command ledger"
+  },
+  {
+    "id": "OP-flat",
+    "protocol": "P1",
+    "action": "flat",
+    "inputs": {
+      "opcode": 49
+    },
+    "expected_bytes": "6e010031a0",
+    "evidence": [
+      "work/hermes/bundle.js:196648 (BLE_COMMANDS)",
+      "work/hermes/functions/5204.hasm:0x0010d68b offsets 0x0b-0x40"
+    ],
+    "hardware": "UNVERIFIED",
+    "kind": "literal expected bytes independently frozen from shipped opcode and builder literals; some constants are DEAD/UNUSED, see command ledger"
+  },
+  {
+    "id": "OP-zeroGravity",
+    "protocol": "P1",
+    "action": "zeroGravity",
+    "inputs": {
+      "opcode": 69
+    },
+    "expected_bytes": "6e010045b4",
+    "evidence": [
+      "work/hermes/bundle.js:196648 (BLE_COMMANDS)",
+      "work/hermes/functions/5204.hasm:0x0010d68b offsets 0x0b-0x40"
+    ],
+    "hardware": "UNVERIFIED",
+    "kind": "literal expected bytes independently frozen from shipped opcode and builder literals; some constants are DEAD/UNUSED, see command ledger"
+  },
+  {
+    "id": "OP-antiSnore",
+    "protocol": "P1",
+    "action": "antiSnore",
+    "inputs": {
+      "opcode": 70
+    },
+    "expected_bytes": "6e010046b5",
+    "evidence": [
+      "work/hermes/bundle.js:196648 (BLE_COMMANDS)",
+      "work/hermes/functions/5204.hasm:0x0010d68b offsets 0x0b-0x40"
+    ],
+    "hardware": "UNVERIFIED",
+    "kind": "literal expected bytes independently frozen from shipped opcode and builder literals; some constants are DEAD/UNUSED, see command ledger"
+  },
+  {
+    "id": "OP-tv",
+    "protocol": "P1",
+    "action": "tv",
+    "inputs": {
+      "opcode": 88
+    },
+    "expected_bytes": "6e010058c7",
+    "evidence": [
+      "work/hermes/bundle.js:196648 (BLE_COMMANDS)",
+      "work/hermes/functions/5204.hasm:0x0010d68b offsets 0x0b-0x40"
+    ],
+    "hardware": "UNVERIFIED",
+    "kind": "literal expected bytes independently frozen from shipped opcode and builder literals; some constants are DEAD/UNUSED, see command ledger"
+  },
+  {
+    "id": "OP-lounge",
+    "protocol": "P1",
+    "action": "lounge",
+    "inputs": {
+      "opcode": 89
+    },
+    "expected_bytes": "6e010059c8",
+    "evidence": [
+      "work/hermes/bundle.js:196648 (BLE_COMMANDS)",
+      "work/hermes/functions/5204.hasm:0x0010d68b offsets 0x0b-0x40"
+    ],
+    "hardware": "UNVERIFIED",
+    "kind": "literal expected bytes independently frozen from shipped opcode and builder literals; some constants are DEAD/UNUSED, see command ledger"
+  },
+  {
+    "id": "OP-programAntiSnore",
+    "protocol": "P1",
+    "action": "programAntiSnore",
+    "inputs": {
+      "opcode": 105
+    },
+    "expected_bytes": "6e010069d8",
+    "evidence": [
+      "work/hermes/bundle.js:196648 (BLE_COMMANDS)",
+      "work/hermes/functions/5204.hasm:0x0010d68b offsets 0x0b-0x40"
+    ],
+    "hardware": "UNVERIFIED",
+    "kind": "literal expected bytes independently frozen from shipped opcode and builder literals; some constants are DEAD/UNUSED, see command ledger"
+  },
+  {
+    "id": "OP-programLounge",
+    "protocol": "P1",
+    "action": "programLounge",
+    "inputs": {
+      "opcode": 101
+    },
+    "expected_bytes": "6e010065d4",
+    "evidence": [
+      "work/hermes/bundle.js:196648 (BLE_COMMANDS)",
+      "work/hermes/functions/5204.hasm:0x0010d68b offsets 0x0b-0x40"
+    ],
+    "hardware": "UNVERIFIED",
+    "kind": "literal expected bytes independently frozen from shipped opcode and builder literals; some constants are DEAD/UNUSED, see command ledger"
+  },
+  {
+    "id": "OP-programTV",
+    "protocol": "P1",
+    "action": "programTV",
+    "inputs": {
+      "opcode": 100
+    },
+    "expected_bytes": "6e010064d3",
+    "evidence": [
+      "work/hermes/bundle.js:196648 (BLE_COMMANDS)",
+      "work/hermes/functions/5204.hasm:0x0010d68b offsets 0x0b-0x40"
+    ],
+    "hardware": "UNVERIFIED",
+    "kind": "literal expected bytes independently frozen from shipped opcode and builder literals; some constants are DEAD/UNUSED, see command ledger"
+  },
+  {
+    "id": "OP-programZeroG",
+    "protocol": "P1",
+    "action": "programZeroG",
+    "inputs": {
+      "opcode": 102
+    },
+    "expected_bytes": "6e010066d5",
+    "evidence": [
+      "work/hermes/bundle.js:196648 (BLE_COMMANDS)",
+      "work/hermes/functions/5204.hasm:0x0010d68b offsets 0x0b-0x40"
+    ],
+    "hardware": "UNVERIFIED",
+    "kind": "literal expected bytes independently frozen from shipped opcode and builder literals; some constants are DEAD/UNUSED, see command ledger"
+  },
+  {
+    "id": "OP-massageHeadStep",
+    "protocol": "P1",
+    "action": "massageHeadStep",
+    "inputs": {
+      "opcode": 76
+    },
+    "expected_bytes": "6e01004cbb",
+    "evidence": [
+      "work/hermes/bundle.js:196648 (BLE_COMMANDS)",
+      "work/hermes/functions/5204.hasm:0x0010d68b offsets 0x0b-0x40"
+    ],
+    "hardware": "UNVERIFIED",
+    "kind": "literal expected bytes independently frozen from shipped opcode and builder literals; some constants are DEAD/UNUSED, see command ledger"
+  },
+  {
+    "id": "OP-massageFootStep",
+    "protocol": "P1",
+    "action": "massageFootStep",
+    "inputs": {
+      "opcode": 78
+    },
+    "expected_bytes": "6e01004ebd",
+    "evidence": [
+      "work/hermes/bundle.js:196648 (BLE_COMMANDS)",
+      "work/hermes/functions/5204.hasm:0x0010d68b offsets 0x0b-0x40"
+    ],
+    "hardware": "UNVERIFIED",
+    "kind": "literal expected bytes independently frozen from shipped opcode and builder literals; some constants are DEAD/UNUSED, see command ledger"
+  },
+  {
+    "id": "OP-massageMode",
+    "protocol": "P1",
+    "action": "massageMode",
+    "inputs": {
+      "opcode": 72
+    },
+    "expected_bytes": "6e010048b7",
+    "evidence": [
+      "work/hermes/bundle.js:196648 (BLE_COMMANDS)",
+      "work/hermes/functions/5204.hasm:0x0010d68b offsets 0x0b-0x40"
+    ],
+    "hardware": "UNVERIFIED",
+    "kind": "literal expected bytes independently frozen from shipped opcode and builder literals; some constants are DEAD/UNUSED, see command ledger"
+  },
+  {
+    "id": "OP-massageToggle",
+    "protocol": "P1",
+    "action": "massageToggle",
+    "inputs": {
+      "opcode": 93
+    },
+    "expected_bytes": "6e01005dcc",
+    "evidence": [
+      "work/hermes/bundle.js:196648 (BLE_COMMANDS)",
+      "work/hermes/functions/5204.hasm:0x0010d68b offsets 0x0b-0x40"
+    ],
+    "hardware": "UNVERIFIED",
+    "kind": "literal expected bytes independently frozen from shipped opcode and builder literals; some constants are DEAD/UNUSED, see command ledger"
+  },
+  {
+    "id": "OP-bedLight",
+    "protocol": "P1",
+    "action": "bedLight",
+    "inputs": {
+      "opcode": 60
+    },
+    "expected_bytes": "6e01003cab",
+    "evidence": [
+      "work/hermes/bundle.js:196648 (BLE_COMMANDS)",
+      "work/hermes/functions/5204.hasm:0x0010d68b offsets 0x0b-0x40"
+    ],
+    "hardware": "UNVERIFIED",
+    "kind": "literal expected bytes independently frozen from shipped opcode and builder literals; some constants are DEAD/UNUSED, see command ledger"
+  },
+  {
+    "id": "OP-end",
+    "protocol": "P1",
+    "action": "end",
+    "inputs": {
+      "opcode": 110
+    },
+    "expected_bytes": "6e01006edd",
+    "evidence": [
+      "work/hermes/bundle.js:196648 (BLE_COMMANDS)",
+      "work/hermes/functions/5204.hasm:0x0010d68b offsets 0x0b-0x40"
+    ],
+    "hardware": "UNVERIFIED",
+    "kind": "literal expected bytes independently frozen from shipped opcode and builder literals; some constants are DEAD/UNUSED, see command ledger"
+  },
+  {
+    "id": "MODEL-harmony-pillowUp",
+    "protocol": "P1",
+    "action": "pillowUp",
+    "inputs": {
+      "model": "harmony"
+    },
+    "expected_bytes": "6e010041b0",
+    "evidence": [
+      "work/hermes/functions/5422.hasm:0x00113840 offsets 0x19-0xdf",
+      "work/hermes/bundle.js:222887-222897"
+    ],
+    "hardware": "UNVERIFIED"
+  },
+  {
+    "id": "MODEL-harmony-pillowDown",
+    "protocol": "P1",
+    "action": "pillowDown",
+    "inputs": {
+      "model": "harmony"
+    },
+    "expected_bytes": "6e010042b1",
+    "evidence": [
+      "work/hermes/functions/5422.hasm:0x00113840 offsets 0x19-0xdf",
+      "work/hermes/bundle.js:222887-222897"
+    ],
+    "hardware": "UNVERIFIED"
+  },
+  {
+    "id": "MODEL-bliss-pillowUp",
+    "protocol": "P1",
+    "action": "pillowUp",
+    "inputs": {
+      "model": "bliss"
+    },
+    "expected_bytes": "6e010041b0",
+    "evidence": [
+      "work/hermes/functions/5422.hasm:0x00113840 offsets 0x19-0xdf",
+      "work/hermes/bundle.js:222887-222897"
+    ],
+    "hardware": "UNVERIFIED"
+  },
+  {
+    "id": "MODEL-bliss-pillowDown",
+    "protocol": "P1",
+    "action": "pillowDown",
+    "inputs": {
+      "model": "bliss"
+    },
+    "expected_bytes": "6e010042b1",
+    "evidence": [
+      "work/hermes/functions/5422.hasm:0x00113840 offsets 0x19-0xdf",
+      "work/hermes/bundle.js:222887-222897"
+    ],
+    "hardware": "UNVERIFIED"
+  },
+  {
+    "id": "MODEL-bliss-lumbarUp",
+    "protocol": "P1",
+    "action": "lumbarUp",
+    "inputs": {
+      "model": "bliss"
+    },
+    "expected_bytes": "6e01003fae",
+    "evidence": [
+      "work/hermes/functions/5422.hasm:0x00113840 offsets 0x19-0xdf",
+      "work/hermes/bundle.js:222887-222897"
+    ],
+    "hardware": "UNVERIFIED"
+  },
+  {
+    "id": "MODEL-bliss-lumbarDown",
+    "protocol": "P1",
+    "action": "lumbarDown",
+    "inputs": {
+      "model": "bliss"
+    },
+    "expected_bytes": "6e010040af",
+    "evidence": [
+      "work/hermes/functions/5422.hasm:0x00113840 offsets 0x19-0xdf",
+      "work/hermes/bundle.js:222887-222897"
+    ],
+    "hardware": "UNVERIFIED"
+  },
+  {
+    "id": "MODEL-platinum-pillowUp",
+    "protocol": "P1",
+    "action": "pillowUp",
+    "inputs": {
+      "model": "platinum"
+    },
+    "expected_bytes": "6e010041b0",
+    "evidence": [
+      "work/hermes/functions/5422.hasm:0x00113840 offsets 0x19-0xdf",
+      "work/hermes/bundle.js:222887-222897"
+    ],
+    "hardware": "UNVERIFIED"
+  },
+  {
+    "id": "MODEL-platinum-pillowDown",
+    "protocol": "P1",
+    "action": "pillowDown",
+    "inputs": {
+      "model": "platinum"
+    },
+    "expected_bytes": "6e010042b1",
+    "evidence": [
+      "work/hermes/functions/5422.hasm:0x00113840 offsets 0x19-0xdf",
+      "work/hermes/bundle.js:222887-222897"
+    ],
+    "hardware": "UNVERIFIED"
+  },
+  {
+    "id": "MODEL-platinum-lumbarUp",
+    "protocol": "P1",
+    "action": "lumbarUp",
+    "inputs": {
+      "model": "platinum"
+    },
+    "expected_bytes": "6e01003fae",
+    "evidence": [
+      "work/hermes/functions/5422.hasm:0x00113840 offsets 0x19-0xdf",
+      "work/hermes/bundle.js:222887-222897"
+    ],
+    "hardware": "UNVERIFIED"
+  },
+  {
+    "id": "MODEL-platinum-lumbarDown",
+    "protocol": "P1",
+    "action": "lumbarDown",
+    "inputs": {
+      "model": "platinum"
+    },
+    "expected_bytes": "6e010040af",
+    "evidence": [
+      "work/hermes/functions/5422.hasm:0x00113840 offsets 0x19-0xdf",
+      "work/hermes/bundle.js:222887-222897"
+    ],
+    "hardware": "UNVERIFIED"
+  }
+]

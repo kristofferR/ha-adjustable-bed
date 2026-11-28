@@ -670,6 +670,13 @@ is the only proven release. Initial's app waiter requests conditional
 cancellation; Home Assistant independently bounds its refresh instead of
 reproducing the app's unbounded-sender failure. See [AVEK](../beds/avek.md).
 
+Sven & Son 1.0.4 reuses the Richmat command encoder after all 37 frozen builder
+and model-routing literals match byte for byte. Its explicit models own actuator
+remapping, light gates, 50 ms refresh and 100 ms tap release. The shared fixed
+Richmat session controller is extended for ordered property-selected GATT targets
+and uncertain local massage accounting. No remote route or historical wire case
+changes. See [Sven & Son](../beds/richmat.md#sven--son).
+
 EasyCtrl V1.3 (19) reproduces every accepted eight-byte literal through
 CheersSleep's existing `p1` carrier. Its separate counter policy preserves
 zero-serial settings/query packets, pre-increment control serials and cached

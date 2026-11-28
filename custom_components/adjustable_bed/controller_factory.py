@@ -342,6 +342,7 @@ _SIMPLE_CONTROLLERS: Final[dict[str, _ControllerSpec]] = {
     BED_TYPE_KOMFYD: _ControllerSpec("kaidi.comfy", "ComfyController"),
     BED_TYPE_COMFYDS: _ControllerSpec("kaidi.comfy", "ComfyController"),
     BED_TYPE_AMINACH: _ControllerSpec("aminach", "AminachController"),
+    "sven": _ControllerSpec("richmat.sven", "SvenController"),
     "avek": _ControllerSpec("avek", "AvekController"),
     BED_TYPE_IFIT: _ControllerSpec("ifit.controller", "IfitController"),
     BED_TYPE_ISLEEP: _ControllerSpec("isleep", "IsleepController"),

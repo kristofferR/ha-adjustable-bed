@@ -4506,6 +4506,18 @@
       "amada_refresh_alarm": {
         "name": "Refresh alarm"
       },
+      "sven_head_massage": {
+        "name": "Cycle head massage"
+      },
+      "sven_foot_massage": {
+        "name": "Cycle foot massage"
+      },
+      "sven_massage_off_now": {
+        "name": "Confirm massage is off"
+      },
+      "sven_massage_rested": {
+        "name": "Confirm massage has rested"
+      },
       "easyctrl_all_up": {
         "name": "All motors up"
       },
@@ -6696,6 +6708,9 @@
       },
       "amada_alarm_submitted": {
         "name": "Last submitted bed alarm frame"
+      },
+      "sven_last_preset": {
+        "name": "Last commanded preset"
       },
       "ar_headboard_status": {
         "name": "Headboard activity",
@@ -9509,6 +9524,18 @@
         "side": {
           "name": "Side",
           "description": "Which side of a combined bed to stop. Leave unset to stop the whole bed (or the specific side when you target one side's device); single beds always stop the whole bed."
+        },
+        "hold_owner": {
+          "name": "Hold owner",
+          "description": "Release only the matching dashboard hold. Supply its hold number too; leave both unset for an explicit Stop."
+        },
+        "hold_generation": {
+          "name": "Hold number",
+          "description": "The number from the original hold request. An expired or replaced hold sends no new Stop."
+        },
+        "hold_cancelled": {
+          "name": "Cancel held gesture",
+          "description": "Cancel the matching hold without performing its normal release movement. Supply the hold owner and number."
         }
       }
     },
@@ -13173,6 +13200,10 @@
         }
       }
     },
+    "cancel_hold": {
+      "name": "Cancel held control",
+      "description": "End a cancelled gesture and stop its movement."
+    },
     "ar_connect_move_sections": {
       "name": "Move bed sections (AR Connect)",
       "description": "Hold the selected available sections of one physical bed. Release cancels refresh and sends the native stop command.",
@@ -14641,6 +14672,33 @@
     "mattresspoint_hold": {
       "message": "Choose a hold duration between 1 and 60000 milliseconds."
     },
+    "sven_massage_concurrent": {
+      "message": "Sven & Son massage needs concurrent Bluetooth connections for a paired bed. Use concurrent connections or control movement only."
+    },
+    "sven_gatt": {
+      "message": "No writable bed characteristic was found. Check that this is the correct Bluetooth device."
+    },
+    "sven_memory": {
+      "message": "Choose memory position 1 or 2."
+    },
+    "sven_massage_uncertain": {
+      "message": "Massage state is unknown. Turn both massage motors off with the remote, then confirm massage is off or has rested."
+    },
+    "sven_massage_rest": {
+      "message": "Massage needs 10 minutes off after 30 minutes of use. Wait, then try again."
+    },
+    "sven_massage_inactive": {
+      "message": "Start head or foot massage before changing the pattern."
+    },
+    "sven_massage_level": {
+      "message": "Choose head or foot massage and a level from 0 to 3."
+    },
+    "sven_massage_timer": {
+      "message": "Choose a massage duration of 10, 20 or 30 minutes."
+    },
+    "held_cancel_unavailable": {
+      "message": "This button does not end a held control."
+    },
     "ar_connect_layout": {
       "message": "Choose the bed sections in AR Connect setup."
     },
@@ -15533,7 +15591,8 @@
         "m1x12_part_16": "Part 16 (M1X12)",
         "elevate_actuator_1": "Elevate actuator 1",
         "elevate_actuator_2": "Elevate actuator 2",
-        "elevate_both": "Elevate both"
+        "elevate_both": "Elevate both",
+        "pillow": "Pillow"
       }
     },
     "direction": {

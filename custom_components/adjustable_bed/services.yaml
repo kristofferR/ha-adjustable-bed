@@ -79,6 +79,25 @@ stop_all:
           options: [both, left, right]
           translation_key: side
 
+    hold_owner:
+      required: false
+      advanced: true
+      selector:
+        text:
+    hold_generation:
+      required: false
+      advanced: true
+      selector:
+        number:
+          min: 0
+          max: 9007199254740992
+          mode: box
+    hold_cancelled:
+      required: false
+      advanced: true
+      selector:
+        boolean:
+
 set_position:
   fields:
     device_id:
@@ -140,7 +159,7 @@ timed_move:
       required: true
       selector:
         select:
-          options: [axis_1, axis_2, axis_3, lumbar_tilt, lumbar_pillow, head_feet, tv_lift, back, right_back, legs, head, feet, both, neck, tilt, foot_tilt, lumbar, bed_height,
+          options: [pillow, axis_1, axis_2, axis_3, lumbar_tilt, lumbar_pillow, head_feet, tv_lift, back, right_back, legs, head, feet, both, neck, tilt, foot_tilt, lumbar, bed_height,
             elevate, stair, m1x12_part_1, m1x12_part_2, m1x12_part_4, m1x12_part_8, m1x12_part_16, elevate_actuator_1,
             elevate_actuator_2, elevate_both, motor_1, motor_2, motor_3, motor_4, motor_5, motor_6, motor_7,
             motors_1_2, motors_2_3, motors_3_4, motors_3_4_tilt, selected_motor]

@@ -517,7 +517,9 @@ test("tap to move: a click starts the motor, the next click on any arrow stops i
   expect(pressed(api._motorDirection(back, "up", "button.pair_stop"))).toBe("true");
   expect(pressed(api._motorDirection(back, "down", "button.pair_stop"))).toBe("false");
   handler(api._motorDirection(legs, "down", "button.pair_stop"), "@click")(new Event("click"));
-  expect(calls.slice(1)).toEqual([{ domain: "cover", service: "stop_cover", data: { entity_id: "cover.back" } }]);
+  expect(calls.slice(1)).toEqual([{ domain: "adjustable_bed", service: "stop_all", data: {
+    device_id: "pair", hold_owner: calls[0]?.data.hold_owner, hold_generation: calls[0]?.data.hold_generation,
+  } }]);
   expect(pressed(api._motorDirection(back, "up", "button.pair_stop"))).toBe("false");
 
   // A held control without a lease keeps press-and-hold in tap mode, and its
@@ -528,14 +530,16 @@ test("tap to move: a click starts the motor, the next click on any arrow stops i
   handler(windowed, "@click")(Object.assign(new Event("click"), { detail: 0 }));
   expect(calls.slice(2)).toEqual([
     { domain: "adjustable_bed", service: "timed_move", data: expect.any(Object) },
-    { domain: "cover", service: "stop_cover", data: { entity_id: "cover.back" } },
+    { domain: "adjustable_bed", service: "stop_all", data: { device_id: "pair",
+      hold_owner: calls[2]?.data.hold_owner, hold_generation: calls[2]?.data.hold_generation } },
   ]);
 
   // Another row's Stop is scoped to its own motor, yet still ends the tap move.
   handler(api._motorDirection(back, "up", "button.pair_stop"), "@click")(new Event("click"));
   stopHandler(api._motorRow(legs, "button.pair_stop"))(new Event("click"));
   expect(calls.slice(5)).toEqual([
-    { domain: "cover", service: "stop_cover", data: { entity_id: "cover.back" } },
+    { domain: "adjustable_bed", service: "stop_all", data: { device_id: "pair",
+      hold_owner: calls[4]?.data.hold_owner, hold_generation: calls[4]?.data.hold_generation } },
     { domain: "cover", service: "stop_cover", data: { entity_id: "cover.legs" } },
   ]);
   expect(pressed(api._motorDirection(back, "up", "button.pair_stop"))).toBe("false");

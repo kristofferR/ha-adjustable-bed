@@ -481,8 +481,12 @@ test.each(["pointerup", "pointercancel", "window-cancel", "abandon", "keyup", "b
     else if (ending === "keyup") handler(button, "keyup")(new KeyEvent("Enter", "keyup"));
     else handler(button, ending)(event(ending));
     const normalRelease = ending === "pointerup" || ending === "keyup";
-    expect(calls[1]).toEqual({ domain: normalRelease ? "button" : "adjustable_bed",
-      service: normalRelease ? "press" : "cancel_hold", data: { entity_id: motor.releaseButton } });
+    expect(calls[0].data.hold_owner).toEqual(expect.any(String));
+    expect(calls[1]).toEqual({ domain: "adjustable_bed", service: "stop_all", data: {
+      device_id: "receiver", hold_owner: calls[0].data.hold_owner,
+      hold_generation: calls[0].data.hold_generation,
+      ...(!normalRelease ? { hold_cancelled: true } : {}),
+    } });
     finish?.();
     card.disconnectedCallback();
     // Wrong metadata must fail the same lookup, rather than being repaired by a mock.

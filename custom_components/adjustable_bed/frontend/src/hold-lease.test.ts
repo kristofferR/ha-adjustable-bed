@@ -15,6 +15,7 @@ import {
   type HoldTimers,
   MotorHold,
   movementLease,
+  movementRelease,
   TAP_MOVE_MAX_MS,
 } from "./hold";
 import type { EntityRegistryDisplayEntry, HomeAssistant, MotorEntity } from "./types";
@@ -542,3 +543,37 @@ class FakeDocument implements HoldLifecycleTarget {
     this.listeners.get(type)?.forEach((listener) => listener());
   }
 }
+
+
+test("automatic release keeps its admitted lease after expiry; explicit Stop stays available", async () => {
+  const timers = new FakeTimers();
+  const bed = new FakeLeaseBed(timers);
+  const releases: HoldLeaseCall[] = [];
+  const stops: string[] = [];
+  const hold = new MotorHold({
+    pulse: () => undefined, lease: bed.lease,
+    releaseLease: (_motor, _direction, lease) => { releases.push(lease); },
+    stopCover: (cover) => { stops.push(cover); }, stopBed: (stop) => { stops.push(stop ?? "bed"); },
+  }, timers);
+  hold.start(leasedCover, "up", 9);
+  const original = bed.calls[0];
+  bed.end();
+  await tick();
+  hold.endFromPointer(leasedCover, 9, true);
+  expect(releases).toEqual([{ owner: original?.owner, generation: original?.generation }]);
+  expect(stops).toEqual([]);
+  hold.stopAll("button.stop");
+  expect(stops).toEqual(["button.stop"]);
+});
+
+test("card lease release uses the original paired target and owner generation", async () => {
+  const calls: unknown[] = [];
+  const hass = { callService: async (...args: unknown[]) => { calls.push(args); } } as HomeAssistant;
+  await movementRelease(hass, {
+    key: "pillow", timedMove: { deviceId: "pair", motor: "pillow", side: "left" },
+    holdLease: { deviceId: "pair", motor: "pillow", side: "left" },
+  }, "up", { owner: "original-card", generation: 3 });
+  expect(calls).toEqual([["adjustable_bed", "stop_all", {
+    device_id: "pair", side: "left", hold_owner: "original-card", hold_generation: 3,
+  }]]);
+});

@@ -114,11 +114,9 @@ async def test_every_action_and_field_is_named_in_both_translation_files() -> No
 async def test_every_registered_action_is_described(hass: HomeAssistant) -> None:
     await async_register_services(hass)
     services = yaml.safe_load((ROOT / "services.yaml").read_text())
-    # Entity-targeted actions are registered when their platform adds an entity.
-    entity_actions = {
-        name for name, spec in services.items() if "entity" in spec.get("target", {})
-    }
-    assert set(hass.services.async_services()[DOMAIN]) == set(services) - entity_actions
+    # Confirmation registers when the button platform adds an entity; cancellation
+    # is registered centrally so its routing also works during platform setup.
+    assert set(hass.services.async_services()[DOMAIN]) == set(services) - {"press_confirmed"}
 
 
 async def test_hold_control_runs_a_declared_control(hass: HomeAssistant, resolve) -> None:

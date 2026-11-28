@@ -477,6 +477,58 @@ async def test_queued_sync_rechecks_live_binding_before_gatt_dispatch(runtime):
     assert not writes(co)
 
 
+@pytest.mark.parametrize("control", ("tilt_down", "head_up"))
+@pytest.mark.parametrize("ending", ("release", "cancel", "stale"))
+async def test_card_captured_lease_preserves_native_release(runtime, clock, control, ending):
+    hass, co = runtime
+    await install(co, name("00"))
+    task = asyncio.create_task(
+        hass.services.async_call(
+            const.DOMAIN,
+            "hold_control",
+            {
+                "device_id": ["bed"],
+                "control": "vivasleep_" + control,
+                "duration": 0.75,
+                "hold_owner": "card-viva",
+                "hold_generation": 2,
+            },
+            blocking=True,
+        )
+    )
+    await asyncio.sleep(0.02)
+    await hass.services.async_call(
+        const.DOMAIN,
+        "stop_all",
+        {
+            "device_id": ["bed"],
+            "hold_owner": "card-viva",
+            "hold_generation": 1 if ending == "stale" else 2,
+            "hold_cancelled": ending == "cancel",
+        },
+        blocking=True,
+    )
+    if ending == "stale":
+        assert not task.done()
+        assert writes(co) == []
+        await hass.services.async_call(
+            const.DOMAIN,
+            "stop_all",
+            {
+                "device_id": ["bed"],
+                "hold_owner": "card-viva",
+                "hold_generation": 2,
+                "hold_cancelled": True,
+            },
+            blocking=True,
+        )
+    await task
+    expected = [b"$Q"] * 3 if control == "tilt_down" and ending == "release" else []
+    if control == "head_up":
+        expected = [b"$b"] * 5
+    assert writes(co) == expected
+
+
 @pytest.mark.parametrize("control, expected", (("tilt_down", []), ("head_up", [b"$b"] * 5)))
 async def test_public_cancel_hold_before_first_tick(
     runtime, enable_custom_integrations, control, expected

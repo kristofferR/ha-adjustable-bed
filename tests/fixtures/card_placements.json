@@ -3503,6 +3503,18 @@
  "button:suta_release": {
   "card_section": "hidden"
  },
+ "button:sven_foot_massage": {
+  "card_section": "massage"
+ },
+ "button:sven_head_massage": {
+  "card_section": "massage"
+ },
+ "button:sven_massage_off_now": {
+  "card_section": "massage"
+ },
+ "button:sven_massage_rested": {
+  "card_section": "massage"
+ },
  "button:symphony_elevation_down": {
   "card_section": "motors",
   "card_role": "down",
@@ -6792,6 +6804,9 @@
   "card_section": "hidden"
  },
  "sensor:svane_manufacturer": {
+  "card_section": "hidden"
+ },
+ "sensor:sven_last_preset": {
   "card_section": "hidden"
  },
  "sensor:symphony_alarm": {

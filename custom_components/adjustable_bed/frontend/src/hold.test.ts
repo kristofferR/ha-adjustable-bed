@@ -165,6 +165,7 @@ function heldActions(events: string[]): HoldActions {
     },
     stopCover: (cover, stop) => events.push(`cover-stop:${cover}:${stop ?? ""}`),
     stopBed: (stop) => events.push(`stop:${stop ?? ""}`),
+    cancelHold: (stop) => events.push(`cancel:${stop}`),
   };
 }
 

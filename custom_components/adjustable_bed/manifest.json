@@ -2583,6 +2583,9 @@
       "local_name": "LVRN*"
     },
     {
+      "local_name": "LW-*"
+    },
+    {
       "local_name": "LWRM*"
     },
     {
@@ -3091,7 +3094,13 @@
       "local_name": "QHRN*"
     },
     {
+      "local_name": "QJ-*"
+    },
+    {
       "local_name": "QMS*"
+    },
+    {
+      "local_name": "QR-*"
     },
     {
       "local_name": "QRRM*"

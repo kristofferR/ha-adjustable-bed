@@ -2498,6 +2498,17 @@ def _restonic_settings(data: Mapping[str, Any]) -> Mapping[str, Any]:
             CONF_DISABLE_ANGLE_SENSING: True, CONF_MOTOR_PULSE_DELAY_MS: 200}
 
 
+def _sven_choices(_data: Mapping[str, Any]) -> Mapping[str, str]:
+    from .profiles.sven import CHOICES
+    return CHOICES
+
+
+def _sven_settings(data: Mapping[str, Any]) -> Mapping[str, Any]:
+    from .profiles.sven import MODELS
+    model = MODELS.get(data.get(CONF_PROTOCOL_VARIANT, "unknown"))
+    return {} if model is None else {CONF_MOTOR_COUNT: len(model.axes)}
+
+
 def _konfurt_settings(data: Mapping[str, Any]) -> Mapping[str, Any]:
     from .profiles.konfurt import LAYOUTS
 
@@ -4306,6 +4317,13 @@ SETUP_PROFILES: Final[dict[str, SetupProfile]] = {
             CONF_MOTOR_PULSE_DELAY_MS: aminach_app.PLATINUM.refresh_ms,
         },
         questions=(Question(CONF_MOTOR_COUNT, aminach_app.LAYOUT_CHOICES, aminach_app.PLATINUM.default_motor_count),),
+    ),
+    "sven": SetupProfile(
+        owns={CONF_MOTOR_COUNT: SET_BY_PROFILE, CONF_HAS_MASSAGE: True,
+              CONF_DISABLE_ANGLE_SENSING: True, CONF_MOTOR_PULSE_DELAY_MS: 50,
+              CONF_MOTOR_PULSE_COUNT: 1},
+        questions=(Question(CONF_PROTOCOL_VARIANT, _sven_choices),),
+        derive=_sven_settings,
     ),
     "roewa": SetupProfile(
         owns={CONF_MOTOR_COUNT: 2, CONF_HAS_MASSAGE: False,

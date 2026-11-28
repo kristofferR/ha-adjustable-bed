@@ -1425,12 +1425,6 @@ class AdjustableBedButton(AdjustableBedEntity, ButtonEntity):
         _LOGGER.debug("Button action completed: %s", self.entity_description.key)
 
 
-async def _cancel_held_button(entity: ButtonEntity, _call: ServiceCall) -> None:
-    if not isinstance(entity, (ControllerActionButton, PairedBedGestureReleaseButton)):
-        raise invalid("held_cancel_unavailable")
-    await entity.async_cancel_hold()
-
-
 async def _press_confirmed_button(entity: ButtonEntity, call: ServiceCall) -> None:
     if not isinstance(entity, ControllerActionButton):
         raise invalid("button_confirmation_required")
@@ -1480,7 +1474,6 @@ class ControllerActionButton(AdjustableBedEntity, ButtonEntity):
         """Refresh availability when the controller publishes new state."""
         await super().async_added_to_hass()
         if self.platform is not None:
-            self.platform.async_register_entity_service("cancel_hold", {}, _cancel_held_button)
             self.platform.async_register_entity_service(
                 "press_confirmed",
                 {vol.Required("confirmed"): vol.All(cv.boolean, vol.In((True,)))},
@@ -1517,16 +1510,6 @@ class ControllerActionButton(AdjustableBedEntity, ButtonEntity):
         # Home Assistant also reads availability outside state writes.
         with self._side_scope():
             return super().available and controller.controller_button_available(self._spec.key)
-
-    async def async_cancel_hold(self) -> None:
-        """Cancel a gesture without turning it into a normal release."""
-        if not self._spec.release_only:
-            raise invalid("held_cancel_unavailable")
-        token = CONTROLLER_GESTURE_RELEASE.set(True)
-        try:
-            await self._coordinator.async_stop_command()
-        finally:
-            CONTROLLER_GESTURE_RELEASE.reset(token)
 
     async def async_press_confirmed(self, confirmed: bool) -> None:
         """Execute an action only after the caller explicitly acknowledges it."""
@@ -1568,6 +1551,16 @@ class ControllerActionButton(AdjustableBedEntity, ButtonEntity):
         await self._coordinator.async_execute_controller_command(
             press_fn, cancel_running=self._spec.cancel_movement
         )
+
+    async def async_cancel_hold(self) -> None:
+        """Cancel a gesture without turning it into a normal release."""
+        if not self._spec.release_only:
+            raise invalid("held_cancel_unavailable")
+        token = CONTROLLER_GESTURE_RELEASE.set(True)
+        try:
+            await self._coordinator.async_stop_command()
+        finally:
+            CONTROLLER_GESTURE_RELEASE.reset(token)
 
     def _current_spec(self) -> ControllerButtonSpec:
         """Follow local gesture selectors and replacement controllers in place."""
@@ -1664,11 +1657,6 @@ class PairedBedGestureReleaseButton(PairedBedStopButton):
         super().__init__(coordinator)
         self._attr_unique_id = _paired_entity_unique_id(coordinator, "gesture_release_both")
         self._card = CARD_HIDDEN
-
-    async def async_added_to_hass(self) -> None:
-        await super().async_added_to_hass()
-        if self.platform is not None:
-            self.platform.async_register_entity_service("cancel_hold", {}, _cancel_held_button)
 
     async def async_press(self) -> None:
         await self.async_cancel_hold()

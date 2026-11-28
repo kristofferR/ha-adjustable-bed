@@ -42,10 +42,14 @@ import {
   activateWithoutPointer,
   attachHoldLifecycle,
   canTapMove,
+  hasHoldLease,
   heldButtonMotor,
   holdTargetForEntity,
+  holdTargetsOverlap,
+  type HoldTarget,
   pairedPeerStopEntityIds,
   movementLease,
+  movementRelease,
   MotorHold,
   movementPulse,
   registerHoldFocusLoss,
@@ -79,6 +83,11 @@ import {
 } from "./types";
 // Side-effect import: registers <adjustable-bed-card-editor> in the same bundle.
 import "./editor";
+
+interface CompactStopTarget {
+  target?: HoldTarget;
+  pending: number;
+}
 
 // The estimated beds a pane covers and where its estimate actions go (#601).
 interface EstimateSide {
@@ -164,12 +173,18 @@ export class AdjustableBedCard extends LitElement {
   private _awaitingState: string[] = [];
   // Retain STOP targets across tab changes, including presets that outlive their
   // service response. A later Stop must still reach movement this card started.
-  private readonly _compactStopTargets = new Map<string, symbol>();
+  private readonly _compactStopTargets = new Map<string, CompactStopTarget>();
   // Press-and-hold rules live in MotorHold; this class owns only the event
   // wiring and the service calls it drives.
   private readonly _hold = new MotorHold({
     pulse: (m, dir) => movementPulse(this.hass, m, dir),
-    lease: (m, dir, lease) => movementLease(this.hass, m, dir, lease),
+    lease: (m, dir, lease, first) => {
+      const request = movementLease(this.hass, m, dir, lease);
+      if (request && first && hasHoldLease(m, dir)) this._retireCompactTargets(m, dir);
+      return request;
+    },
+    releaseLease: (m, dir, lease, cancelled) => { void movementRelease(this.hass, m, dir, lease, cancelled); },
+    cancelHold: (entityId) => this._call("adjustable_bed", "cancel_hold", entityId),
     stopCover: (cover, stopEntityId) =>
       this._stopCompactTarget(cover, stopEntityId ?? cover),
     // Which stop applies depends on the bed the held motor belongs to, so it is
@@ -178,7 +193,6 @@ export class AdjustableBedCard extends LitElement {
     stopBed: (stopEntityId) => {
       if (stopEntityId) this._stopCompactTarget(stopEntityId);
     },
-    cancelHold: (entityId) => this._call("adjustable_bed", "cancel_hold", entityId),
     changed: () => { this._tapRevision++; },
   });
   private _focusLossCleanup: (() => void) | null = null;
@@ -226,8 +240,8 @@ export class AdjustableBedCard extends LitElement {
     if (!config) throw new Error("Invalid configuration");
     if (this._detailsOpen) this._closeDetails();
     if (this._config) {
+      this._hold.abandon();
       if (this._compactStopTargets.size > 0) this._stopCompact();
-      else this._hold.abandon();
     }
     if (config.device_id !== this._config?.device_id ||
         config.default_target !== this._config?.default_target) {
@@ -755,7 +769,7 @@ export class AdjustableBedCard extends LitElement {
 
   private _compactRecall(entityId: string, bed: BedEntities): void {
     this._hold.abandon();
-    compactStopEntities(bed).forEach((id) => this._compactStopTargets.set(id, Symbol()));
+    compactStopEntities(bed).forEach((id) => this._retainCompactTarget(id));
     this._press(entityId);
     this.requestUpdate();
   }
@@ -767,16 +781,19 @@ export class AdjustableBedCard extends LitElement {
     ])];
     this._hold.cancelForStopScope(targets);
     for (const id of targets) {
-      if (!this._compactStopTargets.has(id)) this._compactStopTargets.set(id, Symbol());
+      if (!this._compactStopTargets.has(id)) this._retainCompactTarget(id);
     }
-    for (const id of this._compactStopTargets.keys()) this._stopCompactTarget(id);
+    for (const id of this._compactStopTargets.keys()) this._stopCompactTarget(id, id, bed !== undefined);
     if (this._compactStopTargets.size) this.requestUpdate();
   }
 
-  private _stopCompactTarget(id: string, retainedTarget = id): void {
+  private _stopCompactTarget(id: string, retainedTarget = id, explicit = false): void {
     const movement = this._compactStopTargets.get(retainedTarget);
+    const hass = this.hass;
+    if (!hass || (movement?.pending && !explicit)) return;
+    if (movement) movement.pending++;
     const cover = id.startsWith("cover.");
-    this.hass?.callService(cover ? "cover" : "button", cover ? "stop_cover" : "press", {
+    hass.callService(cover ? "cover" : "button", cover ? "stop_cover" : "press", {
       entity_id: id,
     }).then(() => {
       // A completed STOP must not forget movement started while it was pending.
@@ -787,7 +804,13 @@ export class AdjustableBedCard extends LitElement {
       }
     }).catch(() => {
       // Keep failed targets available for another Stop, even after switching sides.
+    }).finally(() => {
+      if (movement) movement.pending--;
     });
+  }
+
+  private _retainCompactTarget(id: string): void {
+    this._compactStopTargets.set(id, { target: holdTargetForEntity(this.hass, id), pending: 0 });
   }
 
   private _navigate = (): void => {
@@ -2321,7 +2344,7 @@ export class AdjustableBedCard extends LitElement {
       this._hold.endTap();
       return;
     }
-    this._markCompactTarget(m, stopId);
+    if (!hasHoldLease(m, dir)) this._markCompactTarget(m, stopId);
     this._hold.start(
       m,
       dir,
@@ -2372,7 +2395,7 @@ export class AdjustableBedCard extends LitElement {
     stopScope?: string[],
     remainingStopIds?: string[],
   ): void {
-    if (!this._hold.tapMoving) this._markCompactTarget(m, stopId);
+    if (!this._hold.tapMoving && !hasHoldLease(m, dir)) this._markCompactTarget(m, stopId);
     this._hold.tap(
       m,
       dir,
@@ -2383,11 +2406,33 @@ export class AdjustableBedCard extends LitElement {
     );
   }
 
-  // The compact Stop must reach movement this card started.
+  // Only a dispatched lease replaces finite movement; a delayed press may never start.
+  private _retireCompactTargets(m: MotorEntity, dir: "up" | "down"): void {
+    const entityId = m.cover ?? m.holdEntityId ?? m[dir];
+    const target = holdTargetForEntity(this.hass, entityId);
+    for (const [id, movement] of [...this._compactStopTargets]) {
+      if (id !== entityId &&
+          !(target && movement.target && holdTargetsOverlap(target, movement.target))) continue;
+      this._compactStopTargets.delete(id);
+      if (!movement.pending && movement.target?.side === "both" && target?.side !== "both" && this.hass) {
+        for (const { bed } of compactTargets(this.hass, this._config?.device_id)) {
+          for (const peerId of compactStopEntities(bed)) {
+            const peer = holdTargetForEntity(this.hass, peerId);
+            if (target && peer && !holdTargetsOverlap(target, peer) &&
+                holdTargetsOverlap(movement.target, peer) && !this._compactStopTargets.has(peerId)) {
+              this._retainCompactTarget(peerId);
+            }
+          }
+        }
+      }
+    }
+  }
+
+  // The compact Stop must reach finite movement this card started.
   private _markCompactTarget(m: MotorEntity, stopId?: string): void {
     if (this._config?.layout !== "compact") return;
-    if (stopId) this._compactStopTargets.set(stopId, Symbol());
-    else if (m.cover) this._compactStopTargets.set(m.cover, Symbol());
+    if (stopId) this._retainCompactTarget(stopId);
+    else if (m.cover) this._retainCompactTarget(m.cover);
     this.requestUpdate();
   }
 

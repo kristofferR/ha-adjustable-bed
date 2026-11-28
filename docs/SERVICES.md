@@ -26,6 +26,7 @@ For named raise/lower/stop voice commands and Apple Home controls, see
 | [`cancel_hold`](#cancel_hold) | Cancel held control | End a cancelled gesture and stop its movement. Targets its Release held control button. |
 | [`press_confirmed`](#press_confirmed) | Send confirmed action | Send a button action with explicit confirmation. Targets the button entity. |
 | [`hold_control`](#hold_control) | Hold control | Holds one of the bed's controls for a set time, then releases it as the remote does. Every bed is checked before any moves; a control the bed does not have is refused with the list of controls it has. |
+| [`cancel_hold`](#cancel_hold) | Cancel held control | End a cancelled gesture without its normal release movement. Targets its Release held control button. |
 | [`l2motion`](#l2motion) | L2 Motion: settings | Sets the light color of an L2 Motion bed, or switches its two bases between wired and wireless sync. |
 | [`instant_comfort_firmness`](#instant_comfort_firmness) | Instant Comfort: set firmness | Sets the main or lumbar firmness for one sleeper of an Instant Comfort air unit. |
 | [`personal_comfort_sequence`](#personal_comfort_sequence) | Personal Comfort / Instant Comfort: run sequence | Runs a full body massage, or moves one base of a pair to a preset while the other base lowers its feet for 30 seconds. |
@@ -277,6 +278,11 @@ it carry a `hold_lease_mode` attribute (`stream` or `latched`), and
 `hold_lease_motor` names the `timed_move` motor where there is one. A combined
 control on a combined bed carries them only when both sides hold the same way.
 
+Pass the same `hold_owner` and `hold_generation` to `stop_all` to release only
+that admitted hold. An expired or replaced hold does nothing. For a cancelled
+gesture (for example, focus loss), also pass `hold_cancelled: true` to suppress
+any normal release movement. Leave the hold fields unset for an explicit Stop.
+
 ```yaml
 # Repeat every 250 ms while a button is held; send stop_all on release.
 action: adjustable_bed.timed_move
@@ -366,6 +372,13 @@ Send a button action that asks for confirmation. Target the button entity and
 set `confirmed: true` only after you have acknowledged the action. The dashboard
 card does this after its confirmation dialog. An ordinary `button.press` cannot
 change VivaSleep's wired or wireless synchronization mode.
+
+### `cancel_hold`
+
+Targets a **Release held control** button and cancels its gesture without
+performing the normal release movement. The card uses this when a native
+gesture is cancelled or loses focus. A normal pointer or key release uses the
+button's regular Press action. Other buttons refuse this action.
 
 ### `hold_control`
 
@@ -2916,6 +2929,12 @@ are 3, 5, 10, 15 or 30 seconds. Preview requires current original strengths,
 ends with both channels off and restores strengths on the original connection.
 Privacy accepts a three-digit `pin` and disconnects after delivery.
 See [AI Bed](beds/ai_bed.md) for controls, limits and untested hardware status.
+
+The dashboard card's automatic hold release calls `stop_all` with the original
+`hold_owner` and `hold_generation`. Both fields must be supplied together. This
+ends only that admitted hold and runs its own release cleanup; an expired hold or
+a replaced Bluetooth connection receives no new STOP frame. An ordinary
+`stop_all` call without those fields remains an explicit bed-wide Stop.
 
 ### name_memory
 
