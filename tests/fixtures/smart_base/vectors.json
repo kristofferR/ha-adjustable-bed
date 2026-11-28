@@ -1,0 +1,783 @@
+[
+  {
+    "id": "P1-A8-motor1_up",
+    "protocol": "P1",
+    "action": "A8RM motor1_up",
+    "inputs": {
+      "builder": "control",
+      "vendor": "WI_LINKE",
+      "mode": 0,
+      "command": "24"
+    },
+    "expected_bytes": "6e01002493",
+    "evidence": [
+      "E-A8",
+      "E-BUILDER",
+      "E-LOOP"
+    ],
+    "vector_origin": "Derived from literal resource input and fully traced static builder, not a hardware capture"
+  },
+  {
+    "id": "P2-A8-motor1_up",
+    "protocol": "P2",
+    "action": "A8RM motor1_up",
+    "inputs": {
+      "builder": "control",
+      "vendor": "NORDIC",
+      "mode": 0,
+      "command": "24"
+    },
+    "expected_bytes": "24",
+    "evidence": [
+      "E-A8",
+      "E-BUILDER",
+      "E-LOOP"
+    ],
+    "vector_origin": "Derived from literal resource input and fully traced static builder, not a hardware capture"
+  },
+  {
+    "id": "P1-A8-motor1_down",
+    "protocol": "P1",
+    "action": "A8RM motor1_down",
+    "inputs": {
+      "builder": "control",
+      "vendor": "WI_LINKE",
+      "mode": 0,
+      "command": "25"
+    },
+    "expected_bytes": "6e01002594",
+    "evidence": [
+      "E-A8",
+      "E-BUILDER",
+      "E-LOOP"
+    ],
+    "vector_origin": "Derived from literal resource input and fully traced static builder, not a hardware capture"
+  },
+  {
+    "id": "P2-A8-motor1_down",
+    "protocol": "P2",
+    "action": "A8RM motor1_down",
+    "inputs": {
+      "builder": "control",
+      "vendor": "NORDIC",
+      "mode": 0,
+      "command": "25"
+    },
+    "expected_bytes": "25",
+    "evidence": [
+      "E-A8",
+      "E-BUILDER",
+      "E-LOOP"
+    ],
+    "vector_origin": "Derived from literal resource input and fully traced static builder, not a hardware capture"
+  },
+  {
+    "id": "P1-A8-motor2_up",
+    "protocol": "P1",
+    "action": "A8RM motor2_up",
+    "inputs": {
+      "builder": "control",
+      "vendor": "WI_LINKE",
+      "mode": 0,
+      "command": "26"
+    },
+    "expected_bytes": "6e01002695",
+    "evidence": [
+      "E-A8",
+      "E-BUILDER",
+      "E-LOOP"
+    ],
+    "vector_origin": "Derived from literal resource input and fully traced static builder, not a hardware capture"
+  },
+  {
+    "id": "P2-A8-motor2_up",
+    "protocol": "P2",
+    "action": "A8RM motor2_up",
+    "inputs": {
+      "builder": "control",
+      "vendor": "NORDIC",
+      "mode": 0,
+      "command": "26"
+    },
+    "expected_bytes": "26",
+    "evidence": [
+      "E-A8",
+      "E-BUILDER",
+      "E-LOOP"
+    ],
+    "vector_origin": "Derived from literal resource input and fully traced static builder, not a hardware capture"
+  },
+  {
+    "id": "P1-A8-motor2_down",
+    "protocol": "P1",
+    "action": "A8RM motor2_down",
+    "inputs": {
+      "builder": "control",
+      "vendor": "WI_LINKE",
+      "mode": 0,
+      "command": "27"
+    },
+    "expected_bytes": "6e01002796",
+    "evidence": [
+      "E-A8",
+      "E-BUILDER",
+      "E-LOOP"
+    ],
+    "vector_origin": "Derived from literal resource input and fully traced static builder, not a hardware capture"
+  },
+  {
+    "id": "P2-A8-motor2_down",
+    "protocol": "P2",
+    "action": "A8RM motor2_down",
+    "inputs": {
+      "builder": "control",
+      "vendor": "NORDIC",
+      "mode": 0,
+      "command": "27"
+    },
+    "expected_bytes": "27",
+    "evidence": [
+      "E-A8",
+      "E-BUILDER",
+      "E-LOOP"
+    ],
+    "vector_origin": "Derived from literal resource input and fully traced static builder, not a hardware capture"
+  },
+  {
+    "id": "P1-A8-underbed_light_toggle",
+    "protocol": "P1",
+    "action": "A8RM underbed_light_toggle",
+    "inputs": {
+      "builder": "control",
+      "vendor": "WI_LINKE",
+      "mode": 0,
+      "command": "3c"
+    },
+    "expected_bytes": "6e01003cab",
+    "evidence": [
+      "E-A8",
+      "E-BUILDER",
+      "E-LOOP"
+    ],
+    "vector_origin": "Derived from literal resource input and fully traced static builder, not a hardware capture"
+  },
+  {
+    "id": "P2-A8-underbed_light_toggle",
+    "protocol": "P2",
+    "action": "A8RM underbed_light_toggle",
+    "inputs": {
+      "builder": "control",
+      "vendor": "NORDIC",
+      "mode": 0,
+      "command": "3c"
+    },
+    "expected_bytes": "3c",
+    "evidence": [
+      "E-A8",
+      "E-BUILDER",
+      "E-LOOP"
+    ],
+    "vector_origin": "Derived from literal resource input and fully traced static builder, not a hardware capture"
+  },
+  {
+    "id": "P1-A8-flat",
+    "protocol": "P1",
+    "action": "A8RM flat",
+    "inputs": {
+      "builder": "control",
+      "vendor": "WI_LINKE",
+      "mode": 0,
+      "command": "31"
+    },
+    "expected_bytes": "6e010031a0",
+    "evidence": [
+      "E-A8",
+      "E-BUILDER",
+      "E-LOOP"
+    ],
+    "vector_origin": "Derived from literal resource input and fully traced static builder, not a hardware capture"
+  },
+  {
+    "id": "P2-A8-flat",
+    "protocol": "P2",
+    "action": "A8RM flat",
+    "inputs": {
+      "builder": "control",
+      "vendor": "NORDIC",
+      "mode": 0,
+      "command": "31"
+    },
+    "expected_bytes": "31",
+    "evidence": [
+      "E-A8",
+      "E-BUILDER",
+      "E-LOOP"
+    ],
+    "vector_origin": "Derived from literal resource input and fully traced static builder, not a hardware capture"
+  },
+  {
+    "id": "P1-A8-zero_gravity_recall",
+    "protocol": "P1",
+    "action": "A8RM zero_gravity_recall",
+    "inputs": {
+      "builder": "control",
+      "vendor": "WI_LINKE",
+      "mode": 0,
+      "command": "45"
+    },
+    "expected_bytes": "6e010045b4",
+    "evidence": [
+      "E-A8",
+      "E-BUILDER",
+      "E-LOOP"
+    ],
+    "vector_origin": "Derived from literal resource input and fully traced static builder, not a hardware capture"
+  },
+  {
+    "id": "P2-A8-zero_gravity_recall",
+    "protocol": "P2",
+    "action": "A8RM zero_gravity_recall",
+    "inputs": {
+      "builder": "control",
+      "vendor": "NORDIC",
+      "mode": 0,
+      "command": "45"
+    },
+    "expected_bytes": "45",
+    "evidence": [
+      "E-A8",
+      "E-BUILDER",
+      "E-LOOP"
+    ],
+    "vector_origin": "Derived from literal resource input and fully traced static builder, not a hardware capture"
+  },
+  {
+    "id": "P1-A8-zero_gravity_save",
+    "protocol": "P1",
+    "action": "A8RM zero_gravity_save",
+    "inputs": {
+      "builder": "control",
+      "vendor": "WI_LINKE",
+      "mode": 0,
+      "command": "66"
+    },
+    "expected_bytes": "6e010066d5",
+    "evidence": [
+      "E-A8",
+      "E-BUILDER",
+      "E-LOOP"
+    ],
+    "vector_origin": "Derived from literal resource input and fully traced static builder, not a hardware capture"
+  },
+  {
+    "id": "P2-A8-zero_gravity_save",
+    "protocol": "P2",
+    "action": "A8RM zero_gravity_save",
+    "inputs": {
+      "builder": "control",
+      "vendor": "NORDIC",
+      "mode": 0,
+      "command": "66"
+    },
+    "expected_bytes": "66",
+    "evidence": [
+      "E-A8",
+      "E-BUILDER",
+      "E-LOOP"
+    ],
+    "vector_origin": "Derived from literal resource input and fully traced static builder, not a hardware capture"
+  },
+  {
+    "id": "P1-A8-release",
+    "protocol": "P1",
+    "action": "A8RM release",
+    "inputs": {
+      "builder": "control",
+      "vendor": "WI_LINKE",
+      "mode": 0,
+      "command": "6e"
+    },
+    "expected_bytes": "6e01006edd",
+    "evidence": [
+      "E-A8",
+      "E-BUILDER",
+      "E-LOOP"
+    ],
+    "vector_origin": "Derived from literal resource input and fully traced static builder, not a hardware capture"
+  },
+  {
+    "id": "P2-A8-release",
+    "protocol": "P2",
+    "action": "A8RM release",
+    "inputs": {
+      "builder": "control",
+      "vendor": "NORDIC",
+      "mode": 0,
+      "command": "6e"
+    },
+    "expected_bytes": "6e",
+    "evidence": [
+      "E-A8",
+      "E-BUILDER",
+      "E-LOOP"
+    ],
+    "vector_origin": "Derived from literal resource input and fully traced static builder, not a hardware capture"
+  },
+  {
+    "id": "RGB-white",
+    "protocol": "P1",
+    "action": "central color-wheel touch white",
+    "inputs": {
+      "builder": "rgb",
+      "rgb": "ffffff"
+    },
+    "expected_bytes": "6e0cffff786e0dffff79",
+    "evidence": [
+      "E-RGB"
+    ],
+    "vector_origin": "Literal callsite or boundary parameter through static builder; not a capture"
+  },
+  {
+    "id": "timeout-300",
+    "protocol": "P1",
+    "action": "LED slider release 300 seconds",
+    "inputs": {
+      "builder": "led_timeout",
+      "seconds": 300,
+      "event": "slider_release"
+    },
+    "expected_bytes": "6e0b012ca6",
+    "evidence": [
+      "E-TIMEOUT"
+    ],
+    "vector_origin": "Literal callsite or boundary parameter through static builder; not a capture"
+  },
+  {
+    "id": "timeout-zero-release",
+    "protocol": "P1",
+    "action": "LED slider release zero",
+    "inputs": {
+      "builder": "led_timeout",
+      "seconds": 0,
+      "event": "slider_release"
+    },
+    "expected_bytes": "6e0bffff77",
+    "evidence": [
+      "E-TIMEOUT"
+    ],
+    "vector_origin": "Literal callsite or boundary parameter through static builder; not a capture"
+  },
+  {
+    "id": "timeout-zero-save",
+    "protocol": "P1",
+    "action": "LED Save button zero",
+    "inputs": {
+      "builder": "led_timeout",
+      "seconds": 0,
+      "event": "save_button"
+    },
+    "expected_bytes": "6e0b000079",
+    "evidence": [
+      "E-TIMEOUT"
+    ],
+    "vector_origin": "Unreachable selected-page Save handler: activity_led_lamp.xml:34-47 sets GONE; no code shows it. Builder-only regression/transcription vector, not reachable feature.",
+    "reachability": "DEAD/UNUSED"
+  },
+  {
+    "id": "query-led",
+    "protocol": "P1",
+    "action": "Settings query LED capability",
+    "inputs": {
+      "builder": "sum_frame",
+      "header": [
+        110,
+        10,
+        0,
+        1
+      ]
+    },
+    "expected_bytes": "6e0a000179",
+    "evidence": [
+      "E-CAPABILITY"
+    ],
+    "vector_origin": "Literal callsite or boundary parameter through static builder; not a capture"
+  },
+  {
+    "id": "query-alarm",
+    "protocol": "P1",
+    "action": "Settings conditional query alarm",
+    "inputs": {
+      "builder": "sum_frame",
+      "header": [
+        110,
+        8,
+        1,
+        1
+      ]
+    },
+    "expected_bytes": "6e08010178",
+    "evidence": [
+      "E-CAPABILITY"
+    ],
+    "vector_origin": "Literal callsite or boundary parameter through static builder; not a capture"
+  },
+  {
+    "id": "query-aroma",
+    "protocol": "P1",
+    "action": "Settings query aroma",
+    "inputs": {
+      "builder": "sum_frame",
+      "header": [
+        110,
+        26,
+        0,
+        0
+      ]
+    },
+    "expected_bytes": "6e1a000088",
+    "evidence": [
+      "E-CAPABILITY"
+    ],
+    "vector_origin": "Literal callsite or boundary parameter through static builder; not a capture"
+  },
+  {
+    "id": "R-A8-init",
+    "protocol": "P1",
+    "action": "Selected route successful local notification setup initialization",
+    "inputs": {
+      "builder": "sum_frame",
+      "header": [
+        110,
+        2,
+        1,
+        0
+      ]
+    },
+    "expected_bytes": "6e02010071",
+    "evidence": [
+      "E-SELECTED",
+      "E-GATT"
+    ],
+    "vector_origin": "Literal initialization byte array at Utils.java:1077, after300ms task delay; local notify success conditional"
+  },
+  {
+    "id": "R-A8-hold-up",
+    "protocol": "P1",
+    "action": "Motor1 up, three worker turns then normalUP",
+    "inputs": {
+      "builder": "control_sequence",
+      "vendor": "WI_LINKE",
+      "mode": 0,
+      "commands": [
+        "24",
+        "24",
+        "24",
+        "6e"
+      ]
+    },
+    "expected_bytes": "6e01002493 | 6e01002493 | 6e01002493 | 6e01006edd",
+    "expected_gatt_values": [
+      "6e01002493",
+      "6e01002493",
+      "6e01002493",
+      "6e01006edd"
+    ],
+    "source_state_trace": "mode1 refreshes; UP->mode0; worker idle,50ms,end",
+    "evidence": [
+      "E-SELECTED",
+      "E-LOOP",
+      "E-TOUCH"
+    ],
+    "vector_origin": "Static manually traced event/worker ordering, existing builder reproduction only; not Android runtime or capture"
+  },
+  {
+    "id": "R-A8-flat",
+    "protocol": "P1",
+    "action": "Flat DOWN, one worker turn and built-in cleanup",
+    "inputs": {
+      "builder": "control_sequence",
+      "vendor": "WI_LINKE",
+      "mode": 0,
+      "commands": [
+        "31",
+        "6e"
+      ]
+    },
+    "expected_bytes": "6e010031a0 | 6e01006edd",
+    "expected_gatt_values": [
+      "6e010031a0",
+      "6e01006edd"
+    ],
+    "source_state_trace": "mode2 once then150ms end",
+    "evidence": [
+      "E-SELECTED",
+      "E-LOOP",
+      "E-TOUCH"
+    ],
+    "vector_origin": "Static manually traced event/worker ordering, existing builder reproduction only; not Android runtime or capture"
+  },
+  {
+    "id": "R-A8-ubl",
+    "protocol": "P1",
+    "action": "UBL DOWN, one worker turn and built-in cleanup",
+    "inputs": {
+      "builder": "control_sequence",
+      "vendor": "WI_LINKE",
+      "mode": 0,
+      "commands": [
+        "3c",
+        "6e"
+      ]
+    },
+    "expected_bytes": "6e01003cab | 6e01006edd",
+    "expected_gatt_values": [
+      "6e01003cab",
+      "6e01006edd"
+    ],
+    "source_state_trace": "mode2 once then150ms end",
+    "evidence": [
+      "E-SELECTED",
+      "E-LOOP",
+      "E-TOUCH"
+    ],
+    "vector_origin": "Static manually traced event/worker ordering, existing builder reproduction only; not Android runtime or capture"
+  },
+  {
+    "id": "R-A8-zg-short",
+    "protocol": "P1",
+    "action": "ZG DOWN thenUP before threshold",
+    "inputs": {
+      "builder": "control_sequence",
+      "vendor": "WI_LINKE",
+      "mode": 0,
+      "commands": [
+        "45",
+        "6e"
+      ]
+    },
+    "expected_bytes": "6e010045b4 | 6e01006edd",
+    "expected_gatt_values": [
+      "6e010045b4",
+      "6e01006edd"
+    ],
+    "source_state_trace": "mode3 pending66 replaced by45+mode4 onUP; z=false permits recall then150ms end",
+    "evidence": [
+      "E-SELECTED",
+      "E-LOOP",
+      "E-TOUCH"
+    ],
+    "vector_origin": "Static manually traced event/worker ordering, existing builder reproduction only; not Android runtime or capture"
+  },
+  {
+    "id": "R-A8-zg-long",
+    "protocol": "P1",
+    "action": "ZG long threshold then normalUP",
+    "inputs": {
+      "builder": "control_sequence",
+      "vendor": "WI_LINKE",
+      "mode": 0,
+      "commands": [
+        "66",
+        "6e"
+      ]
+    },
+    "expected_bytes": "6e010066d5 | 6e01006edd",
+    "expected_gatt_values": [
+      "6e010066d5",
+      "6e01006edd"
+    ],
+    "source_state_trace": "20 threshold increments at150ms with initial i0; save then z=true; UP mode4 suppresses recall then150ms end",
+    "evidence": [
+      "E-SELECTED",
+      "E-LOOP",
+      "E-TOUCH"
+    ],
+    "vector_origin": "Static manually traced event/worker ordering, existing builder reproduction only; not Android runtime or capture"
+  },
+  {
+    "id": "R-A8-cancel-inside",
+    "protocol": "P1",
+    "action": "Motor1 up, insideCANCEL then another worker turn",
+    "inputs": {
+      "builder": "control_sequence",
+      "vendor": "WI_LINKE",
+      "mode": 0,
+      "commands": [
+        "24",
+        "24"
+      ]
+    },
+    "expected_bytes": "6e01002493 | 6e01002493",
+    "expected_gatt_values": [
+      "6e01002493",
+      "6e01002493"
+    ],
+    "source_state_trace": "isBtnRelease=false; no mode/btnView change; no end",
+    "evidence": [
+      "E-SELECTED",
+      "E-LOOP",
+      "E-TOUCH"
+    ],
+    "vector_origin": "Static manually traced event/worker ordering, existing builder reproduction only; not Android runtime or capture"
+  },
+  {
+    "id": "R-A8-cancel-outside",
+    "protocol": "P1",
+    "action": "Motor1 up, outsideCANCEL then cleanup",
+    "inputs": {
+      "builder": "control_sequence",
+      "vendor": "WI_LINKE",
+      "mode": 0,
+      "commands": [
+        "24",
+        "6e"
+      ]
+    },
+    "expected_bytes": "6e01002493 | 6e01006edd",
+    "expected_gatt_values": [
+      "6e01002493",
+      "6e01006edd"
+    ],
+    "source_state_trace": "isBtnRelease=true; changeStatus1->0; btnView cleared; worker50ms end",
+    "evidence": [
+      "E-SELECTED",
+      "E-LOOP",
+      "E-TOUCH"
+    ],
+    "vector_origin": "Static manually traced event/worker ordering, existing builder reproduction only; not Android runtime or capture"
+  },
+  {
+    "id": "R-A8-pause-held",
+    "protocol": "P1",
+    "action": "Motor1 up, onPause, next held worker turn",
+    "inputs": {
+      "builder": "control_sequence",
+      "vendor": "WI_LINKE",
+      "mode": 0,
+      "commands": [
+        "24",
+        "6e",
+        "24"
+      ]
+    },
+    "expected_bytes": "6e01002493 | 6e01006edd | 6e01002493",
+    "expected_gatt_values": [
+      "6e01002493",
+      "6e01006edd",
+      "6e01002493"
+    ],
+    "source_state_trace": "onPause queues6e without clearing mode1/threadFlag; subsequent movement possible, subject to scheduling",
+    "evidence": [
+      "E-SELECTED",
+      "E-LOOP",
+      "E-TOUCH"
+    ],
+    "vector_origin": "Static manually traced event/worker ordering, existing builder reproduction only; not Android runtime or capture"
+  },
+  {
+    "id": "R-A8-pause-idle",
+    "protocol": "P1",
+    "action": "onPause from idle",
+    "inputs": {
+      "builder": "control_sequence",
+      "vendor": "WI_LINKE",
+      "mode": 0,
+      "commands": [
+        "6e"
+      ]
+    },
+    "expected_bytes": "6e01006edd",
+    "expected_gatt_values": [
+      "6e01006edd"
+    ],
+    "source_state_trace": "onPause calls sendData directly even without movement",
+    "evidence": [
+      "E-SELECTED",
+      "E-LOOP",
+      "E-TOUCH"
+    ],
+    "vector_origin": "Static manually traced event/worker ordering, existing builder reproduction only; not Android runtime or capture"
+  },
+  {
+    "id": "R-A8-long-cancel",
+    "protocol": "P1",
+    "action": "ZG DOWN, outsideCANCEL before threshold, later threshold",
+    "inputs": {
+      "builder": "control_sequence",
+      "vendor": "WI_LINKE",
+      "mode": 0,
+      "commands": [
+        "66"
+      ]
+    },
+    "expected_bytes": "6e010066d5",
+    "expected_gatt_values": [
+      "6e010066d5"
+    ],
+    "source_state_trace": "changeStatus only handles mode1, not3; outside clears btnView; pending save remains; laterUP ignored",
+    "evidence": [
+      "E-SELECTED",
+      "E-LOOP",
+      "E-TOUCH"
+    ],
+    "vector_origin": "Static manually traced event/worker ordering, existing builder reproduction only; not Android runtime or capture"
+  },
+  {
+    "id": "R-A8-phone-ring",
+    "protocol": "P1",
+    "action": "Motor1 up then delivered RINGING callback",
+    "inputs": {
+      "builder": "control_sequence",
+      "vendor": "WI_LINKE",
+      "mode": 0,
+      "commands": [
+        "24",
+        "6e"
+      ]
+    },
+    "expected_bytes": "6e01002493 | 6e01006edd",
+    "expected_gatt_values": [
+      "6e01002493",
+      "6e01006edd"
+    ],
+    "source_state_trace": "AppReceiver callback sets mode0 and isRinging=true; worker50ms end; further touch rejected untilIDLE",
+    "evidence": [
+      "E-SELECTED",
+      "E-LOOP",
+      "E-TOUCH"
+    ],
+    "vector_origin": "Static manually traced event/worker ordering, existing builder reproduction only; not Android runtime or capture"
+  },
+  {
+    "id": "R-A8-conditional-alarm-cancel",
+    "protocol": "P1",
+    "action": "Unsolicited alarm capability shows row, displayed Cancel alarm button",
+    "inputs": {
+      "builder": "header_sequence",
+      "headers": [
+        [
+          110,
+          5,
+          0,
+          0
+        ],
+        [
+          110,
+          6,
+          0,
+          0
+        ]
+      ]
+    },
+    "expected_bytes": "6e05000073 | 6e06000074",
+    "expected_gatt_values": [
+      "6e05000073",
+      "6e06000074"
+    ],
+    "evidence": [
+      "E-SELECTED-SETTINGS"
+    ],
+    "source_state_trace": "A8 has no alarm choices; Set produces error/no write. Conditional row Cancel uses two direct sum_frame writes separated300ms, then300ms wait.",
+    "vector_origin": "Literal selected conditional cancel callsites; no alarm scheduling inference"
+  }
+]

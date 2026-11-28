@@ -227,6 +227,8 @@ async def _create_controller_for_bed_type(
         from custom_components.adjustable_bed.profiles import ergosportive as ergosportive_app
         coordinator.entry.data.update({const.CONF_PROTOCOL_VARIANT: variant or "remote", const.CONF_PRODUCT_TYPE: "old_dsp_normal", "ergosportive_controls": list(ergosportive_app.CONTROLS)})
 
+    if bed_type == const.BED_TYPE_SMART_BASE:
+        coordinator.entry.data[const.CONF_PRODUCT_TYPE] = "200iv2_a8rm"
     if bed_type == "amada":
         coordinator.entry.data[const.CONF_PRODUCT_TYPE] = "ab"
     if bed_type == const.BED_TYPE_BETTERLIVING2:

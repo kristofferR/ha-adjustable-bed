@@ -1792,6 +1792,8 @@
   },
   "entity": {
     "button": {
+      "smart_base_query": {"name": "Refresh bed settings"},
+      "smart_base_cancel_alarm": {"name": "Cancel alarm"},
       "active_sleep_refresh": {
         "name": "Refresh state"
       },
@@ -6894,6 +6896,7 @@
     },
     "number": {
       "ergosportive_brightness": {"name": "Bedside lamp brightness"},
+      "smart_base_lamp_seconds": {"name": "Light timeout (0 keeps on)"},
       "thrivesleep_light_seconds": {
         "name": "Light timer (0 keeps on)"
       },
@@ -12400,6 +12403,9 @@
     "ergosportive_control": {"message": "Choose a control enabled for this ErgoSportive profile and a hold from 0.1 to 30 seconds."},
     "ergosportive_memory_gesture_unresolved": {"message": "Memory save and held recall are not available for this ErgoSportive profile."},
     "ergosportive_brightness": {"message": "Enable bedside lamp brightness and choose a whole level from 1 to 13."},
+    "smart_base_product": {"message": "Choose the Smart Base 200IV2 / A8RM product in Reconfigure."},
+    "smart_base_gatt": {"message": "The Smart Base 200IV2 route requires its FEE9 service and exact write and notification characteristics."},
+    "smart_base_settings": {"message": "Reconnect and refresh bed settings. The bed must report this feature on the current connection; choose a valid color or 0 to 300 seconds."},
     "purely_sleep_product_required": {
       "message": "Choose NXPS200 (JLRN) or PS200 (VJRM) for Purely Sleep normal mode."
     },
@@ -14364,6 +14370,7 @@
       "options": {
         "motionflex": "MotionFlex app",
         "topcare": "TOP CARE",
+        "smart_base": "Smart Base (200IV2 / A8RM)",
         "comfort_bed": "Comfort Bed (ComfortCareBed)",
         "thrivesleep": "Thrive Sleep app",
         "atlas_lift": "Atlas Lift (Cama Lift)",
