@@ -2824,3 +2824,18 @@ Use Set alarm for the selected layout’s preset/massage alarm combinations.
 ### GhostBed alarms and clock
 
 GhostBed app beds support `set_alarm` slots 1–4 with weekdays and `wake_mode_1` (Basic) or `wake_mode_2` (Pro). Both bank reports must be available before editing. `sync_clock` writes HA local time. Confirmed native Delete alarm buttons compact the four records; see [GhostBed](beds/flexispot.md#ghostbed).
+
+## AI Bed primary-route controls
+
+`adjustable_bed.ai_bed` supports `inflation`, `vibration_apply`,
+`vibration_preview`, `privacy_pin` and `settings_query` on the explicitly selected
+primary 305 subset. Use `set_alarm` for wake schedules and `sync_clock` for local
+MCU time. Inflation weekdays are integers 0 (Monday) through 6 (Sunday). An
+enabled schedule needs at least one weekday. Disabling inflation first reads
+a fresh schedule so its hour/minute are preserved.
+
+Vibration strengths are 1–15 with mode 0–2, on M2/M3 names. Preview durations
+are 3, 5, 10, 15 or 30 seconds. Preview requires current original strengths,
+ends with both channels off and restores strengths on the original connection.
+Privacy accepts a three-digit `pin` and disconnects after delivery.
+See [AI Bed](beds/ai_bed.md) for controls, limits and untested hardware status.

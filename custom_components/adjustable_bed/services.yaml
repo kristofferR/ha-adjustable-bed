@@ -5016,3 +5016,84 @@ myside:
       default: true
       selector:
         boolean:
+
+ai_bed:
+  name: AI Bed controls
+  description: Configure the proved direct BLE primary-route controls. Use set_alarm for wake schedules.
+  fields:
+    device_id:
+      name: Bed
+      required: true
+      selector:
+        device:
+          integration: adjustable_bed
+          multiple: true
+    action:
+      name: Action
+      required: true
+      selector:
+        select:
+          options:
+            - inflation
+            - vibration_apply
+            - vibration_preview
+            - privacy_pin
+            - settings_query
+    side:
+      name: Side
+      selector:
+        select:
+          options: [both, left, right]
+    enabled:
+      name: Enabled
+      selector:
+        boolean:
+    hour:
+      name: Hour
+      selector:
+        number:
+          min: 0
+          max: 23
+          mode: box
+    minute:
+      name: Minute
+      selector:
+        number:
+          min: 0
+          max: 59
+          mode: box
+    weekdays:
+      name: Weekdays
+      description: Monday is 0, Sunday is 6. Enabling inflation needs at least one day.
+      selector:
+        object:
+    mode:
+      name: Vibration mode
+      selector:
+        number:
+          min: 0
+          max: 2
+          mode: box
+    head:
+      name: Head strength
+      selector:
+        number:
+          min: 1
+          max: 15
+    foot:
+      name: Foot strength
+      selector:
+        number:
+          min: 1
+          max: 15
+    seconds:
+      name: Preview seconds
+      selector:
+        select:
+          options: ["3", "5", "10", "15", "30"]
+    pin:
+      name: New privacy PIN
+      description: Three decimal digits. The bed disconnects after the write.
+      selector:
+        text:
+          type: password
