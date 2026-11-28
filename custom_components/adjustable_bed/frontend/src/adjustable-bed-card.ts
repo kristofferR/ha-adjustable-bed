@@ -178,6 +178,7 @@ export class AdjustableBedCard extends LitElement {
     stopBed: (stopEntityId) => {
       if (stopEntityId) this._stopCompactTarget(stopEntityId);
     },
+    cancelHold: (entityId) => this._call("adjustable_bed", "cancel_hold", entityId),
     changed: () => { this._tapRevision++; },
   });
   private _focusLossCleanup: (() => void) | null = null;
@@ -187,6 +188,7 @@ export class AdjustableBedCard extends LitElement {
     this._hold.endActiveFromPointer(
       event.pointerId,
       event.type === "pointercancel" || event.button === 0,
+      event.type === "pointercancel",
     );
   };
 
@@ -1420,7 +1422,7 @@ export class AdjustableBedCard extends LitElement {
           e, m, direction, stopId, stopScope, remainingStopIds,
         )}
         @keyup=${(e: KeyboardEvent) => this._endKeyHold(e, m, stopId)}
-        @blur=${() => this._hold.endKeyboard(m, stopId)}
+        @blur=${() => this._hold.endKeyboard(m, stopId, undefined, true)}
         @click=${(e: MouseEvent) => this._activateWithoutPointer(e, m, direction, stopId, stopScope)}
         ?disabled=${disabled}
       ><ha-icon icon=${`mdi:chevron-${direction}`}></ha-icon></button>`;
@@ -1472,7 +1474,7 @@ export class AdjustableBedCard extends LitElement {
       @pointercancel=${(e: PointerEvent) => this._endPointerHold(e, motor, stopId)}
       @keydown=${(e: KeyboardEvent) => this._startHold(e, motor, "up", stopId)}
       @keyup=${(e: KeyboardEvent) => this._endKeyHold(e, motor, stopId)}
-      @blur=${() => this._endHold(motor, stopId)}
+      @blur=${() => this._endHold(motor, stopId, true)}
       @click=${(e: MouseEvent) => this._activateWithoutPointer(e, motor, "up", stopId)}
       ?disabled=${!stopId || !this._available(entityId)}>
       ${this._icon(entityId)}
@@ -2009,7 +2011,7 @@ export class AdjustableBedCard extends LitElement {
         <button class="dialog-btn" @click=${this._closeEstimateDialog}>${this._t("memory.cancel")}</button>
         <button class="dialog-btn primary" @click=${() => {
           this._closeEstimateDialog();
-          this._sendPress(entityId);
+          this._sendPress(entityId, true);
         }}>${action}</button>
       </div>`;
   }
@@ -2397,6 +2399,7 @@ export class AdjustableBedCard extends LitElement {
       e.pointerId,
       e.type !== "pointerup" || e.button === 0,
       stopId,
+      e.type === "pointercancel",
     );
   }
 
@@ -2407,8 +2410,8 @@ export class AdjustableBedCard extends LitElement {
     this._hold.endKeyboard(m, stopId, e.key);
   }
 
-  private _endHold(motor: MotorEntity, stopId?: string): void {
-    this._hold.end(motor, stopId);
+  private _endHold(motor: MotorEntity, stopId?: string, cancelled = false): void {
+    this._hold.end(motor, stopId, cancelled);
   }
 
   private _motorStop(
@@ -2477,10 +2480,14 @@ export class AdjustableBedCard extends LitElement {
     this._sendPress(entityId);
   }
 
-  private _sendPress(entityId: string): void {
+  private _sendPress(entityId: string, confirmed = false): void {
     // A preset or other command replaces a tap move; a STOP could cancel it.
     this._hold.retireTap();
-    this._call("button", "press", entityId);
+    if (confirmed) {
+      this.hass?.callService("adjustable_bed", "press_confirmed", {
+        entity_id: entityId, confirmed: true,
+      })?.catch(() => undefined);
+    } else this._call("button", "press", entityId);
   }
 
   private _cover(entityId: string, service: string): void {

@@ -42,6 +42,8 @@ class ControllerButtonSpec:
     release_only: bool = field(default=False, kw_only=True)
     # The native card asks before an explicit destructive/save action.
     requires_confirmation: bool = field(default=False, kw_only=True)
+    # An explicitly acknowledged action; an ordinary button press cannot grant it.
+    confirmed_press_fn: MotorCommandCallable | None = field(default=None, kw_only=True)
     # A maintenance action (e.g. a refresh for a bed that never pushes state):
     # a diagnostic entity, disabled by default.
     diagnostic: bool = field(default=False, kw_only=True)
