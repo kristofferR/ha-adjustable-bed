@@ -8390,5 +8390,22 @@
         "6e400003-b5a3-f393-e0a9-e50e24dcca9e"
       ]
     }
+  },
+  "easyctrl": {
+    "services": {
+      "6e403587-b5a3-f393-e0a9-e50e24dcca9e": [
+        "6e403588-b5a3-f393-e0a9-e50e24dcca9e",
+        "6e403589-b5a3-f393-e0a9-e50e24dcca9e"
+      ]
+    },
+    "properties": {
+      "6e403588-b5a3-f393-e0a9-e50e24dcca9e": [
+        "write-without-response",
+        "notify"
+      ],
+      "6e403589-b5a3-f393-e0a9-e50e24dcca9e": [
+        "notify"
+      ]
+    }
   }
 }

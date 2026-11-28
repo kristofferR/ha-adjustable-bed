@@ -267,6 +267,8 @@ async def _create_controller_for_bed_type(
         coordinator.entry.data[const.CONF_BLE_DEVICE_NAME] = "HHC0000001D00X"
     if bed_type == const.BED_TYPE_RESTONIC:
         coordinator.entry.data[const.CONF_PRODUCT_TYPE] = "prime"
+    if bed_type == "easyctrl":
+        coordinator.entry.data[const.CONF_PRODUCT_TYPE] = "100"
     if bed_type == "cheerssleep":
         coordinator.entry.data[const.CONF_PRODUCT_TYPE] = "45"
     if bed_type in ("sleep_evolution", "wsilver_legacy"):

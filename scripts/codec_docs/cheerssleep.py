@@ -4,6 +4,7 @@ from custom_components.adjustable_bed.codec import cheerssleep as codec
 from custom_components.adjustable_bed.profiles import cheerssleep as app
 
 from ._common import Block, _block, _hex, _table
+from ._easyctrl import BLOCKS as EASYCTRL_BLOCKS
 
 GUIDE = "docs/beds/cheerssleep.md"
 
@@ -215,3 +216,5 @@ def massage_and_settings() -> str:
 
 
 BLOCKS.append((GUIDE, "cheerssleep-massage-settings", massage_and_settings))
+
+BLOCKS.extend(EASYCTRL_BLOCKS)

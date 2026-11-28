@@ -1126,6 +1126,219 @@
  "button:dynasty_query": {
   "card_section": "utility"
  },
+ "button:easyctrl_all_down": {
+  "card_section": "motors",
+  "card_role": "down",
+  "card_motor": "easyctrl_all"
+ },
+ "button:easyctrl_all_up": {
+  "card_section": "motors",
+  "card_role": "up",
+  "card_motor": "easyctrl_all"
+ },
+ "button:easyctrl_back_down": {
+  "card_section": "motors",
+  "card_role": "down",
+  "card_motor": "easyctrl_back"
+ },
+ "button:easyctrl_back_head_down": {
+  "card_section": "motors",
+  "card_role": "down",
+  "card_motor": "easyctrl_back_head"
+ },
+ "button:easyctrl_back_head_up": {
+  "card_section": "motors",
+  "card_role": "up",
+  "card_motor": "easyctrl_back_head"
+ },
+ "button:easyctrl_back_up": {
+  "card_section": "motors",
+  "card_role": "up",
+  "card_motor": "easyctrl_back"
+ },
+ "button:easyctrl_both_back_head_down": {
+  "card_section": "motors",
+  "card_role": "down",
+  "card_motor": "easyctrl_both_back_head"
+ },
+ "button:easyctrl_both_back_head_up": {
+  "card_section": "motors",
+  "card_role": "up",
+  "card_motor": "easyctrl_both_back_head"
+ },
+ "button:easyctrl_both_backs_down": {
+  "card_section": "motors",
+  "card_role": "down",
+  "card_motor": "easyctrl_both_backs"
+ },
+ "button:easyctrl_both_backs_up": {
+  "card_section": "motors",
+  "card_role": "up",
+  "card_motor": "easyctrl_both_backs"
+ },
+ "button:easyctrl_both_legs_down": {
+  "card_section": "motors",
+  "card_role": "down",
+  "card_motor": "easyctrl_both_legs"
+ },
+ "button:easyctrl_both_legs_up": {
+  "card_section": "motors",
+  "card_role": "up",
+  "card_motor": "easyctrl_both_legs"
+ },
+ "button:easyctrl_head_down": {
+  "card_section": "motors",
+  "card_role": "down",
+  "card_motor": "easyctrl_head"
+ },
+ "button:easyctrl_head_up": {
+  "card_section": "motors",
+  "card_role": "up",
+  "card_motor": "easyctrl_head"
+ },
+ "button:easyctrl_left_back_down": {
+  "card_section": "motors",
+  "card_role": "down",
+  "card_motor": "easyctrl_left_back"
+ },
+ "button:easyctrl_left_back_head_down": {
+  "card_section": "motors",
+  "card_role": "down",
+  "card_motor": "easyctrl_left_back_head"
+ },
+ "button:easyctrl_left_back_head_up": {
+  "card_section": "motors",
+  "card_role": "up",
+  "card_motor": "easyctrl_left_back_head"
+ },
+ "button:easyctrl_left_back_up": {
+  "card_section": "motors",
+  "card_role": "up",
+  "card_motor": "easyctrl_left_back"
+ },
+ "button:easyctrl_left_head_down": {
+  "card_section": "motors",
+  "card_role": "down",
+  "card_motor": "easyctrl_left_head"
+ },
+ "button:easyctrl_left_head_up": {
+  "card_section": "motors",
+  "card_role": "up",
+  "card_motor": "easyctrl_left_head"
+ },
+ "button:easyctrl_left_legs_down": {
+  "card_section": "motors",
+  "card_role": "down",
+  "card_motor": "easyctrl_left_legs"
+ },
+ "button:easyctrl_left_legs_up": {
+  "card_section": "motors",
+  "card_role": "up",
+  "card_motor": "easyctrl_left_legs"
+ },
+ "button:easyctrl_legs_down": {
+  "card_section": "motors",
+  "card_role": "down",
+  "card_motor": "easyctrl_legs"
+ },
+ "button:easyctrl_legs_up": {
+  "card_section": "motors",
+  "card_role": "up",
+  "card_motor": "easyctrl_legs"
+ },
+ "button:easyctrl_middle_down": {
+  "card_section": "motors",
+  "card_role": "down",
+  "card_motor": "easyctrl_middle"
+ },
+ "button:easyctrl_middle_up": {
+  "card_section": "motors",
+  "card_role": "up",
+  "card_motor": "easyctrl_middle"
+ },
+ "button:easyctrl_right_back_down": {
+  "card_section": "motors",
+  "card_role": "down",
+  "card_motor": "easyctrl_right_back"
+ },
+ "button:easyctrl_right_back_head_down": {
+  "card_section": "motors",
+  "card_role": "down",
+  "card_motor": "easyctrl_right_back_head"
+ },
+ "button:easyctrl_right_back_head_up": {
+  "card_section": "motors",
+  "card_role": "up",
+  "card_motor": "easyctrl_right_back_head"
+ },
+ "button:easyctrl_right_back_up": {
+  "card_section": "motors",
+  "card_role": "up",
+  "card_motor": "easyctrl_right_back"
+ },
+ "button:easyctrl_right_head_down": {
+  "card_section": "motors",
+  "card_role": "down",
+  "card_motor": "easyctrl_right_head"
+ },
+ "button:easyctrl_right_head_up": {
+  "card_section": "motors",
+  "card_role": "up",
+  "card_motor": "easyctrl_right_head"
+ },
+ "button:easyctrl_right_legs_down": {
+  "card_section": "motors",
+  "card_role": "down",
+  "card_motor": "easyctrl_right_legs"
+ },
+ "button:easyctrl_right_legs_up": {
+  "card_section": "motors",
+  "card_role": "up",
+  "card_motor": "easyctrl_right_legs"
+ },
+ "button:easyctrl_save_light": {
+  "card_section": "lighting"
+ },
+ "button:easyctrl_seat_1_down": {
+  "card_section": "motors",
+  "card_role": "down",
+  "card_motor": "easyctrl_seat_1"
+ },
+ "button:easyctrl_seat_1_up": {
+  "card_section": "motors",
+  "card_role": "up",
+  "card_motor": "easyctrl_seat_1"
+ },
+ "button:easyctrl_seat_2_down": {
+  "card_section": "motors",
+  "card_role": "down",
+  "card_motor": "easyctrl_seat_2"
+ },
+ "button:easyctrl_seat_2_up": {
+  "card_section": "motors",
+  "card_role": "up",
+  "card_motor": "easyctrl_seat_2"
+ },
+ "button:easyctrl_seat_3_down": {
+  "card_section": "motors",
+  "card_role": "down",
+  "card_motor": "easyctrl_seat_3"
+ },
+ "button:easyctrl_seat_3_up": {
+  "card_section": "motors",
+  "card_role": "up",
+  "card_motor": "easyctrl_seat_3"
+ },
+ "button:easyctrl_seat_4_down": {
+  "card_section": "motors",
+  "card_role": "down",
+  "card_motor": "easyctrl_seat_4"
+ },
+ "button:easyctrl_seat_4_up": {
+  "card_section": "motors",
+  "card_role": "up",
+  "card_motor": "easyctrl_seat_4"
+ },
  "button:elevate_actuator_1_down": {
   "card_section": "motors",
   "card_role": "down",
@@ -3733,6 +3946,90 @@
   "card_section": "motors",
   "card_motor": "dorsal_zero_gravity"
  },
+ "cover:easyctrl_all": {
+  "card_section": "motors",
+  "card_motor": "easyctrl_all"
+ },
+ "cover:easyctrl_back": {
+  "card_section": "motors",
+  "card_motor": "easyctrl_back"
+ },
+ "cover:easyctrl_back_head": {
+  "card_section": "motors",
+  "card_motor": "easyctrl_back_head"
+ },
+ "cover:easyctrl_both_back_head": {
+  "card_section": "motors",
+  "card_motor": "easyctrl_both_back_head"
+ },
+ "cover:easyctrl_both_backs": {
+  "card_section": "motors",
+  "card_motor": "easyctrl_both_backs"
+ },
+ "cover:easyctrl_both_legs": {
+  "card_section": "motors",
+  "card_motor": "easyctrl_both_legs"
+ },
+ "cover:easyctrl_head": {
+  "card_section": "motors",
+  "card_motor": "easyctrl_head"
+ },
+ "cover:easyctrl_left_back": {
+  "card_section": "motors",
+  "card_motor": "easyctrl_left_back"
+ },
+ "cover:easyctrl_left_back_head": {
+  "card_section": "motors",
+  "card_motor": "easyctrl_left_back_head"
+ },
+ "cover:easyctrl_left_head": {
+  "card_section": "motors",
+  "card_motor": "easyctrl_left_head"
+ },
+ "cover:easyctrl_left_legs": {
+  "card_section": "motors",
+  "card_motor": "easyctrl_left_legs"
+ },
+ "cover:easyctrl_legs": {
+  "card_section": "motors",
+  "card_motor": "easyctrl_legs"
+ },
+ "cover:easyctrl_middle": {
+  "card_section": "motors",
+  "card_motor": "easyctrl_middle"
+ },
+ "cover:easyctrl_right_back": {
+  "card_section": "motors",
+  "card_motor": "easyctrl_right_back"
+ },
+ "cover:easyctrl_right_back_head": {
+  "card_section": "motors",
+  "card_motor": "easyctrl_right_back_head"
+ },
+ "cover:easyctrl_right_head": {
+  "card_section": "motors",
+  "card_motor": "easyctrl_right_head"
+ },
+ "cover:easyctrl_right_legs": {
+  "card_section": "motors",
+  "card_motor": "easyctrl_right_legs"
+ },
+ "cover:easyctrl_seat_1": {
+  "card_section": "motors",
+  "card_motor": "easyctrl_seat_1"
+ },
+ "cover:easyctrl_seat_2": {
+  "card_section": "motors",
+  "card_motor": "easyctrl_seat_2"
+ },
+ "cover:easyctrl_seat_3": {
+  "card_section": "motors",
+  "card_motor": "easyctrl_seat_3"
+ },
+ "cover:easyctrl_seat_4": {
+  "card_section": "motors",
+  "card_motor": "easyctrl_seat_4"
+ },
  "cover:elevate_actuator_1": {
   "card_section": "motors",
   "card_motor": "elevate_actuator_1"
@@ -4360,6 +4657,18 @@
  "number:dynasty_lamp_seconds": {
   "card_section": "lighting"
  },
+ "number:easyctrl_all_power": {
+  "card_section": "massage"
+ },
+ "number:easyctrl_foot_power": {
+  "card_section": "massage"
+ },
+ "number:easyctrl_head_power": {
+  "card_section": "massage"
+ },
+ "number:easyctrl_sleep_minutes": {
+  "card_section": "utility"
+ },
  "number:enso2_light_timer": {
   "card_section": "lighting"
  },
@@ -4834,6 +5143,18 @@
  },
  "select:dreamsense_selected_side": {
   "card_section": "utility"
+ },
+ "select:easyctrl_all_mode": {
+  "card_section": "massage"
+ },
+ "select:easyctrl_foot_mode": {
+  "card_section": "massage"
+ },
+ "select:easyctrl_head_mode": {
+  "card_section": "massage"
+ },
+ "select:easyctrl_swing_timer": {
+  "card_section": "massage"
  },
  "select:enso2_mode": {
   "card_section": "utility"
@@ -6526,6 +6847,12 @@
  },
  "switch:dreamsense_split": {
   "card_section": "utility"
+ },
+ "switch:easyctrl_sleep": {
+  "card_section": "utility"
+ },
+ "switch:easyctrl_swing": {
+  "card_section": "massage"
  },
  "switch:ergobq_child_lock": {
   "card_section": "utility"

@@ -175,6 +175,7 @@ from .const import (
     BED_TYPE_DIAGNOSTIC,
     BED_TYPE_DORSAL,
     BED_TYPE_DOUBLESLEEP,
+    BED_TYPE_EASYCTRL,
     BED_TYPE_ENSO2,
     BED_TYPE_ERGOBED,
     BED_TYPE_ESHINE_OKIN,
@@ -1440,6 +1441,7 @@ _DECLARED_QUESTION_ROUTES: Final = frozenset(
         "berun",
         "nerum",
         "cheerssleep",
+        "easyctrl",
         BED_TYPE_LEGGETT_LP_LEGACY,
         *STARCODE_FAMILY.direct,
     }
@@ -2446,6 +2448,7 @@ class CapabilityReport:
     sleeptime_uart_valid: bool | None = None
     ambient_transport_valid: bool | None = None
     vindo_transport_valid: bool | None = None
+    easyctrl_transport_valid: bool | None = None
     konfurt_transport_valid: bool | None = None
     kingkoil_transport_valid: bool | None = None
     scott_living_transport_valid: bool | None = None
@@ -2780,7 +2783,7 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
     @property
     def _migration_requires_check(self) -> bool:
         staged = self._pending_entry if self._pending_entry is not None else self._manual_data
-        if staged is not None and staged.get(CONF_BED_TYPE) in (BED_TYPE_AMBIENT, BED_TYPE_DORSAL, BED_TYPE_LANGJUE, "ergosportive", "kingkoil", "konfurt", "scott_living"):
+        if staged is not None and staged.get(CONF_BED_TYPE) in (BED_TYPE_AMBIENT, BED_TYPE_DORSAL, BED_TYPE_LANGJUE, "easyctrl", "ergosportive", "kingkoil", "konfurt", "scott_living"):
             return True
         if self._migration_family is None:
             return False
@@ -2789,6 +2792,11 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
     def _migration_endpoint_check(self, client: BleakClient, data: dict[str, Any]) -> None:
         """Run the staged route's family check on the candidate link."""
         self._migration_preview = {}
+        if data.get(CONF_BED_TYPE) == "easyctrl":
+            from .beds.easyctrl.transport import select_link as select_easyctrl_link
+
+            select_easyctrl_link(client)
+            return
         if data.get(CONF_BED_TYPE) == "scott_living":
             from .beds.scott_living import select_roles
 
@@ -2818,6 +2826,8 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
 
     async def _async_import_endpoint_check(self, data: Mapping[str, Any]) -> None:
         """Import what the staged route's family check reads, off the event loop."""
+        if data.get(CONF_BED_TYPE) == "easyctrl":
+            await async_import_modules(self.hass, "beds.easyctrl.transport")
         if data.get(CONF_BED_TYPE) == "scott_living":
             await async_import_modules(self.hass, "beds.scott_living")
         if data.get(CONF_BED_TYPE) == "konfurt":
@@ -3523,6 +3533,7 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         # replayed submission from the previous form cannot be read as a
         # confirmation of a result the user never saw.
         self._verify_form_shown: bool = False
+        self._easyctrl_disproved_addresses: set[str] = set()
         self._octo_pin_form_shown: bool = False
         # The result step whose guided-change check failed; the failure form
         # hands its Try again or Keep back to it.
@@ -6667,11 +6678,16 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
             # An app step that finishes by itself still asks the bed's settings first.
             self._manual_data = entry_data
             return await self._async_new_bed_settings("verify")
+        address = entry_data.get(CONF_ADDRESS)
         needs_live_check = (
             entry_data.get(CONF_BED_TYPE) == BED_TYPE_OCTO
             and entry_data.get(CONF_PROTOCOL_VARIANT) != OCTO_VARIANT_STAR2
         ) or entry_data.get(CONF_PROTOCOL_VARIANT) == DORSAL_ROOMI_S655_PLUS or (
             entry_data.get(CONF_BED_TYPE) == BED_TYPE_AMBIENT and self._verification_possible()
+        ) or (
+            entry_data.get(CONF_BED_TYPE) == BED_TYPE_EASYCTRL
+            and isinstance(address, str)
+            and address.upper() in self._easyctrl_disproved_addresses
         )
         if self._migration is not None and self._migration.is_unchanged_by(entry_data):
             return await self._async_abort_unchanged()
@@ -6784,6 +6800,7 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                 and self._pending_entry.get(CONF_BED_TYPE) == BED_TYPE_LANGJUE
                 and report.langjue_receiver_valid is not True
             )
+            or report.easyctrl_transport_valid is False
             or report.mattresspoint_uart_valid is False
             or report.sleeptime_uart_valid is False
             or (
@@ -7101,6 +7118,14 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                             ):
                                 writable += 1
                     report.writable_count = writable
+                    if bed_type == "easyctrl":
+                        await async_import_modules(self.hass, "beds.easyctrl.transport")
+                        from .beds.easyctrl.transport import select_link as select_easyctrl_link
+
+                        report.easyctrl_transport_valid = False
+                        select_easyctrl_link(client)
+                        report.easyctrl_transport_valid = True
+                        return report
                     if bed_type == "scott_living":
                         await async_import_modules(self.hass, "beds.scott_living")
                         from .beds.scott_living import select_roles
@@ -7352,7 +7377,7 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                     else "check_not_connected"
                 )
             )
-            if report.dorsal_endpoint_error is not None and report.error:
+            if (report.dorsal_endpoint_error is not None or report.easyctrl_transport_valid is False) and report.error:
                 lines.append(report.error)
             return "\n".join(lines)
 
@@ -7437,6 +7462,17 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
             # without it). Say so rather than running a blocking probe here:
             # this is the step that exists so that nothing blocks.
             report = CapabilityReport(freshness=FreshnessStatus.MISSING)
+
+        address = self._pending_entry.get(CONF_ADDRESS)
+        if self._pending_entry.get(CONF_BED_TYPE) == BED_TYPE_EASYCTRL and isinstance(address, str):
+            address = address.upper()
+            if report.easyctrl_transport_valid is False:
+                self._easyctrl_disproved_addresses.add(address)
+            elif report.easyctrl_transport_valid is True:
+                self._easyctrl_disproved_addresses.discard(address)
+            elif address in self._easyctrl_disproved_addresses:
+                # An inconclusive retry cannot undo an earlier live mismatch.
+                report.easyctrl_transport_valid = False
 
         roomi_unverified = (
             self._pending_entry.get(CONF_PROTOCOL_VARIANT) == DORSAL_ROOMI_S655_PLUS
@@ -7534,7 +7570,7 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                 self._verify_form_shown = False
                 self._async_start_probe_operation()
                 return await self.async_step_setup_progress()
-            if (((report.konfurt_transport_valid is False or report.atlas_lift_transport_valid is False or report.topcare_transport_valid is False) or report.comfort_bed_transport_valid is False) or report.kingkoil_transport_valid is False or report.scott_living_transport_valid is False) and user_input.get("action") == "change_app":
+            if (report.easyctrl_transport_valid is False or ((report.konfurt_transport_valid is False or report.atlas_lift_transport_valid is False or report.topcare_transport_valid is False) or report.comfort_bed_transport_valid is False) or report.kingkoil_transport_valid is False or report.scott_living_transport_valid is False) and user_input.get("action") == "change_app":
                 self._verify_form_shown = False
                 self._operation = None
                 if self._discovery_info is None:
@@ -7544,6 +7580,7 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
             user_input is not None
             and self._verify_form_shown
             and ((report.atlas_lift_transport_valid is not False and report.topcare_transport_valid is not False) and report.comfort_bed_transport_valid is not False)
+            and report.easyctrl_transport_valid is not False
             and report.konfurt_transport_valid is not False
             and report.kingkoil_transport_valid is not False
             and report.scott_living_transport_valid is not False
@@ -7601,7 +7638,7 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
             return self.async_show_form(step_id="retry_roomi_receiver")
 
         schema: dict[vol.Marker, Any] = {}
-        if ((report.konfurt_transport_valid is False or report.atlas_lift_transport_valid is False or report.topcare_transport_valid is False) or report.comfort_bed_transport_valid is False) or report.kingkoil_transport_valid is False or report.scott_living_transport_valid is False:
+        if (report.easyctrl_transport_valid is False or (report.konfurt_transport_valid is False or report.atlas_lift_transport_valid is False or report.topcare_transport_valid is False) or report.comfort_bed_transport_valid is False) or report.kingkoil_transport_valid is False or report.scott_living_transport_valid is False:
             schema[vol.Required("action", default="retry")] = SelectSelector(
                 SelectSelectorConfig(
                     options=["retry", "change_app"],
