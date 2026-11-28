@@ -354,6 +354,7 @@ from .profiles.bobpowerbase import PROFILE_CHOICES as BOB_PROFILES
 from .profiles.bobpowerbase import SCAN_KEYWORDS as BOB_SCAN_KEYWORDS
 from .profiles.comfort_bed import SCAN_KEYWORDS as COMFORT_BED_SCAN_KEYWORDS
 from .profiles.customatic_demo import NAME_PREFIX as CUSTOMATIC_DEMO_NAME_PREFIX
+from .profiles.easyctrl import advertised_model as easyctrl_model
 from .profiles.ergobq import product as ergobq_product
 from .profiles.flexirest import accepts_name as accepts_flexirest_name
 from .profiles.majestichome import PROFILE_CHOICES as MAJESTICHOME_PROFILES
@@ -654,6 +655,7 @@ BED_TYPE_DISPLAY_NAMES: dict[str, str] = {
     "berun": "BERUN app",
     "nerum": "Nerum app",
     "relax_motion": "Relax Motion app",
+    "easyctrl": "EasyCtrl app",
     "cheerssleep": "CheersSleep app",
     "agingplace": "Aging in Place / Dawn House app",
     "smart_sleep": "OKIN Smart Sleep app",
@@ -1707,6 +1709,14 @@ def _detect_with_first_pass(
     } and cheerssleep_advertisement(service_info.manufacturer_data or {}):
         result.ambiguous_types = list(dict.fromkeys([*(result.ambiguous_types or ()), "cheerssleep"]))
         result.signals.append("manufacturer:cheerssleep_model_candidate")
+    # Manufacturer key only suggests the app. Keep stronger receiver matches and
+    # explicit exclusions, since this service is shared with other app catalogs.
+    if first.service("easyctrl") and easyctrl_model(service_info.manufacturer_data or {}) is not None and not any(signal.startswith("excluded:") for signal in result.signals):
+        if result.bed_type is None:
+            result = DetectionResult("easyctrl", 0.3, [*result.signals, "manufacturer:easyctrl_app_candidate"])
+        elif result.bed_type != "easyctrl":
+            result.ambiguous_types = list(dict.fromkeys([*(result.ambiguous_types or ()), "easyctrl"]))
+            result.signals.append("manufacturer:easyctrl_app_candidate")
     # Dawn House scans case-sensitive substrings, without a service filter.
     if any(name in (service_info.name or "") for name in ("KSWF07S", "KSWF19S")):
         if result.bed_type is None:

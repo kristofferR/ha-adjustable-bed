@@ -355,7 +355,7 @@ SIDE_LEFT: Final = "left"
 SIDE_RIGHT: Final = "right"
 SIDE_BOTH: Final = "both"
 
-# Motors the timed_move action can name, and so the card can hold through it.
+# Suggested motor names for action selectors. Admission uses controller declarations.
 TIMED_MOVE_MOTOR_OPTIONS: Final = (
     "axis_1",
     "axis_2",
@@ -464,6 +464,7 @@ BED_TYPE_BERUN: Final = "berun"
 BED_TYPE_NERUM: Final = "nerum"
 BED_TYPE_RELAX_MOTION: Final = "relax_motion"
 BED_TYPE_SMARTBED: Final = "smartbed"  # The SmartBed app's receivers (Okin CB24 family and others)
+BED_TYPE_EASYCTRL: Final = "easyctrl"
 BED_TYPE_CHEERSSLEEP: Final = "cheerssleep"
 BED_TYPE_SMART_SLEEP: Final = "smart_sleep"
 BED_TYPE_SLEEP_ASSIST_PRO: Final = "sleep_assist_pro"
@@ -863,6 +864,7 @@ BED_TYPE_POWERSBEDDING: Final = "powersbedding"
 BED_TYPE_HESTIA_MOTION: Final = "hestia_motion"
 
 SUPPORTED_BED_TYPES: Final = [
+    BED_TYPE_EASYCTRL,
     BED_TYPE_KONFURT,
     BED_TYPE_MATTRESSPOINT,
     BED_TYPE_INTELLIBED,
