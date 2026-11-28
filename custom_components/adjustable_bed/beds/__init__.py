@@ -50,6 +50,7 @@ if TYPE_CHECKING:
     from .ergomotion_app import ErgomotionAppController as ErgomotionAppController
     from .eshine.controller import EshineController as EshineController
     from .eshine_okin.controller import EshineOkinController as EshineOkinController
+    from .flexispot.ghostbed import GhostBedController as GhostBedController
     from .fsm_relax.controller import FsmRelaxController as FsmRelaxController
     from .furnimove.controller import FurniMoveController as FurniMoveController
     from .glideaway_motion.controller import GlideawayMotionController as GlideawayMotionController
@@ -78,6 +79,7 @@ if TYPE_CHECKING:
     from .keeson.jalon import JalonController as JalonController
     from .keeson.kingkoil import KingKoilController as KingKoilController
     from .keeson.ormatek import OrmatekController as OrmatekController
+    from .keeson.powersbedding import PowersBeddingController as PowersBeddingController
     from .keeson.sleep_assist_pro import SleepAssistProController as SleepAssistProController
     from .keeson.somos import SomosController as SomosController
     from .keeson.symphony_sleep import SymphonySleepController as SymphonySleepController
@@ -193,6 +195,7 @@ if TYPE_CHECKING:
     from .woosa import WoosaController as WoosaController
 
 _EXPORT_MODULES = {
+    "GhostBedController": "flexispot.ghostbed",
     "InstantComfortBase": "instant_comfort.controller",
     "SuperiorSleepController": "superior_sleep.controller",
     "RizeHomeController": "rize_home.controller",
@@ -217,6 +220,7 @@ _EXPORT_MODULES = {
     "GoodVibeController": "goodvibe.controller",
     "MajesticHomeController": "majestichome.controller",
     "MotoMotionController": "motomotion.controller",
+    "PowersBeddingController": "keeson.powersbedding",
     "HestiaController": "hestia.controller",
     "HJBedController": "hjbed.controller",
     "RichmatAppController": "richmat_app.controller",
@@ -372,6 +376,7 @@ _EXPORT_MODULES = {
 }
 
 __all__ = [
+    "GhostBedController",
     "InstantComfortBase",
     "DoubleSleepController",
     'TempurCurveController',

@@ -7,7 +7,8 @@ The rules are described in docs/apk-analysis/TRACKERS.md.
     apk_tracker_guard.py guard <event.json>       workflow mode for issues.edited
 
 Guard mode restores the previous body when an edit breaks the rules and the
-previous body passed them. Standard library only, so the workflow needs no setup.
+previous body passed them, and recomputes #436's Status counts after a clean
+edit. Standard library only, so the workflow needs no setup.
 """
 
 from __future__ import annotations
@@ -18,6 +19,7 @@ import os
 import re
 import sys
 import urllib.request
+from collections import Counter
 from dataclasses import dataclass
 
 
@@ -37,7 +39,7 @@ TRACKERS: dict[int, Tracker] = {
             ("Status", 2500),
             ("Goal", 2000),
             ("Hardware validation policy", 3000),
-            ("Canonical ordered phase 4 queue", None),
+            ("Queue", None),
             ("Definition of done", 1500),
             ("History", 800),
         ),
@@ -73,13 +75,26 @@ TRACKERS: dict[int, Tracker] = {
 
 QUEUE_START = "<!-- phase4-queue:start -->"
 QUEUE_END = "<!-- phase4-queue:end -->"
-QUEUE_HEADER = "| Order | Analysis | Work unit | Route | Implementation |"
-ANALYSIS_STATES = frozenset({"ACCEPTED", "IN PROGRESS", "PARTIAL", "QUEUED", "BLOCKED"})
-IMPLEMENTATION_STATES = ("MERGED", "IN REVIEW", "PENDING", "NOT STARTED")
+QUEUE_HEADER = "| Order | Status | App | Version | Details |"
+# Every queue status and its label in the Status count table, in lifecycle order.
+STATUSES: dict[str, str] = {
+    "MERGED": "Merged",
+    "PARTIAL": "Partial",
+    "IN REVIEW": "In review",
+    "IN PROGRESS": "In progress",
+    "QUEUED": "Queued",
+    "BLOCKED": "Blocked",
+    "OUT OF SCOPE": "Out of scope",
+}
+# These statuses always link their implementation PR in the Details cell.
+PR_STATUSES = frozenset({"MERGED", "PARTIAL", "IN REVIEW"})
+COUNTS_HEADER = "| Status | Count |"
 MAX_QUEUE_CELL = 160
-# A formal cluster's work-unit cell also lists its member packages, so it may run longer.
-MAX_WORK_CELL = 400
-_CLUSTER_WORK = re.compile(r"`cluster-\d{3}` · `[\w.]+`(?:, `[\w.]+`)*")
+# A formal cluster's app cell also lists its member packages, so it may run longer.
+MAX_APP_CELL = 400
+_CLUSTER_APP = re.compile(r"`cluster-\d{3}` · `[\w.]+`(?:, `[\w.]+`)*")
+# One "name (code)" per package, for example "1.2.3 (45)" or "1.0 (1), 2.1 (19)".
+_VERSIONS = re.compile(r"\S+ \(\d+\)(?:, \S+ \(\d+\))*")
 
 PR_URL = "https://github.com/kristofferR/ha-adjustable-bed/pull/"
 
@@ -149,33 +164,48 @@ def _lint_queue(lines: list[str]) -> list[str]:
         if len(cells) != 5 or not cells[0]:
             problems.append(f"queue row needs five cells and an order ID: {'|'.join(cells)[:80]}")
             continue
-        order, analysis, work, _route, implementation = cells
+        order, status, app, version, details = cells
         if order in seen:
             problems.append(f"queue row {order} appears twice")
         seen.add(order)
-        if analysis not in ANALYSIS_STATES:
-            problems.append(f"queue row {order}: analysis must be one of {sorted(ANALYSIS_STATES)}")
-        if not implementation.startswith(IMPLEMENTATION_STATES):
-            problems.append(
-                f"queue row {order}: implementation must start with one of {IMPLEMENTATION_STATES}"
-            )
+        if status not in STATUSES:
+            problems.append(f"queue row {order}: status must be one of {list(STATUSES)}")
         # The PR link is the row's most important fact: every PR mention must be a link.
-        linked = _PR_LINK.findall(implementation)
-        if len(linked) != len(_PR_MENTION.findall(implementation)) or any(
-            a != b for a, b in linked
-        ):
+        linked = _PR_LINK.findall(details)
+        if len(linked) != len(_PR_MENTION.findall(details)) or any(a != b for a, b in linked):
             problems.append(f"queue row {order}: write each PR as [PR #N]({PR_URL}N)")
-        if implementation.startswith(("MERGED", "IN REVIEW")) and not linked:
-            problems.append(f"queue row {order}: a MERGED or IN REVIEW row links its PR")
-        if work.startswith("`cluster-") and not _CLUSTER_WORK.fullmatch(work):
+        if status in PR_STATUSES and not linked:
+            problems.append(f"queue row {order}: a {status} row links its PR")
+        if status in ("BLOCKED", "OUT OF SCOPE") and not details:
+            problems.append(f"queue row {order}: a {status} row says why in Details")
+        if version and not _VERSIONS.fullmatch(version):
+            problems.append(f"queue row {order}: write the version as name (code), e.g. 1.2.3 (45)")
+        if app.startswith("`cluster-") and not _CLUSTER_APP.fullmatch(app):
             problems.append(
                 f"queue row {order}: write a cluster as `cluster-NNN` · `package`, `package`"
             )
         for index, cell in enumerate(cells):
-            limit = MAX_WORK_CELL if index == 2 else MAX_QUEUE_CELL
+            limit = MAX_APP_CELL if index == 2 else MAX_QUEUE_CELL
             if len(_visible(cell)) > limit:
                 problems.append(f"queue row {order}: cell over {limit} characters")
     return problems
+
+
+def count_table(rows: list[list[str]]) -> list[str]:
+    """The Status section's count table for these queue rows."""
+    counts = Counter(cells[1] for cells in rows)
+    table = [COUNTS_HEADER, "|---|---:|", f"| Total | {len(rows)} |"]
+    return table + [f"| {label} | {counts[status]} |" for status, label in STATUSES.items()]
+
+
+def with_counts(body: str) -> str:
+    """The #436 body with its count table recomputed from the queue."""
+    lines = body.replace("\r\n", "\n").split("\n")
+    start = lines.index(COUNTS_HEADER)
+    end = start
+    while end < len(lines) and lines[end].startswith("|"):
+        end += 1
+    return "\n".join(lines[:start] + count_table(queue_rows(lines)) + lines[end:])
 
 
 def lint(number: int, body: str) -> list[str]:
@@ -206,8 +236,10 @@ def lint(number: int, body: str) -> list[str]:
         budget = budgets.get(title)
         if budget is not None and _size(section) > budget:
             problems.append(f"section {title!r} is over its {budget} byte budget")
-        if tracker.has_queue and title == "Canonical ordered phase 4 queue":
+        if tracker.has_queue and title == "Queue":
             problems.extend(_lint_queue(section))
+        if tracker.has_queue and title == "Status" and COUNTS_HEADER not in section:
+            problems.append(f"the Status section holds the count table {COUNTS_HEADER}")
 
     for index, line in enumerate(lines, 1):
         if _compacted(line):
@@ -231,22 +263,31 @@ def _api(method: str, path: str, payload: dict[str, str] | None = None) -> dict:
 
 
 def guard(event: dict) -> int:
-    """Check one issues.edited event; restore the previous body if the edit broke the rules."""
+    """Check one issues.edited event; restore the previous body if the edit broke the rules.
+
+    A clean #436 edit whose Status counts no longer match its queue gets them recomputed.
+    """
     number = event["issue"]["number"]
     previous = event.get("changes", {}).get("body", {}).get("from")
     if number not in TRACKERS or previous is None:
         return 0
     edited = event["issue"]["body"] or ""
     problems = lint(number, edited)
+    path = f"repos/{os.environ['GITHUB_REPOSITORY']}/issues/{number}"
     if not problems:
         print(f"#{number}: edit follows the tracker rules")
+        if not TRACKERS[number].has_queue:
+            return 0
+        counted = with_counts(edited)
+        if counted != edited.replace("\r\n", "\n") and (_api("GET", path)["body"] or "") == edited:
+            _api("PATCH", path, {"body": counted})
+            print(f"#{number}: updated the Status counts")
         return 0
     for problem in problems:
         print(f"::error title=#{number} tracker rule::{problem}")
     if lint(number, previous):
         print(f"#{number}: the previous body also breaks the rules, so it is not restored")
         return 1
-    path = f"repos/{os.environ['GITHUB_REPOSITORY']}/issues/{number}"
     if (_api("GET", path)["body"] or "") != edited:
         print(f"#{number}: the issue changed again after this edit, so it is not restored")
         return 1

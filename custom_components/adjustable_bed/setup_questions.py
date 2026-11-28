@@ -72,6 +72,7 @@ from .const import (
     BED_TYPE_FSM_RELAX,
     BED_TYPE_FURNIMOVE,
     BED_TYPE_GALAXY,
+    BED_TYPE_GHOSTBED,
     BED_TYPE_GLIDEAWAY_MOTION,
     BED_TYPE_GMMOTOR,
     BED_TYPE_GOODVIBE,
@@ -379,6 +380,7 @@ _OWNED_BY_BED_TYPE: Final[dict[str, frozenset[str]]] = {
     "ergobq": GENERIC_FIELDS,
     "sonicsleep": GENERIC_FIELDS - {CONF_MOTOR_PULSE_COUNT},
     "suta": GENERIC_FIELDS - {CONF_MOTOR_PULSE_COUNT},
+    "powersbedding": GENERIC_FIELDS - {CONF_MOTOR_PULSE_COUNT},
     "hestia_motion": GENERIC_FIELDS - {CONF_MOTOR_PULSE_COUNT},
     "truemotion": GENERIC_FIELDS,
     "suta_king_koil": GENERIC_FIELDS,
@@ -4074,6 +4076,12 @@ SETUP_PROFILES: Final[dict[str, SetupProfile]] = {
             CONF_MOTOR_PULSE_DELAY_MS: 200,
         },
     ),
+    BED_TYPE_GHOSTBED: SetupProfile(
+        owns={CONF_MOTOR_COUNT: 2, CONF_HAS_MASSAGE: True,
+              CONF_DISABLE_ANGLE_SENSING: True, CONF_MOTOR_PULSE_DELAY_MS: 200,
+              CONF_PROTOCOL_VARIANT: "auto"},
+        title=lambda _data: "GhostBed",
+    ),
     BED_TYPE_FLEXISPOT: SetupProfile(
         owns={CONF_MOTOR_COUNT: SET_BY_PROFILE, CONF_HAS_MASSAGE: True,
               CONF_DISABLE_ANGLE_SENSING: True,
@@ -4135,6 +4143,12 @@ SETUP_PROFILES: Final[dict[str, SetupProfile]] = {
         seed=_sleeptime_seed,
         title=lambda _data: "Sleeptime Australia",
         imports=("profiles.sleeptime",),
+    ),
+    "powersbedding": SetupProfile(
+        owns={CONF_MOTOR_COUNT: 2, CONF_HAS_MASSAGE: True,
+              CONF_DISABLE_ANGLE_SENSING: True, CONF_PROTOCOL_VARIANT: "auto",
+              CONF_MOTOR_PULSE_DELAY_MS: 100},
+        title=lambda _data: "PowersBedding",
     ),
     "hestia_motion": SetupProfile(
         owns={CONF_MOTOR_COUNT: 2, CONF_HAS_MASSAGE: True,

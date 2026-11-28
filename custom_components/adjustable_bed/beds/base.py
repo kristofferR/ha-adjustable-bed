@@ -2600,6 +2600,11 @@ class BedController(GattWriter):
         return False
 
     @property
+    def massage_timer_is_assumed(self) -> bool:
+        """Whether the timer select echoes commands without bed readback."""
+        return False
+
+    @property
     def massage_timer_options(self) -> list[int]:
         """Return available timer durations in minutes.
 

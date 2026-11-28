@@ -488,6 +488,12 @@ def plan_commands(controller: Any) -> list[Command]:
                 if command.name.startswith("select:suta_king_koil_massage_mode=") else command for command in plan]
         for operation in ("SA", "CA", "DA"):
             plan.append(Command(f"alarm:{operation}", _method("alarm_operation", operation, [0, 6], 7, 30), True))
+    if controller._coordinator.bed_type == "powersbedding":
+        from custom_components.adjustable_bed.alarm import AlarmRequest
+        for enabled, wake in ((True, "memory_1"), (True, "massage"), (False, "none")):
+            alarm = AlarmRequest(enabled=enabled, hour=7, minute=30, weekdays=(0, 1, 2, 3, 4),
+                                 wake_action=wake, reference_time=datetime.datetime.fromisoformat(FROZEN_NOW))
+            plan.append(Command(f"set_alarm:{enabled}:{wake}", _method("configure_alarm", alarm), True))
     if controller._coordinator.bed_type == "ronco_motion":
         from custom_components.adjustable_bed.alarm import AlarmRequest
         for enabled, wake_action in ((True, "zero_g"), (True, "anti_snore"), (True, "memory_1"), (False, "none")):
@@ -1506,6 +1512,10 @@ def default_scenario(bed_type: str) -> Scenario:
     """The bed type in its default route, with the entry data it needs to build."""
     from custom_components.adjustable_bed import const
 
+    if bed_type == "powersbedding":
+        return Scenario(id=bed_type, bed_type=bed_type,
+                        entry_data={const.CONF_BLE_DEVICE_NAME: "okin-Powers"},
+                        layout_id="powersbedding")
     if bed_type == "meisemobell":
         return Scenario(id=bed_type, bed_type=bed_type, protocol_variant="15_22_15a", layout_id="meisemobell:15_22_15a", replies={"write:e180039b": "ed8003061e8211072d841300"})
     if bed_type == "ergobq":
@@ -1519,6 +1529,8 @@ def default_scenario(bed_type: str) -> Scenario:
                      "write:" + codec.frame(1, b"\x00").hex(): codec.frame(1, b"\x01\x01\x01A").hex(),
                      "*": status})
 
+    if bed_type == "ghostbed":
+        return Scenario(id=bed_type, bed_type=bed_type, layout_id="flexispot")
     if bed_type == "flexispot":
         return Scenario(id=bed_type, bed_type=bed_type, entry_data={"product_type": "eb632"})
     if bed_type == "ronco_motion":
@@ -2014,6 +2026,18 @@ def route_scenarios() -> list[Scenario]:
         scenarios.append(dataclasses.replace(
             default_scenario("comfort_enhancement3"), id=f"comfort_enhancement3:{profile}",
             protocol_variant=profile, layout_id="comfort_enhancement3",
+        ))
+    # Each PowersBedding packet route is independent of its discovery-time GATT.
+    for suffix, name, manufacturer in (
+        ("p2_ffe", "okin-Powers", "424c452d342e30204d6f64756c65"),
+        ("p3_uart", "smartbed-Powers", None),
+        ("p1_uart", "smartbed-Powers", "4f74686572"),
+        ("p2_uart", "smartbed-Powers", "424c452d342e30204d6f64756c65"),
+    ):
+        scenarios.append(Scenario(id=f"powersbedding:{suffix}", bed_type="powersbedding",
+            entry_data={const.CONF_BLE_DEVICE_NAME: name},
+            layout_id="powersbedding:uart_no_manufacturer" if suffix == "p3_uart" else "powersbedding:uart" if name.startswith("smartbed") else "powersbedding",
+            replies={"read:00002a29-0000-1000-8000-00805f9b34fb": manufacturer} if manufacturer is not None else {},
         ))
     from custom_components.adjustable_bed.profiles.symphony_sleep import MODELS
     from custom_components.adjustable_bed.profiles.symphony_sleep import (
@@ -2916,6 +2940,8 @@ async def _build(scenario: Scenario, client: Any) -> Any:
         cast(Any, coordinator).entry = ChildEntryView(
             parent, effective_child_data(parent.data, "right"), lambda _data: None,
         )
+    if scenario.bed_type == "powersbedding":
+        coordinator.ble_device_name = coordinator.entry.data["ble_device_name"]
     controller = await create_controller(
         cast(Any, coordinator),
         scenario.bed_type,
@@ -2958,6 +2984,12 @@ async def _connect(controller: Any, recorder: Recorder, clock: FakeClock) -> dic
         discovery = controller.async_discover_capabilities()
         if inspect.isawaitable(discovery):
             await discovery
+        if controller._coordinator.bed_type == "powersbedding":
+            await controller.async_on_connect(SimpleNamespace(
+                async_start_notify=controller.start_notify,
+                persist_capability_snapshot=lambda: None,
+            ))
+            return
         if controller._coordinator.bed_type == "sealy_posturematic":
             controller._coordinator.connection_generation += 1
             session = SimpleNamespace(async_start_notify=controller.start_notify)
@@ -3104,6 +3136,14 @@ async def _capture(
                 # each action admits read/modify/write without guessing state.
                 for target, callback in controller.client._subscribers:
                     callback(target, bytearray.fromhex("9b002701651e02061eff01072d8002239500009d"))
+            if scenario.bed_type == "ghostbed":
+                from custom_components.adjustable_bed.codec import flexispot as ghost_codec
+                # Two banked unsolicited records admit exact read/modify/write.
+                # Empty alarms avoid imposing a schedule on every captured action.
+                for bank in (0, 0x80):
+                    status = ghost_codec.frame(0x27, bank | 1, {4: 0x65, 5: 30, 6: 2, 15: 3, 16: 0x95})
+                    for target, callback in controller.client._subscribers:
+                        callback(target, bytearray(status))
             result = await _run_command(controller, recorder, clock, command)
             # A cover that emits exactly what the matching move call did points to it.
             twin = (

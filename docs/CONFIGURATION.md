@@ -398,6 +398,7 @@ actions; its bounded `hold_control` behavior has separate timing in the
 | eShine app (E2000 to E5000) | `eshine_okin` | 10 | 300 ms |
 | Flexispot app | `flexispot` | 5 | 200 ms |
 | FSM Relax app | `fsm_relax` | 10 | 60 ms |
+| GhostBed app | `ghostbed` | 5 | 200 ms |
 | Jensen Adjustable Sleep app, JMC400 bed | `jensen` | 4 | 300 ms |
 | JobsAI智能助眠床 / Jobs AI app | `jobs` | 10 | 200 ms |
 | King Koil (SUTA) app | `suta_king_koil` | 1 | 150 ms |
@@ -1007,6 +1008,14 @@ The searchable **Ronco Motion app** choice asks for ECONOMY (Fk9rm) or PREMIUM
 (Fk8rm). Select the layout used in Ronco Motion 1.2; Bluetooth names cannot
 identify it. PREMIUM adds Pillow and a light toggle. Layout settings belong to
 one physical side of a two-address pair. See [Ronco Motion](beds/richmat.md#ronco-motion).
+
+### PowersBedding
+
+Choose **PowersBedding app** for its fixed two-motor screen. The Bluetooth name
+and manufacturer query select the receiver route automatically. Layout, massage
+and 100 ms movement cadence belong to the profile. Each receiver in a two-address
+pair keeps its own Bluetooth name and massage levels. See the
+[PowersBedding guide](beds/keeson.md#powersbedding).
 
 ### My Side
 
