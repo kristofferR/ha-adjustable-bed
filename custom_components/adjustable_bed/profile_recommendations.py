@@ -118,7 +118,7 @@ _APP_HINTS: Final = _GMMOTOR_APP_HINTS | {
     "askona",
     "instant_comfort", "berun", BED_TYPE_SIMMONS_BLUE, "dorsal", BED_TYPE_ENSO2, BED_TYPE_MOODBASE,
     BED_TYPE_ERGOBED, BED_TYPE_TRUEMOTION, BED_TYPE_SUTA_KING_KOIL, BED_TYPE_SLEEP_ASSIST_PRO, BED_TYPE_RONCO_MOTION,
-    BED_TYPE_MLILY0, BED_TYPE_MYSIDE, "muuegm", "silksnow", "awmotion",
+    BED_TYPE_MLILY0, BED_TYPE_MYSIDE, "muuegm", "silksnow", "motionflex", "awmotion",
 }
 
 if TYPE_CHECKING:
