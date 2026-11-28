@@ -1,0 +1,5113 @@
+[
+  {
+    "id": "14",
+    "selector": "manufacturerSpecificData.keyAt(0) == 14",
+    "page": "ClotheOneMC4BtnActivity",
+    "name_index": 31,
+    "order": 4,
+    "source": "sources/com/ykd/newuieasyc/initDataUtil/BDUtils.java:18",
+    "source_row": "put(14, new BD(DeviceNameUtil.dname[31], ImageUtils.icon[9], ImageUtils.bigbedimage[5], null, ImageUtils.smallbedimage[4], ImageUtils.img_bed_flat[4], 0, PageUtils.intentclass[27], false, OrderUtil.oup[4], OrderUtil.odown[4], OrderUtil.ostop[4], ImageUtils.keydes_bed, StringUtils.keydes_bed_text, StringUtils.troubleshoot_bed_question, StringUtils.troubleshoot_bed_analyse, StringUtils.troubleshoot_bed_solve, ButtonUtils.Null));",
+    "registration_id": "registration-001-14",
+    "name_resource": "device_name_14",
+    "scope": "DIRECT_BED",
+    "disposition": "REACHABLE",
+    "scope_reason": "Bed storage label/images but ClotheOneMC4BtnActivity route; retain mismatch. Movement/light recovered, drying/disinfection EXCLUDED.",
+    "content_sha256": "8f9e8b0ebc323006c076bea967b9c03b75207d76fce1f4a604475d646367446a",
+    "show_alarm_sleep": false,
+    "button_config": "Null",
+    "graphics": [
+      "bed_push_unselect",
+      "bed_push_select"
+    ],
+    "orders": {
+      "oup": [
+        272
+      ],
+      "odown": [
+        273
+      ],
+      "ostop": [
+        1
+      ]
+    },
+    "confidence": "VERIFIED"
+  },
+  {
+    "id": "16",
+    "selector": "manufacturerSpecificData.keyAt(0) == 16",
+    "page": "StorageBedActivity",
+    "name_index": 31,
+    "order": 4,
+    "source": "sources/com/ykd/newuieasyc/initDataUtil/BDUtils.java:19",
+    "source_row": "put(16, new BD(DeviceNameUtil.dname[31], ImageUtils.icon[9], ImageUtils.bigbedimage[5], null, ImageUtils.smallbedimage[4], ImageUtils.img_bed_flat[4], 0, PageUtils.intentclass[38], false, OrderUtil.oup[4], OrderUtil.odown[4], OrderUtil.ostop[4], ImageUtils.stotage_bed, StringUtils.stotage_bed_text, StringUtils.troubleshoot_bed_question, StringUtils.troubleshoot_bed_analyse, StringUtils.troubleshoot_bed_solve, ButtonUtils.Null));",
+    "registration_id": "registration-002-16",
+    "name_resource": "device_name_14",
+    "scope": "DIRECT_BED",
+    "disposition": "REACHABLE",
+    "scope_reason": "Direct bed/sofa-bed resources in registration",
+    "content_sha256": "0352f048e9b6df13de925289441d96c99d748b72b1ed308cf7791f3ad329929e",
+    "show_alarm_sleep": false,
+    "button_config": "Null",
+    "graphics": [
+      "bed_push_unselect",
+      "bed_push_select"
+    ],
+    "orders": {
+      "oup": [
+        272
+      ],
+      "odown": [
+        273
+      ],
+      "ostop": [
+        1
+      ]
+    },
+    "confidence": "VERIFIED"
+  },
+  {
+    "id": "100",
+    "selector": "manufacturerSpecificData.keyAt(0) == 100",
+    "page": "Bed9BtnActivity",
+    "name_index": 0,
+    "order": 0,
+    "source": "sources/com/ykd/newuieasyc/initDataUtil/BDUtils.java:20",
+    "source_row": "put(100, new BD(DeviceNameUtil.dname[0], ImageUtils.icon[0], ImageUtils.bigbedimage[0], null, ImageUtils.smallbedimage[0], ImageUtils.img_bed_flat[0], ImageUtils.smallchangeiamge[0], PageUtils.intentclass[14], true, OrderUtil.oup[0], OrderUtil.odown[0], OrderUtil.ostop[0], ImageUtils.keydes_bed, StringUtils.keydes_bed_text, StringUtils.troubleshoot_bed_question, StringUtils.troubleshoot_bed_analyse, StringUtils.troubleshoot_bed_solve, ButtonUtils.Null));",
+    "registration_id": "registration-003-100",
+    "name_resource": "device_name_bed_two_motor",
+    "scope": "DIRECT_BED",
+    "disposition": "REACHABLE",
+    "scope_reason": "Direct bed/sofa-bed resources in registration",
+    "content_sha256": "b84f0afca4637f4c27041fefbd628e6293dba665a062b6b25d8fa5c9b26f9517",
+    "show_alarm_sleep": true,
+    "button_config": "Null",
+    "graphics": [
+      "bed_23_unselect",
+      "bed_23_back_foot_head",
+      "bed_23_back_head",
+      "bed_23_foot"
+    ],
+    "orders": {
+      "oup": [
+        272,
+        257,
+        261
+      ],
+      "odown": [
+        273,
+        258,
+        262
+      ],
+      "ostop": [
+        1,
+        256,
+        260
+      ]
+    },
+    "confidence": "VERIFIED"
+  },
+  {
+    "id": "101",
+    "selector": "manufacturerSpecificData.keyAt(0) == 101",
+    "page": "Bed6BtnActivity",
+    "name_index": 0,
+    "order": 0,
+    "source": "sources/com/ykd/newuieasyc/initDataUtil/BDUtils.java:21",
+    "source_row": "put(Integer.valueOf(TypedValues.TYPE_TARGET), new BD(DeviceNameUtil.dname[0], ImageUtils.icon[0], ImageUtils.bigbedimage[0], null, ImageUtils.smallbedimage[0], ImageUtils.img_bed_flat[0], ImageUtils.smallchangeiamge[0], PageUtils.intentclass[15], true, OrderUtil.oup[0], OrderUtil.odown[0], OrderUtil.ostop[0], ImageUtils.keydes_bed, StringUtils.keydes_bed_text, StringUtils.troubleshoot_bed_question, StringUtils.troubleshoot_bed_analyse, StringUtils.troubleshoot_bed_solve, ButtonUtils.Null));",
+    "registration_id": "registration-004-101",
+    "name_resource": "device_name_bed_two_motor",
+    "scope": "DIRECT_BED",
+    "disposition": "REACHABLE",
+    "scope_reason": "Direct bed/sofa-bed resources in registration",
+    "content_sha256": "42c70efeb4c29e93b7eb293cae14b724c2315f08564d430de65f85dcda13cc2c",
+    "show_alarm_sleep": true,
+    "button_config": "Null",
+    "graphics": [
+      "bed_23_unselect",
+      "bed_23_back_foot_head",
+      "bed_23_back_head",
+      "bed_23_foot"
+    ],
+    "orders": {
+      "oup": [
+        272,
+        257,
+        261
+      ],
+      "odown": [
+        273,
+        258,
+        262
+      ],
+      "ostop": [
+        1,
+        256,
+        260
+      ]
+    },
+    "confidence": "VERIFIED"
+  },
+  {
+    "id": "102",
+    "selector": "manufacturerSpecificData.keyAt(0) == 102",
+    "page": "Bed5BtnActivity",
+    "name_index": 0,
+    "order": 0,
+    "source": "sources/com/ykd/newuieasyc/initDataUtil/BDUtils.java:22",
+    "source_row": "put(Integer.valueOf(LocationRequestCompat.QUALITY_BALANCED_POWER_ACCURACY), new BD(DeviceNameUtil.dname[0], ImageUtils.icon[0], ImageUtils.bigbedimage[0], null, ImageUtils.smallbedimage[0], ImageUtils.img_bed_flat[0], ImageUtils.smallchangeiamge[0], PageUtils.intentclass[16], true, OrderUtil.oup[0], OrderUtil.odown[0], OrderUtil.ostop[0], ImageUtils.keydes_bed, StringUtils.keydes_bed_text, StringUtils.troubleshoot_bed_question, StringUtils.troubleshoot_bed_analyse, StringUtils.troubleshoot_bed_solve, ButtonUtils.Null));",
+    "registration_id": "registration-005-102",
+    "name_resource": "device_name_bed_two_motor",
+    "scope": "DIRECT_BED",
+    "disposition": "REACHABLE",
+    "scope_reason": "Direct bed/sofa-bed resources in registration",
+    "content_sha256": "3fc2136557aeb80f1b5adab57d3ca75f3b0ae20db688c6b2b9016808c0d244c3",
+    "show_alarm_sleep": true,
+    "button_config": "Null",
+    "graphics": [
+      "bed_23_unselect",
+      "bed_23_back_foot_head",
+      "bed_23_back_head",
+      "bed_23_foot"
+    ],
+    "orders": {
+      "oup": [
+        272,
+        257,
+        261
+      ],
+      "odown": [
+        273,
+        258,
+        262
+      ],
+      "ostop": [
+        1,
+        256,
+        260
+      ]
+    },
+    "confidence": "VERIFIED"
+  },
+  {
+    "id": "103",
+    "selector": "manufacturerSpecificData.keyAt(0) == 103",
+    "page": "Bed9BtnActivity",
+    "name_index": 1,
+    "order": 1,
+    "source": "sources/com/ykd/newuieasyc/initDataUtil/BDUtils.java:23",
+    "source_row": "put(103, new BD(DeviceNameUtil.dname[1], ImageUtils.icon[1], ImageUtils.bigbedimage[1], null, ImageUtils.smallbedimage[0], ImageUtils.img_bed_flat[0], ImageUtils.smallchangeiamge[0], PageUtils.intentclass[14], true, OrderUtil.oup[1], OrderUtil.odown[1], OrderUtil.ostop[1], ImageUtils.keydes_bed, StringUtils.keydes_bed_text, StringUtils.troubleshoot_bed_question, StringUtils.troubleshoot_bed_analyse, StringUtils.troubleshoot_bed_solve, ButtonUtils.Null));",
+    "registration_id": "registration-006-103",
+    "name_resource": "device_name_bed_three_motor",
+    "scope": "DIRECT_BED",
+    "disposition": "REACHABLE",
+    "scope_reason": "Direct bed/sofa-bed resources in registration",
+    "content_sha256": "c9713ac976cb88bbffb89189bb6c1d95aa7d0f73c9143e0a4558faaa6f0654a7",
+    "show_alarm_sleep": true,
+    "button_config": "Null",
+    "graphics": [
+      "bed_23_unselect",
+      "bed_23_back_foot_head",
+      "bed_23_back",
+      "bed_23_foot",
+      "bed_23_head"
+    ],
+    "orders": {
+      "oup": [
+        272,
+        257,
+        261,
+        265
+      ],
+      "odown": [
+        273,
+        258,
+        262,
+        266
+      ],
+      "ostop": [
+        1,
+        256,
+        260,
+        264
+      ]
+    },
+    "confidence": "VERIFIED"
+  },
+  {
+    "id": "104",
+    "selector": "manufacturerSpecificData.keyAt(0) == 104",
+    "page": "Bed6BtnActivity",
+    "name_index": 1,
+    "order": 1,
+    "source": "sources/com/ykd/newuieasyc/initDataUtil/BDUtils.java:24",
+    "source_row": "put(Integer.valueOf(LocationRequestCompat.QUALITY_LOW_POWER), new BD(DeviceNameUtil.dname[1], ImageUtils.icon[1], ImageUtils.bigbedimage[1], null, ImageUtils.smallbedimage[0], ImageUtils.img_bed_flat[0], ImageUtils.smallchangeiamge[0], PageUtils.intentclass[15], true, OrderUtil.oup[1], OrderUtil.odown[1], OrderUtil.ostop[1], ImageUtils.keydes_bed, StringUtils.keydes_bed_text, StringUtils.troubleshoot_bed_question, StringUtils.troubleshoot_bed_analyse, StringUtils.troubleshoot_bed_solve, ButtonUtils.Null));",
+    "registration_id": "registration-007-104",
+    "name_resource": "device_name_bed_three_motor",
+    "scope": "DIRECT_BED",
+    "disposition": "REACHABLE",
+    "scope_reason": "Direct bed/sofa-bed resources in registration",
+    "content_sha256": "be84177ebd7b284652aa301c102ca88e8d3a6f54af824d2e98f8417627e5759d",
+    "show_alarm_sleep": true,
+    "button_config": "Null",
+    "graphics": [
+      "bed_23_unselect",
+      "bed_23_back_foot_head",
+      "bed_23_back",
+      "bed_23_foot",
+      "bed_23_head"
+    ],
+    "orders": {
+      "oup": [
+        272,
+        257,
+        261,
+        265
+      ],
+      "odown": [
+        273,
+        258,
+        262,
+        266
+      ],
+      "ostop": [
+        1,
+        256,
+        260,
+        264
+      ]
+    },
+    "confidence": "VERIFIED"
+  },
+  {
+    "id": "105",
+    "selector": "manufacturerSpecificData.keyAt(0) == 105",
+    "page": "Bed5BtnActivity",
+    "name_index": 1,
+    "order": 1,
+    "source": "sources/com/ykd/newuieasyc/initDataUtil/BDUtils.java:25",
+    "source_row": "put(105, new BD(DeviceNameUtil.dname[1], ImageUtils.icon[1], ImageUtils.bigbedimage[1], null, ImageUtils.smallbedimage[0], ImageUtils.img_bed_flat[0], ImageUtils.smallchangeiamge[0], PageUtils.intentclass[16], true, OrderUtil.oup[1], OrderUtil.odown[1], OrderUtil.ostop[1], ImageUtils.keydes_bed, StringUtils.keydes_bed_text, StringUtils.troubleshoot_bed_question, StringUtils.troubleshoot_bed_analyse, StringUtils.troubleshoot_bed_solve, ButtonUtils.Null));",
+    "registration_id": "registration-008-105",
+    "name_resource": "device_name_bed_three_motor",
+    "scope": "DIRECT_BED",
+    "disposition": "REACHABLE",
+    "scope_reason": "Direct bed/sofa-bed resources in registration",
+    "content_sha256": "8ceaff0fe1fa4ecbdbec05f23e5521dba9d7b25a0c9aab9ae862bd13516e2a0d",
+    "show_alarm_sleep": true,
+    "button_config": "Null",
+    "graphics": [
+      "bed_23_unselect",
+      "bed_23_back_foot_head",
+      "bed_23_back",
+      "bed_23_foot",
+      "bed_23_head"
+    ],
+    "orders": {
+      "oup": [
+        272,
+        257,
+        261,
+        265
+      ],
+      "odown": [
+        273,
+        258,
+        262,
+        266
+      ],
+      "ostop": [
+        1,
+        256,
+        260,
+        264
+      ]
+    },
+    "confidence": "VERIFIED"
+  },
+  {
+    "id": "106",
+    "selector": "manufacturerSpecificData.keyAt(0) == 106",
+    "page": "Bed9BtnActivity",
+    "name_index": 1,
+    "order": 1,
+    "source": "sources/com/ykd/newuieasyc/initDataUtil/BDUtils.java:26",
+    "source_row": "put(106, new BD(DeviceNameUtil.dname[1], ImageUtils.icon[1], ImageUtils.bigbedimage[2], null, ImageUtils.smallbedimage[0], ImageUtils.img_bed_flat[0], ImageUtils.smallchangeiamge[0], PageUtils.intentclass[14], true, OrderUtil.oup[1], OrderUtil.odown[1], OrderUtil.ostop[1], ImageUtils.keydes_bed, StringUtils.keydes_bed_text, StringUtils.troubleshoot_bed_question, StringUtils.troubleshoot_bed_analyse, StringUtils.troubleshoot_bed_solve, ButtonUtils.Null));",
+    "registration_id": "registration-009-106",
+    "name_resource": "device_name_bed_three_motor",
+    "scope": "DIRECT_BED",
+    "disposition": "REACHABLE",
+    "scope_reason": "Direct bed/sofa-bed resources in registration",
+    "content_sha256": "809f8504e960bda84a2719ab2841e032f0a4b9e9687c82c3da0395e385bcd787",
+    "show_alarm_sleep": true,
+    "button_config": "Null",
+    "graphics": [
+      "bed_23_unselect",
+      "bed_23_all",
+      "bed_23_back_head",
+      "bed_23_foot",
+      "bed_23_middle"
+    ],
+    "orders": {
+      "oup": [
+        272,
+        257,
+        261,
+        265
+      ],
+      "odown": [
+        273,
+        258,
+        262,
+        266
+      ],
+      "ostop": [
+        1,
+        256,
+        260,
+        264
+      ]
+    },
+    "confidence": "VERIFIED"
+  },
+  {
+    "id": "107",
+    "selector": "manufacturerSpecificData.keyAt(0) == 107",
+    "page": "Bed6BtnActivity",
+    "name_index": 1,
+    "order": 1,
+    "source": "sources/com/ykd/newuieasyc/initDataUtil/BDUtils.java:27",
+    "source_row": "put(107, new BD(DeviceNameUtil.dname[1], ImageUtils.icon[1], ImageUtils.bigbedimage[2], null, ImageUtils.smallbedimage[0], ImageUtils.img_bed_flat[0], ImageUtils.smallchangeiamge[0], PageUtils.intentclass[15], true, OrderUtil.oup[1], OrderUtil.odown[1], OrderUtil.ostop[1], ImageUtils.keydes_bed, StringUtils.keydes_bed_text, StringUtils.troubleshoot_bed_question, StringUtils.troubleshoot_bed_analyse, StringUtils.troubleshoot_bed_solve, ButtonUtils.Null));",
+    "registration_id": "registration-010-107",
+    "name_resource": "device_name_bed_three_motor",
+    "scope": "DIRECT_BED",
+    "disposition": "REACHABLE",
+    "scope_reason": "Direct bed/sofa-bed resources in registration",
+    "content_sha256": "398c2d8cce4f2ebc78a1f95918047b29c9af4ebfaf31c49b623db46afd489194",
+    "show_alarm_sleep": true,
+    "button_config": "Null",
+    "graphics": [
+      "bed_23_unselect",
+      "bed_23_all",
+      "bed_23_back_head",
+      "bed_23_foot",
+      "bed_23_middle"
+    ],
+    "orders": {
+      "oup": [
+        272,
+        257,
+        261,
+        265
+      ],
+      "odown": [
+        273,
+        258,
+        262,
+        266
+      ],
+      "ostop": [
+        1,
+        256,
+        260,
+        264
+      ]
+    },
+    "confidence": "VERIFIED"
+  },
+  {
+    "id": "108",
+    "selector": "manufacturerSpecificData.keyAt(0) == 108",
+    "page": "Bed5BtnActivity",
+    "name_index": 1,
+    "order": 1,
+    "source": "sources/com/ykd/newuieasyc/initDataUtil/BDUtils.java:28",
+    "source_row": "put(Integer.valueOf(AppCompatDelegate.FEATURE_SUPPORT_ACTION_BAR), new BD(DeviceNameUtil.dname[1], ImageUtils.icon[1], ImageUtils.bigbedimage[2], null, ImageUtils.smallbedimage[0], ImageUtils.img_bed_flat[0], ImageUtils.smallchangeiamge[0], PageUtils.intentclass[16], true, OrderUtil.oup[1], OrderUtil.odown[1], OrderUtil.ostop[1], ImageUtils.keydes_bed, StringUtils.keydes_bed_text, StringUtils.troubleshoot_bed_question, StringUtils.troubleshoot_bed_analyse, StringUtils.troubleshoot_bed_solve, ButtonUtils.Null));",
+    "registration_id": "registration-011-108",
+    "name_resource": "device_name_bed_three_motor",
+    "scope": "DIRECT_BED",
+    "disposition": "REACHABLE",
+    "scope_reason": "Direct bed/sofa-bed resources in registration",
+    "content_sha256": "844e5ca56efdb493d057a39baad82b0db799545a167093513394b769ce401d1d",
+    "show_alarm_sleep": true,
+    "button_config": "Null",
+    "graphics": [
+      "bed_23_unselect",
+      "bed_23_all",
+      "bed_23_back_head",
+      "bed_23_foot",
+      "bed_23_middle"
+    ],
+    "orders": {
+      "oup": [
+        272,
+        257,
+        261,
+        265
+      ],
+      "odown": [
+        273,
+        258,
+        262,
+        266
+      ],
+      "ostop": [
+        1,
+        256,
+        260,
+        264
+      ]
+    },
+    "confidence": "VERIFIED"
+  },
+  {
+    "id": "109",
+    "selector": "manufacturerSpecificData.keyAt(0) == 109",
+    "page": "Bed9BtnActivity",
+    "name_index": 1,
+    "order": 2,
+    "source": "sources/com/ykd/newuieasyc/initDataUtil/BDUtils.java:29",
+    "source_row": "put(Integer.valueOf(AppCompatDelegate.FEATURE_SUPPORT_ACTION_BAR_OVERLAY), new BD(DeviceNameUtil.dname[1], ImageUtils.icon[2], ImageUtils.bigbedimage[3], null, ImageUtils.smallbedimage[1], ImageUtils.img_bed_flat[1], ImageUtils.smallchangeiamge[1], PageUtils.intentclass[14], true, OrderUtil.oup[2], OrderUtil.odown[2], OrderUtil.ostop[2], ImageUtils.keydes_bed, StringUtils.keydes_bed_text, StringUtils.troubleshoot_bed_question, StringUtils.troubleshoot_bed_analyse, StringUtils.troubleshoot_bed_solve, ButtonUtils.Null));",
+    "registration_id": "registration-012-109",
+    "name_resource": "device_name_bed_three_motor",
+    "scope": "DIRECT_BED",
+    "disposition": "REACHABLE",
+    "scope_reason": "Direct bed/sofa-bed resources in registration",
+    "content_sha256": "eaf82406b246f366cb27384d367bf7f365c5ce52e3b538272c2bdc3cbe3ff680",
+    "show_alarm_sleep": true,
+    "button_config": "Null",
+    "graphics": [
+      "bed_2back_unselect",
+      "bed_2back_all",
+      "bed_2back_backall",
+      "bed_2back_rightback",
+      "bed_2back_foot",
+      "bed_2back_leftback"
+    ],
+    "orders": {
+      "oup": [
+        272,
+        276,
+        257,
+        261,
+        265
+      ],
+      "odown": [
+        273,
+        277,
+        258,
+        262,
+        266
+      ],
+      "ostop": [
+        1,
+        1,
+        256,
+        260,
+        264
+      ]
+    },
+    "confidence": "VERIFIED"
+  },
+  {
+    "id": "110",
+    "selector": "manufacturerSpecificData.keyAt(0) == 110",
+    "page": "Bed6BtnActivity",
+    "name_index": 1,
+    "order": 2,
+    "source": "sources/com/ykd/newuieasyc/initDataUtil/BDUtils.java:30",
+    "source_row": "put(110, new BD(DeviceNameUtil.dname[1], ImageUtils.icon[2], ImageUtils.bigbedimage[3], null, ImageUtils.smallbedimage[1], ImageUtils.img_bed_flat[1], ImageUtils.smallchangeiamge[1], PageUtils.intentclass[15], true, OrderUtil.oup[2], OrderUtil.odown[2], OrderUtil.ostop[2], ImageUtils.keydes_bed, StringUtils.keydes_bed_text, StringUtils.troubleshoot_bed_question, StringUtils.troubleshoot_bed_analyse, StringUtils.troubleshoot_bed_solve, ButtonUtils.Null));",
+    "registration_id": "registration-013-110",
+    "name_resource": "device_name_bed_three_motor",
+    "scope": "DIRECT_BED",
+    "disposition": "REACHABLE",
+    "scope_reason": "Direct bed/sofa-bed resources in registration",
+    "content_sha256": "27b29f00f3893e23984acc3342ec48aedf262fa8d0c8c7c6a2c6c3ab0e9320ac",
+    "show_alarm_sleep": true,
+    "button_config": "Null",
+    "graphics": [
+      "bed_2back_unselect",
+      "bed_2back_all",
+      "bed_2back_backall",
+      "bed_2back_rightback",
+      "bed_2back_foot",
+      "bed_2back_leftback"
+    ],
+    "orders": {
+      "oup": [
+        272,
+        276,
+        257,
+        261,
+        265
+      ],
+      "odown": [
+        273,
+        277,
+        258,
+        262,
+        266
+      ],
+      "ostop": [
+        1,
+        1,
+        256,
+        260,
+        264
+      ]
+    },
+    "confidence": "VERIFIED"
+  },
+  {
+    "id": "111",
+    "selector": "manufacturerSpecificData.keyAt(0) == 111",
+    "page": "Bed5BtnActivity",
+    "name_index": 1,
+    "order": 2,
+    "source": "sources/com/ykd/newuieasyc/initDataUtil/BDUtils.java:31",
+    "source_row": "put(111, new BD(DeviceNameUtil.dname[1], ImageUtils.icon[2], ImageUtils.bigbedimage[3], null, ImageUtils.smallbedimage[1], ImageUtils.img_bed_flat[1], ImageUtils.smallchangeiamge[1], PageUtils.intentclass[16], true, OrderUtil.oup[2], OrderUtil.odown[2], OrderUtil.ostop[2], ImageUtils.keydes_bed, StringUtils.keydes_bed_text, StringUtils.troubleshoot_bed_question, StringUtils.troubleshoot_bed_analyse, StringUtils.troubleshoot_bed_solve, ButtonUtils.Null));",
+    "registration_id": "registration-014-111",
+    "name_resource": "device_name_bed_three_motor",
+    "scope": "DIRECT_BED",
+    "disposition": "REACHABLE",
+    "scope_reason": "Direct bed/sofa-bed resources in registration",
+    "content_sha256": "64df0300fc82c6c40b4cf77b83f5314b779c062e75c36b3218d1ca93e8d6db28",
+    "show_alarm_sleep": true,
+    "button_config": "Null",
+    "graphics": [
+      "bed_2back_unselect",
+      "bed_2back_all",
+      "bed_2back_backall",
+      "bed_2back_rightback",
+      "bed_2back_foot",
+      "bed_2back_leftback"
+    ],
+    "orders": {
+      "oup": [
+        272,
+        276,
+        257,
+        261,
+        265
+      ],
+      "odown": [
+        273,
+        277,
+        258,
+        262,
+        266
+      ],
+      "ostop": [
+        1,
+        1,
+        256,
+        260,
+        264
+      ]
+    },
+    "confidence": "VERIFIED"
+  },
+  {
+    "id": "112",
+    "selector": "manufacturerSpecificData.keyAt(0) == 112",
+    "page": "Bed9BtnActivity",
+    "name_index": 2,
+    "order": 3,
+    "source": "sources/com/ykd/newuieasyc/initDataUtil/BDUtils.java:32",
+    "source_row": "put(112, new BD(DeviceNameUtil.dname[2], ImageUtils.icon[1], ImageUtils.bigbedimage[4], null, ImageUtils.smallbedimage[0], ImageUtils.img_bed_flat[0], ImageUtils.smallchangeiamge[0], PageUtils.intentclass[14], true, OrderUtil.oup[3], OrderUtil.odown[3], OrderUtil.ostop[3], ImageUtils.keydes_bed, StringUtils.keydes_bed_text, StringUtils.troubleshoot_bed_question, StringUtils.troubleshoot_bed_analyse, StringUtils.troubleshoot_bed_solve, ButtonUtils.Null));",
+    "registration_id": "registration-015-112",
+    "name_resource": "device_name_bed_four_motor",
+    "scope": "DIRECT_BED",
+    "disposition": "REACHABLE",
+    "scope_reason": "Direct bed/sofa-bed resources in registration",
+    "content_sha256": "9124a3f628d97b29352425511e50c66b167d18b85a96a87e537f07aae41bd573",
+    "show_alarm_sleep": true,
+    "button_config": "Null",
+    "graphics": [
+      "bed_23_unselect",
+      "bed_23_all",
+      "bed_23_back",
+      "bed_23_foot",
+      "bed_23_head",
+      "bed_23_middle"
+    ],
+    "orders": {
+      "oup": [
+        272,
+        257,
+        261,
+        265,
+        269
+      ],
+      "odown": [
+        273,
+        258,
+        262,
+        266,
+        270
+      ],
+      "ostop": [
+        1,
+        256,
+        260,
+        264,
+        268
+      ]
+    },
+    "confidence": "VERIFIED"
+  },
+  {
+    "id": "113",
+    "selector": "manufacturerSpecificData.keyAt(0) == 113",
+    "page": "Bed6BtnActivity",
+    "name_index": 2,
+    "order": 3,
+    "source": "sources/com/ykd/newuieasyc/initDataUtil/BDUtils.java:33",
+    "source_row": "put(113, new BD(DeviceNameUtil.dname[2], ImageUtils.icon[1], ImageUtils.bigbedimage[4], null, ImageUtils.smallbedimage[0], ImageUtils.img_bed_flat[0], ImageUtils.smallchangeiamge[0], PageUtils.intentclass[15], true, OrderUtil.oup[3], OrderUtil.odown[3], OrderUtil.ostop[3], ImageUtils.keydes_bed, StringUtils.keydes_bed_text, StringUtils.troubleshoot_bed_question, StringUtils.troubleshoot_bed_analyse, StringUtils.troubleshoot_bed_solve, ButtonUtils.Null));",
+    "registration_id": "registration-016-113",
+    "name_resource": "device_name_bed_four_motor",
+    "scope": "DIRECT_BED",
+    "disposition": "REACHABLE",
+    "scope_reason": "Direct bed/sofa-bed resources in registration",
+    "content_sha256": "70fc7fcf349f25c8991b55a38aeb9ea236bd5d73b11cb04a9d49027e8657b598",
+    "show_alarm_sleep": true,
+    "button_config": "Null",
+    "graphics": [
+      "bed_23_unselect",
+      "bed_23_all",
+      "bed_23_back",
+      "bed_23_foot",
+      "bed_23_head",
+      "bed_23_middle"
+    ],
+    "orders": {
+      "oup": [
+        272,
+        257,
+        261,
+        265,
+        269
+      ],
+      "odown": [
+        273,
+        258,
+        262,
+        266,
+        270
+      ],
+      "ostop": [
+        1,
+        256,
+        260,
+        264,
+        268
+      ]
+    },
+    "confidence": "VERIFIED"
+  },
+  {
+    "id": "114",
+    "selector": "manufacturerSpecificData.keyAt(0) == 114",
+    "page": "Bed5BtnActivity",
+    "name_index": 2,
+    "order": 3,
+    "source": "sources/com/ykd/newuieasyc/initDataUtil/BDUtils.java:34",
+    "source_row": "put(114, new BD(DeviceNameUtil.dname[2], ImageUtils.icon[1], ImageUtils.bigbedimage[4], null, ImageUtils.smallbedimage[0], ImageUtils.img_bed_flat[0], ImageUtils.smallchangeiamge[0], PageUtils.intentclass[16], true, OrderUtil.oup[3], OrderUtil.odown[3], OrderUtil.ostop[3], ImageUtils.keydes_bed, StringUtils.keydes_bed_text, StringUtils.troubleshoot_bed_question, StringUtils.troubleshoot_bed_analyse, StringUtils.troubleshoot_bed_solve, ButtonUtils.Null));",
+    "registration_id": "registration-017-114",
+    "name_resource": "device_name_bed_four_motor",
+    "scope": "DIRECT_BED",
+    "disposition": "REACHABLE",
+    "scope_reason": "Direct bed/sofa-bed resources in registration",
+    "content_sha256": "e8d70854f05e2afaf34d3c8eb2cd076303133a9cd5e14a7ac572016ebfc37365",
+    "show_alarm_sleep": true,
+    "button_config": "Null",
+    "graphics": [
+      "bed_23_unselect",
+      "bed_23_all",
+      "bed_23_back",
+      "bed_23_foot",
+      "bed_23_head",
+      "bed_23_middle"
+    ],
+    "orders": {
+      "oup": [
+        272,
+        257,
+        261,
+        265,
+        269
+      ],
+      "odown": [
+        273,
+        258,
+        262,
+        266,
+        270
+      ],
+      "ostop": [
+        1,
+        256,
+        260,
+        264,
+        268
+      ]
+    },
+    "confidence": "VERIFIED"
+  },
+  {
+    "id": "115",
+    "selector": "manufacturerSpecificData.keyAt(0) == 115",
+    "page": "Bed8BtnActivity",
+    "name_index": 0,
+    "order": 0,
+    "source": "sources/com/ykd/newuieasyc/initDataUtil/BDUtils.java:35",
+    "source_row": "put(115, new BD(DeviceNameUtil.dname[0], ImageUtils.icon[0], ImageUtils.bigbedimage[0], null, ImageUtils.smallbedimage[0], ImageUtils.img_bed_flat[0], ImageUtils.smallchangeiamge[0], PageUtils.intentclass[17], true, OrderUtil.oup[0], OrderUtil.odown[0], OrderUtil.ostop[0], ImageUtils.keydes_bed, StringUtils.keydes_bed_text, StringUtils.troubleshoot_bed_question, StringUtils.troubleshoot_bed_analyse, StringUtils.troubleshoot_bed_solve, ButtonUtils.Null));",
+    "registration_id": "registration-018-115",
+    "name_resource": "device_name_bed_two_motor",
+    "scope": "DIRECT_BED",
+    "disposition": "REACHABLE",
+    "scope_reason": "Direct bed/sofa-bed resources in registration",
+    "content_sha256": "d82ce8512a2f4fa9a70f6d56c45c8a478a6f2753217d9ee62c36f840f711e8c4",
+    "show_alarm_sleep": true,
+    "button_config": "Null",
+    "graphics": [
+      "bed_23_unselect",
+      "bed_23_back_foot_head",
+      "bed_23_back_head",
+      "bed_23_foot"
+    ],
+    "orders": {
+      "oup": [
+        272,
+        257,
+        261
+      ],
+      "odown": [
+        273,
+        258,
+        262
+      ],
+      "ostop": [
+        1,
+        256,
+        260
+      ]
+    },
+    "confidence": "VERIFIED"
+  },
+  {
+    "id": "116",
+    "selector": "manufacturerSpecificData.keyAt(0) == 116",
+    "page": "Bed8BtnActivity",
+    "name_index": 1,
+    "order": 1,
+    "source": "sources/com/ykd/newuieasyc/initDataUtil/BDUtils.java:36",
+    "source_row": "put(116, new BD(DeviceNameUtil.dname[1], ImageUtils.icon[1], ImageUtils.bigbedimage[1], null, ImageUtils.smallbedimage[0], ImageUtils.img_bed_flat[0], ImageUtils.smallchangeiamge[0], PageUtils.intentclass[17], true, OrderUtil.oup[1], OrderUtil.odown[1], OrderUtil.ostop[1], ImageUtils.keydes_bed, StringUtils.keydes_bed_text, StringUtils.troubleshoot_bed_question, StringUtils.troubleshoot_bed_analyse, StringUtils.troubleshoot_bed_solve, ButtonUtils.Null));",
+    "registration_id": "registration-019-116",
+    "name_resource": "device_name_bed_three_motor",
+    "scope": "DIRECT_BED",
+    "disposition": "REACHABLE",
+    "scope_reason": "Direct bed/sofa-bed resources in registration",
+    "content_sha256": "f81c7766aa23c888f0561439281c657fe445c6787c5c0779881d9cdb89f5e766",
+    "show_alarm_sleep": true,
+    "button_config": "Null",
+    "graphics": [
+      "bed_23_unselect",
+      "bed_23_back_foot_head",
+      "bed_23_back",
+      "bed_23_foot",
+      "bed_23_head"
+    ],
+    "orders": {
+      "oup": [
+        272,
+        257,
+        261,
+        265
+      ],
+      "odown": [
+        273,
+        258,
+        262,
+        266
+      ],
+      "ostop": [
+        1,
+        256,
+        260,
+        264
+      ]
+    },
+    "confidence": "VERIFIED"
+  },
+  {
+    "id": "117",
+    "selector": "manufacturerSpecificData.keyAt(0) == 117",
+    "page": "Bed8BtnActivity",
+    "name_index": 1,
+    "order": 1,
+    "source": "sources/com/ykd/newuieasyc/initDataUtil/BDUtils.java:37",
+    "source_row": "put(117, new BD(DeviceNameUtil.dname[1], ImageUtils.icon[1], ImageUtils.bigbedimage[2], null, ImageUtils.smallbedimage[0], ImageUtils.img_bed_flat[0], ImageUtils.smallchangeiamge[0], PageUtils.intentclass[17], true, OrderUtil.oup[1], OrderUtil.odown[1], OrderUtil.ostop[1], ImageUtils.keydes_bed, StringUtils.keydes_bed_text, StringUtils.troubleshoot_bed_question, StringUtils.troubleshoot_bed_analyse, StringUtils.troubleshoot_bed_solve, ButtonUtils.Null));",
+    "registration_id": "registration-020-117",
+    "name_resource": "device_name_bed_three_motor",
+    "scope": "DIRECT_BED",
+    "disposition": "REACHABLE",
+    "scope_reason": "Direct bed/sofa-bed resources in registration",
+    "content_sha256": "819048ac614117bf45a2ec8a83c5bf207468ef47397475acb0049a8bc74839af",
+    "show_alarm_sleep": true,
+    "button_config": "Null",
+    "graphics": [
+      "bed_23_unselect",
+      "bed_23_all",
+      "bed_23_back_head",
+      "bed_23_foot",
+      "bed_23_middle"
+    ],
+    "orders": {
+      "oup": [
+        272,
+        257,
+        261,
+        265
+      ],
+      "odown": [
+        273,
+        258,
+        262,
+        266
+      ],
+      "ostop": [
+        1,
+        256,
+        260,
+        264
+      ]
+    },
+    "confidence": "VERIFIED"
+  },
+  {
+    "id": "118",
+    "selector": "manufacturerSpecificData.keyAt(0) == 118",
+    "page": "Bed8BtnActivity",
+    "name_index": 2,
+    "order": 2,
+    "source": "sources/com/ykd/newuieasyc/initDataUtil/BDUtils.java:38",
+    "source_row": "put(118, new BD(DeviceNameUtil.dname[2], ImageUtils.icon[2], ImageUtils.bigbedimage[3], null, ImageUtils.smallbedimage[1], ImageUtils.img_bed_flat[1], ImageUtils.smallchangeiamge[1], PageUtils.intentclass[17], true, OrderUtil.oup[2], OrderUtil.odown[2], OrderUtil.ostop[2], ImageUtils.keydes_bed, StringUtils.keydes_bed_text, StringUtils.troubleshoot_bed_question, StringUtils.troubleshoot_bed_analyse, StringUtils.troubleshoot_bed_solve, ButtonUtils.Null));",
+    "registration_id": "registration-021-118",
+    "name_resource": "device_name_bed_four_motor",
+    "scope": "DIRECT_BED",
+    "disposition": "REACHABLE",
+    "scope_reason": "Direct bed/sofa-bed resources in registration",
+    "content_sha256": "37855660362adcfcd4202f9ad6e6f0e58dc71b249e166ae026255380064a7bff",
+    "show_alarm_sleep": true,
+    "button_config": "Null",
+    "graphics": [
+      "bed_2back_unselect",
+      "bed_2back_all",
+      "bed_2back_backall",
+      "bed_2back_rightback",
+      "bed_2back_foot",
+      "bed_2back_leftback"
+    ],
+    "orders": {
+      "oup": [
+        272,
+        276,
+        257,
+        261,
+        265
+      ],
+      "odown": [
+        273,
+        277,
+        258,
+        262,
+        266
+      ],
+      "ostop": [
+        1,
+        1,
+        256,
+        260,
+        264
+      ]
+    },
+    "confidence": "VERIFIED"
+  },
+  {
+    "id": "119",
+    "selector": "manufacturerSpecificData.keyAt(0) == 119",
+    "page": "BedTwoHeadActivity",
+    "name_index": 62,
+    "order": 0,
+    "source": "sources/com/ykd/newuieasyc/initDataUtil/BDUtils.java:39",
+    "source_row": "put(119, new BD(DeviceNameUtil.dname[62], ImageUtils.icon[22], ImageUtils.bigbedimage[6], null, ImageUtils.smallbedimage[5], ImageUtils.img_bed_flat[5], 0, PageUtils.intentclass[31], true, OrderUtil.oup[0], OrderUtil.odown[0], OrderUtil.ostop[0], ImageUtils.electric_bed, StringUtils.electric_bed_text, StringUtils.troubleshoot_bed_question, StringUtils.troubleshoot_bed_analyse, StringUtils.troubleshoot_bed_solve, ButtonUtils.Null));",
+    "registration_id": "registration-022-119",
+    "name_resource": "device_name_ele_head",
+    "scope": "DIRECT_BED",
+    "disposition": "REACHABLE",
+    "scope_reason": "Direct bed/sofa-bed resources in registration",
+    "content_sha256": "0c144c359f106dc74b47b753650cd8c21239e4a2a2ecc70fdd2add4215db66d7",
+    "show_alarm_sleep": true,
+    "button_config": "Null",
+    "graphics": [
+      "bed_2head_all_unselect",
+      "bed_2head_all_select",
+      "bed_2head_left_select",
+      "bed_2head_right_select"
+    ],
+    "orders": {
+      "oup": [
+        272,
+        257,
+        261
+      ],
+      "odown": [
+        273,
+        258,
+        262
+      ],
+      "ostop": [
+        1,
+        256,
+        260
+      ]
+    },
+    "confidence": "VERIFIED"
+  },
+  {
+    "id": "121",
+    "selector": "manufacturerSpecificData.keyAt(0) == 121",
+    "page": "Bed9LRBtnActivity",
+    "name_index": 0,
+    "order": 5,
+    "source": "sources/com/ykd/newuieasyc/initDataUtil/BDUtils.java:40",
+    "source_row": "put(121, new BD(DeviceNameUtil.dname[0], ImageUtils.icon[0], ImageUtils.bigbedimage[0], null, ImageUtils.smallbedimage[0], ImageUtils.img_bed_flat[0], ImageUtils.smallchangeiamge[0], PageUtils.intentclass[40], true, OrderUtil.oup[5], OrderUtil.odown[5], OrderUtil.ostop[5], ImageUtils.keydes_bed, StringUtils.keydes_bed_text, StringUtils.troubleshoot_bed_question, StringUtils.troubleshoot_bed_analyse, StringUtils.troubleshoot_bed_solve, ButtonUtils.Null));",
+    "registration_id": "registration-023-121",
+    "name_resource": "device_name_bed_two_motor",
+    "scope": "DIRECT_BED",
+    "disposition": "REACHABLE",
+    "scope_reason": "Direct bed/sofa-bed resources in registration",
+    "content_sha256": "3e9a3c1f78ed756c40b810b5a96dcdff36dd145ae61cf6513db4b9227366d180",
+    "show_alarm_sleep": true,
+    "button_config": "Null",
+    "graphics": [
+      "bed_23_unselect",
+      "bed_23_back_foot_head",
+      "bed_23_back_head",
+      "bed_23_foot"
+    ],
+    "orders": {
+      "oup": [
+        272,
+        276,
+        280
+      ],
+      "odown": [
+        273,
+        277,
+        281
+      ],
+      "ostop": [
+        1,
+        1,
+        1
+      ]
+    },
+    "confidence": "VERIFIED"
+  },
+  {
+    "id": "123",
+    "selector": "manufacturerSpecificData.keyAt(0) == 123",
+    "page": "StorageBedActivity",
+    "name_index": 31,
+    "order": 4,
+    "source": "sources/com/ykd/newuieasyc/initDataUtil/BDUtils.java:41",
+    "source_row": "put(123, new BD(DeviceNameUtil.dname[31], ImageUtils.icon[8], ImageUtils.bigbedimage[7], null, ImageUtils.smallbedimage[4], ImageUtils.img_bed_flat[4], 0, PageUtils.intentclass[38], false, OrderUtil.oup[4], OrderUtil.odown[4], OrderUtil.ostop[4], ImageUtils.stotage_bed, StringUtils.stotage_bed_text, StringUtils.troubleshoot_bed_question, StringUtils.troubleshoot_bed_analyse, StringUtils.troubleshoot_bed_solve, ButtonUtils.Null));",
+    "registration_id": "registration-024-123",
+    "name_resource": "device_name_14",
+    "scope": "DIRECT_BED",
+    "disposition": "REACHABLE",
+    "scope_reason": "Direct bed/sofa-bed resources in registration",
+    "content_sha256": "f038805c1674fa25142d06c109346ec29370c51239a42403ec6d28ebc7637865",
+    "show_alarm_sleep": false,
+    "button_config": "Null",
+    "graphics": [
+      "bed_raise_unselect",
+      "bed_raise_select"
+    ],
+    "orders": {
+      "oup": [
+        272
+      ],
+      "odown": [
+        273
+      ],
+      "ostop": [
+        1
+      ]
+    },
+    "confidence": "VERIFIED"
+  },
+  {
+    "id": "124",
+    "selector": "manufacturerSpecificData.keyAt(0) == 124",
+    "page": "BedYB9BtnActivity",
+    "name_index": 0,
+    "order": 0,
+    "source": "sources/com/ykd/newuieasyc/initDataUtil/BDUtils.java:42",
+    "source_row": "put(124, new BD(DeviceNameUtil.dname[0], ImageUtils.icon[0], ImageUtils.bigbedimage[0], null, ImageUtils.smallbedimage[0], ImageUtils.img_bed_flat[0], ImageUtils.smallchangeiamge[0], PageUtils.intentclass[47], true, OrderUtil.oup[0], OrderUtil.odown[0], OrderUtil.ostop[0], ImageUtils.keydes_ybbed, StringUtils.keydes_ybbed_text, StringUtils.troubleshoot_bed_question, StringUtils.troubleshoot_bed_analyse, StringUtils.troubleshoot_bed_solve, ButtonUtils.Null));",
+    "registration_id": "registration-025-124",
+    "name_resource": "device_name_bed_two_motor",
+    "scope": "DIRECT_BED",
+    "disposition": "REACHABLE",
+    "scope_reason": "Direct bed/sofa-bed resources in registration",
+    "content_sha256": "7d24eb5fed2079d7706a4e0169197d05dd98aef6dec978482d156389dbc88545",
+    "show_alarm_sleep": true,
+    "button_config": "Null",
+    "graphics": [
+      "bed_23_unselect",
+      "bed_23_back_foot_head",
+      "bed_23_back_head",
+      "bed_23_foot"
+    ],
+    "orders": {
+      "oup": [
+        272,
+        257,
+        261
+      ],
+      "odown": [
+        273,
+        258,
+        262
+      ],
+      "ostop": [
+        1,
+        256,
+        260
+      ]
+    },
+    "confidence": "VERIFIED"
+  },
+  {
+    "id": "220",
+    "selector": "manufacturerSpecificData.keyAt(0) == 220",
+    "page": "Bed5BtnActivity",
+    "name_index": 0,
+    "order": 0,
+    "source": "sources/com/ykd/newuieasyc/initDataUtil/BDUtils.java:43",
+    "source_row": "put(220, new BD(DeviceNameUtil.dname[0], ImageUtils.icon[0], ImageUtils.bigbedimage[0], null, ImageUtils.smallbedimage[0], ImageUtils.img_bed_flat[0], ImageUtils.smallchangeiamge[0], PageUtils.intentclass[16], true, OrderUtil.oup[0], OrderUtil.odown[0], OrderUtil.ostop[0], ImageUtils.keydes_bed, StringUtils.keydes_bed_text, StringUtils.troubleshoot_bed_question, StringUtils.troubleshoot_bed_analyse, StringUtils.troubleshoot_bed_solve, ButtonUtils.Null));",
+    "registration_id": "registration-026-220",
+    "name_resource": "device_name_bed_two_motor",
+    "scope": "DIRECT_BED",
+    "disposition": "REACHABLE",
+    "scope_reason": "Direct bed/sofa-bed resources in registration",
+    "content_sha256": "7a1d057f10999e9c23dec63e52ae0a3b27d224a7cafff9471ce3655d87bc0f7e",
+    "show_alarm_sleep": true,
+    "button_config": "Null",
+    "graphics": [
+      "bed_23_unselect",
+      "bed_23_back_foot_head",
+      "bed_23_back_head",
+      "bed_23_foot"
+    ],
+    "orders": {
+      "oup": [
+        272,
+        257,
+        261
+      ],
+      "odown": [
+        273,
+        258,
+        262
+      ],
+      "ostop": [
+        1,
+        256,
+        260
+      ]
+    },
+    "confidence": "VERIFIED"
+  },
+  {
+    "id": "300",
+    "selector": "manufacturerSpecificData.keyAt(0) == 300",
+    "page": "SofaOne2BtnActivity",
+    "name_index": 40,
+    "order": 4,
+    "source": "sources/com/ykd/newuieasyc/initDataUtil/BDUtils.java:44",
+    "source_row": "put(Integer.valueOf(MaterialCardViewHelper.DEFAULT_FADE_ANIM_DURATION), new BD(DeviceNameUtil.dname[40], ImageUtils.icon[0], ImageUtils.bigbedimage[0], null, ImageUtils.smallbedimage[0], ImageUtils.img_bed_flat[0], ImageUtils.smallchangeiamge[0], PageUtils.intentclass[2], true, OrderUtil.oup[4], OrderUtil.odown[4], OrderUtil.ostop[4], ImageUtils.keydes_bed, StringUtils.keydes_bed_text, StringUtils.troubleshoot_bed_question, StringUtils.troubleshoot_bed_analyse, StringUtils.troubleshoot_bed_solve, ButtonUtils.M1M2));",
+    "registration_id": "registration-027-300",
+    "name_resource": "device_name_bed_one_motor",
+    "scope": "DIRECT_BED",
+    "disposition": "REACHABLE",
+    "scope_reason": "Direct bed/sofa-bed resources in registration",
+    "content_sha256": "35bf4816b53492013eac53c99e93d0a4bf5cb3c727495b0f6961b7a864c17ace",
+    "show_alarm_sleep": true,
+    "button_config": "M1M2",
+    "graphics": [
+      "bed_23_unselect",
+      "bed_23_back_foot_head",
+      "bed_23_back_head",
+      "bed_23_foot"
+    ],
+    "orders": {
+      "oup": [
+        272
+      ],
+      "odown": [
+        273
+      ],
+      "ostop": [
+        1
+      ]
+    },
+    "confidence": "VERIFIED"
+  },
+  {
+    "id": "301",
+    "selector": "manufacturerSpecificData.keyAt(0) == 301",
+    "page": "SofaMore2BtnActivity",
+    "name_index": 0,
+    "order": 0,
+    "source": "sources/com/ykd/newuieasyc/initDataUtil/BDUtils.java:45",
+    "source_row": "put(301, new BD(DeviceNameUtil.dname[0], ImageUtils.icon[0], ImageUtils.bigbedimage[0], null, ImageUtils.smallbedimage[0], ImageUtils.img_bed_flat[0], ImageUtils.smallchangeiamge[0], PageUtils.intentclass[4], true, OrderUtil.oup[0], OrderUtil.odown[0], OrderUtil.ostop[0], ImageUtils.keydes_bed, StringUtils.keydes_bed_text, StringUtils.troubleshoot_bed_question, StringUtils.troubleshoot_bed_analyse, StringUtils.troubleshoot_bed_solve, ButtonUtils.M1M2));",
+    "registration_id": "registration-028-301",
+    "name_resource": "device_name_bed_two_motor",
+    "scope": "DIRECT_BED",
+    "disposition": "REACHABLE",
+    "scope_reason": "Direct bed/sofa-bed resources in registration",
+    "content_sha256": "f0d26f8bac1999047bbcdd45f56c799188f727584af80784fa8f40d11433cbd4",
+    "show_alarm_sleep": true,
+    "button_config": "M1M2",
+    "graphics": [
+      "bed_23_unselect",
+      "bed_23_back_foot_head",
+      "bed_23_back_head",
+      "bed_23_foot"
+    ],
+    "orders": {
+      "oup": [
+        272,
+        257,
+        261
+      ],
+      "odown": [
+        273,
+        258,
+        262
+      ],
+      "ostop": [
+        1,
+        256,
+        260
+      ]
+    },
+    "confidence": "VERIFIED"
+  },
+  {
+    "id": "302",
+    "selector": "manufacturerSpecificData.keyAt(0) == 302",
+    "page": "SofaMore2BtnActivity",
+    "name_index": 1,
+    "order": 1,
+    "source": "sources/com/ykd/newuieasyc/initDataUtil/BDUtils.java:46",
+    "source_row": "put(302, new BD(DeviceNameUtil.dname[1], ImageUtils.icon[1], ImageUtils.bigbedimage[2], null, ImageUtils.smallbedimage[0], ImageUtils.img_bed_flat[0], ImageUtils.smallchangeiamge[0], PageUtils.intentclass[4], true, OrderUtil.oup[1], OrderUtil.odown[1], OrderUtil.ostop[1], ImageUtils.keydes_bed, StringUtils.keydes_bed_text, StringUtils.troubleshoot_bed_question, StringUtils.troubleshoot_bed_analyse, StringUtils.troubleshoot_bed_solve, ButtonUtils.M1M2));",
+    "registration_id": "registration-029-302",
+    "name_resource": "device_name_bed_three_motor",
+    "scope": "DIRECT_BED",
+    "disposition": "REACHABLE",
+    "scope_reason": "Direct bed/sofa-bed resources in registration",
+    "content_sha256": "46780487c0c7f0204180622a31c9ae344eeb9f9528c666ce682719c3ae7bb4df",
+    "show_alarm_sleep": true,
+    "button_config": "M1M2",
+    "graphics": [
+      "bed_23_unselect",
+      "bed_23_all",
+      "bed_23_back_head",
+      "bed_23_foot",
+      "bed_23_middle"
+    ],
+    "orders": {
+      "oup": [
+        272,
+        257,
+        261,
+        265
+      ],
+      "odown": [
+        273,
+        258,
+        262,
+        266
+      ],
+      "ostop": [
+        1,
+        256,
+        260,
+        264
+      ]
+    },
+    "confidence": "VERIFIED"
+  },
+  {
+    "id": "303",
+    "selector": "manufacturerSpecificData.keyAt(0) == 303",
+    "page": "SofaMore2BtnActivity",
+    "name_index": 2,
+    "order": 3,
+    "source": "sources/com/ykd/newuieasyc/initDataUtil/BDUtils.java:47",
+    "source_row": "put(303, new BD(DeviceNameUtil.dname[2], ImageUtils.icon[1], ImageUtils.bigbedimage[4], null, ImageUtils.smallbedimage[0], ImageUtils.img_bed_flat[0], ImageUtils.smallchangeiamge[0], PageUtils.intentclass[4], true, OrderUtil.oup[3], OrderUtil.odown[3], OrderUtil.ostop[3], ImageUtils.keydes_bed, StringUtils.keydes_bed_text, StringUtils.troubleshoot_bed_question, StringUtils.troubleshoot_bed_analyse, StringUtils.troubleshoot_bed_solve, ButtonUtils.M1M2));",
+    "registration_id": "registration-030-303",
+    "name_resource": "device_name_bed_four_motor",
+    "scope": "DIRECT_BED",
+    "disposition": "REACHABLE",
+    "scope_reason": "Direct bed/sofa-bed resources in registration",
+    "content_sha256": "b5dcad0b58a24e281ba8e62d79e9599e1752ef823db090472fbd581cf754776e",
+    "show_alarm_sleep": true,
+    "button_config": "M1M2",
+    "graphics": [
+      "bed_23_unselect",
+      "bed_23_all",
+      "bed_23_back",
+      "bed_23_foot",
+      "bed_23_head",
+      "bed_23_middle"
+    ],
+    "orders": {
+      "oup": [
+        272,
+        257,
+        261,
+        265,
+        269
+      ],
+      "odown": [
+        273,
+        258,
+        262,
+        266,
+        270
+      ],
+      "ostop": [
+        1,
+        256,
+        260,
+        264,
+        268
+      ]
+    },
+    "confidence": "VERIFIED"
+  },
+  {
+    "id": "310",
+    "selector": "manufacturerSpecificData.keyAt(0) == 310",
+    "page": "Bed9BtnActivity",
+    "name_index": 0,
+    "order": 0,
+    "source": "sources/com/ykd/newuieasyc/initDataUtil/BDUtils.java:48",
+    "source_row": "put(310, new BD(DeviceNameUtil.dname[0], ImageUtils.icon[0], ImageUtils.bigbedimage[0], null, ImageUtils.smallbedimage[0], ImageUtils.img_bed_flat[0], ImageUtils.smallchangeiamge[0], PageUtils.intentclass[14], true, OrderUtil.oup[0], OrderUtil.odown[0], OrderUtil.ostop[0], ImageUtils.keydes_bed, StringUtils.keydes_bed_text, StringUtils.troubleshoot_bed_question, StringUtils.troubleshoot_bed_analyse, StringUtils.troubleshoot_bed_solve, ButtonUtils.Null));",
+    "registration_id": "registration-031-310",
+    "name_resource": "device_name_bed_two_motor",
+    "scope": "DIRECT_BED",
+    "disposition": "REACHABLE",
+    "scope_reason": "Direct bed/sofa-bed resources in registration",
+    "content_sha256": "e2d897351705e74db47f02f3669abeefcc6a8a26ec119dd620d475c0c5fab684",
+    "show_alarm_sleep": true,
+    "button_config": "Null",
+    "graphics": [
+      "bed_23_unselect",
+      "bed_23_back_foot_head",
+      "bed_23_back_head",
+      "bed_23_foot"
+    ],
+    "orders": {
+      "oup": [
+        272,
+        257,
+        261
+      ],
+      "odown": [
+        273,
+        258,
+        262
+      ],
+      "ostop": [
+        1,
+        256,
+        260
+      ]
+    },
+    "confidence": "VERIFIED"
+  },
+  {
+    "id": "311",
+    "selector": "manufacturerSpecificData.keyAt(0) == 311",
+    "page": "SofaMore2BtnActivity",
+    "name_index": 55,
+    "order": 0,
+    "source": "sources/com/ykd/newuieasyc/initDataUtil/BDUtils.java:49",
+    "source_row": "put(311, new BD(DeviceNameUtil.dname[55], ImageUtils.icon[22], ImageUtils.bigbedimage[6], null, ImageUtils.smallbedimage[5], ImageUtils.img_bed_flat[5], 0, PageUtils.intentclass[4], true, OrderUtil.oup[0], OrderUtil.odown[0], OrderUtil.ostop[0], ImageUtils.electric_bed, StringUtils.electric_bed_text, StringUtils.troubleshoot_bed_question, StringUtils.troubleshoot_bed_analyse, StringUtils.troubleshoot_bed_solve, ButtonUtils.M1M2));",
+    "registration_id": "registration-032-311",
+    "name_resource": "device_name_ele_bed",
+    "scope": "DIRECT_BED",
+    "disposition": "REACHABLE",
+    "scope_reason": "Direct bed/sofa-bed resources in registration",
+    "content_sha256": "403efbb35e206f978362effe387a15edd60da8f3602e1f482c33e215a9500a5e",
+    "show_alarm_sleep": true,
+    "button_config": "M1M2",
+    "graphics": [
+      "bed_2head_all_unselect",
+      "bed_2head_all_select",
+      "bed_2head_left_select",
+      "bed_2head_right_select"
+    ],
+    "orders": {
+      "oup": [
+        272,
+        257,
+        261
+      ],
+      "odown": [
+        273,
+        258,
+        262
+      ],
+      "ostop": [
+        1,
+        256,
+        260
+      ]
+    },
+    "confidence": "VERIFIED"
+  },
+  {
+    "id": "312",
+    "selector": "manufacturerSpecificData.keyAt(0) == 312",
+    "page": "BedLRSleepBtnActivity",
+    "name_index": 2,
+    "order": 3,
+    "source": "sources/com/ykd/newuieasyc/initDataUtil/BDUtils.java:50",
+    "source_row": "put(312, new BD(DeviceNameUtil.dname[2], ImageUtils.icon[0], ImageUtils.bigbedimage[8], null, ImageUtils.smallbedimage[0], ImageUtils.img_bed_flat[0], ImageUtils.smallchangeiamge[0], PageUtils.intentclass[48], true, OrderUtil.oup[3], OrderUtil.odown[3], OrderUtil.ostop[3], ImageUtils.keydes_sofa_bed, StringUtils.keydes_bed_text, StringUtils.troubleshoot_bed_question, StringUtils.troubleshoot_bed_analyse, StringUtils.troubleshoot_bed_solve, ButtonUtils.Null));",
+    "registration_id": "registration-033-312",
+    "name_resource": "device_name_bed_four_motor",
+    "scope": "DIRECT_BED",
+    "disposition": "REACHABLE",
+    "scope_reason": "Direct bed/sofa-bed resources in registration",
+    "content_sha256": "d65db69d981e44f26c9b77fb1426ce1c92e3529be3833e6cace575492c559368",
+    "show_alarm_sleep": true,
+    "button_config": "Null",
+    "graphics": [
+      "bed_23_unselect",
+      "bed_23_all",
+      "bed_23_back",
+      "bed_23_foot",
+      "bed_23_back",
+      "bed_23_foot"
+    ],
+    "orders": {
+      "oup": [
+        272,
+        257,
+        261,
+        265,
+        269
+      ],
+      "odown": [
+        273,
+        258,
+        262,
+        266,
+        270
+      ],
+      "ostop": [
+        1,
+        256,
+        260,
+        264,
+        268
+      ]
+    },
+    "confidence": "VERIFIED"
+  },
+  {
+    "id": "324",
+    "selector": "manufacturerSpecificData.keyAt(0) == 324",
+    "page": "BedSleepZGLedBtnActivity",
+    "name_index": 0,
+    "order": 0,
+    "source": "sources/com/ykd/newuieasyc/initDataUtil/BDUtils.java:51",
+    "source_row": "put(324, new BD(DeviceNameUtil.dname[0], ImageUtils.icon[0], ImageUtils.bigbedimage[9], null, ImageUtils.smallbedimage[0], ImageUtils.img_bed_flat[0], ImageUtils.smallchangeiamge[0], PageUtils.intentclass[50], true, OrderUtil.oup[0], OrderUtil.odown[0], OrderUtil.ostop[0], ImageUtils.keydes_sofa_bed, StringUtils.keydes_bed_text, StringUtils.troubleshoot_bed_question, StringUtils.troubleshoot_bed_analyse, StringUtils.troubleshoot_bed_solve, ButtonUtils.Null));",
+    "registration_id": "registration-034-324",
+    "name_resource": "device_name_bed_two_motor",
+    "scope": "DIRECT_BED",
+    "disposition": "REACHABLE",
+    "scope_reason": "Direct bed/sofa-bed resources in registration",
+    "content_sha256": "fcc8556a2d7d848100fd6101553458f845bd999f412c4feda70399f3b7bbbd22",
+    "show_alarm_sleep": true,
+    "button_config": "Null",
+    "graphics": [
+      "bed_23_unselect",
+      "bed_23_all",
+      "bed_23_back",
+      "bed_23_foot"
+    ],
+    "orders": {
+      "oup": [
+        272,
+        257,
+        261
+      ],
+      "odown": [
+        273,
+        258,
+        262
+      ],
+      "ostop": [
+        1,
+        256,
+        260
+      ]
+    },
+    "confidence": "VERIFIED"
+  },
+  {
+    "id": "1000",
+    "selector": "manufacturerSpecificData.keyAt(0) == 1000",
+    "page": "SofaOne32BtnActivity",
+    "name_index": 3,
+    "order": 4,
+    "source": "sources/com/ykd/newuieasyc/initDataUtil/BDUtils.java:52",
+    "source_row": "put(1000, new BD(DeviceNameUtil.dname[3], ImageUtils.icon[3], ImageUtils.bigsofaimage[0], ImageUtils.smallsofaimage[0], 0, ImageUtils.img_sofa_flat[0], 0, PageUtils.intentclass[0], false, OrderUtil.oup[4], OrderUtil.odown[4], OrderUtil.ostop[4], ImageUtils.keydes_sofa, StringUtils.keydes_sofa_text, StringUtils.troubleshoot_sofa_question, StringUtils.troubleshoot_sofa_analyse, StringUtils.troubleshoot_sofa_solve, ButtonUtils.f2M1LedM2));",
+    "registration_id": "registration-035-1000",
+    "name_resource": "device_name_sofa_one_motor_hml",
+    "scope": "EXCLUDED",
+    "disposition": "REACHABLE",
+    "scope_reason": "Non-bed product catalog, EXCLUDED from bed integration product boundary",
+    "content_sha256": "a2f742abcd56e249b595274a28943181900fc0e78e0cfd4bf321d7201130bb9c",
+    "show_alarm_sleep": false,
+    "button_config": "f2M1LedM2",
+    "graphics": [
+      "sofa_big_unselect",
+      "sofa_big_backfootheadmiddle"
+    ],
+    "orders": {
+      "oup": [
+        272
+      ],
+      "odown": [
+        273
+      ],
+      "ostop": [
+        1
+      ]
+    },
+    "confidence": "VERIFIED"
+  },
+  {
+    "id": "1001",
+    "selector": "manufacturerSpecificData.keyAt(0) == 1001",
+    "page": "SofaOne3BtnActivity",
+    "name_index": 4,
+    "order": 4,
+    "source": "sources/com/ykd/newuieasyc/initDataUtil/BDUtils.java:53",
+    "source_row": "put(1001, new BD(DeviceNameUtil.dname[4], ImageUtils.icon[3], ImageUtils.bigsofaimage[0], ImageUtils.smallsofaimage[0], 0, ImageUtils.img_sofa_flat[0], 0, PageUtils.intentclass[3], false, OrderUtil.oup[4], OrderUtil.odown[4], OrderUtil.ostop[4], ImageUtils.keydes_sofa, StringUtils.keydes_sofa_text, StringUtils.troubleshoot_sofa_question, StringUtils.troubleshoot_sofa_analyse, StringUtils.troubleshoot_sofa_solve, ButtonUtils.M1LedM2));",
+    "registration_id": "registration-036-1001",
+    "name_resource": "device_name_sofa_one_motor_l",
+    "scope": "EXCLUDED",
+    "disposition": "REACHABLE",
+    "scope_reason": "Non-bed product catalog, EXCLUDED from bed integration product boundary",
+    "content_sha256": "0542f88ef8fb3995732abd8e2e8b7c1d47f0aaabea0fb0e40ae3a74076f6ddda",
+    "show_alarm_sleep": false,
+    "button_config": "M1LedM2",
+    "graphics": [
+      "sofa_big_unselect",
+      "sofa_big_backfootheadmiddle"
+    ],
+    "orders": {
+      "oup": [
+        272
+      ],
+      "odown": [
+        273
+      ],
+      "ostop": [
+        1
+      ]
+    },
+    "confidence": "VERIFIED"
+  },
+  {
+    "id": "1002",
+    "selector": "manufacturerSpecificData.keyAt(0) == 1002",
+    "page": "SofaOne2BtnActivity",
+    "name_index": 5,
+    "order": 4,
+    "source": "sources/com/ykd/newuieasyc/initDataUtil/BDUtils.java:54",
+    "source_row": "put(Integer.valueOf(PointerIconCompat.TYPE_HAND), new BD(DeviceNameUtil.dname[5], ImageUtils.icon[3], ImageUtils.bigsofaimage[0], ImageUtils.smallsofaimage[0], 0, ImageUtils.img_sofa_flat[3], 0, PageUtils.intentclass[2], false, OrderUtil.oup[4], OrderUtil.odown[4], OrderUtil.ostop[4], ImageUtils.keydes_sofa, StringUtils.keydes_sofa_text, StringUtils.troubleshoot_sofa_question, StringUtils.troubleshoot_sofa_analyse, StringUtils.troubleshoot_sofa_solve, ButtonUtils.M1M2));",
+    "registration_id": "registration-037-1002",
+    "name_resource": "device_name_sofa_one_motor",
+    "scope": "EXCLUDED",
+    "disposition": "REACHABLE",
+    "scope_reason": "Non-bed product catalog, EXCLUDED from bed integration product boundary",
+    "content_sha256": "9115c33c86217ad68e17068beb40a962c9ab174fd967925b39146bcc26113cad",
+    "show_alarm_sleep": false,
+    "button_config": "M1M2",
+    "graphics": [
+      "sofa_big_unselect",
+      "sofa_big_backfootheadmiddle"
+    ],
+    "orders": {
+      "oup": [
+        272
+      ],
+      "odown": [
+        273
+      ],
+      "ostop": [
+        1
+      ]
+    },
+    "confidence": "VERIFIED"
+  },
+  {
+    "id": "1003",
+    "selector": "manufacturerSpecificData.keyAt(0) == 1003",
+    "page": "SofaMore32BtnActivity",
+    "name_index": 6,
+    "order": 0,
+    "source": "sources/com/ykd/newuieasyc/initDataUtil/BDUtils.java:55",
+    "source_row": "put(Integer.valueOf(PointerIconCompat.TYPE_HELP), new BD(DeviceNameUtil.dname[6], ImageUtils.icon[3], ImageUtils.bigsofaimage[1], ImageUtils.smallsofaimage[1], 0, ImageUtils.img_sofa_flat[0], 0, PageUtils.intentclass[7], false, OrderUtil.oup[0], OrderUtil.odown[0], OrderUtil.ostop[0], ImageUtils.keydes_sofa, StringUtils.keydes_sofa_text, StringUtils.troubleshoot_sofa_question, StringUtils.troubleshoot_sofa_analyse, StringUtils.troubleshoot_sofa_solve, ButtonUtils.f2M1LedM2));",
+    "registration_id": "registration-038-1003",
+    "name_resource": "device_name_sofa_two_motor_hml",
+    "scope": "EXCLUDED",
+    "disposition": "REACHABLE",
+    "scope_reason": "Non-bed product catalog, EXCLUDED from bed integration product boundary",
+    "content_sha256": "c71564bde8cc45361c9173f4620a07a4339cb2c8ea1be675b0b01969487b5826",
+    "show_alarm_sleep": false,
+    "button_config": "f2M1LedM2",
+    "graphics": [
+      "sofa_big_unselect",
+      "sofa_big_backfootheadmiddle",
+      "sofa_big_head",
+      "sofa_big_backfootmiddle"
+    ],
+    "orders": {
+      "oup": [
+        272,
+        257,
+        261
+      ],
+      "odown": [
+        273,
+        258,
+        262
+      ],
+      "ostop": [
+        1,
+        256,
+        260
+      ]
+    },
+    "confidence": "VERIFIED"
+  },
+  {
+    "id": "1004",
+    "selector": "manufacturerSpecificData.keyAt(0) == 1004",
+    "page": "SofaMore21BtnActivity",
+    "name_index": 7,
+    "order": 0,
+    "source": "sources/com/ykd/newuieasyc/initDataUtil/BDUtils.java:56",
+    "source_row": "put(Integer.valueOf(PointerIconCompat.TYPE_WAIT), new BD(DeviceNameUtil.dname[7], ImageUtils.icon[3], ImageUtils.bigsofaimage[1], ImageUtils.smallsofaimage[1], 0, ImageUtils.img_sofa_flat[0], 0, PageUtils.intentclass[5], false, OrderUtil.oup[0], OrderUtil.odown[0], OrderUtil.ostop[0], ImageUtils.keydes_sofa, StringUtils.keydes_sofa_text, StringUtils.troubleshoot_sofa_question, StringUtils.troubleshoot_sofa_analyse, StringUtils.troubleshoot_sofa_solve, ButtonUtils.f4M1M2Led));",
+    "registration_id": "registration-039-1004",
+    "name_resource": "device_name_sofa_two_motor_l",
+    "scope": "EXCLUDED",
+    "disposition": "REACHABLE",
+    "scope_reason": "Non-bed product catalog, EXCLUDED from bed integration product boundary",
+    "content_sha256": "9e66d2a8698adee10a0446c95ec6c5e9db5ca52bce69c1ca6d7ad4abe5ed4339",
+    "show_alarm_sleep": false,
+    "button_config": "f4M1M2Led",
+    "graphics": [
+      "sofa_big_unselect",
+      "sofa_big_backfootheadmiddle",
+      "sofa_big_head",
+      "sofa_big_backfootmiddle"
+    ],
+    "orders": {
+      "oup": [
+        272,
+        257,
+        261
+      ],
+      "odown": [
+        273,
+        258,
+        262
+      ],
+      "ostop": [
+        1,
+        256,
+        260
+      ]
+    },
+    "confidence": "VERIFIED"
+  },
+  {
+    "id": "1005",
+    "selector": "manufacturerSpecificData.keyAt(0) == 1005",
+    "page": "SofaMore2BtnActivity",
+    "name_index": 8,
+    "order": 0,
+    "source": "sources/com/ykd/newuieasyc/initDataUtil/BDUtils.java:57",
+    "source_row": "put(Integer.valueOf(WebSocketProtocol.CLOSE_NO_STATUS_CODE), new BD(DeviceNameUtil.dname[8], ImageUtils.icon[3], ImageUtils.bigsofaimage[16], ImageUtils.smallsofaimage[12], 0, ImageUtils.img_sofa_flat[0], 0, PageUtils.intentclass[4], false, OrderUtil.oup[0], OrderUtil.odown[0], OrderUtil.ostop[0], ImageUtils.keydes_sofa, StringUtils.keydes_sofa_text, StringUtils.troubleshoot_sofa_question, StringUtils.troubleshoot_sofa_analyse, StringUtils.troubleshoot_sofa_solve, ButtonUtils.M1M2));",
+    "registration_id": "registration-040-1005",
+    "name_resource": "device_name_sofa_two_motor",
+    "scope": "EXCLUDED",
+    "disposition": "REACHABLE",
+    "scope_reason": "Non-bed product catalog, EXCLUDED from bed integration product boundary",
+    "content_sha256": "9ccbd8e5edc098b7ac890136b2433f5c5c629cba2573630dd9b07db12ae0b4ec",
+    "show_alarm_sleep": false,
+    "button_config": "M1M2",
+    "graphics": [
+      "sofa_big_unselect",
+      "sofa_big_backfootheadmiddle",
+      "sofa_big_backfootmiddle",
+      "sofa_big_head"
+    ],
+    "orders": {
+      "oup": [
+        272,
+        257,
+        261
+      ],
+      "odown": [
+        273,
+        258,
+        262
+      ],
+      "ostop": [
+        1,
+        256,
+        260
+      ]
+    },
+    "confidence": "VERIFIED"
+  },
+  {
+    "id": "1006",
+    "selector": "manufacturerSpecificData.keyAt(0) == 1006",
+    "page": "SofaMore32BtnActivity",
+    "name_index": 6,
+    "order": 0,
+    "source": "sources/com/ykd/newuieasyc/initDataUtil/BDUtils.java:58",
+    "source_row": "put(Integer.valueOf(PointerIconCompat.TYPE_CELL), new BD(DeviceNameUtil.dname[6], ImageUtils.icon[3], ImageUtils.bigsofaimage[2], ImageUtils.smallsofaimage[2], 0, ImageUtils.img_sofa_flat[0], 0, PageUtils.intentclass[7], false, OrderUtil.oup[0], OrderUtil.odown[0], OrderUtil.ostop[0], ImageUtils.keydes_sofa, StringUtils.keydes_sofa_text, StringUtils.troubleshoot_sofa_question, StringUtils.troubleshoot_sofa_analyse, StringUtils.troubleshoot_sofa_solve, ButtonUtils.f2M1LedM2));",
+    "registration_id": "registration-041-1006",
+    "name_resource": "device_name_sofa_two_motor_hml",
+    "scope": "EXCLUDED",
+    "disposition": "REACHABLE",
+    "scope_reason": "Non-bed product catalog, EXCLUDED from bed integration product boundary",
+    "content_sha256": "1c7b4f2b40a45d9f1ba768aa8d2cbb8d1dc6de5d55d69be9e24f7a7633544b59",
+    "show_alarm_sleep": false,
+    "button_config": "f2M1LedM2",
+    "graphics": [
+      "sofa_big_unselect",
+      "sofa_big_backfootheadmiddle",
+      "sofa_big_foot",
+      "sofa_big_backheadmiddle"
+    ],
+    "orders": {
+      "oup": [
+        272,
+        257,
+        261
+      ],
+      "odown": [
+        273,
+        258,
+        262
+      ],
+      "ostop": [
+        1,
+        256,
+        260
+      ]
+    },
+    "confidence": "VERIFIED"
+  },
+  {
+    "id": "1007",
+    "selector": "manufacturerSpecificData.keyAt(0) == 1007",
+    "page": "SofaMore21BtnActivity",
+    "name_index": 7,
+    "order": 0,
+    "source": "sources/com/ykd/newuieasyc/initDataUtil/BDUtils.java:59",
+    "source_row": "put(Integer.valueOf(PointerIconCompat.TYPE_CROSSHAIR), new BD(DeviceNameUtil.dname[7], ImageUtils.icon[3], ImageUtils.bigsofaimage[2], ImageUtils.smallsofaimage[2], 0, ImageUtils.img_sofa_flat[0], 0, PageUtils.intentclass[5], false, OrderUtil.oup[0], OrderUtil.odown[0], OrderUtil.ostop[0], ImageUtils.keydes_sofa, StringUtils.keydes_sofa_text, StringUtils.troubleshoot_sofa_question, StringUtils.troubleshoot_sofa_analyse, StringUtils.troubleshoot_sofa_solve, ButtonUtils.f4M1M2Led));",
+    "registration_id": "registration-042-1007",
+    "name_resource": "device_name_sofa_two_motor_l",
+    "scope": "EXCLUDED",
+    "disposition": "REACHABLE",
+    "scope_reason": "Non-bed product catalog, EXCLUDED from bed integration product boundary",
+    "content_sha256": "daa3db9b6d02c15010028086b1f2532c43d21672a6a95aee663dbcdd58eaeab4",
+    "show_alarm_sleep": false,
+    "button_config": "f4M1M2Led",
+    "graphics": [
+      "sofa_big_unselect",
+      "sofa_big_backfootheadmiddle",
+      "sofa_big_foot",
+      "sofa_big_backheadmiddle"
+    ],
+    "orders": {
+      "oup": [
+        272,
+        257,
+        261
+      ],
+      "odown": [
+        273,
+        258,
+        262
+      ],
+      "ostop": [
+        1,
+        256,
+        260
+      ]
+    },
+    "confidence": "VERIFIED"
+  },
+  {
+    "id": "1008",
+    "selector": "manufacturerSpecificData.keyAt(0) == 1008",
+    "page": "SofaMore2BtnActivity",
+    "name_index": 8,
+    "order": 0,
+    "source": "sources/com/ykd/newuieasyc/initDataUtil/BDUtils.java:60",
+    "source_row": "put(Integer.valueOf(PointerIconCompat.TYPE_TEXT), new BD(DeviceNameUtil.dname[8], ImageUtils.icon[3], ImageUtils.bigsofaimage[2], ImageUtils.smallsofaimage[2], 0, ImageUtils.img_sofa_flat[0], 0, PageUtils.intentclass[4], false, OrderUtil.oup[0], OrderUtil.odown[0], OrderUtil.ostop[0], ImageUtils.keydes_sofa, StringUtils.keydes_sofa_text, StringUtils.troubleshoot_sofa_question, StringUtils.troubleshoot_sofa_analyse, StringUtils.troubleshoot_sofa_solve, ButtonUtils.M1M2));",
+    "registration_id": "registration-043-1008",
+    "name_resource": "device_name_sofa_two_motor",
+    "scope": "EXCLUDED",
+    "disposition": "REACHABLE",
+    "scope_reason": "Non-bed product catalog, EXCLUDED from bed integration product boundary",
+    "content_sha256": "b5c12314b71c5b0d6c109bef4911323eae8908e053e6c0746cac0ffeb0bab7f6",
+    "show_alarm_sleep": false,
+    "button_config": "M1M2",
+    "graphics": [
+      "sofa_big_unselect",
+      "sofa_big_backfootheadmiddle",
+      "sofa_big_foot",
+      "sofa_big_backheadmiddle"
+    ],
+    "orders": {
+      "oup": [
+        272,
+        257,
+        261
+      ],
+      "odown": [
+        273,
+        258,
+        262
+      ],
+      "ostop": [
+        1,
+        256,
+        260
+      ]
+    },
+    "confidence": "VERIFIED"
+  },
+  {
+    "id": "1009",
+    "selector": "manufacturerSpecificData.keyAt(0) == 1009",
+    "page": "SofaMore32BtnActivity",
+    "name_index": 6,
+    "order": 0,
+    "source": "sources/com/ykd/newuieasyc/initDataUtil/BDUtils.java:61",
+    "source_row": "put(Integer.valueOf(PointerIconCompat.TYPE_VERTICAL_TEXT), new BD(DeviceNameUtil.dname[6], ImageUtils.icon[3], ImageUtils.bigsofaimage[3], ImageUtils.smallsofaimage[3], 0, ImageUtils.img_sofa_flat[0], 0, PageUtils.intentclass[7], false, OrderUtil.oup[0], OrderUtil.odown[0], OrderUtil.ostop[0], ImageUtils.keydes_sofa, StringUtils.keydes_sofa_text, StringUtils.troubleshoot_sofa_question, StringUtils.troubleshoot_sofa_analyse, StringUtils.troubleshoot_sofa_solve, ButtonUtils.f2M1LedM2));",
+    "registration_id": "registration-044-1009",
+    "name_resource": "device_name_sofa_two_motor_hml",
+    "scope": "EXCLUDED",
+    "disposition": "REACHABLE",
+    "scope_reason": "Non-bed product catalog, EXCLUDED from bed integration product boundary",
+    "content_sha256": "31321e4492cb8319adbb2d6be2409aaa0284966fbeb46161e476bcb586c6e1fd",
+    "show_alarm_sleep": false,
+    "button_config": "f2M1LedM2",
+    "graphics": [
+      "sofa_big_unselect",
+      "sofa_big_backfootheadmiddle",
+      "sofa_big_middle",
+      "sofa_big_backfoothead"
+    ],
+    "orders": {
+      "oup": [
+        272,
+        257,
+        261
+      ],
+      "odown": [
+        273,
+        258,
+        262
+      ],
+      "ostop": [
+        1,
+        256,
+        260
+      ]
+    },
+    "confidence": "VERIFIED"
+  },
+  {
+    "id": "1010",
+    "selector": "manufacturerSpecificData.keyAt(0) == 1010",
+    "page": "SofaMore21BtnActivity",
+    "name_index": 7,
+    "order": 0,
+    "source": "sources/com/ykd/newuieasyc/initDataUtil/BDUtils.java:62",
+    "source_row": "put(Integer.valueOf(PointerIconCompat.TYPE_ALIAS), new BD(DeviceNameUtil.dname[7], ImageUtils.icon[3], ImageUtils.bigsofaimage[3], ImageUtils.smallsofaimage[3], 0, ImageUtils.img_sofa_flat[0], 0, PageUtils.intentclass[5], false, OrderUtil.oup[0], OrderUtil.odown[0], OrderUtil.ostop[0], ImageUtils.keydes_sofa, StringUtils.keydes_sofa_text, StringUtils.troubleshoot_sofa_question, StringUtils.troubleshoot_sofa_analyse, StringUtils.troubleshoot_sofa_solve, ButtonUtils.f4M1M2Led));",
+    "registration_id": "registration-045-1010",
+    "name_resource": "device_name_sofa_two_motor_l",
+    "scope": "EXCLUDED",
+    "disposition": "REACHABLE",
+    "scope_reason": "Non-bed product catalog, EXCLUDED from bed integration product boundary",
+    "content_sha256": "2a2a85dcb0f3092bee3dccaea920d960aa5fe6f505de658d965e3b6cb19436c0",
+    "show_alarm_sleep": false,
+    "button_config": "f4M1M2Led",
+    "graphics": [
+      "sofa_big_unselect",
+      "sofa_big_backfootheadmiddle",
+      "sofa_big_middle",
+      "sofa_big_backfoothead"
+    ],
+    "orders": {
+      "oup": [
+        272,
+        257,
+        261
+      ],
+      "odown": [
+        273,
+        258,
+        262
+      ],
+      "ostop": [
+        1,
+        256,
+        260
+      ]
+    },
+    "confidence": "VERIFIED"
+  },
+  {
+    "id": "1011",
+    "selector": "manufacturerSpecificData.keyAt(0) == 1011",
+    "page": "SofaMore2BtnActivity",
+    "name_index": 8,
+    "order": 0,
+    "source": "sources/com/ykd/newuieasyc/initDataUtil/BDUtils.java:63",
+    "source_row": "put(Integer.valueOf(PointerIconCompat.TYPE_COPY), new BD(DeviceNameUtil.dname[8], ImageUtils.icon[3], ImageUtils.bigsofaimage[3], ImageUtils.smallsofaimage[3], 0, ImageUtils.img_sofa_flat[0], 0, PageUtils.intentclass[4], false, OrderUtil.oup[0], OrderUtil.odown[0], OrderUtil.ostop[0], ImageUtils.keydes_sofa, StringUtils.keydes_sofa_text, StringUtils.troubleshoot_sofa_question, StringUtils.troubleshoot_sofa_analyse, StringUtils.troubleshoot_sofa_solve, ButtonUtils.M1M2));",
+    "registration_id": "registration-046-1011",
+    "name_resource": "device_name_sofa_two_motor",
+    "scope": "EXCLUDED",
+    "disposition": "REACHABLE",
+    "scope_reason": "Non-bed product catalog, EXCLUDED from bed integration product boundary",
+    "content_sha256": "2a06d6982d23d8fa3c0202ccfedb984fe1d27243270338f5515f13dc68eaa0a8",
+    "show_alarm_sleep": false,
+    "button_config": "M1M2",
+    "graphics": [
+      "sofa_big_unselect",
+      "sofa_big_backfootheadmiddle",
+      "sofa_big_middle",
+      "sofa_big_backfoothead"
+    ],
+    "orders": {
+      "oup": [
+        272,
+        257,
+        261
+      ],
+      "odown": [
+        273,
+        258,
+        262
+      ],
+      "ostop": [
+        1,
+        256,
+        260
+      ]
+    },
+    "confidence": "VERIFIED"
+  },
+  {
+    "id": "1012",
+    "selector": "manufacturerSpecificData.keyAt(0) == 1012",
+    "page": "SofaMore32BtnActivity",
+    "name_index": 9,
+    "order": 1,
+    "source": "sources/com/ykd/newuieasyc/initDataUtil/BDUtils.java:64",
+    "source_row": "put(Integer.valueOf(PointerIconCompat.TYPE_NO_DROP), new BD(DeviceNameUtil.dname[9], ImageUtils.icon[3], ImageUtils.bigsofaimage[4], ImageUtils.smallsofaimage[4], 0, ImageUtils.img_sofa_flat[0], 0, PageUtils.intentclass[7], false, OrderUtil.oup[1], OrderUtil.odown[1], OrderUtil.ostop[1], ImageUtils.keydes_sofa, StringUtils.keydes_sofa_text, StringUtils.troubleshoot_sofa_question, StringUtils.troubleshoot_sofa_analyse, StringUtils.troubleshoot_sofa_solve, ButtonUtils.f2M1LedM2));",
+    "registration_id": "registration-047-1012",
+    "name_resource": "device_name_sofa_three_motor_hml",
+    "scope": "EXCLUDED",
+    "disposition": "REACHABLE",
+    "scope_reason": "Non-bed product catalog, EXCLUDED from bed integration product boundary",
+    "content_sha256": "2114380f3722dc17eef8b2d3affb1129f368e31c1768ef43b0d01995af28fc9b",
+    "show_alarm_sleep": false,
+    "button_config": "f2M1LedM2",
+    "graphics": [
+      "sofa_big_unselect",
+      "sofa_big_backfootheadmiddle",
+      "sofa_big_head",
+      "sofa_big_middle",
+      "sofa_big_backfoot"
+    ],
+    "orders": {
+      "oup": [
+        272,
+        257,
+        261,
+        265
+      ],
+      "odown": [
+        273,
+        258,
+        262,
+        266
+      ],
+      "ostop": [
+        1,
+        256,
+        260,
+        264
+      ]
+    },
+    "confidence": "VERIFIED"
+  },
+  {
+    "id": "1013",
+    "selector": "manufacturerSpecificData.keyAt(0) == 1013",
+    "page": "SofaMore21BtnActivity",
+    "name_index": 10,
+    "order": 1,
+    "source": "sources/com/ykd/newuieasyc/initDataUtil/BDUtils.java:65",
+    "source_row": "put(Integer.valueOf(PointerIconCompat.TYPE_ALL_SCROLL), new BD(DeviceNameUtil.dname[10], ImageUtils.icon[3], ImageUtils.bigsofaimage[4], ImageUtils.smallsofaimage[4], 0, ImageUtils.img_sofa_flat[0], 0, PageUtils.intentclass[5], false, OrderUtil.oup[1], OrderUtil.odown[1], OrderUtil.ostop[1], ImageUtils.keydes_sofa, StringUtils.keydes_sofa_text, StringUtils.troubleshoot_sofa_question, StringUtils.troubleshoot_sofa_analyse, StringUtils.troubleshoot_sofa_solve, ButtonUtils.f4M1M2Led));",
+    "registration_id": "registration-048-1013",
+    "name_resource": "device_name_sofa_three_motor_l",
+    "scope": "EXCLUDED",
+    "disposition": "REACHABLE",
+    "scope_reason": "Non-bed product catalog, EXCLUDED from bed integration product boundary",
+    "content_sha256": "86f28afa291288e3feada56d87dc490f94512397edbb8461ae7a528e5c321db1",
+    "show_alarm_sleep": false,
+    "button_config": "f4M1M2Led",
+    "graphics": [
+      "sofa_big_unselect",
+      "sofa_big_backfootheadmiddle",
+      "sofa_big_head",
+      "sofa_big_middle",
+      "sofa_big_backfoot"
+    ],
+    "orders": {
+      "oup": [
+        272,
+        257,
+        261,
+        265
+      ],
+      "odown": [
+        273,
+        258,
+        262,
+        266
+      ],
+      "ostop": [
+        1,
+        256,
+        260,
+        264
+      ]
+    },
+    "confidence": "VERIFIED"
+  },
+  {
+    "id": "1014",
+    "selector": "manufacturerSpecificData.keyAt(0) == 1014",
+    "page": "SofaMore2BtnActivity",
+    "name_index": 11,
+    "order": 1,
+    "source": "sources/com/ykd/newuieasyc/initDataUtil/BDUtils.java:66",
+    "source_row": "put(Integer.valueOf(PointerIconCompat.TYPE_HORIZONTAL_DOUBLE_ARROW), new BD(DeviceNameUtil.dname[11], ImageUtils.icon[3], ImageUtils.bigsofaimage[4], ImageUtils.smallsofaimage[4], 0, ImageUtils.img_sofa_flat[0], 0, PageUtils.intentclass[4], false, OrderUtil.oup[1], OrderUtil.odown[1], OrderUtil.ostop[1], ImageUtils.keydes_sofa, StringUtils.keydes_sofa_text, StringUtils.troubleshoot_sofa_question, StringUtils.troubleshoot_sofa_analyse, StringUtils.troubleshoot_sofa_solve, ButtonUtils.M1M2));",
+    "registration_id": "registration-049-1014",
+    "name_resource": "device_name_sofa_three_motor",
+    "scope": "EXCLUDED",
+    "disposition": "REACHABLE",
+    "scope_reason": "Non-bed product catalog, EXCLUDED from bed integration product boundary",
+    "content_sha256": "dcc73854a033f21becf76e508257a671374fe7834ebe5b3cec57c798e7389856",
+    "show_alarm_sleep": false,
+    "button_config": "M1M2",
+    "graphics": [
+      "sofa_big_unselect",
+      "sofa_big_backfootheadmiddle",
+      "sofa_big_head",
+      "sofa_big_middle",
+      "sofa_big_backfoot"
+    ],
+    "orders": {
+      "oup": [
+        272,
+        257,
+        261,
+        265
+      ],
+      "odown": [
+        273,
+        258,
+        262,
+        266
+      ],
+      "ostop": [
+        1,
+        256,
+        260,
+        264
+      ]
+    },
+    "confidence": "VERIFIED"
+  },
+  {
+    "id": "1015",
+    "selector": "manufacturerSpecificData.keyAt(0) == 1015",
+    "page": "SofaMore32BtnActivity",
+    "name_index": 9,
+    "order": 1,
+    "source": "sources/com/ykd/newuieasyc/initDataUtil/BDUtils.java:67",
+    "source_row": "put(Integer.valueOf(PointerIconCompat.TYPE_VERTICAL_DOUBLE_ARROW), new BD(DeviceNameUtil.dname[9], ImageUtils.icon[3], ImageUtils.bigsofaimage[5], ImageUtils.smallsofaimage[5], 0, ImageUtils.img_sofa_flat[0], 0, PageUtils.intentclass[7], false, OrderUtil.oup[1], OrderUtil.odown[1], OrderUtil.ostop[1], ImageUtils.keydes_sofa, StringUtils.keydes_sofa_text, StringUtils.troubleshoot_sofa_question, StringUtils.troubleshoot_sofa_analyse, StringUtils.troubleshoot_sofa_solve, ButtonUtils.f2M1LedM2));",
+    "registration_id": "registration-050-1015",
+    "name_resource": "device_name_sofa_three_motor_hml",
+    "scope": "EXCLUDED",
+    "disposition": "REACHABLE",
+    "scope_reason": "Non-bed product catalog, EXCLUDED from bed integration product boundary",
+    "content_sha256": "f45fe919bcd3506ff4d80d3e69fe9d133c393c7d8e07545aa55903374adf97da",
+    "show_alarm_sleep": false,
+    "button_config": "f2M1LedM2",
+    "graphics": [
+      "sofa_big_unselect",
+      "sofa_big_backfootheadmiddle",
+      "sofa_big_foot",
+      "sofa_big_backmiddle",
+      "sofa_big_head"
+    ],
+    "orders": {
+      "oup": [
+        272,
+        257,
+        261,
+        265
+      ],
+      "odown": [
+        273,
+        258,
+        262,
+        266
+      ],
+      "ostop": [
+        1,
+        256,
+        260,
+        264
+      ]
+    },
+    "confidence": "VERIFIED"
+  },
+  {
+    "id": "1016",
+    "selector": "manufacturerSpecificData.keyAt(0) == 1016",
+    "page": "SofaMore21BtnActivity",
+    "name_index": 10,
+    "order": 1,
+    "source": "sources/com/ykd/newuieasyc/initDataUtil/BDUtils.java:68",
+    "source_row": "put(Integer.valueOf(PointerIconCompat.TYPE_TOP_RIGHT_DIAGONAL_DOUBLE_ARROW), new BD(DeviceNameUtil.dname[10], ImageUtils.icon[3], ImageUtils.bigsofaimage[5], ImageUtils.smallsofaimage[5], 0, ImageUtils.img_sofa_flat[0], 0, PageUtils.intentclass[5], false, OrderUtil.oup[1], OrderUtil.odown[1], OrderUtil.ostop[1], ImageUtils.keydes_sofa, StringUtils.keydes_sofa_text, StringUtils.troubleshoot_sofa_question, StringUtils.troubleshoot_sofa_analyse, StringUtils.troubleshoot_sofa_solve, ButtonUtils.f4M1M2Led));",
+    "registration_id": "registration-051-1016",
+    "name_resource": "device_name_sofa_three_motor_l",
+    "scope": "EXCLUDED",
+    "disposition": "REACHABLE",
+    "scope_reason": "Non-bed product catalog, EXCLUDED from bed integration product boundary",
+    "content_sha256": "1cdbd325303187709cad97c9ceb6e66e25193509095e89c80b4237580a92357d",
+    "show_alarm_sleep": false,
+    "button_config": "f4M1M2Led",
+    "graphics": [
+      "sofa_big_unselect",
+      "sofa_big_backfootheadmiddle",
+      "sofa_big_foot",
+      "sofa_big_backmiddle",
+      "sofa_big_head"
+    ],
+    "orders": {
+      "oup": [
+        272,
+        257,
+        261,
+        265
+      ],
+      "odown": [
+        273,
+        258,
+        262,
+        266
+      ],
+      "ostop": [
+        1,
+        256,
+        260,
+        264
+      ]
+    },
+    "confidence": "VERIFIED"
+  },
+  {
+    "id": "1017",
+    "selector": "manufacturerSpecificData.keyAt(0) == 1017",
+    "page": "SofaMore2BtnActivity",
+    "name_index": 11,
+    "order": 1,
+    "source": "sources/com/ykd/newuieasyc/initDataUtil/BDUtils.java:69",
+    "source_row": "put(Integer.valueOf(PointerIconCompat.TYPE_TOP_LEFT_DIAGONAL_DOUBLE_ARROW), new BD(DeviceNameUtil.dname[11], ImageUtils.icon[3], ImageUtils.bigsofaimage[5], ImageUtils.smallsofaimage[5], 0, ImageUtils.img_sofa_flat[0], 0, PageUtils.intentclass[4], false, OrderUtil.oup[1], OrderUtil.odown[1], OrderUtil.ostop[1], ImageUtils.keydes_sofa, StringUtils.keydes_sofa_text, StringUtils.troubleshoot_sofa_question, StringUtils.troubleshoot_sofa_analyse, StringUtils.troubleshoot_sofa_solve, ButtonUtils.M1M2));",
+    "registration_id": "registration-052-1017",
+    "name_resource": "device_name_sofa_three_motor",
+    "scope": "EXCLUDED",
+    "disposition": "REACHABLE",
+    "scope_reason": "Non-bed product catalog, EXCLUDED from bed integration product boundary",
+    "content_sha256": "8336659096baa70e597a4f2cf6e87ce868a9ced315b2956ae82e5e7d08ab04b4",
+    "show_alarm_sleep": false,
+    "button_config": "M1M2",
+    "graphics": [
+      "sofa_big_unselect",
+      "sofa_big_backfootheadmiddle",
+      "sofa_big_foot",
+      "sofa_big_backmiddle",
+      "sofa_big_head"
+    ],
+    "orders": {
+      "oup": [
+        272,
+        257,
+        261,
+        265
+      ],
+      "odown": [
+        273,
+        258,
+        262,
+        266
+      ],
+      "ostop": [
+        1,
+        256,
+        260,
+        264
+      ]
+    },
+    "confidence": "VERIFIED"
+  },
+  {
+    "id": "1018",
+    "selector": "manufacturerSpecificData.keyAt(0) == 1018",
+    "page": "SofaMore32BtnActivity",
+    "name_index": 9,
+    "order": 1,
+    "source": "sources/com/ykd/newuieasyc/initDataUtil/BDUtils.java:70",
+    "source_row": "put(Integer.valueOf(PointerIconCompat.TYPE_ZOOM_IN), new BD(DeviceNameUtil.dname[9], ImageUtils.icon[3], ImageUtils.bigsofaimage[6], ImageUtils.smallsofaimage[6], 0, ImageUtils.img_sofa_flat[0], 0, PageUtils.intentclass[7], false, OrderUtil.oup[1], OrderUtil.odown[1], OrderUtil.ostop[1], ImageUtils.keydes_sofa, StringUtils.keydes_sofa_text, StringUtils.troubleshoot_sofa_question, StringUtils.troubleshoot_sofa_analyse, StringUtils.troubleshoot_sofa_solve, ButtonUtils.f2M1LedM2));",
+    "registration_id": "registration-053-1018",
+    "name_resource": "device_name_sofa_three_motor_hml",
+    "scope": "EXCLUDED",
+    "disposition": "REACHABLE",
+    "scope_reason": "Non-bed product catalog, EXCLUDED from bed integration product boundary",
+    "content_sha256": "43a74889fac535bc3429e770fd437018c1b56dca996dc4bf068f30c9a829271a",
+    "show_alarm_sleep": false,
+    "button_config": "f2M1LedM2",
+    "graphics": [
+      "sofa_big_unselect",
+      "sofa_big_backfootheadmiddle",
+      "sofa_big_middle",
+      "sofa_big_back",
+      "sofa_big_foot"
+    ],
+    "orders": {
+      "oup": [
+        272,
+        257,
+        261,
+        265
+      ],
+      "odown": [
+        273,
+        258,
+        262,
+        266
+      ],
+      "ostop": [
+        1,
+        256,
+        260,
+        264
+      ]
+    },
+    "confidence": "VERIFIED"
+  },
+  {
+    "id": "1019",
+    "selector": "manufacturerSpecificData.keyAt(0) == 1019",
+    "page": "SofaMore21BtnActivity",
+    "name_index": 10,
+    "order": 1,
+    "source": "sources/com/ykd/newuieasyc/initDataUtil/BDUtils.java:71",
+    "source_row": "put(Integer.valueOf(PointerIconCompat.TYPE_ZOOM_OUT), new BD(DeviceNameUtil.dname[10], ImageUtils.icon[3], ImageUtils.bigsofaimage[6], ImageUtils.smallsofaimage[6], 0, ImageUtils.img_sofa_flat[0], 0, PageUtils.intentclass[5], false, OrderUtil.oup[1], OrderUtil.odown[1], OrderUtil.ostop[1], ImageUtils.keydes_sofa, StringUtils.keydes_sofa_text, StringUtils.troubleshoot_sofa_question, StringUtils.troubleshoot_sofa_analyse, StringUtils.troubleshoot_sofa_solve, ButtonUtils.f4M1M2Led));",
+    "registration_id": "registration-054-1019",
+    "name_resource": "device_name_sofa_three_motor_l",
+    "scope": "EXCLUDED",
+    "disposition": "REACHABLE",
+    "scope_reason": "Non-bed product catalog, EXCLUDED from bed integration product boundary",
+    "content_sha256": "323812be985d903607eb0322c64df0bba84e57dcd4db1b8f197783890f1e2449",
+    "show_alarm_sleep": false,
+    "button_config": "f4M1M2Led",
+    "graphics": [
+      "sofa_big_unselect",
+      "sofa_big_backfootheadmiddle",
+      "sofa_big_middle",
+      "sofa_big_back",
+      "sofa_big_foot"
+    ],
+    "orders": {
+      "oup": [
+        272,
+        257,
+        261,
+        265
+      ],
+      "odown": [
+        273,
+        258,
+        262,
+        266
+      ],
+      "ostop": [
+        1,
+        256,
+        260,
+        264
+      ]
+    },
+    "confidence": "VERIFIED"
+  },
+  {
+    "id": "1020",
+    "selector": "manufacturerSpecificData.keyAt(0) == 1020",
+    "page": "SofaMore2BtnActivity",
+    "name_index": 11,
+    "order": 1,
+    "source": "sources/com/ykd/newuieasyc/initDataUtil/BDUtils.java:72",
+    "source_row": "put(Integer.valueOf(PointerIconCompat.TYPE_GRAB), new BD(DeviceNameUtil.dname[11], ImageUtils.icon[3], ImageUtils.bigsofaimage[6], ImageUtils.smallsofaimage[6], 0, ImageUtils.img_sofa_flat[0], 0, PageUtils.intentclass[4], false, OrderUtil.oup[1], OrderUtil.odown[1], OrderUtil.ostop[1], ImageUtils.keydes_sofa, StringUtils.keydes_sofa_text, StringUtils.troubleshoot_sofa_question, StringUtils.troubleshoot_sofa_analyse, StringUtils.troubleshoot_sofa_solve, ButtonUtils.M1M2));",
+    "registration_id": "registration-055-1020",
+    "name_resource": "device_name_sofa_three_motor",
+    "scope": "EXCLUDED",
+    "disposition": "REACHABLE",
+    "scope_reason": "Non-bed product catalog, EXCLUDED from bed integration product boundary",
+    "content_sha256": "c45b939419dd8ae6f9c96b63aa60136e5508c46a9f0b1e8c09305626bc227d24",
+    "show_alarm_sleep": false,
+    "button_config": "M1M2",
+    "graphics": [
+      "sofa_big_unselect",
+      "sofa_big_backfootheadmiddle",
+      "sofa_big_middle",
+      "sofa_big_back",
+      "sofa_big_foot"
+    ],
+    "orders": {
+      "oup": [
+        272,
+        257,
+        261,
+        265
+      ],
+      "odown": [
+        273,
+        258,
+        262,
+        266
+      ],
+      "ostop": [
+        1,
+        256,
+        260,
+        264
+      ]
+    },
+    "confidence": "VERIFIED"
+  },
+  {
+    "id": "1021",
+    "selector": "manufacturerSpecificData.keyAt(0) == 1021",
+    "page": "SofaMore32BtnActivity",
+    "name_index": 12,
+    "order": 3,
+    "source": "sources/com/ykd/newuieasyc/initDataUtil/BDUtils.java:73",
+    "source_row": "put(Integer.valueOf(PointerIconCompat.TYPE_GRABBING), new BD(DeviceNameUtil.dname[12], ImageUtils.icon[3], ImageUtils.bigsofaimage[7], ImageUtils.smallsofaimage[7], 0, ImageUtils.img_sofa_flat[0], 0, PageUtils.intentclass[7], false, OrderUtil.oup[3], OrderUtil.odown[3], OrderUtil.ostop[3], ImageUtils.keydes_sofa, StringUtils.keydes_sofa_text, StringUtils.troubleshoot_sofa_question, StringUtils.troubleshoot_sofa_analyse, StringUtils.troubleshoot_sofa_solve, ButtonUtils.f2M1LedM2));",
+    "registration_id": "registration-056-1021",
+    "name_resource": "device_name_sofa_four_motor_hml",
+    "scope": "EXCLUDED",
+    "disposition": "REACHABLE",
+    "scope_reason": "Non-bed product catalog, EXCLUDED from bed integration product boundary",
+    "content_sha256": "356aabbaa015ca9416bba405e47aba8fc7a092b7ca95e917b3ad5b5e8532aa42",
+    "show_alarm_sleep": false,
+    "button_config": "f2M1LedM2",
+    "graphics": [
+      "sofa_big_unselect",
+      "sofa_big_backfootheadmiddle",
+      "sofa_big_head",
+      "sofa_big_middle",
+      "sofa_big_back",
+      "sofa_big_foot"
+    ],
+    "orders": {
+      "oup": [
+        272,
+        257,
+        261,
+        265,
+        269
+      ],
+      "odown": [
+        273,
+        258,
+        262,
+        266,
+        270
+      ],
+      "ostop": [
+        1,
+        256,
+        260,
+        264,
+        268
+      ]
+    },
+    "confidence": "VERIFIED"
+  },
+  {
+    "id": "1022",
+    "selector": "manufacturerSpecificData.keyAt(0) == 1022",
+    "page": "SofaMore21BtnActivity",
+    "name_index": 13,
+    "order": 3,
+    "source": "sources/com/ykd/newuieasyc/initDataUtil/BDUtils.java:74",
+    "source_row": "put(1022, new BD(DeviceNameUtil.dname[13], ImageUtils.icon[3], ImageUtils.bigsofaimage[7], ImageUtils.smallsofaimage[7], 0, ImageUtils.img_sofa_flat[0], 0, PageUtils.intentclass[5], false, OrderUtil.oup[3], OrderUtil.odown[3], OrderUtil.ostop[3], ImageUtils.keydes_sofa, StringUtils.keydes_sofa_text, StringUtils.troubleshoot_sofa_question, StringUtils.troubleshoot_sofa_analyse, StringUtils.troubleshoot_sofa_solve, ButtonUtils.f4M1M2Led));",
+    "registration_id": "registration-057-1022",
+    "name_resource": "device_name_sofa_four_motor_l",
+    "scope": "EXCLUDED",
+    "disposition": "REACHABLE",
+    "scope_reason": "Non-bed product catalog, EXCLUDED from bed integration product boundary",
+    "content_sha256": "8d23b6815d2f803d37f974fa61314682b91cd6a57f5a5996c9e9a4646aff6718",
+    "show_alarm_sleep": false,
+    "button_config": "f4M1M2Led",
+    "graphics": [
+      "sofa_big_unselect",
+      "sofa_big_backfootheadmiddle",
+      "sofa_big_head",
+      "sofa_big_middle",
+      "sofa_big_back",
+      "sofa_big_foot"
+    ],
+    "orders": {
+      "oup": [
+        272,
+        257,
+        261,
+        265,
+        269
+      ],
+      "odown": [
+        273,
+        258,
+        262,
+        266,
+        270
+      ],
+      "ostop": [
+        1,
+        256,
+        260,
+        264,
+        268
+      ]
+    },
+    "confidence": "VERIFIED"
+  },
+  {
+    "id": "1023",
+    "selector": "manufacturerSpecificData.keyAt(0) == 1023",
+    "page": "SofaMore2BtnActivity",
+    "name_index": 14,
+    "order": 3,
+    "source": "sources/com/ykd/newuieasyc/initDataUtil/BDUtils.java:75",
+    "source_row": "put(1023, new BD(DeviceNameUtil.dname[14], ImageUtils.icon[3], ImageUtils.bigsofaimage[7], ImageUtils.smallsofaimage[7], 0, ImageUtils.img_sofa_flat[0], 0, PageUtils.intentclass[4], false, OrderUtil.oup[3], OrderUtil.odown[3], OrderUtil.ostop[3], ImageUtils.keydes_sofa, StringUtils.keydes_sofa_text, StringUtils.troubleshoot_sofa_question, StringUtils.troubleshoot_sofa_analyse, StringUtils.troubleshoot_sofa_solve, ButtonUtils.M1M2));",
+    "registration_id": "registration-058-1023",
+    "name_resource": "device_name_sofa_four_motor",
+    "scope": "EXCLUDED",
+    "disposition": "REACHABLE",
+    "scope_reason": "Non-bed product catalog, EXCLUDED from bed integration product boundary",
+    "content_sha256": "d587d3b5eb58e004b96eaa8cb5acc14d948052a99cf6b25fe5881867f2b326a8",
+    "show_alarm_sleep": false,
+    "button_config": "M1M2",
+    "graphics": [
+      "sofa_big_unselect",
+      "sofa_big_backfootheadmiddle",
+      "sofa_big_head",
+      "sofa_big_middle",
+      "sofa_big_back",
+      "sofa_big_foot"
+    ],
+    "orders": {
+      "oup": [
+        272,
+        257,
+        261,
+        265,
+        269
+      ],
+      "odown": [
+        273,
+        258,
+        262,
+        266,
+        270
+      ],
+      "ostop": [
+        1,
+        256,
+        260,
+        264,
+        268
+      ]
+    },
+    "confidence": "VERIFIED"
+  },
+  {
+    "id": "1024",
+    "selector": "manufacturerSpecificData.keyAt(0) == 1024",
+    "page": "SofaOne3BtnActivity",
+    "name_index": 34,
+    "order": 4,
+    "source": "sources/com/ykd/newuieasyc/initDataUtil/BDUtils.java:76",
+    "source_row": "put(1024, new BD(DeviceNameUtil.dname[34], ImageUtils.icon[3], ImageUtils.bigsofaimage[0], ImageUtils.smallsofaimage[0], 0, ImageUtils.img_sofa_flat[0], 0, PageUtils.intentclass[3], false, OrderUtil.oup[4], OrderUtil.odown[4], OrderUtil.ostop[4], ImageUtils.keydes_sofa, StringUtils.keydes_sofa_text, StringUtils.troubleshoot_sofa_question, StringUtils.troubleshoot_sofa_analyse, StringUtils.troubleshoot_sofa_solve, ButtonUtils.f21M1M2));",
+    "registration_id": "registration-059-1024",
+    "name_resource": "device_name_sofa_one_motor_h",
+    "scope": "EXCLUDED",
+    "disposition": "REACHABLE",
+    "scope_reason": "Non-bed product catalog, EXCLUDED from bed integration product boundary",
+    "content_sha256": "a48abc1ac9359503ed8f00df83f1b49f1a5a23fac54e50873d20c1e3aa8557bd",
+    "show_alarm_sleep": false,
+    "button_config": "f21M1M2",
+    "graphics": [
+      "sofa_big_unselect",
+      "sofa_big_backfootheadmiddle"
+    ],
+    "orders": {
+      "oup": [
+        272
+      ],
+      "odown": [
+        273
+      ],
+      "ostop": [
+        1
+      ]
+    },
+    "confidence": "VERIFIED"
+  },
+  {
+    "id": "1025",
+    "selector": "manufacturerSpecificData.keyAt(0) == 1025",
+    "page": "SofaOne22BtnActivity",
+    "name_index": 57,
+    "order": 4,
+    "source": "sources/com/ykd/newuieasyc/initDataUtil/BDUtils.java:77",
+    "source_row": "put(Integer.valueOf(InputDeviceCompat.SOURCE_GAMEPAD), new BD(DeviceNameUtil.dname[57], ImageUtils.icon[3], ImageUtils.bigsofaimage[0], ImageUtils.smallsofaimage[0], 0, ImageUtils.img_sofa_flat[0], 0, PageUtils.intentclass[10], false, OrderUtil.oup[4], OrderUtil.odown[4], OrderUtil.ostop[4], ImageUtils.keydes_sofa, StringUtils.keydes_sofa_text, StringUtils.troubleshoot_sofa_question, StringUtils.troubleshoot_sofa_analyse, StringUtils.troubleshoot_sofa_solve, ButtonUtils.f5M1M2Led));",
+    "registration_id": "registration-060-1025",
+    "name_resource": "device_name_sofa_one_motor_ml",
+    "scope": "EXCLUDED",
+    "disposition": "REACHABLE",
+    "scope_reason": "Non-bed product catalog, EXCLUDED from bed integration product boundary",
+    "content_sha256": "8b892f63d6a0b7a8b24ee8dadfe963f6b12a18f04291eaac2ce8f1c0b57a397f",
+    "show_alarm_sleep": false,
+    "button_config": "f5M1M2Led",
+    "graphics": [
+      "sofa_big_unselect",
+      "sofa_big_backfootheadmiddle"
+    ],
+    "orders": {
+      "oup": [
+        272
+      ],
+      "odown": [
+        273
+      ],
+      "ostop": [
+        1
+      ]
+    },
+    "confidence": "VERIFIED"
+  },
+  {
+    "id": "1026",
+    "selector": "manufacturerSpecificData.keyAt(0) == 1026",
+    "page": "SofaOne3BtnActivity",
+    "name_index": 51,
+    "order": 4,
+    "source": "sources/com/ykd/newuieasyc/initDataUtil/BDUtils.java:78",
+    "source_row": "put(1026, new BD(DeviceNameUtil.dname[51], ImageUtils.icon[3], ImageUtils.bigsofaimage[0], ImageUtils.smallsofaimage[0], 0, ImageUtils.img_sofa_flat[0], 1, PageUtils.intentclass[3], false, OrderUtil.oup[4], OrderUtil.odown[4], OrderUtil.ostop[4], ImageUtils.keydes_sofa, StringUtils.keydes_sofa_text, StringUtils.troubleshoot_sofa_question, StringUtils.troubleshoot_sofa_analyse, StringUtils.troubleshoot_sofa_solve, ButtonUtils.f20M1M2));",
+    "registration_id": "registration-061-1026",
+    "name_resource": "device_name_sofa_ZM",
+    "scope": "EXCLUDED",
+    "disposition": "REACHABLE",
+    "scope_reason": "Non-bed product catalog, EXCLUDED from bed integration product boundary",
+    "content_sha256": "c1be81a5c49e64105d9e8aff11d49fee5d31b24f37bc05c26536a5556e763410",
+    "show_alarm_sleep": false,
+    "button_config": "f20M1M2",
+    "graphics": [
+      "sofa_big_unselect",
+      "sofa_big_backfootheadmiddle"
+    ],
+    "orders": {
+      "oup": [
+        272
+      ],
+      "odown": [
+        273
+      ],
+      "ostop": [
+        1
+      ]
+    },
+    "confidence": "VERIFIED"
+  },
+  {
+    "id": "1028",
+    "selector": "manufacturerSpecificData.keyAt(0) == 1028",
+    "page": "SofaOne22BtnActivity",
+    "name_index": 66,
+    "order": 4,
+    "source": "sources/com/ykd/newuieasyc/initDataUtil/BDUtils.java:79",
+    "source_row": "put(1028, new BD(DeviceNameUtil.dname[66], ImageUtils.icon[3], ImageUtils.bigsofaimage[0], ImageUtils.smallsofaimage[0], 0, ImageUtils.img_sofa_flat[0], 1, PageUtils.intentclass[10], false, OrderUtil.oup[4], OrderUtil.odown[4], OrderUtil.ostop[4], ImageUtils.keydes_sofa, StringUtils.keydes_sofa_text, StringUtils.troubleshoot_sofa_question, StringUtils.troubleshoot_sofa_analyse, StringUtils.troubleshoot_sofa_solve, ButtonUtils.f10M1M2));",
+    "registration_id": "registration-062-1028",
+    "name_resource": "device_name_sofa_one_motor_HM",
+    "scope": "EXCLUDED",
+    "disposition": "REACHABLE",
+    "scope_reason": "Non-bed product catalog, EXCLUDED from bed integration product boundary",
+    "content_sha256": "0b9c71c6694465244104b8200fb385a5d5b4400876150c306cdc1d039dbe34fc",
+    "show_alarm_sleep": false,
+    "button_config": "f10M1M2",
+    "graphics": [
+      "sofa_big_unselect",
+      "sofa_big_backfootheadmiddle"
+    ],
+    "orders": {
+      "oup": [
+        272
+      ],
+      "odown": [
+        273
+      ],
+      "ostop": [
+        1
+      ]
+    },
+    "confidence": "VERIFIED"
+  },
+  {
+    "id": "1036",
+    "selector": "manufacturerSpecificData.keyAt(0) == 1036",
+    "page": "SofaMore3BtnActivity",
+    "name_index": 39,
+    "order": 0,
+    "source": "sources/com/ykd/newuieasyc/initDataUtil/BDUtils.java:80",
+    "source_row": "put(1036, new BD(DeviceNameUtil.dname[39], ImageUtils.icon[3], ImageUtils.bigsofaimage[1], ImageUtils.smallsofaimage[1], 0, ImageUtils.img_sofa_flat[0], 0, PageUtils.intentclass[9], false, OrderUtil.oup[0], OrderUtil.odown[0], OrderUtil.ostop[0], ImageUtils.keydes_sofa, StringUtils.keydes_sofa_text, StringUtils.troubleshoot_sofa_question, StringUtils.troubleshoot_sofa_analyse, StringUtils.troubleshoot_sofa_solve, ButtonUtils.f21M1M2));",
+    "registration_id": "registration-063-1036",
+    "name_resource": "device_name_sofa_two_motor_h",
+    "scope": "EXCLUDED",
+    "disposition": "REACHABLE",
+    "scope_reason": "Non-bed product catalog, EXCLUDED from bed integration product boundary",
+    "content_sha256": "e83a9842bcad1e8e6eed8771cb1af0c85e7bd408e15d9bdc2fd8927bcfd0e6ab",
+    "show_alarm_sleep": false,
+    "button_config": "f21M1M2",
+    "graphics": [
+      "sofa_big_unselect",
+      "sofa_big_backfootheadmiddle",
+      "sofa_big_head",
+      "sofa_big_backfootmiddle"
+    ],
+    "orders": {
+      "oup": [
+        272,
+        257,
+        261
+      ],
+      "odown": [
+        273,
+        258,
+        262
+      ],
+      "ostop": [
+        1,
+        256,
+        260
+      ]
+    },
+    "confidence": "VERIFIED"
+  },
+  {
+    "id": "1037",
+    "selector": "manufacturerSpecificData.keyAt(0) == 1037",
+    "page": "SofaMore3BtnActivity",
+    "name_index": 39,
+    "order": 0,
+    "source": "sources/com/ykd/newuieasyc/initDataUtil/BDUtils.java:81",
+    "source_row": "put(1037, new BD(DeviceNameUtil.dname[39], ImageUtils.icon[3], ImageUtils.bigsofaimage[2], ImageUtils.smallsofaimage[2], 0, ImageUtils.img_sofa_flat[0], 0, PageUtils.intentclass[9], false, OrderUtil.oup[0], OrderUtil.odown[0], OrderUtil.ostop[0], ImageUtils.keydes_sofa, StringUtils.keydes_sofa_text, StringUtils.troubleshoot_sofa_question, StringUtils.troubleshoot_sofa_analyse, StringUtils.troubleshoot_sofa_solve, ButtonUtils.f21M1M2));",
+    "registration_id": "registration-064-1037",
+    "name_resource": "device_name_sofa_two_motor_h",
+    "scope": "EXCLUDED",
+    "disposition": "REACHABLE",
+    "scope_reason": "Non-bed product catalog, EXCLUDED from bed integration product boundary",
+    "content_sha256": "a3fbebd4b6e56243e065d5f0d3578daa7dffdadcd2eb5943ccb5f2bb30b72560",
+    "show_alarm_sleep": false,
+    "button_config": "f21M1M2",
+    "graphics": [
+      "sofa_big_unselect",
+      "sofa_big_backfootheadmiddle",
+      "sofa_big_foot",
+      "sofa_big_backheadmiddle"
+    ],
+    "orders": {
+      "oup": [
+        272,
+        257,
+        261
+      ],
+      "odown": [
+        273,
+        258,
+        262
+      ],
+      "ostop": [
+        1,
+        256,
+        260
+      ]
+    },
+    "confidence": "VERIFIED"
+  },
+  {
+    "id": "1038",
+    "selector": "manufacturerSpecificData.keyAt(0) == 1038",
+    "page": "SofaMore3BtnActivity",
+    "name_index": 39,
+    "order": 0,
+    "source": "sources/com/ykd/newuieasyc/initDataUtil/BDUtils.java:82",
+    "source_row": "put(1038, new BD(DeviceNameUtil.dname[39], ImageUtils.icon[3], ImageUtils.bigsofaimage[3], ImageUtils.smallsofaimage[3], 0, ImageUtils.img_sofa_flat[0], 0, PageUtils.intentclass[9], false, OrderUtil.oup[0], OrderUtil.odown[0], OrderUtil.ostop[0], ImageUtils.keydes_sofa, StringUtils.keydes_sofa_text, StringUtils.troubleshoot_sofa_question, StringUtils.troubleshoot_sofa_analyse, StringUtils.troubleshoot_sofa_solve, ButtonUtils.f21M1M2));",
+    "registration_id": "registration-065-1038",
+    "name_resource": "device_name_sofa_two_motor_h",
+    "scope": "EXCLUDED",
+    "disposition": "REACHABLE",
+    "scope_reason": "Non-bed product catalog, EXCLUDED from bed integration product boundary",
+    "content_sha256": "85a2caeddfbde2162b4f31ff80f6d05907b677295ea671c3e0320a2ec685fc71",
+    "show_alarm_sleep": false,
+    "button_config": "f21M1M2",
+    "graphics": [
+      "sofa_big_unselect",
+      "sofa_big_backfootheadmiddle",
+      "sofa_big_middle",
+      "sofa_big_backfoothead"
+    ],
+    "orders": {
+      "oup": [
+        272,
+        257,
+        261
+      ],
+      "odown": [
+        273,
+        258,
+        262
+      ],
+      "ostop": [
+        1,
+        256,
+        260
+      ]
+    },
+    "confidence": "VERIFIED"
+  },
+  {
+    "id": "1039",
+    "selector": "manufacturerSpecificData.keyAt(0) == 1039",
+    "page": "SofaMore3BtnActivity",
+    "name_index": 39,
+    "order": 0,
+    "source": "sources/com/ykd/newuieasyc/initDataUtil/BDUtils.java:83",
+    "source_row": "put(1039, new BD(DeviceNameUtil.dname[39], ImageUtils.icon[3], ImageUtils.bigsofaimage[4], ImageUtils.smallsofaimage[4], 0, ImageUtils.img_sofa_flat[0], 0, PageUtils.intentclass[9], false, OrderUtil.oup[0], OrderUtil.odown[0], OrderUtil.ostop[0], ImageUtils.keydes_sofa, StringUtils.keydes_sofa_text, StringUtils.troubleshoot_sofa_question, StringUtils.troubleshoot_sofa_analyse, StringUtils.troubleshoot_sofa_solve, ButtonUtils.f21M1M2));",
+    "registration_id": "registration-066-1039",
+    "name_resource": "device_name_sofa_two_motor_h",
+    "scope": "EXCLUDED",
+    "disposition": "REACHABLE",
+    "scope_reason": "Non-bed product catalog, EXCLUDED from bed integration product boundary",
+    "content_sha256": "3f485016fc5a4b938a9baa65a31fd072e3b9cad954a654b53184dd991d2119d1",
+    "show_alarm_sleep": false,
+    "button_config": "f21M1M2",
+    "graphics": [
+      "sofa_big_unselect",
+      "sofa_big_backfootheadmiddle",
+      "sofa_big_head",
+      "sofa_big_middle",
+      "sofa_big_backfoot"
+    ],
+    "orders": {
+      "oup": [
+        272,
+        257,
+        261
+      ],
+      "odown": [
+        273,
+        258,
+        262
+      ],
+      "ostop": [
+        1,
+        256,
+        260
+      ]
+    },
+    "confidence": "VERIFIED"
+  },
+  {
+    "id": "1040",
+    "selector": "manufacturerSpecificData.keyAt(0) == 1040",
+    "page": "SofaMore3BtnActivity",
+    "name_index": 39,
+    "order": 0,
+    "source": "sources/com/ykd/newuieasyc/initDataUtil/BDUtils.java:84",
+    "source_row": "put(1040, new BD(DeviceNameUtil.dname[39], ImageUtils.icon[3], ImageUtils.bigsofaimage[5], ImageUtils.smallsofaimage[5], 0, ImageUtils.img_sofa_flat[0], 0, PageUtils.intentclass[9], false, OrderUtil.oup[0], OrderUtil.odown[0], OrderUtil.ostop[0], ImageUtils.keydes_sofa, StringUtils.keydes_sofa_text, StringUtils.troubleshoot_sofa_question, StringUtils.troubleshoot_sofa_analyse, StringUtils.troubleshoot_sofa_solve, ButtonUtils.f21M1M2));",
+    "registration_id": "registration-067-1040",
+    "name_resource": "device_name_sofa_two_motor_h",
+    "scope": "EXCLUDED",
+    "disposition": "REACHABLE",
+    "scope_reason": "Non-bed product catalog, EXCLUDED from bed integration product boundary",
+    "content_sha256": "768f8e05d7907fd51c539625bee1f90eec329ac6d87f041629ede3bf4e2703c6",
+    "show_alarm_sleep": false,
+    "button_config": "f21M1M2",
+    "graphics": [
+      "sofa_big_unselect",
+      "sofa_big_backfootheadmiddle",
+      "sofa_big_foot",
+      "sofa_big_backmiddle",
+      "sofa_big_head"
+    ],
+    "orders": {
+      "oup": [
+        272,
+        257,
+        261
+      ],
+      "odown": [
+        273,
+        258,
+        262
+      ],
+      "ostop": [
+        1,
+        256,
+        260
+      ]
+    },
+    "confidence": "VERIFIED"
+  },
+  {
+    "id": "1041",
+    "selector": "manufacturerSpecificData.keyAt(0) == 1041",
+    "page": "SofaMore3BtnActivity",
+    "name_index": 39,
+    "order": 0,
+    "source": "sources/com/ykd/newuieasyc/initDataUtil/BDUtils.java:85",
+    "source_row": "put(1041, new BD(DeviceNameUtil.dname[39], ImageUtils.icon[3], ImageUtils.bigsofaimage[6], ImageUtils.smallsofaimage[6], 0, ImageUtils.img_sofa_flat[0], 0, PageUtils.intentclass[9], false, OrderUtil.oup[0], OrderUtil.odown[0], OrderUtil.ostop[0], ImageUtils.keydes_sofa, StringUtils.keydes_heatM_text, StringUtils.troubleshoot_sofa_question, StringUtils.troubleshoot_sofa_analyse, StringUtils.troubleshoot_sofa_solve, ButtonUtils.f21M1M2));",
+    "registration_id": "registration-068-1041",
+    "name_resource": "device_name_sofa_two_motor_h",
+    "scope": "EXCLUDED",
+    "disposition": "REACHABLE",
+    "scope_reason": "Non-bed product catalog, EXCLUDED from bed integration product boundary",
+    "content_sha256": "d34877cb74ab96d4ff79c208362a705b57306c15435b66e2a9557cdc3ee28cf7",
+    "show_alarm_sleep": false,
+    "button_config": "f21M1M2",
+    "graphics": [
+      "sofa_big_unselect",
+      "sofa_big_backfootheadmiddle",
+      "sofa_big_middle",
+      "sofa_big_back",
+      "sofa_big_foot"
+    ],
+    "orders": {
+      "oup": [
+        272,
+        257,
+        261
+      ],
+      "odown": [
+        273,
+        258,
+        262
+      ],
+      "ostop": [
+        1,
+        256,
+        260
+      ]
+    },
+    "confidence": "VERIFIED"
+  },
+  {
+    "id": "1042",
+    "selector": "manufacturerSpecificData.keyAt(0) == 1042",
+    "page": "SofaMore3BtnActivity",
+    "name_index": 39,
+    "order": 0,
+    "source": "sources/com/ykd/newuieasyc/initDataUtil/BDUtils.java:86",
+    "source_row": "put(1042, new BD(DeviceNameUtil.dname[39], ImageUtils.icon[3], ImageUtils.bigsofaimage[7], ImageUtils.smallsofaimage[7], 0, ImageUtils.img_sofa_flat[0], 0, PageUtils.intentclass[9], false, OrderUtil.oup[0], OrderUtil.odown[0], OrderUtil.ostop[0], ImageUtils.keydes_sofa, StringUtils.keydes_sofa_text, StringUtils.troubleshoot_sofa_question, StringUtils.troubleshoot_sofa_analyse, StringUtils.troubleshoot_sofa_solve, ButtonUtils.f21M1M2));",
+    "registration_id": "registration-069-1042",
+    "name_resource": "device_name_sofa_two_motor_h",
+    "scope": "EXCLUDED",
+    "disposition": "REACHABLE",
+    "scope_reason": "Non-bed product catalog, EXCLUDED from bed integration product boundary",
+    "content_sha256": "66ab13494284c80dde0bf470686a878fc74e7b122fe58a4dd1b7b12b818406eb",
+    "show_alarm_sleep": false,
+    "button_config": "f21M1M2",
+    "graphics": [
+      "sofa_big_unselect",
+      "sofa_big_backfootheadmiddle",
+      "sofa_big_head",
+      "sofa_big_middle",
+      "sofa_big_back",
+      "sofa_big_foot"
+    ],
+    "orders": {
+      "oup": [
+        272,
+        257,
+        261
+      ],
+      "odown": [
+        273,
+        258,
+        262
+      ],
+      "ostop": [
+        1,
+        256,
+        260
+      ]
+    },
+    "confidence": "VERIFIED"
+  },
+  {
+    "id": "1051",
+    "selector": "manufacturerSpecificData.keyAt(0) == 1051",
+    "page": "SofaMore22BtnActivity",
+    "name_index": 58,
+    "order": 0,
+    "source": "sources/com/ykd/newuieasyc/initDataUtil/BDUtils.java:87",
+    "source_row": "put(1051, new BD(DeviceNameUtil.dname[58], ImageUtils.icon[3], ImageUtils.bigsofaimage[2], ImageUtils.smallsofaimage[2], 0, ImageUtils.img_sofa_flat[0], 0, PageUtils.intentclass[6], false, OrderUtil.oup[0], OrderUtil.odown[0], OrderUtil.ostop[0], ImageUtils.keydes_sofa, StringUtils.keydes_sofa_text, StringUtils.troubleshoot_sofa_question, StringUtils.troubleshoot_sofa_analyse, StringUtils.troubleshoot_sofa_solve, ButtonUtils.f5M1M2Led));",
+    "registration_id": "registration-070-1051",
+    "name_resource": "device_name_sofa_two_motor_ml",
+    "scope": "EXCLUDED",
+    "disposition": "REACHABLE",
+    "scope_reason": "Non-bed product catalog, EXCLUDED from bed integration product boundary",
+    "content_sha256": "c54bd98fd7fb33ee75a345f0010742194e78ea4dac0821085ef72e58f939a97a",
+    "show_alarm_sleep": false,
+    "button_config": "f5M1M2Led",
+    "graphics": [
+      "sofa_big_unselect",
+      "sofa_big_backfootheadmiddle",
+      "sofa_big_foot",
+      "sofa_big_backheadmiddle"
+    ],
+    "orders": {
+      "oup": [
+        272,
+        257,
+        261
+      ],
+      "odown": [
+        273,
+        258,
+        262
+      ],
+      "ostop": [
+        1,
+        256,
+        260
+      ]
+    },
+    "confidence": "VERIFIED"
+  },
+  {
+    "id": "1064",
+    "selector": "manufacturerSpecificData.keyAt(0) == 1064",
+    "page": "SofaOne3BtnActivity",
+    "name_index": 34,
+    "order": 4,
+    "source": "sources/com/ykd/newuieasyc/initDataUtil/BDUtils.java:88",
+    "source_row": "put(1064, new BD(DeviceNameUtil.dname[34], ImageUtils.icon[3], ImageUtils.bigsofaimage[0], ImageUtils.smallsofaimage[0], 0, ImageUtils.img_sofa_flat[0], 0, PageUtils.intentclass[3], false, OrderUtil.oup[4], OrderUtil.odown[4], OrderUtil.ostop[4], ImageUtils.keydes_sofa, StringUtils.keydes_sofa_text, StringUtils.troubleshoot_sofa_question, StringUtils.troubleshoot_sofa_analyse, StringUtils.troubleshoot_sofa_solve, ButtonUtils.f18M1M2));",
+    "registration_id": "registration-071-1064",
+    "name_resource": "device_name_sofa_one_motor_h",
+    "scope": "EXCLUDED",
+    "disposition": "REACHABLE",
+    "scope_reason": "Non-bed product catalog, EXCLUDED from bed integration product boundary",
+    "content_sha256": "76a816ab407b6c77baaf6a7ef88adfb5c2b45fd09baa1b68b6cfa63312af3bc4",
+    "show_alarm_sleep": false,
+    "button_config": "f18M1M2",
+    "graphics": [
+      "sofa_big_unselect",
+      "sofa_big_backfootheadmiddle"
+    ],
+    "orders": {
+      "oup": [
+        272
+      ],
+      "odown": [
+        273
+      ],
+      "ostop": [
+        1
+      ]
+    },
+    "confidence": "VERIFIED"
+  },
+  {
+    "id": "1065",
+    "selector": "manufacturerSpecificData.keyAt(0) == 1065",
+    "page": "SofaMore3BtnActivity",
+    "name_index": 39,
+    "order": 0,
+    "source": "sources/com/ykd/newuieasyc/initDataUtil/BDUtils.java:89",
+    "source_row": "put(1065, new BD(DeviceNameUtil.dname[39], ImageUtils.icon[3], ImageUtils.bigsofaimage[1], ImageUtils.smallsofaimage[1], 0, ImageUtils.img_sofa_flat[0], 0, PageUtils.intentclass[9], false, OrderUtil.oup[0], OrderUtil.odown[0], OrderUtil.ostop[0], ImageUtils.keydes_sofa, StringUtils.keydes_sofa_text, StringUtils.troubleshoot_sofa_question, StringUtils.troubleshoot_sofa_analyse, StringUtils.troubleshoot_sofa_solve, ButtonUtils.f18M1M2));",
+    "registration_id": "registration-072-1065",
+    "name_resource": "device_name_sofa_two_motor_h",
+    "scope": "EXCLUDED",
+    "disposition": "REACHABLE",
+    "scope_reason": "Non-bed product catalog, EXCLUDED from bed integration product boundary",
+    "content_sha256": "8f8a73fcf50c3e0ff10ec27ae92f96a28da407684783e97216c3f8423fa04e2c",
+    "show_alarm_sleep": false,
+    "button_config": "f18M1M2",
+    "graphics": [
+      "sofa_big_unselect",
+      "sofa_big_backfootheadmiddle",
+      "sofa_big_head",
+      "sofa_big_backfootmiddle"
+    ],
+    "orders": {
+      "oup": [
+        272,
+        257,
+        261
+      ],
+      "odown": [
+        273,
+        258,
+        262
+      ],
+      "ostop": [
+        1,
+        256,
+        260
+      ]
+    },
+    "confidence": "VERIFIED"
+  },
+  {
+    "id": "1066",
+    "selector": "manufacturerSpecificData.keyAt(0) == 1066",
+    "page": "SofaMore2BtnActivity",
+    "name_index": 41,
+    "order": 1,
+    "source": "sources/com/ykd/newuieasyc/initDataUtil/BDUtils.java:90",
+    "source_row": "put(1066, new BD(DeviceNameUtil.dname[41], ImageUtils.icon[15], ImageUtils.bigsofaimage[8], null, 0, ImageUtils.img_sofa_flat[1], 0, PageUtils.intentclass[4], false, OrderUtil.oup[1], OrderUtil.odown[1], OrderUtil.ostop[1], ImageUtils.keydes_sofa, StringUtils.keydes_sofa_text, StringUtils.troubleshoot_sofa_question, StringUtils.troubleshoot_sofa_analyse, StringUtils.troubleshoot_sofa_solve, ButtonUtils.M1M2));",
+    "registration_id": "registration-073-1066",
+    "name_resource": "device_name_sofa_three_push",
+    "scope": "EXCLUDED",
+    "disposition": "REACHABLE",
+    "scope_reason": "Non-bed product catalog, EXCLUDED from bed integration product boundary",
+    "content_sha256": "2e42567212eb6b10d82976bb4fa160b8a8ab84cc6389a37f65946495406e0698",
+    "show_alarm_sleep": false,
+    "button_config": "M1M2",
+    "graphics": [
+      "sofa_three_all",
+      "sofa_three_all_unselectd",
+      "sofa_three_pos1",
+      "sofa_three_pos2",
+      "sofa_three_pos3"
+    ],
+    "orders": {
+      "oup": [
+        272,
+        257,
+        261,
+        265
+      ],
+      "odown": [
+        273,
+        258,
+        262,
+        266
+      ],
+      "ostop": [
+        1,
+        256,
+        260,
+        264
+      ]
+    },
+    "confidence": "VERIFIED"
+  },
+  {
+    "id": "1067",
+    "selector": "manufacturerSpecificData.keyAt(0) == 1067",
+    "page": "SofaThreeHeatActivity",
+    "name_index": 42,
+    "order": null,
+    "source": "sources/com/ykd/newuieasyc/initDataUtil/BDUtils.java:91",
+    "source_row": "put(1067, new BD(DeviceNameUtil.dname[42], ImageUtils.icon[16], ImageUtils.sofaheatimage[0], null, 0, 0, 0, PageUtils.intentclass[11], false, OrderUtil.oopen[0], OrderUtil.ooff[0], null, ImageUtils.keydes_sofa_heat_massage, StringUtils.keydes_heatM_text, StringUtils.troubleshoot_sofa_question, StringUtils.troubleshoot_sofa_analyse, StringUtils.troubleshoot_sofa_solve, ButtonUtils.Null));",
+    "registration_id": "registration-074-1067",
+    "name_resource": "device_name_sofa_H",
+    "scope": "EXCLUDED",
+    "disposition": "REACHABLE",
+    "scope_reason": "Non-bed product catalog, EXCLUDED from bed integration product boundary",
+    "content_sha256": "7043bf2eddc0eb8748d0d9069e8dcc79953cf2093f41c6af93ea8e36c29675d1",
+    "show_alarm_sleep": false,
+    "button_config": "Null",
+    "graphics": [],
+    "confidence": "VERIFIED"
+  },
+  {
+    "id": "1068",
+    "selector": "manufacturerSpecificData.keyAt(0) == 1068",
+    "page": "SofaThreeMassageActivity",
+    "name_index": 43,
+    "order": null,
+    "source": "sources/com/ykd/newuieasyc/initDataUtil/BDUtils.java:92",
+    "source_row": "put(1068, new BD(DeviceNameUtil.dname[43], ImageUtils.icon[17], ImageUtils.sofamassageimage[0], null, 0, 0, 0, PageUtils.intentclass[12], false, OrderUtil.oopen[0], OrderUtil.ooff[0], null, ImageUtils.keydes_sofa_heat_massage, StringUtils.keydes_heatM_text, StringUtils.troubleshoot_sofa_question, StringUtils.troubleshoot_sofa_analyse, StringUtils.troubleshoot_sofa_solve, ButtonUtils.Null));",
+    "registration_id": "registration-075-1068",
+    "name_resource": "device_name_sofa_M",
+    "scope": "EXCLUDED",
+    "disposition": "REACHABLE",
+    "scope_reason": "Non-bed product catalog, EXCLUDED from bed integration product boundary",
+    "content_sha256": "ac42378aebdd33c9d66152e3347d4d5f463df59ea219acdcfb790f8c88ebb232",
+    "show_alarm_sleep": false,
+    "button_config": "Null",
+    "graphics": [],
+    "confidence": "VERIFIED"
+  },
+  {
+    "id": "1069",
+    "selector": "manufacturerSpecificData.keyAt(0) == 1069",
+    "page": "SofaThreeHeatMassageActivity",
+    "name_index": 44,
+    "order": 1,
+    "source": "sources/com/ykd/newuieasyc/initDataUtil/BDUtils.java:93",
+    "source_row": "put(1069, new BD(DeviceNameUtil.dname[44], ImageUtils.icon[18], ImageUtils.sofamassageimage[0], null, 0, 0, 0, PageUtils.intentclass[13], false, OrderUtil.oup[1], OrderUtil.odown[1], null, ImageUtils.keydes_sofa_heat_massage, StringUtils.keydes_heatM_text, StringUtils.troubleshoot_sofa_question, StringUtils.troubleshoot_sofa_analyse, StringUtils.troubleshoot_sofa_solve, ButtonUtils.Null));",
+    "registration_id": "registration-076-1069",
+    "name_resource": "device_name_sofa_HM",
+    "scope": "EXCLUDED",
+    "disposition": "REACHABLE",
+    "scope_reason": "Non-bed product catalog, EXCLUDED from bed integration product boundary",
+    "content_sha256": "d4225df1a50e7283a5f75b1f174e55907e23c8e032dd7a47bce36ff1f6b02a23",
+    "show_alarm_sleep": false,
+    "button_config": "Null",
+    "graphics": [],
+    "orders": {
+      "oup": [
+        272,
+        257,
+        261,
+        265
+      ],
+      "odown": [
+        273,
+        258,
+        262,
+        266
+      ],
+      "ostop": [
+        1,
+        256,
+        260,
+        264
+      ]
+    },
+    "confidence": "VERIFIED"
+  },
+  {
+    "id": "1070",
+    "selector": "manufacturerSpecificData.keyAt(0) == 1070",
+    "page": "SofaMore32BtnActivity",
+    "name_index": 44,
+    "order": 4,
+    "source": "sources/com/ykd/newuieasyc/initDataUtil/BDUtils.java:94",
+    "source_row": "put(1070, new BD(DeviceNameUtil.dname[44], ImageUtils.icon[3], ImageUtils.bigsofaimage[0], ImageUtils.smallsofaimage[0], 0, ImageUtils.img_sofa_flat[0], 0, PageUtils.intentclass[7], false, OrderUtil.oup[4], OrderUtil.odown[4], OrderUtil.ostop[4], ImageUtils.keydes_sofa, StringUtils.keydes_sofa_text, StringUtils.troubleshoot_sofa_question, StringUtils.troubleshoot_sofa_analyse, StringUtils.troubleshoot_sofa_solve, ButtonUtils.f1M1LedM2));",
+    "registration_id": "registration-077-1070",
+    "name_resource": "device_name_sofa_HM",
+    "scope": "EXCLUDED",
+    "disposition": "REACHABLE",
+    "scope_reason": "Non-bed product catalog, EXCLUDED from bed integration product boundary",
+    "content_sha256": "0eb79518aa398903b3e9032420437793051d404469a89386ee578ef7c8e0b9f2",
+    "show_alarm_sleep": false,
+    "button_config": "f1M1LedM2",
+    "graphics": [
+      "sofa_big_unselect",
+      "sofa_big_backfootheadmiddle"
+    ],
+    "orders": {
+      "oup": [
+        272
+      ],
+      "odown": [
+        273
+      ],
+      "ostop": [
+        1
+      ]
+    },
+    "confidence": "VERIFIED"
+  },
+  {
+    "id": "1071",
+    "selector": "manufacturerSpecificData.keyAt(0) == 1071",
+    "page": "SofaMore32BtnActivity",
+    "name_index": 44,
+    "order": 4,
+    "source": "sources/com/ykd/newuieasyc/initDataUtil/BDUtils.java:95",
+    "source_row": "put(1071, new BD(DeviceNameUtil.dname[44], ImageUtils.icon[3], ImageUtils.bigsofaimage[0], ImageUtils.smallsofaimage[0], 0, ImageUtils.img_sofa_flat[0], 0, PageUtils.intentclass[7], false, OrderUtil.oup[4], OrderUtil.odown[4], OrderUtil.ostop[4], ImageUtils.keydes_sofa, StringUtils.keydes_sofa_text, StringUtils.troubleshoot_sofa_question, StringUtils.troubleshoot_sofa_analyse, StringUtils.troubleshoot_sofa_solve, ButtonUtils.f0M1LedM2));",
+    "registration_id": "registration-078-1071",
+    "name_resource": "device_name_sofa_HM",
+    "scope": "EXCLUDED",
+    "disposition": "REACHABLE",
+    "scope_reason": "Non-bed product catalog, EXCLUDED from bed integration product boundary",
+    "content_sha256": "27d8e7c5b79026ac3e5201ea75bc3cc2c0ed69a56a4902add4d25e4e893dc3b9",
+    "show_alarm_sleep": false,
+    "button_config": "f0M1LedM2",
+    "graphics": [
+      "sofa_big_unselect",
+      "sofa_big_backfootheadmiddle"
+    ],
+    "orders": {
+      "oup": [
+        272
+      ],
+      "odown": [
+        273
+      ],
+      "ostop": [
+        1
+      ]
+    },
+    "confidence": "VERIFIED"
+  },
+  {
+    "id": "1072",
+    "selector": "manufacturerSpecificData.keyAt(0) == 1072",
+    "page": "SofaMore32BtnActivity",
+    "name_index": 49,
+    "order": 0,
+    "source": "sources/com/ykd/newuieasyc/initDataUtil/BDUtils.java:96",
+    "source_row": "put(1072, new BD(DeviceNameUtil.dname[49], ImageUtils.icon[3], ImageUtils.bigsofaimage[2], ImageUtils.smallsofaimage[2], 0, ImageUtils.img_sofa_flat[0], 0, PageUtils.intentclass[7], false, OrderUtil.oup[0], OrderUtil.odown[0], OrderUtil.ostop[0], ImageUtils.keydes_sofa, StringUtils.keydes_sofa_text, StringUtils.troubleshoot_sofa_question, StringUtils.troubleshoot_sofa_analyse, StringUtils.troubleshoot_sofa_solve, ButtonUtils.f1M1LedM2));",
+    "registration_id": "registration-079-1072",
+    "name_resource": "device_name_sofa_two_HM",
+    "scope": "EXCLUDED",
+    "disposition": "REACHABLE",
+    "scope_reason": "Non-bed product catalog, EXCLUDED from bed integration product boundary",
+    "content_sha256": "b363b09aaf4e416ba3682453e3e0fd80f9c95cfeefa255d5ac8f6f09ace89571",
+    "show_alarm_sleep": false,
+    "button_config": "f1M1LedM2",
+    "graphics": [
+      "sofa_big_unselect",
+      "sofa_big_backfootheadmiddle",
+      "sofa_big_foot",
+      "sofa_big_backheadmiddle"
+    ],
+    "orders": {
+      "oup": [
+        272,
+        257,
+        261
+      ],
+      "odown": [
+        273,
+        258,
+        262
+      ],
+      "ostop": [
+        1,
+        256,
+        260
+      ]
+    },
+    "confidence": "VERIFIED"
+  },
+  {
+    "id": "1073",
+    "selector": "manufacturerSpecificData.keyAt(0) == 1073",
+    "page": "SofaMore32BtnActivity",
+    "name_index": 49,
+    "order": 0,
+    "source": "sources/com/ykd/newuieasyc/initDataUtil/BDUtils.java:97",
+    "source_row": "put(1073, new BD(DeviceNameUtil.dname[49], ImageUtils.icon[3], ImageUtils.bigsofaimage[2], ImageUtils.smallsofaimage[2], 0, ImageUtils.img_sofa_flat[0], 0, PageUtils.intentclass[7], false, OrderUtil.oup[0], OrderUtil.odown[0], OrderUtil.ostop[0], ImageUtils.keydes_sofa, StringUtils.keydes_sofa_text, StringUtils.troubleshoot_sofa_question, StringUtils.troubleshoot_sofa_analyse, StringUtils.troubleshoot_sofa_solve, ButtonUtils.f0M1LedM2));",
+    "registration_id": "registration-080-1073",
+    "name_resource": "device_name_sofa_two_HM",
+    "scope": "EXCLUDED",
+    "disposition": "REACHABLE",
+    "scope_reason": "Non-bed product catalog, EXCLUDED from bed integration product boundary",
+    "content_sha256": "8ddaf350a73b4aab452f3f533da65fcc9de4aab0a04aaddf4c95dd1004d58804",
+    "show_alarm_sleep": false,
+    "button_config": "f0M1LedM2",
+    "graphics": [
+      "sofa_big_unselect",
+      "sofa_big_backfootheadmiddle",
+      "sofa_big_foot",
+      "sofa_big_backheadmiddle"
+    ],
+    "orders": {
+      "oup": [
+        272,
+        257,
+        261
+      ],
+      "odown": [
+        273,
+        258,
+        262
+      ],
+      "ostop": [
+        1,
+        256,
+        260
+      ]
+    },
+    "confidence": "VERIFIED"
+  },
+  {
+    "id": "1074",
+    "selector": "manufacturerSpecificData.keyAt(0) == 1074",
+    "page": "SofaOne3BtnActivity",
+    "name_index": 34,
+    "order": 4,
+    "source": "sources/com/ykd/newuieasyc/initDataUtil/BDUtils.java:98",
+    "source_row": "put(1074, new BD(DeviceNameUtil.dname[34], ImageUtils.icon[3], ImageUtils.bigsofaimage[0], ImageUtils.smallsofaimage[0], 0, ImageUtils.img_sofa_flat[0], 0, PageUtils.intentclass[3], true, OrderUtil.oup[4], OrderUtil.odown[4], OrderUtil.ostop[4], ImageUtils.keydes_sofa, StringUtils.keydes_sofa_text, StringUtils.troubleshoot_sofa_question, StringUtils.troubleshoot_sofa_analyse, StringUtils.troubleshoot_sofa_solve, ButtonUtils.f15M1M2));",
+    "registration_id": "registration-081-1074",
+    "name_resource": "device_name_sofa_one_motor_h",
+    "scope": "EXCLUDED",
+    "disposition": "REACHABLE",
+    "scope_reason": "Non-bed product catalog, EXCLUDED from bed integration product boundary",
+    "content_sha256": "3c48c22c7eaab1ff19d49bf39daa19b591913252e5cd5b4dd7ad00ca0633302f",
+    "show_alarm_sleep": true,
+    "button_config": "f15M1M2",
+    "graphics": [
+      "sofa_big_unselect",
+      "sofa_big_backfootheadmiddle"
+    ],
+    "orders": {
+      "oup": [
+        272
+      ],
+      "odown": [
+        273
+      ],
+      "ostop": [
+        1
+      ]
+    },
+    "confidence": "VERIFIED"
+  },
+  {
+    "id": "1075",
+    "selector": "manufacturerSpecificData.keyAt(0) == 1075",
+    "page": "SofaOne3BtnActivity",
+    "name_index": 51,
+    "order": 4,
+    "source": "sources/com/ykd/newuieasyc/initDataUtil/BDUtils.java:99",
+    "source_row": "put(1075, new BD(DeviceNameUtil.dname[51], ImageUtils.icon[3], ImageUtils.bigsofaimage[0], ImageUtils.smallsofaimage[0], 0, ImageUtils.img_sofa_flat[0], 0, PageUtils.intentclass[3], false, OrderUtil.oup[4], OrderUtil.odown[4], OrderUtil.ostop[4], ImageUtils.keydes_sofa, StringUtils.keydes_sofa_text, StringUtils.troubleshoot_sofa_question, StringUtils.troubleshoot_sofa_analyse, StringUtils.troubleshoot_sofa_solve, ButtonUtils.f19M1M2));",
+    "registration_id": "registration-082-1075",
+    "name_resource": "device_name_sofa_ZM",
+    "scope": "EXCLUDED",
+    "disposition": "REACHABLE",
+    "scope_reason": "Non-bed product catalog, EXCLUDED from bed integration product boundary",
+    "content_sha256": "c1b7165570e2bc6d4707b91f58d8677ea7121b0ddd71ca79c814020aa302c07e",
+    "show_alarm_sleep": false,
+    "button_config": "f19M1M2",
+    "graphics": [
+      "sofa_big_unselect",
+      "sofa_big_backfootheadmiddle"
+    ],
+    "orders": {
+      "oup": [
+        272
+      ],
+      "odown": [
+        273
+      ],
+      "ostop": [
+        1
+      ]
+    },
+    "confidence": "VERIFIED"
+  },
+  {
+    "id": "1076",
+    "selector": "manufacturerSpecificData.keyAt(0) == 1076",
+    "page": "SofaMore3BtnActivity",
+    "name_index": 52,
+    "order": 0,
+    "source": "sources/com/ykd/newuieasyc/initDataUtil/BDUtils.java:100",
+    "source_row": "put(1076, new BD(DeviceNameUtil.dname[52], ImageUtils.icon[3], ImageUtils.bigsofaimage[2], ImageUtils.smallsofaimage[2], 0, ImageUtils.img_sofa_flat[0], 0, PageUtils.intentclass[9], false, OrderUtil.oup[0], OrderUtil.odown[0], OrderUtil.ostop[0], ImageUtils.keydes_sofa, StringUtils.keydes_sofa_text, StringUtils.troubleshoot_sofa_question, StringUtils.troubleshoot_sofa_analyse, StringUtils.troubleshoot_sofa_solve, ButtonUtils.f19M1M2));",
+    "registration_id": "registration-083-1076",
+    "name_resource": "device_name_sofa_two_motor_M",
+    "scope": "EXCLUDED",
+    "disposition": "REACHABLE",
+    "scope_reason": "Non-bed product catalog, EXCLUDED from bed integration product boundary",
+    "content_sha256": "a0abb36e7e2bc0899fe69f845f034c082baae9c24050956a001204845d78402b",
+    "show_alarm_sleep": false,
+    "button_config": "f19M1M2",
+    "graphics": [
+      "sofa_big_unselect",
+      "sofa_big_backfootheadmiddle",
+      "sofa_big_foot",
+      "sofa_big_backheadmiddle"
+    ],
+    "orders": {
+      "oup": [
+        272,
+        257,
+        261
+      ],
+      "odown": [
+        273,
+        258,
+        262
+      ],
+      "ostop": [
+        1,
+        256,
+        260
+      ]
+    },
+    "confidence": "VERIFIED"
+  },
+  {
+    "id": "1077",
+    "selector": "manufacturerSpecificData.keyAt(0) == 1077",
+    "page": "SofaOneSeatFrontPush",
+    "name_index": 53,
+    "order": 4,
+    "source": "sources/com/ykd/newuieasyc/initDataUtil/BDUtils.java:101",
+    "source_row": "put(1077, new BD(DeviceNameUtil.dname[53], ImageUtils.icon[23], ImageUtils.bigsofaimage[11], ImageUtils.smallsofaimage[0], 0, ImageUtils.img_sofa_flat[6], 0, PageUtils.intentclass[39], false, OrderUtil.oup[4], OrderUtil.odown[4], OrderUtil.ostop[4], ImageUtils.keydes_sofa_bed, StringUtils.keydes_sofa_bed_text, StringUtils.troubleshoot_sofa_bed__question, StringUtils.troubleshoot_sofa_bed_analyse, StringUtils.troubleshoot_sofa_bed_solve, ButtonUtils.M1M2));",
+    "registration_id": "registration-084-1077",
+    "name_resource": "device_name_sofa_bed",
+    "scope": "DIRECT_BED",
+    "disposition": "REACHABLE",
+    "scope_reason": "Direct bed/sofa-bed resources in registration",
+    "content_sha256": "716c2fabfe8db607b7beb8f1890acebdd1bea4ae88ac5c004bc03fb8cb3c406f",
+    "show_alarm_sleep": false,
+    "button_config": "M1M2",
+    "graphics": [
+      "sofa_bed_unselect",
+      "sofa_bed_select"
+    ],
+    "orders": {
+      "oup": [
+        272
+      ],
+      "odown": [
+        273
+      ],
+      "ostop": [
+        1
+      ]
+    },
+    "confidence": "VERIFIED"
+  },
+  {
+    "id": "1079",
+    "selector": "manufacturerSpecificData.keyAt(0) == 1079",
+    "page": "SofaMore3BtnActivity",
+    "name_index": 59,
+    "order": 1,
+    "source": "sources/com/ykd/newuieasyc/initDataUtil/BDUtils.java:102",
+    "source_row": "put(1079, new BD(DeviceNameUtil.dname[59], ImageUtils.icon[3], ImageUtils.bigsofaimage[4], ImageUtils.smallsofaimage[4], 0, ImageUtils.img_sofa_flat[0], 0, PageUtils.intentclass[9], false, OrderUtil.oup[1], OrderUtil.odown[1], OrderUtil.ostop[1], ImageUtils.keydes_sofa, StringUtils.keydes_sofa_text, StringUtils.troubleshoot_sofa_question, StringUtils.troubleshoot_sofa_analyse, StringUtils.troubleshoot_sofa_solve, ButtonUtils.f19M1M2));",
+    "registration_id": "registration-085-1079",
+    "name_resource": "device_name_sofa_three_motor_M",
+    "scope": "EXCLUDED",
+    "disposition": "REACHABLE",
+    "scope_reason": "Non-bed product catalog, EXCLUDED from bed integration product boundary",
+    "content_sha256": "6e8f34e83db6661b6ad37094fe8b2a0cb3687c66fa61cfacf57f0744bd016b61",
+    "show_alarm_sleep": false,
+    "button_config": "f19M1M2",
+    "graphics": [
+      "sofa_big_unselect",
+      "sofa_big_backfootheadmiddle",
+      "sofa_big_head",
+      "sofa_big_middle",
+      "sofa_big_backfoot"
+    ],
+    "orders": {
+      "oup": [
+        272,
+        257,
+        261,
+        265
+      ],
+      "odown": [
+        273,
+        258,
+        262,
+        266
+      ],
+      "ostop": [
+        1,
+        256,
+        260,
+        264
+      ]
+    },
+    "confidence": "VERIFIED"
+  },
+  {
+    "id": "1080",
+    "selector": "manufacturerSpecificData.keyAt(0) == 1080",
+    "page": "SofaMore22BtnActivity",
+    "name_index": 49,
+    "order": 0,
+    "source": "sources/com/ykd/newuieasyc/initDataUtil/BDUtils.java:103",
+    "source_row": "put(1080, new BD(DeviceNameUtil.dname[49], ImageUtils.icon[3], ImageUtils.bigsofaimage[1], ImageUtils.smallsofaimage[1], 0, ImageUtils.img_sofa_flat[0], 0, PageUtils.intentclass[6], false, OrderUtil.oup[0], OrderUtil.odown[0], OrderUtil.ostop[0], ImageUtils.keydes_sofa, StringUtils.keydes_sofa_text, StringUtils.troubleshoot_sofa_question, StringUtils.troubleshoot_sofa_analyse, StringUtils.troubleshoot_sofa_solve, ButtonUtils.f9M1M2));",
+    "registration_id": "registration-086-1080",
+    "name_resource": "device_name_sofa_two_HM",
+    "scope": "EXCLUDED",
+    "disposition": "REACHABLE",
+    "scope_reason": "Non-bed product catalog, EXCLUDED from bed integration product boundary",
+    "content_sha256": "9ae6672b7adc3f0b13316f82558ccdb826ca53b2eac9b577cc200f599ea6484c",
+    "show_alarm_sleep": false,
+    "button_config": "f9M1M2",
+    "graphics": [
+      "sofa_big_unselect",
+      "sofa_big_backfootheadmiddle",
+      "sofa_big_head",
+      "sofa_big_backfootmiddle"
+    ],
+    "orders": {
+      "oup": [
+        272,
+        257,
+        261
+      ],
+      "odown": [
+        273,
+        258,
+        262
+      ],
+      "ostop": [
+        1,
+        256,
+        260
+      ]
+    },
+    "confidence": "VERIFIED"
+  },
+  {
+    "id": "1081",
+    "selector": "manufacturerSpecificData.keyAt(0) == 1081",
+    "page": "SofaMore22BtnActivity",
+    "name_index": 60,
+    "order": 1,
+    "source": "sources/com/ykd/newuieasyc/initDataUtil/BDUtils.java:104",
+    "source_row": "put(1081, new BD(DeviceNameUtil.dname[60], ImageUtils.icon[3], ImageUtils.bigsofaimage[12], ImageUtils.smallsofaimage[10], 0, ImageUtils.img_sofa_flat[0], 0, PageUtils.intentclass[6], false, OrderUtil.oup[1], OrderUtil.odown[1], OrderUtil.ostop[1], ImageUtils.keydes_sofa, StringUtils.keydes_sofa_text, StringUtils.troubleshoot_sofa_question, StringUtils.troubleshoot_sofa_analyse, StringUtils.troubleshoot_sofa_solve, ButtonUtils.f9M1M2));",
+    "registration_id": "registration-087-1081",
+    "name_resource": "device_name_sofa_three_motor_HM",
+    "scope": "EXCLUDED",
+    "disposition": "REACHABLE",
+    "scope_reason": "Non-bed product catalog, EXCLUDED from bed integration product boundary",
+    "content_sha256": "1265b49a48a4b8c315ab37bb842d1bea33e0c293ad8f77ac05a395620884eef8",
+    "show_alarm_sleep": false,
+    "button_config": "f9M1M2",
+    "graphics": [
+      "sofa_big_unselect",
+      "sofa_big_backfootheadmiddle",
+      "sofa_big_head",
+      "sofa_big_backmiddle",
+      "sofa_big_foot"
+    ],
+    "orders": {
+      "oup": [
+        272,
+        257,
+        261,
+        265
+      ],
+      "odown": [
+        273,
+        258,
+        262,
+        266
+      ],
+      "ostop": [
+        1,
+        256,
+        260,
+        264
+      ]
+    },
+    "confidence": "VERIFIED"
+  },
+  {
+    "id": "1082",
+    "selector": "manufacturerSpecificData.keyAt(0) == 1082",
+    "page": "SofaMore21BtnActivity",
+    "name_index": 7,
+    "order": 0,
+    "source": "sources/com/ykd/newuieasyc/initDataUtil/BDUtils.java:105",
+    "source_row": "put(1082, new BD(DeviceNameUtil.dname[7], ImageUtils.icon[3], ImageUtils.bigsofaimage[2], ImageUtils.smallsofaimage[2], 0, ImageUtils.img_sofa_flat[0], 0, PageUtils.intentclass[5], false, OrderUtil.oup[0], OrderUtil.odown[0], OrderUtil.ostop[0], ImageUtils.keydes_sofa, StringUtils.keydes_sofa_text, StringUtils.troubleshoot_sofa_question, StringUtils.troubleshoot_sofa_analyse, StringUtils.troubleshoot_sofa_solve, ButtonUtils.f7M1M2RgbLed));",
+    "registration_id": "registration-088-1082",
+    "name_resource": "device_name_sofa_two_motor_l",
+    "scope": "EXCLUDED",
+    "disposition": "REACHABLE",
+    "scope_reason": "Non-bed product catalog, EXCLUDED from bed integration product boundary",
+    "content_sha256": "37b91b53873df38ec6e916012737515b3e32e160292faac7dfb588c76060b350",
+    "show_alarm_sleep": false,
+    "button_config": "f7M1M2RgbLed",
+    "graphics": [
+      "sofa_big_unselect",
+      "sofa_big_backfootheadmiddle",
+      "sofa_big_foot",
+      "sofa_big_backheadmiddle"
+    ],
+    "orders": {
+      "oup": [
+        272,
+        257,
+        261
+      ],
+      "odown": [
+        273,
+        258,
+        262
+      ],
+      "ostop": [
+        1,
+        256,
+        260
+      ]
+    },
+    "confidence": "VERIFIED"
+  },
+  {
+    "id": "1083",
+    "selector": "manufacturerSpecificData.keyAt(0) == 1083",
+    "page": "SofaMore22BtnActivity",
+    "name_index": 58,
+    "order": 0,
+    "source": "sources/com/ykd/newuieasyc/initDataUtil/BDUtils.java:106",
+    "source_row": "put(1083, new BD(DeviceNameUtil.dname[58], ImageUtils.icon[3], ImageUtils.bigsofaimage[2], ImageUtils.smallsofaimage[2], 0, ImageUtils.img_sofa_flat[0], 0, PageUtils.intentclass[6], false, OrderUtil.oup[0], OrderUtil.odown[0], OrderUtil.ostop[0], ImageUtils.keydes_sofa, StringUtils.keydes_sofa_text, StringUtils.troubleshoot_sofa_question, StringUtils.troubleshoot_sofa_analyse, StringUtils.troubleshoot_sofa_solve, ButtonUtils.f6M1M2Led));",
+    "registration_id": "registration-089-1083",
+    "name_resource": "device_name_sofa_two_motor_ml",
+    "scope": "EXCLUDED",
+    "disposition": "REACHABLE",
+    "scope_reason": "Non-bed product catalog, EXCLUDED from bed integration product boundary",
+    "content_sha256": "22b88a52c13fbaa916ec3c4ca4968c8b2a9e29368d631810ddcde62a5309835f",
+    "show_alarm_sleep": false,
+    "button_config": "f6M1M2Led",
+    "graphics": [
+      "sofa_big_unselect",
+      "sofa_big_backfootheadmiddle",
+      "sofa_big_foot",
+      "sofa_big_backheadmiddle"
+    ],
+    "orders": {
+      "oup": [
+        272,
+        257,
+        261
+      ],
+      "odown": [
+        273,
+        258,
+        262
+      ],
+      "ostop": [
+        1,
+        256,
+        260
+      ]
+    },
+    "confidence": "VERIFIED"
+  },
+  {
+    "id": "1084",
+    "selector": "manufacturerSpecificData.keyAt(0) == 1084",
+    "page": "SofaMore2BtnActivity",
+    "name_index": 63,
+    "order": 0,
+    "source": "sources/com/ykd/newuieasyc/initDataUtil/BDUtils.java:107",
+    "source_row": "put(1084, new BD(DeviceNameUtil.dname[63], ImageUtils.icon[27], ImageUtils.bigsofaimage[13], null, 0, ImageUtils.img_sofa_flat[4], 0, PageUtils.intentclass[4], false, OrderUtil.oup[0], OrderUtil.odown[0], OrderUtil.ostop[0], ImageUtils.keydes_sofa, StringUtils.keydes_sofa_text, StringUtils.troubleshoot_sofa_question, StringUtils.troubleshoot_sofa_analyse, StringUtils.troubleshoot_sofa_solve, ButtonUtils.M1M2));",
+    "registration_id": "registration-090-1084",
+    "name_resource": "device_name_sofa_two_push",
+    "scope": "EXCLUDED",
+    "disposition": "REACHABLE",
+    "scope_reason": "Non-bed product catalog, EXCLUDED from bed integration product boundary",
+    "content_sha256": "e466bf767b8518da0f20bfed580ac8574e4aa6774f2e1430b4c93fae8c52ca11",
+    "show_alarm_sleep": false,
+    "button_config": "M1M2",
+    "graphics": [
+      "sofa_two_all_unselectd",
+      "sofa_two_all",
+      "sofa_two_pos1",
+      "sofa_two_pos2"
+    ],
+    "orders": {
+      "oup": [
+        272,
+        257,
+        261
+      ],
+      "odown": [
+        273,
+        258,
+        262
+      ],
+      "ostop": [
+        1,
+        256,
+        260
+      ]
+    },
+    "confidence": "VERIFIED"
+  },
+  {
+    "id": "1085",
+    "selector": "manufacturerSpecificData.keyAt(0) == 1085",
+    "page": "SofaOne21BtnActivity",
+    "name_index": 4,
+    "order": 4,
+    "source": "sources/com/ykd/newuieasyc/initDataUtil/BDUtils.java:108",
+    "source_row": "put(1085, new BD(DeviceNameUtil.dname[4], ImageUtils.icon[3], ImageUtils.bigsofaimage[0], ImageUtils.smallsofaimage[0], 0, ImageUtils.img_sofa_flat[0], 0, PageUtils.intentclass[1], false, OrderUtil.oup[4], OrderUtil.odown[4], OrderUtil.ostop[4], ImageUtils.keydes_sofa, StringUtils.keydes_sofa_text, StringUtils.troubleshoot_sofa_question, StringUtils.troubleshoot_sofa_analyse, StringUtils.troubleshoot_sofa_solve, ButtonUtils.f7M1M2RgbLed));",
+    "registration_id": "registration-091-1085",
+    "name_resource": "device_name_sofa_one_motor_l",
+    "scope": "EXCLUDED",
+    "disposition": "REACHABLE",
+    "scope_reason": "Non-bed product catalog, EXCLUDED from bed integration product boundary",
+    "content_sha256": "2d7db21f0b2aa99bb4ba2a185e36aaf7fb1924c9ea69e7e9fc37b9beafc28170",
+    "show_alarm_sleep": false,
+    "button_config": "f7M1M2RgbLed",
+    "graphics": [
+      "sofa_big_unselect",
+      "sofa_big_backfootheadmiddle"
+    ],
+    "orders": {
+      "oup": [
+        272
+      ],
+      "odown": [
+        273
+      ],
+      "ostop": [
+        1
+      ]
+    },
+    "confidence": "VERIFIED"
+  },
+  {
+    "id": "1086",
+    "selector": "manufacturerSpecificData.keyAt(0) == 1086",
+    "page": "SofaOne3BtnActivity",
+    "name_index": 51,
+    "order": 4,
+    "source": "sources/com/ykd/newuieasyc/initDataUtil/BDUtils.java:109",
+    "source_row": "put(1086, new BD(DeviceNameUtil.dname[51], ImageUtils.icon[3], ImageUtils.bigsofaimage[0], ImageUtils.smallsofaimage[0], 0, ImageUtils.img_sofa_flat[0], 1, PageUtils.intentclass[3], false, OrderUtil.oup[4], OrderUtil.odown[4], OrderUtil.ostop[4], ImageUtils.keydes_sofa, StringUtils.keydes_sofa_text, StringUtils.troubleshoot_sofa_question, StringUtils.troubleshoot_sofa_analyse, StringUtils.troubleshoot_sofa_solve, ButtonUtils.f16M1M2));",
+    "registration_id": "registration-092-1086",
+    "name_resource": "device_name_sofa_ZM",
+    "scope": "EXCLUDED",
+    "disposition": "REACHABLE",
+    "scope_reason": "Non-bed product catalog, EXCLUDED from bed integration product boundary",
+    "content_sha256": "07d0fc1c99d39323ea5b85c5afaab2093202a6c6ba0769ae2da14d557a46adb3",
+    "show_alarm_sleep": false,
+    "button_config": "f16M1M2",
+    "graphics": [
+      "sofa_big_unselect",
+      "sofa_big_backfootheadmiddle"
+    ],
+    "orders": {
+      "oup": [
+        272
+      ],
+      "odown": [
+        273
+      ],
+      "ostop": [
+        1
+      ]
+    },
+    "confidence": "VERIFIED"
+  },
+  {
+    "id": "1088",
+    "selector": "manufacturerSpecificData.keyAt(0) == 1088",
+    "page": "SofaMore3BtnActivity",
+    "name_index": 52,
+    "order": 0,
+    "source": "sources/com/ykd/newuieasyc/initDataUtil/BDUtils.java:110",
+    "source_row": "put(1088, new BD(DeviceNameUtil.dname[52], ImageUtils.icon[3], ImageUtils.bigsofaimage[2], ImageUtils.smallsofaimage[2], 0, ImageUtils.img_sofa_flat[0], 0, PageUtils.intentclass[9], false, OrderUtil.oup[0], OrderUtil.odown[0], OrderUtil.ostop[0], ImageUtils.keydes_sofa, StringUtils.keydes_sofa_text, StringUtils.troubleshoot_sofa_question, StringUtils.troubleshoot_sofa_analyse, StringUtils.troubleshoot_sofa_solve, ButtonUtils.f16M1M2));",
+    "registration_id": "registration-093-1088",
+    "name_resource": "device_name_sofa_two_motor_M",
+    "scope": "EXCLUDED",
+    "disposition": "REACHABLE",
+    "scope_reason": "Non-bed product catalog, EXCLUDED from bed integration product boundary",
+    "content_sha256": "23cbf9a7a5501cf02960569ca2bef0bbd644473d7b7e0356316a05031612722e",
+    "show_alarm_sleep": false,
+    "button_config": "f16M1M2",
+    "graphics": [
+      "sofa_big_unselect",
+      "sofa_big_backfootheadmiddle",
+      "sofa_big_foot",
+      "sofa_big_backheadmiddle"
+    ],
+    "orders": {
+      "oup": [
+        272,
+        257,
+        261
+      ],
+      "odown": [
+        273,
+        258,
+        262
+      ],
+      "ostop": [
+        1,
+        256,
+        260
+      ]
+    },
+    "confidence": "VERIFIED"
+  },
+  {
+    "id": "1089",
+    "selector": "manufacturerSpecificData.keyAt(0) == 1089",
+    "page": "SofaMore3233BtnActivity",
+    "name_index": 9,
+    "order": 1,
+    "source": "sources/com/ykd/newuieasyc/initDataUtil/BDUtils.java:111",
+    "source_row": "put(1089, new BD(DeviceNameUtil.dname[9], ImageUtils.icon[3], ImageUtils.bigsofaimage[4], ImageUtils.smallsofaimage[4], 0, ImageUtils.img_sofa_flat[0], 0, PageUtils.intentclass[34], false, OrderUtil.oup[1], OrderUtil.odown[1], OrderUtil.ostop[1], ImageUtils.keydes_sofa, StringUtils.keydes_sofa_text, StringUtils.troubleshoot_sofa_question, StringUtils.troubleshoot_sofa_analyse, StringUtils.troubleshoot_sofa_solve, ButtonUtils.f3M1M2M3LED));",
+    "registration_id": "registration-094-1089",
+    "name_resource": "device_name_sofa_three_motor_hml",
+    "scope": "EXCLUDED",
+    "disposition": "REACHABLE",
+    "scope_reason": "Non-bed product catalog, EXCLUDED from bed integration product boundary",
+    "content_sha256": "733a4fda41d8db829b690c1d02b1bface6b246bdf4fe5a4e357a6e6597d1389a",
+    "show_alarm_sleep": false,
+    "button_config": "f3M1M2M3LED",
+    "graphics": [
+      "sofa_big_unselect",
+      "sofa_big_backfootheadmiddle",
+      "sofa_big_head",
+      "sofa_big_middle",
+      "sofa_big_backfoot"
+    ],
+    "orders": {
+      "oup": [
+        272,
+        257,
+        261,
+        265
+      ],
+      "odown": [
+        273,
+        258,
+        262,
+        266
+      ],
+      "ostop": [
+        1,
+        256,
+        260,
+        264
+      ]
+    },
+    "confidence": "VERIFIED"
+  },
+  {
+    "id": "1090",
+    "selector": "manufacturerSpecificData.keyAt(0) == 1090",
+    "page": "SofaOne22BtnActivity",
+    "name_index": 64,
+    "order": 4,
+    "source": "sources/com/ykd/newuieasyc/initDataUtil/BDUtils.java:112",
+    "source_row": "put(1090, new BD(DeviceNameUtil.dname[64], ImageUtils.icon[28], ImageUtils.bigsofaimage[14], ImageUtils.smallsofaimage[11], 0, ImageUtils.img_sofa_flat[0], 0, PageUtils.intentclass[10], false, OrderUtil.oup[4], OrderUtil.odown[4], OrderUtil.ostop[4], ImageUtils.keydes_sofa, StringUtils.keydes_sofa_text, StringUtils.troubleshoot_sofa_question, StringUtils.troubleshoot_sofa_analyse, StringUtils.troubleshoot_sofa_solve, ButtonUtils.f11M1M2));",
+    "registration_id": "registration-095-1090",
+    "name_resource": "device_name_sofa_one_rock",
+    "scope": "EXCLUDED",
+    "disposition": "REACHABLE",
+    "scope_reason": "Non-bed product catalog, EXCLUDED from bed integration product boundary",
+    "content_sha256": "ca88875aa8d81ee7109359ca43b213158a0bdfd8f990c13569f0bc55d3ca59b5",
+    "show_alarm_sleep": false,
+    "button_config": "f11M1M2",
+    "graphics": [
+      "sofa_one_yb",
+      "sofa_one_yb_select"
+    ],
+    "orders": {
+      "oup": [
+        272
+      ],
+      "odown": [
+        273
+      ],
+      "ostop": [
+        1
+      ]
+    },
+    "confidence": "VERIFIED"
+  },
+  {
+    "id": "1091",
+    "selector": "manufacturerSpecificData.keyAt(0) == 1091",
+    "page": "SofaFourSeatFrontPush",
+    "name_index": 65,
+    "order": 3,
+    "source": "sources/com/ykd/newuieasyc/initDataUtil/BDUtils.java:113",
+    "source_row": "put(1091, new BD(DeviceNameUtil.dname[65], ImageUtils.icon[29], ImageUtils.bigsofaimage[15], null, 0, ImageUtils.img_sofa_flat[5], 0, PageUtils.intentclass[35], false, OrderUtil.oup[3], OrderUtil.odown[3], OrderUtil.ostop[3], ImageUtils.keydes_sofa_bed, StringUtils.keydes_sofa_bed_text, StringUtils.troubleshoot_sofa_bed__question, StringUtils.troubleshoot_sofa_bed_analyse, StringUtils.troubleshoot_sofa_bed_solve, ButtonUtils.Null));",
+    "registration_id": "registration-096-1091",
+    "name_resource": "device_name_sofa_four_push",
+    "scope": "DIRECT_BED",
+    "disposition": "REACHABLE",
+    "scope_reason": "Direct bed/sofa-bed resources in registration",
+    "content_sha256": "a6fdb01b7a74e6a6e348a2f2aaa2c9249dbb8f17cd8825f71a4777715f6f8d43",
+    "show_alarm_sleep": false,
+    "button_config": "Null",
+    "graphics": [
+      "sofa_four_pos1",
+      "sofa_four_pos2",
+      "sofa_four_pos3",
+      "sofa_four_pos4",
+      "sofa_four_all",
+      "sofa_four_all_unselectd"
+    ],
+    "orders": {
+      "oup": [
+        272,
+        257,
+        261,
+        265,
+        269
+      ],
+      "odown": [
+        273,
+        258,
+        262,
+        266,
+        270
+      ],
+      "ostop": [
+        1,
+        256,
+        260,
+        264,
+        268
+      ]
+    },
+    "confidence": "VERIFIED"
+  },
+  {
+    "id": "1093",
+    "selector": "manufacturerSpecificData.keyAt(0) == 1093",
+    "page": "SofaOne22BtnActivity",
+    "name_index": 66,
+    "order": 4,
+    "source": "sources/com/ykd/newuieasyc/initDataUtil/BDUtils.java:114",
+    "source_row": "put(1093, new BD(DeviceNameUtil.dname[66], ImageUtils.icon[3], ImageUtils.bigsofaimage[0], ImageUtils.smallsofaimage[0], 0, ImageUtils.img_sofa_flat[0], 1, PageUtils.intentclass[10], false, OrderUtil.oup[4], OrderUtil.odown[4], OrderUtil.ostop[4], ImageUtils.keydes_sofa, StringUtils.keydes_sofa_text, StringUtils.troubleshoot_sofa_question, StringUtils.troubleshoot_sofa_analyse, StringUtils.troubleshoot_sofa_solve, ButtonUtils.f8M1M2));",
+    "registration_id": "registration-097-1093",
+    "name_resource": "device_name_sofa_one_motor_HM",
+    "scope": "EXCLUDED",
+    "disposition": "REACHABLE",
+    "scope_reason": "Non-bed product catalog, EXCLUDED from bed integration product boundary",
+    "content_sha256": "475a0bc3fbfaab2e781f6aacb8f938b7b8c558f539f56c016eafc853451e6b7d",
+    "show_alarm_sleep": false,
+    "button_config": "f8M1M2",
+    "graphics": [
+      "sofa_big_unselect",
+      "sofa_big_backfootheadmiddle"
+    ],
+    "orders": {
+      "oup": [
+        272
+      ],
+      "odown": [
+        273
+      ],
+      "ostop": [
+        1
+      ]
+    },
+    "confidence": "VERIFIED"
+  },
+  {
+    "id": "1094",
+    "selector": "manufacturerSpecificData.keyAt(0) == 1094",
+    "page": "SofaMore32BtnActivity",
+    "name_index": 6,
+    "order": 0,
+    "source": "sources/com/ykd/newuieasyc/initDataUtil/BDUtils.java:115",
+    "source_row": "put(1094, new BD(DeviceNameUtil.dname[6], ImageUtils.icon[3], ImageUtils.bigsofaimage[1], ImageUtils.smallsofaimage[1], 0, ImageUtils.img_sofa_flat[0], 0, PageUtils.intentclass[7], false, OrderUtil.oup[0], OrderUtil.odown[0], OrderUtil.ostop[0], ImageUtils.keydes_sofa, StringUtils.keydes_sofa_text, StringUtils.troubleshoot_sofa_question, StringUtils.troubleshoot_sofa_analyse, StringUtils.troubleshoot_sofa_solve, ButtonUtils.f14M1M2));",
+    "registration_id": "registration-098-1094",
+    "name_resource": "device_name_sofa_two_motor_hml",
+    "scope": "EXCLUDED",
+    "disposition": "REACHABLE",
+    "scope_reason": "Non-bed product catalog, EXCLUDED from bed integration product boundary",
+    "content_sha256": "9fcc12eaf3f13a25da66da626ead1fbefe81585880eff7ea334b525829744e1c",
+    "show_alarm_sleep": false,
+    "button_config": "f14M1M2",
+    "graphics": [
+      "sofa_big_unselect",
+      "sofa_big_backfootheadmiddle",
+      "sofa_big_head",
+      "sofa_big_backfootmiddle"
+    ],
+    "orders": {
+      "oup": [
+        272,
+        257,
+        261
+      ],
+      "odown": [
+        273,
+        258,
+        262
+      ],
+      "ostop": [
+        1,
+        256,
+        260
+      ]
+    },
+    "confidence": "VERIFIED"
+  },
+  {
+    "id": "1095",
+    "selector": "manufacturerSpecificData.keyAt(0) == 1095",
+    "page": "SofaMore3BtnActivity",
+    "name_index": 59,
+    "order": 1,
+    "source": "sources/com/ykd/newuieasyc/initDataUtil/BDUtils.java:116",
+    "source_row": "put(1095, new BD(DeviceNameUtil.dname[59], ImageUtils.icon[3], ImageUtils.bigsofaimage[4], ImageUtils.smallsofaimage[4], 0, ImageUtils.img_sofa_flat[0], 0, PageUtils.intentclass[9], false, OrderUtil.oup[1], OrderUtil.odown[1], OrderUtil.ostop[1], ImageUtils.keydes_sofa, StringUtils.keydes_sofa_text, StringUtils.troubleshoot_sofa_question, StringUtils.troubleshoot_sofa_analyse, StringUtils.troubleshoot_sofa_solve, ButtonUtils.f16M1M2));",
+    "registration_id": "registration-099-1095",
+    "name_resource": "device_name_sofa_three_motor_M",
+    "scope": "EXCLUDED",
+    "disposition": "REACHABLE",
+    "scope_reason": "Non-bed product catalog, EXCLUDED from bed integration product boundary",
+    "content_sha256": "f2ff19b52f2a318cbf5ad89325a8c6619d2c4707464602115bb374d0cf8f4a81",
+    "show_alarm_sleep": false,
+    "button_config": "f16M1M2",
+    "graphics": [
+      "sofa_big_unselect",
+      "sofa_big_backfootheadmiddle",
+      "sofa_big_head",
+      "sofa_big_middle",
+      "sofa_big_backfoot"
+    ],
+    "orders": {
+      "oup": [
+        272,
+        257,
+        261,
+        265
+      ],
+      "odown": [
+        273,
+        258,
+        262,
+        266
+      ],
+      "ostop": [
+        1,
+        256,
+        260,
+        264
+      ]
+    },
+    "confidence": "VERIFIED"
+  },
+  {
+    "id": "1101",
+    "selector": "manufacturerSpecificData.keyAt(0) == 1101",
+    "page": "SofaMore0BtnActivity",
+    "name_index": 63,
+    "order": 0,
+    "source": "sources/com/ykd/newuieasyc/initDataUtil/BDUtils.java:117",
+    "source_row": "put(1101, new BD(DeviceNameUtil.dname[63], ImageUtils.icon[27], ImageUtils.bigsofaimage[13], null, 0, ImageUtils.img_sofa_flat[4], 0, PageUtils.intentclass[46], false, OrderUtil.oup[0], OrderUtil.odown[0], OrderUtil.ostop[0], ImageUtils.keydes_sofa, StringUtils.keydes_sofa_text, StringUtils.troubleshoot_sofa_question, StringUtils.troubleshoot_sofa_analyse, StringUtils.troubleshoot_sofa_solve, ButtonUtils.Null));",
+    "registration_id": "registration-100-1101",
+    "name_resource": "device_name_sofa_two_push",
+    "scope": "EXCLUDED",
+    "disposition": "REACHABLE",
+    "scope_reason": "Non-bed product catalog, EXCLUDED from bed integration product boundary",
+    "content_sha256": "33e373415e915e673e309f9c8cd937941ed6186096ad6b8906f359367d12f367",
+    "show_alarm_sleep": false,
+    "button_config": "Null",
+    "graphics": [
+      "sofa_two_all_unselectd",
+      "sofa_two_all",
+      "sofa_two_pos1",
+      "sofa_two_pos2"
+    ],
+    "orders": {
+      "oup": [
+        272,
+        257,
+        261
+      ],
+      "odown": [
+        273,
+        258,
+        262
+      ],
+      "ostop": [
+        1,
+        256,
+        260
+      ]
+    },
+    "confidence": "VERIFIED"
+  },
+  {
+    "id": "1102",
+    "selector": "manufacturerSpecificData.keyAt(0) == 1102",
+    "page": "SofaMore0BtnActivity",
+    "name_index": 41,
+    "order": 1,
+    "source": "sources/com/ykd/newuieasyc/initDataUtil/BDUtils.java:118",
+    "source_row": "put(1102, new BD(DeviceNameUtil.dname[41], ImageUtils.icon[15], ImageUtils.bigsofaimage[8], null, 0, ImageUtils.img_sofa_flat[1], 0, PageUtils.intentclass[46], false, OrderUtil.oup[1], OrderUtil.odown[1], OrderUtil.ostop[1], ImageUtils.keydes_sofa, StringUtils.keydes_sofa_text, StringUtils.troubleshoot_sofa_question, StringUtils.troubleshoot_sofa_analyse, StringUtils.troubleshoot_sofa_solve, ButtonUtils.Null));",
+    "registration_id": "registration-101-1102",
+    "name_resource": "device_name_sofa_three_push",
+    "scope": "EXCLUDED",
+    "disposition": "DEAD/UNUSED",
+    "scope_reason": "Overwritten by later registration with identical manufacturer key",
+    "content_sha256": "47df2dc66c5dcd59b860cf16eb2cc7e26a0b6351b7e7815e0a91c3bb3a23f3c4",
+    "show_alarm_sleep": false,
+    "button_config": "Null",
+    "graphics": [
+      "sofa_three_all",
+      "sofa_three_all_unselectd",
+      "sofa_three_pos1",
+      "sofa_three_pos2",
+      "sofa_three_pos3"
+    ],
+    "orders": {
+      "oup": [
+        272,
+        257,
+        261,
+        265
+      ],
+      "odown": [
+        273,
+        258,
+        262,
+        266
+      ],
+      "ostop": [
+        1,
+        256,
+        260,
+        264
+      ]
+    },
+    "confidence": "VERIFIED"
+  },
+  {
+    "id": "1102",
+    "selector": "manufacturerSpecificData.keyAt(0) == 1102",
+    "page": "SofaMore0BtnActivity",
+    "name_index": 65,
+    "order": 3,
+    "source": "sources/com/ykd/newuieasyc/initDataUtil/BDUtils.java:119",
+    "source_row": "put(1102, new BD(DeviceNameUtil.dname[65], ImageUtils.icon[29], ImageUtils.bigsofaimage[15], null, 0, ImageUtils.img_sofa_flat[5], 0, PageUtils.intentclass[46], false, OrderUtil.oup[3], OrderUtil.odown[3], OrderUtil.ostop[3], ImageUtils.keydes_sofa_bed, StringUtils.keydes_sofa_bed_text, StringUtils.troubleshoot_sofa_bed__question, StringUtils.troubleshoot_sofa_bed_analyse, StringUtils.troubleshoot_sofa_bed_solve, ButtonUtils.Null));",
+    "registration_id": "registration-102-1102",
+    "name_resource": "device_name_sofa_four_push",
+    "scope": "DIRECT_BED",
+    "disposition": "REACHABLE",
+    "scope_reason": "Direct bed/sofa-bed resources in registration",
+    "content_sha256": "204601431e8baf7c436b2f34808d47bee0724d46c719ba6aaa178cc4bf5db2e0",
+    "show_alarm_sleep": false,
+    "button_config": "Null",
+    "graphics": [
+      "sofa_four_pos1",
+      "sofa_four_pos2",
+      "sofa_four_pos3",
+      "sofa_four_pos4",
+      "sofa_four_all",
+      "sofa_four_all_unselectd"
+    ],
+    "orders": {
+      "oup": [
+        272,
+        257,
+        261,
+        265,
+        269
+      ],
+      "odown": [
+        273,
+        258,
+        262,
+        266,
+        270
+      ],
+      "ostop": [
+        1,
+        256,
+        260,
+        264,
+        268
+      ]
+    },
+    "confidence": "VERIFIED"
+  },
+  {
+    "id": "1104",
+    "selector": "manufacturerSpecificData.keyAt(0) == 1104",
+    "page": "SofaMore32BtnActivity",
+    "name_index": 6,
+    "order": 0,
+    "source": "sources/com/ykd/newuieasyc/initDataUtil/BDUtils.java:120",
+    "source_row": "put(1104, new BD(DeviceNameUtil.dname[6], ImageUtils.icon[3], ImageUtils.bigsofaimage[3], ImageUtils.smallsofaimage[3], 0, ImageUtils.img_sofa_flat[0], 0, PageUtils.intentclass[7], false, OrderUtil.oup[0], OrderUtil.odown[0], OrderUtil.ostop[0], ImageUtils.keydes_sofa, StringUtils.keydes_sofa_text, StringUtils.troubleshoot_sofa_question, StringUtils.troubleshoot_sofa_analyse, StringUtils.troubleshoot_sofa_solve, ButtonUtils.f17M1LedM2));",
+    "registration_id": "registration-103-1104",
+    "name_resource": "device_name_sofa_two_motor_hml",
+    "scope": "EXCLUDED",
+    "disposition": "REACHABLE",
+    "scope_reason": "Non-bed product catalog, EXCLUDED from bed integration product boundary",
+    "content_sha256": "de662f4c73b7cf2f27374975fdcd7c16137573f5854b386259746f40f886e451",
+    "show_alarm_sleep": false,
+    "button_config": "f17M1LedM2",
+    "graphics": [
+      "sofa_big_unselect",
+      "sofa_big_backfootheadmiddle",
+      "sofa_big_middle",
+      "sofa_big_backfoothead"
+    ],
+    "orders": {
+      "oup": [
+        272,
+        257,
+        261
+      ],
+      "odown": [
+        273,
+        258,
+        262
+      ],
+      "ostop": [
+        1,
+        256,
+        260
+      ]
+    },
+    "confidence": "VERIFIED"
+  },
+  {
+    "id": "1105",
+    "selector": "manufacturerSpecificData.keyAt(0) == 1105",
+    "page": "SofaMore32BtnActivity",
+    "name_index": 6,
+    "order": 0,
+    "source": "sources/com/ykd/newuieasyc/initDataUtil/BDUtils.java:121",
+    "source_row": "put(1105, new BD(DeviceNameUtil.dname[6], ImageUtils.icon[3], ImageUtils.bigsofaimage[3], ImageUtils.smallsofaimage[3], 0, ImageUtils.img_sofa_flat[0], 0, PageUtils.intentclass[7], false, OrderUtil.oup[0], OrderUtil.odown[0], OrderUtil.ostop[0], ImageUtils.keydes_sofa, StringUtils.keydes_sofa_text, StringUtils.troubleshoot_sofa_question, StringUtils.troubleshoot_sofa_analyse, StringUtils.troubleshoot_sofa_solve, ButtonUtils.f13M1rgbLedM2));",
+    "registration_id": "registration-104-1105",
+    "name_resource": "device_name_sofa_two_motor_hml",
+    "scope": "EXCLUDED",
+    "disposition": "REACHABLE",
+    "scope_reason": "Non-bed product catalog, EXCLUDED from bed integration product boundary",
+    "content_sha256": "0a9e85646b2510d6d5f6e15b936bb3fa688a82d8ae6121cf65c0f906df4d98cb",
+    "show_alarm_sleep": false,
+    "button_config": "f13M1rgbLedM2",
+    "graphics": [
+      "sofa_big_unselect",
+      "sofa_big_backfootheadmiddle",
+      "sofa_big_middle",
+      "sofa_big_backfoothead"
+    ],
+    "orders": {
+      "oup": [
+        272,
+        257,
+        261
+      ],
+      "odown": [
+        273,
+        258,
+        262
+      ],
+      "ostop": [
+        1,
+        256,
+        260
+      ]
+    },
+    "confidence": "VERIFIED"
+  },
+  {
+    "id": "1106",
+    "selector": "manufacturerSpecificData.keyAt(0) == 1106",
+    "page": "SofaMore32BtnActivity",
+    "name_index": 9,
+    "order": 1,
+    "source": "sources/com/ykd/newuieasyc/initDataUtil/BDUtils.java:122",
+    "source_row": "put(1106, new BD(DeviceNameUtil.dname[9], ImageUtils.icon[3], ImageUtils.bigsofaimage[4], ImageUtils.smallsofaimage[4], 0, ImageUtils.img_sofa_flat[0], 0, PageUtils.intentclass[7], false, OrderUtil.oup[1], OrderUtil.odown[1], OrderUtil.ostop[1], ImageUtils.keydes_sofa, StringUtils.keydes_sofa_text, StringUtils.troubleshoot_sofa_question, StringUtils.troubleshoot_sofa_analyse, StringUtils.troubleshoot_sofa_solve, ButtonUtils.f12M1rgbLedM2));",
+    "registration_id": "registration-105-1106",
+    "name_resource": "device_name_sofa_three_motor_hml",
+    "scope": "EXCLUDED",
+    "disposition": "REACHABLE",
+    "scope_reason": "Non-bed product catalog, EXCLUDED from bed integration product boundary",
+    "content_sha256": "ea996c261f8b8493c8b0ddb2ab55d200ef4d5edd405608ad3d2f77674f801b7b",
+    "show_alarm_sleep": false,
+    "button_config": "f12M1rgbLedM2",
+    "graphics": [
+      "sofa_big_unselect",
+      "sofa_big_backfootheadmiddle",
+      "sofa_big_head",
+      "sofa_big_middle",
+      "sofa_big_backfoot"
+    ],
+    "orders": {
+      "oup": [
+        272,
+        257,
+        261,
+        265
+      ],
+      "odown": [
+        273,
+        258,
+        262,
+        266
+      ],
+      "ostop": [
+        1,
+        256,
+        260,
+        264
+      ]
+    },
+    "confidence": "VERIFIED"
+  },
+  {
+    "id": "1121",
+    "selector": "manufacturerSpecificData.keyAt(0) == 1121",
+    "page": "SofaOne21BtnActivity",
+    "name_index": 4,
+    "order": 4,
+    "source": "sources/com/ykd/newuieasyc/initDataUtil/BDUtils.java:123",
+    "source_row": "put(1121, new BD(DeviceNameUtil.dname[4], ImageUtils.icon[3], ImageUtils.bigsofaimage[0], ImageUtils.smallsofaimage[0], 0, ImageUtils.img_sofa_flat[0], 0, PageUtils.intentclass[1], false, OrderUtil.oup[4], OrderUtil.odown[4], OrderUtil.ostop[4], ImageUtils.keydes_sofa, StringUtils.keydes_sofa_text, StringUtils.troubleshoot_sofa_question, StringUtils.troubleshoot_sofa_analyse, StringUtils.troubleshoot_sofa_solve, ButtonUtils.f7M1M2RgbLed));",
+    "registration_id": "registration-106-1121",
+    "name_resource": "device_name_sofa_one_motor_l",
+    "scope": "EXCLUDED",
+    "disposition": "REACHABLE",
+    "scope_reason": "Non-bed product catalog, EXCLUDED from bed integration product boundary",
+    "content_sha256": "0fe38439d0736d52ea30848688be736bfa33bed2741c306fed96e1dbc8bb6e25",
+    "show_alarm_sleep": false,
+    "button_config": "f7M1M2RgbLed",
+    "graphics": [
+      "sofa_big_unselect",
+      "sofa_big_backfootheadmiddle"
+    ],
+    "orders": {
+      "oup": [
+        272
+      ],
+      "odown": [
+        273
+      ],
+      "ostop": [
+        1
+      ]
+    },
+    "confidence": "VERIFIED"
+  },
+  {
+    "id": "1135",
+    "selector": "manufacturerSpecificData.keyAt(0) == 1135",
+    "page": "SofaMore22BtnActivity",
+    "name_index": 70,
+    "order": 3,
+    "source": "sources/com/ykd/newuieasyc/initDataUtil/BDUtils.java:124",
+    "source_row": "put(1135, new BD(DeviceNameUtil.dname[70], ImageUtils.icon[3], ImageUtils.bigsofaimage[18], ImageUtils.smallsofaimage[10], 0, ImageUtils.img_sofa_flat[0], 0, PageUtils.intentclass[6], false, OrderUtil.oup[3], OrderUtil.odown[3], OrderUtil.ostop[3], ImageUtils.keydes_sofa, StringUtils.keydes_sofa_text, StringUtils.troubleshoot_sofa_question, StringUtils.troubleshoot_sofa_analyse, StringUtils.troubleshoot_sofa_solve, ButtonUtils.f9M1M2));",
+    "registration_id": "registration-107-1135",
+    "name_resource": "device_name_sofa_four_motor_hm",
+    "scope": "EXCLUDED",
+    "disposition": "REACHABLE",
+    "scope_reason": "Non-bed product catalog, EXCLUDED from bed integration product boundary",
+    "content_sha256": "08dfafe95b7b6319ad61c0bf6b5f9748f68dda0c0ad01b0f9cba8e8941f3c491",
+    "show_alarm_sleep": false,
+    "button_config": "f9M1M2",
+    "graphics": [
+      "sofa_big_unselect",
+      "sofa_big_backfootheadmiddle",
+      "sofa_big_foot",
+      "sofa_big_back",
+      "sofa_big_head",
+      "sofa_big_middle"
+    ],
+    "orders": {
+      "oup": [
+        272,
+        257,
+        261,
+        265,
+        269
+      ],
+      "odown": [
+        273,
+        258,
+        262,
+        266,
+        270
+      ],
+      "ostop": [
+        1,
+        256,
+        260,
+        264,
+        268
+      ]
+    },
+    "confidence": "VERIFIED"
+  },
+  {
+    "id": "1501",
+    "selector": "manufacturerSpecificData.keyAt(0) == 1501",
+    "page": "Cup25BCRSActivity",
+    "name_index": 47,
+    "order": null,
+    "source": "sources/com/ykd/newuieasyc/initDataUtil/BDUtils.java:125",
+    "source_row": "put(1501, new BD(DeviceNameUtil.dname[47], ImageUtils.icon[10], ImageUtils.bigcupimage[0], null, 0, 0, 0, PageUtils.intentclass[18], false, null, null, null, ImageUtils.keydes_cup, StringUtils.keydes_cup_text, StringUtils.troubleshoot_cup_question, StringUtils.troubleshoot_cup_analyse, StringUtils.troubleshoot_cup_solve, ButtonUtils.Null));",
+    "registration_id": "registration-108-1501",
+    "name_resource": "device_name_cup_two_motor",
+    "scope": "EXCLUDED",
+    "disposition": "REACHABLE",
+    "scope_reason": "Non-bed product catalog, EXCLUDED from bed integration product boundary",
+    "content_sha256": "ee4ba71a905547d82051abb9b9bb488e291c0d6375b222a408c09b0f3ef38ebd",
+    "show_alarm_sleep": false,
+    "button_config": "Null",
+    "graphics": [],
+    "confidence": "VERIFIED"
+  },
+  {
+    "id": "1502",
+    "selector": "manufacturerSpecificData.keyAt(0) == 1502",
+    "page": "Cup25BCRActivity",
+    "name_index": 47,
+    "order": null,
+    "source": "sources/com/ykd/newuieasyc/initDataUtil/BDUtils.java:126",
+    "source_row": "put(1502, new BD(DeviceNameUtil.dname[47], ImageUtils.icon[11], ImageUtils.bigcupimage[1], null, 0, 0, 0, PageUtils.intentclass[19], false, null, null, null, ImageUtils.keydes_cup, StringUtils.keydes_cup_text, StringUtils.troubleshoot_cup_question, StringUtils.troubleshoot_cup_analyse, StringUtils.troubleshoot_cup_solve, ButtonUtils.Null));",
+    "registration_id": "registration-109-1502",
+    "name_resource": "device_name_cup_two_motor",
+    "scope": "EXCLUDED",
+    "disposition": "REACHABLE",
+    "scope_reason": "Non-bed product catalog, EXCLUDED from bed integration product boundary",
+    "content_sha256": "3ef0f208b2d399c5b393b506fa536f67cc3ab810b933479cfdb4692141c45d8a",
+    "show_alarm_sleep": false,
+    "button_config": "Null",
+    "graphics": [],
+    "confidence": "VERIFIED"
+  },
+  {
+    "id": "1503",
+    "selector": "manufacturerSpecificData.keyAt(0) == 1503",
+    "page": "Cup25BCLActivity",
+    "name_index": 47,
+    "order": null,
+    "source": "sources/com/ykd/newuieasyc/initDataUtil/BDUtils.java:127",
+    "source_row": "put(1503, new BD(DeviceNameUtil.dname[47], ImageUtils.icon[13], ImageUtils.bigcupimage[3], null, 0, 0, 0, PageUtils.intentclass[20], false, null, null, null, ImageUtils.keydes_cup, StringUtils.keydes_cup_text, StringUtils.troubleshoot_cup_question, StringUtils.troubleshoot_cup_analyse, StringUtils.troubleshoot_cup_solve, ButtonUtils.Null));",
+    "registration_id": "registration-110-1503",
+    "name_resource": "device_name_cup_two_motor",
+    "scope": "EXCLUDED",
+    "disposition": "REACHABLE",
+    "scope_reason": "Non-bed product catalog, EXCLUDED from bed integration product boundary",
+    "content_sha256": "06f001d429c49324cac93387be895dfc8f36f12f8de34a2559b46dfaa2c29977",
+    "show_alarm_sleep": false,
+    "button_config": "Null",
+    "graphics": [],
+    "confidence": "VERIFIED"
+  },
+  {
+    "id": "1504",
+    "selector": "manufacturerSpecificData.keyAt(0) == 1504",
+    "page": "Cup252BCActivity",
+    "name_index": 47,
+    "order": null,
+    "source": "sources/com/ykd/newuieasyc/initDataUtil/BDUtils.java:128",
+    "source_row": "put(1504, new BD(DeviceNameUtil.dname[47], ImageUtils.icon[14], ImageUtils.bigcupimage[4], null, 0, 0, 0, PageUtils.intentclass[21], false, null, null, null, ImageUtils.keydes_cup, StringUtils.keydes_cup_text, StringUtils.troubleshoot_cup_question, StringUtils.troubleshoot_cup_analyse, StringUtils.troubleshoot_cup_solve, ButtonUtils.Null));",
+    "registration_id": "registration-111-1504",
+    "name_resource": "device_name_cup_two_motor",
+    "scope": "EXCLUDED",
+    "disposition": "REACHABLE",
+    "scope_reason": "Non-bed product catalog, EXCLUDED from bed integration product boundary",
+    "content_sha256": "d1fbcfa7a1ced2d346048a829f0cbb799cbd82db6ab6df95ff210aece8cb8ebd",
+    "show_alarm_sleep": false,
+    "button_config": "Null",
+    "graphics": [],
+    "confidence": "VERIFIED"
+  },
+  {
+    "id": "1505",
+    "selector": "manufacturerSpecificData.keyAt(0) == 1505",
+    "page": "Cup25BCLRActivity",
+    "name_index": 48,
+    "order": null,
+    "source": "sources/com/ykd/newuieasyc/initDataUtil/BDUtils.java:129",
+    "source_row": "put(1505, new BD(DeviceNameUtil.dname[48], ImageUtils.icon[19], ImageUtils.bigcupimage[5], null, 0, 0, 0, PageUtils.intentclass[22], false, null, null, null, ImageUtils.keydes_cup, StringUtils.keydes_cup_text, StringUtils.troubleshoot_cup_question, StringUtils.troubleshoot_cup_analyse, StringUtils.troubleshoot_cup_solve, ButtonUtils.Null));",
+    "registration_id": "registration-112-1505",
+    "name_resource": "device_name_cup_one_motor",
+    "scope": "EXCLUDED",
+    "disposition": "REACHABLE",
+    "scope_reason": "Non-bed product catalog, EXCLUDED from bed integration product boundary",
+    "content_sha256": "7ab4341afd0250023efa08085b5a4173bd9a5625419d63c2d0d429b8f61885d5",
+    "show_alarm_sleep": false,
+    "button_config": "Null",
+    "graphics": [],
+    "confidence": "VERIFIED"
+  },
+  {
+    "id": "1506",
+    "selector": "manufacturerSpecificData.keyAt(0) == 1506",
+    "page": "Cup253BCRActivity",
+    "name_index": 50,
+    "order": null,
+    "source": "sources/com/ykd/newuieasyc/initDataUtil/BDUtils.java:130",
+    "source_row": "put(1506, new BD(DeviceNameUtil.dname[50], ImageUtils.icon[21], ImageUtils.bigcupimage[7], null, 0, 0, 0, PageUtils.intentclass[23], false, null, null, null, ImageUtils.keydes_cup, StringUtils.keydes_cup_text, StringUtils.troubleshoot_cup_question, StringUtils.troubleshoot_cup_analyse, StringUtils.troubleshoot_cup_solve, ButtonUtils.Null));",
+    "registration_id": "registration-113-1506",
+    "name_resource": "device_name_cup_three_motor",
+    "scope": "EXCLUDED",
+    "disposition": "REACHABLE",
+    "scope_reason": "Non-bed product catalog, EXCLUDED from bed integration product boundary",
+    "content_sha256": "7bcc5746fa56d821304b8220d63d85b82fb1e9ce0425ef41dc58b7560895b510",
+    "show_alarm_sleep": false,
+    "button_config": "Null",
+    "graphics": [],
+    "confidence": "VERIFIED"
+  },
+  {
+    "id": "1507",
+    "selector": "manufacturerSpecificData.keyAt(0) == 1507",
+    "page": "Cup25BCLMRActivity",
+    "name_index": 61,
+    "order": null,
+    "source": "sources/com/ykd/newuieasyc/initDataUtil/BDUtils.java:131",
+    "source_row": "put(1507, new BD(DeviceNameUtil.dname[61], ImageUtils.icon[26], ImageUtils.bigcupimage[8], null, 0, 0, 0, PageUtils.intentclass[30], false, null, null, null, ImageUtils.keydes_cup, StringUtils.keydes_cup_text, StringUtils.troubleshoot_cup_question, StringUtils.troubleshoot_cup_analyse, StringUtils.troubleshoot_cup_solve, ButtonUtils.Null));",
+    "registration_id": "registration-114-1507",
+    "name_resource": "device_name_25_bclmr",
+    "scope": "EXCLUDED",
+    "disposition": "REACHABLE",
+    "scope_reason": "Non-bed product catalog, EXCLUDED from bed integration product boundary",
+    "content_sha256": "ced51d35baca1c51e96ce2a4f8519e0b74486c166fdb60a1bbe3240e421a0dfb",
+    "show_alarm_sleep": false,
+    "button_config": "Null",
+    "graphics": [],
+    "confidence": "VERIFIED"
+  },
+  {
+    "id": "1508",
+    "selector": "manufacturerSpecificData.keyAt(0) == 1508",
+    "page": "Cup25BCL1MRActivity",
+    "name_index": 61,
+    "order": null,
+    "source": "sources/com/ykd/newuieasyc/initDataUtil/BDUtils.java:132",
+    "source_row": "put(1508, new BD(DeviceNameUtil.dname[61], ImageUtils.icon[26], ImageUtils.bigcupimage[8], null, 0, 0, 0, PageUtils.intentclass[33], false, null, null, null, ImageUtils.keydes_cup, StringUtils.keydes_cup_text, StringUtils.troubleshoot_cup_question, StringUtils.troubleshoot_cup_analyse, StringUtils.troubleshoot_cup_solve, ButtonUtils.Null));",
+    "registration_id": "registration-115-1508",
+    "name_resource": "device_name_25_bclmr",
+    "scope": "EXCLUDED",
+    "disposition": "REACHABLE",
+    "scope_reason": "Non-bed product catalog, EXCLUDED from bed integration product boundary",
+    "content_sha256": "b5d9604cc3bf4f8543375831587f88cd2e19af3c71d00feceef9c452ceeb7e86",
+    "show_alarm_sleep": false,
+    "button_config": "Null",
+    "graphics": [],
+    "confidence": "VERIFIED"
+  },
+  {
+    "id": "1510",
+    "selector": "manufacturerSpecificData.keyAt(0) == 1510",
+    "page": "SofaMore21BtnActivity",
+    "name_index": 7,
+    "order": 0,
+    "source": "sources/com/ykd/newuieasyc/initDataUtil/BDUtils.java:133",
+    "source_row": "put(1510, new BD(DeviceNameUtil.dname[7], ImageUtils.icon[3], ImageUtils.bigsofaimage[9], ImageUtils.smallsofaimage[8], 0, ImageUtils.img_sofa_flat[0], 0, PageUtils.intentclass[5], false, OrderUtil.oup[0], OrderUtil.odown[0], OrderUtil.ostop[0], ImageUtils.keydes_sofa, StringUtils.keydes_sofa_text, StringUtils.troubleshoot_sofa_question, StringUtils.troubleshoot_sofa_analyse, StringUtils.troubleshoot_sofa_solve, ButtonUtils.f4M1M2Led));",
+    "registration_id": "registration-116-1510",
+    "name_resource": "device_name_sofa_two_motor_l",
+    "scope": "EXCLUDED",
+    "disposition": "REACHABLE",
+    "scope_reason": "Non-bed product catalog, EXCLUDED from bed integration product boundary",
+    "content_sha256": "bfa86c5e1ca3e76818c1688ba2e042c4afc09502223992a423dc5712bdb6658e",
+    "show_alarm_sleep": false,
+    "button_config": "f4M1M2Led",
+    "graphics": [
+      "sofa_big_unselect",
+      "sofa_big_backfootheadmiddle",
+      "sofa_big_backheadmiddle",
+      "sofa_big_foot"
+    ],
+    "orders": {
+      "oup": [
+        272,
+        257,
+        261
+      ],
+      "odown": [
+        273,
+        258,
+        262
+      ],
+      "ostop": [
+        1,
+        256,
+        260
+      ]
+    },
+    "confidence": "VERIFIED"
+  },
+  {
+    "id": "1511",
+    "selector": "manufacturerSpecificData.keyAt(0) == 1511",
+    "page": "SofaMore21BtnActivity",
+    "name_index": 10,
+    "order": 1,
+    "source": "sources/com/ykd/newuieasyc/initDataUtil/BDUtils.java:134",
+    "source_row": "put(1511, new BD(DeviceNameUtil.dname[10], ImageUtils.icon[3], ImageUtils.bigsofaimage[10], ImageUtils.smallsofaimage[9], 0, ImageUtils.img_sofa_flat[0], 0, PageUtils.intentclass[5], false, OrderUtil.oup[1], OrderUtil.odown[1], OrderUtil.ostop[1], ImageUtils.keydes_sofa, StringUtils.keydes_sofa_text, StringUtils.troubleshoot_sofa_question, StringUtils.troubleshoot_sofa_analyse, StringUtils.troubleshoot_sofa_solve, ButtonUtils.f4M1M2Led));",
+    "registration_id": "registration-117-1511",
+    "name_resource": "device_name_sofa_three_motor_l",
+    "scope": "EXCLUDED",
+    "disposition": "REACHABLE",
+    "scope_reason": "Non-bed product catalog, EXCLUDED from bed integration product boundary",
+    "content_sha256": "fe9d79e41234d274f59847e936bcc4d696829b069d8bcea334a94f6aea72103c",
+    "show_alarm_sleep": false,
+    "button_config": "f4M1M2Led",
+    "graphics": [
+      "sofa_big_unselect",
+      "sofa_big_backfootheadmiddle",
+      "sofa_big_head",
+      "sofa_big_back",
+      "sofa_big_foot"
+    ],
+    "orders": {
+      "oup": [
+        272,
+        257,
+        261,
+        265
+      ],
+      "odown": [
+        273,
+        258,
+        262,
+        266
+      ],
+      "ostop": [
+        1,
+        256,
+        260,
+        264
+      ]
+    },
+    "confidence": "VERIFIED"
+  },
+  {
+    "id": "1512",
+    "selector": "manufacturerSpecificData.keyAt(0) == 1512",
+    "page": "SofaOne3BtnActivity",
+    "name_index": 4,
+    "order": 4,
+    "source": "sources/com/ykd/newuieasyc/initDataUtil/BDUtils.java:135",
+    "source_row": "put(1512, new BD(DeviceNameUtil.dname[4], ImageUtils.icon[3], ImageUtils.bigsofaimage[0], ImageUtils.smallsofaimage[0], 0, ImageUtils.img_sofa_flat[0], 0, PageUtils.intentclass[3], false, OrderUtil.oup[4], OrderUtil.odown[4], OrderUtil.ostop[4], ImageUtils.keydes_sofa, StringUtils.keydes_sofa_text, StringUtils.troubleshoot_sofa_question, StringUtils.troubleshoot_sofa_analyse, StringUtils.troubleshoot_sofa_solve, ButtonUtils.M1LedM2));",
+    "registration_id": "registration-118-1512",
+    "name_resource": "device_name_sofa_one_motor_l",
+    "scope": "EXCLUDED",
+    "disposition": "REACHABLE",
+    "scope_reason": "Non-bed product catalog, EXCLUDED from bed integration product boundary",
+    "content_sha256": "4db5b1f994f95a05e509a9cffc654bfe5d34eefa921c1f751a19aa9c271d16a5",
+    "show_alarm_sleep": false,
+    "button_config": "M1LedM2",
+    "graphics": [
+      "sofa_big_unselect",
+      "sofa_big_backfootheadmiddle"
+    ],
+    "orders": {
+      "oup": [
+        272
+      ],
+      "odown": [
+        273
+      ],
+      "ostop": [
+        1
+      ]
+    },
+    "confidence": "VERIFIED"
+  },
+  {
+    "id": "1513",
+    "selector": "manufacturerSpecificData.keyAt(0) == 1513",
+    "page": "Cup2271BCRActivity",
+    "name_index": 68,
+    "order": 4,
+    "source": "sources/com/ykd/newuieasyc/initDataUtil/BDUtils.java:136",
+    "source_row": "put(1513, new BD(DeviceNameUtil.dname[68], ImageUtils.icon[32], ImageUtils.bigsofaimage[0], ImageUtils.smallsofaimage[0], 0, ImageUtils.img_sofa_flat[0], 0, PageUtils.intentclass[41], false, OrderUtil.oup[4], OrderUtil.odown[4], OrderUtil.ostop[4], ImageUtils.keydes_cup, StringUtils.keydes_cup_text, StringUtils.troubleshoot_cup_question, StringUtils.troubleshoot_cup_analyse, StringUtils.troubleshoot_cup_solve, ButtonUtils.Null));",
+    "registration_id": "registration-119-1513",
+    "name_resource": "device_name_227",
+    "scope": "EXCLUDED",
+    "disposition": "REACHABLE",
+    "scope_reason": "Non-bed product catalog, EXCLUDED from bed integration product boundary",
+    "content_sha256": "a36311b46440122a4943bb502d6f45bbcf4267b02e1e57ec51ab0796f094fbc2",
+    "show_alarm_sleep": false,
+    "button_config": "Null",
+    "graphics": [
+      "sofa_big_unselect",
+      "sofa_big_backfootheadmiddle"
+    ],
+    "orders": {
+      "oup": [
+        272
+      ],
+      "odown": [
+        273
+      ],
+      "ostop": [
+        1
+      ]
+    },
+    "confidence": "VERIFIED"
+  },
+  {
+    "id": "1514",
+    "selector": "manufacturerSpecificData.keyAt(0) == 1514",
+    "page": "Cup2272BCLMRTActivity",
+    "name_index": 68,
+    "order": 0,
+    "source": "sources/com/ykd/newuieasyc/initDataUtil/BDUtils.java:137",
+    "source_row": "put(1514, new BD(DeviceNameUtil.dname[68], ImageUtils.icon[33], ImageUtils.bigsofaimage[0], ImageUtils.smallsofaimage[0], 0, ImageUtils.img_sofa_flat[0], 0, PageUtils.intentclass[42], false, OrderUtil.oup[0], OrderUtil.odown[0], OrderUtil.ostop[0], ImageUtils.keydes_cup, StringUtils.keydes_cup_text, StringUtils.troubleshoot_cup_question, StringUtils.troubleshoot_cup_analyse, StringUtils.troubleshoot_cup_solve, ButtonUtils.Null));",
+    "registration_id": "registration-120-1514",
+    "name_resource": "device_name_227",
+    "scope": "EXCLUDED",
+    "disposition": "REACHABLE",
+    "scope_reason": "Non-bed product catalog, EXCLUDED from bed integration product boundary",
+    "content_sha256": "58c3ebd87412980475f87d7a6773d29d7169c1f2795052afa76a6fd047d9c84c",
+    "show_alarm_sleep": false,
+    "button_config": "Null",
+    "graphics": [
+      "sofa_big_unselect",
+      "sofa_big_backfootheadmiddle"
+    ],
+    "orders": {
+      "oup": [
+        272,
+        257,
+        261
+      ],
+      "odown": [
+        273,
+        258,
+        262
+      ],
+      "ostop": [
+        1,
+        256,
+        260
+      ]
+    },
+    "confidence": "VERIFIED"
+  },
+  {
+    "id": "1515",
+    "selector": "manufacturerSpecificData.keyAt(0) == 1515",
+    "page": "Cup2272BCLMRMActivity",
+    "name_index": 68,
+    "order": 4,
+    "source": "sources/com/ykd/newuieasyc/initDataUtil/BDUtils.java:138",
+    "source_row": "put(1515, new BD(DeviceNameUtil.dname[68], ImageUtils.icon[34], ImageUtils.bigsofaimage[0], ImageUtils.smallsofaimage[0], 0, ImageUtils.img_sofa_flat[0], 0, PageUtils.intentclass[43], false, OrderUtil.oup[4], OrderUtil.odown[4], OrderUtil.ostop[4], ImageUtils.keydes_cup, StringUtils.keydes_cup_text, StringUtils.troubleshoot_cup_question, StringUtils.troubleshoot_cup_analyse, StringUtils.troubleshoot_cup_solve, ButtonUtils.Null));",
+    "registration_id": "registration-121-1515",
+    "name_resource": "device_name_227",
+    "scope": "EXCLUDED",
+    "disposition": "REACHABLE",
+    "scope_reason": "Non-bed product catalog, EXCLUDED from bed integration product boundary",
+    "content_sha256": "90636e2e8cfd11bed8422aea547caeb536dff128c402e2edac13f483142441f9",
+    "show_alarm_sleep": false,
+    "button_config": "Null",
+    "graphics": [
+      "sofa_big_unselect",
+      "sofa_big_backfootheadmiddle"
+    ],
+    "orders": {
+      "oup": [
+        272
+      ],
+      "odown": [
+        273
+      ],
+      "ostop": [
+        1
+      ]
+    },
+    "confidence": "VERIFIED"
+  },
+  {
+    "id": "1516",
+    "selector": "manufacturerSpecificData.keyAt(0) == 1516",
+    "page": "Cup2271BCLMRActivity",
+    "name_index": 68,
+    "order": 4,
+    "source": "sources/com/ykd/newuieasyc/initDataUtil/BDUtils.java:139",
+    "source_row": "put(1516, new BD(DeviceNameUtil.dname[68], ImageUtils.icon[35], ImageUtils.bigsofaimage[0], ImageUtils.smallsofaimage[0], 0, ImageUtils.img_sofa_flat[0], 0, PageUtils.intentclass[44], false, OrderUtil.oup[4], OrderUtil.odown[4], OrderUtil.ostop[4], ImageUtils.keydes_cup, StringUtils.keydes_cup_text, StringUtils.troubleshoot_cup_question, StringUtils.troubleshoot_cup_analyse, StringUtils.troubleshoot_cup_solve, ButtonUtils.Null));",
+    "registration_id": "registration-122-1516",
+    "name_resource": "device_name_227",
+    "scope": "EXCLUDED",
+    "disposition": "REACHABLE",
+    "scope_reason": "Non-bed product catalog, EXCLUDED from bed integration product boundary",
+    "content_sha256": "647ea12e67803cff8d0dd54b93d706c7ba829828e2e0bec6e283f90147bd224f",
+    "show_alarm_sleep": false,
+    "button_config": "Null",
+    "graphics": [
+      "sofa_big_unselect",
+      "sofa_big_backfootheadmiddle"
+    ],
+    "orders": {
+      "oup": [
+        272
+      ],
+      "odown": [
+        273
+      ],
+      "ostop": [
+        1
+      ]
+    },
+    "confidence": "VERIFIED"
+  },
+  {
+    "id": "2000",
+    "selector": "manufacturerSpecificData.keyAt(0) == 2000",
+    "page": "CurtainOneMC0BtnActivity",
+    "name_index": 15,
+    "order": null,
+    "source": "sources/com/ykd/newuieasyc/initDataUtil/BDUtils.java:140",
+    "source_row": "put(2000, new BD(DeviceNameUtil.dname[15], ImageUtils.icon[4], ImageUtils.bigcurtainimage[0], null, ImageUtils.smallcurtainimage, 0, 0, PageUtils.intentclass[24], true, null, null, null, ImageUtils.keydes_curtain, StringUtils.keydes_curtain_text, StringUtils.troubleshoot_curtain_question, StringUtils.troubleshoot_curtain_analyse, StringUtils.troubleshoot_curtain_solve, ButtonUtils.Null));",
+    "registration_id": "registration-123-2000",
+    "name_resource": "device_name_curtain_one",
+    "scope": "EXCLUDED",
+    "disposition": "REACHABLE",
+    "scope_reason": "Non-bed product catalog, EXCLUDED from bed integration product boundary",
+    "content_sha256": "e45717027e79fc556a5aaea3ae31977eb102d8df0b3bb951892d9e820ce0f04f",
+    "show_alarm_sleep": true,
+    "button_config": "Null",
+    "graphics": [],
+    "confidence": "VERIFIED"
+  },
+  {
+    "id": "2001",
+    "selector": "manufacturerSpecificData.keyAt(0) == 2001",
+    "page": "CurtainTwoMC0BtnActivity",
+    "name_index": 56,
+    "order": null,
+    "source": "sources/com/ykd/newuieasyc/initDataUtil/BDUtils.java:141",
+    "source_row": "put(2001, new BD(DeviceNameUtil.dname[56], ImageUtils.icon[25], ImageUtils.bigcurtainimage[1], null, ImageUtils.smalltwocurtainimage, 0, 0, PageUtils.intentclass[25], true, null, null, null, ImageUtils.keydes_curtain, StringUtils.keydes_curtain_text, StringUtils.troubleshoot_curtain_question, StringUtils.troubleshoot_curtain_analyse, StringUtils.troubleshoot_curtain_solve, ButtonUtils.Null));",
+    "registration_id": "registration-124-2001",
+    "name_resource": "device_name_curtain",
+    "scope": "EXCLUDED",
+    "disposition": "REACHABLE",
+    "scope_reason": "Non-bed product catalog, EXCLUDED from bed integration product boundary",
+    "content_sha256": "90a08123af072ed0ad03c47ab63288ad25c6f12afff4e61d1256e86ef76e24f5",
+    "show_alarm_sleep": true,
+    "button_config": "Null",
+    "graphics": [],
+    "confidence": "VERIFIED"
+  },
+  {
+    "id": "2002",
+    "selector": "manufacturerSpecificData.keyAt(0) == 2002",
+    "page": "CurtainOneMC0BtnActivity",
+    "name_index": 15,
+    "order": null,
+    "source": "sources/com/ykd/newuieasyc/initDataUtil/BDUtils.java:142",
+    "source_row": "put(2002, new BD(DeviceNameUtil.dname[15], ImageUtils.icon[4], ImageUtils.bigcurtainimage[0], null, ImageUtils.smallcurtainimage, 0, 0, PageUtils.intentclass[24], true, null, null, null, ImageUtils.keydes_curtain, StringUtils.keydes_curtain_text, StringUtils.troubleshoot_curtain_question, StringUtils.troubleshoot_curtain_analyse, StringUtils.troubleshoot_curtain_solve, ButtonUtils.Null));",
+    "registration_id": "registration-125-2002",
+    "name_resource": "device_name_curtain_one",
+    "scope": "EXCLUDED",
+    "disposition": "REACHABLE",
+    "scope_reason": "Non-bed product catalog, EXCLUDED from bed integration product boundary",
+    "content_sha256": "26848b5e7824bf9b4ddc8fcfa29703c564d13864cf34c7ff226cc9c5e84ff70b",
+    "show_alarm_sleep": true,
+    "button_config": "Null",
+    "graphics": [],
+    "confidence": "VERIFIED"
+  },
+  {
+    "id": "2005",
+    "selector": "manufacturerSpecificData.keyAt(0) == 2005",
+    "page": "CurtainOneMC0BtnActivity",
+    "name_index": 16,
+    "order": null,
+    "source": "sources/com/ykd/newuieasyc/initDataUtil/BDUtils.java:143",
+    "source_row": "put(2005, new BD(DeviceNameUtil.dname[16], ImageUtils.icon[4], ImageUtils.bigcurtainimage[0], null, ImageUtils.smallcurtainimage, 0, 0, PageUtils.intentclass[24], true, null, null, null, ImageUtils.keydes_curtain, StringUtils.keydes_curtain_text, StringUtils.troubleshoot_curtain_question, StringUtils.troubleshoot_curtain_analyse, StringUtils.troubleshoot_curtain_solve, ButtonUtils.Null));",
+    "registration_id": "registration-126-2005",
+    "name_resource": "device_name_curtain_two",
+    "scope": "EXCLUDED",
+    "disposition": "REACHABLE",
+    "scope_reason": "Non-bed product catalog, EXCLUDED from bed integration product boundary",
+    "content_sha256": "274d53ba8cb4c9641300406aeb8575a1f24e61021bbd3e87fb09bbe28b817208",
+    "show_alarm_sleep": true,
+    "button_config": "Null",
+    "graphics": [],
+    "confidence": "VERIFIED"
+  },
+  {
+    "id": "2006",
+    "selector": "manufacturerSpecificData.keyAt(0) == 2006",
+    "page": "CurtainOneMC0BtnActivity",
+    "name_index": 16,
+    "order": null,
+    "source": "sources/com/ykd/newuieasyc/initDataUtil/BDUtils.java:144",
+    "source_row": "put(2006, new BD(DeviceNameUtil.dname[16], ImageUtils.icon[4], ImageUtils.bigcurtainimage[0], null, ImageUtils.smallcurtainimage, 0, 0, PageUtils.intentclass[24], true, null, null, null, ImageUtils.keydes_curtain, StringUtils.keydes_curtain_text, StringUtils.troubleshoot_curtain_question, StringUtils.troubleshoot_curtain_analyse, StringUtils.troubleshoot_curtain_solve, ButtonUtils.Null));",
+    "registration_id": "registration-127-2006",
+    "name_resource": "device_name_curtain_two",
+    "scope": "EXCLUDED",
+    "disposition": "REACHABLE",
+    "scope_reason": "Non-bed product catalog, EXCLUDED from bed integration product boundary",
+    "content_sha256": "d1a6dc284099fd3555abb324ce71069d1596294651ba6b2762081068d7b07062",
+    "show_alarm_sleep": true,
+    "button_config": "Null",
+    "graphics": [],
+    "confidence": "VERIFIED"
+  },
+  {
+    "id": "2007",
+    "selector": "manufacturerSpecificData.keyAt(0) == 2007",
+    "page": "CurtainOneMC0BtnActivity",
+    "name_index": 16,
+    "order": null,
+    "source": "sources/com/ykd/newuieasyc/initDataUtil/BDUtils.java:145",
+    "source_row": "put(2007, new BD(DeviceNameUtil.dname[16], ImageUtils.icon[4], ImageUtils.bigcurtainimage[0], null, ImageUtils.smallcurtainimage, 0, 0, PageUtils.intentclass[24], true, null, null, null, ImageUtils.keydes_curtain, StringUtils.keydes_curtain_text, StringUtils.troubleshoot_curtain_question, StringUtils.troubleshoot_curtain_analyse, StringUtils.troubleshoot_curtain_solve, ButtonUtils.Null));",
+    "registration_id": "registration-128-2007",
+    "name_resource": "device_name_curtain_two",
+    "scope": "EXCLUDED",
+    "disposition": "REACHABLE",
+    "scope_reason": "Non-bed product catalog, EXCLUDED from bed integration product boundary",
+    "content_sha256": "6b227731d118b31ac51bbaa88ca683924ab9aac20ced6c8c05528734cfe75638",
+    "show_alarm_sleep": true,
+    "button_config": "Null",
+    "graphics": [],
+    "confidence": "VERIFIED"
+  },
+  {
+    "id": "2010",
+    "selector": "manufacturerSpecificData.keyAt(0) == 2010",
+    "page": "CurtainCurlyOneMC0BtnActivity",
+    "name_index": 17,
+    "order": null,
+    "source": "sources/com/ykd/newuieasyc/initDataUtil/BDUtils.java:146",
+    "source_row": "put(2010, new BD(DeviceNameUtil.dname[17], ImageUtils.icon[5], ImageUtils.bigcurlycurtainimage[0], null, ImageUtils.smallcurlycurtainimage, 0, 0, PageUtils.intentclass[26], true, null, null, null, ImageUtils.keydes_curtain_curly, StringUtils.keydes_curtain_curly_text, StringUtils.troubleshoot_curtain_curly_question, StringUtils.troubleshoot_curtain_curly_analyse, StringUtils.troubleshoot_curtain_curly_solve, ButtonUtils.Null));",
+    "registration_id": "registration-129-2010",
+    "name_resource": "device_name_curtain_roller_shutters",
+    "scope": "EXCLUDED",
+    "disposition": "REACHABLE",
+    "scope_reason": "Non-bed product catalog, EXCLUDED from bed integration product boundary",
+    "content_sha256": "4b5419d2e3d20e3cb6340e52707e4c84f5ab4e4c11be85242532304a21410707",
+    "show_alarm_sleep": true,
+    "button_config": "Null",
+    "graphics": [],
+    "confidence": "VERIFIED"
+  },
+  {
+    "id": "2011",
+    "selector": "manufacturerSpecificData.keyAt(0) == 2011",
+    "page": "CurtainCurlyOneMC0BtnActivity",
+    "name_index": 17,
+    "order": null,
+    "source": "sources/com/ykd/newuieasyc/initDataUtil/BDUtils.java:147",
+    "source_row": "put(2011, new BD(DeviceNameUtil.dname[17], ImageUtils.icon[5], ImageUtils.bigcurlycurtainimage[0], null, ImageUtils.smallcurlycurtainimage, 0, 0, PageUtils.intentclass[26], true, null, null, null, ImageUtils.keydes_curtain_curly, StringUtils.keydes_curtain_curly_text, StringUtils.troubleshoot_curtain_curly_question, StringUtils.troubleshoot_curtain_curly_analyse, StringUtils.troubleshoot_curtain_curly_solve, ButtonUtils.Null));",
+    "registration_id": "registration-130-2011",
+    "name_resource": "device_name_curtain_roller_shutters",
+    "scope": "EXCLUDED",
+    "disposition": "REACHABLE",
+    "scope_reason": "Non-bed product catalog, EXCLUDED from bed integration product boundary",
+    "content_sha256": "90cee0cf62dd7f2e33442d0fac930843604480dd165358318da0696833a8bf91",
+    "show_alarm_sleep": true,
+    "button_config": "Null",
+    "graphics": [],
+    "confidence": "VERIFIED"
+  },
+  {
+    "id": "2012",
+    "selector": "manufacturerSpecificData.keyAt(0) == 2012",
+    "page": "CurtainCurlyOneMC0BtnActivity",
+    "name_index": 17,
+    "order": null,
+    "source": "sources/com/ykd/newuieasyc/initDataUtil/BDUtils.java:148",
+    "source_row": "put(2012, new BD(DeviceNameUtil.dname[17], ImageUtils.icon[5], ImageUtils.bigcurlycurtainimage[0], null, ImageUtils.smallcurlycurtainimage, 0, 0, PageUtils.intentclass[26], true, null, null, null, ImageUtils.keydes_curtain_curly, StringUtils.keydes_curtain_curly_text, StringUtils.troubleshoot_curtain_curly_question, StringUtils.troubleshoot_curtain_curly_analyse, StringUtils.troubleshoot_curtain_curly_solve, ButtonUtils.Null));",
+    "registration_id": "registration-131-2012",
+    "name_resource": "device_name_curtain_roller_shutters",
+    "scope": "EXCLUDED",
+    "disposition": "REACHABLE",
+    "scope_reason": "Non-bed product catalog, EXCLUDED from bed integration product boundary",
+    "content_sha256": "3961f6aedf7c64d37d5e8899ae9e4a0bb1aa3939c3699306d332407e41e1272e",
+    "show_alarm_sleep": true,
+    "button_config": "Null",
+    "graphics": [],
+    "confidence": "VERIFIED"
+  },
+  {
+    "id": "3001",
+    "selector": "manufacturerSpecificData.keyAt(0) == 3001",
+    "page": "ClotheOneMC4BtnActivity",
+    "name_index": 33,
+    "order": null,
+    "source": "sources/com/ykd/newuieasyc/initDataUtil/BDUtils.java:149",
+    "source_row": "put(3001, new BD(DeviceNameUtil.dname[33], ImageUtils.icon[6], ImageUtils.bigclotheimage[0], null, ImageUtils.smallclothesimage, 0, 0, PageUtils.intentclass[27], false, null, null, null, ImageUtils.keydes_clothe, StringUtils.keydes_clothe_text, StringUtils.troubleshoot_clothe_question, StringUtils.troubleshoot_clothe_analyse, StringUtils.troubleshoot_clothe_solve, ButtonUtils.Null));",
+    "registration_id": "registration-132-3001",
+    "name_resource": "device_name_airer",
+    "scope": "EXCLUDED",
+    "disposition": "REACHABLE",
+    "scope_reason": "Non-bed product catalog, EXCLUDED from bed integration product boundary",
+    "content_sha256": "65e6b1efc9b4ac3ea2a831822ec77800dd02d4dfe8649297ffd60136b104b946",
+    "show_alarm_sleep": false,
+    "button_config": "Null",
+    "graphics": [],
+    "confidence": "VERIFIED"
+  },
+  {
+    "id": "4000",
+    "selector": "manufacturerSpecificData.keyAt(0) == 4000",
+    "page": "SofaOne2BtnActivity",
+    "name_index": 54,
+    "order": 4,
+    "source": "sources/com/ykd/newuieasyc/initDataUtil/BDUtils.java:150",
+    "source_row": "put(4000, new BD(DeviceNameUtil.dname[54], ImageUtils.icon[24], ImageUtils.bigtetableimage[0], null, 0, ImageUtils.smallteatablesimage, 0, PageUtils.intentclass[2], false, OrderUtil.oup[4], OrderUtil.odown[4], OrderUtil.ostop[4], ImageUtils.keydes_tea_table, StringUtils.keydes_tea_table_text, StringUtils.troubleshoot_sofa_question, StringUtils.troubleshoot_sofa_analyse, StringUtils.troubleshoot_sofa_solve, ButtonUtils.M1M2));",
+    "registration_id": "registration-133-4000",
+    "name_resource": "device_name_tea_table",
+    "scope": "EXCLUDED",
+    "disposition": "REACHABLE",
+    "scope_reason": "Non-bed product catalog, EXCLUDED from bed integration product boundary",
+    "content_sha256": "e4245f27e7118b312a6cfe52b5ec79c378bc05c885a2e318d32be1b0ab7cf6c8",
+    "show_alarm_sleep": false,
+    "button_config": "M1M2",
+    "graphics": [],
+    "orders": {
+      "oup": [
+        272
+      ],
+      "odown": [
+        273
+      ],
+      "ostop": [
+        1
+      ]
+    },
+    "confidence": "VERIFIED"
+  },
+  {
+    "id": "5001",
+    "selector": "manufacturerSpecificData.keyAt(0) == 5001",
+    "page": "TableDxracer",
+    "name_index": 67,
+    "order": 4,
+    "source": "sources/com/ykd/newuieasyc/initDataUtil/BDUtils.java:151",
+    "source_row": "put(5001, new BD(DeviceNameUtil.dname[67], ImageUtils.icon[30], ImageUtils.bigtetableimage[0], null, 0, ImageUtils.smallteatablesimage, 0, PageUtils.intentclass[36], false, OrderUtil.oup[4], OrderUtil.odown[4], OrderUtil.ostop[4], ImageUtils.keydes_tea_table, StringUtils.keydes_tea_table_text, StringUtils.troubleshoot_sofa_question, StringUtils.troubleshoot_sofa_analyse, StringUtils.troubleshoot_sofa_solve, ButtonUtils.Null));",
+    "registration_id": "registration-134-5001",
+    "name_resource": "device_name_table_dxracer",
+    "scope": "EXCLUDED",
+    "disposition": "REACHABLE",
+    "scope_reason": "Non-bed product catalog, EXCLUDED from bed integration product boundary",
+    "content_sha256": "b6eb8bec61e6381ecd7257a95ef722f1812fc02333d282421fd3fd8fcde35290",
+    "show_alarm_sleep": false,
+    "button_config": "Null",
+    "graphics": [],
+    "orders": {
+      "oup": [
+        272
+      ],
+      "odown": [
+        273
+      ],
+      "ostop": [
+        1
+      ]
+    },
+    "confidence": "VERIFIED"
+  },
+  {
+    "id": "5003",
+    "selector": "manufacturerSpecificData.keyAt(0) == 5003",
+    "page": "TableTwoDxracer",
+    "name_index": 69,
+    "order": 4,
+    "source": "sources/com/ykd/newuieasyc/initDataUtil/BDUtils.java:152",
+    "source_row": "put(5003, new BD(DeviceNameUtil.dname[69], ImageUtils.icon[36], ImageUtils.bigtetableimage[0], null, 0, ImageUtils.smallteatablesimage, 0, PageUtils.intentclass[45], false, OrderUtil.oup[4], OrderUtil.odown[4], OrderUtil.ostop[4], ImageUtils.keydes_tea_table, StringUtils.keydes_tea_table_text, StringUtils.troubleshoot_sofa_question, StringUtils.troubleshoot_sofa_analyse, StringUtils.troubleshoot_sofa_solve, ButtonUtils.Null));",
+    "registration_id": "registration-135-5003",
+    "name_resource": "device_name_table_twodxracer",
+    "scope": "EXCLUDED",
+    "disposition": "REACHABLE",
+    "scope_reason": "Non-bed product catalog, EXCLUDED from bed integration product boundary",
+    "content_sha256": "527a2567eea463acb60a711dea67fe21bef85490bee5c159ff3f6e933baa7987",
+    "show_alarm_sleep": false,
+    "button_config": "Null",
+    "graphics": [],
+    "orders": {
+      "oup": [
+        272
+      ],
+      "odown": [
+        273
+      ],
+      "ostop": [
+        1
+      ]
+    },
+    "confidence": "VERIFIED"
+  },
+  {
+    "id": "5005",
+    "selector": "manufacturerSpecificData.keyAt(0) == 5005",
+    "page": "LumbarSupportActivity",
+    "name_index": 71,
+    "order": 4,
+    "source": "sources/com/ykd/newuieasyc/initDataUtil/BDUtils.java:153",
+    "source_row": "put(5005, new BD(DeviceNameUtil.dname[71], ImageUtils.icon[37], ImageUtils.bigtetableimage[1], null, 0, ImageUtils.smallteatablesimage, 0, PageUtils.intentclass[49], false, OrderUtil.oup[4], OrderUtil.odown[4], OrderUtil.ostop[4], ImageUtils.keydes_tea_table, StringUtils.keydes_tea_table_text, StringUtils.troubleshoot_sofa_question, StringUtils.troubleshoot_sofa_analyse, StringUtils.troubleshoot_sofa_solve, ButtonUtils.Null));",
+    "registration_id": "registration-136-5005",
+    "name_resource": "device_name_lumbar_support",
+    "scope": "EXCLUDED",
+    "disposition": "REACHABLE",
+    "scope_reason": "Non-bed product catalog, EXCLUDED from bed integration product boundary",
+    "content_sha256": "9e052c443e668d85bd02e20c6cb13512bc2ed29200ec53d307d5559f7c320857",
+    "show_alarm_sleep": false,
+    "button_config": "Null",
+    "graphics": [],
+    "orders": {
+      "oup": [
+        272
+      ],
+      "odown": [
+        273
+      ],
+      "ostop": [
+        1
+      ]
+    },
+    "confidence": "VERIFIED"
+  }
+]
