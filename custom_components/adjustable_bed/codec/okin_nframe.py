@@ -122,6 +122,12 @@ def parameter_record(opcode: int, fields: Sequence[int], *, size: int | None = N
     return bytes((len(fields) if size is None else size, opcode, *fields))
 
 
+def device_name_record(name: str) -> bytes:
+    """RÖWA's UTF-8 name, prefixed by its UTF-16 code-unit count modulo 256."""
+    units = len(name.encode("utf-16-le")) // 2
+    return bytes((units & 255, 4)) + name.encode("utf-8")
+
+
 def clock(fields: Sequence[int]) -> bytes:
     """Encode the 9-byte ``07 04`` clock frame from seven date and time bytes.
 
@@ -230,6 +236,13 @@ def parse_receipt(data: bytes) -> int | None:
     if len(data) != 20 or data[:2] != b"\x09\x0b" or data[2:6] != data[6:10]:
         return None
     return int.from_bytes(data[2:6], "big")
+
+
+def parse_masked_feedback(data: bytes) -> int | None:
+    """RÖWA's complete status/validity record; header byte zero is unchecked."""
+    if len(data) < 10 or data[1] != 0x0B:
+        return None
+    return int.from_bytes(data[2:6], "big") & int.from_bytes(data[6:10], "big")
 
 
 def prefixed_query(fields: Sequence[int], width: int = 8) -> bytes:

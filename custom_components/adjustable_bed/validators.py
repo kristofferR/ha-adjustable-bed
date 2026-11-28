@@ -143,6 +143,7 @@ from .profiles.restonic import BRANCH_CHOICES as RESTONIC_BRANCHES
 from .profiles.richmat import BEDTECH_VARIANTS
 from .profiles.richmat_legacy import APP_NAMES as LEGACY_APPS
 from .profiles.richmat_legacy import choices as legacy_choices
+from .profiles.roewa import LAYOUTS as ROEWA_LAYOUTS
 from .profiles.ronco_motion import CHOICES as RONCO_MOTION_VARIANTS
 from .profiles.saatva import CHOICES as SAATVA_CHOICES
 from .profiles.silksnow import CHOICES as SILKSNOW_CHOICES
@@ -289,6 +290,7 @@ VARIANTS_BY_BED_TYPE: dict[str, dict[str, str]] = {
     BED_TYPE_OKIN_UUID: OKIMAT_VARIANTS,
     BED_TYPE_OKIN_DOT: OKIN_DOT_VARIANTS,
     BED_TYPE_OKIN_64BIT: OKIN_64BIT_VARIANTS,
+    "roewa": ROEWA_LAYOUTS,
 }
 
 
