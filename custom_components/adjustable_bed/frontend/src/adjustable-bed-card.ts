@@ -2034,7 +2034,7 @@ export class AdjustableBedCard extends LitElement {
         <button class="dialog-btn" @click=${this._closeEstimateDialog}>${this._t("memory.cancel")}</button>
         <button class="dialog-btn primary" @click=${() => {
           this._closeEstimateDialog();
-          this._sendPress(entityId);
+          this._sendPress(entityId, true);
         }}>${action}</button>
       </div>`;
   }
@@ -2525,10 +2525,14 @@ export class AdjustableBedCard extends LitElement {
     this._sendPress(entityId);
   }
 
-  private _sendPress(entityId: string): void {
+  private _sendPress(entityId: string, confirmed = false): void {
     // A preset or other command replaces a tap move; a STOP could cancel it.
     this._hold.retireTap();
-    this._call("button", "press", entityId);
+    if (confirmed) {
+      this.hass?.callService("adjustable_bed", "press_confirmed", {
+        entity_id: entityId, confirmed: true,
+      })?.catch(() => undefined);
+    } else this._call("button", "press", entityId);
   }
 
   private _cover(entityId: string, service: string): void {

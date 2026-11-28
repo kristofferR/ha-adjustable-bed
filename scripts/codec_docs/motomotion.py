@@ -3,6 +3,7 @@
 from custom_components.adjustable_bed.codec import motomotion as codec
 from custom_components.adjustable_bed.profiles.bedgear import BedgearProfile
 from scripts.codec_docs._common import _block, _hex, _table
+from scripts.codec_docs._vivasleep import BLOCKS as VIVASLEEP_BLOCKS
 
 GUIDE = "docs/beds/motomotion.md"
 PAIRS = ("15", "35", "E1", "81", "51", "44", "91", "13", "71", "61", "D1", "34", "23", "01", "97")
@@ -79,6 +80,7 @@ BLOCKS = [
     (GUIDE, "bedgear-layouts", profiles),
     (GUIDE, "bedgear-controls", commands),
     (GUIDE, "bedgear-timing", timing),
+    *VIVASLEEP_BLOCKS,
 ]
 
 

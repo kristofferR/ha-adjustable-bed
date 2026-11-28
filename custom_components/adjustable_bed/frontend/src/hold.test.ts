@@ -1777,9 +1777,9 @@ test("controller-owned release cancels refresh without the general STOP", () => 
 });
 
 
-test("abandoning an HJBed held action retains its protocol release route", () => {
+test("abandoning an HJBed held action uses its cancellation route", () => {
   const events: string[] = [];
-  const hold = new MotorHold(heldActions(events), new FakeTimers());
+  const hold = new MotorHold({ ...heldActions(events), cancelHold: (id) => events.push(`cancel:${id}`) }, new FakeTimers());
   const motor: MotorEntity = { key: "sofa_reset", deviceId: "bed",
     releaseButton: "button.hjbed_release",
     heldControl: { control: "hjbed_sit_position", startDelayMs: 0, releaseDelayMs: 0 } };

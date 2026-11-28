@@ -3,6 +3,17 @@ cancel_hold:
     entity:
       domain: button
       integration: adjustable_bed
+press_confirmed:
+  target:
+    entity:
+      domain: button
+      integration: adjustable_bed
+  fields:
+    confirmed:
+      required: true
+      selector:
+        boolean:
+
 goto_preset:
   fields:
     device_id:

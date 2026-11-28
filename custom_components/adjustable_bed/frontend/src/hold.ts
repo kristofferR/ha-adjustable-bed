@@ -714,7 +714,8 @@ export class MotorHold {
     }
     if (target.releaseButton) {
       if (cancelled) {
-        this.actions.cancelHold?.(target.releaseButton);
+        if (this.actions.cancelHold) this.actions.cancelHold(target.releaseButton);
+        else this.actions.stopBed(target.stopEntityId);
         return target.releaseButton;
       }
       this.actions.stopBed(target.releaseButton);
