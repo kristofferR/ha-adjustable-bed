@@ -444,6 +444,16 @@ def plan_commands(controller: Any) -> list[Command]:
         # STOP phases already capture that hold's real release writes.
         if spec.key == "leva_release" and spec.release_only:
             continue
+        if getattr(controller, "app", None) == "tss_remote" and not controller.controller_button_available(spec.key):
+            # Dedicated saves are real entities gated by the app's Hold mode.
+            # Reach them through that selector, without inventing startup state.
+            async def hold_mode_save(ctrl: Any, button=spec) -> None:
+                selector = next(s for s in ctrl.controller_select_specs if s.key == "dreamlab_press_mode")
+                await selector.select_fn(ctrl, "hold")
+                await button.press_fn(ctrl)
+
+            plan.append(Command(f"hold_mode:button:{spec.key}", hold_mode_save, True))
+            continue
         plan.append(Command(f"button:{spec.key}", spec.press_fn, True))
     for spec in _value(controller, "controller_select_specs", ()):
         for option in spec.options:
@@ -2433,6 +2443,32 @@ def route_scenarios() -> list[Scenario]:
                     "write:6e0a000179": "6e0e00037f",
                     "write:6e1a000088": "6e1a000189",
                 },
+            ))
+    if const.BED_TYPE_RICHMAT_CLASSIC_APPS in const.SUPPORTED_BED_TYPES:
+        # Both the factory argument and stored entry select this app. Each
+        # named service is exercised independently of its selected remote.
+        for layout, name, route in (
+            ("FGRM", "FGRM", "w1"), ("FMRM", "FMRM", "w2"),
+            ("FNRM", "FNRM", "n1"), ("FGRM", "FGRM", "w4"),
+            ("ZIRM", "6BRM", "n1"), ("ZIRM", "TWRM", "w1"),
+            ("D1RM", "D1RM", "w1"), ("D9RM", "MLRM", "n1"),
+            ("Y6RM", "Y6RM", "w1"), ("YFRM", "YFRM", "w1"),
+            ("E3RM", "E3RM", "w1"), ("GVRM", "GVRM", "n1"),
+            ("FDRM", "FDRM", "w1"),
+            ("APRM", "APRM", "w1"), ("APRM", "APRM", "n1"),
+            ("AQRM", "AQRM", "w1"), ("A9RM", "A9RM", "n1"),
+            ("FLRM", "FLRM", "w1"), ("ZWRM", "ZWRM", "w1"),
+            ("OTRM", "OTRM", "n1"), ("DXRM", "DXRM", "w1"),
+            ("DXRM", "DXRM", "n1"),
+        ):
+            scenarios.append(Scenario(
+                id=f"richmat_classic_apps:tss_remote:{layout}:{route}",
+                bed_type=const.BED_TYPE_RICHMAT_CLASSIC_APPS,
+                protocol_variant="tss_remote", layout_id="tss_remote:" + route,
+                entry_data={const.CONF_PROTOCOL_VARIANT: "tss_remote",
+                            const.CONF_PRODUCT_TYPE: layout, const.CONF_BLE_DEVICE_NAME: name},
+                replies={"write:6e08010178": "6e09010078",
+                         "write:6e0a000179": "6e0e00037f"},
             ))
     if const.BED_TYPE_RICHMAT_CLASSIC_APPS in const.SUPPORTED_BED_TYPES:
         for layout, suffix in (("6BRM", ""), ("6BRM", "_nordic"), ("BRRM", ""),

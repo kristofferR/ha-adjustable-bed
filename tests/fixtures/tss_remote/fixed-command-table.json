@@ -1,0 +1,317 @@
+[
+  {
+    "id": "F-INIT",
+    "action": "Initialize known W session",
+    "bytes": "6e02010071",
+    "characteristic": "Selected direct write characteristic, GATT table/property fallback in runtime-contract.md",
+    "write_type": "Existing Android characteristic writeType, not changed by app; ATT response mode not statically asserted",
+    "timing": "300ms scheduled after local notification enable; descriptor completion not awaited",
+    "release_behavior": "No automatic movement END on this direct helper route",
+    "preconditions": "W family and setCharacteristicNotification returns true; delayed worker current remote is not WFRM/FWRM",
+    "evidence": [
+      "Utils.java1062..1080;Utils$5.smali:taskRun delay;Utils$6.smali:run actual literal write"
+    ],
+    "hardware_status": "UNVERIFIED",
+    "confidence": "VERIFIED"
+  },
+  {
+    "id": "F-QUERY-ALARM",
+    "action": "Probe alarm presence",
+    "bytes": "6e08010178",
+    "characteristic": "Selected direct write characteristic, GATT table/property fallback in runtime-contract.md",
+    "write_type": "Existing Android characteristic writeType, not changed by app; ATT response mode not statically asserted",
+    "timing": "500ms after write before next probe",
+    "release_behavior": "No automatic movement END on this direct helper route",
+    "preconditions": "SettingActivity.initView; GATT/read/write nonnull; alarmCommandList not empty",
+    "evidence": [
+      "Utils.java1561..1585;SettingActivity.initView"
+    ],
+    "hardware_status": "UNVERIFIED",
+    "confidence": "VERIFIED"
+  },
+  {
+    "id": "F-QUERY-LIGHT",
+    "action": "Probe lighting presence",
+    "bytes": "6e0a000179",
+    "characteristic": "Selected direct write characteristic, GATT table/property fallback in runtime-contract.md",
+    "write_type": "Existing Android characteristic writeType, not changed by app; ATT response mode not statically asserted",
+    "timing": "After optional alarm500ms; then sleep500ms",
+    "release_behavior": "No automatic movement END on this direct helper route",
+    "preconditions": "Same Settings worker, read/write/GATT nonnull",
+    "evidence": [
+      "Utils.java1561..1585"
+    ],
+    "hardware_status": "UNVERIFIED",
+    "confidence": "VERIFIED"
+  },
+  {
+    "id": "F-ALARM-SET",
+    "action": "Set relative alarm",
+    "bytes": "sum5(6e 05 (minutes&ff) 00), then sum5(6e 06 ((minutes>>8)&ff) action)",
+    "characteristic": "Selected direct write characteristic, GATT table/property fallback in runtime-contract.md",
+    "write_type": "Existing Android characteristic writeType, not changed by app; ATT response mode not statically asserted",
+    "timing": "300ms after each write; minutes1..1440, zero modulo day becomes1440",
+    "release_behavior": "No automatic movement END on this direct helper route",
+    "preconditions": "Alarm UI visible by status7 or Settings alarm capability; current layout action list; no checked item -> no send; allowed combinations only",
+    "evidence": [
+      "AlarmClockActivity.java230..380"
+    ],
+    "hardware_status": "UNVERIFIED",
+    "confidence": "VERIFIED"
+  },
+  {
+    "id": "F-ALARM-CANCEL",
+    "action": "Cancel relative alarm",
+    "bytes": "6e05000073 then 6e06000074",
+    "characteristic": "Selected direct write characteristic, GATT table/property fallback in runtime-contract.md",
+    "write_type": "Existing Android characteristic writeType, not changed by app; ATT response mode not statically asserted",
+    "timing": "300ms after each",
+    "release_behavior": "No automatic movement END on this direct helper route",
+    "preconditions": "Alarm UI; local metadata removed before write",
+    "evidence": [
+      "AlarmClockActivity.java172..181"
+    ],
+    "hardware_status": "UNVERIFIED",
+    "confidence": "VERIFIED"
+  },
+  {
+    "id": "F-RGB",
+    "action": "Set lighting color",
+    "bytes": "sum5(6e 0c ff R) || sum5(6e 0d G B)",
+    "characteristic": "Selected direct write characteristic, GATT table/property fallback in runtime-contract.md",
+    "write_type": "Existing Android characteristic writeType, not changed by app; ATT response mode not statically asserted",
+    "timing": "One10byte write; worker clears flag after150ms; changes during flag are dropped",
+    "release_behavior": "No automatic movement END on this direct helper route",
+    "preconditions": "Settings lighting gate; accepted color event only when !sendFlag; saved RGB also sent on init",
+    "evidence": [
+      "LedLampActivity.java45..80,129..187"
+    ],
+    "hardware_status": "UNVERIFIED",
+    "confidence": "VERIFIED"
+  },
+  {
+    "id": "F-LIGHT-TIMER",
+    "action": "Set lighting timeout",
+    "bytes": "sum5(6e 0b secondsHi secondsLo)",
+    "characteristic": "Selected direct write characteristic, GATT table/property fallback in runtime-contract.md",
+    "write_type": "Existing Android characteristic writeType, not changed by app; ATT response mode not statically asserted",
+    "timing": "Once on slider release or Save; seconds0..300,0 Keep on",
+    "release_behavior": "No automatic movement END on this direct helper route",
+    "preconditions": "Lighting UI; Bluetooth enabled at save; direct helper requires char && isConnected",
+    "evidence": [
+      "LedLampActivity.java213..245"
+    ],
+    "hardware_status": "UNVERIFIED",
+    "confidence": "VERIFIED"
+  },
+  {
+    "id": "F-TIMER-d1rm-0",
+    "action": "Massage timer 0",
+    "bytes": "6e01005ecd",
+    "characteristic": "Selected direct write characteristic, GATT table/property fallback in runtime-contract.md",
+    "write_type": "Existing Android characteristic writeType, not changed by app; ATT response mode not statically asserted",
+    "timing": "Once; callback integers1/4 pass through opcode01/04 without assigned label",
+    "release_behavior": "No automatic movement END on this direct helper route",
+    "preconditions": "Selected d1rm; non-Rich SignSeekBar tag0235 finally callback integer0",
+    "evidence": [
+      "RemoteFragment.java1365..1420;fd1rm.xml"
+    ],
+    "hardware_status": "UNVERIFIED",
+    "confidence": "VERIFIED"
+  },
+  {
+    "id": "F-TIMER-d1rm-2",
+    "action": "Massage timer 2 hours",
+    "bytes": "6e01005fce",
+    "characteristic": "Selected direct write characteristic, GATT table/property fallback in runtime-contract.md",
+    "write_type": "Existing Android characteristic writeType, not changed by app; ATT response mode not statically asserted",
+    "timing": "Once; callback integers1/4 pass through opcode01/04 without assigned label",
+    "release_behavior": "No automatic movement END on this direct helper route",
+    "preconditions": "Selected d1rm; non-Rich SignSeekBar tag0235 finally callback integer2",
+    "evidence": [
+      "RemoteFragment.java1365..1420;fd1rm.xml"
+    ],
+    "hardware_status": "UNVERIFIED",
+    "confidence": "VERIFIED"
+  },
+  {
+    "id": "F-TIMER-d1rm-3",
+    "action": "Massage timer 3 hours",
+    "bytes": "6e010063d2",
+    "characteristic": "Selected direct write characteristic, GATT table/property fallback in runtime-contract.md",
+    "write_type": "Existing Android characteristic writeType, not changed by app; ATT response mode not statically asserted",
+    "timing": "Once; callback integers1/4 pass through opcode01/04 without assigned label",
+    "release_behavior": "No automatic movement END on this direct helper route",
+    "preconditions": "Selected d1rm; non-Rich SignSeekBar tag0235 finally callback integer3",
+    "evidence": [
+      "RemoteFragment.java1365..1420;fd1rm.xml"
+    ],
+    "hardware_status": "UNVERIFIED",
+    "confidence": "VERIFIED"
+  },
+  {
+    "id": "F-TIMER-d1rm-5",
+    "action": "Massage timer 5 hours",
+    "bytes": "6e010061d0",
+    "characteristic": "Selected direct write characteristic, GATT table/property fallback in runtime-contract.md",
+    "write_type": "Existing Android characteristic writeType, not changed by app; ATT response mode not statically asserted",
+    "timing": "Once; callback integers1/4 pass through opcode01/04 without assigned label",
+    "release_behavior": "No automatic movement END on this direct helper route",
+    "preconditions": "Selected d1rm; non-Rich SignSeekBar tag0235 finally callback integer5",
+    "evidence": [
+      "RemoteFragment.java1365..1420;fd1rm.xml"
+    ],
+    "hardware_status": "UNVERIFIED",
+    "confidence": "VERIFIED"
+  },
+  {
+    "id": "F-TIMER-d9rm-0",
+    "action": "Massage timer 0",
+    "bytes": "6e01008bfa",
+    "characteristic": "Selected direct write characteristic, GATT table/property fallback in runtime-contract.md",
+    "write_type": "Existing Android characteristic writeType, not changed by app; ATT response mode not statically asserted",
+    "timing": "Once; callback integers1/4 pass through opcode01/04 without assigned label",
+    "release_behavior": "No automatic movement END on this direct helper route",
+    "preconditions": "Selected d9rm; non-Rich SignSeekBar tag0236 finally callback integer0",
+    "evidence": [
+      "RemoteFragment.java1365..1420;fd9rm.xml"
+    ],
+    "hardware_status": "UNVERIFIED",
+    "confidence": "VERIFIED"
+  },
+  {
+    "id": "F-TIMER-d9rm-2",
+    "action": "Massage timer 2 hours",
+    "bytes": "6e01005fce",
+    "characteristic": "Selected direct write characteristic, GATT table/property fallback in runtime-contract.md",
+    "write_type": "Existing Android characteristic writeType, not changed by app; ATT response mode not statically asserted",
+    "timing": "Once; callback integers1/4 pass through opcode01/04 without assigned label",
+    "release_behavior": "No automatic movement END on this direct helper route",
+    "preconditions": "Selected d9rm; non-Rich SignSeekBar tag0236 finally callback integer2",
+    "evidence": [
+      "RemoteFragment.java1365..1420;fd9rm.xml"
+    ],
+    "hardware_status": "UNVERIFIED",
+    "confidence": "VERIFIED"
+  },
+  {
+    "id": "F-TIMER-d9rm-3",
+    "action": "Massage timer 3 hours",
+    "bytes": "6e010063d2",
+    "characteristic": "Selected direct write characteristic, GATT table/property fallback in runtime-contract.md",
+    "write_type": "Existing Android characteristic writeType, not changed by app; ATT response mode not statically asserted",
+    "timing": "Once; callback integers1/4 pass through opcode01/04 without assigned label",
+    "release_behavior": "No automatic movement END on this direct helper route",
+    "preconditions": "Selected d9rm; non-Rich SignSeekBar tag0236 finally callback integer3",
+    "evidence": [
+      "RemoteFragment.java1365..1420;fd9rm.xml"
+    ],
+    "hardware_status": "UNVERIFIED",
+    "confidence": "VERIFIED"
+  },
+  {
+    "id": "F-TIMER-d9rm-5",
+    "action": "Massage timer 5 hours",
+    "bytes": "6e010061d0",
+    "characteristic": "Selected direct write characteristic, GATT table/property fallback in runtime-contract.md",
+    "write_type": "Existing Android characteristic writeType, not changed by app; ATT response mode not statically asserted",
+    "timing": "Once; callback integers1/4 pass through opcode01/04 without assigned label",
+    "release_behavior": "No automatic movement END on this direct helper route",
+    "preconditions": "Selected d9rm; non-Rich SignSeekBar tag0236 finally callback integer5",
+    "evidence": [
+      "RemoteFragment.java1365..1420;fd9rm.xml"
+    ],
+    "hardware_status": "UNVERIFIED",
+    "confidence": "VERIFIED"
+  },
+  {
+    "id": "F-POPUP-5e",
+    "action": "Massage popup on/off",
+    "bytes": "6e01005ecd",
+    "characteristic": "Selected direct write characteristic, GATT table/property fallback in runtime-contract.md",
+    "write_type": "Existing Android characteristic writeType, not changed by app; ATT response mode not statically asserted",
+    "timing": "One write on selection; no curMode",
+    "release_behavior": "No automatic movement END on this direct helper route",
+    "preconditions": "RichButton tag65 opens PopWindow; direct helper char && isConnected",
+    "evidence": [
+      "PopWindow.java62..94"
+    ],
+    "hardware_status": "UNVERIFIED",
+    "confidence": "VERIFIED"
+  },
+  {
+    "id": "F-POPUP-5f",
+    "action": "Massage popup 15 minutes",
+    "bytes": "6e01005fce",
+    "characteristic": "Selected direct write characteristic, GATT table/property fallback in runtime-contract.md",
+    "write_type": "Existing Android characteristic writeType, not changed by app; ATT response mode not statically asserted",
+    "timing": "One write on selection; no curMode",
+    "release_behavior": "No automatic movement END on this direct helper route",
+    "preconditions": "RichButton tag65 opens PopWindow; direct helper char && isConnected",
+    "evidence": [
+      "PopWindow.java62..94"
+    ],
+    "hardware_status": "UNVERIFIED",
+    "confidence": "VERIFIED"
+  },
+  {
+    "id": "F-POPUP-63",
+    "action": "Massage popup 30 minutes",
+    "bytes": "6e010063d2",
+    "characteristic": "Selected direct write characteristic, GATT table/property fallback in runtime-contract.md",
+    "write_type": "Existing Android characteristic writeType, not changed by app; ATT response mode not statically asserted",
+    "timing": "One write on selection; no curMode",
+    "release_behavior": "No automatic movement END on this direct helper route",
+    "preconditions": "RichButton tag65 opens PopWindow; direct helper char && isConnected",
+    "evidence": [
+      "PopWindow.java62..94"
+    ],
+    "hardware_status": "UNVERIFIED",
+    "confidence": "VERIFIED"
+  },
+  {
+    "id": "F-POPUP-61",
+    "action": "Massage popup 45 minutes",
+    "bytes": "6e010061d0",
+    "characteristic": "Selected direct write characteristic, GATT table/property fallback in runtime-contract.md",
+    "write_type": "Existing Android characteristic writeType, not changed by app; ATT response mode not statically asserted",
+    "timing": "One write on selection; no curMode",
+    "release_behavior": "No automatic movement END on this direct helper route",
+    "preconditions": "RichButton tag65 opens PopWindow; direct helper char && isConnected",
+    "evidence": [
+      "PopWindow.java62..94"
+    ],
+    "hardware_status": "UNVERIFIED",
+    "confidence": "VERIFIED"
+  },
+  {
+    "id": "F-END-NORDIC",
+    "action": "Shared release/end NORDIC",
+    "bytes": "6e",
+    "characteristic": "Selected direct write characteristic, GATT table/property fallback in runtime-contract.md",
+    "write_type": "Existing Android characteristic writeType, not changed by app; ATT response mode not statically asserted",
+    "timing": "Mode0 waits50ms; mode2/4 waits150ms; onPause immediate enqueue (does not stop repeat)",
+    "release_behavior": "No automatic movement END on this direct helper route",
+    "preconditions": "Sender mode0,2,4, RemoteActivity.onPause or test explicit path; vendor selection already established",
+    "evidence": [
+      "Utils$2.run;RemoteActivity.onPause"
+    ],
+    "hardware_status": "UNVERIFIED",
+    "confidence": "VERIFIED"
+  },
+  {
+    "id": "F-END-WI_LINKE",
+    "action": "Shared release/end WI_LINKE",
+    "bytes": "6e 01 mode 6e sum(first4)&ff",
+    "characteristic": "Selected direct write characteristic, GATT table/property fallback in runtime-contract.md",
+    "write_type": "Existing Android characteristic writeType, not changed by app; ATT response mode not statically asserted",
+    "timing": "Mode0 waits50ms; mode2/4 waits150ms; onPause immediate enqueue (does not stop repeat)",
+    "release_behavior": "No automatic movement END on this direct helper route",
+    "preconditions": "Sender mode0,2,4, RemoteActivity.onPause or test explicit path; vendor selection already established",
+    "evidence": [
+      "Utils$2.run;RemoteActivity.onPause"
+    ],
+    "hardware_status": "UNVERIFIED",
+    "confidence": "VERIFIED"
+  }
+]

@@ -1794,6 +1794,7 @@
   },
   "entity": {
     "button": {
+      "tss_refresh": {"name": "Refresh bed features"},
       "konfurt_massage": {"name": "Toggle massage"},
       "konfurt_massage_head": {"name": "Cycle head massage"},
       "konfurt_massage_foot": {"name": "Cycle feet massage"},
@@ -6453,6 +6454,8 @@
       }
     },
     "switch": {
+      "tss_massage": {"name": "Massage"},
+      "tss_synchronization": {"name": "Synchronization"},
       "konfurt_massage": {"name": "Massage"},
       "mattresspoint_massage": { "name": "Massage" },
         "active_sleep_motor_lock": {
@@ -13612,6 +13615,27 @@
     "dreamlab_accessory": {
       "message": "The receiver has not reported this accessory or its current state on this connection."
     },
+    "tss_remote_layout": {
+      "message": "Choose a TSS Remote layout that contains bed controls."
+    },
+    "tss_remote_transport": {
+      "message": "No complete TSS Remote Bluetooth service was found. Select the third service option only if your receiver requires it."
+    },
+    "tss_remote_side": {
+      "message": "Choose the whole receiver. This app does not establish physical bed sides."
+    },
+    "tss_remote_control": {
+      "message": "Choose a control available for the current TSS Remote layout and mode."
+    },
+    "tss_remote_alarm": {
+      "message": "Choose an alarm preset and massage combination offered by this layout."
+    },
+    "tss_remote_accessory": {
+      "message": "The receiver has not reported this bed feature or its current state on this connection."
+    },
+    "tss_remote_settings": {
+      "message": "Choose TSS Remote lighting settings or refresh the bed features."
+    },
     "dreamlab_settings": {
       "message": "Choose Dreamlab Control settings with a color or three aroma timers in range."
     },
@@ -14800,6 +14824,7 @@
         "baseremote": "Base Remote app",
         "maxprime": "Maxprime app",
         "dreamlab2": "Dreamlab Control app",
+        "tss_remote": "TSS Remote app",
         "sleepfunction": "SleepFunction Bed Control app",
         "super_colchones": "Super Colchones app",
         "dynasty": "Dynasty DM9000 app"

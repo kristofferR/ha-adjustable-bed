@@ -425,6 +425,9 @@ _BY_VARIANT: Final[dict[tuple[str, str], SideProfile]] = {
     (BED_TYPE_SOLACE, SOLACE_VARIANT_WOOSA): SideProfile("Woosa Sleep"),
     (BED_TYPE_SOLACE, SOLACE_VARIANT_SOPHIE): SideProfile("Sophie"),
     (BED_TYPE_SOLACE, SOLACE_VARIANT_FLEXIREST): SideProfile("Sealy FlexiRest"),
+    (BED_TYPE_RICHMAT_CLASSIC_APPS, "tss_remote"): SideProfile(
+        "TSS Remote", variant_owned=True
+    ),
     (BED_TYPE_RICHMAT_CLASSIC_APPS, "dreamlab2"): SideProfile(
         "Dreamlab Control", variant_owned=True
     ),

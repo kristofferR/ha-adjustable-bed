@@ -3366,6 +3366,9 @@
  "button:truemotion_version": {
   "card_section": "utility"
  },
+ "button:tss_refresh": {
+  "card_section": "utility"
+ },
  "button:ultramatic_foot_down": {
   "card_section": "motors",
   "card_role": "down",
@@ -6769,6 +6772,9 @@
   "card_section": "utility"
  },
  "switch:truemotion_lock": {
+  "card_section": "utility"
+ },
+ "switch:tss_synchronization": {
   "card_section": "utility"
  },
  "switch:under_bed_lights": {

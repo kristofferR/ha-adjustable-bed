@@ -8,7 +8,7 @@ from dataclasses import replace
 from functools import partial
 from math import ceil
 from time import monotonic
-from typing import TYPE_CHECKING, Final
+from typing import TYPE_CHECKING, ClassVar, Final
 
 from bleak.backends.characteristic import BleakGATTCharacteristic
 from bleak.exc import BleakError
@@ -28,6 +28,7 @@ from ...controller_state import StateKey
 from ...errors import BedNotConnectedError, invalid
 from ...execution import NO_EXECUTION_CAPABILITIES, ExecutionCapabilities
 from ...profiles import dreamlab
+from ...profiles.resource_runtime import ResourceRuntime
 from ...state_keys import MASSAGE_TIMER_MINUTES, UNDER_BED_LIGHTS_ON, UNDER_BED_LIGHTS_RGB
 from ..base import CONTROLLER_GESTURE_RELEASE, BedController, require_controller
 from ..catalog_buttons import Kind, catalog_button, classify, unique_buttons
@@ -65,12 +66,22 @@ async def _press(controller: BedController, node: int, *, long: bool, raw: bool)
     if not long and raw != (
         ctrl._resolved_wire == "RAW" and nordic_label(ctrl._button(node)) is not None
     ):
-        raise invalid("dreamlab_control")
+        raise ctrl._invalid("control")
     await ctrl.execute_action(node, long=long)
 
 
 class DreamlabController(SessionController):
     """Capture one command, one physical session and one bank through END."""
+
+    button_prefix: ClassVar[str] = "dreamlab"
+    error_namespace: ClassVar[str] = "dreamlab"
+
+    @property
+    def release_key(self) -> str:
+        return f"{self.button_prefix}_release"
+
+    def _invalid(self, suffix: str):
+        return invalid(f"{self.error_namespace}_{suffix}")
 
     def __init__(
         self,
@@ -79,10 +90,12 @@ class DreamlabController(SessionController):
         app: str,
         device_name: str | None = None,
         capability_snapshot: Mapping[str, object] | None = None,
+        runtime: ResourceRuntime = dreamlab.RUNTIME,
     ) -> None:
         super().__init__(coordinator, app=app, device_name=device_name)
-        if self.layout not in dreamlab.LAYOUTS:
-            raise invalid("dreamlab_layout")
+        self.runtime = runtime
+        if self.layout not in self.runtime.layouts:
+            raise self._invalid("layout")
         self._preferences = {}
         snapshot = capability_snapshot or {}
         self._known_light = snapshot.get("layout") == self.layout and snapshot.get("light") is True
@@ -91,6 +104,9 @@ class DreamlabController(SessionController):
     @property
     def capability_snapshot_policy(self) -> CapabilitySnapshotPolicy:
         return CapabilitySnapshotPolicy(deferred_reload=True, after_operations=True)
+
+    def _new_receive(self) -> ReceiveState:
+        return ReceiveState()
 
     def capability_snapshot(self) -> dict[str, object]:
         return {"layout": self.layout, "light": self._known_light}
@@ -128,12 +144,21 @@ class DreamlabController(SessionController):
 
     @property
     def supports_single_address_pairing(self) -> bool:
-        return self.layout in dreamlab.SIDE_LAYOUTS and self._resolved_wire == "FRAMED"
+        return self.layout in self.runtime.side_layouts and self._resolved_wire == "FRAMED"
+
+    def _mode_value(self, mode: int) -> str:
+        return _PAIRED_SIDES[mode] if self.layout in self.runtime.side_layouts else str(mode)
+
+    def _action_name(self, button: Control, *, long: bool, raw: bool) -> str:
+        return action_name(button, long=long, raw=raw)
+
+    def _gesture(self, button: Control, wire: p.Wire, selection: Selection, *, long: bool) -> Gesture | None:
+        return gesture(button, self.layout, wire, selection, long=long)
 
     def _target(self, wire: p.Wire) -> int:
         if self.command_side in _PAIRED_SIDES:
-            if self.layout not in dreamlab.SIDE_LAYOUTS or wire == "RAW":
-                raise invalid("dreamlab_side")
+            if self.layout not in self.runtime.side_layouts or wire == "RAW":
+                raise self._invalid("side")
             return int(self.command_side == SIDE_RIGHT)
         return self._mode if wire == "FRAMED" else 0
 
@@ -145,7 +170,7 @@ class DreamlabController(SessionController):
             "alarm_acknowledged": self._receive.alarm_enabled,
             "last_notification": self._receive.last_value,
         }
-        mode = _mode_value(self.layout, self._mode)
+        mode = self._mode_value(self._mode)
         hold = self._selection.hold
         self.forward_controller_state_updates(
             STATUS("ready" if self._session else "disconnected"),
@@ -170,6 +195,7 @@ class DreamlabController(SessionController):
         ):
             return
         self.forward_raw_notification(session.notify.uuid, bytes(data))
+        parsed = False
         try:
             self._receive.feed(
                 bytes(data),
@@ -179,11 +205,12 @@ class DreamlabController(SessionController):
                 table_controls_bound=False,
             )
             self._rejection = None
+            parsed = True
         except MalformedFrame:
             # Recover the next frame boundary without carrying a broken substring.
             self._receive.buffer = "6e" if data.endswith(b"\x6e") else ""
             self._rejection = "Malformed notification"
-        if self._receive.value_event in ("6e0e00017d", "6e0e00037f"):
+        if parsed and self._receive.value_event in ("6e0e00017d", "6e0e00037f"):
             self._light_on = self._receive.value_event == "6e0e00037f"
             self.forward_controller_state_updates(UNDER_BED_LIGHTS_ON(self._light_on))
         self._known_light |= self._receive.light_capable
@@ -201,15 +228,15 @@ class DreamlabController(SessionController):
                 ),
             )
         except ValueError as err:
-            raise BedNotConnectedError("dreamlab_transport") from err
+            raise BedNotConnectedError(f"{self.error_namespace}_transport") from err
         name = self._device_name or self._coordinator.entry.data.get(CONF_BLE_DEVICE_NAME)
         self._worker.set_interval(
-            dreamlab.poll_interval(
+            self.runtime.poll_interval(
                 name if isinstance(name, str) else None, raw=session.wire == "RAW"
             )
         )
         self._session, self._wire = session, session.wire
-        self._receive = ReceiveState()
+        self._receive = self._new_receive()
         self._light_on = None
         self._notifications_started = False
         self._rejection = None
@@ -225,7 +252,7 @@ class DreamlabController(SessionController):
                         self._rejection = "Notification registration failed"
                 if self._notifications_started:
                     if session.wire == "FRAMED":
-                        await asyncio.sleep(p.STARTUP_MS / 1000)
+                        await asyncio.sleep(self.runtime.startup_ms / 1000)
                         await self._send(p.INITIALIZE)
                     await self._probe()
         except BaseException:
@@ -235,7 +262,7 @@ class DreamlabController(SessionController):
         self._publish()
 
     def on_disconnect(self) -> None:
-        self._receive = ReceiveState()
+        self._receive = self._new_receive()
         self._light_on = None
         self.forward_controller_state_updates(
             LIGHT_SECONDS(None),
@@ -250,7 +277,7 @@ class DreamlabController(SessionController):
             if any(button.alarm_clock for button in self._controls)
             else (p.LAMP_QUERY, p.AROMA_QUERY)
         )
-        await self._sequence(frames, p.QUERY_SPACING_MS, counted=counted)
+        await self._sequence(frames, self.runtime.query_spacing_ms, counted=counted)
 
     async def _sequence(
         self, frames: tuple[bytes, ...], spacing: int, *, counted: bool = True
@@ -266,7 +293,7 @@ class DreamlabController(SessionController):
             await self._send(frame, cancel)
 
     def _plan(self, button: Control, wire: p.Wire, *, long: bool) -> Gesture | None:
-        return gesture(button, self.layout, wire, self._selection, long=long)
+        return self._gesture(button, wire, self._selection, long=long)
 
     def _selection_after(self, button: Control) -> None:
         if button.tag in ("53", "54", "55"):
@@ -283,9 +310,9 @@ class DreamlabController(SessionController):
         with self._transaction() as session:
             plan = self._plan(button, session.wire, long=long)
             if plan is None:
-                raise invalid("dreamlab_control")
+                raise self._invalid("control")
             target = self._target(session.wire)
-            name = action_name(button, long=long, raw=session.wire == "RAW")
+            name = self._action_name(button, long=long, raw=session.wire == "RAW")
             control = classify(name)
             context = current_command_context()
             leased = context is not None and context.lease is not None
@@ -332,7 +359,7 @@ class DreamlabController(SessionController):
     async def stop_all(self) -> None:
         if not CONTROLLER_GESTURE_RELEASE.get():
             with self._transaction() as session:
-                await self._release(p.HELD_RELEASE_MS, mode=self._target(session.wire))
+                await self._release(self.runtime.held_release_ms, mode=self._target(session.wire))
 
     def _button_spec(
         self, button: Control, *, long: bool, raw: bool
@@ -347,16 +374,16 @@ class DreamlabController(SessionController):
         plans = [
             plan
             for wire in wires
-            if (plan := gesture(button, self.layout, wire, selection, long=long)) is not None
+            if (plan := self._gesture(button, wire, selection, long=long)) is not None
         ]
         if not plans:
             return None
-        name = action_name(button, long=long, raw=raw)
+        name = self._action_name(button, long=long, raw=raw)
         shape = classify(name)
         if shape is None:
             name = f"Control {button.node}"
         save = long or shape is not None and shape.kind is Kind.SAVE
-        key = f"dreamlab_{button.node}" + ("_raw" if raw else "") + ("_long" if long else "")
+        key = f"{self.button_prefix}_{button.node}" + ("_raw" if raw else "") + ("_long" if long else "")
         wire = self._resolved_wire
         active = (
             (plan := self._plan(button, wire, long=long)) is not None and plan.held
@@ -364,7 +391,7 @@ class DreamlabController(SessionController):
             else any(plan.held for plan in plans) and not button.hold_affected
         )
         hold = (
-            ControllerHoldSpec(key, release_button_key=RELEASE_KEY) if active and not save else None
+            ControllerHoldSpec(key, release_button_key=self.release_key) if active and not save else None
         )
         return catalog_button(
             key,
@@ -396,12 +423,12 @@ class DreamlabController(SessionController):
         if self.layout == "Y6RM":
             specs.append(
                 catalog_button(
-                    "dreamlab_massage_toggle", "Toggle massage", _toggle_massage, kind=Kind.MASSAGE
+                    f"{self.button_prefix}_massage_toggle", "Toggle massage", _toggle_massage, kind=Kind.MASSAGE
                 )
             )
         specs.append(
             ControllerButtonSpec(
-                RELEASE_KEY,
+                self.release_key,
                 "Release",
                 lambda c: c.stop_all(),
                 translation_key="richmat_classic_release",
@@ -412,11 +439,11 @@ class DreamlabController(SessionController):
         return unique_buttons(specs)
 
     def controller_button_available(self, key: str) -> bool:
-        if key == RELEASE_KEY or key == "dreamlab_massage_toggle" and self.layout == "Y6RM":
+        if key == self.release_key or key == f"{self.button_prefix}_massage_toggle" and self.layout == "Y6RM":
             return True
         prefix, separator, node = key.partition("_")
         number = node.split("_", 1)[0]
-        if not separator or prefix != "dreamlab" or not number.isdecimal():
+        if not separator or prefix != self.button_prefix or not number.isdecimal():
             return False
         button = next((button for button in self._controls if button.node == int(number)), None)
         if button is None:
@@ -452,7 +479,7 @@ class DreamlabController(SessionController):
 
     def validate_hold_control(self, control: str, duration_ms: int) -> None:
         if control not in self.held_control_options or not 1 <= duration_ms <= 60000:
-            raise invalid("dreamlab_control")
+            raise self._invalid("control")
 
     async def hold_control(self, control: str, duration_ms: int) -> None:
         self.validate_hold_control(control, duration_ms)
@@ -466,7 +493,7 @@ class DreamlabController(SessionController):
     def controller_select_specs(self) -> tuple[ControllerSelectSpec, ...]:
         specs = []
         if self._resolved_wire != "RAW" and len(self._model.modes) > 1:
-            options = tuple(_mode_value(self.layout, mode) for mode in self._model.modes)
+            options = tuple(self._mode_value(mode) for mode in self._model.modes)
             if self.command_side not in _PAIRED_SIDES:
                 specs.append(self._select_spec(MODE, options))
         if self.layout == "GVRM":
@@ -490,7 +517,7 @@ class DreamlabController(SessionController):
     ) -> ControllerSelectSpec:
         def select_local(value: str) -> None:
             if value not in options:
-                raise invalid("dreamlab_control")
+                raise self._invalid("control")
             if key == MODE:
                 self._mode = self._model.modes[options.index(value)]
             elif key == HEAD_FOOT:
@@ -525,7 +552,7 @@ class DreamlabController(SessionController):
     def massage_timer_options(self) -> list[int]:
         if not self.supports_massage_timer:
             return []
-        return [m for m in p.SLIDER_MINUTES if m] if self._slider else [10, 20, 30]
+        return [m for m in p.SLIDER_MINUTES if m] if self._slider else [minutes for minutes in self.runtime.massage_popup if minutes]
 
     @property
     def massage_timer_can_turn_off(self) -> bool:
@@ -533,9 +560,9 @@ class DreamlabController(SessionController):
 
     async def set_massage_timer(self, minutes: int) -> None:
         if not self.supports_massage_timer or minutes not in (0, *self.massage_timer_options):
-            raise invalid("dreamlab_control")
+            raise self._invalid("control")
         if not self._slider and not minutes:
-            raise invalid("dreamlab_control")
+            raise self._invalid("control")
         with self.sent_state(MASSAGE_TIMER_MINUTES(minutes)):
             if self._slider:
                 self._require_receiver()
@@ -551,13 +578,13 @@ class DreamlabController(SessionController):
         self._require_receiver()
         with self._transaction():
             await self._send(
-                p.control(bytes((dreamlab.MASSAGE_POPUP[minutes],)), "FRAMED"),
+                p.control(bytes((self.runtime.massage_popup[minutes],)), "FRAMED"),
                 self._coordinator.cancel_command,
             )
 
     def _require_receiver(self) -> None:
         if self.command_side in _PAIRED_SIDES:
-            raise invalid("dreamlab_side")
+            raise self._invalid("side")
 
     @property
     def controller_number_specs(self) -> tuple[ControllerNumberSpec, ...]:
@@ -593,7 +620,7 @@ class DreamlabController(SessionController):
         if self.command_side in _PAIRED_SIDES:
             return None
         capability = p.alarm_capability(self._alarm_actions())
-        if capability is not None and self.layout not in dreamlab.DIRECT_ALARM_LAYOUTS:
+        if capability is not None and self.layout not in self.runtime.direct_alarm_layouts:
             return replace(capability, live_check=True)
         return capability
 
@@ -612,13 +639,13 @@ class DreamlabController(SessionController):
                 return (
                     preset
                     if zone is None
-                    else dreamlab.ALARM_COMBINATIONS[preset][massage_codes.index(zone)]
+                    else self.runtime.alarm_combinations[preset][massage_codes.index(zone)]
                 )
             if zone is not None:
                 return zone
         except (KeyError, ValueError) as err:
-            raise invalid("dreamlab_alarm") from err
-        raise invalid("dreamlab_alarm")
+            raise self._invalid("alarm") from err
+        raise self._invalid("alarm")
 
     def validate_alarm(self, alarm: AlarmRequest) -> None:
         self._require_receiver()
@@ -626,15 +653,15 @@ class DreamlabController(SessionController):
 
     async def check_alarm(self, alarm: AlarmRequest) -> None:
         self._require_receiver()
-        if not self._receive.alarm_capable and self.layout not in dreamlab.DIRECT_ALARM_LAYOUTS:
-            raise invalid("dreamlab_accessory")
+        if not self._receive.alarm_capable and self.layout not in self.runtime.direct_alarm_layouts:
+            raise self._invalid("accessory")
 
     async def configure_alarm(self, alarm: AlarmRequest) -> None:
         await self.check_alarm(alarm)
         code = self._alarm_code(alarm)
         minutes = min(1440, alarm.minutes_until(dt_util.now())) if alarm.enabled else 0
         with self._transaction():
-            await self._sequence(p.alarm(minutes, code), p.ALARM_SPACING_MS)
+            await self._sequence(p.alarm(minutes, code), self.runtime.alarm_spacing_ms)
 
     def _toggle_light(self) -> Control | None:
         return next(
@@ -675,7 +702,7 @@ class DreamlabController(SessionController):
         if button is None:
             raise NotImplementedError
         if self._light_on is None:
-            raise invalid("dreamlab_accessory")
+            raise self._invalid("accessory")
         if enabled != self._light_on:
             # A second power request needs a fresh state reply, even if the
             # first turn's cleanup was cancelled after its toggle write.
@@ -694,10 +721,10 @@ class DreamlabController(SessionController):
     async def set_light_color(self, rgb_color: tuple[int, int, int]) -> None:
         self._require_receiver()
         if not self._receive.light_capable:
-            raise invalid("dreamlab_accessory")
+            raise self._invalid("accessory")
         with self._transaction(), self.sent_state(UNDER_BED_LIGHTS_RGB(rgb_color)):
             await self._send(p.rgb(*rgb_color), self._coordinator.cancel_command)
-            await self._wait(p.SETTINGS_SPACING_MS, self._coordinator.cancel_command)
+            await self._wait(self.runtime.rgb_spacing_ms, self._coordinator.cancel_command)
 
     def validate_richmat_classic_request(self, request: Request) -> None:
         self._require_receiver()
@@ -713,7 +740,16 @@ class DreamlabController(SessionController):
             )
         ):
             return
-        raise invalid("dreamlab_settings")
+        raise self._invalid("settings")
+
+    def settings_session(self, request: Request) -> Transport:
+        link = super().settings_session(request)
+        if (
+            request.operation == "rgb" and not self._receive.light_capable
+            or request.operation == "aroma" and not self._receive.aroma_capable
+        ):
+            raise self._invalid("accessory")
+        return link
 
     async def async_execute_richmat_classic_request(self, request: Request) -> None:
         self.validate_richmat_classic_request(request)
@@ -724,12 +760,12 @@ class DreamlabController(SessionController):
                 await self.set_light_color(request.color)
             elif request.aroma_values is not None:
                 if not self._receive.aroma_capable:
-                    raise invalid("dreamlab_accessory")
+                    raise self._invalid("accessory")
                 frames = tuple(
                     p.aroma(op, value)
                     for op, value in zip((0x1B, 0x1C, 0x1D), request.aroma_values, strict=True)
                 )
-                await self._sequence(frames, p.SETTINGS_SPACING_MS)
+                await self._sequence(frames, self.runtime.rgb_spacing_ms)
 
 
 def _mode_value(layout: str, mode: int) -> str:
@@ -743,11 +779,11 @@ def _axis_value(selection: Selection) -> str:
 async def _select_press_mode(controller: BedController, value: str) -> None:
     ctrl = require_controller(controller, DreamlabController)
     if value not in ("release", "hold"):
-        raise invalid("dreamlab_control")
+        raise ctrl._invalid("control")
     view_id = "btnRelease" if value == "release" else "btnHold"
     button = next((button for button in ctrl._controls if button.view_id == view_id), None)
     if button is None:
-        raise invalid("dreamlab_control")
+        raise ctrl._invalid("control")
     await ctrl.execute_action(button.node)
 
 
@@ -759,7 +795,7 @@ async def _set_light_seconds(controller: BedController, value: float) -> None:
     ctrl = require_controller(controller, DreamlabController)
     ctrl._require_receiver()
     if not ctrl._receive.light_capable:
-        raise invalid("dreamlab_accessory")
+        raise ctrl._invalid("accessory")
     seconds = int(value)
     with ctrl._transaction(), ctrl.sent_state(LIGHT_SECONDS(seconds)):
         await ctrl._send(p.direct(0x0B, seconds >> 8, seconds), ctrl._coordinator.cancel_command)
