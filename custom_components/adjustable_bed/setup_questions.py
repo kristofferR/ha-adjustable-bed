@@ -163,6 +163,7 @@ from .const import (
     BED_TYPE_VIBRADORM,
     BED_TYPE_VIBRADORM_APP,
     BED_TYPE_VINDO,
+    BED_TYPE_VIVASLEEP,
     BED_TYPE_VMATBASIC,
     BED_TYPE_YAMADA,
     BED_TYPE_ZSERIES,
@@ -484,6 +485,7 @@ _OWNED_BY_BED_TYPE: Final[dict[str, frozenset[str]]] = {
     BED_TYPE_AMBIENT: _APP_DEFINED - {CONF_PROTOCOL_VARIANT},
     BED_TYPE_ERGOBED: _APP_DEFINED,
     BED_TYPE_MOODBASE: _APP_DEFINED,
+    BED_TYPE_VIVASLEEP: _APP_DEFINED,
     BED_TYPE_MOTOMOTION: _APP_DEFINED,
     BED_TYPE_DOUBLESLEEP: _APP_DEFINED - {CONF_MOTOR_PULSE_COUNT},
     BED_TYPE_SLEEPTRACKER: _APP_DEFINED,
@@ -1636,6 +1638,13 @@ def _motion_bed_seed(
     if discovered is None or not discovered.name:
         return dict(data)
     return {CONF_BLE_DEVICE_NAME: discovered.name, **data}
+
+
+def _vivasleep_errors(data: Mapping[str, Any]) -> dict[str, str]:
+    from .profiles.vivasleep import accepts_name
+
+    name = data.get(CONF_BLE_DEVICE_NAME)
+    return {} if isinstance(name, str) and accepts_name(name) else {CONF_BLE_DEVICE_NAME: "vivasleep_profile"}
 
 
 def _moodbase_errors(data: Mapping[str, Any]) -> dict[str, str]:
@@ -4618,6 +4627,16 @@ SETUP_PROFILES: Final[dict[str, SetupProfile]] = {
         derive=lambda _data: _NO_PULSE_CHOICE,
         seed=_ergobed_seed,
         title=lambda _data: "ErgoBed Control",
+    ),
+    BED_TYPE_VIVASLEEP: _asking(
+        BED_TYPE_VIVASLEEP,
+        owns={**_BASE[BED_TYPE_VIVASLEEP].owns, CONF_HAS_MASSAGE: False, CONF_DISABLE_ANGLE_SENSING: True},
+        questions=(Question(CONF_BLE_DEVICE_NAME, default="", text=True),),
+        validate=_vivasleep_errors,
+        imports=("profiles.vivasleep",),
+        derive=lambda _data: _NO_PULSE_CHOICE,
+        seed=_ergobed_seed,
+        title=lambda _data: "VivaSleep",
     ),
     BED_TYPE_MOODBASE: _asking(
         BED_TYPE_MOODBASE,

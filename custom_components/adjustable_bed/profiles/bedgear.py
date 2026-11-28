@@ -19,6 +19,7 @@ class Control:
     letter: str
     release: Release = "none"
     held: bool = True
+    tap_up_write: bool = False
 
 
 def eligible(name: str | None) -> bool:

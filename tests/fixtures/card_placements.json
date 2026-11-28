@@ -6860,6 +6860,12 @@
  "sensor:vibradorm_app_xmc_status": {
   "card_section": "hidden"
  },
+ "sensor:vivasleep_alarm_strength": {
+  "card_section": "hidden"
+ },
+ "sensor:vivasleep_sync_mode": {
+  "card_section": "hidden"
+ },
  "sensor:vmatbasic_firmware": {
   "card_section": "hidden"
  },
@@ -7217,5 +7223,8 @@
  },
  "switch:under_bed_lights": {
   "card_section": "lighting"
+ },
+ "switch:vivasleep_sync_enabled": {
+  "card_section": "utility"
  }
 }

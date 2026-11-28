@@ -31,26 +31,35 @@ class Receiver:
         if not data:
             return ()
         texts = []
+
+        def append(fragment: bytes) -> bool:
+            if len(self.buffer) + len(fragment) > 8192:
+                self.buffer.clear()
+                self.collecting = False
+                return False
+            self.buffer.extend(fragment)
+            return True
+
         if not self.collecting:
             if b"$" in data:
                 self.collecting = True
                 self.buffer.clear()
-                self.buffer.extend(data[data.index(b"$") + 1 :])
+                if not append(data[data.index(b"$") + 1 :]):
+                    return ()
         else:
             if b"\r" in data:
-                self.buffer.extend(data[: max(0, data.index(b"\r") - 1)])
+                if not append(data[: max(0, data.index(b"\r") - 1)]):
+                    return ()
                 texts.append(
                     re.sub(r"[^0-9 ]", "", self.buffer.decode("ascii", errors="ignore")).strip()
                 )
                 self.buffer.clear()
             elif b"$" not in data:
-                self.buffer.extend(data)
+                if not append(data):
+                    return ()
             if b"$" in data:
-                self.buffer.extend(data[data.index(b"$") + 1 :])
-        # The Android buffer is unbounded. Reject oversized/incomplete messages in HA.
-        if len(self.buffer) > 8192:
-            self.buffer.clear()
-            self.collecting = False
+                if not append(data[data.index(b"$") + 1 :]):
+                    return tuple(texts)
         return tuple(texts)
 
 
@@ -89,7 +98,9 @@ class ErgoBedReceiver(Receiver):
 
 
 def token_fields(
-    text: str, *, alarm_indices: tuple[int, int, int] = (11, 12, 14),
+    text: str,
+    *,
+    alarm_indices: tuple[int, int, int] = (11, 12, 14),
     parse_sync: Callable[[str], int | None] | None = None,
 ) -> dict[str, object]:
     tokens = text.split(" ")
@@ -107,8 +118,10 @@ def token_fields(
         }
         raw = tokens[24]
         sync_type = (
-            parse_sync(raw) if parse_sync is not None
-            else int(raw) if raw.isascii() and raw.isdecimal() and len(raw) <= 10
+            parse_sync(raw)
+            if parse_sync is not None
+            else int(raw)
+            if raw.isascii() and raw.isdecimal() and len(raw) <= 10
             else None
         )
         if sync_type is not None:

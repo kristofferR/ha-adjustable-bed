@@ -177,6 +177,11 @@ async def factory_controllers() -> list[BedController]:
 
     for name in ("HHC00000E1DE0X", "HHC0000001DM0X", "HHC0000015BM0H"):
         controllers.append(MoodBaseController(_FactoryCoordinator(), profile=MoodBaseProfile(name)))
+    from custom_components.adjustable_bed.beds.bedgear.vivasleep import VivaSleepController
+    from custom_components.adjustable_bed.profiles.vivasleep import VivaSleepProfile
+
+    for selected in ("HHC00000E0DE0X", "HHC0000000DM0X", "HHC0000015B00H"):
+        controllers.append(VivaSleepController(_FactoryCoordinator(), profile=VivaSleepProfile(selected)))
     # MotoMotion decodes its panels from the advertised name. This name adds the
     # users, RGB and music panels that the default name lacks.
     controller = await _create_controller_for_bed_type(BED_TYPE_MOTOMOTION)

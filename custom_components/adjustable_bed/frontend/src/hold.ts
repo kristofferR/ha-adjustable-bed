@@ -238,6 +238,8 @@ export interface HoldActions {
   // paired bed is the side's own stop rather than the parent's; omitted falls
   // back to the single bed's stop.
   stopBed: (stopEntityId?: string) => void;
+  // A cancelled gesture must not execute a normal release tail.
+  cancelHold?: (releaseEntityId: string) => void;
   // Called when a tap move starts or ends, so the card can show it.
   changed?: () => void;
 }
@@ -681,7 +683,13 @@ export class MotorHold {
   // Returns the entity whose stop was requested, if any.
   private _release(
     target: Pick<PendingRelease, "cover" | "stopEntityId" | "releaseButton">,
+    cancelled = false,
   ): string | undefined {
+    if (target.releaseButton && cancelled) {
+      if (this.actions.cancelHold) this.actions.cancelHold(target.releaseButton);
+      else this.actions.stopBed(target.stopEntityId);
+      return target.releaseButton;
+    }
     if (target.releaseButton) {
       this.actions.stopBed(target.releaseButton);
       return target.releaseButton;
@@ -794,22 +802,24 @@ export class MotorHold {
     pointerId: number,
     isPrimaryButtonRelease: boolean,
     stopEntityId?: string,
+    cancelled = false,
   ): void {
     if (this._pointerId === null || pointerId !== this._pointerId) return;
     if (!isPrimaryButtonRelease) return;
     if (stopEntityId !== undefined && this._stop !== stopEntityId) return;
-    this.end(motor, stopEntityId);
+    this.end(motor, stopEntityId, cancelled);
   }
 
-  endActiveFromPointer(pointerId: number, isPrimaryButtonRelease: boolean): void {
+  endActiveFromPointer(pointerId: number, isPrimaryButtonRelease: boolean, cancelled = false): void {
     if (!this._motor || this._pointerId === null) return;
-    this.endFromPointer(this._motor, pointerId, isPrimaryButtonRelease);
+    this.endFromPointer(this._motor, pointerId, isPrimaryButtonRelease, undefined, cancelled);
   }
 
   endKeyboard(
     motor?: MotorEntity,
     stopEntityId?: string,
     keyboardKey?: string,
+    cancelled = false,
   ): void {
     // A key release cannot end a tap move: Enter and Space are what start it.
     if (this._pointerId !== null || this._tapDirection !== null || !this._motor) return;
@@ -817,13 +827,13 @@ export class MotorHold {
     if (stopEntityId !== undefined && this._stop !== stopEntityId) return;
     if (keyboardKey !== undefined && this._keyboardKey !== null &&
         this._keyboardKey !== keyboardKey) return;
-    this.end(this._motor);
+    this.end(this._motor, stopEntityId, cancelled);
   }
 
   // End a hold and stop the motor. Releasing one control must not end a hold
   // another control owns: a blur on some other motor's button would otherwise
   // stop the motor that is running.
-  end(motor: MotorEntity, stopEntityId?: string): void {
+  end(motor: MotorEntity, stopEntityId?: string, cancelled = false): void {
     if (!this._ownsRelease(motor, stopEntityId)) return;
     const started = this._started;
     const hasMetadata = this._heldControl !== undefined;
@@ -832,7 +842,11 @@ export class MotorHold {
       cover: this._cover ?? undefined,
       stopEntityId: this._stop ?? undefined,
     };
-    if (started && hasMetadata) this._scheduleRelease();
+    if (started && hasMetadata) {
+      // Native cancellation suppresses release tails; other routes keep their cleanup timing.
+      if (cancelled && releaseTarget.releaseButton) this._release(releaseTarget, true);
+      else this._scheduleRelease();
+    }
     this._reset();
     if (!started || hasMetadata) return;
     this._release(releaseTarget);
@@ -1033,7 +1047,7 @@ export class MotorHold {
     const record = (id: string | undefined): void => {
       if (id !== undefined) stopped.add(id);
     };
-    if (active && activeStarted) record(this._release(active));
+    if (active && activeStarted) record(this._release(active, true));
     for (const release of [...this._pendingReleases.values()]) {
       record(this._runRelease(release));
     }

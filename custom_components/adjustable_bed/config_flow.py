@@ -247,6 +247,7 @@ from .const import (
     BED_TYPE_VIBRADORM,
     BED_TYPE_VIBRADORM_APP,
     BED_TYPE_VINDO,
+    BED_TYPE_VIVASLEEP,
     BED_TYPE_VMATBASIC,
     BED_TYPE_ZSERIES,
     CONF_BACK_MAX_ANGLE,
@@ -463,7 +464,7 @@ _NAME_ONLY_CONFIDENCE = 0.3
 _EXPLICIT_APP_HINTS = frozenset(
     {
         "ar_connect",
-        "aminach", "ergosportive", "roewa", "avek", "active_sleep","topcare", "ai_bed", "intellibed", BED_TYPE_RONCO_MOTION, BED_TYPE_COMFORT_BED, BED_TYPE_ATLAS_LIFT, BED_TYPE_DORSAL, BED_TYPE_ENSO2, BED_TYPE_ERGOBED, BED_TYPE_LIKIMIO, BED_TYPE_MOODBASE, "thrivesleep", "super_colchones", "dreamsense", "muuegm", "awmotion", "flexx_motion", "saatva", "bobpowerbase", BED_TYPE_COMFORT_ENHANCEMENT3, BED_TYPE_MYSIDE, BED_TYPE_RICHMAT_APP_SLEEP, BED_TYPE_RICHMAT_APP, BED_TYPE_RICHMAT_CLASSIC_APPS, BED_TYPE_MOTOMOTION, BED_TYPE_MLILY, BED_TYPE_MLILY0, BED_TYPE_GALAXY, BED_TYPE_GOODVIBE, BED_TYPE_HJBED, BED_TYPE_ESHINE_OKIN, BED_TYPE_ISLEEP, BED_TYPE_KOMFYD, BED_TYPE_COMFYDS, BED_TYPE_RIZE, BED_TYPE_STARCODE_ABM5_4, BED_TYPE_MOTION_BED, BED_TYPE_VMATBASIC, BED_TYPE_FURNIMOVE,
+        "aminach", "ergosportive", "roewa", "avek", "active_sleep","topcare", "ai_bed", "intellibed", BED_TYPE_RONCO_MOTION, BED_TYPE_COMFORT_BED, BED_TYPE_ATLAS_LIFT, BED_TYPE_DORSAL, BED_TYPE_ENSO2, BED_TYPE_ERGOBED, BED_TYPE_LIKIMIO, BED_TYPE_MOODBASE, BED_TYPE_VIVASLEEP, "thrivesleep", "super_colchones", "dreamsense", "muuegm", "awmotion", "flexx_motion", "saatva", "bobpowerbase", BED_TYPE_COMFORT_ENHANCEMENT3, BED_TYPE_MYSIDE, BED_TYPE_RICHMAT_APP_SLEEP, BED_TYPE_RICHMAT_APP, BED_TYPE_RICHMAT_CLASSIC_APPS, BED_TYPE_MOTOMOTION, BED_TYPE_MLILY, BED_TYPE_MLILY0, BED_TYPE_GALAXY, BED_TYPE_GOODVIBE, BED_TYPE_HJBED, BED_TYPE_ESHINE_OKIN, BED_TYPE_ISLEEP, BED_TYPE_KOMFYD, BED_TYPE_COMFYDS, BED_TYPE_RIZE, BED_TYPE_STARCODE_ABM5_4, BED_TYPE_MOTION_BED, BED_TYPE_VMATBASIC, BED_TYPE_FURNIMOVE,
      BED_TYPE_GMMOTOR, BED_TYPE_OKIMIKI, BED_TYPE_SIMMONS_BLUE, "gmmotor_sleep_mm", "gmmotor_sleep_sxb", "sealy_posturematic", "instant_comfort", BED_TYPE_TRUEMOTION,
      BED_TYPE_JEROME_ADJUSTABLE_BASE, BED_TYPE_VINDO, BED_TYPE_AMBIENT, "silksnow", BED_TYPE_MOTIONFLEX}
 )
@@ -1432,6 +1433,7 @@ _DECLARED_QUESTION_ROUTES: Final = frozenset(
         "l2motion",
         BED_TYPE_ERGOBED,
         BED_TYPE_MOODBASE,
+        BED_TYPE_VIVASLEEP,
         "suta",
         BED_TYPE_TRUEMOTION,
         "hush_base",
@@ -1458,7 +1460,7 @@ _APP_SETUP_STEPS: Final[dict[str, str]] = {
 def _name_rule_setup_name(bed_type: str | None, name: str | None) -> dict[str, str]:
     """Keep the raw Bluetooth name an app name rule reads, never the display name."""
     if (
-        bed_type not in NAME_RULE_VARIANTS_BY_BED_TYPE and bed_type not in (BED_TYPE_GMMOTOR, BED_TYPE_MOTOMOTION, "bedgear", "l2motion", BED_TYPE_MOODBASE, "suta", BED_TYPE_TRUEMOTION, "sleep_evolution", "wsilver_legacy")
+        bed_type not in NAME_RULE_VARIANTS_BY_BED_TYPE and bed_type not in (BED_TYPE_GMMOTOR, BED_TYPE_MOTOMOTION, "bedgear", "l2motion", BED_TYPE_MOODBASE, BED_TYPE_VIVASLEEP, "suta", BED_TYPE_TRUEMOTION, "sleep_evolution", "wsilver_legacy")
     ) or name is None or is_mac_like_name(name):
         return {}
     return {CONF_BLE_DEVICE_NAME: name}
