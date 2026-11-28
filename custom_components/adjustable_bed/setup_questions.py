@@ -293,6 +293,7 @@ from .const import (
 )
 from .import_executor import async_import_modules
 from .profiles import aminach as aminach_app
+from .profiles import ar_connect as ar_connect_profiles
 from .profiles import askona as askona_profiles
 from .profiles import enso2 as enso2_profiles
 from .profiles import ergosportive as ergosportive_app
@@ -3188,6 +3189,15 @@ SETUP_PROFILES: Final[dict[str, SetupProfile]] = {
             "0": "Element", "1": "Ascent", "2": "Apex",
         }, "0"),),
         title=lambda _data: "Sealy Posturematic",
+    ),
+    "ar_connect": SetupProfile(
+        seed=lambda _hass, data, info: {**data, **({CONF_PROTOCOL_VARIANT: "headboard"} if not data.get(CONF_PROTOCOL_VARIANT) and info is not None and "dosseret" in (info.name or "").lower() else {})},
+        owns={CONF_MOTOR_COUNT: SET_BY_PROFILE, CONF_HAS_MASSAGE: False,
+              CONF_DISABLE_ANGLE_SENSING: True, CONF_MOTOR_PULSE_DELAY_MS: 400},
+        questions=(Question(CONF_PROTOCOL_VARIANT, ar_connect_profiles.ROUTE_CHOICES, "native"),
+                   Question(CONF_PRODUCT_TYPE, ar_connect_profiles.LAYOUT_CHOICES, "back_legs",
+                            when={"field": CONF_PROTOCOL_VARIANT, "operator": ConditionOperator.IN, "value": ["native", "auto"]})),
+        derive=lambda data: {CONF_MOTOR_COUNT: len(ar_connect_profiles.LAYOUTS.get(data.get(CONF_PRODUCT_TYPE, "back_legs"), ("back", "legs")))},
     ),
     "askona": SetupProfile(
         owns={CONF_MOTOR_COUNT: 2, CONF_HAS_MASSAGE: True, CONF_DISABLE_ANGLE_SENSING: False},

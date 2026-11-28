@@ -655,6 +655,7 @@ beds, Reconfigure that bed, then combine them again.
 | Smart Base | Choose Smart Base, then 200IV2 / A8RM (FEE9). Refresh bed settings to discover RGB, timeout and alarm cancellation on the current connection. See the [Smart Base guide](beds/richmat.md#smart-base). |
 | Sinca Comfort Bed | Choose the receiver and motor layout from the [Sinca Comfort Bed setup steps](beds/mline.md#sinca-comfort-bed). Shared Bluetooth names and services leave the app choice to you. |
 | M Line | See the [setup steps](beds/mline.md#m-line-family). |
+| AR Connect | Choose Adjustable bed or Headboard, then the bed's actual sections. Native beds require a bond on the active Bluetooth route; headboards have their own light/routine capability read. See [AR Connect setup](beds/linak.md#ar-connect). |
 | Malouf / Lucid | Answer the [Malouf question](beds/malouf.md#choosing-a-profile) with your app or receiver: the [Malouf Base and Lucid Base apps](beds/malouf.md#malouf-base--lucid-base-family) ask the exact model, primary/secondary role and transport; the Nordic UART and FFE5 receivers ask the [layout and memory positions](#malouflucid-layout-and-memory). Change an existing bed's app with **Reconfigure**. |
 | MLILY Control | The product the app shows, or the remote. Sleep sensors (RM- or HJ-) are added as their own beds. See the [product table](beds/richmat.md#mlily-control). |
 | MLILY Remote | See the [setup steps](beds/richmat.md#mlily-remote). |

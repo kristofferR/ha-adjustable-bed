@@ -144,6 +144,7 @@ bed has been tested on real hardware.
 | [Limoss / Stawett](docs/beds/limoss.md) | [Limoss Remote](docs/beds/limoss.md#limoss-remote), [FSM Relax](docs/beds/limoss.md#fsm-relax), [Stawett and older Limoss controls](docs/beds/limoss.md#legacy-route) | Limoss, Stawett |
 | [Vindö](docs/beds/vindo.md) | Vindö app, Carpe Diem Beds (needs hardware testing) | Carpe Diem Beds |
 | [Linak](docs/beds/linak.md) | [Bed Control, Bed Connect, AA Control My Bed, Carpe Diem Beds and Performance Series apps](docs/beds/linak.md) | Tempur-Pedic, Bedre Nætter, Jensen |
+| [AR Connect](docs/beds/linak.md#ar-connect) | Native adjustable bed and independent RGBW headboard routes | App-selected bed/headboard (untested) |
 | [Leva Bed Remote](docs/beds/okin-nframe.md#leva-bed-remote) | Leva Smart App, Ascent, Elite 250, Elite 500, Evolution LX, Quest Elite | Leva |
 | [Linx](docs/beds/linx.md) | [Linx](docs/beds/linx.md) | Linx |
 | [LOGICDATA](docs/beds/logicdata.md) | [SILVERmotion (Logicdata SimplicityFrame)](docs/beds/logicdata.md), [SILVERmotion with zero gravity and anti-snore presets](docs/beds/silvermotion.md), [MOTIONrelax phone and tablet](docs/beds/jiecang.md#motionrelax-phone-and-tablet), [Sleep Smart Air Mattress](docs/beds/jiecang.md#sleep-smart-air-mattress-bed), [Sleep Smart air mattress pump](docs/beds/logicdata-sleep-smart.md) | LOGICDATA, SILVERmotion, SimplicityFrame, Sleep Smart Vienna / Toronto / Middle Rail |

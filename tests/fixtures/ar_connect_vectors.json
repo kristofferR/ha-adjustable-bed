@@ -1,0 +1,1249 @@
+{
+  "app": "AR Connect 3.2.2 (118), com.pulpsoft.arcommand",
+  "provenance": "Frozen native constructor literals and formula checks, not captured hardware traffic. Binary32 parser rounding follows the native arithmetic described in the audit.",
+  "transmit": [
+    {
+      "id": "V.head_up",
+      "protocol": "P1",
+      "action": "moveBed",
+      "inputs": {
+        "motorsDirectionsMap": {
+          "head": 0
+        },
+        "slowMode": false
+      },
+      "expected_bytes": "03 00",
+      "evidence": [
+        "E03",
+        "E04",
+        "E06",
+        "report/reproduce.py"
+      ],
+      "provenance": "Constructed from artifact constants/transform, not captured traffic."
+    },
+    {
+      "id": "V.head_up_slow",
+      "protocol": "P1",
+      "action": "moveBed",
+      "inputs": {
+        "motorsDirectionsMap": {
+          "head": 0
+        },
+        "slowMode": true
+      },
+      "expected_bytes": "03 40",
+      "evidence": [
+        "E03",
+        "E04",
+        "E06",
+        "report/reproduce.py"
+      ],
+      "provenance": "Constructed from artifact constants/transform, not captured traffic."
+    },
+    {
+      "id": "V.back_up_legs_down",
+      "protocol": "P1",
+      "action": "moveBed",
+      "inputs": {
+        "motorsDirectionsMap": {
+          "back": 0,
+          "legs": 1
+        },
+        "slowMode": false
+      },
+      "expected_bytes": "35 00",
+      "evidence": [
+        "E03",
+        "E04",
+        "E06",
+        "report/reproduce.py"
+      ],
+      "provenance": "Constructed from artifact constants/transform, not captured traffic."
+    },
+    {
+      "id": "V.all_down",
+      "protocol": "P1",
+      "action": "moveBed",
+      "inputs": {
+        "motorsDirectionsMap": {
+          "head": 1,
+          "back": 1,
+          "legs": 1,
+          "feet": 1
+        },
+        "slowMode": false
+      },
+      "expected_bytes": "00 00",
+      "evidence": [
+        "E03",
+        "E04",
+        "E06",
+        "report/reproduce.py"
+      ],
+      "provenance": "Constructed from artifact constants/transform, not captured traffic."
+    },
+    {
+      "id": "V.empty_map",
+      "protocol": "P1",
+      "action": "moveBed",
+      "inputs": {
+        "motorsDirectionsMap": {},
+        "slowMode": false
+      },
+      "expected_bytes": "ff 00",
+      "evidence": [
+        "E03",
+        "E04",
+        "E06",
+        "report/reproduce.py"
+      ],
+      "provenance": "Constructed from artifact constants/transform, not captured traffic."
+    },
+    {
+      "id": "V.WAKE_UP",
+      "protocol": "P1",
+      "action": "WAKE_UP",
+      "inputs": {
+        "slowMode": false
+      },
+      "expected_bytes": "fe 00",
+      "evidence": [
+        "E03",
+        "E04",
+        "E06",
+        "report/reproduce.py"
+      ],
+      "provenance": "Constructed from artifact constants/transform, not captured traffic."
+    },
+    {
+      "id": "V.AUX_1_TOGGLE",
+      "protocol": "P1",
+      "action": "AUX_1_TOGGLE",
+      "inputs": {
+        "slowMode": false
+      },
+      "expected_bytes": "94 00",
+      "evidence": [
+        "E03",
+        "E04",
+        "E06",
+        "report/reproduce.py"
+      ],
+      "provenance": "Constructed from artifact constants/transform, not captured traffic."
+    },
+    {
+      "id": "V.MEMORY_5",
+      "protocol": "P1",
+      "action": "MEMORY_5",
+      "inputs": {
+        "slowMode": false
+      },
+      "expected_bytes": "83 00",
+      "evidence": [
+        "E03",
+        "E04",
+        "E06",
+        "report/reproduce.py"
+      ],
+      "provenance": "Constructed from artifact constants/transform, not captured traffic."
+    },
+    {
+      "id": "V.STORE_MEM_5",
+      "protocol": "P1",
+      "action": "STORE_MEM_5",
+      "inputs": {
+        "slowMode": false
+      },
+      "expected_bytes": "85 00",
+      "evidence": [
+        "E03",
+        "E04",
+        "E06",
+        "report/reproduce.py"
+      ],
+      "provenance": "Constructed from artifact constants/transform, not captured traffic."
+    },
+    {
+      "id": "V.custom_back_zero",
+      "protocol": "P1",
+      "action": "setCustomSpeed: BACK",
+      "inputs": {
+        "speedUp": 0,
+        "accelerationUp": 0,
+        "axis": "BACK"
+      },
+      "expected_bytes": "00 df 80 00 00 00 00 00 00 00 00 00 00",
+      "evidence": [
+        "E16",
+        "E17",
+        "report/reproduce.py"
+      ],
+      "provenance": "Formula-derived from authoritative smali, not captured traffic."
+    },
+    {
+      "id": "V.custom_legs_zero",
+      "protocol": "P1",
+      "action": "setCustomSpeed: LEGS",
+      "inputs": {
+        "speedUp": 0,
+        "accelerationUp": 0,
+        "axis": "LEGS"
+      },
+      "expected_bytes": "00 de 80 00 00 00 00 00 00 00 00 00 00",
+      "evidence": [
+        "E16",
+        "E17",
+        "report/reproduce.py"
+      ],
+      "provenance": "Formula-derived from authoritative smali, not captured traffic."
+    },
+    {
+      "id": "V.custom_feet_zero",
+      "protocol": "P1",
+      "action": "setCustomSpeed: FEET",
+      "inputs": {
+        "speedUp": 0,
+        "accelerationUp": 0,
+        "axis": "FEET"
+      },
+      "expected_bytes": "00 dc 80 00 00 00 00 00 00 00 00 00 00",
+      "evidence": [
+        "E16",
+        "E17",
+        "report/reproduce.py"
+      ],
+      "provenance": "Formula-derived from authoritative smali, not captured traffic."
+    },
+    {
+      "id": "V.custom_base_zero",
+      "protocol": "P1",
+      "action": "setCustomSpeed: BASE",
+      "inputs": {
+        "speedUp": 0,
+        "accelerationUp": 0,
+        "axis": "BASE"
+      },
+      "expected_bytes": "00 db 80 00 00 00 00 00 00 00 00 00 00",
+      "evidence": [
+        "E16",
+        "E17",
+        "report/reproduce.py"
+      ],
+      "provenance": "Formula-derived from authoritative smali, not captured traffic."
+    },
+    {
+      "id": "V.custom_back_100_50",
+      "protocol": "P1",
+      "action": "setCustomSpeed: BACK",
+      "inputs": {
+        "speedUp": 100,
+        "accelerationUp": 50,
+        "axis": "BACK"
+      },
+      "expected_bytes": "00 df 80 00 40 00 40 00 20 00 20 00 00",
+      "evidence": [
+        "E16",
+        "E17",
+        "report/reproduce.py"
+      ],
+      "provenance": "Formula-derived from authoritative smali, not captured traffic."
+    },
+    {
+      "id": "V.custom_legs_100_50",
+      "protocol": "P1",
+      "action": "setCustomSpeed: LEGS",
+      "inputs": {
+        "speedUp": 100,
+        "accelerationUp": 50,
+        "axis": "LEGS"
+      },
+      "expected_bytes": "00 de 80 00 40 00 40 00 20 00 20 00 00",
+      "evidence": [
+        "E16",
+        "E17",
+        "report/reproduce.py"
+      ],
+      "provenance": "Formula-derived from authoritative smali, not captured traffic."
+    },
+    {
+      "id": "V.custom_feet_100_50",
+      "protocol": "P1",
+      "action": "setCustomSpeed: FEET",
+      "inputs": {
+        "speedUp": 100,
+        "accelerationUp": 50,
+        "axis": "FEET"
+      },
+      "expected_bytes": "00 dc 80 00 40 00 40 00 20 00 20 00 00",
+      "evidence": [
+        "E16",
+        "E17",
+        "report/reproduce.py"
+      ],
+      "provenance": "Formula-derived from authoritative smali, not captured traffic."
+    },
+    {
+      "id": "V.custom_base_100_50",
+      "protocol": "P1",
+      "action": "setCustomSpeed: BASE",
+      "inputs": {
+        "speedUp": 100,
+        "accelerationUp": 50,
+        "axis": "BASE"
+      },
+      "expected_bytes": "00 db 80 00 40 00 40 00 20 00 20 00 00",
+      "evidence": [
+        "E16",
+        "E17",
+        "report/reproduce.py"
+      ],
+      "provenance": "Formula-derived from authoritative smali, not captured traffic."
+    },
+    {
+      "id": "V.custom_negative",
+      "protocol": "P1",
+      "action": "setCustomSpeed: BACK",
+      "inputs": {
+        "speedUp": -1,
+        "accelerationUp": 0.5,
+        "axis": "BACK"
+      },
+      "expected_bytes": "00 df 80 5d ff 5d ff 51 00 51 00 00 00",
+      "evidence": [
+        "E16",
+        "E17",
+        "report/reproduce.py"
+      ],
+      "provenance": "Formula boundary check; negative value proves native conversion, not UI/hardware support."
+    },
+    {
+      "id": "V.custom_fractional",
+      "protocol": "P1",
+      "action": "setCustomSpeed: LEGS",
+      "inputs": {
+        "speedUp": 100.25,
+        "accelerationUp": 0.5,
+        "axis": "LEGS"
+      },
+      "expected_bytes": "00 de 80 28 40 28 40 51 00 51 00 00 00",
+      "evidence": [
+        "E16",
+        "E17",
+        "report/reproduce.py"
+      ],
+      "provenance": "Formula boundary check; negative value proves native conversion, not UI/hardware support."
+    }
+  ],
+  "movement": [
+    {
+      "name": "FOOT_REST_DOWN_BACK_REST_DOWN",
+      "code": 34,
+      "input_maps": [
+        {
+          "back": 1,
+          "feet": 1
+        },
+        {
+          "head": 0,
+          "back": 1,
+          "feet": 1
+        },
+        {
+          "head": 1,
+          "back": 1,
+          "feet": 1
+        }
+      ],
+      "payload_formula": "[code, 0x40 if slowMode else 0x00]",
+      "source": [
+        "work/jadx/sources/p104x2/w.java:y",
+        "work/jadx/sources/p104x2/p.java:o",
+        "work/smali/base/smali/A1/c.smali:469-528"
+      ]
+    },
+    {
+      "name": "FOOT_REST_DOWN_BACK_REST_UP",
+      "code": 37,
+      "input_maps": [
+        {
+          "back": 0,
+          "feet": 1
+        },
+        {
+          "head": 0,
+          "back": 0,
+          "feet": 1
+        },
+        {
+          "head": 1,
+          "back": 0,
+          "feet": 1
+        }
+      ],
+      "payload_formula": "[code, 0x40 if slowMode else 0x00]",
+      "source": [
+        "work/jadx/sources/p104x2/w.java:y",
+        "work/jadx/sources/p104x2/p.java:o",
+        "work/smali/base/smali/A1/c.smali:469-528"
+      ]
+    },
+    {
+      "name": "FOOT_REST_DOWN_HEAD_REST_DOWN",
+      "code": 32,
+      "input_maps": [
+        {
+          "head": 1,
+          "feet": 1
+        }
+      ],
+      "payload_formula": "[code, 0x40 if slowMode else 0x00]",
+      "source": [
+        "work/jadx/sources/p104x2/w.java:y",
+        "work/jadx/sources/p104x2/p.java:o",
+        "work/smali/base/smali/A1/c.smali:469-528"
+      ]
+    },
+    {
+      "name": "FOOT_REST_DOWN_HEAD_REST_UP",
+      "code": 35,
+      "input_maps": [
+        {
+          "head": 0,
+          "feet": 1
+        }
+      ],
+      "payload_formula": "[code, 0x40 if slowMode else 0x00]",
+      "source": [
+        "work/jadx/sources/p104x2/w.java:y",
+        "work/jadx/sources/p104x2/p.java:o",
+        "work/smali/base/smali/A1/c.smali:469-528"
+      ]
+    },
+    {
+      "name": "FOOT_REST_DOWN_LEG_REST_DOWN",
+      "code": 33,
+      "input_maps": [
+        {
+          "legs": 1,
+          "feet": 1
+        },
+        {
+          "head": 0,
+          "legs": 1,
+          "feet": 1
+        },
+        {
+          "head": 1,
+          "legs": 1,
+          "feet": 1
+        }
+      ],
+      "payload_formula": "[code, 0x40 if slowMode else 0x00]",
+      "source": [
+        "work/jadx/sources/p104x2/w.java:y",
+        "work/jadx/sources/p104x2/p.java:o",
+        "work/smali/base/smali/A1/c.smali:469-528"
+      ]
+    },
+    {
+      "name": "FOOT_REST_DOWN_LEG_REST_UP",
+      "code": 36,
+      "input_maps": [
+        {
+          "legs": 0,
+          "feet": 1
+        },
+        {
+          "head": 0,
+          "legs": 0,
+          "feet": 1
+        },
+        {
+          "head": 1,
+          "legs": 0,
+          "feet": 1
+        }
+      ],
+      "payload_formula": "[code, 0x40 if slowMode else 0x00]",
+      "source": [
+        "work/jadx/sources/p104x2/w.java:y",
+        "work/jadx/sources/p104x2/p.java:o",
+        "work/smali/base/smali/A1/c.smali:469-528"
+      ]
+    },
+    {
+      "name": "FOOT_REST_UP_BACK_REST_DOWN",
+      "code": 40,
+      "input_maps": [
+        {
+          "back": 1,
+          "feet": 0
+        },
+        {
+          "head": 0,
+          "back": 1,
+          "feet": 0
+        },
+        {
+          "head": 1,
+          "back": 1,
+          "feet": 0
+        }
+      ],
+      "payload_formula": "[code, 0x40 if slowMode else 0x00]",
+      "source": [
+        "work/jadx/sources/p104x2/w.java:y",
+        "work/jadx/sources/p104x2/p.java:o",
+        "work/smali/base/smali/A1/c.smali:469-528"
+      ]
+    },
+    {
+      "name": "FOOT_REST_UP_BACK_REST_UP",
+      "code": 43,
+      "input_maps": [
+        {
+          "back": 0,
+          "feet": 0
+        },
+        {
+          "head": 0,
+          "back": 0,
+          "feet": 0
+        },
+        {
+          "head": 1,
+          "back": 0,
+          "feet": 0
+        }
+      ],
+      "payload_formula": "[code, 0x40 if slowMode else 0x00]",
+      "source": [
+        "work/jadx/sources/p104x2/w.java:y",
+        "work/jadx/sources/p104x2/p.java:o",
+        "work/smali/base/smali/A1/c.smali:469-528"
+      ]
+    },
+    {
+      "name": "FOOT_REST_UP_HEAD_REST_DOWN",
+      "code": 38,
+      "input_maps": [
+        {
+          "head": 1,
+          "feet": 0
+        }
+      ],
+      "payload_formula": "[code, 0x40 if slowMode else 0x00]",
+      "source": [
+        "work/jadx/sources/p104x2/w.java:y",
+        "work/jadx/sources/p104x2/p.java:o",
+        "work/smali/base/smali/A1/c.smali:469-528"
+      ]
+    },
+    {
+      "name": "FOOT_REST_UP_HEAD_REST_UP",
+      "code": 41,
+      "input_maps": [
+        {
+          "head": 0,
+          "feet": 0
+        }
+      ],
+      "payload_formula": "[code, 0x40 if slowMode else 0x00]",
+      "source": [
+        "work/jadx/sources/p104x2/w.java:y",
+        "work/jadx/sources/p104x2/p.java:o",
+        "work/smali/base/smali/A1/c.smali:469-528"
+      ]
+    },
+    {
+      "name": "FOOT_REST_UP_LEG_REST_DOWN",
+      "code": 39,
+      "input_maps": [
+        {
+          "legs": 1,
+          "feet": 0
+        },
+        {
+          "head": 0,
+          "legs": 1,
+          "feet": 0
+        },
+        {
+          "head": 1,
+          "legs": 1,
+          "feet": 0
+        }
+      ],
+      "payload_formula": "[code, 0x40 if slowMode else 0x00]",
+      "source": [
+        "work/jadx/sources/p104x2/w.java:y",
+        "work/jadx/sources/p104x2/p.java:o",
+        "work/smali/base/smali/A1/c.smali:469-528"
+      ]
+    },
+    {
+      "name": "FOOT_REST_UP_LEG_REST_UP",
+      "code": 42,
+      "input_maps": [
+        {
+          "legs": 0,
+          "feet": 0
+        },
+        {
+          "head": 0,
+          "legs": 0,
+          "feet": 0
+        },
+        {
+          "head": 1,
+          "legs": 0,
+          "feet": 0
+        }
+      ],
+      "payload_formula": "[code, 0x40 if slowMode else 0x00]",
+      "source": [
+        "work/jadx/sources/p104x2/w.java:y",
+        "work/jadx/sources/p104x2/p.java:o",
+        "work/smali/base/smali/A1/c.smali:469-528"
+      ]
+    },
+    {
+      "name": "HEAD_REST_DOWN_BACK_REST_DOWN",
+      "code": 45,
+      "input_maps": [
+        {
+          "head": 1,
+          "back": 1
+        }
+      ],
+      "payload_formula": "[code, 0x40 if slowMode else 0x00]",
+      "source": [
+        "work/jadx/sources/p104x2/w.java:y",
+        "work/jadx/sources/p104x2/p.java:o",
+        "work/smali/base/smali/A1/c.smali:469-528"
+      ]
+    },
+    {
+      "name": "HEAD_REST_DOWN_BACK_REST_UP",
+      "code": 47,
+      "input_maps": [
+        {
+          "head": 1,
+          "back": 0
+        }
+      ],
+      "payload_formula": "[code, 0x40 if slowMode else 0x00]",
+      "source": [
+        "work/jadx/sources/p104x2/w.java:y",
+        "work/jadx/sources/p104x2/p.java:o",
+        "work/smali/base/smali/A1/c.smali:469-528"
+      ]
+    },
+    {
+      "name": "HEAD_REST_DOWN_LEG_REST_DOWN",
+      "code": 44,
+      "input_maps": [
+        {
+          "head": 1,
+          "legs": 1
+        }
+      ],
+      "payload_formula": "[code, 0x40 if slowMode else 0x00]",
+      "source": [
+        "work/jadx/sources/p104x2/w.java:y",
+        "work/jadx/sources/p104x2/p.java:o",
+        "work/smali/base/smali/A1/c.smali:469-528"
+      ]
+    },
+    {
+      "name": "HEAD_REST_DOWN_LEG_REST_UP",
+      "code": 46,
+      "input_maps": [
+        {
+          "head": 1,
+          "legs": 0
+        }
+      ],
+      "payload_formula": "[code, 0x40 if slowMode else 0x00]",
+      "source": [
+        "work/jadx/sources/p104x2/w.java:y",
+        "work/jadx/sources/p104x2/p.java:o",
+        "work/smali/base/smali/A1/c.smali:469-528"
+      ]
+    },
+    {
+      "name": "HEAD_REST_UP_BACK_REST_DOWN",
+      "code": 49,
+      "input_maps": [
+        {
+          "head": 0,
+          "back": 1
+        }
+      ],
+      "payload_formula": "[code, 0x40 if slowMode else 0x00]",
+      "source": [
+        "work/jadx/sources/p104x2/w.java:y",
+        "work/jadx/sources/p104x2/p.java:o",
+        "work/smali/base/smali/A1/c.smali:469-528"
+      ]
+    },
+    {
+      "name": "HEAD_REST_UP_BACK_REST_UP",
+      "code": 51,
+      "input_maps": [
+        {
+          "head": 0,
+          "back": 0
+        }
+      ],
+      "payload_formula": "[code, 0x40 if slowMode else 0x00]",
+      "source": [
+        "work/jadx/sources/p104x2/w.java:y",
+        "work/jadx/sources/p104x2/p.java:o",
+        "work/smali/base/smali/A1/c.smali:469-528"
+      ]
+    },
+    {
+      "name": "HEAD_REST_UP_LEG_REST_DOWN",
+      "code": 48,
+      "input_maps": [
+        {
+          "head": 0,
+          "legs": 1
+        }
+      ],
+      "payload_formula": "[code, 0x40 if slowMode else 0x00]",
+      "source": [
+        "work/jadx/sources/p104x2/w.java:y",
+        "work/jadx/sources/p104x2/p.java:o",
+        "work/smali/base/smali/A1/c.smali:469-528"
+      ]
+    },
+    {
+      "name": "HEAD_REST_UP_LEG_REST_UP",
+      "code": 50,
+      "input_maps": [
+        {
+          "head": 0,
+          "legs": 0
+        }
+      ],
+      "payload_formula": "[code, 0x40 if slowMode else 0x00]",
+      "source": [
+        "work/jadx/sources/p104x2/w.java:y",
+        "work/jadx/sources/p104x2/p.java:o",
+        "work/smali/base/smali/A1/c.smali:469-528"
+      ]
+    },
+    {
+      "name": "INITIALIZE_DOWN",
+      "code": 0,
+      "input_maps": [
+        {
+          "head": 1,
+          "back": 1,
+          "legs": 1,
+          "feet": 1
+        }
+      ],
+      "payload_formula": "[code, 0x40 if slowMode else 0x00]",
+      "source": [
+        "work/jadx/sources/p104x2/w.java:y",
+        "work/jadx/sources/p104x2/p.java:o",
+        "work/smali/base/smali/A1/c.smali:469-528"
+      ]
+    },
+    {
+      "name": "INITIALIZE_UP",
+      "code": 1,
+      "input_maps": [
+        {
+          "head": 0,
+          "back": 0,
+          "legs": 0,
+          "feet": 0
+        }
+      ],
+      "payload_formula": "[code, 0x40 if slowMode else 0x00]",
+      "source": [
+        "work/jadx/sources/p104x2/w.java:y",
+        "work/jadx/sources/p104x2/p.java:o",
+        "work/smali/base/smali/A1/c.smali:469-528"
+      ]
+    },
+    {
+      "name": "LEG_REST_DOWN_BACK_REST_DOWN",
+      "code": 52,
+      "input_maps": [
+        {
+          "back": 1,
+          "legs": 1
+        },
+        {
+          "back": 1,
+          "legs": 1,
+          "feet": 0
+        },
+        {
+          "back": 1,
+          "legs": 1,
+          "feet": 1
+        },
+        {
+          "head": 0,
+          "back": 1,
+          "legs": 1
+        },
+        {
+          "head": 0,
+          "back": 1,
+          "legs": 1,
+          "feet": 0
+        },
+        {
+          "head": 0,
+          "back": 1,
+          "legs": 1,
+          "feet": 1
+        },
+        {
+          "head": 1,
+          "back": 1,
+          "legs": 1
+        },
+        {
+          "head": 1,
+          "back": 1,
+          "legs": 1,
+          "feet": 0
+        }
+      ],
+      "payload_formula": "[code, 0x40 if slowMode else 0x00]",
+      "source": [
+        "work/jadx/sources/p104x2/w.java:y",
+        "work/jadx/sources/p104x2/p.java:o",
+        "work/smali/base/smali/A1/c.smali:469-528"
+      ]
+    },
+    {
+      "name": "LEG_REST_DOWN_BACK_REST_UP",
+      "code": 53,
+      "input_maps": [
+        {
+          "back": 0,
+          "legs": 1
+        },
+        {
+          "back": 0,
+          "legs": 1,
+          "feet": 0
+        },
+        {
+          "back": 0,
+          "legs": 1,
+          "feet": 1
+        },
+        {
+          "head": 0,
+          "back": 0,
+          "legs": 1
+        },
+        {
+          "head": 0,
+          "back": 0,
+          "legs": 1,
+          "feet": 0
+        },
+        {
+          "head": 0,
+          "back": 0,
+          "legs": 1,
+          "feet": 1
+        },
+        {
+          "head": 1,
+          "back": 0,
+          "legs": 1
+        },
+        {
+          "head": 1,
+          "back": 0,
+          "legs": 1,
+          "feet": 0
+        },
+        {
+          "head": 1,
+          "back": 0,
+          "legs": 1,
+          "feet": 1
+        }
+      ],
+      "payload_formula": "[code, 0x40 if slowMode else 0x00]",
+      "source": [
+        "work/jadx/sources/p104x2/w.java:y",
+        "work/jadx/sources/p104x2/p.java:o",
+        "work/smali/base/smali/A1/c.smali:469-528"
+      ]
+    },
+    {
+      "name": "LEG_REST_UP_BACK_REST_DOWN",
+      "code": 54,
+      "input_maps": [
+        {
+          "back": 1,
+          "legs": 0
+        },
+        {
+          "back": 1,
+          "legs": 0,
+          "feet": 0
+        },
+        {
+          "back": 1,
+          "legs": 0,
+          "feet": 1
+        },
+        {
+          "head": 0,
+          "back": 1,
+          "legs": 0
+        },
+        {
+          "head": 0,
+          "back": 1,
+          "legs": 0,
+          "feet": 0
+        },
+        {
+          "head": 0,
+          "back": 1,
+          "legs": 0,
+          "feet": 1
+        },
+        {
+          "head": 1,
+          "back": 1,
+          "legs": 0
+        },
+        {
+          "head": 1,
+          "back": 1,
+          "legs": 0,
+          "feet": 0
+        },
+        {
+          "head": 1,
+          "back": 1,
+          "legs": 0,
+          "feet": 1
+        }
+      ],
+      "payload_formula": "[code, 0x40 if slowMode else 0x00]",
+      "source": [
+        "work/jadx/sources/p104x2/w.java:y",
+        "work/jadx/sources/p104x2/p.java:o",
+        "work/smali/base/smali/A1/c.smali:469-528"
+      ]
+    },
+    {
+      "name": "LEG_REST_UP_BACK_REST_UP",
+      "code": 55,
+      "input_maps": [
+        {
+          "back": 0,
+          "legs": 0
+        },
+        {
+          "back": 0,
+          "legs": 0,
+          "feet": 0
+        },
+        {
+          "back": 0,
+          "legs": 0,
+          "feet": 1
+        },
+        {
+          "head": 0,
+          "back": 0,
+          "legs": 0
+        },
+        {
+          "head": 0,
+          "back": 0,
+          "legs": 0,
+          "feet": 1
+        },
+        {
+          "head": 1,
+          "back": 0,
+          "legs": 0
+        },
+        {
+          "head": 1,
+          "back": 0,
+          "legs": 0,
+          "feet": 0
+        },
+        {
+          "head": 1,
+          "back": 0,
+          "legs": 0,
+          "feet": 1
+        }
+      ],
+      "payload_formula": "[code, 0x40 if slowMode else 0x00]",
+      "source": [
+        "work/jadx/sources/p104x2/w.java:y",
+        "work/jadx/sources/p104x2/p.java:o",
+        "work/smali/base/smali/A1/c.smali:469-528"
+      ]
+    },
+    {
+      "name": "REF_5_DOWN",
+      "code": 4,
+      "input_maps": [
+        {
+          "feet": 1
+        }
+      ],
+      "payload_formula": "[code, 0x40 if slowMode else 0x00]",
+      "source": [
+        "work/jadx/sources/p104x2/w.java:y",
+        "work/jadx/sources/p104x2/p.java:o",
+        "work/smali/base/smali/A1/c.smali:469-528"
+      ]
+    },
+    {
+      "name": "REF_5_UP",
+      "code": 5,
+      "input_maps": [
+        {
+          "feet": 0
+        }
+      ],
+      "payload_formula": "[code, 0x40 if slowMode else 0x00]",
+      "source": [
+        "work/jadx/sources/p104x2/w.java:y",
+        "work/jadx/sources/p104x2/p.java:o",
+        "work/smali/base/smali/A1/c.smali:469-528"
+      ]
+    },
+    {
+      "name": "REF_6_DOWN",
+      "code": 2,
+      "input_maps": [
+        {
+          "head": 1
+        }
+      ],
+      "payload_formula": "[code, 0x40 if slowMode else 0x00]",
+      "source": [
+        "work/jadx/sources/p104x2/w.java:y",
+        "work/jadx/sources/p104x2/p.java:o",
+        "work/smali/base/smali/A1/c.smali:469-528"
+      ]
+    },
+    {
+      "name": "REF_6_UP",
+      "code": 3,
+      "input_maps": [
+        {
+          "head": 0
+        }
+      ],
+      "payload_formula": "[code, 0x40 if slowMode else 0x00]",
+      "source": [
+        "work/jadx/sources/p104x2/w.java:y",
+        "work/jadx/sources/p104x2/p.java:o",
+        "work/smali/base/smali/A1/c.smali:469-528"
+      ]
+    },
+    {
+      "name": "REF_7_DOWN",
+      "code": 8,
+      "input_maps": [
+        {
+          "legs": 1
+        }
+      ],
+      "payload_formula": "[code, 0x40 if slowMode else 0x00]",
+      "source": [
+        "work/jadx/sources/p104x2/w.java:y",
+        "work/jadx/sources/p104x2/p.java:o",
+        "work/smali/base/smali/A1/c.smali:469-528"
+      ]
+    },
+    {
+      "name": "REF_7_UP",
+      "code": 9,
+      "input_maps": [
+        {
+          "legs": 0
+        }
+      ],
+      "payload_formula": "[code, 0x40 if slowMode else 0x00]",
+      "source": [
+        "work/jadx/sources/p104x2/w.java:y",
+        "work/jadx/sources/p104x2/p.java:o",
+        "work/smali/base/smali/A1/c.smali:469-528"
+      ]
+    },
+    {
+      "name": "REF_8_DOWN",
+      "code": 10,
+      "input_maps": [
+        {
+          "back": 1
+        }
+      ],
+      "payload_formula": "[code, 0x40 if slowMode else 0x00]",
+      "source": [
+        "work/jadx/sources/p104x2/w.java:y",
+        "work/jadx/sources/p104x2/p.java:o",
+        "work/smali/base/smali/A1/c.smali:469-528"
+      ]
+    },
+    {
+      "name": "REF_8_UP",
+      "code": 11,
+      "input_maps": [
+        {
+          "back": 0
+        }
+      ],
+      "payload_formula": "[code, 0x40 if slowMode else 0x00]",
+      "source": [
+        "work/jadx/sources/p104x2/w.java:y",
+        "work/jadx/sources/p104x2/p.java:o",
+        "work/smali/base/smali/A1/c.smali:469-528"
+      ]
+    },
+    {
+      "name": "STOP_MOVEMENT",
+      "code": 255,
+      "input_maps": [
+        {}
+      ],
+      "payload_formula": "[code, 0x40 if slowMode else 0x00]",
+      "source": [
+        "work/jadx/sources/p104x2/w.java:y",
+        "work/jadx/sources/p104x2/p.java:o",
+        "work/smali/base/smali/A1/c.smali:469-528"
+      ]
+    }
+  ],
+  "reference": [
+    {
+      "id": "positive",
+      "data": "39 30 a3 00",
+      "expected": {
+        "extension": 123.44999694824219,
+        "position_export": 12345.0,
+        "speed": 0.9765625,
+        "flags": 3,
+        "moving": true
+      }
+    },
+    {
+      "id": "negative",
+      "data": "00 00 f5 ff",
+      "expected": {
+        "extension": 0.0,
+        "position_export": 0.0,
+        "speed": -0.09765625,
+        "flags": 5,
+        "moving": true
+      }
+    },
+    {
+      "id": "invalid",
+      "data": "",
+      "expected": {
+        "extension": 0.0,
+        "position_export": 0.0,
+        "speed": 0.0,
+        "flags": 0,
+        "moving": false
+      }
+    }
+  ],
+  "memory": [
+    {
+      "index": 0,
+      "store": true,
+      "expected": "38 00"
+    },
+    {
+      "index": 0,
+      "store": false,
+      "expected": "0e 00"
+    },
+    {
+      "index": 1,
+      "store": true,
+      "expected": "39 00"
+    },
+    {
+      "index": 1,
+      "store": false,
+      "expected": "0f 00"
+    },
+    {
+      "index": 2,
+      "store": true,
+      "expected": "3a 00"
+    },
+    {
+      "index": 2,
+      "store": false,
+      "expected": "0c 00"
+    },
+    {
+      "index": 3,
+      "store": true,
+      "expected": "45 00"
+    },
+    {
+      "index": 3,
+      "store": false,
+      "expected": "44 00"
+    },
+    {
+      "index": 4,
+      "store": true,
+      "expected": "85 00"
+    },
+    {
+      "index": 4,
+      "store": false,
+      "expected": "83 00"
+    },
+    {
+      "index": 5,
+      "store": true,
+      "expected": "86 00"
+    },
+    {
+      "index": 5,
+      "store": false,
+      "expected": "84 00"
+    }
+  ],
+  "transport": {
+    "control_service": "99fa0001-338a-1024-8a49-009c0215f78a",
+    "command_characteristic": "99fa0002-338a-1024-8a49-009c0215f78a",
+    "error_characteristic": "99fa0003-338a-1024-8a49-009c0215f78a",
+    "configuration_service": "99fa0010-338a-1024-8a49-009c0215f78a",
+    "configuration_characteristic": "99fa0011-338a-1024-8a49-009c0215f78a",
+    "reference_mask": "99fa0029-338a-1024-8a49-009c0215f78a",
+    "reference_service": "99fa0020-338a-1024-8a49-009c0215f78a",
+    "scan_timeout_ms": 300000
+  },
+  "references": {
+    "head": "99fa0026-338a-1024-8a49-009c0215f78a",
+    "back": "99fa0028-338a-1024-8a49-009c0215f78a",
+    "legs": "99fa0027-338a-1024-8a49-009c0215f78a",
+    "feet": "99fa0025-338a-1024-8a49-009c0215f78a"
+  }
+}
