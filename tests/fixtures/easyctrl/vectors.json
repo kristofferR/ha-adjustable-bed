@@ -1,0 +1,349 @@
+{
+  "transmit": [
+    {
+      "id": "V1",
+      "protocol": "P1",
+      "action": "head-up",
+      "inputs": {
+        "builder": "held",
+        "code": 257,
+        "parameter": 0,
+        "sequence_context": "ordered vectors beginning i=1,cache=0"
+      },
+      "expected_bytes": "0201010100000000",
+      "evidence": [
+        "E-BUILD",
+        "E-TEST"
+      ]
+    },
+    {
+      "id": "V2",
+      "protocol": "P1",
+      "action": "repeat-head-up",
+      "inputs": {
+        "builder": "held",
+        "code": 257,
+        "parameter": 0,
+        "sequence_context": "ordered vectors beginning i=1,cache=0"
+      },
+      "expected_bytes": "0201010100000000",
+      "evidence": [
+        "E-BUILD",
+        "E-TEST"
+      ]
+    },
+    {
+      "id": "V3",
+      "protocol": "P1",
+      "action": "head-down",
+      "inputs": {
+        "builder": "held",
+        "code": 258,
+        "parameter": 0,
+        "sequence_context": "ordered vectors beginning i=1,cache=0"
+      },
+      "expected_bytes": "0301020100000000",
+      "evidence": [
+        "E-BUILD",
+        "E-TEST"
+      ]
+    },
+    {
+      "id": "V4",
+      "protocol": "P1",
+      "action": "rgb",
+      "inputs": {
+        "builder": "send",
+        "code": 1281,
+        "parameter": 305419896,
+        "sequence_context": "ordered vectors beginning i=1,cache=0"
+      },
+      "expected_bytes": "0401010578563412",
+      "evidence": [
+        "E-BUILD",
+        "E-TEST"
+      ]
+    },
+    {
+      "id": "V5",
+      "protocol": "P1",
+      "action": "query-led",
+      "inputs": {
+        "builder": "query",
+        "code": 773,
+        "parameter": 0,
+        "sequence_context": "ordered vectors beginning i=1,cache=0"
+      },
+      "expected_bytes": "0002050300000000",
+      "evidence": [
+        "E-BUILD",
+        "E-TEST"
+      ]
+    },
+    {
+      "id": "V6",
+      "protocol": "P1",
+      "action": "set-led-delay",
+      "inputs": {
+        "builder": "setting",
+        "code": 4353,
+        "parameter": 10,
+        "sequence_context": "ordered vectors beginning i=1,cache=0"
+      },
+      "expected_bytes": "000301110a000000",
+      "evidence": [
+        "E-BUILD",
+        "E-TEST"
+      ]
+    },
+    {
+      "id": "V7",
+      "protocol": "P1",
+      "action": "massage",
+      "inputs": {
+        "builder": "send",
+        "code": 513,
+        "parameter": 600,
+        "sequence_context": "ordered vectors beginning i=1,cache=0"
+      },
+      "expected_bytes": "0501010258020000",
+      "evidence": [
+        "E-BUILD",
+        "E-TEST"
+      ]
+    },
+    {
+      "id": "V8",
+      "protocol": "P1",
+      "action": "alarm",
+      "inputs": {
+        "builder": "send",
+        "code": 1041,
+        "parameter": 21764,
+        "sequence_context": "ordered vectors beginning i=1,cache=0"
+      },
+      "expected_bytes": "0601110404550000",
+      "evidence": [
+        "E-BUILD",
+        "E-TEST"
+      ]
+    },
+    {
+      "id": "V9",
+      "protocol": "P1",
+      "action": "stop",
+      "inputs": {
+        "builder": "send",
+        "code": 1,
+        "parameter": 0,
+        "sequence_context": "ordered vectors beginning i=1,cache=0"
+      },
+      "expected_bytes": "0701010000000000",
+      "evidence": [
+        "E-BUILD",
+        "E-TEST"
+      ]
+    },
+    {
+      "id": "V10",
+      "protocol": "P1",
+      "action": "signed-led-default",
+      "inputs": {
+        "builder": "send",
+        "code": 1280,
+        "parameter": -128,
+        "sequence_context": "ordered vectors beginning i=1,cache=0"
+      },
+      "expected_bytes": "0801000580ffffff",
+      "evidence": [
+        "E-BUILD",
+        "E-TEST"
+      ]
+    },
+    {
+      "id": "V11",
+      "protocol": "P1",
+      "action": "sequence wrap memory 3",
+      "inputs": {
+        "i": 255,
+        "code": 789,
+        "parameter": 0
+      },
+      "expected_bytes": "0001150300000000",
+      "evidence": [
+        "E-BUILD",
+        "E-TEST"
+      ]
+    },
+    {
+      "id": "V12",
+      "protocol": "P1",
+      "action": "Model 300 flat-down press",
+      "inputs": {
+        "model": "300",
+        "initial_sequence": 1,
+        "interleaved_commands": false,
+        "relative_to": "press",
+        "offset_ms": 0,
+        "sequence_context": "isolated flat-down press then ACTION_UP; all press durations"
+      },
+      "expected_bytes": "0201110100000000",
+      "evidence": [
+        "E-A95-F1",
+        "E-BUILD"
+      ]
+    },
+    {
+      "id": "V13",
+      "protocol": "P1",
+      "action": "Model 300 flat-down release STOP 1",
+      "inputs": {
+        "model": "300",
+        "initial_sequence": 1,
+        "interleaved_commands": false,
+        "relative_to": "release",
+        "offset_ms": 0,
+        "sequence_context": "isolated flat-down press then ACTION_UP; all press durations"
+      },
+      "expected_bytes": "0301010000000000",
+      "evidence": [
+        "E-A95-F1",
+        "E-BUILD"
+      ]
+    },
+    {
+      "id": "V14",
+      "protocol": "P1",
+      "action": "Model 300 flat-down release STOP 2",
+      "inputs": {
+        "model": "300",
+        "initial_sequence": 1,
+        "interleaved_commands": false,
+        "relative_to": "release",
+        "offset_ms": 20,
+        "sequence_context": "isolated flat-down press then ACTION_UP; all press durations"
+      },
+      "expected_bytes": "0401010000000000",
+      "evidence": [
+        "E-A95-F1",
+        "E-BUILD"
+      ]
+    },
+    {
+      "id": "V15",
+      "protocol": "P1",
+      "action": "Model 300 flat-down release STOP 3",
+      "inputs": {
+        "model": "300",
+        "initial_sequence": 1,
+        "interleaved_commands": false,
+        "relative_to": "release",
+        "offset_ms": 40,
+        "sequence_context": "isolated flat-down press then ACTION_UP; all press durations"
+      },
+      "expected_bytes": "0501010000000000",
+      "evidence": [
+        "E-A95-F1",
+        "E-BUILD"
+      ]
+    }
+  ],
+  "receive": [
+    {
+      "action": "led-on",
+      "notification_hex": "0082050301000000",
+      "expected_event": [
+        "led_status_1",
+        1
+      ],
+      "evidence": [
+        "E-PARSE",
+        "E-TEST"
+      ]
+    },
+    {
+      "action": "led-side2-off",
+      "notification_hex": "0082250300000000",
+      "expected_event": [
+        "led_status_2",
+        0
+      ],
+      "evidence": [
+        "E-PARSE",
+        "E-TEST"
+      ]
+    },
+    {
+      "action": "rgba",
+      "notification_hex": "0082060378563412",
+      "expected_event": [
+        "led_status_RGBA_1",
+        "78563412"
+      ],
+      "evidence": [
+        "E-PARSE",
+        "E-TEST"
+      ]
+    },
+    {
+      "action": "airbag",
+      "notification_hex": "0082090302000000",
+      "expected_event": [
+        "airbag_massage_status_1",
+        2
+      ],
+      "evidence": [
+        "E-PARSE",
+        "E-TEST"
+      ]
+    },
+    {
+      "action": "battery-special",
+      "notification_hex": "0082820064090000",
+      "expected_event": [
+        "BATTERY_LEVEL",
+        100
+      ],
+      "evidence": [
+        "E-PARSE",
+        "E-TEST"
+      ]
+    },
+    {
+      "action": "other-pid",
+      "notification_hex": "0002050301000000",
+      "expected_event": null,
+      "evidence": [
+        "E-PARSE",
+        "E-TEST"
+      ]
+    },
+    {
+      "action": "unknown-code",
+      "notification_hex": "0082ffff01000000",
+      "expected_event": null,
+      "evidence": [
+        "E-PARSE",
+        "E-TEST"
+      ]
+    },
+    {
+      "action": "short-modern",
+      "notification_hex": "008205",
+      "expected_event": null,
+      "evidence": [
+        "E-PARSE",
+        "E-TEST"
+      ]
+    },
+    {
+      "action": "short-value",
+      "notification_hex": "00820503",
+      "expected_event": null,
+      "evidence": [
+        "E-PARSE",
+        "E-TEST"
+      ]
+    }
+  ]
+}

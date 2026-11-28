@@ -8,8 +8,6 @@ from dataclasses import dataclass, field
 from time import monotonic
 from typing import TYPE_CHECKING, Final, Literal, cast
 
-from bleak import BleakClient
-from bleak.backends.characteristic import BleakGATTCharacteristic
 from homeassistant.const import EntityCategory
 
 from ...app_session import app_session
@@ -20,7 +18,7 @@ from ...controller_state import StateKey, sided
 from ...errors import invalid
 from ...profiles import cheerssleep as app
 from ...state_keys import LIGHT_LEVEL, UNDER_BED_LIGHTS_ON, UNDER_BED_LIGHTS_RGB
-from ..base import BedController, ProfileExecution, require_controller
+from ..base import ProfileExecution, require_controller
 from ..builder import BuildContext
 from ..catalog_buttons import Kind, catalog_button
 from ..entity_specs import (
@@ -37,6 +35,7 @@ from ..entity_specs import (
     sleep_rate_sensor_spec,
 )
 from ..lifecycle import ControllerSession
+from ..syndata import Link, SynDataController
 from . import state_keys as keys
 
 if TYPE_CHECKING:
@@ -58,13 +57,6 @@ class LocalState:
 
 
 @dataclass(frozen=True, slots=True)
-class Link:
-    client: BleakClient
-    write: BleakGATTCharacteristic
-    notify: BleakGATTCharacteristic
-
-
-@dataclass(frozen=True, slots=True)
 class Request:
     operation: str
     value: int = 0
@@ -76,10 +68,14 @@ class Request:
     position: int = 1
     sleeper: str | None = None
 
-_RATE_FIELDS: Final[tuple[tuple[str, SleepRate], ...]] = (("heart", "heart_rate"), ("breath", "breathing_rate"))
+
+_RATE_FIELDS: Final[tuple[tuple[str, SleepRate], ...]] = (
+    ("heart", "heart_rate"),
+    ("breath", "breathing_rate"),
+)
 
 
-class CheersSleepController(ProfileExecution[app.CheersSleepProfile], BedController):
+class CheersSleepController(ProfileExecution[app.CheersSleepProfile], SynDataController):
     def __init__(
         self,
         coordinator: AdjustableBedCoordinator,
@@ -218,54 +214,6 @@ class CheersSleepController(ProfileExecution[app.CheersSleepProfile], BedControl
             self._presets.clear()
         else:
             self._presets.pop(selected, None)
-
-    def _live(self, link: Link | None = None) -> Link:
-        current = self._link
-        if (
-            current is None
-            or self._coordinator.controller is not self
-            or (link is not None and current is not link)
-            or self.client is not current.client
-            or not current.client.is_connected
-        ):
-            raise ConnectionError("CheersSleep physical session changed")
-        return current
-
-    async def _send(self, frame: bytes, link: Link, *, cleanup: bool = False) -> None:
-        self._live(link)
-        await self._write_gatt_with_retry(
-            codec.WRITE,
-            frame,
-            1,
-            0,
-            asyncio.Event() if cleanup else self._coordinator.cancel_command,
-            response=True,
-            characteristic=link.write,
-            expected_client=link.client,
-        )
-
-    async def _release(self, link: Link, frame: bytes, delay_ms: int = 0) -> None:
-        async def release() -> None:
-            if delay_ms:
-                await asyncio.sleep(delay_ms / 1000)
-            if (
-                self._coordinator.controller is self
-                and self._link is link
-                and self.client is link.client
-                and link.client.is_connected
-            ):
-                await self._send(frame, link, cleanup=True)
-
-        task = asyncio.create_task(release())
-        cancelled = False
-        while not task.done():
-            try:
-                await asyncio.shield(task)
-            except asyncio.CancelledError:
-                cancelled = True
-        task.result()
-        if cancelled:
-            raise asyncio.CancelledError
 
     async def _hold(
         self, frame: bytes, release: bytes, duration_ms: int, *, latched: bool = False
@@ -558,7 +506,9 @@ class CheersSleepController(ProfileExecution[app.CheersSleepProfile], BedControl
         if not self.model.rgb:
             raise NotImplementedError("This model has no RGB controls")
         if any(not 0 <= v <= 255 for v in rgb_color):
-            raise ValueError("This bed model has no color light, or a color value is outside 0 to 255")
+            raise ValueError(
+                "This bed model has no color light, or a color value is outside 0 to 255"
+            )
         await self._tap(codec.setting(5, *rgb_color), codec.setting(0xAA))
 
     async def set_light_level(self, level: int) -> None:
@@ -631,7 +581,9 @@ class CheersSleepController(ProfileExecution[app.CheersSleepProfile], BedControl
         if control not in self.held_control_options or not 1 <= duration_ms <= 30000:
             raise ValueError("Choose a control this bed offers and a duration of up to 30 seconds")
         if self.model.format == "p1" and duration_ms > 10000:
-            raise ValueError("This bed holds a control for at most 10 seconds. Choose a shorter duration")
+            raise ValueError(
+                "This bed holds a control for at most 10 seconds. Choose a shorter duration"
+            )
 
     async def hold_control(self, control: str, duration_ms: int) -> None:
         self.validate_hold_control(control, duration_ms)
@@ -751,7 +703,9 @@ class CheersSleepController(ProfileExecution[app.CheersSleepProfile], BedControl
 
     async def set_sonic_level(self, value: int) -> None:
         if not self.model.sonic or not 0 <= value <= 100:
-            raise ValueError("Choose a sound level from 0 to 100. Only the I and HI models have sound")
+            raise ValueError(
+                "Choose a sound level from 0 to 100. Only the I and HI models have sound"
+            )
         await self._tap(codec.setting(11, 3, value), codec.setting(0xAA))
 
     def validate_request(self, request: Request) -> None:
@@ -760,7 +714,9 @@ class CheersSleepController(ProfileExecution[app.CheersSleepProfile], BedControl
             if op != "seven_motion" or request.sleeper not in ("left", "right"):
                 raise ValueError("Only the Seven Motion model has a second sleeper setting")
             if self.command_side in ("left", "right") and self.command_side != request.sleeper:
-                raise ValueError("The sleeper you chose is on the other side of the bed. Target that side instead")
+                raise ValueError(
+                    "The sleeper you chose is on the other side of the bed. Target that side instead"
+                )
         if op in ("position_light_toggle", "color_light_toggle"):
             if (
                 self.model.format != "p2"
@@ -795,7 +751,9 @@ class CheersSleepController(ProfileExecution[app.CheersSleepProfile], BedControl
                 or not 1 <= request.position <= 4
                 or not 1 <= request.duration_ms <= 10000
             ):
-                raise ValueError("Choose a motor, a position from 1 to 4 and a duration of up to 10000 milliseconds")
+                raise ValueError(
+                    "Choose a motor, a position from 1 to 4 and a duration of up to 10000 milliseconds"
+                )
             if op.endswith(("recall", "save")) and request.value not in (1, 2):
                 raise ValueError("Choose memory position 1 or 2")
             if op in ("snore_setting", "out_of_bed_setting") and request.value not in (0, 1):
@@ -816,7 +774,9 @@ class CheersSleepController(ProfileExecution[app.CheersSleepProfile], BedControl
             ):
                 raise ValueError("Choose a massage control this bed offers")
             if self.model.format == "p2" and request.value:
-                raise ValueError("This bed steps through massage settings and cannot set a level directly. Leave the value empty or set it to 0 to step to the next setting")
+                raise ValueError(
+                    "This bed steps through massage settings and cannot set a level directly. Leave the value empty or set it to 0 to step to the next setting"
+                )
         elif op == "sonic_level":
             if not self.model.sonic or not 0 <= request.value <= 100:
                 raise ValueError("Choose a sound level from 0 to 100")
