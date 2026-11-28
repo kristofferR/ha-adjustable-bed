@@ -649,6 +649,17 @@ The EasyCtrl extension owns its parser, alarm calendar and release gestures,
 including model 300's unconditional incrementing STOP triplet.
 
 
+## TSS Remote
+
+TSS Remote 1.0.4 uses the unchanged Richmat raw-command, additive function,
+RGB and countdown encoders. All frozen route literals reproduce byte for byte.
+Its package-local catalog owns layout membership, excluded gestures, modes,
+actual-name timing and alarm choices. The shared resource-catalog session
+runtime takes typed per-app rules; TSS keeps its own notification search and
+15/30/45 minute popup versus 2/3/5 hour slider labels. Generic numbered motors
+remain diagnostic-only, and numbered modes do not add physical side routing.
+
+
 ## Softide
 
 Softide 1.2.4's frozen AA literals reproduce through the Sleep Assistant

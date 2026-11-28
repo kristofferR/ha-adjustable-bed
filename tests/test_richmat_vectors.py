@@ -412,6 +412,13 @@ def _census(key: str) -> set[str]:
             classic.release("RAW"), *(classic.release("FRAMED", mode) for mode in (0, 1, 2)),
             classic.INITIALIZE, classic.ALARM_QUERY, classic.LAMP_QUERY, classic.AROMA_QUERY,
         )}
+    if key == "richmat_classic_tss_remote":
+        # Its complete catalog membership and parameterized helpers are checked
+        # against the same sealed fixtures in test_tss_remote.
+        return {frame.hex() for frame in (
+            classic.release("RAW"), classic.release("FRAMED"),
+            classic.INITIALIZE, classic.ALARM_QUERY, classic.LAMP_QUERY,
+        )}
     if key == "richmat_classic_baseremote":
         # Base Remote has no desk, manufacturing or TEST command path.
         return {frame.hex() for frame in (

@@ -363,6 +363,7 @@ entities, including the light colors, are separate.
 | [Leva Bed Remote](beds/okin-nframe.md#leva-bed-remote) | `back_up`, `back_down`, `legs_up`, `legs_down`; Ascent, Evolution LX and Quest Elite with Nordic UART also have `pillow_up`, `pillow_down`, `lumbar_up` and `lumbar_down` | Remote motor directions only. Presets, light and massage run once. |
 | [Super Colchones](beds/richmat.md#super-colchones) | `head_up`, `head_down`, `foot_up`, `foot_down`; AFEG350 also `lumbar_up`, `lumbar_down` | |
 | [BedSmart / X-Series](beds/richmat.md#bedsmart--x-series) | The `richmat_classic_<node>` controls of the selected remote layout that can be held | Saves cannot be held |
+| [TSS Remote](beds/richmat.md#tss-remote) | The available `tss_<node>` controls with a held gesture | Confirmed saves and diagnostic-only unnamed motion cannot be held |
 | [Dreamlab Control](beds/richmat.md#dreamlab-control) | The available `dreamlab_<node>` controls with a held gesture | Saves and one-shot controls cannot be held |
 | [Base Remote](beds/richmat.md#base-remote) | The held controls of the selected layout and mode | Saves cannot be held |
 | [Maxprime](beds/richmat.md#maxprime) | The selected layout's held controls, listed as `held_control` on the buttons | Applies the receiver mode selected when the hold starts. Save actions use confirmed buttons |
@@ -520,6 +521,7 @@ data:
 | Linx | None | Turn off only (`enabled: false`), `slot` 1–6 |
 | Logicdata app | `flat`, `zero_g`, `anti_snore`, `memory_1`, `memory_2` | `weekdays`, head and foot massage levels 0–3 |
 | Luuna + | The product's alarm positions: `tv`, `zero_g`, `anti_snore`, `memory_1`, `memory_2`; required to turn the alarm on | Once, at the next occurrence. Needs the bed to report its alarm on the current connection |
+| TSS Remote | From the selected layout; required to turn the alarm on | One occurrence with optional supported massage zones. Availability must be reported on this connection unless the layout has a direct alarm button |
 | Dreamlab Control | From the selected layout; required to turn the alarm on | One occurrence with optional supported massage zones. The receiver reports availability on the current connection, or the layout has a direct alarm button |
 | Luuna Rise and Power Cool | From the selected layout's alarm controls; required to turn the alarm on | `massage` with the layout's zones (then `none` is allowed). Once, at the next occurrence. Needs the bed to report its alarm on the current connection |
 | M Line | `zero_g`, `flat`, `memory_1`, `memory_2`, `massage`, `anti_snore` | `weekdays` |
@@ -2211,6 +2213,8 @@ receiver-wide settings. Select `query` to check for accessories, `rgb` with
 [Set alarm](#set_alarm) for its alarm and the native entities for the light
 timeout and layout-dependent massage timers.
 
+
+TSS Remote uses `richmat_classic` only for `query` and `rgb`, with lighting writes gated by the receiver's current capability reply. RGB reconnects idle receivers and checks every selected connection before the first color write. Use the shared light and timer entities and `set_alarm` for its other settings. See [TSS Remote](beds/richmat.md#tss-remote).
 
 ## Richmat app
 

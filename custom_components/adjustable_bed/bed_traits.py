@@ -553,6 +553,13 @@ def bed_traits(bed_type: str | None, protocol_variant: str | None = None) -> Bed
         return replace(traits, owns_device_info_reads=True)
     if resolved == "richmat_classic_apps" and protocol_variant == "jerome2":
         return replace(traits, single_address_native_both=False)
+    if resolved == "richmat_classic_apps" and protocol_variant == "tss_remote":
+        from .profiles.tss_remote import CONNECTION_TIMEOUT_S
+
+        return replace(
+            traits, single_address_native_both=False, owns_device_info_reads=True,
+            connection_scoped_state=True, connection_timeout=CONNECTION_TIMEOUT_S,
+        )
     if resolved == "richmat_classic_apps" and protocol_variant == "dreamlab2":
         return replace(traits, single_address_native_both=False, owns_device_info_reads=True)
     if resolved == "solace" and protocol_variant in ("sophie", "flexirest"):
