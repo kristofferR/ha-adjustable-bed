@@ -150,8 +150,10 @@ jobs:
           uv run --no-sync python scripts/ha_bluetooth_test_requirements.py > /tmp/ha-bluetooth-requirements.txt
           uv pip install -r /tmp/ha-bluetooth-requirements.txt
       - name: Verify wire bytes and both hash seeds
+        env:
+          WIRE_SNAPSHOT_VERBOSE: "1"
         run: >-
-          uv run --no-sync pytest -n 0
+          uv run --no-sync pytest -s -n 0
           tests/test_wire_snapshot.py::test_wire_bytes_match_committed_snapshot
 
   # pytest-split balances the shards on .test_durations. Refresh it only from

@@ -58,6 +58,7 @@ import contextvars
 import dataclasses
 import datetime
 import difflib
+import faulthandler
 import inspect
 import json
 import logging
@@ -3224,6 +3225,11 @@ async def capture_all(only: list[str] | None = None) -> dict[str, Any]:
     with freeze_time(FROZEN_NOW, real_asyncio=True) as frozen:
         for scenario in scenarios:
             started = _REAL_CLOCK[0]()
+            if os.environ.get("WIRE_SNAPSHOT_VERBOSE"):
+                print(
+                    f"seed={os.environ.get('PYTHONHASHSEED', 'unset')} starting {scenario.id}",
+                    file=sys.stderr, flush=True,
+                )
             try:
                 layout = layouts[scenario.layout_id or scenario.id]
                 if scenario.properties is not None:
@@ -3237,7 +3243,10 @@ async def capture_all(only: list[str] | None = None) -> dict[str, Any]:
                 }
             if os.environ.get("WIRE_SNAPSHOT_VERBOSE"):
                 elapsed = _REAL_CLOCK[0]() - started
-                print(f"{scenario.id} {elapsed:.1f}s", file=sys.stderr, flush=True)
+                print(
+                    f"seed={os.environ.get('PYTHONHASHSEED', 'unset')} {scenario.id} {elapsed:.1f}s",
+                    file=sys.stderr, flush=True,
+                )
     return {"schema": SCHEMA_VERSION, "scenarios": result}
 
 
@@ -3326,41 +3335,48 @@ def main() -> int:
             print(scenario.id)
         return 0
 
-    probe = None
-    if args.check:
-        # A second hash seed, captured in parallel: new set-order dependence fails.
-        probe = subprocess.Popen(
-            [sys.executable, __file__, "--probe"],
-            env={**os.environ, "PYTHONHASHSEED": "1"},
-            stdout=subprocess.PIPE,
-            text=True,
-        )
-    text = render(asyncio.run(capture_all(args.only)))
-    if args.only or args.probe:
-        print(text, end="")
-        return 0
-    if args.check:
-        assert probe is not None
-        probed, _ = probe.communicate()
-        committed = SNAPSHOT_PATH.read_text()
-        if committed != text:
-            diff = difflib.unified_diff(
-                committed.splitlines(), text.splitlines(), "committed", "fresh", n=0, lineterm=""
+    verbose = bool(os.environ.get("WIRE_SNAPSHOT_VERBOSE"))
+    if verbose:
+        faulthandler.dump_traceback_later(120, repeat=True)
+    try:
+        probe = None
+        if args.check:
+            # A second hash seed, captured in parallel: new set-order dependence fails.
+            probe = subprocess.Popen(
+                [sys.executable, __file__, "--probe"],
+                env={**os.environ, "PYTHONHASHSEED": "1"},
+                stdout=subprocess.PIPE,
+                text=True,
             )
-            print(f"{SNAPSHOT_PATH.relative_to(REPO_ROOT)} is stale:")
-            print("\n".join(line[:240] for _, line in zip(range(20), diff, strict=False)))
-            return 1
-        if probe.returncode:
-            print("the second-seed capture failed")
-            return 1
-        if differing := seed_differences(text, probed):
-            print("output depends on the hash seed (set iteration order):")
-            print("\n".join(differing[:20]))
-            return 1
+        text = render(asyncio.run(capture_all(args.only)))
+        if args.only or args.probe:
+            print(text, end="")
+            return 0
+        if args.check:
+            assert probe is not None
+            probed, _ = probe.communicate()
+            committed = SNAPSHOT_PATH.read_text()
+            if committed != text:
+                diff = difflib.unified_diff(
+                    committed.splitlines(), text.splitlines(), "committed", "fresh", n=0, lineterm=""
+                )
+                print(f"{SNAPSHOT_PATH.relative_to(REPO_ROOT)} is stale:")
+                print("\n".join(line[:240] for _, line in zip(range(20), diff, strict=False)))
+                return 1
+            if probe.returncode:
+                print("the second-seed capture failed")
+                return 1
+            if differing := seed_differences(text, probed):
+                print("output depends on the hash seed (set iteration order):")
+                print("\n".join(differing[:20]))
+                return 1
+            return 0
+        SNAPSHOT_PATH.write_text(text)
+        print(f"wrote {SNAPSHOT_PATH.relative_to(REPO_ROOT)}")
         return 0
-    SNAPSHOT_PATH.write_text(text)
-    print(f"wrote {SNAPSHOT_PATH.relative_to(REPO_ROOT)}")
-    return 0
+    finally:
+        if verbose:
+            faulthandler.cancel_dump_traceback_later()
 
 
 if __name__ == "__main__":
