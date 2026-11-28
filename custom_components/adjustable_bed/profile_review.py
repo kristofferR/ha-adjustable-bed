@@ -322,6 +322,7 @@ _DETECTION_DRIFT: Final[dict[str, frozenset[str]]] = {
 # offered only when detection still picks the stored route for this bed.
 _ADVERTISED_APPS: Final = frozenset({"ai_bed"}) | frozenset(
     {
+        "askona",
         BED_TYPE_FSM_RELAX,
         BED_TYPE_MOTION_BED,
         BED_TYPE_STARCODE_ABM5_4,
@@ -332,6 +333,7 @@ _ADVERTISED_APPS: Final = frozenset({"ai_bed"}) | frozenset(
 # Routes whose advertisement can add an app above or drift to another route.
 _ADVERTISED_ROUTES: Final = frozenset(
     {
+        BED_TYPE_KEESON,
         BED_TYPE_SOLACE,  # Motion Bed names
         BED_TYPE_OCTO,  # Motion Bed names on FFE0
         BED_TYPE_LIMOSS,  # FSM Relax names

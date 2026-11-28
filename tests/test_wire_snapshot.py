@@ -37,10 +37,10 @@ def _load_tool():
     return module
 
 
+@pytest.mark.xdist_group("wire_snapshot")
 @pytest.mark.parametrize("hash_seed", ("0", "1"))
 def test_wire_bytes_match_committed_snapshot(hash_seed: str) -> None:
-    # Let pytest schedule each full capture instead of nesting parallel captures
-    # inside one worker alongside the rest of the suite.
+    # Both full captures share a worker so they do not compete for CPU.
     result = subprocess.run(
         [sys.executable, str(SCRIPT), "--probe"],
         env={**os.environ, "PYTHONHASHSEED": hash_seed},

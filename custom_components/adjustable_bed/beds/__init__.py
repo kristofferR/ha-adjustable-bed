@@ -318,6 +318,7 @@ _EXPORT_MODULES = {
     "SymphonySleepController": ("keeson.symphony_sleep", "SymphonySleepController"),
     "JunaSleepController": ("keeson.junasleep", "JunaSleepController"),
     "KeesonController": "keeson.controller",
+    "AskonaController": "keeson.askona",
     "OrmatekController": "keeson.ormatek",
     "AgingPlaceController": "keeson.agingplace",
     "LeggettGen2Controller": "leggett.gen2",
