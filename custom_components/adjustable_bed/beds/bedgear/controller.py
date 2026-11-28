@@ -36,6 +36,7 @@ from ...profiles.bedgear import BedgearProfile, Control
 from ...profiles.ergobed import ErgoBedProfile
 from ...profiles.l2motion import L2MotionProfile
 from ...profiles.moodbase import MoodBaseProfile
+from ...profiles.vivasleep import VivaSleepProfile
 from ..base import CONTROLLER_GESTURE_RELEASE, BedController, ProfileExecution, require_controller
 from ..builder import BuildContext
 from ..cancellation import settled
@@ -114,7 +115,7 @@ async def press(controller: BedController, *, key: str) -> None:
 
 
 class BedgearController(
-    ProfileExecution[BedgearProfile | L2MotionProfile | MoodBaseProfile | ErgoBedProfile],
+    ProfileExecution[BedgearProfile | L2MotionProfile | MoodBaseProfile | ErgoBedProfile | VivaSleepProfile],
     BedController,
 ):
     _receiver_type: ClassVar[type[Receiver]] = Receiver
@@ -125,7 +126,7 @@ class BedgearController(
         coordinator: AdjustableBedCoordinator,
         *,
         name: str,
-        profile: L2MotionProfile | MoodBaseProfile | ErgoBedProfile | None = None,
+        profile: L2MotionProfile | MoodBaseProfile | ErgoBedProfile | VivaSleepProfile | None = None,
     ) -> None:
         super().__init__(coordinator)
         self.profile = profile if profile is not None else BedgearProfile(name)
@@ -561,7 +562,7 @@ class BedgearController(
             if isinstance(bind, dict):
                 self._bind = (bind["available"] is True, bind["active"] is True)
                 value = fields.get("sync_type")
-                if isinstance(value, int) or not isinstance(self.profile, MoodBaseProfile):
+                if isinstance(value, int) or not isinstance(self.profile, (MoodBaseProfile, VivaSleepProfile)):
                     self._sync = value if isinstance(value, int) else None
             self._publish()
 
@@ -864,7 +865,7 @@ class BedgearController(
                     self.profile.key + "_" + axis + "_down",
                     stop_scope="side",
                     press_is_native=True,
-                    release_button_key=self.profile.key + "_release",
+                    release_button_key="bedgear_release",
                 ),
             )
             for axis, _up, _down in self.profile.axes
@@ -884,7 +885,7 @@ class BedgearController(
                     translation_placeholders={"action": self._control_label(c.key)},
                     hold=ControllerHoldSpec(
                         self.profile.key + "_" + c.key,
-                        release_button_key=self.profile.key + "_release",
+                        release_button_key="bedgear_release",
                     )
                     if c.held
                     else None,
@@ -910,7 +911,7 @@ class BedgearController(
         control = key.removeprefix("preset_") if key.startswith("preset_memory_") else key
         if self.profile.key + "_" + control in self.held_control_options:
             return ControllerHoldSpec(
-                self.profile.key + "_" + control, release_button_key=self.profile.key + "_release"
+                self.profile.key + "_" + control, release_button_key="bedgear_release"
             )
         return None
 

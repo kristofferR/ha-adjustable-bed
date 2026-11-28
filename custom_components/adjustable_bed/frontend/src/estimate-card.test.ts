@@ -264,7 +264,7 @@ test("a preset that overwrites a saved position asks in the card's own dialog", 
   expect(calls).toEqual([]);
   press("button.save");
   clicks(card._estimateDialogTemplate(), "dialog-btn primary").at(-1)!();
-  expect(calls).toEqual([{ service: "press", data: { entity_id: "button.save" } }]);
+  expect(calls).toEqual([{ service: "press_confirmed", data: { entity_id: "button.save", confirmed: true } }]);
   expect(card._estimateDialog).toBeUndefined();
 });
 

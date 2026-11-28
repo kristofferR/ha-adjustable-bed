@@ -351,11 +351,13 @@ async def test_automatic_favorite_survives_card_release_and_lease_expiry_but_exp
 
 
 @pytest.mark.parametrize('combined', [False, True])
-async def test_shipped_card_resolves_actual_registry_release_metadata(hass, combined):
+async def test_shipped_card_cancellation_uses_actual_registry_release_metadata(hass, combined):
     if combined:
-        c, _, _, _ = await paired_runtime(hass, mode='concurrent')
+        c, left, right, _ = await paired_runtime(hass, mode='concurrent')
+        receivers = (left, right)
     else:
         c, _ = await public_runtime(hass)
+        receivers = (c,)
     entities = []
     await button.async_setup_entry(hass, c.entry, entities.extend)
     favorite = next(entity for entity in entities if entity.unique_id.endswith(
@@ -365,8 +367,18 @@ async def test_shipped_card_resolves_actual_registry_release_metadata(hass, comb
     platform = MockEntityPlatform(hass, domain='button', platform_name=const.DOMAIN)
     platform.config_entry = c.entry
     await platform.platform_data.async_load_translations()
-    await platform.async_add_entities([favorite, release])
     registry = er.async_get(hass)
+    rows = [favorite, release]
+    if combined:
+        for entity in entities:
+            if isinstance(entity, button.ControllerActionButton) and entity._spec.release_only:
+                registry.async_get_or_create(
+                    'button', const.DOMAIN, entity.unique_id, config_entry=c.entry,
+                    disabled_by=er.RegistryEntryDisabler.USER,
+                )
+                rows.append(entity)
+    await platform.async_add_entities(rows)
+    assert hass.services.has_service(const.DOMAIN, 'cancel_hold')
     data = {'entities': {}, 'states': {}}
     for entity in (favorite, release):
         row = registry.async_get(entity.entity_id)
@@ -374,15 +386,46 @@ async def test_shipped_card_resolves_actual_registry_release_metadata(hass, comb
             'device_id': row.device_id, 'translation_key': row.translation_key}
         data['states'][entity.entity_id] = {'attributes': dict(hass.states.get(entity.entity_id).attributes)}
     assert data['states'][favorite.entity_id]['attributes']['hold_release_button_key'] == row.translation_key
-    script = '''import { heldButtonMotor } from './custom_components/adjustable_bed/frontend/src/hold.ts';
+    script = """import { heldButtonMotor, MotorHold, movementLease } from './custom_components/adjustable_bed/frontend/src/hold.ts';
 const {hass, favorite} = JSON.parse(await Bun.stdin.text());
-console.log(JSON.stringify(heldButtonMotor(hass, favorite)));'''
+let start, cancel;
+hass.callService = (domain, service, data) => {
+  start = {domain, service, data};
+  return new Promise(() => {});
+};
+const motor = heldButtonMotor(hass, favorite);
+const hold = new MotorHold({
+  pulse: () => undefined,
+  lease: (motor, direction, lease) => movementLease(hass, motor, direction, lease),
+  stopCover: () => {}, stopBed: () => {},
+  cancelHold: entity => { cancel = entity; },
+});
+hold.start(motor, 'up', 1);
+hold.end(motor, undefined, true);
+console.log(JSON.stringify({motor, start, cancel}));"""
     result = await hass.async_add_executor_job(lambda: subprocess.run(
         ['bun', '-e', script], input=json.dumps({'hass': data, 'favorite': favorite.entity_id}),
         cwd=Path(__file__).resolve().parents[1], text=True, capture_output=True, check=True,
     ))
-    assert result.stdout.strip() != 'undefined', data
-    assert json.loads(result.stdout)['releaseButton'] == release.entity_id
+    route = json.loads(result.stdout)
+    assert route['motor']['releaseButton'] == route['cancel'] == release.entity_id
+    start = route['start']
+    if isinstance(start['data']['device_id'], str):
+        start['data']['device_id'] = [start['data']['device_id']]
+    written = asyncio.Event()
+    receivers[-1].client.write_gatt_char.side_effect = lambda *_args, **_kwargs: written.set()
+    with virtual_clock():
+        holding = asyncio.create_task(hass.services.async_call(
+            start['domain'], start['service'], start['data'], blocking=True))
+        await asyncio.wait_for(written.wait(), 1)
+        await hass.services.async_call(const.DOMAIN, 'cancel_hold', {
+            'entity_id': route['cancel'],
+        }, blocking=True)
+        await asyncio.wait_for(holding, 1)
+    packet = '0000' if combined else '0e00'
+    cleanup = 'ff00' if combined else 'fe00'
+    for receiver in receivers:
+        assert frames(receiver.client) == [packet, cleanup]
     if combined:
         await c.async_shutdown()
     else:
