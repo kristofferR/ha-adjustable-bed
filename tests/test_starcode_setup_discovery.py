@@ -605,6 +605,7 @@ def test_non_star_missing_service_list_preserves_original_detector(
     from tests.test_detection import _make_service_info
 
     info = _make_service_info(name=name, service_uuids=[])
+    info.advertisement = None
     info.service_uuids = service_uuids
     assert detect_bed_type_detailed(info) == _detect_bed_type_detailed(info)
 

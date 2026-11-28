@@ -12,6 +12,7 @@ from homeassistant.exceptions import HomeAssistantError
 
 from ...card import CARD_MASSAGE
 from ...command_scheduler import (
+    CommandContext,
     CommandKind,
     copy_context_without_command,
     current_command_context,
@@ -101,6 +102,7 @@ class SvenController(FixedRichmatAppController):
         self._timer: asyncio.TimerHandle | None = None
         self._stopping_massage: _Link | None = None
         self._timer_epoch = 0
+        self._massage_context: CommandContext | None = None
 
     def _current_link(self, expected: _Link | None = None) -> _Link:
         link = super()._current_link(expected)
@@ -172,6 +174,7 @@ class SvenController(FixedRichmatAppController):
     def on_disconnect(self) -> None:
         super().on_disconnect()
         self._is_current = lambda: False
+        self._massage_context = None
         self.on_gesture_release()
         self._uncertain()
 
@@ -271,6 +274,9 @@ class SvenController(FixedRichmatAppController):
 
     async def _tap(self, code: int) -> None:
         link, epoch = self._current_link(), self._epoch
+        codes = self.profile.codes
+        if codes is not None and code in {codes.get(key) for key in ("massage_head", "massage_foot", "massage_mode")}:
+            self._massage_context = current_command_context()
 
         def verify() -> None:
             if epoch != self._epoch:
@@ -430,9 +436,22 @@ class SvenController(FixedRichmatAppController):
                 and (epoch is None or epoch == self._timer_epoch)
             )
 
+        def changing_massage() -> bool:
+            active = self._coordinator.command_scheduler.active
+            return (active is not None and not active.future.done()
+                    and active.intent.kind is not CommandKind.SAFETY
+                    and active.context is self._massage_context)
+
         # A stale timer must not even admit work that could cancel a new command.
         if not current():
             return
+        if changing_massage():
+            # Settle the bounded change so off can use its resulting known levels.
+            active = self._coordinator.command_scheduler.active
+            assert active is not None
+            await asyncio.wait((active.future,))
+            if not current():
+                return
         self._coordinator.require_persistent_command_connection("sven_massage_concurrent")
 
         async def stop(c: BedController) -> None:
@@ -443,7 +462,8 @@ class SvenController(FixedRichmatAppController):
 
         try:
             await self._coordinator.async_execute_controller_command(
-                stop, kind=CommandKind.SAFETY, admit_if=current
+                stop, kind=CommandKind.SAFETY,
+                admit_if=lambda: current() and not changing_massage(),
             )
         except HomeAssistantError, BleakError, ConnectionError, TimeoutError:
             if self._link is link:
@@ -503,14 +523,14 @@ class SvenController(FixedRichmatAppController):
         self._admit_massage(stopping=level == 0)
         old = self._levels[index]
         assert old is not None
-        try:
-            for _ in range((level - old) % 4):
-                await self._massage_step(index, stopping=level == 0, preserve_duration=level != 0)
+        for _ in range((level - old) % 4):
+            await self._massage_step(index, stopping=level == 0, preserve_duration=level != 0)
+            try:
                 await cancellable(asyncio.sleep(p.TAP_MS / 1000), self._coordinator.cancel_command)
-        except BaseException:
-            if self._link is link:
-                self._uncertain()
-            raise
+            except BaseException:
+                if self._link is link:
+                    self._uncertain()
+                raise
 
     async def massage_off(self) -> None:
         # No blind toggle/off opcode is reachable. Off requires known levels.

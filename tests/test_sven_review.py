@@ -288,6 +288,63 @@ async def test_timer_revision_is_rechecked_under_scheduler_admission(hass, runti
     assert frames(client) == [bytes.fromhex("6e01002493"), bytes.fromhex("6e01006edd")]
 
 
+@pytest.mark.parametrize('operation', ['level', 'pattern'])
+@pytest.mark.parametrize('during_write', [False, True])
+async def test_due_shutoff_settles_active_massage_change(hass, runtime, operation, during_write):
+    coordinator, client = runtime
+    assert await coordinator.async_connect()
+    ctrl = coordinator.controller
+    delayed = False
+
+    async def write(_char, frame, **_kwargs):
+        nonlocal delayed
+        if during_write and not delayed:
+            delayed = True
+            await asyncio.sleep(0.1)
+
+    client.write_gatt_char.side_effect = write
+    with virtual_clock():
+        ctrl.confirm_massage_off(True)
+        ctrl._levels = [1, 1]
+        ctrl._used = 0
+        ctrl._duration_deadline = asyncio.get_running_loop().time() + 0.05
+        ctrl._account()
+        await coordinator.async_execute_controller_command(
+            lambda current: current.set_massage_intensity('head', 2)
+            if operation == 'level' else current.massage_mode_step()
+        )
+        await asyncio.sleep(2)
+    assert ctrl._levels == [0, 0]
+    assert ctrl._timer is None
+    packets = frames(client)
+    for zone in ('head', 'foot'):
+        assert any(frame[3] == ctrl._code('massage_' + zone) for frame in packets)
+
+
+async def test_usage_cutoff_preserves_known_levels_after_partial_level_change(hass, runtime):
+    coordinator, client = runtime
+    assert await coordinator.async_connect()
+    ctrl = coordinator.controller
+    with virtual_clock():
+        ctrl.confirm_massage_off(True)
+        ctrl._levels = [1, 1]
+        ctrl._used = 30 * 60 - 0.05
+        ctrl._off_since = None
+        ctrl._account()
+        with raises_key("sven_massage_rest"):
+            await coordinator.async_execute_controller_command(
+                lambda current: current.set_massage_intensity("head", 3)
+            )
+        await asyncio.sleep(2)
+    assert ctrl._levels == [0, 0]
+    assert ctrl._timer is None
+    assert frames(client) == [
+        bytes.fromhex(frame)
+        for frame in ("6e01004cbb", "6e01006edd") * 3
+        + ("6e01004ebd", "6e01006edd") * 3
+    ]
+
+
 @pytest.mark.parametrize("error", (BleakError("CCCD refused"), TimeoutError("CCCD timeout")))
 async def test_optional_notification_failure_retains_current_writer(error):
     c, client = make_controller()
