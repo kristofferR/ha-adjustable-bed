@@ -204,13 +204,23 @@ async def test_rejected_auth_never_queries_controls(bed):
     assert [raw[0] for raw in bed.writes] == [0x81, 0x82, 0x84]
 
 
-async def test_movement_uses_real_writer_and_same_link_stop(bed):
+async def test_movement_uses_real_writer_and_same_link_stop(bed, monkeypatch):
+    from scripts.wire_snapshot import FakeClock, virtual_time
+
     ctrl = await bed.connect()
-    await ctrl.hold_control("head_up", 2)
-    assert bed.writes[0] == codec.arrow(2) and bed.writes[-1] == codec.arrow(0)
-    assert not ctrl._poisoned
-    await ctrl.hold_control("legs_up", 2)
-    assert bed.writes[-1] == codec.arrow(0)
+    # Advance the short hold through refreshes, independently of scheduler latency.
+    ctrl.profile = replace(ctrl.profile, interval_ms=1)
+    clock = FakeClock()
+    monkeypatch.setattr(
+        "custom_components.adjustable_bed.beds.active_sleep.controller.monotonic", clock.time
+    )
+    with virtual_time(clock):
+        await ctrl.hold_control("head_up", 2)
+        assert bed.writes[0] == codec.arrow(2) and bed.writes[-1] == codec.arrow(0)
+        assert not ctrl._poisoned
+        bed.writes.clear()
+        await ctrl.hold_control("legs_up", 2)
+        assert bed.writes[0] == codec.arrow(4) and bed.writes[-1] == codec.arrow(0)
     assert all(
         call.args[0] is bed.char and call.kwargs["response"]
         for call in bed.client.write_gatt_char.await_args_list
