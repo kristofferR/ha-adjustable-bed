@@ -4521,6 +4521,7 @@ SETUP_PROFILES: Final[dict[str, SetupProfile]] = {
         owns={**_BASE[BED_TYPE_VIVASLEEP].owns, CONF_HAS_MASSAGE: False, CONF_DISABLE_ANGLE_SENSING: True},
         questions=(Question(CONF_BLE_DEVICE_NAME, default="", text=True),),
         validate=_vivasleep_errors,
+        imports=("profiles.vivasleep",),
         derive=lambda _data: _NO_PULSE_CHOICE,
         seed=_ergobed_seed,
         title=lambda _data: "VivaSleep",

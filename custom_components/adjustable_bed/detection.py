@@ -375,6 +375,7 @@ from .profiles.sinca_comfort import scan_name as sinca_scan_name
 from .profiles.smart_base import NAME as SMART_BASE_NAME
 from .profiles.smart_sleep import advertisement as smart_sleep_advertisement
 from .profiles.sophie import accepts_name as accepts_sophie_name
+from .profiles.vivasleep import accepts_name as vivasleep_accepts_name
 from .profiles.vmatbasic import manufacturer_payload_matches
 
 _LOGGER = logging.getLogger(__name__)
@@ -2319,8 +2320,6 @@ def _detect_bed_type_with_app_candidates(
         result.signals.append("name:moodbase_app_candidate")
         if moodbase_receiver_hint(service_info.name, service_info.service_uuids):
             result.signals.append("service:moodbase_app_candidate")
-    from .profiles.vivasleep import accepts_name as vivasleep_accepts_name
-
     if first.name(BED_TYPE_VIVASLEEP) and vivasleep_accepts_name(service_info.name) and not any(signal.startswith("excluded:") for signal in result.signals):
         if result.bed_type is None:
             result = DetectionResult(BED_TYPE_VIVASLEEP, 0.3, ["name:vivasleep_app_candidate"])

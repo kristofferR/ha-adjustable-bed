@@ -8,6 +8,7 @@ from pathlib import Path
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
+import yaml
 from homeassistant.config_entries import ConfigEntryState
 from homeassistant.const import CONF_ADDRESS, CONF_NAME
 from homeassistant.data_entry_flow import FlowResultType
@@ -619,6 +620,11 @@ async def test_native_card_discovery_metadata_matches_ha(
     hass.config.components.add(const.DOMAIN)
     await hass.config_entries.async_forward_entry_setups(co.entry, ["button", "cover"])
     await hass.async_block_till_done()
+    # With a real button platform loaded, the complete action census must match.
+    described = yaml.safe_load(
+        (FIXTURES.parents[2] / "custom_components" / "adjustable_bed" / "services.yaml").read_text()
+    )
+    assert set(hass.services.async_services()[const.DOMAIN]) == set(described)
     snapshot = {"entities": {}, "states": {}}
     for entry in er.async_entries_for_config_entry(er.async_get(hass), co.entry.entry_id):
         state = hass.states.get(entry.entity_id)
