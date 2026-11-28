@@ -506,6 +506,12 @@ profile. `beds/ergobq/` uses the shared settled GATT writer with an expected
 client, while owning its authentication, notification stream and release.
 See [ErgoBQ BED](../beds/ergobq.md) and `tests/test_ergobq_vectors.py`.
 
+Purely Sleep 2.0.1 uses typed normal-mode JLRN and VJRM profiles over the Richmat
+codec. All 90 frozen builder vectors reproduce byte for byte in
+`tests/test_purely_sleep_vectors.py`; no new codec or catalog-wide alias is needed.
+Its session extension keeps FIFO pacing, property-selected GATT roles and the
+normal/version-one boundary separate from the legacy remote routes.
+
 ## iFit
 
 iFit 1.1 (3) reuses `codec/okin_5a.py` only after all 35 reachable command
@@ -525,6 +531,14 @@ the existing family motion/session controller. Its ordinary RX dispatcher
 differs from Casper's complete-length receiver, so it has a scoped dispatcher
 with only its two verified announcements. See the
 [Comfort Bed section](../beds/richmat.md#comfort-bed) and `tests/test_comfort_bed.py`.
+
+Amada Smart 1.0.0 (1) selects the unchanged Okin N-frame codec after all 78
+frozen transmit literals match `frame40`, `request`, `clock` and `alarm`.
+`profiles/amada.py` owns the explicit A/AB/B selector and its own schedules.
+The shared Okin controller extension owns AMADA's captured BLE session, selected
+record parsing, six-second save/reset and generic HA alarm routing. A/B are not
+physical Left/Right evidence. The accepted source remains bounded PARTIAL
+(B1 SDK warnings and B2 exception/cancellation ordering), hardware unverified.
 
 ### Active Sleep
 

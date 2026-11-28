@@ -429,7 +429,7 @@ def plan_commands(controller: Any) -> list[Command]:
     for spec in specs:
         # These STOP paths consume the interrupted command's release receipt.
         # Keep older synthetic STOP rows stable.
-        scheduled = controller._coordinator.bed_type in {"shuda", "atlas_lift", "topcare", "comfort_bed"}
+        scheduled = controller._coordinator.bed_type in {"shuda", "atlas_lift", "purely_sleep", "topcare", "comfort_bed"}
         # Stop between OkimattMotion refresh ticks so equal deadlines cannot race.
         after_s = 0.35 if controller._coordinator.bed_type == "okimattmotion" else STOP_AFTER_S
         plan.append(Command(
@@ -1558,6 +1558,9 @@ def default_scenario(bed_type: str) -> Scenario:
                      "write:" + codec.frame(1, b"\x00").hex(): codec.frame(1, b"\x01\x01\x01A").hex(),
                      "*": status})
 
+    if bed_type == "amada":
+        return Scenario(id=bed_type, bed_type=bed_type, entry_data={"product_type": "ab"},
+                        layout_id="amada")
     if bed_type == "ghostbed":
         return Scenario(id=bed_type, bed_type=bed_type, layout_id="flexispot")
     if bed_type == "flexispot":
@@ -1617,6 +1620,9 @@ def default_scenario(bed_type: str) -> Scenario:
     if bed_type == "super_colchones":
         return Scenario(id=bed_type, bed_type=bed_type, protocol_variant="afeg302",
                         entry_data={const.CONF_PROTOCOL_VARIANT: "afeg302"}, layout_id="super_colchones:n1")
+    if bed_type == const.BED_TYPE_PURELY_SLEEP:
+        return Scenario(id=bed_type, bed_type=bed_type, protocol_variant="JLRN",
+                        layout_id="atlas_lift:w1")
     if bed_type == "topcare":
         return Scenario(id=bed_type, bed_type=bed_type, layout_id="topcare:n1")
     if bed_type == const.BED_TYPE_COMFORT_BED:
@@ -2194,6 +2200,10 @@ def route_scenarios() -> list[Scenario]:
             scenarios.append(Scenario(id=f"betterliving2:{wire}:{layout}", bed_type="betterliving2",
                 protocol_variant=wire, entry_data={"protocol_variant": wire, "product_type": layout},
                 layout_id=f"betterliving2:{wire}"))
+
+    for selector in ("a", "b"):
+        scenarios.append(Scenario(id=f"amada:{selector}", bed_type="amada",
+                                  entry_data={"product_type": selector}, layout_id="amada"))
 
     # Jiecang family: one app, four profiles, shared and distinct layouts.
     for profile in ("dreamask", "dreamotion", "dreamhd", "comfort_motion"):
@@ -2902,6 +2912,9 @@ def build_scenarios() -> list[Scenario]:
         )
     )
 
+    for product, route in (("JLRN", "n1"), ("VJRM", "n1"), ("VJRM", "w1")):
+        scenarios.append(Scenario(id=f"purely_sleep:{product}:{route}", bed_type="purely_sleep",
+            protocol_variant=product, layout_id=f"atlas_lift:{route}"))
     # My Side's own four picker products on each accepted GATT route. Reuse
     # stored physical layouts without changing any previous peer scenario.
     for product in ("76", "77", "78", "79"):
@@ -3063,13 +3076,13 @@ async def _connect(controller: Any, recorder: Recorder, clock: FakeClock) -> dic
         if controller._coordinator.bed_type in {"shuda", "sleeptime"}:
             await controller.async_on_connect(SimpleNamespace(async_start_notify=controller.start_notify))
             return
-        if controller._coordinator.bed_type in {"meisemobell", "rize_home", "superior_sleep", "okin_64bit", "betterliving2", "ultramatic_smart_bed", "smart_comfort_synargy", "smart_comfort_synergy", "simmons_blue", "ifit"}:
+        if controller._coordinator.bed_type in {"amada", "meisemobell", "rize_home", "superior_sleep", "okin_64bit", "betterliving2", "ultramatic_smart_bed", "smart_comfort_synargy", "smart_comfort_synergy", "simmons_blue", "ifit"}:
             session = SimpleNamespace(async_start_notify=controller.start_notify, is_current=lambda: True)
             if controller._coordinator.bed_type == "betterliving2":
                 session.store_device_info = lambda *_: None
             await controller.async_on_connect(session)
             return
-        if controller._coordinator.bed_type in {"symphony", "linx", "agingplace", "sleep_assistant", "sinca_comfort", "leva", "sleep_assist_pro", "atlas_lift", "topcare", "comfort_bed", "ambient", "ergobq", "ronco_motion"}:
+        if controller._coordinator.bed_type in {"symphony", "linx", "agingplace", "sleep_assistant", "sinca_comfort", "leva", "sleep_assist_pro", "atlas_lift", "purely_sleep", "topcare", "comfort_bed", "ambient", "ergobq", "ronco_motion"}:
             session = SimpleNamespace(
                 client=controller.client, is_current=lambda: True,
                 async_start_notify=lambda: controller.start_notify(lambda *_: None),
