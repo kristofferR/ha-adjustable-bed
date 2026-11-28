@@ -391,6 +391,7 @@ _BED_TRAITS: Final[dict[str, BedTraits]] = {
     "luuna": _NO_ANGLES_SCOPED,
     "instant_comfort": replace(_NO_ANGLES_SCOPED, owns_device_info_reads=True, single_address_native_both=False),
     "personal_comfort": replace(_NO_ANGLES_SCOPED, owns_device_info_reads=True, single_address_native_both=False),
+    "aminach": replace(_NO_ANGLES_SCOPED, owns_device_info_reads=True, single_address_native_both=False),
     "ifit": replace(_NO_ANGLES_SCOPED, owns_device_info_reads=True, single_address_native_both=False, connection_timeout=5),
     "leva": replace(_NO_ANGLES_SCOPED, connection_timeout=15.0, owns_device_info_reads=True),
     "mline": replace(_NO_ANGLES_SCOPED, owns_device_info_reads=True),
