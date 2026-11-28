@@ -118,6 +118,7 @@ _GMMOTOR_APP_HINTS: Final = frozenset({"gmmotor", "gmmotor_sleep_mm", "gmmotor_s
 _APP_HINTS: Final = _GMMOTOR_APP_HINTS | {
     "ar_connect",
     "ergosportive",
+    "dynasty_base_a",
     "askona",
     "intellibed",
     "smart_base",

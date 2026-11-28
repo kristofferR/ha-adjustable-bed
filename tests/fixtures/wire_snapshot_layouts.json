@@ -5,6 +5,8 @@
 "ar_connect:headboard": {"services": {"000000fa-0000-1000-8000-00805f9b34fb": ["0000fa01-0000-1000-8000-00805f9b34fb"], "000000fc-0000-1000-8000-00805f9b34fb": ["0000fc01-0000-1000-8000-00805f9b34fb", "0000fc02-0000-1000-8000-00805f9b34fb", "0000fc03-0000-1000-8000-00805f9b34fb", "0000fc04-0000-1000-8000-00805f9b34fb", "0000fc05-0000-1000-8000-00805f9b34fb"], "000000fd-0000-1000-8000-00805f9b34fb": ["0000fd01-0000-1000-8000-00805f9b34fb", "0000fd02-0000-1000-8000-00805f9b34fb"], "000000fe-0000-1000-8000-00805f9b34fb": ["0000fe01-0000-1000-8000-00805f9b34fb", "0000fe02-0000-1000-8000-00805f9b34fb"], "000000ff-0000-1000-8000-00805f9b34fb": ["0000ff01-0000-1000-8000-00805f9b34fb", "0000ff02-0000-1000-8000-00805f9b34fb"]}, "properties": {"0000fa01-0000-1000-8000-00805f9b34fb": ["read", "write", "notify"], "0000fc01-0000-1000-8000-00805f9b34fb": ["read", "write", "notify"], "0000fc02-0000-1000-8000-00805f9b34fb": ["read", "write", "notify"], "0000fc03-0000-1000-8000-00805f9b34fb": ["read", "write", "notify"], "0000fc04-0000-1000-8000-00805f9b34fb": ["read", "write", "notify"], "0000fc05-0000-1000-8000-00805f9b34fb": ["read", "write", "notify"], "0000fd01-0000-1000-8000-00805f9b34fb": ["read", "write", "notify"], "0000fd02-0000-1000-8000-00805f9b34fb": ["read", "write", "notify"], "0000fe01-0000-1000-8000-00805f9b34fb": ["read", "write", "notify"], "0000fe02-0000-1000-8000-00805f9b34fb": ["read", "write", "notify"], "0000ff01-0000-1000-8000-00805f9b34fb": ["read", "write", "notify"], "0000ff02-0000-1000-8000-00805f9b34fb": ["read", "write", "notify"]}},
 
 "konfurt": {"services": {"0000ffe5-0000-1000-8000-00805f9b34fb": ["0000ffe9-0000-1000-8000-00805f9b34fb"], "0000ffe0-0000-1000-8000-00805f9b34fb": ["0000ffe4-0000-1000-8000-00805f9b34fb"]}, "properties": {"0000ffe9-0000-1000-8000-00805f9b34fb": ["write"], "0000ffe4-0000-1000-8000-00805f9b34fb": ["notify"]}},
+"dynasty_base_a:p1": {"services": {"0000ffe0-0000-1000-8000-00805f9b34fb": ["0000ffe4-0000-1000-8000-00805f9b34fb"], "0000ffe5-0000-1000-8000-00805f9b34fb": ["0000ffe9-0000-1000-8000-00805f9b34fb"]}},
+"dynasty_base_a:p2": {"services": {"62741523-52f9-8864-b1ab-3b3a8d65950b": ["62741525-52f9-8864-b1ab-3b3a8d65950b", "62741625-52f9-8864-b1ab-3b3a8d65950b"]}},
 "dreamotion_smart": {"services": {"6e40fe60-b5a3-f393-e0a9-e50e24dcca9e": ["6e40fe61-b5a3-f393-e0a9-e50e24dcca9e", "6e40fe62-b5a3-f393-e0a9-e50e24dcca9e"]}, "properties": {"6e40fe61-b5a3-f393-e0a9-e50e24dcca9e": ["write"], "6e40fe62-b5a3-f393-e0a9-e50e24dcca9e": ["notify"]}},
   "active_sleep": {"services": {"bc2f4cc6-aaef-4351-9034-d66268e328f0": ["06d1e5e7-79ad-4a71-8faa-373789f7d93c"]}, "properties": {"06d1e5e7-79ad-4a71-8faa-373789f7d93c": ["write", "notify"]}},
   "powersbedding:uart_no_manufacturer": {
@@ -8376,6 +8378,23 @@
       "0000ffe5-0000-1000-8000-00805f9b34fb": [
         "0000ffe9-0000-1000-8000-00805f9b34fb",
         "0000ffe4-0000-1000-8000-00805f9b34fb"
+      ]
+    }
+  },
+  "aminach": {
+    "properties": {
+      "6e400002-b5a3-f393-e0a9-e50e24dcca9e": [
+        "write",
+        "write-without-response"
+      ],
+      "6e400003-b5a3-f393-e0a9-e50e24dcca9e": [
+        "notify"
+      ]
+    },
+    "services": {
+      "6e400001-b5a3-f393-e0a9-e50e24dcca9e": [
+        "6e400002-b5a3-f393-e0a9-e50e24dcca9e",
+        "6e400003-b5a3-f393-e0a9-e50e24dcca9e"
       ]
     }
   }

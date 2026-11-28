@@ -15,6 +15,7 @@ Devices & services > Adjustable Bed** and choose **Reconfigure**.
 |-------|------------|
 | A H Beard | [Okin](beds/okin-nframe.md) |
 | ActiveBreeze | [Tempur Sleeptracker-AI](beds/sleeptracker.md) |
+| AMINACH | [AMINACH Platinum](beds/aminach.md) |
 | Amada | [SmartBed app](beds/smartbed.md) |
 | Avocado | [Richmat](beds/richmat.md) |
 | Beautyrest | [Keeson](beds/keeson.md) |

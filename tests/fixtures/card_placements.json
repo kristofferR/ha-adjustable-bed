@@ -560,6 +560,9 @@
  "button:ambient_zero_g": {
   "card_section": "presets"
  },
+ "button:aminach_release": {
+  "card_section": "hidden"
+ },
  "button:apex_massage_both": {
   "card_section": "massage"
  },
@@ -1119,6 +1122,24 @@
  },
  "button:dreamotion_smart_save_light": {
   "card_section": "lighting"
+ },
+ "button:dynasty_base_a_flat_zero_g": {
+  "card_section": "presets"
+ },
+ "button:dynasty_base_a_foot_massage": {
+  "card_section": "massage"
+ },
+ "button:dynasty_base_a_head_massage": {
+  "card_section": "massage"
+ },
+ "button:dynasty_base_a_massage_power": {
+  "card_section": "massage"
+ },
+ "button:dynasty_base_a_massage_timer": {
+  "card_section": "massage"
+ },
+ "button:dynasty_base_a_massage_type": {
+  "card_section": "massage"
  },
  "button:dynasty_query": {
   "card_section": "utility"
@@ -5560,6 +5581,10 @@
  },
  "sensor:dunlopillo_massage_timer": {
   "card_section": "hidden"
+ },
+ "sensor:dynasty_base_a_timer": {
+  "card_section": "massage",
+  "card_role": "timer"
  },
  "sensor:enso2_alarm_status": {
   "card_section": "hidden"
