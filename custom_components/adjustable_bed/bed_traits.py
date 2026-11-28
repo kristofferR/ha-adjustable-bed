@@ -18,6 +18,7 @@ from .const import (
     BED_TYPE_ADJUSTABLE_LUMBAR,
     BED_TYPE_ADJUSTAMATTRESS,
     BED_TYPE_ALYA,
+    BED_TYPE_AMADA,
     BED_TYPE_AMBIENT,
     BED_TYPE_ATLAS_LIFT,
     BED_TYPE_BEDJET_POWERLAYER,
@@ -102,6 +103,7 @@ from .const import (
     BED_TYPE_OKIN_ORE,
     BED_TYPE_OKIN_RF_ECO_BT,
     BED_TYPE_OKIN_UUID,
+    BED_TYPE_PURELY_SLEEP,
     BED_TYPE_QPLUS_APP,
     BED_TYPE_RESIDENT,
     BED_TYPE_RESTFUL,
@@ -277,6 +279,7 @@ _BED_TRAITS: Final[dict[str, BedTraits]] = {
     BED_TYPE_OKIN_MOTIONBED: replace(_NO_ANGLES, owns_device_info_reads=True),
     BED_TYPE_OKIMATTMOTION: replace(_NO_ANGLES, owns_device_info_reads=True),
     BED_TYPE_COMFORT_ENHANCEMENT3: replace(_NO_ANGLES_SCOPED, owns_device_info_reads=True),
+    BED_TYPE_AMADA: _NO_ANGLES_SCOPED,
     BED_TYPE_N32_MOTION_BED: replace(_NO_ANGLES_SCOPED, owns_device_info_reads=True),
     BED_TYPE_SHUDA: replace(_NO_ANGLES, owns_device_info_reads=True, connection_timeout=5),
     BED_TYPE_RESIDENT: replace(_NO_ANGLES_SCOPED, owns_device_info_reads=True),
@@ -355,6 +358,7 @@ _BED_TRAITS: Final[dict[str, BedTraits]] = {
     BED_TYPE_GMMOTOR_SLEEP_SXB: _NO_ANGLES_PERSISTENT,
     BED_TYPE_GALAXY: _NO_ANGLES,
     BED_TYPE_ATLAS_LIFT: _NO_ANGLES,
+    BED_TYPE_PURELY_SLEEP: _NO_ANGLES_SCOPED,
     BED_TYPE_TOPCARE: _NO_ANGLES,
     BED_TYPE_COMFORT_BED: replace(_NO_ANGLES_SCOPED, connection_timeout=5, owns_device_info_reads=True),
     BED_TYPE_GOODVIBE: _NO_ANGLES,
@@ -617,7 +621,7 @@ def store_read_positions(data: dict[str, object], read: bool | None = None) -> N
 # keeps this in step with the controllers.
 MASSAGE_SETTING_UNUSED_BED_TYPES: Final = frozenset(
     {
-     BED_TYPE_AMBIENT, BED_TYPE_ATLAS_LIFT, BED_TYPE_TOPCARE, BED_TYPE_COMFORT_BED,
+     BED_TYPE_AMBIENT, BED_TYPE_ATLAS_LIFT, BED_TYPE_PURELY_SLEEP, BED_TYPE_TOPCARE, BED_TYPE_COMFORT_BED,
      "adjustable_bed", "adjustable_lumbar", "adjustamattress", "bailey_bed_control",
      BED_TYPE_ERGOBED, BED_TYPE_MOODBASE, "l2motion", "bedgear", "bedjet_powerlayer", "bedsense", "bf", "casper_base", "casper_remote",
      "casper_sleep_mm", "casper_sleep_sxb", "cherish", "comfort_enhancement3",

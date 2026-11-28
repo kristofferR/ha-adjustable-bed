@@ -141,7 +141,7 @@ class FixedRichmatAppController(RichmatProfileController):
 
         def receive(sender: BleakGATTCharacteristic, data: bytearray) -> None:
             if self._link is link and self.client is link.client and self._notifying:
-                self.forward_raw_notification(sender.uuid, bytes(data))
+                self._receive_notification(sender.uuid, bytes(data))
 
         async with self.ble_lock:
             self._current_link(link)
@@ -149,6 +149,9 @@ class FixedRichmatAppController(RichmatProfileController):
                 await link.client.start_notify(link.notify, receive)
                 self._current_link(link)
                 self._notifying = True
+
+    def _receive_notification(self, sender: str, data: bytes) -> None:
+        self.forward_raw_notification(sender, data)
 
     async def stop_notify(self) -> None:
         link = self._link
