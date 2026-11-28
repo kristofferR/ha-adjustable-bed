@@ -70,6 +70,7 @@ APPS = [
     "homezone",
     "dreamlab2",
     "enso2",
+    "motionflex",
     "remote",
     "thrivesleep",
 ]
