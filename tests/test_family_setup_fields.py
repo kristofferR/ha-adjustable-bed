@@ -596,13 +596,14 @@ async def test_the_quiet_bed_types_are_those_whose_controller_reads_positions(ha
             found.add(bed_type)
     # King Koil and PowersBedding have no-op readers. Their method overrides
     # do not make them position-reading setup routes.
-    # King Koil inherits Keeson's no-op read_positions, but its source-fixed
-    # cadence and lack of feedback do not make it a position-reading setup route.
+    # King Koil and Dunlopillo inherit Keeson's no-op read_positions; their
+    # source-fixed cadence and lack of feedback do not make them position-reading routes.
     # Keep the quiet-route census while accounting for that inherited method.
     assert found == set(_QUIET_BED_TYPES) | {
         const.BED_TYPE_KINGKOIL,
         const.BED_TYPE_THRIVESLEEP,
         const.BED_TYPE_POWERSBEDDING,
+        const.BED_TYPE_DUNLOPILLO,
     }
     assert not any(
         bed_type_has_position_feedback(const.BED_TYPE_KINGKOIL, variant)

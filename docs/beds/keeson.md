@@ -109,6 +109,7 @@ Beautyrest bases that use one of the Keeson Bluetooth routes still work.
 | ✅ | [OkinComfortBed Ⅱ](https://apkpure.com/okin-comfortbed-%E2%85%B1/com.ore.jalon.neworebeding_android) 1.4 (4) | `com.ore.jalon.neworebeding_android` | [Jalon](#okincomfortbed-ⅱ-jalon) |
 | ✅ | [OkimattMotion](https://apkpure.com/okimattmotion/com.okin.jalon.okimatandroid) 1.1.1 (3) | `com.okin.jalon.okimatandroid` | [OkimattMotion](#okimattmotion) |
 | Own guide | Tempur Sleeptracker-AI ([guide](sleeptracker.md)) | `com.fullpower.applications.horizon` | none |
+| ✅ | [Dunlopillo Remote](https://play.google.com/store/apps/details?id=com.sfd.dunlopillo) 1.7 | `com.sfd.dunlopillo` | [Dunlopillo Remote](#dunlopillo-remote) |
 | ✅ | [JunaSleep](https://play.google.com/store/apps/details?id=com.keeson.junasleep) 1.0.3 | `com.keeson.junasleep` | [JunaSleep](#junasleep) |
 
 **iDealBed 6i:** iDealBed 6i Adjustable (installed as iDealBed 6i Remote,
@@ -6901,6 +6902,157 @@ also allow intensity zero for enhancement, which encodes the app's FF sentinel.
 
 Based on Hestia Motion 1.2 (3). Frozen literals and finite alarm mappings are
 covered in `tests/fixtures/hestia_vectors.json` and `tests/test_hestia.py`.
+
+### Dunlopillo Remote
+
+**App:** [Dunlopillo Remote](https://play.google.com/store/apps/details?id=com.sfd.dunlopillo) 1.7 (11), `com.sfd.dunlopillo`
+
+**Status:** Not yet tested on hardware.
+
+#### Setup
+
+Choose **Dunlopillo Remote app**, then match the app's remote layout: A/B2
+(the default), B/B1, C/C1 or D/D1. BLE discovery has no name, service or
+manufacturer filter, so this profile is selected explicitly. Bluetooth Classic
+is unsupported. Both GATT roles below must be present; no PIN, pairing exchange
+or startup command is sent. Home Assistant attempts notifications on every
+matching receive handle through its Bluetooth stack. Timer notifications are
+best-effort; failed subscriptions do not prevent bed controls on a live connection.
+
+#### Controls
+
+Every layout has head and foot movement, Flat, Zero gravity, massage and Reset.
+D1 adds tilt and lumbar movement; C1 and D1 add a light toggle and massage
+decrease buttons. C1 and D1 also offer an optional under-bed light entity,
+disabled by default, which uses assumed state because the bed reports no light
+state. B2 has three wave-icon massage buttons. The B1 screen and
+contour controls remain massage buttons, without assuming a TV or lounge preset.
+C1 and D1 expose the bottom contours as reclined and raised position controls.
+Reset is disabled by default, asks for confirmation in the card and runs a
+bounded press. Its physical reset or programming effect is unknown.
+
+There is no position feedback, memory programming, proven concurrent movement
+or receiver-side Left/Right selection.
+
+<!-- generated:keeson-dunlopillo -->
+| Role | Value |
+|---|---|
+| Service | Not pinned; last matching characteristic in enumeration order |
+| Write | 0000ffe9-0000-1000-8000-00805f9b34fb |
+| Notify | 0000ffe4-0000-1000-8000-00805f9b34fb |
+| Write mode | Without response when offered, otherwise with response (Android default) |
+
+| Layout | Controls | Refresh | Pulse release |
+|---|---|---|---|
+| B / B1 (two axes) | head, feet | 100 ms | 300 ms |
+| A / B2 (two axes) | head, feet | 100 ms | 300 ms |
+| C / C1 (two axes, light) | head, feet | 100 ms | 300 ms |
+| D / D1 (four axes, light) | head, feet, tilt, lumbar | 100 ms | 300 ms |
+
+| Layout | Control | Frame | Dispatch |
+|---|---|---|---|
+| B1 | Head up | `E5 FE 16 01 00 00 00 05` | hold |
+| B1 | Head down | `E5 FE 16 02 00 00 00 04` | hold |
+| B1 | Foot up | `E5 FE 16 04 00 00 00 02` | hold |
+| B1 | Foot down | `E5 FE 16 08 00 00 00 FE` | hold |
+| B1 | Flat | `E5 FE 16 00 00 00 08 FE` | single |
+| B1 | Zero gravity | `E5 FE 16 00 10 00 00 F6` | single |
+| B1 | Head massage increase | `E5 FE 16 00 08 00 00 FE` | pulse |
+| B1 | Foot massage increase | `E5 FE 16 00 04 00 00 02` | pulse |
+| B1 | Massage timer / all off | `E5 FE 16 00 02 00 00 04` | pulse |
+| B1 | Reset | `E5 FE 16 00 10 00 08 EE` | hold |
+| B1 | Massage wave | `E5 FE 16 00 01 00 00 05` | single |
+| B1 | Massage screen | `E5 FE 16 00 40 00 00 C6` | hold |
+| B1 | Massage contour | `E5 FE 16 00 20 00 00 E6` | hold |
+| B2 | Head up | `E5 FE 16 01 00 00 00 05` | hold |
+| B2 | Head down | `E5 FE 16 02 00 00 00 04` | hold |
+| B2 | Foot up | `E5 FE 16 04 00 00 00 02` | hold |
+| B2 | Foot down | `E5 FE 16 08 00 00 00 FE` | hold |
+| B2 | Flat | `E5 FE 16 00 00 00 08 FE` | single |
+| B2 | Zero gravity | `E5 FE 16 00 10 00 00 F6` | single |
+| B2 | Head massage increase | `E5 FE 16 00 08 00 00 FE` | pulse |
+| B2 | Foot massage increase | `E5 FE 16 00 04 00 00 02` | pulse |
+| B2 | Massage timer / all off | `E5 FE 16 00 02 00 00 04` | pulse |
+| B2 | Reset | `E5 FE 16 00 10 00 08 EE` | hold |
+| B2 | Massage 1-wave | `E5 FE 16 00 00 08 00 FE` | single |
+| B2 | Massage 2-wave | `E5 FE 16 00 00 10 00 F6` | single |
+| B2 | Massage 3-wave | `E5 FE 16 00 00 20 00 E6` | single |
+| C1 | Head up | `E5 FE 16 01 00 00 00 05` | hold |
+| C1 | Head down | `E5 FE 16 02 00 00 00 04` | hold |
+| C1 | Foot up | `E5 FE 16 04 00 00 00 02` | hold |
+| C1 | Foot down | `E5 FE 16 08 00 00 00 FE` | hold |
+| C1 | Flat | `E5 FE 16 00 00 00 08 FE` | single |
+| C1 | Zero gravity | `E5 FE 16 00 10 00 00 F6` | single |
+| C1 | Head massage increase | `E5 FE 16 00 08 00 00 FE` | pulse |
+| C1 | Foot massage increase | `E5 FE 16 00 04 00 00 02` | pulse |
+| C1 | Massage timer / all off | `E5 FE 16 00 02 00 00 04` | pulse |
+| C1 | Reset | `E5 FE 16 00 10 00 08 EE` | hold |
+| C1 | Head massage decrease | `E5 FE 16 00 00 80 00 86` | pulse |
+| C1 | Foot massage decrease | `E5 FE 16 00 00 00 01 05` | pulse |
+| C1 | Toggle under-bed light | `E5 FE 16 00 00 02 00 04` | single |
+| C1 | Reclined position | `E5 FE 16 00 20 00 00 E6` | hold |
+| C1 | Raised position | `E5 FE 16 00 40 00 00 C6` | hold |
+| C1 | Massage wave | `E5 FE 16 00 01 00 00 05` | single |
+| D1 | Head up | `E5 FE 16 01 00 00 00 05` | hold |
+| D1 | Head down | `E5 FE 16 02 00 00 00 04` | hold |
+| D1 | Foot up | `E5 FE 16 04 00 00 00 02` | hold |
+| D1 | Foot down | `E5 FE 16 08 00 00 00 FE` | hold |
+| D1 | Flat | `E5 FE 16 00 00 00 08 FE` | single |
+| D1 | Zero gravity | `E5 FE 16 00 10 00 00 F6` | single |
+| D1 | Head massage increase | `E5 FE 16 00 08 00 00 FE` | pulse |
+| D1 | Foot massage increase | `E5 FE 16 00 04 00 00 02` | pulse |
+| D1 | Massage timer / all off | `E5 FE 16 00 02 00 00 04` | pulse |
+| D1 | Reset | `E5 FE 16 00 10 00 08 EE` | hold |
+| D1 | Head massage decrease | `E5 FE 16 00 00 80 00 86` | pulse |
+| D1 | Foot massage decrease | `E5 FE 16 00 00 00 01 05` | pulse |
+| D1 | Toggle under-bed light | `E5 FE 16 00 00 02 00 04` | single |
+| D1 | Reclined position | `E5 FE 16 00 20 00 00 E6` | hold |
+| D1 | Raised position | `E5 FE 16 00 40 00 00 C6` | hold |
+| D1 | Massage wave | `E5 FE 16 00 01 00 00 05` | single |
+| D1 | Tilt up | `E5 FE 16 10 00 00 00 F6` | hold |
+| D1 | Tilt down | `E5 FE 16 20 00 00 00 E6` | hold |
+| D1 | Lumbar up | `E5 FE 16 40 00 00 00 C6` | hold |
+| D1 | Lumbar down | `E5 FE 16 80 00 00 00 86` | hold |
+
+| Operation | Frame |
+|---|---|
+| Release / STOP | `E5 FE 16 00 00 00 00 06` |
+| Rename to Test | `EF 02 54 65 73 74 00 00 00 00 00 00 00 00 00 00 00 6E` |
+| Rename to Bed | `EF 02 42 65 64 00 00 00 00 00 00 00 00 00 00 00 00 03` |
+<!-- /generated -->
+
+#### Timing
+
+`hold` sends immediately, repeats at the profile cadence and sends key-zero on
+release. Home Assistant bounds ordinary presses by the movement pulse count;
+renewable holds last until released. `single` sends once, with no trailing zero.
+`pulse` sends once, waits the profile delay, then sends zero. Cancellation ends
+the wait and still attempts release on the original connection. Disconnect
+invalidates pending writes and callbacks; cleanup never reaches a replacement
+connection. Reset has no renewable hold gesture.
+
+#### Notifications
+
+A complete notification of length 16 or 20 reads byte 14. Length 19 reads byte
+14 when byte 0 is F1, otherwise byte 15. Values FF, 01, 02 and 03 show the
+massage timer as off, 10, 20 and 30 minutes. Other values retain the current
+indicator. Other lengths are ignored; no checksum, fragments or position fields
+are interpreted. State clears on disconnect.
+
+#### Services
+
+The shared `rename` action accepts a trimmed name of 1–14 UTF-16 units.
+The name builder copies that many UTF-8 bytes into a zero-filled EF02 record,
+matching the app. Multibyte names can be truncated mid-character; ASCII names
+are recommended. Rename does not force a disconnect or claim an acknowledgement.
+The integration redacts rename payloads in its logs and command traces, and
+support captures sanitize Bluetooth payload logs. Separately enabled Bluetooth
+backend DEBUG logging can still show raw wire bytes, including the name.
+
+#### Evidence
+
+Based on Dunlopillo Remote 1.7 (11). Frozen literals and native Home Assistant
+callers are covered by `tests/test_dunlopillo.py`.
 
 ### JunaSleep
 

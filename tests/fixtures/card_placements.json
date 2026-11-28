@@ -5532,6 +5532,9 @@
  "sensor:dreamsense_alarm_ack": {
   "card_section": "hidden"
  },
+ "sensor:dunlopillo_massage_timer": {
+  "card_section": "hidden"
+ },
  "sensor:enso2_alarm_status": {
   "card_section": "hidden"
  },

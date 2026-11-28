@@ -2797,6 +2797,11 @@ def build_scenarios() -> list[Scenario]:
                  entry_data={"motor_count": count}, layout_id="aminach")
         for count in (1, 2, 3)
     )
+    scenarios.extend(
+        Scenario(id=f"dunlopillo:{layout}", bed_type="dunlopillo", protocol_variant=layout,
+                 layout_id="dunlopillo")
+        for layout in ("b1", "b2", "c1", "d1")
+    )
     scenarios.extend(Scenario(id=f"ai_bed:{route}", bed_type="ai_bed", protocol_variant=route, layout_id=f"ai_bed:{route}") for route in ("limos", "hj001", "qrrm"))
     scenarios.append(Scenario(id="intellibed:hhc", bed_type="intellibed", protocol_variant="hhc"))
     scenarios.extend(Scenario(id=f"berun:v{v}", bed_type="berun", protocol_variant=f"v{v}",
