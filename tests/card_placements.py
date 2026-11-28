@@ -228,6 +228,7 @@ def runtime_variants(controllers: Iterable[BedController]) -> Iterator[BedContro
     from custom_components.adjustable_bed.beds.paramount.controller import ParamountController
     from custom_components.adjustable_bed.beds.relax_motion.controller import RelaxMotionController
     from custom_components.adjustable_bed.beds.restonic.controller import RestonicController
+    from custom_components.adjustable_bed.beds.richmat.smart_base import SmartBaseController
     from custom_components.adjustable_bed.beds.richmat_classic.bedsmart import BedSmartController
     from custom_components.adjustable_bed.beds.richmat_classic.dreamlab import DreamlabController
     from custom_components.adjustable_bed.beds.richmat_classic.innova_control import (
@@ -302,6 +303,8 @@ def runtime_variants(controllers: Iterable[BedController]) -> Iterator[BedContro
             yield variant(controller, _head_foot=True, _has_light=True, _has_massage=True)
         if isinstance(controller, SimmonsBlueController):
             yield from (variant(controller, _layout=layout) for layout in SIMMONS_BLUE_LAYOUTS.values())
+        if isinstance(controller, SmartBaseController):
+            yield variant(controller, _flags={"led_on", "alarm"})
         if isinstance(controller, SmartBedController) and controller.protocol == 5:
             yield variant(controller, _sonic=True, _rgb=True, _motors=5)
         if isinstance(controller, RelaxMotionController):
