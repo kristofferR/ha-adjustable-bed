@@ -58,6 +58,7 @@ import contextvars
 import dataclasses
 import datetime
 import difflib
+import faulthandler
 import inspect
 import json
 import logging
@@ -1528,6 +1529,8 @@ def default_scenario(bed_type: str) -> Scenario:
     """The bed type in its default route, with the entry data it needs to build."""
     from custom_components.adjustable_bed import const
 
+    if bed_type == "intellibed":
+        return Scenario(id=bed_type, bed_type=bed_type, protocol_variant="old")
     if bed_type == "active_sleep":
         from custom_components.adjustable_bed.codec import active_sleep as active
         return Scenario(id=bed_type, bed_type=bed_type, layout_id=bed_type,
@@ -1651,6 +1654,15 @@ def default_scenario(bed_type: str) -> Scenario:
             layout_id="dreamsense:gatt:1",
             replies={"write:6e0a000179": "6e0e00037f"},
         )
+    if bed_type == "dreamotion_smart":
+        return Scenario(id=bed_type, bed_type=bed_type, replies={
+            "write:f1f14302a200": "f2f24302a101e77e",
+            "write:f1f14002a200": "f2f24002a101e47e",
+            "write:f1f18002a200": "f2f28002a132557e",
+            "write:f1f18105a200": "f2f28105a1010201032e7e",
+            "write:f1f14507a200": "f2f24507a164ff0080012cfd7e",
+            "write:f1f1440da200": "f2f2440da164ff00003200ff00190000ff9e7e",
+        })
     if bed_type == "awmotion":
         return Scenario(id=bed_type, bed_type=bed_type, protocol_variant="SN300",
                         entry_data={"bed_type": bed_type, "protocol_variant": "SN300"},
@@ -2754,6 +2766,7 @@ def build_scenarios() -> list[Scenario]:
     scenarios = [default_scenario(bed_type) for bed_type in SUPPORTED_BED_TYPES
                  if bed_type not in RICHMAT_MH_APP_CATALOGS]
     scenarios.extend(route_scenarios())
+    scenarios.append(Scenario(id="intellibed:hhc", bed_type="intellibed", protocol_variant="hhc"))
     scenarios.extend(Scenario(id=f"berun:v{v}", bed_type="berun", protocol_variant=f"v{v}",
                               layout_id=f"berun:v{v}") for v in (6, 7, 8, 9))
     scenarios.extend(Scenario(id=f"flexispot:{model}", bed_type="flexispot",
@@ -3101,7 +3114,7 @@ async def _connect(controller: Any, recorder: Recorder, clock: FakeClock) -> dic
             await controller.async_on_connect(session)
             await controller.async_read_device_info(session)
             return
-        if controller._coordinator.bed_type in {"shuda", "sleeptime"}:
+        if controller._coordinator.bed_type in {"shuda", "sleeptime", "dreamotion_smart"}:
             await controller.async_on_connect(SimpleNamespace(async_start_notify=controller.start_notify))
             return
         if controller._coordinator.bed_type in {"amada", "meisemobell", "rize_home", "superior_sleep", "okin_64bit", "betterliving2", "ultramatic_smart_bed", "smart_comfort_synargy", "smart_comfort_synergy", "simmons_blue", "ifit"}:
@@ -3298,6 +3311,11 @@ async def capture_all(only: list[str] | None = None) -> dict[str, Any]:
     with freeze_time(FROZEN_NOW, real_asyncio=True) as frozen:
         for scenario in scenarios:
             started = _REAL_CLOCK[0]()
+            if os.environ.get("WIRE_SNAPSHOT_VERBOSE"):
+                print(
+                    f"seed={os.environ.get('PYTHONHASHSEED', 'unset')} starting {scenario.id}",
+                    file=sys.stderr, flush=True,
+                )
             try:
                 layout = layouts[scenario.layout_id or scenario.id]
                 if scenario.properties is not None:
@@ -3321,7 +3339,10 @@ async def capture_all(only: list[str] | None = None) -> dict[str, Any]:
                 }
             if os.environ.get("WIRE_SNAPSHOT_VERBOSE"):
                 elapsed = _REAL_CLOCK[0]() - started
-                print(f"{scenario.id} {elapsed:.1f}s", file=sys.stderr, flush=True)
+                print(
+                    f"seed={os.environ.get('PYTHONHASHSEED', 'unset')} {scenario.id} {elapsed:.1f}s",
+                    file=sys.stderr, flush=True,
+                )
     return {"schema": SCHEMA_VERSION, "scenarios": result}
 
 
@@ -3410,41 +3431,48 @@ def main() -> int:
             print(scenario.id)
         return 0
 
-    probe = None
-    if args.check:
-        # A second hash seed, captured in parallel: new set-order dependence fails.
-        probe = subprocess.Popen(
-            [sys.executable, __file__, "--probe"],
-            env={**os.environ, "PYTHONHASHSEED": "1"},
-            stdout=subprocess.PIPE,
-            text=True,
-        )
-    text = render(asyncio.run(capture_all(args.only)))
-    if args.only or args.probe:
-        print(text, end="")
-        return 0
-    if args.check:
-        assert probe is not None
-        probed, _ = probe.communicate()
-        committed = SNAPSHOT_PATH.read_text()
-        if committed != text:
-            diff = difflib.unified_diff(
-                committed.splitlines(), text.splitlines(), "committed", "fresh", n=0, lineterm=""
+    verbose = bool(os.environ.get("WIRE_SNAPSHOT_VERBOSE"))
+    if verbose:
+        faulthandler.dump_traceback_later(120, repeat=True)
+    try:
+        probe = None
+        if args.check:
+            # A second hash seed, captured in parallel: new set-order dependence fails.
+            probe = subprocess.Popen(
+                [sys.executable, __file__, "--probe"],
+                env={**os.environ, "PYTHONHASHSEED": "1"},
+                stdout=subprocess.PIPE,
+                text=True,
             )
-            print(f"{SNAPSHOT_PATH.relative_to(REPO_ROOT)} is stale:")
-            print("\n".join(line[:240] for _, line in zip(range(20), diff, strict=False)))
-            return 1
-        if probe.returncode:
-            print("the second-seed capture failed")
-            return 1
-        if differing := seed_differences(text, probed):
-            print("output depends on the hash seed (set iteration order):")
-            print("\n".join(differing[:20]))
-            return 1
+        text = render(asyncio.run(capture_all(args.only)))
+        if args.only or args.probe:
+            print(text, end="")
+            return 0
+        if args.check:
+            assert probe is not None
+            probed, _ = probe.communicate()
+            committed = SNAPSHOT_PATH.read_text()
+            if committed != text:
+                diff = difflib.unified_diff(
+                    committed.splitlines(), text.splitlines(), "committed", "fresh", n=0, lineterm=""
+                )
+                print(f"{SNAPSHOT_PATH.relative_to(REPO_ROOT)} is stale:")
+                print("\n".join(line[:240] for _, line in zip(range(20), diff, strict=False)))
+                return 1
+            if probe.returncode:
+                print("the second-seed capture failed")
+                return 1
+            if differing := seed_differences(text, probed):
+                print("output depends on the hash seed (set iteration order):")
+                print("\n".join(differing[:20]))
+                return 1
+            return 0
+        SNAPSHOT_PATH.write_text(text)
+        print(f"wrote {SNAPSHOT_PATH.relative_to(REPO_ROOT)}")
         return 0
-    SNAPSHOT_PATH.write_text(text)
-    print(f"wrote {SNAPSHOT_PATH.relative_to(REPO_ROOT)}")
-    return 0
+    finally:
+        if verbose:
+            faulthandler.cancel_dump_traceback_later()
 
 
 if __name__ == "__main__":

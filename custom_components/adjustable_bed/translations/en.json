@@ -4311,6 +4311,24 @@
       "kingkoil_feet_down": {
         "name": "Foot down"
       },
+      "dreamotion_smart_back": {
+        "name": "Cycle back massage"
+      },
+      "dreamotion_smart_foot": {
+        "name": "Cycle foot massage"
+      },
+      "dreamotion_smart_pattern": {
+        "name": "Cycle massage pattern"
+      },
+      "dreamotion_smart_save_light": {
+        "name": "Save light settings"
+      },
+      "dreamotion_smart_preview_light": {
+        "name": "Preview light settings"
+      },
+      "dreamotion_smart_refresh": {
+        "name": "Refresh settings"
+      },
       "amada_reset": {
         "name": "Reset saved positions"
       },
@@ -6250,6 +6268,21 @@
       "jobs_wake_alarm": {
         "name": "Wake alarm type"
       },
+      "dreamotion_smart_back": {
+        "name": "Back massage intensity"
+      },
+      "dreamotion_smart_foot": {
+        "name": "Foot massage intensity"
+      },
+      "dreamotion_smart_pattern": {
+        "name": "Massage pattern"
+      },
+      "dreamotion_smart_timer": {
+        "name": "Massage timer"
+      },
+      "dreamotion_smart_seconds": {
+        "name": "Timed light duration"
+      },
       "amada_massage_time_bucket": {
         "name": "Massage timer bucket"
       },
@@ -6588,6 +6621,9 @@
       },
       "flexispot_massage": {
         "name": "Massage"
+      },
+      "dreamotion_smart_sensor": {
+        "name": "Human detection"
       }
     },
     "binary_sensor": {
@@ -8448,6 +8484,44 @@
           "pattern_2": "Pattern 2",
           "pattern_3": "Pattern 3",
           "pattern_4": "Pattern 4"
+        }
+      },
+      "dreamotion_smart_mode": {
+        "name": "Vibration mode",
+        "state": {
+          "inherent": "Inherent frequency",
+          "acoustic": "Acoustic"
+        }
+      },
+      "dreamotion_smart_page": {
+        "name": "Light settings",
+        "state": {
+          "timed": "Timed light",
+          "presets": "Saved light entries"
+        }
+      },
+      "dreamotion_smart_slot": {
+        "name": "Saved light entry",
+        "state": {
+          "1": "1",
+          "2": "2",
+          "3": "3"
+        }
+      },
+      "dreamotion_smart_duration": {
+        "name": "Timed light duration",
+        "state": {
+          "0": "0 seconds",
+          "60": "60 seconds",
+          "120": "120 seconds",
+          "180": "180 seconds",
+          "240": "240 seconds",
+          "300": "300 seconds",
+          "600": "600 seconds",
+          "900": "900 seconds",
+          "1200": "1200 seconds",
+          "1500": "1500 seconds",
+          "1800": "1800 seconds"
         }
       }
     },
@@ -12471,6 +12545,21 @@
     "konfurt_control": {"message": "Choose a control offered by this KONFURT layout and a hold of 1 to 60000 milliseconds."},
     "konfurt_alarm": {"message": "KONFURT sets an alarm for today's weekday only. Choose no wake action, massage or Memory 1."},
     "konfurt_massage_unknown": {"message": "Wait for a massage status report from this connection before turning massage on or off. You can use Toggle massage without a report."},
+    "dreamotion_smart_refresh": {
+      "message": "Refresh {setting} settings, then try again."
+    },
+    "dreamotion_smart_inherent": {
+      "message": "Select inherent vibration mode before adjusting massage."
+    },
+    "dreamotion_smart_session": {
+      "message": "The bed disconnected or its Bluetooth session changed. Reconnect and try again."
+    },
+    "dreamotion_smart_gatt": {
+      "message": "The bed's Bluetooth controls could not be identified. Reconnect and try again."
+    },
+    "dreamotion_smart_duration": {
+      "message": "Choose one of the supported light durations."
+    },
     "smart_base_product": {"message": "Choose the Smart Base 200IV2 / A8RM product in Reconfigure."},
     "smart_base_gatt": {"message": "The Smart Base 200IV2 route requires its FEE9 service and exact write and notification characteristics."},
     "smart_base_settings": {"message": "Reconnect and refresh bed settings. The bed must report this feature on the current connection; choose a valid color or 0 to 300 seconds."},

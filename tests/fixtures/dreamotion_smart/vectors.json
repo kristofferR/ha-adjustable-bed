@@ -1,0 +1,686 @@
+[
+  {
+    "id": "V-COMMON-00",
+    "protocol": "P1",
+    "action": "subscription probe",
+    "inputs": {
+      "kind": "common",
+      "args": [
+        "00"
+      ]
+    },
+    "expected_bytes": "F1F100020000027E",
+    "evidence": [
+      "E-BUILDER",
+      "E-MOVEMENT",
+      "E-RELEASE"
+    ]
+  },
+  {
+    "id": "V-COMMON-01",
+    "protocol": "P1",
+    "action": "head up",
+    "inputs": {
+      "kind": "common",
+      "args": [
+        "01"
+      ]
+    },
+    "expected_bytes": "F1F101020000037E",
+    "evidence": [
+      "E-BUILDER",
+      "E-MOVEMENT",
+      "E-RELEASE"
+    ]
+  },
+  {
+    "id": "V-COMMON-02",
+    "protocol": "P1",
+    "action": "head down",
+    "inputs": {
+      "kind": "common",
+      "args": [
+        "02"
+      ]
+    },
+    "expected_bytes": "F1F102020000047E",
+    "evidence": [
+      "E-BUILDER",
+      "E-MOVEMENT",
+      "E-RELEASE"
+    ]
+  },
+  {
+    "id": "V-COMMON-03",
+    "protocol": "P1",
+    "action": "foot up",
+    "inputs": {
+      "kind": "common",
+      "args": [
+        "03"
+      ]
+    },
+    "expected_bytes": "F1F103020000057E",
+    "evidence": [
+      "E-BUILDER",
+      "E-MOVEMENT",
+      "E-RELEASE"
+    ]
+  },
+  {
+    "id": "V-COMMON-04",
+    "protocol": "P1",
+    "action": "foot down",
+    "inputs": {
+      "kind": "common",
+      "args": [
+        "04"
+      ]
+    },
+    "expected_bytes": "F1F104020000067E",
+    "evidence": [
+      "E-BUILDER",
+      "E-MOVEMENT",
+      "E-RELEASE"
+    ]
+  },
+  {
+    "id": "V-COMMON-07",
+    "protocol": "P1",
+    "action": "zero gravity",
+    "inputs": {
+      "kind": "common",
+      "args": [
+        "07"
+      ]
+    },
+    "expected_bytes": "F1F107020000097E",
+    "evidence": [
+      "E-BUILDER",
+      "E-MOVEMENT",
+      "E-RELEASE"
+    ]
+  },
+  {
+    "id": "V-COMMON-08",
+    "protocol": "P1",
+    "action": "flat",
+    "inputs": {
+      "kind": "common",
+      "args": [
+        "08"
+      ]
+    },
+    "expected_bytes": "F1F1080200000A7E",
+    "evidence": [
+      "E-BUILDER",
+      "E-MOVEMENT",
+      "E-RELEASE"
+    ]
+  },
+  {
+    "id": "V-COMMON-09",
+    "protocol": "P1",
+    "action": "anti snore",
+    "inputs": {
+      "kind": "common",
+      "args": [
+        "09"
+      ]
+    },
+    "expected_bytes": "F1F1090200000B7E",
+    "evidence": [
+      "E-BUILDER",
+      "E-MOVEMENT",
+      "E-RELEASE"
+    ]
+  },
+  {
+    "id": "V-COMMON-0A",
+    "protocol": "P1",
+    "action": "save M1",
+    "inputs": {
+      "kind": "common",
+      "args": [
+        "0A"
+      ]
+    },
+    "expected_bytes": "F1F10A0200000C7E",
+    "evidence": [
+      "E-BUILDER",
+      "E-MOVEMENT",
+      "E-RELEASE"
+    ]
+  },
+  {
+    "id": "V-COMMON-0B",
+    "protocol": "P1",
+    "action": "recall M1",
+    "inputs": {
+      "kind": "common",
+      "args": [
+        "0B"
+      ]
+    },
+    "expected_bytes": "F1F10B0200000D7E",
+    "evidence": [
+      "E-BUILDER",
+      "E-MOVEMENT",
+      "E-RELEASE"
+    ]
+  },
+  {
+    "id": "V-COMMON-0C",
+    "protocol": "P1",
+    "action": "save M2",
+    "inputs": {
+      "kind": "common",
+      "args": [
+        "0C"
+      ]
+    },
+    "expected_bytes": "F1F10C0200000E7E",
+    "evidence": [
+      "E-BUILDER",
+      "E-MOVEMENT",
+      "E-RELEASE"
+    ]
+  },
+  {
+    "id": "V-COMMON-0D",
+    "protocol": "P1",
+    "action": "recall M2",
+    "inputs": {
+      "kind": "common",
+      "args": [
+        "0D"
+      ]
+    },
+    "expected_bytes": "F1F10D0200000F7E",
+    "evidence": [
+      "E-BUILDER",
+      "E-MOVEMENT",
+      "E-RELEASE"
+    ]
+  },
+  {
+    "id": "V-COMMON-19",
+    "protocol": "P1",
+    "action": "neck up",
+    "inputs": {
+      "kind": "common",
+      "args": [
+        "19"
+      ]
+    },
+    "expected_bytes": "F1F1190200001B7E",
+    "evidence": [
+      "E-BUILDER",
+      "E-MOVEMENT",
+      "E-RELEASE"
+    ]
+  },
+  {
+    "id": "V-COMMON-1A",
+    "protocol": "P1",
+    "action": "neck down",
+    "inputs": {
+      "kind": "common",
+      "args": [
+        "1A"
+      ]
+    },
+    "expected_bytes": "F1F11A0200001C7E",
+    "evidence": [
+      "E-BUILDER",
+      "E-MOVEMENT",
+      "E-RELEASE"
+    ]
+  },
+  {
+    "id": "V-COMMON-1B",
+    "protocol": "P1",
+    "action": "lumbar up",
+    "inputs": {
+      "kind": "common",
+      "args": [
+        "1B"
+      ]
+    },
+    "expected_bytes": "F1F11B0200001D7E",
+    "evidence": [
+      "E-BUILDER",
+      "E-MOVEMENT",
+      "E-RELEASE"
+    ]
+  },
+  {
+    "id": "V-COMMON-1C",
+    "protocol": "P1",
+    "action": "lumbar down",
+    "inputs": {
+      "kind": "common",
+      "args": [
+        "1C"
+      ]
+    },
+    "expected_bytes": "F1F11C0200001E7E",
+    "evidence": [
+      "E-BUILDER",
+      "E-MOVEMENT",
+      "E-RELEASE"
+    ]
+  },
+  {
+    "id": "V-COMMON-28",
+    "protocol": "P1",
+    "action": "yoga",
+    "inputs": {
+      "kind": "common",
+      "args": [
+        "28"
+      ]
+    },
+    "expected_bytes": "F1F1280200002A7E",
+    "evidence": [
+      "E-BUILDER",
+      "E-MOVEMENT",
+      "E-RELEASE"
+    ]
+  },
+  {
+    "id": "V-COMMON-4E",
+    "protocol": "P1",
+    "action": "release",
+    "inputs": {
+      "kind": "common",
+      "args": [
+        "4E"
+      ]
+    },
+    "expected_bytes": "F1F14E020000507E",
+    "evidence": [
+      "E-BUILDER",
+      "E-MOVEMENT",
+      "E-RELEASE"
+    ]
+  },
+  {
+    "id": "V-SENSOR-ON",
+    "protocol": "P1",
+    "action": "sensor on",
+    "inputs": {
+      "kind": "date",
+      "args": [
+        "40",
+        "A101"
+      ]
+    },
+    "expected_bytes": "F1F14002A101E47E",
+    "evidence": [
+      "E-BUILDER",
+      "E-TOGGLES"
+    ]
+  },
+  {
+    "id": "V-SENSOR-OFF",
+    "protocol": "P1",
+    "action": "sensor off",
+    "inputs": {
+      "kind": "date",
+      "args": [
+        "40",
+        "A100"
+      ]
+    },
+    "expected_bytes": "F1F14002A100E37E",
+    "evidence": [
+      "E-BUILDER",
+      "E-TOGGLES"
+    ]
+  },
+  {
+    "id": "V-LIGHT-ON",
+    "protocol": "P1",
+    "action": "light on",
+    "inputs": {
+      "kind": "date",
+      "args": [
+        "43",
+        "A101"
+      ]
+    },
+    "expected_bytes": "F1F14302A101E77E",
+    "evidence": [
+      "E-BUILDER",
+      "E-TOGGLES"
+    ]
+  },
+  {
+    "id": "V-LIGHT-OFF",
+    "protocol": "P1",
+    "action": "light off",
+    "inputs": {
+      "kind": "date",
+      "args": [
+        "43",
+        "A100"
+      ]
+    },
+    "expected_bytes": "F1F14302A100E67E",
+    "evidence": [
+      "E-BUILDER",
+      "E-TOGGLES"
+    ]
+  },
+  {
+    "id": "V-SENSOR-QUERY",
+    "protocol": "P1",
+    "action": "sensor query",
+    "inputs": {
+      "kind": "flag",
+      "args": [
+        "40",
+        "A2"
+      ]
+    },
+    "expected_bytes": "F1F14002A200E47E",
+    "evidence": [
+      "E-BUILDER",
+      "E-TOGGLES"
+    ]
+  },
+  {
+    "id": "V-MASSAGE-QUERY",
+    "protocol": "P1",
+    "action": "massage 81 query builder",
+    "inputs": {
+      "kind": "variable",
+      "args": [
+        "8105",
+        "A200000000"
+      ]
+    },
+    "expected_bytes": "F1F18105A200000000287E",
+    "evidence": [
+      "E-BUILDER",
+      "E-MASSAGE"
+    ]
+  },
+  {
+    "id": "V-HZ-QUERY",
+    "protocol": "P1",
+    "action": "massage 80 query builder",
+    "inputs": {
+      "kind": "variable",
+      "args": [
+        "8002",
+        "A200"
+      ]
+    },
+    "expected_bytes": "F1F18002A200247E",
+    "evidence": [
+      "E-BUILDER",
+      "E-MASSAGE"
+    ]
+  },
+  {
+    "id": "V-MASSAGE-SET",
+    "protocol": "P1",
+    "action": "massage fields fixture",
+    "inputs": {
+      "kind": "variable",
+      "args": [
+        "8105",
+        "A101020301"
+      ]
+    },
+    "expected_bytes": "F1F18105A1010203012E7E",
+    "evidence": [
+      "E-BUILDER",
+      "E-MASSAGE"
+    ]
+  },
+  {
+    "id": "V-LIGHT-QUERY",
+    "protocol": "P1",
+    "action": "light 45 query",
+    "inputs": {
+      "kind": "variable",
+      "args": [
+        "4507",
+        "A2000000000000"
+      ]
+    },
+    "expected_bytes": "F1F14507A2000000000000EE7E",
+    "evidence": [
+      "E-BUILDER",
+      "E-LIGHT1"
+    ]
+  },
+  {
+    "id": "V-LIGHT-SET",
+    "protocol": "P1",
+    "action": "light 45 fields fixture",
+    "inputs": {
+      "kind": "variable",
+      "args": [
+        "4507",
+        "A164FF0080012C"
+      ]
+    },
+    "expected_bytes": "F1F14507A164FF0080012CFD7E",
+    "evidence": [
+      "E-BUILDER",
+      "E-LIGHT1"
+    ]
+  },
+  {
+    "id": "V-SLOTS-QUERY",
+    "protocol": "P1",
+    "action": "light 44 query",
+    "inputs": {
+      "kind": "variable",
+      "args": [
+        "440D",
+        "A2000000000000000000000000"
+      ]
+    },
+    "expected_bytes": "F1F1440DA2000000000000000000000000F37E",
+    "evidence": [
+      "E-BUILDER",
+      "E-LIGHT2"
+    ]
+  },
+  {
+    "id": "V-SLOTS-SET",
+    "protocol": "P1",
+    "action": "three light slots fixture",
+    "inputs": {
+      "kind": "variable",
+      "args": [
+        "440D",
+        "A164FF00003200FF00190000FF"
+      ]
+    },
+    "expected_bytes": "F1F1440DA164FF00003200FF00190000FF9E7E",
+    "evidence": [
+      "E-BUILDER",
+      "E-LIGHT2"
+    ]
+  },
+  {
+    "id": "V-LIGHT-PREVIEW",
+    "protocol": "P1",
+    "action": "selected RGB preview fixture",
+    "inputs": {
+      "kind": "variable",
+      "args": [
+        "4C05",
+        "A164FF0080"
+      ]
+    },
+    "expected_bytes": "F1F14C05A164FF0080D57E",
+    "evidence": [
+      "E-BUILDER",
+      "E-LIGHT2"
+    ]
+  },
+  {
+    "id": "V-85-BUILDER",
+    "protocol": "P1",
+    "action": "85 builder only, reachability DEFERRED",
+    "inputs": {
+      "kind": "function85",
+      "args": [
+        "A1",
+        "010203"
+      ]
+    },
+    "expected_bytes": "F1F18504A1010203307E",
+    "evidence": [
+      "E-BUILDER",
+      "E-BUILDER"
+    ]
+  },
+  {
+    "id": "V-PARSE-81",
+    "protocol": "P1",
+    "action": "constructed parser fixture (not captured)",
+    "inputs": {
+      "kind": "parser",
+      "expected_state": {
+        "back": "01",
+        "foot": "02",
+        "pattern": "03",
+        "duration": "01"
+      }
+    },
+    "expected_bytes": "F2F28105A1010203012E7E",
+    "evidence": [
+      "E-MASSAGE-PARSER"
+    ]
+  },
+  {
+    "id": "V-PARSE-80",
+    "protocol": "P1",
+    "action": "constructed parser fixture (not captured)",
+    "inputs": {
+      "kind": "parser",
+      "expected_state": {
+        "massage_hz": "32"
+      }
+    },
+    "expected_bytes": "F2F28002A132557E",
+    "evidence": [
+      "E-MASSAGE-PARSER"
+    ]
+  },
+  {
+    "id": "V-PARSE-45",
+    "protocol": "P1",
+    "action": "constructed parser fixture (not captured)",
+    "inputs": {
+      "kind": "parser",
+      "expected_state": {
+        "brightness": "64",
+        "red": "ff",
+        "green": "00",
+        "blue": "80",
+        "duration": "012c"
+      }
+    },
+    "expected_bytes": "F2F24507A164FF0080012CFD7E",
+    "evidence": [
+      "E-LIGHT1"
+    ]
+  },
+  {
+    "id": "V-PARSE-44",
+    "protocol": "P1",
+    "action": "constructed parser fixture (not captured)",
+    "inputs": {
+      "kind": "parser",
+      "expected_state": {
+        "slots": [
+          "64ff0000",
+          "3200ff00",
+          "190000ff"
+        ]
+      }
+    },
+    "expected_bytes": "F2F2440DA164FF00003200FF00190000FF9E7E",
+    "evidence": [
+      "E-LIGHT2"
+    ]
+  },
+  {
+    "id": "V-PARSE-43",
+    "protocol": "P1",
+    "action": "constructed parser fixture (not captured)",
+    "inputs": {
+      "kind": "parser",
+      "expected_state": {
+        "light": "01"
+      }
+    },
+    "expected_bytes": "F2F24302A101E77E",
+    "evidence": [
+      "E-TOGGLES"
+    ]
+  },
+  {
+    "id": "V-INHERENT-SET",
+    "protocol": "P1",
+    "action": "inherent massage mode",
+    "inputs": {
+      "kind": "variable",
+      "args": [
+        "8002",
+        "A132"
+      ]
+    },
+    "expected_bytes": "F1F18002A132557E",
+    "evidence": [
+      "E-BUILDER",
+      "E-PRIMARY-INIT",
+      "E-PRIMARY-MASSAGE"
+    ]
+  },
+  {
+    "id": "V-ACOUSTIC-SET",
+    "protocol": "P1",
+    "action": "acoustic massage mode",
+    "inputs": {
+      "kind": "variable",
+      "args": [
+        "8002",
+        "A100"
+      ]
+    },
+    "expected_bytes": "F1F18002A100237E",
+    "evidence": [
+      "E-BUILDER",
+      "E-PRIMARY-INIT",
+      "E-PRIMARY-MASSAGE"
+    ]
+  },
+  {
+    "id": "V-LIGHT-STATUS-QUERY",
+    "protocol": "P1",
+    "action": "light status query",
+    "inputs": {
+      "kind": "variable",
+      "args": [
+        "4302",
+        "A200"
+      ]
+    },
+    "expected_bytes": "F1F14302A200E77E",
+    "evidence": [
+      "E-BUILDER",
+      "E-PRIMARY-INIT",
+      "E-PRIMARY-MASSAGE"
+    ]
+  }
+]
