@@ -732,6 +732,7 @@ BED_TYPE_BEDTECH: Final = "bedtech"  # BedTech 5-byte ASCII protocol
 BED_TYPE_JENSEN: Final = "jensen"  # Jensen JMC400/LinON Entry (6-byte commands)
 BED_TYPE_SLEEP_NUMBER: Final = "sleep_number"  # Sleep Number Climate 360 / Fuzion bamkey BLE
 BED_TYPE_SLEEP_NUMBER_MCR: Final = "sleep_number_mcr"  # Sleep Number BAM/MCR BLE
+BED_TYPE_IFIT: Final = "ifit"
 BED_TYPE_OKIN_CB35: Final = "okin_cb35"  # DewertOkin CB35 Star (Sealy Posturematic, NUS 7-byte)
 BED_TYPE_OKIN_64BIT: Final = "okin_64bit"  # OKIN 64-bit protocol (10-byte commands)
 BED_TYPE_SLEEPYS_BOX15: Final = (
@@ -786,6 +787,7 @@ BED_TYPE_SCOTT_LIVING: Final = "scott_living"  # Scott Living 9-byte protocol
 BED_TYPE_SUTA_KING_KOIL: Final = "suta_king_koil"
 BED_TYPE_TRUEMOTION: Final = "truemotion"
 BED_TYPE_SUTA: Final = "suta"  # SUTA Smart Home AT protocol (ASCII + CRLF)
+BED_TYPE_ACTIVE_SLEEP: Final = "active_sleep"
 BED_TYPE_PARAMOUNT: Final = "paramount"
 BED_TYPE_TIMOTION_AHF: Final = "timotion_ahf"  # TiMOTION AHF 11-byte bitmask protocol
 BED_TYPE_RIZE: Final = "rize"
@@ -843,6 +845,7 @@ BED_TYPE_POWERSBEDDING: Final = "powersbedding"
 BED_TYPE_HESTIA_MOTION: Final = "hestia_motion"
 
 SUPPORTED_BED_TYPES: Final = [
+    BED_TYPE_IFIT,
     BED_TYPE_POWERSBEDDING,
     BED_TYPE_HESTIA_MOTION,
     BED_TYPE_RESTONIC,
@@ -867,6 +870,7 @@ SUPPORTED_BED_TYPES: Final = [
     BED_TYPE_L2MOTION,
     BED_TYPE_ERGOBED,
     BED_TYPE_MOODBASE,
+    BED_TYPE_ACTIVE_SLEEP,
     BED_TYPE_PARAMOUNT,
     BED_TYPE_RICHMAT_CLASSIC_APPS,
     BED_TYPE_ERGOMOTION_4,
@@ -3175,6 +3179,7 @@ BED_MOTOR_PULSE_DEFAULTS: Final = {
     # OKIN DOT: FurniMove resends the held keycode ~every 100ms
     # (BluetoothLeService.onCharacteristicWrite Thread.sleep(100) loop)
     BED_TYPE_OKIN_DOT: (10, 100),
+    BED_TYPE_IFIT: (10, 220),
     # OKIN CB35: 300ms delay → 3 repeats = 0.9s total
     # Source: com.okin.sealy ANALYSIS.md (Timer.periodic 300ms, exTimes: 2 → 3 sends)
     BED_TYPE_OKIN_CB35: (3, 300),

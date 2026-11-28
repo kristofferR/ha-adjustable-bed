@@ -312,6 +312,7 @@ async def test_clock_sync_after_motor_activity_keeps_configuration_admission(
             validate_clock_sync=MagicMock(),
             sync_clock=AsyncMock(),
             requires_disconnected_transport=False,
+            requires_connection_reset=False,
             requires_linked_live_readiness=False,
             commands_share_timer=False,
             _coordinator=child,

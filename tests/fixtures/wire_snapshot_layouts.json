@@ -1,4 +1,5 @@
 {
+  "active_sleep": {"services": {"bc2f4cc6-aaef-4351-9034-d66268e328f0": ["06d1e5e7-79ad-4a71-8faa-373789f7d93c"]}, "properties": {"06d1e5e7-79ad-4a71-8faa-373789f7d93c": ["write", "notify"]}},
   "powersbedding:uart_no_manufacturer": {
     "services": {
       "6e400001-b5a3-f393-e0a9-e50e24dcca9e": [
@@ -8214,6 +8215,19 @@
       ],
       "d44bc439-abfd-45a2-b575-925416129611": [
         "notify"
+      ]
+    }
+  },
+  "ifit": {
+    "services": {
+      "6e400001-b5a3-f393-e0a9-e50e24dcca9e": [
+        "6e400002-b5a3-f393-e0a9-e50e24dcca9e"
+      ]
+    },
+    "properties": {
+      "6e400002-b5a3-f393-e0a9-e50e24dcca9e": [
+        "write",
+        "write-without-response"
       ]
     }
   }
