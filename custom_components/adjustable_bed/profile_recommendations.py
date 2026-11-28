@@ -117,6 +117,7 @@ from .validators import get_variants_for_bed_type
 _GMMOTOR_APP_HINTS: Final = frozenset({"gmmotor", "gmmotor_sleep_mm", "gmmotor_sleep_sxb"})
 _APP_HINTS: Final = _GMMOTOR_APP_HINTS | {
     "ergosportive",
+    "askona",
     "intellibed",
     "smart_base",
     "ai_bed",

@@ -12669,6 +12669,12 @@
     "ergosportive_control": {"message": "Choose a control enabled for this ErgoSportive profile and a hold from 0.1 to 30 seconds."},
     "ergosportive_memory_gesture_unresolved": {"message": "Memory save and held recall are not available for this ErgoSportive profile."},
     "ergosportive_brightness": {"message": "Enable bedside lamp brightness and choose a whole level from 1 to 13."},
+    "askona_model_required": {"message": "Choose the Askona bed model before connecting"},
+    "askona_session_changed": {"message": "The bed connection changed. Reconnect and try again"},
+    "askona_gatt_missing": {"message": "The Askona write or notification characteristic is missing"},
+    "askona_movement_unavailable": {"message": "This Askona movement has no verified safe stopping behavior"},
+    "askona_feedback_required": {"message": "Wait for a new bed status report before changing this setting"},
+    "askona_target_invalid": {"message": "Choose a whole number within the selected model’s range"},
     "dreamotion_smart_refresh": {
       "message": "Refresh {setting} settings, then try again."
     },

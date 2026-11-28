@@ -658,3 +658,42 @@ def bedding_alarm(fields: Sequence[int]) -> bytes:
     if len(fields) != 10:
         raise ValueError("A bedding alarm carries ten fields")
     return checked(bytes((0xEB, 0xFE, 0x16, *fields)))
+
+
+@dataclass(frozen=True, slots=True)
+class AskonaStatus:
+    """Askona's signed-byte positions and model-specific massage projection."""
+
+    head: int
+    foot: int
+    head_massage: int
+    foot_massage: int
+    real_head_massage: int
+    real_foot_massage: int
+    light: bool
+    timer_ms: int
+
+
+def parse_askona_status(
+    data: bytes, *, max_head: int, max_foot: int, light_offset: int,
+    timer_offset: int, massage_values: tuple[int, ...],
+) -> AskonaStatus | None:
+    """No invented header/checksum test; reject truncated input before indexing."""
+    if len(data) < max(16, light_offset + 1, timer_offset + 4):
+        return None
+
+    def signed(index: int) -> int:
+        return int.from_bytes(data[index:index + 1], signed=True)
+
+    raw_head, raw_foot = signed(7), signed(8)
+    def massage(value: int) -> int:
+        if massage_values == tuple(range(7)):
+            return value
+        return massage_values.index(value) if value in massage_values else 0
+
+    return AskonaStatus(
+        max(0, min(max_head, signed(4))), max(0, min(max_foot, signed(6))),
+        massage(raw_head), massage(raw_foot), raw_head, raw_foot,
+        int.from_bytes(bytes((data[light_offset] & 0xC0,)), signed=True) >> 6 > 0,
+        int.from_bytes(data[timer_offset:timer_offset + 4], "little") * 10,
+    )
