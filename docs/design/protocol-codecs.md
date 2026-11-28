@@ -594,3 +594,14 @@ those encoders. Its three current profiles own the product menus and alarm modes
 its session controller rejects mixed recognized services rather than applying
 the app's independent handle-selection and encoding order to unknown hardware.
 See [Thrive Sleep](../beds/richmat.md#thrive-sleep).
+
+## AMINACH Platinum
+
+AMINACH Platinum 1.36 adds `codec/aminach.py`. None of the existing codecs
+reproduces its complete B0 key and B1 adapter-response literals: the UART
+transport is shared, but the carriers, lengths and checksums differ. All ten
+reachable control frames and both independent synthetic adapter-address vectors
+run through production encoders in `tests/test_aminach.py`. The typed profile
+owns three layouts and the distinct normal/Memo schedules; its controller owns
+the connection-specific address exchange and cancellation-safe release. The
+opaque title field remains diagnostic data. See [Platinum](../beds/aminach.md).

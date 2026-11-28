@@ -35,6 +35,7 @@ app. Every guide follows the [bed guide format](BED_GUIDE_FORMAT.md).
 |-------|--------|--------|
 | [Personal Comfort / Instant Comfort](beds/personal-comfort.md) | ANM and RA air units, Malouf and Reverie bases |
 | [Alya Smart Furnishing](beds/alya.md) | Alya app BLE types and twelve explicit layouts | |
+| [AMINACH Platinum](beds/aminach.md) | Platinum app with one, two or three motors | |
 | [Active Sleep](beds/active-sleep.md) | Active Sleep (Paramount) |
 | [BedJet PowerLayer](beds/bedjet-powerlayer.md) | The BedJet PowerLayer adjustable frame | |
 | [SILVERmotion Android](beds/silvermotion.md) | SILVERmotion Android SimplicityFrame beds | |

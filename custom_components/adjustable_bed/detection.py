@@ -640,6 +640,7 @@ def _rests_on_shared_service(
 # Leggett & Platt setup is not offered to a new bed, so it is not listed here.
 BED_TYPE_DISPLAY_NAMES: dict[str, str] = {
     "intellibed": "Intellibed Sleep Genius app",
+    "aminach": "AMINACH Platinum",
     "ifit": "iFit app (manual selection)",
     "topcare": "TOP CARE app",
     "dorsal": "Dorsal app / Roomi",
@@ -1967,6 +1968,12 @@ def _detect_with_first_pass(
             result = DetectionResult("nerum", 0.3, ["name:nerum_app_candidate"])
         elif result.bed_type != "nerum":
             result.ambiguous_types = list(dict.fromkeys([*(result.ambiguous_types or ()), "nerum"]))
+    if first.name("aminach") and not any(signal.startswith("excluded:") for signal in result.signals):
+        if result.bed_type is None:
+            result = DetectionResult("aminach", 0.3, [*result.signals, "name:aminach_app_candidate"])
+        elif result.bed_type != "aminach":
+            result.ambiguous_types = list(dict.fromkeys([*(result.ambiguous_types or ()), "aminach"]))
+            result.signals.append("name:aminach_app_candidate")
     if first.name("kingkoil") and not any(signal.startswith("excluded:") for signal in result.signals):
         if result.bed_type is None:
             result = DetectionResult("kingkoil", 0.3, [*result.signals, "name:kingkoil_app_candidate"])
