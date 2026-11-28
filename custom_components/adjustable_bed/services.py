@@ -3234,12 +3234,14 @@ def _import_service_registrars() -> tuple[Callable[[HomeAssistant], None], ...]:
     from .beds.suta_king_koil.services import register_services as register_suta_king_koil_services
     from .beds.svane.services import async_register_svane_services
     from .beds.symphony.services import register_services as register_symphony_sense_services
+    from .beds.thrivesleep.services import register_services as register_thrivesleep_services
 
     # Ultramatic registers no action of its own; set_alarm uses this module.
     from .beds.ultramatic import services as _ultramatic_alarm  # noqa: F401
     from .position_estimate_services import async_register_position_estimate_services
 
     return (
+        register_thrivesleep_services,
         async_register_ambient_services,
         async_register_bedgear_services,
         register_mline_services,

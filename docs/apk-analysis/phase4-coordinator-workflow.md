@@ -176,7 +176,7 @@ clean-room analysis do not change; the comparison stays in the post-freeze pass.
 
 After acceptance, reopening or implementation changes, update the trackers and
 the published queue in the same task, following [the tracker rules](TRACKERS.md):
-change the affected #436 queue row and counts in place and add one evidence row
+change the affected #436 queue row in place and add one evidence row
 to #443 or #447. Publish transitions only, never progress. Make one edit per
 transition and check it with `.github/scripts/apk_tracker_guard.py`; no readback
 receipts, delta files or verification scripts.

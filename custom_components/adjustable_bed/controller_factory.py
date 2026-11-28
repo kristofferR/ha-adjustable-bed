@@ -62,6 +62,7 @@ from .const import (
     BED_TYPE_FSM_RELAX,
     BED_TYPE_FURNIMOVE,
     BED_TYPE_GALAXY,
+    BED_TYPE_GHOSTBED,
     BED_TYPE_GLIDEAWAY_MOTION,
     BED_TYPE_GMMOTOR,
     BED_TYPE_GMMOTOR_SLEEP_MM,
@@ -306,6 +307,7 @@ _SIMPLE_CONTROLLERS: Final[dict[str, _ControllerSpec]] = {
     BED_TYPE_RESIDENT: _ControllerSpec("resident.controller", "ResidentController"),
     BED_TYPE_SYMPHONY_SLEEP: _ControllerSpec("keeson.symphony_sleep", "SymphonySleepController"),
     BED_TYPE_LANGJUE: _ControllerSpec("langjue", "LangjueController"),
+    BED_TYPE_GHOSTBED: _ControllerSpec("flexispot.ghostbed", "GhostBedController"),
     BED_TYPE_FLEXISPOT: _ControllerSpec("flexispot.controller", "FlexispotController"),
     BED_TYPE_JALON_BED: _ControllerSpec("jalon_bed.controller", "JalonBedController"),
     BED_TYPE_BF: _ControllerSpec("bf_cherish.controller", "BfCherishController"),
@@ -390,6 +392,7 @@ _SIMPLE_CONTROLLERS: Final[dict[str, _ControllerSpec]] = {
 # Bed types whose controller needs the variant, entry data, the advertisement
 # or the live GATT table. Each builder lives in its bed module.
 _BUILDERS: Final[dict[str, _BuilderSpec]] = {
+    "thrivesleep": _BuilderSpec("thrivesleep.controller"),
     "super_colchones": _BuilderSpec("super_colchones.controller"),
     "agingplace": _BuilderSpec("keeson.agingplace"),
     "sleep_evolution": _BuilderSpec("richmat_legacy.controller"),
