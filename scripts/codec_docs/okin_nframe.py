@@ -38,6 +38,7 @@ from custom_components.adjustable_bed.profiles.comfort_enhancement3 import PROFI
 from custom_components.adjustable_bed.profiles.n32_motion_bed import N32
 from scripts.codec_docs._common import Block, _block, _hex, _table
 from scripts.codec_docs._mattresspoint import render as render_mattresspoint
+from scripts.codec_docs._roewa import render as render_roewa
 from scripts.codec_docs._sleeptime import render as render_sleeptime
 from scripts.codec_docs._ultramatic import render as render_ultramatic
 
@@ -1015,6 +1016,7 @@ def render_jobs_settings() -> str:
 
 
 BLOCKS: list[Block] = [
+    (GUIDE, "roewa-controls", render_roewa),
     (GUIDE, "leva-routes", render_leva_routes),
     (GUIDE, "leva-controls", render_leva_controls),
     (GUIDE, "leva-commands", render_leva_commands),

@@ -40,6 +40,7 @@ async def service_target(hass: HomeAssistant):
         supports_preset_yoga=True,
         supports_wake_routine=True,
         supports_device_rename=True,
+        device_rename_needs_live_validation=False,
         disconnects_after_rename=False,
         validate_device_rename=MagicMock(),
         configure_clock_alarm=AsyncMock(),
@@ -214,6 +215,7 @@ async def test_all_targets_are_validated_before_writing(
     unsupported.controller_side = None
     unsupported.capability_controller = MagicMock(
         spec=JiecangAppController,
+        device_rename_needs_live_validation=False,
         **{capability: None if capability == "alarm_capability" else False},
     )
     resolve.return_value = ([(coordinator, SIDE_BOTH), (unsupported, SIDE_BOTH)], [])
