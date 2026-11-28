@@ -4467,6 +4467,132 @@
       "amada_refresh_alarm": {
         "name": "Refresh alarm"
       },
+      "easyctrl_all_up": {
+        "name": "All motors up"
+      },
+      "easyctrl_all_down": {
+        "name": "All motors down"
+      },
+      "easyctrl_back_head_up": {
+        "name": "Back and head up"
+      },
+      "easyctrl_back_head_down": {
+        "name": "Back and head down"
+      },
+      "easyctrl_legs_up": {
+        "name": "Legs up"
+      },
+      "easyctrl_legs_down": {
+        "name": "Legs down"
+      },
+      "easyctrl_back_up": {
+        "name": "Back up"
+      },
+      "easyctrl_back_down": {
+        "name": "Back down"
+      },
+      "easyctrl_head_up": {
+        "name": "Head up"
+      },
+      "easyctrl_head_down": {
+        "name": "Head down"
+      },
+      "easyctrl_middle_up": {
+        "name": "Middle up"
+      },
+      "easyctrl_middle_down": {
+        "name": "Middle down"
+      },
+      "easyctrl_both_backs_up": {
+        "name": "Both backs up"
+      },
+      "easyctrl_both_backs_down": {
+        "name": "Both backs down"
+      },
+      "easyctrl_right_back_up": {
+        "name": "Right back up"
+      },
+      "easyctrl_right_back_down": {
+        "name": "Right back down"
+      },
+      "easyctrl_left_back_up": {
+        "name": "Left back up"
+      },
+      "easyctrl_left_back_down": {
+        "name": "Left back down"
+      },
+      "easyctrl_left_head_up": {
+        "name": "Left head up"
+      },
+      "easyctrl_left_head_down": {
+        "name": "Left head down"
+      },
+      "easyctrl_right_head_up": {
+        "name": "Right head up"
+      },
+      "easyctrl_right_head_down": {
+        "name": "Right head down"
+      },
+      "easyctrl_left_back_head_up": {
+        "name": "Left back and head up"
+      },
+      "easyctrl_left_back_head_down": {
+        "name": "Left back and head down"
+      },
+      "easyctrl_left_legs_up": {
+        "name": "Left legs up"
+      },
+      "easyctrl_left_legs_down": {
+        "name": "Left legs down"
+      },
+      "easyctrl_right_back_head_up": {
+        "name": "Right back and head up"
+      },
+      "easyctrl_right_back_head_down": {
+        "name": "Right back and head down"
+      },
+      "easyctrl_right_legs_up": {
+        "name": "Right legs up"
+      },
+      "easyctrl_right_legs_down": {
+        "name": "Right legs down"
+      },
+      "easyctrl_both_back_head_up": {
+        "name": "Both back and head up"
+      },
+      "easyctrl_both_back_head_down": {
+        "name": "Both back and head down"
+      },
+      "easyctrl_both_legs_up": {
+        "name": "Both legs up"
+      },
+      "easyctrl_both_legs_down": {
+        "name": "Both legs down"
+      },
+      "easyctrl_seat_1_up": {
+        "name": "Seat 1 up"
+      },
+      "easyctrl_seat_1_down": {
+        "name": "Seat 1 down"
+      },
+      "easyctrl_seat_2_up": {
+        "name": "Seat 2 up"
+      },
+      "easyctrl_seat_2_down": {
+        "name": "Seat 2 down"
+      },
+      "easyctrl_seat_3_up": {
+        "name": "Seat 3 up"
+      },
+      "easyctrl_seat_3_down": {
+        "name": "Seat 3 down"
+      },
+      "easyctrl_seat_4_up": {
+        "name": "Seat 4 up"
+      },
+      "easyctrl_seat_4_down": {
+        "name": "Seat 4 down"
+      },
       "easyctrl_save_light": {
         "name": "Save light settings"
       }
