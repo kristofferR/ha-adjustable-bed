@@ -38,6 +38,7 @@ async def service_target(hass: HomeAssistant):
         spec=LogicdataAppController,
         supports_clock_alarm=True,
         supports_device_rename=True,
+        device_rename_needs_live_validation=False,
         supports_preset_hold=True,
         held_preset_options=("flat", "memory_1", "memory_2"),
         validate_device_rename=MagicMock(),
@@ -161,6 +162,7 @@ async def test_all_targets_are_validated_before_writing(
     unsupported.controller_side = None
     unsupported.capability_controller = MagicMock(
         spec=LogicdataAppController,
+        device_rename_needs_live_validation=False,
         **{capability: None if capability == "alarm_capability" else False},
     )
     resolve.return_value = ([(coordinator, SIDE_BOTH), (unsupported, SIDE_BOTH)], [])

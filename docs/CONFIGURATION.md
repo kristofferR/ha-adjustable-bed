@@ -428,6 +428,7 @@ actions; its bounded `hold_control` behavior has separate timing in the
 | Restonic app (Prime / Lombar / Infinity) | `restonic` | 10 | 200 ms |
 | Richmat / RMControl app | `richmat` | 7 | 150 ms |
 | Rize Home app | `rize_home` | 3 | 200 ms |
+| RÖWA Fernbedienung | `roewa` | 10 | 80 ms |
 | Shuda app | `shuda` | 5 | 200 ms |
 | SIMMONS app | `simmons` | 4 | 300 ms |
 | Simmons Blue app | `simmons_blue` | 5 | 200 ms |
@@ -1051,3 +1052,11 @@ with Sleep, with Coaxing, or with Coaxing and Sleep. Shared BLE services and
 Bluetooth names do not determine this choice. Each receiver in a two-address
 pair keeps its own product choice. The separate sleep-sensor connection is
 currently unavailable; Sleep products expose the bed-side sensor name only.
+
+### RÖWA Fernbedienung
+
+Select the remote with two, three or four motors during setup or Reconfigure.
+The layout controls which motor rows appear, independently of the generic motor
+count. Memory-store and light feedback contain no physical positions. See the
+[RÖWA profile](beds/okin-nframe.md#röwa-fernbedienung) for memory save, hold,
+Bluetooth rename and connection requirements.
