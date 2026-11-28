@@ -707,9 +707,17 @@ class BLEDiagnosticRunner:
                 char_info.read_error = "Characteristic not found after reconnect"
                 return True
 
+        controller = self.coordinator.controller if self.coordinator is not None else None
+        if (
+            self._using_coordinator_connection
+            and controller is not None
+            and char_info.uuid.lower() in controller.diagnostic_read_exclusions
+        ):
+            char_info.read_error = "Skipped: reads are owned by the active controller"
+            return True
+
         try:
             value = await self._read_gatt_char(target)
-            controller = self.coordinator.controller if self.coordinator is not None else None
             control_uuid = controller.control_characteristic_uuid.lower() if controller else None
             if char_info.uuid.lower() in SLEEPTRACKER_SECRET_CHARACTERISTICS:
                 char_info.read_result = {
