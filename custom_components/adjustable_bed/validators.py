@@ -34,6 +34,7 @@ from .const import (
     BED_TYPE_COMFORT_ENHANCEMENTS,
     BED_TYPE_COMFORTBASE,
     BED_TYPE_DOUBLESLEEP,
+    BED_TYPE_DUNLOPILLO,
     BED_TYPE_ENSO2,
     BED_TYPE_ESHINE_OKIN,
     BED_TYPE_GALAXY,
@@ -116,6 +117,7 @@ from .profiles.bobpowerbase import PROFILE_CHOICES as BOB_PROFILES
 from .profiles.casper import CASPER_BASE_VARIANTS
 from .profiles.comfort_enhancement3 import CHOICES as APEX_CHOICES
 from .profiles.comfortbase import PRODUCTS as COMFORTBASE_PRODUCTS
+from .profiles.dunlopillo import CHOICES as DUNLOPILLO_CHOICES
 from .profiles.enso2 import LAYOUT_CHOICES as ENSO2_LAYOUT_CHOICES
 from .profiles.ergosportive import VARIANTS as ERGOSPORTIVE_CHOICES
 from .profiles.hush import HUSH_BASE_VARIANTS
@@ -264,6 +266,7 @@ VARIANTS_BY_BED_TYPE: dict[str, dict[str, str]] = {
     "konfurt": KONFURT_CHOICES,
     "ergosportive": ERGOSPORTIVE_CHOICES,
     "kingkoil": KINGKOIL_CHOICES,
+    BED_TYPE_DUNLOPILLO: DUNLOPILLO_CHOICES,
     BED_TYPE_JUNASLEEP: JUNASLEEP_CHOICES,
     BED_TYPE_SOMOS: SOMOS_CHOICES,
     BED_TYPE_COMFORTBASE: {key: p.name for key, p in COMFORTBASE_PRODUCTS.items()},

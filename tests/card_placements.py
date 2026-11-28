@@ -288,6 +288,13 @@ def runtime_variants(controllers: Iterable[BedController]) -> Iterator[BedContro
 
     dorsal_catalog_covered = False
     for controller in controllers:
+        if type(controller).__name__ == "DunlopilloController":
+            from custom_components.adjustable_bed.profiles.dunlopillo import (
+                PROFILES as DUNLOPILLO_PROFILES,
+            )
+            for layout, profile in DUNLOPILLO_PROFILES.items():
+                yield variant(controller, layout=layout, profile=profile)
+
         if type(controller).__name__ == "PowersBeddingController":
             from custom_components.adjustable_bed.profiles.powersbedding import PROFILES
             for profile in PROFILES.values():
