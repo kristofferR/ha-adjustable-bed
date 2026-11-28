@@ -158,6 +158,7 @@ bed has been tested on real hardware.
 | [M Line](docs/beds/mline.md) | M Line | OKIN |
 | [MotoMotion](docs/beds/motomotion.md) | [MotoMotion](docs/beds/motomotion.md) | MotoMotion |
 | [MoodBase](docs/beds/motomotion.md#moodbase) | [MoodBase](docs/beds/motomotion.md#moodbase) | Bob Mills Furniture (HHC receivers) |
+| [VivaSleep](docs/beds/motomotion.md#vivasleep) | [VivaSleep app](docs/beds/motomotion.md#vivasleep) | HHC receivers supported by VivaSleep |
 | [MotoSleep / Power Bob](docs/beds/motomotion.md#motosleep-and-power-bob-family) | [MotoSleep / Power Bob app, HHC models](docs/beds/motomotion.md#hhc-profiles-names-longer-than-14-characters), [Power Bob and binary MOTO models](docs/beds/motomotion.md#power-bob-profiles-14-character-names) | HHC, Power Bob |
 | [BERUN](docs/beds/berun.md) | BERUN (versions 6–9) | OKIN / Smartbed |
 | [Nerum](docs/beds/nerum.md) | Nerum | Nerum |

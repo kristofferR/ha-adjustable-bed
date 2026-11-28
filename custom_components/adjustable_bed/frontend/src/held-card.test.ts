@@ -2,8 +2,9 @@
 import { expect, test } from "bun:test";
 import type { TemplateResult } from "lit";
 import { bedEntitiesForDevice } from "./discovery";
-import type { MotorHold } from "./hold";
-import type { BedEntities, HomeAssistant } from "./types";
+import { heldButtonMotor, type MotorHold } from "./hold";
+import type { BedEntities, HomeAssistant, MotorEntity } from "./types";
+import vivaMetadata from "../../../../tests/fixtures/vivasleep/card-metadata.json";
 import { placed } from "./test-placements";
 
 await import("lit");
@@ -387,3 +388,106 @@ for (const ending of ["release", "abandon", "stop"] as const) test(`compact ${en
   expect(f.calls).toEqual(ending === "stop" ? [{ domain: "button", service: "press", data: { entity_id: "button.right_stop" } }] : []);
   expect(clock.tasks.size).toBe(0); f.stopFinishes.forEach((done) => done()); await settle();
 })));
+
+test.each(["pointerup", "pointercancel", "window-cancel"])("real card %s selects the release or cancellation service", async (ending) => {
+  await withKeyboard(async () => {
+    const f = fixture();
+    f.hass.entities["button.release"] = { entity_id: "button.release", platform: "adjustable_bed", device_id: "right-child", translation_key: "bedgear_release" };
+    f.hass.states["button.release"] = { entity_id: "button.release", state: "unknown", attributes: {} } as HomeAssistant["states"][string];
+    f.hass.states["button.mx_memory1"].attributes.hold_release_button_key = "bedgear_release";
+    f.hass.states["button.mx_memory1"].attributes.held_control = "vivasleep_tilt_down";
+    const button = tile(f.card._utility(bedEntitiesForDevice(f.hass, "right-child")));
+    const event = (type: string) => ({ type, pointerId: 7, button: 0, isPrimary: true,
+      currentTarget: { setPointerCapture() {} }, preventDefault() {} });
+    handler(button, "pointerdown")(event("pointerdown"));
+    expect(f.calls[0]?.service).toBe("hold_control");
+    if (ending === "window-cancel") {
+      const card = f.card as unknown as { _windowPointerEnd(e: unknown): void };
+      card._windowPointerEnd(event("pointercancel"));
+    } else handler(button, ending)(event(ending));
+    expect(f.calls[1]).toEqual({
+      domain: ending === "pointerup" ? "button" : "adjustable_bed",
+      service: ending === "pointerup" ? "press" : "cancel_hold",
+      data: { entity_id: "button.release" },
+    });
+    // Bubbling/window completion cannot send a second release.
+    (f.card as unknown as { _windowPointerEnd(e: unknown): void })._windowPointerEnd(event("pointercancel"));
+    expect(f.calls).toHaveLength(2);
+    f.finish();
+    f.card.disconnectedCallback();
+  });
+});
+
+test.each(["wired", "wireless"])("synchronization %s requires the card acknowledgement", async (mode) => {
+  await withKeyboard(() => {
+  const f = fixture();
+  const entityId = "button." + mode;
+  f.hass.entities[entityId] = { ...f.hass.entities["button.mx_memory1"], entity_id: entityId };
+  f.hass.states[entityId] = { ...f.hass.states["button.mx_memory1"], entity_id: entityId, attributes: { requires_confirmation: true } };
+  delete f.hass.states["button.mx_memory1"];
+  delete f.hass.entities["button.mx_memory1"];
+  const card = f.card as unknown as CardUnderTest & {
+    _confirmDialog(id: string): TemplateResult;
+  };
+  const button = tile(card._utility(bedEntitiesForDevice(f.hass, "right-child")));
+  handler(button, "click")(new Event("click"));
+  expect(f.calls).toEqual([]);
+  const dialog = card._confirmDialog(entityId);
+  const index = dialog.strings.findLastIndex((s) => s.endsWith("@click="));
+  (dialog.values[index] as () => void)();
+  expect(f.calls).toEqual([{ domain: "adjustable_bed", service: "press_confirmed",
+    data: { entity_id: entityId, confirmed: true } }]);
+  card.disconnectedCallback();
+  });
+});
+
+for (const surface of ["motor", "tile"] as const) {
+test.each(["pointerup", "pointercancel", "window-cancel", "abandon", "keyup", "blur"])(`actual HA VivaSleep ${surface} metadata routes %s`, async (ending) => {
+  await withKeyboard(async () => {
+    const calls: Array<{ domain: string; service: string; data: Record<string, unknown> }> = [];
+    let finish: (() => void) | undefined;
+    const hass = { ...structuredClone(vivaMetadata), devices: { receiver: { id: "receiver" } },
+      language: "en", locale: { language: "en" }, themes: {}, formatEntityName: (s: { entity_id: string }) => s.entity_id,
+      callService: async (domain: string, service: string, data: Record<string, unknown>) => {
+        calls.push({ domain, service, data });
+        if (service === "hold_control") await new Promise<void>((resolve) => { finish = resolve; });
+      },
+    } as unknown as HomeAssistant;
+    const card = new AdjustableBedCard() as unknown as CardUnderTest & {
+      _motorDirection(motor: MotorEntity, dir: "up" | "down", stopId?: string): TemplateResult;
+      _actionTile(entityId: string, stopId?: string): TemplateResult;
+      _windowPointerEnd(e: unknown): void;
+    };
+    card.hass = hass;
+    const bed = bedEntitiesForDevice(hass, "receiver");
+    const motor = surface === "motor"
+      ? bed.motors.find((m) => m.key === "tilt")!
+      : heldButtonMotor(hass, "button.bedgear_flat")!;
+    expect(motor).toBeDefined();
+    const control = surface === "motor" ? "vivasleep_tilt_down" : "vivasleep_preset_flat";
+    expect(surface === "motor" ? motor.heldControls?.down?.control : motor.heldControl?.control).toBe(control);
+    expect(motor.releaseButton).toBe("button.bedgear_release_held_control");
+    const button = surface === "motor"
+      ? card._motorDirection(motor, "down", bed.stop)
+      : card._actionTile("button.bedgear_flat", bed.stop);
+    const event = (type: string) => ({ type, pointerId: 3, button: 0, isPrimary: true,
+      currentTarget: { setPointerCapture() {} }, preventDefault() {} });
+    if (ending === "keyup" || ending === "blur") handler(button, "keydown")(new KeyEvent("Enter"));
+    else handler(button, "pointerdown")(event("pointerdown"));
+    expect(calls[0]?.service).toBe("hold_control");
+    expect(calls[0]?.data.control).toBe(control);
+    if (ending === "abandon") card._hold.abandon();
+    else if (ending === "window-cancel") card._windowPointerEnd(event("pointercancel"));
+    else if (ending === "keyup") handler(button, "keyup")(new KeyEvent("Enter", "keyup"));
+    else handler(button, ending)(event(ending));
+    const normalRelease = ending === "pointerup" || ending === "keyup";
+    expect(calls[1]).toEqual({ domain: normalRelease ? "button" : "adjustable_bed",
+      service: normalRelease ? "press" : "cancel_hold", data: { entity_id: motor.releaseButton } });
+    finish?.();
+    card.disconnectedCallback();
+    // Wrong metadata must fail the same lookup, rather than being repaired by a mock.
+    hass.states["cover.bedgear_tilt"].attributes.hold_release_button_key = "missing_release";
+    expect(bedEntitiesForDevice(hass, "receiver").motors.find((m) => m.key === "tilt")?.heldControls).toBeUndefined();
+  });
+});
+}

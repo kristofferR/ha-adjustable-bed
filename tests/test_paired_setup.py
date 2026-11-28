@@ -4581,7 +4581,7 @@ class TestOfflineSafeBedTypes:
                 child[CONF_BLE_DEVICE_NAME] = "SealyMF Base"
             elif bed_type == BED_TYPE_AMADA:
                 child[CONF_PRODUCT_TYPE] = "a" if child[CONF_SIDE] == SIDE_LEFT else "b"
-            elif bed_type in ("bedgear", "ergobed", "l2motion", "moodbase"):
+            elif bed_type in ("bedgear", "ergobed", "l2motion", "moodbase", "vivasleep"):
                 child[CONF_BLE_DEVICE_NAME] = "HHC0000001D00X"
             elif bed_type == "motomotion":
                 child[CONF_BLE_DEVICE_NAME] = "SOFA000001S000H"

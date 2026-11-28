@@ -1,0 +1,205 @@
+[
+  {
+    "id": "SYNC-15",
+    "kind": "numeric",
+    "protocol": "P1",
+    "action": "Builder input 00015/00000",
+    "inputs": {
+      "command": "00015",
+      "parameter": "00000"
+    },
+    "expected_bytes": "24 23 30 30 30 31 35 30 30 30 30 30 30 30 30 30 34 52 0d",
+    "expected_text": "$#000150000000004R\r",
+    "evidence": [
+      "work/blutter/asm/motosleep/base/view/base_view_state.dart:776-1023 (0x5adc0c-0x5adec8)",
+      "work/blutter/asm/motosleep/page/main_panel.dart:2765-3010 (0x4b5310-0x4b55c0)",
+      "report/gdt-resolution.json"
+    ],
+    "confidence": "CORROBORATED",
+    "limitation": "Expected bytes independently calculated from reconstructed static builder, not captured app buffers. GDT formatter identities now resolved. Physical action and full variant semantics are not implied."
+  },
+  {
+    "id": "SYNC-12",
+    "kind": "numeric",
+    "protocol": "P1",
+    "action": "Builder input 00012/00000",
+    "inputs": {
+      "command": "00012",
+      "parameter": "00000"
+    },
+    "expected_bytes": "24 23 30 30 30 31 32 30 30 30 30 30 30 30 30 30 33 52 0d",
+    "expected_text": "$#000120000000003R\r",
+    "evidence": [
+      "work/blutter/asm/motosleep/base/view/base_view_state.dart:776-1023 (0x5adc0c-0x5adec8)",
+      "work/blutter/asm/motosleep/page/main_panel.dart:2765-3010 (0x4b5310-0x4b55c0)",
+      "report/gdt-resolution.json"
+    ],
+    "confidence": "CORROBORATED",
+    "limitation": "Expected bytes independently calculated from reconstructed static builder, not captured app buffers. GDT formatter identities now resolved. Physical action and full variant semantics are not implied."
+  },
+  {
+    "id": "RGB-R120",
+    "kind": "numeric",
+    "protocol": "P1",
+    "action": "Builder input 00315/00120",
+    "inputs": {
+      "command": "00315",
+      "parameter": "00120"
+    },
+    "expected_bytes": "24 23 30 30 33 31 35 30 30 31 32 30 30 30 30 30 34 52 0d",
+    "expected_text": "$#003150012000004R\r",
+    "evidence": [
+      "work/blutter/asm/motosleep/base/view/base_view_state.dart:776-1023 (0x5adc0c-0x5adec8)",
+      "work/blutter/asm/motosleep/base/view/base_view_state.dart:1390-1455 0x5aebf4 (00315; dynamic decimal parameter)",
+      "report/gdt-resolution.json"
+    ],
+    "confidence": "CORROBORATED",
+    "limitation": "Expected bytes independently calculated from reconstructed static builder, not captured app buffers. GDT formatter identities now resolved. Physical action and full variant semantics are not implied. Parameter120 is a synthetic formatter probe, not an extracted literal or proven selectable UI value.",
+    "provenance": "Synthetic parameter120 paired with shipped00315 builder route"
+  },
+  {
+    "id": "SYNC-33049",
+    "kind": "numeric",
+    "protocol": "P1",
+    "action": "Builder input 33049/00001",
+    "inputs": {
+      "command": "33049",
+      "parameter": "00001"
+    },
+    "expected_bytes": "24 23 33 33 30 34 39 30 30 30 30 31 30 30 30 31 32 52 0d",
+    "expected_text": "$#330490000100012R\r",
+    "evidence": [
+      "work/blutter/asm/motosleep/base/view/base_view_state.dart:776-1023 (0x5adc0c-0x5adec8)",
+      "work/blutter/asm/motosleep/page/panel_snyc.dart:941-1025 0x62d46c (33049/00001 callsite)",
+      "report/gdt-resolution.json"
+    ],
+    "confidence": "CORROBORATED",
+    "limitation": "Expected bytes independently calculated from reconstructed static builder, not captured app buffers. GDT formatter identities now resolved. Physical action and full variant semantics are not implied. That callsite uses separate app_toolbar.getCommand0x5a1504; full equivalence of that builder remains unclosed, so this vector tests the recovered BaseViewState formatter on these inputs only."
+  },
+  {
+    "id": "RAW-K",
+    "kind": "transport",
+    "protocol": "P1",
+    "action": "ASCII write transform '$K'",
+    "inputs": {
+      "command": "$K",
+      "enhanced": false
+    },
+    "expected_bytes": "24 4b",
+    "expected_bytes_unknown_reason": null,
+    "expected_text": "$K",
+    "evidence": [
+      "work/blutter/asm/motosleep/base/ble/ble_manager.dart:1739-1997 (0x4b1df4-0x4b20c8)"
+    ],
+    "confidence": "CORROBORATED",
+    "limitation": "Conditional transform only. Does not establish a user action for every literal or all variants."
+  },
+  {
+    "id": "M-K",
+    "kind": "transport",
+    "protocol": "P1",
+    "action": "ASCII write transform '$K'",
+    "inputs": {
+      "command": "$K",
+      "enhanced": true
+    },
+    "expected_bytes": "24 23 24 4b 52 0d",
+    "expected_bytes_unknown_reason": null,
+    "expected_text": "$#$KR\r",
+    "evidence": [
+      "work/blutter/asm/motosleep/base/ble/ble_manager.dart:1739-1997 (0x4b1df4-0x4b20c8)"
+    ],
+    "confidence": "CORROBORATED",
+    "limitation": "Conditional transform only. Does not establish a user action for every literal or all variants."
+  },
+  {
+    "id": "RAW-b",
+    "kind": "transport",
+    "protocol": "P1",
+    "action": "ASCII write transform '$b'",
+    "inputs": {
+      "command": "$b",
+      "enhanced": false
+    },
+    "expected_bytes": "24 62",
+    "expected_bytes_unknown_reason": null,
+    "expected_text": "$b",
+    "evidence": [
+      "work/blutter/asm/motosleep/base/ble/ble_manager.dart:1739-1997 (0x4b1df4-0x4b20c8)"
+    ],
+    "confidence": "CORROBORATED",
+    "limitation": "Conditional transform only. Does not establish a user action for every literal or all variants."
+  },
+  {
+    "id": "M-b",
+    "kind": "transport",
+    "protocol": "P1",
+    "action": "ASCII write transform '$b'",
+    "inputs": {
+      "command": "$b",
+      "enhanced": true
+    },
+    "expected_bytes": "24 23 24 62 52 0d",
+    "expected_bytes_unknown_reason": null,
+    "expected_text": "$#$bR\r",
+    "evidence": [
+      "work/blutter/asm/motosleep/base/ble/ble_manager.dart:1739-1997 (0x4b1df4-0x4b20c8)"
+    ],
+    "confidence": "CORROBORATED",
+    "limitation": "Conditional transform only. Does not establish a user action for every literal or all variants."
+  },
+  {
+    "id": "RAW-z",
+    "kind": "transport",
+    "protocol": "P1",
+    "action": "ASCII write transform '$z'",
+    "inputs": {
+      "command": "$z",
+      "enhanced": false
+    },
+    "expected_bytes": "24 7a",
+    "expected_bytes_unknown_reason": null,
+    "expected_text": "$z",
+    "evidence": [
+      "work/blutter/asm/motosleep/base/ble/ble_manager.dart:1739-1997 (0x4b1df4-0x4b20c8)"
+    ],
+    "confidence": "CORROBORATED",
+    "limitation": "Conditional transform only. Does not establish a user action for every literal or all variants."
+  },
+  {
+    "id": "M-z",
+    "kind": "transport",
+    "protocol": "P1",
+    "action": "ASCII write transform '$z'",
+    "inputs": {
+      "command": "$z",
+      "enhanced": true
+    },
+    "expected_bytes": null,
+    "expected_bytes_unknown_reason": "Suppressed branch, no GATT write occurs",
+    "expected_text": null,
+    "evidence": [
+      "work/blutter/asm/motosleep/base/ble/ble_manager.dart:1739-1997 (0x4b1df4-0x4b20c8)"
+    ],
+    "confidence": "CORROBORATED",
+    "limitation": "Conditional transform only. Does not establish a user action for every literal or all variants."
+  },
+  {
+    "id": "M-ALREADY-FRAMED",
+    "kind": "transport",
+    "protocol": "P1",
+    "action": "ASCII write transform '$#000120000000003R\\r'",
+    "inputs": {
+      "command": "$#000120000000003R\r",
+      "enhanced": true
+    },
+    "expected_bytes": "24 23 30 30 30 31 32 30 30 30 30 30 30 30 30 30 33 52 0d",
+    "expected_bytes_unknown_reason": null,
+    "expected_text": "$#000120000000003R\r",
+    "evidence": [
+      "work/blutter/asm/motosleep/base/ble/ble_manager.dart:1739-1997 (0x4b1df4-0x4b20c8)"
+    ],
+    "confidence": "CORROBORATED",
+    "limitation": "Conditional transform only. Does not establish a user action for every literal or all variants."
+  }
+]
