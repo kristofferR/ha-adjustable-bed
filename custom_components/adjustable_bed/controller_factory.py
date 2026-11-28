@@ -158,6 +158,7 @@ from .const import (
     BED_TYPE_SLEEPYS_BOX24,
     BED_TYPE_SLEEPYS_BOX25,
     BED_TYPE_SLEEPYS_ELITE_APP,
+    BED_TYPE_SMART_BASE,
     BED_TYPE_SOLACE,
     BED_TYPE_SOMOS,
     BED_TYPE_STAR_ELEVATE,
@@ -298,6 +299,7 @@ class _BuilderSpec:
 # plus fixed kwargs".
 _SIMPLE_CONTROLLERS: Final[dict[str, _ControllerSpec]] = {
     BED_TYPE_TOPCARE: _ControllerSpec("richmat.topcare", "TopcareController"),
+    BED_TYPE_SMART_BASE: _ControllerSpec("richmat.smart_base", "SmartBaseController"),
     BED_TYPE_COMFORT_BED: _ControllerSpec("comfort_bed.controller", "ComfortBedController"),
     BED_TYPE_ATLAS_LIFT: _ControllerSpec("richmat.atlas_lift", "AtlasLiftController"),
     BED_TYPE_VINDO: _ControllerSpec("vindo", "VindoController"),
