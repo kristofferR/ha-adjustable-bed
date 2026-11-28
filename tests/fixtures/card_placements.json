@@ -3637,6 +3637,9 @@
  "button:truemotion_version": {
   "card_section": "utility"
  },
+ "button:tss_refresh": {
+  "card_section": "utility"
+ },
  "button:ultramatic_foot_down": {
   "card_section": "motors",
   "card_role": "down",
@@ -5178,6 +5181,9 @@
  "select:ai_bed_massage_mode": {
   "card_section": "massage"
  },
+ "select:ar_headboard_mood_delay": {
+  "card_section": "lighting"
+ },
  "select:bedsmart_side": {
   "card_section": "motors"
  },
@@ -5687,6 +5693,32 @@
  "sensor:app_timer_status": {
   "card_section": "massage",
   "card_role": "timer"
+ },
+ "sensor:ar_connect_back_position": {
+  "card_section": "motors",
+  "card_role": "position",
+  "card_motor": "back"
+ },
+ "sensor:ar_connect_feet_position": {
+  "card_section": "motors",
+  "card_role": "position",
+  "card_motor": "feet"
+ },
+ "sensor:ar_connect_head_position": {
+  "card_section": "motors",
+  "card_role": "position",
+  "card_motor": "head"
+ },
+ "sensor:ar_connect_legs_position": {
+  "card_section": "motors",
+  "card_role": "position",
+  "card_motor": "legs"
+ },
+ "sensor:ar_headboard_routines": {
+  "card_section": "utility"
+ },
+ "sensor:ar_headboard_status": {
+  "card_section": "lighting"
  },
  "sensor:back_angle": {
   "card_section": "motors",
@@ -6896,6 +6928,15 @@
  "switch:ai_bed_massage_head": {
   "card_section": "massage"
  },
+ "switch:ar_connect_silent": {
+  "card_section": "utility"
+ },
+ "switch:ar_headboard_mood": {
+  "card_section": "lighting"
+ },
+ "switch:ar_headboard_repeat": {
+  "card_section": "lighting"
+ },
  "switch:automatic_light": {
   "card_section": "utility"
  },
@@ -7180,6 +7221,9 @@
   "card_section": "utility"
  },
  "switch:truemotion_lock": {
+  "card_section": "utility"
+ },
+ "switch:tss_synchronization": {
   "card_section": "utility"
  },
  "switch:under_bed_lights": {

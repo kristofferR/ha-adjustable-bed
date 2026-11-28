@@ -648,6 +648,7 @@ def _rests_on_shared_service(
 # Display names for bed types shown in the UI selector. The automatic
 # Leggett & Platt setup is not offered to a new bed, so it is not listed here.
 BED_TYPE_DISPLAY_NAMES: dict[str, str] = {
+    "ar_connect": "AR Connect (adjustable bed or headboard)",
     "intellibed": "Intellibed Sleep Genius app",
     "aminach": "AMINACH Platinum",
     "ifit": "iFit app (manual selection)",
@@ -933,6 +934,7 @@ def is_jensen_linon_name(name: str | None) -> bool:
 # users find them by app name. A bed type's own entry names the app its auto
 # variant selects; see AGENTS.md "Adding a New Bed Type".
 APP_VARIANT_CHOICES: dict[tuple[str, str], str] = {
+    ("ar_connect", "headboard"): "AR Connect headboard",
     **{("motionflex", profile): f"MotionFlex ({label})" for profile, label in MOTIONFLEX_CHOICES.items()},
     ("ai_bed", "limos"): "AI Bed: Limos",
     ("ai_bed", "qrrm"): "AI Bed: QRRM",
@@ -3109,6 +3111,9 @@ def _detect_bed_type_detailed(
             manufacturer_id=MANUFACTURER_ID_OKIN,
         )
 
+    if "dosseret" in device_name.lower():
+        return DetectionResult("ar_connect", 0.9, ["name:ar_connect_headboard"])
+
     # Check for Linak - most specific first
     # Some Linak beds may advertise position service but not control service
     if (
@@ -3128,7 +3133,7 @@ def _detect_bed_type_detailed(
             bed_type=BED_TYPE_LINAK,
             confidence=1.0,
             signals=signals,
-            ambiguous_types=[BED_TYPE_VINDO] if vindo else None,
+            ambiguous_types=["ar_connect", BED_TYPE_VINDO] if vindo else ["ar_connect"],
         )
 
     # Check for Linak by name pattern (e.g., "Bed 1696")

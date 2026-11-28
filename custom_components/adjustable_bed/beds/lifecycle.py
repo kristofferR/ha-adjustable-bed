@@ -46,6 +46,10 @@ class ControllerSession(Protocol):
     async def async_start_notify(self) -> None:
         """Start notifications as the coordinator's angle-sensing setting allows."""
 
+    async def async_require_native_bond(self) -> None:
+        """Require a completed pairing attempt and exact local native bond proof when available."""
+        ...
+
     async def async_record_verified_bond(self) -> None:
         """Record that a protocol read proved this link is bonded."""
 

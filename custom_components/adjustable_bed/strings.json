@@ -1804,6 +1804,7 @@
   },
   "entity": {
     "button": {
+      "tss_refresh": {"name": "Refresh bed features"},
       "softide_section_a_up": {"name": "A section up"},
       "softide_section_a_down": {"name": "A section down"},
       "softide_section_b_up": {"name": "B section up"},
@@ -6682,6 +6683,31 @@
       },
       "amada_alarm_submitted": {
         "name": "Last submitted bed alarm frame"
+      },
+      "ar_headboard_status": {
+        "name": "Headboard activity",
+        "state": {
+          "live": "Live lighting",
+          "scen": "Mood lighting",
+          "wake": "Wake routine",
+          "sleep": "Sleep routine",
+          "idle": "Idle"
+        }
+      },
+      "ar_headboard_routines": {
+        "name": "Stored routines"
+      },
+      "ar_connect_back_position": {
+        "name": "Back position"
+      },
+      "ar_connect_legs_position": {
+        "name": "Legs position"
+      },
+      "ar_connect_head_position": {
+        "name": "Head position"
+      },
+      "ar_connect_feet_position": {
+        "name": "Feet position"
       }
     },
     "light": {
@@ -6690,6 +6716,8 @@
       }
     },
     "switch": {
+      "tss_massage": {"name": "Massage"},
+      "tss_synchronization": {"name": "Synchronization"},
       "konfurt_massage": {"name": "Massage"},
       "mattresspoint_massage": { "name": "Massage" },
         "active_sleep_motor_lock": {
@@ -6995,6 +7023,15 @@
       },
       "dreamotion_smart_sensor": {
         "name": "Human detection"
+      },
+      "ar_connect_silent": {
+        "name": "Silent"
+      },
+      "ar_headboard_mood": {
+        "name": "Mood light"
+      },
+      "ar_headboard_repeat": {
+        "name": "Repeat mood sequence"
       },
       "easyctrl_sleep": {
         "name": "Sleep countdown"
@@ -8925,6 +8962,19 @@
           "1800": "1800 seconds"
         }
       },
+      "ar_headboard_mood_delay": {
+        "name": "Time per mood color",
+        "state": {
+          "1": "1 min",
+          "2": "2 min",
+          "5": "5 min",
+          "10": "10 min",
+          "20": "20 min",
+          "30": "30 min",
+          "60": "60 min",
+          "120": "120 min"
+        }
+      },
       "easyctrl_head_mode": {
         "name": "Head massage mode",
         "state": {
@@ -9571,6 +9621,10 @@
         "side": {
           "name": "Side",
           "description": "Which side of a combined bed to set. Leave empty to use the selected device's side, or both sides."
+        },
+        "duration": {
+          "name": "Routine duration",
+          "description": "Complete wake routine in minutes, when the bed supports it."
         }
       }
     },
@@ -13015,6 +13069,77 @@
           "description": "Raw blue channel byte from 0 to 255."
         }
       }
+    },
+    "ar_connect_move_sections": {
+      "name": "Move bed sections (AR Connect)",
+      "description": "Hold the selected available sections of one physical bed. Release cancels refresh and sends the native stop command.",
+      "fields": {
+        "device_id": {
+          "name": "Device id"
+        },
+        "directions": {
+          "name": "Directions",
+          "description": "A mapping of back, legs, head or feet to up or down."
+        },
+        "duration_ms": {
+          "name": "Duration ms"
+        }
+      }
+    },
+    "ar_connect_mood": {
+      "name": "Set mood colors (AR Connect)",
+      "description": "Set the five color steps, repeat choice and time per step on an AR Connect headboard.",
+      "fields": {
+        "device_id": {
+          "name": "Device id"
+        },
+        "repeat": {
+          "name": "Repeat"
+        },
+        "delay": {
+          "name": "Delay",
+          "description": "Minutes per color, choose 1, 2, 5, 10, 20, 30, 60 or 120."
+        },
+        "colors": {
+          "name": "Colors",
+          "description": "Five objects with hue (0 to 1), tint (0.5 to 1) and brightness (0 to 1), using the app's color scale."
+        }
+      }
+    },
+    "ar_connect_routine": {
+      "name": "Manage local routine (AR Connect)",
+      "description": "Create a wake or sleep routine, update or delete a returned routine id, or refresh the current list. Updates remove the old routine before creating its replacement.",
+      "fields": {
+        "device_id": {
+          "name": "Device id"
+        },
+        "action": {
+          "name": "Action"
+        },
+        "id": {
+          "name": "Id",
+          "description": "A routine id returned by the headboard, required for update or delete."
+        },
+        "enabled": {
+          "name": "Enabled"
+        },
+        "mode": {
+          "name": "Mode"
+        },
+        "hour": {
+          "name": "Hour"
+        },
+        "minute": {
+          "name": "Minute"
+        },
+        "duration": {
+          "name": "Duration",
+          "description": "Routine duration in minutes, choose 1, 2, 5, 10, 20, 30, 60 or 120."
+        },
+        "weekdays": {
+          "name": "Weekdays"
+        }
+      }
     }
   },
   "exceptions": {
@@ -13922,6 +14047,27 @@
     "dreamlab_accessory": {
       "message": "The receiver has not reported this accessory or its current state on this connection."
     },
+    "tss_remote_layout": {
+      "message": "Choose a TSS Remote layout that contains bed controls."
+    },
+    "tss_remote_transport": {
+      "message": "No complete TSS Remote Bluetooth service was found. Select the third service option only if your receiver requires it."
+    },
+    "tss_remote_side": {
+      "message": "Choose the whole receiver. This app does not establish physical bed sides."
+    },
+    "tss_remote_control": {
+      "message": "Choose a control available for the current TSS Remote layout and mode."
+    },
+    "tss_remote_alarm": {
+      "message": "Choose an alarm preset and massage combination offered by this layout."
+    },
+    "tss_remote_accessory": {
+      "message": "The receiver has not reported this bed feature or its current state on this connection."
+    },
+    "tss_remote_settings": {
+      "message": "Choose TSS Remote lighting settings or refresh the bed features."
+    },
     "dreamlab_settings": {
       "message": "Choose Dreamlab Control settings with a color or three aroma timers in range."
     },
@@ -14371,6 +14517,45 @@
     },
     "mattresspoint_hold": {
       "message": "Choose a hold duration between 1 and 60000 milliseconds."
+    },
+    "ar_connect_layout": {
+      "message": "Choose the bed sections in AR Connect setup."
+    },
+    "ar_connect_route": {
+      "message": "Choose Adjustable bed or Headboard in AR Connect setup."
+    },
+    "ar_connect_empty_mask": {
+      "message": "The bed returned an empty motor mask. Reconnect and try again."
+    },
+    "ar_connect_motion_busy": {
+      "message": "Release the current bed control before starting another movement."
+    },
+    "ar_connect_hold": {
+      "message": "Choose available sections and a duration from 1 to 60000 milliseconds."
+    },
+    "ar_connect_invalid_state": {
+      "message": "The headboard returned an invalid startup value. Reconnect and try again."
+    },
+    "ar_connect_color": {
+      "message": "Choose valid headboard color values."
+    },
+    "ar_connect_mood_unknown": {
+      "message": "Read or set all five mood colors before changing the sequence."
+    },
+    "ar_connect_routine_unknown": {
+      "message": "Refresh the headboard routines and choose a returned routine id."
+    },
+    "ar_connect_native_bond_required": {
+      "message": "A stored Bluetooth bond could not be confirmed on this adapter. Pair the bed on the selected adapter and try again."
+    },
+    "alarm_duration_not_supported": {
+      "message": "Choose a supported routine duration in minutes: {durations}."
+    },
+    "ar_connect_alarm_record_required": {
+      "message": "Use the AR Connect routine action with its returned id to turn off an existing routine."
+    },
+    "single_command_target_required": {
+      "message": "Choose one physical receiver. Select Left or Right on this combined bed, or target one bed device."
     },
     "easyctrl_control": {
       "message": "Choose a control, value and duration supported by this EasyCtrl model."
@@ -15119,6 +15304,7 @@
         "baseremote": "Base Remote app",
         "maxprime": "Maxprime app",
         "dreamlab2": "Dreamlab Control app",
+        "tss_remote": "TSS Remote app",
         "sleepfunction": "SleepFunction Bed Control app",
         "super_colchones": "Super Colchones app",
         "dynasty": "Dynasty DM9000 app"

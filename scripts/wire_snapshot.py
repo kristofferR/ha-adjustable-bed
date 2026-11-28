@@ -393,7 +393,9 @@ def plan_commands(controller: Any) -> list[Command]:
             Command(
                 f"memory_program_{slot}",
                 _method("program_memory", slot),
-                _flag(controller, "supports_memory_programming"),
+                _flag(controller, "supports_memory_programming") and (
+                    controller._coordinator.bed_type != "ar_connect" or controller.is_memory_slot_programmable(slot)
+                ),
             )
         )
         plan.append(
@@ -443,6 +445,16 @@ def plan_commands(controller: Any) -> list[Command]:
         # For Leva the gesture button only cancels a hold. The movement and
         # STOP phases already capture that hold's real release writes.
         if spec.key == "leva_release" and spec.release_only:
+            continue
+        if getattr(controller, "app", None) == "tss_remote" and not controller.controller_button_available(spec.key):
+            # Dedicated saves are real entities gated by the app's Hold mode.
+            # Reach them through that selector, without inventing startup state.
+            async def hold_mode_save(ctrl: Any, button=spec) -> None:
+                selector = next(s for s in ctrl.controller_select_specs if s.key == "dreamlab_press_mode")
+                await selector.select_fn(ctrl, "hold")
+                await button.press_fn(ctrl)
+
+            plan.append(Command(f"hold_mode:button:{spec.key}", hold_mode_save, True))
             continue
         plan.append(Command(f"button:{spec.key}", spec.press_fn, True))
     for spec in _value(controller, "controller_select_specs", ()):
@@ -608,6 +620,23 @@ def plan_commands(controller: Any) -> list[Command]:
         plan.extend((Command("light_rgb", _method("light_rgb", (1, 2, 3)), True),
                      Command("repeat_alarm", _method("configure_alarm", alarm), True),
                      Command("delete_alarm", _method("delete_alarm", 1), True)))
+    if controller._coordinator.bed_type == "ar_connect":
+        if type(controller).__name__ == "HeadboardController":
+            from custom_components.adjustable_bed.alarm import AlarmRequest
+            from custom_components.adjustable_bed.codec.ar_connect import Routine
+            plan.extend([
+                Command("routine:create_wake", _method("configure_alarm", AlarmRequest(enabled=True, hour=7, minute=30, duration=10, reference_time=datetime.datetime.fromisoformat(FROZEN_NOW))), True),
+                Command("routine:create_sleep", _method("put_routine", Routine(True, "sleep", 22, 45, 5)), True),
+                Command("routine:update_12", _method("put_routine", Routine(False, "wake", 8, 0, 20), "12"), True),
+                Command("routine:delete_12", _method("delete_routine", "12"), True),
+            ])
+            if controller.supports_light_color_control:
+                plan.append(Command("mood:five_steps", _method("set_mood", True, 2, ((255, 0, 0, 0),) * 5), True))
+        else:
+            plan.extend([
+                Command("sections:back_head_up", _method("move_sections", {"back": True, "head": True}, 1000), True, True),
+                Command("sections:all_down", _method("move_sections", dict.fromkeys(("back", "legs", "head", "feet"), False), 1000), True, True),
+            ])
     return plan
 
 
@@ -1212,6 +1241,13 @@ class FakeClient:
     async def read_gatt_char(self, char: Any, **_: Any) -> bytearray:
         self._recorder.add(char, "read")
         uuid = str(getattr(char, "uuid", char)).lower()
+        if reply := self._replies.get(f"read-notify:{uuid}"):
+            def deliver() -> None:
+                for frame in reply.split(","):
+                    for target, callback in self._subscribers:
+                        if target.uuid == uuid:
+                            callback(target, bytearray.fromhex(frame))
+            asyncio.get_running_loop().call_soon(deliver)
         return bytearray.fromhex(self._replies.get(f"read:{uuid}", ""))
 
     async def pair(self, *_: Any, **__: Any) -> bool:
@@ -1561,12 +1597,42 @@ def cosyworld_scenario(motors: int = 2, subscription: str = "notify") -> Scenari
     )
 
 
+
+def _ar_connect_scenario(sid: str = "ar_connect", *, mask: int | None = 0xc0,
+                         alarm: bool = False, headboard: int | None = None) -> Scenario:
+    from custom_components.adjustable_bed.profiles import ar_connect as app
+    from custom_components.adjustable_bed.profiles import ar_headboard as hb
+    if headboard is not None:
+        replies = {"read:" + hb.TRANSPORTS[key][1]: value.encode().hex() for key, value in {
+            "version": '{"version":"1.0"}', "config": '{"config":' + str(headboard) + '}',
+            "advertising": '{"timeout":30}', "pairing": '{"timeout":60}',
+            "live_state": '{"livestat":false}', "live_values": '1,2,3,4',
+            "mood_state": '{"scenstat":false}', "routine": '{"length":223}',
+            "mood_values": '{"repeat":true,"delay":2,"colors":{' + ','.join('"' + str(i) + '":{"red":255,"green":0,"blue":0,"white":0}' for i in range(1,6)) + '}}',
+        }.items()}
+        parser_rows = json.loads((REPO_ROOT / "tests/fixtures/ar_connect/parser-vectors.json").read_text())
+        replies["read-notify:" + hb.TRANSPORTS["routine"][1]] = ",".join(
+            row["input_hex"] for row in parser_rows
+            if row["id"] in ("FD01.first_chunk", "FD01.completed_chunks")
+        )
+        return Scenario(id=sid, bed_type="ar_connect", protocol_variant="headboard",
+                        layout_id="ar_connect:headboard", replies=replies)
+    replies = {"read:" + app.NAME_CHARACTERISTIC: "415220626564"}
+    if mask is not None:
+        replies["read:" + app.AR_CONNECT.reference_mask] = f"{mask:02x}"
+        replies.update({"read:" + uuid: "00000000" for _, uuid in app.NATIVE_REFERENCES})
+    return Scenario(id=sid, bed_type="ar_connect", protocol_variant="native",
+                    entry_data={"product_type":"back_legs_head_feet", "motor_count":4},
+                    layout_id="ar_connect:alarm" if alarm else "ar_connect" if mask is not None else "ar_connect:standard", replies=replies)
+
 def default_scenario(bed_type: str) -> Scenario:
     """The bed type in its default route, with the entry data it needs to build."""
     from custom_components.adjustable_bed import const
 
     if bed_type == "cosyworld":
         return cosyworld_scenario()
+    if bed_type == "ar_connect":
+        return _ar_connect_scenario()
     if bed_type == "softide":
         return Scenario(id=bed_type, bed_type=bed_type, protocol_variant="3", layout_id="softide",
                         entry_data={"protocol_variant": "3", "product_type": "primary", "ble_device_name": "KSWF16S182"})
@@ -2509,6 +2575,32 @@ def route_scenarios() -> list[Scenario]:
                 },
             ))
     if const.BED_TYPE_RICHMAT_CLASSIC_APPS in const.SUPPORTED_BED_TYPES:
+        # Both the factory argument and stored entry select this app. Each
+        # named service is exercised independently of its selected remote.
+        for layout, name, route in (
+            ("FGRM", "FGRM", "w1"), ("FMRM", "FMRM", "w2"),
+            ("FNRM", "FNRM", "n1"), ("FGRM", "FGRM", "w4"),
+            ("ZIRM", "6BRM", "n1"), ("ZIRM", "TWRM", "w1"),
+            ("D1RM", "D1RM", "w1"), ("D9RM", "MLRM", "n1"),
+            ("Y6RM", "Y6RM", "w1"), ("YFRM", "YFRM", "w1"),
+            ("E3RM", "E3RM", "w1"), ("GVRM", "GVRM", "n1"),
+            ("FDRM", "FDRM", "w1"),
+            ("APRM", "APRM", "w1"), ("APRM", "APRM", "n1"),
+            ("AQRM", "AQRM", "w1"), ("A9RM", "A9RM", "n1"),
+            ("FLRM", "FLRM", "w1"), ("ZWRM", "ZWRM", "w1"),
+            ("OTRM", "OTRM", "n1"), ("DXRM", "DXRM", "w1"),
+            ("DXRM", "DXRM", "n1"),
+        ):
+            scenarios.append(Scenario(
+                id=f"richmat_classic_apps:tss_remote:{layout}:{route}",
+                bed_type=const.BED_TYPE_RICHMAT_CLASSIC_APPS,
+                protocol_variant="tss_remote", layout_id="tss_remote:" + route,
+                entry_data={const.CONF_PROTOCOL_VARIANT: "tss_remote",
+                            const.CONF_PRODUCT_TYPE: layout, const.CONF_BLE_DEVICE_NAME: name},
+                replies={"write:6e08010178": "6e09010078",
+                         "write:6e0a000179": "6e0e00037f"},
+            ))
+    if const.BED_TYPE_RICHMAT_CLASSIC_APPS in const.SUPPORTED_BED_TYPES:
         for layout, suffix in (("6BRM", ""), ("6BRM", "_nordic"), ("BRRM", ""),
                                ("E3RM", ""), ("U3RM", ""), ("BTRM", ""),
                                ("D9RM", ""), ("Y6RM", "")):
@@ -2870,6 +2962,12 @@ def build_scenarios() -> list[Scenario]:
     scenarios.extend(cosyworld_scenario(motors, subscription)
                      for motors, subscription in ((1, "notify"), (4, "indicate"), (3, "notify")))
     scenarios.extend(route_scenarios())
+    scenarios.extend((
+        _ar_connect_scenario("ar_connect:standard", mask=None),
+        _ar_connect_scenario("ar_connect:td3", mask=0),
+        _ar_connect_scenario("ar_connect:alarm", mask=0xf0, alarm=True),
+        *(_ar_connect_scenario(f"ar_connect:headboard_{config}", headboard=config) for config in (0,1,2,3,99)),
+    ))
     scenarios.extend(
         Scenario(id=f"aminach:motors:{count}", bed_type="aminach",
                  entry_data={"motor_count": count}, layout_id="aminach")
@@ -3145,6 +3243,8 @@ async def _build(scenario: Scenario, client: Any) -> Any:
         {**_base_entry_data(), **scenario.entry_data},
     )
     coordinator.client = client
+    if scenario.bed_type == "ar_connect":
+        coordinator.motor_count = int(scenario.entry_data.get("motor_count", 2))
     if scenario.bed_type == "dynasty_base_a":
         coordinator.motor_count = scenario.entry_data["motor_count"]
     if scenario.bed_type == "aminach":
@@ -3160,7 +3260,7 @@ async def _build(scenario: Scenario, client: Any) -> Any:
             coordinator.controller_state.update((update.key, update.value) for update in updates)
 
         coordinator.handle_controller_state_updates = receive
-    if scenario.bed_type == "askona":
+    if scenario.bed_type in {"askona", "ar_connect"}:
         # Askona's native light uses typed feedback; leave parent captures alone.
         from custom_components.adjustable_bed.controller_state import ControllerState
 
@@ -3231,6 +3331,13 @@ async def _connect(controller: Any, recorder: Recorder, clock: FakeClock) -> dic
         discovery = controller.async_discover_capabilities()
         if inspect.isawaitable(discovery):
             await discovery
+        if controller._coordinator.bed_type == "ar_connect":
+            await controller.async_on_connect(SimpleNamespace(
+                async_require_native_bond=controller.client.pair,
+                async_start_notify=controller.start_notify,
+                persist_capability_snapshot=lambda: None,
+            ))
+            return
         if controller._coordinator.bed_type == "softide":
             controller._coordinator.connection_generation += 1
             session = SimpleNamespace(client=controller.client, is_current=lambda: True,
@@ -3388,6 +3495,16 @@ async def _capture(
             # virtual clock reaches their movement deadlines at the same times.
             plan.sort(key=lambda command: command.name in {"lights_on", "lights_off"})
         for command in plan:
+            if scenario.bed_type == "ar_connect" and scenario.protocol_variant == "headboard":
+                # Replay the frozen source-derived FD01 chunk literals through
+                # the actual notification callback before independent actions.
+                from custom_components.adjustable_bed.profiles.ar_headboard import TRANSPORTS
+                rows = json.loads((REPO_ROOT / "tests/fixtures/ar_connect/parser-vectors.json").read_text())
+                for row in rows:
+                    if row["id"] in {"FD01.length", "FD01.first_chunk", "FD01.completed_chunks"}:
+                        for target, callback in controller.client._subscribers:
+                            if target.uuid == TRANSPORTS["routine"][1]:
+                                callback(target, bytearray.fromhex(row["input_hex"]))
             if scenario.bed_type == "konfurt":
                 # Source-derived status16 admits the app's report-backed toggles.
                 # A new report is supplied for each independent action.

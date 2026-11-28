@@ -3,8 +3,8 @@
 Surfaces the Dual Bed combine suggestion and a guided fix for the
 ``pairing_required`` issue. The latter walks the user through putting the base
 into Bluetooth pairing mode, follows the controller-specific connection/bond
-ordering, and verifies the bond by reading an auth-gated characteristic before
-resolving the issue. It also offers to replace a bond this host is still
+ordering, keeping native/authenticated bond proof separate from completed
+pairing attempts. It also offers to replace a bond this host is still
 holding but the bed no longer honours, whenever the evidence points at the
 host.
 """
@@ -54,6 +54,7 @@ from .bond_verification import (
     BondOwner,
     BondVerificationStatus,
     async_verify_authenticated_access,
+    async_verify_native_bond,
     bond_context_matches,
     build_bond_context,
     has_evidence_backed_verifier,
@@ -1150,9 +1151,10 @@ class PairingRequiredRepairFlow(BluetoothOperationMixin, RepairsFlow):
 
         client: BleakClient | None = None
         bed_type, variant = self._bed_type()
+        native_ar = bed_type == "ar_connect" and variant != "headboard"
         pair_after_discovery = (
             pair and bed_type is not None
-            and requires_pairing_after_service_discovery(bed_type, variant)
+            and (native_ar or requires_pairing_after_service_discovery(bed_type, variant))
         )
         reload_entry_id: str | None = None
         verified_owner: BondOwner | None = None
@@ -1187,10 +1189,24 @@ class PairingRequiredRepairFlow(BluetoothOperationMixin, RepairsFlow):
                         expected_source,
                     )
                     return False
+                path = async_path_for_source(self.hass, source) if source else None
+                if native_ar and (
+                    path is None or path.transport not in (TransportClass.LOCAL, TransportClass.PROXY)
+                    or not source or source == "unknown"
+                ):
+                    return False
                 pair_error: Exception | None = None
                 if pair and (expected_source or pair_after_discovery):
+                    if native_ar:
+                        data = dict(self._target_data())
+                        data[CONF_BLE_BOND_ESTABLISHED] = False
+                        data.pop(CONF_BLE_BOND_CONTEXT, None)
+                        data.pop(CONF_BLE_BOND_ATTEMPTED_SOURCE, None)
+                        self._persist_target_bond_data(data, claim_internal_update=True)
                     try:
-                        await client.pair()
+                        paired = await client.pair()
+                        if native_ar and paired is False:
+                            raise ConnectionError("Native AR pairing was refused")
                     except (NotImplementedError, TypeError) as err:
                         self._retry_pairing_not_supported = True
                         _LOGGER.warning(
@@ -1206,10 +1222,19 @@ class PairingRequiredRepairFlow(BluetoothOperationMixin, RepairsFlow):
                             self._address,
                             err,
                         )
-                path = async_path_for_source(self.hass, source) if source else None
                 bed_type, variant = self._bed_type()
                 proven_bond = False
-                if has_evidence_backed_verifier(bed_type, variant):
+                native_evidence: BondEvidence | None = None
+                if native_ar:
+                    native_evidence = await async_verify_native_bond(
+                        self._address, path=path, operation="repair_native_pairing"
+                    )
+                    proven_bond = native_evidence.proves_bond
+                    bonded = proven_bond or (
+                        path is not None and path.transport is TransportClass.PROXY
+                        and pair and pair_error is None
+                    )
+                elif has_evidence_backed_verifier(bed_type, variant):
                     evidence = await async_verify_authenticated_access(
                         client,
                         bed_type=bed_type,
@@ -1266,12 +1291,24 @@ class PairingRequiredRepairFlow(BluetoothOperationMixin, RepairsFlow):
                 if not bonded:
                     return False
 
-                # Persist the confirmed bond and reload so the coordinator reuses it
-                # (and does not try to re-pair on top of the existing bond).
+                # Persist the proof or scoped attempt before reloading so the
+                # coordinator does not immediately repeat successful pairing.
                 if self._entry_id is not None:
                     entry = self.hass.config_entries.async_get_entry(self._entry_id)
                     if entry is not None:
-                        self._persist_repaired_bond(verified_owner)
+                        if native_evidence is not None:
+                            data = dict(self._target_data())
+                            data[CONF_BLE_BOND_ESTABLISHED] = True
+                            data.pop(CONF_BLE_BOND_MARKER_UNRELIABLE, None)
+                            if native_evidence.proves_bond:
+                                data[CONF_BLE_BOND_CONTEXT] = build_bond_context(native_evidence)
+                                data.pop(CONF_BLE_BOND_ATTEMPTED_SOURCE, None)
+                            else:
+                                data.pop(CONF_BLE_BOND_CONTEXT, None)
+                                data[CONF_BLE_BOND_ATTEMPTED_SOURCE] = source
+                            self._persist_target_bond_data(data, claim_internal_update=True)
+                        else:
+                            self._persist_repaired_bond(verified_owner)
                         reload_entry_id = self._entry_id
             finally:
                 if client is not None:

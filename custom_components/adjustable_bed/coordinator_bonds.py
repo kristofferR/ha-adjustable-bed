@@ -453,6 +453,8 @@ class CoordinatorBondsMixin:
         # to skip a probe that timed out. The next paired connection should
         # verify the fresh bond again.
         self._bond_probe_timed_out = False
+        if self._bed_type == "ar_connect" and stale_cache_retry:
+            self._persist_bond_flags(established=False)
         if not stale_cache_retry:
             latch = self._attempt_trusted_bond_marker and not self._ble_bond_marker_unreliable
             if latch:
@@ -540,6 +542,10 @@ class CoordinatorBondsMixin:
         """
         details = pairing_details if pairing_details is not None else {}
         details["in_place_pairing"] = "attempted"
+        if self._bed_type == "ar_connect" and self._protocol_variant != "headboard":
+            # Failed GATT access invalidates the old attempt even if pairing
+            # now fails. A new RPC completion is not authenticated-read proof.
+            self._persist_bond_flags(established=False)
         try:
             paired = await self._async_pair_on_live_link(details)
         except Exception as err:
@@ -600,10 +606,18 @@ class CoordinatorBondsMixin:
         async with self._lock:
             if not self._can_encrypt_proxy_link_in_place():
                 return False
+            client, path, generation = self._client, self._connection_path, self.connection_generation
             if not await self._async_pair_proxy_link_in_place():
                 return False
-            await self._async_record_verified_bond()
-            self._record_bond_verification("encrypted_in_place")
+            if self._bed_type == "ar_connect" and self._protocol_variant != "headboard":
+                if client is not self._client or path != self._connection_path or generation != self.connection_generation:
+                    return False
+                assert path is not None
+                self._record_native_bond_attempt(path.source)
+                self._record_bond_verification("pairing_attempt_completed")
+            else:
+                await self._async_record_verified_bond()
+                self._record_bond_verification("encrypted_in_place")
             return True
 
     async def _async_raise_pairing_issue(self: AdjustableBedCoordinator) -> None:
@@ -711,7 +725,9 @@ class CoordinatorBondsMixin:
         self._attempt_used_pairing = True
         try:
             _LOGGER.info("BLE backend pairing starting for %s on the discovered link", self._address)
-            await client.pair()
+            paired = await client.pair()
+            if self._bed_type == "ar_connect" and self._protocol_variant != "headboard" and paired is False:
+                return False
             _LOGGER.info("BLE backend pairing completed for %s; authenticated access is not yet verified", self._address)
         except (NotImplementedError, TypeError) as err:
             if not advisory:
@@ -1025,9 +1041,35 @@ class CoordinatorBondsMixin:
             finally:
                 self._force_pairing_requested = False
 
+    def _record_native_bond_attempt(self: AdjustableBedCoordinator, source: str | None) -> None:
+        """Scope a completed pairing RPC without minting native/authentication proof."""
+        if not source or source == "unknown":
+            return
+        data = dict(self.entry.data)
+        data[CONF_BLE_BOND_ESTABLISHED] = True
+        data[CONF_BLE_BOND_ATTEMPTED_SOURCE] = source
+        data.pop(CONF_BLE_BOND_CONTEXT, None)
+        data.pop(CONF_BLE_BOND_MARKER_UNRELIABLE, None)
+        self._ble_bond_established = True
+        self._ble_bond_marker_unreliable = False
+        if (
+            self._last_bond_evidence is not None
+            and self._last_bond_evidence.status is BondVerificationStatus.AUTH_FAILED
+            and self._last_bond_evidence.owner.source == source
+        ):
+            # A new explicit attempt supersedes the failed attempt, without
+            # upgrading it to native or authenticated-access evidence.
+            self._last_bond_evidence = None
+        if data != dict(self.entry.data):
+            self._begin_internal_entry_update(True)
+            self._async_persist_config(data)
+
     async def _async_pair_live_and_verify(self: AdjustableBedCoordinator) -> bool:
         """Pair and verify the live link while the coordinator lock is held."""
         pairing_details: dict[str, Any] = {}
+        if self._bed_type == "ar_connect" and self._protocol_variant != "headboard":
+            await self._async_pair_on_live_link(pairing_details)
+            return await self._async_observe_native_bond(pairing_details)
         if self._bed_type == BED_TYPE_VIBRADORM_APP:
             return await self._async_pair_on_live_link(pairing_details, force_pairing=True)
         if await self._async_pair_on_live_link(pairing_details):
@@ -1082,6 +1124,10 @@ class CoordinatorBondsMixin:
             # Native state cannot prove authentication failure. Keep the usable
             # link; explicit repair still reports False unless native proof exists.
             return True
+
+        if self._bed_type == "ar_connect" and self._protocol_variant != "headboard":
+            # No authentication-gated characteristic is established for this app.
+            return await self._async_observe_native_bond({})
 
         if self._bond_probe_timed_out:
             _LOGGER.debug(
@@ -1358,8 +1404,14 @@ class CoordinatorBondsMixin:
         it on an unbonded route cannot be retried within the attempt.
         """
         attempted = self.entry.data.get(CONF_BLE_BOND_ATTEMPTED_SOURCE)
-        if self._bed_type == BED_TYPE_VIBRADORM_APP:
+        if self._bed_type in (BED_TYPE_VIBRADORM_APP, "ar_connect"):
             evidence = self._last_bond_evidence
+            if (
+                self._bed_type == "ar_connect" and evidence is not None
+                and evidence.status is BondVerificationStatus.AUTH_FAILED
+                and source == evidence.owner.source
+            ):
+                return False
             if (
                 evidence is not None and evidence.proves_native_bond_absent
                 and source == evidence.owner.source
@@ -1442,12 +1494,20 @@ class CoordinatorBondsMixin:
                 self._protocol_variant,
             )
         )
+        actual_route_pairing = self._bed_type == "ar_connect" and self._protocol_variant != "headboard"
+        if actual_route_pairing:
+            # HA may reroute the connection. Native-bond startup decides once
+            # the actual client/adapter is known, never in connect().
+            use_pairing = False
+            pair_after_service_discovery = False
         pairing_ordering = "not_requested"
         if use_pairing:
             pairing_ordering = (
                 "connect_discover_then_pair" if pair_after_service_discovery else "backend_default"
             )
-        if force_pairing and use_pairing:
+        if actual_route_pairing:
+            pairing_decision = "deferred_to_actual_route"
+        elif force_pairing and use_pairing:
             pairing_decision = "explicit_pair_repair"
         elif not bed_requires_pairing:
             pairing_decision = "not_required"

@@ -1618,7 +1618,7 @@ class TestBluetoothDiscoveryFlow:
         result = await _discover(hass, "LIN2BLE 34", [LINAK_CONTROL_SERVICE_UUID])
         assert result["step_id"] == "bluetooth_disambiguate"
         assert list(select_options(result, "bed_type_choice")) == [
-            BED_TYPE_LINAK, BED_TYPE_VINDO, "show_all",
+            BED_TYPE_LINAK, "ar_connect", BED_TYPE_VINDO, "show_all",
         ]
         result = await hass.config_entries.flow.async_configure(
             result["flow_id"], {"bed_type_choice": BED_TYPE_LINAK}

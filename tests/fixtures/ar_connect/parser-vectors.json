@@ -1,0 +1,162 @@
+[
+  {
+    "id": "FF02.four",
+    "input_hex": "312c322c332c34",
+    "expected": {
+      "red": 1,
+      "green": 2,
+      "blue": 3,
+      "white": 4
+    },
+    "source": [
+      "libapp.so:0x6fbb48",
+      "libapp.so:0x26bdb4"
+    ],
+    "provenance": "static literal parser vector; not captured notification"
+  },
+  {
+    "id": "FF02.skip_invalid",
+    "input_hex": "312c782c322c332c34",
+    "expected": {
+      "red": 1,
+      "green": 2,
+      "blue": 3,
+      "white": 4
+    },
+    "source": [
+      "libapp.so:0x6fbb48",
+      "libapp.so:0x26bdb4"
+    ],
+    "provenance": "static literal parser vector; not captured notification"
+  },
+  {
+    "id": "FF02.too_few",
+    "input_hex": "312c322c33",
+    "expected": null,
+    "source": [
+      "libapp.so:0x6fbb48",
+      "libapp.so:0x26bdb4"
+    ],
+    "provenance": "static literal parser vector; not captured notification"
+  },
+  {
+    "id": "FF02.too_many",
+    "input_hex": "312c322c332c342c35",
+    "expected": null,
+    "source": [
+      "libapp.so:0x6fbb48",
+      "libapp.so:0x26bdb4"
+    ],
+    "provenance": "static literal parser vector; not captured notification"
+  },
+  {
+    "id": "FF02.substring_error",
+    "input_hex": "312c322c332c342c6572726f72",
+    "expected": null,
+    "source": [
+      "libapp.so:0x6fbb48",
+      "libapp.so:0x26bdb4"
+    ],
+    "provenance": "static literal parser vector; not captured notification"
+  },
+  {
+    "id": "FF02.no_clamp",
+    "input_hex": "2d312c3235362c332c34",
+    "expected": {
+      "red": -1,
+      "green": 256,
+      "blue": 3,
+      "white": 4
+    },
+    "source": [
+      "libapp.so:0x6fbb48",
+      "libapp.so:0x26bdb4"
+    ],
+    "provenance": "static literal parser vector; not captured notification"
+  },
+  {
+    "id": "FF02.json_is_not_csv",
+    "input_hex": "7b22726564223a312c22677265656e223a322c22626c7565223a332c227768697465223a347d",
+    "expected": null,
+    "source": [
+      "libapp.so:0x6fbb48",
+      "libapp.so:0x26bdb4"
+    ],
+    "provenance": "static literal parser vector; not captured notification"
+  },
+  {
+    "id": "FD01.deleted",
+    "input_hex": "7b22737570706964223a31327d",
+    "expected": [
+      "deleted",
+      "12"
+    ],
+    "source": [
+      "libapp.so:0x6fb174"
+    ],
+    "provenance": "static literal parser vector; not captured notification"
+  },
+  {
+    "id": "FD01.created",
+    "input_hex": "7b226372656174656964223a31337d",
+    "expected": [
+      "created",
+      "13"
+    ],
+    "source": [
+      "libapp.so:0x6fb174"
+    ],
+    "provenance": "static literal parser vector; not captured notification"
+  },
+  {
+    "id": "FD01.length",
+    "input_hex": "7b226c656e677468223a3232337d",
+    "expected": null,
+    "source": [
+      "libapp.so:0x6fb174"
+    ],
+    "provenance": "static literal parser vector; not captured notification"
+  },
+  {
+    "id": "FD01.first_chunk",
+    "input_hex": "7b223132223a7b22656e61626c6564223a747275652c226d6f6465223a2277616b65222c22686f7572223a372c226d696e757465223a33302c226475726174696f6e223a31302c22747261636b223a6e756c6c2c22766f6c756d65223a302c22726563757272656e6365223a7b226d",
+    "expected": null,
+    "source": [
+      "libapp.so:0x6fb174"
+    ],
+    "provenance": "static literal parser vector; not captured notification"
+  },
+  {
+    "id": "FD01.completed_chunks",
+    "input_hex": "6f6e646179223a747275652c2274756573646179223a66616c73652c227765646e6573646179223a66616c73652c227468757273646179223a66616c73652c22667269646179223a66616c73652c227361747572646179223a66616c73652c2273756e646179223a66616c73657d7d7d",
+    "expected": [
+      "list",
+      {
+        "12": {
+          "enabled": true,
+          "mode": "wake",
+          "hour": 7,
+          "minute": 30,
+          "duration": 10,
+          "track": null,
+          "volume": 0,
+          "recurrence": {
+            "monday": true,
+            "tuesday": false,
+            "wednesday": false,
+            "thursday": false,
+            "friday": false,
+            "saturday": false,
+            "sunday": false
+          }
+        }
+      }
+    ],
+    "source": [
+      "libapp.so:0x6fb174",
+      "libapp.so:0x6fb7f0",
+      "libapp.so:0x26b238"
+    ],
+    "provenance": "static literal parser vector; not captured notification"
+  }
+]
