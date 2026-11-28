@@ -41,6 +41,7 @@ from .const import (
     BED_TYPE_GOODVIBE,
     BED_TYPE_HJBED,
     BED_TYPE_JOBS,
+    BED_TYPE_JUNASLEEP,
     BED_TYPE_KAIDI,
     BED_TYPE_KEESON,
     BED_TYPE_LIKIMIO,
@@ -117,6 +118,7 @@ from .profiles.comfortbase import PRODUCTS as COMFORTBASE_PRODUCTS
 from .profiles.enso2 import LAYOUT_CHOICES as ENSO2_LAYOUT_CHOICES
 from .profiles.hush import HUSH_BASE_VARIANTS
 from .profiles.instant_comfort import ROUTES as INSTANT_COMFORT_ROUTES
+from .profiles.junasleep import CHOICES as JUNASLEEP_CHOICES
 from .profiles.kingkoil import CHOICES as KINGKOIL_CHOICES
 from .profiles.leva import RECEIVERS as LEVA_RECEIVERS
 from .profiles.likimio import CHOICES as LIKIMIO_CHOICES
@@ -255,6 +257,7 @@ VARIANTS_BY_BED_TYPE: dict[str, dict[str, str]] = {
     BED_TYPE_COMFORT_ENHANCEMENTS: COMFORT_ENHANCEMENTS_VARIANTS,
     BED_TYPE_RESTONIC: RESTONIC_BRANCHES,
     "kingkoil": KINGKOIL_CHOICES,
+    BED_TYPE_JUNASLEEP: JUNASLEEP_CHOICES,
     BED_TYPE_SOMOS: SOMOS_CHOICES,
     BED_TYPE_COMFORTBASE: {key: p.name for key, p in COMFORTBASE_PRODUCTS.items()},
     "dorsal": DORSAL_ROUTES,

@@ -86,6 +86,7 @@ from .const import (
     BED_TYPE_JEROME_ADJUSTABLE_BASE,
     BED_TYPE_JIECANG_APP,
     BED_TYPE_JOBS,
+    BED_TYPE_JUNASLEEP,
     BED_TYPE_KAIDI,
     BED_TYPE_KEESON,
     BED_TYPE_KOMFYD,
@@ -395,6 +396,7 @@ _OWNED_BY_BED_TYPE: Final[dict[str, frozenset[str]]] = {
     "hush_sleep_sxb": GENERIC_FIELDS,
     BED_TYPE_RESTONIC: _APP_DEFINED - {CONF_PROTOCOL_VARIANT, CONF_MOTOR_PULSE_COUNT},
     "kingkoil": _APP_DEFINED - {CONF_PROTOCOL_VARIANT, CONF_MOTOR_PULSE_COUNT},
+    BED_TYPE_JUNASLEEP: _APP_DEFINED - {CONF_PROTOCOL_VARIANT, CONF_MOTOR_PULSE_COUNT},
     BED_TYPE_SOMOS: _APP_DEFINED - {CONF_PROTOCOL_VARIANT, CONF_MOTOR_PULSE_COUNT},
     BED_TYPE_COMFORTBASE: _APP_DEFINED - {CONF_PROTOCOL_VARIANT, CONF_MOTOR_PULSE_COUNT},
     BED_TYPE_COMFORT_ENHANCEMENTS: _APP_DEFINED - {CONF_PROTOCOL_VARIANT, CONF_MOTOR_PULSE_COUNT},
@@ -2471,6 +2473,22 @@ def _kingkoil_settings(data: Mapping[str, Any]) -> Mapping[str, Any]:
     }
 
 
+def _junasleep_choices(_data: Mapping[str, Any]) -> Mapping[str, str]:
+    from .profiles.junasleep import CHOICES
+
+    return CHOICES
+
+
+def _junasleep_settings(data: Mapping[str, Any]) -> Mapping[str, Any]:
+    from .profiles.junasleep import AXES, PROFILES
+
+    remote = data.get(CONF_PROTOCOL_VARIANT, "")
+    if remote not in PROFILES:
+        return {}
+    return {CONF_MOTOR_COUNT: len(AXES[remote]), CONF_HAS_MASSAGE: True,
+            CONF_DISABLE_ANGLE_SENSING: True, CONF_MOTOR_PULSE_DELAY_MS: PROFILES[remote].refresh_ms}
+
+
 def _somos_settings(data: Mapping[str, Any]) -> Mapping[str, Any]:
     from .profiles.somos import PRODUCTS
 
@@ -3544,6 +3562,7 @@ SETUP_PROFILES: Final[dict[str, SetupProfile]] = {
         questions=(Question(CONF_PROTOCOL_VARIANT, _routes("kingkoil")),),
         derive=_kingkoil_settings,
     ),
+    BED_TYPE_JUNASLEEP: _asking(BED_TYPE_JUNASLEEP, questions=(Question(CONF_PROTOCOL_VARIANT, _junasleep_choices),), derive=_junasleep_settings),
     BED_TYPE_SOMOS: _asking(
         BED_TYPE_SOMOS,
         questions=(Question(CONF_PROTOCOL_VARIANT, _routes(BED_TYPE_SOMOS)),),

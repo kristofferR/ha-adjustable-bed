@@ -97,6 +97,8 @@ def test_manifest_discovers_adjustable_lite_name_only_advertisements() -> None:
 
 def test_manifest_discovers_restonic_bt_name_only_advertisements() -> None:
     """Restonic BT accepts case-sensitive base-i4/base-i5 names with no service filter."""
+    from custom_components.adjustable_bed.discovery_hints.junasleep import HINTS
+
     manifest_path = (
         Path(__file__).parents[1] / "custom_components" / "adjustable_bed" / "manifest.json"
     )
@@ -105,6 +107,12 @@ def test_manifest_discovers_restonic_bt_name_only_advertisements() -> None:
 
     for name in ("base-i4.00002574", "base-i4X0001", "base-i4", "base-i5.00000682"):
         assert any(fnmatchcase(name, pattern) for pattern in patterns)
+    # JunaSleep separately admits case-insensitive base names as app candidates.
+    juna_patterns = {
+        pattern for hint in HINTS for matcher in hint.matchers()
+        if isinstance(pattern := matcher.get("local_name"), str)
+    }
+    assert any(fnmatchcase("BASE-I4.00002574", pattern) for pattern in juna_patterns)
     # Intellibed also scans these names, but case-insensitively. Keep this
     # assertion scoped to Restonic rather than prohibiting other app hints.
     from custom_components.adjustable_bed.discovery_hints import HINTS_BY_FAMILY
