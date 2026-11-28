@@ -1538,6 +1538,9 @@ def default_scenario(bed_type: str) -> Scenario:
         return Scenario(id=bed_type, bed_type=bed_type, layout_id="bedgear",
                         entry_data={"ble_device_name": "HHC0000000DE0X"})
 
+    if bed_type == "softide":
+        return Scenario(id=bed_type, bed_type=bed_type, protocol_variant="3", layout_id="softide",
+                        entry_data={"protocol_variant": "3", "product_type": "primary", "ble_device_name": "KSWF16S182"})
     if bed_type == "ergosportive":
         from custom_components.adjustable_bed.profiles.ergosportive import CONTROLS
         return Scenario(id=bed_type, bed_type=bed_type, protocol_variant="remote",
@@ -2261,6 +2264,17 @@ def route_scenarios() -> list[Scenario]:
                 continue  # The default captures the app's initial two-motor layout.
             scenarios.append(Scenario(id=f"konfurt:{layout}{suffix}", bed_type="konfurt",
                 protocol_variant=layout, layout_id="konfurt", properties=properties))
+    from custom_components.adjustable_bed.profiles.softide import MODELS as SOFTIDE_MODELS
+    from custom_components.adjustable_bed.profiles.softide import ROUTES as SOFTIDE_ROUTES
+
+    for model in SOFTIDE_MODELS:
+        for route in SOFTIDE_ROUTES:
+            for suffix, properties in (("", None), (":no_response", NO_RESPONSE_ONLY)):
+                if model == "3" and route == "primary" and not suffix:
+                    continue
+                scenarios.append(Scenario(id=f"softide:{model}:{route}{suffix}", bed_type="softide",
+                    protocol_variant=model, layout_id="softide", properties=properties,
+                    entry_data={"protocol_variant": model, "product_type": route, "ble_device_name": "KSWF16S182"}))
     scenarios.append(dataclasses.replace(default_scenario("ergosportive"), id="ergosportive:hardware221", protocol_variant="hardware221", entry_data={**default_scenario("ergosportive").entry_data, "protocol_variant": "hardware221"}, layout_id="ergosportive"))
     scenarios.append(dataclasses.replace(default_scenario("kingkoil"), id="kingkoil:KSBT03CL", protocol_variant="KSBT03CL", layout_id="kingkoil"))
     for route in ("p1", "p2"):
@@ -3194,6 +3208,12 @@ async def _connect(controller: Any, recorder: Recorder, clock: FakeClock) -> dic
         discovery = controller.async_discover_capabilities()
         if inspect.isawaitable(discovery):
             await discovery
+        if controller._coordinator.bed_type == "softide":
+            controller._coordinator.connection_generation += 1
+            session = SimpleNamespace(client=controller.client, is_current=lambda: True,
+                                      async_start_notify=controller.start_notify)
+            await controller.async_on_connect(session)
+            return
         if controller._coordinator.bed_type in {"powersbedding", "active_sleep"}:
             await controller.async_on_connect(SimpleNamespace(
                 async_start_notify=controller.start_notify,
@@ -3423,12 +3443,14 @@ async def capture_all(only: list[str] | None = None) -> dict[str, Any]:
             try:
                 layout = layouts[scenario.layout_id or scenario.id]
                 if scenario.properties is not None:
-                    if scenario.bed_type == "konfurt":
-                        from custom_components.adjustable_bed.profiles.konfurt import WRITE
+                    if scenario.bed_type in ("konfurt", "softide"):
+                        from custom_components.adjustable_bed.profiles import konfurt, softide
 
-                        # This layout has explicit per-characteristic roles, which
+                        write_uuid = konfurt.WRITE if scenario.bed_type == "konfurt" else softide.WRITE
+
+                        # These layouts have explicit per-characteristic roles, which
                         # take precedence over a default. Keep the notify role.
-                        properties = {**layout.get("properties", {}), WRITE: [
+                        properties = {**layout.get("properties", {}), write_uuid: [
                             prop for prop in scenario.properties
                             if prop in ("write", "write-without-response")
                         ]}

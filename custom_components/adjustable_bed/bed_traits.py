@@ -340,6 +340,7 @@ _BED_TRAITS: Final[dict[str, BedTraits]] = {
     BED_TYPE_RESTONIC: replace(_NO_ANGLES_SCOPED, owns_device_info_reads=True, connection_timeout=5, single_address_native_both=False),
     "konfurt": replace(_NO_ANGLES_SCOPED, owns_device_info_reads=True, single_address_native_both=False),
     "ergosportive": _NO_ANGLES_SCOPED,
+    "softide": replace(_NO_ANGLES_SCOPED, owns_device_info_reads=True, single_address_native_both=False, connection_timeout=10, cancellation_only_stop=True),
     "kingkoil": replace(
         _NO_ANGLES_SCOPED, owns_device_info_reads=True, connection_timeout=5,
         cancellation_only_stop=True,
@@ -665,7 +666,7 @@ MASSAGE_SETTING_UNUSED_BED_TYPES: Final = frozenset(
      "awmotion", "dreamsense", "dreamotion_smart", "smart_comfort_synergy", "solace", "saatva", "sonicsleep", "star_elevate", "starcode_abm5_4",
      "starcode_m1x12", "starcode_m5x5", "svane", "symphony", "symphony_sleep",
      "tempur_au", "tempur_curve", "timotion_ahf", "tranquil", "vmatbasic",
-     "wsilver_products", "yamada", "ormatek", "konfurt", "powersbedding", "intellibed",
+     "wsilver_products", "yamada", "ormatek", "konfurt", "softide", "powersbedding", "intellibed",
     }
 )
 
