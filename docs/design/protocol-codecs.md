@@ -605,6 +605,15 @@ its session controller rejects mixed recognized services rather than applying
 the app's independent handle-selection and encoding order to unknown hardware.
 See [Thrive Sleep](../beds/richmat.md#thrive-sleep).
 
+## Dunlopillo Remote
+
+Dunlopillo Remote 1.7 (11) reproduces all 24 control and two rename literals
+through the existing Keeson `frame` and `rename` encoders. Its own typed profile
+retains four independently selected layouts, held versus single versus pulsed
+release policies and timer notification offsets. The shared Keeson controller
+extension owns concrete characteristic selection and connection-bound cleanup;
+no new wire codec or name-based discovery rule is needed.
+
 ## AVEK Ergo System
 
 AVEK Ergo System 2.0.2 requires `codec/avek.py`: no existing carrier

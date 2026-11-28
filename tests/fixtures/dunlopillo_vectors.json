@@ -1,0 +1,214 @@
+[
+  {
+    "id": "K-00000000",
+    "inputs": {
+      "key": "0x00000000"
+    },
+    "expected_bytes": "e5fe160000000006"
+  },
+  {
+    "id": "K-00000001",
+    "inputs": {
+      "key": "0x00000001"
+    },
+    "expected_bytes": "e5fe160100000005"
+  },
+  {
+    "id": "K-00000002",
+    "inputs": {
+      "key": "0x00000002"
+    },
+    "expected_bytes": "e5fe160200000004"
+  },
+  {
+    "id": "K-00000004",
+    "inputs": {
+      "key": "0x00000004"
+    },
+    "expected_bytes": "e5fe160400000002"
+  },
+  {
+    "id": "K-00000008",
+    "inputs": {
+      "key": "0x00000008"
+    },
+    "expected_bytes": "e5fe1608000000fe"
+  },
+  {
+    "id": "K-00000010",
+    "inputs": {
+      "key": "0x00000010"
+    },
+    "expected_bytes": "e5fe1610000000f6"
+  },
+  {
+    "id": "K-00000020",
+    "inputs": {
+      "key": "0x00000020"
+    },
+    "expected_bytes": "e5fe1620000000e6"
+  },
+  {
+    "id": "K-00000040",
+    "inputs": {
+      "key": "0x00000040"
+    },
+    "expected_bytes": "e5fe1640000000c6"
+  },
+  {
+    "id": "K-00000080",
+    "inputs": {
+      "key": "0x00000080"
+    },
+    "expected_bytes": "e5fe168000000086"
+  },
+  {
+    "id": "K-00000100",
+    "inputs": {
+      "key": "0x00000100"
+    },
+    "expected_bytes": "e5fe160001000005"
+  },
+  {
+    "id": "K-00000200",
+    "inputs": {
+      "key": "0x00000200"
+    },
+    "expected_bytes": "e5fe160002000004"
+  },
+  {
+    "id": "K-00000400",
+    "inputs": {
+      "key": "0x00000400"
+    },
+    "expected_bytes": "e5fe160004000002"
+  },
+  {
+    "id": "K-00000800",
+    "inputs": {
+      "key": "0x00000800"
+    },
+    "expected_bytes": "e5fe1600080000fe"
+  },
+  {
+    "id": "K-00001000",
+    "inputs": {
+      "key": "0x00001000"
+    },
+    "expected_bytes": "e5fe1600100000f6"
+  },
+  {
+    "id": "K-00002000",
+    "inputs": {
+      "key": "0x00002000"
+    },
+    "expected_bytes": "e5fe1600200000e6"
+  },
+  {
+    "id": "K-00004000",
+    "inputs": {
+      "key": "0x00004000"
+    },
+    "expected_bytes": "e5fe1600400000c6"
+  },
+  {
+    "id": "K-00020000",
+    "inputs": {
+      "key": "0x00020000"
+    },
+    "expected_bytes": "e5fe160000020004"
+  },
+  {
+    "id": "K-00080000",
+    "inputs": {
+      "key": "0x00080000"
+    },
+    "expected_bytes": "e5fe1600000800fe"
+  },
+  {
+    "id": "K-00100000",
+    "inputs": {
+      "key": "0x00100000"
+    },
+    "expected_bytes": "e5fe1600001000f6"
+  },
+  {
+    "id": "K-00200000",
+    "inputs": {
+      "key": "0x00200000"
+    },
+    "expected_bytes": "e5fe1600002000e6"
+  },
+  {
+    "id": "K-00800000",
+    "inputs": {
+      "key": "0x00800000"
+    },
+    "expected_bytes": "e5fe160000800086"
+  },
+  {
+    "id": "K-01000000",
+    "inputs": {
+      "key": "0x01000000"
+    },
+    "expected_bytes": "e5fe160000000105"
+  },
+  {
+    "id": "K-08000000",
+    "inputs": {
+      "key": "0x08000000"
+    },
+    "expected_bytes": "e5fe1600000008fe"
+  },
+  {
+    "id": "K-08001000",
+    "inputs": {
+      "key": "0x08001000"
+    },
+    "expected_bytes": "e5fe1600100008ee"
+  },
+  {
+    "id": "NAME-Test",
+    "inputs": {
+      "name": "Test",
+      "charset": "ASCII-compatible default charset"
+    },
+    "expected_bytes": "ef025465737400000000000000000000006e"
+  },
+  {
+    "id": "NAME-Bed",
+    "inputs": {
+      "name": "Bed",
+      "charset": "ASCII-compatible default charset"
+    },
+    "expected_bytes": "ef0242656400000000000000000000000003"
+  },
+  {
+    "id": "N-16-0",
+    "inputs": {
+      "incoming_frame_hex": "00000000000000000000000000000100"
+    },
+    "expected_bytes": "00000000000000000000000000000100"
+  },
+  {
+    "id": "N-19-241",
+    "inputs": {
+      "incoming_frame_hex": "f1000000000000000000000000000200000000"
+    },
+    "expected_bytes": "f1000000000000000000000000000200000000"
+  },
+  {
+    "id": "N-19-0",
+    "inputs": {
+      "incoming_frame_hex": "00000000000000000000000000000003000000"
+    },
+    "expected_bytes": "00000000000000000000000000000003000000"
+  },
+  {
+    "id": "N-20-0",
+    "inputs": {
+      "incoming_frame_hex": "0000000000000000000000000000ff0000000000"
+    },
+    "expected_bytes": "0000000000000000000000000000ff0000000000"
+  }
+]
