@@ -1,0 +1,5084 @@
+[
+  {
+    "label": "HC800",
+    "product": "HC800",
+    "remote": "LTRM",
+    "normal": false,
+    "controls": [
+      [
+        "HeadUp",
+        36,
+        null,
+        true,
+        true,
+        0
+      ],
+      [
+        "HeadDown",
+        37,
+        null,
+        true,
+        true,
+        0
+      ],
+      [
+        "FootUp",
+        38,
+        null,
+        true,
+        true,
+        0
+      ],
+      [
+        "FootDown",
+        39,
+        null,
+        true,
+        true,
+        0
+      ],
+      [
+        "LumberUp",
+        63,
+        null,
+        true,
+        true,
+        0
+      ],
+      [
+        "LumberDown",
+        64,
+        null,
+        true,
+        true,
+        0
+      ],
+      [
+        "LightBoard",
+        80,
+        null,
+        false,
+        true,
+        0
+      ],
+      [
+        "BedLight",
+        60,
+        null,
+        false,
+        true,
+        0
+      ],
+      [
+        "MotorReset",
+        49,
+        null,
+        false,
+        true,
+        0
+      ],
+      [
+        "MassageHeadInstensityStrengthen",
+        76,
+        null,
+        false,
+        true,
+        0
+      ],
+      [
+        "MassageFootInstensityStrengthen",
+        78,
+        null,
+        false,
+        true,
+        0
+      ],
+      [
+        "MassageModeChange",
+        72,
+        null,
+        false,
+        true,
+        0
+      ],
+      [
+        "MassageModeAllOff",
+        94,
+        null,
+        false,
+        true,
+        0
+      ],
+      [
+        "Massage10MinuteTimer",
+        95,
+        null,
+        false,
+        true,
+        0
+      ],
+      [
+        "Massage20MinuteTimer",
+        99,
+        null,
+        false,
+        true,
+        0
+      ],
+      [
+        "Massage30MinuteTimer",
+        97,
+        null,
+        false,
+        true,
+        0
+      ],
+      [
+        "AntiSnoring",
+        70,
+        105,
+        false,
+        false,
+        0
+      ],
+      [
+        "ZeroGravity",
+        69,
+        102,
+        false,
+        false,
+        0
+      ],
+      [
+        "MemoryPosition1",
+        46,
+        43,
+        false,
+        false,
+        0
+      ]
+    ],
+    "alarm": {
+      "AntiSnoring": 70,
+      "ZeroGravity": 69,
+      "MemoryPosition1": 46
+    },
+    "clock": true,
+    "repeat": false,
+    "light": true,
+    "vibration": false,
+    "side": false,
+    "split": false,
+    "box_query": false,
+    "omitted": []
+  },
+  {
+    "label": "SN300",
+    "product": "SN300",
+    "remote": "B3RN",
+    "normal": false,
+    "controls": [
+      [
+        "HeadUp",
+        36,
+        null,
+        true,
+        true,
+        0
+      ],
+      [
+        "HeadDown",
+        37,
+        null,
+        true,
+        true,
+        0
+      ],
+      [
+        "FootUp",
+        38,
+        null,
+        true,
+        true,
+        0
+      ],
+      [
+        "FootDown",
+        39,
+        null,
+        true,
+        true,
+        0
+      ],
+      [
+        "HeadAndFootUp",
+        41,
+        null,
+        true,
+        true,
+        0
+      ],
+      [
+        "HeadAndFootDown",
+        42,
+        null,
+        true,
+        true,
+        0
+      ],
+      [
+        "LightBoard",
+        80,
+        null,
+        false,
+        true,
+        0
+      ],
+      [
+        "BedLight",
+        60,
+        null,
+        false,
+        true,
+        0
+      ],
+      [
+        "MotorReset",
+        49,
+        null,
+        false,
+        true,
+        0
+      ],
+      [
+        "MassageHeadInstensityStrengthen",
+        76,
+        null,
+        false,
+        true,
+        0
+      ],
+      [
+        "MassageFootInstensityStrengthen",
+        78,
+        null,
+        false,
+        true,
+        0
+      ],
+      [
+        "MassageModeChange",
+        72,
+        null,
+        false,
+        true,
+        0
+      ],
+      [
+        "MassageModeAllOff",
+        94,
+        null,
+        false,
+        true,
+        0
+      ],
+      [
+        "Massage10MinuteTimer",
+        95,
+        null,
+        false,
+        true,
+        0
+      ],
+      [
+        "Massage20MinuteTimer",
+        99,
+        null,
+        false,
+        true,
+        0
+      ],
+      [
+        "Massage30MinuteTimer",
+        97,
+        null,
+        false,
+        true,
+        0
+      ],
+      [
+        "ZeroGravity",
+        69,
+        102,
+        false,
+        false,
+        0
+      ],
+      [
+        "AntiSnoring",
+        70,
+        105,
+        false,
+        false,
+        0
+      ],
+      [
+        "TVPosition",
+        88,
+        100,
+        false,
+        false,
+        0
+      ],
+      [
+        "MemoryPosition1",
+        46,
+        43,
+        false,
+        false,
+        0
+      ]
+    ],
+    "alarm": {
+      "ZeroGravity": 69,
+      "AntiSnoring": 70,
+      "TVPosition": 88,
+      "MemoryPosition1": 46
+    },
+    "clock": true,
+    "repeat": false,
+    "light": true,
+    "vibration": false,
+    "side": false,
+    "split": false,
+    "box_query": false,
+    "omitted": []
+  },
+  {
+    "label": "SN500",
+    "product": "SN500",
+    "remote": "LTRM",
+    "normal": false,
+    "controls": [
+      [
+        "HeadUp",
+        36,
+        null,
+        true,
+        true,
+        0
+      ],
+      [
+        "HeadDown",
+        37,
+        null,
+        true,
+        true,
+        0
+      ],
+      [
+        "FootUp",
+        38,
+        null,
+        true,
+        true,
+        0
+      ],
+      [
+        "FootDown",
+        39,
+        null,
+        true,
+        true,
+        0
+      ],
+      [
+        "LumberUp",
+        63,
+        null,
+        true,
+        true,
+        0
+      ],
+      [
+        "LumberDown",
+        64,
+        null,
+        true,
+        true,
+        0
+      ],
+      [
+        "PillowUp",
+        65,
+        null,
+        true,
+        true,
+        0
+      ],
+      [
+        "PillowDown",
+        66,
+        null,
+        true,
+        true,
+        0
+      ],
+      [
+        "LightBoard",
+        80,
+        null,
+        false,
+        true,
+        0
+      ],
+      [
+        "BedLight",
+        60,
+        null,
+        false,
+        true,
+        0
+      ],
+      [
+        "MotorReset",
+        49,
+        null,
+        false,
+        true,
+        0
+      ],
+      [
+        "MassageHeadInstensityStrengthen",
+        76,
+        null,
+        false,
+        true,
+        0
+      ],
+      [
+        "MassageFootInstensityStrengthen",
+        78,
+        null,
+        false,
+        true,
+        0
+      ],
+      [
+        "MassageModeChange",
+        72,
+        null,
+        false,
+        true,
+        0
+      ],
+      [
+        "MassageModeAllOff",
+        94,
+        null,
+        false,
+        true,
+        0
+      ],
+      [
+        "Massage10MinuteTimer",
+        95,
+        null,
+        false,
+        true,
+        0
+      ],
+      [
+        "Massage20MinuteTimer",
+        99,
+        null,
+        false,
+        true,
+        0
+      ],
+      [
+        "Massage30MinuteTimer",
+        97,
+        null,
+        false,
+        true,
+        0
+      ],
+      [
+        "AntiSnoring",
+        70,
+        105,
+        false,
+        false,
+        0
+      ],
+      [
+        "ZeroGravity",
+        69,
+        102,
+        false,
+        false,
+        0
+      ]
+    ],
+    "alarm": {
+      "AntiSnoring": 70,
+      "ZeroGravity": 69
+    },
+    "clock": true,
+    "repeat": false,
+    "light": true,
+    "vibration": false,
+    "side": false,
+    "split": false,
+    "box_query": false,
+    "omitted": []
+  },
+  {
+    "label": "blue",
+    "product": "blue",
+    "remote": "LTRM",
+    "normal": false,
+    "controls": [
+      [
+        "HeadUp",
+        36,
+        null,
+        true,
+        true,
+        0
+      ],
+      [
+        "HeadDown",
+        37,
+        null,
+        true,
+        true,
+        0
+      ],
+      [
+        "FootUp",
+        38,
+        null,
+        true,
+        true,
+        0
+      ],
+      [
+        "FootDown",
+        39,
+        null,
+        true,
+        true,
+        0
+      ],
+      [
+        "LumberUp",
+        63,
+        null,
+        true,
+        true,
+        0
+      ],
+      [
+        "LumberDown",
+        64,
+        null,
+        true,
+        true,
+        0
+      ],
+      [
+        "PillowUp",
+        65,
+        null,
+        true,
+        true,
+        0
+      ],
+      [
+        "PillowDown",
+        66,
+        null,
+        true,
+        true,
+        0
+      ],
+      [
+        "MotorReset",
+        49,
+        null,
+        false,
+        true,
+        0
+      ],
+      [
+        "MassageHeadInstensityStrengthen",
+        76,
+        null,
+        false,
+        true,
+        0
+      ],
+      [
+        "MassageFootInstensityStrengthen",
+        78,
+        null,
+        false,
+        true,
+        0
+      ],
+      [
+        "MassageModeChange",
+        72,
+        null,
+        false,
+        true,
+        0
+      ],
+      [
+        "MassageModeAllOff",
+        94,
+        null,
+        false,
+        true,
+        0
+      ],
+      [
+        "Massage10MinuteTimer",
+        95,
+        null,
+        false,
+        true,
+        0
+      ],
+      [
+        "Massage20MinuteTimer",
+        99,
+        null,
+        false,
+        true,
+        0
+      ],
+      [
+        "Massage30MinuteTimer",
+        97,
+        null,
+        false,
+        true,
+        0
+      ],
+      [
+        "TVPosition",
+        88,
+        100,
+        false,
+        false,
+        0
+      ],
+      [
+        "ZeroGravity",
+        69,
+        102,
+        false,
+        false,
+        0
+      ],
+      [
+        "LoungePosition",
+        89,
+        101,
+        false,
+        false,
+        0
+      ],
+      [
+        "AntiSnoring",
+        70,
+        105,
+        false,
+        false,
+        0
+      ],
+      [
+        "MemoryPosition1",
+        46,
+        43,
+        false,
+        false,
+        0
+      ],
+      [
+        "MemoryPosition2",
+        47,
+        44,
+        false,
+        false,
+        0
+      ]
+    ],
+    "alarm": {
+      "TVPosition": 88,
+      "ZeroGravity": 69,
+      "LoungePosition": 89,
+      "AntiSnoring": 70,
+      "MemoryPosition1": 46,
+      "MemoryPosition2": 47
+    },
+    "clock": true,
+    "repeat": false,
+    "light": true,
+    "vibration": false,
+    "side": false,
+    "split": true,
+    "box_query": true,
+    "omitted": []
+  },
+  {
+    "label": "green",
+    "product": "green",
+    "remote": "HARM",
+    "normal": false,
+    "controls": [
+      [
+        "HeadUp",
+        36,
+        null,
+        true,
+        true,
+        0
+      ],
+      [
+        "HeadDown",
+        37,
+        null,
+        true,
+        true,
+        0
+      ],
+      [
+        "FootUp",
+        38,
+        null,
+        true,
+        true,
+        0
+      ],
+      [
+        "FootDown",
+        39,
+        null,
+        true,
+        true,
+        0
+      ],
+      [
+        "HeadAndFootUp",
+        41,
+        null,
+        true,
+        true,
+        0
+      ],
+      [
+        "HeadAndFootDown",
+        42,
+        null,
+        true,
+        true,
+        0
+      ],
+      [
+        "MotorReset",
+        49,
+        null,
+        false,
+        true,
+        0
+      ],
+      [
+        "MassageInstensityStrengthen",
+        52,
+        null,
+        false,
+        true,
+        0
+      ],
+      [
+        "MassageModeChange",
+        72,
+        null,
+        false,
+        true,
+        0
+      ],
+      [
+        "MassageSwitch",
+        111,
+        null,
+        false,
+        true,
+        0
+      ],
+      [
+        "Massage10MinuteTimer",
+        95,
+        null,
+        false,
+        true,
+        0
+      ],
+      [
+        "Massage20MinuteTimer",
+        99,
+        null,
+        false,
+        true,
+        0
+      ],
+      [
+        "Massage30MinuteTimer",
+        97,
+        null,
+        false,
+        true,
+        0
+      ],
+      [
+        "ZeroGravity",
+        69,
+        102,
+        false,
+        false,
+        0
+      ],
+      [
+        "TVPosition",
+        88,
+        100,
+        false,
+        false,
+        0
+      ],
+      [
+        "MemoryPosition1",
+        46,
+        43,
+        false,
+        false,
+        0
+      ],
+      [
+        "AntiSnoring",
+        70,
+        105,
+        false,
+        false,
+        0
+      ]
+    ],
+    "alarm": {
+      "ZeroGravity": 69,
+      "TVPosition": 88,
+      "MemoryPosition1": 46,
+      "AntiSnoring": 70
+    },
+    "clock": true,
+    "repeat": false,
+    "light": true,
+    "vibration": false,
+    "side": false,
+    "split": true,
+    "box_query": true,
+    "omitted": []
+  },
+  {
+    "label": "orange",
+    "product": "orange",
+    "remote": "JMRM",
+    "normal": false,
+    "controls": [
+      [
+        "HeadUp",
+        36,
+        null,
+        true,
+        true,
+        0
+      ],
+      [
+        "HeadDown",
+        37,
+        null,
+        true,
+        true,
+        0
+      ],
+      [
+        "FootUp",
+        38,
+        null,
+        true,
+        true,
+        0
+      ],
+      [
+        "FootDown",
+        39,
+        null,
+        true,
+        true,
+        0
+      ],
+      [
+        "HeadAndFootUp",
+        41,
+        null,
+        true,
+        true,
+        0
+      ],
+      [
+        "HeadAndFootDown",
+        42,
+        null,
+        true,
+        true,
+        0
+      ],
+      [
+        "MotorReset",
+        49,
+        null,
+        false,
+        true,
+        0
+      ],
+      [
+        "MassageInstensityStrengthen",
+        52,
+        null,
+        false,
+        true,
+        0
+      ],
+      [
+        "MassageModeChange",
+        72,
+        null,
+        false,
+        true,
+        0
+      ],
+      [
+        "MassageSwitch",
+        111,
+        null,
+        false,
+        true,
+        0
+      ],
+      [
+        "Massage10MinuteTimer",
+        95,
+        null,
+        false,
+        true,
+        0
+      ],
+      [
+        "Massage20MinuteTimer",
+        99,
+        null,
+        false,
+        true,
+        0
+      ],
+      [
+        "Massage30MinuteTimer",
+        97,
+        null,
+        false,
+        true,
+        0
+      ],
+      [
+        "ZeroGravity",
+        69,
+        102,
+        false,
+        false,
+        0
+      ],
+      [
+        "TVPosition",
+        88,
+        100,
+        false,
+        false,
+        0
+      ],
+      [
+        "MemoryPosition1",
+        46,
+        43,
+        false,
+        false,
+        0
+      ],
+      [
+        "AntiSnoring",
+        70,
+        105,
+        false,
+        false,
+        0
+      ]
+    ],
+    "alarm": {
+      "ZeroGravity": 69,
+      "TVPosition": 88,
+      "MemoryPosition1": 46,
+      "AntiSnoring": 70
+    },
+    "clock": true,
+    "repeat": false,
+    "light": true,
+    "vibration": false,
+    "side": true,
+    "split": true,
+    "box_query": true,
+    "omitted": []
+  },
+  {
+    "label": "yellow",
+    "product": "yellow",
+    "remote": "HBRM",
+    "normal": false,
+    "controls": [
+      [
+        "HeadUp",
+        36,
+        null,
+        true,
+        true,
+        0
+      ],
+      [
+        "HeadDown",
+        37,
+        null,
+        true,
+        true,
+        0
+      ],
+      [
+        "FootUp",
+        38,
+        null,
+        true,
+        true,
+        0
+      ],
+      [
+        "FootDown",
+        39,
+        null,
+        true,
+        true,
+        0
+      ],
+      [
+        "PillowUp",
+        63,
+        null,
+        true,
+        true,
+        0
+      ],
+      [
+        "PillowDown",
+        64,
+        null,
+        true,
+        true,
+        0
+      ],
+      [
+        "MotorReset",
+        49,
+        null,
+        false,
+        true,
+        0
+      ],
+      [
+        "MassageHeadInstensityStrengthen",
+        76,
+        null,
+        false,
+        true,
+        0
+      ],
+      [
+        "MassageFootInstensityStrengthen",
+        78,
+        null,
+        false,
+        true,
+        0
+      ],
+      [
+        "MassageModeChange",
+        72,
+        null,
+        false,
+        true,
+        0
+      ],
+      [
+        "MassageSwitch",
+        111,
+        null,
+        false,
+        true,
+        0
+      ],
+      [
+        "Massage10MinuteTimer",
+        95,
+        null,
+        false,
+        true,
+        0
+      ],
+      [
+        "Massage20MinuteTimer",
+        99,
+        null,
+        false,
+        true,
+        0
+      ],
+      [
+        "Massage30MinuteTimer",
+        97,
+        null,
+        false,
+        true,
+        0
+      ],
+      [
+        "ZeroGravity",
+        69,
+        102,
+        false,
+        false,
+        0
+      ],
+      [
+        "TVPosition",
+        88,
+        100,
+        false,
+        false,
+        0
+      ],
+      [
+        "MemoryPosition1",
+        46,
+        43,
+        false,
+        false,
+        0
+      ],
+      [
+        "MemoryPosition2",
+        47,
+        44,
+        false,
+        false,
+        0
+      ],
+      [
+        "AntiSnoring",
+        70,
+        105,
+        false,
+        false,
+        0
+      ]
+    ],
+    "alarm": {
+      "ZeroGravity": 69,
+      "TVPosition": 88,
+      "MemoryPosition1": 46,
+      "MemoryPosition2": 47,
+      "AntiSnoring": 70
+    },
+    "clock": true,
+    "repeat": false,
+    "light": true,
+    "vibration": false,
+    "side": false,
+    "split": false,
+    "box_query": false,
+    "omitted": []
+  },
+  {
+    "label": "AFEG300",
+    "product": "AFEG300",
+    "remote": "L5RN",
+    "normal": true,
+    "controls": [
+      [
+        "HeadUp",
+        36,
+        null,
+        true,
+        true,
+        0
+      ],
+      [
+        "HeadDown",
+        37,
+        null,
+        true,
+        true,
+        0
+      ],
+      [
+        "FootUp",
+        38,
+        null,
+        true,
+        true,
+        0
+      ],
+      [
+        "FootDown",
+        39,
+        null,
+        true,
+        true,
+        0
+      ],
+      [
+        "HeadAndFootUp",
+        41,
+        null,
+        true,
+        true,
+        0
+      ],
+      [
+        "HeadAndFootDown",
+        42,
+        null,
+        true,
+        true,
+        0
+      ],
+      [
+        "MotorReset",
+        49,
+        null,
+        false,
+        true,
+        0
+      ],
+      [
+        "BedLight",
+        60,
+        null,
+        false,
+        true,
+        0
+      ],
+      [
+        "MassageHeadInstensityStrengthen",
+        76,
+        null,
+        false,
+        true,
+        0
+      ],
+      [
+        "MassageFootInstensityStrengthen",
+        78,
+        null,
+        false,
+        true,
+        0
+      ],
+      [
+        "MassageModeChange",
+        72,
+        null,
+        false,
+        true,
+        0
+      ],
+      [
+        "MassageModeAllOff",
+        94,
+        null,
+        false,
+        true,
+        0
+      ],
+      [
+        "Massage10MinuteTimer",
+        95,
+        null,
+        false,
+        true,
+        0
+      ],
+      [
+        "Massage20MinuteTimer",
+        99,
+        null,
+        false,
+        true,
+        0
+      ],
+      [
+        "Massage30MinuteTimer",
+        97,
+        null,
+        false,
+        true,
+        0
+      ],
+      [
+        "LoungePosition",
+        89,
+        101,
+        false,
+        false,
+        0
+      ],
+      [
+        "ZeroGravity",
+        69,
+        102,
+        false,
+        false,
+        0
+      ],
+      [
+        "TVPosition",
+        88,
+        100,
+        false,
+        false,
+        0
+      ],
+      [
+        "MemoryPosition1",
+        46,
+        43,
+        false,
+        false,
+        0
+      ],
+      [
+        "CoaxingSleepMode",
+        134,
+        null,
+        false,
+        false,
+        0
+      ]
+    ],
+    "alarm": {
+      "LoungePosition": 89,
+      "ZeroGravity": 69,
+      "TVPosition": 88,
+      "MemoryPosition1": 46
+    },
+    "clock": true,
+    "repeat": true,
+    "light": false,
+    "vibration": false,
+    "side": false,
+    "split": false,
+    "box_query": false,
+    "omitted": []
+  },
+  {
+    "label": "AFEG300-SH",
+    "product": "AFEG300-SH",
+    "remote": "LPRN",
+    "normal": true,
+    "controls": [
+      [
+        "HeadUp",
+        36,
+        null,
+        true,
+        true,
+        0
+      ],
+      [
+        "HeadDown",
+        37,
+        null,
+        true,
+        true,
+        0
+      ],
+      [
+        "FootUp",
+        38,
+        null,
+        true,
+        true,
+        0
+      ],
+      [
+        "FootDown",
+        39,
+        null,
+        true,
+        true,
+        0
+      ],
+      [
+        "HeadAndFootUp",
+        41,
+        null,
+        true,
+        true,
+        0
+      ],
+      [
+        "HeadAndFootDown",
+        42,
+        null,
+        true,
+        true,
+        0
+      ],
+      [
+        "MotorReset",
+        49,
+        null,
+        false,
+        true,
+        0
+      ],
+      [
+        "BedLight",
+        60,
+        null,
+        false,
+        true,
+        0
+      ],
+      [
+        "SyncOn",
+        188,
+        null,
+        false,
+        false,
+        0
+      ],
+      [
+        "MassageHeadInstensityStrengthen",
+        76,
+        null,
+        false,
+        true,
+        0
+      ],
+      [
+        "MassageFootInstensityStrengthen",
+        78,
+        null,
+        false,
+        true,
+        0
+      ],
+      [
+        "MassageModeChange",
+        72,
+        null,
+        false,
+        true,
+        0
+      ],
+      [
+        "MassageModeAllOff",
+        94,
+        null,
+        false,
+        true,
+        0
+      ],
+      [
+        "Massage10MinuteTimer",
+        95,
+        null,
+        false,
+        true,
+        0
+      ],
+      [
+        "Massage20MinuteTimer",
+        99,
+        null,
+        false,
+        true,
+        0
+      ],
+      [
+        "Massage30MinuteTimer",
+        97,
+        null,
+        false,
+        true,
+        0
+      ],
+      [
+        "LoungePosition",
+        89,
+        101,
+        false,
+        false,
+        0
+      ],
+      [
+        "ZeroGravity",
+        69,
+        102,
+        false,
+        false,
+        0
+      ],
+      [
+        "TVPosition",
+        88,
+        100,
+        false,
+        false,
+        0
+      ],
+      [
+        "MemoryPosition1",
+        46,
+        43,
+        false,
+        false,
+        0
+      ],
+      [
+        "CoaxingSleepMode",
+        134,
+        null,
+        false,
+        false,
+        0
+      ]
+    ],
+    "alarm": {},
+    "clock": false,
+    "repeat": false,
+    "light": false,
+    "vibration": false,
+    "side": true,
+    "split": false,
+    "box_query": false,
+    "omitted": []
+  },
+  {
+    "label": "PB250",
+    "product": "PB250",
+    "remote": "VJRM",
+    "normal": true,
+    "controls": [
+      [
+        "HeadUp",
+        36,
+        null,
+        true,
+        true,
+        0
+      ],
+      [
+        "HeadDown",
+        37,
+        null,
+        true,
+        true,
+        0
+      ],
+      [
+        "FootUp",
+        38,
+        null,
+        true,
+        true,
+        0
+      ],
+      [
+        "FootDown",
+        39,
+        null,
+        true,
+        true,
+        0
+      ],
+      [
+        "MotorReset",
+        49,
+        null,
+        false,
+        true,
+        0
+      ],
+      [
+        "MemoryPosition1",
+        46,
+        43,
+        false,
+        false,
+        0
+      ]
+    ],
+    "alarm": {},
+    "clock": false,
+    "repeat": false,
+    "light": false,
+    "vibration": false,
+    "side": false,
+    "split": false,
+    "box_query": false,
+    "omitted": []
+  },
+  {
+    "label": "PB300",
+    "product": "PB300",
+    "remote": "FARM",
+    "normal": true,
+    "controls": [
+      [
+        "HeadUp",
+        36,
+        null,
+        true,
+        true,
+        0
+      ],
+      [
+        "HeadDown",
+        37,
+        null,
+        true,
+        true,
+        0
+      ],
+      [
+        "FootUp",
+        38,
+        null,
+        true,
+        true,
+        0
+      ],
+      [
+        "FootDown",
+        39,
+        null,
+        true,
+        true,
+        0
+      ],
+      [
+        "HeadAndFootUp",
+        41,
+        null,
+        true,
+        true,
+        0
+      ],
+      [
+        "HeadAndFootDown",
+        42,
+        null,
+        true,
+        true,
+        0
+      ],
+      [
+        "BedLight",
+        60,
+        null,
+        false,
+        true,
+        0
+      ],
+      [
+        "MotorReset",
+        49,
+        null,
+        false,
+        true,
+        0
+      ],
+      [
+        "MassageHeadInstensityStrengthen",
+        76,
+        null,
+        false,
+        true,
+        0
+      ],
+      [
+        "MassageFootInstensityStrengthen",
+        78,
+        null,
+        false,
+        true,
+        0
+      ],
+      [
+        "MassageModeChange",
+        72,
+        null,
+        false,
+        true,
+        0
+      ],
+      [
+        "MassageModeAllOff",
+        94,
+        null,
+        false,
+        true,
+        0
+      ],
+      [
+        "Massage10MinuteTimer",
+        95,
+        null,
+        false,
+        true,
+        0
+      ],
+      [
+        "Massage20MinuteTimer",
+        99,
+        null,
+        false,
+        true,
+        0
+      ],
+      [
+        "Massage30MinuteTimer",
+        97,
+        null,
+        false,
+        true,
+        0
+      ],
+      [
+        "TVPosition",
+        88,
+        100,
+        false,
+        false,
+        0
+      ],
+      [
+        "LoungePosition",
+        89,
+        101,
+        false,
+        false,
+        0
+      ],
+      [
+        "ZeroGravity",
+        69,
+        102,
+        false,
+        false,
+        0
+      ],
+      [
+        "MemoryPosition1",
+        46,
+        43,
+        false,
+        false,
+        0
+      ],
+      [
+        "MemoryPosition2",
+        47,
+        44,
+        false,
+        false,
+        0
+      ]
+    ],
+    "alarm": {},
+    "clock": false,
+    "repeat": false,
+    "light": false,
+    "vibration": false,
+    "side": false,
+    "split": false,
+    "box_query": false,
+    "omitted": []
+  },
+  {
+    "label": "PB325",
+    "product": "PB325",
+    "remote": "FARM",
+    "normal": true,
+    "controls": [
+      [
+        "HeadUp",
+        36,
+        null,
+        true,
+        true,
+        0
+      ],
+      [
+        "HeadDown",
+        37,
+        null,
+        true,
+        true,
+        0
+      ],
+      [
+        "FootUp",
+        38,
+        null,
+        true,
+        true,
+        0
+      ],
+      [
+        "FootDown",
+        39,
+        null,
+        true,
+        true,
+        0
+      ],
+      [
+        "HeadAndFootUp",
+        41,
+        null,
+        true,
+        true,
+        0
+      ],
+      [
+        "HeadAndFootDown",
+        42,
+        null,
+        true,
+        true,
+        0
+      ],
+      [
+        "BedLight",
+        60,
+        null,
+        false,
+        true,
+        0
+      ],
+      [
+        "MotorReset",
+        49,
+        null,
+        false,
+        true,
+        0
+      ],
+      [
+        "MassageHeadInstensityStrengthen",
+        76,
+        null,
+        false,
+        true,
+        0
+      ],
+      [
+        "MassageFootInstensityStrengthen",
+        78,
+        null,
+        false,
+        true,
+        0
+      ],
+      [
+        "MassageModeChange",
+        72,
+        null,
+        false,
+        true,
+        0
+      ],
+      [
+        "MassageModeAllOff",
+        94,
+        null,
+        false,
+        true,
+        0
+      ],
+      [
+        "Massage10MinuteTimer",
+        95,
+        null,
+        false,
+        true,
+        0
+      ],
+      [
+        "Massage20MinuteTimer",
+        99,
+        null,
+        false,
+        true,
+        0
+      ],
+      [
+        "Massage30MinuteTimer",
+        97,
+        null,
+        false,
+        true,
+        0
+      ],
+      [
+        "TVPosition",
+        88,
+        100,
+        false,
+        false,
+        0
+      ],
+      [
+        "AntiSnoring",
+        70,
+        105,
+        false,
+        false,
+        0
+      ],
+      [
+        "ZeroGravity",
+        69,
+        102,
+        false,
+        false,
+        0
+      ],
+      [
+        "MemoryPosition1",
+        46,
+        43,
+        false,
+        false,
+        0
+      ]
+    ],
+    "alarm": {
+      "TVPosition": 88,
+      "AntiSnoring": 70,
+      "ZeroGravity": 69,
+      "MemoryPosition1": 46
+    },
+    "clock": true,
+    "repeat": true,
+    "light": true,
+    "vibration": false,
+    "side": false,
+    "split": false,
+    "box_query": false,
+    "omitted": []
+  },
+  {
+    "label": "PB450",
+    "product": "PB450",
+    "remote": "MPRM",
+    "normal": true,
+    "controls": [
+      [
+        "HeadUp",
+        36,
+        null,
+        true,
+        true,
+        0
+      ],
+      [
+        "HeadDown",
+        37,
+        null,
+        true,
+        true,
+        0
+      ],
+      [
+        "FootUp",
+        38,
+        null,
+        true,
+        true,
+        0
+      ],
+      [
+        "FootDown",
+        39,
+        null,
+        true,
+        true,
+        0
+      ],
+      [
+        "LumberUp",
+        65,
+        null,
+        true,
+        true,
+        0
+      ],
+      [
+        "LumberDown",
+        66,
+        null,
+        true,
+        true,
+        0
+      ],
+      [
+        "LightBoard",
+        80,
+        null,
+        false,
+        true,
+        0
+      ],
+      [
+        "MotorReset",
+        49,
+        null,
+        false,
+        true,
+        0
+      ],
+      [
+        "MassageHeadInstensityStrengthen",
+        76,
+        null,
+        false,
+        true,
+        0
+      ],
+      [
+        "MassageFootInstensityStrengthen",
+        78,
+        null,
+        false,
+        true,
+        0
+      ],
+      [
+        "MassageModeChange",
+        72,
+        null,
+        false,
+        true,
+        0
+      ],
+      [
+        "MassageModeAllOff",
+        94,
+        null,
+        false,
+        true,
+        0
+      ],
+      [
+        "Massage10MinuteTimer",
+        95,
+        null,
+        false,
+        true,
+        0
+      ],
+      [
+        "Massage20MinuteTimer",
+        99,
+        null,
+        false,
+        true,
+        0
+      ],
+      [
+        "Massage30MinuteTimer",
+        97,
+        null,
+        false,
+        true,
+        0
+      ],
+      [
+        "ZeroGravity",
+        69,
+        102,
+        false,
+        false,
+        0
+      ],
+      [
+        "AntiSnoring",
+        70,
+        105,
+        false,
+        false,
+        0
+      ],
+      [
+        "MemoryPosition1",
+        46,
+        43,
+        false,
+        false,
+        0
+      ]
+    ],
+    "alarm": {
+      "ZeroGravity": 69,
+      "AntiSnoring": 70,
+      "MemoryPosition1": 46
+    },
+    "clock": true,
+    "repeat": false,
+    "light": true,
+    "vibration": false,
+    "side": false,
+    "split": false,
+    "box_query": false,
+    "omitted": []
+  },
+  {
+    "label": "PB450-SH",
+    "product": "PB450-SH",
+    "remote": "LVRN",
+    "normal": true,
+    "controls": [
+      [
+        "HeadUp",
+        36,
+        null,
+        true,
+        true,
+        0
+      ],
+      [
+        "HeadDown",
+        37,
+        null,
+        true,
+        true,
+        0
+      ],
+      [
+        "FootUp",
+        38,
+        null,
+        true,
+        true,
+        0
+      ],
+      [
+        "FootDown",
+        39,
+        null,
+        true,
+        true,
+        0
+      ],
+      [
+        "LumberUp",
+        63,
+        null,
+        true,
+        true,
+        0
+      ],
+      [
+        "LumberDown",
+        64,
+        null,
+        true,
+        true,
+        0
+      ],
+      [
+        "MotorReset",
+        49,
+        null,
+        false,
+        true,
+        0
+      ],
+      [
+        "LightBoard",
+        80,
+        null,
+        false,
+        true,
+        0
+      ],
+      [
+        "MassageHeadInstensityStrengthen",
+        76,
+        null,
+        false,
+        true,
+        0
+      ],
+      [
+        "MassageFootInstensityStrengthen",
+        78,
+        null,
+        false,
+        true,
+        0
+      ],
+      [
+        "MassageModeChange",
+        72,
+        null,
+        false,
+        true,
+        0
+      ],
+      [
+        "MassageModeAllOff",
+        94,
+        null,
+        false,
+        true,
+        0
+      ],
+      [
+        "Massage10MinuteTimer",
+        95,
+        null,
+        false,
+        true,
+        0
+      ],
+      [
+        "Massage20MinuteTimer",
+        99,
+        null,
+        false,
+        true,
+        0
+      ],
+      [
+        "Massage30MinuteTimer",
+        97,
+        null,
+        false,
+        true,
+        0
+      ],
+      [
+        "AntiSnoring",
+        70,
+        105,
+        false,
+        false,
+        0
+      ],
+      [
+        "ZeroGravity",
+        69,
+        102,
+        false,
+        false,
+        0
+      ],
+      [
+        "MemoryPosition1",
+        46,
+        43,
+        false,
+        false,
+        0
+      ]
+    ],
+    "alarm": {},
+    "clock": false,
+    "repeat": false,
+    "light": true,
+    "vibration": false,
+    "side": true,
+    "split": false,
+    "box_query": false,
+    "omitted": []
+  },
+  {
+    "label": "BJRN",
+    "product": "BJRN",
+    "remote": "BJRN",
+    "normal": false,
+    "controls": [
+      [
+        "HeadUp",
+        36,
+        null,
+        true,
+        true,
+        3000
+      ],
+      [
+        "HeadDown",
+        37,
+        null,
+        true,
+        true,
+        3000
+      ],
+      [
+        "FootUp",
+        38,
+        null,
+        true,
+        true,
+        3000
+      ],
+      [
+        "FootDown",
+        39,
+        null,
+        true,
+        true,
+        3000
+      ],
+      [
+        "HeadAndFootUp",
+        41,
+        null,
+        true,
+        true,
+        3000
+      ],
+      [
+        "HeadAndFootDown",
+        42,
+        null,
+        true,
+        true,
+        3000
+      ],
+      [
+        "LumberUp",
+        63,
+        null,
+        true,
+        true,
+        3000
+      ],
+      [
+        "LumberDown",
+        64,
+        null,
+        true,
+        true,
+        3000
+      ],
+      [
+        "PillowUp",
+        65,
+        null,
+        true,
+        true,
+        3000
+      ],
+      [
+        "PillowDown",
+        66,
+        null,
+        true,
+        true,
+        3000
+      ],
+      [
+        "BedLight",
+        60,
+        null,
+        false,
+        true,
+        3000
+      ],
+      [
+        "MotorReset",
+        49,
+        null,
+        true,
+        true,
+        3000
+      ],
+      [
+        "MemoryPosition1",
+        46,
+        43,
+        true,
+        false,
+        3000
+      ],
+      [
+        "MemoryPosition2",
+        47,
+        44,
+        true,
+        false,
+        3000
+      ],
+      [
+        "MemoryPosition3",
+        48,
+        45,
+        true,
+        false,
+        3000
+      ]
+    ],
+    "alarm": {},
+    "clock": false,
+    "repeat": false,
+    "light": false,
+    "vibration": false,
+    "side": false,
+    "split": false,
+    "box_query": false,
+    "omitted": []
+  },
+  {
+    "label": "BYRN",
+    "product": "BYRN",
+    "remote": "BYRN",
+    "normal": false,
+    "controls": [
+      [
+        "FootBoxUp",
+        36,
+        null,
+        true,
+        true,
+        0
+      ],
+      [
+        "FootBoxDown",
+        37,
+        null,
+        true,
+        true,
+        0
+      ]
+    ],
+    "alarm": {},
+    "clock": false,
+    "repeat": false,
+    "light": false,
+    "vibration": false,
+    "side": false,
+    "split": false,
+    "box_query": false,
+    "omitted": []
+  },
+  {
+    "label": "E3RM",
+    "product": "E3RM",
+    "remote": "E3RM",
+    "normal": false,
+    "controls": [
+      [
+        "HeadUp",
+        36,
+        null,
+        true,
+        true,
+        0
+      ],
+      [
+        "HeadDown",
+        37,
+        null,
+        true,
+        true,
+        0
+      ],
+      [
+        "FootUp",
+        38,
+        null,
+        true,
+        true,
+        0
+      ],
+      [
+        "FootDown",
+        39,
+        null,
+        true,
+        true,
+        0
+      ],
+      [
+        "HeadAndFootUp",
+        41,
+        null,
+        true,
+        true,
+        0
+      ],
+      [
+        "HeadAndFootDown",
+        42,
+        null,
+        true,
+        true,
+        0
+      ],
+      [
+        "BedLight",
+        60,
+        null,
+        false,
+        true,
+        0
+      ],
+      [
+        "SyncOn",
+        188,
+        null,
+        false,
+        false,
+        0
+      ],
+      [
+        "SyncOff",
+        189,
+        null,
+        false,
+        false,
+        0
+      ],
+      [
+        "MemoryPosition1",
+        46,
+        43,
+        true,
+        false,
+        0
+      ],
+      [
+        "MemoryPosition2",
+        47,
+        44,
+        true,
+        false,
+        0
+      ],
+      [
+        "MemoryPosition3",
+        48,
+        45,
+        true,
+        false,
+        0
+      ],
+      [
+        "MemoryPosition4",
+        178,
+        179,
+        true,
+        false,
+        0
+      ]
+    ],
+    "alarm": {},
+    "clock": false,
+    "repeat": false,
+    "light": false,
+    "vibration": false,
+    "side": false,
+    "split": false,
+    "box_query": false,
+    "omitted": [
+      "TileUp",
+      "TileDown"
+    ]
+  },
+  {
+    "label": "FARM",
+    "product": "FARM",
+    "remote": "FARM",
+    "normal": false,
+    "controls": [
+      [
+        "HeadUp",
+        36,
+        null,
+        true,
+        true,
+        0
+      ],
+      [
+        "HeadDown",
+        37,
+        null,
+        true,
+        true,
+        0
+      ],
+      [
+        "FootUp",
+        38,
+        null,
+        true,
+        true,
+        0
+      ],
+      [
+        "FootDown",
+        39,
+        null,
+        true,
+        true,
+        0
+      ],
+      [
+        "HeadAndFootUp",
+        41,
+        null,
+        true,
+        true,
+        0
+      ],
+      [
+        "HeadAndFootDown",
+        42,
+        null,
+        true,
+        true,
+        0
+      ],
+      [
+        "BedLight",
+        60,
+        null,
+        false,
+        true,
+        0
+      ],
+      [
+        "MotorReset",
+        49,
+        null,
+        false,
+        true,
+        0
+      ],
+      [
+        "MassageHeadInstensityStrengthen",
+        76,
+        null,
+        false,
+        true,
+        0
+      ],
+      [
+        "MassageFootInstensityStrengthen",
+        78,
+        null,
+        false,
+        true,
+        0
+      ],
+      [
+        "MassageModeChange",
+        72,
+        null,
+        false,
+        true,
+        0
+      ],
+      [
+        "MassageModeAllOff",
+        94,
+        null,
+        false,
+        true,
+        0
+      ],
+      [
+        "Massage10MinuteTimer",
+        95,
+        null,
+        false,
+        true,
+        0
+      ],
+      [
+        "Massage20MinuteTimer",
+        99,
+        null,
+        false,
+        true,
+        0
+      ],
+      [
+        "Massage30MinuteTimer",
+        97,
+        null,
+        false,
+        true,
+        0
+      ],
+      [
+        "TVPosition",
+        88,
+        100,
+        false,
+        false,
+        0
+      ],
+      [
+        "LoungePosition",
+        89,
+        101,
+        false,
+        false,
+        0
+      ],
+      [
+        "ZeroGravity",
+        69,
+        102,
+        false,
+        false,
+        0
+      ],
+      [
+        "MemoryPosition1",
+        46,
+        43,
+        false,
+        false,
+        0
+      ],
+      [
+        "MemoryPosition2",
+        47,
+        44,
+        false,
+        false,
+        0
+      ]
+    ],
+    "alarm": {},
+    "clock": false,
+    "repeat": false,
+    "light": false,
+    "vibration": false,
+    "side": false,
+    "split": false,
+    "box_query": false,
+    "omitted": []
+  },
+  {
+    "label": "HZRM",
+    "product": "HZRM",
+    "remote": "HZRM",
+    "normal": false,
+    "controls": [
+      [
+        "HeadUp",
+        36,
+        null,
+        true,
+        true,
+        0
+      ],
+      [
+        "HeadDown",
+        37,
+        null,
+        true,
+        true,
+        0
+      ],
+      [
+        "FootUp",
+        38,
+        null,
+        true,
+        true,
+        0
+      ],
+      [
+        "FootDown",
+        39,
+        null,
+        true,
+        true,
+        0
+      ],
+      [
+        "BedLight",
+        60,
+        null,
+        false,
+        true,
+        0
+      ],
+      [
+        "MotorReset",
+        49,
+        null,
+        true,
+        true,
+        0
+      ],
+      [
+        "MassageHeadInstensityStrengthen",
+        76,
+        null,
+        false,
+        true,
+        0
+      ],
+      [
+        "MassageFootInstensityStrengthen",
+        78,
+        null,
+        false,
+        true,
+        0
+      ],
+      [
+        "MassageModeChange",
+        72,
+        null,
+        false,
+        true,
+        0
+      ],
+      [
+        "MassageModeAllOff",
+        94,
+        null,
+        false,
+        true,
+        0
+      ],
+      [
+        "Massage10MinuteTimer",
+        95,
+        null,
+        false,
+        true,
+        0
+      ],
+      [
+        "Massage20MinuteTimer",
+        99,
+        null,
+        false,
+        true,
+        0
+      ],
+      [
+        "Massage30MinuteTimer",
+        97,
+        null,
+        false,
+        true,
+        0
+      ],
+      [
+        "TVPosition",
+        88,
+        null,
+        true,
+        false,
+        0
+      ],
+      [
+        "ZeroGravity",
+        69,
+        null,
+        true,
+        false,
+        0
+      ],
+      [
+        "MemoryPosition1",
+        46,
+        43,
+        true,
+        false,
+        0
+      ],
+      [
+        "MemoryPosition2",
+        47,
+        44,
+        true,
+        false,
+        0
+      ],
+      [
+        "MemoryPosition3",
+        48,
+        45,
+        true,
+        false,
+        0
+      ]
+    ],
+    "alarm": {},
+    "clock": false,
+    "repeat": false,
+    "light": false,
+    "vibration": false,
+    "side": false,
+    "split": false,
+    "box_query": false,
+    "omitted": []
+  },
+  {
+    "label": "JGRM",
+    "product": "JGRM",
+    "remote": "JGRM",
+    "normal": false,
+    "controls": [
+      [
+        "HeadUp",
+        36,
+        null,
+        true,
+        true,
+        0
+      ],
+      [
+        "HeadDown",
+        37,
+        null,
+        true,
+        true,
+        0
+      ],
+      [
+        "FootUp",
+        38,
+        null,
+        true,
+        true,
+        0
+      ],
+      [
+        "FootDown",
+        39,
+        null,
+        true,
+        true,
+        0
+      ],
+      [
+        "BedLight",
+        60,
+        null,
+        false,
+        true,
+        0
+      ],
+      [
+        "MotorReset",
+        49,
+        null,
+        true,
+        true,
+        0
+      ],
+      [
+        "MassageHeadInstensityStrengthen",
+        76,
+        null,
+        false,
+        true,
+        0
+      ],
+      [
+        "MassageFootInstensityStrengthen",
+        78,
+        null,
+        false,
+        true,
+        0
+      ],
+      [
+        "MassageModeChange",
+        72,
+        null,
+        false,
+        true,
+        0
+      ],
+      [
+        "MassageModeAllOff",
+        94,
+        null,
+        false,
+        true,
+        0
+      ],
+      [
+        "Massage10MinuteTimer",
+        95,
+        null,
+        false,
+        true,
+        0
+      ],
+      [
+        "Massage20MinuteTimer",
+        99,
+        null,
+        false,
+        true,
+        0
+      ],
+      [
+        "Massage30MinuteTimer",
+        97,
+        null,
+        false,
+        true,
+        0
+      ],
+      [
+        "TVPosition",
+        88,
+        null,
+        true,
+        false,
+        0
+      ],
+      [
+        "ZeroGravity",
+        69,
+        null,
+        true,
+        false,
+        0
+      ],
+      [
+        "AntiSnoring",
+        70,
+        null,
+        true,
+        false,
+        0
+      ],
+      [
+        "MemoryPosition1",
+        46,
+        43,
+        true,
+        false,
+        0
+      ],
+      [
+        "MemoryPosition2",
+        47,
+        44,
+        true,
+        false,
+        0
+      ]
+    ],
+    "alarm": {},
+    "clock": false,
+    "repeat": false,
+    "light": false,
+    "vibration": false,
+    "side": false,
+    "split": false,
+    "box_query": false,
+    "omitted": []
+  },
+  {
+    "label": "JHRM",
+    "product": "JHRM",
+    "remote": "JHRM",
+    "normal": false,
+    "controls": [
+      [
+        "HeadUp",
+        36,
+        null,
+        true,
+        true,
+        0
+      ],
+      [
+        "HeadDown",
+        37,
+        null,
+        true,
+        true,
+        0
+      ],
+      [
+        "FootUp",
+        38,
+        null,
+        true,
+        true,
+        0
+      ],
+      [
+        "FootDown",
+        39,
+        null,
+        true,
+        true,
+        0
+      ],
+      [
+        "MotorReset",
+        49,
+        null,
+        true,
+        true,
+        0
+      ],
+      [
+        "TVPosition",
+        88,
+        null,
+        true,
+        false,
+        0
+      ],
+      [
+        "ZeroGravity",
+        69,
+        null,
+        true,
+        false,
+        0
+      ],
+      [
+        "AntiSnoring",
+        70,
+        null,
+        true,
+        false,
+        0
+      ]
+    ],
+    "alarm": {},
+    "clock": false,
+    "repeat": false,
+    "light": false,
+    "vibration": false,
+    "side": false,
+    "split": false,
+    "box_query": false,
+    "omitted": []
+  },
+  {
+    "label": "JJRM",
+    "product": "JJRM",
+    "remote": "JJRM",
+    "normal": false,
+    "controls": [
+      [
+        "HeadUp",
+        36,
+        null,
+        true,
+        true,
+        0
+      ],
+      [
+        "HeadDown",
+        37,
+        null,
+        true,
+        true,
+        0
+      ],
+      [
+        "MotorReset",
+        49,
+        null,
+        true,
+        true,
+        0
+      ],
+      [
+        "TVPosition",
+        88,
+        null,
+        true,
+        false,
+        0
+      ]
+    ],
+    "alarm": {},
+    "clock": false,
+    "repeat": false,
+    "light": false,
+    "vibration": false,
+    "side": false,
+    "split": false,
+    "box_query": false,
+    "omitted": []
+  },
+  {
+    "label": "KZRM",
+    "product": "KZRM",
+    "remote": "KZRM",
+    "normal": false,
+    "controls": [
+      [
+        "HeadUp",
+        36,
+        null,
+        true,
+        true,
+        0
+      ],
+      [
+        "HeadDown",
+        37,
+        null,
+        true,
+        true,
+        0
+      ],
+      [
+        "FootUp",
+        38,
+        null,
+        true,
+        true,
+        0
+      ],
+      [
+        "FootDown",
+        39,
+        null,
+        true,
+        true,
+        0
+      ],
+      [
+        "BedLight",
+        60,
+        null,
+        false,
+        true,
+        0
+      ],
+      [
+        "MotorReset",
+        49,
+        null,
+        true,
+        true,
+        0
+      ],
+      [
+        "MassageHeadInstensityStrengthen",
+        76,
+        null,
+        false,
+        true,
+        0
+      ],
+      [
+        "MassageFootInstensityStrengthen",
+        78,
+        null,
+        false,
+        true,
+        0
+      ],
+      [
+        "MassageModeChange",
+        72,
+        null,
+        false,
+        true,
+        0
+      ],
+      [
+        "MassageModeAllOff",
+        94,
+        null,
+        false,
+        true,
+        0
+      ],
+      [
+        "Massage10MinuteTimer",
+        95,
+        null,
+        false,
+        true,
+        0
+      ],
+      [
+        "Massage20MinuteTimer",
+        99,
+        null,
+        false,
+        true,
+        0
+      ],
+      [
+        "Massage30MinuteTimer",
+        97,
+        null,
+        false,
+        true,
+        0
+      ],
+      [
+        "TVPosition",
+        88,
+        null,
+        true,
+        false,
+        0
+      ],
+      [
+        "ZeroGravity",
+        69,
+        null,
+        true,
+        false,
+        0
+      ],
+      [
+        "MemoryPosition1",
+        46,
+        43,
+        true,
+        false,
+        0
+      ],
+      [
+        "MemoryPosition2",
+        47,
+        44,
+        true,
+        false,
+        0
+      ],
+      [
+        "MemoryPosition3",
+        48,
+        45,
+        true,
+        false,
+        0
+      ]
+    ],
+    "alarm": {},
+    "clock": false,
+    "repeat": false,
+    "light": false,
+    "vibration": false,
+    "side": false,
+    "split": false,
+    "box_query": false,
+    "omitted": []
+  },
+  {
+    "label": "L2RM",
+    "product": "L2RM",
+    "remote": "L2RM",
+    "normal": false,
+    "controls": [
+      [
+        "HeadUp",
+        36,
+        null,
+        true,
+        true,
+        0
+      ],
+      [
+        "HeadDown",
+        37,
+        null,
+        true,
+        true,
+        0
+      ],
+      [
+        "FootUp",
+        38,
+        null,
+        true,
+        true,
+        0
+      ],
+      [
+        "FootDown",
+        39,
+        null,
+        true,
+        true,
+        0
+      ],
+      [
+        "HeadAndFootUp",
+        41,
+        null,
+        true,
+        true,
+        0
+      ],
+      [
+        "MotorReset",
+        49,
+        null,
+        true,
+        true,
+        0
+      ],
+      [
+        "TVPosition",
+        88,
+        null,
+        true,
+        false,
+        0
+      ],
+      [
+        "ZeroGravity",
+        69,
+        null,
+        true,
+        false,
+        0
+      ]
+    ],
+    "alarm": {},
+    "clock": false,
+    "repeat": false,
+    "light": false,
+    "vibration": false,
+    "side": false,
+    "split": false,
+    "box_query": false,
+    "omitted": []
+  },
+  {
+    "label": "VJRM",
+    "product": "VJRM",
+    "remote": "VJRM",
+    "normal": false,
+    "controls": [
+      [
+        "HeadUp",
+        36,
+        null,
+        true,
+        true,
+        0
+      ],
+      [
+        "HeadDown",
+        37,
+        null,
+        true,
+        true,
+        0
+      ],
+      [
+        "FootUp",
+        38,
+        null,
+        true,
+        true,
+        0
+      ],
+      [
+        "FootDown",
+        39,
+        null,
+        true,
+        true,
+        0
+      ],
+      [
+        "MotorReset",
+        49,
+        null,
+        false,
+        true,
+        0
+      ],
+      [
+        "MemoryPosition1",
+        46,
+        43,
+        false,
+        false,
+        0
+      ]
+    ],
+    "alarm": {},
+    "clock": false,
+    "repeat": false,
+    "light": false,
+    "vibration": false,
+    "side": false,
+    "split": false,
+    "box_query": false,
+    "omitted": []
+  },
+  {
+    "label": "ABM10",
+    "product": "ABM10",
+    "remote": "UTRM",
+    "normal": false,
+    "controls": [
+      [
+        "HeadUp",
+        36,
+        null,
+        true,
+        true,
+        0
+      ],
+      [
+        "HeadDown",
+        37,
+        null,
+        true,
+        true,
+        0
+      ],
+      [
+        "FootUp",
+        38,
+        null,
+        true,
+        true,
+        0
+      ],
+      [
+        "FootDown",
+        39,
+        null,
+        true,
+        true,
+        0
+      ],
+      [
+        "HeadAndFootUp",
+        41,
+        null,
+        true,
+        true,
+        0
+      ],
+      [
+        "HeadAndFootDown",
+        42,
+        null,
+        true,
+        true,
+        0
+      ],
+      [
+        "BedLight",
+        60,
+        null,
+        false,
+        true,
+        0
+      ],
+      [
+        "MotorReset",
+        49,
+        null,
+        false,
+        true,
+        0
+      ],
+      [
+        "MassageHeadInstensityStrengthen",
+        76,
+        null,
+        false,
+        true,
+        0
+      ],
+      [
+        "MassageFootInstensityStrengthen",
+        78,
+        null,
+        false,
+        true,
+        0
+      ],
+      [
+        "MassageModeChange",
+        72,
+        null,
+        false,
+        true,
+        0
+      ],
+      [
+        "MassageModeAllOff",
+        94,
+        null,
+        false,
+        true,
+        0
+      ],
+      [
+        "Massage10MinuteTimer",
+        95,
+        null,
+        false,
+        true,
+        0
+      ],
+      [
+        "Massage20MinuteTimer",
+        99,
+        null,
+        false,
+        true,
+        0
+      ],
+      [
+        "Massage30MinuteTimer",
+        97,
+        null,
+        false,
+        true,
+        0
+      ],
+      [
+        "ZeroGravity",
+        69,
+        102,
+        false,
+        false,
+        0
+      ],
+      [
+        "AntiSnoring",
+        70,
+        105,
+        false,
+        false,
+        0
+      ],
+      [
+        "MemoryPosition1",
+        46,
+        43,
+        false,
+        false,
+        0
+      ],
+      [
+        "MemoryPosition2",
+        47,
+        44,
+        false,
+        false,
+        0
+      ]
+    ],
+    "alarm": {},
+    "clock": false,
+    "repeat": false,
+    "light": true,
+    "vibration": false,
+    "side": false,
+    "split": false,
+    "box_query": false,
+    "omitted": []
+  },
+  {
+    "label": "Series 1",
+    "product": "Series 1",
+    "remote": "GURN",
+    "normal": false,
+    "controls": [
+      [
+        "HeadUp",
+        36,
+        null,
+        true,
+        true,
+        0
+      ],
+      [
+        "HeadDown",
+        37,
+        null,
+        true,
+        true,
+        0
+      ],
+      [
+        "FootUp",
+        38,
+        null,
+        true,
+        true,
+        0
+      ],
+      [
+        "FootDown",
+        39,
+        null,
+        true,
+        true,
+        0
+      ],
+      [
+        "HeadAndFootUp",
+        41,
+        null,
+        true,
+        true,
+        0
+      ],
+      [
+        "HeadAndFootDown",
+        42,
+        null,
+        true,
+        true,
+        0
+      ],
+      [
+        "MotorReset",
+        49,
+        null,
+        false,
+        true,
+        0
+      ],
+      [
+        "ZeroGravity",
+        69,
+        102,
+        false,
+        false,
+        0
+      ],
+      [
+        "AntiSnoring",
+        70,
+        105,
+        false,
+        false,
+        0
+      ],
+      [
+        "TVPosition",
+        88,
+        100,
+        false,
+        false,
+        0
+      ],
+      [
+        "LoungePosition",
+        89,
+        101,
+        false,
+        false,
+        0
+      ],
+      [
+        "MemoryPosition1",
+        46,
+        43,
+        false,
+        false,
+        0
+      ]
+    ],
+    "alarm": {},
+    "clock": false,
+    "repeat": false,
+    "light": false,
+    "vibration": false,
+    "side": false,
+    "split": false,
+    "box_query": false,
+    "omitted": []
+  },
+  {
+    "label": "Series 2",
+    "product": "Series 2",
+    "remote": "GVRN",
+    "normal": false,
+    "controls": [
+      [
+        "HeadUp",
+        36,
+        null,
+        true,
+        true,
+        0
+      ],
+      [
+        "HeadDown",
+        37,
+        null,
+        true,
+        true,
+        0
+      ],
+      [
+        "FootUp",
+        38,
+        null,
+        true,
+        true,
+        0
+      ],
+      [
+        "FootDown",
+        39,
+        null,
+        true,
+        true,
+        0
+      ],
+      [
+        "HeadAndFootUp",
+        41,
+        null,
+        true,
+        true,
+        0
+      ],
+      [
+        "HeadAndFootDown",
+        42,
+        null,
+        true,
+        true,
+        0
+      ],
+      [
+        "MotorReset",
+        49,
+        null,
+        false,
+        true,
+        0
+      ],
+      [
+        "BedLight",
+        60,
+        null,
+        false,
+        true,
+        0
+      ],
+      [
+        "MassageHeadInstensityStrengthen",
+        76,
+        null,
+        false,
+        true,
+        0
+      ],
+      [
+        "MassageFootInstensityStrengthen",
+        78,
+        null,
+        false,
+        true,
+        0
+      ],
+      [
+        "MassageModeAllOff",
+        94,
+        null,
+        false,
+        true,
+        0
+      ],
+      [
+        "MassageModeChange",
+        72,
+        null,
+        false,
+        true,
+        0
+      ],
+      [
+        "Massage10MinuteTimer",
+        95,
+        null,
+        false,
+        true,
+        0
+      ],
+      [
+        "Massage20MinuteTimer",
+        99,
+        null,
+        false,
+        true,
+        0
+      ],
+      [
+        "Massage30MinuteTimer",
+        97,
+        null,
+        false,
+        true,
+        0
+      ],
+      [
+        "ZeroGravity",
+        69,
+        102,
+        false,
+        false,
+        0
+      ],
+      [
+        "AntiSnoring",
+        70,
+        105,
+        false,
+        false,
+        0
+      ],
+      [
+        "MemoryPosition1",
+        46,
+        43,
+        false,
+        false,
+        0
+      ],
+      [
+        "MemoryPosition2",
+        47,
+        44,
+        false,
+        false,
+        0
+      ]
+    ],
+    "alarm": {},
+    "clock": false,
+    "repeat": false,
+    "light": false,
+    "vibration": false,
+    "side": false,
+    "split": false,
+    "box_query": false,
+    "omitted": []
+  },
+  {
+    "label": "Series 3",
+    "product": "Series 3",
+    "remote": "GWRN",
+    "normal": false,
+    "controls": [
+      [
+        "HeadUp",
+        36,
+        null,
+        true,
+        true,
+        0
+      ],
+      [
+        "HeadDown",
+        37,
+        null,
+        true,
+        true,
+        0
+      ],
+      [
+        "FootUp",
+        38,
+        null,
+        true,
+        true,
+        0
+      ],
+      [
+        "FootDown",
+        39,
+        null,
+        true,
+        true,
+        0
+      ],
+      [
+        "LumberUp",
+        63,
+        null,
+        true,
+        true,
+        0
+      ],
+      [
+        "LumberDown",
+        64,
+        null,
+        true,
+        true,
+        0
+      ],
+      [
+        "PillowUp",
+        65,
+        null,
+        true,
+        true,
+        0
+      ],
+      [
+        "PillowDown",
+        66,
+        null,
+        true,
+        true,
+        0
+      ],
+      [
+        "MotorReset",
+        49,
+        null,
+        false,
+        true,
+        0
+      ],
+      [
+        "MassageHeadInstensityStrengthen",
+        76,
+        null,
+        false,
+        true,
+        0
+      ],
+      [
+        "MassageFootInstensityStrengthen",
+        78,
+        null,
+        false,
+        true,
+        0
+      ],
+      [
+        "MassageModeAllOff",
+        94,
+        null,
+        false,
+        true,
+        0
+      ],
+      [
+        "MassageModeChange",
+        72,
+        null,
+        false,
+        true,
+        0
+      ],
+      [
+        "Massage10MinuteTimer",
+        95,
+        null,
+        false,
+        true,
+        0
+      ],
+      [
+        "Massage20MinuteTimer",
+        99,
+        null,
+        false,
+        true,
+        0
+      ],
+      [
+        "Massage30MinuteTimer",
+        97,
+        null,
+        false,
+        true,
+        0
+      ],
+      [
+        "ZeroGravity",
+        69,
+        102,
+        false,
+        false,
+        0
+      ],
+      [
+        "AntiSnoring",
+        70,
+        105,
+        false,
+        false,
+        0
+      ],
+      [
+        "MemoryPosition1",
+        46,
+        43,
+        false,
+        false,
+        0
+      ]
+    ],
+    "alarm": {
+      "ZeroGravity": 69,
+      "AntiSnoring": 70,
+      "MemoryPosition1": 46
+    },
+    "clock": true,
+    "repeat": true,
+    "light": true,
+    "vibration": false,
+    "side": false,
+    "split": false,
+    "box_query": false,
+    "omitted": []
+  },
+  {
+    "label": "ABF03",
+    "product": "ABF03",
+    "remote": "BNRN",
+    "normal": false,
+    "controls": [
+      [
+        "HeadUp",
+        36,
+        null,
+        true,
+        true,
+        0
+      ],
+      [
+        "HeadDown",
+        37,
+        null,
+        true,
+        true,
+        0
+      ],
+      [
+        "FootUp",
+        38,
+        null,
+        true,
+        true,
+        0
+      ],
+      [
+        "FootDown",
+        39,
+        null,
+        true,
+        true,
+        0
+      ],
+      [
+        "HeadAndFootUp",
+        41,
+        null,
+        true,
+        true,
+        0
+      ],
+      [
+        "HeadAndFootDown",
+        42,
+        null,
+        true,
+        true,
+        0
+      ],
+      [
+        "BedLight",
+        60,
+        null,
+        false,
+        true,
+        0
+      ],
+      [
+        "MotorReset",
+        49,
+        null,
+        false,
+        true,
+        0
+      ],
+      [
+        "MassageHeadInstensityStrengthen",
+        76,
+        null,
+        false,
+        true,
+        0
+      ],
+      [
+        "MassageFootInstensityStrengthen",
+        78,
+        null,
+        false,
+        true,
+        0
+      ],
+      [
+        "MassageModeChange",
+        72,
+        null,
+        false,
+        true,
+        0
+      ],
+      [
+        "MassageModeAllOff",
+        94,
+        null,
+        false,
+        true,
+        0
+      ],
+      [
+        "Massage10MinuteTimer",
+        95,
+        null,
+        false,
+        true,
+        0
+      ],
+      [
+        "Massage20MinuteTimer",
+        99,
+        null,
+        false,
+        true,
+        0
+      ],
+      [
+        "Massage30MinuteTimer",
+        97,
+        null,
+        false,
+        true,
+        0
+      ],
+      [
+        "ZeroGravity",
+        69,
+        102,
+        false,
+        false,
+        0
+      ],
+      [
+        "AntiSnoring",
+        70,
+        105,
+        false,
+        false,
+        0
+      ],
+      [
+        "TVPosition",
+        88,
+        100,
+        false,
+        false,
+        0
+      ],
+      [
+        "LoungePosition",
+        89,
+        101,
+        false,
+        false,
+        0
+      ],
+      [
+        "MemoryPosition1",
+        46,
+        43,
+        false,
+        false,
+        0
+      ]
+    ],
+    "alarm": {
+      "ZeroGravity": 69,
+      "AntiSnoring": 70,
+      "TVPosition": 88,
+      "LoungePosition": 89,
+      "MemoryPosition1": 46
+    },
+    "clock": true,
+    "repeat": false,
+    "light": true,
+    "vibration": false,
+    "side": false,
+    "split": false,
+    "box_query": false,
+    "omitted": []
+  },
+  {
+    "label": "ABF07",
+    "product": "ABF07",
+    "remote": "DNRN",
+    "normal": false,
+    "controls": [
+      [
+        "HeadUp",
+        36,
+        null,
+        true,
+        true,
+        0
+      ],
+      [
+        "HeadDown",
+        37,
+        null,
+        true,
+        true,
+        0
+      ],
+      [
+        "FootUp",
+        38,
+        null,
+        true,
+        true,
+        0
+      ],
+      [
+        "FootDown",
+        39,
+        null,
+        true,
+        true,
+        0
+      ],
+      [
+        "HeadAndFootUp",
+        41,
+        null,
+        true,
+        true,
+        0
+      ],
+      [
+        "HeadAndFootDown",
+        42,
+        null,
+        true,
+        true,
+        0
+      ],
+      [
+        "MotorReset",
+        49,
+        null,
+        false,
+        true,
+        0
+      ],
+      [
+        "MassageHeadInstensityStrengthen",
+        76,
+        null,
+        false,
+        true,
+        0
+      ],
+      [
+        "MassageFootInstensityStrengthen",
+        78,
+        null,
+        false,
+        true,
+        0
+      ],
+      [
+        "MassageModeChange",
+        72,
+        null,
+        false,
+        true,
+        0
+      ],
+      [
+        "MassageModeAllOff",
+        94,
+        null,
+        false,
+        true,
+        0
+      ],
+      [
+        "Massage10MinuteTimer",
+        95,
+        null,
+        false,
+        true,
+        0
+      ],
+      [
+        "Massage20MinuteTimer",
+        99,
+        null,
+        false,
+        true,
+        0
+      ],
+      [
+        "Massage30MinuteTimer",
+        97,
+        null,
+        false,
+        true,
+        0
+      ],
+      [
+        "ZeroGravity",
+        69,
+        102,
+        false,
+        false,
+        0
+      ],
+      [
+        "AntiSnoring",
+        70,
+        105,
+        false,
+        false,
+        0
+      ],
+      [
+        "TVPosition",
+        88,
+        100,
+        false,
+        false,
+        0
+      ],
+      [
+        "LoungePosition",
+        89,
+        101,
+        false,
+        false,
+        0
+      ],
+      [
+        "MemoryPosition1",
+        46,
+        43,
+        false,
+        false,
+        0
+      ]
+    ],
+    "alarm": {
+      "ZeroGravity": 69,
+      "AntiSnoring": 70,
+      "TVPosition": 88,
+      "LoungePosition": 89,
+      "MemoryPosition1": 46
+    },
+    "clock": true,
+    "repeat": true,
+    "light": true,
+    "vibration": false,
+    "side": false,
+    "split": false,
+    "box_query": false,
+    "omitted": []
+  },
+  {
+    "label": "NUPG400",
+    "product": "NUPG400",
+    "remote": "BVRN",
+    "normal": false,
+    "controls": [
+      [
+        "HeadUp",
+        36,
+        null,
+        true,
+        true,
+        0
+      ],
+      [
+        "HeadDown",
+        37,
+        null,
+        true,
+        true,
+        0
+      ],
+      [
+        "FootUp",
+        38,
+        null,
+        true,
+        true,
+        0
+      ],
+      [
+        "FootDown",
+        39,
+        null,
+        true,
+        true,
+        0
+      ],
+      [
+        "PillowUp",
+        63,
+        null,
+        true,
+        true,
+        0
+      ],
+      [
+        "PillowDown",
+        64,
+        null,
+        true,
+        true,
+        0
+      ],
+      [
+        "MotorReset",
+        49,
+        null,
+        false,
+        true,
+        0
+      ],
+      [
+        "MassageHeadInstensityStrengthen",
+        76,
+        null,
+        false,
+        true,
+        0
+      ],
+      [
+        "MassageFootInstensityStrengthen",
+        78,
+        null,
+        false,
+        true,
+        0
+      ],
+      [
+        "MassageModeChange",
+        72,
+        null,
+        false,
+        true,
+        0
+      ],
+      [
+        "MassageModeAllOff",
+        94,
+        null,
+        false,
+        true,
+        0
+      ],
+      [
+        "Massage10MinuteTimer",
+        95,
+        null,
+        false,
+        true,
+        0
+      ],
+      [
+        "Massage20MinuteTimer",
+        99,
+        null,
+        false,
+        true,
+        0
+      ],
+      [
+        "Massage30MinuteTimer",
+        97,
+        null,
+        false,
+        true,
+        0
+      ],
+      [
+        "ZeroGravity",
+        69,
+        102,
+        false,
+        false,
+        0
+      ],
+      [
+        "AntiSnoring",
+        70,
+        105,
+        false,
+        false,
+        0
+      ],
+      [
+        "TVPosition",
+        88,
+        100,
+        false,
+        false,
+        0
+      ],
+      [
+        "MemoryPosition1",
+        46,
+        43,
+        false,
+        false,
+        0
+      ],
+      [
+        "MemoryPosition2",
+        47,
+        44,
+        false,
+        false,
+        0
+      ]
+    ],
+    "alarm": {},
+    "clock": false,
+    "repeat": false,
+    "light": false,
+    "vibration": false,
+    "side": false,
+    "split": false,
+    "box_query": false,
+    "omitted": []
+  },
+  {
+    "label": "VIP 3.0",
+    "product": "VIP 3.0",
+    "remote": "",
+    "normal": false,
+    "controls": [
+      [
+        "HeadUp",
+        36,
+        null,
+        true,
+        true,
+        0
+      ],
+      [
+        "HeadDown",
+        37,
+        null,
+        true,
+        true,
+        0
+      ],
+      [
+        "FootUp",
+        38,
+        null,
+        true,
+        true,
+        0
+      ],
+      [
+        "FootDown",
+        39,
+        null,
+        true,
+        true,
+        0
+      ],
+      [
+        "HeadAndFootUp",
+        41,
+        null,
+        true,
+        true,
+        0
+      ],
+      [
+        "HeadAndFootDown",
+        42,
+        null,
+        true,
+        true,
+        0
+      ],
+      [
+        "BedLight",
+        60,
+        null,
+        false,
+        true,
+        0
+      ],
+      [
+        "MotorReset",
+        49,
+        null,
+        false,
+        true,
+        0
+      ],
+      [
+        "MassageHeadInstensityStrengthen",
+        76,
+        null,
+        false,
+        true,
+        0
+      ],
+      [
+        "MassageFootInstensityStrengthen",
+        78,
+        null,
+        false,
+        true,
+        0
+      ],
+      [
+        "MassageModeChange",
+        72,
+        null,
+        false,
+        true,
+        0
+      ],
+      [
+        "MassageModeAllOff",
+        94,
+        null,
+        false,
+        true,
+        0
+      ],
+      [
+        "Massage10MinuteTimer",
+        95,
+        null,
+        false,
+        true,
+        0
+      ],
+      [
+        "Massage20MinuteTimer",
+        99,
+        null,
+        false,
+        true,
+        0
+      ],
+      [
+        "Massage30MinuteTimer",
+        97,
+        null,
+        false,
+        true,
+        0
+      ],
+      [
+        "TVPosition",
+        88,
+        100,
+        false,
+        false,
+        0
+      ],
+      [
+        "LoungePosition",
+        89,
+        101,
+        false,
+        false,
+        0
+      ],
+      [
+        "ZeroGravity",
+        69,
+        102,
+        false,
+        false,
+        0
+      ],
+      [
+        "MemoryPosition1",
+        46,
+        43,
+        false,
+        false,
+        0
+      ],
+      [
+        "MemoryPosition2",
+        47,
+        44,
+        false,
+        false,
+        0
+      ]
+    ],
+    "alarm": {
+      "TVPosition": 88,
+      "LoungePosition": 89,
+      "ZeroGravity": 69,
+      "MemoryPosition1": 46,
+      "MemoryPosition2": 47
+    },
+    "clock": true,
+    "repeat": true,
+    "light": true,
+    "vibration": false,
+    "side": false,
+    "split": false,
+    "box_query": false,
+    "omitted": []
+  },
+  {
+    "label": "VIP 3.0-SH",
+    "product": "VIP 3.0-SH",
+    "remote": "",
+    "normal": false,
+    "controls": [
+      [
+        "HeadUp",
+        36,
+        null,
+        true,
+        true,
+        0
+      ],
+      [
+        "HeadDown",
+        37,
+        null,
+        true,
+        true,
+        0
+      ],
+      [
+        "FootUp",
+        38,
+        null,
+        true,
+        true,
+        0
+      ],
+      [
+        "FootDown",
+        39,
+        null,
+        true,
+        true,
+        0
+      ],
+      [
+        "HeadAndFootUp",
+        41,
+        null,
+        true,
+        true,
+        0
+      ],
+      [
+        "HeadAndFootDown",
+        42,
+        null,
+        true,
+        true,
+        0
+      ],
+      [
+        "BedLight",
+        60,
+        null,
+        false,
+        true,
+        0
+      ],
+      [
+        "MotorReset",
+        49,
+        null,
+        false,
+        true,
+        0
+      ],
+      [
+        "MassageHeadInstensityStrengthen",
+        76,
+        null,
+        false,
+        true,
+        0
+      ],
+      [
+        "MassageFootInstensityStrengthen",
+        78,
+        null,
+        false,
+        true,
+        0
+      ],
+      [
+        "MassageModeChange",
+        72,
+        null,
+        false,
+        true,
+        0
+      ],
+      [
+        "MassageModeAllOff",
+        94,
+        null,
+        false,
+        true,
+        0
+      ],
+      [
+        "Massage10MinuteTimer",
+        95,
+        null,
+        false,
+        true,
+        0
+      ],
+      [
+        "Massage20MinuteTimer",
+        99,
+        null,
+        false,
+        true,
+        0
+      ],
+      [
+        "Massage30MinuteTimer",
+        97,
+        null,
+        false,
+        true,
+        0
+      ],
+      [
+        "TVPosition",
+        88,
+        100,
+        false,
+        false,
+        0
+      ],
+      [
+        "LoungePosition",
+        89,
+        101,
+        false,
+        false,
+        0
+      ],
+      [
+        "ZeroGravity",
+        69,
+        102,
+        false,
+        false,
+        0
+      ],
+      [
+        "MemoryPosition1",
+        46,
+        43,
+        false,
+        false,
+        0
+      ],
+      [
+        "MemoryPosition2",
+        47,
+        44,
+        false,
+        false,
+        0
+      ]
+    ],
+    "alarm": {
+      "TVPosition": 88,
+      "LoungePosition": 89,
+      "ZeroGravity": 69,
+      "MemoryPosition1": 46,
+      "MemoryPosition2": 47
+    },
+    "clock": true,
+    "repeat": true,
+    "light": true,
+    "vibration": false,
+    "side": true,
+    "split": false,
+    "box_query": false,
+    "omitted": []
+  }
+]

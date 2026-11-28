@@ -2931,3 +2931,12 @@ The dashboard card's automatic hold release calls `stop_all` with the original
 ends only that admitted hold and runs its own release cleanup; an expired hold or
 a replaced Bluetooth connection receives no new STOP frame. An ordinary
 `stop_all` call without those fields remains an explicit bed-wide Stop.
+
+### Flexx Motion repeating alarms
+
+Use shared `set_alarm` to create or replace a repeating alarm in slots 1–7,
+with a wake action from the selected model. Refresh the bed's alarm list before
+`flexx_motion_enable_alarm` (`alarm_number`, `enabled`) or
+`flexx_motion_delete_alarm` (`alarm_number`). Both actions take `device_id`,
+require a fresh current record and preserve its other fields. They target one
+physical bed without an explicit side. See [Flexx Motion](beds/richmat.md#flexx-motion).

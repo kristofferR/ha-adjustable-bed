@@ -317,6 +317,8 @@ from .profiles.comfort_enhancement3 import CHOICES_WITH_CODE, REMOTE_CODE, REMOT
 from .profiles.comfort_enhancement3 import resolve as resolve_apex
 from .profiles.dreamsense import CHOICES as DREAMSENSE_CHOICES
 from .profiles.dreamsense import PROFILES as DREAMSENSE_PROFILES
+from .profiles.flexx_motion import CHOICES as FLEXX_CHOICES
+from .profiles.flexx_motion import PROFILES as FLEXX_PROFILES
 from .profiles.jerome_adjustable_base import PRODUCT_CHOICES as JEROME_ADJUSTABLE_BASE_PRODUCTS
 from .profiles.likimio import ABM10 as LIKIMIO_ABM10
 from .profiles.likimio import CHOICES as LIKIMIO_CHOICES
@@ -425,6 +427,7 @@ _OWNED_BY_BED_TYPE: Final[dict[str, frozenset[str]]] = {
     BED_TYPE_OKIMIKI: _APP_DEFINED - {CONF_PROTOCOL_VARIANT},
     BED_TYPE_LIKIMIO: _APP_DEFINED - {CONF_PROTOCOL_VARIANT},
     "dreamotion_smart": GENERIC_FIELDS - {CONF_MOTOR_PULSE_COUNT},
+    "flexx_motion": _APP_DEFINED - {CONF_PROTOCOL_VARIANT},
     "awmotion": _APP_DEFINED - {CONF_PROTOCOL_VARIANT, CONF_MOTOR_PULSE_COUNT},
     "muuegm": _APP_DEFINED - {CONF_PROTOCOL_VARIANT, CONF_MOTOR_PULSE_COUNT},
     "dreamsense": _APP_DEFINED - {CONF_PROTOCOL_VARIANT, CONF_MOTOR_PULSE_COUNT},
@@ -3795,6 +3798,16 @@ SETUP_PROFILES: Final[dict[str, SetupProfile]] = {
         title=lambda _data: "MUUEGM",
     ),
     # The app's product sets every control, so its one row asks it.
+    "flexx_motion": SetupProfile(
+        owns={CONF_MOTOR_COUNT: SET_BY_PROFILE, CONF_HAS_MASSAGE: SET_BY_PROFILE,
+              CONF_DISABLE_ANGLE_SENSING: True, CONF_MOTOR_PULSE_DELAY_MS: 100},
+        questions=(Question(CONF_PROTOCOL_VARIANT, FLEXX_CHOICES, REQUIRED, searchable=True),),
+        derive=lambda data: {
+            CONF_MOTOR_COUNT: FLEXX_PROFILES[str(data[CONF_PROTOCOL_VARIANT])].motor_count,
+            CONF_HAS_MASSAGE: any(a.action.startswith("Massage") for a in FLEXX_PROFILES[str(data[CONF_PROTOCOL_VARIANT])].controls),
+        },
+        title=lambda _data: "Flexx Motion",
+    ),
     "awmotion": SetupProfile(
         owns={CONF_MOTOR_COUNT: SET_BY_PROFILE, CONF_HAS_MASSAGE: True,
               CONF_DISABLE_ANGLE_SENSING: True, CONF_MOTOR_PULSE_DELAY_MS: 100},

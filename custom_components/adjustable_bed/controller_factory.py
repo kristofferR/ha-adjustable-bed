@@ -485,6 +485,7 @@ _BUILDERS: Final[dict[str, _BuilderSpec]] = {
     "majestichome": _BuilderSpec("majestichome.controller"),
     BED_TYPE_OKIMIKI: _BuilderSpec("okimiki.controller"),
     BED_TYPE_LIKIMIO: _BuilderSpec("dreamsense.likimio"),
+    "flexx_motion": _BuilderSpec("dreamsense.flexx_motion"),
     "awmotion": _BuilderSpec("dreamsense.awmotion"),
     "dreamsense": _BuilderSpec("dreamsense.controller"),
     "muuegm": _BuilderSpec("dreamsense.muuegm"),

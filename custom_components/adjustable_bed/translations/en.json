@@ -7941,6 +7941,19 @@
       }
     },
     "select": {
+      "flexx_motion_color": {
+        "name": "Light color",
+        "state": {
+          "yellow": "Yellow",
+          "green": "Green",
+          "sky_blue": "Sky blue",
+          "blue": "Blue",
+          "violet": "Violet",
+          "white": "White",
+          "red": "Red",
+          "orange": "Orange"
+        }
+      },
         "active_sleep_speed": {
           "name": "Movement speed",
           "state": {
@@ -9204,6 +9217,33 @@
         },
         "enabled": {
           "name": "Enabled"
+        }
+      }
+    },
+    "flexx_motion_enable_alarm": {
+      "name": "Flexx Motion, turn an alarm on or off",
+      "description": "Enable or disable a repeating alarm read from the current bed connection.",
+      "fields": {
+        "device_id": {
+          "name": "Device"
+        },
+        "alarm_number": {
+          "name": "Alarm number"
+        },
+        "enabled": {
+          "name": "Enabled"
+        }
+      }
+    },
+    "flexx_motion_delete_alarm": {
+      "name": "Flexx Motion, delete an alarm",
+      "description": "Delete a repeating alarm read from the current bed connection.",
+      "fields": {
+        "device_id": {
+          "name": "Device"
+        },
+        "alarm_number": {
+          "name": "Alarm number"
         }
       }
     },
@@ -14405,10 +14445,10 @@
       "message": "The bed connection or selected layout changed. Try the action again."
     },
     "dreamsense_product": {
-      "message": "Choose the product saved in Dream Sense Bed."
+      "message": "Choose the product saved in the bed app."
     },
     "dreamsense_transport": {
-      "message": "The bed did not provide a writable Dream Sense command endpoint and notifications."
+      "message": "The bed did not provide a writable command endpoint and notifications."
     },
     "dreamsense_session": {
       "message": "The bed connection or selected product changed. Try the action again."
@@ -14420,7 +14460,7 @@
       "message": "Target the physical bed for this setting, without a side."
     },
     "dreamsense_action": {
-      "message": "Choose a control or setting offered by this Dream Sense product."
+      "message": "Choose a control or setting offered by this bed product."
     },
     "dreamsense_capability": {
       "message": "The bed must report support for this feature on the current connection first."
@@ -14429,7 +14469,7 @@
       "message": "The bed did not return its alarm list. Try again."
     },
     "dreamsense_alarm_record": {
-      "message": "Choose an existing alarm number from the current bed alarm list. Creating a new record is unavailable."
+      "message": "Refresh the bed alarm list and choose a current alarm number."
     },
     "alarm_slot_required": {
       "message": "Choose the existing alarm number for {device_name}."
