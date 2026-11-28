@@ -67,6 +67,7 @@ from .const import (
     BED_TYPE_DOUBLESLEEP,
     BED_TYPE_DREAMOTION_SMART,
     BED_TYPE_DUNLOPILLO,
+    BED_TYPE_DYNASTY_BASE_A,
     BED_TYPE_ENSO2,
     BED_TYPE_ERGOBED,
     BED_TYPE_ESHINE,
@@ -2527,6 +2528,22 @@ def _dunlopillo_settings(data: Mapping[str, Any]) -> Mapping[str, Any]:
             CONF_DISABLE_ANGLE_SENSING: True, CONF_MOTOR_PULSE_DELAY_MS: REFRESH_MS}
 
 
+def _dynasty_base_a_choices(_data: Mapping[str, Any]) -> Mapping[str, str]:
+    from .profiles.dynasty_base_a import CHOICES
+
+    return CHOICES
+
+
+def _dynasty_base_a_settings(data: Mapping[str, Any]) -> Mapping[str, Any]:
+    from .profiles.dynasty_base_a import LAYOUTS, REFRESH_MS
+
+    axes = LAYOUTS.get(data.get(CONF_PROTOCOL_VARIANT, "40"))
+    return {} if axes is None else {
+        CONF_MOTOR_COUNT: len(axes), CONF_HAS_MASSAGE: True,
+        CONF_DISABLE_ANGLE_SENSING: True, CONF_MOTOR_PULSE_DELAY_MS: REFRESH_MS,
+    }
+
+
 def _junasleep_choices(_data: Mapping[str, Any]) -> Mapping[str, str]:
     from .profiles.junasleep import CHOICES
 
@@ -3632,6 +3649,13 @@ SETUP_PROFILES: Final[dict[str, SetupProfile]] = {
         derive=_kingkoil_settings,
     ),
     BED_TYPE_DUNLOPILLO: _asking(BED_TYPE_DUNLOPILLO, questions=(Question(CONF_PROTOCOL_VARIANT, _dunlopillo_choices, "b2"),), derive=_dunlopillo_settings),
+    BED_TYPE_DYNASTY_BASE_A: _asking(
+        BED_TYPE_DYNASTY_BASE_A,
+        questions=(Question(CONF_PROTOCOL_VARIANT, _dynasty_base_a_choices),),
+        owns={CONF_MOTOR_COUNT: SET_BY_PROFILE, CONF_HAS_MASSAGE: True,
+              CONF_DISABLE_ANGLE_SENSING: True, CONF_MOTOR_PULSE_DELAY_MS: SET_BY_PROFILE},
+        derive=_dynasty_base_a_settings,
+    ),
     BED_TYPE_JUNASLEEP: _asking(BED_TYPE_JUNASLEEP, questions=(Question(CONF_PROTOCOL_VARIANT, _junasleep_choices),), derive=_junasleep_settings),
     BED_TYPE_SOMOS: _asking(
         BED_TYPE_SOMOS,
