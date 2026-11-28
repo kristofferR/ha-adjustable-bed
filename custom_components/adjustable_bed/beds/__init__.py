@@ -20,6 +20,7 @@ if TYPE_CHECKING:
     from .baseremote.controller import BaseRemoteController as BaseRemoteController
     from .bedgear.controller import BedgearController as BedgearController
     from .bedgear.ergobed import ErgoBedController as ErgoBedController
+    from .bedgear.vivasleep import VivaSleepController as VivaSleepController
     from .bedjet_powerlayer import BedJetPowerLayerController as BedJetPowerLayerController
     from .bedsense import BedSenseController as BedSenseController
     from .bf_cherish.controller import BfCherishController as BfCherishController
@@ -344,6 +345,7 @@ _EXPORT_MODULES = {
     "MotionBedController": "motion_bed.controller",
     "BedgearController": "bedgear.controller",
     "ErgoBedController": "bedgear.ergobed",
+    "VivaSleepController": "bedgear.vivasleep",
     "MotoSleepController": "motosleep",
     "RoncoMotionController": "ronco_motion.controller",
     "OctoController": "octo.controller",

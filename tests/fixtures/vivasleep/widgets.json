@@ -1,0 +1,1262 @@
+[
+  {
+    "panel": "panel_a",
+    "va": "0x5a2070",
+    "action": "Head up",
+    "command_input": "$K",
+    "held": "true",
+    "tap_up_write": "false",
+    "release": "Cancel periodic and call send_stop ($b five times at0/30/60/90/120ms), also on pointer cancellation"
+  },
+  {
+    "panel": "panel_a",
+    "va": "0x5a20f8",
+    "action": "Foot up",
+    "command_input": "$M",
+    "held": "true",
+    "tap_up_write": "false",
+    "release": "Cancel periodic and call send_stop ($b five times at0/30/60/90/120ms), also on pointer cancellation"
+  },
+  {
+    "panel": "panel_a",
+    "va": "0x5a21b0",
+    "action": "Actuator movement, physical mapping in product_matrix",
+    "command_input": "$p if name[13]==H else $P",
+    "held": "true",
+    "tap_up_write": "false",
+    "release": "Cancel periodic and call send_stop ($b five times at0/30/60/90/120ms), also on pointer cancellation"
+  },
+  {
+    "panel": "panel_a",
+    "va": "0x5a2800",
+    "action": "Head down",
+    "command_input": "$L",
+    "held": "true",
+    "tap_up_write": "false",
+    "release": "Cancel periodic and call send_stop ($b five times at0/30/60/90/120ms), also on pointer cancellation"
+  },
+  {
+    "panel": "panel_a",
+    "va": "0x5a2888",
+    "action": "Foot down",
+    "command_input": "$N",
+    "held": "true",
+    "tap_up_write": "false",
+    "release": "Cancel periodic and call send_stop ($b five times at0/30/60/90/120ms), also on pointer cancellation"
+  },
+  {
+    "panel": "panel_a",
+    "va": "0x5a2940",
+    "action": "Actuator movement, physical mapping in product_matrix",
+    "command_input": "$q if name[13]==H else $Q",
+    "held": "true",
+    "tap_up_write": "false",
+    "release": "Cancel periodic and call send_stop ($b five times at0/30/60/90/120ms), also on pointer cancellation"
+  },
+  {
+    "panel": "panel_a",
+    "va": "0x5a2b3c",
+    "action": "Flat/home",
+    "command_input": "$O",
+    "held": "true",
+    "tap_up_write": "false",
+    "release": "Cancel periodic; if fewer than5 ticks, generic tail repeats SAME command at0/100/200ms; cancellation has no tail or $b"
+  },
+  {
+    "panel": "panel_a",
+    "va": "0x5a2d1c",
+    "action": "Anti-snore",
+    "command_input": "$R",
+    "held": "true",
+    "tap_up_write": "false",
+    "release": "Cancel periodic; if fewer than5 ticks, generic tail repeats SAME command at0/100/200ms; cancellation has no tail or $b"
+  },
+  {
+    "panel": "panel_a",
+    "va": "0x5a2d88",
+    "action": "TV",
+    "command_input": "$S",
+    "held": "true",
+    "tap_up_write": "false",
+    "release": "Cancel periodic; if fewer than5 ticks, generic tail repeats SAME command at0/100/200ms; cancellation has no tail or $b"
+  },
+  {
+    "panel": "panel_a",
+    "va": "0x5a2df4",
+    "action": "Zero gravity",
+    "command_input": "$T",
+    "held": "true",
+    "tap_up_write": "false",
+    "release": "Cancel periodic; if fewer than5 ticks, generic tail repeats SAME command at0/100/200ms; cancellation has no tail or $b"
+  },
+  {
+    "panel": "panel_a",
+    "va": "0x5a2f9c",
+    "action": "Memory1 recall; program1 in saving mode",
+    "command_input": "$U",
+    "held": "NOT(field_37@0x5a2f88)",
+    "tap_up_write": "field_37@0x5a2f88",
+    "release": "Cancel periodic and run custom UI/save-mode callback; no $b and no generic short-release tail"
+  },
+  {
+    "panel": "panel_a",
+    "va": "0x5a3030",
+    "action": "Memory2 recall; program2 in saving mode",
+    "command_input": "$V",
+    "held": "NOT(field_37@0x5a2f88)",
+    "tap_up_write": "field_37@0x5a2f88",
+    "release": "Cancel periodic and run custom UI/save-mode callback; no $b and no generic short-release tail"
+  },
+  {
+    "panel": "panel_a",
+    "va": "0x5a30e8",
+    "action": "Under-bed light toggle; long press selects saving mode",
+    "command_input": "$A",
+    "held": "false",
+    "tap_up_write": "true",
+    "release": "No release command; use shared image_button flags"
+  },
+  {
+    "panel": "panel_d",
+    "va": "0x5a3f84",
+    "action": "Head up",
+    "command_input": "$K",
+    "held": "true",
+    "tap_up_write": "false",
+    "release": "Cancel periodic and call send_stop ($b five times at0/30/60/90/120ms), also on pointer cancellation"
+  },
+  {
+    "panel": "panel_d",
+    "va": "0x5a400c",
+    "action": "Foot up",
+    "command_input": "$M",
+    "held": "true",
+    "tap_up_write": "false",
+    "release": "Cancel periodic and call send_stop ($b five times at0/30/60/90/120ms), also on pointer cancellation"
+  },
+  {
+    "panel": "panel_d",
+    "va": "0x5a4094",
+    "action": "Actuator movement, physical mapping in product_matrix",
+    "command_input": "$P",
+    "held": "true",
+    "tap_up_write": "false",
+    "release": "Cancel periodic and call send_stop ($b five times at0/30/60/90/120ms), also on pointer cancellation"
+  },
+  {
+    "panel": "panel_d",
+    "va": "0x5a46e8",
+    "action": "Head down",
+    "command_input": "$L",
+    "held": "true",
+    "tap_up_write": "false",
+    "release": "Cancel periodic and call send_stop ($b five times at0/30/60/90/120ms), also on pointer cancellation"
+  },
+  {
+    "panel": "panel_d",
+    "va": "0x5a4770",
+    "action": "Foot down",
+    "command_input": "$N",
+    "held": "true",
+    "tap_up_write": "false",
+    "release": "Cancel periodic and call send_stop ($b five times at0/30/60/90/120ms), also on pointer cancellation"
+  },
+  {
+    "panel": "panel_d",
+    "va": "0x5a47f8",
+    "action": "Actuator movement, physical mapping in product_matrix",
+    "command_input": "$Q",
+    "held": "true",
+    "tap_up_write": "false",
+    "release": "Cancel periodic and call send_stop ($b five times at0/30/60/90/120ms), also on pointer cancellation"
+  },
+  {
+    "panel": "panel_d",
+    "va": "0x5a49b8",
+    "action": "Flat/home",
+    "command_input": "$O",
+    "held": "true",
+    "tap_up_write": "false",
+    "release": "Cancel periodic; if fewer than5 ticks, generic tail repeats SAME command at0/100/200ms; cancellation has no tail or $b"
+  },
+  {
+    "panel": "panel_d",
+    "va": "0x5a4bb8",
+    "action": "Memory1 recall; program1 in saving mode",
+    "command_input": "$U",
+    "held": "NOT(field_37@0x5a4ba4)",
+    "tap_up_write": "field_37@0x5a4ba4",
+    "release": "Cancel periodic and run custom UI/save-mode callback; no $b and no generic short-release tail"
+  },
+  {
+    "panel": "panel_d",
+    "va": "0x5a4c4c",
+    "action": "Memory2 recall; program2 in saving mode",
+    "command_input": "$V",
+    "held": "NOT(field_37@0x5a4ba4)",
+    "tap_up_write": "field_37@0x5a4ba4",
+    "release": "Cancel periodic and run custom UI/save-mode callback; no $b and no generic short-release tail"
+  },
+  {
+    "panel": "panel_d",
+    "va": "0x5a4d08",
+    "action": "Under-bed light toggle; long press selects saving mode",
+    "command_input": "$A",
+    "held": "false",
+    "tap_up_write": "true",
+    "release": "No release command; use shared image_button flags"
+  },
+  {
+    "panel": "panel_d",
+    "va": "0x5a4ef0",
+    "action": "Head massage cycle",
+    "command_input": "$C",
+    "held": "false",
+    "tap_up_write": "false",
+    "release": "No release command; use shared image_button flags"
+  },
+  {
+    "panel": "panel_d",
+    "va": "0x5a4f58",
+    "action": "Stop massage",
+    "command_input": "$D",
+    "held": "false",
+    "tap_up_write": "false",
+    "release": "No release command; use shared image_button flags"
+  },
+  {
+    "panel": "panel_d",
+    "va": "0x5a4fc0",
+    "action": "Foot massage cycle",
+    "command_input": "$B",
+    "held": "false",
+    "tap_up_write": "false",
+    "release": "No release command; use shared image_button flags"
+  },
+  {
+    "panel": "panel_e",
+    "va": "0x5a589c",
+    "action": "Head up",
+    "command_input": "$K",
+    "held": "true",
+    "tap_up_write": "false",
+    "release": "Cancel periodic and call send_stop ($b five times at0/30/60/90/120ms), also on pointer cancellation"
+  },
+  {
+    "panel": "panel_e",
+    "va": "0x5a5904",
+    "action": "Head down",
+    "command_input": "$L",
+    "held": "true",
+    "tap_up_write": "false",
+    "release": "Cancel periodic and call send_stop ($b five times at0/30/60/90/120ms), also on pointer cancellation"
+  },
+  {
+    "panel": "panel_e",
+    "va": "0x5a5aa8",
+    "action": "Under-bed light toggle; long press selects saving mode",
+    "command_input": "$A",
+    "held": "false",
+    "tap_up_write": "true",
+    "release": "No release command; use shared image_button flags"
+  },
+  {
+    "panel": "panel_e",
+    "va": "0x5a5b28",
+    "action": "Anti-snore",
+    "command_input": "$R",
+    "held": "true",
+    "tap_up_write": "false",
+    "release": "Cancel periodic and run custom UI/save-mode callback; no $b and no generic short-release tail"
+  },
+  {
+    "panel": "panel_eight",
+    "va": "0x5a606c",
+    "action": "Head up",
+    "command_input": "$K",
+    "held": "true",
+    "tap_up_write": "false",
+    "release": "Cancel periodic and call send_stop ($b five times at0/30/60/90/120ms), also on pointer cancellation"
+  },
+  {
+    "panel": "panel_eight",
+    "va": "0x5a60f4",
+    "action": "Foot up",
+    "command_input": "$M",
+    "held": "true",
+    "tap_up_write": "false",
+    "release": "Cancel periodic and call send_stop ($b five times at0/30/60/90/120ms), also on pointer cancellation"
+  },
+  {
+    "panel": "panel_eight",
+    "va": "0x5a627c",
+    "action": "Flat/home",
+    "command_input": "$O",
+    "held": "true",
+    "tap_up_write": "false",
+    "release": "Cancel periodic; if fewer than5 ticks, generic tail repeats SAME command at0/100/200ms; cancellation has no tail or $b"
+  },
+  {
+    "panel": "panel_eight",
+    "va": "0x5a63e8",
+    "action": "Head down",
+    "command_input": "$L",
+    "held": "true",
+    "tap_up_write": "false",
+    "release": "Cancel periodic and call send_stop ($b five times at0/30/60/90/120ms), also on pointer cancellation"
+  },
+  {
+    "panel": "panel_eight",
+    "va": "0x5a6470",
+    "action": "Foot down",
+    "command_input": "$N",
+    "held": "true",
+    "tap_up_write": "false",
+    "release": "Cancel periodic and call send_stop ($b five times at0/30/60/90/120ms), also on pointer cancellation"
+  },
+  {
+    "panel": "panel_eight",
+    "va": "0x5a663c",
+    "action": "Anti-snore",
+    "command_input": "$R",
+    "held": "true",
+    "tap_up_write": "false",
+    "release": "Cancel periodic; if fewer than5 ticks, generic tail repeats SAME command at0/100/200ms; cancellation has no tail or $b"
+  },
+  {
+    "panel": "panel_eight",
+    "va": "0x5a66a8",
+    "action": "TV",
+    "command_input": "$S",
+    "held": "true",
+    "tap_up_write": "false",
+    "release": "Cancel periodic; if fewer than5 ticks, generic tail repeats SAME command at0/100/200ms; cancellation has no tail or $b"
+  },
+  {
+    "panel": "panel_eight",
+    "va": "0x5a6714",
+    "action": "Zero gravity",
+    "command_input": "$T",
+    "held": "true",
+    "tap_up_write": "false",
+    "release": "Cancel periodic; if fewer than5 ticks, generic tail repeats SAME command at0/100/200ms; cancellation has no tail or $b"
+  },
+  {
+    "panel": "panel_eight",
+    "va": "0x5a68bc",
+    "action": "Memory1 recall; program1 in saving mode",
+    "command_input": "$U",
+    "held": "NOT(field_37@0x5a68a8)",
+    "tap_up_write": "field_37@0x5a68a8",
+    "release": "Cancel periodic and run custom UI/save-mode callback; no $b and no generic short-release tail"
+  },
+  {
+    "panel": "panel_eight",
+    "va": "0x5a6950",
+    "action": "Memory2 recall; program2 in saving mode",
+    "command_input": "$V",
+    "held": "NOT(field_37@0x5a68a8)",
+    "tap_up_write": "field_37@0x5a68a8",
+    "release": "Cancel periodic and run custom UI/save-mode callback; no $b and no generic short-release tail"
+  },
+  {
+    "panel": "panel_eight",
+    "va": "0x5a6a08",
+    "action": "Under-bed light toggle; long press selects saving mode",
+    "command_input": "$A",
+    "held": "false",
+    "tap_up_write": "true",
+    "release": "No release command; use shared image_button flags"
+  },
+  {
+    "panel": "panel_five",
+    "va": "0x5a71c4",
+    "action": "Head up",
+    "command_input": "$K",
+    "held": "true",
+    "tap_up_write": "false",
+    "release": "Cancel periodic and call send_stop ($b five times at0/30/60/90/120ms), also on pointer cancellation"
+  },
+  {
+    "panel": "panel_five",
+    "va": "0x5a722c",
+    "action": "Head down",
+    "command_input": "$L",
+    "held": "true",
+    "tap_up_write": "false",
+    "release": "Cancel periodic and call send_stop ($b five times at0/30/60/90/120ms), also on pointer cancellation"
+  },
+  {
+    "panel": "panel_four",
+    "va": "0x5a7474",
+    "action": "Selected actuator up",
+    "command_input": "selected physical actuator command from product_matrix; selection changes local fields only",
+    "held": "true",
+    "tap_up_write": "false",
+    "release": "Cancel periodic and call send_stop ($b five times at0/30/60/90/120ms), also on pointer cancellation"
+  },
+  {
+    "panel": "panel_four",
+    "va": "0x5a7554",
+    "action": "Flat/home",
+    "command_input": "$O",
+    "held": "true",
+    "tap_up_write": "false",
+    "release": "Cancel periodic and run custom UI/save-mode callback; no $b and no generic short-release tail"
+  },
+  {
+    "panel": "panel_four",
+    "va": "0x5a75ec",
+    "action": "Selected actuator down",
+    "command_input": "selected physical actuator command from product_matrix; selection changes local fields only",
+    "held": "true",
+    "tap_up_write": "false",
+    "release": "Cancel periodic and call send_stop ($b five times at0/30/60/90/120ms), also on pointer cancellation"
+  },
+  {
+    "panel": "panel_four",
+    "va": "0x5a7670",
+    "action": "Select next/previous actuator locally, no command text and no BLE write",
+    "command_input": null,
+    "held": "true",
+    "tap_up_write": "false",
+    "release": "Cancel periodic; if fewer than5 ticks, generic tail repeats SAME command at0/100/200ms; cancellation has no tail or $b"
+  },
+  {
+    "panel": "panel_four",
+    "va": "0x5a7828",
+    "action": "Anti-snore",
+    "command_input": "$R",
+    "held": "true",
+    "tap_up_write": "false",
+    "release": "Cancel periodic and run custom UI/save-mode callback; no $b and no generic short-release tail"
+  },
+  {
+    "panel": "panel_four",
+    "va": "0x5a78ac",
+    "action": "TV",
+    "command_input": "$S",
+    "held": "true",
+    "tap_up_write": "false",
+    "release": "Cancel periodic and run custom UI/save-mode callback; no $b and no generic short-release tail"
+  },
+  {
+    "panel": "panel_four",
+    "va": "0x5a7930",
+    "action": "Zero gravity",
+    "command_input": "$T",
+    "held": "true",
+    "tap_up_write": "false",
+    "release": "Cancel periodic and run custom UI/save-mode callback; no $b and no generic short-release tail"
+  },
+  {
+    "panel": "panel_four",
+    "va": "0x5a7ae8",
+    "action": "Memory1 recall; program1 in saving mode",
+    "command_input": "$U",
+    "held": "NOT(field_5b@0x5a7ad4)",
+    "tap_up_write": "field_5b@0x5a7ad4",
+    "release": "Cancel periodic and run custom UI/save-mode callback; no $b and no generic short-release tail"
+  },
+  {
+    "panel": "panel_four",
+    "va": "0x5a7b78",
+    "action": "Memory2 recall; program2 in saving mode",
+    "command_input": "$V",
+    "held": "NOT(field_5b@0x5a7ad4)",
+    "tap_up_write": "field_5b@0x5a7ad4",
+    "release": "Cancel periodic and run custom UI/save-mode callback; no $b and no generic short-release tail"
+  },
+  {
+    "panel": "panel_four",
+    "va": "0x5a7bfc",
+    "action": "Under-bed light toggle; long press selects saving mode",
+    "command_input": "$A",
+    "held": "false",
+    "tap_up_write": "true",
+    "release": "No release command; use shared image_button flags"
+  },
+  {
+    "panel": "panel_four",
+    "va": "0x5a7da4",
+    "action": "Head massage cycle",
+    "command_input": "$C",
+    "held": "false",
+    "tap_up_write": "false",
+    "release": "No release command; use shared image_button flags"
+  },
+  {
+    "panel": "panel_four",
+    "va": "0x5a7e24",
+    "action": "Stop massage",
+    "command_input": "$D",
+    "held": "false",
+    "tap_up_write": "false",
+    "release": "No release command; use shared image_button flags"
+  },
+  {
+    "panel": "panel_four",
+    "va": "0x5a7ea4",
+    "action": "Foot massage cycle",
+    "command_input": "$B",
+    "held": "false",
+    "tap_up_write": "false",
+    "release": "No release command; use shared image_button flags"
+  },
+  {
+    "panel": "panel_nine",
+    "va": "0x5ab85c",
+    "action": "Head up",
+    "command_input": "$K",
+    "held": "true",
+    "tap_up_write": "false",
+    "release": "Cancel periodic and call send_stop ($b five times at0/30/60/90/120ms), also on pointer cancellation"
+  },
+  {
+    "panel": "panel_nine",
+    "va": "0x5ab8e0",
+    "action": "Foot up",
+    "command_input": "$M",
+    "held": "true",
+    "tap_up_write": "false",
+    "release": "Cancel periodic and call send_stop ($b five times at0/30/60/90/120ms), also on pointer cancellation"
+  },
+  {
+    "panel": "panel_nine",
+    "va": "0x5abac4",
+    "action": "Flat/home",
+    "command_input": "$O",
+    "held": "true",
+    "tap_up_write": "false",
+    "release": "Cancel periodic and run custom UI/save-mode callback; no $b and no generic short-release tail"
+  },
+  {
+    "panel": "panel_nine",
+    "va": "0x5abbf0",
+    "action": "Head down",
+    "command_input": "$L",
+    "held": "true",
+    "tap_up_write": "false",
+    "release": "Cancel periodic and call send_stop ($b five times at0/30/60/90/120ms), also on pointer cancellation"
+  },
+  {
+    "panel": "panel_nine",
+    "va": "0x5abc74",
+    "action": "Foot down",
+    "command_input": "$N",
+    "held": "true",
+    "tap_up_write": "false",
+    "release": "Cancel periodic and call send_stop ($b five times at0/30/60/90/120ms), also on pointer cancellation"
+  },
+  {
+    "panel": "panel_one",
+    "va": "0x5ac36c",
+    "action": "Selected actuator up",
+    "command_input": "selected physical actuator command from product_matrix; selection changes local fields only",
+    "held": "true",
+    "tap_up_write": "false",
+    "release": "Cancel periodic and call send_stop ($b five times at0/30/60/90/120ms), also on pointer cancellation"
+  },
+  {
+    "panel": "panel_one",
+    "va": "0x5ac41c",
+    "action": "Selected actuator down",
+    "command_input": "selected physical actuator command from product_matrix; selection changes local fields only",
+    "held": "true",
+    "tap_up_write": "false",
+    "release": "Cancel periodic and call send_stop ($b five times at0/30/60/90/120ms), also on pointer cancellation"
+  },
+  {
+    "panel": "panel_one",
+    "va": "0x5ac4bc",
+    "action": "Flat/home",
+    "command_input": "$O",
+    "held": "true",
+    "tap_up_write": "false",
+    "release": "Cancel periodic and run custom UI/save-mode callback; no $b and no generic short-release tail"
+  },
+  {
+    "panel": "panel_one",
+    "va": "0x5ac548",
+    "action": "Select next/previous actuator locally, no command text and no BLE write",
+    "command_input": null,
+    "held": "true",
+    "tap_up_write": "false",
+    "release": "Cancel periodic; if fewer than5 ticks, generic tail repeats SAME command at0/100/200ms; cancellation has no tail or $b"
+  },
+  {
+    "panel": "panel_seven",
+    "va": "0x5b052c",
+    "action": "Head up",
+    "command_input": "$K",
+    "held": "true",
+    "tap_up_write": "false",
+    "release": "Cancel periodic and call send_stop ($b five times at0/30/60/90/120ms), also on pointer cancellation"
+  },
+  {
+    "panel": "panel_seven",
+    "va": "0x5b05b4",
+    "action": "Foot up",
+    "command_input": "$M",
+    "held": "true",
+    "tap_up_write": "false",
+    "release": "Cancel periodic and call send_stop ($b five times at0/30/60/90/120ms), also on pointer cancellation"
+  },
+  {
+    "panel": "panel_seven",
+    "va": "0x5b073c",
+    "action": "Flat/home",
+    "command_input": "$O",
+    "held": "true",
+    "tap_up_write": "false",
+    "release": "Cancel periodic; if fewer than5 ticks, generic tail repeats SAME command at0/100/200ms; cancellation has no tail or $b"
+  },
+  {
+    "panel": "panel_seven",
+    "va": "0x5b08a8",
+    "action": "Head down",
+    "command_input": "$L",
+    "held": "true",
+    "tap_up_write": "false",
+    "release": "Cancel periodic and call send_stop ($b five times at0/30/60/90/120ms), also on pointer cancellation"
+  },
+  {
+    "panel": "panel_seven",
+    "va": "0x5b0930",
+    "action": "Foot down",
+    "command_input": "$N",
+    "held": "true",
+    "tap_up_write": "false",
+    "release": "Cancel periodic and call send_stop ($b five times at0/30/60/90/120ms), also on pointer cancellation"
+  },
+  {
+    "panel": "panel_seven",
+    "va": "0x5b0b14",
+    "action": "Memory1 recall; program1 in saving mode",
+    "command_input": "$U",
+    "held": "NOT(field_37@0x5b0b00)",
+    "tap_up_write": "field_37@0x5b0b00",
+    "release": "Cancel periodic and run custom UI/save-mode callback; no $b and no generic short-release tail"
+  },
+  {
+    "panel": "panel_seven",
+    "va": "0x5b0ba8",
+    "action": "Memory2 recall; program2 in saving mode",
+    "command_input": "$V",
+    "held": "NOT(field_37@0x5b0b00)",
+    "tap_up_write": "field_37@0x5b0b00",
+    "release": "Cancel periodic and run custom UI/save-mode callback; no $b and no generic short-release tail"
+  },
+  {
+    "panel": "panel_seven",
+    "va": "0x5b0c64",
+    "action": "Under-bed light toggle; long press selects saving mode",
+    "command_input": "$A",
+    "held": "false",
+    "tap_up_write": "true",
+    "release": "No release command; use shared image_button flags"
+  },
+  {
+    "panel": "panel_seven",
+    "va": "0x5b0e0c",
+    "action": "Head massage cycle",
+    "command_input": "$C",
+    "held": "false",
+    "tap_up_write": "false",
+    "release": "No release command; use shared image_button flags"
+  },
+  {
+    "panel": "panel_seven",
+    "va": "0x5b0e74",
+    "action": "Stop massage",
+    "command_input": "$D",
+    "held": "false",
+    "tap_up_write": "false",
+    "release": "No release command; use shared image_button flags"
+  },
+  {
+    "panel": "panel_seven",
+    "va": "0x5b0edc",
+    "action": "Foot massage cycle",
+    "command_input": "$B",
+    "held": "false",
+    "tap_up_write": "false",
+    "release": "No release command; use shared image_button flags"
+  },
+  {
+    "panel": "panel_six",
+    "va": "0x5b167c",
+    "action": "Head up",
+    "command_input": "$K",
+    "held": "true",
+    "tap_up_write": "false",
+    "release": "Cancel periodic and call send_stop ($b five times at0/30/60/90/120ms), also on pointer cancellation"
+  },
+  {
+    "panel": "panel_six",
+    "va": "0x5b16e4",
+    "action": "Foot up",
+    "command_input": "$M",
+    "held": "true",
+    "tap_up_write": "false",
+    "release": "Cancel periodic and call send_stop ($b five times at0/30/60/90/120ms), also on pointer cancellation"
+  },
+  {
+    "panel": "panel_six",
+    "va": "0x5b1858",
+    "action": "Head down",
+    "command_input": "$L",
+    "held": "true",
+    "tap_up_write": "false",
+    "release": "Cancel periodic and call send_stop ($b five times at0/30/60/90/120ms), also on pointer cancellation"
+  },
+  {
+    "panel": "panel_six",
+    "va": "0x5b18c0",
+    "action": "Foot down",
+    "command_input": "$N",
+    "held": "true",
+    "tap_up_write": "false",
+    "release": "Cancel periodic and call send_stop ($b five times at0/30/60/90/120ms), also on pointer cancellation"
+  },
+  {
+    "panel": "panel_six_zg",
+    "va": "0x5b1b74",
+    "action": "Head up",
+    "command_input": "$K",
+    "held": "true",
+    "tap_up_write": "false",
+    "release": "Cancel periodic and call send_stop ($b five times at0/30/60/90/120ms), also on pointer cancellation"
+  },
+  {
+    "panel": "panel_six_zg",
+    "va": "0x5b1bdc",
+    "action": "Foot up",
+    "command_input": "$M",
+    "held": "true",
+    "tap_up_write": "false",
+    "release": "Cancel periodic and call send_stop ($b five times at0/30/60/90/120ms), also on pointer cancellation"
+  },
+  {
+    "panel": "panel_six_zg",
+    "va": "0x5b1d50",
+    "action": "Head down",
+    "command_input": "$L",
+    "held": "true",
+    "tap_up_write": "false",
+    "release": "Cancel periodic and call send_stop ($b five times at0/30/60/90/120ms), also on pointer cancellation"
+  },
+  {
+    "panel": "panel_six_zg",
+    "va": "0x5b1db8",
+    "action": "Foot down",
+    "command_input": "$N",
+    "held": "true",
+    "tap_up_write": "false",
+    "release": "Cancel periodic and call send_stop ($b five times at0/30/60/90/120ms), also on pointer cancellation"
+  },
+  {
+    "panel": "panel_three",
+    "va": "0x5b20c8",
+    "action": "Selected actuator up",
+    "command_input": "selected physical actuator command from product_matrix; selection changes local fields only",
+    "held": "true",
+    "tap_up_write": "false",
+    "release": "Cancel periodic and call send_stop ($b five times at0/30/60/90/120ms), also on pointer cancellation"
+  },
+  {
+    "panel": "panel_three",
+    "va": "0x5b2188",
+    "action": "Flat/home",
+    "command_input": "$O",
+    "held": "true",
+    "tap_up_write": "false",
+    "release": "Cancel periodic and run custom UI/save-mode callback; no $b and no generic short-release tail"
+  },
+  {
+    "panel": "panel_three",
+    "va": "0x5b2220",
+    "action": "Selected actuator down",
+    "command_input": "selected physical actuator command from product_matrix; selection changes local fields only",
+    "held": "true",
+    "tap_up_write": "false",
+    "release": "Cancel periodic and call send_stop ($b five times at0/30/60/90/120ms), also on pointer cancellation"
+  },
+  {
+    "panel": "panel_three",
+    "va": "0x5b22a0",
+    "action": "Select next/previous actuator locally, no command text and no BLE write",
+    "command_input": null,
+    "held": "true",
+    "tap_up_write": "false",
+    "release": "Cancel periodic; if fewer than5 ticks, generic tail repeats SAME command at0/100/200ms; cancellation has no tail or $b"
+  },
+  {
+    "panel": "panel_three",
+    "va": "0x5b241c",
+    "action": "Anti-snore",
+    "command_input": "$R",
+    "held": "true",
+    "tap_up_write": "false",
+    "release": "Cancel periodic and run custom UI/save-mode callback; no $b and no generic short-release tail"
+  },
+  {
+    "panel": "panel_three",
+    "va": "0x5b24a0",
+    "action": "TV",
+    "command_input": "$S",
+    "held": "true",
+    "tap_up_write": "false",
+    "release": "Cancel periodic and run custom UI/save-mode callback; no $b and no generic short-release tail"
+  },
+  {
+    "panel": "panel_three",
+    "va": "0x5b2524",
+    "action": "Zero gravity",
+    "command_input": "$T",
+    "held": "true",
+    "tap_up_write": "false",
+    "release": "Cancel periodic and run custom UI/save-mode callback; no $b and no generic short-release tail"
+  },
+  {
+    "panel": "panel_three",
+    "va": "0x5b269c",
+    "action": "Memory1 recall; program1 in saving mode",
+    "command_input": "$U",
+    "held": "NOT(field_5b@0x5b2688)",
+    "tap_up_write": "field_5b@0x5b2688",
+    "release": "Cancel periodic and run custom UI/save-mode callback; no $b and no generic short-release tail"
+  },
+  {
+    "panel": "panel_three",
+    "va": "0x5b272c",
+    "action": "Memory2 recall; program2 in saving mode",
+    "command_input": "$V",
+    "held": "NOT(field_5b@0x5b2688)",
+    "tap_up_write": "field_5b@0x5b2688",
+    "release": "Cancel periodic and run custom UI/save-mode callback; no $b and no generic short-release tail"
+  },
+  {
+    "panel": "panel_three",
+    "va": "0x5b27b0",
+    "action": "Under-bed light toggle; long press selects saving mode",
+    "command_input": "$A",
+    "held": "false",
+    "tap_up_write": "true",
+    "release": "No release command; use shared image_button flags"
+  },
+  {
+    "panel": "panel_two",
+    "va": "0x5b412c",
+    "action": "Selected actuator up",
+    "command_input": "selected physical actuator command from product_matrix; selection changes local fields only",
+    "held": "true",
+    "tap_up_write": "false",
+    "release": "Cancel periodic and call send_stop ($b five times at0/30/60/90/120ms), also on pointer cancellation"
+  },
+  {
+    "panel": "panel_two",
+    "va": "0x5b41e8",
+    "action": "Flat/home",
+    "command_input": "$O",
+    "held": "true",
+    "tap_up_write": "false",
+    "release": "Cancel periodic and run custom UI/save-mode callback; no $b and no generic short-release tail"
+  },
+  {
+    "panel": "panel_two",
+    "va": "0x5b4280",
+    "action": "Selected actuator down",
+    "command_input": "selected physical actuator command from product_matrix; selection changes local fields only",
+    "held": "true",
+    "tap_up_write": "false",
+    "release": "Cancel periodic and call send_stop ($b five times at0/30/60/90/120ms), also on pointer cancellation"
+  },
+  {
+    "panel": "panel_two",
+    "va": "0x5b4314",
+    "action": "Select next/previous actuator locally, no command text and no BLE write",
+    "command_input": null,
+    "held": "true",
+    "tap_up_write": "false",
+    "release": "Cancel periodic; if fewer than5 ticks, generic tail repeats SAME command at0/100/200ms; cancellation has no tail or $b"
+  },
+  {
+    "panel": "panel_two",
+    "va": "0x5b44a8",
+    "action": "Memory1 recall; program1 in saving mode",
+    "command_input": "$U",
+    "held": "NOT(field_5b@0x5b4494)",
+    "tap_up_write": "field_5b@0x5b4494",
+    "release": "Cancel periodic and run custom UI/save-mode callback; no $b and no generic short-release tail"
+  },
+  {
+    "panel": "panel_two",
+    "va": "0x5b4538",
+    "action": "Memory2 recall; program2 in saving mode",
+    "command_input": "$V",
+    "held": "NOT(field_5b@0x5b4494)",
+    "tap_up_write": "field_5b@0x5b4494",
+    "release": "Cancel periodic and run custom UI/save-mode callback; no $b and no generic short-release tail"
+  },
+  {
+    "panel": "panel_two",
+    "va": "0x5b45bc",
+    "action": "Under-bed light toggle; long press selects saving mode",
+    "command_input": "$A",
+    "held": "false",
+    "tap_up_write": "true",
+    "release": "No release command; use shared image_button flags"
+  },
+  {
+    "panel": "panel_two",
+    "va": "0x5b471c",
+    "action": "Head massage cycle",
+    "command_input": "$C",
+    "held": "false",
+    "tap_up_write": "false",
+    "release": "No release command; use shared image_button flags"
+  },
+  {
+    "panel": "panel_two",
+    "va": "0x5b479c",
+    "action": "Stop massage",
+    "command_input": "$D",
+    "held": "false",
+    "tap_up_write": "false",
+    "release": "No release command; use shared image_button flags"
+  },
+  {
+    "panel": "panel_two",
+    "va": "0x5b481c",
+    "action": "Foot massage cycle",
+    "command_input": "$B",
+    "held": "false",
+    "tap_up_write": "false",
+    "release": "No release command; use shared image_button flags"
+  },
+  {
+    "panel": "panel_zero",
+    "va": "0x5b5ec4",
+    "action": "Head up",
+    "command_input": "$K",
+    "held": "true",
+    "tap_up_write": "false",
+    "release": "Cancel periodic and call send_stop ($b five times at0/30/60/90/120ms), also on pointer cancellation"
+  },
+  {
+    "panel": "panel_zero",
+    "va": "0x5b5f48",
+    "action": "Foot up",
+    "command_input": "$M",
+    "held": "true",
+    "tap_up_write": "false",
+    "release": "Cancel periodic and call send_stop ($b five times at0/30/60/90/120ms), also on pointer cancellation"
+  },
+  {
+    "panel": "panel_zero",
+    "va": "0x5b5fcc",
+    "action": "Actuator movement, physical mapping in product_matrix",
+    "command_input": "$p",
+    "held": "true",
+    "tap_up_write": "false",
+    "release": "Cancel periodic and call send_stop ($b five times at0/30/60/90/120ms), also on pointer cancellation"
+  },
+  {
+    "panel": "panel_zero",
+    "va": "0x5b6128",
+    "action": "Head down",
+    "command_input": "$L",
+    "held": "true",
+    "tap_up_write": "false",
+    "release": "Cancel periodic and call send_stop ($b five times at0/30/60/90/120ms), also on pointer cancellation"
+  },
+  {
+    "panel": "panel_zero",
+    "va": "0x5b61ac",
+    "action": "Foot down",
+    "command_input": "$N",
+    "held": "true",
+    "tap_up_write": "false",
+    "release": "Cancel periodic and call send_stop ($b five times at0/30/60/90/120ms), also on pointer cancellation"
+  },
+  {
+    "panel": "panel_zero",
+    "va": "0x5b6230",
+    "action": "Actuator movement, physical mapping in product_matrix",
+    "command_input": "$q",
+    "held": "true",
+    "tap_up_write": "false",
+    "release": "Cancel periodic and call send_stop ($b five times at0/30/60/90/120ms), also on pointer cancellation"
+  },
+  {
+    "panel": "panel_zero",
+    "va": "0x5b63a4",
+    "action": "Memory1 recall; program1 in saving mode",
+    "command_input": "$U",
+    "held": "NOT(field_37@0x5b6390)",
+    "tap_up_write": "field_37@0x5b6390",
+    "release": "Cancel periodic and run custom UI/save-mode callback; no $b and no generic short-release tail"
+  },
+  {
+    "panel": "panel_zero",
+    "va": "0x5b6428",
+    "action": "Actuator movement, physical mapping in product_matrix",
+    "command_input": "$P",
+    "held": "true",
+    "tap_up_write": "false",
+    "release": "Cancel periodic and call send_stop ($b five times at0/30/60/90/120ms), also on pointer cancellation"
+  },
+  {
+    "panel": "panel_zero",
+    "va": "0x5b64ac",
+    "action": "Flat/home",
+    "command_input": "$O",
+    "held": "true",
+    "tap_up_write": "false",
+    "release": "Cancel periodic; if fewer than5 ticks, generic tail repeats SAME command at0/100/200ms; cancellation has no tail or $b"
+  },
+  {
+    "panel": "panel_zero",
+    "va": "0x5b65f8",
+    "action": "Memory2 recall; program2 in saving mode",
+    "command_input": "$V",
+    "held": "NOT(field_37@0x5b6390)",
+    "tap_up_write": "field_37@0x5b6390",
+    "release": "Cancel periodic and run custom UI/save-mode callback; no $b and no generic short-release tail"
+  },
+  {
+    "panel": "panel_zero",
+    "va": "0x5b667c",
+    "action": "Actuator movement, physical mapping in product_matrix",
+    "command_input": "$Q",
+    "held": "true",
+    "tap_up_write": "false",
+    "release": "Cancel periodic; if fewer than5 ticks, generic tail repeats SAME command at0/100/200ms; cancellation has no tail or $b"
+  },
+  {
+    "panel": "panel_zero",
+    "va": "0x5b6718",
+    "action": "Under-bed light toggle; long press selects saving mode",
+    "command_input": "$A",
+    "held": "false",
+    "tap_up_write": "true",
+    "release": "No release command; use shared image_button flags"
+  },
+  {
+    "panel": "panel_zero",
+    "va": "0x5b6870",
+    "action": "Head massage increase",
+    "command_input": "$G",
+    "held": "true",
+    "tap_up_write": "false",
+    "release": "Cancel periodic; if fewer than5 ticks, generic tail repeats SAME command at0/100/200ms; cancellation has no tail or $b"
+  },
+  {
+    "panel": "panel_zero",
+    "va": "0x5b68d8",
+    "action": "Stop head massage",
+    "command_input": "$J",
+    "held": "true",
+    "tap_up_write": "false",
+    "release": "Cancel periodic; if fewer than5 ticks, generic tail repeats SAME command at0/100/200ms; cancellation has no tail or $b"
+  },
+  {
+    "panel": "panel_zero",
+    "va": "0x5b6940",
+    "action": "Foot massage increase",
+    "command_input": "$E",
+    "held": "true",
+    "tap_up_write": "false",
+    "release": "Cancel periodic; if fewer than5 ticks, generic tail repeats SAME command at0/100/200ms; cancellation has no tail or $b"
+  },
+  {
+    "panel": "panel_zero",
+    "va": "0x5b6a80",
+    "action": "Head massage decrease",
+    "command_input": "$H",
+    "held": "true",
+    "tap_up_write": "false",
+    "release": "Cancel periodic; if fewer than5 ticks, generic tail repeats SAME command at0/100/200ms; cancellation has no tail or $b"
+  },
+  {
+    "panel": "panel_zero",
+    "va": "0x5b6ae8",
+    "action": "Stop foot massage",
+    "command_input": "$I",
+    "held": "true",
+    "tap_up_write": "false",
+    "release": "Cancel periodic; if fewer than5 ticks, generic tail repeats SAME command at0/100/200ms; cancellation has no tail or $b"
+  },
+  {
+    "panel": "panel_zero",
+    "va": "0x5b6b50",
+    "action": "Foot massage decrease",
+    "command_input": "$F",
+    "held": "true",
+    "tap_up_write": "false",
+    "release": "Cancel periodic; if fewer than5 ticks, generic tail repeats SAME command at0/100/200ms; cancellation has no tail or $b"
+  },
+  {
+    "panel": "wr1140",
+    "va": "0x5b7464",
+    "action": "Anti-snore",
+    "command_input": "$R",
+    "held": "true",
+    "tap_up_write": "false",
+    "release": "Cancel periodic and run custom UI/save-mode callback; no $b and no generic short-release tail"
+  },
+  {
+    "panel": "wr1140",
+    "va": "0x5b74e8",
+    "action": "TV",
+    "command_input": "$S",
+    "held": "true",
+    "tap_up_write": "false",
+    "release": "Cancel periodic and run custom UI/save-mode callback; no $b and no generic short-release tail"
+  },
+  {
+    "panel": "wr1140",
+    "va": "0x5b756c",
+    "action": "Zero gravity",
+    "command_input": "$T",
+    "held": "true",
+    "tap_up_write": "false",
+    "release": "Cancel periodic and run custom UI/save-mode callback; no $b and no generic short-release tail"
+  },
+  {
+    "panel": "wr1140",
+    "va": "0x5b7720",
+    "action": "Memory1 recall; program1 in saving mode",
+    "command_input": "$U",
+    "held": "NOT(field_4f@0x5b770c)",
+    "tap_up_write": "field_4f@0x5b770c",
+    "release": "Cancel periodic and run custom UI/save-mode callback; no $b and no generic short-release tail"
+  },
+  {
+    "panel": "wr1140",
+    "va": "0x5b77b0",
+    "action": "Memory2 recall; program2 in saving mode",
+    "command_input": "$V",
+    "held": "NOT(field_4f@0x5b770c)",
+    "tap_up_write": "field_4f@0x5b770c",
+    "release": "Cancel periodic and run custom UI/save-mode callback; no $b and no generic short-release tail"
+  },
+  {
+    "panel": "wr1140",
+    "va": "0x5b7834",
+    "action": "Under-bed light toggle; long press selects saving mode",
+    "command_input": "$A",
+    "held": "false",
+    "tap_up_write": "true",
+    "release": "No release command; use shared image_button flags"
+  },
+  {
+    "panel": "wr1140",
+    "va": "0x5b7994",
+    "action": "Head massage cycle",
+    "command_input": "$C",
+    "held": "false",
+    "tap_up_write": "false",
+    "release": "No release command; use shared image_button flags"
+  },
+  {
+    "panel": "wr1140",
+    "va": "0x5b7a14",
+    "action": "Stop massage",
+    "command_input": "$D",
+    "held": "false",
+    "tap_up_write": "false",
+    "release": "No release command; use shared image_button flags"
+  },
+  {
+    "panel": "wr1140",
+    "va": "0x5b7a94",
+    "action": "Foot massage cycle",
+    "command_input": "$B",
+    "held": "false",
+    "tap_up_write": "false",
+    "release": "No release command; use shared image_button flags"
+  },
+  {
+    "panel": "wr1140",
+    "va": "0x5b8d58",
+    "action": "Selected actuator up",
+    "command_input": "selected physical actuator command from product_matrix; selection changes local fields only",
+    "held": "true",
+    "tap_up_write": "false",
+    "release": "Cancel periodic and call send_stop ($b five times at0/30/60/90/120ms), also on pointer cancellation"
+  },
+  {
+    "panel": "wr1140",
+    "va": "0x5b8e1c",
+    "action": "Flat/home",
+    "command_input": "$O",
+    "held": "true",
+    "tap_up_write": "false",
+    "release": "Cancel periodic and run custom UI/save-mode callback; no $b and no generic short-release tail"
+  },
+  {
+    "panel": "wr1140",
+    "va": "0x5b8f08",
+    "action": "Selected actuator down",
+    "command_input": "selected physical actuator command from product_matrix; selection changes local fields only",
+    "held": "true",
+    "tap_up_write": "false",
+    "release": "Cancel periodic and call send_stop ($b five times at0/30/60/90/120ms), also on pointer cancellation"
+  },
+  {
+    "panel": "wr1140",
+    "va": "0x5b8fb0",
+    "action": "Select next/previous actuator locally, no command text and no BLE write",
+    "command_input": null,
+    "held": "true",
+    "tap_up_write": "false",
+    "release": "Cancel periodic; if fewer than5 ticks, generic tail repeats SAME command at0/100/200ms; cancellation has no tail or $b"
+  },
+  {
+    "panel": "wr1140",
+    "va": "0x5b9050",
+    "action": "Select next/previous actuator locally, no command text and no BLE write",
+    "command_input": null,
+    "held": "true",
+    "tap_up_write": "false",
+    "release": "Cancel periodic; if fewer than5 ticks, generic tail repeats SAME command at0/100/200ms; cancellation has no tail or $b"
+  },
+  {
+    "panel": "panel_e",
+    "va": "0x5a5a6c",
+    "action": "Flat/home",
+    "command_input": "$O",
+    "held": "true",
+    "tap_up_write": "false",
+    "release": "Cancel periodic; fewer than5 ticks: same-command tail0/100/200ms. No $b. Cancellation only cancels periodic."
+  },
+  {
+    "panel": "panel_five",
+    "va": "0x5a72d0",
+    "action": "Flat/home",
+    "command_input": "$O",
+    "held": "true",
+    "tap_up_write": "false",
+    "release": "Cancel periodic; fewer than5 ticks: same-command tail0/100/200ms. No $b. Cancellation only cancels periodic."
+  },
+  {
+    "panel": "panel_six",
+    "va": "0x5b184c",
+    "action": "Flat/home",
+    "command_input": "$O",
+    "held": "true",
+    "tap_up_write": "false",
+    "release": "Cancel periodic; fewer than5 ticks: same-command tail0/100/200ms. No $b. Cancellation only cancels periodic."
+  },
+  {
+    "panel": "panel_six_zg",
+    "va": "0x5b1d44",
+    "action": "Zero gravity",
+    "command_input": "$T",
+    "held": "true",
+    "tap_up_write": "false",
+    "release": "Cancel periodic; fewer than5 ticks: same-command tail0/100/200ms. No $b. Cancellation only cancels periodic."
+  }
+]

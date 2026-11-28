@@ -23,6 +23,8 @@ For named raise/lower/stop voice commands and Apple Home controls, see
 | [`set_position`](#movement-and-memory) | Move motor to position | Move a motor to a specific position and stop when reached. |
 | [`set_positions`](#movement-and-memory) | Move motors to positions | Moves several motors to their target positions, one after another. Every target is checked before any motor moves. |
 | [`timed_move`](#movement-and-memory) | Move motor for a time | Move a motor for a specified duration. |
+| [`cancel_hold`](#cancel_hold) | Cancel held control | End a cancelled gesture and stop its movement. Targets its Release held control button. |
+| [`press_confirmed`](#press_confirmed) | Send confirmed action | Send a button action with explicit confirmation. Targets the button entity. |
 | [`hold_control`](#hold_control) | Hold control | Holds one of the bed's controls for a set time, then releases it as the remote does. Every bed is checked before any moves; a control the bed does not have is refused with the list of controls it has. |
 | [`l2motion`](#l2motion) | L2 Motion: settings | Sets the light color of an L2 Motion bed, or switches its two bases between wired and wireless sync. |
 | [`instant_comfort_firmness`](#instant_comfort_firmness) | Instant Comfort: set firmness | Sets the main or lumbar firmness for one sleeper of an Instant Comfort air unit. |
@@ -341,9 +343,22 @@ sends motor STOP followed by separate Head and Foot massage timer-off bursts.
 ## Held Controls, Rename and Clock
 
 
-These general actions take `device_id` and an optional `side`. Each bed offers
-only what it supports, and every selected bed is checked before any of them
-changes.
+The button actions below target `entity_id`. The remaining general actions take
+`device_id` and an optional `side`. Each bed offers only what it supports, and
+every selected bed is checked before any of them changes.
+
+### `cancel_hold`
+
+Cancel a held gesture by targeting its Release held control button. Required
+movement cleanup still runs. Cancellation does not execute a normal release's
+short movement tail. The dashboard card uses this when a pointer is cancelled.
+
+### `press_confirmed`
+
+Send a button action that asks for confirmation. Target the button entity and
+set `confirmed: true` only after you have acknowledged the action. The dashboard
+card does this after its confirmation dialog. An ordinary `button.press` cannot
+change VivaSleep's wired or wireless synchronization mode.
 
 ### `hold_control`
 

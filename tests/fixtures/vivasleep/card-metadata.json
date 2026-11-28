@@ -1,0 +1,359 @@
+{
+  "entities": {
+    "button.bedgear_memory_1": {
+      "entity_id": "button.bedgear_memory_1",
+      "platform": "adjustable_bed",
+      "translation_key": "preset_memory_1",
+      "device_id": "receiver"
+    },
+    "button.bedgear_memory_2": {
+      "entity_id": "button.bedgear_memory_2",
+      "platform": "adjustable_bed",
+      "translation_key": "preset_memory_2",
+      "device_id": "receiver"
+    },
+    "button.bedgear_flat": {
+      "entity_id": "button.bedgear_flat",
+      "platform": "adjustable_bed",
+      "translation_key": "preset_flat",
+      "device_id": "receiver"
+    },
+    "button.bedgear_save_to_memory_1": {
+      "entity_id": "button.bedgear_save_to_memory_1",
+      "platform": "adjustable_bed",
+      "translation_key": "program_memory_1",
+      "device_id": "receiver"
+    },
+    "button.bedgear_save_to_memory_2": {
+      "entity_id": "button.bedgear_save_to_memory_2",
+      "platform": "adjustable_bed",
+      "translation_key": "program_memory_2",
+      "device_id": "receiver"
+    },
+    "button.bedgear_stop_all": {
+      "entity_id": "button.bedgear_stop_all",
+      "platform": "adjustable_bed",
+      "translation_key": "stop",
+      "device_id": "receiver"
+    },
+    "button.bedgear_disconnect": {
+      "entity_id": "button.bedgear_disconnect",
+      "platform": "adjustable_bed",
+      "translation_key": "disconnect",
+      "device_id": "receiver"
+    },
+    "button.bedgear_connect": {
+      "entity_id": "button.bedgear_connect",
+      "platform": "adjustable_bed",
+      "translation_key": "connect",
+      "device_id": "receiver"
+    },
+    "button.bedgear_toggle_light": {
+      "entity_id": "button.bedgear_toggle_light",
+      "platform": "adjustable_bed",
+      "translation_key": "bedgear_light_toggle",
+      "device_id": "receiver"
+    },
+    "button.bedgear_increase_head_massage": {
+      "entity_id": "button.bedgear_increase_head_massage",
+      "platform": "adjustable_bed",
+      "translation_key": "bedgear_massage",
+      "device_id": "receiver"
+    },
+    "button.bedgear_decrease_head_massage": {
+      "entity_id": "button.bedgear_decrease_head_massage",
+      "platform": "adjustable_bed",
+      "translation_key": "bedgear_massage",
+      "device_id": "receiver"
+    },
+    "button.bedgear_stop_head_massage": {
+      "entity_id": "button.bedgear_stop_head_massage",
+      "platform": "adjustable_bed",
+      "translation_key": "bedgear_massage",
+      "device_id": "receiver"
+    },
+    "button.bedgear_increase_foot_massage": {
+      "entity_id": "button.bedgear_increase_foot_massage",
+      "platform": "adjustable_bed",
+      "translation_key": "bedgear_massage",
+      "device_id": "receiver"
+    },
+    "button.bedgear_decrease_foot_massage": {
+      "entity_id": "button.bedgear_decrease_foot_massage",
+      "platform": "adjustable_bed",
+      "translation_key": "bedgear_massage",
+      "device_id": "receiver"
+    },
+    "button.bedgear_stop_foot_massage": {
+      "entity_id": "button.bedgear_stop_foot_massage",
+      "platform": "adjustable_bed",
+      "translation_key": "bedgear_massage",
+      "device_id": "receiver"
+    },
+    "button.bedgear_release_held_control": {
+      "entity_id": "button.bedgear_release_held_control",
+      "platform": "adjustable_bed",
+      "translation_key": "bedgear_release",
+      "device_id": "receiver"
+    },
+    "cover.bedgear_head": {
+      "entity_id": "cover.bedgear_head",
+      "platform": "adjustable_bed",
+      "translation_key": "head",
+      "device_id": "receiver"
+    },
+    "cover.bedgear_feet": {
+      "entity_id": "cover.bedgear_feet",
+      "platform": "adjustable_bed",
+      "translation_key": "feet",
+      "device_id": "receiver"
+    },
+    "cover.bedgear_head_feet": {
+      "entity_id": "cover.bedgear_head_feet",
+      "platform": "adjustable_bed",
+      "translation_key": "bedgear_combined",
+      "device_id": "receiver"
+    },
+    "cover.bedgear_tilt": {
+      "entity_id": "cover.bedgear_tilt",
+      "platform": "adjustable_bed",
+      "translation_key": "tilt",
+      "device_id": "receiver"
+    }
+  },
+  "states": {
+    "button.bedgear_memory_1": {
+      "entity_id": "button.bedgear_memory_1",
+      "state": "unknown",
+      "attributes": {
+        "card_section": "memory",
+        "card_role": "recall",
+        "card_slot": 1,
+        "held_control": "vivasleep_memory_1",
+        "hold_start_delay_ms": 0,
+        "hold_release_delay_ms": 0,
+        "hold_lease_mode": "stream",
+        "hold_release_button_key": "bedgear_release"
+      }
+    },
+    "button.bedgear_memory_2": {
+      "entity_id": "button.bedgear_memory_2",
+      "state": "unknown",
+      "attributes": {
+        "card_section": "memory",
+        "card_role": "recall",
+        "card_slot": 2,
+        "held_control": "vivasleep_memory_2",
+        "hold_start_delay_ms": 0,
+        "hold_release_delay_ms": 0,
+        "hold_lease_mode": "stream",
+        "hold_release_button_key": "bedgear_release"
+      }
+    },
+    "button.bedgear_flat": {
+      "entity_id": "button.bedgear_flat",
+      "state": "unknown",
+      "attributes": {
+        "card_section": "presets",
+        "held_control": "vivasleep_preset_flat",
+        "hold_start_delay_ms": 0,
+        "hold_release_delay_ms": 0,
+        "hold_lease_mode": "stream",
+        "hold_release_button_key": "bedgear_release"
+      }
+    },
+    "button.bedgear_save_to_memory_1": {
+      "entity_id": "button.bedgear_save_to_memory_1",
+      "state": "unknown",
+      "attributes": {
+        "card_section": "memory",
+        "card_role": "save",
+        "card_slot": 1
+      }
+    },
+    "button.bedgear_save_to_memory_2": {
+      "entity_id": "button.bedgear_save_to_memory_2",
+      "state": "unknown",
+      "attributes": {
+        "card_section": "memory",
+        "card_role": "save",
+        "card_slot": 2
+      }
+    },
+    "button.bedgear_stop_all": {
+      "entity_id": "button.bedgear_stop_all",
+      "state": "unknown",
+      "attributes": {
+        "card_section": "motors",
+        "card_role": "stop"
+      }
+    },
+    "button.bedgear_disconnect": {
+      "entity_id": "button.bedgear_disconnect",
+      "state": "unknown",
+      "attributes": {
+        "card_section": "connection",
+        "card_role": "disconnect"
+      }
+    },
+    "button.bedgear_connect": {
+      "entity_id": "button.bedgear_connect",
+      "state": "unknown",
+      "attributes": {
+        "card_section": "connection",
+        "card_role": "connect"
+      }
+    },
+    "button.bedgear_toggle_light": {
+      "entity_id": "button.bedgear_toggle_light",
+      "state": "unknown",
+      "attributes": {
+        "card_section": "lighting",
+        "card_role": "toggle"
+      }
+    },
+    "button.bedgear_increase_head_massage": {
+      "entity_id": "button.bedgear_increase_head_massage",
+      "state": "unknown",
+      "attributes": {
+        "card_section": "massage",
+        "held_control": "vivasleep_massage_head_up",
+        "hold_start_delay_ms": 0,
+        "hold_release_delay_ms": 0,
+        "hold_lease_mode": "stream",
+        "hold_release_button_key": "bedgear_release"
+      }
+    },
+    "button.bedgear_decrease_head_massage": {
+      "entity_id": "button.bedgear_decrease_head_massage",
+      "state": "unknown",
+      "attributes": {
+        "card_section": "massage",
+        "held_control": "vivasleep_massage_head_down",
+        "hold_start_delay_ms": 0,
+        "hold_release_delay_ms": 0,
+        "hold_lease_mode": "stream",
+        "hold_release_button_key": "bedgear_release"
+      }
+    },
+    "button.bedgear_stop_head_massage": {
+      "entity_id": "button.bedgear_stop_head_massage",
+      "state": "unknown",
+      "attributes": {
+        "card_section": "massage",
+        "held_control": "vivasleep_massage_head_stop",
+        "hold_start_delay_ms": 0,
+        "hold_release_delay_ms": 0,
+        "hold_lease_mode": "stream",
+        "hold_release_button_key": "bedgear_release"
+      }
+    },
+    "button.bedgear_increase_foot_massage": {
+      "entity_id": "button.bedgear_increase_foot_massage",
+      "state": "unknown",
+      "attributes": {
+        "card_section": "massage",
+        "held_control": "vivasleep_massage_foot_up",
+        "hold_start_delay_ms": 0,
+        "hold_release_delay_ms": 0,
+        "hold_lease_mode": "stream",
+        "hold_release_button_key": "bedgear_release"
+      }
+    },
+    "button.bedgear_decrease_foot_massage": {
+      "entity_id": "button.bedgear_decrease_foot_massage",
+      "state": "unknown",
+      "attributes": {
+        "card_section": "massage",
+        "held_control": "vivasleep_massage_foot_down",
+        "hold_start_delay_ms": 0,
+        "hold_release_delay_ms": 0,
+        "hold_lease_mode": "stream",
+        "hold_release_button_key": "bedgear_release"
+      }
+    },
+    "button.bedgear_stop_foot_massage": {
+      "entity_id": "button.bedgear_stop_foot_massage",
+      "state": "unknown",
+      "attributes": {
+        "card_section": "massage",
+        "held_control": "vivasleep_massage_foot_stop",
+        "hold_start_delay_ms": 0,
+        "hold_release_delay_ms": 0,
+        "hold_lease_mode": "stream",
+        "hold_release_button_key": "bedgear_release"
+      }
+    },
+    "button.bedgear_release_held_control": {
+      "entity_id": "button.bedgear_release_held_control",
+      "state": "unknown",
+      "attributes": {
+        "card_section": "hidden"
+      }
+    },
+    "cover.bedgear_head": {
+      "entity_id": "cover.bedgear_head",
+      "state": "unknown",
+      "attributes": {
+        "card_section": "motors",
+        "card_motor": "head",
+        "hold_lease_mode": "stream",
+        "hold_lease_motor": "head",
+        "held_control_up": "vivasleep_head_up",
+        "held_control_down": "vivasleep_head_down",
+        "hold_start_delay_ms": 0,
+        "hold_release_delay_ms": 0,
+        "held_stop_scope": "side",
+        "hold_release_button_key": "bedgear_release"
+      }
+    },
+    "cover.bedgear_feet": {
+      "entity_id": "cover.bedgear_feet",
+      "state": "unknown",
+      "attributes": {
+        "card_section": "motors",
+        "card_motor": "feet",
+        "hold_lease_mode": "stream",
+        "hold_lease_motor": "feet",
+        "held_control_up": "vivasleep_foot_up",
+        "held_control_down": "vivasleep_foot_down",
+        "hold_start_delay_ms": 0,
+        "hold_release_delay_ms": 0,
+        "held_stop_scope": "side",
+        "hold_release_button_key": "bedgear_release"
+      }
+    },
+    "cover.bedgear_head_feet": {
+      "entity_id": "cover.bedgear_head_feet",
+      "state": "unknown",
+      "attributes": {
+        "card_section": "motors",
+        "card_motor": "bedgear_combined",
+        "hold_lease_mode": "stream",
+        "hold_lease_motor": "both",
+        "held_control_up": "vivasleep_combined_up",
+        "held_control_down": "vivasleep_combined_down",
+        "hold_start_delay_ms": 0,
+        "hold_release_delay_ms": 0,
+        "held_stop_scope": "side",
+        "hold_release_button_key": "bedgear_release"
+      }
+    },
+    "cover.bedgear_tilt": {
+      "entity_id": "cover.bedgear_tilt",
+      "state": "unknown",
+      "attributes": {
+        "card_section": "motors",
+        "card_motor": "tilt",
+        "hold_lease_mode": "stream",
+        "hold_lease_motor": "tilt",
+        "held_control_up": "vivasleep_tilt_up",
+        "held_control_down": "vivasleep_tilt_down",
+        "hold_start_delay_ms": 0,
+        "hold_release_delay_ms": 0,
+        "held_stop_scope": "side",
+        "hold_release_button_key": "bedgear_release"
+      }
+    }
+  }
+}

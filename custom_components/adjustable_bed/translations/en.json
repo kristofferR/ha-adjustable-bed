@@ -833,6 +833,7 @@
       "ambient_receiver_mismatch": "This device lacks the Bluetooth write or notification channel required by M3 Ambient. Check the selected device."
     },
     "error": {
+      "vivasleep_profile": "Enter the exact 14-character Bluetooth name shown in VivaSleep, including uppercase HHC.",
       "ergosportive_selection": "Choose a release mode, sensor stream and controls matching your ErgoSportive bed.",
       "scan_failed": "Bluetooth scanning is unavailable. Check your adapters and try again, or choose a device from the list.",
       "langjue_receiver_mismatch": "Choose the Bluetooth device used to control the bed in Comfort Smart Bed. The selected device is missing the required channels.",
@@ -4961,6 +4962,16 @@
       }
     },
     "sensor": {
+      "vivasleep_alarm_strength": {
+        "name": "Alarm strength"
+      },
+      "vivasleep_sync_mode": {
+        "name": "Base synchronization mode",
+        "state": {
+          "wireless": "Wireless",
+          "wired": "Wired"
+        }
+      },
       "konfurt_timer": {"name": "Massage timer"},
       "konfurt_wave": {"name": "Massage wave"},
       "konfurt_alarm_on": {"name": "Bed alarm enabled"},
@@ -6451,6 +6462,9 @@
       }
     },
     "switch": {
+      "vivasleep_sync_enabled": {
+        "name": "Base synchronization"
+      },
       "konfurt_massage": {"name": "Massage"},
       "mattresspoint_massage": { "name": "Massage" },
         "active_sleep_motor_lock": {
@@ -8690,6 +8704,20 @@
     }
   },
   "services": {
+    "cancel_hold": {
+      "name": "Cancel held control",
+      "description": "End a cancelled gesture and stop its movement."
+    },
+    "press_confirmed": {
+      "name": "Send confirmed action",
+      "description": "Send a button action after you have confirmed it.",
+      "fields": {
+        "confirmed": {
+          "name": "Confirmed",
+          "description": "Confirm that you want to send this action."
+        }
+      }
+    },
     "innova_control": {
       "name": "Innova Control settings",
       "description": "Change direct Bluetooth settings offered by the selected bed layout. Use Set alarm for alarms. Query refreshes accessory availability.",
@@ -12725,6 +12753,24 @@
     }
   },
   "exceptions": {
+    "vivasleep_name_mismatch": {
+      "message": "The Bluetooth name does not match the configured VivaSleep model. Check the original Bluetooth name in Reconfigure."
+    },
+    "vivasleep_receiver_missing": {
+      "message": "The bed did not expose the Bluetooth control channel used by VivaSleep."
+    },
+    "vivasleep_sync_unavailable": {
+      "message": "Wait until the bed reports its synchronization state before changing it."
+    },
+    "held_cancel_unavailable": {
+      "message": "This button does not end a held control."
+    },
+    "button_confirmation_required": {
+      "message": "Confirm this action before sending it."
+    },
+    "vivasleep_sync_confirmation": {
+      "message": "Confirm the synchronization mode change before sending it to the bed."
+    },
     "konfurt_gatt": {"message": "KONFURT needs writable FFE9 in FFE5 and notifying FFE4 in FFE0. Check the selected app and Bluetooth device."},
     "konfurt_layout": {"message": "Choose the 2, 3 or 4 motor layout shown in the KONFURT app."},
     "konfurt_control": {"message": "Choose a control offered by this KONFURT layout and a hold of 1 to 60000 milliseconds."},

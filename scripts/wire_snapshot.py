@@ -462,7 +462,7 @@ def plan_commands(controller: Any) -> list[Command]:
                 Command(
                     f"switch:{spec.key}={'on' if on else 'off'}",
                     lambda ctrl, fn=spec.set_fn, v=on, spec_key=spec.key: (
-                        _moodbase_sync(ctrl, v) if spec_key == "moodbase_sync_enabled" else fn(ctrl, v)
+                        _moodbase_sync(ctrl, v) if spec_key in {"moodbase_sync_enabled", "vivasleep_sync_enabled"} else fn(ctrl, v)
                     ),
                     True,
                 )
@@ -516,7 +516,7 @@ def plan_commands(controller: Any) -> list[Command]:
                 sleep_timer=20, reference_time=datetime.datetime.fromisoformat(FROZEN_NOW),
             )
             plan.append(Command(f"set_alarm:{enabled}", _method("configure_alarm", alarm), True))
-    if controller._coordinator.bed_type in {"ergobed", "moodbase"} and controller.alarm_capability:
+    if controller._coordinator.bed_type in {"ergobed", "moodbase", "vivasleep"} and controller.alarm_capability:
         from custom_components.adjustable_bed.alarm import AlarmRequest
 
         for intensity in (0, 1, 2):
@@ -728,7 +728,12 @@ def _argument_commands(controller: Any) -> list[Command]:
         "light_color_rgbw",
         (255, 128, 0, 64),
     )
-    for option in _value(c, "light_timer_options", []) if _flag(c, "supports_light_timer") else []:
+    timer_options = _value(c, "light_timer_options", []) if _flag(c, "supports_light_timer") else []
+    if c._coordinator.bed_type == "vivasleep":
+        # The picker admits every minute. Bound the wire fixture to off, on and
+        # both edges; artifact vectors and HA tests cover its parameter domain.
+        timer_options = [option for option in ("Off", "1 min", "10 min", "1439 min") if option in timer_options]
+    for option in timer_options:
         add("supports_light_timer", "set_light_timer", f"light_timer_{option}", option)
     if _flag(c, "supports_massage_intensity_control"):
         top = int(_value(c, "massage_intensity_max", 10))
@@ -1528,6 +1533,10 @@ def _ambient_scenario(*, split: bool = False) -> Scenario:
 def default_scenario(bed_type: str) -> Scenario:
     """The bed type in its default route, with the entry data it needs to build."""
     from custom_components.adjustable_bed import const
+
+    if bed_type == "vivasleep":
+        return Scenario(id=bed_type, bed_type=bed_type, layout_id="bedgear",
+                        entry_data={"ble_device_name": "HHC0000000DE0X"})
 
     if bed_type == "ergosportive":
         from custom_components.adjustable_bed.profiles.ergosportive import CONTROLS
@@ -2966,6 +2975,18 @@ def build_scenarios() -> list[Scenario]:
     from custom_components.adjustable_bed.profiles.moodbase import (
         LAYOUT_EXAMPLES as MOODBASE_LAYOUTS,
     )
+    from custom_components.adjustable_bed.profiles.vivasleep import (
+        LAYOUT_EXAMPLES as VIVASLEEP_LAYOUTS,
+    )
+
+    for pair in VIVASLEEP_LAYOUTS:
+        if pair != "00":
+            scenarios.append(Scenario(id=f"vivasleep:{pair}", bed_type="vivasleep", layout_id="bedgear",
+                                      entry_data={"ble_device_name": f"HHC00000{pair}DE0X"}))
+    for label, selected in (("wrapped", "HHC0000015DM0X"), ("lumbar_lowercase", "HHC0000015D00H"),
+                            ("no_rgb", "HHC0000000B000"), ("rgb_no_brightness", "HHC0000015C000")):
+        scenarios.append(Scenario(id=f"vivasleep:{label}", bed_type="vivasleep", layout_id="bedgear",
+                                  entry_data={"ble_device_name": selected}))
 
     for pair in MOODBASE_LAYOUTS:
         if pair != "01":

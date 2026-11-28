@@ -64,7 +64,7 @@ app. Every guide follows the [bed guide format](BED_GUIDE_FORMAT.md).
 | [M Line and Sinca Comfort Bed](beds/mline.md) | The M Line and Sinca Comfort Bed apps | Shared |
 | [Malouf / Lucid](beds/malouf.md) | The Malouf Base and Lucid Base apps and receivers | Shared |
 | [M3 Ambient](beds/ambient.md) | The M3 Ambient app, one-piece and split beds | |
-| [MotoMotion, MotoSleep and others](beds/motomotion.md) | MotoMotion, MotoSleep, Power Bob, Bedgear, L2 Motion, MoodBase, ErgoBed Control and VivaSleep static helpers (no setup support) | Shared |
+| [MotoMotion, MotoSleep and others](beds/motomotion.md) | MotoMotion, MotoSleep, Power Bob, Bedgear, L2 Motion, MoodBase, ErgoBed Control and VivaSleep | Shared |
 | [BERUN](beds/berun.md) | BERUN versions 6–9 | Shared |
 | [Nerum](beds/nerum.md) | The Nerum app | |
 | [OCTO Smart Control](beds/octo.md) | OCTO receivers, the RTV TV lift and Octo Remote Star2 | |

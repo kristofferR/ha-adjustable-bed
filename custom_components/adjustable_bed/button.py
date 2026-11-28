@@ -7,10 +7,12 @@ from collections.abc import Callable, Coroutine, Iterable, Sequence
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any
 
+import voluptuous as vol
 from homeassistant.components.button import ButtonEntity, ButtonEntityDescription
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import EntityCategory, Platform
-from homeassistant.core import HomeAssistant, callback
+from homeassistant.core import HomeAssistant, ServiceCall, callback
+from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
@@ -994,7 +996,9 @@ def _combined_spec(
             candidate
             for candidate in controller.controller_button_specs
             if candidate.combine_sides
-            and not (candidate.diagnostic or candidate.release_only or candidate.requires_confirmation)
+            and not (
+                candidate.diagnostic or candidate.release_only or candidate.requires_confirmation
+            )
             and candidate.key == common.key
             and candidate.card == common.card
             and candidate.translation_key == common.translation_key
@@ -1026,7 +1030,9 @@ def _combined_controller_buttons_for(
     with controller_side_scope(children[0]):
         specs = controller.controller_button_specs
     for spec in specs:
-        if not spec.combine_sides or not all(_child_combined_spec(child, spec) for child in children):
+        if not spec.combine_sides or not all(
+            _child_combined_spec(child, spec) for child in children
+        ):
             continue
 
         async def press(ctrl: BedController, common: ControllerButtonSpec = spec) -> None:
@@ -1350,10 +1356,17 @@ class AdjustableBedButton(AdjustableBedEntity, ButtonEntity):
     def extra_state_attributes(self) -> dict[str, Any]:
         attributes = dict(getattr(self, "_attr_extra_state_attributes", None) or {})
         controller = self._coordinator.capability_controller
-        hold = controller.standard_button_hold_spec(self.entity_description.key) if controller else None
+        hold = (
+            controller.standard_button_hold_spec(self.entity_description.key)
+            if controller
+            else None
+        )
         if hold is not None:
-            attributes.update(held_control=hold.control, hold_start_delay_ms=hold.start_delay_ms,
-                              hold_release_delay_ms=hold.release_delay_ms)
+            attributes.update(
+                held_control=hold.control,
+                hold_start_delay_ms=hold.start_delay_ms,
+                hold_release_delay_ms=hold.release_delay_ms,
+            )
             attributes.update(hold_lease_attributes([controller], control=hold.control))
             if hold.release_button_key is not None:
                 attributes["hold_release_button_key"] = hold.release_button_key
@@ -1398,6 +1411,18 @@ class AdjustableBedButton(AdjustableBedEntity, ButtonEntity):
         _LOGGER.debug("Button action completed: %s", self.entity_description.key)
 
 
+async def _cancel_held_button(entity: ButtonEntity, _call: ServiceCall) -> None:
+    if not isinstance(entity, ControllerActionButton):
+        raise invalid("held_cancel_unavailable")
+    await entity.async_cancel_hold()
+
+
+async def _press_confirmed_button(entity: ButtonEntity, call: ServiceCall) -> None:
+    if not isinstance(entity, ControllerActionButton):
+        raise invalid("button_confirmation_required")
+    await entity.async_press_confirmed(call.data["confirmed"])
+
+
 class ControllerActionButton(AdjustableBedEntity, ButtonEntity):
     """Expose a controller's named action through the serialized command path."""
 
@@ -1440,6 +1465,14 @@ class ControllerActionButton(AdjustableBedEntity, ButtonEntity):
     async def async_added_to_hass(self) -> None:
         """Refresh availability when the controller publishes new state."""
         await super().async_added_to_hass()
+        if self.platform is not None:
+            self.platform.async_register_entity_service("cancel_hold", {}, _cancel_held_button)
+            self.platform.async_register_entity_service(
+                "press_confirmed",
+                {vol.Required("confirmed"): vol.All(cv.boolean, vol.In((True,)))},
+                _press_confirmed_button,
+            )
+
         self.async_on_remove(
             self._coordinator.register_controller_state_callback(
                 self._handle_controller_state_update
@@ -1471,8 +1504,30 @@ class ControllerActionButton(AdjustableBedEntity, ButtonEntity):
         with self._side_scope():
             return super().available and controller.controller_button_available(self._spec.key)
 
+    async def async_cancel_hold(self) -> None:
+        """Cancel a gesture without turning it into a normal release."""
+        if not self._spec.release_only:
+            raise invalid("held_cancel_unavailable")
+        token = CONTROLLER_GESTURE_RELEASE.set(True)
+        try:
+            await self._coordinator.async_stop_command()
+        finally:
+            CONTROLLER_GESTURE_RELEASE.reset(token)
+
+    async def async_press_confirmed(self, confirmed: bool) -> None:
+        """Execute an action only after the caller explicitly acknowledges it."""
+        spec = self._current_spec()
+        if confirmed is not True or not spec.requires_confirmation:
+            raise invalid("button_confirmation_required")
+        await self._async_press(spec.confirmed_press_fn or spec.press_fn)
+
     async def async_press(self) -> None:
         """Execute the named action with its declared replacement policy."""
+        await self._async_press(self._spec.press_fn)
+
+    async def _async_press(
+        self, press_fn: Callable[[BedController], Coroutine[Any, Any, None]]
+    ) -> None:
         if self._spec.release_only:
             controller = self._coordinator.capability_controller
             if controller is not None:
@@ -1484,7 +1539,6 @@ class ControllerActionButton(AdjustableBedEntity, ButtonEntity):
             finally:
                 CONTROLLER_GESTURE_RELEASE.reset(token)
             return
-        press_fn = self._spec.press_fn
         if self._spec.invalidates_position or _moves_untimed(
             self._spec.key, held=self._current_hold_spec() is not None
         ):
@@ -1506,7 +1560,11 @@ class ControllerActionButton(AdjustableBedEntity, ButtonEntity):
         if controller is not None:
             with self._side_scope():
                 spec = next(
-                    (spec for spec in controller.controller_button_specs if spec.key == self._spec.key),
+                    (
+                        spec
+                        for spec in controller.controller_button_specs
+                        if spec.key == self._spec.key
+                    ),
                     None,
                 )
             if spec is not None:
@@ -1661,7 +1719,8 @@ class PairedBedCombinedButton(RenamesInPlace, PlacedInCard, ButtonEntity):
                     controller.validate_memory_recall(description.memory_slot)
         press_fn = description.press_fn
         if (
-            self._spec is not None and (self._spec.invalidates_position or self._spec.hold is not None)
+            self._spec is not None
+            and (self._spec.invalidates_position or self._spec.hold is not None)
         ) or _moves_untimed(description.key):
             press_fn = invalidate_on_command(self.hass, press_fn)
         await self._coordinator.async_execute_controller_command(
@@ -1820,7 +1879,9 @@ class PairedBedCombinedMotorButton(RenamesInPlace, PlacedInCard, ButtonEntity):
         native_press_ms = _paired_native_press_ms(self._coordinator, self._motor_key)
         if self._hold_spec is not None and native_press_ms is not None:
             control = (
-                self._hold_spec.up_control if self._direction == "up" else self._hold_spec.down_control
+                self._hold_spec.up_control
+                if self._direction == "up"
+                else self._hold_spec.down_control
             )
 
             async def finite_app_move(controller: BedController) -> None:
@@ -1948,7 +2009,11 @@ def _paired_motor_hold_spec(
             return None
         with controller_side_scope(child):
             spec = next(
-                (candidate for candidate in controller.motor_control_specs if candidate.key == motor),
+                (
+                    candidate
+                    for candidate in controller.motor_control_specs
+                    if candidate.key == motor
+                ),
                 None,
             )
         if spec is None or spec.hold is None:

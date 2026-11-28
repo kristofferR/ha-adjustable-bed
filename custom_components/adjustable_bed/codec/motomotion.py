@@ -2,8 +2,8 @@
 
 The forms come from MotoMotion 3.1.9; MotoSleep
 5.1.5 and Power Bob 2.0.3 send the ASCII, binary and letter forms.
-VivaSleep 1.0.4 reuses only the verified ASCII writer/decimal subset and
-accumulated digit/space tokenization; its field offsets stay in its profile.
+VivaSleep 1.0.4 also uses the UTF-16 low-byte writer and variable-width decimal
+fields. Its accumulated digit/space token offsets stay in its profile.
 
 - ASCII command: ``$#``, then the command, the parameter and the XOR of their
   decimal digits, each as five decimal digits, then ``R\\r``.
@@ -60,6 +60,18 @@ def short_transport(command: str, *, wrapped: bool) -> bytes | None:
         if not command.endswith("R\r"):
             command += "R\r"
     return command.encode("ascii")
+
+
+def utf16_transport(command: str, *, wrapped: bool) -> bytes | None:
+    """The HHC writer's UTF-16 codeUnits-to-Uint8List narrowing, without UTF-8."""
+    if command in ("", "null") or wrapped and command == "$z":
+        return None
+    if wrapped:
+        if not command.startswith("$#"):
+            command = "$#" + command
+        if not command.endswith("R\r"):
+            command += "R\r"
+    return command.encode("utf-16-le", errors="surrogatepass")[::2]
 
 
 def decimal_tokens(data: bytes) -> tuple[str, ...]:

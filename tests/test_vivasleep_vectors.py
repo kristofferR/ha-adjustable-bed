@@ -1,4 +1,4 @@
-"""Static VivaSleep 1.0.4 vectors; no captured hardware or complete bed contract."""
+"""VivaSleep's earlier frozen subset vectors and decimal boundary guards."""
 
 from __future__ import annotations
 

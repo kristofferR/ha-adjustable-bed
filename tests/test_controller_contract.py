@@ -356,6 +356,9 @@ async def _create_controller_for_bed_type(
     if bed_type == const.BED_TYPE_JALON_BED:
         coordinator.entry.data[const.CONF_PRODUCT_TYPE] = "40"
 
+    if bed_type == const.BED_TYPE_VIVASLEEP:
+        coordinator.entry.data[const.CONF_BLE_DEVICE_NAME] = "HHC0000015DE0X"
+
     if bed_type == const.BED_TYPE_MOTOMOTION:
         # Include the source-declared side-state specs in translation reachability.
         coordinator.entry.data = {**coordinator.entry.data, const.CONF_BLE_DEVICE_NAME: "SOFA000001SC00M"}

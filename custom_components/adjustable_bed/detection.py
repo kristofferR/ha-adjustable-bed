@@ -200,6 +200,7 @@ from .const import (
     BED_TYPE_VIBRADORM,
     BED_TYPE_VIBRADORM_APP,
     BED_TYPE_VINDO,
+    BED_TYPE_VIVASLEEP,
     BED_TYPE_VMATBASIC,
     BED_TYPE_YAMADA,
     BED_TYPE_ZSERIES,
@@ -854,6 +855,7 @@ BED_TYPE_DISPLAY_NAMES: dict[str, str] = {
     BED_TYPE_MALOUF_LEGACY_OKIN: "Malouf remote, older receiver",
     BED_TYPE_MALOUF_NEW_OKIN: "Malouf remote, newer receiver",
     "bedgear": "Bedgear app",
+    BED_TYPE_VIVASLEEP: "VivaSleep app",
     "l2motion": "L2 Motion app",
     BED_TYPE_ERGOBED: "ErgoBed Control app",
     BED_TYPE_MOODBASE: "MoodBase app",
@@ -2308,6 +2310,15 @@ def _detect_bed_type_with_app_candidates(
         result.signals.append("name:moodbase_app_candidate")
         if moodbase_receiver_hint(service_info.name, service_info.service_uuids):
             result.signals.append("service:moodbase_app_candidate")
+    from .profiles.vivasleep import accepts_name as vivasleep_accepts_name
+
+    if first.name(BED_TYPE_VIVASLEEP) and vivasleep_accepts_name(service_info.name) and not any(signal.startswith("excluded:") for signal in result.signals):
+        if result.bed_type is None:
+            result = DetectionResult(BED_TYPE_VIVASLEEP, 0.3, ["name:vivasleep_app_candidate"])
+        else:
+            result.ambiguous_types = list(dict.fromkeys([*(result.ambiguous_types or ()), BED_TYPE_VIVASLEEP]))
+            result.signals.append("name:vivasleep_app_candidate")
+            result.confidence = min(result.confidence, 0.6)
     if motomotion_eligible(service_info.name):
         if result.bed_type is None and not any(signal.startswith("excluded:") for signal in result.signals):
             return DetectionResult(bed_type=BED_TYPE_MOTOMOTION, confidence=0.3, signals=[*result.signals, "name:motomotion_app_candidate"])

@@ -288,14 +288,15 @@ guide's **Aliases**. The default pulse timing table in
 [Configuration](../CONFIGURATION.md#default-values-by-bed-type) is generated the
 same way, from `scripts/codec_docs/_configuration.py`.
 
-VivaSleep's static subset in `profiles/vivasleep.py` reuses MotoMotion's
-`decimal_fields` and `short_transport`: every frozen numeric/writer vector
-reproduces byte for byte in `tests/test_vivasleep_vectors.py`. Its parser reuses
-only digit/space tokenization; the neutral field offsets stay app-local. No new
-wire codec is needed. The profile remains unregistered until panel actions,
-admission, startup and cleanup contracts are complete; sharing a writer does
-not grant another app's capabilities or execution settings. Its reference
-tables are generated in the [shared HHC guide](../beds/motomotion.md#vivasleep).
+VivaSleep declares its own original-name motor layouts, gesture policies and
+optional gates in `profiles/vivasleep.py`. Its controller extends the shared HHC
+session with native RGB lighting, light timer, alarm and synchronization
+controls. The shared codec preserves variable-width decimal fields and UTF-16
+low-byte writer encoding; the full frozen vectors and name-equivalence cases
+exercise those paths. App-specific parser offsets remain profile data, while
+ordered writes, cancellation and session fencing stay in the shared controller.
+The [VivaSleep guide](../beds/motomotion.md#vivasleep) generates its tables from
+these definitions.
 
 ## Controller glue
 

@@ -1,0 +1,2712 @@
+[
+  {
+    "id": "runtime.sync_off",
+    "kind": "frame",
+    "inputs": {
+      "command": "00015",
+      "parameter": "00000"
+    },
+    "expected": "24 23 30 30 30 31 35 30 30 30 30 30 30 30 30 30 34 52 0d",
+    "evidence": [
+      "main_panel.dart@0x4b5250..0x4b55c4"
+    ],
+    "origin_scope": "runtime",
+    "origin_file": "runtime-vectors.json"
+  },
+  {
+    "id": "runtime.sync_on",
+    "kind": "frame",
+    "inputs": {
+      "command": "00012",
+      "parameter": "00000"
+    },
+    "expected": "24 23 30 30 30 31 32 30 30 30 30 30 30 30 30 30 33 52 0d",
+    "evidence": [
+      "main_panel.dart@0x4b5250..0x4b55c4"
+    ],
+    "origin_scope": "runtime",
+    "origin_file": "runtime-vectors.json"
+  },
+  {
+    "id": "runtime.wireless",
+    "kind": "frame",
+    "inputs": {
+      "command": "33049",
+      "parameter": "00000"
+    },
+    "expected": "24 23 33 33 30 34 39 30 30 30 30 30 30 30 30 31 33 52 0d",
+    "evidence": [
+      "panel_snyc.dart@0x62d3f0..0x62d4d0; app_toolbar.dart@0x5a1504..0x5a17b8"
+    ],
+    "origin_scope": "runtime",
+    "origin_file": "runtime-vectors.json"
+  },
+  {
+    "id": "runtime.wired",
+    "kind": "frame",
+    "inputs": {
+      "command": "33049",
+      "parameter": "00001"
+    },
+    "expected": "24 23 33 33 30 34 39 30 30 30 30 31 30 30 30 31 32 52 0d",
+    "evidence": [
+      "panel_snyc.dart@0x62d3f0..0x62d4d0; app_toolbar.dart@0x5a1504..0x5a17b8"
+    ],
+    "origin_scope": "runtime",
+    "origin_file": "runtime-vectors.json"
+  },
+  {
+    "id": "runtime.raw_stop",
+    "kind": "writer",
+    "inputs": {
+      "text": "$b",
+      "selected_name": "HHC0000010000X"
+    },
+    "expected": "24 62",
+    "evidence": [
+      "ble_manager.dart@0x4b1df4..0x4b20cc"
+    ],
+    "origin_scope": "runtime",
+    "origin_file": "runtime-vectors.json"
+  },
+  {
+    "id": "runtime.wrapped_stop",
+    "kind": "writer",
+    "inputs": {
+      "text": "$b",
+      "selected_name": "HHC00000100M0X"
+    },
+    "expected": "24 23 24 62 52 0d",
+    "evidence": [
+      "ble_manager.dart@0x4b1df4..0x4b20cc"
+    ],
+    "origin_scope": "runtime",
+    "origin_file": "runtime-vectors.json"
+  },
+  {
+    "id": "runtime.raw_query",
+    "kind": "writer",
+    "inputs": {
+      "text": "$z",
+      "selected_name": "HHC0000010000X"
+    },
+    "expected": "24 7a",
+    "evidence": [
+      "ble_manager.dart@0x4b1df4..0x4b20cc"
+    ],
+    "origin_scope": "runtime",
+    "origin_file": "runtime-vectors.json"
+  },
+  {
+    "id": "runtime.suppressed_query",
+    "kind": "writer",
+    "inputs": {
+      "text": "$z",
+      "selected_name": "HHC00000100M0X"
+    },
+    "expected": "NO WRITE",
+    "evidence": [
+      "ble_manager.dart@0x4b1df4..0x4b20cc"
+    ],
+    "origin_scope": "runtime",
+    "origin_file": "runtime-vectors.json"
+  },
+  {
+    "id": "runtime.case_sensitive_mode",
+    "kind": "writer",
+    "inputs": {
+      "text": "$b",
+      "selected_name": "HHC00000100m0X"
+    },
+    "expected": "24 62",
+    "evidence": [
+      "ble_manager.dart@0x4b1df4..0x4b20cc"
+    ],
+    "origin_scope": "runtime",
+    "origin_file": "runtime-vectors.json"
+  },
+  {
+    "id": "runtime.empty",
+    "kind": "writer",
+    "inputs": {
+      "text": "",
+      "selected_name": "HHC0000010000X"
+    },
+    "expected": "NO WRITE",
+    "evidence": [
+      "ble_manager.dart@0x4b1df4..0x4b20cc"
+    ],
+    "origin_scope": "runtime",
+    "origin_file": "runtime-vectors.json"
+  },
+  {
+    "id": "runtime.literal_null",
+    "kind": "writer",
+    "inputs": {
+      "text": "null",
+      "selected_name": "HHC0000010000X"
+    },
+    "expected": "NO WRITE",
+    "evidence": [
+      "ble_manager.dart@0x4b1df4..0x4b20cc"
+    ],
+    "origin_scope": "runtime",
+    "origin_file": "runtime-vectors.json"
+  },
+  {
+    "id": "runtime.already_framed",
+    "kind": "writer",
+    "inputs": {
+      "text": "$#000120000000003R\r",
+      "selected_name": "HHC00000100M0X"
+    },
+    "expected": "24 23 30 30 30 31 32 30 30 30 30 30 30 30 30 30 33 52 0d",
+    "evidence": [
+      "ble_manager.dart@0x4b1df4..0x4b20cc"
+    ],
+    "origin_scope": "runtime",
+    "origin_file": "runtime-vectors.json"
+  },
+  {
+    "id": "runtime.held_tap_50",
+    "kind": "gesture",
+    "inputs": {
+      "held": true,
+      "tap_up_write": false,
+      "release_ms": 50
+    },
+    "expected": [
+      50,
+      150,
+      250
+    ],
+    "evidence": [
+      "image_button.dart@0x4b19c4..0x4b1df4,0x4b232c..0x4b2a24; pp+0x75c8"
+    ],
+    "origin_scope": "runtime",
+    "origin_file": "runtime-vectors.json"
+  },
+  {
+    "id": "runtime.held_250",
+    "kind": "gesture",
+    "inputs": {
+      "held": true,
+      "tap_up_write": false,
+      "release_ms": 250
+    },
+    "expected": [
+      100,
+      200,
+      250,
+      350,
+      450
+    ],
+    "evidence": [
+      "image_button.dart@0x4b19c4..0x4b1df4,0x4b232c..0x4b2a24; pp+0x75c8"
+    ],
+    "origin_scope": "runtime",
+    "origin_file": "runtime-vectors.json"
+  },
+  {
+    "id": "runtime.held_650",
+    "kind": "gesture",
+    "inputs": {
+      "held": true,
+      "tap_up_write": false,
+      "release_ms": 650
+    },
+    "expected": [
+      100,
+      200,
+      300,
+      400,
+      500,
+      600
+    ],
+    "evidence": [
+      "image_button.dart@0x4b19c4..0x4b1df4,0x4b232c..0x4b2a24; pp+0x75c8"
+    ],
+    "origin_scope": "runtime",
+    "origin_file": "runtime-vectors.json"
+  },
+  {
+    "id": "runtime.cancel_250",
+    "kind": "gesture",
+    "inputs": {
+      "held": true,
+      "tap_up_write": false,
+      "release_ms": 250,
+      "cancelled": true
+    },
+    "expected": [
+      100,
+      200
+    ],
+    "evidence": [
+      "image_button.dart@0x4b19c4..0x4b1df4,0x4b232c..0x4b2a24; pp+0x75c8"
+    ],
+    "origin_scope": "runtime",
+    "origin_file": "runtime-vectors.json"
+  },
+  {
+    "id": "runtime.custom_up_250",
+    "kind": "gesture",
+    "inputs": {
+      "held": true,
+      "tap_up_write": false,
+      "release_ms": 250,
+      "custom_up": true
+    },
+    "expected": [
+      100,
+      200
+    ],
+    "evidence": [
+      "image_button.dart@0x4b19c4..0x4b1df4,0x4b232c..0x4b2a24; pp+0x75c8"
+    ],
+    "origin_scope": "runtime",
+    "origin_file": "runtime-vectors.json"
+  },
+  {
+    "id": "runtime.tap_down",
+    "kind": "gesture",
+    "inputs": {
+      "held": false,
+      "tap_up_write": false,
+      "release_ms": 50
+    },
+    "expected": [
+      0
+    ],
+    "evidence": [
+      "image_button.dart@0x4b19c4..0x4b1df4,0x4b232c..0x4b2a24; pp+0x75c8"
+    ],
+    "origin_scope": "runtime",
+    "origin_file": "runtime-vectors.json"
+  },
+  {
+    "id": "runtime.tap_up",
+    "kind": "gesture",
+    "inputs": {
+      "held": false,
+      "tap_up_write": true,
+      "release_ms": 50
+    },
+    "expected": [
+      50
+    ],
+    "evidence": [
+      "image_button.dart@0x4b19c4..0x4b1df4,0x4b232c..0x4b2a24; pp+0x75c8"
+    ],
+    "origin_scope": "runtime",
+    "origin_file": "runtime-vectors.json"
+  },
+  {
+    "id": "runtime.explicit_stop_train",
+    "kind": "stop_train",
+    "inputs": {},
+    "expected": [
+      0,
+      30,
+      60,
+      90,
+      120
+    ],
+    "evidence": [
+      "base_view_state.dart@0x5a3d0c..0x5a3edc; pp+0x14e88"
+    ],
+    "origin_scope": "runtime",
+    "origin_file": "runtime-vectors.json"
+  },
+  {
+    "id": "controls.static-A-normal",
+    "kind": "write",
+    "inputs": {
+      "text": "$A",
+      "m": false
+    },
+    "expected": "24 41",
+    "evidence": [
+      "work/blutter/asm/motosleep/base/ble/ble_manager.dart@0x4b1df4"
+    ],
+    "origin_scope": "controls",
+    "origin_file": "controls-vectors.json"
+  },
+  {
+    "id": "controls.static-A-M",
+    "kind": "write",
+    "inputs": {
+      "text": "$A",
+      "m": true
+    },
+    "expected": "24 23 24 41 52 0d",
+    "evidence": [
+      "work/blutter/asm/motosleep/base/ble/ble_manager.dart@0x4b1df4"
+    ],
+    "origin_scope": "controls",
+    "origin_file": "controls-vectors.json"
+  },
+  {
+    "id": "controls.static-B-normal",
+    "kind": "write",
+    "inputs": {
+      "text": "$B",
+      "m": false
+    },
+    "expected": "24 42",
+    "evidence": [
+      "work/blutter/asm/motosleep/base/ble/ble_manager.dart@0x4b1df4"
+    ],
+    "origin_scope": "controls",
+    "origin_file": "controls-vectors.json"
+  },
+  {
+    "id": "controls.static-B-M",
+    "kind": "write",
+    "inputs": {
+      "text": "$B",
+      "m": true
+    },
+    "expected": "24 23 24 42 52 0d",
+    "evidence": [
+      "work/blutter/asm/motosleep/base/ble/ble_manager.dart@0x4b1df4"
+    ],
+    "origin_scope": "controls",
+    "origin_file": "controls-vectors.json"
+  },
+  {
+    "id": "controls.static-C-normal",
+    "kind": "write",
+    "inputs": {
+      "text": "$C",
+      "m": false
+    },
+    "expected": "24 43",
+    "evidence": [
+      "work/blutter/asm/motosleep/base/ble/ble_manager.dart@0x4b1df4"
+    ],
+    "origin_scope": "controls",
+    "origin_file": "controls-vectors.json"
+  },
+  {
+    "id": "controls.static-C-M",
+    "kind": "write",
+    "inputs": {
+      "text": "$C",
+      "m": true
+    },
+    "expected": "24 23 24 43 52 0d",
+    "evidence": [
+      "work/blutter/asm/motosleep/base/ble/ble_manager.dart@0x4b1df4"
+    ],
+    "origin_scope": "controls",
+    "origin_file": "controls-vectors.json"
+  },
+  {
+    "id": "controls.static-D-normal",
+    "kind": "write",
+    "inputs": {
+      "text": "$D",
+      "m": false
+    },
+    "expected": "24 44",
+    "evidence": [
+      "work/blutter/asm/motosleep/base/ble/ble_manager.dart@0x4b1df4"
+    ],
+    "origin_scope": "controls",
+    "origin_file": "controls-vectors.json"
+  },
+  {
+    "id": "controls.static-D-M",
+    "kind": "write",
+    "inputs": {
+      "text": "$D",
+      "m": true
+    },
+    "expected": "24 23 24 44 52 0d",
+    "evidence": [
+      "work/blutter/asm/motosleep/base/ble/ble_manager.dart@0x4b1df4"
+    ],
+    "origin_scope": "controls",
+    "origin_file": "controls-vectors.json"
+  },
+  {
+    "id": "controls.static-E-normal",
+    "kind": "write",
+    "inputs": {
+      "text": "$E",
+      "m": false
+    },
+    "expected": "24 45",
+    "evidence": [
+      "work/blutter/asm/motosleep/base/ble/ble_manager.dart@0x4b1df4"
+    ],
+    "origin_scope": "controls",
+    "origin_file": "controls-vectors.json"
+  },
+  {
+    "id": "controls.static-E-M",
+    "kind": "write",
+    "inputs": {
+      "text": "$E",
+      "m": true
+    },
+    "expected": "24 23 24 45 52 0d",
+    "evidence": [
+      "work/blutter/asm/motosleep/base/ble/ble_manager.dart@0x4b1df4"
+    ],
+    "origin_scope": "controls",
+    "origin_file": "controls-vectors.json"
+  },
+  {
+    "id": "controls.static-F-normal",
+    "kind": "write",
+    "inputs": {
+      "text": "$F",
+      "m": false
+    },
+    "expected": "24 46",
+    "evidence": [
+      "work/blutter/asm/motosleep/base/ble/ble_manager.dart@0x4b1df4"
+    ],
+    "origin_scope": "controls",
+    "origin_file": "controls-vectors.json"
+  },
+  {
+    "id": "controls.static-F-M",
+    "kind": "write",
+    "inputs": {
+      "text": "$F",
+      "m": true
+    },
+    "expected": "24 23 24 46 52 0d",
+    "evidence": [
+      "work/blutter/asm/motosleep/base/ble/ble_manager.dart@0x4b1df4"
+    ],
+    "origin_scope": "controls",
+    "origin_file": "controls-vectors.json"
+  },
+  {
+    "id": "controls.static-G-normal",
+    "kind": "write",
+    "inputs": {
+      "text": "$G",
+      "m": false
+    },
+    "expected": "24 47",
+    "evidence": [
+      "work/blutter/asm/motosleep/base/ble/ble_manager.dart@0x4b1df4"
+    ],
+    "origin_scope": "controls",
+    "origin_file": "controls-vectors.json"
+  },
+  {
+    "id": "controls.static-G-M",
+    "kind": "write",
+    "inputs": {
+      "text": "$G",
+      "m": true
+    },
+    "expected": "24 23 24 47 52 0d",
+    "evidence": [
+      "work/blutter/asm/motosleep/base/ble/ble_manager.dart@0x4b1df4"
+    ],
+    "origin_scope": "controls",
+    "origin_file": "controls-vectors.json"
+  },
+  {
+    "id": "controls.static-H-normal",
+    "kind": "write",
+    "inputs": {
+      "text": "$H",
+      "m": false
+    },
+    "expected": "24 48",
+    "evidence": [
+      "work/blutter/asm/motosleep/base/ble/ble_manager.dart@0x4b1df4"
+    ],
+    "origin_scope": "controls",
+    "origin_file": "controls-vectors.json"
+  },
+  {
+    "id": "controls.static-H-M",
+    "kind": "write",
+    "inputs": {
+      "text": "$H",
+      "m": true
+    },
+    "expected": "24 23 24 48 52 0d",
+    "evidence": [
+      "work/blutter/asm/motosleep/base/ble/ble_manager.dart@0x4b1df4"
+    ],
+    "origin_scope": "controls",
+    "origin_file": "controls-vectors.json"
+  },
+  {
+    "id": "controls.static-I-normal",
+    "kind": "write",
+    "inputs": {
+      "text": "$I",
+      "m": false
+    },
+    "expected": "24 49",
+    "evidence": [
+      "work/blutter/asm/motosleep/base/ble/ble_manager.dart@0x4b1df4"
+    ],
+    "origin_scope": "controls",
+    "origin_file": "controls-vectors.json"
+  },
+  {
+    "id": "controls.static-I-M",
+    "kind": "write",
+    "inputs": {
+      "text": "$I",
+      "m": true
+    },
+    "expected": "24 23 24 49 52 0d",
+    "evidence": [
+      "work/blutter/asm/motosleep/base/ble/ble_manager.dart@0x4b1df4"
+    ],
+    "origin_scope": "controls",
+    "origin_file": "controls-vectors.json"
+  },
+  {
+    "id": "controls.static-J-normal",
+    "kind": "write",
+    "inputs": {
+      "text": "$J",
+      "m": false
+    },
+    "expected": "24 4a",
+    "evidence": [
+      "work/blutter/asm/motosleep/base/ble/ble_manager.dart@0x4b1df4"
+    ],
+    "origin_scope": "controls",
+    "origin_file": "controls-vectors.json"
+  },
+  {
+    "id": "controls.static-J-M",
+    "kind": "write",
+    "inputs": {
+      "text": "$J",
+      "m": true
+    },
+    "expected": "24 23 24 4a 52 0d",
+    "evidence": [
+      "work/blutter/asm/motosleep/base/ble/ble_manager.dart@0x4b1df4"
+    ],
+    "origin_scope": "controls",
+    "origin_file": "controls-vectors.json"
+  },
+  {
+    "id": "controls.static-K-normal",
+    "kind": "write",
+    "inputs": {
+      "text": "$K",
+      "m": false
+    },
+    "expected": "24 4b",
+    "evidence": [
+      "work/blutter/asm/motosleep/base/ble/ble_manager.dart@0x4b1df4"
+    ],
+    "origin_scope": "controls",
+    "origin_file": "controls-vectors.json"
+  },
+  {
+    "id": "controls.static-K-M",
+    "kind": "write",
+    "inputs": {
+      "text": "$K",
+      "m": true
+    },
+    "expected": "24 23 24 4b 52 0d",
+    "evidence": [
+      "work/blutter/asm/motosleep/base/ble/ble_manager.dart@0x4b1df4"
+    ],
+    "origin_scope": "controls",
+    "origin_file": "controls-vectors.json"
+  },
+  {
+    "id": "controls.static-L-normal",
+    "kind": "write",
+    "inputs": {
+      "text": "$L",
+      "m": false
+    },
+    "expected": "24 4c",
+    "evidence": [
+      "work/blutter/asm/motosleep/base/ble/ble_manager.dart@0x4b1df4"
+    ],
+    "origin_scope": "controls",
+    "origin_file": "controls-vectors.json"
+  },
+  {
+    "id": "controls.static-L-M",
+    "kind": "write",
+    "inputs": {
+      "text": "$L",
+      "m": true
+    },
+    "expected": "24 23 24 4c 52 0d",
+    "evidence": [
+      "work/blutter/asm/motosleep/base/ble/ble_manager.dart@0x4b1df4"
+    ],
+    "origin_scope": "controls",
+    "origin_file": "controls-vectors.json"
+  },
+  {
+    "id": "controls.static-M-normal",
+    "kind": "write",
+    "inputs": {
+      "text": "$M",
+      "m": false
+    },
+    "expected": "24 4d",
+    "evidence": [
+      "work/blutter/asm/motosleep/base/ble/ble_manager.dart@0x4b1df4"
+    ],
+    "origin_scope": "controls",
+    "origin_file": "controls-vectors.json"
+  },
+  {
+    "id": "controls.static-M-M",
+    "kind": "write",
+    "inputs": {
+      "text": "$M",
+      "m": true
+    },
+    "expected": "24 23 24 4d 52 0d",
+    "evidence": [
+      "work/blutter/asm/motosleep/base/ble/ble_manager.dart@0x4b1df4"
+    ],
+    "origin_scope": "controls",
+    "origin_file": "controls-vectors.json"
+  },
+  {
+    "id": "controls.static-N-normal",
+    "kind": "write",
+    "inputs": {
+      "text": "$N",
+      "m": false
+    },
+    "expected": "24 4e",
+    "evidence": [
+      "work/blutter/asm/motosleep/base/ble/ble_manager.dart@0x4b1df4"
+    ],
+    "origin_scope": "controls",
+    "origin_file": "controls-vectors.json"
+  },
+  {
+    "id": "controls.static-N-M",
+    "kind": "write",
+    "inputs": {
+      "text": "$N",
+      "m": true
+    },
+    "expected": "24 23 24 4e 52 0d",
+    "evidence": [
+      "work/blutter/asm/motosleep/base/ble/ble_manager.dart@0x4b1df4"
+    ],
+    "origin_scope": "controls",
+    "origin_file": "controls-vectors.json"
+  },
+  {
+    "id": "controls.static-O-normal",
+    "kind": "write",
+    "inputs": {
+      "text": "$O",
+      "m": false
+    },
+    "expected": "24 4f",
+    "evidence": [
+      "work/blutter/asm/motosleep/base/ble/ble_manager.dart@0x4b1df4"
+    ],
+    "origin_scope": "controls",
+    "origin_file": "controls-vectors.json"
+  },
+  {
+    "id": "controls.static-O-M",
+    "kind": "write",
+    "inputs": {
+      "text": "$O",
+      "m": true
+    },
+    "expected": "24 23 24 4f 52 0d",
+    "evidence": [
+      "work/blutter/asm/motosleep/base/ble/ble_manager.dart@0x4b1df4"
+    ],
+    "origin_scope": "controls",
+    "origin_file": "controls-vectors.json"
+  },
+  {
+    "id": "controls.static-P-normal",
+    "kind": "write",
+    "inputs": {
+      "text": "$P",
+      "m": false
+    },
+    "expected": "24 50",
+    "evidence": [
+      "work/blutter/asm/motosleep/base/ble/ble_manager.dart@0x4b1df4"
+    ],
+    "origin_scope": "controls",
+    "origin_file": "controls-vectors.json"
+  },
+  {
+    "id": "controls.static-P-M",
+    "kind": "write",
+    "inputs": {
+      "text": "$P",
+      "m": true
+    },
+    "expected": "24 23 24 50 52 0d",
+    "evidence": [
+      "work/blutter/asm/motosleep/base/ble/ble_manager.dart@0x4b1df4"
+    ],
+    "origin_scope": "controls",
+    "origin_file": "controls-vectors.json"
+  },
+  {
+    "id": "controls.static-Q-normal",
+    "kind": "write",
+    "inputs": {
+      "text": "$Q",
+      "m": false
+    },
+    "expected": "24 51",
+    "evidence": [
+      "work/blutter/asm/motosleep/base/ble/ble_manager.dart@0x4b1df4"
+    ],
+    "origin_scope": "controls",
+    "origin_file": "controls-vectors.json"
+  },
+  {
+    "id": "controls.static-Q-M",
+    "kind": "write",
+    "inputs": {
+      "text": "$Q",
+      "m": true
+    },
+    "expected": "24 23 24 51 52 0d",
+    "evidence": [
+      "work/blutter/asm/motosleep/base/ble/ble_manager.dart@0x4b1df4"
+    ],
+    "origin_scope": "controls",
+    "origin_file": "controls-vectors.json"
+  },
+  {
+    "id": "controls.static-R-normal",
+    "kind": "write",
+    "inputs": {
+      "text": "$R",
+      "m": false
+    },
+    "expected": "24 52",
+    "evidence": [
+      "work/blutter/asm/motosleep/base/ble/ble_manager.dart@0x4b1df4"
+    ],
+    "origin_scope": "controls",
+    "origin_file": "controls-vectors.json"
+  },
+  {
+    "id": "controls.static-R-M",
+    "kind": "write",
+    "inputs": {
+      "text": "$R",
+      "m": true
+    },
+    "expected": "24 23 24 52 52 0d",
+    "evidence": [
+      "work/blutter/asm/motosleep/base/ble/ble_manager.dart@0x4b1df4"
+    ],
+    "origin_scope": "controls",
+    "origin_file": "controls-vectors.json"
+  },
+  {
+    "id": "controls.static-S-normal",
+    "kind": "write",
+    "inputs": {
+      "text": "$S",
+      "m": false
+    },
+    "expected": "24 53",
+    "evidence": [
+      "work/blutter/asm/motosleep/base/ble/ble_manager.dart@0x4b1df4"
+    ],
+    "origin_scope": "controls",
+    "origin_file": "controls-vectors.json"
+  },
+  {
+    "id": "controls.static-S-M",
+    "kind": "write",
+    "inputs": {
+      "text": "$S",
+      "m": true
+    },
+    "expected": "24 23 24 53 52 0d",
+    "evidence": [
+      "work/blutter/asm/motosleep/base/ble/ble_manager.dart@0x4b1df4"
+    ],
+    "origin_scope": "controls",
+    "origin_file": "controls-vectors.json"
+  },
+  {
+    "id": "controls.static-T-normal",
+    "kind": "write",
+    "inputs": {
+      "text": "$T",
+      "m": false
+    },
+    "expected": "24 54",
+    "evidence": [
+      "work/blutter/asm/motosleep/base/ble/ble_manager.dart@0x4b1df4"
+    ],
+    "origin_scope": "controls",
+    "origin_file": "controls-vectors.json"
+  },
+  {
+    "id": "controls.static-T-M",
+    "kind": "write",
+    "inputs": {
+      "text": "$T",
+      "m": true
+    },
+    "expected": "24 23 24 54 52 0d",
+    "evidence": [
+      "work/blutter/asm/motosleep/base/ble/ble_manager.dart@0x4b1df4"
+    ],
+    "origin_scope": "controls",
+    "origin_file": "controls-vectors.json"
+  },
+  {
+    "id": "controls.static-U-normal",
+    "kind": "write",
+    "inputs": {
+      "text": "$U",
+      "m": false
+    },
+    "expected": "24 55",
+    "evidence": [
+      "work/blutter/asm/motosleep/base/ble/ble_manager.dart@0x4b1df4"
+    ],
+    "origin_scope": "controls",
+    "origin_file": "controls-vectors.json"
+  },
+  {
+    "id": "controls.static-U-M",
+    "kind": "write",
+    "inputs": {
+      "text": "$U",
+      "m": true
+    },
+    "expected": "24 23 24 55 52 0d",
+    "evidence": [
+      "work/blutter/asm/motosleep/base/ble/ble_manager.dart@0x4b1df4"
+    ],
+    "origin_scope": "controls",
+    "origin_file": "controls-vectors.json"
+  },
+  {
+    "id": "controls.static-V-normal",
+    "kind": "write",
+    "inputs": {
+      "text": "$V",
+      "m": false
+    },
+    "expected": "24 56",
+    "evidence": [
+      "work/blutter/asm/motosleep/base/ble/ble_manager.dart@0x4b1df4"
+    ],
+    "origin_scope": "controls",
+    "origin_file": "controls-vectors.json"
+  },
+  {
+    "id": "controls.static-V-M",
+    "kind": "write",
+    "inputs": {
+      "text": "$V",
+      "m": true
+    },
+    "expected": "24 23 24 56 52 0d",
+    "evidence": [
+      "work/blutter/asm/motosleep/base/ble/ble_manager.dart@0x4b1df4"
+    ],
+    "origin_scope": "controls",
+    "origin_file": "controls-vectors.json"
+  },
+  {
+    "id": "controls.static-W-normal",
+    "kind": "write",
+    "inputs": {
+      "text": "$W",
+      "m": false
+    },
+    "expected": "24 57",
+    "evidence": [
+      "work/blutter/asm/motosleep/base/ble/ble_manager.dart@0x4b1df4"
+    ],
+    "origin_scope": "controls",
+    "origin_file": "controls-vectors.json"
+  },
+  {
+    "id": "controls.static-W-M",
+    "kind": "write",
+    "inputs": {
+      "text": "$W",
+      "m": true
+    },
+    "expected": "24 23 24 57 52 0d",
+    "evidence": [
+      "work/blutter/asm/motosleep/base/ble/ble_manager.dart@0x4b1df4"
+    ],
+    "origin_scope": "controls",
+    "origin_file": "controls-vectors.json"
+  },
+  {
+    "id": "controls.static-Z-normal",
+    "kind": "write",
+    "inputs": {
+      "text": "$Z",
+      "m": false
+    },
+    "expected": "24 5a",
+    "evidence": [
+      "work/blutter/asm/motosleep/base/ble/ble_manager.dart@0x4b1df4"
+    ],
+    "origin_scope": "controls",
+    "origin_file": "controls-vectors.json"
+  },
+  {
+    "id": "controls.static-Z-M",
+    "kind": "write",
+    "inputs": {
+      "text": "$Z",
+      "m": true
+    },
+    "expected": "24 23 24 5a 52 0d",
+    "evidence": [
+      "work/blutter/asm/motosleep/base/ble/ble_manager.dart@0x4b1df4"
+    ],
+    "origin_scope": "controls",
+    "origin_file": "controls-vectors.json"
+  },
+  {
+    "id": "controls.static-a-normal",
+    "kind": "write",
+    "inputs": {
+      "text": "$a",
+      "m": false
+    },
+    "expected": "24 61",
+    "evidence": [
+      "work/blutter/asm/motosleep/base/ble/ble_manager.dart@0x4b1df4"
+    ],
+    "origin_scope": "controls",
+    "origin_file": "controls-vectors.json"
+  },
+  {
+    "id": "controls.static-a-M",
+    "kind": "write",
+    "inputs": {
+      "text": "$a",
+      "m": true
+    },
+    "expected": "24 23 24 61 52 0d",
+    "evidence": [
+      "work/blutter/asm/motosleep/base/ble/ble_manager.dart@0x4b1df4"
+    ],
+    "origin_scope": "controls",
+    "origin_file": "controls-vectors.json"
+  },
+  {
+    "id": "controls.static-b-normal",
+    "kind": "write",
+    "inputs": {
+      "text": "$b",
+      "m": false
+    },
+    "expected": "24 62",
+    "evidence": [
+      "work/blutter/asm/motosleep/base/ble/ble_manager.dart@0x4b1df4"
+    ],
+    "origin_scope": "controls",
+    "origin_file": "controls-vectors.json"
+  },
+  {
+    "id": "controls.static-b-M",
+    "kind": "write",
+    "inputs": {
+      "text": "$b",
+      "m": true
+    },
+    "expected": "24 23 24 62 52 0d",
+    "evidence": [
+      "work/blutter/asm/motosleep/base/ble/ble_manager.dart@0x4b1df4"
+    ],
+    "origin_scope": "controls",
+    "origin_file": "controls-vectors.json"
+  },
+  {
+    "id": "controls.static-p-normal",
+    "kind": "write",
+    "inputs": {
+      "text": "$p",
+      "m": false
+    },
+    "expected": "24 70",
+    "evidence": [
+      "work/blutter/asm/motosleep/base/ble/ble_manager.dart@0x4b1df4"
+    ],
+    "origin_scope": "controls",
+    "origin_file": "controls-vectors.json"
+  },
+  {
+    "id": "controls.static-p-M",
+    "kind": "write",
+    "inputs": {
+      "text": "$p",
+      "m": true
+    },
+    "expected": "24 23 24 70 52 0d",
+    "evidence": [
+      "work/blutter/asm/motosleep/base/ble/ble_manager.dart@0x4b1df4"
+    ],
+    "origin_scope": "controls",
+    "origin_file": "controls-vectors.json"
+  },
+  {
+    "id": "controls.static-q-normal",
+    "kind": "write",
+    "inputs": {
+      "text": "$q",
+      "m": false
+    },
+    "expected": "24 71",
+    "evidence": [
+      "work/blutter/asm/motosleep/base/ble/ble_manager.dart@0x4b1df4"
+    ],
+    "origin_scope": "controls",
+    "origin_file": "controls-vectors.json"
+  },
+  {
+    "id": "controls.static-q-M",
+    "kind": "write",
+    "inputs": {
+      "text": "$q",
+      "m": true
+    },
+    "expected": "24 23 24 71 52 0d",
+    "evidence": [
+      "work/blutter/asm/motosleep/base/ble/ble_manager.dart@0x4b1df4"
+    ],
+    "origin_scope": "controls",
+    "origin_file": "controls-vectors.json"
+  },
+  {
+    "id": "controls.skip-56",
+    "kind": "write",
+    "inputs": {
+      "text": "$z",
+      "m": false
+    },
+    "expected": "24 7a",
+    "evidence": [
+      "work/blutter/asm/motosleep/base/ble/ble_manager.dart@0x4b1df4"
+    ],
+    "origin_scope": "controls",
+    "origin_file": "controls-vectors.json"
+  },
+  {
+    "id": "controls.skip-57",
+    "kind": "write",
+    "inputs": {
+      "text": "$z",
+      "m": true
+    },
+    "expected": null,
+    "evidence": [
+      "work/blutter/asm/motosleep/base/ble/ble_manager.dart@0x4b1df4"
+    ],
+    "origin_scope": "controls",
+    "origin_file": "controls-vectors.json"
+  },
+  {
+    "id": "controls.skip-58",
+    "kind": "write",
+    "inputs": {
+      "text": "",
+      "m": false
+    },
+    "expected": null,
+    "evidence": [
+      "work/blutter/asm/motosleep/base/ble/ble_manager.dart@0x4b1df4"
+    ],
+    "origin_scope": "controls",
+    "origin_file": "controls-vectors.json"
+  },
+  {
+    "id": "controls.skip-59",
+    "kind": "write",
+    "inputs": {
+      "text": "null",
+      "m": true
+    },
+    "expected": null,
+    "evidence": [
+      "work/blutter/asm/motosleep/base/ble/ble_manager.dart@0x4b1df4"
+    ],
+    "origin_scope": "controls",
+    "origin_file": "controls-vectors.json"
+  },
+  {
+    "id": "controls.red120",
+    "kind": "frame",
+    "inputs": {
+      "a": "00315",
+      "b": "00120"
+    },
+    "expected": "24 23 30 30 33 31 35 30 30 31 32 30 30 30 30 30 34 52 0d",
+    "evidence": [
+      "work/blutter/asm/motosleep/base/view/base_view_state.dart@0x5adc0c"
+    ],
+    "origin_scope": "controls",
+    "origin_file": "controls-vectors.json"
+  },
+  {
+    "id": "controls.green120",
+    "kind": "frame",
+    "inputs": {
+      "a": "00316",
+      "b": "00120"
+    },
+    "expected": "24 23 30 30 33 31 36 30 30 31 32 30 30 30 30 30 37 52 0d",
+    "evidence": [
+      "work/blutter/asm/motosleep/base/view/base_view_state.dart@0x5adc0c"
+    ],
+    "origin_scope": "controls",
+    "origin_file": "controls-vectors.json"
+  },
+  {
+    "id": "controls.blue120",
+    "kind": "frame",
+    "inputs": {
+      "a": "00317",
+      "b": "00120"
+    },
+    "expected": "24 23 30 30 33 31 37 30 30 31 32 30 30 30 30 30 36 52 0d",
+    "evidence": [
+      "work/blutter/asm/motosleep/base/view/base_view_state.dart@0x5adc0c"
+    ],
+    "origin_scope": "controls",
+    "origin_file": "controls-vectors.json"
+  },
+  {
+    "id": "controls.redzero",
+    "kind": "frame",
+    "inputs": {
+      "a": "00315",
+      "b": "00000"
+    },
+    "expected": "24 23 30 30 33 31 35 30 30 30 30 30 30 30 30 30 37 52 0d",
+    "evidence": [
+      "work/blutter/asm/motosleep/base/view/base_view_state.dart@0x5adc0c"
+    ],
+    "origin_scope": "controls",
+    "origin_file": "controls-vectors.json"
+  },
+  {
+    "id": "controls.timer10",
+    "kind": "frame",
+    "inputs": {
+      "a": "00319",
+      "b": "00010"
+    },
+    "expected": "24 23 30 30 33 31 39 30 30 30 31 30 30 30 30 31 30 52 0d",
+    "evidence": [
+      "work/blutter/asm/motosleep/base/view/base_view_state.dart@0x5adc0c"
+    ],
+    "origin_scope": "controls",
+    "origin_file": "controls-vectors.json"
+  },
+  {
+    "id": "controls.timeroff",
+    "kind": "frame",
+    "inputs": {
+      "a": "00319",
+      "b": "00000"
+    },
+    "expected": "24 23 30 30 33 31 39 30 30 30 30 30 30 30 30 31 31 52 0d",
+    "evidence": [
+      "work/blutter/asm/motosleep/base/view/base_view_state.dart@0x5adc0c"
+    ],
+    "origin_scope": "controls",
+    "origin_file": "controls-vectors.json"
+  },
+  {
+    "id": "controls.alarm0630off",
+    "kind": "frame",
+    "inputs": {
+      "a": "063000",
+      "b": "0017"
+    },
+    "expected": "24 23 30 36 33 30 30 30 30 30 31 37 30 30 30 30 33 52 0d",
+    "evidence": [
+      "work/blutter/asm/motosleep/page/alarm.dart@0x5a1270"
+    ],
+    "origin_scope": "controls",
+    "origin_file": "controls-vectors.json"
+  },
+  {
+    "id": "controls.alarm0630s1",
+    "kind": "frame",
+    "inputs": {
+      "a": "063000",
+      "b": "0118"
+    },
+    "expected": "24 23 30 36 33 30 30 30 30 31 31 38 30 30 30 31 33 52 0d",
+    "evidence": [
+      "work/blutter/asm/motosleep/page/alarm.dart@0x5a1270"
+    ],
+    "origin_scope": "controls",
+    "origin_file": "controls-vectors.json"
+  },
+  {
+    "id": "controls.alarm0630s2",
+    "kind": "frame",
+    "inputs": {
+      "a": "063000",
+      "b": "0219"
+    },
+    "expected": "24 23 30 36 33 30 30 30 30 32 31 39 30 30 30 31 35 52 0d",
+    "evidence": [
+      "work/blutter/asm/motosleep/page/alarm.dart@0x5a1270"
+    ],
+    "origin_scope": "controls",
+    "origin_file": "controls-vectors.json"
+  },
+  {
+    "id": "controls.alarm2359s2",
+    "kind": "frame",
+    "inputs": {
+      "a": "235900",
+      "b": "0219"
+    },
+    "expected": "24 23 32 33 35 39 30 30 30 32 31 39 30 30 30 30 37 52 0d",
+    "evidence": [
+      "work/blutter/asm/motosleep/page/alarm.dart@0x5a1270"
+    ],
+    "origin_scope": "controls",
+    "origin_file": "controls-vectors.json"
+  },
+  {
+    "id": "controls.selector-15",
+    "kind": "panel",
+    "inputs": {
+      "name": "abcdefgh15BCDX"
+    },
+    "expected": "panel_a",
+    "evidence": [
+      "work/blutter/asm/motosleep/page/main_panel.dart@0x44a544..0x44ad64"
+    ],
+    "origin_scope": "controls",
+    "origin_file": "controls-vectors.json"
+  },
+  {
+    "id": "controls.selector-35",
+    "kind": "panel",
+    "inputs": {
+      "name": "abcdefgh35BCDX"
+    },
+    "expected": "panel_d",
+    "evidence": [
+      "work/blutter/asm/motosleep/page/main_panel.dart@0x44a544..0x44ad64"
+    ],
+    "origin_scope": "controls",
+    "origin_file": "controls-vectors.json"
+  },
+  {
+    "id": "controls.selector-45",
+    "kind": "panel",
+    "inputs": {
+      "name": "abcdefgh45BCDX"
+    },
+    "expected": "panel_d",
+    "evidence": [
+      "work/blutter/asm/motosleep/page/main_panel.dart@0x44a544..0x44ad64"
+    ],
+    "origin_scope": "controls",
+    "origin_file": "controls-vectors.json"
+  },
+  {
+    "id": "controls.selector-85",
+    "kind": "panel",
+    "inputs": {
+      "name": "abcdefgh85BCDX"
+    },
+    "expected": "panel_d",
+    "evidence": [
+      "work/blutter/asm/motosleep/page/main_panel.dart@0x44a544..0x44ad64"
+    ],
+    "origin_scope": "controls",
+    "origin_file": "controls-vectors.json"
+  },
+  {
+    "id": "controls.selector-25",
+    "kind": "panel",
+    "inputs": {
+      "name": "abcdefgh25BCDX"
+    },
+    "expected": "panel_four",
+    "evidence": [
+      "work/blutter/asm/motosleep/page/main_panel.dart@0x44a544..0x44ad64"
+    ],
+    "origin_scope": "controls",
+    "origin_file": "controls-vectors.json"
+  },
+  {
+    "id": "controls.selector-55",
+    "kind": "panel",
+    "inputs": {
+      "name": "abcdefgh55BCDX"
+    },
+    "expected": "panel_four",
+    "evidence": [
+      "work/blutter/asm/motosleep/page/main_panel.dart@0x44a544..0x44ad64"
+    ],
+    "origin_scope": "controls",
+    "origin_file": "controls-vectors.json"
+  },
+  {
+    "id": "controls.selector-95",
+    "kind": "panel",
+    "inputs": {
+      "name": "abcdefgh95BCDX"
+    },
+    "expected": "wr1140",
+    "evidence": [
+      "work/blutter/asm/motosleep/page/main_panel.dart@0x44a544..0x44ad64"
+    ],
+    "origin_scope": "controls",
+    "origin_file": "controls-vectors.json"
+  },
+  {
+    "id": "controls.selector-96",
+    "kind": "panel",
+    "inputs": {
+      "name": "abcdefgh96BCDX"
+    },
+    "expected": "wr1140",
+    "evidence": [
+      "work/blutter/asm/motosleep/page/main_panel.dart@0x44a544..0x44ad64"
+    ],
+    "origin_scope": "controls",
+    "origin_file": "controls-vectors.json"
+  },
+  {
+    "id": "controls.selector-97",
+    "kind": "panel",
+    "inputs": {
+      "name": "abcdefgh97BCDX"
+    },
+    "expected": "wr1140",
+    "evidence": [
+      "work/blutter/asm/motosleep/page/main_panel.dart@0x44a544..0x44ad64"
+    ],
+    "origin_scope": "controls",
+    "origin_file": "controls-vectors.json"
+  },
+  {
+    "id": "controls.selector-98",
+    "kind": "panel",
+    "inputs": {
+      "name": "abcdefgh98BCDX"
+    },
+    "expected": "wr1140",
+    "evidence": [
+      "work/blutter/asm/motosleep/page/main_panel.dart@0x44a544..0x44ad64"
+    ],
+    "origin_scope": "controls",
+    "origin_file": "controls-vectors.json"
+  },
+  {
+    "id": "controls.selector-00",
+    "kind": "panel",
+    "inputs": {
+      "name": "abcdefgh00BCDX"
+    },
+    "expected": "panel_zero",
+    "evidence": [
+      "work/blutter/asm/motosleep/page/main_panel.dart@0x44a544..0x44ad64"
+    ],
+    "origin_scope": "controls",
+    "origin_file": "controls-vectors.json"
+  },
+  {
+    "id": "controls.selector-11",
+    "kind": "panel",
+    "inputs": {
+      "name": "abcdefgh11BCDX"
+    },
+    "expected": "panel_one",
+    "evidence": [
+      "work/blutter/asm/motosleep/page/main_panel.dart@0x44a544..0x44ad64"
+    ],
+    "origin_scope": "controls",
+    "origin_file": "controls-vectors.json"
+  },
+  {
+    "id": "controls.selector-21",
+    "kind": "panel",
+    "inputs": {
+      "name": "abcdefgh21BCDX"
+    },
+    "expected": "panel_two",
+    "evidence": [
+      "work/blutter/asm/motosleep/page/main_panel.dart@0x44a544..0x44ad64"
+    ],
+    "origin_scope": "controls",
+    "origin_file": "controls-vectors.json"
+  },
+  {
+    "id": "controls.selector-31",
+    "kind": "panel",
+    "inputs": {
+      "name": "abcdefgh31BCDX"
+    },
+    "expected": "panel_three",
+    "evidence": [
+      "work/blutter/asm/motosleep/page/main_panel.dart@0x44a544..0x44ad64"
+    ],
+    "origin_scope": "controls",
+    "origin_file": "controls-vectors.json"
+  },
+  {
+    "id": "controls.selector-41",
+    "kind": "panel",
+    "inputs": {
+      "name": "abcdefgh41BCDX"
+    },
+    "expected": "panel_four",
+    "evidence": [
+      "work/blutter/asm/motosleep/page/main_panel.dart@0x44a544..0x44ad64"
+    ],
+    "origin_scope": "controls",
+    "origin_file": "controls-vectors.json"
+  },
+  {
+    "id": "controls.selector-51",
+    "kind": "panel",
+    "inputs": {
+      "name": "abcdefgh51BCDX"
+    },
+    "expected": "panel_five",
+    "evidence": [
+      "work/blutter/asm/motosleep/page/main_panel.dart@0x44a544..0x44ad64"
+    ],
+    "origin_scope": "controls",
+    "origin_file": "controls-vectors.json"
+  },
+  {
+    "id": "controls.selector-61",
+    "kind": "panel",
+    "inputs": {
+      "name": "abcdefgh61BCDX"
+    },
+    "expected": "panel_six",
+    "evidence": [
+      "work/blutter/asm/motosleep/page/main_panel.dart@0x44a544..0x44ad64"
+    ],
+    "origin_scope": "controls",
+    "origin_file": "controls-vectors.json"
+  },
+  {
+    "id": "controls.selector-65",
+    "kind": "panel",
+    "inputs": {
+      "name": "abcdefgh65BCDX"
+    },
+    "expected": "panel_three",
+    "evidence": [
+      "work/blutter/asm/motosleep/page/main_panel.dart@0x44a544..0x44ad64"
+    ],
+    "origin_scope": "controls",
+    "origin_file": "controls-vectors.json"
+  },
+  {
+    "id": "controls.selector-71",
+    "kind": "panel",
+    "inputs": {
+      "name": "abcdefgh71BCDX"
+    },
+    "expected": "panel_seven",
+    "evidence": [
+      "work/blutter/asm/motosleep/page/main_panel.dart@0x44a544..0x44ad64"
+    ],
+    "origin_scope": "controls",
+    "origin_file": "controls-vectors.json"
+  },
+  {
+    "id": "controls.selector-75",
+    "kind": "panel",
+    "inputs": {
+      "name": "abcdefgh75BCDX"
+    },
+    "expected": "panel_three",
+    "evidence": [
+      "work/blutter/asm/motosleep/page/main_panel.dart@0x44a544..0x44ad64"
+    ],
+    "origin_scope": "controls",
+    "origin_file": "controls-vectors.json"
+  },
+  {
+    "id": "controls.selector-81",
+    "kind": "panel",
+    "inputs": {
+      "name": "abcdefgh81BCDX"
+    },
+    "expected": "panel_eight",
+    "evidence": [
+      "work/blutter/asm/motosleep/page/main_panel.dart@0x44a544..0x44ad64"
+    ],
+    "origin_scope": "controls",
+    "origin_file": "controls-vectors.json"
+  },
+  {
+    "id": "controls.selector-91",
+    "kind": "panel",
+    "inputs": {
+      "name": "abcdefgh91BCDX"
+    },
+    "expected": "panel_nine",
+    "evidence": [
+      "work/blutter/asm/motosleep/page/main_panel.dart@0x44a544..0x44ad64"
+    ],
+    "origin_scope": "controls",
+    "origin_file": "controls-vectors.json"
+  },
+  {
+    "id": "controls.selector-A0",
+    "kind": "panel",
+    "inputs": {
+      "name": "abcdefghA0BCDX"
+    },
+    "expected": "panel_a",
+    "evidence": [
+      "work/blutter/asm/motosleep/page/main_panel.dart@0x44a544..0x44ad64"
+    ],
+    "origin_scope": "controls",
+    "origin_file": "controls-vectors.json"
+  },
+  {
+    "id": "controls.selector-B0",
+    "kind": "panel",
+    "inputs": {
+      "name": "abcdefghB0BCDX"
+    },
+    "expected": "panel_four",
+    "evidence": [
+      "work/blutter/asm/motosleep/page/main_panel.dart@0x44a544..0x44ad64"
+    ],
+    "origin_scope": "controls",
+    "origin_file": "controls-vectors.json"
+  },
+  {
+    "id": "controls.selector-C0",
+    "kind": "panel",
+    "inputs": {
+      "name": "abcdefghC0BCDX"
+    },
+    "expected": "panel_d",
+    "evidence": [
+      "work/blutter/asm/motosleep/page/main_panel.dart@0x44a544..0x44ad64"
+    ],
+    "origin_scope": "controls",
+    "origin_file": "controls-vectors.json"
+  },
+  {
+    "id": "controls.selector-D0",
+    "kind": "panel",
+    "inputs": {
+      "name": "abcdefghD0BCDX"
+    },
+    "expected": "panel_six_zg",
+    "evidence": [
+      "work/blutter/asm/motosleep/page/main_panel.dart@0x44a544..0x44ad64"
+    ],
+    "origin_scope": "controls",
+    "origin_file": "controls-vectors.json"
+  },
+  {
+    "id": "controls.selector-E0",
+    "kind": "panel",
+    "inputs": {
+      "name": "abcdefghE0BCDX"
+    },
+    "expected": "panel_e",
+    "evidence": [
+      "work/blutter/asm/motosleep/page/main_panel.dart@0x44a544..0x44ad64"
+    ],
+    "origin_scope": "controls",
+    "origin_file": "controls-vectors.json"
+  },
+  {
+    "id": "controls.selector-a0",
+    "kind": "panel",
+    "inputs": {
+      "name": "abcdefgha0BCDX"
+    },
+    "expected": "panel_one",
+    "evidence": [
+      "work/blutter/asm/motosleep/page/main_panel.dart@0x44a544..0x44ad64"
+    ],
+    "origin_scope": "controls",
+    "origin_file": "controls-vectors.json"
+  },
+  {
+    "id": "controls.selector-Z0",
+    "kind": "panel",
+    "inputs": {
+      "name": "abcdefghZ0BCDX"
+    },
+    "expected": "panel_one",
+    "evidence": [
+      "work/blutter/asm/motosleep/page/main_panel.dart@0x44a544..0x44ad64"
+    ],
+    "origin_scope": "controls",
+    "origin_file": "controls-vectors.json"
+  },
+  {
+    "id": "controls.rgb-[0, 0, 0]",
+    "kind": "rgb",
+    "inputs": {
+      "rgb": [
+        0,
+        0,
+        0
+      ]
+    },
+    "expected": [
+      0,
+      0,
+      0
+    ],
+    "evidence": [
+      "work/blutter/asm/motosleep/base/view/base_view_state.dart@0x5ae758"
+    ],
+    "origin_scope": "controls",
+    "origin_file": "controls-vectors.json"
+  },
+  {
+    "id": "controls.rgb-[255, 255, 255]",
+    "kind": "rgb",
+    "inputs": {
+      "rgb": [
+        255,
+        255,
+        255
+      ]
+    },
+    "expected": [
+      120,
+      120,
+      120
+    ],
+    "evidence": [
+      "work/blutter/asm/motosleep/base/view/base_view_state.dart@0x5ae758"
+    ],
+    "origin_scope": "controls",
+    "origin_file": "controls-vectors.json"
+  },
+  {
+    "id": "controls.rgb-[21, 63, 63]",
+    "kind": "rgb",
+    "inputs": {
+      "rgb": [
+        21,
+        63,
+        63
+      ]
+    },
+    "expected": [
+      0,
+      0,
+      0
+    ],
+    "evidence": [
+      "work/blutter/asm/motosleep/base/view/base_view_state.dart@0x5ae758"
+    ],
+    "origin_scope": "controls",
+    "origin_file": "controls-vectors.json"
+  },
+  {
+    "id": "controls.rgb-[22, 64, 64]",
+    "kind": "rgb",
+    "inputs": {
+      "rgb": [
+        22,
+        64,
+        64
+      ]
+    },
+    "expected": [
+      10,
+      30,
+      30
+    ],
+    "evidence": [
+      "work/blutter/asm/motosleep/base/view/base_view_state.dart@0x5ae758"
+    ],
+    "origin_scope": "controls",
+    "origin_file": "controls-vectors.json"
+  },
+  {
+    "id": "controls.rgb-[128, 128, 128]",
+    "kind": "rgb",
+    "inputs": {
+      "rgb": [
+        128,
+        128,
+        128
+      ]
+    },
+    "expected": [
+      60,
+      60,
+      60
+    ],
+    "evidence": [
+      "work/blutter/asm/motosleep/base/view/base_view_state.dart@0x5ae758"
+    ],
+    "origin_scope": "controls",
+    "origin_file": "controls-vectors.json"
+  },
+  {
+    "id": "controls.parse-75",
+    "kind": "parse",
+    "inputs": {
+      "hex": "30 30 30 30 30 20 30 30 30 30 31 20 30 30 30 30 32 20 30 30 30 30 33 20 30 30 30 30 34 20 30 30 30 30 35 20 30 30 30 30 36 20 30 30 30 30 37 20 30 30 30 30 38 20 30 30 30 30 39 20 30 30 30 31 30 20 30 30 30 31 31 20 30 30 30 31 32 20 30 30 30 31 33 20 30 30 30 31 34 20 30 30 30 31 35 20 30 30 30 31 36 20 30 30 30 31 37 20 30 30 30 31 38 20 30 30 30 31 39 20 30 30 30 32 30 20 30 30 30 32 31 20 30 30 30 32 32 20 30 30 30 32 33 20 30 30 30 32 34 20 30 30 30 32 35 20 30 30 30 32 36 20 30 30 30 32 37 20 30 30 30 32 38 20 30 30 30 32 39 20 30 30 30 33 30 20 30 30 30 33 31 20 30 30 30 33 32 20 30 30 30 33 33 20 30 30 30 33 34 20 30 30 30 33 35 20 30 30 30 33 36 20 30 30 30 33 37 20 30 30 30 33 38 20 30 30 30 33 39 20 30 30 30 34 30 20 30 30 30 34 31 20 30 30 30 34 32 20 30 30 30 34 33 20 30 30 30 34 34 20 30 30 30 34 35 20 30 30 30 34 36 20 30 30 30 34 37 20 30 30 30 34 38 20 30 30 30 34 39 20 30 30 30 35 30 20 30 30 30 35 31 20 30 30 30 35 32 20 30 30 30 35 33 20 30 30 30 35 34 20 30 30 30 35 35 20 30 30 30 35 36 20 30 30 30 35 37 20 30 30 30 35 38 20 30 30 30 35 39 20 30 30 30 36 30 20 30 30 30 36 31 20 30 30 30 36 32 20 30 30 30 36 33 20 30 30 30 36 34 20 30 30 30 36 35 20 30 30 30 36 36 20 30 30 30 36 37 20 30 30 30 36 38 20 30 30 30 36 39 20 30 30 30 37 30 20 30 30 30 37 31 20 30 30 30 37 32 20 30 30 30 37 33 20 30 30 30 37 34"
+    },
+    "expected": {
+      "field_count": 75,
+      "rgb": [
+        "00028",
+        "00029",
+        "00030",
+        "00054"
+      ],
+      "alarm": [
+        "00008",
+        "00009",
+        "00011"
+      ]
+    },
+    "evidence": [
+      "work/blutter/asm/motosleep/base/ble/ble_manager.dart@0x443e94..0x444a5c"
+    ],
+    "origin_scope": "controls",
+    "origin_file": "controls-vectors.json"
+  },
+  {
+    "id": "controls.parse-71",
+    "kind": "parse",
+    "inputs": {
+      "hex": "30 30 30 30 30 20 30 30 30 30 31 20 30 30 30 30 32 20 30 30 30 30 33 20 30 30 30 30 34 20 30 30 30 30 35 20 30 30 30 30 36 20 30 30 30 30 37 20 30 30 30 30 38 20 30 30 30 30 39 20 30 30 30 31 30 20 30 30 30 31 31 20 30 30 30 31 32 20 30 30 30 31 33 20 30 30 30 31 34 20 30 30 30 31 35 20 30 30 30 31 36 20 30 30 30 31 37 20 30 30 30 31 38 20 30 30 30 31 39 20 30 30 30 32 30 20 30 30 30 32 31 20 30 30 30 32 32 20 30 30 30 32 33 20 30 30 30 32 34 20 30 30 30 32 35 20 30 30 30 32 36 20 30 30 30 32 37 20 30 30 30 32 38 20 30 30 30 32 39 20 30 30 30 33 30 20 30 30 30 33 31 20 30 30 30 33 32 20 30 30 30 33 33 20 30 30 30 33 34 20 30 30 30 33 35 20 30 30 30 33 36 20 30 30 30 33 37 20 30 30 30 33 38 20 30 30 30 33 39 20 30 30 30 34 30 20 30 30 30 34 31 20 30 30 30 34 32 20 30 30 30 34 33 20 30 30 30 34 34 20 30 30 30 34 35 20 30 30 30 34 36 20 30 30 30 34 37 20 30 30 30 34 38 20 30 30 30 34 39 20 30 30 30 35 30 20 30 30 30 35 31 20 30 30 30 35 32 20 30 30 30 35 33 20 30 30 30 35 34 20 30 30 30 35 35 20 30 30 30 35 36 20 30 30 30 35 37 20 30 30 30 35 38 20 30 30 30 35 39 20 30 30 30 36 30 20 30 30 30 36 31 20 30 30 30 36 32 20 30 30 30 36 33 20 30 30 30 36 34 20 30 30 30 36 35 20 30 30 30 36 36 20 30 30 30 36 37 20 30 30 30 36 38 20 30 30 30 36 39 20 30 30 30 37 30"
+    },
+    "expected": {
+      "field_count": 71,
+      "rgb": [
+        "00018",
+        "00019",
+        "00020",
+        "00030"
+      ]
+    },
+    "evidence": [
+      "work/blutter/asm/motosleep/base/ble/ble_manager.dart@0x443e94..0x444a5c"
+    ],
+    "origin_scope": "controls",
+    "origin_file": "controls-vectors.json"
+  },
+  {
+    "id": "controls.parse-44",
+    "kind": "parse",
+    "inputs": {
+      "hex": "30 30 30 30 30 20 30 30 30 30 31 20 30 30 30 30 32 20 30 30 30 30 33 20 30 30 30 30 34 20 30 30 30 30 35 20 30 30 30 30 36 20 30 30 30 30 37 20 30 30 30 30 38 20 30 30 30 30 39 20 30 30 30 31 30 20 30 30 30 31 31 20 30 30 30 31 32 20 30 30 30 31 33 20 30 30 30 31 34 20 30 30 30 31 35 20 30 30 30 31 36 20 30 30 30 31 37 20 30 30 30 31 38 20 30 30 30 31 39 20 30 30 30 32 30 20 30 30 30 32 31 20 30 30 30 32 32 20 30 30 30 32 33 20 30 30 30 32 34 20 30 30 30 32 35 20 30 30 30 32 36 20 30 30 30 32 37 20 30 30 30 32 38 20 30 30 30 32 39 20 30 30 30 33 30 20 30 30 30 33 31 20 30 30 30 33 32 20 30 30 30 33 33 20 30 30 30 33 34 20 30 30 30 33 35 20 30 30 30 33 36 20 30 30 30 33 37 20 30 30 30 33 38 20 30 30 30 33 39 20 30 30 30 34 30 20 30 30 30 34 31 20 30 30 30 34 32 20 30 30 30 34 33"
+    },
+    "expected": {
+      "field_count": 44,
+      "rgb": [
+        "00018",
+        "00019",
+        "00020",
+        "00030"
+      ]
+    },
+    "evidence": [
+      "work/blutter/asm/motosleep/base/ble/ble_manager.dart@0x443e94..0x444a5c"
+    ],
+    "origin_scope": "controls",
+    "origin_file": "controls-vectors.json"
+  },
+  {
+    "id": "controls.parse-38",
+    "kind": "parse",
+    "inputs": {
+      "hex": "30 30 30 30 30 20 30 30 30 30 31 20 30 30 30 30 32 20 30 30 30 30 33 20 30 30 30 30 34 20 30 30 30 30 35 20 30 30 30 30 36 20 30 30 30 30 37 20 30 30 30 30 38 20 30 30 30 30 39 20 30 30 30 31 30 20 30 30 30 31 31 20 30 30 30 31 32 20 30 30 30 31 33 20 30 30 30 31 34 20 30 30 30 31 35 20 30 30 30 31 36 20 30 30 30 31 37 20 30 30 30 31 38 20 30 30 30 31 39 20 30 30 30 32 30 20 30 30 30 32 31 20 30 30 30 32 32 20 30 30 30 32 33 20 30 30 30 32 34 20 30 30 30 32 35 20 30 30 30 32 36 20 30 30 30 32 37 20 30 30 30 32 38 20 30 30 30 32 39 20 30 30 30 33 30 20 30 30 30 33 31 20 30 30 30 33 32 20 30 30 30 33 33 20 30 30 30 33 34 20 30 30 30 33 35 20 30 30 30 33 36 20 30 30 30 33 37"
+    },
+    "expected": {
+      "field_count": 38
+    },
+    "evidence": [
+      "work/blutter/asm/motosleep/base/ble/ble_manager.dart@0x443e94..0x444a5c"
+    ],
+    "origin_scope": "controls",
+    "origin_file": "controls-vectors.json"
+  },
+  {
+    "id": "controls.parse-40",
+    "kind": "parse",
+    "inputs": {
+      "hex": "30 30 30 30 30 20 30 30 30 30 31 20 30 30 30 30 32 20 30 30 30 30 33 20 30 30 30 30 34 20 30 30 30 30 35 20 30 30 30 30 36 20 30 30 30 30 37 20 30 30 30 30 38 20 30 30 30 30 39 20 30 30 30 31 30 20 30 30 30 31 31 20 30 30 30 31 32 20 30 30 30 31 33 20 30 30 30 31 34 20 30 30 30 31 35 20 30 30 30 31 36 20 30 30 30 31 37 20 30 30 30 31 38 20 30 30 30 31 39 20 30 30 30 32 30 20 30 30 30 32 31 20 30 30 30 32 32 20 30 30 30 32 33 20 30 30 30 32 34 20 30 30 30 32 35 20 30 30 30 32 36 20 30 30 30 32 37 20 30 30 30 32 38 20 30 30 30 32 39 20 30 30 30 33 30 20 30 30 30 33 31 20 30 30 30 33 32 20 30 30 30 33 33 20 30 30 30 33 34 20 30 30 30 33 35 20 30 30 30 33 36 20 30 30 30 33 37 20 30 30 30 33 38 20 30 30 30 33 39"
+    },
+    "expected": {
+      "field_count": 40
+    },
+    "evidence": [
+      "work/blutter/asm/motosleep/base/ble/ble_manager.dart@0x443e94..0x444a5c"
+    ],
+    "origin_scope": "controls",
+    "origin_file": "controls-vectors.json"
+  },
+  {
+    "id": "controls.parse39-00065",
+    "kind": "parse",
+    "inputs": {
+      "hex": "30 30 30 30 30 20 30 30 30 30 31 20 30 30 30 30 32 20 30 30 30 30 33 20 30 30 30 30 34 20 30 30 30 30 35 20 30 30 30 30 36 20 30 30 30 30 37 20 30 30 30 30 38 20 30 30 30 30 39 20 30 30 30 31 30 20 30 30 30 31 31 20 30 30 30 31 32 20 30 30 30 31 33 20 30 30 30 31 34 20 30 30 30 31 35 20 30 30 30 31 36 20 30 30 30 31 37 20 30 30 30 31 38 20 30 30 30 31 39 20 30 30 30 32 30 20 30 30 30 32 31 20 30 30 30 32 32 20 30 30 30 32 33 20 30 30 30 30 32 20 30 30 30 32 35 20 30 30 30 32 36 20 30 30 30 36 35 20 30 30 30 32 38 20 30 30 30 32 39 20 30 30 30 33 30 20 30 30 30 33 31 20 30 30 30 33 32 20 30 30 30 33 33 20 30 30 30 33 34 20 30 30 30 33 35 20 30 30 30 33 36 20 30 30 30 33 37 20 30 30 30 33 38"
+    },
+    "expected": {
+      "field_count": 39,
+      "rgb": [
+        "00018",
+        "00019",
+        "00020",
+        "00030"
+      ],
+      "bind_recognized": true,
+      "sync_on": true,
+      "sync_type": 2,
+      "event": "OK"
+    },
+    "evidence": [
+      "work/blutter/asm/motosleep/base/ble/ble_manager.dart@0x443e94..0x444a5c"
+    ],
+    "origin_scope": "controls",
+    "origin_file": "controls-vectors.json"
+  },
+  {
+    "id": "controls.parse39-00066",
+    "kind": "parse",
+    "inputs": {
+      "hex": "30 30 30 30 30 20 30 30 30 30 31 20 30 30 30 30 32 20 30 30 30 30 33 20 30 30 30 30 34 20 30 30 30 30 35 20 30 30 30 30 36 20 30 30 30 30 37 20 30 30 30 30 38 20 30 30 30 30 39 20 30 30 30 31 30 20 30 30 30 31 31 20 30 30 30 31 32 20 30 30 30 31 33 20 30 30 30 31 34 20 30 30 30 31 35 20 30 30 30 31 36 20 30 30 30 31 37 20 30 30 30 31 38 20 30 30 30 31 39 20 30 30 30 32 30 20 30 30 30 32 31 20 30 30 30 32 32 20 30 30 30 32 33 20 30 30 30 30 32 20 30 30 30 32 35 20 30 30 30 32 36 20 30 30 30 36 36 20 30 30 30 32 38 20 30 30 30 32 39 20 30 30 30 33 30 20 30 30 30 33 31 20 30 30 30 33 32 20 30 30 30 33 33 20 30 30 30 33 34 20 30 30 30 33 35 20 30 30 30 33 36 20 30 30 30 33 37 20 30 30 30 33 38"
+    },
+    "expected": {
+      "field_count": 39,
+      "rgb": [
+        "00018",
+        "00019",
+        "00020",
+        "00030"
+      ],
+      "bind_recognized": true,
+      "sync_on": false,
+      "sync_type": 2,
+      "event": "OK"
+    },
+    "evidence": [
+      "work/blutter/asm/motosleep/base/ble/ble_manager.dart@0x443e94..0x444a5c"
+    ],
+    "origin_scope": "controls",
+    "origin_file": "controls-vectors.json"
+  },
+  {
+    "id": "controls.parse39-00000",
+    "kind": "parse",
+    "inputs": {
+      "hex": "30 30 30 30 30 20 30 30 30 30 31 20 30 30 30 30 32 20 30 30 30 30 33 20 30 30 30 30 34 20 30 30 30 30 35 20 30 30 30 30 36 20 30 30 30 30 37 20 30 30 30 30 38 20 30 30 30 30 39 20 30 30 30 31 30 20 30 30 30 31 31 20 30 30 30 31 32 20 30 30 30 31 33 20 30 30 30 31 34 20 30 30 30 31 35 20 30 30 30 31 36 20 30 30 30 31 37 20 30 30 30 31 38 20 30 30 30 31 39 20 30 30 30 32 30 20 30 30 30 32 31 20 30 30 30 32 32 20 30 30 30 32 33 20 30 30 30 30 32 20 30 30 30 32 35 20 30 30 30 32 36 20 30 30 30 30 30 20 30 30 30 32 38 20 30 30 30 32 39 20 30 30 30 33 30 20 30 30 30 33 31 20 30 30 30 33 32 20 30 30 30 33 33 20 30 30 30 33 34 20 30 30 30 33 35 20 30 30 30 33 36 20 30 30 30 33 37 20 30 30 30 33 38"
+    },
+    "expected": {
+      "field_count": 39,
+      "rgb": [
+        "00018",
+        "00019",
+        "00020",
+        "00030"
+      ],
+      "bind_recognized": false,
+      "sync_on": false,
+      "sync_type": 2,
+      "event": "OK"
+    },
+    "evidence": [
+      "work/blutter/asm/motosleep/base/ble/ble_manager.dart@0x443e94..0x444a5c"
+    ],
+    "origin_scope": "controls",
+    "origin_file": "controls-vectors.json"
+  },
+  {
+    "id": "controls.parse-normalization",
+    "kind": "parse",
+    "inputs": {
+      "hex": "2d 31 5f 58 20 20 32 52 0d"
+    },
+    "expected": {
+      "field_count": 3
+    },
+    "evidence": [
+      "work/blutter/asm/motosleep/base/ble/ble_manager.dart@0x443e94..0x444a5c"
+    ],
+    "origin_scope": "controls",
+    "origin_file": "controls-vectors.json"
+  },
+  {
+    "id": "controls.acc-inactive",
+    "kind": "accumulator",
+    "inputs": {
+      "chunks": [
+        "61 62 63"
+      ]
+    },
+    "expected": {
+      "results": [
+        null
+      ],
+      "buffer": "",
+      "active": false
+    },
+    "evidence": [
+      "work/blutter/asm/motosleep/base/ble/ble_manager.dart@0x443e94..0x444a5c"
+    ],
+    "origin_scope": "controls",
+    "origin_file": "controls-vectors.json"
+  },
+  {
+    "id": "controls.acc-first-complete-is-buffered",
+    "kind": "accumulator",
+    "inputs": {
+      "chunks": [
+        "24 31 20 32 52 0d"
+      ]
+    },
+    "expected": {
+      "results": [
+        null
+      ],
+      "buffer": "31 20 32 52 0d",
+      "active": true
+    },
+    "evidence": [
+      "work/blutter/asm/motosleep/base/ble/ble_manager.dart@0x443e94..0x444a5c"
+    ],
+    "origin_scope": "controls",
+    "origin_file": "controls-vectors.json"
+  },
+  {
+    "id": "controls.acc-fragment",
+    "kind": "accumulator",
+    "inputs": {
+      "chunks": [
+        "24 31 20",
+        "32 52 0d"
+      ]
+    },
+    "expected": {
+      "results": [
+        null,
+        {
+          "field_count": 2
+        }
+      ],
+      "buffer": "",
+      "active": true
+    },
+    "evidence": [
+      "work/blutter/asm/motosleep/base/ble/ble_manager.dart@0x443e94..0x444a5c"
+    ],
+    "origin_scope": "controls",
+    "origin_file": "controls-vectors.json"
+  },
+  {
+    "id": "controls.acc-middle-dollar-no-clear",
+    "kind": "accumulator",
+    "inputs": {
+      "chunks": [
+        "24 31 20",
+        "24 32 20",
+        "33 52 0d"
+      ]
+    },
+    "expected": {
+      "results": [
+        null,
+        null,
+        {
+          "field_count": 3
+        }
+      ],
+      "buffer": "",
+      "active": true
+    },
+    "evidence": [
+      "work/blutter/asm/motosleep/base/ble/ble_manager.dart@0x443e94..0x444a5c"
+    ],
+    "origin_scope": "controls",
+    "origin_file": "controls-vectors.json"
+  },
+  {
+    "id": "controls.acc-noR-drops-lastbyte",
+    "kind": "accumulator",
+    "inputs": {
+      "chunks": [
+        "24 31 20",
+        "32 33 0d"
+      ]
+    },
+    "expected": {
+      "results": [
+        null,
+        {
+          "field_count": 2
+        }
+      ],
+      "buffer": "",
+      "active": true
+    },
+    "evidence": [
+      "work/blutter/asm/motosleep/base/ble/ble_manager.dart@0x443e94..0x444a5c"
+    ],
+    "origin_scope": "controls",
+    "origin_file": "controls-vectors.json"
+  },
+  {
+    "id": "controls.acc-cr-at-zero",
+    "kind": "accumulator",
+    "inputs": {
+      "chunks": [
+        "24 31 20",
+        "0d"
+      ]
+    },
+    "expected": {
+      "results": [
+        null,
+        {
+          "field_count": 1
+        }
+      ],
+      "buffer": "",
+      "active": true
+    },
+    "evidence": [
+      "work/blutter/asm/motosleep/base/ble/ble_manager.dart@0x443e94..0x444a5c"
+    ],
+    "origin_scope": "controls",
+    "origin_file": "controls-vectors.json"
+  },
+  {
+    "id": "controls.acc-tail-after-dollar",
+    "kind": "accumulator",
+    "inputs": {
+      "chunks": [
+        "24 31 20",
+        "32 52 0d 24 33 20"
+      ]
+    },
+    "expected": {
+      "results": [
+        null,
+        {
+          "field_count": 2
+        }
+      ],
+      "buffer": "33 20",
+      "active": true
+    },
+    "evidence": [
+      "work/blutter/asm/motosleep/base/ble/ble_manager.dart@0x443e94..0x444a5c"
+    ],
+    "origin_scope": "controls",
+    "origin_file": "controls-vectors.json"
+  },
+  {
+    "id": "controls.acc-dollar-before-cr-duplicates",
+    "kind": "accumulator",
+    "inputs": {
+      "chunks": [
+        "24 31 20",
+        "24 32 52 0d"
+      ]
+    },
+    "expected": {
+      "results": [
+        null,
+        {
+          "field_count": 2
+        }
+      ],
+      "buffer": "32 52 0d",
+      "active": true
+    },
+    "evidence": [
+      "work/blutter/asm/motosleep/base/ble/ble_manager.dart@0x443e94..0x444a5c"
+    ],
+    "origin_scope": "controls",
+    "origin_file": "controls-vectors.json"
+  },
+  {
+    "id": "controls.acc-firstCR-only",
+    "kind": "accumulator",
+    "inputs": {
+      "chunks": [
+        "24 31 20",
+        "32 52 0d 33 52 0d"
+      ]
+    },
+    "expected": {
+      "results": [
+        null,
+        {
+          "field_count": 2
+        }
+      ],
+      "buffer": "",
+      "active": true
+    },
+    "evidence": [
+      "work/blutter/asm/motosleep/base/ble/ble_manager.dart@0x443e94..0x444a5c"
+    ],
+    "origin_scope": "controls",
+    "origin_file": "controls-vectors.json"
+  },
+  {
+    "id": "controls.axes-11",
+    "kind": "axes",
+    "inputs": {
+      "name": "abcdefgh11BCDX"
+    },
+    "expected": {
+      "head": "K/L"
+    },
+    "evidence": [
+      "product-matrix.json source_init/source_axis_mapping and original assembly"
+    ],
+    "origin_scope": "controls",
+    "origin_file": "controls-vectors.json"
+  },
+  {
+    "id": "controls.axes-12",
+    "kind": "axes",
+    "inputs": {
+      "name": "abcdefgh12BCDX"
+    },
+    "expected": {
+      "head": "K/L",
+      "foot": "M/N"
+    },
+    "evidence": [
+      "product-matrix.json source_init/source_axis_mapping and original assembly"
+    ],
+    "origin_scope": "controls",
+    "origin_file": "controls-vectors.json"
+  },
+  {
+    "id": "controls.axes-13",
+    "kind": "axes",
+    "inputs": {
+      "name": "abcdefgh13BCDX"
+    },
+    "expected": {
+      "neck": "P/Q",
+      "head": "K/L",
+      "foot": "M/N"
+    },
+    "evidence": [
+      "product-matrix.json source_init/source_axis_mapping and original assembly"
+    ],
+    "origin_scope": "controls",
+    "origin_file": "controls-vectors.json"
+  },
+  {
+    "id": "controls.axes-10",
+    "kind": "axes",
+    "inputs": {
+      "name": "abcdefgh10BCDX"
+    },
+    "expected": {
+      "neck": "P/Q",
+      "head": "K/L",
+      "foot": "M/N"
+    },
+    "evidence": [
+      "product-matrix.json source_init/source_axis_mapping and original assembly"
+    ],
+    "origin_scope": "controls",
+    "origin_file": "controls-vectors.json"
+  },
+  {
+    "id": "controls.axes-20",
+    "kind": "axes",
+    "inputs": {
+      "name": "abcdefgh20BCDX"
+    },
+    "expected": {
+      "head": "K/L",
+      "foot": "M/N"
+    },
+    "evidence": [
+      "product-matrix.json source_init/source_axis_mapping and original assembly"
+    ],
+    "origin_scope": "controls",
+    "origin_file": "controls-vectors.json"
+  },
+  {
+    "id": "controls.axes-23",
+    "kind": "axes",
+    "inputs": {
+      "name": "abcdefgh23BCDX"
+    },
+    "expected": {
+      "neck": "P/Q",
+      "head": "K/L",
+      "foot": "M/N"
+    },
+    "evidence": [
+      "product-matrix.json source_init/source_axis_mapping and original assembly"
+    ],
+    "origin_scope": "controls",
+    "origin_file": "controls-vectors.json"
+  },
+  {
+    "id": "controls.axes-34",
+    "kind": "axes",
+    "inputs": {
+      "name": "abcdefgh34BCDX"
+    },
+    "expected": {
+      "neck": "P/Q",
+      "head": "K/L",
+      "lumbar": "p/q",
+      "foot": "M/N"
+    },
+    "evidence": [
+      "product-matrix.json source_init/source_axis_mapping and original assembly"
+    ],
+    "origin_scope": "controls",
+    "origin_file": "controls-vectors.json"
+  },
+  {
+    "id": "controls.axes-65",
+    "kind": "axes",
+    "inputs": {
+      "name": "abcdefgh65BCDX"
+    },
+    "expected": {
+      "head": "K/L",
+      "lumbar": "P/Q",
+      "foot": "M/N"
+    },
+    "evidence": [
+      "product-matrix.json source_init/source_axis_mapping and original assembly"
+    ],
+    "origin_scope": "controls",
+    "origin_file": "controls-vectors.json"
+  },
+  {
+    "id": "controls.axes-75",
+    "kind": "axes",
+    "inputs": {
+      "name": "abcdefgh75BCDX"
+    },
+    "expected": {
+      "neck": "P/Q",
+      "head": "K/L",
+      "lumbar": "p/q",
+      "foot": "M/N"
+    },
+    "evidence": [
+      "product-matrix.json source_init/source_axis_mapping and original assembly"
+    ],
+    "origin_scope": "controls",
+    "origin_file": "controls-vectors.json"
+  },
+  {
+    "id": "controls.axes-44",
+    "kind": "axes",
+    "inputs": {
+      "name": "abcdefgh44BCDX"
+    },
+    "expected": {
+      "neck": "P/Q",
+      "head": "K/L",
+      "lumbar": "p/q",
+      "foot": "M/N"
+    },
+    "evidence": [
+      "product-matrix.json source_init/source_axis_mapping and original assembly"
+    ],
+    "origin_scope": "controls",
+    "origin_file": "controls-vectors.json"
+  },
+  {
+    "id": "controls.axes-25",
+    "kind": "axes",
+    "inputs": {
+      "name": "abcdefgh25BCDX"
+    },
+    "expected": {
+      "head": "K/L",
+      "lumbar": "P/Q",
+      "foot": "M/N"
+    },
+    "evidence": [
+      "product-matrix.json source_init/source_axis_mapping and original assembly"
+    ],
+    "origin_scope": "controls",
+    "origin_file": "controls-vectors.json"
+  },
+  {
+    "id": "controls.axes-55",
+    "kind": "axes",
+    "inputs": {
+      "name": "abcdefgh55BCDX"
+    },
+    "expected": {
+      "neck": "P/Q",
+      "head": "K/L",
+      "foot": "M/N",
+      "tilt": "p/q"
+    },
+    "evidence": [
+      "product-matrix.json source_init/source_axis_mapping and original assembly"
+    ],
+    "origin_scope": "controls",
+    "origin_file": "controls-vectors.json"
+  },
+  {
+    "id": "controls.axes-95",
+    "kind": "axes",
+    "inputs": {
+      "name": "abcdefgh95BCDX"
+    },
+    "expected": {
+      "head": "K/L",
+      "foot": "M/N",
+      "tilt": "P/Q"
+    },
+    "evidence": [
+      "product-matrix.json source_init/source_axis_mapping and original assembly"
+    ],
+    "origin_scope": "controls",
+    "origin_file": "controls-vectors.json"
+  },
+  {
+    "id": "controls.axes-96",
+    "kind": "axes",
+    "inputs": {
+      "name": "abcdefgh96BCDX"
+    },
+    "expected": {
+      "head": "K/L",
+      "foot": "M/N"
+    },
+    "evidence": [
+      "product-matrix.json source_init/source_axis_mapping and original assembly"
+    ],
+    "origin_scope": "controls",
+    "origin_file": "controls-vectors.json"
+  },
+  {
+    "id": "controls.axes-97",
+    "kind": "axes",
+    "inputs": {
+      "name": "abcdefgh97BCDX"
+    },
+    "expected": {
+      "neck": "P/Q",
+      "head": "K/L",
+      "lumbar": "p/q",
+      "foot": "M/N"
+    },
+    "evidence": [
+      "product-matrix.json source_init/source_axis_mapping and original assembly"
+    ],
+    "origin_scope": "controls",
+    "origin_file": "controls-vectors.json"
+  },
+  {
+    "id": "controls.axes-98",
+    "kind": "axes",
+    "inputs": {
+      "name": "abcdefgh98BCDX"
+    },
+    "expected": {
+      "head": "K/L",
+      "lumbar": "p/q",
+      "foot": "M/N"
+    },
+    "evidence": [
+      "product-matrix.json source_init/source_axis_mapping and original assembly"
+    ],
+    "origin_scope": "controls",
+    "origin_file": "controls-vectors.json"
+  },
+  {
+    "id": "controls.axes-A0",
+    "kind": "axes",
+    "inputs": {
+      "name": "abcdefghA0BCDX"
+    },
+    "expected": {
+      "head": "K/L",
+      "foot": "M/N",
+      "lumbar": "P/Q"
+    },
+    "evidence": [
+      "product-matrix.json source_init/source_axis_mapping and original assembly"
+    ],
+    "origin_scope": "controls",
+    "origin_file": "controls-vectors.json"
+  },
+  {
+    "id": "controls.axes-35",
+    "kind": "axes",
+    "inputs": {
+      "name": "abcdefgh35BCDX"
+    },
+    "expected": {
+      "head": "K/L",
+      "foot": "M/N",
+      "neck": "P/Q"
+    },
+    "evidence": [
+      "product-matrix.json source_init/source_axis_mapping and original assembly"
+    ],
+    "origin_scope": "controls",
+    "origin_file": "controls-vectors.json"
+  },
+  {
+    "id": "controls.axes-45",
+    "kind": "axes",
+    "inputs": {
+      "name": "abcdefgh45BCDX"
+    },
+    "expected": {
+      "head": "K/L",
+      "foot": "M/N",
+      "lumbar": "P/Q"
+    },
+    "evidence": [
+      "product-matrix.json source_init/source_axis_mapping and original assembly"
+    ],
+    "origin_scope": "controls",
+    "origin_file": "controls-vectors.json"
+  },
+  {
+    "id": "controls.axes-85",
+    "kind": "axes",
+    "inputs": {
+      "name": "abcdefgh85BCDX"
+    },
+    "expected": {
+      "head": "K/L",
+      "foot": "M/N",
+      "tilt": "P/Q"
+    },
+    "evidence": [
+      "product-matrix.json source_init/source_axis_mapping and original assembly"
+    ],
+    "origin_scope": "controls",
+    "origin_file": "controls-vectors.json"
+  },
+  {
+    "id": "controls.axes-00",
+    "kind": "axes",
+    "inputs": {
+      "name": "abcdefgh00BCDX"
+    },
+    "expected": {
+      "head": "K/L",
+      "foot": "M/N",
+      "head and foot together": "p/q",
+      "tilt": "P/Q"
+    },
+    "evidence": [
+      "product-matrix.json source_init/source_axis_mapping and original assembly"
+    ],
+    "origin_scope": "controls",
+    "origin_file": "controls-vectors.json"
+  },
+  {
+    "id": "controls.axes-A-H",
+    "kind": "axes",
+    "inputs": {
+      "name": "abcdefghA0BCDH"
+    },
+    "expected": {
+      "head": "K/L",
+      "foot": "M/N",
+      "lumbar": "p/q"
+    },
+    "evidence": [
+      "panel_a.dart@0x432950,0x5a2180,0x5a2910"
+    ],
+    "origin_scope": "controls",
+    "origin_file": "controls-vectors.json"
+  },
+  {
+    "id": "controls.rgb-schedule-False",
+    "kind": "rgb_schedule",
+    "inputs": {
+      "m": false
+    },
+    "expected": {
+      "channel_times": [
+        100,
+        300,
+        500
+      ],
+      "marker_times": [
+        0,
+        200,
+        400
+      ],
+      "clear_busy": 600
+    },
+    "evidence": [
+      "base_view_state.dart@0x5ae758..0x5af454"
+    ],
+    "origin_scope": "controls",
+    "origin_file": "controls-vectors.json"
+  },
+  {
+    "id": "controls.rgb-schedule-True",
+    "kind": "rgb_schedule",
+    "inputs": {
+      "m": true
+    },
+    "expected": {
+      "channel_times": [
+        0,
+        100,
+        200
+      ],
+      "marker_times": [],
+      "clear_busy": 300
+    },
+    "evidence": [
+      "base_view_state.dart@0x5ae758..0x5af454"
+    ],
+    "origin_scope": "controls",
+    "origin_file": "controls-vectors.json"
+  },
+  {
+    "id": "controls.parse39-empty-mode",
+    "kind": "parse_error",
+    "inputs": {
+      "hex": "30 30 30 30 30 20 30 30 30 30 31 20 30 30 30 30 32 20 30 30 30 30 33 20 30 30 30 30 34 20 30 30 30 30 35 20 30 30 30 30 36 20 30 30 30 30 37 20 30 30 30 30 38 20 30 30 30 30 39 20 30 30 30 31 30 20 30 30 30 31 31 20 30 30 30 31 32 20 30 30 30 31 33 20 30 30 30 31 34 20 30 30 30 31 35 20 30 30 30 31 36 20 30 30 30 31 37 20 30 30 30 31 38 20 30 30 30 31 39 20 30 30 30 32 30 20 30 30 30 32 31 20 30 30 30 32 32 20 30 30 30 32 33 20 20 30 30 30 32 35 20 30 30 30 32 36 20 30 30 30 32 37 20 30 30 30 32 38 20 30 30 30 32 39 20 30 30 30 33 30 20 30 30 30 33 31 20 30 30 30 33 32 20 30 30 30 33 33 20 30 30 30 33 34 20 30 30 30 33 35 20 30 30 30 33 36 20 30 30 30 33 37 20 30 30 30 33 38"
+    },
+    "expected": "INVALID DECIMAL",
+    "evidence": [
+      "ble_manager.dart@0x4449a0"
+    ],
+    "origin_scope": "controls",
+    "origin_file": "controls-vectors.json"
+  },
+  {
+    "id": "reconcile.alarm.cached-long",
+    "kind": "cached_alarm",
+    "inputs": {
+      "hour": "00008",
+      "minute": "00009",
+      "strength": 1
+    },
+    "expected_text": "$#000080000900011800009R\r",
+    "evidence": [
+      "work/blutter/asm/motosleep/page/alarm.dart@0x4323d8..0x4324e8,0x5a1270..0x5a1504"
+    ],
+    "origin_scope": "reconciliation",
+    "origin_file": "reconciliation-vectors.json"
+  },
+  {
+    "id": "reconcile.alarm.cached-empty",
+    "kind": "cached_alarm",
+    "inputs": {
+      "hour": "",
+      "minute": "",
+      "strength": 0
+    },
+    "expected_text": "$#00001700006R\r",
+    "evidence": [
+      "work/blutter/asm/motosleep/base/ble/ble_manager.dart@0x4444f0",
+      "work/blutter/asm/motosleep/page/alarm.dart@0x4323d8,0x5a1270"
+    ],
+    "origin_scope": "reconciliation",
+    "origin_file": "reconciliation-vectors.json"
+  },
+  {
+    "id": "reconcile.alarm.ui-latest",
+    "kind": "cached_alarm",
+    "inputs": {
+      "hour": "23",
+      "minute": "59",
+      "strength": 2
+    },
+    "expected_text": "$#235900021900007R\r",
+    "evidence": [
+      "work/blutter/asm/motosleep/page/alarm.dart@0x5a1270..0x5a1504"
+    ],
+    "origin_scope": "reconciliation",
+    "origin_file": "reconciliation-vectors.json"
+  },
+  {
+    "id": "reconcile.writer.utf16",
+    "kind": "utf16",
+    "inputs": {
+      "text": "😀",
+      "selected_name": "HHC00000000000"
+    },
+    "expected_hex": "3d 00",
+    "evidence": [
+      "work/blutter/asm/motosleep/base/ble/ble_manager.dart@0x4b1df4..0x4b20cc"
+    ],
+    "origin_scope": "reconciliation",
+    "origin_file": "reconciliation-vectors.json"
+  },
+  {
+    "id": "reconcile.marker.M",
+    "kind": "marker",
+    "inputs": {
+      "text": "$z",
+      "selected_name": "HHC00000000M00"
+    },
+    "expected_hex": null,
+    "evidence": [
+      "work/blutter/asm/motosleep/base/ble/ble_manager.dart@0x4b1df4..0x4b20cc"
+    ],
+    "origin_scope": "reconciliation",
+    "origin_file": "reconciliation-vectors.json"
+  },
+  {
+    "id": "reconcile.marker.normal",
+    "kind": "marker",
+    "inputs": {
+      "text": "$z",
+      "selected_name": "HHC00000000000"
+    },
+    "expected_hex": "24 7a",
+    "evidence": [
+      "work/blutter/asm/motosleep/base/ble/ble_manager.dart@0x4b1df4..0x4b20cc"
+    ],
+    "origin_scope": "reconciliation",
+    "origin_file": "reconciliation-vectors.json"
+  }
+]
