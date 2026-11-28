@@ -526,3 +526,12 @@ GATT link, two delayed release writes, alarm sequencing and notification parser.
 Its manual layouts and command words are independent of other apps named Sino.
 No shared UUID or catalog name chooses this profile. Existing wire scenarios
 remain unchanged. See the [KONFURT profile](../beds/keeson.md#konfurt).
+
+## Thrive Sleep
+
+Thrive Sleep 1.1.2 uses the existing Richmat function, calendar, RGB, light-timer,
+countdown and extended-record encoders. All 115 frozen literals reproduce through
+those encoders. Its three current profiles own the product menus and alarm modes;
+its session controller rejects mixed recognized services rather than applying
+the app's independent handle-selection and encoding order to unknown hardware.
+See [Thrive Sleep](../beds/richmat.md#thrive-sleep).

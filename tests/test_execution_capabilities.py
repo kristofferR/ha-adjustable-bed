@@ -141,6 +141,16 @@ async def test_konfurt_one_300ms_held_key_with_delayed_release(layout):
     assert tuple(delay for delay, _ in controller.profile.release.steps) == (300, 300)
 
 
+async def test_thrivesleep_current_motor_refresh_and_release_are_serialized():
+    # Thrive Sleep 1.1.2: held widget Timer.periodic100ms; UP/CANCEL invokes
+    # STOP through the FIFO. No concurrent/composed command or sustain proof.
+    controller = await _create_controller_for_bed_type("thrivesleep", "level5")
+    assert controller.execution.declared == {"hold"}
+    assert controller.execution.hold_for("head_up") == "stream"
+    assert controller.profile.execution.concurrent == frozenset()
+    assert controller.motor_pulse_settings()[1] == 100
+
+
 async def test_powersbedding_single_timer_movement_stream():
     # PowersBedding 1.1.0 (2), E5: one movement timer, 100 ms refresh,
     # two zero releases 100 ms apart; no independent concurrent axis holds.
