@@ -203,3 +203,9 @@ not make their reachable features or configuration equivalent.
 Rize Remedy II uses the explicit `rize_remedy_ii` profile id on standalone entries
 and each two-address paired side. Shared OKIN names and the CST frame do not
 merge its setup, capabilities or response parser with another app.
+
+
+Softide stores `softide:<model>` for its explicit local model or fallback.
+Its ordinary/care route, selected sensor and exact Bluetooth identity are
+side-owned setup data. It shares the AA carrier with Sleep Assist but keeps its
+own profile identity, release policy, program stages and notification consumer.

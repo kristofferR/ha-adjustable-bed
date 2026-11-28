@@ -609,6 +609,7 @@ BED_TYPE_BETTERLIVING2: Final = "betterliving2"
 BED_TYPE_RESTONIC: Final = "restonic"
 BED_TYPE_KONFURT: Final = "konfurt"
 BED_TYPE_ERGOSPORTIVE: Final = "ergosportive"
+BED_TYPE_SOFTIDE: Final = "softide"
 BED_TYPE_KINGKOIL: Final = "kingkoil"
 BED_TYPE_DUNLOPILLO: Final = "dunlopillo"
 BED_TYPE_JUNASLEEP: Final = "junasleep"
@@ -1009,6 +1010,7 @@ SUPPORTED_BED_TYPES: Final = [
     BED_TYPE_SHUDA,
     BED_TYPE_COMFORT_ENHANCEMENTS,
     BED_TYPE_ERGOSPORTIVE,
+    BED_TYPE_SOFTIDE,
     BED_TYPE_KINGKOIL,
     BED_TYPE_DUNLOPILLO,
     BED_TYPE_JUNASLEEP,
@@ -3176,6 +3178,7 @@ BED_MOTOR_PULSE_DEFAULTS: Final = {
     BED_TYPE_SIMMONS_BLUE: (5, 200),  # Finite HA press at the app's hold cadence.
     BED_TYPE_SIMMONS: (4, 300),  # APK 300 ms hold refresh; ~1.2 s HA movement
     BED_TYPE_RESTONIC: (10, 200),
+    BED_TYPE_SOFTIDE: (3, 300),  # Finite HA tap policy, independent source cadence.
     BED_TYPE_KONFURT: (4, 300),  # Finite HA press, source cadence.
     BED_TYPE_KINGKOIL: (10, 300),
     BED_TYPE_DUNLOPILLO: (10, 100),

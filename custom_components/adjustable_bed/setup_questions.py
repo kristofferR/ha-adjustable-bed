@@ -305,6 +305,7 @@ from .profiles import okimattmotion as okimattmotion_app
 from .profiles import roewa as roewa_app
 from .profiles import sleep_assist_pro as sleep_assist_pro_app
 from .profiles import sleep_assistant as sleep_assistant_app
+from .profiles import softide as softide_app
 from .profiles.ambient import LAYOUTS as AMBIENT_LAYOUTS
 from .profiles.awmotion import CHOICES as AWMOTION_CHOICES
 from .profiles.baseremote import SIDE_LAYOUTS as BASEREMOTE_SIDE_LAYOUTS
@@ -406,6 +407,7 @@ _OWNED_BY_BED_TYPE: Final[dict[str, frozenset[str]]] = {
     BED_TYPE_RESTONIC: _APP_DEFINED - {CONF_PROTOCOL_VARIANT, CONF_MOTOR_PULSE_COUNT},
     "konfurt": _APP_DEFINED - {CONF_PROTOCOL_VARIANT, CONF_MOTOR_PULSE_COUNT},
     "ergosportive": _APP_DEFINED - {CONF_PROTOCOL_VARIANT},
+    "softide": _APP_DEFINED - {CONF_PROTOCOL_VARIANT, CONF_MOTOR_PULSE_COUNT},
     "kingkoil": _APP_DEFINED - {CONF_PROTOCOL_VARIANT, CONF_MOTOR_PULSE_COUNT},
     BED_TYPE_JUNASLEEP: _APP_DEFINED - {CONF_PROTOCOL_VARIANT, CONF_MOTOR_PULSE_COUNT},
     BED_TYPE_SOMOS: _APP_DEFINED - {CONF_PROTOCOL_VARIANT, CONF_MOTOR_PULSE_COUNT},
@@ -2484,6 +2486,21 @@ def _konfurt_settings(data: Mapping[str, Any]) -> Mapping[str, Any]:
     }
 
 
+def _softide_validate(data: Mapping[str, Any]) -> dict[str, str]:
+    try:
+        softide_app.selected(data)
+    except ValueError as err:
+        return {str(err): "invalid_selection"}
+    return {}
+
+
+def _softide_settings(data: Mapping[str, Any]) -> Mapping[str, Any]:
+    profile = softide_app.selected(data)
+    return {CONF_MOTOR_COUNT: 3 if profile.layout == "IQ3Y" else 2,
+            CONF_HAS_MASSAGE: False, CONF_DISABLE_ANGLE_SENSING: True,
+            CONF_MOTOR_PULSE_DELAY_MS: softide_app.REFRESH_MS}
+
+
 def _ergosportive_validate(data: Mapping[str, Any]) -> dict[str, str]:
     try:
         ergosportive_app.selected(data)
@@ -3643,6 +3660,13 @@ SETUP_PROFILES: Final[dict[str, SetupProfile]] = {
     ),
     "konfurt": _asking("konfurt", questions=(Question(CONF_PROTOCOL_VARIANT, _routes("konfurt")),),
                         derive=_konfurt_settings),
+    "softide": _asking(
+        "softide", questions=(Question(CONF_PROTOCOL_VARIANT, softide_app.MODELS, "other"),
+                              Question(CONF_PRODUCT_TYPE, softide_app.ROUTES, "primary"),
+                              Question(softide_app.CONF_SENSORS, softide_app.SENSORS, "single"),
+                              _EXACT_NAME, Question(softide_app.CONF_PREPARE, default=False, advanced=True)),
+        derive=_softide_settings, validate=_softide_validate,
+    ),
     "ergosportive": _asking(
         "ergosportive",
         questions=(Question(CONF_PROTOCOL_VARIANT, ergosportive_app.VARIANTS),

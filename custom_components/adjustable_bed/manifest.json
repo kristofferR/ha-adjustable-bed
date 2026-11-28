@@ -2316,6 +2316,10 @@
       "connectable": true
     },
     {
+      "local_name": "KSWF16S*",
+      "connectable": true
+    },
+    {
       "local_name": "KSWF19S*",
       "connectable": true
     },

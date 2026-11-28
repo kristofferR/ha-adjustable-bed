@@ -3020,6 +3020,26 @@
  "button:smartbed_alarm_refresh": {
   "card_section": "utility"
  },
+ "button:softide_section_a_down": {
+  "card_section": "motors",
+  "card_role": "down",
+  "card_motor": "softide_section_a"
+ },
+ "button:softide_section_a_up": {
+  "card_section": "motors",
+  "card_role": "up",
+  "card_motor": "softide_section_a"
+ },
+ "button:softide_section_b_down": {
+  "card_section": "motors",
+  "card_role": "down",
+  "card_motor": "softide_section_b"
+ },
+ "button:softide_section_b_up": {
+  "card_section": "motors",
+  "card_role": "up",
+  "card_motor": "softide_section_b"
+ },
  "button:solace_music_off": {
   "card_section": "utility"
  },
@@ -4108,6 +4128,14 @@
  "cover:smartbed_right": {
   "card_section": "motors",
   "card_motor": "smartbed_right"
+ },
+ "cover:softide_section_a": {
+  "card_section": "motors",
+  "card_motor": "softide_section_a"
+ },
+ "cover:softide_section_b": {
+  "card_section": "motors",
+  "card_motor": "softide_section_b"
  },
  "cover:somos_axis_1": {
   "card_section": "motors",
@@ -6251,6 +6279,16 @@
  },
  "sensor:smartbed_alarm_time": {
   "card_section": "hidden"
+ },
+ "sensor:softide_movement": {
+  "card_section": "utility"
+ },
+ "sensor:softide_program": {
+  "card_section": "presets"
+ },
+ "sensor:softide_timer": {
+  "card_section": "massage",
+  "card_role": "timer"
  },
  "sensor:solace_audio_volume": {
   "card_section": "hidden"

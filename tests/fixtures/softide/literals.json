@@ -1,0 +1,252 @@
+[
+  {
+    "method": "Lcom/sfd/i18n/smartbed/activitys/functions/HitSnoringActivity;->onClick(Landroid/view/View;)V",
+    "path": "smali_classes4/com/sfd/i18n/smartbed/activitys/functions/HitSnoringActivity.smali",
+    "line": 3382,
+    "hex": "AA010205000800EF55",
+    "scope": "EXCLUDED",
+    "disposition": "CONDITIONALLY REACHABLE"
+  },
+  {
+    "method": "Lcom/sfd/i18n/smartbed/activitys/functions/HitSnoringActivity;->onClick(Landroid/view/View;)V",
+    "path": "smali_classes4/com/sfd/i18n/smartbed/activitys/functions/HitSnoringActivity.smali",
+    "line": 3387,
+    "hex": "AA0102040007F155",
+    "scope": "EXCLUDED",
+    "disposition": "CONDITIONALLY REACHABLE"
+  },
+  {
+    "method": "Lcom/sfd/i18n/smartbed/activitys/search/NetWorkActivity;->requestTimeZone()V",
+    "path": "smali_classes4/com/sfd/i18n/smartbed/activitys/search/NetWorkActivity.smali",
+    "line": 773,
+    "hex": "AA100009000305010001F5E755",
+    "scope": "EXCLUDED",
+    "disposition": "CONDITIONALLY REACHABLE"
+  },
+  {
+    "method": "Lcom/sfd/i18n/smartbed/activitys/services/MusicService$getMessageEvent$1;->invokeSuspend(Ljava/lang/Object;)Ljava/lang/Object;",
+    "path": "smali_classes4/com/sfd/i18n/smartbed/activitys/services/MusicService$getMessageEvent$1.smali",
+    "line": 236,
+    "hex": "AA100009000303020708E8E755",
+    "scope": "DIRECT_BLE",
+    "disposition": "CONDITIONALLY REACHABLE"
+  },
+  {
+    "method": "Lcom/sfd/i18n/smartbed/activitys/services/MusicService$getMessageEvent$2;->invokeSuspend(Ljava/lang/Object;)Ljava/lang/Object;",
+    "path": "smali_classes4/com/sfd/i18n/smartbed/activitys/services/MusicService$getMessageEvent$2.smali",
+    "line": 236,
+    "hex": "AA100009000303020708E8E755",
+    "scope": "DIRECT_BLE",
+    "disposition": "CONDITIONALLY REACHABLE"
+  },
+  {
+    "method": "Lcom/sfd/i18n/smartbed/activitys/services/MusicService$getMessageEvent$3;->invokeSuspend(Ljava/lang/Object;)Ljava/lang/Object;",
+    "path": "smali_classes4/com/sfd/i18n/smartbed/activitys/services/MusicService$getMessageEvent$3.smali",
+    "line": 236,
+    "hex": "AA100009000303020708E8E755",
+    "scope": "DIRECT_BLE",
+    "disposition": "CONDITIONALLY REACHABLE"
+  },
+  {
+    "method": "Lcom/sfd/i18n/smartbed/activitys/services/MusicService$getMessageEvent$4;->invokeSuspend(Ljava/lang/Object;)Ljava/lang/Object;",
+    "path": "smali_classes4/com/sfd/i18n/smartbed/activitys/services/MusicService$getMessageEvent$4.smali",
+    "line": 198,
+    "hex": "AA0B001000100A040404040000EE0A0000DDE555",
+    "scope": "DIRECT_BLE",
+    "disposition": "CONDITIONALLY REACHABLE"
+  },
+  {
+    "method": "Lcom/sfd/i18n/smartbed/activitys/services/MusicService$getMessageEvent$4;->invokeSuspend(Ljava/lang/Object;)Ljava/lang/Object;",
+    "path": "smali_classes4/com/sfd/i18n/smartbed/activitys/services/MusicService$getMessageEvent$4.smali",
+    "line": 240,
+    "hex": "AA100009000303020708E8E755",
+    "scope": "DIRECT_BLE",
+    "disposition": "CONDITIONALLY REACHABLE"
+  },
+  {
+    "method": "Lcom/sfd/i18n/smartbed/activitys/services/MusicService$getMessageEvent$5;->invokeSuspend(Ljava/lang/Object;)Ljava/lang/Object;",
+    "path": "smali_classes4/com/sfd/i18n/smartbed/activitys/services/MusicService$getMessageEvent$5.smali",
+    "line": 198,
+    "hex": "AA0B001000100A030303030000EE0E0000DDE555",
+    "scope": "DIRECT_BLE",
+    "disposition": "CONDITIONALLY REACHABLE"
+  },
+  {
+    "method": "Lcom/sfd/i18n/smartbed/activitys/services/MusicService$getMessageEvent$5;->invokeSuspend(Ljava/lang/Object;)Ljava/lang/Object;",
+    "path": "smali_classes4/com/sfd/i18n/smartbed/activitys/services/MusicService$getMessageEvent$5.smali",
+    "line": 240,
+    "hex": "AA100009000303020708E8E755",
+    "scope": "DIRECT_BLE",
+    "disposition": "CONDITIONALLY REACHABLE"
+  },
+  {
+    "method": "Lcom/sfd/i18n/smartbed/activitys/services/MusicService$getMessageEvent$6;->invokeSuspend(Ljava/lang/Object;)Ljava/lang/Object;",
+    "path": "smali_classes4/com/sfd/i18n/smartbed/activitys/services/MusicService$getMessageEvent$6.smali",
+    "line": 198,
+    "hex": "AA0B001000100A020202020000EE090000E6E555",
+    "scope": "DIRECT_BLE",
+    "disposition": "CONDITIONALLY REACHABLE"
+  },
+  {
+    "method": "Lcom/sfd/i18n/smartbed/activitys/services/MusicService$getMessageEvent$6;->invokeSuspend(Ljava/lang/Object;)Ljava/lang/Object;",
+    "path": "smali_classes4/com/sfd/i18n/smartbed/activitys/services/MusicService$getMessageEvent$6.smali",
+    "line": 240,
+    "hex": "AA100009000303020708E8E755",
+    "scope": "DIRECT_BLE",
+    "disposition": "CONDITIONALLY REACHABLE"
+  },
+  {
+    "method": "Lcom/sfd/i18n/smartbed/activitys/services/MusicService$sendControl$1;->invokeSuspend(Ljava/lang/Object;)Ljava/lang/Object;",
+    "path": "smali_classes4/com/sfd/i18n/smartbed/activitys/services/MusicService$sendControl$1.smali",
+    "line": 182,
+    "hex": "AA03000A00040100000002F8F355",
+    "scope": "DIRECT_BLE",
+    "disposition": "CONDITIONALLY REACHABLE"
+  },
+  {
+    "method": "Lcom/sfd/i18n/smartbed/activitys/services/MusicService$sendControl$1;->invokeSuspend(Ljava/lang/Object;)Ljava/lang/Object;",
+    "path": "smali_classes4/com/sfd/i18n/smartbed/activitys/services/MusicService$sendControl$1.smali",
+    "line": 231,
+    "hex": "AA07000C00040501B00400000045E955",
+    "scope": "DIRECT_BLE",
+    "disposition": "CONDITIONALLY REACHABLE"
+  },
+  {
+    "method": "Lcom/sfd/i18n/smartbed/activitys/services/MusicService;->getMessageEvent(Lcom/sfd/i18n/smartbed/dataBeans/MessageEvent;)V",
+    "path": "smali_classes4/com/sfd/i18n/smartbed/activitys/services/MusicService.smali",
+    "line": 3169,
+    "hex": "AA03000A00040100000008F2F355",
+    "scope": "DIRECT_BLE",
+    "disposition": "CONDITIONALLY REACHABLE"
+  },
+  {
+    "method": "Lcom/sfd/i18n/smartbed/activitys/services/MusicService;->getMessageEvent(Lcom/sfd/i18n/smartbed/dataBeans/MessageEvent;)V",
+    "path": "smali_classes4/com/sfd/i18n/smartbed/activitys/services/MusicService.smali",
+    "line": 3177,
+    "hex": "AA03000A00040100100000EAF355",
+    "scope": "DIRECT_BLE",
+    "disposition": "CONDITIONALLY REACHABLE"
+  },
+  {
+    "method": "Lcom/sfd/i18n/smartbed/activitys/services/MusicService;->getMessageEvent(Lcom/sfd/i18n/smartbed/dataBeans/MessageEvent;)V",
+    "path": "smali_classes4/com/sfd/i18n/smartbed/activitys/services/MusicService.smali",
+    "line": 3185,
+    "hex": "AA03000A000401002000409AF355",
+    "scope": "DIRECT_BLE",
+    "disposition": "CONDITIONALLY REACHABLE"
+  },
+  {
+    "method": "Lcom/sfd/i18n/smartbed/activitys/services/MusicService;->getMessageEvent(Lcom/sfd/i18n/smartbed/dataBeans/MessageEvent;)V",
+    "path": "smali_classes4/com/sfd/i18n/smartbed/activitys/services/MusicService.smali",
+    "line": 3193,
+    "hex": "AA03000A000401008000007AF355",
+    "scope": "DIRECT_BLE",
+    "disposition": "CONDITIONALLY REACHABLE"
+  },
+  {
+    "method": "Lcom/sfd/i18n/smartbed/activitys/services/MusicService;->getMessageEvent(Lcom/sfd/i18n/smartbed/dataBeans/MessageEvent;)V",
+    "path": "smali_classes4/com/sfd/i18n/smartbed/activitys/services/MusicService.smali",
+    "line": 3201,
+    "hex": "AA03000A000401000000807AF355",
+    "scope": "DIRECT_BLE",
+    "disposition": "CONDITIONALLY REACHABLE"
+  },
+  {
+    "method": "Lcom/sfd/i18n/smartbed/activitys/services/MusicService;->getMessageEvent(Lcom/sfd/i18n/smartbed/dataBeans/MessageEvent;)V",
+    "path": "smali_classes4/com/sfd/i18n/smartbed/activitys/services/MusicService.smali",
+    "line": 3209,
+    "hex": "AA03000A00040100000040BAF355",
+    "scope": "DIRECT_BLE",
+    "disposition": "CONDITIONALLY REACHABLE"
+  },
+  {
+    "method": "Lcom/sfd/i18n/smartbed/activitys/services/MusicService;->getMessageEvent(Lcom/sfd/i18n/smartbed/dataBeans/MessageEvent;)V",
+    "path": "smali_classes4/com/sfd/i18n/smartbed/activitys/services/MusicService.smali",
+    "line": 3228,
+    "hex": "AA1000090003030203C034E755",
+    "scope": "DIRECT_BLE",
+    "disposition": "DEAD/UNUSED",
+    "resolution": "Primary1077 handler: no liveBLEproducer;unused nested BLEcoroutine, excluded TCPproducer."
+  },
+  {
+    "method": "Lcom/sfd/i18n/smartbed/activitys/services/MusicService;->getMessageEvent(Lcom/sfd/i18n/smartbed/dataBeans/MessageEvent;)V",
+    "path": "smali_classes4/com/sfd/i18n/smartbed/activitys/services/MusicService.smali",
+    "line": 3241,
+    "hex": "AA100009000303000000F9E755",
+    "scope": "DIRECT_BLE",
+    "disposition": "CONDITIONALLY REACHABLE"
+  },
+  {
+    "method": "Lcom/sfd/i18n/smartbed/fragments/likes/YJMFragment$sendLocal$1;->invokeSuspend(Ljava/lang/Object;)Ljava/lang/Object;",
+    "path": "smali_classes5/com/sfd/i18n/smartbed/fragments/likes/YJMFragment$sendLocal$1.smali",
+    "line": 216,
+    "hex": "AA07000C00040501680100000090E955",
+    "scope": "DIRECT_BLE",
+    "disposition": "DEAD/UNUSED"
+  },
+  {
+    "method": "Lcom/sfd/i18n/smartbed/fragments/remote/RemotePartOneFragment$onTouch$1$1;->invokeSuspend(Ljava/lang/Object;)Ljava/lang/Object;",
+    "path": "smali_classes5/com/sfd/i18n/smartbed/fragments/remote/RemotePartOneFragment$onTouch$1$1.smali",
+    "line": 229,
+    "hex": "AA0B001000100A000000000000EE040000F3E555",
+    "scope": "DIRECT_BLE",
+    "disposition": "CONDITIONALLY REACHABLE"
+  },
+  {
+    "method": "Lcom/sfd/i18n/smartbed/utils/LoveCtrlUtil$getMessageEvent$1;->invokeSuspend(Ljava/lang/Object;)Ljava/lang/Object;",
+    "path": "smali_classes5/com/sfd/i18n/smartbed/utils/LoveCtrlUtil$getMessageEvent$1.smali",
+    "line": 236,
+    "hex": "AA100009000303020708E8E755",
+    "scope": "DIRECT_BLE",
+    "disposition": "CONDITIONALLY REACHABLE"
+  },
+  {
+    "method": "Lcom/sfd/i18n/smartbed/utils/LoveCtrlUtil$getMessageEvent$2;->invokeSuspend(Ljava/lang/Object;)Ljava/lang/Object;",
+    "path": "smali_classes5/com/sfd/i18n/smartbed/utils/LoveCtrlUtil$getMessageEvent$2.smali",
+    "line": 236,
+    "hex": "AA100009000303020708E8E755",
+    "scope": "DIRECT_BLE",
+    "disposition": "CONDITIONALLY REACHABLE"
+  },
+  {
+    "method": "Lcom/sfd/i18n/smartbed/utils/LoveCtrlUtil$getMessageEvent$3;->invokeSuspend(Ljava/lang/Object;)Ljava/lang/Object;",
+    "path": "smali_classes5/com/sfd/i18n/smartbed/utils/LoveCtrlUtil$getMessageEvent$3.smali",
+    "line": 236,
+    "hex": "AA100009000303020708E8E755",
+    "scope": "DIRECT_BLE",
+    "disposition": "CONDITIONALLY REACHABLE"
+  },
+  {
+    "method": "Lcom/sfd/i18n/smartbed/utils/LoveCtrlUtil;->getMessageEvent(Lcom/sfd/i18n/smartbed/dataBeans/MessageEvent;)V",
+    "path": "smali_classes5/com/sfd/i18n/smartbed/utils/LoveCtrlUtil.smali",
+    "line": 562,
+    "hex": "AA100009000303000000F9E755",
+    "scope": "DIRECT_BLE",
+    "disposition": "DEAD/UNUSED",
+    "resolution": "Secondary1076 has no producer;primary1054 independentlylive."
+  },
+  {
+    "method": "Lcom/sfd/i18n/smartbed/utils/LoveCtrlUtil;->getMessageEvent(Lcom/sfd/i18n/smartbed/dataBeans/MessageEvent;)V",
+    "path": "smali_classes5/com/sfd/i18n/smartbed/utils/LoveCtrlUtil.smali",
+    "line": 606,
+    "hex": "AA0B001000100A030303030000EE0E0000DDE555",
+    "scope": "DIRECT_BLE",
+    "disposition": "CONDITIONALLY REACHABLE"
+  },
+  {
+    "method": "Lcom/sfd/i18n/smartbed/utils/LoveCtrlUtil;->getMessageEvent(Lcom/sfd/i18n/smartbed/dataBeans/MessageEvent;)V",
+    "path": "smali_classes5/com/sfd/i18n/smartbed/utils/LoveCtrlUtil.smali",
+    "line": 618,
+    "hex": "AA0B001000100A020202020000EE090000E6E555",
+    "scope": "DIRECT_BLE",
+    "disposition": "CONDITIONALLY REACHABLE"
+  },
+  {
+    "method": "Lcom/sfd/i18n/smartbed/utils/LoveCtrlUtil;->getMessageEvent(Lcom/sfd/i18n/smartbed/dataBeans/MessageEvent;)V",
+    "path": "smali_classes5/com/sfd/i18n/smartbed/utils/LoveCtrlUtil.smali",
+    "line": 630,
+    "hex": "AA0B001000100A040404040000EE0A0000DDE555",
+    "scope": "DIRECT_BLE",
+    "disposition": "CONDITIONALLY REACHABLE"
+  }
+]

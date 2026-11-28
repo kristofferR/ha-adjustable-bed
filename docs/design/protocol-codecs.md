@@ -653,6 +653,21 @@ cancellation; Home Assistant independently bounds its refresh instead of
 reproducing the app's unbounded-sender failure. See [AVEK](../beds/avek.md).
 
 
+## Softide
+
+Softide 1.2.4's frozen AA literals reproduce through the Sleep Assistant
+fourteen-byte carrier. Its own sparse switch also admits combined keys; the
+carrier is shared before each app's independent key gate. Fixed auxiliary
+records stay a literal lookup in the codec rather than an inferred checksum
+family. The independent `profiles/softide.py` owns all model, route and timing
+data. `beds/sleep_assistant/softide.py` supplies captured-session, primary/care
+release, program and JSON-consumer behavior through the shared GATT writer,
+command lane, hold leases and native entity shapes. No sibling capability or
+schedule selects Softide. See [Softide](../beds/sleep-assistant.md#softide).
+
+
+## RÖWA
+
 RÖWA Fernbedienung 1.1.0 reproduces all 17 frozen write vectors through
 `codec/okin_nframe.py`: the 15 independent 32-bit action literals, reconnect
 parameter record and UTF-16-counted UTF-8 name. Its separate typed profiles in
