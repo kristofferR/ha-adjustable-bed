@@ -782,6 +782,14 @@ class RichmatClassicController(BedController):
             return session
         return None
 
+    def settings_session(self, request: Request) -> Transport:
+        """Validate the writer's requirements on its current settings transport."""
+        self.validate_richmat_classic_request(request)
+        link = self.settings_transport
+        if link is None:
+            raise invalid("bed_changed")
+        return link
+
     def validate_richmat_classic_request(self, request: Request) -> None:
         if self.app in RISE_APPS:
             raise ValueError("Use the Luuna Rise / Power Cool bed settings action")
@@ -1044,6 +1052,15 @@ async def build_controller(ctx: BuildContext) -> RichmatClassicController:
         from .dynasty import DynastyController
 
         return DynastyController(ctx.coordinator, app=ctx.variant, device_name=ctx.device_name)
+    if ctx.variant == "tss_remote":
+        await ctx.preload("richmat_classic.tss_remote")
+        from .tss_remote import TssRemoteController
+
+        return TssRemoteController(
+            ctx.coordinator,
+            device_name=ctx.advertisement_local_name,
+            capability_snapshot=ctx.stored_capabilities("richmat_classic_apps"),
+        )
     if ctx.variant == "dreamlab2":
         await ctx.preload("richmat_classic.dreamlab")
         from .dreamlab import DreamlabController

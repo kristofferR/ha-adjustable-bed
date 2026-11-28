@@ -17,6 +17,23 @@ from tests.jerome_vectors import FROZEN_FRAMES as JEROME_FROZEN_FRAMES
 from tests.richmat_rise_vectors import FROZEN_FRAMES as RISE_FROZEN_FRAMES
 
 
+def _tss_remote_frames() -> frozenset[str]:
+    folder = Path(__file__).parent / "fixtures/tss_remote"
+    rows = json.loads(gzip.decompress((folder / "command-table.json.gz").read_bytes()))
+    frames = {row["mode_zero_literal"].lower() for row in rows}
+    for row in json.loads((folder / "fixed-command-table.json").read_text()):
+        literal = row["bytes"].lower()
+        if literal and all(c in "0123456789abcdef" for c in literal):
+            frames.add(literal)
+    for row in json.loads((folder / "literal-vectors.json").read_text()):
+        literal = row["expected_bytes"].lower()
+        if "rgb" in row["inputs"] or "minutes" in row["inputs"]:
+            frames.update(literal[i:i + 10] for i in range(0, len(literal), 10))
+        else:
+            frames.add(literal)
+    return frozenset(frames)
+
+
 def _mlily() -> frozenset[str]:
     fixture = Path(__file__).parent / "fixtures/mlily/wire.json.gz"
     inherited = {row["hex"] for row in json.loads(gzip.decompress(fixture.read_bytes()))}
@@ -2399,3 +2416,6 @@ FROZEN_FRAMES["richmat_classic_innova2"] = frozenset({
     "6e01000170", "6e01000473", "6e01005ecd", "6e01005fce",
     "6e010061d0", "6e010063d2", "6e01008bfa",
 })
+
+
+FROZEN_FRAMES["richmat_classic_tss_remote"] = _tss_remote_frames()

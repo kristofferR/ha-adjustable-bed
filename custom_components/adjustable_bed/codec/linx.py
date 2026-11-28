@@ -12,6 +12,8 @@ from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from typing import Final
 
+from .json_record import compact_json as _json
+
 
 @dataclass(frozen=True, slots=True)
 class Transport:
@@ -35,10 +37,6 @@ TRANSPORTS: Final = {
         "notify",
     ),
 }
-
-
-def _json(payload: dict[str, object]) -> bytes:
-    return json.dumps(payload, separators=(",", ":"), ensure_ascii=False).encode()
 
 
 def control(device: str, word: int, *, km: int = 1, held: bool = False) -> bytes:

@@ -76,6 +76,7 @@ APPS = [
     "motionflex",
     "remote",
     "thrivesleep",
+    "tss_remote",
 ]
 
 

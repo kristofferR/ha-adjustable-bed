@@ -462,6 +462,7 @@ _NAME_ONLY_CONFIDENCE = 0.3
 # Explicit app candidates offered beside a confident match are hints, not ambiguity.
 _EXPLICIT_APP_HINTS = frozenset(
     {
+        "ar_connect",
         "aminach", "ergosportive", "roewa", "avek", "active_sleep","topcare", "ai_bed", "intellibed", BED_TYPE_RONCO_MOTION, BED_TYPE_COMFORT_BED, BED_TYPE_ATLAS_LIFT, BED_TYPE_DORSAL, BED_TYPE_ENSO2, BED_TYPE_ERGOBED, BED_TYPE_LIKIMIO, BED_TYPE_MOODBASE, "thrivesleep", "super_colchones", "dreamsense", "muuegm", "awmotion", "flexx_motion", "saatva", "bobpowerbase", BED_TYPE_COMFORT_ENHANCEMENT3, BED_TYPE_MYSIDE, BED_TYPE_RICHMAT_APP_SLEEP, BED_TYPE_RICHMAT_APP, BED_TYPE_RICHMAT_CLASSIC_APPS, BED_TYPE_MOTOMOTION, BED_TYPE_MLILY, BED_TYPE_MLILY0, BED_TYPE_GALAXY, BED_TYPE_GOODVIBE, BED_TYPE_HJBED, BED_TYPE_ESHINE_OKIN, BED_TYPE_ISLEEP, BED_TYPE_KOMFYD, BED_TYPE_COMFYDS, BED_TYPE_RIZE, BED_TYPE_STARCODE_ABM5_4, BED_TYPE_MOTION_BED, BED_TYPE_VMATBASIC, BED_TYPE_FURNIMOVE,
      BED_TYPE_GMMOTOR, BED_TYPE_OKIMIKI, BED_TYPE_SIMMONS_BLUE, "gmmotor_sleep_mm", "gmmotor_sleep_sxb", "sealy_posturematic", "instant_comfort", BED_TYPE_TRUEMOTION,
      BED_TYPE_JEROME_ADJUSTABLE_BASE, BED_TYPE_VINDO, BED_TYPE_AMBIENT, "silksnow", BED_TYPE_MOTIONFLEX}
@@ -1398,6 +1399,7 @@ _DECLARED_QUESTION_ROUTES: Final = frozenset(
         # The app is its variant, chosen from the bed-type list.
         BED_TYPE_RICHMAT_CLASSIC_APPS,
         *KEESON_LAYOUT_APP_BED_TYPES,
+        "ar_connect",
         "askona",
         "amada",
         "aminach",
@@ -5945,11 +5947,17 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                 detail=evidence.error,
                 payload=evidence,
             )
-        if mode == "verify_existing" and not evidence.proves_bond:
-            # The whole point of this mode is proof, so this is not a success.
-            # But an inconclusive read proves nothing either way, and telling the
-            # user their link is unauthenticated would push them into replacing a
-            # bond that may be working perfectly.
+        native_ar = (
+            self._manual_data is not None
+            and self._manual_data.get(CONF_BED_TYPE) == "ar_connect"
+            and self._manual_data.get(CONF_PROTOCOL_VARIANT) != "headboard"
+        )
+        if not evidence.proves_bond and (
+            mode == "verify_existing"
+            or native_ar and evidence.owner.transport is not TransportClass.PROXY
+        ):
+            # Native AR host startup also requires exact stored-bond proof.
+            # An unreadable inventory cannot establish a host pairing attempt.
             return OperationResult(
                 outcome=OperationOutcome.BOND_VERIFICATION_INCONCLUSIVE,
                 detail=str(evidence.status),
@@ -6313,10 +6321,12 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
         protocol_variant = (
             self._manual_data.get(CONF_PROTOCOL_VARIANT) if self._manual_data else None
         )
+        native_ar = bed_type == "ar_connect" and protocol_variant != "headboard"
         pair_after_service_discovery = bool(
             request_bond
             and (
-                self._pairing_retry_source
+                native_ar
+                or self._pairing_retry_source
                 or (
                     bed_type
                     and requires_pairing_after_service_discovery(bed_type, protocol_variant)
@@ -6397,6 +6407,11 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                 actual_source = client_source(client)
                 path = async_path_for_source(self.hass, actual_source) if actual_source else None
                 self.async_report_path(path or prediction.chosen)
+                if native_ar and (
+                    path is None
+                    or path.transport not in (TransportClass.LOCAL, TransportClass.PROXY)
+                ):
+                    raise BondRouteMismatchError("The actual Bluetooth route could not be classified")
                 if (
                     not request_bond
                     and self._pairing_verify_source
@@ -6508,7 +6523,9 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                     )
                     self.async_report_action(SetupAction.PAIRING)
                     try:
-                        await client.pair()
+                        paired = await client.pair()
+                        if native_ar and paired is False:
+                            raise ConnectionError("Native AR pairing was refused")
                     except NotImplementedError, TypeError:
                         # The backend cannot pair at all; an unauthenticated
                         # read would misreport this as stale proxy keys.
@@ -6528,7 +6545,7 @@ class AdjustableBedConfigFlow(BluetoothOperationMixin, ConfigFlow, domain=DOMAIN
                         )
 
                 self.async_report_action(SetupAction.VERIFYING_BOND)
-                if bed_type == BED_TYPE_VIBRADORM_APP:
+                if bed_type == BED_TYPE_VIBRADORM_APP or (bed_type == "ar_connect" and protocol_variant != "headboard"):
                     evidence = await async_verify_native_bond(
                         address,
                         path=path,

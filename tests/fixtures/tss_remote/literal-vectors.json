@@ -1,0 +1,500 @@
+[
+  {
+    "id": "V-RAW-6BRM",
+    "protocol": "P1",
+    "action": "6BRM motor1 up N old short",
+    "inputs": {
+      "vendor": "NORDIC",
+      "payload": "34"
+    },
+    "expected_bytes": "34",
+    "evidence": [
+      "f6brm.xml;k_motor1_up_old"
+    ],
+    "provenance": "Artifact literal or independently hand-calculated final bytes, never captured device traffic",
+    "hardware_status": "UNVERIFIED"
+  },
+  {
+    "id": "V-RAW-A0RM",
+    "protocol": "P1",
+    "action": "A0RM motor1 up",
+    "inputs": {
+      "vendor": "NORDIC",
+      "payload": "24"
+    },
+    "expected_bytes": "24",
+    "evidence": [
+      "fa0rm.xml;k_motor1_up"
+    ],
+    "provenance": "Artifact literal or independently hand-calculated final bytes, never captured device traffic",
+    "hardware_status": "UNVERIFIED"
+  },
+  {
+    "id": "V-RAW-MEM-SHORT",
+    "protocol": "P1",
+    "action": "N short old memory recall",
+    "inputs": {
+      "vendor": "NORDIC",
+      "payload": "42"
+    },
+    "expected_bytes": "42",
+    "evidence": [
+      "RichButton+combineData;old short override"
+    ],
+    "provenance": "Artifact literal or independently hand-calculated final bytes, never captured device traffic",
+    "hardware_status": "UNVERIFIED"
+  },
+  {
+    "id": "V-RAW-MEM-LONG",
+    "protocol": "P1",
+    "action": "N long memory save (XML old ignored)",
+    "inputs": {
+      "vendor": "NORDIC",
+      "payload": "2b"
+    },
+    "expected_bytes": "2b",
+    "evidence": [
+      "RichButton constructor does not assign long_old;combineData"
+    ],
+    "provenance": "Artifact literal or independently hand-calculated final bytes, never captured device traffic",
+    "hardware_status": "UNVERIFIED"
+  },
+  {
+    "id": "V-W-UP0",
+    "protocol": "P2",
+    "action": "W-UP0",
+    "inputs": {
+      "vendor": "WI_LINKE",
+      "payload": "24",
+      "mode": 0
+    },
+    "expected_bytes": "6e01002493",
+    "evidence": [
+      "Utils.sendData;resource exact opcode"
+    ],
+    "provenance": "Artifact literal or independently hand-calculated final bytes, never captured device traffic",
+    "hardware_status": "UNVERIFIED"
+  },
+  {
+    "id": "V-W-UP2",
+    "protocol": "P2",
+    "action": "W-UP2",
+    "inputs": {
+      "vendor": "WI_LINKE",
+      "payload": "24",
+      "mode": 2
+    },
+    "expected_bytes": "6e01022495",
+    "evidence": [
+      "Utils.sendData;resource exact opcode"
+    ],
+    "provenance": "Artifact literal or independently hand-calculated final bytes, never captured device traffic",
+    "hardware_status": "UNVERIFIED"
+  },
+  {
+    "id": "V-W-DOWN",
+    "protocol": "P2",
+    "action": "W-DOWN",
+    "inputs": {
+      "vendor": "WI_LINKE",
+      "payload": "25",
+      "mode": 0
+    },
+    "expected_bytes": "6e01002594",
+    "evidence": [
+      "Utils.sendData;resource exact opcode"
+    ],
+    "provenance": "Artifact literal or independently hand-calculated final bytes, never captured device traffic",
+    "hardware_status": "UNVERIFIED"
+  },
+  {
+    "id": "V-W-END0",
+    "protocol": "P2",
+    "action": "W-END0",
+    "inputs": {
+      "vendor": "WI_LINKE",
+      "payload": "6e",
+      "mode": 0
+    },
+    "expected_bytes": "6e01006edd",
+    "evidence": [
+      "Utils.sendData;resource exact opcode"
+    ],
+    "provenance": "Artifact literal or independently hand-calculated final bytes, never captured device traffic",
+    "hardware_status": "UNVERIFIED"
+  },
+  {
+    "id": "V-W-END2",
+    "protocol": "P2",
+    "action": "W-END2",
+    "inputs": {
+      "vendor": "WI_LINKE",
+      "payload": "6e",
+      "mode": 2
+    },
+    "expected_bytes": "6e01026edf",
+    "evidence": [
+      "Utils.sendData;resource exact opcode"
+    ],
+    "provenance": "Artifact literal or independently hand-calculated final bytes, never captured device traffic",
+    "hardware_status": "UNVERIFIED"
+  },
+  {
+    "id": "V-W-M1",
+    "protocol": "P2",
+    "action": "W-M1",
+    "inputs": {
+      "vendor": "WI_LINKE",
+      "payload": "2e",
+      "mode": 0
+    },
+    "expected_bytes": "6e01002e9d",
+    "evidence": [
+      "Utils.sendData;resource exact opcode"
+    ],
+    "provenance": "Artifact literal or independently hand-calculated final bytes, never captured device traffic",
+    "hardware_status": "UNVERIFIED"
+  },
+  {
+    "id": "V-W-SAVE",
+    "protocol": "P2",
+    "action": "W-SAVE",
+    "inputs": {
+      "vendor": "WI_LINKE",
+      "payload": "2b",
+      "mode": 0
+    },
+    "expected_bytes": "6e01002b9a",
+    "evidence": [
+      "Utils.sendData;resource exact opcode"
+    ],
+    "provenance": "Artifact literal or independently hand-calculated final bytes, never captured device traffic",
+    "hardware_status": "UNVERIFIED"
+  },
+  {
+    "id": "V-INIT",
+    "protocol": "P2",
+    "action": "INIT",
+    "inputs": {
+      "direct_prefix": "6e020100"
+    },
+    "expected_bytes": "6e02010071",
+    "evidence": [
+      "Fixed direct helper four-byte callsite; independent sum"
+    ],
+    "provenance": "Artifact literal or independently hand-calculated final bytes, never captured device traffic",
+    "hardware_status": "UNVERIFIED"
+  },
+  {
+    "id": "V-CANCEL1",
+    "protocol": "P2",
+    "action": "CANCEL1",
+    "inputs": {
+      "direct_prefix": "6e050000"
+    },
+    "expected_bytes": "6e05000073",
+    "evidence": [
+      "Fixed direct helper four-byte callsite; independent sum"
+    ],
+    "provenance": "Artifact literal or independently hand-calculated final bytes, never captured device traffic",
+    "hardware_status": "UNVERIFIED"
+  },
+  {
+    "id": "V-CANCEL2",
+    "protocol": "P2",
+    "action": "CANCEL2",
+    "inputs": {
+      "direct_prefix": "6e060000"
+    },
+    "expected_bytes": "6e06000074",
+    "evidence": [
+      "Fixed direct helper four-byte callsite; independent sum"
+    ],
+    "provenance": "Artifact literal or independently hand-calculated final bytes, never captured device traffic",
+    "hardware_status": "UNVERIFIED"
+  },
+  {
+    "id": "V-LIGHT-TIMER0",
+    "protocol": "P2",
+    "action": "LIGHT-TIMER0",
+    "inputs": {
+      "direct_prefix": "6e0b0000"
+    },
+    "expected_bytes": "6e0b000079",
+    "evidence": [
+      "Fixed direct helper four-byte callsite; independent sum"
+    ],
+    "provenance": "Artifact literal or independently hand-calculated final bytes, never captured device traffic",
+    "hardware_status": "UNVERIFIED"
+  },
+  {
+    "id": "V-LIGHT-TIMER300",
+    "protocol": "P2",
+    "action": "LIGHT-TIMER300",
+    "inputs": {
+      "direct_prefix": "6e0b012c"
+    },
+    "expected_bytes": "6e0b012ca6",
+    "evidence": [
+      "Fixed direct helper four-byte callsite; independent sum"
+    ],
+    "provenance": "Artifact literal or independently hand-calculated final bytes, never captured device traffic",
+    "hardware_status": "UNVERIFIED"
+  },
+  {
+    "id": "V-POP15",
+    "protocol": "P2",
+    "action": "POP15",
+    "inputs": {
+      "direct_prefix": "6e01005f"
+    },
+    "expected_bytes": "6e01005fce",
+    "evidence": [
+      "Fixed direct helper four-byte callsite; independent sum"
+    ],
+    "provenance": "Artifact literal or independently hand-calculated final bytes, never captured device traffic",
+    "hardware_status": "UNVERIFIED"
+  },
+  {
+    "id": "V-POP30",
+    "protocol": "P2",
+    "action": "POP30",
+    "inputs": {
+      "direct_prefix": "6e010063"
+    },
+    "expected_bytes": "6e010063d2",
+    "evidence": [
+      "Fixed direct helper four-byte callsite; independent sum"
+    ],
+    "provenance": "Artifact literal or independently hand-calculated final bytes, never captured device traffic",
+    "hardware_status": "UNVERIFIED"
+  },
+  {
+    "id": "V-POP45",
+    "protocol": "P2",
+    "action": "POP45",
+    "inputs": {
+      "direct_prefix": "6e010061"
+    },
+    "expected_bytes": "6e010061d0",
+    "evidence": [
+      "Fixed direct helper four-byte callsite; independent sum"
+    ],
+    "provenance": "Artifact literal or independently hand-calculated final bytes, never captured device traffic",
+    "hardware_status": "UNVERIFIED"
+  },
+  {
+    "id": "V-RGB",
+    "protocol": "P2",
+    "action": "Stored/color green",
+    "inputs": {
+      "rgb": [
+        0,
+        255,
+        0
+      ]
+    },
+    "expected_bytes": "6e0cff00796e0dff007a",
+    "evidence": [
+      "LedLampActivity two independent sums; sample input00FF00"
+    ],
+    "provenance": "Artifact literal or independently hand-calculated final bytes, never captured device traffic",
+    "hardware_status": "UNVERIFIED"
+  },
+  {
+    "id": "V-ALARM-DAY",
+    "protocol": "P2",
+    "action": "Relative same-minute ZG next day",
+    "inputs": {
+      "minutes": 1440,
+      "action": 69
+    },
+    "expected_bytes": "6e05a000136e060545be",
+    "evidence": [
+      "AlarmClockActivity minutes low first,high second;sum"
+    ],
+    "provenance": "Artifact literal or independently hand-calculated final bytes, never captured device traffic",
+    "hardware_status": "UNVERIFIED"
+  },
+  {
+    "id": "V-ALARM-NIGHT",
+    "protocol": "P2",
+    "action": "20minutes ZG+head massage",
+    "inputs": {
+      "minutes": 20,
+      "action": 124
+    },
+    "expected_bytes": "6e051400876e06007cf0",
+    "evidence": [
+      "AlarmClockActivity;alarm-combinations ZG/head"
+    ],
+    "provenance": "Artifact literal or independently hand-calculated final bytes, never captured device traffic",
+    "hardware_status": "UNVERIFIED"
+  },
+  {
+    "id": "V-REPLY-ALARM-PRESENT",
+    "protocol": "P2",
+    "action": "Parser ALARM-PRESENT",
+    "inputs": {
+      "notification": "6e09010078"
+    },
+    "expected_bytes": "6e09010078",
+    "evidence": [
+      "Utils$4 parser;BaseActivity/AlarmClockActivity exact comparison"
+    ],
+    "provenance": "Artifact literal or independently hand-calculated final bytes, never captured device traffic",
+    "hardware_status": "UNVERIFIED"
+  },
+  {
+    "id": "V-REPLY-LIGHT-OFF",
+    "protocol": "P2",
+    "action": "Parser LIGHT-OFF",
+    "inputs": {
+      "notification": "6e0e00017d"
+    },
+    "expected_bytes": "6e0e00017d",
+    "evidence": [
+      "Utils$4 parser;BaseActivity/AlarmClockActivity exact comparison"
+    ],
+    "provenance": "Artifact literal or independently hand-calculated final bytes, never captured device traffic",
+    "hardware_status": "UNVERIFIED"
+  },
+  {
+    "id": "V-REPLY-LIGHT-ON",
+    "protocol": "P2",
+    "action": "Parser LIGHT-ON",
+    "inputs": {
+      "notification": "6e0e00037f"
+    },
+    "expected_bytes": "6e0e00037f",
+    "evidence": [
+      "Utils$4 parser;BaseActivity/AlarmClockActivity exact comparison"
+    ],
+    "provenance": "Artifact literal or independently hand-calculated final bytes, never captured device traffic",
+    "hardware_status": "UNVERIFIED"
+  },
+  {
+    "id": "V-REPLY-ALARM-SET-ACK",
+    "protocol": "P2",
+    "action": "Parser ALARM-SET-ACK",
+    "inputs": {
+      "notification": "6e07010177"
+    },
+    "expected_bytes": "6e07010177",
+    "evidence": [
+      "Utils$4 parser;BaseActivity/AlarmClockActivity exact comparison"
+    ],
+    "provenance": "Artifact literal or independently hand-calculated final bytes, never captured device traffic",
+    "hardware_status": "UNVERIFIED"
+  },
+  {
+    "id": "V-REPLY-ALARM-CANCEL-ACK",
+    "protocol": "P2",
+    "action": "Parser ALARM-CANCEL-ACK",
+    "inputs": {
+      "notification": "6e07010278"
+    },
+    "expected_bytes": "6e07010278",
+    "evidence": [
+      "Utils$4 parser;BaseActivity/AlarmClockActivity exact comparison"
+    ],
+    "provenance": "Artifact literal or independently hand-calculated final bytes, never captured device traffic",
+    "hardware_status": "UNVERIFIED"
+  },
+  {
+    "id": "V-MIXED-LOCK-NORDIC-LONG_THRESHOLD",
+    "protocol": "P1",
+    "action": "Bed lock long FGRM/FMRM/FNRM",
+    "inputs": {
+      "vendor": "NORDIC",
+      "payload": "84",
+      "mode": 0
+    },
+    "expected_bytes": "84",
+    "evidence": [
+      "work/smali/base/res/layout/ffgrm.xml:4",
+      "work/smali/base/res/layout/ffmrm.xml:5",
+      "work/smali/base/res/layout/ffnrm.xml:9",
+      "work/smali/base/res/values/strings.xml:280,368,556",
+      "work/smali/base/smali/com/richmat/rmcontrol/view/RichButton.smali:31-227",
+      "work/smali/base/smali/com/richmat/rmcontrol/fragment/RemoteFragment.smali:6760-6924",
+      "work/smali/base/smali/com/richmat/rmcontrol/tools/Utils.smali:3470-3508,3973-3990,5872-5978,6021-6032",
+      "work/smali/base/smali/com/richmat/rmcontrol/tools/Utils$2.smali:120-195",
+      "work/smali/base/smali/com/richmat/rmcontrol/tools/Utils$7.smali:35-81"
+    ],
+    "provenance": "Original resource literal plus independently hand-calculated sendData wrapper sum; static source, no captured traffic",
+    "hardware_status": "UNVERIFIED"
+  },
+  {
+    "id": "V-MIXED-LOCK-NORDIC-UP_SHORT_IF_NO_LONG",
+    "protocol": "P1",
+    "action": "EXCLUDED_AUDIO music lock short FGRM/FMRM/FNRM",
+    "inputs": {
+      "vendor": "NORDIC",
+      "payload": "d9",
+      "mode": 0
+    },
+    "expected_bytes": "d9",
+    "evidence": [
+      "work/smali/base/res/layout/ffgrm.xml:4",
+      "work/smali/base/res/layout/ffmrm.xml:5",
+      "work/smali/base/res/layout/ffnrm.xml:9",
+      "work/smali/base/res/values/strings.xml:280,368,556",
+      "work/smali/base/smali/com/richmat/rmcontrol/view/RichButton.smali:31-227",
+      "work/smali/base/smali/com/richmat/rmcontrol/fragment/RemoteFragment.smali:6760-6924",
+      "work/smali/base/smali/com/richmat/rmcontrol/tools/Utils.smali:3470-3508,3973-3990,5872-5978,6021-6032",
+      "work/smali/base/smali/com/richmat/rmcontrol/tools/Utils$2.smali:120-195",
+      "work/smali/base/smali/com/richmat/rmcontrol/tools/Utils$7.smali:35-81"
+    ],
+    "provenance": "Original resource literal plus independently hand-calculated sendData wrapper sum; static source, no captured traffic",
+    "hardware_status": "UNVERIFIED"
+  },
+  {
+    "id": "V-MIXED-LOCK-WI_LINKE-LONG_THRESHOLD",
+    "protocol": "P2",
+    "action": "Bed lock long FGRM/FMRM/FNRM",
+    "inputs": {
+      "vendor": "WI_LINKE",
+      "payload": "84",
+      "mode": 0
+    },
+    "expected_bytes": "6e010084f3",
+    "evidence": [
+      "work/smali/base/res/layout/ffgrm.xml:4",
+      "work/smali/base/res/layout/ffmrm.xml:5",
+      "work/smali/base/res/layout/ffnrm.xml:9",
+      "work/smali/base/res/values/strings.xml:280,368,556",
+      "work/smali/base/smali/com/richmat/rmcontrol/view/RichButton.smali:31-227",
+      "work/smali/base/smali/com/richmat/rmcontrol/fragment/RemoteFragment.smali:6760-6924",
+      "work/smali/base/smali/com/richmat/rmcontrol/tools/Utils.smali:3470-3508,3973-3990,5872-5978,6021-6032",
+      "work/smali/base/smali/com/richmat/rmcontrol/tools/Utils$2.smali:120-195",
+      "work/smali/base/smali/com/richmat/rmcontrol/tools/Utils$7.smali:35-81"
+    ],
+    "provenance": "Original resource literal plus independently hand-calculated sendData wrapper sum; static source, no captured traffic",
+    "hardware_status": "UNVERIFIED"
+  },
+  {
+    "id": "V-MIXED-LOCK-WI_LINKE-UP_SHORT_IF_NO_LONG",
+    "protocol": "P2",
+    "action": "EXCLUDED_AUDIO music lock short FGRM/FMRM/FNRM",
+    "inputs": {
+      "vendor": "WI_LINKE",
+      "payload": "d9",
+      "mode": 0
+    },
+    "expected_bytes": "6e0100d948",
+    "evidence": [
+      "work/smali/base/res/layout/ffgrm.xml:4",
+      "work/smali/base/res/layout/ffmrm.xml:5",
+      "work/smali/base/res/layout/ffnrm.xml:9",
+      "work/smali/base/res/values/strings.xml:280,368,556",
+      "work/smali/base/smali/com/richmat/rmcontrol/view/RichButton.smali:31-227",
+      "work/smali/base/smali/com/richmat/rmcontrol/fragment/RemoteFragment.smali:6760-6924",
+      "work/smali/base/smali/com/richmat/rmcontrol/tools/Utils.smali:3470-3508,3973-3990,5872-5978,6021-6032",
+      "work/smali/base/smali/com/richmat/rmcontrol/tools/Utils$2.smali:120-195",
+      "work/smali/base/smali/com/richmat/rmcontrol/tools/Utils$7.smali:35-81"
+    ],
+    "provenance": "Original resource literal plus independently hand-calculated sendData wrapper sum; static source, no captured traffic",
+    "hardware_status": "UNVERIFIED"
+  }
+]

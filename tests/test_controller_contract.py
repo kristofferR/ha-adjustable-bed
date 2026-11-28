@@ -420,6 +420,8 @@ async def _create_controller_for_bed_type(
         return await create_controller(coordinator, bed_type, variant or "p1", client)
     if bed_type == const.BED_TYPE_LUUNA:
         return await create_controller(coordinator, bed_type, variant or "rise", client)
+    if bed_type == "ar_connect":
+        coordinator.entry.data = {**coordinator.entry.data, const.CONF_PRODUCT_TYPE: "back_legs"}
     if bed_type == const.BED_TYPE_HUSH_BASE:
         return await create_controller(coordinator, bed_type, variant or "hushl400", client)
     if bed_type == const.BED_TYPE_SLEEPTIME:

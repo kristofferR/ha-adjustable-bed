@@ -272,6 +272,14 @@ set_alarm:
           step: 10
           unit_of_measurement: min
           mode: slider
+    duration:
+      name: Routine duration
+      description: Duration in minutes for a bed with a local wake or sleep routine.
+      selector:
+        number:
+          min: 1
+          max: 120
+          mode: box
     sleep_timer:
       selector:
         number:
@@ -5140,3 +5148,106 @@ flexx_motion_delete_alarm:
           min: 1
           max: 7
           mode: box
+
+ar_connect_move_sections:
+  name: Move bed sections (AR Connect)
+  description: Hold the selected available sections of one physical bed. Release cancels refresh and sends the native stop command.
+  fields:
+    device_id:
+      required: true
+      selector:
+        device:
+          integration: adjustable_bed
+    directions:
+      required: true
+      description: A mapping of back, legs, head or feet to up or down.
+      selector:
+        object:
+    duration_ms:
+      required: true
+      selector:
+        number:
+          min: 1
+          max: 60000
+          unit_of_measurement: ms
+          mode: box
+ar_connect_mood:
+  name: Set mood colors (AR Connect)
+  description: Set the five color steps, repeat choice and time per step on an AR Connect headboard.
+  fields:
+    device_id:
+      required: true
+      selector:
+        device:
+          integration: adjustable_bed
+    repeat:
+      required: true
+      selector:
+        boolean:
+    delay:
+      required: true
+      description: Minutes per color, choose 1, 2, 5, 10, 20, 30, 60 or 120.
+      selector:
+        number:
+          min: 1
+          max: 120
+          mode: box
+    colors:
+      required: true
+      description: Five objects with hue (0 to 1), tint (0.5 to 1) and brightness (0 to 1), using the app's color scale.
+      selector:
+        object:
+ar_connect_routine:
+  name: Manage local routine (AR Connect)
+  description: Create a wake or sleep routine, update or delete a returned routine id, or refresh the current list. Updates remove the old routine before creating its replacement.
+  fields:
+    device_id:
+      required: true
+      selector:
+        device:
+          integration: adjustable_bed
+    action:
+      required: true
+      selector:
+        select:
+          options: [create, update, delete, refresh]
+    id:
+      description: A routine id returned by the headboard, required for update or delete.
+      selector:
+        number:
+          min: 0
+          mode: box
+    enabled:
+      default: true
+      selector:
+        boolean:
+    mode:
+      default: wake
+      selector:
+        select:
+          options: [wake, sleep]
+    hour:
+      selector:
+        number:
+          min: 0
+          max: 23
+          mode: box
+    minute:
+      selector:
+        number:
+          min: 0
+          max: 59
+          mode: box
+    duration:
+      default: 10
+      description: Routine duration in minutes, choose 1, 2, 5, 10, 20, 30, 60 or 120.
+      selector:
+        number:
+          min: 1
+          max: 120
+          mode: box
+    weekdays:
+      selector:
+        select:
+          multiple: true
+          options: [monday, tuesday, wednesday, thursday, friday, saturday, sunday]

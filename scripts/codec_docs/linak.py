@@ -5,6 +5,7 @@ from itertools import combinations
 from custom_components.adjustable_bed.codec.linak import control_frame, selected_sections_frame
 from custom_components.adjustable_bed.profiles.linak import CARPE_DIEM
 
+from . import _ar_connect
 from ._common import Block, _block, _hex, _table
 
 
@@ -53,6 +54,7 @@ def carpe_timing() -> str:
 
 
 BLOCKS: list[Block] = [
+    *_ar_connect.BLOCKS,
     ("docs/beds/linak.md", "linak-carpe-controls", carpe_controls),
     ("docs/beds/linak.md", "linak-carpe-timing", carpe_timing),
 ]

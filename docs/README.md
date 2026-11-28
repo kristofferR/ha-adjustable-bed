@@ -57,7 +57,7 @@ app. Every guide follows the [bed guide format](BED_GUIDE_FORMAT.md).
 | [Leggett & Platt](beds/leggett-platt.md) | LP Control, LP Comfort Connect and the L&P remotes | |
 | [Vindö](beds/vindo.md) | Carpe Diem Beds Vindö (Linak two-byte controls) |
 | [Limoss](beds/limoss.md) | Limoss Remote, FSM Relax, Stawett and older Limoss controls | Shared |
-| [Linak](beds/linak.md) | Linak Bed Control, Bed Connect and Performance Series | |
+| [Linak](beds/linak.md) | Linak Bed Control, Bed Connect, Performance Series and AR Connect native beds and headboards | |
 | [ErgoBQ BED](beds/ergobq.md) | The ErgoBQ direct electric-bed route | |
 | [Linx](beds/linx.md) | The Linx app | |
 | [LOGICDATA SimplicityFrame](beds/logicdata.md) | SILVERmotion / SimplicityFrame | |
@@ -81,7 +81,7 @@ app. Every guide follows the [bed guide format](BED_GUIDE_FORMAT.md).
 | [Reverie Pairlink](beds/reverie-pairlink-sdk.md) | Reverie Pairlink (R510L / Harmoniq) | |
 | [Likimio](beds/richmat.md#likimio) | The Likimio app and ABM10 beds | Shared |
 | [Dorsal / Roomi](beds/richmat.md#dorsal--roomi) | The Dorsal app, saved Dorsal projects and Roomi controls | Shared |
-| [Richmat](beds/richmat.md) | Richmat remotes, RMControl, Smart Base (200IV2 / A8RM), Maxprime, BedTech and Bed Tech, BedSmart / X-Series, L&P MlRM and both L&P Adjustable Base apps, the Richmat MH apps, ENSO Sleep Control, HJBed, eShine E6000, Good Vibe Sleep, Lunio, Luuna, Majestic Home, MLILY, Saatva, Dream Sense Bed, Dreamlab Control, Super Colchones, SleepEvolution, S&S Base (Silk & Snow) and other Richmat-based apps | Shared |
+| [Richmat](beds/richmat.md) | Richmat remotes, RMControl, Smart Base (200IV2 / A8RM), Maxprime, BedTech and Bed Tech, BedSmart / X-Series, L&P MlRM and both L&P Adjustable Base apps, the Richmat MH apps, ENSO Sleep Control, HJBed, eShine E6000, Good Vibe Sleep, Lunio, Luuna, Majestic Home, MLILY, Saatva, Dream Sense Bed, Dreamlab Control, TSS Remote, Super Colchones, SleepEvolution, S&S Base (Silk & Snow) and other Richmat-based apps | Shared |
 | [RUF and related apps](beds/ruf-richmat-apps.md) | RUF Betten, W.Silver Products, AMERICANSTAR, Bailey's Bed Control and TX | |
 | [Sleep Assist](beds/sleep-assistant.md) | The original Sleep Assist app, ErgoSportive and Softide | |
 | [Sleep Assist Pro](beds/sleep-assist-pro.md) | The Sleep Assist Pro app and its five Bluetooth routes | |

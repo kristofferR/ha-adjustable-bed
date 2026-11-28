@@ -17,6 +17,7 @@ if TYPE_CHECKING:
     from .ai_bed.controller import AiBedController as AiBedController
     from .alya.controller import AlyaController as AlyaController
     from .ambient.controller import AmbientController as AmbientController
+    from .ar_connect.native import ArConnectController as ArConnectController
     from .baseremote.controller import BaseRemoteController as BaseRemoteController
     from .bedgear.controller import BedgearController as BedgearController
     from .bedgear.ergobed import ErgoBedController as ErgoBedController
@@ -205,6 +206,7 @@ if TYPE_CHECKING:
     from .woosa import WoosaController as WoosaController
 
 _EXPORT_MODULES = {
+    "ArConnectController": "ar_connect.native",
     "IntellibedController": "intellibed.controller",
     "GhostBedController": "flexispot.ghostbed",
     "InstantComfortBase": "instant_comfort.controller",
@@ -397,6 +399,7 @@ _EXPORT_MODULES = {
 }
 
 __all__ = [
+    "ArConnectController",
     "GhostBedController",
     "InstantComfortBase",
     "DoubleSleepController",
