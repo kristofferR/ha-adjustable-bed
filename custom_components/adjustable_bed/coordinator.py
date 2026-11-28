@@ -2163,6 +2163,11 @@ class AdjustableBedCoordinator(
                 raise BedNotConnectedError("pairlink_not_ready", device_name=self.name)
             return controller
 
+        if controller is not None and controller.requires_connection_reset is True:
+            # The command lane has settled the previous operation's cleanup.
+            if not await self.async_disconnect(reason="protocol_error"):
+                raise self._not_connected_error()
+
         if not await self.async_ensure_connected(reset_timer=False):
             _LOGGER.debug("Cannot execute %s: not connected to bed", operation_name)
             raise self._not_connected_error()
@@ -2947,14 +2952,15 @@ class AdjustableBedCoordinator(
 
     async def async_validate_linked_command_readiness(self) -> None:
         """Prepare actual GATT without starting a reserved linked command."""
-        if not await self.async_ensure_connected(reset_timer=False):
-            raise ConnectionError("Linked receiver is unavailable")
-        controller = self._controller
-        if controller is None or controller.requires_linked_live_readiness is not True:
-            raise ValueError("Linked readiness requires an explicitly compatible profile")
-        await controller.async_validate_linked_readiness()
-        if self._controller is not controller or not self.is_connected:
-            raise ConnectionError("Linked session changed during readiness validation")
+        async with self._command_lock:
+            # Preparing the group can cancel a query. Settle its cleanup before
+            # recovering and validating the connection either side will use.
+            controller = await self._async_prepare_controller_operation("linked readiness")
+            if controller.requires_linked_live_readiness is not True:
+                raise ValueError("Linked readiness requires an explicitly compatible profile")
+            await controller.async_validate_linked_readiness()
+            if self._controller is not controller or not self.is_connected:
+                raise ConnectionError("Linked session changed during readiness validation")
 
     async def async_wait_prepared_command(self, handle: CommandHandle) -> None:
         """Wait until a prepared command owns this device scheduler."""

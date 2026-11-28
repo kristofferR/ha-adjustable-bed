@@ -64,6 +64,23 @@ Action = Literal[
     "light_brightness_up",
     "light_brightness_down",
     "light_color",
+    "legs_up",
+    "legs_down",
+    "head_up_max",
+    "head_down_max",
+    "feet_up_max",
+    "feet_down_max",
+    "legs_up_max",
+    "legs_down_max",
+    "inverse",
+    "stretch",
+    "save_zero_g",
+    "save_lounge",
+    "save_incline",
+    "save_anti_snore",
+    "massage_wave_1",
+    "massage_wave_2",
+    "massage_wave_3",
 ]
 
 
