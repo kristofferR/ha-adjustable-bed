@@ -523,3 +523,12 @@ with only its two verified announcements. See the
 UUIDs, so it does not reproduce the Active Sleep literals. All 32 frozen
 Active Sleep frames have an independent literal vector test, including excluded
 commands tested only through the codec, never exposed as runtime actions.
+
+## Thrive Sleep
+
+Thrive Sleep 1.1.2 uses the existing Richmat function, calendar, RGB, light-timer,
+countdown and extended-record encoders. All 115 frozen literals reproduce through
+those encoders. Its three current profiles own the product menus and alarm modes;
+its session controller rejects mixed recognized services rather than applying
+the app's independent handle-selection and encoding order to unknown hardware.
+See [Thrive Sleep](../beds/richmat.md#thrive-sleep).

@@ -16,6 +16,7 @@ from custom_components.adjustable_bed.beds.active_sleep.controller import Active
 from custom_components.adjustable_bed.codec import active_sleep as codec
 from custom_components.adjustable_bed.coordinator import AdjustableBedCoordinator
 from custom_components.adjustable_bed.errors import BedCommandTimedOutError, BedNotConnectedError
+from custom_components.adjustable_bed.execution import HOLD_CEILING_MS
 from custom_components.adjustable_bed.paired_coordinator import PairedBedCoordinator
 from custom_components.adjustable_bed.runtime_data import entry_runtime
 from scripts.wire_snapshot import FakeServices
@@ -64,6 +65,8 @@ async def test_paired_hold_recovers_after_preempting_query(hass):
     pair = PairedBedCoordinator(hass, entry, {const.SIDE_LEFT: left, const.SIDE_RIGHT: right},
         connection_mode=const.PAIR_CONNECTION_MODE_CONCURRENT)
     query_written = asyncio.Event()
+    left_motion = asyncio.Event()
+    right_motion = asyncio.Event()
     bed.drop = 0xB2
     original_write = bed.write
 
@@ -71,15 +74,31 @@ async def test_paired_hold_recovers_after_preempting_query(hass):
         await original_write(char, raw, **kwargs)
         if raw[0] == 0xB2:
             query_written.set()
+        elif raw == codec.arrow(2):
+            left_motion.set()
+
+    async def right_write(char, raw, **kwargs):
+        await other.write(char, raw, **kwargs)
+        if raw == codec.arrow(2):
+            right_motion.set()
 
     bed.client.write_gatt_char.side_effect = write
+    other.client.write_gatt_char.side_effect = right_write
     query = asyncio.create_task(left.async_execute_controller_query(
         lambda current: current.read_positions(), skip_disconnect=True, preemptible=True))
     try:
         await query_written.wait()
         bed.drop = None
         original_controller = left.controller
-        await services._hold_targets([(pair, const.SIDE_BOTH)], "head_up", 2)
+        hold = asyncio.create_task(
+            services._hold_targets([(pair, const.SIDE_BOTH)], "head_up", HOLD_CEILING_MS)
+        )
+        try:
+            await asyncio.wait_for(asyncio.gather(left_motion.wait(), right_motion.wait()), 5)
+        finally:
+            hold.cancel()
+            with pytest.raises(asyncio.CancelledError):
+                await hold
         assert left.controller is not original_controller
         left.async_disconnect.assert_awaited_once_with(reason="protocol_error")
         assert any(raw[0] == 0xB4 and raw[2] == 2 for raw in bed.writes)

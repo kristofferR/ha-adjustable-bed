@@ -1,0 +1,55 @@
+[
+  {
+    "id": "N1",
+    "frame": "6e200d0501020100071e45f907",
+    "expected": {
+      "id": 1,
+      "reserved": 0,
+      "hour": 7,
+      "minute": 30,
+      "mode": 69,
+      "repeatCode": 249
+    }
+  },
+  {
+    "id": "N2",
+    "frame": "6e20090601020001a1",
+    "expected": {
+      "antiSnore": true
+    }
+  },
+  {
+    "id": "N3",
+    "frame": "6e200d060302004245442d31cf",
+    "expected": {
+      "sleepAdvName": "BED-1"
+    }
+  },
+  {
+    "id": "N4",
+    "frame": "6e90010201",
+    "expected": {
+      "protocolVersion": 2,
+      "bedMode": 1
+    }
+  },
+  {
+    "id": "N5",
+    "frame": "6e90392d64",
+    "expected": {
+      "no": 2,
+      "status": 1,
+      "angle": 45
+    }
+  },
+  {
+    "id": "N6",
+    "frame": "6e90a29c3c",
+    "expected": {
+      "mode": 1,
+      "massage1": 2,
+      "massage2": 3,
+      "massage3": 4
+    }
+  }
+]

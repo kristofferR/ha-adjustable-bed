@@ -21,6 +21,7 @@ from custom_components.adjustable_bed.beds.active_sleep.controller import (
 from custom_components.adjustable_bed.codec import active_sleep as codec
 from custom_components.adjustable_bed.controller_state import ControllerState
 from custom_components.adjustable_bed.detection import detect_bed_type, detect_bed_type_detailed
+from custom_components.adjustable_bed.execution import HOLD_CEILING_MS
 from tests.active_sleep_vectors import VECTORS
 from tests.error_helpers import raises_key
 
@@ -265,8 +266,23 @@ async def test_height_threshold_counterexample_and_explicit_ack(bed):
         await ctrl.hold_control("height_down", 1)
     assert not bed.writes and bed.coordinator.controller_state[WARNING] is True
     await ctrl.press("acknowledge")
-    await ctrl.hold_control("height_down", 1)
+    motion_written = asyncio.Event()
+
+    async def write(char, raw, **kwargs):
+        await bed.write(char, raw, **kwargs)
+        if raw == codec.arrow(7):
+            motion_written.set()
+
+    bed.client.write_gatt_char.side_effect = write
+    hold = asyncio.create_task(ctrl.hold_control("height_down", HOLD_CEILING_MS))
+    try:
+        await asyncio.wait_for(motion_written.wait(), 5)
+    finally:
+        hold.cancel()
+        with pytest.raises(asyncio.CancelledError):
+            await hold
     assert bed.writes[0] == codec.arrow(7)
+    assert bed.writes[-1] == codec.arrow(0)
     ctrl.on_disconnect()
     assert not ctrl._acknowledged
 

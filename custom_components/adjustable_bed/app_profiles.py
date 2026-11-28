@@ -255,6 +255,7 @@ _BY_BED_TYPE: Final[dict[str, SideProfile]] = {
     "luniosmart": SideProfile("Lunio Smart+", frozenset()),
     "sleep_evolution": SideProfile("SleepEvolution", frozenset({CONF_BLE_DEVICE_NAME}), variant_owned=True),
     "wsilver_legacy": SideProfile("W.Silver Products (older version)", frozenset({CONF_BLE_DEVICE_NAME}), variant_owned=True),
+    "thrivesleep": SideProfile("Thrive Sleep product", variant_owned=True),
     "super_colchones": SideProfile("Super Colchones product", variant_owned=True),
     "ergobq": SideProfile("ErgoBQ BED"),
     "sonicsleep": SideProfile("SonicSleep IQRM", frozenset({"product_type"})),
