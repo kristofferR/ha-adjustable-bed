@@ -1073,3 +1073,36 @@ async def test_automatic_disable_rechecks_claim_after_waiting_for_ble_lock(
             await pending
         assert written(mock_bleak_client) == [frame for _, frame in app.program("rest")]
     await hass.config_entries.async_unload(e.entry_id)
+
+
+@pytest.mark.parametrize("suffix,response", (("", True), (":no_response", False)))
+async def test_actual_wire_scenario_overrides_b002_without_changing_notify(
+    monkeypatch, suffix, response
+):
+    tool = _tool()
+    original = tool.capture_scenario
+    scenario_id = "softide" if response else "softide:3:primary" + suffix
+    observed = []
+
+    async def capture(scenario, layout, frozen):
+        client = tool.FakeClient(tool.Recorder(tool.FakeClock()), layout, scenario.replies)
+        link = bed.select_link(client, 0)
+        observed.append((link.write.properties, link.notify.properties, link.response))
+        return await original(scenario, layout, frozen)
+
+    monkeypatch.setattr(tool, "capture_scenario", capture)
+    snapshot = await tool.capture_all([scenario_id])
+    assert len(observed) == 1
+    write_properties, notify_properties, selected_response = observed[0]
+    assert write_properties == (["write"] if response else ["write-without-response"])
+    assert notify_properties == ["notify"]
+    assert selected_response is response
+    row = snapshot["scenarios"][scenario_id]
+    assert not row.get("gaps") and not row.get("connect_error")
+    frames = [
+        write
+        for command in row["commands"].values()
+        for write in command.get("writes", ())
+        if type(write[2]) is bool
+    ]
+    assert frames and all(write[1] == app.WRITE and write[2] is response for write in frames)

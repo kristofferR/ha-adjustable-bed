@@ -3397,12 +3397,14 @@ async def capture_all(only: list[str] | None = None) -> dict[str, Any]:
             try:
                 layout = layouts[scenario.layout_id or scenario.id]
                 if scenario.properties is not None:
-                    if scenario.bed_type == "konfurt":
-                        from custom_components.adjustable_bed.profiles.konfurt import WRITE
+                    if scenario.bed_type in ("konfurt", "softide"):
+                        from custom_components.adjustable_bed.profiles import konfurt, softide
 
-                        # This layout has explicit per-characteristic roles, which
+                        write_uuid = konfurt.WRITE if scenario.bed_type == "konfurt" else softide.WRITE
+
+                        # These layouts have explicit per-characteristic roles, which
                         # take precedence over a default. Keep the notify role.
-                        properties = {**layout.get("properties", {}), WRITE: [
+                        properties = {**layout.get("properties", {}), write_uuid: [
                             prop for prop in scenario.properties
                             if prop in ("write", "write-without-response")
                         ]}

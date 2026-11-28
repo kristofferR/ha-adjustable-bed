@@ -1209,6 +1209,8 @@
         "title": "Left side settings",
         "description": "Change connection, movement and app settings for **{name}**. Only this side changes.",
         "data": {
+          "softide_sensors": "Sleep sensor selection",
+          "softide_prepare_massage": "Initialize massage frequency before first use",
           "ergosportive_controls": "Controls available on your bed",
           "ergobq_serial": "ErgoBQ six-byte serial (hex, optional)",
           "active_sleep_auth_id": "Existing Active Sleep authentication ID (optional)",
@@ -1398,6 +1400,8 @@
         "title": "Right side settings",
         "description": "Change connection, movement and app settings for **{name}**. Only this side changes.",
         "data": {
+          "softide_sensors": "Sleep sensor selection",
+          "softide_prepare_massage": "Initialize massage frequency before first use",
           "ergosportive_controls": "Controls available on your bed",
           "ergobq_serial": "ErgoBQ six-byte serial (hex, optional)",
           "active_sleep_auth_id": "Existing Active Sleep authentication ID (optional)",
