@@ -317,12 +317,15 @@ class DreamotionSmartController(JiecangProfileController):
         await self._write(link, app.query(0x44), self._coordinator.cancel_command)
 
     async def _wait_light_settings(self, link: _Link, *, timed: bool) -> None:
+        await self._wait_settings(
+            link,
+            lambda: self._timed is not None if timed else self._colors is not None,
+            "timed light" if timed else "saved light",
+        )
+
+    async def _wait_settings(self, link: _Link, ready: Callable[[], bool], setting: str) -> None:
         """Await accepted readbacks, not query-write completion or a device ACK."""
         self._live(link)
-
-        def ready() -> bool:
-            return self._timed is not None if timed else self._colors is not None
-
         if ready():
             return
 
@@ -336,14 +339,12 @@ class DreamotionSmartController(JiecangProfileController):
 
         try:
             # Reuse HA's bounded BLE-read budget, without a new protocol timer,
-            # retransmission or query. Other controls need no light readback.
+            # retransmission or query.
             async with asyncio.timeout(DEVICE_INFO_READ_TIMEOUT):
                 await cancellable(wait(), self._coordinator.cancel_command)
         except TimeoutError as error:
             self._live(link)
-            raise invalid(
-                "dreamotion_smart_refresh", setting="timed light" if timed else "saved light"
-            ) from error
+            raise invalid("dreamotion_smart_refresh", setting=setting) from error
         self._live(link)
 
     async def _move_axis(self, axis: codec.Axis, up: bool) -> None:
@@ -433,7 +434,7 @@ class DreamotionSmartController(JiecangProfileController):
                 app.Color(*payload[8:12]),
             )
             self._publish_color()
-        if op in (0x44, 0x45) and self._link is not None:
+        if op in (0x44, 0x45, 0x80, 0x81) and self._link is not None:
             self._link.readback_changed.set()
 
     def _publish_massage(self) -> None:
@@ -480,14 +481,15 @@ class DreamotionSmartController(JiecangProfileController):
         )
 
     async def cycle_massage(self, action: str) -> None:
-        if not self._massage_known or not self._mode_known:
-            raise invalid("dreamotion_smart_refresh", setting="massage")
+        link = self._live()
+        await self._wait_settings(
+            link, lambda: self._massage_known and self._mode_known, "massage"
+        )
         if action in ("back", "foot", "pattern") and self._massage.hz == 0:
             raise invalid("dreamotion_smart_inherent")
         local, wire = self._massage.cycle(action)
         if wire is None:
             return
-        link = self._live()
 
         def remember(sent: bool) -> None:
             self._massage_known = sent
@@ -543,9 +545,9 @@ class DreamotionSmartController(JiecangProfileController):
     async def set_mode(self, option: str) -> None:
         if option not in ("inherent", "acoustic"):
             raise invalid("option_unavailable")
-        if option == "inherent" and not self._massage_known:
-            raise invalid("dreamotion_smart_refresh", setting="massage")
         link, cancel = self._live(), self._coordinator.cancel_command
+        if option == "inherent":
+            await self._wait_settings(link, lambda: self._massage_known, "massage")
         hz = 0x32 if option == "inherent" else 0
 
         def remember(sent: bool) -> None:
