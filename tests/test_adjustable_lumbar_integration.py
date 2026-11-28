@@ -190,7 +190,9 @@ async def test_hold_service_refuses_a_mixed_selection_before_any_write(hass):
     lumbar, lumbar_controller = _service_target()
     other, _ = _service_target("okin_64bit")
     other.controller_side = None
-    other.capability_controller = SimpleNamespace(held_control_options=(), requires_disconnected_transport=False)
+    other.capability_controller = SimpleNamespace(
+        held_control_options=(), requires_disconnected_transport=False, requires_connection_reset=False
+    )
     with (
         patch(
             "custom_components.adjustable_bed.services._resolve_sided_targets",

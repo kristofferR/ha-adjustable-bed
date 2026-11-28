@@ -373,6 +373,14 @@ class BedController(GattWriter):
         return self.static_traits.persistent_connection
 
     @property
+    def requires_connection_reset(self) -> bool:
+        """Discard an unusable BLE session before the next ordinary operation.
+
+        STOP and in-flight cleanup still use their captured connection.
+        """
+        return False
+
+    @property
     def requires_disconnected_transport(self) -> bool:
         """Return True when the selected operation uses a non-central role.
 
@@ -792,6 +800,15 @@ class BedController(GattWriter):
         This allows the coordinator to skip the incremental seek loop.
         """
         return False
+
+    @property
+    def position_validation_requires_connection(self) -> bool:
+        """Whether service preflight needs live state rather than a capability snapshot."""
+        return False
+
+    def validate_position_request(self, motor: str, position: float) -> None:
+        """Reject live protocol constraints before any service target starts moving."""
+        return None
 
     def angle_to_native_position(self, motor: str, angle: float) -> int:
         """Convert an angle value to the bed's native position format.

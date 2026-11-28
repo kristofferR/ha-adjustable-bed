@@ -512,6 +512,16 @@ codec. All 90 frozen builder vectors reproduce byte for byte in
 Its session extension keeps FIFO pacing, property-selected GATT roles and the
 normal/version-one boundary separate from the legacy remote routes.
 
+## iFit
+
+iFit 1.1 (3) reuses `codec/okin_5a.py` only after all 35 reachable command
+literals and its separate startup literal reproduce byte for byte. Its
+`profiles/ifit.py` declares independent timing and command data. The shared
+Okin 5A controller extension in `beds/ifit/` owns exact-session startup,
+held refresh without a trailing release frame, and the combined Flat/preset
+save gesture. No existing app route, discovery matcher or wire scenario changes.
+See [iFit](../beds/okin-5a.md#ifit).
+
 ## Comfort Bed
 
 Comfort Bed 1.0.2's current ComfortCareBed profile reproduces all 108 frozen
@@ -521,6 +531,14 @@ the existing family motion/session controller. Its ordinary RX dispatcher
 differs from Casper's complete-length receiver, so it has a scoped dispatcher
 with only its two verified announcements. See the
 [Comfort Bed section](../beds/richmat.md#comfort-bed) and `tests/test_comfort_bed.py`.
+
+### Active Sleep
+
+`codec/active_sleep.py` and its typed profile are separate from Bed Operation's
+`codec/paramount.py`: the latter adds a `40` header and uses different GATT
+UUIDs, so it does not reproduce the Active Sleep literals. All 32 frozen
+Active Sleep frames have an independent literal vector test, including excluded
+commands tested only through the codec, never exposed as runtime actions.
 
 ## Thrive Sleep
 
