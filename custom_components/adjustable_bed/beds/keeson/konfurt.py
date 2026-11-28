@@ -256,6 +256,12 @@ class KonfurtController(KeesonController):
     def held_control_options(self) -> tuple[str, ...]:
         return self.layout.controls
 
+    def standard_button_hold_spec(self, key: str) -> ControllerHoldSpec | None:
+        if not key.startswith("preset_"):
+            return None
+        control = key.removeprefix("preset_")
+        return ControllerHoldSpec(control) if control in self.layout.controls else None
+
     def validate_hold_control(self, control: str, duration_ms: int) -> None:
         if control not in self.layout.controls or type(duration_ms) is not int or not 1 <= duration_ms <= 60000:
             raise invalid("konfurt_control")

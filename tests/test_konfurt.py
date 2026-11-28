@@ -195,6 +195,19 @@ async def test_real_entities_every_held_command_and_alarm_service(
     device = next(v.device_id for v in entities if v.device_id)
     assert len([v for v in entities if v.domain == "cover"]) == int(variant)
     assert not any("program" in v.unique_id for v in entities)
+    for control in ("flat", "zero_g", "tv", "anti_snore", "reading", "memory_1", "memory_2"):
+        key = f"preset_{control}"
+        if control not in controller.layout.controls:
+            assert controller.standard_button_hold_spec(key) is None
+            continue
+        target = next(v.entity_id for v in entities if v.unique_id.endswith(key))
+        state = hass.states.get(target)
+        assert state is not None
+        assert state.attributes["held_control"] == control
+        assert state.attributes["hold_start_delay_ms"] >= 0
+        assert state.attributes["hold_release_delay_ms"] >= 0
+        assert state.attributes["hold_lease_mode"] == controller.execution.hold_for(control)
+    assert controller.standard_button_hold_spec("stop") is None
     now = datetime(2026, 11, 27, 16, 21, 22)
     monkeypatch.setattr(bed.dt_util, "now", lambda: now)
     with virtual_clock():
