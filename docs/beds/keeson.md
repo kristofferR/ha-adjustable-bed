@@ -105,6 +105,7 @@ Beautyrest bases that use one of the Keeson Bluetooth routes still work.
 | ✅ | [OkinComfortBed Ⅱ](https://apkpure.com/okin-comfortbed-%E2%85%B1/com.ore.jalon.neworebeding_android) 1.4 (4) | `com.ore.jalon.neworebeding_android` | [Jalon](#okincomfortbed-ⅱ-jalon) |
 | ✅ | [OkimattMotion](https://apkpure.com/okimattmotion/com.okin.jalon.okimatandroid) 1.1.1 (3) | `com.okin.jalon.okimatandroid` | [OkimattMotion](#okimattmotion) |
 | Own guide | Tempur Sleeptracker-AI ([guide](sleeptracker.md)) | `com.fullpower.applications.horizon` | none |
+| ✅ | [JunaSleep](https://play.google.com/store/apps/details?id=com.keeson.junasleep) 1.0.3 | `com.keeson.junasleep` | [JunaSleep](#junasleep) |
 
 **iDealBed 6i:** iDealBed 6i Adjustable (installed as iDealBed 6i Remote,
 `com.keeson.idealbed6iremote` 1.2.0 (11)) controls beds over the local network
@@ -6896,6 +6897,133 @@ also allow intensity zero for enhancement, which encodes the app's FF sentinel.
 
 Based on Hestia Motion 1.2 (3). Frozen literals and finite alarm mappings are
 covered in `tests/fixtures/hestia_vectors.json` and `tests/test_hestia.py`.
+
+### JunaSleep
+
+**App:** [JunaSleep](https://play.google.com/store/apps/details?id=com.keeson.junasleep) 1.0.3 (20), `com.keeson.junasleep`
+
+**Status:** Not yet tested on hardware.
+
+#### Setup
+
+Choose **JunaSleep app**, then remote A or remote B. Shared `KSBT02C` and
+case-insensitive `base` names offer an app candidate, never select a remote.
+The app's name filters use contains matching. Home Assistant also permits a
+Bluetooth address and uses its own adapter/proxy discovery and reconnect flow.
+The phone app's optical and manual identifiers select the same two remotes;
+they introduce no additional protocol. There is no PIN, pairing handshake,
+capability query or model catalog. This is separate from the legacy JSON route.
+
+Write transport follows the selected remote. Notification transport follows the
+selected Bluetooth name independently: a lowercase `base` prefix selects the
+FFE0/FFE4 route, otherwise Nordic UART. Services and roles are fixed; no fallback
+characteristic search is used. Home Assistant chooses a write mode from the
+live characteristic properties, using response writes when available. The app
+leaves the platform write type unchanged. Its MTU request is an optimization,
+not a protocol requirement. Failed notifications do not prevent control.
+
+#### Controls
+
+Both remotes offer back and legs movement, Flat, Zero G, Position I/II recall,
+a light toggle, head/foot massage increase and decrease, and a timer button.
+Remote A adds Total massage. Remote B adds auxiliary head in/out and waist
+in/out; the physical actuator roles remain unverified. There is no memory
+programming, selected massage duration, inferred intensity range or position
+feedback. Timer indicators show 10, 20 or 30 minutes, rather than setting them.
+
+<!-- generated:keeson-junasleep -->
+| Remote | Write service | Write characteristic | Normal notify characteristic |
+|---|---|---|---|
+| Remote A (two axes) | 6e400001-b5a3-f393-e0a9-e50e24dcca9e | 6e400002-b5a3-f393-e0a9-e50e24dcca9e | 6e400003-b5a3-f393-e0a9-e50e24dcca9e |
+| Remote B (four axes) | 0000ffe5-0000-1000-8000-00805f9b34fb | 0000ffe9-0000-1000-8000-00805f9b34fb | 0000ffe4-0000-1000-8000-00805f9b34fb |
+
+| Remote | Control | Frame | Dispatch |
+|---|---|---|---|
+| A | head up | `04 02 00 00 00 01` | held, 300 ms |
+| A | head down | `04 02 00 00 00 02` | held, 300 ms |
+| A | feet up | `04 02 00 00 00 04` | held, 300 ms |
+| A | feet down | `04 02 00 00 00 08` | held, 300 ms |
+| A | flat | `04 02 08 00 00 00` | once |
+| A | zero_g | `04 02 00 00 10 00` | once |
+| A | Position 1 | `04 02 00 00 20 00` | once |
+| A | Position 2 | `04 02 00 00 40 00` | once |
+| A | foot_massage_down | `04 02 01 00 00 00` | once |
+| A | foot_massage_up | `04 02 00 00 04 00` | once |
+| A | head_massage_down | `04 02 00 80 00 00` | once |
+| A | head_massage_up | `04 02 00 00 08 00` | once |
+| A | massage_timer_button | `04 02 00 00 02 00` | once |
+| A | total_massage_button | `04 02 00 00 01 00` | once |
+| A | light | `04 02 00 02 00 00` | once |
+| A | status query | `00 B0` | every 3 s |
+| B | head up | `E5 FE 16 01 00 00 00 05` | held, 80 ms |
+| B | head down | `E5 FE 16 02 00 00 00 04` | held, 80 ms |
+| B | feet up | `E5 FE 16 04 00 00 00 02` | held, 80 ms |
+| B | feet down | `E5 FE 16 08 00 00 00 FE` | held, 80 ms |
+| B | tilt up | `E5 FE 16 20 00 00 00 E6` | held, 80 ms |
+| B | tilt down | `E5 FE 16 10 00 00 00 F6` | held, 80 ms |
+| B | lumbar up | `E5 FE 16 80 00 00 00 86` | held, 80 ms |
+| B | lumbar down | `E5 FE 16 40 00 00 00 C6` | held, 80 ms |
+| B | flat | `E5 FE 16 00 00 00 08 FE` | once |
+| B | zero_g | `E5 FE 16 00 10 00 00 F6` | once |
+| B | Position 1 | `E5 FE 16 00 20 00 00 E6` | once |
+| B | Position 2 | `E5 FE 16 00 40 00 00 C6` | once |
+| B | foot_massage_down | `E5 FE 16 00 00 00 01 05` | once |
+| B | foot_massage_up | `E5 FE 16 00 04 00 00 02` | once |
+| B | head_massage_down | `E5 FE 16 00 00 80 00 86` | once |
+| B | head_massage_up | `E5 FE 16 00 08 00 00 FE` | once |
+| B | massage_timer_button | `E5 FE 16 00 02 00 00 04` | once |
+| B | light | `E5 FE 16 00 00 02 00 04` | once |
+| B | status query | `E5 FE 16 00 00 00 00 06` | every 3 s |
+
+| Operation | Schedule |
+|---|---|
+| A post-tap status | 3 queries, 200 ms initial and interval |
+| Release / STOP | End refresh, no packet |
+<!-- /generated -->
+
+#### Timing
+
+See the generated schedules above. Release and STOP end the cancellable held
+refresh without transmitting a frame. Physical stopping latency remains
+unverified. All follow-up queries and held writes stay on their original link.
+Home Assistant serializes commands and cancels polling on disconnect or unload.
+The app's duplicate poll threads, races and unbounded retry loops are not
+reproduced. Home Assistant uses its shared bounded connection handling.
+
+The app's setup activity has one 12-second scan watchdog and a 2-second refresh
+debounce. Refresh does not rearm the original watchdog; activity destruction
+cancels it, pause does not. Saved-name reconnect does not instantiate it. These
+Android screen timers do not limit Home Assistant reconnect or GATT commands.
+
+#### Notifications
+
+Remote A accepts exactly 16 bytes. Byte 12 values zero and one report light off
+and on; other values preserve state. Timer seconds concatenate the unpadded hex
+strings of bytes 3 and 4. Zero clears the indicator; the 600/1200/1800-second
+boundaries choose 10/20/30 minutes, and larger values preserve the indicator.
+
+Remote B accepts exactly 20 bytes. The high nibble of byte 14 shifted right six
+bits reports light off/on for zero/one and preserves it for other values. Timer
+bytes 9 through 12 are rendered as eight hex characters, reversed by character,
+parsed as a positive Java integer, then divided by 1000. Values over signed
+32-bit range preserve the timer while retaining the preceding light update.
+Zero clears the indicator, up to 600/1200 seconds chooses 10/20 minutes, and
+anything larger chooses 30. No header/checksum filter or reassembly is applied.
+Other bytes establish no additional capability. Reports become unknown when
+the connection ends.
+
+#### Services
+
+Use native cover, preset, memory-recall, massage-button and light entities, plus
+the standard hold action. Refresh bed status requests the current light/timer.
+Two-address pairs retain each side's remote and Bluetooth name; there is no
+proven single-address side selector.
+
+#### Evidence
+
+Based on JunaSleep 1.0.3 (20). The complete outgoing and synthetic parser
+literals run through `tests/test_junasleep_vectors.py`; real Home Assistant
+callers and session behavior run through `tests/test_junasleep.py`.
 
 
 ### KONFURT

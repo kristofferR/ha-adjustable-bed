@@ -403,6 +403,7 @@ actions; its bounded `hold_control` behavior has separate timing in the
 | iFit app (manual selection) | `ifit` | 10 | 220 ms |
 | Jensen Adjustable Sleep app, JMC400 bed | `jensen` | 4 | 300 ms |
 | JobsAI智能助眠床 / Jobs AI app | `jobs` | 10 | 200 ms |
+| JunaSleep app | `junasleep` | 10 | 300 ms |
 | King Koil (SUTA) app | `suta_king_koil` | 1 | 150 ms |
 | King Koil Bed app | `kingkoil` | 10 | 300 ms |
 | KONFURT app | `konfurt` | 4 | 300 ms |

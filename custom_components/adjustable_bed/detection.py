@@ -93,6 +93,7 @@ from .const import (
     BED_TYPE_JIECANG,
     BED_TYPE_JIECANG_APP,
     BED_TYPE_JOBS,
+    BED_TYPE_JUNASLEEP,
     BED_TYPE_KAIDI,
     BED_TYPE_KEESON,
     BED_TYPE_KOMFYD,
@@ -751,6 +752,7 @@ BED_TYPE_DISPLAY_NAMES: dict[str, str] = {
     "konfurt": "KONFURT app",
     BED_TYPE_GHOSTBED: "GhostBed app",
     "kingkoil": "King Koil Bed app",
+    BED_TYPE_JUNASLEEP: "JunaSleep app",
     BED_TYPE_SOMOS: "Somos / SomosBeds app",
     BED_TYPE_COMFORTBASE: "ComfortBaseForBluetooth app",
     BED_TYPE_COMFORT_ENHANCEMENTS: "Comfort Enhancements app",
@@ -1061,7 +1063,7 @@ HIDDEN_APP_CHOICES: Final = frozenset(bed_type_choice(*row) for row in _HIDDEN_A
 # Bed types whose one row asks for the product, although each product is an app entry.
 PRODUCT_QUESTION_BED_TYPES: Final = frozenset(
     {
-        BED_TYPE_ALYA, BED_TYPE_RONCO_MOTION, BED_TYPE_AMBIENT, BED_TYPE_RESTONIC, BED_TYPE_FLEXISPOT, "kingkoil", "konfurt", BED_TYPE_ENSO2, BED_TYPE_LIKIMIO, "awmotion", "dreamsense", "muuegm", "saatva", "majestichome", BED_TYPE_LEVA, BED_TYPE_LINX, BED_TYPE_SOMOS, "bobpowerbase", BED_TYPE_COMFORT_ENHANCEMENT3, BED_TYPE_SYMPHONY_SLEEP, BED_TYPE_YAMADA, BED_TYPE_MYSIDE, BED_TYPE_RICHMAT_APP, BED_TYPE_RICHMAT_APP_SLEEP, BED_TYPE_GALAXY, BED_TYPE_MLILY, BED_TYPE_MLILY0, BED_TYPE_MLILY_REMOTE, BED_TYPE_OKIMIKI, "luuna", BED_TYPE_GOODVIBE, BED_TYPE_HJBED, BED_TYPE_CASPER_BASE, BED_TYPE_COMFORT_ENHANCEMENTS, BED_TYPE_COMFORTBASE, "sleep_evolution", "wsilver_legacy", "personal_comfort", "instant_comfort"}
+        BED_TYPE_ALYA, BED_TYPE_RONCO_MOTION, BED_TYPE_AMBIENT, BED_TYPE_RESTONIC, BED_TYPE_FLEXISPOT, "kingkoil", "konfurt", BED_TYPE_ENSO2, BED_TYPE_LIKIMIO, "awmotion", "dreamsense", "muuegm", "saatva", "majestichome", BED_TYPE_LEVA, BED_TYPE_LINX, BED_TYPE_JUNASLEEP, BED_TYPE_SOMOS, "bobpowerbase", BED_TYPE_COMFORT_ENHANCEMENT3, BED_TYPE_SYMPHONY_SLEEP, BED_TYPE_YAMADA, BED_TYPE_MYSIDE, BED_TYPE_RICHMAT_APP, BED_TYPE_RICHMAT_APP_SLEEP, BED_TYPE_GALAXY, BED_TYPE_MLILY, BED_TYPE_MLILY0, BED_TYPE_MLILY_REMOTE, BED_TYPE_OKIMIKI, "luuna", BED_TYPE_GOODVIBE, BED_TYPE_HJBED, BED_TYPE_CASPER_BASE, BED_TYPE_COMFORT_ENHANCEMENTS, BED_TYPE_COMFORTBASE, "sleep_evolution", "wsilver_legacy", "personal_comfort", "instant_comfort"}
 ).union({"intellibed", "motionflex", BED_TYPE_BETTERLIVING2, BED_TYPE_JEROME_ADJUSTABLE_BASE, BED_TYPE_SLEEPTIME, BED_TYPE_PURELY_SLEEP, "sealy_posturematic"})
 # Routes named after their protocol, not an app or brand. They stay off the
 # bed-type list and are reached through detection, the brand list and Configure.
@@ -1522,7 +1524,7 @@ def detect_bed_type(service_info: BluetoothServiceInfoBleak) -> str | None:
         For detailed detection with confidence scores, use detect_new_bed().
     """
     result = detect_new_bed(service_info)
-    if result.bed_type in ("intellibed", "active_sleep", BED_TYPE_RONCO_MOTION, BED_TYPE_AMBIENT, BED_TYPE_COMFORT_BED, BED_TYPE_SMART_BASE, BED_TYPE_ATLAS_LIFT, BED_TYPE_LIKIMIO, "dorsal", BED_TYPE_SIMMONS_BLUE, "sleep_assistant", BED_TYPE_SLEEP_ASSIST_PRO, "thrivesleep", "super_colchones", "bobpowerbase", BED_TYPE_GALAXY, BED_TYPE_GOODVIBE, BED_TYPE_MLILY, BED_TYPE_MLILY0, BED_TYPE_MLILY_REMOTE, BED_TYPE_MOTOMOTION, BED_TYPE_AMADA, BED_TYPE_N32_MOTION_BED, BED_TYPE_SYMPHONY, BED_TYPE_MLINE, BED_TYPE_OKIMIKI) and result.confidence < 0.7:
+    if result.bed_type in (BED_TYPE_JUNASLEEP, "intellibed", "active_sleep", BED_TYPE_RONCO_MOTION, BED_TYPE_AMBIENT, BED_TYPE_COMFORT_BED, BED_TYPE_SMART_BASE, BED_TYPE_ATLAS_LIFT, BED_TYPE_LIKIMIO, "dorsal", BED_TYPE_SIMMONS_BLUE, "sleep_assistant", BED_TYPE_SLEEP_ASSIST_PRO, "thrivesleep", "super_colchones", "bobpowerbase", BED_TYPE_GALAXY, BED_TYPE_GOODVIBE, BED_TYPE_MLILY, BED_TYPE_MLILY0, BED_TYPE_MLILY_REMOTE, BED_TYPE_MOTOMOTION, BED_TYPE_AMADA, BED_TYPE_N32_MOTION_BED, BED_TYPE_SYMPHONY, BED_TYPE_MLINE, BED_TYPE_OKIMIKI) and result.confidence < 0.7:
         return None  # An app name hint requires an explicit product choice.
     return result.bed_type
 
@@ -1959,6 +1961,11 @@ def _detect_with_first_pass(
             result = DetectionResult("kingkoil", 0.3, [*result.signals, "name:kingkoil_app_candidate"])
         elif result.bed_type != "kingkoil":
             result.ambiguous_types = list(dict.fromkeys([*(result.ambiguous_types or ()), "kingkoil"]))
+    if first.name(BED_TYPE_JUNASLEEP) and not any(signal.startswith("excluded:") for signal in result.signals):
+        if result.bed_type is None:
+            result = DetectionResult(BED_TYPE_JUNASLEEP, 0.3, [*result.signals, "name:junasleep_app_candidate"])
+        elif result.bed_type != BED_TYPE_JUNASLEEP:
+            result.ambiguous_types = list(dict.fromkeys([*(result.ambiguous_types or ()), BED_TYPE_JUNASLEEP]))
     if first.name(BED_TYPE_SOMOS) and not any(signal.startswith("excluded:") for signal in result.signals):
         if result.bed_type is None:
             result = DetectionResult(BED_TYPE_SOMOS, 0.3, [*result.signals, "name:somos_app_candidate"])

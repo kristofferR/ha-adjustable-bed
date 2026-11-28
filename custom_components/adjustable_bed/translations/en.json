@@ -4350,6 +4350,39 @@
       "kingkoil_feet_down": {
         "name": "Foot down"
       },
+      "junasleep_foot_massage_down": {
+        "name": "Foot massage decrease"
+      },
+      "junasleep_foot_massage_up": {
+        "name": "Foot massage increase"
+      },
+      "junasleep_head_massage_down": {
+        "name": "Head massage decrease"
+      },
+      "junasleep_head_massage_up": {
+        "name": "Head massage increase"
+      },
+      "junasleep_massage_timer_button": {
+        "name": "Massage timer"
+      },
+      "junasleep_total_massage_button": {
+        "name": "Total massage"
+      },
+      "junasleep_query": {
+        "name": "Refresh bed status"
+      },
+      "junasleep_tilt_up": {
+        "name": "Auxiliary head in"
+      },
+      "junasleep_tilt_down": {
+        "name": "Auxiliary head out"
+      },
+      "junasleep_lumbar_up": {
+        "name": "Waist in"
+      },
+      "junasleep_lumbar_down": {
+        "name": "Waist out"
+      },
       "dreamotion_smart_back": {
         "name": "Cycle back massage"
       },
@@ -4873,6 +4906,12 @@
       },
       "kingkoil_feet": {
         "name": "Foot"
+      },
+      "junasleep_tilt": {
+        "name": "Auxiliary head in/out"
+      },
+      "junasleep_lumbar": {
+        "name": "Waist in/out"
       }
     },
     "sensor": {
@@ -6306,6 +6345,9 @@
       },
       "jobs_wake_alarm": {
         "name": "Wake alarm type"
+      },
+      "junasleep_timer": {
+        "name": "Massage timer indicator"
       },
       "dreamotion_smart_back": {
         "name": "Back massage intensity"
