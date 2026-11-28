@@ -1603,6 +1603,9 @@ def default_scenario(bed_type: str) -> Scenario:
             "write:5500000018": "55000000180102",
             "write:5500000032": "5500000032080001010300080000",
         })
+    if bed_type == "mattresspoint":
+        return Scenario(id=bed_type, bed_type=bed_type, protocol_variant="BOX2422",
+                        layout_id="mattresspoint")
     if bed_type == const.BED_TYPE_SLEEPTIME:
         return Scenario(
             id=bed_type, bed_type=bed_type, protocol_variant="205",
@@ -2815,6 +2818,11 @@ def build_scenarios() -> list[Scenario]:
         entry_data={"product_type": "head_foot", "has_light": True, "has_massage": True},
     ))
     scenarios.extend(
+        dataclasses.replace(default_scenario("mattresspoint"), id=f"mattresspoint:{box}",
+                            protocol_variant=box)
+        for box in ("BOX2422", "BOX2442")
+    )
+    scenarios.extend(
         dataclasses.replace(default_scenario("sleeptime"), id=f"sleeptime:{selector}",
                             protocol_variant=selector)
         for selector in ("402", "404", "405")
@@ -3147,7 +3155,7 @@ async def _connect(controller: Any, recorder: Recorder, clock: FakeClock) -> dic
             await controller.async_on_connect(session)
             await controller.async_read_device_info(session)
             return
-        if controller._coordinator.bed_type in {"shuda", "sleeptime", "dreamotion_smart"}:
+        if controller._coordinator.bed_type in {"shuda", "sleeptime", "mattresspoint", "dreamotion_smart"}:
             await controller.async_on_connect(SimpleNamespace(async_start_notify=controller.start_notify))
             return
         if controller._coordinator.bed_type in {"amada", "meisemobell", "rize_home", "superior_sleep", "okin_64bit", "betterliving2", "ultramatic_smart_bed", "smart_comfort_synargy", "smart_comfort_synergy", "simmons_blue", "ifit"}:

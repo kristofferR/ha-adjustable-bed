@@ -1,0 +1,716 @@
+[
+  {
+    "id": "V-massageCheck",
+    "protocol": "P1",
+    "action": "massageCheck",
+    "inputs": {
+      "kind": "literal",
+      "parameters": {
+        "octets": [
+          0,
+          176
+        ]
+      }
+    },
+    "expected_bytes": "00 b0",
+    "evidence": [
+      "work/blutter/asm/MattressPoint/tools/ble_manager.dart:5285 (0x2b38b0 massageCheck)",
+      "E07",
+      "E08"
+    ],
+    "vector_kind": "source literal, independently checked by tagged list-store extraction"
+  },
+  {
+    "id": "V-massageStopAll",
+    "protocol": "P1",
+    "action": "massageStopAll",
+    "inputs": {
+      "kind": "control",
+      "parameters": {
+        "mask": 2
+      }
+    },
+    "expected_bytes": "05 02 02 00 00 00 00",
+    "evidence": [
+      "work/blutter/asm/MattressPoint/tools/ble_manager.dart:5350 (0x2b3a08 massageStopAll)",
+      "E07",
+      "E08"
+    ],
+    "vector_kind": "source literal, independently checked by tagged list-store extraction"
+  },
+  {
+    "id": "V-massageAll",
+    "protocol": "P1",
+    "action": "massageAll",
+    "inputs": {
+      "kind": "control",
+      "parameters": {
+        "mask": 65536
+      }
+    },
+    "expected_bytes": "05 02 00 00 01 00 00",
+    "evidence": [
+      "work/blutter/asm/MattressPoint/tools/ble_manager.dart:5429 (0x2b3acc massageAll)",
+      "E07",
+      "E08"
+    ],
+    "vector_kind": "source literal, independently checked by tagged list-store extraction"
+  },
+  {
+    "id": "V-timerSwitch",
+    "protocol": "P1",
+    "action": "timerSwitch",
+    "inputs": {
+      "kind": "control",
+      "parameters": {
+        "mask": 131072
+      }
+    },
+    "expected_bytes": "05 02 00 00 02 00 00",
+    "evidence": [
+      "work/blutter/asm/MattressPoint/tools/ble_manager.dart:5508 (0x2b3c18 timerSwitch)",
+      "E07",
+      "E08"
+    ],
+    "vector_kind": "source literal, independently checked by tagged list-store extraction"
+  },
+  {
+    "id": "V-underbedLighting",
+    "protocol": "P1",
+    "action": "underbedLighting",
+    "inputs": {
+      "kind": "control",
+      "parameters": {
+        "mask": 512
+      }
+    },
+    "expected_bytes": "05 02 00 02 00 00 00",
+    "evidence": [
+      "work/blutter/asm/MattressPoint/tools/ble_manager.dart:5682 (0x2b431c underbedLighting)",
+      "E07",
+      "E08"
+    ],
+    "vector_kind": "source literal, independently checked by tagged list-store extraction"
+  },
+  {
+    "id": "V-memory_tvpc",
+    "protocol": "P1",
+    "action": "memory_tvpc",
+    "inputs": {
+      "kind": "control",
+      "parameters": {
+        "mask": 4194304
+      }
+    },
+    "expected_bytes": "05 02 00 00 40 00 00",
+    "evidence": [
+      "work/blutter/asm/MattressPoint/tools/ble_manager.dart:5761 (0x2b4b18 memory_tvpc)",
+      "E07",
+      "E08"
+    ],
+    "vector_kind": "source literal, independently checked by tagged list-store extraction"
+  },
+  {
+    "id": "V-memory_zero",
+    "protocol": "P1",
+    "action": "memory_zero",
+    "inputs": {
+      "kind": "control",
+      "parameters": {
+        "mask": 1048576
+      }
+    },
+    "expected_bytes": "05 02 00 00 10 00 00",
+    "evidence": [
+      "work/blutter/asm/MattressPoint/tools/ble_manager.dart:5840 (0x2b4da0 memory_zero)",
+      "E07",
+      "E08"
+    ],
+    "vector_kind": "source literal, independently checked by tagged list-store extraction"
+  },
+  {
+    "id": "V-reset",
+    "protocol": "P1",
+    "action": "reset",
+    "inputs": {
+      "kind": "control",
+      "parameters": {
+        "mask": 1048584
+      }
+    },
+    "expected_bytes": "05 02 08 00 10 00 00",
+    "evidence": [
+      "work/blutter/asm/MattressPoint/tools/ble_manager.dart:5919 (0x2b5068 reset)",
+      "E07",
+      "E08"
+    ],
+    "vector_kind": "source literal, independently checked by tagged list-store extraction"
+  },
+  {
+    "id": "V-lumbarDown",
+    "protocol": "P1",
+    "action": "lumbarDown",
+    "inputs": {
+      "kind": "control",
+      "parameters": {
+        "mask": 2147483648
+      }
+    },
+    "expected_bytes": "05 02 00 00 00 80 00",
+    "evidence": [
+      "work/blutter/asm/MattressPoint/tools/ble_manager.dart:6000 (0x2b5964 lumbarDown)",
+      "E07",
+      "E08"
+    ],
+    "vector_kind": "source literal, independently checked by tagged list-store extraction"
+  },
+  {
+    "id": "V-lumbarUp",
+    "protocol": "P1",
+    "action": "lumbarUp",
+    "inputs": {
+      "kind": "control",
+      "parameters": {
+        "mask": 1073741824
+      }
+    },
+    "expected_bytes": "05 02 00 00 00 40 00",
+    "evidence": [
+      "work/blutter/asm/MattressPoint/tools/ble_manager.dart:6079 (0x2b5a28 lumbarUp)",
+      "E07",
+      "E08"
+    ],
+    "vector_kind": "source literal, independently checked by tagged list-store extraction"
+  },
+  {
+    "id": "V-flatPosition",
+    "protocol": "P1",
+    "action": "flatPosition",
+    "inputs": {
+      "kind": "control",
+      "parameters": {
+        "mask": 8
+      }
+    },
+    "expected_bytes": "05 02 08 00 00 00 00",
+    "evidence": [
+      "work/blutter/asm/MattressPoint/tools/ble_manager.dart:6158 (0x2b5e3c flatPosition)",
+      "E07",
+      "E08"
+    ],
+    "vector_kind": "source literal, independently checked by tagged list-store extraction"
+  },
+  {
+    "id": "V-headTiltDown",
+    "protocol": "P1",
+    "action": "headTiltDown",
+    "inputs": {
+      "kind": "control",
+      "parameters": {
+        "mask": 536870912
+      }
+    },
+    "expected_bytes": "05 02 00 00 00 20 00",
+    "evidence": [
+      "work/blutter/asm/MattressPoint/tools/ble_manager.dart:6237 (0x2b60c4 headTiltDown)",
+      "E07",
+      "E08"
+    ],
+    "vector_kind": "source literal, independently checked by tagged list-store extraction"
+  },
+  {
+    "id": "V-headTiltUp",
+    "protocol": "P1",
+    "action": "headTiltUp",
+    "inputs": {
+      "kind": "control",
+      "parameters": {
+        "mask": 268435456
+      }
+    },
+    "expected_bytes": "05 02 00 00 00 10 00",
+    "evidence": [
+      "work/blutter/asm/MattressPoint/tools/ble_manager.dart:6316 (0x2b6188 headTiltUp)",
+      "E07",
+      "E08"
+    ],
+    "vector_kind": "source literal, independently checked by tagged list-store extraction"
+  },
+  {
+    "id": "V-memory_lounge",
+    "protocol": "P1",
+    "action": "memory_lounge",
+    "inputs": {
+      "kind": "control",
+      "parameters": {
+        "mask": 2097152
+      }
+    },
+    "expected_bytes": "05 02 00 00 20 00 00",
+    "evidence": [
+      "work/blutter/asm/MattressPoint/tools/ble_manager.dart:6395 (0x2b66f0 memory_lounge)",
+      "E07",
+      "E08"
+    ],
+    "vector_kind": "source literal, independently checked by tagged list-store extraction"
+  },
+  {
+    "id": "V-memory_antiSnore",
+    "protocol": "P1",
+    "action": "memory_antiSnore",
+    "inputs": {
+      "kind": "control",
+      "parameters": {
+        "mask": 8388608
+      }
+    },
+    "expected_bytes": "05 02 00 00 80 00 00",
+    "evidence": [
+      "work/blutter/asm/MattressPoint/tools/ble_manager.dart:6474 (0x2b6a04 memory_antiSnore)",
+      "E07",
+      "E08"
+    ],
+    "vector_kind": "source literal, independently checked by tagged list-store extraction"
+  },
+  {
+    "id": "V-footDown",
+    "protocol": "P1",
+    "action": "footDown",
+    "inputs": {
+      "kind": "control",
+      "parameters": {
+        "mask": 134217728
+      }
+    },
+    "expected_bytes": "05 02 00 00 00 08 00",
+    "evidence": [
+      "work/blutter/asm/MattressPoint/tools/ble_manager.dart:6553 (0x2b70a0 footDown)",
+      "E07",
+      "E08"
+    ],
+    "vector_kind": "source literal, independently checked by tagged list-store extraction"
+  },
+  {
+    "id": "V-footUp",
+    "protocol": "P1",
+    "action": "footUp",
+    "inputs": {
+      "kind": "control",
+      "parameters": {
+        "mask": 67108864
+      }
+    },
+    "expected_bytes": "05 02 00 00 00 04 00",
+    "evidence": [
+      "work/blutter/asm/MattressPoint/tools/ble_manager.dart:6632 (0x2b7164 footUp)",
+      "E07",
+      "E08"
+    ],
+    "vector_kind": "source literal, independently checked by tagged list-store extraction"
+  },
+  {
+    "id": "V-HFDown",
+    "protocol": "P1",
+    "action": "HFDown",
+    "inputs": {
+      "kind": "control",
+      "parameters": {
+        "mask": 167772160
+      }
+    },
+    "expected_bytes": "05 02 00 00 00 0a 00",
+    "evidence": [
+      "work/blutter/asm/MattressPoint/tools/ble_manager.dart:6711 (0x2b73ec HFDown)",
+      "E07",
+      "E08"
+    ],
+    "vector_kind": "source literal, independently checked by tagged list-store extraction"
+  },
+  {
+    "id": "V-HFUp",
+    "protocol": "P1",
+    "action": "HFUp",
+    "inputs": {
+      "kind": "control",
+      "parameters": {
+        "mask": 83886080
+      }
+    },
+    "expected_bytes": "05 02 00 00 00 05 00",
+    "evidence": [
+      "work/blutter/asm/MattressPoint/tools/ble_manager.dart:6790 (0x2b74b0 HFUp)",
+      "E07",
+      "E08"
+    ],
+    "vector_kind": "source literal, independently checked by tagged list-store extraction"
+  },
+  {
+    "id": "V-headDown",
+    "protocol": "P1",
+    "action": "headDown",
+    "inputs": {
+      "kind": "control",
+      "parameters": {
+        "mask": 33554432
+      }
+    },
+    "expected_bytes": "05 02 00 00 00 02 00",
+    "evidence": [
+      "work/blutter/asm/MattressPoint/tools/ble_manager.dart:6869 (0x2b7738 headDown)",
+      "E07",
+      "E08"
+    ],
+    "vector_kind": "source literal, independently checked by tagged list-store extraction"
+  },
+  {
+    "id": "V-headUp",
+    "protocol": "P1",
+    "action": "headUp",
+    "inputs": {
+      "kind": "control",
+      "parameters": {
+        "mask": 16777216
+      }
+    },
+    "expected_bytes": "05 02 00 00 00 01 00",
+    "evidence": [
+      "work/blutter/asm/MattressPoint/tools/ble_manager.dart:6948 (0x2b77fc headUp)",
+      "E07",
+      "E08"
+    ],
+    "vector_kind": "source literal, independently checked by tagged list-store extraction"
+  },
+  {
+    "id": "V-waveAdd",
+    "protocol": "P1",
+    "action": "waveAdd",
+    "inputs": {
+      "kind": "control",
+      "parameters": {
+        "mask": 16
+      }
+    },
+    "expected_bytes": "05 02 10 00 00 00 00",
+    "evidence": [
+      "work/blutter/asm/MattressPoint/tools/ble_manager.dart:7027 (0x2bb9d0 waveAdd)",
+      "E07",
+      "E08"
+    ],
+    "vector_kind": "source literal, independently checked by tagged list-store extraction"
+  },
+  {
+    "id": "V-footStrengthAdd",
+    "protocol": "P1",
+    "action": "footStrengthAdd",
+    "inputs": {
+      "kind": "control",
+      "parameters": {
+        "mask": 262144
+      }
+    },
+    "expected_bytes": "05 02 00 00 04 00 00",
+    "evidence": [
+      "work/blutter/asm/MattressPoint/tools/ble_manager.dart:7106 (0x2bba94 footStrengthAdd)",
+      "E07",
+      "E08"
+    ],
+    "vector_kind": "source literal, independently checked by tagged list-store extraction"
+  },
+  {
+    "id": "V-headStrengthAdd",
+    "protocol": "P1",
+    "action": "headStrengthAdd",
+    "inputs": {
+      "kind": "control",
+      "parameters": {
+        "mask": 524288
+      }
+    },
+    "expected_bytes": "05 02 00 00 08 00 00",
+    "evidence": [
+      "work/blutter/asm/MattressPoint/tools/ble_manager.dart:7185 (0x2bbb58 headStrengthAdd)",
+      "E07",
+      "E08"
+    ],
+    "vector_kind": "source literal, independently checked by tagged list-store extraction"
+  },
+  {
+    "id": "V-waveReduce",
+    "protocol": "P1",
+    "action": "waveReduce",
+    "inputs": {
+      "kind": "control",
+      "parameters": {
+        "mask": 4
+      }
+    },
+    "expected_bytes": "05 02 04 00 00 00 00",
+    "evidence": [
+      "work/blutter/asm/MattressPoint/tools/ble_manager.dart:7264 (0x2bbdbc waveReduce)",
+      "E07",
+      "E08"
+    ],
+    "vector_kind": "source literal, independently checked by tagged list-store extraction"
+  },
+  {
+    "id": "V-footStrengthReduce",
+    "protocol": "P1",
+    "action": "footStrengthReduce",
+    "inputs": {
+      "kind": "control",
+      "parameters": {
+        "mask": 1
+      }
+    },
+    "expected_bytes": "05 02 01 00 00 00 00",
+    "evidence": [
+      "work/blutter/asm/MattressPoint/tools/ble_manager.dart:7343 (0x2bbe80 footStrengthReduce)",
+      "E07",
+      "E08"
+    ],
+    "vector_kind": "source literal, independently checked by tagged list-store extraction"
+  },
+  {
+    "id": "V-headStrengthReduce",
+    "protocol": "P1",
+    "action": "headStrengthReduce",
+    "inputs": {
+      "kind": "control",
+      "parameters": {
+        "mask": 32768
+      }
+    },
+    "expected_bytes": "05 02 00 80 00 00 00",
+    "evidence": [
+      "work/blutter/asm/MattressPoint/tools/ble_manager.dart:7422 (0x2bbf44 headStrengthReduce)",
+      "E07",
+      "E08"
+    ],
+    "vector_kind": "source literal, independently checked by tagged list-store extraction"
+  },
+  {
+    "id": "V-stopCommand",
+    "protocol": "P1",
+    "action": "stopCommand",
+    "inputs": {
+      "kind": "literal",
+      "parameters": {
+        "octets": [
+          5,
+          2,
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    "expected_bytes": "05 02 00 00 00 00 00",
+    "evidence": [
+      "E09"
+    ],
+    "vector_kind": "source literal"
+  },
+  {
+    "id": "V-closeAlarm",
+    "protocol": "P1",
+    "action": "closeAlarm",
+    "inputs": {
+      "kind": "literal",
+      "parameters": {
+        "octets": [
+          7,
+          5,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    "expected_bytes": "07 05 00 00 00 00 00 00 00",
+    "evidence": [
+      "E10"
+    ],
+    "vector_kind": "source literal"
+  },
+  {
+    "id": "V-checkAlarm",
+    "protocol": "P1",
+    "action": "checkAlarm",
+    "inputs": {
+      "kind": "literal",
+      "parameters": {
+        "octets": [
+          0,
+          192
+        ]
+      }
+    },
+    "expected_bytes": "00 c0",
+    "evidence": [
+      "E10"
+    ],
+    "vector_kind": "source literal"
+  },
+  {
+    "id": "V-clock1",
+    "protocol": "P1",
+    "action": "calibrationTime",
+    "inputs": {
+      "kind": "clock",
+      "parameters": {
+        "year": 2026,
+        "month": 11,
+        "day": 27,
+        "weekday": 5,
+        "hour": 14,
+        "minute": 5,
+        "second": 6
+      }
+    },
+    "expected_bytes": "07 04 1a 0b 1b 05 0e 05 06",
+    "evidence": [
+      "E10"
+    ],
+    "vector_kind": "synthetic inputs evaluated against source-derived list layout, not device traffic"
+  },
+  {
+    "id": "V-clock2",
+    "protocol": "P1",
+    "action": "calibrationTime",
+    "inputs": {
+      "kind": "clock",
+      "parameters": {
+        "year": 2025,
+        "month": 1,
+        "day": 1,
+        "weekday": 3,
+        "hour": 0,
+        "minute": 0,
+        "second": 0
+      }
+    },
+    "expected_bytes": "07 04 19 01 01 03 00 00 00",
+    "evidence": [
+      "E10"
+    ],
+    "vector_kind": "synthetic inputs evaluated against source-derived list layout, not device traffic"
+  },
+  {
+    "id": "V-alarm1",
+    "protocol": "P1",
+    "action": "setAlarm",
+    "inputs": {
+      "kind": "alarm",
+      "parameters": {
+        "repeat": 255,
+        "position": 0,
+        "wake": 0,
+        "hour": 7,
+        "minute": 30,
+        "now_hour": 6,
+        "now_minute": 0,
+        "weekday": 5
+      }
+    },
+    "expected_bytes": "07 05 ff 05 07 1e 00 01 00",
+    "evidence": [
+      "E10"
+    ],
+    "vector_kind": "synthetic inputs preserving source shifts; UI label mapping remains pending"
+  },
+  {
+    "id": "V-alarm2",
+    "protocol": "P1",
+    "action": "setAlarm",
+    "inputs": {
+      "kind": "alarm",
+      "parameters": {
+        "repeat": 128,
+        "position": 1,
+        "wake": 3,
+        "hour": 7,
+        "minute": 30,
+        "now_hour": 8,
+        "now_minute": 0,
+        "weekday": 6
+      }
+    },
+    "expected_bytes": "07 05 80 08 07 1e 00 01 00",
+    "evidence": [
+      "E10"
+    ],
+    "vector_kind": "synthetic inputs preserving source shifts; UI label mapping remains pending"
+  },
+  {
+    "id": "V-massage1",
+    "protocol": "P1",
+    "action": "massage notification parse",
+    "inputs": {
+      "kind": "massage",
+      "parameters": {}
+    },
+    "expected_bytes": "a5 0b 0e 00 02 58 03 05 08",
+    "expected_state": {
+      "timer_bucket": 1,
+      "remaining_raw": 600,
+      "head": 3,
+      "foot": 4,
+      "mode": 3
+    },
+    "evidence": [
+      "E11",
+      "E12"
+    ],
+    "vector_kind": "synthetic notification payload using literal recognized header and source parser formula"
+  },
+  {
+    "id": "V-massage2",
+    "protocol": "P1",
+    "action": "massage notification parse",
+    "inputs": {
+      "kind": "massage",
+      "parameters": {}
+    },
+    "expected_bytes": "a5 0b 0e 00 04 b1 01 00 01",
+    "expected_state": {
+      "timer_bucket": 3,
+      "remaining_raw": 1201,
+      "head": 0,
+      "foot": 1,
+      "mode": 1
+    },
+    "evidence": [
+      "E11",
+      "E12"
+    ],
+    "vector_kind": "synthetic notification payload using literal recognized header and source parser formula"
+  },
+  {
+    "id": "V-massage3",
+    "protocol": "P1",
+    "action": "massage notification parse",
+    "inputs": {
+      "kind": "massage",
+      "parameters": {}
+    },
+    "expected_bytes": "a5 0b 0e 00 00 00 00 00 00",
+    "expected_state": {
+      "timer_bucket": 0,
+      "remaining_raw": 0,
+      "head": 0,
+      "foot": 0,
+      "mode": 0
+    },
+    "evidence": [
+      "E11",
+      "E12"
+    ],
+    "vector_kind": "synthetic notification payload using literal recognized header and source parser formula"
+  }
+]

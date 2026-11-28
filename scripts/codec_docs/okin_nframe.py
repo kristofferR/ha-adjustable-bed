@@ -22,6 +22,7 @@ from custom_components.adjustable_bed.const import (
 from custom_components.adjustable_bed.profiles import (
     customatic_demo,
     leva,
+    mattresspoint,
     rize_home,
     shuda,
     simmons_blue,
@@ -36,6 +37,7 @@ from custom_components.adjustable_bed.profiles.adjustable_bed import (
 from custom_components.adjustable_bed.profiles.comfort_enhancement3 import PROFILES as APEX_PROFILES
 from custom_components.adjustable_bed.profiles.n32_motion_bed import N32
 from scripts.codec_docs._common import Block, _block, _hex, _table
+from scripts.codec_docs._mattresspoint import render as render_mattresspoint
 from scripts.codec_docs._sleeptime import render as render_sleeptime
 from scripts.codec_docs._ultramatic import render as render_ultramatic
 
@@ -156,6 +158,7 @@ _OKIN_GROUPS = {
     "Shuda": (shuda.SHUDA,),
     "Resident Adjustable Base": (okin_profiles.RESIDENT,),
     "Ultramatic Smart Bed": (ultramatic.PROFILE,),
+    "MattressPoint": tuple(mattresspoint.PROFILES.values()),
     "Sleeptime": (sleeptime.PROFILE,),
     "Okin 64-Bit": tuple(okin_profiles.OKIN_64BIT_PROFILES.values()),
     "Adjustable bed (Lumbar)": tuple(okin_profiles.ADJUSTABLE_LUMBAR_PROFILES.values()),
@@ -192,7 +195,7 @@ def _okin_hold(profile: okin_profiles.OkinNFrameProfile) -> tuple[str, str, str]
             release += f" at {hold.release_ms} ms"
         if hold.release_after_ms:
             anchor = "the last write"
-            if profile is sleeptime.PROFILE:
+            if profile is sleeptime.PROFILE or profile in mattresspoint.PROFILES.values():
                 anchor = "release or cancellation"
             elif profile is customatic_demo.PROFILE:
                 anchor = "release"
@@ -1017,6 +1020,7 @@ BLOCKS: list[Block] = [
     (GUIDE, "leva-commands", render_leva_commands),
     (GUIDE, "leva-timing", render_leva_timing),
     (GUIDE, "ultramatic-controls", render_ultramatic),
+    (GUIDE, "mattresspoint-controls", render_mattresspoint),
     (GUIDE, "sleeptime-controls", render_sleeptime),
     (GUIDE, "rize-home", render_rize_home),
     (GUIDE, "superior-sleep", render_superior_sleep),

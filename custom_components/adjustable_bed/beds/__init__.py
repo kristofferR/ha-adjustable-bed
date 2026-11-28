@@ -221,6 +221,7 @@ _EXPORT_MODULES = {
     "NerumController": "nerum.controller",
     "RelaxMotionController": "relax_motion.controller",
     "CheersSleepController": "cheerssleep.controller",
+    "MattressPointController": "mattresspoint.controller",
     "SleeptimeController": "sleeptime.controller",
     "UltramaticController": "ultramatic.controller",
     "SmartSleepController": "smart_sleep.controller",
